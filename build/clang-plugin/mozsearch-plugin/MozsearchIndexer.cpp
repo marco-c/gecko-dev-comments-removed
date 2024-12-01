@@ -1138,9 +1138,57 @@ public:
     return CurDeclContext && CurDeclContext->VisitImplicit;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool TraverseClassTemplateDecl(ClassTemplateDecl *D) {
     AutoTemplateContext Atc(this);
     Super::TraverseClassTemplateDecl(D);
+
+    
+    SmallVector<ClassTemplatePartialSpecializationDecl *> PS;
+    D->getPartialSpecializations(PS);
+    for (auto *Spec : PS) {
+      for (auto *Rd : Spec->redecls()) {
+        TraverseDecl(Rd);
+      }
+    }
 
     if (!Atc.needsAnalysis()) {
       return true;
@@ -1148,9 +1196,8 @@ public:
 
     Atc.switchMode();
 
-    if (D != D->getCanonicalDecl()) {
+    if (!D->isThisDeclarationADefinition())
       return true;
-    }
 
     for (auto *Spec : D->specializations()) {
       for (auto *Rd : Spec->redecls()) {
@@ -1165,6 +1212,7 @@ public:
     return true;
   }
 
+  
   bool TraverseFunctionTemplateDecl(FunctionTemplateDecl *D) {
     AutoTemplateContext Atc(this);
     if (Atc.inGatherMode()) {
@@ -1177,9 +1225,8 @@ public:
 
     Atc.switchMode();
 
-    if (D != D->getCanonicalDecl()) {
+    if (!D->isCanonicalDecl())
       return true;
-    }
 
     for (auto *Spec : D->specializations()) {
       for (auto *Rd : Spec->redecls()) {
@@ -2144,21 +2191,23 @@ public:
   }
 
   bool VisitCXXConstructExpr(const CXXConstructExpr *E) {
-    SourceLocation Loc = E->getBeginLoc();
-    if (!isInterestingLocation(Loc)) {
-      return true;
-    }
-
     
     
     
     if (TemplateStack && !TemplateStack->inGatherMode()) {
       if (ForwardedTemplateLocations.find(E->getBeginLoc().getRawEncoding()) !=
           ForwardedTemplateLocations.end()) {
-        ForwardingTemplates.insert(
-            {getCurrentFunctionTemplateInstantiation(), E});
+        if (const auto *currentTemplate =
+                getCurrentFunctionTemplateInstantiation()) {
+          ForwardingTemplates.insert({currentTemplate, E});
+        }
         return true;
       }
+    }
+
+    SourceLocation Loc = E->getBeginLoc();
+    if (!isInterestingLocation(Loc)) {
+      return true;
     }
 
     return VisitCXXConstructExpr(E, Loc);
@@ -2181,21 +2230,50 @@ public:
     return true;
   }
 
-  bool VisitUnresolvedLookupExpr(UnresolvedLookupExpr *E) {
-    
-    
-    
-    if (TemplateStack && TemplateStack->inGatherMode()) {
-      if (E->isTypeDependent()) {
-        TemplateStack->visitDependent(E->getBeginLoc());
-        ForwardedTemplateLocations.insert(E->getBeginLoc().getRawEncoding());
+  bool VisitCallExpr(CallExpr *E) {
+    Expr *CalleeExpr = E->getCallee()->IgnoreParenImpCasts();
+
+    if (TemplateStack) {
+      const auto CalleeLocation = [&] {
+        if (const auto *Member =
+                dyn_cast<CXXDependentScopeMemberExpr>(CalleeExpr)) {
+          return Member->getMemberLoc();
+        }
+        if (const auto *DeclRef =
+                dyn_cast<DependentScopeDeclRefExpr>(CalleeExpr)) {
+          return DeclRef->getLocation();
+        }
+        if (const auto *DeclRef = dyn_cast<DeclRefExpr>(CalleeExpr)) {
+          return DeclRef->getLocation();
+        }
+
+        
+        
+        return CalleeExpr->getExprLoc();
+      }();
+
+      
+      
+      
+      
+      
+      
+      if (TemplateStack->inGatherMode()) {
+        if (CalleeExpr->isTypeDependent()) {
+          TemplateStack->visitDependent(CalleeLocation);
+          ForwardedTemplateLocations.insert(CalleeLocation.getRawEncoding());
+        }
+      } else {
+        if (ForwardedTemplateLocations.find(CalleeLocation.getRawEncoding()) !=
+            ForwardedTemplateLocations.end()) {
+          if (const auto *currentTemplate =
+                  getCurrentFunctionTemplateInstantiation()) {
+            ForwardingTemplates.insert({currentTemplate, E});
+          }
+        }
       }
     }
 
-    return true;
-  }
-
-  bool VisitCallExpr(CallExpr *E) {
     Decl *Callee = E->getCalleeDecl();
     if (!Callee || !FunctionDecl::classof(Callee)) {
       return true;
@@ -2212,8 +2290,6 @@ public:
 
     std::string Mangled = getMangledName(CurMangleContext, NamedCallee);
     int Flags = 0;
-
-    Expr *CalleeExpr = E->getCallee()->IgnoreParenImpCasts();
 
     if (CXXOperatorCallExpr::classof(E)) {
       
@@ -2337,6 +2413,11 @@ public:
 
   void VisitForwardedStatements(const Expr *E, SourceLocation Loc) {
     
+    if (ForwardedTemplateLocations.find(Loc.getRawEncoding()) !=
+        ForwardedTemplateLocations.cend())
+      return;
+
+    
     
     auto todo = std::stack{std::vector<const Stmt *>{E}};
     auto seen = std::unordered_set<const Stmt *>{};
@@ -2376,20 +2457,6 @@ public:
     SourceLocation Loc = E->getExprLoc();
     if (!isInterestingLocation(Loc)) {
       return true;
-    }
-
-    
-    
-    
-    if (TemplateStack && !TemplateStack->inGatherMode()) {
-      const auto IsForwarded =
-          ForwardedTemplateLocations.find(E->getBeginLoc().getRawEncoding()) !=
-          ForwardedTemplateLocations.end();
-      if (IsForwarded) {
-        ForwardingTemplates.insert(
-            {getCurrentFunctionTemplateInstantiation(), E});
-        return true;
-      }
     }
 
     SourceLocation SpellingLoc = SM.getSpellingLoc(Loc);
@@ -2556,12 +2623,6 @@ public:
   }
 
   bool VisitCXXNewExpr(CXXNewExpr *N) {
-    SourceLocation Loc = N->getExprLoc();
-    normalizeLocation(&Loc);
-    if (!isInterestingLocation(Loc)) {
-      return true;
-    }
-
     
     
     
