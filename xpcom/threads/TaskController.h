@@ -319,6 +319,8 @@ class TaskController {
 
   static void Shutdown();
 
+  static Task::TaskResult RunTask(Task*);
+
   
   
   void AddTask(already_AddRefed<Task>&& aTask);
