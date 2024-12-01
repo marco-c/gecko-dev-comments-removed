@@ -393,20 +393,19 @@
       return this.tabpanels.dispatchEvent(...args);
     }
 
-    get visibleTabs() {
-      return this.tabContainer.visibleTabs;
+    
+
+
+
+    get openTabs() {
+      return this.tabContainer.openTabs;
     }
 
     
 
 
-
-    get openTabCount() {
-      let count = this.tabs.length - this._removingTabs.size;
-      if (FirefoxViewHandler.tab) {
-        count--;
-      }
-      return count;
+    get visibleTabs() {
+      return this.tabContainer.visibleTabs;
     }
 
     get pinnedTabCount() {
@@ -5676,6 +5675,7 @@
       }
 
       this._handleTabMove(aTab, () => aGroup.appendChild(aTab));
+      this.removeFromMultiSelectedTabs(aTab);
     }
 
     
