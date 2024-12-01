@@ -943,7 +943,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
       
       
       
-      SetNonClientMargins(LayoutDeviceIntMargin(0, 2, 2, 2));
+      SetNonClientMargins(LayoutDeviceIntMargin());
       
       
       mNeedsNCAreaClear = false;
