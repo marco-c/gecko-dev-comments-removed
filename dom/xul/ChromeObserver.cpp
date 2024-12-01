@@ -82,37 +82,25 @@ void ChromeObserver::AttributeChanged(dom::Element* aElement,
     return;
   }
 
-  const nsAttrValue* value = aElement->GetParsedAttr(aName, aNamespaceID);
-  if (value) {
-    
+  if (aModType == dom::MutationEvent_Binding::ADDITION ||
+      aModType == dom::MutationEvent_Binding::REMOVAL) {
+    const bool added = aModType == dom::MutationEvent_Binding::ADDITION;
     if (aName == nsGkAtoms::hidechrome) {
-      HideWindowChrome(value->Equals(u"true"_ns, eCaseMatters));
+      HideWindowChrome(added);
     } else if (aName == nsGkAtoms::customtitlebar) {
-      SetCustomTitlebar(true);
+      SetCustomTitlebar(added);
+    } else if (aName == nsGkAtoms::drawtitle) {
+      SetDrawsTitle(added);
     }
+  }
+  if (aName == nsGkAtoms::localedir) {
     
     
-    else if (aName == nsGkAtoms::title) {
-      mDocument->NotifyPossibleTitleChange(false);
-    } else if (aName == nsGkAtoms::drawtitle) {
-      SetDrawsTitle(value->Equals(u"true"_ns, eCaseMatters));
-    } else if (aName == nsGkAtoms::localedir) {
-      
-      
-      mDocument->ResetDocumentDirection();
-    }
-  } else {
-    if (aName == nsGkAtoms::hidechrome) {
-      HideWindowChrome(false);
-    } else if (aName == nsGkAtoms::customtitlebar) {
-      SetCustomTitlebar(false);
-    } else if (aName == nsGkAtoms::localedir) {
-      
-      
-      mDocument->ResetDocumentDirection();
-    } else if (aName == nsGkAtoms::drawtitle) {
-      SetDrawsTitle(false);
-    }
+    mDocument->ResetDocumentDirection();
+  }
+  if (aName == nsGkAtoms::title &&
+      aModType != dom::MutationEvent_Binding::REMOVAL) {
+    mDocument->NotifyPossibleTitleChange(false);
   }
 }
 
