@@ -10,12 +10,15 @@
 
 
 
+
+
+
 globalThis.shadowRealmEvalAsync = function (realm, asyncBody) {
   return new Promise(realm.evaluate(`
     (resolve, reject) => {
       (async () => {
         ${asyncBody}
-      })().then(resolve, (e) => reject(e.toString()));
+      })().then(resolve, (e) => reject(e.toString() + "\\n" + (e.stack || "")));
     }
   `));
 };
@@ -125,3 +128,22 @@ globalThis.setupFakeFetchOverMessagePort = function (port) {
   });
   port.start();
 }
+
+
+
+
+
+
+
+
+globalThis.createSetupErrorResult = function (message) {
+  return {
+    type: "complete",
+    tests: [],
+    asserts: [],
+    status: {
+      status: 1, 
+      message,
+    },
+  };
+};
