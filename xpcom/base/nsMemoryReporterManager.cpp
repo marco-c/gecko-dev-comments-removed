@@ -1732,6 +1732,11 @@ nsMemoryReporterManager::Init() {
   }
   isInited = true;
 
+  
+  
+  
+  
+
 #ifdef HAVE_JEMALLOC_STATS
   RegisterStrongReporter(new JemallocHeapReporter());
 #endif
@@ -2057,13 +2062,13 @@ nsMemoryReporterManager::GetReportsForThisProcessExtended(
     mozilla::MutexAutoLock autoLock(mMutex);
 
     for (const auto& entry : *mStrongReporters) {
-      DispatchReporter(entry.GetKey(), entry.GetData(), aHandleReport,
+      DispatchReporter(entry.mPtr, entry.mIsAsync, aHandleReport,
                        aHandleReportData, aAnonymize);
     }
 
     for (const auto& entry : *mWeakReporters) {
-      nsCOMPtr<nsIMemoryReporter> reporter = entry.GetKey();
-      DispatchReporter(reporter, entry.GetData(), aHandleReport,
+      nsCOMPtr<nsIMemoryReporter> reporter = entry.mPtr;
+      DispatchReporter(reporter, entry.mIsAsync, aHandleReport,
                        aHandleReportData, aAnonymize);
     }
   }
@@ -2313,13 +2318,11 @@ nsresult nsMemoryReporterManager::RegisterReporterHelper(
   
   
   
-  
-  
-  
-  
   if (aStrong) {
-    nsCOMPtr<nsIMemoryReporter> kungFuDeathGrip = aReporter;
-    mStrongReporters->InsertOrUpdate(aReporter, aIsAsync);
+    {
+      mStrongReporters->AppendElement(StrongReporterEntry{aReporter, aIsAsync});
+    }
+    
     CrashIfRefcountIsZero(aReporter);
   } else {
     CrashIfRefcountIsZero(aReporter);
@@ -2332,7 +2335,7 @@ nsresult nsMemoryReporterManager::RegisterReporterHelper(
       
       return NS_ERROR_XPC_BAD_CONVERT_JS;
     }
-    mWeakReporters->InsertOrUpdate(aReporter, aIsAsync);
+    mWeakReporters->AppendElement(WeakReporterEntry{aReporter, aIsAsync});
   }
 
   return NS_OK;

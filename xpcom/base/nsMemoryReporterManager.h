@@ -55,9 +55,45 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
     return imgr.forget().downcast<nsMemoryReporterManager>();
   }
 
-  typedef nsTHashMap<nsRefPtrHashKey<nsIMemoryReporter>, bool>
-      StrongReportersTable;
-  typedef nsTHashMap<nsPtrHashKey<nsIMemoryReporter>, bool> WeakReportersTable;
+  
+  
+  
+  
+  template <class PtrT>
+  struct ReporterEntry {
+   public:
+    PtrT mPtr;
+    bool mIsAsync;
+  };
+
+  template <class PtrT>
+  using ReportersArray = AutoTArray<ReporterEntry<PtrT>, 64>;
+
+  template <class PtrT>
+  class ReportersTable : public ReportersArray<PtrT> {
+    class ReporterComparator {
+     public:
+      bool Equals(const ReporterEntry<PtrT>& aA,
+                  const nsIMemoryReporter* aB) const {
+        return aA.mPtr == aB;
+      }
+    };
+
+   public:
+    bool Contains(nsIMemoryReporter* aPtr) {
+      return ReportersArray<PtrT>::IndexOf(aPtr, 0, ReporterComparator()) !=
+             ReportersArray<PtrT>::NoIndex;
+    }
+
+    void Remove(nsIMemoryReporter* aPtr) {
+      ReportersArray<PtrT>::RemoveElement(aPtr, ReporterComparator());
+    }
+  };
+
+  using StrongReporterEntry = ReporterEntry<nsCOMPtr<nsIMemoryReporter>>;
+  using StrongReportersTable = ReportersTable<nsCOMPtr<nsIMemoryReporter>>;
+  using WeakReporterEntry = ReporterEntry<nsIMemoryReporter*>;
+  using WeakReportersTable = ReportersTable<nsIMemoryReporter*>;
 
   
   
