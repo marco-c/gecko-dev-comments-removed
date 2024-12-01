@@ -439,6 +439,89 @@ const uint32_t kSlowSQLThresholdForHelperThreads = 100;
 
 void WriteFailedProfileLock(nsIFile* aProfileDir);
 
+
+
+
+
+
+
+void ScalarAdd(mozilla::Telemetry::ScalarID aId, uint32_t aValue);
+
+
+
+
+
+
+
+void ScalarSet(mozilla::Telemetry::ScalarID aId, uint32_t aValue);
+
+
+
+
+
+
+
+void ScalarSet(mozilla::Telemetry::ScalarID aId, bool aValue);
+
+
+
+
+
+
+
+
+void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aValue);
+
+
+
+
+
+
+
+
+void ScalarSetMaximum(mozilla::Telemetry::ScalarID aId, uint32_t aValue);
+
+
+
+
+
+
+
+
+void ScalarAdd(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
+               uint32_t aValue);
+
+
+
+
+
+
+
+
+void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
+               uint32_t aValue);
+
+
+
+
+
+
+
+
+void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
+               bool aValue);
+
+
+
+
+
+
+
+
+
+void ScalarSetMaximum(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
+                      uint32_t aValue);
+
 }  
 }  
 
