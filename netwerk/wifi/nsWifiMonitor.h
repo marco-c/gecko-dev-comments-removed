@@ -20,6 +20,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Monitor.h"
 #include "WifiScanner.h"
+#include "mozilla/HashTable.h"
 
 namespace mozilla {
 class TestWifiMonitor;
@@ -46,6 +47,22 @@ struct WifiListenerHolder {
   explicit WifiListenerHolder(nsIWifiListener* aListener,
                               bool aShouldPoll = false)
       : mListener(aListener), mShouldPoll(aShouldPoll) {}
+
+  
+  
+  
+  struct WifiListenerHasher {
+    using Key = WifiListenerHolder;
+    using Lookup = WifiListenerHolder;
+    static mozilla::HashNumber hash(const Lookup& aLookup) {
+      return mozilla::DefaultHasher<nsIWifiListener*>::hash(aLookup.mListener);
+    }
+    static bool match(const Key& aKey, const Lookup& aLookup) {
+      return mozilla::DefaultHasher<nsIWifiListener*>::match(aKey.mListener,
+                                                             aLookup.mListener);
+    }
+    static void rekey(Key& aKey, const Key& aNewKey) { aKey = aNewKey; }
+  };
 };
 
 class nsWifiMonitor final : public nsIWifiMonitor, public nsIObserver {
@@ -82,7 +99,7 @@ class nsWifiMonitor final : public nsIWifiMonitor, public nsIObserver {
 
   bool ShouldPoll() {
     MOZ_ASSERT(!IsBackgroundThread());
-    return (mShouldPollForCurrentNetwork && !mListeners.IsEmpty()) ||
+    return (mShouldPollForCurrentNetwork && !mListeners.empty()) ||
            mNumPollingListeners > 0;
   };
 
@@ -97,7 +114,8 @@ class nsWifiMonitor final : public nsIWifiMonitor, public nsIObserver {
   nsCOMPtr<nsIThread> mThread;
 
   
-  nsTArray<WifiListenerHolder> mListeners;
+  mozilla::HashSet<WifiListenerHolder, WifiListenerHolder::WifiListenerHasher>
+      mListeners;
 
   
   mozilla::UniquePtr<mozilla::WifiScanner> mWifiScanner;
