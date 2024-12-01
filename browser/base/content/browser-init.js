@@ -106,6 +106,7 @@ var gBrowserInit = {
     
     AutoHideMenubar.init();
     
+    
     window.TabBarVisibility.update();
     TabsInTitlebar.init();
 
