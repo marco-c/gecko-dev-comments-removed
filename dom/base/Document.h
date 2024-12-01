@@ -1596,20 +1596,24 @@ class Document : public nsINode,
   Element* GetHtmlElement() const;
   
   
-  Element* GetHtmlChildElement(nsAtom* aTag);
+  Element* GetHtmlChildElement(
+      nsAtom* aTag, const nsIContent* aContentToIgnore = nullptr) const;
   
   
-  HTMLBodyElement* GetBodyElement();
+  HTMLBodyElement* GetBodyElement(
+      const nsIContent* aContentToIgnore = nullptr) const;
   
   
-  Element* GetHeadElement() { return GetHtmlChildElement(nsGkAtoms::head); }
+  Element* GetHeadElement() const {
+    return GetHtmlChildElement(nsGkAtoms::head);
+  }
   
   
-  nsGenericHTMLElement* GetBody();
+  nsGenericHTMLElement* GetBody() const;
   
   void SetBody(nsGenericHTMLElement* aBody, ErrorResult& rv);
   
-  HTMLSharedElement* GetHead();
+  HTMLSharedElement* GetHead() const;
 
   ServoStyleSet* StyleSetForPresShell() const {
     MOZ_ASSERT(!!mStyleSet.get());
@@ -2039,7 +2043,7 @@ class Document : public nsINode,
 
   
   
-  void RuleChanged(StyleSheet&, css::Rule*, StyleRuleChangeKind);
+  void RuleChanged(StyleSheet&, css::Rule*, const StyleRuleChange&);
   void RuleAdded(StyleSheet&, css::Rule&);
   void RuleRemoved(StyleSheet&, css::Rule&);
   void SheetCloned(StyleSheet&) {}

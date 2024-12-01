@@ -40,6 +40,9 @@ class ServoStyleRuleMap final {
 
   void RuleAdded(StyleSheet& aStyleSheet, css::Rule&);
   void RuleRemoved(StyleSheet& aStyleSheet, css::Rule&);
+  void RuleDeclarationsChanged(css::Rule&,
+                               const StyleLockedDeclarationBlock* aOld,
+                               const StyleLockedDeclarationBlock* aNew);
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
@@ -49,7 +52,7 @@ class ServoStyleRuleMap final {
   
   
   
-  bool IsEmpty() const { return mTable.Count() == 0; }
+  bool IsEmpty() const { return mTable.IsEmpty(); }
 
   void FillTableFromRule(css::Rule&);
   void FillTableFromRuleList(ServoCSSRuleList&);

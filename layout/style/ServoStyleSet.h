@@ -31,6 +31,8 @@ namespace mozilla {
 enum class MediaFeatureChangeReason : uint8_t;
 enum class StylePageSizeOrientation : uint8_t;
 enum class StyleRuleChangeKind : uint32_t;
+enum class StyleRelativeSelectorNthEdgeInvalidateFor : uint8_t;
+struct StyleRuleChange;
 
 class ErrorResult;
 
@@ -134,7 +136,7 @@ class ServoStyleSet {
   
   void RuleAdded(StyleSheet&, css::Rule&);
   void RuleRemoved(StyleSheet&, css::Rule&);
-  void RuleChanged(StyleSheet&, css::Rule*, StyleRuleChangeKind);
+  void RuleChanged(StyleSheet&, css::Rule*, const StyleRuleChange&);
   void SheetCloned(StyleSheet&);
   void ImportRuleLoaded(StyleSheet&);
 
@@ -514,7 +516,8 @@ class ServoStyleSet {
 
 
 
-  void MaybeInvalidateRelativeSelectorForNthEdgeDependency(const dom::Element&);
+  void MaybeInvalidateRelativeSelectorForNthEdgeDependency(
+      const dom::Element&, StyleRelativeSelectorNthEdgeInvalidateFor);
 
   
 
@@ -541,8 +544,7 @@ class ServoStyleSet {
 
 
 
-  void MaybeInvalidateForElementRemove(const dom::Element& aElement,
-                                       const nsIContent* aFollowingSibling);
+  void MaybeInvalidateForElementRemove(const dom::Element& aElement);
 
   
 
@@ -603,7 +605,7 @@ class ServoStyleSet {
 
   bool ShouldTraverseInParallel() const;
 
-  void RuleChangedInternal(StyleSheet&, css::Rule&, StyleRuleChangeKind);
+  void RuleChangedInternal(StyleSheet&, css::Rule&, const StyleRuleChange&);
 
   
 

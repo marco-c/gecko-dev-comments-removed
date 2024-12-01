@@ -26,12 +26,12 @@ use selectors::parser::{Component, LocalName, Selector};
 #[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
 pub enum RuleChangeKind {
     
+    
+    Generic = 0,
+    
     Insertion,
     
     Removal,
-    
-    
-    Generic,
     
     StyleRuleDeclarations,
 }
