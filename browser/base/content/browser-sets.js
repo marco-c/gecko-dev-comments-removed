@@ -223,10 +223,9 @@ document.addEventListener(
           case "Browser:Screenshot":
             ScreenshotsUtils.notify(window, "Shortcut");
             break;
-          
-          
-          
-          
+          case "History:UndoCloseTab":
+            undoCloseTab();
+            break;
           case "History:UndoCloseWindow":
             undoCloseWindow();
             break;

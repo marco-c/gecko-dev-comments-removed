@@ -2673,12 +2673,6 @@
       ownerTab ??= inBackground ? null : this.selectedTab;
 
       
-      
-      document
-        .getElementById("History:UndoCloseTab")
-        .setAttribute("data-l10n-args", JSON.stringify({ tabCount: 1 }));
-
-      
       if (this.selectedTab.owner) {
         this.selectedTab.owner = null;
       }
@@ -4347,14 +4341,6 @@
 
       this._clearMultiSelectionLocked = false;
       this._avoidSingleSelectedTab();
-      
-      
-      document.getElementById("History:UndoCloseTab").setAttribute(
-        "data-l10n-args",
-        JSON.stringify({
-          tabCount: SessionStore.getLastClosedTabCount(window),
-        })
-      );
     }
 
     removeCurrentTab(aParams) {
@@ -8208,8 +8194,13 @@ var TabContextMenu = {
     );
 
     
-    document.getElementById("context_undoCloseTab").disabled =
-      SessionStore.getClosedTabCount() == 0;
+    let closedCount = SessionStore.getLastClosedTabCount(window);
+    document
+      .getElementById("History:UndoCloseTab")
+      .setAttribute("disabled", closedCount == 0);
+    document.l10n.setArgs(document.getElementById("context_undoCloseTab"), {
+      tabCount: closedCount,
+    });
 
     
     
