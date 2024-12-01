@@ -1,6 +1,8 @@
 
 
 
+
+
 function mybtoa(s) {
     
     s = String(s);
@@ -125,7 +127,7 @@ tests.push(["btoa(first 256 code points concatenated)", everything]);
 
 generate_tests(testBtoa, tests);
 
-promise_test(() => fetch("../../../fetch/data-urls/resources/base64.json").then(res => res.json()).then(runAtobTests), "atob() setup.");
+promise_test(() => fetch_json("../../../fetch/data-urls/resources/base64.json").then(runAtobTests), "atob() setup.");
 
 const idlTests = [
   [undefined, null],
