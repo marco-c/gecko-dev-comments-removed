@@ -49,6 +49,13 @@ add_task(async function () {
     { identifier: "self:", value: `Object { x: 1, #privateVar: 2 }` },
   ]);
 
+  await checkInlinePreview(dbg, "explicitResourceManagement", [
+    {
+      identifier: "erm:",
+      value: `Object { foo: 42, Symbol("Symbol.dispose"): Symbol.dispose() }`,
+    },
+  ]);
+
   
   await checkInlinePreview(dbg, "runInModule", [
     { identifier: "val:", value: "4" },
