@@ -282,6 +282,9 @@ async function waitForRecordBounces(browser) {
 
 
 
+
+
+
 async function runTestBounce(options = {}) {
   let {
     bounceType,
@@ -297,6 +300,7 @@ async function runTestBounce(options = {}) {
     originAttributes = {},
     postBounceCallback = () => {},
     skipSiteDataCleanup = false,
+    skipBounceTrackingProtectionCleanup = false,
     closeTabAfterBounce = false,
   } = options;
   info(`runTestBounce ${JSON.stringify(options)}`);
@@ -590,7 +594,10 @@ async function runTestBounce(options = {}) {
       );
     }
   }
-  bounceTrackingProtection?.clearAll();
+  if (!skipBounceTrackingProtectionCleanup) {
+    bounceTrackingProtection?.clearAll();
+  }
+
   if (!skipSiteDataCleanup) {
     await SiteDataTestUtils.clear();
   }
