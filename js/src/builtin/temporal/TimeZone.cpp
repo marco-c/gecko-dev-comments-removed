@@ -213,10 +213,8 @@ JSLinearString* js::temporal::CanonicalizeTimeZoneName(
 #endif
 
   
-  if (StringEqualsLiteral(ianaTimeZone, "Etc/UTC") ||
-      StringEqualsLiteral(ianaTimeZone, "Etc/GMT")) {
-    return cx->names().UTC;
-  }
+  MOZ_ASSERT(!StringEqualsLiteral(ianaTimeZone, "Etc/UTC"));
+  MOZ_ASSERT(!StringEqualsLiteral(ianaTimeZone, "Etc/GMT"));
 
   
   
