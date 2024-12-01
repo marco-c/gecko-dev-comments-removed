@@ -441,48 +441,15 @@ ThirdPartyUtil::GetBaseDomain(nsIURI* aHostURI, nsACString& aBaseDomain) {
   }
 
   
-  if (aBaseDomain.Length() == 1 && aBaseDomain.Last() == '.')
+  if (aBaseDomain.Length() == 1 && aBaseDomain.Last() == '.') {
     return NS_ERROR_INVALID_ARG;
+  }
 
   
   
   
   
   if (aBaseDomain.IsEmpty() && !aHostURI->SchemeIs("file")) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-ThirdPartyUtil::GetBaseDomainFromSchemeHost(const nsACString& aScheme,
-                                            const nsACString& aAsciiHost,
-                                            nsACString& aBaseDomain) {
-  MOZ_DIAGNOSTIC_ASSERT(IsAscii(aAsciiHost));
-
-  
-  
-  nsresult rv = mTLDService->GetBaseDomainFromHost(aAsciiHost, 0, aBaseDomain);
-  if (rv == NS_ERROR_HOST_IS_IP_ADDRESS ||
-      rv == NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
-    
-    
-    
-    aBaseDomain = aAsciiHost;
-    rv = NS_OK;
-  }
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  if (aBaseDomain.Length() == 1 && aBaseDomain.Last() == '.')
-    return NS_ERROR_INVALID_ARG;
-
-  
-  
-  
-  
-  if (aBaseDomain.IsEmpty() && !aScheme.EqualsLiteral("file")) {
     return NS_ERROR_INVALID_ARG;
   }
 
