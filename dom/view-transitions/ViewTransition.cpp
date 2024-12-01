@@ -339,7 +339,7 @@ void ViewTransition::SetupTransitionPseudoElements() {
       
       
       RefPtr<Element> new_ = MakePseudo(
-          *mDocument, PseudoStyleType::viewTransitionOld, transitionName);
+          *mDocument, PseudoStyleType::viewTransitionNew, transitionName);
       
       imagePair->AppendChildTo(new_, kNotify, IgnoreErrors());
     }
@@ -621,7 +621,7 @@ void ViewTransition::ClearActiveTransition() {
   if (mViewTransitionRoot) {
     nsAutoScriptBlocker scriptBlocker;
     if (PresShell* ps = mDocument->GetPresShell()) {
-      ps->ContentRemoved(mViewTransitionRoot, nullptr);
+      ps->ContentWillBeRemoved(mViewTransitionRoot);
     }
     mViewTransitionRoot->UnbindFromTree();
     mViewTransitionRoot = nullptr;
