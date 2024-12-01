@@ -151,6 +151,7 @@
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/FileDescriptorUtils.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
+#include "mozilla/ipc/UtilityProcessManager.h"
 #include "mozilla/ipc/SharedMemory.h"
 #include "mozilla/ipc/TestShellParent.h"
 #include "mozilla/layers/CompositorThread.h"
@@ -2971,6 +2972,12 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
     rdd->LaunchRDDProcess();
   }
 
+  if (StaticPrefs::media_utility_process_enabled()) {
+    
+    RefPtr<UtilityProcessManager> upm = UtilityProcessManager::GetSingleton();
+    upm->StartProcessForRemoteMediaDecoding();
+  }
+
   nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
   if (sheetService) {
     
@@ -4079,8 +4086,8 @@ mozilla::ipc::IPCResult ContentParent::RecvCloneDocumentTreeInto(
     return IPC_OK();
   }
 
-  auto* source = aSource.get_canonical();
-  auto* target = aTarget.get_canonical();
+  RefPtr source = aSource.get_canonical();
+  RefPtr target = aTarget.get_canonical();
 
   if (!CloneIsLegal(this, *source, *target)) {
     return IPC_FAIL(this, "Illegal subframe clone");
