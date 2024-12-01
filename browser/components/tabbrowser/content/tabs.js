@@ -344,7 +344,7 @@
       
       
       
-      if (TabsInTitlebar.enabled && !this.verticalMode) {
+      if (CustomTitlebar.enabled && !this.verticalMode) {
         return;
       }
 
