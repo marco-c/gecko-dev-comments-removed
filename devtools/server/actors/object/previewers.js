@@ -42,6 +42,7 @@ const ERROR_CLASSNAMES = new Set([
   "LinkError",
   "RuntimeError",
   "Exception", 
+  "SuppressedError",
 ]);
 const ARRAY_LIKE_CLASSNAMES = new Set([
   "DOMStringList",
