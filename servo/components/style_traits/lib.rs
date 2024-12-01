@@ -34,10 +34,6 @@ extern crate thin_vec;
 extern crate to_shmem;
 #[macro_use]
 extern crate to_shmem_derive;
-#[cfg(feature = "servo")]
-extern crate webrender_api;
-#[cfg(feature = "servo")]
-pub use webrender_api::units::DevicePixel;
 
 use cssparser::{CowRcStr, Token};
 use selectors::parser::SelectorParseErrorKind;
@@ -47,10 +43,8 @@ use servo_atoms::Atom;
 
 
 
-#[cfg(not(feature = "servo"))]
 #[derive(Clone, Copy, Debug)]
 pub enum DevicePixel {}
-
 
 
 #[derive(Clone, Copy, Debug, PartialEq)]
