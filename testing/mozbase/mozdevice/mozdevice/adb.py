@@ -3929,7 +3929,6 @@ class ADBDevice(ADBCommand):
         """
         if self.version >= version_codes.M:
             permissions = [
-                "android.permission.READ_EXTERNAL_STORAGE",
                 "android.permission.ACCESS_COARSE_LOCATION",
                 "android.permission.ACCESS_FINE_LOCATION",
                 "android.permission.CAMERA",
@@ -3937,8 +3936,10 @@ class ADBDevice(ADBCommand):
             ]
             if self.version < version_codes.R:
                 
-                
                 permissions.append("android.permission.WRITE_EXTERNAL_STORAGE")
+            if self.version < version_codes.TIRAMISU:
+                
+                permissions.append("android.permission.READ_EXTERNAL_STORAGE")
             self._logger.info("Granting important runtime permissions to %s" % app_name)
             for permission in permissions:
                 try:

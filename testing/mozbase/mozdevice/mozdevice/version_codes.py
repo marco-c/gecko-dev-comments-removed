@@ -5,7 +5,7 @@
 """
 VERSION CODES of the android releases.
 
-See http://developer.android.com/reference/android/os/Build.VERSION_CODES.html.
+See https://developer.android.com/reference/android/os/Build.VERSION_CODES.html.
 """
 
 
@@ -68,3 +68,12 @@ P = 28
 Q = 29
 
 R = 30
+
+S = 31
+S_V2 = 32
+
+TIRAMISU = 33
+
+UPSIDE_DOWN_CAKE = 34
+
+VANILLA_ICE_CREAM = 35
