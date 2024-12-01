@@ -3598,11 +3598,15 @@ ContentParent::BlockShutdown(nsIAsyncShutdownClient* aClient) {
 #endif
     
     
-    SignalImpendingShutdownToContentJS();
-    
-    
     
     PreallocatedProcessManager::Erase(this);
+    {
+      RecursiveMutexAutoLock lock(mThreadsafeHandle->mMutex);
+      mThreadsafeHandle->mShutdownStarted = true;
+    }
+    
+    
+    SignalImpendingShutdownToContentJS();
 
     if (sQuitApplicationGrantedClient) {
       Unused << sQuitApplicationGrantedClient->RemoveBlocker(this);
