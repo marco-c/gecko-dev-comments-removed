@@ -180,6 +180,17 @@ nsFileProtocolHandler::NewChannel(nsIURI* uri, nsILoadInfo* aLoadInfo,
   
   
   
+  
+  nsAutoCString host;
+  rv = uri->GetHost(host);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(!host.IsEmpty())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
   rv = chan->SetLoadInfo(aLoadInfo);
   if (NS_FAILED(rv)) {
     return rv;
