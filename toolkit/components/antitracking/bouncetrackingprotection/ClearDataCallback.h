@@ -4,6 +4,7 @@
 #ifndef mozilla_ClearDataCallback_h__
 #define mozilla_ClearDataCallback_h__
 
+#include "BounceTrackingMapEntry.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/glean/bindings/GleanMetric.h"
 #include "nsIClearDataService.h"
@@ -12,7 +13,8 @@
 namespace mozilla {
 
 
-using ClearDataMozPromise = MozPromise<nsCString, uint32_t, true>;
+using ClearDataMozPromise =
+    MozPromise<RefPtr<BounceTrackingMapEntry>, uint32_t, true>;
 
 extern LazyLogModule gBounceTrackingProtectionLog;
 
@@ -26,15 +28,16 @@ class ClearDataCallback final : public nsIClearDataCallback,
   NS_DECL_NSIURLCLASSIFIERFEATURECALLBACK
 
   explicit ClearDataCallback(ClearDataMozPromise::Private* aPromise,
+                             const OriginAttributes& aOriginAttributes,
                              const nsACString& aHost, PRTime aBounceTime);
 
  private:
   virtual ~ClearDataCallback();
 
   
-  nsCString mHost;
   
-  PRTime mBounceTime;
+  RefPtr<BounceTrackingMapEntry> mEntry;
+
   
   RefPtr<ClearDataMozPromise::Private> mPromise;
 
