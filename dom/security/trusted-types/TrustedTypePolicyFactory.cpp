@@ -17,6 +17,8 @@
 #include "mozilla/dom/TrustedTypeUtils.h"
 #include "mozilla/dom/nsCSPUtils.h"
 
+using namespace mozilla::dom::TrustedTypeUtils;
+
 namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TrustedTypePolicyFactory, mGlobalObject,
@@ -190,10 +192,6 @@ already_AddRefed<TrustedScript> TrustedTypePolicyFactory::EmptyScript() {
   return result.forget();
 }
 
-static constexpr nsLiteralString kTrustedHTML = u"TrustedHTML"_ns;
-static constexpr nsLiteralString kTrustedScript = u"TrustedScript"_ns;
-static constexpr nsLiteralString kTrustedScriptURL = u"TrustedScriptURL"_ns;
-
 
 
 
@@ -206,48 +204,47 @@ void TrustedTypePolicyFactory::GetAttributeType(const nsAString& aTagName,
                                                 const nsAString& aElementNs,
                                                 const nsAString& aAttrNs,
                                                 DOMString& aResult) {
+  
+  
+  
+  
+
+  
+  
+  int32_t attributeNamespaceID = kNameSpaceID_Unknown;
+  if (aAttrNs.IsEmpty()) {
+    attributeNamespaceID = kNameSpaceID_None;
+  } else if (nsGkAtoms::nsuri_xlink->Equals(aAttrNs)) {
+    attributeNamespaceID = kNameSpaceID_XLink;
+  } else {
+    aResult.SetNull();
+    return;
+  }
+
+  
+  
+  int32_t elementNamespaceID = kNameSpaceID_Unknown;
+  if (aElementNs.IsEmpty() || nsGkAtoms::nsuri_xhtml->Equals(aElementNs)) {
+    elementNamespaceID = kNameSpaceID_XHTML;
+  } else if (nsGkAtoms::nsuri_svg->Equals(aElementNs)) {
+    elementNamespaceID = kNameSpaceID_SVG;
+  }
+
   nsAutoString attribute;
   nsContentUtils::ASCIIToLower(aAttribute, attribute);
   RefPtr<nsAtom> attributeAtom = NS_Atomize(attribute);
 
-  
-  
-  
-  if (aAttrNs.IsEmpty() &&
-      nsContentUtils::IsEventAttributeName(
-          attributeAtom, EventNameType_All & ~EventNameType_XUL)) {
-    
-    aResult.SetKnownLiveString(kTrustedScript);
+  nsAutoString localName;
+  nsContentUtils::ASCIIToLower(aTagName, localName);
+  RefPtr<nsAtom> elementAtom = NS_Atomize(localName);
+
+  TrustedType trustedType;
+  nsAutoString unusedSink;
+  if (GetTrustedTypeDataForAttribute(elementAtom, elementNamespaceID,
+                                     attributeAtom, attributeNamespaceID,
+                                     trustedType, unusedSink)) {
+    aResult.SetKnownLiveString(GetTrustedTypeName(trustedType));
     return;
-  }
-  if (aElementNs.IsEmpty() ||
-      aElementNs == nsDependentAtomString(nsGkAtoms::nsuri_xhtml)) {
-    if (nsContentUtils::EqualsIgnoreASCIICase(
-            aTagName, nsDependentAtomString(nsGkAtoms::iframe))) {
-      
-      if (aAttrNs.IsEmpty() && attributeAtom == nsGkAtoms::srcdoc) {
-        aResult.SetKnownLiveString(kTrustedHTML);
-        return;
-      }
-    } else if (nsContentUtils::EqualsIgnoreASCIICase(
-                   aTagName, nsDependentAtomString(nsGkAtoms::script))) {
-      
-      if (aAttrNs.IsEmpty() && attributeAtom == nsGkAtoms::src) {
-        aResult.SetKnownLiveString(kTrustedScriptURL);
-        return;
-      }
-    }
-  } else if (aElementNs == nsDependentAtomString(nsGkAtoms::nsuri_svg)) {
-    if (nsContentUtils::EqualsIgnoreASCIICase(
-            aTagName, nsDependentAtomString(nsGkAtoms::script))) {
-      
-      if ((aAttrNs.IsEmpty() ||
-           aAttrNs == nsDependentAtomString(nsGkAtoms::nsuri_xlink)) &&
-          attributeAtom == nsGkAtoms::href) {
-        aResult.SetKnownLiveString(kTrustedScriptURL);
-        return;
-      }
-    }
   }
 
   aResult.SetNull();
@@ -265,13 +262,12 @@ void TrustedTypePolicyFactory::GetPropertyType(const nsAString& aTagName,
                                                const nsAString& aElementNs,
                                                DOMString& aResult) {
   RefPtr<nsAtom> propertyAtom = NS_Atomize(aProperty);
-  if (aElementNs.IsEmpty() ||
-      aElementNs == nsDependentAtomString(nsGkAtoms::nsuri_xhtml)) {
+  if (aElementNs.IsEmpty() || nsGkAtoms::nsuri_xhtml->Equals(aElementNs)) {
     if (nsContentUtils::EqualsIgnoreASCIICase(
             aTagName, nsDependentAtomString(nsGkAtoms::iframe))) {
       
       if (propertyAtom == nsGkAtoms::srcdoc) {
-        aResult.SetKnownLiveString(kTrustedHTML);
+        aResult.SetKnownLiveString(GetTrustedTypeName<TrustedHTML>());
         return;
       }
     } else if (nsContentUtils::EqualsIgnoreASCIICase(
@@ -280,11 +276,11 @@ void TrustedTypePolicyFactory::GetPropertyType(const nsAString& aTagName,
       if (propertyAtom == nsGkAtoms::innerText ||
           propertyAtom == nsGkAtoms::text ||
           propertyAtom == nsGkAtoms::textContent) {
-        aResult.SetKnownLiveString(kTrustedScript);
+        aResult.SetKnownLiveString(GetTrustedTypeName<TrustedScript>());
         return;
       }
       if (propertyAtom == nsGkAtoms::src) {
-        aResult.SetKnownLiveString(kTrustedScriptURL);
+        aResult.SetKnownLiveString(GetTrustedTypeName<TrustedScriptURL>());
         return;
       }
     }
@@ -292,7 +288,7 @@ void TrustedTypePolicyFactory::GetPropertyType(const nsAString& aTagName,
   
   if (propertyAtom == nsGkAtoms::innerHTML ||
       propertyAtom == nsGkAtoms::outerHTML) {
-    aResult.SetKnownLiveString(kTrustedHTML);
+    aResult.SetKnownLiveString(GetTrustedTypeName<TrustedHTML>());
     return;
   }
 
