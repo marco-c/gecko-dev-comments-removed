@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, ExternalImageId, ImageBufferKind, ImageKey, ImageRendering, YuvFormat, YuvRangedColorSpace};
+use api::{ColorF, YuvRangedColorSpace, YuvFormat, ImageRendering, ExternalImageId, ImageBufferKind};
 use api::units::*;
 use api::ColorDepth;
 use crate::image_source::resolve_image;
@@ -204,8 +204,6 @@ pub struct ExternalSurfaceDescriptor {
     
     
     pub update_params: Option<DeviceIntSize>,
-    
-    pub external_image_id: Option<ExternalImageId>,
 }
 
 impl ExternalSurfaceDescriptor {
@@ -285,8 +283,6 @@ pub struct ResolvedExternalSurface {
     pub image_buffer_kind: ImageBufferKind,
     
     pub update_params: Option<(NativeSurfaceId, DeviceIntSize)>,
-    
-    pub external_image_id: Option<ExternalImageId>,
 }
 
 
@@ -465,32 +461,10 @@ pub struct CompositeTileDescriptor {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum CompositorSurfaceUsage {
     Content,
-    External {
-        image_key: ImageKey,
-        external_image_id: ExternalImageId,
-        transform_index: CompositorTransformIndex,
-    },
-}
-
-impl CompositorSurfaceUsage {
-    
-    pub fn matches(&self, other: &CompositorSurfaceUsage) -> bool {
-        match (self, other) {
-            
-            (CompositorSurfaceUsage::Content, CompositorSurfaceUsage::Content) => true,
-
-            (CompositorSurfaceUsage::Content, CompositorSurfaceUsage::External { .. }) |
-            (CompositorSurfaceUsage::External { .. }, CompositorSurfaceUsage::Content) => false,
-
-            
-            (CompositorSurfaceUsage::External { image_key: key1, .. }, CompositorSurfaceUsage::External { image_key: key2, .. }) => {
-                key1 == key2
-            }
-        }
-    }
+    External,
 }
 
 
@@ -778,7 +752,7 @@ impl CompositeState {
         
         
         let needs_external_surface_update = match self.compositor_kind {
-            CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => true,
+            CompositorKind::Draw { .. } => true,
             _ => external_surface.update_params.is_some(),
         };
         let external_surface_index = if needs_external_surface_update {
@@ -1061,7 +1035,6 @@ impl CompositeState {
                         },
                     image_buffer_kind,
                     update_params,
-                    external_image_id: external_surface.external_image_id,
                 });
             },
             ExternalSurfaceDependency::Rgb { .. } => {
@@ -1074,7 +1047,6 @@ impl CompositeState {
                     },
                     image_buffer_kind,
                     update_params,
-                    external_image_id: external_surface.external_image_id,
                 });
             },
         }
@@ -1361,7 +1333,6 @@ pub trait Compositor {
 
 
 
-#[derive(Debug)]
 pub struct CompositorInputLayer {
     
     pub rect: DeviceIntRect,
@@ -1373,7 +1344,6 @@ pub struct CompositorInputLayer {
 
 
 
-#[derive(Debug)]
 pub struct CompositorInputConfig<'a> {
     pub layers: &'a [CompositorInputLayer],
 }
@@ -1398,7 +1368,6 @@ pub trait LayerCompositor {
     fn add_surface(
         &mut self,
         index: usize,
-        transform: CompositorSurfaceTransform,
         clip_rect: DeviceIntRect,
         image_rendering: ImageRendering,
     );
