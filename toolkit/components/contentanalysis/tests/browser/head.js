@@ -133,10 +133,24 @@ function makeMockContentAnalysis() {
     isActive: true,
     mightBeActive: true,
     errorValue: undefined,
+    waitForEventToFinish: false,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    eventTarget: new EventTarget(),
 
-    setupForTest(shouldAllowRequest) {
+    setupForTest(shouldAllowRequest, waitForEvent) {
       this.shouldAllowRequest = shouldAllowRequest;
       this.errorValue = undefined;
+      this.waitForEvent = !!waitForEvent;
       this.clearCalls();
     },
 
@@ -173,6 +187,21 @@ function makeMockContentAnalysis() {
       }
       
       await new Promise(res => setTimeout(res, 0));
+      if (this.waitForEvent) {
+        let waitPromise = new Promise(res => {
+          this.eventTarget.addEventListener(
+            "returnContentAnalysisResponse",
+            () => {
+              res();
+            },
+            { once: true }
+          );
+        });
+        this.eventTarget.dispatchEvent(
+          new CustomEvent("inAnalyzeContentRequest")
+        );
+        await waitPromise;
+      }
       return makeContentAnalysisResponse(
         this.getAction(),
         request.requestToken
@@ -184,7 +213,9 @@ function makeMockContentAnalysis() {
         "Mock ContentAnalysis service: analyzeContentRequestCallback, this.shouldAllowRequest=" +
           this.shouldAllowRequest +
           ", this.errorValue=" +
-          this.errorValue
+          this.errorValue +
+          ", this.waitForEvent=" +
+          this.waitForEvent
       );
       this.calls.push(request);
       if (this.errorValue) {
@@ -194,6 +225,21 @@ function makeMockContentAnalysis() {
       
       
       setTimeout(async () => {
+        if (this.waitForEvent) {
+          let waitPromise = new Promise(res => {
+            this.eventTarget.addEventListener(
+              "returnContentAnalysisResponse",
+              () => {
+                res();
+              },
+              { once: true }
+            );
+          });
+          this.eventTarget.dispatchEvent(
+            new CustomEvent("inAnalyzeContentRequest")
+          );
+          await waitPromise;
+        }
         let isDir = false;
         try {
           isDir = (await IOUtils.stat(request.filePath)).type == "directory";
