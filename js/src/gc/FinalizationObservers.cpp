@@ -284,6 +284,9 @@ void FinalizationObservers::updateForRemovedRecord(
 
 void GCRuntime::nukeFinalizationRecordWrapper(
     JSObject* wrapper, FinalizationRecordObject* record) {
+  
+  AutoTouchingGrayThings atgt;
+
   if (record->isInRecordMap()) {
     FinalizationRegistryObject::unregisterRecord(record);
     FinalizationObservers* observers = wrapper->zone()->finalizationObservers();
