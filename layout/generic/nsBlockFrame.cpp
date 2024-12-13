@@ -2500,12 +2500,6 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
       continue;
     }
 
-    if (line.IsInline()) {
-      
-      
-      inFlowChildBounds =
-          inFlowChildBounds.UnionEdges(line.GetPhysicalBounds());
-    }
     auto lineInFlowChildBounds = line.GetInFlowChildBounds();
     if (lineInFlowChildBounds) {
       inFlowChildBounds = inFlowChildBounds.UnionEdges(*lineInFlowChildBounds);
@@ -2545,37 +2539,44 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
 #endif
 }
 
+enum class RestrictPaddingInflation {
+  No,
+  Block,
+  Inline,
+};
 
 
 
-static bool RestrictPaddingInflationInInline(const nsIFrame* aFrame) {
+
+static RestrictPaddingInflation RestrictPaddingInflation(
+    const nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
   if (aFrame->Style()->GetPseudoType() != PseudoStyleType::scrolledContent) {
     
     
-    return false;
+    return RestrictPaddingInflation::No;
   }
   
   
   const auto* parent = aFrame->GetParent();
   if (!parent) {
-    return false;
+    return RestrictPaddingInflation::No;
   }
   MOZ_ASSERT(parent->IsScrollContainerOrSubclass(), "Not a scrolled frame?");
 
   nsTextControlFrame* textControl = do_QueryFrame(parent->GetParent());
   if (MOZ_LIKELY(!textControl)) {
-    return false;
+    return RestrictPaddingInflation::No;
   }
 
   
   
   
   
-  if (!textControl->IsTextArea()) {
-    return false;
-  }
-  return true;
+  
+  
+  return textControl->IsTextArea() ? RestrictPaddingInflation::Inline
+                                   : RestrictPaddingInflation::Block;
 }
 
 nsRect nsBlockFrame::ComputePaddingInflatedScrollableOverflow(
@@ -2583,8 +2584,16 @@ nsRect nsBlockFrame::ComputePaddingInflatedScrollableOverflow(
   auto result = aInFlowChildBounds;
   const auto wm = GetWritingMode();
   auto padding = GetLogicalUsedPadding(wm);
-  if (RestrictPaddingInflationInInline(this)) {
-    padding.IStart(wm) = padding.IEnd(wm) = 0;
+  const auto restriction = RestrictPaddingInflation(this);
+  switch (restriction) {
+    case RestrictPaddingInflation::Block:
+      padding.BStart(wm) = padding.BEnd(wm) = 0;
+      break;
+    case RestrictPaddingInflation::Inline:
+      padding.IStart(wm) = padding.IEnd(wm) = 0;
+      break;
+    case RestrictPaddingInflation::No:
+      break;
   }
   result.Inflate(padding.GetPhysicalMargin(wm));
   return result;
@@ -2594,12 +2603,7 @@ Maybe<nsRect> nsBlockFrame::GetLineFrameInFlowBounds(
     const nsLineBox& aLine, const nsIFrame& aLineChildFrame) const {
   MOZ_ASSERT(aLineChildFrame.GetParent() == this,
              "Line's frame doesn't belong to this block frame?");
-  
-  
-  
-  
-  if (aLineChildFrame.IsPlaceholderFrame() ||
-      aLineChildFrame.IsLineParticipant()) {
+  if (aLineChildFrame.IsPlaceholderFrame()) {
     return Nothing{};
   }
   if (aLine.IsInline()) {
