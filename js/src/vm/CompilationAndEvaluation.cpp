@@ -223,6 +223,7 @@ static bool FinishIncrementalEncoding(JSContext* cx,
   if (stencils->canLazilyParse()) {
     
     
+    
     RefPtr initial =
         const_cast<frontend::CompilationStencil*>(stencils->getInitial());
     initial.forget(stencilOut);

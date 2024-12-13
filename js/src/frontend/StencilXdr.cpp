@@ -1476,6 +1476,7 @@ JS::TranscodeResult JS::EncodeStencil(JSContext* cx, JS::Stencil* stencil,
                                       JS::TranscodeBuffer& buffer) {
   AutoReportFrontendContext fc(cx);
   XDRStencilEncoder encoder(&fc, buffer);
+  
   XDRResult res = encoder.codeStencil(*stencil);
   if (res.isErr()) {
     return res.unwrapErr();
@@ -1542,6 +1543,7 @@ JS::TranscodeResult JS::DecodeStencil(JS::FrontendContext* fc,
   if (res.isErr()) {
     return res.unwrapErr();
   }
+  
   *stencilOut = stencil.forget().take();
   return TranscodeResult::Ok;
 }

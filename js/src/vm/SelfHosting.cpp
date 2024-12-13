@@ -2676,6 +2676,7 @@ bool JSRuntime::initSelfHostingStencil(JSContext* cx,
 
     JS::DecodeOptions decodeOption(options);
     RefPtr<frontend::CompilationStencil> stencil;
+    
     JS::TranscodeResult result =
         JS::DecodeStencil(&fc, decodeOption, xdrCache, getter_AddRefs(stencil));
     if (result == JS::TranscodeResult::Ok) {
@@ -2726,6 +2727,7 @@ bool JSRuntime::initSelfHostingStencil(JSContext* cx,
   
   if (xdrWriter) {
     JS::TranscodeBuffer xdrBuffer;
+    
     JS::TranscodeResult result = JS::EncodeStencil(cx, stencil, xdrBuffer);
     if (result != JS::TranscodeResult::Ok) {
       JS_ReportErrorASCII(cx, "Encoding failure");
