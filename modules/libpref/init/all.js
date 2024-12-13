@@ -3955,7 +3955,8 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   pref("remote.active-protocols", 1);
 
   
-  pref("remote.events.async.enabled", false);
+  
+  pref("remote.events.async.enabled", true);
 
   
   #if defined(NIGHTLY_BUILD)
