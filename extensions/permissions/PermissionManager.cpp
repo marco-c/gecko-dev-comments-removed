@@ -1771,6 +1771,9 @@ nsresult PermissionManager::AddInternal(
     const bool aAllowPersistInPrivateBrowsing) {
   MOZ_ASSERT(NS_IsMainThread());
 
+  
+  MOZ_ASSERT((aID != cIDPermissionIsDefault) || (aDBOperation != eWriteToDB));
+
   EnsureReadCompleted();
 
   nsresult rv = NS_OK;
@@ -1881,23 +1884,26 @@ nsresult PermissionManager::AddInternal(
     if (aPermission == oldPermissionEntry.mPermission &&
         aExpireType == oldPermissionEntry.mExpireType &&
         (aExpireType == nsIPermissionManager::EXPIRE_NEVER ||
-         aExpireTime == oldPermissionEntry.mExpireTime))
+         aExpireTime == oldPermissionEntry.mExpireTime)) {
       op = eOperationNone;
-    else if (oldPermissionEntry.mID == cIDPermissionIsDefault)
-      
-      
+    } else if (oldPermissionEntry.mID == cIDPermissionIsDefault &&
+               aID != cIDPermissionIsDefault) {
       
       
       op = eOperationReplacingDefault;
-    else if (aID == cIDPermissionIsDefault)
-      
+    } else if (oldPermissionEntry.mID != cIDPermissionIsDefault &&
+               aID == cIDPermissionIsDefault) {
       
       
       op = eOperationNone;
-    else if (aPermission == nsIPermissionManager::UNKNOWN_ACTION)
+    } else if (aPermission == nsIPermissionManager::UNKNOWN_ACTION) {
+      
+      
+      
       op = eOperationRemoving;
-    else
+    } else {
       op = eOperationChanging;
+    }
   }
 
   
