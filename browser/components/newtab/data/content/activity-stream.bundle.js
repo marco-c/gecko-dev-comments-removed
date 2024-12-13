@@ -11899,6 +11899,8 @@ function Base_extends() { Base_extends = Object.assign ? Object.assign.bind() : 
 const Base_VISIBLE = "visible";
 const Base_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 const Base_WALLPAPER_HIGHLIGHT_DISMISSED_PREF = "newtabWallpapers.highlightDismissed";
+const Base_PREF_THUMBS_UP_DOWN_ENABLED = "discoverystream.thumbsUpDown.enabled";
+const PREF_THUMBS_UP_DOWN_LAYOUT_ENABLED = "discoverystream.thumbsUpDown.searchTopsitesCompact";
 const PrefsButton = ({
   onClick,
   icon
@@ -11986,7 +11988,8 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.state = {
       fixedSearch: false,
       firstVisibleTimestamp: null,
-      colorMode: ""
+      colorMode: "",
+      fixedNavStyle: {}
     };
   }
   setFirstVisibleTimestamp() {
@@ -12034,14 +12037,91 @@ class BaseContent extends (external_React_default()).PureComponent {
   }
   onWindowScroll() {
     const prefs = this.props.Prefs.values;
-    const SCROLL_THRESHOLD = prefs["logowordmark.alwaysVisible"] ? 179 : 34;
+    const logoAlwaysVisible = prefs["logowordmark.alwaysVisible"];
+    const layoutsVariantAEnabled = prefs["newtabLayouts.variant-a"];
+    const layoutsVariantBEnabled = prefs["newtabLayouts.variant-b"];
+    const layoutsVariantAorB = layoutsVariantAEnabled || layoutsVariantBEnabled;
+    const thumbsUpDownEnabled = prefs[Base_PREF_THUMBS_UP_DOWN_ENABLED];
+    
+    
+    const thumbsUpDownLayoutEnabled = prefs[PREF_THUMBS_UP_DOWN_LAYOUT_ENABLED] && thumbsUpDownEnabled;
+
+    
+
+    let SCROLL_THRESHOLD = 0; 
+    let MAIN_OFFSET_PADDING = 0; 
+
+    let layout = {
+      outerWrapperPaddingTop: 30,
+      searchWrapperPaddingTop: 34,
+      searchWrapperPaddingBottom: 38,
+      searchWrapperFixedScrollPaddingTop: 27,
+      searchWrapperFixedScrollPaddingBottom: 27,
+      searchInnerWrapperMinHeight: 52,
+      logoAndWordmarkWrapperHeight: 64,
+      logoAndWordmarkWrapperMarginBottom: 48
+    };
+    const CSS_VAR_SPACE_XXLARGE = 34.2; 
+
+    
+    
+    if (thumbsUpDownLayoutEnabled || layoutsVariantAorB) {
+      
+      if (thumbsUpDownLayoutEnabled) {
+        layout.logoAndWordmarkWrapperMarginBottom = CSS_VAR_SPACE_XXLARGE;
+        if (!logoAlwaysVisible) {
+          layout.searchWrapperPaddingTop = CSS_VAR_SPACE_XXLARGE;
+          layout.searchWrapperPaddingBottom = CSS_VAR_SPACE_XXLARGE;
+        }
+      }
+
+      
+      if (layoutsVariantAEnabled) {
+        layout.outerWrapperPaddingTop = 24;
+        if (!thumbsUpDownLayoutEnabled) {
+          layout.searchWrapperPaddingTop = 0;
+          layout.searchWrapperPaddingBottom = 32;
+          layout.logoAndWordmarkWrapperMarginBottom = 32;
+        }
+      }
+
+      
+      if (layoutsVariantBEnabled) {
+        layout.outerWrapperPaddingTop = 24;
+        
+        layout.logoAndWordmarkWrapperHeight = 0;
+        layout.logoAndWordmarkWrapperMarginBottom = 0;
+        layout.searchWrapperPaddingTop = 16;
+        layout.searchWrapperPaddingBottom = CSS_VAR_SPACE_XXLARGE;
+        if (!thumbsUpDownLayoutEnabled) {
+          layout.searchWrapperPaddingBottom = 32;
+        }
+      }
+    }
+
+    
+    if (!logoAlwaysVisible) {
+      layout.logoAndWordmarkWrapperHeight = 0;
+      layout.logoAndWordmarkWrapperMarginBottom = 0;
+    }
+    SCROLL_THRESHOLD = layout.outerWrapperPaddingTop + layout.searchWrapperPaddingTop + layout.logoAndWordmarkWrapperHeight + layout.logoAndWordmarkWrapperMarginBottom - layout.searchWrapperFixedScrollPaddingTop;
+    MAIN_OFFSET_PADDING = layout.searchWrapperPaddingTop + layout.searchWrapperPaddingBottom + layout.searchInnerWrapperMinHeight + layout.logoAndWordmarkWrapperHeight + layout.logoAndWordmarkWrapperMarginBottom;
+
+    
+    if (SCROLL_THRESHOLD < 1) {
+      SCROLL_THRESHOLD = 1;
+    }
     if (__webpack_require__.g.scrollY > SCROLL_THRESHOLD && !this.state.fixedSearch) {
       this.setState({
-        fixedSearch: true
+        fixedSearch: true,
+        fixedNavStyle: {
+          paddingBlockStart: `${MAIN_OFFSET_PADDING}px`
+        }
       });
     } else if (__webpack_require__.g.scrollY <= SCROLL_THRESHOLD && this.state.fixedSearch) {
       this.setState({
-        fixedSearch: false
+        fixedSearch: false,
+        fixedNavStyle: {}
       });
     }
   }
@@ -12329,7 +12409,9 @@ class BaseContent extends (external_React_default()).PureComponent {
     }, weatherEnabled && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Weather_Weather, null))), external_React_default().createElement("div", {
       className: outerClassName,
       onClick: this.closeCustomizationMenu
-    }, external_React_default().createElement("main", null, prefs.showSearch && external_React_default().createElement("div", {
+    }, external_React_default().createElement("main", {
+      style: this.state.fixedNavStyle
+    }, prefs.showSearch && external_React_default().createElement("div", {
       className: "non-collapsible-section"
     }, external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Search_Search, Base_extends({
       showLogo: noSectionsEnabled || prefs["logowordmark.alwaysVisible"],
