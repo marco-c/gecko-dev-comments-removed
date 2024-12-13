@@ -516,6 +516,10 @@ pub struct SceneBuilder<'a> {
 
     
     
+    snapshot_pictures: Vec<PictureIndex>,
+
+    
+    
     
     
     
@@ -591,6 +595,8 @@ impl<'a> SceneBuilder<'a> {
             ),
             snap_to_device,
             picture_graph: mem::take(&mut recycler.picture_graph),
+            
+            snapshot_pictures: Vec::new(),
             next_plane_splitter_index: 0,
             prim_instances: mem::take(&mut recycler.prim_instances),
             pipeline_instance_ids: FastHashMap::default(),
@@ -663,6 +669,7 @@ impl<'a> SceneBuilder<'a> {
             clip_store: builder.clip_store,
             config: builder.config,
             tile_cache_config,
+            snapshot_pictures: builder.snapshot_pictures,
             tile_cache_pictures,
             picture_graph: builder.picture_graph,
             num_plane_splitters: builder.next_plane_splitter_index,
@@ -2630,6 +2637,11 @@ impl<'a> SceneBuilder<'a> {
             &mut self.clip_tree_builder,
             stacking_context.composite_ops.snapshot,
         );
+
+        if stacking_context.composite_ops.snapshot.is_some() {
+            let pic_index = cur_instance.kind.as_pic();
+            self.snapshot_pictures.push(pic_index);
+        }
 
         
         
