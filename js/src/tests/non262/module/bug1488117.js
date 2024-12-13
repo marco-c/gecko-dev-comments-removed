@@ -7,8 +7,8 @@
 
 
 
-import "./bug1488117-import-namespace_FIXTURE.js";
-export* from "./bug1488117-empty_FIXTURE.js";
+import "./bug1488117-import-namespace.js";
+export* from "./bug1488117-empty.js";
 
 if (typeof reportCompare === "function")
     reportCompare(0, 0);

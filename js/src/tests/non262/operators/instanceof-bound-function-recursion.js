@@ -1,6 +1,3 @@
-
-
-
 function f() {}
 
 var fn = f;

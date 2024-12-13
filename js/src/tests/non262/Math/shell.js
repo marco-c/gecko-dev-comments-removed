@@ -1,9 +1,4 @@
 
-
-
-
-
-
 const ONE_PLUS_EPSILON = 1 + Math.pow(2, -52);  
 const ONE_MINUS_EPSILON = 1 - Math.pow(2, -53);  
 

@@ -1,10 +1,7 @@
-
-
-
 actual   = 'No Error';
-expected = /column-numbers\.js:7:11/;
+expected = /column-numbers\.js:4:11/;
 try {
-    throw new Error("test"); 
+    throw new Error("test");
 }
 catch(ex) {
     actual = ex.stack;

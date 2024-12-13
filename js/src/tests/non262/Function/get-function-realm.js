@@ -1,6 +1,3 @@
-
-
-
 var g1 = newGlobal();
 var g1Fun = g1.eval("function Fun() {}; Fun");
 

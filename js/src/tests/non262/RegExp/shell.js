@@ -10,11 +10,6 @@
 
 
 
-
-
-
-
-
 (function(global) {
 
   var MSG_PATTERN = '\nregexp = ';

@@ -1,8 +1,5 @@
 
 
-
-
-
 let x = "global";
 function getX() { return x; }
 

@@ -9,6 +9,7 @@
 
 
 
+
 assertEq(Iterator.prototype.filter.length, 1);
 
 const propertyDescriptor = Reflect.getOwnPropertyDescriptor(Iterator.prototype.filter, 'length');

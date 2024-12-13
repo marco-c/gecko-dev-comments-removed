@@ -1,7 +1,5 @@
 
 
-
-
 function toMessage(stack) {
   
   return `[stack: ${stack.replace(/\n/g, "\\n")}]`;
@@ -17,7 +15,7 @@ function toMessage(stack) {
     assertEq(e.name, "AggregateError");
     var {stack} = e;
 
-    assertEq(/^@.+any-stack.js:12/m.test(stack), true, toMessage(stack));
+    assertEq(/^@.+any-stack.js:10/m.test(stack), true, toMessage(stack));
   });
 }
 
@@ -31,7 +29,7 @@ function testNoJobQueue() {
     assertEq(e.name, "AggregateError");
     var {stack} = e;
 
-    assertEq(/^testNoJobQueue@.+any-stack.js:26/m.test(stack), true, toMessage(stack));
+    assertEq(/^testNoJobQueue@.+any-stack.js:24/m.test(stack), true, toMessage(stack));
   });
 }
 testNoJobQueue();
@@ -47,7 +45,7 @@ testNoJobQueue();
     assertEq(e.name, "AggregateError");
     var {stack} = e;
 
-    assertEq(/^Promise.any\*@.+any-stack.js:42/m.test(stack), true, toMessage(stack));
+    assertEq(/^Promise.any\*@.+any-stack.js:40/m.test(stack), true, toMessage(stack));
   });
 }
 
@@ -62,7 +60,7 @@ function testFromJobQueue() {
     assertEq(e.name, "AggregateError");
     var {stack} = e;
 
-    assertEq(/^Promise.any\*testFromJobQueue@.+any-stack.js:57/m.test(stack), true, toMessage(stack));
+    assertEq(/^Promise.any\*testFromJobQueue@.+any-stack.js:55/m.test(stack), true, toMessage(stack));
   });
 }
 testFromJobQueue();

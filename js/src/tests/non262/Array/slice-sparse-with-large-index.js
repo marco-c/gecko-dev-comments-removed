@@ -1,6 +1,3 @@
-
-
-
 var array = [];
 array[2**31 - 2] = "INT32_MAX - 1";
 array[2**31 - 1] = "INT32_MAX";

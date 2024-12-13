@@ -1,4 +1,3 @@
-
 loadRelativeToScript('PatternAsserts.js');
 
 

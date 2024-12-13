@@ -1,7 +1,3 @@
-
-
-
-
 function testJSON(str, expectSyntaxError)
 {
   

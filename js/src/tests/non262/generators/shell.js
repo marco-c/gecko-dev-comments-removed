@@ -2,10 +2,6 @@
 
 
 
-
-
-
-
 function assertFalse(a) { assertEq(a, false) }
 function assertTrue(a) { assertEq(a, true) }
 function assertNotEq(found, not_expected) { assertEq(Object.is(found, not_expected), false) }

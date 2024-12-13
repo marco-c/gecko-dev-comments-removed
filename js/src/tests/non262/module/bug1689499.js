@@ -1,7 +1,5 @@
 
 
-
-
 async function test() {
   try {
     await import("./bug1689499-a.js");

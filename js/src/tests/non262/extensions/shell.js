@@ -4,10 +4,6 @@
 
 
 
-
-
-
-
 (function(global) {
   
 

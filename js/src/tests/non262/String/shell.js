@@ -1,8 +1,3 @@
-
-
-
-
-
 function runNormalizeTest(test) {
   function codePointsToString(points) {
     return points.map(x => String.fromCodePoint(x)).join("");
