@@ -42,7 +42,7 @@ struct PromiseHelperTask;
 class SourceCompressionTask;
 
 namespace frontend {
-struct CompilationStencil;
+struct InitialStencilAndDelazifications;
 }
 
 namespace gc {
@@ -246,9 +246,9 @@ void WaitForAllDelazifyTasks(JSRuntime* rt);
 
 
 
-void StartOffThreadDelazification(JSContext* maybeCx,
-                                  const JS::ReadOnlyCompileOptions& options,
-                                  const frontend::CompilationStencil& stencil);
+void StartOffThreadDelazification(
+    JSContext* maybeCx, const JS::ReadOnlyCompileOptions& options,
+    frontend::InitialStencilAndDelazifications* stencils);
 
 
 

@@ -31,9 +31,9 @@
 #include "gc/GCRuntime.h"                 
 #include "js/AllocPolicy.h"               
 #include "js/CompileOptions.h"            
-#include "js/experimental/JSStencil.h"    
-#include "js/HelperThreadAPI.h"           
-#include "js/MemoryMetrics.h"             
+#include "js/experimental/JSStencil.h"  
+#include "js/HelperThreadAPI.h"         
+#include "js/MemoryMetrics.h"           
 #include "js/ProfilingStack.h"  
 #include "js/RootingAPI.h"                
 #include "js/UniquePtr.h"                 
@@ -522,14 +522,14 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   
   static UniquePtr<DelazifyTask> Create(
       JSRuntime* maybeRuntime, const JS::ReadOnlyCompileOptions& options,
-      const frontend::CompilationStencil& stencil);
+      frontend::InitialStencilAndDelazifications* stencils);
 
   DelazifyTask(JSRuntime* maybeRuntime,
                const JS::PrefableCompileOptions& initialPrefableOptions);
   ~DelazifyTask();
 
   [[nodiscard]] bool init(const JS::ReadOnlyCompileOptions& options,
-                          const frontend::CompilationStencil& stencil);
+                          frontend::InitialStencilAndDelazifications* stencils);
 
   bool runtimeMatchesOrNoRuntime(JSRuntime* rt) {
     return !maybeRuntime || maybeRuntime == rt;

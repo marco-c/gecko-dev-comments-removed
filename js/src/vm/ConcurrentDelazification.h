@@ -13,8 +13,8 @@
 #include <utility>   
 
 #include "frontend/CompilationStencil.h"  
-#include "frontend/ScriptIndex.h"  
-#include "js/AllocPolicy.h"        
+#include "frontend/ScriptIndex.h"         
+#include "js/AllocPolicy.h"               
 #include "js/CompileOptions.h"  
 #include "js/UniquePtr.h"  
 #include "js/Vector.h"     
@@ -125,7 +125,7 @@ class DelazificationContext {
         stackQuota_(stackQuota) {}
 
   bool init(const JS::ReadOnlyCompileOptions& options,
-            const frontend::CompilationStencil& stencil);
+            frontend::InitialStencilAndDelazifications* stencils);
   bool delazify();
 
   
