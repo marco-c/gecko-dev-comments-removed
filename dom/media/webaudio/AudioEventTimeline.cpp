@@ -124,11 +124,9 @@ AudioTimelineEvent::AudioTimelineEvent(Type aType,
   MOZ_ASSERT(aType == AudioTimelineEvent::SetValueCurve);
 }
 
-
-
 AudioTimelineEvent::AudioTimelineEvent(const AudioTimelineEvent& rhs)
     : mType(rhs.mType) {
-  PodCopy(this, &rhs, 1);
+  memcpy((void*)this, &rhs, sizeof(*this));
 
   if (rhs.mType == AudioTimelineEvent::SetValueCurve) {
     mCurve = NewCurveCopy(Span(rhs.mCurve, rhs.mCurveLength));

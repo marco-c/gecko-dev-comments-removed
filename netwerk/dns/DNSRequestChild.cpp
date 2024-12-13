@@ -124,7 +124,7 @@ ChildDNSRecord::GetNextAddr(uint16_t port, NetAddr* addr) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  memcpy(addr, &mAddresses[mCurrent++], sizeof(NetAddr));
+  *addr = mAddresses[mCurrent++];
 
   
   addr->inet.port = htons(port);
