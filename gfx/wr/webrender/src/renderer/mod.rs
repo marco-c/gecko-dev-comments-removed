@@ -58,7 +58,7 @@ use crate::composite::{CompositeState, CompositeTileSurface, CompositorInputLaye
 use crate::composite::{CompositorKind, Compositor, NativeTileId, CompositeFeatures, CompositeSurfaceFormat, ResolvedExternalSurfaceColorData};
 use crate::composite::{CompositorConfig, NativeSurfaceOperationDetails, NativeSurfaceId, NativeSurfaceOperation};
 use crate::composite::TileKind;
-use crate::{debug_colors, Compositor2, CompositorInputConfig, CompositorSurfaceUsage};
+use crate::{debug_colors, CompositorInputConfig, CompositorSurfaceUsage};
 use crate::device::{DepthFunction, Device, DrawTarget, ExternalTexture, GpuFrameId, UploadPBOPool};
 use crate::device::{ReadTarget, ShaderError, Texture, TextureFilter, TextureFlags, TextureSlot, Texel};
 use crate::device::query::{GpuSampler, GpuTimer};
@@ -873,7 +873,6 @@ pub struct Renderer {
     
     compositor_config: CompositorConfig,
     current_compositor_kind: CompositorKind,
-    compositor2: Option<Box<dyn Compositor2>>,
 
     
     
@@ -1706,7 +1705,7 @@ impl Renderer {
             
             let surface_origin_is_top_left = match self.current_compositor_kind {
                 CompositorKind::Native { .. } => true,
-                CompositorKind::Draw { .. } => self.device.surface_origin_is_top_left(),
+                CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => self.device.surface_origin_is_top_left(),
             };
             
             
@@ -3539,7 +3538,10 @@ impl Renderer {
                         (CompositorSurfaceUsage::External, CompositorSurfaceUsage::Content) |
                         (CompositorSurfaceUsage::External, CompositorSurfaceUsage::External) => {
                             
-                            self.compositor2.as_ref().map(|_| usage)
+                            match self.compositor_config {
+                                CompositorConfig::Draw { .. } | CompositorConfig::Native { .. } => None,
+                                CompositorConfig::Layer { .. } => Some(usage),
+                            }
                         }
                     }
                 }
@@ -3608,7 +3610,7 @@ impl Renderer {
         }
 
         
-        if let Some(ref mut compositor) = self.compositor2 {
+        if let Some(ref mut compositor) = self.compositor_config.layer_compositor() {
             let input = CompositorInputConfig {
                 layers: &input_layers,
                 framebuffer_size: fb_draw_target.dimensions(),
@@ -3626,8 +3628,8 @@ impl Renderer {
                 ColorF::TRANSPARENT
             };
 
-            let draw_target = match self.compositor2 {
-                Some(ref mut compositor) => {
+            let draw_target = match self.compositor_config {
+                CompositorConfig::Layer { ref mut compositor } => {
                     compositor.bind_layer(layer_index);
 
                     DrawTarget::NativeSurface {
@@ -3636,7 +3638,8 @@ impl Renderer {
                         dimensions: fb_draw_target.dimensions(),
                     }
                 }
-                None => {
+                
+                CompositorConfig::Draw { .. } | CompositorConfig::Native { .. } => {
                     fb_draw_target
                 }
             };
@@ -3655,13 +3658,13 @@ impl Renderer {
                 swapchain_layer,
             );
 
-            if let Some(ref mut compositor) = self.compositor2 {
+            if let Some(ref mut compositor) = self.compositor_config.layer_compositor() {
                 compositor.present_layer(layer_index);
             }
         }
 
         
-        if let Some(ref mut compositor) = self.compositor2 {
+        if let Some(ref mut compositor) = self.compositor_config.layer_compositor() {
             for (layer_index, layer) in input_layers.iter().enumerate() {
                 compositor.add_surface(
                     layer_index,
@@ -4414,6 +4417,9 @@ impl Renderer {
             CompositorKind::Draw { draw_previous_partial_present_regions, max_partial_present_rects } => {
                 (max_partial_present_rects, draw_previous_partial_present_regions)
             }
+            CompositorKind::Layer { .. } => {
+                (0, false)
+            }
         };
 
         if max_partial_present_rects > 0 {
@@ -4568,7 +4574,7 @@ impl Renderer {
                     }
                 }
             }
-            CompositorConfig::Draw { .. } => {
+            CompositorConfig::Draw { .. } | CompositorConfig::Layer { .. } => {
                 
                 
                 debug_assert!(self.pending_native_surface_updates.is_empty());
@@ -4775,7 +4781,7 @@ impl Renderer {
                                         picture_target.valid_rect,
                                     )
                                 }
-                                CompositorKind::Draw { .. } => {
+                                CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
                                     unreachable!();
                                 }
                             };
@@ -4812,7 +4818,7 @@ impl Renderer {
                                 let compositor = self.compositor_config.compositor().unwrap();
                                 compositor.unbind(&mut self.device);
                             }
-                            CompositorKind::Draw { .. } => {
+                            CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
                                 unreachable!();
                             }
                         }
@@ -4932,7 +4938,7 @@ impl Renderer {
                         results,
                     );
                 }
-                CompositorKind::Draw { .. } => {
+                CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
                     self.composite_simple(
                         &frame.composite_state,
                         draw_target,
