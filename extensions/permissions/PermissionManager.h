@@ -620,23 +620,25 @@ class PermissionManager final : public nsIPermissionManager,
 
   
   struct DefaultEntry {
-    DefaultEntry() : mOp(eImportMatchTypeHost), mPermission(0) {}
-
-    enum Op {
-      eImportMatchTypeHost,
-      eImportMatchTypeOrigin,
-    };
-
-    Op mOp;
-
-    nsCString mHostOrOrigin;
+    nsCString mOrigin;
     nsCString mType;
-    uint32_t mPermission;
+    uint32_t mPermission = 0;
   };
 
   
   
-  nsTArray<DefaultEntry> mDefaultEntries;
+  nsTArray<DefaultEntry> mDefaultEntriesForImport;
+  
+  
+  void AddDefaultEntryForImport(const nsACString& aOrigin,
+                                const nsCString& aType, uint32_t aPermission,
+                                const MonitorAutoLock& aProofOfLock);
+  
+  
+  
+  
+  
+  nsresult ImportDefaultEntry(const DefaultEntry& aDefaultEntry);
 
   nsresult Read(const MonitorAutoLock& aProofOfLock);
   void CompleteRead();
