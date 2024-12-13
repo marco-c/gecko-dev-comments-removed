@@ -1269,10 +1269,6 @@ impl Tile {
             CompositorKind::Native { capabilities, .. } => {
                 (capabilities.max_update_rects > 0, false)
             }
-            CompositorKind::Layer { .. } => {
-                
-                (false, true)
-            }
         };
 
         
@@ -1346,7 +1342,7 @@ impl Tile {
                     
                     
                     let descriptor = match state.composite_state.compositor_kind {
-                        CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
+                        CompositorKind::Draw { .. } => {
                             
                             
                             SurfaceTextureDescriptor::TextureCache {
@@ -2476,7 +2472,7 @@ impl TileCacheInstance {
 
         
         match frame_context.config.compositor_kind {
-            CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
+            CompositorKind::Draw { .. } => {
                 for sub_slice in &mut self.sub_slices {
                     for tile in sub_slice.tiles.values_mut() {
                         if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { ref mut id, .. }, .. }) = tile.surface {
@@ -2825,7 +2821,7 @@ impl TileCacheInstance {
         
         
         let (native_surface_id, update_params) = match composite_state.compositor_kind {
-            CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
+            CompositorKind::Draw { .. } => {
                 (None, None)
             }
             CompositorKind::Native { .. } => {
@@ -5724,7 +5720,7 @@ impl PicturePrimitive {
                 let mut backdrop_in_use_and_visible = false;
                 if let Some(backdrop_rect) = backdrop_rect {
                     let supports_surface_for_backdrop = match frame_state.composite_state.compositor_kind {
-                        CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
+                        CompositorKind::Draw { .. } => {
                             false
                         }
                         CompositorKind::Native { capabilities, .. } => {

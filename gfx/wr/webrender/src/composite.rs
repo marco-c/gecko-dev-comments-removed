@@ -303,12 +303,6 @@ pub enum CompositorConfig {
         
         partial_present: Option<Box<dyn PartialPresentCompositor>>,
     },
-    Layer {
-        
-        
-        
-        compositor: Box<dyn LayerCompositor>,
-    },
     
     
     
@@ -324,7 +318,7 @@ impl CompositorConfig {
             CompositorConfig::Native { ref mut compositor, .. } => {
                 Some(compositor)
             }
-            CompositorConfig::Draw { .. } | CompositorConfig::Layer { .. } => {
+            CompositorConfig::Draw { .. } => {
                 None
             }
         }
@@ -338,25 +332,9 @@ impl CompositorConfig {
             CompositorConfig::Draw { ref mut partial_present, .. } => {
                 partial_present.as_mut()
             }
-            CompositorConfig::Layer { .. } => {
-                None
-            }
         }
     }
 
-    pub fn layer_compositor(&mut self) -> Option<&mut Box<dyn LayerCompositor>> {
-        match self {
-            CompositorConfig::Native { .. } => {
-                None
-            }
-            CompositorConfig::Draw { .. } => {
-                None
-            }
-            CompositorConfig::Layer { ref mut compositor } => {
-                Some(compositor)
-            }
-        }
-    }
 }
 
 impl Default for CompositorConfig {
@@ -384,9 +362,6 @@ pub enum CompositorKind {
         
         draw_previous_partial_present_regions: bool,
     },
-    Layer {
-
-    },
     
     Native {
         
@@ -407,7 +382,7 @@ impl Default for CompositorKind {
 impl CompositorKind {
     pub fn get_virtual_surface_size(&self) -> i32 {
         match self {
-            CompositorKind::Draw { .. } | CompositorKind::Layer {  .. }=> 0,
+            CompositorKind::Draw { .. } => 0,
             CompositorKind::Native { capabilities, .. } => capabilities.virtual_surface_size,
         }
     }
@@ -418,7 +393,6 @@ impl CompositorKind {
                 
                 *max_partial_present_rects > 0
             }
-            CompositorKind::Layer {  } => false,    
             CompositorKind::Native { capabilities, .. } => capabilities.redraw_on_invalidation,
         }
     }
@@ -1351,7 +1325,9 @@ pub struct CompositorInputConfig<'a> {
 
 
 
-pub trait LayerCompositor {
+
+
+pub trait Compositor2 {
     
     
     fn begin_frame(
