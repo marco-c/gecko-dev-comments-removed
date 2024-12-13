@@ -258,7 +258,6 @@ struct StructuredCloneTestPrincipals final : public JSPrincipals {
 
 JSSecurityCallbacks StructuredCloneTestPrincipals::securityCallbacks = {
     nullptr,  
-    nullptr,  
     subsumes};
 
 BEGIN_TEST(testStructuredClone_SavedFrame) {

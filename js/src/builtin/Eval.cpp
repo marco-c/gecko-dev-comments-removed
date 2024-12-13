@@ -240,34 +240,14 @@ static bool EvalKernel(JSContext* cx, HandleValue v, EvalType evalType,
   AssertInnerizedEnvironmentChain(cx, *env);
 
   
-  
-  
-  RootedString str(cx);
-  if (v.isString()) {
-    str = v.toString();
-  } else if (v.isObject()) {
-    RootedObject obj(cx, &v.toObject());
-    if (!cx->getCodeForEval(obj, &str)) {
-      return false;
-    }
-  }
-  if (!str) {
+  if (!v.isString()) {
     vp.set(v);
     return true;
   }
 
   
-  JS::RootedVector<JSString*> parameterStrings(cx);
-  JS::RootedVector<Value> parameterArgs(cx);
-  bool canCompileStrings = false;
-  if (!cx->isRuntimeCodeGenEnabled(
-          JS::RuntimeCode::JS, str,
-          evalType == DIRECT_EVAL ? JS::CompilationType::DirectEval
-                                  : JS::CompilationType::IndirectEval,
-          parameterStrings, str, parameterArgs, v, &canCompileStrings)) {
-    return false;
-  }
-  if (!canCompileStrings) {
+  RootedString str(cx, v.toString());
+  if (!cx->isRuntimeCodeGenEnabled(JS::RuntimeCode::JS, str)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_CSP_BLOCKED_EVAL);
     return false;
