@@ -17,6 +17,12 @@ async function focusIdentityBox() {
   await focused;
 }
 
+add_setup(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.scotchBonnet.enableOverride", true]],
+  });
+});
+
 
 add_task(async function testIdentityPopupFocusClick() {
   await SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] });

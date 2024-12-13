@@ -91,7 +91,7 @@ add_setup(async function init() {
 
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.scotchBonnet.enableOverride", false],
+      ["browser.urlbar.scotchBonnet.enableOverride", true],
       ["test.events.async.enabled", true],
       
       

@@ -9,36 +9,44 @@ function test() {
   ok(PopupNotifications.panel, "PopupNotifications panel exists");
 
   
-  SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] }).then(
-    setup
-  );
+  SpecialPowers.pushPrefEnv({
+    set: [
+      ["accessibility.tabfocus", 7],
+      ["browser.urlbar.scotchBonnet.enableOverride", true],
+    ],
+  }).then(setup);
 }
 
 
 
-function focusNotificationAnchor(anchor) {
+async function focusNotificationAnchor(anchor) {
   let urlbarContainer = anchor.closest("#urlbar-container");
-  urlbarContainer.querySelector("toolbartabstop").focus();
 
-  const searchModeSwitcher = urlbarContainer.querySelector(
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+  EventUtils.synthesizeMouseAtCenter(document.getElementById("browser"), {});
+  AccessibilityUtils.resetEnv();
+  await BrowserTestUtils.waitForCondition(() =>
+    document.activeElement.closest("#browser")
+  );
+
+  
+  let searchModeSwitcher = urlbarContainer.querySelector(
     "#urlbar-searchmode-switcher"
   );
-  is(
-    document.activeElement,
-    searchModeSwitcher,
-    "Search mode switcher container is focused."
+  EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
+  await BrowserTestUtils.waitForCondition(
+    () => BrowserTestUtils.isVisible(searchModeSwitcher),
+    "Wait until Unified Search Button is shown"
+  );
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+  await BrowserTestUtils.waitForCondition(
+    () => document.activeElement == searchModeSwitcher,
+    "Wait until the focus will move to Unified Search Button"
   );
 
-  EventUtils.synthesizeKey("ArrowRight");
-
-  const trackingProtectionIconContainer = urlbarContainer.querySelector(
-    "#tracking-protection-icon-container"
-  );
-  is(
-    document.activeElement,
-    trackingProtectionIconContainer,
-    "tracking protection icon container is focused."
-  );
   while (document.activeElement !== anchor) {
     EventUtils.synthesizeKey("ArrowRight");
   }
@@ -127,10 +135,10 @@ var tests = [
       });
       this.notification = showNotification(this.notifyObj);
     },
-    onShown(popup) {
+    async onShown(popup) {
       checkPopup(popup, this.notifyObj);
       let anchor = document.getElementById(this.notifyObj.anchorID);
-      focusNotificationAnchor(anchor);
+      await focusNotificationAnchor(anchor);
       EventUtils.sendString(" ");
       is(document.activeElement, popup.children[0].closebutton);
       this.notification.remove();
@@ -171,7 +179,7 @@ var tests = [
 
       
       let anchor = document.getElementById(notifyObj1.anchorID);
-      focusNotificationAnchor(anchor);
+      await focusNotificationAnchor(anchor);
       is(document.activeElement, anchor);
       opened = waitForNotificationPanel();
       EventUtils.sendString(" ");
@@ -182,7 +190,7 @@ var tests = [
 
       
       anchor = document.getElementById(notifyObj2.anchorID);
-      focusNotificationAnchor(anchor);
+      await focusNotificationAnchor(anchor);
       is(document.activeElement, anchor);
       opened = waitForNotificationPanel();
       EventUtils.sendString(" ");
