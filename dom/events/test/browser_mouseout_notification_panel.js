@@ -93,6 +93,9 @@ add_setup(async function init() {
     set: [
       ["browser.urlbar.scotchBonnet.enableOverride", false],
       ["test.events.async.enabled", true],
+      
+      
+      ["layout.reflow.synthMouseMove", false],
     ],
   });
 
@@ -116,6 +119,7 @@ add_task(async function test_mouseout_chrome() {
     info(`Showing notification should generate mouseout event on browser`);
     let mouseoutPromise = waitForMouseEvent("mouseout", browser);
     let { notification } = await showNotification(browser, "Test#Chrome");
+    synthesizeMouseAtCenter(notificationRect);
     let mouseoutCoordinate = await mouseoutPromise;
     info(`mouseout event: ${JSON.stringify(mouseoutCoordinate)}`);
 
@@ -143,7 +147,8 @@ add_task(async function test_mouseout_content() {
     let mouseoutPromise = waitForRemoteMouseEvent("mouseout", browser);
     
     await executeSoonRemote(browser);
-    showNotification(browser, "Test#Content");
+    let { notification } = await showNotification(browser, "Test#Content");
+    synthesizeMouseAtCenter(notificationRect);
     let mouseoutCoordinate = await mouseoutPromise;
     info(`remote mouseout event: ${JSON.stringify(mouseoutCoordinate)}`);
 
@@ -152,5 +157,7 @@ add_task(async function test_mouseout_content() {
       mousemoveCoordinate,
       "Test event coordinate"
     );
+    info(`Remove notification`);
+    PopupNotifications.remove(notification);
   });
 });
