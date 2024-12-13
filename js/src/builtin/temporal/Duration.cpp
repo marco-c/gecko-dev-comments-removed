@@ -907,7 +907,6 @@ bool js::temporal::ThrowIfInvalidDuration(JSContext* cx,
 
 
 
-
 static TemporalUnit DefaultTemporalLargestUnit(const Duration& duration) {
   MOZ_ASSERT(IsIntegerDuration(duration));
 
@@ -2476,7 +2475,7 @@ struct DurationNudge {
 static bool NudgeToCalendarUnit(
     JSContext* cx, const NormalizedDuration& duration,
     const Instant& destEpochNs, const PlainDateTime& dateTime,
-    Handle<CalendarValue> calendar, Handle<TimeZoneValue> timeZone,
+    Handle<TimeZoneValue> timeZone, Handle<CalendarValue> calendar,
     Increment increment, TemporalUnit unit, TemporalRoundingMode roundingMode,
     DurationNudge* result) {
   MOZ_ASSERT(IsValidDuration(duration));
@@ -2525,25 +2524,22 @@ static bool NudgeToCalendarUnit(
     endDuration = {duration.date.years, r2};
   } else if (unit == TemporalUnit::Week) {
     
-    
-    
+    auto yearsMonths = DateDuration{duration.date.years, duration.date.months};
 
     
     PlainDate weeksStart;
-    if (!AddDate(cx, calendar, dateTime.date,
-                 DateDuration{duration.date.years, duration.date.months},
-                 TemporalOverflow::Constrain, &weeksStart)) {
+    if (!CalendarDateAdd(cx, calendar, dateTime.date, yearsMonths,
+                         TemporalOverflow::Constrain, &weeksStart)) {
       return false;
     }
+    MOZ_ASSERT(ISODateWithinLimits(weeksStart));
 
     
     PlainDate weeksEnd;
-    if (!AddDate(cx, calendar, dateTime.date,
-                 DateDuration{duration.date.years, duration.date.months, 0,
-                              duration.date.days},
-                 TemporalOverflow::Constrain, &weeksEnd)) {
+    if (!BalanceISODate(cx, weeksStart, duration.date.days, &weeksEnd)) {
       return false;
     }
+    MOZ_ASSERT(ISODateWithinLimits(weeksEnd));
 
     
     DateDuration untilResult;
@@ -2755,8 +2751,8 @@ static bool NudgeToCalendarUnit(
 
 static bool NudgeToZonedTime(JSContext* cx, const NormalizedDuration& duration,
                              const PlainDateTime& dateTime,
-                             Handle<CalendarValue> calendar,
                              Handle<TimeZoneValue> timeZone,
+                             Handle<CalendarValue> calendar,
                              Increment increment, TemporalUnit unit,
                              TemporalRoundingMode roundingMode,
                              DurationNudge* result) {
@@ -2988,24 +2984,17 @@ static bool NudgeToDayOrTime(JSContext* cx, const NormalizedDuration& duration,
 static bool BubbleRelativeDuration(
     JSContext* cx, const NormalizedDuration& duration,
     const DurationNudge& nudge, const PlainDateTime& dateTime,
-    Handle<CalendarValue> calendar, Handle<TimeZoneValue> timeZone,
+    Handle<TimeZoneValue> timeZone, Handle<CalendarValue> calendar,
     TemporalUnit largestUnit, TemporalUnit smallestUnit,
     NormalizedDuration* result) {
   MOZ_ASSERT(IsValidDuration(duration));
   MOZ_ASSERT(IsValidDuration(nudge.duration));
   MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
+  MOZ_ASSERT(largestUnit <= TemporalUnit::Day);
+  MOZ_ASSERT(smallestUnit <= TemporalUnit::Day);
   MOZ_ASSERT(largestUnit <= smallestUnit);
 
   int32_t sign = DurationSign(duration) < 0 ? -1 : 1;
-
-  
-  MOZ_ASSERT(largestUnit <= TemporalUnit::Day);
-
-  
-  MOZ_ASSERT(smallestUnit <= TemporalUnit::Day);
-
-  
-  
 
   
   if (smallestUnit == largestUnit) {
@@ -3015,25 +3004,19 @@ static bool BubbleRelativeDuration(
   MOZ_ASSERT(smallestUnit != TemporalUnit::Year);
 
   
-  
-
-  
   auto dateDuration = nudge.duration.date;
   auto timeDuration = nudge.duration.time;
   auto unit = smallestUnit;
   while (unit > largestUnit) {
-    
     using TemporalUnitType = std::underlying_type_t<TemporalUnit>;
 
     static_assert(static_cast<TemporalUnitType>(TemporalUnit::Auto) == 0,
                   "TemporalUnit::Auto has value zero");
     MOZ_ASSERT(unit > TemporalUnit::Auto, "can subtract unit by one");
 
-    unit = static_cast<TemporalUnit>(static_cast<TemporalUnitType>(unit) - 1);
-
-    MOZ_ASSERT(TemporalUnit::Year <= unit && unit <= TemporalUnit::Week);
-
     
+    unit = static_cast<TemporalUnit>(static_cast<TemporalUnitType>(unit) - 1);
+    MOZ_ASSERT(TemporalUnit::Year <= unit && unit <= TemporalUnit::Week);
 
     
     if (unit != TemporalUnit::Week || largestUnit == TemporalUnit::Week) {
@@ -3051,44 +3034,34 @@ static bool BubbleRelativeDuration(
 
         
         endDuration = {dateDuration.years, months};
-      } else if (unit == TemporalUnit::Week) {
+      } else {
+        
+        MOZ_ASSERT(unit == TemporalUnit::Week);
+
         
         int64_t weeks = dateDuration.weeks + sign;
 
         
         endDuration = {dateDuration.years, dateDuration.months, weeks};
-      } else {
-        
-        MOZ_ASSERT(unit == TemporalUnit::Day);
-
-        
-        int64_t days = dateDuration.days + sign;
-
-        
-        endDuration = {dateDuration.years, dateDuration.months,
-                       dateDuration.weeks, days};
       }
-
-      
+      MOZ_ASSERT(IsValidDuration(endDuration));
 
       
       PlainDate end;
-      if (!AddDate(cx, calendar, dateTime.date, endDuration,
-                   TemporalOverflow::Constrain, &end)) {
+      if (!CalendarDateAdd(cx, calendar, dateTime.date, endDuration,
+                           TemporalOverflow::Constrain, &end)) {
         return false;
       }
 
       
+      auto endDateTime = PlainDateTime{end, dateTime.time};
+      MOZ_ASSERT(ISODateTimeWithinLimits(endDateTime));
+
+      
       Instant endEpochNs;
       if (!timeZone) {
-        
-        endEpochNs = GetUTCEpochNanoseconds({end, dateTime.time});
+        endEpochNs = GetUTCEpochNanoseconds(endDateTime);
       } else {
-        
-        auto endDateTime = PlainDateTime{end, dateTime.time};
-        MOZ_ASSERT(ISODateTimeWithinLimits(endDateTime));
-
-        
         if (!GetInstantFor(cx, timeZone, endDateTime,
                            TemporalDisambiguation::Compatible, &endEpochNs)) {
           return false;
@@ -3129,7 +3102,7 @@ static bool BubbleRelativeDuration(
 bool js::temporal::RoundRelativeDuration(
     JSContext* cx, const NormalizedDuration& duration,
     const Instant& destEpochNs, const PlainDateTime& dateTime,
-    Handle<CalendarValue> calendar, Handle<TimeZoneValue> timeZone,
+    Handle<TimeZoneValue> timeZone, Handle<CalendarValue> calendar,
     TemporalUnit largestUnit, Increment increment, TemporalUnit smallestUnit,
     TemporalRoundingMode roundingMode, RoundedRelativeDuration* result) {
   MOZ_ASSERT(IsValidDuration(duration));
@@ -3147,14 +3120,14 @@ bool js::temporal::RoundRelativeDuration(
   DurationNudge nudge;
   if (irregularLengthUnit) {
     
-    if (!NudgeToCalendarUnit(cx, duration, destEpochNs, dateTime, calendar,
-                             timeZone, increment, smallestUnit, roundingMode,
+    if (!NudgeToCalendarUnit(cx, duration, destEpochNs, dateTime, timeZone,
+                             calendar, increment, smallestUnit, roundingMode,
                              &nudge)) {
       return false;
     }
   } else if (timeZone) {
     
-    if (!NudgeToZonedTime(cx, duration, dateTime, calendar, timeZone, increment,
+    if (!NudgeToZonedTime(cx, duration, dateTime, timeZone, calendar, increment,
                           smallestUnit, roundingMode, &nudge)) {
       return false;
     }
@@ -3175,8 +3148,8 @@ bool js::temporal::RoundRelativeDuration(
     auto startUnit = std::min(smallestUnit, TemporalUnit::Day);
 
     
-    if (!BubbleRelativeDuration(cx, duration, nudge, dateTime, calendar,
-                                timeZone, largestUnit, startUnit,
+    if (!BubbleRelativeDuration(cx, duration, nudge, dateTime, timeZone,
+                                calendar, largestUnit, startUnit,
                                 &nudgedDuration)) {
       return false;
     }

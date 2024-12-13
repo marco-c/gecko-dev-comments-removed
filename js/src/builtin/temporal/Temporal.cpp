@@ -105,51 +105,30 @@ static bool GetStringOption(JSContext* cx, Handle<JSObject*> options,
 
 
 
-static bool GetNumberOption(JSContext* cx, Handle<JSObject*> options,
-                            Handle<PropertyName*> property, double* number) {
+bool js::temporal::GetRoundingIncrementOption(JSContext* cx,
+                                              Handle<JSObject*> options,
+                                              Increment* increment) {
   
   Rooted<Value> value(cx);
-  if (!GetProperty(cx, options, options, property, &value)) {
+  if (!GetProperty(cx, options, options, cx->names().roundingIncrement,
+                   &value)) {
     return false;
   }
 
   
   if (value.isUndefined()) {
+    *increment = Increment{1};
     return true;
   }
 
   
-
-  
-  if (!JS::ToNumber(cx, value, number)) {
+  double number;
+  if (!ToIntegerWithTruncation(cx, value, "roundingIncrement", &number)) {
     return false;
   }
 
   
-
-  
-
-  
-  return true;
-}
-
-
-
-
-bool js::temporal::GetRoundingIncrementOption(JSContext* cx,
-                                              Handle<JSObject*> options,
-                                              Increment* increment) {
-  
-  double number = 1;
-  if (!GetNumberOption(cx, options, cx->names().roundingIncrement, &number)) {
-    return false;
-  }
-
-  
-  number = std::trunc(number);
-
-  
-  if (!std::isfinite(number) || number < 1 || number > 1'000'000'000) {
+  if (number < 1 || number > 1'000'000'000) {
     ToCStringBuf cbuf;
     const char* numStr = NumberToCString(&cbuf, number);
 

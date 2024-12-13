@@ -278,7 +278,7 @@ struct RoundedRelativeDuration {
 bool RoundRelativeDuration(
     JSContext* cx, const NormalizedDuration& duration,
     const Instant& destEpochNs, const PlainDateTime& dateTime,
-    JS::Handle<CalendarValue> calendar, JS::Handle<TimeZoneValue> timeZone,
+    JS::Handle<TimeZoneValue> timeZone, JS::Handle<CalendarValue> calendar,
     TemporalUnit largestUnit, Increment increment, TemporalUnit smallestUnit,
     TemporalRoundingMode roundingMode, RoundedRelativeDuration* result);
 
