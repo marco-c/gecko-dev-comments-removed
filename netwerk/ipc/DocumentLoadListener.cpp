@@ -321,9 +321,12 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
     
     
     
-    if ((NS_SUCCEEDED(rv) || rv == NS_ERROR_WONT_HANDLE_CONTENT) &&
-        !mUsedContentHandler && !m_targetStreamListener) {
+    if (!mUsedContentHandler && !m_targetStreamListener) {
       m_targetStreamListener = mListener;
+      if (NS_FAILED(rv)) {
+        request->CancelWithReason(
+            rv, "nsDocumentOpenInfo::OnStartRequest failed"_ns);
+      }
       return m_targetStreamListener->OnStartRequest(request);
     }
     if (m_targetStreamListener != mListener) {
@@ -2009,20 +2012,22 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
         ->Then(
             GetMainThreadSerialEventTarget(), __func__,
             [self = RefPtr{this},
-             options](const RefPtr<BrowsingContext>& aBrowsingContext) mutable {
-              if (aBrowsingContext->IsDiscarded()) {
-                MOZ_LOG(
-                    gProcessIsolationLog, LogLevel::Error,
-                    ("Process Switch: Got invalid new-tab BrowsingContext"));
-                self->RedirectToRealChannelFinished(NS_ERROR_FAILURE);
-                return;
-              }
+             options](const RefPtr<BrowsingContext>& aBrowsingContext)
+                MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA mutable {
+                  if (aBrowsingContext->IsDiscarded()) {
+                    MOZ_LOG(gProcessIsolationLog, LogLevel::Error,
+                            ("Process Switch: Got invalid new-tab "
+                             "BrowsingContext"));
+                    self->RedirectToRealChannelFinished(NS_ERROR_FAILURE);
+                    return;
+                  }
 
-              MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-                      ("Process Switch: Redirected load to new tab"));
-              self->TriggerProcessSwitch(aBrowsingContext->Canonical(), options,
-                                          true);
-            },
+                  MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+                          ("Process Switch: Redirected load to new tab"));
+                  self->TriggerProcessSwitch(
+                      MOZ_KnownLive(aBrowsingContext->Canonical()), options,
+                       true);
+                },
             [self = RefPtr{this}](const CopyableErrorResult&) {
               MOZ_LOG(gProcessIsolationLog, LogLevel::Error,
                       ("Process Switch: SwitchToNewTab failed"));
@@ -2049,30 +2054,32 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
 
   mObjectUpgradeHandler->UpgradeObjectLoad()->Then(
       GetMainThreadSerialEventTarget(), __func__,
-      [self = RefPtr{this}, options, parentWindow](
-          const RefPtr<CanonicalBrowsingContext>& aBrowsingContext) mutable {
-        if (aBrowsingContext->IsDiscarded() ||
-            parentWindow != aBrowsingContext->GetParentWindowContext()) {
-          MOZ_LOG(gProcessIsolationLog, LogLevel::Error,
+      [self = RefPtr{this}, options,
+       parentWindow](const RefPtr<CanonicalBrowsingContext>& aBrowsingContext)
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA mutable {
+            if (aBrowsingContext->IsDiscarded() ||
+                parentWindow != aBrowsingContext->GetParentWindowContext()) {
+              MOZ_LOG(
+                  gProcessIsolationLog, LogLevel::Error,
                   ("Process Switch: Got invalid BrowsingContext from object "
                    "upgrade!"));
-          self->RedirectToRealChannelFinished(NS_ERROR_FAILURE);
-          return;
-        }
+              self->RedirectToRealChannelFinished(NS_ERROR_FAILURE);
+              return;
+            }
 
-        
-        
-        
-        nsCOMPtr<nsILoadInfo> loadInfo = self->mChannel->LoadInfo();
-        if (aBrowsingContext->GetContainerFeaturePolicy()) {
-          loadInfo->SetContainerFeaturePolicyInfo(
-              *aBrowsingContext->GetContainerFeaturePolicy());
-        }
+            
+            
+            
+            nsCOMPtr<nsILoadInfo> loadInfo = self->mChannel->LoadInfo();
+            if (aBrowsingContext->GetContainerFeaturePolicy()) {
+              loadInfo->SetContainerFeaturePolicyInfo(
+                  *aBrowsingContext->GetContainerFeaturePolicy());
+            }
 
-        MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-                ("Process Switch: Upgraded Object to Document Load"));
-        self->TriggerProcessSwitch(aBrowsingContext, options);
-      },
+            MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+                    ("Process Switch: Upgraded Object to Document Load"));
+            self->TriggerProcessSwitch(aBrowsingContext, options);
+          },
       [self = RefPtr{this}](nsresult aStatusCode) {
         MOZ_ASSERT(NS_FAILED(aStatusCode), "Status should be error");
         self->RedirectToRealChannelFinished(aStatusCode);
@@ -2507,6 +2514,10 @@ bool DocumentLoadListener::MaybeHandleLoadErrorWithURIFixup(nsresult aStatus) {
 
 NS_IMETHODIMP
 DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
+  return DoOnStartRequest(aRequest);
+}
+
+nsresult DocumentLoadListener::DoOnStartRequest(nsIRequest* aRequest) {
   LOG(("DocumentLoadListener OnStartRequest [this=%p]", this));
 
   nsCOMPtr<nsIMultiPartChannel> multiPartChannel = do_QueryInterface(aRequest);
