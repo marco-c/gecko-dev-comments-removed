@@ -288,7 +288,8 @@ APZCTreeManager::APZCTreeManager(LayersId aRootLayersId,
       mScrollGenerationLock("APZScrollGenerationLock"),
       mInteractiveWidget(
           dom::InteractiveWidgetUtils::DefaultInteractiveWidgetMode()),
-      mIsSoftwareKeyboardVisible(false) {
+      mIsSoftwareKeyboardVisible(false),
+      mHaveOOPIframes(false) {
   AsyncPanZoomController::InitializeGlobalState();
   mApzcTreeLog.ConditionOnPrefFunction(StaticPrefs::apz_printtree);
 
@@ -466,7 +467,9 @@ std::vector<LayersId> APZCTreeManager::UpdateHitTestingTree(
                                  state.mNodesToDestroy.AppendElement(aNode);
                                });
   mRootNode = nullptr;
+  mHaveOOPIframes = false;
   Maybe<LayersId> asyncZoomContainerSubtree = Nothing();
+  LayersId currentRootContentLayersId{0};
   int asyncZoomContainerNestingDepth = 0;
   bool haveNestedAsyncZoomContainers = false;
   nsTArray<LayersId> subtreesWithRootContentOutsideAsyncZoomContainer;
@@ -518,10 +521,16 @@ std::vector<LayersId> APZCTreeManager::UpdateHitTestingTree(
                 aLayerMetrics.Metadata().GetInteractiveWidget();
             mIsSoftwareKeyboardVisible =
                 aLayerMetrics.Metadata().IsSoftwareKeyboardVisible();
+            currentRootContentLayersId = layersId;
           } else {
             MOZ_ASSERT(aLayerMetrics.Metrics().GetFixedLayerMargins() ==
                            ScreenMargin(),
                        "fixed-layer-margins should be 0 on non-root layer");
+            if (currentRootContentLayersId.IsValid() &&
+                currentRootContentLayersId != layersId &&
+                mRootLayersId != layersId) {
+              mHaveOOPIframes = true;
+            }
           }
 
           
@@ -1553,10 +1562,18 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(
         
         FlushRepaintsToClearScreenToGeckoTransform();
       }
+      const bool endsDrag = DragTracker::EndsDrag(mouseInput);
+      if (endsDrag) {
+        mDragBlockHitResult = HitTestResult();
+      }
 
-      
-      state.mHit = GetTargetAPZC(mouseInput.mOrigin);
+      state.mHit = GetTargetAPZCForMouseInput(mouseInput);
+
       bool hitScrollbar = (bool)state.mHit.mScrollbarNode;
+      if (startsDrag && hitScrollbar) {
+        RecursiveMutexAutoLock lock(mTreeLock);
+        mDragBlockHitResult = mHitTester->CloneHitTestResult(lock, state.mHit);
+      }
 
       
       
@@ -3005,6 +3022,31 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetTargetAPZC(
   RecursiveMutexAutoLock lock(mTreeLock);
   MOZ_ASSERT(mHitTester);
   return mHitTester->GetAPZCAtPoint(aPoint, lock);
+}
+
+APZCTreeManager::HitTestResult APZCTreeManager::GetTargetAPZCForMouseInput(
+    const MouseInput& aMouseInput) {
+  
+  
+  if (aMouseInput.mType != MouseInput::MOUSE_MOVE ||
+      mInputQueue->GetActiveWheelTransaction()) {
+    return GetTargetAPZC(aMouseInput.mOrigin);
+  }
+
+  
+  
+  if (mDragBlockHitResult.mTargetApzc) {
+    RecursiveMutexAutoLock lock(mTreeLock);
+    return mHitTester->CloneHitTestResult(lock, mDragBlockHitResult);
+  }
+
+  
+  
+  RecursiveMutexAutoLock lock(mTreeLock);
+  if (!mHaveOOPIframes) {
+    return HitTestResult{};
+  }
+  return GetTargetAPZC(aMouseInput.mOrigin);
 }
 
 APZCTreeManager::TargetApzcForNodeResult APZCTreeManager::FindHandoffParent(

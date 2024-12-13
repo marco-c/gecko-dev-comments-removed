@@ -655,6 +655,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   TargetApzcForNodeResult GetTargetApzcForNode(const HitTestingTreeNode* aNode);
   TargetApzcForNodeResult FindHandoffParent(
       const AsyncPanZoomController* aApzc);
+
+  
+  HitTestResult GetTargetAPZCForMouseInput(const MouseInput& aMouseInput);
+
   
 
 
@@ -1053,6 +1057,12 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   HitTestResult mTapGestureHitResult;
   
 
+
+
+
+  HitTestResult mDragBlockHitResult;
+  
+
   mutable DataMutex<ScreenPoint> mCurrentMousePosition;
   
 
@@ -1098,6 +1108,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   
   bool mIsSoftwareKeyboardVisible;
+
+  
+  
+  bool mHaveOOPIframes;
 
 #if defined(MOZ_WIDGET_ANDROID)
  private:
