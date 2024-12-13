@@ -25,6 +25,8 @@ const IGNORED_EXTENSIONS = ["css", "svg", "png"];
 import { isPretty, getRawSourceURL } from "../utils/source";
 import { prefs } from "../utils/prefs";
 
+import TargetCommand from "resource://devtools/shared/commands/target/target-command.js";
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   BinarySearch: "resource://gre/modules/BinarySearch.sys.mjs",
@@ -437,6 +439,15 @@ function sortItems(a, b) {
   return 0;
 }
 
+const { TYPES } = TargetCommand;
+const TARGET_TYPE_ORDER = [
+  TYPES.PROCESS,
+  TYPES.FRAME,
+  TYPES.CONTENT_SCRIPT,
+  TYPES.SERVICE_WORKER,
+  TYPES.SHARED_WORKER,
+  TYPES.WORKER,
+];
 function sortThreadItems(a, b) {
   
   
@@ -452,33 +463,27 @@ function sortThreadItems(a, b) {
   }
 
   
-  if (a.thread.targetType == "process" && b.thread.targetType == "frame") {
-    return -1;
-  } else if (
-    a.thread.targetType == "frame" &&
-    b.thread.targetType == "process"
-  ) {
-    return 1;
-  }
-
   
-  if (
-    a.thread.targetType.endsWith("worker") &&
-    !b.thread.targetType.endsWith("worker")
-  ) {
+  if (a.thread.innerWindowId > b.thread.innerWindowId) {
     return 1;
-  } else if (
-    !a.thread.targetType.endsWith("worker") &&
-    b.thread.targetType.endsWith("worker")
-  ) {
+  } else if (a.thread.innerWindowId < b.thread.innerWindowId) {
     return -1;
   }
 
   
-  if (a.thread.processID > b.thread.processID) {
-    return 1;
-  } else if (a.thread.processID < b.thread.processID) {
-    return -1;
+  if (a.thread.targetType !== b.thread.targetType) {
+    const idxA = TARGET_TYPE_ORDER.indexOf(a.thread.targetType);
+    const idxB = TARGET_TYPE_ORDER.indexOf(b.thread.targetType);
+    return idxA < idxB ? -1 : 1;
+  }
+
+  
+  if (a.thread.processID && b.thread.processID) {
+    if (a.thread.processID > b.thread.processID) {
+      return 1;
+    } else if (a.thread.processID < b.thread.processID) {
+      return -1;
+    }
   }
 
   

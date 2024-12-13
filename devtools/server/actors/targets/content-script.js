@@ -46,6 +46,7 @@ class WebExtensionContentScriptTargetActor extends BaseTargetActor {
     this.contentScriptSandbox = contentScriptSandbox;
     const metadata = Cu.getSandboxMetadata(contentScriptSandbox);
     this.addonId = metadata.addonId;
+    this.innerWindowId = metadata["inner-window-id"];
 
     
     this.makeDebugger = makeDebugger.bind(null, {
@@ -108,6 +109,9 @@ class WebExtensionContentScriptTargetActor extends BaseTargetActor {
       
       
       title: policy.name,
+
+      
+      innerWindowId: this.innerWindowId,
 
       consoleActor: this._consoleActor.actorID,
       threadActor: this.threadActor.actorID,
