@@ -5,10 +5,11 @@
 
 #include "SelectionState.h"
 
-#include "AutoRangeArray.h"  
-#include "EditorUtils.h"     
-#include "ErrorList.h"
+#include "AutoRangeArray.h"   
+#include "EditorUtils.h"      
+#include "HTMLEditHelpers.h"  
 
+#include "ErrorList.h"
 #include "mozilla/Assertions.h"    
 #include "mozilla/IntegerRange.h"  
 #include "mozilla/Likely.h"        
@@ -608,5 +609,15 @@ AutoTrackDOMMoveNodeResult::AutoTrackDOMMoveNodeResult(
                                &aMoveNodeResult->mNextInsertionPoint),
       mTrackMovedContentRange(aRangeUpdater,
                               &aMoveNodeResult->mMovedContentRange) {}
+
+
+
+
+
+AutoTrackDOMDeleteRangeResult::AutoTrackDOMDeleteRangeResult(
+    RangeUpdater& aRangeUpdater, DeleteRangeResult* aDeleteRangeResult)
+    : mTrackCaretPoint(aRangeUpdater,
+                       static_cast<CaretPoint*>(aDeleteRangeResult)),
+      mTrackDeleteRange(aRangeUpdater, &aDeleteRangeResult->mDeleteRange) {}
 
 }  

@@ -525,6 +525,25 @@ class MOZ_STACK_CLASS AutoTrackDOMMoveNodeResult final {
   AutoTrackDOMRange mTrackMovedContentRange;
 };
 
+class MOZ_STACK_CLASS AutoTrackDOMDeleteRangeResult final {
+ public:
+  AutoTrackDOMDeleteRangeResult(RangeUpdater& aRangeUpdater,
+                                DeleteRangeResult* aDeleteRangeResult);
+
+  void FlushAndStopTracking() {
+    mTrackCaretPoint.FlushAndStopTracking();
+    mTrackDeleteRange.FlushAndStopTracking();
+  }
+  void StopTracking() {
+    mTrackCaretPoint.StopTracking();
+    mTrackDeleteRange.StopTracking();
+  }
+
+ private:
+  AutoTrackDOMPoint mTrackCaretPoint;
+  AutoTrackDOMRange mTrackDeleteRange;
+};
+
 
 
 

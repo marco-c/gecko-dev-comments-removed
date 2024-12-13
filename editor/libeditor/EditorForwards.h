@@ -96,6 +96,7 @@ class CSSEditUtils;
 class DeleteContentTransactionBase;     
 class DeleteMultipleRangesTransaction;  
 class DeleteNodeTransaction;            
+class DeleteRangeResult;                
 class DeleteRangeTransaction;           
 class DeleteTextTransaction;            
 class EditActionResult;                 
