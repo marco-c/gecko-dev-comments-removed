@@ -1,8 +1,8 @@
-/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
-/* vim: set sts=2 sw=2 et tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
@@ -15,7 +15,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 const DASHED = AppConstants.platform === "linux";
 
-// Supported native manifest types, with platform-specific slugs.
+
 const TYPES = {
   stdio: DASHED ? "native-messaging-hosts" : "NativeMessagingHosts",
   storage: DASHED ? "managed-storage" : "ManagedStorage",
@@ -82,33 +82,27 @@ export var NativeManifests = {
       return null;
     }
 
-    // Normalize in case the extension used / instead of \.
+    
     path = path.replaceAll("/", "\\");
 
     let manifest = await this._tryPath(type, path, name, context, true);
     return manifest ? { path, manifest } : null;
   },
 
-  async _tryPath(type, path, name, context, logIfNotFound) {
-    let manifest;
-    try {
-      manifest = await IOUtils.readJSON(path);
-    } catch (ex) {
-      if (ex instanceof SyntaxError && ex.message.startsWith("JSON.parse:")) {
-        Cu.reportError(`Error parsing native manifest ${path}: ${ex.message}`);
-        return null;
-      }
-      if (DOMException.isInstance(ex) && ex.name == "NotFoundError") {
-        if (logIfNotFound) {
-          Cu.reportError(
-            `Error reading native manifest file ${path}: file is referenced in the registry but does not exist`
-          );
-        }
-        return null;
-      }
-      Cu.reportError(ex);
-      return null;
-    }
+  
+
+
+
+
+
+
+
+
+
+
+  async parseManifest(type, path, name, context, data) {
+    await this.init();
+    let manifest = data;
     let normalized = lazy.Schemas.normalize(
       manifest,
       "manifest.NativeManifest",
@@ -137,9 +131,9 @@ export var NativeManifests = {
       AppConstants.platform != "win" &&
       !PathUtils.isAbsolute(manifest.path)
     ) {
-      // manifest.path is defined for type "stdio" and "pkcs11".
-      // stdio requires an absolute path on Linux and macOS,
-      // pkcs11 also accepts relative paths.
+      
+      
+      
       Cu.reportError(
         `Native manifest ${path} has relative path value ${manifest.path} (expected absolute path)`
       );
@@ -158,6 +152,30 @@ export var NativeManifests = {
     return manifest;
   },
 
+  async _tryPath(type, path, name, context, logIfNotFound) {
+    let manifest;
+    try {
+      manifest = await IOUtils.readJSON(path);
+    } catch (ex) {
+      if (ex instanceof SyntaxError && ex.message.startsWith("JSON.parse:")) {
+        Cu.reportError(`Error parsing native manifest ${path}: ${ex.message}`);
+        return null;
+      }
+      if (DOMException.isInstance(ex) && ex.name == "NotFoundError") {
+        if (logIfNotFound) {
+          Cu.reportError(
+            `Error reading native manifest file ${path}: file is referenced in the registry but does not exist`
+          );
+        }
+        return null;
+      }
+      Cu.reportError(ex);
+      return null;
+    }
+    manifest = await this.parseManifest(type, path, name, context, manifest);
+    return manifest;
+  },
+
   async _tryPaths(type, name, dirs, context) {
     for (let dir of dirs) {
       let path = PathUtils.join(dir, TYPES[type], `${name}.json`);
@@ -169,17 +187,17 @@ export var NativeManifests = {
     return null;
   },
 
-  /**
-   * Search for a valid native manifest of the given type and name.
-   * The directories searched and rules for manifest validation are all
-   * detailed in the Native Manifests documentation.
-   *
-   * @param {string} type The type, one of: "pkcs11", "stdio" or "storage".
-   * @param {string} name The name of the manifest to search for.
-   * @param {object} context A context object as expected by Schemas.normalize.
-   * @returns {object} The contents of the validated manifest, or null if
-   *                   no valid manifest can be found for this type and name.
-   */
+  
+
+
+
+
+
+
+
+
+
+
   lookupManifest(type, name, context) {
     return this.init().then(() => this._lookup(type, name, context));
   },
