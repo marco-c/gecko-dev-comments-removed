@@ -1416,6 +1416,7 @@ Toolbox.prototype = {
       connectionType,
       runtimeInfo,
       descriptorType: this._descriptorFront.descriptorType,
+      descriptorName: this._descriptorFront.name,
     };
   },
 
@@ -3340,14 +3341,21 @@ Toolbox.prototype = {
     ) {
       
       
-      const url = this._descriptorFront.isWebExtensionDescriptor
-        ? this.getExtensionPathName(selectedTargetFront.url)
-        : getUnicodeUrl(selectedTargetFront.url);
-      title = L10N.getFormatStr(
-        "toolbox.titleTemplate2",
-        selectedTargetFront.name,
-        url
-      );
+      if (
+        this._descriptorFront.isWebExtensionDescriptor &&
+        selectedTargetFront.url.includes(selectedTargetFront.name)
+      ) {
+        title = L10N.getFormatStr(
+          "toolbox.titleTemplate1",
+          getUnicodeUrl(selectedTargetFront.url)
+        );
+      } else {
+        title = L10N.getFormatStr(
+          "toolbox.titleTemplate2",
+          selectedTargetFront.name,
+          getUnicodeUrl(selectedTargetFront.url)
+        );
+      }
     } else {
       title = L10N.getFormatStr(
         "toolbox.titleTemplate1",

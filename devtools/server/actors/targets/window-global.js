@@ -611,13 +611,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
   
 
 
-
   get title() {
-    if (this.sessionContext.type == "webextension") {
-      const policy = WebExtensionPolicy.getByID(this.sessionContext.addonId);
-      
-      return policy?.name;
-    }
     return this.contentDocument.title;
   }
 

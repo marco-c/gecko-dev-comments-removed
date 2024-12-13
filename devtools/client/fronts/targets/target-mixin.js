@@ -277,7 +277,23 @@ function TargetMixin(parentClass) {
       return this.typeName === "windowGlobalTarget";
     }
 
+    
+
+
     get name() {
+      
+      
+      
+      if (this.commands.descriptorFront.isWebExtensionDescriptor) {
+        if (this._title) {
+          return this._title;
+        }
+        return URL.canParse(this._url)
+          ? new URL(this._url).pathname
+          : 
+            this._url;
+      }
+
       if (this.isWebExtension || this.isContentProcess) {
         return this.targetForm.name;
       }
