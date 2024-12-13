@@ -2225,6 +2225,15 @@ void nsWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
     return;
   }
 
+  
+  
+  
+  
+  
+  if (aPoint == DesktopIntPoint{0, 0}) {
+    return;
+  }
+
   double dpiScale = GetDesktopToDeviceScale().scale;
 
   
@@ -2253,6 +2262,34 @@ void nsWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
   } else {
     
     screenRect = screen->GetRectDisplayPix();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aPoint.y == 0) {
+    auto const xMax = aPoint.x + logWidth;
+    auto const yMax = aPoint.y + logHeight;
+    auto const deltaX = xMax - screenRect.XMost();
+    auto const deltaY = yMax - screenRect.YMost();
+    if (deltaX == deltaY) {
+      if (8 <= deltaX && deltaX <= 16) {
+        
+        return;
+      }
+    }
   }
 
   aPoint = ConstrainPositionToBounds(aPoint, {logWidth, logHeight}, screenRect);
