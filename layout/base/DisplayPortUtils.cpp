@@ -881,12 +881,7 @@ bool DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered(
       }
     }
   }
-  
-  
-  
-  
-  if (XRE_IsParentProcess() &&
-      aFrame->StyleUIReset()->mMozSubtreeHiddenOnlyVisually) {
+  if (aFrame->StyleUIReset()->mMozSubtreeHiddenOnlyVisually) {
     
     return false;
   }
