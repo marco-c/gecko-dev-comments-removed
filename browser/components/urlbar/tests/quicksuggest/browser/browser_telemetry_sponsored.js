@@ -40,9 +40,7 @@ add_setup(async function () {
 
 add_task(async function sponsored() {
   let match_type = "firefox-suggest";
-  let source = UrlbarPrefs.get("quicksuggest.rustEnabled")
-    ? "rust"
-    : "remote-settings";
+  let source = "rust";
 
   
   
@@ -171,9 +169,7 @@ add_task(async function sponsored() {
 
 add_task(async function sponsoredBestMatch() {
   let match_type = "best-match";
-  let source = UrlbarPrefs.get("quicksuggest.rustEnabled")
-    ? "rust"
-    : "remote-settings";
+  let source = "rust";
 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.quicksuggest.sponsoredPriority", true]],
