@@ -192,7 +192,8 @@ static bool StringifiedObjectsMatchTrustedCodeProperties(
     }
     if (!trustedCode) {
       
-      JS_ReportErrorASCII(aCx, "test failed, trustedCode property is undefined");
+      JS_ReportErrorASCII(aCx,
+                          "test failed, trustedCode property is undefined");
       return false;
     }
     bool equals;
