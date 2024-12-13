@@ -20,25 +20,13 @@ async function openTabMenuFor(tab) {
 }
 
 async function addBrowserTabs(numberOfTabs) {
-  let uris = [];
+  
+  
+  
+  let tabs = [];
   for (let i = 0; i < numberOfTabs; i++) {
-    uris.push(`http://mochi.test:8888/#${i}`);
+    tabs.push(await addTab(`http://mochi.test:8888/#${i}`));
   }
-  gBrowser.loadTabs(uris, {
-    inBackground: true,
-    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-  });
-
-  let tabs = Array.from(gBrowser.tabs).slice(-1 * numberOfTabs);
-  await TestUtils.waitForCondition(() => {
-    return tabs.every(tab => tab._fullyOpen);
-  });
-
-  let browsers = tabs.map(tab => gBrowser.getBrowserForTab(tab));
-  let browserLoadedPromises = browsers.map(browser =>
-    BrowserTestUtils.browserLoaded(browser)
-  );
-  await Promise.all(browserLoadedPromises);
   return tabs;
 }
 
@@ -69,7 +57,16 @@ function awaitAndCloseBeforeUnloadDialog(browser, doStayOnPage) {
 
 add_setup(async function () {
   
+  
+  await promiseTabLoadEvent(
+    gBrowser.selectedTab,
+    "http://mochi.test:8888/#originalTab"
+  );
+  let originalTab = gBrowser.selectedTab;
+  
   FirefoxViewHandler.openTab();
+  
+  await BrowserTestUtils.switchTab(gBrowser, originalTab);
 });
 
 add_task(async function test_unload_selected_and_allow() {
