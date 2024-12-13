@@ -35,7 +35,7 @@ globalThis.fetchAdaptor = (resource) => (resolve, reject) => {
     .then(resolve, (e) => reject(e.toString()));
 };
 
-let sharedWorkerMessagePortPromise;
+let workerMessagePortPromise;
 
 
 
@@ -47,17 +47,8 @@ globalThis.getPostMessageFunc = async function () {
     return postMessage;  
   }
 
-  if (typeof clients === "object") {
-    
-    
-    const allClients = await clients.matchAll({ includeUncontrolled: true });
-    return function broadcast(msg) {
-      allClients.map(client => client.postMessage(msg));
-    }
-  }
-
-  if (sharedWorkerMessagePortPromise) {
-    return await sharedWorkerMessagePortPromise;
+  if (workerMessagePortPromise) {
+    return await workerMessagePortPromise;
   }
 
   throw new Error("getPostMessageFunc is intended for Worker scopes");
@@ -66,12 +57,22 @@ globalThis.getPostMessageFunc = async function () {
 
 let savedResolver;
 if (globalThis.constructor.name === "SharedWorkerGlobalScope") {
-  sharedWorkerMessagePortPromise = new Promise((resolve) => {
+  workerMessagePortPromise = new Promise((resolve) => {
     savedResolver = resolve;
   });
   addEventListener("connect", function (event) {
     const port = event.ports[0];
     savedResolver(port.postMessage.bind(port));
+  });
+} else if (globalThis.constructor.name === "ServiceWorkerGlobalScope") {
+  workerMessagePortPromise = new Promise((resolve) => {
+    savedResolver = resolve;
+  });
+  addEventListener("message", (e) => {
+    if (typeof e.data === "object" && e.data !== null && e.data.type === "connect") {
+      const client = e.source;
+      savedResolver(client.postMessage.bind(client));
+    }
   });
 }
 
@@ -143,7 +144,8 @@ globalThis.createSetupErrorResult = function (message) {
     asserts: [],
     status: {
       status: 1, 
-      message,
+      message: String(message),
+      stack: typeof message === "object" && message !== null && "stack" in message ? message.stack : undefined,
     },
   };
 };
