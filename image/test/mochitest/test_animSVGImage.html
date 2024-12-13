@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=610419
+-->
 <head>
   <title>Test for Bug 610419</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -74,7 +74,7 @@ function myPoll() {
     ok(true, "Animated image looks correct, " +
              "at call #" + gPollCounter + " to myPoll");
 
-    if (++gSVGCurrentImage > gSVGImages.length) {
+    if (++gSVGCurrentImage >= gSVGImages.length) {
       cleanUpAndFinish();
     } else {
       loadNextImageAndPoll();
