@@ -1819,11 +1819,13 @@ static bool ZonedDateTime_hoursInDay(JSContext* cx, const CallArgs& args) {
 
   
   auto diff = tomorrowNs - todayNs;
-  MOZ_ASSERT(IsValidInstantSpan(diff));
+  MOZ_ASSERT(diff.abs().toNanoseconds() <
+             Int128{ToNanoseconds(TemporalUnit::Day) * 2});
 
   
-  constexpr auto nsPerHour = Int128{ToNanoseconds(TemporalUnit::Hour)};
-  args.rval().setNumber(FractionToDouble(diff.toNanoseconds(), nsPerHour));
+  constexpr auto nsPerHour = ToNanoseconds(TemporalUnit::Hour);
+  args.rval().setNumber(
+      FractionToDouble(int64_t(diff.toNanoseconds()), nsPerHour));
   return true;
 }
 
