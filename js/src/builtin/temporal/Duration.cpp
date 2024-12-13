@@ -114,7 +114,6 @@ static constexpr bool IsSafeInteger(int64_t x) {
 
 
 
-
 int32_t js::temporal::DurationSign(const Duration& duration) {
   MOZ_ASSERT(IsIntegerOrInfinityDuration(duration));
 
@@ -142,8 +141,7 @@ int32_t js::temporal::DurationSign(const Duration& duration) {
 
 
 
-
-int32_t js::temporal::DurationSign(const DateDuration& duration) {
+int32_t js::temporal::DateDurationSign(const DateDuration& duration) {
   const auto& [years, months, weeks, days] = duration;
 
   
@@ -166,11 +164,10 @@ int32_t js::temporal::DurationSign(const DateDuration& duration) {
 
 
 
-
-static int32_t DurationSign(const NormalizedDuration& duration) {
+static int32_t NormalizedDurationSign(const NormalizedDuration& duration) {
   MOZ_ASSERT(IsValidDuration(duration));
 
-  if (int32_t sign = DurationSign(duration.date)) {
+  if (int32_t sign = DateDurationSign(duration.date)) {
     return sign;
   }
   return NormalizedTimeDurationSign(duration.time);
@@ -604,7 +601,7 @@ bool js::temporal::CombineDateAndNormalizedTimeDuration(
   MOZ_ASSERT(IsValidNormalizedTimeDuration(time));
 
   
-  int32_t dateSign = DurationSign(date);
+  int32_t dateSign = DateDurationSign(date);
 
   
   int32_t timeSign = NormalizedTimeDurationSign(time);
@@ -651,7 +648,7 @@ bool js::temporal::IsValidDuration(const Duration& duration) {
                milliseconds, microseconds, nanoseconds] = duration;
 
   
-  int32_t sign = DurationSign(duration);
+  int32_t sign = 0;
 
   
   for (auto v : {years, months, weeks, days, hours, minutes, seconds,
@@ -662,13 +659,25 @@ bool js::temporal::IsValidDuration(const Duration& duration) {
     }
 
     
-    if (v < 0 && sign > 0) {
-      return false;
+    if (v < 0) {
+      
+      if (sign > 0) {
+        return false;
+      }
+
+      
+      sign = -1;
     }
 
     
-    if (v > 0 && sign < 0) {
-      return false;
+    else if (v > 0) {
+      
+      if (sign < 0) {
+        return false;
+      }
+
+      
+      sign = 1;
     }
   }
 
@@ -840,7 +849,7 @@ bool js::temporal::ThrowIfInvalidDuration(JSContext* cx,
   const auto& [years, months, weeks, days] = duration;
 
   
-  int32_t sign = DurationSign(duration);
+  int32_t sign = DateDurationSign(duration);
 
   auto throwIfInvalid = [&](int64_t v, const char* name) {
     
@@ -1623,7 +1632,10 @@ static bool UnbalanceDateDurationRelative(
   auto [years, months, weeks, days] = duration;
 
   
-  if (years == 0 && months == 0 && weeks == 0) {
+  auto yearsMonthsWeeksDuration = DateDuration{years, months, weeks};
+
+  
+  if (yearsMonthsWeeksDuration == DateDuration{}) {
     *result = days;
     return true;
   }
@@ -1635,9 +1647,6 @@ static bool UnbalanceDateDurationRelative(
                               "relativeTo");
     return false;
   }
-
-  
-  auto yearsMonthsWeeksDuration = DateDuration{years, months, weeks};
 
   
   PlainDate later;
@@ -1737,7 +1746,6 @@ static Duration AbsoluteDuration(const Duration& duration) {
 
 
 
-
 static JSString* TemporalDurationToString(JSContext* cx,
                                           const Duration& duration,
                                           Precision precision) {
@@ -1764,9 +1772,6 @@ static JSString* TemporalDurationToString(JSContext* cx,
   MOZ_ASSERT(hours < DOUBLE_INTEGRAL_PRECISION_LIMIT);
   MOZ_ASSERT(minutes < DOUBLE_INTEGRAL_PRECISION_LIMIT);
   MOZ_ASSERT(seconds < DOUBLE_INTEGRAL_PRECISION_LIMIT);
-
-  auto secondsDuration = NormalizeTimeDuration(0.0, 0.0, seconds, milliseconds,
-                                               microseconds, nanoseconds);
 
   
   int32_t sign = DurationSign(duration);
@@ -1831,6 +1836,10 @@ static JSString* TemporalDurationToString(JSContext* cx,
   
   bool zeroMinutesAndHigher = years == 0 && months == 0 && weeks == 0 &&
                               days == 0 && hours == 0 && minutes == 0;
+
+  
+  auto secondsDuration = NormalizeTimeDuration(0.0, 0.0, seconds, milliseconds,
+                                               microseconds, nanoseconds);
 
   
   bool hasSecondsPart = (secondsDuration != NormalizedTimeDuration{}) ||
@@ -2483,7 +2492,7 @@ static bool NudgeToCalendarUnit(
   MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
   MOZ_ASSERT(unit <= TemporalUnit::Day);
 
-  int32_t sign = DurationSign(duration) < 0 ? -1 : 1;
+  int32_t sign = NormalizedDurationSign(duration) < 0 ? -1 : 1;
 
   
   int64_t r1;
@@ -2759,7 +2768,7 @@ static bool NudgeToZonedTime(JSContext* cx, const NormalizedDuration& duration,
   MOZ_ASSERT(IsValidDuration(duration));
   MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
 
-  int32_t sign = DurationSign(duration) < 0 ? -1 : 1;
+  int32_t sign = NormalizedDurationSign(duration) < 0 ? -1 : 1;
 
   
   MOZ_ASSERT(unit >= TemporalUnit::Hour);
@@ -2991,7 +3000,7 @@ static bool BubbleRelativeDuration(
   MOZ_ASSERT(smallestUnit <= TemporalUnit::Day);
   MOZ_ASSERT(largestUnit <= smallestUnit);
 
-  int32_t sign = DurationSign(duration) < 0 ? -1 : 1;
+  int32_t sign = NormalizedDurationSign(duration) < 0 ? -1 : 1;
 
   
   if (smallestUnit == largestUnit) {
@@ -4392,14 +4401,16 @@ static bool Duration_toString(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Duration result;
+
+  
+  auto roundedDuration = duration;
   if (precision.unit != TemporalUnit::Nanosecond ||
       precision.increment != Increment{1}) {
     
-    auto timeDuration = NormalizeTimeDuration(duration);
+    auto largestUnit = DefaultTemporalLargestUnit(duration);
 
     
-    auto largestUnit = DefaultTemporalLargestUnit(duration);
+    auto timeDuration = NormalizeTimeDuration(duration);
 
     
     NormalizedTimeDuration rounded;
@@ -4409,11 +4420,11 @@ static bool Duration_toString(JSContext* cx, const CallArgs& args) {
     }
 
     
-    auto balanced = BalanceTimeDuration(
-        rounded, std::min(largestUnit, TemporalUnit::Second));
+    auto roundedLargestUnit = std::min(largestUnit, TemporalUnit::Second);
 
     
-    result = {
+    auto balanced = BalanceTimeDuration(rounded, roundedLargestUnit);
+    roundedDuration = {
         duration.years,           duration.months,
         duration.weeks,           duration.days + double(balanced.days),
         double(balanced.hours),   double(balanced.minutes),
@@ -4421,13 +4432,11 @@ static bool Duration_toString(JSContext* cx, const CallArgs& args) {
         balanced.microseconds,    balanced.nanoseconds,
     };
     MOZ_ASSERT(IsValidDuration(duration));
-  } else {
-    
-    result = duration;
   }
 
   
-  JSString* str = TemporalDurationToString(cx, result, precision.precision);
+  JSString* str =
+      TemporalDurationToString(cx, roundedDuration, precision.precision);
   if (!str) {
     return false;
   }
