@@ -3783,9 +3783,9 @@ pref("browser.ml.modelCacheTimeout", 120000);
 
 pref("browser.ml.minimumPhysicalMemory", 4);
 
-pref("browser.ml.defaultModelMemoryUsage", 2);
+pref("browser.ml.defaultModelMemoryUsage", 1);
 
-pref("browser.ml.checkForMemory", false);
+pref("browser.ml.checkForMemory", true);
 
 pref("browser.ml.maximumMemoryPressure", 80);
 
