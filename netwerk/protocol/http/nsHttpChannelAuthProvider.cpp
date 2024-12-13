@@ -626,8 +626,7 @@ nsresult nsHttpChannelAuthProvider::GetCredentials(
         return 0;
       }
 
-      
-      if (lhs.algorithm == 0 || rhs.algorithm == 0) {
+      if (lhs.algorithm == rhs.algorithm) {
         return 0;
       }
 
