@@ -601,8 +601,7 @@ def exportTest262(
                 )  
 
                 
-                (_, fileExt) = os.path.splitext(fileName)
-                if fileExt != ".js":
+                if "_FIXTURE" in fileName or os.path.splitext(fileName)[1] != ".js":
                     shutil.copyfile(filePath, os.path.join(currentOutDir, fileName))
                     print("C %s" % testName)
                     continue
