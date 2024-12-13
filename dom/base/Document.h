@@ -3375,8 +3375,8 @@ class Document : public nsINode,
   void SetDocumentEditableFlag(bool);
   MOZ_CAN_RUN_SCRIPT
   bool ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
-                   const nsAString& aValue, nsIPrincipal& aSubjectPrincipal,
-                   mozilla::ErrorResult& aRv);
+                   const TrustedHTMLOrString& aValue,
+                   nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& aRv);
   MOZ_CAN_RUN_SCRIPT bool QueryCommandEnabled(const nsAString& aHTMLCommandName,
                                               nsIPrincipal& aSubjectPrincipal,
                                               mozilla::ErrorResult& aRv);
@@ -4425,8 +4425,10 @@ class Document : public nsINode,
 
 
 
-  static InternalCommandData ConvertToInternalCommand(
-      const nsAString& aHTMLCommandName, const nsAString& aValue = u""_ns,
+
+  MOZ_CAN_RUN_SCRIPT InternalCommandData ConvertToInternalCommand(
+      const nsAString& aHTMLCommandName,
+      const TrustedHTMLOrString* aValue = nullptr, ErrorResult* aRv = nullptr,
       nsAString* aAdjustedValue = nullptr);
 
   
