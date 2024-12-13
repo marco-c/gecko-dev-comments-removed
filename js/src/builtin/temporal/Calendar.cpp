@@ -322,14 +322,13 @@ int32_t js::temporal::MakeDay(const PlainDate& date) {
 
 
 
-int64_t js::temporal::MakeDate(const PlainDateTime& dateTime) {
-  MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
+int64_t js::temporal::MakeDate(const PlainDate& date) {
+  MOZ_ASSERT(ISODateWithinLimits(date));
 
   
 
   
-  int64_t tv = MakeDay(dateTime.date) * ToMilliseconds(TemporalUnit::Day) +
-               MakeTime(dateTime.time);
+  int64_t tv = MakeDay(date) * ToMilliseconds(TemporalUnit::Day);
 
   
   return tv;
@@ -338,24 +337,14 @@ int64_t js::temporal::MakeDate(const PlainDateTime& dateTime) {
 
 
 
-static int32_t MakeDay(int32_t year, int32_t month, int32_t day) {
-  MOZ_ASSERT(1 <= month && month <= 12);
-
-  
-  return DayFromYear(year) + ::ToISODayOfYear(year, month, day) - 1;
-}
-
-
-
-
-int64_t js::temporal::MakeDate(int32_t year, int32_t month, int32_t day) {
-  
-  MOZ_ASSERT(1 <= month && month <= 12);
+int64_t js::temporal::MakeDate(const PlainDateTime& dateTime) {
+  MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
 
   
 
   
-  int64_t tv = ::MakeDay(year, month, day) * ToMilliseconds(TemporalUnit::Day);
+  int64_t tv = MakeDay(dateTime.date) * ToMilliseconds(TemporalUnit::Day) +
+               MakeTime(dateTime.time);
 
   
   return tv;

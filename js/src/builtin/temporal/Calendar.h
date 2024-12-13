@@ -206,12 +206,12 @@ int32_t MakeDay(const PlainDate& date);
 
 
 
+int64_t MakeDate(const PlainDate& date);
+
+
+
+
 int64_t MakeDate(const PlainDateTime& dateTime);
-
-
-
-
-int64_t MakeDate(int32_t year, int32_t month, int32_t day);
 
 
 

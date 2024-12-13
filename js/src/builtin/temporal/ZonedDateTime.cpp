@@ -1798,9 +1798,12 @@ static bool ZonedDateTime_hoursInDay(JSContext* cx, const CallArgs& args) {
   const auto& today = dateTime.date;
 
   
-
-  
   auto tomorrow = BalanceISODate(today, 1);
+  if (!ISODateWithinLimits(tomorrow)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_PLAIN_DATE_INVALID);
+    return false;
+  }
 
   
   Instant todayNs;
@@ -2517,9 +2520,12 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
     const auto& dateStart = dateTime.date;
 
     
-
-    
     auto dateEnd = BalanceISODate(dateStart, 1);
+    if (!ISODateWithinLimits(dateEnd)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TEMPORAL_PLAIN_DATE_INVALID);
+      return false;
+    }
 
     
     Instant startNs;
