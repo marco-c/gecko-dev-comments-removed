@@ -487,9 +487,6 @@ function makeExpectedResult({
   let keywordSubstringNotTyped = fullKeyword.substring(searchString.length);
   let description = suggestion.description;
   switch (source) {
-    case "remote-settings":
-      provider = "PocketSuggestions";
-      break;
     case "rust":
       provider = "Pocket";
       
