@@ -390,9 +390,14 @@ export async function createPause(threadActorID, pausedThreadState) {
 }
 
 export function createThread(targetFront) {
-  const name = targetFront.isTopLevel
-    ? L10N.getStr("mainThread")
-    : targetFront.name;
+  
+  
+  
+  const name =
+    targetFront.isTopLevel &&
+    !targetFront.commands.descriptorFront.isWebExtension
+      ? L10N.getStr("mainThread")
+      : targetFront.name;
 
   return {
     actor: targetFront.targetForm.threadActor,
