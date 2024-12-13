@@ -181,32 +181,12 @@ enum class TemporalUnit;
 
 
 
-int32_t ISODaysInYear(int32_t year);
-
-
-
-
 int32_t ISODaysInMonth(int32_t year, int32_t month);
 
 
 
 
-int32_t ISODaysInMonth(double year, int32_t month);
-
-
-
-
-int32_t ToISODayOfYear(const PlainDate& date);
-
-
-
-
 int32_t MakeDay(const PlainDate& date);
-
-
-
-
-int64_t MakeDate(const PlainDate& date);
 
 
 

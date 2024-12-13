@@ -63,12 +63,10 @@ static inline bool IsPlainYearMonth(Handle<Value> v) {
 
 
 
-template <typename T>
-static bool ISOYearMonthWithinLimits(T year, int32_t month) {
-  static_assert(std::is_same_v<T, int32_t> || std::is_same_v<T, double>);
+bool js::temporal::ISOYearMonthWithinLimits(const PlainDate& isoDate) {
+  MOZ_ASSERT(IsValidISODate(isoDate));
 
-  MOZ_ASSERT(IsInteger(year));
-  MOZ_ASSERT(1 <= month && month <= 12);
+  const auto& [year, month, day] = isoDate;
 
   
   if (year < -271821 || year > 275760) {
@@ -92,28 +90,11 @@ static bool ISOYearMonthWithinLimits(T year, int32_t month) {
 
 
 
-bool js::temporal::ISOYearMonthWithinLimits(int32_t year, int32_t month) {
-  return ::ISOYearMonthWithinLimits(year, month);
-}
-
-
-
-
-
 static PlainYearMonthObject* CreateTemporalYearMonth(
-    JSContext* cx, const CallArgs& args, double isoYear, double isoMonth,
-    double isoDay, Handle<CalendarValue> calendar) {
-  MOZ_ASSERT(IsInteger(isoYear));
-  MOZ_ASSERT(IsInteger(isoMonth));
-  MOZ_ASSERT(IsInteger(isoDay));
-
+    JSContext* cx, const CallArgs& args, const PlainDate& isoDate,
+    Handle<CalendarValue> calendar) {
   
-  if (!ThrowIfInvalidISODate(cx, isoYear, isoMonth, isoDay)) {
-    return nullptr;
-  }
-
-  
-  if (!::ISOYearMonthWithinLimits(isoYear, int32_t(isoMonth))) {
+  if (!ISOYearMonthWithinLimits(isoDate)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_PLAIN_YEAR_MONTH_INVALID);
     return nullptr;
@@ -126,108 +107,70 @@ static PlainYearMonthObject* CreateTemporalYearMonth(
     return nullptr;
   }
 
-  auto* obj = NewObjectWithClassProto<PlainYearMonthObject>(cx, proto);
-  if (!obj) {
+  auto* object = NewObjectWithClassProto<PlainYearMonthObject>(cx, proto);
+  if (!object) {
     return nullptr;
   }
 
   
-  obj->setFixedSlot(PlainYearMonthObject::ISO_YEAR_SLOT,
-                    Int32Value(int32_t(isoYear)));
+  auto packedDate = PackedDate::pack(isoDate);
+  object->setFixedSlot(PlainYearMonthObject::PACKED_DATE_SLOT,
+                       PrivateUint32Value(packedDate.value));
 
   
-  obj->setFixedSlot(PlainYearMonthObject::ISO_MONTH_SLOT,
-                    Int32Value(int32_t(isoMonth)));
+  object->setFixedSlot(PlainYearMonthObject::CALENDAR_SLOT,
+                       calendar.toSlotValue());
 
   
-  obj->setFixedSlot(PlainYearMonthObject::CALENDAR_SLOT,
-                    calendar.toSlotValue());
-
-  
-  obj->setFixedSlot(PlainYearMonthObject::ISO_DAY_SLOT,
-                    Int32Value(int32_t(isoDay)));
-
-  
-  return obj;
+  return object;
 }
-
-
-
-
-
-static PlainYearMonthObject* CreateTemporalYearMonth(
-    JSContext* cx, const PlainDate& date, Handle<CalendarValue> calendar) {
-  const auto& [isoYear, isoMonth, isoDay] = date;
-
-  
-  if (!ThrowIfInvalidISODate(cx, date)) {
-    return nullptr;
-  }
-
-  
-  if (!::ISOYearMonthWithinLimits(isoYear, isoMonth)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEMPORAL_PLAIN_YEAR_MONTH_INVALID);
-    return nullptr;
-  }
-
-  
-  auto* obj = NewBuiltinClassInstance<PlainYearMonthObject>(cx);
-  if (!obj) {
-    return nullptr;
-  }
-
-  
-  obj->setFixedSlot(PlainYearMonthObject::ISO_YEAR_SLOT, Int32Value(isoYear));
-
-  
-  obj->setFixedSlot(PlainYearMonthObject::ISO_MONTH_SLOT, Int32Value(isoMonth));
-
-  
-  obj->setFixedSlot(PlainYearMonthObject::CALENDAR_SLOT,
-                    calendar.toSlotValue());
-
-  
-  obj->setFixedSlot(PlainYearMonthObject::ISO_DAY_SLOT, Int32Value(isoDay));
-
-  
-  return obj;
-}
-
 
 
 
 
 PlainYearMonthObject* js::temporal::CreateTemporalYearMonth(
     JSContext* cx, Handle<PlainYearMonthWithCalendar> yearMonth) {
-  MOZ_ASSERT(
-      ISOYearMonthWithinLimits(yearMonth.date().year, yearMonth.date().month));
-  return CreateTemporalYearMonth(cx, yearMonth, yearMonth.calendar());
+  MOZ_ASSERT(IsValidISODate(yearMonth));
+
+  
+  MOZ_ASSERT(ISOYearMonthWithinLimits(yearMonth));
+
+  
+  auto* object = NewBuiltinClassInstance<PlainYearMonthObject>(cx);
+  if (!object) {
+    return nullptr;
+  }
+
+  
+  auto packedDate = PackedDate::pack(yearMonth);
+  object->setFixedSlot(PlainYearMonthObject::PACKED_DATE_SLOT,
+                       PrivateUint32Value(packedDate.value));
+
+  
+  object->setFixedSlot(PlainYearMonthObject::CALENDAR_SLOT,
+                       yearMonth.calendar().toSlotValue());
+
+  
+  return object;
 }
 
 
 
 
-
 bool js::temporal::CreateTemporalYearMonth(
-    JSContext* cx, const PlainDate& date, Handle<CalendarValue> calendar,
+    JSContext* cx, const PlainDate& isoDate, Handle<CalendarValue> calendar,
     MutableHandle<PlainYearMonthWithCalendar> result) {
-  const auto& [isoYear, isoMonth, isoDay] = date;
+  MOZ_ASSERT(IsValidISODate(isoDate));
 
   
-  if (!ThrowIfInvalidISODate(cx, date)) {
-    return false;
-  }
-
-  
-  if (!::ISOYearMonthWithinLimits(isoYear, isoMonth)) {
+  if (!ISOYearMonthWithinLimits(isoDate)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_PLAIN_YEAR_MONTH_INVALID);
     return false;
   }
 
   
-  result.set(PlainYearMonthWithCalendar{date, calendar});
+  result.set(PlainYearMonthWithCalendar{isoDate, calendar});
   return true;
 }
 
@@ -272,7 +215,7 @@ static bool ToTemporalYearMonth(
 
   
   if (auto* plainYearMonth = item->maybeUnwrapIf<PlainYearMonthObject>()) {
-    auto date = ToPlainDate(plainYearMonth);
+    auto date = plainYearMonth->date();
     Rooted<CalendarValue> calendar(cx, plainYearMonth->calendar());
     if (!calendar.wrap(cx)) {
       return false;
@@ -735,8 +678,16 @@ static bool PlainYearMonthConstructor(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  auto* yearMonth =
-      CreateTemporalYearMonth(cx, args, isoYear, isoMonth, isoDay, calendar);
+  if (!ThrowIfInvalidISODate(cx, isoYear, isoMonth, isoDay)) {
+    return false;
+  }
+
+  
+  auto isoDate =
+      PlainDate{int32_t(isoYear), int32_t(isoMonth), int32_t(isoDay)};
+
+  
+  auto* yearMonth = CreateTemporalYearMonth(cx, args, isoDate, calendar);
   if (!yearMonth) {
     return false;
   }
@@ -824,7 +775,7 @@ static bool PlainYearMonth_era(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
 
   
-  return CalendarEra(cx, calendar, ToPlainDate(yearMonth), args.rval());
+  return CalendarEra(cx, calendar, yearMonth->date(), args.rval());
 }
 
 
@@ -844,7 +795,7 @@ static bool PlainYearMonth_eraYear(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
 
   
-  return CalendarEraYear(cx, calendar, ToPlainDate(yearMonth), args.rval());
+  return CalendarEraYear(cx, calendar, yearMonth->date(), args.rval());
 }
 
 
@@ -865,7 +816,7 @@ static bool PlainYearMonth_year(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
 
   
-  return CalendarYear(cx, calendar, ToPlainDate(yearMonth), args.rval());
+  return CalendarYear(cx, calendar, yearMonth->date(), args.rval());
 }
 
 
@@ -885,7 +836,7 @@ static bool PlainYearMonth_month(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
 
   
-  return CalendarMonth(cx, calendar, ToPlainDate(yearMonth), args.rval());
+  return CalendarMonth(cx, calendar, yearMonth->date(), args.rval());
 }
 
 
@@ -905,7 +856,7 @@ static bool PlainYearMonth_monthCode(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
 
   
-  return CalendarMonthCode(cx, calendar, ToPlainDate(yearMonth), args.rval());
+  return CalendarMonthCode(cx, calendar, yearMonth->date(), args.rval());
 }
 
 
@@ -926,7 +877,7 @@ static bool PlainYearMonth_daysInYear(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
 
   
-  return CalendarDaysInYear(cx, calendar, ToPlainDate(yearMonth), args.rval());
+  return CalendarDaysInYear(cx, calendar, yearMonth->date(), args.rval());
 }
 
 
@@ -947,7 +898,7 @@ static bool PlainYearMonth_daysInMonth(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
 
   
-  return CalendarDaysInMonth(cx, calendar, ToPlainDate(yearMonth), args.rval());
+  return CalendarDaysInMonth(cx, calendar, yearMonth->date(), args.rval());
 }
 
 
@@ -969,8 +920,7 @@ static bool PlainYearMonth_monthsInYear(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
 
   
-  return CalendarMonthsInYear(cx, calendar, ToPlainDate(yearMonth),
-                              args.rval());
+  return CalendarMonthsInYear(cx, calendar, yearMonth->date(), args.rval());
 }
 
 
@@ -992,7 +942,7 @@ static bool PlainYearMonth_inLeapYear(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
 
   
-  return CalendarInLeapYear(cx, calendar, ToPlainDate(yearMonth), args.rval());
+  return CalendarInLeapYear(cx, calendar, yearMonth->date(), args.rval());
 }
 
 
@@ -1166,7 +1116,7 @@ static bool PlainYearMonth_since(JSContext* cx, unsigned argc, Value* vp) {
 
 static bool PlainYearMonth_equals(JSContext* cx, const CallArgs& args) {
   auto* yearMonth = &args.thisv().toObject().as<PlainYearMonthObject>();
-  auto date = ToPlainDate(yearMonth);
+  auto date = yearMonth->date();
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
 
   

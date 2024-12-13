@@ -25,47 +25,21 @@ class PlainTimeObject : public NativeObject {
   static const JSClass class_;
   static const JSClass& protoClass_;
 
-  
-  
-  
-  
+  static constexpr uint32_t PACKED_TIME_SLOT = 0;
+  static constexpr uint32_t SLOT_COUNT = 1;
+
   
 
-  static constexpr uint32_t HOUR_SLOT = 0;
-  static constexpr uint32_t MINUTE_SLOT = 1;
-  static constexpr uint32_t SECOND_SLOT = 2;
-  static constexpr uint32_t MILLISECOND_SLOT = 3;
-  static constexpr uint32_t MICROSECOND_SLOT = 4;
-  static constexpr uint32_t NANOSECOND_SLOT = 5;
-  static constexpr uint32_t SLOT_COUNT = 6;
 
-  int32_t hour() const { return getFixedSlot(HOUR_SLOT).toInt32(); }
-
-  int32_t minute() const { return getFixedSlot(MINUTE_SLOT).toInt32(); }
-
-  int32_t second() const { return getFixedSlot(SECOND_SLOT).toInt32(); }
-
-  int32_t millisecond() const {
-    return getFixedSlot(MILLISECOND_SLOT).toInt32();
+  PlainTime time() const {
+    auto packed = PackedTime{mozilla::BitwiseCast<uint64_t>(
+        getFixedSlot(PACKED_TIME_SLOT).toDouble())};
+    return PackedTime::unpack(packed);
   }
-
-  int32_t microsecond() const {
-    return getFixedSlot(MICROSECOND_SLOT).toInt32();
-  }
-
-  int32_t nanosecond() const { return getFixedSlot(NANOSECOND_SLOT).toInt32(); }
 
  private:
   static const ClassSpec classSpec_;
 };
-
-
-
-
-inline PlainTime ToPlainTime(const PlainTimeObject* time) {
-  return {time->hour(),        time->minute(),      time->second(),
-          time->millisecond(), time->microsecond(), time->nanosecond()};
-}
 
 class Increment;
 enum class TemporalOverflow;
@@ -96,7 +70,6 @@ bool ThrowIfInvalidTime(JSContext* cx, const PlainTime& time);
 bool ThrowIfInvalidTime(JSContext* cx, double hour, double minute,
                         double second, double millisecond, double microsecond,
                         double nanosecond);
-
 
 
 

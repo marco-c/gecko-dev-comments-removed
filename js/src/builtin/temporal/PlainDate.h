@@ -34,22 +34,17 @@ class PlainDateObject : public NativeObject {
   static const JSClass class_;
   static const JSClass& protoClass_;
 
-  
-  
-  
+  static constexpr uint32_t PACKED_DATE_SLOT = 0;
+  static constexpr uint32_t CALENDAR_SLOT = 1;
+  static constexpr uint32_t SLOT_COUNT = 2;
+
   
 
-  static constexpr uint32_t ISO_YEAR_SLOT = 0;
-  static constexpr uint32_t ISO_MONTH_SLOT = 1;
-  static constexpr uint32_t ISO_DAY_SLOT = 2;
-  static constexpr uint32_t CALENDAR_SLOT = 3;
-  static constexpr uint32_t SLOT_COUNT = 4;
 
-  int32_t isoYear() const { return getFixedSlot(ISO_YEAR_SLOT).toInt32(); }
-
-  int32_t isoMonth() const { return getFixedSlot(ISO_MONTH_SLOT).toInt32(); }
-
-  int32_t isoDay() const { return getFixedSlot(ISO_DAY_SLOT).toInt32(); }
+  PlainDate date() const {
+    auto packed = PackedDate{getFixedSlot(PACKED_DATE_SLOT).toPrivateUint32()};
+    return PackedDate::unpack(packed);
+  }
 
   CalendarValue calendar() const {
     return CalendarValue(getFixedSlot(CALENDAR_SLOT));
@@ -59,13 +54,6 @@ class PlainDateObject : public NativeObject {
   static const ClassSpec classSpec_;
 };
 
-
-
-
-inline PlainDate ToPlainDate(const PlainDateObject* date) {
-  return {date->isoYear(), date->isoMonth(), date->isoDay()};
-}
-
 enum class TemporalOverflow;
 enum class TemporalUnit;
 
@@ -74,11 +62,6 @@ enum class TemporalUnit;
 
 
 bool IsValidISODate(const PlainDate& date);
-
-
-
-
-bool IsValidISODate(double year, double month, double day);
 #endif
 
 
@@ -95,12 +78,7 @@ bool ThrowIfInvalidISODate(JSContext* cx, double year, double month,
 
 
 
-bool ISODateWithinLimits(const PlainDate& date);
-
-
-
-
-bool ISODateWithinLimits(double year, double month, double day);
+bool ISODateWithinLimits(const PlainDate& isoDate);
 
 class MOZ_STACK_CLASS PlainDateWithCalendar final {
   PlainDate date_;
@@ -115,7 +93,7 @@ class MOZ_STACK_CLASS PlainDateWithCalendar final {
   }
 
   explicit PlainDateWithCalendar(const PlainDateObject* date)
-      : PlainDateWithCalendar(ToPlainDate(date), date->calendar()) {}
+      : PlainDateWithCalendar(date->date(), date->calendar()) {}
 
   const auto& date() const { return date_; }
   const auto& calendar() const { return calendar_; }
@@ -133,7 +111,7 @@ class MOZ_STACK_CLASS PlainDateWithCalendar final {
 
 
 
-PlainDateObject* CreateTemporalDate(JSContext* cx, const PlainDate& date,
+PlainDateObject* CreateTemporalDate(JSContext* cx, const PlainDate& isoDate,
                                     JS::Handle<CalendarValue> calendar);
 
 
@@ -145,21 +123,15 @@ PlainDateObject* CreateTemporalDate(JSContext* cx,
 
 
 
-bool CreateTemporalDate(JSContext* cx, const PlainDate& date,
+bool CreateTemporalDate(JSContext* cx, const PlainDate& isoDate,
                         JS::Handle<CalendarValue> calendar,
                         JS::MutableHandle<PlainDateWithCalendar> result);
 
-struct RegulatedISODate final {
-  double year = 0;
-  int32_t month = 0;
-  int32_t day = 0;
-};
 
 
 
-
-bool RegulateISODate(JSContext* cx, double year, double month, double day,
-                     TemporalOverflow overflow, RegulatedISODate* result);
+bool RegulateISODate(JSContext* cx, int32_t year, double month, double day,
+                     TemporalOverflow overflow, PlainDate* result);
 
 
 

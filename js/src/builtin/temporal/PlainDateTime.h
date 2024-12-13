@@ -9,6 +9,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/Casting.h"
 
 #include <stdint.h>
 
@@ -32,45 +33,32 @@ class PlainDateTimeObject : public NativeObject {
   static const JSClass class_;
   static const JSClass& protoClass_;
 
+  static constexpr uint32_t PACKED_DATE_SLOT = 0;
+  static constexpr uint32_t PACKED_TIME_SLOT = 1;
+  static constexpr uint32_t CALENDAR_SLOT = 2;
+  static constexpr uint32_t SLOT_COUNT = 3;
+
   
-  
-  
 
-  static constexpr uint32_t ISO_YEAR_SLOT = 0;
-  static constexpr uint32_t ISO_MONTH_SLOT = 1;
-  static constexpr uint32_t ISO_DAY_SLOT = 2;
-  static constexpr uint32_t ISO_HOUR_SLOT = 3;
-  static constexpr uint32_t ISO_MINUTE_SLOT = 4;
-  static constexpr uint32_t ISO_SECOND_SLOT = 5;
-  static constexpr uint32_t ISO_MILLISECOND_SLOT = 6;
-  static constexpr uint32_t ISO_MICROSECOND_SLOT = 7;
-  static constexpr uint32_t ISO_NANOSECOND_SLOT = 8;
-  static constexpr uint32_t CALENDAR_SLOT = 9;
-  static constexpr uint32_t SLOT_COUNT = 10;
 
-  int32_t isoYear() const { return getFixedSlot(ISO_YEAR_SLOT).toInt32(); }
-
-  int32_t isoMonth() const { return getFixedSlot(ISO_MONTH_SLOT).toInt32(); }
-
-  int32_t isoDay() const { return getFixedSlot(ISO_DAY_SLOT).toInt32(); }
-
-  int32_t isoHour() const { return getFixedSlot(ISO_HOUR_SLOT).toInt32(); }
-
-  int32_t isoMinute() const { return getFixedSlot(ISO_MINUTE_SLOT).toInt32(); }
-
-  int32_t isoSecond() const { return getFixedSlot(ISO_SECOND_SLOT).toInt32(); }
-
-  int32_t isoMillisecond() const {
-    return getFixedSlot(ISO_MILLISECOND_SLOT).toInt32();
+  PlainDate date() const {
+    auto packed = PackedDate{getFixedSlot(PACKED_DATE_SLOT).toPrivateUint32()};
+    return PackedDate::unpack(packed);
   }
 
-  int32_t isoMicrosecond() const {
-    return getFixedSlot(ISO_MICROSECOND_SLOT).toInt32();
+  
+
+
+  PlainTime time() const {
+    auto packed = PackedTime{mozilla::BitwiseCast<uint64_t>(
+        getFixedSlot(PACKED_TIME_SLOT).toDouble())};
+    return PackedTime::unpack(packed);
   }
 
-  int32_t isoNanosecond() const {
-    return getFixedSlot(ISO_NANOSECOND_SLOT).toInt32();
-  }
+  
+
+
+  PlainDateTime dateTime() const { return {date(), time()}; }
 
   CalendarValue calendar() const {
     return CalendarValue(getFixedSlot(CALENDAR_SLOT));
@@ -79,29 +67,6 @@ class PlainDateTimeObject : public NativeObject {
  private:
   static const ClassSpec classSpec_;
 };
-
-
-
-
-inline PlainDate ToPlainDate(const PlainDateTimeObject* dateTime) {
-  return {dateTime->isoYear(), dateTime->isoMonth(), dateTime->isoDay()};
-}
-
-
-
-
-inline PlainTime ToPlainTime(const PlainDateTimeObject* dateTime) {
-  return {dateTime->isoHour(),        dateTime->isoMinute(),
-          dateTime->isoSecond(),      dateTime->isoMillisecond(),
-          dateTime->isoMicrosecond(), dateTime->isoNanosecond()};
-}
-
-
-
-
-inline PlainDateTime ToPlainDateTime(const PlainDateTimeObject* dateTime) {
-  return {ToPlainDate(dateTime), ToPlainTime(dateTime)};
-}
 
 struct DifferenceSettings;
 class Increment;
@@ -115,14 +80,13 @@ enum class TemporalUnit;
 
 
 
-bool IsValidISODateTime(const PlainDateTime& dateTime);
+bool IsValidISODateTime(const PlainDateTime& isoDateTime);
 #endif
 
 
 
 
-
-bool ISODateTimeWithinLimits(const PlainDateTime& dateTime);
+bool ISODateTimeWithinLimits(const PlainDateTime& isoDateTime);
 
 class MOZ_STACK_CLASS PlainDateTimeWithCalendar final {
   PlainDateTime dateTime_;
@@ -138,8 +102,7 @@ class MOZ_STACK_CLASS PlainDateTimeWithCalendar final {
   }
 
   explicit PlainDateTimeWithCalendar(const PlainDateTimeObject* dateTime)
-      : PlainDateTimeWithCalendar(ToPlainDateTime(dateTime),
-                                  dateTime->calendar()) {}
+      : PlainDateTimeWithCalendar(dateTime->dateTime(), dateTime->calendar()) {}
 
   const auto& dateTime() const { return dateTime_; }
   const auto& date() const { return dateTime_.date; }
@@ -157,18 +120,9 @@ class MOZ_STACK_CLASS PlainDateTimeWithCalendar final {
 
 
 
-inline const auto& ToPlainDateTime(const PlainDateTimeWithCalendar& dateTime) {
-  return dateTime.dateTime();
-}
-
-
-
-
-
 PlainDateTimeObject* CreateTemporalDateTime(JSContext* cx,
                                             const PlainDateTime& dateTime,
                                             JS::Handle<CalendarValue> calendar);
-
 
 
 
