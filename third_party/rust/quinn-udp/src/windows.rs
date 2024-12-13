@@ -10,11 +10,17 @@ use std::{
 
 use libc::{c_int, c_uint};
 use once_cell::sync::Lazy;
-use windows_sys::Win32::Networking::WinSock;
+use windows_sys::Win32::{
+    Networking::WinSock,
+    System::{
+        SystemInformation::IMAGE_FILE_MACHINE_ARM64,
+        Threading::{GetCurrentProcess, IsWow64Process2},
+    },
+};
 
 use crate::{
     cmsg::{self, CMsgHdr},
-    log::{debug, error},
+    log::debug,
     log_sendmsg_error, EcnCodepoint, RecvMeta, Transmit, UdpSockRef, IO_ERROR_LOG_INTERVAL,
 };
 
@@ -61,9 +67,10 @@ impl UdpSocketState {
 
         
         if WSARECVMSG_PTR.is_none() {
-            error!("network stack does not support WSARecvMsg function");
-
-            return Err(io::Error::from(io::ErrorKind::Unsupported));
+            return Err(io::Error::new(
+                io::ErrorKind::Unsupported,
+                "network stack does not support WSARecvMsg function",
+            ));
         }
 
         if is_ipv4 {
@@ -106,16 +113,33 @@ impl UdpSocketState {
             )?;
         }
 
-        
-        _ = set_socket_option(
-            &*socket.0,
-            WinSock::IPPROTO_UDP,
-            WinSock::UDP_RECV_MAX_COALESCED_SIZE,
-            
-            
-            
-            u16::MAX as u32,
-        );
+        match &*IS_WINDOWS_ON_ARM {
+            Ok(true) => {
+                
+                
+                
+                debug!("detected Windows on ARM host thus not enabling URO")
+            }
+            Ok(false) => {
+                
+                let result = set_socket_option(
+                    &*socket.0,
+                    WinSock::IPPROTO_UDP,
+                    WinSock::UDP_RECV_MAX_COALESCED_SIZE,
+                    
+                    
+                    
+                    u16::MAX as u32,
+                );
+
+                if let Err(_e) = result {
+                    debug!("failed to enable URO: {_e}");
+                }
+            }
+            Err(_e) => {
+                debug!("failed to detect host system thus not enabling URO: {_e}");
+            }
+        }
 
         let now = Instant::now();
         Ok(Self {
@@ -467,5 +491,31 @@ static MAX_GSO_SEGMENTS: Lazy<usize> = Lazy::new(|| {
         
         Ok(()) => 512,
         Err(_) => 1,
+    }
+});
+
+
+
+
+
+
+
+static IS_WINDOWS_ON_ARM: Lazy<io::Result<bool>> = Lazy::new(|| {
+    let mut process_machine: u16 = 0;
+    let mut native_machine: u16 = 0;
+
+    let result = unsafe {
+        IsWow64Process2(
+            GetCurrentProcess(),
+            &mut process_machine as *mut u16,
+            &mut native_machine as *mut u16,
+        )
+    };
+
+    match result {
+        
+        
+        0 => Err(io::Error::last_os_error()),
+        _ => Ok(native_machine == IMAGE_FILE_MACHINE_ARM64),
     }
 });
