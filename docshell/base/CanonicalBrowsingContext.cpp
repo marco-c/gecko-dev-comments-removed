@@ -1223,6 +1223,14 @@ void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
     mActiveEntry->SharedInfo()->mCacheKey = aUpdatedCacheKey;
   }
 
+  if (oldActiveEntry) {
+    
+    
+    
+    mActiveEntry->SetHasUserInteraction(
+        oldActiveEntry->GetHasUserInteraction());
+  }
+
   if (IsTop()) {
     Maybe<int32_t> previousEntryIndex, loadedEntryIndex;
     shistory->AddToRootSessionHistory(
