@@ -77,6 +77,7 @@ typedef bool (*JSSubsumesOp)(JSPrincipals* first, JSPrincipals* second);
 
 namespace JS {
 enum class RuntimeCode { JS, WASM };
+enum class CompilationType { DirectEval, IndirectEval, Function, Undefined };
 }  
 
 
@@ -89,8 +90,22 @@ enum class RuntimeCode { JS, WASM };
 
 
 
-typedef bool (*JSCSPEvalChecker)(JSContext* cx, JS::RuntimeCode kind,
-                                 JS::HandleString code);
+
+
+
+
+
+
+
+
+
+typedef bool (*JSCSPEvalChecker)(
+    JSContext* cx, JS::RuntimeCode kind, JS::Handle<JSString*> codeString,
+    JS::CompilationType compilationType,
+    JS::Handle<JS::StackGCVector<JSString*>> parameterStrings,
+    JS::Handle<JSString*> bodyString,
+    JS::Handle<JS::StackGCVector<JS::Value>> parameterArgs,
+    JS::Handle<JS::Value> bodyArg, bool* outCanCompileStrings);
 
 
 

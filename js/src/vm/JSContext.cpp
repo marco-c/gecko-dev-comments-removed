@@ -1233,15 +1233,24 @@ bool JSContext::isThrowingDebuggeeWouldRun() {
              JSEXN_DEBUGGEEWOULDRUN;
 }
 
-bool JSContext::isRuntimeCodeGenEnabled(JS::RuntimeCode kind,
-                                        HandleString code) {
+bool JSContext::isRuntimeCodeGenEnabled(
+    JS::RuntimeCode kind, JS::Handle<JSString*> codeString,
+    JS::CompilationType compilationType,
+    JS::Handle<JS::StackGCVector<JSString*>> parameterStrings,
+    JS::Handle<JSString*> bodyString,
+    JS::Handle<JS::StackGCVector<JS::Value>> parameterArgs,
+    JS::Handle<JS::Value> bodyArg, bool* outCanCompileStrings) {
   
   
   if (JSCSPEvalChecker allows =
           runtime()->securityCallbacks->contentSecurityPolicyAllows) {
-    return allows(this, kind, code);
+    return allows(this, kind, codeString, compilationType, parameterStrings,
+                  bodyString, parameterArgs, bodyArg, outCanCompileStrings);
   }
 
+  
+  
+  *outCanCompileStrings = true;
   return true;
 }
 
