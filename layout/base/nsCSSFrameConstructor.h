@@ -252,8 +252,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
-  bool ContentRemoved(nsIContent* aChild, nsIContent* aOldNextSibling,
-                      RemoveFlags aFlags);
+  bool ContentWillBeRemoved(nsIContent* aChild, RemoveFlags aFlags);
 
   void CharacterDataChanged(nsIContent* aContent,
                             const CharacterDataChangeInfo& aInfo);
@@ -2178,6 +2177,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   bool mQuotesDirty : 1;
   bool mCountersDirty : 1;
   bool mAlwaysCreateFramesForIgnorableWhitespace : 1;
+  bool mRemovingContent : 1;
 
   
   

@@ -1421,7 +1421,8 @@ nsCSSFrameConstructor::nsCSSFrameConstructor(Document* aDocument,
       mCurrentDepth(0),
       mQuotesDirty(false),
       mCountersDirty(false),
-      mAlwaysCreateFramesForIgnorableWhitespace(false) {
+      mAlwaysCreateFramesForIgnorableWhitespace(false),
+      mRemovingContent(false) {
 #ifdef DEBUG
   static bool gFirstTime = true;
   if (gFirstTime) {
@@ -7299,40 +7300,51 @@ static bool CanRemoveWrapperPseudoForChildRemoval(nsIFrame* aFrame,
   return true;
 }
 
-bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
-                                           nsIContent* aOldNextSibling,
-                                           RemoveFlags aFlags) {
+bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
+                                                 RemoveFlags aFlags) {
   MOZ_ASSERT(aChild);
-  MOZ_ASSERT(!aChild->IsRootOfNativeAnonymousSubtree() || !aOldNextSibling,
-             "Anonymous roots don't have siblings");
-  AUTO_PROFILER_LABEL_HOT("nsCSSFrameConstructor::ContentRemoved",
+  MOZ_ASSERT(
+      !aChild->IsRootOfNativeAnonymousSubtree() || !aChild->GetNextSibling(),
+      "Anonymous roots don't have siblings");
+  AUTO_PROFILER_LABEL_HOT("nsCSSFrameConstructor::ContentWillBeRemoved",
                           LAYOUT_FrameConstruction);
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
   nsPresContext* presContext = mPresShell->GetPresContext();
   MOZ_ASSERT(presContext, "Our presShell should have a valid presContext");
 
-  
-  
-  
-  
-  
-  
-  
-  if (aChild == presContext->GetViewportScrollStylesOverrideElement() ||
-      (aChild->IsElement() && !aChild->GetParent())) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Element* newOverrideElement =
-        presContext->UpdateViewportScrollStylesOverride();
+  const bool wasRemovingContent = mRemovingContent;
+  auto _ = MakeScopeExit([&] { mRemovingContent = wasRemovingContent; });
+  mRemovingContent = true;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if ((aChild == presContext->GetViewportScrollStylesOverrideElement() ||
+       aChild->IsRootElement()) &&
+      !wasRemovingContent) {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    const Element* removingElement =
+        aFlags == REMOVE_CONTENT ? aChild->AsElement() : nullptr;
+    Element* newOverrideElement =
+        presContext->UpdateViewportScrollStylesOverride(removingElement);
+
     
     
     
@@ -7356,9 +7368,8 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
 #ifdef DEBUG
   if (gNoisyContentUpdates) {
     printf(
-        "nsCSSFrameConstructor::ContentRemoved container=%p child=%p "
-        "old-next-sibling=%p\n",
-        aChild->GetParent(), aChild, aOldNextSibling);
+        "nsCSSFrameConstructor::ContentWillBeRemoved container=%p child=%p\n",
+        aChild->GetParent(), aChild);
     if (gReallyNoisyContentUpdates) {
       aChild->GetParent()->List(stdout, 0);
     }
@@ -7423,7 +7434,7 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
     for (nsIContent* c = iter.GetNextChild(); c; c = iter.GetNextChild()) {
       if (c->GetPrimaryFrame() || CouldHaveBeenDisplayContents(c)) {
         LAYOUT_PHASE_TEMP_EXIT();
-        bool didReconstruct = ContentRemoved(c, nullptr, aFlags);
+        bool didReconstruct = ContentWillBeRemoved(c, aFlags);
         LAYOUT_PHASE_TEMP_REENTER();
         if (didReconstruct) {
           return true;
@@ -7498,7 +7509,7 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
       
       
 #ifdef NOISY_FIRST_LETTER
-      printf("ContentRemoved: containingBlock=");
+      printf("ContentWillBeRemoved: containingBlock=");
       containingBlock->ListTag(stdout);
       printf(" parentFrame=");
       parentFrame->ListTag(stdout);
@@ -7533,7 +7544,7 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
 
 #ifdef DEBUG
     if (gReallyNoisyContentUpdates) {
-      printf("nsCSSFrameConstructor::ContentRemoved: childFrame=");
+      printf("nsCSSFrameConstructor::ContentWillBeRemoved: childFrame=");
       childFrame->ListTag(stdout);
       putchar('\n');
       parentFrame->List(stdout);
@@ -7579,7 +7590,7 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
     
     
     
-    if (aOldNextSibling && aFlags == REMOVE_CONTENT) {
+    if (aFlags == REMOVE_CONTENT) {
       MOZ_ASSERT(aChild->GetParentNode(),
                  "How did we have a sibling without a parent?");
       
@@ -7592,7 +7603,7 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
       
       
       
-      nsIContent* prevSibling = aOldNextSibling->GetPreviousSibling();
+      nsIContent* prevSibling = aChild->GetPreviousSibling();
       if (prevSibling && prevSibling->GetPreviousSibling()) {
         LAYOUT_PHASE_TEMP_EXIT();
         ReframeTextIfNeeded(prevSibling);
@@ -7600,17 +7611,19 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
       }
       
       
-      if (aOldNextSibling->GetNextSibling() &&
-          aOldNextSibling->GetPreviousSibling()) {
+      nsIContent* nextSibling = aChild->GetNextSibling();
+      if (nextSibling && prevSibling && nextSibling->GetNextSibling()) {
         LAYOUT_PHASE_TEMP_EXIT();
-        ReframeTextIfNeeded(aOldNextSibling);
+        ReframeTextIfNeeded(nextSibling);
         LAYOUT_PHASE_TEMP_REENTER();
       }
     }
 
 #ifdef DEBUG
     if (gReallyNoisyContentUpdates && parentFrame) {
-      printf("nsCSSFrameConstructor::ContentRemoved: resulting frame model:\n");
+      printf(
+          "nsCSSFrameConstructor::ContentWillBeRemoved: resulting frame "
+          "model:\n");
       parentFrame->List(stdout);
     }
 #endif
@@ -8473,13 +8486,8 @@ void nsCSSFrameConstructor::RecreateFramesForContent(
   }
 
   MOZ_ASSERT(aContent->GetParentNode());
-
-  
-  nsIContent* nextSibling = aContent->IsRootOfNativeAnonymousSubtree()
-                                ? nullptr
-                                : aContent->GetNextSibling();
-  bool didReconstruct =
-      ContentRemoved(aContent, nextSibling, REMOVE_FOR_RECONSTRUCTION);
+  const bool didReconstruct =
+      ContentWillBeRemoved(aContent, REMOVE_FOR_RECONSTRUCTION);
 
   if (!didReconstruct) {
     if (aInsertionKind == InsertionKind::Async && aContent->IsElement()) {
@@ -8504,12 +8512,7 @@ void nsCSSFrameConstructor::RecreateFramesForContent(
 
 bool nsCSSFrameConstructor::DestroyFramesFor(nsIContent* aContent) {
   MOZ_ASSERT(aContent && aContent->GetParentNode());
-
-  nsIContent* nextSibling = aContent->IsRootOfNativeAnonymousSubtree()
-                                ? nullptr
-                                : aContent->GetNextSibling();
-
-  return ContentRemoved(aContent, nextSibling, REMOVE_FOR_RECONSTRUCTION);
+  return ContentWillBeRemoved(aContent, REMOVE_FOR_RECONSTRUCTION);
 }
 
 
