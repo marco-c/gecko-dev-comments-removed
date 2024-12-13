@@ -581,7 +581,9 @@ def _get_clang_tidy_command(
             compilation_commands_path,
         ]
         + common_args
-        + sources
+        
+        
+        + [os.path.normpath(s).replace("\\", "\\\\") for s in sources]
     )
 
 
