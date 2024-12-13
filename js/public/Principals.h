@@ -92,8 +92,24 @@ enum class RuntimeCode { JS, WASM };
 typedef bool (*JSCSPEvalChecker)(JSContext* cx, JS::RuntimeCode kind,
                                  JS::HandleString code);
 
+
+
+
+
+
+
+
+
+
+
+
+
+typedef bool (*JSCodeForEvalOp)(JSContext* cx, JS::HandleObject code,
+                                JS::MutableHandle<JSString*> outCode);
+
 struct JSSecurityCallbacks {
   JSCSPEvalChecker contentSecurityPolicyAllows;
+  JSCodeForEvalOp codeForEvalGets;
   JSSubsumesOp subsumes;
 };
 
