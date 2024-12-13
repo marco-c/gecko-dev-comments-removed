@@ -750,8 +750,7 @@ void nsFocusManager::WindowRaised(mozIDOMWindowProxy* aWindow,
   
   nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
   docShellAsItem->GetTreeOwner(getter_AddRefs(treeOwner));
-  nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(treeOwner);
-  if (baseWindow) {
+  if (nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(treeOwner)) {
     bool isEnabled = true;
     if (NS_SUCCEEDED(baseWindow->GetEnabled(&isEnabled)) && !isEnabled) {
       return;
@@ -768,24 +767,30 @@ void nsFocusManager::WindowRaised(mozIDOMWindowProxy* aWindow,
   }
 
   
+  MoveFocusToWindowAfterRaise(window, aActionId);
+}
+
+void nsFocusManager::MoveFocusToWindowAfterRaise(nsPIDOMWindowOuter* aWindow,
+                                                 uint64_t aActionId) {
   nsCOMPtr<nsPIDOMWindowOuter> currentWindow;
   RefPtr<Element> currentFocus = GetFocusedDescendant(
-      window, eIncludeAllDescendants, getter_AddRefs(currentWindow));
+      aWindow, eIncludeAllDescendants, getter_AddRefs(currentWindow));
 
   NS_ASSERTION(currentWindow, "window raised with no window current");
   if (!currentWindow) {
     return;
   }
 
-  nsCOMPtr<nsIAppWindow> appWin(do_GetInterface(baseWindow));
   
   
   
   
   
   
-  Focus(currentWindow, currentFocus, 0, currentWindow != mFocusedWindow, false,
-        appWin != nullptr, true, aActionId);
+  Focus(currentWindow, currentFocus,  0,
+         currentWindow != mFocusedWindow,
+         false,
+         true,  true, aActionId);
 }
 
 void nsFocusManager::WindowLowered(mozIDOMWindowProxy* aWindow,
@@ -3020,6 +3025,11 @@ void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
 
   if (XRE_IsParentProcess()) {
     if (aWindow == mActiveWindow) {
+      if (!mFocusedWindow ||
+          !IsSameOrAncestor(aWindow->GetBrowsingContext(),
+                            mFocusedWindow->GetBrowsingContext())) {
+        MoveFocusToWindowAfterRaise(aWindow, aActionId);
+      }
       return;
     }
   } else {

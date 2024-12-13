@@ -304,6 +304,13 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
+
+  MOZ_CAN_RUN_SCRIPT void MoveFocusToWindowAfterRaise(nsPIDOMWindowOuter*,
+                                                      uint64_t aActionId);
+
+  
+
+
   void ActivateOrDeactivate(nsPIDOMWindowOuter* aWindow, bool aActive);
 
   
