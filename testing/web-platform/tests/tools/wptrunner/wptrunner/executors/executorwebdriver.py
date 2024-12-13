@@ -77,7 +77,11 @@ class WebDriverBaseProtocolPart(BaseProtocolPart):
     def set_timeout(self, timeout):
         self.webdriver.timeouts.script = timeout
 
-    def create_window(self, type="tab", **kwargs):
+    def create_window(self, type=None, **kwargs):
+        
+        
+        if type is None:
+            type = 'window' if 'webkitgtk:browserOptions' in self.parent.capabilities else 'tab'
         return self.webdriver.new_window(type_hint=type)
 
     @property
