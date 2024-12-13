@@ -2714,7 +2714,7 @@ class DisplaySVGText final : public DisplaySVGItem {
     MOZ_COUNT_CTOR(DisplaySVGText);
   }
 
-  MOZ_COUNTED_DTOR_OVERRIDE(DisplaySVGText)
+  MOZ_COUNTED_DTOR_FINAL(DisplaySVGText)
 
   NS_DISPLAY_DECL_NAME("DisplaySVGText", TYPE_SVG_TEXT)
 
@@ -2893,8 +2893,7 @@ void SVGTextFrame::MutationObserver::ContentInserted(nsIContent* aChild) {
   mFrame->NotifyGlyphMetricsChange(true);
 }
 
-void SVGTextFrame::MutationObserver::ContentRemoved(
-    nsIContent* aChild, nsIContent* aPreviousSibling) {
+void SVGTextFrame::MutationObserver::ContentWillBeRemoved(nsIContent* aChild) {
   mFrame->NotifyGlyphMetricsChange(true);
 }
 

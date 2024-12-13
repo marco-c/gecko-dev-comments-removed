@@ -386,13 +386,14 @@ void nsDisplayCanvasThemedBackground::Paint(nsDisplayListBuilder* aBuilder,
 
 
 
-class nsDisplayCanvasFocus : public nsPaintedDisplayItem {
+class nsDisplayCanvasFocus final : public nsPaintedDisplayItem {
  public:
   nsDisplayCanvasFocus(nsDisplayListBuilder* aBuilder, nsCanvasFrame* aFrame)
       : nsPaintedDisplayItem(aBuilder, aFrame) {
     MOZ_COUNT_CTOR(nsDisplayCanvasFocus);
   }
-  MOZ_COUNTED_DTOR_OVERRIDE(nsDisplayCanvasFocus)
+
+  MOZ_COUNTED_DTOR_FINAL(nsDisplayCanvasFocus)
 
   virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder,
                            bool* aSnap) const override {
