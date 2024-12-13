@@ -129,25 +129,6 @@ bool CreateTemporalDate(JSContext* cx, const ISODate& isoDate,
 
 
 
-bool RegulateISODate(JSContext* cx, int32_t year, double month, double day,
-                     TemporalOverflow overflow, ISODate* result);
-
-
-
-
-bool AddISODate(JSContext* cx, const ISODate& date,
-                const DateDuration& duration, TemporalOverflow overflow,
-                ISODate* result);
-
-
-
-
-DateDuration DifferenceISODate(const ISODate& start, const ISODate& end,
-                               TemporalUnit largestUnit);
-
-
-
-
 int32_t CompareISODate(const ISODate& one, const ISODate& two);
 
 
