@@ -732,9 +732,6 @@ void GCRuntime::updateCellPointers(Zone* zone, AllocKinds kinds) {
 
 
 
-
-
-
 static constexpr AllocKinds UpdatePhaseOne{AllocKind::SCRIPT,
                                            AllocKind::BASE_SHAPE,
                                            AllocKind::SHAPE,
@@ -747,31 +744,28 @@ static constexpr AllocKinds UpdatePhaseOne{AllocKind::SCRIPT,
                                            AllocKind::NORMAL_PROP_MAP,
                                            AllocKind::DICT_PROP_MAP};
 
-
-
-static constexpr AllocKinds UpdatePhaseThree{AllocKind::FUNCTION,
-                                             AllocKind::FUNCTION_EXTENDED,
-                                             AllocKind::OBJECT0,
-                                             AllocKind::OBJECT0_BACKGROUND,
-                                             AllocKind::OBJECT2,
-                                             AllocKind::OBJECT2_BACKGROUND,
-                                             AllocKind::ARRAYBUFFER4,
-                                             AllocKind::OBJECT4,
-                                             AllocKind::OBJECT4_BACKGROUND,
-                                             AllocKind::ARRAYBUFFER8,
-                                             AllocKind::OBJECT8,
-                                             AllocKind::OBJECT8_BACKGROUND,
-                                             AllocKind::ARRAYBUFFER12,
-                                             AllocKind::OBJECT12,
-                                             AllocKind::OBJECT12_BACKGROUND,
-                                             AllocKind::ARRAYBUFFER16,
-                                             AllocKind::OBJECT16,
-                                             AllocKind::OBJECT16_BACKGROUND};
+static constexpr AllocKinds UpdatePhaseTwo{AllocKind::FUNCTION,
+                                           AllocKind::FUNCTION_EXTENDED,
+                                           AllocKind::OBJECT0,
+                                           AllocKind::OBJECT0_BACKGROUND,
+                                           AllocKind::OBJECT2,
+                                           AllocKind::OBJECT2_BACKGROUND,
+                                           AllocKind::ARRAYBUFFER4,
+                                           AllocKind::OBJECT4,
+                                           AllocKind::OBJECT4_BACKGROUND,
+                                           AllocKind::ARRAYBUFFER8,
+                                           AllocKind::OBJECT8,
+                                           AllocKind::OBJECT8_BACKGROUND,
+                                           AllocKind::ARRAYBUFFER12,
+                                           AllocKind::OBJECT12,
+                                           AllocKind::OBJECT12_BACKGROUND,
+                                           AllocKind::ARRAYBUFFER16,
+                                           AllocKind::OBJECT16,
+                                           AllocKind::OBJECT16_BACKGROUND};
 
 void GCRuntime::updateAllCellPointers(MovingTracer* trc, Zone* zone) {
   updateCellPointers(zone, UpdatePhaseOne);
-
-  updateCellPointers(zone, UpdatePhaseThree);
+  updateCellPointers(zone, UpdatePhaseTwo);
 }
 
 
