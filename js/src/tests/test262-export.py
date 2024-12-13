@@ -45,12 +45,16 @@ def findAndCopyIncludes(dirPath: str, baseDir: str, includeDir: str) -> "list[st
 
         
         if os.path.exists(shellFile) and os.path.getsize(shellFile) > 0:
-            
-            includeFileName = "sm/" + relPath.replace("/", "-") + "-shell.js"
-            includes.append(includeFileName)
+            with open(shellFile, "rb") as f:
+                testSource = f.read()
 
-            includesPath = os.path.join(includeDir, includeFileName)
-            shutil.copyfile(shellFile, includesPath)
+            if b"// SKIP test262 export" not in testSource:
+                
+                includeFileName = "sm/" + relPath.replace("/", "-") + "-shell.js"
+                includes.append(includeFileName)
+
+                includesPath = os.path.join(includeDir, includeFileName)
+                shutil.copyfile(shellFile, includesPath)
 
         relPath = os.path.split(relPath)[0]
 
