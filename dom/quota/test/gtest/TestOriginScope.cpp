@@ -4,6 +4,7 @@
 
 
 
+#include "QuotaManagerTestHelpers.h"
 #include "gtest/gtest.h"
 #include "mozilla/dom/quota/OriginScope.h"
 #include "nsStringFwd.h"
@@ -12,25 +13,7 @@
 
 namespace mozilla::dom::quota {
 
-namespace {
-
-PrincipalMetadata GetPrincipalMetadata(const nsCString& aGroup,
-                                       const nsCString& aOriginNoSuffix) {
-  return PrincipalMetadata{""_ns, aGroup, aOriginNoSuffix, aOriginNoSuffix,
-                            false};
-}
-
-PrincipalMetadata GetPrincipalMetadata(const nsCString& aSuffix,
-                                       const nsCString& aGroupNoSuffix,
-                                       const nsCString& aOriginNoSuffix) {
-  nsCString group = aGroupNoSuffix + aSuffix;
-  nsCString origin = aOriginNoSuffix + aSuffix;
-
-  return PrincipalMetadata{aSuffix, group, origin, origin,
-                            false};
-}
-
-}  
+using test::GetPrincipalMetadata;
 
 TEST(DOM_Quota_OriginScope, SanityChecks)
 {
