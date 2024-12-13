@@ -43,11 +43,9 @@ JSString* TemporalDateToString(JSContext* cx,
 
 
 
-
-JSString* TemporalDateTimeToString(JSContext* cx, const ISODateTime& dateTime,
-                                   JS::Handle<CalendarValue> calendar,
-                                   Precision precision,
-                                   ShowCalendar showCalendar);
+JSString* ISODateTimeToString(JSContext* cx, const ISODateTime& isoDateTime,
+                              JS::Handle<CalendarValue> calendar,
+                              Precision precision, ShowCalendar showCalendar);
 
 
 

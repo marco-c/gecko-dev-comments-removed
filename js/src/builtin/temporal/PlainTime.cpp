@@ -921,20 +921,16 @@ static bool DifferenceTemporalPlainTime(JSContext* cx,
   }
 
   
-  auto diff = DifferenceTime(temporalTime, other);
+  auto timeDuration = DifferenceTime(temporalTime, other);
 
   
-
-  
-  if (settings.smallestUnit != TemporalUnit::Nanosecond ||
-      settings.roundingIncrement != Increment{1}) {
-    diff = RoundTimeDuration(diff, settings.roundingIncrement,
-                             settings.smallestUnit, settings.roundingMode);
-  }
+  timeDuration =
+      RoundTimeDuration(timeDuration, settings.roundingIncrement,
+                        settings.smallestUnit, settings.roundingMode);
 
   
   Duration duration;
-  if (!TemporalDurationFromInternal(cx, diff, settings.largestUnit,
+  if (!TemporalDurationFromInternal(cx, timeDuration, settings.largestUnit,
                                     &duration)) {
     return false;
   }

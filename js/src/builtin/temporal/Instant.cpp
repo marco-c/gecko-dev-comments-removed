@@ -521,8 +521,6 @@ TimeDuration js::temporal::DifferenceInstant(
              MaximumTemporalDurationRoundingIncrement(smallestUnit));
 
   
-
-  
   auto diff = TimeDurationFromEpochNanosecondsDifference(ns2, ns1);
   MOZ_ASSERT(IsValidEpochDuration(diff.to<EpochDuration>()));
 

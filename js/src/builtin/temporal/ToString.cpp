@@ -310,8 +310,6 @@ static void FormatDateTimeUTCOffsetRounded(TemporalStringBuilder& result,
 static bool FormatCalendarAnnotation(TemporalStringBuilder& result,
                                      const CalendarValue& calendar,
                                      ShowCalendar showCalendar) {
-  
-
   switch (showCalendar) {
     case ShowCalendar::Never:
       return true;
@@ -424,14 +422,12 @@ JSString* js::temporal::TemporalDateToString(
 
 
 
-
-JSString* js::temporal::TemporalDateTimeToString(JSContext* cx,
-                                                 const ISODateTime& dateTime,
-                                                 Handle<CalendarValue> calendar,
-                                                 Precision precision,
-                                                 ShowCalendar showCalendar) {
-  
-  MOZ_ASSERT(IsValidISODateTime(dateTime));
+JSString* js::temporal::ISODateTimeToString(JSContext* cx,
+                                            const ISODateTime& isoDateTime,
+                                            Handle<CalendarValue> calendar,
+                                            Precision precision,
+                                            ShowCalendar showCalendar) {
+  MOZ_ASSERT(IsValidISODateTime(isoDateTime));
 
   TemporalStringBuilder result(cx, TemporalStringFormat::DateTime);
   if (!result.reserve()) {
@@ -439,7 +435,7 @@ JSString* js::temporal::TemporalDateTimeToString(JSContext* cx,
   }
 
   
-  FormatDateTimeString(result, dateTime, precision);
+  FormatDateTimeString(result, isoDateTime, precision);
 
   
   if (!FormatCalendarAnnotation(result, calendar, showCalendar)) {
