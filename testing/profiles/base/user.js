@@ -14,3 +14,7 @@ user_pref("extensions.formautofill.addresses.experiments.enabled", true);
 
 
 user_pref("app.update.disabledForTesting", true);
+
+
+
+user_pref("browser.startup.couldRestoreSession.count", -1);
