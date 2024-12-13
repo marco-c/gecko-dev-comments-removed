@@ -248,9 +248,8 @@ DurationObject* CreateTemporalDuration(JSContext* cx, const Duration& duration);
 
 
 
-bool ToTemporalDurationRecord(JSContext* cx,
-                              JS::Handle<JS::Value> temporalDurationLike,
-                              Duration* result);
+bool ToTemporalDuration(JSContext* cx, JS::Handle<JS::Value> item,
+                        Duration* result);
 
 
 

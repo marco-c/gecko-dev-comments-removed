@@ -1107,58 +1107,45 @@ static bool ToTemporalPartialDurationRecord(
 
 
 
-bool js::temporal::ToTemporalDurationRecord(JSContext* cx,
-                                            Handle<Value> temporalDurationLike,
-                                            Duration* result) {
+bool js::temporal::ToTemporalDuration(JSContext* cx, Handle<Value> item,
+                                      Duration* result) {
   
-  if (!temporalDurationLike.isObject()) {
+  if (item.isObject()) {
+    Rooted<JSObject*> itemObj(cx, &item.toObject());
+
     
-    if (!temporalDurationLike.isString()) {
-      ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK,
-                       temporalDurationLike, nullptr, "not a string");
+    if (auto* duration = itemObj->maybeUnwrapIf<DurationObject>()) {
+      *result = ToDuration(duration);
+      return true;
+    }
+
+    
+    Duration duration = {};
+
+    
+    if (!ToTemporalPartialDurationRecord(cx, itemObj, &duration)) {
       return false;
     }
-    Rooted<JSString*> string(cx, temporalDurationLike.toString());
 
     
-    return ParseTemporalDurationString(cx, string, result);
-  }
+    if (!ThrowIfInvalidDuration(cx, duration)) {
+      return false;
+    }
 
-  Rooted<JSObject*> durationLike(cx, &temporalDurationLike.toObject());
-
-  
-  if (auto* duration = durationLike->maybeUnwrapIf<DurationObject>()) {
-    *result = ToDuration(duration);
+    *result = duration;
     return true;
   }
 
   
-  Duration duration = {};
-
-  
-  if (!ToTemporalPartialDurationRecord(cx, durationLike, &duration)) {
+  if (!item.isString()) {
+    ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK, item,
+                     nullptr, "not a string");
     return false;
   }
+  Rooted<JSString*> string(cx, item.toString());
 
   
-  if (!ThrowIfInvalidDuration(cx, duration)) {
-    return false;
-  }
-
-  
-  *result = duration;
-  return true;
-}
-
-
-
-
-static bool ToTemporalDuration(JSContext* cx, Handle<Value> item,
-                               Duration* result) {
-  
-
-  
-  return ToTemporalDurationRecord(cx, item, result);
+  return ParseTemporalDurationString(cx, string, result);
 }
 
 
@@ -3165,7 +3152,7 @@ static bool AddDurations(JSContext* cx, DurationOperation operation,
 
   
   Duration other;
-  if (!ToTemporalDurationRecord(cx, args.get(0), &other)) {
+  if (!ToTemporalDuration(cx, args.get(0), &other)) {
     return false;
   }
 

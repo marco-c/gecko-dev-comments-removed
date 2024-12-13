@@ -396,11 +396,42 @@ bool js::temporal::CreateTemporalDate(
   return true;
 }
 
+struct DateOptions {
+  TemporalOverflow overflow = TemporalOverflow::Constrain;
+};
+
+
+
+
+static bool ToTemporalDateOptions(JSContext* cx, Handle<Value> options,
+                                  DateOptions* result) {
+  if (options.isUndefined()) {
+    *result = {};
+    return true;
+  }
+
+  
+
+  Rooted<JSObject*> resolvedOptions(
+      cx, RequireObjectArg(cx, "options", "from", options));
+  if (!resolvedOptions) {
+    return false;
+  }
+
+  auto overflow = TemporalOverflow::Constrain;
+  if (!GetTemporalOverflowOption(cx, resolvedOptions, &overflow)) {
+    return false;
+  }
+
+  *result = {overflow};
+  return true;
+}
+
 
 
 
 static bool ToTemporalDate(JSContext* cx, Handle<JSObject*> item,
-                           TemporalOverflow overflow,
+                           Handle<Value> options,
                            MutableHandle<PlainDateWithCalendar> result) {
   
 
@@ -409,6 +440,12 @@ static bool ToTemporalDate(JSContext* cx, Handle<JSObject*> item,
     auto date = ToPlainDate(plainDate);
     Rooted<CalendarValue> calendar(cx, plainDate->calendar());
     if (!calendar.wrap(cx)) {
+      return false;
+    }
+
+    
+    DateOptions ignoredOptions;
+    if (!ToTemporalDateOptions(cx, options, &ignoredOptions)) {
       return false;
     }
 
@@ -437,6 +474,12 @@ static bool ToTemporalDate(JSContext* cx, Handle<JSObject*> item,
     }
 
     
+    DateOptions ignoredOptions;
+    if (!ToTemporalDateOptions(cx, options, &ignoredOptions)) {
+      return false;
+    }
+
+    
     result.set(PlainDateWithCalendar{dateTime.date, calendar});
     return true;
   }
@@ -446,6 +489,12 @@ static bool ToTemporalDate(JSContext* cx, Handle<JSObject*> item,
     auto date = ToPlainDate(dateTime);
     Rooted<CalendarValue> calendar(cx, dateTime->calendar());
     if (!calendar.wrap(cx)) {
+      return false;
+    }
+
+    
+    DateOptions ignoredOptions;
+    if (!ToTemporalDateOptions(cx, options, &ignoredOptions)) {
       return false;
     }
 
@@ -474,6 +523,13 @@ static bool ToTemporalDate(JSContext* cx, Handle<JSObject*> item,
   }
 
   
+  DateOptions resolvedOptions;
+  if (!ToTemporalDateOptions(cx, options, &resolvedOptions)) {
+    return false;
+  }
+  auto [overflow] = resolvedOptions;
+
+  
   return CalendarDateFromFields(cx, calendar, fields, overflow, result);
 }
 
@@ -481,14 +537,14 @@ static bool ToTemporalDate(JSContext* cx, Handle<JSObject*> item,
 
 
 static bool ToTemporalDate(JSContext* cx, Handle<Value> item,
-                           TemporalOverflow overflow,
+                           Handle<Value> options,
                            MutableHandle<PlainDateWithCalendar> result) {
   
 
   
   if (item.isObject()) {
     Rooted<JSObject*> itemObj(cx, &item.toObject());
-    return ToTemporalDate(cx, itemObj, overflow, result);
+    return ToTemporalDate(cx, itemObj, options, result);
   }
 
   
@@ -518,6 +574,12 @@ static bool ToTemporalDate(JSContext* cx, Handle<Value> item,
   }
 
   
+  DateOptions ignoredOptions;
+  if (!ToTemporalDateOptions(cx, options, &ignoredOptions)) {
+    return false;
+  }
+
+  
   return CreateTemporalDate(cx, dateTime.date, calendar, result);
 }
 
@@ -526,7 +588,7 @@ static bool ToTemporalDate(JSContext* cx, Handle<Value> item,
 
 static bool ToTemporalDate(JSContext* cx, Handle<Value> item,
                            MutableHandle<PlainDateWithCalendar> result) {
-  return ToTemporalDate(cx, item, TemporalOverflow::Constrain, result);
+  return ToTemporalDate(cx, item, UndefinedHandleValue, result);
 }
 
 
@@ -1359,24 +1421,8 @@ static bool PlainDate_from(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  auto overflow = TemporalOverflow::Constrain;
-  if (args.hasDefined(1)) {
-    
-    Rooted<JSObject*> options(cx,
-                              RequireObjectArg(cx, "options", "from", args[1]));
-    if (!options) {
-      return false;
-    }
-
-    
-    if (!GetTemporalOverflowOption(cx, options, &overflow)) {
-      return false;
-    }
-  }
-
-  
   Rooted<PlainDateWithCalendar> date(cx);
-  if (!ToTemporalDate(cx, args.get(0), overflow, &date)) {
+  if (!ToTemporalDate(cx, args.get(0), args.get(1), &date)) {
     return false;
   }
 
@@ -1881,10 +1927,8 @@ static bool PlainDate_add(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-
-  
   Duration duration;
-  if (!ToTemporalDurationRecord(cx, args.get(0), &duration)) {
+  if (!ToTemporalDuration(cx, args.get(0), &duration)) {
     return false;
   }
 
@@ -1937,10 +1981,8 @@ static bool PlainDate_subtract(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-
-  
   Duration duration;
-  if (!ToTemporalDurationRecord(cx, args.get(0), &duration)) {
+  if (!ToTemporalDuration(cx, args.get(0), &duration)) {
     return false;
   }
 

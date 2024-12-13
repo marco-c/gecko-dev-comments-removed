@@ -438,8 +438,6 @@ static bool ToTemporalInstant(JSContext* cx, Handle<Value> item,
       *result = ToInstant(instant);
       return true;
     }
-
-    
     if (auto* zonedDateTime = itemObj->maybeUnwrapIf<ZonedDateTimeObject>()) {
       *result = ToInstant(zonedDateTime);
       return true;
@@ -662,7 +660,7 @@ static bool AddDurationToOrSubtractDurationFromInstant(
 
   
   Duration duration;
-  if (!ToTemporalDurationRecord(cx, args.get(0), &duration)) {
+  if (!ToTemporalDuration(cx, args.get(0), &duration)) {
     return false;
   }
 
