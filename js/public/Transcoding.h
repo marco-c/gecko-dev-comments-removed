@@ -21,12 +21,12 @@
 
 
 namespace js::frontend {
-struct CompilationStencil;
+struct InitialStencilAndDelazifications;
 }  
 
 namespace JS {
 
-using Stencil = js::frontend::CompilationStencil;
+using Stencil = js::frontend::InitialStencilAndDelazifications;
 
 class JS_PUBLIC_API ReadOnlyCompileOptions;
 

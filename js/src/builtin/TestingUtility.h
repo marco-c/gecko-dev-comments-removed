@@ -7,8 +7,9 @@
 #ifndef builtin_TestingUtility_h
 #define builtin_TestingUtility_h
 
-#include "js/RootingAPI.h"  
-#include "js/Utility.h"     
+#include "js/experimental/JSStencil.h"  
+#include "js/RootingAPI.h"              
+#include "js/Utility.h"                 
 
 struct JSContext;
 class JSObject;
@@ -69,8 +70,8 @@ JSObject* CreateScriptPrivate(JSContext* cx,
 
 
 
-bool ValidateLazinessOfStencilAndGlobal(
-    JSContext* cx, const frontend::CompilationStencil& stencil);
+bool ValidateLazinessOfStencilAndGlobal(JSContext* cx,
+                                        const JS::Stencil* stencil);
 
 bool ValidateModuleCompileOptions(JSContext* cx, JS::CompileOptions& options);
 

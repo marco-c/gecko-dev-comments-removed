@@ -56,12 +56,14 @@ bool testCompile() {
     RefPtr<JS::Stencil> stencil =
         CompileGlobalScriptToStencil(fc, options, buf16);
     CHECK(stencil);
-    CHECK(stencil->scriptExtra.size() == 1);
-    CHECK(stencil->scriptExtra[0].extent.sourceStart == 0);
-    CHECK(stencil->scriptExtra[0].extent.sourceEnd == 3);
-    CHECK(stencil->scriptData.size() == 1);
-    CHECK(stencil->scriptData[0].hasSharedData());  
-    CHECK(stencil->scriptData[0].gcThingsLength == 1);
+    RefPtr<const js::frontend::CompilationStencil> initial =
+        stencil->getInitial();
+    CHECK(initial->scriptExtra.size() == 1);
+    CHECK(initial->scriptExtra[0].extent.sourceStart == 0);
+    CHECK(initial->scriptExtra[0].extent.sourceEnd == 3);
+    CHECK(initial->scriptData.size() == 1);
+    CHECK(initial->scriptData[0].hasSharedData());  
+    CHECK(initial->scriptData[0].gcThingsLength == 1);
   }
 
   {  
@@ -72,12 +74,14 @@ bool testCompile() {
     RefPtr<JS::Stencil> stencil =
         CompileGlobalScriptToStencil(fc, options, buf8);
     CHECK(stencil);
-    CHECK(stencil->scriptExtra.size() == 1);
-    CHECK(stencil->scriptExtra[0].extent.sourceStart == 0);
-    CHECK(stencil->scriptExtra[0].extent.sourceEnd == 3);
-    CHECK(stencil->scriptData.size() == 1);
-    CHECK(stencil->scriptData[0].hasSharedData());  
-    CHECK(stencil->scriptData[0].gcThingsLength == 1);
+    RefPtr<const js::frontend::CompilationStencil> initial =
+        stencil->getInitial();
+    CHECK(initial->scriptExtra.size() == 1);
+    CHECK(initial->scriptExtra[0].extent.sourceStart == 0);
+    CHECK(initial->scriptExtra[0].extent.sourceEnd == 3);
+    CHECK(initial->scriptData.size() == 1);
+    CHECK(initial->scriptData[0].hasSharedData());  
+    CHECK(initial->scriptData[0].gcThingsLength == 1);
   }
 
   {  
@@ -150,13 +154,15 @@ bool testCompileModule() {
     RefPtr<JS::Stencil> stencil =
         CompileModuleScriptToStencil(fc, options, buf16);
     CHECK(stencil);
-    CHECK(stencil->isModule());
-    CHECK(stencil->scriptExtra.size() == 1);
-    CHECK(stencil->scriptExtra[0].extent.sourceStart == 0);
-    CHECK(stencil->scriptExtra[0].extent.sourceEnd == 15);
-    CHECK(stencil->scriptData.size() == 1);
-    CHECK(stencil->scriptData[0].hasSharedData());  
-    CHECK(stencil->scriptData[0].gcThingsLength == 1);
+    RefPtr<const js::frontend::CompilationStencil> initial =
+        stencil->getInitial();
+    CHECK(initial->isModule());
+    CHECK(initial->scriptExtra.size() == 1);
+    CHECK(initial->scriptExtra[0].extent.sourceStart == 0);
+    CHECK(initial->scriptExtra[0].extent.sourceEnd == 15);
+    CHECK(initial->scriptData.size() == 1);
+    CHECK(initial->scriptData[0].hasSharedData());  
+    CHECK(initial->scriptData[0].gcThingsLength == 1);
   }
 
   {  
@@ -167,12 +173,14 @@ bool testCompileModule() {
     RefPtr<JS::Stencil> stencil =
         CompileModuleScriptToStencil(fc, options, buf8);
     CHECK(stencil);
-    CHECK(stencil->scriptExtra.size() == 1);
-    CHECK(stencil->scriptExtra[0].extent.sourceStart == 0);
-    CHECK(stencil->scriptExtra[0].extent.sourceEnd == 15);
-    CHECK(stencil->scriptData.size() == 1);
-    CHECK(stencil->scriptData[0].hasSharedData());  
-    CHECK(stencil->scriptData[0].gcThingsLength == 1);
+    RefPtr<const js::frontend::CompilationStencil> initial =
+        stencil->getInitial();
+    CHECK(initial->scriptExtra.size() == 1);
+    CHECK(initial->scriptExtra[0].extent.sourceStart == 0);
+    CHECK(initial->scriptExtra[0].extent.sourceEnd == 15);
+    CHECK(initial->scriptData.size() == 1);
+    CHECK(initial->scriptData[0].hasSharedData());  
+    CHECK(initial->scriptData[0].gcThingsLength == 1);
   }
 
   {  
@@ -212,9 +220,11 @@ bool testPrepareForInstantiate() {
   RefPtr<JS::Stencil> stencil =
       CompileGlobalScriptToStencil(fc, options, buf16);
   CHECK(stencil);
-  CHECK(stencil->scriptData.size() == 2);
-  CHECK(stencil->scopeData.size() == 1);       
-  CHECK(stencil->parserAtomData.size() == 1);  
+  RefPtr<const js::frontend::CompilationStencil> initial =
+      stencil->getInitial();
+  CHECK(initial->scriptData.size() == 2);
+  CHECK(initial->scopeData.size() == 1);       
+  CHECK(initial->parserAtomData.size() == 1);  
 
   JS::InstantiationStorage storage;
   CHECK(JS::PrepareForInstantiate(fc, *stencil, storage));

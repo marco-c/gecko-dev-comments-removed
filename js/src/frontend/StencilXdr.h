@@ -11,7 +11,9 @@
 
 #include "frontend/ParserAtom.h"  
 #include "frontend/Stencil.h"  
-#include "vm/Xdr.h"            
+#include "js/CompileOptions.h"  
+#include "js/Transcoding.h"  
+#include "vm/Xdr.h"  
 
 namespace JS {
 
@@ -211,6 +213,15 @@ class XDRStencilEncoder : public XDRState<XDR_ENCODE> {
 
   XDRResult codeStencil(const frontend::CompilationStencil& stencil);
 };
+
+JS::TranscodeResult EncodeStencil(JSContext* cx,
+                                  frontend::CompilationStencil* stencil,
+                                  JS::TranscodeBuffer& buffer);
+
+JS::TranscodeResult DecodeStencil(JS::FrontendContext* fc,
+                                  const JS::ReadOnlyDecodeOptions& options,
+                                  const JS::TranscodeRange& range,
+                                  frontend::CompilationStencil** stencilOut);
 
 } 
 
