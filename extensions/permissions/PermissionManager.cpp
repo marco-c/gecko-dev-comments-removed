@@ -6,6 +6,9 @@
 
 #include "mozilla/AbstractThread.h"
 #include "mozilla/AppShutdown.h"
+#ifdef MOZ_BACKGROUNDTASKS
+#  include "mozilla/BackgroundTasks.h"
+#endif
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ContentPrincipal.h"
@@ -781,6 +784,7 @@ nsresult PermissionManager::Init() {
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   if (observerService) {
     observerService->AddObserver(this, "profile-do-change", true);
+    observerService->AddObserver(this, "profile-after-change", true);
     observerService->AddObserver(this, "testonly-reload-permissions-from-disk",
                                  true);
   }
@@ -2799,6 +2803,8 @@ NS_IMETHODIMP PermissionManager::Observe(nsISupports* aSubject,
     
     
     InitDB(false);
+  } else if (!nsCRT::strcmp(aTopic, "profile-after-change")) {
+    InitRemotePermissionService();
   } else if (!nsCRT::strcmp(aTopic, "testonly-reload-permissions-from-disk")) {
     
     
@@ -2810,6 +2816,7 @@ NS_IMETHODIMP PermissionManager::Observe(nsISupports* aSubject,
     RemoveAllFromMemory();
     CloseDB(eNone);
     InitDB(false);
+    InitRemotePermissionService();
   } else if (!nsCRT::strcmp(aTopic, OBSERVER_TOPIC_IDLE_DAILY)) {
     PerformIdleDailyMaintenance();
   }
@@ -3254,6 +3261,33 @@ void PermissionManager::CompleteRead() {
                      &entry.mOrigin);
     Unused << NS_WARN_IF(NS_FAILED(rv));
   }
+}
+
+void PermissionManager::InitRemotePermissionService() {
+  
+  if (!StaticPrefs::permissions_manager_remote_enabled()) {
+    return;
+  }
+
+  
+  
+  
+#ifdef MOZ_BACKGROUNDTASKS
+  if (BackgroundTasks::IsBackgroundTaskMode()) {
+    return;
+  }
+#endif
+
+  NS_DispatchToCurrentThreadQueue(
+      NS_NewRunnableFunction(
+          "RemotePermissionService::Init",
+          [&] {
+            nsCOMPtr<nsIRemotePermissionService> remotePermissionService =
+                do_GetService(NS_REMOTEPERMISSIONSERVICE_CONTRACTID);
+            NS_ENSURE_TRUE_VOID(remotePermissionService);
+            remotePermissionService->Init();
+          }),
+      EventQueuePriority::Idle);
 }
 
 void PermissionManager::MaybeAddReadEntryFromMigration(
