@@ -2115,8 +2115,8 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
     }
 
     
-    if (!GetInstantFor(cx, timeZone, temporalDateTime,
-                       TemporalDisambiguation::Compatible, &instant)) {
+    if (!GetEpochNanosecondsFor(cx, timeZone, temporalDateTime,
+                                TemporalDisambiguation::Compatible, &instant)) {
       return false;
     }
   }

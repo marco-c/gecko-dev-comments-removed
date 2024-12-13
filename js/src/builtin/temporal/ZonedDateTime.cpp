@@ -113,7 +113,8 @@ bool js::temporal::InterpretISODateTimeOffset(
       (offsetBehaviour == OffsetBehaviour::Option &&
        offsetOption == TemporalOffset::Ignore)) {
     
-    return GetInstantFor(cx, timeZone, dateTime, disambiguation, result);
+    return GetEpochNanosecondsFor(cx, timeZone, dateTime, disambiguation,
+                                  result);
   }
 
   
@@ -144,15 +145,15 @@ bool js::temporal::InterpretISODateTimeOffset(
              offsetOption == TemporalOffset::Reject);
 
   
-  PossibleInstants possibleInstants;
-  if (!GetPossibleInstantsFor(cx, timeZone, dateTime, &possibleInstants)) {
+  PossibleEpochNanoseconds possibleEpochNs;
+  if (!GetPossibleEpochNanoseconds(cx, timeZone, dateTime, &possibleEpochNs)) {
     return false;
   }
 
   
 
   
-  for (const auto& candidate : possibleInstants) {
+  for (const auto& candidate : possibleEpochNs) {
     
     int64_t candidateNanoseconds;
     if (!GetOffsetNanosecondsFor(cx, timeZone, candidate,
@@ -192,8 +193,8 @@ bool js::temporal::InterpretISODateTimeOffset(
 
   
   Instant instant;
-  if (!DisambiguatePossibleInstants(cx, possibleInstants, timeZone, dateTime,
-                                    disambiguation, &instant)) {
+  if (!DisambiguatePossibleEpochNanoseconds(
+          cx, possibleEpochNs, timeZone, dateTime, disambiguation, &instant)) {
     return false;
   }
 
@@ -634,9 +635,9 @@ static bool AddZonedDateTime(JSContext* cx, Handle<ZonedDateTime> zonedDateTime,
 
   
   Instant intermediateInstant;
-  if (!GetInstantFor(cx, zonedDateTime.timeZone(), intermediateDateTime,
-                     TemporalDisambiguation::Compatible,
-                     &intermediateInstant)) {
+  if (!GetEpochNanosecondsFor(
+          cx, zonedDateTime.timeZone(), intermediateDateTime,
+          TemporalDisambiguation::Compatible, &intermediateInstant)) {
     return false;
   }
 
@@ -720,9 +721,9 @@ static bool DifferenceZonedDateTime(JSContext* cx, const Instant& ns1,
 
     
     Instant intermediateInstant;
-    if (!GetInstantFor(cx, timeZone, intermediateDateTime,
-                       TemporalDisambiguation::Compatible,
-                       &intermediateInstant)) {
+    if (!GetEpochNanosecondsFor(cx, timeZone, intermediateDateTime,
+                                TemporalDisambiguation::Compatible,
+                                &intermediateInstant)) {
       return false;
     }
 
@@ -2242,8 +2243,8 @@ static bool ZonedDateTime_withPlainTime(JSContext* cx, const CallArgs& args) {
     }
 
     
-    if (!GetInstantFor(cx, timeZone, resultPlainDateTime,
-                       TemporalDisambiguation::Compatible, &instant)) {
+    if (!GetEpochNanosecondsFor(cx, timeZone, resultPlainDateTime,
+                                TemporalDisambiguation::Compatible, &instant)) {
       return false;
     }
   }
