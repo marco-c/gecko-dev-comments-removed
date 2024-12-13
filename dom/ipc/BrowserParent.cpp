@@ -351,9 +351,9 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
   
   
   
-  if (aBrowsingContext->Top()->IsPriorityActive()) {
-    ProcessPriorityManager::BrowserPriorityChanged(this, true);
-  }
+  
+  ProcessPriorityManager::BrowserPriorityChanged(
+      this, aBrowsingContext->Top()->IsPriorityActive());
 }
 
 BrowserParent::~BrowserParent() {
