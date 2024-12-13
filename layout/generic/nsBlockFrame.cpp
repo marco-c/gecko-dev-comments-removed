@@ -2545,44 +2545,38 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
 #endif
 }
 
-enum class RestrictPaddingInflation {
-  No,
-  Block,
-  Inline,
-};
 
 
 
-
-static RestrictPaddingInflation RestrictPaddingInflation(
+static bool RestrictPaddingInflationInInline(
     const nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
   if (aFrame->Style()->GetPseudoType() != PseudoStyleType::scrolledContent) {
     
     
-    return RestrictPaddingInflation::No;
+    return false;
   }
   
   
   const auto* parent = aFrame->GetParent();
   if (!parent) {
-    return RestrictPaddingInflation::No;
+    return false;
   }
   MOZ_ASSERT(parent->IsScrollContainerOrSubclass(), "Not a scrolled frame?");
 
   nsTextControlFrame* textControl = do_QueryFrame(parent->GetParent());
   if (MOZ_LIKELY(!textControl)) {
-    return RestrictPaddingInflation::No;
+    return false;
   }
 
   
   
   
   
-  
-  
-  return textControl->IsTextArea() ? RestrictPaddingInflation::Inline
-                                   : RestrictPaddingInflation::Block;
+  if (!textControl->IsTextArea()) {
+    return false;
+  }
+  return true;
 }
 
 nsRect nsBlockFrame::ComputePaddingInflatedScrollableOverflow(
@@ -2590,16 +2584,8 @@ nsRect nsBlockFrame::ComputePaddingInflatedScrollableOverflow(
   auto result = aInFlowChildBounds;
   const auto wm = GetWritingMode();
   auto padding = GetLogicalUsedPadding(wm);
-  const auto restriction = RestrictPaddingInflation(this);
-  switch (restriction) {
-    case RestrictPaddingInflation::Block:
-      padding.BStart(wm) = padding.BEnd(wm) = 0;
-      break;
-    case RestrictPaddingInflation::Inline:
-      padding.IStart(wm) = padding.IEnd(wm) = 0;
-      break;
-    case RestrictPaddingInflation::No:
-      break;
+  if (RestrictPaddingInflationInInline(this)) {
+    padding.IStart(wm) = padding.IEnd(wm) = 0;
   }
   result.Inflate(padding.GetPhysicalMargin(wm));
   return result;
