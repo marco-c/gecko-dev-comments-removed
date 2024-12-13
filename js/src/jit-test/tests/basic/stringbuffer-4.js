@@ -33,3 +33,24 @@ function testJoin() {
     assertEq(repr.bufferRefCount, 1);
 }
 testJoin();
+
+
+function testLowerCase() {
+    var str = "A".repeat(2000).toLowerCase();
+    var repr = JSON.parse(stringRepresentation(str));
+    assertEq(repr.flags.includes("HAS_STRING_BUFFER_BIT"), true);
+    assertEq(repr.bufferRefCount, 1);
+}
+testLowerCase();
+
+function testUpperCase(N) {
+    
+    
+    
+    var str = "ß".repeat(N).toUpperCase();
+    var repr = JSON.parse(stringRepresentation(str));
+    assertEq(repr.flags.includes("HAS_STRING_BUFFER_BIT"), true);
+    assertEq(repr.bufferRefCount, 1);
+}
+testUpperCase(1000);  
+testUpperCase(2000);  
