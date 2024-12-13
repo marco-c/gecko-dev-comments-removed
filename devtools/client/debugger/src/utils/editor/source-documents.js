@@ -91,7 +91,7 @@ const nonJSLanguageExtensionMap = new Map([
 
 
 
-export function getMode(source, sourceTextContent, symbols) {
+export function getMode(source, sourceTextContent) {
   const content = sourceTextContent.value;
   
   if (
@@ -107,18 +107,15 @@ export function getMode(source, sourceTextContent, symbols) {
   }
 
   const extension = source.displayURL.fileExtension;
-  if (extension === "jsx" || (symbols && symbols.hasJsx)) {
-    if (symbols && symbols.hasTypes) {
-      return contentTypeModeMap.get("text/typescript-jsx");
-    }
+  if (extension === "jsx") {
     return contentTypeModeMap.get("text/jsx");
   }
 
-  if (symbols && symbols.hasTypes) {
-    if (symbols.hasJsx) {
-      return contentTypeModeMap.get("text/typescript-jsx");
-    }
+  if (extension === "tsx") {
+    return contentTypeModeMap.get("text/typescript-jsx");
+  }
 
+  if (extension === "ts") {
     return contentTypeModeMap.get("text/typescript");
   }
 
@@ -159,8 +156,8 @@ export function getMode(source, sourceTextContent, symbols) {
   return contentTypeModeMap.get("text/plain");
 }
 
-function setMode(editor, source, sourceTextContent, symbols) {
-  const mode = getMode(source, sourceTextContent, symbols);
+function setMode(editor, source, sourceTextContent) {
+  const mode = getMode(source, sourceTextContent);
   const currentMode = editor.codeMirror.getOption("mode");
   if (!currentMode || currentMode.name != mode.name) {
     editor.setMode(mode);
@@ -171,17 +168,17 @@ function setMode(editor, source, sourceTextContent, symbols) {
 
 
 
-export function showSourceText(editor, source, sourceTextContent, symbols) {
+export function showSourceText(editor, source, sourceTextContent) {
   if (hasDocument(source.id)) {
     const doc = getDocument(source.id);
     if (editor.codeMirror.doc === doc) {
-      setMode(editor, source, sourceTextContent, symbols);
+      setMode(editor, source, sourceTextContent);
       return;
     }
 
     editor.replaceDocument(doc);
     updateLineNumberFormat(editor, source.id);
-    setMode(editor, source, sourceTextContent, symbols);
+    setMode(editor, source, sourceTextContent);
     return;
   }
 
@@ -191,7 +188,7 @@ export function showSourceText(editor, source, sourceTextContent, symbols) {
     
     
     content.type !== "wasm" ? content.value : "",
-    getMode(source, sourceTextContent, symbols)
+    getMode(source, sourceTextContent)
   );
 
   setDocument(source.id, doc);

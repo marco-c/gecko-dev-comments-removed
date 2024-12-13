@@ -48,14 +48,6 @@ function extractSymbol(path, symbols, state) {
     extractFunctionSymbol(path, state, symbols);
   }
 
-  if (t.isJSXElement(path)) {
-    symbols.hasJsx = true;
-  }
-
-  if (t.isGenericTypeAnnotation(path)) {
-    symbols.hasTypes = true;
-  }
-
   if (t.isClassDeclaration(path)) {
     symbols.classes.push(getClassDeclarationSymbol(path.node));
   }
@@ -92,6 +84,27 @@ function extractSymbol(path, symbols, state) {
 }
 
 function extractSymbols(sourceId) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const symbols = {
     functions: [],
     memberExpressions: [],
@@ -102,8 +115,6 @@ function extractSymbols(sourceId) {
     identifiersKeys: new Set(),
     classes: [],
     literals: [],
-    hasJsx: false,
-    hasTypes: false,
     importsReact: false,
   };
 
@@ -391,38 +402,10 @@ export function getClosestFunctionName(location) {
 }
 
 
+
 export function getSymbols(sourceId) {
-  const symbols = getInternalSymbols(sourceId);
-  return {
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-
-    
-    hasJsx: symbols.hasJsx,
-    hasTypes: symbols.hasTypes,
-
-    
-    
-  };
+  getInternalSymbols(sourceId);
+  return {};
 }
 
 function getMemberExpressionSymbol(path) {

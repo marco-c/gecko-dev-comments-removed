@@ -39088,14 +39088,6 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         extractFunctionSymbol(path, state, symbols);
       }
 
-      if (libExports$2.isJSXElement(path)) {
-        symbols.hasJsx = true;
-      }
-
-      if (libExports$2.isGenericTypeAnnotation(path)) {
-        symbols.hasTypes = true;
-      }
-
       if (libExports$2.isClassDeclaration(path)) {
         symbols.classes.push(getClassDeclarationSymbol(path.node));
       }
@@ -39132,6 +39124,27 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     }
 
     function extractSymbols(sourceId) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       const symbols = {
         functions: [],
         memberExpressions: [],
@@ -39142,8 +39155,6 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         identifiersKeys: new Set(),
         classes: [],
         literals: [],
-        hasJsx: false,
-        hasTypes: false,
         importsReact: false,
       };
 
@@ -39431,38 +39442,10 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     }
 
     
+    
     function getSymbols(sourceId) {
-      const symbols = getInternalSymbols(sourceId);
-      return {
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-        
-
-        
-        hasJsx: symbols.hasJsx,
-        hasTypes: symbols.hasTypes,
-
-        
-        
-      };
+      getInternalSymbols(sourceId);
+      return {};
     }
 
     function getMemberExpressionSymbol(path) {
