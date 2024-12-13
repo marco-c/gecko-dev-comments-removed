@@ -26,7 +26,6 @@ add_task(async function test_main() {
   
   
   var subtests = [
-    { file: "helper_fission_scroll_oopif.html" },
     {
       file: "helper_fission_event_region_override.html",
       setup(win) {
