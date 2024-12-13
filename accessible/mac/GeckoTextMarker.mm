@@ -427,6 +427,21 @@ static void AppendTextToAttributedString(
   [aAttributedString appendAttributedString:substr];
 }
 
+static RefPtr<AccAttributes> GetTextAttributes(TextLeafPoint aPoint) {
+  RefPtr<AccAttributes> attrs = aPoint.GetTextAttributes();
+  
+  
+  
+  
+  for (Accessible* ancestor = aPoint.mAcc->Parent();
+       ancestor && !ancestor->IsDoc(); ancestor = ancestor->Parent()) {
+    if (ancestor->Role() == roles::MARK) {
+      attrs->SetAttribute(nsGkAtoms::mark, true);
+    }
+  }
+  return attrs;
+}
+
 NSAttributedString* GeckoTextMarkerRange::AttributedText() const {
   NSMutableAttributedString* str =
       [[[NSMutableAttributedString alloc] init] autorelease];
@@ -449,7 +464,7 @@ NSAttributedString* GeckoTextMarkerRange::AttributedText() const {
           : mRange;
 
   nsAutoString text;
-  RefPtr<AccAttributes> currentRun = range.Start().GetTextAttributes();
+  RefPtr<AccAttributes> currentRun = GetTextAttributes(range.Start());
   Accessible* runAcc = range.Start().mAcc;
   for (TextLeafRange segment : range) {
     TextLeafPoint start = segment.Start();
@@ -472,7 +487,7 @@ NSAttributedString* GeckoTextMarkerRange::AttributedText() const {
         
         break;
       }
-      RefPtr<AccAttributes> attributes = start.GetTextAttributes();
+      RefPtr<AccAttributes> attributes = GetTextAttributes(start);
       if (!currentRun || !attributes || !attributes->Equal(currentRun)) {
         
         
