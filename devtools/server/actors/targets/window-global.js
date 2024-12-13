@@ -32,9 +32,6 @@ var {
 var makeDebugger = require("resource://devtools/server/actors/utils/make-debugger.js");
 const Targets = require("resource://devtools/server/actors/targets/index.js");
 
-const EXTENSION_CONTENT_SYS_MJS =
-  "resource://gre/modules/ExtensionContent.sys.mjs";
-
 const lazy = {};
 
 
@@ -55,11 +52,6 @@ ChromeUtils.defineESModuleGetters(
   {
     TargetActorRegistry:
       "resource://devtools/server/actors/targets/target-actor-registry.sys.mjs",
-    
-    
-    
-    
-    ExtensionContent: EXTENSION_CONTENT_SYS_MJS,
   },
   { global: "shared" }
 );
@@ -79,7 +71,7 @@ const {
 
 loader.lazyRequireGetter(
   this,
-  ["ThreadActor", "unwrapDebuggerObjectGlobal"],
+  ["ThreadActor"],
   "resource://devtools/server/actors/thread.js",
   true
 );
@@ -95,7 +87,6 @@ loader.lazyRequireGetter(
   "resource://devtools/server/actors/utils/stylesheets-manager.js",
   true
 );
-
 loader.lazyRequireGetter(
   this,
   "TouchSimulator",
@@ -324,7 +315,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
             }
           }
         }
-        return result.concat(this.webextensionsContentScriptGlobals);
+        return result;
       },
       shouldAddNewGlobalAsDebuggee: this._shouldAddNewGlobalAsDebuggee,
     });
@@ -526,21 +517,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
   get openerBrowserId() {
     return this.browsingContext?.opener?.browserId;
-  }
-
-  
-
-
-
-  get webextensionsContentScriptGlobals() {
-    
-    
-    
-    if (Cu.isESModuleLoaded(EXTENSION_CONTENT_SYS_MJS)) {
-      return lazy.ExtensionContent.getContentScriptGlobals(this.window);
-    }
-
-    return [];
   }
 
   
@@ -868,27 +844,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
   
 
 
-
-  _shouldAddNewGlobalAsDebuggee(wrappedGlobal) {
-    
-    const global = unwrapDebuggerObjectGlobal(wrappedGlobal);
-    if (!global) {
-      return false;
-    }
-
-    
-    let metadata = {};
-    let id = "";
-    try {
-      id = getInnerId(this.window);
-      metadata = Cu.getSandboxMetadata(global);
-    } catch (e) {
-      
-    }
-    if (metadata?.["inner-window-id"] && metadata["inner-window-id"] == id) {
-      return true;
-    }
-
+  _shouldAddNewGlobalAsDebuggee() {
     return false;
   }
 

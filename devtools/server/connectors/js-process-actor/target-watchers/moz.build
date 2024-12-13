@@ -5,6 +5,7 @@
 
 
 DevToolsModules(
+    "content_script.sys.mjs",
     "process.sys.mjs",
     "service_worker.sys.mjs",
     "shared_worker.sys.mjs",

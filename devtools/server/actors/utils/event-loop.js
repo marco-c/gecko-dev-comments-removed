@@ -132,7 +132,7 @@ class EventLoop {
 
 
   getAllWindowDebuggees() {
-    return this._thread.dbg
+    const rawGlobals = this._thread.dbg
       .getDebuggees()
       .filter(debuggee => {
         
@@ -142,47 +142,56 @@ class EventLoop {
       .map(debuggee => {
         
         return debuggee.unsafeDereference();
-      })
-
-      .filter(window => {
-        
-        
-        if (Cu.isDeadWrapper(window)) {
-          return false;
-        }
-        
-        if (window.closed) {
-          return false;
-        }
-        
-        
-        if (Cu.isRemoteProxy(window)) {
-          return false;
-        }
-        
-        
-        if (Cu.isRemoteProxy(window.parent) && !Cu.isRemoteProxy(window)) {
-          return true;
-        }
-
-        
-        if (this.thread.getParent().ignoreSubFrames) {
-          return true;
-        }
-
-        try {
-          
-          
-          return window.top === window;
-        } catch (e) {
-          
-          
-          if (!/not initialized/.test(e)) {
-            console.warn(`Exception in getAllWindowDebuggees: ${e}`);
-          }
-          return false;
-        }
       });
+
+    
+    const { innerWindowId } = this._thread.targetActor;
+    if (innerWindowId) {
+      const windowGlobal = WindowGlobalChild.getByInnerWindowId(innerWindowId);
+      if (windowGlobal?.browsingContext?.window) {
+        rawGlobals.push(windowGlobal.browsingContext.window);
+      }
+    }
+
+    return rawGlobals.filter(window => {
+      
+      
+      if (Cu.isDeadWrapper(window)) {
+        return false;
+      }
+      
+      if (window.closed) {
+        return false;
+      }
+      
+      
+      if (Cu.isRemoteProxy(window)) {
+        return false;
+      }
+      
+      
+      if (Cu.isRemoteProxy(window.parent) && !Cu.isRemoteProxy(window)) {
+        return true;
+      }
+
+      
+      if (this.thread.getParent().ignoreSubFrames) {
+        return true;
+      }
+
+      try {
+        
+        
+        return window.top === window;
+      } catch (e) {
+        
+        
+        if (!/not initialized/.test(e)) {
+          console.warn(`Exception in getAllWindowDebuggees: ${e}`);
+        }
+        return false;
+      }
+    });
   }
 
   

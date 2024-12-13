@@ -178,6 +178,29 @@ const WorkerTargetResources = augmentResourceDictionary({
 
 
 
+const WebExtensionContentScriptTargetResources = augmentResourceDictionary({
+  [TYPES.CONSOLE_MESSAGE]: {
+    path: "devtools/server/actors/resources/console-messages",
+  },
+  [TYPES.JSTRACER_TRACE]: {
+    path: "devtools/server/actors/resources/jstracer-trace",
+  },
+  [TYPES.JSTRACER_STATE]: {
+    path: "devtools/server/actors/resources/jstracer-state",
+  },
+  [TYPES.SOURCE]: {
+    path: "devtools/server/actors/resources/sources",
+  },
+  [TYPES.THREAD_STATE]: {
+    path: "devtools/server/actors/resources/thread-states",
+  },
+});
+
+
+
+
+
+
 const ParentProcessResources = augmentResourceDictionary({
   [TYPES.NETWORK_EVENT]: {
     path: "devtools/server/actors/resources/network-events",
@@ -258,6 +281,8 @@ function getResourceTypeDictionaryForTargetType(targetType) {
       return WorkerTargetResources;
     case Targets.TYPES.SHARED_WORKER:
       return WorkerTargetResources;
+    case Targets.TYPES.CONTENT_SCRIPT:
+      return WebExtensionContentScriptTargetResources;
     default:
       throw new Error(`Unsupported target actor typeName '${targetType}'`);
   }
