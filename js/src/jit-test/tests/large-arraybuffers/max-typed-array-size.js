@@ -1,6 +1,6 @@
 load(libdir + "asserts.js");
 
-const maxByteLength = 16 * 1024 * 1024 * 1024;
+const maxByteLength = 8 * 1024 * 1024 * 1024;
 
 
 
