@@ -2103,6 +2103,21 @@ class MOZ_NON_PARAM StringChars {
 
 
 
+  bool maybeRealloc(JSContext* cx, size_t oldLength, size_t newLength,
+                    gc::Heap heap = gc::Heap::Default);
+
+  
+
+
+
+  template <AllowGC allowGC>
+  JSLinearString* toStringDontDeflate(JSContext* cx, size_t length,
+                                      gc::Heap heap = gc::Heap::Default);
+
+  
+
+
+
   template <AllowGC allowGC>
   JSLinearString* toStringDontDeflateNonStatic(
       JSContext* cx, size_t length, gc::Heap heap = gc::Heap::Default);
