@@ -294,7 +294,7 @@ function TargetMixin(parentClass) {
             this._url;
       }
 
-      if (this.isContentProcess) {
+      if (this.isWebExtension || this.isContentProcess) {
         return this.targetForm.name;
       }
       return this.title;
@@ -312,6 +312,18 @@ function TargetMixin(parentClass) {
       
       return (
         this.typeName === "workerTarget" || this.typeName === "workerDescriptor"
+      );
+    }
+
+    
+    
+    
+    get isWebExtension() {
+      return !!(
+        this.targetForm &&
+        this.targetForm.actor &&
+        (this.targetForm.actor.match(/conn\d+\.webExtension(Target)?\d+/) ||
+          this.targetForm.actor.match(/child\d+\/webExtension(Target)?\d+/))
       );
     }
 

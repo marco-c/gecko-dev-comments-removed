@@ -99,7 +99,10 @@ class WebExtensionDescriptorFront extends DescriptorMixin(
 
   isServerTargetSwitchingEnabled() {
     
-    return true;
+    
+    
+    
+    return this.traits.isServerTargetSwitchingEnabled;
   }
 
   getWatcher() {
