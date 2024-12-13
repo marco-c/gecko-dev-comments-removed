@@ -425,19 +425,29 @@ def cleanupMeta(meta: "dict[str, Any]") -> "dict[str, Any]":
     """
 
     
+    for tag in ("description", "esid", "es5id", "es6id", "info", "author"):
+        if tag in meta:
+            if not meta[tag]:
+                del meta[tag]
+            else:
+                meta[tag] = meta[tag].strip()
+                if not len(meta[tag]):
+                    del meta[tag]
+
+    
     for tag in ("description", "esid"):
         meta.setdefault(tag, "pending")
 
     
-    for tag in ("description", "esid", "es5id", "es6id", "info", "author"):
-        if tag in meta:
-            meta[tag] = meta[tag].strip()
-
-    
     for tag in ("features", "flags", "includes"):
         if tag in meta:
-            
-            meta[tag] = list(set(meta[tag]))
+            if not meta[tag]:
+                del meta[tag]
+            else:
+                
+                meta[tag] = sorted(set(meta[tag]))
+                if not len(meta[tag]):
+                    del meta[tag]
 
     if "negative" in meta:
         
