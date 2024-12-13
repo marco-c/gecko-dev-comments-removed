@@ -152,6 +152,10 @@ class IOUtils final {
                                            ErrorResult& aError);
 
  public:
+  static already_AddRefed<Promise> HasChildren(
+      GlobalObject& aGlobal, const nsAString& aPath,
+      const HasChildrenOptions& aOptions, ErrorResult& aError);
+
   static already_AddRefed<Promise> GetChildren(
       GlobalObject& aGlobal, const nsAString& aPath,
       const GetChildrenOptions& aOptions, ErrorResult& aError);
@@ -462,6 +466,20 @@ class IOUtils final {
   static Result<int64_t, IOError> SetTimeSync(nsIFile* aFile,
                                               SetTimeFn aSetTimeFn,
                                               int64_t aNewTime);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static Result<bool, IOError> HasChildrenSync(nsIFile* aFile,
+                                               bool aIgnoreAbsent);
 
   
 
