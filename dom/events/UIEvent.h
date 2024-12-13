@@ -97,16 +97,11 @@ class UIEvent : public Event {
   ~UIEvent() = default;
 
   
-  nsIntPoint GetMovementPoint();
   nsIntPoint GetLayerPoint() const;
 
   nsCOMPtr<nsPIDOMWindowOuter> mView;
   int32_t mDetail;
-  CSSIntPoint mDefaultClientPoint;
-  
   nsIntPoint mLayerPoint;
-  CSSIntPoint mPagePoint;
-  nsIntPoint mMovementPoint;
 
   static Modifiers ComputeModifierState(const nsAString& aModifiersList);
   bool GetModifierStateInternal(const nsAString& aKey);

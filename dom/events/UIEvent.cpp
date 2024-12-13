@@ -30,10 +30,7 @@ UIEvent::UIEvent(EventTarget* aOwner, nsPresContext* aPresContext,
                  WidgetGUIEvent* aEvent)
     : Event(aOwner, aPresContext,
             aEvent ? aEvent : new InternalUIEvent(false, eVoidEvent, nullptr)),
-      mDefaultClientPoint(0, 0),
-      mLayerPoint(0, 0),
-      mPagePoint(0, 0),
-      mMovementPoint(0, 0) {
+      mLayerPoint(0, 0) {
   if (aEvent) {
     mEventIsInternal = false;
   } else {
@@ -89,34 +86,6 @@ NS_IMPL_RELEASE_INHERITED(UIEvent, Event)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(UIEvent)
 NS_INTERFACE_MAP_END_INHERITING(Event)
-
-static nsIntPoint DevPixelsToCSSPixels(const LayoutDeviceIntPoint& aPoint,
-                                       nsPresContext* aContext) {
-  return nsIntPoint(aContext->DevPixelsToIntCSSPixels(aPoint.x),
-                    aContext->DevPixelsToIntCSSPixels(aPoint.y));
-}
-
-nsIntPoint UIEvent::GetMovementPoint() {
-  if (mEvent->mFlags.mIsPositionless) {
-    return nsIntPoint(0, 0);
-  }
-
-  if (mPrivateDataDuplicated || mEventIsInternal) {
-    return mMovementPoint;
-  }
-
-  if (!mEvent || !mEvent->AsGUIEvent()->mWidget ||
-      (mEvent->mMessage != eMouseMove && mEvent->mMessage != ePointerMove)) {
-    
-    
-    return nsIntPoint(0, 0);
-  }
-
-  
-  nsIntPoint current = DevPixelsToCSSPixels(mEvent->mRefPoint, mPresContext);
-  nsIntPoint last = DevPixelsToCSSPixels(mEvent->mLastRefPoint, mPresContext);
-  return current - last;
-}
 
 void UIEvent::InitUIEvent(const nsAString& typeArg, bool canBubbleArg,
                           bool cancelableArg, nsGlobalWindowInner* viewArg,
@@ -187,12 +156,8 @@ nsIntPoint UIEvent::GetLayerPoint() const {
 }
 
 void UIEvent::DuplicatePrivateData() {
-  mDefaultClientPoint = Event::GetClientCoords(
-      mPresContext, mEvent, mEvent->mRefPoint, mDefaultClientPoint);
-  mMovementPoint = GetMovementPoint();
   mLayerPoint = GetLayerPoint();
-  mPagePoint = Event::GetPageCoords(mPresContext, mEvent, mEvent->mRefPoint,
-                                    mDefaultClientPoint);
+
   
   CSSIntPoint screenPoint =
       Event::GetScreenCoords(mPresContext, mEvent, mEvent->mRefPoint)
