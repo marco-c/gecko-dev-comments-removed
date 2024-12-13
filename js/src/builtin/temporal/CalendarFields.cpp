@@ -403,14 +403,8 @@ static bool PrepareCalendarFields(
           break;
         }
         case CalendarField::EraYear: {
-          
-          
-          
-          
-          
-          
           double eraYear;
-          if (!ToPositiveIntegerWithTruncation(cx, value, cstr, &eraYear)) {
+          if (!ToIntegerWithTruncation(cx, value, cstr, &eraYear)) {
             return false;
           }
           result.setEraYear(eraYear);

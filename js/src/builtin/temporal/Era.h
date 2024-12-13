@@ -75,9 +75,6 @@ inline constexpr auto Ethiopian = {
     "incar"sv,
 };
 
-
-
-
 inline constexpr auto EthiopianInverse = {
     "ethioaa"sv,
     "ethiopic-amete-alem"sv,

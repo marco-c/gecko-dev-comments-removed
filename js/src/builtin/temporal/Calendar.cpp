@@ -992,237 +992,67 @@ static mozilla::Result<UniqueICU4XDate, CalendarError> CreateDateFromCodes(
 
 
 
-
-
-
-
-
-
-
-
-
-
-static mozilla::Result<UniqueICU4XDate, CalendarError>
-CreateDateFromCodesConstrainToJapaneseEra(JSContext* cx, CalendarId calendarId,
-                                          const capi::ICU4XCalendar* calendar,
-                                          EraYear eraYear, MonthCode monthCode,
-                                          int32_t day) {
+static bool FirstYearOfJapaneseEra(JSContext* cx, CalendarId calendarId,
+                                   const capi::ICU4XCalendar* calendar,
+                                   EraCode era, int32_t* result) {
   MOZ_ASSERT(calendarId == CalendarId::Japanese);
-  MOZ_ASSERT(capi::ICU4XCalendar_kind(calendar) ==
-             ToAnyCalendarKind(calendarId));
-  MOZ_ASSERT(!CalendarEraStartsAtYearBoundary(calendarId, eraYear.era));
-  MOZ_ASSERT(!monthCode.isLeapMonth());
-  MOZ_ASSERT(1 <= monthCode.ordinal() && monthCode.ordinal() <= 12);
-  MOZ_ASSERT(1 <= day && day <= 31);
-
-  const auto& [era, year] = eraYear;
-
-  int32_t month = monthCode.ordinal();
-  const int32_t startMonth = month;
+  MOZ_ASSERT(!CalendarEraStartsAtYearBoundary(calendarId, era));
 
   
-  if (year == 1) {
-    
-    
-    
-    
-    MOZ_ASSERT(capi::ICU4XCalendar_kind(calendar) !=
-               capi::ICU4XAnyCalendarKind_JapaneseExtended);
+  
+  auto dateResult =
+      CreateDateFromCodes(calendarId, calendar, {era, 1}, MonthCode{12}, 31);
+  if (dateResult.isErr()) {
+    MOZ_ASSERT(dateResult.inspectErr() == CalendarError::Generic,
+               "unexpected non-generic calendar error");
 
-    auto firstEraYear = EraYear{era, 1};
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_CALENDAR_INTERNAL_ERROR);
+    return false;
+  }
 
-    
-    for (; month <= 12; month++) {
-      auto firstDayOfMonth = CreateDateFromCodes(
-          calendarId, calendar, firstEraYear, MonthCode{month}, 1);
-      if (firstDayOfMonth.isOk()) {
-        
-        if (month == startMonth) {
-          int32_t lastDayOfMonth =
-              capi::ICU4XDate_days_in_month(firstDayOfMonth.inspect().get());
-          return CreateDateFromCodes(calendarId, calendar, firstEraYear,
-                                     MonthCode{month},
-                                     std::min(day, lastDayOfMonth));
-        }
-        break;
-      }
+  auto date = dateResult.unwrap();
+  UniqueICU4XIsoDate isoDate{capi::ICU4XDate_to_iso(date.get())};
 
-      
-      
-      
-      if (firstDayOfMonth.inspectErr() != CalendarError::OutOfRange) {
-        return firstDayOfMonth.propagateErr();
-      }
-    }
-    MOZ_ASSERT(startMonth < month);
+  int32_t isoYear = capi::ICU4XIsoDate_year(isoDate.get());
+  MOZ_ASSERT(isoYear > 0, "unexpected era start before 1 CE");
 
-    
-    
-    auto monthCode = MonthCode{month - 1};
+  *result = isoYear;
+  return true;
+}
 
-    
-    
-    if (startMonth < month - 1) {
-      
-      
-      
-      for (int32_t firstDayOfEra = 2; firstDayOfEra <= 31; firstDayOfEra++) {
-        auto date = CreateDateFromCodes(calendarId, calendar, firstEraYear,
-                                        monthCode, firstDayOfEra);
-        if (date.isOk()) {
-          return date.unwrap();
-        }
 
-        
-        
-        if (date.inspectErr() == CalendarError::OutOfRange) {
-          continue;
-        }
 
-        
-        
-        if (date.inspectErr() == CalendarError::Overflow) {
-          break;
-        }
 
-        
-        return date.propagateErr();
-      }
-
-      
-      
-      return CreateDateFromCodes(calendarId, calendar, firstEraYear,
-                                 MonthCode{month}, 1);
-    }
-
-    
-    auto date =
-        CreateDateFromCodes(calendarId, calendar, firstEraYear, monthCode, day);
-    if (date.isOk()) {
-      return date.unwrap();
-    }
-
-    
-    auto errorCode = date.inspectErr();
-    int32_t direction;
-    if (errorCode == CalendarError::Overflow) {
-      direction = -1;
-    } else if (errorCode == CalendarError::OutOfRange) {
-      direction = 1;
-    } else {
-      return date.propagateErr();
-    }
-
-    
-    
-    while ((direction < 0 && day > 28) || (direction > 0 && day < 31)) {
-      day += direction;
-
-      auto date = CreateDateFromCodes(calendarId, calendar, firstEraYear,
-                                      monthCode, day);
-      if (date.isOk()) {
-        return date.unwrap();
-      }
-      if (date.inspectErr() == errorCode) {
-        continue;
-      }
-      return date.propagateErr();
-    }
-
-    
-    
-    return CreateDateFromCodes(calendarId, calendar, firstEraYear,
-                               MonthCode{month}, 1);
+static bool JapaneseEraYearToCommonEraYear(JSContext* cx, CalendarId calendarId,
+                                           const capi::ICU4XCalendar* calendar,
+                                           EraYear eraYear, EraYear* result) {
+  int32_t firstYearOfEra;
+  if (!FirstYearOfJapaneseEra(cx, calendarId, calendar, eraYear.era,
+                              &firstYearOfEra)) {
+    return false;
   }
 
   
-
   
-  auto firstDayOfYear = CreateDateFromCodes(
-      calendarId, calendar, EraYear{era, year}, MonthCode{1}, 1);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-  int32_t lastYearInEra;
-  if (firstDayOfYear.isOk()) {
-    
-    lastYearInEra = year;
-  } else if (firstDayOfYear.inspectErr() == CalendarError::OutOfRange) {
-    
-
-    
-    int32_t minYear = 1;
-    int32_t maxYear = year;
-    while (minYear != maxYear) {
-      int32_t candidateYear = minYear + (maxYear - minYear) / 2;
-
-      auto firstDayOfYear = CreateDateFromCodes(
-          calendarId, calendar, EraYear{era, candidateYear}, MonthCode{1}, 1);
-      if (firstDayOfYear.isOk()) {
-        
-        minYear = candidateYear + 1;
-      } else if (firstDayOfYear.inspectErr() == CalendarError::OutOfRange) {
-        
-        maxYear = candidateYear;
-      } else {
-        return firstDayOfYear.propagateErr();
-      }
-    }
-
-    
-    MOZ_ASSERT(1 < minYear && minYear <= year);
-
-    
-    
-    lastYearInEra = minYear - 1;
-    month = 12;
-    day = 31;
-  } else {
-    return firstDayOfYear.propagateErr();
+  int32_t year = (firstYearOfEra - 1) + eraYear.year;
+  if (year > 0) {
+    *result = {EraCode::Standard, year};
+    return true;
   }
-
-  auto lastEraYear = EraYear{era, lastYearInEra};
-  for (; month > 0; month--) {
-    
-    auto monthCode = MonthCode{month};
-    auto firstDayOfMonth =
-        CreateDateFromCodes(calendarId, calendar, lastEraYear, monthCode, 1);
-    if (firstDayOfMonth.isErr()) {
-      
-      if (firstDayOfMonth.inspectErr() == CalendarError::OutOfRange) {
-        continue;
-      }
-
-      
-      return firstDayOfMonth.propagateErr();
-    }
-    auto intermediateDate = firstDayOfMonth.unwrap();
-
-    int32_t lastDayOfMonth =
-        capi::ICU4XDate_days_in_month(intermediateDate.get());
-
-    if (lastYearInEra == year && month == startMonth) {
-      
-      day = std::min(day, lastDayOfMonth);
-    } else {
-      MOZ_ASSERT_IF(lastYearInEra == year, month < startMonth);
-      day = lastDayOfMonth;
-    }
-
-    
-    for (int32_t nextDay = 2; nextDay <= day; nextDay++) {
-      auto nextDayOfMonth = CreateDateFromCodes(
-          calendarId, calendar, lastEraYear, monthCode, nextDay);
-      if (nextDayOfMonth.isErr()) {
-        if (nextDayOfMonth.inspectErr() == CalendarError::OutOfRange) {
-          break;
-        }
-        return nextDayOfMonth.propagateErr();
-      }
-      intermediateDate = nextDayOfMonth.unwrap();
-    }
-    return intermediateDate;
-  }
-
-  MOZ_CRASH("error constraining to end of era");
+  *result = {EraCode::Inverse, int32_t(mozilla::Abs(year) + 1)};
+  return true;
 }
 
 static UniqueICU4XDate CreateDateFromCodes(JSContext* cx, CalendarId calendarId,
@@ -1342,17 +1172,13 @@ static UniqueICU4XDate CreateDateFromCodes(JSContext* cx, CalendarId calendarId,
       MOZ_ASSERT(calendarId == CalendarId::Japanese);
       MOZ_ASSERT(!CalendarEraStartsAtYearBoundary(calendarId, eraYear.era));
 
-      if (overflow == TemporalOverflow::Reject) {
-        ReportCalendarFieldOverflow(cx, "eraYear", eraYear.year);
+      EraYear commonEraYear;
+      if (!JapaneseEraYearToCommonEraYear(cx, calendarId, calendar, eraYear,
+                                          &commonEraYear)) {
         return nullptr;
       }
-
-      auto result = CreateDateFromCodesConstrainToJapaneseEra(
-          cx, calendarId, calendar, eraYear, monthCode, day);
-      if (result.isOk()) {
-        return result.unwrap();
-      }
-      break;
+      return CreateDateFromCodes(cx, calendarId, calendar, commonEraYear,
+                                 monthCode, day, overflow);
     }
 
     case CalendarError::Underflow:
@@ -1802,6 +1628,55 @@ struct EraYears {
   mozilla::Maybe<EraYear> fromEra;
 };
 
+static bool CalendarEraYear(JSContext* cx, CalendarId calendarId,
+                            EraYear eraYear, EraYear* result) {
+  MOZ_ASSERT(CalendarEraRelevant(calendarId));
+  MOZ_ASSERT(mozilla::Abs(eraYear.year) <= MaximumCalendarYear(calendarId));
+
+  if (eraYear.year > 0) {
+    *result = eraYear;
+    return true;
+  }
+
+  switch (eraYear.era) {
+    case EraCode::Standard: {
+      
+      
+      
+      
+      
+      *result = {EraCode::Inverse, int32_t(mozilla::Abs(eraYear.year) + 1)};
+      return true;
+    }
+
+    case EraCode::Inverse: {
+      
+      
+      
+      
+      
+      *result = {EraCode::Standard, int32_t(mozilla::Abs(eraYear.year) + 1)};
+      return true;
+    }
+
+    case EraCode::Meiji:
+    case EraCode::Taisho:
+    case EraCode::Showa:
+    case EraCode::Heisei:
+    case EraCode::Reiwa: {
+      MOZ_ASSERT(calendarId == CalendarId::Japanese);
+
+      auto cal = CreateICU4XCalendar(cx, calendarId);
+      if (!cal) {
+        return false;
+      }
+      return JapaneseEraYearToCommonEraYear(cx, calendarId, cal.get(), eraYear,
+                                            result);
+    }
+  }
+  MOZ_CRASH("invalid era id");
+}
+
 
 
 
@@ -1828,7 +1703,8 @@ static bool CalendarFieldYear(JSContext* cx, CalendarId calendar,
     MOZ_ASSERT(IsInteger(year));
 
     int32_t intYear;
-    if (!mozilla::NumberEqualsInt32(year, &intYear)) {
+    if (!mozilla::NumberEqualsInt32(year, &intYear) ||
+        mozilla::Abs(intYear) > MaximumCalendarYear(calendar)) {
       ReportCalendarFieldOverflow(cx, "year", year);
       return false;
     }
@@ -1867,12 +1743,17 @@ static bool CalendarFieldYear(JSContext* cx, CalendarId calendar,
     }
 
     int32_t intEraYear;
-    if (!mozilla::NumberEqualsInt32(eraYear, &intEraYear)) {
+    if (!mozilla::NumberEqualsInt32(eraYear, &intEraYear) ||
+        mozilla::Abs(intEraYear) > MaximumCalendarYear(calendar)) {
       ReportCalendarFieldOverflow(cx, "eraYear", eraYear);
       return false;
     }
 
-    fromEra = mozilla::Some(EraYear{*eraCode, intEraYear});
+    EraYear eraAndYear;
+    if (!CalendarEraYear(cx, calendar, {*eraCode, intEraYear}, &eraAndYear)) {
+      return false;
+    }
+    fromEra = mozilla::Some(eraAndYear);
   }
 
   *result = {fromEpoch, fromEra};
