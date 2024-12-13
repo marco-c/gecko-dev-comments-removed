@@ -212,7 +212,13 @@ DecodeStencil(JS::FrontendContext* fc, const ReadOnlyDecodeOptions& options,
 
 
 extern JS_PUBLIC_API bool StartIncrementalEncoding(JSContext* cx,
-                                                   RefPtr<Stencil>&& stencil,
+                                                   JS::Handle<JSScript*> script,
+                                                   Stencil* stencil,
+                                                   bool& alreadyStarted);
+
+extern JS_PUBLIC_API bool StartIncrementalEncoding(JSContext* cx,
+                                                   JS::Handle<JSObject*> module,
+                                                   Stencil* stencil,
                                                    bool& alreadyStarted);
 
 }  

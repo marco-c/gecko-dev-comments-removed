@@ -20,7 +20,8 @@
 #include "frontend/BytecodeCompiler.h"  
 #include "frontend/CompilationStencil.h"  
 #include "frontend/FrontendContext.h"     
-#include "frontend/Parser.h"  
+#include "frontend/Parser.h"      
+#include "frontend/StencilXdr.h"  
 #include "js/CharacterEncoding.h"  
 #include "js/ColumnNumber.h"            
 #include "js/EnvironmentChain.h"        
@@ -28,9 +29,10 @@
 #include "js/friend/ErrorMessages.h"    
 #include "js/RootingAPI.h"              
 #include "js/SourceText.h"              
-#include "js/TypeDecls.h"          
-#include "js/Utility.h"            
-#include "js/Value.h"              
+#include "js/Transcoding.h"  
+#include "js/TypeDecls.h"    
+#include "js/Utility.h"      
+#include "js/Value.h"        
 #include "util/CompleteFile.h"     
 #include "util/Identifier.h"       
 #include "util/StringBuilder.h"    
@@ -38,6 +40,8 @@
 #include "vm/ErrorReporting.h"  
 #include "vm/Interpreter.h"     
 #include "vm/JSContext.h"       
+#include "vm/JSScript.h"        
+#include "vm/Xdr.h"             
 
 #include "vm/JSContext-inl.h"  
 
@@ -110,33 +114,162 @@ JSScript* JS::Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
   return CompileSourceBuffer(cx, options, srcBuf);
 }
 
-JS_PUBLIC_API bool JS::StartIncrementalEncoding(JSContext* cx,
-                                                RefPtr<JS::Stencil>&& stencil,
-                                                bool& alreadyStarted) {
-  MOZ_ASSERT(cx);
-  MOZ_ASSERT(!stencil->hasMultipleReference());
-
-  auto* source = stencil->source.get();
-
-  UniquePtr<frontend::ExtensibleCompilationStencil> initial;
-  if (stencil->hasOwnedBorrow()) {
-    initial.reset(stencil->takeOwnedBorrow());
-    stencil = nullptr;
-  } else {
-    initial = cx->make_unique<frontend::ExtensibleCompilationStencil>(
-        stencil->source);
-    if (!initial) {
-      return false;
-    }
-
-    AutoReportFrontendContext fc(cx);
-    if (!initial->steal(&fc, std::move(stencil))) {
-      return false;
-    }
+static already_AddRefed<frontend::InitialStencilAndDelazifications>
+CreateInitialStencilAndDelazifications(JSContext* cx, JS::Stencil* initial) {
+  RefPtr stencils = cx->new_<frontend::InitialStencilAndDelazifications>();
+  if (!stencils) {
+    return nullptr;
   }
 
-  return source->startIncrementalEncoding(cx, std::move(initial),
-                                          alreadyStarted);
+  AutoReportFrontendContext fc(cx);
+  if (!stencils->init(&fc, initial)) {
+    return nullptr;
+  }
+
+  return stencils.forget();
+}
+
+static bool StartCollectingDelazifications(JSContext* cx,
+                                           JS::Handle<ScriptSourceObject*> sso,
+                                           JS::Stencil* initial,
+                                           bool& alreadyStarted) {
+  if (sso->maybeGetStencils()) {
+    alreadyStarted = true;
+    return true;
+  }
+
+  alreadyStarted = false;
+
+  
+  
+  if (initial->asmJS) {
+    return true;
+  }
+
+  
+  
+  RefPtr stencils = CreateInitialStencilAndDelazifications(cx, initial);
+  if (!stencils) {
+    return false;
+  }
+
+  sso->setStencils(stencils.forget());
+  return true;
+}
+
+JS_PUBLIC_API bool JS::StartIncrementalEncoding(JSContext* cx,
+                                                JS::Handle<JSScript*> script,
+                                                JS::Stencil* stencil,
+                                                bool& alreadyStarted) {
+  JS::Rooted<ScriptSourceObject*> sso(cx, script->sourceObject());
+  return StartCollectingDelazifications(cx, sso, stencil, alreadyStarted);
+}
+
+JS_PUBLIC_API bool JS::StartIncrementalEncoding(JSContext* cx,
+                                                JS::Handle<JSObject*> module,
+                                                JS::Stencil* stencil,
+                                                bool& alreadyStarted) {
+  JS::Rooted<ScriptSourceObject*> sso(
+      cx, module->as<ModuleObject>().scriptSourceObject());
+  return StartCollectingDelazifications(cx, sso, stencil, alreadyStarted);
+}
+
+static bool FinishIncrementalEncoding(JSContext* cx,
+                                      JS::Handle<ScriptSourceObject*> sso,
+                                      JS::TranscodeBuffer& buffer) {
+  RefPtr<frontend::InitialStencilAndDelazifications> stencils =
+      sso->maybeStealStencils();
+  if (!stencils) {
+    JS_ReportErrorASCII(cx, "Not collecting delazifications");
+    return false;
+  }
+
+  AutoReportFrontendContext fc(cx);
+  UniquePtr<frontend::CompilationStencil> stencilHolder;
+  const frontend::CompilationStencil* stencil;
+
+  if (stencils->canLazilyParse()) {
+    stencilHolder.reset(stencils->getMerged(&fc));
+    if (!stencilHolder) {
+      return false;
+    }
+    stencil = stencilHolder.get();
+  } else {
+    stencil = stencils->getInitial();
+  }
+
+  XDRStencilEncoder encoder(&fc, buffer);
+  XDRResult res = encoder.codeStencil(sso->source(), *stencil);
+  if (res.isErr()) {
+    if (JS::IsTranscodeFailureResult(res.unwrapErr())) {
+      fc.clearAutoReport();
+      JS_ReportErrorASCII(cx, "XDR encoding failure");
+    }
+    return false;
+  }
+  return true;
+}
+
+static bool FinishIncrementalEncoding(JSContext* cx,
+                                      JS::Handle<ScriptSourceObject*> sso,
+                                      JS::Stencil** stencilOut) {
+  RefPtr<frontend::InitialStencilAndDelazifications> stencils =
+      sso->maybeStealStencils();
+  if (!stencils) {
+    JS_ReportErrorASCII(cx, "Not collecting delazifications");
+    return false;
+  }
+
+  if (stencils->canLazilyParse()) {
+    
+    
+    RefPtr initial =
+        const_cast<frontend::CompilationStencil*>(stencils->getInitial());
+    initial.forget(stencilOut);
+    return true;
+  }
+
+  AutoReportFrontendContext fc(cx);
+  RefPtr<frontend::CompilationStencil> stencil = stencils->getMerged(&fc);
+  if (!stencil) {
+    return false;
+  }
+
+  stencil.forget(stencilOut);
+  return true;
+}
+
+JS_PUBLIC_API bool JS::FinishIncrementalEncoding(JSContext* cx,
+                                                 JS::HandleScript script,
+                                                 JS::TranscodeBuffer& buffer) {
+  JS::Rooted<ScriptSourceObject*> sso(cx, script->sourceObject());
+  return ::FinishIncrementalEncoding(cx, sso, buffer);
+}
+
+JS_PUBLIC_API bool JS::FinishIncrementalEncoding(JSContext* cx,
+                                                 JS::HandleScript script,
+                                                 JS::Stencil** stencilOut) {
+  JS::Rooted<ScriptSourceObject*> sso(cx, script->sourceObject());
+  return ::FinishIncrementalEncoding(cx, sso, stencilOut);
+}
+
+JS_PUBLIC_API bool JS::FinishIncrementalEncoding(JSContext* cx,
+                                                 JS::Handle<JSObject*> module,
+                                                 JS::TranscodeBuffer& buffer) {
+  JS::Rooted<ScriptSourceObject*> sso(
+      cx, module->as<ModuleObject>().scriptSourceObject());
+  return ::FinishIncrementalEncoding(cx, sso, buffer);
+}
+
+JS_PUBLIC_API void JS::AbortIncrementalEncoding(JS::HandleScript script) {
+  if (!script) {
+    return;
+  }
+  script->sourceObject()->clearStencils();
+}
+
+JS_PUBLIC_API void JS::AbortIncrementalEncoding(JS::Handle<JSObject*> module) {
+  module->as<ModuleObject>().scriptSourceObject()->clearStencils();
 }
 
 JSScript* JS::CompileUtf8File(JSContext* cx,

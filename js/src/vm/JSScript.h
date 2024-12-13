@@ -86,6 +86,7 @@ namespace frontend {
 struct CompilationStencil;
 struct ExtensibleCompilationStencil;
 struct CompilationGCOutput;
+struct InitialStencilAndDelazifications;
 struct CompilationStencilMerger;
 class StencilXDR;
 }  
@@ -190,29 +191,6 @@ using ScriptFinalWarmUpCountMap =
     GCRekeyableHashMap<HeapPtr<BaseScript*>, ScriptFinalWarmUpCountEntry,
                        DefaultHasher<HeapPtr<BaseScript*>>, SystemAllocPolicy>;
 #endif
-
-
-
-
-
-
-class StencilIncrementalEncoderPtr {
- public:
-  frontend::CompilationStencilMerger* merger_ = nullptr;
-
-  StencilIncrementalEncoderPtr() = default;
-  ~StencilIncrementalEncoderPtr() { reset(); }
-
-  bool hasEncoder() const { return bool(merger_); }
-
-  void reset();
-
-  bool setInitial(JSContext* cx,
-                  UniquePtr<frontend::ExtensibleCompilationStencil>&& initial);
-
-  bool addDelazification(JSContext* cx,
-                         const frontend::CompilationStencil& delazification);
-};
 
 struct ScriptSourceChunk {
   ScriptSource* ss = nullptr;
@@ -596,11 +574,6 @@ class ScriptSource {
 
   SharedImmutableTwoByteString displayURL_;
   SharedImmutableTwoByteString sourceMapURL_;
-
-  
-  
-  
-  StencilIncrementalEncoderPtr xdrEncoder_;
 
   
   
@@ -1079,27 +1052,6 @@ class ScriptSource {
     MOZ_ASSERT(offset <= (uint32_t)INT32_MAX);
     introductionOffset_.emplace(offset);
   }
-
-  
-  bool hasEncoder() const { return xdrEncoder_.hasEncoder(); }
-
-  [[nodiscard]] bool startIncrementalEncoding(
-      JSContext* cx,
-      UniquePtr<frontend::ExtensibleCompilationStencil>&& initial,
-      bool& alreadyStarted);
-
-  [[nodiscard]] bool addDelazificationToIncrementalEncoding(
-      JSContext* cx, const frontend::CompilationStencil& stencil);
-
-  
-  
-  
-  bool xdrFinalizeEncoder(JSContext* cx, JS::TranscodeBuffer& buffer);
-
-  bool xdrFinalizeEncoder(JSContext* cx, JS::Stencil** stencilOut);
-
-  
-  void xdrAbortEncoder();
 };
 
 
@@ -1176,8 +1128,28 @@ class ScriptSourceObject : public NativeObject {
     ELEMENT_PROPERTY_SLOT,
     INTRODUCTION_SCRIPT_SLOT,
     PRIVATE_SLOT,
+    STENCILS_SLOT,
     RESERVED_SLOTS
   };
+
+ public:
+  
+  
+  void setStencils(
+      already_AddRefed<frontend::InitialStencilAndDelazifications> stencils);
+
+  
+  
+  frontend::InitialStencilAndDelazifications* maybeGetStencils();
+
+  
+  
+  
+  already_AddRefed<frontend::InitialStencilAndDelazifications>
+  maybeStealStencils();
+
+  
+  void clearStencils();
 };
 
 
