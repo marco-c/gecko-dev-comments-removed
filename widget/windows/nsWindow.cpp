@@ -2671,10 +2671,35 @@ void nsWindow::SetCustomTitlebar(bool aCustomTitlebar) {
 
   mCustomNonClient = aCustomTitlebar;
 
+  const LONG_PTR style = GetWindowLongPtrW(mWnd, GWL_STYLE);
   
   if (mCustomNonClient) {
+    if (style & WS_SYSMENU) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      ::GetSystemMenu(mWnd, FALSE);
+      ::SetWindowLongPtrW(mWnd, GWL_STYLE, style & ~WS_SYSMENU);
+    }
     UpdateNonClientMargins();
   } else {
+    if (WindowStyle() & WS_SYSMENU) {
+      
+      ::SetWindowLongPtrW(mWnd, GWL_STYLE, style | WS_SYSMENU);
+    }
     ResetLayout();
   }
 }
@@ -4498,53 +4523,55 @@ void nsWindow::IPCWindowProcHandler(UINT& msg, WPARAM& wParam, LPARAM& lParam) {
 static bool DisplaySystemMenu(HWND hWnd, nsSizeMode sizeMode, bool isRtl,
                               int32_t x, int32_t y) {
   HMENU hMenu = GetSystemMenu(hWnd, FALSE);
-  if (hMenu) {
-    MENUITEMINFO mii;
-    mii.cbSize = sizeof(MENUITEMINFO);
-    mii.fMask = MIIM_STATE;
-    mii.fType = 0;
-
-    
-    mii.fState = MF_ENABLED;
-    SetMenuItemInfo(hMenu, SC_RESTORE, FALSE, &mii);
-    SetMenuItemInfo(hMenu, SC_SIZE, FALSE, &mii);
-    SetMenuItemInfo(hMenu, SC_MOVE, FALSE, &mii);
-    SetMenuItemInfo(hMenu, SC_MAXIMIZE, FALSE, &mii);
-    SetMenuItemInfo(hMenu, SC_MINIMIZE, FALSE, &mii);
-
-    mii.fState = MF_GRAYED;
-    switch (sizeMode) {
-      case nsSizeMode_Fullscreen:
-        
-      case nsSizeMode_Maximized:
-        SetMenuItemInfo(hMenu, SC_SIZE, FALSE, &mii);
-        SetMenuItemInfo(hMenu, SC_MOVE, FALSE, &mii);
-        SetMenuItemInfo(hMenu, SC_MAXIMIZE, FALSE, &mii);
-        break;
-      case nsSizeMode_Minimized:
-        SetMenuItemInfo(hMenu, SC_MINIMIZE, FALSE, &mii);
-        break;
-      case nsSizeMode_Normal:
-        SetMenuItemInfo(hMenu, SC_RESTORE, FALSE, &mii);
-        break;
-      case nsSizeMode_Invalid:
-        NS_ASSERTION(false, "Did the argument come from invalid IPC?");
-        break;
-      default:
-        MOZ_ASSERT_UNREACHABLE("Unhnalded nsSizeMode value detected");
-        break;
-    }
-    LPARAM cmd = TrackPopupMenu(
-        hMenu,
-        (TPM_LEFTBUTTON | TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_TOPALIGN |
-         (isRtl ? TPM_RIGHTALIGN : TPM_LEFTALIGN)),
-        x, y, 0, hWnd, nullptr);
-    if (cmd) {
-      PostMessage(hWnd, WM_SYSCOMMAND, cmd, 0);
-      return true;
-    }
+  if (NS_WARN_IF(!hMenu)) {
+    return false;
   }
-  return false;
+
+  MENUITEMINFO mii;
+  mii.cbSize = sizeof(MENUITEMINFO);
+  mii.fMask = MIIM_STATE;
+  mii.fType = 0;
+
+  
+  mii.fState = MF_ENABLED;
+  SetMenuItemInfo(hMenu, SC_RESTORE, FALSE, &mii);
+  SetMenuItemInfo(hMenu, SC_SIZE, FALSE, &mii);
+  SetMenuItemInfo(hMenu, SC_MOVE, FALSE, &mii);
+  SetMenuItemInfo(hMenu, SC_MAXIMIZE, FALSE, &mii);
+  SetMenuItemInfo(hMenu, SC_MINIMIZE, FALSE, &mii);
+
+  mii.fState = MF_GRAYED;
+  switch (sizeMode) {
+    case nsSizeMode_Fullscreen:
+      
+    case nsSizeMode_Maximized:
+      SetMenuItemInfo(hMenu, SC_SIZE, FALSE, &mii);
+      SetMenuItemInfo(hMenu, SC_MOVE, FALSE, &mii);
+      SetMenuItemInfo(hMenu, SC_MAXIMIZE, FALSE, &mii);
+      break;
+    case nsSizeMode_Minimized:
+      SetMenuItemInfo(hMenu, SC_MINIMIZE, FALSE, &mii);
+      break;
+    case nsSizeMode_Normal:
+      SetMenuItemInfo(hMenu, SC_RESTORE, FALSE, &mii);
+      break;
+    case nsSizeMode_Invalid:
+      NS_ASSERTION(false, "Did the argument come from invalid IPC?");
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unhnalded nsSizeMode value detected");
+      break;
+  }
+  LPARAM cmd = TrackPopupMenu(hMenu,
+                              TPM_LEFTBUTTON | TPM_RIGHTBUTTON | TPM_RETURNCMD |
+                                  TPM_TOPALIGN |
+                                  (isRtl ? TPM_RIGHTALIGN : TPM_LEFTALIGN),
+                              x, y, 0, hWnd, nullptr);
+  if (!cmd) {
+    return false;
+  }
+  PostMessage(hWnd, WM_SYSCOMMAND, cmd, 0);
+  return true;
 }
 
 
@@ -5700,13 +5727,20 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
         result = true;
       }
 
-      
-      
-      if (filteredWParam == SC_KEYMENU && lParam == VK_SPACE &&
-          mFrameState->GetSizeMode() == nsSizeMode_Fullscreen) {
-        DisplaySystemMenu(mWnd, mFrameState->GetSizeMode(), mIsRTL,
-                          MOZ_SYSCONTEXT_X_POS, MOZ_SYSCONTEXT_Y_POS);
-        result = true;
+      if (filteredWParam == SC_KEYMENU && lParam == VK_SPACE) {
+        const auto sizeMode = mFrameState->GetSizeMode();
+        
+        
+        if (sizeMode == nsSizeMode_Fullscreen || mCustomNonClient) {
+          
+          
+          
+          
+          constexpr LayoutDeviceIntPoint offset(20, 20);
+          auto pos = GetScreenBounds().TopLeft() + offset;
+          DisplaySystemMenu(mWnd, sizeMode, mIsRTL, pos.x, pos.y);
+          result = true;
+        }
       }
     } break;
 

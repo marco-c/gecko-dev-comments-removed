@@ -25,10 +25,6 @@
 #define kWindowPositionSlop 20
 
 
-#define MOZ_SYSCONTEXT_X_POS 20
-#define MOZ_SYSCONTEXT_Y_POS 20
-
-
 
 #define MAX_RECTS_IN_REGION 100
 
