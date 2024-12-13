@@ -281,11 +281,7 @@ pub fn parse_fragment_directive_and_remove_it_from_hash(
     if let Some(fragment_directive) = fragment_directive_iter.next() {
         if fragment_directive_iter.next().is_some() {
             
-            return Some((
-                hash_without_fragment_directive,
-                fragment_directive,
-                vec![],
-            ));
+            return Some((hash_without_fragment_directive, fragment_directive, vec![]));
         }
         
         
