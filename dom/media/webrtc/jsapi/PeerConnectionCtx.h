@@ -21,10 +21,9 @@ class WebrtcLogSinkHandle;
 namespace webrtc {
 class AudioDecoderFactory;
 
-
-class NoTrialsConfig : public FieldTrialsView {
+class MozTrialsConfig : public FieldTrialsView {
  public:
-  NoTrialsConfig() = default;
+  MozTrialsConfig() = default;
   std::string Lookup(absl::string_view key) const override {
     
     
