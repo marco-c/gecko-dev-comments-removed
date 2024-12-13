@@ -758,7 +758,8 @@ class MOZ_RAII AutoHandlingPasteEvent final {
 bool nsCopySupport::FireClipboardEvent(
     EventMessage aEventMessage,
     mozilla::Maybe<nsIClipboard::ClipboardType> aClipboardType,
-    PresShell* aPresShell, Selection* aSelection, bool* aActionTaken) {
+    PresShell* aPresShell, Selection* aSelection, DataTransfer* aDataTransfer,
+    bool* aActionTaken) {
   if (aActionTaken) {
     *aActionTaken = false;
   }
@@ -825,9 +826,18 @@ bool nsCopySupport::FireClipboardEvent(
   bool doDefault = true;
   RefPtr<DataTransfer> clipboardData;
   if (chromeShell || StaticPrefs::dom_event_clipboardevents_enabled()) {
-    clipboardData =
-        new DataTransfer(doc->GetScopeObject(), aEventMessage,
-                         originalEventMessage == ePaste, aClipboardType);
+    MOZ_ASSERT_IF(aDataTransfer,
+                  aDataTransfer->GetParentObject() == doc->GetScopeObject());
+    MOZ_ASSERT_IF(aDataTransfer, (aDataTransfer->GetEventMessage() == ePaste) &&
+                                     (aEventMessage == ePaste ||
+                                      aEventMessage == ePasteNoFormatting));
+    MOZ_ASSERT_IF(aDataTransfer,
+                  aDataTransfer->ClipboardType() == aClipboardType);
+    clipboardData = aDataTransfer
+                        ? RefPtr<DataTransfer>(aDataTransfer)
+                        : MakeRefPtr<DataTransfer>(
+                              doc->GetScopeObject(), aEventMessage,
+                              originalEventMessage == ePaste, aClipboardType);
 
     nsEventStatus status = nsEventStatus_eIgnore;
     InternalClipboardEvent evt(true, originalEventMessage);
@@ -851,7 +861,7 @@ bool nsCopySupport::FireClipboardEvent(
   
   
   auto clearAfter = MakeScopeExit([&] {
-    if (clipboardData) {
+    if (clipboardData && !aDataTransfer) {
       clipboardData->Disconnect();
 
       
@@ -959,6 +969,10 @@ bool nsCopySupport::FireClipboardEvent(
   
   if (doDefault || count) {
     piWindow->UpdateCommands(u"clipboard"_ns);
+    if (aPresShell && aPresShell->GetDocument()) {
+      
+      aPresShell->GetDocument()->SetClipboardCopyTriggered();
+    }
   }
 
   if (aActionTaken) {
