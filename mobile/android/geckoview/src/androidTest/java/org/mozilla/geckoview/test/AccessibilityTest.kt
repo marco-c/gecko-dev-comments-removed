@@ -1471,7 +1471,7 @@ class AccessibilityTest : BaseSessionTest() {
         )
 
         
-        mainSession.goBack()
+        mainSession.goBack(false)
         waitForInitialFocus()
         waitForAutoFillNodes()
         assertThat(
