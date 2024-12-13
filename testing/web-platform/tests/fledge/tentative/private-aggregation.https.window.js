@@ -7,15 +7,22 @@
 
 
 
+
+
+
 'use strict;'
 
 
 
 const MAIN_ORIGIN = OTHER_ORIGIN1;
+const ALT_ORIGIN = OTHER_ORIGIN4;
 
 const MAIN_PATH = '/.well-known/private-aggregation/report-protected-audience';
 const DEBUG_PATH =
     '/.well-known/private-aggregation/debug/report-protected-audience';
+
+const ADDITIONAL_BID_PUBLIC_KEY =
+    '11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=';
 
 const enableDebugMode = 'privateAggregation.enableDebugMode();';
 
@@ -69,8 +76,8 @@ function byteArrayToBigInt(inArray) {
   return out;
 }
 
-async function getDebugSamples() {
-  const debugReports = await pollReports(DEBUG_PATH);
+async function getDebugSamples(path) {
+  const debugReports = await pollReports(path);
 
   let samplesDict = new Map();
 
@@ -99,6 +106,10 @@ async function getDebugSamples() {
     }
   }
 
+  return samplesDict;
+}
+
+function stringifySamples(samplesDict) {
   let samplesArray = [];
   for (let [bucket, value] of samplesDict.entries()) {
     
@@ -108,11 +119,12 @@ async function getDebugSamples() {
   return samplesArray;
 }
 
-function createIgOverrides(nameAndBid, fragments) {
+function createIgOverrides(nameAndBid, fragments, originOverride = null) {
+  let originToUse = originOverride ? originOverride : MAIN_ORIGIN;
   return {
     name: nameAndBid,
     biddingLogicURL: createBiddingScriptURL({
-      origin: MAIN_ORIGIN,
+      origin: originToUse,
       generateBid: enableDebugMode + fragments.generateBidFragment,
       reportWin: enableDebugMode + fragments.reportWinFragment,
       bid: nameAndBid
@@ -120,19 +132,25 @@ function createIgOverrides(nameAndBid, fragments) {
   };
 }
 
+function expectAndConsume(samplesDict, bucket, val) {
+  assert_equals(samplesDict.get(bucket), val, 'sample in bucket ' + bucket);
+  samplesDict.delete(bucket);
+}
 
 
 
 
 
-async function runPrivateAggregationTest(test, uuid, fragments) {
-  await resetReports(MAIN_ORIGIN + '/' + MAIN_PATH);
-  await resetReports(MAIN_ORIGIN + '/' + DEBUG_PATH);
 
-  await joinCrossOriginInterestGroup(
-      test, uuid, MAIN_ORIGIN, createIgOverrides('1', fragments));
-  await joinCrossOriginInterestGroup(
-      test, uuid, MAIN_ORIGIN, createIgOverrides('2', fragments));
+async function runPrivateAggregationTest(
+    test, uuid, fragments, numGroups = 2, moreAuctionConfigOverrides = {}) {
+  await resetReports(MAIN_ORIGIN + MAIN_PATH);
+  await resetReports(MAIN_ORIGIN + DEBUG_PATH);
+
+  for (let i = 1; i <= numGroups; ++i) {
+    await joinCrossOriginInterestGroup(
+        test, uuid, MAIN_ORIGIN, createIgOverrides(i, fragments));
+  }
 
   const auctionConfigOverrides = {
     decisionLogicURL: createDecisionScriptURL(uuid, {
@@ -141,11 +159,12 @@ async function runPrivateAggregationTest(test, uuid, fragments) {
       reportResult: enableDebugMode + fragments.reportResultFragment
     }),
     seller: MAIN_ORIGIN,
-    interestGroupBuyers: [MAIN_ORIGIN]
+    interestGroupBuyers: [MAIN_ORIGIN],
+    ...moreAuctionConfigOverrides
   };
 
   await runBasicFledgeAuctionAndNavigate(test, uuid, auctionConfigOverrides);
-  return await getDebugSamples();
+  return await getDebugSamples(DEBUG_PATH);
 }
 
 subsetTest(promise_test, async test => {
@@ -166,7 +185,7 @@ subsetTest(promise_test, async test => {
 
   const samples = await runPrivateAggregationTest(test, uuid, fragments);
   assert_array_equals(
-      samples,
+      stringifySamples(samples),
       [
         '1 => 4',  
         '2 => 3',
@@ -201,7 +220,7 @@ subsetTest(promise_test, async test => {
 
   const samples = await runPrivateAggregationTest(test, uuid, fragments);
   assert_array_equals(
-      samples,
+      stringifySamples(samples),
       [
         '1 => 4',  
         '2 => 3',
@@ -236,7 +255,7 @@ subsetTest(promise_test, async test => {
 
   const samples = await runPrivateAggregationTest(test, uuid, fragments);
   assert_array_equals(
-      samples,
+      stringifySamples(samples),
       [
         '1 => 2',  
         '2 => 3',
@@ -273,7 +292,7 @@ subsetTest(promise_test, async test => {
 
   
   assert_array_equals(
-      samples,
+      stringifySamples(samples),
       [
         '1 => 1',  
         '3 => 1',  
@@ -304,12 +323,557 @@ subsetTest(promise_test, async test => {
           { bucket: 4n, value: 5 });`
   };
 
-  const samples = await runPrivateAggregationTest(test, uuid, fragments);
+  const samples =
+      stringifySamples(await runPrivateAggregationTest(test, uuid, fragments));
 
   
   
   assert_equals(samples.length, 2, 'samples array length');
   assert_in_array(samples[0], ['1 => 1', '1 => 2'], 'samples[0]');
   assert_in_array(samples[1], ['3 => 1', '3 => 2'], 'samples[1]');
-  
 }, 'reserved.once');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  const fragments = {
+    generateBidFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once',
+          { bucket: 1n, value: 1 });`,
+
+    reportWinFragment: `
+      try {
+        privateAggregation.contributeToHistogramOnEvent(
+            'reserved.once',
+            { bucket: 2n, value: 2 });
+      } catch (e) {
+        privateAggregation.contributeToHistogramOnEvent(
+            'reserved.always',
+            { bucket: 2n, value: (e instanceof TypeError ? 3 : 4) });
+      }`,
+
+    scoreAdFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once',
+          { bucket: 3n, value: 4 });`,
+
+    reportResultFragment: `
+      try {
+        privateAggregation.contributeToHistogramOnEvent(
+            'reserved.once',
+            { bucket: 4n, value: 5 });
+      } catch (e) {
+        privateAggregation.contributeToHistogramOnEvent(
+            'reserved.always',
+            { bucket: 4n, value: (e instanceof TypeError ? 6 : 7) });
+      }`
+  };
+
+  const samples =
+      stringifySamples(await runPrivateAggregationTest(test, uuid, fragments));
+
+  assert_array_equals(samples, [
+    '1 => 1',
+    '2 => 3',
+    '3 => 4',
+    '4 => 6',
+  ]);
+}, 'no reserved.once in reporting');
+
+
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  const fragments = {
+    generateBidFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {baseValue: 'percent-scripts-timeout', offset: 0n},
+              value: 1});
+      if (interestGroup.name === '1') {
+        while (true) {}
+      }
+      `,
+
+    reportWinFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {baseValue: 'percent-scripts-timeout', offset: 200n},
+              value: 1});
+      while(true) {}`,
+
+    scoreAdFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {baseValue: 'percent-scripts-timeout', offset: 400n},
+              value: 1});
+      if (bid == 2) {
+        while (true) {}
+      }
+      `,
+
+    reportResultFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {baseValue: 'percent-scripts-timeout', offset: 600n},
+              value: 1});`
+  };
+
+  const samples = await runPrivateAggregationTest(test, uuid, fragments, 3);
+
+  let expected = [
+    '33 => 1',   
+    '300 => 1',  
+    '450 => 1',  
+    '600 => 1',  
+  ].sort();
+
+  assert_array_equals(stringifySamples(samples), expected);
+}, 'percent-scripts-timeout');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  await resetReports(ALT_ORIGIN + DEBUG_PATH);
+
+  const ADDITIONAL_BID_PUBLIC_KEY =
+      '11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=';
+
+  
+  
+  await joinNegativeInterestGroup(
+      test, MAIN_ORIGIN, 'some negative group', ADDITIONAL_BID_PUBLIC_KEY);
+  await joinCrossOriginInterestGroup(test, uuid, MAIN_ORIGIN, {ads: []});
+
+  const fragments = {
+    generateBidFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {baseValue: 'participating-ig-count', offset: 0n},
+              value: 1});`,
+
+    reportWinFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {baseValue: 'participating-ig-count', offset: 200n},
+              value: 1});`,
+
+    scoreAdFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {baseValue: 'participating-ig-count', offset: 400n},
+              value: 1});`,
+
+    reportResultFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {baseValue: 'participating-ig-count', offset: 600n},
+              value: 1});`
+  };
+
+  
+  await joinCrossOriginInterestGroup(
+      test, uuid, ALT_ORIGIN, createIgOverrides('1', fragments, ALT_ORIGIN));
+  await joinCrossOriginInterestGroup(
+      test, uuid, ALT_ORIGIN, createIgOverrides('2', fragments, ALT_ORIGIN));
+  const auctionConfigOverrides = {
+    interestGroupBuyers: [MAIN_ORIGIN, ALT_ORIGIN]
+  };
+
+  const samples = await runPrivateAggregationTest(
+      test, uuid, fragments, 5, auctionConfigOverrides,
+       2);
+
+  let expected = [
+    '5 => 1',    
+    '205 => 1',  
+    '400 => 1',  
+    '600 => 1',  
+  ].sort();
+
+  assert_array_equals(stringifySamples(samples), expected);
+
+  let otherSamples = await getDebugSamples(ALT_ORIGIN + DEBUG_PATH);
+  assert_array_equals(stringifySamples(otherSamples), ['2 => 1']);
+}, 'participating-ig-count');
+
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  const fragments = {
+    generateBidFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {
+                  baseValue: 'percent-igs-cumulative-timeout',
+                  offset: 0n
+              },
+              value: 1});
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {
+                  baseValue: 'cumulative-buyer-time',
+                  offset: 10000n
+              },
+              value: 1});
+      setBid({bid: interestGroup.name, render: interestGroup.ads[0].renderURL});
+      while (true) {}
+      `,
+
+    reportWinFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {
+                  baseValue: 'percent-igs-cumulative-timeout',
+                  offset: 200n
+              },
+              value: 1});
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {
+                  baseValue: 'cumulative-buyer-time',
+                  offset: 20000n
+              },
+              value: 1});
+      `,
+
+    scoreAdFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {
+                  baseValue: 'percent-igs-cumulative-timeout',
+                  offset: 400n
+              },
+              value: 1});
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {
+                  baseValue: 'cumulative-buyer-time',
+                  offset: 40000n
+              },
+              value: 1});
+      `,
+
+    reportResultFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {
+                  baseValue: 'percent-igs-cumulative-timeout',
+                  offset: 600n
+              },
+              value: 1});
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {
+                  baseValue: 'cumulative-buyer-time',
+                  offset: 60000n
+              },
+              value: 1});`
+  };
+
+  const auctionConfigOverrides = {
+    perBuyerTimeouts: {
+      '*': 500  
+    },
+    perBuyerCumulativeTimeouts: {'*': 2000}
+  };
+
+  const samples = await runPrivateAggregationTest(
+      test, uuid, fragments, 15, auctionConfigOverrides);
+
+  
+  
+  expectAndConsume(samples, 13000n, 1n);  
+  expectAndConsume(samples, 23000n, 1n);
+  expectAndConsume(samples, 40000n, 1n);
+  expectAndConsume(samples, 60000n, 1n);
+
+  
+  expectAndConsume(samples, 400n, 1n);
+  expectAndConsume(samples, 600n, 1n);
+
+  assert_equals(samples.size, 2, 'buyer samples');
+
+  let percentGenerateBid = -1;
+  let percentReportWin = -1;
+
+  for (let [bucket, val] of samples.entries()) {
+    assert_equals(val, 1n, 'bucket val');
+    if (0n <= bucket && bucket <= 110n) {
+      percentGenerateBid = bucket;
+    } else if (200n <= bucket && bucket <= 310n) {
+      percentReportWin = bucket - 200n;
+    } else {
+      assert_unreached('Unexpected bucket number ' + bucket);
+    }
+  }
+
+  assert_equals(
+      percentGenerateBid, percentReportWin,
+      'same % in generateBid and reportWin');
+
+  
+  
+  
+  assert_in_array(
+      percentGenerateBid,
+      [6n, 13n, 20n, 26n, 33n, 40n, 46n, 53n, 60n, 66n, 73n, 80n, 86n, 93n],
+      'percent timeout is as expected');
+}, 'percent-igs-cumulative-timeout, and cumulative-buyer-time when hit');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  const fragments = {
+    generateBidFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {baseValue: 'cumulative-buyer-time', offset: 0n},
+              value: 1});`,
+
+    reportWinFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {baseValue: 'cumulative-buyer-time', offset: 200n},
+              value: 1});`,
+
+    scoreAdFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {baseValue: 'cumulative-buyer-time', offset: 400n},
+              value: 1});`,
+
+    reportResultFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {baseValue: 'cumulative-buyer-time', offset: 600n},
+              value: 1});`
+  };
+
+  const samples = await runPrivateAggregationTest(test, uuid, fragments, 5);
+
+  
+  let expected = ['0 => 1', '200 => 1', '400 => 1', '600 => 1'].sort();
+
+  assert_array_equals(stringifySamples(samples), expected);
+}, 'cumulative-buyer-time when not configured');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  const fragments = {
+    generateBidFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {baseValue: 'cumulative-buyer-time', offset: 0n},
+              value: 1});`,
+
+    reportWinFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {baseValue: 'cumulative-buyer-time', offset: 10000n},
+              value: 1});`,
+
+    scoreAdFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {baseValue: 'cumulative-buyer-time', offset: 20000n},
+              value: 1});`,
+
+    reportResultFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {baseValue: 'cumulative-buyer-time', offset: 30000n},
+              value: 1});`
+  };
+
+  const auctionConfigOverrides = {perBuyerCumulativeTimeouts: {'*': 4000}};
+
+  const samples = await runPrivateAggregationTest(
+      test, uuid, fragments, 5, auctionConfigOverrides);
+
+  
+  expectAndConsume(samples, 20000n, 1n);
+  expectAndConsume(samples, 30000n, 1n);
+
+  assert_equals(samples.size, 2, 'buyer samples');
+
+  let timeGenerateBid = -1;
+  let timeReportWin = -1;
+
+  for (let [bucket, val] of samples.entries()) {
+    assert_equals(val, 1n, 'bucket val');
+    if (0n <= bucket && bucket <= 5000n) {
+      timeGenerateBid = bucket;
+    } else if (10000n <= bucket && bucket <= 15000n) {
+      timeReportWin = bucket - 10000n;
+    } else {
+      assert_unreached('Unexpected bucket number');
+    }
+  }
+
+  assert_equals(
+      timeGenerateBid, timeReportWin, 'same time in generateBid and reportWin');
+
+  
+  
+  
+  assert_true(
+      1n <= timeGenerateBid && timeGenerateBid <= 4000n,
+      'time ' + timeGenerateBid + ' is reasonable and non-zero');
+}, 'cumulative-buyer-time when configured');
+
+
+async function testStorageQuotaMetric(test, name) {
+  const uuid = generateUuid(test);
+  const fragments = {
+    generateBidFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {baseValue: '${name}', offset: 0n},
+              value: 1});`,
+
+    reportWinFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {baseValue: '${name}', offset: 10000n},
+              value: 1});`,
+
+    scoreAdFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {baseValue: '${name}', offset: 20000n},
+              value: 1});`,
+
+    reportResultFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {baseValue: '${name}', offset: 30000n},
+              value: 1});`
+  };
+
+  const samples = await runPrivateAggregationTest(test, uuid, fragments, 5);
+
+  
+  expectAndConsume(samples, 20000n, 1n);
+  expectAndConsume(samples, 30000n, 1n);
+
+  assert_equals(samples.size, 2, 'buyer samples');
+
+  let generateBidVal = -1;
+  let reportWinVal = -1;
+
+  for (let [bucket, val] of samples.entries()) {
+    assert_equals(val, 1n, 'bucket val');
+    if (0n <= bucket && bucket < 10000n) {
+      generateBidVal = Number(bucket);
+    } else if (10000n <= bucket && bucket <= 20000n) {
+      reportWinVal = Number(bucket - 10000n);
+    } else {
+      assert_unreached('Unexpected bucket number ' + bucket);
+    }
+  }
+
+  assert_equals(
+      generateBidVal, reportWinVal, 'same value in generateBid and reportWin');
+
+  
+  
+  assert_between_inclusive(
+      generateBidVal, 0, 110, 'reported percent value is in expected range');
+}
+
+subsetTest(promise_test, async test => {
+  await testStorageQuotaMetric(test, 'percent-regular-ig-count-quota-used');
+}, 'percent-regular-ig-count-quota-used');
+
+subsetTest(promise_test, async test => {
+  await testStorageQuotaMetric(test, 'percent-negative-ig-count-quota-used');
+}, 'percent-negative-ig-count-quota-used');
+
+subsetTest(promise_test, async test => {
+  await testStorageQuotaMetric(test, 'percent-ig-storage-quota-used');
+}, 'percent-ig-storage-quota-used');
+
+
+async function testStorageUsageMetric(test, name, min) {
+  const uuid = generateUuid(test);
+  const spacing = 1000000000n;
+  const fragments = {
+    generateBidFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {baseValue: '${name}', offset: 0n},
+              value: 1});`,
+
+    reportWinFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {baseValue: '${name}', offset: ${spacing}n},
+              value: 1});`,
+
+    scoreAdFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.once', {
+              bucket: {baseValue: '${name}', offset: 2n * ${spacing}n},
+              value: 1});`,
+
+    reportResultFragment: `
+      privateAggregation.contributeToHistogramOnEvent(
+          'reserved.always', {
+              bucket: {baseValue: '${name}', offset: 3n * ${spacing}n},
+              value: 1});`
+  };
+
+  await joinNegativeInterestGroup(
+      test, MAIN_ORIGIN, 'some negative group', ADDITIONAL_BID_PUBLIC_KEY);
+  await joinNegativeInterestGroup(
+      test, MAIN_ORIGIN, 'some negative group 2', ADDITIONAL_BID_PUBLIC_KEY);
+  await joinCrossOriginInterestGroup(
+      test, uuid, MAIN_ORIGIN,
+      {ads: [], name: 'Big group w/o ads'.padEnd(50000)});
+
+  const samples = await runPrivateAggregationTest(test, uuid, fragments, 5);
+
+  
+  expectAndConsume(samples, 2n * spacing, 1n);
+  expectAndConsume(samples, 3n * spacing, 1n);
+
+  assert_equals(samples.size, 2, 'buyer samples');
+
+  let generateBidVal = -1;
+  let reportWinVal = -1;
+
+  for (let [bucket, val] of samples.entries()) {
+    assert_equals(val, 1n, 'bucket val');
+    if (0n <= bucket && bucket < spacing) {
+      generateBidVal = bucket;
+    } else if (spacing <= bucket && bucket < 2n * spacing) {
+      reportWinVal = bucket - spacing;
+    } else {
+      assert_unreached('Unexpected bucket number ' + bucket);
+    }
+  }
+
+  assert_equals(
+      generateBidVal, reportWinVal, 'same value in generateBid and reportWin');
+
+  assert_true(
+      generateBidVal >= BigInt(min),
+      'reported value should be at least ' + min + ' but is ' + generateBidVal);
+}
+
+subsetTest(promise_test, async test => {
+  
+  await testStorageUsageMetric(test, 'regular-igs-count', 6);
+}, 'regular-igs-count');
+
+subsetTest(promise_test, async test => {
+  
+  await testStorageUsageMetric(test, 'negative-igs-count', 2);
+}, 'negative-igs-count');
+
+subsetTest(promise_test, async test => {
+  
+  await testStorageUsageMetric(test, 'ig-storage-used', 50000);
+}, 'ig-storage-used');
+
+
+
