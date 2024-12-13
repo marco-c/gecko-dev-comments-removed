@@ -1132,7 +1132,33 @@ class ScriptSourceObject : public NativeObject {
     RESERVED_SLOTS
   };
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr uintptr_t STENCILS_COLLECTING_DELAZIFICATIONS_FLAG = 0x1;
+  static constexpr uintptr_t STENCILS_SHARING_DELAZIFICATIONS_FLAG = 0x2;
+  static constexpr uintptr_t STENCILS_MASK = 0x3;
+
+  void clearStencils();
+
+  template <uintptr_t flag>
+  void setStencilsFlag();
+
+  template <uintptr_t flag>
+  void unsetStencilsFlag();
+
+  template <uintptr_t flag>
+  bool isStencilsFlagSet() const;
+
  public:
+  
   
   
   void setStencils(
@@ -1140,16 +1166,33 @@ class ScriptSourceObject : public NativeObject {
 
   
   
+  
+  
+  
+  void setCollectingDelazifications();
+
+  
+  
+  
+  
+  void unsetCollectingDelazifications();
+
+  
+  
+  bool isCollectingDelazifications() const;
+
+  
+  
+  
+  
+  void setSharingDelazifications();
+
+  
+  bool isSharingDelazifications() const;
+
+  
+  
   frontend::InitialStencilAndDelazifications* maybeGetStencils();
-
-  
-  
-  
-  already_AddRefed<frontend::InitialStencilAndDelazifications>
-  maybeStealStencils();
-
-  
-  void clearStencils();
 };
 
 
