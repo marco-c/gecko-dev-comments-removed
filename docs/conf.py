@@ -131,6 +131,9 @@ else:
     html_theme = "sphinx_rtd_theme"
 
 
+
+os.environ["LANG"] = "C"
+
 html_static_path = ["_static"]
 htmlhelp_basename = "FirefoxTreeDocs"
 
