@@ -6838,6 +6838,13 @@ nsresult nsGlobalWindowOuter::OpenInternal(
     }
   }
 
+  
+  
+  
+  if (!windowExists && mDoc) {
+    mDoc->ConsumeTransientUserGestureActivation();
+  }
+
   RefPtr<BrowsingContext> domReturn;
 
   nsresult rv = NS_OK;
