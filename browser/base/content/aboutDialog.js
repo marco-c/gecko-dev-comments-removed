@@ -7,6 +7,7 @@
 
 
 
+
 var { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
@@ -116,6 +117,38 @@ function init() {
 
   if (AppConstants.IS_ESR) {
     document.getElementById("release").hidden = false;
+  }
+
+  document
+    .getElementById("aboutDialogEscapeKey")
+    .addEventListener("command", () => {
+      window.close();
+    });
+  if (AppConstants.MOZ_UPDATER) {
+    document
+      .getElementById("aboutDialogHelpLink")
+      .addEventListener("click", () => {
+        openHelpLink("firefox-help");
+      });
+    document
+      .getElementById("submit-feedback")
+      .addEventListener("click", openFeedbackPage);
+    document
+      .getElementById("checkForUpdatesButton")
+      .addEventListener("command", () => {
+        gAppUpdater.checkForUpdates();
+      });
+    document
+      .getElementById("downloadAndInstallButton")
+      .addEventListener("command", () => {
+        gAppUpdater.startDownload();
+      });
+    document.getElementById("updateButton").addEventListener("command", () => {
+      gAppUpdater.buttonRestartAfterDownload();
+    });
+    window.addEventListener("unload", e => {
+      onUnload(e);
+    });
   }
 }
 
