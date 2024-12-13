@@ -25,13 +25,13 @@
 #include "NamespaceImports.h"
 
 #include "builtin/temporal/Calendar.h"
+#include "builtin/temporal/CalendarFields.h"
 #include "builtin/temporal/Duration.h"
 #include "builtin/temporal/PlainDateTime.h"
 #include "builtin/temporal/PlainMonthDay.h"
 #include "builtin/temporal/PlainTime.h"
 #include "builtin/temporal/PlainYearMonth.h"
 #include "builtin/temporal/Temporal.h"
-#include "builtin/temporal/TemporalFields.h"
 #include "builtin/temporal/TemporalParser.h"
 #include "builtin/temporal/TemporalRoundingMode.h"
 #include "builtin/temporal/TemporalTypes.h"
@@ -578,13 +578,13 @@ static bool ToTemporalDate(JSContext* cx, Handle<JSObject*> item,
   }
 
   
-  Rooted<TemporalFields> fields(cx);
+  Rooted<CalendarFields> fields(cx);
   if (!PrepareCalendarFields(cx, calendar, item,
                              {
-                                 CalendarField::Day,
+                                 CalendarField::Year,
                                  CalendarField::Month,
                                  CalendarField::MonthCode,
-                                 CalendarField::Year,
+                                 CalendarField::Day,
                              },
                              &fields)) {
     return false;
@@ -1888,17 +1888,15 @@ static bool PlainDate_inLeapYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_toPlainYearMonth(JSContext* cx, const CallArgs& args) {
-  Rooted<PlainDateObject*> temporalDate(
+  Rooted<PlainDateWithCalendar> temporalDate(
       cx, &args.thisv().toObject().as<PlainDateObject>());
 
   
-  Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
+  auto calendar = temporalDate.calendar();
 
   
-  Rooted<TemporalFields> fields(cx);
-  if (!PrepareCalendarFields(cx, calendar, temporalDate,
-                             {CalendarField::MonthCode, CalendarField::Year},
-                             &fields)) {
+  Rooted<CalendarFields> fields(cx);
+  if (!TemporalObjectToFields(cx, temporalDate, &fields)) {
     return false;
   }
 
@@ -1909,6 +1907,7 @@ static bool PlainDate_toPlainYearMonth(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
+  
   auto* obj = CreateTemporalYearMonth(cx, result);
   if (!obj) {
     return false;
@@ -1933,17 +1932,15 @@ static bool PlainDate_toPlainYearMonth(JSContext* cx, unsigned argc,
 
 
 static bool PlainDate_toPlainMonthDay(JSContext* cx, const CallArgs& args) {
-  Rooted<PlainDateObject*> temporalDate(
+  Rooted<PlainDateWithCalendar> temporalDate(
       cx, &args.thisv().toObject().as<PlainDateObject>());
 
   
-  Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
+  auto calendar = temporalDate.calendar();
 
   
-  Rooted<TemporalFields> fields(cx);
-  if (!PrepareCalendarFields(cx, calendar, temporalDate,
-                             {CalendarField::Day, CalendarField::MonthCode},
-                             &fields)) {
+  Rooted<CalendarFields> fields(cx);
+  if (!TemporalObjectToFields(cx, temporalDate, &fields)) {
     return false;
   }
 
@@ -1954,6 +1951,7 @@ static bool PlainDate_toPlainMonthDay(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
+  
   auto* obj = CreateTemporalMonthDay(cx, result);
   if (!obj) {
     return false;
@@ -2046,7 +2044,7 @@ static bool PlainDate_subtract(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_with(JSContext* cx, const CallArgs& args) {
-  Rooted<PlainDateObject*> temporalDate(
+  Rooted<PlainDateWithCalendar> temporalDate(
       cx, &args.thisv().toObject().as<PlainDateObject>());
 
   
@@ -2058,6 +2056,32 @@ static bool PlainDate_with(JSContext* cx, const CallArgs& args) {
   if (!ThrowIfTemporalLikeObject(cx, temporalDateLike)) {
     return false;
   }
+
+  
+  auto calendar = temporalDate.calendar();
+
+  
+  Rooted<CalendarFields> fields(cx);
+  if (!TemporalObjectToFields(cx, temporalDate, &fields)) {
+    return false;
+  }
+
+  
+  Rooted<CalendarFields> partialDate(cx);
+  if (!PreparePartialCalendarFields(cx, calendar, temporalDateLike,
+                                    {
+                                        CalendarField::Year,
+                                        CalendarField::Month,
+                                        CalendarField::MonthCode,
+                                        CalendarField::Day,
+                                    },
+                                    &partialDate)) {
+    return false;
+  }
+  MOZ_ASSERT(!partialDate.keys().isEmpty());
+
+  
+  fields = CalendarMergeFields(calendar, fields, partialDate);
 
   
   auto overflow = TemporalOverflow::Constrain;
@@ -2076,44 +2100,12 @@ static bool PlainDate_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
-
-  
-  Rooted<TemporalFields> fields(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, temporalDate,
-                                          {
-                                              CalendarField::Day,
-                                              CalendarField::Month,
-                                              CalendarField::MonthCode,
-                                              CalendarField::Year,
-                                          },
-                                          &fields)) {
-    return false;
-  }
-
-  
-  Rooted<TemporalFields> partialDate(cx);
-  if (!PreparePartialTemporalFields(cx, temporalDateLike, fields.keys(),
-                                    &partialDate)) {
-    return false;
-  }
-  MOZ_ASSERT(!partialDate.keys().isEmpty());
-
-  
-  Rooted<TemporalFields> mergedFields(
-      cx, CalendarMergeFields(calendar, fields, partialDate));
-
-  
-  if (!PrepareTemporalFields(cx, mergedFields, fields.keys(), &fields)) {
-    return false;
-  }
-
-  
   Rooted<PlainDateWithCalendar> date(cx);
   if (!CalendarDateFromFields(cx, calendar, fields, overflow, &date)) {
     return false;
   }
 
+  
   auto* result = CreateTemporalDate(cx, date);
   if (!result) {
     return false;

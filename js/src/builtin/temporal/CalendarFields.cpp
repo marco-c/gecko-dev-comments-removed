@@ -1,0 +1,765 @@
+
+
+
+
+
+
+#include "builtin/temporal/CalendarFields.h"
+
+#include "mozilla/Assertions.h"
+#include "mozilla/Likely.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Range.h"
+#include "mozilla/RangedPtr.h"
+
+#include <algorithm>
+#include <array>
+#include <cstring>
+#include <iterator>
+#include <stdint.h>
+#include <type_traits>
+#include <utility>
+
+#include "jsnum.h"
+#include "jspubtd.h"
+#include "NamespaceImports.h"
+
+#include "builtin/temporal/Crash.h"
+#include "builtin/temporal/Era.h"
+#include "builtin/temporal/PlainDate.h"
+#include "builtin/temporal/PlainDateTime.h"
+#include "builtin/temporal/PlainMonthDay.h"
+#include "builtin/temporal/PlainYearMonth.h"
+#include "builtin/temporal/Temporal.h"
+#include "builtin/temporal/TemporalParser.h"
+#include "gc/Barrier.h"
+#include "gc/Tracer.h"
+#include "js/AllocPolicy.h"
+#include "js/ComparisonOperators.h"
+#include "js/ErrorReport.h"
+#include "js/friend/ErrorMessages.h"
+#include "js/GCVector.h"
+#include "js/Id.h"
+#include "js/Printer.h"
+#include "js/RootingAPI.h"
+#include "js/TracingAPI.h"
+#include "js/TypeDecls.h"
+#include "js/Utility.h"
+#include "js/Value.h"
+#include "util/Text.h"
+#include "vm/BytecodeUtil.h"
+#include "vm/JSAtomState.h"
+#include "vm/JSContext.h"
+#include "vm/JSObject.h"
+#include "vm/PlainObject.h"
+#include "vm/StringType.h"
+#include "vm/SymbolType.h"
+
+#include "vm/JSAtomUtils-inl.h"
+#include "vm/ObjectOperations-inl.h"
+
+using namespace js;
+using namespace js::temporal;
+
+void CalendarFields::trace(JSTracer* trc) {
+  TraceNullableRoot(trc, &era_, "CalendarFields::era");
+  timeZone_.trace(trc);
+}
+
+void CalendarFields::setFrom(CalendarField field,
+                             const CalendarFields& source) {
+  MOZ_ASSERT(source.has(field));
+
+  switch (field) {
+    case CalendarField::Era:
+      setEra(source.era());
+      return;
+    case CalendarField::EraYear:
+      setEraYear(source.eraYear());
+      return;
+    case CalendarField::Year:
+      setYear(source.year());
+      return;
+    case CalendarField::Month:
+      setMonth(source.month());
+      return;
+    case CalendarField::MonthCode:
+      setMonthCode(source.monthCode());
+      return;
+    case CalendarField::Day:
+      setDay(source.day());
+      return;
+    case CalendarField::Hour:
+      setHour(source.hour());
+      return;
+    case CalendarField::Minute:
+      setMinute(source.minute());
+      return;
+    case CalendarField::Second:
+      setSecond(source.second());
+      return;
+    case CalendarField::Millisecond:
+      setMillisecond(source.millisecond());
+      return;
+    case CalendarField::Microsecond:
+      setMicrosecond(source.microsecond());
+      return;
+    case CalendarField::Nanosecond:
+      setNanosecond(source.nanosecond());
+      return;
+    case CalendarField::Offset:
+      setOffset(source.offset());
+      return;
+    case CalendarField::TimeZone:
+      setTimeZone(source.timeZone());
+      return;
+  }
+  MOZ_CRASH("invalid temporal field");
+}
+
+template <typename T, const auto& sorted>
+class SortedEnumSet {
+  mozilla::EnumSet<T> fields_;
+
+ public:
+  explicit SortedEnumSet(mozilla::EnumSet<T> fields) : fields_(fields) {}
+
+  class Iterator {
+    mozilla::EnumSet<T> fields_;
+    size_t index_;
+
+    void findNext() {
+      while (index_ < sorted.size() && !fields_.contains(sorted[index_])) {
+        index_++;
+      }
+    }
+
+   public:
+    
+    using difference_type = ptrdiff_t;
+    using value_type = CalendarField;
+    using pointer = CalendarField*;
+    using reference = CalendarField&;
+    using iterator_category = std::forward_iterator_tag;
+
+    Iterator(mozilla::EnumSet<T> fields, size_t index)
+        : fields_(fields), index_(index) {
+      findNext();
+    }
+
+    bool operator==(const Iterator& other) const {
+      MOZ_ASSERT(fields_ == other.fields_);
+      return index_ == other.index_;
+    }
+
+    bool operator!=(const Iterator& other) const { return !(*this == other); }
+
+    auto operator*() const {
+      MOZ_ASSERT(index_ < sorted.size());
+      MOZ_ASSERT(fields_.contains(sorted[index_]));
+      return sorted[index_];
+    }
+
+    auto& operator++() {
+      MOZ_ASSERT(index_ < sorted.size());
+      index_++;
+      findNext();
+      return *this;
+    }
+
+    auto operator++(int) {
+      auto result = *this;
+      ++(*this);
+      return result;
+    }
+  };
+
+  Iterator begin() const { return Iterator{fields_, 0}; };
+
+  Iterator end() const { return Iterator{fields_, sorted.size()}; }
+};
+
+static PropertyName* ToPropertyName(JSContext* cx, CalendarField field) {
+  switch (field) {
+    case CalendarField::Era:
+      return cx->names().era;
+    case CalendarField::EraYear:
+      return cx->names().eraYear;
+    case CalendarField::Year:
+      return cx->names().year;
+    case CalendarField::Month:
+      return cx->names().month;
+    case CalendarField::MonthCode:
+      return cx->names().monthCode;
+    case CalendarField::Day:
+      return cx->names().day;
+    case CalendarField::Hour:
+      return cx->names().hour;
+    case CalendarField::Minute:
+      return cx->names().minute;
+    case CalendarField::Second:
+      return cx->names().second;
+    case CalendarField::Millisecond:
+      return cx->names().millisecond;
+    case CalendarField::Microsecond:
+      return cx->names().microsecond;
+    case CalendarField::Nanosecond:
+      return cx->names().nanosecond;
+    case CalendarField::Offset:
+      return cx->names().offset;
+    case CalendarField::TimeZone:
+      return cx->names().timeZone;
+  }
+  MOZ_CRASH("invalid temporal field name");
+}
+
+static constexpr const char* ToCString(CalendarField field) {
+  switch (field) {
+    case CalendarField::Era:
+      return "era";
+    case CalendarField::EraYear:
+      return "eraYear";
+    case CalendarField::Year:
+      return "year";
+    case CalendarField::Month:
+      return "month";
+    case CalendarField::MonthCode:
+      return "monthCode";
+    case CalendarField::Day:
+      return "day";
+    case CalendarField::Hour:
+      return "hour";
+    case CalendarField::Minute:
+      return "minute";
+    case CalendarField::Second:
+      return "second";
+    case CalendarField::Millisecond:
+      return "millisecond";
+    case CalendarField::Microsecond:
+      return "microsecond";
+    case CalendarField::Nanosecond:
+      return "nanosecond";
+    case CalendarField::Offset:
+      return "offset";
+    case CalendarField::TimeZone:
+      return "timeZone";
+  }
+  JS_CONSTEXPR_CRASH("invalid temporal field name");
+}
+
+template <typename T, size_t N>
+static constexpr bool IsSorted(const std::array<T, N>& arr) {
+  for (size_t i = 1; i < arr.size(); i++) {
+    auto a = std::string_view{ToCString(arr[i - 1])};
+    auto b = std::string_view{ToCString(arr[i])};
+    if (a.compare(b) >= 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static constexpr auto sortedTemporalFields = std::array{
+    CalendarField::Day,         CalendarField::Era,
+    CalendarField::EraYear,     CalendarField::Hour,
+    CalendarField::Microsecond, CalendarField::Millisecond,
+    CalendarField::Minute,      CalendarField::Month,
+    CalendarField::MonthCode,   CalendarField::Nanosecond,
+    CalendarField::Offset,      CalendarField::Second,
+    CalendarField::TimeZone,    CalendarField::Year,
+};
+
+static_assert(IsSorted(sortedTemporalFields));
+
+
+
+
+using SortedTemporalFields = SortedEnumSet<CalendarField, sortedTemporalFields>;
+
+
+
+
+static mozilla::EnumSet<CalendarField> CalendarExtraFields(
+    CalendarId calendar, mozilla::EnumSet<CalendarField> type) {
+  MOZ_ASSERT(calendar != CalendarId::ISO8601);
+
+  
+
+  
+  
+  if (type.contains(CalendarField::Year) && CalendarEraRelevant(calendar)) {
+    return {CalendarField::Era, CalendarField::EraYear};
+  }
+  return {};
+}
+
+
+
+
+template <typename CharT>
+static mozilla::Maybe<MonthCodeField> ToMonthCode(
+    mozilla::Range<const CharT> chars) {
+  
+
+  
+  
+  
+  MOZ_ASSERT(chars.length() >= 3 && chars.length() <= 4);
+
+  
+  
+  
+  bool isLeapMonth = chars.length() == 4;
+  if (chars[0] != 'M' || (isLeapMonth && chars[3] != 'L')) {
+    return mozilla::Nothing();
+  }
+
+  
+  
+  
+  if (!mozilla::IsAsciiDigit(chars[1]) || !mozilla::IsAsciiDigit(chars[2])) {
+    return mozilla::Nothing();
+  }
+
+  
+  int32_t ordinal =
+      AsciiDigitToNumber(chars[1]) * 10 + AsciiDigitToNumber(chars[2]);
+
+  
+  if (ordinal == 0 && !isLeapMonth) {
+    return mozilla::Nothing();
+  }
+
+  
+  return mozilla::Some(MonthCodeField{ordinal, isLeapMonth});
+}
+
+
+
+
+static auto ToMonthCode(const JSLinearString* linear) {
+  JS::AutoCheckCannotGC nogc;
+
+  if (linear->hasLatin1Chars()) {
+    return ToMonthCode(linear->latin1Range(nogc));
+  }
+  return ToMonthCode(linear->twoByteRange(nogc));
+}
+
+
+
+
+static bool ToMonthCode(JSContext* cx, Handle<Value> value,
+                        MonthCodeField* result) {
+  auto reportInvalidMonthCode = [&](JSLinearString* monthCode) {
+    if (auto code = QuoteString(cx, monthCode)) {
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_TEMPORAL_CALENDAR_INVALID_MONTHCODE,
+                               code.get());
+    }
+    return false;
+  };
+
+  
+  Rooted<Value> monthCode(cx, value);
+  if (!ToPrimitive(cx, JSTYPE_STRING, &monthCode)) {
+    return false;
+  }
+
+  
+  if (!monthCode.isString()) {
+    ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK, monthCode,
+                     nullptr, "not a string");
+    return false;
+  }
+
+  JSLinearString* monthCodeStr = monthCode.toString()->ensureLinear(cx);
+  if (!monthCodeStr) {
+    return false;
+  }
+
+  
+  if (monthCodeStr->length() < 3 || monthCodeStr->length() > 4) {
+    return reportInvalidMonthCode(monthCodeStr);
+  }
+
+  
+  auto parsed = ToMonthCode(monthCodeStr);
+  if (!parsed) {
+    return reportInvalidMonthCode(monthCodeStr);
+  }
+
+  *result = *parsed;
+  return true;
+}
+
+
+
+
+static bool ToOffsetString(JSContext* cx, Handle<Value> value,
+                           int64_t* result) {
+  
+  Rooted<Value> offset(cx, value);
+  if (!ToPrimitive(cx, JSTYPE_STRING, &offset)) {
+    return false;
+  }
+
+  
+  if (!offset.isString()) {
+    ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK, offset,
+                     nullptr, "not a string");
+    return false;
+  }
+  Rooted<JSString*> offsetStr(cx, offset.toString());
+
+  
+  return ParseDateTimeUTCOffset(cx, offsetStr, result);
+}
+
+enum class Partial : bool { No, Yes };
+
+
+
+
+
+static bool PrepareCalendarFields(
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
+    mozilla::EnumSet<CalendarField> fieldNames,
+    mozilla::EnumSet<CalendarField> requiredFields, Partial partial,
+    MutableHandle<CalendarFields> result) {
+  MOZ_ASSERT_IF(partial == Partial::Yes, requiredFields.isEmpty());
+
+  
+  
+
+  
+  
+
+  
+
+  
+  auto calendarId = calendar.identifier();
+  if (calendarId != CalendarId::ISO8601) {
+    
+    auto extraFieldNames = CalendarExtraFields(calendarId, fieldNames);
+
+    
+    fieldNames += extraFieldNames;
+  }
+
+  
+  
+  
+  result.set(CalendarFields{});
+
+  
+
+  
+  Rooted<Value> value(cx);
+  for (auto fieldName : SortedTemporalFields{fieldNames}) {
+    auto* propertyName = ToPropertyName(cx, fieldName);
+    const auto* cstr = ToCString(fieldName);
+
+    
+
+    
+    if (!GetProperty(cx, fields, fields, propertyName, &value)) {
+      return false;
+    }
+
+    
+    if (!value.isUndefined()) {
+      
+
+      
+      switch (fieldName) {
+        case CalendarField::Era: {
+          JSString* era = ToString(cx, value);
+          if (!era) {
+            return false;
+          }
+          result.setEra(era);
+          break;
+        }
+        case CalendarField::EraYear: {
+          
+          
+          
+          
+          
+          
+          double eraYear;
+          if (!ToPositiveIntegerWithTruncation(cx, value, cstr, &eraYear)) {
+            return false;
+          }
+          result.setEraYear(eraYear);
+          break;
+        }
+        case CalendarField::Year: {
+          double year;
+          if (!ToIntegerWithTruncation(cx, value, cstr, &year)) {
+            return false;
+          }
+          result.setYear(year);
+          break;
+        }
+        case CalendarField::Month: {
+          double month;
+          if (!ToPositiveIntegerWithTruncation(cx, value, cstr, &month)) {
+            return false;
+          }
+          result.setMonth(month);
+          break;
+        }
+        case CalendarField::MonthCode: {
+          MonthCodeField monthCode;
+          if (!ToMonthCode(cx, value, &monthCode)) {
+            return false;
+          }
+          result.setMonthCode(monthCode);
+          break;
+        }
+        case CalendarField::Day: {
+          double day;
+          if (!ToPositiveIntegerWithTruncation(cx, value, cstr, &day)) {
+            return false;
+          }
+          result.setDay(day);
+          break;
+        }
+        case CalendarField::Hour: {
+          double hour;
+          if (!ToIntegerWithTruncation(cx, value, cstr, &hour)) {
+            return false;
+          }
+          result.setHour(hour);
+          break;
+        }
+        case CalendarField::Minute: {
+          double minute;
+          if (!ToIntegerWithTruncation(cx, value, cstr, &minute)) {
+            return false;
+          }
+          result.setMinute(minute);
+          break;
+        }
+        case CalendarField::Second: {
+          double second;
+          if (!ToIntegerWithTruncation(cx, value, cstr, &second)) {
+            return false;
+          }
+          result.setSecond(second);
+          break;
+        }
+        case CalendarField::Millisecond: {
+          double millisecond;
+          if (!ToIntegerWithTruncation(cx, value, cstr, &millisecond)) {
+            return false;
+          }
+          result.setMillisecond(millisecond);
+          break;
+        }
+        case CalendarField::Microsecond: {
+          double microsecond;
+          if (!ToIntegerWithTruncation(cx, value, cstr, &microsecond)) {
+            return false;
+          }
+          result.setMicrosecond(microsecond);
+          break;
+        }
+        case CalendarField::Nanosecond: {
+          double nanosecond;
+          if (!ToIntegerWithTruncation(cx, value, cstr, &nanosecond)) {
+            return false;
+          }
+          result.setNanosecond(nanosecond);
+          break;
+        }
+        case CalendarField::Offset: {
+          int64_t offset;
+          if (!ToOffsetString(cx, value, &offset)) {
+            return false;
+          }
+          result.setOffset(OffsetField{offset});
+          break;
+        }
+        case CalendarField::TimeZone:
+          Rooted<TimeZoneValue> timeZone(cx);
+          if (!ToTemporalTimeZone(cx, value, &timeZone)) {
+            return false;
+          }
+          result.setTimeZone(timeZone);
+          break;
+      }
+    } else if (partial == Partial::No) {
+      
+      if (requiredFields.contains(fieldName)) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_TEMPORAL_MISSING_PROPERTY, cstr);
+        return false;
+      }
+
+      
+      result.setDefault(fieldName);
+    }
+  }
+
+  
+  if (partial == Partial::Yes && result.keys().isEmpty()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_MISSING_TEMPORAL_FIELDS);
+    return false;
+  }
+
+  
+  return true;
+}
+
+
+
+
+
+bool js::temporal::PrepareCalendarFields(
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
+    mozilla::EnumSet<CalendarField> fieldNames,
+    mozilla::EnumSet<CalendarField> requiredFields,
+    MutableHandle<CalendarFields> result) {
+  return PrepareCalendarFields(cx, calendar, fields, fieldNames, requiredFields,
+                               Partial::No, result);
+}
+
+
+
+
+
+bool js::temporal::PreparePartialCalendarFields(
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
+    mozilla::EnumSet<CalendarField> fieldNames,
+    JS::MutableHandle<CalendarFields> result) {
+  return PrepareCalendarFields(cx, calendar, fields, fieldNames, {},
+                               Partial::Yes, result);
+}
+
+enum class DateFieldType { Date, YearMonth, MonthDay };
+
+
+
+
+static bool ISODateToFields(JSContext* cx, Handle<CalendarValue> calendar,
+                            const PlainDate& date, DateFieldType type,
+                            MutableHandle<CalendarFields> result) {
+  
+  result.set(CalendarFields{});
+
+  
+  Rooted<Value> value(cx);
+  if (!CalendarMonthCode(cx, calendar, date, &value)) {
+    return false;
+  }
+  MOZ_ASSERT(value.isString());
+
+  MonthCodeField monthCode;
+  if (!ToMonthCode(cx, value, &monthCode)) {
+    return false;
+  }
+  result.setMonthCode(monthCode);
+
+  
+  if (type == DateFieldType::MonthDay || type == DateFieldType::Date) {
+    if (!CalendarDay(cx, calendar, date, &value)) {
+      return false;
+    }
+    MOZ_ASSERT(value.isInt32());
+
+    result.setDay(value.toInt32());
+  }
+
+  
+  if (type == DateFieldType::YearMonth || type == DateFieldType::Date) {
+    if (!CalendarYear(cx, calendar, date, &value)) {
+      return false;
+    }
+    MOZ_ASSERT(value.isInt32());
+
+    result.setYear(value.toInt32());
+  }
+
+  
+  return true;
+}
+
+
+
+
+bool js::temporal::TemporalObjectToFields(
+    JSContext* cx, Handle<PlainDateWithCalendar> temporalObject,
+    MutableHandle<CalendarFields> result) {
+  
+  auto calendar = temporalObject.calendar();
+
+  
+  auto date = temporalObject.date();
+
+  
+  auto type = DateFieldType::Date;
+
+  
+  return ISODateToFields(cx, calendar, date, type, result);
+}
+
+
+
+
+bool js::temporal::TemporalObjectToFields(
+    JSContext* cx, Handle<PlainDateTimeWithCalendar> temporalObject,
+    MutableHandle<CalendarFields> result) {
+  
+  auto calendar = temporalObject.calendar();
+
+  
+  auto date = temporalObject.date();
+
+  
+  auto type = DateFieldType::Date;
+
+  
+  return ISODateToFields(cx, calendar, date, type, result);
+}
+
+
+
+
+bool js::temporal::TemporalObjectToFields(
+    JSContext* cx, Handle<PlainMonthDayWithCalendar> temporalObject,
+    MutableHandle<CalendarFields> result) {
+  
+  auto calendar = temporalObject.calendar();
+
+  
+  auto date = temporalObject.date();
+
+  
+  auto type = DateFieldType::MonthDay;
+
+  
+  return ISODateToFields(cx, calendar, date, type, result);
+}
+
+
+
+
+bool js::temporal::TemporalObjectToFields(
+    JSContext* cx, Handle<PlainYearMonthWithCalendar> temporalObject,
+    MutableHandle<CalendarFields> result) {
+  
+  auto calendar = temporalObject.calendar();
+
+  
+  auto date = temporalObject.date();
+
+  
+  auto type = DateFieldType::YearMonth;
+
+  
+  return ISODateToFields(cx, calendar, date, type, result);
+}

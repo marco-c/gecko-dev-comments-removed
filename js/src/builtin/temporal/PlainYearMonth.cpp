@@ -16,10 +16,10 @@
 #include "NamespaceImports.h"
 
 #include "builtin/temporal/Calendar.h"
+#include "builtin/temporal/CalendarFields.h"
 #include "builtin/temporal/Duration.h"
 #include "builtin/temporal/PlainDate.h"
 #include "builtin/temporal/Temporal.h"
-#include "builtin/temporal/TemporalFields.h"
 #include "builtin/temporal/TemporalParser.h"
 #include "builtin/temporal/TemporalRoundingMode.h"
 #include "builtin/temporal/TemporalTypes.h"
@@ -296,12 +296,12 @@ static bool ToTemporalYearMonth(
   }
 
   
-  Rooted<TemporalFields> fields(cx);
+  Rooted<CalendarFields> fields(cx);
   if (!PrepareCalendarFields(cx, calendar, item,
                              {
+                                 CalendarField::Year,
                                  CalendarField::Month,
                                  CalendarField::MonthCode,
-                                 CalendarField::Year,
                              },
                              &fields)) {
     return false;
@@ -356,13 +356,6 @@ static bool ToTemporalYearMonth(
   }
 
   
-  Rooted<PlainYearMonthObject*> obj(
-      cx, CreateTemporalYearMonth(cx, date, calendar));
-  if (!obj) {
-    return false;
-  }
-
-  
 
   
   YearMonthOptions ignoredOptions;
@@ -371,7 +364,24 @@ static bool ToTemporalYearMonth(
   }
 
   
-  return CalendarYearMonthFromFields(cx, calendar, obj,
+  
+
+  
+  
+  
+  Rooted<PlainYearMonthWithCalendar> yearMonth(cx);
+  if (!CreateTemporalYearMonth(cx, date, calendar, &yearMonth)) {
+    return false;
+  }
+
+  
+  Rooted<CalendarFields> fields(cx);
+  if (!TemporalObjectToFields(cx, yearMonth, &fields)) {
+    return false;
+  }
+
+  
+  return CalendarYearMonthFromFields(cx, calendar, fields,
                                      TemporalOverflow::Constrain, result);
 }
 
@@ -390,7 +400,7 @@ static bool ToTemporalYearMonth(
 static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
                                              TemporalDifference operation,
                                              const CallArgs& args) {
-  Rooted<PlainYearMonthObject*> yearMonth(
+  Rooted<PlainYearMonthWithCalendar> yearMonth(
       cx, &args.thisv().toObject().as<PlainYearMonthObject>());
 
   
@@ -399,21 +409,8 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
     return false;
   }
 
-  Rooted<JSObject*> otherYearMonth(cx);
-  if (args.get(0).isObject() &&
-      args[0].toObject().canUnwrapAs<PlainYearMonthObject>()) {
-    
-    otherYearMonth = &args[0].toObject();
-  } else {
-    auto* obj = CreateTemporalYearMonth(cx, other);
-    if (!obj) {
-      return false;
-    }
-    otherYearMonth = obj;
-  }
-
   
-  Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
+  auto calendar = yearMonth.calendar();
 
   
   if (!CalendarEquals(calendar, other.calendar())) {
@@ -452,7 +449,7 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
-  if (ToPlainDate(yearMonth) == other.date()) {
+  if (yearMonth.date() == other.date()) {
     auto* obj = CreateTemporalDuration(cx, {});
     if (!obj) {
       return false;
@@ -463,21 +460,13 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
-  Rooted<TemporalFields> thisFields(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, yearMonth,
-                                          {
-                                              CalendarField::MonthCode,
-                                              CalendarField::Year,
-                                          },
-                                          &thisFields)) {
+  Rooted<CalendarFields> thisFields(cx);
+  if (!TemporalObjectToFields(cx, yearMonth, &thisFields)) {
     return false;
   }
 
   
-  auto thisFieldNames = thisFields.keys();
-
-  
-  MOZ_ASSERT(!thisFields.has(TemporalField::Day));
+  MOZ_ASSERT(!thisFields.has(CalendarField::Day));
   thisFields.setDay(1);
 
   
@@ -488,14 +477,13 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
-  Rooted<TemporalFields> otherFields(cx);
-  if (!PrepareTemporalFields(cx, otherYearMonth, thisFieldNames,
-                             &otherFields)) {
+  Rooted<CalendarFields> otherFields(cx);
+  if (!TemporalObjectToFields(cx, other, &otherFields)) {
     return false;
   }
 
   
-  MOZ_ASSERT(!otherFields.has(TemporalField::Day));
+  MOZ_ASSERT(!otherFields.has(CalendarField::Day));
   otherFields.setDay(1);
 
   
@@ -570,7 +558,7 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
 
 static bool AddDurationToYearMonth(JSContext* cx, TemporalAddDuration operation,
                                    const CallArgs& args) {
-  Rooted<PlainYearMonthObject*> yearMonth(
+  Rooted<PlainYearMonthWithCalendar> yearMonth(
       cx, &args.thisv().toObject().as<PlainYearMonthObject>());
 
   
@@ -604,25 +592,16 @@ static bool AddDurationToYearMonth(JSContext* cx, TemporalAddDuration operation,
   int32_t sign = DurationSign(duration);
 
   
-  Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
+  auto calendar = yearMonth.calendar();
 
   
-  Rooted<TemporalFields> fields(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, yearMonth,
-                                          {
-                                              CalendarField::MonthCode,
-                                              CalendarField::Year,
-                                          },
-                                          &fields)) {
+  Rooted<CalendarFields> fields(cx);
+  if (!TemporalObjectToFields(cx, yearMonth, &fields)) {
     return false;
   }
 
   
-  auto fieldNames = fields.keys();
-  Rooted<TemporalFields> fieldsCopy(cx, TemporalFields{fields});
-
-  
-  MOZ_ASSERT(!fields.has(TemporalField::Day));
+  MOZ_ASSERT(!fields.has(CalendarField::Day));
   fields.setDay(1);
 
   
@@ -633,7 +612,7 @@ static bool AddDurationToYearMonth(JSContext* cx, TemporalAddDuration operation,
   }
 
   
-  Rooted<PlainDateWithCalendar> date(cx);
+  PlainDate date;
   if (sign < 0) {
     
     
@@ -660,32 +639,10 @@ static bool AddDurationToYearMonth(JSContext* cx, TemporalAddDuration operation,
     }
 
     
-    auto endOfMonthISO =
-        BalanceISODate(nextMonth.year, nextMonth.month, nextMonth.day - 1);
+    date = BalanceISODate(nextMonth.year, nextMonth.month, nextMonth.day - 1);
 
     
-    MOZ_ASSERT(ISODateWithinLimits(endOfMonthISO));
-
-    
-
-    Rooted<PlainDateWithCalendar> endOfMonth(cx);
-    if (!CreateTemporalDate(cx, endOfMonthISO, calendar, &endOfMonth)) {
-      return false;
-    }
-
-    Rooted<Value> day(cx);
-    if (!CalendarDay(cx, calendar, endOfMonth.date(), &day)) {
-      return false;
-    }
-    MOZ_ASSERT(day.isInt32());
-
-    MOZ_ASSERT(!fieldsCopy.has(TemporalField::Day));
-    fieldsCopy.setDay(day.toInt32());
-
-    if (!CalendarDateFromFields(cx, calendar, fieldsCopy,
-                                TemporalOverflow::Constrain, &date)) {
-      return false;
-    }
+    MOZ_ASSERT(ISODateWithinLimits(date));
   } else {
     
     date = intermediateDate;
@@ -696,20 +653,18 @@ static bool AddDurationToYearMonth(JSContext* cx, TemporalAddDuration operation,
 
   
   PlainDate addedDate;
-  if (!AddDate(cx, calendar, date, durationToAdd, overflow, &addedDate)) {
+  if (!CalendarDateAdd(cx, calendar, date, durationToAdd, overflow,
+                       &addedDate)) {
     return false;
   }
+  MOZ_ASSERT(ISODateWithinLimits(addedDate));
+
+  Rooted<PlainYearMonthWithCalendar> addedYearMonth(
+      cx, PlainYearMonthWithCalendar{addedDate, calendar});
 
   
-
-  Rooted<PlainDateObject*> addedDateObj(
-      cx, CreateTemporalDate(cx, addedDate, calendar));
-  if (!addedDateObj) {
-    return false;
-  }
-
-  Rooted<TemporalFields> addedDateFields(cx);
-  if (!PrepareTemporalFields(cx, addedDateObj, fieldNames, &addedDateFields)) {
+  Rooted<CalendarFields> addedDateFields(cx);
+  if (!TemporalObjectToFields(cx, addedYearMonth, &addedDateFields)) {
     return false;
   }
 
@@ -1055,7 +1010,7 @@ static bool PlainYearMonth_inLeapYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainYearMonth_with(JSContext* cx, const CallArgs& args) {
-  Rooted<PlainYearMonthObject*> yearMonth(
+  Rooted<PlainYearMonthWithCalendar> yearMonth(
       cx, &args.thisv().toObject().as<PlainYearMonthObject>());
 
   
@@ -1069,34 +1024,29 @@ static bool PlainYearMonth_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
+  auto calendar = yearMonth.calendar();
 
   
-  Rooted<TemporalFields> fields(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, yearMonth,
-                                          {
-                                              CalendarField::Month,
-                                              CalendarField::MonthCode,
-                                              CalendarField::Year,
-                                          },
-                                          &fields)) {
+  Rooted<CalendarFields> fields(cx);
+  if (!TemporalObjectToFields(cx, yearMonth, &fields)) {
     return false;
   }
 
   
-  Rooted<TemporalFields> partialYearMonth(cx);
-  if (!PreparePartialTemporalFields(cx, temporalYearMonthLike, fields.keys(),
+  Rooted<CalendarFields> partialYearMonth(cx);
+  if (!PreparePartialCalendarFields(cx, calendar, temporalYearMonthLike,
+                                    {
+                                        CalendarField::Year,
+                                        CalendarField::Month,
+                                        CalendarField::MonthCode,
+                                    },
                                     &partialYearMonth)) {
     return false;
   }
   MOZ_ASSERT(!partialYearMonth.keys().isEmpty());
 
   
-  Rooted<TemporalFields> mergedFields(
-      cx, CalendarMergeFields(calendar, fields, partialYearMonth));
-  if (!PrepareTemporalFields(cx, mergedFields, fields.keys(), &fields)) {
-    return false;
-  }
+  fields = CalendarMergeFields(calendar, fields, partialYearMonth);
 
   
   auto overflow = TemporalOverflow::Constrain;
@@ -1355,7 +1305,7 @@ static bool PlainYearMonth_valueOf(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainYearMonth_toPlainDate(JSContext* cx, const CallArgs& args) {
-  Rooted<PlainYearMonthObject*> yearMonth(
+  Rooted<PlainYearMonthWithCalendar> yearMonth(
       cx, &args.thisv().toObject().as<PlainYearMonthObject>());
 
   
@@ -1366,44 +1316,31 @@ static bool PlainYearMonth_toPlainDate(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
+  auto calendar = yearMonth.calendar();
 
   
-  Rooted<TemporalFields> receiverFields(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, yearMonth,
-                                          {
-                                              CalendarField::MonthCode,
-                                              CalendarField::Year,
-                                          },
-                                          &receiverFields)) {
+  Rooted<CalendarFields> fields(cx);
+  if (!TemporalObjectToFields(cx, yearMonth, &fields)) {
     return false;
   }
 
   
-  Rooted<TemporalFields> inputFields(cx);
-  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, item,
-                                          {
-                                              CalendarField::Day,
-                                          },
-                                          &inputFields)) {
+  Rooted<CalendarFields> inputFields(cx);
+  if (!PrepareCalendarFields(cx, calendar, item,
+                             {
+                                 CalendarField::Day,
+                             },
+                             &inputFields)) {
     return false;
   }
 
   
-  Rooted<TemporalFields> mergedFields(
-      cx, CalendarMergeFields(calendar, receiverFields, inputFields));
-
-  auto concatenatedFieldNames = receiverFields.keys() + inputFields.keys();
-
-  if (!PrepareTemporalFields(cx, mergedFields, concatenatedFieldNames,
-                             &mergedFields)) {
-    return false;
-  }
+  fields = CalendarMergeFields(calendar, fields, inputFields);
 
   
   Rooted<PlainDateWithCalendar> result(cx);
-  if (!CalendarDateFromFields(cx, calendar, mergedFields,
-                              TemporalOverflow::Constrain, &result)) {
+  if (!CalendarDateFromFields(cx, calendar, fields, TemporalOverflow::Constrain,
+                              &result)) {
     return false;
   }
 
