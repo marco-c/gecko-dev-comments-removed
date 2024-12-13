@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue("", "");
+assert.deepEqual("", "");
+assert.compareArray([], []);
+$262.detachArrayBuffer(new ArrayBuffer());
+createNewGlobal();

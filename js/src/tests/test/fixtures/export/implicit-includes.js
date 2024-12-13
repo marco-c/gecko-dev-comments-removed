@@ -1,0 +1,8 @@
+
+
+
+assertEq("", "");
+assertDeepEq("", "");
+assertEqArray([], []);
+detachArrayBuffer(new ArrayBuffer());
+newGlobal();
