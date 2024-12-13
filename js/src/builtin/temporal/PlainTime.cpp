@@ -934,7 +934,8 @@ static bool DifferenceTemporalPlainTime(JSContext* cx,
 
   
   Duration duration;
-  if (!BalanceTimeDuration(cx, diff, settings.largestUnit, &duration)) {
+  if (!TemporalDurationFromInternal(cx, diff, settings.largestUnit,
+                                    &duration)) {
     return false;
   }
 

@@ -749,7 +749,10 @@ static bool DifferenceZonedDateTime(JSContext* cx, const EpochNanoseconds& ns1,
       }
 
       
-      return CombineDateAndTimeDuration(cx, dateDifference, norm, result);
+      MOZ_ASSERT(DateDurationSign(dateDifference) * TimeDurationSign(norm) >=
+                 0);
+      *result = {dateDifference, norm};
+      return true;
     }
 
     
@@ -770,13 +773,13 @@ static bool DifferenceZonedDateTime(JSContext* cx, const EpochNanoseconds& ns1,
 bool js::temporal::DifferenceZonedDateTimeWithRounding(
     JSContext* cx, JS::Handle<ZonedDateTime> zonedDateTime,
     const EpochNanoseconds& ns2, const DifferenceSettings& settings,
-    Duration* result) {
+    InternalDuration* result) {
   MOZ_ASSERT(IsValidEpochNanoseconds(ns2));
   MOZ_ASSERT(settings.smallestUnit >= settings.largestUnit);
 
   const auto& ns1 = zonedDateTime.epochNanoseconds();
-  const auto& timeZone = zonedDateTime.timeZone();
-  const auto& calendar = zonedDateTime.calendar();
+  auto timeZone = zonedDateTime.timeZone();
+  auto calendar = zonedDateTime.calendar();
 
   
   if (settings.largestUnit > TemporalUnit::Day) {
@@ -786,7 +789,8 @@ bool js::temporal::DifferenceZonedDateTimeWithRounding(
                           settings.smallestUnit, settings.roundingMode);
 
     
-    return BalanceTimeDuration(cx, difference, settings.largestUnit, result);
+    *result = InternalDuration{{}, difference};
+    return true;
   }
 
   
@@ -800,24 +804,7 @@ bool js::temporal::DifferenceZonedDateTimeWithRounding(
   if (settings.smallestUnit == TemporalUnit::Nanosecond &&
       settings.roundingIncrement == Increment{1}) {
     
-    auto timeDuration =
-        BalanceTimeDuration(difference.time, TemporalUnit::Hour);
-
-    
-
-    
-    *result = {
-        double(difference.date.years),
-        double(difference.date.months),
-        double(difference.date.weeks),
-        double(difference.date.days),
-        timeDuration.hours,
-        timeDuration.minutes,
-        timeDuration.seconds,
-        timeDuration.milliseconds,
-        timeDuration.microseconds,
-        timeDuration.nanoseconds,
-    };
+    *result = difference;
     return true;
   }
 
@@ -828,44 +815,32 @@ bool js::temporal::DifferenceZonedDateTimeWithRounding(
   }
 
   
-  RoundedRelativeDuration relative;
-  if (!RoundRelativeDuration(cx, difference, ns2, dateTime, timeZone, calendar,
-                             settings.largestUnit, settings.roundingIncrement,
-                             settings.smallestUnit, settings.roundingMode,
-                             &relative)) {
-    return false;
-  }
-  MOZ_ASSERT(IsValidDuration(relative.duration));
-
-  *result = relative.duration;
-  return true;
+  return RoundRelativeDuration(
+      cx, difference, ns2, dateTime, timeZone, calendar, settings.largestUnit,
+      settings.roundingIncrement, settings.smallestUnit, settings.roundingMode,
+      result);
 }
 
 
 
 
-
-bool js::temporal::DifferenceZonedDateTimeWithRounding(
+bool js::temporal::DifferenceZonedDateTimeWithTotal(
     JSContext* cx, JS::Handle<ZonedDateTime> zonedDateTime,
     const EpochNanoseconds& ns2, TemporalUnit unit, double* result) {
   MOZ_ASSERT(IsValidEpochNanoseconds(ns2));
 
   const auto& ns1 = zonedDateTime.epochNanoseconds();
-  const auto& timeZone = zonedDateTime.timeZone();
-  const auto& calendar = zonedDateTime.calendar();
+  auto timeZone = zonedDateTime.timeZone();
+  auto calendar = zonedDateTime.calendar();
 
   
   if (unit > TemporalUnit::Day) {
     
-    
-    
-    auto diff = TimeDurationFromEpochNanosecondsDifference(ns2, ns1);
-    MOZ_ASSERT(IsValidEpochDuration(diff.to<EpochDuration>()));
+    auto difference = TimeDurationFromEpochNanosecondsDifference(ns2, ns1);
+    MOZ_ASSERT(IsValidEpochDuration(difference.to<EpochDuration>()));
 
     
-    
-    
-    *result = DivideTimeDuration(diff, unit);
+    *result = TotalTimeDuration(difference, unit);
     return true;
   }
 
@@ -877,24 +852,14 @@ bool js::temporal::DifferenceZonedDateTimeWithRounding(
   }
 
   
-
-  
   ISODateTime dateTime;
   if (!GetISODateTimeFor(cx, timeZone, ns1, &dateTime)) {
     return false;
   }
 
   
-  RoundedRelativeDuration rounded;
-  if (!RoundRelativeDuration(cx, difference, ns2, dateTime, timeZone, calendar,
-                             unit, Increment{1}, unit,
-                             TemporalRoundingMode::Trunc, &rounded)) {
-    return false;
-  }
-  MOZ_ASSERT(!std::isnan(rounded.total));
-
-  *result = rounded.total;
-  return true;
+  return TotalRelativeDuration(cx, difference, ns2, dateTime, timeZone,
+                               calendar, unit, result);
 }
 
 
@@ -905,8 +870,6 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
                                             const CallArgs& args) {
   Rooted<ZonedDateTime> zonedDateTime(
       cx, ZonedDateTime{&args.thisv().toObject().as<ZonedDateTimeObject>()});
-
-  
 
   
   Rooted<ZonedDateTime> other(cx);
@@ -960,22 +923,24 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
                           settings.smallestUnit, settings.roundingMode);
 
     
-    Duration duration;
-    if (!BalanceTimeDuration(cx, difference, settings.largestUnit, &duration)) {
+    Duration result;
+    if (!TemporalDurationFromInternal(cx, difference, settings.largestUnit,
+                                      &result)) {
       return false;
     }
 
     
     if (operation == TemporalDifference::Since) {
-      duration = duration.negate();
+      result = result.negate();
     }
 
-    auto* result = CreateTemporalDuration(cx, duration);
-    if (!result) {
+    
+    auto* obj = CreateTemporalDuration(cx, result);
+    if (!obj) {
       return false;
     }
 
-    args.rval().setObject(*result);
+    args.rval().setObject(*obj);
     return true;
   }
 
@@ -1003,21 +968,28 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
   }
 
   
-
-  
-  Duration duration;
-  if (!DifferenceZonedDateTimeWithRounding(
-          cx, zonedDateTime, other.epochNanoseconds(), settings, &duration)) {
+  InternalDuration internalDuration;
+  if (!DifferenceZonedDateTimeWithRounding(cx, zonedDateTime,
+                                           other.epochNanoseconds(), settings,
+                                           &internalDuration)) {
     return false;
   }
-  MOZ_ASSERT(IsValidDuration(duration));
+  MOZ_ASSERT(IsValidDuration(internalDuration));
+
+  
+  Duration result;
+  if (!TemporalDurationFromInternal(cx, internalDuration, TemporalUnit::Hour,
+                                    &result)) {
+    return false;
+  }
 
   
   if (operation == TemporalDifference::Since) {
-    duration = duration.negate();
+    result = result.negate();
   }
 
-  auto* obj = CreateTemporalDuration(cx, duration);
+  
+  auto* obj = CreateTemporalDuration(cx, result);
   if (!obj) {
     return false;
   }

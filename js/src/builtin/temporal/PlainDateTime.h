@@ -141,9 +141,8 @@ bool InterpretTemporalDateTimeFields(JSContext* cx,
 
 
 
-
-ISODateTime RoundISODateTime(const ISODateTime& dateTime, Increment increment,
-                             TemporalUnit unit,
+ISODateTime RoundISODateTime(const ISODateTime& isoDateTime,
+                             Increment increment, TemporalUnit unit,
                              TemporalRoundingMode roundingMode);
 
 
@@ -155,16 +154,16 @@ bool DifferencePlainDateTimeWithRounding(JSContext* cx,
                                          const ISODateTime& isoDateTime2,
                                          JS::Handle<CalendarValue> calendar,
                                          const DifferenceSettings& settings,
-                                         Duration* result);
+                                         InternalDuration* result);
 
 
 
 
-bool DifferencePlainDateTimeWithRounding(JSContext* cx,
-                                         const ISODateTime& isoDateTime1,
-                                         const ISODateTime& isoDateTime2,
-                                         JS::Handle<CalendarValue> calendar,
-                                         TemporalUnit unit, double* result);
+bool DifferencePlainDateTimeWithTotal(JSContext* cx,
+                                      const ISODateTime& isoDateTime1,
+                                      const ISODateTime& isoDateTime2,
+                                      JS::Handle<CalendarValue> calendar,
+                                      TemporalUnit unit, double* result);
 
 } 
 

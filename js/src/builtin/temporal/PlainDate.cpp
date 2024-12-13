@@ -619,8 +619,6 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
   Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
 
   
-
-  
   Rooted<PlainDate> other(cx);
   if (!ToTemporalDate(cx, args.get(0), &other)) {
     return false;
@@ -638,6 +636,7 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
   
   DifferenceSettings settings;
   if (args.hasDefined(1)) {
+    
     Rooted<JSObject*> options(
         cx, RequireObjectArg(cx, "options", ToName(operation), args[1]));
     if (!options) {
@@ -672,52 +671,49 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
   }
 
   
-  DateDuration difference;
+  DateDuration dateDifference;
   if (!CalendarDateUntil(cx, calendar, temporalDate->date(), other.date(),
-                         settings.largestUnit, &difference)) {
+                         settings.largestUnit, &dateDifference)) {
     return false;
   }
 
   
+  auto duration = InternalDuration{dateDifference, {}};
 
   
-  bool roundingGranularityIsNoop = settings.smallestUnit == TemporalUnit::Day &&
-                                   settings.roundingIncrement == Increment{1};
-
-  
-  if (!roundingGranularityIsNoop) {
+  if (settings.smallestUnit != TemporalUnit::Day ||
+      settings.roundingIncrement != Increment{1}) {
     
-    auto duration = InternalDuration{difference, {}};
+    auto isoDateTime = ISODateTime{temporalDate->date(), {}};
 
     
-    auto otherDateTime = ISODateTime{other.date(), {}};
-    auto destEpochNs = GetUTCEpochNanoseconds(otherDateTime);
+    auto isoDateTimeOther = ISODateTime{other.date(), {}};
 
     
-    auto dateTime = ISODateTime{temporalDate->date(), {}};
+    auto destEpochNs = GetUTCEpochNanoseconds(isoDateTimeOther);
 
     
     Rooted<TimeZoneValue> timeZone(cx, TimeZoneValue{});
-    RoundedRelativeDuration relative;
     if (!RoundRelativeDuration(
-            cx, duration, destEpochNs, dateTime, timeZone, calendar,
+            cx, duration, destEpochNs, isoDateTime, timeZone, calendar,
             settings.largestUnit, settings.roundingIncrement,
-            settings.smallestUnit, settings.roundingMode, &relative)) {
+            settings.smallestUnit, settings.roundingMode, &duration)) {
       return false;
     }
-    MOZ_ASSERT(IsValidDuration(relative.duration));
-
-    difference = relative.duration.toDateDuration();
-  }
-
-  
-  auto duration = difference.toDuration();
-  if (operation == TemporalDifference::Since) {
-    duration = duration.negate();
   }
   MOZ_ASSERT(IsValidDuration(duration));
+  MOZ_ASSERT(duration.time == TimeDuration{});
 
-  auto* obj = CreateTemporalDuration(cx, duration);
+  
+  auto result = duration.date.toDuration();
+
+  
+  if (operation == TemporalDifference::Since) {
+    result = result.negate();
+  }
+  MOZ_ASSERT(IsValidDuration(result));
+
+  auto* obj = CreateTemporalDuration(cx, result);
   if (!obj) {
     return false;
   }

@@ -521,6 +521,8 @@ TimeDuration js::temporal::DifferenceInstant(
              MaximumTemporalDurationRoundingIncrement(smallestUnit));
 
   
+
+  
   auto diff = TimeDurationFromEpochNanosecondsDifference(ns2, ns1);
   MOZ_ASSERT(IsValidEpochDuration(diff.to<EpochDuration>()));
 
@@ -609,13 +611,14 @@ static bool DifferenceTemporalInstant(JSContext* cx,
   }
 
   
-  auto difference =
+  auto timeDuration =
       DifferenceInstant(epochNs, other, settings.roundingIncrement,
                         settings.smallestUnit, settings.roundingMode);
 
   
   Duration duration;
-  if (!BalanceTimeDuration(cx, difference, settings.largestUnit, &duration)) {
+  if (!TemporalDurationFromInternal(cx, timeDuration, settings.largestUnit,
+                                    &duration)) {
     return false;
   }
 

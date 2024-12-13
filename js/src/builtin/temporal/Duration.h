@@ -176,12 +176,6 @@ inline int32_t TimeDurationSign(const TimeDuration& d) {
 
 
 
-bool Add24HourDaysToTimeDuration(JSContext* cx, const TimeDuration& d,
-                                 int64_t days, TimeDuration* result);
-
-
-
-
 inline InternalDuration ToInternalDurationRecord(const Duration& duration) {
   MOZ_ASSERT(IsValidDuration(duration));
 
@@ -199,6 +193,20 @@ InternalDuration ToInternalDurationRecordWith24HourDays(
 
 
 DateDuration ToDateDurationRecordWithoutTime(const Duration& duration);
+
+
+
+
+bool TemporalDurationFromInternal(JSContext* cx,
+                                  const TimeDuration& timeDuration,
+                                  TemporalUnit largestUnit, Duration* result);
+
+
+
+
+bool TemporalDurationFromInternal(JSContext* cx,
+                                  const InternalDuration& internalDuration,
+                                  TemporalUnit largestUnit, Duration* result);
 
 
 
@@ -228,26 +236,9 @@ bool ToTemporalDuration(JSContext* cx, JS::Handle<JS::Value> item,
 
 
 
-Duration BalanceTimeDuration(const TimeDuration& duration,
-                             TemporalUnit largestUnit);
-
-
-
-
-bool BalanceTimeDuration(JSContext* cx, const TimeDuration& duration,
-                         TemporalUnit largestUnit, Duration* result);
-
-
-
-
 TimeDuration RoundTimeDuration(const TimeDuration& duration,
                                Increment increment, TemporalUnit unit,
                                TemporalRoundingMode roundingMode);
-
-struct RoundedRelativeDuration {
-  Duration duration;
-  double total = 0;
-};
 
 
 
@@ -255,15 +246,38 @@ struct RoundedRelativeDuration {
 
 bool RoundRelativeDuration(
     JSContext* cx, const InternalDuration& duration,
-    const EpochNanoseconds& destEpochNs, const ISODateTime& dateTime,
+    const EpochNanoseconds& destEpochNs, const ISODateTime& isoDateTime,
     JS::Handle<TimeZoneValue> timeZone, JS::Handle<CalendarValue> calendar,
     TemporalUnit largestUnit, Increment increment, TemporalUnit smallestUnit,
-    TemporalRoundingMode roundingMode, RoundedRelativeDuration* result);
+    TemporalRoundingMode roundingMode, InternalDuration* result);
+
+
+
+
+
+bool TotalRelativeDuration(JSContext* cx, const InternalDuration& duration,
+                           const EpochNanoseconds& destEpochNs,
+                           const ISODateTime& isoDateTime,
+                           JS::Handle<TimeZoneValue> timeZone,
+                           JS::Handle<CalendarValue> calendar,
+                           TemporalUnit unit, double* result);
 
 
 
 
 double DivideTimeDuration(const TimeDuration& duration, TemporalUnit unit);
+
+
+
+
+inline double TotalTimeDuration(const TimeDuration& duration,
+                                TemporalUnit unit) {
+  
+  
+
+  
+  return DivideTimeDuration(duration, unit);
+}
 
 } 
 

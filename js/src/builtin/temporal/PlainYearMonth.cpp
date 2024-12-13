@@ -448,13 +448,11 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   auto dateDuration = DateDuration{until.years, until.months};
 
   
+  auto duration = InternalDuration{dateDuration, {}};
 
   
   if (settings.smallestUnit != TemporalUnit::Month ||
       settings.roundingIncrement != Increment{1}) {
-    
-    auto duration = InternalDuration{dateDuration, {}};
-
     
     auto destEpochNs = GetUTCEpochNanoseconds(ISODateTime{otherDate, {}});
 
@@ -463,29 +461,30 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
 
     
     Rooted<TimeZoneValue> timeZone(cx, TimeZoneValue{});
-    RoundedRelativeDuration relative;
     if (!RoundRelativeDuration(
             cx, duration, destEpochNs, dateTime, timeZone, calendar,
             settings.largestUnit, settings.roundingIncrement,
-            settings.smallestUnit, settings.roundingMode, &relative)) {
+            settings.smallestUnit, settings.roundingMode, &duration)) {
       return false;
     }
-    MOZ_ASSERT(IsValidDuration(relative.duration));
-
-    dateDuration = relative.duration.toDateDuration();
   }
+  MOZ_ASSERT(IsValidDuration(duration));
+  MOZ_ASSERT(duration.date.weeks == 0);
+  MOZ_ASSERT(duration.date.days == 0);
+  MOZ_ASSERT(duration.time == TimeDuration{});
 
   
 
   
-  auto duration =
-      Duration{double(dateDuration.years), double(dateDuration.months)};
+  auto result = duration.date.toDuration();
+
+  
   if (operation == TemporalDifference::Since) {
-    duration = duration.negate();
+    result = result.negate();
   }
 
   
-  auto* obj = CreateTemporalDuration(cx, duration);
+  auto* obj = CreateTemporalDuration(cx, result);
   if (!obj) {
     return false;
   }

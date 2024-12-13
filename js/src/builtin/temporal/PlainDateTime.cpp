@@ -510,106 +510,111 @@ static int32_t CompareISODateTime(const ISODateTime& one,
 
   
   return CompareTimeRecord(one.time, two.time);
+
+
+
+
+static TimeDuration Add24HourDaysToTimeDuration(const TimeDuration& d,
+                                                int32_t days) {
+  constexpr auto secPerDay = ToSeconds(TemporalUnit::Day);
+
+  
+  auto result = d + TimeDuration::fromSeconds(int64_t(days) * secPerDay);
+
+  
+  MOZ_ASSERT(result.abs() <= TimeDuration::max());
+
+  
+  return result;
 }
 
 
 
 
-
-static bool DifferenceISODateTime(JSContext* cx, const ISODateTime& one,
-                                  const ISODateTime& two,
+static bool DifferenceISODateTime(JSContext* cx,
+                                  const ISODateTime& isoDateTime1,
+                                  const ISODateTime& isoDateTime2,
                                   Handle<CalendarValue> calendar,
                                   TemporalUnit largestUnit,
                                   InternalDuration* result) {
-  
-  MOZ_ASSERT(IsValidISODateTime(one));
-  MOZ_ASSERT(IsValidISODateTime(two));
-  MOZ_ASSERT(ISODateTimeWithinLimits(one));
-  MOZ_ASSERT(ISODateTimeWithinLimits(two));
+  MOZ_ASSERT(isoDateTime1 != isoDateTime2,
+             "fast-path for same date-time case handled in caller");
 
   
-  auto timeDuration = DifferenceTime(one.time, two.time);
+  MOZ_ASSERT(IsValidISODateTime(isoDateTime1));
+  MOZ_ASSERT(IsValidISODateTime(isoDateTime2));
+  MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime1));
+  MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime2));
+
+  
+  auto timeDuration = DifferenceTime(isoDateTime1.time, isoDateTime2.time);
 
   
   int32_t timeSign = TimeDurationSign(timeDuration);
 
   
-  int32_t dateSign = CompareISODate(two.date, one.date);
+  int32_t dateSign = CompareISODate(isoDateTime1.date, isoDateTime2.date);
 
   
-  auto adjustedDate = two.date;
+  auto adjustedDate = isoDateTime2.date;
 
   
-  if (timeSign == -dateSign) {
+  if (timeSign == dateSign) {
     
     adjustedDate = BalanceISODate(adjustedDate, timeSign);
 
     
-    if (!Add24HourDaysToTimeDuration(cx, timeDuration, -timeSign,
-                                     &timeDuration)) {
-      return false;
-    }
+    timeDuration = Add24HourDaysToTimeDuration(timeDuration, -timeSign);
   }
 
   MOZ_ASSERT(IsValidISODate(adjustedDate));
   MOZ_ASSERT(ISODateWithinLimits(adjustedDate));
 
   
-  const auto& date1 = one.date;
-
-  
-  const auto& date2 = adjustedDate;
-
-  
   auto dateLargestUnit = std::min(TemporalUnit::Day, largestUnit);
 
   
   DateDuration dateDifference;
-  if (!CalendarDateUntil(cx, calendar, date1, date2, dateLargestUnit,
-                         &dateDifference)) {
+  if (!CalendarDateUntil(cx, calendar, isoDateTime1.date, adjustedDate,
+                         dateLargestUnit, &dateDifference)) {
     return false;
   }
 
   
-
-  
-  if (largestUnit != dateLargestUnit) {
+  if (largestUnit > TemporalUnit::Day) {
     
-    if (!Add24HourDaysToTimeDuration(cx, timeDuration, dateDifference.days,
-                                     &timeDuration)) {
-      return false;
-    }
+    auto days = mozilla::AssertedCast<int32_t>(dateDifference.days);
+    timeDuration = Add24HourDaysToTimeDuration(timeDuration, days);
 
     
     dateDifference.days = 0;
   }
 
   
-  return CombineDateAndTimeDuration(cx, dateDifference, timeDuration, result);
+  MOZ_ASSERT(
+      DateDurationSign(dateDifference) * TimeDurationSign(timeDuration) >= 0);
+  *result = {dateDifference, timeDuration};
+  return true;
 }
 
 
 
 
-
-ISODateTime js::temporal::RoundISODateTime(const ISODateTime& dateTime,
+ISODateTime js::temporal::RoundISODateTime(const ISODateTime& isoDateTime,
                                            Increment increment,
                                            TemporalUnit unit,
                                            TemporalRoundingMode roundingMode) {
-  const auto& [date, time] = dateTime;
+  MOZ_ASSERT(IsValidISODateTime(isoDateTime));
 
   
-  MOZ_ASSERT(IsValidISODateTime(dateTime));
+  MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime));
 
   
-  MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
-
-  
-  auto roundedTime = RoundTime(time, increment, unit, roundingMode);
+  auto roundedTime = RoundTime(isoDateTime.time, increment, unit, roundingMode);
   MOZ_ASSERT(0 <= roundedTime.days && roundedTime.days <= 1);
 
   
-  auto balanceResult = BalanceISODate(date, roundedTime.days);
+  auto balanceResult = BalanceISODate(isoDateTime.date, roundedTime.days);
 
   
   return {balanceResult, roundedTime.time};
@@ -622,8 +627,7 @@ ISODateTime js::temporal::RoundISODateTime(const ISODateTime& dateTime,
 bool js::temporal::DifferencePlainDateTimeWithRounding(
     JSContext* cx, const ISODateTime& isoDateTime1,
     const ISODateTime& isoDateTime2, Handle<CalendarValue> calendar,
-    const DifferenceSettings& settings, Duration* result) {
-  
+    const DifferenceSettings& settings, InternalDuration* result) {
   MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime1));
   MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime2));
 
@@ -636,71 +640,37 @@ bool js::temporal::DifferencePlainDateTimeWithRounding(
 
   
   InternalDuration diff;
-  if (!::DifferenceISODateTime(cx, isoDateTime1, isoDateTime2, calendar,
-                               settings.largestUnit, &diff)) {
+  if (!DifferenceISODateTime(cx, isoDateTime1, isoDateTime2, calendar,
+                             settings.largestUnit, &diff)) {
     return false;
   }
 
   
   if (settings.smallestUnit == TemporalUnit::Nanosecond &&
       settings.roundingIncrement == Increment{1}) {
-    
-    TimeDuration withDays;
-    if (!Add24HourDaysToTimeDuration(cx, diff.time, diff.date.days,
-                                     &withDays)) {
-      return false;
-    }
-
-    
-    Duration balanced;
-    if (!BalanceTimeDuration(cx, withDays, settings.largestUnit, &balanced)) {
-      return false;
-    }
-
-    
-
-    
-    *result = {
-        double(diff.date.years), double(diff.date.months),
-        double(diff.date.weeks), balanced.days,
-        balanced.hours,          balanced.minutes,
-        balanced.seconds,        balanced.milliseconds,
-        balanced.microseconds,   balanced.nanoseconds,
-    };
-    MOZ_ASSERT(IsValidDuration(*result));
+    *result = diff;
     return true;
   }
-
-  
-  const auto& dateTime = isoDateTime1;
 
   
   auto destEpochNs = GetUTCEpochNanoseconds(isoDateTime2);
 
   
   Rooted<TimeZoneValue> timeZone(cx, TimeZoneValue{});
-  RoundedRelativeDuration relative;
-  if (!RoundRelativeDuration(cx, diff, destEpochNs, dateTime, timeZone,
-                             calendar, settings.largestUnit,
-                             settings.roundingIncrement, settings.smallestUnit,
-                             settings.roundingMode, &relative)) {
-    return false;
-  }
-  MOZ_ASSERT(IsValidDuration(relative.duration));
-
-  *result = relative.duration;
-  return true;
+  return RoundRelativeDuration(
+      cx, diff, destEpochNs, isoDateTime1, timeZone, calendar,
+      settings.largestUnit, settings.roundingIncrement, settings.smallestUnit,
+      settings.roundingMode, result);
 }
 
 
 
 
 
-bool js::temporal::DifferencePlainDateTimeWithRounding(
+bool js::temporal::DifferencePlainDateTimeWithTotal(
     JSContext* cx, const ISODateTime& isoDateTime1,
     const ISODateTime& isoDateTime2, Handle<CalendarValue> calendar,
     TemporalUnit unit, double* result) {
-  
   MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime1));
   MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime2));
 
@@ -719,39 +689,33 @@ bool js::temporal::DifferencePlainDateTimeWithRounding(
   }
 
   
-  if (unit == TemporalUnit::Nanosecond) {
-    
-    TimeDuration withDays;
-    if (!Add24HourDaysToTimeDuration(cx, diff.time, diff.date.days,
-                                     &withDays)) {
-      return false;
-    }
+  if (unit > TemporalUnit::Day) {
+    MOZ_ASSERT(diff.date == DateDuration{});
 
     
 
     
-    *result = double(withDays.toNanoseconds());
+    *result = TotalTimeDuration(diff.time, unit);
+    return true;
+  } else if (unit == TemporalUnit::Day) {
+    
+
+    
+    auto days = mozilla::AssertedCast<int32_t>(diff.date.days);
+    auto timeDuration = Add24HourDaysToTimeDuration(diff.time, days);
+
+    
+    *result = TotalTimeDuration(timeDuration, unit);
     return true;
   }
-
-  
-  const auto& dateTime = isoDateTime1;
 
   
   auto destEpochNs = GetUTCEpochNanoseconds(isoDateTime2);
 
   
   Rooted<TimeZoneValue> timeZone(cx, TimeZoneValue{});
-  RoundedRelativeDuration relative;
-  if (!RoundRelativeDuration(cx, diff, destEpochNs, dateTime, timeZone,
-                             calendar, unit, Increment{1}, unit,
-                             TemporalRoundingMode::Trunc, &relative)) {
-    return false;
-  }
-  MOZ_ASSERT(!std::isnan(relative.total));
-
-  *result = relative.total;
-  return true;
+  return TotalRelativeDuration(cx, diff, destEpochNs, isoDateTime1, timeZone,
+                               calendar, unit, result);
 }
 
 
@@ -762,8 +726,6 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
                                             const CallArgs& args) {
   Rooted<PlainDateTime> dateTime(
       cx, &args.thisv().toObject().as<PlainDateTimeObject>());
-
-  
 
   
   Rooted<PlainDateTime> other(cx);
@@ -818,19 +780,29 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
   }
 
   
-  Duration duration;
-  if (!DifferencePlainDateTimeWithRounding(
-          cx, dateTime, other, dateTime.calendar(), settings, &duration)) {
+  InternalDuration internalDuration;
+  if (!DifferencePlainDateTimeWithRounding(cx, dateTime, other,
+                                           dateTime.calendar(), settings,
+                                           &internalDuration)) {
     return false;
   }
-  MOZ_ASSERT(IsValidDuration(duration));
+  MOZ_ASSERT(IsValidDuration(internalDuration));
+
+  
+  Duration result;
+  if (!TemporalDurationFromInternal(cx, internalDuration, settings.largestUnit,
+                                    &result)) {
+    return false;
+  }
+  MOZ_ASSERT(IsValidDuration(result));
 
   
   if (operation == TemporalDifference::Since) {
-    duration = duration.negate();
+    result = result.negate();
   }
 
-  auto* obj = CreateTemporalDuration(cx, duration);
+  
+  auto* obj = CreateTemporalDuration(cx, result);
   if (!obj) {
     return false;
   }
