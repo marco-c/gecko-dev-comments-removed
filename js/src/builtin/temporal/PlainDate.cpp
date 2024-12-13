@@ -965,7 +965,7 @@ static bool AddDate(JSContext* cx, Handle<CalendarValue> calendar,
   }
 
   
-  auto normalized = CreateNormalizedDurationRecord(duration);
+  auto normalized = NormalizeDuration(duration);
 
   
   auto balancedDuration =

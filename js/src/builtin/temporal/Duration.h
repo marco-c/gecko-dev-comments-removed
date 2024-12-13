@@ -192,28 +192,22 @@ bool Add24HourDaysToNormalizedTimeDuration(JSContext* cx,
 
 
 
-inline NormalizedDuration CreateNormalizedDurationRecord(
-    const DateDuration& date, const NormalizedTimeDuration& time) {
-  MOZ_ASSERT(IsValidDuration(date));
-  MOZ_ASSERT(IsValidNormalizedTimeDuration(time));
-#ifdef DEBUG
-  int64_t dateValues = date.years | date.months | date.weeks | date.days;
-  int32_t dateSign = dateValues ? dateValues < 0 ? -1 : 1 : 0;
-  int32_t timeSign = NormalizedTimeDurationSign(time);
-  MOZ_ASSERT((dateSign * timeSign) >= 0);
-#endif
+inline NormalizedDuration NormalizeDuration(const Duration& duration) {
+  MOZ_ASSERT(IsValidDuration(duration));
 
-  return {date, time};
+  
+  return {duration.toDateDuration(), NormalizeTimeDuration(duration)};
 }
 
 
 
 
-inline NormalizedDuration CreateNormalizedDurationRecord(
-    const Duration& duration) {
-  return CreateNormalizedDurationRecord(duration.toDateDuration(),
-                                        NormalizeTimeDuration(duration));
-}
+NormalizedDuration NormalizeDurationWith24HourDays(const Duration& duration);
+
+
+
+
+DateDuration NormalizeDurationWithoutTime(const Duration& duration);
 
 
 
@@ -222,16 +216,6 @@ bool CombineDateAndNormalizedTimeDuration(JSContext* cx,
                                           const DateDuration& date,
                                           const NormalizedTimeDuration& time,
                                           NormalizedDuration* result);
-
-
-
-
-inline bool CreateNormalizedDurationRecord(JSContext* cx,
-                                           const DateDuration& date,
-                                           const NormalizedTimeDuration& time,
-                                           NormalizedDuration* result) {
-  return CombineDateAndNormalizedTimeDuration(cx, date, time, result);
-}
 
 
 

@@ -513,6 +513,61 @@ bool js::temporal::Add24HourDaysToNormalizedTimeDuration(
 
 
 
+NormalizedDuration js::temporal::NormalizeDurationWith24HourDays(
+    const Duration& duration) {
+  MOZ_ASSERT(IsValidDuration(duration));
+
+  
+  auto norm = NormalizeTimeDuration(duration);
+
+  
+  auto secondsFromDay = mozilla::CheckedInt64{int64_t(duration.days)} *
+                        ToSeconds(TemporalUnit::Day);
+  MOZ_ASSERT(secondsFromDay.isValid());
+
+  norm += NormalizedTimeDuration::fromSeconds(secondsFromDay.value());
+
+  
+  auto dateDuration = DateDuration{
+      int64_t(duration.years),
+      int64_t(duration.months),
+      int64_t(duration.weeks),
+      0,
+  };
+
+  
+  return NormalizedDuration{dateDuration, norm};
+}
+
+
+
+
+DateDuration js::temporal::NormalizeDurationWithoutTime(
+    const Duration& duration) {
+  
+  auto normalizedDuration = NormalizeDurationWith24HourDays(duration);
+
+  
+  int64_t days =
+      normalizedDuration.time.toSeconds() / ToSeconds(TemporalUnit::Day);
+
+  
+  auto result = DateDuration{
+      normalizedDuration.date.years,
+      normalizedDuration.date.months,
+      normalizedDuration.date.weeks,
+      days,
+  };
+
+  
+  MOZ_ASSERT(IsValidDuration(result));
+
+  return result;
+}
+
+
+
+
 bool js::temporal::CombineDateAndNormalizedTimeDuration(
     JSContext* cx, const DateDuration& date, const NormalizedTimeDuration& time,
     NormalizedDuration* result) {
@@ -2794,14 +2849,14 @@ static bool NudgeToZonedTime(JSContext* cx, const NormalizedDuration& duration,
 
   
   NormalizedDuration resultDuration;
-  if (!CreateNormalizedDurationRecord(cx,
-                                      {
-                                          duration.date.years,
-                                          duration.date.months,
-                                          duration.date.weeks,
-                                          duration.date.days + dayDelta,
-                                      },
-                                      roundedTime, &resultDuration)) {
+  if (!CombineDateAndNormalizedTimeDuration(cx,
+                                            {
+                                                duration.date.years,
+                                                duration.date.months,
+                                                duration.date.weeks,
+                                                duration.date.days + dayDelta,
+                                            },
+                                            roundedTime, &resultDuration)) {
     return false;
   }
 
@@ -2893,14 +2948,14 @@ static bool NudgeToDayOrTime(JSContext* cx, const NormalizedDuration& duration,
 
   
   NormalizedDuration resultDuration;
-  if (!CreateNormalizedDurationRecord(cx,
-                                      {
-                                          duration.date.years,
-                                          duration.date.months,
-                                          duration.date.weeks,
-                                          days,
-                                      },
-                                      remainder, &resultDuration)) {
+  if (!CombineDateAndNormalizedTimeDuration(cx,
+                                            {
+                                                duration.date.years,
+                                                duration.date.months,
+                                                duration.date.weeks,
+                                                days,
+                                            },
+                                            remainder, &resultDuration)) {
     return false;
   }
 
@@ -3380,8 +3435,8 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  auto normOne = CreateNormalizedDurationRecord(one);
-  auto normTwo = CreateNormalizedDurationRecord(two);
+  auto normOne = NormalizeDuration(one);
+  auto normTwo = NormalizeDuration(two);
   bool calendarUnitsOrDaysPresent =
       normOne.date != DateDuration{} || normTwo.date != DateDuration{};
 
@@ -4020,7 +4075,7 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   }
 
   
-  auto normDuration = CreateNormalizedDurationRecord(duration);
+  auto normDuration = NormalizeDuration(duration);
 
   
   Duration roundResult;
@@ -4202,7 +4257,7 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
   }
 
   
-  auto normDuration = CreateNormalizedDurationRecord(duration);
+  auto normDuration = NormalizeDuration(duration);
 
   
   double total;

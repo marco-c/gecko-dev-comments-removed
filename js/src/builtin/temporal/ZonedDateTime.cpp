@@ -682,7 +682,7 @@ static bool DifferenceZonedDateTime(JSContext* cx, const Instant& ns1,
 
   
   if (ns1 == ns2) {
-    *result = CreateNormalizedDurationRecord({}, {});
+    *result = NormalizedDuration{{}, {}};
     return true;
   }
 
@@ -768,7 +768,8 @@ static bool DifferenceZonedDateTime(JSContext* cx, const Instant& ns1,
       }
 
       
-      return CreateNormalizedDurationRecord(cx, dateDifference, norm, result);
+      return CombineDateAndNormalizedTimeDuration(cx, dateDifference, norm,
+                                                  result);
     }
 
     
@@ -1096,7 +1097,7 @@ static bool AddDurationToOrSubtractDurationFromZonedDateTime(
   if (operation == ZonedDateTimeDuration::Subtract) {
     duration = duration.negate();
   }
-  auto normalized = CreateNormalizedDurationRecord(duration);
+  auto normalized = NormalizeDuration(duration);
 
   
   Instant resultInstant;
