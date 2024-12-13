@@ -17,6 +17,7 @@
 #include "jstypes.h"
 
 #include "builtin/temporal/Calendar.h"
+#include "builtin/temporal/MonthCode.h"
 #include "builtin/temporal/TemporalUnit.h"
 #include "builtin/temporal/TimeZone.h"
 #include "js/RootingAPI.h"
@@ -56,6 +57,9 @@ class MonthCodeField final {
     MOZ_ASSERT(ordinal >= 0);
     MOZ_ASSERT_IF(ordinal == 0, isLeapMonth);
   }
+
+  MOZ_IMPLICIT MonthCodeField(MonthCode monthCode)
+      : MonthCodeField(monthCode.ordinal(), monthCode.isLeapMonth()) {}
 
   int32_t ordinal() const { return (code_ >> 1); }
 
@@ -341,30 +345,34 @@ bool PreparePartialCalendarFields(JSContext* cx,
 
 
 
-bool TemporalObjectToFields(JSContext* cx,
-                            Handle<PlainDateWithCalendar> temporalObject,
-                            MutableHandle<CalendarFields> result);
+CalendarFields CalendarMergeFields(const CalendarValue& calendar,
+                                   const CalendarFields& fields,
+                                   const CalendarFields& additionalFields);
 
 
 
 
-bool TemporalObjectToFields(JSContext* cx,
-                            Handle<PlainDateTimeWithCalendar> temporalObject,
-                            MutableHandle<CalendarFields> result);
+bool ISODateToFields(JSContext* cx, Handle<PlainDateWithCalendar> date,
+                     MutableHandle<CalendarFields> result);
 
 
 
 
-bool TemporalObjectToFields(JSContext* cx,
-                            Handle<PlainMonthDayWithCalendar> temporalObject,
-                            MutableHandle<CalendarFields> result);
+bool ISODateToFields(JSContext* cx, Handle<PlainDateTimeWithCalendar> dateTime,
+                     MutableHandle<CalendarFields> result);
 
 
 
 
-bool TemporalObjectToFields(JSContext* cx,
-                            Handle<PlainYearMonthWithCalendar> temporalObject,
-                            MutableHandle<CalendarFields> result);
+bool ISODateToFields(JSContext* cx, Handle<PlainMonthDayWithCalendar> monthDay,
+                     MutableHandle<CalendarFields> result);
+
+
+
+
+bool ISODateToFields(JSContext* cx,
+                     Handle<PlainYearMonthWithCalendar> yearMonth,
+                     MutableHandle<CalendarFields> result);
 
 } 
 

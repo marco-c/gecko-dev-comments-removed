@@ -250,13 +250,6 @@ JSLinearString* ToTemporalCalendarIdentifier(
 
 
 
-CalendarFields CalendarMergeFields(const CalendarValue& calendar,
-                                   const CalendarFields& fields,
-                                   const CalendarFields& additionalFields);
-
-
-
-
 bool CalendarDateAdd(JSContext* cx, JS::Handle<CalendarValue> calendar,
                      const PlainDate& date, const DateDuration& duration,
                      TemporalOverflow overflow, PlainDate* result);
