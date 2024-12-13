@@ -6407,6 +6407,13 @@ PinchGestureBlockState* AsyncPanZoomController::GetCurrentPinchGestureBlock()
 }
 
 void AsyncPanZoomController::ResetTouchInputState() {
+  TouchBlockState* block = GetCurrentTouchBlock();
+  if (block && block->HasStateBeenReset()) {
+    
+    
+    return;
+  }
+
   MultiTouchInput cancel(MultiTouchInput::MULTITOUCH_CANCEL, 0,
                          TimeStamp::Now(), 0);
   RefPtr<GestureEventListener> listener = GetGestureEventListener();
@@ -6416,19 +6423,28 @@ void AsyncPanZoomController::ResetTouchInputState() {
   CancelAnimationAndGestureState();
   
   
-  if (TouchBlockState* block = GetCurrentTouchBlock()) {
+  if (block) {
     block->GetOverscrollHandoffChain()->ClearOverscroll();
+    block->ResetState();
   }
 }
 
 void AsyncPanZoomController::ResetPanGestureInputState() {
+  PanGestureBlockState* block = GetCurrentPanGestureBlock();
+  if (block && block->HasStateBeenReset()) {
+    
+    
+    return;
+  }
+
   
   
   CancelAnimationAndGestureState();
   
   
-  if (PanGestureBlockState* block = GetCurrentPanGestureBlock()) {
+  if (block) {
     block->GetOverscrollHandoffChain()->ClearOverscroll();
+    block->ResetState();
   }
 }
 
