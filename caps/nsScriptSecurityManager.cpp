@@ -73,6 +73,8 @@
 #include "nsJSUtils.h"
 #include "nsILoadInfo.h"
 #include "js/ColumnNumber.h"  
+#include "js/GCVector.h"
+#include "js/Value.h"
 
 
 #define WEBAPPS_PERM_NAME "webapps-manage"
@@ -462,7 +464,12 @@ NS_IMPL_ISUPPORTS(nsScriptSecurityManager, nsIScriptSecurityManager)
 
 
 bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
-    JSContext* cx, JS::RuntimeCode aKind, JS::Handle<JSString*> aCode) {
+    JSContext* cx, JS::RuntimeCode aKind, JS::Handle<JSString*> aCodeString,
+    JS::CompilationType aCompilationType,
+    JS::Handle<JS::StackGCVector<JSString*>> aParameterStrings,
+    JS::Handle<JSString*> aBodyString,
+    JS::Handle<JS::StackGCVector<JS::Value>> aParameterArgs,
+    JS::Handle<JS::Value> aBodyArg, bool* aOutCanCompileStrings) {
   MOZ_ASSERT(cx == nsContentUtils::GetCurrentJSContext());
 
   nsCOMPtr<nsIPrincipal> subjectPrincipal = nsContentUtils::SubjectPrincipal();
@@ -477,13 +484,14 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
   if (contextForbidsEval) {
     nsAutoJSString scriptSample;
     if (aKind == JS::RuntimeCode::JS &&
-        NS_WARN_IF(!scriptSample.init(cx, aCode))) {
+        NS_WARN_IF(!scriptSample.init(cx, aCodeString))) {
       return false;
     }
 
     if (!nsContentSecurityUtils::IsEvalAllowed(
             cx, subjectPrincipal->IsSystemPrincipal(), scriptSample)) {
-      return false;
+      *aOutCanCompileStrings = false;
+      return true;
     }
   }
 
@@ -503,6 +511,7 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
     }
     
     if (!csp) {
+      *aOutCanCompileStrings = true;
       return true;
     }
   }
@@ -522,7 +531,8 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
     nsresult rv = csp->GetAllowsEval(&reportViolation, &evalOK);
     if (NS_FAILED(rv)) {
       NS_WARNING("CSP: failed to get allowsEval");
-      return true;  
+      *aOutCanCompileStrings = true;  
+      return true;
     }
   } else {
     if (NS_FAILED(csp->GetAllowsWasmEval(&reportViolation, &evalOK))) {
@@ -545,8 +555,7 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
     auto caller = JSCallingLocation::Get(cx);
     nsAutoJSString scriptSample;
     if (aKind == JS::RuntimeCode::JS &&
-        NS_WARN_IF(!scriptSample.init(cx, aCode))) {
-      JS_ClearPendingException(cx);
+        NS_WARN_IF(!scriptSample.init(cx, aCodeString))) {
       return false;
     }
     uint16_t violationType =
@@ -559,7 +568,8 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
                              caller.mLine, caller.mColumn, u""_ns, u""_ns);
   }
 
-  return evalOK;
+  *aOutCanCompileStrings = evalOK;
+  return true;
 }
 
 

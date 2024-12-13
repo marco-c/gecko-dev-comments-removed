@@ -803,7 +803,13 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   
   
-  bool isRuntimeCodeGenEnabled(JS::RuntimeCode kind, js::HandleString code);
+  bool isRuntimeCodeGenEnabled(
+      JS::RuntimeCode kind, JS::Handle<JSString*> codeString,
+      JS::CompilationType compilationType,
+      JS::Handle<JS::StackGCVector<JSString*>> parameterStrings,
+      JS::Handle<JSString*> bodyString,
+      JS::Handle<JS::StackGCVector<JS::Value>> parameterArgs,
+      JS::Handle<JS::Value> bodyArg, bool* outCanCompileStrings);
 
   
   bool getCodeForEval(JS::HandleObject code,
