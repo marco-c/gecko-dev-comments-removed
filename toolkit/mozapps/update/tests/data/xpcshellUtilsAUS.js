@@ -2165,14 +2165,16 @@ function runUpdate(
 
   setAppBundleModTime();
 
-  let args = [updatesDirPath, installDirPath];
-  if (aSwitchApp) {
-    args[2] = stageDirPath;
-    args[3] = pid + "/replace";
-  } else {
-    args[2] = applyToDirPath;
-    args[3] = pid;
-  }
+  
+  
+  let args = [
+    "3",
+    updatesDirPath,
+    installDirPath,
+    aSwitchApp ? stageDirPath : applyToDirPath,
+    "first",
+    aSwitchApp ? pid + "/replace" : pid,
+  ];
 
   let launchBin = gIsServiceTest && isInvalidArgTest ? callbackApp : gUpdateBin;
 
@@ -2180,6 +2182,8 @@ function runUpdate(
     args = args.concat([callbackApp.parent.path, callbackApp.path]);
     args = args.concat(gCallbackArgs);
   } else if (gIsServiceTest) {
+    
+    args[4] = "second";
     args = ["launch-service", gUpdateBin.path].concat(args);
   } else if (aCallbackPath) {
     args = args.concat([callbackApp.parent.path, aCallbackPath]);
