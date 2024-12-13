@@ -2747,7 +2747,7 @@ static void Decode(JSContext* aCx, JS::CompileOptions& aCompileOptions,
 static void InstantiateStencil(
     JSContext* aCx, JS::CompileOptions& aCompileOptions, JS::Stencil* aStencil,
     JS::MutableHandle<JSScript*> aScript,
-    bool& incrementalEncodingAlreadyStarted,
+    bool& aCollectingDelazificationsAlreadyStarted,
     JS::Handle<JS::Value> aDebuggerPrivateValue,
     JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv,
     bool aEncodeBytecode = false,
@@ -2762,8 +2762,8 @@ static void InstantiateStencil(
   }
 
   if (aEncodeBytecode) {
-    if (!JS::StartIncrementalEncoding(aCx, script, aStencil,
-                                      incrementalEncodingAlreadyStarted)) {
+    if (!JS::StartCollectingDelazifications(
+            aCx, script, aStencil, aCollectingDelazificationsAlreadyStarted)) {
       aRv.NoteJSContextException(aCx);
       return;
     }
@@ -2903,12 +2903,12 @@ void ScriptLoader::InstantiateClassicScriptFromCachedStencil(
     JS::MutableHandle<JSScript*> aScript,
     JS::Handle<JS::Value> aDebuggerPrivateValue,
     JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv) {
-  bool incrementalEncodingAlreadyStarted = false;
+  bool collectingDelazificationsAlreadyStarted = false;
   InstantiateStencil(aCx, aCompileOptions, aStencil, aScript,
-                     incrementalEncodingAlreadyStarted, aDebuggerPrivateValue,
-                     aDebuggerIntroductionScript, aRv,
+                     collectingDelazificationsAlreadyStarted,
+                     aDebuggerPrivateValue, aDebuggerIntroductionScript, aRv,
                       true);
-  if (incrementalEncodingAlreadyStarted) {
+  if (collectingDelazificationsAlreadyStarted) {
     aRequest->MarkSkippedBytecodeEncoding();
   }
 }
@@ -3286,14 +3286,14 @@ void ScriptLoader::EncodeRequestBytecode(JSContext* aCx,
     aRequest->mScriptForBytecodeEncoding = nullptr;
     ModuleScript* moduleScript = aRequest->AsModuleRequest()->mModuleScript;
     JS::Rooted<JSObject*> module(aCx, moduleScript->ModuleRecord());
-    result =
-        JS::FinishIncrementalEncoding(aCx, module, aRequest->SRIAndBytecode());
+    result = JS::FinishCollectingDelazifications(aCx, module,
+                                                 aRequest->SRIAndBytecode());
   } else if (mCache) {
     RefPtr<JS::Stencil> stencil;
     JS::Rooted<JSScript*> script(aCx, aRequest->mScriptForBytecodeEncoding);
     aRequest->mScriptForBytecodeEncoding = nullptr;
-    result =
-        JS::FinishIncrementalEncoding(aCx, script, getter_AddRefs(stencil));
+    result = JS::FinishCollectingDelazifications(aCx, script,
+                                                 getter_AddRefs(stencil));
     if (result) {
       aRequest->SetStencil(stencil.forget());
       bytecodeFailed.release();
@@ -3302,8 +3302,8 @@ void ScriptLoader::EncodeRequestBytecode(JSContext* aCx,
     
   } else {
     JS::Rooted<JSScript*> script(aCx, aRequest->mScriptForBytecodeEncoding);
-    result =
-        JS::FinishIncrementalEncoding(aCx, script, aRequest->SRIAndBytecode());
+    result = JS::FinishCollectingDelazifications(aCx, script,
+                                                 aRequest->SRIAndBytecode());
     aRequest->mScriptForBytecodeEncoding = nullptr;
   }
   if (!result) {
@@ -3400,12 +3400,12 @@ void ScriptLoader::GiveUpBytecodeEncoding() {
       if (request->IsModuleRequest()) {
         ModuleScript* moduleScript = request->AsModuleRequest()->mModuleScript;
         JS::Rooted<JSObject*> module(aes->cx(), moduleScript->ModuleRecord());
-        JS::AbortIncrementalEncoding(module);
+        JS::AbortCollectingDelazifications(module);
       } else {
         JS::Rooted<JSScript*> script(aes->cx(),
                                      request->mScriptForBytecodeEncoding);
         request->mScriptForBytecodeEncoding = nullptr;
-        JS::AbortIncrementalEncoding(script);
+        JS::AbortCollectingDelazifications(script);
       }
     }
 

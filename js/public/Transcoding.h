@@ -1,28 +1,28 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+/*
+ * Structures and functions for transcoding compiled scripts and functions to
+ * and from memory.
+ */
 
 #ifndef js_Transcoding_h
 #define js_Transcoding_h
 
-#include "mozilla/Range.h"   
-#include "mozilla/Vector.h"  
+#include "mozilla/Range.h"   // mozilla::Range
+#include "mozilla/Vector.h"  // mozilla::Vector
 
-#include <stddef.h>  
-#include <stdint.h>  
+#include <stddef.h>  // size_t
+#include <stdint.h>  // uint8_t, uint32_t
 
 #include "js/TypeDecls.h"
 
-
+// Underlying opaque type.
 namespace js::frontend {
 struct InitialStencilAndDelazifications;
-}  
+}  // namespace js::frontend
 
 namespace JS {
 
@@ -43,16 +43,16 @@ struct TranscodeSource final {
 };
 
 enum class TranscodeResult : uint8_t {
-  
+  // Successful encoding / decoding.
   Ok = 0,
 
-  
+  // A warning message, is set to the message out-param.
   Failure = 0x10,
   Failure_BadBuildId = Failure | 0x1,
   Failure_AsmJSNotSupported = Failure | 0x2,
   Failure_BadDecode = Failure | 0x3,
 
-  
+  // There is a pending exception on the context.
   Throw = 0x20
 };
 
@@ -68,7 +68,7 @@ static constexpr size_t BytecodeOffsetAlignment = 4;
 static_assert(BytecodeOffsetAlignment <= alignof(std::max_align_t),
               "Alignment condition requires a custom allocator.");
 
-
+// Align the bytecode offset for transcoding for the requirement.
 inline size_t AlignTranscodingBytecodeOffset(size_t offset) {
   size_t extra = offset % BytecodeOffsetAlignment;
   if (extra == 0) {
@@ -86,66 +86,12 @@ inline bool IsTranscodingBytecodeAligned(const void* offset) {
   return IsTranscodingBytecodeOffsetAligned(size_t(offset));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool FinishIncrementalEncoding(JSContext* cx,
-                                                    Handle<JSScript*> script,
-                                                    TranscodeBuffer& buffer);
-
-
-
-
-
-
-extern JS_PUBLIC_API bool FinishIncrementalEncoding(JSContext* cx,
-                                                    Handle<JSObject*> module,
-                                                    TranscodeBuffer& buffer);
-
-
-
-
-
-extern JS_PUBLIC_API bool FinishIncrementalEncoding(JSContext* cx,
-                                                    Handle<JSScript*> script,
-                                                    JS::Stencil** stencilOut);
-
-
-extern JS_PUBLIC_API void AbortIncrementalEncoding(Handle<JSScript*> script);
-extern JS_PUBLIC_API void AbortIncrementalEncoding(Handle<JSObject*> module);
-
-
-
-
+// Check if the compile options and script's flag matches.
+//
+// JS::DecodeScript* and JS::DecodeOffThreadScript internally check this.
 extern JS_PUBLIC_API bool CheckCompileOptionsMatch(
     const ReadOnlyCompileOptions& options, JSScript* script);
 
-}  
+}  // namespace JS
 
-#endif 
+#endif /* js_Transcoding_h */

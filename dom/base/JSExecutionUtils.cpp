@@ -16,10 +16,10 @@
 #include <utility>      
 #include "ErrorList.h"  
 #include "js/CompilationAndEvaluation.h"  
-#include "js/experimental/JSStencil.h"    
-#include "js/SourceText.h"                
-#include "jsapi.h"                        
-#include "nsTPromiseFlatString.h"         
+#include "js/experimental/JSStencil.h"  
+#include "js/SourceText.h"              
+#include "jsapi.h"                      
+#include "nsTPromiseFlatString.h"  
 
 #if !defined(DEBUG) && !defined(MOZ_ENABLE_JS_DUMP)
 #  include "mozilla/StaticPrefs_browser.h"
