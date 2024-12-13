@@ -1986,8 +1986,6 @@
       evt.initEvent("BeforeTabRemotenessChange", true, false);
       tab.dispatchEvent(evt);
 
-      let wasActive = document.activeElement == aBrowser;
-
       
       let filter = this._tabFilters.get(tab);
       let listener = this._tabListeners.get(tab);
@@ -2082,10 +2080,6 @@
         
         
         this.tabContainer.updateTabIndicatorAttr(tab);
-      }
-
-      if (wasActive) {
-        aBrowser.focus();
       }
 
       
@@ -6977,8 +6971,6 @@
         evt.initEvent("BeforeTabRemotenessChange", true, false);
         tab.dispatchEvent(evt);
 
-        let wasActive = document.activeElement == browser;
-
         
         let filter = this._tabFilters.get(tab);
         let oldListener = this._tabListeners.get(tab);
@@ -7046,10 +7038,6 @@
             
             tab.removeAttribute("crashed");
             gBrowser.tabContainer.updateTabIndicatorAttr(tab);
-          }
-
-          if (wasActive) {
-            browser.focus();
           }
 
           if (this.isFindBarInitialized(tab)) {
