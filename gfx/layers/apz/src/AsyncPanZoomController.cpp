@@ -5888,9 +5888,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
     ClampAndSetVisualScrollOffset(Metrics().GetVisualScrollOffset());
-    for (auto& sampledState : mSampledState) {
-      sampledState.ClampVisualScrollOffset(Metrics());
-    }
   }
 
   
@@ -5917,15 +5914,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   }
 
   if (scrollOffsetUpdated) {
-    for (auto& sampledState : mSampledState) {
-      if (!didCancelAnimation && cumulativeRelativeDelta.isSome()) {
-        sampledState.UpdateScrollPropertiesWithRelativeDelta(
-            Metrics(), *cumulativeRelativeDelta);
-      } else {
-        sampledState.UpdateScrollProperties(Metrics());
-      }
-    }
-
     
     
     
@@ -5996,9 +5984,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
     Metrics().RecalculateLayoutViewportOffset();
-    for (auto& sampledState : mSampledState) {
-      sampledState.UpdateScrollProperties(Metrics());
-    }
     mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
     if (ShouldCancelAnimationForScrollUpdate(Nothing())) {
       CancelAnimation();
@@ -6025,6 +6010,23 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
     Metrics().RecalculateLayoutViewportOffset();
+  }
+
+  
+  if (scrollOffsetUpdated || visualScrollOffsetUpdated) {
+    for (auto& sampledState : mSampledState) {
+      if (!didCancelAnimation && cumulativeRelativeDelta.isSome()) {
+        sampledState.UpdateScrollPropertiesWithRelativeDelta(
+            Metrics(), *cumulativeRelativeDelta);
+      } else {
+        sampledState.UpdateScrollProperties(Metrics());
+      }
+    }
+  }
+  if (aIsFirstPaint || needToReclampScroll) {
+    for (auto& sampledState : mSampledState) {
+      sampledState.ClampVisualScrollOffset(Metrics());
+    }
   }
 
   if (needContentRepaint) {
