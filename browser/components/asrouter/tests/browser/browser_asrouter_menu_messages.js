@@ -222,10 +222,12 @@ function assertNoMessageInMenuSource(source, win = window) {
 
 
 
+
 async function reopenMenuSource(source, expectedMessage, win = window, taskFn) {
   await hideAllPopups(win);
 
   let promiseViewShown;
+  let panel;
 
   if (source === MenuMessage.SOURCES.APP_MENU) {
     promiseViewShown = BrowserTestUtils.waitForEvent(
@@ -233,6 +235,7 @@ async function reopenMenuSource(source, expectedMessage, win = window, taskFn) {
       "ViewShown"
     );
     win.PanelUI.show();
+    panel = win.PanelUI.panel;
   } else if (source === MenuMessage.SOURCES.PXI_MENU) {
     promiseViewShown = BrowserTestUtils.waitForEvent(
       PanelMultiView.getViewNode(win.document, "PanelUI-fxa"),
@@ -242,6 +245,7 @@ async function reopenMenuSource(source, expectedMessage, win = window, taskFn) {
       win.document.getElementById("fxa-toolbar-menu-button"),
       new MouseEvent("mousedown")
     );
+    panel = win.document.getElementById("customizationui-widget-panel");
   }
 
   info(`Waiting for menu source ${source} to open`);
@@ -256,7 +260,7 @@ async function reopenMenuSource(source, expectedMessage, win = window, taskFn) {
   }
 
   if (taskFn) {
-    await taskFn(messageEl);
+    await taskFn(messageEl, panel);
   }
 
   await hideAllPopups(win);
@@ -398,6 +402,7 @@ add_task(async function test_trigger() {
 
 
 
+
 add_task(async function test_show_fxa_cta_message() {
   let sandbox = sinon.createSandbox();
   sandbox.spy(ASRouter, "addImpression");
@@ -406,7 +411,25 @@ add_task(async function test_show_fxa_cta_message() {
   await withTestMessage(sandbox, gTestFxAMessage, async () => {
     await withEachSource(async source => {
       info(`Testing source ${source}`);
-      await reopenMenuSource(source, gTestFxAMessage);
+      await reopenMenuSource(
+        source,
+        gTestFxAMessage,
+        window,
+        async (msgElement, panel) => {
+          
+          
+          
+          AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+          msgElement.click();
+          AccessibilityUtils.resetEnv();
+
+          Assert.equal(
+            panel.state,
+            "open",
+            "Panel should still be in the open state."
+          );
+        }
+      );
 
       Assert.ok(
         ASRouter.addImpression.calledWith(gTestFxAMessage),
@@ -520,8 +543,13 @@ add_task(async function test_fxa_cta_actions() {
         source,
         gTestFxAMessage,
         window,
-        async messageEl => {
+        async (messageEl, panel) => {
           messageEl.signUpButton.click();
+          Assert.notEqual(
+            panel.state,
+            "open",
+            "Panel should have started to close."
+          );
         }
       );
 
