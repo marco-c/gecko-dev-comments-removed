@@ -101,7 +101,7 @@ class MOZ_STACK_CLASS AutoRangeArray final {
 
   void ExtendRangesToWrapLines(EditSubAction aEditSubAction,
                                BlockInlineCheck aBlockInlineCheck,
-                               const dom::Element& aEditingHost);
+                               const dom::Element& aAncestorLimiter);
 
   
 
