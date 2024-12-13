@@ -11,6 +11,7 @@ import {
 import { createLocation } from "../../utils/location";
 import { addHiddenBreakpoint } from "../breakpoints/index";
 import { setBreakpointPositions } from "../breakpoints/breakpointPositions";
+import { setSkipPausing } from "./skipPausing";
 
 import { resume } from "./commands";
 
@@ -41,6 +42,9 @@ export function continueToHere(location) {
     }
 
     const pauseLocation = column && position ? position.location : location;
+
+    
+    await dispatch(setSkipPausing(false));
 
     
     
