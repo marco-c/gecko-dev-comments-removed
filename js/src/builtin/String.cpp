@@ -58,7 +58,6 @@
 #include "vm/ToSource.h"  
 
 #include "vm/GeckoProfiler-inl.h"
-#include "vm/InlineCharBuffer-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/StringObject-inl.h"
 #include "vm/StringType-inl.h"
@@ -4013,6 +4012,20 @@ JSLinearString* js::StringFromCodePoint(JSContext* cx, char32_t codePoint) {
 }
 
 
+static bool GuessFromCharCodeIsLatin1(const CallArgs& args) {
+  
+  constexpr unsigned SampleSize = 8;
+
+  for (unsigned i = 0; i < std::min(args.length(), SampleSize); i++) {
+    auto v = args[i];
+    if (v.isInt32() && uint16_t(v.toInt32()) > JSString::MAX_LATIN1_CHAR) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
 
 
 
@@ -4039,26 +4052,71 @@ bool js::str_fromCharCode(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  
-  
-  
-  
-  InlineCharBuffer<char16_t> chars;
-  if (!chars.maybeAlloc(cx, args.length())) {
+  StringChars<Latin1Char> latin1Chars(cx);
+
+  unsigned i = 0;
+  uint16_t firstTwoByteChar = 0;
+  if (GuessFromCharCodeIsLatin1(args)) {
+    if (!latin1Chars.maybeAlloc(cx, args.length())) {
+      return false;
+    }
+
+    for (; i < args.length(); i++) {
+      uint16_t code;
+      if (!ToUint16(cx, args[i], &code)) {
+        return false;
+      }
+
+      if (code > JSString::MAX_LATIN1_CHAR) {
+        firstTwoByteChar = code;
+        break;
+      }
+
+      AutoCheckCannotGC nogc;
+      latin1Chars.data(nogc)[i] = code;
+    }
+
+    if (i == args.length()) {
+      JSString* str = latin1Chars.toStringDontDeflate<CanGC>(cx, args.length());
+      if (!str) {
+        return false;
+      }
+
+      args.rval().setString(str);
+      return true;
+    }
+  }
+
+  StringChars<char16_t> twoByteChars(cx);
+  if (!twoByteChars.maybeAlloc(cx, args.length())) {
     return false;
   }
 
-  char16_t* rawChars = chars.get();
-  for (unsigned i = 0; i < args.length(); i++) {
+  
+  if (i > 0) {
+    AutoCheckCannotGC nogc;
+    std::copy_n(latin1Chars.data(nogc), i, twoByteChars.data(nogc));
+  }
+
+  
+  if (firstTwoByteChar > 0) {
+    MOZ_ASSERT(firstTwoByteChar > JSString::MAX_LATIN1_CHAR);
+
+    AutoCheckCannotGC nogc;
+    twoByteChars.data(nogc)[i++] = char16_t(firstTwoByteChar);
+  }
+
+  for (; i < args.length(); i++) {
     uint16_t code;
     if (!ToUint16(cx, args[i], &code)) {
       return false;
     }
 
-    rawChars[i] = char16_t(code);
+    AutoCheckCannotGC nogc;
+    twoByteChars.data(nogc)[i] = code;
   }
 
-  JSString* str = chars.toString(cx, args.length());
+  JSString* str = twoByteChars.toStringDontDeflate<CanGC>(cx, args.length());
   if (!str) {
     return false;
   }
