@@ -27,4 +27,18 @@ PrincipalMetadata GetPrincipalMetadata(const nsCString& aOriginSuffix,
                             false};
 }
 
+OriginMetadata GetOriginMetadata(const nsCString& aOriginSuffix,
+                                 const nsCString& aGroupNoSuffix,
+                                 const nsCString& aOriginNoSuffix) {
+  return {GetPrincipalMetadata(aOriginSuffix, aGroupNoSuffix, aOriginNoSuffix),
+          PERSISTENCE_TYPE_DEFAULT};
+}
+
+FullOriginMetadata GetFullOriginMetadata(const nsCString& aOriginSuffix,
+                                         const nsCString& aGroupNoSuffix,
+                                         const nsCString& aOriginNoSuffix) {
+  return {GetOriginMetadata(aOriginSuffix, aGroupNoSuffix, aOriginNoSuffix),
+           false,  0};
+}
+
 }  
