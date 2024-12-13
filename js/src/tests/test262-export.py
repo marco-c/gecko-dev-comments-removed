@@ -404,7 +404,7 @@ def mergeMeta(
                 
                 
                 
-                "phase": "early",
+                "phase": "parse",
                 "type": error,
             }
         
@@ -451,7 +451,7 @@ def cleanupMeta(meta: "dict[str, Any]") -> "dict[str, Any]":
 
     if "negative" in meta:
         
-        if meta["negative"].get("phase") not in ("early", "runtime"):
+        if meta["negative"].get("phase") not in ["parse", "resolution", "runtime"]:
             print(
                 "Warning: the negative.phase is not properly set.\n"
                 + "Ref https://github.com/tc39/test262/blob/main/INTERPRETING.md#negative"
@@ -510,6 +510,9 @@ def insertMeta(source: bytes, frontmatter: "dict[str, Any]") -> bytes:
         source = source.replace(frontmattermatch.group(0), frontmatterstr)
     else:
         source = frontmatterstr + source
+
+    if frontmatter.get("negative", {}).get("phase", "") == "parse":
+        source += b"$DONOTEVALUATE();\n"
 
     return source
 
