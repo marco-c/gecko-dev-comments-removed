@@ -875,6 +875,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 
   BaseCreate(aParent, aInitData);
 
+  HWND parent =
+      aParent ? (HWND)aParent->GetNativeData(NS_NATIVE_WINDOW) : nullptr;
+
   mIsRTL = aInitData->mRTL;
   mOpeningAnimationSuppressed = aInitData->mIsAnimationSuppressed;
   mAlwaysOnTop = aInitData->mAlwaysOnTop;
@@ -886,12 +889,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
       .ex = static_cast<LONG_PTR>(WindowExStyle()),
   };
 
-  
-  
-  HWND parent = nullptr;
   if (mWindowType != WindowType::Popup) {
-    parent = aParent ? (HWND)aParent->GetNativeData(NS_NATIVE_WINDOW) : nullptr;
-
     
     if (aInitData->mClipChildren) {
       desiredStyles.style |= WS_CLIPCHILDREN;
