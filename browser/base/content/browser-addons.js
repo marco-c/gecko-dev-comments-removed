@@ -1969,6 +1969,12 @@ var gUnifiedExtensions = {
       );
       CustomizableUI.addPanelCloseListeners(this._panel);
 
+      this._panel
+        .querySelector("#unified-extensions-manage-extensions")
+        .addEventListener("command", () => {
+          BrowserAddonUI.openAddonsMgr("addons://list/extension");
+        });
+
       
       
       document
