@@ -82,6 +82,9 @@ void QuotaManagerDependencyFixture::InitializeFixture() {
   nsresult rv = observer->Observe(nullptr, "profile-do-change", nullptr);
   ASSERT_NS_SUCCEEDED(rv);
 
+  rv = observer->Observe(nullptr, "sessionstore-windows-restored", nullptr);
+  ASSERT_NS_SUCCEEDED(rv);
+
   
   ASSERT_NO_FATAL_FAILURE(EnsureQuotaManager());
 
