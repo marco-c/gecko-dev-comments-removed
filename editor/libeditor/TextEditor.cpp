@@ -565,20 +565,11 @@ bool TextEditor::IsCopyToClipboardAllowedInternal() const {
 
 nsresult TextEditor::HandlePasteAsQuotation(
     AutoEditActionDataSetter& aEditActionData,
-    nsIClipboard::ClipboardType aClipboardType) {
+    nsIClipboard::ClipboardType aClipboardType, DataTransfer* aDataTransfer) {
   MOZ_ASSERT(aClipboardType == nsIClipboard::kGlobalClipboard ||
              aClipboardType == nsIClipboard::kSelectionClipboard);
   if (NS_WARN_IF(!GetDocument())) {
     return NS_OK;
-  }
-
-  
-  nsresult rv;
-  nsCOMPtr<nsIClipboard> clipboard =
-      do_GetService("@mozilla.org/widget/clipboard;1", &rv);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("Failed to get nsIClipboard service");
-    return rv;
   }
 
   
@@ -598,13 +589,9 @@ nsresult TextEditor::HandlePasteAsQuotation(
     return NS_OK;
   }
 
-  auto* windowContext = GetDocument()->GetWindowContext();
-  if (!windowContext) {
-    NS_WARNING("Editor didn't have document window context");
-    return NS_ERROR_FAILURE;
-  }
   
-  rv = clipboard->GetData(trans, aClipboardType, windowContext);
+  nsresult rv =
+      GetDataFromDataTransferOrClipboard(aDataTransfer, trans, aClipboardType);
 
   
   

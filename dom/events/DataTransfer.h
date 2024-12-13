@@ -447,6 +447,8 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   
   void ClearForPaste();
 
+  bool HasPrivateHTMLFlavor() const;
+
  protected:
   
   

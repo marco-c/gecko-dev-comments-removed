@@ -3688,6 +3688,9 @@ class Document : public nsINode,
     mHasPolicyWithRequireTrustedTypesForDirective =
         aHasPolicyWithRequireTrustedTypesForDirective;
   }
+  bool IsClipboardCopyTriggered() const { return mClipboardCopyTriggered; }
+  void ClearClipboardCopyTriggered() { mClipboardCopyTriggered = false; }
+  void SetClipboardCopyTriggered() { mClipboardCopyTriggered = true; }
 
   
   
@@ -4965,6 +4968,10 @@ class Document : public nsINode,
 
   
   bool mHasPolicyWithRequireTrustedTypesForDirective : 1;
+
+  
+  
+  bool mClipboardCopyTriggered : 1;
 
   Maybe<bool> mMutationEventsEnabled;
 
