@@ -2360,9 +2360,6 @@ pref("font.size.monospace.x-math", 13);
   pref("intl.imm.japanese.assume_active_tip_name_as", "");
 
   
-  pref("ui.panel.default_level_parent", false);
-
-  
   
   
   
@@ -2603,9 +2600,6 @@ pref("font.size.monospace.x-math", 13);
   pref("font.weight-override.HelveticaNeue-LightItalic", 300);
 
   
-  pref("ui.panel.default_level_parent", false);
-
-  
   pref("mousewheel.enable_pixel_scrolling", true);
 
 #endif // XP_MACOSX
@@ -2761,16 +2755,6 @@ pref("font.size.monospace.x-math", 13);
   pref("helpers.global_mailcap_file", "/etc/mailcap");
   pref("helpers.private_mime_types_file", "~/.mime.types");
   pref("helpers.private_mailcap_file", "~/.mailcap");
-
-  
-  
-  
-  
-  
-  
-  
-  pref("ui.panel.default_level_parent", true);
-
 #endif // ANDROID
 
 #if !defined(ANDROID) && !defined(XP_MACOSX) && defined(XP_UNIX)
@@ -2944,17 +2928,6 @@ pref("font.size.monospace.x-math", 13);
   pref("font.name-list.sans-serif.zh-TW", "sans-serif");
   pref("font.name-list.monospace.zh-TW", "monospace");
   pref("font.name-list.cursive.zh-TW", "cursive");
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  pref("ui.panel.default_level_parent", true);
 
   pref("intl.ime.use_simple_context_on_password_field", false);
 
