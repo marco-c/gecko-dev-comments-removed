@@ -3,6 +3,9 @@
 
 
 
+
+
+
 var gTestfile = "too-many-arguments-constructing-bound-function.js";
 
 var BUGNUMBER = 1303678;

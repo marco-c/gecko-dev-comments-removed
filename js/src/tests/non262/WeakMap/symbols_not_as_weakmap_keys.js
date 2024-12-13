@@ -1,5 +1,8 @@
 
 
+
+
+
 var m = new WeakMap;
 var sym = Symbol();
 assertThrowsInstanceOf(() => m.set(sym, 0), TypeError);
