@@ -692,8 +692,6 @@ bool js::temporal::ToTemporalCalendar(JSContext* cx,
                                       Handle<Value> temporalCalendarLike,
                                       MutableHandle<CalendarValue> result) {
   
-
-  
   if (temporalCalendarLike.isObject()) {
     Rooted<JSObject*> obj(cx, &temporalCalendarLike.toObject());
 
@@ -760,15 +758,12 @@ bool js::temporal::GetTemporalCalendarWithISODefault(
   }
 
   
-  
-  
-  
-
-  
   if (calendarValue.isUndefined()) {
     result.set(CalendarValue(CalendarId::ISO8601));
     return true;
   }
+
+  
   return ToTemporalCalendar(cx, calendarValue, result);
 }
 

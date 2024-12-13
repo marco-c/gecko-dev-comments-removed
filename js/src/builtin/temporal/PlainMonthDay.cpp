@@ -209,10 +209,6 @@ static bool ToTemporalMonthDay(
   }
 
   
-  
-  
-
-  
   Rooted<CalendarValue> calendar(cx);
   if (!GetTemporalCalendarWithISODefault(cx, item, &calendar)) {
     return false;

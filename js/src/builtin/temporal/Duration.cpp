@@ -2573,29 +2573,10 @@ static bool NudgeToCalendarUnit(
   }
 
   
-  if (sign > 0) {
-    
-    if (startEpochNs > destEpochNs || destEpochNs >= endEpochNs) {
-      JS_ReportErrorNumberASCII(
-          cx, GetErrorMessage, nullptr,
-          JSMSG_TEMPORAL_ZONED_DATE_TIME_INCONSISTENT_INSTANT);
-      return false;
-    }
-
-    
-    MOZ_ASSERT(startEpochNs <= destEpochNs && destEpochNs < endEpochNs);
-  } else {
-    
-    if (endEpochNs >= destEpochNs || destEpochNs > startEpochNs) {
-      JS_ReportErrorNumberASCII(
-          cx, GetErrorMessage, nullptr,
-          JSMSG_TEMPORAL_ZONED_DATE_TIME_INCONSISTENT_INSTANT);
-      return false;
-    }
-
-    
-    MOZ_ASSERT(endEpochNs < destEpochNs && destEpochNs <= startEpochNs);
-  }
+  MOZ_ASSERT_IF(sign > 0,
+                startEpochNs <= destEpochNs && destEpochNs <= endEpochNs);
+  MOZ_ASSERT_IF(sign <= 0,
+                endEpochNs <= destEpochNs && destEpochNs <= startEpochNs);
 
   
   MOZ_ASSERT(startEpochNs != endEpochNs);
@@ -2604,7 +2585,7 @@ static bool NudgeToCalendarUnit(
   auto numerator = (destEpochNs - startEpochNs).toNanoseconds();
   auto denominator = (endEpochNs - startEpochNs).toNanoseconds();
   MOZ_ASSERT(denominator != Int128{0});
-  MOZ_ASSERT(numerator.abs() < denominator.abs());
+  MOZ_ASSERT(numerator.abs() <= denominator.abs());
   MOZ_ASSERT_IF(denominator > Int128{0}, numerator >= Int128{0});
   MOZ_ASSERT_IF(denominator < Int128{0}, numerator <= Int128{0});
 
@@ -2667,7 +2648,9 @@ static bool NudgeToCalendarUnit(
   
   
   bool didExpandCalendarUnit;
-  if (numerator == Int128{0}) {
+  if (numerator == denominator) {
+    didExpandCalendarUnit = true;
+  } else if (numerator == Int128{0}) {
     didExpandCalendarUnit = false;
   } else if (unsignedRoundingMode == UnsignedRoundingMode::Zero) {
     didExpandCalendarUnit = false;
