@@ -146,8 +146,9 @@ typedef struct sb_parameters {
 
 
 typedef struct vpx_rc_encodeframe_decision {
-  int q_index; 
-  int rdmult;  
+  int q_index;    
+  int rdmult;     
+  int delta_q_uv; 
   
 
 
