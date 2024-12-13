@@ -657,18 +657,37 @@ export class AppProvidedSearchEngine extends SearchEngine {
     );
 
     if (urlData.params) {
+      let isEnterprise = Services.policies.isEnterprise;
+      let enterpriseParams = urlData.params
+        .filter(p => "enterpriseValue" in p)
+        .map(p => p.name);
+
       for (const param of urlData.params) {
         switch (true) {
           case "value" in param:
-            engineURL.addParam(
-              param.name,
-              param.value == "{partnerCode}" ? partnerCode : param.value
-            );
+            if (!isEnterprise || !enterpriseParams.includes(param.name)) {
+              engineURL.addParam(
+                param.name,
+                param.value == "{partnerCode}" ? partnerCode : param.value
+              );
+            }
             break;
           case "experimentConfig" in param:
-            engineURL.addQueryParameter(
-              new QueryPreferenceParameter(param.name, param.experimentConfig)
-            );
+            if (!isEnterprise || !enterpriseParams.includes(param.name)) {
+              engineURL.addQueryParameter(
+                new QueryPreferenceParameter(param.name, param.experimentConfig)
+              );
+            }
+            break;
+          case "enterpriseValue" in param:
+            if (isEnterprise) {
+              engineURL.addParam(
+                param.name,
+                param.enterpriseValue == "{partnerCode}"
+                  ? partnerCode
+                  : param.enterpriseValue
+              );
+            }
             break;
         }
       }
@@ -737,5 +756,25 @@ export class AppProvidedSearchEngine extends SearchEngine {
 
       this.#prevEngineInfo.set(key, newValue);
     });
+  }
+}
+
+/**
+ * This class defines Search Engines that are built in to to the
+ * application but whose installation was triggered by the user
+ * and not the region configuration.
+ */
+export class UserInstalledAppEngine extends AppProvidedSearchEngine {
+  /**
+   * @param {object} options
+   *   Options object passed to the constructor.
+   * @param {object} options.config
+   *   The configuration object for this engine defined in the Search Configuration.
+   * @param {object} options.settings
+   *   The settings object that the engine details will be stored in.
+   */
+  constructor({ config, settings }) {
+    super({ config, settings });
+    this.setAttr("user-installed", true);
   }
 }

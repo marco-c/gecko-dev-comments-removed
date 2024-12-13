@@ -4,6 +4,8 @@
 ChromeUtils.defineESModuleGetters(this, {
   AddonTestUtils: "resource://testing-common/AddonTestUtils.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
+  EnterprisePolicyTesting:
+    "resource://testing-common/EnterprisePolicyTesting.sys.mjs",
   ExtensionTestUtils:
     "resource://testing-common/ExtensionXPCShellUtils.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
@@ -469,6 +471,41 @@ async function assertGleanDefaultEngine(expected) {
       );
     }
   }
+}
+
+
+
+
+
+
+
+
+
+async function setupPolicyEngineWithJson(policy) {
+  Services.search.wrappedJSObject.reset();
+
+  await this.EnterprisePolicyTesting.setupPolicyEngineWithJson(policy);
+
+  let settingsWritten = SearchTestUtils.promiseSearchNotification(
+    "write-settings-to-disk-complete"
+  );
+  await Services.search.init();
+  await settingsWritten;
+}
+
+
+
+
+
+
+async function enableEnterprise() {
+  await setupPolicyEngineWithJson({
+    
+    policies: {
+      BlockAboutSupport: true,
+    },
+  });
+  Assert.ok(Services.policies.isEnterprise, "isEnterprise");
 }
 
 
