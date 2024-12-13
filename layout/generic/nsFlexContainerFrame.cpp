@@ -536,8 +536,8 @@ class nsFlexContainerFrame::FlexItem final {
   bool HasAnyAutoMargin() const { return mHasAnyAutoMargin; }
 
   BaselineSharingGroup ItemBaselineSharingGroup() const {
-    MOZ_ASSERT(mAlignSelf._0 == StyleAlignFlags::BASELINE ||
-                   mAlignSelf._0 == StyleAlignFlags::LAST_BASELINE,
+    MOZ_ASSERT(mAlignSelf == StyleAlignFlags::BASELINE ||
+                   mAlignSelf == StyleAlignFlags::LAST_BASELINE,
                "mBaselineSharingGroup only gets a meaningful value "
                "for baseline-aligned items");
     return mBaselineSharingGroup;
@@ -564,7 +564,7 @@ class nsFlexContainerFrame::FlexItem final {
 
   WritingMode GetWritingMode() const { return mWM; }
   WritingMode ContainingBlockWM() const { return mCBWM; }
-  StyleAlignSelf AlignSelf() const { return mAlignSelf; }
+  StyleAlignFlags AlignSelf() const { return mAlignSelf; }
   StyleAlignFlags AlignSelfFlags() const { return mAlignSelfFlags; }
 
   
@@ -955,7 +955,7 @@ class nsFlexContainerFrame::FlexItem final {
 
   
   
-  StyleAlignSelf mAlignSelf{StyleAlignFlags::AUTO};
+  StyleAlignFlags mAlignSelf{StyleAlignFlags::AUTO};
 
   
   StyleAlignFlags mAlignSelfFlags{0};
@@ -2150,18 +2150,19 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
     
     
     const nsStyleXUL* containerStyleXUL = containerRS->mFrame->StyleXUL();
-    mAlignSelf = {ConvertLegacyStyleToAlignItems(containerStyleXUL)};
+    mAlignSelf = ConvertLegacyStyleToAlignItems(containerStyleXUL);
     mAlignSelfFlags = {0};
   } else {
-    mAlignSelf = aFlexItemReflowInput.mStylePosition->UsedAlignSelf(
-        containerRS->mFrame->Style());
-    if (MOZ_LIKELY(mAlignSelf._0 == StyleAlignFlags::NORMAL)) {
-      mAlignSelf = {StyleAlignFlags::STRETCH};
+    StyleAlignSelf alignSelf =
+        aFlexItemReflowInput.mStylePosition->UsedAlignSelf(
+            containerRS->mFrame->Style());
+    if (MOZ_LIKELY(alignSelf._0 == StyleAlignFlags::NORMAL)) {
+      alignSelf = {StyleAlignFlags::STRETCH};
     }
 
     
-    mAlignSelfFlags = mAlignSelf._0 & StyleAlignFlags::FLAG_BITS;
-    mAlignSelf._0 &= ~StyleAlignFlags::FLAG_BITS;
+    mAlignSelfFlags = alignSelf._0 & StyleAlignFlags::FLAG_BITS;
+    mAlignSelf = alignSelf._0 & ~StyleAlignFlags::FLAG_BITS;
   }
 
   
@@ -2227,11 +2228,11 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
   }
 #endif  
 
-  if (mAlignSelf._0 == StyleAlignFlags::BASELINE ||
-      mAlignSelf._0 == StyleAlignFlags::LAST_BASELINE) {
+  if (mAlignSelf == StyleAlignFlags::BASELINE ||
+      mAlignSelf == StyleAlignFlags::LAST_BASELINE) {
     
     const bool usingItemFirstBaseline =
-        (mAlignSelf._0 == StyleAlignFlags::BASELINE);
+        (mAlignSelf == StyleAlignFlags::BASELINE);
     if (IsBlockAxisCrossAxis()) {
       
       
@@ -2298,7 +2299,7 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
       
       mIsFrozen(true),
       mIsStrut(true),  
-      mAlignSelf({StyleAlignFlags::FLEX_START}) {
+      mAlignSelf(StyleAlignFlags::FLEX_START) {
   MOZ_ASSERT(mFrame, "expecting a non-null child frame");
   MOZ_ASSERT(mFrame->StyleVisibility()->IsCollapse(),
              "Should only make struts for children with 'visibility:collapse'");
@@ -3760,11 +3761,11 @@ void FlexLine::ComputeCrossSizeAndBaseline(
   for (const FlexItem& item : Items()) {
     nscoord curOuterCrossSize = item.OuterCrossSize();
 
-    if ((item.AlignSelf()._0 == StyleAlignFlags::BASELINE ||
-         item.AlignSelf()._0 == StyleAlignFlags::LAST_BASELINE) &&
+    if ((item.AlignSelf() == StyleAlignFlags::BASELINE ||
+         item.AlignSelf() == StyleAlignFlags::LAST_BASELINE) &&
         item.NumAutoMarginsInCrossAxis() == 0) {
       const bool usingItemFirstBaseline =
-          (item.AlignSelf()._0 == StyleAlignFlags::BASELINE);
+          (item.AlignSelf() == StyleAlignFlags::BASELINE);
 
       
       
@@ -3868,7 +3869,7 @@ void FlexItem::ResolveStretchedCrossSize(nscoord aLineCrossSize) {
   
   
   
-  if (mAlignSelf._0 != StyleAlignFlags::STRETCH ||
+  if (mAlignSelf != StyleAlignFlags::STRETCH ||
       NumAutoMarginsInCrossAxis() != 0 || !IsCrossSizeAuto()) {
     return;
   }
@@ -3950,7 +3951,7 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
     return;
   }
 
-  StyleAlignFlags alignSelf = aItem.AlignSelf()._0;
+  StyleAlignFlags alignSelf = aItem.AlignSelf();
   
   
   if (alignSelf == StyleAlignFlags::STRETCH) {
@@ -4513,7 +4514,7 @@ void nsFlexContainerFrame::SizeItemInCrossAxis(ReflowInput& aChildReflowInput,
   MOZ_ASSERT(!aItem.HadMeasuringReflow(),
              "We shouldn't need more than one measuring reflow");
 
-  if (aItem.AlignSelf()._0 == StyleAlignFlags::STRETCH) {
+  if (aItem.AlignSelf() == StyleAlignFlags::STRETCH) {
     
     
     
