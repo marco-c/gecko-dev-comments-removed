@@ -119,7 +119,8 @@ UrlClassifierFeatureEmailTrackingDataCollection::MaybeCreate(
     return nullptr;
   }
 
-  bool isThirdParty = AntiTrackingUtils::IsThirdPartyChannel(aChannel);
+  RefPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  bool isThirdParty = loadInfo->GetIsThirdPartyContextToTopWindow();
 
   
   
