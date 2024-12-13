@@ -41,8 +41,7 @@ class Promise;
 
 
 class MIDIAccess final : public DOMEventTargetHelper,
-                         public Observer<MIDIPortList>,
-                         public SupportsWeakPtr {
+                         public Observer<MIDIPortList> {
   
   
   friend class MIDIPermissionRequest;

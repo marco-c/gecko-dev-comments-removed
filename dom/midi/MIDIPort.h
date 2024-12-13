@@ -101,8 +101,7 @@ class MIDIPort : public DOMEventTargetHelper {
 
   
   
-  
-  WeakPtr<MIDIAccess> mMIDIAccessParent;
+  RefPtr<MIDIAccess> mMIDIAccessParent;
   
   
   RefPtr<Promise> mOpeningPromise;
