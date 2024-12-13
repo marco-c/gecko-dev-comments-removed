@@ -118,9 +118,3 @@ FINAL_LIBRARY = "xul"
 
 
 AllowCompilerWarnings()
-
-
-
-
-if CONFIG["CC_TYPE"] == "clang":
-    CXXFLAGS += ["-std=c++11"]
