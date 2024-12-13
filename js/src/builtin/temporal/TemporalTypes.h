@@ -551,22 +551,40 @@ struct PackedTime final {
 };
 
 struct DateDuration;
-struct TimeDuration;
 
 
 
 
 
 struct Duration final {
+  
   double years = 0;
+
+  
   double months = 0;
+
+  
   double weeks = 0;
+
+  
   double days = 0;
+
+  
   double hours = 0;
+
+  
   double minutes = 0;
+
+  
   double seconds = 0;
+
+  
   double milliseconds = 0;
+
+  
   double microseconds = 0;
+
+  
   double nanoseconds = 0;
 
   constexpr bool operator==(const Duration& other) const {
@@ -640,46 +658,6 @@ struct DateDuration final {
 inline DateDuration Duration::toDateDuration() const {
   return {int64_t(years), int64_t(months), int64_t(weeks), int64_t(days)};
 }
-
-
-
-
-
-struct TimeDuration final {
-  
-  int64_t days = 0;
-
-  
-  int64_t hours = 0;
-
-  
-  int64_t minutes = 0;
-
-  
-  int64_t seconds = 0;
-
-  
-  int64_t milliseconds = 0;
-
-  
-  double microseconds = 0;
-
-  
-  double nanoseconds = 0;
-
-  constexpr Duration toDuration() const {
-    return {0,
-            0,
-            0,
-            double(days),
-            double(hours),
-            double(minutes),
-            double(seconds),
-            double(milliseconds),
-            microseconds,
-            nanoseconds};
-  }
-};
 
 
 

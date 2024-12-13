@@ -216,12 +216,6 @@ DateDuration NormalizeDurationWithoutTime(const Duration& duration);
 
 
 
-bool UnnormalizeDuration(JSContext* cx, const NormalizedDuration& duration,
-                         TemporalUnit largestUnit, Duration* result);
-
-
-
-
 bool CombineDateAndNormalizedTimeDuration(JSContext* cx,
                                           const DateDuration& date,
                                           const NormalizedTimeDuration& time,
@@ -248,14 +242,14 @@ bool ToTemporalDuration(JSContext* cx, JS::Handle<JS::Value> item,
 
 
 
-TimeDuration BalanceTimeDuration(const NormalizedTimeDuration& duration,
-                                 TemporalUnit largestUnit);
+Duration BalanceTimeDuration(const NormalizedTimeDuration& duration,
+                             TemporalUnit largestUnit);
 
 
 
 
 bool BalanceTimeDuration(JSContext* cx, const NormalizedTimeDuration& duration,
-                         TemporalUnit largestUnit, TimeDuration* result);
+                         TemporalUnit largestUnit, Duration* result);
 
 
 

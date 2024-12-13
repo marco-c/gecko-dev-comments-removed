@@ -788,16 +788,7 @@ bool js::temporal::DifferenceZonedDateTimeWithRounding(
                           settings.smallestUnit, settings.roundingMode);
 
     
-    TimeDuration balancedTime;
-    if (!BalanceTimeDuration(cx, difference, settings.largestUnit,
-                             &balancedTime)) {
-      return false;
-    }
-    MOZ_ASSERT(balancedTime.days == 0);
-
-    
-    *result = balancedTime.toDuration();
-    return true;
+    return BalanceTimeDuration(cx, difference, settings.largestUnit, result);
   }
 
   
@@ -818,11 +809,16 @@ bool js::temporal::DifferenceZonedDateTimeWithRounding(
 
     
     *result = {
-        double(difference.date.years), double(difference.date.months),
-        double(difference.date.weeks), double(difference.date.days),
-        double(timeDuration.hours),    double(timeDuration.minutes),
-        double(timeDuration.seconds),  double(timeDuration.milliseconds),
-        timeDuration.microseconds,     timeDuration.nanoseconds,
+        double(difference.date.years),
+        double(difference.date.months),
+        double(difference.date.weeks),
+        double(difference.date.days),
+        timeDuration.hours,
+        timeDuration.minutes,
+        timeDuration.seconds,
+        timeDuration.milliseconds,
+        timeDuration.microseconds,
+        timeDuration.nanoseconds,
     };
     return true;
   }
@@ -966,14 +962,12 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
                           settings.smallestUnit, settings.roundingMode);
 
     
-    TimeDuration balancedTime;
-    if (!BalanceTimeDuration(cx, difference, settings.largestUnit,
-                             &balancedTime)) {
+    Duration duration;
+    if (!BalanceTimeDuration(cx, difference, settings.largestUnit, &duration)) {
       return false;
     }
 
     
-    auto duration = balancedTime.toDuration();
     if (operation == TemporalDifference::Since) {
       duration = duration.negate();
     }

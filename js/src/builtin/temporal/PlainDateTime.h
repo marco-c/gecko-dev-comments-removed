@@ -150,9 +150,9 @@ ISODateTime RoundISODateTime(const ISODateTime& dateTime, Increment increment,
 
 
 
-
-bool DifferencePlainDateTimeWithRounding(JSContext* cx, const ISODateTime& one,
-                                         const ISODateTime& two,
+bool DifferencePlainDateTimeWithRounding(JSContext* cx,
+                                         const ISODateTime& isoDateTime1,
+                                         const ISODateTime& isoDateTime2,
                                          JS::Handle<CalendarValue> calendar,
                                          const DifferenceSettings& settings,
                                          Duration* result);
@@ -160,9 +160,9 @@ bool DifferencePlainDateTimeWithRounding(JSContext* cx, const ISODateTime& one,
 
 
 
-
-bool DifferencePlainDateTimeWithRounding(JSContext* cx, const ISODateTime& one,
-                                         const ISODateTime& two,
+bool DifferencePlainDateTimeWithRounding(JSContext* cx,
+                                         const ISODateTime& isoDateTime1,
+                                         const ISODateTime& isoDateTime2,
                                          JS::Handle<CalendarValue> calendar,
                                          TemporalUnit unit, double* result);
 

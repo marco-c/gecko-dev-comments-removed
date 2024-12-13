@@ -894,13 +894,12 @@ static bool DifferenceTemporalPlainTime(JSContext* cx,
   }
 
   
-  TimeDuration balancedDuration;
-  if (!BalanceTimeDuration(cx, diff, settings.largestUnit, &balancedDuration)) {
+  Duration duration;
+  if (!BalanceTimeDuration(cx, diff, settings.largestUnit, &duration)) {
     return false;
   }
 
   
-  auto duration = balancedDuration.toDuration();
   if (operation == TemporalDifference::Since) {
     duration = duration.negate();
   }
