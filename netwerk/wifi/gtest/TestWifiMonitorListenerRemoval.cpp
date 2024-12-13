@@ -12,6 +12,10 @@
 #include "nsWifiAccessPoint.h"
 #include "WifiScanner.h"
 
+#if defined(XP_WIN) && defined(_M_IX86)
+#  include <objbase.h>  
+#endif
+
 
 
 
