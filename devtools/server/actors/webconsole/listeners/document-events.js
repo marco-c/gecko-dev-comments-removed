@@ -236,11 +236,15 @@ DocumentEventsListener.prototype = {
     this.targetActor.off("will-navigate", this.onWillNavigate);
     this.targetActor.off("window-ready", this.onWindowReady);
     if (this.webProgress) {
-      this.webProgress.removeProgressListener(
-        this,
-        Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
-          Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
-      );
+      
+      try {
+        this.webProgress.removeProgressListener(
+          this,
+          Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
+            Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
+        );
+      } catch (e) {}
+      this.webProgress = null;
     }
   },
 

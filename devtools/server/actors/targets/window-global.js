@@ -654,6 +654,14 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       .devtoolsSpawnedBrowsingContextForWebExtension
       ? this.devtoolsSpawnedBrowsingContextForWebExtension
       : this.originalDocShell.browsingContext;
+
+    
+    
+    
+    if (!originalBrowsingContext.currentWindowContext) {
+      return { actor: this.actorID };
+    }
+
     const browsingContextID = originalBrowsingContext.id;
     const innerWindowId =
       originalBrowsingContext.currentWindowContext.innerWindowId;
