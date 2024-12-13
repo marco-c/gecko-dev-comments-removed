@@ -543,24 +543,24 @@ JSString* js::temporal::TemporalZonedDateTimeToString(
   
 
   
-  auto ns = RoundTemporalInstant(zonedDateTime.epochNanoseconds(), increment,
-                                 unit, roundingMode);
+  auto epochNs = RoundTemporalInstant(zonedDateTime.epochNanoseconds(),
+                                      increment, unit, roundingMode);
 
   
   auto timeZone = zonedDateTime.timeZone();
 
   
   int64_t offsetNanoseconds;
-  if (!GetOffsetNanosecondsFor(cx, timeZone, ns, &offsetNanoseconds)) {
+  if (!GetOffsetNanosecondsFor(cx, timeZone, epochNs, &offsetNanoseconds)) {
     return nullptr;
   }
   MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
 
   
-  auto temporalDateTime = GetISODateTimeFor(ns, offsetNanoseconds);
+  auto isoDateTime = GetISODateTimeFor(epochNs, offsetNanoseconds);
 
   
-  FormatDateTimeString(result, temporalDateTime, precision);
+  FormatDateTimeString(result, isoDateTime, precision);
 
   
   if (showOffset != ShowOffset::Never) {

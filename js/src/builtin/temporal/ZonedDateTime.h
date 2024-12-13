@@ -161,7 +161,7 @@ bool InterpretISODateTimeOffset(
 
 
 bool InterpretISODateTimeOffset(
-    JSContext* cx, const ISODate& date, OffsetBehaviour offsetBehaviour,
+    JSContext* cx, const ISODate& isoDate, OffsetBehaviour offsetBehaviour,
     int64_t offsetNanoseconds, JS::Handle<TimeZoneValue> timeZone,
     TemporalDisambiguation disambiguation, TemporalOffset offsetOption,
     MatchBehaviour matchBehaviour, EpochNanoseconds* result);

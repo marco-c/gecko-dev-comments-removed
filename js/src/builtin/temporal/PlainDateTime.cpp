@@ -219,27 +219,6 @@ static bool CreateTemporalDateTime(JSContext* cx, const ISODateTime& dateTime,
 
 
 
-bool js::temporal::CreateTemporalDateTime(JSContext* cx, const ISODate& date,
-                                          const Time& time,
-                                          ISODateTime* result) {
-  auto dateTime = ISODateTime{date, time};
-  MOZ_ASSERT(IsValidISODateTime(dateTime));
-
-  
-  if (!ISODateTimeWithinLimits(dateTime)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEMPORAL_PLAIN_DATE_TIME_INVALID);
-    return false;
-  }
-
-  
-  *result = dateTime;
-  return true;
-}
-
-
-
-
 bool js::temporal::InterpretTemporalDateTimeFields(
     JSContext* cx, Handle<CalendarValue> calendar,
     Handle<CalendarFields> fields, TemporalOverflow overflow,

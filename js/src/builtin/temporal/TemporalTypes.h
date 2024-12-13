@@ -332,14 +332,6 @@ struct EpochNanoseconds final : SecondsAndNanoseconds<EpochNanoseconds> {
 
 
 
-  constexpr int64_t floorToMicroseconds() const {
-    return (seconds * 1'000'000) + (nanoseconds / 1'000);
-  }
-
-  
-
-
-
   constexpr int64_t floorToMilliseconds() const {
     return (seconds * 1'000) + (nanoseconds / 1'000'000);
   }

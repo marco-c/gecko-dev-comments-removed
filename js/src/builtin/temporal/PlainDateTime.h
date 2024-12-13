@@ -126,12 +126,6 @@ PlainDateTimeObject* CreateTemporalDateTime(JSContext* cx,
 
 
 
-bool CreateTemporalDateTime(JSContext* cx, const ISODate& date,
-                            const Time& time, ISODateTime* result);
-
-
-
-
 bool InterpretTemporalDateTimeFields(JSContext* cx,
                                      JS::Handle<CalendarValue> calendar,
                                      JS::Handle<CalendarFields> fields,
