@@ -10,9 +10,6 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-
-requestLongerTimeout(2);
-
 async function addTab() {
   const tab = BrowserTestUtils.addTab(gBrowser, "https://example.com/browser", {
     forceNewProcess: true,
@@ -72,8 +69,8 @@ async function waitForMaybeSandboxProfilerData(
         return !!intercepted.length;
       },
       `Wait for some samples from ${threadName}`,
-       250,
-       75
+       100,
+       25
     );
     Assert.greater(
       intercepted.length,

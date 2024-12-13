@@ -152,12 +152,11 @@ class SandboxProfiler final {
   
   
   
-  
-  
   static void Signal(sem_t* aSem);
-  static int TimedWait(sem_t* aSem, int aSec, int aNSec);
+  static int Wait(sem_t* aSem);
 
-  void ThreadMain(const char* aThreadName, SandboxProfilerQueue* aQueue);
+  void ThreadMain(const char* aThreadName, SandboxProfilerQueue* aQueue,
+                  sem_t* aRequest);
   void ReportInitImpl(SandboxProfilerPayload& payload,
                       ProfileChunkedBuffer& buffer);
   void ReportLogImpl(SandboxProfilerPayload& payload);
