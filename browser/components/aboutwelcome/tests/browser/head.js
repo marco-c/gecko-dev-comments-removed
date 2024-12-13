@@ -39,6 +39,10 @@ async function openMRAboutWelcome() {
     "about:welcome",
     true
   );
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function () {
+    
+    content.document.notifyUserGestureActivation();
+  });
 
   return {
     browser: tab.linkedBrowser,

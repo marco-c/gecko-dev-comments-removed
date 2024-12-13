@@ -64,7 +64,13 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
 
 
 
-  bool CanGo(int32_t aOffset);
+
+
+
+
+
+
+  bool CanGo(int32_t aOffset, bool aRequireUserInteraction);
   MOZ_CAN_RUN_SCRIPT
   void Go(int32_t aOffset, bool aRequireUserInteraction, bool aUserActivation,
           ErrorResult& aRv);

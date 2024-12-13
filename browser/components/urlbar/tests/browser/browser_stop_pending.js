@@ -282,8 +282,10 @@ add_task(async function testCorrectUrlBarAfterGoingBackDuringAnotherLoad() {
   );
 
   
-  await TestUtils.waitForCondition(() => tab.linkedBrowser.canGoBack);
-  ok(tab.linkedBrowser.canGoBack, "can go back");
+  await TestUtils.waitForCondition(
+    () => tab.linkedBrowser.canGoBackIgnoringUserInteraction
+  );
+  ok(tab.linkedBrowser.canGoBackIgnoringUserInteraction, "can go back");
 
   
   tab.linkedBrowser.goBack();
