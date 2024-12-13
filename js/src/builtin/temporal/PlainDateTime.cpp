@@ -83,52 +83,26 @@ bool js::temporal::IsValidISODateTime(const ISODateTime& isoDateTime) {
 bool js::temporal::ISODateTimeWithinLimits(const ISODateTime& isoDateTime) {
   MOZ_ASSERT(IsValidISODateTime(isoDateTime));
 
-  const auto& [date, time] = isoDateTime;
-  const auto& [year, month, day] = date;
-  const auto& [hour, minute, second, millisecond, microsecond, nanosecond] =
-      time;
+  constexpr auto min = ISODate::min();
+  constexpr auto max = ISODate::max();
+
+  const auto& year = isoDateTime.date.year;
 
   
-  
-  
-  
-  
-
-  constexpr int32_t minYear = -271821;
-  constexpr int32_t maxYear = 275760;
-
-  
-  if (minYear < year && year < maxYear) {
+  if (min.year < year && year < max.year) {
     return true;
   }
 
   
   if (year < 0) {
-    if (year != minYear) {
-      return false;
+    if (isoDateTime.date != min) {
+      return isoDateTime.date > min;
     }
-    if (month != 4) {
-      return month > 4;
-    }
-    if (day != (20 - 1)) {
-      return day > (20 - 1);
-    }
-    
-    return !(hour == 0 && minute == 0 && second == 0 && millisecond == 0 &&
-             microsecond == 0 && nanosecond == 0);
-  }
 
-  
-  if (year != maxYear) {
-    return false;
+    
+    return isoDateTime.time != Time{};
   }
-  if (month != 9) {
-    return month < 9;
-  }
-  if (day > 13) {
-    return false;
-  }
-  return true;
+  return isoDateTime.date <= max;
 }
 
 

@@ -106,51 +106,21 @@ bool js::temporal::IsValidISODate(const ISODate& date) {
 bool js::temporal::ISODateWithinLimits(const ISODate& isoDate) {
   MOZ_ASSERT(IsValidISODate(isoDate));
 
-  const auto& [year, month, day] = isoDate;
+  constexpr auto min = ISODate::min();
+  constexpr auto max = ISODate::max();
+
+  const auto& year = isoDate.year;
 
   
-  
-  
-  
-  
-
-  constexpr int32_t minYear = -271821;
-  constexpr int32_t maxYear = 275760;
-
-  
-  
-  
-
-  
-  if (minYear < year && year < maxYear) {
+  if (min.year < year && year < max.year) {
     return true;
   }
 
   
   if (year < 0) {
-    if (year != minYear) {
-      return false;
-    }
-    if (month != 4) {
-      return month > 4;
-    }
-    if (day < (20 - 1)) {
-      return false;
-    }
-    return true;
+    return isoDate >= min;
   }
-
-  
-  if (year != maxYear) {
-    return false;
-  }
-  if (month != 9) {
-    return month < 9;
-  }
-  if (day > 13) {
-    return false;
-  }
-  return true;
+  return isoDate <= max;
 }
 
 static void ReportInvalidDateValue(JSContext* cx, const char* name, int32_t min,

@@ -66,25 +66,21 @@ static inline bool IsPlainYearMonth(Handle<Value> v) {
 bool js::temporal::ISOYearMonthWithinLimits(const ISODate& isoDate) {
   MOZ_ASSERT(IsValidISODate(isoDate));
 
-  const auto& [year, month, day] = isoDate;
+  constexpr auto min = ISODate::min();
+  constexpr auto max = ISODate::max();
+
+  const auto& year = isoDate.year;
 
   
-  if (year < -271821 || year > 275760) {
-    return false;
+  if (min.year < year && year < max.year) {
+    return true;
   }
 
   
-  if (year == -271821 && month < 4) {
-    return false;
+  if (year < 0) {
+    return isoDate >= ISODate{min.year, min.month, 1};
   }
-
-  
-  if (year == 275760 && month > 9) {
-    return false;
-  }
-
-  
-  return true;
+  return isoDate < ISODate{max.year, max.month + 1, 1};
 }
 
 
