@@ -3,7 +3,7 @@ add_task(async function helper() {
   
   let rs = new ReadableStream({
     type: "bytes",
-    autoAllocateChunkSize: 10 * 1024 * 1024 * 1024,
+    autoAllocateChunkSize: 20 * 1024 * 1024 * 1024,
   });
   let reader = rs.getReader();
   try {
