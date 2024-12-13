@@ -1212,9 +1212,16 @@ class Artifacts(object):
                 return "win64-aarch64" + target_suffix
             return ("win64" if target_64bit else "win32") + target_suffix
         if self._defines.get("XP_MACOSX", False):
-            
-            
-            return "macosx64" + target_suffix
+            if (
+                not self._substs.get("MOZ_DEBUG")
+                or self._substs["TARGET_CPU"] == "x86_64"
+            ):
+                
+                
+                return "macosx64" + target_suffix
+            if self._substs["TARGET_CPU"] == "aarch64":
+                return "macosx64-aarch64" + target_suffix
+
         raise Exception("Cannot determine default job for |mach artifact|!")
 
     def _pushheads_from_rev(self, rev, count):
