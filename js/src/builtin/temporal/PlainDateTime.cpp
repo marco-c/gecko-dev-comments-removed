@@ -676,51 +676,6 @@ static int32_t CompareISODateTime(const PlainDateTime& one,
 
 
 
-
-static bool AddDateTime(JSContext* cx, const PlainDateTime& dateTime,
-                        Handle<CalendarValue> calendar,
-                        const NormalizedDuration& duration,
-                        TemporalOverflow overflow, PlainDateTime* result) {
-  MOZ_ASSERT(IsValidDuration(duration));
-
-  
-  MOZ_ASSERT(IsValidISODateTime(dateTime));
-
-  
-  MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
-
-  
-  auto timeResult = AddTime(dateTime.time, duration.time);
-
-  
-  const auto& datePart = dateTime.date;
-
-  
-  auto dateDuration = DateDuration{
-      duration.date.years,
-      duration.date.months,
-      duration.date.weeks,
-      duration.date.days + timeResult.days,
-  };
-  if (!ThrowIfInvalidDuration(cx, dateDuration)) {
-    return false;
-  }
-
-  
-  PlainDate addedDate;
-  if (!AddDate(cx, calendar, datePart, dateDuration, overflow, &addedDate)) {
-    return false;
-  }
-
-  
-  *result = {addedDate, timeResult.time};
-  return true;
-}
-
-
-
-
-
 static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
                                   const PlainDateTime& two,
                                   Handle<CalendarValue> calendar,
@@ -1046,18 +1001,13 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
   return true;
 }
 
-enum class PlainDateTimeDuration { Add, Subtract };
 
 
 
-
-
-static bool AddDurationToOrSubtractDurationFromPlainDateTime(
-    JSContext* cx, PlainDateTimeDuration operation, const CallArgs& args) {
+static bool AddDurationToDateTime(JSContext* cx, TemporalAddDuration operation,
+                                  const CallArgs& args) {
   Rooted<PlainDateTimeWithCalendar> dateTime(
       cx, &args.thisv().toObject().as<PlainDateTimeObject>());
-
-  
 
   
   Duration duration;
@@ -1066,14 +1016,16 @@ static bool AddDurationToOrSubtractDurationFromPlainDateTime(
   }
 
   
+  if (operation == TemporalAddDuration::Subtract) {
+    duration = duration.negate();
+  }
+
+  
   auto overflow = TemporalOverflow::Constrain;
   if (args.hasDefined(1)) {
-    const char* name =
-        operation == PlainDateTimeDuration::Add ? "add" : "subtract";
-
     
-    Rooted<JSObject*> options(cx,
-                              RequireObjectArg(cx, "options", name, args[1]));
+    Rooted<JSObject*> options(
+        cx, RequireObjectArg(cx, "options", ToName(operation), args[1]));
     if (!options) {
       return false;
     }
@@ -1085,19 +1037,34 @@ static bool AddDurationToOrSubtractDurationFromPlainDateTime(
   }
 
   
-  if (operation == PlainDateTimeDuration::Subtract) {
-    duration = duration.negate();
-  }
-  auto normalized = NormalizeDuration(duration);
+  auto normalized = NormalizeDurationWith24HourDays(duration);
 
   
-  PlainDateTime result;
-  if (!AddDateTime(cx, dateTime, dateTime.calendar(), normalized, overflow,
-                   &result)) {
+  auto timeResult = AddTime(dateTime.time(), normalized.time);
+
+  
+  auto date = dateTime.date();
+
+  
+  auto dateDuration = DateDuration{
+      normalized.date.years,
+      normalized.date.months,
+      normalized.date.weeks,
+      timeResult.days,
+  };
+  if (!ThrowIfInvalidDuration(cx, dateDuration)) {
     return false;
   }
 
   
+  PlainDate addedDate;
+  if (!CalendarDateAdd(cx, dateTime.calendar(), date, dateDuration, overflow,
+                       &addedDate)) {
+    return false;
+  }
+
+  
+  auto result = PlainDateTime{addedDate, timeResult.time};
   MOZ_ASSERT(IsValidISODateTime(result));
 
   
@@ -1896,8 +1863,7 @@ static bool PlainDateTime_withCalendar(JSContext* cx, unsigned argc,
 
 static bool PlainDateTime_add(JSContext* cx, const CallArgs& args) {
   
-  return AddDurationToOrSubtractDurationFromPlainDateTime(
-      cx, PlainDateTimeDuration::Add, args);
+  return AddDurationToDateTime(cx, TemporalAddDuration::Add, args);
 }
 
 
@@ -1915,8 +1881,7 @@ static bool PlainDateTime_add(JSContext* cx, unsigned argc, Value* vp) {
 
 static bool PlainDateTime_subtract(JSContext* cx, const CallArgs& args) {
   
-  return AddDurationToOrSubtractDurationFromPlainDateTime(
-      cx, PlainDateTimeDuration::Subtract, args);
+  return AddDurationToDateTime(cx, TemporalAddDuration::Subtract, args);
 }
 
 

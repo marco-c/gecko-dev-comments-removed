@@ -1049,18 +1049,15 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
   return true;
 }
 
-enum class ZonedDateTimeDuration { Add, Subtract };
 
 
 
 
-
-static bool AddDurationToOrSubtractDurationFromZonedDateTime(
-    JSContext* cx, ZonedDateTimeDuration operation, const CallArgs& args) {
+static bool AddDurationToZonedDateTime(JSContext* cx,
+                                       TemporalAddDuration operation,
+                                       const CallArgs& args) {
   Rooted<ZonedDateTime> zonedDateTime(
       cx, &args.thisv().toObject().as<ZonedDateTimeObject>());
-
-  
 
   
   Duration duration;
@@ -1069,14 +1066,16 @@ static bool AddDurationToOrSubtractDurationFromZonedDateTime(
   }
 
   
+  if (operation == TemporalAddDuration::Subtract) {
+    duration = duration.negate();
+  }
+
+  
   auto overflow = TemporalOverflow::Constrain;
   if (args.hasDefined(1)) {
-    const char* name =
-        operation == ZonedDateTimeDuration::Add ? "add" : "subtract";
-
     
-    Rooted<JSObject*> options(cx,
-                              RequireObjectArg(cx, "options", name, args[1]));
+    Rooted<JSObject*> options(
+        cx, RequireObjectArg(cx, "options", ToName(operation), args[1]));
     if (!options) {
       return false;
     }
@@ -1094,9 +1093,6 @@ static bool AddDurationToOrSubtractDurationFromZonedDateTime(
   auto timeZone = zonedDateTime.timeZone();
 
   
-  if (operation == ZonedDateTimeDuration::Subtract) {
-    duration = duration.negate();
-  }
   auto normalized = NormalizeDuration(duration);
 
   
@@ -2375,8 +2371,7 @@ static bool ZonedDateTime_withCalendar(JSContext* cx, unsigned argc,
 
 
 static bool ZonedDateTime_add(JSContext* cx, const CallArgs& args) {
-  return AddDurationToOrSubtractDurationFromZonedDateTime(
-      cx, ZonedDateTimeDuration::Add, args);
+  return AddDurationToZonedDateTime(cx, TemporalAddDuration::Add, args);
 }
 
 
@@ -2393,8 +2388,7 @@ static bool ZonedDateTime_add(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool ZonedDateTime_subtract(JSContext* cx, const CallArgs& args) {
-  return AddDurationToOrSubtractDurationFromZonedDateTime(
-      cx, ZonedDateTimeDuration::Subtract, args);
+  return AddDurationToZonedDateTime(cx, TemporalAddDuration::Subtract, args);
 }
 
 

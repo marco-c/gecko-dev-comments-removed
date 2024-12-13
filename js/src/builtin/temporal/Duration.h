@@ -212,6 +212,12 @@ DateDuration NormalizeDurationWithoutTime(const Duration& duration);
 
 
 
+bool UnnormalizeDuration(JSContext* cx, const NormalizedDuration& duration,
+                         TemporalUnit largestUnit, Duration* result);
+
+
+
+
 bool CombineDateAndNormalizedTimeDuration(JSContext* cx,
                                           const DateDuration& date,
                                           const NormalizedTimeDuration& time,

@@ -1007,43 +1007,8 @@ static PlainDate AddISODate(const PlainDate& date,
   return ::ConstrainISODate({year, month, date.day});
 }
 
-static bool HasYearsMonthsOrWeeks(const Duration& duration) {
-  return duration.years != 0 || duration.months != 0 || duration.weeks != 0;
-}
-
 static bool HasYearsMonthsOrWeeks(const DateDuration& duration) {
   return duration.years != 0 || duration.months != 0 || duration.weeks != 0;
-}
-
-
-
-static bool AddDate(JSContext* cx, Handle<CalendarValue> calendar,
-                    const PlainDate& date, const Duration& duration,
-                    TemporalOverflow overflow, PlainDate* result) {
-  MOZ_ASSERT(ISODateWithinLimits(date));
-  MOZ_ASSERT(IsValidDuration(duration));
-
-  
-  
-  
-
-  
-  if (HasYearsMonthsOrWeeks(duration)) {
-    return CalendarDateAdd(cx, calendar, date, duration, overflow, result);
-  }
-
-  
-  auto normalized = NormalizeDuration(duration);
-
-  
-  auto balancedDuration =
-      BalanceTimeDuration(normalized.time, TemporalUnit::Day);
-
-  
-  int64_t days = normalized.date.days + balancedDuration.days;
-
-  
-  return AddISODate(cx, date, {0, 0, 0, days}, overflow, result);
 }
 
 
@@ -1417,6 +1382,65 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
   MOZ_ASSERT(IsValidDuration(duration));
 
   auto* obj = CreateTemporalDuration(cx, duration);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+
+
+static bool AddDurationToDate(JSContext* cx, TemporalAddDuration operation,
+                              const CallArgs& args) {
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
+
+  
+  auto date = ToPlainDate(temporalDate);
+
+  
+  Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
+
+  
+  Duration duration;
+  if (!ToTemporalDuration(cx, args.get(0), &duration)) {
+    return false;
+  }
+
+  
+  if (operation == TemporalAddDuration::Subtract) {
+    duration = duration.negate();
+  }
+
+  
+  auto dateDuration = NormalizeDurationWithoutTime(duration);
+
+  
+  auto overflow = TemporalOverflow::Constrain;
+  if (args.hasDefined(1)) {
+    
+    Rooted<JSObject*> options(
+        cx, RequireObjectArg(cx, "options", ToName(operation), args[1]));
+    if (!options) {
+      return false;
+    }
+
+    
+    if (!GetTemporalOverflowOption(cx, options, &overflow)) {
+      return false;
+    }
+  }
+
+  
+  PlainDate result;
+  if (!CalendarDateAdd(cx, calendar, date, dateDuration, overflow, &result)) {
+    return false;
+  }
+
+  
+  auto* obj = CreateTemporalDate(cx, result, calendar);
   if (!obj) {
     return false;
   }
@@ -1990,45 +2014,8 @@ static bool PlainDate_toPlainDateTime(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_add(JSContext* cx, const CallArgs& args) {
-  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
-  auto date = ToPlainDate(temporalDate);
-  Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
-
   
-  Duration duration;
-  if (!ToTemporalDuration(cx, args.get(0), &duration)) {
-    return false;
-  }
-
-  
-  auto overflow = TemporalOverflow::Constrain;
-  if (args.hasDefined(1)) {
-    
-    Rooted<JSObject*> options(cx,
-                              RequireObjectArg(cx, "options", "add", args[1]));
-    if (!options) {
-      return false;
-    }
-
-    
-    if (!GetTemporalOverflowOption(cx, options, &overflow)) {
-      return false;
-    }
-  }
-
-  
-  PlainDate result;
-  if (!AddDate(cx, calendar, date, duration, overflow, &result)) {
-    return false;
-  }
-
-  auto* obj = CreateTemporalDate(cx, result, calendar);
-  if (!obj) {
-    return false;
-  }
-
-  args.rval().setObject(*obj);
-  return true;
+  return AddDurationToDate(cx, TemporalAddDuration::Add, args);
 }
 
 
@@ -2044,48 +2031,8 @@ static bool PlainDate_add(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool PlainDate_subtract(JSContext* cx, const CallArgs& args) {
-  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
-  auto date = ToPlainDate(temporalDate);
-  Rooted<CalendarValue> calendar(cx, temporalDate->calendar());
-
   
-  Duration duration;
-  if (!ToTemporalDuration(cx, args.get(0), &duration)) {
-    return false;
-  }
-
-  
-  auto overflow = TemporalOverflow::Constrain;
-  if (args.hasDefined(1)) {
-    
-    Rooted<JSObject*> options(
-        cx, RequireObjectArg(cx, "options", "subtract", args[1]));
-    if (!options) {
-      return false;
-    }
-
-    
-    if (!GetTemporalOverflowOption(cx, options, &overflow)) {
-      return false;
-    }
-  }
-
-  
-  auto negatedDuration = duration.negate();
-
-  
-  PlainDate result;
-  if (!AddDate(cx, calendar, date, negatedDuration, overflow, &result)) {
-    return false;
-  }
-
-  auto* obj = CreateTemporalDate(cx, result, calendar);
-  if (!obj) {
-    return false;
-  }
-
-  args.rval().setObject(*obj);
-  return true;
+  return AddDurationToDate(cx, TemporalAddDuration::Subtract, args);
 }
 
 

@@ -167,7 +167,6 @@ class MOZ_STACK_CLASS CalendarValue final {
 };
 
 struct DateDuration;
-struct Duration;
 struct PlainDate;
 struct PlainDateTime;
 class PlainDateWithCalendar;
@@ -266,13 +265,6 @@ mozilla::EnumSet<TemporalField> CalendarFieldDescriptors(
 TemporalFields CalendarMergeFields(const CalendarValue& calendar,
                                    const TemporalFields& fields,
                                    const TemporalFields& additionalFields);
-
-
-
-
-bool CalendarDateAdd(JSContext* cx, JS::Handle<CalendarValue> calendar,
-                     const PlainDate& date, const Duration& duration,
-                     TemporalOverflow overflow, PlainDate* result);
 
 
 
