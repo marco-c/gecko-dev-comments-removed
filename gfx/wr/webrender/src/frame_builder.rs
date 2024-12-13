@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, DebugFlags, FontRenderMode, PremultipliedColorF, ExternalScrollId, MinimapData};
+use api::{ColorF, DebugFlags, ExternalScrollId, FontRenderMode, ImageKey, MinimapData, PremultipliedColorF};
 use api::units::*;
 use plane_split::BspSplitter;
 use crate::batch::{BatchBuilder, AlphaBatchBuilder, AlphaBatchContainer};
@@ -28,7 +28,7 @@ use crate::render_backend::{DataStores, ScratchBuffer};
 use crate::renderer::{GpuBufferF, GpuBufferBuilderF, GpuBufferI, GpuBufferBuilderI, GpuBufferBuilder};
 use crate::render_target::{PictureCacheTarget, PictureCacheTargetKind};
 use crate::render_target::{RenderTargetContext, RenderTargetKind, RenderTarget};
-use crate::render_task_graph::{RenderTaskGraph, Pass, SubPassSurface};
+use crate::render_task_graph::{Pass, RenderTaskGraph, RenderTaskId, SubPassSurface};
 use crate::render_task_graph::{RenderPass, RenderTaskGraphBuilder};
 use crate::render_task::{RenderTaskKind, StaticRenderTaskSurface};
 use crate::resource_cache::ResourceCache;
@@ -173,6 +173,16 @@ pub struct FrameBuildingState<'a> {
     pub cmd_buffers: &'a mut CommandBufferList,
     pub clip_tree: &'a ClipTree,
     pub frame_gpu_data: &'a mut GpuBufferBuilder,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub image_dependencies: FastHashMap<ImageKey, RenderTaskId>,
 }
 
 impl<'a> FrameBuildingState<'a> {
@@ -431,6 +441,7 @@ impl FrameBuilder {
             cmd_buffers,
             clip_tree: &mut scene.clip_tree,
             frame_gpu_data,
+            image_dependencies: FastHashMap::default(),
         };
 
         
