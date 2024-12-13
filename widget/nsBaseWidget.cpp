@@ -1655,16 +1655,24 @@ DesktopIntPoint nsBaseWidget::ConstrainPositionToBounds(
   auto const maxX = aScreenRect.XMost() - aSize.Width();
   auto const maxY = aScreenRect.YMost() - aSize.Height();
 
-  if (point.x < aScreenRect.x) {
-    point.x = aScreenRect.x;
-  } else if (point.x >= maxX) {
+  
+  
+  
+  
+  
+
+  if (point.x >= maxX) {
     point.x = maxX;
   }
+  if (point.x < aScreenRect.x) {
+    point.x = aScreenRect.x;
+  }
 
+  if (point.y >= maxY) {
+    point.y = maxY;
+  }
   if (point.y < aScreenRect.y) {
     point.y = aScreenRect.y;
-  } else if (point.y >= maxY) {
-    point.y = maxY;
   }
 
   return point;
