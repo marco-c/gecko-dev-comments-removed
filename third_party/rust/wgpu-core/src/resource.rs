@@ -188,6 +188,36 @@ macro_rules! impl_trackable {
     };
 }
 
+
+
+
+#[repr(C)]
+#[derive(Debug)]
+pub enum BufferMapAsyncStatus {
+    
+    
+    
+    Success,
+    
+    
+    
+    AlreadyMapped,
+    
+    MapAlreadyPending,
+    
+    Error,
+    
+    ContextLost,
+    
+    Invalid,
+    
+    InvalidRange,
+    
+    InvalidAlignment,
+    
+    InvalidUsageFlags,
+}
+
 #[derive(Debug)]
 pub(crate) enum BufferMapState {
     
@@ -209,23 +239,105 @@ unsafe impl Send for BufferMapState {}
 #[cfg(send_sync)]
 unsafe impl Sync for BufferMapState {}
 
-#[cfg(send_sync)]
-pub type BufferMapCallback = Box<dyn FnOnce(BufferAccessResult) + Send + 'static>;
-#[cfg(not(send_sync))]
-pub type BufferMapCallback = Box<dyn FnOnce(BufferAccessResult) + 'static>;
+#[repr(C)]
+pub struct BufferMapCallbackC {
+    pub callback: unsafe extern "C" fn(status: BufferMapAsyncStatus, user_data: *mut u8),
+    pub user_data: *mut u8,
+}
 
+#[cfg(send_sync)]
+unsafe impl Send for BufferMapCallbackC {}
+
+#[derive(Debug)]
+pub struct BufferMapCallback {
+    
+    
+    inner: BufferMapCallbackInner,
+}
+
+#[cfg(send_sync)]
+type BufferMapCallbackCallback = Box<dyn FnOnce(BufferAccessResult) + Send + 'static>;
+#[cfg(not(send_sync))]
+type BufferMapCallbackCallback = Box<dyn FnOnce(BufferAccessResult) + 'static>;
+
+enum BufferMapCallbackInner {
+    Rust { callback: BufferMapCallbackCallback },
+    C { inner: BufferMapCallbackC },
+}
+
+impl Debug for BufferMapCallbackInner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            BufferMapCallbackInner::Rust { callback: _ } => f.debug_struct("Rust").finish(),
+            BufferMapCallbackInner::C { inner: _ } => f.debug_struct("C").finish(),
+        }
+    }
+}
+
+impl BufferMapCallback {
+    pub fn from_rust(callback: BufferMapCallbackCallback) -> Self {
+        Self {
+            inner: BufferMapCallbackInner::Rust { callback },
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn from_c(inner: BufferMapCallbackC) -> Self {
+        Self {
+            inner: BufferMapCallbackInner::C { inner },
+        }
+    }
+
+    pub(crate) fn call(self, result: BufferAccessResult) {
+        match self.inner {
+            BufferMapCallbackInner::Rust { callback } => {
+                callback(result);
+            }
+            
+            BufferMapCallbackInner::C { inner } => unsafe {
+                let status = match result {
+                    Ok(_) => BufferMapAsyncStatus::Success,
+                    Err(BufferAccessError::Device(_)) => BufferMapAsyncStatus::ContextLost,
+                    Err(BufferAccessError::InvalidResource(_))
+                    | Err(BufferAccessError::DestroyedResource(_)) => BufferMapAsyncStatus::Invalid,
+                    Err(BufferAccessError::AlreadyMapped) => BufferMapAsyncStatus::AlreadyMapped,
+                    Err(BufferAccessError::MapAlreadyPending) => {
+                        BufferMapAsyncStatus::MapAlreadyPending
+                    }
+                    Err(BufferAccessError::MissingBufferUsage(_)) => {
+                        BufferMapAsyncStatus::InvalidUsageFlags
+                    }
+                    Err(BufferAccessError::UnalignedRange)
+                    | Err(BufferAccessError::UnalignedRangeSize { .. })
+                    | Err(BufferAccessError::UnalignedOffset { .. }) => {
+                        BufferMapAsyncStatus::InvalidAlignment
+                    }
+                    Err(BufferAccessError::OutOfBoundsUnderrun { .. })
+                    | Err(BufferAccessError::OutOfBoundsOverrun { .. })
+                    | Err(BufferAccessError::NegativeRange { .. }) => {
+                        BufferMapAsyncStatus::InvalidRange
+                    }
+                    Err(BufferAccessError::Failed)
+                    | Err(BufferAccessError::NotMapped)
+                    | Err(BufferAccessError::MapAborted) => BufferMapAsyncStatus::Error,
+                };
+
+                (inner.callback)(status, inner.user_data);
+            },
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct BufferMapOperation {
     pub host: HostMap,
     pub callback: Option<BufferMapCallback>,
-}
-
-impl Debug for BufferMapOperation {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("BufferMapOperation")
-            .field("host", &self.host)
-            .field("callback", &self.callback.as_ref().map(|_| "?"))
-            .finish()
-    }
 }
 
 #[derive(Clone, Debug, Error)]
@@ -391,7 +503,7 @@ impl Buffer {
     pub(crate) fn try_raw<'a>(
         &'a self,
         guard: &'a SnatchGuard,
-    ) -> Result<&'a dyn hal::DynBuffer, DestroyedResourceError> {
+    ) -> Result<&dyn hal::DynBuffer, DestroyedResourceError> {
         self.raw
             .get(guard)
             .map(|raw| raw.as_ref())
@@ -525,7 +637,7 @@ impl Buffer {
             
             let (mut operation, status) = self.map(&device.snatchable_lock.read()).unwrap();
             if let Some(callback) = operation.callback.take() {
-                callback(status);
+                callback.call(status);
             }
             0
         };
@@ -599,7 +711,7 @@ impl Buffer {
             buffer_id,
         )? {
             if let Some(callback) = operation.callback.take() {
-                callback(status);
+                callback.call(status);
             }
         }
 
@@ -1964,7 +2076,7 @@ impl Drop for Tlas {
 }
 
 impl AccelerationStructure for Tlas {
-    fn raw<'a>(&'a self, guard: &'a SnatchGuard) -> Option<&'a dyn hal::DynAccelerationStructure> {
+    fn raw<'a>(&'a self, guard: &'a SnatchGuard) -> Option<&dyn hal::DynAccelerationStructure> {
         Some(self.raw.get(guard)?.as_ref())
     }
 }

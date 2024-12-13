@@ -5,7 +5,7 @@ use crate::front::wgsl::error::{
 };
 use crate::{Handle, Span};
 
-impl<'source> super::ExpressionContext<'source, '_, '_> {
+impl<'source, 'temp, 'out> super::ExpressionContext<'source, 'temp, 'out> {
     
     
     

@@ -1692,11 +1692,11 @@ bitflags::bitflags! {
 
         /// With this feature not present, there are the following restrictions on `Queue::copy_external_image_to_texture`:
         /// - The source must not be [`web_sys::OffscreenCanvas`]
-        /// - [`CopyExternalImageSourceInfo::origin`] must be zero.
-        /// - [`CopyExternalImageDestInfo::color_space`] must be srgb.
+        /// - [`ImageCopyExternalImage::origin`] must be zero.
+        /// - [`ImageCopyTextureTagged::color_space`] must be srgb.
         /// - If the source is an [`web_sys::ImageBitmap`]:
-        ///   - [`CopyExternalImageSourceInfo::flip_y`] must be false.
-        ///   - [`CopyExternalImageDestInfo::premultiplied_alpha`] must be false.
+        ///   - [`ImageCopyExternalImage::flip_y`] must be false.
+        ///   - [`ImageCopyTextureTagged::premultiplied_alpha`] must be false.
         ///
         /// WebGL doesn't support this. WebGPU does.
         const UNRESTRICTED_EXTERNAL_TEXTURE_COPIES = 1 << 20;
@@ -2382,7 +2382,7 @@ bitflags::bitflags! {
         const MULTISAMPLE_RESOLVE = 1 << 5;
         /// When used as a STORAGE texture, then a texture with this format can be bound with
         /// [`StorageTextureAccess::ReadOnly`] or [`StorageTextureAccess::ReadWrite`].
-        const STORAGE_WRITE = 1 << 6;
+        const STORAGE_READ_WRITE = 1 << 6;
         /// If not present, the texture can't be blended into the render target.
         const BLENDABLE = 1 << 7;
     }
@@ -2822,7 +2822,7 @@ impl<'de> Deserialize<'de> for TextureFormat {
 
         struct TextureFormatVisitor;
 
-        impl de::Visitor<'_> for TextureFormatVisitor {
+        impl<'de> de::Visitor<'de> for TextureFormatVisitor {
             type Value = TextureFormat;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -5901,8 +5901,8 @@ impl Extent3d {
     pub fn physical_size(&self, format: TextureFormat) -> Self {
         let (block_width, block_height) = format.block_dimensions();
 
-        let width = self.width.div_ceil(block_width) * block_width;
-        let height = self.height.div_ceil(block_height) * block_height;
+        let width = ((self.width + block_width - 1) / block_width) * block_width;
+        let height = ((self.height + block_height - 1) / block_height) * block_height;
 
         Self {
             width,
@@ -6370,7 +6370,7 @@ impl<T> Default for RenderBundleDescriptor<Option<T>> {
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct TexelCopyBufferLayout {
+pub struct ImageDataLayout {
     
     
     pub offset: BufferAddress,
@@ -6403,13 +6403,6 @@ pub struct TexelCopyBufferLayout {
     
     pub rows_per_image: Option<u32>,
 }
-
-
-#[deprecated(
-    since = "24.0.0",
-    note = "This has been renamed to `TexelCopyBufferLayout`, and will be removed in 25.0.0."
-)]
-pub type ImageDataLayout = TexelCopyBufferLayout;
 
 
 
@@ -6821,19 +6814,12 @@ pub struct BindGroupLayoutEntry {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct TexelCopyBufferInfo<B> {
+pub struct ImageCopyBuffer<B> {
     
     pub buffer: B,
     
-    pub layout: TexelCopyBufferLayout,
+    pub layout: ImageDataLayout,
 }
-
-
-#[deprecated(
-    since = "24.0.0",
-    note = "This has been renamed to `TexelCopyBufferInfo`, and will be removed in 25.0.0."
-)]
-pub type ImageCopyBuffer<B> = TexelCopyBufferInfo<B>;
 
 
 
@@ -6842,7 +6828,7 @@ pub type ImageCopyBuffer<B> = TexelCopyBufferInfo<B>;
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct TexelCopyTextureInfo<T> {
+pub struct ImageCopyTexture<T> {
     
     pub texture: T,
     
@@ -6857,15 +6843,15 @@ pub struct TexelCopyTextureInfo<T> {
     pub aspect: TextureAspect,
 }
 
-impl<T> TexelCopyTextureInfo<T> {
+impl<T> ImageCopyTexture<T> {
     
     
     pub fn to_tagged(
         self,
         color_space: PredefinedColorSpace,
         premultiplied_alpha: bool,
-    ) -> CopyExternalImageDestInfo<T> {
-        CopyExternalImageDestInfo {
+    ) -> ImageCopyTextureTagged<T> {
+        ImageCopyTextureTagged {
             texture: self.texture,
             mip_level: self.mip_level,
             origin: self.origin,
@@ -6877,19 +6863,12 @@ impl<T> TexelCopyTextureInfo<T> {
 }
 
 
-#[deprecated(
-    since = "24.0.0",
-    note = "This has been renamed to `TexelCopyTextureInfo`, and will be removed in 25.0.0."
-)]
-pub type ImageCopyTexture<T> = TexelCopyTextureInfo<T>;
-
-
 
 
 
 #[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug)]
-pub struct CopyExternalImageSourceInfo {
+pub struct ImageCopyExternalImage {
     
     
     pub source: ExternalImageSource,
@@ -6905,14 +6884,6 @@ pub struct CopyExternalImageSourceInfo {
     
     pub flip_y: bool,
 }
-
-
-#[deprecated(
-    since = "24.0.0",
-    note = "This has been renamed to `CopyExternalImageSourceInfo`, and will be removed in 25.0.0."
-)]
-#[cfg(target_arch = "wasm32")]
-pub type ImageCopyExternalImage = CopyExternalImageSourceInfo;
 
 
 
@@ -7023,7 +6994,7 @@ pub enum PredefinedColorSpace {
 
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct CopyExternalImageDestInfo<T> {
+pub struct ImageCopyTextureTagged<T> {
     
     pub texture: T,
     
@@ -7038,10 +7009,10 @@ pub struct CopyExternalImageDestInfo<T> {
     pub premultiplied_alpha: bool,
 }
 
-impl<T> CopyExternalImageDestInfo<T> {
+impl<T> ImageCopyTextureTagged<T> {
     
-    pub fn to_untagged(self) -> TexelCopyTextureInfo<T> {
-        TexelCopyTextureInfo {
+    pub fn to_untagged(self) -> ImageCopyTexture<T> {
+        ImageCopyTexture {
             texture: self.texture,
             mip_level: self.mip_level,
             origin: self.origin,
@@ -7049,13 +7020,6 @@ impl<T> CopyExternalImageDestInfo<T> {
         }
     }
 }
-
-
-#[deprecated(
-    since = "24.0.0",
-    note = "This has been renamed to `CopyExternalImageDestInfo`, and will be removed in 25.0.0."
-)]
-pub type ImageCopyTextureTagged<T> = CopyExternalImageDestInfo<T>;
 
 
 #[repr(C)]
@@ -7431,15 +7395,12 @@ pub enum Dx12Compiler {
     
     
     
-    DynamicDxc {
+    Dxc {
         
-        dxc_path: PathBuf,
+        dxil_path: Option<PathBuf>,
         
-        dxil_path: PathBuf,
+        dxc_path: Option<PathBuf>,
     },
-    
-    
-    StaticDxc,
 }
 
 
@@ -7712,4 +7673,18 @@ pub enum DeviceLostReason {
     Unknown = 0,
     
     Destroyed = 1,
+    
+    
+    
+    
+    
+    
+    Dropped = 2,
+    
+    
+    
+    
+    
+    
+    ReplacedCallback = 3,
 }
