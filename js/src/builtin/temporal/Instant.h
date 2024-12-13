@@ -31,28 +31,22 @@ class InstantObject : public NativeObject {
   static constexpr uint32_t NANOSECONDS_SLOT = 1;
   static constexpr uint32_t SLOT_COUNT = 2;
 
-  int64_t seconds() const {
+  
+
+
+  EpochNanoseconds epochNanoseconds() const {
     double seconds = getFixedSlot(SECONDS_SLOT).toNumber();
     MOZ_ASSERT(-8'640'000'000'000 <= seconds && seconds <= 8'640'000'000'000);
-    return int64_t(seconds);
-  }
 
-  int32_t nanoseconds() const {
     int32_t nanoseconds = getFixedSlot(NANOSECONDS_SLOT).toInt32();
     MOZ_ASSERT(0 <= nanoseconds && nanoseconds <= 999'999'999);
-    return nanoseconds;
+
+    return {int64_t(seconds), nanoseconds};
   }
 
  private:
   static const ClassSpec classSpec_;
 };
-
-
-
-
-inline Instant ToInstant(const InstantObject* instant) {
-  return {instant->seconds(), instant->nanoseconds()};
-}
 
 class Increment;
 enum class TemporalUnit;
@@ -66,61 +60,57 @@ bool IsValidEpochNanoseconds(const JS::BigInt* epochNanoseconds);
 
 
 
-bool IsValidEpochInstant(const Instant& instant);
+bool IsValidEpochNanoseconds(const EpochNanoseconds& epochNanoseconds);
 
 #ifdef DEBUG
 
 
 
-bool IsValidInstantSpan(const InstantSpan& span);
+bool IsValidEpochDuration(const EpochDuration& duration);
 #endif
 
 
 
 
 
-Instant ToInstant(const JS::BigInt* epochNanoseconds);
-
-
-
-
-JS::BigInt* ToEpochNanoseconds(JSContext* cx, const Instant& instant);
-
-
-
-
-InstantObject* CreateTemporalInstant(JSContext* cx, const Instant& instant);
+EpochNanoseconds ToEpochNanoseconds(const JS::BigInt* epochNanoseconds);
 
 
 
 
 
-Instant GetUTCEpochNanoseconds(const ISODateTime& dateTime);
+JS::BigInt* ToBigInt(JSContext* cx, const EpochNanoseconds& epochNanoseconds);
 
 
 
 
-
-Instant GetUTCEpochNanoseconds(const ISODateTime& dateTime,
-                               const InstantSpan& offsetNanoseconds);
-
-
-
-
-Instant RoundTemporalInstant(const Instant& ns, Increment increment,
-                             TemporalUnit unit,
-                             TemporalRoundingMode roundingMode);
+InstantObject* CreateTemporalInstant(JSContext* cx,
+                                     const EpochNanoseconds& epochNanoseconds);
 
 
 
 
-bool AddInstant(JSContext* cx, const Instant& instant,
-                const NormalizedTimeDuration& duration, Instant* result);
+EpochNanoseconds GetUTCEpochNanoseconds(const ISODateTime& isoDateTime);
 
 
 
 
-NormalizedTimeDuration DifferenceInstant(const Instant& ns1, const Instant& ns2,
+EpochNanoseconds RoundTemporalInstant(const EpochNanoseconds& ns,
+                                      Increment increment, TemporalUnit unit,
+                                      TemporalRoundingMode roundingMode);
+
+
+
+
+bool AddInstant(JSContext* cx, const EpochNanoseconds& epochNanoseconds,
+                const NormalizedTimeDuration& duration,
+                EpochNanoseconds* result);
+
+
+
+
+NormalizedTimeDuration DifferenceInstant(const EpochNanoseconds& ns1,
+                                         const EpochNanoseconds& ns2,
                                          Increment roundingIncrement,
                                          TemporalUnit smallestUnit,
                                          TemporalRoundingMode roundingMode);

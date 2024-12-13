@@ -358,7 +358,7 @@ static bool FormatTimeZoneAnnotation(TemporalStringBuilder& result,
 
 
 JSString* js::temporal::TemporalInstantToString(JSContext* cx,
-                                                const Instant& instant,
+                                                const EpochNanoseconds& epochNs,
                                                 Handle<TimeZoneValue> timeZone,
                                                 Precision precision) {
   TemporalStringBuilder result(cx, TemporalStringFormat::Instant);
@@ -369,14 +369,16 @@ JSString* js::temporal::TemporalInstantToString(JSContext* cx,
   
   int64_t offsetNanoseconds = 0;
   if (timeZone) {
-    if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNanoseconds)) {
+    if (!GetOffsetNanosecondsFor(cx, timeZone, epochNs, &offsetNanoseconds)) {
       return nullptr;
     }
     MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
   }
 
   
-  auto dateTime = GetISODateTimeFor(instant, offsetNanoseconds);
+
+  
+  auto dateTime = GetISODateTimeFor(epochNs, offsetNanoseconds);
 
   
   FormatDateTimeString(result, dateTime, precision);
@@ -545,8 +547,8 @@ JSString* js::temporal::TemporalZonedDateTimeToString(
   
 
   
-  auto ns = RoundTemporalInstant(zonedDateTime.instant(), increment, unit,
-                                 roundingMode);
+  auto ns = RoundTemporalInstant(zonedDateTime.epochNanoseconds(), increment,
+                                 unit, roundingMode);
 
   
   auto timeZone = zonedDateTime.timeZone();

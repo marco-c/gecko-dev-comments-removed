@@ -58,6 +58,7 @@ struct SecondsAndNanoseconds {
   constexpr bool operator<(const SecondsAndNanoseconds& other) const {
     
     
+    
     JS_ASSUME(nanoseconds >= 0);
     JS_ASSUME(other.nanoseconds >= 0);
     return (seconds < other.seconds) ||
@@ -269,31 +270,31 @@ struct SecondsAndNanoseconds {
 
 
 
-struct InstantSpan final : SecondsAndNanoseconds<InstantSpan> {
-  constexpr InstantSpan& operator+=(const InstantSpan& other) {
+struct EpochDuration final : SecondsAndNanoseconds<EpochDuration> {
+  constexpr EpochDuration& operator+=(const EpochDuration& other) {
     *this = add(*this, other);
     return *this;
   }
 
-  constexpr InstantSpan& operator-=(const InstantSpan& other) {
+  constexpr EpochDuration& operator-=(const EpochDuration& other) {
     *this = subtract(*this, other);
     return *this;
   }
 
-  constexpr InstantSpan operator+(const InstantSpan& other) const {
+  constexpr EpochDuration operator+(const EpochDuration& other) const {
     return add(*this, other);
   }
 
-  constexpr InstantSpan operator-(const InstantSpan& other) const {
+  constexpr EpochDuration operator-(const EpochDuration& other) const {
     return subtract(*this, other);
   }
 
-  constexpr InstantSpan operator-() const { return negate(*this); }
+  constexpr EpochDuration operator-() const { return negate(*this); }
 
   
 
 
-  static constexpr InstantSpan max() {
+  static constexpr EpochDuration max() {
     
     constexpr int64_t seconds = 2 * 8'640'000'000'000;
     constexpr int64_t nanos = 0;
@@ -303,7 +304,7 @@ struct InstantSpan final : SecondsAndNanoseconds<InstantSpan> {
   
 
 
-  static constexpr InstantSpan min() { return -max(); }
+  static constexpr EpochDuration min() { return -max(); }
 };
 
 
@@ -319,30 +320,32 @@ struct InstantSpan final : SecondsAndNanoseconds<InstantSpan> {
 
 
 
-struct Instant final : SecondsAndNanoseconds<Instant> {
-  constexpr Instant& operator+=(const InstantSpan& other) {
+
+struct EpochNanoseconds final : SecondsAndNanoseconds<EpochNanoseconds> {
+  constexpr EpochNanoseconds& operator+=(const EpochDuration& other) {
     *this = add(*this, other);
     return *this;
   }
 
-  constexpr Instant& operator-=(const InstantSpan& other) {
+  constexpr EpochNanoseconds& operator-=(const EpochDuration& other) {
     *this = subtract(*this, other);
     return *this;
   }
 
-  constexpr Instant operator+(const InstantSpan& other) const {
+  constexpr EpochNanoseconds operator+(const EpochDuration& other) const {
     return add(*this, other);
   }
 
-  constexpr Instant operator-(const InstantSpan& other) const {
+  constexpr EpochNanoseconds operator-(const EpochDuration& other) const {
     return subtract(*this, other);
   }
 
-  constexpr InstantSpan operator-(const Instant& other) const {
-    return subtract<Instant, Instant, InstantSpan>(*this, other);
+  constexpr EpochDuration operator-(const EpochNanoseconds& other) const {
+    return subtract<EpochNanoseconds, EpochNanoseconds, EpochDuration>(*this,
+                                                                       other);
   }
 
-  constexpr Instant operator-() const { return negate(*this); }
+  constexpr EpochNanoseconds operator-() const { return negate(*this); }
 
   
 
@@ -371,7 +374,7 @@ struct Instant final : SecondsAndNanoseconds<Instant> {
   
 
 
-  static constexpr Instant max() {
+  static constexpr EpochNanoseconds max() {
     
     constexpr int64_t seconds = 8'640'000'000'000;
     constexpr int64_t nanos = 0;
@@ -381,7 +384,7 @@ struct Instant final : SecondsAndNanoseconds<Instant> {
   
 
 
-  static constexpr Instant min() { return -max(); }
+  static constexpr EpochNanoseconds min() { return -max(); }
 };
 
 
@@ -403,9 +406,10 @@ constexpr inline int32_t MinEpochDay = -100'000'001;
 constexpr inline int32_t MaxEpochDay = 100'000'000;
 
 static_assert(MinEpochDay ==
-              Instant::min().seconds / ToSeconds(TemporalUnit::Day) - 1);
+              EpochNanoseconds::min().seconds / ToSeconds(TemporalUnit::Day) -
+                  1);
 static_assert(MaxEpochDay ==
-              Instant::max().seconds / ToSeconds(TemporalUnit::Day));
+              EpochNanoseconds::max().seconds / ToSeconds(TemporalUnit::Day));
 
 
 constexpr inline int32_t MaxEpochDaysDuration = MaxEpochDay - MinEpochDay;

@@ -4422,19 +4422,22 @@ static bool date_toTemporalInstant(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  double utctime = unwrapped->UTCTime().toDouble();
-  if (!std::isfinite(utctime)) {
+  double t = unwrapped->UTCTime().toDouble();
+  MOZ_ASSERT(IsTimeValue(t));
+
+  
+  if (std::isnan(t)) {
     JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
                               JSMSG_INVALID_DATE);
     return false;
   }
-  MOZ_ASSERT(IsInteger(utctime));
+  int64_t tv = static_cast<int64_t>(t);
 
-  auto instant = temporal::Instant::fromMilliseconds(int64_t(utctime));
-  MOZ_ASSERT(temporal::IsValidEpochInstant(instant));
+  auto epochNs = temporal::EpochNanoseconds::fromMilliseconds(tv);
+  MOZ_ASSERT(temporal::IsValidEpochNanoseconds(epochNs));
 
   
-  auto* result = temporal::CreateTemporalInstant(cx, instant);
+  auto* result = temporal::CreateTemporalInstant(cx, epochNs);
   if (!result) {
     return false;
   }
