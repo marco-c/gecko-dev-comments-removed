@@ -92,7 +92,6 @@
 #include "mozilla/Try.h"
 #include "mozilla/WrappingOperations.h"
 
-#include <charconv>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -114,7 +113,6 @@
 #include "gc/GCContext-inl.h"
 #include "gc/Nursery-inl.h"
 #include "vm/JSContext-inl.h"
-#include "vm/StringType-inl.h"
 
 using namespace js;
 
@@ -1208,7 +1206,6 @@ JSLinearString* BigInt::toStringBasePowerOfTwo(JSContext* cx, HandleBigInt x,
   MOZ_ASSERT(mozilla::IsPowerOfTwo(radix));
   MOZ_ASSERT(radix >= 2 && radix <= 32);
   MOZ_ASSERT(!x->isZero());
-  MOZ_ASSERT(x->digitLength() > 1);
 
   const unsigned length = x->digitLength();
   const bool sign = x->isNegative();
@@ -1221,107 +1218,106 @@ JSLinearString* BigInt::toStringBasePowerOfTwo(JSContext* cx, HandleBigInt x,
   const size_t bitLength = length * DigitBits - DigitLeadingZeroes(msd);
   const size_t charsRequired = CeilDiv(bitLength, bitsPerChar) + sign;
 
-  static_assert(MaxBitLength + 1 <= JSString::MAX_LENGTH,
-                "Base 2 representation (including leading sign) of the largest "
-                "possible BigInt fits into a string");
+  if (charsRequired > JSString::MAX_LENGTH) {
+    if constexpr (allowGC) {
+      ReportAllocationOverflow(cx);
+    }
+    return nullptr;
+  }
 
-  MOZ_RELEASE_ASSERT(charsRequired <= JSString::MAX_LENGTH);
-
-  StringChars<JS::Latin1Char> stringChars(cx);
-  if (!stringChars.maybeAlloc(cx, charsRequired)) {
+  auto resultChars = cx->make_pod_array<char>(charsRequired);
+  if (!resultChars) {
     if constexpr (!allowGC) {
       cx->recoverFromOutOfMemory();
     }
     return nullptr;
   }
 
-  {
-    JS::AutoCheckCannotGC nogc;
-    auto* resultChars = stringChars.data(nogc);
-
-    Digit digit = 0;
+  Digit digit = 0;
+  
+  unsigned availableBits = 0;
+  size_t pos = charsRequired;
+  for (unsigned i = 0; i < length - 1; i++) {
+    Digit newDigit = x->digit(i);
     
-    unsigned availableBits = 0;
-    size_t pos = charsRequired;
-    for (unsigned i = 0; i < length - 1; i++) {
-      Digit newDigit = x->digit(i);
-      
-      unsigned current = (digit | (newDigit << availableBits)) & charMask;
-      MOZ_ASSERT(pos);
-      resultChars[--pos] = radixDigits[current];
-      unsigned consumedBits = bitsPerChar - availableBits;
-      digit = newDigit >> consumedBits;
-      availableBits = DigitBits - consumedBits;
-      while (availableBits >= bitsPerChar) {
-        MOZ_ASSERT(pos);
-        resultChars[--pos] = radixDigits[digit & charMask];
-        digit >>= bitsPerChar;
-        availableBits -= bitsPerChar;
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    unsigned current = (digit | (msd << availableBits)) & charMask;
+    unsigned current = (digit | (newDigit << availableBits)) & charMask;
     MOZ_ASSERT(pos);
     resultChars[--pos] = radixDigits[current];
-
-    
-    
-    digit = msd >> (bitsPerChar - availableBits);
-    while (digit != 0) {
+    unsigned consumedBits = bitsPerChar - availableBits;
+    digit = newDigit >> consumedBits;
+    availableBits = DigitBits - consumedBits;
+    while (availableBits >= bitsPerChar) {
       MOZ_ASSERT(pos);
       resultChars[--pos] = radixDigits[digit & charMask];
       digit >>= bitsPerChar;
+      availableBits -= bitsPerChar;
     }
-
-    if (sign) {
-      MOZ_ASSERT(pos);
-      resultChars[--pos] = '-';
-    }
-    MOZ_ASSERT(pos == 0);
-  }
-
-  return stringChars.toStringDontDeflateNonStatic<allowGC>(cx, charsRequired);
-}
-
-template <AllowGC allowGC>
-JSLinearString* BigInt::toStringSingleDigit(JSContext* cx, Digit digit,
-                                            bool isNegative, unsigned radix) {
-  MOZ_ASSERT(digit != 0, "zero case should have been handled in toString");
-
-  if (digit <= Digit(INT32_MAX)) {
-    int32_t val = AssertedCast<int32_t>(digit);
-    return Int32ToStringWithBase<allowGC>(cx, isNegative ? -val : val, radix,
-                                           true);
   }
 
   
-  constexpr size_t maxLength = std::numeric_limits<Digit>::digits + 1;
-  static_assert(maxLength == 33 || maxLength == 65,
-                "unexpected single digit string length");
+  
+  
+  
+  
+  
+  
+  
+  
+  unsigned current = (digit | (msd << availableBits)) & charMask;
+  MOZ_ASSERT(pos);
+  resultChars[--pos] = radixDigits[current];
 
-  char resultChars[maxLength];
-
-  char* chars = resultChars;
-  if (isNegative) {
-    *chars++ = '-';
+  
+  
+  digit = msd >> (bitsPerChar - availableBits);
+  while (digit != 0) {
+    MOZ_ASSERT(pos);
+    resultChars[--pos] = radixDigits[digit & charMask];
+    digit >>= bitsPerChar;
   }
 
-  auto result = std::to_chars(chars, std::end(resultChars), digit, radix);
-  MOZ_ASSERT(result.ec == std::errc());
+  if (sign) {
+    MOZ_ASSERT(pos);
+    resultChars[--pos] = '-';
+  }
 
-  size_t length = result.ptr - resultChars;
-  MOZ_ASSERT(length <= maxLength);
+  MOZ_ASSERT(pos == 0);
+  return NewStringCopyN<allowGC>(cx, resultChars.get(), charsRequired);
+}
 
-  return NewStringCopyN<allowGC>(cx, resultChars, length);
+template <AllowGC allowGC>
+JSLinearString* BigInt::toStringSingleDigitBaseTen(JSContext* cx, Digit digit,
+                                                   bool isNegative) {
+  if (digit <= Digit(INT32_MAX)) {
+    int32_t val = AssertedCast<int32_t>(digit);
+    return Int32ToString<allowGC>(cx, isNegative ? -val : val);
+  }
+
+  MOZ_ASSERT(digit != 0, "zero case should have been handled in toString");
+
+  constexpr size_t maxLength = 1 + (std::numeric_limits<Digit>::digits10 + 1);
+  static_assert(maxLength == 11 || maxLength == 21,
+                "unexpected decimal string length");
+
+  char resultChars[maxLength];
+  size_t writePos = maxLength;
+
+  while (digit != 0) {
+    MOZ_ASSERT(writePos > 0);
+    resultChars[--writePos] = radixDigits[digit % 10];
+    digit /= 10;
+  }
+  MOZ_ASSERT(writePos < maxLength);
+  MOZ_ASSERT(resultChars[writePos] != '0');
+
+  if (isNegative) {
+    MOZ_ASSERT(writePos > 0);
+    resultChars[--writePos] = '-';
+  }
+
+  MOZ_ASSERT(writePos < maxLength);
+  return NewStringCopyN<allowGC>(cx, resultChars + writePos,
+                                 maxLength - writePos);
 }
 
 static constexpr BigInt::Digit MaxPowerInDigit(uint8_t radix) {
@@ -1368,8 +1364,6 @@ JSLinearString* BigInt::toStringGeneric(JSContext* cx, HandleBigInt x,
                                         unsigned radix) {
   MOZ_ASSERT(radix >= 2 && radix <= 36);
   MOZ_ASSERT(!x->isZero());
-  MOZ_ASSERT(x->digitLength() > 1);
-  MOZ_ASSERT(!mozilla::IsPowerOfTwo(radix));
 
   size_t maximumCharactersRequired =
       calculateMaximumCharactersRequired(x, radix);
@@ -1378,57 +1372,63 @@ JSLinearString* BigInt::toStringGeneric(JSContext* cx, HandleBigInt x,
     return nullptr;
   }
 
-  auto resultString = cx->make_pod_array<char>(maximumCharactersRequired);
+  UniqueChars resultString(js_pod_malloc<char>(maximumCharactersRequired));
   if (!resultString) {
+    ReportOutOfMemory(cx);
     return nullptr;
   }
 
   size_t writePos = maximumCharactersRequired;
-
-  unsigned chunkChars = toStringInfo[radix].maxExponentInDigit;
-  Digit chunkDivisor = toStringInfo[radix].maxPowerInDigit;
-
   unsigned length = x->digitLength();
-  unsigned nonZeroDigit = length - 1;
-  MOZ_ASSERT(x->digit(nonZeroDigit) != 0);
+  Digit lastDigit;
+  if (length == 1) {
+    lastDigit = x->digit(0);
+  } else {
+    unsigned chunkChars = toStringInfo[radix].maxExponentInDigit;
+    Digit chunkDivisor = toStringInfo[radix].maxPowerInDigit;
 
-  
-  
-  RootedBigInt rest(cx);
+    unsigned nonZeroDigit = length - 1;
+    MOZ_ASSERT(x->digit(nonZeroDigit) != 0);
 
-  
-  
-  
-  
-  
-  
-  
-  RootedBigInt dividend(cx, x);
-  do {
-    Digit chunk;
-    if (!absoluteDivWithDigitDivisor(cx, dividend, chunkDivisor, Some(&rest),
-                                     &chunk, dividend->isNegative())) {
-      return nullptr;
-    }
+    
+    
+    RootedBigInt rest(cx);
 
-    dividend = rest;
-    for (unsigned i = 0; i < chunkChars; i++) {
-      MOZ_ASSERT(writePos > 0);
-      resultString[--writePos] = radixDigits[chunk % radix];
-      chunk /= radix;
-    }
-    MOZ_ASSERT(!chunk);
+    
+    
+    
+    
+    
+    
+    
+    RootedBigInt dividend(cx, x);
+    do {
+      Digit chunk;
+      if (!absoluteDivWithDigitDivisor(cx, dividend, chunkDivisor, Some(&rest),
+                                       &chunk, dividend->isNegative())) {
+        return nullptr;
+      }
 
-    if (!rest->digit(nonZeroDigit)) {
-      nonZeroDigit--;
-    }
+      dividend = rest;
+      for (unsigned i = 0; i < chunkChars; i++) {
+        MOZ_ASSERT(writePos > 0);
+        resultString[--writePos] = radixDigits[chunk % radix];
+        chunk /= radix;
+      }
+      MOZ_ASSERT(!chunk);
 
-    MOZ_ASSERT(rest->digit(nonZeroDigit) != 0,
-               "division by a single digit can't remove more than one "
-               "digit from a number");
-  } while (nonZeroDigit > 0);
+      if (!rest->digit(nonZeroDigit)) {
+        nonZeroDigit--;
+      }
 
-  Digit lastDigit = rest->digit(0);
+      MOZ_ASSERT(rest->digit(nonZeroDigit) != 0,
+                 "division by a single digit can't remove more than one "
+                 "digit from a number");
+    } while (nonZeroDigit > 0);
+
+    lastDigit = rest->digit(0);
+  }
+
   do {
     MOZ_ASSERT(writePos > 0);
     resultString[--writePos] = radixDigits[lastDigit % radix];
@@ -3716,13 +3716,13 @@ JSLinearString* BigInt::toString(JSContext* cx, HandleBigInt x, uint8_t radix) {
     return cx->staticStrings().getInt(0);
   }
 
-  if (x->digitLength() == 1) {
-    return toStringSingleDigit<allowGC>(cx, x->digit(0), x->isNegative(),
-                                        radix);
-  }
-
   if (mozilla::IsPowerOfTwo(radix)) {
     return toStringBasePowerOfTwo<allowGC>(cx, x, radix);
+  }
+
+  if (radix == 10 && x->digitLength() == 1) {
+    return toStringSingleDigitBaseTen<allowGC>(cx, x->digit(0),
+                                               x->isNegative());
   }
 
   
