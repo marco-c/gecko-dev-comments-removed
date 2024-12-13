@@ -156,8 +156,8 @@ NormalizedTimeDuration NormalizeTimeDuration(const Duration& duration);
 
 
 
-inline int32_t CompareNormalizedTimeDuration(
-    const NormalizedTimeDuration& one, const NormalizedTimeDuration& two) {
+inline int32_t CompareTimeDuration(const NormalizedTimeDuration& one,
+                                   const NormalizedTimeDuration& two) {
   MOZ_ASSERT(IsValidNormalizedTimeDuration(one));
   MOZ_ASSERT(IsValidNormalizedTimeDuration(two));
 
@@ -178,11 +178,11 @@ inline int32_t CompareNormalizedTimeDuration(
 
 
 
-inline int32_t NormalizedTimeDurationSign(const NormalizedTimeDuration& d) {
+inline int32_t TimeDurationSign(const NormalizedTimeDuration& d) {
   MOZ_ASSERT(IsValidNormalizedTimeDuration(d));
 
   
-  return CompareNormalizedTimeDuration(d, NormalizedTimeDuration{});
+  return CompareTimeDuration(d, NormalizedTimeDuration{});
 }
 
 
