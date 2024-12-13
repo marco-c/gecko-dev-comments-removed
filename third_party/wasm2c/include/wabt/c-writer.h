@@ -29,7 +29,6 @@ class Stream;
 
 struct WriteCOptions {
   std::string_view module_name;
-  Features features;
   
 
 

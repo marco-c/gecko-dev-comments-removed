@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "PlatformMacros.h"
 #include "Sandbox.h"  
 #include "SandboxBrokerClient.h"
 #include "SandboxFilterUtil.h"
@@ -43,11 +42,6 @@
 #include "sandbox/linux/bpf_dsl/bpf_dsl.h"
 #include "sandbox/linux/system_headers/linux_seccomp.h"
 #include "sandbox/linux/system_headers/linux_syscalls.h"
-
-#if defined(GP_PLAT_amd64_linux) && defined(GP_ARCH_amd64) && \
-    defined(MOZ_USING_WASM_SANDBOXING)
-#  include <asm/prctl.h>  
-#endif
 
 using namespace sandbox::bpf_dsl;
 #define CASES SANDBOX_BPF_DSL_CASES
@@ -1127,22 +1121,6 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
                   Trap(SetNoNewPrivsTrap, nullptr))
             .Else(PrctlPolicy());
       }
-
-#if defined(GP_PLAT_amd64_linux) && defined(GP_ARCH_amd64) && \
-    defined(MOZ_USING_WASM_SANDBOXING)
-        
-      case __NR_arch_prctl: {
-        
-        
-        
-        
-        
-        
-        Arg<int> op(0);
-        return If(op == ARCH_SET_GS, Allow())
-            .Else(SandboxPolicyBase::EvaluateSyscall(sysno));
-      }
-#endif
 
         
         
