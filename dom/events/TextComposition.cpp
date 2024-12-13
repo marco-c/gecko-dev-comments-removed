@@ -169,6 +169,11 @@ void TextComposition::OnCharacterDataChanged(
   
   
   if (aInfo.mChangeStart >= mCompositionStartOffsetInTextNode) {
+    if (!mCompositionLengthInTextNode) {
+      
+      
+      return;
+    }
     MOZ_ASSERT(aInfo.LengthOfRemovedText() <= mCompositionLengthInTextNode);
     mCompositionLengthInTextNode -= aInfo.LengthOfRemovedText();
     mCompositionLengthInTextNode += aInfo.mReplaceLength;
@@ -181,6 +186,11 @@ void TextComposition::OnCharacterDataChanged(
   const uint32_t removedLengthInCompositionString =
       aInfo.mChangeEnd - mCompositionStartOffsetInTextNode;
   mCompositionStartOffsetInTextNode = aInfo.mChangeStart;
+  if (!mCompositionLengthInTextNode) {
+    
+    
+    return;
+  }
   mCompositionLengthInTextNode -= removedLengthInCompositionString;
   mCompositionLengthInTextNode += aInfo.mReplaceLength;
 }

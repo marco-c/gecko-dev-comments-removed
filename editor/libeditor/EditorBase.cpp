@@ -5688,18 +5688,14 @@ nsresult EditorBase::InitializeSelection(
   
   
   
-  if (mComposition && mComposition->IsMovingToNewTextNode()) {
-    MOZ_DIAGNOSTIC_ASSERT(IsTextEditor());
-    if (NS_WARN_IF(!IsTextEditor())) {
-      return NS_ERROR_UNEXPECTED;
-    }
+  
+  
+  
+  if (IsTextEditor() && mComposition && mComposition->IsMovingToNewTextNode()) {
     
     
-    const nsRange* firstRange = SelectionRef().GetRangeAt(0);
-    if (NS_WARN_IF(!firstRange)) {
-      return NS_ERROR_FAILURE;
-    }
-    EditorRawDOMPoint atStartOfFirstRange(firstRange->StartRef());
+    const auto atStartOfFirstRange =
+        EditorBase::GetFirstSelectionStartPoint<EditorRawDOMPoint>();
     EditorRawDOMPoint betterInsertionPoint =
         AsTextEditor()->FindBetterInsertionPoint(atStartOfFirstRange);
     RefPtr<Text> textNode = betterInsertionPoint.GetContainerAs<Text>();
