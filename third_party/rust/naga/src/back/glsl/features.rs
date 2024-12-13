@@ -282,7 +282,7 @@ impl FeaturesManager {
     }
 }
 
-impl<'a, W> Writer<'a, W> {
+impl<W> Writer<'_, W> {
     
     
     

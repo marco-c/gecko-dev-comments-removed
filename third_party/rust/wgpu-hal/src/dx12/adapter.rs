@@ -207,10 +207,10 @@ impl super::Adapter {
                 Direct3D12::D3D_SHADER_MODEL_6_2,
                 Direct3D12::D3D_SHADER_MODEL_6_1,
                 Direct3D12::D3D_SHADER_MODEL_6_0,
-                Direct3D12::D3D_SHADER_MODEL_5_1,
             ]
             .iter();
-            match loop {
+
+            let highest_shader_model = loop {
                 if let Some(&sm) = versions.next() {
                     let mut sm = Direct3D12::D3D12_FEATURE_DATA_SHADER_MODEL {
                         HighestShaderModel: sm,
@@ -229,8 +229,10 @@ impl super::Adapter {
                 } else {
                     break Direct3D12::D3D_SHADER_MODEL_5_1;
                 }
-            } {
-                Direct3D12::D3D_SHADER_MODEL_5_1 => naga::back::hlsl::ShaderModel::V5_1,
+            };
+
+            match highest_shader_model {
+                Direct3D12::D3D_SHADER_MODEL_5_1 => return None, 
                 Direct3D12::D3D_SHADER_MODEL_6_0 => naga::back::hlsl::ShaderModel::V6_0,
                 Direct3D12::D3D_SHADER_MODEL_6_1 => naga::back::hlsl::ShaderModel::V6_1,
                 Direct3D12::D3D_SHADER_MODEL_6_2 => naga::back::hlsl::ShaderModel::V6_2,
@@ -293,6 +295,7 @@ impl super::Adapter {
             }
         };
 
+        
         let mut features = wgt::Features::empty()
             | wgt::Features::DEPTH_CLIP_CONTROL
             | wgt::Features::DEPTH32FLOAT_STENCIL8
@@ -315,7 +318,8 @@ impl super::Adapter {
             | wgt::Features::SHADER_PRIMITIVE_INDEX
             | wgt::Features::RG11B10UFLOAT_RENDERABLE
             | wgt::Features::DUAL_SOURCE_BLENDING
-            | wgt::Features::TEXTURE_FORMAT_NV12;
+            | wgt::Features::TEXTURE_FORMAT_NV12
+            | wgt::Features::FLOAT32_FILTERABLE;
 
         
         
@@ -402,9 +406,6 @@ impl super::Adapter {
             wgt::Features::SHADER_INT64_ATOMIC_ALL_OPS | wgt::Features::SHADER_INT64_ATOMIC_MIN_MAX,
             atomic_int64_on_typed_resource_supported,
         );
-
-        
-        features.set(wgt::Features::FLOAT32_FILTERABLE, true);
 
         
         let presentation_timer = auxil::dxgi::time::PresentationTimer::new_dxgi();
@@ -671,7 +672,7 @@ impl crate::Adapter for super::Adapter {
         );
         
         caps.set(
-            Tfc::STORAGE,
+            Tfc::STORAGE_WRITE,
             data_srv_uav
                 .Support1
                 .contains(Direct3D12::D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW),

@@ -6,7 +6,7 @@ pub struct TypeTracer<'a> {
     pub types_used: &'a mut HandleSet<crate::Type>,
 }
 
-impl<'a> TypeTracer<'a> {
+impl TypeTracer<'_> {
     
     
     

@@ -59,7 +59,7 @@ pub(super) enum MaybeKnown<T> {
     Computed(Word),
 }
 
-impl<'w> BlockContext<'w> {
+impl BlockContext<'_> {
     
     
     
