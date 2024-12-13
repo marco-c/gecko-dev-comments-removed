@@ -31,3 +31,9 @@ function assignJavascriptURLToInjectionSink(testCase) {
     element[testCase.navigationFunction]();
   }
 }
+
+function encodeURIWithApostrophes(uriWithApostrophes) {
+  const encodedURI = encodeURI(uriWithApostrophes);
+  
+  return encodedURI.replaceAll("'","%27");
+}
