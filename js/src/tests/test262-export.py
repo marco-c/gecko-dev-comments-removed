@@ -26,9 +26,43 @@ SUPPORT_FILES = set(
     ]
 )
 
-FRONTMATTER_WRAPPER_PATTERN = re.compile(
-    rb"/\*\---\n([\s]*)((?:\s|\S)*)[\n\s*]---\*/", flags=re.DOTALL
-)
+
+
+def findAndCopyIncludes(dirPath: str, baseDir: str, includeDir: str) -> "list[str]":
+    relPath = os.path.relpath(dirPath, baseDir)
+    includes: list[str] = []
+
+    
+    
+    
+    while relPath:
+        
+        shellFile = os.path.join(baseDir, relPath, "shell.js")
+
+        
+        includeFileName = relPath.replace("/", "-") + "-shell.js"
+        includesPath = os.path.join(includeDir, includeFileName)
+
+        if os.path.exists(shellFile):
+            
+            includes.append(includeFileName)
+
+            if not os.path.exists(includesPath):
+                shutil.copyfile(shellFile, includesPath)
+
+        relPath = os.path.split(relPath)[0]
+
+    shellFile = os.path.join(baseDir, "shell.js")
+    includesPath = os.path.join(includeDir, "shell.js")
+    if not os.path.exists(includesPath):
+        shutil.copyfile(shellFile, includesPath)
+
+    includes.append("shell.js")
+
+    if not os.path.exists(includesPath):
+        shutil.copyfile(shellFile, includesPath)
+
+    return includes
 
 
 def convertTestFile(source: bytes, includes: "list[str]") -> bytes:
@@ -43,33 +77,7 @@ def convertTestFile(source: bytes, includes: "list[str]") -> bytes:
     return source
 
 
-def convertReportCompare(source: bytes) -> bytes:
-    """
-    Captures all the reportCompare and convert them accordingly.
 
-    Cases with reportCompare calls where the arguments are the same and one of
-    0, true, or null, will be discarded as they are not necessary for Test262.
-
-    Otherwise, reportCompare will be replaced with assert.sameValue, as the
-    equivalent in Test262
-    """
-
-    def replaceFn(matchobj: "re.Match[bytes]") -> bytes:
-        actual: bytes = matchobj.group(2)
-        expected: bytes = matchobj.group(3)
-
-        if actual == expected and actual in [b"0", b"true", b"null"]:
-            return b""
-
-        return matchobj.group()
-
-    newSource = re.sub(
-        rb".*(if \(typeof reportCompare === \"function\"\)\s*)?reportCompare\s*\(\s*(\w*)\s*,\s*(\w*)\s*(,\s*\S*)?\s*\)\s*;*\s*",
-        replaceFn,
-        source,
-    )
-
-    return re.sub(rb"\breportCompare\b", b"assert.sameValue", newSource)
 
 
 class ReftestEntry:
@@ -157,6 +165,37 @@ def parseHeader(source: bytes) -> "tuple[bytes, Optional[ReftestEntry]]":
     return (source, None)
 
 
+
+
+
+def insertCopyrightLines(source: bytes) -> bytes:
+    """
+    Insert the copyright lines into the file.
+    """
+    from datetime import date
+
+    lines: list[bytes] = []
+
+    if not re.match(rb"\/\/\s+Copyright.*\. All rights reserved.", source):
+        year = date.today().year
+        lines.append(
+            b"// Copyright (C) %d Mozilla Corporation. All rights reserved." % year
+        )
+        lines.append(
+            b"// This code is governed by the BSD license found in the LICENSE file."
+        )
+        lines.append(b"\n")
+
+    return b"\n".join(lines) + source
+
+
+
+
+FRONTMATTER_WRAPPER_PATTERN = re.compile(
+    rb"/\*\---\n([\s]*)((?:\s|\S)*)[\n\s*]---\*/", flags=re.DOTALL
+)
+
+
 def extractMeta(source: bytes) -> "dict[str, Any]":
     """
     Capture the frontmatter metadata as yaml if it exists.
@@ -174,63 +213,7 @@ def extractMeta(source: bytes) -> "dict[str, Any]":
     return yaml.safe_load(unindented)
 
 
-def updateMeta(source: bytes, includes: "list[str]") -> bytes:
-    """
-    Captures the reftest meta and a pre-existing meta if any and merge them
-    into a single dict.
-    """
 
-    
-    source, reftest = parseHeader(source)
-
-    
-    frontmatter = extractMeta(source)
-
-    
-    merged = mergeMeta(reftest, frontmatter, includes)
-
-    
-    properData = cleanupMeta(merged)
-
-    return insertMeta(source, properData)
-
-
-def cleanupMeta(meta: "dict[str, Any]") -> "dict[str, Any]":
-    """
-    Clean up all the frontmatter meta tags. This is not a lint tool, just a
-    simple cleanup to remove trailing spaces and duplicate entries from lists.
-    """
-
-    
-    for tag in ("description", "esid"):
-        meta.setdefault(tag, "pending")
-
-    
-    for tag in ("description", "esid", "es5id", "es6id", "info", "author"):
-        if tag in meta:
-            meta[tag] = meta[tag].strip()
-
-    
-    for tag in ("features", "flags", "includes"):
-        if tag in meta:
-            
-            meta[tag] = list(set(meta[tag]))
-
-    if "negative" in meta:
-        
-        if meta["negative"].get("phase") not in ("early", "runtime"):
-            print(
-                "Warning: the negative.phase is not properly set.\n"
-                + "Ref https://github.com/tc39/test262/blob/main/INTERPRETING.md#negative"
-            )
-        
-        if "type" not in meta["negative"]:
-            print(
-                "Warning: the negative.type is not set.\n"
-                + "Ref https://github.com/tc39/test262/blob/main/INTERPRETING.md#negative"
-            )
-
-    return meta
 
 
 def mergeMeta(
@@ -291,25 +274,42 @@ def mergeMeta(
     return frontmatter
 
 
-def insertCopyrightLines(source: bytes) -> bytes:
+def cleanupMeta(meta: "dict[str, Any]") -> "dict[str, Any]":
     """
-    Insert the copyright lines into the file.
+    Clean up all the frontmatter meta tags. This is not a lint tool, just a
+    simple cleanup to remove trailing spaces and duplicate entries from lists.
     """
-    from datetime import date
 
-    lines: list[bytes] = []
+    
+    for tag in ("description", "esid"):
+        meta.setdefault(tag, "pending")
 
-    if not re.match(rb"\/\/\s+Copyright.*\. All rights reserved.", source):
-        year = date.today().year
-        lines.append(
-            b"// Copyright (C) %d Mozilla Corporation. All rights reserved." % year
-        )
-        lines.append(
-            b"// This code is governed by the BSD license found in the LICENSE file."
-        )
-        lines.append(b"\n")
+    
+    for tag in ("description", "esid", "es5id", "es6id", "info", "author"):
+        if tag in meta:
+            meta[tag] = meta[tag].strip()
 
-    return b"\n".join(lines) + source
+    
+    for tag in ("features", "flags", "includes"):
+        if tag in meta:
+            
+            meta[tag] = list(set(meta[tag]))
+
+    if "negative" in meta:
+        
+        if meta["negative"].get("phase") not in ("early", "runtime"):
+            print(
+                "Warning: the negative.phase is not properly set.\n"
+                + "Ref https://github.com/tc39/test262/blob/main/INTERPRETING.md#negative"
+            )
+        
+        if "type" not in meta["negative"]:
+            print(
+                "Warning: the negative.type is not set.\n"
+                + "Ref https://github.com/tc39/test262/blob/main/INTERPRETING.md#negative"
+            )
+
+    return meta
 
 
 def insertMeta(source: bytes, frontmatter: "dict[str, Any]") -> bytes:
@@ -350,41 +350,57 @@ def insertMeta(source: bytes, frontmatter: "dict[str, Any]") -> bytes:
         return b"\n".join(lines) + source
 
 
-def findAndCopyIncludes(dirPath: str, baseDir: str, includeDir: str) -> "list[str]":
-    relPath = os.path.relpath(dirPath, baseDir)
-    includes: list[str] = []
+def updateMeta(source: bytes, includes: "list[str]") -> bytes:
+    """
+    Captures the reftest meta and a pre-existing meta if any and merge them
+    into a single dict.
+    """
 
     
+    source, reftest = parseHeader(source)
+
     
+    frontmatter = extractMeta(source)
+
     
-    while relPath:
-        
-        shellFile = os.path.join(baseDir, relPath, "shell.js")
+    merged = mergeMeta(reftest, frontmatter, includes)
 
-        
-        includeFileName = relPath.replace("/", "-") + "-shell.js"
-        includesPath = os.path.join(includeDir, includeFileName)
+    
+    properData = cleanupMeta(merged)
 
-        if os.path.exists(shellFile):
-            
-            includes.append(includeFileName)
+    return insertMeta(source, properData)
 
-            if not os.path.exists(includesPath):
-                shutil.copyfile(shellFile, includesPath)
 
-        relPath = os.path.split(relPath)[0]
 
-    shellFile = os.path.join(baseDir, "shell.js")
-    includesPath = os.path.join(includeDir, "shell.js")
-    if not os.path.exists(includesPath):
-        shutil.copyfile(shellFile, includesPath)
 
-    includes.append("shell.js")
 
-    if not os.path.exists(includesPath):
-        shutil.copyfile(shellFile, includesPath)
+def convertReportCompare(source: bytes) -> bytes:
+    """
+    Captures all the reportCompare and convert them accordingly.
 
-    return includes
+    Cases with reportCompare calls where the arguments are the same and one of
+    0, true, or null, will be discarded as they are not necessary for Test262.
+
+    Otherwise, reportCompare will be replaced with assert.sameValue, as the
+    equivalent in Test262
+    """
+
+    def replaceFn(matchobj: "re.Match[bytes]") -> bytes:
+        actual: bytes = matchobj.group(2)
+        expected: bytes = matchobj.group(3)
+
+        if actual == expected and actual in [b"0", b"true", b"null"]:
+            return b""
+
+        return matchobj.group()
+
+    newSource = re.sub(
+        rb".*(if \(typeof reportCompare === \"function\"\)\s*)?reportCompare\s*\(\s*(\w*)\s*,\s*(\w*)\s*(,\s*\S*)?\s*\)\s*;*\s*",
+        replaceFn,
+        source,
+    )
+
+    return re.sub(rb"\breportCompare\b", b"assert.sameValue", newSource)
 
 
 def exportTest262(
