@@ -2826,7 +2826,7 @@ bool IsGlobalInExposureSet(JSContext* aCx, JSObject* aGlobal,
   const char* name = JS::GetClass(aGlobal)->name;
 
   if ((aGlobalSet & GlobalNames::Window) &&
-      (!strcmp(name, "Window") || !strcmp(name, "BackstagePass"))) {
+      (!strcmp(name, "Window") || !strcmp(name, "SystemGlobal"))) {
     return true;
   }
 

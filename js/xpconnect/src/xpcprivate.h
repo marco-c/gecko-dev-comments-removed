@@ -148,7 +148,7 @@
 #include "xpcObjectHelper.h"
 
 #include "SandboxPrivate.h"
-#include "BackstagePass.h"
+#include "SystemGlobal.h"
 
 #ifdef XP_WIN
 
@@ -2078,20 +2078,12 @@ using AutoMarkingWrappedNativeProtoPtr =
 
 
 
-#define XPCVARIANT_IID                              \
-  {                                                 \
-    0x1809fd50, 0x91e8, 0x11d5, {                   \
-      0x90, 0xf9, 0x0, 0x10, 0xa4, 0xe7, 0x3d, 0x9a \
-    }                                               \
-  }
+#define XPCVARIANT_IID \
+  {0x1809fd50, 0x91e8, 0x11d5, {0x90, 0xf9, 0x0, 0x10, 0xa4, 0xe7, 0x3d, 0x9a}}
 
 
-#define XPCVARIANT_CID                               \
-  {                                                  \
-    0xdc524540, 0x487e, 0x4501, {                    \
-      0x9a, 0xc7, 0xaa, 0xa7, 0x84, 0xb1, 0x7c, 0x1c \
-    }                                                \
-  }
+#define XPCVARIANT_CID \
+  {0xdc524540, 0x487e, 0x4501, {0x9a, 0xc7, 0xaa, 0xa7, 0x84, 0xb1, 0x7c, 0x1c}}
 
 class XPCVariant : public nsIVariant {
  public:

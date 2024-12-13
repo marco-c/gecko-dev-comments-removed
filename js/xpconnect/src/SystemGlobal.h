@@ -4,8 +4,8 @@
 
 
 
-#ifndef BackstagePass_h__
-#define BackstagePass_h__
+#ifndef SystemGlobal_h__
+#define SystemGlobal_h__
 
 #include "js/loader/ModuleLoaderBase.h"
 #include "mozilla/BasePrincipal.h"
@@ -21,13 +21,15 @@
 
 class XPCWrappedNative;
 
-class BackstagePass final : public nsIGlobalObject,
-                            public nsIScriptObjectPrincipal,
-                            public nsIXPCScriptable,
-                            public nsIClassInfo,
-                            public nsSupportsWeakReference {
+
+
+class SystemGlobal final : public nsIGlobalObject,
+                           public nsIScriptObjectPrincipal,
+                           public nsIXPCScriptable,
+                           public nsIClassInfo,
+                           public nsSupportsWeakReference {
  public:
-  BackstagePass();
+  SystemGlobal();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIXPCSCRIPTABLE
@@ -89,7 +91,7 @@ class BackstagePass final : public nsIGlobalObject,
   }
 
  private:
-  virtual ~BackstagePass() = default;
+  virtual ~SystemGlobal() = default;
 
   const nsID mAgentClusterId;
   nsCOMPtr<nsIPrincipal> mPrincipal;

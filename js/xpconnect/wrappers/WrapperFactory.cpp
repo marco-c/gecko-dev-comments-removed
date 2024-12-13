@@ -393,7 +393,8 @@ static void DEBUG_CheckUnwrapSafety(HandleObject obj,
 }
 #else
 #  define DEBUG_CheckUnwrapSafety(obj, handler, origin, target) \
-    {}
+    {                                                           \
+    }
 #endif
 
 const CrossOriginObjectWrapper CrossOriginObjectWrapper::singleton;
