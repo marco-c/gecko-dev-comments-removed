@@ -3720,6 +3720,10 @@ class nsDisplayGeneric : public nsPaintedDisplayItem {
   
   
   void Destroy(nsDisplayListBuilder* aBuilder) override {
+    if (IsReusedItem()) {
+      aBuilder->RemoveReusedDisplayItem(this);
+    }
+
     this->~nsDisplayGeneric();
     aBuilder->Destroy(DisplayItemType::TYPE_GENERIC, this);
   }
