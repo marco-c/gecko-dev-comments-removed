@@ -36,6 +36,9 @@ class DXVA2Manager {
   virtual HRESULT CopyToImage(IMFSample* aVideoSample,
                               const gfx::IntRect& aRegion,
                               layers::Image** aOutImage) = 0;
+  virtual HRESULT CopyToImage(ID3D11Texture2D* aInputTexture,
+                              UINT aSurfaceIndex, const gfx::IntRect& aRegion,
+                              layers::Image** aOutImage) = 0;
 
   virtual HRESULT WrapTextureWithImage(IMFSample* aVideoSample,
                                        const gfx::IntRect& aRegion,
@@ -58,6 +61,14 @@ class DXVA2Manager {
                                    gfx::ColorRange aColorRange, uint32_t aWidth,
                                    uint32_t aHeight) {
     return S_OK;
+  }
+  virtual HRESULT ConfigureForSize(gfx::SurfaceFormat aSurfaceFormat,
+                                   gfx::YUVColorSpace aColorSpace,
+                                   gfx::ColorRange aColorRange, uint32_t aWidth,
+                                   uint32_t aHeight) {
+    
+    MOZ_CRASH("ConfigureForSize not implemented on this manager.");
+    return E_FAIL;
   }
 
   virtual bool IsD3D11() { return false; }
