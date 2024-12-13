@@ -1131,7 +1131,8 @@ nsresult ChromeTooltipListener::MouseMove(Event* aMouseEvent) {
   
   
   
-  CSSIntPoint newMouseClientPoint = mouseEvent->ClientPoint();
+  const CSSIntPoint newMouseClientPoint =
+      RoundedToInt(mouseEvent->ClientPoint());
   if (mMouseClientPoint == newMouseClientPoint) {
     return NS_OK;
   }

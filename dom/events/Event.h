@@ -174,22 +174,82 @@ class Event : public nsISupports, public nsWrapperCache {
   bool Init(EventTarget* aGlobal);
 
   static const char16_t* GetEventName(EventMessage aEventType);
-  static CSSIntPoint GetClientCoords(nsPresContext* aPresContext,
-                                     WidgetEvent* aEvent,
-                                     LayoutDeviceIntPoint aPoint,
-                                     CSSIntPoint aDefaultPoint);
-  static CSSIntPoint GetPageCoords(nsPresContext* aPresContext,
-                                   WidgetEvent* aEvent,
-                                   LayoutDeviceIntPoint aPoint,
-                                   CSSIntPoint aDefaultPoint);
-  static Maybe<CSSIntPoint> GetScreenCoords(nsPresContext* aPresContext,
-                                            WidgetEvent* aEvent,
-                                            LayoutDeviceIntPoint aPoint);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  static CSSIntPoint GetOffsetCoords(nsPresContext* aPresContext,
-                                     WidgetEvent* aEvent,
-                                     LayoutDeviceIntPoint aPoint,
-                                     CSSIntPoint aDefaultPoint);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static CSSDoublePoint GetClientCoords(
+      nsPresContext* aPresContext, WidgetEvent* aEvent,
+      const LayoutDeviceDoublePoint& aWidgetRelativePoint,
+      const CSSDoublePoint& aDefaultClientPoint);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static CSSDoublePoint GetPageCoords(
+      nsPresContext* aPresContext, WidgetEvent* aEvent,
+      const LayoutDeviceDoublePoint& aWidgetRelativePoint,
+      const CSSDoublePoint& aDefaultClientPoint);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static Maybe<CSSDoublePoint> GetScreenCoords(
+      nsPresContext* aPresContext, WidgetEvent* aEvent,
+      const LayoutDeviceDoublePoint& aWidgetRelativePoint);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  static CSSDoublePoint GetOffsetCoords(
+      nsPresContext* aPresContext, WidgetEvent* aEvent,
+      const LayoutDeviceDoublePoint& aWidgetRelativePoint,
+      const CSSDoublePoint& aDefaultClientPoint);
 
   static already_AddRefed<Event> Constructor(EventTarget* aEventTarget,
                                              const nsAString& aType,
@@ -340,6 +400,10 @@ class Event : public nsISupports, public nsWrapperCache {
 
   already_AddRefed<EventTarget> EnsureWebAccessibleRelatedTarget(
       EventTarget* aRelatedTarget);
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsIFrame*
+  GetPrimaryFrameOfEventTarget(const nsPresContext& aPresContext,
+                               const WidgetEvent& aEvent);
 
   mozilla::WidgetEvent* mEvent;
   RefPtr<nsPresContext> mPresContext;

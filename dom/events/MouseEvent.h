@@ -28,7 +28,7 @@ class MouseEvent : public UIEvent {
 
   virtual MouseEvent* AsMouseEvent() override { return this; }
 
-  void DuplicatePrivateData() override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DuplicatePrivateData() override;
 
   
   virtual uint32_t Which(CallerType aCallerType) override {
@@ -38,7 +38,15 @@ class MouseEvent : public UIEvent {
   already_AddRefed<nsIScreen> GetScreen();
 
   
-  CSSIntPoint ScreenPoint(CallerType) const;
+
+
+
+
+
+
+
+
+  CSSDoublePoint ScreenPoint(CallerType) const;
   double ScreenX(CallerType aCallerType) const {
     return ScreenPoint(aCallerType).x;
   }
@@ -48,15 +56,46 @@ class MouseEvent : public UIEvent {
   LayoutDeviceIntPoint ScreenPointLayoutDevicePix() const;
   DesktopIntPoint ScreenPointDesktopPix() const;
 
-  CSSIntPoint PagePoint() const;
+  
+
+
+
+
+
+
+
+
+
+  CSSDoublePoint PagePoint() const;
   double PageX() const { return PagePoint().x; }
   double PageY() const { return PagePoint().y; }
 
-  CSSIntPoint ClientPoint() const;
+  
+
+
+
+
+
+
+
+
+  CSSDoublePoint ClientPoint() const;
   double ClientX() const { return ClientPoint().x; }
   double ClientY() const { return ClientPoint().y; }
 
-  CSSIntPoint OffsetPoint() const;
+  
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY CSSDoublePoint OffsetPoint() const;
   double OffsetX() const { return OffsetPoint().x; }
   double OffsetY() const { return OffsetPoint().y; }
 
@@ -120,9 +159,33 @@ class MouseEvent : public UIEvent {
                               EventTarget* aRelatedTarget,
                               const nsAString& aModifiersList);
 
-  CSSIntPoint mDefaultClientPoint;
-  CSSIntPoint mPagePoint;
+  
+  
+  
+  
+  
+  
+  
+  LayoutDeviceDoublePoint mWidgetRelativePoint;
+
+  
+  
+  
+  
+  
+  
+  CSSDoublePoint mDefaultClientPoint;
+
+  
+  
+  
+  
+  
+  
+  CSSDoublePoint mPagePoint;
+
   nsIntPoint mMovementPoint;
+  bool mUseFractionalCoords = false;
 };
 
 }  

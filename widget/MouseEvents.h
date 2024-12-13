@@ -256,6 +256,11 @@ class WidgetMouseEventBase : public WidgetInputEvent {
 
 
   [[nodiscard]] bool InputSourceSupportsHover() const;
+
+  
+
+
+  [[nodiscard]] bool DOMEventShouldUseFractionalCoords() const;
 };
 
 

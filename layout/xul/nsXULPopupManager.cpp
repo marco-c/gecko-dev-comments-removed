@@ -146,7 +146,7 @@ void PendingPopup::InitMousePoint() {
         !event->AsGUIEvent()->mWidget) {
       
       MouseEvent* mouseEvent = mEvent->AsMouseEvent();
-      CSSIntPoint clientPt(mouseEvent->ClientPoint());
+      const CSSIntPoint clientPt(RoundedToInt(mouseEvent->ClientPoint()));
 
       
       nsPoint thisDocToRootDocOffset =

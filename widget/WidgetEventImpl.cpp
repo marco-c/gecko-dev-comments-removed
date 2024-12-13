@@ -900,6 +900,36 @@ bool WidgetMouseEventBase::InputSourceSupportsHover() const {
   }
 }
 
+bool WidgetMouseEventBase::DOMEventShouldUseFractionalCoords() const {
+  if (!StaticPrefs::dom_event_pointer_fractional_coordinates_enabled()) {
+    return false;  
+  }
+  
+  
+  
+  
+  if (mClass == ePointerEventClass && mMessage != ePointerClick &&
+      mMessage != ePointerAuxClick && mMessage != eContextMenu) {
+    return true;
+  }
+  
+  
+  
+  
+  
+  
+  
+  if (!IsTrusted()) {
+    return StaticPrefs::
+        dom_event_mouse_fractional_coordinates_untrusted_enabled();
+  }
+  
+  
+  
+  return MOZ_UNLIKELY(
+      StaticPrefs::dom_event_mouse_fractional_coordinates_trusted_enabled());
+}
+
 
 
 

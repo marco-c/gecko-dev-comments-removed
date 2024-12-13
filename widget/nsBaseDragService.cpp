@@ -451,7 +451,7 @@ nsresult nsBaseDragSession::InitWithImage(
   mSourceTopWindowContext =
       mSourceWindowContext ? mSourceWindowContext->TopWindowContext() : nullptr;
 
-  mScreenPosition = aDragEvent->ScreenPoint(CallerType::System);
+  mScreenPosition = RoundedToInt(aDragEvent->ScreenPoint(CallerType::System));
   mInputSource = aDragEvent->InputSource(CallerType::System);
 
   
@@ -523,7 +523,7 @@ nsresult nsBaseDragSession::InitWithRemoteImage(
   mSourceWindowContext = mDragStartData->GetSourceWindowContext();
   mSourceTopWindowContext = mDragStartData->GetSourceTopWindowContext();
 
-  mScreenPosition = aDragEvent->ScreenPoint(CallerType::System);
+  mScreenPosition = RoundedToInt(aDragEvent->ScreenPoint(CallerType::System));
   mInputSource = aDragEvent->InputSource(CallerType::System);
 
   nsresult rv = InvokeDragSession(
@@ -578,7 +578,7 @@ nsresult nsBaseDragSession::InitWithSelection(
   mDragStartData = nullptr;
   mRegion = Nothing();
 
-  mScreenPosition = aDragEvent->ScreenPoint(CallerType::System);
+  mScreenPosition = RoundedToInt(aDragEvent->ScreenPoint(CallerType::System));
   mInputSource = aDragEvent->InputSource(CallerType::System);
 
   

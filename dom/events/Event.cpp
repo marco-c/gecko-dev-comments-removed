@@ -4,6 +4,8 @@
 
 
 
+#include "Event.h"
+
 #include "AccessCheck.h"
 #include "base/basictypes.h"
 #include "ipc/IPCMessageUtils.h"
@@ -27,7 +29,6 @@
 #include "mozilla/ViewportUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/Event.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/ScrollContainerFrame.h"
@@ -582,9 +583,9 @@ bool Event::IsDispatchStopped() { return mEvent->PropagationStopped(); }
 WidgetEvent* Event::WidgetEventPtr() { return mEvent; }
 
 
-Maybe<CSSIntPoint> Event::GetScreenCoords(nsPresContext* aPresContext,
-                                          WidgetEvent* aEvent,
-                                          LayoutDeviceIntPoint aPoint) {
+Maybe<CSSDoublePoint> Event::GetScreenCoords(
+    nsPresContext* aPresContext, WidgetEvent* aEvent,
+    const LayoutDeviceDoublePoint& aWidgetRelativePoint) {
   if (PointerLockManager::IsLocked()) {
     return Some(EventStateManager::sLastScreenPoint);
   }
@@ -595,9 +596,9 @@ Maybe<CSSIntPoint> Event::GetScreenCoords(nsPresContext* aPresContext,
 
   
   
-  WidgetGUIEvent* guiEvent = aEvent->AsGUIEvent();
-  if (!aPresContext || !(guiEvent && guiEvent->mWidget)) {
-    return Some(CSSIntPoint(aPoint.x, aPoint.y));
+  const WidgetGUIEvent* guiEvent = aEvent->AsGUIEvent();
+  if (MOZ_UNLIKELY(!aPresContext) || !(guiEvent && guiEvent->mWidget)) {
+    return Some(CSSDoublePoint(aWidgetRelativePoint.x, aWidgetRelativePoint.y));
   }
 
   
@@ -605,113 +606,126 @@ Maybe<CSSIntPoint> Event::GetScreenCoords(nsPresContext* aPresContext,
   
   
   
-  LayoutDevicePoint floatPoint(aPoint);
-  LayoutDevicePoint topLevelPoint =
+  const LayoutDeviceIntPoint topLevelPoint = LayoutDeviceIntPoint::Round(
       guiEvent->mWidget->WidgetToTopLevelWidgetTransform().TransformPoint(
-          floatPoint);
-  LayoutDeviceIntPoint rounded = RoundedToInt(topLevelPoint);
-
-  nsPoint pt = LayoutDevicePixel::ToAppUnits(
-      rounded, aPresContext->DeviceContext()->AppUnitsPerDevPixel());
-
-  pt += LayoutDevicePixel::ToAppUnits(
-      guiEvent->mWidget->TopLevelWidgetToScreenOffset(),
-      aPresContext->DeviceContext()->AppUnitsPerDevPixel());
-
-  return Some(CSSPixel::FromAppUnitsRounded(pt));
+          aWidgetRelativePoint));
+  const CSSPoint pt = CSSPixel::FromAppUnits(
+      LayoutDevicePixel::ToAppUnits(
+          topLevelPoint, aPresContext->DeviceContext()->AppUnitsPerDevPixel()) +
+      LayoutDevicePixel::ToAppUnits(
+          guiEvent->mWidget->TopLevelWidgetToScreenOffset(),
+          aPresContext->DeviceContext()->AppUnitsPerDevPixel()));
+  return Some(CSSDoublePoint(pt.x, pt.y));
 }
 
 
-CSSIntPoint Event::GetPageCoords(nsPresContext* aPresContext,
-                                 WidgetEvent* aEvent,
-                                 LayoutDeviceIntPoint aPoint,
-                                 CSSIntPoint aDefaultPoint) {
-  CSSIntPoint pagePoint =
-      Event::GetClientCoords(aPresContext, aEvent, aPoint, aDefaultPoint);
+CSSDoublePoint Event::GetPageCoords(
+    nsPresContext* aPresContext, WidgetEvent* aEvent,
+    const LayoutDeviceDoublePoint& aWidgetRelativePoint,
+    const CSSDoublePoint& aDefaultClientPoint) {
+  const CSSDoublePoint clientCoords = Event::GetClientCoords(
+      aPresContext, aEvent, aWidgetRelativePoint, aDefaultClientPoint);
 
   
-  if (aPresContext && aPresContext->GetPresShell()) {
-    PresShell* presShell = aPresContext->PresShell();
-    if (ScrollContainerFrame* sf = presShell->GetRootScrollContainerFrame()) {
-      pagePoint += CSSIntPoint::FromAppUnitsRounded(sf->GetScrollPosition());
+  const CSSPoint scrollPoint = CSSPixel::FromAppUnits([&]() {
+    if (aPresContext && aPresContext->GetPresShell()) {
+      if (const ScrollContainerFrame* const sf =
+              aPresContext->PresShell()->GetRootScrollContainerFrame()) {
+        return sf->GetScrollPosition();
+      }
     }
-  }
-
-  return pagePoint;
+    return nsPoint{};
+  }());
+  return clientCoords + CSSDoublePoint(scrollPoint.x, scrollPoint.y);
 }
 
 
-CSSIntPoint Event::GetClientCoords(nsPresContext* aPresContext,
-                                   WidgetEvent* aEvent,
-                                   LayoutDeviceIntPoint aPoint,
-                                   CSSIntPoint aDefaultPoint) {
+CSSDoublePoint Event::GetClientCoords(
+    nsPresContext* aPresContext, WidgetEvent* aEvent,
+    const LayoutDeviceDoublePoint& aWidgetRelativePoint,
+    const CSSDoublePoint& aDefaultClientPoint) {
   if (PointerLockManager::IsLocked()) {
     return EventStateManager::sLastClientPoint;
   }
 
-  if (!aPresContext || !aEvent || !aEvent->DOMEventSupportsCoords() ||
-      !aEvent->AsGUIEvent()->mWidget) {
-    return aDefaultPoint;
+  if (MOZ_UNLIKELY(!aPresContext) || MOZ_UNLIKELY(!aEvent) ||
+      !aEvent->DOMEventSupportsCoords() ||
+      MOZ_UNLIKELY(!aEvent->AsGUIEvent()->mWidget)) {
+    return aDefaultClientPoint;
   }
 
-  PresShell* presShell = aPresContext->GetPresShell();
-  if (!presShell) {
-    return CSSIntPoint(0, 0);
+  const PresShell* const presShell = aPresContext->GetPresShell();
+  if (MOZ_UNLIKELY(!presShell)) {
+    return CSSDoublePoint(0, 0);
   }
-  nsIFrame* rootFrame = presShell->GetRootFrame();
-  if (!rootFrame) {
-    return CSSIntPoint(0, 0);
+  
+  
+  const nsIFrame* const rootFrame = presShell->GetRootFrame();
+  if (MOZ_UNLIKELY(!rootFrame)) {
+    return CSSDoublePoint(0, 0);
   }
-  nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(
-      aEvent, aPoint, RelativeTo{rootFrame});
-
-  return CSSIntPoint::FromAppUnitsRounded(pt);
+  const CSSPoint pt =
+      CSSPixel::FromAppUnits(nsLayoutUtils::GetEventCoordinatesRelativeTo(
+          aEvent, LayoutDeviceIntPoint::Round(aWidgetRelativePoint),
+          RelativeTo{rootFrame}));
+  return CSSDoublePoint(pt.x, pt.y);
 }
 
 
-CSSIntPoint Event::GetOffsetCoords(nsPresContext* aPresContext,
-                                   WidgetEvent* aEvent,
-                                   LayoutDeviceIntPoint aPoint,
-                                   CSSIntPoint aDefaultPoint) {
-  if (!aEvent->mTarget) {
-    return GetPageCoords(aPresContext, aEvent, aPoint, aDefaultPoint);
+nsIFrame* Event::GetPrimaryFrameOfEventTarget(const nsPresContext& aPresContext,
+                                              const WidgetEvent& aEvent) {
+  const nsCOMPtr<nsIContent> content =
+      nsIContent::FromEventTargetOrNull(aEvent.mTarget);
+  if (!content) {
+    return nullptr;
   }
-  nsCOMPtr<nsIContent> content = nsIContent::FromEventTarget(aEvent->mTarget);
-  if (!content || !aPresContext) {
-    return CSSIntPoint();
-  }
-  RefPtr<PresShell> presShell = aPresContext->GetPresShell();
-  if (!presShell) {
-    return CSSIntPoint();
-  }
-  presShell->FlushPendingNotifications(FlushType::Layout);
-  nsIFrame* frame = content->GetPrimaryFrame();
-  if (!frame) {
-    return CSSIntPoint();
+  
+  
+  nsIFrame* const frame = content->GetPrimaryFrame(FlushType::Layout);
+  if (MOZ_UNLIKELY(!frame)) {
+    return nullptr;
   }
   
   
   
   if (frame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT) &&
       StaticPrefs::dom_events_offset_in_svg_relative_to_svg_root()) {
-    frame = SVGUtils::GetOuterSVGFrame(frame);
-    if (!frame) {
-      return CSSIntPoint();
-    }
+    return SVGUtils::GetOuterSVGFrame(frame);
   }
-  nsIFrame* rootFrame = presShell->GetRootFrame();
-  if (!rootFrame) {
-    return CSSIntPoint();
+  return frame;
+}
+
+
+CSSDoublePoint Event::GetOffsetCoords(
+    nsPresContext* aPresContext, WidgetEvent* aEvent,
+    const LayoutDeviceDoublePoint& aWidgetRelativePoint,
+    const CSSDoublePoint& aDefaultClientPoint) {
+  if (!aEvent->mTarget) {
+    return GetPageCoords(aPresContext, aEvent, aWidgetRelativePoint,
+                         aDefaultClientPoint);
   }
-  CSSIntPoint clientCoords =
-      GetClientCoords(aPresContext, aEvent, aPoint, aDefaultPoint);
-  nsPoint pt = CSSPixel::ToAppUnits(clientCoords);
-  if (nsLayoutUtils::TransformPoint(RelativeTo{rootFrame}, RelativeTo{frame},
-                                    pt) == nsLayoutUtils::TRANSFORM_SUCCEEDED) {
-    pt -= frame->GetPaddingRectRelativeToSelf().TopLeft();
-    return CSSPixel::FromAppUnitsRounded(pt);
+  if (!nsIContent::FromEventTarget(aEvent->mTarget) || !aPresContext) {
+    return CSSDoublePoint();
   }
-  return CSSIntPoint();
+  const nsIFrame* const frame =
+      GetPrimaryFrameOfEventTarget(*aPresContext, *aEvent);
+  if (MOZ_UNLIKELY(!frame)) {
+    return CSSDoublePoint();
+  }
+  MOZ_ASSERT(aPresContext->PresShell()->GetRootFrame());
+  const CSSDoublePoint clientCoords = GetClientCoords(
+      aPresContext, aEvent, aWidgetRelativePoint, aDefaultClientPoint);
+  nsPoint ptInAppUnits = CSSPixel::ToAppUnits(CSSPoint(
+      static_cast<float>(clientCoords.x), static_cast<float>(clientCoords.y)));
+  if (nsLayoutUtils::TransformPoint(
+          RelativeTo{aPresContext->PresShell()->GetRootFrame()},
+          RelativeTo{frame},
+          ptInAppUnits) != nsLayoutUtils::TRANSFORM_SUCCEEDED) {
+    return CSSDoublePoint();
+  }
+  ptInAppUnits -= frame->GetPaddingRectRelativeToSelf().TopLeft();
+  const CSSPoint pt = CSSPixel::FromAppUnits(ptInAppUnits);
+  return CSSDoublePoint(pt.x, pt.y);
 }
 
 
