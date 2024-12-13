@@ -13,7 +13,6 @@
 
 
 
-
 var sample = #[1,2,3];
 
 assertThrowsInstanceOf(() => sample.map(), TypeError,

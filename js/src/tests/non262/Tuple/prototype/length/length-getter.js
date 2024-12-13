@@ -14,8 +14,6 @@
 
 
 
-
-
 let TuplePrototype = Tuple.prototype;
 let desc = Object.getOwnPropertyDescriptor(TuplePrototype, "length");
 
