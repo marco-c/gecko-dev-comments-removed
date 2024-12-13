@@ -193,12 +193,6 @@ bool OffscreenCanvasDisplayHelper::CommitFrameToCompositor(
     MaybeQueueInvalidateElement();
   }
 
-  if (mData.mOwnerId.isSome()) {
-    
-    
-    return true;
-  }
-
   if (!mImageContainer) {
     return false;
   }
