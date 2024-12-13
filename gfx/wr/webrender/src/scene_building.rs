@@ -941,12 +941,22 @@ impl<'a> SceneBuilder<'a> {
                             continue;
                         }
 
+                        let snapshot = info.snapshot.map(|snapshot| {
+                            
+                            
+                            
+                            SnapshotInfo {
+                                area: snapshot.area.translate(info.origin.to_vector()),
+                                key: snapshot.key,
+                            }
+                        });
+
                         let composition_operations = CompositeOps::new(
                             filter_ops_for_compositing(item.filters()),
                             filter_datas_for_compositing(item.filter_datas()),
                             filter_primitives_for_compositing(item.filter_primitives()),
                             info.stacking_context.mix_blend_mode_for_compositing(),
-                            info.snapshot,
+                            snapshot,
                         );
 
                         let sc_info = self.push_stacking_context(
