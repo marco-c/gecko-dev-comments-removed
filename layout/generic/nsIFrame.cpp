@@ -365,7 +365,12 @@ bool nsIFrame::IsVisibleConsideringAncestors(uint32_t aFlags) const {
       return false;
     }
 
-    if (frame->StyleUIReset()->mMozSubtreeHiddenOnlyVisually) {
+    
+    
+    
+    
+    if (XRE_IsParentProcess() &&
+        frame->StyleUIReset()->mMozSubtreeHiddenOnlyVisually) {
       return false;
     }
 
@@ -4042,7 +4047,12 @@ static bool ShouldSkipFrame(nsDisplayListBuilder* aBuilder,
   if (aFrame->HasAnyStateBits(skipFlags)) {
     return true;
   }
-  return aFrame->StyleUIReset()->mMozSubtreeHiddenOnlyVisually;
+  
+  
+  
+  
+  return XRE_IsParentProcess() &&
+         aFrame->StyleUIReset()->mMozSubtreeHiddenOnlyVisually;
 }
 
 void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
