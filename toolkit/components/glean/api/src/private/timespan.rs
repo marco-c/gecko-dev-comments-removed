@@ -12,24 +12,92 @@ use glean::traits::Timespan;
 
 use crate::ipc::need_ipc;
 
+#[cfg(feature = "with_gecko")]
+use super::profiler_utils::{lookup_canonical_metric_name, LookupError};
+
+#[cfg(feature = "with_gecko")]
+use gecko_profiler::{gecko_profiler_category, MarkerOptions, MarkerTiming};
+
+#[cfg(feature = "with_gecko")]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct TimespanMetricMarker {
+    id: MetricId,
+    value: Option<u64>,
+}
+
+#[cfg(feature = "with_gecko")]
+impl gecko_profiler::ProfilerMarker for TimespanMetricMarker {
+    fn marker_type_name() -> &'static str {
+        "TimespanMetric"
+    }
+
+    fn marker_type_display() -> gecko_profiler::MarkerSchema {
+        use gecko_profiler::schema::*;
+        let mut schema = MarkerSchema::new(&[Location::MarkerChart, Location::MarkerTable]);
+        schema.set_tooltip_label("{marker.data.id} {marker.data.val}{marker.data.stringval}");
+        schema.set_table_label(
+            "{marker.name} - {marker.data.id}: {marker.data.val}{marker.data.stringval}",
+        );
+        schema.add_key_label_format_searchable(
+            "id",
+            "Metric",
+            Format::UniqueString,
+            Searchable::Searchable,
+        );
+        schema.add_key_label_format("val", "Value", Format::Integer);
+        schema.add_key_label_format("stringval", "Value", Format::String);
+        schema
+    }
+
+    fn stream_json_marker_data(&self, json_writer: &mut gecko_profiler::JSONWriter) {
+        json_writer.unique_string_property(
+            "id",
+            lookup_canonical_metric_name(&self.id).unwrap_or_else(LookupError::as_str),
+        );
+        if let Some(v) = self.value {
+            use std::convert::TryFrom;
+            
+            
+            
+            
+            match i64::try_from(v) {
+                
+                Ok(v) => {
+                    json_writer.int_property("val", v);
+                }
+                
+                Err(_) => {
+                    let strv = format!("{}", v);
+                    json_writer.string_property("stringval", strv.as_str());
+                }
+            };
+        };
+    }
+}
+
 
 
 
 pub enum TimespanMetric {
-    Parent(glean::private::TimespanMetric, TimeUnit),
+    Parent {
+        id: MetricId,
+        inner: glean::private::TimespanMetric,
+        time_unit: TimeUnit,
+    },
     Child,
 }
 
 impl TimespanMetric {
     
-    pub fn new(_id: MetricId, meta: CommonMetricData, time_unit: TimeUnit) -> Self {
+    pub fn new(id: MetricId, meta: CommonMetricData, time_unit: TimeUnit) -> Self {
         if need_ipc() {
             TimespanMetric::Child
         } else {
-            TimespanMetric::Parent(
-                glean::private::TimespanMetric::new(meta, time_unit),
-                time_unit,
-            )
+            TimespanMetric::Parent {
+                id: id,
+                inner: glean::private::TimespanMetric::new(meta, time_unit),
+                time_unit: time_unit,
+            }
         }
     }
 
@@ -37,8 +105,25 @@ impl TimespanMetric {
     
     pub fn set_raw_unitless(&self, duration: u64) {
         match self {
-            TimespanMetric::Parent(p, time_unit) => {
-                p.set_raw(Duration::from_nanos(time_unit.as_nanos(duration)));
+            #[allow(unused)]
+            TimespanMetric::Parent {
+                id,
+                inner,
+                time_unit,
+            } => {
+                #[cfg(feature = "with_gecko")]
+                if gecko_profiler::can_accept_markers() {
+                    gecko_profiler::add_marker(
+                        "TimeSpan::setRaw",
+                        gecko_profiler_category!(Telemetry),
+                        MarkerOptions::default(),
+                        TimespanMetricMarker {
+                            id: *id,
+                            value: Some(duration),
+                        },
+                    );
+                }
+                inner.set_raw(Duration::from_nanos(time_unit.as_nanos(duration)));
             }
             TimespanMetric::Child => {
                 log::error!(
@@ -57,7 +142,33 @@ impl TimespanMetric {
 impl Timespan for TimespanMetric {
     pub fn start(&self) {
         match self {
-            TimespanMetric::Parent(p, _) => p.start(),
+            #[allow(unused)]
+            TimespanMetric::Parent { id, inner, .. } => {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                #[cfg(feature = "with_gecko")]
+                if gecko_profiler::can_accept_markers() {
+                    gecko_profiler::add_marker(
+                        "TimeSpan::start",
+                        gecko_profiler_category!(Telemetry),
+                        MarkerOptions::default().with_timing(MarkerTiming::instant_now()),
+                        TimespanMetricMarker {
+                            id: *id,
+                            value: None,
+                        },
+                    );
+                };
+                inner.start();
+            }
             TimespanMetric::Child => {
                 log::error!("Unable to start timespan metric in non-main process. This operation will be ignored.");
                 
@@ -70,7 +181,23 @@ impl Timespan for TimespanMetric {
 
     pub fn stop(&self) {
         match self {
-            TimespanMetric::Parent(p, _) => p.stop(),
+            #[allow(unused)]
+            TimespanMetric::Parent { id, inner, .. } => {
+                
+                #[cfg(feature = "with_gecko")]
+                if gecko_profiler::can_accept_markers() {
+                    gecko_profiler::add_marker(
+                        "TimeSpan::stop",
+                        gecko_profiler_category!(Telemetry),
+                        MarkerOptions::default().with_timing(MarkerTiming::instant_now()),
+                        TimespanMetricMarker {
+                            id: *id,
+                            value: None,
+                        },
+                    );
+                };
+                inner.stop();
+            }
             TimespanMetric::Child => {
                 log::error!("Unable to stop timespan metric in non-main process. This operation will be ignored.");
                 
@@ -83,7 +210,23 @@ impl Timespan for TimespanMetric {
 
     pub fn cancel(&self) {
         match self {
-            TimespanMetric::Parent(p, _) => p.cancel(),
+            #[allow(unused)]
+            TimespanMetric::Parent { id, inner, .. } => {
+                
+                #[cfg(feature = "with_gecko")]
+                if gecko_profiler::can_accept_markers() {
+                    gecko_profiler::add_marker(
+                        "TimeSpan::cancel",
+                        gecko_profiler_category!(Telemetry),
+                        MarkerOptions::default().with_timing(MarkerTiming::instant_now()),
+                        TimespanMetricMarker {
+                            id: *id,
+                            value: None,
+                        },
+                    );
+                };
+                inner.cancel();
+            }
             TimespanMetric::Child => {
                 log::error!("Unable to cancel timespan metric in non-main process. This operation will be ignored.");
                 
@@ -95,9 +238,27 @@ impl Timespan for TimespanMetric {
     }
 
     pub fn set_raw(&self, elapsed: Duration) {
-        let elapsed = elapsed.as_nanos().try_into().unwrap_or(i64::MAX);
         match self {
-            TimespanMetric::Parent(p, _) => p.set_raw_nanos(elapsed),
+            #[allow(unused)]
+            TimespanMetric::Parent { id, inner, .. } => {
+                let elapsed = elapsed.as_nanos().try_into().unwrap_or(i64::MAX);
+                #[cfg(feature = "with_gecko")]
+                if gecko_profiler::can_accept_markers() {
+                    gecko_profiler::add_marker(
+                        "TimeSpan::setRaw",
+                        gecko_profiler_category!(Telemetry),
+                        MarkerOptions::default(),
+                        TimespanMetricMarker {
+                            id: *id,
+                            
+                            
+                            
+                            value: Some(elapsed as u64),
+                        },
+                    );
+                };
+                inner.set_raw_nanos(elapsed)
+            }
             TimespanMetric::Child => {
                 log::error!("Unable to set_raw on timespan in non-main process. This operation will be ignored.");
                 
@@ -113,7 +274,9 @@ impl Timespan for TimespanMetric {
         match self {
             
             
-            TimespanMetric::Parent(p, _) => p.test_get_value(ping_name).map(|i| i as u64),
+            TimespanMetric::Parent { inner, .. } => {
+                inner.test_get_value(ping_name).map(|i| i as u64)
+            }
             TimespanMetric::Child => {
                 panic!("Cannot get test value for in non-main process!");
             }
@@ -122,7 +285,7 @@ impl Timespan for TimespanMetric {
 
     pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
         match self {
-            TimespanMetric::Parent(p, _) => p.test_get_num_recorded_errors(error),
+            TimespanMetric::Parent { inner, .. } => inner.test_get_num_recorded_errors(error),
             TimespanMetric::Child => {
                 panic!("Cannot get the number of recorded errors for timespan metric in non-main process!");
             }
