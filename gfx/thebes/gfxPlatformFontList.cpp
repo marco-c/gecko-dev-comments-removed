@@ -1418,47 +1418,27 @@ void gfxPlatformFontList::StartCmapLoadingFromFamily(uint32_t aStartIndex) {
   }
 }
 
-class LoadCmapsRunnable : public CancelableRunnable {
-  class WillShutdownObserver : public nsIObserver {
-   public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIOBSERVER
+class LoadCmapsRunnable final : public IdleRunnable,
+                                public nsIObserver,
+                                public nsSupportsWeakReference {
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIOBSERVER
 
-    explicit WillShutdownObserver(LoadCmapsRunnable* aRunnable)
-        : mRunnable(aRunnable) {}
-
-    void Remove() {
-      nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
-      if (obs) {
-        obs->RemoveObserver(this, NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID);
-      }
-      mRunnable = nullptr;
+ private:
+  virtual ~LoadCmapsRunnable() {
+    if (nsCOMPtr<nsIObserverService> obs = services::GetObserverService()) {
+      obs->RemoveObserver(this, NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID);
     }
-
-   protected:
-    virtual ~WillShutdownObserver() = default;
-
-    LoadCmapsRunnable* mRunnable;
-  };
+  }
 
  public:
-  explicit LoadCmapsRunnable(uint32_t aGeneration, uint32_t aFamilyIndex)
-      : CancelableRunnable("gfxPlatformFontList::LoadCmapsRunnable"),
+  LoadCmapsRunnable(uint32_t aGeneration, uint32_t aFamilyIndex)
+      : IdleRunnable("gfxPlatformFontList::LoadCmapsRunnable"),
         mGeneration(aGeneration),
         mStartIndex(aFamilyIndex),
-        mIndex(aFamilyIndex) {
-    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
-    if (obs) {
-      mObserver = new WillShutdownObserver(this);
-      obs->AddObserver(mObserver, NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID, false);
-    }
-  }
+        mIndex(aFamilyIndex) {}
 
-  virtual ~LoadCmapsRunnable() {
-    if (mObserver) {
-      mObserver->Remove();
-    }
-  }
+  void SetDeadline(TimeStamp aDeadline) override { mDeadline = aDeadline; }
 
   
   
@@ -1474,10 +1454,7 @@ class LoadCmapsRunnable : public CancelableRunnable {
     }
   }
 
-  nsresult Cancel() override {
-    mIsCanceled = true;
-    return NS_OK;
-  }
+  void Cancel() { mIsCanceled = true; }
 
   NS_IMETHOD Run() override {
     if (mIsCanceled) {
@@ -1502,16 +1479,18 @@ class LoadCmapsRunnable : public CancelableRunnable {
       ++mIndex;
     }
     
-    if (mIndex < numFamilies) {
-      Unused << pfl->InitializeFamily(&families[mIndex], true);
-      ++mIndex;
+    while (mIndex < numFamilies) {
+      Unused << pfl->InitializeFamily(&families[mIndex++], true);
+      if (mDeadline.IsNull() || TimeStamp::Now() >= mDeadline) {
+        break;
+      }
     }
     
     
     
     if (mIndex < numFamilies) {
-      RefPtr<CancelableRunnable> task = this;
-      NS_DispatchToMainThreadQueue(task.forget(), EventQueuePriority::Idle);
+      mDeadline = TimeStamp();
+      NS_DispatchToMainThreadQueue(do_AddRef(this), EventQueuePriority::Idle);
     } else {
       pfl->Lock();
       pfl->CancelLoadCmapsTask();
@@ -1526,25 +1505,27 @@ class LoadCmapsRunnable : public CancelableRunnable {
   uint32_t mGeneration;
   uint32_t mStartIndex;
   uint32_t mIndex;
+  TimeStamp mDeadline;
   bool mIsCanceled = false;
-
-  RefPtr<WillShutdownObserver> mObserver;
 };
 
-NS_IMPL_ISUPPORTS(LoadCmapsRunnable::WillShutdownObserver, nsIObserver)
+NS_IMPL_ISUPPORTS_INHERITED(LoadCmapsRunnable, IdleRunnable, nsIObserver,
+                            nsISupportsWeakReference);
 
 NS_IMETHODIMP
-LoadCmapsRunnable::WillShutdownObserver::Observe(nsISupports* aSubject,
-                                                 const char* aTopic,
-                                                 const char16_t* aData) {
-  if (!nsCRT::strcmp(aTopic, NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID)) {
-    if (mRunnable) {
-      mRunnable->Cancel();
-    }
-  } else {
-    MOZ_ASSERT_UNREACHABLE("unexpected notification topic");
-  }
+LoadCmapsRunnable::Observe(nsISupports* aSubject, const char* aTopic,
+                           const char16_t* aData) {
+  MOZ_ASSERT(!nsCRT::strcmp(aTopic, NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID),
+             "unexpected topic");
+  Cancel();
   return NS_OK;
+}
+
+void gfxPlatformFontList::CancelLoadCmapsTask() {
+  if (mLoadCmapsRunnable) {
+    mLoadCmapsRunnable->Cancel();
+    mLoadCmapsRunnable = nullptr;
+  }
 }
 
 void gfxPlatformFontList::StartCmapLoading(uint32_t aGeneration,
@@ -1559,13 +1540,16 @@ void gfxPlatformFontList::StartCmapLoading(uint32_t aGeneration,
   if (mLoadCmapsRunnable) {
     
     
-    static_cast<LoadCmapsRunnable*>(mLoadCmapsRunnable.get())
-        ->MaybeResetIndex(aStartIndex);
+    mLoadCmapsRunnable->MaybeResetIndex(aStartIndex);
     return;
   }
   mLoadCmapsRunnable = new LoadCmapsRunnable(aGeneration, aStartIndex);
-  RefPtr<CancelableRunnable> task = mLoadCmapsRunnable;
-  NS_DispatchToMainThreadQueue(task.forget(), EventQueuePriority::Idle);
+  if (nsCOMPtr<nsIObserverService> obs = services::GetObserverService()) {
+    obs->AddObserver(mLoadCmapsRunnable, NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID,
+                      true);
+  }
+  NS_DispatchToMainThreadQueue(do_AddRef(mLoadCmapsRunnable),
+                               EventQueuePriority::Idle);
 }
 
 gfxFontFamily* gfxPlatformFontList::CheckFamily(gfxFontFamily* aFamily) {
