@@ -2140,8 +2140,8 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
              "public API should be consistent with internal state (about "
              "whether flex item's inline axis is flex container's main axis)");
 
-  const ReflowInput* containerRS = aFlexItemReflowInput.mParentReflowInput;
-  if (IsLegacyBox(containerRS->mFrame)) {
+  const ReflowInput* containerRI = aFlexItemReflowInput.mParentReflowInput;
+  if (IsLegacyBox(containerRI->mFrame)) {
     
     
     
@@ -2149,13 +2149,13 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
     
     
     
-    const nsStyleXUL* containerStyleXUL = containerRS->mFrame->StyleXUL();
+    const nsStyleXUL* containerStyleXUL = containerRI->mFrame->StyleXUL();
     mAlignSelf = ConvertLegacyStyleToAlignItems(containerStyleXUL);
     mAlignSelfFlags = {0};
   } else {
     StyleAlignSelf alignSelf =
         aFlexItemReflowInput.mStylePosition->UsedAlignSelf(
-            containerRS->mFrame->Style());
+            containerRI->mFrame->Style());
     if (MOZ_LIKELY(alignSelf._0 == StyleAlignFlags::NORMAL)) {
       alignSelf = {StyleAlignFlags::STRETCH};
     }
@@ -2191,8 +2191,8 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
     
     
     if (aAxisTracker.IsRowOriented() ||
-        (containerRS->ComputedBSize() != NS_UNCONSTRAINEDSIZE &&
-         !containerRS->mFlags.mTreatBSizeAsIndefinite)) {
+        (containerRI->ComputedBSize() != NS_UNCONSTRAINEDSIZE &&
+         !containerRI->mFlags.mTreatBSizeAsIndefinite)) {
       
       
       
