@@ -1346,6 +1346,7 @@ pub struct CompositorInputLayer {
 
 pub struct CompositorInputConfig<'a> {
     pub layers: &'a [CompositorInputLayer],
+    pub framebuffer_size: DeviceIntSize,
 }
 
 
