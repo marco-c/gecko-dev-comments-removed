@@ -1,6 +1,11 @@
 import pytest
 
-from webdriver.error import InvalidArgumentException, NoSuchWindowException, StaleElementReferenceException
+from webdriver.error import (
+    InvalidArgumentException,
+    MoveTargetOutOfBoundsException,
+    NoSuchWindowException,
+    StaleElementReferenceException,
+)
 
 from tests.classic.perform_actions.support.mouse import (
     get_inview_center,
@@ -29,12 +34,36 @@ def test_no_browsing_context(session, closed_frame, mouse_chain):
         mouse_chain.click().perform()
 
 
+def test_pointer_down_closes_browsing_context(
+    session, configuration, http_new_tab, inline, mouse_chain
+):
+    session.url = inline(
+        """<input onpointerdown="window.close()">close</input>""")
+    origin = session.find.css("input", all=False)
+
+    with pytest.raises(NoSuchWindowException):
+        mouse_chain.pointer_move(0, 0, origin=origin) \
+            .pointer_down(button=0) \
+            .pause(100 * configuration["timeout_multiplier"]) \
+            .pointer_up(button=0) \
+            .perform()
+
+
 @pytest.mark.parametrize("as_frame", [False, True], ids=["top_context", "child_context"])
 def test_stale_element_reference(session, stale_element, mouse_chain, as_frame):
     element = stale_element("input#text", as_frame=as_frame)
 
     with pytest.raises(StaleElementReferenceException):
         mouse_chain.click(element=element).perform()
+
+
+@pytest.mark.parametrize("origin", ["element", "pointer", "viewport"])
+def test_params_actions_origin_outside_viewport(session, test_actions_page, mouse_chain, origin):
+    if origin == "element":
+        origin = session.find.css("#outer", all=False)
+
+    with pytest.raises(MoveTargetOutOfBoundsException):
+        mouse_chain.pointer_move(-100, -100, origin=origin).perform()
 
 
 def test_click_at_coordinates(session, test_actions_page, mouse_chain):
