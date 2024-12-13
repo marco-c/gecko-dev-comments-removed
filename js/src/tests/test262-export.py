@@ -34,6 +34,7 @@ SUPPORT_FILES = set(
 def findAndCopyIncludes(dirPath: str, baseDir: str, includeDir: str) -> "list[str]":
     relPath = os.path.relpath(dirPath, baseDir)
     includes: list[str] = []
+    os.makedirs(os.path.join(includeDir, "sm"), exist_ok=True)
 
     
     
@@ -43,27 +44,15 @@ def findAndCopyIncludes(dirPath: str, baseDir: str, includeDir: str) -> "list[st
         shellFile = os.path.join(baseDir, relPath, "shell.js")
 
         
-        includeFileName = relPath.replace("/", "-") + "-shell.js"
-        includesPath = os.path.join(includeDir, includeFileName)
-
-        if os.path.exists(shellFile):
+        if os.path.exists(shellFile) and os.path.getsize(shellFile) > 0:
             
+            includeFileName = "sm/" + relPath.replace("/", "-") + "-shell.js"
             includes.append(includeFileName)
 
-            if not os.path.exists(includesPath):
-                shutil.copyfile(shellFile, includesPath)
+            includesPath = os.path.join(includeDir, includeFileName)
+            shutil.copyfile(shellFile, includesPath)
 
         relPath = os.path.split(relPath)[0]
-
-    shellFile = os.path.join(baseDir, "shell.js")
-    includesPath = os.path.join(includeDir, "shell.js")
-    if not os.path.exists(includesPath):
-        shutil.copyfile(shellFile, includesPath)
-
-    includes.append("shell.js")
-
-    if not os.path.exists(includesPath):
-        shutil.copyfile(shellFile, includesPath)
 
     return includes
 
