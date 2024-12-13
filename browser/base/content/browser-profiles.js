@@ -19,11 +19,6 @@ var gProfiles = {
     this.toggleProfileMenus = this.toggleProfileMenus.bind(this);
     this.updateView = this.updateView.bind(this);
 
-    this.profiles = [];
-    if (SelectableProfileService.initialized) {
-      this.profiles = await SelectableProfileService.getAllProfiles();
-    }
-
     this.bundle = Services.strings.createBundle(
       "chrome://browser/locale/browser.properties"
     );
@@ -183,31 +178,13 @@ var gProfiles = {
   
 
 
-  onPopupShowing() {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    SelectableProfileService.getAllProfiles().then(profiles => {
-      this.profiles = profiles;
-    });
-
+  async onPopupShowing() {
     let menuPopup = document.getElementById("menu_ProfilesPopup");
-
     while (menuPopup.hasChildNodes()) {
       menuPopup.firstChild.remove();
     }
 
-    let profiles = this.profiles;
+    let profiles = await SelectableProfileService.getAllProfiles();
     let currentProfile = SelectableProfileService.currentProfile;
 
     for (let profile of profiles) {
