@@ -2295,7 +2295,7 @@ TEST_F(APZCOverscrollTester, HoldGestureDuringOverscroll) {
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID  
-TEST_F(APZCOverscrollTester, ResetTouchInputStateJustOnce) {
+TEST_F(APZCOverscrollTester, NoResetTouchInputStateCalled) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
   MakeApzcWaitForMainThread();
@@ -2303,7 +2303,7 @@ TEST_F(APZCOverscrollTester, ResetTouchInputStateJustOnce) {
   InSequence s;
   
   
-  EXPECT_CALL(*mcc, UpdateOverscrollVelocity(_, _, _, _)).Times(1);
+  EXPECT_CALL(*mcc, UpdateOverscrollVelocity(_, _, _, _)).Times(0);
 
   ScreenIntPoint touchPoint(5, 5);
   APZEventResult result = TouchDown(apzc, touchPoint, mcc->Time());
@@ -2323,7 +2323,44 @@ TEST_F(APZCOverscrollTester, ResetTouchInputStateJustOnce) {
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID  
-TEST_F(APZCOverscrollTester, ResetPanGestureInputStateJustOnce) {
+TEST_F(APZCOverscrollTester, ResetTouchInputStateJustOnce) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+  SCOPED_GFX_PREF_FLOAT("apz.touch_start_tolerance", 0.1f);
+  SCOPED_GFX_PREF_FLOAT("apz.touch_move_tolerance", 0.0f);
+  
+  
+  SCOPED_GFX_PREF_FLOAT("apz.fling_stop_on_tap_threshold", 1000.0f);
+
+  InSequence s;
+  
+  
+  EXPECT_CALL(*mcc, UpdateOverscrollVelocity(_, _, _, _)).Times(1);
+
+  
+  PanIntoOverscroll();
+
+  
+  MakeApzcWaitForMainThread();
+
+  ScreenIntPoint touchPoint(5, 5);
+  APZEventResult result = TouchDown(apzc, touchPoint, mcc->Time());
+  SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
+  apzc->ContentReceivedInputBlock(result.mInputBlockId,
+                                  true);
+
+  for (int i = 0; i < 5; ++i) {
+    touchPoint.y -= 1;
+    mcc->AdvanceByMillis(10);
+    TouchMove(apzc, touchPoint, mcc->Time());
+  }
+
+  mcc->AdvanceByMillis(10);
+  TouchUp(apzc, touchPoint, mcc->Time());
+}
+#endif
+
+#ifdef MOZ_WIDGET_ANDROID  
+TEST_F(APZCOverscrollTester, NoResetPanGestureInputStateCalled) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
   MakeApzcWaitForMainThread();
@@ -2331,7 +2368,7 @@ TEST_F(APZCOverscrollTester, ResetPanGestureInputStateJustOnce) {
   InSequence s;
   
   
-  EXPECT_CALL(*mcc, UpdateOverscrollVelocity(_, _, _, _)).Times(1);
+  EXPECT_CALL(*mcc, UpdateOverscrollVelocity(_, _, _, _)).Times(0);
 
   ScreenIntPoint panPoint(5, 5);
   APZEventResult result = PanGesture(PanGestureInput::PANGESTURE_START, apzc,
@@ -2342,6 +2379,50 @@ TEST_F(APZCOverscrollTester, ResetPanGestureInputStateJustOnce) {
     mcc->AdvanceByMillis(10);
     PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, panPoint,
                ScreenPoint(0, 1), mcc->Time());
+  }
+
+  mcc->AdvanceByMillis(10);
+  PanGesture(PanGestureInput::PANGESTURE_END, apzc, panPoint,
+             ScreenPoint(0, 0), mcc->Time());
+}
+#endif
+
+#ifdef MOZ_WIDGET_ANDROID  
+TEST_F(APZCOverscrollTester, ResetPanGestureInputStateJustOnce) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+
+  InSequence s;
+  
+  
+  
+  EXPECT_CALL(*mcc, UpdateOverscrollVelocity(_, _, _, _)).Times(1);
+
+  
+  
+  ScreenIntPoint panPoint(5, 5);
+  PanGesture(PanGestureInput::PANGESTURE_START, apzc, panPoint,
+             ScreenPoint(0, -10), mcc->Time());
+  mcc->AdvanceByMillis(10);
+  PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, panPoint,
+             ScreenPoint(0, -100), mcc->Time());
+  
+  EXPECT_TRUE(apzc->IsOverscrolled());
+  
+  mcc->AdvanceByMillis(10);
+  PanGesture(PanGestureInput::PANGESTURE_END, apzc, panPoint,
+             ScreenPoint(0, 0), mcc->Time());
+
+  
+  MakeApzcWaitForMainThread();
+
+  APZEventResult result = PanGesture(PanGestureInput::PANGESTURE_START, apzc,
+                                     panPoint, ScreenPoint(0, 10), mcc->Time());
+  apzc->ContentReceivedInputBlock(result.mInputBlockId,
+                                  true);
+  for (int i = 0; i < 5; ++i) {
+    mcc->AdvanceByMillis(10);
+    PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, panPoint,
+               ScreenPoint(0, 10), mcc->Time());
   }
 
   mcc->AdvanceByMillis(10);
