@@ -115,6 +115,8 @@ assertEq(log, "sp");
 
 
 var g = newGlobal();
+if (!("assert" in g) && "assert" in globalThis)
+    g.assert = assert;  
 if (!("assertEq" in g))
     g.assertEq = assertEq;  
 g.eval(`

@@ -50,7 +50,7 @@ function createScope() {
   }
   assertEq(environment.a, false);
 
-  assertDeepEq(log, [
+  assertDeepEq(log.slice(), [
     
     
     
@@ -101,7 +101,7 @@ function createScope() {
   }
   assertEq(environment.a, true);
 
-  assertDeepEq(log, [
+  assertDeepEq(log.slice(), [
     
     
     
@@ -152,7 +152,7 @@ function createScope() {
   }
   assertEq(environment.a, true);
 
-  assertDeepEq(log, [
+  assertDeepEq(log.slice(), [
     
     
     
