@@ -36,12 +36,11 @@
 
 
 
-const tz = TemporalHelpers.specificOffsetTimeZone(-2);
-const datetime = new Temporal.ZonedDateTime(3661_001_001_001n, tz);
+const datetime = new Temporal.ZonedDateTime(3661_001_001_001n, "-00:02");
 
 const date = new Temporal.PlainDate(2000, 5, 2);
 const pdt = date.toPlainDateTime(datetime);
 
-TemporalHelpers.assertPlainDateTime(pdt, 2000, 5, "M05", 2, 1, 1, 1, 1, 0, 999);
+TemporalHelpers.assertPlainDateTime(pdt, 2000, 5, "M05", 2, 0, 59, 1, 1, 1, 1);
 
 reportCompare(0, 0);

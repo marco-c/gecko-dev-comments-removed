@@ -12,9 +12,6 @@
 const actual = [];
 const expected = [
   "get item.timeZone",
-  "has item.timeZone.getOffsetNanosecondsFor",
-  "has item.timeZone.getPossibleInstantsFor",
-  "has item.timeZone.id",
   "get item.plainTime",
   
   "get item.plainTime.hour",
@@ -35,18 +32,9 @@ const expected = [
   "get item.plainTime.second",
   "get item.plainTime.second.valueOf",
   "call item.plainTime.second.valueOf",
-  
-  "get item.timeZone.getOffsetNanosecondsFor",
-  "get item.timeZone.getPossibleInstantsFor",
-  
-  "call item.timeZone.getPossibleInstantsFor",
 ];
 
-const calendar = TemporalHelpers.calendarObserver(actual, "this.calendar");
-const instance = new Temporal.PlainDate(2000, 1, 1, calendar);
-const springForwardInstance = new Temporal.PlainDate(2000, 4, 2, calendar);
-const fallBackInstance = new Temporal.PlainDate(2000, 10, 29, calendar);
-actual.splice(0); 
+const instance = new Temporal.PlainDate(2000, 1, 1, "iso8601");
 
 const plainTime = TemporalHelpers.propertyBagObserver(actual, {
   hour: 2,
@@ -56,43 +44,13 @@ const plainTime = TemporalHelpers.propertyBagObserver(actual, {
   microsecond: 0,
   nanosecond: 0,
 }, "item.plainTime");
-const dstTimeZone = TemporalHelpers.springForwardFallBackTimeZone();
-const timeZone = TemporalHelpers.timeZoneObserver(actual, "item.timeZone", {
-  getOffsetNanosecondsFor: dstTimeZone.getOffsetNanosecondsFor,
-  getPossibleInstantsFor: dstTimeZone.getPossibleInstantsFor,
-});
 const item = TemporalHelpers.propertyBagObserver(actual, {
   plainTime,
-  timeZone,
-}, "item");
+  timeZone: "UTC"
+}, "item", ["timeZone"]);
 
 instance.toZonedDateTime(item);
-assert.compareArray(actual, expected, "order of operations at normal wall-clock time");
-actual.splice(0); 
-
-const plainTime130 = TemporalHelpers.propertyBagObserver(actual, {
-  hour: 1,
-  minute: 30,
-  second: 0,
-  millisecond: 0,
-  microsecond: 0,
-  nanosecond: 0,
-}, "item.plainTime");
-const item130 = TemporalHelpers.propertyBagObserver(actual, {
-  plainTime: plainTime130,
-  timeZone,
-}, "item");
-
-fallBackInstance.toZonedDateTime(item130);
-assert.compareArray(actual, expected, "order of operations at repeated wall-clock time");
-actual.splice(0); 
-
-springForwardInstance.toZonedDateTime(item);
-assert.compareArray(actual, expected.concat([
-  "call item.timeZone.getOffsetNanosecondsFor",
-  "call item.timeZone.getOffsetNanosecondsFor",
-  "call item.timeZone.getPossibleInstantsFor",
-]), "order of operations at skipped wall-clock time");
+assert.compareArray(actual, expected, "order of operations");
 actual.splice(0); 
 
 reportCompare(0, 0);

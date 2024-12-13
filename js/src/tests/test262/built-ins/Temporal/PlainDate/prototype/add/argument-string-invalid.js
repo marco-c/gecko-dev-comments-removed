@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+const instance = new Temporal.PlainDate(2000, 5, 2);
+assert.throws(RangeError,
+  () => instance.add("invalid duration string"),
+  "invalid duration string causes a RangeError");
+
+reportCompare(0, 0);

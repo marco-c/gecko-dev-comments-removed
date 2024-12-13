@@ -35,15 +35,12 @@
 
 
 
+const datetime = new Temporal.ZonedDateTime(3661_001_001_001n, "-00:02");
 
-const tz = TemporalHelpers.specificOffsetTimeZone(-2);
-const datetime = new Temporal.ZonedDateTime(3661_001_001_001n, tz);
-
-const otherTimeZone = new Temporal.TimeZone("UTC");  
 const date = new Temporal.PlainDate(2000, 5, 2);
-const zdt = date.toZonedDateTime({ timeZone: otherTimeZone, plainTime: datetime });
+const zdt = date.toZonedDateTime({ timeZone: "UTC", plainTime: datetime });
 
-assert.sameValue(zdt.microsecond, 0);
-assert.sameValue(zdt.nanosecond, 999);
+assert.sameValue(zdt.hour, 0);
+assert.sameValue(zdt.minute, 59);
 
 reportCompare(0, 0);

@@ -35,10 +35,8 @@
 
 
 
+const datetime = new Temporal.ZonedDateTime(3661_001_001_001n, "-00:02");
 
-const tz = TemporalHelpers.specificOffsetTimeZone(-2);
-const datetime = new Temporal.ZonedDateTime(3661_001_001_001n, tz);
-
-assert(new Temporal.PlainDateTime(1970, 1, 1, 1, 1, 1, 1, 0, 999).equals(datetime));
+assert(new Temporal.PlainDateTime(1970, 1, 1, 0, 59, 1, 1, 1, 1).equals(datetime));
 
 reportCompare(0, 0);

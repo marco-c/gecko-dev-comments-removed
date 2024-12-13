@@ -8,17 +8,17 @@
 
 
 
+const invalidStrings = [
+  "1976-11-18T15:23:30.12\u221202:00",
+  "\u2212009999-11-18T15:23:30.12",
+];
 
-TemporalHelpers.assertPlainDateTime(
-  Temporal.PlainDateTime.from("1976-11-18T15:23:30.12\u221202:00"),
-  1976, 11, "M11", 18, 15, 23, 30, 120, 0, 0,
-  "variant minus sign (offset)"
-);
-
-TemporalHelpers.assertPlainDateTime(
-  Temporal.PlainDateTime.from("\u2212009999-11-18T15:23:30.12"),
-  -9999, 11, "M11", 18, 15, 23, 30, 120, 0, 0,
-  "variant minus sign (leading minus)"
-);
+invalidStrings.forEach((arg) => {
+  assert.throws(
+    RangeError,
+    () => Temporal.PlainDateTime.from(arg),
+    `variant minus sign: ${arg}`
+  );
+});
 
 reportCompare(0, 0);
