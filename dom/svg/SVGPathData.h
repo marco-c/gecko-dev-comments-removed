@@ -27,55 +27,10 @@ namespace mozilla {
 struct SVGMark;
 enum class StyleStrokeLinecap : uint8_t;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class SVGPathData {
   friend class SVGAnimatedPathSegList;
   friend class SVGPathDataAndInfo;
+  friend class SVGPathSegListSMILType;
 
   using DrawTarget = gfx::DrawTarget;
   using Path = gfx::Path;
@@ -109,7 +64,6 @@ class SVGPathData {
   Span<const StylePathCommand> AsSpan() const { return mData._0.AsSpan(); }
   bool IsEmpty() const { return AsSpan().IsEmpty(); }
 
-  StyleSVGPathData& RawData() { return mData; }
   const StyleSVGPathData& RawData() const { return mData; }
 
   void GetMarkerPositioningData(float aZoom, nsTArray<SVGMark>* aMarks) const;
@@ -166,27 +120,12 @@ class SVGPathData {
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-  
-  
-  
-  
-  
-  
-
  protected:
   nsresult SetValueFromString(const nsACString& aValue);
 
   void Clear() { mData = {}; }
 
-  
-  
-  
-  
-  
-  
-  
-
-  nsresult AppendSeg(uint32_t aType, ...);  
+  StyleSVGPathData& RawData() { return mData; }
 
   mozilla::StyleSVGPathData mData;
 };
