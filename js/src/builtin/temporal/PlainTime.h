@@ -31,31 +31,29 @@ class PlainTimeObject : public NativeObject {
   
   
 
-  static constexpr uint32_t ISO_HOUR_SLOT = 0;
-  static constexpr uint32_t ISO_MINUTE_SLOT = 1;
-  static constexpr uint32_t ISO_SECOND_SLOT = 2;
-  static constexpr uint32_t ISO_MILLISECOND_SLOT = 3;
-  static constexpr uint32_t ISO_MICROSECOND_SLOT = 4;
-  static constexpr uint32_t ISO_NANOSECOND_SLOT = 5;
+  static constexpr uint32_t HOUR_SLOT = 0;
+  static constexpr uint32_t MINUTE_SLOT = 1;
+  static constexpr uint32_t SECOND_SLOT = 2;
+  static constexpr uint32_t MILLISECOND_SLOT = 3;
+  static constexpr uint32_t MICROSECOND_SLOT = 4;
+  static constexpr uint32_t NANOSECOND_SLOT = 5;
   static constexpr uint32_t SLOT_COUNT = 6;
 
-  int32_t isoHour() const { return getFixedSlot(ISO_HOUR_SLOT).toInt32(); }
+  int32_t hour() const { return getFixedSlot(HOUR_SLOT).toInt32(); }
 
-  int32_t isoMinute() const { return getFixedSlot(ISO_MINUTE_SLOT).toInt32(); }
+  int32_t minute() const { return getFixedSlot(MINUTE_SLOT).toInt32(); }
 
-  int32_t isoSecond() const { return getFixedSlot(ISO_SECOND_SLOT).toInt32(); }
+  int32_t second() const { return getFixedSlot(SECOND_SLOT).toInt32(); }
 
-  int32_t isoMillisecond() const {
-    return getFixedSlot(ISO_MILLISECOND_SLOT).toInt32();
+  int32_t millisecond() const {
+    return getFixedSlot(MILLISECOND_SLOT).toInt32();
   }
 
-  int32_t isoMicrosecond() const {
-    return getFixedSlot(ISO_MICROSECOND_SLOT).toInt32();
+  int32_t microsecond() const {
+    return getFixedSlot(MICROSECOND_SLOT).toInt32();
   }
 
-  int32_t isoNanosecond() const {
-    return getFixedSlot(ISO_NANOSECOND_SLOT).toInt32();
-  }
+  int32_t nanosecond() const { return getFixedSlot(NANOSECOND_SLOT).toInt32(); }
 
  private:
   static const ClassSpec classSpec_;
@@ -65,9 +63,8 @@ class PlainTimeObject : public NativeObject {
 
 
 inline PlainTime ToPlainTime(const PlainTimeObject* time) {
-  return {time->isoHour(),        time->isoMinute(),
-          time->isoSecond(),      time->isoMillisecond(),
-          time->isoMicrosecond(), time->isoNanosecond()};
+  return {time->hour(),        time->minute(),      time->second(),
+          time->millisecond(), time->microsecond(), time->nanosecond()};
 }
 
 class Increment;
@@ -148,14 +145,12 @@ bool RegulateTime(JSContext* cx, const TemporalTimeLike& time,
 
 
 
-
-int32_t CompareTemporalTime(const PlainTime& one, const PlainTime& two);
+int32_t CompareTimeRecord(const PlainTime& one, const PlainTime& two);
 
 
 
 
 TimeRecord BalanceTime(const PlainTime& time, int64_t nanoseconds);
-
 
 
 
