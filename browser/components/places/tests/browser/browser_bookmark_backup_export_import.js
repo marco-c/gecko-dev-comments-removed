@@ -7,7 +7,7 @@
 
 
 
-const BASE_URL = "http://example.com/";
+const BASE_URL = "https://example.com/";
 
 const PLACES = [
   {
