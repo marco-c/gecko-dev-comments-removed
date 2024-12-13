@@ -6,7 +6,7 @@ use std::os::raw::c_void;
 use std::ptr;
 
 use glutin::platform::windows::EGLContext;
-use webrender::{Compositor2, CompositorInputConfig};
+use webrender::{LayerCompositor, CompositorInputConfig};
 use winit::platform::windows::WindowExtWindows;
 
 use crate::WindowWrapper;
@@ -115,7 +115,7 @@ impl Drop for WrCompositor {
     }
 }
 
-impl Compositor2 for WrCompositor {
+impl LayerCompositor for WrCompositor {
     
     
     
