@@ -147,6 +147,60 @@ BOOL PathGetSiblingFilePath(LPWSTR destinationBuffer, LPCWSTR siblingFilePath,
 
 
 
+
+
+enum class UpdaterInvocation {
+  
+  
+  
+  
+  
+  First,
+  
+  
+  Second,
+  
+  
+  Unknown,
+};
+
+
+
+
+const char* getUpdaterInvocationString(UpdaterInvocation value) {
+  switch (value) {
+    case UpdaterInvocation::First:
+      return "UpdaterInvocation::First";
+    case UpdaterInvocation::Second:
+      return "UpdaterInvocation::Second";
+    case UpdaterInvocation::Unknown:
+      return "UpdaterInvocation::Unknown";
+  }
+  MOZ_ASSERT_UNREACHABLE("All enum cases should have been covered");
+}
+
+const NS_tchar* firstUpdateInvocationArg = NS_T("first");
+const NS_tchar* secondUpdateInvocationArg = NS_T("second");
+
+
+
+
+
+static UpdaterInvocation getUpdaterInvocationFromArg(const NS_tchar* argument) {
+  if (NS_tstrcmp(argument, firstUpdateInvocationArg) == 0) {
+    return UpdaterInvocation::First;
+  }
+  if (NS_tstrcmp(argument, secondUpdateInvocationArg) == 0) {
+    return UpdaterInvocation::Second;
+  }
+  return UpdaterInvocation::Unknown;
+}
+
+
+
+
+
+
 static unsigned int crc32(const unsigned char* buf, unsigned int len) {
   unsigned int crc = 0xffffffffL;
 
@@ -290,15 +344,27 @@ static bool gIsElevated = false;
 
 
 
-static const int kPatchDirIndex = 1;
-static const int kInstallDirIndex = 2;
-static const int kApplyToDirIndex = 3;
-
-static const int kWaitPidIndex = 4;
-static const int kCallbackWorkingDirIndex = 5;
 
 
-static const int kCallbackIndex = 6;
+
+
+static UpdaterInvocation gInvocation = UpdaterInvocation::Unknown;
+
+
+
+
+
+
+static const int kPatchDirIndex = 2;
+static const int kInstallDirIndex = 3;
+static const int kApplyToDirIndex = 4;
+static const int kWhichInvocationIndex = 5;
+
+static const int kWaitPidIndex = 6;
+static const int kCallbackWorkingDirIndex = 7;
+
+
+static const int kCallbackIndex = 8;
 
 
 
@@ -3006,6 +3072,16 @@ bool ShouldRunSilently(int argc, NS_tchar** argv) {
 }
 
 int NS_main(int argc, NS_tchar** argv) {
+  
+  
+  
+  int suiArgc = argc;
+  mozilla::UniquePtr<const NS_tchar*[]> suiArgv =
+      mozilla::MakeUnique<const NS_tchar*[]>(suiArgc);
+  for (int argIndex = 0; argIndex < suiArgc; argIndex++) {
+    suiArgv.get()[argIndex] = argv[argIndex];
+  }
+
 #ifdef MOZ_MAINTENANCE_SERVICE
   sUsingService = EnvHasValue("MOZ_USING_SERVICE");
   putenv(const_cast<char*>("MOZ_USING_SERVICE="));
@@ -3098,10 +3174,12 @@ int NS_main(int argc, NS_tchar** argv) {
     
     
     
+    
     if (argc < kWaitPidIndex) {
       fprintf(stderr,
-              "Usage: updater patch-dir install-dir apply-to-dir [wait-pid "
-              "[callback-working-dir callback-path args...]]\n");
+              "Usage: updater arg-version patch-dir install-dir apply-to-dir "
+              "which-invocation [wait-pid [callback-working-dir callback-path "
+              "args...]]\n");
 #ifdef XP_MACOSX
       if (isElevated) {
         freeArguments(argc, argv);
@@ -3122,7 +3200,26 @@ int NS_main(int argc, NS_tchar** argv) {
     }
 #endif
 
-  }  
+    gInvocation = getUpdaterInvocationFromArg(argv[kWhichInvocationIndex]);
+    switch (gInvocation) {
+      case UpdaterInvocation::Unknown:
+        fprintf(stderr, "Invalid which-invocation value: " LOG_S "\n",
+                argv[kWhichInvocationIndex]);
+        return 1;
+      case UpdaterInvocation::First:
+        suiArgv.get()[kWhichInvocationIndex] = secondUpdateInvocationArg;
+        break;
+      default:
+        
+        
+        
+        suiArgv.get()[kWhichInvocationIndex] = NS_T("third???");
+        break;
+    }
+  } else { 
+    
+    gInvocation = UpdaterInvocation::First;
+  }
 
   
   NS_tstrncpy(gPatchDirPath, argv[kPatchDirIndex], MAXPATHLEN);
@@ -3426,6 +3523,7 @@ int NS_main(int argc, NS_tchar** argv) {
     LOG(("useService=%s", useService ? "true" : "false"));
 #endif
     LOG(("gIsElevated=%s", gIsElevated ? "true" : "false"));
+    LOG(("gInvocation=%s", getUpdaterInvocationString(gInvocation)));
 
     if (!WriteStatusFile("applying")) {
       LOG(("failed setting status to 'applying'"));
@@ -3606,7 +3704,7 @@ int NS_main(int argc, NS_tchar** argv) {
            (noServiceFallback || forceServiceFallback))) {
         LOG(("Can't open lock file - seems like we need elevation"));
 
-        auto cmdLine = mozilla::MakeCommandLine(argc - 1, argv + 1);
+        auto cmdLine = mozilla::MakeCommandLine(suiArgc - 1, suiArgv.get() + 1);
         if (!cmdLine) {
           LOG(("Failed to make command line! Exiting"));
           output_finish();
@@ -3697,18 +3795,18 @@ int NS_main(int argc, NS_tchar** argv) {
           WriteStatusFile(SERVICE_UPDATE_STATUS_UNCHANGED);
 
           int serviceArgc = argc;
-          if (forceServiceFallback && serviceArgc > 2) {
+          if (forceServiceFallback && serviceArgc > kPatchDirIndex) {
             
             
             
             
-            serviceArgc = 2;
+            serviceArgc = kPatchDirIndex + 1;
           }
 
           
           
-          DWORD ret =
-              LaunchServiceSoftwareUpdateCommand(serviceArgc, (LPCWSTR*)argv);
+          DWORD ret = LaunchServiceSoftwareUpdateCommand(
+              serviceArgc, (LPCWSTR*)suiArgv.get());
           useService = (ret == ERROR_SUCCESS);
           
           if (useService) {
