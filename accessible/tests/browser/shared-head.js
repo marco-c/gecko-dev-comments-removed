@@ -463,7 +463,7 @@ const CacheDomain = {
 };
 
 function accessibleTask(doc, task, options = {}) {
-  return async function () {
+  const wrapped = async function () {
     let cacheDomains;
     if (!("cacheDomains" in options)) {
       cacheDomains = CacheDomain.All;
@@ -615,6 +615,16 @@ function accessibleTask(doc, task, options = {}) {
       await runPython(`__reset__`);
     }
   };
+  
+  
+  
+  
+  
+  
+  
+  
+  Object.defineProperty(wrapped, "name", { value: task.name });
+  return wrapped;
 }
 
 
