@@ -2548,8 +2548,7 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
 
 
 
-static bool RestrictPaddingInflationInInline(
-    const nsIFrame* aFrame) {
+static bool RestrictPaddingInflationInInline(const nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
   if (aFrame->Style()->GetPseudoType() != PseudoStyleType::scrolledContent) {
     
@@ -2598,7 +2597,9 @@ Maybe<nsRect> nsBlockFrame::GetLineFrameInFlowBounds(
   
   
   
-  if (aLineChildFrame.IsPlaceholderFrame() || aLineChildFrame.IsLineParticipant()) {
+  
+  if (aLineChildFrame.IsPlaceholderFrame() ||
+      aLineChildFrame.IsLineParticipant()) {
     return Nothing{};
   }
   if (aLine.IsInline()) {
