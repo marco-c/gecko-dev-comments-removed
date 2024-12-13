@@ -112,7 +112,7 @@ class nsCaret final : public nsISelectionListener {
 
 
 
-
+  nsIFrame* GetPaintGeometry();
   nsIFrame* GetPaintGeometry(nsRect* aRect);
 
   
