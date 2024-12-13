@@ -196,6 +196,11 @@ int64_t MakeDate(const ISODateTime& dateTime);
 
 
 
+std::string_view CalendarIdentifier(const CalendarValue& calendar);
+
+
+
+
 
 
 
@@ -215,17 +220,6 @@ bool ToTemporalCalendar(JSContext* cx,
 bool GetTemporalCalendarWithISODefault(JSContext* cx,
                                        JS::Handle<JSObject*> item,
                                        JS::MutableHandle<CalendarValue> result);
-
-
-
-
-std::string_view ToTemporalCalendarIdentifier(const CalendarValue& calendar);
-
-
-
-
-JSLinearString* ToTemporalCalendarIdentifier(
-    JSContext* cx, JS::Handle<CalendarValue> calendar);
 
 
 
