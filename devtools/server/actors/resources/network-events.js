@@ -242,10 +242,6 @@ class NetworkEventWatcher {
 
   shouldIgnoreChannel(channel) {
     
-    if (channel instanceof Ci.nsIDataChannel) {
-      return true;
-    }
-    
     const filters = { sessionContext: this.watcherActor.sessionContext };
     if (!lazy.NetworkUtils.matchRequest(channel, filters)) {
       return true;
@@ -307,7 +303,6 @@ class NetworkEventWatcher {
       innerWindowId: resource.innerWindowId,
       resourceId: resource.resourceId,
       isBlocked,
-      isFileRequest: resource.isFileRequest,
       receivedUpdates: [],
       resourceUpdates: {
         
@@ -387,11 +382,10 @@ class NetworkEventWatcher {
     resourceUpdates[`${updateResource.updateType}Available`] = true;
     receivedUpdates.push(updateResource.updateType);
 
-    const isComplete = networkEvent.isFileRequest
-      ? receivedUpdates.includes("responseStart")
-      : receivedUpdates.includes("eventTimings") &&
-        receivedUpdates.includes("responseContent") &&
-        receivedUpdates.includes("securityInfo");
+    const isComplete =
+      receivedUpdates.includes("eventTimings") &&
+      receivedUpdates.includes("responseContent") &&
+      receivedUpdates.includes("securityInfo");
 
     if (isComplete) {
       this._emitUpdate(networkEvent);
