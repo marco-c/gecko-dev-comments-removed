@@ -55,6 +55,8 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
     return imgr.forget().downcast<nsMemoryReporterManager>();
   }
 
+  typedef AutoTArray<nsCOMPtr<nsIMemoryReporter>, 32> StrongReportersArray;
+
   typedef nsTHashMap<nsRefPtrHashKey<nsIMemoryReporter>, bool>
       StrongReportersTable;
   typedef nsTHashMap<nsPtrHashKey<nsIMemoryReporter>, bool> WeakReportersTable;
@@ -236,12 +238,25 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
   mozilla::Mutex mMutex;
   bool mIsRegistrationBlocked MOZ_GUARDED_BY(mMutex);
 
-  StrongReportersTable* mStrongReporters MOZ_GUARDED_BY(mMutex);
-  WeakReportersTable* mWeakReporters MOZ_GUARDED_BY(mMutex);
+  
+  
+  
+  mozilla::UniquePtr<StrongReportersArray> mStrongEternalReporters
+      MOZ_GUARDED_BY(mMutex);
 
   
-  StrongReportersTable* mSavedStrongReporters MOZ_GUARDED_BY(mMutex);
-  WeakReportersTable* mSavedWeakReporters MOZ_GUARDED_BY(mMutex);
+  
+  mozilla::UniquePtr<StrongReportersTable> mStrongReporters
+      MOZ_GUARDED_BY(mMutex);
+  mozilla::UniquePtr<WeakReportersTable> mWeakReporters MOZ_GUARDED_BY(mMutex);
+
+  
+  mozilla::UniquePtr<StrongReportersArray> mSavedStrongEternalReporters
+      MOZ_GUARDED_BY(mMutex);
+  mozilla::UniquePtr<StrongReportersTable> mSavedStrongReporters
+      MOZ_GUARDED_BY(mMutex);
+  mozilla::UniquePtr<WeakReportersTable> mSavedWeakReporters
+      MOZ_GUARDED_BY(mMutex);
 
   uint32_t mNextGeneration;  
 
