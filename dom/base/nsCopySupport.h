@@ -23,7 +23,6 @@ class nsILoadContext;
 namespace mozilla {
 class PresShell;
 namespace dom {
-class DataTransfer;
 class Document;
 class Selection;
 class WindowContext;
@@ -110,16 +109,12 @@ class nsCopySupport {
 
 
 
-
-
-
-
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static bool FireClipboardEvent(
       mozilla::EventMessage aEventMessage,
       mozilla::Maybe<nsIClipboard::ClipboardType> aClipboardType,
       mozilla::PresShell* aPresShell, mozilla::dom::Selection* aSelection,
-      mozilla::dom::DataTransfer* aDataTransfer, bool* aActionTaken = nullptr);
+      bool* aActionTaken = nullptr);
 };
 
 #endif

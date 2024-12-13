@@ -127,11 +127,10 @@ nsresult PasteNoFormattingCommand::DoCommand(Command aCommand,
     return NS_ERROR_FAILURE;
   }
   
-  nsresult rv =
-      MOZ_KnownLive(htmlEditor)
-          ->PasteNoFormattingAsAction(nsIClipboard::kGlobalClipboard,
-                                      EditorBase::DispatchPasteEvent::Yes,
-                                      nullptr, aPrincipal);
+  nsresult rv = MOZ_KnownLive(htmlEditor)
+                    ->PasteNoFormattingAsAction(
+                        nsIClipboard::kGlobalClipboard,
+                        EditorBase::DispatchPasteEvent::Yes, aPrincipal);
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rv),
       "HTMLEditor::PasteNoFormattingAsAction(DispatchPasteEvent::Yes) failed");

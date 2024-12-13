@@ -108,7 +108,6 @@ class EditorBase : public nsIEditor,
 
 
 
-  using DataTransfer = dom::DataTransfer;
   using Document = dom::Document;
   using Element = dom::Element;
   using InterlinePosition = dom::Selection::InterlinePosition;
@@ -241,14 +240,6 @@ class EditorBase : public nsIEditor,
     Selection* selection = GetSelection(SelectionType::eNormal);
     return selection ? selection->GetAncestorLimiter() : nullptr;
   }
-
-  
-
-
-
-  already_AddRefed<DataTransfer> CreateDataTransferForPaste(
-      EventMessage aEventMessage,
-      nsIClipboard::ClipboardType aClipboardType) const;
 
   
 
@@ -765,14 +756,10 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
   enum class DispatchPasteEvent { No, Yes };
   MOZ_CAN_RUN_SCRIPT nsresult
   PasteAsAction(nsIClipboard::ClipboardType aClipboardType,
                 DispatchPasteEvent aDispatchPasteEvent,
-                DataTransfer* aDataTransfer = nullptr,
                 nsIPrincipal* aPrincipal = nullptr);
 
   
@@ -804,13 +791,9 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
   MOZ_CAN_RUN_SCRIPT nsresult
   PasteAsQuotationAsAction(nsIClipboard::ClipboardType aClipboardType,
                            DispatchPasteEvent aDispatchPasteEvent,
-                           DataTransfer* aDataTransfer = nullptr,
                            nsIPrincipal* aPrincipal = nullptr);
 
   
@@ -1168,7 +1151,7 @@ class EditorBase : public nsIEditor,
 
 
 
-    void InitializeDataTransfer(DataTransfer* aDataTransfer);
+    void InitializeDataTransfer(dom::DataTransfer* aDataTransfer);
     
 
 
@@ -1185,9 +1168,9 @@ class EditorBase : public nsIEditor,
 
 
     void InitializeDataTransferWithClipboard(
-        SettingDataTransfer aSettingDataTransfer, DataTransfer* aDataTransfer,
+        SettingDataTransfer aSettingDataTransfer,
         nsIClipboard::ClipboardType aClipboardType);
-    DataTransfer* GetDataTransfer() const { return mDataTransfer; }
+    dom::DataTransfer* GetDataTransfer() const { return mDataTransfer; }
 
     
 
@@ -1437,7 +1420,7 @@ class EditorBase : public nsIEditor,
     nsString mData;
 
     
-    RefPtr<DataTransfer> mDataTransfer;
+    RefPtr<dom::DataTransfer> mDataTransfer;
 
     
     OwningNonNullStaticRangeArray mTargetRanges;
@@ -1558,10 +1541,6 @@ class EditorBase : public nsIEditor,
     return mEditActionData->IsAborted();
   }
 
-  nsresult GetDataFromDataTransferOrClipboard(
-      DataTransfer* aDataTransfer, nsITransferable* aTransferable,
-      nsIClipboard::ClipboardType aClipboardType) const;
-
   
 
 
@@ -1603,7 +1582,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  DataTransfer* GetInputEventDataTransfer() const {
+  dom::DataTransfer* GetInputEventDataTransfer() const {
     return mEditActionData ? mEditActionData->GetDataTransfer() : nullptr;
   }
 
@@ -2579,7 +2558,7 @@ class EditorBase : public nsIEditor,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult
   InsertDroppedDataTransferAsAction(AutoEditActionDataSetter& aEditActionData,
-                                    DataTransfer& aDataTransfer,
+                                    dom::DataTransfer& aDataTransfer,
                                     const EditorDOMPoint& aDroppedAt,
                                     nsIPrincipal* aSourcePrincipal) = 0;
 
@@ -2739,8 +2718,7 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<ClipboardEventResult, nsresult>
   DispatchClipboardEventAndUpdateClipboard(
       EventMessage aEventMessage,
-      mozilla::Maybe<nsIClipboard::ClipboardType> aClipboardType,
-      DataTransfer* aDataTransfer = nullptr);
+      mozilla::Maybe<nsIClipboard::ClipboardType> aClipboardType);
 
   
 
@@ -2748,8 +2726,7 @@ class EditorBase : public nsIEditor,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult HandlePaste(
       AutoEditActionDataSetter& aEditActionData,
-      nsIClipboard::ClipboardType aClipboardType,
-      DataTransfer* aDataTransfer) = 0;
+      nsIClipboard::ClipboardType aClipboardType) = 0;
 
   
 
@@ -2757,8 +2734,7 @@ class EditorBase : public nsIEditor,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult HandlePasteAsQuotation(
       AutoEditActionDataSetter& aEditActionData,
-      nsIClipboard::ClipboardType aClipboardType,
-      DataTransfer* aDataTransfer) = 0;
+      nsIClipboard::ClipboardType aClipboardType) = 0;
 
   
 
@@ -2837,8 +2813,6 @@ class EditorBase : public nsIEditor,
         EditorBase& aEditorBase, EditSubAction aEditSubAction,
         nsIEditor::EDirection aDirection, ErrorResult& aRv)
         : mEditorBase(aEditorBase), mIsTopLevel(true) {
-      
-      
       
       
       
@@ -3008,7 +2982,6 @@ class EditorBase : public nsIEditor,
   friend class CaretPoint;              
                                         
   friend class CompositionTransaction;  
-                                        
                                         
                                         
   friend class DeleteNodeTransaction;   

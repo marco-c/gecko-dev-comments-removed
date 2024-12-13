@@ -245,13 +245,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
   MOZ_CAN_RUN_SCRIPT nsresult
   PasteNoFormattingAsAction(nsIClipboard::ClipboardType aClipboardType,
                             DispatchPasteEvent aDispatchPasteEvent,
-                            DataTransfer* aDataTransfer = nullptr,
                             nsIPrincipal* aPrincipal = nullptr);
 
   bool CanPasteTransferable(nsITransferable* aTransferable) final;
@@ -1100,8 +1096,9 @@ class HTMLEditor final : public EditorBase,
                    SelectionHandling aSelectionHandling) final;
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertDroppedDataTransferAsAction(
-      AutoEditActionDataSetter& aEditActionData, DataTransfer& aDataTransfer,
-      const EditorDOMPoint& aDroppedAt, nsIPrincipal* aSourcePrincipal) final;
+      AutoEditActionDataSetter& aEditActionData,
+      dom::DataTransfer& aDataTransfer, const EditorDOMPoint& aDroppedAt,
+      nsIPrincipal* aSourcePrincipal) final;
 
   
 
@@ -3138,12 +3135,10 @@ class HTMLEditor final : public EditorBase,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   HandlePaste(AutoEditActionDataSetter& aEditActionData,
-              nsIClipboard::ClipboardType aClipboardType,
-              DataTransfer* aDataTransfer) final;
+              nsIClipboard::ClipboardType aClipboardType) final;
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   HandlePasteAsQuotation(AutoEditActionDataSetter& aEditActionData,
-                         nsIClipboard::ClipboardType aClipboardType,
-                         DataTransfer* aDataTransfer) final;
+                         nsIClipboard::ClipboardType aClipboardType) final;
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   HandlePasteTransferable(AutoEditActionDataSetter& aEditActionData,
                           nsITransferable& aTransferable) final;
@@ -3157,9 +3152,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult
-  PasteInternal(nsIClipboard::ClipboardType aClipboardType,
-                DataTransfer* aDataTransfer, const Element& aEditingHost);
+  MOZ_CAN_RUN_SCRIPT nsresult PasteInternal(
+      nsIClipboard::ClipboardType aClipboardType, const Element& aEditingHost);
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   InsertWithQuotationsAsSubAction(const nsAString& aQuotedText) final;
@@ -3439,7 +3433,7 @@ class HTMLEditor final : public EditorBase,
     RefPtr<dom::BlobImpl> mBlob;
     RefPtr<HTMLEditor> mHTMLEditor;
     RefPtr<const Element> mEditingHost;
-    RefPtr<DataTransfer> mDataTransfer;
+    RefPtr<dom::DataTransfer> mDataTransfer;
     EditorDOMPoint mPointToInsert;
     EditAction mEditAction;
     SafeToInsertData mSafeToInsertData;
@@ -3741,8 +3735,7 @@ class HTMLEditor final : public EditorBase,
 
   
   MOZ_CAN_RUN_SCRIPT nsresult PasteAsPlaintextQuotation(
-      nsIClipboard::ClipboardType aSelectionType, DataTransfer* aDataTransfer,
-      const Element& aEditingHost);
+      nsIClipboard::ClipboardType aSelectionType, const Element& aEditingHost);
 
   enum class AddCites { No, Yes };
   
@@ -3788,13 +3781,13 @@ class HTMLEditor final : public EditorBase,
 
 
   MOZ_CAN_RUN_SCRIPT nsresult InsertFromDataTransfer(
-      const DataTransfer* aDataTransfer, uint32_t aIndex,
+      const dom::DataTransfer* aDataTransfer, uint32_t aIndex,
       nsIPrincipal* aSourcePrincipal, const EditorDOMPoint& aDroppedAt,
       DeleteSelectedContent aDeleteSelectedContent,
       const Element& aEditingHost);
 
-  static HavePrivateHTMLFlavor DataTransferOrClipboardHasPrivateHTMLFlavor(
-      DataTransfer* aDataTransfer, nsIClipboard* clipboard);
+  static HavePrivateHTMLFlavor ClipboardHasPrivateHTMLFlavor(
+      nsIClipboard* clipboard);
 
   
 

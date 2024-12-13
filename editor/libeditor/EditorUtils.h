@@ -12,7 +12,6 @@
 #include "mozilla/IntegerRange.h"       
 #include "mozilla/Maybe.h"              
 #include "mozilla/Result.h"             
-#include "mozilla/dom/DataTransfer.h"   
 #include "mozilla/dom/Element.h"        
 #include "mozilla/dom/HTMLBRElement.h"  
 #include "mozilla/dom/Selection.h"      
@@ -342,43 +341,6 @@ class MOZ_STACK_CLASS AutoSelectionRangeArray final {
   }
 
   AutoTArray<mozilla::OwningNonNull<nsRange>, 8> mRanges;
-};
-
-
-
-
-
-class MOZ_STACK_CLASS AutoTrackDataTransferForPaste {
- public:
-  MOZ_CAN_RUN_SCRIPT AutoTrackDataTransferForPaste(
-      const EditorBase& aEditorBase,
-      RefPtr<dom::DataTransfer>& aDataTransferForPaste)
-      : mEditorBase(aEditorBase),
-        mDataTransferForPaste(aDataTransferForPaste.get_address()) {
-    mEditorBase.GetDocument()->ClearClipboardCopyTriggered();
-  }
-
-  ~AutoTrackDataTransferForPaste() { FlushAndStopTracking(); }
-
- private:
-  void FlushAndStopTracking() {
-    if (!mDataTransferForPaste ||
-        !mEditorBase.GetDocument()->IsClipboardCopyTriggered()) {
-      return;
-    }
-    
-    
-    if (*mDataTransferForPaste) {
-      (*mDataTransferForPaste)->ClearForPaste();
-    }
-    
-    
-    *mDataTransferForPaste = nullptr;
-    mDataTransferForPaste = nullptr;
-  }
-
-  MOZ_KNOWN_LIVE const EditorBase& mEditorBase;
-  RefPtr<dom::DataTransfer>* mDataTransferForPaste;
 };
 
 class EditorUtils final {
