@@ -5,6 +5,9 @@
 
 
 
+
+
+
 var actual = "" + function ([arguments]) {return arguments;};
 compareSource('function ([arguments]) {return arguments;}', actual, "part 1");
 

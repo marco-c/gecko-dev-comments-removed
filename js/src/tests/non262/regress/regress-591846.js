@@ -4,6 +4,10 @@
 
 
 
+
+
+
+
 /x/.test('x');
 
 var d = Object.getOwnPropertyDescriptor(RegExp, "leftContext");

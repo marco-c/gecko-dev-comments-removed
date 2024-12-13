@@ -1,6 +1,9 @@
 
 
 
+
+
+
 function f(reportCompare) {
     if (typeof clear === 'function')
         clear(this);

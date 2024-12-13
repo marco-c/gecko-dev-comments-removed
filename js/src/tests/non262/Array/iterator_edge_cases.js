@@ -1,5 +1,8 @@
 
 
+
+
+
 function TestArrayIteratorPrototypeConfusion() {
     var iter = [][Symbol.iterator]();
     assertThrowsInstanceOfWithMessage(
