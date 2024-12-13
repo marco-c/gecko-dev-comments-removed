@@ -24,12 +24,8 @@ namespace mozilla {
 namespace net {
 
 
-#define NS_DNSANDCONNECTSOCKET_IID                   \
-  {                                                  \
-    0x8d411b53, 0x54bc, 0x4a99, {                    \
-      0x8b, 0x78, 0xff, 0x12, 0x5e, 0xab, 0x15, 0x64 \
-    }                                                \
-  }
+#define NS_DNSANDCONNECTSOCKET_IID \
+  {0x8d411b53, 0x54bc, 0x4a99, {0x8b, 0x78, 0xff, 0x12, 0x5e, 0xab, 0x15, 0x64}}
 
 class PendingTransactionInfo;
 class ConnectionEntry;
@@ -183,6 +179,10 @@ class DnsAndConnectSocket final : public nsIOutputStreamCallback,
     nsresult OnLookupComplete(DnsAndConnectSocket* dnsAndSock,
                               nsIDNSRecord* rec, nsresult status);
     nsresult CheckConnectedResult(DnsAndConnectSocket* dnsAndSock);
+    
+    
+    
+    bool ToggleIpFamilyFlagsIfRetryEnabled();
 
    protected:
     explicit TransportSetup(bool isBackup);

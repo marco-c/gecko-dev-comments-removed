@@ -522,6 +522,24 @@ DnsAndConnectSocket::OnOutputStreamReady(nsIAsyncOutputStream* out) {
     return NS_ERROR_UNEXPECTED;
   }
 
+  nsresult socketStatus = out->StreamStatus();
+  if (StaticPrefs::network_http_retry_with_another_half_open() &&
+      NS_FAILED(socketStatus) && socketStatus != NS_BASE_STREAM_WOULD_BLOCK) {
+    if (isPrimary) {
+      if (mBackupTransport.mState ==
+          TransportSetup::TransportSetupState::CONNECTING) {
+        mPrimaryTransport.Abandon();
+        return NS_OK;
+      }
+    } else if (IsBackup(out)) {
+      if (mPrimaryTransport.mState ==
+          TransportSetup::TransportSetupState::CONNECTING) {
+        mBackupTransport.Abandon();
+        return NS_OK;
+      }
+    }
+  }
+
   
   
   
@@ -942,6 +960,40 @@ void DnsAndConnectSocket::TransportSetup::CloseAll() {
   mConnectedOK = false;
 }
 
+bool DnsAndConnectSocket::TransportSetup::ToggleIpFamilyFlagsIfRetryEnabled() {
+  if (!mRetryWithDifferentIPFamily) {
+    return false;
+  }
+
+  LOG(
+      ("DnsAndConnectSocket::TransportSetup::ToggleIpFamilyFlagsIfRetryEnabled"
+       "[this=%p dnsFlags=%u]",
+       this, mDnsFlags));
+  mRetryWithDifferentIPFamily = false;
+
+  
+  
+  mDnsFlags ^= (nsIDNSService::RESOLVE_DISABLE_IPV6 |
+                nsIDNSService::RESOLVE_DISABLE_IPV4);
+
+  if ((mDnsFlags & nsIDNSService::RESOLVE_DISABLE_IPV6) &&
+      (mDnsFlags & nsIDNSService::RESOLVE_DISABLE_IPV4)) {
+    
+    mDnsFlags &= ~(nsIDNSService::RESOLVE_DISABLE_IPV6 |
+                   nsIDNSService::RESOLVE_DISABLE_IPV4);
+    LOG(
+        ("DnsAndConnectSocket::TransportSetup::"
+         "ToggleIpFamilyFlagsIfRetryEnabled "
+         "[this=%p] both v6 and v4 are disabled",
+         this));
+    MOZ_DIAGNOSTIC_CRASH("both v6 and v4 addresses are disabled");
+  }
+
+  
+  mResetFamilyPreference = true;
+  return true;
+}
+
 nsresult DnsAndConnectSocket::TransportSetup::CheckConnectedResult(
     DnsAndConnectSocket* dnsAndSock) {
   mState = TransportSetup::TransportSetupState::CONNECTING_DONE;
@@ -957,11 +1009,7 @@ nsresult DnsAndConnectSocket::TransportSetup::CheckConnectedResult(
   }
 
   bool retry = false;
-  if (mRetryWithDifferentIPFamily) {
-    mRetryWithDifferentIPFamily = false;
-    mDnsFlags ^= (nsIDNSService::RESOLVE_DISABLE_IPV6 |
-                  nsIDNSService::RESOLVE_DISABLE_IPV4);
-    mResetFamilyPreference = true;
+  if (ToggleIpFamilyFlagsIfRetryEnabled()) {
     retry = true;
   } else if (!(mDnsFlags & nsIDNSService::RESOLVE_DISABLE_TRR)) {
     bool trrEnabled;
@@ -984,6 +1032,7 @@ nsresult DnsAndConnectSocket::TransportSetup::CheckConnectedResult(
   }
 
   if (retry) {
+    LOG(("  retry DNS, mDnsFlags=%u", mDnsFlags));
     CloseAll();
     mState = TransportSetup::TransportSetupState::RETRY_RESOLVING;
     nsresult rv = ResolveHost(dnsAndSock);
@@ -1307,11 +1356,7 @@ bool DnsAndConnectSocket::TransportSetup::ShouldRetryDNS() {
     return true;
   }
 
-  if (mRetryWithDifferentIPFamily) {
-    mRetryWithDifferentIPFamily = false;
-    mDnsFlags ^= (nsIDNSService::RESOLVE_DISABLE_IPV6 |
-                  nsIDNSService::RESOLVE_DISABLE_IPV4);
-    mResetFamilyPreference = true;
+  if (ToggleIpFamilyFlagsIfRetryEnabled()) {
     return true;
   }
   return false;
