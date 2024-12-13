@@ -14,6 +14,8 @@
 
 
 
+
+
 const getListView = (win = window) => {
   const { panel } = win.gUnifiedExtensions;
   ok(panel, "expected panel to be created");
@@ -196,4 +198,44 @@ const getMessageBars = (win = window) => {
   return panel.querySelectorAll(
     "#unified-extensions-messages-container > moz-message-bar"
   );
+};
+
+const getBlockKey = ({ id, version }) => {
+  if (!id || !version) {
+    
+    throw new Error(
+      "getBlockKey requires id and version to be defined and non-empty"
+    );
+  }
+  return `${id}:${version}`;
+};
+
+const loadBlocklistRawData = async stash => {
+  const { AddonTestUtils } = ChromeUtils.importESModule(
+    "resource://testing-common/AddonTestUtils.sys.mjs"
+  );
+  await AddonTestUtils.loadBlocklistRawData({
+    extensionsMLBF: [
+      {
+        stash: {
+          blocked: stash.blocked?.map(getBlockKey) ?? [],
+          softblocked: stash.softblocked?.map(getBlockKey) ?? [],
+          unblocked: stash.unblocked?.map(getBlockKey) ?? [],
+        },
+        stash_time: 0,
+      },
+    ],
+  });
+  let needsCleanupBlocklist = true;
+  const cleanupBlocklist = async () => {
+    if (!needsCleanupBlocklist) {
+      return;
+    }
+    await AddonTestUtils.loadBlocklistRawData({
+      extensionsMLBF: [],
+    });
+    needsCleanupBlocklist = false;
+  };
+  registerCleanupFunction(cleanupBlocklist);
+  return cleanupBlocklist;
 };
