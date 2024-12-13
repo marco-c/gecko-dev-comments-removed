@@ -31,7 +31,7 @@ class PlainTimeObject : public NativeObject {
   
 
 
-  PlainTime time() const {
+  Time time() const {
     auto packed = PackedTime{mozilla::BitwiseCast<uint64_t>(
         getFixedSlot(PACKED_TIME_SLOT).toDouble())};
     return PackedTime::unpack(packed);
@@ -50,7 +50,7 @@ enum class TemporalUnit;
 
 
 
-bool IsValidTime(const PlainTime& time);
+bool IsValidTime(const Time& time);
 
 
 
@@ -62,7 +62,7 @@ bool IsValidTime(double hour, double minute, double second, double millisecond,
 
 
 
-bool ThrowIfInvalidTime(JSContext* cx, const PlainTime& time);
+bool ThrowIfInvalidTime(JSContext* cx, const Time& time);
 
 
 
@@ -74,30 +74,27 @@ bool ThrowIfInvalidTime(JSContext* cx, double hour, double minute,
 
 
 
-PlainTimeObject* CreateTemporalTime(JSContext* cx, const PlainTime& time);
+PlainTimeObject* CreateTemporalTime(JSContext* cx, const Time& time);
 
 
 
 
-bool ToTemporalTime(JSContext* cx, JS::Handle<JS::Value> item,
-                    PlainTime* result);
+bool ToTemporalTime(JSContext* cx, JS::Handle<JS::Value> item, Time* result);
 
 struct TimeRecord final {
   int64_t days = 0;
-  PlainTime time;
+  Time time;
 };
 
 
 
 
-TimeRecord AddTime(const PlainTime& time,
-                   const NormalizedTimeDuration& duration);
+TimeRecord AddTime(const Time& time, const NormalizedTimeDuration& duration);
 
 
 
 
-NormalizedTimeDuration DifferenceTime(const PlainTime& time1,
-                                      const PlainTime& time2);
+NormalizedTimeDuration DifferenceTime(const Time& time1, const Time& time2);
 
 struct TemporalTimeLike final {
   double hour = 0;
@@ -113,23 +110,23 @@ struct TemporalTimeLike final {
 
 
 bool RegulateTime(JSContext* cx, const TemporalTimeLike& time,
-                  TemporalOverflow overflow, PlainTime* result);
+                  TemporalOverflow overflow, Time* result);
 
 
 
 
-int32_t CompareTimeRecord(const PlainTime& one, const PlainTime& two);
+int32_t CompareTimeRecord(const Time& one, const Time& two);
 
 
 
 
-TimeRecord BalanceTime(const PlainTime& time, int64_t nanoseconds);
+TimeRecord BalanceTime(const Time& time, int64_t nanoseconds);
 
 
 
 
-TimeRecord RoundTime(const PlainTime& time, Increment increment,
-                     TemporalUnit unit, TemporalRoundingMode roundingMode);
+TimeRecord RoundTime(const Time& time, Increment increment, TemporalUnit unit,
+                     TemporalRoundingMode roundingMode);
 
 } 
 

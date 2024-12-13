@@ -307,10 +307,10 @@ class MutableWrappedPtrOperations<temporal::CalendarFields, Wrapper>
 
 namespace js::temporal {
 
-class PlainDateWithCalendar;
-class PlainDateTimeWithCalendar;
-class PlainMonthDayWithCalendar;
-class PlainYearMonthWithCalendar;
+class PlainDate;
+class PlainDateTime;
+class PlainMonthDay;
+class PlainYearMonth;
 
 
 
@@ -354,26 +354,25 @@ CalendarFields CalendarMergeFields(const CalendarValue& calendar,
 
 
 
-bool ISODateToFields(JSContext* cx, Handle<PlainDateWithCalendar> date,
+bool ISODateToFields(JSContext* cx, Handle<PlainDate> date,
                      MutableHandle<CalendarFields> result);
 
 
 
 
-bool ISODateToFields(JSContext* cx, Handle<PlainDateTimeWithCalendar> dateTime,
+bool ISODateToFields(JSContext* cx, Handle<PlainDateTime> dateTime,
                      MutableHandle<CalendarFields> result);
 
 
 
 
-bool ISODateToFields(JSContext* cx, Handle<PlainMonthDayWithCalendar> monthDay,
+bool ISODateToFields(JSContext* cx, Handle<PlainMonthDay> monthDay,
                      MutableHandle<CalendarFields> result);
 
 
 
 
-bool ISODateToFields(JSContext* cx,
-                     Handle<PlainYearMonthWithCalendar> yearMonth,
+bool ISODateToFields(JSContext* cx, Handle<PlainYearMonth> yearMonth,
                      MutableHandle<CalendarFields> result);
 
 } 

@@ -174,7 +174,7 @@ static bool SystemUTCEpochNanoseconds(JSContext* cx, Instant* result) {
 
 
 static bool SystemDateTime(JSContext* cx, Handle<Value> temporalTimeZoneLike,
-                           PlainDateTime* dateTime) {
+                           ISODateTime* dateTime) {
   
   Rooted<TimeZoneValue> timeZone(cx);
   if (temporalTimeZoneLike.isUndefined()) {
@@ -243,7 +243,7 @@ static bool Temporal_Now_plainDateTimeISO(JSContext* cx, unsigned argc,
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  PlainDateTime dateTime;
+  ISODateTime dateTime;
   if (!SystemDateTime(cx, args.get(0), &dateTime)) {
     return false;
   }
@@ -302,7 +302,7 @@ static bool Temporal_Now_plainDateISO(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  PlainDateTime dateTime;
+  ISODateTime dateTime;
   if (!SystemDateTime(cx, args.get(0), &dateTime)) {
     return false;
   }
@@ -325,7 +325,7 @@ static bool Temporal_Now_plainTimeISO(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  PlainDateTime dateTime;
+  ISODateTime dateTime;
   if (!SystemDateTime(cx, args.get(0), &dateTime)) {
     return false;
   }

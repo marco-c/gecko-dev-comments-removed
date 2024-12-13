@@ -314,7 +314,7 @@ BigInt* js::temporal::ToEpochNanoseconds(JSContext* cx,
 
 
 
-Instant js::temporal::GetUTCEpochNanoseconds(const PlainDateTime& dateTime) {
+Instant js::temporal::GetUTCEpochNanoseconds(const ISODateTime& dateTime) {
   MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
 
   const auto& [date, time] = dateTime;
@@ -335,7 +335,7 @@ Instant js::temporal::GetUTCEpochNanoseconds(const PlainDateTime& dateTime) {
 
 
 Instant js::temporal::GetUTCEpochNanoseconds(
-    const PlainDateTime& dateTime, const InstantSpan& offsetNanoseconds) {
+    const ISODateTime& dateTime, const InstantSpan& offsetNanoseconds) {
   MOZ_ASSERT(offsetNanoseconds.abs() <
              InstantSpan::fromNanoseconds(ToNanoseconds(TemporalUnit::Day)));
 
@@ -456,7 +456,7 @@ static bool ToTemporalInstant(JSContext* cx, Handle<Value> item,
   Rooted<JSString*> string(cx, primitiveValue.toString());
 
   
-  PlainDateTime dateTime;
+  ISODateTime dateTime;
   int64_t offset;
   if (!ParseTemporalInstantString(cx, string, &dateTime, &offset)) {
     return false;

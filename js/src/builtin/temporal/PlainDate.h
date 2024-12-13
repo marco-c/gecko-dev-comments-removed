@@ -41,7 +41,7 @@ class PlainDateObject : public NativeObject {
   
 
 
-  PlainDate date() const {
+  ISODate date() const {
     auto packed = PackedDate{getFixedSlot(PACKED_DATE_SLOT).toPrivateUint32()};
     return PackedDate::unpack(packed);
   }
@@ -61,13 +61,13 @@ enum class TemporalUnit;
 
 
 
-bool IsValidISODate(const PlainDate& date);
+bool IsValidISODate(const ISODate& date);
 #endif
 
 
 
 
-bool ThrowIfInvalidISODate(JSContext* cx, const PlainDate& date);
+bool ThrowIfInvalidISODate(JSContext* cx, const ISODate& date);
 
 
 
@@ -78,28 +78,28 @@ bool ThrowIfInvalidISODate(JSContext* cx, double year, double month,
 
 
 
-bool ISODateWithinLimits(const PlainDate& isoDate);
+bool ISODateWithinLimits(const ISODate& isoDate);
 
-class MOZ_STACK_CLASS PlainDateWithCalendar final {
-  PlainDate date_;
+class MOZ_STACK_CLASS PlainDate final {
+  ISODate date_;
   CalendarValue calendar_;
 
  public:
-  PlainDateWithCalendar() = default;
+  PlainDate() = default;
 
-  PlainDateWithCalendar(const PlainDate& date, const CalendarValue& calendar)
+  PlainDate(const ISODate& date, const CalendarValue& calendar)
       : date_(date), calendar_(calendar) {
     MOZ_ASSERT(ISODateWithinLimits(date));
   }
 
-  explicit PlainDateWithCalendar(const PlainDateObject* date)
-      : PlainDateWithCalendar(date->date(), date->calendar()) {}
+  explicit PlainDate(const PlainDateObject* date)
+      : PlainDate(date->date(), date->calendar()) {}
 
   const auto& date() const { return date_; }
   const auto& calendar() const { return calendar_; }
 
   
-  operator const PlainDate&() const { return date(); }
+  operator const ISODate&() const { return date(); }
 
   explicit operator bool() const { return !!calendar_; }
 
@@ -111,63 +111,62 @@ class MOZ_STACK_CLASS PlainDateWithCalendar final {
 
 
 
-PlainDateObject* CreateTemporalDate(JSContext* cx, const PlainDate& isoDate,
+PlainDateObject* CreateTemporalDate(JSContext* cx, const ISODate& isoDate,
                                     JS::Handle<CalendarValue> calendar);
 
 
 
 
-PlainDateObject* CreateTemporalDate(JSContext* cx,
-                                    JS::Handle<PlainDateWithCalendar> date);
+PlainDateObject* CreateTemporalDate(JSContext* cx, JS::Handle<PlainDate> date);
 
 
 
 
-bool CreateTemporalDate(JSContext* cx, const PlainDate& isoDate,
+bool CreateTemporalDate(JSContext* cx, const ISODate& isoDate,
                         JS::Handle<CalendarValue> calendar,
-                        JS::MutableHandle<PlainDateWithCalendar> result);
+                        JS::MutableHandle<PlainDate> result);
 
 
 
 
 bool RegulateISODate(JSContext* cx, int32_t year, double month, double day,
-                     TemporalOverflow overflow, PlainDate* result);
+                     TemporalOverflow overflow, ISODate* result);
 
 
 
 
-bool AddISODate(JSContext* cx, const PlainDate& date,
+bool AddISODate(JSContext* cx, const ISODate& date,
                 const DateDuration& duration, TemporalOverflow overflow,
-                PlainDate* result);
+                ISODate* result);
 
 
 
 
-DateDuration DifferenceISODate(const PlainDate& start, const PlainDate& end,
+DateDuration DifferenceISODate(const ISODate& start, const ISODate& end,
                                TemporalUnit largestUnit);
 
 
 
 
-int32_t CompareISODate(const PlainDate& one, const PlainDate& two);
+int32_t CompareISODate(const ISODate& one, const ISODate& two);
 
 
 
 
-bool BalanceISODate(JSContext* cx, const PlainDate& date, int64_t days,
-                    PlainDate* result);
+bool BalanceISODate(JSContext* cx, const ISODate& date, int64_t days,
+                    ISODate* result);
 
 
 
 
-PlainDate BalanceISODate(const PlainDate& date, int32_t days);
+ISODate BalanceISODate(const ISODate& date, int32_t days);
 
 } 
 
 namespace js {
 
 template <typename Wrapper>
-class WrappedPtrOperations<temporal::PlainDateWithCalendar, Wrapper> {
+class WrappedPtrOperations<temporal::PlainDate, Wrapper> {
   const auto& container() const {
     return static_cast<const Wrapper*>(this)->get();
   }
@@ -183,7 +182,7 @@ class WrappedPtrOperations<temporal::PlainDateWithCalendar, Wrapper> {
   }
 
   
-  operator const temporal::PlainDate&() const { return date(); }
+  operator const temporal::ISODate&() const { return date(); }
 };
 
 }  

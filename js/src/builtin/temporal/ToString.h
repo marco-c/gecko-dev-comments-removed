@@ -22,8 +22,8 @@ class PlainYearMonthObject;
 class TimeZoneValue;
 class ZonedDateTime;
 
-struct PlainDateTime;
-struct PlainTime;
+struct ISODateTime;
+struct Time;
 
 
 
@@ -43,7 +43,7 @@ JSString* TemporalDateToString(JSContext* cx,
 
 
 
-JSString* TemporalDateTimeToString(JSContext* cx, const PlainDateTime& dateTime,
+JSString* TemporalDateTimeToString(JSContext* cx, const ISODateTime& dateTime,
                                    JS::Handle<CalendarValue> calendar,
                                    Precision precision,
                                    ShowCalendar showCalendar);
@@ -51,7 +51,7 @@ JSString* TemporalDateTimeToString(JSContext* cx, const PlainDateTime& dateTime,
 
 
 
-JSString* TimeRecordToString(JSContext* cx, const PlainTime& time,
+JSString* TimeRecordToString(JSContext* cx, const Time& time,
                              Precision precision);
 
 
