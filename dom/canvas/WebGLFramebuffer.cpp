@@ -922,7 +922,7 @@ void WebGLFramebuffer::ResolveAttachmentData() const {
       } else {
         fnClearBuffer();
       }
-      imageInfo->mUninitializedSlices = Nothing();
+      imageInfo->mUninitializedSlices.reset();
     }
     return;
   }
@@ -936,7 +936,7 @@ void WebGLFramebuffer::ResolveAttachmentData() const {
     if (!imageInfo || !imageInfo->mUninitializedSlices) return false;
 
     clearBits |= attachClearBits;
-    imageInfo->mUninitializedSlices = Nothing();  
+    imageInfo->mUninitializedSlices.reset();  
     return true;
   };
 
