@@ -515,75 +515,73 @@ class TIPMessageHandler {
     }
   }
 
-  class MOZ_RAII A11yInstantiationBlocker {
-   public:
-    A11yInstantiationBlocker() {
-      if (!TIPMessageHandler::sInstance) {
-        return;
-      }
-      ++TIPMessageHandler::sInstance->mA11yBlockCount;
-    }
+  class MOZ_RAII A11yInstantiationBlocker{public : A11yInstantiationBlocker(){
+      if (!TIPMessageHandler::sInstance){return;
+} ++TIPMessageHandler::sInstance->mA11yBlockCount;
+}  
 
-    ~A11yInstantiationBlocker() {
-      if (!TIPMessageHandler::sInstance) {
-        return;
-      }
-      MOZ_ASSERT(TIPMessageHandler::sInstance->mA11yBlockCount > 0);
-      --TIPMessageHandler::sInstance->mA11yBlockCount;
-    }
-  };
+~A11yInstantiationBlocker() {
+  if (!TIPMessageHandler::sInstance) {
+    return;
+  }
+  MOZ_ASSERT(TIPMessageHandler::sInstance->mA11yBlockCount > 0);
+  --TIPMessageHandler::sInstance->mA11yBlockCount;
+}
+}
+;
 
-  friend class A11yInstantiationBlocker;
+friend class A11yInstantiationBlocker;
 
-  static LRESULT CALLBACK TIPHook(int aCode, WPARAM aWParam, LPARAM aLParam) {
-    if (aCode < 0 || !sInstance) {
-      return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
-    }
-
-    MSG* msg = reinterpret_cast<MSG*>(aLParam);
-    UINT& msgCode = msg->message;
-
-    for (uint32_t i = 0; i < std::size(sInstance->mMessages); ++i) {
-      if (msgCode == sInstance->mMessages[i]) {
-        A11yInstantiationBlocker block;
-        return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
-      }
-    }
-
+static LRESULT CALLBACK TIPHook(int aCode, WPARAM aWParam, LPARAM aLParam) {
+  if (aCode < 0 || !sInstance) {
     return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
   }
 
-  static LRESULT WINAPI SendMessageTimeoutWHook(HWND aHwnd, UINT aMsgCode,
-                                                WPARAM aWParam, LPARAM aLParam,
-                                                UINT aFlags, UINT aTimeout,
-                                                PDWORD_PTR aMsgResult) {
-    
-    
-    
-    if (!aMsgResult || aMsgCode != WM_GETOBJECT ||
-        static_cast<LONG>(aLParam) != OBJID_CLIENT || !::NS_IsMainThread() ||
-        !WinUtils::GetNSWindowPtr(aHwnd) || !IsA11yBlocked()) {
-      return sSendMessageTimeoutWStub(aHwnd, aMsgCode, aWParam, aLParam, aFlags,
-                                      aTimeout, aMsgResult);
+  MSG* msg = reinterpret_cast<MSG*>(aLParam);
+  UINT& msgCode = msg->message;
+
+  for (uint32_t i = 0; i < std::size(sInstance->mMessages); ++i) {
+    if (msgCode == sInstance->mMessages[i]) {
+      A11yInstantiationBlocker block;
+      return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
     }
-
-    
-    
-    
-    *aMsgResult = static_cast<DWORD_PTR>(
-        ::DefWindowProcW(aHwnd, aMsgCode, aWParam, aLParam));
-
-    return static_cast<LRESULT>(TRUE);
   }
 
-  static WindowsDllInterceptor::FuncHookType<decltype(&SendMessageTimeoutW)>
-      sSendMessageTimeoutWStub;
-  static StaticAutoPtr<TIPMessageHandler> sInstance;
+  return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
+}
 
-  HHOOK mHook;
-  UINT mMessages[7];
-  uint32_t mA11yBlockCount;
-};
+static LRESULT WINAPI SendMessageTimeoutWHook(HWND aHwnd, UINT aMsgCode,
+                                              WPARAM aWParam, LPARAM aLParam,
+                                              UINT aFlags, UINT aTimeout,
+                                              PDWORD_PTR aMsgResult) {
+  
+  
+  
+  if (!aMsgResult || aMsgCode != WM_GETOBJECT ||
+      static_cast<LONG>(aLParam) != OBJID_CLIENT || !::NS_IsMainThread() ||
+      !WinUtils::GetNSWindowPtr(aHwnd) || !IsA11yBlocked()) {
+    return sSendMessageTimeoutWStub(aHwnd, aMsgCode, aWParam, aLParam, aFlags,
+                                    aTimeout, aMsgResult);
+  }
+
+  
+  
+  
+  *aMsgResult = static_cast<DWORD_PTR>(
+      ::DefWindowProcW(aHwnd, aMsgCode, aWParam, aLParam));
+
+  return static_cast<LRESULT>(TRUE);
+}
+
+static WindowsDllInterceptor::FuncHookType<decltype(&SendMessageTimeoutW)>
+    sSendMessageTimeoutWStub;
+static StaticAutoPtr<TIPMessageHandler> sInstance;
+
+HHOOK mHook;
+UINT mMessages[7];
+uint32_t mA11yBlockCount;
+}
+;
 
 WindowsDllInterceptor::FuncHookType<decltype(&SendMessageTimeoutW)>
     TIPMessageHandler::sSendMessageTimeoutWStub;
@@ -1202,7 +1200,7 @@ void nsWindow::Destroy() {
 
   
   
-  if (false == mOnDestroyCalled) {
+  if (!mOnDestroyCalled) {
     MSGResult msgResult;
     mWindowHook.Notify(mWnd, WM_DESTROY, 0, 0, msgResult);
     OnDestroy();
@@ -2324,23 +2322,24 @@ bool nsWindow::IsEnabled() const {
 
 
 void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
-  if (mWnd) {
-#ifdef WINSTATE_DEBUG_OUTPUT
-    if (mWnd == WinUtils::GetTopLevelHWND(mWnd)) {
-      MOZ_LOG(gWindowsLog, LogLevel::Info,
-              ("*** SetFocus: [  top] raise=%d\n", aRaise == Raise::Yes));
-    } else {
-      MOZ_LOG(gWindowsLog, LogLevel::Info,
-              ("*** SetFocus: [child] raise=%d\n", aRaise == Raise::Yes));
-    }
-#endif
-    
-    HWND toplevelWnd = WinUtils::GetTopLevelHWND(mWnd);
-    if (aRaise == Raise::Yes && ::IsIconic(toplevelWnd)) {
-      ::ShowWindow(toplevelWnd, SW_RESTORE);
-    }
-    ::SetFocus(mWnd);
+  if (!mWnd) {
+    return;
   }
+#ifdef WINSTATE_DEBUG_OUTPUT
+  if (mWnd == WinUtils::GetTopLevelHWND(mWnd)) {
+    MOZ_LOG(gWindowsLog, LogLevel::Info,
+            ("*** SetFocus: [  top] raise=%d\n", aRaise == Raise::Yes));
+  } else {
+    MOZ_LOG(gWindowsLog, LogLevel::Info,
+            ("*** SetFocus: [child] raise=%d\n", aRaise == Raise::Yes));
+  }
+#endif
+  
+  HWND toplevelWnd = WinUtils::GetTopLevelHWND(mWnd);
+  if (aRaise == Raise::Yes && ::IsIconic(toplevelWnd)) {
+    ::ShowWindow(toplevelWnd, SW_RESTORE);
+  }
+  ::SetFocus(mWnd);
 }
 
 
@@ -4631,8 +4630,9 @@ LRESULT CALLBACK nsWindow::WindowProcInternal(HWND hWnd, UINT msg,
   nsAutoRollup autoRollup;
 
   LRESULT popupHandlingResult;
-  if (DealWithPopups(hWnd, msg, wParam, lParam, &popupHandlingResult))
+  if (DealWithPopups(hWnd, msg, wParam, lParam, &popupHandlingResult)) {
     return popupHandlingResult;
+  }
 
   
   LRESULT retValue;
@@ -5559,40 +5559,42 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
     
     case WM_ACTIVATE: {
       int32_t fActive = LOWORD(wParam);
-      if (mWidgetListener) {
-        if (WA_INACTIVE == fActive) {
-          
-          
-          
-          
-          
-          if (HIWORD(wParam) ||
-              (mLastKillFocusWindow &&
-               (GetTopLevelForFocus(mLastKillFocusWindow) == mWnd))) {
-            DispatchFocusToTopLevelWindow(false);
-          } else {
-            sJustGotDeactivate = true;
-          }
-          if (IsTopLevelWidget()) {
-            mLastKeyboardLayout = KeyboardLayout::GetLayout();
-          }
+      if (!mWidgetListener) {
+        break;
+      }
+      if (WA_INACTIVE == fActive) {
+        
+        
+        
+        
+        
+        if (HIWORD(wParam) ||
+            (mLastKillFocusWindow &&
+             (GetTopLevelForFocus(mLastKillFocusWindow) == mWnd))) {
+          DispatchFocusToTopLevelWindow(false);
         } else {
-          StopFlashing();
+          sJustGotDeactivate = true;
+        }
+        if (IsTopLevelWidget()) {
+          mLastKeyboardLayout = KeyboardLayout::GetLayout();
+        }
+      } else {
+        StopFlashing();
 
-          sJustGotActivate = true;
-          WidgetMouseEvent event(true, eMouseActivate, this,
-                                 WidgetMouseEvent::eReal);
-          InitEvent(event);
-          ModifierKeyState modifierKeyState;
-          modifierKeyState.InitInputEvent(event);
-          DispatchInputEvent(&event);
-          if (sSwitchKeyboardLayout && mLastKeyboardLayout)
-            ActivateKeyboardLayout(mLastKeyboardLayout, 0);
+        sJustGotActivate = true;
+        WidgetMouseEvent event(true, eMouseActivate, this,
+                               WidgetMouseEvent::eReal);
+        InitEvent(event);
+        ModifierKeyState modifierKeyState;
+        modifierKeyState.InitInputEvent(event);
+        DispatchInputEvent(&event);
+        if (sSwitchKeyboardLayout && mLastKeyboardLayout) {
+          ActivateKeyboardLayout(mLastKeyboardLayout, 0);
+        }
 
 #ifdef ACCESSIBILITY
-          a11y::LazyInstantiator::ResetUiaDetectionCache();
+        a11y::LazyInstantiator::ResetUiaDetectionCache();
 #endif
-        }
       }
     } break;
 
