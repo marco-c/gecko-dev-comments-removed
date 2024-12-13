@@ -136,6 +136,28 @@ interface nsIContentAnalysisRequest : nsISupports
   readonly attribute nsIContentAnalysisRequest_AnalysisType analysisType;
 
   
+  
+  
+  cenum Reason : 32 {
+    eUnknown = 0,
+    
+    eClipboardPaste = 1,
+    eDragAndDrop = 2,
+
+    
+    eFilePickerDialog = 3,
+
+    
+    ePrintPreviewPrint = 4,
+    eSystemDialogPrint = 5,
+
+    
+    eNormalDownload = 6,
+    eSaveAsDownload = 7,
+  };
+  readonly attribute nsIContentAnalysisRequest_Reason reason;
+
+  
   cenum OperationType : 32 {
     eCustomDisplayString = 0,
     eClipboard = 1,

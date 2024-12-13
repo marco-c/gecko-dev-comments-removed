@@ -101,6 +101,9 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   AnalysisType mAnalysisType;
 
   
+  Reason mReason;
+
+  
   nsString mTextContent;
 
   
