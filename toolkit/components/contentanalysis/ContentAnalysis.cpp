@@ -2151,7 +2151,8 @@ class AggregatedClipboardCACallback final : public nsIContentAnalysisCallback {
       mRemainingCallbackRequestTokens.Remove(requestToken);
       if (!result->GetShouldAllowContent()) {
         SendFinalResult(nsIContentAnalysisResponse::Action::eBlock);
-      } else if (mRemainingCallbackRequestTokens.IsEmpty()) {
+      } else if (mRemainingCallbackRequestTokens.IsEmpty() &&
+                 mFinishedSendingRequests) {
         SendFinalResult(nsIContentAnalysisResponse::Action::eAllow);
       }
     }
@@ -2238,10 +2239,17 @@ class AggregatedClipboardCACallback final : public nsIContentAnalysisCallback {
       }
     }
 
-    if (mRemainingCallbackRequestTokens.IsEmpty()) {
+    mFinishedSendingRequests = true;
+
+    if (!mSentAnyRequests) {
       
       caResult = NoContentAnalysisResult::ALLOW_DUE_TO_COULD_NOT_GET_DATA;
       return;
+    }
+    if (mRemainingCallbackRequestTokens.IsEmpty() && !mResponseSent) {
+      
+      
+      SendFinalResult(nsIContentAnalysisResponse::Action::eAllow);
     }
 
     
@@ -2254,6 +2262,7 @@ class AggregatedClipboardCACallback final : public nsIContentAnalysisCallback {
     DebugOnly<nsresult> rv = aRequest->GetRequestToken(requestToken);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
     mRemainingCallbackRequestTokens.Insert(requestToken);
+    mSentAnyRequests = true;
   }
   void CancelActiveRequests() {
     RefPtr<ContentAnalysis> contentAnalysis =
@@ -2319,12 +2328,14 @@ class AggregatedClipboardCACallback final : public nsIContentAnalysisCallback {
             nsIContentAnalysisRequest::Reason::eClipboardPaste,
             std::move(aText), false, EmptyCString(), mURI,
             nsIContentAnalysisRequest::OperationType::eClipboard, window);
+    
+    
+    RequestSent(contentAnalysisRequest);
     nsresult rv = aContentAnalysis->AnalyzeContentRequestCallback(
         contentAnalysisRequest,  true, this);
     if (NS_FAILED(rv)) {
       return mozilla::Err(NoContentAnalysisResult::DENY_DUE_TO_OTHER_ERROR);
     }
-    RequestSent(contentAnalysisRequest);
     return Ok();
   }
 
@@ -2432,6 +2443,9 @@ class AggregatedClipboardCACallback final : public nsIContentAnalysisCallback {
             std::move(filePath), true, EmptyCString(), mURI,
             nsIContentAnalysisRequest::OperationType::eCustomDisplayString,
             window);
+    
+    
+    RequestSent(contentAnalysisRequest);
     rv = aContentAnalysis->AnalyzeContentRequestCallback(
         contentAnalysisRequest,
          true, this);
@@ -2439,7 +2453,6 @@ class AggregatedClipboardCACallback final : public nsIContentAnalysisCallback {
       return mozilla::Err(NoContentAnalysisResult::DENY_DUE_TO_OTHER_ERROR);
     }
 
-    RequestSent(contentAnalysisRequest);
     return Ok();
   }
 
@@ -2451,6 +2464,8 @@ class AggregatedClipboardCACallback final : public nsIContentAnalysisCallback {
   nsCOMPtr<nsIURI> mURI;
   bool mStoreInCache;
   nsTArray<nsCString> mFlavors;
+  bool mFinishedSendingRequests = false;
+  bool mSentAnyRequests = false;
 };
 
 NS_IMPL_ISUPPORTS(ContentAnalysis::SafeContentAnalysisResultCallback,
