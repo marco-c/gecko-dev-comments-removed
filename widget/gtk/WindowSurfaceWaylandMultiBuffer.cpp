@@ -21,7 +21,7 @@
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/WidgetUtils.h"
 
-#undef LOG
+#undef LOGWAYLAND
 #ifdef MOZ_LOGGING
 #  include "mozilla/Logging.h"
 #  include "Units.h"
@@ -285,17 +285,18 @@ void WindowSurfaceWaylandMB::Commit(
   mFrameInProcess = false;
 
   MozContainer* container = mWindow->GetMozContainer();
-  MozContainerSurfaceLock MozContainerLock(container);
-  struct wl_surface* waylandSurface = MozContainerLock.GetSurface();
-  if (!waylandSurface) {
+  WaylandSurface* waylandSurface = MOZ_WL_SURFACE(container);
+  WaylandSurfaceLock lock(waylandSurface);
+  
+  if (!waylandSurface->IsMapped()) {
     LOGWAYLAND(
         "WindowSurfaceWaylandMB::Commit [%p] frame queued: can't lock "
         "wl_surface\n",
         (void*)mWindow.get());
     if (!mCallbackRequested) {
       RefPtr<WindowSurfaceWaylandMB> self(this);
-      moz_container_wayland_add_initial_draw_callback_locked(
-          container, [self, aInvalidRegion]() -> void {
+      waylandSurface->AddInitialDrawCallbackLocked(
+          lock, [self, aInvalidRegion]() -> void {
             MutexAutoLock lock(self->mSurfaceLock);
             if (!self->mFrameInProcess) {
               self->Commit(lock, aInvalidRegion);
@@ -307,32 +308,11 @@ void WindowSurfaceWaylandMB::Commit(
     return;
   }
 
-  if (moz_container_wayland_is_commiting_to_parent(container)) {
-    
-    
-    
-    wl_surface_damage(waylandSurface, 0, 0, INT32_MAX, INT32_MAX);
-  } else {
-    for (auto iter = aInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
-      LayoutDeviceIntRect r = iter.Get();
-      wl_surface_damage_buffer(waylandSurface, r.x, r.y, r.width, r.height);
-    }
-  }
-
-  
-  
-  
-  moz_container_wayland_set_scale_factor_locked(
-      aProofOfLock, container, mWindow->GdkCeiledScaleFactor());
-
-  
-  
-  
-  
-  if (moz_container_wayland_size_matches_scale_factor_locked(
-          aProofOfLock, container, mWindowSize.width, mWindowSize.height)) {
-    mInProgressBuffer->AttachAndCommit(waylandSurface);
-  }
+  waylandSurface->InvalidateRegionLocked(lock,
+                                         aInvalidRegion.ToUnknownRegion());
+  waylandSurface->AttachLocked(lock, mInProgressBuffer);
+  waylandSurface->CommitLocked(lock,  true,
+                                true);
 
   mInProgressBuffer->ResetBufferAge();
   mFrontBuffer = mInProgressBuffer;
@@ -341,11 +321,6 @@ void WindowSurfaceWaylandMB::Commit(
 
   EnforcePoolSizeLimit(aProofOfLock);
   IncrementBufferAge(aProofOfLock);
-
-  if (wl_display_flush(WaylandDisplayGet()->GetDisplay()) == -1) {
-    LOGWAYLAND("WindowSurfaceWaylandMB::Commit [%p] flush failed\n",
-               (void*)mWindow.get());
-  }
 }
 
 RefPtr<WaylandBufferSHM> WindowSurfaceWaylandMB::ObtainBufferFromPool(
