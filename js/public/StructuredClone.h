@@ -320,6 +320,11 @@ typedef void (*StructuredCloneErrorOp)(JSContext* cx, uint32_t errorid,
 
 
 
+
+
+
+
+
 typedef bool (*ReadTransferStructuredCloneOp)(
     JSContext* cx, JSStructuredCloneReader* r,
     const JS::CloneDataPolicy& aCloneDataPolicy, uint32_t tag, void* content,
@@ -347,6 +352,8 @@ typedef bool (*TransferStructuredCloneOp)(JSContext* cx,
                                           uint32_t* tag,
                                           JS::TransferableOwnership* ownership,
                                           void** content, uint64_t* extraData);
+
+
 
 
 
