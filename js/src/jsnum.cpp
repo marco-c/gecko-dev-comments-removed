@@ -855,40 +855,6 @@ frontend::TaggedParserAtomIndex js::Int32ToParserAtom(
 }
 
 
-template <typename T, size_t Length>
-static size_t Int32ToCStringWithBase(char (&out)[Length], T i, int base) {
-  
-  
-  static_assert(std::numeric_limits<T>::digits + (2 * std::is_signed_v<T>) <
-                Length);
-
-  
-  
-  std::to_chars_result result;
-  switch (base) {
-    case 10: {
-      result = std::to_chars(out, out + Length, i, 10);
-      break;
-    }
-    case 16: {
-      result = std::to_chars(out, out + Length, i, 16);
-      break;
-    }
-    default: {
-      MOZ_ASSERT(base >= 2 && base <= 36);
-      result = std::to_chars(out, out + Length, i, base);
-      break;
-    }
-  }
-  MOZ_ASSERT(result.ec == std::errc());
-
-  
-  *result.ptr = '\0';
-
-  return result.ptr - out;
-}
-
-
 template <typename T, size_t Base, size_t Length>
 static size_t Int32ToCString(char (&out)[Length], T i) {
   
@@ -1671,14 +1637,34 @@ static JSString* Int32ToStringWithBase(JSContext* cx, int32_t i, int32_t base) {
   }
 
   
-  
-  constexpr size_t MaximumLength = std::numeric_limits<int32_t>::digits + 3;
+  constexpr size_t MaximumLength = std::numeric_limits<int32_t>::digits + 2;
 
   char buf[MaximumLength] = {};
-  size_t numStrLen = Int32ToCStringWithBase(buf, i, base);
-  MOZ_ASSERT(numStrLen == strlen(buf));
 
-  JSLinearString* s = NewStringCopyN<allowGC>(cx, buf, numStrLen);
+  
+  
+  std::to_chars_result result;
+  switch (base) {
+    case 10: {
+      result = std::to_chars(buf, std::end(buf), i, 10);
+      break;
+    }
+    case 16: {
+      result = std::to_chars(buf, std::end(buf), i, 16);
+      break;
+    }
+    default: {
+      MOZ_ASSERT(base >= 2 && base <= 36);
+      result = std::to_chars(buf, std::end(buf), i, base);
+      break;
+    }
+  }
+  MOZ_ASSERT(result.ec == std::errc());
+
+  size_t length = result.ptr - buf;
+  MOZ_ASSERT(i < 0 || length > 2, "small static strings are handled above");
+
+  JSLinearString* s = NewStringCopyN<allowGC>(cx, buf, length);
   if (!s) {
     return nullptr;
   }
