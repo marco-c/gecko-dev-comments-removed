@@ -12,10 +12,41 @@ struct PrincipalMetadata;
 
 namespace test {
 
-PrincipalMetadata GetPrincipalMetadata(const nsCString& aGroup,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PrincipalMetadata GetPrincipalMetadata(const nsCString& aGroupNoSuffix,
                                        const nsCString& aOriginNoSuffix);
 
-PrincipalMetadata GetPrincipalMetadata(const nsCString& aSuffix,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PrincipalMetadata GetPrincipalMetadata(const nsCString& aOriginSuffix,
                                        const nsCString& aGroupNoSuffix,
                                        const nsCString& aOriginNoSuffix);
 
