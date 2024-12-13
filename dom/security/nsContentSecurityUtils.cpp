@@ -1491,17 +1491,6 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
     }
   }
 
-  auto kAllowedFilenamesExact = {
-      
-      "data:,new function() {\n  const { AboutSyncRedirector } = ChromeUtils.import(\"chrome://aboutsync/content/AboutSyncRedirector.js\");\n  AboutSyncRedirector.register();\n}"_ns,
-  };
-
-  for (auto allowedFilename : kAllowedFilenamesExact) {
-    if (filename == allowedFilename) {
-      return true;
-    }
-  }
-
   auto kAllowedFilenamesPrefix = {
       
       
