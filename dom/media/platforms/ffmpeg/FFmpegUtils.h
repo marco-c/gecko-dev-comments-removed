@@ -81,8 +81,6 @@ inline const int64_t& Duration(const T* aObject) {
 #endif
 }
 
-const char* AVCodecToString(const AVCodecID& aCodec);
-
 }  
 
 #endif  

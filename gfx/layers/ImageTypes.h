@@ -78,7 +78,7 @@ enum class ImageFormat {
 
 
 
-  D3D11_TEXTURE_ZERO_COPY,
+  D3D11_TEXTURE_IMF_SAMPLE,
 
   
 

@@ -78,8 +78,7 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::AllocateExtraData() {
 
 
 
-MediaResult FFmpegDataDecoder<LIBAV_VER>::InitSWDecoder(
-    AVDictionary** aOptions) {
+MediaResult FFmpegDataDecoder<LIBAV_VER>::InitDecoder(AVDictionary** aOptions) {
   FFMPEG_LOG("Initialising FFmpeg decoder");
 
   AVCodec* codec = FindAVCodec(mLib, mCodecID);
@@ -138,7 +137,7 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::InitSWDecoder(
       mLib->av_freep(&mCodecContext->extradata);
     }
     mLib->av_freep(&mCodecContext);
-    FFMPEG_LOG("  Couldn't open avcodec for %s", codec->name);
+    FFMPEG_LOG("  Couldn't open avcodec");
     return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                        RESULT_DETAIL("Couldn't open avcodec"));
   }
@@ -315,6 +314,7 @@ AVFrame* FFmpegDataDecoder<LIBAV_VER>::PrepareFrame() {
   return aLib->avcodec_find_decoder(aCodec);
 }
 
+#ifdef MOZ_WIDGET_GTK
  AVCodec* FFmpegDataDecoder<LIBAV_VER>::FindHardwareAVCodec(
     FFmpegLibWrapper* aLib, AVCodecID aCodec) {
   void* opaque = nullptr;
@@ -326,5 +326,6 @@ AVFrame* FFmpegDataDecoder<LIBAV_VER>::PrepareFrame() {
   }
   return nullptr;
 }
+#endif
 
 }  
