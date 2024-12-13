@@ -1283,7 +1283,7 @@ static SVGPaintingProperty* GetPaintingProperty(
 }
 
 static already_AddRefed<URLAndReferrerInfo> GetMarkerURI(
-    nsIFrame* aFrame, const StyleUrlOrNone nsStyleSVG::*aMarker) {
+    nsIFrame* aFrame, const StyleUrlOrNone nsStyleSVG::* aMarker) {
   const StyleUrlOrNone& url = aFrame->StyleSVG()->*aMarker;
   if (url.IsNone()) {
     return nullptr;
@@ -1702,7 +1702,7 @@ Element* SVGObserverUtils::GetAndObserveBackgroundClip(nsIFrame* aFrame) {
 }
 
 SVGPaintServerFrame* SVGObserverUtils::GetAndObservePaintServer(
-    nsIFrame* aPaintedFrame, StyleSVGPaint nsStyleSVG::*aPaint) {
+    nsIFrame* aPaintedFrame, StyleSVGPaint nsStyleSVG::* aPaint) {
   
   
   
@@ -1863,9 +1863,11 @@ void SVGObserverUtils::InvalidateRenderingObservers(nsIFrame* aFrame) {
 
 void SVGObserverUtils::InvalidateDirectRenderingObservers(
     Element* aElement, uint32_t aFlags ) {
-  if (nsIFrame* frame = aElement->GetPrimaryFrame()) {
-    
-    frame->RemoveProperty(SVGUtils::ObjectBoundingBoxProperty());
+  if (!(aFlags & INVALIDATE_DESTROY)) {
+    if (nsIFrame* frame = aElement->GetPrimaryFrame()) {
+      
+      frame->RemoveProperty(SVGUtils::ObjectBoundingBoxProperty());
+    }
   }
 
   if (aElement->HasDirectRenderingObservers()) {
