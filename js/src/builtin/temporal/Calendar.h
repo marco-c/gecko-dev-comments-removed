@@ -218,8 +218,10 @@ int64_t MakeDate(int32_t year, int32_t month, int32_t day);
 
 
 
-bool ToBuiltinCalendar(JSContext* cx, JS::Handle<JSString*> id,
-                       JS::MutableHandle<CalendarValue> result);
+
+
+bool CanonicalizeCalendar(JSContext* cx, JS::Handle<JSString*> id,
+                          JS::MutableHandle<CalendarValue> result);
 
 
 

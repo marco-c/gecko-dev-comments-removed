@@ -2085,7 +2085,7 @@ static bool GetTemporalRelativeToOption(
 
     
     if (parsed.calendar()) {
-      if (!ToBuiltinCalendar(cx, parsed.calendar(), &calendar)) {
+      if (!CanonicalizeCalendar(cx, parsed.calendar(), &calendar)) {
         return false;
       }
     } else {

@@ -463,13 +463,11 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<Value> item,
   }
 
   
-  Rooted<CalendarValue> calendar(cx);
+  Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
   if (parsed.calendar()) {
-    if (!ToBuiltinCalendar(cx, parsed.calendar(), &calendar)) {
+    if (!CanonicalizeCalendar(cx, parsed.calendar(), &calendar)) {
       return false;
     }
-  } else {
-    calendar.set(CalendarValue(CalendarId::ISO8601));
   }
 
   
@@ -1170,7 +1168,7 @@ static bool ZonedDateTimeConstructor(JSContext* cx, unsigned argc, Value* vp) {
 
     
     Rooted<JSString*> calendarString(cx, args[2].toString());
-    if (!ToBuiltinCalendar(cx, calendarString, &calendar)) {
+    if (!CanonicalizeCalendar(cx, calendarString, &calendar)) {
       return false;
     }
   }

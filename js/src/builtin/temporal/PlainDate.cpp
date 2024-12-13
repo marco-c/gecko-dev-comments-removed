@@ -629,14 +629,12 @@ static bool ToTemporalDate(JSContext* cx, Handle<Value> item,
   if (!ParseTemporalDateTimeString(cx, string, &dateTime, &calendarString)) {
     return false;
   }
-
-  
   MOZ_ASSERT(IsValidISODate(dateTime.date));
 
   
   Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
   if (calendarString) {
-    if (!ToBuiltinCalendar(cx, calendarString, &calendar)) {
+    if (!CanonicalizeCalendar(cx, calendarString, &calendar)) {
       return false;
     }
   }
@@ -1490,7 +1488,7 @@ static bool PlainDateConstructor(JSContext* cx, unsigned argc, Value* vp) {
 
     
     Rooted<JSString*> calendarString(cx, args[3].toString());
-    if (!ToBuiltinCalendar(cx, calendarString, &calendar)) {
+    if (!CanonicalizeCalendar(cx, calendarString, &calendar)) {
       return false;
     }
   }

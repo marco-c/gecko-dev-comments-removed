@@ -621,17 +621,13 @@ static bool ToTemporalDateTime(
   if (!ParseTemporalDateTimeString(cx, string, &dateTime, &calendarString)) {
     return false;
   }
-
-  
   MOZ_ASSERT(IsValidISODate(dateTime.date));
-
-  
   MOZ_ASSERT(IsValidTime(dateTime.time));
 
   
   Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
   if (calendarString) {
-    if (!ToBuiltinCalendar(cx, calendarString, &calendar)) {
+    if (!CanonicalizeCalendar(cx, calendarString, &calendar)) {
       return false;
     }
   }
@@ -1168,7 +1164,7 @@ static bool PlainDateTimeConstructor(JSContext* cx, unsigned argc, Value* vp) {
 
     
     Rooted<JSString*> calendarString(cx, args[9].toString());
-    if (!ToBuiltinCalendar(cx, calendarString, &calendar)) {
+    if (!CanonicalizeCalendar(cx, calendarString, &calendar)) {
       return false;
     }
   }
