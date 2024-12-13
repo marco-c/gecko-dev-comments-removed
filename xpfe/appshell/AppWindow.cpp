@@ -1151,11 +1151,14 @@ static Maybe<int32_t> ReadIntAttribute(const Element& aElement,
 
 
 bool AppWindow::LoadPositionFromXUL(int32_t aSpecWidth, int32_t aSpecHeight) {
-  bool gotPosition = false;
-
   
   
   if (mIsHiddenWindow) {
+    return false;
+  }
+
+  
+  if (mWindow->SizeMode() != nsSizeMode_Normal) {
     return false;
   }
 
@@ -1184,6 +1187,7 @@ bool AppWindow::LoadPositionFromXUL(int32_t aSpecWidth, int32_t aSpecHeight) {
 
   
   DesktopIntPoint specPoint = curPoint;
+  bool gotPosition = false;
 
   
   
@@ -1219,7 +1223,6 @@ bool AppWindow::LoadPositionFromXUL(int32_t aSpecWidth, int32_t aSpecHeight) {
   if (specPoint != curPoint) {
     SetPositionDesktopPix(specPoint.x, specPoint.y);
   }
-
   return gotPosition;
 }
 
