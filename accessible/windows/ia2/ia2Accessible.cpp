@@ -12,12 +12,14 @@
 #include "AccessibleStates.h"
 
 #include "AccAttributes.h"
+#include "ApplicationAccessible.h"
 #include "Compatibility.h"
 #include "ia2AccessibleRelation.h"
 #include "IUnknownImpl.h"
 #include "nsCoreUtils.h"
 #include "nsIAccessibleTypes.h"
 #include "mozilla/a11y/PDocAccessible.h"
+#include "mozilla/StaticPrefs_accessibility.h"
 #include "Relation.h"
 #include "TextRange-inl.h"
 #include "nsAccessibilityService.h"
@@ -352,6 +354,22 @@ ia2Accessible::get_windowHandle(HWND* aWindowHandle) {
   if (!acc) return CO_E_OBJNOTCONNECTED;
 
   *aWindowHandle = MsaaAccessible::GetHWNDFor(acc);
+  if (!*aWindowHandle && !StaticPrefs::accessibility_uia_enable()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (ApplicationAccessible* app = ApplicationAcc()) {
+      if (LocalAccessible* firstRoot = app->LocalFirstChild()) {
+        *aWindowHandle = MsaaAccessible::GetHWNDFor(firstRoot);
+      }
+    }
+  }
   return S_OK;
 }
 
