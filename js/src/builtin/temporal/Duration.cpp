@@ -838,6 +838,7 @@ TimeDuration js::temporal::TimeDurationFromEpochNanosecondsDifference(
   return result.to<TimeDuration>();
 }
 
+#ifdef DEBUG
 
 
 
@@ -906,7 +907,6 @@ bool js::temporal::IsValidDuration(const Duration& duration) {
   return true;
 }
 
-#ifdef DEBUG
 
 
 
@@ -1030,79 +1030,6 @@ bool js::temporal::ThrowIfInvalidDuration(JSContext* cx,
 
   
   if (!TimeDurationFromDuration(duration)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEMPORAL_DURATION_INVALID_NORMALIZED_TIME);
-    return false;
-  }
-
-  MOZ_ASSERT(IsValidDuration(duration));
-
-  
-  return true;
-}
-
-
-
-
-
-bool js::temporal::ThrowIfInvalidDuration(JSContext* cx,
-                                          const DateDuration& duration) {
-  const auto& [years, months, weeks, days] = duration;
-
-  
-  int32_t sign = DateDurationSign(duration);
-
-  auto throwIfInvalid = [&](int64_t v, const char* name) {
-    
-
-    
-    if ((v < 0 && sign > 0) || (v > 0 && sign < 0)) {
-      return ThrowInvalidDurationPart(cx, double(v), name,
-                                      JSMSG_TEMPORAL_DURATION_INVALID_SIGN);
-    }
-
-    return true;
-  };
-
-  auto throwIfTooLarge = [&](int64_t v, const char* name) {
-    if (std::abs(v) >= (int64_t(1) << 32)) {
-      return ThrowInvalidDurationPart(
-          cx, double(v), name, JSMSG_TEMPORAL_DURATION_INVALID_NON_FINITE);
-    }
-    return true;
-  };
-
-  
-  if (!throwIfInvalid(years, "years")) {
-    return false;
-  }
-  if (!throwIfInvalid(months, "months")) {
-    return false;
-  }
-  if (!throwIfInvalid(weeks, "weeks")) {
-    return false;
-  }
-  if (!throwIfInvalid(days, "days")) {
-    return false;
-  }
-
-  
-  if (!throwIfTooLarge(years, "years")) {
-    return false;
-  }
-
-  
-  if (!throwIfTooLarge(months, "months")) {
-    return false;
-  }
-
-  
-  if (!throwIfTooLarge(weeks, "weeks")) {
-    return false;
-  }
-
-  
-  if (std::abs(days) > TimeDuration::max().toDays()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_DURATION_INVALID_NORMALIZED_TIME);
     return false;

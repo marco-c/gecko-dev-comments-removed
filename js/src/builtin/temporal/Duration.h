@@ -88,13 +88,13 @@ int32_t DurationSign(const Duration& duration);
 
 int32_t DateDurationSign(const DateDuration& duration);
 
+#ifdef DEBUG
 
 
 
 
 bool IsValidDuration(const Duration& duration);
 
-#ifdef DEBUG
 
 
 
@@ -113,12 +113,6 @@ bool IsValidDuration(const InternalDuration& duration);
 
 
 bool ThrowIfInvalidDuration(JSContext* cx, const Duration& duration);
-
-
-
-
-
-bool ThrowIfInvalidDuration(JSContext* cx, const DateDuration& duration);
 
 
 
