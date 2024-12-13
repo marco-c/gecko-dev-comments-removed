@@ -9,7 +9,13 @@ There are a couple of preferences associated with the Remote Agent:
 Defines the remote protocols that are active. Available protocols are,
 WebDriver BiDi (`1`), and CDP (`2`). Multiple protocols can be activated
 at the same time by using bitwise or with the values, such as `3` for
-both protocols. Defaults to `1` (WebDriver BiDi).
+both protocols. Defaults to `1` (WebDriver BiDi) since Firefox 129.
+
+### `remote.events.async.enabled`
+
+This preference determines whether processing of action sequences happens in the
+parent process and dispatching of individual actions is forwarded to the content
+process. Starting with Firefox 135 its value is set to `true` by default.
 
 ### `remote.experimental.enabled`
 
