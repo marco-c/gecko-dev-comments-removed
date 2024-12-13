@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 import os
 import logging
-from six.moves import urllib
+import urllib
 
 import mohawk
 import mohawk.bewit
@@ -151,26 +151,24 @@ class AsyncBaseClient(BaseClient):
                     superExc=rerr
                 ))
 
-            status = response.status
-            if status == 204:
-                return None
+            try:
+                response.raise_for_status()
+                if response.status == 204:
+                    return None
+            except aiohttp.ClientResponseError as err:
+                status = response.status
+                
+                
+                if 500 <= status and status < 600:
+                    return retryFor(err)
 
-            
-            
-            if 500 <= status and status < 600:
-                try:
-                    response.raise_for_status()
-                except Exception as exc:
-                    return retryFor(exc)
-
-            
-            if status < 200 or status >= 300:
                 
                 data = {}
                 try:
                     data = await response.json()
                 except Exception:
                     pass  
+
                 
                 message = "Unknown Server Error"
                 if isinstance(data, dict) and 'message' in data:

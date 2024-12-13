@@ -154,7 +154,8 @@ def upload_artifact(queue_service, artifact_path, content, content_type, ttl):
     run_id = os.environ.get("RUN_ID")
     proxy = os.environ.get("TASKCLUSTER_PROXY_URL")
     assert task_id and run_id and proxy, "Can only run in Taskcluster tasks with proxy"
-    assert isinstance(content, str)
+    
+    assert isinstance(content, str) or isinstance(content, bytes)
     assert isinstance(ttl, datetime.timedelta)
 
     
