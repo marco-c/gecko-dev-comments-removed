@@ -122,15 +122,13 @@ struct CompilationGCOutput;
 class ScopeBindingCache;
 
 
-extern already_AddRefed<CompilationStencil> CompileGlobalScriptToStencil(
-    JSContext* maybeCx, FrontendContext* fc, js::LifoAlloc& tempLifoAlloc,
-    CompilationInput& input, ScopeBindingCache* scopeCache,
-    JS::SourceText<char16_t>& srcBuf, ScopeKind scopeKind);
-
-extern already_AddRefed<CompilationStencil> CompileGlobalScriptToStencil(
-    JSContext* maybeCx, FrontendContext* fc, js::LifoAlloc& tempLifoAlloc,
-    CompilationInput& input, ScopeBindingCache* scopeCache,
-    JS::SourceText<mozilla::Utf8Unit>& srcBuf, ScopeKind scopeKind);
+extern already_AddRefed<CompilationStencil>
+CompileGlobalScriptToStencilWithInput(JSContext* maybeCx, FrontendContext* fc,
+                                      js::LifoAlloc& tempLifoAlloc,
+                                      CompilationInput& input,
+                                      ScopeBindingCache* scopeCache,
+                                      JS::SourceText<mozilla::Utf8Unit>& srcBuf,
+                                      ScopeKind scopeKind);
 
 [[nodiscard]] extern bool InstantiateStencils(JSContext* cx,
                                               CompilationInput& input,
