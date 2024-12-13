@@ -47,6 +47,81 @@ const MODEL_FILE_ALIGNMENTS = {
 
 
 
+const WHITESPACE_REGEX = /^(\s*)(.*?)(\s*)$/s;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const FULL_WIDTH_PUNCTUATION_REGEX = /([。！？])“/g;
+
+
+
+
+
+
+
+const FULL_WIDTH_PUNCTUATION_LANGUAGE_TAGS = ["ja", "ko", "zh"];
+
+
+
+
+
+
+
+
+
+function cleanText(sourceLanguage, sourceText) {
+  
+  
+  const result = WHITESPACE_REGEX.exec(sourceText);
+  if (!result) {
+    throw new Error("The whitespace regex should always return a result.");
+  }
+  const whitespaceBefore = result[1];
+  const whitespaceAfter = result[3];
+  let cleanedSourceText = result[2];
+
+  
+  cleanedSourceText = cleanedSourceText.replaceAll("\u00AD", "");
+
+  if (FULL_WIDTH_PUNCTUATION_LANGUAGE_TAGS.includes(sourceLanguage)) {
+    
+    
+    
+    cleanedSourceText = cleanedSourceText.replaceAll(
+      FULL_WIDTH_PUNCTUATION_REGEX,
+      "$1 “"
+    );
+  }
+
+  return { whitespaceBefore, whitespaceAfter, cleanedSourceText };
+}
+
+
+
+
 
 
 addEventListener("message", handleInitializationMessage);
@@ -145,7 +220,7 @@ function handleMessages(engine) {
           }
           try {
             const { whitespaceBefore, whitespaceAfter, cleanedSourceText } =
-              cleanText(sourceText);
+              cleanText(engine.fromLanguage, sourceText);
 
             
             
@@ -780,36 +855,4 @@ class WorkQueue {
     await new Promise(resolve => setTimeout(resolve, 0));
     this.#isWorkCancelled = false;
   }
-}
-
-
-
-
-const whitespaceRegex = /^(\s*)(.*?)(\s*)$/s;
-
-
-
-
-
-
-
-
-
-
-
-function cleanText(sourceText) {
-  
-  
-  const result = whitespaceRegex.exec(sourceText);
-  if (!result) {
-    throw new Error("The whitespace regex should always return a result.");
-  }
-  const whitespaceBefore = result[1];
-  const whitespaceAfter = result[3];
-  let cleanedSourceText = result[2];
-
-  
-  cleanedSourceText = cleanedSourceText.replaceAll("\u00AD", "");
-
-  return { whitespaceBefore, whitespaceAfter, cleanedSourceText };
 }
