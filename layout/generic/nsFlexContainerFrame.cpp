@@ -6475,6 +6475,7 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
     
     
     
+    
     const bool childShouldStretchCrossSize = [&]() {
       if (!isSingleLine || axisTracker.IsColumnOriented()) {
         
@@ -6497,8 +6498,8 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
           childStylePos->UsedAlignSelf(Style())._0;
       if ((alignSelf != StyleAlignFlags::STRETCH &&
            alignSelf != StyleAlignFlags::NORMAL) ||
-          childFrame->StyleMargin()->HasBlockAxisAuto(flexWM) ||
-          !childStylePos->BSize(flexWM).IsAuto()) {
+          !childStylePos->BSize(flexWM).IsAuto() ||
+          childFrame->StyleMargin()->HasBlockAxisAuto(flexWM)) {
         
         
         
