@@ -17,12 +17,7 @@ const kATP = Cc["@mozilla.org/about-thirdparty;1"].getService(
 function loadShellExtension() {
   
   
-  
-  kATP.openAndCloseFileDialogForTesting(
-    kExtensionModuleName,
-    getTestFilePath(""),
-    kFileFilterInDialog
-  );
+  kATP.loadModuleForTesting(getTestFilePath(kExtensionModuleName));
 }
 
 async function registerObject() {
