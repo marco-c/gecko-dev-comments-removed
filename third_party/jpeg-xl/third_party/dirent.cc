@@ -20,6 +20,8 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif  
+
+#include <errno.h>
 #include <windows.h>
 
 #include <memory>

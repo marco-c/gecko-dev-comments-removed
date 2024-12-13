@@ -18,7 +18,15 @@ constexpr int kJpegHuffmanRootTableBits = 8;
 
 
 
-constexpr int kJpegHuffmanLutSize = 758;
+
+
+
+
+
+
+
+
+constexpr int kJpegHuffmanLutSize = 1024;
 
 struct HuffmanTableEntry {
   
