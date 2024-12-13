@@ -1207,8 +1207,8 @@ bool js::temporal::ToTemporalDuration(JSContext* cx, Handle<Value> item,
 
 
 static int32_t DaysUntil(const PlainDate& earlier, const PlainDate& later) {
-  MOZ_ASSERT(ISODateTimeWithinLimits(earlier));
-  MOZ_ASSERT(ISODateTimeWithinLimits(later));
+  MOZ_ASSERT(ISODateWithinLimits(earlier));
+  MOZ_ASSERT(ISODateWithinLimits(later));
 
   
   int32_t epochDaysEarlier = MakeDay(earlier);

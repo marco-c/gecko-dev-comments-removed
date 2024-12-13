@@ -751,11 +751,11 @@ static bool DifferenceZonedDateTime(JSContext* cx, const Instant& ns1,
     if (sign != -timeSign) {
       
       const auto& date1 = startDateTime.date;
-      MOZ_ASSERT(ISODateTimeWithinLimits(date1));
+      MOZ_ASSERT(ISODateWithinLimits(date1));
 
       
       const auto& date2 = intermediateDate;
-      MOZ_ASSERT(ISODateTimeWithinLimits(date2));
+      MOZ_ASSERT(ISODateWithinLimits(date2));
 
       
       auto dateLargestUnit = std::min(largestUnit, TemporalUnit::Day);
