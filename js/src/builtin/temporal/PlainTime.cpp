@@ -577,7 +577,9 @@ static bool ToTemporalTimeOptions(JSContext* cx, Handle<Value> options,
 static bool ToTemporalTime(JSContext* cx, Handle<JSObject*> item,
                            Handle<Value> options, Time* result) {
   
-  if (auto* time = item->maybeUnwrapIf<PlainTimeObject>()) {
+  if (auto* plainTime = item->maybeUnwrapIf<PlainTimeObject>()) {
+    auto time = plainTime->time();
+
     
     TimeOptions ignoredOptions;
     if (!ToTemporalTimeOptions(cx, options, &ignoredOptions)) {
@@ -585,12 +587,14 @@ static bool ToTemporalTime(JSContext* cx, Handle<JSObject*> item,
     }
 
     
-    *result = time->time();
+    *result = time;
     return true;
   }
 
   
   if (auto* dateTime = item->maybeUnwrapIf<PlainDateTimeObject>()) {
+    auto time = dateTime->time();
+
     
     TimeOptions ignoredOptions;
     if (!ToTemporalTimeOptions(cx, options, &ignoredOptions)) {
@@ -598,7 +602,7 @@ static bool ToTemporalTime(JSContext* cx, Handle<JSObject*> item,
     }
 
     
-    *result = dateTime->time();
+    *result = time;
     return true;
   }
 
