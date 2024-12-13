@@ -221,10 +221,8 @@ class nsFocusManager final : public nsIFocusManager,
       mozIDOMWindowProxy* aWindowToFocus, mozilla::dom::CallerType aCallerType);
 
   
-
-
-
-  void ActivateRemoteFrameIfNeeded(mozilla::dom::Element&, uint64_t aActionId);
+  MOZ_CAN_RUN_SCRIPT void FixUpFocusAfterFrameLoaderChange(
+      mozilla::dom::Element&);
 
   
 
@@ -302,6 +300,13 @@ class nsFocusManager final : public nsIFocusManager,
 
 
   void EnsureCurrentWidgetFocused(mozilla::dom::CallerType aCallerType);
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT void MoveFocusToWindowAfterRaise(nsPIDOMWindowOuter*,
+                                                      uint64_t aActionId);
 
   
 
@@ -760,6 +765,12 @@ class nsFocusManager final : public nsIFocusManager,
                            nsIContent** aFocusedContent);
 
  private:
+  
+
+
+
+  void ActivateRemoteFrameIfNeeded(mozilla::dom::Element&, uint64_t aActionId);
+
   
   
   
