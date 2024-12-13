@@ -6,17 +6,6 @@ function IteratorIdentity() {
   return this;
 }
 
-#ifdef NIGHTLY_BUILD
-
-
-
-
-
-function IteratorRange(start, end, optionOrStep) {
-  return false;
-}
-#endif
-
 
 function IteratorNext(iteratorRecord, value) {
   
@@ -24,10 +13,10 @@ function IteratorNext(iteratorRecord, value) {
     ArgumentsLength() < 2
       ? callContentFunction(iteratorRecord.nextMethod, iteratorRecord.iterator)
       : callContentFunction(
-          iteratorRecord.nextMethod,
-          iteratorRecord.iterator,
-          value
-        );
+        iteratorRecord.nextMethod,
+        iteratorRecord.iterator,
+        value
+      );
   
   if (!IsObject(result)) {
     ThrowTypeError(JSMSG_OBJECT_REQUIRED, result);
@@ -1033,7 +1022,7 @@ function* IteratorConcatGenerator(iterables) {
   assert(iterables.length % 2 === 0, "iterables contains pairs (item, method)");
 
   
-  for (var i = iterables.length; i > 0; ) {
+  for (var i = iterables.length; i > 0;) {
     var item = iterables[--i];
     var method = iterables[--i];
 
@@ -1065,5 +1054,35 @@ function IteratorZip(predicate) {
 
 function IteratorZipKeyed(predicate) {
   return false;
+}
+
+
+
+
+
+
+function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
+  return false;
+}
+
+
+
+
+
+
+function IteratorRange(start, end, optionOrStep) {
+
+  
+  if (typeof start === 'number') {
+    return CreateNumericRangeIterator(start, end, optionOrStep, true);
+  }
+
+  
+  if (typeof start === 'bigint') {
+    return CreateNumericRangeIterator(start, end, optionOrStep, false);
+  }
+
+  
+  ThrowTypeError(JSMSG_ITERATOR_RANGE_INVALID_START);
 }
 #endif
