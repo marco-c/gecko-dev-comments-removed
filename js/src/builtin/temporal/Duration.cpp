@@ -1972,30 +1972,24 @@ static bool GetTemporalRelativeToOption(
     Rooted<JSString*> string(cx, value.toString());
 
     
-    bool isUTC;
-    bool hasOffset;
-    int64_t timeZoneOffset;
-    Rooted<ParsedTimeZone> timeZoneAnnotation(cx);
-    Rooted<JSString*> calendarString(cx);
-    if (!ParseTemporalRelativeToString(cx, string, &dateTime, &isUTC,
-                                       &hasOffset, &timeZoneOffset,
-                                       &timeZoneAnnotation, &calendarString)) {
+    Rooted<ParsedZonedDateTime> parsed(cx);
+    if (!ParseTemporalRelativeToString(cx, string, &parsed)) {
       return false;
     }
 
     
 
     
-    if (timeZoneAnnotation) {
+    if (parsed.timeZoneAnnotation()) {
       
-      if (!ToTemporalTimeZone(cx, timeZoneAnnotation, &timeZone)) {
+      if (!ToTemporalTimeZone(cx, parsed.timeZoneAnnotation(), &timeZone)) {
         return false;
       }
 
       
-      if (isUTC) {
+      if (parsed.isUTC()) {
         offsetBehaviour = OffsetBehaviour::Exact;
-      } else if (!hasOffset) {
+      } else if (!parsed.hasOffset()) {
         offsetBehaviour = OffsetBehaviour::Wall;
       }
 
@@ -2006,8 +2000,8 @@ static bool GetTemporalRelativeToOption(
     }
 
     
-    if (calendarString) {
-      if (!ToBuiltinCalendar(cx, calendarString, &calendar)) {
+    if (parsed.calendar()) {
+      if (!ToBuiltinCalendar(cx, parsed.calendar(), &calendar)) {
         return false;
       }
     } else {
@@ -2015,12 +2009,19 @@ static bool GetTemporalRelativeToOption(
     }
 
     
+    if (!timeZone) {
+      
+      return CreateTemporalDate(cx, parsed.dateTime().date, calendar,
+                                plainRelativeTo);
+    }
+
+    
     if (timeZone) {
       if (offsetBehaviour == OffsetBehaviour::Option) {
-        MOZ_ASSERT(hasOffset);
+        MOZ_ASSERT(parsed.hasOffset());
 
         
-        offsetNs = timeZoneOffset;
+        offsetNs = parsed.timeZoneOffset();
       } else {
         
         offsetNs = 0;

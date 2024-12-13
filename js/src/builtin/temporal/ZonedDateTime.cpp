@@ -334,16 +334,15 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<Value> item,
     
 
     
-    bool isUTC;
-    bool hasOffset;
-    int64_t timeZoneOffset;
-    Rooted<ParsedTimeZone> timeZoneAnnotation(cx);
-    Rooted<JSString*> calendarString(cx);
-    if (!ParseTemporalZonedDateTimeString(
-            cx, string, &dateTime, &isUTC, &hasOffset, &timeZoneOffset,
-            &timeZoneAnnotation, &calendarString)) {
+    Rooted<ParsedZonedDateTime> parsed(cx);
+    if (!ParseTemporalZonedDateTimeString(cx, string, &parsed)) {
       return false;
     }
+    bool isUTC = parsed.isUTC();
+    bool hasOffset = parsed.hasOffset();
+    int64_t timeZoneOffset = parsed.timeZoneOffset();
+    Rooted<ParsedTimeZone> timeZoneAnnotation(cx, parsed.timeZoneAnnotation());
+    Rooted<JSString*> calendarString(cx, parsed.calendar());
 
     
     MOZ_ASSERT(timeZoneAnnotation);

@@ -500,14 +500,14 @@ static bool ToTemporalDate(JSContext* cx, Handle<Value> item,
   Rooted<JSString*> string(cx, item.toString());
 
   
-  PlainDate date;
+  PlainDateTime dateTime;
   Rooted<JSString*> calendarString(cx);
-  if (!ParseTemporalDateString(cx, string, &date, &calendarString)) {
+  if (!ParseTemporalDateTimeString(cx, string, &dateTime, &calendarString)) {
     return false;
   }
 
   
-  MOZ_ASSERT(IsValidISODate(date));
+  MOZ_ASSERT(IsValidISODate(dateTime.date));
 
   
   Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
@@ -518,7 +518,7 @@ static bool ToTemporalDate(JSContext* cx, Handle<Value> item,
   }
 
   
-  return CreateTemporalDate(cx, date, calendar, result);
+  return CreateTemporalDate(cx, dateTime.date, calendar, result);
 }
 
 
