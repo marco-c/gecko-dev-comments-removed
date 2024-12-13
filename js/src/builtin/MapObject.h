@@ -330,8 +330,6 @@ class SetObject : public OrderedHashSetObject {
   static bool is(HandleValue v);
   static bool is(HandleObject o);
 
-  static bool isBuiltinAdd(HandleValue add);
-
   [[nodiscard]] static bool iterator_impl(JSContext* cx, const CallArgs& args,
                                           IteratorKind kind);
 
@@ -364,57 +362,6 @@ class SetIteratorObject : public TableIteratorObject {
  private:
   SetObject* target() const;
 };
-
-using SetInitGetPrototypeOp = NativeObject* (*)(JSContext*,
-                                                Handle<GlobalObject*>);
-using SetInitIsBuiltinOp = bool (*)(HandleValue);
-
-template <SetInitGetPrototypeOp getPrototypeOp, SetInitIsBuiltinOp isBuiltinOp>
-[[nodiscard]] static bool IsOptimizableInitForSet(JSContext* cx,
-                                                  HandleObject setObject,
-                                                  HandleValue iterable,
-                                                  bool* optimized) {
-  MOZ_ASSERT(!*optimized);
-
-  if (!iterable.isObject()) {
-    return true;
-  }
-
-  RootedObject array(cx, &iterable.toObject());
-  if (!IsPackedArray(array)) {
-    return true;
-  }
-
-  
-  Rooted<NativeObject*> setProto(cx, getPrototypeOp(cx, cx->global()));
-  if (!setProto) {
-    return false;
-  }
-
-  
-  if (setObject->staticPrototype() != setProto) {
-    return true;
-  }
-
-  
-  mozilla::Maybe<PropertyInfo> addProp = setProto->lookup(cx, cx->names().add);
-  if (addProp.isNothing() || !addProp->isDataProperty()) {
-    return true;
-  }
-
-  
-  RootedValue add(cx, setProto->getSlot(addProp->slot()));
-  if (!isBuiltinOp(add)) {
-    return true;
-  }
-
-  ForOfPIC::Chain* stubChain = ForOfPIC::getOrCreate(cx);
-  if (!stubChain) {
-    return false;
-  }
-
-  return stubChain->tryOptimizeArray(cx, array.as<ArrayObject>(), optimized);
-}
 
 } 
 

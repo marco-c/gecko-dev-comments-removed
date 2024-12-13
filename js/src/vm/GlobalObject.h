@@ -111,17 +111,6 @@ class GlobalObjectData {
 
   ~GlobalObjectData();
 
-#ifndef NIGHTLY_BUILD
-  
-  
-  
-  
-  
-  using VarNamesSet =
-      GCHashSet<HeapPtr<JSAtom*>, DefaultHasher<JSAtom*>, CellAllocPolicy>;
-  VarNamesSet varNames;
-#endif
-
   
   
   
@@ -703,22 +692,6 @@ class GlobalObject : public NativeObject {
     return getOrCreateCustomErrorPrototype(cx, global, JSEXN_ERR);
   }
 
-  static NativeObject* getOrCreateSetPrototype(JSContext* cx,
-                                               Handle<GlobalObject*> global) {
-    if (!ensureConstructor(cx, global, JSProto_Set)) {
-      return nullptr;
-    }
-    return &global->getPrototype(JSProto_Set).as<NativeObject>();
-  }
-
-  static NativeObject* getOrCreateWeakSetPrototype(
-      JSContext* cx, Handle<GlobalObject*> global) {
-    if (!ensureConstructor(cx, global, JSProto_WeakSet)) {
-      return nullptr;
-    }
-    return &global->getPrototype(JSProto_WeakSet).as<NativeObject>();
-  }
-
   static JSFunction* getOrCreateTypedArrayConstructor(
       JSContext* cx, Handle<GlobalObject*> global) {
     if (!ensureConstructor(cx, global, JSProto_TypedArray)) {
@@ -1014,16 +987,6 @@ class GlobalObject : public NativeObject {
   
   
   bool valueIsEval(const Value& val);
-
-#ifndef NIGHTLY_BUILD
-  void removeFromVarNames(JSAtom* name) { data().varNames.remove(name); }
-
-  
-  bool isInVarNames(JSAtom* name) { return data().varNames.has(name); }
-
-  
-  [[nodiscard]] bool addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name);
-#endif
 
   static ArgumentsObject* getOrCreateArgumentsTemplateObject(JSContext* cx,
                                                              bool mapped);
