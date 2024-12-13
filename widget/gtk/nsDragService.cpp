@@ -62,7 +62,7 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 
 
-#define NS_DND_TIMEOUT (5 * 1000000)
+#define NS_DND_TIMEOUT (1 * 1000000)
 
 
 
