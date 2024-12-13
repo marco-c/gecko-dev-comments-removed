@@ -106,7 +106,25 @@ int nr_ice_candidate_pair_create(nr_ice_peer_ctx *pctx, nr_ice_candidate *lcand,
     
 
     memcpy(&tmpcand, lcand, sizeof(tmpcand));
-    tmpcand.type = PEER_REFLEXIVE;
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    if (tmpcand.type != RELAYED) {
+      tmpcand.type = PEER_REFLEXIVE;
+    }
     if (r=nr_ice_candidate_compute_priority(&tmpcand))
       ABORT(r);
     t_priority = tmpcand.priority;
