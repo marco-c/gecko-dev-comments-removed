@@ -28,7 +28,7 @@ nsTArray<RefPtr<nsRange>> TextDirectiveFinder::FindTextDirectivesInDocument() {
                  : nsCString();
   TEXT_FRAGMENT_LOG("Trying to find text directives in document '%s'.",
                     uri.Data());
-  mDocument.FlushPendingNotifications(FlushType::Frames);
+  mDocument.FlushPendingNotifications(FlushType::Layout);
   
   
   
