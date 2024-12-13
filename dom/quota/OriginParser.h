@@ -103,6 +103,28 @@ class MOZ_STACK_CLASS OriginParser final {
 
 bool IsUUIDOrigin(const nsCString& aOrigin);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool IsUserContextSuffix(const nsACString& aSuffix, uint32_t aUserContextId);
+
 }  
 }  
 
