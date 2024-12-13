@@ -8931,14 +8931,6 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
 
   metrics.SetPresShellId(presShell->GetPresShellId());
 
-  
-  
-  
-  if (aScrollFrame &&
-      nsContentUtils::HasScrollgrab(aScrollFrame->GetContent())) {
-    metadata.SetHasScrollgrab(true);
-  }
-
   if (ShouldDisableApzForElement(aContent)) {
     metadata.SetForceDisableApz(true);
   }

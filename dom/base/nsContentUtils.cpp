@@ -6948,13 +6948,6 @@ void* nsContentUtils::AllocClassMatchingInfo(nsINode* aRootNode,
   return info;
 }
 
-bool nsContentUtils::HasScrollgrab(nsIContent* aContent) {
-  
-  
-  
-  return false;
-}
-
 void nsContentUtils::FlushLayoutForTree(nsPIDOMWindowOuter* aWindow) {
   if (!aWindow) {
     return;

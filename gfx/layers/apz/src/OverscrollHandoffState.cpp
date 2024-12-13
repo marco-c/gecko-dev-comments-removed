@@ -20,22 +20,6 @@ void OverscrollHandoffChain::Add(AsyncPanZoomController* aApzc) {
   mChain.push_back(aApzc);
 }
 
-struct CompareByScrollPriority {
-  bool operator()(const RefPtr<AsyncPanZoomController>& a,
-                  const RefPtr<AsyncPanZoomController>& b) const {
-    return a->HasScrollgrab() && !b->HasScrollgrab();
-  }
-};
-
-void OverscrollHandoffChain::SortByScrollPriority() {
-  
-  
-  
-  
-  
-  std::stable_sort(mChain.begin(), mChain.end(), CompareByScrollPriority());
-}
-
 const RefPtr<AsyncPanZoomController>& OverscrollHandoffChain::GetApzcAtIndex(
     uint32_t aIndex) const {
   MOZ_ASSERT(aIndex < Length());

@@ -3077,11 +3077,6 @@ APZCTreeManager::BuildOverscrollHandoffChain(
   }
 
   
-  
-  
-  result->SortByScrollPriority();
-
-  
   for (uint32_t i = 0; i < result->Length(); ++i) {
     APZCTM_LOG("OverscrollHandoffChain[%d] = %p\n", i,
                result->GetApzcAtIndex(i).get());

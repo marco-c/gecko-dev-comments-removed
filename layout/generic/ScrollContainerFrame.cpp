@@ -4205,7 +4205,7 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   if (aBuilder->IsPaintingToWindow()) {
     if (DisplayPortUtils::HasNonMinimalDisplayPort(GetContent()) ||
-        mZoomableByAPZ || nsContentUtils::HasScrollgrab(GetContent())) {
+        mZoomableByAPZ) {
       aBuilder->SetContainsNonMinimalDisplayPort();
     }
   }
@@ -4537,9 +4537,7 @@ bool ScrollContainerFrame::DecideScrollableLayer(
   
   
   
-  mWillBuildScrollableLayer = hasDisplayPort ||
-                              nsContentUtils::HasScrollgrab(content) ||
-                              mZoomableByAPZ;
+  mWillBuildScrollableLayer = hasDisplayPort || mZoomableByAPZ;
   return mWillBuildScrollableLayer;
 }
 
@@ -5994,8 +5992,7 @@ bool ScrollContainerFrame::IsScrollingActive() const {
 
   nsIContent* content = GetContent();
   return mHasBeenScrolledRecently || IsAlwaysActive() ||
-         DisplayPortUtils::HasDisplayPort(content) ||
-         nsContentUtils::HasScrollgrab(content);
+         DisplayPortUtils::HasDisplayPort(content);
 }
 
 void ScrollContainerFrame::FinishReflowForScrollbar(

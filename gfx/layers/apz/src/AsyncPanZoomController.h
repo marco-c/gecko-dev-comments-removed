@@ -450,12 +450,6 @@ class AsyncPanZoomController {
   
 
 
-
-  bool HasScrollgrab() const { return mScrollMetadata.GetHasScrollgrab(); }
-
-  
-
-
   bool HasScrollSnapping() const {
     return mScrollMetadata.GetSnapInfo().HasScrollSnapping();
   }

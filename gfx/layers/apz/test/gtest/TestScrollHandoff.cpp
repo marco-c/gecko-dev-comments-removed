@@ -142,67 +142,6 @@ class APZScrollHandoffTester : public APZCTreeManagerTester {
     rootApzc = ApzcOf(root);
   }
 
-  void CreateScrollgrabLayerTree(bool makeParentScrollable = true) {
-    const char* treeShape = "x(x)";
-    LayerIntRect layerVisibleRect[] = {
-        LayerIntRect(0, 0, 100, 100),  
-        LayerIntRect(0, 20, 100, 80)   
-    };
-    CreateScrollData(treeShape, layerVisibleRect);
-    float parentHeight = makeParentScrollable ? 120 : 100;
-    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                              CSSRect(0, 0, 100, parentHeight));
-    SetScrollableFrameMetrics(layers[1],
-                              ScrollableLayerGuid::START_SCROLL_ID + 1,
-                              CSSRect(0, 0, 100, 800));
-    SetScrollHandoff(layers[1], root);
-    registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
-    UpdateHitTestingTree();
-    rootApzc = ApzcOf(root);
-    rootApzc->GetScrollMetadata().SetHasScrollgrab(true);
-  }
-
-  void TestFlingAcceleration() {
-    
-    
-    const float kAcceleration = 100.0f;
-    SCOPED_GFX_PREF_FLOAT("apz.fling_accel_base_mult", kAcceleration);
-    SCOPED_GFX_PREF_FLOAT("apz.fling_accel_min_fling_velocity", 0.0);
-    SCOPED_GFX_PREF_FLOAT("apz.fling_accel_min_pan_velocity", 0.0);
-
-    RefPtr<TestAsyncPanZoomController> childApzc = ApzcOf(layers[1]);
-
-    
-    
-    QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
-    Pan(manager, 70, 40);
-
-    
-    SampleAnimationsOnce();
-
-    float childVelocityAfterFling1 = childApzc->GetVelocityVector().y;
-
-    
-    QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
-    Pan(manager, 70, 40);
-
-    
-    
-    SampleAnimationsOnce();
-
-    float childVelocityAfterFling2 = childApzc->GetVelocityVector().y;
-
-    
-    
-    EXPECT_GT(childVelocityAfterFling2,
-              childVelocityAfterFling1 * kAcceleration / 2);
-
-    
-    
-    EXPECT_LE(childVelocityAfterFling2,
-              childVelocityAfterFling1 * kAcceleration * kAcceleration / 4);
-  }
-
   void TestCrossApzcAxisLock() {
     SCOPED_GFX_PREF_INT("apz.axis_lock.mode", 1);
 
@@ -565,62 +504,6 @@ TEST_F(APZScrollHandoffTester, SimultaneousFlings) {
   parent1->AssertStateIsFling();
   child2->AssertStateIsReset();
   parent2->AssertStateIsFling();
-}
-
-#ifndef MOZ_WIDGET_ANDROID  
-TEST_F(APZScrollHandoffTester, Scrollgrab) {
-  SCOPED_GFX_PREF_BOOL("apz.allow_immediate_handoff", true);
-
-  
-  CreateScrollgrabLayerTree();
-
-  RefPtr<TestAsyncPanZoomController> childApzc = ApzcOf(layers[1]);
-
-  
-  
-  Pan(childApzc, 80, 45);
-
-  
-  EXPECT_EQ(20, rootApzc->GetFrameMetrics().GetVisualScrollOffset().y);
-  EXPECT_EQ(15, childApzc->GetFrameMetrics().GetVisualScrollOffset().y);
-}
-#endif
-
-TEST_F(APZScrollHandoffTester, ScrollgrabFling) {
-  SCOPED_GFX_PREF_BOOL("apz.allow_immediate_handoff", true);
-  SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
-
-  
-  CreateScrollgrabLayerTree();
-
-  RefPtr<TestAsyncPanZoomController> childApzc = ApzcOf(layers[1]);
-
-  
-  Pan(childApzc, 80, 70);
-
-  
-  rootApzc->AssertStateIsFling();
-  childApzc->AssertStateIsReset();
-}
-
-TEST_F(APZScrollHandoffTesterMock, ScrollgrabFlingAcceleration1) {
-  SCOPED_GFX_PREF_BOOL("apz.allow_immediate_handoff", true);
-  SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
-  CreateScrollgrabLayerTree(true );
-
-  
-  
-  
-  
-  
-  TestFlingAcceleration();
-}
-
-TEST_F(APZScrollHandoffTesterMock, ScrollgrabFlingAcceleration2) {
-  SCOPED_GFX_PREF_BOOL("apz.allow_immediate_handoff", true);
-  SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
-  CreateScrollgrabLayerTree(false );
-  TestFlingAcceleration();
 }
 
 TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Pan) {
