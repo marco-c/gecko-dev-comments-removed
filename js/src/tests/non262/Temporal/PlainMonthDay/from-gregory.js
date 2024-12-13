@@ -21,22 +21,15 @@
 
 
 {
-  let pmd = Temporal.PlainMonthDay.from({
+  let fields = {
     calendar: "gregory",
     era: "ce",
     eraYear: 2024,
     year: 2023,
     monthCode: "M01",
     day: 1,
-  });
-
-  let expected = Temporal.PlainMonthDay.from({
-    calendar: "gregory",
-    monthCode: "M01",
-    day: 1,
-  });
-
-  assertEq(pmd.equals(expected), true);
+  };
+  assertThrowsInstanceOf(() => Temporal.PlainMonthDay.from(fields), RangeError);
 }
 
 
