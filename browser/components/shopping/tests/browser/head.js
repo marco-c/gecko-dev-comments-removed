@@ -1,6 +1,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/toolkit/components/shopping/test/browser/head.js",
   this
@@ -222,4 +231,43 @@ function getSettingsDetails(browser, data) {
     }
     return returnState;
   });
+}
+
+
+
+
+
+
+
+
+
+
+async function withReviewCheckerSidebar(task, args = [], win = window) {
+  const SHOPPING_SIDEBAR_URL = "about:shoppingsidebar";
+  let sidebar = win.document.getElementById("sidebar");
+  if (!sidebar) {
+    return;
+  }
+
+  let { readyState } = sidebar.contentDocument;
+  if (readyState === "loading" || readyState === "uninitialized") {
+    await new Promise(resolve => {
+      sidebar.contentDocument.addEventListener("DOMContentLoaded", resolve, {
+        once: true,
+      });
+    });
+  }
+
+  let rcBrowser = sidebar.contentDocument.getElementById(
+    "review-checker-browser"
+  );
+  if (rcBrowser.webProgress.isLoadingDocument) {
+    await BrowserTestUtils.browserLoaded(
+      rcBrowser,
+      false,
+      SHOPPING_SIDEBAR_URL
+    );
+  }
+
+  await ContentTask.spawn(rcBrowser, args, task);
 }
