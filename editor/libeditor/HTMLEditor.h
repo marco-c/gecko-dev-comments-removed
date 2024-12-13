@@ -1602,26 +1602,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  InsertPaddingBRElementIfNeeded(const EditorDOMPoint& aPoint,
-                                 nsIEditor::EStripWrappers aDeleteEmptyInlines,
-                                 const Element& aEditingHost);
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
-  DeleteRangesWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
-                              nsIEditor::EStripWrappers aStripWrappers,
-                              const AutoRangeArray& aRangesToDelete) override;
-
-  
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   MaybeInsertPaddingBRElementForEmptyLastLineAtSelection();
 
@@ -2096,10 +2076,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
-  DeleteEmptyInclusiveAncestorInlineElements(nsIContent& aContent,
-                                             const Element& aEditingHost);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  RemoveEmptyInclusiveAncestorInlineElements(nsIContent& aContent);
 
   
 
@@ -2120,7 +2098,7 @@ class HTMLEditor final : public EditorBase,
       const EditorDOMPointInText& aStartToDelete,
       const EditorDOMPointInText& aEndToDelete,
       TreatEmptyTextNodes aTreatEmptyTextNodes,
-      DeleteDirection aDeleteDirection, const Element& aEditingHost);
+      DeleteDirection aDeleteDirection);
 
   
 
@@ -3298,24 +3276,6 @@ class HTMLEditor final : public EditorBase,
 
   MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult> PrepareToInsertBRElement(
       const EditorDOMPoint& aPointToInsert);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  EnsureNoFollowingUnnecessaryLineBreak(
-      const EditorDOMPoint& aNextOrAfterModifiedPoint,
-      const Element& aEditingHost);
 
   
 
@@ -4563,6 +4523,7 @@ class HTMLEditor final : public EditorBase,
   friend class CSSEditUtils;            
                                         
   friend class EditorBase;              
+                            
                             
                             
                             
