@@ -188,17 +188,6 @@ ModuleObject* CompileModule(JSContext* cx, FrontendContext* fc,
 
 
 
-already_AddRefed<CompilationStencil> ParseModuleToStencil(
-    JSContext* maybeCx, FrontendContext* fc, js::LifoAlloc& tempLifoAlloc,
-    CompilationInput& input, ScopeBindingCache* scopeCache,
-    JS::SourceText<char16_t>& srcBuf);
-already_AddRefed<CompilationStencil> ParseModuleToStencil(
-    JSContext* maybeCx, FrontendContext* fc, js::LifoAlloc& tempLifoAlloc,
-    CompilationInput& input, ScopeBindingCache* scopeCache,
-    JS::SourceText<mozilla::Utf8Unit>& srcBuf);
-
-
-
 
 
 
