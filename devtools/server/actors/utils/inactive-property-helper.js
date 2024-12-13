@@ -455,6 +455,19 @@ class InactivePropertyHelper {
       },
       
       {
+        invalidProperties: ["content-visibility"],
+        when: () =>
+          !this.hasPrincipalBox ||
+          this.table ||
+          this.internalTableElement ||
+          this.rubyContainer ||
+          this.internalRubyElement ||
+          this.nonAtomicInlineBox,
+        fixId: "inactive-css-no-size-containment-fix",
+        msgId: "inactive-css-no-size-containment",
+      },
+      
+      {
         invalidProperties: [
           "margin",
           "margin-block",
@@ -1043,6 +1056,13 @@ class InactivePropertyHelper {
   
 
 
+  get table() {
+    return this.checkComputedStyle("display", ["table", "inline-table"]);
+  }
+
+  
+
+
   get tableRow() {
     return this.style && this.style.display === "table-row";
   }
@@ -1158,6 +1178,25 @@ class InactivePropertyHelper {
   
 
 
+  get rubyContainer() {
+    return this.checkComputedStyle("display", ["ruby"]);
+  }
+
+  
+
+
+  get internalRubyElement() {
+    return this.checkComputedStyle("display", [
+      "ruby-base",
+      "ruby-text",
+      "ruby-base-container",
+      "ruby-text-container",
+    ]);
+  }
+
+  
+
+
   get hasCssLayout() {
     return !this.isSvg && !this.isMathMl;
   }
@@ -1171,6 +1210,30 @@ class InactivePropertyHelper {
       this.nonReplaced &&
       this.style &&
       this.style.display === "inline"
+    );
+  }
+
+  
+
+
+  get nonAtomicInlineBox() {
+    return (
+      this.hasCssLayout &&
+      this.nonReplaced &&
+      this.style &&
+      this.checkComputedStyle("display", ["inline", "inline list-item"])
+    );
+  }
+
+  
+
+
+  get hasPrincipalBox() {
+    return (
+      this.hasCssLayout &&
+      this.style &&
+      this.style.display !== "none" &&
+      this.style.display !== "contents"
     );
   }
 
