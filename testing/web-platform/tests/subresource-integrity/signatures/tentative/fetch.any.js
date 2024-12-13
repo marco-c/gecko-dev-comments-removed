@@ -19,33 +19,98 @@ function resourceURL(data) {
 
 
 
-promise_test(test => {
-  const data = {
-    body: `{"hello": "world"}`
-  };
-  return fetch(resourceURL(data)).then(r => {
-    assert_equals(r.status, 200, "Response status is 200.");
-  });
-}, "No signature: loads.");
 
-promise_test(test => {
-  const data = {
-    body: `{"hello": "world"}`,
-    digest: `sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:`,
-    signature: `signature=:H7AqWWgo1DJ7VdyF9DKotG/4hvatKDfRTq2mpuY/hvJupSn+EYzus5p24qPK7DtVQcxJFhzSYDj4RBq9grZTAQ==:`,
-    signatureInput: `signature=("identity-digest";sf);alg="ed25519";keyid="JrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=";tag="sri"`
-  };
-  return fetch(resourceURL(data)).then(r => {
-    assert_equals(r.status, 200, "Response status is 200.");
-  });
-}, "Valid signature: loads.");
 
-promise_test(test => {
-  const data = {
-    body: `{"hello": "world"}`,
-    digest: `sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:`,
-    signature: `signature=:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==:`,
-    signatureInput: `signature=("identity-digest";sf);alg="ed25519";keyid="JrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=";tag="sri"`
-  };
-  return promise_rejects_js(test, TypeError, fetch(resourceURL(data)));
-}, "Non-matching signature: blocked.");
+
+
+
+
+
+
+
+const kValidKey   = "JrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=";
+
+
+
+const kInvalidKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+
+
+const kRequestWithValidSignature = {
+  body: `{"hello": "world"}`,
+  digest: `sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:`,
+  signature: `signature=:H7AqWWgo1DJ7VdyF9DKotG/4hvatKDfRTq2mpuY/hvJupSn+EYzus5p24qPK7DtVQcxJFhzSYDj4RBq9grZTAQ==:`,
+  signatureInput: `signature=("identity-digest";sf);alg="ed25519";keyid="JrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=";tag="sri"`
+};
+
+
+const kRequestWithInvalidSignature = {
+  body: `{"hello": "world"}`,
+  digest: `sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:`,
+  signature: `signature=:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==:`,
+  signatureInput: `signature=("identity-digest";sf);alg="ed25519";keyid="JrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=";tag="sri"`
+};
+
+const EXPECT_BLOCKED = "block";
+const EXPECT_LOADED = "loaded";
+
+function generate_test(request_data, integrity, expectation, description) {
+  promise_test(test => {
+    const url = resourceURL(request_data);
+    let options = {};
+    if (integrity != "") {
+      options.integrity = integrity;
+    }
+
+    let fetcher = fetch(url, options);
+    if (expectation == EXPECT_LOADED) {
+      return fetcher.then(r => {
+        assert_equals(r.status, 200, "Response status is 200.");
+      });
+    } else {
+      return promise_rejects_js(test, TypeError, fetcher);
+    }
+  }, description);
+}
+
+generate_test({}, "", EXPECT_LOADED,
+              "No signature, no integrity check: loads.");
+
+generate_test({}, `ed25519-!!!`, EXPECT_LOADED,
+              "No signature, malformed integrity check: loads.");
+
+generate_test({}, `ed25519-${kValidKey}`, EXPECT_BLOCKED,
+              "No signature, valid integrity check: blocked.");
+
+
+generate_test(kRequestWithValidSignature, "", EXPECT_LOADED,
+              "Valid signature, no integrity check: loads.");
+
+generate_test(kRequestWithValidSignature, "ed25519-???", EXPECT_LOADED,
+              "Valid signature, malformed integrity check: loads.");
+
+generate_test(kRequestWithValidSignature, `ed25519-${kValidKey}`, EXPECT_LOADED,
+              "Valid signature, matching integrity check: loads.");
+
+generate_test(kRequestWithValidSignature, `ed25519-${kInvalidKey}`, EXPECT_BLOCKED,
+              "Valid signature, mismatched integrity check: blocked.");
+
+generate_test(kRequestWithValidSignature,
+              `ed25519-${kValidKey} ed25519-${kInvalidKey}`, EXPECT_LOADED,
+              "Valid signature, one valid integrity check: loads.");
+
+
+generate_test(kRequestWithInvalidSignature, "", EXPECT_BLOCKED,
+              "Invalid signature, no integrity check: blocked.");
+
+generate_test(kRequestWithInvalidSignature, "ed25519-???", EXPECT_BLOCKED,
+              "Invalid signature, malformed integrity check: blocked.");
+
+generate_test(kRequestWithInvalidSignature, `ed25519-${kValidKey}`, EXPECT_BLOCKED,
+              "Invalid signature, matching integrity check: blocked.");
+
+generate_test(kRequestWithInvalidSignature, `ed25519-${kInvalidKey}`, EXPECT_BLOCKED,
+              "Invalid signature, mismatched integrity check: blocked.");
+
+generate_test(kRequestWithInvalidSignature,
+              `ed25519-${kValidKey} ed25519-${kInvalidKey}`, EXPECT_BLOCKED,
+              "Invalid signature, one valid integrity check: blocked.");
