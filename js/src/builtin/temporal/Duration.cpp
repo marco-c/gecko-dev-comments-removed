@@ -3972,6 +3972,19 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
         return false;
       }
     }
+
+    
+    if (roundingIncrement > Increment{1} && largestUnit != smallestUnit &&
+        smallestUnit <= TemporalUnit::Day) {
+      Int32ToCStringBuf cbuf;
+      const char* numStr =
+          Int32ToCString(&cbuf, int32_t(roundingIncrement.value()));
+
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_INVALID_OPTION_VALUE, "roundingIncrement",
+                                numStr);
+      return false;
+    }
   }
 
   
