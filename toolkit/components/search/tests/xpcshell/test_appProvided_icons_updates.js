@@ -130,6 +130,10 @@ add_setup(async function setup() {
   
   
   consoleAllowList.push("Could not find");
+
+  registerCleanupFunction(async () => {
+    sinon.restore();
+  });
 });
 
 add_task(async function test_icon_added_unknown_engine() {
