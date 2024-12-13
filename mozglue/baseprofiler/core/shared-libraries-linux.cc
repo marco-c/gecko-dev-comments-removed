@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <vector>
+#include <optional>
 
 #if defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd)
 #  include <link.h>  
@@ -664,26 +665,35 @@ static std::string IDtoString(const std::vector<uint8_t>& aIdentifier) {
 }
 
 
-static std::string getBreakpadId(const char* bin_name) {
+
+static std::optional<std::vector<uint8_t>> getElfFileIdentifier(
+    const char* bin_name) {
   std::vector<uint8_t> identifier;
   identifier.reserve(kDefaultBuildIdSize);
 
   FileID file_id(bin_name);
   if (file_id.ElfFileIdentifier(identifier)) {
-    return IDtoUUIDString(identifier);
+    return identifier;
   }
 
   return {};
 }
 
 
-static std::string getCodeId(const char* bin_name) {
-  std::vector<uint8_t> identifier;
-  identifier.reserve(kDefaultBuildIdSize);
+static std::string getBreakpadId(
+    const std::optional<std::vector<uint8_t>>& aIdentifier) {
+  if (aIdentifier) {
+    return IDtoUUIDString(aIdentifier.value());
+  }
 
-  FileID file_id(bin_name);
-  if (file_id.ElfFileIdentifier(identifier)) {
-    return IDtoString(identifier);
+  return {};
+}
+
+
+static std::string getCodeId(
+    const std::optional<std::vector<uint8_t>>& aIdentifier) {
+  if (aIdentifier) {
+    return IDtoString(aIdentifier.value());
   }
 
   return {};
@@ -699,9 +709,11 @@ static SharedLibrary SharedLibraryAtPath(const char* path,
   std::string nameStr =
       (pos != std::string::npos) ? pathStr.substr(pos + 1) : pathStr;
 
-  return SharedLibrary(libStart, libEnd, offset, getBreakpadId(path),
-                       getCodeId(path), nameStr, pathStr, nameStr, pathStr,
-                       std::string{}, "");
+  const auto identifier = getElfFileIdentifier(path);
+
+  return SharedLibrary(libStart, libEnd, offset, getBreakpadId(identifier),
+                       getCodeId(identifier), nameStr, pathStr, nameStr,
+                       pathStr, std::string{}, "");
 }
 
 static int dl_iterate_callback(struct dl_phdr_info* dl_info, size_t size,
