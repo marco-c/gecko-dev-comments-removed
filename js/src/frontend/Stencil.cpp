@@ -34,15 +34,16 @@
 #include "gc/Tracer.h"            
 #include "js/CallArgs.h"          
 #include "js/CompileOptions.h"  
-#include "js/experimental/JSStencil.h"  
-#include "js/GCAPI.h"                   
-#include "js/Printer.h"                 
-#include "js/RealmOptions.h"            
-#include "js/RootingAPI.h"              
-#include "js/Transcoding.h"             
-#include "js/Utility.h"                 
-#include "js/Value.h"                   
-#include "js/WasmModule.h"              
+#include "js/experimental/CompileScript.h"  
+#include "js/experimental/JSStencil.h"      
+#include "js/GCAPI.h"                       
+#include "js/Printer.h"                     
+#include "js/RealmOptions.h"                
+#include "js/RootingAPI.h"                  
+#include "js/Transcoding.h"                 
+#include "js/Utility.h"                     
+#include "js/Value.h"                       
+#include "js/WasmModule.h"                  
 #include "vm/BigIntType.h"   
 #include "vm/BindingKind.h"  
 #include "vm/EnvironmentObject.h"
@@ -2955,6 +2956,20 @@ bool CompilationStencil::prepareForInstantiate(
     PreallocatedCompilationGCOutput& gcOutput) {
   return gcOutput.allocate(fc, stencil.scriptData.size(),
                            stencil.scopeData.size());
+}
+
+bool JS::PrepareForInstantiate(JS::FrontendContext* fc, JS::Stencil& stencil,
+                               JS::InstantiationStorage& storage) {
+  if (!storage.gcOutput_) {
+    storage.gcOutput_ =
+        fc->getAllocator()
+            ->new_<js::frontend::PreallocatedCompilationGCOutput>();
+    if (!storage.gcOutput_) {
+      return false;
+    }
+  }
+  return CompilationStencil::prepareForInstantiate(fc, stencil,
+                                                   *storage.gcOutput_);
 }
 
 ExtensibleCompilationStencil::ExtensibleCompilationStencil(ScriptSource* source)
