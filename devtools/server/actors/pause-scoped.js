@@ -28,10 +28,13 @@ class PauseScopedObjectActor extends ObjectActor {
     for (const methodName of guardWithPaused) {
       this[methodName] = this.withPaused(this[methodName]);
     }
+
+    
+    this.threadLifetimePool = this.threadActor.threadLifetimePool;
   }
 
   isThreadLifetimePool() {
-    return this.getParent() === this.threadActor.threadLifetimePool;
+    return this.getParent() === this.threadLifetimePool;
   }
 
   isPaused() {
@@ -51,6 +54,19 @@ class PauseScopedObjectActor extends ObjectActor {
           " actors can only be accessed while the thread is paused.",
       };
     };
+  }
+
+  
+
+
+
+
+
+
+
+  threadGrip() {
+    this.threadActor.promoteObjectToThreadLifetime(this);
+    return {};
   }
 
   
