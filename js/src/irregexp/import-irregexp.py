@@ -53,8 +53,8 @@ def copy_and_update_includes(src_path, dst_path):
 
     
     
-    
-    regexp_include = re.compile('#include "src/regexp(?!/regexp-(flags|utils).h)')
+    excluded = "|".join(["flags", "utils", "result-vector"])
+    regexp_include = re.compile(f'#include "src/regexp(?!/regexp-({excluded}).h)')
     regexp_include_new = '#include "irregexp/imported'
 
     
@@ -92,6 +92,8 @@ def import_from(srcdir, dstdir):
         "OWNERS",
         "regexp.cc",
         "regexp-flags.h",
+        "regexp-result-vector.cc",
+        "regexp-result-vector.h",
         "regexp-utils.cc",
         "regexp-utils.h",
         "regexp-macro-assembler-arch.h",
