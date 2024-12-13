@@ -3015,11 +3015,18 @@ var gPrivacyPane = {
       "privacy.donottrackheader.enabled",
       false
     );
-    document.getElementById("globalPrivacyControlBox").hidden =
-      !gpcEnabledPrefValue;
-    document.getElementById("doNotTrackBox").hidden =
-      !gpcEnabledPrefValue || !dntEnabledPrefValue;
-    document.getElementById("legacyDoNotTrackBox").hidden = gpcEnabledPrefValue;
+    document.getElementById("doNotTrackBox").hidden = !dntEnabledPrefValue;
+    
+    
+    if (gpcEnabledPrefValue) {
+      document
+        .getElementById("nonTechnicalPrivacyGroup")
+        .removeAttribute("style");
+    } else {
+      document
+        .getElementById("nonTechnicalPrivacyGroup")
+        .setAttribute("style", "display: none !important");
+    }
   },
 
   
