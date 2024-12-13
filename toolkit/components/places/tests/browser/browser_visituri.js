@@ -16,10 +16,10 @@ add_task(async function test_basic() {
   
   
   const expectedUrls = [
-    "http://example.com/tests/toolkit/components/places/tests/browser/begin.html",
-    "http://example.com/tests/toolkit/components/places/tests/browser/redirect_twice.sjs",
-    "http://example.com/tests/toolkit/components/places/tests/browser/redirect_once.sjs",
-    "http://test1.example.com/tests/toolkit/components/places/tests/browser/final.html",
+    "https://example.com/tests/toolkit/components/places/tests/browser/begin.html",
+    "https://example.com/tests/toolkit/components/places/tests/browser/redirect_twice.sjs",
+    "https://example.com/tests/toolkit/components/places/tests/browser/redirect_once.sjs",
+    "https://test1.example.com/tests/toolkit/components/places/tests/browser/final.html",
   ];
 
   let currentIndex = 0;
@@ -75,7 +75,7 @@ add_task(async function test_basic() {
   );
 
   const testUrl =
-    "http://example.com/tests/toolkit/components/places/tests/browser/begin.html";
+    "https://example.com/tests/toolkit/components/places/tests/browser/begin.html";
   await BrowserTestUtils.openNewForegroundTab(gBrowser, testUrl);
 
   
