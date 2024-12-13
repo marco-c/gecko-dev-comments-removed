@@ -1165,6 +1165,7 @@ struct CompilationStencil {
 
   
   
+  
   bool canLazilyParse = false;
 
   
@@ -1272,13 +1273,6 @@ struct CompilationStencil {
                                                 ScriptIndexRange range,
                                                 JS::Handle<JSFunction*> fun);
 
-  [[nodiscard]] bool serializeStencils(JSContext* cx, CompilationInput& input,
-                                       JS::TranscodeBuffer& buf,
-                                       bool* succeededOut = nullptr) const;
-  [[nodiscard]] bool deserializeStencils(
-      FrontendContext* fc, const JS::ReadOnlyCompileOptions& options,
-      const JS::TranscodeRange& range, bool* succeededOut = nullptr);
-
   
   CompilationStencil(const CompilationStencil&) = delete;
   CompilationStencil(CompilationStencil&&) = delete;
@@ -1330,6 +1324,149 @@ struct CompilationStencil {
   void dumpFields(js::JSONPrinter& json) const;
 
   void dumpAtom(TaggedParserAtomIndex index) const;
+#endif
+};
+
+
+class FunctionKeyToScriptIndexMap {
+  using FunctionKey = SourceExtent::FunctionKey;
+  mozilla::HashMap<FunctionKey, ScriptIndex,
+                   mozilla::DefaultHasher<FunctionKey>, js::SystemAllocPolicy>
+      map_;
+
+  template <typename T>
+  [[nodiscard]] bool init(FrontendContext* fc, const T& scriptExtra,
+                          size_t scriptExtraSize);
+
+ public:
+  FunctionKeyToScriptIndexMap() = default;
+
+  [[nodiscard]] bool init(FrontendContext* fc,
+                          const CompilationStencil* initial);
+  [[nodiscard]] bool init(FrontendContext* fc,
+                          const ExtensibleCompilationStencil* initial);
+
+  mozilla::Maybe<ScriptIndex> get(FunctionKey key) const;
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct InitialStencilAndDelazifications {
+ private:
+  using FunctionKey = SourceExtent::FunctionKey;
+
+  
+  RefPtr<const CompilationStencil> initial_;
+
+  
+  
+  
+  
+  
+  
+  Vector<mozilla::Atomic<CompilationStencil*>, 0, js::SystemAllocPolicy>
+      delazifications_;
+
+  
+  
+  
+  
+  FunctionKeyToScriptIndexMap functionKeyToInitialScriptIndex_;
+
+  mutable mozilla::Atomic<uintptr_t> refCount_{0};
+
+ public:
+  InitialStencilAndDelazifications() = default;
+  ~InitialStencilAndDelazifications();
+
+  void AddRef();
+  void Release();
+
+  [[nodiscard]] bool init(FrontendContext* fc,
+                          const CompilationStencil* initial);
+
+  
+  
+  const CompilationStencil* getInitial() const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool canLazilyParse() const { return initial_->canLazilyParse; }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const CompilationStencil* getDelazificationAt(size_t functionIndex) const;
+  const CompilationStencil* getDelazificationFor(
+      const SourceExtent& extent) const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const CompilationStencil* storeDelazification(
+      RefPtr<CompilationStencil>&& delazification);
+
+  
+  
+  
+  
+  
+  CompilationStencil* getMerged(FrontendContext* fc) const;
+
+  
+  [[nodiscard]] static bool instantiateStencils(
+      JSContext* cx, CompilationInput& input,
+      const InitialStencilAndDelazifications& stencils,
+      CompilationGCOutput& gcOutput);
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
+  }
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+  void dump() const;
+  void dump(js::JSONPrinter& json) const;
+  void dumpFields(js::JSONPrinter& json) const;
 #endif
 };
 
@@ -1964,14 +2101,7 @@ struct CompilationStencilMerger {
   
   UniquePtr<ExtensibleCompilationStencil> initial_;
 
-  
-  using FunctionKeyToScriptIndexMap =
-      mozilla::HashMap<FunctionKey, ScriptIndex,
-                       mozilla::DefaultHasher<FunctionKey>,
-                       js::SystemAllocPolicy>;
   FunctionKeyToScriptIndexMap functionKeyToInitialScriptIndex_;
-
-  [[nodiscard]] bool buildFunctionKeyToIndex(FrontendContext* fc);
 
   ScriptIndex getInitialScriptIndexFor(
       const CompilationStencil& delazification) const;
@@ -1993,6 +2123,14 @@ struct CompilationStencilMerger {
 
   
   [[nodiscard]] bool addDelazification(
+      FrontendContext* fc, const CompilationStencil& delazification);
+
+  
+  
+  
+  
+  
+  [[nodiscard]] bool maybeAddDelazification(
       FrontendContext* fc, const CompilationStencil& delazification);
 
   ExtensibleCompilationStencil& getResult() const { return *initial_; }
@@ -2087,6 +2225,19 @@ const ScriptStencilExtra& ScriptStencilRef::scriptExtra() const {
 }
 
 }  
+}  
+
+namespace mozilla {
+template <>
+struct RefPtrTraits<js::frontend::InitialStencilAndDelazifications> {
+  static void AddRef(js::frontend::InitialStencilAndDelazifications* stencils) {
+    stencils->AddRef();
+  }
+  static void Release(
+      js::frontend::InitialStencilAndDelazifications* stencils) {
+    stencils->Release();
+  }
+};
 }  
 
 #endif  
