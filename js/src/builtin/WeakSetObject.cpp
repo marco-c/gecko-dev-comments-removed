@@ -24,6 +24,17 @@ using namespace js;
   return v.isObject() && v.toObject().is<WeakSetObject>();
 }
 
+static bool AddWeakSetEntryImpl(JSContext* cx, Handle<WeakSetObject*> setObj,
+                                Handle<Value> keyVal) {
+  if (MOZ_UNLIKELY(!CanBeHeldWeakly(cx, keyVal))) {
+    unsigned errorNum = GetErrorNumber(false);
+    ReportValueError(cx, errorNum, JSDVG_IGNORE_STACK, keyVal, nullptr);
+    return false;
+  }
+
+  return WeakCollectionPutEntryInternal(cx, setObj, keyVal, TrueHandleValue);
+}
+
 
 
  MOZ_ALWAYS_INLINE bool WeakSetObject::add_impl(
@@ -31,16 +42,9 @@ using namespace js;
   MOZ_ASSERT(is(args.thisv()));
 
   
-  if (!CanBeHeldWeakly(cx, args.get(0))) {
-    unsigned errorNum = GetErrorNumber(false);
-    ReportValueError(cx, errorNum, JSDVG_IGNORE_STACK, args.get(0), nullptr);
-    return false;
-  }
-
-  
-  RootedValue value(cx, args[0]);
-  Rooted<WeakSetObject*> map(cx, &args.thisv().toObject().as<WeakSetObject>());
-  if (!WeakCollectionPutEntryInternal(cx, map, value, TrueHandleValue)) {
+  Rooted<WeakSetObject*> setObj(cx,
+                                &args.thisv().toObject().as<WeakSetObject>());
+  if (!AddWeakSetEntryImpl(cx, setObj, args.get(0))) {
     return false;
   }
 
@@ -204,14 +208,7 @@ bool WeakSetObject::construct(JSContext* cx, unsigned argc, Value* vp) {
         keyVal.set(array->getDenseElement(index));
         MOZ_ASSERT(!keyVal.isMagic(JS_ELEMENTS_HOLE));
 
-        if (!CanBeHeldWeakly(cx, keyVal)) {
-          unsigned errorNum = GetErrorNumber(false);
-          ReportValueError(cx, errorNum, JSDVG_IGNORE_STACK, args.get(0),
-                           nullptr);
-          return false;
-        }
-
-        if (!WeakCollectionPutEntryInternal(cx, obj, keyVal, TrueHandleValue)) {
+        if (!AddWeakSetEntryImpl(cx, obj, keyVal)) {
           return false;
         }
       }
