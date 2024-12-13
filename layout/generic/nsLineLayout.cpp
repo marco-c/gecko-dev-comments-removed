@@ -1486,6 +1486,30 @@ bool nsLineLayout::NotifyOptionalBreakPosition(nsIFrame* aFrame,
 #define VALIGN_TOP 1
 #define VALIGN_BOTTOM 2
 
+void nsLineLayout::SetSpanForEmptyLine(PerSpanData* aPerSpanData,
+                                       WritingMode aWM,
+                                       const nsSize& aContainerSize,
+                                       nscoord aBStartEdge) {
+  for (PerFrameData* pfd = aPerSpanData->mFirstFrame; pfd; pfd = pfd->mNext) {
+    
+    
+    if (!pfd->mFrame->IsInlineFrame() && !pfd->mFrame->IsRubyFrame() &&
+        !pfd->mFrame->IsPlaceholderFrame()) {
+      continue;
+    }
+    
+    pfd->mBounds.BStart(aWM) = aBStartEdge;
+    pfd->mBounds.BSize(aWM) = 0;
+    
+    
+    pfd->mBlockDirAlign = VALIGN_OTHER;
+    pfd->mFrame->SetRect(aWM, pfd->mBounds, aContainerSize);
+    if (pfd->mSpan) {
+      SetSpanForEmptyLine(pfd->mSpan, aWM, aContainerSize, aBStartEdge);
+    }
+  }
+}
+
 void nsLineLayout::VerticalAlignLine() {
   
   
@@ -1494,21 +1518,8 @@ void nsLineLayout::VerticalAlignLine() {
   if (mLineIsEmpty) {
     
     
-    WritingMode lineWM = psd->mWritingMode;
-    for (PerFrameData* pfd = psd->mFirstFrame; pfd; pfd = pfd->mNext) {
-      
-      
-      if (!pfd->mFrame->IsInlineFrame() && !pfd->mFrame->IsRubyFrame()) {
-        continue;
-      }
-      
-      pfd->mBounds.BStart(lineWM) = mBStartEdge;
-      pfd->mBounds.BSize(lineWM) = 0;
-      
-      
-      pfd->mBlockDirAlign = VALIGN_OTHER;
-      pfd->mFrame->SetRect(lineWM, pfd->mBounds, ContainerSize());
-    }
+    SetSpanForEmptyLine(psd, mRootSpan->mWritingMode, ContainerSize(),
+                        mBStartEdge);
 
     mFinalLineBSize = 0;
     if (mGotLineBox) {
