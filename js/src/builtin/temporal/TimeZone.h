@@ -290,11 +290,6 @@ bool GetEpochNanosecondsFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
 
 
 
-JSString* FormatUTCOffsetNanoseconds(JSContext* cx, int64_t offsetNanoseconds);
-
-
-
-
 bool GetOffsetNanosecondsFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                              const EpochNanoseconds& epochNs,
                              int64_t* offsetNanoseconds);
