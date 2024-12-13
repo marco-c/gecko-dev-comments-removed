@@ -1090,6 +1090,7 @@ bool ModuleGenerator::prepareTier1() {
 
 bool ModuleGenerator::startCompleteTier() {
 #ifdef JS_JITSPEW
+  completeTierStartTime_ = mozilla::TimeStamp::Now();
   JS_LOG(wasmPerf, mozilla::LogLevel::Info,
          "CM=..%06lx  MG::startCompleteTier (%s, %u imports, %u functions)",
          (unsigned long)(uintptr_t(codeMeta_) & 0xFFFFFFL),
@@ -1361,6 +1362,8 @@ SharedModule ModuleGenerator::finishModule(
   }
 
   
+  
+  size_t completeBCSize = 0;
   {
     auto guard = codeMeta->stats.writeLock();
     guard->completeNumFuncs = codeMeta->numFuncDefs();
@@ -1368,16 +1371,19 @@ SharedModule ModuleGenerator::finishModule(
     for (const BytecodeRange& range : codeMeta->funcDefRanges) {
       guard->completeBCSize += range.size;
     }
+    completeBCSize = guard->completeBCSize;
     
     
     
-    guard->inliningBudget =
-        mode() == CompileMode::LazyTiering
-            ? int64_t(guard->completeBCSize) * PerModuleMaxInliningRatio
-            : 0;
-    
-    
-    guard->inliningBudget = std::max<int64_t>(guard->inliningBudget, 1000);
+    if (mode() == CompileMode::LazyTiering) {
+      guard->inliningBudget =
+          int64_t(guard->completeBCSize) * PerModuleMaxInliningRatio;
+      
+      
+      guard->inliningBudget = std::max<int64_t>(guard->inliningBudget, 1000);
+    } else {
+      guard->inliningBudget = 0;
+    }
   }
 
   MutableCode code = js_new<Code>(mode(), *codeMeta_, codeMetaForAsmJS_);
@@ -1442,10 +1448,17 @@ SharedModule ModuleGenerator::finishModule(
   }
 
 #ifdef JS_JITSPEW
+  double wallclockSeconds =
+      (mozilla::TimeStamp::Now() - completeTierStartTime_).ToSeconds();
   JS_LOG(wasmPerf, mozilla::LogLevel::Info,
-         "CM=..%06lx  MG::finishModule      (%s, complete tier)",
+         "CM=..%06lx  MG::finishModule      "
+         "(%s, complete tier, %.2f MB in %.3fs = %.2f MB/s)",
          (unsigned long)(uintptr_t(codeMeta_) & 0xFFFFFFL),
-         tier() == Tier::Baseline ? "BL" : "OPT");
+         tier() == Tier::Baseline ? "BL" : "OPT",
+         double(completeBCSize) / 1.0e6, wallclockSeconds,
+         double(completeBCSize) / 1.0e6 / wallclockSeconds);
+#else
+  (void)completeBCSize;  
 #endif
 
   return module;

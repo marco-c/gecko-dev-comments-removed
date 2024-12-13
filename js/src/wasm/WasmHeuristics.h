@@ -156,13 +156,13 @@ class InliningHeuristics {
     
     
     
-    static constexpr int32_t baseSize[9] = {0,   50,  100, 150,
-                                            200,  
-                                            250, 300, 350, 400};
+    static constexpr int32_t baseSize[9] = {0,   40,  80,  120,
+                                            160,  
+                                            200, 240, 280, 320};
     uint32_t level = rawLevel();
     MOZ_RELEASE_ASSERT(level >= MIN_LEVEL && level <= MAX_LEVEL);
     int32_t allowedSize = baseSize[level - MIN_LEVEL];
-    allowedSize -= int32_t(50 * inliningDepth);
+    allowedSize -= int32_t(40 * inliningDepth);
     return allowedSize > 0 && bodyLength <= uint32_t(allowedSize);
   }
 };
@@ -259,7 +259,7 @@ class InliningHeuristics {
 static constexpr int64_t PerModuleMaxInliningRatio = 1;
 
 
-static constexpr int64_t PerFunctionMaxInliningRatio = 9;
+static constexpr int64_t PerFunctionMaxInliningRatio = 99;
 
 }  
 }  
