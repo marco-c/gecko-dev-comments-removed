@@ -17,6 +17,7 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import warnings
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Optional
@@ -819,33 +820,75 @@ class PythonVirtualenv:
     """Calculates paths of interest for general python virtual environments"""
 
     def __init__(self, prefix):
-        if _is_windows:
-            self.bin_path = os.path.join(prefix, "Scripts")
-            self.python_path = os.path.join(self.bin_path, "python.exe")
-        else:
-            self.bin_path = os.path.join(prefix, "bin")
-            self.python_path = os.path.join(self.bin_path, "python")
         self.prefix = os.path.realpath(prefix)
+        self.paths = self._get_sysconfig_paths(self.prefix)
 
-    @functools.lru_cache(maxsize=None)
-    def resolve_sysconfig_packages_path(self, sysconfig_path):
         
         
         
         
         
-        if os.name == "posix":
-            scheme = "posix_prefix"
+        python_exe_name = "python" + sysconfig.get_config_var("EXE")
+
+        self.bin_path = self.paths["scripts"]
+        self.python_path = os.path.join(self.bin_path, python_exe_name)
+
+    @staticmethod
+    def _get_sysconfig_paths(prefix):
+        """Calculate the sysconfig paths of a virtual environment in the given prefix.
+
+        The virtual environment MUST be using the same Python distribution as us.
+        """
+        
+        if "venv" in sysconfig.get_scheme_names():
+            
+            
+            
+            
+            
+            
+            venv_scheme = "venv"
+        elif os.name == "nt":
+            
+            
+            venv_scheme = "nt"
+        elif os.name == "posix":
+            
+            
+            venv_scheme = "posix_prefix"
         else:
-            scheme = os.name
-
-        sysconfig_paths = sysconfig.get_paths(scheme)
-        data_path = Path(sysconfig_paths["data"])
-        path = Path(sysconfig_paths[sysconfig_path])
-        relative_path = path.relative_to(data_path)
-
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            venv_scheme = sysconfig.get_default_scheme()
+            warnings.warn(
+                f"Unknown platform '{os.name}', using the default install scheme '{venv_scheme}'. "
+                "If this is incorrect, please ask your Python vendor to add a 'venv' sysconfig scheme "
+                "(see https://github.com/python/cpython/issues/89576, or check the code comment).",
+                stacklevel=2,
+            )
         
-        return os.path.normpath(os.path.normcase(Path(self.prefix) / relative_path))
+        venv_vars = sysconfig.get_config_vars().copy()
+        venv_vars["base"] = venv_vars["platbase"] = prefix
+        
+        return sysconfig.get_paths(venv_scheme, vars=venv_vars)
+
+    def resolve_sysconfig_packages_path(self, sysconfig_path):
+        return self.paths[sysconfig_path]
 
     def site_packages_dirs(self):
         dirs = []
