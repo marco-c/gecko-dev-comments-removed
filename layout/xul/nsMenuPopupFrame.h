@@ -173,6 +173,7 @@ class nsMenuPopupFrame final : public nsBlockFrame {
               nsReflowStatus& aStatus) override;
 
   nsIWidget* GetWidget() const;
+  already_AddRefed<nsIWidget> ComputeParentWidget() const;
 
   enum class WidgetStyle : uint8_t {
     ColorScheme,
@@ -215,7 +216,8 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   
   
   
-  void PrepareWidget(bool aRecreate = false);
+  
+  void PrepareWidget(bool aForceRecreate = false);
 
   MOZ_CAN_RUN_SCRIPT void EnsureActiveMenuListItemIsVisible();
 

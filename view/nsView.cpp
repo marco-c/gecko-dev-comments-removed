@@ -526,19 +526,10 @@ nsresult nsView::CreateWidgetForPopup(widget::InitData* aWidgetInitData,
   MOZ_ASSERT(aWidgetInitData, "Widget init data required");
   MOZ_ASSERT(aWidgetInitData->mWindowType == WindowType::Popup,
              "Use one of the other CreateWidget methods");
+  MOZ_ASSERT(aParent);
 
   LayoutDeviceIntRect trect = CalcWidgetBounds(
       aWidgetInitData->mWindowType, aWidgetInitData->mTransparencyMode);
-
-  if (!aParent && GetParent()) {
-    aParent = GetParent()->GetNearestWidget(nullptr);
-  }
-  if (!aParent) {
-    NS_ERROR("nsView::CreateWidgetForPopup without suitable parent widget??");
-    
-    
-    return NS_ERROR_FAILURE;
-  }
   mWindow = aParent->CreateChild(trect, *aWidgetInitData);
   if (!mWindow) {
     return NS_ERROR_FAILURE;
