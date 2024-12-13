@@ -1910,8 +1910,8 @@ static TimeDuration RoundTimeDurationToIncrement(
 
 
 
-double js::temporal::DivideTimeDuration(const TimeDuration& duration,
-                                        TemporalUnit unit) {
+double js::temporal::TotalTimeDuration(const TimeDuration& duration,
+                                       TemporalUnit unit) {
   MOZ_ASSERT(IsValidTimeDuration(duration));
   MOZ_ASSERT(unit >= TemporalUnit::Day);
 

@@ -304,9 +304,6 @@ static bool ToTemporalYearMonth(JSContext* cx, Handle<Value> item,
 
   
   
-
-  
-  
   
   Rooted<PlainYearMonth> yearMonth(cx);
   if (!CreateTemporalYearMonth(cx, date, calendar, &yearMonth)) {
@@ -469,6 +466,7 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   MOZ_ASSERT(duration.date.days == 0);
   MOZ_ASSERT(duration.time == TimeDuration{});
 
+  
   
 
   

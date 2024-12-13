@@ -261,19 +261,7 @@ bool TotalRelativeDuration(JSContext* cx, const InternalDuration& duration,
 
 
 
-double DivideTimeDuration(const TimeDuration& duration, TemporalUnit unit);
-
-
-
-
-inline double TotalTimeDuration(const TimeDuration& duration,
-                                TemporalUnit unit) {
-  
-  
-
-  
-  return DivideTimeDuration(duration, unit);
-}
+double TotalTimeDuration(const TimeDuration& duration, TemporalUnit unit);
 
 } 
 
