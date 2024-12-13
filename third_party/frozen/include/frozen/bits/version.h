@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef FROZEN_LETITGO_VERSION_H
+#define FROZEN_LETITGO_VERSION_H
+
+#define FROZEN_MAJOR_VERSION 1
+#define FROZEN_MINOR_VERSION 1
+#define FROZEN_PATCH_VERSION 1
+
+#endif

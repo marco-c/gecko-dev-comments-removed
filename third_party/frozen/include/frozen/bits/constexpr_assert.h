@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef FROZEN_LETITGO_CONSTEXPR_ASSERT_H
+#define FROZEN_LETITGO_CONSTEXPR_ASSERT_H
+
+#include <cassert>
+
+#ifdef _MSC_VER
+
+
+#define constexpr_assert(cond, msg)
+
+#else
+
+#define constexpr_assert(cond, msg)\
+    assert(cond && msg);
+#endif
+
+#endif
+
