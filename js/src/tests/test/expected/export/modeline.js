@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+async function f() {
+  let
+  await 0;
+}
+
+assert.sameValue(true, f instanceof Function);
