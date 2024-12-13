@@ -101,28 +101,30 @@ class RegExp final : public AllStatic {
     kFromJs = 1,
   };
 
-  enum class ExecQuirks {
-    kNone,
-    
-    
-    
-    
-    
-    kTreatMatchAtEndAsFailure,
-  };
-
   
   
-  V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static MaybeHandle<Object> Exec(
+  V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static std::optional<int> Exec(
       Isolate* isolate, DirectHandle<JSRegExp> regexp, Handle<String> subject,
-      int index, Handle<RegExpMatchInfo> last_match_info,
-      ExecQuirks exec_quirks = ExecQuirks::kNone);
-
+      int index, int32_t* result_offsets_vector,
+      uint32_t result_offsets_vector_length);
+  
+  
   V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static MaybeHandle<Object>
+  Exec_Single(Isolate* isolate, DirectHandle<JSRegExp> regexp,
+              Handle<String> subject, int index,
+              Handle<RegExpMatchInfo> last_match_info);
+
+  V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static std::optional<int>
   ExperimentalOneshotExec(Isolate* isolate, DirectHandle<JSRegExp> regexp,
                           DirectHandle<String> subject, int index,
-                          Handle<RegExpMatchInfo> last_match_info,
-                          ExecQuirks exec_quirks = ExecQuirks::kNone);
+                          int32_t* result_offsets_vector,
+                          uint32_t result_offsets_vector_length);
+
+  
+  V8_EXPORT_PRIVATE static intptr_t AtomExecRaw(
+      Isolate* isolate, Address  data_address,
+      Address  subject_address, int32_t index,
+      int32_t* result_offsets_vector, int32_t result_offsets_vector_length);
 
   
   static constexpr int kInternalRegExpFailure = 0;
@@ -174,12 +176,10 @@ class RegExp final : public AllStatic {
 
 
 
-class RegExpGlobalCache final {
+class RegExpGlobalExecRunner final {
  public:
-  RegExpGlobalCache(Handle<RegExpData> regexp_data, Handle<String> subject,
-                    Isolate* isolate);
-
-  ~RegExpGlobalCache();
+  RegExpGlobalExecRunner(Handle<RegExpData> regexp_data, Handle<String> subject,
+                         Isolate* isolate);
 
   
   
@@ -187,23 +187,28 @@ class RegExpGlobalCache final {
   
   int32_t* FetchNext();
 
-  int32_t* LastSuccessfulMatch();
+  int32_t* LastSuccessfulMatch() const;
 
-  bool HasException() { return num_matches_ < 0; }
+  bool HasException() const { return num_matches_ < 0; }
 
  private:
-  int AdvanceZeroLength(int last_index);
+  int AdvanceZeroLength(int last_index) const;
 
-  int num_matches_;
-  int max_matches_;
-  int current_match_index_;
-  int registers_per_match_;
+  int max_matches() const {
+    DCHECK_NE(register_array_size_, 0);
+    return register_array_size_ / registers_per_match_;
+  }
+
+  RegExpResultVectorScope result_vector_scope_;
+  int num_matches_ = 0;
+  int current_match_index_ = 0;
+  int registers_per_match_ = 0;
   
-  int32_t* register_array_;
-  int register_array_size_;
+  int32_t* register_array_ = nullptr;
+  int register_array_size_ = 0;
   Handle<RegExpData> regexp_data_;
   Handle<String> subject_;
-  Isolate* isolate_;
+  Isolate* const isolate_;
 };
 
 

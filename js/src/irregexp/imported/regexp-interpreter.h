@@ -26,12 +26,12 @@ class V8_EXPORT_PRIVATE IrregexpInterpreter : public AllStatic {
 
   
   
-  static Result MatchForCallFromRuntime(Isolate* isolate,
-                                        DirectHandle<IrRegExpData> regexp_data,
-                                        DirectHandle<String> subject_string,
-                                        int* output_registers,
-                                        int output_register_count,
-                                        int start_position);
+  static int MatchForCallFromRuntime(Isolate* isolate,
+                                     DirectHandle<IrRegExpData> regexp_data,
+                                     DirectHandle<String> subject_string,
+                                     int* output_registers,
+                                     int output_register_count,
+                                     int start_position);
 
   
   
@@ -45,26 +45,27 @@ class V8_EXPORT_PRIVATE IrregexpInterpreter : public AllStatic {
   
   
   
-  static Result MatchForCallFromJs(Address subject, int32_t start_position,
-                                   Address input_start, Address input_end,
-                                   int* output_registers,
-                                   int32_t output_register_count,
-                                   RegExp::CallOrigin call_origin,
-                                   Isolate* isolate, Address regexp_data);
+  
+  static int MatchForCallFromJs(Address subject, int32_t start_position,
+                                Address input_start, Address input_end,
+                                int* output_registers,
+                                int32_t output_register_count,
+                                RegExp::CallOrigin call_origin,
+                                Isolate* isolate, Address regexp_data);
 
   static Result MatchInternal(Isolate* isolate,
-                              Tagged<TrustedByteArray> code_array,
-                              Tagged<String> subject_string,
+                              Tagged<TrustedByteArray>* code_array,
+                              Tagged<String>* subject_string,
                               int* output_registers, int output_register_count,
                               int total_register_count, int start_position,
                               RegExp::CallOrigin call_origin,
                               uint32_t backtrack_limit);
 
  private:
-  static Result Match(Isolate* isolate, Tagged<IrRegExpData> regexp_data,
-                      Tagged<String> subject_string, int* output_registers,
-                      int output_register_count, int start_position,
-                      RegExp::CallOrigin call_origin);
+  static int Match(Isolate* isolate, Tagged<IrRegExpData> regexp_data,
+                   Tagged<String> subject_string, int* output_registers,
+                   int output_register_count, int start_position,
+                   RegExp::CallOrigin call_origin);
 };
 
 }  

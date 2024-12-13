@@ -1435,11 +1435,19 @@ void ActionNode::GetQuickCheckDetails(QuickCheckDetails* details,
     
     
     
+    std::optional<RegExpFlags> old_flags;
     if (action_type() == MODIFY_FLAGS) {
+      
+      
+      
+      old_flags = compiler->flags();
       compiler->set_flags(flags());
     }
     on_success()->GetQuickCheckDetails(details, compiler, filled_in,
                                        not_at_start);
+    if (old_flags.has_value()) {
+      compiler->set_flags(*old_flags);
+    }
   }
 }
 
@@ -4065,6 +4073,11 @@ RegExpNode* RegExpCompiler::PreprocessRegExp(RegExpCompileData* data,
   }
 
   if (node == nullptr) node = zone()->New<EndNode>(EndNode::BACKTRACK, zone());
+  
+  
+  if (reg_exp_too_big_) {
+    data->error = RegExpError::kTooLarge;
+  }
   return node;
 }
 
