@@ -47,10 +47,6 @@ MIDIPort::MIDIPort(nsPIDOMWindowInner* aWindow)
 }
 
 MIDIPort::~MIDIPort() {
-  if (mMIDIAccessParent) {
-    mMIDIAccessParent->RemovePortListener(this);
-    mMIDIAccessParent = nullptr;
-  }
   if (Port()) {
     
     
@@ -184,13 +180,6 @@ already_AddRefed<Promise> MIDIPort::Close(ErrorResult& aError) {
   return p.forget();
 }
 
-void MIDIPort::Notify(const void_t& aVoid) {
-  LOG("MIDIPort::notify MIDIAccess shutting down, dropping reference.");
-  
-  
-  mMIDIAccessParent = nullptr;
-}
-
 void MIDIPort::FireStateChangeEvent() {
   if (!GetOwnerWindow()) {
     return;  
@@ -231,8 +220,8 @@ void MIDIPort::FireStateChangeEvent() {
 
   
   
-  if (mMIDIAccessParent) {
-    mMIDIAccessParent->FireConnectionEvent(this);
+  if (RefPtr<MIDIAccess> access = mMIDIAccessParent.get()) {
+    access->FireConnectionEvent(this);
   }
 
   MIDIConnectionEventInit init;

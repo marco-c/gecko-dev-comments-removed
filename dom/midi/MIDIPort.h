@@ -28,8 +28,7 @@ class MIDIMessage;
 
 
 
-class MIDIPort : public DOMEventTargetHelper,
-                 public MIDIAccessDestructionObserver {
+class MIDIPort : public DOMEventTargetHelper {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(MIDIPort,
@@ -55,10 +54,6 @@ class MIDIPort : public DOMEventTargetHelper,
 
   already_AddRefed<Promise> Open(ErrorResult& aError);
   already_AddRefed<Promise> Close(ErrorResult& aError);
-
-  
-  
-  virtual void Notify(const void_t& aVoid) override;
 
   void FireStateChangeEvent();
 
@@ -107,10 +102,7 @@ class MIDIPort : public DOMEventTargetHelper,
   
   
   
-  
-  
-  
-  MIDIAccess* mMIDIAccessParent;
+  WeakPtr<MIDIAccess> mMIDIAccessParent;
   
   
   RefPtr<Promise> mOpeningPromise;

@@ -10,6 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Observer.h"
+#include "mozilla/WeakPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 
@@ -17,10 +18,6 @@ struct JSContext;
 
 namespace mozilla {
 class ErrorResult;
-
-
-
-struct void_t;
 
 namespace dom {
 
@@ -35,8 +32,6 @@ class MIDIPortInfo;
 class MIDIPortList;
 class Promise;
 
-using MIDIAccessDestructionObserver = Observer<void_t>;
-
 
 
 
@@ -46,7 +41,8 @@ using MIDIAccessDestructionObserver = Observer<void_t>;
 
 
 class MIDIAccess final : public DOMEventTargetHelper,
-                         public Observer<MIDIPortList> {
+                         public Observer<MIDIPortList>,
+                         public SupportsWeakPtr {
   
   
   friend class MIDIPermissionRequest;
@@ -73,12 +69,6 @@ class MIDIAccess final : public DOMEventTargetHelper,
   void Notify(const MIDIPortList& aEvent) override;
 
   
-  
-  
-  
-  void RemovePortListener(MIDIAccessDestructionObserver* aObs);
-
-  
   void FireConnectionEvent(MIDIPort* aPort);
 
   
@@ -101,8 +91,6 @@ class MIDIAccess final : public DOMEventTargetHelper,
   RefPtr<MIDIInputMap> mInputMap;
   
   RefPtr<MIDIOutputMap> mOutputMap;
-  
-  ObserverList<void_t> mDestructionObservers;
   
   bool mSysexEnabled;
   
