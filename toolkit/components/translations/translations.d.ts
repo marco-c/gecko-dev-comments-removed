@@ -153,7 +153,7 @@ export namespace Bergamot {
     size(): number;
     getByteArrayView(): Uint8Array;
   }
-  
+
   
 
 
@@ -164,7 +164,7 @@ export namespace Bergamot {
     getOriginalText(): string;
     getTranslatedText(): string;
   }
-  
+
   
 
 
@@ -206,6 +206,14 @@ interface LanguageTranslationModelFile {
 
 
 
+interface TranslationModelPayload {
+  sourceLanguage: string,
+  targetLanguage: string,
+  languageModelFiles: LanguageTranslationModelFiles,
+};
+
+
+
 
 interface LanguageTranslationModelFiles {
   
@@ -238,7 +246,7 @@ type LanguageTranslationModelFilesAligned = {
 
 interface TranslationsEnginePayload {
   bergamotWasmArrayBuffer: ArrayBuffer,
-  languageModelFiles: LanguageTranslationModelFiles[]
+  translationModelPayloads: TranslationModelPayload[]
   isMocked: boolean,
 }
 
