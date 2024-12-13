@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 body {
   margin: 10px 50px;
@@ -61,7 +61,7 @@ body {
 .button_report_issue {
   height: 50px;
   width: 110px;
-  margin: 20px 0px 70px 10px;
+  margin: 20px 0 70px 10px;
 
   font-size: 10px;
   text-align: start;
@@ -128,7 +128,7 @@ body {
 
 .setting_control {
   min-width: 120px;
-  margin: 5px 0px;
+  margin: 5px 0;
 }
 
 button.setting_control {

@@ -31,7 +31,6 @@ module.exports = {
   ],
   ignoreFiles,
   rules: {
-    "stylelint-plugin-mozilla/no-base-design-tokens": true,
     
     "color-no-invalid-hex": null,
     "font-family-no-missing-generic-family-keyword": [
@@ -54,6 +53,13 @@ module.exports = {
           "light-dark" ,
           "add" ,
         ],
+      },
+    ],
+
+    "length-zero-no-unit": [
+      true,
+      {
+        ignore: ["custom-properties"],
       },
     ],
 
@@ -261,6 +267,7 @@ module.exports = {
         ignorePseudoElements: ["slider-track", "slider-fill", "slider-thumb"],
       },
     ],
+    "stylelint-plugin-mozilla/no-base-design-tokens": true,
   },
 
   overrides: [

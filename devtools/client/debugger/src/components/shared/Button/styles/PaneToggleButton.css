@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 .toggle-button {
   padding: 4px 6px;
@@ -11,12 +11,12 @@
 }
 
 .toggle-button.end {
-  margin-inline-end: 0px;
+  margin-inline-end: 0;
   margin-inline-start: auto;
 }
 
 .toggle-button.start {
-  margin-inline-start: 0px;
+  margin-inline-start: 0;
 }
 
 html[dir="rtl"] .toggle-button.start .img,

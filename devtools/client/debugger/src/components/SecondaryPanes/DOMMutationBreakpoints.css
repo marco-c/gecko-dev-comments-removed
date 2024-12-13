@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
  .dom-mutation-empty {
   padding: 6px 20px;
@@ -41,8 +41,8 @@
   margin: 2px 3px;
 
   padding-inline-start: 2px;
-  margin-top: 0px;
-  margin-bottom: 0px;
+  margin-top: 0;
+  margin-bottom: 0;
   margin-inline-start: 0;
   margin-inline-end: 2px;
   vertical-align: text-bottom;
@@ -57,11 +57,11 @@
 
 .dom-mutation-list .close-btn {
   position: absolute;
-  
+  /* hide button outside of row until hovered or focused */
   top: -100px;
 }
 
-
+/* Reveal the remove button on hover/focus */
 .dom-mutation-list li:hover .close-btn,
 .dom-mutation-list li .close-btn:focus {
   top: calc(50% - 8px);
