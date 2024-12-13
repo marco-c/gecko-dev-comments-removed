@@ -123,8 +123,8 @@ bool ForOfEmitter::emitInitialize(uint32_t forPos) {
       
       
       
-      if (!bce_->innermostEmitterScope()->prepareForForOfLoopIteration(
-              bce_,
+      if (!loopInfo_->prepareForForOfLoopIteration(
+              bce_, headLexicalEmitterScope_,
               usingDeclarationInHead_ == HeadUsingDeclarationKind::Async)) {
         return false;
       }

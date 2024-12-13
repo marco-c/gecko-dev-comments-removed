@@ -15,7 +15,10 @@
 #include "frontend/IteratorKind.h"               
 #include "frontend/SelfHostedIter.h"             
 #include "frontend/TryEmitter.h"                 
-#include "vm/CompletionKind.h"                   
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+#  include "frontend/UsingEmitter.h"  
+#endif
+#include "vm/CompletionKind.h"  
 
 namespace js {
 namespace frontend {
@@ -68,9 +71,19 @@ class ForOfLoopControl : public LoopControl {
 
   IteratorKind iterKind_;
 
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  mozilla::Maybe<ForOfDisposalEmitter> forOfDisposalEmitter_;
+#endif
+
  public:
   ForOfLoopControl(BytecodeEmitter* bce, int32_t iterDepth,
                    SelfHostedIter selfHostedIter, IteratorKind iterKind);
+
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  [[nodiscard]] bool prepareForForOfLoopIteration(
+      BytecodeEmitter* bce, const EmitterScope* headLexicalEmitterScope,
+      bool hasAwaitUsing);
+#endif
 
   [[nodiscard]] bool emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce);
   [[nodiscard]] bool emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce);

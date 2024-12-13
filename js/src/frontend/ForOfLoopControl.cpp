@@ -38,6 +38,19 @@ bool ForOfLoopControl::emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   return true;
 }
 
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+bool ForOfLoopControl::prepareForForOfLoopIteration(
+    BytecodeEmitter* bce, const EmitterScope* headLexicalEmitterScope,
+    bool hasAwaitUsing) {
+  MOZ_ASSERT(headLexicalEmitterScope);
+  if (headLexicalEmitterScope->hasDisposables()) {
+    forOfDisposalEmitter_.emplace(bce, hasAwaitUsing);
+    return forOfDisposalEmitter_->prepareForForOfLoopIteration();
+  }
+  return true;
+}
+#endif
+
 bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   if (!tryCatch_->emitCatch(TryEmitter::ExceptionStack::Yes)) {
     
@@ -49,9 +62,11 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   
   
   
-  if (!bce->innermostEmitterScope()->prepareForForOfIteratorCloseOnThrow()) {
-    
-    return false;
+  if (forOfDisposalEmitter_.isSome()) {
+    if (!forOfDisposalEmitter_->emitEnd()) {
+      
+      return false;
+    }
   }
 #endif
 
