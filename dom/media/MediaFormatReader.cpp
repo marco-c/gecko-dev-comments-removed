@@ -2134,6 +2134,7 @@ void MediaFormatReader::HandleDemuxedSamples(
         
         
         decoder.mHardwareDecodingDisabled = false;
+        decoder.mFirstFrameTime = Some(sample->mTime);
       } else if (decoder.HasWaitingPromise()) {
         decoder.Flush();
       }
