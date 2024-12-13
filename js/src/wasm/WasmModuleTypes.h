@@ -263,40 +263,86 @@ struct CallRefMetricsRange {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class CallRefHint {
  public:
-  using Repr = uint32_t;
+  using Repr = uint64_t;
+  static constexpr size_t NUM_ENTRIES = 3;
 
  private:
-  Repr state_;
+  
+  
+  
+  
+  
+  static constexpr uint32_t ElemBits = 20;
+  static constexpr uint32_t LengthBits = 2;
+  static constexpr uint64_t Mask = (uint64_t(1) << ElemBits) - 1;
+  static_assert(js::wasm::MaxFuncs <= Mask);
+  static_assert(3 * ElemBits + LengthBits <= 8 * sizeof(Repr));
 
-  static constexpr Repr UnknownState = 0;
-  static constexpr Repr FirstInlineFuncState = UnknownState + 1;
+  Repr state_ = 0;
 
-  explicit CallRefHint(uint32_t state) : state_(state) {}
+  bool valid() const {
+    
+    
+    return (state_ >> (length() * ElemBits + LengthBits)) == 0;
+  }
 
  public:
-  static CallRefHint unknown() { return CallRefHint(UnknownState); }
-  static CallRefHint inlineFunc(uint32_t funcIndex) {
-    return CallRefHint(FirstInlineFuncState + funcIndex);
+  
+  
+  
+
+  uint32_t length() const { return state_ & 3; }
+  bool empty() const { return length() == 0; }
+  bool full() const { return length() == 3; }
+
+  uint32_t get(uint32_t index) const {
+    MOZ_ASSERT(index < length());
+    uint64_t res = (state_ >> (index * ElemBits + LengthBits)) & Mask;
+    return uint32_t(res);
+  }
+  void set(uint32_t index, uint32_t funcIndex) {
+    MOZ_ASSERT(index < length());
+    MOZ_ASSERT(funcIndex <= Mask);
+    uint32_t shift = index * ElemBits + LengthBits;
+    uint64_t c = uint64_t(Mask) << shift;
+    uint64_t s = uint64_t(funcIndex) << shift;
+    state_ = (state_ & ~c) | s;
   }
 
-  static CallRefHint fromRepr(Repr repr) { return CallRefHint(repr); }
+  void append(uint32_t funcIndex) {
+    MOZ_RELEASE_ASSERT(!full());
+    
+    
+    state_++;
+    set(length() - 1, funcIndex);
+  }
+
+  static CallRefHint fromRepr(Repr repr) {
+    CallRefHint res;
+    res.state_ = repr;
+    MOZ_ASSERT(res.valid());
+    return res;
+  }
   Repr toRepr() const { return state_; }
-
-  
-  bool isUnknown() const { return state_ == UnknownState; }
-
-  
-  
-  bool isInlineFunc() const { return state_ >= FirstInlineFuncState; }
-
-  
-  uint32_t inlineFuncIndex() const {
-    MOZ_ASSERT(isInlineFunc());
-    return state_ - FirstInlineFuncState;
-  }
 };
+
+static_assert(sizeof(CallRefHint) == sizeof(CallRefHint::Repr));
 
 using MutableCallRefHint = mozilla::Atomic<CallRefHint::Repr>;
 using MutableCallRefHints =

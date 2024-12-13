@@ -2759,43 +2759,157 @@ void Instance::submitCallRefHints(uint32_t funcIndex) {
        callRefIndex < range.begin + range.length; callRefIndex++) {
     MOZ_RELEASE_ASSERT(callRefIndex < codeMeta().numCallRefMetrics);
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     CallRefMetrics& metrics = callRefMetrics_[callRefIndex];
     MOZ_RELEASE_ASSERT(metrics.checkInvariants());
 
-    uint64_t totalCount = metrics.totalCount();
-    uint32_t targetFuncIndex = UINT32_MAX;
-    uint32_t targetBodySize = 0;
+    
+    
+    struct Candidate {
+      uint32_t funcIndex = 0;
+      uint32_t count = 0;
+      Candidate() = default;
+      Candidate(const Candidate&) = default;
+      Candidate(uint32_t funcIndex, uint32_t count)
+          : funcIndex(funcIndex), count(count) {}
+    };
+    Candidate candidates[CallRefMetrics::NUM_SLOTS];
+    size_t numCandidates = 0;
+
+    
     const char* skipReason = nullptr;
 
+    
+    uint64_t totalTrackedCount = 0;
+    bool allCandidatesAreImports = true;
+
+    
+    for (size_t i = 0; i < CallRefMetrics::NUM_SLOTS; i++) {
+      if (!metrics.targets[i]) {
+        break;
+      }
+      uint32_t targetCount = metrics.counts[i];
+      if (targetCount == 0) {
+        continue;
+      }
+      totalTrackedCount += uint64_t(targetCount);
+
+      
+      
+      
+      
+      
+      
+      const DebugOnly<Instance*> targetFuncInstance =
+          static_cast<wasm::Instance*>(
+              metrics.targets[i]
+                  ->getExtendedSlot(FunctionExtended::WASM_INSTANCE_SLOT)
+                  .toPrivate());
+      MOZ_ASSERT(targetFuncInstance == this);
+
+      uint32_t targetFuncIndex =
+          wasm::ExportedFunctionToFuncIndex(metrics.targets[i]);
+      if (codeMeta().funcIsImport(targetFuncIndex)) {
+        continue;
+      }
+      allCandidatesAreImports = false;
+      candidates[numCandidates] = Candidate(targetFuncIndex, targetCount);
+      numCandidates++;
+    }
+    MOZ_RELEASE_ASSERT(numCandidates <= CallRefMetrics::NUM_SLOTS);
+
+    
+    uint64_t totalCount = totalTrackedCount + uint64_t(metrics.countOther);
+
+    
     if (totalCount == 0) {
       
       skipReason = "(callsite unused)";
     } else if (metrics.targets[0] == nullptr) {
-      skipReason = "(all calls are cross-instance)";
-    } else {
-      targetFuncIndex = wasm::ExportedFunctionToFuncIndex(metrics.targets[0]);
-      if (codeMeta().funcIsImport(targetFuncIndex)) {
-        skipReason = "(target is an import)";
+      
+      
+      
+      skipReason = "(no individually tracked targets)";
+    } else if (numCandidates > 0 && allCandidatesAreImports) {
+      
+      skipReason = "(all targets are imports)";
+    }
+
+    
+    if (!skipReason) {
+      uint32_t totalTargetBodySize = 0;
+      for (size_t i = 0; i < numCandidates; i++) {
+        totalTargetBodySize +=
+            codeMeta().funcDefRange(candidates[i].funcIndex).size;
+      }
+      if (totalCount < 2 * totalTargetBodySize) {
+        skipReason = "(callsite too cold)";
       }
     }
 
-    MOZ_ASSERT_IF(!skipReason,
-                  targetFuncIndex != UINT32_MAX && targetFuncIndex < MaxFuncs);
+    
+    
+    
+    
+    
+    
+    
+    CallRefHint hints;
+    if (!skipReason) {
+      MOZ_RELEASE_ASSERT(totalCount > 0);  
+      float usableFraction = 0.0;
+      uint32_t numUsableCandidates = 0;
+      for (size_t i = 0; i < numCandidates; i++) {
+        float candidateFraction =
+            float(candidates[i].count) / float(totalCount);
+        if (candidateFraction >= 0.1 * requiredHotnessFraction) {
+          usableFraction += candidateFraction;
+          numUsableCandidates++;
+          if (!hints.full()) {
+            
+            
+            
+            hints.append(candidates[i].funcIndex);
+          }
+        }
+      }
+      if (numUsableCandidates == 0) {
+        skipReason = "(no target is hot enough)";
+      } else if (usableFraction < requiredHotnessFraction) {
+        skipReason = "(collectively not hot enough)";
+      }
+    }
+
     if (!skipReason) {
       
-      
-      targetBodySize = codeMeta().funcDefRange(targetFuncIndex).size;
-      if (2 * totalCount < targetBodySize) {
-        skipReason = "(callsite too cold)";
-      } else if ((float(metrics.counts[0]) / float(totalCount)) <
-                 requiredHotnessFraction) {
-        skipReason = "(no clear hottest)";
-      }
+      MOZ_ASSERT(hints.length() > 0);
+      codeMeta().setCallRefHint(callRefIndex, hints);
+    } else {
+      CallRefHint empty;
+      codeMeta().setCallRefHint(callRefIndex, empty);
     }
 
-    codeMeta().setCallRefHint(
-        callRefIndex, skipReason ? CallRefHint::unknown()
-                                 : CallRefHint::inlineFunc(targetFuncIndex));
 #ifdef JS_JITSPEW
     if (!headerShown) {
       JS_LOG(wasmPerf, mozilla::LogLevel::Info,
@@ -2810,10 +2924,17 @@ void Instance::submitCallRefHints(uint32_t funcIndex) {
       countsStr =
           JS_sprintf_append(std::move(countsStr), "%u ", metrics.counts[i]);
     }
-    JS::UniqueChars targetStr = skipReason
-                                    ? JS_smprintf("%s", skipReason)
-                                    : JS_smprintf("fI %u", targetFuncIndex);
-
+    JS::UniqueChars targetStr;
+    if (skipReason) {
+      targetStr = JS_smprintf("%s", skipReason);
+    } else {
+      targetStr = JS_smprintf("%s", "fI ");
+      for (size_t i = 0; i < hints.length(); i++) {
+        targetStr =
+            JS_sprintf_append(std::move(targetStr), "%u%s", hints.get(i),
+                              i + 1 < hints.length() ? ", " : "");
+      }
+    }
     JS_LOG(wasmPerf, mozilla::LogLevel::Info, "CM=..%06lx    %sother:%u --> %s",
            (unsigned long)(uintptr_t(&codeMeta()) & 0xFFFFFFL), countsStr.get(),
            metrics.countOther, targetStr.get());

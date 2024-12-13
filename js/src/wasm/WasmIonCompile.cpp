@@ -2525,25 +2525,28 @@ class FunctionCompiler {
   }
 
   [[nodiscard]]
-  bool shouldInlineCall(InliningHeuristics::CallKind kind, uint32_t funcIndex) {
+  CallRefHint auditInlineableCallees(InliningHeuristics::CallKind kind,
+                                     CallRefHint hints) {
+    
+    
+    
+
+    MOZ_ASSERT_IF(kind == InliningHeuristics::CallKind::Direct,
+                  hints.length() == 1);
+
     
     
     
     if (compilerEnv().mode() != CompileMode::LazyTiering) {
-      return false;
+      return CallRefHint();
     }
 
     
-    if (codeMeta().funcIsImport(funcIndex)) {
-      return false;
+    if (hints.empty()) {
+      return CallRefHint();
     }
 
     
-    FeatureUsage funcFeatureUsage = codeMeta().funcDefFeatureUsage(funcIndex);
-    if (funcFeatureUsage & FeatureUsage::ReturnCall) {
-      return false;
-    }
-
     
     
     
@@ -2554,14 +2557,39 @@ class FunctionCompiler {
     
     
     if (rootCompiler_.inliningBudget() < 0) {
-      return false;
+      return CallRefHint();
     }
 
     
     
-    uint32_t inlineeBodySize = codeMeta().funcDefRange(funcIndex).size;
-    return InliningHeuristics::isSmallEnoughToInline(kind, inliningDepth(),
-                                                     inlineeBodySize);
+    CallRefHint filtered;
+    for (uint32_t i = 0; i < hints.length(); i++) {
+      uint32_t funcIndex = hints.get(i);
+
+      
+      if (codeMeta().funcIsImport(funcIndex)) {
+        continue;
+      }
+
+      
+      FeatureUsage funcFeatureUsage = codeMeta().funcDefFeatureUsage(funcIndex);
+      if (funcFeatureUsage & FeatureUsage::ReturnCall) {
+        continue;
+      }
+
+      
+      
+      uint32_t inlineeBodySize = codeMeta().funcDefRange(funcIndex).size;
+      if (!InliningHeuristics::isSmallEnoughToInline(kind, inliningDepth(),
+                                                     inlineeBodySize)) {
+        continue;
+      }
+
+      filtered.append(funcIndex);
+    }
+
+    
+    return filtered;
   }
 
   [[nodiscard]]
@@ -5605,7 +5633,7 @@ class FunctionCompiler {
   CallRefHint readCallRefHint() {
     
     if (compilerEnv().mode() != CompileMode::LazyTiering) {
-      return CallRefHint::unknown();
+      return CallRefHint();
     }
 
     CallRefMetricsRange rangeInModule =
@@ -5835,7 +5863,7 @@ class FunctionCompiler {
   bool emitBrOnNonNull();
   bool emitSpeculativeInlineCallRef(uint32_t bytecodeOffset,
                                     const FuncType& funcType,
-                                    uint32_t expectedFuncIndex,
+                                    CallRefHint expectedFuncIndices,
                                     MDefinition* actualCalleeFunc,
                                     const DefVector& args, DefVector* results);
   bool emitCallRef();
@@ -6397,7 +6425,12 @@ bool FunctionCompiler::emitCall(bool asmJSFuncDef) {
     }
   } else {
     const auto callKind = InliningHeuristics::CallKind::Direct;
-    if (shouldInlineCall(callKind, funcIndex)) {
+    
+    CallRefHint hints;
+    hints.append(funcIndex);
+    hints = auditInlineableCallees(callKind, hints);
+    if (!hints.empty()) {
+      
       if (!emitInlineCall(funcType, funcIndex, callKind, args, &results)) {
         return false;
       }
@@ -8320,62 +8353,84 @@ bool FunctionCompiler::emitBrOnNonNull() {
 
 
 
+
+
+
+
 bool FunctionCompiler::emitSpeculativeInlineCallRef(
     uint32_t bytecodeOffset, const FuncType& funcType,
-    uint32_t expectedFuncIndex, MDefinition* actualCalleeFunc,
+    CallRefHint expectedFuncIndices, MDefinition* actualCalleeFunc,
     const DefVector& args, DefVector* results) {
+  
+  MOZ_ASSERT(!expectedFuncIndices.empty());
+
   
   if (!refAsNonNull(actualCalleeFunc)) {
     return false;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  MDefinition* expectedCalleeFunc = loadCachedRefFunc(expectedFuncIndex);
-  if (!expectedCalleeFunc) {
+  constexpr size_t numElseBlocks = CallRefHint::NUM_ENTRIES + 1;
+  Vector<MBasicBlock*, numElseBlocks, SystemAllocPolicy> elseBlocks;
+  if (!elseBlocks.reserve(numElseBlocks)) {
     return false;
   }
 
-  
-  
-  MDefinition* isExpectedCallee =
-      compare(actualCalleeFunc, expectedCalleeFunc, JSOp::Eq,
-              MCompare::Compare_WasmAnyRef);
-  if (!isExpectedCallee) {
-    return false;
-  }
+  for (uint32_t i = 0; i < expectedFuncIndices.length(); i++) {
+    uint32_t funcIndex = expectedFuncIndices.get(i);
 
-  
-  MBasicBlock* elseBlock;
-  if (!branchAndStartThen(isExpectedCallee, &elseBlock)) {
-    return false;
-  }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MDefinition* expectedCalleeFunc = loadCachedRefFunc(funcIndex);
+    if (!expectedCalleeFunc) {
+      return false;
+    }
 
-  
-  DefVector inlineResults;
-  if (!emitInlineCall(funcType, expectedFuncIndex,
-                      InliningHeuristics::CallKind::CallRef, args,
-                      &inlineResults)) {
-    return false;
-  }
+    
+    
+    MDefinition* isExpectedCallee =
+        compare(actualCalleeFunc, expectedCalleeFunc, JSOp::Eq,
+                MCompare::Compare_WasmAnyRef);
+    if (!isExpectedCallee) {
+      return false;
+    }
 
-  
-  if (!pushDefs(inlineResults)) {
-    return false;
-  }
+    
+    MBasicBlock* elseBlock;
+    if (!branchAndStartThen(isExpectedCallee, &elseBlock)) {
+      return false;
+    }
 
-  
-  if (!switchToElse(elseBlock, &elseBlock)) {
-    return false;
+    
+    DefVector inlineResults;
+    if (!emitInlineCall(funcType, funcIndex,
+                        InliningHeuristics::CallKind::CallRef, args,
+                        &inlineResults)) {
+      return false;
+    }
+
+    
+    if (!pushDefs(inlineResults)) {
+      return false;
+    }
+
+    
+    
+    if (!switchToElse(elseBlock, &elseBlock)) {
+      return false;
+    }
+
+    elseBlocks.infallibleAppend(elseBlock);
   }
 
   DefVector callResults;
@@ -8390,7 +8445,13 @@ bool FunctionCompiler::emitSpeculativeInlineCallRef(
   }
 
   
-  return joinIfElse(elseBlock, results);
+  for (uint32_t i = elseBlocks.length() - 1; i != 0; i--) {
+    DefVector results;
+    if (!joinIfElse(elseBlocks[i], &results) || !pushDefs(results)) {
+      return false;
+    }
+  }
+  return joinIfElse(elseBlocks[0], results);
 }
 
 bool FunctionCompiler::emitCallRef() {
@@ -8413,13 +8474,14 @@ bool FunctionCompiler::emitCallRef() {
 
   const FuncType& funcType = codeMeta().types->type(funcTypeIndex).funcType();
 
-  if (hint.isInlineFunc() &&
-      shouldInlineCall(InliningHeuristics::CallKind::CallRef,
-                       hint.inlineFuncIndex())) {
+  
+  
+  CallRefHint approved =
+      auditInlineableCallees(InliningHeuristics::CallKind::CallRef, hint);
+  if (!approved.empty()) {
     DefVector results;
-    if (!emitSpeculativeInlineCallRef(bytecodeOffset, funcType,
-                                      hint.inlineFuncIndex(), callee, args,
-                                      &results)) {
+    if (!emitSpeculativeInlineCallRef(bytecodeOffset, funcType, approved,
+                                      callee, args, &results)) {
       return false;
     }
     iter().setResults(results.length(), results);
