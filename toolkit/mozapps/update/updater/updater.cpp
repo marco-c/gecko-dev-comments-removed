@@ -3708,13 +3708,6 @@ int NS_main(int argc, NS_tchar** argv) {
            (noServiceFallback || forceServiceFallback))) {
         LOG(("Can't open lock file - seems like we need elevation"));
 
-        auto cmdLine = mozilla::MakeCommandLine(suiArgc - 1, suiArgv.get() + 1);
-        if (!cmdLine) {
-          LOG(("Failed to make command line! Exiting"));
-          output_finish();
-          return 1;
-        }
-
 #  ifdef MOZ_MAINTENANCE_SERVICE
 
 
@@ -3944,13 +3937,23 @@ int NS_main(int argc, NS_tchar** argv) {
                         SEE_MASK_NOCLOSEPROCESS;
           sinfo.hwnd = nullptr;
           sinfo.lpFile = argv[0];
-          sinfo.lpParameters = cmdLine.get();
           if (forceServiceFallback) {
             
             
             
             
             sinfo.lpVerb = L"open";
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            suiArgv.get()[kWhichInvocationIndex] = firstUpdateInvocationArg;
             
             
             if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
@@ -3960,6 +3963,16 @@ int NS_main(int argc, NS_tchar** argv) {
             sinfo.lpVerb = L"runas";
           }
           sinfo.nShow = SW_SHOWNORMAL;
+
+          auto cmdLine =
+              mozilla::MakeCommandLine(suiArgc - 1, suiArgv.get() + 1);
+          if (!cmdLine) {
+            LOG(("Failed to make command line! Exiting"));
+            output_finish();
+            return 1;
+          }
+          sinfo.lpParameters = cmdLine.get();
+          LOG(("Using UAC to launch \"%S\"", sinfo.lpParameters));
 
           bool result = ShellExecuteEx(&sinfo);
 
