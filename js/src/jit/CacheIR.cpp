@@ -11461,7 +11461,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapSetConstructor(
   MOZ_ASSERT(flags_.isConstructing());
 
   
-  if (argc_ != 0) {
+  if (argc_ > 1) {
     return AttachDecision::NoAction;
   }
 
@@ -11487,10 +11487,20 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapSetConstructor(
   
   emitNativeCalleeGuard();
 
-  if (native == InlinableNative::MapConstructor) {
-    writer.newMapObjectResult(templateObj);
+  if (argc_ == 1) {
+    ValOperandId iterableId =
+        writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_, flags_);
+    if (native == InlinableNative::MapConstructor) {
+      writer.newMapObjectFromIterableResult(templateObj, iterableId);
+    } else {
+      writer.newSetObjectFromIterableResult(templateObj, iterableId);
+    }
   } else {
-    writer.newSetObjectResult(templateObj);
+    if (native == InlinableNative::MapConstructor) {
+      writer.newMapObjectResult(templateObj);
+    } else {
+      writer.newSetObjectResult(templateObj);
+    }
   }
   writer.returnFromIC();
 
