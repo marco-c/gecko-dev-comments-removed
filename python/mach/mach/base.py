@@ -3,7 +3,7 @@
 
 
 
-class CommandContext(object):
+class CommandContext:
     """Holds run-time state so it can easily be passed to command providers."""
 
     def __init__(

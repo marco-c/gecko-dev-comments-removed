@@ -81,7 +81,7 @@ class PackageCache:
         if vendor_path in self._cache:
             return self._cache[vendor_path]
 
-        if not any((p for p in vendor_path.iterdir() if p.name.endswith(".dist-info"))):
+        if not any(p for p in vendor_path.iterdir() if p.name.endswith(".dist-info")):
             
             
             
