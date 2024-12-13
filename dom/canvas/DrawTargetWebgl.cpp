@@ -3096,7 +3096,12 @@ static inline AAStroke::LineCap ToAAStrokeLineCap(CapStyle aCap) {
 }
 
 static inline Point WGRPointToPoint(const WGR::Point& aPoint) {
-  return Point(IntPoint(aPoint.x, aPoint.y)) * (1.0f / 16.0f);
+  
+  
+  
+  
+  return Point(IntPoint(aPoint.x, aPoint.y)) * (1.0f / 16.0f) +
+         Point(0.5f, 0.5f);
 }
 
 
