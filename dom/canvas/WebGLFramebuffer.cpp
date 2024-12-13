@@ -1555,8 +1555,8 @@ void WebGLFramebuffer::BlitFramebuffer(WebGLContext* webgl, GLint _srcX0,
     }
 
     
-    const auto srcQ0 = srcP0f.ClampMinMax(zero2f, srcSizef);
-    const auto srcQ1 = srcP1f.ClampMinMax(zero2f, srcSizef);
+    const auto srcQ0 = srcP0f.Clamp(zero2f, srcSizef);
+    const auto srcQ1 = srcP1f.Clamp(zero2f, srcSizef);
 
     
     const auto srcQ0Norm = (srcQ0 - srcP0f) / srcRectDiff;
@@ -1567,8 +1567,8 @@ void WebGLFramebuffer::BlitFramebuffer(WebGLContext* webgl, GLint _srcX0,
     const auto srcQ1InDst = dstP0f + srcQ1Norm * dstRectDiff;
 
     
-    const auto dstQ0 = srcQ0InDst.ClampMinMax(zero2f, dstSizef);
-    const auto dstQ1 = srcQ1InDst.ClampMinMax(zero2f, dstSizef);
+    const auto dstQ0 = srcQ0InDst.Clamp(zero2f, dstSizef);
+    const auto dstQ1 = srcQ1InDst.Clamp(zero2f, dstSizef);
 
     
     
@@ -1579,8 +1579,8 @@ void WebGLFramebuffer::BlitFramebuffer(WebGLContext* webgl, GLint _srcX0,
     const auto dstQ0InSrc = srcP0f + dstQ0Norm * srcRectDiff;
     const auto dstQ1InSrc = srcP0f + dstQ1Norm * srcRectDiff;
 
-    const auto srcQ0Constrained = dstQ0InSrc.ClampMinMax(zero2f, srcSizef);
-    const auto srcQ1Constrained = dstQ1InSrc.ClampMinMax(zero2f, srcSizef);
+    const auto srcQ0Constrained = dstQ0InSrc.Clamp(zero2f, srcSizef);
+    const auto srcQ1Constrained = dstQ1InSrc.Clamp(zero2f, srcSizef);
 
     
     srcP0 = (srcQ0Constrained + 0.5).StaticCast<ivec2>();
