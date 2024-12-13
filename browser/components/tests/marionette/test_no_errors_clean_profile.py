@@ -51,6 +51,11 @@ known_errors = [
     {
         
         
+        "message": "viewGenaiChatSidebarKb",
+    },
+    {
+        
+        
         "message": "(NS_ERROR_NOT_IMPLEMENTED) [nsIAppStartup.secondsSinceLastOSRestart]",
         "filename": "BrowserGlue",
     },
