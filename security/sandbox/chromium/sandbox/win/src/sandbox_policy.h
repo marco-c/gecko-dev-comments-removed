@@ -110,6 +110,9 @@ class TargetPolicy {
   virtual void SetDoNotUseRestrictingSIDs() = 0;
 
   
+  virtual void SetAllowEveryoneForUserRestricted() = 0;
+
+  
   
   
   

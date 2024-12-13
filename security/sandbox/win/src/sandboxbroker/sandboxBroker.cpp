@@ -834,6 +834,15 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
   } else if (aSandboxLevel >= 8) {
     jobLevel = sandbox::JOB_LOCKDOWN;
     accessTokenLevel = sandbox::USER_RESTRICTED;
+    
+    
+    
+    
+    
+    
+    if (::GetModuleHandleW(L"ks3rdhmpg.dll")) {
+      mPolicy->SetAllowEveryoneForUserRestricted();
+    }
     initialIntegrityLevel = sandbox::INTEGRITY_LEVEL_LOW;
     delayedIntegrityLevel = sandbox::INTEGRITY_LEVEL_UNTRUSTED;
   } else if (aSandboxLevel >= 7) {
