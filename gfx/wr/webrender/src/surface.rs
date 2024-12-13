@@ -327,6 +327,11 @@ impl SurfaceBuilder {
         }
     }
 
+    pub fn pop_empty_surface(&mut self) {
+        let builder = self.builder_stack.pop().unwrap();
+        assert!(!builder.establishes_sub_graph);
+    }
+
     
     pub fn pop_surface(
         &mut self,
