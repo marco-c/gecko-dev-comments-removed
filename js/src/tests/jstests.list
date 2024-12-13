@@ -608,10 +608,6 @@ skip script test262/language/statements/with/set-mutable-binding-idref-with-prox
 skip script test262/language/statements/with/get-binding-value-idref-with-proxy-env.js
 skip script test262/language/statements/with/set-mutable-binding-idref-compound-assign-with-proxy-env.js
 
-# https://github.com/tc39/proposal-redeclarable-global-eval-vars
-skip-if(release_or_beta) script test262/language/global-code/script-decl-lex-var-declared-via-eval.js
-skip-if(release_or_beta) script test262/annexB/language/eval-code/direct/script-decl-lex-no-collision.js
-
 # Failures in AsyncFromSyncIteratorPrototype, see bug 1877862.
 skip script test262/built-ins/AsyncFromSyncIteratorPrototype/throw/throw-undefined-poisoned-return.js
 skip script test262/built-ins/AsyncFromSyncIteratorPrototype/throw/throw-undefined-return-object.js
@@ -674,6 +670,9 @@ skip script test262/staging/Intl402/Temporal/old/non-iso-calendars.js
 
 # https://github.com/tc39/test262/pull/4318
 skip script test262/intl402/DurationFormat/prototype/format/precision-exact-mathematical-values.js
+
+# https://github.com/tc39/test262/pull/4324
+skip script test262/built-ins/Object/freeze/typedarray-backed-by-resizable-buffer.js
 
 
 ##############################################

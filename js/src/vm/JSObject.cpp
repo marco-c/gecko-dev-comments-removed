@@ -2019,6 +2019,23 @@ bool js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto) {
   return SetPrototype(cx, obj, proto, result) && result.checkStrict(cx, obj);
 }
 
+
+
+
+
+
+static bool IsTypedArrayFixedLength(ResizableTypedArrayObject* obj) {
+  MOZ_ASSERT(obj->hasResizableBuffer());
+
+  
+  if (obj->isAutoLength()) {
+    return false;
+  }
+
+  
+  return obj->isSharedMemory();
+}
+
 bool js::PreventExtensions(JSContext* cx, HandleObject obj,
                            ObjectOpResult& result) {
   if (obj->is<ProxyObject>()) {
@@ -2026,6 +2043,11 @@ bool js::PreventExtensions(JSContext* cx, HandleObject obj,
   }
 
   if (obj->is<WasmGcObject>()) {
+    return result.failCantPreventExtensions();
+  }
+
+  if (obj->is<ResizableTypedArrayObject>() &&
+      !IsTypedArrayFixedLength(&obj->as<ResizableTypedArrayObject>())) {
     return result.failCantPreventExtensions();
   }
 
