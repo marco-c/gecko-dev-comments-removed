@@ -4,6 +4,9 @@
 
 
 
+#ifndef builtin_temporal_Era_h
+#define builtin_temporal_Era_h
+
 #include "mozilla/Assertions.h"
 #include "mozilla/MathAlgorithms.h"
 
@@ -294,3 +297,5 @@ constexpr EraYear CalendarEraYear(CalendarId id, int32_t year) {
 }
 
 }  
+
+#endif 

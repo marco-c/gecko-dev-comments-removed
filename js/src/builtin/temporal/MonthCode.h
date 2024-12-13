@@ -4,6 +4,9 @@
 
 
 
+#ifndef builtin_temporal_MonthCode_h
+#define builtin_temporal_MonthCode_h
+
 #include "mozilla/Assertions.h"
 #include "mozilla/EnumSet.h"
 
@@ -127,26 +130,15 @@ class MonthCode final {
 };
 
 class MonthCodes final {
-  mozilla::EnumSet<MonthCode::Code> monthCodes_{};
+  mozilla::EnumSet<MonthCode::Code> monthCodes_{
+      MonthCode::Code::M01, MonthCode::Code::M02, MonthCode::Code::M03,
+      MonthCode::Code::M04, MonthCode::Code::M05, MonthCode::Code::M06,
+      MonthCode::Code::M07, MonthCode::Code::M08, MonthCode::Code::M09,
+      MonthCode::Code::M10, MonthCode::Code::M11, MonthCode::Code::M12,
+  };
 
  public:
-  constexpr explicit MonthCodes(std::initializer_list<MonthCode> list) {
-    for (auto value : {
-             MonthCode::Code::M01,
-             MonthCode::Code::M02,
-             MonthCode::Code::M03,
-             MonthCode::Code::M04,
-             MonthCode::Code::M05,
-             MonthCode::Code::M06,
-             MonthCode::Code::M07,
-             MonthCode::Code::M08,
-             MonthCode::Code::M09,
-             MonthCode::Code::M10,
-             MonthCode::Code::M11,
-             MonthCode::Code::M12,
-         }) {
-      monthCodes_ += value;
-    }
+  constexpr MOZ_IMPLICIT MonthCodes(std::initializer_list<MonthCode> list) {
     for (auto value : list) {
       monthCodes_ += value.code();
     }
@@ -184,9 +176,9 @@ class MonthCodes final {
 
 
 namespace monthcodes {
-inline constexpr auto ISO8601 = MonthCodes{};
+inline constexpr MonthCodes ISO8601 = {};
 
-inline constexpr auto ChineseOrDangi = MonthCodes{
+inline constexpr MonthCodes ChineseOrDangi = {
     
     MonthCode{1,  true},
     MonthCode{2,  true},
@@ -202,12 +194,12 @@ inline constexpr auto ChineseOrDangi = MonthCodes{
     MonthCode{12,  true},
 };
 
-inline constexpr auto CopticOrEthiopian = MonthCodes{
+inline constexpr MonthCodes CopticOrEthiopian = {
     
     MonthCode{13},
 };
 
-inline constexpr auto Hebrew = MonthCodes{
+inline constexpr MonthCodes Hebrew = {
     
     MonthCode{5,  true},
 };
@@ -481,3 +473,5 @@ constexpr std::pair<int32_t, int32_t> CalendarDaysInMonth(CalendarId id,
 }
 
 }  
+
+#endif 
