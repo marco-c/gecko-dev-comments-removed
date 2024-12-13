@@ -215,10 +215,6 @@ void JSRuntime::destroyRuntime() {
 
   watchtowerTestingLog.ref().reset();
 
-  
-  
-  caches().purgeStencils();
-
   if (gc.wasInitialized()) {
     
 

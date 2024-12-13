@@ -28,7 +28,7 @@ function count(w, d) {
 function depthFirstExec(indent, name, w, d) {
   let fun = `${indent}function ${name} (arg) {\n`;
   let inner = "";
-  let val = `arg + isInStencilCache(${name})`;
+  let val = `arg + isDelazificationPopulatedFor(${name})`;
   if (d > 0) {
     for (let i = 0; i < w; i++) {
       inner += depthFirstExec(`${indent}  `, `${name}_${i}`, w, d - 1);
@@ -58,18 +58,13 @@ for (let i = 0; i < load; i++) {
 const stencil = finishOffThreadStencil(jobs[0]);
 evalStencil(stencil, options);
 
-waitForStencilCache(raceMe);
+waitForDelazificationOf(raceMe);
 let start = raceMe(0);
 let mid = raceMe(0);
 let end = raceMe(0);
-
-
-
-gc();
-let afterGc = raceMe(0);
 
 assertEq(1 <= start, true);
 assertEq(start <= mid, true);
 assertEq(mid <= end, true);
 assertEq(end <= count(width, depth), true);
-assertEq(afterGc, 0);
+print(start, mid, end);

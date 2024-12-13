@@ -517,8 +517,10 @@ PrecompiledScript::PrecompiledScript(nsISupports* aParent,
   MOZ_ASSERT(aParent);
   MOZ_ASSERT(aStencil);
 #ifdef DEBUG
+  
+  
   JS::InstantiateOptions options(aOptions);
-  options.assertDefault();
+  options.assertCompatibleWithDefault();
 #endif
 };
 

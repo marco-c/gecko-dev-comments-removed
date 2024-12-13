@@ -768,17 +768,22 @@ class JS_PUBLIC_API InstantiateOptions {
   bool hideScriptFromDebugger = false;
   bool deferDebugMetadata = false;
 
+  DelazificationOption eagerDelazificationStrategy_ =
+      DelazificationOption::OnDemandOnly;
+
   InstantiateOptions() = default;
 
   explicit InstantiateOptions(const ReadOnlyCompileOptions& options)
       : skipFilenameValidation(options.skipFilenameValidation_),
         hideScriptFromDebugger(options.hideScriptFromDebugger_),
-        deferDebugMetadata(options.deferDebugMetadata_) {}
+        deferDebugMetadata(options.deferDebugMetadata_),
+        eagerDelazificationStrategy_(options.eagerDelazificationStrategy()) {}
 
   void copyTo(CompileOptions& options) const {
     options.skipFilenameValidation_ = skipFilenameValidation;
     options.hideScriptFromDebugger_ = hideScriptFromDebugger;
     options.deferDebugMetadata_ = deferDebugMetadata;
+    options.setEagerDelazificationStrategy(eagerDelazificationStrategy_);
   }
 
   bool hideFromNewScriptInitial() const {
@@ -794,6 +799,29 @@ class JS_PUBLIC_API InstantiateOptions {
     MOZ_ASSERT(skipFilenameValidation == false);
     MOZ_ASSERT(hideScriptFromDebugger == false);
     MOZ_ASSERT(deferDebugMetadata == false);
+    MOZ_ASSERT(eagerDelazificationStrategy_ ==
+               DelazificationOption::OnDemandOnly);
+  }
+
+  
+  
+  
+  
+  void assertCompatibleWithDefault() const {
+    MOZ_ASSERT(skipFilenameValidation == false);
+    MOZ_ASSERT(hideScriptFromDebugger == false);
+    MOZ_ASSERT(deferDebugMetadata == false);
+
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(eagerDelazificationStrategy_ ==
+                   DelazificationOption::OnDemandOnly ||
+               eagerDelazificationStrategy_ ==
+                   DelazificationOption::ParseEverythingEagerly);
   }
 #endif
 };

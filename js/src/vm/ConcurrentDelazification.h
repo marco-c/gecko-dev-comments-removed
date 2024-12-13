@@ -16,8 +16,9 @@
 #include "frontend/ScriptIndex.h"         
 #include "js/AllocPolicy.h"               
 #include "js/CompileOptions.h"  
-#include "js/UniquePtr.h"  
-#include "js/Vector.h"     
+#include "js/experimental/JSStencil.h"  
+#include "js/UniquePtr.h"               
+#include "js/Vector.h"                  
 
 namespace js {
 
@@ -109,6 +110,8 @@ class DelazificationContext {
   
   
   frontend::CompilationStencilMerger merger_;
+
+  RefPtr<frontend::InitialStencilAndDelazifications> stencils_;
 
   
   FrontendContext fc_;

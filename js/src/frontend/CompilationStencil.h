@@ -1466,7 +1466,7 @@ struct InitialStencilAndDelazifications {
   
   [[nodiscard]] static bool instantiateStencils(
       JSContext* cx, CompilationInput& input,
-      const InitialStencilAndDelazifications& stencils,
+      InitialStencilAndDelazifications& stencils,
       CompilationGCOutput& gcOutput);
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
