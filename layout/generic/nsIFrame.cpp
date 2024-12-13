@@ -6455,7 +6455,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   } else if (MOZ_UNLIKELY(isGridItem) && !IsTrueOverflowContainer()) {
     
     
-    bool stretch = false;
+    bool isStretchAligned = false;
     bool mayUseAspectRatio = aspectRatio && !isAutoBSize;
     if (!aFlags.contains(ComputeSizeFlag::ShrinkWrap) &&
         !StyleMargin()->HasInlineAxisAuto(aWM) &&
@@ -6464,9 +6464,9 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
       auto inlineAxisAlignment =
           isOrthogonal ? StylePosition()->UsedAlignSelf(alignCB->Style())._0
                        : StylePosition()->UsedJustifySelf(alignCB->Style())._0;
-      stretch = inlineAxisAlignment == StyleAlignFlags::STRETCH ||
-                (inlineAxisAlignment == StyleAlignFlags::NORMAL &&
-                 !mayUseAspectRatio);
+      isStretchAligned = inlineAxisAlignment == StyleAlignFlags::STRETCH ||
+                         (inlineAxisAlignment == StyleAlignFlags::NORMAL &&
+                          !mayUseAspectRatio);
     }
 
     
@@ -6475,18 +6475,19 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     
     
     
-    if (!stretch && mayUseAspectRatio) {
+    if (!isStretchAligned && mayUseAspectRatio) {
       result.ISize(aWM) = ComputeISizeValueFromAspectRatio(
           aWM, aCBSize, boxSizingAdjust, styleBSize.AsLengthPercentage(),
           aspectRatio);
       aspectRatioUsage = AspectRatioUsage::ToComputeISize;
     }
 
-    if (stretch || aFlags.contains(ComputeSizeFlag::IClampMarginBoxMinSize)) {
+    if (isStretchAligned ||
+        aFlags.contains(ComputeSizeFlag::IClampMarginBoxMinSize)) {
       auto iSizeToFillCB =
           std::max(nscoord(0), aCBSize.ISize(aWM) - aBorderPadding.ISize(aWM) -
                                    aMargin.ISize(aWM));
-      if (stretch || result.ISize(aWM) > iSizeToFillCB) {
+      if (isStretchAligned || result.ISize(aWM) > iSizeToFillCB) {
         result.ISize(aWM) = iSizeToFillCB;
       }
     }
@@ -6661,16 +6662,16 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     if (cbSize != NS_UNCONSTRAINEDSIZE) {
       
       
-      bool stretch = false;
+      bool isStretchAligned = false;
       bool mayUseAspectRatio =
           aspectRatio && result.ISize(aWM) != NS_UNCONSTRAINEDSIZE;
       if (!StyleMargin()->HasBlockAxisAuto(aWM)) {
         auto blockAxisAlignment =
             isOrthogonal ? StylePosition()->UsedJustifySelf(alignCB->Style())._0
                          : StylePosition()->UsedAlignSelf(alignCB->Style())._0;
-        stretch = blockAxisAlignment == StyleAlignFlags::STRETCH ||
-                  (blockAxisAlignment == StyleAlignFlags::NORMAL &&
-                   !mayUseAspectRatio);
+        isStretchAligned = blockAxisAlignment == StyleAlignFlags::STRETCH ||
+                           (blockAxisAlignment == StyleAlignFlags::NORMAL &&
+                            !mayUseAspectRatio);
       }
 
       
@@ -6679,19 +6680,20 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
       
       
       
-      if (!stretch && mayUseAspectRatio) {
+      if (!isStretchAligned && mayUseAspectRatio) {
         result.BSize(aWM) = aspectRatio.ComputeRatioDependentSize(
             LogicalAxis::Block, aWM, result.ISize(aWM), boxSizingAdjust);
         MOZ_ASSERT(aspectRatioUsage == AspectRatioUsage::None);
         aspectRatioUsage = AspectRatioUsage::ToComputeBSize;
       }
 
-      if (stretch || aFlags.contains(ComputeSizeFlag::BClampMarginBoxMinSize)) {
+      if (isStretchAligned ||
+          aFlags.contains(ComputeSizeFlag::BClampMarginBoxMinSize)) {
         auto bSizeToFillCB =
             std::max(nscoord(0),
                      cbSize - aBorderPadding.BSize(aWM) - aMargin.BSize(aWM));
-        if (stretch || (result.BSize(aWM) != NS_UNCONSTRAINEDSIZE &&
-                        result.BSize(aWM) > bSizeToFillCB)) {
+        if (isStretchAligned || (result.BSize(aWM) != NS_UNCONSTRAINEDSIZE &&
+                                 result.BSize(aWM) > bSizeToFillCB)) {
           result.BSize(aWM) = bSizeToFillCB;
         }
       }
