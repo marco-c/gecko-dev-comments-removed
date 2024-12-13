@@ -128,6 +128,13 @@ static uint32_t ComputeWOFF2FinalSize(const uint8_t* aData, size_t aLength,
   std::memcpy(&decompressedSize, location, sizeof(decompressedSize));
   decompressedSize = ots_ntohl(decompressedSize);
 
+  
+  
+  
+  
+  decompressedSize =
+      std::max(decompressedSize, decompressedSize + (decompressedSize >> 4));
+
   if (!Woff2SizeValidator(aLength, decompressedSize, aLimit)) {
     return 0;
   }
