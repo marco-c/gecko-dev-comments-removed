@@ -366,6 +366,12 @@ PrincipalMetadata QuotaManagerDependencyFixture::GetTestPrincipalMetadata() {
 }
 
 
+OriginMetadata
+QuotaManagerDependencyFixture::GetTestPersistentOriginMetadata() {
+  return {GetTestPrincipalMetadata(), PERSISTENCE_TYPE_PERSISTENT};
+}
+
+
 OriginMetadata QuotaManagerDependencyFixture::GetTestOriginMetadata() {
   return {GetTestPrincipalMetadata(), PERSISTENCE_TYPE_DEFAULT};
 }
