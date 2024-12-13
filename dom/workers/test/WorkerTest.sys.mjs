@@ -1,10 +1,8 @@
-
-
-
-
-var EXPORTED_SYMBOLS = ["WorkerTest"];
-
-var WorkerTest = {
+/**
+ * Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
+export var WorkerTest = {
   go(message, messageCallback, errorCallback) {
     let worker = new ChromeWorker("WorkerTest_worker.js");
     worker.onmessage = messageCallback;
