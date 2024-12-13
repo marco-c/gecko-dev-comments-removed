@@ -174,6 +174,15 @@ bool RequiresEncoderReset(const VideoCodec& prev_send_codec,
             prev_send_codec.simulcastStream[i].qpMax) {
       return true;
     }
+
+    if (new_send_codec.simulcastStream[i].maxFramerate !=
+            prev_send_codec.simulcastStream[i].maxFramerate &&
+        new_send_codec.simulcastStream[i].maxFramerate !=
+            new_send_codec.maxFramerate) {
+      
+      
+      return true;
+    }
   }
 
   if (new_send_codec.codecType == kVideoCodecVP9) {
