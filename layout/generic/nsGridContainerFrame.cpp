@@ -831,6 +831,12 @@ struct nsGridContainerFrame::GridItemInfo {
   
   
   
+  
+  
+  
+  
+  
+  
   bool ShouldApplyAutoMinSize(WritingMode aContainerWM,
                               LogicalAxis aContainerAxis,
                               nscoord aPercentageBasis) const {
@@ -2383,7 +2389,7 @@ struct nsGridContainerFrame::Tracks {
   void ResolveIntrinsicSize(GridReflowInput& aState,
                             nsTArray<GridItemInfo>& aGridItems,
                             const TrackSizingFunctions& aFunctions,
-                            LineRange GridArea::*aRange,
+                            LineRange GridArea::* aRange,
                             nscoord aPercentageBasis,
                             SizingConstraint aConstraint);
 
@@ -2783,7 +2789,7 @@ struct nsGridContainerFrame::Tracks {
   void CalculateSizes(GridReflowInput& aState,
                       nsTArray<GridItemInfo>& aGridItems,
                       const TrackSizingFunctions& aFunctions,
-                      nscoord aContentBoxSize, LineRange GridArea::*aRange,
+                      nscoord aContentBoxSize, LineRange GridArea::* aRange,
                       SizingConstraint aConstraint);
 
   
@@ -5830,10 +5836,10 @@ static nscoord MaxContentContribution(const GridItemInfo& aGridItem,
 
 
 
-static nscoord MinSize(const GridItemInfo& aGridItem,
-                       const GridReflowInput& aState, gfxContext* aRC,
-                       WritingMode aCBWM, LogicalAxis aAxis,
-                       CachedIntrinsicSizes* aCache) {
+static nscoord MinContribution(const GridItemInfo& aGridItem,
+                               const GridReflowInput& aState, gfxContext* aRC,
+                               WritingMode aCBWM, LogicalAxis aAxis,
+                               CachedIntrinsicSizes* aCache) {
   if (aCache->mMinSize.isSome()) {
     return aCache->mMinSize.value();
   }
@@ -5901,7 +5907,7 @@ static nscoord MinSize(const GridItemInfo& aGridItem,
 void nsGridContainerFrame::Tracks::CalculateSizes(
     GridReflowInput& aState, nsTArray<GridItemInfo>& aGridItems,
     const TrackSizingFunctions& aFunctions, nscoord aContentBoxSize,
-    LineRange GridArea::*aRange, SizingConstraint aConstraint) {
+    LineRange GridArea::* aRange, SizingConstraint aConstraint) {
   
   
   nscoord percentageBasis = aContentBoxSize;
@@ -5985,7 +5991,7 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSizeForNonSpanningItems(
         s = MaxContentContribution(aGridItem, aState, rc, wm, mAxis, &cache);
       }
     } else {
-      s = MinSize(aGridItem, aState, rc, wm, mAxis, &cache);
+      s = MinContribution(aGridItem, aState, rc, wm, mAxis, &cache);
     }
     sz.mBase = std::max(sz.mBase, s);
   } else if (sz.mState & TrackSize::eMinContentMinSizing) {
@@ -6626,7 +6632,7 @@ bool nsGridContainerFrame::Tracks::GrowSizeForSpanningItems(
 
 void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
     GridReflowInput& aState, nsTArray<GridItemInfo>& aGridItems,
-    const TrackSizingFunctions& aFunctions, LineRange GridArea::*aRange,
+    const TrackSizingFunctions& aFunctions, LineRange GridArea::* aRange,
     nscoord aPercentageBasis, SizingConstraint aConstraint) {
   
   
@@ -6751,7 +6757,7 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
         
         nscoord minSize = 0;
         if (state & TrackSize::eIntrinsicMinSizing) {  
-          minSize = MinSize(gridItem, aState, rc, wm, mAxis, &cache);
+          minSize = MinContribution(gridItem, aState, rc, wm, mAxis, &cache);
         }
         nscoord minContent = 0;
         if (state & (contentBasedMinSelector |           
@@ -9887,7 +9893,7 @@ void nsGridContainerFrame::ExtraContainerFrameInfo(nsACString& aTo) const {
  nsGridContainerFrame::FindItemInGridOrderResult
 nsGridContainerFrame::FindFirstItemInGridOrder(
     CSSOrderAwareFrameIterator& aIter, const nsTArray<GridItemInfo>& aGridItems,
-    LineRange GridArea::*aMajor, LineRange GridArea::*aMinor,
+    LineRange GridArea::* aMajor, LineRange GridArea::* aMinor,
     uint32_t aFragmentStartTrack) {
   FindItemInGridOrderResult result = {nullptr, false};
   uint32_t minMajor = kTranslatedMaxLine + 1;
@@ -9913,8 +9919,8 @@ nsGridContainerFrame::FindFirstItemInGridOrder(
  nsGridContainerFrame::FindItemInGridOrderResult
 nsGridContainerFrame::FindLastItemInGridOrder(
     ReverseCSSOrderAwareFrameIterator& aIter,
-    const nsTArray<GridItemInfo>& aGridItems, LineRange GridArea::*aMajor,
-    LineRange GridArea::*aMinor, uint32_t aFragmentStartTrack,
+    const nsTArray<GridItemInfo>& aGridItems, LineRange GridArea::* aMajor,
+    LineRange GridArea::* aMinor, uint32_t aFragmentStartTrack,
     uint32_t aFirstExcludedTrack) {
   FindItemInGridOrderResult result = {nullptr, false};
   int32_t maxMajor = -1;
