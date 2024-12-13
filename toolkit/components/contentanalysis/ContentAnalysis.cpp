@@ -2559,7 +2559,10 @@ void ContentAnalysis::CheckClipboardContentAnalysis(
         NoContentAnalysisResult::ALLOW_DUE_TO_SAME_TAB_SOURCE));
     return;
   }
-  if (maybeSequenceNumber.isSome()) {
+  
+  
+  
+  if (!aForFullClipboard && maybeSequenceNumber.isSome()) {
     bool isValid = false;
     nsIContentAnalysisResponse::Action action =
         nsIContentAnalysisResponse::Action::eUnspecified;
@@ -2567,29 +2570,6 @@ void ContentAnalysis::CheckClipboardContentAnalysis(
                                        flavors, &action, &isValid);
     if (isValid) {
       LOGD("Content analysis returning cached clipboard response %d", action);
-      if (aForFullClipboard) {
-        
-        
-        
-        if (action == nsIContentAnalysisResponse::Action::eBlock) {
-          nsCOMPtr<nsIObserverService> obsServ =
-              mozilla::services::GetObserverService();
-          
-          
-          auto fakeRequest = MakeRefPtr<ContentAnalysisRequest>(
-              ContentAnalysisRequest::AnalysisType::eBulkDataEntry,
-              ContentAnalysisRequest::Reason::eClipboardPaste, u""_ns, false,
-              ""_ns, currentURI,
-              ContentAnalysisRequest::OperationType::eClipboard, aWindow);
-          obsServ->NotifyObservers(fakeRequest, "dlp-request-made", nullptr);
-          nsCString requestToken;
-          DebugOnly<nsresult> rv = fakeRequest->GetRequestToken(requestToken);
-          MOZ_ASSERT(NS_SUCCEEDED(rv));
-          RefPtr<ContentAnalysisResponse> fakeResponse =
-              ContentAnalysisResponse::FromAction(action, requestToken);
-          obsServ->NotifyObservers(fakeResponse, "dlp-response", nullptr);
-        }
-      }
       aResolver->Callback(ContentAnalysisResult::FromAction(action));
       return;
     }

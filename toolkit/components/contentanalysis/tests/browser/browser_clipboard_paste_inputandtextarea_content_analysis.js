@@ -52,7 +52,12 @@ async function testClipboardPaste(testMode) {
   });
   await testPasteWithElementId("testInput", browser, testMode);
   
-  setClipboardData(testMode.isEmpty ? "" : CLIPBOARD_TEXT_STRING);
+  await setElementValue(browser, "testInput", "");
+  await testPasteWithElementId("testInput", browser, testMode);
+
+  await testPasteWithElementId("testTextArea", browser, testMode);
+  
+  await setElementValue(browser, "testTextArea", "");
   await testPasteWithElementId("testTextArea", browser, testMode);
 
   BrowserTestUtils.removeTab(tab);
@@ -183,6 +188,16 @@ async function getElementValue(browser, elementId) {
   return await SpecialPowers.spawn(browser, [elementId], async elementId => {
     return content.document.getElementById(elementId).value;
   });
+}
+
+async function setElementValue(browser, elementId, value) {
+  await SpecialPowers.spawn(
+    browser,
+    [elementId, value],
+    async (elementId, value) => {
+      content.document.getElementById(elementId).value = value;
+    }
+  );
 }
 
 add_task(async function testClipboardPasteWithContentAnalysisAllow() {
