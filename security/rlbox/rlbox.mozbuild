@@ -42,6 +42,31 @@ def RLBoxLibrary(name):
         "-Wno-unused",
     ]
 
+    
+    
+    
+    if (
+        CONFIG["CC_TYPE"] in ("clang", "gcc")
+        and CONFIG["TARGET_CPU"] == "x86_64"
+        and CONFIG["OS_TARGET"] != "Android"
+    ):
+        
+        
+        
+        DEFINES["WASM_RT_ALLOW_SEGUE"] = 1
+
+        
+        
+        
+        DEFINES["WASM_RT_SEGUE_FREE_SEGMENT"] = 1
+
+        
+        
+        
+        
+        
+        CFLAGS += ["-mfsgsbase"]
+
     WASM_DEFINES["MOZ_IN_WASM_SANDBOX"] = True
     if CONFIG["ENABLE_CLANG_PLUGIN"]:
         WASM_DEFINES["MOZ_CLANG_PLUGIN"] = True
