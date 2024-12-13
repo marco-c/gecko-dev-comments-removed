@@ -71,7 +71,7 @@ add_task(async function yelpDisabled() {
   gMakeSuggestionsStub.returns({ intent: "yelp_intent", subject: "burgers" });
   let expectedResult = makeExpectedResult(YOKOHAMA_RESULT);
 
-  let prefs = [
+  let tests = [
     
     "suggest.quicksuggest.sponsored",
     "suggest.yelp",
@@ -83,9 +83,50 @@ add_task(async function yelpDisabled() {
     "yelp.mlEnabled",
     "browser.ml.enable",
     "quicksuggest.mlEnabled",
+
+    
+    {
+      prefs: {
+        "suggest.quicksuggest.sponsored": true,
+        "suggest.quicksuggest.nonsponsored": true,
+      },
+      expected: true,
+    },
+    {
+      prefs: {
+        "suggest.quicksuggest.sponsored": true,
+        "suggest.quicksuggest.nonsponsored": false,
+      },
+      expected: true,
+    },
+    {
+      prefs: {
+        "suggest.quicksuggest.sponsored": false,
+        "suggest.quicksuggest.nonsponsored": true,
+      },
+      expected: false,
+    },
+    {
+      prefs: {
+        "suggest.quicksuggest.sponsored": false,
+        "suggest.quicksuggest.nonsponsored": false,
+      },
+      expected: false,
+    },
   ];
-  for (let pref of prefs) {
-    info("Starting subtest for pref: " + pref);
+  for (let test of tests) {
+    info("Starting subtest: " + JSON.stringify(test));
+
+    let prefs;
+    let expected;
+    if (typeof test == "string") {
+      
+      
+      prefs = { [test]: false };
+      expected = false;
+    } else {
+      ({ prefs, expected } = test);
+    }
 
     
     info("Doing search 1");
@@ -98,22 +139,31 @@ add_task(async function yelpDisabled() {
     });
 
     
-    info("Disabling pref and doing search 2");
-    UrlbarPrefs.set(pref, false);
+    let originalPrefs = Object.fromEntries(
+      Object.keys(prefs).map(name => [name, UrlbarPrefs.get(name)])
+    );
+
+    
+    info("Setting prefs and doing search 2");
+    for (let [name, value] of Object.entries(prefs)) {
+      UrlbarPrefs.set(name, value);
+    }
     await check_results({
       context: createContext("burgers", {
         providers: [UrlbarProviderQuickSuggest.name],
         isPrivate: false,
       }),
-      matches: [],
+      matches: expected ? [expectedResult] : [],
     });
 
     
-    UrlbarPrefs.set(pref, true);
+    for (let [name, value] of Object.entries(originalPrefs)) {
+      UrlbarPrefs.set(name, value);
+    }
     await QuickSuggestTestUtils.forceSync();
 
     
-    info("Doing search 3 after re-enabling the pref");
+    info("Doing search 3 after reverting the prefs");
     await check_results({
       context: createContext("burgers", {
         providers: [UrlbarProviderQuickSuggest.name],
