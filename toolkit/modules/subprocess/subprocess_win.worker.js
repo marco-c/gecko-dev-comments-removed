@@ -601,6 +601,12 @@ class Process extends BaseProcess {
     libc.CloseHandle(procInfo.hThread);
   }
 
+  connectRunning(_options) {
+    
+    
+    throw new Error("Not implemented");
+  }
+
   
 
 

@@ -464,6 +464,96 @@ class Process extends BaseProcess {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ManagedProcess extends BaseProcess {
+  
+
+
+
+
+
+
+  connectRunning(receivedFDs) {
+    const fdCheck = fds => {
+      for (let value of io.pipes.values()) {
+        const fd = parseInt(value.fd.toString(), 10);
+        return fd === fds[0] || fd === fds[1] || fd === fds[2];
+      }
+    };
+
+    const alreadyUsed = fdCheck(receivedFDs);
+    if (alreadyUsed) {
+      throw new Error("Attempt to connect FDs already handled by Subprocess");
+    }
+
+    this.pipes.push(new OutputPipe(this, unix.Fd(receivedFDs[0])));
+    this.pipes.push(new InputPipe(this, unix.Fd(receivedFDs[1])));
+    this.pipes.push(new InputPipe(this, unix.Fd(receivedFDs[2])));
+  }
+
+  get pollEvents() {
+    
+    
+    
+    
+
+    
+    
+    return 0;
+  }
+
+  
+
+
+
+
+
+  kill() {
+    this.pipes.forEach(p => p.close());
+    this.resolveExit(this.exitCode);
+  }
+
+  
+
+
+
+
+  wait() {
+    if (this.pipes.every(pipe => pipe.closed)) {
+      
+      this.resolveExit(null);
+    } else {
+      io.updatePollFds();
+    }
+  }
+
+  
+
+
+
+
+
+
+  spawn(options) {
+    return this.connectRunning(options);
+  }
+}
+
 io = {
   pollFds: null,
   pollHandlers: null,
