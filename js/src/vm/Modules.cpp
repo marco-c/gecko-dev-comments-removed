@@ -46,9 +46,9 @@ using mozilla::Utf8Unit;
 
 static bool ModuleLink(JSContext* cx, Handle<ModuleObject*> module);
 static bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> module,
-                           MutableHandle<Value> rval);
+                           MutableHandle<Value> result);
 static bool SyntheticModuleEvaluate(JSContext* cx, Handle<ModuleObject*> module,
-                                    MutableHandle<Value> rval);
+                                    MutableHandle<Value> result);
 
 
 
@@ -1493,7 +1493,7 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
 
 static bool SyntheticModuleEvaluate(JSContext* cx,
                                     Handle<ModuleObject*> moduleArg,
-                                    MutableHandle<Value> rval) {
+                                    MutableHandle<Value> result) {
   
 
   
@@ -1503,17 +1503,14 @@ static bool SyntheticModuleEvaluate(JSContext* cx,
   }
 
   
-  
 
   
-
-  
-  if (!AsyncFunctionReturned(cx, resultPromise, JS::UndefinedHandleValue)) {
+  if (!AsyncFunctionReturned(cx, resultPromise, result)) {
     return false;
   }
 
   
-  rval.set(ObjectValue(*resultPromise));
+  result.set(ObjectValue(*resultPromise));
   return true;
 }
 
