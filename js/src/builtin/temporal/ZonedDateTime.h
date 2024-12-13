@@ -188,8 +188,19 @@ enum class MatchBehaviour { MatchExactly, MatchMinutes };
 
 
 
-
 bool InterpretISODateTimeOffset(JSContext* cx, const PlainDateTime& dateTime,
+                                OffsetBehaviour offsetBehaviour,
+                                int64_t offsetNanoseconds,
+                                JS::Handle<TimeZoneValue> timeZone,
+                                TemporalDisambiguation disambiguation,
+                                TemporalOffset offsetOption,
+                                MatchBehaviour matchBehaviour, Instant* result);
+
+
+
+
+
+bool InterpretISODateTimeOffset(JSContext* cx, const PlainDate& date,
                                 OffsetBehaviour offsetBehaviour,
                                 int64_t offsetNanoseconds,
                                 JS::Handle<TimeZoneValue> timeZone,

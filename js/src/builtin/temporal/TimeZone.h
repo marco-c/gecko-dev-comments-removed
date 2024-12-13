@@ -347,6 +347,12 @@ bool GetNamedTimeZonePreviousTransition(JSContext* cx,
                                         mozilla::Maybe<Instant>* result);
 
 
+
+
+bool GetStartOfDay(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
+                   const PlainDate& date, Instant* result);
+
+
 bool WrapTimeZoneValueObject(
     JSContext* cx, JS::MutableHandle<BuiltinTimeZoneObject*> timeZone);
 

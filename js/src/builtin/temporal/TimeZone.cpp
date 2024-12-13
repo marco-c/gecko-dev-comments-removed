@@ -451,6 +451,48 @@ bool js::temporal::GetNamedTimeZonePreviousTransition(
 
 
 
+bool js::temporal::GetStartOfDay(JSContext* cx, Handle<TimeZoneValue> timeZone,
+                                 const PlainDate& date, Instant* result) {
+  
+  auto dateTime = PlainDateTime{date, {}};
+
+  
+  PossibleInstants possibleInstants;
+  if (!GetPossibleInstantsFor(cx, timeZone, dateTime, &possibleInstants)) {
+    return false;
+  }
+
+  
+  if (!possibleInstants.empty()) {
+    *result = possibleInstants[0];
+    return true;
+  }
+
+  
+  MOZ_ASSERT(!timeZone.isOffset());
+
+  constexpr auto oneDay =
+      InstantSpan::fromNanoseconds(ToNanoseconds(TemporalUnit::Day));
+
+  
+  auto previousDayEpochNs = GetUTCEpochNanoseconds(dateTime) - oneDay;
+  mozilla::Maybe<Instant> transition{};
+  if (!GetNamedTimeZoneNextTransition(cx, timeZone, previousDayEpochNs,
+                                      &transition)) {
+    return false;
+  }
+
+  
+  MOZ_ASSERT(transition, "time zone transition not found");
+
+  
+  *result = *transition;
+  return true;
+}
+
+
+
+
 static JSLinearString* FormatOffsetTimeZoneIdentifier(JSContext* cx,
                                                       int32_t offsetMinutes) {
   MOZ_ASSERT(std::abs(offsetMinutes) < UnitsPerDay(TemporalUnit::Minute));
@@ -896,6 +938,13 @@ bool js::temporal::GetPossibleInstantsFor(JSContext* cx,
                                           Handle<TimeZoneValue> timeZone,
                                           const PlainDateTime& dateTime,
                                           PossibleInstants* result) {
+  
+  if (!ISODateTimeWithinLimits(dateTime)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_PLAIN_DATE_TIME_INVALID);
+    return false;
+  }
+
   
 
   

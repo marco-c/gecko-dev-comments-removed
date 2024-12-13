@@ -2196,7 +2196,7 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<TimeZoneValue> timeZone(cx);
-  PlainTime time = {};
+  Rooted<Value> temporalTime(cx);
   if (args.get(0).isObject()) {
     Rooted<JSObject*> item(cx, &args[0].toObject());
 
@@ -2221,16 +2221,8 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
       }
 
       
-      Rooted<Value> temporalTime(cx);
       if (!GetProperty(cx, item, item, cx->names().plainTime, &temporalTime)) {
         return false;
-      }
-
-      
-      if (!temporalTime.isUndefined()) {
-        if (!ToTemporalTime(cx, temporalTime, &time)) {
-          return false;
-        }
       }
     }
   } else {
@@ -2243,18 +2235,30 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
   }
 
   
-
-  
-  PlainDateTime temporalDateTime;
-  if (!CreateTemporalDateTime(cx, date, time, &temporalDateTime)) {
-    return false;
-  }
-
-  
   Instant instant;
-  if (!GetInstantFor(cx, timeZone, temporalDateTime,
-                     TemporalDisambiguation::Compatible, &instant)) {
-    return false;
+  if (temporalTime.isUndefined()) {
+    
+    if (!GetStartOfDay(cx, timeZone, date, &instant)) {
+      return false;
+    }
+  } else {
+    
+    PlainTime time = {};
+    if (!ToTemporalTime(cx, temporalTime, &time)) {
+      return false;
+    }
+
+    
+    PlainDateTime temporalDateTime;
+    if (!CreateTemporalDateTime(cx, date, time, &temporalDateTime)) {
+      return false;
+    }
+
+    
+    if (!GetInstantFor(cx, timeZone, temporalDateTime,
+                       TemporalDisambiguation::Compatible, &instant)) {
+      return false;
+    }
   }
 
   
