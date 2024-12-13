@@ -59,7 +59,8 @@ interface nsIContentAnalysisResponse : nsISupports
     eNoAgent = 1,
     eInvalidAgentSignature = 2,
     eErrorOther = 3,
-    eOtherRequestInGroupCancelled = 4
+    eOtherRequestInGroupCancelled = 4,
+    eShutdown = 5
   };
 
   readonly attribute nsIContentAnalysisResponse_Action action;
@@ -280,7 +281,10 @@ interface nsIContentAnalysis : nsISupports
 
 
 
-  void cancelContentAnalysisRequest(in ACString aRequestToken);
+
+
+
+  void cancelContentAnalysisRequest(in ACString aRequestToken, in boolean aNotifyObservers);
 
   
 
