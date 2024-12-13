@@ -2021,6 +2021,12 @@ pref("pdfjs.handleOctetStream", true);
 
 pref("sidebar.position_start", true);
 pref("sidebar.revamp", false);
+
+#ifdef NIGHTLY_BUILD
+pref("sidebar.revamp.round-content-area", true);
+#else
+pref("sidebar.revamp.round-content-area", false);
+#endif
 pref("sidebar.animation.enabled", true);
 pref("sidebar.animation.duration-ms", 200);
 pref("sidebar.main.tools", "aichat,syncedtabs,history");
