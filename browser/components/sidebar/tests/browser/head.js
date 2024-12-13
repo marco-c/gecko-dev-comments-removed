@@ -17,12 +17,12 @@ function imageBufferFromDataURI(encodedImageData) {
 const kPrefCustomizationState = "browser.uiCustomization.state";
 const kPrefCustomizationHorizontalTabstrip =
   "browser.uiCustomization.horizontalTabstrip";
-const kPrefCustomizationVerticalNavBar =
-  "browser.uiCustomization.verticalNavBar";
+const kPrefCustomizationNavBarWhenVerticalTabs =
+  "browser.uiCustomization.navBarWhenVerticalTabs";
 
 Services.prefs.clearUserPref(kPrefCustomizationState);
 Services.prefs.clearUserPref(kPrefCustomizationHorizontalTabstrip);
-Services.prefs.clearUserPref(kPrefCustomizationVerticalNavBar);
+Services.prefs.clearUserPref(kPrefCustomizationNavBarWhenVerticalTabs);
 
 
 const extData = {
