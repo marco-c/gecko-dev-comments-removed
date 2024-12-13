@@ -2538,14 +2538,6 @@ class nsDisplayItem {
 
 
 
-  virtual bool ShouldFixToViewport(nsDisplayListBuilder* aBuilder) const {
-    return false;
-  }
-
-  
-
-
-
   static bool ForceActiveLayers();
 
 #ifdef MOZ_DUMP_PAINTING
@@ -4195,9 +4187,6 @@ class nsDisplayBackgroundImage : public nsPaintedDisplayItem {
   void ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
                                  const nsDisplayItemGeometry* aGeometry,
                                  nsRegion* aInvalidRegion) const override;
-  bool ShouldFixToViewport(nsDisplayListBuilder* aBuilder) const override {
-    return mShouldFixToViewport;
-  }
 
   nsRect GetDestRect() const { return mDestRect; }
 
@@ -4249,8 +4238,6 @@ class nsDisplayBackgroundImage : public nsPaintedDisplayItem {
   nsRect mBounds;
   uint16_t mLayer;
   bool mIsRasterImage;
-  
-  bool mShouldFixToViewport;
 };
 
 
@@ -5658,10 +5645,6 @@ class nsDisplayFixedPosition : public nsDisplayOwnLayer {
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override {
     GetChildren()->Paint(aBuilder, aCtx,
                          mFrame->PresContext()->AppUnitsPerDevPixel());
-  }
-
-  bool ShouldFixToViewport(nsDisplayListBuilder* aBuilder) const override {
-    return mIsFixedBackground;
   }
 
   bool CreateWebRenderCommands(
