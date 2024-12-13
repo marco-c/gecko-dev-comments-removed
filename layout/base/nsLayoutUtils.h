@@ -1586,6 +1586,53 @@ class nsLayoutUtils {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static inline nscoord ComputeStretchContentBoxISize(nscoord aSizeToFill,
+                                                      nscoord aMargin,
+                                                      nscoord aBorderPadding) {
+    return std::max(0, aSizeToFill - aMargin - aBorderPadding);
+  }
+  static inline nscoord ComputeStretchContentBoxBSize(nscoord aSizeToFill,
+                                                      nscoord aMargin,
+                                                      nscoord aBorderPadding) {
+    NS_ASSERTION(aSizeToFill != NS_UNCONSTRAINEDSIZE,
+                 "We don't handle situations with unconstrained "
+                 "aSizeToFill; caller should handle that!");
+    return ComputeStretchContentBoxISize(aSizeToFill, aMargin, aBorderPadding);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
   template <typename SizeOrMaxSize>
   static bool IsAutoBSize(const SizeOrMaxSize& aCoord, nscoord aCBBSize) {
     return aCoord.BehavesLikeInitialValueOnBlockAxis() ||
@@ -1623,7 +1670,7 @@ class nsLayoutUtils {
   
   
   template <typename Frame, typename T, typename S>
-  static nscolor GetTextColor(Frame* aFrame, T S::*aField) {
+  static nscolor GetTextColor(Frame* aFrame, T S::* aField) {
     nscolor color = aFrame->GetVisitedDependentColor(aField);
     return DarkenColorIfNeeded(aFrame, color);
   }
