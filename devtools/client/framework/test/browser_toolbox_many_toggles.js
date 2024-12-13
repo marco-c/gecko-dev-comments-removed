@@ -8,6 +8,13 @@ requestLongerTimeout(2);
 
 
 
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection closed/);
+
+
+
 
 
 const URL1 =
@@ -69,21 +76,34 @@ add_task(
 );
 
 
-const URL2 = `data:text/html,<script>
-    setInterval(()=>{
-      document.body.innerHTML="";
-      let iframe=document.createElement("iframe");
-      iframe.src="data:text/html,foo";
-      document.body.appendChild(iframe);
-    },0);</script>`;
+const URL2 = `data:text/html,Test toggling DevTools with many destroying iframes`;
 
 add_task(async function manyTogglesWithDestroyingIframes() {
   const tab = await addTab(URL2);
+
+  
+  
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function () {
+    let iframe;
+    content.setInterval(function () {
+      if (iframe) {
+        iframe.remove();
+      }
+      iframe = content.document.createElement("iframe");
+      iframe.src = "data:text/html,foo";
+      content.document.body.appendChild(iframe);
+
+      
+      
+      
+    }, 100);
+  });
 
   info(
     "Open/close DevTools many times in a row while some processes get destroyed"
   );
   for (let i = 0; i < 3; i++) {
+    info(` # Toggle DevTools attempt #${i}`);
     const toolbox = await gDevTools.showToolboxForTab(tab, {
       toolId: "webconsole",
     });
