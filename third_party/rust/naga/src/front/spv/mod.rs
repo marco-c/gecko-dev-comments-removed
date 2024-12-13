@@ -561,7 +561,7 @@ struct BlockContext<'function> {
     parameter_sampling: &'function mut [image::SamplingFlags],
 }
 
-impl<'a> BlockContext<'a> {
+impl BlockContext<'_> {
     
     
     

@@ -2115,7 +2115,7 @@ impl crate::Adapter for super::Adapter {
         
         
         flags.set(
-            Tfc::STORAGE | Tfc::STORAGE_READ_WRITE,
+            Tfc::STORAGE_WRITE | Tfc::STORAGE_READ_WRITE,
             features.contains(vk::FormatFeatureFlags::STORAGE_IMAGE),
         );
         flags.set(

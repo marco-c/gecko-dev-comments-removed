@@ -27,7 +27,7 @@ pub struct ExpressionTracer<'tracer> {
     pub global_expressions_used: Option<&'tracer mut HandleSet<crate::Expression>>,
 }
 
-impl<'tracer> ExpressionTracer<'tracer> {
+impl ExpressionTracer<'_> {
     
     
     

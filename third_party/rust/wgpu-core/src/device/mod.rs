@@ -12,7 +12,6 @@ use crate::{
 
 use arrayvec::ArrayVec;
 use smallvec::SmallVec;
-use std::os::raw::c_char;
 use thiserror::Error;
 use wgt::{BufferAddress, DeviceLostReason, TextureFormat};
 
@@ -176,126 +175,27 @@ impl UserClosures {
         
         for (mut operation, status) in self.mappings {
             if let Some(callback) = operation.callback.take() {
-                callback.call(status);
+                callback(status);
             }
         }
         for closure in self.submissions {
-            closure.call();
+            closure();
         }
         for invocation in self.device_lost_invocations {
-            invocation
-                .closure
-                .call(invocation.reason, invocation.message);
+            (invocation.closure)(invocation.reason, invocation.message);
         }
     }
 }
 
 #[cfg(send_sync)]
-pub type DeviceLostCallback = Box<dyn Fn(DeviceLostReason, String) + Send + 'static>;
+pub type DeviceLostClosure = Box<dyn FnOnce(DeviceLostReason, String) + Send + 'static>;
 #[cfg(not(send_sync))]
-pub type DeviceLostCallback = Box<dyn Fn(DeviceLostReason, String) + 'static>;
-
-pub struct DeviceLostClosureRust {
-    pub callback: DeviceLostCallback,
-    consumed: bool,
-}
-
-impl Drop for DeviceLostClosureRust {
-    fn drop(&mut self) {
-        if !self.consumed {
-            panic!("DeviceLostClosureRust must be consumed before it is dropped.");
-        }
-    }
-}
-
-#[repr(C)]
-pub struct DeviceLostClosureC {
-    pub callback: unsafe extern "C" fn(user_data: *mut u8, reason: u8, message: *const c_char),
-    pub user_data: *mut u8,
-    consumed: bool,
-}
-
-#[cfg(send_sync)]
-unsafe impl Send for DeviceLostClosureC {}
-
-impl Drop for DeviceLostClosureC {
-    fn drop(&mut self) {
-        if !self.consumed {
-            panic!("DeviceLostClosureC must be consumed before it is dropped.");
-        }
-    }
-}
-
-pub struct DeviceLostClosure {
-    
-    
-    inner: DeviceLostClosureInner,
-}
+pub type DeviceLostClosure = Box<dyn FnOnce(DeviceLostReason, String) + 'static>;
 
 pub struct DeviceLostInvocation {
     closure: DeviceLostClosure,
     reason: DeviceLostReason,
     message: String,
-}
-
-enum DeviceLostClosureInner {
-    Rust { inner: DeviceLostClosureRust },
-    C { inner: DeviceLostClosureC },
-}
-
-impl DeviceLostClosure {
-    pub fn from_rust(callback: DeviceLostCallback) -> Self {
-        let inner = DeviceLostClosureRust {
-            callback,
-            consumed: false,
-        };
-        Self {
-            inner: DeviceLostClosureInner::Rust { inner },
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub unsafe fn from_c(mut closure: DeviceLostClosureC) -> Self {
-        
-        
-        let inner = DeviceLostClosureC {
-            callback: closure.callback,
-            user_data: closure.user_data,
-            consumed: false,
-        };
-
-        
-        closure.consumed = true;
-
-        Self {
-            inner: DeviceLostClosureInner::C { inner },
-        }
-    }
-
-    pub(crate) fn call(self, reason: DeviceLostReason, message: String) {
-        match self.inner {
-            DeviceLostClosureInner::Rust { mut inner } => {
-                inner.consumed = true;
-
-                (inner.callback)(reason, message)
-            }
-            
-            DeviceLostClosureInner::C { mut inner } => unsafe {
-                inner.consumed = true;
-
-                
-                
-                let message = std::ffi::CString::new(message).unwrap();
-                (inner.callback)(inner.user_data, reason as u8, message.as_ptr())
-            },
-        }
-    }
 }
 
 pub(crate) fn map_buffer(

@@ -93,7 +93,7 @@ impl Components<'_> {
     }
 }
 
-impl<'source, 'temp> Lowerer<'source, 'temp> {
+impl<'source> Lowerer<'source, '_> {
     
     
     
