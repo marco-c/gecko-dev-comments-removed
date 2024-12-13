@@ -1474,16 +1474,19 @@ class LoadCmapsRunnable final : public IdleRunnable,
       return NS_OK;
     }
     auto* families = list->Families();
-    
-    while (mIndex < numFamilies && families[mIndex].IsFullyInitialized()) {
-      ++mIndex;
-    }
-    
     while (mIndex < numFamilies) {
-      Unused << pfl->InitializeFamily(&families[mIndex++], true);
-      if (mDeadline.IsNull() || TimeStamp::Now() >= mDeadline) {
-        break;
+      auto& family = families[mIndex++];
+      if (family.IsFullyInitialized()) {
+        
+        continue;
       }
+      
+      Unused << pfl->InitializeFamily(&family, true);
+      
+      
+      
+      
+      break;
     }
     
     
