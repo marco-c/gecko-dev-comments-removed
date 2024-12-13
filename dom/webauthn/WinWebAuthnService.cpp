@@ -308,6 +308,9 @@ WinWebAuthnService::MakeCredential(uint64_t aTransactionId,
         
         DWORD winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_ANY;
 
+        
+        BOOL winEnablePrf = FALSE;
+
         nsString rpName;
         Unused << aArgs->GetRpName(rpName);
         rpInfo.pwszName = rpName.get();
@@ -430,6 +433,12 @@ WinWebAuthnService::MakeCredential(uint64_t aTransactionId,
           winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_ANY;
         }
 
+        bool requestedPrf;
+        Unused << aArgs->GetPrf(&requestedPrf);
+        if (requestedPrf) {
+          winEnablePrf = TRUE;
+        }
+
         bool requestedCredProps;
         Unused << aArgs->GetCredProps(&requestedCredProps);
 
@@ -442,7 +451,7 @@ WinWebAuthnService::MakeCredential(uint64_t aTransactionId,
         
         WEBAUTHN_EXTENSION rgExtension[2] = {};
         DWORD cExtensions = 0;
-        if (requestedHmacCreateSecret) {
+        if (requestedPrf || requestedHmacCreateSecret) {
           HmacCreateSecret = TRUE;
           rgExtension[cExtensions].pwszExtensionIdentifier =
               WEBAUTHN_EXTENSIONS_IDENTIFIER_HMAC_SECRET;
@@ -540,7 +549,7 @@ WinWebAuthnService::MakeCredential(uint64_t aTransactionId,
             WEBAUTHN_LARGE_BLOB_SUPPORT_NONE,
             winPreferResidentKey,  
             FALSE,                 
-            FALSE,                 
+            winEnablePrf,          
             NULL,                  
             0,                     
             NULL,                  
@@ -724,6 +733,89 @@ void WinWebAuthnService::DoGetAssertion(
         }
 
         
+        WEBAUTHN_HMAC_SECRET_SALT_VALUES* pPrfInputs = nullptr;
+        WEBAUTHN_HMAC_SECRET_SALT_VALUES prfInputs = {0};
+        WEBAUTHN_HMAC_SECRET_SALT globalHmacSalt = {0};
+        nsTArray<uint8_t> prfEvalFirst;
+        nsTArray<uint8_t> prfEvalSecond;
+        nsTArray<nsTArray<uint8_t>> prfEvalByCredIds;
+        nsTArray<nsTArray<uint8_t>> prfEvalByCredFirsts;
+        nsTArray<bool> prfEvalByCredSecondMaybes;
+        nsTArray<nsTArray<uint8_t>> prfEvalByCredSeconds;
+        nsTArray<WEBAUTHN_HMAC_SECRET_SALT> hmacSecretSalts;
+        nsTArray<WEBAUTHN_CRED_WITH_HMAC_SECRET_SALT>
+            credWithHmacSecretSaltList;
+
+        bool requestedPrf;
+        Unused << aArgs->GetPrf(&requestedPrf);
+        if (requestedPrf) {
+          rv = aArgs->GetPrfEvalFirst(prfEvalFirst);
+          if (rv == NS_OK) {
+            globalHmacSalt.cbFirst = prfEvalFirst.Length();
+            globalHmacSalt.pbFirst = prfEvalFirst.Elements();
+            prfInputs.pGlobalHmacSalt = &globalHmacSalt;
+          }
+          rv = aArgs->GetPrfEvalSecond(prfEvalSecond);
+          if (rv == NS_OK) {
+            globalHmacSalt.cbSecond = prfEvalSecond.Length();
+            globalHmacSalt.pbSecond = prfEvalSecond.Elements();
+          }
+          if (NS_OK ==
+                  aArgs->GetPrfEvalByCredentialCredentialId(prfEvalByCredIds) &&
+              NS_OK ==
+                  aArgs->GetPrfEvalByCredentialEvalFirst(prfEvalByCredFirsts) &&
+              NS_OK == aArgs->GetPrfEvalByCredentialEvalSecondMaybe(
+                           prfEvalByCredSecondMaybes) &&
+              NS_OK == aArgs->GetPrfEvalByCredentialEvalSecond(
+                           prfEvalByCredSeconds) &&
+              prfEvalByCredIds.Length() == prfEvalByCredFirsts.Length() &&
+              prfEvalByCredIds.Length() == prfEvalByCredSecondMaybes.Length() &&
+              prfEvalByCredIds.Length() == prfEvalByCredSeconds.Length()) {
+            for (size_t i = 0; i < prfEvalByCredIds.Length(); i++) {
+              WEBAUTHN_HMAC_SECRET_SALT salt = {0};
+              salt.cbFirst = prfEvalByCredFirsts[i].Length();
+              salt.pbFirst = prfEvalByCredFirsts[i].Elements();
+              if (prfEvalByCredSecondMaybes[i]) {
+                salt.cbSecond = prfEvalByCredSeconds[i].Length();
+                salt.pbSecond = prfEvalByCredSeconds[i].Elements();
+              }
+              hmacSecretSalts.AppendElement(salt);
+            }
+            
+            
+            
+            for (size_t i = 0; i < prfEvalByCredIds.Length(); i++) {
+              WEBAUTHN_CRED_WITH_HMAC_SECRET_SALT value = {0};
+              value.cbCredID = prfEvalByCredIds[i].Length();
+              value.pbCredID = prfEvalByCredIds[i].Elements();
+              value.pHmacSecretSalt = &hmacSecretSalts[i];
+              credWithHmacSecretSaltList.AppendElement(value);
+            }
+            prfInputs.cCredWithHmacSecretSaltList =
+                credWithHmacSecretSaltList.Length();
+            prfInputs.pCredWithHmacSecretSaltList =
+                credWithHmacSecretSaltList.Elements();
+          }
+
+          pPrfInputs = &prfInputs;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        if (pPrfInputs &&
+            winUserVerificationReq ==
+                WEBAUTHN_USER_VERIFICATION_REQUIREMENT_DISCOURAGED) {
+          winUserVerificationReq =
+              WEBAUTHN_USER_VERIFICATION_REQUIREMENT_PREFERRED;
+        }
+
+        
         nsTArray<nsTArray<uint8_t>> allowList;
         nsTArray<uint8_t> allowListTransports;
         if (aSelectedCredentialId.isSome()) {
@@ -801,14 +893,14 @@ void WinWebAuthnService::DoGetAssertion(
                 &aCancellationId,  
                 pAllowCredentialList,
                 WEBAUTHN_CRED_LARGE_BLOB_OPERATION_NONE,
-                0,      
-                NULL,   
-                NULL,   
-                FALSE,  
-                NULL,   
-                FALSE,  
-                0,      
-                NULL,   
+                0,           
+                NULL,        
+                pPrfInputs,  
+                FALSE,       
+                NULL,        
+                FALSE,       
+                0,           
+                NULL,        
             };
 
         PWEBAUTHN_ASSERTION pWebAuthNAssertion = nullptr;
