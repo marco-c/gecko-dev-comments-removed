@@ -104,6 +104,12 @@ const gCSSProperties1 = {
     types: [
     ]
   },
+  'block-step-align': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'auto', 'center'], ['end', 'start'], ['start', 'center'] ] }
+    ]
+  },
   'block-step-insert': {
     
     types: [
