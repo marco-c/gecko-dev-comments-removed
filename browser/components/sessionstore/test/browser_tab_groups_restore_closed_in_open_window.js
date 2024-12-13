@@ -1,3 +1,6 @@
+
+
+
 "use strict";
 
 const ORIG_STATE = SessionStore.getBrowserState();
@@ -6,28 +9,49 @@ registerCleanupFunction(async () => {
   await SessionStoreTestUtils.promiseBrowserState(ORIG_STATE);
 });
 
-add_task(async function test_RestoreSingleGroup() {
+add_task(async function test_restoreClosedTabGroupFromSameWindow() {
   let win = await promiseNewWindowLoaded();
   let aboutRobotsTab = BrowserTestUtils.addTab(win.gBrowser, "about:robots");
   let aboutCrashesTab = BrowserTestUtils.addTab(win.gBrowser, "about:crashes");
-  const { id: originalTabGroupId } = win.gBrowser.addTabGroup(
+  const tabGroupToClose = win.gBrowser.addTabGroup(
     [aboutRobotsTab, aboutCrashesTab],
     {
       color: "blue",
       label: "about pages",
     }
   );
+  const tabGroupToCloseId = tabGroupToClose.id;
 
   await TabStateFlusher.flushWindow(win);
-  await BrowserTestUtils.closeWindow(win);
   await forceSaveState();
 
-  
-  win = SessionStore.undoCloseWindow(0);
-  await BrowserTestUtils.waitForEvent(win, "SSWindowStateReady");
-  await BrowserTestUtils.waitForEvent(
-    win.gBrowser.tabContainer,
-    "SSTabRestored"
+  let removePromise = BrowserTestUtils.waitForEvent(
+    tabGroupToClose,
+    "TabGroupRemoved"
+  );
+  win.gBrowser.removeTabGroup(tabGroupToClose);
+  await removePromise;
+
+  Assert.ok(
+    !win.gBrowser.tabGroups.length,
+    "closed tab group should not be in the tab strip"
+  );
+  Assert.ok(
+    !win.gBrowser.tabs.includes(aboutRobotsTab),
+    "about:robots tab should not be in the tab strip"
+  );
+  Assert.ok(
+    !win.gBrowser.tabs.includes(aboutCrashesTab),
+    "about:crashes tab should not be in the tab strip"
+  );
+
+  await TabStateFlusher.flushWindow(win);
+  await forceSaveState();
+
+  const restoredTabGroup = SessionStore.undoCloseTabGroup(
+    win,
+    tabGroupToCloseId,
+    win
   );
 
   Assert.equal(
@@ -41,25 +65,28 @@ add_task(async function test_RestoreSingleGroup() {
     "there should be 1 tab group restored"
   );
 
-  let tabGroup = win.gBrowser.tabGroups[0];
   Assert.equal(
-    tabGroup.tabs.length,
+    restoredTabGroup.tabs.length,
     2,
     "the 2 restored tabs should be in the restored tab group"
   );
   Assert.equal(
-    tabGroup.label,
+    restoredTabGroup.label,
     "about pages",
     "tab group name should be restored"
   );
   Assert.equal(
-    tabGroup.id,
-    originalTabGroupId,
+    restoredTabGroup.id,
+    tabGroupToCloseId,
     "tab group ID should be restored"
   );
-  Assert.equal(tabGroup.color, "blue", "tab group color should be restored");
+  Assert.equal(
+    restoredTabGroup.color,
+    "blue",
+    "tab group color should be restored"
+  );
   Assert.ok(
-    !tabGroup.collapsed,
+    !restoredTabGroup.collapsed,
     "tab group collapsed state should be restored"
   );
 
