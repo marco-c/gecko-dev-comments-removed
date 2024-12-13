@@ -2591,7 +2591,8 @@ nsRect nsBlockFrame::ComputePaddingInflatedScrollableOverflow(
 }
 
 Maybe<nsRect> nsBlockFrame::GetLineFrameInFlowBounds(
-    const nsLineBox& aLine, const nsIFrame& aLineChildFrame) const {
+    const nsLineBox& aLine, const nsIFrame& aLineChildFrame,
+    bool aConsiderMargins) const {
   MOZ_ASSERT(aLineChildFrame.GetParent() == this,
              "Line's frame doesn't belong to this block frame?");
   
@@ -2603,26 +2604,28 @@ Maybe<nsRect> nsBlockFrame::GetLineFrameInFlowBounds(
     return Nothing{};
   }
   if (aLine.IsInline()) {
-    return Some(aLineChildFrame.GetMarginRectRelativeToSelf() +
-                aLineChildFrame.GetNormalPosition());
+    auto rect = aConsiderMargins ? aLineChildFrame.GetMarginRectRelativeToSelf()
+                                 : aLineChildFrame.GetRectRelativeToSelf();
+    return Some(rect + aLineChildFrame.GetNormalPosition());
   }
   const auto wm = GetWritingMode();
+  auto rect = aLineChildFrame.GetRectRelativeToSelf();
   
-  auto logicalMargin = aLineChildFrame.GetLogicalUsedMargin(wm);
-  logicalMargin.BEnd(wm) = aLine.GetCarriedOutBEndMargin().Get();
-
+  
+  
+  
   const auto linePoint = aLine.GetPhysicalBounds().TopLeft();
-  
-  
-  
-  
   const auto normalPosition = aLineChildFrame.GetLogicalSize(wm).BSize(wm) == 0
                                   ? linePoint
                                   : aLineChildFrame.GetNormalPosition();
-  const auto margin = logicalMargin.GetPhysicalMargin(wm).ApplySkipSides(
-      aLineChildFrame.GetSkipSides());
-  auto rect = aLineChildFrame.GetRectRelativeToSelf();
-  rect.Inflate(margin);
+  if (aConsiderMargins) {
+    
+    auto logicalMargin = aLineChildFrame.GetLogicalUsedMargin(wm);
+    logicalMargin.BEnd(wm) = aLine.GetCarriedOutBEndMargin().Get();
+    const auto margin = logicalMargin.GetPhysicalMargin(wm).ApplySkipSides(
+        aLineChildFrame.GetSkipSides());
+    rect.Inflate(margin);
+  }
   return Some(rect + normalPosition);
 }
 
@@ -2638,6 +2641,12 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
   
   const bool isScrolled = aAsIfScrolled || Style()->GetPseudoType() ==
                                                PseudoStyleType::scrolledContent;
+  
+  
+  
+  
+  const bool considerMarginsForInFlowChildBounds =
+      isScrolled && HasAnyStateBits(NS_BLOCK_BFC);
 
   
   
@@ -2668,7 +2677,8 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
         continue;
       }
 
-      if (auto lineFrameBounds = GetLineFrameInFlowBounds(line, *lineFrame)) {
+      if (auto lineFrameBounds = GetLineFrameInFlowBounds(
+              line, *lineFrame, considerMarginsForInFlowChildBounds)) {
         inFlowChildBounds = inFlowChildBounds.UnionEdges(*lineFrameBounds);
       }
     }
@@ -2680,8 +2690,10 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
         if (inkOverflowOnly || !isScrolled) {
           continue;
         }
-        inFlowChildBounds =
-            inFlowChildBounds.UnionEdges(GetNormalMarginRect(f));
+        auto rect = considerMarginsForInFlowChildBounds
+                        ? GetNormalMarginRect(f)
+                        : f->GetRectRelativeToSelf() + f->GetNormalPosition();
+        inFlowChildBounds = inFlowChildBounds.UnionEdges(rect);
       }
     }
 
