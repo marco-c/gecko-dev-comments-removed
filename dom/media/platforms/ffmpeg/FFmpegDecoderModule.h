@@ -69,13 +69,27 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
     if (Supports(SupportDecoderParams(aParams), nullptr).isEmpty()) {
       return nullptr;
     }
-    RefPtr<MediaDataDecoder> decoder = new FFmpegVideoDecoder<V>(
+    auto decoder = MakeRefPtr<FFmpegVideoDecoder<V>>(
         mLib, aParams.VideoConfig(), aParams.mKnowsCompositor,
         aParams.mImageContainer,
         aParams.mOptions.contains(CreateDecoderParams::Option::LowLatency),
         aParams.mOptions.contains(
             CreateDecoderParams::Option::HardwareDecoderNotAllowed),
         aParams.mTrackingId);
+
+    
+    
+    
+    
+    
+    if (XRE_IsGPUProcess() &&
+        IsHWDecodingSupported(aParams.mConfig.mMimeType) &&
+        !decoder->IsHardwareAccelerated()) {
+      MOZ_LOG(sPDMLog, LogLevel::Debug,
+              ("FFmpeg video decoder can't perform hw decoding, abort!"));
+      Unused << decoder->Shutdown();
+      decoder = nullptr;
+    }
     return decoder.forget();
   }
 

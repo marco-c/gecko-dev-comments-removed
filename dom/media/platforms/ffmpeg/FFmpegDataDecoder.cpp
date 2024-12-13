@@ -78,7 +78,8 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::AllocateExtraData() {
 
 
 
-MediaResult FFmpegDataDecoder<LIBAV_VER>::InitDecoder(AVDictionary** aOptions) {
+MediaResult FFmpegDataDecoder<LIBAV_VER>::InitSWDecoder(
+    AVDictionary** aOptions) {
   FFMPEG_LOG("Initialising FFmpeg decoder");
 
   AVCodec* codec = FindAVCodec(mLib, mCodecID);
