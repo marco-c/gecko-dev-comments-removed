@@ -43,6 +43,8 @@ class WorkerTargetActor extends BaseTargetActor {
 
 
 
+
+
   constructor(conn, workerGlobal, workerDebuggerData, sessionContext) {
     super(conn, Targets.TYPES.WORKER, workerTargetSpec);
 
@@ -58,6 +60,8 @@ class WorkerTargetActor extends BaseTargetActor {
     } else if (workerDebuggerData.type == 1) {
       this.targetType = Targets.TYPES.SHARED_WORKER;
     }
+    this._relatedDocumentInnerWindowId =
+      workerDebuggerData.relatedDocumentInnerWindowId;
 
     this._workerDebuggerData = workerDebuggerData;
     this._sourcesManager = null;
@@ -110,6 +114,7 @@ class WorkerTargetActor extends BaseTargetActor {
       id: this._workerDebuggerData.id,
       type: this._workerDebuggerData.type,
       url: this._workerDebuggerData.url,
+      relatedDocumentInnerWindowId: this._relatedDocumentInnerWindowId,
       traits: {
         
         supportsTopLevelTargetFlag: false,

@@ -166,7 +166,7 @@ class EvaluationContextSelector extends Component {
     const processTargets = [];
     const frameTargets = new Set();
     const contentScriptTargets = new Set();
-    const workerTargets = [];
+    const workerTargets = new Set();
     let topTarget = null;
 
     for (const target of targets) {
@@ -187,7 +187,7 @@ class EvaluationContextSelector extends Component {
         case TARGET_TYPES.WORKER:
         case TARGET_TYPES.SHARED_WORKER:
         case TARGET_TYPES.SERVICE_WORKER:
-          workerTargets.push(target);
+          workerTargets.add(target);
           break;
         default:
           console.warn(
@@ -202,12 +202,24 @@ class EvaluationContextSelector extends Component {
     const renderFrameWithContentScripts = frameTarget => {
       items.push(this.renderMenuItem(frameTarget));
 
-      for (const contentScriptTarget of [...contentScriptTargets]) {
+      
+      for (const contentScriptTarget of contentScriptTargets) {
         if (contentScriptTarget.innerWindowId != frameTarget.innerWindowId) {
           continue;
         }
         items.push(this.renderMenuItem(contentScriptTarget, true));
         contentScriptTargets.delete(contentScriptTarget);
+      }
+
+      
+      for (const workerTarget of workerTargets) {
+        if (
+          workerTarget.relatedDocumentInnerWindowId != frameTarget.innerWindowId
+        ) {
+          continue;
+        }
+        items.push(this.renderMenuItem(workerTarget, true));
+        workerTargets.delete(workerTarget);
       }
     };
 
@@ -224,11 +236,14 @@ class EvaluationContextSelector extends Component {
       );
       for (const target of sortedProcessTargets) {
         items.push(
-          dom.hr({ role: "menuseparator", key: `process-separator-${target.actorID}` }),
+          dom.hr({
+            role: "menuseparator",
+            key: `process-separator-${target.actorID}`,
+          }),
           this.renderMenuItem(target)
         );
 
-        for (const frameTarget of [...frameTargets]) {
+        for (const frameTarget of frameTargets) {
           if (frameTarget.processID != target.processID) {
             continue;
           }
@@ -249,13 +264,13 @@ class EvaluationContextSelector extends Component {
     for (const frameTarget of sortedFrames) {
       renderFrameWithContentScripts(frameTarget);
     }
+
     
     
     for (const contentScriptTarget of contentScriptTargets) {
-      items.push(this.renderMenuItem(contentScriptTarget, true));
+      items.push(this.renderMenuItem(contentScriptTarget));
     }
-
-    const sortedWorkers = workerTargets.sort((a, b) => a.url < b.url);
+    const sortedWorkers = [...workerTargets].sort((a, b) => a.url < b.url);
     if (sortedWorkers.length) {
       items.push(dom.hr({ role: "menuseparator", key: `worker-separator` }));
     }

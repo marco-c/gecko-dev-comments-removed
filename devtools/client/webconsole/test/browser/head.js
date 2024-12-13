@@ -1827,6 +1827,7 @@ function checkContextSelectorMenu(hud, expected) {
 
 
 
+
 function checkContextSelectorMenuItemAt(hud, index, expected) {
   const el = getContextSelectorItems(hud).at(index);
 
@@ -1838,6 +1839,7 @@ function checkContextSelectorMenuItemAt(hud, index, expected) {
   const elChecked = el.getAttribute("aria-checked") === "true";
   const elTooltip = el.getAttribute("title");
   const elLabel = el.querySelector(".label").innerText;
+  const indented = el.classList.contains("indented");
 
   is(elLabel, expected.label, `The item has the expected label`);
   is(elTooltip, expected.tooltip, `Item "${elLabel}" has the expected tooltip`);
@@ -1845,6 +1847,11 @@ function checkContextSelectorMenuItemAt(hud, index, expected) {
     elChecked,
     expected.checked,
     `Item "${elLabel}" is ${expected.checked ? "checked" : "unchecked"}`
+  );
+  is(
+    indented,
+    expected.indented ?? false,
+    `Item "${elLabel}" is ${!indented ? " not" : ""} indented`
   );
 }
 

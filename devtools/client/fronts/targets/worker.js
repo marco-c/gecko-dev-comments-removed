@@ -46,6 +46,9 @@ class WorkerTargetFront extends TargetMixin(
     this._type = json.type;
     
     this.id = json.id;
+
+    
+    this.relatedDocumentInnerWindowId = json.relatedDocumentInnerWindowId;
   }
 }
 
