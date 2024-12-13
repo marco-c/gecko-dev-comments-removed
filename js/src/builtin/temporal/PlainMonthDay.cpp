@@ -292,9 +292,6 @@ static bool ToTemporalMonthDay(JSContext* cx, Handle<Value> item,
 
   
   
-
-  
-  
   
   Rooted<PlainMonthDay> monthDay(cx);
   if (!CreateTemporalMonthDay(cx, date, calendar, &monthDay)) {

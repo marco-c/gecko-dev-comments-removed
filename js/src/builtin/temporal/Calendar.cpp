@@ -2322,6 +2322,15 @@ static bool CalendarMonthDayToISOReferenceDate(JSContext* cx,
       return false;
     }
 
+    
+    
+    auto isoDate = ToISODate(date.get());
+    if (!ISODateWithinLimits(isoDate)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TEMPORAL_PLAIN_DATE_INVALID);
+      return false;
+    }
+
     if (!fields.has(CalendarField::MonthCode)) {
       if (!CalendarDateMonthCode(cx, calendar, date.get(), &monthCode)) {
         return false;
