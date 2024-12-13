@@ -8,6 +8,10 @@
 
 "use strict";
 
+const { UrlbarProviderOpenTabs } = ChromeUtils.importESModule(
+  "resource:///modules/UrlbarProviderOpenTabs.sys.mjs"
+);
+
 add_setup(async function () {
   registerCleanupFunction(async () => {
     await PlacesUtils.history.clear();
@@ -108,6 +112,13 @@ add_task(
     );
     let tab = BrowserTestUtils.addTab(gBrowser, url, { userContextId: 1 });
     await promiseVisited;
+    
+    
+    await TestUtils.waitForCondition(
+      () =>
+        UrlbarProviderOpenTabs.getOpenTabUrlsForUserContextId(1).includes(url),
+      "Awaiting for open tab to be registered"
+    );
 
     async function queryAndCheckOneSwitchTabResult() {
       await UrlbarTestUtils.promiseAutocompleteResultPopup({
