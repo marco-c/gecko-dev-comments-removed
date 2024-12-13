@@ -6,6 +6,9 @@
 
 #include "mozilla/dom/MediaError.h"
 
+#include <string>
+#include <unordered_set>
+
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/MediaErrorBinding.h"
 #include "nsContentUtils.h"
@@ -31,13 +34,13 @@ MediaError::MediaError(HTMLMediaElement* aParent, uint16_t aCode,
 void MediaError::GetMessage(nsAString& aResult) const {
   
   
-  static constexpr nsLiteralCString whitelist[] = {
-      "404: Not Found"_ns
+  
+  static const std::unordered_set<std::string> whitelist = {
+      "404: Not Found"
       
   };
 
-  const bool shouldBlank = std::find(std::begin(whitelist), std::end(whitelist),
-                                     mMessage) != std::end(whitelist);
+  const bool shouldBlank = whitelist.find(mMessage.get()) == whitelist.end();
 
   if (shouldBlank) {
     
