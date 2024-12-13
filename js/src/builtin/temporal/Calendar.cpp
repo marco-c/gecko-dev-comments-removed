@@ -409,17 +409,6 @@ static YearWeek ToISOWeekOfYear(const PlainDate& date) {
 
 
 
-static JSString* ISOMonthCode(JSContext* cx, int32_t month) {
-  MOZ_ASSERT(1 <= month && month <= 12);
-
-  
-  char monthCode[3] = {'M', char('0' + (month / 10)), char('0' + (month % 10))};
-  return NewStringCopyN<CanGC>(cx, monthCode, std::size(monthCode));
-}
-
-
-
-
 static std::string_view CalendarIdToBcp47(CalendarId id) {
   switch (id) {
     case CalendarId::ISO8601:
@@ -1569,6 +1558,7 @@ static constexpr size_t ICUEraNameMaxLength() {
 
 
 
+
 static bool CalendarDateEra(JSContext* cx, CalendarId calendar,
                             const capi::ICU4XDate* date, EraCode* result) {
   MOZ_ASSERT(calendar != CalendarId::ISO8601);
@@ -1666,6 +1656,7 @@ static bool CalendarDateYear(JSContext* cx, CalendarId calendar,
 
 
 
+
 static bool CalendarDateMonthCode(JSContext* cx, CalendarId calendar,
                                   const capi::ICU4XDate* date,
                                   MonthCode* result) {
@@ -1717,530 +1708,6 @@ static bool CalendarDateMonthCode(JSContext* cx, CalendarId calendar,
   MOZ_ASSERT(CalendarMonthCodes(calendar).contains(monthCode));
 
   *result = monthCode;
-  return true;
-}
-
-
-
-
-static bool CalendarDateEra(JSContext* cx, CalendarId calendar,
-                            const PlainDate& date,
-                            MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  if (!CalendarEraRelevant(calendar)) {
-    result.setUndefined();
-    return true;
-  }
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  EraCode era;
-  if (!CalendarDateEra(cx, calendar, dt.get(), &era)) {
-    return false;
-  }
-
-  auto* str = NewStringCopy<CanGC>(cx, CalendarEraName(calendar, era));
-  if (!str) {
-    return false;
-  }
-
-  result.setString(str);
-  return true;
-}
-
-
-
-
-static bool CalendarDateEraYear(JSContext* cx, CalendarId calendar,
-                                const PlainDate& date,
-                                MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  if (!CalendarEraRelevant(calendar)) {
-    result.setUndefined();
-    return true;
-  }
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  int32_t year = capi::ICU4XDate_year_in_era(dt.get());
-  result.setInt32(year);
-  return true;
-}
-
-
-
-
-static bool CalendarDateYear(JSContext* cx, CalendarId calendar,
-                             const PlainDate& date,
-                             MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  int32_t year;
-  if (!CalendarDateYear(cx, calendar, dt.get(), &year)) {
-    return false;
-  }
-
-  result.setInt32(year);
-  return true;
-}
-
-
-
-
-static bool CalendarDateMonth(JSContext* cx, CalendarId calendar,
-                              const PlainDate& date,
-                              MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  int32_t month = capi::ICU4XDate_ordinal_month(dt.get());
-  result.setInt32(month);
-  return true;
-}
-
-
-
-
-static bool CalendarDateMonthCode(JSContext* cx, CalendarId calendar,
-                                  const PlainDate& date,
-                                  MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  MonthCode monthCode;
-  if (!CalendarDateMonthCode(cx, calendar, dt.get(), &monthCode)) {
-    return false;
-  }
-
-  auto* str = NewStringCopy<CanGC>(cx, std::string_view{monthCode});
-  if (!str) {
-    return false;
-  }
-
-  result.setString(str);
-  return true;
-}
-
-
-
-
-static bool CalendarDateDay(JSContext* cx, CalendarId calendar,
-                            const PlainDate& date,
-                            MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  int32_t day = capi::ICU4XDate_day_of_month(dt.get());
-  result.setInt32(day);
-  return true;
-}
-
-
-
-
-static bool CalendarDateDayOfWeek(JSContext* cx, CalendarId calendar,
-                                  const PlainDate& date,
-                                  MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  
-  static_assert(capi::ICU4XIsoWeekday_Monday == 1);
-  static_assert(capi::ICU4XIsoWeekday_Tuesday == 2);
-  static_assert(capi::ICU4XIsoWeekday_Wednesday == 3);
-  static_assert(capi::ICU4XIsoWeekday_Thursday == 4);
-  static_assert(capi::ICU4XIsoWeekday_Friday == 5);
-  static_assert(capi::ICU4XIsoWeekday_Saturday == 6);
-  static_assert(capi::ICU4XIsoWeekday_Sunday == 7);
-
-  capi::ICU4XIsoWeekday day = capi::ICU4XDate_day_of_week(dt.get());
-  result.setInt32(static_cast<int32_t>(day));
-  return true;
-}
-
-
-
-
-static bool CalendarDateDayOfYear(JSContext* cx, CalendarId calendar,
-                                  const PlainDate& date,
-                                  MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  
-  
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  
-  
-  
-  int32_t year;
-  if (!CalendarDateYear(cx, calendar, dt.get(), &year)) {
-    return false;
-  }
-  auto eraYear = CalendarEraYear(calendar, year);
-
-  int32_t dayOfYear = capi::ICU4XDate_day_of_month(dt.get());
-  int32_t month = capi::ICU4XDate_ordinal_month(dt.get());
-
-  
-  
-  while (month > 1) {
-    auto previousMonth = CreateDateFrom(cx, calendar, cal.get(), eraYear,
-                                        --month, 1, TemporalOverflow::Reject);
-    if (!previousMonth) {
-      return false;
-    }
-
-    dayOfYear += capi::ICU4XDate_days_in_month(previousMonth.get());
-  }
-
-  MOZ_ASSERT(dayOfYear <= capi::ICU4XDate_days_in_year(dt.get()));
-
-  result.setInt32(dayOfYear);
-  return true;
-}
-
-
-
-
-static bool CalendarDateWeekOfYear(JSContext* cx, CalendarId calendar,
-                                   const PlainDate& date,
-                                   MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  
-  
-  
-  if (calendar != CalendarId::Gregorian) {
-    result.setUndefined();
-    return true;
-  }
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  auto weekCal = CreateICU4WeekCalculator(cx, calendar);
-  if (!weekCal) {
-    return false;
-  }
-
-  auto week = capi::ICU4XDate_week_of_year(dt.get(), weekCal.get());
-  if (!week.is_ok) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEMPORAL_CALENDAR_INTERNAL_ERROR);
-    return false;
-  }
-
-  result.setInt32(week.ok.week);
-  return true;
-}
-
-
-
-
-static bool CalendarDateYearOfWeek(JSContext* cx, CalendarId calendar,
-                                   const PlainDate& date,
-                                   MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  
-  
-  
-  if (calendar != CalendarId::Gregorian) {
-    result.setUndefined();
-    return true;
-  }
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  auto weekCal = CreateICU4WeekCalculator(cx, calendar);
-  if (!weekCal) {
-    return false;
-  }
-
-  auto week = capi::ICU4XDate_week_of_year(dt.get(), weekCal.get());
-  if (!week.is_ok) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEMPORAL_CALENDAR_INTERNAL_ERROR);
-    return false;
-  }
-
-  int32_t relative = 0;
-  switch (week.ok.unit) {
-    case capi::ICU4XWeekRelativeUnit_Previous:
-      relative = -1;
-      break;
-    case capi::ICU4XWeekRelativeUnit_Current:
-      relative = 0;
-      break;
-    case capi::ICU4XWeekRelativeUnit_Next:
-      relative = 1;
-      break;
-  }
-
-  int32_t calendarYear;
-  if (!CalendarDateYear(cx, calendar, dt.get(), &calendarYear)) {
-    return false;
-  }
-
-  result.setInt32(calendarYear + relative);
-  return true;
-}
-
-
-
-
-static bool CalendarDateDaysInWeek(JSContext* cx, CalendarId calendar,
-                                   const PlainDate& date,
-                                   MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  
-  
-  
-  
-  result.setInt32(7);
-  return true;
-}
-
-
-
-
-static bool CalendarDateDaysInMonth(JSContext* cx, CalendarId calendar,
-                                    const PlainDate& date,
-                                    MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  int32_t days = capi::ICU4XDate_days_in_month(dt.get());
-  result.setInt32(days);
-  return true;
-}
-
-
-
-
-static bool CalendarDateDaysInYear(JSContext* cx, CalendarId calendar,
-                                   const PlainDate& date,
-                                   MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  int32_t days = capi::ICU4XDate_days_in_year(dt.get());
-  result.setInt32(days);
-  return true;
-}
-
-
-
-
-static bool CalendarDateMonthsInYear(JSContext* cx, CalendarId calendar,
-                                     const PlainDate& date,
-                                     MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  int32_t months = capi::ICU4XDate_months_in_year(dt.get());
-  result.setInt32(months);
-  return true;
-}
-
-
-
-
-static bool CalendarDateInLeapYear(JSContext* cx, CalendarId calendar,
-                                   const PlainDate& date,
-                                   MutableHandle<Value> result) {
-  MOZ_ASSERT(calendar != CalendarId::ISO8601);
-
-  
-  
-  
-
-  auto cal = CreateICU4XCalendar(cx, calendar);
-  if (!cal) {
-    return false;
-  }
-
-  auto dt = CreateICU4XDate(cx, date, cal.get());
-  if (!dt) {
-    return false;
-  }
-
-  bool inLeapYear = false;
-  switch (calendar) {
-    case CalendarId::ISO8601:
-    case CalendarId::Buddhist:
-    case CalendarId::Gregorian:
-    case CalendarId::Japanese:
-    case CalendarId::Coptic:
-    case CalendarId::Ethiopian:
-    case CalendarId::EthiopianAmeteAlem:
-    case CalendarId::Indian:
-    case CalendarId::Persian:
-    case CalendarId::ROC: {
-      MOZ_ASSERT(!CalendarHasLeapMonths(calendar));
-
-      
-      int32_t days = capi::ICU4XDate_days_in_year(dt.get());
-      MOZ_ASSERT(days == 365 || days == 366);
-
-      
-      inLeapYear = days == 366;
-      break;
-    }
-
-    case CalendarId::Islamic:
-    case CalendarId::IslamicCivil:
-    case CalendarId::IslamicRGSA:
-    case CalendarId::IslamicTabular:
-    case CalendarId::IslamicUmmAlQura: {
-      MOZ_ASSERT(!CalendarHasLeapMonths(calendar));
-
-      
-      
-      
-      
-      int32_t days = capi::ICU4XDate_days_in_year(dt.get());
-      MOZ_ASSERT(days == 353 || days == 354 || days == 355);
-
-      
-      inLeapYear = days == 355;
-      break;
-    }
-
-    case CalendarId::Chinese:
-    case CalendarId::Dangi:
-    case CalendarId::Hebrew: {
-      MOZ_ASSERT(CalendarHasLeapMonths(calendar));
-
-      
-      
-      int32_t months = capi::ICU4XDate_months_in_year(dt.get());
-      MOZ_ASSERT(months == 12 || months == 13);
-
-      
-      inLeapYear = months == 13;
-      break;
-    }
-  }
-
-  result.setBoolean(inLeapYear);
   return true;
 }
 
@@ -2945,6 +2412,8 @@ static bool CalendarResolveFields(JSContext* cx, CalendarId calendar,
 
 
 
+
+
 bool js::temporal::CalendarEra(JSContext* cx, Handle<CalendarValue> calendar,
                                const PlainDate& date,
                                MutableHandle<Value> result) {
@@ -2957,8 +2426,36 @@ bool js::temporal::CalendarEra(JSContext* cx, Handle<CalendarValue> calendar,
   }
 
   
-  return CalendarDateEra(cx, calendarId, date, result);
+  if (!CalendarEraRelevant(calendarId)) {
+    result.setUndefined();
+    return true;
+  }
+
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  EraCode era;
+  if (!CalendarDateEra(cx, calendarId, dt.get(), &era)) {
+    return false;
+  }
+
+  auto* str = NewStringCopy<CanGC>(cx, CalendarEraName(calendarId, era));
+  if (!str) {
+    return false;
+  }
+
+  result.setString(str);
+  return true;
 }
+
+
 
 
 
@@ -2976,8 +2473,27 @@ bool js::temporal::CalendarEraYear(JSContext* cx,
   }
 
   
-  return CalendarDateEraYear(cx, calendarId, date, result);
+  if (!CalendarEraRelevant(calendarId)) {
+    result.setUndefined();
+    return true;
+  }
+
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  int32_t year = capi::ICU4XDate_year_in_era(dt.get());
+  result.setInt32(year);
+  return true;
 }
+
+
 
 
 
@@ -2994,8 +2510,26 @@ bool js::temporal::CalendarYear(JSContext* cx, Handle<CalendarValue> calendar,
   }
 
   
-  return CalendarDateYear(cx, calendarId, date, result);
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  int32_t year;
+  if (!CalendarDateYear(cx, calendarId, dt.get(), &year)) {
+    return false;
+  }
+
+  result.setInt32(year);
+  return true;
 }
+
+
 
 
 
@@ -3012,8 +2546,22 @@ bool js::temporal::CalendarMonth(JSContext* cx, Handle<CalendarValue> calendar,
   }
 
   
-  return CalendarDateMonth(cx, calendarId, date, result);
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  int32_t month = capi::ICU4XDate_ordinal_month(dt.get());
+  result.setInt32(month);
+  return true;
 }
+
+
 
 
 
@@ -3026,7 +2574,9 @@ bool js::temporal::CalendarMonthCode(JSContext* cx,
 
   
   if (calendarId == CalendarId::ISO8601) {
-    JSString* str = ISOMonthCode(cx, date.month);
+    
+    auto monthCode = MonthCode{date.month};
+    JSString* str = NewStringCopy<CanGC>(cx, std::string_view{monthCode});
     if (!str) {
       return false;
     }
@@ -3036,8 +2586,31 @@ bool js::temporal::CalendarMonthCode(JSContext* cx,
   }
 
   
-  return CalendarDateMonthCode(cx, calendarId, date, result);
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  MonthCode monthCode;
+  if (!CalendarDateMonthCode(cx, calendarId, dt.get(), &monthCode)) {
+    return false;
+  }
+
+  auto* str = NewStringCopy<CanGC>(cx, std::string_view{monthCode});
+  if (!str) {
+    return false;
+  }
+
+  result.setString(str);
+  return true;
 }
+
+
 
 
 
@@ -3054,8 +2627,22 @@ bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
   }
 
   
-  return CalendarDateDay(cx, calendarId, date, result);
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  int32_t day = capi::ICU4XDate_day_of_month(dt.get());
+  result.setInt32(day);
+  return true;
 }
+
+
 
 
 
@@ -3073,8 +2660,31 @@ bool js::temporal::CalendarDayOfWeek(JSContext* cx,
   }
 
   
-  return CalendarDateDayOfWeek(cx, calendarId, date, result);
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  
+  static_assert(capi::ICU4XIsoWeekday_Monday == 1);
+  static_assert(capi::ICU4XIsoWeekday_Tuesday == 2);
+  static_assert(capi::ICU4XIsoWeekday_Wednesday == 3);
+  static_assert(capi::ICU4XIsoWeekday_Thursday == 4);
+  static_assert(capi::ICU4XIsoWeekday_Friday == 5);
+  static_assert(capi::ICU4XIsoWeekday_Saturday == 6);
+  static_assert(capi::ICU4XIsoWeekday_Sunday == 7);
+
+  capi::ICU4XIsoWeekday day = capi::ICU4XDate_day_of_week(dt.get());
+  result.setInt32(static_cast<int32_t>(day));
+  return true;
 }
+
+
 
 
 
@@ -3092,8 +2702,54 @@ bool js::temporal::CalendarDayOfYear(JSContext* cx,
   }
 
   
-  return CalendarDateDayOfYear(cx, calendarId, date, result);
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  
+  if (calendarId == CalendarId::Japanese) {
+    
+    
+    
+    int32_t year;
+    if (!CalendarDateYear(cx, calendarId, dt.get(), &year)) {
+      return false;
+    }
+    auto eraYear = CalendarEraYear(calendarId, year);
+
+    int32_t dayOfYear = capi::ICU4XDate_day_of_month(dt.get());
+    int32_t month = capi::ICU4XDate_ordinal_month(dt.get());
+
+    
+    
+    while (month > 1) {
+      auto previousMonth = CreateDateFrom(cx, calendarId, cal.get(), eraYear,
+                                          --month, 1, TemporalOverflow::Reject);
+      if (!previousMonth) {
+        return false;
+      }
+
+      dayOfYear += capi::ICU4XDate_days_in_month(previousMonth.get());
+    }
+
+    MOZ_ASSERT(dayOfYear <= capi::ICU4XDate_days_in_year(dt.get()));
+
+    result.setInt32(dayOfYear);
+    return true;
+  }
+
+  int32_t day = capi::ICU4XDate_day_of_year(dt.get());
+  result.setInt32(day);
+  return true;
 }
+
+
 
 
 
@@ -3111,8 +2767,42 @@ bool js::temporal::CalendarWeekOfYear(JSContext* cx,
   }
 
   
-  return CalendarDateWeekOfYear(cx, calendarId, date, result);
+
+  
+  
+  
+  if (calendarId != CalendarId::Gregorian) {
+    result.setUndefined();
+    return true;
+  }
+
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  auto weekCal = CreateICU4WeekCalculator(cx, calendarId);
+  if (!weekCal) {
+    return false;
+  }
+
+  auto week = capi::ICU4XDate_week_of_year(dt.get(), weekCal.get());
+  if (!week.is_ok) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_CALENDAR_INTERNAL_ERROR);
+    return false;
+  }
+
+  result.setInt32(week.ok.week);
+  return true;
 }
+
+
 
 
 
@@ -3130,8 +2820,60 @@ bool js::temporal::CalendarYearOfWeek(JSContext* cx,
   }
 
   
-  return CalendarDateYearOfWeek(cx, calendarId, date, result);
+
+  
+  
+  
+  if (calendarId != CalendarId::Gregorian) {
+    result.setUndefined();
+    return true;
+  }
+
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  auto weekCal = CreateICU4WeekCalculator(cx, calendarId);
+  if (!weekCal) {
+    return false;
+  }
+
+  auto week = capi::ICU4XDate_week_of_year(dt.get(), weekCal.get());
+  if (!week.is_ok) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_CALENDAR_INTERNAL_ERROR);
+    return false;
+  }
+
+  int32_t relative = 0;
+  switch (week.ok.unit) {
+    case capi::ICU4XWeekRelativeUnit_Previous:
+      relative = -1;
+      break;
+    case capi::ICU4XWeekRelativeUnit_Current:
+      relative = 0;
+      break;
+    case capi::ICU4XWeekRelativeUnit_Next:
+      relative = 1;
+      break;
+  }
+
+  int32_t calendarYear;
+  if (!CalendarDateYear(cx, calendarId, dt.get(), &calendarYear)) {
+    return false;
+  }
+
+  result.setInt32(calendarYear + relative);
+  return true;
 }
+
+
 
 
 
@@ -3140,17 +2882,18 @@ bool js::temporal::CalendarDaysInWeek(JSContext* cx,
                                       Handle<CalendarValue> calendar,
                                       const PlainDate& date,
                                       MutableHandle<Value> result) {
-  auto calendarId = calendar.identifier();
+  
+  
+  
+  
+  
 
   
-  if (calendarId == CalendarId::ISO8601) {
-    result.setInt32(7);
-    return true;
-  }
-
-  
-  return CalendarDateDaysInWeek(cx, calendarId, date, result);
+  result.setInt32(7);
+  return true;
 }
+
+
 
 
 
@@ -3168,8 +2911,22 @@ bool js::temporal::CalendarDaysInMonth(JSContext* cx,
   }
 
   
-  return CalendarDateDaysInMonth(cx, calendarId, date, result);
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  int32_t days = capi::ICU4XDate_days_in_month(dt.get());
+  result.setInt32(days);
+  return true;
 }
+
+
 
 
 
@@ -3187,8 +2944,22 @@ bool js::temporal::CalendarDaysInYear(JSContext* cx,
   }
 
   
-  return CalendarDateDaysInYear(cx, calendarId, date, result);
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  int32_t days = capi::ICU4XDate_days_in_year(dt.get());
+  result.setInt32(days);
+  return true;
 }
+
+
 
 
 
@@ -3206,8 +2977,22 @@ bool js::temporal::CalendarMonthsInYear(JSContext* cx,
   }
 
   
-  return CalendarDateMonthsInYear(cx, calendarId, date, result);
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  int32_t months = capi::ICU4XDate_months_in_year(dt.get());
+  result.setInt32(months);
+  return true;
 }
+
+
 
 
 
@@ -3225,7 +3010,81 @@ bool js::temporal::CalendarInLeapYear(JSContext* cx,
   }
 
   
-  return CalendarDateInLeapYear(cx, calendarId, date, result);
+
+  
+  
+  
+
+  auto cal = CreateICU4XCalendar(cx, calendarId);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  bool inLeapYear = false;
+  switch (calendarId) {
+    case CalendarId::ISO8601:
+    case CalendarId::Buddhist:
+    case CalendarId::Gregorian:
+    case CalendarId::Japanese:
+    case CalendarId::Coptic:
+    case CalendarId::Ethiopian:
+    case CalendarId::EthiopianAmeteAlem:
+    case CalendarId::Indian:
+    case CalendarId::Persian:
+    case CalendarId::ROC: {
+      MOZ_ASSERT(!CalendarHasLeapMonths(calendarId));
+
+      
+      int32_t days = capi::ICU4XDate_days_in_year(dt.get());
+      MOZ_ASSERT(days == 365 || days == 366);
+
+      
+      inLeapYear = days == 366;
+      break;
+    }
+
+    case CalendarId::Islamic:
+    case CalendarId::IslamicCivil:
+    case CalendarId::IslamicRGSA:
+    case CalendarId::IslamicTabular:
+    case CalendarId::IslamicUmmAlQura: {
+      MOZ_ASSERT(!CalendarHasLeapMonths(calendarId));
+
+      
+      
+      
+      
+      int32_t days = capi::ICU4XDate_days_in_year(dt.get());
+      MOZ_ASSERT(days == 353 || days == 354 || days == 355);
+
+      
+      inLeapYear = days == 355;
+      break;
+    }
+
+    case CalendarId::Chinese:
+    case CalendarId::Dangi:
+    case CalendarId::Hebrew: {
+      MOZ_ASSERT(CalendarHasLeapMonths(calendarId));
+
+      
+      
+      int32_t months = capi::ICU4XDate_months_in_year(dt.get());
+      MOZ_ASSERT(months == 12 || months == 13);
+
+      
+      inLeapYear = months == 13;
+      break;
+    }
+  }
+
+  result.setBoolean(inLeapYear);
+  return true;
 }
 
 

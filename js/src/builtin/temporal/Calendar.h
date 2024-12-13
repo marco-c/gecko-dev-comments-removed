@@ -271,8 +271,12 @@ bool CalendarDateUntil(JSContext* cx, JS::Handle<CalendarValue> calendar,
 
 
 
+
+
 bool CalendarEra(JSContext* cx, JS::Handle<CalendarValue> calendar,
                  const PlainDate& date, JS::MutableHandle<JS::Value> result);
+
+
 
 
 
@@ -283,14 +287,20 @@ bool CalendarEraYear(JSContext* cx, JS::Handle<CalendarValue> calendar,
 
 
 
+
+
 bool CalendarYear(JSContext* cx, JS::Handle<CalendarValue> calendar,
                   const PlainDate& date, JS::MutableHandle<JS::Value> result);
 
 
 
 
+
+
 bool CalendarMonth(JSContext* cx, JS::Handle<CalendarValue> calendar,
                    const PlainDate& date, JS::MutableHandle<JS::Value> result);
+
+
 
 
 
@@ -302,8 +312,12 @@ bool CalendarMonthCode(JSContext* cx, JS::Handle<CalendarValue> calendar,
 
 
 
+
+
 bool CalendarDay(JSContext* cx, JS::Handle<CalendarValue> calendar,
                  const PlainDate& date, JS::MutableHandle<JS::Value> result);
+
+
 
 
 
@@ -315,9 +329,14 @@ bool CalendarDayOfWeek(JSContext* cx, JS::Handle<CalendarValue> calendar,
 
 
 
+
+
 bool CalendarDayOfYear(JSContext* cx, JS::Handle<CalendarValue> calendar,
                        const PlainDate& date,
                        JS::MutableHandle<JS::Value> result);
+
+
+
 
 
 
@@ -329,9 +348,14 @@ bool CalendarWeekOfYear(JSContext* cx, JS::Handle<CalendarValue> calendar,
 
 
 
+
+
+
 bool CalendarYearOfWeek(JSContext* cx, JS::Handle<CalendarValue> calendar,
                         const PlainDate& date,
                         JS::MutableHandle<JS::Value> result);
+
+
 
 
 
@@ -343,9 +367,13 @@ bool CalendarDaysInWeek(JSContext* cx, JS::Handle<CalendarValue> calendar,
 
 
 
+
+
 bool CalendarDaysInMonth(JSContext* cx, JS::Handle<CalendarValue> calendar,
                          const PlainDate& date,
                          JS::MutableHandle<JS::Value> result);
+
+
 
 
 
@@ -357,9 +385,13 @@ bool CalendarDaysInYear(JSContext* cx, JS::Handle<CalendarValue> calendar,
 
 
 
+
+
 bool CalendarMonthsInYear(JSContext* cx, JS::Handle<CalendarValue> calendar,
                           const PlainDate& date,
                           JS::MutableHandle<JS::Value> result);
+
+
 
 
 
