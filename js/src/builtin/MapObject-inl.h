@@ -22,7 +22,7 @@ template <JSProtoKey ProtoKey>
     JSContext* cx, JSNative addOrSetNative,
     Handle<NativeObject*> mapOrSetObject, Handle<Value> iterable,
     bool* optimized) {
-  constexpr bool isMap = ProtoKey == JSProto_Map;
+  constexpr bool isMap = ProtoKey == JSProto_Map || ProtoKey == JSProto_WeakMap;
   constexpr bool isSet = ProtoKey == JSProto_Set || ProtoKey == JSProto_WeakSet;
   static_assert(isMap != isSet, "must be either a Map or a Set");
 
