@@ -107,7 +107,7 @@ add_task(async function telemetryType() {
 
 
 
-add_tasks_with_rust(async function nonsponsoredDisabled() {
+add_task(async function nonsponsoredDisabled() {
   
   
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
@@ -139,7 +139,7 @@ add_tasks_with_rust(async function nonsponsoredDisabled() {
 
 
 
-add_tasks_with_rust(async function pocketSpecificPrefsDisabled() {
+add_task(async function pocketSpecificPrefsDisabled() {
   const prefs = ["suggest.pocket", "pocket.featureGate"];
   for (const pref of prefs) {
     
@@ -169,7 +169,7 @@ add_tasks_with_rust(async function pocketSpecificPrefsDisabled() {
 
 
 
-add_tasks_with_rust(async function nimbus() {
+add_task(async function nimbus() {
   
   UrlbarPrefs.set("pocket.featureGate", false);
   await check_results({
@@ -218,7 +218,7 @@ add_tasks_with_rust(async function nimbus() {
 
 
 
-add_tasks_with_rust(async function topPick() {
+add_task(async function topPick() {
   await check_results({
     context: createContext(HIGH_KEYWORD, {
       providers: [UrlbarProviderQuickSuggest.name],
@@ -231,7 +231,7 @@ add_tasks_with_rust(async function topPick() {
 });
 
 
-add_tasks_with_rust(async function lowPrefixes() {
+add_task(async function lowPrefixes() {
   
   let tests = {
     l: false,
@@ -262,44 +262,7 @@ add_tasks_with_rust(async function lowPrefixes() {
 });
 
 
-
-
-
-add_tasks_with_rust(
-  {
-    skip_if_rust_enabled: true,
-  },
-  async function lowPrefixes_howTo() {
-    
-    let tests = {
-      h: false,
-      ho: false,
-      how: false,
-      "how ": false,
-      "how t": false,
-      "how to": true,
-      "how to ": true,
-      "how to l": true,
-      "how to lo": true,
-      "how to low": true,
-    };
-    for (let [searchString, shouldMatch] of Object.entries(tests)) {
-      info("Doing search: " + JSON.stringify({ searchString, shouldMatch }));
-      await check_results({
-        context: createContext(searchString, {
-          providers: [UrlbarProviderQuickSuggest.name],
-          isPrivate: false,
-        }),
-        matches: shouldMatch
-          ? [makeExpectedResult({ searchString, fullKeyword: "how to low" })]
-          : [],
-      });
-    }
-  }
-);
-
-
-add_tasks_with_rust(async function highPrefixes() {
+add_task(async function highPrefixes() {
   
   let tests = {
     h: false,
@@ -335,7 +298,7 @@ add_tasks_with_rust(async function highPrefixes() {
 });
 
 
-add_tasks_with_rust(async function uppercase() {
+add_task(async function uppercase() {
   await check_results({
     context: createContext(LOW_KEYWORD.toUpperCase(), {
       providers: [UrlbarProviderQuickSuggest.name],
@@ -364,7 +327,7 @@ add_tasks_with_rust(async function uppercase() {
 });
 
 
-add_tasks_with_rust(async function notRelevant() {
+add_task(async function notRelevant() {
   let result = makeExpectedResult({ searchString: LOW_KEYWORD });
 
   info("Triggering the 'Not relevant' command");
@@ -429,7 +392,7 @@ add_tasks_with_rust(async function notRelevant() {
 
 
 
-add_tasks_with_rust(async function notInterested() {
+add_task(async function notInterested() {
   let result = makeExpectedResult({ searchString: LOW_KEYWORD });
 
   info("Triggering the 'Not interested' command");
@@ -469,7 +432,7 @@ add_tasks_with_rust(async function notInterested() {
 });
 
 
-add_tasks_with_rust(async function showLessFrequently() {
+add_task(async function showLessFrequently() {
   await doShowLessFrequentlyTests({
     feature: QuickSuggest.getFeature("PocketSuggestions"),
     showLessFrequentlyCountPref: "pocket.showLessFrequentlyCount",

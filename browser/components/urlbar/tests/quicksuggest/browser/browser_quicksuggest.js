@@ -56,7 +56,7 @@ add_setup(async function () {
 });
 
 
-add_tasks_with_rust(async function sponsored() {
+add_task(async function sponsored() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "fra",
@@ -82,7 +82,7 @@ add_tasks_with_rust(async function sponsored() {
 });
 
 
-add_tasks_with_rust(async function nonSponsored() {
+add_task(async function nonSponsored() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "wikipedia",
@@ -97,7 +97,7 @@ add_tasks_with_rust(async function nonSponsored() {
 });
 
 
-add_tasks_with_rust(async function sponsoredPriority() {
+add_task(async function sponsoredPriority() {
   const cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature({
     quickSuggestSponsoredPriority: true,
   });
@@ -140,40 +140,38 @@ add_tasks_with_rust(async function sponsoredPriority() {
 });
 
 
-add_tasks_with_rust(
-  async function sponsoredPriorityButNotSponsoredSuggestion() {
-    const cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature({
-      quickSuggestSponsoredPriority: true,
-    });
+add_task(async function sponsoredPriorityButNotSponsoredSuggestion() {
+  const cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature({
+    quickSuggestSponsoredPriority: true,
+  });
 
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window,
-      value: "wikipedia",
-    });
-    await QuickSuggestTestUtils.assertIsQuickSuggest({
-      window,
-      index: 1,
-      isSponsored: false,
-      url: "https://example.com/wikipedia",
-    });
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "wikipedia",
+  });
+  await QuickSuggestTestUtils.assertIsQuickSuggest({
+    window,
+    index: 1,
+    isSponsored: false,
+    url: "https://example.com/wikipedia",
+  });
 
-    let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
-    let before = window.getComputedStyle(row, "::before");
-    Assert.equal(before.content, "attr(label)", "::before.content is enabled");
-    Assert.equal(
-      row.getAttribute("label"),
-      "Firefox Suggest",
-      "Row has general group label for quick suggest"
-    );
+  let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
+  let before = window.getComputedStyle(row, "::before");
+  Assert.equal(before.content, "attr(label)", "::before.content is enabled");
+  Assert.equal(
+    row.getAttribute("label"),
+    "Firefox Suggest",
+    "Row has general group label for quick suggest"
+  );
 
-    await UrlbarTestUtils.promisePopupClose(window);
-    await cleanUpNimbus();
-  }
-);
+  await UrlbarTestUtils.promisePopupClose(window);
+  await cleanUpNimbus();
+});
 
 
 
-add_tasks_with_rust(async function ampTopPickCharThreshold_meetsThreshold() {
+add_task(async function ampTopPickCharThreshold_meetsThreshold() {
   
   
   
@@ -217,7 +215,7 @@ add_tasks_with_rust(async function ampTopPickCharThreshold_meetsThreshold() {
 
 
 
-add_tasks_with_rust(async function ampTopPickCharThreshold_belowThreshold() {
+add_task(async function ampTopPickCharThreshold_belowThreshold() {
   
   
   let queryAndFullKeyword = "frab";
@@ -256,7 +254,7 @@ add_tasks_with_rust(async function ampTopPickCharThreshold_belowThreshold() {
 });
 
 
-add_tasks_with_rust(async function resultMenu_manage_sponsored() {
+add_task(async function resultMenu_manage_sponsored() {
   await doManageTest({
     input: "fra",
     index: 1,
@@ -264,7 +262,7 @@ add_tasks_with_rust(async function resultMenu_manage_sponsored() {
 });
 
 
-add_tasks_with_rust(async function resultMenu_manage_nonSponsored() {
+add_task(async function resultMenu_manage_nonSponsored() {
   await doManageTest({
     input: "wikipedia",
     index: 1,
@@ -272,7 +270,7 @@ add_tasks_with_rust(async function resultMenu_manage_nonSponsored() {
 });
 
 
-add_tasks_with_rust(async function resultMenu_manage_navigational() {
+add_task(async function resultMenu_manage_navigational() {
   
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.quicksuggest.dataCollection.enabled", true]],
@@ -291,7 +289,7 @@ add_tasks_with_rust(async function resultMenu_manage_navigational() {
 });
 
 
-add_tasks_with_rust(async function resultMenu_manage_dynamicWikipedia() {
+add_task(async function resultMenu_manage_dynamicWikipedia() {
   
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.quicksuggest.dataCollection.enabled", true]],

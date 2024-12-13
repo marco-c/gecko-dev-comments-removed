@@ -57,7 +57,7 @@ add_setup(async function () {
 });
 
 
-add_tasks_with_rust(async function basic() {
+add_task(async function basic() {
   await doBasicBlockTest({
     block: async () => {
       await UrlbarTestUtils.openResultMenuAndPressAccesskey(window, "D", {
@@ -68,7 +68,7 @@ add_tasks_with_rust(async function basic() {
 });
 
 
-add_tasks_with_rust(async function basic_keyShortcut() {
+add_task(async function basic_keyShortcut() {
   await doBasicBlockTest({
     block: () => {
       
@@ -182,7 +182,7 @@ async function doOneBasicBlockTest({ result, block }) {
 }
 
 
-add_tasks_with_rust(async function blockMultiple() {
+add_task(async function blockMultiple() {
   for (let i = 0; i < REMOTE_SETTINGS_RESULTS.length; i++) {
     
     let { keywords, url } = REMOTE_SETTINGS_RESULTS[i];
