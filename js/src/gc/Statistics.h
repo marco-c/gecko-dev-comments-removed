@@ -196,7 +196,7 @@ struct Statistics {
     }
   }
 
-  void measureInitialHeapSize();
+  void measureInitialHeapSizes();
 
   void nonincremental(GCAbortReason reason) {
     MOZ_ASSERT(reason != GCAbortReason::None);
@@ -295,7 +295,7 @@ struct Statistics {
   TimeStamp creationTime() const { return creationTime_; }
 
   TimeDuration totalGCTime() const { return totalGCTime_; }
-  size_t initialCollectedBytes() const { return preCollectedHeapBytes; }
+  size_t initialCollectedBytes() const { return preCollectedGCHeapBytes; }
 
   
   
@@ -384,11 +384,15 @@ struct Statistics {
   uint32_t tenuredAllocsSinceMinorGC;
 
   
-  size_t preTotalHeapBytes;
-  size_t postTotalHeapBytes;
+  size_t preTotalGCHeapBytes;
+  size_t postTotalGCHeapBytes;
 
   
-  size_t preCollectedHeapBytes;
+  size_t preCollectedGCHeapBytes;
+
+  
+  size_t preTotalMallocHeapBytes;
+  size_t postTotalMallocHeapBytes;
 
   
 
