@@ -181,21 +181,17 @@ static int32_t WeekDay(int32_t day) {
 
 
 
-static int32_t ToISODayOfWeek(const ISODate& date) {
-  MOZ_ASSERT(ISODateWithinLimits(date));
+static int32_t ISODayOfWeek(const ISODate& isoDate) {
+  MOZ_ASSERT(ISODateWithinLimits(isoDate));
 
   
+  int32_t day = MakeDay(isoDate);
 
   
-  
-  
+  int32_t dayOfWeek = WeekDay(day);
 
   
-  int32_t day = MakeDay(date);
-
-  
-  int32_t weekday = WeekDay(day);
-  return weekday != 0 ? weekday : 7;
+  return dayOfWeek != 0 ? dayOfWeek : 7;
 }
 
 static constexpr auto FirstDayOfMonth(int32_t year) {
@@ -211,14 +207,14 @@ static constexpr auto FirstDayOfMonth(int32_t year) {
 
 
 
-static int32_t ToISODayOfYear(int32_t year, int32_t month, int32_t day) {
-  MOZ_ASSERT(1 <= month && month <= 12);
+static int32_t ISODayOfYear(const ISODate& isoDate) {
+  MOZ_ASSERT(ISODateWithinLimits(isoDate));
+
+  const auto& [year, month, day] = isoDate;
 
   
   constexpr decltype(FirstDayOfMonth(0)) firstDayOfMonth[2] = {
       FirstDayOfMonth(1), FirstDayOfMonth(0)};
-
-  
 
   
   
@@ -226,17 +222,6 @@ static int32_t ToISODayOfYear(int32_t year, int32_t month, int32_t day) {
   
   
   return firstDayOfMonth[IsISOLeapYear(year)][month - 1] + day;
-}
-
-
-
-
-static int32_t ToISODayOfYear(const ISODate& date) {
-  MOZ_ASSERT(ISODateWithinLimits(date));
-
-  
-  const auto& [year, month, day] = date;
-  return ::ToISODayOfYear(year, month, day);
 }
 
 static int32_t FloorDiv(int32_t dividend, int32_t divisor) {
@@ -290,7 +275,7 @@ static int64_t MakeTime(const Time& time) {
 int32_t js::temporal::MakeDay(const ISODate& date) {
   MOZ_ASSERT(ISODateWithinLimits(date));
 
-  return DayFromYear(date.year) + ToISODayOfYear(date) - 1;
+  return DayFromYear(date.year) + ISODayOfYear(date) - 1;
 }
 
 
@@ -317,41 +302,45 @@ struct YearWeek final {
 
 
 
-static YearWeek ToISOWeekOfYear(const ISODate& date) {
-  MOZ_ASSERT(ISODateWithinLimits(date));
-
-  const auto& [year, month, day] = date;
+static YearWeek ISOWeekOfYear(const ISODate& isoDate) {
+  MOZ_ASSERT(ISODateWithinLimits(isoDate));
 
   
-  
+  int32_t year = isoDate.year;
 
   
 
   
-  int32_t doy = ToISODayOfYear(date);
-  int32_t dow = ToISODayOfWeek(date);
+  int32_t dayOfYear = ISODayOfYear(isoDate);
+  int32_t dayOfWeek = ISODayOfWeek(isoDate);
 
-  int32_t woy = (10 + doy - dow) / 7;
-  MOZ_ASSERT(0 <= woy && woy <= 53);
+  
+  int32_t week = (10 + dayOfYear - dayOfWeek) / 7;
+  MOZ_ASSERT(0 <= week && week <= 53);
 
   
   
   auto isLongYear = [](int32_t year) {
-    int32_t startOfYear = ToISODayOfWeek({year, 1, 1});
+    int32_t startOfYear = ISODayOfWeek({year, 1, 1});
     return startOfYear == 4 || (startOfYear == 3 && IsISOLeapYear(year));
   };
 
   
-  if (woy == 0) {
+  
+  
+  if (week == 0) {
     return {year - 1, 52 + int32_t(isLongYear(year - 1))};
   }
 
   
-  if (woy == 53 && !isLongYear(year)) {
+  
+  
+  if (week == 53 && !isLongYear(year)) {
     return {year + 1, 1};
   }
 
-  return {year, woy};
+  
+  return {year, week};
 }
 
 
@@ -2790,7 +2779,7 @@ bool js::temporal::CalendarDayOfWeek(JSContext* cx,
 
   
   if (calendarId == CalendarId::ISO8601) {
-    result.setInt32(ToISODayOfWeek(date));
+    result.setInt32(ISODayOfWeek(date));
     return true;
   }
 
@@ -2832,7 +2821,7 @@ bool js::temporal::CalendarDayOfYear(JSContext* cx,
 
   
   if (calendarId == CalendarId::ISO8601) {
-    result.setInt32(ToISODayOfYear(date));
+    result.setInt32(ISODayOfYear(date));
     return true;
   }
 
@@ -2897,7 +2886,7 @@ bool js::temporal::CalendarWeekOfYear(JSContext* cx,
 
   
   if (calendarId == CalendarId::ISO8601) {
-    result.setInt32(ToISOWeekOfYear(date).week);
+    result.setInt32(ISOWeekOfYear(date).week);
     return true;
   }
 
@@ -2950,7 +2939,7 @@ bool js::temporal::CalendarYearOfWeek(JSContext* cx,
 
   
   if (calendarId == CalendarId::ISO8601) {
-    result.setInt32(ToISOWeekOfYear(date).year);
+    result.setInt32(ISOWeekOfYear(date).year);
     return true;
   }
 
