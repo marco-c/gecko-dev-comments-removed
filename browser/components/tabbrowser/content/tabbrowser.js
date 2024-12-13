@@ -810,7 +810,7 @@
           this.verticalPinnedTabsContainer.appendChild(aTab)
         );
       } else {
-        this.moveTabTo(aTab, this.pinnedTabCount);
+        this.moveTabTo(aTab, this.pinnedTabCount, { forceStandaloneTab: true });
       }
       aTab.setAttribute("pinned", "true");
       this._updateTabBarForPinnedTabs();
@@ -831,7 +831,9 @@
           this.tabContainer.arrowScrollbox.prepend(aTab);
         });
       } else {
-        this.moveTabTo(aTab, this.pinnedTabCount - 1);
+        this.moveTabTo(aTab, this.pinnedTabCount - 1, {
+          forceStandaloneTab: true,
+        });
         aTab.removeAttribute("pinned");
       }
       aTab.style.marginInlineStart = "";
@@ -5629,7 +5631,14 @@
 
 
 
-    moveTabTo(aTab, aIndex, aKeepRelatedTabs) {
+
+
+
+
+
+    moveTabTo(aTab, aIndex, options = { forceStandaloneTab: false }) {
+      const { forceStandaloneTab } = options;
+
       
       if (aTab.pinned) {
         aIndex = Math.min(aIndex, this.pinnedTabCount - 1);
@@ -5640,12 +5649,13 @@
         return;
       }
 
-      if (!aKeepRelatedTabs) {
-        this._lastRelatedTabMap = new WeakMap();
-      }
+      this._lastRelatedTabMap = new WeakMap();
 
       this._handleTabMove(aTab, () => {
         let neighbor = this.tabs[aIndex];
+        if (forceStandaloneTab && neighbor.group) {
+          neighbor = neighbor.group;
+        }
         if (neighbor && aIndex >= aTab._tPos) {
           neighbor.after(aTab);
         } else {
