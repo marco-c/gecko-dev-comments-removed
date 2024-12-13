@@ -2465,7 +2465,7 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
   }
 
   
-  nsRect frameBounds = aOverflowAreas.ScrollableOverflow();
+  const nsRect frameBounds = aOverflowAreas.ScrollableOverflow();
 
   const auto wm = GetWritingMode();
   const auto borderPadding =
@@ -2550,9 +2550,12 @@ enum class RestrictPaddingInflation {
 
 static RestrictPaddingInflation RestrictPaddingInflation(
     const nsIFrame* aFrame) {
-  MOZ_ASSERT(aFrame && aFrame->Style()->GetPseudoType() ==
-                           PseudoStyleType::scrolledContent,
-             "expecting a scrolled frame");
+  MOZ_ASSERT(aFrame);
+  if (aFrame->Style()->GetPseudoType() != PseudoStyleType::scrolledContent) {
+    
+    
+    return RestrictPaddingInflation::No;
+  }
   
   
   const auto* parent = aFrame->GetParent();
@@ -2578,13 +2581,9 @@ static RestrictPaddingInflation RestrictPaddingInflation(
 
 nsRect nsBlockFrame::ComputePaddingInflatedScrollableOverflow(
     const nsRect& aInFlowChildBounds) const {
-  MOZ_ASSERT(Style()->GetPseudoType() == PseudoStyleType::scrolledContent,
-             "Expected scrolled frame");
   auto result = aInFlowChildBounds;
   const auto wm = GetWritingMode();
   auto padding = GetLogicalUsedPadding(wm);
-  MOZ_ASSERT(GetLogicalUsedBorderAndPadding(wm) == padding,
-             "A scrolled inner frame shouldn't have any border!");
   const auto restriction = RestrictPaddingInflation(this);
   switch (restriction) {
     case RestrictPaddingInflation::Block:
@@ -2638,23 +2637,26 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
   
   
   const auto wm = GetWritingMode();
-  const auto borderPadding =
-      GetLogicalUsedBorderAndPadding(wm).GetPhysicalMargin(wm);
   
   
   
-  const bool isScrolled =
-      Style()->GetPseudoType() == PseudoStyleType::scrolledContent;
+  const bool isScrolled = aAsIfScrolled || Style()->GetPseudoType() ==
+                                               PseudoStyleType::scrolledContent;
 
   
+  
   auto frameContentBounds = aOverflowAreas.ScrollableOverflow();
-  frameContentBounds.Deflate(borderPadding);
+  frameContentBounds.Deflate((aAsIfScrolled
+                                  ? GetLogicalUsedPadding(wm)
+                                  : GetLogicalUsedBorderAndPadding(wm))
+                                 .GetPhysicalMargin(wm));
   
   
   auto inFlowChildBounds = frameContentBounds;
   auto inFlowScrollableOverflow = frameContentBounds;
 
-  const auto inkOverflowOnly = StyleDisplay()->IsContainLayout();
+  const auto inkOverflowOnly =
+      !aAsIfScrolled && StyleDisplay()->IsContainLayout();
 
   for (auto& line : Lines()) {
     nsRect bounds = line.GetPhysicalBounds();
@@ -2664,7 +2666,7 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
     for (nsIFrame* lineFrame = line.mFirstChild; n > 0;
          lineFrame = lineFrame->GetNextSibling(), --n) {
       
-      ConsiderChildOverflow(lineAreas, lineFrame);
+      ConsiderChildOverflow(lineAreas, lineFrame, aAsIfScrolled);
 
       if (inkOverflowOnly || !isScrolled) {
         continue;
@@ -2678,7 +2680,7 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
     
     if (line.HasFloats()) {
       for (nsIFrame* f : line.Floats()) {
-        ConsiderChildOverflow(lineAreas, f);
+        ConsiderChildOverflow(lineAreas, f, aAsIfScrolled);
         if (inkOverflowOnly || !isScrolled) {
           continue;
         }
@@ -2687,7 +2689,9 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
       }
     }
 
-    line.SetOverflowAreas(lineAreas);
+    if (!aAsIfScrolled) {
+      line.SetOverflowAreas(lineAreas);
+    }
     aOverflowAreas.InkOverflow() =
         aOverflowAreas.InkOverflow().Union(lineAreas.InkOverflow());
     if (!inkOverflowOnly) {

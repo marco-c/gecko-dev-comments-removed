@@ -1229,7 +1229,7 @@ void nsContainerFrame::ReflowOverflowContainerChildren(
                                        aReflowInput.ComputedPhysicalSize());
       }
     }
-    ConsiderChildOverflow(aOverflowRects, frame);
+    ConsiderChildOverflow(aOverflowRects, frame,  false);
   }
 }
 
@@ -2651,8 +2651,10 @@ bool nsContainerFrame::ShouldAvoidBreakInside(
 }
 
 void nsContainerFrame::ConsiderChildOverflow(OverflowAreas& aOverflowAreas,
-                                             nsIFrame* aChildFrame) {
-  if (StyleDisplay()->IsContainLayout() && SupportsContainLayoutAndPaint()) {
+                                             nsIFrame* aChildFrame,
+                                             bool aAsIfScrolled) {
+  if (StyleDisplay()->IsContainLayout() && SupportsContainLayoutAndPaint() &&
+      !aAsIfScrolled) {
     
     
     

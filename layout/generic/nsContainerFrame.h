@@ -510,7 +510,7 @@ class nsContainerFrame : public nsSplittableFrame {
   
   
   void ConsiderChildOverflow(mozilla::OverflowAreas& aOverflowAreas,
-                             nsIFrame* aChildFrame);
+                             nsIFrame* aChildFrame, bool aAsIfScrolled = false);
 
  protected:
   nsContainerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
