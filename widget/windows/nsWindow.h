@@ -327,9 +327,6 @@ class nsWindow final : public nsBaseWidget {
   WindowHook& GetWindowHook() { return mWindowHook; }
   nsWindow* GetParentWindow(bool aIncludeOwner);
 
-  
-
-
   bool WidgetTypeSupportsAcceleration() override;
 
   void ForcePresent();

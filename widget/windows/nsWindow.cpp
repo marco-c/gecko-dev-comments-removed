@@ -515,73 +515,75 @@ class TIPMessageHandler {
     }
   }
 
-  class MOZ_RAII A11yInstantiationBlocker{public : A11yInstantiationBlocker(){
-      if (!TIPMessageHandler::sInstance){return;
-} ++TIPMessageHandler::sInstance->mA11yBlockCount;
-}  
+  class MOZ_RAII A11yInstantiationBlocker {
+   public:
+    A11yInstantiationBlocker() {
+      if (!TIPMessageHandler::sInstance) {
+        return;
+      }
+      ++TIPMessageHandler::sInstance->mA11yBlockCount;
+    }  
 
-~A11yInstantiationBlocker() {
-  if (!TIPMessageHandler::sInstance) {
-    return;
-  }
-  MOZ_ASSERT(TIPMessageHandler::sInstance->mA11yBlockCount > 0);
-  --TIPMessageHandler::sInstance->mA11yBlockCount;
-}
-}
-;
+    ~A11yInstantiationBlocker() {
+      if (!TIPMessageHandler::sInstance) {
+        return;
+      }
+      MOZ_ASSERT(TIPMessageHandler::sInstance->mA11yBlockCount > 0);
+      --TIPMessageHandler::sInstance->mA11yBlockCount;
+    }
+  };
 
-friend class A11yInstantiationBlocker;
+  friend class A11yInstantiationBlocker;
 
-static LRESULT CALLBACK TIPHook(int aCode, WPARAM aWParam, LPARAM aLParam) {
-  if (aCode < 0 || !sInstance) {
+  static LRESULT CALLBACK TIPHook(int aCode, WPARAM aWParam, LPARAM aLParam) {
+    if (aCode < 0 || !sInstance) {
+      return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
+    }
+
+    MSG* msg = reinterpret_cast<MSG*>(aLParam);
+    UINT& msgCode = msg->message;
+
+    for (uint32_t i = 0; i < std::size(sInstance->mMessages); ++i) {
+      if (msgCode == sInstance->mMessages[i]) {
+        A11yInstantiationBlocker block;
+        return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
+      }
+    }
+
     return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
   }
 
-  MSG* msg = reinterpret_cast<MSG*>(aLParam);
-  UINT& msgCode = msg->message;
-
-  for (uint32_t i = 0; i < std::size(sInstance->mMessages); ++i) {
-    if (msgCode == sInstance->mMessages[i]) {
-      A11yInstantiationBlocker block;
-      return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
+  static LRESULT WINAPI SendMessageTimeoutWHook(HWND aHwnd, UINT aMsgCode,
+                                                WPARAM aWParam, LPARAM aLParam,
+                                                UINT aFlags, UINT aTimeout,
+                                                PDWORD_PTR aMsgResult) {
+    
+    
+    
+    if (!aMsgResult || aMsgCode != WM_GETOBJECT ||
+        static_cast<LONG>(aLParam) != OBJID_CLIENT || !::NS_IsMainThread() ||
+        !WinUtils::GetNSWindowPtr(aHwnd) || !IsA11yBlocked()) {
+      return sSendMessageTimeoutWStub(aHwnd, aMsgCode, aWParam, aLParam, aFlags,
+                                      aTimeout, aMsgResult);
     }
+
+    
+    
+    
+    *aMsgResult = static_cast<DWORD_PTR>(
+        ::DefWindowProcW(aHwnd, aMsgCode, aWParam, aLParam));
+
+    return static_cast<LRESULT>(TRUE);
   }
 
-  return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
-}
+  static WindowsDllInterceptor::FuncHookType<decltype(&SendMessageTimeoutW)>
+      sSendMessageTimeoutWStub;
+  static StaticAutoPtr<TIPMessageHandler> sInstance;
 
-static LRESULT WINAPI SendMessageTimeoutWHook(HWND aHwnd, UINT aMsgCode,
-                                              WPARAM aWParam, LPARAM aLParam,
-                                              UINT aFlags, UINT aTimeout,
-                                              PDWORD_PTR aMsgResult) {
-  
-  
-  
-  if (!aMsgResult || aMsgCode != WM_GETOBJECT ||
-      static_cast<LONG>(aLParam) != OBJID_CLIENT || !::NS_IsMainThread() ||
-      !WinUtils::GetNSWindowPtr(aHwnd) || !IsA11yBlocked()) {
-    return sSendMessageTimeoutWStub(aHwnd, aMsgCode, aWParam, aLParam, aFlags,
-                                    aTimeout, aMsgResult);
-  }
-
-  
-  
-  
-  *aMsgResult = static_cast<DWORD_PTR>(
-      ::DefWindowProcW(aHwnd, aMsgCode, aWParam, aLParam));
-
-  return static_cast<LRESULT>(TRUE);
-}
-
-static WindowsDllInterceptor::FuncHookType<decltype(&SendMessageTimeoutW)>
-    sSendMessageTimeoutWStub;
-static StaticAutoPtr<TIPMessageHandler> sInstance;
-
-HHOOK mHook;
-UINT mMessages[7];
-uint32_t mA11yBlockCount;
-}
-;
+  HHOOK mHook;
+  UINT mMessages[7];
+  uint32_t mA11yBlockCount;
+};
 
 WindowsDllInterceptor::FuncHookType<decltype(&SendMessageTimeoutW)>
     TIPMessageHandler::sSendMessageTimeoutWStub;
@@ -2711,6 +2713,10 @@ void nsWindow::SetCustomTitlebar(bool aCustomTitlebar) {
     if (WindowStyle() & WS_SYSMENU) {
       
       ::SetWindowLongPtrW(mWnd, GWL_STYLE, style | WS_SYSMENU);
+      
+      HICON icon =
+          (HICON)::SendMessageW(mWnd, WM_SETICON, (WPARAM)ICON_SMALL, 0);
+      ::SendMessageW(mWnd, WM_SETICON, (WPARAM)ICON_SMALL, (LPARAM)icon);
     }
     ResetLayout();
   }
