@@ -152,7 +152,9 @@ mozilla::ipc::IPCResult NotificationParent::RecvShow(ShowResolver&& aResolver) {
   
   
   nsresult rv = Show();
-  if (NS_FAILED(rv)) {
+  
+  
+  if (NS_FAILED(rv) && mResolver) {
     mResolver.take().value()(CopyableErrorResult(rv));
   }
   
