@@ -588,4 +588,25 @@ already_AddRefed<nsRange> RangeItem::GetRange() const {
   return range.forget();
 }
 
+
+
+
+
+AutoTrackDOMPoint::AutoTrackDOMPoint(RangeUpdater& aRangeUpdater,
+                                     CaretPoint* aCaretPoint)
+    : AutoTrackDOMPoint(aRangeUpdater, &aCaretPoint->mCaretPoint) {}
+
+
+
+
+
+AutoTrackDOMMoveNodeResult::AutoTrackDOMMoveNodeResult(
+    RangeUpdater& aRangeUpdater, MoveNodeResult* aMoveNodeResult)
+    : mTrackCaretPoint(aRangeUpdater,
+                       static_cast<CaretPoint*>(aMoveNodeResult)),
+      mTrackNextInsertionPoint(aRangeUpdater,
+                               &aMoveNodeResult->mNextInsertionPoint),
+      mTrackMovedContentRange(aRangeUpdater,
+                              &aMoveNodeResult->mMovedContentRange) {}
+
 }  

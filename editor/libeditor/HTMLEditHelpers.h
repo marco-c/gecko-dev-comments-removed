@@ -82,6 +82,7 @@ inline std::ostream& operator<<(std::ostream& aStream,
 
 
 
+
 class MOZ_STACK_CLASS MoveNodeResult final : public CaretPoint,
                                              public EditActionResult {
  public:
@@ -90,6 +91,12 @@ class MOZ_STACK_CLASS MoveNodeResult final : public CaretPoint,
   }
   constexpr EditorDOMPoint&& UnwrapNextInsertionPoint() {
     return std::move(mNextInsertionPoint);
+  }
+  constexpr const EditorDOMRange& MovedContentRangeRef() const {
+    return mMovedContentRange;
+  }
+  constexpr EditorDOMRange&& UnwrapMovedContentRange() {
+    return std::move(mMovedContentRange);
   }
   template <typename EditorDOMPointType>
   EditorDOMPointType NextInsertionPoint() const {
@@ -110,10 +117,22 @@ class MOZ_STACK_CLASS MoveNodeResult final : public CaretPoint,
     UnmarkAsHandledCaretPoint();
 
     if (aOther.Canceled()) {
+      MOZ_ASSERT_UNREACHABLE("How was aOther canceled?");
       MarkAsCanceled();
     } else if (aOther.Handled()) {
       MarkAsHandled();
       UnmarkAsCanceled();
+      if (!mMovedContentRange.IsPositioned() && mNextInsertionPoint.IsSet()) {
+        MOZ_ASSERT(mNextInsertionPoint.IsSetAndValid());
+        mMovedContentRange.SetStartAndEnd(mNextInsertionPoint,
+                                          mNextInsertionPoint);
+      }
+      if (aOther.mMovedContentRange.IsPositioned()) {
+        mMovedContentRange.MergeWith(aOther.mMovedContentRange);
+      } else if (aOther.mNextInsertionPoint.IsSet()) {
+        MOZ_ASSERT(aOther.mNextInsertionPoint.IsSetAndValid());
+        mMovedContentRange.MergeWith(aOther.mNextInsertionPoint);
+      }
     }
 
     
@@ -124,6 +143,18 @@ class MOZ_STACK_CLASS MoveNodeResult final : public CaretPoint,
       SetCaretPoint(aOther.CaretPointRef());
     }
     return *this;
+  }
+
+  void ForceToMarkAsHandled() {
+    if (Handled()) {
+      return;
+    }
+    MarkAsHandled();
+    if (!mMovedContentRange.IsPositioned()) {
+      MOZ_ASSERT(mNextInsertionPoint.IsSetAndValidInComposedDoc());
+      mMovedContentRange.SetStartAndEnd(mNextInsertionPoint,
+                                        mNextInsertionPoint);
+    }
   }
 
 #ifdef DEBUG
@@ -185,49 +216,62 @@ class MOZ_STACK_CLASS MoveNodeResult final : public CaretPoint,
                           bool aHandled)
       : EditActionResult(false, aHandled && aNextInsertionPoint.IsSet()),
         mNextInsertionPoint(aNextInsertionPoint) {
-    AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
-        mNextInsertionPoint);
+    if (Handled()) {
+      mMovedContentRange = EditorDOMRange(mNextInsertionPoint);
+    }
   }
   explicit MoveNodeResult(EditorDOMPoint&& aNextInsertionPoint, bool aHandled)
       : EditActionResult(false, aHandled && aNextInsertionPoint.IsSet()),
         mNextInsertionPoint(std::move(aNextInsertionPoint)) {
-    AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
-        mNextInsertionPoint);
+    if (Handled()) {
+      mMovedContentRange = EditorDOMRange(mNextInsertionPoint);
+    }
   }
   explicit MoveNodeResult(const EditorDOMPoint& aNextInsertionPoint,
                           const EditorDOMPoint& aPointToPutCaret)
       : CaretPoint(aPointToPutCaret),
         EditActionResult(false, aNextInsertionPoint.IsSet()),
         mNextInsertionPoint(aNextInsertionPoint) {
-    AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
-        mNextInsertionPoint);
+    if (Handled()) {
+      mMovedContentRange = EditorDOMRange(mNextInsertionPoint);
+    }
   }
   explicit MoveNodeResult(EditorDOMPoint&& aNextInsertionPoint,
                           const EditorDOMPoint& aPointToPutCaret)
       : CaretPoint(aPointToPutCaret),
         EditActionResult(false, aNextInsertionPoint.IsSet()),
         mNextInsertionPoint(std::move(aNextInsertionPoint)) {
-    AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
-        mNextInsertionPoint);
+    if (Handled()) {
+      mMovedContentRange = EditorDOMRange(mNextInsertionPoint);
+    }
   }
   explicit MoveNodeResult(const EditorDOMPoint& aNextInsertionPoint,
                           EditorDOMPoint&& aPointToPutCaret)
       : CaretPoint(std::move(aPointToPutCaret)),
         EditActionResult(false, aNextInsertionPoint.IsSet()),
         mNextInsertionPoint(aNextInsertionPoint) {
-    AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
-        mNextInsertionPoint);
+    if (Handled()) {
+      mMovedContentRange = EditorDOMRange(mNextInsertionPoint);
+    }
   }
   explicit MoveNodeResult(EditorDOMPoint&& aNextInsertionPoint,
                           EditorDOMPoint&& aPointToPutCaret)
       : CaretPoint(std::move(aPointToPutCaret)),
         EditActionResult(false, aNextInsertionPoint.IsSet()),
         mNextInsertionPoint(std::move(aNextInsertionPoint)) {
-    AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
-        mNextInsertionPoint);
+    if (Handled()) {
+      mMovedContentRange = EditorDOMRange(mNextInsertionPoint);
+    }
   }
 
+  using EditActionResult::CanceledResult;
+  using EditActionResult::MarkAsCanceled;
+  using EditActionResult::MarkAsHandled;
+
   EditorDOMPoint mNextInsertionPoint;
+  EditorDOMRange mMovedContentRange;
+
+  friend class AutoTrackDOMMoveNodeResult;
 };
 
 
