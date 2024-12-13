@@ -100,18 +100,11 @@ function test() {
     
     var g6 = y();
     g6.next();
-    var exc;
-    try {
-        g6.throw("foo");
-    } catch (e) {
-        exc = e;
-    } finally {
-        assertEq(exc instanceof TypeError, true);
-        
-        
-        
-        assertEq(exc.toString().indexOf("non-object") > 0, true);
-    }
+    assertThrowsInstanceOfWithMessageContains(
+        () => g6.throw("foo"),
+        TypeError,
+        "non-object"
+    );
     assertEq(returnCalled, ++returnCalledExpected);
 
     
