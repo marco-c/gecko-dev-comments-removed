@@ -805,6 +805,10 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   bool isRuntimeCodeGenEnabled(JS::RuntimeCode kind, js::HandleString code);
 
+  
+  bool getCodeForEval(JS::HandleObject code,
+                      JS::MutableHandle<JSString*> outCode);
+
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 

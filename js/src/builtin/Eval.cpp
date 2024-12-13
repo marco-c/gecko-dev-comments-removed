@@ -240,13 +240,23 @@ static bool EvalKernel(JSContext* cx, HandleValue v, EvalType evalType,
   AssertInnerizedEnvironmentChain(cx, *env);
 
   
-  if (!v.isString()) {
+  
+  
+  RootedString str(cx);
+  if (v.isString()) {
+    str = v.toString();
+  } else if (v.isObject()) {
+    RootedObject obj(cx, &v.toObject());
+    if (!cx->getCodeForEval(obj, &str)) {
+      return false;
+    }
+  }
+  if (!str) {
     vp.set(v);
     return true;
   }
 
   
-  RootedString str(cx, v.toString());
   if (!cx->isRuntimeCodeGenEnabled(JS::RuntimeCode::JS, str)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_CSP_BLOCKED_EVAL);

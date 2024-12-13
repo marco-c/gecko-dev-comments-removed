@@ -955,6 +955,7 @@ class ShellPrincipals final : public JSPrincipals {
 
 JSSecurityCallbacks ShellPrincipals::securityCallbacks = {
     nullptr,  
+    nullptr,  
     subsumes};
 
 
