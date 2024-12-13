@@ -132,7 +132,16 @@ inline bool IsValidTimeDuration(const TimeDuration& duration) {
   
   
   
-  return TimeDuration::min() <= duration && duration <= TimeDuration::max();
+  
+
+  constexpr auto max = TimeDuration::max() + TimeDuration::fromNanoseconds(1);
+  static_assert(max.nanoseconds == 0);
+
+  constexpr auto min = TimeDuration::min() - TimeDuration::fromNanoseconds(1);
+  static_assert(min.nanoseconds == 0);
+
+  
+  return min < duration && duration < max;
 }
 
 
@@ -207,13 +216,6 @@ bool TemporalDurationFromInternal(JSContext* cx,
 bool TemporalDurationFromInternal(JSContext* cx,
                                   const InternalDuration& internalDuration,
                                   TemporalUnit largestUnit, Duration* result);
-
-
-
-
-bool CombineDateAndTimeDuration(JSContext* cx, const DateDuration& date,
-                                const TimeDuration& time,
-                                InternalDuration* result);
 
 
 

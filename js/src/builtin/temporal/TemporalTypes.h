@@ -176,6 +176,15 @@ struct SecondsAndNanoseconds {
   
 
 
+  constexpr Int128 toMicroseconds() const {
+    auto [sec, nanos] = denormalize();
+    return Int128{sec} * Int128{ToMicroseconds(TemporalUnit::Second)} +
+           Int128{nanos / 1'000};
+  }
+
+  
+
+
   constexpr Int128 toNanoseconds() const {
     return Int128{seconds} * Int128{ToNanoseconds(TemporalUnit::Second)} +
            Int128{nanoseconds};
