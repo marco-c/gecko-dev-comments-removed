@@ -3749,57 +3749,66 @@ void PermissionManager::AddDefaultEntryForImport(
   entry->mType = aType;
 }
 
+nsresult PermissionManager::ImportDefaultEntry(
+    const DefaultEntry& aDefaultEntry) {
+  nsCOMPtr<nsIPrincipal> principal;
+  nsresult rv = GetPrincipalFromOrigin(
+      aDefaultEntry.mOrigin, IsOAForceStripPermission(aDefaultEntry.mType),
+      getter_AddRefs(principal));
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Couldn't import an origin permission - malformed origin");
+    return rv;
+  }
+
+  
+  
+  int64_t modificationTime = 0;
+
+  rv = AddInternal(principal, aDefaultEntry.mType, aDefaultEntry.mPermission,
+                   cIDPermissionIsDefault, nsIPermissionManager::EXPIRE_NEVER,
+                   0, modificationTime, eDontNotify, eNoDBOperation);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("There was a problem importing an origin permission");
+    return rv;
+  }
+
+  if (StaticPrefs::permissions_isolateBy_privateBrowsing() &&
+      !IsOAForceStripPermission(aDefaultEntry.mType)) {
+    
+    OriginAttributes attrs = OriginAttributes(principal->OriginAttributesRef());
+    attrs.mPrivateBrowsingId = 1;
+    nsCOMPtr<nsIPrincipal> pbPrincipal =
+        BasePrincipal::Cast(principal)->CloneForcingOriginAttributes(attrs);
+    
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    rv =
+        AddInternal(pbPrincipal, aDefaultEntry.mType, aDefaultEntry.mPermission,
+                    cIDPermissionIsDefault, nsIPermissionManager::EXPIRE_NEVER,
+                    0, modificationTime, eDontNotify, eNoDBOperation);
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "There was a problem importing an origin permission for private "
+          "browsing");
+      return rv;
+    }
+  }
+
+  return NS_OK;
+}
+
 
 
 nsresult PermissionManager::ImportLatestDefaults() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mState == eReady);
 
-  nsresult rv;
-
   MonitorAutoLock lock(mMonitor);
 
   for (const DefaultEntry& entry : mDefaultEntriesForImport) {
-    nsCOMPtr<nsIPrincipal> principal;
-    rv = GetPrincipalFromOrigin(entry.mOrigin,
-                                IsOAForceStripPermission(entry.mType),
-                                getter_AddRefs(principal));
-    if (NS_FAILED(rv)) {
-      NS_WARNING("Couldn't import an origin permission - malformed origin");
-      continue;
-    }
-
-    
-    
-    int64_t modificationTime = 0;
-
-    rv = AddInternal(principal, entry.mType, entry.mPermission,
-                     cIDPermissionIsDefault, nsIPermissionManager::EXPIRE_NEVER,
-                     0, modificationTime, eDontNotify, eNoDBOperation);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("There was a problem importing an origin permission");
-    }
-
-    if (StaticPrefs::permissions_isolateBy_privateBrowsing()) {
-      
-      OriginAttributes attrs =
-          OriginAttributes(principal->OriginAttributesRef());
-      attrs.mPrivateBrowsingId = 1;
-      nsCOMPtr<nsIPrincipal> pbPrincipal =
-          BasePrincipal::Cast(principal)->CloneForcingOriginAttributes(attrs);
-      
-      NS_ENSURE_TRUE(pbPrincipal, NS_ERROR_FAILURE);
-
-      rv = AddInternal(pbPrincipal, entry.mType, entry.mPermission,
-                       cIDPermissionIsDefault,
-                       nsIPermissionManager::EXPIRE_NEVER, 0, modificationTime,
-                       eDontNotify, eNoDBOperation);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "There was a problem importing an origin permission for private "
-            "browsing");
-      }
-    }
+    Unused << ImportDefaultEntry(entry);
   }
 
   return NS_OK;
