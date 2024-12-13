@@ -376,18 +376,16 @@ static bool Add24HourDaysToTimeDuration(JSContext* cx, const TimeDuration& d,
   MOZ_ASSERT(IsValidTimeDuration(d));
 
   
+  constexpr int64_t MaxDurationDays = (int64_t(1) << 53) / (24 * 60 * 60);
+
   
-  
-  auto dayMillis =
-      mozilla::CheckedInt64(days) * ToMilliseconds(TemporalUnit::Day);
-  if (!dayMillis.isValid()) {
+  if (days > MaxDurationDays) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_DURATION_INVALID_NORMALIZED_TIME);
     return false;
   }
 
-  
-  auto timeDurationDays = TimeDuration::fromMilliseconds(dayMillis.value());
+  auto timeDurationDays = TimeDuration::fromDays(days);
   if (!IsValidTimeDuration(timeDurationDays)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_DURATION_INVALID_NORMALIZED_TIME);
@@ -418,11 +416,7 @@ InternalDuration js::temporal::ToInternalDurationRecordWith24HourDays(
   auto timeDuration = TimeDurationFromComponents(duration);
 
   
-  auto secondsFromDay = mozilla::CheckedInt64{int64_t(duration.days)} *
-                        ToSeconds(TemporalUnit::Day);
-  MOZ_ASSERT(secondsFromDay.isValid());
-
-  timeDuration += TimeDuration::fromSeconds(secondsFromDay.value());
+  timeDuration += TimeDuration::fromDays(int64_t(duration.days));
 
   
   auto dateDuration = DateDuration{
@@ -445,8 +439,7 @@ DateDuration js::temporal::ToDateDurationRecordWithoutTime(
   auto internalDuration = ToInternalDurationRecordWith24HourDays(duration);
 
   
-  int64_t days =
-      internalDuration.time.toSeconds() / ToSeconds(TemporalUnit::Day);
+  int64_t days = internalDuration.time.toDays();
 
   
   auto result = DateDuration{
@@ -2071,7 +2064,7 @@ static bool RoundTimeDuration(JSContext* cx, const TimeDuration& duration,
   
   if (unit == TemporalUnit::Day) {
     
-    constexpr auto nsPerDay = Int128{ToNanoseconds(TemporalUnit::Day)};
+    constexpr auto nsPerDay = ToNanoseconds(TemporalUnit::Day);
     auto rounded = RoundNumberToIncrement(duration.toNanoseconds(), nsPerDay,
                                           increment, roundingMode);
     MOZ_ASSERT(Int128{INT64_MIN} <= rounded && rounded <= Int128{INT64_MAX},
@@ -2619,7 +2612,6 @@ static bool NudgeToDayOrTime(JSContext* cx, const InternalDuration& duration,
   }
 
   
-  double total = DivideTimeDuration(timeDuration, smallestUnit);
   TimeDuration roundedTime;
   if (!RoundTimeDurationToIncrement(cx, timeDuration, smallestUnit, increment,
                                     roundingMode, &roundedTime)) {
@@ -2634,13 +2626,11 @@ static bool NudgeToDayOrTime(JSContext* cx, const InternalDuration& duration,
     return false;
   }
 
-  constexpr int64_t secPerDay = ToSeconds(TemporalUnit::Day);
+  
+  int64_t wholeDays = timeDuration.toDays();
 
   
-  int64_t wholeDays = timeDuration.toSeconds() / secPerDay;
-
-  
-  int64_t roundedWholeDays = roundedTime.toSeconds() / secPerDay;
+  int64_t roundedWholeDays = roundedTime.toDays();
 
   
   int64_t dayDelta = roundedWholeDays - wholeDays;
@@ -2666,8 +2656,7 @@ static bool NudgeToDayOrTime(JSContext* cx, const InternalDuration& duration,
     days = roundedWholeDays;
 
     
-    remainder =
-        roundedTime - TimeDuration::fromSeconds(roundedWholeDays * secPerDay);
+    remainder = roundedTime - TimeDuration::fromDays(roundedWholeDays);
   }
 
   
@@ -2681,7 +2670,8 @@ static bool NudgeToDayOrTime(JSContext* cx, const InternalDuration& duration,
   auto resultDuration = InternalDuration{dateDuration, remainder};
 
   
-  *result = {resultDuration, nudgedEpochNs, total, didExpandDays};
+  *result = {resultDuration, nudgedEpochNs, mozilla::UnspecifiedNaN<double>(),
+             didExpandDays};
   return true;
 }
 

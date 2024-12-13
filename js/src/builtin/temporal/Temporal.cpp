@@ -419,58 +419,17 @@ bool IsValidMul<Int128>(const Int128& x, const Int128& y) {
 
 
 
-Int128 js::temporal::RoundNumberToIncrement(int64_t numerator,
+Int128 js::temporal::RoundNumberToIncrement(const Int128& numerator,
                                             int64_t denominator,
                                             Increment increment,
                                             TemporalRoundingMode roundingMode) {
   MOZ_ASSERT(denominator > 0);
   MOZ_ASSERT(Increment::min() <= increment && increment <= Increment::max());
 
-  
-  if (numerator == 0) {
-    return Int128{0};
-  }
-
-  
-  if (increment == Increment{1}) {
-    
-    return Int128{Divide(numerator, denominator, roundingMode)};
-  }
-
-  
-  auto divisor = mozilla::CheckedInt64(denominator) * increment.value();
-  if (MOZ_LIKELY(divisor.isValid())) {
-    MOZ_ASSERT(divisor.value() > 0);
-
-    
-    int64_t rounded = Divide(numerator, divisor.value(), roundingMode);
-
-    
-    auto result = mozilla::CheckedInt64(rounded) * increment.value();
-    if (MOZ_LIKELY(result.isValid())) {
-      return Int128{result.value()};
-    }
-  }
-
-  
-  return RoundNumberToIncrement(Int128{numerator}, Int128{denominator},
-                                increment, roundingMode);
-}
-
-
-
-
-Int128 js::temporal::RoundNumberToIncrement(const Int128& numerator,
-                                            const Int128& denominator,
-                                            Increment increment,
-                                            TemporalRoundingMode roundingMode) {
-  MOZ_ASSERT(denominator > Int128{0});
-  MOZ_ASSERT(Increment::min() <= increment && increment <= Increment::max());
-
   auto inc = Int128{increment.value()};
-  MOZ_ASSERT(IsValidMul(denominator, inc), "unsupported overflow");
+  MOZ_ASSERT(IsValidMul(Int128{denominator}, inc), "unsupported overflow");
 
-  auto divisor = denominator * inc;
+  auto divisor = Int128{denominator} * inc;
   MOZ_ASSERT(divisor > Int128{0});
 
   

@@ -483,8 +483,7 @@ TimeDuration js::temporal::DifferenceTime(const Time& time1,
       hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
 
   
-  MOZ_ASSERT(result.abs().toNanoseconds() <
-             Int128{ToNanoseconds(TemporalUnit::Day)});
+  MOZ_ASSERT(result.abs() < TimeDuration::fromDays(1));
 
   
   return result;
