@@ -38,7 +38,7 @@ function testOffThreadXDR(sourceIsLazy1, sourceIsLazy2,
   const t = cacheEntry(code);
   evaluate(t, { sourceIsLazy: sourceIsLazy1,
                 forceFullParse: forceFullParse1,
-                saveIncrementalBytecode: true });
+                saveBytecodeWithDelazifications: true });
 
   
   offThreadDecodeStencil(t, { sourceIsLazy: sourceIsLazy2,

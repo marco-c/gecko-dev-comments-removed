@@ -23,7 +23,7 @@ evalWithCache(test, {
 });
 
 evalWithCache(test, {
-  incremental: true,
+  collectDelazifications: true,
   checkAfter: function (ctx) {
     relazifyFunctions(); 
     evaluate("assertEq(isLazyFunction(f), expect);", ctx);
