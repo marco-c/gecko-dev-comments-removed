@@ -458,6 +458,10 @@ void DragData::ConvertToMozURIList() {
   mAsURIData = true;
 
   const nsDependentSubstring uris((char16_t*)mDragData.get(), mDragDataLen / 2);
+
+  LOGDRAG("DragData::ConvertToMozURIList(), data %s",
+          NS_ConvertUTF16toUTF8(uris).get());
+
   int32_t uriBegin = 0;
   do {
     nsAutoString uri;
@@ -471,6 +475,8 @@ void DragData::ConvertToMozURIList() {
         0) {
       break;
     }
+
+    LOGDRAG("  URI: %s", NS_ConvertUTF16toUTF8(uri).get());
     mUris.AppendElement(uri);
   } while (uriBegin < (int32_t)uris.Length());
 
@@ -1027,8 +1033,15 @@ nsDragSession::GetNumDropItems(uint32_t* aNumItems) {
     return NS_OK;
   }
 
-  const GdkAtom fileListFlavors[] = {sURLMimeAtom, sTextUriListTypeAtom,
-                                     sPortalFileAtom, sPortalFileTransferAtom};
+  
+  
+  
+  
+  
+  
+  const GdkAtom fileListFlavors[] = {sTextUriListTypeAtom,  
+                                     sPortalFileAtom, sPortalFileTransferAtom,
+                                     sURLMimeAtom};  
 
   for (auto fileFlavour : fileListFlavors) {
     RefPtr<DragData> data = GetDragData(fileFlavour);
@@ -1120,10 +1133,38 @@ nsDragSession::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
     LOGDRAGSERVICE("  we're getting data %s\n", flavorStr.get());
 
     RefPtr<DragData> dragData;
+
+    
+    
+    
+
+    
     if (requestedFlavor == sTextMimeAtom) {
       dragData = GetDragData(sTextPlainUTF8TypeAtom);
     }
 
+    
+    
+    if (requestedFlavor == sURLMimeAtom) {
+      LOGDRAGSERVICE("  conversion %s => %s", gTextUriListType, kURLMime);
+      dragData = GetDragData(sTextUriListTypeAtom);
+      if (dragData) {
+        dragData = dragData->ConvertToMozURL();
+        mCachedDragData.InsertOrUpdate(dragData->GetFlavor(), dragData);
+      }
+      if (!dragData) {
+        LOGDRAGSERVICE("  conversion %s => %s", gMozUrlType, kURLMime);
+        dragData = GetDragData(sMozUrlTypeAtom);
+        if (dragData) {
+          dragData = dragData->ConvertToMozURL();
+          if (dragData) {
+            mCachedDragData.InsertOrUpdate(dragData->GetFlavor(), dragData);
+          }
+        }
+      }
+    }
+
+    
     if (!dragData) {
       dragData = GetDragData(requestedFlavor);
     }
@@ -1147,28 +1188,6 @@ nsDragSession::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
         dragData = GetDragData(sTextUriListTypeAtom);
         if (dragData) {
           dragData = dragData->ConvertToFile();
-          if (dragData) {
-            mCachedDragData.InsertOrUpdate(dragData->GetFlavor(), dragData);
-          }
-        }
-      }
-    }
-
-    if (!dragData && requestedFlavor == sURLMimeAtom) {
-      
-      
-      
-      LOGDRAGSERVICE("  conversion %s => %s", gTextUriListType, kURLMime);
-      dragData = GetDragData(sTextUriListTypeAtom);
-      if (dragData) {
-        dragData = dragData->ConvertToMozURL();
-        mCachedDragData.InsertOrUpdate(dragData->GetFlavor(), dragData);
-      }
-      if (!dragData) {
-        LOGDRAGSERVICE("  conversion %s => %s", gMozUrlType, kURLMime);
-        dragData = GetDragData(sMozUrlTypeAtom);
-        if (dragData) {
-          dragData = dragData->ConvertToMozURL();
           if (dragData) {
             mCachedDragData.InsertOrUpdate(dragData->GetFlavor(), dragData);
           }
@@ -1523,6 +1542,7 @@ void nsDragSession::TargetDataReceived(GtkWidget* aWidget,
       LOGDRAGSERVICE(" TargetDataReceived() failed");
       return;
     }
+
     dragData = new DragData(target, data, len);
     LOGDRAGSERVICE("  TargetDataReceived(): plain data, MIME %s len = %d",
                    GUniquePtr<gchar>(gdk_atom_name(target)).get(), len);
