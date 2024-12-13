@@ -410,12 +410,9 @@ class StorageActorMock extends EventEmitter {
 
 
 
-
-
-
-  getBrowsingContextsFromHost(host, { acceptSameProcessIframes = true } = {}) {
+  getBrowsingContextsFromHost(host) {
     return this.watcherActor
-      .getAllBrowsingContexts({ acceptSameProcessIframes })
+      .getAllBrowsingContexts({ acceptSameProcessIframes: true })
       .filter(
         bc => this.getHostName(bc.currentWindowGlobal.documentURI) === host
       );

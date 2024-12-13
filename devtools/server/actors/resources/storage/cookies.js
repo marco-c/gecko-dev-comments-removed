@@ -124,6 +124,7 @@ class CookiesStorageActor extends BaseStorageActor {
         
         
         
+        
         if (
           bc.currentWindowGlobal.cookieJarSettings.partitionKey !==
           originAttributes.partitionKey
@@ -217,7 +218,7 @@ class CookiesStorageActor extends BaseStorageActor {
       return null;
     }
 
-    return {
+    const obj = {
       uniqueKey: this.#getCookieUniqueKey(cookie),
       name: cookie.name,
       host: cookie.host || "",
@@ -239,6 +240,23 @@ class CookiesStorageActor extends BaseStorageActor {
       isHttpOnly: cookie.isHttpOnly,
       sameSite: this.getSameSiteStringFromCookie(cookie),
     };
+
+    if (cookie.isPartitioned) {
+      const rawPartitionKey = cookie.originAttributes.partitionKey;
+      
+      
+      
+      
+      const [scheme, baseDomain, port] = rawPartitionKey
+        .replace(/(?<openingparen>^\()|(?<closingparen>\)$)/g, "")
+        .split(",");
+      const partitionKey = `${scheme}://${baseDomain}${
+        port !== undefined && /^\d+$/.test(port) ? ":" + port : ""
+      }`;
+      obj.partitionKey = partitionKey;
+    }
+
+    return obj;
   }
 
   getSameSiteStringFromCookie(cookie) {
@@ -329,7 +347,7 @@ class CookiesStorageActor extends BaseStorageActor {
   }
 
   async getFields() {
-    return [
+    const fields = [
       { name: "uniqueKey", editable: false, private: true },
       { name: "name", editable: true, hidden: false },
       { name: "value", editable: true, hidden: false },
@@ -344,6 +362,12 @@ class CookiesStorageActor extends BaseStorageActor {
       { name: "creationTime", editable: false, hidden: true },
       { name: "hostOnly", editable: false, hidden: true },
     ];
+
+    if (Services.prefs.getBoolPref("network.cookie.CHIPS.enabled", false)) {
+      fields.push({ name: "partitionKey", editable: false, hidden: false });
+    }
+
+    return fields;
   }
 
   
