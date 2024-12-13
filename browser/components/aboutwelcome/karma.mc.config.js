@@ -120,6 +120,15 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            "content-src/components/EmbeddedBrowser.jsx": {
+              
+              
+              
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
             "content-src/components/MSLocalized.jsx": {
               statements: 77.42,
               lines: 77.42,

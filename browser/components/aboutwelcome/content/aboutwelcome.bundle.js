@@ -178,7 +178,7 @@ __webpack_require__.r(__webpack_exports__);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(10);
  var _SubmenuButton__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(15);
- var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(20);
+ var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(21);
 
 
 
@@ -867,6 +867,8 @@ __webpack_require__.r(__webpack_exports__);
  var _AddonsPicker__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(17);
  var _LinkParagraph__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(18);
  var _ActionChecklist__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(19);
+ var _EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(20);
+
 
 
 
@@ -1133,6 +1135,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     }) : null, content.tiles && content.tiles.type === "action_checklist" && content.tiles.data ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ActionChecklist__WEBPACK_IMPORTED_MODULE_15__.ActionChecklist, {
       content: content,
       message_id: this.props.messageId
+    }) : null, content.tiles && content.tiles.type === "embedded_browser" && content.tiles.data?.url ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_16__.EmbeddedBrowser, {
+      url: content.tiles.data.url,
+      style: content.tiles.data.style
     }) : null);
   }
   renderNoodles() {
@@ -2706,6 +2711,64 @@ const ActionChecklist = ({
 
  }),
 
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   EmbeddedBrowser: () => ( EmbeddedBrowser),
+   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+ });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+
+
+
+
+
+const BROWSER_STYLES = ["height", "width", "border", "border-radius", "flex", "margin", "padding"];
+function applyValidStyles(element, style, validStyles) {
+  Object.keys(style).forEach(key => {
+    if (validStyles.includes(key)) {
+      element.style.setProperty(key, style[key]);
+    }
+  });
+}
+const EmbeddedBrowser = props => {
+  
+  return document.createXULElement ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(EmbeddedBrowserInner, props) : null;
+};
+const EmbeddedBrowserInner = ({
+  url,
+  style
+}) => {
+  const ref = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    const browser = document.createXULElement("browser");
+    browser.setAttribute("disableglobalhistory", "true");
+    browser.setAttribute("type", "content");
+    browser.setAttribute("remote", "true");
+    ref.current.appendChild(browser);
+  }, []);
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    const browser = ref.current.querySelector("browser");
+    if (browser) {
+      if (style) {
+        applyValidStyles(browser, style, BROWSER_STYLES);
+      }
+      browser.fixupAndLoadURIString(url, {
+        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+      });
+    }
+  }, [url, style]);
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "embedded-browser-container",
+    ref: ref
+  });
+};
+ const __WEBPACK_DEFAULT_EXPORT__ = (EmbeddedBrowser);
+
+ }),
+
  ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -2759,7 +2822,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
- var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(20);
+ var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(21);
 
 
 
@@ -2945,7 +3008,7 @@ __webpack_require__.r(__webpack_exports__);
  var react_dom__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);
  var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4);
- var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(21);
+ var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(22);
 function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 

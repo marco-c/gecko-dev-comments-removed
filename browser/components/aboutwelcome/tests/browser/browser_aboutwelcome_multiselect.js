@@ -47,22 +47,6 @@ const BASE_CONTENT = {
 
 
 
-async function openAboutWelcome(json) {
-  if (json) {
-    await setAboutWelcomeMultiStage(json);
-  }
-
-  let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    "about:welcome",
-    true
-  );
-  registerCleanupFunction(() => {
-    BrowserTestUtils.removeTab(tab);
-  });
-  return tab.linkedBrowser;
-}
-
 
 
 
