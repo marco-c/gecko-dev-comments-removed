@@ -2236,7 +2236,7 @@ void nsWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
 
   
 
-  RECT screenRect;
+  DesktopIntRect screenRect;
 
   nsCOMPtr<nsIScreenManager> screenmgr =
       do_GetService(sScreenManagerContractID);
@@ -2244,37 +2244,19 @@ void nsWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
     return;
   }
   nsCOMPtr<nsIScreen> screen;
-  int32_t left, top, width, height;
 
   screenmgr->ScreenForRect(aPoint.x, aPoint.y, logWidth, logHeight,
                            getter_AddRefs(screen));
   if (mFrameState->GetSizeMode() != nsSizeMode_Fullscreen) {
     
-    nsresult rv = screen->GetAvailRectDisplayPix(&left, &top, &width, &height);
-    if (NS_FAILED(rv)) {
-      return;
-    }
+    screenRect = screen->GetAvailRectDisplayPix();
   } else {
     
-    nsresult rv = screen->GetRectDisplayPix(&left, &top, &width, &height);
-    if (NS_FAILED(rv)) {
-      return;
-    }
+    screenRect = screen->GetRectDisplayPix();
   }
-  screenRect.left = left;
-  screenRect.right = left + width;
-  screenRect.top = top;
-  screenRect.bottom = top + height;
 
-  if (aPoint.x < screenRect.left)
-    aPoint.x = screenRect.left;
-  else if (aPoint.x >= screenRect.right - logWidth)
-    aPoint.x = screenRect.right - logWidth;
+  aPoint = ConstrainPositionToBounds(aPoint, {logWidth, logHeight}, screenRect);
 
-  if (aPoint.y < screenRect.top)
-    aPoint.y = screenRect.top;
-  else if (aPoint.y >= screenRect.bottom - logHeight)
-    aPoint.y = screenRect.bottom - logHeight;
 }
 
 
