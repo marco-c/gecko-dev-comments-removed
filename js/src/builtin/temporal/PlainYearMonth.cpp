@@ -67,7 +67,6 @@ template <typename T>
 static bool ISOYearMonthWithinLimits(T year, int32_t month) {
   static_assert(std::is_same_v<T, int32_t> || std::is_same_v<T, double>);
 
-  
   MOZ_ASSERT(IsInteger(year));
   MOZ_ASSERT(1 <= month && month <= 12);
 
@@ -395,8 +394,6 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
       cx, &args.thisv().toObject().as<PlainYearMonthObject>());
 
   
-
-  
   Rooted<PlainYearMonthWithCalendar> other(cx);
   if (!ToTemporalYearMonth(cx, args.get(0), &other)) {
     return false;
@@ -431,6 +428,7 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   DifferenceSettings settings;
   Rooted<PlainObject*> resolvedOptions(cx);
   if (args.hasDefined(1)) {
+    
     Rooted<JSObject*> options(
         cx, RequireObjectArg(cx, "options", ToName(operation), args[1]));
     if (!options) {
@@ -515,6 +513,8 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
+  
+  
   auto dateDuration = DateDuration{until.years, until.months};
 
   
@@ -526,8 +526,7 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
     auto duration = NormalizedDuration{dateDuration, {}};
 
     
-    auto otherDateTime = PlainDateTime{otherDate, {}};
-    auto destEpochNs = GetUTCEpochNanoseconds(otherDateTime);
+    auto destEpochNs = GetUTCEpochNanoseconds(PlainDateTime{otherDate, {}});
 
     
     auto dateTime = PlainDateTime{thisDate, {}};
@@ -547,12 +546,15 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
+
+  
   auto duration =
       Duration{double(dateDuration.years), double(dateDuration.months)};
   if (operation == TemporalDifference::Since) {
     duration = duration.negate();
   }
 
+  
   auto* obj = CreateTemporalDuration(cx, duration);
   if (!obj) {
     return false;
@@ -599,10 +601,7 @@ static bool AddDurationToYearMonth(JSContext* cx, TemporalAddDuration operation,
   }
 
   
-  auto durationToAdd = NormalizeDurationWithoutTime(duration);
-
-  
-  int32_t sign = DurationSign(durationToAdd);
+  int32_t sign = DurationSign(duration);
 
   
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
@@ -693,6 +692,7 @@ static bool AddDurationToYearMonth(JSContext* cx, TemporalAddDuration operation,
   }
 
   
+  auto durationToAdd = NormalizeDurationWithoutTime(duration);
 
   
   PlainDate addedDate;
@@ -1069,22 +1069,6 @@ static bool PlainYearMonth_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  auto overflow = TemporalOverflow::Constrain;
-  if (args.hasDefined(1)) {
-    
-    Rooted<JSObject*> options(cx,
-                              RequireObjectArg(cx, "options", "with", args[1]));
-    if (!options) {
-      return false;
-    }
-
-    
-    if (!GetTemporalOverflowOption(cx, options, &overflow)) {
-      return false;
-    }
-  }
-
-  
   Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
 
   
@@ -1110,10 +1094,24 @@ static bool PlainYearMonth_with(JSContext* cx, const CallArgs& args) {
   
   Rooted<TemporalFields> mergedFields(
       cx, CalendarMergeFields(calendar, fields, partialYearMonth));
-
-  
   if (!PrepareTemporalFields(cx, mergedFields, fields.keys(), &fields)) {
     return false;
+  }
+
+  
+  auto overflow = TemporalOverflow::Constrain;
+  if (args.hasDefined(1)) {
+    
+    Rooted<JSObject*> options(cx,
+                              RequireObjectArg(cx, "options", "with", args[1]));
+    if (!options) {
+      return false;
+    }
+
+    
+    if (!GetTemporalOverflowOption(cx, options, &overflow)) {
+      return false;
+    }
   }
 
   
@@ -1122,6 +1120,7 @@ static bool PlainYearMonth_with(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
+  
   auto* obj = CreateTemporalYearMonth(cx, result);
   if (!obj) {
     return false;
@@ -1394,10 +1393,8 @@ static bool PlainYearMonth_toPlainDate(JSContext* cx, const CallArgs& args) {
   Rooted<TemporalFields> mergedFields(
       cx, CalendarMergeFields(calendar, receiverFields, inputFields));
 
-  
   auto concatenatedFieldNames = receiverFields.keys() + inputFields.keys();
 
-  
   if (!PrepareTemporalFields(cx, mergedFields, concatenatedFieldNames,
                              &mergedFields)) {
     return false;
@@ -1410,6 +1407,7 @@ static bool PlainYearMonth_toPlainDate(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
+  
   auto* obj = CreateTemporalDate(cx, result);
   if (!obj) {
     return false;
