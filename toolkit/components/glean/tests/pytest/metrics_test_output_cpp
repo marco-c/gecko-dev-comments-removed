@@ -270,7 +270,7 @@ namespace test_nested {
 
 
 
-  constexpr impl::QuantityMetric quantity_metric(24);
+  constexpr impl::CounterMetric optimizable_disabled_counter_metric(24);
 
   
 
@@ -279,7 +279,7 @@ namespace test_nested {
 
 
 
-  constexpr impl::RateMetric rate_metric(25);
+  constexpr impl::QuantityMetric quantity_metric(25);
 
   
 
@@ -288,7 +288,7 @@ namespace test_nested {
 
 
 
-  constexpr impl::NumeratorMetric rate_with_external_denominator(26);
+  constexpr impl::RateMetric rate_metric(26);
 
   
 
@@ -297,7 +297,16 @@ namespace test_nested {
 
 
 
-  constexpr impl::UuidMetric uuid_metric(27);
+  constexpr impl::NumeratorMetric rate_with_external_denominator(27);
+
+  
+
+
+  
+
+
+
+  constexpr impl::UuidMetric uuid_metric(28);
 
 }
 
