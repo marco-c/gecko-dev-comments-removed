@@ -1498,39 +1498,41 @@ void nsDragSession::TargetDataReceived(GtkWidget* aWidget,
     mCachedDragData.InsertOrUpdate(target, dragData);
   });
 
-  if (gtk_targets_include_uri(&target, 1)) {
-    if (target == sPortalFileAtom || target == sPortalFileTransferAtom) {
-      const guchar* data = gtk_selection_data_get_data(aSelectionData);
-      if (!data || data[0] == '\0') {
-        LOGDRAGSERVICE(" TargetDataReceived() failed");
-        return;
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      nsCOMPtr<nsIURI> sourceURI;
-      nsresult rv =
-          NS_NewURI(getter_AddRefs(sourceURI), (const gchar*)data, nullptr);
-      if (NS_SUCCEEDED(rv)) {
-        LOGDRAGSERVICE(
-            "  TargetDataReceived(): got valid uri for MIME %s - this is bug "
-            "in GTK - expected numeric value for portal, got %s\n",
-            GUniquePtr<gchar>(gdk_atom_name(target)).get(), data);
-        return;
-      }
+  if (target == sPortalFileAtom || target == sPortalFileTransferAtom) {
+    const guchar* data = gtk_selection_data_get_data(aSelectionData);
+    if (!data || data[0] == '\0') {
+      LOGDRAGSERVICE(" TargetDataReceived() failed");
+      return;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIURI> sourceURI;
+    nsresult rv =
+        NS_NewURI(getter_AddRefs(sourceURI), (const gchar*)data, nullptr);
+    if (NS_SUCCEEDED(rv)) {
+      LOGDRAGSERVICE(
+          "  TargetDataReceived(): got valid uri for MIME %s - this is bug "
+          "in GTK - expected numeric value for portal, got %s\n",
+          GUniquePtr<gchar>(gdk_atom_name(target)).get(), data);
+      return;
+    }
+    dragData =
+        new DragData(target, gtk_selection_data_get_uris(aSelectionData));
+    LOGDRAGSERVICE("  TargetDataReceived(): FILE PORTAL data, MIME %s",
+                   GUniquePtr<gchar>(gdk_atom_name(target)).get());
+  } else if (target == sTextUriListTypeAtom) {
     dragData =
         new DragData(target, gtk_selection_data_get_uris(aSelectionData));
     LOGDRAGSERVICE("  TargetDataReceived(): URI data, MIME %s",
@@ -1549,7 +1551,9 @@ void nsDragSession::TargetDataReceived(GtkWidget* aWidget,
   }
 
 #if MOZ_LOGGING
-  dragData->Print();
+  if (dragData) {
+    dragData->Print();
+  }
 #endif
 }
 
