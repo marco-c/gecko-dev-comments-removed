@@ -20,8 +20,6 @@ function test() {
 
 
 async function focusNotificationAnchor(anchor) {
-  let urlbarContainer = anchor.closest("#urlbar-container");
-
   
   
   
@@ -33,20 +31,10 @@ async function focusNotificationAnchor(anchor) {
   );
 
   
-  let searchModeSwitcher = urlbarContainer.querySelector(
-    "#urlbar-searchmode-switcher"
-  );
   EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
-  await BrowserTestUtils.waitForCondition(
-    () => BrowserTestUtils.isVisible(searchModeSwitcher),
-    "Wait until Unified Search Button is shown"
-  );
   EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
-  await BrowserTestUtils.waitForCondition(
-    () => document.activeElement == searchModeSwitcher,
-    "Wait until the focus will move to Unified Search Button"
-  );
 
+  
   while (document.activeElement !== anchor) {
     EventUtils.synthesizeKey("ArrowRight");
   }
