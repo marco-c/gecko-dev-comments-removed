@@ -11,25 +11,33 @@ add_setup(async function () {
 add_task(async () => {
   await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
     
-    SpecialPowers.wrap(document).notifyUserGestureActivation();
+    await SpecialPowers.spawn(browser, [], async () => {
+      content.document.notifyUserGestureActivation();
+    });
     await followLink(TEST_URI + "2.html");
 
     
-    await SpecialPowers.spawn(browser, [], async function () {
+    let loaded = BrowserTestUtils.waitForLocationChange(
+      gBrowser,
+      TEST_URI + "3.html"
+    );
+    await SpecialPowers.spawn(browser, [], async () => {
       content.history.pushState({}, "", "https://example.com/3.html");
     });
+    await loaded;
 
-    
-    await new Promise(resolve =>
-      SessionStore.getSessionHistory(gBrowser.selectedTab, resolve)
-    );
     
     await assertMenulist([TEST_URI + "3.html", TEST_URI]);
 
     
-    await SpecialPowers.spawn(browser, [], async function () {
+    loaded = BrowserTestUtils.waitForLocationChange(
+      gBrowser,
+      TEST_URI + "2.html"
+    );
+    await SpecialPowers.spawn(browser, [], async () => {
       content.history.back();
     });
+    await loaded;
 
     
     await assertMenulist([TEST_URI + "3.html", TEST_URI + "2.html", TEST_URI]);

@@ -14,6 +14,11 @@ const SLOW_PAGE2 =
     "chrome://mochitests/content",
     "http://mochi.test:8888"
   ) + "slow-page.sjs?faster";
+const SLOW_PAGE3 =
+  getRootDirectory(gTestPath).replace(
+    "chrome://mochitests/content",
+    "http://mochi.test:8888"
+  ) + "slow-page.sjs?slower";
 
 
 
@@ -234,12 +239,20 @@ add_task(async function testCorrectUrlBarAfterGoingBackDuringAnotherLoad() {
     true,
     true
   );
+  
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    content.document.notifyUserGestureActivation();
+  });
 
   
   let page1 = "http://example.com/";
-  let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, page1);
+  let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, page1);
   await loaded;
+  
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    content.document.notifyUserGestureActivation();
+  });
 
   let initialValue = gURLBar.untrimmedValue;
   let expectedURLBarChange = SLOW_PAGE;
@@ -325,7 +338,7 @@ add_task(async function testCorrectUrlBarAfterReloadingDuringSlowPageLoad() {
   );
 
   let initialValue = gURLBar.untrimmedValue;
-  let expectedURLBarChange = SLOW_PAGE;
+  let expectedURLBarChange = SLOW_PAGE3;
   let sawChange = false;
   let hasReloaded = false;
   let handler = () => {
@@ -350,7 +363,7 @@ add_task(async function testCorrectUrlBarAfterReloadingDuringSlowPageLoad() {
 
   obs.observe(gURLBar.textbox, { attributes: true });
   
-  gURLBar.value = SLOW_PAGE;
+  gURLBar.value = SLOW_PAGE3;
   gURLBar.handleCommand();
 
   
@@ -368,7 +381,7 @@ add_task(async function testCorrectUrlBarAfterReloadingDuringSlowPageLoad() {
   hasReloaded = true;
   is(
     gURLBar.untrimmedValue,
-    SLOW_PAGE,
+    SLOW_PAGE3,
     "Should not have changed URL bar value synchronously."
   );
   
