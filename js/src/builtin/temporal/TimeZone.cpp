@@ -859,8 +859,7 @@ static PlainDateTime BalanceISODateTime(const PlainDateTime& dateTime,
   MOZ_ASSERT(std::abs(balancedTime.days) <= 1);
 
   
-  auto balancedDate =
-      BalanceISODate(date.year, date.month, date.day + balancedTime.days);
+  auto balancedDate = BalanceISODate(date, balancedTime.days);
 
   
   return {balancedDate, balancedTime.time};
@@ -1077,8 +1076,7 @@ bool js::temporal::DisambiguatePossibleInstants(
                "subtracting nanoseconds is at most one day");
 
     
-    auto earlierDate = BalanceISODate(dateTime.date.year, dateTime.date.month,
-                                      dateTime.date.day + earlierTime.days);
+    auto earlierDate = BalanceISODate(dateTime.date, earlierTime.days);
 
     
     auto earlierDateTime = PlainDateTime{earlierDate, earlierTime.time};
@@ -1112,8 +1110,7 @@ bool js::temporal::DisambiguatePossibleInstants(
              "adding nanoseconds is at most one day");
 
   
-  auto laterDate = BalanceISODate(dateTime.date.year, dateTime.date.month,
-                                  dateTime.date.day + laterTime.days);
+  auto laterDate = BalanceISODate(dateTime.date, laterTime.days);
 
   
   auto laterDateTime = PlainDateTime{laterDate, laterTime.time};

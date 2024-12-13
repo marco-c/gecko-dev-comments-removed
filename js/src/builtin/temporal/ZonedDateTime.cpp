@@ -711,8 +711,7 @@ static bool DifferenceZonedDateTime(JSContext* cx, const Instant& ns1,
   while (dayCorrection <= maxDayCorrection) {
     
     auto intermediateDate =
-        BalanceISODate(endDateTime.date.year, endDateTime.date.month,
-                       endDateTime.date.day - dayCorrection * sign);
+        BalanceISODate(endDateTime.date, -dayCorrection * sign);
 
     
     
@@ -1801,7 +1800,7 @@ static bool ZonedDateTime_hoursInDay(JSContext* cx, const CallArgs& args) {
   
 
   
-  auto tomorrow = BalanceISODate(today.year, today.month, today.day + 1);
+  auto tomorrow = BalanceISODate(today, 1);
 
   
   Instant todayNs;
@@ -2520,8 +2519,7 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
     
 
     
-    auto dateEnd =
-        BalanceISODate(dateStart.year, dateStart.month, dateStart.day + 1);
+    auto dateEnd = BalanceISODate(dateStart, 1);
 
     
     Instant startNs;

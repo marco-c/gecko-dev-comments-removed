@@ -725,9 +725,6 @@ static bool CanBalanceISODay(int64_t day) {
 
   
   
-  
-  
-  
   return std::abs(day) <= maximumDayDifference;
 }
 
@@ -766,8 +763,18 @@ bool js::temporal::BalanceISODate(JSContext* cx, const PlainDate& date,
     return false;
   }
 
-  *result = BalanceISODate(date.year, date.month, int32_t(day));
+  *result = BalanceISODate(date, days);
   return true;
+}
+
+
+
+
+PlainDate js::temporal::BalanceISODate(const PlainDate& date, int32_t days) {
+  MOZ_ASSERT(IsValidISODate(date));
+  MOZ_ASSERT(ISODateWithinLimits(date));
+  MOZ_ASSERT(CanBalanceISODay(int64_t(date.day) + days));
+  return BalanceISODate(date.year, date.month, date.day + days);
 }
 
 
@@ -775,10 +782,6 @@ bool js::temporal::BalanceISODate(JSContext* cx, const PlainDate& date,
 
 PlainDate js::temporal::BalanceISODate(int32_t year, int32_t month,
                                        int32_t day) {
-  
-  
-  
-  
   MOZ_ASSERT(CanBalanceISOYear(year));
   MOZ_ASSERT(1 <= month && month <= 12);
   MOZ_ASSERT(CanBalanceISODay(day));
@@ -872,11 +875,6 @@ bool js::temporal::AddISODate(JSContext* cx, const PlainDate& date,
                               TemporalOverflow overflow, PlainDate* result) {
   MOZ_ASSERT(IsValidISODate(date));
   MOZ_ASSERT(ISODateWithinLimits(date));
-
-  
-  
-  
-  
   MOZ_ASSERT(IsValidDuration(duration));
 
   
@@ -928,10 +926,8 @@ bool js::temporal::AddISODate(JSContext* cx, const PlainDate& date,
   }
 
   
-  
-
-  
-  int64_t d = regulated.day + (duration.days + duration.weeks * 7);
+  int64_t days = (duration.days + duration.weeks * 7);
+  int64_t d = regulated.day + days;
 
   
   
@@ -942,15 +938,8 @@ bool js::temporal::AddISODate(JSContext* cx, const PlainDate& date,
   }
 
   
-  auto balanced = BalanceISODate(regulated.year, regulated.month, int32_t(d));
+  auto balanced = BalanceISODate(regulated, days);
   MOZ_ASSERT(IsValidISODate(balanced));
-
-  
-  if (!ISODateWithinLimits(balanced)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEMPORAL_PLAIN_DATE_INVALID);
-    return false;
-  }
 
   *result = balanced;
   return true;
@@ -1003,30 +992,6 @@ static PlainDate AddISODate(const PlainDate& date,
 
   
   return ::ConstrainISODate({year, month, date.day});
-}
-
-static bool HasYearsMonthsOrWeeks(const DateDuration& duration) {
-  return duration.years != 0 || duration.months != 0 || duration.weeks != 0;
-}
-
-
-
-
-bool js::temporal::AddDate(JSContext* cx, Handle<CalendarValue> calendar,
-                           const PlainDate& date, const DateDuration& duration,
-                           TemporalOverflow overflow, PlainDate* result) {
-  MOZ_ASSERT(ISODateWithinLimits(date));
-  MOZ_ASSERT(IsValidDuration(duration));
-
-  
-  if (HasYearsMonthsOrWeeks(duration)) {
-    return CalendarDateAdd(cx, calendar, date, duration, overflow, result);
-  }
-
-  
-
-  
-  return AddISODate(cx, date, duration, overflow, result);
 }
 
 
