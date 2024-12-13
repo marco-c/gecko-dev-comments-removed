@@ -2500,6 +2500,12 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
       continue;
     }
 
+    if (line.IsInline()) {
+      
+      
+      inFlowChildBounds =
+          inFlowChildBounds.UnionEdges(line.GetPhysicalBounds());
+    }
     auto lineInFlowChildBounds = line.GetInFlowChildBounds();
     if (lineInFlowChildBounds) {
       inFlowChildBounds = inFlowChildBounds.UnionEdges(*lineInFlowChildBounds);
@@ -2603,7 +2609,10 @@ Maybe<nsRect> nsBlockFrame::GetLineFrameInFlowBounds(
     const nsLineBox& aLine, const nsIFrame& aLineChildFrame) const {
   MOZ_ASSERT(aLineChildFrame.GetParent() == this,
              "Line's frame doesn't belong to this block frame?");
-  if (aLineChildFrame.IsPlaceholderFrame()) {
+  
+  
+  
+  if (aLineChildFrame.IsPlaceholderFrame() || aLineChildFrame.IsLineParticipant()) {
     return Nothing{};
   }
   if (aLine.IsInline()) {
