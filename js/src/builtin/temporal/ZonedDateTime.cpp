@@ -593,7 +593,7 @@ static auto* CreateTemporalZonedDateTime(JSContext* cx,
 
 
 static bool AddZonedDateTime(JSContext* cx, Handle<ZonedDateTime> zonedDateTime,
-                             const NormalizedDuration& duration,
+                             const InternalDuration& duration,
                              TemporalOverflow overflow,
                              EpochNanoseconds* result) {
   MOZ_ASSERT(IsValidDuration(duration));
@@ -645,7 +645,7 @@ static bool AddZonedDateTime(JSContext* cx, Handle<ZonedDateTime> zonedDateTime,
 
 bool js::temporal::AddZonedDateTime(JSContext* cx,
                                     Handle<ZonedDateTime> zonedDateTime,
-                                    const NormalizedDuration& duration,
+                                    const InternalDuration& duration,
                                     EpochNanoseconds* result) {
   return ::AddZonedDateTime(cx, zonedDateTime, duration,
                             TemporalOverflow::Constrain, result);
@@ -659,13 +659,13 @@ static bool DifferenceZonedDateTime(JSContext* cx, const EpochNanoseconds& ns1,
                                     Handle<TimeZoneValue> timeZone,
                                     Handle<CalendarValue> calendar,
                                     TemporalUnit largestUnit,
-                                    NormalizedDuration* result) {
+                                    InternalDuration* result) {
   MOZ_ASSERT(IsValidEpochNanoseconds(ns1));
   MOZ_ASSERT(IsValidEpochNanoseconds(ns2));
 
   
   if (ns1 == ns2) {
-    *result = NormalizedDuration{{}, {}};
+    *result = InternalDuration{{}, {}};
     return true;
   }
 
@@ -723,8 +723,7 @@ static bool DifferenceZonedDateTime(JSContext* cx, const EpochNanoseconds& ns1,
     }
 
     
-    auto norm = NormalizedTimeDurationFromEpochNanosecondsDifference(
-        ns2, intermediateNs);
+    auto norm = TimeDurationFromEpochNanosecondsDifference(ns2, intermediateNs);
 
     
     int32_t timeSign = TimeDurationSign(norm);
@@ -750,8 +749,7 @@ static bool DifferenceZonedDateTime(JSContext* cx, const EpochNanoseconds& ns1,
       }
 
       
-      return CombineDateAndNormalizedTimeDuration(cx, dateDifference, norm,
-                                                  result);
+      return CombineDateAndTimeDuration(cx, dateDifference, norm, result);
     }
 
     
@@ -792,7 +790,7 @@ bool js::temporal::DifferenceZonedDateTimeWithRounding(
   }
 
   
-  NormalizedDuration difference;
+  InternalDuration difference;
   if (!DifferenceZonedDateTime(cx, ns1, ns2, timeZone, calendar,
                                settings.largestUnit, &difference)) {
     return false;
@@ -861,18 +859,18 @@ bool js::temporal::DifferenceZonedDateTimeWithRounding(
     
     
     
-    auto diff = NormalizedTimeDurationFromEpochNanosecondsDifference(ns2, ns1);
+    auto diff = TimeDurationFromEpochNanosecondsDifference(ns2, ns1);
     MOZ_ASSERT(IsValidEpochDuration(diff.to<EpochDuration>()));
 
     
     
     
-    *result = DivideNormalizedTimeDuration(diff, unit);
+    *result = DivideTimeDuration(diff, unit);
     return true;
   }
 
   
-  NormalizedDuration difference;
+  InternalDuration difference;
   if (!DifferenceZonedDateTime(cx, ns1, ns2, timeZone, calendar, unit,
                                &difference)) {
     return false;
@@ -1072,11 +1070,11 @@ static bool AddDurationToZonedDateTime(JSContext* cx,
   auto timeZone = zonedDateTime.timeZone();
 
   
-  auto normalized = NormalizeDuration(duration);
+  auto internalDuration = ToInternalDurationRecord(duration);
 
   
   EpochNanoseconds epochNanoseconds;
-  if (!::AddZonedDateTime(cx, zonedDateTime, normalized, overflow,
+  if (!::AddZonedDateTime(cx, zonedDateTime, internalDuration, overflow,
                           &epochNanoseconds)) {
     return false;
   }

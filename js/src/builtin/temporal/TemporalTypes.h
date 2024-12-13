@@ -664,36 +664,31 @@ inline DateDuration Duration::toDateDuration() const {
 
 
 
-struct NormalizedTimeDuration final
-    : SecondsAndNanoseconds<NormalizedTimeDuration> {
-  constexpr NormalizedTimeDuration& operator+=(
-      const NormalizedTimeDuration& other) {
+struct TimeDuration final : SecondsAndNanoseconds<TimeDuration> {
+  constexpr TimeDuration& operator+=(const TimeDuration& other) {
     *this = add(*this, other);
     return *this;
   }
 
-  constexpr NormalizedTimeDuration& operator-=(
-      const NormalizedTimeDuration& other) {
+  constexpr TimeDuration& operator-=(const TimeDuration& other) {
     *this = subtract(*this, other);
     return *this;
   }
 
-  constexpr NormalizedTimeDuration operator+(
-      const NormalizedTimeDuration& other) const {
+  constexpr TimeDuration operator+(const TimeDuration& other) const {
     return add(*this, other);
   }
 
-  constexpr NormalizedTimeDuration operator-(
-      const NormalizedTimeDuration& other) const {
+  constexpr TimeDuration operator-(const TimeDuration& other) const {
     return subtract(*this, other);
   }
 
-  constexpr NormalizedTimeDuration operator-() const { return negate(*this); }
+  constexpr TimeDuration operator-() const { return negate(*this); }
 
   
 
 
-  static constexpr NormalizedTimeDuration max() {
+  static constexpr TimeDuration max() {
     constexpr int64_t seconds = 0x1f'ffff'ffff'ffff;
     constexpr int64_t nanos = 999'999'999;
     return {seconds, nanos};
@@ -702,22 +697,22 @@ struct NormalizedTimeDuration final
   
 
 
-  static constexpr NormalizedTimeDuration min() { return -max(); }
+  static constexpr TimeDuration min() { return -max(); }
 };
 
 
 
 
 
-struct NormalizedDuration final {
+struct InternalDuration final {
   DateDuration date;
-  NormalizedTimeDuration time;
+  TimeDuration time;
 
-  constexpr bool operator==(const NormalizedDuration& other) const {
+  constexpr bool operator==(const InternalDuration& other) const {
     return date == other.date && time == other.time;
   }
 
-  constexpr bool operator!=(const NormalizedDuration& other) const {
+  constexpr bool operator!=(const InternalDuration& other) const {
     return !(*this == other);
   }
 };

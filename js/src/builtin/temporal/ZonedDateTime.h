@@ -122,7 +122,7 @@ ZonedDateTimeObject* CreateTemporalZonedDateTime(
 
 
 bool AddZonedDateTime(JSContext* cx, JS::Handle<ZonedDateTime> zonedDateTime,
-                      const NormalizedDuration& duration,
+                      const InternalDuration& duration,
                       EpochNanoseconds* result);
 
 

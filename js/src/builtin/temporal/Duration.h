@@ -105,7 +105,7 @@ bool IsValidDuration(const DateDuration& duration);
 
 
 
-bool IsValidDuration(const NormalizedDuration& duration);
+bool IsValidDuration(const InternalDuration& duration);
 #endif
 
 
@@ -124,8 +124,7 @@ bool ThrowIfInvalidDuration(JSContext* cx, const DateDuration& duration);
 
 
 
-inline bool IsValidNormalizedTimeDuration(
-    const NormalizedTimeDuration& duration) {
+inline bool IsValidTimeDuration(const TimeDuration& duration) {
   MOZ_ASSERT(0 <= duration.nanoseconds && duration.nanoseconds <= 999'999'999);
 
   
@@ -133,33 +132,22 @@ inline bool IsValidNormalizedTimeDuration(
   
   
   
-  return NormalizedTimeDuration::min() <= duration &&
-         duration <= NormalizedTimeDuration::max();
+  return TimeDuration::min() <= duration && duration <= TimeDuration::max();
 }
 
 
 
 
 
-NormalizedTimeDuration NormalizeTimeDuration(int32_t hours, int32_t minutes,
-                                             int32_t seconds,
-                                             int32_t milliseconds,
-                                             int32_t microseconds,
-                                             int32_t nanoseconds);
+TimeDuration TimeDurationFromComponents(const Duration& duration);
 
 
 
 
-
-NormalizedTimeDuration NormalizeTimeDuration(const Duration& duration);
-
-
-
-
-inline int32_t CompareTimeDuration(const NormalizedTimeDuration& one,
-                                   const NormalizedTimeDuration& two) {
-  MOZ_ASSERT(IsValidNormalizedTimeDuration(one));
-  MOZ_ASSERT(IsValidNormalizedTimeDuration(two));
+inline int32_t CompareTimeDuration(const TimeDuration& one,
+                                   const TimeDuration& two) {
+  MOZ_ASSERT(IsValidTimeDuration(one));
+  MOZ_ASSERT(IsValidTimeDuration(two));
 
   
   if (one > two) {
@@ -178,53 +166,51 @@ inline int32_t CompareTimeDuration(const NormalizedTimeDuration& one,
 
 
 
-inline int32_t TimeDurationSign(const NormalizedTimeDuration& d) {
-  MOZ_ASSERT(IsValidNormalizedTimeDuration(d));
+inline int32_t TimeDurationSign(const TimeDuration& d) {
+  MOZ_ASSERT(IsValidTimeDuration(d));
 
   
-  return CompareTimeDuration(d, NormalizedTimeDuration{});
+  return CompareTimeDuration(d, TimeDuration{});
 }
 
 
 
 
-bool Add24HourDaysToNormalizedTimeDuration(JSContext* cx,
-                                           const NormalizedTimeDuration& d,
-                                           int64_t days,
-                                           NormalizedTimeDuration* result);
+bool Add24HourDaysToTimeDuration(JSContext* cx, const TimeDuration& d,
+                                 int64_t days, TimeDuration* result);
 
 
 
 
-inline NormalizedDuration NormalizeDuration(const Duration& duration) {
+inline InternalDuration ToInternalDurationRecord(const Duration& duration) {
   MOZ_ASSERT(IsValidDuration(duration));
 
   
-  return {duration.toDateDuration(), NormalizeTimeDuration(duration)};
+  return {duration.toDateDuration(), TimeDurationFromComponents(duration)};
 }
 
 
 
 
-NormalizedDuration NormalizeDurationWith24HourDays(const Duration& duration);
+InternalDuration ToInternalDurationRecordWith24HourDays(
+    const Duration& duration);
 
 
 
 
-DateDuration NormalizeDurationWithoutTime(const Duration& duration);
+DateDuration ToDateDurationRecordWithoutTime(const Duration& duration);
 
 
 
 
-bool CombineDateAndNormalizedTimeDuration(JSContext* cx,
-                                          const DateDuration& date,
-                                          const NormalizedTimeDuration& time,
-                                          NormalizedDuration* result);
+bool CombineDateAndTimeDuration(JSContext* cx, const DateDuration& date,
+                                const TimeDuration& time,
+                                InternalDuration* result);
 
 
 
 
-NormalizedTimeDuration NormalizedTimeDurationFromEpochNanosecondsDifference(
+TimeDuration TimeDurationFromEpochNanosecondsDifference(
     const EpochNanoseconds& one, const EpochNanoseconds& two);
 
 
@@ -242,21 +228,21 @@ bool ToTemporalDuration(JSContext* cx, JS::Handle<JS::Value> item,
 
 
 
-Duration BalanceTimeDuration(const NormalizedTimeDuration& duration,
+Duration BalanceTimeDuration(const TimeDuration& duration,
                              TemporalUnit largestUnit);
 
 
 
 
-bool BalanceTimeDuration(JSContext* cx, const NormalizedTimeDuration& duration,
+bool BalanceTimeDuration(JSContext* cx, const TimeDuration& duration,
                          TemporalUnit largestUnit, Duration* result);
 
 
 
 
-NormalizedTimeDuration RoundTimeDuration(const NormalizedTimeDuration& duration,
-                                         Increment increment, TemporalUnit unit,
-                                         TemporalRoundingMode roundingMode);
+TimeDuration RoundTimeDuration(const TimeDuration& duration,
+                               Increment increment, TemporalUnit unit,
+                               TemporalRoundingMode roundingMode);
 
 struct RoundedRelativeDuration {
   Duration duration;
@@ -268,7 +254,7 @@ struct RoundedRelativeDuration {
 
 
 bool RoundRelativeDuration(
-    JSContext* cx, const NormalizedDuration& duration,
+    JSContext* cx, const InternalDuration& duration,
     const EpochNanoseconds& destEpochNs, const ISODateTime& dateTime,
     JS::Handle<TimeZoneValue> timeZone, JS::Handle<CalendarValue> calendar,
     TemporalUnit largestUnit, Increment increment, TemporalUnit smallestUnit,
@@ -277,8 +263,7 @@ bool RoundRelativeDuration(
 
 
 
-double DivideNormalizedTimeDuration(const NormalizedTimeDuration& duration,
-                                    TemporalUnit unit);
+double DivideTimeDuration(const TimeDuration& duration, TemporalUnit unit);
 
 } 
 

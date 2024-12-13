@@ -89,12 +89,12 @@ struct TimeRecord final {
 
 
 
-TimeRecord AddTime(const Time& time, const NormalizedTimeDuration& duration);
+TimeRecord AddTime(const Time& time, const TimeDuration& duration);
 
 
 
 
-NormalizedTimeDuration DifferenceTime(const Time& time1, const Time& time2);
+TimeDuration DifferenceTime(const Time& time1, const Time& time2);
 
 struct TemporalTimeLike final {
   double hour = 0;

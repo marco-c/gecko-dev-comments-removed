@@ -103,17 +103,16 @@ EpochNanoseconds RoundTemporalInstant(const EpochNanoseconds& ns,
 
 
 bool AddInstant(JSContext* cx, const EpochNanoseconds& epochNanoseconds,
-                const NormalizedTimeDuration& duration,
-                EpochNanoseconds* result);
+                const TimeDuration& duration, EpochNanoseconds* result);
 
 
 
 
-NormalizedTimeDuration DifferenceInstant(const EpochNanoseconds& ns1,
-                                         const EpochNanoseconds& ns2,
-                                         Increment roundingIncrement,
-                                         TemporalUnit smallestUnit,
-                                         TemporalRoundingMode roundingMode);
+TimeDuration DifferenceInstant(const EpochNanoseconds& ns1,
+                               const EpochNanoseconds& ns2,
+                               Increment roundingIncrement,
+                               TemporalUnit smallestUnit,
+                               TemporalRoundingMode roundingMode);
 
 } 
 
