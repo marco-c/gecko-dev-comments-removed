@@ -78,7 +78,7 @@ class CacheImpl {
   typedef LinkedList<RefPtr<T>> ListType;
 
   
-  static constexpr size_t kNumChains = BIG ? 499 : 17;
+  static constexpr size_t kNumChains = BIG ? 499 : 71;
 
  public:
   ~CacheImpl() {
@@ -356,9 +356,14 @@ class GlyphCache : public LinkedListElement<GlyphCache>,
       const IntRect& aBounds, const IntRect& aFullBounds, HashNumber aHash,
       const StrokeOptions* aOptions);
 
+  bool IsWhitespace(const GlyphBuffer& aBuffer) const;
+  void SetLastWhitespace(const GlyphBuffer& aBuffer);
+
  private:
   
   ScaledFont* mFont;
+  
+  Maybe<uint32_t> mLastWhitespace;
 };
 
 struct QuantizedPath {

@@ -2814,9 +2814,9 @@ HashNumber PathCacheEntry::HashPath(const QuantizedPath& aPath,
 static inline bool HasMatchingScale(const Matrix& aTransform1,
                                     const Matrix& aTransform2) {
   return FuzzyEqual(aTransform1._11, aTransform2._11) &&
+         FuzzyEqual(aTransform1._22, aTransform2._22) &&
          FuzzyEqual(aTransform1._12, aTransform2._12) &&
-         FuzzyEqual(aTransform1._21, aTransform2._21) &&
-         FuzzyEqual(aTransform1._22, aTransform2._22);
+         FuzzyEqual(aTransform1._21, aTransform2._21);
 }
 
 
@@ -4296,6 +4296,25 @@ static void ReleaseGlyphCache(void* aPtr) {
   delete static_cast<GlyphCache*>(aPtr);
 }
 
+
+bool GlyphCache::IsWhitespace(const GlyphBuffer& aBuffer) const {
+  if (!mLastWhitespace) {
+    return false;
+  }
+  uint32_t whitespace = *mLastWhitespace;
+  for (size_t i = 0; i < aBuffer.mNumGlyphs; ++i) {
+    if (aBuffer.mGlyphs[i].mIndex != whitespace) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+void GlyphCache::SetLastWhitespace(const GlyphBuffer& aBuffer) {
+  mLastWhitespace = Some(aBuffer.mGlyphs[0].mIndex);
+}
+
 void DrawTargetWebgl::SetPermitSubpixelAA(bool aPermitSubpixelAA) {
   DrawTarget::SetPermitSubpixelAA(aPermitSubpixelAA);
   mSkia->SetPermitSubpixelAA(aPermitSubpixelAA);
@@ -4370,6 +4389,21 @@ bool SharedContextWebgl::DrawGlyphsAccel(ScaledFont* aFont,
                                          const StrokeOptions* aStrokeOptions,
                                          bool aUseSubpixelAA) {
   
+  GlyphCache* cache =
+      static_cast<GlyphCache*>(aFont->GetUserData(&mGlyphCacheKey));
+  if (!cache) {
+    cache = new GlyphCache(aFont);
+    aFont->AddUserData(&mGlyphCacheKey, cache, ReleaseGlyphCache);
+    mGlyphCaches.insertFront(cache);
+  }
+
+  
+  
+  if (cache->IsWhitespace(aBuffer)) {
+    return true;
+  }
+
+  
   
   
   
@@ -4378,15 +4412,6 @@ bool SharedContextWebgl::DrawGlyphsAccel(ScaledFont* aFont,
   
   bool useBitmaps = !aStrokeOptions && aFont->MayUseBitmaps() &&
                     aOptions.mCompositionOp != CompositionOp::OP_CLEAR;
-
-  
-  GlyphCache* cache =
-      static_cast<GlyphCache*>(aFont->GetUserData(&mGlyphCacheKey));
-  if (!cache) {
-    cache = new GlyphCache(aFont);
-    aFont->AddUserData(&mGlyphCacheKey, cache, ReleaseGlyphCache);
-    mGlyphCaches.insertFront(cache);
-  }
   
   DeviceColor color = aOptions.mCompositionOp == CompositionOp::OP_CLEAR
                           ? DeviceColor(1, 1, 1, 1)
@@ -4432,6 +4457,9 @@ bool SharedContextWebgl::DrawGlyphsAccel(ScaledFont* aFont,
     Maybe<Rect> bounds = mCurrentTarget->mSkia->GetGlyphLocalBounds(
         aFont, aBuffer, aPattern, aStrokeOptions, aOptions);
     if (!bounds) {
+      
+      
+      cache->SetLastWhitespace(aBuffer);
       return true;
     }
     
