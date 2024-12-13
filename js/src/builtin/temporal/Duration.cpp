@@ -3410,12 +3410,6 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
     const auto& instant = zonedRelativeTo.instant();
 
     
-    PlainDateTime dateTime;
-    if (!GetPlainDateTimeFor(cx, timeZone, instant, &dateTime)) {
-      return false;
-    }
-
-    
     const auto& normalized1 = normOne;
 
     
@@ -3424,14 +3418,14 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
     
     Instant after1;
     if (!AddZonedDateTime(cx, instant, timeZone, calendar, normalized1,
-                          dateTime, &after1)) {
+                          &after1)) {
       return false;
     }
 
     
     Instant after2;
     if (!AddZonedDateTime(cx, instant, timeZone, calendar, normalized2,
-                          dateTime, &after2)) {
+                          &after2)) {
       return false;
     }
 
@@ -4039,33 +4033,6 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   }
 
   
-  mozilla::Maybe<const PlainDateTime&> precalculatedPlainDateTime{};
-
-  
-  bool plainDateTimeOrRelativeToWillBeUsed = largestUnit <= TemporalUnit::Day ||
-                                             calendarUnitsPresent ||
-                                             duration.days != 0;
-
-  
-  PlainDateTime relativeToDateTime;
-  if (zonedRelativeTo && plainDateTimeOrRelativeToWillBeUsed) {
-    
-    const auto& instant = zonedRelativeTo.instant();
-
-    
-    if (!GetPlainDateTimeFor(cx, zonedRelativeTo.timeZone(), instant,
-                             &relativeToDateTime)) {
-      return false;
-    }
-    precalculatedPlainDateTime =
-        mozilla::SomeRef<const PlainDateTime>(relativeToDateTime);
-
-    
-    
-    
-  }
-
-  
   auto normDuration = CreateNormalizedDurationRecord(duration);
 
   
@@ -4084,48 +4051,23 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     const auto& relativeInstant = relativeEpochNs;
 
     
-    if (precalculatedPlainDateTime) {
-      
-      Instant targetEpochNs;
-      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar,
-                            normDuration, *precalculatedPlainDateTime,
-                            &targetEpochNs)) {
-        return false;
-      }
+    Instant targetEpochNs;
+    if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar, normDuration,
+                          &targetEpochNs)) {
+      return false;
+    }
 
-      
-      if (!DifferenceZonedDateTimeWithRounding(
-              cx, relativeEpochNs, targetEpochNs, timeZone, calendar,
-              *precalculatedPlainDateTime,
-              {
-                  smallestUnit,
-                  largestUnit,
-                  roundingMode,
-                  roundingIncrement,
-              },
-              &roundResult)) {
-        return false;
-      }
-    } else {
-      
-      Instant targetEpochNs;
-      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar,
-                            normDuration, &targetEpochNs)) {
-        return false;
-      }
-
-      
-      if (!DifferenceZonedDateTimeWithRounding(cx, relativeEpochNs,
-                                               targetEpochNs,
-                                               {
-                                                   smallestUnit,
-                                                   largestUnit,
-                                                   roundingMode,
-                                                   roundingIncrement,
-                                               },
-                                               &roundResult)) {
-        return false;
-      }
+    
+    if (!DifferenceZonedDateTimeWithRounding(cx, relativeEpochNs, targetEpochNs,
+                                             timeZone, calendar,
+                                             {
+                                                 smallestUnit,
+                                                 largestUnit,
+                                                 roundingMode,
+                                                 roundingIncrement,
+                                             },
+                                             &roundResult)) {
+      return false;
     }
   } else if (plainRelativeTo) {
     
@@ -4273,32 +4215,6 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
   }
 
   
-  mozilla::Maybe<const PlainDateTime&> precalculatedPlainDateTime{};
-
-  
-  bool plainDateTimeOrRelativeToWillBeUsed =
-      unit <= TemporalUnit::Day || duration.toDateDuration() != DateDuration{};
-
-  
-  PlainDateTime relativeToDateTime;
-  if (zonedRelativeTo && plainDateTimeOrRelativeToWillBeUsed) {
-    
-    const auto& instant = zonedRelativeTo.instant();
-
-    
-    if (!GetPlainDateTimeFor(cx, zonedRelativeTo.timeZone(), instant,
-                             &relativeToDateTime)) {
-      return false;
-    }
-    precalculatedPlainDateTime =
-        mozilla::SomeRef<const PlainDateTime>(relativeToDateTime);
-
-    
-    
-    
-  }
-
-  
   auto normDuration = CreateNormalizedDurationRecord(duration);
 
   
@@ -4318,29 +4234,16 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
 
     
     Instant targetEpochNs;
-    if (precalculatedPlainDateTime) {
-      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar,
-                            normDuration, *precalculatedPlainDateTime,
-                            &targetEpochNs)) {
-        return false;
-      }
-    } else {
-      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar,
-                            normDuration, &targetEpochNs)) {
-        return false;
-      }
+    if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar, normDuration,
+                          &targetEpochNs)) {
+      return false;
     }
 
     
-    if (unit <= TemporalUnit::Day) {
-      if (!DifferenceZonedDateTimeWithRounding(
-              cx, relativeEpochNs, targetEpochNs, timeZone, calendar,
-              *precalculatedPlainDateTime, unit, &total)) {
-        return false;
-      }
-    } else {
-      total = DifferenceZonedDateTimeWithRounding(targetEpochNs,
-                                                  relativeEpochNs, unit);
+    if (!DifferenceZonedDateTimeWithRounding(cx, relativeEpochNs, targetEpochNs,
+                                             timeZone, calendar, unit,
+                                             &total)) {
+      return false;
     }
   } else if (plainRelativeTo) {
     

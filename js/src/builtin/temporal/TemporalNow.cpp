@@ -220,7 +220,7 @@ static bool SystemDateTime(JSContext* cx, Handle<Value> timeZoneLike,
   }
 
   
-  return GetPlainDateTimeFor(cx, timeZone, instant, dateTime);
+  return GetISODateTimeFor(cx, timeZone, instant, dateTime);
 }
 
 

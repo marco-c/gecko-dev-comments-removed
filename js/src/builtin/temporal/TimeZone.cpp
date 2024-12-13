@@ -780,23 +780,6 @@ JSString* js::temporal::FormatUTCOffsetNanoseconds(JSContext* cx,
 
 
 
-JSString* js::temporal::GetOffsetStringFor(JSContext* cx,
-                                           Handle<TimeZoneValue> timeZone,
-                                           const Instant& instant) {
-  
-  int64_t offsetNanoseconds;
-  if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNanoseconds)) {
-    return nullptr;
-  }
-  MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
-
-  
-  return FormatUTCOffsetNanoseconds(cx, offsetNanoseconds);
-}
-
-
-
-
 bool js::temporal::TimeZoneEquals(const TimeZoneValue& one,
                                   const TimeZoneValue& two) {
   
@@ -886,13 +869,12 @@ static PlainDateTime BalanceISODateTime(const PlainDateTime& dateTime,
 
 
 
-
-PlainDateTime js::temporal::GetPlainDateTimeFor(const Instant& instant,
-                                                int64_t offsetNanoseconds) {
-  
-
-  
+PlainDateTime js::temporal::GetISODateTimeFor(const Instant& instant,
+                                              int64_t offsetNanoseconds) {
+  MOZ_ASSERT(IsValidEpochInstant(instant));
   MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
+
+  
 
   
 
@@ -903,18 +885,16 @@ PlainDateTime js::temporal::GetPlainDateTimeFor(const Instant& instant,
   auto balanced = BalanceISODateTime(dateTime, offsetNanoseconds);
   MOZ_ASSERT(ISODateTimeWithinLimits(balanced));
 
-  
   return balanced;
 }
 
 
 
 
-
-bool js::temporal::GetPlainDateTimeFor(JSContext* cx,
-                                       Handle<TimeZoneValue> timeZone,
-                                       const Instant& instant,
-                                       PlainDateTime* result) {
+bool js::temporal::GetISODateTimeFor(JSContext* cx,
+                                     Handle<TimeZoneValue> timeZone,
+                                     const Instant& instant,
+                                     PlainDateTime* result) {
   MOZ_ASSERT(IsValidEpochInstant(instant));
 
   
@@ -922,12 +902,10 @@ bool js::temporal::GetPlainDateTimeFor(JSContext* cx,
   if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNanoseconds)) {
     return false;
   }
-
-  
   MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
 
   
-  *result = GetPlainDateTimeFor(instant, offsetNanoseconds);
+  *result = GetISODateTimeFor(instant, offsetNanoseconds);
   return true;
 }
 

@@ -123,7 +123,6 @@ ZonedDateTimeObject* CreateTemporalZonedDateTime(
 
 
 
-
 bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
                       JS::Handle<TimeZoneValue> timeZone,
                       JS::Handle<CalendarValue> calendar,
@@ -133,30 +132,10 @@ bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
 
 
 
-bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
-                      JS::Handle<TimeZoneValue> timeZone,
-                      JS::Handle<CalendarValue> calendar,
-                      const NormalizedDuration& duration,
-                      const PlainDateTime& dateTime, Instant* result);
-
-
-
-
-
-
-bool DifferenceZonedDateTimeWithRounding(
-    JSContext* cx, const Instant& ns1, const Instant& ns2,
-    JS::Handle<TimeZoneValue> timeZone, JS::Handle<CalendarValue> calendar,
-    const PlainDateTime& precalculatedPlainDateTime,
-    const DifferenceSettings& settings, Duration* result);
-
-
-
-
-
-
 bool DifferenceZonedDateTimeWithRounding(JSContext* cx, const Instant& ns1,
                                          const Instant& ns2,
+                                         JS::Handle<TimeZoneValue> timeZone,
+                                         JS::Handle<CalendarValue> calendar,
                                          const DifferenceSettings& settings,
                                          Duration* result);
 
@@ -164,21 +143,11 @@ bool DifferenceZonedDateTimeWithRounding(JSContext* cx, const Instant& ns1,
 
 
 
-
-bool DifferenceZonedDateTimeWithRounding(
-    JSContext* cx, const Instant& ns1, const Instant& ns2,
-    JS::Handle<TimeZoneValue> timeZone, JS::Handle<CalendarValue> calendar,
-    const PlainDateTime& precalculatedPlainDateTime, TemporalUnit unit,
-    double* result);
-
-
-
-
-
-
-double DifferenceZonedDateTimeWithRounding(const Instant& ns1,
-                                           const Instant& ns2,
-                                           TemporalUnit unit);
+bool DifferenceZonedDateTimeWithRounding(JSContext* cx, const Instant& ns1,
+                                         const Instant& ns2,
+                                         JS::Handle<TimeZoneValue> timeZone,
+                                         JS::Handle<CalendarValue> calendar,
+                                         TemporalUnit unit, double* result);
 
 enum class OffsetBehaviour { Option, Exact, Wall };
 

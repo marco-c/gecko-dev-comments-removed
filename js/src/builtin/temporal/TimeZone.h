@@ -276,16 +276,14 @@ bool TimeZoneEquals(const TimeZoneValue& one, const TimeZoneValue& two);
 
 
 
-
-PlainDateTime GetPlainDateTimeFor(const Instant& instant,
-                                  int64_t offsetNanoseconds);
-
+PlainDateTime GetISODateTimeFor(const Instant& instant,
+                                int64_t offsetNanoseconds);
 
 
 
 
-bool GetPlainDateTimeFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
-                         const Instant& instant, PlainDateTime* result);
+bool GetISODateTimeFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
+                       const Instant& instant, PlainDateTime* result);
 
 
 
@@ -298,12 +296,6 @@ bool GetInstantFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
 
 
 JSString* FormatUTCOffsetNanoseconds(JSContext* cx, int64_t offsetNanoseconds);
-
-
-
-
-JSString* GetOffsetStringFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
-                             const Instant& instant);
 
 
 
