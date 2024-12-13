@@ -40,6 +40,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.List;
 import java.util.Map;
+import org.mozilla.gecko.Clipboard;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoNetworkManager;
@@ -183,6 +184,14 @@ public final class GeckoRuntime implements Parcelable {
       
       GeckoAppShell.setIs24HourFormat(
           DateFormat.is24HourFormat(GeckoAppShell.getApplicationContext()));
+
+      
+      
+      
+      ThreadUtils.sGeckoHandler.post(
+          () -> {
+            Clipboard.updateSequenceNumber(GeckoAppShell.getApplicationContext());
+          });
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
@@ -194,6 +203,7 @@ public final class GeckoRuntime implements Parcelable {
       
       GeckoNetworkManager.getInstance().stop();
       GeckoThread.onPause();
+      Clipboard.onPause();
     }
   }
 

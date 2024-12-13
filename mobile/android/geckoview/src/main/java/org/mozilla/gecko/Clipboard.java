@@ -29,6 +29,7 @@ public final class Clipboard {
 
   private static OnPrimaryClipChangedListener sClipboardChangedListener = null;
   private static final AtomicLong sClipboardSequenceNumber = new AtomicLong();
+  private static final AtomicLong sClipboardTimestamp = new AtomicLong();
 
   private Clipboard() {}
 
@@ -169,10 +170,17 @@ public final class Clipboard {
     
     final ClipboardManager cm =
         (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-    if (isPrivateData && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      final PersistableBundle extras = new PersistableBundle();
-      extras.putBoolean("android.content.extra.IS_SENSITIVE", true);
-      clipData.getDescription().setExtras(extras);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      if (isPrivateData || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        final PersistableBundle extras = new PersistableBundle();
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+          extras.putLong("org.mozilla.gecko.clipboard", System.currentTimeMillis());
+        }
+        if (isPrivateData) {
+          extras.putBoolean("android.content.extra.IS_SENSITIVE", true);
+        }
+        clipData.getDescription().setExtras(extras);
+      }
     }
     try {
       cm.setPrimaryClip(clipData);
@@ -185,6 +193,7 @@ public final class Clipboard {
       Log.e(LOGTAG, "Couldn't set clip data to clipboard", e);
       return false;
     }
+    updateSequenceNumber(context);
     return true;
   }
 
@@ -265,7 +274,7 @@ public final class Clipboard {
         new OnPrimaryClipChangedListener() {
           @Override
           public void onPrimaryClipChanged() {
-            Clipboard.sClipboardSequenceNumber.incrementAndGet();
+            Clipboard.updateSequenceNumber(GeckoAppShell.getApplicationContext());
           }
         };
 
@@ -285,6 +294,55 @@ public final class Clipboard {
         (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
     cm.removePrimaryClipChangedListener(sClipboardChangedListener);
     sClipboardChangedListener = null;
+  }
+
+  private static long getClipboardTimestamp(final Context context) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+      return 0;
+    }
+
+    final ClipboardManager cm =
+        (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+    final ClipDescription description = cm.getPrimaryClipDescription();
+    if (description == null) {
+      return 0;
+    }
+
+    
+    
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      return description.getTimestamp();
+    }
+
+    final PersistableBundle extras = description.getExtras();
+    if (extras == null) {
+      return 0;
+    }
+
+    return extras.getLong("org.mozilla.gecko.clipboard", 0);
+  }
+
+  public static void updateSequenceNumber(final Context context) {
+    final long timestamp = getClipboardTimestamp(context);
+    if (timestamp != 0) {
+      if (timestamp == sClipboardTimestamp.get()) {
+        return;
+      }
+      sClipboardTimestamp.set(timestamp);
+    }
+
+    sClipboardSequenceNumber.incrementAndGet();
+  }
+
+  public static void onPause() {
+    
+    
+    
+    
+    
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      sClipboardTimestamp.set(0);
+    }
   }
 
   
