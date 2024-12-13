@@ -151,7 +151,7 @@ void jit::AttachFinishedCompilations(JSContext* cx) {
   MOZ_ASSERT(!rt->jitRuntime()->numFinishedOffThreadTasks());
 }
 
-static void FreeIonCompileTask(IonCompileTask* task) {
+static UniquePtr<LifoAlloc> FreeIonCompileTask(IonCompileTask* task) {
   
   
   task->mirGen().tracker.reset();
@@ -161,7 +161,10 @@ static void FreeIonCompileTask(IonCompileTask* task) {
   
   
   js_delete(task->backgroundCodegen());
-  js_delete(task->alloc().lifoAlloc());
+
+  
+  
+  return UniquePtr<LifoAlloc>(task->alloc().lifoAlloc());
 }
 
 void jit::FreeIonCompileTasks(const IonFreeCompileTasks& tasks) {
@@ -169,6 +172,24 @@ void jit::FreeIonCompileTasks(const IonFreeCompileTasks& tasks) {
   for (auto* task : tasks) {
     FreeIonCompileTask(task);
   }
+}
+
+UniquePtr<LifoAlloc> jit::FreeIonCompileTaskAndReuseLifoAlloc(
+    IonCompileTask* task) {
+  UniquePtr<LifoAlloc> lifoAlloc = FreeIonCompileTask(task);
+
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!lifoAlloc->isHuge());
+  TempAllocator* tempAlloc = &task->alloc();
+  tempAlloc->~TempAllocator();
+  lifoAlloc->releaseAll();
+  return lifoAlloc;
 }
 
 void IonFreeTask::runHelperThreadTask(AutoLockHelperThreadState& locked) {
