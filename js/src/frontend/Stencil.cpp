@@ -2957,59 +2957,6 @@ bool CompilationStencil::prepareForInstantiate(
                            stencil.scopeData.size());
 }
 
-bool CompilationStencil::serializeStencils(JSContext* cx,
-                                           CompilationInput& input,
-                                           JS::TranscodeBuffer& buf,
-                                           bool* succeededOut) const {
-  if (succeededOut) {
-    *succeededOut = false;
-  }
-  AutoReportFrontendContext fc(cx);
-  XDRStencilEncoder encoder(&fc, buf);
-
-  XDRResult res = encoder.codeStencil(*this);
-  if (res.isErr()) {
-    if (JS::IsTranscodeFailureResult(res.unwrapErr())) {
-      buf.clear();
-      return true;
-    }
-    MOZ_ASSERT(res.unwrapErr() == JS::TranscodeResult::Throw);
-
-    return false;
-  }
-
-  if (succeededOut) {
-    *succeededOut = true;
-  }
-  return true;
-}
-
-bool CompilationStencil::deserializeStencils(
-    FrontendContext* fc, const JS::ReadOnlyCompileOptions& compileOptions,
-    const JS::TranscodeRange& range, bool* succeededOut) {
-  if (succeededOut) {
-    *succeededOut = false;
-  }
-  MOZ_ASSERT(parserAtomData.empty());
-  XDRStencilDecoder decoder(fc, range);
-  JS::DecodeOptions options(compileOptions);
-
-  XDRResult res = decoder.codeStencil(options, *this);
-  if (res.isErr()) {
-    if (JS::IsTranscodeFailureResult(res.unwrapErr())) {
-      return true;
-    }
-    MOZ_ASSERT(res.unwrapErr() == JS::TranscodeResult::Throw);
-
-    return false;
-  }
-
-  if (succeededOut) {
-    *succeededOut = true;
-  }
-  return true;
-}
-
 ExtensibleCompilationStencil::ExtensibleCompilationStencil(ScriptSource* source)
     : alloc(CompilationStencil::LifoAllocChunkSize, js::BackgroundMallocArena),
       source(source),
@@ -5511,39 +5458,6 @@ void JS::StencilRelease(JS::Stencil* stencil) {
   if (--stencil->refCount == 0) {
     js_delete(stencil);
   }
-}
-
-template <typename CharT>
-static already_AddRefed<JS::Stencil> CompileGlobalScriptToStencilImpl(
-    JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-    JS::SourceText<CharT>& srcBuf) {
-  ScopeKind scopeKind =
-      options.nonSyntacticScope ? ScopeKind::NonSyntactic : ScopeKind::Global;
-
-  AutoReportFrontendContext fc(cx);
-  NoScopeBindingCache scopeCache;
-  Rooted<CompilationInput> input(cx, CompilationInput(options));
-  RefPtr<JS::Stencil> stencil = js::frontend::CompileGlobalScriptToStencil(
-      cx, &fc, cx->tempLifoAlloc(), input.get(), &scopeCache, srcBuf,
-      scopeKind);
-  if (!stencil) {
-    return nullptr;
-  }
-
-  
-  return stencil.forget();
-}
-
-already_AddRefed<JS::Stencil> JS::CompileGlobalScriptToStencil(
-    JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-    JS::SourceText<mozilla::Utf8Unit>& srcBuf) {
-  return CompileGlobalScriptToStencilImpl(cx, options, srcBuf);
-}
-
-already_AddRefed<JS::Stencil> JS::CompileGlobalScriptToStencil(
-    JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-    JS::SourceText<char16_t>& srcBuf) {
-  return CompileGlobalScriptToStencilImpl(cx, options, srcBuf);
 }
 
 template <typename CharT>
