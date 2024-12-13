@@ -1992,16 +1992,6 @@ pref("nimbus.debug", false);
 pref("nimbus.validation.enabled", true);
 
 
-
-
-
-#if defined(MOZ_ARTIFACT_BUILDS)
-  pref("nimbus.telemetry.targetingContextEnabled", false);
-#else
-  pref("nimbus.telemetry.targetingContextEnabled", true);
-#endif
-
-
 pref("nimbus.qa.pref-1", "default");
 pref("nimbus.qa.pref-2", "default");
 
