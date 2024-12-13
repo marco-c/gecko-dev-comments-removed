@@ -102,6 +102,9 @@ def is_skiplisted(dep):
     if dep.startswith("icu"):
         return True
     
+    if dep.startswith(("dxcompiler", " dxil")):
+        return True
+    
     if substs.get("WIN32_REDIST_DIR"):
         for runtime in [
             "MSVC_C_RUNTIME_DLL",
