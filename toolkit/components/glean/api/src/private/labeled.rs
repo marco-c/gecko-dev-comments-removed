@@ -286,7 +286,10 @@ mod private {
                     
                     LabeledQuantityMetric::Child(crate::private::quantity::QuantityMetricIpc)
                 } else {
-                    LabeledQuantityMetric::Parent(metric.get(label))
+                    LabeledQuantityMetric::Parent {
+                        id,
+                        inner: metric.get(label),
+                    }
                 };
                 Arc::new(submetric)
             });
