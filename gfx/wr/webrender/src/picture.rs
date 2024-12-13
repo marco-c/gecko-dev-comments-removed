@@ -3042,17 +3042,13 @@ impl TileCacheInstance {
         is_root_tile_cache: bool,
         surfaces: &mut [SurfaceInfo],
         profile: &mut TransactionProfile,
-    ) {
+    ) -> VisibilityState {
         use crate::picture::SurfacePromotionFailure::*;
 
         
         profile_scope!("update_prim_dependencies");
         let prim_surface_index = surface_stack.last().unwrap().1;
         let prim_clip_chain = &prim_instance.vis.clip_chain;
-
-        
-        let surface = &mut surfaces[prim_surface_index.0];
-        surface.clipped_local_rect = surface.clipped_local_rect.union(&prim_clip_chain.pic_coverage_rect);
 
         
         
@@ -3099,7 +3095,7 @@ impl TileCacheInstance {
                         ).cast_unit()
                     }
                     None => {
-                        return;
+                        return VisibilityState::Culled;
                     }
                 };
 
@@ -3115,7 +3111,7 @@ impl TileCacheInstance {
         
         
         if p0.x == p1.x || p0.y == p1.y {
-            return;
+            return VisibilityState::Culled;
         }
 
         
@@ -3297,9 +3293,8 @@ impl TileCacheInstance {
                     *compositor_surface_kind = kind;
 
                     if kind == CompositorSurfaceKind::Overlay {
-                        prim_instance.vis.state = VisibilityState::Culled;
                         profile.inc(profiler::COMPOSITOR_SURFACE_OVERLAYS);
-                        return;
+                        return VisibilityState::Culled;
                     }
 
                     assert!(kind == CompositorSurfaceKind::Blit, "Image prims should either be overlays or blits.");
@@ -3417,11 +3412,10 @@ impl TileCacheInstance {
                     *compositor_surface_kind = kind;
                     if kind == CompositorSurfaceKind::Overlay {
                         profile.inc(profiler::COMPOSITOR_SURFACE_OVERLAYS);
-                        prim_instance.vis.state = VisibilityState::Culled;
-                        return;
-                    } else {
-                        profile.inc(profiler::COMPOSITOR_SURFACE_UNDERLAYS);
+                        return VisibilityState::Culled;
                     }
+
+                    profile.inc(profiler::COMPOSITOR_SURFACE_UNDERLAYS);
                 } else {
                     
                     *compositor_surface_kind = CompositorSurfaceKind::Blit;
@@ -3680,10 +3674,10 @@ impl TileCacheInstance {
             }
         }
 
-        prim_instance.vis.state = VisibilityState::Visible {
+        VisibilityState::Visible {
             vis_flags,
             sub_slice_index: SubSliceIndex::new(sub_slice_index),
-        };
+        }
     }
 
     
