@@ -18,24 +18,51 @@
 namespace js {
 
 template <JSProtoKey ProtoKey>
-[[nodiscard]] static bool IsOptimizableInitForSet(JSContext* cx,
-                                                  JSNative addNative,
-                                                  HandleObject setObject,
-                                                  HandleValue iterable,
-                                                  bool* optimized) {
+[[nodiscard]] static bool IsOptimizableInitForMapOrSet(
+    JSContext* cx, JSNative addOrSetNative,
+    Handle<NativeObject*> mapOrSetObject, Handle<Value> iterable,
+    bool* optimized) {
+  constexpr bool isMap = ProtoKey == JSProto_Map;
+  constexpr bool isSet = ProtoKey == JSProto_Set || ProtoKey == JSProto_WeakSet;
+  static_assert(isMap != isSet, "must be either a Map or a Set");
+
   MOZ_ASSERT(!*optimized);
 
   if (!iterable.isObject()) {
     return true;
   }
 
-  RootedObject array(cx, &iterable.toObject());
-  if (!IsPackedArray(array)) {
+  if (!IsPackedArray(&iterable.toObject())) {
     return true;
+  }
+  Rooted<ArrayObject*> array(cx, &iterable.toObject().as<ArrayObject>());
+
+  
+  
+  
+  
+  
+  
+  if constexpr (isMap) {
+    size_t len = array->length();
+    static constexpr size_t MaxLength = 100;
+    if (len > MaxLength) {
+      return true;
+    }
+    for (size_t i = 0; i < len; i++) {
+      Value elem = array->getDenseElement(i);
+      if (!elem.isObject()) {
+        return true;
+      }
+      JSObject* obj = &elem.toObject();
+      if (!IsPackedArray(obj) || obj->as<ArrayObject>().length() < 2) {
+        return true;
+      }
+    }
   }
 
   
-  JSObject* proto = setObject->staticPrototype();
+  JSObject* proto = mapOrSetObject->staticPrototype();
   MOZ_ASSERT(proto);
   if (proto != cx->global()->maybeGetPrototype(ProtoKey)) {
     return true;
@@ -43,14 +70,16 @@ template <JSProtoKey ProtoKey>
 
   
   auto* nproto = &proto->as<NativeObject>();
-  mozilla::Maybe<PropertyInfo> addProp = nproto->lookup(cx, cx->names().add);
-  if (addProp.isNothing() || !addProp->isDataProperty()) {
+  PropertyName* propName = isSet ? cx->names().add : cx->names().set;
+  mozilla::Maybe<PropertyInfo> prop = nproto->lookup(cx, propName);
+  if (prop.isNothing() || !prop->isDataProperty()) {
     return true;
   }
 
   
-  Value propVal = nproto->getSlot(addProp->slot());
-  if (!IsNativeFunction(propVal, addNative)) {
+  
+  Value propVal = nproto->getSlot(prop->slot());
+  if (!IsNativeFunction(propVal, addOrSetNative)) {
     return true;
   }
 
@@ -59,7 +88,7 @@ template <JSProtoKey ProtoKey>
     return false;
   }
 
-  return stubChain->tryOptimizeArray(cx, array.as<ArrayObject>(), optimized);
+  return stubChain->tryOptimizeArray(cx, array, optimized);
 }
 
 }  
