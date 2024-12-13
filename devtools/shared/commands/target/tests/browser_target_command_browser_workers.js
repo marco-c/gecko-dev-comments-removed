@@ -34,8 +34,12 @@ add_task(async function () {
   await targetCommand.startListening();
 
   
+  
+  await waitFor(() => targetCommand.getAllTargets([TYPES.SHARED_WORKER]).some(target => target.url == CHROME_WORKER_URL + "#shared-worker"));
+
+  
   info("Check that getAllTargets returned the expected targets");
-  const workers = await targetCommand.getAllTargets([TYPES.WORKER]);
+  const workers = targetCommand.getAllTargets([TYPES.WORKER]);
   const hasWorker = workers.find(workerTarget => {
     return workerTarget.url == CHROME_WORKER_URL + "#simple-worker";
   });
