@@ -1126,6 +1126,10 @@ class TargetCommand extends EventEmitter {
 
 
   selectTarget(targetFront) {
+    
+    if (targetFront.isDestroyedOrBeingDestroyed()) {
+      return;
+    }
     return this._onTargetSelected(targetFront);
   }
 
