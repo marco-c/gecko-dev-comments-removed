@@ -463,9 +463,6 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   IonPerfSpewer perfSpewer_;
 
   
-  uint32_t zoneStubsToReadBarrier_;
-
-  
   mozilla::TimeDuration compileTime_;
 
 #ifdef FUZZING_JS_FUZZILLI

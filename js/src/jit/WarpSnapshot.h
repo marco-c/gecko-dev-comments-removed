@@ -14,6 +14,7 @@
 #include "gc/Policy.h"
 #include "jit/JitAllocPolicy.h"
 #include "jit/JitContext.h"
+#include "jit/JitZone.h"
 #include "jit/TypeData.h"
 #include "vm/EnvironmentObject.h"
 #include "vm/FunctionFlags.h"  
@@ -554,11 +555,16 @@ class WarpBailoutInfo {
 
 using WarpScriptSnapshotList = mozilla::LinkedList<WarpScriptSnapshot>;
 
+using WarpZoneStubsSnapshot = JitZone::Stubs<JitCode*>;
+
 
 
 class WarpSnapshot : public TempObject {
   
   WarpScriptSnapshotList scriptSnapshots_;
+
+  
+  const WarpZoneStubsSnapshot zoneStubs_;
 
   
   
@@ -585,11 +591,17 @@ class WarpSnapshot : public TempObject {
  public:
   explicit WarpSnapshot(JSContext* cx, TempAllocator& alloc,
                         WarpScriptSnapshotList&& scriptSnapshots,
+                        const WarpZoneStubsSnapshot& zoneStubs,
                         const WarpBailoutInfo& bailoutInfo,
                         bool recordWarmUpCount);
 
   WarpScriptSnapshot* rootScript() { return scriptSnapshots_.getFirst(); }
   const WarpScriptSnapshotList& scripts() const { return scriptSnapshots_; }
+
+  JitCode* getZoneStub(JitZone::StubKind kind) const {
+    MOZ_ASSERT(zoneStubs_[kind]);
+    return zoneStubs_[kind];
+  }
 
   GlobalLexicalEnvironmentObject* globalLexicalEnv() const {
     return globalLexicalEnv_;
