@@ -39,22 +39,39 @@ already_AddRefed<Worker> Worker::Constructor(
   nsCOMPtr<nsIGlobalObject> globalObject =
       do_QueryInterface(aGlobal.GetAsSupports());
 
-  if (globalObject->GetAsInnerWindow() &&
-      !globalObject->GetAsInnerWindow()->IsCurrentInnerWindow()) {
+  nsPIDOMWindowInner* innerWindow = globalObject->GetAsInnerWindow();
+  if (innerWindow && !innerWindow->IsCurrentInnerWindow()) {
     aRv.ThrowInvalidStateError(
         "Cannot create worker for a going to be discarded document");
     return nullptr;
   }
 
-  constexpr nsLiteralString sink = u"Worker constructor"_ns;
-  Maybe<nsAutoString> compliantStringHolder;
-  const nsAString* compliantString =
-      TrustedTypeUtils::GetTrustedTypesCompliantString(
-          aScriptURL, sink, kTrustedTypesOnlySinkGroup, *globalObject,
-          compliantStringHolder, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
+  
+  
+  
+  
+  const nsAString* compliantString = nullptr;
+  bool performTrustedTypeConversion = innerWindow;
+  if (!performTrustedTypeConversion) {
+    if (JSObject* globalJSObject = globalObject->GetGlobalJSObject()) {
+      performTrustedTypeConversion = IsWorkerGlobal(globalJSObject);
+    }
   }
+  if (performTrustedTypeConversion) {
+    constexpr nsLiteralString sink = u"Worker constructor"_ns;
+    Maybe<nsAutoString> compliantStringHolder;
+    compliantString = TrustedTypeUtils::GetTrustedTypesCompliantString(
+        aScriptURL, sink, kTrustedTypesOnlySinkGroup, *globalObject,
+        compliantStringHolder, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+  } else {
+    compliantString = aScriptURL.IsUSVString()
+                          ? &aScriptURL.GetAsUSVString()
+                          : &aScriptURL.GetAsTrustedScriptURL().mData;
+  }
+  MOZ_ASSERT(compliantString);
 
   RefPtr<WorkerPrivate> workerPrivate = WorkerPrivate::Constructor(
       cx, *compliantString, false , WorkerKindDedicated,
