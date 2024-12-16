@@ -33,7 +33,7 @@ add_task(async function () {
   
   await resume(dbg);
   await waitForRequestsToSettle(dbg);
-  await removeTab(gBrowser.selectedTab);
+  await closeTabAndToolbox();
 });
 
 
@@ -67,7 +67,8 @@ add_task(async function () {
 
   await checkAdditionalThreadCount(dbg, 0);
   await waitForRequestsToSettle(dbg);
-  await removeTab(gBrowser.selectedTab);
+
+  await closeTabAndToolbox();
 });
 
 
@@ -162,7 +163,8 @@ add_task(async function () {
 
   await checkAdditionalThreadCount(dbg, 0);
   await waitForRequestsToSettle(dbg);
-  await removeTab(gBrowser.selectedTab);
+
+  await closeTabAndToolbox();
 });
 
 async function checkWorkerStatus(_dbg, _status) {
