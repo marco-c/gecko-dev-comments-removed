@@ -954,7 +954,7 @@ impl<'a> SceneBuilder<'a> {
                             
                             SnapshotInfo {
                                 area: snapshot.area.translate(info.origin.to_vector()),
-                                key: snapshot.key,
+                                .. snapshot
                             }
                         });
 
