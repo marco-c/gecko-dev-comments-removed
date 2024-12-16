@@ -1251,6 +1251,13 @@ MockAddon.prototype = {
     this.seen = true;
   },
 
+  updateBlocklistState() {
+    
+    
+    
+    
+  },
+
   _updateActiveState(currentActive, newActive) {
     if (currentActive == newActive) {
       return;

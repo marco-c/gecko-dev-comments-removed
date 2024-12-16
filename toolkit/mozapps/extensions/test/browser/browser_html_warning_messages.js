@@ -5,7 +5,8 @@
 "use strict";
 
 let gProvider;
-const { STATE_BLOCKED, STATE_SOFTBLOCKED } = Ci.nsIBlocklistService;
+const { STATE_NOT_BLOCKED, STATE_BLOCKED, STATE_SOFTBLOCKED } =
+  Ci.nsIBlocklistService;
 
 const appVersion = Services.appinfo.version;
 const SUPPORT_URL = Services.urlFormatter.formatURL(
@@ -16,60 +17,67 @@ add_setup(async function () {
   gProvider = new MockProvider();
 });
 
-async function checkMessageState(id, addonType, expected) {
-  async function checkAddonCard() {
-    let card = doc.querySelector(`addon-card[addon-id="${id}"]`);
-    let messageBar = card.querySelector(".addon-card-message");
+async function checkAddonCard(doc, id, expected, followLink = false) {
+  let card = doc.querySelector(`addon-card[addon-id="${id}"]`);
+  let messageBar = card.querySelector(".addon-card-message");
 
-    if (!expected) {
-      ok(messageBar.hidden, "message is hidden");
-    } else {
-      const { linkUrl, linkIsSumo, text, type } = expected;
+  if (!expected) {
+    ok(messageBar.hidden, `messagebar is hidden (addon-card ${id})`);
+  } else {
+    const { linkUrl, linkIsSumo, text, type } = expected;
 
-      await BrowserTestUtils.waitForMutationCondition(
-        messageBar,
-        { attributes: true },
-        () => !messageBar.hidden
+    await BrowserTestUtils.waitForMutationCondition(
+      messageBar,
+      { attributes: true },
+      () => !messageBar.hidden && messageBar.getAttribute("type") === type
+    );
+    ok(!messageBar.hidden, `messagebar is visible (addon-card ${id})`);
+
+    is(messageBar.getAttribute("type"), type, "message has the right type");
+    Assert.deepEqual(
+      document.l10n.getAttributes(messageBar),
+      { id: text.id, args: text.args },
+      "message l10n data is set correctly"
+    );
+
+    const link = messageBar.querySelector(
+      linkIsSumo ? `a[slot=support-link]` : `button[slot=actions]`
+    );
+
+    if (linkUrl) {
+      ok(link, "Link element found");
+      ok(BrowserTestUtils.isVisible(link), "Link is visible");
+      is(
+        link.getAttribute("data-l10n-id"),
+        linkIsSumo ? "moz-support-link-text" : text.linkId,
+        "link l10n id is correct"
       );
-      ok(!messageBar.hidden, "message is visible");
-
-      is(messageBar.getAttribute("type"), type, "message has the right type");
-      Assert.deepEqual(
-        document.l10n.getAttributes(messageBar),
-        { id: text.id, args: text.args },
-        "message l10n data is set correctly"
-      );
-
-      const link = messageBar.querySelector(
-        linkIsSumo ? `a[slot=support-link]` : `button[slot=actions]`
-      );
-
-      if (linkUrl) {
-        ok(link, "Link element found");
-        ok(BrowserTestUtils.isVisible(link), "Link is visible");
-        is(
-          link.getAttribute("data-l10n-id"),
-          linkIsSumo ? "moz-support-link-text" : text.linkId,
-          "link l10n id is correct"
-        );
+      if (followLink) {
         const newTab = BrowserTestUtils.waitForNewTab(gBrowser, linkUrl);
         link.click();
         BrowserTestUtils.removeTab(await newTab);
       } else {
-        ok(!link, "Expect no slotted link element");
-        is(messageBar.childElementCount, 0, "Expect no child element");
+        
+        
+        const actualLinkUrl = link.href ?? link.getAttribute("url");
+        is(actualLinkUrl, linkUrl, "link should have the expected url");
       }
+    } else {
+      ok(!link, "Expect no slotted link element");
+      is(messageBar.childElementCount, 0, "Expect no child element");
     }
-
-    return card;
   }
 
+  return card;
+}
+
+async function checkMessageState(id, addonType, expected) {
   let win = await loadInitialView(addonType);
   let doc = win.document;
 
   
   ok(doc.querySelector("addon-list"), "this is a list view");
-  let card = await checkAddonCard();
+  let card = await checkAddonCard(doc, id, expected, true);
 
   
   let loaded = waitForViewLoad(win);
@@ -78,7 +86,7 @@ async function checkMessageState(id, addonType, expected) {
 
   
   ok(!doc.querySelector("addon-list"), "this isn't a list view");
-  await checkAddonCard();
+  await checkAddonCard(doc, id, expected, true);
 
   await closeView(win);
 }
@@ -353,4 +361,178 @@ add_task(async function testPluginInstalling() {
     text: { id: "details-notification-gmp-pending2", args: { name } },
     type: "warning",
   });
+});
+
+add_task(async function testCardRefreshedOnBlocklistStateChanges() {
+  const { AddonTestUtils } = ChromeUtils.importESModule(
+    "resource://testing-common/AddonTestUtils.sys.mjs"
+  );
+
+  let needsCleanupBlocklist = true;
+  const cleanupBlocklist = async () => {
+    if (!needsCleanupBlocklist) {
+      return;
+    }
+    await AddonTestUtils.loadBlocklistRawData({
+      extensionsMLBF: [],
+    });
+    needsCleanupBlocklist = false;
+  };
+  registerCleanupFunction(cleanupBlocklist);
+
+  
+  
+  
+  
+  
+  
+  const id = "amosigned-xpi@tests.mozilla.org";
+  const version = "2.2";
+  const XPI_URL = `${TESTROOT}../xpinstall/amosigned.xpi`;
+  let install = await AddonManager.getInstallForURL(XPI_URL);
+  await install.install();
+  const addon = await AddonManager.getAddonByID(id);
+
+  await checkMessageState(id, "extension", null);
+
+  
+  
+  
+  let win = await loadInitialView("extension");
+  let doc = win.document;
+  ok(doc.querySelector("addon-list"), "this is a list view");
+
+  
+  
+  
+  Assert.equal(
+    addon.blocklistState,
+    STATE_NOT_BLOCKED,
+    "Expect test extension to NOT be initially blocked"
+  );
+  await checkAddonCard(doc, id, null);
+
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+  
+  
+  
+  EventUtils.synthesizeMouseAtCenter(
+    doc.querySelector(".header-name"),
+    {},
+    win
+  );
+  AccessibilityUtils.resetEnv();
+
+  let moved = BrowserTestUtils.waitForEvent(
+    doc.querySelector("addon-list"),
+    "move"
+  );
+  await addon.disable();
+  await moved;
+
+  info("Verify blocklistState changing from unblocked to hard-blocked");
+
+  const blockKey = `${id}:${version}`;
+  const waitForBlocklistStateChanged = () =>
+    AddonTestUtils.promiseAddonEvent(
+      "onPropertyChanged",
+      (addon, changedProps) =>
+        addon.id === id && changedProps.includes("blocklistState")
+    );
+
+  let promiseBlocklistStateChanged = waitForBlocklistStateChanged();
+  await AddonTestUtils.loadBlocklistRawData({
+    extensionsMLBF: [
+      {
+        stash: {
+          blocked: [blockKey],
+          softblocked: [],
+          unblocked: [],
+        },
+      },
+    ],
+  });
+  await promiseBlocklistStateChanged;
+
+  const baseDetailsURL =
+    "https://addons.mozilla.org/en-US/firefox/blocked-addon";
+  const linkUrl = `${baseDetailsURL}/${id}/${version}/`;
+
+  await checkAddonCard(doc, id, {
+    linkUrl,
+    text: {
+      id: `details-notification-hard-blocked-extension`,
+      linkId: "details-notification-blocked-link2",
+    },
+    type: "error",
+  });
+
+  info("Verify blocklistState changing from hard-blocked to soft-blocked");
+
+  promiseBlocklistStateChanged = waitForBlocklistStateChanged();
+  await AddonTestUtils.loadBlocklistRawData({
+    extensionsMLBF: [
+      {
+        stash: {
+          blocked: [],
+          softblocked: [blockKey],
+          unblocked: [],
+        },
+      },
+    ],
+  });
+  await promiseBlocklistStateChanged;
+
+  await checkAddonCard(doc, id, {
+    linkUrl,
+    text: {
+      id: `details-notification-soft-blocked-extension-disabled`,
+      linkId: "details-notification-softblocked-link2",
+    },
+    type: "warning",
+  });
+
+  info("Enable soft-blocked addon");
+  moved = BrowserTestUtils.waitForEvent(
+    doc.querySelector("addon-list"),
+    "move"
+  );
+  await addon.enable();
+  await moved;
+
+  await checkAddonCard(doc, id, {
+    linkUrl,
+    text: {
+      id: `details-notification-soft-blocked-extension-enabled`,
+      linkId: "details-notification-softblocked-link2",
+    },
+    type: "warning",
+  });
+
+  info("Verify blocklistState changing from soft-blocked to not-blocked");
+
+  promiseBlocklistStateChanged = waitForBlocklistStateChanged();
+  await AddonTestUtils.loadBlocklistRawData({
+    extensionsMLBF: [
+      {
+        stash: {
+          blocked: [],
+          softblocked: [],
+          unblocked: [blockKey],
+        },
+      },
+    ],
+  });
+  await promiseBlocklistStateChanged;
+
+  await checkAddonCard(doc, id, null);
+
+  await closeView(win);
+  await addon.uninstall();
+
+  await cleanupBlocklist();
 });
