@@ -321,9 +321,12 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
     
     
     
-    if ((NS_SUCCEEDED(rv) || rv == NS_ERROR_WONT_HANDLE_CONTENT) &&
-        !mUsedContentHandler && !m_targetStreamListener) {
+    if (!mUsedContentHandler && !m_targetStreamListener) {
       m_targetStreamListener = mListener;
+      if (NS_FAILED(rv)) {
+        request->CancelWithReason(
+            rv, "nsDocumentOpenInfo::OnStartRequest failed"_ns);
+      }
       return m_targetStreamListener->OnStartRequest(request);
     }
     if (m_targetStreamListener != mListener) {
