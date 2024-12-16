@@ -311,9 +311,8 @@ def latest_nightly(binary=None):
             binary = "/Volumes/Nightly/Firefox Nightly.app/Contents/MacOS/firefox"
         
         elif platform.system() == "Linux":
-            cmd = "bunzip2 %s" % target
-            os.system(cmd)
-            cmd = "tar -xvf %s" % target[: -len(".xz")]
+            
+            cmd = "tar -xvf %s" % target
             os.system(cmd)
             binary = "firefox/firefox"
 
