@@ -791,27 +791,39 @@ class nsWindow final : public nsBaseWidget {
   PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate = nullptr;
 
   LayoutDeviceIntMargin NonClientSizeMargin() const {
-    return NonClientSizeMargin(mNonClientOffset);
+    return NonClientSizeMargin(mCustomNonClientMetrics.mOffset);
   }
   LayoutDeviceIntMargin NonClientSizeMargin(
       const LayoutDeviceIntMargin& aNonClientOffset) const;
   LayoutDeviceIntMargin NormalWindowNonClientOffset() const;
 
-  
-  
-  LayoutDeviceIntMargin mNonClientOffset;
+  struct CustomNonClientMetrics {
+    
+    mozilla::LayoutDeviceIntCoord mHorResizeMargin;
+    
+    mozilla::LayoutDeviceIntCoord mVertResizeMargin;
+    
+    mozilla::LayoutDeviceIntCoord mCaptionHeight;
+    
+    LayoutDeviceIntMargin mOffset;
+
+    LayoutDeviceIntMargin ResizeMargins() const {
+      return {mVertResizeMargin, mHorResizeMargin, mVertResizeMargin,
+              mHorResizeMargin};
+    }
+
+    LayoutDeviceIntMargin DefaultMargins() const {
+      auto margins = ResizeMargins();
+      margins.top += mCaptionHeight;
+      return margins;
+    }
+  } mCustomNonClientMetrics;
 
   
   bool mCustomNonClient = false;
   
   
   mozilla::Maybe<bool> mCustomTitlebarOnceChromeShows;
-  
-  mozilla::LayoutDeviceIntCoord mHorResizeMargin;
-  
-  mozilla::LayoutDeviceIntCoord mVertResizeMargin;
-  
-  mozilla::LayoutDeviceIntCoord mCaptionHeight;
   
   mozilla::LayoutDeviceIntCoord mCustomResizeMargin{0};
 

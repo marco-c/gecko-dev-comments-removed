@@ -2545,7 +2545,8 @@ LayoutDeviceIntMargin nsWindow::NormalWindowNonClientOffset() const {
   
   
   
-  return LayoutDeviceIntMargin(mCaptionHeight + mVertResizeMargin, 0, 0, 0);
+  return LayoutDeviceIntMargin(mCustomNonClientMetrics.DefaultMargins().top, 0,
+                               0, 0);
 }
 
 
@@ -2576,6 +2577,8 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
 
   float dpi = GetDPI();
 
+  auto& metrics = mCustomNonClientMetrics;
+
   
   
   
@@ -2585,7 +2588,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   
   
   
-  mHorResizeMargin =
+  metrics.mHorResizeMargin =
       WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, dpi) +
       (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
                   : 0);
@@ -2598,7 +2601,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   
   
   
-  mVertResizeMargin =
+  metrics.mVertResizeMargin =
       WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
       (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
                   : 0);
@@ -2606,15 +2609,12 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   
   
   
-  mCaptionHeight =
+  metrics.mCaptionHeight =
       hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CYCAPTION, dpi) : 0;
 
+  metrics.mOffset = {};
   if (sizeMode == nsSizeMode_Minimized) {
     
-    mNonClientOffset.top = 0;
-    mNonClientOffset.left = 0;
-    mNonClientOffset.right = 0;
-    mNonClientOffset.bottom = 0;
   } else if (sizeMode == nsSizeMode_Fullscreen) {
     
     
@@ -2626,31 +2626,25 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     
     
     
-    mNonClientOffset.top = mVertResizeMargin + mCaptionHeight;
-    mNonClientOffset.bottom = mVertResizeMargin;
-    mNonClientOffset.left = mHorResizeMargin;
-    mNonClientOffset.right = mHorResizeMargin;
+    metrics.mOffset = metrics.DefaultMargins();
   } else if (sizeMode == nsSizeMode_Maximized) {
     
     
     
-    mNonClientOffset.top = mCaptionHeight;
-    mNonClientOffset.bottom = 0;
-    mNonClientOffset.left = 0;
-    mNonClientOffset.right = 0;
+    metrics.mOffset.top = metrics.mCaptionHeight;
 
     if (mozilla::Maybe<UINT> maybeEdge = GetHiddenTaskbarEdge()) {
       auto edge = maybeEdge.value();
       if (ABE_LEFT == edge) {
-        mNonClientOffset.left -= kHiddenTaskbarSize;
+        metrics.mOffset.left -= kHiddenTaskbarSize;
       } else if (ABE_RIGHT == edge) {
-        mNonClientOffset.right -= kHiddenTaskbarSize;
+        metrics.mOffset.right -= kHiddenTaskbarSize;
       } else if (ABE_BOTTOM == edge || ABE_TOP == edge) {
-        mNonClientOffset.bottom -= kHiddenTaskbarSize;
+        metrics.mOffset.bottom -= kHiddenTaskbarSize;
       }
     }
   } else {
-    mNonClientOffset = NormalWindowNonClientOffset();
+    metrics.mOffset = NormalWindowNonClientOffset();
   }
 
   UpdateOpaqueRegionInternal();
@@ -2718,6 +2712,7 @@ void nsWindow::SetCustomTitlebar(bool aCustomTitlebar) {
           (HICON)::SendMessageW(mWnd, WM_SETICON, (WPARAM)ICON_SMALL, 0);
       ::SendMessageW(mWnd, WM_SETICON, (WPARAM)ICON_SMALL, (LPARAM)icon);
     }
+    mCustomNonClientMetrics = {};
     ResetLayout();
   }
 }
@@ -5922,11 +5917,7 @@ void nsWindow::FinishLiveResizing(ResizeState aNewState) {
 
 LayoutDeviceIntMargin nsWindow::NonClientSizeMargin(
     const LayoutDeviceIntMargin& aNonClientOffset) const {
-  return LayoutDeviceIntMargin(
-      mCaptionHeight + mVertResizeMargin - aNonClientOffset.top,
-      mHorResizeMargin - aNonClientOffset.right,
-      mVertResizeMargin - aNonClientOffset.bottom,
-      mHorResizeMargin - aNonClientOffset.left);
+  return mCustomNonClientMetrics.DefaultMargins() - aNonClientOffset;
 }
 
 int32_t nsWindow::ClientMarginHitTestPoint(int32_t aX, int32_t aY) {
@@ -5976,9 +5967,7 @@ int32_t nsWindow::ClientMarginHitTestPoint(int32_t aX, int32_t aY) {
   
   
   LayoutDeviceIntMargin borderSize = nonClientSizeMargin;
-  borderSize.EnsureAtLeast(
-      LayoutDeviceIntMargin(mVertResizeMargin, mHorResizeMargin,
-                            mVertResizeMargin, mHorResizeMargin));
+  borderSize.EnsureAtLeast(mCustomNonClientMetrics.ResizeMargins());
   
   if (mCustomResizeMargin) {
     borderSize.EnsureAtLeast(
