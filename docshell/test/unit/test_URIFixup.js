@@ -75,6 +75,11 @@ var data = [
   },
   {
     
+    wrong: "whatever://user:pass@example.com/test.html",
+    fixed: "whatever://user:pass@example.com/test.html",
+  },
+  {
+    
     wrong: "example.com/ @test.com",
     fixed: "http://example.com/%20@test.com",
     noPrefValue: "http://example.com/%20@test.com",
