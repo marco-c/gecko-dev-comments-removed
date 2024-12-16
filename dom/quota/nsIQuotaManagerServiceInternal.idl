@@ -14,4 +14,22 @@
 [scriptable, builtinclass, uuid(7df37702-e977-4107-9b1d-289439e7d37b)]
 interface nsIQuotaManagerServiceInternal : nsISupports
 {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void setThumbnailPrivateIdentityId(
+      in unsigned long aThumbnailPrivateIdentityId);
 };
