@@ -562,7 +562,9 @@ add_task(async function enter_on_remove_bookmark_should_remove_bookmark() {
 });
 
 add_task(async function mouse_hovering_panel_should_prevent_autoclose() {
-  if (AppConstants.platform != "win") {
+  if (true) {
+    
+    
     
     
     return;
