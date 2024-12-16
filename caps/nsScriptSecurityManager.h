@@ -88,7 +88,7 @@ class nsScriptSecurityManager final : public nsIScriptSecurityManager {
   virtual ~nsScriptSecurityManager();
 
   
-  static bool ContentSecurityPolicyPermitsJSAction(
+  MOZ_CAN_RUN_SCRIPT static bool ContentSecurityPolicyPermitsJSAction(
       JSContext* aCx, JS::RuntimeCode aKind, JS::Handle<JSString*> aCodeString,
       JS::CompilationType aCompilationType,
       JS::Handle<JS::StackGCVector<JSString*>> aParameterStrings,

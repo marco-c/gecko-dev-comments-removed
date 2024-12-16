@@ -105,6 +105,11 @@ GetTrustedTypesCompliantStringForTrustedHTML(const nsAString& aInput,
                                              const nsINode& aNode,
                                              Maybe<nsAutoString>& aResultHolder,
                                              ErrorResult& aError);
+MOZ_CAN_RUN_SCRIPT const nsAString*
+GetTrustedTypesCompliantStringForTrustedScript(
+    const nsAString& aInput, const nsAString& aSink,
+    const nsAString& aSinkGroup, nsIGlobalObject& aGlobalObject,
+    Maybe<nsAutoString>& aResultHolder, ErrorResult& aError);
 
 
 template <typename ExpectedType>
@@ -130,6 +135,17 @@ MOZ_CAN_RUN_SCRIPT const nsAString* GetTrustedTypesCompliantAttributeValue(
 
 bool HostGetCodeForEval(JSContext* aCx, JS::Handle<JSObject*> aCode,
                         JS::MutableHandle<JSString*> aOutCode);
+
+
+
+MOZ_CAN_RUN_SCRIPT bool
+AreArgumentsTrustedForEnsureCSPDoesNotBlockStringCompilation(
+    JSContext* aCx, JS::Handle<JSString*> aCodeString,
+    JS::CompilationType aCompilationType,
+    JS::Handle<JS::StackGCVector<JSString*>> aParameterStrings,
+    JS::Handle<JSString*> aBodyString,
+    JS::Handle<JS::StackGCVector<JS::Value>> aParameterArgs,
+    JS::Handle<JS::Value> aBodyArg, ErrorResult& aError);
 
 }  
 
