@@ -402,10 +402,10 @@ class JsepVideoCodecDescription : public JsepCodecDescription {
   SdpMediaSection::MediaType Type() const override { return type; }
 
   static UniquePtr<JsepVideoCodecDescription> CreateDefaultAV1(bool aUseRtx) {
-    auto codec = MakeUnique<JsepVideoCodecDescription>("99", "AV1", 90000);
     
-    codec->mConstraints.maxFs = 12288;  
-    codec->mConstraints.maxFps = Some(60);
+    
+    
+    auto codec = MakeUnique<JsepVideoCodecDescription>("99", "AV1", 90000);
     codec->mAv1Config.mProfile = Nothing();
     if (aUseRtx) {
       codec->EnableRtx("100");
