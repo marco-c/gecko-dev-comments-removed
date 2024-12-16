@@ -146,13 +146,6 @@ static bool GetStatusFile(nsIFile* dir, nsCOMPtr<nsIFile>& result) {
   return GetFile(dir, "update.status"_ns, result);
 }
 
-static void GetPidString(nsACString& output) {
-  output.Truncate(0);
-  output.AppendInt((int32_t)getpid());
-}
-
-
-
 
 
 
@@ -165,30 +158,21 @@ static void GetPidString(nsACString& output) {
 
 
 template <size_t Size>
-static int32_t ReadWritableFile(nsIFile* file, char (&buf)[Size]) {
+static bool GetStatusFileContents(nsIFile* statusFile, char (&buf)[Size]) {
+  static_assert(
+      Size > 16,
+      "Buffer needs to be large enough to hold the known status codes");
+
   PRFileDesc* fd = nullptr;
-  nsresult rv = file->OpenNSPRFileDesc(PR_RDWR, 0660, &fd);
+  nsresult rv = statusFile->OpenNSPRFileDesc(PR_RDWR, 0660, &fd);
   if (NS_FAILED(rv)) {
-    return 0;
+    return false;
   }
 
   const int32_t n = PR_Read(fd, buf, Size);
   PR_Close(fd);
 
-  return n;
-}
-
-static nsresult WriteFile(nsIFile* file, nsACString& toWrite) {
-  PRFileDesc* fd = nullptr;
-  nsresult rv = file->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE,
-                                       0660, &fd);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  const int32_t n =
-      PR_Write(fd, PromiseFlatCString(toWrite).get(), toWrite.Length());
-  PR_Close(fd);
-
-  return (unsigned long)n == toWrite.Length() ? NS_OK : NS_ERROR_FAILURE;
+  return (n >= 0);
 }
 
 enum UpdateStatus {
@@ -212,9 +196,8 @@ enum UpdateStatus {
 static UpdateStatus GetUpdateStatus(nsIFile* dir,
                                     nsCOMPtr<nsIFile>& statusFile) {
   if (GetStatusFile(dir, statusFile)) {
-    
     char buf[32];
-    if (ReadWritableFile(statusFile, buf) >= 0) {
+    if (GetStatusFileContents(statusFile, buf)) {
       const char kPending[] = "pending";
       const char kPendingService[] = "pending-service";
       const char kPendingElevate[] = "pending-elevate";
@@ -274,73 +257,6 @@ static bool IsOlderVersion(nsIFile* versionFile, const char* appVersion) {
   }
 
   return mozilla::Version(appVersion) > buf;
-}
-
-nsresult GetUpdatePatchDir(nsIFile* updRootDir, nsIFile** updatesDirOut) {
-  nsresult rv;
-  nsCOMPtr<nsIFile> updatesDir;
-  rv = updRootDir->Clone(getter_AddRefs(updatesDir));
-  rv = updatesDir->AppendNative("updates"_ns);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = updatesDir->AppendNative("0"_ns);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  updatesDir.forget(updatesDirOut);
-  return NS_OK;
-}
-
-nsresult IsMultiSessionInstallLockoutActive(nsIFile* updRootDir,
-                                            bool& isActive) {
-  nsresult rv;
-
-  nsCOMPtr<nsIFile> timestampFile;
-  rv = GetUpdatePatchDir(updRootDir, getter_AddRefs(timestampFile));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = timestampFile->AppendNative("update.timestamp"_ns);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  const size_t bufferSize = 21;
-  char buffer[bufferSize];
-  int32_t readLen = ReadWritableFile(timestampFile, buffer);
-  NS_ENSURE_TRUE(readLen >= 0 && readLen < static_cast<int32_t>(bufferSize),
-                 NS_ERROR_FAILURE);
-  buffer[readLen] = '\0';
-
-  
-  if (readLen == 0) {
-    isActive = false;
-    return NS_OK;
-  }
-
-  nsDependentCString timestampString(buffer);
-  
-  uint64_t msilEnd = timestampString.ToInteger64(&rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  uint64_t now = PR_Now() / PR_USEC_PER_MSEC;
-
-  isActive = now < msilEnd;
-
-#ifdef DEBUG
-  printf_stderr("Multi Session Install Lockout %s active\n",
-                isActive ? "is" : "is not");
-#endif
-
-  return NS_OK;
-}
-
-nsresult WriteUpdateCompleteTestFile(nsIFile* updRootDir) {
-  nsCOMPtr<nsIFile> outputFile;
-  nsresult rv = updRootDir->Clone(getter_AddRefs(outputFile));
-  NS_ENSURE_SUCCESS(rv, rv);
-  outputFile->AppendNative("test_process_updates.txt"_ns);
-
-  nsAutoCString pid;
-  GetPidString(pid);
-
-  return WriteFile(outputFile, pid);
 }
 
 
@@ -583,7 +499,7 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
     
     pid.AssignLiteral("0");
 #else
-    GetPidString(pid);
+    pid.AppendInt((int32_t)getpid());
 #endif
     if (isStaged) {
       
@@ -767,7 +683,11 @@ nsresult ProcessUpdates(nsIFile* greDir, nsIFile* appDir, nsIFile* updRootDir,
 #endif
 
   nsCOMPtr<nsIFile> updatesDir;
-  rv = GetUpdatePatchDir(updRootDir, getter_AddRefs(updatesDir));
+  rv = updRootDir->Clone(getter_AddRefs(updatesDir));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = updatesDir->AppendNative("updates"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = updatesDir->AppendNative("0"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
 
   

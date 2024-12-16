@@ -25,6 +25,22 @@ Services.prefs.setBoolPref(PREF_APP_UPDATE_LANGPACK_ENABLED, true);
 
 
 
+async function downloadUpdate() {
+  let patches = getRemotePatchString({});
+  let updateString = getRemoteUpdateString({}, patches);
+  gResponseBody = getRemoteUpdatesXMLString(updateString);
+
+  let { updates } = await waitForUpdateCheck(true);
+
+  initMockIncrementalDownload();
+  gIncrementalDownloadErrorType = 3;
+
+  await waitForUpdateDownload(updates, Cr.NS_OK);
+}
+
+
+
+
 
 
 
