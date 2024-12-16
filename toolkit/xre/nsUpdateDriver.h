@@ -30,6 +30,7 @@ typedef PRProcess* ProcessType;
 #ifdef XP_WIN
 #  define UPDATER_BIN "updater.exe"
 #  define MAINTENANCE_SVC_NAME L"MozillaMaintenance"
+#  define MAYBE_WAIT_TIMEOUT_MS (60U * 1000U)
 #elif XP_MACOSX
 #  define UPDATER_APP "updater.app"
 #  define UPDATER_BIN "org.mozilla.updater"
@@ -60,6 +61,20 @@ typedef PRProcess* ProcessType;
 nsresult ProcessUpdates(nsIFile* greDir, nsIFile* appDir, nsIFile* updRootDir,
                         int argc, char** argv, const char* appVersion,
                         bool restart = true, ProcessType* pid = nullptr);
+
+
+
+
+
+
+
+
+
+
+
+
+nsresult IsMultiSessionInstallLockoutActive(nsIFile* updRootDir,
+                                            bool& isActive);
 
 
 
