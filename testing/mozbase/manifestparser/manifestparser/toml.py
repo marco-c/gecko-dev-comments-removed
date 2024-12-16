@@ -255,7 +255,11 @@ def _should_keep_condition(existing_condition: str, new_condition: str):
     If both are equal, then we keep the existing to prevent changing the order of conditions
     """
     return existing_condition == new_condition or not (
-        existing_condition in new_condition or new_condition in existing_condition
+        
+        
+        
+        (existing_condition + " ") in new_condition
+        or (new_condition + " ") in existing_condition
     )
 
 
