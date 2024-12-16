@@ -5297,6 +5297,15 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   CrashReporter::RecordAnnotationBool(
       CrashReporter::Annotation::StartupCacheValid, cachesOK && versionOK);
 
+  if (shouldNotProcessUpdatesReason) {
+    nsDependentCString skipStartupReason(ShouldNotProcessUpdatesReasonAsString(
+        shouldNotProcessUpdatesReason.value()));
+    mozilla::glean::update::skip_startup_update_reason.Get(skipStartupReason)
+        .Add(1);
+  } else {
+    mozilla::glean::update::skip_startup_update_reason.Get("none"_ns).Add(1);
+  }
+
   
   
   
