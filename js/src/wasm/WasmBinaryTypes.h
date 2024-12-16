@@ -32,8 +32,28 @@ struct BytecodeRange {
 
   uint32_t end() const { return start + size; }
 
+  
   bool contains(const BytecodeRange& other) const {
     return other.start >= start && other.end() <= end();
+  }
+
+  
+  bool containsOffset(uint32_t bytecodeOffset) const {
+    return bytecodeOffset >= start && bytecodeOffset < end();
+  }
+
+  
+  
+  
+  int compareOffset(uint32_t bytecodeOffset) const {
+    if (containsOffset(bytecodeOffset)) {
+      return 0;
+    }
+    if (bytecodeOffset < start) {
+      return -1;
+    }
+    MOZ_ASSERT(bytecodeOffset >= end());
+    return 1;
   }
 
   bool operator==(const BytecodeRange& rhs) const {

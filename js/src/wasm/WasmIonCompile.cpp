@@ -2549,6 +2549,12 @@ class FunctionCompiler {
     
     
     
+    
+    MOZ_ASSERT(!codeMeta().isAsmJS());
+
+    
+    
+    
     if (compilerEnv().mode() != CompileMode::LazyTiering) {
       return CallRefHint();
     }
