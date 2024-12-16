@@ -7,9 +7,7 @@
 
 "use strict";
 
-
-
-const SW_URL = EXAMPLE_URL_WITH_PORT + "service-worker.sjs";
+let SW_URL;
 
 add_task(async function () {
   info("Subtest #1");
@@ -17,6 +15,8 @@ add_task(async function () {
   await pushPref("devtools.debugger.threads-visible", true);
   await pushPref("dom.serviceWorkers.testing.enabled", true);
 
+  
+  
   const dbg = await initDebuggerWithAbsoluteURL(
     EXAMPLE_URL_WITH_PORT + "doc-service-workers.html"
   );
@@ -25,6 +25,11 @@ add_task(async function () {
     await content.wrappedJSObject.registerWorker();
   });
   const workerSource = await waitForSource(dbg, "service-worker.sjs");
+
+  
+  
+  
+  SW_URL = workerSource.url;
 
   await addBreakpoint(dbg, "service-worker.sjs", 13);
 
