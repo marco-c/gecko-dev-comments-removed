@@ -13,6 +13,8 @@ add_task(async function () {
   const { tab, monitor } = await initNetMonitor(HTTPS_CURL_URL, {
     requestCount: 1,
   });
+  
+  Services.prefs.setBoolPref("network.http.idempotencyKey.enabled", false);
   info("Starting test... ");
 
   
