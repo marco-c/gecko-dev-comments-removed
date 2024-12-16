@@ -66,6 +66,7 @@ class PrincipalInfo;
 namespace mozilla::dom::quota {
 
 class CanonicalQuotaObject;
+class ClearRequestBase;
 class ClientUsageArray;
 class ClientDirectoryLock;
 class DirectoryLockImpl;
@@ -80,6 +81,7 @@ class UniversalDirectoryLock;
 
 class QuotaManager final : public BackgroundThreadObject {
   friend class CanonicalQuotaObject;
+  friend class ClearRequestBase;
   friend class ClearStorageOp;
   friend class DirectoryLockImpl;
   friend class FinalizeOriginEvictionOp;
@@ -619,6 +621,14 @@ class QuotaManager final : public BackgroundThreadObject {
       const OriginMetadata& aOriginMetadata);
 
   
+
+
+
+
+
+  uint64_t TotalDirectoryIterations() const;
+
+  
   
   static void MaybeRecordQuotaClientShutdownStep(
       const Client::Type aClientType, const nsACString& aStepDescription);
@@ -845,6 +855,14 @@ class QuotaManager final : public BackgroundThreadObject {
       -> std::invoke_result_t<Func, const FirstInitializationAttempt<
                                         Initialization, StringGenerator>&>;
 
+  
+
+
+
+
+
+  void IncreaseTotalDirectoryIterations();
+
   template <typename Iterator>
   static void MaybeInsertNonPersistedOriginInfos(
       Iterator aDest, const RefPtr<GroupInfo>& aTemporaryGroupInfo,
@@ -905,6 +923,9 @@ class QuotaManager final : public BackgroundThreadObject {
   struct IOThreadAccessible {
     nsTHashMap<nsCStringHashKey, nsTArray<FullOriginMetadata>>
         mAllTemporaryOrigins;
+    
+    
+    uint64_t mTotalDirectoryIterations = 0;
   };
   ThreadBound<IOThreadAccessible> mIOThreadAccessible;
 

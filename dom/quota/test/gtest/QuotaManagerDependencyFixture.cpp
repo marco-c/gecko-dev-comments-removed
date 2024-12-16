@@ -351,6 +351,18 @@ void QuotaManagerDependencyFixture::InitializeTemporaryClient(
 }
 
 
+uint64_t QuotaManagerDependencyFixture::TotalDirectoryIterations() {
+  const auto result = PerformOnIOThread([]() -> uint64_t {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    MOZ_RELEASE_ASSERT(quotaManager);
+
+    return quotaManager->TotalDirectoryIterations();
+  });
+
+  return result;
+}
+
+
 PrincipalMetadata QuotaManagerDependencyFixture::GetTestPrincipalMetadata() {
   return GetPrincipalMetadata("example.com"_ns, "http://example.com"_ns);
 }

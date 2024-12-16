@@ -62,6 +62,8 @@ class QuotaManagerDependencyFixture : public testing::Test {
 
   static void InitializeTemporaryClient(const ClientMetadata& aClientMetadata);
 
+  static uint64_t TotalDirectoryIterations();
+
   
   template <class Invokable, class... Args>
   static auto PerformOnBackgroundThread(Invokable&& aInvokable, Args&&... aArgs)
