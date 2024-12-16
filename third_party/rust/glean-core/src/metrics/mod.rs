@@ -178,10 +178,6 @@ pub trait MetricType {
     
     
     fn should_record(&self, glean: &Glean) -> bool {
-        if !glean.is_upload_enabled() {
-            return false;
-        }
-
         
         
         

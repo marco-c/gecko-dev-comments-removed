@@ -99,6 +99,7 @@ static PRE_INIT_SOURCE_TAGS: Mutex<Vec<String>> = Mutex::new(Vec::new());
 
 
 static PRE_INIT_PING_REGISTRATION: Mutex<Vec<metrics::PingType>> = Mutex::new(Vec::new());
+static PRE_INIT_PING_ENABLED: Mutex<Vec<(metrics::PingType, bool)>> = Mutex::new(Vec::new());
 
 
 
@@ -440,6 +441,10 @@ fn initialize_inner(
                 let pings = PRE_INIT_PING_REGISTRATION.lock().unwrap();
                 for ping in pings.iter() {
                     glean.register_ping_type(ping);
+                }
+                let pings = PRE_INIT_PING_ENABLED.lock().unwrap();
+                for (ping, enabled) in pings.iter() {
+                    glean.set_ping_enabled(ping, *enabled);
                 }
 
                 
@@ -820,6 +825,9 @@ pub extern "C" fn glean_enable_logging() {
 }
 
 
+
+
+
 pub fn glean_set_upload_enabled(enabled: bool) {
     if !was_initialize_called() {
         return;
@@ -853,6 +861,28 @@ pub fn glean_set_upload_enabled(enabled: bool) {
 }
 
 
+
+
+pub fn glean_set_collection_enabled(enabled: bool) {
+    glean_set_upload_enabled(enabled)
+}
+
+
+
+
+
+pub fn set_ping_enabled(ping: &PingType, enabled: bool) {
+    let ping = ping.clone();
+    if was_initialize_called() {
+        crate::launch_with_glean_mut(move |glean| glean.set_ping_enabled(&ping, enabled));
+    } else {
+        let m = &PRE_INIT_PING_ENABLED;
+        let mut lock = m.lock().unwrap();
+        lock.push((ping, enabled));
+    }
+}
+
+
 pub(crate) fn register_ping_type(ping: &PingType) {
     
     
@@ -872,6 +902,22 @@ pub(crate) fn register_ping_type(ping: &PingType) {
         let mut lock = m.lock().unwrap();
         lock.push(ping.clone());
     }
+}
+
+
+
+
+
+
+pub fn glean_get_registered_ping_names() -> Vec<String> {
+    block_on_dispatcher();
+    core::with_glean(|glean| {
+        glean
+            .get_registered_ping_names()
+            .iter()
+            .map(|ping| ping.to_string())
+            .collect()
+    })
 }
 
 
@@ -977,6 +1023,16 @@ pub fn glean_set_debug_view_tag(tag: String) -> bool {
 
 
 
+pub fn glean_get_debug_view_tag() -> Option<String> {
+    block_on_dispatcher();
+    core::with_glean(|glean| glean.debug_view_tag().map(|tag| tag.to_string()))
+}
+
+
+
+
+
+
 
 
 
@@ -1016,6 +1072,16 @@ pub fn glean_set_log_pings(value: bool) {
     } else {
         PRE_INIT_LOG_PINGS.store(value, Ordering::SeqCst);
     }
+}
+
+
+
+
+
+
+pub fn glean_get_log_pings() -> bool {
+    block_on_dispatcher();
+    core::with_glean(|glean| glean.log_pings())
 }
 
 

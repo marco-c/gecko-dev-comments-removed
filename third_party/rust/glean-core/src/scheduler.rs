@@ -134,7 +134,7 @@ fn schedule_internal(
     
     
 
-    let already_sent_today = last_sent_time.map_or(false, |d| d.date() == now.date());
+    let already_sent_today = last_sent_time.is_some_and(|d| d.date() == now.date());
     if already_sent_today {
         
         log::info!("The 'metrics' ping was already sent today, {}", now);

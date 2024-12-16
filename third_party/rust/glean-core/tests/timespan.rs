@@ -284,7 +284,7 @@ fn set_raw_time_does_nothing_when_timer_running() {
 }
 
 #[test]
-fn timespan_is_not_tracked_across_upload_toggle() {
+fn timespan_is_tracked_across_upload_toggle() {
     let (mut glean, _t) = new_glean(None);
 
     let metric = TimespanMetric::new(
@@ -307,7 +307,8 @@ fn timespan_is_not_tracked_across_upload_toggle() {
     
     metric.set_stop(&glean, 40);
 
-    
+    assert_eq!(None, metric.get_value(&glean, "store1"));
+
     
     metric.set_start(&glean, 100);
     
@@ -316,14 +317,10 @@ fn timespan_is_not_tracked_across_upload_toggle() {
     
     metric.set_stop(&glean, 200);
 
-    
-    assert_eq!(None, metric.get_value(&glean, "store1"));
+    assert_eq!(Some(100), metric.get_value(&glean, "store1"));
 
     
-    assert_eq!(
-        Ok(1),
-        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidState)
-    );
+    assert!(test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidState).is_err());
 }
 
 #[test]
@@ -334,7 +331,7 @@ fn time_cannot_go_backwards() {
         CommonMetricData {
             name: "raw_timespan".into(),
             category: "test".into(),
-            send_in_pings: vec!["test1".into()],
+            send_in_pings: vec!["store1".into()],
             ..Default::default()
         },
         TimeUnit::Millisecond,
@@ -343,7 +340,7 @@ fn time_cannot_go_backwards() {
     
     metric.set_start(&glean, 10);
     metric.set_stop(&glean, 0);
-    assert!(metric.get_value(&glean, "test1").is_none());
+    assert!(metric.get_value(&glean, "store1").is_none());
     assert_eq!(
         Ok(1),
         test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidValue),
