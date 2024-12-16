@@ -1308,6 +1308,10 @@ struct BaseCompiler final {
   inline BytecodeOffset bytecodeOffset() const;
 
   
+  
+  inline TrapSiteDesc trapSiteDesc() const;
+
+  
   inline void trap(Trap t) const;
 
   
