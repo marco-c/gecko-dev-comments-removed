@@ -45,20 +45,19 @@ class MOZ_STACK_CLASS ColorStopInterpolator {
   ColorStopInterpolator(
       const nsTArray<ColorStop>& aStops,
       const StyleColorInterpolationMethod& aStyleColorInterpolationMethod,
-      bool aExtendLastStop)
+      bool aExtend)
       : mStyleColorInterpolationMethod(aStyleColorInterpolationMethod),
         mStops(aStops),
-        mExtendLastStop(aExtendLastStop) {}
+        mExtend(aExtend) {}
 
   void CreateStops() {
     
     
-    uint32_t iterStops = mStops.Length() - 1 + (mExtendLastStop ? 2 : 0);
+    uint32_t iterStops = mStops.Length() - 1 + (mExtend ? 2 : 0);
     for (uint32_t i = 0; i < iterStops; i++) {
-      auto thisindex = mExtendLastStop ? (i == 0 ? 0 : i - 1) : i;
-      auto nextindex = mExtendLastStop && (i == iterStops - 1 || i == 0)
-                           ? thisindex
-                           : thisindex + 1;
+      auto thisindex = mExtend ? (i == 0 ? 0 : i - 1) : i;
+      auto nextindex =
+          mExtend && (i == iterStops - 1 || i == 0) ? thisindex : thisindex + 1;
       const auto& start = mStops[thisindex];
       const auto& end = mStops[nextindex];
       float startPosition = start.mPosition;
@@ -68,7 +67,7 @@ class MOZ_STACK_CLASS ColorStopInterpolator {
       
       
       
-      if (mExtendLastStop) {
+      if (mExtend) {
         if (i == 0) {
           startPosition = std::min(startPosition, 0.0f);
         }
@@ -100,7 +99,7 @@ class MOZ_STACK_CLASS ColorStopInterpolator {
   
   
   
-  bool mExtendLastStop;
+  bool mExtend;
 
   
   
