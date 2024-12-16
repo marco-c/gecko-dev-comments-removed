@@ -123,6 +123,10 @@ const MSG_SHOULD_EQUAL = " should equal the expected value";
 const MSG_SHOULD_EXIST = "the file or directory should exist";
 const MSG_SHOULD_NOT_EXIST = "the file or directory should not exist";
 
+const CONTINUE_CHECK = "continueCheck";
+const CONTINUE_DOWNLOAD = "continueDownload";
+const CONTINUE_STAGING = "continueStaging";
+
 
 
 const HELPER_SLEEP_TIMEOUT = 180;
@@ -145,6 +149,10 @@ var gTestID;
 var gURLData = URL_HOST + "/";
 var gTestserver;
 var gUpdateCheckCount = 0;
+
+const REL_PATH_DATA = "";
+const APP_UPDATE_SJS_HOST = "http://127.0.0.1";
+const APP_UPDATE_SJS_PATH = "/" + REL_PATH_DATA + "app_update.sjs";
 
 var gIncrementalDownloadErrorType;
 
@@ -4423,7 +4431,7 @@ async function waitForUpdateCheck(aSuccess, aExpectedValues = {}) {
 
 async function waitForUpdateDownload(aUpdates, aExpectedStatus) {
   let bestUpdate = await gAUS.selectUpdate(aUpdates);
-  let result = await gAUS.downloadUpdate(bestUpdate, false);
+  let result = await gAUS.downloadUpdate(bestUpdate);
   if (result != Ci.nsIApplicationUpdateService.DOWNLOAD_SUCCESS) {
     do_throw("nsIApplicationUpdateService:downloadUpdate returned " + result);
   }
@@ -4447,6 +4455,59 @@ async function waitForUpdateDownload(aUpdates, aExpectedStatus) {
       ]),
     })
   );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function startSjsServer({ onResponse } = {}) {
+  let { HttpServer } = ChromeUtils.importESModule(
+    "resource://testing-common/httpd.sys.mjs"
+  );
+  const server = new HttpServer();
+
+  server.registerContentType("sjs", "sjs");
+  server.registerDirectory("/", do_get_cwd());
+
+  if (onResponse) {
+    const origHandler = server._handler;
+    server._handler = {
+      handleResponse: connection => {
+        onResponse(connection);
+        return origHandler.handleResponse(connection);
+      },
+    };
+  }
+
+  server.start(-1);
+  let port = server.identity.primaryPort;
+  
+  gURLData =
+    APP_UPDATE_SJS_HOST + ":" + port + APP_UPDATE_SJS_PATH + "?port=" + port;
+
+  registerCleanupFunction(resolve => server.stop(resolve));
+
+  return server;
 }
 
 
@@ -5190,13 +5251,11 @@ function setUpdateSettingsUseWrongChannel() {
 }
 
 class DownloadHeadersTest {
-  #httpServer = null;
   
   #requests = [];
 
   get updateUrl() {
-    
-    return `http://127.0.0.1:${8888}/app_update.sjs?appVersion=999000.0`;
+    return `${gURLData}&appVersion=999000.0`;
   }
 
   async #downloadUpdate() {
@@ -5214,31 +5273,14 @@ class DownloadHeadersTest {
   }
 
   startUpdateServer() {
-    let { HttpServer } = ChromeUtils.importESModule(
-      "resource://testing-common/httpd.sys.mjs"
-    );
-    this.#httpServer = new HttpServer();
-
-    this.#httpServer.registerContentType("sjs", "sjs");
-    this.#httpServer.registerDirectory("/", do_get_cwd());
-
-    
-    let origHandler = this.#httpServer._handler;
-    this.#httpServer._handler = {
-      
-      handleResponse: connection => {
+    startSjsServer({
+      onResponse: connection => {
         if (connection.request.method.toUpperCase() !== "HEAD") {
           
           this.#requests.push(connection.request);
         }
-        return origHandler.handleResponse(connection);
       },
-    };
-
-    
-    this.#httpServer.start(8888);
-
-    registerCleanupFunction(resolve => this.#httpServer.stop(resolve));
+    });
   }
 
   
@@ -5499,5 +5541,195 @@ const EXIT_CODE = ${JSON.stringify(TestUpdateMutexCrossProcess.EXIT_CODE)};
   async release() {
     await this.#proc.kill();
     this.#proc = null;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function downloadUpdate({
+  appUpdateAuto = true,
+  checkWithAUS,
+  expectDownloadRestriction,
+  expectedCheckResult,
+  expectedDownloadResult = Cr.NS_OK,
+  incrementalDownloadErrorType = 3,
+  onDownloadStartCallback,
+  slowDownload,
+  updateProps = {},
+} = {}) {
+  let downloadFinishedPromise;
+  if (expectDownloadRestriction) {
+    downloadFinishedPromise = new Promise(resolve => {
+      let downloadRestrictionHitListener = (subject, topic) => {
+        Services.obs.removeObserver(downloadRestrictionHitListener, topic);
+        resolve();
+      };
+      Services.obs.addObserver(
+        downloadRestrictionHitListener,
+        "update-download-restriction-hit"
+      );
+    });
+  } else {
+    downloadFinishedPromise = new Promise(resolve =>
+      gAUS.addDownloadListener({
+        onStartRequest: _aRequest => {},
+        onProgress: (_aRequest, _aContext, _aProgress, _aMaxProgress) => {},
+        onStatus: (_aRequest, _aStatus, _aStatusText) => {},
+        onStopRequest(request, status) {
+          gAUS.removeDownloadListener(this);
+          resolve({ status });
+        },
+        QueryInterface: ChromeUtils.generateQI([
+          "nsIRequestObserver",
+          "nsIProgressEventSink",
+        ]),
+      })
+    );
+  }
+
+  let updateAvailablePromise;
+  if (!appUpdateAuto) {
+    updateAvailablePromise = new Promise(resolve => {
+      let observer = (subject, topic, status) => {
+        Services.obs.removeObserver(observer, "update-available");
+        subject.QueryInterface(Ci.nsIUpdate);
+        resolve({ update: subject, status });
+      };
+      Services.obs.addObserver(observer, "update-available");
+    });
+  }
+
+  let waitToStartPromise;
+  if (onDownloadStartCallback) {
+    waitToStartPromise = new Promise(resolve => {
+      let listener = {
+        onStartRequest: async _aRequest => {
+          gAUS.removeDownloadListener(listener);
+          await onDownloadStartCallback();
+          resolve();
+        },
+        onProgress: (_aRequest, _aContext, _aProgress, _aMaxProgress) => {},
+        onStatus: (_aRequest, _aStatus, _aStatusText) => {},
+        onStopRequest(_request, _status) {},
+        QueryInterface: ChromeUtils.generateQI([
+          "nsIRequestObserver",
+          "nsIProgressEventSink",
+        ]),
+      };
+      gAUS.addDownloadListener(listener);
+    });
+  }
+
+  let update;
+  if (checkWithAUS) {
+    const updateCheckStarted = await gAUS.checkForBackgroundUpdates();
+    Assert.ok(updateCheckStarted, "Update check should have started");
+  } else {
+    const patches = getRemotePatchString({});
+    const updateString = getRemoteUpdateString(updateProps, patches);
+    gResponseBody = getRemoteUpdatesXMLString(updateString);
+
+    const { updates } = await waitForUpdateCheck(true, expectedCheckResult);
+
+    initMockIncrementalDownload();
+    gIncrementalDownloadErrorType = incrementalDownloadErrorType;
+
+    update = await gAUS.selectUpdate(updates);
+  }
+
+  if (!appUpdateAuto) {
+    const result = await updateAvailablePromise;
+    Assert.equal(
+      result.status,
+      "show-prompt",
+      "Should attempt to show the update-available prompt"
+    );
+    update = result.update;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (!checkWithAUS || !appUpdateAuto) {
+    const result = await gAUS.downloadUpdate(update);
+    Assert.equal(
+      result,
+      Ci.nsIApplicationUpdateService.DOWNLOAD_SUCCESS,
+      "nsIApplicationUpdateService:downloadUpdate should succeed"
+    );
+  }
+
+  if (waitToStartPromise) {
+    logTestInfo("Waiting for the download to start");
+    await waitToStartPromise;
+    logTestInfo("Download started");
+  }
+
+  if (slowDownload) {
+    await continueFileHandler(CONTINUE_DOWNLOAD);
+  }
+
+  logTestInfo("Waiting for the download to finish");
+  const result = await downloadFinishedPromise;
+
+  if (!expectDownloadRestriction) {
+    Assert.equal(
+      result.status,
+      expectedDownloadResult,
+      "The download should have the expected status"
+    );
+
+    
+    
+    
+    
+    await TestUtils.waitForTick();
   }
 }

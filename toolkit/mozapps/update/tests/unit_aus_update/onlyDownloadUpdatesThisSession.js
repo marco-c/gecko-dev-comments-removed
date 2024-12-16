@@ -13,45 +13,10 @@ function setup() {
 }
 setup();
 
-
-
-
-
-async function downloadUpdate() {
-  let patches = getRemotePatchString({});
-  let updateString = getRemoteUpdateString({}, patches);
-  gResponseBody = getRemoteUpdatesXMLString(updateString);
-
-  let { updates } = await waitForUpdateCheck(true);
-
-  initMockIncrementalDownload();
-  gIncrementalDownloadErrorType = 3;
-
-  let downloadRestrictionHitPromise = new Promise(resolve => {
-    let downloadRestrictionHitListener = (subject, topic) => {
-      Services.obs.removeObserver(downloadRestrictionHitListener, topic);
-      resolve();
-    };
-    Services.obs.addObserver(
-      downloadRestrictionHitListener,
-      "update-download-restriction-hit"
-    );
-  });
-
-  let bestUpdate = await gAUS.selectUpdate(updates);
-  let result = await gAUS.downloadUpdate(bestUpdate, false);
-  Assert.equal(
-    result,
-    Ci.nsIApplicationUpdateService.DOWNLOAD_SUCCESS,
-    "Update download should have started"
-  );
-  return downloadRestrictionHitPromise;
-}
-
 add_task(async function onlyDownloadUpdatesThisSession() {
   gAUS.onlyDownloadUpdatesThisSession = true;
 
-  await downloadUpdate();
+  await downloadUpdate({ expectDownloadRestriction: true });
 
   Assert.ok(
     !(await gUpdateManager.getReadyUpdate()),
