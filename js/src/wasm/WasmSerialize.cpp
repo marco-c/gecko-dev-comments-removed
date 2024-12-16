@@ -926,6 +926,8 @@ CoderResult CodeTrapSitesForKind(Coder<mode>& coder,
 #endif
   MOZ_TRY(CodePodVector(coder, &item->pcOffsets_));
   MOZ_TRY(CodePodVector(coder, &item->bytecodeOffsets_));
+  
+  MOZ_RELEASE_ASSERT(item->inlinedCallerOffsets_.empty());
   return Ok();
 }
 
