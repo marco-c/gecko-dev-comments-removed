@@ -451,11 +451,24 @@ interface nsIContentPolicy : nsISupports
     
 
 
+    TYPE_JSON = 62,
+
+    
 
 
 
-    TYPE_END = 62,
 
+
+
+    TYPE_INTERNAL_JSON_PRELOAD = 63,
+
+    
+
+
+
+
+
+    TYPE_END = 64,
 
     
 
@@ -604,6 +617,7 @@ enum class ExtContentPolicyType : uint8_t {
   TYPE_PROXIED_WEBRTC_MEDIA = nsIContentPolicy::TYPE_PROXIED_WEBRTC_MEDIA,
   TYPE_WEB_IDENTITY = nsIContentPolicy::TYPE_WEB_IDENTITY,
   TYPE_WEB_TRANSPORT = nsIContentPolicy::TYPE_WEB_TRANSPORT,
+  TYPE_JSON = nsIContentPolicy::TYPE_JSON,
 };
 
 typedef ExtContentPolicyType ExtContentPolicy;

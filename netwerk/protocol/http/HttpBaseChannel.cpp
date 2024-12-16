@@ -6543,6 +6543,9 @@ static void CollectORBBlockTelemetry(
           Telemetry::LABELS_ORB_BLOCK_INITIATOR::BLOCKED_FETCH);
       break;
     case ExtContentPolicy::TYPE_SCRIPT:
+    
+    
+    case ExtContentPolicy::TYPE_JSON:
       Telemetry::AccumulateCategorical(
           Telemetry::LABELS_ORB_BLOCK_INITIATOR::SCRIPT);
       break;
