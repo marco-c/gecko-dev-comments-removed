@@ -126,10 +126,15 @@ add_task(async function () {
 
   info("Add a logpoint to the first file");
   await selectSource(dbg, "test-location-debugger-link-logpoint-1.js");
+  
+  
+  await waitForDocumentLoadComplete(dbg);
   await setLogPoint(dbg, 8, "`a is ${a}`");
 
   info("Add a logpoint to the second file");
   await selectSource(dbg, "test-location-debugger-link-logpoint-2.js");
+  
+  await waitForDocumentLoadComplete(dbg);
   await setLogPoint(dbg, 8, "`c is ${c}`");
 
   info("Selecting the console");
