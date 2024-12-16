@@ -100,7 +100,7 @@ add_task(async function test_record_exposure_event() {
   );
 
   
-  var exposureEvents = Glean.nimbusEvents.exposure.testGetValue();
+  var exposureEvents = Glean.nimbusEvents.exposure.testGetValue("events");
   Assert.equal(
     undefined,
     exposureEvents,
@@ -131,7 +131,7 @@ add_task(async function test_record_exposure_event() {
   Assert.equal(getExperimentSpy.callCount, 2, "Should be called every time");
 
   
-  exposureEvents = Glean.nimbusEvents.exposure.testGetValue();
+  exposureEvents = Glean.nimbusEvents.exposure.testGetValue("events");
   
   Assert.equal(1, exposureEvents.length);
   
@@ -189,7 +189,7 @@ add_task(async function test_record_exposure_event_once() {
   );
 
   
-  let exposureEvents = Glean.nimbusEvents.exposure.testGetValue();
+  let exposureEvents = Glean.nimbusEvents.exposure.testGetValue("events");
   
   Assert.equal(1, exposureEvents.length);
 
@@ -225,7 +225,7 @@ add_task(async function test_allow_multiple_exposure_events() {
   );
 
   
-  let exposureEvents = Glean.nimbusEvents.exposure.testGetValue();
+  let exposureEvents = Glean.nimbusEvents.exposure.testGetValue("events");
   
   Assert.equal(3, exposureEvents.length);
 

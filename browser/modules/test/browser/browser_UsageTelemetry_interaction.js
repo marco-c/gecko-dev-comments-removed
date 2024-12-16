@@ -97,6 +97,8 @@ add_task(async function toolbarButtons() {
 
     Services.telemetry.getSnapshotForKeyedScalars("main", true);
     Services.fog.testResetFOG();
+    
+    GleanPings.prototypeNoCodeEvents.setEnabled(true);
 
     let newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
     let tabClose = BrowserTestUtils.waitForTabClosing(newTab);

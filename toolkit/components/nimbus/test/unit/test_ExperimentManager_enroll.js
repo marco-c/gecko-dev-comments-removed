@@ -185,7 +185,7 @@ add_task(
     );
 
     
-    var enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue();
+    var enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue("events");
     Assert.equal(
       undefined,
       enrollmentEvents,
@@ -219,7 +219,7 @@ add_task(
     );
 
     
-    enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue();
+    enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue("events");
     
     Assert.equal(1, enrollmentEvents.length);
     
@@ -275,7 +275,7 @@ add_task(async function test_setRolloutActive_sendEnrollmentTelemetry_called() {
   );
 
   
-  var enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue();
+  var enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue("events");
   Assert.equal(
     undefined,
     enrollmentEvents,
@@ -337,7 +337,7 @@ add_task(async function test_setRolloutActive_sendEnrollmentTelemetry_called() {
   );
 
   
-  enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue();
+  enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue("events");
   
   Assert.equal(1, enrollmentEvents.length);
   
@@ -381,7 +381,7 @@ add_task(async function test_failure_name_conflict() {
   await manager.onStartup();
 
   
-  var failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
+  var failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue("events");
   Assert.equal(
     undefined,
     failureEvents,
@@ -408,7 +408,7 @@ add_task(async function test_failure_name_conflict() {
   );
 
   
-  failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
+  failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue("events");
   
   Assert.equal(1, failureEvents.length);
   
@@ -439,7 +439,7 @@ add_task(async function test_failure_group_conflict() {
   await manager.onStartup();
 
   
-  var failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
+  var failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue("events");
   Assert.equal(
     undefined,
     failureEvents,
@@ -488,7 +488,7 @@ add_task(async function test_failure_group_conflict() {
   );
 
   
-  failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
+  failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue("events");
   
   Assert.equal(1, failureEvents.length);
   
@@ -525,7 +525,7 @@ add_task(async function test_rollout_failure_group_conflict() {
   await manager.onStartup();
 
   
-  var failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
+  var failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue("events");
   Assert.equal(
     undefined,
     failureEvents,
@@ -552,7 +552,7 @@ add_task(async function test_rollout_failure_group_conflict() {
   );
 
   
-  failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
+  failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue("events");
   
   Assert.equal(1, failureEvents.length);
   
@@ -586,7 +586,7 @@ add_task(async function test_rollout_experiment_no_conflict() {
   await manager.onStartup();
 
   
-  var failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
+  var failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue("events");
   Assert.equal(
     undefined,
     failureEvents,
@@ -616,7 +616,7 @@ add_task(async function test_rollout_experiment_no_conflict() {
   );
 
   
-  failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
+  failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue("events");
   Assert.equal(
     undefined,
     failureEvents,
