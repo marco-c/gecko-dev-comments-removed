@@ -4026,57 +4026,66 @@ nsresult HTMLEditor::SetHTMLBackgroundColorWithTransaction(
   return rv;
 }
 
-nsresult HTMLEditor::RemoveEmptyInclusiveAncestorInlineElements(
-    nsIContent& aContent) {
+Result<CaretPoint, nsresult>
+HTMLEditor::DeleteEmptyInclusiveAncestorInlineElements(
+    nsIContent& aContent, const Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(!aContent.Length());
 
-  Element* editingHost = aContent.GetEditingHost();
-  if (NS_WARN_IF(!editingHost)) {
-    return NS_ERROR_FAILURE;
-  }
+  constexpr static HTMLEditUtils::EmptyCheckOptions kOptionsToCheckInline =
+      HTMLEditUtils::EmptyCheckOptions{
+          EmptyCheckOption::TreatBlockAsVisible,
+          EmptyCheckOption::TreatListItemAsVisible,
+          EmptyCheckOption::TreatSingleBRElementAsVisible,
+          EmptyCheckOption::TreatTableCellAsVisible};
 
-  if (&aContent == editingHost ||
+  if (&aContent == &aEditingHost ||
       HTMLEditUtils::IsBlockElement(
           aContent, BlockInlineCheck::UseComputedDisplayOutsideStyle) ||
-      !EditorUtils::IsEditableContent(aContent, EditorType::HTML) ||
-      !aContent.GetParent()) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  {
-    const Element* editableBlockElement = HTMLEditUtils::GetAncestorElement(
-        aContent, HTMLEditUtils::ClosestEditableBlockElement,
-        BlockInlineCheck::UseComputedDisplayOutsideStyle);
-    if (!editableBlockElement ||
-        HTMLEditUtils::IsEmptyNode(
-            *editableBlockElement,
-            {EmptyCheckOption::TreatSingleBRElementAsVisible,
-             EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
-      return NS_OK;
-    }
+      !HTMLEditUtils::IsRemovableFromParentNode(aContent) ||
+      !aContent.GetParent() ||
+      !HTMLEditUtils::IsEmptyNode(aContent, kOptionsToCheckInline)) {
+    return CaretPoint(EditorDOMPoint());
   }
 
   OwningNonNull<nsIContent> content = aContent;
   for (nsIContent* parentContent : aContent.AncestorsOfType<nsIContent>()) {
     if (HTMLEditUtils::IsBlockElement(
-            *parentContent, BlockInlineCheck::UseComputedDisplayOutsideStyle) ||
-        parentContent->Length() != 1 ||
-        !EditorUtils::IsEditableContent(*parentContent, EditorType::HTML) ||
-        parentContent == editingHost) {
+            *parentContent, BlockInlineCheck::UseComputedDisplayStyle) ||
+        !HTMLEditUtils::IsRemovableFromParentNode(*parentContent) ||
+        parentContent == &aEditingHost) {
+      break;
+    }
+    bool parentIsEmpty = true;
+    if (parentContent->GetChildCount() > 1) {
+      for (nsIContent* sibling = parentContent->GetFirstChild(); sibling;
+           sibling = sibling->GetNextSibling()) {
+        if (sibling == content) {
+          continue;
+        }
+        if (!HTMLEditUtils::IsEmptyNode(*sibling, kOptionsToCheckInline)) {
+          parentIsEmpty = false;
+          break;
+        }
+      }
+    }
+    if (!parentIsEmpty) {
       break;
     }
     content = *parentContent;
   }
 
+  const nsCOMPtr<nsIContent> nextSibling = content->GetNextSibling();
+  const nsCOMPtr<nsINode> parentNode = content->GetParentNode();
   nsresult rv = DeleteNodeWithTransaction(content);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::DeleteNodeWithTransaction() failed");
-  return rv;
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+    return Err(rv);
+  }
+  if (NS_WARN_IF(nextSibling && nextSibling->GetParentNode() != parentNode)) {
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+  }
+  return CaretPoint(nextSibling ? EditorDOMPoint(nextSibling)
+                                : EditorDOMPoint::AtEndOf(*parentNode));
 }
 
 nsresult HTMLEditor::DeleteAllChildrenWithTransaction(Element& aElement) {

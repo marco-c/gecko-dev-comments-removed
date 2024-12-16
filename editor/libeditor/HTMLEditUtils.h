@@ -519,6 +519,43 @@ class HTMLEditUtils final {
     return !HTMLEditUtils::IsVisibleBRElement(aBRElement);
   }
 
+  enum class IgnoreInvisibleLineBreak { No, Yes };
+
+  
+
+
+
+
+  template <typename PT, typename CT>
+  [[nodiscard]] static bool PointIsImmediatelyBeforeCurrentBlockBoundary(
+      const EditorDOMPointBase<PT, CT>& aPoint,
+      IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak,
+      const Element& aEditingHost);
+
+  
+
+
+
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] static bool RangeIsAcrossStartBlockBoundary(
+      const EditorDOMRangeBase<EditorDOMPointType>& aRange) {
+    MOZ_ASSERT(aRange.IsPositionedAndValid());
+    if (MOZ_UNLIKELY(!aRange.StartRef().IsInContentNode())) {
+      return false;
+    }
+    const Element* const startBlockElement =
+        HTMLEditUtils::GetInclusiveAncestorElement(
+            *aRange.StartRef().template ContainerAs<nsIContent>(),
+            ClosestBlockElement,
+            BlockInlineCheck::UseComputedDisplayOutsideStyle);
+    if (MOZ_UNLIKELY(!startBlockElement)) {
+      return false;
+    }
+    return EditorRawDOMPoint::After(*startBlockElement)
+        .EqualsOrIsBefore(aRange.EndRef());
+  }
+
   
 
 
@@ -590,6 +627,15 @@ class HTMLEditUtils final {
 
 
 
+
+  template <typename PT, typename CT>
+  static EditorDOMPoint LineRequiresPaddingLineBreakToBeVisible(
+      const EditorDOMPointBase<PT, CT>& aPoint, const Element& aEditingHost);
+
+  
+
+
+
   static bool ShouldInsertLinefeedCharacter(
       const EditorDOMPoint& aPointToInsert, const Element& aEditingHost);
 
@@ -607,6 +653,7 @@ class HTMLEditUtils final {
 
   enum class EmptyCheckOption {
     TreatSingleBRElementAsVisible,
+    TreatBlockAsVisible,
     TreatListItemAsVisible,
     TreatTableCellAsVisible,
     TreatNonEditableContentAsInvisible,
