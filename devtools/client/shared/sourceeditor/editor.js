@@ -170,6 +170,7 @@ class Editor extends EventEmitter {
   #abortController;
   
   
+  
   #currentDocumentId = null;
   #currentDocument = null;
   #CodeMirror6;
@@ -2136,6 +2137,71 @@ class Editor extends EventEmitter {
 
   getLineOrOffset(line) {
     return this.isWasm ? this.lineToWasmOffset(line) : line;
+  }
+
+  
+
+
+
+
+
+
+
+  async findBestMatchExpressions(tokenLocation) {
+    const cm = editors.get(this);
+    const {
+      codemirrorLanguage: { syntaxTree },
+    } = this.#CodeMirror6;
+
+    function matchPosition(node, position) {
+      return node.from <= position && node.to >= position;
+    }
+    const expressions = [];
+    const symbolTypes = new Set([
+      "MemberExpression",
+      "VariableDefinition",
+      "VariableName",
+      "this",
+      "PropertyName",
+    ]);
+
+    const line = cm.state.doc.line(tokenLocation.line);
+    const tokPos = line.from + tokenLocation.column;
+
+    await syntaxTree(cm.state).iterate({
+      enter: node => {
+        if (symbolTypes.has(node.name) && matchPosition(node, tokPos)) {
+          expressions.push({
+            type: node.name,
+            
+            computed: false,
+            expression: cm.state.doc.sliceString(node.from, node.to),
+            location: {
+              start: this.#posToLineColumn(node.from),
+              end: this.#posToLineColumn(node.to),
+            },
+            from: node.from,
+            to: node.to,
+          });
+        }
+      },
+      from: line.from,
+      to: line.to,
+    });
+    
+    
+    
+    
+    
+    
+    return expressions.sort((a, b) => {
+      if (a.from < b.from || a.to < b.to) {
+        return -1;
+      } else if (a.from > b.from || a.to > b.to) {
+        return 1;
+      }
+      return 0;
+    });
   }
 
   
