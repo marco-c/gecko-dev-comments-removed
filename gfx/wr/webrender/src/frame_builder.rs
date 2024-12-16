@@ -401,6 +401,19 @@ impl FrameBuilder {
 
                 let world_culling_rect = WorldRect::max_rect();
 
+                
+                
+                
+                
+                
+                let snapshot = scene.prim_store
+                    .pictures[pic_index.0]
+                    .snapshot
+                    .unwrap();
+                let key = snapshot.key.as_image();
+                visibility_state.resource_cache
+                    .increment_image_generation(key);
+
                 update_prim_visibility(
                     *pic_index,
                     None,
