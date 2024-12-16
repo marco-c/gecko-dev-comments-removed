@@ -101,7 +101,7 @@ struct SecondsAndNanoseconds {
     }
     MOZ_ASSERT(0 <= nanos.value() && nanos.value() < 1'000'000'000);
 
-    return {secs.value(), nanos.value()};
+    return {{secs.value(), nanos.value()}};
   }
 
   template <class T, class U, class R = Derived>
@@ -123,7 +123,7 @@ struct SecondsAndNanoseconds {
     }
     MOZ_ASSERT(0 <= nanos.value() && nanos.value() < 1'000'000'000);
 
-    return {secs.value(), nanos.value()};
+    return {{secs.value(), nanos.value()}};
   }
 
   static constexpr Derived negate(const Derived& self) {
@@ -156,7 +156,7 @@ struct SecondsAndNanoseconds {
 
   constexpr Derived abs() const {
     auto [sec, nanos] = denormalize();
-    return {std::abs(sec), std::abs(nanos)};
+    return {{std::abs(sec), std::abs(nanos)}};
   }
 
   
@@ -198,21 +198,21 @@ struct SecondsAndNanoseconds {
   template <class Other>
   constexpr Other to() const {
     static_assert(std::is_base_of_v<SecondsAndNanoseconds<Other>, Other>);
-    return Other{seconds, nanoseconds};
+    return Other{{seconds, nanoseconds}};
   }
 
   
 
 
   static constexpr Derived fromDays(int64_t days) {
-    return {days * ToSeconds(TemporalUnit::Day), 0};
+    return {{days * ToSeconds(TemporalUnit::Day), 0}};
   }
 
   
 
 
   static constexpr Derived fromMinutes(int64_t minutes) {
-    return {minutes * ToSeconds(TemporalUnit::Minute), 0};
+    return {{minutes * ToSeconds(TemporalUnit::Minute), 0}};
   }
 
   
@@ -225,7 +225,7 @@ struct SecondsAndNanoseconds {
       seconds -= 1;
       millis += 1'000;
     }
-    return {seconds, millis * 1'000'000};
+    return {{seconds, millis * 1'000'000}};
   }
 
   
@@ -238,7 +238,7 @@ struct SecondsAndNanoseconds {
       seconds -= 1;
       nanos += 1'000'000'000;
     }
-    return {seconds, nanos};
+    return {{seconds, nanos}};
   }
 
   
@@ -252,7 +252,7 @@ struct SecondsAndNanoseconds {
       seconds -= 1;
       nanos += 1'000'000'000;
     }
-    return {seconds, nanos};
+    return {{seconds, nanos}};
   }
 };
 
@@ -290,7 +290,7 @@ struct EpochDuration final : SecondsAndNanoseconds<EpochDuration> {
     
     constexpr int64_t seconds = 2 * 8'640'000'000'000;
     constexpr int64_t nanos = 0;
-    return {seconds, nanos};
+    return {{seconds, nanos}};
   }
 
   
@@ -362,7 +362,7 @@ struct EpochNanoseconds final : SecondsAndNanoseconds<EpochNanoseconds> {
     
     constexpr int64_t seconds = 8'640'000'000'000;
     constexpr int64_t nanos = 0;
-    return {seconds, nanos};
+    return {{seconds, nanos}};
   }
 
   
@@ -757,7 +757,7 @@ struct TimeDuration final : SecondsAndNanoseconds<TimeDuration> {
   static constexpr TimeDuration max() {
     constexpr int64_t seconds = 0x1f'ffff'ffff'ffff;
     constexpr int64_t nanos = 999'999'999;
-    return {seconds, nanos};
+    return {{seconds, nanos}};
   }
 
   
