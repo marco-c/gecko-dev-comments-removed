@@ -5060,34 +5060,6 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   Maybe<ShouldNotProcessUpdatesReason> shouldNotProcessUpdatesReason =
       ShouldNotProcessUpdates(mDirProvider, updRoot);
   if (shouldNotProcessUpdatesReason.isNothing()) {
-    
-    
-    if (EnvHasValue("MOZ_TEST_PROCESS_UPDATES")) {
-      
-      
-      
-      const char* logFile = nullptr;
-      if (ARG_FOUND == CheckArg("dump-args", &logFile)) {
-        FILE* logFP = fopen(logFile, "wb");
-        if (logFP) {
-          for (int i = 1; i < gRestartArgc; ++i) {
-            fprintf(logFP, "%s\n", gRestartArgv[i]);
-          }
-          fclose(logFP);
-        }
-      }
-      *aExitFlag = true;
-      return 0;
-    }
-
-    
-    
-    
-    
-    
-    if (CheckArg("test-process-updates")) {
-      SaveToEnv("MOZ_TEST_PROCESS_UPDATES=1");
-    }
     nsCOMPtr<nsIFile> exeFile, exeDir;
     rv = mDirProvider.GetFile(XRE_EXECUTABLE_FILE, &persistent,
                               getter_AddRefs(exeFile));
@@ -5113,6 +5085,25 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   if (CheckArg("test-process-updates") ||
       EnvHasValue("MOZ_TEST_PROCESS_UPDATES")) {
     SaveToEnv("MOZ_TEST_PROCESS_UPDATES=");
+
+    
+    
+    
+    const char* logFile = nullptr;
+    if (ARG_FOUND == CheckArg("dump-args", &logFile)) {
+      FILE* logFP = fopen(logFile, "wb");
+      if (logFP) {
+        for (int i = 1; i < gRestartArgc; ++i) {
+          fprintf(logFP, "%s\n", gRestartArgv[i]);
+        }
+        fclose(logFP);
+      }
+    }
+
+    
+    
+    WriteUpdateCompleteTestFile(updRoot);
+
     *aExitFlag = true;
     return 0;
   }

@@ -80,6 +80,16 @@ nsresult IsMultiSessionInstallLockoutActive(nsIFile* updRootDir,
 
 
 
+
+
+
+
+nsresult WriteUpdateCompleteTestFile(nsIFile* updRootDir);
+
+
+
+
+
 class nsUpdateProcessor final : public nsIUpdateProcessor {
  public:
   nsUpdateProcessor();
