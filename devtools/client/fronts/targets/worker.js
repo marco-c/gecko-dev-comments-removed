@@ -30,8 +30,9 @@ class WorkerTargetFront extends TargetMixin(
   }
 
   
+  
   get name() {
-    return this._url.split("/").pop();
+    return this._name || this._url.split("/").pop();
   }
 
   form(json) {
@@ -46,6 +47,7 @@ class WorkerTargetFront extends TargetMixin(
     this._type = json.type;
     
     this.id = json.id;
+    this._name = json.name;
 
     
     this.relatedDocumentInnerWindowId = json.relatedDocumentInnerWindowId;
