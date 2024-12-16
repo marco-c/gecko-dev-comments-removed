@@ -279,10 +279,17 @@ function FetchFromFrame(frame, url) {
 
 
 
-function NoCorsSubresourceCookiesFromFrame(frame, host) {
-  const url = `${host}/storage-access-api/resources/echo-cookie-header.py`;
+function NoCorsFetchFromFrame(frame, url) {
   return PostMessageAndAwaitReply(
     { command: "no-cors fetch", url }, frame.contentWindow);
+}
+
+
+
+
+function NoCorsSubresourceCookiesFromFrame(frame, host) {
+  const url = `${host}/storage-access-api/resources/echo-cookie-header.py`;
+  return NoCorsFetchFromFrame(frame, url);
 }
 
 
