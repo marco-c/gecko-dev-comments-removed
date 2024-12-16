@@ -1376,6 +1376,44 @@ StyleAlignFlags nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
   return (alignment | alignmentFlags);
 }
 
+std::pair<StyleAlignFlags, StyleAlignFlags>
+nsFlexContainerFrame::UsedAlignSelfAndFlagsForItem(
+    const nsIFrame* aFlexItem) const {
+  MOZ_ASSERT(aFlexItem->IsFlexItem());
+
+  if (IsLegacyBox(this)) {
+    
+    
+    
+    
+    
+    
+    
+    const StyleAlignFlags alignSelf =
+        ConvertLegacyStyleToAlignItems(StyleXUL());
+    const StyleAlignFlags flags = {0};
+    return {alignSelf, flags};
+  }
+
+  
+  
+  
+  StyleAlignSelf usedAlignSelf =
+      aFlexItem->StylePosition()->UsedAlignSelf(Style());
+  if (MOZ_LIKELY(usedAlignSelf._0 == StyleAlignFlags::NORMAL)) {
+    
+    
+    usedAlignSelf = {StyleAlignFlags::STRETCH};
+  }
+
+  
+  
+  const StyleAlignFlags flags = usedAlignSelf._0 & StyleAlignFlags::FLAG_BITS;
+  const StyleAlignFlags alignSelf =
+      usedAlignSelf._0 & ~StyleAlignFlags::FLAG_BITS;
+  return {alignSelf, flags};
+}
+
 void nsFlexContainerFrame::GenerateFlexItemForChild(
     FlexLine& aLine, nsIFrame* aChildFrame,
     const ReflowInput& aParentReflowInput,
@@ -2133,37 +2171,16 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
   MOZ_ASSERT(mFrame, "expecting a non-null child frame");
   MOZ_ASSERT(!mFrame->IsPlaceholderFrame(),
              "placeholder frames should not be treated as flex items");
-  MOZ_ASSERT(!mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
-             "out-of-flow frames should not be treated as flex items");
+  MOZ_ASSERT(mFrame->IsFlexItem(), "mFrame must be a flex item!");
   MOZ_ASSERT(mIsInlineAxisMainAxis ==
                  nsFlexContainerFrame::IsItemInlineAxisMainAxis(mFrame),
              "public API should be consistent with internal state (about "
              "whether flex item's inline axis is flex container's main axis)");
 
-  const ReflowInput* containerRI = aFlexItemReflowInput.mParentReflowInput;
-  if (IsLegacyBox(containerRI->mFrame)) {
-    
-    
-    
-    
-    
-    
-    
-    const nsStyleXUL* containerStyleXUL = containerRI->mFrame->StyleXUL();
-    mAlignSelf = ConvertLegacyStyleToAlignItems(containerStyleXUL);
-    mAlignSelfFlags = {0};
-  } else {
-    StyleAlignSelf alignSelf =
-        aFlexItemReflowInput.mStylePosition->UsedAlignSelf(
-            containerRI->mFrame->Style());
-    if (MOZ_LIKELY(alignSelf._0 == StyleAlignFlags::NORMAL)) {
-      alignSelf = {StyleAlignFlags::STRETCH};
-    }
-
-    
-    mAlignSelfFlags = alignSelf._0 & StyleAlignFlags::FLAG_BITS;
-    mAlignSelf = alignSelf._0 & ~StyleAlignFlags::FLAG_BITS;
-  }
+  const auto* container =
+      static_cast<nsFlexContainerFrame*>(mFrame->GetParent());
+  std::tie(mAlignSelf, mAlignSelfFlags) =
+      container->UsedAlignSelfAndFlagsForItem(mFrame);
 
   
   
@@ -2190,6 +2207,7 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
     
     
     
+    const ReflowInput* containerRI = aFlexItemReflowInput.mParentReflowInput;
     if (aAxisTracker.IsRowOriented() ||
         (containerRI->ComputedBSize() != NS_UNCONSTRAINEDSIZE &&
          !containerRI->mFlags.mTreatBSizeAsIndefinite)) {
@@ -6494,10 +6512,9 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
         
         return false;
       }
-      const StyleAlignFlags alignSelf =
-          childStylePos->UsedAlignSelf(Style())._0;
-      if ((alignSelf != StyleAlignFlags::STRETCH &&
-           alignSelf != StyleAlignFlags::NORMAL) ||
+      [[maybe_unused]] auto [alignSelf, flags] =
+          UsedAlignSelfAndFlagsForItem(childFrame);
+      if (alignSelf != StyleAlignFlags::STRETCH ||
           !childStylePos->BSize(flexWM).IsAuto() ||
           childFrame->StyleMargin()->HasBlockAxisAuto(flexWM)) {
         

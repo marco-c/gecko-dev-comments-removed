@@ -178,6 +178,14 @@ class nsFlexContainerFrame final : public nsContainerFrame,
       mozilla::LogicalAxis aLogicalAxis) const override;
 
   
+  
+  
+  
+  
+  std::pair<mozilla::StyleAlignFlags, mozilla::StyleAlignFlags>
+  UsedAlignSelfAndFlagsForItem(const nsIFrame* aFlexItem) const;
+
+  
 
 
 
