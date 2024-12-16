@@ -115,9 +115,6 @@ class WebExtensionDescriptorActor extends Actor {
         supportsReloadDescriptor: true,
         
         watcher: true,
-        
-        
-        isServerTargetSwitchingEnabled: true,
       },
       url: this.addon.sourceURI ? this.addon.sourceURI.spec : undefined,
       warnings: lazy.ExtensionParent.DebugUtils.getExtensionManifestWarnings(

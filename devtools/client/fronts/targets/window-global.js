@@ -83,9 +83,7 @@ class WindowGlobalTargetFront extends TargetMixin(
 
     
     
-    
-    
-    if (!packet.isFrameSwitching || this.isWebExtension) {
+    if (!packet.isFrameSwitching) {
       this.setTitle(packet.title);
       this.setUrl(packet.url);
     }
