@@ -1466,6 +1466,17 @@ nsresult nsObjectLoadingContent::OpenChannel() {
 
     loadState->SetShouldCheckForRecursion(true);
 
+    
+    
+    
+    if (!mOriginalContentType.IsEmpty()) {
+      nsAutoCString parsedMime, dummy;
+      NS_ParseResponseContentType(mOriginalContentType, parsedMime, dummy);
+      if (!parsedMime.IsEmpty()) {
+        loadState->SetTypeHint(parsedMime);
+      }
+    }
+
     chan =
         DocumentChannel::CreateForObject(loadState, loadInfo, loadFlags, shim);
     MOZ_ASSERT(chan);
