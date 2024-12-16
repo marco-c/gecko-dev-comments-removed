@@ -463,8 +463,7 @@ void MPRISServiceHandler::InitIdentity() {
   mIdentity.Append(' ');
   mIdentity.Append(mDesktopEntry);
 
-  
-  ToLowerCase(mDesktopEntry);
+  LOGMPRIS("InitIdentity() MPRIS desktop ID %s", mDesktopEntry.get());
 }
 
 const char* MPRISServiceHandler::Identity() const {
