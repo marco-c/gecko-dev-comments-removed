@@ -2,6 +2,7 @@
 
 
 
+use crate::private::PingType;
 use crate::ClientInfoMetrics;
 use crate::{Configuration, ConfigurationBuilder};
 use std::sync::{Mutex, MutexGuard};
@@ -44,6 +45,8 @@ pub(crate) fn new_glean(
             .with_server_endpoint("invalid-test-host")
             .build(),
     };
+
+    _ = PingType::new("store1", true, true, true, true, true, vec![], vec![], true);
 
     crate::test_reset_glean(cfg, ClientInfoMetrics::unknown(), clear_stores);
     dir

@@ -3,6 +3,7 @@
 
 
 use std::fmt;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use crate::ping::PingMaker;
@@ -30,11 +31,15 @@ struct InnerPing {
     
     pub include_info_sections: bool,
     
-    pub enabled: bool,
+    pub enabled: AtomicBool,
     
     pub schedules_pings: Vec<String>,
     
     pub reason_codes: Vec<String>,
+
+    
+    
+    follows_collection_enabled: AtomicBool,
 }
 
 impl fmt::Debug for PingType {
@@ -45,9 +50,13 @@ impl fmt::Debug for PingType {
             .field("send_if_empty", &self.0.send_if_empty)
             .field("precise_timestamps", &self.0.precise_timestamps)
             .field("include_info_sections", &self.0.include_info_sections)
-            .field("enabled", &self.0.enabled)
+            .field("enabled", &self.0.enabled.load(Ordering::Relaxed))
             .field("schedules_pings", &self.0.schedules_pings)
             .field("reason_codes", &self.0.reason_codes)
+            .field(
+                "follows_collection_enabled",
+                &self.0.follows_collection_enabled.load(Ordering::Relaxed),
+            )
             .finish()
     }
 }
@@ -80,6 +89,7 @@ impl PingType {
         enabled: bool,
         schedules_pings: Vec<String>,
         reason_codes: Vec<String>,
+        follows_collection_enabled: bool,
     ) -> Self {
         Self::new_internal(
             name,
@@ -90,6 +100,7 @@ impl PingType {
             enabled,
             schedules_pings,
             reason_codes,
+            follows_collection_enabled,
         )
     }
 
@@ -103,6 +114,7 @@ impl PingType {
         enabled: bool,
         schedules_pings: Vec<String>,
         reason_codes: Vec<String>,
+        follows_collection_enabled: bool,
     ) -> Self {
         let this = Self(Arc::new(InnerPing {
             name: name.into(),
@@ -110,9 +122,10 @@ impl PingType {
             send_if_empty,
             precise_timestamps,
             include_info_sections,
-            enabled,
+            enabled: AtomicBool::new(enabled),
             schedules_pings,
             reason_codes,
+            follows_collection_enabled: AtomicBool::new(follows_collection_enabled),
         }));
 
         
@@ -142,16 +155,47 @@ impl PingType {
         self.0.include_info_sections
     }
 
-    pub(crate) fn enabled(&self, glean: &Glean) -> bool {
-        let remote_settings_config = &glean.remote_settings_config.lock().unwrap();
+    
+    
+    
+    
+    pub fn set_enabled(&self, enabled: bool) {
+        crate::set_ping_enabled(self, enabled)
+    }
 
-        if !remote_settings_config.pings_enabled.is_empty() {
-            if let Some(remote_enabled) = remote_settings_config.pings_enabled.get(self.name()) {
-                return *remote_enabled;
+    
+    
+    
+    
+    pub(crate) fn store_enabled(&self, enabled: bool) {
+        self.0.enabled.store(enabled, Ordering::Release);
+    }
+
+    pub(crate) fn enabled(&self, glean: &Glean) -> bool {
+        if self.0.follows_collection_enabled.load(Ordering::Relaxed) {
+            
+            
+            
+            
+            if !glean.is_upload_enabled() {
+                return false;
+            }
+
+            let remote_settings_config = &glean.remote_settings_config.lock().unwrap();
+
+            if !remote_settings_config.pings_enabled.is_empty() {
+                if let Some(remote_enabled) = remote_settings_config.pings_enabled.get(self.name())
+                {
+                    return *remote_enabled;
+                }
             }
         }
 
-        self.0.enabled
+        self.0.enabled.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn follows_collection_enabled(&self) -> bool {
+        self.0.follows_collection_enabled.load(Ordering::Relaxed)
     }
 
     pub(crate) fn schedules_pings(&self) -> &[String] {
@@ -194,8 +238,12 @@ impl PingType {
     
     #[doc(hidden)]
     pub fn submit_sync(&self, glean: &Glean, reason: Option<&str>) -> bool {
-        if !glean.is_upload_enabled() {
-            log::info!("Glean disabled: not submitting any pings.");
+        if !self.enabled(glean) {
+            log::info!(
+                "The ping '{}' is disabled and will be discarded and not submitted",
+                self.0.name
+            );
+
             return false;
         }
 
