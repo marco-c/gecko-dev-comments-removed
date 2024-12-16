@@ -17,7 +17,7 @@ add_task(async function test_backgroundtask_shouldprocessupdates() {
   
   
   let exitCode = await do_backgroundtask("shouldprocessupdates", {
-    extraArgs: ["--test-process-updates"],
+    extraArgs: ["--test-should-not-process-updates"],
   });
   Assert.equal(80, exitCode);
 
@@ -33,13 +33,15 @@ add_task(async function test_backgroundtask_shouldprocessupdates() {
   
   
   
-  exitCode = await do_backgroundtask("shouldprocessupdates");
+  exitCode = await do_backgroundtask("shouldprocessupdates", {
+    extraArgs: ["--test-should-not-process-updates"],
+  });
   Assert.equal(81, exitCode);
 
   
   
   exitCode = await do_backgroundtask("shouldnotprocessupdates", {
-    extraArgs: ["--test-process-updates"],
+    extraArgs: ["--test-should-not-process-updates"],
   });
   Assert.equal(78, exitCode);
 });
