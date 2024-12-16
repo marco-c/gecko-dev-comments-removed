@@ -140,18 +140,8 @@ pub fn shutdown() {
 
 
 
-
-
-
 pub fn set_upload_enabled(enabled: bool) {
     glean_core::glean_set_upload_enabled(enabled)
-}
-
-
-
-
-pub fn set_collection_enabled(enabled: bool) {
-    glean_core::glean_set_collection_enabled(enabled)
 }
 
 
@@ -277,38 +267,8 @@ pub fn set_debug_view_tag(tag: &str) -> bool {
 
 
 
-
-
-
-pub fn glean_get_debug_view_tag() -> Option<String> {
-    glean_core::glean_get_debug_view_tag()
-}
-
-
-
-
-
-
-
-
-
 pub fn set_log_pings(value: bool) {
     glean_core::glean_set_log_pings(value)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn glean_get_log_pings() -> bool {
-    glean_core::glean_get_log_pings()
 }
 
 
@@ -339,18 +299,6 @@ pub fn get_timestamp_ms() -> u64 {
 
 pub fn persist_ping_lifetime_data() {
     glean_core::glean_persist_ping_lifetime_data();
-}
-
-
-
-
-
-
-
-
-
-pub fn get_registered_ping_names() -> Vec<String> {
-    glean_core::glean_get_registered_ping_names()
 }
 
 #[cfg(test)]

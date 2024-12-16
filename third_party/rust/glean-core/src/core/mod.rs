@@ -428,16 +428,7 @@ impl Glean {
     
     
     
-    pub fn on_ready_to_submit_pings(&mut self, trim_data_to_registered_pings: bool) -> bool {
-        
-        
-        
-        
-        if !self.upload_enabled {
-            log::debug!("on_ready_to_submit_pings. let's clear pings once again.");
-            self.clear_metrics();
-        }
-
+    pub fn on_ready_to_submit_pings(&self, trim_data_to_registered_pings: bool) -> bool {
         self.event_data_store
             .flush_pending_events_on_startup(self, trim_data_to_registered_pings)
     }
@@ -479,61 +470,8 @@ impl Glean {
     
     
     
-    
-    
-    
-    #[doc(hidden)]
-    pub fn set_ping_enabled(&mut self, ping: &PingType, enabled: bool) {
-        ping.store_enabled(enabled);
-        if !enabled {
-            if let Some(data) = self.data_store.as_ref() {
-                _ = data.clear_ping_lifetime_storage(ping.name());
-                _ = data.clear_lifetime_storage(Lifetime::User, ping.name());
-                _ = data.clear_lifetime_storage(Lifetime::Application, ping.name());
-            }
-            let ping_maker = PingMaker::new();
-            let disabled_pings = &[ping.name()][..];
-            if let Err(err) = ping_maker.clear_pending_pings(self.get_data_path(), disabled_pings) {
-                log::warn!("Error clearing pending pings: {}", err);
-            }
-        }
-    }
-
-    
-    
-    
     pub fn is_upload_enabled(&self) -> bool {
         self.upload_enabled
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn is_ping_enabled(&self, ping: &str) -> bool {
-        
-        const DEFAULT_ENABLED: &[&str] = &[
-            "glean_client_info",
-            "glean_internal_info",
-            
-            
-            "all-pings",
-        ];
-
-        
-        if DEFAULT_ENABLED.contains(&ping) {
-            return true;
-        }
-
-        let Some(ping) = self.ping_registry.get(ping) else {
-            return false;
-        };
-
-        ping.enabled(self)
     }
 
     
@@ -590,13 +528,7 @@ impl Glean {
 
         
         let ping_maker = PingMaker::new();
-        let disabled_pings = self
-            .ping_registry
-            .iter()
-            .filter(|&(_ping_name, ping)| ping.follows_collection_enabled())
-            .map(|(ping_name, _ping)| &ping_name[..])
-            .collect::<Vec<_>>();
-        if let Err(err) = ping_maker.clear_pending_pings(self.get_data_path(), &disabled_pings) {
+        if let Err(err) = ping_maker.clear_pending_pings(self.get_data_path()) {
             log::warn!("Error clearing pending pings: {}", err);
         }
 
@@ -604,16 +536,7 @@ impl Glean {
         
         
         if let Some(data) = self.data_store.as_ref() {
-            _ = data.clear_lifetime_storage(Lifetime::User, "glean_internal_info");
-            _ = data.clear_lifetime_storage(Lifetime::User, "glean_client_info");
-            _ = data.clear_lifetime_storage(Lifetime::Application, "glean_client_info");
-            for (ping_name, ping) in &self.ping_registry {
-                if ping.follows_collection_enabled() {
-                    _ = data.clear_ping_lifetime_storage(ping_name);
-                    _ = data.clear_lifetime_storage(Lifetime::User, ping_name);
-                    _ = data.clear_lifetime_storage(Lifetime::Application, ping_name);
-                }
-            }
+            data.clear_all()
         }
         if let Err(err) = self.event_data_store.clear_all() {
             log::warn!("Error clearing pending events: {}", err);
@@ -802,15 +725,6 @@ impl Glean {
     }
 
     
-    
-    
-    
-    
-    pub fn get_registered_ping_names(&self) -> Vec<&str> {
-        self.ping_registry.keys().map(String::as_str).collect()
-    }
-
-    
     pub(crate) fn start_time(&self) -> DateTime<FixedOffset> {
         self.start_time
     }
@@ -947,7 +861,7 @@ impl Glean {
     
     
     
-    pub fn debug_view_tag(&self) -> Option<&String> {
+    pub(crate) fn debug_view_tag(&self) -> Option<&String> {
         self.debug.debug_view_tag.get()
     }
 
@@ -992,7 +906,7 @@ impl Glean {
     
     
     
-    pub fn log_pings(&self) -> bool {
+    pub(crate) fn log_pings(&self) -> bool {
         self.debug.log_pings.get().copied().unwrap_or(false)
     }
 

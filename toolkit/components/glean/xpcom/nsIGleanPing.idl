@@ -48,14 +48,4 @@ interface nsIGleanPing : nsISupports
 
 
   void testBeforeNextSubmit(in nsIGleanPingTestCallback aCallback);
-
-  
-
-
-
-
-
-
-
-  void setEnabled(in boolean aValue);
 };

@@ -23,12 +23,6 @@ const TELEMETRY_SERVER: &str = if cfg!(mock) {
 
 #[cfg_attr(test, allow(dead_code))]
 pub fn init(cfg: &Config) {
-    
-    
-    
-    
-    _ = &*crash;
-
     glean::initialize(config(cfg), client_info_metrics(cfg));
 }
 
