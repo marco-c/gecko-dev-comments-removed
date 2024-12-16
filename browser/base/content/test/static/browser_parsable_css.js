@@ -165,6 +165,10 @@ let propNameAllowlist = [
 
   
   { sourceName: /\/design-system\/tokens-.*\.css$/, isFromDevTools: true },
+
+  
+  { propName: "--toggle-background-color-disabled", isFromDevTools: false },
+  { propName: "--toggle-border-color-disabled", isFromDevTools: false },
 ];
 
 
