@@ -1100,16 +1100,7 @@ function setupTestCommon(aAppUpdateAutoEnabled = false, aAllowBits = false) {
 
 
 
-
-function cleanupTestCommon() {
-  debugDump("start - general test cleanup");
-
-  if (gChannel) {
-    gPrefRoot.removeObserver(PREF_APP_UPDATE_CHANNEL, observer);
-  }
-
-  gTestserver = null;
-
+function cleanupUpdateFiles() {
   if (AppConstants.platform == "macosx" || AppConstants.platform == "linux") {
     
     getLaunchScript();
@@ -1125,36 +1116,6 @@ function cleanupTestCommon() {
         } catch (e) {}
       }
     }
-  }
-
-  if (AppConstants.platform == "win" && MOZ_APP_BASENAME) {
-    let appDir = getApplyDirFile();
-    let vendor = MOZ_APP_VENDOR ? MOZ_APP_VENDOR : "Mozilla";
-    const REG_PATH =
-      "SOFTWARE\\" + vendor + "\\" + MOZ_APP_BASENAME + "\\TaskBarIDs";
-    let key = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
-      Ci.nsIWindowsRegKey
-    );
-    try {
-      key.open(
-        Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
-        REG_PATH,
-        Ci.nsIWindowsRegKey.ACCESS_ALL
-      );
-      if (key.hasValue(appDir.path)) {
-        key.removeValue(appDir.path);
-      }
-    } catch (e) {}
-    try {
-      key.open(
-        Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-        REG_PATH,
-        Ci.nsIWindowsRegKey.ACCESS_ALL
-      );
-      if (key.hasValue(appDir.path)) {
-        key.removeValue(appDir.path);
-      }
-    } catch (e) {}
   }
 
   
@@ -1223,6 +1184,52 @@ function cleanupTestCommon() {
       );
     }
   }
+}
+
+
+
+
+
+function cleanupTestCommon() {
+  debugDump("start - general test cleanup");
+
+  if (gChannel) {
+    gPrefRoot.removeObserver(PREF_APP_UPDATE_CHANNEL, observer);
+  }
+
+  gTestserver = null;
+
+  if (AppConstants.platform == "win" && MOZ_APP_BASENAME) {
+    let appDir = getApplyDirFile();
+    let vendor = MOZ_APP_VENDOR ? MOZ_APP_VENDOR : "Mozilla";
+    const REG_PATH =
+      "SOFTWARE\\" + vendor + "\\" + MOZ_APP_BASENAME + "\\TaskBarIDs";
+    let key = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
+      Ci.nsIWindowsRegKey
+    );
+    try {
+      key.open(
+        Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
+        REG_PATH,
+        Ci.nsIWindowsRegKey.ACCESS_ALL
+      );
+      if (key.hasValue(appDir.path)) {
+        key.removeValue(appDir.path);
+      }
+    } catch (e) {}
+    try {
+      key.open(
+        Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+        REG_PATH,
+        Ci.nsIWindowsRegKey.ACCESS_ALL
+      );
+      if (key.hasValue(appDir.path)) {
+        key.removeValue(appDir.path);
+      }
+    } catch (e) {}
+  }
+
+  cleanupUpdateFiles();
 
   resetEnvironment();
   Services.prefs.clearUserPref(PREF_APP_UPDATE_BITS_ENABLED);
