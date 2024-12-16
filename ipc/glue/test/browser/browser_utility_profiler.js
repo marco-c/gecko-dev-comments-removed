@@ -3,11 +3,8 @@
 
 "use strict";
 
-
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/tools/profiler/tests/browser/shared-head.js",
-  this
+const { ProfilerTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/ProfilerTestUtils.sys.mjs"
 );
 
 
@@ -20,7 +17,7 @@ add_task(async () => {
   const utilityPid = await startUtilityProcess();
 
   info("Start the profiler");
-  await startProfiler();
+  await ProfilerTestUtils.startProfiler();
 
   let profile;
   await TestUtils.waitForCondition(async () => {

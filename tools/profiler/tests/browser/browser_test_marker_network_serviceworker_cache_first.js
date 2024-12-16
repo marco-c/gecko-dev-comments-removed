@@ -32,7 +32,7 @@ add_task(async function test_network_markers_service_worker_register() {
     "The profiler is not currently active"
   );
 
-  startProfilerForMarkerTests();
+  await ProfilerTestUtils.startProfilerForMarkerTests();
 
   const url = `${BASE_URL_HTTPS}serviceworkers/serviceworker_register.html`;
   await BrowserTestUtils.withNewTab(url, async contentBrowser => {
@@ -97,17 +97,19 @@ add_task(async function test_network_markers_service_worker_register() {
     );
 
     
-    const parentNetworkMarkers = getInflatedNetworkMarkers(parentThread)
+    const parentNetworkMarkers = ProfilerTestUtils.getInflatedNetworkMarkers(
+      parentThread
+    )
       
       
       
       
       
       .filter(marker => !marker.data.URI.includes(serviceWorkerFileName));
-    const contentNetworkMarkers = getInflatedNetworkMarkers(contentThread);
-    const serviceWorkerNetworkMarkers = getInflatedNetworkMarkers(
-      serviceWorkerParentThread
-    );
+    const contentNetworkMarkers =
+      ProfilerTestUtils.getInflatedNetworkMarkers(contentThread);
+    const serviceWorkerNetworkMarkers =
+      ProfilerTestUtils.getInflatedNetworkMarkers(serviceWorkerParentThread);
 
     
     info(
@@ -122,9 +124,12 @@ add_task(async function test_network_markers_service_worker_register() {
         JSON.stringify(serviceWorkerNetworkMarkers, null, 2)
     );
 
-    const parentPairs = getPairsOfNetworkMarkers(parentNetworkMarkers);
-    const contentPairs = getPairsOfNetworkMarkers(contentNetworkMarkers);
-    const serviceWorkerPairs = getPairsOfNetworkMarkers(
+    const parentPairs =
+      ProfilerTestUtils.getPairsOfNetworkMarkers(parentNetworkMarkers);
+    const contentPairs = ProfilerTestUtils.getPairsOfNetworkMarkers(
+      contentNetworkMarkers
+    );
+    const serviceWorkerPairs = ProfilerTestUtils.getPairsOfNetworkMarkers(
       serviceWorkerNetworkMarkers
     );
 
@@ -208,7 +213,7 @@ add_task(async function test_network_markers_service_worker_use() {
     "The profiler is not currently active"
   );
 
-  startProfilerForMarkerTests();
+  await ProfilerTestUtils.startProfilerForMarkerTests();
 
   const url = `${BASE_URL_HTTPS}serviceworkers/serviceworker_page.html`;
   await BrowserTestUtils.withNewTab(url, async contentBrowser => {
@@ -225,14 +230,17 @@ add_task(async function test_network_markers_service_worker_use() {
     logInformationForThread("parentThread information", parentThread);
     logInformationForThread("contentThread information", contentThread);
 
-    const parentNetworkMarkers = getInflatedNetworkMarkers(parentThread)
+    const parentNetworkMarkers = ProfilerTestUtils.getInflatedNetworkMarkers(
+      parentThread
+    )
       
       
       
       
       
       .filter(marker => !marker.data.URI.includes(serviceWorkerFileName));
-    const contentNetworkMarkers = getInflatedNetworkMarkers(contentThread);
+    const contentNetworkMarkers =
+      ProfilerTestUtils.getInflatedNetworkMarkers(contentThread);
 
     
     info(
@@ -243,8 +251,11 @@ add_task(async function test_network_markers_service_worker_use() {
         JSON.stringify(contentNetworkMarkers, null, 2)
     );
 
-    const parentPairs = getPairsOfNetworkMarkers(parentNetworkMarkers);
-    const contentPairs = getPairsOfNetworkMarkers(contentNetworkMarkers);
+    const parentPairs =
+      ProfilerTestUtils.getPairsOfNetworkMarkers(parentNetworkMarkers);
+    const contentPairs = ProfilerTestUtils.getPairsOfNetworkMarkers(
+      contentNetworkMarkers
+    );
 
     
     
