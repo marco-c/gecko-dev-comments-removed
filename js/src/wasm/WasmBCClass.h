@@ -945,7 +945,7 @@ struct BaseCompiler final {
 
   
   
-  void insertBreakablePoint(CallSiteKind kind);
+  void insertBreakablePoint(CallSiteDesc::Kind kind);
 
   
   void insertPerFunctionDebugStub();
@@ -1306,10 +1306,6 @@ struct BaseCompiler final {
 
   
   inline BytecodeOffset bytecodeOffset() const;
-
-  
-  
-  inline TrapSiteDesc trapSiteDesc() const;
 
   
   inline void trap(Trap t) const;

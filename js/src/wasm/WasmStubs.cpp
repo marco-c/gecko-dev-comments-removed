@@ -597,7 +597,7 @@ static void CallFuncExport(MacroAssembler& masm, const FuncExport& fe,
   if (funcPtr) {
     masm.call(*funcPtr);
   } else {
-    masm.call(CallSiteDesc(CallSiteKind::Func), fe.funcIndex());
+    masm.call(CallSiteDesc(CallSiteDesc::Func), fe.funcIndex());
   }
 }
 
@@ -754,7 +754,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   
   SetupABIArguments(masm, fe, funcType, argv, scratch);
 
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
                                      WasmCalleeInstanceOffsetBeforeCall));
@@ -1208,7 +1208,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   GenPrintf(DebugChannel::Function, masm, "\n");
 
   
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
                                      WasmCalleeInstanceOffsetBeforeCall));
@@ -1500,7 +1500,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   masm.movePtr(ImmPtr(&inst), InstanceReg);
   masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
                                      WasmCalleeInstanceOffsetBeforeCall));
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   
   const CodeBlock& codeBlock = inst.code().funcCodeBlock(fe.funcIndex());
@@ -1860,7 +1860,7 @@ static bool AddStackCheckForImportFunctionEntry(jit::MacroAssembler& masm,
                                                 const FuncType& funcType,
                                                 StackMaps* stackMaps) {
   std::pair<CodeOffset, uint32_t> pair =
-      masm.wasmReserveStackChecked(reserve, TrapSiteDesc());
+      masm.wasmReserveStackChecked(reserve, BytecodeOffset(0));
 
   
   ArgTypeVector argTypes(funcType);
@@ -1949,7 +1949,7 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   }
 
   
-  CallSiteDesc desc(CallSiteKind::Import);
+  CallSiteDesc desc(CallSiteDesc::Import);
   MoveSPForJitABI(masm);
   masm.wasmCallImport(desc, CalleeDesc::import(funcImportInstanceOffset));
 
@@ -1957,7 +1957,7 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   masm.loadPtr(
       Address(masm.getStackPointer(), framePushed - sizeOfInstanceSlot),
       InstanceReg);
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   
   masm.switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
@@ -2725,7 +2725,7 @@ void wasm::GenerateJumpToCatchHandler(MacroAssembler& masm, Register rfe,
                                       Register scratch1, Register scratch2) {
   masm.loadPtr(Address(rfe, ResumeFromException::offsetOfInstance()),
                InstanceReg);
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
   masm.switchToWasmInstanceRealm(scratch1, scratch2);
   masm.loadPtr(Address(rfe, ResumeFromException::offsetOfTarget()), scratch1);
   masm.loadPtr(Address(rfe, ResumeFromException::offsetOfFramePointer()),

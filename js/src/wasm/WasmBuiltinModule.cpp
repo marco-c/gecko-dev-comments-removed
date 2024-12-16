@@ -235,7 +235,6 @@ bool CompileBuiltinModule(JSContext* cx,
     ReportOutOfMemory(cx);
     return false;
   }
-  uint32_t funcBytecodeOffset = CallSite::FIRST_VALID_BYTECODE_OFFSET;
   for (uint32_t funcIndex = 0; funcIndex < ids.size(); funcIndex++) {
     BuiltinModuleFuncId id = ids[funcIndex];
     const BuiltinModuleFunc& builtinModuleFunc =
@@ -249,14 +248,13 @@ bool CompileBuiltinModule(JSContext* cx,
     
     
     if (!EncodeFuncBody(builtinModuleFunc, id, &bytecode) ||
-        !mg.compileFuncDef(funcIndex, funcBytecodeOffset, bytecode.begin(),
+        !mg.compileFuncDef(funcIndex, 0, bytecode.begin(),
                            bytecode.begin() + bytecode.length())) {
       
       MOZ_ASSERT(!error);
       ReportOutOfMemory(cx);
       return false;
     }
-    funcBytecodeOffset += bytecode.length();
   }
 
   

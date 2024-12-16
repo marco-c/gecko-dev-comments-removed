@@ -136,7 +136,7 @@ class MacroAssemblerARM : public Assembler {
   void outOfLineWasmTruncateToIntCheck(FloatRegister input, MIRType fromType,
                                        MIRType toType, TruncFlags flags,
                                        Label* rejoin,
-                                       const wasm::TrapSiteDesc& trapSiteDesc);
+                                       wasm::BytecodeOffset trapOffset);
 
   
   
