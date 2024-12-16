@@ -16,6 +16,7 @@
 namespace mozilla {
 
 class OriginAttributes;
+class OriginAttributesPattern;
 
 namespace dom::quota {
 
@@ -124,6 +125,25 @@ bool IsUUIDOrigin(const nsCString& aOrigin);
 
 
 bool IsUserContextSuffix(const nsACString& aSuffix, uint32_t aUserContextId);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool IsUserContextPattern(const OriginAttributesPattern& aPattern,
+                          uint32_t aUserContextId);
 
 }  
 }  
