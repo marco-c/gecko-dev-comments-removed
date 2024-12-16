@@ -59,6 +59,16 @@ class Ping {
 
   void TestBeforeNextSubmit(PingTestCallback&& aCallback) const;
 
+  
+
+
+
+
+
+
+
+  void SetEnabled(bool aValue) const;
+
  private:
   const uint32_t mId;
 };

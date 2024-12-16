@@ -247,6 +247,12 @@ fn try_run(config: &mut Arc<Config>) -> anyhow::Result<bool> {
         
         
         
+        _ = &*glean::crash;
+
+        
+        
+        
+        
         
         
         #[cfg(not(test))]
