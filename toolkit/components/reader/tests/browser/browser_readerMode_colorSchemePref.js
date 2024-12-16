@@ -68,6 +68,7 @@ add_task(async function () {
 
 async function testColorsFocus() {
   
+  Services.prefs.setBoolPref("reader.colors_menu.enabled", true);
   Services.prefs.setCharPref("reader.color_scheme", "auto");
 
   

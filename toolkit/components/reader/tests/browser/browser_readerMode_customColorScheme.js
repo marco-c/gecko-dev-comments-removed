@@ -11,6 +11,7 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
 
 async function testCustomColors(aPref, color) {
   
+  Services.prefs.setBoolPref("reader.colors_menu.enabled", true);
   Services.prefs.setCharPref("reader.color_scheme", "custom");
 
   
