@@ -25,9 +25,6 @@ const defaultValues = {
 
 async function testTextLayout(aPref, value, cssProp, cssValue) {
   
-  Services.prefs.setBoolPref("reader.improved_text_menu.enabled", true);
-
-  
   const valueType = typeof value;
   if (valueType == "number") {
     Services.prefs.setIntPref(`reader.${aPref}`, value);
@@ -75,9 +72,6 @@ async function testTextLayout(aPref, value, cssProp, cssValue) {
 
 
 async function testTextLayoutReset() {
-  
-  Services.prefs.setBoolPref("reader.improved_text_menu.enabled", true);
-
   
   Services.prefs.setIntPref(`reader.font_size`, 15);
   Services.prefs.setCharPref(`reader.font_type`, "serif");
@@ -135,9 +129,6 @@ async function testTextLayoutReset() {
 
 async function testTextLayoutFocus() {
   
-  Services.prefs.setBoolPref("reader.improved_text_menu.enabled", true);
-
-  
   
   await BrowserTestUtils.withNewTab(
     TEST_PATH + "readerModeArticle.html",
@@ -153,7 +144,7 @@ async function testTextLayoutFocus() {
 
       await SpecialPowers.spawn(browser, [], () => {
         let doc = content.document;
-        doc.querySelector(".improved-style-button").click();
+        doc.querySelector(".text-layout-button").click();
 
         let firstFocusableElement = doc.querySelector(
           ".text-size-minus-button"
