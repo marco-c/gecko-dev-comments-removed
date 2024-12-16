@@ -180,9 +180,23 @@ var testCases = [
       });
     }
 
+    
+    
+    let isTrackerCookieBlocked = Services.prefs.getBoolPref(
+      "network.cookie.cookieBehavior.trackerCookieBlocking"
+    );
+
+    if (!isTrackerCookieBlocked) {
+      
+      testCases[5].cases[3] = [false]; 
+      testCases[5].cases[4] = [false]; 
+      testCases[5].cases[7] = [false]; 
+    }
+
     testCases.forEach(test => {
       let [hasStorageAccess, expectedBlockingNotifications] =
         test.cases[settings.indexOf(setting)];
+
       let callback = hasStorageAccess
         ? async _ => {
             
