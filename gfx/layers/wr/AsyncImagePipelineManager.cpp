@@ -470,7 +470,7 @@ void AsyncImagePipelineManager::ApplyAsyncImageForPipeline(
           params, wr::ToLayoutRect(aPipeline->mScBounds),
           
           
-          wr::RasterSpace::Screen());
+          wr::RasterSpace::Screen(), nullptr);
 
   Maybe<wr::SpaceAndClipChainHelper> spaceAndClipChainHelper;
   if (referenceFrameId) {
