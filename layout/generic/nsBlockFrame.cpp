@@ -7929,25 +7929,44 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     backplateColor.emplace(GetBackplateColor(this));
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsLineBox* cursor =
-      (hasDescendantPlaceHolders || textOverflow.isSome() || backplateColor ||
-       HasLineClampEllipsis() || HasLineClampEllipsisDescendant())
-          ? nullptr
-          : GetFirstLineContaining(aBuilder->GetDirtyRect().y);
+  const bool canUseCursor = [&] {
+    if (hasDescendantPlaceHolders) {
+      
+      
+      
+      
+      
+      
+      
+      
+      return false;
+    }
+    if (textOverflow.isSome()) {
+      
+      
+      
+      return false;
+    }
+    if (backplateColor) {
+      
+      
+      
+      return false;
+    }
+    if ((HasLineClampEllipsis() || HasLineClampEllipsisDescendant()) &&
+        StaticPrefs::layout_css_webkit_line_clamp_skip_paint()) {
+      
+      
+      
+      
+      return false;
+    }
+    return true;
+  }();
+
+  nsLineBox* cursor = canUseCursor
+                          ? GetFirstLineContaining(aBuilder->GetDirtyRect().y)
+                          : nullptr;
   LineIterator line_end = LinesEnd();
 
   TextOverflow* textOverflowPtr = textOverflow.ptrOr(nullptr);
@@ -7967,7 +7986,8 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         if (ShouldDescendIntoLine(lineArea)) {
           DisplayLine(aBuilder, line, line->IsInline(), aLists, this, nullptr,
                       0, depth, drawnLines, foundClamp);
-          MOZ_ASSERT(!foundClamp);
+          MOZ_ASSERT(!foundClamp ||
+                     !StaticPrefs::layout_css_webkit_line_clamp_skip_paint());
         }
       }
     }
@@ -8030,7 +8050,8 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         }
       }
       foundClamp = foundClamp || line->HasLineClampEllipsis();
-      if (foundClamp) {
+      if (foundClamp &&
+          StaticPrefs::layout_css_webkit_line_clamp_skip_paint()) {
         break;
       }
       lineCount++;
