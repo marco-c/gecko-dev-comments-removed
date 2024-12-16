@@ -54,8 +54,6 @@ Invoke-WebRequest -UseBasicParsing -Uri "https://example.com/browser/devtools/cl
   "Cache-Control" = "no-cache"
 }`);
 
-  
-  Services.prefs.setBoolPref("network.http.idempotencyKey.enabled", false);
   info("Test powershell command for POST request with post body");
   await performRequest("POST", "Plaintext value as a payload");
   await testClipboardContentForRecentRequest(`$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
