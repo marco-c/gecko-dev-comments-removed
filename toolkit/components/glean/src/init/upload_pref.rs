@@ -90,10 +90,10 @@ impl UploadPrefObserver {
             
             
             
-            glean::set_collection_enabled(false);
+            glean::set_upload_enabled(false);
         }
         RECORDING_ENABLED.store(recording_enabled, Ordering::SeqCst);
-        glean::set_collection_enabled(upload_enabled || recording_enabled);
+        glean::set_upload_enabled(upload_enabled || recording_enabled);
         NS_OK
     }
 }
