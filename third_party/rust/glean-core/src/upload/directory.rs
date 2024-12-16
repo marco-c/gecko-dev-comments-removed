@@ -94,7 +94,7 @@ pub struct PingMetadata {
 
 
 
-fn process_metadata(path: &str, metadata: &str) -> Option<PingMetadata> {
+pub fn process_metadata(path: &str, metadata: &str) -> Option<PingMetadata> {
     if let Ok(metadata) = serde_json::from_str::<PingMetadata>(metadata) {
         return Some(metadata);
     } else {
@@ -337,7 +337,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true, true, true, true, true, vec![], vec![]);
+        let ping_type = PingType::new("test", true, true, true, true, true, vec![], vec![], true);
         glean.register_ping_type(&ping_type);
 
         
@@ -364,7 +364,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true, true, true, true, true, vec![], vec![]);
+        let ping_type = PingType::new("test", true, true, true, true, true, vec![], vec![], true);
         glean.register_ping_type(&ping_type);
 
         
@@ -400,7 +400,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true, true, true, true, true, vec![], vec![]);
+        let ping_type = PingType::new("test", true, true, true, true, true, vec![], vec![], true);
         glean.register_ping_type(&ping_type);
 
         

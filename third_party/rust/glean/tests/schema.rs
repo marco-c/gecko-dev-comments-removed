@@ -170,8 +170,17 @@ fn validate_against_schema() {
     text_metric.set("loooooong text".repeat(100));
 
     
-    let custom_ping =
-        glean::private::PingType::new(PING_NAME, true, true, true, true, true, vec![], vec![]);
+    let custom_ping = glean::private::PingType::new(
+        PING_NAME,
+        true,
+        true,
+        true,
+        true,
+        true,
+        vec![],
+        vec![],
+        true,
+    );
     custom_ping.submit(None);
 
     
