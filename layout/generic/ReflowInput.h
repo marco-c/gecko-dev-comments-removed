@@ -180,6 +180,20 @@ struct SizeComputationInput {
                                    StyleBoxSizing aBoxSizing,
                                    const SizeOrMaxSize&) const;
 
+  
+
+
+
+
+  template <typename SizeOrMaxSize>
+  inline nscoord ComputeBSizeValueHandlingStretch(
+      nscoord aContainingBlockBSize, StyleBoxSizing aBoxSizing,
+      const SizeOrMaxSize& aSize) const;
+
+  
+
+
+
   nscoord ComputeBSizeValue(nscoord aContainingBlockBSize,
                             StyleBoxSizing aBoxSizing,
                             const LengthPercentage& aCoord) const;

@@ -1576,6 +1576,25 @@ class nsLayoutUtils {
   }
 
   
+  template <typename SizeOrMaxSize>
+  static nscoord ComputeBSizeValueHandlingStretch(
+      nscoord aContainingBlockBSize, nscoord aMargin, nscoord aBorderPadding,
+      nscoord aContentEdgeToBoxSizingBoxEdge, const SizeOrMaxSize& aSize) {
+    if (aSize.BehavesLikeStretchOnBlockAxis()) {
+      
+      
+      
+      
+      
+      return ComputeStretchContentBoxBSize(aContainingBlockBSize, aMargin,
+                                           aBorderPadding);
+    }
+    return ComputeBSizeValue(aContainingBlockBSize,
+                             aContentEdgeToBoxSizingBoxEdge,
+                             aSize.AsLengthPercentage());
+  }
+
+  
 
 
 
@@ -1656,14 +1675,15 @@ class nsLayoutUtils {
 
 
 
-
-
-
-
   template <typename SizeOrMaxSize>
   static bool IsAutoBSize(const SizeOrMaxSize& aCoord, nscoord aCBBSize) {
+    
+    
+    
+    
     return aCoord.BehavesLikeInitialValueOnBlockAxis() ||
-           (aCBBSize == nscoord_MAX && aCoord.HasPercent());
+           (aCBBSize == nscoord_MAX &&
+            (aCoord.HasPercent() || aCoord.BehavesLikeStretchOnBlockAxis()));
   }
 
   static bool IsPaddingZero(const LengthPercentage& aLength) {

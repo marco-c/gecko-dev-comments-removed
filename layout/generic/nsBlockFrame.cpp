@@ -4034,11 +4034,14 @@ static inline bool IsNonAutoNonZeroBSize(const StyleSize& aCoord) {
   
   
   
-  
-  
-  
   if (aCoord.BehavesLikeInitialValueOnBlockAxis()) {
     return false;
+  }
+  if (aCoord.BehavesLikeStretchOnBlockAxis()) {
+    
+    
+    
+    return true;
   }
   MOZ_ASSERT(aCoord.IsLengthPercentage());
   

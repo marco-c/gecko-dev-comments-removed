@@ -1606,6 +1606,10 @@ nscoord nsFlexContainerFrame::PartiallyResolveAutoMinSize(
   nscoord specifiedSizeSuggestion = nscoord_MAX;
 
   if (aAxisTracker.IsRowOriented()) {
+    
+    
+    
+    
     if (mainStyleSize.IsLengthPercentage()) {
       
       
@@ -1615,14 +1619,16 @@ nscoord nsFlexContainerFrame::PartiallyResolveAutoMinSize(
           mainStyleSize.AsLengthPercentage());
     }
   } else {
+    
+    
+    
+    
     const auto percentageBasisBSize = PercentageBasisForItem().BSize(cbWM);
     if (!nsLayoutUtils::IsAutoBSize(mainStyleSize, percentageBasisBSize)) {
-      
-      
-      
-      specifiedSizeSuggestion = nsLayoutUtils::ComputeBSizeValue(
-          percentageBasisBSize, boxSizingAdjust.BSize(cbWM),
-          mainStyleSize.AsLengthPercentage());
+      specifiedSizeSuggestion = nsLayoutUtils::ComputeBSizeValueHandlingStretch(
+          percentageBasisBSize, aFlexItem.MarginSizeInMainAxis(),
+          aFlexItem.BorderPaddingSizeInMainAxis(), boxSizingAdjust.BSize(cbWM),
+          mainStyleSize);
     }
   }
 
@@ -2340,6 +2346,15 @@ bool FlexItem::IsMinSizeAutoResolutionNeeded() const {
   const auto& mainMinSize =
       Frame()->StylePosition()->MinSize(MainAxis(), ContainingBlockWM());
 
+  
+  
+  
+  
+  
+  
+  if (mainMinSize.BehavesLikeStretchOnBlockAxis()) {
+    return false;
+  }
   return IsAutoOrEnumOnBSize(mainMinSize, IsInlineAxisMainAxis()) &&
          !Frame()->StyleDisplay()->IsScrollableOverflow();
 }
