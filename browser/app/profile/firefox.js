@@ -199,6 +199,19 @@ pref("app.update.langpack.enabled", true);
   pref("app.update.noWindowAutoRestart.delayMs", 300000);
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+pref("app.update.multiSessionInstallLockout.enabled", true);
+
 #if defined(MOZ_BACKGROUNDTASKS)
   
   
