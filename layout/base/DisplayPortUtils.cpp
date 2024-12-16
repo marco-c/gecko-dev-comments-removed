@@ -472,22 +472,21 @@ bool DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(nsIContent* aContent) {
   if (aContent->GetProperty(nsGkAtoms::MinimalDisplayPort)) {
     return false;
   }
-  if (!HasDisplayPort(aContent)) {
+
+  DisplayPortPropertyData* rectData = nullptr;
+  DisplayPortMarginsPropertyData* marginsData = nullptr;
+  if (!GetDisplayPortData(aContent, &rectData, &marginsData)) {
     return false;
   }
 
-  DisplayPortMarginsPropertyData* currentData =
-      static_cast<DisplayPortMarginsPropertyData*>(
-          aContent->GetProperty(nsGkAtoms::DisplayPortMargins));
-
-  if (!currentData) {
+  if (!marginsData) {
     
     
     
     return true;
   }
 
-  if (currentData->mMargins.mMargins != ScreenMargin()) {
+  if (marginsData->mMargins.mMargins != ScreenMargin()) {
     return true;
   }
 
