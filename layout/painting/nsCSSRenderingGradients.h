@@ -52,10 +52,14 @@ class MOZ_STACK_CLASS ColorStopInterpolator {
 
   void CreateStops() {
     
-    uint32_t iterStops = mStops.Length() - (mExtendLastStop ? 0 : 1);
+    
+    uint32_t iterStops = mStops.Length() - 1 + (mExtendLastStop ? 2 : 0);
     for (uint32_t i = 0; i < iterStops; i++) {
-      auto nextindex = i + 1 < mStops.Length() ? i + 1 : i;
-      const auto& start = mStops[i];
+      auto thisindex = mExtendLastStop ? (i == 0 ? 0 : i - 1) : i;
+      auto nextindex = mExtendLastStop && (i == iterStops - 1 || i == 0)
+                           ? thisindex
+                           : thisindex + 1;
+      const auto& start = mStops[thisindex];
       const auto& end = mStops[nextindex];
       float startPosition = start.mPosition;
       float endPosition = end.mPosition;
@@ -64,8 +68,13 @@ class MOZ_STACK_CLASS ColorStopInterpolator {
       
       
       
-      if (i == mStops.Length() - 1 && mExtendLastStop) {
-        endPosition = 1.0f;
+      if (mExtendLastStop) {
+        if (i == 0) {
+          startPosition = std::min(startPosition, 0.0f);
+        }
+        if (i == iterStops - 1) {
+          endPosition = std::max(endPosition, 1.0f);
+        }
       }
       uint32_t extraStops =
           (uint32_t)(floor(endPosition * kFullRangeExtraStops) -
