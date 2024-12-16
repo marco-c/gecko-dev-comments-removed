@@ -209,6 +209,9 @@ enum GMPApiVersion {
 
   
   kGMPVersion35 = 35,
+
+  
+  kGMPVersion36 = 36,
 };
 
 struct GMPVideoCodec {
@@ -245,6 +248,9 @@ struct GMPVideoCodec {
   GMPRateControlMode mRateControlMode;
   GMPSliceMode mSliceMode;
   bool mUseThreadedEncode;
+
+  
+  int32_t mTemporalLayerNum;
 };
 
 
