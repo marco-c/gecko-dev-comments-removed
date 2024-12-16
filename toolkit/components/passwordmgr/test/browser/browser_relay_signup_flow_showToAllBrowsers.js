@@ -353,7 +353,11 @@ add_task(
     const fxaSigninUrlString =
       await gFxAccounts.constructor.config.promiseConnectAccountURI(
         "relay_integration",
-        { service: "relay" }
+        {
+          service: "relay",
+          entrypoint_experiment: "first_offer_version",
+          entrypoint_variation: "control",
+        }
       );
     const fxaSigninURL = new URL(fxaSigninUrlString);
     
