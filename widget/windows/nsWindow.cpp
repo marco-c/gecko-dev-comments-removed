@@ -3888,7 +3888,15 @@ uint32_t nsWindow::GetMaxTouchPoints() const {
 }
 
 void nsWindow::SetIsEarlyBlankWindow(bool aIsEarlyBlankWindow) {
+  if (mIsEarlyBlankWindow == aIsEarlyBlankWindow) {
+    return;
+  }
   mIsEarlyBlankWindow = aIsEarlyBlankWindow;
+  if (!aIsEarlyBlankWindow && mNeedsNCAreaClear) {
+    
+    
+    ::RedrawWindow(mWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_INTERNALPAINT);
+  }
 }
 
 
@@ -7212,7 +7220,7 @@ void nsWindow::UpdateOpaqueRegionInternal() {
   DwmExtendFrameIntoClientArea(mWnd, &margins);
   if (mTransparencyMode == TransparencyMode::Transparent) {
     mNeedsNCAreaClear = true;
-    Invalidate();
+    ::RedrawWindow(mWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_INTERNALPAINT);
   }
 }
 
