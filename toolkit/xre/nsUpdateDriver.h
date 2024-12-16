@@ -66,6 +66,20 @@ nsresult ProcessUpdates(nsIFile* greDir, nsIFile* appDir, nsIFile* updRootDir,
 
 
 
+
+
+
+
+
+
+
+nsresult IsMultiSessionInstallLockoutActive(nsIFile* updRootDir,
+                                            bool& isActive);
+
+
+
+
+
 class nsUpdateProcessor final : public nsIUpdateProcessor {
  public:
   nsUpdateProcessor();

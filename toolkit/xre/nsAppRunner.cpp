@@ -4502,7 +4502,8 @@ enum struct ShouldNotProcessUpdatesReason {
   DevToolsLaunching,
   NotAnUpdatingTask,
   OtherInstanceRunning,
-  FirstStartup
+  FirstStartup,
+  MultiSessionInstallLockout
 };
 
 const char* ShouldNotProcessUpdatesReasonAsString(
@@ -4514,13 +4515,17 @@ const char* ShouldNotProcessUpdatesReasonAsString(
       return "NotAnUpdatingTask";
     case ShouldNotProcessUpdatesReason::OtherInstanceRunning:
       return "OtherInstanceRunning";
+    case ShouldNotProcessUpdatesReason::FirstStartup:
+      return "FirstStartup";
+    case ShouldNotProcessUpdatesReason::MultiSessionInstallLockout:
+      return "MultiSessionInstallLockout";
     default:
       MOZ_CRASH("impossible value for ShouldNotProcessUpdatesReason");
   }
 }
 
 Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
-    nsXREDirProvider& aDirProvider) {
+    nsXREDirProvider& aDirProvider, nsIFile* aUpdateRoot) {
   
   
   
@@ -4548,6 +4553,33 @@ Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
     }
   }
 
+  bool otherInstance = false;
+  
+  
+  
+  nsCOMPtr<nsIFile> anAppFile;
+  bool persistent;
+  nsresult rv = aDirProvider.GetFile(XRE_EXECUTABLE_FILE, &persistent,
+                                     getter_AddRefs(anAppFile));
+  if (NS_SUCCEEDED(rv) && anAppFile) {
+    auto updateSyncManager = new nsUpdateSyncManager(anAppFile);
+    rv = updateSyncManager->IsOtherInstanceRunning(&otherInstance);
+    if (NS_FAILED(rv)) {
+      
+      
+      otherInstance = false;
+    }
+  }
+
+  if (otherInstance) {
+    bool msilActive = false;
+    rv = IsMultiSessionInstallLockoutActive(aUpdateRoot, msilActive);
+    if (NS_SUCCEEDED(rv) && msilActive) {
+      NS_WARNING("ShouldNotProcessUpdates(): MultiSessionInstallLockout");
+      return Some(ShouldNotProcessUpdatesReason::MultiSessionInstallLockout);
+    }
+  }
+
 #  ifdef MOZ_BACKGROUNDTASKS
   
   
@@ -4571,22 +4603,6 @@ Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
       return Some(ShouldNotProcessUpdatesReason::NotAnUpdatingTask);
     }
 
-    
-    
-    
-    nsCOMPtr<nsIFile> anAppFile;
-    bool persistent;
-    nsresult rv = aDirProvider.GetFile(XRE_EXECUTABLE_FILE, &persistent,
-                                       getter_AddRefs(anAppFile));
-    if (NS_FAILED(rv) || !anAppFile) {
-      
-      return Nothing();
-    }
-
-    auto updateSyncManager = new nsUpdateSyncManager(anAppFile);
-
-    bool otherInstance = false;
-    updateSyncManager->IsOtherInstanceRunning(&otherInstance);
     if (otherInstance) {
       NS_WARNING("ShouldNotProcessUpdates(): OtherInstanceRunning");
       return Some(ShouldNotProcessUpdatesReason::OtherInstanceRunning);
@@ -5031,19 +5047,19 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     }
   }
 #  endif
-  Maybe<ShouldNotProcessUpdatesReason> shouldNotProcessUpdatesReason =
-      ShouldNotProcessUpdates(mDirProvider);
-  if (shouldNotProcessUpdatesReason.isNothing()) {
-    
-    nsCOMPtr<nsIFile> updRoot;
-    bool persistent;
-    rv = mDirProvider.GetFile(XRE_UPDATE_ROOT_DIR, &persistent,
-                              getter_AddRefs(updRoot));
-    
-    if (NS_FAILED(rv)) {
-      updRoot = mDirProvider.GetAppDir();
-    }
+  
+  nsCOMPtr<nsIFile> updRoot;
+  bool persistent;
+  rv = mDirProvider.GetFile(XRE_UPDATE_ROOT_DIR, &persistent,
+                            getter_AddRefs(updRoot));
+  
+  if (NS_FAILED(rv)) {
+    updRoot = mDirProvider.GetAppDir();
+  }
 
+  Maybe<ShouldNotProcessUpdatesReason> shouldNotProcessUpdatesReason =
+      ShouldNotProcessUpdates(mDirProvider, updRoot);
+  if (shouldNotProcessUpdatesReason.isNothing()) {
     
     
     if (EnvHasValue("MOZ_TEST_PROCESS_UPDATES")) {
