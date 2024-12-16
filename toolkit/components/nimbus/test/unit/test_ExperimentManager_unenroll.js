@@ -64,7 +64,8 @@ add_task(async function test_unenroll_opt_out() {
   await manager.store.addEnrollment(experiment);
 
   
-  var unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue("events");
+  var unenrollmentEvents =
+    Glean.nimbusEvents.unenrollment.testGetValue("events");
   Assert.equal(
     undefined,
     unenrollmentEvents,
@@ -131,7 +132,8 @@ add_task(async function test_unenroll_rollout_opt_out() {
   await manager.store.addEnrollment(rollout);
 
   
-  var unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue("events");
+  var unenrollmentEvents =
+    Glean.nimbusEvents.unenrollment.testGetValue("events");
   Assert.equal(
     undefined,
     unenrollmentEvents,
@@ -263,7 +265,8 @@ add_task(async function test_send_unenroll_event() {
   await manager.store.addEnrollment(experiment);
 
   
-  var unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue("events");
+  var unenrollmentEvents =
+    Glean.nimbusEvents.unenrollment.testGetValue("events");
   Assert.equal(
     undefined,
     unenrollmentEvents,
@@ -334,7 +337,8 @@ add_task(async function test_undefined_reason() {
   );
 
   
-  let unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue("events");
+  let unenrollmentEvents =
+    Glean.nimbusEvents.unenrollment.testGetValue("events");
   
   Assert.equal(1, unenrollmentEvents.length);
   
@@ -395,7 +399,8 @@ add_task(async function test_remove_rollout_onFinalize() {
   manager.onFinalize("NimbusTestUtils");
 
   
-  var unenrollFailedEvents = Glean.nimbusEvents.unenrollFailed.testGetValue("events");
+  var unenrollFailedEvents =
+    Glean.nimbusEvents.unenrollFailed.testGetValue("events");
   Assert.equal(
     undefined,
     unenrollFailedEvents,
@@ -425,7 +430,8 @@ add_task(async function test_rollout_telemetry_events() {
   await manager.onStartup();
 
   
-  var unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue("events");
+  var unenrollmentEvents =
+    Glean.nimbusEvents.unenrollment.testGetValue("events");
   Assert.equal(
     undefined,
     unenrollmentEvents,
@@ -435,7 +441,8 @@ add_task(async function test_rollout_telemetry_events() {
   manager.onFinalize("NimbusTestUtils");
 
   
-  var unenrollFailedEvents = Glean.nimbusEvents.unenrollFailed.testGetValue("events");
+  var unenrollFailedEvents =
+    Glean.nimbusEvents.unenrollFailed.testGetValue("events");
   Assert.equal(
     undefined,
     unenrollFailedEvents,
