@@ -54,7 +54,7 @@ add_setup(async function test_setup() {
   do_get_profile();
 
   
-  Services.fog.initializeFOG();
+  Services.fog.initializeFOG(undefined, "firefox.desktop.background.update");
 
   setupProfileService();
 });

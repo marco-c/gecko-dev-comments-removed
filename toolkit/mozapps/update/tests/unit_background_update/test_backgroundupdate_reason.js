@@ -21,7 +21,7 @@ add_setup(async function test_setup() {
 
   
   
-  Services.fog.initializeFOG();
+  Services.fog.initializeFOG(undefined, "firefox.desktop.background.update");
 });
 
 
