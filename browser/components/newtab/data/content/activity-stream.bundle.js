@@ -12538,6 +12538,11 @@ class BaseContent extends (external_React_default()).PureComponent {
     }
   }
   onWindowScroll() {
+    if (window.innerHeight <= 700) {
+      
+      
+      return;
+    }
     const prefs = this.props.Prefs.values;
     const logoAlwaysVisible = prefs["logowordmark.alwaysVisible"];
     const layoutsVariantAEnabled = prefs["newtabLayouts.variant-a"];
