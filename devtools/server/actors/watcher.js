@@ -97,6 +97,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
       this._browserElement = browsingContext.embedderElement;
     }
 
+    this.watcherConnectionPrefix = conn.allocID("watcher");
+
     
     
     
@@ -498,6 +500,9 @@ exports.WatcherActor = class WatcherActor extends Actor {
     
     const actors = TargetActorRegistry.getTargetActors(
       this.sessionContext,
+      
+      
+      
       this.conn.prefix
     );
 
