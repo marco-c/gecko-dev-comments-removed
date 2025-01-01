@@ -231,16 +231,23 @@ void APZUpdater::UpdateScrollDataAndTreeState(
               self->mScrollData[id].SetWasUpdateSkipped(false);
             }
 
-            if (isFirstPaint && originatingLayersIdWasSkipped) {
-              
-              
-              
-              
-              
-              
-              
-              
-              self->mScrollData[aOriginatingLayersId].SetWasUpdateSkipped(true);
+            if (isFirstPaint) {
+              if (originatingLayersIdWasSkipped) {
+                
+                
+                
+                
+                
+                
+                
+                
+                self->mScrollData[aOriginatingLayersId].SetWasUpdateSkipped(true);
+              } else {
+                
+                
+                
+                self->mScrollData[aOriginatingLayersId].SetIsFirstPaint(false);
+              }
             }
           }));
 }
