@@ -241,8 +241,11 @@ void APZUpdater::UpdateScrollDataAndTreeState(
                 
                 
                 
-                self->mScrollData[aOriginatingLayersId].SetWasUpdateSkipped(true);
+                
+                self->mScrollData[aOriginatingLayersId].SetWasUpdateSkipped(
+                    true);
               } else {
+                
                 
                 
                 
