@@ -58,36 +58,74 @@ using RegisterState = JS::ProfilingFrameIterator::RegisterState;
 
 
 class WasmFrameIter {
- public:
-  enum class Unwind { True, False };
+  
+  
+  
 
- private:
-  jit::JitActivation* activation_;
-  const Code* code_;
-  const CodeRange* codeRange_;
-  unsigned lineOrBytecode_;
-  Frame* fp_;
-  Instance* instance_;
-  uint8_t* unwoundCallerFP_;
+  jit::JitActivation* activation_ = nullptr;
+  bool isLeavingFrames_ = false;
+
   
-  bool hasUnwoundJitFrame_ = false;
-  Unwind unwind_;
-  void** unwoundAddressOfReturnAddress_;
-  uint8_t* resumePCinCurrentFrame_;
   
-  bool failedUnwindSignatureMismatch_;
-  bool stackSwitched_;
+  
+
+  const Code* code_ = nullptr;
+  uint32_t funcIndex_ = UINT32_MAX;
+  uint32_t lineOrBytecode_ = UINT32_MAX;
+  Frame* fp_ = nullptr;
+  Instance* instance_ = nullptr;
+  
+  
+  uint8_t* resumePCinCurrentFrame_ = nullptr;
+  
+  bool failedUnwindSignatureMismatch_ = false;
+  
+  bool currentFrameStackSwitched_ = false;
+
+  
+  
+  
+
+  
+  
+  void** unwoundAddressOfReturnAddress_ = nullptr;
+  
+  
+  uint8_t* unwoundCallerFP_ = nullptr;
+  
+  bool unwoundCallerFPIsJSJit_ = false;
 
   void popFrame();
 
  public:
   
   explicit WasmFrameIter(jit::JitActivation* activation, Frame* fp = nullptr);
+
+  
   WasmFrameIter(FrameWithInstances* fp, void* returnAddress);
-  const jit::JitActivation* activation() const { return activation_; }
-  void setUnwind(Unwind unwind) { unwind_ = unwind; }
+
+  
+  
+  
+  
+  
+  void setIsLeavingFrames() {
+    MOZ_ASSERT(activation_);
+    MOZ_ASSERT(!isLeavingFrames_);
+    isLeavingFrames_ = true;
+  }
+
+  
+  
+  
+
   void operator++();
   bool done() const;
+
+  
+  
+  
+
   const char* filename() const;
   const char16_t* displayURL() const;
   bool mutedErrors() const;
@@ -95,19 +133,70 @@ class WasmFrameIter {
   unsigned lineOrBytecode() const;
   uint32_t funcIndex() const;
   unsigned computeLine(JS::TaggedColumnNumberOneOrigin* column) const;
-  const CodeRange* codeRange() const { return codeRange_; }
-  void** unwoundAddressOfReturnAddress() const;
-  bool debugEnabled() const;
-  DebugFrame* debugFrame() const;
-  bool hasUnwoundJitFrame() const;
-  uint8_t* unwoundCallerFP() const { return unwoundCallerFP_; }
-  Frame* frame() const { return fp_; }
-  Instance* instance() const { return instance_; }
-  bool stackSwitched() const { return stackSwitched_; }
 
   
   
-  uint8_t* resumePCinCurrentFrame() const;
+  
+
+  
+  Instance* instance() const {
+    MOZ_ASSERT(!done());
+    return instance_;
+  }
+
+  
+  Frame* frame() const {
+    MOZ_ASSERT(!done());
+    return fp_;
+  }
+
+  
+  
+  uint8_t* resumePCinCurrentFrame() const {
+    MOZ_ASSERT(!done());
+    return resumePCinCurrentFrame_;
+  }
+
+  
+  bool currentFrameStackSwitched() const {
+    MOZ_ASSERT(!done());
+    return currentFrameStackSwitched_;
+  }
+
+  
+  
+  
+
+  
+  bool debugEnabled() const;
+
+  
+  DebugFrame* debugFrame() const;
+
+  
+  
+  
+
+  
+  void** unwoundAddressOfReturnAddress() const {
+    MOZ_ASSERT(done());
+    MOZ_ASSERT(unwoundAddressOfReturnAddress_);
+    return unwoundAddressOfReturnAddress_;
+  }
+
+  
+  uint8_t* unwoundCallerFP() const {
+    MOZ_ASSERT(done());
+    MOZ_ASSERT(unwoundCallerFP_);
+    return unwoundCallerFP_;
+  }
+
+  
+  bool unwoundCallerFPIsJSJit() const {
+    MOZ_ASSERT(done());
+    MOZ_ASSERT_IF(unwoundCallerFPIsJSJit_, unwoundCallerFP_);
+    return unwoundCallerFPIsJSJit_;
+  }
 };
 
 enum class SymbolicAddress;

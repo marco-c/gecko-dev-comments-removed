@@ -805,7 +805,11 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
 #endif
 
   MOZ_ASSERT(!iter.done());
-  iter.asWasm().setUnwind(WasmFrameIter::Unwind::True);
+
+  
+  
+  
+  iter.asWasm().setIsLeavingFrames();
 
   JitActivation* activation = CallingActivation(cx);
   Rooted<WasmExceptionObject*> wasmExn(cx,
