@@ -43,7 +43,6 @@ extern bool InitializeDateTimeFormatObject(
     JSContext* cx, JS::Handle<JSObject*> obj, JS::Handle<JS::Value> thisValue,
     JS::Handle<JS::Value> locales, JS::Handle<JS::Value> options,
     JS::Handle<JSString*> required, JS::Handle<JSString*> defaults,
-    JS::Handle<JS::Value> toLocaleStringTimeZone,
     DateTimeFormatOptions dtfOptions, JS::MutableHandle<JS::Value> result);
 
 
