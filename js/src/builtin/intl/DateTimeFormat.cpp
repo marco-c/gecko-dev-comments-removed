@@ -25,6 +25,19 @@
 #include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/LanguageTag.h"
 #include "builtin/intl/SharedIntlData.h"
+#ifdef JS_HAS_TEMPORAL_API
+#  include "builtin/temporal/Calendar.h"
+#  include "builtin/temporal/Instant.h"
+#  include "builtin/temporal/PlainDate.h"
+#  include "builtin/temporal/PlainDateTime.h"
+#  include "builtin/temporal/PlainMonthDay.h"
+#  include "builtin/temporal/PlainTime.h"
+#  include "builtin/temporal/PlainYearMonth.h"
+#  include "builtin/temporal/Temporal.h"
+#  include "builtin/temporal/TemporalParser.h"
+#  include "builtin/temporal/TimeZone.h"
+#  include "builtin/temporal/ZonedDateTime.h"
+#endif
 #include "gc/GCContext.h"
 #include "js/Date.h"
 #include "js/experimental/Intl.h"     
@@ -33,6 +46,7 @@
 #include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/StableStringChars.h"
+#include "js/Wrapper.h"
 #include "vm/DateTime.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
@@ -44,6 +58,10 @@
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
+
+#ifdef JS_HAS_TEMPORAL_API
+using namespace js::temporal;
+#endif
 
 using JS::AutoStableStringChars;
 using JS::ClippedTime;
@@ -1635,9 +1653,35 @@ static mozilla::intl::DateTimeFormat* NewDateTimeFormat(
   return df.release();
 }
 
+void js::DateTimeFormatObject::maybeClearCache(DateTimeValueKind kind) {
+  if (getDateTimeValueKind() == kind) {
+    return;
+  }
+  setDateTimeValueKind(kind);
+
+  if (auto* df = getDateFormat()) {
+    intl::RemoveICUCellMemory(
+        this, DateTimeFormatObject::UDateFormatEstimatedMemoryUse);
+    delete df;
+
+    setDateFormat(nullptr);
+  }
+
+  if (auto* dif = getDateIntervalFormat()) {
+    intl::RemoveICUCellMemory(
+        this, DateTimeFormatObject::UDateIntervalFormatEstimatedMemoryUse);
+    delete dif;
+
+    setDateIntervalFormat(nullptr);
+  }
+}
+
 static mozilla::intl::DateTimeFormat* GetOrCreateDateTimeFormat(
     JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat,
     DateTimeValueKind kind) {
+  
+  dateTimeFormat->maybeClearCache(kind);
+
   
   mozilla::intl::DateTimeFormat* df = dateTimeFormat->getDateFormat();
   if (df) {
@@ -1778,9 +1822,366 @@ bool js::intl_resolveDateTimeFormatComponents(JSContext* cx, unsigned argc,
 
 
 static auto ToDateTimeFormattable(const Value& value) {
+#ifdef JS_HAS_TEMPORAL_API
+  
+  if (value.isObject()) {
+    auto* obj = CheckedUnwrapStatic(&value.toObject());
+    if (obj) {
+      if (obj->is<PlainDateObject>()) {
+        return DateTimeValueKind::TemporalDate;
+      }
+      if (obj->is<PlainDateTimeObject>()) {
+        return DateTimeValueKind::TemporalDateTime;
+      }
+      if (obj->is<PlainTimeObject>()) {
+        return DateTimeValueKind::TemporalTime;
+      }
+      if (obj->is<PlainYearMonthObject>()) {
+        return DateTimeValueKind::TemporalYearMonth;
+      }
+      if (obj->is<PlainMonthDayObject>()) {
+        return DateTimeValueKind::TemporalMonthDay;
+      }
+      if (obj->is<ZonedDateTimeObject>()) {
+        return DateTimeValueKind::TemporalZonedDateTime;
+      }
+      if (obj->is<InstantObject>()) {
+        return DateTimeValueKind::TemporalInstant;
+      }
+      return DateTimeValueKind::Number;
+    }
+  }
+#endif
+
   
   return DateTimeValueKind::Number;
 }
+
+#ifdef JS_HAS_TEMPORAL_API
+static bool ResolveCalendarAndTimeZone(
+    JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat) {
+  Rooted<JSObject*> internals(cx, intl::GetInternalsObject(cx, dateTimeFormat));
+  if (!internals) {
+    return false;
+  }
+
+  Rooted<Value> calendarValue(cx);
+  if (!GetProperty(cx, internals, internals, cx->names().calendar,
+                   &calendarValue)) {
+    return false;
+  }
+  Rooted<JSString*> calendarString(cx, calendarValue.toString());
+
+  Rooted<CalendarValue> calendar(cx);
+  if (!CanonicalizeCalendar(cx, calendarString, &calendar)) {
+    return false;
+  }
+
+  Rooted<Value> timeZoneValue(cx);
+  if (!GetProperty(cx, internals, internals, cx->names().timeZone,
+                   &timeZoneValue)) {
+    return false;
+  }
+  Rooted<JSString*> timeZoneString(cx, timeZoneValue.toString());
+
+  Rooted<ParsedTimeZone> parsedTimeZone(cx);
+  Rooted<TimeZoneValue> timeZone(cx);
+  if (!ParseTemporalTimeZoneString(cx, timeZoneString, &parsedTimeZone) ||
+      !ToTemporalTimeZone(cx, parsedTimeZone, &timeZone)) {
+    return false;
+  }
+
+  dateTimeFormat->setCalendar(calendar);
+  dateTimeFormat->setTimeZone(timeZone);
+  return true;
+}
+
+
+
+
+
+
+static bool HandleDateTimeTemporalDate(
+    JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat,
+    Handle<PlainDateObject*> unwrappedTemporalDate, ClippedTime* result) {
+  auto isoDate = unwrappedTemporalDate->date();
+  auto calendarId = unwrappedTemporalDate->calendar().identifier();
+
+  Rooted<CalendarValue> calendar(cx, dateTimeFormat->getCalendar());
+  Rooted<TimeZoneValue> timeZone(cx, dateTimeFormat->getTimeZone());
+  if (!calendar || !timeZone) {
+    if (!ResolveCalendarAndTimeZone(cx, dateTimeFormat)) {
+      return false;
+    }
+    calendar.set(dateTimeFormat->getCalendar());
+    timeZone.set(dateTimeFormat->getTimeZone());
+  }
+  MOZ_ASSERT(calendar && timeZone);
+
+  
+  if (calendarId != CalendarId::ISO8601 &&
+      calendarId != calendar.identifier()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_CALENDAR_INCOMPATIBLE,
+                              CalendarIdentifier(calendarId).data(),
+                              CalendarIdentifier(calendar).data());
+    return false;
+  }
+
+  
+  auto isoDateTime = ISODateTime{isoDate, {12, 0, 0}};
+
+  
+  EpochNanoseconds epochNs;
+  if (!GetEpochNanosecondsFor(cx, timeZone, isoDateTime,
+                              TemporalDisambiguation::Compatible, &epochNs)) {
+    return false;
+  }
+
+  
+
+  
+  int64_t milliseconds = epochNs.floorToMilliseconds();
+  *result = JS::TimeClip(double(milliseconds));
+  return true;
+}
+
+
+
+
+
+
+static bool HandleDateTimeTemporalYearMonth(
+    JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat,
+    Handle<PlainYearMonthObject*> unwrappedTemporalYearMonth,
+    ClippedTime* result) {
+  auto isoDate = unwrappedTemporalYearMonth->date();
+  auto calendarId = unwrappedTemporalYearMonth->calendar().identifier();
+
+  Rooted<CalendarValue> calendar(cx, dateTimeFormat->getCalendar());
+  Rooted<TimeZoneValue> timeZone(cx, dateTimeFormat->getTimeZone());
+  if (!calendar || !timeZone) {
+    if (!ResolveCalendarAndTimeZone(cx, dateTimeFormat)) {
+      return false;
+    }
+    calendar.set(dateTimeFormat->getCalendar());
+    timeZone.set(dateTimeFormat->getTimeZone());
+  }
+  MOZ_ASSERT(calendar && timeZone);
+
+  
+  if (calendarId != calendar.identifier()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_CALENDAR_INCOMPATIBLE,
+                              CalendarIdentifier(calendarId).data(),
+                              CalendarIdentifier(calendar).data());
+    return false;
+  }
+
+  
+  auto isoDateTime = ISODateTime{isoDate, {12, 0, 0}};
+
+  
+  EpochNanoseconds epochNs;
+  if (!GetEpochNanosecondsFor(cx, timeZone, isoDateTime,
+                              TemporalDisambiguation::Compatible, &epochNs)) {
+    return false;
+  }
+
+  
+
+  
+  int64_t milliseconds = epochNs.floorToMilliseconds();
+  *result = JS::TimeClip(double(milliseconds));
+  return true;
+}
+
+
+
+
+
+
+static bool HandleDateTimeTemporalMonthDay(
+    JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat,
+    Handle<PlainMonthDayObject*> unwrappedTemporalMonthDay,
+    ClippedTime* result) {
+  auto isoDate = unwrappedTemporalMonthDay->date();
+  auto calendarId = unwrappedTemporalMonthDay->calendar().identifier();
+
+  Rooted<CalendarValue> calendar(cx, dateTimeFormat->getCalendar());
+  Rooted<TimeZoneValue> timeZone(cx, dateTimeFormat->getTimeZone());
+  if (!calendar || !timeZone) {
+    if (!ResolveCalendarAndTimeZone(cx, dateTimeFormat)) {
+      return false;
+    }
+    calendar.set(dateTimeFormat->getCalendar());
+    timeZone.set(dateTimeFormat->getTimeZone());
+  }
+  MOZ_ASSERT(calendar && timeZone);
+
+  
+  if (calendarId != calendar.identifier()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_CALENDAR_INCOMPATIBLE,
+                              CalendarIdentifier(calendarId).data(),
+                              CalendarIdentifier(calendar).data());
+    return false;
+  }
+
+  
+  auto isoDateTime = ISODateTime{isoDate, {12, 0, 0}};
+
+  
+  EpochNanoseconds epochNs;
+  if (!GetEpochNanosecondsFor(cx, timeZone, isoDateTime,
+                              TemporalDisambiguation::Compatible, &epochNs)) {
+    return false;
+  }
+
+  
+
+  
+  int64_t milliseconds = epochNs.floorToMilliseconds();
+  *result = JS::TimeClip(double(milliseconds));
+  return true;
+}
+
+
+
+
+
+
+static bool HandleDateTimeTemporalTime(
+    JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat,
+    Handle<PlainTimeObject*> unwrappedTemporalTime, ClippedTime* result) {
+  auto time = unwrappedTemporalTime->time();
+
+  Rooted<TimeZoneValue> timeZone(cx, dateTimeFormat->getTimeZone());
+  if (!timeZone) {
+    if (!ResolveCalendarAndTimeZone(cx, dateTimeFormat)) {
+      return false;
+    }
+    timeZone.set(dateTimeFormat->getTimeZone());
+  }
+  MOZ_ASSERT(timeZone);
+
+  
+  auto isoDateTime = ISODateTime{{1970, 1, 1}, time};
+
+  
+  EpochNanoseconds epochNs;
+  if (!GetEpochNanosecondsFor(cx, timeZone, isoDateTime,
+                              TemporalDisambiguation::Compatible, &epochNs)) {
+    return false;
+  }
+
+  
+
+  
+  int64_t milliseconds = epochNs.floorToMilliseconds();
+  *result = JS::TimeClip(double(milliseconds));
+  return true;
+}
+
+
+
+
+
+
+static bool HandleDateTimeTemporalDateTime(
+    JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat,
+    Handle<PlainDateTimeObject*> unwrappedDateTime, ClippedTime* result) {
+  auto isoDateTime = unwrappedDateTime->dateTime();
+  auto calendarId = unwrappedDateTime->calendar().identifier();
+
+  Rooted<CalendarValue> calendar(cx, dateTimeFormat->getCalendar());
+  Rooted<TimeZoneValue> timeZone(cx, dateTimeFormat->getTimeZone());
+  if (!calendar || !timeZone) {
+    if (!ResolveCalendarAndTimeZone(cx, dateTimeFormat)) {
+      return false;
+    }
+    calendar.set(dateTimeFormat->getCalendar());
+    timeZone.set(dateTimeFormat->getTimeZone());
+  }
+  MOZ_ASSERT(calendar && timeZone);
+
+  
+  if (calendarId != CalendarId::ISO8601 &&
+      calendarId != calendar.identifier()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_CALENDAR_INCOMPATIBLE,
+                              CalendarIdentifier(calendarId).data(),
+                              CalendarIdentifier(calendar).data());
+    return false;
+  }
+
+  
+  EpochNanoseconds epochNs;
+  if (!GetEpochNanosecondsFor(cx, timeZone, isoDateTime,
+                              TemporalDisambiguation::Compatible, &epochNs)) {
+    return false;
+  }
+
+  
+
+  
+  int64_t milliseconds = epochNs.floorToMilliseconds();
+  *result = JS::TimeClip(double(milliseconds));
+  return true;
+}
+
+
+
+
+
+
+static bool HandleDateTimeTemporalInstant(InstantObject* unwrappedInstant,
+                                          ClippedTime* result) {
+  
+
+  
+  auto epochNs = unwrappedInstant->epochNanoseconds();
+  int64_t milliseconds = epochNs.floorToMilliseconds();
+  *result = JS::TimeClip(double(milliseconds));
+  return true;
+}
+
+
+
+
+static bool HandleDateTimeTemporalZonedDateTime(
+    JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat,
+    Handle<ZonedDateTimeObject*> unwrappedZonedDateTime, ClippedTime* result) {
+  auto epochNs = unwrappedZonedDateTime->epochNanoseconds();
+  auto calendarId = unwrappedZonedDateTime->calendar().identifier();
+
+  Rooted<CalendarValue> calendar(cx, dateTimeFormat->getCalendar());
+  Rooted<TimeZoneValue> timeZone(cx, dateTimeFormat->getTimeZone());
+  if (!calendar || !timeZone) {
+    if (!ResolveCalendarAndTimeZone(cx, dateTimeFormat)) {
+      return false;
+    }
+    calendar.set(dateTimeFormat->getCalendar());
+    timeZone.set(dateTimeFormat->getTimeZone());
+  }
+  MOZ_ASSERT(calendar && timeZone);
+
+  
+  if (calendarId != CalendarId::ISO8601 &&
+      calendarId != calendar.identifier()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_CALENDAR_INCOMPATIBLE,
+                              CalendarIdentifier(calendarId).data(),
+                              CalendarIdentifier(calendar).data());
+    return false;
+  }
+
+  
+  int64_t milliseconds = epochNs.floorToMilliseconds();
+  *result = JS::TimeClip(double(milliseconds));
+  return true;
+}
+#endif
 
 
 
@@ -1815,6 +2216,62 @@ static bool HandleDateTimeValue(JSContext* cx, const char* method,
                                 Handle<DateTimeFormatObject*> dateTimeFormat,
                                 Handle<Value> x, ClippedTime* result) {
   MOZ_ASSERT(x.isObject() || x.isNumber());
+
+#ifdef JS_HAS_TEMPORAL_API
+  
+  if (x.isObject()) {
+    Rooted<JSObject*> unwrapped(cx, CheckedUnwrapStatic(&x.toObject()));
+    if (!unwrapped) {
+      ReportAccessDenied(cx);
+      return false;
+    }
+
+    
+    if (unwrapped->is<PlainDateObject>()) {
+      return HandleDateTimeTemporalDate(
+          cx, dateTimeFormat, unwrapped.as<PlainDateObject>(), result);
+    }
+
+    
+    if (unwrapped->is<PlainYearMonthObject>()) {
+      return HandleDateTimeTemporalYearMonth(
+          cx, dateTimeFormat, unwrapped.as<PlainYearMonthObject>(), result);
+    }
+
+    
+    if (unwrapped->is<PlainMonthDayObject>()) {
+      return HandleDateTimeTemporalMonthDay(
+          cx, dateTimeFormat, unwrapped.as<PlainMonthDayObject>(), result);
+    }
+
+    
+    if (unwrapped->is<PlainTimeObject>()) {
+      return HandleDateTimeTemporalTime(
+          cx, dateTimeFormat, unwrapped.as<PlainTimeObject>(), result);
+    }
+
+    
+    if (unwrapped->is<PlainDateTimeObject>()) {
+      return HandleDateTimeTemporalDateTime(
+          cx, dateTimeFormat, unwrapped.as<PlainDateTimeObject>(), result);
+    }
+
+    
+    if (unwrapped->is<InstantObject>()) {
+      return HandleDateTimeTemporalInstant(&unwrapped->as<InstantObject>(),
+                                           result);
+    }
+
+    
+    MOZ_ASSERT(unwrapped->is<ZonedDateTimeObject>());
+
+    
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_UNEXPECTED_TYPE, "object",
+                              unwrapped->getClass()->name);
+    return false;
+  }
+#endif
 
   
   return HandleDateTimeOthers(cx, method, x.toNumber(), result);
@@ -2102,7 +2559,9 @@ static mozilla::intl::DateIntervalFormat* NewDateIntervalFormat(
 
 static mozilla::intl::DateIntervalFormat* GetOrCreateDateIntervalFormat(
     JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat,
-    mozilla::intl::DateTimeFormat& mozDtf) {
+    mozilla::intl::DateTimeFormat& mozDtf, DateTimeValueKind kind) {
+  dateTimeFormat->maybeClearCache(kind);
+
   
   mozilla::intl::DateIntervalFormat* dif =
       dateTimeFormat->getDateIntervalFormat();

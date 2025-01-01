@@ -196,7 +196,14 @@ int64_t MakeDate(const ISODateTime& dateTime);
 
 
 
-std::string_view CalendarIdentifier(const CalendarValue& calendar);
+std::string_view CalendarIdentifier(CalendarId calendarId);
+
+
+
+
+inline std::string_view CalendarIdentifier(const CalendarValue& calendar) {
+  return CalendarIdentifier(calendar.identifier());
+}
 
 
 
