@@ -515,6 +515,27 @@ class Atomic<bool, Order> : protected detail::AtomicBase<uint32_t, Order> {
 
 
 
+template <MemoryOrdering Order>
+class Atomic<double, Order> : protected detail::AtomicBase<double, Order> {
+  typedef typename detail::AtomicBase<double, Order> Base;
+
+ public:
+  constexpr Atomic() : Base() {}
+  explicit constexpr Atomic(double aInit) : Base(aInit) {}
+
+  operator double() const {
+    return double(Base::Intrinsics::load(Base::mValue));
+  }
+
+  double operator=(double aVal) { return Base::operator=(aVal); }
+
+ private:
+  Atomic(Atomic& aOther) = delete;
+};
+
+
+
+
 inline void cpu_pause() {
 #if defined(__i386) || defined(_M_IX86) || defined(__x86_64__) || \
     defined(_M_X64)
