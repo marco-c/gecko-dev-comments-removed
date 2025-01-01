@@ -284,18 +284,14 @@ CookieParser::~CookieParser() {
 
 
 static inline bool iswhitespace(char c) { return c == ' ' || c == '\t'; }
-static inline bool isterminator(char c) { return c == '\n' || c == '\r'; }
-static inline bool isvalueseparator(char c) {
-  return isterminator(c) || c == ';';
-}
+static inline bool isvalueseparator(char c) { return c == ';'; }
 static inline bool istokenseparator(char c) {
   return isvalueseparator(c) || c == '=';
 }
 
 
 
-
-bool CookieParser::GetTokenValue(nsACString::const_char_iterator& aIter,
+void CookieParser::GetTokenValue(nsACString::const_char_iterator& aIter,
                                  nsACString::const_char_iterator& aEndIter,
                                  nsDependentCSubstring& aTokenString,
                                  nsDependentCSubstring& aTokenValue,
@@ -351,14 +347,8 @@ bool CookieParser::GetTokenValue(nsACString::const_char_iterator& aIter,
   
   if (aIter != aEndIter) {
     
-    if (isterminator(*aIter)) {
-      ++aIter;
-      return true;
-    }
-    
     ++aIter;
   }
-  return false;
 }
 
 static inline void SetSameSiteAttribute(CookieStruct& aCookieData,
@@ -403,7 +393,7 @@ bool CookieParser::CheckAttributeSize(const nsACString& currentValue,
 
 
 
-bool CookieParser::ParseAttributes(nsCString& aCookieHeader,
+void CookieParser::ParseAttributes(nsCString& aCookieHeader,
                                    nsACString& aExpires, nsACString& aMaxage,
                                    bool& aAcceptedByParser) {
   aAcceptedByParser = false;
@@ -433,16 +423,13 @@ bool CookieParser::ParseAttributes(nsCString& aCookieHeader,
 
   nsDependentCSubstring tokenString(cookieStart, cookieStart);
   nsDependentCSubstring tokenValue(cookieStart, cookieStart);
-  bool newCookie;
   bool equalsFound;
 
   
   
   
   
-  
-  newCookie = GetTokenValue(cookieStart, cookieEnd, tokenString, tokenValue,
-                            equalsFound);
+  GetTokenValue(cookieStart, cookieEnd, tokenString, tokenValue, equalsFound);
   if (equalsFound) {
     mCookieData.name() = tokenString;
     mCookieData.value() = tokenValue;
@@ -451,13 +438,12 @@ bool CookieParser::ParseAttributes(nsCString& aCookieHeader,
   }
 
   
-  while (cookieStart != cookieEnd && !newCookie) {
-    newCookie = GetTokenValue(cookieStart, cookieEnd, tokenString, tokenValue,
-                              equalsFound);
+  while (cookieStart != cookieEnd) {
+    GetTokenValue(cookieStart, cookieEnd, tokenString, tokenValue, equalsFound);
 
     if (ContainsControlChars(tokenString) || ContainsControlChars(tokenValue)) {
       RejectCookie(RejectedInvalidCharAttributes);
-      return newCookie;
+      return;
     }
 
     
@@ -518,7 +504,7 @@ bool CookieParser::ParseAttributes(nsCString& aCookieHeader,
       mCookieData.sameSite() == nsICookie::SAMESITE_NONE) {
     if (StaticPrefs::network_cookie_sameSite_noneRequiresSecure()) {
       RejectCookie(RejectedNoneRequiresSecure);
-      return newCookie;
+      return;
     }
 
     
@@ -530,7 +516,7 @@ bool CookieParser::ParseAttributes(nsCString& aCookieHeader,
   if (StaticPrefs::network_cookie_CHIPS_enabled() &&
       mCookieData.isPartitioned() && !mCookieData.isSecure()) {
     RejectCookie(RejectedPartitionedRequiresSecure);
-    return newCookie;
+    return;
   }
 
   if (mCookieData.rawSameSite() == nsICookie::SAMESITE_NONE &&
@@ -551,7 +537,6 @@ bool CookieParser::ParseAttributes(nsCString& aCookieHeader,
   aAcceptedByParser = true;
 
   MOZ_ASSERT(Cookie::ValidateSameSite(mCookieData));
-  return newCookie;
 }
 
 namespace {
@@ -869,7 +854,7 @@ static void RecordPartitionedTelemetry(const CookieStruct& aCookieData,
 
 
 
-bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
+void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
                          CookieStatus aStatus, nsCString& aCookieHeader,
                          const nsACString& aDateHeader, bool aFromHttp,
                          bool aIsForeignAndNotAddon, bool aPartitionedOnly,
@@ -890,10 +875,9 @@ bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
   nsAutoCString expires;
   nsAutoCString maxage;
   bool acceptedByParser = false;
-  bool newCookie =
-      ParseAttributes(aCookieHeader, expires, maxage, acceptedByParser);
+  ParseAttributes(aCookieHeader, expires, maxage, acceptedByParser);
   if (!acceptedByParser) {
-    return newCookie;
+    return;
   }
 
   
@@ -924,7 +908,7 @@ bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
                       "cookie name and value are empty");
 
     RejectCookie(RejectedEmptyNameAndValue);
-    return newCookie;
+    return;
   }
 
   
@@ -932,7 +916,7 @@ bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
     COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
                       "cookie too big (> 4kb)");
     RejectCookie(RejectedNameValueOversize);
-    return newCookie;
+    return;
   }
 
   
@@ -945,7 +929,7 @@ bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
     COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
                       "invalid name character");
     RejectCookie(RejectedInvalidCharName);
-    return newCookie;
+    return;
   }
 
   
@@ -953,13 +937,13 @@ bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
     COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
                       "failed the domain tests");
     RejectCookie(RejectedInvalidDomain);
-    return newCookie;
+    return;
   }
 
   if (!CheckPath()) {
     COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
                       "failed the path tests");
-    return newCookie;
+    return;
   }
 
   
@@ -969,7 +953,7 @@ bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
     COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
                       "failed hidden prefix tests");
     RejectCookie(RejectedInvalidPrefix);
-    return newCookie;
+    return;
   }
 
   
@@ -977,14 +961,14 @@ bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
     COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
                       "failed the prefix tests");
     RejectCookie(RejectedInvalidPrefix);
-    return newCookie;
+    return;
   }
 
   if (!CookieCommons::CheckValue(mCookieData)) {
     COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
                       "invalid value character");
     RejectCookie(RejectedInvalidCharValue);
-    return newCookie;
+    return;
   }
 
   
@@ -992,7 +976,7 @@ bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
     COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
                       "cookie is httponly; coming from script");
     RejectCookie(RejectedHttpOnlyButFromScript);
-    return newCookie;
+    return;
   }
 
   
@@ -1002,7 +986,7 @@ bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
     COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, aCookieHeader,
                       "non-https cookie can't set secure flag");
     RejectCookie(RejectedSecureButNonHttps);
-    return newCookie;
+    return;
   }
 
   
@@ -1018,7 +1002,7 @@ bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
     COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
                       "failed the samesite tests");
     RejectCookie(RejectedForNonSameSiteness);
-    return newCookie;
+    return;
   }
 
   
@@ -1047,14 +1031,13 @@ bool CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
       COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
                         "foreign cookies must be partitioned");
       RejectCookie(RejectedForeignNoPartitionedError);
-      return newCookie;
+      return;
     }
 
     mWarnings.mForeignNoPartitionedWarning = true;
   }
 
   mContainsCookie = true;
-  return newCookie;
 }
 
 void CookieParser::RejectCookie(Rejection aRejection) {

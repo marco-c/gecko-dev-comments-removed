@@ -257,6 +257,25 @@ nsresult Hash(const char* buf, nsACString& hash) {
   return NS_OK;
 }
 
+class CookieVisitor final {
+ public:
+  explicit CookieVisitor(nsHttpResponseHead* aResponseHead) {
+    nsAutoCString cookieHeader;
+    if (NS_SUCCEEDED(
+            aResponseHead->GetHeader(nsHttp::Set_Cookie, cookieHeader))) {
+      for (const auto& cookie : cookieHeader.Split('\n')) {
+        mCookieHeaders.AppendElement(cookie);
+      }
+    }
+  }
+
+  ~CookieVisitor() = default;
+
+  const nsTArray<nsCString>& CookieHeaders() const { return mCookieHeaders; }
+
+ private:
+  nsTArray<nsCString> mCookieHeaders;
+};
 }  
 
 
@@ -1043,14 +1062,12 @@ nsresult nsHttpChannel::HandleOverrideResponse() {
   }
 
   
-  if (nsAutoCString cookie;
-      NS_SUCCEEDED(mResponseHead->GetHeader(nsHttp::Set_Cookie, cookie))) {
-    SetCookie(cookie);
-    nsCOMPtr<nsIParentChannel> parentChannel;
-    NS_QueryNotificationCallbacks(this, parentChannel);
-    if (RefPtr<HttpChannelParent> httpParent = do_QueryObject(parentChannel)) {
-      httpParent->SetCookie(std::move(cookie));
-    }
+  CookieVisitor cookieVisitor(mResponseHead.get());
+  SetCookieHeaders(cookieVisitor.CookieHeaders());
+  nsCOMPtr<nsIParentChannel> parentChannel;
+  NS_QueryNotificationCallbacks(this, parentChannel);
+  if (RefPtr<HttpChannelParent> httpParent = do_QueryObject(parentChannel)) {
+    httpParent->SetCookieHeaders(cookieVisitor.CookieHeaders());
   }
 
   rv = ProcessSecurityHeaders();
@@ -2712,15 +2729,12 @@ nsresult nsHttpChannel::ContinueProcessResponse1() {
   
   if (!(mTransaction && mTransaction->ProxyConnectFailed()) &&
       (httpStatus != 407)) {
-    if (nsAutoCString cookie;
-        NS_SUCCEEDED(mResponseHead->GetHeader(nsHttp::Set_Cookie, cookie))) {
-      SetCookie(cookie);
-      nsCOMPtr<nsIParentChannel> parentChannel;
-      NS_QueryNotificationCallbacks(this, parentChannel);
-      if (RefPtr<HttpChannelParent> httpParent =
-              do_QueryObject(parentChannel)) {
-        httpParent->SetCookie(std::move(cookie));
-      }
+    CookieVisitor cookieVisitor(mResponseHead.get());
+    SetCookieHeaders(cookieVisitor.CookieHeaders());
+    nsCOMPtr<nsIParentChannel> parentChannel;
+    NS_QueryNotificationCallbacks(this, parentChannel);
+    if (RefPtr<HttpChannelParent> httpParent = do_QueryObject(parentChannel)) {
+      httpParent->SetCookieHeaders(cookieVisitor.CookieHeaders());
     }
 
     
