@@ -181,6 +181,9 @@ class HashMap {
   HashMap& operator=(HashMap&& aRhs) = default;
 
   
+  void swap(HashMap& aOther) { mImpl.swap(aOther.mImpl); }
+
+  
 
   
   Generation generation() const { return mImpl.generation(); }
@@ -476,6 +479,9 @@ class HashSet {
   
   HashSet(HashSet&& aRhs) = default;
   HashSet& operator=(HashSet&& aRhs) = default;
+
+  
+  void swap(HashSet& aOther) { mImpl.swap(aOther.mImpl); }
 
   
 
@@ -1556,6 +1562,29 @@ class HashTable : private AllocPolicy {
     AllocPolicy::operator=(std::move(aRhs));
     moveFrom(aRhs);
     return *this;
+  }
+
+  void swap(HashTable& aOther) {
+    ReentrancyGuard g1(*this);
+    ReentrancyGuard g2(aOther);
+
+    
+    uint64_t generation = mGen;
+    mGen = aOther.mGen;
+    aOther.mGen = generation;
+
+    
+    uint64_t hashShift = mHashShift;
+    mHashShift = aOther.mHashShift;
+    aOther.mHashShift = hashShift;
+
+    std::swap(mTable, aOther.mTable);
+    std::swap(mEntryCount, aOther.mEntryCount);
+    std::swap(mRemovedCount, aOther.mRemovedCount);
+#ifdef DEBUG
+    std::swap(mMutationCount, aOther.mMutationCount);
+    std::swap(mEntered, aOther.mEntered);
+#endif
   }
 
  private:
