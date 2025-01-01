@@ -29,7 +29,7 @@ use serde_json::Value as JsonValue;
 
 
 pub struct WebExtStorageStore {
-    db: Arc<ThreadSafeStorageDb>,
+    pub(crate) db: Arc<ThreadSafeStorageDb>,
 }
 
 impl WebExtStorageStore {
@@ -124,46 +124,16 @@ impl WebExtStorageStore {
 
     
     
-    pub fn get_bytes_in_use(&self, ext_id: &str, keys: JsonValue) -> Result<usize> {
+    pub fn get_bytes_in_use(&self, ext_id: &str, keys: JsonValue) -> Result<u64> {
         let db = &self.db.lock();
         let conn = db.get_connection()?;
-        api::get_bytes_in_use(conn, ext_id, keys)
-    }
-
-    
-    pub fn bridged_engine(&self) -> sync::BridgedEngine {
-        sync::BridgedEngine::new(&self.db)
+        Ok(api::get_bytes_in_use(conn, ext_id, keys)? as u64)
     }
 
     
     
-    pub fn close(self) -> Result<()> {
-        
-        
-        
-        let shared: ThreadSafeStorageDb = match Arc::into_inner(self.db) {
-            Some(shared) => shared,
-            _ => {
-                
-                
-                
-                
-
-                
-                
-                
-                
-
-                
-                
-                
-                
-                log::warn!("Attempting to close a store while other DB references exist.");
-                return Err(Error::OtherConnectionReferencesExist);
-            }
-        };
-        
-        let mut db = shared.into_inner();
+    pub fn close(&self) -> Result<()> {
+        let mut db = self.db.lock();
         db.close()
     }
 

@@ -4,8 +4,6 @@
 
 "use strict";
 
-
-
 const { ExtensionCommon } = ChromeUtils.importESModule(
   "resource://gre/modules/ExtensionCommon.sys.mjs"
 );
@@ -42,25 +40,5 @@ async function withContext(f) {
     await f(context);
   } finally {
     await context.unload();
-  }
-}
-
-
-
-
-
-
-
-
-
-async function withSyncContext(f) {
-  const STORAGE_SYNC_PREF = "webextensions.storage.sync.enabled";
-  let prefs = Services.prefs;
-
-  try {
-    prefs.setBoolPref(STORAGE_SYNC_PREF, true);
-    await withContext(f);
-  } finally {
-    prefs.clearUserPref(STORAGE_SYNC_PREF);
   }
 }
