@@ -88,15 +88,19 @@
       
       
       this.arrowScrollbox._getScrollableElements = () => {
-        return this.allTabs.filter(this.arrowScrollbox._canScrollToElement);
+        return this.ariaFocusableItems.filter(
+          this.arrowScrollbox._canScrollToElement
+        );
       };
-      let arePositioningPinnedTabs = () => {
-        return this.hasAttribute("positionpinnedtabs");
-      };
-      this.arrowScrollbox._canScrollToElement = tab => {
-        return (!tab.pinned || !arePositioningPinnedTabs()) && tab.visible;
+      this.arrowScrollbox._canScrollToElement = element => {
+        if (isTab(element)) {
+          return !element.pinned || !this.hasAttribute("positionpinnedtabs");
+        }
+        return true;
       };
 
+      
+      
       
       
       
