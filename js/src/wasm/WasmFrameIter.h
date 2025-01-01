@@ -23,7 +23,7 @@
 #include "js/ProfilingFrameIterator.h"
 #include "js/TypeDecls.h"
 
-#include "wasm/WasmCodegenTypes.h" 
+#include "wasm/WasmCodegenTypes.h"  
 
 namespace js {
 
