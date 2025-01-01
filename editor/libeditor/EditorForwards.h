@@ -98,6 +98,7 @@ class CaretPoint;
 class ChangeAttributeTransaction;       
 class ChangeStyleTransaction;           
 class CompositionTransaction;           
+class CreateLineBreakResult;            
 class CSSEditUtils;                     
 class DeleteContentTransactionBase;     
 class DeleteMultipleRangesTransaction;  

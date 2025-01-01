@@ -142,21 +142,22 @@ MOZ_RUNINIT HTMLEditor::InitializeInsertingElement
 
 MOZ_RUNINIT HTMLEditor::InitializeInsertingElement
     HTMLEditor::InsertNewBRElement =
-        [](HTMLEditor& aHTMLEditor, Element& aNewElement, const EditorDOMPoint&)
-            MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-              MOZ_ASSERT(!aNewElement.IsInComposedDoc());
-              Result<CreateElementResult, nsresult> createBRElementResult =
-                  aHTMLEditor.InsertBRElement(WithTransaction::No,
-                                              EditorDOMPoint(&aNewElement, 0u));
-              if (MOZ_UNLIKELY(createBRElementResult.isErr())) {
-                NS_WARNING_ASSERTION(
-                    createBRElementResult.isOk(),
-                    "HTMLEditor::InsertBRElement(WithTransaction::No) failed");
-                return createBRElementResult.unwrapErr();
-              }
-              createBRElementResult.unwrap().IgnoreCaretPointSuggestion();
-              return NS_OK;
-            };
+        [](HTMLEditor& aHTMLEditor, Element& aNewElement,
+           const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+          MOZ_ASSERT(!aNewElement.IsInComposedDoc());
+          Result<CreateLineBreakResult, nsresult> insertBRElementResultOrError =
+              aHTMLEditor.InsertLineBreak(WithTransaction::No,
+                                          LineBreakType::BRElement,
+                                          EditorDOMPoint(&aNewElement, 0u));
+          if (MOZ_UNLIKELY(insertBRElementResultOrError.isErr())) {
+            NS_WARNING(
+                "HTMLEditor::InsertLineBreak(WithTransaction::No, "
+                "LineBreakType::BRElement) failed");
+            return insertBRElementResultOrError.unwrapErr();
+          }
+          insertBRElementResultOrError.unwrap().IgnoreCaretPointSuggestion();
+          return NS_OK;
+        };
 
 
 Result<CreateElementResult, nsresult>
@@ -2320,19 +2321,24 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
     return NS_OK;
   }
 
-  const auto afterElement = EditorDOMPoint::After(*aElement);
-  
-  Result<CreateElementResult, nsresult> insertBRElementResult =
-      InsertBRElement(WithTransaction::Yes, afterElement, ePrevious);
-  if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
+  Result<CreateLineBreakResult, nsresult> insertBRElementResultOrError =
+      InsertLineBreak(WithTransaction::Yes, LineBreakType::BRElement,
+                      EditorDOMPoint::After(*aElement),
+                      
+                      ePrevious);
+  if (MOZ_UNLIKELY(insertBRElementResultOrError.isErr())) {
     NS_WARNING(
-        "HTMLEditor::InsertBRElement(WithTransaction::Yes, ePrevious) failed");
-    return EditorBase::ToGenericNSResult(insertBRElementResult.unwrapErr());
+        "HTMLEditor::InsertLineBreak(WithTransaction::Yes, "
+        "LineBreakType::BRElement, ePrevious) failed");
+    return EditorBase::ToGenericNSResult(
+        insertBRElementResultOrError.unwrapErr());
   }
-  rv = insertBRElementResult.inspect().SuggestCaretPointTo(*this, {});
+  CreateLineBreakResult insertBRElementResult =
+      insertBRElementResultOrError.unwrap();
+  MOZ_ASSERT(insertBRElementResult.Handled());
+  rv = insertBRElementResult.SuggestCaretPointTo(*this, {});
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::CollapseSelectionTo() failed");
-  MOZ_ASSERT(insertBRElementResult.inspect().GetNewNode());
+                       "CaretPoint::SuggestCaretPointTo() failed");
   return EditorBase::ToGenericNSResult(rv);
 }
 
@@ -4281,37 +4287,48 @@ Result<InsertTextResult, nsresult> HTMLEditor::InsertTextWithTransaction(
                                                aPointToInsert, aInsertTextTo);
 }
 
-Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertBRElement(
-    const EditorDOMPoint& aPointToInsert) {
+Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertLineBreak(
+    LineBreakType aLineBreakType, const EditorDOMPoint& aPointToInsert) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (NS_WARN_IF(!aPointToInsert.IsSet())) {
+  if (NS_WARN_IF(!aPointToInsert.IsInContentNode())) {
     return Err(NS_ERROR_FAILURE);
   }
 
+  const auto CanInsertLineBreak = [aLineBreakType](const nsIContent& aContent) {
+    if (aLineBreakType == LineBreakType::BRElement) {
+      return HTMLEditUtils::CanNodeContain(aContent, *nsGkAtoms::br);
+    }
+    MOZ_ASSERT(aLineBreakType == LineBreakType::Linefeed);
+    return HTMLEditUtils::CanNodeContain(aContent, *nsGkAtoms::textTagName) &&
+           EditorUtils::IsNewLinePreformatted(aContent);
+  };
+
   if (!aPointToInsert.IsInTextNode()) {
+    if (NS_WARN_IF(
+            !CanInsertLineBreak(*aPointToInsert.ContainerAs<nsIContent>()))) {
+      return Err(NS_ERROR_FAILURE);
+    }
     return aPointToInsert;
+  }
+
+  
+  
+  const Element* const containerOrNewLineBreak =
+      aPointToInsert.GetContainerParentAs<Element>();
+  if (NS_WARN_IF(!containerOrNewLineBreak) ||
+      NS_WARN_IF(!CanInsertLineBreak(*containerOrNewLineBreak))) {
+    return Err(NS_ERROR_FAILURE);
   }
 
   if (aPointToInsert.IsStartOfContainer()) {
     
-    EditorDOMPoint pointInContainer(aPointToInsert.GetContainer());
-    if (!pointInContainer.IsSet()) {
-      NS_WARNING("Failed to climb up the DOM tree from text node");
-      return Err(NS_ERROR_FAILURE);
-    }
-    return pointInContainer;
+    return aPointToInsert.ParentPoint();
   }
 
   if (aPointToInsert.IsEndOfContainer()) {
     
-    EditorDOMPoint pointInContainer(aPointToInsert.GetContainer());
-    if (NS_WARN_IF(!pointInContainer.IsSet())) {
-      NS_WARNING("Failed to climb up the DOM tree from text node");
-      return Err(NS_ERROR_FAILURE);
-    }
-    MOZ_ALWAYS_TRUE(pointInContainer.AdvanceOffset());
-    return pointInContainer;
+    return EditorDOMPoint::After(*aPointToInsert.ContainerAs<Text>());
   }
 
   MOZ_DIAGNOSTIC_ASSERT(aPointToInsert.IsSetAndValid());
@@ -4323,6 +4340,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertBRElement(
     NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
     return splitTextNodeResult.propagateErr();
   }
+
+  
   nsresult rv = splitTextNodeResult.inspect().SuggestCaretPointTo(
       *this, {SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
   if (NS_FAILED(rv)) {
@@ -4333,7 +4352,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertBRElement(
   
   auto atNextContent =
       splitTextNodeResult.inspect().AtNextContent<EditorDOMPoint>();
-  if (MOZ_UNLIKELY(!atNextContent.IsSet())) {
+  if (MOZ_UNLIKELY(!atNextContent.IsInContentNode())) {
     NS_WARNING("The next node seems not in the DOM tree");
     return Err(NS_ERROR_FAILURE);
   }
@@ -4368,59 +4387,106 @@ Maybe<HTMLEditor::LineBreakType> HTMLEditor::GetPreferredLineBreakType(
   return Some(LineBreakType::BRElement);
 }
 
-Result<CreateElementResult, nsresult> HTMLEditor::InsertBRElement(
-    WithTransaction aWithTransaction, const EditorDOMPoint& aPointToInsert,
-    EDirection aSelect ) {
+Result<CreateLineBreakResult, nsresult> HTMLEditor::InsertLineBreak(
+    WithTransaction aWithTransaction, LineBreakType aLineBreakType,
+    const EditorDOMPoint& aPointToInsert, EDirection aSelect ) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  Result<EditorDOMPoint, nsresult> maybePointToInsert =
-      PrepareToInsertBRElement(aPointToInsert);
-  if (maybePointToInsert.isErr()) {
+  Result<EditorDOMPoint, nsresult> pointToInsertOrError =
+      PrepareToInsertLineBreak(aLineBreakType, aPointToInsert);
+  if (MOZ_UNLIKELY(pointToInsertOrError.isErr())) {
     NS_WARNING(
-        nsPrintfCString("HTMLEditor::PrepareToInsertBRElement(%s) failed",
+        nsPrintfCString("HTMLEditor::PrepareToInsertLineBreak(%s) failed",
                         ToString(aWithTransaction).c_str())
             .get());
-    return maybePointToInsert.propagateErr();
+    return pointToInsertOrError.propagateErr();
   }
-  MOZ_ASSERT(maybePointToInsert.inspect().IsSetAndValid());
+  EditorDOMPoint pointToInsert = pointToInsertOrError.unwrap();
+  MOZ_ASSERT(pointToInsert.IsInContentNode());
+  MOZ_ASSERT(pointToInsert.IsSetAndValid());
 
-  Result<CreateElementResult, nsresult> createNewBRElementResult =
-      CreateAndInsertElement(aWithTransaction, *nsGkAtoms::br,
-                             maybePointToInsert.inspect());
-  if (MOZ_UNLIKELY(createNewBRElementResult.isErr())) {
-    NS_WARNING(nsPrintfCString("HTMLEditor::CreateAndInsertElement(%s) failed",
-                               ToString(aWithTransaction).c_str())
-                   .get());
-    return createNewBRElementResult.propagateErr();
-  }
-  CreateElementResult unwrappedCreateNewBRElementResult =
-      createNewBRElementResult.unwrap();
-  RefPtr<Element> newBRElement =
-      unwrappedCreateNewBRElementResult.UnwrapNewNode();
-  MOZ_ASSERT(newBRElement);
-
-  unwrappedCreateNewBRElementResult.IgnoreCaretPointSuggestion();
-  switch (aSelect) {
-    case eNext: {
-      const auto pointToPutCaret = EditorDOMPoint::After(
-          *newBRElement, Selection::InterlinePosition::StartOfNextLine);
-      return CreateElementResult(std::move(newBRElement), pointToPutCaret);
+  auto lineBreakOrError = [&]() MOZ_NEVER_INLINE_DEBUG MOZ_CAN_RUN_SCRIPT
+      -> Result<EditorLineBreak, nsresult> {
+    if (aLineBreakType == LineBreakType::BRElement) {
+      Result<CreateElementResult, nsresult> insertBRElementResultOrError =
+          CreateAndInsertElement(aWithTransaction, *nsGkAtoms::br,
+                                 pointToInsert);
+      if (MOZ_UNLIKELY(insertBRElementResultOrError.isErr())) {
+        NS_WARNING(
+            nsPrintfCString("HTMLEditor::CreateAndInsertElement(%s) failed",
+                            ToString(aWithTransaction).c_str())
+                .get());
+        return insertBRElementResultOrError.propagateErr();
+      }
+      insertBRElementResultOrError.inspect().IgnoreCaretPointSuggestion();
+      const auto* brElement = HTMLBRElement::FromNode(
+          insertBRElementResultOrError.unwrap().GetNewNode());
+      if (NS_WARN_IF(!brElement)) {
+        return Err(NS_ERROR_FAILURE);
+      }
+      return EditorLineBreak(*brElement);
     }
-    case ePrevious: {
-      const auto pointToPutCaret = EditorDOMPoint(
-          newBRElement, Selection::InterlinePosition::StartOfNextLine);
-      return CreateElementResult(std::move(newBRElement), pointToPutCaret);
+    MOZ_ASSERT(aLineBreakType == LineBreakType::Linefeed);
+    RefPtr<Text> newTextNode = CreateTextNode(u"\n"_ns);
+    if (NS_WARN_IF(!newTextNode)) {
+      return Err(NS_ERROR_FAILURE);
     }
-    default:
-      NS_WARNING(
-          "aSelect has invalid value, the caller need to set selection "
-          "by itself");
-      [[fallthrough]];
-    case eNone:
-      return CreateElementResult(
-          std::move(newBRElement),
-          unwrappedCreateNewBRElementResult.UnwrapCaretPoint());
+    if (aWithTransaction == WithTransaction::Yes) {
+      Result<CreateTextResult, nsresult> insertTextNodeResult =
+          InsertNodeWithTransaction<Text>(*newTextNode, pointToInsert);
+      if (MOZ_UNLIKELY(insertTextNodeResult.isErr())) {
+        NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
+        return insertTextNodeResult.propagateErr();
+      }
+      insertTextNodeResult.unwrap().IgnoreCaretPointSuggestion();
+    } else {
+      Unused << pointToInsert.Offset();
+      RefPtr<InsertNodeTransaction> transaction =
+          InsertNodeTransaction::Create(*this, *newTextNode, pointToInsert);
+      nsresult rv = transaction->DoTransaction();
+      if (NS_WARN_IF(Destroyed())) {
+        return Err(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (NS_FAILED(rv)) {
+        NS_WARNING("InsertNodeTransaction::DoTransaction() failed");
+        return Err(rv);
+      }
+      if (NS_WARN_IF(newTextNode->GetParentNode() !=
+                     pointToInsert.GetContainer())) {
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+      }
+      RangeUpdaterRef().SelAdjInsertNode(EditorRawDOMPoint(
+          pointToInsert.GetContainer(), pointToInsert.Offset()));
+    }
+    if (NS_WARN_IF(!newTextNode->TextDataLength() ||
+                   newTextNode->TextFragment().CharAt(0) != '\n')) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+    return EditorLineBreak(std::move(newTextNode), 0u);
+  }();
+  if (MOZ_UNLIKELY(lineBreakOrError.isErr())) {
+    return lineBreakOrError.propagateErr();
   }
+  EditorLineBreak lineBreak = lineBreakOrError.unwrap();
+  auto pointToPutCaret = [&]() -> EditorDOMPoint {
+    switch (aSelect) {
+      case eNext: {
+        return lineBreak.After<EditorDOMPoint>();
+      }
+      case ePrevious: {
+        return lineBreak.Before<EditorDOMPoint>();
+      }
+      default:
+        NS_WARNING(
+            "aSelect has invalid value, the caller need to set selection "
+            "by itself");
+        [[fallthrough]];
+      case eNone:
+        return lineBreak.To<EditorDOMPoint>();
+    }
+  }();
+  return CreateLineBreakResult(std::move(lineBreak),
+                               std::move(pointToPutCaret));
 }
 
 nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
@@ -5227,115 +5293,127 @@ HTMLEditor::RemoveBlockContainerWithTransaction(Element& aElement) {
   
   
 
+  const RefPtr<Element> parentElement = aElement.GetParentElement();
+  if (NS_WARN_IF((!parentElement))) {
+    return Err(NS_ERROR_FAILURE);
+  }
   EditorDOMPoint pointToPutCaret;
-  if (nsCOMPtr<nsIContent> child = HTMLEditUtils::GetFirstChild(
-          aElement, {WalkTreeOption::IgnoreNonEditableNode})) {
-    
-    
-    
-    
-    
-
-    if (nsIContent* previousSibling = HTMLEditUtils::GetPreviousSibling(
+  if (HTMLEditUtils::CanNodeContain(*parentElement, *nsGkAtoms::br)) {
+    if (nsCOMPtr<nsIContent> child = HTMLEditUtils::GetFirstChild(
             aElement, {WalkTreeOption::IgnoreNonEditableNode})) {
-      if (!HTMLEditUtils::IsBlockElement(
-              *previousSibling,
-              BlockInlineCheck::UseComputedDisplayOutsideStyle) &&
-          !previousSibling->IsHTMLElement(nsGkAtoms::br) &&
-          !HTMLEditUtils::IsBlockElement(
-              *child, BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
-        
-        Result<CreateElementResult, nsresult> insertBRElementResult =
-            InsertBRElement(WithTransaction::Yes,
-                            EditorDOMPoint(&aElement, 0u));
-        if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
-          NS_WARNING(
-              "HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
-          return insertBRElementResult.propagateErr();
-        }
-        CreateElementResult unwrappedInsertBRElementResult =
-            insertBRElementResult.unwrap();
-        unwrappedInsertBRElementResult.MoveCaretPointTo(
-            pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-        MOZ_ASSERT(unwrappedInsertBRElementResult.GetNewNode());
-      }
-    }
+      
+      
+      
+      
+      
 
-    
-    
-    
-    
-    
-
-    if (nsIContent* nextSibling = HTMLEditUtils::GetNextSibling(
-            aElement, {WalkTreeOption::IgnoreNonEditableNode})) {
-      if (nextSibling &&
-          !HTMLEditUtils::IsBlockElement(
-              *nextSibling, BlockInlineCheck::UseComputedDisplayStyle)) {
-        if (nsIContent* lastChild = HTMLEditUtils::GetLastChild(
-                aElement, {WalkTreeOption::IgnoreNonEditableNode},
-                BlockInlineCheck::Unused)) {
-          if (!HTMLEditUtils::IsBlockElement(
-                  *lastChild, BlockInlineCheck::UseComputedDisplayStyle) &&
-              !lastChild->IsHTMLElement(nsGkAtoms::br)) {
-            Result<CreateElementResult, nsresult> insertBRElementResult =
-                InsertBRElement(WithTransaction::Yes,
-                                EditorDOMPoint::AtEndOf(aElement));
-            if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
-              NS_WARNING(
-                  "HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
-              return insertBRElementResult.propagateErr();
-            }
-            CreateElementResult unwrappedInsertBRElementResult =
-                insertBRElementResult.unwrap();
-            unwrappedInsertBRElementResult.MoveCaretPointTo(
-                pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-            MOZ_ASSERT(unwrappedInsertBRElementResult.GetNewNode());
-          }
-        }
-      }
-    }
-  } else if (nsIContent* previousSibling = HTMLEditUtils::GetPreviousSibling(
-                 aElement, {WalkTreeOption::IgnoreNonEditableNode})) {
-    
-    
-    
-    
-    
-    
-    if (!HTMLEditUtils::IsBlockElement(
-            *previousSibling, BlockInlineCheck::UseComputedDisplayStyle) &&
-        !previousSibling->IsHTMLElement(nsGkAtoms::br)) {
-      if (nsIContent* nextSibling = HTMLEditUtils::GetNextSibling(
+      if (nsIContent* previousSibling = HTMLEditUtils::GetPreviousSibling(
               aElement, {WalkTreeOption::IgnoreNonEditableNode})) {
         if (!HTMLEditUtils::IsBlockElement(
-                *nextSibling, BlockInlineCheck::UseComputedDisplayStyle) &&
-            !nextSibling->IsHTMLElement(nsGkAtoms::br)) {
-          Result<CreateElementResult, nsresult> insertBRElementResult =
-              InsertBRElement(WithTransaction::Yes,
-                              EditorDOMPoint(&aElement, 0u));
-          if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
+                *previousSibling,
+                BlockInlineCheck::UseComputedDisplayOutsideStyle) &&
+            !previousSibling->IsHTMLElement(nsGkAtoms::br) &&
+            !HTMLEditUtils::IsBlockElement(
+                *child, BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
+          Result<CreateLineBreakResult, nsresult> insertBRElementResultOrError =
+              InsertLineBreak(WithTransaction::Yes, LineBreakType::BRElement,
+                              EditorDOMPoint(&aElement));
+          if (MOZ_UNLIKELY(insertBRElementResultOrError.isErr())) {
             NS_WARNING(
-                "HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
-            return insertBRElementResult.propagateErr();
+                "HTMLEditor::InsertLineBreak(WithTransaction::Yes, "
+                "LineBreakType::BRElement) failed");
+            return insertBRElementResultOrError.propagateErr();
           }
-          CreateElementResult unwrappedInsertBRElementResult =
-              insertBRElementResult.unwrap();
-          unwrappedInsertBRElementResult.MoveCaretPointTo(
-              pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-          MOZ_ASSERT(unwrappedInsertBRElementResult.GetNewNode());
+          CreateLineBreakResult insertBRElementResult =
+              insertBRElementResultOrError.unwrap();
+          MOZ_ASSERT(insertBRElementResult.Handled());
+          insertBRElementResult.IgnoreCaretPointSuggestion();
+          pointToPutCaret = EditorDOMPoint(&aElement, 0);
+        }
+      }
+
+      
+      
+      
+      
+      
+
+      if (nsIContent* nextSibling = HTMLEditUtils::GetNextSibling(
+              aElement, {WalkTreeOption::IgnoreNonEditableNode})) {
+        if (nextSibling &&
+            !HTMLEditUtils::IsBlockElement(
+                *nextSibling, BlockInlineCheck::UseComputedDisplayStyle)) {
+          if (nsIContent* lastChild = HTMLEditUtils::GetLastChild(
+                  aElement, {WalkTreeOption::IgnoreNonEditableNode},
+                  BlockInlineCheck::Unused)) {
+            if (!HTMLEditUtils::IsBlockElement(
+                    *lastChild, BlockInlineCheck::UseComputedDisplayStyle) &&
+                !lastChild->IsHTMLElement(nsGkAtoms::br)) {
+              Result<CreateLineBreakResult, nsresult>
+                  insertBRElementResultOrError = InsertLineBreak(
+                      WithTransaction::Yes, LineBreakType::BRElement,
+                      EditorDOMPoint::After(aElement));
+              if (MOZ_UNLIKELY(insertBRElementResultOrError.isErr())) {
+                NS_WARNING(
+                    "HTMLEditor::InsertLineBreak(WithTransaction::Yes, "
+                    "LineBreakType::BRElement) failed");
+                return insertBRElementResultOrError.propagateErr();
+              }
+              CreateLineBreakResult insertBRElementResult =
+                  insertBRElementResultOrError.unwrap();
+              MOZ_ASSERT(insertBRElementResult.Handled());
+              insertBRElementResult.IgnoreCaretPointSuggestion();
+              pointToPutCaret = EditorDOMPoint::AtEndOf(aElement);
+            }
+          }
+        }
+      }
+    } else if (nsIContent* previousSibling = HTMLEditUtils::GetPreviousSibling(
+                   aElement, {WalkTreeOption::IgnoreNonEditableNode})) {
+      
+      
+      
+      
+      
+      
+      if (!HTMLEditUtils::IsBlockElement(
+              *previousSibling, BlockInlineCheck::UseComputedDisplayStyle) &&
+          !previousSibling->IsHTMLElement(nsGkAtoms::br)) {
+        if (nsIContent* nextSibling = HTMLEditUtils::GetNextSibling(
+                aElement, {WalkTreeOption::IgnoreNonEditableNode})) {
+          if (!HTMLEditUtils::IsBlockElement(
+                  *nextSibling, BlockInlineCheck::UseComputedDisplayStyle) &&
+              !nextSibling->IsHTMLElement(nsGkAtoms::br)) {
+            Result<CreateLineBreakResult, nsresult>
+                insertBRElementResultOrError = InsertLineBreak(
+                    WithTransaction::Yes, LineBreakType::BRElement,
+                    EditorDOMPoint(&aElement));
+            if (MOZ_UNLIKELY(insertBRElementResultOrError.isErr())) {
+              NS_WARNING(
+                  "HTMLEditor::InsertLineBreak(WithTransaction::Yes, "
+                  "LineBreakType::BRElement) failed");
+              return insertBRElementResultOrError.propagateErr();
+            }
+            CreateLineBreakResult insertBRElementResult =
+                insertBRElementResultOrError.unwrap();
+            MOZ_ASSERT(insertBRElementResult.Handled());
+            insertBRElementResult.IgnoreCaretPointSuggestion();
+            pointToPutCaret = EditorDOMPoint(&aElement, 0);
+          }
         }
       }
     }
   }
 
   
+  AutoTrackDOMPoint trackPointToPutCaret(RangeUpdaterRef(), &pointToPutCaret);
   Result<EditorDOMPoint, nsresult> unwrapBlockElementResult =
       RemoveContainerWithTransaction(aElement);
   if (MOZ_UNLIKELY(unwrapBlockElementResult.isErr())) {
     NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
     return unwrapBlockElementResult;
   }
+  trackPointToPutCaret.FlushAndStopTracking();
   if (AllowsTransactionsToChangeSelection() &&
       unwrapBlockElementResult.inspect().IsSet()) {
     pointToPutCaret = unwrapBlockElementResult.unwrap();
@@ -6871,15 +6949,20 @@ HTMLEditor::CopyLastEditableChildStylesWithTransaction(
     return EditorDOMPoint(&aNewBlock, 0u);
   }
 
-  Result<CreateElementResult, nsresult> insertBRElementResult = InsertBRElement(
-      WithTransaction::Yes, EditorDOMPoint(firstClonedElement, 0u));
-  if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
-    NS_WARNING("HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
-    return insertBRElementResult.propagateErr();
+  Result<CreateLineBreakResult, nsresult> insertBRElementResultOrError =
+      InsertLineBreak(WithTransaction::Yes, LineBreakType::BRElement,
+                      EditorDOMPoint(firstClonedElement, 0u));
+  if (MOZ_UNLIKELY(insertBRElementResultOrError.isErr())) {
+    NS_WARNING(
+        "HTMLEditor::InsertLineBreak(WithTransaction::Yes, "
+        "LineBreakType::BRElement) failed");
+    return insertBRElementResultOrError.propagateErr();
   }
-  insertBRElementResult.inspect().IgnoreCaretPointSuggestion();
-  MOZ_ASSERT(insertBRElementResult.inspect().GetNewNode());
-  return EditorDOMPoint(insertBRElementResult.inspect().GetNewNode());
+  CreateLineBreakResult insertBRElementResult =
+      insertBRElementResultOrError.unwrap();
+  MOZ_ASSERT(insertBRElementResult.Handled());
+  insertBRElementResult.IgnoreCaretPointSuggestion();
+  return insertBRElementResult.AtLineBreak<EditorDOMPoint>();
 }
 
 nsresult HTMLEditor::GetElementOrigin(Element& aElement, int32_t& aX,

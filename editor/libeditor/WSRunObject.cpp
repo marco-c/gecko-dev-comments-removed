@@ -1095,12 +1095,21 @@ WhiteSpaceVisibilityKeeper::InsertBRElement(
     }
   }
 
-  Result<CreateElementResult, nsresult> insertBRElementResult =
-      aHTMLEditor.InsertBRElement(WithTransaction::Yes, pointToInsert);
-  NS_WARNING_ASSERTION(
-      insertBRElementResult.isOk(),
-      "HTMLEditor::InsertBRElement(WithTransaction::Yes, eNone) failed");
-  return insertBRElementResult;
+  Result<CreateLineBreakResult, nsresult> insertBRElementResultOrError =
+      aHTMLEditor.InsertLineBreak(WithTransaction::Yes,
+                                  HTMLEditor::LineBreakType::BRElement,
+                                  pointToInsert);
+  if (MOZ_UNLIKELY(insertBRElementResultOrError.isErr())) {
+    NS_WARNING(
+        "HTMLEditor::InsertLineBreak(WithTransaction::Yes, "
+        "LineBreakType::BRElement, eNone) failed");
+    return insertBRElementResultOrError.propagateErr();
+  }
+  CreateLineBreakResult insertBRElementResult =
+      insertBRElementResultOrError.unwrap();
+  EditorDOMPoint pointToPutCaret = insertBRElementResult.UnwrapCaretPoint();
+  return CreateElementResult(insertBRElementResult->BRElementRef(),
+                             std::move(pointToPutCaret));
 }
 
 
@@ -3638,18 +3647,22 @@ nsresult WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
           
           
 
-          Result<CreateElementResult, nsresult> insertBRElementResult =
-              aHTMLEditor.InsertBRElement(WithTransaction::Yes,
+          Result<CreateLineBreakResult, nsresult> insertBRElementResultOrError =
+              aHTMLEditor.InsertLineBreak(WithTransaction::Yes,
+                                          HTMLEditor::LineBreakType::BRElement,
                                           atEndOfVisibleWhiteSpaces);
-          if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
+          if (MOZ_UNLIKELY(insertBRElementResultOrError.isErr())) {
             NS_WARNING(
-                "HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
-            return insertBRElementResult.propagateErr();
+                "HTMLEditor::InsertLineBreak(WithTransaction::Yes, "
+                "LineBreakType::BRElement) failed");
+            return insertBRElementResultOrError.propagateErr();
           }
-          MOZ_ASSERT(insertBRElementResult.inspect().GetNewNode());
+          CreateLineBreakResult insertBRElementResult =
+              insertBRElementResultOrError.unwrap();
+          MOZ_ASSERT(insertBRElementResult.Handled());
           
           
-          insertBRElementResult.unwrap().IgnoreCaretPointSuggestion();
+          insertBRElementResult.IgnoreCaretPointSuggestion();
 
           atPreviousCharOfEndOfVisibleWhiteSpaces =
               textFragmentData.GetPreviousEditableCharPoint(
