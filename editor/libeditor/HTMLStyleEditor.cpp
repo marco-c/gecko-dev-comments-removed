@@ -11,6 +11,7 @@
 #include "AutoRangeArray.h"
 #include "CSSEditUtils.h"
 #include "EditAction.h"
+#include "EditorLineBreak.h"
 #include "EditorUtils.h"
 #include "HTMLEditHelpers.h"
 #include "HTMLEditUtils.h"
@@ -2399,14 +2400,18 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
       firstLeafChildOfNextNode ? firstLeafChildOfNextNode
                                : unwrappedSplitNodeResult.GetNextContent(),
       0);
-  RefPtr<HTMLBRElement> brElement;
+  Maybe<EditorLineBreak> lineBreak;
   
   
   if (!atStartOfNextNode.IsInContentNode() ||
       !HTMLEditUtils::IsContainerNode(
           *atStartOfNextNode.ContainerAs<nsIContent>())) {
     
-    brElement = HTMLBRElement::FromNode(atStartOfNextNode.GetContainer());
+    auto* const brElement =
+        HTMLBRElement::FromNode(atStartOfNextNode.GetContainer());
+    if (brElement) {
+      lineBreak.emplace(*brElement);
+    }
     if (!atStartOfNextNode.GetContainerParentAs<nsIContent>()) {
       NS_WARNING("atStartOfNextNode was in an orphan node");
       return Err(NS_ERROR_FAILURE);
@@ -2449,16 +2454,17 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
             {EmptyCheckOption::TreatListItemAsVisible,
              EmptyCheckOption::TreatTableCellAsVisible},
             &seenBR)) {
-      if (seenBR && !brElement) {
-        brElement = HTMLEditUtils::GetFirstBRElement(
+      if (seenBR && lineBreak.isNothing()) {
+        lineBreak = HTMLEditUtils::GetFirstLineBreak<EditorLineBreak>(
             *unwrappedSplitResultAtStartOfNextNode.GetNextContentAs<Element>());
       }
       
       
       
       
-      if (brElement) {
-        nsresult rv = DeleteNodeWithTransaction(*brElement);
+      if (lineBreak.isSome() && lineBreak->IsHTMLBRElement()) {
+        nsresult rv =
+            DeleteNodeWithTransaction(MOZ_KnownLive(lineBreak->BRElementRef()));
         if (NS_FAILED(rv)) {
           NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
           return Err(rv);
@@ -2507,10 +2513,11 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
   
   
   
-  if (brElement) {
-    if (brElement->GetParentNode()) {
+  if (lineBreak.isSome() && lineBreak->IsHTMLBRElement()) {
+    if (lineBreak->BRElementRef().GetParentNode()) {
       Result<MoveNodeResult, nsresult> moveBRElementResult =
-          MoveNodeWithTransaction(*brElement, pointToPutCaret);
+          MoveNodeWithTransaction(MOZ_KnownLive(lineBreak->BRElementRef()),
+                                  pointToPutCaret);
       if (MOZ_UNLIKELY(moveBRElementResult.isErr())) {
         NS_WARNING("HTMLEditor::MoveNodeWithTransaction() failed");
         return moveBRElementResult.propagateErr();
@@ -2521,7 +2528,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
            SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
     } else {
       Result<CreateElementResult, nsresult> insertBRElementResult =
-          InsertNodeWithTransaction<Element>(*brElement, pointToPutCaret);
+          InsertNodeWithTransaction<Element>(
+              MOZ_KnownLive(lineBreak->BRElementRef()), pointToPutCaret);
       if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
         NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
         return insertBRElementResult.propagateErr();

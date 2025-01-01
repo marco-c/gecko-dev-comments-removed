@@ -15,6 +15,7 @@
 #include "EditorBase.h"
 #include "EditorDOMPoint.h"
 #include "EditorForwards.h"
+#include "EditorLineBreak.h"
 #include "EditorUtils.h"
 #include "HTMLEditHelpers.h"
 
@@ -2012,7 +2013,9 @@ class HTMLEditUtils final {
 
 
 
-  static dom::HTMLBRElement* GetFirstBRElement(const dom::Element& aElement) {
+  template <typename EditorLineBreakType>
+  static Maybe<EditorLineBreakType> GetFirstLineBreak(
+      const dom::Element& aElement) {
     for (nsIContent* content = HTMLEditUtils::GetFirstLeafContent(
              aElement, {LeafNodeType::OnlyLeafNode});
          content; content = HTMLEditUtils::GetNextContent(
@@ -2021,10 +2024,11 @@ class HTMLEditUtils final {
                        WalkTreeOption::IgnoreWhiteSpaceOnlyText},
                       BlockInlineCheck::Unused, &aElement)) {
       if (auto* brElement = dom::HTMLBRElement::FromNode(*content)) {
-        return brElement;
+        return Some(EditorLineBreakType(*brElement));
       }
+      
     }
-    return nullptr;
+    return Nothing();
   }
 
   enum class ScanLineBreak {
@@ -2035,7 +2039,8 @@ class HTMLEditUtils final {
 
 
 
-  static nsIContent* GetUnnecessaryLineBreakContent(
+  template <typename EditorLineBreakType>
+  static Maybe<EditorLineBreakType> GetUnnecessaryLineBreak(
       const Element& aBlockElement, ScanLineBreak aScanLineBreak);
 
   
@@ -2043,9 +2048,10 @@ class HTMLEditUtils final {
 
 
 
-  template <typename EditorDOMPointType>
-  [[nodiscard]] static nsIContent* GetFollowingUnnecessaryLineBreakContent(
-      const EditorDOMPointType& aPoint, const Element& aEditingHost);
+  template <typename EditorLineBreakType, typename EditorDOMPointType>
+  [[nodiscard]] static Maybe<EditorLineBreakType>
+  GetFollowingUnnecessaryLineBreak(const EditorDOMPointType& aPoint,
+                                   const Element& aEditingHost);
 
   
 

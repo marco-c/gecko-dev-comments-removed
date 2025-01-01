@@ -153,13 +153,25 @@ template bool HTMLEditUtils::IsSameCSSColorValue(const nsAString& aColorA,
 template bool HTMLEditUtils::IsSameCSSColorValue(const nsACString& aColorA,
                                                  const nsACString& aColorB);
 
-template nsIContent* HTMLEditUtils::GetFollowingUnnecessaryLineBreakContent(
+template Maybe<EditorLineBreak> HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
     const EditorDOMPoint& aPoint, const Element& aEditingHost);
-template nsIContent* HTMLEditUtils::GetFollowingUnnecessaryLineBreakContent(
+template Maybe<EditorLineBreak> HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
     const EditorRawDOMPoint& aPoint, const Element& aEditingHost);
-template nsIContent* HTMLEditUtils::GetFollowingUnnecessaryLineBreakContent(
+template Maybe<EditorLineBreak> HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
     const EditorDOMPointInText& aPoint, const Element& aEditingHost);
-template nsIContent* HTMLEditUtils::GetFollowingUnnecessaryLineBreakContent(
+template Maybe<EditorLineBreak> HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
+    const EditorRawDOMPointInText& aPoint, const Element& aEditingHost);
+template Maybe<EditorRawLineBreak>
+HTMLEditUtils::GetFollowingUnnecessaryLineBreak(const EditorDOMPoint& aPoint,
+                                                const Element& aEditingHost);
+template Maybe<EditorRawLineBreak>
+HTMLEditUtils::GetFollowingUnnecessaryLineBreak(const EditorRawDOMPoint& aPoint,
+                                                const Element& aEditingHost);
+template Maybe<EditorRawLineBreak>
+HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
+    const EditorDOMPointInText& aPoint, const Element& aEditingHost);
+template Maybe<EditorRawLineBreak>
+HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
     const EditorRawDOMPointInText& aPoint, const Element& aEditingHost);
 
 template bool HTMLEditUtils::PointIsImmediatelyBeforeCurrentBlockBoundary(
@@ -178,6 +190,11 @@ template bool HTMLEditUtils::PointIsImmediatelyBeforeCurrentBlockBoundary(
     const EditorRawDOMPointInText& aPoint,
     IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak,
     const Element& aEditingHost);
+
+template Maybe<EditorLineBreak> HTMLEditUtils::GetUnnecessaryLineBreak(
+    const Element& aBlockElement, ScanLineBreak aScanLineBreak);
+template Maybe<EditorRawLineBreak> HTMLEditUtils::GetUnnecessaryLineBreak(
+    const Element& aBlockElement, ScanLineBreak aScanLineBreak);
 
 bool HTMLEditUtils::CanContentsBeJoined(const nsIContent& aLeftContent,
                                         const nsIContent& aRightContent) {
@@ -1006,7 +1023,8 @@ bool HTMLEditUtils::PointIsImmediatelyBeforeCurrentBlockBoundary(
   return false;
 }
 
-nsIContent* HTMLEditUtils::GetUnnecessaryLineBreakContent(
+template <typename EditorLineBreakType>
+Maybe<EditorLineBreakType> HTMLEditUtils::GetUnnecessaryLineBreak(
     const Element& aBlockElement, ScanLineBreak aScanLineBreak) {
   auto* lastLineBreakContent = [&]() -> nsIContent* {
     const LeafNodeTypes leafNodeOrNonEditableNode{
@@ -1076,16 +1094,20 @@ nsIContent* HTMLEditUtils::GetUnnecessaryLineBreakContent(
     return nullptr;
   }();
   if (!lastLineBreakContent) {
-    return nullptr;
+    return Nothing();
   }
 
   
   
   
-  Text* lastLineBreakText = Text::FromNode(lastLineBreakContent);
+  Text* const lastLineBreakText = Text::FromNode(lastLineBreakContent);
   if (lastLineBreakText && lastLineBreakText->TextDataLength() != 1u) {
-    return lastLineBreakText;
+    return Some(EditorLineBreakType::AtLastChar(*lastLineBreakText));
   }
+  HTMLBRElement* const lastBRElement =
+      lastLineBreakText ? nullptr
+                        : HTMLBRElement::FromNode(lastLineBreakContent);
+  MOZ_ASSERT_IF(!lastLineBreakText, lastBRElement);
 
   
   const LeafNodeTypes leafNodeOrNonEditableNodeOrChildBlock{
@@ -1110,10 +1132,10 @@ nsIContent* HTMLEditUtils::GetUnnecessaryLineBreakContent(
       
       
       
-      return nullptr;
+      return Nothing();
     }
     if (Text* textNode = Text::FromNode(content)) {
-      if (!textNode->TextLength()) {
+      if (!textNode->TextDataLength()) {
         continue;  
       }
       const nsTextFragment& textFragment = textNode->TextFragment();
@@ -1124,7 +1146,7 @@ nsIContent* HTMLEditUtils::GetUnnecessaryLineBreakContent(
         
         
         
-        return nullptr;
+        return Nothing();
       }
       if (!HTMLEditUtils::IsVisibleTextNode(*textNode)) {
         continue;
@@ -1132,7 +1154,9 @@ nsIContent* HTMLEditUtils::GetUnnecessaryLineBreakContent(
       if (EditorUtils::IsWhiteSpacePreformatted(*textNode)) {
         
         
-        return lastLineBreakContent;
+        return Some(lastLineBreakText
+                        ? EditorLineBreakType::AtLastChar(*lastLineBreakText)
+                        : EditorLineBreakType(*lastBRElement));
       }
       
       
@@ -1141,9 +1165,11 @@ nsIContent* HTMLEditUtils::GetUnnecessaryLineBreakContent(
         case HTMLEditUtils::kNewLine:
         case HTMLEditUtils::kCarriageReturn:
         case HTMLEditUtils::kTab:
-          return nullptr;
+          return Nothing();
         default:
-          return lastLineBreakContent;
+          return Some(lastLineBreakText
+                          ? EditorLineBreakType::AtLastChar(*lastLineBreakText)
+                          : EditorLineBreakType(*lastBRElement));
       }
     }
     if (content->IsCharacterData()) {
@@ -1152,20 +1178,22 @@ nsIContent* HTMLEditUtils::GetUnnecessaryLineBreakContent(
     
     
     if (content->IsHTMLElement(nsGkAtoms::br)) {
-      return nullptr;
+      return Nothing();
     }
     if (HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*content)) {
-      return lastLineBreakContent;
+      return Some(lastLineBreakText
+                      ? EditorLineBreakType::AtLastChar(*lastLineBreakText)
+                      : EditorLineBreakType(*lastBRElement));
     }
     
   }
   
   
-  return nullptr;
+  return Nothing();
 }
 
-template <typename EditorDOMPointType>
-nsIContent* HTMLEditUtils::GetFollowingUnnecessaryLineBreakContent(
+template <typename EditorLineBreakType, typename EditorDOMPointType>
+Maybe<EditorLineBreakType> HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
     const EditorDOMPointType& aPoint, const Element& aEditingHost) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
   MOZ_ASSERT(aPoint.IsInContentNode());
@@ -1177,7 +1205,7 @@ nsIContent* HTMLEditUtils::GetFollowingUnnecessaryLineBreakContent(
       !(nextThing.ReachedPreformattedLineBreak() &&
         nextThing.PointAtReachedContent<EditorRawDOMPoint>()
             .IsAtLastContent())) {
-    return nullptr;  
+    return Nothing();  
   }
   WSScanResult nextThingOfLineBreak =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
@@ -1191,16 +1219,18 @@ nsIContent* HTMLEditUtils::GetFollowingUnnecessaryLineBreakContent(
                 *nextThing.GetContent(), {AncestorType::ClosestBlockElement},
                 BlockInlineCheck::UseComputedDisplayStyle);
   if (MOZ_UNLIKELY(!blockElement)) {
-    return nullptr;
+    return Nothing();
   }
-  nsIContent* const unnecessaryLineBreak = GetUnnecessaryLineBreakContent(
-      *blockElement, nextThingOfLineBreak.ReachedOtherBlockElement()
-                         ? ScanLineBreak::BeforeBlock
-                         : ScanLineBreak::AtEndOfBlock);
+  Maybe<EditorLineBreakType> unnecessaryLineBreak =
+      GetUnnecessaryLineBreak<EditorLineBreakType>(
+          *blockElement, nextThingOfLineBreak.ReachedOtherBlockElement()
+                             ? ScanLineBreak::BeforeBlock
+                             : ScanLineBreak::AtEndOfBlock);
   
   
-  if (unnecessaryLineBreak != nextThing.GetContent()) {
-    return nullptr;
+  if (unnecessaryLineBreak.isSome() &&
+      &unnecessaryLineBreak->ContentRef() != nextThing.GetContent()) {
+    unnecessaryLineBreak.reset();
   }
   return unnecessaryLineBreak;
 }

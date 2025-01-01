@@ -16,6 +16,7 @@
 #include "CSSEditUtils.h"
 #include "EditAction.h"
 #include "EditorDOMPoint.h"
+#include "EditorLineBreak.h"
 #include "EditorUtils.h"
 #include "HTMLEditHelpers.h"
 #include "HTMLEditUtils.h"
@@ -8746,27 +8747,35 @@ Result<SplitNodeResult, nsresult> HTMLEditor::SplitParagraphWithTransaction(
           return result;
         }(*rightDivOrParagraphElement);
     if (deepestInlineContainerElement) {
-      RefPtr<HTMLBRElement> brElement =
-          HTMLEditUtils::GetFirstBRElement(*rightDivOrParagraphElement);
+      Maybe<EditorLineBreak> lineBreak =
+          HTMLEditUtils::GetFirstLineBreak<EditorLineBreak>(
+              *rightDivOrParagraphElement);
       
       
       
-      if (brElement &&
-          brElement->GetParentNode() == deepestInlineContainerElement) {
-        nsresult rv = UpdateBRElementType(
-            *brElement, BRElementType::PaddingForEmptyLastLine);
-        if (NS_FAILED(rv)) {
-          NS_WARNING("EditorBase::UpdateBRElementType() failed");
-          return Err(rv);
+      if (lineBreak.isSome() && lineBreak->IsHTMLBRElement() &&
+          lineBreak->BRElementRef().GetParentNode() ==
+              deepestInlineContainerElement) {
+        auto pointAtBRElement = lineBreak->To<EditorDOMPoint>();
+        {
+          AutoEditorDOMPointChildInvalidator lockOffset(pointAtBRElement);
+          nsresult rv =
+              UpdateBRElementType(MOZ_KnownLive(lineBreak->BRElementRef()),
+                                  BRElementType::PaddingForEmptyLastLine);
+          if (NS_FAILED(rv)) {
+            NS_WARNING("EditorBase::UpdateBRElementType() failed");
+            return Err(rv);
+          }
         }
         return SplitNodeResult(std::move(unwrappedSplitDivOrPResult),
-                               EditorDOMPoint(brElement));
+                               pointAtBRElement);
       }
       
       
       
-      if (brElement) {
-        nsresult rv = DeleteNodeWithTransaction(*brElement);
+      if (lineBreak.isSome() && lineBreak->IsHTMLBRElement()) {
+        nsresult rv =
+            DeleteNodeWithTransaction(MOZ_KnownLive(lineBreak->BRElementRef()));
         if (NS_FAILED(rv)) {
           NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
           return Err(rv);
