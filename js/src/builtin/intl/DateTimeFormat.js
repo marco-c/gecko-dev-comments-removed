@@ -387,6 +387,7 @@ function InitializeDateTimeFormat(
   options,
   required,
   defaults,
+  toLocaleStringTimeZone,
   mozExtensions
 ) {
   assert(
@@ -404,6 +405,10 @@ function InitializeDateTimeFormat(
   assert(
     defaults === "date" || defaults === "time" || defaults === "all",
     `InitializeDateTimeFormat called with invalid defaults value: ${defaults}`
+  );
+  assert(
+    toLocaleStringTimeZone === undefined || typeof toLocaleStringTimeZone === "string",
+    `InitializeDateTimeFormat called with invalid toLocaleStringTimeZone value: ${toLocaleStringTimeZone}`
   );
 
   
@@ -537,11 +542,22 @@ function InitializeDateTimeFormat(
   
   if (timeZone === undefined) {
     
-    timeZone = DefaultTimeZone();
+    if (toLocaleStringTimeZone !== undefined) {
+      timeZone = toLocaleStringTimeZone;
+    } else {
+      timeZone = DefaultTimeZone();
+    }
 
     
   } else {
     
+    if (toLocaleStringTimeZone !== undefined) {
+      ThrowTypeError(
+        JSMSG_INVALID_DATETIME_OPTION,
+        "timeZone",
+        "Temporal.ZonedDateTime.toLocaleString"
+      );
+    }
     timeZone = ToString(timeZone);
 
     
