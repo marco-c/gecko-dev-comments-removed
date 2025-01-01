@@ -113,6 +113,8 @@ SOURCES += [
 include("metrics_index.py")
 
 
+
+
 if CONFIG["MOZ_GLEAN_EXTRA_METRICS_FILES"]:
     metrics_yamls.extend(CONFIG["MOZ_GLEAN_EXTRA_METRICS_FILES"])
     metrics_yamls = sorted(metrics_yamls)
