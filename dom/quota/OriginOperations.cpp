@@ -62,6 +62,7 @@
 #include "nsTArray.h"
 #include "OriginInfo.h"
 #include "OriginOperationBase.h"
+#include "OriginParser.h"
 #include "QuotaRequestBase.h"
 #include "ResolvableNormalOriginOp.h"
 #include "prthread.h"
@@ -3196,6 +3197,24 @@ nsresult ClearDataOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
   AssertIsOnIOThread();
 
   AUTO_PROFILER_LABEL("ClearRequestBase::DoDirectoryWork", OTHER);
+
+  
+  
+  
+  
+  
+  
+  
+  if (aQuotaManager.IsThumbnailPrivateIdentityIdKnown() &&
+      IsUserContextPattern(mPattern,
+                           aQuotaManager.GetThumbnailPrivateIdentityId()) &&
+      aQuotaManager.IsTemporaryStorageInitializedInternal() &&
+      aQuotaManager.ThumbnailPrivateIdentityTemporaryOriginCount() == 0) {
+    DeleteFiles(aQuotaManager, PERSISTENCE_TYPE_PERSISTENT,
+                OriginScope::FromPattern(mPattern));
+
+    return NS_OK;
+  }
 
   for (const PersistenceType type : kAllPersistenceTypes) {
     DeleteFiles(aQuotaManager, type, OriginScope::FromPattern(mPattern));

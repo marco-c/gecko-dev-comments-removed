@@ -352,6 +352,52 @@ void QuotaManagerDependencyFixture::InitializeTemporaryClient(
 }
 
 
+CStringArray QuotaManagerDependencyFixture::ListOrigins() {
+  auto result = PerformOnBackgroundThread([]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    MOZ_RELEASE_ASSERT(quotaManager);
+
+    auto value = Await(quotaManager->ListOrigins());
+    MOZ_RELEASE_ASSERT(value.IsResolve());
+
+    return std::move(value.ResolveValue());
+  });
+
+  return result;
+}
+
+
+CStringArray QuotaManagerDependencyFixture::ListCachedOrigins() {
+  auto result = PerformOnBackgroundThread([]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    MOZ_RELEASE_ASSERT(quotaManager);
+
+    auto value = Await(quotaManager->ListCachedOrigins());
+    MOZ_RELEASE_ASSERT(value.IsResolve());
+
+    return std::move(value.ResolveValue());
+  });
+
+  return result;
+}
+
+
+void QuotaManagerDependencyFixture::ClearStoragesForOriginAttributesPattern(
+    const nsAString& aPattern) {
+  OriginAttributesPattern pattern;
+  MOZ_ALWAYS_TRUE(pattern.Init(aPattern));
+
+  PerformOnBackgroundThread([&pattern]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    MOZ_RELEASE_ASSERT(quotaManager);
+
+    auto value =
+        Await(quotaManager->ClearStoragesForOriginAttributesPattern(pattern));
+    MOZ_RELEASE_ASSERT(value.IsResolve());
+  });
+}
+
+
 uint64_t QuotaManagerDependencyFixture::TotalDirectoryIterations() {
   const auto result = PerformOnIOThread([]() -> uint64_t {
     QuotaManager* quotaManager = QuotaManager::Get();
