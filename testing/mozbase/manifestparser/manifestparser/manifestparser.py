@@ -247,6 +247,10 @@ class ManifestParser(object):
             
             
             
+            
+            
+            
+            
             self.manifest_defaults[(parentmanifest, manifest_defaults_filename)] = (
                 defaults
             )

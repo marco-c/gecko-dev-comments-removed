@@ -569,14 +569,26 @@ class BuildBackendLoader(TestLoader):
             for metadata in tests:
                 defaults_manifests = [metadata["manifest"]]
 
+                
+                
+                
+                
+                
                 ancestor_manifest = metadata.get("ancestor_manifest")
                 if ancestor_manifest:
                     
                     
                     
-                    ancestor_manifest = os.path.join(topsrcdir, ancestor_manifest)
+
+                    
+                    
                     defaults_manifests[0] = (ancestor_manifest, metadata["manifest"])
-                    defaults_manifests.append(ancestor_manifest)
+
+                    
+                    
+                    defaults_manifests.append(
+                        os.path.join(topsrcdir, ancestor_manifest)
+                    )
 
                 for manifest in defaults_manifests:
                     manifest_defaults = defaults.get(manifest)

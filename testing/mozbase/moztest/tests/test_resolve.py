@@ -207,18 +207,29 @@ def defaults(topsrcdir):
         
         return os.path.normpath(os.path.join(topsrcdir, relpath))
 
+    def to_ancestor_manifest_path(relpath):
+        
+        
+        
+        return os.path.normpath(relpath)
+
+    
+    
+    
+    
+    
     return {
         (to_abspath("dragonfruit/elderberry/xpcshell_updater.toml")): {
             "support-files": "data/**\nxpcshell_updater.toml"
         },
         (
-            to_abspath("carrot/xpcshell-one.toml"),
+            to_ancestor_manifest_path("carrot/xpcshell-one.toml"),
             to_abspath("carrot/xpcshell-shared.toml"),
         ): {
             "head": "head_one.js",
         },
         (
-            to_abspath("carrot/xpcshell-two.toml"),
+            to_ancestor_manifest_path("carrot/xpcshell-two.toml"),
             to_abspath("carrot/xpcshell-shared.toml"),
         ): {
             "head": "head_two.js",
