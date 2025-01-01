@@ -21,8 +21,6 @@ module.exports = {
     InstallTrigger: false,
     
     InternalError: true,
-    
-    MLS: false,
     Services: false,
     
     dump: true,
