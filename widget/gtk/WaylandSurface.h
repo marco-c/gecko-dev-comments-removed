@@ -266,9 +266,6 @@ class WaylandSurface final {
   gfx::IntPoint mSubsurfacePosition{-1, -1};
 
   
-  static bool sForceEmulateFrameCallback;
-
-  
   
   
   
