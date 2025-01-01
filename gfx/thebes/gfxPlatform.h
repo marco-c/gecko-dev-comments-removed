@@ -602,10 +602,25 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-  enum class NeedsReframe : bool { No, Yes };
-  enum class BroadcastToChildren : bool { No, Yes };
-  static void ForceGlobalReflow(NeedsReframe,
-                                BroadcastToChildren = BroadcastToChildren::Yes);
+
+  enum class GlobalReflowFlags : uint8_t {
+    None = 0,
+    
+    
+    
+    FontsChanged = (1 << 0),
+    
+    
+    
+    
+    NeedsReframe = (1 << 1),
+    
+    
+    BroadcastToChildren = (1 << 2),
+    
+    ALL_BITS = FontsChanged | NeedsReframe | BroadcastToChildren,
+  };
+  static void ForceGlobalReflow(GlobalReflowFlags aFlags);
 
   static void FlushFontAndWordCaches();
 
@@ -1006,6 +1021,8 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
   const gfxSkipChars kEmptySkipChars;
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxPlatform::GlobalReflowFlags)
 
 CMSMode GfxColorManagementMode();
 

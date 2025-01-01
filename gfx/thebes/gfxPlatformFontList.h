@@ -161,6 +161,7 @@ class LoadCmapsRunnable;
 
 class gfxPlatformFontList : public gfxFontInfoLoader {
   friend class InitOtherFamilyNamesRunnable;
+  friend class LoadCmapsRunnable;
 
  public:
   typedef mozilla::StretchRange StretchRange;
@@ -268,8 +269,6 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   
   bool InitFontList();
-
-  void FontListChanged();
 
   
 
@@ -632,6 +631,11 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
                       FontVisibility aVisibility) const;
 
   
+  void ForgetMissingChars() {
+    AutoLock lock(mLock);
+    InitializeCodepointsWithNoFonts();
+  }
+
   void InitializeCodepointsWithNoFonts() MOZ_REQUIRES(mLock);
 
   
@@ -894,10 +898,10 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   bool LoadFontInfo() override;
   void CleanupLoader() override;
 
-  void ForceGlobalReflowLocked(
-      gfxPlatform::NeedsReframe aNeedsReframe,
-      gfxPlatform::BroadcastToChildren aBroadcastToChildren =
-          gfxPlatform::BroadcastToChildren::Yes) MOZ_REQUIRES(mLock);
+  void ForceGlobalReflow(gfxPlatform::GlobalReflowFlags aFlags);
+
+  void ForceGlobalReflowLocked(gfxPlatform::GlobalReflowFlags aFlags)
+      MOZ_REQUIRES(mLock);
 
   
   void GetPrefsAndStartLoader();
