@@ -28,12 +28,8 @@ class ClassOfService;
 
 
 
-#define HTTPCONNECTIONMGRSHELL_IID                   \
-  {                                                  \
-    0xf5379ff9, 0x2758, 0x4bec, {                    \
-      0x99, 0x92, 0x23, 0x51, 0xc2, 0x58, 0xae, 0xd6 \
-    }                                                \
-  }
+#define HTTPCONNECTIONMGRSHELL_IID \
+  {0xf5379ff9, 0x2758, 0x4bec, {0x99, 0x92, 0x23, 0x51, 0xc2, 0x58, 0xae, 0xd6}}
 
 class HttpConnectionMgrShell : public nsISupports {
  public:
