@@ -1342,6 +1342,14 @@ static nsIFrame* GetNearestScrollableOrOverflowClipFrame(
     if ((aFlags & nsLayoutUtils::SCROLLABLE_STOP_AT_PAGE) && f->IsPageFrame()) {
       break;
     }
+
+    
+    
+    if ((aFlags & nsLayoutUtils::SCROLLABLE_ONLY_ASYNC_SCROLLABLE) &&
+        f->IsMenuPopupFrame()) {
+      break;
+    }
+
     if (ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(f)) {
       if (aFlags & nsLayoutUtils::SCROLLABLE_ONLY_ASYNC_SCROLLABLE) {
         if (scrollContainerFrame->WantAsyncScroll()) {
