@@ -1410,6 +1410,9 @@ class Document : public nsINode,
   bool UsingStorageAccess();
 
   
+  bool IsOn3PCBExceptionList() const;
+
+  
   
   bool HasStorageAccessPermissionGrantedByAllowList();
 

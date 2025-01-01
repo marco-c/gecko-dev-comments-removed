@@ -149,6 +149,10 @@ class FetchDriver final : public nsIChannelEventSink,
     mIsThirdPartyWorker = aIsThirdPartyWorker;
   }
 
+  void SetIsOn3PCBExceptionList(bool aIsOn3PCBExceptionList) {
+    mIsOn3PCBExceptionList = aIsOn3PCBExceptionList;
+  }
+
  private:
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
@@ -186,6 +190,9 @@ class FetchDriver final : public nsIChannelEventSink,
   
   
   Maybe<bool> mIsThirdPartyWorker;
+
+  
+  bool mIsOn3PCBExceptionList;
 
   RefPtr<AlternativeDataStreamListener> mAltDataListener;
   bool mOnStopRequestCalled;
