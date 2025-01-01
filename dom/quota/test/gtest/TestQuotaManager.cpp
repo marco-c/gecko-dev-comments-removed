@@ -31,6 +31,19 @@ class TestQuotaManager : public QuotaManagerDependencyFixture {
   }
 };
 
+TEST_F(TestQuotaManager, GetThumbnailPrivateIdentityId) {
+  PerformOnIOThread([]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    ASSERT_TRUE(quotaManager);
+
+    const bool known = quotaManager->IsThumbnailPrivateIdentityIdKnown();
+    ASSERT_TRUE(known);
+
+    const uint32_t id = quotaManager->GetThumbnailPrivateIdentityId();
+    ASSERT_GT(id, 4u);
+  });
+}
+
 
 
 TEST_F(TestQuotaManager, OpenStorageDirectory_OngoingWithScheduledShutdown) {
