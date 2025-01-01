@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+class foo extends null {
+    constructor() {
+        
+        
+        
+        
+        return null;
+    }
+}
+
+for (let i = 0; i < 1100; i++)
+    assertThrownErrorContains(() => new foo(), "return");
+
+
+reportCompare(0, 0);

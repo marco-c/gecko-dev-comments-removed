@@ -26,7 +26,7 @@
 
 
 assert.throws(TypeError, () => {
-  var C = class extends (async () => {}) {};
+  var C = class extends (() => {}) {};
 });
 
 

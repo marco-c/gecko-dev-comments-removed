@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   typeof Set.prototype.isDisjointFrom,
   "function",

@@ -41,21 +41,6 @@ const durations = [
   
   
   {
-    seconds: Number.MAX_SAFE_INTEGER,
-    milliseconds: Number.MAX_SAFE_INTEGER,
-    microseconds: Number.MAX_SAFE_INTEGER,
-    nanoseconds: Number.MAX_SAFE_INTEGER,
-  },
-  {
-    seconds: Number.MIN_SAFE_INTEGER,
-    milliseconds: Number.MIN_SAFE_INTEGER,
-    microseconds: Number.MIN_SAFE_INTEGER,
-    nanoseconds: Number.MIN_SAFE_INTEGER,
-  },
-
-  
-  
-  {
     seconds: 1,
     milliseconds: 2,
     microseconds: 3,
@@ -66,19 +51,11 @@ const durations = [
   
   
   {
-    seconds: Number.MAX_SAFE_INTEGER,
-    milliseconds: 10 ** 3,
-    microseconds: 10 ** 6,
-    nanoseconds: 10 ** 9,
-  },
+    
+    milliseconds: 4503599627370497_000,
 
-  
-  
-  {
-    seconds: 0,
-    milliseconds: 0,
-    microseconds: 0,
-    nanoseconds: Number.MAX_VALUE,
+    
+    microseconds: 4503599627370495_000000,
   },
 ];
 

@@ -6,7 +6,6 @@
 
 
 
-
 assert.sameValue(
   Object.isExtensible(Set.prototype.isDisjointFrom),
   true,

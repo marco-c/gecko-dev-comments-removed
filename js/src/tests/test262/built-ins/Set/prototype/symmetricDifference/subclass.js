@@ -7,7 +7,6 @@
 
 
 
-
 class MySet extends Set {}
 
 const s1 = new MySet([1, 2]);

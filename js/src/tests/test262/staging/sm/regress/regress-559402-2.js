@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var expect = undefined;
+var actual = (function foo() { "bogus"; })();
+
+assert.sameValue(expect, actual, "ok");
+
+reportCompare(0, 0);

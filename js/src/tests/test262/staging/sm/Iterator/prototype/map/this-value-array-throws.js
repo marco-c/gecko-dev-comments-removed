@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Iterator.prototype.map.call([], x => x);
+
+
+reportCompare(0, 0);

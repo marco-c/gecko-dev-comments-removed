@@ -12,8 +12,10 @@
 
 
 
-verifyNotEnumerable(Math, "fround");
-verifyWritable(Math, "fround");
-verifyConfigurable(Math, "fround");
+verifyProperty(Math, "fround", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(typeof Set.prototype.symmetricDifference, "function");
 
 verifyProperty(Set.prototype.symmetricDifference, "length", {

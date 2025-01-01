@@ -14,8 +14,10 @@
 
 assert.sameValue(RangeError.prototype, Object.getPrototypeOf(new RangeError));
 
-verifyNotEnumerable(RangeError, "prototype");
-verifyNotWritable(RangeError, "prototype");
-verifyNotConfigurable(RangeError, "prototype");
+verifyProperty(RangeError, "prototype", {
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
 
 reportCompare(0, 0);

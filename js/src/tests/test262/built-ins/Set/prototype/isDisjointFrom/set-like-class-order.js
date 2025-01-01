@@ -7,7 +7,6 @@
 
 
 
-
 let observedOrder = [];
 
 function observableIterator() {

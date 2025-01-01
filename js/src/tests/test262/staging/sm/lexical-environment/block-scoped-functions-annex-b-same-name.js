@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+{
+  function f() { return "inner"; }
+}
+
+function f() { return "outer"; }
+
+assert.sameValue(f(), "inner");
+
+reportCompare(0, 0);

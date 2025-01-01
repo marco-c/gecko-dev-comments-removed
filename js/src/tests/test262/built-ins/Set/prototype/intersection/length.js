@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(typeof Set.prototype.intersection, "function");
 
 verifyProperty(Set.prototype.intersection, "length", {

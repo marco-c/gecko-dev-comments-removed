@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+new class extends class { } {
+    constructor() {
+        let arrow = () => this;
+        assertThrowsInstanceOf(arrow, ReferenceError);
+        super();
+        assert.sameValue(arrow(), this);
+    }
+}();
+
+
+reportCompare(0, 0);

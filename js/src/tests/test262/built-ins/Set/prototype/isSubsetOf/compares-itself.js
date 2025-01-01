@@ -6,7 +6,6 @@
 
 
 
-
 const s1 = new Set([1, 2]);
 
 assert.sameValue(s1.isSubsetOf(s1), true);

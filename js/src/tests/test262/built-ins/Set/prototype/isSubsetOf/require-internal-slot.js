@@ -8,7 +8,6 @@
 
 
 
-
 const isSubsetOf = Set.prototype.isSubsetOf;
 
 assert.sameValue(typeof isSubsetOf, "function");

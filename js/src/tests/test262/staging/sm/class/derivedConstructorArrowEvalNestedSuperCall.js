@@ -1,0 +1,45 @@
+
+
+
+
+
+
+
+
+
+
+
+new class extends class { } {
+    constructor() {
+        (()=>eval("super()"))();
+        assert.sameValue(this, eval("this"));
+        assert.sameValue(this, (()=>this)());
+    }
+}();
+
+new class extends class { } {
+    constructor() {
+        (()=>(()=>super())())();
+        assert.sameValue(this, eval("this"));
+        assert.sameValue(this, (()=>this)());
+    }
+}();
+
+new class extends class { } {
+    constructor() {
+        eval("(()=>super())()");
+        assert.sameValue(this, eval("this"));
+        assert.sameValue(this, (()=>this)());
+    }
+}();
+
+new class extends class { } {
+    constructor() {
+        eval("eval('super()')");
+        assert.sameValue(this, eval("this"));
+        assert.sameValue(this, (()=>this)());
+    }
+}();
+
+
+reportCompare(0, 0);

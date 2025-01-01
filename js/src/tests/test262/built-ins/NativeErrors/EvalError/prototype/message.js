@@ -18,8 +18,10 @@
 
 assert.sameValue(EvalError.prototype.message, "");
 
-verifyNotEnumerable(EvalError.prototype, "message");
-verifyWritable(EvalError.prototype, "message");
-verifyConfigurable(EvalError.prototype, "message");
+verifyProperty(EvalError.prototype, "message", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

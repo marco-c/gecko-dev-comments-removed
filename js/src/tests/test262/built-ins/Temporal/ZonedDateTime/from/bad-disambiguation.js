@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+[
+  "",
+  "EARLIER",
+  "balance"
+].forEach(disambiguation => {
+  assert.throws(RangeError, () => Temporal.ZonedDateTime.from("2020-11-01T04:00[-08:00]", { disambiguation }));
+});
+
+reportCompare(0, 0);

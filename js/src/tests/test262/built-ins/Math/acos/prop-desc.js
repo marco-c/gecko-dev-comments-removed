@@ -11,8 +11,10 @@
 
 
 
-verifyNotEnumerable(Math, "acos");
-verifyWritable(Math, "acos");
-verifyConfigurable(Math, "acos");
+verifyProperty(Math, "acos", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

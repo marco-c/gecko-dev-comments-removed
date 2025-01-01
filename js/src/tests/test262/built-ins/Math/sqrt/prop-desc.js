@@ -12,8 +12,10 @@
 
 
 
-verifyNotEnumerable(Math, "sqrt");
-verifyWritable(Math, "sqrt");
-verifyConfigurable(Math, "sqrt");
+verifyProperty(Math, "sqrt", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

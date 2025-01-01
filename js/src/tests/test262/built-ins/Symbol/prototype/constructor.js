@@ -13,8 +13,10 @@
 
 assert.sameValue(Symbol.prototype.constructor, Symbol);
 
-verifyNotEnumerable(Symbol.prototype, 'constructor');
-verifyWritable(Symbol.prototype, 'constructor');
-verifyConfigurable(Symbol.prototype, 'constructor');
+verifyProperty(Symbol.prototype, 'constructor', {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

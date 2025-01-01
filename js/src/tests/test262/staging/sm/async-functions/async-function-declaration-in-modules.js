@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function f() {
+    return "success";
+}
+
+var AsyncFunction = (async function(){}).constructor;
+
+assert.sameValue(f instanceof AsyncFunction, true);
+
+f().then(v => {
+    assert.sameValue("success", v);
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const reducer = (x, y) => 0;
+const iterator = [].values();
+
+assert.sameValue(iterator.reduce(reducer, 1), 1);
+
+
+reportCompare(0, 0);

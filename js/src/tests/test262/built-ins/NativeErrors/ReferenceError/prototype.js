@@ -14,8 +14,10 @@
 
 assert.sameValue(ReferenceError.prototype, Object.getPrototypeOf(new ReferenceError));
 
-verifyNotEnumerable(ReferenceError, "prototype");
-verifyNotWritable(ReferenceError, "prototype");
-verifyNotConfigurable(ReferenceError, "prototype");
+verifyProperty(ReferenceError, "prototype", {
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
 
 reportCompare(0, 0);

@@ -12,8 +12,10 @@
 
 
 
-verifyNotEnumerable(this, 'Map');
-verifyWritable(this, 'Map');
-verifyConfigurable(this, 'Map');
+verifyProperty(this, 'Map', {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

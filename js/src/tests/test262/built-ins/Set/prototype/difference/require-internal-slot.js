@@ -8,7 +8,6 @@
 
 
 
-
 const difference = Set.prototype.difference;
 
 assert.sameValue(typeof difference, "function");

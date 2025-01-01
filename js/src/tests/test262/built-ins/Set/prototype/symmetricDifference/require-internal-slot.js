@@ -8,7 +8,6 @@
 
 
 
-
 const symmetricDifference = Set.prototype.symmetricDifference;
 
 assert.sameValue(typeof symmetricDifference, "function");

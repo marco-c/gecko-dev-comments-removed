@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+function thunk() {
+    new.target();
+}
+assertThrownErrorContains(thunk, "new.target");
+
+
+reportCompare(0, 0);

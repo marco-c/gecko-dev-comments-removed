@@ -8,7 +8,6 @@
 
 
 
-
 const union = Set.prototype.union;
 
 assert.sameValue(typeof union, "function");

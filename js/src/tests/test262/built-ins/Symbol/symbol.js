@@ -11,8 +11,10 @@
 
 
 
-verifyNotEnumerable(this, "Symbol");
-verifyWritable(this, "Symbol");
-verifyConfigurable(this, "Symbol");
+verifyProperty(this, "Symbol", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

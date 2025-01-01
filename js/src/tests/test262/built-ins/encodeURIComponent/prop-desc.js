@@ -11,8 +11,10 @@
 
 
 
-verifyNotEnumerable(this, "encodeURIComponent");
-verifyWritable(this, "encodeURIComponent");
-verifyConfigurable(this, "encodeURIComponent");
+verifyProperty(this, "encodeURIComponent", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

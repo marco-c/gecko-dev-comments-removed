@@ -6,7 +6,6 @@
 
 
 
-
 const SetLike = {
     arr: [42, 43, 45],
     size: 3,

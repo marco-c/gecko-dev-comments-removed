@@ -7,8 +7,10 @@
 
 
 
-verifyNotEnumerable(Math, "trunc");
-verifyWritable(Math, "trunc");
-verifyConfigurable(Math, "trunc");
+verifyProperty(Math, "trunc", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

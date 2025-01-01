@@ -13,8 +13,10 @@
 
 
 
-verifyNotEnumerable(Reflect, 'isExtensible');
-verifyWritable(Reflect, 'isExtensible');
-verifyConfigurable(Reflect, 'isExtensible');
+verifyProperty(Reflect, 'isExtensible', {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

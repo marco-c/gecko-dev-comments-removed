@@ -11,8 +11,10 @@
 
 
 
-verifyNotEnumerable(Math, "atan2");
-verifyWritable(Math, "atan2");
-verifyConfigurable(Math, "atan2");
+verifyProperty(Math, "atan2", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

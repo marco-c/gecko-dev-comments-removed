@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   isConstructor(Set.prototype.intersection),
   false,

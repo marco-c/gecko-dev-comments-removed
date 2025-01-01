@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const iter = [].values();
+assertThrowsInstanceOf(() => iter.reduce((x, y) => x + y), TypeError);
+
+
+reportCompare(0, 0);

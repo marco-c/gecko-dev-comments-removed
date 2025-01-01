@@ -14,8 +14,10 @@
 
 
 
-verifyNotEnumerable(Number.prototype, "toFixed");
-verifyWritable(Number.prototype, "toFixed");
-verifyConfigurable(Number.prototype, "toFixed");
+verifyProperty(Number.prototype, "toFixed", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

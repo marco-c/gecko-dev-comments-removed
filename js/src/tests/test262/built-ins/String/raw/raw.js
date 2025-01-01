@@ -12,8 +12,10 @@
 
 
 
-verifyNotEnumerable(String, 'raw');
-verifyWritable(String, 'raw');
-verifyConfigurable(String, 'raw');
+verifyProperty(String, 'raw', {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

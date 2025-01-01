@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var x = {}, t = Object.create(x);
+Object.preventExtensions(t);
+
+Object.setPrototypeOf(t, x);
+
+
+Object.setPrototypeOf(Object.prototype, null);
+
+
+reportCompare(0, 0);

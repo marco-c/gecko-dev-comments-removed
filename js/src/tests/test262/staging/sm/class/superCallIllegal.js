@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assertThrowsInstanceOf(() => new Function("super();"), SyntaxError);
+assertThrowsInstanceOf(() => eval("super()"), SyntaxError);
+
+
+reportCompare(0, 0);

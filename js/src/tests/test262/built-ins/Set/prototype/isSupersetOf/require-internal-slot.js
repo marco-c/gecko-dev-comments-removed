@@ -8,7 +8,6 @@
 
 
 
-
 const isSupersetOf = Set.prototype.isSupersetOf;
 
 assert.sameValue(typeof isSupersetOf, "function");

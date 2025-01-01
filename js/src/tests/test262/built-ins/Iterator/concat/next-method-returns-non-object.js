@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let nonObjectIterator = {
+  next() {
+    return null;
+  }
+};
+
+let iterable = {
+  [Symbol.iterator]() {
+    return nonObjectIterator;
+  }
+};
+
+let iterator = Iterator.concat(iterable);
+
+assert.throws(TypeError, function() {
+  iterator.next();
+});
+
+reportCompare(0, 0);

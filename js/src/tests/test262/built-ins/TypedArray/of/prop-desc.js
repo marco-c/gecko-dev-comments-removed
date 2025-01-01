@@ -13,8 +13,10 @@
 
 
 
-verifyNotEnumerable(TypedArray, 'of');
-verifyWritable(TypedArray, 'of');
-verifyConfigurable(TypedArray, 'of');
+verifyProperty(TypedArray, 'of', {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

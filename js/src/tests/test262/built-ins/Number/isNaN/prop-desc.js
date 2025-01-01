@@ -14,8 +14,10 @@
 
 
 
-verifyNotEnumerable(Number, "isNaN");
-verifyWritable(Number, "isNaN");
-verifyConfigurable(Number, "isNaN");
+verifyProperty(Number, "isNaN", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

@@ -7,8 +7,10 @@
 
 
 
-verifyNotEnumerable(Math, "log2");
-verifyWritable(Math, "log2");
-verifyConfigurable(Math, "log2");
+verifyProperty(Math, "log2", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

@@ -12,8 +12,10 @@
 
 
 assert.sameValue(typeof Symbol.match, 'symbol');
-verifyNotEnumerable(Symbol, 'match');
-verifyNotWritable(Symbol, 'match');
-verifyNotConfigurable(Symbol, 'match');
+verifyProperty(Symbol, 'match', {
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
 
 reportCompare(0, 0);

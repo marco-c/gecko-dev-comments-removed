@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+class foo extends null {
+    constructor() {
+        
+        
+        return undefined;
+    }
+}
+
+for (let i = 0; i < 1100; i++)
+    assertThrownErrorContains(() => new foo(), "this");
+
+
+reportCompare(0, 0);

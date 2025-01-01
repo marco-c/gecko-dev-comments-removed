@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+testJSON('{"Numbers cannot have leading zeroes": 013}', true);
+
+
+
+print("Tests complete");
+
+reportCompare(0, 0);

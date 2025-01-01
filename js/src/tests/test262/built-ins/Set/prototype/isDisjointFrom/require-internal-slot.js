@@ -8,7 +8,6 @@
 
 
 
-
 const isDisjointFrom = Set.prototype.isDisjointFrom;
 
 assert.sameValue(typeof isDisjointFrom, "function");

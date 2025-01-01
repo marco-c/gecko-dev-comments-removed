@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var regexp;
+
+regexp = /(?=)/;
+assert.sameValue(regexp.test('test'), true);
+
+
+reportCompare(0, 0);

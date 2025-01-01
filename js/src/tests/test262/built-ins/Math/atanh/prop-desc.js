@@ -7,8 +7,10 @@
 
 
 
-verifyNotEnumerable(Math, "atanh");
-verifyWritable(Math, "atanh");
-verifyConfigurable(Math, "atanh");
+verifyProperty(Math, "atanh", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assertThrowsInstanceOf(function() { eval('let a = 100_00_;'); }, SyntaxError);
+assertThrowsInstanceOf(() => eval("let b = 10__;"), SyntaxError);
+assertThrowsInstanceOf(() => eval("let b = 1._2;"), SyntaxError);
+
+
+reportCompare(0, 0);

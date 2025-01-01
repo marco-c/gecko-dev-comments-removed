@@ -18,8 +18,10 @@
 
 assert.sameValue(RangeError.prototype.constructor, RangeError);
 
-verifyNotEnumerable(RangeError.prototype, "constructor");
-verifyWritable(RangeError.prototype, "constructor");
-verifyConfigurable(RangeError.prototype, "constructor");
+verifyProperty(RangeError.prototype, "constructor", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

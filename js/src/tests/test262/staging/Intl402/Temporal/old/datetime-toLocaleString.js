@@ -39,12 +39,6 @@ var fmt = maybeGetWeekdayOnlyFormat();
 if (fmt) assert.sameValue(fmt.format(datetime), "Thursday");
 
 
-assert.sameValue(
-  datetime.toLocaleString("en-US", { timeZoneName: "long" }),
-  `11/18/1976, 3:23:30${usDayPeriodSpace}PM`
-);
-
-
 var dstStart = new Temporal.PlainDateTime(2020, 3, 8, 2, 30);
 assert.sameValue(
   `${dstStart.toLocaleString("en-US", { timeZone: "America/Los_Angeles" })}`,

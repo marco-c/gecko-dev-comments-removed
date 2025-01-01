@@ -14,8 +14,10 @@
 
 
 
-verifyNotEnumerable(Promise, 'race');
-verifyWritable(Promise, 'race');
-verifyConfigurable(Promise, 'race');
+verifyProperty(Promise, 'race', {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

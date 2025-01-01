@@ -7,8 +7,10 @@
 
 
 
-verifyNotEnumerable(Math, "expm1");
-verifyWritable(Math, "expm1");
-verifyConfigurable(Math, "expm1");
+verifyProperty(Math, "expm1", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

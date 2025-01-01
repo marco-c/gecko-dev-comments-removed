@@ -16,8 +16,10 @@
 
 assert.sameValue(typeof Array.prototype.join, 'function', 'typeof');
 
-verifyNotEnumerable(Array.prototype, "join");
-verifyWritable(Array.prototype, "join");
-verifyConfigurable(Array.prototype, "join");
+verifyProperty(Array.prototype, "join", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

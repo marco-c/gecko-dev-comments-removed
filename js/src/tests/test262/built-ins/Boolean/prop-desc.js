@@ -11,8 +11,10 @@
 
 
 
-verifyNotEnumerable(this, "Boolean");
-verifyWritable(this, "Boolean");
-verifyConfigurable(this, "Boolean");
+verifyProperty(this, "Boolean", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

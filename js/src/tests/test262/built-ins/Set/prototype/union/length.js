@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(typeof Set.prototype.union, "function");
 
 verifyProperty(Set.prototype.union, "length", {

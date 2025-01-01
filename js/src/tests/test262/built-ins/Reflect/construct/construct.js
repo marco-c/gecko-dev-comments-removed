@@ -13,8 +13,10 @@
 
 
 
-verifyNotEnumerable(Reflect, 'construct');
-verifyWritable(Reflect, 'construct');
-verifyConfigurable(Reflect, 'construct');
+verifyProperty(Reflect, 'construct', {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

@@ -13,8 +13,10 @@
 
 
 
-verifyNotEnumerable(Reflect, 'deleteProperty');
-verifyWritable(Reflect, 'deleteProperty');
-verifyConfigurable(Reflect, 'deleteProperty');
+verifyProperty(Reflect, 'deleteProperty', {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

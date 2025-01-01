@@ -7,7 +7,6 @@
 
 
 
-
 const s1 = new Set([]);
 const s2 = new Set([1, 2]);
 let expected = [1, 2];

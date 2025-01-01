@@ -12,8 +12,10 @@
 
 
 
-verifyNotEnumerable(this, "parseFloat");
-verifyWritable(this, "parseFloat");
-verifyConfigurable(this, "parseFloat");
+verifyProperty(this, "parseFloat", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

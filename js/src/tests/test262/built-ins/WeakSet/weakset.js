@@ -9,8 +9,10 @@
 
 
 
-verifyNotEnumerable(this, 'WeakSet');
-verifyWritable(this, 'WeakSet');
-verifyConfigurable(this, 'WeakSet');
+verifyProperty(this, 'WeakSet', {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

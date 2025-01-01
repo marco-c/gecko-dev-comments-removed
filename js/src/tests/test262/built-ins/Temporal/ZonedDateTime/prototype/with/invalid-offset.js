@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+const zdt = new Temporal.ZonedDateTime(0n, "UTC");
+
+[
+  "",
+  "PREFER",
+  "balance"
+].forEach(offset => assert.throws(RangeError, () => zdt.with({ day: 5 }, { offset })));
+
+reportCompare(0, 0);

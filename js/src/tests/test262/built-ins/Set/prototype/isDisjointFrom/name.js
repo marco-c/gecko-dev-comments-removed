@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(typeof Set.prototype.isDisjointFrom, "function");
 
 verifyProperty(Set.prototype.isDisjointFrom, "name", {

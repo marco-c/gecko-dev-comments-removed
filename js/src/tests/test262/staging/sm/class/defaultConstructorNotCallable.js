@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+class badBase {}
+assertThrowsInstanceOf(badBase, TypeError);
+
+class badSub extends (class {}) {}
+assertThrowsInstanceOf(badSub, TypeError);
+
+
+reportCompare(0, 0);

@@ -8,7 +8,6 @@
 
 
 
-
 const intersection = Set.prototype.intersection;
 
 assert.sameValue(typeof intersection, "function");

@@ -7,8 +7,10 @@
 
 
 
-verifyNotEnumerable(WeakMap, 'prototype');
-verifyNotWritable(WeakMap, 'prototype');
-verifyNotConfigurable(WeakMap, 'prototype');
+verifyProperty(WeakMap, 'prototype', {
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
 
 reportCompare(0, 0);

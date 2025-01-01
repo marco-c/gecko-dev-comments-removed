@@ -14,8 +14,10 @@
 
 
 
-verifyNotEnumerable(Number.prototype, "toLocaleString");
-verifyWritable(Number.prototype, "toLocaleString");
-verifyConfigurable(Number.prototype, "toLocaleString");
+verifyProperty(Number.prototype, "toLocaleString", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

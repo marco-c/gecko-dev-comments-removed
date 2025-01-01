@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+var revocationFunction = Proxy.revocable({}, {}).revoke;
+assert.sameValue(revocationFunction.name, "");
+
+reportCompare(0, 0);

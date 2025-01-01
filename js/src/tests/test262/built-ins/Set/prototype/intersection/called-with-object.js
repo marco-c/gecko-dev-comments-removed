@@ -8,7 +8,6 @@
 
 
 
-
 let s1 = new Set([1]);
 assert.throws(
   TypeError,

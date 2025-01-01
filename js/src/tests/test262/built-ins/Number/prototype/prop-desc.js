@@ -13,8 +13,10 @@
 
 
 
-verifyNotEnumerable(Number, "prototype");
-verifyNotWritable(Number, "prototype");
-verifyNotConfigurable(Number, "prototype");
+verifyProperty(Number, "prototype", {
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
 
 reportCompare(0, 0);

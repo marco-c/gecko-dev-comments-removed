@@ -11,8 +11,10 @@
 
 
 
-verifyNotEnumerable(Math, 'E');
-verifyNotWritable(Math, 'E');
-verifyNotConfigurable(Math, 'E');
+verifyProperty(Math, 'E', {
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
 
 reportCompare(0, 0);

@@ -14,8 +14,10 @@
 
 
 
-verifyNotEnumerable(Number.prototype, "toString");
-verifyWritable(Number.prototype, "toString");
-verifyConfigurable(Number.prototype, "toString");
+verifyProperty(Number.prototype, "toString", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const propDesc = Reflect.getOwnPropertyDescriptor(AsyncIterator, 'name');
+assert.sameValue(propDesc.value, 'AsyncIterator');
+assert.sameValue(propDesc.writable, false);
+assert.sameValue(propDesc.enumerable, false);
+assert.sameValue(propDesc.configurable, true);
+
+
+reportCompare(0, 0);

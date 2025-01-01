@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assertThrowsInstanceOf(() => AsyncIterator(), TypeError);
+
+
+reportCompare(0, 0);

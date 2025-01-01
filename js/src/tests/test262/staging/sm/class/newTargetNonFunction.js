@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assertThrowsInstanceOf(() => new ""(...Array()), TypeError);
+
+assertThrowsInstanceOf(() => new ""(), TypeError);
+assertThrowsInstanceOf(() => new ""(1), TypeError);
+
+
+reportCompare(0, 0);

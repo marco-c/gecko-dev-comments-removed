@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(typeof Set.prototype.isSupersetOf, "function");
 
 verifyProperty(Set.prototype.isSupersetOf, "length", {

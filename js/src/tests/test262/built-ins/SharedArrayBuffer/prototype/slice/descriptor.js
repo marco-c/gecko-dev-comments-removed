@@ -17,8 +17,10 @@
 
 
 
-verifyNotEnumerable(SharedArrayBuffer.prototype, "slice");
-verifyWritable(SharedArrayBuffer.prototype, "slice");
-verifyConfigurable(SharedArrayBuffer.prototype, "slice");
+verifyProperty(SharedArrayBuffer.prototype, "slice", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

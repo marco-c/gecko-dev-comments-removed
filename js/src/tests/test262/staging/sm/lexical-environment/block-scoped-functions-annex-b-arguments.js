@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+(function() {
+  assert.sameValue(typeof arguments, "object");
+  { function arguments() {} }
+  assert.sameValue(typeof arguments, "function");
+})();
+
+
+reportCompare(0, 0);

@@ -59,7 +59,7 @@ const obj = {
 {
   import.source(obj).catch(error => {
 
-    assert.sameValue(error.name, 'ReferenceError');
+    assert.sameValue(error.name, 'SyntaxError');
 
   }).then($DONE, $DONE);
 };

@@ -11,8 +11,10 @@
 
 
 
-verifyNotEnumerable(Math, 'LN2');
-verifyNotWritable(Math, 'LN2');
-verifyNotConfigurable(Math, 'LN2');
+verifyProperty(Math, 'LN2', {
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
 
 reportCompare(0, 0);

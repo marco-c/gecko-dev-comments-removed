@@ -6,7 +6,6 @@
 
 
 
-
 var count = 0;
 class MySet extends Set {
   static get [Symbol.species]() {

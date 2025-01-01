@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue([17].lastIndexOf(17, -0), +0);
+
+
+reportCompare(0, 0);

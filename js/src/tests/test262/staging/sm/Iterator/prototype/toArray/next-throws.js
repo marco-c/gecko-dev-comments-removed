@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TestIterator extends Iterator {
+  next() {
+    throw new Error();
+  }
+}
+
+const iter = new TestIterator();
+
+assertThrowsInstanceOf(() => iter.toArray(), Error);
+
+
+reportCompare(0, 0);

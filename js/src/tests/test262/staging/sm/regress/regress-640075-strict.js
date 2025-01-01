@@ -1,0 +1,22 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+"use strict";
+assertThrowsInstanceOf(
+    () => eval("(function() { eval(); function eval() {} })"),
+    SyntaxError
+)
+
+
+reportCompare(0, 0);

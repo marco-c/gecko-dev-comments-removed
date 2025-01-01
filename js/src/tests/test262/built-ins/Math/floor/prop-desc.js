@@ -12,8 +12,10 @@
 
 
 
-verifyNotEnumerable(Math, "floor");
-verifyWritable(Math, "floor");
-verifyConfigurable(Math, "floor");
+verifyProperty(Math, "floor", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

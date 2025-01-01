@@ -13,8 +13,10 @@
 
 
 
-verifyNotEnumerable(Reflect, 'setPrototypeOf');
-verifyWritable(Reflect, 'setPrototypeOf');
-verifyConfigurable(Reflect, 'setPrototypeOf');
+verifyProperty(Reflect, 'setPrototypeOf', {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

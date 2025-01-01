@@ -7,8 +7,10 @@
 
 
 
-verifyNotEnumerable(Math, "imul");
-verifyWritable(Math, "imul");
-verifyConfigurable(Math, "imul");
+verifyProperty(Math, "imul", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

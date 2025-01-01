@@ -53,6 +53,6 @@ async function * f() {
 
 f().next().catch(error => {
 
-  assert.sameValue(error.name, 'ReferenceError');
+  assert.sameValue(error.name, 'SyntaxError');
 
 }).then($DONE, $DONE);

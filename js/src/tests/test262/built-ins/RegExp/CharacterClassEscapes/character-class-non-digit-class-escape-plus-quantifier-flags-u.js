@@ -37,12 +37,22 @@
 
 
 
+
+
+
+
+
+
+
+
 const str = buildString({
-  loneCodePoints: [],
-  ranges: [
-      [0x000000, 0x00002F],
-      [0x00003A, 0x10FFFF],
-  ],
+    loneCodePoints: [],
+    ranges: [
+        [0x00DC00, 0x00DFFF],
+        [0x000000, 0x00002F],
+        [0x00003A, 0x00DBFF],
+        [0x00E000, 0x10FFFF],
+    ],
 });
 
 const re = /\D+/ug;
@@ -50,18 +60,18 @@ const re = /\D+/ug;
 const errors = [];
 
 if (!re.test(str)) {
-    
-    for (const char of str) {
-        if (!re.test(char)) {
-            errors.push('0x' + char.codePointAt(0).toString(16));
-        }
+  
+  for (const char of str) {
+    if (!re.test(char)) {
+      errors.push('0x' + char.codePointAt(0).toString(16));
     }
+  }
 }
 
 assert.sameValue(
-    errors.length,
-    0,
-    'Expected matching code points, but received: ' + errors.join(',')
+  errors.length,
+  0,
+  'Expected matching code points, but received: ' + errors.join(',')
 );
 
 reportCompare(0, 0);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TestIterator extends AsyncIterator {
+}
+
+assert.sameValue(new TestIterator() instanceof AsyncIterator, true);
+
+
+reportCompare(0, 0);

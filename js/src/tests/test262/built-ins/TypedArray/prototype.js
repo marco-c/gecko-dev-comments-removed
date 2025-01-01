@@ -14,8 +14,10 @@
 
 
 
-verifyNotEnumerable(TypedArray, 'prototype');
-verifyNotWritable(TypedArray, 'prototype');
-verifyNotConfigurable(TypedArray, 'prototype');
+verifyProperty(TypedArray, 'prototype', {
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
 
 reportCompare(0, 0);

@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(typeof Set.prototype.difference, "function");
 
 verifyProperty(Set.prototype.difference, "name", {
