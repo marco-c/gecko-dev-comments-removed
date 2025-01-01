@@ -83,7 +83,7 @@ impl Paths {
         self.paths
             .iter()
             .find_map(|p| {
-                if p.borrow().received_on(local, remote, false) {
+                if p.borrow().received_on(local, remote) {
                     Some(Rc::clone(p))
                 } else {
                     None
@@ -99,48 +99,6 @@ impl Paths {
     }
 
     
-    
-    
-    
-    pub fn find_path_with_rebinding(
-        &self,
-        local: SocketAddr,
-        remote: SocketAddr,
-        cc: CongestionControlAlgorithm,
-        pacing: bool,
-        now: Instant,
-    ) -> PathRef {
-        self.paths
-            .iter()
-            .find_map(|p| {
-                if p.borrow().received_on(local, remote, false) {
-                    Some(Rc::clone(p))
-                } else {
-                    None
-                }
-            })
-            .or_else(|| {
-                self.paths.iter().find_map(|p| {
-                    if p.borrow().received_on(local, remote, true) {
-                        Some(Rc::clone(p))
-                    } else {
-                        None
-                    }
-                })
-            })
-            .unwrap_or_else(|| {
-                Rc::new(RefCell::new(Path::temporary(
-                    local,
-                    remote,
-                    cc,
-                    pacing,
-                    self.qlog.clone(),
-                    now,
-                )))
-            })
-    }
-
-    
     pub fn primary(&self) -> Option<PathRef> {
         self.primary.clone()
     }
@@ -152,13 +110,14 @@ impl Paths {
     }
 
     fn retire(to_retire: &mut Vec<u64>, retired: &PathRef) {
-        let seqno = retired
-            .borrow()
-            .remote_cid
-            .as_ref()
-            .unwrap()
-            .sequence_number();
-        to_retire.push(seqno);
+        if let Some(cid) = &retired.borrow().remote_cid {
+            let seqno = cid.sequence_number();
+            if cid.connection_id().is_empty() {
+                qdebug!("Connection ID {seqno} is zero-length, not retiring");
+            } else {
+                to_retire.push(seqno);
+            }
+        }
     }
 
     
@@ -168,6 +127,7 @@ impl Paths {
         path: &PathRef,
         local_cid: Option<ConnectionId>,
         remote_cid: RemoteConnectionIdEntry,
+        now: Instant,
     ) {
         debug_assert!(self.is_temporary(path));
 
@@ -180,7 +140,7 @@ impl Paths {
             if self
                 .migration_target
                 .as_ref()
-                .map_or(false, |target| Rc::ptr_eq(target, &removed))
+                .is_some_and(|target| Rc::ptr_eq(target, &removed))
             {
                 qinfo!(
                     [path.borrow()],
@@ -195,7 +155,7 @@ impl Paths {
         path.borrow_mut().make_permanent(local_cid, remote_cid);
         self.paths.push(Rc::clone(path));
         if self.primary.is_none() {
-            assert!(self.select_primary(path).is_none());
+            assert!(self.select_primary(path, now).is_none());
         }
     }
 
@@ -203,10 +163,10 @@ impl Paths {
     
     
     #[must_use]
-    fn select_primary(&mut self, path: &PathRef) -> Option<PathRef> {
+    fn select_primary(&mut self, path: &PathRef, now: Instant) -> Option<PathRef> {
         qdebug!([path.borrow()], "set as primary path");
         let old_path = self.primary.replace(Rc::clone(path)).inspect(|old| {
-            old.borrow_mut().set_primary(false);
+            old.borrow_mut().set_primary(false, now);
         });
 
         
@@ -218,7 +178,7 @@ impl Paths {
             .expect("migration target should be permanent");
         self.paths.swap(0, idx);
 
-        path.borrow_mut().set_primary(true);
+        path.borrow_mut().set_primary(true, now);
         old_path
     }
 
@@ -242,7 +202,7 @@ impl Paths {
         path.borrow_mut().set_ecn_baseline(baseline);
         if force || path.borrow().is_valid() {
             path.borrow_mut().set_valid(now);
-            mem::drop(self.select_primary(path));
+            mem::drop(self.select_primary(path, now));
             self.migration_target = None;
         } else {
             self.migration_target = Some(Rc::clone(path));
@@ -285,7 +245,7 @@ impl Paths {
                 
                 let path = Rc::clone(fallback);
                 qinfo!([path.borrow()], "Failing over after primary path failed");
-                mem::drop(self.select_primary(&path));
+                mem::drop(self.select_primary(&path, now));
                 true
             } else {
                 false
@@ -328,7 +288,7 @@ impl Paths {
             return;
         }
 
-        if let Some(old_path) = self.select_primary(path) {
+        if let Some(old_path) = self.select_primary(path, now) {
             
             old_path.borrow_mut().probe(stats);
             
@@ -363,10 +323,10 @@ impl Paths {
                 if self
                     .migration_target
                     .as_ref()
-                    .map_or(false, |target| Rc::ptr_eq(target, p))
+                    .is_some_and(|target| Rc::ptr_eq(target, p))
                 {
                     let primary = self.migration_target.take();
-                    mem::drop(self.select_primary(&primary.unwrap()));
+                    mem::drop(self.select_primary(&primary.unwrap(), now));
                     return true;
                 }
                 break;
@@ -388,22 +348,23 @@ impl Paths {
         to_retire.append(&mut retired);
 
         self.paths.retain(|p| {
-            let current = p.borrow().remote_cid.as_ref().unwrap().sequence_number();
-            if current < retire_prior {
-                to_retire.push(current);
+            let mut path = p.borrow_mut();
+            let current = path.remote_cid.as_ref().unwrap();
+            if current.sequence_number() < retire_prior && !current.connection_id().is_empty() {
+                to_retire.push(current.sequence_number());
                 let new_cid = store.next();
                 let has_replacement = new_cid.is_some();
                 
                 
-                debug_assert!(!p.borrow().is_primary() || has_replacement);
-                p.borrow_mut().remote_cid = new_cid;
+                debug_assert!(!path.is_primary() || has_replacement);
+                path.remote_cid = new_cid;
                 if !has_replacement
                     && migration_target
                         .as_ref()
-                        .map_or(false, |target| Rc::ptr_eq(target, p))
+                        .is_some_and(|target| Rc::ptr_eq(target, p))
                 {
                     qinfo!(
-                        [p.borrow()],
+                        [path],
                         "NEW_CONNECTION_ID with Retire Prior To forced migration to fail"
                     );
                     *migration_target = None;
@@ -622,12 +583,8 @@ impl Path {
     }
 
     
-    
-    
-    fn received_on(&self, local: SocketAddr, remote: SocketAddr, flexible: bool) -> bool {
-        self.local == local
-            && self.remote.ip() == remote.ip()
-            && (flexible || self.remote.port() == remote.port())
+    fn received_on(&self, local: SocketAddr, remote: SocketAddr) -> bool {
+        self.local == local && self.remote == remote
     }
 
     
@@ -637,12 +594,12 @@ impl Path {
     }
 
     
-    pub(crate) fn set_primary(&mut self, primary: bool) {
+    pub(crate) fn set_primary(&mut self, primary: bool, now: Instant) {
         qtrace!([self], "Make primary {}", primary);
         debug_assert!(self.remote_cid.is_some());
         self.primary = primary;
         if !primary {
-            self.sender.discard_in_flight();
+            self.sender.discard_in_flight(now);
         }
     }
 
@@ -708,7 +665,7 @@ impl Path {
     pub fn is_stateless_reset(&self, token: &[u8; 16]) -> bool {
         self.remote_cid
             .as_ref()
-            .map_or(false, |rcid| rcid.is_stateless_reset(token))
+            .is_some_and(|rcid| rcid.is_stateless_reset(token))
     }
 
     
@@ -958,11 +915,11 @@ impl Path {
     }
 
     
-    pub fn packet_sent(&mut self, sent: &mut SentPacket) {
+    pub fn packet_sent(&mut self, sent: &mut SentPacket, now: Instant) {
         if !self.is_primary() {
             sent.clear_primary_path();
         }
-        self.sender.on_packet_sent(sent, self.rtt.estimate());
+        self.sender.on_packet_sent(sent, self.rtt.estimate(), now);
     }
 
     
@@ -988,7 +945,7 @@ impl Path {
             );
         }
 
-        self.sender.discard(sent);
+        self.sender.discard(sent, now);
     }
 
     
@@ -1005,7 +962,7 @@ impl Path {
         if ecn_ce_received {
             let cwnd_reduced = self
                 .sender
-                .on_ecn_ce_received(acked_pkts.first().expect("must be there"));
+                .on_ecn_ce_received(acked_pkts.first().expect("must be there"), now);
             if cwnd_reduced {
                 self.rtt.update_ack_delay(self.sender.cwnd(), self.plpmtu());
             }

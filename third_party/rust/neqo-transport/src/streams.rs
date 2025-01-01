@@ -334,8 +334,7 @@ impl Streams {
         
         self.send.remove_terminal();
 
-        let send = &self.send;
-        let (removed_bidi, removed_uni) = self.recv.clear_terminal(send, self.role);
+        let (removed_bidi, removed_uni) = self.recv.clear_terminal(&self.send, self.role);
 
         
         

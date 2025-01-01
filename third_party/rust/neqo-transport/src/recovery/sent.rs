@@ -37,6 +37,7 @@ pub struct SentPacket {
 }
 
 impl SentPacket {
+    #[must_use]
     pub const fn new(
         pt: PacketType,
         pn: PacketNumber,
@@ -61,41 +62,50 @@ impl SentPacket {
     }
 
     
+    #[must_use]
     pub const fn packet_type(&self) -> PacketType {
         self.pt
     }
 
     
+    #[must_use]
     pub const fn pn(&self) -> PacketNumber {
         self.pn
     }
 
     
+    #[must_use]
     pub const fn ecn_mark(&self) -> IpTosEcn {
         self.ecn_mark
     }
 
     
+    #[must_use]
     pub const fn time_sent(&self) -> Instant {
         self.time_sent
     }
 
     
+    #[must_use]
     pub const fn ack_eliciting(&self) -> bool {
         self.ack_eliciting
     }
 
     
+    #[must_use]
     pub const fn on_primary_path(&self) -> bool {
         self.primary_path
     }
 
     
+    #[allow(clippy::len_without_is_empty)]
+    #[must_use]
     pub const fn len(&self) -> usize {
         self.len
     }
 
     
+    #[must_use]
     pub fn tokens(&self) -> &[RecoveryToken] {
         &self.tokens
     }
@@ -113,6 +123,7 @@ impl SentPacket {
     }
 
     
+    #[must_use]
     pub const fn lost(&self) -> bool {
         self.time_declared_lost.is_some()
     }
@@ -123,11 +134,13 @@ impl SentPacket {
     
     
     
+    #[must_use]
     pub const fn cc_outstanding(&self) -> bool {
         self.ack_eliciting() && self.on_primary_path() && !self.lost()
     }
 
     
+    #[must_use]
     pub const fn cc_in_flight(&self) -> bool {
         self.ack_eliciting() && self.on_primary_path()
     }
@@ -144,18 +157,21 @@ impl SentPacket {
 
     
     
+    #[must_use]
     pub fn expired(&self, now: Instant, expiration_period: Duration) -> bool {
         self.time_declared_lost
-            .map_or(false, |loss_time| (loss_time + expiration_period) <= now)
+            .is_some_and(|loss_time| (loss_time + expiration_period) <= now)
     }
 
     
+    #[must_use]
     pub const fn pto_fired(&self) -> bool {
         self.pto
     }
 
     
     
+    #[must_use]
     pub fn pto(&mut self) -> bool {
         if self.pto || self.lost() {
             false
@@ -174,6 +190,8 @@ pub struct SentPackets {
 }
 
 impl SentPackets {
+    #[allow(clippy::len_without_is_empty)]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.packets.len()
     }
@@ -196,19 +214,58 @@ impl SentPackets {
         R::IntoIter: ExactSizeIterator,
     {
         let mut result = Vec::new();
+
+        
         
         let mut packets = std::mem::take(&mut self.packets);
+
+        let mut previous_range_start: Option<PacketNumber> = None;
+
         for range in acked_ranges {
             
             
             
+            let after_acked_range = packets.split_off(&(*range.end() + 1));
+
             
-            let mut acked = packets.split_off(range.start());
-            let keep = acked.split_off(&(*range.end() + 1));
-            self.packets.extend(keep);
-            result.extend(acked.into_values().rev());
+            
+            
+            let acked_range = packets.split_off(range.start());
+
+            
+            
+            
+            
+            
+            
+            debug_assert!(previous_range_start.map_or(true, |s| s > *range.end()));
+            previous_range_start = Some(*range.start());
+
+            
+            
+            
+            
+            if self.packets.is_empty() {
+                
+                
+                self.packets = after_acked_range;
+            } else {
+                
+                
+                self.packets.extend(after_acked_range);
+            }
+
+            
+            result.extend(acked_range.into_values().rev());
         }
+
+        
+        
+        
+        
+        
         self.packets.extend(packets);
+
         result
     }
 
@@ -222,7 +279,7 @@ impl SentPackets {
     pub fn remove_expired(&mut self, now: Instant, cd: Duration) -> usize {
         let mut it = self.packets.iter();
         
-        if it.next().map_or(false, |(_, p)| p.expired(now, cd)) {
+        if it.next().is_some_and(|(_, p)| p.expired(now, cd)) {
             
             let to_remove = if let Some(first_keep) =
                 it.find_map(|(i, p)| if p.expired(now, cd) { None } else { Some(*i) })

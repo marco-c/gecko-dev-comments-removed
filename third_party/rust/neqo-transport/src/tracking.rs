@@ -332,8 +332,8 @@ impl RecvdPackets {
         
         
         
-        self.ack_time.map_or(false, |next| {
-            next <= now || self.last_ack_time.map_or(false, |last| last + rtt <= now)
+        self.ack_time.is_some_and(|next| {
+            next <= now || self.last_ack_time.is_some_and(|last| last + rtt <= now)
         })
     }
 

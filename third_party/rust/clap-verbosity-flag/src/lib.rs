@@ -55,10 +55,19 @@
 
 
 
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
-pub use log::Level;
-pub use log::LevelFilter;
+
+
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![warn(clippy::print_stderr)]
+#![warn(clippy::print_stdout)]
+
+use std::fmt;
+
+#[cfg(feature = "log")]
+pub mod log;
+#[cfg(feature = "tracing")]
+pub mod tracing;
 
 
 #[derive(clap::Args, Debug, Clone, Default)]
@@ -106,77 +115,126 @@ impl<L: LogLevel> Verbosity<L> {
     }
 
     
+    pub fn is_silent(&self) -> bool {
+        self.filter() == VerbosityFilter::Off
+    }
+
+    
+    pub fn filter(&self) -> VerbosityFilter {
+        let offset = self.verbose as i16 - self.quiet as i16;
+        L::default_filter().with_offset(offset)
+    }
+}
+
+#[cfg(feature = "log")]
+impl<L: LogLevel> Verbosity<L> {
+    
     
     
     pub fn log_level(&self) -> Option<log::Level> {
-        level_enum(self.verbosity())
+        self.filter().into()
     }
 
     
     pub fn log_level_filter(&self) -> log::LevelFilter {
-        level_enum(self.verbosity())
-            .map(|l| l.to_level_filter())
-            .unwrap_or(log::LevelFilter::Off)
+        self.filter().into()
+    }
+}
+
+#[cfg(feature = "tracing")]
+impl<L: LogLevel> Verbosity<L> {
+    
+    
+    
+    pub fn tracing_level(&self) -> Option<tracing_core::Level> {
+        self.filter().into()
     }
 
     
-    pub fn is_silent(&self) -> bool {
-        self.log_level().is_none()
-    }
-
-    fn verbosity(&self) -> i8 {
-        level_value(L::default()) - (self.quiet as i8) + (self.verbose as i8)
+    pub fn tracing_level_filter(&self) -> tracing_core::LevelFilter {
+        self.filter().into()
     }
 }
-
-fn level_value(level: Option<log::Level>) -> i8 {
-    match level {
-        None => -1,
-        Some(log::Level::Error) => 0,
-        Some(log::Level::Warn) => 1,
-        Some(log::Level::Info) => 2,
-        Some(log::Level::Debug) => 3,
-        Some(log::Level::Trace) => 4,
-    }
-}
-
-fn level_enum(verbosity: i8) -> Option<log::Level> {
-    match verbosity {
-        std::i8::MIN..=-1 => None,
-        0 => Some(log::Level::Error),
-        1 => Some(log::Level::Warn),
-        2 => Some(log::Level::Info),
-        3 => Some(log::Level::Debug),
-        4..=std::i8::MAX => Some(log::Level::Trace),
-    }
-}
-
-use std::fmt;
 
 impl<L: LogLevel> fmt::Display for Verbosity<L> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.verbosity())
+        self.filter().fmt(f)
     }
 }
 
 
 pub trait LogLevel {
-    fn default() -> Option<log::Level>;
+    
+    fn default_filter() -> VerbosityFilter;
 
+    
     fn verbose_help() -> Option<&'static str> {
         Some("Increase logging verbosity")
     }
 
+    
     fn verbose_long_help() -> Option<&'static str> {
         None
     }
 
+    
     fn quiet_help() -> Option<&'static str> {
         Some("Decrease logging verbosity")
     }
 
+    
     fn quiet_long_help() -> Option<&'static str> {
         None
+    }
+}
+
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VerbosityFilter {
+    Off,
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+impl VerbosityFilter {
+    
+    
+    
+    fn with_offset(&self, offset: i16) -> VerbosityFilter {
+        let value = match self {
+            Self::Off => 0_i16,
+            Self::Error => 1,
+            Self::Warn => 2,
+            Self::Info => 3,
+            Self::Debug => 4,
+            Self::Trace => 5,
+        };
+        match value.saturating_add(offset) {
+            i16::MIN..=0 => Self::Off,
+            1 => Self::Error,
+            2 => Self::Warn,
+            3 => Self::Info,
+            4 => Self::Debug,
+            5..=i16::MAX => Self::Trace,
+        }
+    }
+}
+
+impl fmt::Display for VerbosityFilter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Off => write!(f, "off"),
+            Self::Error => write!(f, "error"),
+            Self::Warn => write!(f, "warn"),
+            Self::Info => write!(f, "info"),
+            Self::Debug => write!(f, "debug"),
+            Self::Trace => write!(f, "trace"),
+        }
     }
 }
 
@@ -185,8 +243,8 @@ pub trait LogLevel {
 pub struct ErrorLevel;
 
 impl LogLevel for ErrorLevel {
-    fn default() -> Option<log::Level> {
-        Some(log::Level::Error)
+    fn default_filter() -> VerbosityFilter {
+        VerbosityFilter::Error
     }
 }
 
@@ -195,8 +253,8 @@ impl LogLevel for ErrorLevel {
 pub struct WarnLevel;
 
 impl LogLevel for WarnLevel {
-    fn default() -> Option<log::Level> {
-        Some(log::Level::Warn)
+    fn default_filter() -> VerbosityFilter {
+        VerbosityFilter::Warn
     }
 }
 
@@ -205,8 +263,38 @@ impl LogLevel for WarnLevel {
 pub struct InfoLevel;
 
 impl LogLevel for InfoLevel {
-    fn default() -> Option<log::Level> {
-        Some(log::Level::Info)
+    fn default_filter() -> VerbosityFilter {
+        VerbosityFilter::Info
+    }
+}
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct DebugLevel;
+
+impl LogLevel for DebugLevel {
+    fn default_filter() -> VerbosityFilter {
+        VerbosityFilter::Debug
+    }
+}
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct TraceLevel;
+
+impl LogLevel for TraceLevel {
+    fn default_filter() -> VerbosityFilter {
+        VerbosityFilter::Trace
+    }
+}
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct OffLevel;
+
+impl LogLevel for OffLevel {
+    fn default_filter() -> VerbosityFilter {
+        VerbosityFilter::Off
     }
 }
 
@@ -223,6 +311,146 @@ mod test {
         }
 
         use clap::CommandFactory;
-        Cli::command().debug_assert()
+        Cli::command().debug_assert();
+    }
+
+    
+    #[track_caller]
+    fn assert_filter<L: LogLevel>(verbose: u8, quiet: u8, expected: VerbosityFilter) {
+        assert_eq!(
+            Verbosity::<L>::new(verbose, quiet).filter(),
+            expected,
+            "verbose = {verbose}, quiet = {quiet}"
+        );
+    }
+
+    #[test]
+    fn verbosity_off_level() {
+        let tests = [
+            (0, 0, VerbosityFilter::Off),
+            (1, 0, VerbosityFilter::Error),
+            (2, 0, VerbosityFilter::Warn),
+            (3, 0, VerbosityFilter::Info),
+            (4, 0, VerbosityFilter::Debug),
+            (5, 0, VerbosityFilter::Trace),
+            (6, 0, VerbosityFilter::Trace),
+            (255, 0, VerbosityFilter::Trace),
+            (0, 1, VerbosityFilter::Off),
+            (0, 255, VerbosityFilter::Off),
+            (255, 255, VerbosityFilter::Off),
+        ];
+
+        for (verbose, quiet, expected_filter) in tests {
+            assert_filter::<OffLevel>(verbose, quiet, expected_filter);
+        }
+    }
+
+    #[test]
+    fn verbosity_error_level() {
+        let tests = [
+            (0, 0, VerbosityFilter::Error),
+            (1, 0, VerbosityFilter::Warn),
+            (2, 0, VerbosityFilter::Info),
+            (3, 0, VerbosityFilter::Debug),
+            (4, 0, VerbosityFilter::Trace),
+            (5, 0, VerbosityFilter::Trace),
+            (255, 0, VerbosityFilter::Trace),
+            (0, 1, VerbosityFilter::Off),
+            (0, 2, VerbosityFilter::Off),
+            (0, 255, VerbosityFilter::Off),
+            (255, 255, VerbosityFilter::Error),
+        ];
+
+        for (verbose, quiet, expected_filter) in tests {
+            assert_filter::<ErrorLevel>(verbose, quiet, expected_filter);
+        }
+    }
+
+    #[test]
+    fn verbosity_warn_level() {
+        let tests = [
+            
+            (0, 0, VerbosityFilter::Warn),
+            (1, 0, VerbosityFilter::Info),
+            (2, 0, VerbosityFilter::Debug),
+            (3, 0, VerbosityFilter::Trace),
+            (4, 0, VerbosityFilter::Trace),
+            (255, 0, VerbosityFilter::Trace),
+            (0, 1, VerbosityFilter::Error),
+            (0, 2, VerbosityFilter::Off),
+            (0, 3, VerbosityFilter::Off),
+            (0, 255, VerbosityFilter::Off),
+            (255, 255, VerbosityFilter::Warn),
+        ];
+
+        for (verbose, quiet, expected_filter) in tests {
+            assert_filter::<WarnLevel>(verbose, quiet, expected_filter);
+        }
+    }
+
+    #[test]
+    fn verbosity_info_level() {
+        let tests = [
+            
+            (0, 0, VerbosityFilter::Info),
+            (1, 0, VerbosityFilter::Debug),
+            (2, 0, VerbosityFilter::Trace),
+            (3, 0, VerbosityFilter::Trace),
+            (255, 0, VerbosityFilter::Trace),
+            (0, 1, VerbosityFilter::Warn),
+            (0, 2, VerbosityFilter::Error),
+            (0, 3, VerbosityFilter::Off),
+            (0, 4, VerbosityFilter::Off),
+            (0, 255, VerbosityFilter::Off),
+            (255, 255, VerbosityFilter::Info),
+        ];
+
+        for (verbose, quiet, expected_filter) in tests {
+            assert_filter::<InfoLevel>(verbose, quiet, expected_filter);
+        }
+    }
+
+    #[test]
+    fn verbosity_debug_level() {
+        let tests = [
+            
+            (0, 0, VerbosityFilter::Debug),
+            (1, 0, VerbosityFilter::Trace),
+            (2, 0, VerbosityFilter::Trace),
+            (255, 0, VerbosityFilter::Trace),
+            (0, 1, VerbosityFilter::Info),
+            (0, 2, VerbosityFilter::Warn),
+            (0, 3, VerbosityFilter::Error),
+            (0, 4, VerbosityFilter::Off),
+            (0, 5, VerbosityFilter::Off),
+            (0, 255, VerbosityFilter::Off),
+            (255, 255, VerbosityFilter::Debug),
+        ];
+
+        for (verbose, quiet, expected_filter) in tests {
+            assert_filter::<DebugLevel>(verbose, quiet, expected_filter);
+        }
+    }
+
+    #[test]
+    fn verbosity_trace_level() {
+        let tests = [
+            
+            (0, 0, VerbosityFilter::Trace),
+            (1, 0, VerbosityFilter::Trace),
+            (255, 0, VerbosityFilter::Trace),
+            (0, 1, VerbosityFilter::Debug),
+            (0, 2, VerbosityFilter::Info),
+            (0, 3, VerbosityFilter::Warn),
+            (0, 4, VerbosityFilter::Error),
+            (0, 5, VerbosityFilter::Off),
+            (0, 6, VerbosityFilter::Off),
+            (0, 255, VerbosityFilter::Off),
+            (255, 255, VerbosityFilter::Trace),
+        ];
+
+        for (verbose, quiet, expected_filter) in tests {
+            assert_filter::<TraceLevel>(verbose, quiet, expected_filter);
+        }
     }
 }
