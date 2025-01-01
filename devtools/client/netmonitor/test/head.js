@@ -1588,3 +1588,20 @@ function testAutocompleteContents(expected, document) {
     );
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+function hasValidSize(request) {
+  const VALID_SIZE_RE = /^\d+(\.\d+)? \w+/;
+  return VALID_SIZE_RE.test(
+    request.querySelector(".requests-list-size").innerText
+  );
+}
