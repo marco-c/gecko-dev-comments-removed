@@ -4304,7 +4304,9 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
     
     
     ProcessSerialNumber psn;
-    if (::GetCurrentProcess(&psn) == noErr) ::SetFrontProcess(&psn);
+    if (::GetCurrentProcess(&psn) == noErr) {
+      ::SetFrontProcess(&psn);
+    }
   }
 #endif
 

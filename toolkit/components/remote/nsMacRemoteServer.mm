@@ -75,8 +75,10 @@ void nsMacRemoteServer::HandleCommandLine(CFDataRef aData) {
       if (!raise || [raise boolValue]) {
         
         
-        [[NSRunningApplication currentApplication]
-            activateWithOptions:NSApplicationActivateIgnoringOtherApps];
+        ProcessSerialNumber psn;
+        if (::GetCurrentProcess(&psn) == noErr) {
+          ::SetFrontProcess(&psn);
+        }
       }
     }
   }
