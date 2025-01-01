@@ -64,10 +64,10 @@ pub enum BoundsCheckPolicy {
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "deserialize", serde(default))]
 pub struct BoundsCheckPolicies {
     
     
-    #[cfg_attr(feature = "deserialize", serde(default))]
     pub index: BoundsCheckPolicy,
 
     
@@ -103,7 +103,6 @@ pub struct BoundsCheckPolicies {
     
     
     
-    #[cfg_attr(feature = "deserialize", serde(default))]
     pub buffer: BoundsCheckPolicy,
 
     
@@ -119,11 +118,9 @@ pub struct BoundsCheckPolicies {
     
     
     
-    #[cfg_attr(feature = "deserialize", serde(default))]
     pub image_load: BoundsCheckPolicy,
 
     
-    #[cfg_attr(feature = "deserialize", serde(default))]
     pub binding_array: BoundsCheckPolicy,
 }
 
@@ -419,6 +416,8 @@ pub enum IndexableLength {
     
     Known(u32),
 
+    Pending,
+
     
     Dynamic,
 }
@@ -430,6 +429,7 @@ impl crate::ArraySize {
     ) -> Result<IndexableLength, IndexableLengthError> {
         Ok(match self {
             Self::Constant(length) => IndexableLength::Known(length.get()),
+            Self::Pending(_) => IndexableLength::Pending,
             Self::Dynamic => IndexableLength::Dynamic,
         })
     }

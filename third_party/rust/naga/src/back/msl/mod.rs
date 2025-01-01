@@ -195,6 +195,7 @@ enum LocationMode {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "deserialize", serde(default))]
 pub struct Options {
     
     pub lang_version: (u8, u8),
@@ -207,7 +208,6 @@ pub struct Options {
     
     pub fake_missing_bindings: bool,
     
-    #[cfg_attr(feature = "deserialize", serde(default))]
     pub bounds_check_policies: index::BoundsCheckPolicies,
     
     pub zero_initialize_workgroup_memory: bool,
@@ -341,6 +341,7 @@ pub struct VertexBufferMapping {
 #[derive(Debug, Default, Clone)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "deserialize", serde(default))]
 pub struct PipelineOptions {
     
     

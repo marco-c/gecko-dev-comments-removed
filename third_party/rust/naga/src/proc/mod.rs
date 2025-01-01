@@ -298,6 +298,9 @@ impl super::TypeInner {
                 let count = match size {
                     super::ArraySize::Constant(count) => count.get(),
                     
+                    
+                    super::ArraySize::Pending(_) => 0,
+                    
                     super::ArraySize::Dynamic => 1,
                 };
                 count * stride

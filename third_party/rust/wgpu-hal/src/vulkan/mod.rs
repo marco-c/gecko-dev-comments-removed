@@ -669,7 +669,7 @@ pub struct Device {
     naga_options: naga::back::spv::Options<'static>,
     #[cfg(feature = "renderdoc")]
     render_doc: crate::auxil::renderdoc::RenderDoc,
-    counters: wgt::HalCounters,
+    counters: Arc<wgt::HalCounters>,
 }
 
 impl Drop for Device {
@@ -918,6 +918,30 @@ pub struct CommandEncoder {
     
     
     end_of_pass_timer_query: Option<(vk::QueryPool, u32)>,
+
+    counters: Arc<wgt::HalCounters>,
+}
+
+impl Drop for CommandEncoder {
+    fn drop(&mut self) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        unsafe {
+            
+            
+            
+            
+            self.device.raw.destroy_command_pool(self.raw, None);
+        }
+        self.counters.command_encoders.sub(1);
+    }
 }
 
 impl CommandEncoder {

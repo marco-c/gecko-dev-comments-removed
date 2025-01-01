@@ -13,6 +13,7 @@ mod render_command;
 mod timestamp_writes;
 mod transfer;
 
+use std::mem::{self, ManuallyDrop};
 use std::sync::Arc;
 
 pub(crate) use self::clear::clear_texture;
@@ -47,7 +48,6 @@ use crate::device::trace::Command as TraceCommand;
 const PUSH_CONSTANT_CLEAR_ARRAY: &[u32] = &[0_u32; 64];
 
 
-#[derive(Debug)]
 pub(crate) enum CommandEncoderStatus {
     
     
@@ -60,7 +60,7 @@ pub(crate) enum CommandEncoderStatus {
     
     
     
-    Recording,
+    Recording(CommandBufferMutable),
 
     
     
@@ -70,7 +70,7 @@ pub(crate) enum CommandEncoderStatus {
     
     
     
-    Locked,
+    Locked(CommandBufferMutable),
 
     
     
@@ -79,12 +79,8 @@ pub(crate) enum CommandEncoderStatus {
     
     
     
-    Finished,
+    Finished(CommandBufferMutable),
 
-    
-    
-    
-    
     
     
     
@@ -92,6 +88,136 @@ pub(crate) enum CommandEncoderStatus {
     
     
     Error,
+}
+
+impl CommandEncoderStatus {
+    
+    pub(crate) fn record(&mut self) -> Result<RecordingGuard<'_>, CommandEncoderError> {
+        match self {
+            Self::Recording(_) => Ok(RecordingGuard { inner: self }),
+            Self::Locked(_) => {
+                *self = Self::Error;
+                Err(CommandEncoderError::Locked)
+            }
+            Self::Finished(_) => Err(CommandEncoderError::NotRecording),
+            Self::Error => Err(CommandEncoderError::Invalid),
+        }
+    }
+
+    #[cfg(feature = "trace")]
+    fn get_inner(&mut self) -> Result<&mut CommandBufferMutable, CommandEncoderError> {
+        match self {
+            Self::Locked(inner) | Self::Finished(inner) | Self::Recording(inner) => Ok(inner),
+            Self::Error => Err(CommandEncoderError::Invalid),
+        }
+    }
+
+    
+    
+    
+    fn lock_encoder(&mut self) -> Result<(), CommandEncoderError> {
+        match mem::replace(self, Self::Error) {
+            Self::Recording(inner) => {
+                *self = Self::Locked(inner);
+                Ok(())
+            }
+            Self::Finished(inner) => {
+                *self = Self::Finished(inner);
+                Err(CommandEncoderError::NotRecording)
+            }
+            Self::Locked(_) => Err(CommandEncoderError::Locked),
+            Self::Error => Err(CommandEncoderError::Invalid),
+        }
+    }
+
+    
+    
+    
+    
+    
+    fn unlock_encoder(&mut self) -> Result<RecordingGuard<'_>, CommandEncoderError> {
+        match mem::replace(self, Self::Error) {
+            Self::Locked(inner) => {
+                *self = Self::Recording(inner);
+                Ok(RecordingGuard { inner: self })
+            }
+            Self::Finished(inner) => {
+                *self = Self::Finished(inner);
+                Err(CommandEncoderError::NotRecording)
+            }
+            Self::Recording(_) => Err(CommandEncoderError::Invalid),
+            Self::Error => Err(CommandEncoderError::Invalid),
+        }
+    }
+
+    fn finish(&mut self, device: &Device) -> Result<(), CommandEncoderError> {
+        match mem::replace(self, Self::Error) {
+            Self::Recording(mut inner) => {
+                if let Err(e) = inner.encoder.close(device) {
+                    Err(e.into())
+                } else {
+                    *self = Self::Finished(inner);
+                    
+                    
+                    Ok(())
+                }
+            }
+            Self::Finished(inner) => {
+                *self = Self::Finished(inner);
+                Err(CommandEncoderError::NotRecording)
+            }
+            Self::Locked(_) => Err(CommandEncoderError::Locked),
+            Self::Error => Err(CommandEncoderError::Invalid),
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub(crate) struct RecordingGuard<'a> {
+    inner: &'a mut CommandEncoderStatus,
+}
+
+impl<'a> RecordingGuard<'a> {
+    pub(crate) fn mark_successful(self) {
+        mem::forget(self)
+    }
+}
+
+impl<'a> Drop for RecordingGuard<'a> {
+    fn drop(&mut self) {
+        *self.inner = CommandEncoderStatus::Error;
+    }
+}
+
+impl<'a> std::ops::Deref for RecordingGuard<'a> {
+    type Target = CommandBufferMutable;
+
+    fn deref(&self) -> &Self::Target {
+        match &*self.inner {
+            CommandEncoderStatus::Recording(command_buffer_mutable) => command_buffer_mutable,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl<'a> std::ops::DerefMut for RecordingGuard<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        match self.inner {
+            CommandEncoderStatus::Recording(command_buffer_mutable) => command_buffer_mutable,
+            _ => unreachable!(),
+        }
+    }
 }
 
 
@@ -122,7 +248,7 @@ pub(crate) struct CommandEncoder {
     
     
     
-    raw: Box<dyn hal::DynCommandEncoder>,
+    pub(crate) raw: ManuallyDrop<Box<dyn hal::DynCommandEncoder>>,
 
     
     
@@ -135,7 +261,9 @@ pub(crate) struct CommandEncoder {
     
     
     
-    list: Vec<Box<dyn hal::DynCommandBuffer>>,
+    pub(crate) list: Vec<Box<dyn hal::DynCommandBuffer>>,
+
+    pub(crate) device: Arc<Device>,
 
     
     
@@ -143,9 +271,9 @@ pub(crate) struct CommandEncoder {
     
     
     
-    is_open: bool,
+    pub(crate) is_open: bool,
 
-    hal_label: Option<String>,
+    pub(crate) hal_label: Option<String>,
 }
 
 
@@ -209,16 +337,6 @@ impl CommandEncoder {
     
     
     
-    pub(crate) fn discard(&mut self) {
-        if self.is_open {
-            self.is_open = false;
-            unsafe { self.raw.discard_encoding() };
-        }
-    }
-
-    
-    
-    
     pub(crate) fn open(
         &mut self,
         device: &Device,
@@ -245,11 +363,24 @@ impl CommandEncoder {
     }
 }
 
+impl Drop for CommandEncoder {
+    fn drop(&mut self) {
+        if self.is_open {
+            unsafe { self.raw.discard_encoding() };
+        }
+        unsafe {
+            self.raw.reset_all(mem::take(&mut self.list));
+        }
+        
+        let raw = unsafe { ManuallyDrop::take(&mut self.raw) };
+        self.device.command_allocator.release_encoder(raw);
+    }
+}
+
 
 
 pub(crate) struct BakedCommands {
-    pub(crate) encoder: Box<dyn hal::DynCommandEncoder>,
-    pub(crate) list: Vec<Box<dyn hal::DynCommandBuffer>>,
+    pub(crate) encoder: CommandEncoder,
     pub(crate) trackers: Tracker,
     buffer_memory_init_actions: Vec<BufferInitTrackerAction>,
     texture_memory_actions: CommandBufferTextureMemoryActions,
@@ -262,9 +393,6 @@ pub struct CommandBufferMutable {
     
     
     pub(crate) encoder: CommandEncoder,
-
-    
-    status: CommandEncoderStatus,
 
     
     pub(crate) trackers: Tracker,
@@ -298,103 +426,12 @@ impl CommandBufferMutable {
         Ok((encoder, tracker))
     }
 
-    fn lock_encoder_impl(&mut self, lock: bool) -> Result<(), CommandEncoderError> {
-        match self.status {
-            CommandEncoderStatus::Recording => {
-                if lock {
-                    self.status = CommandEncoderStatus::Locked;
-                }
-                Ok(())
-            }
-            CommandEncoderStatus::Locked => {
-                
-                
-                self.encoder.discard();
-                self.status = CommandEncoderStatus::Error;
-                Err(CommandEncoderError::Locked)
-            }
-            CommandEncoderStatus::Finished => Err(CommandEncoderError::NotRecording),
-            CommandEncoderStatus::Error => Err(CommandEncoderError::Invalid),
-        }
-    }
-
-    
-    fn check_recording(&mut self) -> Result<(), CommandEncoderError> {
-        self.lock_encoder_impl(false)
-    }
-
-    
-    
-    
-    fn lock_encoder(&mut self) -> Result<(), CommandEncoderError> {
-        self.lock_encoder_impl(true)
-    }
-
-    
-    
-    
-    
-    fn unlock_encoder(&mut self) -> Result<(), CommandEncoderError> {
-        match self.status {
-            CommandEncoderStatus::Recording => Err(CommandEncoderError::Invalid),
-            CommandEncoderStatus::Locked => {
-                self.status = CommandEncoderStatus::Recording;
-                Ok(())
-            }
-            CommandEncoderStatus::Finished => Err(CommandEncoderError::Invalid),
-            CommandEncoderStatus::Error => Err(CommandEncoderError::Invalid),
-        }
-    }
-
-    pub fn check_finished(&self) -> Result<(), CommandEncoderError> {
-        match self.status {
-            CommandEncoderStatus::Finished => Ok(()),
-            _ => Err(CommandEncoderError::Invalid),
-        }
-    }
-
-    pub(crate) fn finish(&mut self, device: &Device) -> Result<(), CommandEncoderError> {
-        match self.status {
-            CommandEncoderStatus::Recording => {
-                if let Err(e) = self.encoder.close(device) {
-                    Err(e.into())
-                } else {
-                    self.status = CommandEncoderStatus::Finished;
-                    
-                    
-                    Ok(())
-                }
-            }
-            CommandEncoderStatus::Locked => {
-                self.encoder.discard();
-                self.status = CommandEncoderStatus::Error;
-                Err(CommandEncoderError::Locked)
-            }
-            CommandEncoderStatus::Finished => Err(CommandEncoderError::NotRecording),
-            CommandEncoderStatus::Error => {
-                self.encoder.discard();
-                Err(CommandEncoderError::Invalid)
-            }
-        }
-    }
-
     pub(crate) fn into_baked_commands(self) -> BakedCommands {
         BakedCommands {
-            encoder: self.encoder.raw,
-            list: self.encoder.list,
+            encoder: self.encoder,
             trackers: self.trackers,
             buffer_memory_init_actions: self.buffer_memory_init_actions,
             texture_memory_actions: self.texture_memory_actions,
-        }
-    }
-
-    pub(crate) fn destroy(mut self, device: &Device) {
-        self.encoder.discard();
-        unsafe {
-            self.encoder.raw.reset_all(self.encoder.list);
-        }
-        unsafe {
-            device.raw().destroy_command_encoder(self.encoder.raw);
         }
     }
 }
@@ -424,20 +461,12 @@ pub struct CommandBuffer {
     label: String,
 
     
-    
-    
-    
-    
-    
-    pub(crate) data: Mutex<Option<CommandBufferMutable>>,
+    pub(crate) data: Mutex<CommandEncoderStatus>,
 }
 
 impl Drop for CommandBuffer {
     fn drop(&mut self) {
         resource_log!("Drop {}", self.error_ident());
-        if let Some(data) = self.data.lock().take() {
-            data.destroy(&self.device);
-        }
     }
 }
 
@@ -453,14 +482,14 @@ impl CommandBuffer {
             label: label.to_string(),
             data: Mutex::new(
                 rank::COMMAND_BUFFER_DATA,
-                Some(CommandBufferMutable {
+                CommandEncoderStatus::Recording(CommandBufferMutable {
                     encoder: CommandEncoder {
-                        raw: encoder,
-                        is_open: false,
+                        raw: ManuallyDrop::new(encoder),
                         list: Vec::new(),
+                        device: device.clone(),
+                        is_open: false,
                         hal_label: label.to_hal(device.instance_flags).map(str::to_owned),
                     },
-                    status: CommandEncoderStatus::Recording,
                     trackers: Tracker::new(),
                     buffer_memory_init_actions: Default::default(),
                     texture_memory_actions: Default::default(),
@@ -483,7 +512,7 @@ impl CommandBuffer {
             device: device.clone(),
             support_clear_texture: device.features.contains(wgt::Features::CLEAR_TEXTURE),
             label: label.to_string(),
-            data: Mutex::new(rank::COMMAND_BUFFER_DATA, None),
+            data: Mutex::new(rank::COMMAND_BUFFER_DATA, CommandEncoderStatus::Error),
         }
     }
 
@@ -565,19 +594,14 @@ impl CommandBuffer {
 }
 
 impl CommandBuffer {
-    pub fn try_get<'a>(
-        &'a self,
-    ) -> Result<parking_lot::MappedMutexGuard<'a, CommandBufferMutable>, InvalidResourceError> {
-        let g = self.data.lock();
-        crate::lock::MutexGuard::try_map(g, |data| data.as_mut())
-            .map_err(|_| InvalidResourceError(self.error_ident()))
-    }
-
-    pub fn try_take<'a>(&'a self) -> Result<CommandBufferMutable, InvalidResourceError> {
-        self.data
-            .lock()
-            .take()
-            .ok_or_else(|| InvalidResourceError(self.error_ident()))
+    pub fn take_finished<'a>(&'a self) -> Result<CommandBufferMutable, InvalidResourceError> {
+        let status = mem::replace(&mut *self.data.lock(), CommandEncoderStatus::Error);
+        match status {
+            CommandEncoderStatus::Finished(command_buffer_mutable) => Ok(command_buffer_mutable),
+            CommandEncoderStatus::Recording(_)
+            | CommandEncoderStatus::Locked(_)
+            | CommandEncoderStatus::Error => Err(InvalidResourceError(self.error_ident())),
+        }
     }
 }
 
@@ -677,11 +701,7 @@ impl Global {
 
         let cmd_buf = hub.command_buffers.get(encoder_id.into_command_buffer_id());
 
-        let error = match cmd_buf
-            .try_get()
-            .map_err(|e| e.into())
-            .and_then(|mut cmd_buf_data| cmd_buf_data.finish(&cmd_buf.device))
-        {
+        let error = match cmd_buf.data.lock().finish(&cmd_buf.device) {
             Ok(_) => None,
             Err(e) => Some(e),
         };
@@ -700,8 +720,9 @@ impl Global {
         let hub = &self.hub;
 
         let cmd_buf = hub.command_buffers.get(encoder_id.into_command_buffer_id());
-        let mut cmd_buf_data = cmd_buf.try_get()?;
-        cmd_buf_data.check_recording()?;
+        let mut cmd_buf_data = cmd_buf.data.lock();
+        let mut cmd_buf_data_guard = cmd_buf_data.record()?;
+        let cmd_buf_data = &mut *cmd_buf_data_guard;
 
         #[cfg(feature = "trace")]
         if let Some(ref mut list) = cmd_buf_data.commands {
@@ -718,6 +739,8 @@ impl Global {
                 cmd_buf_raw.begin_debug_marker(label);
             }
         }
+
+        cmd_buf_data_guard.mark_successful();
         Ok(())
     }
 
@@ -732,8 +755,9 @@ impl Global {
         let hub = &self.hub;
 
         let cmd_buf = hub.command_buffers.get(encoder_id.into_command_buffer_id());
-        let mut cmd_buf_data = cmd_buf.try_get()?;
-        cmd_buf_data.check_recording()?;
+        let mut cmd_buf_data = cmd_buf.data.lock();
+        let mut cmd_buf_data_guard = cmd_buf_data.record()?;
+        let cmd_buf_data = &mut *cmd_buf_data_guard;
 
         #[cfg(feature = "trace")]
         if let Some(ref mut list) = cmd_buf_data.commands {
@@ -750,6 +774,8 @@ impl Global {
                 cmd_buf_raw.insert_debug_marker(label);
             }
         }
+
+        cmd_buf_data_guard.mark_successful();
         Ok(())
     }
 
@@ -763,8 +789,9 @@ impl Global {
         let hub = &self.hub;
 
         let cmd_buf = hub.command_buffers.get(encoder_id.into_command_buffer_id());
-        let mut cmd_buf_data = cmd_buf.try_get()?;
-        cmd_buf_data.check_recording()?;
+        let mut cmd_buf_data = cmd_buf.data.lock();
+        let mut cmd_buf_data_guard = cmd_buf_data.record()?;
+        let cmd_buf_data = &mut *cmd_buf_data_guard;
 
         #[cfg(feature = "trace")]
         if let Some(ref mut list) = cmd_buf_data.commands {
@@ -781,6 +808,8 @@ impl Global {
                 cmd_buf_raw.end_debug_marker();
             }
         }
+
+        cmd_buf_data_guard.mark_successful();
         Ok(())
     }
 

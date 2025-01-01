@@ -63,6 +63,24 @@ pub fn compact(module: &mut crate::Module) {
         }
     }
 
+    for (_, ty) in module.types.iter() {
+        if let crate::TypeInner::Array {
+            size: crate::ArraySize::Pending(crate::PendingArraySize::Expression(size_expr)),
+            ..
+        } = ty.inner
+        {
+            module_tracer.global_expressions_used.insert(size_expr);
+        }
+    }
+
+    for e in module.entry_points.iter() {
+        if let Some(sizes) = e.workgroup_size_overrides {
+            for size in sizes.iter().filter_map(|x| *x) {
+                module_tracer.global_expressions_used.insert(size);
+            }
+        }
+    }
+
     
     
     
@@ -177,12 +195,48 @@ pub fn compact(module: &mut crate::Module) {
     }
 
     
+    log::trace!("adjusting workgroup_size_overrides");
+    for e in module.entry_points.iter_mut() {
+        if let Some(sizes) = e.workgroup_size_overrides.as_mut() {
+            for size in sizes.iter_mut() {
+                if let Some(expr) = size.as_mut() {
+                    module_map.global_expressions.adjust(expr);
+                }
+            }
+        }
+    }
+
+    
     log::trace!("adjusting global variables");
     for (_, global) in module.global_variables.iter_mut() {
         log::trace!("adjusting global {:?}", global.name);
         module_map.types.adjust(&mut global.ty);
         if let Some(ref mut init) = global.init {
             module_map.global_expressions.adjust(init);
+        }
+    }
+
+    for (handle, ty) in module.types.clone().iter() {
+        if let crate::TypeInner::Array {
+            base,
+            size: crate::ArraySize::Pending(crate::PendingArraySize::Expression(mut size_expr)),
+            stride,
+        } = ty.inner
+        {
+            module_map.global_expressions.adjust(&mut size_expr);
+            module.types.replace(
+                handle,
+                crate::Type {
+                    name: None,
+                    inner: crate::TypeInner::Array {
+                        base,
+                        size: crate::ArraySize::Pending(crate::PendingArraySize::Expression(
+                            size_expr,
+                        )),
+                        stride,
+                    },
+                },
+            );
         }
     }
 

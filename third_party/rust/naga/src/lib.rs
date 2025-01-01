@@ -253,6 +253,7 @@
 mod arena;
 pub mod back;
 mod block;
+pub mod common;
 #[cfg(feature = "compact")]
 pub mod compact;
 pub mod diagnostic_filter;
@@ -486,6 +487,15 @@ pub struct Scalar {
     pub width: Bytes,
 }
 
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum PendingArraySize {
+    Expression(Handle<Expression>),
+    Override(Handle<Override>),
+}
+
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
@@ -495,6 +505,8 @@ pub struct Scalar {
 pub enum ArraySize {
     
     Constant(std::num::NonZeroU32),
+    
+    Pending(PendingArraySize),
     
     Dynamic,
 }
@@ -2186,6 +2198,8 @@ pub struct EntryPoint {
     pub early_depth_test: Option<EarlyDepthTest>,
     
     pub workgroup_size: [u32; 3],
+    
+    pub workgroup_size_overrides: Option<[Option<Handle<Expression>>; 3]>,
     
     pub function: Function,
 }

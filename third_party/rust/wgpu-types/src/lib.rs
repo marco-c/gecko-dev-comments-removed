@@ -24,47 +24,6 @@ pub mod math;
 pub use counters::*;
 
 
-
-
-
-
-
-macro_rules! impl_bitflags {
-    ($name:ident) => {
-        #[cfg(feature = "serde")]
-        impl serde::Serialize for $name {
-            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-            where
-                S: serde::Serializer,
-            {
-                self.bits().serialize(serializer)
-            }
-        }
-
-        #[cfg(feature = "serde")]
-        impl<'de> serde::Deserialize<'de> for $name {
-            fn deserialize<D>(deserializer: D) -> Result<$name, D::Error>
-            where
-                D: serde::Deserializer<'de>,
-            {
-                let value = <_ as serde::Deserialize<'de>>::deserialize(deserializer)?;
-                Ok($name::from_bits_retain(value))
-            }
-        }
-
-        impl $name {
-            /// Returns true if the bitflags contains bits that are not part of
-            /// the bitflags definition.
-            #[must_use]
-            pub fn contains_invalid_bits(&self) -> bool {
-                let all = Self::all().bits();
-                (self.bits() | all) != all
-            }
-        }
-    };
-}
-
-
 pub type BufferAddress = u64;
 
 pub type BufferSize = std::num::NonZeroU64;
@@ -156,6 +115,8 @@ pub enum PowerPreference {
 bitflags::bitflags! {
     /// Represents the backends that wgpu will use.
     #[repr(transparent)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
     pub struct Backends: u32 {
         /// Supported on Windows, Linux/Android, and macOS/iOS via Vulkan Portability (with the Vulkan feature enabled)
@@ -198,8 +159,6 @@ impl Default for Backends {
     }
 }
 
-impl_bitflags!(Backends);
-
 impl From<Backend> for Backends {
     fn from(backend: Backend) -> Self {
         Self::from_bits(1 << backend as u32).unwrap()
@@ -219,6 +178,7 @@ pub struct RequestAdapterOptions<S> {
     
     
     pub force_fallback_adapter: bool,
+    
     
     
     pub compatible_surface: Option<S>,
@@ -249,8 +209,9 @@ bitflags::bitflags! {
     /// Corresponds to [WebGPU `GPUFeatureName`](
     /// https://gpuweb.github.io/gpuweb/#enumdef-gpufeaturename).
     #[repr(transparent)]
-    #[derive(Default)]
-    #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
+    #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Hash)]
     pub struct Features: u64 {
         //
         // ---- Start numbering at 1 << 0 ----
@@ -981,8 +942,6 @@ bitflags::bitflags! {
     }
 }
 
-impl_bitflags!(Features);
-
 impl Features {
     
     #[must_use]
@@ -1602,6 +1561,8 @@ bitflags::bitflags! {
     ///
     /// You can check whether a set of flags is compliant through the
     /// [`DownlevelCapabilities::is_webgpu_compliant()`] function.
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct DownlevelFlags: u32 {
         /// The device supports compiling and using compute shaders.
@@ -1752,8 +1713,6 @@ bitflags::bitflags! {
         const VERTEX_AND_INSTANCE_INDEX_RESPECTS_RESPECTIVE_FIRST_VALUE_IN_INDIRECT_DRAW = 1 << 23;
     }
 }
-
-impl_bitflags!(DownlevelFlags);
 
 impl DownlevelFlags {
     
@@ -1918,6 +1877,8 @@ bitflags::bitflags! {
     
     
     #[repr(transparent)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
     pub struct ShaderStages: u32 {
         /// Binding is not visible from any shader stage.
@@ -1933,7 +1894,31 @@ bitflags::bitflags! {
     }
 }
 
-impl_bitflags!(ShaderStages);
+
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq, Hash)]
+pub enum TextureDataOrder {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[default]
+    LayerMajor,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MipMajor,
+}
 
 
 
@@ -2364,6 +2349,8 @@ impl Default for MultisampleState {
 bitflags::bitflags! {
     /// Feature flags for a texture format.
     #[repr(transparent)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
     pub struct TextureFormatFeatureFlags: u32 {
         /// If not present, the texture can't be sampled with a filtering sampler.
@@ -2381,8 +2368,14 @@ bitflags::bitflags! {
         /// to a render pass for an automatic driver-implemented resolve.
         const MULTISAMPLE_RESOLVE = 1 << 5;
         /// When used as a STORAGE texture, then a texture with this format can be bound with
-        /// [`StorageTextureAccess::ReadOnly`] or [`StorageTextureAccess::ReadWrite`].
-        const STORAGE_WRITE = 1 << 6;
+        /// [`StorageTextureAccess::ReadOnly`].
+        const STORAGE_READ_ONLY = 1 << 8;
+        /// When used as a STORAGE texture, then a texture with this format can be bound with
+        /// [`StorageTextureAccess::WriteOnly`].
+        const STORAGE_WRITE_ONLY = 1 << 6;
+        /// When used as a STORAGE texture, then a texture with this format can be bound with
+        /// [`StorageTextureAccess::ReadWrite`].
+        const STORAGE_READ_WRITE = 1 << 9;
         /// If not present, the texture can't be blended into the render target.
         const BLENDABLE = 1 << 7;
     }
@@ -2416,8 +2409,6 @@ impl TextureFormatFeatureFlags {
             .collect()
     }
 }
-
-impl_bitflags!(TextureFormatFeatureFlags);
 
 
 
@@ -3405,9 +3396,13 @@ impl TextureFormat {
     #[must_use]
     pub fn guaranteed_format_features(&self, device_features: Features) -> TextureFormatFeatures {
         
-        let noaa = TextureFormatFeatureFlags::empty();
+        let none = TextureFormatFeatureFlags::empty();
         let msaa = TextureFormatFeatureFlags::MULTISAMPLE_X4;
         let msaa_resolve = msaa | TextureFormatFeatureFlags::MULTISAMPLE_RESOLVE;
+
+        let s_ro_wo = TextureFormatFeatureFlags::STORAGE_READ_ONLY
+            | TextureFormatFeatureFlags::STORAGE_WRITE_ONLY;
+        let s_all = s_ro_wo | TextureFormatFeatureFlags::STORAGE_READ_WRITE;
 
         
         let basic =
@@ -3421,10 +3416,13 @@ impl TextureFormat {
         } else {
             basic
         };
-        let bgra8unorm = if device_features.contains(Features::BGRA8UNORM_STORAGE) {
-            attachment | TextureUsages::STORAGE_BINDING
+        let (bgra8unorm_f, bgra8unorm) = if device_features.contains(Features::BGRA8UNORM_STORAGE) {
+            (
+                msaa_resolve | TextureFormatFeatureFlags::STORAGE_WRITE_ONLY,
+                attachment | TextureUsages::STORAGE_BINDING,
+            )
         } else {
-            attachment
+            (msaa_resolve, attachment)
         };
 
         #[rustfmt::skip] 
@@ -3433,41 +3431,41 @@ impl TextureFormat {
             allowed_usages,
         ) = match *self {
             Self::R8Unorm =>              (msaa_resolve, attachment),
-            Self::R8Snorm =>              (        noaa,      basic),
+            Self::R8Snorm =>              (        none,      basic),
             Self::R8Uint =>               (        msaa, attachment),
             Self::R8Sint =>               (        msaa, attachment),
             Self::R16Uint =>              (        msaa, attachment),
             Self::R16Sint =>              (        msaa, attachment),
             Self::R16Float =>             (msaa_resolve, attachment),
             Self::Rg8Unorm =>             (msaa_resolve, attachment),
-            Self::Rg8Snorm =>             (        noaa,      basic),
+            Self::Rg8Snorm =>             (        none,      basic),
             Self::Rg8Uint =>              (        msaa, attachment),
             Self::Rg8Sint =>              (        msaa, attachment),
-            Self::R32Uint =>              (        noaa,  all_flags),
-            Self::R32Sint =>              (        noaa,  all_flags),
-            Self::R32Float =>             (        msaa,  all_flags),
+            Self::R32Uint =>              (       s_all,  all_flags),
+            Self::R32Sint =>              (       s_all,  all_flags),
+            Self::R32Float =>             (msaa | s_all,  all_flags),
             Self::Rg16Uint =>             (        msaa, attachment),
             Self::Rg16Sint =>             (        msaa, attachment),
             Self::Rg16Float =>            (msaa_resolve, attachment),
-            Self::Rgba8Unorm =>           (msaa_resolve,  all_flags),
+            Self::Rgba8Unorm =>           (msaa_resolve | s_ro_wo,  all_flags),
             Self::Rgba8UnormSrgb =>       (msaa_resolve, attachment),
-            Self::Rgba8Snorm =>           (        noaa,    storage),
-            Self::Rgba8Uint =>            (        msaa,  all_flags),
-            Self::Rgba8Sint =>            (        msaa,  all_flags),
-            Self::Bgra8Unorm =>           (msaa_resolve, bgra8unorm),
+            Self::Rgba8Snorm =>           (     s_ro_wo,    storage),
+            Self::Rgba8Uint =>            (        msaa | s_ro_wo,  all_flags),
+            Self::Rgba8Sint =>            (        msaa | s_ro_wo,  all_flags),
+            Self::Bgra8Unorm =>           (bgra8unorm_f, bgra8unorm),
             Self::Bgra8UnormSrgb =>       (msaa_resolve, attachment),
             Self::Rgb10a2Uint =>          (        msaa, attachment),
             Self::Rgb10a2Unorm =>         (msaa_resolve, attachment),
             Self::Rg11b10Ufloat =>        (        msaa,   rg11b10f),
-            Self::Rg32Uint =>             (        noaa,  all_flags),
-            Self::Rg32Sint =>             (        noaa,  all_flags),
-            Self::Rg32Float =>            (        noaa,  all_flags),
-            Self::Rgba16Uint =>           (        msaa,  all_flags),
-            Self::Rgba16Sint =>           (        msaa,  all_flags),
-            Self::Rgba16Float =>          (msaa_resolve,  all_flags),
-            Self::Rgba32Uint =>           (        noaa,  all_flags),
-            Self::Rgba32Sint =>           (        noaa,  all_flags),
-            Self::Rgba32Float =>          (        noaa,  all_flags),
+            Self::Rg32Uint =>             (     s_ro_wo,  all_flags),
+            Self::Rg32Sint =>             (     s_ro_wo,  all_flags),
+            Self::Rg32Float =>            (     s_ro_wo,  all_flags),
+            Self::Rgba16Uint =>           (        msaa | s_ro_wo,  all_flags),
+            Self::Rgba16Sint =>           (        msaa | s_ro_wo,  all_flags),
+            Self::Rgba16Float =>          (msaa_resolve | s_ro_wo,  all_flags),
+            Self::Rgba32Uint =>           (     s_ro_wo,  all_flags),
+            Self::Rgba32Sint =>           (     s_ro_wo,  all_flags),
+            Self::Rgba32Float =>          (     s_ro_wo,  all_flags),
 
             Self::Stencil8 =>             (        msaa, attachment),
             Self::Depth16Unorm =>         (        msaa, attachment),
@@ -3477,44 +3475,44 @@ impl TextureFormat {
             Self::Depth32FloatStencil8 => (        msaa, attachment),
 
             
-            Self::NV12 =>                 (        noaa,    binding),
+            Self::NV12 =>                 (        none,    binding),
 
-            Self::R16Unorm =>             (        msaa,    storage),
-            Self::R16Snorm =>             (        msaa,    storage),
-            Self::Rg16Unorm =>            (        msaa,    storage),
-            Self::Rg16Snorm =>            (        msaa,    storage),
-            Self::Rgba16Unorm =>          (        msaa,    storage),
-            Self::Rgba16Snorm =>          (        msaa,    storage),
+            Self::R16Unorm =>             (        msaa | s_ro_wo,    storage),
+            Self::R16Snorm =>             (        msaa | s_ro_wo,    storage),
+            Self::Rg16Unorm =>            (        msaa | s_ro_wo,    storage),
+            Self::Rg16Snorm =>            (        msaa | s_ro_wo,    storage),
+            Self::Rgba16Unorm =>          (        msaa | s_ro_wo,    storage),
+            Self::Rgba16Snorm =>          (        msaa | s_ro_wo,    storage),
 
-            Self::Rgb9e5Ufloat =>         (        noaa,      basic),
+            Self::Rgb9e5Ufloat =>         (        none,      basic),
 
-            Self::Bc1RgbaUnorm =>         (        noaa,      basic),
-            Self::Bc1RgbaUnormSrgb =>     (        noaa,      basic),
-            Self::Bc2RgbaUnorm =>         (        noaa,      basic),
-            Self::Bc2RgbaUnormSrgb =>     (        noaa,      basic),
-            Self::Bc3RgbaUnorm =>         (        noaa,      basic),
-            Self::Bc3RgbaUnormSrgb =>     (        noaa,      basic),
-            Self::Bc4RUnorm =>            (        noaa,      basic),
-            Self::Bc4RSnorm =>            (        noaa,      basic),
-            Self::Bc5RgUnorm =>           (        noaa,      basic),
-            Self::Bc5RgSnorm =>           (        noaa,      basic),
-            Self::Bc6hRgbUfloat =>        (        noaa,      basic),
-            Self::Bc6hRgbFloat =>         (        noaa,      basic),
-            Self::Bc7RgbaUnorm =>         (        noaa,      basic),
-            Self::Bc7RgbaUnormSrgb =>     (        noaa,      basic),
+            Self::Bc1RgbaUnorm =>         (        none,      basic),
+            Self::Bc1RgbaUnormSrgb =>     (        none,      basic),
+            Self::Bc2RgbaUnorm =>         (        none,      basic),
+            Self::Bc2RgbaUnormSrgb =>     (        none,      basic),
+            Self::Bc3RgbaUnorm =>         (        none,      basic),
+            Self::Bc3RgbaUnormSrgb =>     (        none,      basic),
+            Self::Bc4RUnorm =>            (        none,      basic),
+            Self::Bc4RSnorm =>            (        none,      basic),
+            Self::Bc5RgUnorm =>           (        none,      basic),
+            Self::Bc5RgSnorm =>           (        none,      basic),
+            Self::Bc6hRgbUfloat =>        (        none,      basic),
+            Self::Bc6hRgbFloat =>         (        none,      basic),
+            Self::Bc7RgbaUnorm =>         (        none,      basic),
+            Self::Bc7RgbaUnormSrgb =>     (        none,      basic),
 
-            Self::Etc2Rgb8Unorm =>        (        noaa,      basic),
-            Self::Etc2Rgb8UnormSrgb =>    (        noaa,      basic),
-            Self::Etc2Rgb8A1Unorm =>      (        noaa,      basic),
-            Self::Etc2Rgb8A1UnormSrgb =>  (        noaa,      basic),
-            Self::Etc2Rgba8Unorm =>       (        noaa,      basic),
-            Self::Etc2Rgba8UnormSrgb =>   (        noaa,      basic),
-            Self::EacR11Unorm =>          (        noaa,      basic),
-            Self::EacR11Snorm =>          (        noaa,      basic),
-            Self::EacRg11Unorm =>         (        noaa,      basic),
-            Self::EacRg11Snorm =>         (        noaa,      basic),
+            Self::Etc2Rgb8Unorm =>        (        none,      basic),
+            Self::Etc2Rgb8UnormSrgb =>    (        none,      basic),
+            Self::Etc2Rgb8A1Unorm =>      (        none,      basic),
+            Self::Etc2Rgb8A1UnormSrgb =>  (        none,      basic),
+            Self::Etc2Rgba8Unorm =>       (        none,      basic),
+            Self::Etc2Rgba8UnormSrgb =>   (        none,      basic),
+            Self::EacR11Unorm =>          (        none,      basic),
+            Self::EacR11Snorm =>          (        none,      basic),
+            Self::EacRg11Unorm =>         (        none,      basic),
+            Self::EacRg11Snorm =>         (        none,      basic),
 
-            Self::Astc { .. } =>          (        noaa,      basic),
+            Self::Astc { .. } =>          (        none,      basic),
         };
 
         
@@ -4671,6 +4669,8 @@ bitflags::bitflags! {
     /// Corresponds to [WebGPU `GPUColorWriteFlags`](
     /// https://gpuweb.github.io/gpuweb/#typedefdef-gpucolorwriteflags).
     #[repr(transparent)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
     pub struct ColorWrites: u32 {
         /// Enable red channel writes
@@ -4687,8 +4687,6 @@ bitflags::bitflags! {
         const ALL = Self::RED.bits() | Self::GREEN.bits() | Self::BLUE.bits() | Self::ALPHA.bits();
     }
 }
-
-impl_bitflags!(ColorWrites);
 
 impl Default for ColorWrites {
     fn default() -> Self {
@@ -5283,6 +5281,8 @@ bitflags::bitflags! {
     /// Corresponds to [WebGPU `GPUBufferUsageFlags`](
     /// https://gpuweb.github.io/gpuweb/#typedefdef-gpubufferusageflags).
     #[repr(transparent)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
     pub struct BufferUsages: u32 {
         /// Allow a buffer to be mapped for reading using [`Buffer::map_async`] + [`Buffer::get_mapped_range`].
@@ -5321,8 +5321,6 @@ bitflags::bitflags! {
         const TLAS_INPUT = 1 << 11;
     }
 }
-
-impl_bitflags!(BufferUsages);
 
 
 
@@ -5506,6 +5504,8 @@ bitflags::bitflags! {
     /// Corresponds to [WebGPU `GPUTextureUsageFlags`](
     /// https://gpuweb.github.io/gpuweb/#typedefdef-gputextureusageflags).
     #[repr(transparent)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
     pub struct TextureUsages: u32 {
         /// Allows a texture to be the source in a [`CommandEncoder::copy_texture_to_buffer`] or
@@ -5522,8 +5522,6 @@ bitflags::bitflags! {
         const RENDER_ATTACHMENT = 1 << 4;
     }
 }
-
-impl_bitflags!(TextureUsages);
 
 
 #[derive(Debug)]
@@ -5649,6 +5647,8 @@ pub enum SurfaceStatus {
     Outdated,
     
     Lost,
+    
+    Unknown,
 }
 
 
@@ -6056,6 +6056,38 @@ fn test_max_mips() {
 
 
 
+
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct TextureViewDescriptor<L> {
+    
+    pub label: L,
+    
+    
+    pub format: Option<TextureFormat>,
+    
+    
+    pub dimension: Option<TextureViewDimension>,
+    
+    pub aspect: TextureAspect,
+    
+    pub base_mip_level: u32,
+    
+    
+    
+    pub mip_level_count: Option<u32>,
+    
+    pub base_array_layer: u32,
+    
+    
+    
+    pub array_layer_count: Option<u32>,
+}
+
+
+
+
+
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -6184,6 +6216,60 @@ impl<L, V> TextureDescriptor<L, V> {
         match self.dimension {
             TextureDimension::D1 | TextureDimension::D3 => 1,
             TextureDimension::D2 => self.size.depth_or_array_layers,
+        }
+    }
+}
+
+
+
+
+
+
+
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SamplerDescriptor<L> {
+    
+    pub label: L,
+    
+    pub address_mode_u: AddressMode,
+    
+    pub address_mode_v: AddressMode,
+    
+    pub address_mode_w: AddressMode,
+    
+    pub mag_filter: FilterMode,
+    
+    pub min_filter: FilterMode,
+    
+    pub mipmap_filter: FilterMode,
+    
+    pub lod_min_clamp: f32,
+    
+    pub lod_max_clamp: f32,
+    
+    pub compare: Option<CompareFunction>,
+    
+    pub anisotropy_clamp: u16,
+    
+    pub border_color: Option<SamplerBorderColor>,
+}
+
+impl<L: Default> Default for SamplerDescriptor<L> {
+    fn default() -> Self {
+        Self {
+            label: Default::default(),
+            address_mode_u: Default::default(),
+            address_mode_v: Default::default(),
+            address_mode_w: Default::default(),
+            mag_filter: Default::default(),
+            min_filter: Default::default(),
+            mipmap_filter: Default::default(),
+            lod_min_clamp: 0.0,
+            lod_max_clamp: 32.0,
+            compare: None,
+            anisotropy_clamp: 1,
+            border_color: None,
         }
     }
 }
@@ -7252,6 +7338,8 @@ bitflags::bitflags! {
     
     
     #[repr(transparent)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
     pub struct PipelineStatisticsTypes : u8 {
         /// Amount of times the vertex shader is ran. Accounts for
@@ -7273,8 +7361,6 @@ bitflags::bitflags! {
         const COMPUTE_SHADER_INVOCATIONS = 1 << 4;
     }
 }
-
-impl_bitflags!(PipelineStatisticsTypes);
 
 
 #[repr(C)]
@@ -7583,6 +7669,8 @@ impl<L> CreateTlasDescriptor<L> {
 
 bitflags::bitflags!(
     /// Flags for acceleration structures
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct AccelerationStructureFlags: u8 {
         /// Allow for incremental updates (no change in size), currently this is unimplemented
@@ -7601,10 +7689,11 @@ bitflags::bitflags!(
         const LOW_MEMORY = 1 << 4;
     }
 );
-impl_bitflags!(AccelerationStructureFlags);
 
 bitflags::bitflags!(
     /// Flags for acceleration structure geometries
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct AccelerationStructureGeometryFlags: u8 {
         /// Is OPAQUE (is there no alpha test) recommended as currently in naga there is no
@@ -7620,7 +7709,6 @@ bitflags::bitflags!(
         const NO_DUPLICATE_ANY_HIT_INVOCATION = 1 << 1;
     }
 );
-impl_bitflags!(AccelerationStructureGeometryFlags);
 
 
 pub const TRANSFORM_BUFFER_ALIGNMENT: BufferAddress = 16;
