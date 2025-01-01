@@ -743,19 +743,9 @@ let gTranslationsPane = {
 
   addTranslateLanguage(langTag, languageList, translatePrefix) {
     
-    const languageDisplayNames =
-      TranslationsParent.createLanguageDisplayNames();
 
-    let languageDisplayName;
-    try {
-      languageDisplayName = languageDisplayNames.of(langTag);
-    } catch (error) {
-      console.warn(
-        `Failed to retrieve language display name for '${langTag}'.`
-      );
-      return;
-    }
-
+    const languageDisplayName =
+      TranslationsParent.getLanguageDisplayName(langTag);
     const languageLabel = this.createLangLabel(
       languageDisplayName,
       langTag,
@@ -965,13 +955,10 @@ let gTranslationsPane = {
     } catch (error) {
       console.error(error);
 
-      const languageDisplayNames =
-        TranslationsParent.createLanguageDisplayNames();
-
       this.showErrorMessage(
         eventButton.parentNode,
         "translations-settings-language-download-error",
-        languageDisplayNames.of(langTag)
+        TranslationsParent.getLanguageDisplayName(langTag)
       );
       const hasAllFilesForLanguage =
         await TranslationsParent.hasAllFilesForLanguage(langTag);
@@ -1031,14 +1018,10 @@ let gTranslationsPane = {
     } catch (error) {
       
       console.error(error);
-
-      const languageDisplayNames =
-        TranslationsParent.createLanguageDisplayNames();
-
       this.showErrorMessage(
         eventButton.parentNode,
         "translations-settings-language-remove-error",
-        languageDisplayNames.of(langTag)
+        TranslationsParent.getLanguageDisplayName(langTag)
       );
       const hasAllFilesForLanguage =
         await TranslationsParent.hasAllFilesForLanguage(langTag);

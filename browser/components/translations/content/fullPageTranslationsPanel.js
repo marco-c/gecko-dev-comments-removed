@@ -14,8 +14,6 @@ ChromeUtils.defineESModuleGetters(this, {
   PageActions: "resource:///modules/PageActions.sys.mjs",
   TranslationsTelemetry:
     "chrome://browser/content/translations/TranslationsTelemetry.sys.mjs",
-  TranslationsUtils:
-    "chrome://global/content/translations/TranslationsUtils.sys.mjs",
   TranslationsPanelShared:
     "chrome://browser/content/translations/TranslationsPanelShared.sys.mjs",
 });
@@ -447,14 +445,8 @@ var FullPageTranslationsPanel = new (class {
     if (
       requestedTranslationPair &&
       !isEngineReady &&
-      TranslationsUtils.langTagsMatch(
-        fromMenuList.value,
-        requestedTranslationPair.fromLanguage
-      ) &&
-      TranslationsUtils.langTagsMatch(
-        toMenuList.value,
-        requestedTranslationPair.toLanguage
-      )
+      toMenuList.value === requestedTranslationPair.toLanguage &&
+      fromMenuList.value === requestedTranslationPair.fromLanguage
     ) {
       // A translation has been requested, but is not ready yet.
       document.l10n.setAttributes(
@@ -471,33 +463,28 @@ var FullPageTranslationsPanel = new (class {
       );
       translateButton.disabled =
         
+        toMenuList.value === fromMenuList.value ||
+        
         !toMenuList.value ||
         
         !fromMenuList.value ||
         
-        TranslationsUtils.langTagsMatch(toMenuList.value, fromMenuList.value) ||
-        
         (requestedTranslationPair &&
-          TranslationsUtils.langTagsMatch(
-            requestedTranslationPair.fromLanguage,
-            fromMenuList.value
-          ) &&
-          TranslationsUtils.langTagsMatch(
-            requestedTranslationPair.toLanguage,
-            toMenuList.value
-          ));
+          requestedTranslationPair.fromLanguage === fromMenuList.value &&
+          requestedTranslationPair.toLanguage === toMenuList.value);
     }
 
     if (requestedTranslationPair && isEngineReady) {
       const { fromLanguage, toLanguage } = requestedTranslationPair;
-      const languageDisplayNames =
-        TranslationsParent.createLanguageDisplayNames();
+      const displayNames = new Services.intl.DisplayNames(undefined, {
+        type: "language",
+      });
       cancelButton.hidden = true;
       this.updateUIForReTranslation(true );
 
       document.l10n.setAttributes(header, "translations-panel-revisit-header", {
-        fromLanguage: languageDisplayNames.of(fromLanguage),
-        toLanguage: languageDisplayNames.of(toLanguage),
+        fromLanguage: displayNames.of(fromLanguage),
+        toLanguage: displayNames.of(toLanguage),
       });
     } else {
       document.l10n.setAttributes(header, "translations-panel-header");
@@ -625,9 +612,7 @@ var FullPageTranslationsPanel = new (class {
           });
       }
 
-      if (
-        TranslationsUtils.langTagsMatch(fromMenuList.value, toMenuList.value)
-      ) {
+      if (fromMenuList.value === toMenuList.value) {
         
         
         
@@ -669,11 +654,11 @@ var FullPageTranslationsPanel = new (class {
       );
       let language;
       if (docLangTag) {
-        const languageDisplayNames =
-          TranslationsParent.createLanguageDisplayNames({
-            fallback: "none",
-          });
-        language = languageDisplayNames.of(docLangTag);
+        const displayNames = new Intl.DisplayNames(undefined, {
+          type: "language",
+          fallback: "none",
+        });
+        language = displayNames.of(docLangTag);
       }
       if (language) {
         document.l10n.setAttributes(
@@ -795,12 +780,12 @@ var FullPageTranslationsPanel = new (class {
     
     let docLangDisplayName;
     if (docLangTag) {
-      const languageDisplayNames =
-        TranslationsParent.createLanguageDisplayNames({
-          fallback: "none",
-        });
+      const displayNames = new Services.intl.DisplayNames(undefined, {
+        type: "language",
+        fallback: "none",
+      });
       
-      docLangDisplayName = languageDisplayNames.of(docLangTag);
+      docLangDisplayName = displayNames.of(docLangTag);
     }
 
     for (const menuitem of alwaysTranslateMenuItems) {
@@ -1592,17 +1577,18 @@ var FullPageTranslationsPanel = new (class {
             
             button.setAttribute("translationsactive", true);
             if (isEngineReady) {
-              const languageDisplayNames =
-                TranslationsParent.createLanguageDisplayNames();
+              const displayNames = new Services.intl.DisplayNames(undefined, {
+                type: "language",
+              });
 
               document.l10n.setAttributes(
                 button,
                 "urlbar-translations-button-translated",
                 {
-                  fromLanguage: languageDisplayNames.of(
+                  fromLanguage: displayNames.of(
                     requestedTranslationPair.fromLanguage
                   ),
-                  toLanguage: languageDisplayNames.of(
+                  toLanguage: displayNames.of(
                     requestedTranslationPair.toLanguage
                   ),
                 }
@@ -1610,8 +1596,7 @@ var FullPageTranslationsPanel = new (class {
               
               buttonLocale.hidden = false;
               buttonCircleArrows.hidden = true;
-              buttonLocale.innerText =
-                requestedTranslationPair.toLanguage.split("-")[0];
+              buttonLocale.innerText = requestedTranslationPair.toLanguage;
             } else {
               document.l10n.setAttributes(
                 button,

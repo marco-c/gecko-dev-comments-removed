@@ -22,11 +22,6 @@ add_task(
         { fromLang: "fi", toLang: "en" },
         
         { fromLang: "en", toLang: "sl" },
-        
-        { fromLang: "zh-Hans", toLang: "en" },
-        { fromLang: "en", toLang: "zh-Hans" },
-        { fromLang: "zh-Hant", toLang: "en" },
-        { fromLang: "en", toLang: "zh-Hant" },
       ],
       prefs: [["browser.translations.select.enable", true]],
     });
@@ -35,70 +30,34 @@ add_task(
 
     await SelectTranslationsTestUtils.testContextMenuItemWithLocales({
       runInPage,
-      appLocales: ["es", "fr", "fi", "ja", "sl"],
+      appLocales: ["es", "fr", "fi", "zh", "sl"],
       
       expectedTargetLanguage: "fr",
     });
 
     await SelectTranslationsTestUtils.testContextMenuItemWithLocales({
       runInPage,
-      appLocales: ["fr", "fi", "ja", "sl", "es"],
+      appLocales: ["fr", "fi", "zh", "sl", "es"],
       expectedTargetLanguage: "fr",
     });
 
     await SelectTranslationsTestUtils.testContextMenuItemWithLocales({
       runInPage,
-      appLocales: ["fi", "ja", "sl", "es", "fr"],
+      appLocales: ["fi", "zh", "sl", "es", "fr"],
       
       expectedTargetLanguage: "sl",
     });
 
     await SelectTranslationsTestUtils.testContextMenuItemWithLocales({
       runInPage,
-      appLocales: ["ja", "sl", "es", "fr", "fi"],
+      appLocales: ["zh", "sl", "es", "fr", "fi"],
       expectedTargetLanguage: "sl",
     });
 
     await SelectTranslationsTestUtils.testContextMenuItemWithLocales({
       runInPage,
-      appLocales: ["sl", "es", "fr", "fi", "ja"],
+      appLocales: ["sl", "es", "fr", "fi", "zh"],
       expectedTargetLanguage: "sl",
-    });
-
-    await SelectTranslationsTestUtils.testContextMenuItemWithLocales({
-      runInPage,
-      appLocales: ["zh-CN", "zh", "es", "fr", "fi", "ja"],
-      expectedTargetLanguage: "zh-Hans",
-    });
-
-    await SelectTranslationsTestUtils.testContextMenuItemWithLocales({
-      runInPage,
-      appLocales: ["zh-SG", "zh", "es", "fr", "fi", "ja"],
-      expectedTargetLanguage: "zh-Hans",
-    });
-
-    await SelectTranslationsTestUtils.testContextMenuItemWithLocales({
-      runInPage,
-      appLocales: ["zh-MY", "zh", "es", "fr", "fi", "ja"],
-      expectedTargetLanguage: "zh-Hans",
-    });
-
-    await SelectTranslationsTestUtils.testContextMenuItemWithLocales({
-      runInPage,
-      appLocales: ["zh-HK", "zh", "es", "fr", "fi", "ja"],
-      expectedTargetLanguage: "zh-Hant",
-    });
-
-    await SelectTranslationsTestUtils.testContextMenuItemWithLocales({
-      runInPage,
-      appLocales: ["zh-MO", "zh", "es", "fr", "fi", "ja"],
-      expectedTargetLanguage: "zh-Hant",
-    });
-
-    await SelectTranslationsTestUtils.testContextMenuItemWithLocales({
-      runInPage,
-      appLocales: ["zh-TW", "zh", "es", "fr", "fi", "ja"],
-      expectedTargetLanguage: "zh-Hant",
     });
 
     await cleanup();
