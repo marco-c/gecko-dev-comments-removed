@@ -211,6 +211,7 @@ add_task(async function handle_database_corruption() {
 
   
   delete ExtensionBlocklistMLBF._mlbfData;
+  delete ExtensionBlocklistMLBF._mlbfDataSoftBlocks;
   delete ExtensionBlocklistMLBF._stashes;
   Assert.equal(
     await Blocklist.getAddonBlocklistState(blockedAddon),

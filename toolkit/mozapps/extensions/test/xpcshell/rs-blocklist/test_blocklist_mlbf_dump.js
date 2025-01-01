@@ -87,21 +87,20 @@ add_task(async function verify_dump_first_run() {
     : undefined;
   const observedHardBlock = observed.pop();
 
-  info("Verify the hard mocks mlbf dump");
-
-  {
-    
-    
-    const { inputRecord, downloadPromise } = observedHardBlock;
+  const verifyMLBFAttachment = async (
+    { inputRecord, downloadPromise },
+    expectedAttachmentType,
+    message
+  ) => {
     Assert.ok(
       inputRecord,
-      "addons-bloomfilters collection hard-blocks dump exists"
+      `addons-bloomfilters collection bloomfilter attachment dump exists (${message})`
     );
 
     Assert.equal(
       inputRecord.attachment_type,
-      ExtensionBlocklistMLBF.RS_ATTACHMENT_TYPE,
-      "hard-blocks attachment record has the expected attachment_type"
+      expectedAttachmentType,
+      `attachment record has the expected attachment_type (${message})`
     );
 
     const downloadResult = await downloadPromise;
@@ -117,31 +116,34 @@ add_task(async function verify_dump_first_run() {
     Assert.equal(
       downloadResult._source,
       "dump_match",
-      "MLBF attachment should match the RemoteSettings collection"
+      `MLBF attachment should match the RemoteSettings collection (${message})`
     );
 
     Assert.equal(
       await sha256(downloadResult.buffer),
       inputRecord.attachment.hash,
-      "The content of the attachment should actually matches the record"
+      `The content of the attachment should actually matches the record (${message})`
     );
-  }
+  };
+
+  const { RS_ATTACHMENT_TYPE, RS_SOFTBLOCKS_ATTACHMENT_TYPE } =
+    ExtensionBlocklistMLBF;
+
+  info("Verify the hard blocks mlbf dump");
+  
+  
+  await verifyMLBFAttachment(
+    observedHardBlock,
+    RS_ATTACHMENT_TYPE,
+    "hard blocks"
+  );
 
   if (Blocklist.isSoftBlockEnabled) {
-    info("Verify the soft mocks mlbf dump");
-
-    
-    
-    
-    const { inputRecord, downloadPromise } = observedSoftBlock;
-    Assert.ok(
-      !inputRecord,
-      "addons-bloomfilters collection's soft-blocks dump does not exist"
-    );
-    await Assert.rejects(
-      downloadPromise,
-      /Could not download softblocks-addons-mlbf.bin/,
-      "Got the expected DownloadError for the soft-blocks MLBF data"
+    info("Verify the soft blocks mlbf dump");
+    await verifyMLBFAttachment(
+      observedSoftBlock,
+      RS_SOFTBLOCKS_ATTACHMENT_TYPE,
+      "soft blocks"
     );
   }
 });
@@ -182,6 +184,7 @@ add_task(async function verify_dump_supersedes_old_dump() {
   
   
   delete ExtensionBlocklistMLBF._mlbfData;
+  delete ExtensionBlocklistMLBF._mlbfDataSoftBlocks;
 
   await AddonTestUtils.loadBlocklistRawData({
     
