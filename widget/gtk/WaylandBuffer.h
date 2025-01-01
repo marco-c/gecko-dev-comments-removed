@@ -17,10 +17,9 @@
 #include "mozilla/RefPtr.h"
 #include "nsTArray.h"
 #include "nsWaylandDisplay.h"
+#include "WaylandSurface.h"
 
 namespace mozilla::widget {
-
-class WaylandSurface;
 
 
 class WaylandShmPool {

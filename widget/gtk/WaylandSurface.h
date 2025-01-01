@@ -12,6 +12,7 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/Atomics.h"
 #include "WaylandSurfaceLock.h"
+#include "mozilla/GRefPtr.h"
 
 
 
