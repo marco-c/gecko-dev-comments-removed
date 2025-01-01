@@ -31,7 +31,7 @@ function generateHash(aString, hashAlg) {
   const stringStream = Cc[
     "@mozilla.org/io/string-input-stream;1"
   ].createInstance(Ci.nsIStringInputStream);
-  stringStream.data = aString;
+  stringStream.setByteStringData(aString);
   cryptoHash.updateFromStream(stringStream, -1);
   
   return cryptoHash.finish(true).replace(/\//g, "-");
