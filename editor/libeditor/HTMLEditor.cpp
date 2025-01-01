@@ -295,6 +295,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLEditor, EditorBase)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mComposerCommandsUpdater)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mChangedRangeForTopLevelEditSubAction)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPaddingBRElementForEmptyEditor)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mLastCollapsibleWhiteSpaceAppendedTextNode)
   tmp->HideAnonymousEditingUIs();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -303,6 +304,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLEditor, EditorBase)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mComposerCommandsUpdater)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mChangedRangeForTopLevelEditSubAction)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPaddingBRElementForEmptyEditor)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLastCollapsibleWhiteSpaceAppendedTextNode)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTopLeftHandle)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTopHandle)
@@ -4916,6 +4918,10 @@ void HTMLEditor::DoContentInserted(nsIContent* aChild,
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLEditor::ContentWillBeRemoved(
     nsIContent* aChild) {
+  if (mLastCollapsibleWhiteSpaceAppendedTextNode == aChild) {
+    mLastCollapsibleWhiteSpaceAppendedTextNode = nullptr;
+  }
+
   if (!IsInObservedSubtree(aChild)) {
     return;
   }
@@ -7633,6 +7639,46 @@ nsresult HTMLEditor::OnModifyDocumentInternal() {
   
   
   nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
+
+  
+  
+  
+  
+  
+  
+  if (mLastCollapsibleWhiteSpaceAppendedTextNode &&
+      MOZ_LIKELY(
+          mLastCollapsibleWhiteSpaceAppendedTextNode->IsInComposedDoc() &&
+          mLastCollapsibleWhiteSpaceAppendedTextNode->IsEditable() &&
+          mLastCollapsibleWhiteSpaceAppendedTextNode->TextDataLength())) {
+    const auto atLastChar = EditorRawDOMPointInText::AtEndOf(
+        *mLastCollapsibleWhiteSpaceAppendedTextNode);
+    if (MOZ_LIKELY(atLastChar.IsPreviousCharCollapsibleASCIISpace())) {
+      if (const RefPtr<Element> editingHost = ComputeEditingHostInternal(
+              mLastCollapsibleWhiteSpaceAppendedTextNode,
+              LimitInBodyElement::No)) {
+        Result<CreateElementResult, nsresult> insertPaddingBRResultOrError =
+            InsertPaddingBRElementIfNeeded(atLastChar.To<EditorDOMPoint>(),
+                                           eNoStrip, *editingHost);
+        if (MOZ_UNLIKELY(insertPaddingBRResultOrError.isErr())) {
+          if (insertPaddingBRResultOrError.inspectErr() ==
+              NS_ERROR_EDITOR_DESTROYED) {
+            NS_WARNING(
+                "HTMLEditor::InsertPaddingBRElementIfNeeded(nsIEditor::"
+                "eNoStrip) destroyed the editor");
+            return insertPaddingBRResultOrError.unwrapErr();
+          }
+          NS_WARNING(
+              "HTMLEditor::InsertPaddingBRElementIfNeeded(nsIEditor::eNoStrip) "
+              "failed, but ignored");
+        } else {
+          
+          
+          insertPaddingBRResultOrError.unwrap().IgnoreCaretPointSuggestion();
+        }
+      }
+    }
+  }
 
   
   

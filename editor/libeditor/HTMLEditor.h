@@ -4471,6 +4471,9 @@ class HTMLEditor final : public EditorBase,
   
   RefPtr<dom::HTMLBRElement> mPaddingBRElementForEmptyEditor;
 
+  
+  RefPtr<dom::Text> mLastCollapsibleWhiteSpaceAppendedTextNode;
+
   bool mCRInParagraphCreatesParagraph;
 
   
