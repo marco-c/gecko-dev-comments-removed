@@ -1,15 +1,15 @@
 
 
 
-if (0) {
+assertThrowsInstanceOf(() => {
   let date = Temporal.PlainDate.from({
     calendar: "islamic-umalqura",
     year: -6823,
     monthCode: "M01",
     day: 1,
   });
-  assertEq(date.day, 1);
-}
+  
+}, RangeError);
 
 if (typeof reportCompare === "function")
   reportCompare(true, true);
