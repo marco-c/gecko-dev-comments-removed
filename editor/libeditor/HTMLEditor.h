@@ -1637,8 +1637,15 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  InsertPaddingBRElementForEmptyLastLineIfNeeded(Element& aElement);
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateLineBreakResult, nsresult>
+  InsertPaddingBRElementIfInEmptyBlock(
+      const EditorDOMPoint& aPoint,
+      nsIEditor::EStripWrappers aDeleteEmptyInlines);
 
   
 
@@ -1659,13 +1666,6 @@ class HTMLEditor final : public EditorBase,
   DeleteRangesWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
                               nsIEditor::EStripWrappers aStripWrappers,
                               const AutoRangeArray& aRangesToDelete) override;
-
-  
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  MaybeInsertPaddingBRElementForEmptyLastLineAtSelection();
 
   
 
