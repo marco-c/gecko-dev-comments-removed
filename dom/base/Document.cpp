@@ -1667,28 +1667,14 @@ void Document::GetNetErrorInfo(NetErrorInfo& aInfo, ErrorResult& aRv) {
     return;
   }
 
-  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mFailedChannel));
-
-  
-  
-  if (httpChannel) {
-    uint32_t responseStatus;
-    nsAutoCString responseStatusText;
-    rv = httpChannel->GetResponseStatus(&responseStatus);
-    if (NS_SUCCEEDED(rv)) {
-      aInfo.mResponseStatus = responseStatus;
-    }
-
-    rv = httpChannel->GetResponseStatusText(responseStatusText);
-    if (NS_SUCCEEDED(rv)) {
-      aInfo.mResponseStatusText.AssignASCII(responseStatusText);
-    }
-  }
-
   nsCOMPtr<nsITransportSecurityInfo> tsi;
   rv = mFailedChannel->GetSecurityInfo(getter_AddRefs(tsi));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
+    return;
+  }
+  if (NS_WARN_IF(!tsi)) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
@@ -1699,12 +1685,6 @@ void Document::GetNetErrorInfo(NetErrorInfo& aInfo, ErrorResult& aRv) {
     return;
   }
   aInfo.mChannelStatus = static_cast<uint32_t>(channelStatus);
-
-  
-  
-  if (!tsi) {
-    return;
-  }
 
   
   (void)tsi->GetErrorCodeString(aInfo.mErrorCodeString);
