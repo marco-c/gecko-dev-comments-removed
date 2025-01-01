@@ -2968,6 +2968,14 @@ toolbar#nav-bar {
                         "test": self.lastTestSeen,
                         "message": msg,
                     }
+
+                    
+                    key = message["test"].split(" ")[0].split("/")[-1].strip()
+                    if key not in self.expectedError:
+                        self.expectedError[key] = message.get(
+                            "message", message["message"]
+                        ).strip()
+
                     
                     
                     self.message_logger.process_message(message)
@@ -3026,6 +3034,14 @@ toolbar#nav-bar {
                     "test": self.lastTestSeen,
                     "message": "application terminated with exit code %s" % status,
                 }
+
+                
+                key = message["test"].split(" ")[0].split("/")[-1].strip()
+                if key not in self.expectedError:
+                    self.expectedError[key] = message.get(
+                        "message", message["message"]
+                    ).strip()
+
                 
                 
                 self.message_logger.process_message(message)
@@ -3970,6 +3986,12 @@ toolbar#nav-bar {
             "message": "application timed out after %d seconds with no output"
             % int(timeout),
         }
+
+        
+        key = message["test"].split(" ")[0].split("/")[-1].strip()
+        if key not in self.expectedError:
+            self.expectedError[key] = message.get("message", message["message"]).strip()
+
         
         
         self.message_logger.process_message(message)
