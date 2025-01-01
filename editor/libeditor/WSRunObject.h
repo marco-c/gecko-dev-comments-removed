@@ -394,18 +394,6 @@ class MOZ_STACK_CLASS WSScanResult final {
     return !InVisibleOrCollapsibleCharacters();
   }
 
-  [[nodiscard]] bool ReachedLineBoundary() const {
-    switch (mReason) {
-      case WSType::CurrentBlockBoundary:
-      case WSType::OtherBlockBoundary:
-      case WSType::BRElement:
-      case WSType::PreformattedLineBreak:
-        return true;
-      default:
-        return ReachedHRElement();
-    }
-  }
-
  private:
   nsCOMPtr<nsIContent> mContent;
   Maybe<uint32_t> mOffset;
@@ -1488,7 +1476,6 @@ class WhiteSpaceVisibilityKeeper final {
 
  public:
   using InsertTextTo = EditorBase::InsertTextTo;
-  using LineBreakType = HTMLEditor::LineBreakType;
 
   WhiteSpaceVisibilityKeeper() = delete;
   explicit WhiteSpaceVisibilityKeeper(
@@ -1660,10 +1647,8 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CreateLineBreakResult,
-                                                 nsresult>
-  InsertLineBreak(LineBreakType aLineBreakType, HTMLEditor& aHTMLEditor,
-                  const EditorDOMPoint& aPointToInsert,
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CreateElementResult, nsresult>
+  InsertBRElement(HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPointToInsert,
                   const Element& aEditingHost);
 
   

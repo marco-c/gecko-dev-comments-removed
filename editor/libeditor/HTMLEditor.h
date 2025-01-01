@@ -770,17 +770,6 @@ class HTMLEditor final : public EditorBase,
     BRElement,  
     Linefeed,   
   };
-  friend std::ostream& operator<<(std::ostream& aStream,
-                                  const LineBreakType aLineBreakType) {
-    switch (aLineBreakType) {
-      case LineBreakType::BRElement:
-        return aStream << "LineBreakType::BRElement";
-      case LineBreakType::Linefeed:
-        return aStream << "LineBreakType::BRElement";
-    }
-    MOZ_ASSERT_UNREACHABLE("Invalid LineBreakType");
-    return aStream;
-  }
 
   
 
@@ -815,11 +804,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-  MOZ_CAN_RUN_SCRIPT Result<CreateLineBreakResult, nsresult> InsertLineBreak(
-      WithTransaction aWithTransaction, LineBreakType aLineBreakType,
-      const EditorDOMPoint& aPointToInsert, EDirection aSelect = eNone);
+  MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult> InsertBRElement(
+      WithTransaction aWithTransaction, const EditorDOMPoint& aPointToInsert,
+      EDirection aSelect = eNone);
 
   
 
@@ -1191,7 +1178,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   HandleInsertParagraphInMailCiteElement(Element& aMailCiteElement,
                                          const EditorDOMPoint& aPointToSplit,
                                          const Element& aEditingHost);
@@ -1620,32 +1607,16 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-  [[nodiscard]] static bool CanInsertLineBreak(LineBreakType aLineBreakType,
-                                               const nsIContent& aContent);
-
-  
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateLineBreakResult, nsresult>
-  InsertPaddingBRElementToMakeEmptyLineVisibleIfNeeded(
-      const EditorDOMPoint& aPointToInsert, const Element& aEditingHost);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
+  InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
+      const EditorDOMPoint& aPointToInsert);
 
   
 
 
 
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateLineBreakResult, nsresult>
-  InsertPaddingBRElementIfInEmptyBlock(
-      const EditorDOMPoint& aPoint,
-      nsIEditor::EStripWrappers aDeleteEmptyInlines);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  InsertPaddingBRElementForEmptyLastLineIfNeeded(Element& aElement);
 
   
 
@@ -1657,7 +1628,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateLineBreakResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
   InsertPaddingBRElementIfNeeded(const EditorDOMPoint& aPoint,
                                  nsIEditor::EStripWrappers aDeleteEmptyInlines,
                                  const Element& aEditingHost);
@@ -1666,6 +1637,13 @@ class HTMLEditor final : public EditorBase,
   DeleteRangesWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
                               nsIEditor::EStripWrappers aStripWrappers,
                               const AutoRangeArray& aRangesToDelete) override;
+
+  
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  MaybeInsertPaddingBRElementForEmptyLastLineAtSelection();
 
   
 
@@ -3355,10 +3333,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-  MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult> PrepareToInsertLineBreak(
-      LineBreakType aLineBreakType, const EditorDOMPoint& aPointToInsert);
+  MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult> PrepareToInsertBRElement(
+      const EditorDOMPoint& aPointToInsert);
 
   
 
@@ -4654,8 +4630,6 @@ class HTMLEditor final : public EditorBase,
                                     
   friend class
       WhiteSpaceVisibilityKeeper;  
-                                   
-                                   
                                    
                                    
                                    
