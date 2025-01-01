@@ -34,7 +34,14 @@ SOURCES["RLBoxSoundTouch.cpp"].flags += ["-DMOZILLA_INTERNAL_API"]
 if CONFIG["MOZ_WASM_SANDBOXING_SOUNDTOUCH"]:
     include("/security/rlbox/rlbox.mozbuild")
 
-    RLBoxLibrary("rlboxsoundtouch")
+    
+    
+    
+    
+    
+    
+    
+    RLBoxLibrary("rlboxsoundtouch", use_segue=False)
 
     DEFINES["WASM_RT_GROW_FAILED_CRASH"] = True
 
