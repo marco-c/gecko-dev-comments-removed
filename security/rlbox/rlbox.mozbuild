@@ -14,7 +14,6 @@ def RLBoxLibrary(name, use_segue=True):
 
     SOURCES += [f"!{name}.wasm.c"]
     SOURCES += ["/third_party/wasm2c/wasm2c/wasm-rt-impl.c"]
-    SOURCES += ["/third_party/wasm2c/wasm2c/wasm-rt-mem-impl.c"]
 
     
 
@@ -32,7 +31,7 @@ def RLBoxLibrary(name, use_segue=True):
     DEFINES["WASM_RT_TRAP_HANDLER"] = "moz_wasm2c_trap_handler"
 
     
-    DEFINES["WASM_RT_NONCONFORMING_UNCHECKED_STACK_EXHAUSTION"] = 1
+    DEFINES["WASM_RT_USE_STACK_DEPTH_COUNT"] = 0
 
     
     
