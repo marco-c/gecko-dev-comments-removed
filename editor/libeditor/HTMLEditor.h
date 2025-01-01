@@ -1003,10 +1003,11 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   ClearStyleAt(const EditorDOMPoint& aPoint,
                const EditorInlineStyle& aStyleToRemove,
-               SpecifiedStyle aSpecifiedStyle);
+               SpecifiedStyle aSpecifiedStyle, const Element& aEditingHost);
 
   MOZ_CAN_RUN_SCRIPT nsresult SetPositionToAbsolute(Element& aElement);
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
@@ -1659,10 +1660,12 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitNodeResult, nsresult>
   SplitParagraphWithTransaction(Element& aParentDivOrP,
                                 const EditorDOMPoint& aStartOfRightNode,
-                                dom::HTMLBRElement* aMayBecomeVisibleBRElement);
+                                dom::HTMLBRElement* aMayBecomeVisibleBRElement,
+                                const Element& aEditingHost);
 
   
 
@@ -1807,6 +1810,21 @@ class HTMLEditor final : public EditorBase,
       const EditorDOMPointType& aStartPoint,
       const EditorDOMPointType& aEndPoint,
       TreatEmptyTextNodes aTreatEmptyTextNodes);
+
+  
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  DeleteLineBreakWithTransaction(const EditorLineBreak& aLineBreak,
+                                 nsIEditor::EStripWrappers aDeleteEmptyInlines,
+                                 const Element& aEditingHost);
 
   
 

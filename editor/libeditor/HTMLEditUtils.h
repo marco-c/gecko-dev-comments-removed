@@ -2026,7 +2026,14 @@ class HTMLEditUtils final {
       if (auto* brElement = dom::HTMLBRElement::FromNode(*content)) {
         return Some(EditorLineBreakType(*brElement));
       }
-      
+      if (auto* textNode = Text::FromNode(*content)) {
+        if (EditorUtils::IsNewLinePreformatted(*textNode)) {
+          uint32_t offset = textNode->TextFragment().FindChar(kNewLine);
+          if (offset != nsTextFragment::kNotFound) {
+            return Some(EditorLineBreakType(*textNode, offset));
+          }
+        }
+      }
     }
     return Nothing();
   }
