@@ -2974,7 +2974,6 @@
 
 
 
-
     removeTabGroup(group, options = {}) {
       if (this.tabGroupMenu.panel.state != "closed") {
         this.tabGroupMenu.panel.hidePopup(options.animate);
@@ -4022,27 +4021,30 @@
 
 
 
+
+
     removeAllTabsBut(aTab, aParams = {}) {
       let {
         skipWarnAboutClosingTabs = false,
         skipPinnedOrSelectedTabs = true,
       } = aParams;
 
+      
       let filterFn;
 
       
       if (skipPinnedOrSelectedTabs) {
         if (aTab?.multiselected) {
-          filterFn = tab => !tab.multiselected && !tab.pinned;
+          filterFn = tab => !tab.multiselected && !tab.pinned && !tab.hidden;
         } else {
-          filterFn = tab => tab != aTab && !tab.pinned;
+          filterFn = tab => tab != aTab && !tab.pinned && !tab.hidden;
         }
       } else {
         
         filterFn = tab => tab != aTab;
       }
 
-      let tabsToRemove = this.visibleTabs.filter(filterFn);
+      let tabsToRemove = this.openTabs.filter(filterFn);
 
       
       if (
@@ -4117,14 +4119,35 @@
     ) {
       
       
+      
       let tabsWithBeforeUnloadPrompt = [];
+      
       let tabsWithoutBeforeUnload = [];
+      
       let beforeUnloadPromises = [];
+      
       let lastToClose;
+      
+
+
+
+
+
+
+
+      let tabGroupsSurvivingTabs = new Map();
 
       for (let tab of tabs) {
         if (!skipRemoves) {
           tab._closedInGroup = true;
+        }
+        if (!skipRemoves && !skipSessionStore) {
+          if (tab.group) {
+            if (!tabGroupsSurvivingTabs.has(tab.group)) {
+              tabGroupsSurvivingTabs.set(tab.group, new Set(tab.group.tabs));
+            }
+            tabGroupsSurvivingTabs.get(tab.group).delete(tab);
+          }
         }
         if (!skipRemoves && tab.selected) {
           lastToClose = tab;
@@ -4179,6 +4202,22 @@
           );
         } else {
           tabsWithoutBeforeUnload.push(tab);
+        }
+      }
+
+      if (!skipRemoves && !skipSessionStore) {
+        for (let [
+          tabGroup,
+          survivingTabs,
+        ] of tabGroupsSurvivingTabs.entries()) {
+          
+          
+          
+          
+          if (!survivingTabs.size) {
+            tabGroup.save();
+            this.removeTabGroup(tabGroup);
+          }
         }
       }
 
@@ -8427,9 +8466,12 @@ var TabContextMenu = {
 
     
     let unpinnedTabsToClose = multiselectionContext
-      ? gBrowser.visibleTabs.filter(t => !t.multiselected && !t.pinned).length
-      : gBrowser.visibleTabs.filter(t => t != this.contextTab && !t.pinned)
-          .length;
+      ? gBrowser.openTabs.filter(
+          t => !t.multiselected && !t.pinned && !t.hidden
+        ).length
+      : gBrowser.openTabs.filter(
+          t => t != this.contextTab && !t.pinned && !t.hidden
+        ).length;
     let closeOtherTabsItem = document.getElementById("context_closeOtherTabs");
     closeOtherTabsItem.disabled = unpinnedTabsToClose < 1;
 
