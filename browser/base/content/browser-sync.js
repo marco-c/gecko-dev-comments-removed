@@ -817,6 +817,7 @@ var gSync = {
       case "PanelUI-fxa-menu-monitor-button":
         this.openMonitorLink(button);
         break;
+      case "PanelUI-services-menu-relay-button":
       case "PanelUI-fxa-menu-relay-button":
         this.openRelayLink(button);
         break;
@@ -862,6 +863,7 @@ var gSync = {
     this.updateSyncStatus(state);
     this.updateFxAPanel(state);
     this.ensureFxaDevices();
+    this.fetchListOfOAuthClients();
   },
 
   
@@ -903,6 +905,24 @@ var gSync = {
       return true;
     } catch (e) {
       this.log.error("Refreshing device list failed.", e);
+      return false;
+    }
+  },
+
+  
+
+
+
+  async fetchListOfOAuthClients() {
+    if (!this.isSignedIn) {
+      console.info("Skipping fetching other attached clients");
+      return false;
+    }
+    try {
+      this._attachedClients = await fxAccounts.listAttachedOAuthClients();
+      return true;
+    } catch (e) {
+      this.log.error("Could not fetch attached OAuth clients", e);
       return false;
     }
   },
@@ -2300,7 +2320,16 @@ var gSync = {
   },
 
   
-  
+
+
+
+
+
+
+  hasClientForId(clientId) {
+    return this._attachedClients?.some(c => !!c.id && c.id === clientId);
+  },
+
   updateCTAPanel(anchor) {
     const mainPanelEl = PanelMultiView.getViewNode(
       document,
@@ -2341,7 +2370,21 @@ var gSync = {
         "identity.fxaccounts.toolbar.pxiToolbarEnabled.relayEnabled",
         false
       );
-    relayPanelEl.hidden = !relayEnabled;
+    if (this.hasClientForId(FX_RELAY_OAUTH_CLIENT_ID)) {
+      let myServicesRelayPanelEl = PanelMultiView.getViewNode(
+        document,
+        "PanelUI-services-menu-relay-button"
+      );
+      let servicesContainerEl = PanelMultiView.getViewNode(
+        document,
+        "PanelUI-fxa-menu-services"
+      );
+      myServicesRelayPanelEl.hidden = false;
+      relayPanelEl.hidden = true;
+      servicesContainerEl.hidden = false;
+    } else {
+      relayPanelEl.hidden = !relayEnabled;
+    }
 
     
     let VpnPanelEl = PanelMultiView.getViewNode(
@@ -2407,12 +2450,7 @@ var gSync = {
       return;
     }
 
-    
-    let attachedClients = await fxAccounts.listAttachedOAuthClients();
-    
-    let hasPXIClient = attachedClients.some(c => !!c.id && c.id === clientId);
-
-    const url = hasPXIClient ? signedInUrl : defaultUrl;
+    const url = this.hasClientForId(clientId) ? signedInUrl : defaultUrl;
     
     url.search = searchParams.toString();
     url.searchParams.append("utm_content", "signedIn");
