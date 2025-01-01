@@ -103,7 +103,7 @@ nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
              "The inner URI for about:blank must be moz-safe-about:blank");
 
   
-  if (!nsScriptSecurityManager::GetStrictFileOriginPolicy() &&
+  if (!StaticPrefs::security_fileuri_strict_origin_policy_AtStartup() &&
       NS_URIIsLocalFile(origin)) {
     
     
@@ -367,7 +367,7 @@ static nsresult GetSpecialBaseDomain(const nsCOMPtr<nsIURI>& aURI,
   if (NS_URIIsLocalFile(aURI)) {
     
     
-    if (!nsScriptSecurityManager::GetStrictFileOriginPolicy()) {
+    if (!StaticPrefs::security_fileuri_strict_origin_policy_AtStartup()) {
       *aHandled = true;
       aBaseDomain.AssignLiteral("UNIVERSAL_FILE_URI_ORIGIN");
       return NS_OK;
