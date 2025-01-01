@@ -9520,11 +9520,8 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
     const results = [...data];
     for (let position of spocsPositions) {
       const spoc = spocsData[spocIndexPlacementMap[placementName]];
-      const format = spoc?.format;
       
-      
-      
-      if (!spoc || format === "billboard" || format === "leaderboard") {
+      if (!spoc) {
         break;
       }
 
@@ -9632,12 +9629,19 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
       const placement = spocsPlacement || {};
       const placementName = placement.name || "newtab_spocs";
       const spocsData = spocs.data[placementName];
+
       
       if (spocs.loaded && spocsData?.items?.length) {
+        
+        
+        const excludedSpocs = ["billboard", "leaderboard"];
+        const filteredSpocs = spocsData?.items?.filter(
+          item => !excludedSpocs.includes(item.format)
+        );
         result = fillSpocPositionsForPlacement(
           result,
           spocsPositions,
-          spocsData.items,
+          filteredSpocs,
           placementName
         );
       }
