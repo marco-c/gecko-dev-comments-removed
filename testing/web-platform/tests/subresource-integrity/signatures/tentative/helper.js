@@ -27,6 +27,7 @@ const kInvalidKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 const EXPECT_BLOCKED = "block";
 const EXPECT_LOADED = "loaded";
 
+const kAcceptSignature = "accept-signature";
 
 
 
@@ -56,13 +57,13 @@ function generate_fetch_test(request_data, integrity, expectation, description) 
         
         
         if (integrity.includes(`ed25519-${kInvalidKey}`)) {
-          assert_equals(r.headers.get('accept-signatures'),
+          assert_equals(r.headers.get(kAcceptSignature),
                         `sig0=("identity-digest";sf);keyid="${kInvalidKey}";tag="sri", sig1=("identity-digest";sf);keyid="${kValidKeys['rfc']}";tag="sri"`,
-                        "`accept-signatures` was set.");
+                        "`accept-signature` was set.");
         } else if (integrity.includes(`ed25519-${kValidKeys['rfc']}`)) {
-          assert_equals(r.headers.get('accept-signatures'),
+          assert_equals(r.headers.get(kAcceptSignature),
                         `sig0=("identity-digest";sf);keyid="${kValidKeys['rfc']}";tag="sri"`,
-                        "`accept-signatures` was set.");
+                        "`accept-signature` was set.");
         }
       });
     } else {

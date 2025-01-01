@@ -35,9 +35,9 @@ def main(request, response):
                        request.GET.first(b'type', b'text/plain'))
 
   
-  acceptSigs = request.headers.get(b'accept-signatures', b'')
-  response.headers.set(b'accept-signatures', acceptSigs)
-  response.headers.set(b'access-control-expose-headers', b'accept-signatures')
+  acceptSigs = request.headers.get(b'accept-signature', b'')
+  response.headers.set(b'accept-signature', acceptSigs)
+  response.headers.set(b'access-control-expose-headers', b'accept-signature')
 
   response.status_code = 200
   response.content = request.GET.first(b'body', '')
