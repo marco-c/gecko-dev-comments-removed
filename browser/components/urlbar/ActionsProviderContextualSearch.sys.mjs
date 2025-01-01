@@ -19,7 +19,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
   UrlbarProviderAutofill: "resource:///modules/UrlbarProviderAutofill.sys.mjs",
   UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.sys.mjs",
-  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
 });
 
 const ENABLED_PREF = "contextualSearch.enabled";
@@ -27,6 +26,8 @@ const ENABLED_PREF = "contextualSearch.enabled";
 const INSTALLED_ENGINE = "installed-engine";
 const OPEN_SEARCH_ENGINE = "opensearch-engine";
 const CONTEXTUAL_SEARCH_ENGINE = "contextual-search-engine";
+
+const DEFAULT_ICON = "chrome://browser/skin/search-engine-placeholder@2x.png";
 
 /**
  * A provider that returns an option for using the search engine provided
@@ -53,8 +54,6 @@ class ProviderContextualSearch extends ActionsProvider {
       queryContext.trimmedSearchString &&
       lazy.UrlbarPrefs.getScotchBonnetPref(ENABLED_PREF) &&
       !queryContext.searchMode &&
-      queryContext.tokens.length == 1 &&
-      queryContext.tokens[0].type != lazy.UrlbarTokenizer.TYPE.URL &&
       lazy.UrlbarPrefs.get("suggest.engines")
     );
   }
@@ -80,7 +79,7 @@ class ProviderContextualSearch extends ActionsProvider {
   }
 
   async createActionResult({ type, engine }) {
-    let icon = engine?.icon || (await engine?.getIconURL?.());
+    let icon = engine?.icon || (await engine?.getIconURL?.()) || DEFAULT_ICON;
     return new ActionsResult({
       key: "contextual-search",
       l10nId: "urlbar-result-search-with",
@@ -230,49 +229,28 @@ class ProviderContextualSearch extends ActionsProvider {
 
   async pickAction(queryContext, controller, _element) {
     let { type, engine } = this.#resultEngine;
-    let enterSearchMode = true;
-    let engineObj;
 
-    if (
-      (type == CONTEXTUAL_SEARCH_ENGINE || type == OPEN_SEARCH_ENGINE) &&
-      !queryContext.isPrivate
-    ) {
-      engineObj = await this.#installEngine({ type, engine }, controller);
-    } else if (type == OPEN_SEARCH_ENGINE) {
+    if (type == OPEN_SEARCH_ENGINE) {
       let openSearchEngineData = await lazy.loadAndParseOpenSearchEngine(
         Services.io.newURI(engine.uri)
       );
-      engineObj = new lazy.OpenSearchEngine({
-        engineData: openSearchEngineData,
-      });
-      enterSearchMode = false;
-    } else if (type == INSTALLED_ENGINE || type == CONTEXTUAL_SEARCH_ENGINE) {
-      engineObj = engine;
+      engine = new lazy.OpenSearchEngine({ engineData: openSearchEngineData });
     }
 
     this.#performSearch(
-      engineObj,
+      engine,
       queryContext.searchString,
       controller.input,
-      enterSearchMode
+      type == INSTALLED_ENGINE
     );
-  }
 
-  async #installEngine({ type, engine }, controller) {
-    let engineObj;
-    if (type == CONTEXTUAL_SEARCH_ENGINE) {
-      await Services.search.addContextualSearchEngine(engine);
-      engineObj = engine;
-    } else {
-      engineObj = await Services.search.addOpenSearchEngine(
-        engine.uri,
-        engine.icon,
-        controller.input.browsingContext
-      );
+    if (
+      !queryContext.isPrivate &&
+      type != INSTALLED_ENGINE &&
+      (await Services.search.shouldShowInstallPrompt(engine))
+    ) {
+      this.#showInstallPrompt(controller, engine);
     }
-    engineObj.setAttr("auto-installed", true);
-    this.#hostEngines.clear();
-    return engineObj;
   }
 
   async #performSearch(engine, search, input, enterSearchMode) {
@@ -284,6 +262,35 @@ class ProviderContextualSearch extends ActionsProvider {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
     input.window.gBrowser.selectedBrowser.focus();
+  }
+
+  #showInstallPrompt(controller, engineData) {
+    let win = controller.input.window;
+    let buttons = [
+      {
+        "l10n-id": "install-search-engine-add",
+        callback() {
+          Services.search.addSearchEngine(engineData);
+        },
+      },
+      {
+        "l10n-id": "install-search-engine-no",
+        callback() {},
+      },
+    ];
+
+    win.gNotificationBox.appendNotification(
+      "install-search-engine",
+      {
+        label: {
+          "l10n-id": "install-search-engine",
+          "l10n-args": { engineName: engineData.name },
+        },
+        image: "chrome://global/skin/icons/question-64.png",
+        priority: win.gNotificationBox.PRIORITY_INFO_LOW,
+      },
+      buttons
+    );
   }
 }
 
