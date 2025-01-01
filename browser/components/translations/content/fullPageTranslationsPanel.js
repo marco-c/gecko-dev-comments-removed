@@ -1610,7 +1610,8 @@ var FullPageTranslationsPanel = new (class {
               
               buttonLocale.hidden = false;
               buttonCircleArrows.hidden = true;
-              buttonLocale.innerText = requestedTranslationPair.toLanguage;
+              buttonLocale.innerText =
+                requestedTranslationPair.toLanguage.split("-")[0];
             } else {
               document.l10n.setAttributes(
                 button,
