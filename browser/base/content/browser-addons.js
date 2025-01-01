@@ -18,6 +18,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
   ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
   OriginControls: "resource://gre/modules/ExtensionPermissions.sys.mjs",
+  PERMISSION_L10N: "resource://gre/modules/ExtensionPermissionMessages.sys.mjs",
   SITEPERMS_ADDON_TYPE:
     "resource://gre/modules/addons/siteperms-addon-utils.sys.mjs",
 });
@@ -183,7 +184,7 @@ customElements.define(
     }
 
     render() {
-      const { strings, showIncognitoCheckbox } =
+      const { strings, showIncognitoCheckbox, isUserScriptsRequest } =
         this.notification.options.customElementOptions;
 
       const { textEl, introEl, permsSingleEl, permsListEl } = this;
@@ -192,6 +193,9 @@ customElements.define(
       const doc = this.ownerDocument;
 
       this.#clearChildElements();
+      
+      
+      this.#setAllowButtonEnabled(true);
 
       if (strings.text) {
         textEl.textContent = strings.text;
@@ -242,6 +246,25 @@ customElements.define(
           permsListEl.appendChild(item);
         }
         permsListEl.hidden = false;
+        return;
+      }
+
+      if (isUserScriptsRequest) {
+        
+        
+        
+
+        let { checkboxEl, warningEl } = this.#createUserScriptsPermissionItems(
+          
+          
+          strings.msgs[0]
+        );
+
+        this.#setAllowButtonEnabled(false);
+
+        permsSingleEl.append(checkboxEl, warningEl);
+        permsSingleEl.classList.add("webext-perm-optional");
+        permsSingleEl.hidden = false;
         return;
       }
 
@@ -314,6 +337,54 @@ customElements.define(
 
       permsListEl.textContent = "";
       permsListEl.hidden = true;
+    }
+
+    #createUserScriptsPermissionItems(userScriptsPermissionMessage) {
+      const doc = this.ownerDocument;
+
+      let checkboxEl = doc.createXULElement("checkbox");
+      checkboxEl.label = userScriptsPermissionMessage;
+      checkboxEl.checked = false;
+      checkboxEl.addEventListener("CheckboxStateChange", () => {
+        
+        this.#setAllowButtonEnabled(checkboxEl.checked);
+      });
+
+      let warningEl = document.createElement("moz-message-bar");
+      warningEl.setAttribute("type", "warning");
+      warningEl.setAttribute(
+        "message",
+        lazy.PERMISSION_L10N.formatValueSync(
+          "webext-perms-extra-warning-userScripts-short"
+        )
+      );
+
+      return { checkboxEl, warningEl };
+    }
+
+    #setAllowButtonEnabled(allowed) {
+      let disabled = !allowed;
+      
+      
+      
+      if (disabled) {
+        this.setAttribute("mainactiondisabled", "true");
+      } else {
+        this.removeAttribute("mainactiondisabled");
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      this.toggleAttribute("invalidselection", disabled);
     }
 
     #createPrivateBrowsingCheckbox() {
