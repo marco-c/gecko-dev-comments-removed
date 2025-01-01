@@ -5,21 +5,22 @@
 use std::sync::RwLock;
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, uniffi::Record)]
 pub struct Point {
-    x: f64,
-    y: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, uniffi::Record)]
 pub struct Vector {
-    dx: f64,
-    dy: f64,
+    pub dx: f64,
+    pub dy: f64,
 }
 
 
+#[uniffi::export]
 pub fn translate(p: &Point, v: Vector) -> Point {
     Point {
         x: p.x + v.dx,
@@ -29,37 +30,40 @@ pub fn translate(p: &Point, v: Vector) -> Point {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, uniffi::Object)]
 pub struct Sprite {
     
     current_position: RwLock<Point>,
 }
 
+#[uniffi::export]
 impl Sprite {
-    fn new(initial_position: Option<Point>) -> Sprite {
+    #[uniffi::constructor]
+    pub fn new(initial_position: Option<Point>) -> Sprite {
         Sprite {
             current_position: RwLock::new(initial_position.unwrap_or(Point { x: 0.0, y: 0.0 })),
         }
     }
 
-    fn new_relative_to(reference: Point, direction: Vector) -> Sprite {
+    #[uniffi::constructor]
+    pub fn new_relative_to(reference: Point, direction: Vector) -> Sprite {
         Sprite {
             current_position: RwLock::new(translate(&reference, direction)),
         }
     }
 
-    fn get_position(&self) -> Point {
+    pub fn get_position(&self) -> Point {
         self.current_position.read().unwrap().clone()
     }
 
-    fn move_to(&self, position: Point) {
+    pub fn move_to(&self, position: Point) {
         *self.current_position.write().unwrap() = position;
     }
 
-    fn move_by(&self, direction: Vector) {
+    pub fn move_by(&self, direction: Vector) {
         let mut current_position = self.current_position.write().unwrap();
         *current_position = translate(&current_position, direction)
     }
 }
 
-uniffi::include_scaffolding!("sprites");
+uniffi::setup_scaffolding!("sprites");
