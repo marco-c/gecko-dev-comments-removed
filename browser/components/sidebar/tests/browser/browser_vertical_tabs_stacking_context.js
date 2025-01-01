@@ -7,7 +7,12 @@
 
 
 add_task(async function test_click_urlbar_results() {
-  await SpecialPowers.pushPrefEnv({ set: [["sidebar.verticalTabs", true]] });
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.verticalTabs", true],
+      ["sidebar.visibility", "always-show"],
+    ],
+  });
 
   await TestUtils.waitForCondition(() => {
     return BrowserTestUtils.isVisible(document.querySelector("sidebar-main"));
