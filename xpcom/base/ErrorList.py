@@ -328,8 +328,6 @@ with modules["NETWORK"]:
     
     errors["NS_ERROR_NET_ERROR_RESPONSE"] = FAILURE(35)
     
-    errors["NS_ERROR_NET_EMPTY_RESPONSE"] = FAILURE(36)
-    
     errors["NS_ERROR_NET_INTERRUPT"] = FAILURE(71)
     
     errors["NS_ERROR_PROXY_CONNECTION_REFUSED"] = FAILURE(72)
