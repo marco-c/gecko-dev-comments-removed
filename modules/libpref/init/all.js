@@ -4186,6 +4186,3 @@ pref("privacy.query_stripping.strip_on_share.enableTestMode", false);
 
 
 pref("privacy.query_stripping.strip_on_share.canDisable", true);
-
-
-pref("captchadetection.loglevel", "Warn");

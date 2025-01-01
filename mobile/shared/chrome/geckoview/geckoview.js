@@ -22,8 +22,6 @@ ChromeUtils.defineESModuleGetters(this, {
   RemoteSecuritySettings:
     "resource://gre/modules/psm/RemoteSecuritySettings.sys.mjs",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
-  CaptchaDetectionPingUtils:
-    "resource://gre/modules/CaptchaDetectionPingUtils.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(this, "WindowEventDispatcher", () =>
@@ -922,14 +920,6 @@ function startup() {
       
       
       Blocklist.loadBlocklistAsync();
-    });
-
-    InitLater(() => {
-      
-      
-      
-      
-      CaptchaDetectionPingUtils.init();
     });
 
     
