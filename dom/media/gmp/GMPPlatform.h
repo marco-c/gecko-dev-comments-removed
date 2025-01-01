@@ -32,24 +32,6 @@ GMPTask* NewGMPTask(std::function<void()>&& aFunction);
 
 GMPErr SetTimerOnMainThread(GMPTask* aTask, int64_t aTimeoutMS);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-using SpinPendingPredicate = std::function<bool()>;
-bool SpinPendingGmpEventsUntil(const SpinPendingPredicate& aPred,
-                               uint32_t aTimeoutMs);
-
 void SendFOGData(ipc::ByteBuf&& buf);
 
 #ifdef XP_WIN
