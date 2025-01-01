@@ -16,10 +16,16 @@
 namespace mozilla::glean {
 
 typedef std::function<void(const nsACString& aReason)> PingTestCallback;
+typedef std::function<nsresult(const nsACString& aReason)>
+    FalliblePingTestCallback;
+
+class GleanPing;
 
 namespace impl {
 
 class Ping {
+  friend class ::mozilla::glean::GleanPing;
+
  public:
   constexpr explicit Ping(uint32_t aId) : mId(aId) {}
 
@@ -58,6 +64,7 @@ class Ping {
 
 
   void TestBeforeNextSubmit(PingTestCallback&& aCallback) const;
+  void TestBeforeNextSubmitFallible(FalliblePingTestCallback&& aCallback) const;
 
   
 
@@ -70,6 +77,8 @@ class Ping {
   void SetEnabled(bool aValue) const;
 
  private:
+  nsresult SubmitInternal(const nsACString& aReason = nsCString()) const;
+
   const uint32_t mId;
 };
 
