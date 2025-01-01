@@ -1059,8 +1059,8 @@ void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument,
 }
 
 void nsMenuX::ObserveContentRemoved(dom::Document* aDocument,
-                                    nsIContent* aContainer, nsIContent* aChild,
-                                    nsIContent* aPreviousSibling) {
+                                    nsIContent* aContainer,
+                                    nsIContent* aChild) {
   if (gConstructingMenu) {
     return;
   }
@@ -1108,6 +1108,7 @@ void nsMenuX::ObserveContentInserted(dom::Document* aDocument,
 }
 
 void nsMenuX::SetupIcon() {
+  SetRebuild(true);
   mIcon->SetupIcon(mContent);
   mNativeMenuItem.image = mIcon->GetIconImage();
 }
