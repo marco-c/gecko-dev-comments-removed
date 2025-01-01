@@ -6,7 +6,6 @@ mod reexport_appservices_uniffi_scaffolding {
     tabs::uniffi_reexport_scaffolding!();
     relevancy::uniffi_reexport_scaffolding!();
     suggest::uniffi_reexport_scaffolding!();
-    webext_storage::uniffi_reexport_scaffolding!();
 }
 
 

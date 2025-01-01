@@ -239,7 +239,7 @@ pub struct Engine<'a> {
     pub recent_clients: HashMap<String, RemoteClient>,
 }
 
-impl Engine<'_> {
+impl<'a> Engine<'a> {
     
     
     pub fn new<'b>(

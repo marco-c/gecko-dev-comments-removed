@@ -18,7 +18,6 @@ pub mod storage;
 
 #[cfg(feature = "jexl")]
 pub(crate) mod jexl_filter;
-mod macros;
 
 pub use client::{Attachment, RemoteSettingsRecord, RemoteSettingsResponse, RsJsonObject};
 pub use config::{RemoteSettingsConfig, RemoteSettingsConfig2, RemoteSettingsServer};
@@ -159,6 +158,8 @@ impl RemoteSettingsClient {
     
     
     
+    
+    
     #[uniffi::method(default(sync_if_empty = false))]
     pub fn get_records(&self, sync_if_empty: bool) -> Option<Vec<RemoteSettingsRecord>> {
         match self.internal.get_records(sync_if_empty) {
@@ -197,8 +198,8 @@ impl RemoteSettingsClient {
     
     
     #[handle_error(Error)]
-    pub fn get_attachment(&self, record: RemoteSettingsRecord) -> ApiResult<Vec<u8>> {
-        self.internal.get_attachment(record)
+    pub fn get_attachment(&self, attachment_id: String) -> ApiResult<Vec<u8>> {
+        self.internal.get_attachment(&attachment_id)
     }
 }
 

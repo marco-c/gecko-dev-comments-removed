@@ -281,8 +281,6 @@ impl SuggestStore {
     
     
     
-    
-    
     #[handle_error(Error)]
     pub fn fetch_geonames(
         &self,

@@ -3626,6 +3626,7 @@ pref("webextensions.webRequest.requestBodyMaxRawBytes", 16777216);
   pref("webextensions.storage.session.enforceQuota", false);
 #endif
 
+pref("webextensions.storage.sync.enabled", true);
 
 pref("webextensions.storage.sync.kinto", false);
 

@@ -1,7 +1,3 @@
-
-
-
-
 use relevancy::{
     url_hash::{hash_url, UrlHash},
     Interest,

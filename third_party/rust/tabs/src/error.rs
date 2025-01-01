@@ -25,8 +25,14 @@ pub enum TabsApiError {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[cfg(feature = "full-sync")]
+    #[error("Error synchronizing: {0}")]
+    SyncAdapterError(#[from] sync15::Error),
+
     
     
+    
+    #[cfg(not(feature = "full-sync"))]
     #[error("Sync feature is disabled: {0}")]
     SyncAdapterError(String),
 

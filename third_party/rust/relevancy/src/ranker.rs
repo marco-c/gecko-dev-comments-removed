@@ -1,7 +1,3 @@
-
-
-
-
 use std::cmp::max;
 
 use crate::interest::{Interest, InterestVector};
