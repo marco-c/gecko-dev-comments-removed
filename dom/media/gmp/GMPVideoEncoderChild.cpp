@@ -6,6 +6,7 @@
 #include "GMPVideoEncoderChild.h"
 #include "GMPContentChild.h"
 #include <stdio.h>
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/Unused.h"
 #include "GMPVideoEncodedFrameImpl.h"
 #include "GMPVideoi420FrameImpl.h"
@@ -166,6 +167,16 @@ mozilla::ipc::IPCResult GMPVideoEncoderChild::RecvSetPeriodicKeyFrames(
 }
 
 void GMPVideoEncoderChild::ActorDestroy(ActorDestroyReason why) {
+  
+  
+  
+  
+  if (!SpinPendingGmpEventsUntil(
+          [&]() -> bool { return mVideoHost.IsDecodedFramesEmpty(); },
+          StaticPrefs::media_gmp_coder_shutdown_timeout_ms())) {
+    NS_WARNING("Timed out waiting for synchronous events!");
+  }
+
   if (mVideoEncoder) {
     
     
