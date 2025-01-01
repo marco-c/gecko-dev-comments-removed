@@ -29,8 +29,9 @@ namespace mozilla {
 class ServoStyleSet;
 
 namespace dom {
+class Document;
 class Element;
-}
+}  
 
 
 
@@ -197,6 +198,7 @@ class ServoRestyleState {
 enum class ServoPostTraversalFlags : uint32_t;
 
 class RestyleManager {
+  friend class dom::Document;
   friend class ServoStyleSet;
 
  public:
@@ -323,12 +325,7 @@ class RestyleManager {
   void ContentAppended(nsIContent* aFirstNewContent);
 
   
-  
-  
-  
-  
-  
-  void ContentRemoved(nsIContent* aOldChild, nsIContent* aFollowingSibling);
+  void ContentWillBeRemoved(nsIContent* aOldChild);
 
   
   
