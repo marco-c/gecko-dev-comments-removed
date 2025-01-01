@@ -102,6 +102,8 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     internalProps.dateStyle = lazyDateTimeFormatData.dateStyle;
     internalProps.timeStyle = lazyDateTimeFormatData.timeStyle;
   } else {
+    internalProps.required = lazyDateTimeFormatData.required;
+    internalProps.defaults = lazyDateTimeFormatData.defaults;
     internalProps.hourCycle = formatOptions.hourCycle;
     internalProps.hour12 = formatOptions.hour12;
     internalProps.weekday = formatOptions.weekday;
@@ -404,6 +406,10 @@ function InitializeDateTimeFormat(
     `InitializeDateTimeFormat called with invalid defaults value: ${defaults}`
   );
 
+  
+  
+  
+  
   
   
   
@@ -755,42 +761,8 @@ function InitializeDateTimeFormat(
       );
     }
   } else {
-    
-    var needDefaults = true;
-
-    
-    if (required === "date" || required === "any") {
-      needDefaults =
-        formatOptions.weekday === undefined &&
-        formatOptions.year === undefined &&
-        formatOptions.month === undefined &&
-        formatOptions.day === undefined;
-    }
-
-    
-    if (required === "time" || required === "any") {
-      needDefaults =
-        needDefaults &&
-        formatOptions.dayPeriod === undefined &&
-        formatOptions.hour === undefined &&
-        formatOptions.minute === undefined &&
-        formatOptions.second === undefined &&
-        formatOptions.fractionalSecondDigits === undefined;
-    }
-
-    
-    if (needDefaults && (defaults === "date" || defaults === "all")) {
-      formatOptions.year = "numeric";
-      formatOptions.month = "numeric";
-      formatOptions.day = "numeric";
-    }
-
-    
-    if (needDefaults && (defaults === "time" || defaults === "all")) {
-      formatOptions.hour = "numeric";
-      formatOptions.minute = "numeric";
-      formatOptions.second = "numeric";
-    }
+    lazyDateTimeFormatData.required = required;
+    lazyDateTimeFormatData.defaults = defaults;
 
     
   }
@@ -895,10 +867,7 @@ function createDateTimeFormatFormat(dtf) {
     );
 
     
-    var x = date === undefined ? std_Date_now() : ToNumber(date);
-
-    
-    return intl_FormatDateTime(dtf, x,  false);
+    return intl_FormatDateTime(dtf, date,  false);
   };
 }
 
@@ -956,13 +925,10 @@ function Intl_DateTimeFormat_formatToParts(date) {
   }
 
   
-  var x = date === undefined ? std_Date_now() : ToNumber(date);
-
-  
   getDateTimeFormatInternals(dtf);
 
   
-  return intl_FormatDateTime(dtf, x,  true);
+  return intl_FormatDateTime(dtf, date,  true);
 }
 
 
@@ -995,16 +961,10 @@ function Intl_DateTimeFormat_formatRange(startDate, endDate) {
   }
 
   
-  var x = ToNumber(startDate);
-
-  
-  var y = ToNumber(endDate);
-
-  
   getDateTimeFormatInternals(dtf);
 
   
-  return intl_FormatDateTimeRange(dtf, x, y,  false);
+  return intl_FormatDateTimeRange(dtf, startDate, endDate,  false);
 }
 
 
@@ -1037,16 +997,10 @@ function Intl_DateTimeFormat_formatRangeToParts(startDate, endDate) {
   }
 
   
-  var x = ToNumber(startDate);
-
-  
-  var y = ToNumber(endDate);
-
-  
   getDateTimeFormatInternals(dtf);
 
   
-  return intl_FormatDateTimeRange(dtf, x, y,  true);
+  return intl_FormatDateTimeRange(dtf, startDate, endDate,  true);
 }
 
 
