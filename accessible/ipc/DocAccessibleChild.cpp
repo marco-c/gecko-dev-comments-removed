@@ -21,6 +21,13 @@ namespace mozilla {
 namespace a11y {
 
 
+
+
+
+static constexpr uint32_t kMaxAccsPerMessage =
+    IPC::Channel::kMaximumMessageSize / (2 * 1024);
+
+
 void DocAccessibleChild::FlattenTree(LocalAccessible* aRoot,
                                      nsTArray<LocalAccessible*>& aTree) {
   MOZ_ASSERT(!aRoot->IsDoc(), "documents shouldn't be serialized");
@@ -80,34 +87,62 @@ void DocAccessibleChild::InsertIntoIpcTree(LocalAccessible* aChild,
   nsTArray<LocalAccessible*> shownTree;
   FlattenTree(aChild, shownTree);
   uint32_t totalAccs = shownTree.Length();
-  
-  
-  
-  
-  constexpr uint32_t kMaxAccsPerMessage =
-      IPC::Channel::kMaximumMessageSize / (2 * 1024);
-  nsTArray<AccessibleData> data(std::min(kMaxAccsPerMessage, totalAccs));
-  for (LocalAccessible* child : shownTree) {
-    if (data.Length() == kMaxAccsPerMessage) {
+  nsTArray<AccessibleData> data(std::min(
+      kMaxAccsPerMessage - mMutationEventBatcher.GetCurrentBatchAccCount(),
+      totalAccs));
+
+  for (uint32_t accIndex = 0; accIndex < totalAccs; ++accIndex) {
+    
+    
+    if (data.Length() + mMutationEventBatcher.GetCurrentBatchAccCount() ==
+        kMaxAccsPerMessage) {
       if (ipc::ProcessChild::ExpectingShutdown()) {
         return;
       }
-      SendShowEvent(data, aSuppressShowEvent, false, false);
-      data.ClearAndRetainStorage();
+      
+      
+      const uint32_t accCount = data.Length();
+      AppendMutationEventData(
+          ShowEventData{std::move(data), std::move(aSuppressShowEvent), false,
+                        false},
+          accCount);
+
+      
+      
+      data = nsTArray<AccessibleData>(
+          std::min(kMaxAccsPerMessage, totalAccs - accIndex));
     }
+    LocalAccessible* child = shownTree[accIndex];
     data.AppendElement(SerializeAcc(child));
   }
   if (ipc::ProcessChild::ExpectingShutdown()) {
     return;
   }
   if (!data.IsEmpty()) {
-    SendShowEvent(data, aSuppressShowEvent, true, false);
+    const uint32_t accCount = data.Length();
+    AppendMutationEventData(
+        ShowEventData{std::move(data), std::move(aSuppressShowEvent), true,
+                      false},
+        accCount);
   }
 }
 
 void DocAccessibleChild::ShowEvent(AccShowEvent* aShowEvent) {
   LocalAccessible* child = aShowEvent->GetAccessible();
-  InsertIntoIpcTree(child, false);
+  InsertIntoIpcTree(child,  false);
+}
+
+void DocAccessibleChild::AppendMutationEventData(MutationEventData aData,
+                                                 uint32_t aAccCount) {
+  mMutationEventBatcher.AppendMutationEventData(std::move(aData), aAccCount);
+}
+
+void DocAccessibleChild::SendQueuedMutationEvents() {
+  mMutationEventBatcher.SendQueuedMutationEvents(*this);
+}
+
+size_t DocAccessibleChild::MutationEventQueueLength() const {
+  return mMutationEventBatcher.EventCount();
 }
 
 mozilla::ipc::IPCResult DocAccessibleChild::RecvTakeFocus(const uint64_t& aID) {
@@ -426,6 +461,55 @@ HyperTextAccessible* DocAccessibleChild::IdToHyperTextAccessible(
     const uint64_t& aID) const {
   LocalAccessible* acc = IdToAccessible(aID);
   return acc && acc->IsHyperText() ? acc->AsHyperText() : nullptr;
+}
+
+void DocAccessibleChild::MutationEventBatcher::AppendMutationEventData(
+    MutationEventData aData, uint32_t aAccCount) {
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(aAccCount <= kMaxAccsPerMessage,
+             "More accessibles given than can fit in a single batch");
+
+  
+  
+  if (mCurrentBatchAccCount + aAccCount > kMaxAccsPerMessage) {
+    mBatchBoundaries.AppendElement(mMutationEventData.Length());
+    mCurrentBatchAccCount = 0;
+  }
+  mMutationEventData.AppendElement(std::move(aData));
+  mCurrentBatchAccCount += aAccCount;
+}
+
+void DocAccessibleChild::MutationEventBatcher::SendQueuedMutationEvents(
+    DocAccessibleChild& aDocAcc) {
+  
+  mBatchBoundaries.AppendElement(mMutationEventData.Length());
+
+  
+  size_t batchStartIndex = 0;
+  for (size_t batchEndIndex : mBatchBoundaries) {
+    Span<const MutationEventData> batch{
+        mMutationEventData.Elements() + batchStartIndex,
+        mMutationEventData.Elements() + batchEndIndex};
+    if (ipc::ProcessChild::ExpectingShutdown()) {
+      break;
+    }
+    if (!batch.IsEmpty()) {
+      aDocAcc.SendMutationEvents(batch);
+    }
+    batchStartIndex = batchEndIndex;
+  }
+
+  
+  mMutationEventData.Clear();
+  mBatchBoundaries.Clear();
+  mCurrentBatchAccCount = 0;
 }
 
 }  

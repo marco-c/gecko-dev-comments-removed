@@ -1009,6 +1009,12 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
 
   
   
+  if (mDocument && mDocument->IPCDoc()) {
+    mDocument->IPCDoc()->SendQueuedMutationEvents();
+  }
+
+  
+  
   
   
   
@@ -1027,6 +1033,13 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   }
 
   ProcessEventQueue();
+
+  
+  
+  if (mDocument && mDocument->IPCDoc()) {
+    MOZ_ASSERT(mDocument->IPCDoc()->MutationEventQueueLength() == 0,
+               "Mutation event queue is non-empty.");
+  }
 
   if (IPCAccessibilityActive()) {
     size_t newDocCount = newChildDocs.Length();

@@ -50,8 +50,14 @@ class DocAccessibleChild : public PDocAccessibleChild {
   
 
 
+
+
   void InsertIntoIpcTree(LocalAccessible* aChild, bool aSuppressShowEvent);
   void ShowEvent(AccShowEvent* aShowEvent);
+
+  void AppendMutationEventData(MutationEventData aData, uint32_t aAccCount = 1);
+  void SendQueuedMutationEvents();
+  size_t MutationEventQueueLength() const;
 
   virtual void ActorDestroy(ActorDestroyReason) override {
     if (!mDoc) {
@@ -168,6 +174,30 @@ class DocAccessibleChild : public PDocAccessibleChild {
   HyperTextAccessible* IdToHyperTextAccessible(const uint64_t& aID) const;
 
   DocAccessible* mDoc;
+
+  
+  struct MutationEventBatcher {
+    void AppendMutationEventData(MutationEventData aData, uint32_t aAccCount);
+    void SendQueuedMutationEvents(DocAccessibleChild& aDocAcc);
+    uint32_t GetCurrentBatchAccCount() const { return mCurrentBatchAccCount; }
+    size_t EventCount() const { return mMutationEventData.Length(); }
+
+   private:
+    
+    nsTArray<MutationEventData> mMutationEventData;
+
+    
+    
+    
+    nsTArray<size_t> mBatchBoundaries;
+
+    
+    
+    
+    
+    uint32_t mCurrentBatchAccCount = 0;
+  };
+  MutationEventBatcher mMutationEventBatcher;
 
   friend void DocAccessible::DoInitialUpdate();
 };

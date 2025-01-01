@@ -459,6 +459,20 @@ void EventQueue::ProcessEventQueue() {
     if (!mDocument) {
       return;
     }
+
+    
+    
+    
+    
+    
+    
+    if (eventType == nsIAccessibleEvent::EVENT_REORDER ||
+        eventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED ||
+        eventType == nsIAccessibleEvent::EVENT_TEXT_REMOVED) {
+      if (auto* ipcDoc = mDocument->IPCDoc()) {
+        ipcDoc->SendQueuedMutationEvents();
+      }
+    }
   }
 
   if (mDocument && IPCAccessibilityActive() &&
