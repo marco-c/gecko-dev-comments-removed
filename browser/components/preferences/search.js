@@ -1,9 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+/* import-globals-from extensionControlled.js */
+/* import-globals-from preferences.js */
 
 const lazy = {};
 
@@ -107,8 +107,8 @@ var gSearchPane = {
     let suggestionsInSearchFieldsCheckbox = document.getElementById(
       "suggestionsInSearchFieldsCheckbox"
     );
-    
-    
+    // We only want to call _updateSuggestionCheckboxes once after updating
+    // all prefs.
     suggestionsInSearchFieldsCheckbox.addEventListener("command", () => {
       this._skipUpdateSuggestionCheckboxesFromPrefChanges = true;
       if (!lazy.CustomizableUI.getPlacementOfWidget("search-container")) {
@@ -138,10 +138,10 @@ var gSearchPane = {
     this._initAddressBar();
   },
 
-  
-
-
-
+  /**
+   * Initialize the default engine handling. This will hide the private default
+   * options if they are not enabled yet.
+   */
   _initDefaultEngines() {
     this._separatePrivateDefaultEnabledPref = Preferences.get(
       "browser.search.separatePrivateDefault.ui.enabled"
@@ -173,8 +173,8 @@ var gSearchPane = {
         !!lazy.CustomizableUI.getPlacementOfWidget("search-container");
     };
 
-    
-    
+    // Add observer of CustomizableUI as showSearchTerms checkbox
+    // should be hidden while Search Bar is enabled.
     let customizableUIListener = {
       onWidgetAfterDOMChange: node => {
         if (node.id == "search-container") {
@@ -185,7 +185,7 @@ var gSearchPane = {
     lazy.CustomizableUI.addListener(customizableUIListener);
     NimbusFeatures.urlbar.onUpdate(updateCheckboxHidden);
 
-    
+    // Fire once to initialize.
     updateCheckboxHidden();
 
     window.addEventListener("unload", () => {
@@ -251,8 +251,8 @@ var gSearchPane = {
     }
     if (urlbarSuggests.checked) {
       positionCheckbox.disabled = false;
-      
-      
+      // Update the checked state of the show-suggestions-first checkbox.  Note
+      // that this does *not* also update its pref, it only checks the box.
       positionCheckbox.checked = Preferences.get(
         positionCheckbox.getAttribute("preference")
       ).value;
@@ -302,21 +302,21 @@ var gSearchPane = {
     trendingCheckBox.disabled = suggestDisabled || !trendingSupported;
   },
 
-  
+  // ADDRESS BAR
 
-  
-
-
+  /**
+   * Initializes the address bar section.
+   */
   _initAddressBar() {
-    
+    // Update the Firefox Suggest section when its Nimbus config changes.
     let onNimbus = () => this._updateFirefoxSuggestSection();
     NimbusFeatures.urlbar.onUpdate(onNimbus);
     window.addEventListener("unload", () => {
       NimbusFeatures.urlbar.offUpdate(onNimbus);
     });
 
-    
-    
+    // The Firefox Suggest info box potentially needs updating when any of the
+    // toggles change.
     let infoBoxPrefs = [
       "browser.urlbar.suggest.quicksuggest.nonsponsored",
       "browser.urlbar.suggest.quicksuggest.sponsored",
@@ -336,13 +336,13 @@ var gSearchPane = {
     this._initQuickActionsSection();
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Updates the Firefox Suggest section (in the address bar section) depending
+   * on whether the user is enrolled in a Firefox Suggest rollout.
+   *
+   * @param {boolean} [onInit]
+   *   Pass true when calling this when initializing the pane.
+   */
   _updateFirefoxSuggestSection(onInit = false) {
     let container = document.getElementById("firefoxSuggestContainer");
 
@@ -350,7 +350,7 @@ var gSearchPane = {
       UrlbarPrefs.get("quickSuggestEnabled") &&
       !UrlbarPrefs.get("quickSuggestHideSettingsUI")
     ) {
-      
+      // Update the l10n IDs of text elements.
       let l10nIdByElementId = {
         locationBarGroupHeader: "addressbar-header-firefox-suggest",
         locationBarSuggestionLabel: "addressbar-suggest-firefox-suggest",
@@ -361,7 +361,7 @@ var gSearchPane = {
         element.dataset.l10nId = l10nId;
       }
 
-      
+      // Show the container.
       this._updateFirefoxSuggestInfoBox();
 
       this._updateDismissedSuggestionsStatus();
@@ -377,9 +377,9 @@ var gSearchPane = {
 
       container.removeAttribute("hidden");
     } else if (!onInit) {
-      
-      
-      
+      // Firefox Suggest is not enabled. This is the default, so to avoid
+      // accidentally messing anything up, only modify the doc if we're being
+      // called due to a change in the rollout-enabled status (!onInit).
       container.setAttribute("hidden", "true");
       let elementIds = ["locationBarGroupHeader", "locationBarSuggestionLabel"];
       for (let id of elementIds) {
@@ -392,10 +392,10 @@ var gSearchPane = {
     }
   },
 
-  
-
-
-
+  /**
+   * Updates the Firefox Suggest info box (in the address bar section) depending
+   * on the states of the Firefox Suggest toggles.
+   */
   _updateFirefoxSuggestInfoBox() {
     let nonsponsored = Preferences.get(
       "browser.urlbar.suggest.quicksuggest.nonsponsored"
@@ -407,8 +407,8 @@ var gSearchPane = {
       "browser.urlbar.quicksuggest.dataCollection.enabled"
     ).value;
 
-    
-    
+    // Get the l10n ID of the appropriate text based on the values of the three
+    // prefs.
     let l10nId;
     if (nonsponsored && sponsored && dataCollection) {
       l10nId = "addressbar-firefox-suggest-info-all";
@@ -434,9 +434,9 @@ var gSearchPane = {
       let infoText = document.getElementById("firefoxSuggestInfoText");
       infoText.dataset.l10nId = l10nId;
 
-      
-      
-      
+      // If the info box is currently hidden and we unhide it immediately, it
+      // will show its old text until the new text is asyncly fetched and shown.
+      // That's ugly, so wait for the fetch to finish before unhiding it.
       document.l10n.translateElements([infoText]).then(() => {
         if (instance == this._firefoxSuggestInfoBoxInstance) {
           infoBox.hidden = false;
@@ -459,10 +459,10 @@ var gSearchPane = {
     showQuickActionsGroup();
   },
 
-  
-
-
-
+  /**
+   * Enables/disables the "Restore" button for dismissed Firefox Suggest
+   * suggestions.
+   */
   _updateDismissedSuggestionsStatus() {
     document.getElementById("restoreDismissedSuggestions").disabled =
       !Services.prefs.prefHasUserValue(PREF_URLBAR_QUICKSUGGEST_BLOCKLIST) &&
@@ -472,9 +472,9 @@ var gSearchPane = {
       );
   },
 
-  
-
-
+  /**
+   * Restores Firefox Suggest suggestions dismissed by the user.
+   */
   restoreDismissedSuggestions() {
     Services.prefs.clearUserPref(PREF_URLBAR_QUICKSUGGEST_BLOCKLIST);
     Services.prefs.clearUserPref(PREF_URLBAR_WEATHER_USER_ENABLED);
@@ -501,17 +501,17 @@ var gSearchPane = {
     }
   },
 
-  
-
-
+  /**
+   * Handle when the app locale is changed.
+   */
   async appLocalesChanged() {
     await document.l10n.ready;
     await gEngineView.loadL10nNames();
   },
 
-  
-
-
+  /**
+   * nsIObserver implementation.
+   */
   observe(subject, topic, data) {
     switch (topic) {
       case "intl:app-locales-changed": {
@@ -522,7 +522,7 @@ var gSearchPane = {
         let engine = subject.QueryInterface(Ci.nsISearchEngine);
         switch (data) {
           case "engine-default": {
-            
+            // Pass through to the engine store to handle updates.
             this._engineStore.browserSearchEngineModified(engine, data);
             gSearchPane._updateSuggestionCheckboxes();
             break;
@@ -560,30 +560,30 @@ var gSearchPane = {
   },
 };
 
-
-
-
+/**
+ * Keeps track of the search engine objects and notifies the views for updates.
+ */
 class EngineStore {
-  
-
-
-
-
+  /**
+   * A list of engines that are currently visible in the UI.
+   *
+   * @type {Object[]}
+   */
   engines = [];
 
-  
-
-
-
-
-
+  /**
+   * A list of application provided engines used when restoring the list of
+   * engines to the default set and order.
+   *
+   * @type {nsISearchEngine[]}
+   */
   #appProvidedEngines = [];
 
-  
-
-
-
-
+  /**
+   * A list of listeners to be notified when the engine list changes.
+   *
+   * @type {Object[]}
+   */
   #listeners = [];
 
   async init() {
@@ -597,24 +597,24 @@ class EngineStore {
 
     this.notifyRowCountChanged(0, visibleEngines.length);
 
-    
+    // check if we need to disable the restore defaults button
     var someHidden = this.#appProvidedEngines.some(e => e.hidden);
     gSearchPane.showRestoreDefaults(someHidden);
   }
 
-  
-
-
-
-
+  /**
+   * Adds a listener to be notified when the engine list changes.
+   *
+   * @param {object} aListener
+   */
   addListener(aListener) {
     this.#listeners.push(aListener);
   }
 
-  
-
-
-
+  /**
+   * Notifies all listeners that the engine list has changed and they should
+   * rebuild.
+   */
   notifyRebuildViews() {
     for (let listener of this.#listeners) {
       try {
@@ -625,24 +625,24 @@ class EngineStore {
     }
   }
 
-  
-
-
-
-
-
+  /**
+   * Notifies all listeners that the number of engines in the list has changed.
+   *
+   * @param {number} index
+   * @param {number} count
+   */
   notifyRowCountChanged(index, count) {
     for (let listener of this.#listeners) {
       listener.rowCountChanged(index, count, this.engines);
     }
   }
 
-  
-
-
-
-
-
+  /**
+   * Notifies all listeners that the default engine has changed.
+   *
+   * @param {string} type
+   * @param {object} engine
+   */
   notifyDefaultEngineChanged(type, engine) {
     for (let listener of this.#listeners) {
       if ("defaultEngineChanged" in listener) {
@@ -652,7 +652,7 @@ class EngineStore {
   }
 
   notifyEngineIconUpdated(engine) {
-    
+    // Check the engine is still in the list.
     let index = this._getIndexForEngine(engine);
     if (index != -1) {
       for (let listener of this.#listeners) {
@@ -678,7 +678,7 @@ class EngineStore {
     }
     clonedObj.originalEngine = aEngine;
 
-    
+    // Trigger getting the iconURL for this engine.
     aEngine.getIconURL().then(iconURL => {
       if (iconURL) {
         clonedObj.iconURL = iconURL;
@@ -696,7 +696,7 @@ class EngineStore {
     return clonedObj;
   }
 
-  
+  // Callback for Array's some(). A thisObj must be passed to some()
   _isSameEngine(aEngineClone) {
     return aEngineClone.originalEngine.id == this.originalEngine.id;
   }
@@ -725,9 +725,9 @@ class EngineStore {
 
     if (index == aNewIndex) {
       return Promise.resolve();
-    } 
+    } // nothing to do
 
-    
+    // Move the engine in our internal store
     var removedEngine = this.engines.splice(index, 1)[0];
     this.engines.splice(aNewIndex, 0, removedEngine);
 
@@ -757,13 +757,13 @@ class EngineStore {
     document.getElementById("engineList").focus();
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Update the default engine UI and engine tree view as appropriate when engine changes
+   * or locale changes occur.
+   *
+   * @param {nsISearchEngine} engine
+   * @param {string} data
+   */
   browserSearchEngineModified(engine, data) {
     engine.QueryInterface(Ci.nsISearchEngine);
     switch (data) {
@@ -794,14 +794,14 @@ class EngineStore {
     for (var i = 0; i < this.#appProvidedEngines.length; ++i) {
       var e = this.#appProvidedEngines[i];
 
-      
+      // If the engine is already in the list, just move it.
       if (this.engines.some(this._isSameEngine, e)) {
         await this.moveEngine(this._getEngineByName(e.name), i);
       } else {
-        
+        // Otherwise, add it back to our internal store
 
-        
-        
+        // The search service removes the alias when an engine is hidden,
+        // so clear any alias we may have cached before unhiding the engine.
         e.alias = "";
 
         this.engines.splice(i, 0, e);
@@ -812,8 +812,8 @@ class EngineStore {
       }
     }
 
-    
-    
+    // We can't do this as part of the loop above because the indices are
+    // used for moving engines.
     let policyRemovedEngineNames =
       Services.policies.getActivePolicies()?.SearchEngines?.Remove || [];
     for (let engineName of policyRemovedEngineNames) {
@@ -822,7 +822,7 @@ class EngineStore {
         try {
           await Services.search.removeEngine(engine);
         } catch (ex) {
-          
+          // Engine might not exist
         }
       }
     }
@@ -844,9 +844,9 @@ class EngineStore {
   }
 }
 
-
-
-
+/**
+ * Manages the view of the Search Shortcuts tree on the search pane of preferences.
+ */
 class EngineView {
   _engineStore = null;
   _engineList = null;
@@ -865,26 +865,47 @@ class EngineView {
     this.#showAddEngineButton();
   }
 
-  loadL10nNames() {
-    
-    
-    
+  async loadL10nNames() {
+    // This maps local shortcut sources to their l10n names.  The names are needed
+    // by getCellText.  Getting the names is async but getCellText is not, so we
+    // cache them here to retrieve them syncronously in getCellText.
     this._localShortcutL10nNames = new Map();
-    return document.l10n
-      .formatValues(
-        UrlbarUtils.LOCAL_SEARCH_MODES.map(mode => {
-          let name = UrlbarUtils.getResultSourceName(mode.source);
-          return { id: `urlbar-search-mode-${name}` };
-        })
-      )
-      .then(names => {
-        for (let { source } of UrlbarUtils.LOCAL_SEARCH_MODES) {
-          this._localShortcutL10nNames.set(source, names.shift());
-        }
-        
-        
+
+    let getIDs = (suffix = "") =>
+      UrlbarUtils.LOCAL_SEARCH_MODES.map(mode => {
+        let name = UrlbarUtils.getResultSourceName(mode.source);
+        return { id: `urlbar-search-mode-${name}${suffix}` };
+      });
+
+    try {
+      let localizedIDs = getIDs();
+      let englishIDs = getIDs("-en");
+
+      let englishSearchStrings = new Localization([
+        "preview/enUS-searchFeatures.ftl",
+      ]);
+      let localizedNames = await document.l10n.formatValues(localizedIDs);
+      let englishNames = await englishSearchStrings.formatValues(englishIDs);
+
+      UrlbarUtils.LOCAL_SEARCH_MODES.forEach(({ source }, index) => {
+        let localizedName = localizedNames[index];
+        let englishName = englishNames[index];
+
+        // Add only the English name if localized and English are the same
+        let names =
+          localizedName === englishName
+            ? [englishName]
+            : [localizedName, englishName];
+
+        this._localShortcutL10nNames.set(source, names);
+
+        // Invalidate the tree now that we have the names in case getCellText was
+        // called before name retrieval finished.
         this.invalidate();
       });
+    } catch (ex) {
+      console.error("Error loading l10n names", ex);
+    }
   }
 
   #addListeners() {
@@ -895,9 +916,9 @@ class EngineView {
     this._engineList.addEventListener("dblclick", this);
   }
 
-  
-
-
+  /**
+   * Shows the "Add Search Engine" button if the pref is enabled.
+   */
   #showAddEngineButton() {
     let aliasRefresh = Services.prefs.getBoolPref(
       "browser.urlbar.update2.engineAliasRefresh",
@@ -927,7 +948,7 @@ class EngineView {
     return this._engineStore.engines[this.selectedIndex];
   }
 
-  
+  // Helpers
   rebuild() {
     this.invalidate();
   }
@@ -938,7 +959,7 @@ class EngineView {
     }
     this.tree.rowCountChanged(index, count);
 
-    
+    // If we're removing elements, ensure that we still have a selection.
     if (count < 0) {
       this.selection.select(Math.min(index, this.rowCount - 1));
       this.ensureRowIsVisible(this.currentIndex);
@@ -971,9 +992,9 @@ class EngineView {
   isEngineSelectedAndRemovable() {
     let defaultEngine = Services.search.defaultEngine;
     let defaultPrivateEngine = Services.search.defaultPrivateEngine;
-    
-    
-    
+    // We don't allow the last remaining engine to be removed, thus the
+    // `this.lastEngineIndex != 0` check.
+    // We don't allow the default engine to be removed.
     return (
       this.selectedIndex != -1 &&
       this.lastEngineIndex != 0 &&
@@ -983,15 +1004,15 @@ class EngineView {
     );
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Returns the local shortcut corresponding to a tree row, or null if the row
+   * is not a local shortcut.
+   *
+   * @param {number} index
+   *   The tree row index.
+   * @returns {object}
+   *   The local shortcut object or null if the row is not a local shortcut.
+   */
   _getLocalShortcut(index) {
     let engineCount = this._engineStore.engines.length;
     if (index < engineCount) {
@@ -1000,15 +1021,15 @@ class EngineView {
     return UrlbarUtils.LOCAL_SEARCH_MODES[index - engineCount];
   }
 
-  
-
-
-
-
-
+  /**
+   * Called by UrlbarPrefs when a urlbar pref changes.
+   *
+   * @param {string} pref
+   *   The name of the pref relative to the browser.urlbar branch.
+   */
   onPrefChanged(pref) {
-    
-    
+    // If one of the local shortcut prefs was toggled, toggle its row's
+    // checkbox.
     let parts = pref.split(".");
     if (parts[0] == "shortcuts" && parts[1] && parts.length == 2) {
       this.invalidate();
@@ -1033,12 +1054,12 @@ class EngineView {
           aEvent.target.id != "engineChildren" &&
           !aEvent.target.classList.contains("searchEngineAction")
         ) {
-          
-          
-          
-          
-          
-          
+          // We don't want to toggle off selection while editing keyword
+          // so proceed only when the input field is hidden.
+          // We need to check that engineList.view is defined here
+          // because the "click" event listener is on <window> and the
+          // view might have been destroyed if the pane has been navigated
+          // away from.
           if (this._engineList.inputField.hidden && this._engineList.view) {
             let selection = this._engineList.view.selection;
             if (selection?.count > 0) {
@@ -1082,10 +1103,10 @@ class EngineView {
     }
   }
 
-  
-
-
-
+  /**
+   * Called when the restore default engines button is clicked to reset the
+   * list of engines to their defaults.
+   */
   async #onRestoreDefaults() {
     let num = await this._engineStore.restoreDefaultEngines();
     this.rowCountChanged(0, num);
@@ -1094,7 +1115,7 @@ class EngineView {
   #onDragEngineStart(event) {
     let selectedIndex = this.selectedIndex;
 
-    
+    // Local shortcut rows can't be dragged or re-ordered.
     if (this._getLocalShortcut(selectedIndex)) {
       event.preventDefault();
       return;
@@ -1121,7 +1142,7 @@ class EngineView {
     }
 
     if (aEvent.charCode == KeyEvent.DOM_VK_SPACE) {
-      
+      // Space toggles the checkbox.
       let newValue = !this.getCellValue(
         index,
         tree.columns.getNamedColumn("engineShown")
@@ -1131,7 +1152,7 @@ class EngineView {
         tree.columns.getFirstColumn(),
         newValue.toString()
       );
-      
+      // Prevent page from scrolling on the space key.
       aEvent.preventDefault();
     } else {
       let isMac = Services.appinfo.OS == "Darwin";
@@ -1147,19 +1168,19 @@ class EngineView {
           aEvent.keyCode == KeyEvent.DOM_VK_BACK_SPACE &&
           this.isEngineSelectedAndRemovable())
       ) {
-        
+        // Delete and Shift+Backspace (Mac) removes selected engine.
         Services.search.removeEngine(this.selectedEngine.originalEngine);
       }
     }
   }
 
-  
-
-
-
-
+  /**
+   * Triggers editing of an alias in the tree.
+   *
+   * @param {number} index
+   */
   #startEditingAlias(index) {
-    
+    // Local shortcut aliases can't be edited.
     if (this._getLocalShortcut(index)) {
       return;
     }
@@ -1171,7 +1192,7 @@ class EngineView {
     tree.inputField.select();
   }
 
-  
+  // nsITreeView
   get rowCount() {
     let localModes = UrlbarUtils.LOCAL_SEARCH_MODES;
     if (lazy.UrlbarPrefs.get("scotchBonnet.enableOverride")) {
@@ -1199,7 +1220,7 @@ class EngineView {
     if (column.id == "engineName") {
       let shortcut = this._getLocalShortcut(index);
       if (shortcut) {
-        return this._localShortcutL10nNames.get(shortcut.source) || "";
+        return this._localShortcutL10nNames.get(shortcut.source)[0] || "";
       }
       return this._engineStore.engines[index].name;
     } else if (column.id == "engineKeyword") {
@@ -1210,10 +1231,12 @@ class EngineView {
             "searchRestrictKeywords.featureGate"
           )
         ) {
-          const keyword =
-            "@" +
-            this._localShortcutL10nNames.get(shortcut.source).toLowerCase();
-          return `${keyword}, ${shortcut.restrict}`;
+          let keywords = this._localShortcutL10nNames
+            .get(shortcut.source)
+            .map(keyword => `@${keyword.toLowerCase()}`)
+            .join(", ");
+
+          return `${keywords}, ${shortcut.restrict}`;
         }
 
         return shortcut.restrict;
@@ -1233,14 +1256,14 @@ class EngineView {
       sourceIndex != -1 &&
       sourceIndex != targetIndex &&
       sourceIndex != targetIndex + orientation &&
-      
+      // Local shortcut rows can't be dragged or dropped on.
       targetIndex < this._engineStore.engines.length
     );
   }
 
   async drop(dropIndex, orientation, dataTransfer) {
-    
-    
+    // Local shortcut rows can't be dragged or dropped on.  This can sometimes
+    // be reached even though canDrop returns false for these rows.
     if (this._engineStore.engines.length <= dropIndex) {
       return;
     }
@@ -1260,7 +1283,7 @@ class EngineView {
     await this._engineStore.moveEngine(sourceEngine, dropIndex);
     gSearchPane.showRestoreDefaults(true);
 
-    
+    // Redraw, and adjust selection
     this.invalidate();
     this.selection.select(dropIndex);
   }
@@ -1271,8 +1294,8 @@ class EngineView {
   }
   getCellProperties(index, column) {
     if (column.id == "engineName") {
-      
-      
+      // For local shortcut rows, return the result source name so we can style
+      // the icons in CSS.
       let shortcut = this._getLocalShortcut(index);
       if (shortcut) {
         return UrlbarUtils.getResultSourceName(shortcut.source);
@@ -1352,27 +1375,27 @@ class EngineView {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Handles changing the keyword for an engine. This will check for potentially
+   * duplicate keywords and prompt the user if necessary.
+   *
+   * @param {object} aEngine
+   *   The engine to change.
+   * @param {string} aNewKeyword
+   *   The new keyword.
+   * @returns {Promise<boolean>}
+   *   Resolves to true if the keyword was changed.
+   */
   async #changeKeyword(aEngine, aNewKeyword) {
     let keyword = aNewKeyword.trim();
     if (keyword) {
       let eduplicate = false;
       let dupName = "";
 
-      
+      // Check for duplicates in Places keywords.
       let bduplicate = !!(await PlacesUtils.keywords.fetch(keyword));
 
-      
+      // Check for duplicates in changes we haven't committed yet
       let engines = this._engineStore.engines;
       let lc_keyword = keyword.toLocaleLowerCase();
       for (let engine of engines) {
@@ -1387,7 +1410,7 @@ class EngineView {
         }
       }
 
-      
+      // Notify the user if they have chosen an existing engine/bookmark keyword
       if (eduplicate || bduplicate) {
         let msgids = [{ id: "search-keyword-warning-title" }];
         if (eduplicate) {
@@ -1412,9 +1435,9 @@ class EngineView {
   }
 }
 
-
-
-
+/**
+ * Manages the default engine dropdown buttons in the search pane of preferences.
+ */
 class DefaultEngineDropDown {
   #element = null;
   #type = null;
@@ -1429,7 +1452,7 @@ class DefaultEngineDropDown {
   }
 
   rowCountChanged(index, count, enginesList) {
-    
+    // Simply rebuild the menulist, rather than trying to update the changed row.
     this.rebuild(enginesList);
   }
 
@@ -1437,9 +1460,9 @@ class DefaultEngineDropDown {
     if (type != this.#type) {
       return;
     }
-    
-    
-    
+    // If the user is going through the drop down using up/down keys, the
+    // dropdown may still be open (eg. on Windows) when engine-default is
+    // fired, so rebuilding the list unconditionally would get in the way.
     let selectedEngineName = this.#element.selectedItem?.engine?.name;
     if (selectedEngineName != engine.name) {
       this.rebuild(enginesList);
@@ -1448,7 +1471,7 @@ class DefaultEngineDropDown {
 
   engineIconUpdated(index, enginesList) {
     let item = this.#element.getItemAtIndex(index);
-    
+    // Check this is the right item.
     if (item?.label == enginesList[index].name) {
       item.setAttribute("image", enginesList[index].iconURL);
     }
@@ -1481,8 +1504,8 @@ class DefaultEngineDropDown {
         this.#element.selectedItem = item;
       }
     }
-    
-    
+    // This should never happen, but try and make sure we have at least one
+    // selected item.
     if (!this.#element.selectedItem) {
       this.#element.selectedIndex = 0;
     }
