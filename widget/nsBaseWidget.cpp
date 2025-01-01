@@ -945,17 +945,33 @@ bool nsBaseWidget::ComputeShouldAccelerate() {
 }
 
 bool nsBaseWidget::UseAPZ() const {
-  return (gfxPlatform::AsyncPanZoomEnabled() &&
-          (mWindowType == WindowType::TopLevel ||
-           mWindowType == WindowType::Child ||
-           (StaticPrefs::apz_popups_enabled() &&
-            ((mWindowType == WindowType::Dialog && HasRemoteContent()) ||
-             UseAPZForPopup()))));
-}
+  
+  if (!gfxPlatform::AsyncPanZoomEnabled()) {
+    return false;
+  }
 
-bool nsBaseWidget::UseAPZForPopup() const {
-  MOZ_ASSERT(gfxPlatform::AsyncPanZoomEnabled());
-  return mWindowType == WindowType::Popup && mPopupType != PopupType::Tooltip;
+  
+  if (mWindowType == WindowType::TopLevel || mWindowType == WindowType::Child) {
+    return true;
+  }
+
+  
+  if (mWindowType == WindowType::Popup && mPopupType == PopupType::Tooltip) {
+    return false;
+  }
+
+  if (!StaticPrefs::apz_popups_enabled()) {
+    return false;
+  }
+
+  if (HasRemoteContent()) {
+    return mWindowType == WindowType::Dialog ||
+           mWindowType == WindowType::Popup;
+  } else if (StaticPrefs::apz_popups_without_remote_enabled()) {
+    return mWindowType == WindowType::Popup;
+  }
+
+  return false;
 }
 
 void nsBaseWidget::CreateCompositor() {
