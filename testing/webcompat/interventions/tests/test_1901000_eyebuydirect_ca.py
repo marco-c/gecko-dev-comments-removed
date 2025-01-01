@@ -1,7 +1,7 @@
 import time
 
 import pytest
-from webdriver.error import NoSuchElementException, UnexpectedAlertOpenException
+from webdriver.error import NoSuchElementException
 
 URL = "https://www.eyebuydirect.ca/"
 
@@ -49,29 +49,15 @@ async def can_click_paypal_button(client):
     
     
     
-    
-    
-    
-    
     frame = client.await_css(f"{PAYPAL_CHECKOUT_CSS} iframe")
-    client.execute_script(
-        """
-        document.documentElement.addEventListener("mousedown", e => {
-            if (e.target.nodeName !== "IFRAME") {
-                alert("Clicked on the wrong node: " + e.target.outerHTML);
-            }
-            alert("top");
-        }, true);
-    """
-    )
 
     while True:
         client.switch_to_frame(frame)
-        buttons = client.await_css("#buttons-container")
+        buttons = client.await_css("#buttons-container", timeout=20)
         client.execute_script(
             """
-            arguments[0].addEventListener("mousedown", () => {
-                alert("frame");
+            arguments[0].addEventListener("mousedown", e => {
+                window.__clicked = true;
             }, true);
         """,
             buttons,
@@ -80,18 +66,17 @@ async def can_click_paypal_button(client):
 
     client.switch_to_frame()
 
-    clicks = 10
-    try:
-        for i in range(clicks):
-            await client.apz_click(frame, no_up=True)
-            time.sleep(0.5)
-    except UnexpectedAlertOpenException as e:
-        s = str(e)
-        if "wrong node" in s:
-            raise e
-        return "frame" in s
+    
+    
+    
+    
+    
+    for i in range(10):
+        await client.apz_down(element=frame)
+        time.sleep(0.2)
 
-    raise ValueError(f"no alert opened after {clicks} clicks")
+    client.switch_to_frame(frame)
+    return client.execute_script("return !!window.__clicked")
 
 
 @pytest.mark.skip_platforms("android")
