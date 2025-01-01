@@ -169,6 +169,16 @@ def get_embedded_version(version, buildid):
     return version
 
 
+def remove_single_line_comments(text):
+    """Remove C++ style single-line comments from the text."""
+    lines = []
+    for line in text.splitlines():
+        line = re.sub("//.*", "", line)
+        lines.append(line)
+
+    return "\n".join(lines)
+
+
 def get_appconstants_sys_mjs_values(finder, *args):
     r"""Extract values, such as the display version like `MOZ_APP_VERSION_DISPLAY:
     "...";`, from the omnijar.  This allows to determine the beta number, like
@@ -180,7 +190,10 @@ def get_appconstants_sys_mjs_values(finder, *args):
     for _, f in finder.find("**/modules/AppConstants.sys.mjs"):
         
         
-        data = f.open().read().decode("utf-8").replace(":\n", ":")
+        
+        
+        data = remove_single_line_comments(f.open().read().decode("utf-8"))
+        data = re.sub(":[\n\\s]+", ":", data)
         for line in data.splitlines():
             for arg in args:
                 if arg in line:
