@@ -159,7 +159,7 @@ RenderedFrameId RenderCompositorEGL::EndFrame(
   
   
   
-  UniquePtr<MozContainerSurfaceLock> lock;
+  UniquePtr<widget::WaylandSurfaceLock> lock;
   if (auto* gtkWidget = mWidget->AsGTK()) {
     lock = gtkWidget->LockSurface();
   }
