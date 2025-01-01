@@ -2257,9 +2257,16 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
   
   
   
-  if (key == JSProto_Function && !JS::Prefs::array_grouping() &&
-      (id == NameToId(cx->names().groupBy))) {
-    return true;
+  if (key == JSProto_Function) {
+    if (!JS::Prefs::array_grouping() && (id == NameToId(cx->names().groupBy))) {
+      return true;
+    }
+
+    if (!JS::Prefs::experimental_uint8array_base64() &&
+        (id == NameToId(cx->names().fromBase64) ||
+         id == NameToId(cx->names().fromHex))) {
+      return true;
+    }
   }
 
   if (key == JSProto_Set && !JS::Prefs::experimental_new_set_methods() &&
@@ -2308,26 +2315,20 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
   
   
   
-  if (key == JSProto_Function && !JS::Prefs::experimental_uint8array_base64() &&
-      (id == NameToId(cx->names().fromBase64) ||
-       id == NameToId(cx->names().fromHex))) {
-    return true;
-  }
-
-  
-  
-  
-  if (key == JSProto_Function && !JS::Prefs::experimental_promise_try() &&
-      id == NameToId(cx->names().try_)) {
-    return true;
-  }
-
-  
-  
-  
-  if (key == JSProto_Function && !JS::Prefs::experimental_regexp_escape() &&
-      id == NameToId(cx->names().escape)) {
-    return true;
+  if (key == JSProto_Function) {
+    if (!JS::Prefs::experimental_uint8array_base64() &&
+        (id == NameToId(cx->names().fromBase64) ||
+         id == NameToId(cx->names().fromHex))) {
+      return true;
+    }
+    if (!JS::Prefs::experimental_promise_try() &&
+        id == NameToId(cx->names().try_)) {
+      return true;
+    }
+    if (!JS::Prefs::experimental_regexp_escape() &&
+        id == NameToId(cx->names().escape)) {
+      return true;
+    }
   }
 
 #ifdef JS_HAS_TEMPORAL_API
@@ -2338,45 +2339,32 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
 #endif
 
 #ifdef NIGHTLY_BUILD
+  
+  
+  
+  if (key == JSProto_Function) {
+    if (!JS::Prefs::experimental_error_iserror() &&
+        id == NameToId(cx->names().isError)) {
+      return true;
+    }
+    if (!JS::Prefs::experimental_iterator_range() &&
+        (id == NameToId(cx->names().range))) {
+      return true;
+    }
+    if (!JS::Prefs::experimental_joint_iteration() &&
+        (id == NameToId(cx->names().zip) ||
+         id == NameToId(cx->names().zipKeyed))) {
+      return true;
+    }
+    if (!JS::Prefs::experimental_iterator_sequencing() &&
+        id == NameToId(cx->names().concat)) {
+      return true;
+    }
+  }
   if (key == JSProto_Math && !JS::Prefs::experimental_math_sumprecise() &&
       id == NameToId(cx->names().sumPrecise)) {
     return true;
   }
-
-  
-  
-  
-  if (key == JSProto_Function && !JS::Prefs::experimental_error_iserror() &&
-      id == NameToId(cx->names().isError)) {
-    return true;
-  }
-
-  
-  
-  
-  if (key == JSProto_Function && !JS::Prefs::experimental_iterator_range() &&
-      (id == NameToId(cx->names().range))) {
-    return true;
-  }
-
-  
-  
-  
-  if (key == JSProto_Function && !JS::Prefs::experimental_joint_iteration() &&
-      (id == NameToId(cx->names().zip) ||
-       id == NameToId(cx->names().zipKeyed))) {
-    return true;
-  }
-
-  
-  
-  
-  if (key == JSProto_Function &&
-      !JS::Prefs::experimental_iterator_sequencing() &&
-      id == NameToId(cx->names().concat)) {
-    return true;
-  }
-
   if (key == JSProto_Atomics && !JS::Prefs::experimental_atomics_pause() &&
       id == NameToId(cx->names().pause)) {
     return true;
