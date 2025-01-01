@@ -66,6 +66,7 @@ included_inclnames_to_ignore = set(
         "jit/ABIFunctionTypeGenerated.h",  
         "jit/AtomicOperationsGenerated.h",  
         "jit/CacheIROpsGenerated.h",  
+        "jit/CacheIRAOTGenerated.h",  
         "jit/LIROpsGenerated.h",  
         "jit/MIROpsGenerated.h",  
         "js/PrefsGenerated.h",  
