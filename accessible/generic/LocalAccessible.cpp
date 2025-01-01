@@ -4193,31 +4193,37 @@ void LocalAccessible::MaybeQueueCacheUpdateForStyleChanges() {
   if (nsIFrame* frame = GetFrame()) {
     const ComputedStyle* newStyle = frame->Style();
 
-    nsAutoCString oldOverflow, newOverflow;
-    mOldComputedStyle->GetComputedPropertyValue(eCSSProperty_overflow,
-                                                oldOverflow);
-    newStyle->GetComputedPropertyValue(eCSSProperty_overflow, newOverflow);
+    const auto overflowProps =
+        nsCSSPropertyIDSet({eCSSProperty_overflow_x, eCSSProperty_overflow_y});
 
-    if (oldOverflow != newOverflow) {
-      if (oldOverflow.Equals("hidden"_ns) || newOverflow.Equals("hidden"_ns)) {
-        mDoc->QueueCacheUpdate(this, CacheDomain::Style);
-      }
-      if (oldOverflow.Equals("auto"_ns) || newOverflow.Equals("auto"_ns) ||
-          oldOverflow.Equals("scroll"_ns) || newOverflow.Equals("scroll"_ns)) {
-        
-        
-        
-        mDoc->QueueCacheUpdate(this, CacheDomain::ScrollPosition);
-      }
-    } else {
-      ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(frame);
-      if (!scrollContainerFrame &&
-          (newOverflow.Equals("auto"_ns) || newOverflow.Equals("scroll"_ns))) {
-        
-        
-        
-        
-        mDoc->QueueCacheUpdate(this, CacheDomain::ScrollPosition);
+    for (nsCSSPropertyID overflowProp : overflowProps) {
+      nsAutoCString oldOverflow, newOverflow;
+      mOldComputedStyle->GetComputedPropertyValue(overflowProp, oldOverflow);
+      newStyle->GetComputedPropertyValue(overflowProp, newOverflow);
+
+      if (oldOverflow != newOverflow) {
+        if (oldOverflow.Equals("hidden"_ns) ||
+            newOverflow.Equals("hidden"_ns)) {
+          mDoc->QueueCacheUpdate(this, CacheDomain::Style);
+        }
+        if (oldOverflow.Equals("auto"_ns) || newOverflow.Equals("auto"_ns) ||
+            oldOverflow.Equals("scroll"_ns) ||
+            newOverflow.Equals("scroll"_ns)) {
+          
+          
+          
+          mDoc->QueueCacheUpdate(this, CacheDomain::ScrollPosition);
+        }
+      } else {
+        ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(frame);
+        if (!scrollContainerFrame && (newOverflow.Equals("auto"_ns) ||
+                                      newOverflow.Equals("scroll"_ns))) {
+          
+          
+          
+          
+          mDoc->QueueCacheUpdate(this, CacheDomain::ScrollPosition);
+        }
       }
     }
 
