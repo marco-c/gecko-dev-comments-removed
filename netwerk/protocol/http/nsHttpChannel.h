@@ -622,7 +622,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   bool mCacheOpenWithPriority{false};
   uint32_t mCacheQueueSizeWhenOpen{0};
 
-  Atomic<bool, Relaxed> mCachedContentIsValid{false};
   Atomic<bool> mIsAuthChannel{false};
   Atomic<bool> mAuthRetryPending{false};
 
@@ -698,12 +697,21 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   MOZ_ATOMIC_BITFIELDS(mAtomicBitfields6, 32, (
     
+    (uint32_t, NetworkWonRace, 1),
+    
+    (uint32_t, CachedContentIsValid, 2),
+    
     
     (uint32_t, HTTPSSVCTelemetryReported, 1),
     (uint32_t, EchConfigUsed, 1),
     (uint32_t, AuthRedirectedChannel, 1)
   ))
   
+  enum CachedContentValidity : uint8_t { Unset = 0, Invalid = 1, Valid = 2 };
+
+  bool CachedContentIsValid() {
+    return LoadCachedContentIsValid() == CachedContentValidity::Valid;
+  }
 
   nsTArray<nsContinueRedirectionFunc> mRedirectFuncStack;
 

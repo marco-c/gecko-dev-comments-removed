@@ -1203,7 +1203,7 @@ nsresult nsHttpChannel::ConnectOnTailUnblock() {
     
   }
 
-  if (mRaceCacheWithNetwork && ((mCacheEntry && !mCachedContentIsValid &&
+  if (mRaceCacheWithNetwork && ((mCacheEntry && !CachedContentIsValid() &&
                                  (mDidReval || LoadCachedContentIsPartial())) ||
                                 mIgnoreCacheEntry)) {
     
@@ -1216,7 +1216,7 @@ nsresult nsHttpChannel::ConnectOnTailUnblock() {
   
   
   
-  if (mRaceCacheWithNetwork && mCachedContentIsValid) {
+  if (mRaceCacheWithNetwork && CachedContentIsValid()) {
     Unused << ReadFromCache();
   }
 
@@ -1243,7 +1243,7 @@ nsresult nsHttpChannel::ContinueConnect() {
   
   if (mCacheEntry) {
     
-    if (mCachedContentIsValid) {
+    if (CachedContentIsValid()) {
       
       if (bc && bc->Top()->GetForceOffline() &&
           BYPASS_LOCAL_CACHE(mLoadFlags, LoadPreferCacheLoadOverBypass())) {
@@ -1273,7 +1273,7 @@ nsresult nsHttpChannel::ContinueConnect() {
       
       
       
-      LOG(("  !mCachedContentIsValid && mLoadFlags & LOAD_ONLY_FROM_CACHE"));
+      LOG(("  !CachedContentIsValid() && mLoadFlags & LOAD_ONLY_FROM_CACHE"));
       return NS_ERROR_DOCUMENT_NOT_CACHED;
     }
   } else if (mLoadFlags & LOAD_ONLY_FROM_CACHE) {
@@ -2662,7 +2662,7 @@ nsresult nsHttpChannel::ProcessResponse() {
     return ProcessFailedProxyConnect(httpStatus);
   }
 
-  MOZ_ASSERT(!mCachedContentIsValid || mRaceCacheWithNetwork,
+  MOZ_ASSERT(!CachedContentIsValid() || mRaceCacheWithNetwork,
              "We should not be hitting the network if we have valid cached "
              "content unless we are racing the network and cache");
 
@@ -3101,6 +3101,11 @@ void nsHttpChannel::UpdateCacheDisposition(bool aSuccessfulReval,
     }
   }
 
+  PROFILER_MARKER_TEXT(
+      "CacheDisposition", NETWORK, {},
+      nsPrintfCString(
+          !mDidReval ? "Missed"
+                     : (aSuccessfulReval ? "HitViaReval" : "MissedViaReval")));
   if (Telemetry::CanRecordPrereleaseData()) {
     CacheDisposition cacheDisposition;
     if (!mDidReval) {
@@ -3954,7 +3959,7 @@ nsresult nsHttpChannel::ProcessPartialContent(
 
   
   
-  mCachedContentIsValid = true;
+  StoreCachedContentIsValid(CachedContentValidity::Valid);
   return CallOrWaitForResume([aContinueProcessResponseFunc](auto* self) {
     nsresult rv = self->ReadFromCache();
     return aContinueProcessResponseFunc(self, rv);
@@ -4099,7 +4104,7 @@ nsresult nsHttpChannel::ProcessNotModified(
   
   gHttpHandler->OnExamineMergedResponse(this);
 
-  mCachedContentIsValid = true;
+  StoreCachedContentIsValid(CachedContentValidity::Valid);
 
   
   rv = mCacheEntry->SetValid();
@@ -4353,7 +4358,8 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
   if (mRaceCacheWithNetwork && mFirstResponseSource == RESPONSE_FROM_NETWORK) {
     LOG(
         ("Not using cached response because we've already got one from the "
-         "network\n"));
+         "network %p",
+         this));
     *aResult = ENTRY_NOT_WANTED;
 
     
@@ -4361,6 +4367,9 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
         (TimeStamp::Now() - mOnStartRequestTimestamp).ToMilliseconds();
     Telemetry::Accumulate(Telemetry::NETWORK_RACE_CACHE_WITH_NETWORK_SAVED_TIME,
                           savedTime);
+    PROFILER_MARKER_TEXT(
+        "RCWN", NETWORK, {},
+        nsPrintfCString("Network won by %" PRId64 "ms", savedTime));
     return NS_OK;
   }
   if (mRaceCacheWithNetwork && mFirstResponseSource == RESPONSE_PENDING) {
@@ -4382,7 +4391,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
 
   
   *aResult = ENTRY_WANTED;
-  mCachedContentIsValid = false;
+  StoreCachedContentIsValid(CachedContentValidity::Invalid);
 
   nsCString buf;
 
@@ -4449,7 +4458,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
 
     rv = OpenCacheInputStream(entry, true);
     if (NS_SUCCEEDED(rv)) {
-      mCachedContentIsValid = true;
+      StoreCachedContentIsValid(CachedContentValidity::Valid);
     }
     return rv;
   }
@@ -4631,7 +4640,8 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
     }
   }
 
-  mCachedContentIsValid = !doValidation;
+  StoreCachedContentIsValid(!doValidation ? CachedContentValidity::Valid
+                                          : CachedContentValidity::Invalid);
 
   if (isForcedValid) {
     
@@ -4699,8 +4709,9 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
     }
   }
 
-  if (mCachedContentIsValid || mDidReval) {
-    rv = OpenCacheInputStream(entry, mCachedContentIsValid);
+  bool valid = CachedContentIsValid();
+  if (valid || mDidReval) {
+    rv = OpenCacheInputStream(entry, valid);
     if (NS_FAILED(rv)) {
       
       
@@ -4708,7 +4719,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
         UntieValidationRequest();
         mDidReval = false;
       }
-      mCachedContentIsValid = false;
+      StoreCachedContentIsValid(CachedContentValidity::Invalid);
     }
   }
 
@@ -4740,8 +4751,8 @@ nsHttpChannel::OnCacheEntryAvailable(nsICacheEntry* entry, bool aNew,
 
   LOG(
       ("nsHttpChannel::OnCacheEntryAvailable [this=%p entry=%p "
-       "new=%d status=%" PRIx32 "]\n",
-       this, entry, aNew, static_cast<uint32_t>(status)));
+       "new=%d status=%" PRIx32 "] for %s",
+       this, entry, aNew, static_cast<uint32_t>(status), mSpec.get()));
 
   
   
@@ -4807,16 +4818,17 @@ nsresult nsHttpChannel::OnCacheEntryAvailableInternal(nsICacheEntry* entry,
     return NS_OK;
   }
 
-  if (mRaceCacheWithNetwork && ((mCacheEntry && !mCachedContentIsValid &&
-                                 (mDidReval || LoadCachedContentIsPartial())) ||
-                                mIgnoreCacheEntry)) {
+  bool valid = CachedContentIsValid();
+  if (mRaceCacheWithNetwork &&
+      ((mCacheEntry && !valid && (mDidReval || LoadCachedContentIsPartial())) ||
+       mIgnoreCacheEntry)) {
     
     
     AccumulateCategorical(
         Telemetry::LABELS_NETWORK_RACE_CACHE_VALIDATION::NotSent);
   }
 
-  if (mRaceCacheWithNetwork && mCachedContentIsValid) {
+  if (mRaceCacheWithNetwork && valid) {
     Unused << ReadFromCache();
   }
 
@@ -4831,7 +4843,7 @@ nsresult nsHttpChannel::OnNormalCacheEntryAvailable(nsICacheEntry* aEntry,
   if (NS_FAILED(aEntryStatus) || aNew) {
     
     
-    mCachedContentIsValid = false;
+    StoreCachedContentIsValid(CachedContentValidity::Invalid);
 
     
     
@@ -5169,7 +5181,7 @@ nsresult nsHttpChannel::OpenCacheInputStream(nsICacheEntry* cacheEntry,
 
 nsresult nsHttpChannel::ReadFromCache(void) {
   NS_ENSURE_TRUE(mCacheEntry, NS_ERROR_FAILURE);
-  NS_ENSURE_TRUE(mCachedContentIsValid, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(CachedContentIsValid(), NS_ERROR_FAILURE);
   NS_ENSURE_TRUE(!mCachePump, NS_OK);  
 
   LOG(
@@ -5187,7 +5199,10 @@ nsresult nsHttpChannel::ReadFromCache(void) {
   if (mRaceCacheWithNetwork) {
     MOZ_ASSERT(mFirstResponseSource != RESPONSE_FROM_CACHE);
     if (mFirstResponseSource == RESPONSE_PENDING) {
-      LOG(("First response from cache\n"));
+      LOG(("First response from cache"));
+      PROFILER_MARKER_TEXT(
+          "RCWN", NETWORK, {},
+          nsPrintfCString("Cache won for %s (%p)", mSpec.get(), this));
       mFirstResponseSource = RESPONSE_FROM_CACHE;
 
       
@@ -5213,6 +5228,10 @@ nsresult nsHttpChannel::ReadFromCache(void) {
         Telemetry::Accumulate(
             Telemetry::NETWORK_RACE_CACHE_WITH_NETWORK_SAVED_TIME, savedTime);
 
+        PROFILER_MARKER_TEXT(
+            "RCWN", NETWORK, {},
+            nsPrintfCString("Network won by %" PRId64 "ms for %s", savedTime,
+                            mSpec.get()));
         int64_t diffTime =
             (currentTime - mOnCacheEntryCheckTimestamp).ToMilliseconds();
         Telemetry::Accumulate(
@@ -5383,7 +5402,7 @@ void nsHttpChannel::MaybeCreateCacheEntryWhenRCWN() {
   StoreDeliveringAltData(false);
   mAltDataLength = -1;
   mCacheInputStream.CloseAndRelease();
-  mCachedContentIsValid = false;
+  StoreCachedContentIsValid(CachedContentValidity::Invalid);
 }
 
 
@@ -5399,7 +5418,7 @@ nsresult nsHttpChannel::InitCacheEntry() {
   if (LoadCacheEntryIsReadOnly()) return NS_OK;
 
   
-  if (mCachedContentIsValid) return NS_OK;
+  if (CachedContentIsValid()) return NS_OK;
 
   LOG(("nsHttpChannel::InitCacheEntry [this=%p entry=%p]\n", this,
        mCacheEntry.get()));
@@ -5612,7 +5631,7 @@ nsresult nsHttpChannel::FinalizeCacheEntry() {
   LOG(("nsHttpChannel::FinalizeCacheEntry [this=%p]\n", this));
 
   
-  if (LoadStronglyFramed() && !mCachedContentIsValid && mCacheEntry) {
+  if (LoadStronglyFramed() && !CachedContentIsValid() && mCacheEntry) {
     LOG(("nsHttpChannel::FinalizeCacheEntry [this=%p] Is Strongly Framed\n",
          this));
     mCacheEntry->SetMetaDataElement("strongly-framed", "1");
@@ -7828,7 +7847,18 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
         
         mozilla::MutexAutoLock lock(mRCWNLock);
         mFirstResponseSource = RESPONSE_FROM_NETWORK;
+        
+        
+        
+        
+        if (LoadCachedContentIsValid() == CachedContentValidity::Unset) {
+          StoreNetworkWonRace(1);
+        }
         mOnStartRequestTimestamp = TimeStamp::Now();
+        PROFILER_MARKER_TEXT(
+            "RCWN", NETWORK, {},
+            nsPrintfCString("Network won on StartRequest valid=%d for %s - %p",
+                            LoadCachedContentIsValid(), mSpec.get(), this));
 
         
         
@@ -7850,6 +7880,11 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
     } else if (WRONG_RACING_RESPONSE_SOURCE(request)) {
       LOG(("  Early return when racing. This response not needed."));
       return NS_OK;
+    } else {
+      PROFILER_MARKER_TEXT(
+          "RCWN", NETWORK, {},
+          nsPrintfCString("Cache won on StartRequest valid=%d for %s - %p",
+                          LoadCachedContentIsValid(), mSpec.get(), this));
     }
   }
 
@@ -8813,7 +8848,7 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
         rv = MaybeSetupByteRangeRequest(size, contentLength, true);
         if (NS_SUCCEEDED(rv) && LoadIsPartialRequest()) {
           
-          mCachedContentIsValid = false;
+          StoreCachedContentIsValid(CachedContentValidity::Invalid);
           StoreCachedContentIsPartial(1);
 
           
@@ -9317,7 +9352,7 @@ nsHttpChannel::IsFromCache(bool* value) {
     
     
     *value = (mCachePump || (mLoadFlags & LOAD_ONLY_IF_MODIFIED)) &&
-             mCachedContentIsValid && !LoadCachedContentIsPartial();
+             CachedContentIsValid() && !LoadCachedContentIsPartial();
     return NS_OK;
   }
 
@@ -10306,7 +10341,21 @@ void nsHttpChannel::ReportRcwnStats(bool isFromNet) {
   }
 
   if (isFromNet) {
-    if (mRaceCacheWithNetwork) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if (mRaceCacheWithNetwork && LoadNetworkWonRace()) {
+      PROFILER_MARKER_TEXT(
+          "RCWN", NETWORK, {},
+          nsPrintfCString("Network won valid = %d, channel %p, URI %s",
+                          LoadCachedContentIsValid(), this, mSpec.get()));
       gIOService->IncrementNetWonRequestNumber();
       Telemetry::Accumulate(
           Telemetry::NETWORK_RACE_CACHE_BANDWIDTH_RACE_NETWORK_WIN,
@@ -10321,6 +10370,11 @@ void nsHttpChannel::ReportRcwnStats(bool isFromNet) {
                 NetworkRace);
       }
     } else {
+      PROFILER_MARKER_TEXT(
+          "RCWN", NETWORK, {},
+          nsPrintfCString(
+              "Cache won or was replaced, valid = %d, channel %p, URI %s",
+              LoadCachedContentIsValid(), this, mSpec.get()));
       Telemetry::Accumulate(Telemetry::NETWORK_RACE_CACHE_BANDWIDTH_NOT_RACE,
                             mTransferSize);
       AccumulateCategorical(
@@ -10329,6 +10383,10 @@ void nsHttpChannel::ReportRcwnStats(bool isFromNet) {
     }
   } else {
     if (mRaceCacheWithNetwork || mRaceDelay) {
+      PROFILER_MARKER_TEXT(
+          "RCWN", NETWORK, {},
+          nsPrintfCString("Cache won valid=%d, channel %p, URI %s",
+                          LoadCachedContentIsValid(), this, mSpec.get()));
       gIOService->IncrementCacheWonRequestNumber();
       Telemetry::Accumulate(
           Telemetry::NETWORK_RACE_CACHE_BANDWIDTH_RACE_CACHE_WIN,
