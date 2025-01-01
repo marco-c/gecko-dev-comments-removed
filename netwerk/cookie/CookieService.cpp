@@ -1770,12 +1770,6 @@ void CookieService::Update3PCBExceptionInfo(nsIChannel* aChannel) {
       [channel = nsCOMPtr{aChannel}, csSingleton, loadInfo](
           const GenericNonExclusivePromise::ResolveOrRejectValue& aValue) {
         
-        if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
-          channel->Resume();
-          return NS_OK;
-        }
-
-        
         
         
         
