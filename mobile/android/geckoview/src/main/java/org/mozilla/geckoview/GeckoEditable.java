@@ -64,6 +64,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
   private static final boolean DEBUG = false;
   private static final String LOGTAG = "GeckoEditable";
+  private static final long DISMISS_VKB_DELAY_MS = 100;
 
   
   private InputFilter[] mFilters;
@@ -116,6 +117,33 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
   private int mLastTextChangeOldEnd = -1; 
   private int mLastTextChangeNewEnd = -1; 
   private boolean mLastTextChangeReplacedSelection; 
+
+  private static class HideSoftInputTask implements Runnable {
+    private GeckoSession mSession;
+    private boolean mCancelled;
+
+    public HideSoftInputTask(final GeckoSession session) {
+      mSession = session;
+      mCancelled = false;
+    }
+
+    @Override
+    public void run() {
+      if (DEBUG) {
+        ThreadUtils.assertOnUiThread();
+      }
+      if (mCancelled) {
+        return;
+      }
+      mSession.getTextInput().getDelegate().hideSoftInput(mSession);
+    }
+
+    public void cancel() {
+      mCancelled = true;
+    }
+  }
+
+  private HideSoftInputTask mHideSoftInputTask;
 
   
   
@@ -1574,6 +1602,10 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
     switch (type) {
       case SessionTextInput.EditableListener.NOTIFY_IME_OF_FOCUS:
+        if (mHideSoftInputTask != null) {
+          mHideSoftInputTask.cancel();
+          mHideSoftInputTask = null;
+        }
         if (mFocusedChild != null) {
           
           icRestartInput(
@@ -1949,10 +1981,16 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     toggleSoftInput( false, state);
   }
 
-   void toggleSoftInput(final boolean force, final int state) {
+   void toggleSoftInput(final boolean force, @IMEState final int state) {
     if (DEBUG) {
-      Log.d(LOGTAG, "toggleSoftInput");
+      final StringBuilder sb = new StringBuilder("toggleSoftInput(force=");
+      sb.append(force)
+          .append(", state=")
+          .append(getConstantName(SessionTextInput.EditableListener.class, "IME_STATE_", state))
+          .append(")");
+      Log.d(LOGTAG, sb.toString());
     }
+
     
     final int flags = mIMEFlags;
 
@@ -2003,8 +2041,15 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
                 }
                 return;
               }
+
+              if (mHideSoftInputTask != null) {
+                mHideSoftInputTask.cancel();
+                mHideSoftInputTask = null;
+              }
+
               if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-                session.getTextInput().getDelegate().hideSoftInput(session);
+                mHideSoftInputTask = new HideSoftInputTask(session);
+                ThreadUtils.postToUiThreadDelayed(mHideSoftInputTask, DISMISS_VKB_DELAY_MS);
                 return;
               }
               {
