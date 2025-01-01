@@ -390,7 +390,7 @@ nsresult nsPrintDialogWidgetGTK::ImportSettings(nsIPrintSettings* aNSSettings) {
                                aNSSettings->GetPrintBGImages());
 
   
-  int32_t pagesPerSide;
+  int32_t pagesPerSide = 1;
   aNSSettings->GetNumPagesPerSheet(&pagesPerSide);
   gtk_print_settings_set_number_up(settings, pagesPerSide);
 
@@ -431,12 +431,7 @@ nsresult nsPrintDialogWidgetGTK::ExportSettings(nsIPrintSettings* aNSSettings) {
         GTK_TOGGLE_BUTTON(print_bg_images_toggle)));
 
     
-    
-    
-    int32_t pagesPerSide = gtk_print_settings_get_number_up(settings);
-    gtk_print_settings_set_number_up(settings, 1);
-    aNSSettings->SetNumPagesPerSheet(pagesPerSide);
-
+    aNSSettings->SetNumPagesPerSheet(1);
     
     nsCOMPtr<nsPrintSettingsGTK> aNSSettingsGTK(do_QueryInterface(aNSSettings));
     if (aNSSettingsGTK) {
