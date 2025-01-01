@@ -590,7 +590,6 @@ void nsWindow::Destroy() {
 
 #ifdef MOZ_WAYLAND
   
-  
   if (mWaylandVsyncSource) {
     mWaylandVsyncSource->Shutdown();
     mWaylandVsyncSource = nullptr;
@@ -658,9 +657,6 @@ void nsWindow::Destroy() {
   gtk_widget_destroy(mShell);
   mShell = nullptr;
   mContainer = nullptr;
-#ifdef MOZ_WAYLAND
-  mSurface = nullptr;
-#endif
 
   MOZ_ASSERT(!mGdkWindow,
              "mGdkWindow should be NULL when mContainer is destroyed");
@@ -3185,12 +3181,14 @@ LayoutDeviceIntRect nsWindow::GetScreenBounds() {
 #if MOZ_LOGGING
   if (MOZ_LOG_TEST(IsPopup() ? gWidgetPopupLog : gWidgetLog,
                    LogLevel::Verbose)) {
-    double scale = FractionalScaleFactor();
-    LOGVERBOSE(
-        "GetScreenBounds [%d,%d] -> [%d x %d], unscaled [%f,%f] -> [%f x %f] "
-        "ceiled scale %f",
-        rect.x, rect.y, rect.width, rect.height, rect.x / scale, rect.y / scale,
-        rect.width / scale, rect.height / scale, scale);
+    gint scale = GdkCeiledScaleFactor();
+    if (mLastLoggedScale != scale || !(mLastLoggedBoundSize == rect)) {
+      mLastLoggedScale = scale;
+      mLastLoggedBoundSize = rect;
+      LOG("GetScreenBounds %d,%d -> %d x %d, unscaled %d,%d -> %d x %d\n",
+          rect.x, rect.y, rect.width, rect.height, rect.x / scale,
+          rect.y / scale, rect.width / scale, rect.height / scale);
+    }
   }
 #endif
   return rect;
@@ -3411,7 +3409,8 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
 #endif
 #ifdef MOZ_WAYLAND
         if (GdkIsWaylandDisplay()) {
-          eglWindow = moz_container_wayland_get_egl_window(mContainer);
+          eglWindow = moz_container_wayland_get_egl_window(
+              mContainer, FractionalScaleFactor());
         }
 #endif
       }
@@ -5328,63 +5327,37 @@ void nsWindow::OnCompositedChanged() {
   mCompositedScreen = gdk_screen_is_composited(gdk_screen_get_default());
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void nsWindow::OnScaleEvent() {
-  if (!mGdkWindow || !IsTopLevelWidget()) {
-    return;
-  }
-
-  LOG("nsWindow::OnScaleEvent() GdkWindow scale %d",
-      gdk_window_get_scale_factor(mGdkWindow));
-
-  RefreshScale( true);
-}
-
-void nsWindow::RefreshScale(bool aRefreshScreen) {
+void nsWindow::OnScaleChanged(bool aNotify) {
   if (!IsTopLevelWidget()) {
     return;
   }
-
-  LOG("nsWindow::RefreshScale() GdkWindow scale %d refresh %d",
-      gdk_window_get_scale_factor(mGdkWindow), aRefreshScreen);
-
-#ifdef MOZ_WAYLAND
-  if (GdkIsWaylandDisplay()) {
-    WaylandSurfaceLock lock(mSurface);
-    mSurface->SetCeiledScaleLocked(lock,
-                                   gdk_window_get_scale_factor(mGdkWindow));
+  if (!mGdkWindow) {
+    return;  
   }
+  gint newCeiled = gdk_window_get_scale_factor(mGdkWindow);
+  double newFractional = [&] {
+#ifdef MOZ_WAYLAND
+    if (GdkIsWaylandDisplay()) {
+      return moz_container_wayland_get_fractional_scale(mContainer);
+    }
 #endif
+    return 0.0;
+  }();
 
-  MOZ_DIAGNOSTIC_ASSERT(mIsMapped && mGdkWindow);
-  int ceiledScale = gdk_window_get_scale_factor(mGdkWindow);
-  bool scaleChanged = (mCeiledScaleFactor != ceiledScale);
-  if (!scaleChanged) {
+  if (mCeiledScaleFactor == newCeiled &&
+      mFractionalScaleFactor == newFractional) {
     return;
   }
-  mCeiledScaleFactor = ceiledScale;
 
   NotifyAPZOfDPIChange();
 
-  if (!aRefreshScreen) {
+  LOG("OnScaleChanged %d, %f -> %d, %f Notify %d\n", int(mCeiledScaleFactor),
+      mFractionalScaleFactor, newCeiled, newFractional, aNotify);
+
+  mCeiledScaleFactor = newCeiled;
+  mFractionalScaleFactor = newFractional;
+
+  if (!aNotify) {
     return;
   }
 
@@ -5401,8 +5374,7 @@ void nsWindow::RefreshScale(bool aRefreshScreen) {
   
   if (mCompositorSession &&
       !wr::WindowSizeSanityCheck(mBounds.width, mBounds.height)) {
-    gfxCriticalNoteOnce << "Invalid mBounds in PropagateScaleChange() "
-                        << mBounds;
+    gfxCriticalNoteOnce << "Invalid mBounds in OnScaleChanged " << mBounds;
   }
 
   if (mWidgetListener) {
@@ -5837,6 +5809,8 @@ void nsWindow::ConfigureCompositor() {
 
 nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
                           widget::InitData* aInitData) {
+  LOG("nsWindow::Create\n");
+
   MOZ_DIAGNOSTIC_ASSERT(!aInitData ||
                         aInitData->mWindowType != WindowType::Invisible);
 
@@ -5859,8 +5833,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   
   BaseCreate(aParent, aInitData);
 
-  LOG("nsWindow::Create()");
-
   
   mBounds = aRect;
   LOG("  mBounds: x:%d y:%d w:%d h:%d\n", mBounds.x, mBounds.y, mBounds.width,
@@ -5875,13 +5847,12 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 
   
   auto* parentnsWindow = static_cast<nsWindow*>(aParent);
-  LOG("  parent window [%p]", parentnsWindow);
   if (mWindowType == WindowType::Child) {
     
     
     mWindowType = WindowType::Popup;
     mIsChildWindow = true;
-    LOG("  child widget, switch to popup");
+    LOG("  child widget, switch to popup. parent nsWindow %p", parentnsWindow);
   }
 
   MOZ_ASSERT_IF(mWindowType == WindowType::Popup, parentnsWindow);
@@ -5923,7 +5894,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   
   mUndecorated = IsAlwaysUndecoratedWindow();
   if (mUndecorated) {
-    LOG("  Is undecorated Window\n");
+    LOG("    Is undecorated Window\n");
     gtk_window_set_titlebar(GTK_WINDOW(mShell), gtk_fixed_new());
     gtk_window_set_decorated(GTK_WINDOW(mShell), false);
   }
@@ -5934,6 +5905,11 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 
   if (IsTopLevelWidget()) {
     mGtkWindowDecoration = GetSystemGtkWindowDecoration();
+    
+    
+    mCeiledScaleFactor = parentnsWindow
+                             ? int32_t(parentnsWindow->mCeiledScaleFactor)
+                             : ScreenHelperGTK::GetGTKMonitorScaleFactor();
   }
 
   
@@ -5978,15 +5954,15 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   
   if (AreBoundsSane()) {
     GdkRectangle size = DevicePixelsToGdkSizeRoundUp(mBounds.Size());
-    LOG("  nsWindow::Create() Initial resize to %d x %d\n", size.width,
+    LOG("nsWindow::Create() Initial resize to %d x %d\n", size.width,
         size.height);
     gtk_window_resize(GTK_WINDOW(mShell), size.width, size.height);
   }
   if (mIsPIPWindow) {
-    LOG("  Is PIP window\n");
+    LOG("    Is PIP window\n");
     gtk_window_set_type_hint(GTK_WINDOW(mShell), GDK_WINDOW_TYPE_HINT_UTILITY);
   } else if (mIsAlert) {
-    LOG("  Is alert window\n");
+    LOG("    Is alert window\n");
     gtk_window_set_type_hint(GTK_WINDOW(mShell),
                              GDK_WINDOW_TYPE_HINT_NOTIFICATION);
     gtk_window_set_skip_taskbar_hint(GTK_WINDOW(mShell), TRUE);
@@ -5995,17 +5971,17 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 
     SetDefaultIcon();
     gtk_window_set_type_hint(GTK_WINDOW(mShell), GDK_WINDOW_TYPE_HINT_DIALOG);
-    LOG("  nsWindow::Create(): dialog");
+    LOG("nsWindow::Create(): dialog");
     if (parentnsWindow) {
       GtkWindowSetTransientFor(GTK_WINDOW(mShell),
                                GTK_WINDOW(parentnsWindow->GetGtkWidget()));
-      LOG("  set parent window [%p]\n", parentnsWindow);
+      LOG("    set parent window [%p]\n", parentnsWindow);
     }
   } else if (mWindowType == WindowType::Popup) {
     MOZ_ASSERT(aInitData);
     mGtkWindowRoleName = "Popup";
 
-    LOG("  nsWindow::Create() Popup");
+    LOG("nsWindow::Create() Popup");
 
     if (mNoAutoHide) {
       
@@ -6039,7 +6015,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     if (aInitData->mIsDragPopup) {
       gtk_window_set_type_hint(GTK_WINDOW(mShell), GDK_WINDOW_TYPE_HINT_DND);
       mIsDragPopup = true;
-      LOG("  nsWindow::Create() Drag popup\n");
+      LOG("nsWindow::Create() Drag popup\n");
     } else if (GdkIsX11Display()) {
       
       
@@ -6056,10 +6032,10 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
           break;
       }
       gtk_window_set_type_hint(GTK_WINDOW(mShell), gtkTypeHint);
-      LOG("  nsWindow::Create() popup type %s", GetPopupTypeName().get());
+      LOG("nsWindow::Create() popup type %s", GetPopupTypeName().get());
     }
     if (parentnsWindow) {
-      LOG("  set parent window [%p] %s", parentnsWindow,
+      LOG("    set parent window [%p] %s", parentnsWindow,
           parentnsWindow->mGtkWindowRoleName.get());
       GtkWindow* parentWidget = GTK_WINDOW(parentnsWindow->GetGtkWidget());
       GtkWindowSetTransientFor(GTK_WINDOW(mShell), parentWidget);
@@ -6087,7 +6063,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     mGtkWindowRoleName = "Toplevel";
     SetDefaultIcon();
 
-    LOG("  nsWindow::Create() Toplevel\n");
+    LOG("nsWindow::Create() Toplevel\n");
 
     
     GtkWindowGroup* group = gtk_window_group_new();
@@ -6099,23 +6075,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     gtk_window_set_keep_above(GTK_WINDOW(mShell), TRUE);
   }
 
-  GtkWidget* container = nullptr;
-
-#ifdef MOZ_WAYLAND
-  if (GdkIsWaylandDisplay()) {
-    mSurface = new WaylandSurface(
-        parentnsWindow ? MOZ_WL_SURFACE(parentnsWindow->GetMozContainer())
-                       : nullptr,
-        gfx::IntSize(mLastSizeRequest.width, mLastSizeRequest.height));
-  }
-  container = moz_container_new(this, mSurface);
-#else
-  container = moz_container_new(this, nullptr);
-#endif
-
   
+  GtkWidget* container = moz_container_new();
   mContainer = MOZ_CONTAINER(container);
-  g_object_set_data(G_OBJECT(mContainer), "nsWindow", this);
 
   
   gtk_widget_set_app_paintable(
@@ -6188,6 +6150,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   
   
   g_object_set_data(G_OBJECT(GetToplevelGdkWindow()), "nsWindow", this);
+  g_object_set_data(G_OBJECT(mContainer), "nsWindow", this);
   g_object_set_data(G_OBJECT(mShell), "nsWindow", this);
 
   
@@ -6242,7 +6205,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
                    G_CALLBACK(hierarchy_changed_cb), nullptr);
   g_signal_connect(mContainer, "notify::scale-factor",
                    G_CALLBACK(scale_changed_cb), nullptr);
-
   
   hierarchy_changed_cb(GTK_WIDGET(mContainer), nullptr);
   
@@ -6272,9 +6234,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   if (GdkIsWaylandDisplay() &&
       StaticPrefs::widget_wayland_vsync_enabled_AtStartup() &&
       IsTopLevelWidget()) {
-    LOG_VSYNC("  create WaylandVsyncSource");
     mWaylandVsyncSource = new WaylandVsyncSource(this);
     mWaylandVsyncDispatcher = new VsyncDispatcher(mWaylandVsyncSource);
+    LOG_VSYNC("  created WaylandVsyncSource");
   }
 #endif
 
@@ -6618,8 +6580,24 @@ void nsWindow::WaylandStartVsync() {
   if (!mWaylandVsyncSource) {
     return;
   }
+
   LOG_VSYNC("nsWindow::WaylandStartVsync");
-  mWaylandVsyncSource->EnableVSyncSource();
+
+  MOZ_DIAGNOSTIC_ASSERT(mCompositorWidgetDelegate);
+  if (mCompositorWidgetDelegate->AsGtkCompositorWidget() &&
+      mCompositorWidgetDelegate->AsGtkCompositorWidget()
+          ->GetNativeLayerRoot()) {
+    LOG_VSYNC("  use source NativeLayerRootWayland");
+    mWaylandVsyncSource->MaybeUpdateSource(
+        mCompositorWidgetDelegate->AsGtkCompositorWidget()
+            ->GetNativeLayerRoot()
+            ->AsNativeLayerRootWayland());
+  } else {
+    LOG_VSYNC("  use source mContainer");
+    mWaylandVsyncSource->MaybeUpdateSource(mContainer);
+  }
+
+  mWaylandVsyncSource->EnableMonitor();
 #endif
 }
 
@@ -6628,8 +6606,13 @@ void nsWindow::WaylandStopVsync() {
   if (!mWaylandVsyncSource) {
     return;
   }
+
   LOG_VSYNC("nsWindow::WaylandStopVsync");
-  mWaylandVsyncSource->DisableVSyncSource();
+
+  
+  
+  mWaylandVsyncSource->DisableMonitor();
+  mWaylandVsyncSource->MaybeUpdateSource(nullptr);
 #endif
 }
 
@@ -8306,7 +8289,7 @@ static void scale_changed_cb(GtkWidget* widget, GParamSpec* aPSpec,
     return;
   }
 
-  window->OnScaleEvent();
+  window->OnScaleChanged( true);
 }
 
 static gboolean touch_event_cb(GtkWidget* aWidget, GdkEventTouch* aEvent) {
@@ -8892,37 +8875,28 @@ GtkWindow* nsWindow::GetCurrentTopmostWindow() const {
 }
 
 gint nsWindow::GdkCeiledScaleFactor() {
-  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
-
-  
-  
-  if (mCeiledScaleFactor != sNoScale) {
-    LOGVERBOSE("nsWindow::GdkCeiledScaleFactor(): ceiled scale %d",
-               (int)mCeiledScaleFactor);
+  if (IsTopLevelWidget()) {
     return mCeiledScaleFactor;
   }
-
-  
   if (nsWindow* topmost = GetTopmostWindow()) {
-    LOGVERBOSE("nsWindow::GdkCeiledScaleFactor(): toplevel [%p] scale %d",
-               topmost, (int)topmost->mCeiledScaleFactor);
     return topmost->mCeiledScaleFactor;
   }
-
-  LOGVERBOSE("nsWindow::GdkCeiledScaleFactor(): monitor scale %d",
-             ScreenHelperGTK::GetGTKMonitorScaleFactor());
   return ScreenHelperGTK::GetGTKMonitorScaleFactor();
 }
 
 double nsWindow::FractionalScaleFactor() {
 #ifdef MOZ_WAYLAND
-  if (mSurface) {
-    auto scale = mSurface->GetScale();
-    if (scale != sNoScale) {
-      LOGVERBOSE("nsWindow::FractionalScaleFactor(): fractional scale %f",
-                 scale);
-      return scale;
+  double fractional_scale = [&] {
+    if (IsTopLevelWidget()) {
+      return mFractionalScaleFactor;
     }
+    if (nsWindow* topmost = GetTopmostWindow()) {
+      return topmost->mFractionalScaleFactor;
+    }
+    return 0.0;
+  }();
+  if (fractional_scale != 0.0) {
+    return fractional_scale;
   }
 #endif
   return GdkCeiledScaleFactor();
@@ -9674,7 +9648,7 @@ bool nsWindow::SetEGLNativeWindowSize(
     return false;
   }
 
-  float scale = FractionalScaleFactor();
+  gint scale = GdkCeiledScaleFactor();
 #  ifdef MOZ_LOGGING
   if (LOG_ENABLED()) {
     static uintptr_t lastSizeLog = 0;
@@ -9683,15 +9657,15 @@ bool nsWindow::SetEGLNativeWindowSize(
         aEGLWindowSize.width / scale + aEGLWindowSize.height / scale;
     if (lastSizeLog != sizeLog) {
       lastSizeLog = sizeLog;
-      LOG("nsWindow::SetEGLNativeWindowSize() %d x %d scale %f (unscaled "
-          "%f x %f)",
+      LOG("nsWindow::SetEGLNativeWindowSize() %d x %d scale %d (unscaled "
+          "%d x %d)",
           aEGLWindowSize.width, aEGLWindowSize.height, scale,
           aEGLWindowSize.width / scale, aEGLWindowSize.height / scale);
     }
   }
 #  endif
   return moz_container_wayland_egl_window_set_size(
-      mContainer, aEGLWindowSize.ToUnknownSize());
+      mContainer, aEGLWindowSize.ToUnknownSize(), scale);
 }
 #endif
 
@@ -9718,7 +9692,7 @@ void nsWindow::OnMap() {
     mIsMapped = true;
 
     EnsureGdkWindow();
-    RefreshScale( false);
+    OnScaleChanged( false);
 
     if (mIsAlert) {
       gdk_window_set_override_redirect(GetToplevelGdkWindow(), TRUE);
@@ -9802,9 +9776,6 @@ void nsWindow::OnUnmap() {
       g_object_set_data(G_OBJECT(mGdkWindow), "nsWindow", nullptr);
       mGdkWindow = nullptr;
     }
-
-    
-    mCeiledScaleFactor = sNoScale;
 
     
     
@@ -9912,13 +9883,10 @@ void nsWindow::SetDragSource(GdkDragContext* aSourceDragContext) {
   }
 }
 
-UniquePtr<WaylandSurfaceLock> nsWindow::LockSurface() {
-#ifdef MOZ_WAYLAND
-  if (mIsDestroyed || !mSurface) {
+UniquePtr<MozContainerSurfaceLock> nsWindow::LockSurface() {
+  if (mIsDestroyed) {
     return nullptr;
   }
-  return MakeUnique<WaylandSurfaceLock>(MOZ_WL_SURFACE(mContainer));
-#else
-  return nullptr;
-#endif
+  LOG_WAYLAND("nsWindow::LockSurface()");
+  return MakeUnique<MozContainerSurfaceLock>(mContainer);
 }

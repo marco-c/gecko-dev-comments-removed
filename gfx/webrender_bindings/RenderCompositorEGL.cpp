@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "RenderCompositorEGL.h"
 
@@ -35,7 +35,7 @@ namespace mozilla::wr {
 extern LazyLogModule gRenderThreadLog;
 #define LOG(...) MOZ_LOG(gRenderThreadLog, LogLevel::Debug, (__VA_ARGS__))
 
-/* static */
+
 UniquePtr<RenderCompositor> RenderCompositorEGL::Create(
     const RefPtr<widget::CompositorWidget>& aWidget, nsACString& aError) {
   if (kIsLinux && !gfx::gfxVars::UseEGL()) {
@@ -91,8 +91,8 @@ bool RenderCompositorEGL::BeginFrame() {
 #ifdef MOZ_WIDGET_GTK
   if (mWidget->AsGTK()) {
     if (!mWidget->AsGTK()->SetEGLNativeWindowSize(GetBufferSize())) {
-      // It's possible that GtkWidget is hidden on Wayland; e.g. maybe it's
-      // just been closed. So, we can't draw into it right now.
+      
+      
       return false;
     }
   }
@@ -104,7 +104,7 @@ bool RenderCompositorEGL::BeginFrame() {
 
 #ifdef MOZ_WIDGET_ANDROID
   java::GeckoSurfaceTexture::DestroyUnused((int64_t)gl());
-  gl()->MakeCurrent();  // DestroyUnused can change the current context!
+  gl()->MakeCurrent();  
 #endif
 
   return true;
@@ -156,10 +156,10 @@ RenderedFrameId RenderCompositorEGL::EndFrame(
   }
 
 #ifdef MOZ_WIDGET_GTK
-  // Rendering on Wayland has to be atomic (buffer attach + commit) and
-  // wayland surface is also used by main thread so lock it before
-  // we paint at SwapBuffers().
-  UniquePtr<widget::WaylandSurfaceLock> lock;
+  
+  
+  
+  UniquePtr<MozContainerSurfaceLock> lock;
   if (auto* gtkWidget = mWidget->AsGTK()) {
     lock = gtkWidget->LockSurface();
   }
@@ -172,14 +172,14 @@ void RenderCompositorEGL::Pause() { DestroyEGLSurface(); }
 
 bool RenderCompositorEGL::Resume() {
   if (kIsAndroid) {
-    // Destroy EGLSurface if it exists.
+    
     DestroyEGLSurface();
 
     auto size = GetBufferSize();
     GLint maxTextureSize = 0;
     gl()->fGetIntegerv(LOCAL_GL_MAX_TEXTURE_SIZE, (GLint*)&maxTextureSize);
 
-    // When window size is too big, hardware buffer allocation could fail.
+    
     if (maxTextureSize < size.width || maxTextureSize < size.height) {
       gfxCriticalNote << "Too big ANativeWindow size(" << size.width << ", "
                       << size.height << ") MaxTextureSize " << maxTextureSize;
@@ -188,14 +188,14 @@ bool RenderCompositorEGL::Resume() {
 
     mEGLSurface = CreateEGLSurface();
     if (mEGLSurface == EGL_NO_SURFACE) {
-      // Often when we fail to create an EGL surface it is because the Java
-      // Surface we have been provided is invalid. Therefore the on the first
-      // occurence we don't raise a WebRenderError and instead just return
-      // failure. This allows the widget a chance to request a new Java
-      // Surface. On subsequent failures, raising the WebRenderError will
-      // result in the compositor being recreated, falling back through
-      // webrender configurations, and eventually crashing if we still do not
-      // succeed.
+      
+      
+      
+      
+      
+      
+      
+      
       if (!mHandlingNewSurfaceError) {
         mHandlingNewSurfaceError = true;
       } else {
@@ -207,15 +207,15 @@ bool RenderCompositorEGL::Resume() {
 
     gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(mEGLSurface);
   } else if (kIsLinux) {
-    // Destroy EGLSurface if it exists and create a new one. We will set the
-    // swap interval after MakeCurrent() has been called.
+    
+    
     DestroyEGLSurface();
     mEGLSurface = CreateEGLSurface();
     if (mEGLSurface != EGL_NO_SURFACE) {
-      // We have a new EGL surface, which on wayland needs to be configured for
-      // non-blocking buffer swaps. We need MakeCurrent() to set our current EGL
-      // context before we call eglSwapInterval, which is why we do it here
-      // rather than where the surface was created.
+      
+      
+      
+      
       const auto& gle = gl::GLContextEGL::Cast(gl());
       const auto& egl = gle->mEgl;
       MakeCurrent();
@@ -238,9 +238,9 @@ bool RenderCompositorEGL::MakeCurrent() {
   gle->SetEGLSurfaceOverride(mEGLSurface);
   bool ok = gl()->MakeCurrent();
   if (!gl()->IsGLES() && ok && mEGLSurface != EGL_NO_SURFACE) {
-    // If we successfully made a surface current, set the draw buffer
-    // appropriately. It's not well-defined by the EGL spec whether
-    // eglMakeCurrent should do this automatically. See bug 1646135.
+    
+    
+    
     gl()->fDrawBuffer(gl()->IsDoubleBuffered() ? LOCAL_GL_BACK
                                                : LOCAL_GL_FRONT);
   }
@@ -251,7 +251,7 @@ void RenderCompositorEGL::DestroyEGLSurface() {
   const auto& gle = gl::GLContextEGL::Cast(gl());
   const auto& egl = gle->mEgl;
 
-  // Release EGLSurface of back buffer before calling ResizeBuffers().
+  
   if (mEGLSurface) {
     gle->SetEGLSurfaceOverride(EGL_NO_SURFACE);
     gl::GLContextEGL::DestroySurface(*egl, mEGLSurface);
@@ -328,4 +328,4 @@ void RenderCompositorEGL::SetBufferDamageRegion(const wr::DeviceIntRect* aRects,
   }
 }
 
-}  // namespace mozilla::wr
+}  

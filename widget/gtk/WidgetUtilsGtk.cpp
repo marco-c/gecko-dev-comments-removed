@@ -445,6 +445,7 @@ static nsCString GetWindowManagerName() {
 
 
 const nsCString& GetDesktopEnvironmentIdentifier() {
+  MOZ_ASSERT(NS_IsMainThread());
   static const nsDependentCString sIdentifier = [] {
     nsCString ident = [] {
       auto Env = [](const char* aKey) -> const char* {
