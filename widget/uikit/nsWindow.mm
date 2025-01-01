@@ -760,7 +760,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 void nsWindow::Destroy() {
   for (uint32_t i = 0; i < mChildren.Length(); ++i) {
     
-    mChildren[i]->SetParent(nullptr);
+    mChildren[i]->ClearParent();
   }
 
   if (mParent) mParent->mChildren.RemoveElement(this);

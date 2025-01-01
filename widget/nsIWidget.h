@@ -155,12 +155,8 @@ typedef void* nsNativeWidget;
 #define MOZ_WIDGET_INVALID_SCALE 0.0
 
 
-#define NS_IWIDGET_IID                               \
-  {                                                  \
-    0x06396bf6, 0x2dd8, 0x45e5, {                    \
-      0xac, 0x45, 0x75, 0x26, 0x53, 0xb1, 0xc9, 0x80 \
-    }                                                \
-  }
+#define NS_IWIDGET_IID \
+  {0x06396bf6, 0x2dd8, 0x45e5, {0xac, 0x45, 0x75, 0x26, 0x53, 0xb1, 0xc9, 0x80}}
 
 
 
@@ -518,13 +514,7 @@ class nsIWidget : public nsISupports {
   bool Destroyed() const { return mOnDestroyCalled; }
 
   
-
-
-
-
-
-
-  void SetParent(nsIWidget* aNewParent);
+  void ClearParent();
 
   
 
@@ -536,7 +526,7 @@ class nsIWidget : public nsISupports {
   nsIWidget* GetParent() const { return mParent; }
 
   
-  virtual void DidChangeParent(nsIWidget* aOldParent) {}
+  virtual void DidClearParent(nsIWidget* aOldParent) {}
 
   
 
