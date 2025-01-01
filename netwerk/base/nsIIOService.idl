@@ -236,6 +236,14 @@ interface nsIIOService : nsISupports
 
     boolean hostnameIsSharedIPAddress(in nsIURI aURI);
 
+     
+
+
+
+
+     boolean hostnameIsIPAddressAny(in nsIURI aURI);
+
+
     
 
 
