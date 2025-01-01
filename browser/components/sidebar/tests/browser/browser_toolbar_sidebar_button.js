@@ -294,13 +294,6 @@ add_task(async function test_sidebar_button_runtime_pref_enabled() {
     CustomizableUI.AREA_NAVBAR,
     "The sidebar button is in the nav-bar"
   );
-
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[SIDEBAR_VISIBILITY_PREF, "always-show"]],
-  });
-  button.click();
 });
 
 
