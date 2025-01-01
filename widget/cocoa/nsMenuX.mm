@@ -132,7 +132,8 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
   
   RebuildMenu();
 
-  if (IsXULWindowMenu(mContent)) {
+  bool isXULWindowMenu = IsXULWindowMenu(mContent);
+  if (isXULWindowMenu) {
     
     NSApp.windowsMenu = mNativeMenu;
   }
@@ -140,6 +141,9 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
   mIcon = MakeUnique<nsMenuItemIconX>(this);
 
   if (mVisible) {
+    if (!isXULWindowMenu) {
+      SetRebuild(true);
+    }
     SetupIcon();
   }
 
@@ -1108,7 +1112,6 @@ void nsMenuX::ObserveContentInserted(dom::Document* aDocument,
 }
 
 void nsMenuX::SetupIcon() {
-  SetRebuild(true);
   mIcon->SetupIcon(mContent);
   mNativeMenuItem.image = mIcon->GetIconImage();
 }
