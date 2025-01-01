@@ -49,12 +49,6 @@
 #  define HAVE_WAITID
 #endif
 
-#ifdef DEBUG
-#  define LOG_AND_ASSERT CHROMIUM_LOG(FATAL)
-#else
-#  define LOG_AND_ASSERT CHROMIUM_LOG(ERROR)
-#endif
-
 namespace base {
 
 ProcessId GetCurrentProcId() { return getpid(); }
@@ -260,73 +254,37 @@ static bool IsZombieProcess(pid_t pid) {
 }
 #endif  
 
-ProcessStatus WaitForProcess(ProcessHandle handle, BlockingWait blocking,
-                             int* info_out) {
-  *info_out = 0;
-
-  
-  
-  
-  
-  auto handleForkServer = [&]() -> mozilla::Maybe<ProcessStatus> {
+bool IsProcessDead(ProcessHandle handle, bool blocking) {
+  auto handleForkServer = [handle]() -> mozilla::Maybe<bool> {
 #ifdef MOZ_ENABLE_FORKSERVER
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    static constexpr long kDelayMS = 500;
-    static constexpr int kAttempts = 10;
-
-    if (errno != ECHILD || !mozilla::ipc::ForkServiceChild::WasUsed()) {
-      return mozilla::Nothing();
-    }
-
-    
-    for (int attempt = 0; attempt < kAttempts; ++attempt) {
-      const int rv = kill(handle, 0);
-      if (rv == 0) {
-        
-        if (blocking == BlockingWait::No) {
-          
-          
-          
-          
-          return mozilla::Some(IsZombieProcess(handle)
-                                   ? ProcessStatus::Exited
-                                   : ProcessStatus::Running);
-        }
-      } else {
-        if (errno == ESRCH) {
-          return mozilla::Some(ProcessStatus::Exited);
-        }
-        
-        *info_out = errno;
-        CHROMIUM_LOG(WARNING) << "Unexpected error probing process " << handle;
-        return mozilla::Some(ProcessStatus::Error);
-      }
-
+    if (errno == ECHILD && mozilla::ipc::ForkServiceChild::WasUsed()) {
       
-      DCHECK(blocking == BlockingWait::Yes);
-      struct timespec delay = {(kDelayMS / 1000),
-                               (kDelayMS % 1000) * 1000 * 1000};
-      HANDLE_EINTR(nanosleep(&delay, &delay));
+      
+      
+      
+      
+      const int r = kill(handle, 0);
+      if (r < 0) {
+        const int e = errno;
+        if (e != ESRCH) {
+          CHROMIUM_LOG(WARNING) << "unexpected error checking for process "
+                                << handle << ": " << strerror(e);
+          
+          
+        }
+        return mozilla::Some(true);
+      }
+      
+      
+      
+      
+      return mozilla::Some(IsZombieProcess(handle));
     }
-
-    *info_out = ETIME;  
-    return mozilla::Some(ProcessStatus::Error);
 #else
-    return mozilla::Nothing();
+    mozilla::Unused << handle;
 #endif
+    return mozilla::Nothing();
   };
-
-  const int maybe_wnohang = (blocking == BlockingWait::No) ? WNOHANG : 0;
 
 #ifdef HAVE_WAITID
 
@@ -336,52 +294,60 @@ ProcessStatus WaitForProcess(ProcessHandle handle, BlockingWait blocking,
   
   
   siginfo_t si{};
-  const int wflags = WEXITED | WNOWAIT | maybe_wnohang;
+  const int wflags = WEXITED | WNOWAIT | (blocking ? 0 : WNOHANG);
   int result = HANDLE_EINTR(waitid(P_PID, handle, &si, wflags));
   if (result == -1) {
-    int wait_err = errno;
     if (auto forkServerReturn = handleForkServer()) {
       return *forkServerReturn;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     CHROMIUM_LOG(ERROR) << "waitid failed pid:" << handle << " errno:" << errno;
-    *info_out = wait_err;
-    return ProcessStatus::Error;
+    return true;
   }
 
   if (si.si_pid == 0) {
     
-    return ProcessStatus::Running;
+    return false;
   }
 
-  ProcessStatus status;
   DCHECK(si.si_pid == handle);
   switch (si.si_code) {
     case CLD_STOPPED:
     case CLD_CONTINUED:
-      LOG_AND_ASSERT << "waitid returned an event type that it shouldn't have";
+      DCHECK(false) << "waitid returned an event type that it shouldn't have";
       [[fallthrough]];
     case CLD_TRAPPED:
       CHROMIUM_LOG(WARNING) << "ignoring non-exit event for process " << handle;
-      return ProcessStatus::Running;
+      return false;
 
     case CLD_KILLED:
     case CLD_DUMPED:
-      status = ProcessStatus::Killed;
-      *info_out = si.si_status;
+      CHROMIUM_LOG(WARNING)
+          << "process " << handle << " exited on signal " << si.si_status;
       break;
 
     case CLD_EXITED:
-      status = ProcessStatus::Exited;
-      *info_out = si.si_status;
+      if (si.si_status != 0) {
+        CHROMIUM_LOG(WARNING)
+            << "process " << handle << " exited with status " << si.si_status;
+      }
       break;
 
     default:
-      LOG_AND_ASSERT << "unexpected waitid si_code value: " << si.si_code;
+      CHROMIUM_LOG(ERROR) << "unexpected waitid si_code value: " << si.si_code;
+      DCHECK(false);
       
       
-      *info_out = 0;
-      return ProcessStatus::Exited;
   }
 
   
@@ -393,36 +359,33 @@ ProcessStatus WaitForProcess(ProcessHandle handle, BlockingWait blocking,
   DCHECK(result == 0);
   DCHECK(si.si_pid == handle);
   DCHECK(si.si_code == old_si_code);
-  return status;
+  return true;
 
 #else  
 
   int status;
-  const int result = waitpid(handle, &status, maybe_wnohang);
+  const int result = waitpid(handle, &status, blocking ? 0 : WNOHANG);
   if (result == -1) {
-    *info_out = errno;
     if (auto forkServerReturn = handleForkServer()) {
       return *forkServerReturn;
     }
 
     CHROMIUM_LOG(ERROR) << "waitpid failed pid:" << handle
                         << " errno:" << errno;
-    return ProcessStatus::Error;
+    return true;
   }
   if (result == 0) {
-    return ProcessStatus::Running;
+    return false;
   }
 
-  if (WIFEXITED(status)) {
-    *info_out = WEXITSTATUS(status);
-    return ProcessStatus::Exited;
+  if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+    CHROMIUM_LOG(WARNING) << "process " << handle << " exited with status "
+                          << WEXITSTATUS(status);
+  } else if (WIFSIGNALED(status)) {
+    CHROMIUM_LOG(WARNING) << "process " << handle << " exited on signal "
+                          << WTERMSIG(status);
   }
-  if (WIFSIGNALED(status)) {
-    *info_out = WTERMSIG(status);
-    return ProcessStatus::Killed;
-  }
-  LOG_AND_ASSERT << "unexpected wait status: " << status;
-  return ProcessStatus::Error;
+  return true;
 
 #endif  
 }
