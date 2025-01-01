@@ -2147,7 +2147,8 @@ void nsCocoaWindow::SetMenuBar(RefPtr<nsMenuBarX>&& aMenuBar) {
                    mWindow.isMainWindow)) {
     
     
-    mMenuBar->PaintAsync();
+    NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+        "PaintMenuBar", [menuBar = mMenuBar] { menuBar->Paint(); }));
   }
 }
 
@@ -2623,9 +2624,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   NS_ASSERTION(geckoWidget, "Window delegate not returning a gecko widget!");
 
   if (nsMenuBarX* geckoMenuBar = geckoWidget->GetMenuBar()) {
-    
-    
-    geckoMenuBar->PaintAsync();
+    geckoMenuBar->Paint();
   } else {
     
     if (!sApplicationMenu) {
@@ -2876,7 +2875,7 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   if (hiddenWindowMenuBar) {
     
     
-    hiddenWindowMenuBar->PaintAsync();
+    hiddenWindowMenuBar->Paint();
   }
 
   NSWindow* window = [aNotification object];

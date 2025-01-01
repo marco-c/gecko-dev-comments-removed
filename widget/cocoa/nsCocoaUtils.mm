@@ -368,13 +368,10 @@ void nsCocoaUtils::CleanUpAfterNativeAppModalDialog() {
   if (!hiddenWindowMenuBar) return;
 
   NSWindow* mainWindow = [NSApp mainWindow];
-  if (!mainWindow) {
-    
-    
-    hiddenWindowMenuBar->PaintAsync();
-  } else {
+  if (!mainWindow)
+    hiddenWindowMenuBar->Paint();
+  else
     [WindowDelegate paintMenubarForWindow:mainWindow];
-  }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }

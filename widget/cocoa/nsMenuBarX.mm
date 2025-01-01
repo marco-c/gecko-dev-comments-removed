@@ -506,13 +506,6 @@ nsresult nsMenuBarX::Paint() {
 }
 
 
-
-void nsMenuBarX::PaintAsync() {
-  NS_DispatchToCurrentThread(NS_NewRunnableFunction(
-      "PaintMenuBar", [self = RefPtr{this}] { self->Paint(); }));
-}
-
-
 void nsMenuBarX::ResetNativeApplicationMenu() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
