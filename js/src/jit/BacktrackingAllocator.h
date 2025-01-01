@@ -291,7 +291,9 @@ class LiveRange : public TempObject, public InlineForwardListNode<LiveRange> {
   void setBundle(LiveBundle* bundle) { bundle_ = bundle; }
 
   void addUse(UsePosition* use);
+
   void tryToMoveDefAndUsesInto(LiveRange* other);
+  void moveAllUsesToTheEndOf(LiveRange* other);
 
   void setHasDefinition() {
     MOZ_ASSERT(!hasDefinition_);
@@ -853,7 +855,7 @@ class BacktrackingAllocator : protected RegisterAllocator {
                                                     bool* success);
 
   
-  [[nodiscard]] bool chooseBundleSplit(LiveBundle* bundle, bool fixed,
+  [[nodiscard]] bool chooseBundleSplit(LiveBundle* bundle, bool hasCall,
                                        LiveBundle* conflict);
 
   
@@ -862,20 +864,20 @@ class BacktrackingAllocator : protected RegisterAllocator {
                                         Requirement* phint);
   [[nodiscard]] bool tryAllocateRegister(PhysicalRegister& r,
                                          LiveBundle* bundle, bool* success,
-                                         bool* pfixed,
+                                         bool* hasCall,
                                          LiveBundleVector& conflicting);
   [[nodiscard]] bool tryAllocateAnyRegister(LiveBundle* bundle, bool* success,
-                                            bool* pfixed,
+                                            bool* hasCall,
                                             LiveBundleVector& conflicting);
   [[nodiscard]] bool evictBundle(LiveBundle* bundle);
   [[nodiscard]] bool tryAllocateFixed(LiveBundle* bundle,
                                       Requirement requirement, bool* success,
-                                      bool* pfixed,
+                                      bool* hasCall,
                                       LiveBundleVector& conflicting);
   [[nodiscard]] bool tryAllocateNonFixed(LiveBundle* bundle,
                                          Requirement requirement,
                                          Requirement hint, bool* success,
-                                         bool* pfixed,
+                                         bool* hasCall,
                                          LiveBundleVector& conflicting);
   [[nodiscard]] bool processBundle(const MIRGenerator* mir, LiveBundle* bundle);
   [[nodiscard]] bool spill(LiveBundle* bundle);
