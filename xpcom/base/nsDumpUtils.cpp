@@ -43,10 +43,6 @@ using namespace mozilla;
 
 
 
-
-
-
-
 static Atomic<int> sDumpPipeWriteFd(-1);
 
 const char FifoWatcher::kPrefName[] = "memory_info_dumper.watch_fifo.enabled";
