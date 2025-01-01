@@ -1117,7 +1117,17 @@
         docElement.getAttribute("privatebrowsingmode") == "temporary"
           ? "Private"
           : "Default";
-      let defaultTitle = docElement.dataset["title" + dataSuffix];
+
+      if (
+        SelectableProfileService?.isEnabled &&
+        SelectableProfileService.currentProfile
+      ) {
+        dataSuffix += "WithProfile";
+      }
+      let defaultTitle = docElement.dataset["title" + dataSuffix].replace(
+        "PROFILENAME",
+        () => SelectableProfileService.currentProfile.name.replace(/\0/g, "")
+      );
 
       if (
         !this._shouldExposeContentTitle ||
@@ -1169,10 +1179,16 @@
         
         
         
-        return docElement.dataset["contentTitle" + dataSuffix].replace(
-          "CONTENTTITLE",
-          () => title
-        );
+        return docElement.dataset["contentTitle" + dataSuffix]
+          .replace("CONTENTTITLE", () => title)
+          .replace(
+            "PROFILENAME",
+            () =>
+              SelectableProfileService?.currentProfile?.name.replace(
+                /\0/g,
+                ""
+              ) ?? ""
+          );
       }
 
       return defaultTitle;
