@@ -168,6 +168,8 @@ enum class TrapMachineInsn {
   
   Atomic
 };
+using TrapMachineInsnVector =
+    mozilla::Vector<TrapMachineInsn, 0, SystemAllocPolicy>;
 
 static inline TrapMachineInsn TrapMachineInsnForLoad(int byteSize) {
   switch (byteSize) {
@@ -208,11 +210,10 @@ static inline TrapMachineInsn TrapMachineInsnForStore(int byteSize) {
 static inline TrapMachineInsn TrapMachineInsnForStoreWord() {
   return TrapMachineInsnForStore(sizeof(void*));
 }
-
 #ifdef DEBUG
-const char* NameOfTrap(Trap trap);
-const char* NameOfTrapMachineInsn(TrapMachineInsn tmi);
-#endif  
+const char* ToString(Trap trap);
+const char* ToString(TrapMachineInsn tmi);
+#endif
 
 
 
@@ -247,15 +248,12 @@ static_assert(sizeof(FaultingCodeOffsetPair) == 8);
 
 
 
-
 struct TrapSite {
 #ifdef DEBUG
   TrapMachineInsn insn;
 #endif
   uint32_t pcOffset;
   BytecodeOffset bytecode;
-
-  WASM_CHECK_CACHEABLE_POD(pcOffset, bytecode);
 
   TrapSite()
       :
@@ -273,22 +271,215 @@ struct TrapSite {
         pcOffset(fco.get()),
         bytecode(bytecode) {
   }
-
-  void offsetBy(uint32_t offset) { pcOffset += offset; }
 };
 
-WASM_DECLARE_CACHEABLE_POD(TrapSite);
-WASM_DECLARE_POD_VECTOR(TrapSite, TrapSiteVector)
 
-struct TrapSiteVectorArray
-    : mozilla::EnumeratedArray<Trap, TrapSiteVector, size_t(Trap::Limit)> {
-  bool empty() const;
-  void clear();
-  void swap(TrapSiteVectorArray& rhs);
-  void shrinkStorageToFit();
 
-  size_t sumOfLengths() const;
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+
+
+
+class TrapSitesForKind {
+  
+  
+  using Uint32Vector = Vector<uint32_t, 0, SystemAllocPolicy>;
+  using BytecodeOffsetVector =
+      mozilla::Vector<BytecodeOffset, 0, SystemAllocPolicy>;
+
+#ifdef DEBUG
+  TrapMachineInsnVector machineInsns_;
+#endif
+  Uint32Vector pcOffsets_;
+  BytecodeOffsetVector bytecodeOffsets_;
+
+ public:
+  explicit TrapSitesForKind() = default;
+
+  size_t length() const { return pcOffsets_.length(); }
+
+  bool empty() const { return pcOffsets_.empty(); }
+
+  [[nodiscard]]
+  bool reserve(size_t length) {
+#ifdef DEBUG
+    if (!machineInsns_.reserve(length)) {
+      return false;
+    }
+#endif
+    return pcOffsets_.reserve(length) && bytecodeOffsets_.reserve(length);
+  }
+
+  [[nodiscard]]
+  bool append(const TrapSite& site) {
+    MOZ_ASSERT(site.bytecodeOffset.isValid());
+
+#ifdef DEBUG
+    if (!machineInsns_.append(site.insn)) {
+      return false;
+    }
+#endif
+    return pcOffsets_.append(site.pcOffset) &&
+           bytecodeOffsets_.append(site.bytecode);
+  }
+
+  [[nodiscard]]
+  bool appendAll(TrapSitesForKind&& other) {
+#ifdef DEBUG
+    if (!machineInsns_.appendAll(other.machineInsns_)) {
+      return false;
+    }
+#endif
+    return pcOffsets_.appendAll(other.pcOffsets_) &&
+           bytecodeOffsets_.appendAll(other.bytecodeOffsets_);
+  }
+
+  void clear() {
+#ifdef DEBUG
+    machineInsns_.clear();
+#endif
+    pcOffsets_.clear();
+    bytecodeOffsets_.clear();
+  }
+
+  void swap(TrapSitesForKind& other) {
+#ifdef DEBUG
+    machineInsns_.swap(other.machineInsns_);
+#endif
+    pcOffsets_.swap(other.pcOffsets_);
+    bytecodeOffsets_.swap(other.bytecodeOffsets_);
+  }
+
+  void shrinkStorageToFit() {
+#ifdef DEBUG
+    machineInsns_.shrinkStorageToFit();
+#endif
+    pcOffsets_.shrinkStorageToFit();
+    bytecodeOffsets_.shrinkStorageToFit();
+  }
+
+  void offsetBy(uint32_t offsetInModule) {
+    for (uint32_t& pcOffset : pcOffsets_) {
+      pcOffset += offsetInModule;
+    }
+  }
+
+  bool lookup(uint32_t trapInstructionOffset,
+              BytecodeOffset* bytecodeOut) const;
+
+  void checkInvariants(const uint8_t* codeBase) const;
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    size_t result = 0;
+#ifdef DEBUG
+    result += machineInsns_.sizeOfExcludingThis(mallocSizeOf);
+#endif
+    return result + pcOffsets_.sizeOfExcludingThis(mallocSizeOf) +
+           bytecodeOffsets_.sizeOfExcludingThis(mallocSizeOf);
+  }
+
+  WASM_DECLARE_FRIEND_SERIALIZE(TrapSitesForKind);
+};
+
+
+
+class TrapSites {
+  using TrapSiteVectorArray =
+      mozilla::EnumeratedArray<Trap, TrapSitesForKind, size_t(Trap::Limit)>;
+
+  TrapSiteVectorArray array_;
+
+ public:
+  explicit TrapSites() = default;
+
+  bool empty() const {
+    for (Trap trap : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      if (!array_[trap].empty()) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  [[nodiscard]]
+  bool reserve(Trap trap, size_t length) {
+    return array_[trap].reserve(length);
+  }
+
+  [[nodiscard]]
+  bool append(Trap trap, TrapSite site) {
+    return array_[trap].append(site);
+  }
+
+  [[nodiscard]]
+  bool appendAll(TrapSites&& other) {
+    for (Trap trap : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      if (!array_[trap].appendAll(std::move(other.array_[trap]))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void clear() {
+    for (Trap trap : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      array_[trap].clear();
+    }
+  }
+
+  void swap(TrapSites& rhs) {
+    for (Trap trap : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      array_[trap].swap(rhs.array_[trap]);
+    }
+  }
+
+  void shrinkStorageToFit() {
+    for (Trap trap : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      array_[trap].shrinkStorageToFit();
+    }
+  }
+
+  void offsetBy(uint32_t offsetInModule) {
+    for (Trap trap : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      array_[trap].offsetBy(offsetInModule);
+    }
+  }
+
+  [[nodiscard]]
+  bool lookup(uint32_t trapInstructionOffset, Trap* trapOut,
+              BytecodeOffset* bytecodeOut) const {
+    for (Trap trap : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      const TrapSitesForKind& trapSitesForKind = array_[trap];
+      if (trapSitesForKind.lookup(trapInstructionOffset, bytecodeOut)) {
+        *trapOut = trap;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void checkInvariants(const uint8_t* codeBase) const {
+    for (Trap trap : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      array_[trap].checkInvariants(codeBase);
+    }
+  }
+
+  size_t sumOfLengths() const {
+    size_t result = 0;
+    for (Trap trap : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      result += array_[trap].length();
+    }
+    return result;
+  }
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    size_t result = 0;
+    for (Trap trap : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      result += array_[trap].sizeOfExcludingThis(mallocSizeOf);
+    }
+    return result;
+  }
+
+  WASM_DECLARE_FRIEND_SERIALIZE(TrapSites);
 };
 
 struct CallFarJump {
