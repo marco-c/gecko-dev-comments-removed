@@ -8973,14 +8973,18 @@ Maybe<ScrollMetadata> nsLayoutUtils::GetRootMetadata(
 
   
   
-  bool ensureMetricsForRootId = nsLayoutUtils::AsyncPanZoomEnabled(frame) &&
-                                aBuilder->IsPaintingToWindow() &&
-                                !presContext->GetParentPresContext();
+  bool ensureMetricsForRootId =
+      nsLayoutUtils::AsyncPanZoomEnabled(frame) &&
+      aBuilder->IsPaintingToWindow() &&
+      (!presContext->GetParentPresContext() || frame->IsMenuPopupFrame());
+  MOZ_ASSERT(!presContext->GetParentPresContext() || frame->IsMenuPopupFrame());
 
   nsIContent* content = nullptr;
   ScrollContainerFrame* rootScrollContainerFrame =
       presShell->GetRootScrollContainerFrame();
-  if (rootScrollContainerFrame) {
+  if (frame->IsMenuPopupFrame()) {
+    content = frame->GetContent();
+  } else if (rootScrollContainerFrame) {
     content = rootScrollContainerFrame->GetContent();
   } else {
     
