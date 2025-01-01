@@ -487,25 +487,29 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
         NS_WARNING("There was no selection range");
         return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
       }
-      Result<CaretPoint, nsresult> caretPointOrError =
-          InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
-              newCaretPosition);
-      if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-        NS_WARNING(
-            "HTMLEditor::"
-            "InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary() "
-            "failed");
-        return caretPointOrError.unwrapErr();
+      if (const RefPtr<Element> editingHost =
+              ComputeEditingHost(LimitInBodyElement::No)) {
+        Result<CreateLineBreakResult, nsresult>
+            insertPaddingBRElementResultOrError =
+                InsertPaddingBRElementToMakeEmptyLineVisibleIfNeeded(
+                    newCaretPosition, *editingHost);
+        if (MOZ_UNLIKELY(insertPaddingBRElementResultOrError.isErr())) {
+          NS_WARNING(
+              "HTMLEditor::"
+              "InsertPaddingBRElementToMakeEmptyLineVisibleIfNeeded() failed");
+          return insertPaddingBRElementResultOrError.unwrapErr();
+        }
+        nsresult rv =
+            insertPaddingBRElementResultOrError.unwrap().SuggestCaretPointTo(
+                *this, {SuggestCaret::OnlyIfHasSuggestion});
+        if (NS_FAILED(rv)) {
+          NS_WARNING("CaretPoint::SuggestCaretPointTo() failed");
+          return rv;
+        }
+        NS_WARNING_ASSERTION(
+            rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+            "CaretPoint::SuggestCaretPointTo() failed, but ignored");
       }
-      nsresult rv = caretPointOrError.unwrap().SuggestCaretPointTo(
-          *this, {SuggestCaret::OnlyIfHasSuggestion});
-      if (NS_FAILED(rv)) {
-        NS_WARNING("CaretPoint::SuggestCaretPointTo() failed");
-        return rv;
-      }
-      NS_WARNING_ASSERTION(
-          rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-          "CaretPoint::SuggestCaretPointTo() failed, but ignored");
     }
 
     
@@ -3414,62 +3418,70 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
   return CaretPoint(std::move(newCaretPosition));
 }
 
-Result<CaretPoint, nsresult>
-HTMLEditor::InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
-    const EditorDOMPoint& aPointToInsert) {
+
+bool HTMLEditor::CanInsertLineBreak(LineBreakType aLineBreakType,
+                                    const nsIContent& aContent) {
+  if (MOZ_UNLIKELY(!HTMLEditUtils::IsSimplyEditableNode(aContent))) {
+    return false;
+  }
+  if (aLineBreakType == LineBreakType::BRElement) {
+    return HTMLEditUtils::CanNodeContain(aContent, *nsGkAtoms::br);
+  }
+  MOZ_ASSERT(aLineBreakType == LineBreakType::Linefeed);
+  const Element* const container = aContent.GetAsElementOrParentElement();
+  return container &&
+         HTMLEditUtils::CanNodeContain(*container, *nsGkAtoms::textTagName) &&
+         EditorUtils::IsNewLinePreformatted(*container);
+}
+
+Result<CreateLineBreakResult, nsresult>
+HTMLEditor::InsertPaddingBRElementToMakeEmptyLineVisibleIfNeeded(
+    const EditorDOMPoint& aPointToInsert, const Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aPointToInsert.IsSet());
 
-  if (!aPointToInsert.IsInContentNode()) {
-    return CaretPoint(EditorDOMPoint());
+  if (MOZ_UNLIKELY(!aPointToInsert.IsInContentNode())) {
+    return CreateLineBreakResult::NotHandled();
+  }
+
+  
+  if (!HTMLEditor::CanInsertLineBreak(
+          LineBreakType::BRElement,
+          *aPointToInsert.ContainerAs<nsIContent>())) {
+    return CreateLineBreakResult::NotHandled();
   }
 
   
   
-  if (!HTMLEditUtils::IsBlockElement(
-          *aPointToInsert.ContainerAs<nsIContent>(),
-          BlockInlineCheck::UseComputedDisplayStyle)) {
-    return CaretPoint(EditorDOMPoint());
-  }
+  
 
-  if (NS_WARN_IF(!HTMLEditUtils::IsSimplyEditableNode(
-          *aPointToInsert.ContainerAs<nsIContent>()))) {
-    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-  }
-
-  WSRunScanner wsRunScanner(ComputeEditingHost(), aPointToInsert,
-                            BlockInlineCheck::UseComputedDisplayStyle);
   
   
-  if (!wsRunScanner.StartsFromHardLineBreak() &&
-      !wsRunScanner.StartsFromInlineEditingHostBoundary()) {
-    return CaretPoint(EditorDOMPoint());
-  }
-  
-  
-  if (!wsRunScanner.EndsByBlockBoundary() &&
-      !wsRunScanner.EndsByInlineEditingHostBoundary()) {
-    return CaretPoint(EditorDOMPoint());
+  const WSScanResult previousThing =
+      WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+          &aEditingHost, aPointToInsert,
+          BlockInlineCheck::UseComputedDisplayStyle);
+  if (!previousThing.ReachedLineBoundary()) {
+    return CreateLineBreakResult::NotHandled();
   }
 
   
-  if (!HTMLEditUtils::CanNodeContain(*aPointToInsert.GetContainer(),
-                                     *nsGkAtoms::br)) {
-    return CaretPoint(EditorDOMPoint());
+  
+  const WSScanResult nextThing =
+      WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+          &aEditingHost, aPointToInsert,
+          BlockInlineCheck::UseComputedDisplayStyle);
+  if (!nextThing.ReachedBlockBoundary()) {
+    return CreateLineBreakResult::NotHandled();
   }
 
-  Result<CreateLineBreakResult, nsresult> insertBRElementResultOrError =
+  Result<CreateLineBreakResult, nsresult> insertLineBreakResultOrError =
       InsertLineBreak(WithTransaction::Yes, LineBreakType::BRElement,
                       aPointToInsert, nsIEditor::ePrevious);
-  if (MOZ_UNLIKELY(insertBRElementResultOrError.isErr())) {
-    NS_WARNING(
-        "HTMLEditor::InsertLineBreak(WithTransaction::Yes, "
-        "LineBreakType::BRElement, ePrevious) failed");
-    return insertBRElementResultOrError.propagateErr();
-  }
-  CreateLineBreakResult insertBRElementResult =
-      insertBRElementResultOrError.unwrap();
-  return CaretPoint(insertBRElementResult.UnwrapCaretPoint());
+  NS_WARNING_ASSERTION(insertLineBreakResultOrError.isOk(),
+                       "HTMLEditor::InsertLineBreak(WithTransaction::Yes, "
+                       "LineBreakType::BRElement, ePrevious) failed");
+  return insertLineBreakResultOrError;
 }
 
 Result<EditActionResult, nsresult>
