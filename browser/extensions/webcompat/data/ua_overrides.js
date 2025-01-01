@@ -962,12 +962,12 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1836140",
+    id: "bug1933811",
     platform: "all",
-    domain: "indices.iriworldwide.com",
-    bug: "1836140",
+    domain: "indices.circana.com",
+    bug: "1933811",
     config: {
-      matches: ["*://indices.iriworldwide.com/covid19/*"],
+      matches: ["*://indices.circana.com/*"],
       uaTransformer: originalUA => {
         return originalUA.replace("Firefox/", "Fx/");
       },
