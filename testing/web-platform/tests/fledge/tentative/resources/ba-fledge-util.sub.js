@@ -260,7 +260,7 @@ BA.decodeInterestGroupData = async function(igData) {
   
   
   
-  assert_true(header.keyId === 0x12, "valid key Id");
+  assert_true(header.keyId === 0x14, "valid key Id");
 
   
   assert_equals(header.kemId, hpke.KemId.DhkemX25519HkdfSha256);
