@@ -11,16 +11,19 @@ async function run_test() {
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
   await setupUpdaterTest(FILE_COMPLETE_MAR, false);
-  const testFile = getTestFileByName("0exe0.exe");
-  await runHelperFileInUse(testFile.relPathDir + testFile.fileName, false);
+  if (!gIsServiceTest) {
+    await runHelperFileInUse(DIR_MACOS + gCallbackBinFile, false);
+  } else {
+    await runHelperFileInUse(DIR_RESOURCES + gCallbackBinFile, false);
+  }
   runUpdate(STATE_SUCCEEDED, false, 0, true);
   await waitForHelperExit();
   await checkPostUpdateAppLog();
+  checkAppBundleModTime();
   await testPostUpdateProcessing();
   checkPostUpdateRunningFile(true);
-  checkFilesAfterUpdateSuccess(getApplyDirFile, false, true);
-  checkUpdateLogContains(ERR_BACKUP_DISCARD);
-  checkUpdateLogContains(STATE_SUCCEEDED + "\n" + CALL_QUIT);
+  checkFilesAfterUpdateSuccess(getApplyDirFile);
+  checkUpdateLogContents(LOG_COMPLETE_SUCCESS);
   await waitForUpdateXMLFiles();
   await checkUpdateManager(STATE_NONE, false, STATE_SUCCEEDED, 0, 1);
   checkCallbackLog();

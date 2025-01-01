@@ -8,19 +8,13 @@ async function run_test() {
   if (!setupTestCommon()) {
     return;
   }
-  const STATE_AFTER_STAGE = STATE_PENDING;
+  const STATE_AFTER_STAGE = gIsServiceTest ? STATE_PENDING_SVC : STATE_PENDING;
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
   setTestFilesAndDirsForFailure();
   await setupUpdaterTest(FILE_COMPLETE_MAR, false);
   await runHelperLockFile(getTestFileByName("searchpluginspng0.png"));
-  await stageUpdate(STATE_AFTER_STAGE, true);
-  checkPostUpdateRunningFile(false);
-  
-  
-  checkUpdateLogContains(ERR_ENSURE_COPY);
-  
-  runUpdate(STATE_FAILED_WRITE_ERROR, false, 1, false);
+  runUpdate(STATE_FAILED_WRITE_ERROR, false, 1, true);
   await waitForHelperExit();
   await testPostUpdateProcessing();
   checkPostUpdateRunningFile(false);
@@ -29,6 +23,12 @@ async function run_test() {
   checkUpdateLogContains(ERR_BACKUP_CREATE_7);
   checkUpdateLogContains(STATE_FAILED_WRITE_ERROR + "\n" + CALL_QUIT);
   await waitForUpdateXMLFiles(true, false);
-  await checkUpdateManager(STATE_PENDING, true, STATE_PENDING, WRITE_ERROR, 0);
+  await checkUpdateManager(
+    STATE_AFTER_STAGE,
+    true,
+    STATE_AFTER_STAGE,
+    WRITE_ERROR,
+    0
+  );
   checkCallbackLog();
 }

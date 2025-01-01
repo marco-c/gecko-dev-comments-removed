@@ -5,3 +5,4 @@
 
 load("xpcshellUtilsAUS.js");
 gIsServiceTest = true;
+LOG_FUNCTION(`gIsServiceTest =? ${gIsServiceTest}`);
