@@ -64,12 +64,8 @@ struct EventInit;
 #undef GENERATED_EVENT
 
 
-#define NS_EVENT_IID                                 \
-  {                                                  \
-    0x71139716, 0x4d91, 0x4dee, {                    \
-      0xba, 0xf9, 0xe3, 0x3b, 0x80, 0xc1, 0x61, 0x61 \
-    }                                                \
-  }
+#define NS_EVENT_IID \
+  {0x71139716, 0x4d91, 0x4dee, {0xba, 0xf9, 0xe3, 0x3b, 0x80, 0xc1, 0x61, 0x61}}
 
 class Event : public nsISupports, public nsWrapperCache {
  public:
@@ -406,6 +402,12 @@ class Event : public nsISupports, public nsWrapperCache {
                                const WidgetEvent& aEvent);
 
   mozilla::WidgetEvent* mEvent;
+  
+  
+  
+  
+  
+  
   RefPtr<nsPresContext> mPresContext;
   nsCOMPtr<EventTarget> mExplicitOriginalTarget;
   nsCOMPtr<nsIGlobalObject> mOwner;

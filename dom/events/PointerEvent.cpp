@@ -6,8 +6,9 @@
 
 
 
+#include "PointerEvent.h"
+
 #include "mozilla/dom/MouseEventBinding.h"
-#include "mozilla/dom/PointerEvent.h"
 #include "mozilla/dom/PointerEventBinding.h"
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/MouseEvents.h"
@@ -368,9 +369,6 @@ void PointerEvent::GetCoalescedEvents(
       
       domEvent->DuplicatePrivateData();
 
-      
-      
-      domEvent->mPresContext = mPresContext;
       mCoalescedEvents.AppendElement(domEvent);
     }
   }
