@@ -1661,20 +1661,38 @@ void GetErrorCodeStringFromNSResult(nsresult aResult,
 }
 
 void Document::GetNetErrorInfo(NetErrorInfo& aInfo, ErrorResult& aRv) {
-  nsresult rv = NS_OK;
   if (NS_WARN_IF(!mFailedChannel)) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
+  }
+
+  nsresult rv = NS_OK;
+  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mFailedChannel));
+
+  
+  
+  if (httpChannel) {
+    uint32_t responseStatus;
+    nsAutoCString responseStatusText;
+    nsresult rv = httpChannel->GetResponseStatus(&responseStatus);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aRv.Throw(rv);
+      return;
+    }
+    aInfo.mResponseStatus = responseStatus;
+
+    rv = httpChannel->GetResponseStatusText(responseStatusText);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aRv.Throw(rv);
+      return;
+    }
+    aInfo.mResponseStatusText.AssignASCII(responseStatusText);
   }
 
   nsCOMPtr<nsITransportSecurityInfo> tsi;
   rv = mFailedChannel->GetSecurityInfo(getter_AddRefs(tsi));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
-    return;
-  }
-  if (NS_WARN_IF(!tsi)) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
@@ -1685,6 +1703,12 @@ void Document::GetNetErrorInfo(NetErrorInfo& aInfo, ErrorResult& aRv) {
     return;
   }
   aInfo.mChannelStatus = static_cast<uint32_t>(channelStatus);
+
+  
+  
+  if (!tsi) {
+    return;
+  }
 
   
   (void)tsi->GetErrorCodeString(aInfo.mErrorCodeString);
