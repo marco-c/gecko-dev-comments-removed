@@ -3114,57 +3114,61 @@ const DefaultMeta = ({
   topic,
   isSectionsCard,
   showTopics
-}) => external_React_default().createElement("div", {
-  className: "meta"
-}, external_React_default().createElement("div", {
-  className: "info-wrap"
-}, ctaButtonVariant !== "variant-b" && format !== "rectangle" && external_React_default().createElement(DSSource, {
-  source: source,
-  timeToRead: timeToRead,
-  newSponsoredLabel: newSponsoredLabel,
-  context: context,
-  sponsor: sponsor,
-  sponsored_by_override: sponsored_by_override
-}), format !== "rectangle" && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h3", {
-  className: "title clamp"
-}, title), excerpt && external_React_default().createElement("p", {
-  className: "excerpt clamp"
-}, excerpt)), format === "rectangle" && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h3", {
-  className: "title clamp"
-}, "Sponsored"), external_React_default().createElement("p", {
-  className: "excerpt clamp"
-}, "Sponsored content supports our mission to build a better web."))), !isListCard && format !== "rectangle" && !mayHaveSectionsCards && mayHaveThumbsUpDown && external_React_default().createElement(DSThumbsUpDownButtons, {
-  onThumbsDownClick: onThumbsDownClick,
-  onThumbsUpClick: onThumbsUpClick,
-  sponsor: sponsor,
-  isThumbsDownActive: state.isThumbsDownActive,
-  isThumbsUpActive: state.isThumbsUpActive
-}), isSectionsCard && external_React_default().createElement("div", {
-  className: "sections-card-footer"
-}, !isListCard && format !== "rectangle" && mayHaveSectionsCards && mayHaveThumbsUpDown && external_React_default().createElement(DSThumbsUpDownButtons, {
-  onThumbsDownClick: onThumbsDownClick,
-  onThumbsUpClick: onThumbsUpClick,
-  sponsor: sponsor,
-  isThumbsDownActive: state.isThumbsDownActive,
-  isThumbsUpActive: state.isThumbsUpActive
-}), showTopics && external_React_default().createElement("span", {
-  className: "ds-card-topic",
-  "data-l10n-id": `newtab-topic-label-${topic}`
-})), !newSponsoredLabel && external_React_default().createElement(DSContextFooter, {
-  context_type: context_type,
-  context: context,
-  sponsor: sponsor,
-  sponsored_by_override: sponsored_by_override,
-  cta_button_variant: ctaButtonVariant,
-  source: source,
-  dispatch: dispatch,
-  spocMessageVariant: spocMessageVariant,
-  mayHaveSectionsCards: mayHaveSectionsCards
-}), newSponsoredLabel && external_React_default().createElement(DSMessageFooter, {
-  context_type: context_type,
-  context: null,
-  saveToPocketCard: saveToPocketCard
-}));
+}) => {
+  const shouldHaveThumbs = !isListCard && format !== "rectangle" && mayHaveSectionsCards && mayHaveThumbsUpDown;
+  const shouldHaveFooterSection = isSectionsCard && (shouldHaveThumbs || showTopics);
+  return external_React_default().createElement("div", {
+    className: "meta"
+  }, external_React_default().createElement("div", {
+    className: "info-wrap"
+  }, ctaButtonVariant !== "variant-b" && format !== "rectangle" && external_React_default().createElement(DSSource, {
+    source: source,
+    timeToRead: timeToRead,
+    newSponsoredLabel: newSponsoredLabel,
+    context: context,
+    sponsor: sponsor,
+    sponsored_by_override: sponsored_by_override
+  }), format !== "rectangle" && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h3", {
+    className: "title clamp"
+  }, title), excerpt && external_React_default().createElement("p", {
+    className: "excerpt clamp"
+  }, excerpt)), format === "rectangle" && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h3", {
+    className: "title clamp"
+  }, "Sponsored"), external_React_default().createElement("p", {
+    className: "excerpt clamp"
+  }, "Sponsored content supports our mission to build a better web."))), !isListCard && format !== "rectangle" && !mayHaveSectionsCards && mayHaveThumbsUpDown && external_React_default().createElement(DSThumbsUpDownButtons, {
+    onThumbsDownClick: onThumbsDownClick,
+    onThumbsUpClick: onThumbsUpClick,
+    sponsor: sponsor,
+    isThumbsDownActive: state.isThumbsDownActive,
+    isThumbsUpActive: state.isThumbsUpActive
+  }), shouldHaveFooterSection && external_React_default().createElement("div", {
+    className: "sections-card-footer"
+  }, shouldHaveThumbs && external_React_default().createElement(DSThumbsUpDownButtons, {
+    onThumbsDownClick: onThumbsDownClick,
+    onThumbsUpClick: onThumbsUpClick,
+    sponsor: sponsor,
+    isThumbsDownActive: state.isThumbsDownActive,
+    isThumbsUpActive: state.isThumbsUpActive
+  }), showTopics && external_React_default().createElement("span", {
+    className: "ds-card-topic",
+    "data-l10n-id": `newtab-topic-label-${topic}`
+  })), !newSponsoredLabel && external_React_default().createElement(DSContextFooter, {
+    context_type: context_type,
+    context: context,
+    sponsor: sponsor,
+    sponsored_by_override: sponsored_by_override,
+    cta_button_variant: ctaButtonVariant,
+    source: source,
+    dispatch: dispatch,
+    spocMessageVariant: spocMessageVariant,
+    mayHaveSectionsCards: mayHaveSectionsCards
+  }), newSponsoredLabel && external_React_default().createElement(DSMessageFooter, {
+    context_type: context_type,
+    context: null,
+    saveToPocketCard: saveToPocketCard
+  }));
+};
 class _DSCard extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
