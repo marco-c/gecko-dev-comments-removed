@@ -139,7 +139,7 @@ class nsTableCellFrame : public nsContainerFrame,
 
 
 
-  nscoord GetCellBaseline() const;
+  Maybe<nscoord> GetCellBaseline() const;
 
   
 

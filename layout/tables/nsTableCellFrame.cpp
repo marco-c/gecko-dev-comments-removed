@@ -421,13 +421,12 @@ void nsTableCellFrame::BlockDirAlignChild(
   nscoord kidBStart = 0;
   switch (verticalAlign) {
     case StyleVerticalAlignKeyword::Baseline:
-      if (!GetContentEmpty()) {
+      if (auto baseline = GetCellBaseline()) {
         
         
-        kidBStart = bStartInset + aMaxAscent - GetCellBaseline();
+        kidBStart = bStartInset + aMaxAscent - *baseline;
         break;
       }
-      
       
       [[fallthrough]];
     case StyleVerticalAlignKeyword::Top:
@@ -544,18 +543,24 @@ nsIFrame* nsTableCellFrame::CellContentFrame() const {
   return inner;
 }
 
-nscoord nsTableCellFrame::GetCellBaseline() const {
+Maybe<nscoord> nsTableCellFrame::GetCellBaseline() const {
+  
+  
+  if (GetContentEmpty()) {
+    return {};
+  }
   
   
   const auto wm = GetWritingMode();
   nscoord result;
-  if (!StyleDisplay()->IsContainLayout() &&
-      nsLayoutUtils::GetFirstLineBaseline(wm, Inner(), &result)) {
+  if (StyleDisplay()->IsContainLayout() ||
+      !nsLayoutUtils::GetFirstLineBaseline(wm, Inner(), &result)) {
     
-    return result + GetLogicalUsedBorder(wm).BStart(wm);
+    return Some(CellContentFrame()->ContentBSize(wm) +
+                GetLogicalUsedBorderAndPadding(wm).BStart(wm));
   }
-  return CellContentFrame()->ContentBSize(wm) +
-         GetLogicalUsedBorderAndPadding(wm).BStart(wm);
+  
+  return Some(result + GetLogicalUsedBorder(wm).BStart(wm));
 }
 
 int32_t nsTableCellFrame::GetRowSpan() {
