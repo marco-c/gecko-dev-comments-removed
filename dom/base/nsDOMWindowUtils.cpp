@@ -1172,12 +1172,13 @@ nsDOMWindowUtils::SendNativeTouchPoint(uint32_t aPointerId,
                                        uint32_t aTouchState, int32_t aScreenX,
                                        int32_t aScreenY, double aPressure,
                                        uint32_t aOrientation,
-                                       nsIObserver* aObserver) {
+                                       nsIObserver* aObserver,
+                                       Element* aElement) {
   
   
   
 
-  nsCOMPtr<nsIWidget> widget = GetWidget();
+  nsCOMPtr<nsIWidget> widget = GetWidgetForElement(aElement);
   if (!widget) {
     return NS_ERROR_FAILURE;
   }
