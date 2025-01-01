@@ -1473,10 +1473,6 @@ pref("network.http.throttle.suspend-for", 900);
 pref("network.http.throttle.resume-for", 100);
 
 
-pref("network.http.throttle.read-limit-bytes", 8000);
-pref("network.http.throttle.read-interval-ms", 500);
-
-
 
 
 
