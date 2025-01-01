@@ -3531,6 +3531,7 @@ bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
     case CacheKind::LazyConstant:
     case CacheKind::ToBool:
     case CacheKind::Call:
+    case CacheKind::Lambda:
       
       MOZ_CRASH("Unexpected kind");
   }
@@ -3564,6 +3565,7 @@ bool WarpBuilder::buildBailoutForColdIC(BytecodeLocation loc, CacheKind kind) {
     case CacheKind::GetIterator:
     case CacheKind::NewArray:
     case CacheKind::NewObject:
+    case CacheKind::Lambda:
       resultType = MIRType::Object;
       break;
     case CacheKind::TypeOf:

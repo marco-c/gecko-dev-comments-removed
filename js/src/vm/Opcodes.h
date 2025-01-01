@@ -1700,7 +1700,7 @@
 
 
  \
-    MACRO(Lambda, lambda, NULL, 5, 0, 1, JOF_OBJECT|JOF_USES_ENV) \
+    MACRO(Lambda, lambda, NULL, 5, 0, 1, JOF_OBJECT|JOF_USES_ENV|JOF_IC) \
     
 
 
