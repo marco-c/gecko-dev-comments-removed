@@ -14,10 +14,8 @@ use glean::traits::Datetime;
 #[cfg(feature = "with_gecko")]
 use super::profiler_utils::{
     glean_to_chrono_datetime, local_now_with_offset, lookup_canonical_metric_name, LookupError,
+    TelemetryProfilerCategory,
 };
-
-#[cfg(feature = "with_gecko")]
-use gecko_profiler::gecko_profiler_category;
 
 #[cfg(feature = "with_gecko")]
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -56,7 +54,22 @@ impl gecko_profiler::ProfilerMarker for DatetimeMetricMarker {
         );
         
         
-        let datestring = format!("{}", self.time.format("%+"));
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let naive = self.time.naive_utc();
+        
+        
+        
+        
+        
+        let datestring = format!("{}", naive.format("%Y-%m-%dT%H:%M:%S%.3fZ"));
         json_writer.string_property("time", datestring.as_str());
     }
 }
@@ -148,7 +161,7 @@ impl DatetimeMetric {
                         if gecko_profiler::can_accept_markers() {
                             gecko_profiler::add_marker(
                                 "Datetime::set",
-                                gecko_profiler_category!(Telemetry),
+                                TelemetryProfilerCategory,
                                 Default::default(),
                                 DatetimeMetricMarker { id: *id, time: d },
                             );
@@ -179,7 +192,7 @@ impl DatetimeMetric {
                             );
                             gecko_profiler::add_text_marker(
                                 "Datetime::set",
-                                gecko_profiler_category!(Telemetry),
+                                TelemetryProfilerCategory,
                                 Default::default(),
                                 payload.as_str(),
                             );
@@ -225,7 +238,7 @@ impl Datetime for DatetimeMetric {
                                 .map(|c| {
                                     gecko_profiler::add_marker(
                                         "Datetime::set",
-                                        gecko_profiler_category!(Telemetry),
+                                        TelemetryProfilerCategory,
                                         Default::default(),
                                         DatetimeMetricMarker { id: *id, time: c },
                                     );
@@ -235,7 +248,7 @@ impl Datetime for DatetimeMetric {
                             
                             gecko_profiler::add_marker(
                                 "Datetime::set",
-                                gecko_profiler_category!(Telemetry),
+                                TelemetryProfilerCategory,
                                 Default::default(),
                                 DatetimeMetricMarker {
                                     id: *id,

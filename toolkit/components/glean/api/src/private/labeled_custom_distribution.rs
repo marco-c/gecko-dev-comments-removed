@@ -13,10 +13,8 @@ use std::collections::HashMap;
 #[cfg(feature = "with_gecko")]
 use super::profiler_utils::{
     truncate_vector_for_marker, DistributionMetricMarker, DistributionValues,
+    TelemetryProfilerCategory,
 };
-
-#[cfg(feature = "with_gecko")]
-use gecko_profiler::{gecko_profiler_category, MarkerOptions};
 
 
 
@@ -48,8 +46,8 @@ impl CustomDistribution for LabeledCustomDistributionMetric {
                 if gecko_profiler::can_accept_markers() {
                     gecko_profiler::add_marker(
                         "CustomDistribution::accumulate",
-                        gecko_profiler_category!(Telemetry),
-                        MarkerOptions::default(),
+                        TelemetryProfilerCategory,
+                        Default::default(),
                         DistributionMetricMarker::new(
                             *id,
                             Some(label.clone()),
@@ -82,8 +80,8 @@ impl CustomDistribution for LabeledCustomDistributionMetric {
                 if gecko_profiler::can_accept_markers() {
                     gecko_profiler::add_marker(
                         "CustomDistribution::accumulate",
-                        gecko_profiler_category!(Telemetry),
-                        MarkerOptions::default(),
+                        TelemetryProfilerCategory,
+                        Default::default(),
                         DistributionMetricMarker::new(
                             *id,
                             Some(label.clone()),
