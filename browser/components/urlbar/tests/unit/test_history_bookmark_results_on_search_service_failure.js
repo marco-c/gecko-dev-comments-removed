@@ -15,7 +15,7 @@ const searchService = Services.search.wrappedJSObject;
 add_setup(async function setup() {
   UrlbarPrefs.set("suggest.quickactions", false);
 
-  searchService.errorToThrowInTest = "Settings";
+  searchService.errorToThrowInTest.type = "Settings";
 
   
   
@@ -24,7 +24,7 @@ add_setup(async function setup() {
   );
 
   registerCleanupFunction(async () => {
-    searchService.errorToThrowInTest = null;
+    searchService.errorToThrowInTest.type = null;
     await cleanupPlaces();
   });
 });
