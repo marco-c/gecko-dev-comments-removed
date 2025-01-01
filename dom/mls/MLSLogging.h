@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_MLSLogging_h
+#define mozilla_dom_MLSLogging_h
+
+#include "mozilla/Logging.h"
+
+namespace mozilla::dom {
+extern LazyLogModule gMlsLog;
+}
+
+#endif  

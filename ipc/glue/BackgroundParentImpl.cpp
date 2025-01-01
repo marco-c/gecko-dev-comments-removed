@@ -30,6 +30,7 @@
 #include "mozilla/dom/MIDIManagerParent.h"
 #include "mozilla/dom/MIDIPlatformService.h"
 #include "mozilla/dom/MIDIPortParent.h"
+#include "mozilla/dom/MLSTransactionParent.h"
 #include "mozilla/dom/MessagePortParent.h"
 #include "mozilla/dom/PGamepadEventChannelParent.h"
 #include "mozilla/dom/PGamepadTestChannelParent.h"
@@ -82,6 +83,7 @@ using mozilla::dom::MIDIPortParent;
 using mozilla::dom::PMessagePortParent;
 using mozilla::dom::PMIDIManagerParent;
 using mozilla::dom::PMIDIPortParent;
+using mozilla::dom::PMLSTransactionParent;
 using mozilla::dom::PServiceWorkerContainerParent;
 using mozilla::dom::PServiceWorkerParent;
 using mozilla::dom::PServiceWorkerRegistrationParent;
@@ -1160,6 +1162,82 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvHasMIDIDevice(
                resolver(r.IsResolve() && r.ResolveValue());
              });
 
+  return IPC_OK();
+}
+
+
+static StaticRefPtr<nsISerialEventTarget> sMLSTaskQueue;
+
+class MLSTaskQueueShutdownTask final : public nsITargetShutdownTask {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  void TargetShutdown() override { sMLSTaskQueue = nullptr; }
+
+ private:
+  ~MLSTaskQueueShutdownTask() = default;
+};
+
+NS_IMPL_ISUPPORTS(MLSTaskQueueShutdownTask, nsITargetShutdownTask)
+
+mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateMLSTransaction(
+    Endpoint<PMLSTransactionParent>&& aEndpoint,
+    NotNull<nsIPrincipal*> aPrincipal) {
+  AssertIsInMainProcess();
+  AssertIsOnBackgroundThread();
+
+  if (!aEndpoint.IsValid()) {
+    return IPC_FAIL(this, "invalid endpoint for MLSTransaction");
+  }
+
+  if (!sMLSTaskQueue) {
+    nsCOMPtr<nsISerialEventTarget> taskQueue;
+    MOZ_ALWAYS_SUCCEEDS(NS_CreateBackgroundTaskQueue(
+        "MLSTaskQueue", getter_AddRefs(taskQueue)));
+    sMLSTaskQueue = taskQueue.forget();
+
+    
+    nsCOMPtr<nsITargetShutdownTask> shutdownTask =
+        new MLSTaskQueueShutdownTask();
+    MOZ_ALWAYS_SUCCEEDS(
+        GetCurrentSerialEventTarget()->RegisterShutdownTask(shutdownTask));
+  }
+
+  
+  nsCOMPtr<nsIFile> file;
+  nsresult rv =
+      mozilla::dom::MLSTransactionParent::ConstructDatabasePrefixPath(file);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    return IPC_OK();
+  }
+
+  
+  sMLSTaskQueue->Dispatch(NS_NewRunnableFunction(
+      "CreateMLSTransactionRunnable",
+      [endpoint = std::move(aEndpoint), file,
+       principal = RefPtr{aPrincipal.get()}]() mutable {
+        
+        nsresult rv =
+            mozilla::dom::MLSTransactionParent::CreateDirectoryIfNotExists(
+                file);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return;
+        }
+
+        
+        nsAutoCString databasePath;
+        rv = mozilla::dom::MLSTransactionParent::ConstructDatabaseFullPath(
+            file, principal, databasePath);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return;
+        }
+
+        
+        RefPtr<PMLSTransactionParent> result =
+            new mozilla::dom::MLSTransactionParent(databasePath);
+        endpoint.Bind(result);
+      }));
   return IPC_OK();
 }
 
