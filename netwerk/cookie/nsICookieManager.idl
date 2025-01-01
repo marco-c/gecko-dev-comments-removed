@@ -5,6 +5,7 @@
 
 #include "nsISupports.idl"
 #include "nsICookie.idl"
+#include "nsIThirdPartyCookieBlockingExceptionListService.idl"
 
 %{ C++
 namespace mozilla {
@@ -295,4 +296,19 @@ interface nsICookieManager : nsISupports
 
 
   Array<nsICookie> getCookiesSince(in int64_t aSinceWhen);
+
+
+  
+
+
+
+  void addThirdPartyCookieBlockingExceptions(
+    in Array<nsIThirdPartyCookieExceptionEntry> aExcpetions);
+
+  
+
+
+
+  void removeThirdPartyCookieBlockingExceptions(
+    in Array<nsIThirdPartyCookieExceptionEntry> aExceptions);
 };
