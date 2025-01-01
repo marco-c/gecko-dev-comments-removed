@@ -79,7 +79,11 @@ const kEncoderCommandInfo: {
 };
 const kEncoderCommands = keysOf(kEncoderCommandInfo);
 
-type RenderPassEncoderCommands = keyof Omit<GPURenderPassEncoder, '__brand' | 'label' | 'end'>;
+
+type RenderPassEncoderCommands =
+  | keyof Omit<GPURenderPassEncoder, '__brand' | 'label' | 'end'>
+  | 'multiDrawIndirect'
+  | 'multiDrawIndexedIndirect';
 const kRenderPassEncoderCommandInfo: {
   readonly [k in RenderPassEncoderCommands]: {};
 } = {
@@ -87,6 +91,8 @@ const kRenderPassEncoderCommandInfo: {
   drawIndexed: {},
   drawIndexedIndirect: {},
   drawIndirect: {},
+  multiDrawIndexedIndirect: {},
+  multiDrawIndirect: {},
   setIndexBuffer: {},
   setBindGroup: {},
   setVertexBuffer: {},
@@ -298,6 +304,12 @@ g.test('render_pass_commands')
       .beginSubcases()
       .combine('finishBeforeCommand', [false, true])
   )
+  .beforeAllSubcases(t => {
+    const { command } = t.params;
+    if (command === 'multiDrawIndirect' || command === 'multiDrawIndexedIndirect') {
+      t.selectDeviceOrSkipTestCase('chromium-experimental-multi-draw-indirect' as GPUFeatureName);
+    }
+  })
   .fn(t => {
     const { command, finishBeforeCommand } = t.params;
 
@@ -344,6 +356,18 @@ g.test('render_pass_commands')
         case 'drawIndexedIndirect':
           {
             renderPass.drawIndexedIndirect(buffer, 0);
+          }
+          break;
+        case 'multiDrawIndirect':
+          {
+            
+            (renderPass as any).multiDrawIndirect(buffer, 0, 1);
+          }
+          break;
+        case 'multiDrawIndexedIndirect':
+          {
+            
+            (renderPass as any).multiDrawIndexedIndirect(buffer, 0, 1);
           }
           break;
         case 'setBindGroup':

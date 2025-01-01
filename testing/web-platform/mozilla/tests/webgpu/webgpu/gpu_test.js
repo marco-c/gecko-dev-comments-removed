@@ -41,7 +41,13 @@ import {
 import { checkElementsEqual, checkElementsBetween } from './util/check_contents.js';
 import { CommandBufferMaker } from './util/command_buffer_maker.js';
 
-import { DevicePool } from './util/device_pool.js';
+import {
+
+
+  DevicePool } from
+
+
+'./util/device_pool.js';
 import { align, roundDown } from './util/math.js';
 import { physicalMipSizeFromTexture, virtualMipSize } from './util/texture/base.js';
 import {
@@ -137,11 +143,15 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
 
 
 
-  selectDeviceOrSkipTestCase(descriptor) {
+  selectDeviceOrSkipTestCase(
+  descriptor,
+  descriptorModifierFn)
+  {
     assert(this.provider === undefined, "Can't selectDeviceOrSkipTestCase() multiple times");
     this.provider = devicePool.acquire(
       this.recorder,
-      initUncanonicalizedDeviceDescriptor(descriptor)
+      initUncanonicalizedDeviceDescriptor(descriptor),
+      descriptorModifierFn
     );
     
     this.provider.catch(() => {});
@@ -202,7 +212,8 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
 
     this.mismatchedProvider = mismatchedDevicePool.acquire(
       this.recorder,
-      initUncanonicalizedDeviceDescriptor(descriptor)
+      initUncanonicalizedDeviceDescriptor(descriptor),
+      undefined
     );
     
     this.mismatchedProvider.catch(() => {});
@@ -1274,6 +1285,75 @@ export class GPUTest extends GPUTestBase {
     assert(this.provider !== undefined, 'internal error: GPUDevice missing?');
     this.provider.expectDeviceLost(reason);
   }
+}
+
+
+
+
+function getAdapterLimitsAsDeviceRequiredLimits(adapter) {
+  const requiredLimits = {};
+  const adapterLimits = adapter.limits;
+  for (const key in adapter.limits) {
+    
+    
+    if (key === 'maxSubgroupSize' || key === 'minSubgroupSize') {
+      continue;
+    }
+    requiredLimits[key] = adapterLimits[key];
+  }
+  return requiredLimits;
+}
+
+function setAllLimitsToAdapterLimits(
+adapter,
+desc)
+{
+  const descWithMaxLimits = {
+    requiredFeatures: [],
+    defaultQueue: {},
+    ...desc,
+    requiredLimits: getAdapterLimitsAsDeviceRequiredLimits(adapter)
+  };
+  return descWithMaxLimits;
+}
+
+
+
+
+export class MaxLimitsGPUTestSubcaseBatchState extends GPUTestSubcaseBatchState {
+  selectDeviceOrSkipTestCase(
+  descriptor,
+  descriptorModifierFn)
+  {
+    const wrapper = (adapter, desc) => {
+      desc = descriptorModifierFn ? descriptorModifierFn(adapter, desc) : desc;
+      return setAllLimitsToAdapterLimits(adapter, desc);
+    };
+    super.selectDeviceOrSkipTestCase(initUncanonicalizedDeviceDescriptor(descriptor), wrapper);
+  }
+}
+
+
+
+
+
+export function MaxLimitsTestMixin(
+Base)
+{
+  class MaxLimitsImpl extends
+  Base
+
+  {
+    
+    static MakeSharedState(
+    recorder,
+    params)
+    {
+      return new MaxLimitsGPUTestSubcaseBatchState(recorder, params);
+    }
+  }
+
+  return MaxLimitsImpl;
 }
 
 
