@@ -101,7 +101,9 @@ async function openProtectionsPanelWithKeyNav() {
   
   
   EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
-  EventUtils.synthesizeKey("KEY_Enter", {});
+  is(document.activeElement.id, "urlbar-searchmode-switcher");
+  EventUtils.synthesizeKey("KEY_ArrowRight");
+  EventUtils.synthesizeKey("KEY_Enter");
 
   await popupShownPromise;
 }
