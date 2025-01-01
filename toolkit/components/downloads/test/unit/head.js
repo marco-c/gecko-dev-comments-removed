@@ -697,12 +697,12 @@ async function promisePartFileReady(aDownload) {
       await promiseTimeout(50);
     } while (!(await IOUtils.exists(aDownload.target.partFilePath)));
   } catch (ex) {
-    if (!(ex instanceof IOUtils.Error)) {
+    if (!DOMException.isInstance(ex)) {
       throw ex;
     }
     
     
-    info("Expected exception while checking existence: " + ex.toString());
+    info("IOUtils exception while checking existence: " + ex.name);
     
     await promiseTimeout(100);
   }
