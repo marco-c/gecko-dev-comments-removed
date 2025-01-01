@@ -2752,7 +2752,6 @@ pref("identity.fxaccounts.toolbar.pxiToolbarEnabled.vpnEnabled", true);
 
 
 pref("identity.fxaccounts.toolbar.syncSetup.enabled", false);
-pref("identity.fxaccounts.toolbar.syncSetup.panelAccessed", false);
 
 
 pref("devtools.toolbox.footer.height", 250);
