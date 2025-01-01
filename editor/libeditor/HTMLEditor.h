@@ -1657,7 +1657,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateLineBreakResult, nsresult>
   InsertPaddingBRElementIfNeeded(const EditorDOMPoint& aPoint,
                                  nsIEditor::EStripWrappers aDeleteEmptyInlines,
                                  const Element& aEditingHost);
