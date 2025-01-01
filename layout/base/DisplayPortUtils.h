@@ -303,6 +303,8 @@ class DisplayPortUtils {
 
   static Maybe<nsRect> GetRootDisplayportBase(PresShell* aPresShell);
 
+  static nsRect GetDisplayportBase(nsIFrame* aFrame);
+
   
 
 

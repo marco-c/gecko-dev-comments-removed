@@ -96,6 +96,10 @@ class APZCCallbackHelper {
   static void InitializeRootDisplayport(PresShell* aPresShell);
 
   
+
+  static void InitializeRootDisplayport(nsIFrame* aFrame);
+
+  
   static nsPresContext* GetPresContextForContent(nsIContent* aContent);
 
   
