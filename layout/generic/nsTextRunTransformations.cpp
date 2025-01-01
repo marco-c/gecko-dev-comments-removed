@@ -681,14 +681,7 @@ bool nsCaseTransformTextRunFactory::TransformString(
             break;
           }
 
-          
-          
-          
-          
-          
-          if (ch < 0x10D0 || ch > 0x10FF) {
-            ch = ToUpperCase(ch);
-          }
+          ch = ToUpperCase(ch);
           break;
 
         case StyleTextTransform::CAPITALIZE._0: {
