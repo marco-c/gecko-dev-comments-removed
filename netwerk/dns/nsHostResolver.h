@@ -103,18 +103,7 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   
 
 
-  static nsresult Create(uint32_t maxCacheEntries,  
-                         uint32_t defaultCacheEntryLifetime,  
-                         uint32_t defaultGracePeriod,         
-                         nsHostResolver** result);
-
-  
-
-
-  void SetCacheLimits(uint32_t maxCacheEntries,  
-                      uint32_t defaultCacheEntryLifetime,  
-                      uint32_t defaultGracePeriod);        
-
+  static nsresult Create(nsHostResolver** result);
   
 
 
@@ -207,9 +196,7 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   bool TRRServiceEnabledForRecord(nsHostRecord* aRec) MOZ_REQUIRES(mLock);
 
  private:
-  explicit nsHostResolver(uint32_t maxCacheEntries,
-                          uint32_t defaultCacheEntryLifetime,
-                          uint32_t defaultGracePeriod);
+  explicit nsHostResolver();
   virtual ~nsHostResolver();
 
   bool DoRetryTRR(AddrHostRecord* aAddrRec,
@@ -294,9 +281,6 @@ class nsHostResolver : public nsISupports, public AHostResolver {
     METHOD_NETWORK_SHARED = 7
   };
 
-  uint32_t mMaxCacheEntries = 0;
-  uint32_t mDefaultCacheLifetime = 0;  
-  uint32_t mDefaultGracePeriod = 0;    
   
   mutable Mutex mLock{"nsHostResolver.mLock"};
   CondVar mIdleTaskCV;
