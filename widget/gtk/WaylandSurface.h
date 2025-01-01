@@ -177,6 +177,10 @@ class WaylandSurface final {
 
   
   
+  double GetScaleSafe();
+
+  
+  
   void SetCeiledScaleLocked(const WaylandSurfaceLock& aProofOfLock,
                             int aScreenCeiledScale);
 
