@@ -1476,6 +1476,7 @@ class WhiteSpaceVisibilityKeeper final {
 
  public:
   using InsertTextTo = EditorBase::InsertTextTo;
+  using LineBreakType = HTMLEditor::LineBreakType;
 
   WhiteSpaceVisibilityKeeper() = delete;
   explicit WhiteSpaceVisibilityKeeper(
@@ -1647,8 +1648,10 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CreateElementResult, nsresult>
-  InsertBRElement(HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPointToInsert,
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CreateLineBreakResult,
+                                                 nsresult>
+  InsertLineBreak(LineBreakType aLineBreakType, HTMLEditor& aHTMLEditor,
+                  const EditorDOMPoint& aPointToInsert,
                   const Element& aEditingHost);
 
   

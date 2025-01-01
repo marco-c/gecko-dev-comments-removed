@@ -4642,6 +4642,8 @@ class HTMLEditor final : public EditorBase,
                                    
                                    
                                    
+                                   
+                                   
 };
 
 
