@@ -9,6 +9,7 @@
 
 namespace mozilla::Telemetry {
 enum class ScalarID : uint32_t;
+enum HistogramID : uint32_t;
 }  
 
 namespace TelemetryScalar {
@@ -22,6 +23,10 @@ void Add(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
 void Set(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
          uint32_t aValue);
 void Set(mozilla::Telemetry::ScalarID aId, const nsAString& aKey, bool aValue);
+}  
+
+namespace TelemetryHistogram {
+uint8_t GetHistogramType(mozilla::Telemetry::HistogramID aId);
 }  
 
 #endif 
