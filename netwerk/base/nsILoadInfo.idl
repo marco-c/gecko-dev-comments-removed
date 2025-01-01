@@ -524,13 +524,6 @@ interface nsILoadInfo : nsISupports
 
 
 
-
-  const unsigned long HTTPS_FIRST_EXEMPT_NEXT_LOAD = (1 << 9);
-
-  
-
-
-
   [infallible] attribute unsigned long httpsOnlyStatus;
 
   
