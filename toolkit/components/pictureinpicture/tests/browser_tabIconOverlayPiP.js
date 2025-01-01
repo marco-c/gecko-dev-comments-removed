@@ -40,13 +40,12 @@ add_task(async () => {
 
       
       let tabIconOverlay = tab.getElementsByClassName("tab-icon-overlay")[0];
-      let tabAudioButton = tab.getElementsByClassName("tab-audio-button")[0];
 
       
       ok(!tabIconOverlay.hasAttribute("pictureinpicture"), "Not using PiP");
 
       
-      ok(tabAudioButton.hasAttribute("soundplaying"), "Sound is playing");
+      ok(tabIconOverlay.hasAttribute("soundplaying"), "Sound is playing");
 
       
       let pipWin = await triggerPictureInPicture(browser, videoID);
@@ -57,7 +56,7 @@ add_task(async () => {
 
       
       ok(
-        tabAudioButton.hasAttribute("soundplaying"),
+        tabIconOverlay.hasAttribute("soundplaying"),
         "Tab knows sound is playing"
       );
 
@@ -69,25 +68,23 @@ add_task(async () => {
 
       
       
-      let style = window.getComputedStyle(
-        tabAudioButton.buttonEl.querySelector(".button-background")
-      );
+      let style = window.getComputedStyle(tabIconOverlay);
       Assert.equal(
         style.backgroundImage,
         'url("chrome://browser/skin/tabbrowser/tab-audio-playing-small.svg")',
-        "Got the tab-audio-button image"
+        "Got the tab-icon-overlay image"
       );
 
       
-      ok(!tabAudioButton.hasAttribute("muted"), "Tab is not muted");
+      ok(!tabIconOverlay.hasAttribute("muted"), "Tab is not muted");
 
       
-      tabAudioButton.click();
-      ok(tabAudioButton.hasAttribute("muted"), "Tab is muted");
+      tabIconOverlay.click();
+      ok(tabIconOverlay.hasAttribute("muted"), "Tab is muted");
 
       
-      tabAudioButton.click();
-      ok(!tabAudioButton.hasAttribute("muted"), "Tab is not muted");
+      tabIconOverlay.click();
+      ok(!tabIconOverlay.hasAttribute("muted"), "Tab is not muted");
     }
   );
 });
