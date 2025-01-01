@@ -134,8 +134,6 @@ class MIRGenerator;
 class MIRGraph;
 class TempAllocator;
 
-const char* ValTypeToString(JSValueType type);
-
 
 
 #ifdef JS_JITSPEW
@@ -221,6 +219,8 @@ void EnableChannel(JitSpewChannel channel);
 void DisableChannel(JitSpewChannel channel);
 void EnableIonDebugSyncLogging();
 void EnableIonDebugAsyncLogging();
+
+const char* ValTypeToString(JSValueType type);
 
 #  define JitSpewIfEnabled(channel, fmt, ...) \
     do {                                      \
