@@ -16,6 +16,7 @@
 #include "jspubtd.h"
 #include "NamespaceImports.h"
 
+#include "builtin/intl/DateTimeFormat.h"
 #include "builtin/temporal/Calendar.h"
 #include "builtin/temporal/CalendarFields.h"
 #include "builtin/temporal/Duration.h"
@@ -2764,15 +2765,11 @@ static bool ZonedDateTime_toLocaleString(JSContext* cx, const CallArgs& args) {
       cx, ZonedDateTime{&args.thisv().toObject().as<ZonedDateTimeObject>()});
 
   
-  JSString* str = TemporalZonedDateTimeToString(
-      cx, zonedDateTime, Precision::Auto(), ShowCalendar::Auto,
-      ShowTimeZoneName::Auto, ShowOffset::Auto);
-  if (!str) {
-    return false;
-  }
-
-  args.rval().setString(str);
-  return true;
+  Handle<PropertyName*> required = cx->names().any;
+  Handle<PropertyName*> defaults = cx->names().all;
+  Rooted<Value> timeZone(cx,
+                         StringValue(zonedDateTime.timeZone().identifier()));
+  return TemporalObjectToLocaleString(cx, args, required, defaults, timeZone);
 }
 
 
