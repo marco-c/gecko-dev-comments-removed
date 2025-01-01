@@ -1,0 +1,12 @@
+
+
+
+
+
+
+DIRS += [
+    "common",
+    "resource",
+    "trace",
+    "version",
+]
