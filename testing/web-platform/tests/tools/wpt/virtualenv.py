@@ -6,7 +6,6 @@ import shutil
 import site
 import sys
 import sysconfig
-from pathlib import Path
 from shutil import which
 
 
@@ -50,11 +49,40 @@ class Virtualenv:
             self._working_set = None
         call(*self.virtualenv, self.path)
 
+    def get_paths(self):
+        """Wrapper around sysconfig.get_paths(), returning the appropriate paths for the env."""
+        if "venv" in sysconfig.get_scheme_names():
+            
+            scheme = "venv"
+        elif os.name == "nt":
+            
+            scheme = "nt"
+        elif os.name == "posix":
+            
+            scheme = "posix_prefix"
+        elif sys.version_info >= (3, 10):
+            
+            
+            
+            
+            scheme = sysconfig.get_default_scheme()
+        else:
+            
+            
+            scheme = sysconfig._get_default_scheme()
+
+        vars = {
+            "base": self.path,
+            "platbase": self.path,
+            "installed_base": self.path,
+            "installed_platbase": self.path,
+        }
+
+        return sysconfig.get_paths(scheme, vars)
+
     @property
     def bin_path(self):
-        if sys.platform in ("win32", "cygwin"):
-            return os.path.join(self.path, "Scripts")
-        return os.path.join(self.path, "bin")
+        return self.get_paths()["scripts"]
 
     @property
     def pip_path(self):
@@ -67,24 +95,10 @@ class Virtualenv:
 
     @property
     def lib_path(self):
-        base = self.path
-
         
-        IS_PYPY = hasattr(sys, "pypy_version_info")
-        IS_JYTHON = sys.platform.startswith("java")
-        if IS_JYTHON:
-            site_packages = os.path.join(base, "Lib", "site-packages")
-        elif IS_PYPY:
-            site_packages = os.path.join(base, "site-packages")
-        else:
-            IS_WIN = sys.platform == "win32"
-            if IS_WIN:
-                site_packages = os.path.join(base, "Lib", "site-packages")
-            else:
-                version = f"{sys.version_info.major}.{sys.version_info.minor}"
-                site_packages = os.path.join(base, "lib", f"python{version}", "site-packages")
-
-        return site_packages
+        
+        
+        return self.get_paths()["platlib"]
 
     @property
     def working_set(self):
@@ -97,43 +111,35 @@ class Virtualenv:
         return self._working_set
 
     def activate(self):
-        if sys.platform == 'darwin':
+        if sys.platform == "darwin":
             
             
             
             
             
-            os.environ.pop('__PYVENV_LAUNCHER__', None)
+            os.environ.pop("__PYVENV_LAUNCHER__", None)
+
+        paths = self.get_paths()
 
         
-        bin_dir = os.path.join(self.path, "bin")
+        bin_dir = paths["scripts"]
         os.environ["PATH"] = os.pathsep.join([bin_dir] + os.environ.get("PATH", "").split(os.pathsep))
+
+        
+        
         os.environ["VIRTUAL_ENV"] = self.path
 
         prev_length = len(sys.path)
 
-        schemes = sysconfig.get_scheme_names()
-        if "venv" in schemes:
-            scheme = "venv"
-        else:
-            scheme = "nt" if os.name == "nt" else "posix_user"
-        sys_paths = sysconfig.get_paths(scheme)
-        data_path = sys_paths["data"]
-        added = set()
-        
-        
-        
         
         for key in ["purelib", "platlib"]:
-            host_path = Path(sys_paths[key])
-            relative_path = host_path.relative_to(data_path)
-            site_dir = os.path.normpath(os.path.normcase(Path(self.path) / relative_path))
-            if site_dir not in added:
-                site.addsitedir(site_dir)
-                added.add(site_dir)
+            site.addsitedir(paths[key])
+
+        
         sys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]
 
-        sys.real_prefix = sys.prefix
+        
+        sys.exec_prefix = self.path
         sys.prefix = self.path
 
     def start(self):
