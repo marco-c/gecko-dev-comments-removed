@@ -18,10 +18,8 @@
 
 assert.sameValue(ArrayBuffer.prototype.constructor, ArrayBuffer);
 
-verifyProperty(ArrayBuffer.prototype, "constructor", {
-  writable: true,
-  enumerable: false,
-  configurable: true
-});
+verifyNotEnumerable(ArrayBuffer.prototype, "constructor");
+verifyWritable(ArrayBuffer.prototype, "constructor");
+verifyConfigurable(ArrayBuffer.prototype, "constructor");
 
 reportCompare(0, 0);

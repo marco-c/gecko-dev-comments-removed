@@ -16,10 +16,8 @@
 
 assert.sameValue(typeof Array.prototype.every, 'function', 'typeof');
 
-verifyPrimordialProperty(Array.prototype, "every", {
-  writable: true,
-  enumerable: false,
-  configurable: true
-});
+verifyNotEnumerable(Array.prototype, "every");
+verifyWritable(Array.prototype, "every");
+verifyConfigurable(Array.prototype, "every");
 
 reportCompare(0, 0);

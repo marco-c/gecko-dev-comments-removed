@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.UTC.hasOwnProperty("length"), true, 'Date.UTC.hasOwnProperty("length") must return true');
+assert.sameValue(Date.UTC.length, 7, 'The value of Date.UTC.length is expected to be 7');
+
+reportCompare(0, 0);

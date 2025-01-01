@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+assert(
+  !Date.prototype.propertyIsEnumerable('setUTCMonth'),
+  'The value of !Date.prototype.propertyIsEnumerable(\'setUTCMonth\') is expected to be true'
+);
+
+for (var x in Date.prototype) {
+  assert.notSameValue(x, "setUTCMonth", 'The value of x is not "setUTCMonth"');
+}
+
+
+
+reportCompare(0, 0);

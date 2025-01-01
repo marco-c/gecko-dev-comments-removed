@@ -12,10 +12,8 @@
 
 
 
-verifyProperty(ArrayBuffer, "isView", {
-  writable: true,
-  enumerable: false,
-  configurable: true
-});
+verifyNotEnumerable(ArrayBuffer, "isView");
+verifyWritable(ArrayBuffer, "isView");
+verifyConfigurable(ArrayBuffer, "isView");
 
 reportCompare(0, 0);

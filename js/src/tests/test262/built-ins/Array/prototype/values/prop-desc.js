@@ -12,10 +12,8 @@
 
 assert.sameValue(typeof Array.prototype.values, 'function');
 
-verifyProperty(Array.prototype, "values", {
-  writable: true,
-  enumerable: false,
-  configurable: true
-});
+verifyNotEnumerable(Array.prototype, 'values');
+verifyWritable(Array.prototype, 'values');
+verifyConfigurable(Array.prototype, 'values');
 
 reportCompare(0, 0);

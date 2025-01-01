@@ -1,7 +1,0 @@
-
-
-
-
-import "./tla_FIXTURE.js";
-
-globalThis.evaluations.push("imports-tla");

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+assert(
+  !Date.prototype.propertyIsEnumerable('toTimeString'),
+  'The value of !Date.prototype.propertyIsEnumerable(\'toTimeString\') is expected to be true'
+);
+
+for (var x in Date.prototype) {
+  assert.notSameValue(x, "toTimeString", 'The value of x is not "toTimeString"');
+}
+
+
+
+reportCompare(0, 0);

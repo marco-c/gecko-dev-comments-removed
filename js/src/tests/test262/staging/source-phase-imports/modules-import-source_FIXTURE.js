@@ -1,6 +1,0 @@
-
-
-
-
-
-import source x from './modules-simple_FIXTURE.js';

@@ -16,10 +16,8 @@
 
 assert.sameValue(typeof Array.prototype.sort, 'function', 'typeof');
 
-verifyProperty(Array.prototype, "sort", {
-  writable: true,
-  enumerable: false,
-  configurable: true
-});
+verifyNotEnumerable(Array.prototype, "sort");
+verifyWritable(Array.prototype, "sort");
+verifyConfigurable(Array.prototype, "sort");
 
 reportCompare(0, 0);

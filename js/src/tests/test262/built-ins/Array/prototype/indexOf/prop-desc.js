@@ -16,10 +16,8 @@
 
 assert.sameValue(typeof Array.prototype.indexOf, 'function', 'typeof');
 
-verifyProperty(Array.prototype, "indexOf", {
-  writable: true,
-  enumerable: false,
-  configurable: true
-});
+verifyNotEnumerable(Array.prototype, "indexOf");
+verifyWritable(Array.prototype, "indexOf");
+verifyConfigurable(Array.prototype, "indexOf");
 
 reportCompare(0, 0);

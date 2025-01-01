@@ -7,10 +7,8 @@
 
 
 
-verifyProperty(Array, "isArray", {
-  writable: true,
-  enumerable: false,
-  configurable: true
-});
+verifyWritable(Array, "isArray");
+verifyNotEnumerable(Array, "isArray");
+verifyConfigurable(Array, "isArray");
 
 reportCompare(0, 0);

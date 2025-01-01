@@ -1,5 +1,0 @@
-
-
-
-
-globalThis.evaluations.push(1.2);
