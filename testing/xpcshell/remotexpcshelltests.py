@@ -688,7 +688,8 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
         self.device.push(self.xpcDir, self.remoteScriptsDir, timeout=600)
         self.device.chmod(self.remoteScriptsDir, recursive=True)
 
-    def setupSocketConnections(self):
+    def trySetupNode(self):
+        super(XPCShellRemote, self).trySetupNode()
         
         if "MOZHTTP2_PORT" in self.env:
             port = "tcp:{}".format(self.env["MOZHTTP2_PORT"])
@@ -703,6 +704,22 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
             )
             self.log.info("reversed MOZNODE_EXEC_PORT connection for port " + port)
 
+    def shutdownNode(self):
+        super(XPCShellRemote, self).shutdownNode()
+
+        if "MOZHTTP2_PORT" in self.env:
+            port = "tcp:{}".format(self.env["MOZHTTP2_PORT"])
+            self.device.remove_socket_connections(
+                ADBDevice.SOCKET_DIRECTION_REVERSE, port
+            )
+            self.log.info("cleared MOZHTTP2_PORT connection for port " + port)
+        if "MOZNODE_EXEC_PORT" in self.env:
+            port = "tcp:{}".format(self.env["MOZNODE_EXEC_PORT"])
+            self.device.remove_socket_connections(
+                ADBDevice.SOCKET_DIRECTION_REVERSE, port
+            )
+            self.log.info("cleared MOZNODE_EXEC_PORT connection for port " + port)
+
     def buildTestList(self, test_tags=None, test_paths=None, verify=False):
         xpcshell.XPCShellTests.buildTestList(
             self, test_tags=test_tags, test_paths=test_paths, verify=verify
@@ -714,11 +731,6 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
             abbrevTestDir = os.path.relpath(testdir, self.xpcDir)
             remoteScriptDir = posixpath.join(self.remoteScriptsDir, abbrevTestDir)
             self.pathMapping.append(PathMapping(testdir, remoteScriptDir))
-        
-        
-        
-        
-        self.setupSocketConnections()
         if self.options["setup"]:
             self.pushWrapper()
 
