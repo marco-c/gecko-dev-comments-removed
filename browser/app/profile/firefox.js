@@ -495,6 +495,12 @@ pref("browser.urlbar.weather.minKeywordLength", 0);
 
 
 
+
+
+pref("browser.urlbar.weather.uiTreatment", 0);
+
+
+
 pref("browser.urlbar.suggest.weather", true);
 
 
