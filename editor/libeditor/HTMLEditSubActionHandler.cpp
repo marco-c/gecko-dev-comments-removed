@@ -1299,6 +1299,11 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
   
   const bool isWhiteSpaceCollapsible = !EditorUtils::IsWhiteSpacePreformatted(
       *pointToInsert.ContainerAs<nsIContent>());
+  const Maybe<LineBreakType> lineBreakType = GetPreferredLineBreakType(
+      *pointToInsert.ContainerAs<nsIContent>(), *editingHost);
+  if (NS_WARN_IF(lineBreakType.isNothing())) {
+    return Err(NS_ERROR_FAILURE);
+  }
 
   
   
@@ -1376,12 +1381,12 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
         }
         MOZ_ASSERT(inclusiveNextLinefeedOffset >= 0);
         Result<CreateLineBreakResult, nsresult> insertLineBreakResultOrError =
-            InsertLineBreak(WithTransaction::Yes, LineBreakType::BRElement,
-                            currentPoint);
+            InsertLineBreak(WithTransaction::Yes, *lineBreakType, currentPoint);
         if (MOZ_UNLIKELY(insertLineBreakResultOrError.isErr())) {
-          NS_WARNING(
-              "HTMLEditor::InsertLineBreak(WithTransaction::Yes, "
-              "LineBreakType::BRElement) failed");
+          NS_WARNING(nsPrintfCString("HTMLEditor::InsertLineBreak("
+                                     "WithTransaction::Yes, %s) failed",
+                                     ToString(*lineBreakType).c_str())
+                         .get());
           return insertLineBreakResultOrError.propagateErr();
         }
         CreateLineBreakResult insertLineBreakResult =
@@ -1451,11 +1456,13 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
 
         Result<CreateLineBreakResult, nsresult> insertLineBreakResultOrError =
             WhiteSpaceVisibilityKeeper::InsertLineBreak(
-                LineBreakType::BRElement, *this, currentPoint, *editingHost);
+                *lineBreakType, *this, currentPoint, *editingHost);
         if (MOZ_UNLIKELY(insertLineBreakResultOrError.isErr())) {
           NS_WARNING(
-              "WhiteSpaceVisibilityKeeper::InsertLineBreak(LineBreakType::"
-              "BRElement) failed");
+              nsPrintfCString(
+                  "WhiteSpaceVisibilityKeeper::InsertLineBreak(%s) failed",
+                  ToString(*lineBreakType).c_str())
+                  .get());
           return insertLineBreakResultOrError.propagateErr();
         }
         CreateLineBreakResult insertLineBreakResult =
@@ -1477,6 +1484,10 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
         nextOffset = inclusiveNextLinefeedOffset + 1;
         pointToInsert = insertLineBreakResult.AfterLineBreak<EditorDOMPoint>();
         currentPoint.SetAfter(&insertLineBreakResult.LineBreakContentRef());
+        if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc()) ||
+            NS_WARN_IF(!currentPoint.IsSetAndValidInComposedDoc())) {
+          return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+        }
       }
     }
 
@@ -2583,9 +2594,6 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::HandleInsertLinefeed(
   
   
   
-  
-  
-  
   if (pointToPutCaret.IsInContentNode() && pointToPutCaret.IsEndOfContainer()) {
     WSRunScanner wsScannerAtCaret(&aEditingHost, pointToPutCaret,
                                   BlockInlineCheck::UseComputedDisplayStyle);
@@ -2610,8 +2618,6 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::HandleInsertLinefeed(
       CreateLineBreakResult insertBRElementResult =
           insertBRElementResultOrError.unwrap();
       MOZ_ASSERT(insertBRElementResult.Handled());
-      
-      
       insertBRElementResult.IgnoreCaretPointSuggestion();
     }
   }
