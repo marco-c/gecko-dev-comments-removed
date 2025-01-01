@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+let capturedPrivateAccess;
+class A {
+  
+  static #x = 42;
+
+  static [(
+    
+    class {},
+
+    
+    capturedPrivateAccess = () => A.#x
+  )];
+}
+assert.sameValue(capturedPrivateAccess(), 42);
+
+
+reportCompare(0, 0);

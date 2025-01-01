@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(testLenientAndStrict('function f(eval,[x]){}',
+                              parsesSuccessfully,
+                              parseRaisesException(SyntaxError)),
+         true);
+
+
+reportCompare(0, 0);

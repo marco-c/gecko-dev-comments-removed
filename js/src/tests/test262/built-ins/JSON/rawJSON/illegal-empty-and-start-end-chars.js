@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const ILLEGAL_END_CHARS = ['\n', '\t', '\r', ' '];
+for (const char of ILLEGAL_END_CHARS) {
+  assert.throws(SyntaxError, () => {
+    JSON.rawJSON(`${char}123`);
+  });
+  assert.throws(SyntaxError, () => {
+    JSON.rawJSON(`123${char}`);
+  });
+}
+
+assert.throws(SyntaxError, () => {
+  JSON.rawJSON('');
+});
+
+reportCompare(0, 0);

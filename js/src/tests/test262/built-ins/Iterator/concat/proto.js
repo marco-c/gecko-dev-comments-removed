@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(Iterator.concat),
+  Function.prototype,
+  "Object.getPrototypeOf(Iterator.concat) must return the value of Function.prototype"
+);
+
+reportCompare(0, 0);

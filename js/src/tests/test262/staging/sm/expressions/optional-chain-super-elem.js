@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  m() {
+    super[0]?.a
+  }
+};
+
+obj.m();
+
+
+reportCompare(0, 0);

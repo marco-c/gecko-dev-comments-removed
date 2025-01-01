@@ -12,8 +12,10 @@
 
 
 
-verifyNotEnumerable(Array.prototype, "includes");
-verifyWritable(Array.prototype, "includes");
-verifyConfigurable(Array.prototype, "includes");
+verifyProperty(Array.prototype, "includes", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

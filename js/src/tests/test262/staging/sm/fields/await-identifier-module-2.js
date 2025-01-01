@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async () => class { x = await };
+$DONOTEVALUATE();

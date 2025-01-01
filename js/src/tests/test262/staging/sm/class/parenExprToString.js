@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue((class {}).toString(), "class {}");
+assert.sameValue(((class {})).toString(), "class {}");
+
+
+reportCompare(0, 0);

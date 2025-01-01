@@ -11,8 +11,10 @@
 
 
 
-verifyNotEnumerable(this, "Error");
-verifyWritable(this, "Error");
-verifyConfigurable(this, "Error");
+verifyProperty(this, "Error", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

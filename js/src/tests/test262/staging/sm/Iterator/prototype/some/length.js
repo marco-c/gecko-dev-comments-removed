@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const propDesc = Reflect.getOwnPropertyDescriptor(Iterator.prototype.some, 'length');
+assert.sameValue(propDesc.value, 1);
+assert.sameValue(propDesc.writable, false);
+assert.sameValue(propDesc.enumerable, false);
+assert.sameValue(propDesc.configurable, true);
+
+
+reportCompare(0, 0);

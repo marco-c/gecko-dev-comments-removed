@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assertThrowsInstanceOf(() => new Iterator(), TypeError);
+
+
+reportCompare(0, 0);

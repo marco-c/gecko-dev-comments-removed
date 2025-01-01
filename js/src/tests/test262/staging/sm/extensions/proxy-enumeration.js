@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+var list = Object.getOwnPropertyNames(this);
+var found = list.indexOf("Proxy") != -1;
+assert.sameValue(found, true)
+
+reportCompare(0, 0);

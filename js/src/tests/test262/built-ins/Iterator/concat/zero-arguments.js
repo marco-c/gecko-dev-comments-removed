@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let iterator = Iterator.concat();
+
+let iterResult = iterator.next();
+
+assert.sameValue(iterResult.done, true);
+assert.sameValue(iterResult.value, undefined);
+
+reportCompare(0, 0);

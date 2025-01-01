@@ -16,8 +16,10 @@
 
 assert.sameValue(typeof Array.prototype.splice, 'function', 'typeof');
 
-verifyNotEnumerable(Array.prototype, "splice");
-verifyWritable(Array.prototype, "splice");
-verifyConfigurable(Array.prototype, "splice");
+verifyProperty(Array.prototype, "splice", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

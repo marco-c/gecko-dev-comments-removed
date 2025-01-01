@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+var o = {
+    access() {
+        super.foo.bar;
+    }
+};
+
+
+assertThrowsInstanceOf(o.access, TypeError);
+
+
+reportCompare(0, 0);

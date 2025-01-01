@@ -31,4 +31,4 @@
 
 
 
-throw new Test262Error("This is not in a comment");
+throw new EvalError("This is not in a comment");

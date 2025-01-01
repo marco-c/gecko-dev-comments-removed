@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Error.isError), false, 'isConstructor(Error.isError) must return false');
+assert.throws(TypeError, function () { new Error.isError(); });
+
+
+reportCompare(0, 0);

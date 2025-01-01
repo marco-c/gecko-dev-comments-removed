@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  exec() {
+    return function(){};
+  }
+};
+
+assert.sameValue(RegExp.prototype.test.call(obj, ""), true);
+
+
+reportCompare(0, 0);

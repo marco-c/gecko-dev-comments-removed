@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+(function () {
+    var [x, y] = [1, function () { return x; }];
+    assert.sameValue(y(), 1);
+})();
+
+
+reportCompare(0, 0);

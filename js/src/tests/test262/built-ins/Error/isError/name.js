@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Error.isError.name, 'isError');
+
+
+reportCompare(0, 0);

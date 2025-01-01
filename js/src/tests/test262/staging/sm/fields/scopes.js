@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+(function({
+    k = class i {
+              [_ => i]()
+              {}
+            }
+} = {}) {
+    var j = 0;
+})()
+
+
+reportCompare(0, 0);

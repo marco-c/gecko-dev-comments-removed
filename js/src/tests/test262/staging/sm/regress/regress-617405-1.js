@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+function C(){}
+C.prototype = 1;
+assert.sameValue(Object.getOwnPropertyDescriptor(C, "prototype").configurable, false);
+
+
+reportCompare(0, 0);

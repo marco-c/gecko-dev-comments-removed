@@ -1,0 +1,11 @@
+
+
+
+
+import "./dep_FIXTURE.js";
+
+globalThis.evaluations.push("tla-with-dep start");
+
+await Promise.resolve(0);
+
+globalThis.evaluations.push("tla-with-dep end");

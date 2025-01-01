@@ -1,0 +1,26 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+"use strict";
+
+Object.defineProperty(String.prototype, "toLocaleString", {
+    get() {
+        assert.sameValue(typeof this, "string");
+
+        return function() { return typeof this; };
+    }
+})
+
+assert.sameValue(["test"].toLocaleString(), "string");
+
+
+reportCompare(0, 0);

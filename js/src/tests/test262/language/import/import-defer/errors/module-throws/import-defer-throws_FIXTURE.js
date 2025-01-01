@@ -1,0 +1,6 @@
+
+
+
+
+import defer * as ns from "./import-defer-throws_FIXTURE.js";
+export { ns };

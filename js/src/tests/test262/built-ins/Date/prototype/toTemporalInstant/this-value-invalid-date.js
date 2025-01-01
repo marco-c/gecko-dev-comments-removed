@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var date = new Date(NaN);
+
+assert.throws(RangeError, function() {
+  date.toTemporalInstant();
+});
+
+reportCompare(0, 0);

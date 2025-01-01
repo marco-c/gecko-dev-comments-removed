@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(testLenientAndStrict('++arguments',
+                              parsesSuccessfully,
+                              parseRaisesException(SyntaxError)),
+         true);
+assert.sameValue(testLenientAndStrict('++eval',
+                              parsesSuccessfully,
+                              parseRaisesException(SyntaxError)),
+         true);
+assert.sameValue(testLenientAndStrict('++(arguments)',
+                              parsesSuccessfully,
+                              parseRaisesException(SyntaxError)),
+         true);
+assert.sameValue(testLenientAndStrict('++(eval)',
+                              parsesSuccessfully,
+                              parseRaisesException(SyntaxError)),
+         true);
+
+
+reportCompare(0, 0);

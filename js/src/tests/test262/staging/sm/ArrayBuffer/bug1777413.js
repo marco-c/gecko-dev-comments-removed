@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var b = createExternalArrayBuffer(0);
+assert.sameValue(b.byteLength, 0);
+
+
+reportCompare(0, 0);

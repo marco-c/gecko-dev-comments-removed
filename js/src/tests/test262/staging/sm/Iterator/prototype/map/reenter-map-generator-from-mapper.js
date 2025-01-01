@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let iterator;
+function mapper(x) {
+  let n = iterator.next();
+  return x;
+}
+iterator = [0].values().map(mapper);
+
+assertThrowsInstanceOf(iterator.next, TypeError);
+
+
+reportCompare(0, 0);

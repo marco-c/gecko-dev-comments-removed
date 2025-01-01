@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+const zdt = new Temporal.ZonedDateTime(0n, "UTC");
+
+
+assert.throws(TypeError, () => zdt.with({
+  month: 2,
+  timeZone: "UTC"
+}));
+
+reportCompare(0, 0);

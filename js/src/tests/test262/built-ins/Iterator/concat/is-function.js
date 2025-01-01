@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Iterator.concat,
+  "function",
+  "The value of `typeof Iterator.concat` is 'function'"
+);
+
+reportCompare(0, 0);

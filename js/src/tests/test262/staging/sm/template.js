@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var BUGNUMBER = 99999;
+var summary = '';
+var actual = '';
+var expect = '';
+
+
+
+test();
+
+
+function test()
+{
+  printBugNumber(BUGNUMBER);
+  printStatus (summary);
+ 
+  assert.sameValue(expect, actual, summary);
+}
+
+reportCompare(0, 0);

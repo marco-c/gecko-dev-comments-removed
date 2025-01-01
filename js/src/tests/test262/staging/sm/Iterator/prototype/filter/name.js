@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Iterator.prototype.filter.name, 'filter');
+
+const propertyDescriptor = Reflect.getOwnPropertyDescriptor(Iterator.prototype.filter, 'name');
+assert.sameValue(propertyDescriptor.value, 'filter');
+assert.sameValue(propertyDescriptor.enumerable, false);
+assert.sameValue(propertyDescriptor.writable, false);
+assert.sameValue(propertyDescriptor.configurable, true);
+
+
+reportCompare(0, 0);

@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const iter = [].values();
+const array = iter.toArray();
+
+assert.sameValue(Array.isArray(array), true);
+assert.sameValue(array.length, 0);
+
+
+reportCompare(0, 0);

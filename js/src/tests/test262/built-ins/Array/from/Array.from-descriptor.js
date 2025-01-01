@@ -7,8 +7,10 @@
 
 
 
-verifyWritable(Array, "from");
-verifyNotEnumerable(Array, "from");
-verifyConfigurable(Array, "from");
+verifyProperty(Array, "from", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

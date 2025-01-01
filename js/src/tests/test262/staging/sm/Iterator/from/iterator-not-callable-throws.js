@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assertThrowsInstanceOf(() => Iterator.from({ [Symbol.iterator]: 0 }), TypeError);
+assertThrowsInstanceOf(() => Iterator.from({ [Symbol.iterator]: false }), TypeError);
+assertThrowsInstanceOf(() => Iterator.from({ [Symbol.iterator]: "" }), TypeError);
+assertThrowsInstanceOf(() => Iterator.from({ [Symbol.iterator]: {} }), TypeError);
+assertThrowsInstanceOf(() => Iterator.from({ [Symbol.iterator]: Symbol('') }), TypeError);
+
+
+reportCompare(0, 0);

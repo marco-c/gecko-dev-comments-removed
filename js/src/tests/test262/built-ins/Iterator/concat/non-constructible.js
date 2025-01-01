@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Iterator.concat();
+});
+
+reportCompare(0, 0);

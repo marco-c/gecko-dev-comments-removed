@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function f() {
+    function g() {
+        function h() {
+            g; x;
+        }
+        var [x] = [];
+    }
+}
+
+
+reportCompare(0, 0);

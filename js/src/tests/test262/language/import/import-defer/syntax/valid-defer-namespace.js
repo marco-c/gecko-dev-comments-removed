@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import defer * as ns from "./dep_FIXTURE.js";
+
+reportCompare(0, 0);

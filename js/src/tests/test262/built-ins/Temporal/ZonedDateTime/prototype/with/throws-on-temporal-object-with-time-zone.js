@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+const zdt = new Temporal.ZonedDateTime(0n, "UTC");
+
+assert.throws(TypeError, () => zdt.with(zdt));
+
+reportCompare(0, 0);

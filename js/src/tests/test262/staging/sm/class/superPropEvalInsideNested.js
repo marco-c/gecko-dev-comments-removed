@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assertThrowsInstanceOf(() =>
+({
+    method() {
+        (function () {
+            eval('super.toString');
+        })();
+    }
+}).method(), SyntaxError);
+
+
+reportCompare(0, 0);

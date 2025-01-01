@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function f() {
+    "use strict";
+    return !this;
+}
+assert.sameValue(f.call(null), true);
+
+
+reportCompare(0, 0);
