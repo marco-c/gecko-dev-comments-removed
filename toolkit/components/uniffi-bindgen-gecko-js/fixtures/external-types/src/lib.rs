@@ -2,11 +2,8 @@
 
 
 
-use std::sync::Arc;
-
 use uniffi_geometry::{Line, Point};
 
-#[uniffi::export]
 pub fn gradient(value: Option<Line>) -> f64 {
     match value {
         None => 0.0,
@@ -14,14 +11,8 @@ pub fn gradient(value: Option<Line>) -> f64 {
     }
 }
 
-#[uniffi::export]
 pub fn intersection(ln1: Line, ln2: Line) -> Option<Point> {
     uniffi_geometry::intersection(ln1, ln2)
 }
 
-#[uniffi::export]
-pub fn move_sprite_to_origin(sprite: Arc<uniffi_sprites::Sprite>) {
-    sprite.move_to(uniffi_sprites::Point { x: 0.0, y: 0.0 })
-}
-
-uniffi::setup_scaffolding!("external_types");
+include!(concat!(env!("OUT_DIR"), "/external-types.uniffi.rs"));

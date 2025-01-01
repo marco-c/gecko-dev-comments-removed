@@ -34,16 +34,6 @@ fn call_style(callable: impl Callable, config: &Config, spec: &str) -> CallStyle
     }
 }
 
-
-pub fn crate_name_to_namespace(crate_name: &str) -> &str {
-    
-    match crate_name {
-        "uniffi_geometry" => "geometry",
-        "uniffi_sprites" => "sprites",
-        s => s,
-    }
-}
-
 #[ext]
 pub impl Function {
     fn call_style(&self, config: &Config) -> CallStyle {
