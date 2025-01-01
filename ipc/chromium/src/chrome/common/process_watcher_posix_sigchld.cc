@@ -181,10 +181,9 @@ bool CrashProcessIfHanging(pid_t aPid) {
   
   static int sWaitMs = kShutdownWaitMs;
   if (sWaitMs > 0) {
-    CHROMIUM_LOG(WARNING)
-        << "Process " << aPid
-        << " may be hanging at shutdown; will wait for up to " << sWaitMs
-        << "ms";
+    CHROMIUM_LOG(WARNING) << "Process " << aPid
+                          << " may be hanging at shutdown; will wait for up to "
+                          << sWaitMs << "ms";
   }
   
   
