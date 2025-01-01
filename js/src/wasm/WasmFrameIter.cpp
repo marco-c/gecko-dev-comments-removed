@@ -53,16 +53,19 @@ static const Instance* ExtractCalleeInstanceFromFrameWithInstances(
       FrameWithInstances::calleeInstanceOffset());
 }
 
-static uint32_t CallSiteFuncIndex(const CodeMetadata& codeMeta,
-                                  const CallSite& callSite,
-                                  const CodeRange& codeRange) {
+static uint32_t FuncIndexForLineOrBytecode(const CodeMetadata& codeMeta,
+                                           uint32_t lineOrBytecode,
+                                           const CodeRange& codeRange) {
   
   
-  if (callSite.lineOrBytecode() == CallSite::NO_LINE_OR_BYTECODE) {
+  
+  
+  
+  if (codeMeta.isAsmJS() || lineOrBytecode == CallSite::NO_LINE_OR_BYTECODE) {
     
     return codeRange.funcIndex();
   }
-  return codeMeta.findFuncIndex(callSite.lineOrBytecode());
+  return codeMeta.findFuncIndex(lineOrBytecode);
 }
 
 
@@ -87,9 +90,14 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
     MOZ_ASSERT(code_ == LookupCode(unwoundPC));
 
     const CodeRange* codeRange = code_->lookupFuncRange(unwoundPC);
-    funcIndex_ = codeRange->funcIndex();
-
-    lineOrBytecode_ = trapData.bytecodeOffset;
+    lineOrBytecode_ = trapData.trapSiteDesc.bytecodeOffset.offset();
+    funcIndex_ = FuncIndexForLineOrBytecode(code_->codeMeta(), lineOrBytecode_,
+                                            *codeRange);
+    if (trapData.trapSiteDesc.inlinedCallerOffsets) {
+      inlinedCallerOffsets_ = trapData.trapSiteDesc.inlinedCallerOffsets->span();
+    } else {
+      inlinedCallerOffsets_ = BytecodeOffsetSpan();
+    }
     failedUnwindSignatureMismatch_ = trapData.failedUnwindSignatureMismatch;
 
     
@@ -142,7 +150,8 @@ WasmFrameIter::WasmFrameIter(FrameWithInstances* fp, void* returnAddress)
 
   MOZ_ASSERT(code_ == &instance_->code());
   lineOrBytecode_ = site.lineOrBytecode();
-  funcIndex_ = CallSiteFuncIndex(code_->codeMeta(), site, *codeRange);
+  funcIndex_ = FuncIndexForLineOrBytecode(code_->codeMeta(),
+                                          site.lineOrBytecode(), *codeRange);
   inlinedCallerOffsets_ = site.inlinedCallerOffsets();
 
   MOZ_ASSERT(!done());
@@ -339,7 +348,8 @@ void WasmFrameIter::popFrame() {
   MOZ_ASSERT(code_ == &instance_->code());
 
   lineOrBytecode_ = site.lineOrBytecode();
-  funcIndex_ = CallSiteFuncIndex(code_->codeMeta(), site, *codeRange);
+  funcIndex_ = FuncIndexForLineOrBytecode(code_->codeMeta(),
+                                          site.lineOrBytecode(), *codeRange);
   inlinedCallerOffsets_ = site.inlinedCallerOffsets();
   failedUnwindSignatureMismatch_ = false;
 
