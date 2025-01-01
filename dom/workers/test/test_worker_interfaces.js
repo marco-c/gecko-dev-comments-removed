@@ -342,7 +342,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "RTCTransformEvent", insecureContext: true },
   
-  { name: "Scheduler", insecureContext: true, nightly: true },
+  { name: "Scheduler", insecureContext: true, disabled: true },
   
   "ServiceWorker",
   
@@ -354,11 +354,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "SubtleCrypto" },
   
-  { name: "TaskController", insecureContext: true, nightly: true },
+  { name: "TaskController", insecureContext: true, disabled: true },
   
-  { name: "TaskPriorityChangeEvent", insecureContext: true, nightly: true },
+  { name: "TaskPriorityChangeEvent", insecureContext: true, disabled: true },
   
-  { name: "TaskSignal", insecureContext: true, nightly: true },
+  { name: "TaskSignal", insecureContext: true, disabled: true },
   
   { name: "TextDecoder", insecureContext: true },
   

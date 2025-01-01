@@ -326,7 +326,7 @@ let interfaceNamesInGlobalScope = [
   
   "Response",
   
-  { name: "Scheduler", nightly: true },
+  { name: "Scheduler", disabled: true },
   
   "ServiceWorker",
   
@@ -340,11 +340,11 @@ let interfaceNamesInGlobalScope = [
   
   "SubtleCrypto",
   
-  { name: "TaskController", nightly: true },
+  { name: "TaskController", disabled: true },
   
-  { name: "TaskPriorityChangeEvent", nightly: true },
+  { name: "TaskPriorityChangeEvent", disabled: true },
   
-  { name: "TaskSignal", nightly: true },
+  { name: "TaskSignal", disabled: true },
   
   "TextDecoder",
   

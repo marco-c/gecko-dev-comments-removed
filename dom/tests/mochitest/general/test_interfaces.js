@@ -1139,7 +1139,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "Sanitizer", disabled: true },
   
-  { name: "Scheduler", insecureContext: true, nightly: true },
+  { name: "Scheduler", insecureContext: true, disabled: true },
   
   { name: "Screen", insecureContext: true },
   
@@ -1395,11 +1395,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "SVGViewElement", insecureContext: true },
   
-  { name: "TaskController", insecureContext: true, nightly: true },
+  { name: "TaskController", insecureContext: true, disabled: true },
   
-  { name: "TaskPriorityChangeEvent", insecureContext: true, nightly: true },
+  { name: "TaskPriorityChangeEvent", insecureContext: true, disabled: true },
   
-  { name: "TaskSignal", insecureContext: true, nightly: true },
+  { name: "TaskSignal", insecureContext: true, disabled: true },
   
   { name: "Text", insecureContext: true },
   
@@ -1968,7 +1968,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "resizeTo", insecureContext: true },
   
-  { name: "scheduler", insecureContext: true, nightly: true },
+  { name: "scheduler", insecureContext: true, disabled: true },
   
   { name: "screen", insecureContext: true },
   
