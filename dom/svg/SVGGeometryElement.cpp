@@ -173,8 +173,7 @@ static Point GetPointFrom(const DOMPointInit& aPoint) {
 }
 
 bool SVGGeometryElement::IsPointInFill(const DOMPointInit& aPoint) {
-  
-  FlushStyleIfNeeded();
+  FlushIfNeeded();
 
   RefPtr<Path> path = GetOrBuildPathForHitTest();
   if (!path) {
@@ -188,9 +187,7 @@ bool SVGGeometryElement::IsPointInFill(const DOMPointInit& aPoint) {
 bool SVGGeometryElement::IsPointInStroke(const DOMPointInit& aPoint) {
   
   
-  if (auto* doc = GetComposedDoc()) {
-    doc->FlushPendingNotifications(FlushType::Layout);
-  }
+  Unused << GetPrimaryFrame(FlushType::Layout);
 
   RefPtr<Path> path = GetOrBuildPathForHitTest();
   if (!path) {
@@ -222,15 +219,14 @@ bool SVGGeometryElement::IsPointInStroke(const DOMPointInit& aPoint) {
 }
 
 float SVGGeometryElement::GetTotalLengthForBinding() {
-  
-  FlushStyleIfNeeded();
+  FlushIfNeeded();
   return GetTotalLength();
 }
 
 already_AddRefed<DOMSVGPoint> SVGGeometryElement::GetPointAtLength(
     float distance, ErrorResult& rv) {
-  
-  FlushStyleIfNeeded();
+  FlushIfNeeded();
+
   RefPtr<Path> path = GetOrBuildPathForMeasuring();
   if (!path) {
     rv.ThrowInvalidStateError("No path available for measuring");
@@ -297,20 +293,10 @@ float SVGGeometryElement::GetTotalLength() {
   return flat ? flat->ComputeLength() : 0.f;
 }
 
-void SVGGeometryElement::FlushStyleIfNeeded() {
-  
-  
-  
-  if (GetPathDataAttrName() != nsGkAtoms::d) {
-    return;
-  }
-
-  RefPtr<Document> doc = GetComposedDoc();
-  if (!doc) {
-    return;
-  }
-
-  doc->FlushPendingNotifications(FlushType::Style);
+void SVGGeometryElement::FlushIfNeeded() {
+  FlushType flushType =
+      GeometryDependsOnCoordCtx() ? FlushType::Layout : FlushType::Style;
+  Unused << GetPrimaryFrame(flushType);
 }
 
 }  

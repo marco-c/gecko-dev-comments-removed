@@ -253,9 +253,7 @@ class SVGGeometryElement : public SVGGeometryElementBase {
   
   NumberAttributesInfo GetNumberInfo() override;
 
-  
-  
-  MOZ_CAN_RUN_SCRIPT void FlushStyleIfNeeded();
+  MOZ_CAN_RUN_SCRIPT void FlushIfNeeded();
 
   SVGAnimatedNumber mPathLength;
   static NumberInfo sNumberInfo;
