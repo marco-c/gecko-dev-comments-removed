@@ -16,6 +16,7 @@
 #include "Compatibility.h"
 #include "ia2AccessibleRelation.h"
 #include "IUnknownImpl.h"
+#include "nsAccUtils.h"
 #include "nsCoreUtils.h"
 #include "nsIAccessibleTypes.h"
 #include "mozilla/a11y/PDocAccessible.h"
@@ -447,6 +448,11 @@ ia2Accessible::get_attributes(BSTR* aAttributes) {
   
   
   RefPtr<AccAttributes> attributes = acc->Attributes();
+  if (acc->Role() == roles::HEADING) {
+    
+    
+    nsAccUtils::SetAccGroupAttrs(attributes, acc);
+  }
   return ConvertToIA2Attributes(attributes, aAttributes);
 }
 
