@@ -9,6 +9,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Maybe.h"
 
@@ -48,6 +49,8 @@
 #include "js/Conversions.h"
 #include "js/ErrorReport.h"
 #include "js/friend/ErrorMessages.h"
+#include "js/GCVector.h"
+#include "js/Id.h"
 #include "js/Printer.h"
 #include "js/PropertyDescriptor.h"
 #include "js/PropertySpec.h"
@@ -59,6 +62,7 @@
 #include "vm/JSAtomState.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
+#include "vm/ObjectOperations.h"
 #include "vm/PlainObject.h"
 #include "vm/StringType.h"
 
