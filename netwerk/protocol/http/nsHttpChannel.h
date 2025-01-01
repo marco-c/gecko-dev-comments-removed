@@ -55,12 +55,8 @@ using DNSPromise = MozPromise<nsCOMPtr<nsIDNSRecord>, nsresult, false>;
 
 
 
-#define NS_HTTPCHANNEL_IID                           \
-  {                                                  \
-    0x301bf95b, 0x7bb3, 0x4ae1, {                    \
-      0xa9, 0x71, 0x40, 0xbc, 0xfa, 0x81, 0xde, 0x12 \
-    }                                                \
-  }
+#define NS_HTTPCHANNEL_IID \
+  {0x301bf95b, 0x7bb3, 0x4ae1, {0xa9, 0x71, 0x40, 0xbc, 0xfa, 0x81, 0xde, 0x12}}
 
 class nsHttpChannel final : public HttpBaseChannel,
                             public HttpAsyncAborter<nsHttpChannel>,
@@ -626,7 +622,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   bool mCacheOpenWithPriority{false};
   uint32_t mCacheQueueSizeWhenOpen{0};
 
-  Atomic<bool, Relaxed> mCachedContentIsValid{false};
   Atomic<bool> mIsAuthChannel{false};
   Atomic<bool> mAuthRetryPending{false};
 
@@ -702,12 +697,21 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   MOZ_ATOMIC_BITFIELDS(mAtomicBitfields6, 32, (
     
+    (uint32_t, NetworkWonRace, 1),
+    
+    (uint32_t, CachedContentIsValid, 2),
+    
     
     (uint32_t, HTTPSSVCTelemetryReported, 1),
     (uint32_t, EchConfigUsed, 1),
     (uint32_t, AuthRedirectedChannel, 1)
   ))
   
+  enum CachedContentValidity : uint8_t { Unset = 0, Invalid = 1, Valid = 2 };
+
+  bool CachedContentIsValid() {
+    return LoadCachedContentIsValid() == CachedContentValidity::Valid;
+  }
 
   nsTArray<nsContinueRedirectionFunc> mRedirectFuncStack;
 
