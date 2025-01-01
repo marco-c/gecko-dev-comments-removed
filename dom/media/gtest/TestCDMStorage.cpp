@@ -1262,16 +1262,22 @@ void TestMatchBaseDomain_NoMatch() {
 }
 
 TEST(GeckoMediaPlugins, MatchBaseDomain_MatchOrigin)
-{ TestMatchBaseDomain_MatchOrigin(); }
+{
+  TestMatchBaseDomain_MatchOrigin();
+}
 
 TEST(GeckoMediaPlugins, MatchBaseDomain_MatchTLD)
-{ TestMatchBaseDomain_MatchTLD(); }
+{
+  TestMatchBaseDomain_MatchTLD();
+}
 
 TEST(GeckoMediaPlugins, MatchBaseDomain_NoMatch)
-{ TestMatchBaseDomain_NoMatch(); }
+{
+  TestMatchBaseDomain_NoMatch();
+}
 
 
-#if !(defined(XP_WIN) && defined(MOZ_ASAN))
+#if !(defined(XP_WIN) && (defined(MOZ_ASAN) || defined(MOZ_CODE_COVERAGE)))
 TEST(GeckoMediaPlugins, CDMStorageGetNodeId)
 {
   RefPtr<CDMStorageTest> runner = new CDMStorageTest();
@@ -1340,3 +1346,4 @@ TEST(GeckoMediaPlugins, GMPOutputProtection)
 }
 #  endif  
 #endif    
+          
