@@ -841,8 +841,19 @@ bool BaselineStackBuilder::buildExpressionStack() {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (!iter_.tryRead(&v)) {
-      MOZ_ASSERT(propagatingIonExceptionForDebugMode() && !iter_.moreFrames());
+      MOZ_ASSERT(
+          !iter_.moreFrames() &&
+          (catchingException() || propagatingIonExceptionForDebugMode()));
       v = MagicValue(JS_OPTIMIZED_OUT);
     }
     if (!writeValue(v, "StackValue")) {
