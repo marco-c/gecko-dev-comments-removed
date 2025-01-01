@@ -668,12 +668,6 @@ var gSync = {
       this.updateCTAPanel();
     }
 
-    const avatarIconVariant =
-      NimbusFeatures.fxaButtonVisibility.getVariable("avatarIconVariant");
-    if (avatarIconVariant) {
-      this.applyAvatarIconVariant(avatarIconVariant);
-    }
-
     this._initialized = true;
   },
 
@@ -2548,24 +2542,6 @@ var gSync = {
     }
 
     return { headerTitleL10nId, headerDescription };
-  },
-
-  
-
-
-
-
-
-
-
-  applyAvatarIconVariant(variant) {
-    const ICON_VARIANTS = ["control", "human-circle", "fox-circle"];
-
-    if (!ICON_VARIANTS.includes(variant)) {
-      return;
-    }
-
-    document.documentElement.setAttribute("fxa-avatar-icon-variant", variant);
   },
 
   openLink(url) {
