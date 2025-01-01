@@ -465,7 +465,7 @@ template <class Addr>
 void EmitWasmPreBarrierGuard(jit::MacroAssembler& masm, jit::Register instance,
                              jit::Register scratch, Addr addr,
                              jit::Label* skipBarrier,
-                             BytecodeOffset* trapOffset);
+                             MaybeTrapSiteDesc trapSiteDesc);
 
 
 
