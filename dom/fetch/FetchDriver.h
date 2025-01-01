@@ -145,8 +145,8 @@ class FetchDriver final : public nsIChannelEventSink,
     mAssociatedBrowsingContextID = aID;
   }
 
-  void SetIsThirdPartyWorker(const Maybe<bool> aIsThirdPartyWorker) {
-    mIsThirdPartyWorker = aIsThirdPartyWorker;
+  void SetIsThirdPartyContext(const Maybe<bool> aIsThirdPartyWorker) {
+    mIsThirdPartyContext = aIsThirdPartyWorker;
   }
 
   void SetIsOn3PCBExceptionList(bool aIsOn3PCBExceptionList) {
@@ -188,8 +188,7 @@ class FetchDriver final : public nsIChannelEventSink,
   bool mIsTrackingFetch;
 
   
-  
-  Maybe<bool> mIsThirdPartyWorker;
+  Maybe<bool> mIsThirdPartyContext;
 
   
   bool mIsOn3PCBExceptionList;
