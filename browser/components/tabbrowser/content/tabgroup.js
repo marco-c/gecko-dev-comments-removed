@@ -138,15 +138,6 @@
       this.#updateLabelAriaAttributes();
     }
 
-    
-    get name() {
-      return this.label;
-    }
-
-    set name(newName) {
-      this.label = newName;
-    }
-
     get collapsed() {
       return this.hasAttribute("collapsed");
     }
@@ -232,19 +223,6 @@
 
     on_TabSelect() {
       this.collapsed = false;
-    }
-
-    
-
-
-
-
-    select() {
-      this.collapsed = false;
-      if (gBrowser.selectedTab.group == this) {
-        return;
-      }
-      gBrowser.selectedTab = this.tabs[0];
     }
   }
 
