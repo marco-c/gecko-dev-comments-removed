@@ -25,6 +25,8 @@ async function enableServiceWorkerDebugging() {
   await pushPref("dom.ipc.processCount", 1);
 
   
+  await pushPref("devtools.debugger.features.windowless-service-workers", true);
+  
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
 
   
