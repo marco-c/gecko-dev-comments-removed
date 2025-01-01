@@ -43,19 +43,28 @@ class TimeZoneObject : public NativeObject {
   static const JSClass class_;
 
   static constexpr uint32_t IDENTIFIER_SLOT = 0;
-  static constexpr uint32_t OFFSET_MINUTES_SLOT = 1;
-  static constexpr uint32_t INTL_TIMEZONE_SLOT = 2;
-  static constexpr uint32_t SLOT_COUNT = 3;
+  static constexpr uint32_t PRIMARY_IDENTIFIER_SLOT = 1;
+  static constexpr uint32_t OFFSET_MINUTES_SLOT = 2;
+  static constexpr uint32_t INTL_TIMEZONE_SLOT = 3;
+  static constexpr uint32_t SLOT_COUNT = 4;
 
   
   static constexpr size_t EstimatedMemoryUse = 6840;
+
+  bool isOffset() const { return getFixedSlot(OFFSET_MINUTES_SLOT).isInt32(); }
 
   JSLinearString* identifier() const {
     return &getFixedSlot(IDENTIFIER_SLOT).toString()->asLinear();
   }
 
-  const auto& offsetMinutes() const {
-    return getFixedSlot(OFFSET_MINUTES_SLOT);
+  JSLinearString* primaryIdentifier() const {
+    MOZ_ASSERT(!isOffset());
+    return &getFixedSlot(PRIMARY_IDENTIFIER_SLOT).toString()->asLinear();
+  }
+
+  int32_t offsetMinutes() const {
+    MOZ_ASSERT(isOffset());
+    return getFixedSlot(OFFSET_MINUTES_SLOT).toInt32();
   }
 
   mozilla::intl::TimeZone* getTimeZone() const {
@@ -79,6 +88,18 @@ class TimeZoneObject : public NativeObject {
 } 
 
 namespace js::temporal {
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -143,15 +164,15 @@ class MOZ_STACK_CLASS TimeZoneValue final {
 
   bool isOffset() const {
     MOZ_ASSERT(object_);
-    return object_->offsetMinutes().isInt32();
+    return object_->isOffset();
   }
 
   
 
 
   auto offsetMinutes() const {
-    MOZ_ASSERT(isOffset());
-    return object_->offsetMinutes().toInt32();
+    MOZ_ASSERT(object_);
+    return object_->offsetMinutes();
   }
 
   
@@ -160,6 +181,14 @@ class MOZ_STACK_CLASS TimeZoneValue final {
   auto* identifier() const {
     MOZ_ASSERT(object_);
     return object_->identifier();
+  }
+
+  
+
+
+  auto* primaryIdentifier() const {
+    MOZ_ASSERT(object_);
+    return object_->primaryIdentifier();
   }
 
   
@@ -355,6 +384,8 @@ class WrappedPtrOperations<temporal::TimeZoneValue, Wrapper> {
   auto offsetMinutes() const { return container().offsetMinutes(); }
 
   auto* identifier() const { return container().identifier(); }
+
+  auto* primaryIdentifier() const { return container().primaryIdentifier(); }
 
   auto* getTimeZone() const { return container().getTimeZone(); }
 
