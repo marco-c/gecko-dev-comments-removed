@@ -5548,10 +5548,15 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
     
+    
     ScrollGeneration oldScrollGeneration = Metrics().GetScrollGeneration();
+    CSSPoint oldLayoutScrollOffset = Metrics().GetLayoutScrollOffset();
+    CSSPoint oldVisualScrollOffset = Metrics().GetVisualScrollOffset();
     mScrollMetadata = aScrollMetadata;
     if (!aScrollMetadata.GetScrollUpdates().IsEmpty()) {
       Metrics().SetScrollGeneration(oldScrollGeneration);
+      Metrics().SetLayoutScrollOffset(oldLayoutScrollOffset);
+      Metrics().SetVisualScrollOffset(oldVisualScrollOffset);
     }
 
     mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
