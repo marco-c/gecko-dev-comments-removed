@@ -20,10 +20,6 @@ struct ParamTraits<NotificationDirection>
                                                NotificationDirection::Auto,
                                                NotificationDirection::Rtl> {};
 
-DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::NotificationBehavior, mNoclear,
-                                  mNoscreen, mShowOnlyOnce, mSoundFile,
-                                  mVibrationPattern);
-
 }  
 
 #endif  
