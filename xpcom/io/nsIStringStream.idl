@@ -32,14 +32,7 @@ interface nsIStringInputStream : nsIInputStream
 
 
 
-
-
-
-
-
-
-
-    void setData(in string data, in long dataLen);
+    void setByteStringData(in ACString data);
 
     
 
@@ -64,7 +57,8 @@ interface nsIStringInputStream : nsIInputStream
 
 
 
-    [noscript] void adoptData(in charPtr data, in long dataLen);
+
+    [noscript] void copyData(in string data, in size_t dataLen);
 
     
 
@@ -74,7 +68,17 @@ interface nsIStringInputStream : nsIInputStream
 
 
 
-    [noscript] void shareData(in string data, in long dataLen);
+    [noscript] void adoptData(in charPtr data, in size_t dataLen);
+
+    
+
+
+
+
+
+
+
+    [noscript] void shareData(in string data, in size_t dataLen);
 
     
 
