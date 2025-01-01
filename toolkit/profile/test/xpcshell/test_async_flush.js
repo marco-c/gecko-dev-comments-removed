@@ -80,9 +80,6 @@ add_task(async () => {
     Assert.ok(true, "Flushing should have failed");
   }
 
-  
-  await service.asyncFlushCurrentProfile();
-
   profileData = readProfilesIni();
   Assert.equal(profileData.profiles.length, 3, "Should have three profiles.");
 
@@ -109,7 +106,7 @@ add_task(async () => {
     
     service.currentProfile.storeID = "7126354jdf";
 
-    await service.asyncFlushCurrentProfile();
+    await service.asyncFlushGroupProfile();
 
     profileData = readProfilesIni();
     Assert.equal(profileData.profiles.length, 3, "Should have three profiles.");
@@ -136,7 +133,7 @@ add_task(async () => {
     
     service.currentProfile.rootDir = newProfileDir;
 
-    await service.asyncFlushCurrentProfile();
+    await service.asyncFlushGroupProfile();
 
     profileData = readProfilesIni();
     Assert.equal(profileData.profiles.length, 3, "Should have three profiles.");
