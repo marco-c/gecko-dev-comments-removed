@@ -308,18 +308,22 @@ function promiseAfterPaint() {
 
 
 
-function promiseOnlyApzControllerFlushedWithoutSetTimeout(aWindow = window) {
+function promiseOnlyApzControllerFlushedWithoutSetTimeout(
+  aWindow = window,
+  aElement
+) {
   return new Promise(function (resolve) {
+    var fail = false;
     var repaintDone = function () {
       dump("PromiseApzRepaintsFlushed: APZ flush done\n");
       SpecialPowers.Services.obs.removeObserver(
         repaintDone,
         "apz-repaints-flushed"
       );
-      resolve();
+      resolve(!fail);
     };
     SpecialPowers.Services.obs.addObserver(repaintDone, "apz-repaints-flushed");
-    if (SpecialPowers.getDOMWindowUtils(aWindow).flushApzRepaints()) {
+    if (SpecialPowers.getDOMWindowUtils(aWindow).flushApzRepaints(aElement)) {
       dump(
         "PromiseApzRepaintsFlushed: Flushed APZ repaints, waiting for callback...\n"
       );
@@ -327,6 +331,7 @@ function promiseOnlyApzControllerFlushedWithoutSetTimeout(aWindow = window) {
       dump(
         "PromiseApzRepaintsFlushed: Flushing APZ repaints was a no-op, triggering callback directly...\n"
       );
+      fail = true;
       repaintDone();
     }
   });
@@ -334,11 +339,17 @@ function promiseOnlyApzControllerFlushedWithoutSetTimeout(aWindow = window) {
 
 
 
-function promiseOnlyApzControllerFlushed(aWindow = window) {
+
+
+
+
+function promiseOnlyApzControllerFlushed(aWindow = window, aElement) {
   return new Promise(resolve => {
-    promiseOnlyApzControllerFlushedWithoutSetTimeout(aWindow).then(() => {
-      setTimeout(resolve, 0);
-    });
+    promiseOnlyApzControllerFlushedWithoutSetTimeout(aWindow, aElement).then(
+      result => {
+        setTimeout(() => resolve(result), 0);
+      }
+    );
   });
 }
 
@@ -351,9 +362,16 @@ function promiseOnlyApzControllerFlushed(aWindow = window) {
 
 
 
-async function promiseApzFlushedRepaints() {
+
+async function promiseApzFlushedRepaints(aPopupElement = null) {
+  if (aPopupElement) {
+    SimpleTest.ok(XULPopupElement.isInstance(aPopupElement));
+  }
   await promiseAllPaintsDone();
-  await promiseOnlyApzControllerFlushed();
+  await promiseOnlyApzControllerFlushed(
+    aPopupElement ? aPopupElement.ownerGlobal : window,
+    aPopupElement
+  );
   await promiseAllPaintsDone();
 }
 
