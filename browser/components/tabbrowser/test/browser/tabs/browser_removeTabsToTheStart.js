@@ -14,13 +14,6 @@ add_task(async function removeTabsToTheStart() {
   gBrowser.pinTab(pinnedTab);
 
   
-  is(
-    gBrowser.getTabsToTheStartFrom(lastTab).length,
-    1,
-    "One unpinned tab towards the start"
-  );
-
-  
   gBrowser.removeTabsToTheStartFrom(lastTab);
 
   ok(firstTab.closing, "First tab is closing");

@@ -10,13 +10,6 @@ add_task(async function removeTabsToTheEnd() {
   gBrowser.pinTab(pinnedTab);
 
   
-  is(
-    gBrowser.getTabsToTheEndFrom(firstTab).length,
-    1,
-    "One unpinned tab towards the end"
-  );
-
-  
   gBrowser.removeTabsToTheEndFrom(firstTab);
 
   ok(!firstTab.closing, "First tab is not closing");

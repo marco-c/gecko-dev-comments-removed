@@ -3809,18 +3809,22 @@
       tab.dispatchEvent(evt);
     }
 
-    getTabsToTheStartFrom(aTab) {
+    
+
+
+
+    _getTabsToTheStartFrom(aTab) {
       let tabsToStart = [];
       if (!aTab.visible) {
         return tabsToStart;
       }
-      let tabs = this.visibleTabs;
+      let tabs = this.openTabs;
       for (let i = 0; i < tabs.length; ++i) {
         if (tabs[i] == aTab) {
           break;
         }
         
-        if (tabs[i].pinned) {
+        if (tabs[i].pinned || tabs[i].hidden) {
           continue;
         }
         
@@ -3833,18 +3837,22 @@
       return tabsToStart;
     }
 
-    getTabsToTheEndFrom(aTab) {
+    
+
+
+
+    _getTabsToTheEndFrom(aTab) {
       let tabsToEnd = [];
       if (!aTab.visible) {
         return tabsToEnd;
       }
-      let tabs = this.visibleTabs;
+      let tabs = this.openTabs;
       for (let i = tabs.length - 1; i >= 0; --i) {
         if (tabs[i] == aTab) {
           break;
         }
         
-        if (tabs[i].pinned) {
+        if (tabs[i].pinned || tabs[i].hidden) {
           continue;
         }
         
@@ -3982,7 +3990,7 @@
 
 
     removeTabsToTheStartFrom(aTab) {
-      let tabs = this.getTabsToTheStartFrom(aTab);
+      let tabs = this._getTabsToTheStartFrom(aTab);
       if (
         !this.warnAboutClosingTabs(tabs.length, this.closingTabsEnum.TO_START)
       ) {
@@ -3997,7 +4005,7 @@
 
 
     removeTabsToTheEndFrom(aTab) {
-      let tabs = this.getTabsToTheEndFrom(aTab);
+      let tabs = this._getTabsToTheEndFrom(aTab);
       if (
         !this.warnAboutClosingTabs(tabs.length, this.closingTabsEnum.TO_END)
       ) {
@@ -8458,10 +8466,11 @@ var TabContextMenu = {
 
     
     
-    let noTabsToStart = !gBrowser.getTabsToTheStartFrom(this.contextTab).length;
+    let noTabsToStart = !gBrowser._getTabsToTheStartFrom(this.contextTab)
+      .length;
     closeTabsToTheStartItem.disabled = noTabsToStart;
 
-    let noTabsToEnd = !gBrowser.getTabsToTheEndFrom(this.contextTab).length;
+    let noTabsToEnd = !gBrowser._getTabsToTheEndFrom(this.contextTab).length;
     closeTabsToTheEndItem.disabled = noTabsToEnd;
 
     
