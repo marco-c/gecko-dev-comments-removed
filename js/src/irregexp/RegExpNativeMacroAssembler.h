@@ -269,6 +269,9 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   
   
   
+  
+  
+  
   class LabelPatch {
    public:
     LabelPatch(js::jit::CodeOffset patchOffset, size_t labelOffset)
@@ -283,6 +286,15 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
     js::AutoEnterOOMUnsafeRegion oomUnsafe;
     if (!labelPatches_.emplaceBack(patchOffset, labelOffset)) {
       oomUnsafe.crash("Irregexp label patch");
+    }
+  }
+
+  js::Vector<js::jit::CodeOffset, 4, js::SystemAllocPolicy>
+      backtrackCodeOffsetPatches_;
+  void PushBacktrackCodeOffsetPatch(js::jit::CodeOffset offset) {
+    js::AutoEnterOOMUnsafeRegion oomUnsafe;
+    if (!backtrackCodeOffsetPatches_.append(offset)) {
+      oomUnsafe.crash("Irregexp backtrack code offset patch");
     }
   }
 

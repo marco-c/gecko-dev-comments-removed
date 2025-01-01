@@ -119,7 +119,10 @@ void SMRegExpMacroAssembler::Backtrack() {
   masm_.bind(&noInterrupt);
 
   
+  
   Pop(temp0_);
+  PushBacktrackCodeOffsetPatch(masm_.movWithPatch(ImmPtr(nullptr), temp1_));
+  masm_.addPtr(temp1_, temp0_);
   masm_.jump(temp0_);
 }
 
@@ -1044,8 +1047,13 @@ Handle<HeapObject> SMRegExpMacroAssembler::GetCode(Handle<String> source,
 
   for (LabelPatch& lp : labelPatches_) {
     Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, lp.patchOffset_),
-                                       ImmPtr(code->raw() + lp.labelOffset_),
+                                       ImmPtr((void*)lp.labelOffset_),
                                        ImmPtr(nullptr));
+  }
+
+  for (js::jit::CodeOffset& offset : backtrackCodeOffsetPatches_) {
+    Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, offset),
+                                       ImmPtr(code->raw()), ImmPtr(nullptr));
   }
 
   CollectPerfSpewerJitCodeProfile(code, "RegExp");
