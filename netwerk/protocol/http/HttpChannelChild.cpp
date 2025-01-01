@@ -489,8 +489,8 @@ void HttpChannelChild::OnStartRequest(
                                       false);
   }
 
-  if (!aArgs.cookieHeaders().IsEmpty()) {
-    SetCookieHeaders(aArgs.cookieHeaders());
+  if (!aArgs.cookie().IsEmpty()) {
+    SetCookie(aArgs.cookie());
   }
 
   

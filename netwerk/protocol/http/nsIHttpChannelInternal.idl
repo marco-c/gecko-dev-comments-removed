@@ -100,7 +100,7 @@ interface nsIHttpChannelInternal : nsISupports
 
 
 
-    [must_use] void setCookieHeaders(in Array<ACString> aCookieHeaders);
+    [must_use] void setCookie(in ACString aCookieHeader);
 
     
 
