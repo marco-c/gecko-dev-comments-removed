@@ -3406,7 +3406,10 @@ class _DSCard extends (external_React_default()).PureComponent {
       }));
     }
   }
-  onThumbsUpClick() {
+  onThumbsUpClick(event) {
+    event.stopPropagation();
+    event.preventDefault();
+
     
     const currentState = this.state.isThumbsUpActive;
 
@@ -3449,7 +3452,10 @@ class _DSCard extends (external_React_default()).PureComponent {
       }
     }, "ActivityStream:Content"));
   }
-  onThumbsDownClick() {
+  onThumbsDownClick(event) {
+    event.stopPropagation();
+    event.preventDefault();
+
     
     const currentState = this.state.isThumbsDownActive;
     this.setState({
@@ -3682,6 +3688,12 @@ class _DSCard extends (external_React_default()).PureComponent {
       "data-position-two": this.props["data-position-one"],
       "data-position-three": this.props["data-position-one"],
       "data-position-four": this.props["data-position-one"]
+    }, external_React_default().createElement(SafeAnchor, {
+      className: "ds-card-link",
+      dispatch: this.props.dispatch,
+      onLinkClick: !this.props.placeholder ? this.onLinkClick : undefined,
+      url: this.props.url,
+      title: this.props.title
     }, this.props.showTopics && !this.props.mayHaveSectionsCards && this.props.topic && !isListCard && external_React_default().createElement("span", {
       className: "ds-card-topic",
       "data-l10n-id": `newtab-topic-label-${this.props.topic}`
@@ -3696,13 +3708,7 @@ class _DSCard extends (external_React_default()).PureComponent {
       title: this.props.title,
       isRecentSave: isRecentSave,
       alt_text: alt_text
-    })), external_React_default().createElement(SafeAnchor, {
-      className: "ds-card-link",
-      dispatch: this.props.dispatch,
-      onLinkClick: !this.props.placeholder ? this.onLinkClick : undefined,
-      url: this.props.url,
-      title: this.props.title
-    }, external_React_default().createElement(ImpressionStats_ImpressionStats, {
+    })), external_React_default().createElement(ImpressionStats_ImpressionStats, {
       flightId: this.props.flightId,
       rows: [{
         id: this.props.id,
@@ -3733,7 +3739,7 @@ class _DSCard extends (external_React_default()).PureComponent {
       isFakespot: isFakespot,
       source: this.props.type,
       firstVisibleTimestamp: this.props.firstVisibleTimestamp
-    })), ctaButtonVariant === "variant-b" && external_React_default().createElement("div", {
+    }), ctaButtonVariant === "variant-b" && external_React_default().createElement("div", {
       className: "cta-header"
     }, "Shop Now"), isFakespot ? external_React_default().createElement("div", {
       className: "meta"
@@ -3765,7 +3771,7 @@ class _DSCard extends (external_React_default()).PureComponent {
       isSectionsCard: this.props.mayHaveSectionsCards && this.props.topic && !isListCard,
       format: format,
       topic: this.props.topic
-    }), external_React_default().createElement("div", {
+    })), external_React_default().createElement("div", {
       className: `card-stp-button-hover-background ${compactPocketSavedButtonClassName}`
     }, external_React_default().createElement("div", {
       className: "card-stp-button-position-wrapper"
