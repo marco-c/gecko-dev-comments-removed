@@ -249,7 +249,7 @@ nsChildView::~nsChildView() {
   
   
   [mView widgetDestroyed];  
-  ClearParent();
+  SetParent(nullptr);
   TearDownView();  
 }
 
@@ -524,15 +524,23 @@ void nsChildView::Show(bool aState) {
 }
 
 
-void nsChildView::DidClearParent(nsIWidget*) {
+void nsChildView::DidChangeParent(nsIWidget*) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (mOnDestroyCalled) {
     return;
   }
 
+  nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
+
   
   [mView removeFromSuperview];
+  mParentView = mParent
+                    ? (NSView<mozView>*)mParent->GetNativeData(NS_NATIVE_WIDGET)
+                    : nullptr;
+  if (mParentView) {
+    [mParentView addSubview:mView];
+  }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }

@@ -514,7 +514,13 @@ class nsIWidget : public nsISupports {
   bool Destroyed() const { return mOnDestroyCalled; }
 
   
-  void ClearParent();
+
+
+
+
+
+
+  void SetParent(nsIWidget* aNewParent);
 
   
 
@@ -526,7 +532,7 @@ class nsIWidget : public nsISupports {
   nsIWidget* GetParent() const { return mParent; }
 
   
-  virtual void DidClearParent(nsIWidget* aOldParent) {}
+  virtual void DidChangeParent(nsIWidget* aOldParent) {}
 
   
 

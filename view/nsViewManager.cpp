@@ -616,6 +616,53 @@ void nsViewManager::DispatchEvent(WidgetGUIEvent* aEvent, nsView* aView,
   *aStatus = nsEventStatus_eIgnore;
 }
 
+
+
+void nsViewManager::ReparentChildWidgets(nsView* aView, nsIWidget* aNewWidget) {
+  MOZ_ASSERT(aNewWidget, "null widget");
+
+  if (nsIWidget* widget = aView->GetWidget()) {
+    
+    
+    
+    
+    if (widget->GetParent() != aNewWidget) {
+      widget->SetParent(aNewWidget);
+    }
+    return;
+  }
+
+  
+  
+
+  for (nsView* kid = aView->GetFirstChild(); kid; kid = kid->GetNextSibling()) {
+    ReparentChildWidgets(kid, aNewWidget);
+  }
+}
+
+
+
+void nsViewManager::ReparentWidgets(nsView* aView, nsView* aParent) {
+  MOZ_ASSERT(aParent, "Must have a parent");
+  MOZ_ASSERT(aView, "Must have a view");
+
+  
+  
+  
+  
+  
+  
+  
+  if (aView->HasWidget() || aView->GetFirstChild()) {
+    nsIWidget* parentWidget = aParent->GetNearestWidget(nullptr);
+    if (parentWidget) {
+      ReparentChildWidgets(aView, parentWidget);
+      return;
+    }
+    NS_WARNING("Can not find a widget for the parent view");
+  }
+}
+
 void nsViewManager::InsertChild(nsView* aParent, nsView* aChild,
                                 nsView* aSibling, bool aAfter) {
   MOZ_ASSERT(nullptr != aParent, "null ptr");
@@ -635,6 +682,7 @@ void nsViewManager::InsertChild(nsView* aParent, nsView* aChild,
         
         
         aParent->InsertChild(aChild, nullptr);
+        ReparentWidgets(aChild, aParent);
       } else {
         
         nsView* kid = aParent->GetFirstChild();
@@ -645,6 +693,7 @@ void nsViewManager::InsertChild(nsView* aParent, nsView* aChild,
         }
         
         aParent->InsertChild(aChild, prev);
+        ReparentWidgets(aChild, aParent);
       }
     } else {
       nsView* kid = aParent->GetFirstChild();
@@ -658,9 +707,11 @@ void nsViewManager::InsertChild(nsView* aParent, nsView* aChild,
       if (aAfter) {
         
         aParent->InsertChild(aChild, prev);
+        ReparentWidgets(aChild, aParent);
       } else {
         
         aParent->InsertChild(aChild, kid);
+        ReparentWidgets(aChild, aParent);
       }
     }
   }
