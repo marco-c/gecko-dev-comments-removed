@@ -43,6 +43,8 @@
 #include "nscore.h"
 #include "prenv.h"
 
+#define GTEST_CLASS(testFixture, testName) testFixture##_##testName##_Test
+
 class mozIStorageConnection;
 class nsIEventTarget;
 class nsIFile;
@@ -79,6 +81,11 @@ class OriginScope;
 class QuotaObject;
 class UniversalDirectoryLock;
 
+namespace test {
+class GTEST_CLASS(TestQuotaManagerAndShutdownFixture,
+                  ThumbnailPrivateIdentityTemporaryOriginCount);
+}
+
 class QuotaManager final : public BackgroundThreadObject {
   friend class CanonicalQuotaObject;
   friend class ClearRequestBase;
@@ -96,6 +103,8 @@ class QuotaManager final : public BackgroundThreadObject {
   friend class OriginInfo;
   friend class PersistOp;
   friend class ShutdownStorageOp;
+  friend class test::GTEST_CLASS(TestQuotaManagerAndShutdownFixture,
+                                 ThumbnailPrivateIdentityTemporaryOriginCount);
   friend class UniversalDirectoryLock;
 
   friend Result<PrincipalMetadata, nsresult> GetInfoFromValidatedPrincipalInfo(
@@ -808,6 +817,21 @@ class QuotaManager final : public BackgroundThreadObject {
 
   void RemoveTemporaryOrigins();
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  uint32_t ThumbnailPrivateIdentityTemporaryOriginCount() const;
+
   PrincipalMetadataArray GetAllTemporaryGroups() const;
 
   OriginMetadataArray GetAllTemporaryOrigins() const;
@@ -935,6 +959,8 @@ class QuotaManager final : public BackgroundThreadObject {
     
     
     uint64_t mTotalDirectoryIterations = 0;
+    
+    uint32_t mThumbnailPrivateIdentityTemporaryOriginCount = 0;
   };
   ThreadBound<IOThreadAccessible> mIOThreadAccessible;
 
