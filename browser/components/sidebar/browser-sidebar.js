@@ -303,7 +303,9 @@ var SidebarController = {
     this.SidebarManager;
 
     
-    this._state = new this.SidebarState(this);
+    if (!this._state) {
+      this._state = new this.SidebarState(this);
+    }
 
     this._box = document.getElementById("sidebar-box");
     this._splitter = document.getElementById("sidebar-splitter");
