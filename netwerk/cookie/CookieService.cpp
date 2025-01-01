@@ -573,60 +573,65 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
   CookieCommons::GetServerDateHeader(aChannel, dateHeader);
 
   
-  CookieParser cookieParser(crc, aHostURI);
+  bool moreCookieToRead = true;
+  while (moreCookieToRead) {
+    CookieParser cookieParser(crc, aHostURI);
 
-  moreCookieToRead = cookieParser.Parse(
-      baseDomain, requireHostMatch, cookieStatus, cookieHeader, dateHeader,
-      true, isForeignAndNotAddon, mustBePartitioned,
-      storagePrincipalOriginAttributes.IsPrivateBrowsing());
+    moreCookieToRead = cookieParser.Parse(
+        baseDomain, requireHostMatch, cookieStatus, cookieHeader, dateHeader,
+        true, isForeignAndNotAddon, mustBePartitioned,
+        storagePrincipalOriginAttributes.IsPrivateBrowsing());
 
-  if (!cookieParser.ContainsCookie()) {
-    continue;
+    if (!cookieParser.ContainsCookie()) {
+      continue;
+    }
+
+    
+    if (!CookieCommons::CheckCookiePermission(aChannel,
+                                              cookieParser.CookieData())) {
+      COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
+                        "cookie rejected by permission manager");
+      CookieCommons::NotifyRejected(
+          aHostURI, aChannel,
+          nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION,
+          OPERATION_WRITE);
+      cookieParser.RejectCookie(CookieParser::RejectedByPermissionManager);
+      continue;
+    }
+
+    
+    
+    
+    
+    bool needPartitioned = isCHIPS &&
+                           cookieParser.CookieData().isPartitioned() &&
+                           !isPartitionedPrincipal;
+    OriginAttributes& cookieOriginAttributes =
+        needPartitioned ? partitionedPrincipalOriginAttributes
+                        : storagePrincipalOriginAttributes;
+    
+    MOZ_ASSERT_IF(
+        needPartitioned,
+        !partitionedPrincipalOriginAttributes.mPartitionKey.IsEmpty());
+
+    
+    RefPtr<Cookie> cookie =
+        Cookie::Create(cookieParser.CookieData(), cookieOriginAttributes);
+    MOZ_ASSERT(cookie);
+
+    int64_t currentTimeInUsec = PR_Now();
+    cookie->SetLastAccessed(currentTimeInUsec);
+    cookie->SetCreationTime(
+        Cookie::GenerateUniqueCreationTime(currentTimeInUsec));
+
+    
+    RefPtr<BrowsingContext> bc = loadInfo->GetTargetBrowsingContext();
+
+    
+    storage->AddCookie(&cookieParser, baseDomain, cookieOriginAttributes,
+                       cookie, currentTimeInUsec, aHostURI, aCookieHeader, true,
+                       isForeignAndNotAddon, bc);
   }
-
-  
-  if (!CookieCommons::CheckCookiePermission(aChannel,
-                                            cookieParser.CookieData())) {
-    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
-                      "cookie rejected by permission manager");
-    CookieCommons::NotifyRejected(
-        aHostURI, aChannel,
-        nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION,
-        OPERATION_WRITE);
-    cookieParser.RejectCookie(CookieParser::RejectedByPermissionManager);
-    continue;
-  }
-
-  
-  
-  
-  
-  bool needPartitioned = isCHIPS && cookieParser.CookieData().isPartitioned() &&
-                         !isPartitionedPrincipal;
-  OriginAttributes& cookieOriginAttributes =
-      needPartitioned ? partitionedPrincipalOriginAttributes
-                      : storagePrincipalOriginAttributes;
-  
-  MOZ_ASSERT_IF(needPartitioned,
-                !partitionedPrincipalOriginAttributes.mPartitionKey.IsEmpty());
-
-  
-  RefPtr<Cookie> cookie =
-      Cookie::Create(cookieParser.CookieData(), cookieOriginAttributes);
-  MOZ_ASSERT(cookie);
-
-  int64_t currentTimeInUsec = PR_Now();
-  cookie->SetLastAccessed(currentTimeInUsec);
-  cookie->SetCreationTime(
-      Cookie::GenerateUniqueCreationTime(currentTimeInUsec));
-
-  
-  RefPtr<BrowsingContext> bc = loadInfo->GetTargetBrowsingContext();
-
-  
-  storage->AddCookie(&cookieParser, baseDomain, cookieOriginAttributes, cookie,
-                     currentTimeInUsec, aHostURI, aCookieHeader, true,
-                     isForeignAndNotAddon, bc);
 
   return NS_OK;
 }

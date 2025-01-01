@@ -1297,7 +1297,9 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   if (mOverrideReferrerInfo) {
     args.overrideReferrerInfo() = ToRefPtr(std::move(mOverrideReferrerInfo));
   }
-  args.cookieHeaders().SwapElements(mCookieHeaders);
+  if (!mCookie.IsEmpty()) {
+    args.cookie() = std::move(mCookie);
+  }
 
   nsHttpRequestHead* requestHead = chan->GetRequestHead();
   
@@ -2191,11 +2193,10 @@ void HttpChannelParent::SetHttpChannelFromEarlyHintPreloader(
   mChannel = aChannel;
 }
 
-void HttpChannelParent::SetCookieHeaders(
-    const nsTArray<nsCString>& aCookieHeaders) {
+void HttpChannelParent::SetCookie(nsCString&& aCookie) {
   LOG(("HttpChannelParent::SetCookie [this=%p]", this));
   MOZ_ASSERT(!mAfterOnStartRequestBegun);
-  MOZ_ASSERT(mCookieHeaders.IsEmpty());
+  MOZ_ASSERT(mCookie.IsEmpty());
 
   
   
@@ -2207,7 +2208,7 @@ void HttpChannelParent::SetCookieHeaders(
       mChannel->IsBrowsingContextDiscarded()) {
     return;
   }
-  mCookieHeaders.AppendElements(aCookieHeaders);
+  mCookie = std::move(aCookie);
 }
 
 }  
