@@ -624,8 +624,20 @@ class CallSiteDesc {
   CallSiteKind kind_;
 
  public:
-  CallSiteDesc() : lineOrBytecode_(0), kind_(CallSiteKind::Func) {}
-  explicit CallSiteDesc(CallSiteKind kind) : lineOrBytecode_(0), kind_(kind) {
+  
+  
+  
+  
+  
+  static constexpr uint32_t NO_LINE_OR_BYTECODE = 0;
+  static constexpr uint32_t FIRST_VALID_BYTECODE_OFFSET =
+      NO_LINE_OR_BYTECODE + 1;
+  static_assert(NO_LINE_OR_BYTECODE < sizeof(wasm::MagicNumber));
+
+  CallSiteDesc()
+      : lineOrBytecode_(NO_LINE_OR_BYTECODE), kind_(CallSiteKind::Func) {}
+  explicit CallSiteDesc(CallSiteKind kind)
+      : lineOrBytecode_(NO_LINE_OR_BYTECODE), kind_(kind) {
     MOZ_ASSERT(kind == CallSiteKind(kind_));
   }
   CallSiteDesc(uint32_t lineOrBytecode, CallSiteKind kind)

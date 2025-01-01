@@ -23,6 +23,8 @@
 #include "js/ProfilingFrameIterator.h"
 #include "js/TypeDecls.h"
 
+#include "wasm/WasmCodegenTypes.h" 
+
 namespace js {
 
 namespace jit {
@@ -64,6 +66,7 @@ class WasmFrameIter {
 
   jit::JitActivation* activation_ = nullptr;
   bool isLeavingFrames_ = false;
+  bool enableInlinedFrames_ = false;
 
   
   
@@ -72,6 +75,7 @@ class WasmFrameIter {
   const Code* code_ = nullptr;
   uint32_t funcIndex_ = UINT32_MAX;
   uint32_t lineOrBytecode_ = UINT32_MAX;
+  BytecodeOffsetSpan inlinedCallerOffsets_;
   Frame* fp_ = nullptr;
   Instance* instance_ = nullptr;
   
@@ -117,6 +121,10 @@ class WasmFrameIter {
 
   
   
+  void enableInlinedFrames() { enableInlinedFrames_ = true; }
+
+  
+  
   
 
   void operator++();
@@ -126,6 +134,7 @@ class WasmFrameIter {
   
   
 
+  bool hasSourceInfo() const;
   const char* filename() const;
   const char16_t* displayURL() const;
   bool mutedErrors() const;
@@ -141,12 +150,15 @@ class WasmFrameIter {
   
   Instance* instance() const {
     MOZ_ASSERT(!done());
+    
+    
     return instance_;
   }
 
   
   Frame* frame() const {
     MOZ_ASSERT(!done());
+    MOZ_ASSERT(!enableInlinedFrames_);
     return fp_;
   }
 
@@ -154,6 +166,7 @@ class WasmFrameIter {
   
   uint8_t* resumePCinCurrentFrame() const {
     MOZ_ASSERT(!done());
+    MOZ_ASSERT(!enableInlinedFrames_);
     return resumePCinCurrentFrame_;
   }
 

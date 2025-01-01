@@ -53,6 +53,18 @@ static const Instance* ExtractCalleeInstanceFromFrameWithInstances(
       FrameWithInstances::calleeInstanceOffset());
 }
 
+static uint32_t CallSiteFuncIndex(const CodeMetadata& codeMeta,
+                                  const CallSite& callSite,
+                                  const CodeRange& codeRange) {
+  
+  
+  if (callSite.lineOrBytecode() == CallSite::NO_LINE_OR_BYTECODE) {
+    
+    return codeRange.funcIndex();
+  }
+  return codeMeta.findFuncIndex(callSite.lineOrBytecode());
+}
+
 
 
 
@@ -119,7 +131,6 @@ WasmFrameIter::WasmFrameIter(FrameWithInstances* fp, void* returnAddress)
   const CodeRange* codeRange;
   code_ = LookupCode(returnAddress, &codeRange);
   MOZ_ASSERT(code_ && codeRange->kind() == CodeRange::Function);
-  funcIndex_ = codeRange->funcIndex();
 
   CallSite site;
   MOZ_ALWAYS_TRUE(code_->lookupCallSite(returnAddress, &site));
@@ -131,6 +142,8 @@ WasmFrameIter::WasmFrameIter(FrameWithInstances* fp, void* returnAddress)
 
   MOZ_ASSERT(code_ == &instance_->code());
   lineOrBytecode_ = site.lineOrBytecode();
+  funcIndex_ = CallSiteFuncIndex(code_->codeMeta(), site, *codeRange);
+  inlinedCallerOffsets_ = site.inlinedCallerOffsets();
 
   MOZ_ASSERT(!done());
 }
@@ -179,6 +192,34 @@ static inline void AssertDirectJitCall(const void* fp) {
 }
 
 void WasmFrameIter::popFrame() {
+  
+  if (enableInlinedFrames_ && inlinedCallerOffsets_.size() > 0) {
+    
+    MOZ_ASSERT(!code_->codeMeta().debugEnabled);
+
+    
+    
+    
+    
+    
+    const BytecodeOffset* first = inlinedCallerOffsets_.data();
+    const BytecodeOffset* last =
+        inlinedCallerOffsets_.data() + inlinedCallerOffsets_.size() - 1;
+    lineOrBytecode_ = last->offset();
+    inlinedCallerOffsets_ = BytecodeOffsetSpan(first, last);
+    MOZ_ASSERT(lineOrBytecode_ != CallSite::NO_LINE_OR_BYTECODE);
+    funcIndex_ = code_->codeMeta().findFuncIndex(lineOrBytecode_);
+    
+    
+    currentFrameStackSwitched_ = false;
+    failedUnwindSignatureMismatch_ = false;
+    
+    resumePCinCurrentFrame_ = nullptr;
+    
+    
+    return;
+  }
+
   uint8_t* returnAddress = fp_->returnAddress();
   const CodeRange* codeRange;
   code_ = LookupCode(returnAddress, &codeRange);
@@ -214,6 +255,7 @@ void WasmFrameIter::popFrame() {
     code_ = nullptr;
     funcIndex_ = UINT32_MAX;
     lineOrBytecode_ = UINT32_MAX;
+    inlinedCallerOffsets_ = BytecodeOffsetSpan();
     resumePCinCurrentFrame_ = nullptr;
 
     MOZ_ASSERT(done());
@@ -236,6 +278,7 @@ void WasmFrameIter::popFrame() {
     code_ = nullptr;
     funcIndex_ = UINT32_MAX;
     lineOrBytecode_ = UINT32_MAX;
+    inlinedCallerOffsets_ = BytecodeOffsetSpan();
 
     if (isLeavingFrames_) {
       
@@ -270,6 +313,7 @@ void WasmFrameIter::popFrame() {
     code_ = nullptr;
     funcIndex_ = UINT32_MAX;
     lineOrBytecode_ = UINT32_MAX;
+    inlinedCallerOffsets_ = BytecodeOffsetSpan();
 
     if (isLeavingFrames_) {
       activation_->setJSExitFP(unwoundCallerFP());
@@ -294,20 +338,29 @@ void WasmFrameIter::popFrame() {
 
   MOZ_ASSERT(code_ == &instance_->code());
 
-  funcIndex_ = codeRange->funcIndex();
   lineOrBytecode_ = site.lineOrBytecode();
+  funcIndex_ = CallSiteFuncIndex(code_->codeMeta(), site, *codeRange);
+  inlinedCallerOffsets_ = site.inlinedCallerOffsets();
   failedUnwindSignatureMismatch_ = false;
 
   MOZ_ASSERT(!done());
 }
 
+bool WasmFrameIter::hasSourceInfo() const {
+  
+  
+  return enableInlinedFrames_ || code_->codeMeta().debugEnabled;
+}
+
 const char* WasmFrameIter::filename() const {
   MOZ_ASSERT(!done());
+  MOZ_ASSERT(hasSourceInfo());
   return code_->codeMeta().scriptedCaller().filename.get();
 }
 
 const char16_t* WasmFrameIter::displayURL() const {
   MOZ_ASSERT(!done());
+  MOZ_ASSERT(hasSourceInfo());
   return code_->codeMetaForAsmJS()
              ? code_->codeMetaForAsmJS()->displayURL()  
              : nullptr;                                 
@@ -315,6 +368,7 @@ const char16_t* WasmFrameIter::displayURL() const {
 
 bool WasmFrameIter::mutedErrors() const {
   MOZ_ASSERT(!done());
+  MOZ_ASSERT(hasSourceInfo());
   return code_->codeMetaForAsmJS()
              ? code_->codeMetaForAsmJS()->mutedErrors()  
              : false;                                    
@@ -322,6 +376,7 @@ bool WasmFrameIter::mutedErrors() const {
 
 JSAtom* WasmFrameIter::functionDisplayAtom() const {
   MOZ_ASSERT(!done());
+  MOZ_ASSERT(hasSourceInfo());
 
   JSContext* cx = activation_->cx();
   JSAtom* atom = instance_->getFuncDisplayAtom(cx, funcIndex_);
@@ -335,17 +390,20 @@ JSAtom* WasmFrameIter::functionDisplayAtom() const {
 
 unsigned WasmFrameIter::lineOrBytecode() const {
   MOZ_ASSERT(!done());
+  MOZ_ASSERT(hasSourceInfo());
   return lineOrBytecode_;
 }
 
 uint32_t WasmFrameIter::funcIndex() const {
   MOZ_ASSERT(!done());
+  MOZ_ASSERT(hasSourceInfo());
   return funcIndex_;
 }
 
 unsigned WasmFrameIter::computeLine(
     JS::TaggedColumnNumberOneOrigin* column) const {
   MOZ_ASSERT(!done());
+  MOZ_ASSERT(hasSourceInfo());
   if (instance_->isAsmJS()) {
     if (column) {
       *column =

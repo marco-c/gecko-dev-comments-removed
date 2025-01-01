@@ -2554,6 +2554,12 @@ class FunctionCompiler {
     }
 
     
+    
+    
+    
+    MOZ_ASSERT(!codeMeta().isAsmJS());
+
+    
     if (hints.empty()) {
       return CallRefHint();
     }
