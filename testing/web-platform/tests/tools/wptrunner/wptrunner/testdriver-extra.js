@@ -58,6 +58,15 @@
         event.stopImmediatePropagation();
     });
 
+    const root_classes = document.documentElement.classList;
+    
+    
+    
+    
+    if (root_classes.contains("reftest-wait") || root_classes.contains("test-wait")) {
+      window.__wptrunner_is_test_context = true;
+    }
+
     function is_test_context() {
       return !!window.__wptrunner_is_test_context;
     }
