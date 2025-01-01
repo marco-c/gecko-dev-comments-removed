@@ -56,10 +56,7 @@ if system in ["Microsoft", "Windows"]:
     info["os"] = "win"
     
     
-    if "PROCESSOR_ARCHITEW6432" in os.environ:
-        processor = os.environ.get("PROCESSOR_ARCHITEW6432", processor)
-    else:
-        processor = os.environ.get("PROCESSOR_ARCHITECTURE", processor)
+    processor = machine
     system = os.environ.get("OS", system).replace("_", " ")
     (major, minor, build_number, _, _) = os.sys.getwindowsversion()
     version = "%d.%d.%d" % (major, minor, build_number)
