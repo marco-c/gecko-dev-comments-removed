@@ -2626,6 +2626,18 @@ class MediaDecoderStateMachine::BufferingState
     }
 
     mBufferingStart = TimeStamp::Now();
+    
+    
+    
+    if (mMaster->IsAudioDecoding() && !mMaster->HaveEnoughDecodedAudio() &&
+        !mMaster->IsRequestingAudioData() && !mMaster->IsWaitingAudioData()) {
+      mMaster->RequestAudioData();
+    }
+    if (mMaster->IsVideoDecoding() && !mMaster->HaveEnoughDecodedVideo() &&
+        !mMaster->IsRequestingVideoData() && !mMaster->IsWaitingVideoData()) {
+      mMaster->RequestVideoData(TimeUnit());
+    }
+
     mMaster->ScheduleStateMachineIn(TimeUnit::FromMicroseconds(USECS_PER_S));
     mMaster->mOnNextFrameStatus.Notify(
         MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE_BUFFERING);
