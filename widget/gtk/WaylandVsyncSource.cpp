@@ -101,7 +101,7 @@ void WaylandVsyncSource::Init() {
         
         SetHiddenWindowVSync();
       },
-       false);
+       true);
 }
 
 WaylandVsyncSource::WaylandVsyncSource(nsWindow* aWindow)

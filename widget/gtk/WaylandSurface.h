@@ -49,15 +49,13 @@ class WaylandSurface final {
 
   void FrameCallbackHandler(struct wl_callback* aCallback, uint32_t aTime,
                             bool aRoutedFromChildSurface);
-
-  
-  
   
   void AddOneTimeFrameCallbackLocked(
       const WaylandSurfaceLock& aProofOfLock,
-      const std::function<void(wl_callback*, uint32_t)>& aFrameCallbackHandler,
-      bool aEmulateFrameCallback = false);
+      const std::function<void(wl_callback*, uint32_t)>& aFrameCallbackHandler);
 
+  
+  
   
   
   
@@ -224,8 +222,10 @@ class WaylandSurface final {
 
   bool CheckAndRemoveWaylandBuffer(WaylandBuffer* aWaylandBuffer, bool aRemove);
 
-  void RequestFrameCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
+  void RequestFrameCallbackLocked(const WaylandSurfaceLock& aProofOfLock,
+                                  bool aRequestEmulated);
   void ClearFrameCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
+  bool IsEmulatedFrameCallbackPending() const;
 
   void ClearInitialDrawCallbacksLocked(const WaylandSurfaceLock& aProofOfLock);
 
@@ -266,11 +266,6 @@ class WaylandSurface final {
   gfx::IntPoint mSubsurfacePosition{-1, -1};
 
   
-  
-  
-  
-  bool mEmulateFrameCallback = true;
-  
   static bool sForceEmulateFrameCallback;
 
   
@@ -279,6 +274,12 @@ class WaylandSurface final {
   
   
   AutoTArray<RefPtr<WaylandBuffer>, 3> mAttachedBuffers;
+
+  
+  
+  
+  
+  bool mBufferAttached = false;
 
   
   
