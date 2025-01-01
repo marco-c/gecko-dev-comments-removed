@@ -8,7 +8,16 @@
 
 
 mod conn_ext;
-pub mod debug_tools;
+
+
+
+
+pub mod debug_tools {
+    pub fn define_debug_functions(_c: &rusqlite::Connection) -> rusqlite::Result<()> {
+        Ok(())
+    }
+}
+
 mod each_chunk;
 mod lazy;
 mod maybe_cached;

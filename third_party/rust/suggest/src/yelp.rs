@@ -50,7 +50,7 @@ const MAX_MODIFIER_WORDS_NUMBER: usize = 2;
 
 const SUBJECT_PREFIX_MATCH_THRESHOLD: usize = 2;
 
-impl<'a> SuggestDao<'a> {
+impl SuggestDao<'_> {
     
     pub(crate) fn insert_yelp_suggestions(
         &mut self,
