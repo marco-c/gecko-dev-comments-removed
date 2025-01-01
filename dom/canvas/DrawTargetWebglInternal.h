@@ -389,6 +389,12 @@ struct PathVertexRange {
   bool IsValid() const { return mLength > 0; }
 };
 
+enum class AAStrokeMode {
+  Unsupported,
+  Geometry,
+  Mask,
+};
+
 
 
 class PathCacheEntry : public CacheEntryImpl<PathCacheEntry> {
@@ -396,14 +402,15 @@ class PathCacheEntry : public CacheEntryImpl<PathCacheEntry> {
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(PathCacheEntry, override)
 
   PathCacheEntry(QuantizedPath&& aPath, Pattern* aPattern,
-                 StoredStrokeOptions* aStrokeOptions, const Matrix& aTransform,
-                 const IntRect& aBounds, const Point& aOrigin, HashNumber aHash,
-                 float aSigma = -1.0f);
+                 StoredStrokeOptions* aStrokeOptions, AAStrokeMode aStrokeMode,
+                 const Matrix& aTransform, const IntRect& aBounds,
+                 const Point& aOrigin, HashNumber aHash, float aSigma = -1.0f);
 
   bool MatchesPath(const QuantizedPath& aPath, const Pattern* aPattern,
                    const StrokeOptions* aStrokeOptions,
-                   const Matrix& aTransform, const IntRect& aBounds,
-                   const Point& aOrigin, HashNumber aHash, float aSigma);
+                   AAStrokeMode aStrokeMode, const Matrix& aTransform,
+                   const IntRect& aBounds, const Point& aOrigin,
+                   HashNumber aHash, float aSigma);
 
   static HashNumber HashPath(const QuantizedPath& aPath,
                              const Pattern* aPattern, const Matrix& aTransform,
@@ -429,6 +436,8 @@ class PathCacheEntry : public CacheEntryImpl<PathCacheEntry> {
   
   UniquePtr<StoredStrokeOptions> mStrokeOptions;
   
+  AAStrokeMode mAAStrokeMode = AAStrokeMode::Unsupported;
+  
   float mSigma;
   
   PathVertexRange mVertexRange;
@@ -440,8 +449,9 @@ class PathCache : public CacheImpl<PathCacheEntry, true> {
 
   already_AddRefed<PathCacheEntry> FindOrInsertEntry(
       QuantizedPath aPath, const Pattern* aPattern,
-      const StrokeOptions* aStrokeOptions, const Matrix& aTransform,
-      const IntRect& aBounds, const Point& aOrigin, float aSigma = -1.0f);
+      const StrokeOptions* aStrokeOptions, AAStrokeMode aStrokeMode,
+      const Matrix& aTransform, const IntRect& aBounds, const Point& aOrigin,
+      float aSigma = -1.0f);
 
   void ClearVertexRanges();
 };

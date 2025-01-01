@@ -2822,13 +2822,11 @@ static inline bool HasMatchingScale(const Matrix& aTransform1,
 
 
 
-inline bool PathCacheEntry::MatchesPath(const QuantizedPath& aPath,
-                                        const Pattern* aPattern,
-                                        const StrokeOptions* aStrokeOptions,
-                                        const Matrix& aTransform,
-                                        const IntRect& aBounds,
-                                        const Point& aOrigin, HashNumber aHash,
-                                        float aSigma) {
+inline bool PathCacheEntry::MatchesPath(
+    const QuantizedPath& aPath, const Pattern* aPattern,
+    const StrokeOptions* aStrokeOptions, AAStrokeMode aStrokeMode,
+    const Matrix& aTransform, const IntRect& aBounds, const Point& aOrigin,
+    HashNumber aHash, float aSigma) {
   return aHash == mHash && HasMatchingScale(aTransform, mTransform) &&
          
          aBounds.x - aOrigin.x >= mBounds.x - mOrigin.x &&
@@ -2841,12 +2839,14 @@ inline bool PathCacheEntry::MatchesPath(const QuantizedPath& aPath,
          (!aPattern ? !mPattern : mPattern && *aPattern == *mPattern) &&
          (!aStrokeOptions
               ? !mStrokeOptions
-              : mStrokeOptions && *aStrokeOptions == *mStrokeOptions) &&
+              : mStrokeOptions && *aStrokeOptions == *mStrokeOptions &&
+                    mAAStrokeMode == aStrokeMode) &&
          aSigma == mSigma;
 }
 
 PathCacheEntry::PathCacheEntry(QuantizedPath&& aPath, Pattern* aPattern,
                                StoredStrokeOptions* aStrokeOptions,
+                               AAStrokeMode aStrokeMode,
                                const Matrix& aTransform, const IntRect& aBounds,
                                const Point& aOrigin, HashNumber aHash,
                                float aSigma)
@@ -2855,6 +2855,7 @@ PathCacheEntry::PathCacheEntry(QuantizedPath&& aPath, Pattern* aPattern,
       mOrigin(aOrigin),
       mPattern(aPattern),
       mStrokeOptions(aStrokeOptions),
+      mAAStrokeMode(aStrokeMode),
       mSigma(aSigma) {}
 
 
@@ -2863,13 +2864,14 @@ PathCacheEntry::PathCacheEntry(QuantizedPath&& aPath, Pattern* aPattern,
 
 already_AddRefed<PathCacheEntry> PathCache::FindOrInsertEntry(
     QuantizedPath aPath, const Pattern* aPattern,
-    const StrokeOptions* aStrokeOptions, const Matrix& aTransform,
-    const IntRect& aBounds, const Point& aOrigin, float aSigma) {
+    const StrokeOptions* aStrokeOptions, AAStrokeMode aStrokeMode,
+    const Matrix& aTransform, const IntRect& aBounds, const Point& aOrigin,
+    float aSigma) {
   HashNumber hash =
       PathCacheEntry::HashPath(aPath, aPattern, aTransform, aBounds, aOrigin);
   for (const RefPtr<PathCacheEntry>& entry : GetChain(hash)) {
-    if (entry->MatchesPath(aPath, aPattern, aStrokeOptions, aTransform, aBounds,
-                           aOrigin, hash, aSigma)) {
+    if (entry->MatchesPath(aPath, aPattern, aStrokeOptions, aStrokeMode,
+                           aTransform, aBounds, aOrigin, hash, aSigma)) {
       return do_AddRef(entry);
     }
   }
@@ -2888,8 +2890,8 @@ already_AddRefed<PathCacheEntry> PathCache::FindOrInsertEntry(
     }
   }
   RefPtr<PathCacheEntry> entry =
-      new PathCacheEntry(std::move(aPath), pattern, strokeOptions, aTransform,
-                         aBounds, aOrigin, hash, aSigma);
+      new PathCacheEntry(std::move(aPath), pattern, strokeOptions, aStrokeMode,
+                         aTransform, aBounds, aOrigin, hash, aSigma);
   Insert(entry);
   return entry.forget();
 }
@@ -3224,12 +3226,6 @@ inline bool DrawTargetWebgl::ShouldAccelPath(
   return mWebglValid && SupportsDrawOptions(aOptions) && PrepareContext();
 }
 
-enum class AAStrokeMode {
-  Unsupported,
-  Geometry,
-  Mask,
-};
-
 
 
 
@@ -3403,6 +3399,11 @@ bool SharedContextWebgl::DrawPathAccel(
           : (aPattern.GetType() == PatternType::COLOR
                  ? Some(static_cast<const ColorPattern&>(aPattern).mColor)
                  : Nothing());
+  AAStrokeMode aaStrokeMode =
+      aStrokeOptions && mPathAAStroke
+          ? SupportsAAStroke(aPattern, aOptions, *aStrokeOptions,
+                             aAllowStrokeAlpha)
+          : AAStrokeMode::Unsupported;
   
   
   RefPtr<PathCacheEntry> entry;
@@ -3420,7 +3421,7 @@ bool SharedContextWebgl::DrawPathAccel(
     }
     entry = mPathCache->FindOrInsertEntry(
         std::move(*qp), color ? nullptr : &aPattern, aStrokeOptions,
-        currentTransform, intBounds, quantizedOrigin,
+        aaStrokeMode, currentTransform, intBounds, quantizedOrigin,
         aShadow ? aShadow->mSigma : -1.0f);
     if (!entry) {
       return false;
@@ -3502,9 +3503,7 @@ bool SharedContextWebgl::DrawPathAccel(
             mRasterizationTruncates, outputBuffer, outputBufferCapacity);
       }
     } else {
-      if (mPathAAStroke &&
-          SupportsAAStroke(aPattern, aOptions, *aStrokeOptions,
-                           aAllowStrokeAlpha) != AAStrokeMode::Unsupported) {
+      if (aaStrokeMode != AAStrokeMode::Unsupported) {
         auto scaleFactors = currentTransform.ScaleFactors();
         if (scaleFactors.AreScalesSame()) {
           strokeVB = GenerateStrokeVertexBuffer(
@@ -3582,9 +3581,7 @@ bool SharedContextWebgl::DrawPathAccel(
         } else {
           AAStroke::aa_stroke_vertex_buffer_release(strokeVB.ref());
         }
-        if (strokeVB && aStrokeOptions &&
-            SupportsAAStroke(aPattern, aOptions, *aStrokeOptions,
-                             aAllowStrokeAlpha) == AAStrokeMode::Mask) {
+        if (strokeVB && aaStrokeMode == AAStrokeMode::Mask) {
           
           if (RefPtr<TextureHandle> handle =
                   DrawStrokeMask(vertexRange, intBounds.Size())) {
