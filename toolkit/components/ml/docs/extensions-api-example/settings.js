@@ -2,14 +2,26 @@
 
 
 
-function deleteCachedModels(event) {
-  
-  event.preventDefault();
 
-  
+function deleteCachedModels() {
   browser.trial.ml.deleteCachedModels().then(_res => {
     alert("Files deleted");
   });
 }
 
-document.querySelector("form").addEventListener("submit", deleteCachedModels);
+async function askPermission() {
+  await browser.permissions.request({ permissions: ["trialML"] });
+  await updateGranted();
+}
+
+async function updateGranted() {
+  let granted = await browser.permissions.contains({
+    permissions: ["trialML"],
+  });
+  document.body.classList.toggle("granted", granted);
+}
+
+document.querySelector("#grant").addEventListener("click", askPermission);
+document.querySelector("#clear").addEventListener("click", deleteCachedModels);
+
+updateGranted();
