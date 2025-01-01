@@ -22,7 +22,7 @@ AddonTestUtils.createAppInfo(
 
 let OptionalPermissions;
 
-add_setup(async () => {
+add_task(async function setup() {
   
   do_get_profile();
   Services.fog.initializeFOG();
@@ -64,14 +64,12 @@ add_setup(async () => {
     "tabHide",
     "tabs",
     "trialML",
+    "userScripts", 
     "webRequestAuthProvider",
     "webRequestBlocking",
     "webRequestFilterResponse",
     "webRequestFilterResponse.serviceWorkerScript",
   ];
-  
-  
-  
   OptionalPermissions = Schemas.getPermissionNames([
     "OptionalPermission",
     "OptionalPermissionNoPrompt",

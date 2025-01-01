@@ -36,9 +36,6 @@ add_setup(async () => {
 
   await AddonTestUtils.promiseStartupManager();
   AddonTestUtils.usePrivilegedSignatures = false;
-
-  
-  Services.prefs.setBoolPref("extensions.userScripts.mv3.enabled", true);
 });
 
 
@@ -101,11 +98,6 @@ async function test_optional_only_permission_in_permissions(manifest_version) {
 
   await extension.unload();
 
-  
-  
-  
-  
-  
   AddonTestUtils.checkMessages(messages, {
     expected: [
       {
@@ -202,19 +194,9 @@ add_task(
   async function at_most_one_optional_only_permission_in_request() {
     let extension = ExtensionTestUtils.loadExtension({
       manifest: {
-        manifest_version: 3,
         optional_permissions: [
-          
-          "cookies",
-          
           "trialML",
-          
-          "userScripts",
-          
           "webNavigation",
-        ],
-        host_permissions: [
-          
           "https://example.com/*",
         ],
       },
@@ -237,34 +219,9 @@ add_task(
         );
 
         await browser.test.assertRejects(
-          testPermissionsRequest({ permissions: ["trialML", "cookies"] }),
-          ERROR_ONLY_ONE_PERM_ALLOWED,
-          "Should reject optional-only permission + permission without warning"
-        );
-
-        await browser.test.assertRejects(
           testPermissionsRequest({ permissions: ["trialML", "webNavigation"] }),
           ERROR_ONLY_ONE_PERM_ALLOWED,
           "Should reject optional-only permissions + regular permission"
-        );
-
-        await browser.test.assertRejects(
-          testPermissionsRequest({ permissions: ["trialML", "userScripts"] }),
-          ERROR_ONLY_ONE_PERM_ALLOWED,
-          "Should reject optional-only permissions (trialML, userScripts)"
-        );
-
-        
-        
-        
-        
-        await browser.test.assertRejects(
-          testPermissionsRequest({ permissions: ["userScripts", "trialML"] }),
-          
-          
-          
-          "Cannot request permission userScripts with another permission",
-          "Should reject optional-only permissions (userScripts, trialML)"
         );
 
         await browser.test.assertRejects(
