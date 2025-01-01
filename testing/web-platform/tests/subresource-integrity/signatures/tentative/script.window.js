@@ -6,27 +6,6 @@
 
 
 
-const kValidKeys = {
-  
-  rfc: "JrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=",
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  arbitrary: "xDnP380zcL4rJ76rXYjeHlfMyPZEOqpJYjsjEppbuXE="
-};
-
-
-
-const kInvalidKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-
 const kScriptToExecute = {
   body: "window.hello = `world`;",
   hash: "PZJ+9CdAAIacg7wfUe4t/RkDQJVKM0mCZ2K7qiRhHFc=",
@@ -70,48 +49,15 @@ const kScriptToBlock = {
 
 
 
-
-let counter = 0;
-function resourceURL(data) {
-  counter++;
-  data.type = "application/javascript";
-  data.counter = counter;
-  let params = new URLSearchParams(data);
-  return "./resource.py?" + params.toString();
-}
-
-const EXPECT_BLOCKED = "block";
-const EXPECT_LOADED = "loaded";
-
-function generate_test(request_data, integrity, expectation, description) {
-  async_test(t => {
-    let s = document.createElement('script');
-    s.src = resourceURL(request_data);
-    s.integrity = integrity;
-    if (expectation == EXPECT_BLOCKED) {
-      s.onerror = t.step_func_done(e => {
-        assert_equals("error", e.type);
-      });
-      s.onload = t.unreached_func("Script should not execute.");
-    } else {
-      s.onload = t.step_func_done(e => {
-        assert_equals("load", e.type);
-      });
-      s.onerror = t.unreached_func("Script should not fail.");
-    }
-    document.body.appendChild(s);
-  }, description);
-}
-
 const kUnsigned = { body: kScriptToExecute['body'] };
-generate_test(kUnsigned, "", EXPECT_LOADED,
-              "No signature, no integrity check: loads.");
+generate_script_test(kUnsigned, "", EXPECT_LOADED,
+                     "No signature, no integrity check: loads.");
 
-generate_test(kUnsigned, "ed25519-???", EXPECT_LOADED,
-              "No signature, malformed integrity check: loads.");
+generate_script_test(kUnsigned, "ed25519-???", EXPECT_LOADED,
+                     "No signature, malformed integrity check: loads.");
 
-generate_test(kUnsigned, `ed25519-${kValidKeys['rfc']}`, EXPECT_BLOCKED,
-              "No signature, valid integrity check: loads.");
+generate_script_test(kUnsigned, `ed25519-${kValidKeys['rfc']}`, EXPECT_BLOCKED,
+                     "No signature, valid integrity check: loads.");
 
 
 const kSignedShouldExecute = {
@@ -128,18 +74,18 @@ const kSignedShouldBlock = {
 };
 
 
-generate_test(kSignedShouldExecute, "", EXPECT_LOADED,
-              "Valid signature, no integrity check: loads.");
-generate_test(kSignedShouldExecute, "ed25519-???", EXPECT_LOADED,
-              "Valid signature, malformed integrity check: loads.");
-generate_test(kSignedShouldExecute, `ed25519-${kValidKeys['rfc']}`, EXPECT_LOADED,
-              "Valid signature, valid integrity check: loads.");
-generate_test(kSignedShouldExecute, `ed25519-${kValidKeys['rfc']} ed25519-${kValidKeys['arbitrary']}`, EXPECT_LOADED,
-              "Valid signature, one matching integrity check: loads.");
+generate_script_test(kSignedShouldExecute, "", EXPECT_LOADED,
+                     "Valid signature, no integrity check: loads.");
+generate_script_test(kSignedShouldExecute, "ed25519-???", EXPECT_LOADED,
+                     "Valid signature, malformed integrity check: loads.");
+generate_script_test(kSignedShouldExecute, `ed25519-${kValidKeys['rfc']}`, EXPECT_LOADED,
+                     "Valid signature, valid integrity check: loads.");
+generate_script_test(kSignedShouldExecute, `ed25519-${kValidKeys['rfc']} ed25519-${kValidKeys['arbitrary']}`, EXPECT_LOADED,
+                     "Valid signature, one matching integrity check: loads.");
 
 
-generate_test(kSignedShouldBlock, `ed25519-${kValidKeys['arbitrary']}`, EXPECT_BLOCKED,
-              "Valid signature, mismatched integrity check: blocked.");
+generate_script_test(kSignedShouldBlock, `ed25519-${kValidKeys['arbitrary']}`, EXPECT_BLOCKED,
+                     "Valid signature, mismatched integrity check: blocked.");
 
 
 const kMultiplySignedShouldExecute = {
@@ -158,17 +104,17 @@ const kMultiplySignedShouldBlock = {
   signature: `signature1=:${kScriptToBlock['signatures']['rfc']}:, ` +
              `signature2=:${kScriptToBlock['signatures']['arbitrary']}:`
 };
-generate_test(kMultiplySignedShouldExecute, "", EXPECT_LOADED,
-              "Valid signatures, no integrity check: loads.");
-generate_test(kMultiplySignedShouldExecute, "ed25519-???", EXPECT_LOADED,
-              "Valid signatures, malformed integrity check: loads.");
-generate_test(kMultiplySignedShouldExecute, `ed25519-${kValidKeys['rfc']}`, EXPECT_LOADED,
-              "Valid signatures, integrity check matches one: loads.");
-generate_test(kMultiplySignedShouldExecute, `ed25519-${kValidKeys['arbitrary']}`, EXPECT_LOADED,
-              "Valid signatures, integrity check matches the other: loads.");
-generate_test(kMultiplySignedShouldExecute, `ed25519-${kValidKeys['rfc']} ed25519-${kValidKeys['arbitrary']}`, EXPECT_LOADED,
-              "Valid signatures, integrity check matches both: loads.");
+generate_script_test(kMultiplySignedShouldExecute, "", EXPECT_LOADED,
+                     "Valid signatures, no integrity check: loads.");
+generate_script_test(kMultiplySignedShouldExecute, "ed25519-???", EXPECT_LOADED,
+                     "Valid signatures, malformed integrity check: loads.");
+generate_script_test(kMultiplySignedShouldExecute, `ed25519-${kValidKeys['rfc']}`, EXPECT_LOADED,
+                     "Valid signatures, integrity check matches one: loads.");
+generate_script_test(kMultiplySignedShouldExecute, `ed25519-${kValidKeys['arbitrary']}`, EXPECT_LOADED,
+                     "Valid signatures, integrity check matches the other: loads.");
+generate_script_test(kMultiplySignedShouldExecute, `ed25519-${kValidKeys['rfc']} ed25519-${kValidKeys['arbitrary']}`, EXPECT_LOADED,
+                     "Valid signatures, integrity check matches both: loads.");
 
 
-generate_test(kMultiplySignedShouldBlock, `ed25519-${kInvalidKey}`, EXPECT_BLOCKED,
-              "Valid signatures, integrity check matches neither: blocked.");
+generate_script_test(kMultiplySignedShouldBlock, `ed25519-${kInvalidKey}`, EXPECT_BLOCKED,
+                     "Valid signatures, integrity check matches neither: blocked.");
