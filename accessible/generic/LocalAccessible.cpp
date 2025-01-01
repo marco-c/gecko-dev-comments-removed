@@ -4209,6 +4209,16 @@ void LocalAccessible::MaybeQueueCacheUpdateForStyleChanges() {
         
         mDoc->QueueCacheUpdate(this, CacheDomain::ScrollPosition);
       }
+    } else {
+      ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(frame);
+      if (!scrollContainerFrame &&
+          (newOverflow.Equals("auto"_ns) || newOverflow.Equals("scroll"_ns))) {
+        
+        
+        
+        
+        mDoc->QueueCacheUpdate(this, CacheDomain::ScrollPosition);
+      }
     }
 
     nsAutoCString oldDisplay, newDisplay;
