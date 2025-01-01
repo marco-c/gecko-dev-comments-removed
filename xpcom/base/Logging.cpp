@@ -10,6 +10,7 @@
 #include "GeckoProfiler.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/FileUtils.h"
+#include "mozilla/GeckoTrace.h"
 #include "mozilla/LateWriteChecks.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
@@ -893,6 +894,13 @@ void LogModule::SetLevel(LogLevel level) {
   
   if (strstr(mName, "::")) {
     set_rust_log_level(mName, static_cast<uint8_t>(level));
+  }
+
+  
+  
+  
+  if (strcmp(mName, "opentelemetry") == 0) {
+    gecko_trace::SetOpenTelemetryInternalLogLevel(level);
   }
 }
 
