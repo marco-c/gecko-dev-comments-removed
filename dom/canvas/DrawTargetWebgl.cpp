@@ -639,7 +639,9 @@ bool DrawTargetWebgl::GenerateComplexClipMask() {
   dt->SetTransform(Matrix::Translation(-mClipBounds.TopLeft()));
   dt->FillRect(Rect(mClipBounds), ColorPattern(DeviceColor(1, 1, 1, 1)));
   
-  webgl->ActiveTexture(1);
+  
+  
+  
   webgl->BindTexture(LOCAL_GL_TEXTURE_2D, mClipMask);
   if (init) {
     mSharedContext->InitTexParameters(mClipMask, false);
@@ -658,10 +660,9 @@ bool DrawTargetWebgl::GenerateComplexClipMask() {
   mSharedContext->UploadSurface(data, SurfaceFormat::A8,
                                 IntRect(IntPoint(), mClipBounds.Size()),
                                 mClipBounds.TopLeft(), init);
-  webgl->ActiveTexture(0);
+  mSharedContext->ClearLastTexture();
   
-  
-  mSharedContext->mLastClipMask = mClipMask;
+  mSharedContext->SetClipMask(mClipMask);
   mSharedContext->SetClipRect(mClipBounds);
   
   
