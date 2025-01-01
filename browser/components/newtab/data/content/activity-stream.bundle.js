@@ -2035,11 +2035,48 @@ const LinkMenuOptions = {
       type: actionTypes.OPEN_ABOUT_FAKESPOT,
     }),
   }),
-  SectionBlock: ({ section, sectionPosition }) => ({
+  SectionBlock: ({
+    blockedSections,
+    sectionKey,
+    section,
+    sectionPosition,
+  }) => ({
     id: "newtab-menu-section-block",
+    icon: "delete",
+    action: {
+      
+      type: actionTypes.DIALOG_OPEN,
+      data: {
+        onConfirm: [
+          
+          
+          actionCreators.AlsoToMain({
+            type: actionTypes.SET_PREF,
+            data: {
+              name: "discoverystream.sections.blocked",
+              value: [...blockedSections, sectionKey].join(", "),
+            },
+          }),
+          
+          
+          actionCreators.AlsoToMain({
+            type: actionTypes.BLOCK_SECTION,
+            data: null,
+          }),
+        ],
+        
+        
+        body_string_id: [
+          "newtab-section-confirm-block-section-p1",
+          "newtab-section-confirm-block-section-p2",
+        ],
+        confirm_button_string_id: "newtab-section-block-section-button",
+        cancel_button_string_id: "newtab-section-cancel-button",
+      },
+    },
+    userEvent: "DIALOG_OPEN",
     
-    
-    action: actionCreators.OnlyToMain({
+    impression: actionCreators.OnlyToMain({
       type: actionTypes.BLOCK_SECTION,
       data: {
         section,
@@ -6918,6 +6955,9 @@ function Dialog(prevState = INITIAL_STATE.Dialog, action) {
       return Object.assign({}, prevState, { visible: false });
     case actionTypes.DELETE_HISTORY_URL:
       return Object.assign({}, INITIAL_STATE.Dialog);
+    case actionTypes.BLOCK_SECTION:
+      
+      return Object.assign({}, INITIAL_STATE.Dialog);
     default:
       return prevState;
   }
@@ -7461,6 +7501,12 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
       return {
         ...prevState,
         showTopicSelection: false,
+      };
+    case actionTypes.SECTION_BLOCKED:
+      return {
+        ...prevState,
+        showBlockSectionConfirmation: true,
+        sectionData: action.data,
       };
     default:
       return prevState;
@@ -9909,6 +9955,7 @@ function SectionContextMenu({
   sectionKey,
   following,
   followedSections,
+  blockedSections,
   section,
   sectionPosition
 }) {
@@ -9942,6 +9989,7 @@ function SectionContextMenu({
     shouldSendImpressionStats: true,
     site: {
       followedSections,
+      blockedSections,
       section,
       sectionKey,
       sectionPosition
@@ -9968,6 +10016,7 @@ const PREF_SECTIONS_PERSONALIZATION_ENABLED = "discoverystream.sections.personal
 const CardSections_PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
 const CardSections_PREF_TOPICS_SELECTED = "discoverystream.topicSelection.selectedTopics";
 const PREF_FOLLOWED_SECTIONS = "discoverystream.sections.following";
+const PREF_BLOCKED_SECTIONS = "discoverystream.sections.blocked";
 const CardSections_PREF_TOPICS_AVAILABLE = "discoverystream.topicSelection.topics";
 const CardSections_PREF_THUMBS_UP_DOWN_ENABLED = "discoverystream.thumbsUpDown.enabled";
 function getLayoutData(responsiveLayouts, index) {
@@ -9997,6 +10046,17 @@ function getMaxTiles(responsiveLayouts) {
     return acc;
   }, {});
 }
+
+
+
+
+
+
+
+
+const getTopics = pref => {
+  return pref.split(",").map(item => item.trim()).filter(item => item);
+};
 function CardSection({
   sectionPosition,
   section,
@@ -10016,6 +10076,7 @@ function CardSection({
   const selectedTopics = prefs[CardSections_PREF_TOPICS_SELECTED];
   const availableTopics = prefs[CardSections_PREF_TOPICS_AVAILABLE];
   const followedSectionsPref = prefs[PREF_FOLLOWED_SECTIONS] || "";
+  const blockedSectionsPref = prefs[PREF_BLOCKED_SECTIONS] || "";
   const {
     saveToPocketCard
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream);
@@ -10028,8 +10089,9 @@ function CardSection({
   const {
     responsiveLayouts
   } = section.layout;
-  const followedSections = followedSectionsPref.split(",").map(s => s.trim()).filter(item => item);
+  const followedSections = getTopics(followedSectionsPref);
   const following = followedSections.includes(sectionKey);
+  const blockedSections = getTopics(blockedSectionsPref);
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.CARD_SECTION_IMPRESSION,
@@ -10102,6 +10164,7 @@ function CardSection({
     index: sectionPosition,
     following: following,
     followedSections: followedSections,
+    blockedSections: blockedSections,
     sectionKey: sectionKey,
     title: title,
     type: type,
@@ -10193,13 +10256,18 @@ function CardSections({
   ctaButtonVariant,
   ctaButtonSponsors
 }) {
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+
   
   if (!data) {
     return null;
   }
-  const {
-    sections
-  } = data;
+
+  
+  const blockedSections = getTopics(prefs[PREF_BLOCKED_SECTIONS] || "");
+
+  
+  const sections = data.sections.filter(section => !blockedSections.includes(section.sectionKey));
   const isEmpty = sections.length === 0;
   return isEmpty ? external_React_default().createElement("div", {
     className: "ds-card-grid empty"
