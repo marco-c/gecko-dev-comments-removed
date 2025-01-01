@@ -481,6 +481,16 @@ class HTMLEditUtils final {
   
 
 
+  [[nodiscard]] static bool TextHasOnlyOnePreformattedLinefeed(
+      const Text& aText) {
+    return aText.TextDataLength() == 1u &&
+           aText.TextFragment().CharAt(0u) == kNewLine &&
+           EditorUtils::IsNewLinePreformatted(aText);
+  }
+
+  
+
+
 
   [[nodiscard]] static bool IsVisibleTextNode(const Text& aText);
 

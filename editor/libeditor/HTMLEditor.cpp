@@ -5234,13 +5234,13 @@ bool HTMLEditor::SetCaretInTableCell(Element* aElement) {
 
 
 
-nsresult HTMLEditor::CollapseAdjacentTextNodes(nsRange& aInRange) {
+nsresult HTMLEditor::CollapseAdjacentTextNodes(nsRange& aRange) {
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
   
   
   DOMSubtreeIterator subtreeIter;
-  if (NS_FAILED(subtreeIter.Init(aInRange))) {
+  if (NS_FAILED(subtreeIter.Init(aRange))) {
     NS_WARNING("DOMSubtreeIterator::Init() failed");
     return NS_ERROR_FAILURE;
   }
@@ -5252,35 +5252,40 @@ nsresult HTMLEditor::CollapseAdjacentTextNodes(nsRange& aInRange) {
       },
       textNodes);
 
-  
-  while (textNodes.Length() > 1u) {
-    OwningNonNull<Text>& leftTextNode = textNodes[0u];
-    OwningNonNull<Text>& rightTextNode = textNodes[1u];
+  if (textNodes.Length() < 2) {
+    return NS_OK;
+  }
 
+  OwningNonNull<Text> leftTextNode = textNodes[0];
+  for (size_t rightTextNodeIndex = 1; rightTextNodeIndex < textNodes.Length();
+       rightTextNodeIndex++) {
+    OwningNonNull<Text>& rightTextNode = textNodes[rightTextNodeIndex];
     
-    
-    if (rightTextNode->GetPreviousSibling() != leftTextNode) {
-      textNodes.RemoveElementAt(0u);
+    if (HTMLEditUtils::TextHasOnlyOnePreformattedLinefeed(leftTextNode)) {
+      leftTextNode = rightTextNode;
       continue;
     }
-
-    Result<JoinNodesResult, nsresult> joinNodesResult =
-        JoinNodesWithTransaction(MOZ_KnownLive(*leftTextNode),
-                                 MOZ_KnownLive(*rightTextNode));
-    if (MOZ_UNLIKELY(joinNodesResult.isErr())) {
-      NS_WARNING("HTMLEditor::JoinNodesWithTransaction() failed");
-      return joinNodesResult.unwrapErr();
+    
+    
+    if (HTMLEditUtils::TextHasOnlyOnePreformattedLinefeed(rightTextNode)) {
+      if (++rightTextNodeIndex == textNodes.Length()) {
+        break;
+      }
+      leftTextNode = textNodes[rightTextNodeIndex];
+      continue;
     }
-    if (MOZ_LIKELY(joinNodesResult.inspect().RemovedContent() ==
-                   leftTextNode)) {
-      textNodes.RemoveElementAt(0u);
-    } else if (MOZ_LIKELY(joinNodesResult.inspect().RemovedContent() ==
-                          rightTextNode)) {
-      textNodes.RemoveElementAt(1u);
-    } else {
-      MOZ_ASSERT_UNREACHABLE(
-          "HTMLEditor::JoinNodesWithTransaction() removed unexpected node");
-      return NS_ERROR_UNEXPECTED;
+    
+    
+    if (leftTextNode->GetNextSibling() != rightTextNode) {
+      leftTextNode = rightTextNode;
+      continue;
+    }
+    Result<JoinNodesResult, nsresult> joinNodesResultOrError =
+        JoinNodesWithTransaction(MOZ_KnownLive(leftTextNode),
+                                 MOZ_KnownLive(rightTextNode));
+    if (MOZ_UNLIKELY(joinNodesResultOrError.isErr())) {
+      NS_WARNING("HTMLEditor::JoinNodesWithTransaction() failed");
+      return joinNodesResultOrError.unwrapErr();
     }
   }
 
