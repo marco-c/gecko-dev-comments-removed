@@ -4,6 +4,9 @@
 
 "use strict";
 
+
+const DESCRIPTOR_TYPES = require("resource://devtools/client/fronts/descriptors/descriptor-types.js");
+
 class NetworkCommand {
   
 
@@ -29,8 +32,12 @@ class NetworkCommand {
   async sendHTTPRequest(data) {
     
     
-    const networkContentFront =
-      await this.commands.targetCommand.targetFront.getFront("networkContent");
+    
+    const targetFront =
+      this.descriptorFront.descriptorType == DESCRIPTOR_TYPES.EXTENSION
+        ? this.commands.targetCommand.selectedTargetFront
+        : this.commands.targetCommand.targetFront;
+    const networkContentFront = await targetFront.getFront("networkContent");
     const { channelId } = await networkContentFront.sendHTTPRequest(data);
     return { channelId };
   }
