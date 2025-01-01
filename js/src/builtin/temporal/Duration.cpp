@@ -446,9 +446,6 @@ DateDuration js::temporal::ToDateDurationRecordWithoutTime(
       internalDuration.date.weeks,
       days,
   };
-
-  
-  
   MOZ_ASSERT(IsValidDuration(result));
 
   return result;
@@ -2535,6 +2532,7 @@ static DurationNudge NudgeToDayOrTime(const InternalDuration& duration,
       duration.date.weeks,
       days,
   };
+  MOZ_ASSERT(IsValidDuration(dateDuration));
 
   
   MOZ_ASSERT(DateDurationSign(dateDuration) * TimeDurationSign(remainder) >= 0);
@@ -3644,7 +3642,6 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     auto targetDateTime = ISODateTime{targetDate, targetTime.time};
 
     
-    
     if (!ISODateTimeWithinLimits(isoDateTime) ||
         !ISODateTimeWithinLimits(targetDateTime)) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
@@ -3860,7 +3857,6 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
     
     auto targetDateTime = ISODateTime{targetDate, targetTime.time};
 
-    
     
     if (!ISODateTimeWithinLimits(isoDateTime) ||
         !ISODateTimeWithinLimits(targetDateTime)) {

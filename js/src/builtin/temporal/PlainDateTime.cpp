@@ -590,6 +590,8 @@ bool js::temporal::DifferencePlainDateTimeWithRounding(
   }
 
   
+
+  
   InternalDuration diff;
   if (!DifferenceISODateTime(cx, isoDateTime1, isoDateTime2, calendar,
                              settings.largestUnit, &diff)) {
@@ -631,6 +633,8 @@ bool js::temporal::DifferencePlainDateTimeWithTotal(
     *result = 0;
     return true;
   }
+
+  
 
   
   InternalDuration diff;

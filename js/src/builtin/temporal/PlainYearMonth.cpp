@@ -469,9 +469,6 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   MOZ_ASSERT(duration.time == TimeDuration{});
 
   
-  
-
-  
   auto result = duration.date.toDuration();
 
   
