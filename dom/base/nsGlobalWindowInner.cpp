@@ -3105,12 +3105,11 @@ bool nsGlobalWindowInner::ResolveComponentsShim(
     JSContext* aCx, JS::Handle<JSObject*> aGlobal,
     JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> aDesc) {
   
-  Telemetry::Accumulate(Telemetry::COMPONENTS_SHIM_ACCESSED_BY_CONTENT, true);
-
-  
   nsCOMPtr<Document> doc = GetExtantDoc();
   if (doc) {
     doc->WarnOnceAbout(DeprecatedOperations::eComponents,  true);
+    
+    doc->SetUseCounter(eUseCounter_custom_ComponentsShimResolved);
   }
 
   
