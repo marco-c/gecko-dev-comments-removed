@@ -14,6 +14,8 @@ ChromeUtils.defineESModuleGetters(this, {
   PageActions: "resource:///modules/PageActions.sys.mjs",
   TranslationsTelemetry:
     "chrome://browser/content/translations/TranslationsTelemetry.sys.mjs",
+  TranslationsUtils:
+    "chrome://global/content/translations/TranslationsUtils.sys.mjs",
   TranslationsPanelShared:
     "chrome://browser/content/translations/TranslationsPanelShared.sys.mjs",
 });
@@ -445,8 +447,14 @@ var FullPageTranslationsPanel = new (class {
     if (
       requestedTranslationPair &&
       !isEngineReady &&
-      toMenuList.value === requestedTranslationPair.toLanguage &&
-      fromMenuList.value === requestedTranslationPair.fromLanguage
+      TranslationsUtils.langTagsMatch(
+        fromMenuList.value,
+        requestedTranslationPair.fromLanguage
+      ) &&
+      TranslationsUtils.langTagsMatch(
+        toMenuList.value,
+        requestedTranslationPair.toLanguage
+      )
     ) {
       // A translation has been requested, but is not ready yet.
       document.l10n.setAttributes(
@@ -463,15 +471,21 @@ var FullPageTranslationsPanel = new (class {
       );
       translateButton.disabled =
         
-        toMenuList.value === fromMenuList.value ||
-        
         !toMenuList.value ||
         
         !fromMenuList.value ||
         
+        TranslationsUtils.langTagsMatch(toMenuList.value, fromMenuList.value) ||
+        
         (requestedTranslationPair &&
-          requestedTranslationPair.fromLanguage === fromMenuList.value &&
-          requestedTranslationPair.toLanguage === toMenuList.value);
+          TranslationsUtils.langTagsMatch(
+            requestedTranslationPair.fromLanguage,
+            fromMenuList.value
+          ) &&
+          TranslationsUtils.langTagsMatch(
+            requestedTranslationPair.toLanguage,
+            toMenuList.value
+          ));
     }
 
     if (requestedTranslationPair && isEngineReady) {
@@ -611,7 +625,9 @@ var FullPageTranslationsPanel = new (class {
           });
       }
 
-      if (fromMenuList.value === toMenuList.value) {
+      if (
+        TranslationsUtils.langTagsMatch(fromMenuList.value, toMenuList.value)
+      ) {
         
         
         
