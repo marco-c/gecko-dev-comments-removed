@@ -744,7 +744,7 @@ void HTMLVideoElement::TakeVideoFrameRequestCallbacks(
   
   
   if (!selected || selected->mFrameID == layers::kContainerFrameID_Invalid ||
-      selected->mFrameID == mLastPresentedFrameID) {
+      selected->mFrameID <= mLastPresentedFrameID) {
     return;
   }
 
