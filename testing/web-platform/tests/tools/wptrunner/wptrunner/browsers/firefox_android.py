@@ -91,12 +91,8 @@ def env_extras(**kwargs):
     return []
 
 
-
-def default_prefs():
-    return {"fission.disableSessionHistoryInParent": "true"}
-
 def run_info_extras(logger, **kwargs):
-    rv = fx_run_info_extras(logger, default_prefs=default_prefs(), **kwargs)
+    rv = fx_run_info_extras(logger, default_prefs=ProfileCreator.default_prefs(), **kwargs)
     rv.update({"headless": False})
 
     if kwargs["browser_version"] is None:
@@ -160,6 +156,10 @@ class ProfileCreator(FirefoxProfileCreator):
                          package_name, certutil_binary, ca_certificate_path,
                          allow_list_paths)
 
+    @staticmethod
+    def default_prefs():
+        return {"fission.disableSessionHistoryInParent": True}
+
     def _set_required_prefs(self, profile):
         profile.set_preferences({
             "network.dns.localDomains": ",".join(self.config.domains_set),
@@ -192,8 +192,6 @@ class ProfileCreator(FirefoxProfileCreator):
         profile.set_preferences({"fission.autostart": True})
         if self.disable_fission:
             profile.set_preferences({"fission.autostart": False})
-
-        profile.set_preferences(default_prefs())
 
 
 class FirefoxAndroidBrowser(Browser):
