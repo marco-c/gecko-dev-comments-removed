@@ -1591,16 +1591,11 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
     }
   }
 
-  const nsRange* firstRange = SelectionRef().GetRangeAt(0);
-  if (NS_WARN_IF(!firstRange)) {
+  auto atStartOfSelection = GetFirstSelectionStartPoint<EditorDOMPoint>();
+  if (NS_WARN_IF(!atStartOfSelection.IsInContentNode())) {
     return NS_ERROR_FAILURE;
   }
-
-  EditorDOMPoint atStartOfSelection(firstRange->StartRef());
-  if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
-    return NS_ERROR_FAILURE;
-  }
-  MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
+  MOZ_ASSERT(atStartOfSelection.IsSetAndValidInComposedDoc());
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
@@ -1608,11 +1603,12 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  if (GetDefaultParagraphSeparator() == ParagraphSeparator::br ||
-      !HTMLEditUtils::ShouldInsertLinefeedCharacter(atStartOfSelection,
-                                                    *editingHost)) {
+  const Maybe<LineBreakType> lineBreakType = GetPreferredLineBreakType(
+      *atStartOfSelection.ContainerAs<nsIContent>(), *editingHost);
+  if (MOZ_UNLIKELY(!lineBreakType)) {
+    return NS_SUCCESS_DOM_NO_OPERATION;  
+  }
+  if (lineBreakType.value() == LineBreakType::BRElement) {
     Result<CreateElementResult, nsresult> insertBRElementResult =
         InsertBRElement(WithTransaction::Yes, atStartOfSelection,
                         nsIEditor::eNext);
@@ -1725,16 +1721,11 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
     }
   }
 
-  firstRange = SelectionRef().GetRangeAt(0);
-  if (NS_WARN_IF(!firstRange)) {
+  atStartOfSelection = GetFirstSelectionStartPoint<EditorDOMPoint>();
+  if (NS_WARN_IF(!atStartOfSelection.IsInContentNode())) {
     return NS_ERROR_FAILURE;
   }
-
-  atStartOfSelection = EditorDOMPoint(firstRange->StartRef());
-  if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
-    return NS_ERROR_FAILURE;
-  }
-  MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
+  MOZ_ASSERT(atStartOfSelection.IsSetAndValidInComposedDoc());
 
   
   if (!HTMLEditUtils::IsSimplyEditableNode(
@@ -1912,10 +1903,10 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
   }
 
   auto InsertLineBreakInstead =
-      [](const Element* aEditableBlockElement,
-         const EditorDOMPoint& aCandidatePointToSplit,
-         ParagraphSeparator aDefaultParagraphSeparator,
-         const Element& aEditingHost) {
+      [this](const Element* aEditableBlockElement,
+             const EditorDOMPoint& aCandidatePointToSplit,
+             ParagraphSeparator aDefaultParagraphSeparator,
+             const Element& aEditingHost) {
         
         
         
@@ -1932,8 +1923,12 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
           return aDefaultParagraphSeparator == ParagraphSeparator::br ||
                  !HTMLEditUtils::CanElementContainParagraph(
                      *aEditableBlockElement) ||
-                 (HTMLEditUtils::ShouldInsertLinefeedCharacter(
-                      aCandidatePointToSplit, aEditingHost) &&
+                 (aCandidatePointToSplit.IsInContentNode() &&
+                  GetPreferredLineBreakType(
+                      *aCandidatePointToSplit.ContainerAs<nsIContent>(),
+                      aEditingHost)
+                          .valueOr(LineBreakType::BRElement) ==
+                      LineBreakType::Linefeed &&
                   HTMLEditUtils::IsDisplayOutsideInline(aEditingHost));
         }
 
@@ -1974,11 +1969,13 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
   const ParagraphSeparator separator = GetDefaultParagraphSeparator();
   if (InsertLineBreakInstead(editableBlockElement, pointToInsert, separator,
                              aEditingHost)) {
-    
-    
-    if (separator != ParagraphSeparator::br &&
-        HTMLEditUtils::ShouldInsertLinefeedCharacter(pointToInsert,
-                                                     aEditingHost)) {
+    const Maybe<LineBreakType> lineBreakType = GetPreferredLineBreakType(
+        *pointToInsert.ContainerAs<nsIContent>(), aEditingHost);
+    if (MOZ_UNLIKELY(!lineBreakType)) {
+      
+      return EditActionResult::IgnoredResult();
+    }
+    if (lineBreakType.value() == LineBreakType::Linefeed) {
       Result<EditorDOMPoint, nsresult> insertLineFeedResult =
           HandleInsertLinefeed(pointToInsert, aEditingHost);
       if (MOZ_UNLIKELY(insertLineFeedResult.isErr())) {

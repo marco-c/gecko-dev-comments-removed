@@ -766,6 +766,25 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  enum class LineBreakType : bool {
+    BRElement,  
+    Linefeed,   
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+  Maybe<LineBreakType> GetPreferredLineBreakType(
+      const nsINode& aNode, const Element& aEditingHost) const;
+
   
 
 
