@@ -4461,6 +4461,13 @@ already_AddRefed<nsILoadInfo> HttpBaseChannel::CloneLoadInfoForRedirect(
       newLoadInfo->SetLoadTriggeredFromExternal(false);
     }
     newLoadInfo->ResetSandboxedNullPrincipalID();
+
+    
+    
+    if (isTopLevelDoc) {
+      Unused << newLoadInfo->SetHttpsOnlyStatus(
+          nsILoadInfo::HTTPS_ONLY_UNINITIALIZED);
+    }
   }
 
   newLoadInfo->AppendRedirectHistoryEntry(this, isInternalRedirect);
