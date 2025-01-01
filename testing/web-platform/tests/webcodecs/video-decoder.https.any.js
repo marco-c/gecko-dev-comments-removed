@@ -1,7 +1,6 @@
 
 
 
-
 const detachedArrayBuffer = new ArrayBuffer(4);
 var b = detachedArrayBuffer.transferToFixedLength();
 
