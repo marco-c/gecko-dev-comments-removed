@@ -1,0 +1,9 @@
+
+
+'use strict';
+
+test(function() {
+  
+  
+  assert_true(Error.isError(new DOMException()));
+});
