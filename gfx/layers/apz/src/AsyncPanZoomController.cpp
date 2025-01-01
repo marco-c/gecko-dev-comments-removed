@@ -620,6 +620,47 @@ class StateChangeNotificationBlocker final {
   AsyncPanZoomController::PanZoomState mInitialState;
 };
 
+class ThreadSafeStateChangeNotificationBlocker final {
+ public:
+  explicit ThreadSafeStateChangeNotificationBlocker(
+      AsyncPanZoomController* aApzc) {
+    RecursiveMutexAutoLock lock(aApzc->mRecursiveMutex);
+    mApzcPtr = RefPtr(aApzc);
+    mApzcPtr->mNotificationBlockers++;
+    mInitialState = mApzcPtr->mState;
+  }
+
+  ThreadSafeStateChangeNotificationBlocker(
+      const StateChangeNotificationBlocker&) = delete;
+  ThreadSafeStateChangeNotificationBlocker(
+      ThreadSafeStateChangeNotificationBlocker&& aOther)
+      : mApzcPtr(std::move(aOther.mApzcPtr)),
+        mInitialState(aOther.mInitialState) {
+    aOther.mApzcPtr = nullptr;
+  }
+
+  ~ThreadSafeStateChangeNotificationBlocker() {
+    
+    
+    
+    
+    if (mApzcPtr == nullptr) {
+      return;
+    }
+    AsyncPanZoomController::PanZoomState newState;
+    {
+      RecursiveMutexAutoLock lock(mApzcPtr->mRecursiveMutex);
+      mApzcPtr->mNotificationBlockers--;
+      newState = mApzcPtr->mState;
+    }
+    mApzcPtr->DispatchStateChangeNotification(mInitialState, newState);
+  }
+
+ private:
+  RefPtr<AsyncPanZoomController> mApzcPtr;
+  AsyncPanZoomController::PanZoomState mInitialState;
+};
+
 
 
 
@@ -4929,7 +4970,7 @@ bool AsyncPanZoomController::AdvanceAnimations(const SampleTime& aSampleTime) {
   
   
   
-  StateChangeNotificationBlocker blocker(this);
+  ThreadSafeStateChangeNotificationBlocker blocker(this);
 
   
   
@@ -4966,7 +5007,7 @@ bool AsyncPanZoomController::AdvanceAnimations(const SampleTime& aSampleTime) {
   if (!deferredTasks.IsEmpty()) {
     APZThreadUtils::RunOnControllerThread(NS_NewRunnableFunction(
         "AsyncPanZoomController::AdvanceAnimations deferred tasks",
-        [keepApzcAlive = RefPtr(this), blocker = std::move(blocker),
+        [blocker = std::move(blocker),
          deferredTasks = std::move(deferredTasks)]() {
           for (uint32_t i = 0; i < deferredTasks.Length(); ++i) {
             deferredTasks[i]->Run();
