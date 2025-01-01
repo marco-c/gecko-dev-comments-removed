@@ -338,10 +338,15 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
   }
 
   bool CanBeInstantiated() const override {
+    if (mCodec == VPXDecoder::Codec::VP8 && mCurrentConfig.mImage.IsEmpty()) {
+      
+      
+      return false;
+    }
+
     
     
-    return mCodec == VPXDecoder::Codec::VP8 || mInfo ||
-           mCurrentConfig.mCrypto.IsEncrypted();
+    return mInfo || mCurrentConfig.mCrypto.IsEncrypted();
   }
 
   MediaResult CheckForChange(MediaRawData* aSample) override {
