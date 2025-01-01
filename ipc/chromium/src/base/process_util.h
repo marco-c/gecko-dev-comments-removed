@@ -216,6 +216,8 @@ EnvironmentArray BuildEnvironmentArray(const environment_map& env_vars_to_set);
 bool KillProcess(ProcessHandle process, int exit_code);
 
 #ifdef XP_UNIX
+enum class BlockingWait { No, Yes };
+enum class ProcessStatus { Running, Exited, Killed, Error };
 
 
 
@@ -229,7 +231,15 @@ bool KillProcess(ProcessHandle process, int exit_code);
 
 
 
-bool IsProcessDead(ProcessHandle handle, bool blocking = false);
+
+
+
+
+
+
+
+ProcessStatus WaitForProcess(ProcessHandle handle, BlockingWait blocking,
+                             int* info_out);
 #endif
 
 }  
