@@ -75,6 +75,7 @@ const modelHub = new ModelHub();
 class TrialML extends ExtensionAPI {
   #pipelineId = null;
   #engine = null;
+  #pipelineOptions = null;
 
   
 
@@ -169,8 +170,8 @@ class TrialML extends ExtensionAPI {
             
             
             try {
-              const pipelineOptions = new PipelineOptions(request);
-              await this.#createEngine(pipelineOptions);
+              this.#pipelineOptions = new PipelineOptions(request);
+              await this.#createEngine(this.#pipelineOptions);
             } catch (error) {
               throw new ExtensionError(error.message);
             }
@@ -183,6 +184,15 @@ class TrialML extends ExtensionAPI {
 
 
           runEngine: async request => {
+            if (this.#engine?.engineStatus === "closed") {
+              
+              try {
+                this.#engine = null;
+                await this.#createEngine(this.#pipelineOptions);
+              } catch (error) {
+                throw new ExtensionError(error.message);
+              }
+            }
             const runOptions = {
               args: request.args,
               options: request.options || {},
