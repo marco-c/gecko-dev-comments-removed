@@ -11,73 +11,71 @@ const vowels = 'aeiou'.split('');
 
 
 
-function object_store_get_all_test(func, name) {
-  indexeddb_test((test, connection, transaction) => {
-    
-    
-    
-    self.expectedObjectStoreRecords = {
-      'generated': [],
-      'out-of-line': [],
-      'empty': [],
-      'large-values': [],
-    };
-
-    
-    
-    let store = connection.createObjectStore(
-        'generated', {autoIncrement: true, keyPath: 'id'});
-    alphabet.forEach(letter => {
-      store.put({ch: letter});
-
-      const generatedKey = alphabet.indexOf(letter) + 1;
-      expectedObjectStoreRecords['generated'].push(
-          {key: generatedKey, primaryKey: generatedKey, value: {ch: letter}});
-    });
-
-    
-    store = connection.createObjectStore('out-of-line');
-    alphabet.forEach(letter => {
-      store.put(`value-${letter}`, letter);
-
-      expectedObjectStoreRecords['out-of-line'].push(
-          {key: letter, primaryKey: letter, value: `value-${letter}`});
-    });
-
-    
-    store = connection.createObjectStore('empty');
-
-    
-    
-    
-    store = connection.createObjectStore('large-values');
-    for (let i = 0; i < 3; i++) {
-      const value = largeValue( wrapThreshold,  i);
-      store.put(value, i);
-
-      expectedObjectStoreRecords['large-values'].push(
-          {key: i, primaryKey: i, value});
-    }
-  }, func, name);
-}
 
 
 
 
-function object_store_get_all_records_test(storeName, options, description) {
-  object_store_get_all_test((test, connection) => {
-    const request =
-        createGetAllRecordsRequest(test, connection, storeName, options);
-    request.onsuccess = test.step_func(event => {
+
+
+function object_store_get_all_test_setup(storeName, callback, testDescription) {
+  const expectedRecords = [];
+
+  indexeddb_test(
+      (test, connection) => {
+        switch (storeName) {
+          case 'generated': {
+            
+            
+            const store = connection.createObjectStore(
+                storeName, {autoIncrement: true, keyPath: 'id'});
+            alphabet.forEach(letter => {
+              store.put({ch: letter});
+
+              const generatedKey = alphabet.indexOf(letter) + 1;
+              expectedRecords.push({
+                key: generatedKey,
+                primaryKey: generatedKey,
+                value: {ch: letter}
+              });
+            });
+            return;
+          }
+          case 'out-of-line': {
+            
+            const store = connection.createObjectStore(storeName);
+            alphabet.forEach(letter => {
+              store.put(`value-${letter}`, letter);
+
+              expectedRecords.push(
+                  {key: letter, primaryKey: letter, value: `value-${letter}`});
+            });
+            return;
+          }
+          case 'empty': {
+            
+            connection.createObjectStore(storeName);
+            return;
+          }
+          case 'large-values': {
+            
+            
+            
+            const store = connection.createObjectStore(storeName);
+            for (let i = 0; i < 3; i++) {
+              const value = largeValue( wrapThreshold,  i);
+              store.put(value, i);
+
+              expectedRecords.push({key: i, primaryKey: i, value});
+            }
+            return;
+          }
+        }
+      },
       
-      let expectedResults = expectedObjectStoreRecords[storeName];
-      expectedResults = applyGetAllRecordsOptions(expectedResults, options);
-
-      const actualResults = event.target.result;
-      assert_records_equals(actualResults, expectedResults);
-      test.done();
-    });
-  }, description);
+      (test, connection) => {
+        callback(test, connection, expectedRecords);
+      },
+      testDescription);
 }
 
 
@@ -192,7 +190,8 @@ function index_get_all_records_test(storeName, options, description) {
     request.onsuccess = test.step_func(event => {
       
       let expectedResults = expectedIndexRecords[storeName];
-      expectedResults = applyGetAllRecordsOptions(expectedResults, options);
+      expectedResults =
+          filterWithGetAllRecordsOptions(expectedResults, options);
 
       const actualResults = event.target.result;
       assert_records_equals(actualResults, expectedResults);
@@ -223,7 +222,101 @@ function createGetAllRecordsRequest(
 
 
 
-function applyGetAllRecordsOptions(records, options) {
+
+
+function get_all_test(getAllFunctionName, storeName, options, testDescription) {
+  const testGetAllCallback = (test, connection, expectedRecords) => {
+    
+    const transaction = connection.transaction(storeName, 'readonly');
+    const objectStore = transaction.objectStore(storeName);
+    const request =
+        createGetAllRequest(getAllFunctionName, objectStore, options);
+    request.onerror = test.unreached_func('The get all request must succeed');
+
+    
+    request.onsuccess = test.step_func(event => {
+      const actualResults = event.target.result;
+      const expectedResults = calculateExpectedGetAllResults(
+          getAllFunctionName, expectedRecords, options);
+      verifyGetAllResults(getAllFunctionName, actualResults, expectedResults);
+      test.done();
+    });
+  };
+  object_store_get_all_test_setup(
+      storeName, testGetAllCallback, testDescription);
+}
+
+function object_store_get_all_keys_test(storeName, options, testDescription) {
+  get_all_test('getAllKeys', storeName, options, testDescription);
+}
+
+function object_store_get_all_values_test(storeName, options, testDescription) {
+  get_all_test('getAll', storeName, options, testDescription);
+}
+
+function object_store_get_all_records_test(
+    storeName, options, testDescription) {
+  get_all_test('getAllRecords', storeName, options, testDescription);
+}
+
+function createGetAllRequest(getAllFunctionName, queryTarget, options) {
+  switch (getAllFunctionName) {
+    case 'getAll':
+    case 'getAllKeys':
+      
+      
+      if (options && options.count) {
+        return queryTarget[getAllFunctionName](options.query, options.count);
+      }
+      if (options && options.query) {
+        return queryTarget[getAllFunctionName](options.query);
+      }
+      return queryTarget[getAllFunctionName]();
+    case 'getAllRecords':
+      return queryTarget.getAllRecords(options);
+  }
+  assert_unreached(`Unknown getAllFunctionName: "${getAllFunctionName}"`);
+}
+
+
+
+function calculateExpectedGetAllResults(getAllFunctionName, records, options) {
+  const expectedRecords = filterWithGetAllRecordsOptions(records, options);
+  switch (getAllFunctionName) {
+    case 'getAll':
+      return expectedRecords.map(({value}) => {return value});
+    case 'getAllKeys':
+      return expectedRecords.map(({primaryKey}) => {return primaryKey});
+    case 'getAllRecords':
+      return expectedRecords;
+  }
+  assert_unreached(`Unknown getAllFunctionName: "${getAllFunctionName}"`);
+}
+
+
+
+function verifyGetAllResults(getAllFunctionName, actual, expected) {
+  switch (getAllFunctionName) {
+    case 'getAll':
+      assert_idb_values_equals(actual, expected);
+      return;
+    case 'getAllKeys':
+      assert_array_equals(actual, expected);
+      return;
+    case 'getAllRecords':
+      assert_records_equals(actual, expected);
+      return;
+  }
+  assert_unreached(`Unknown getAllFunctionName: "${getAllFunctionName}"`);
+}
+
+
+
+
+
+
+
+function filterWithGetAllRecordsOptions(records, options) {
   if (!options) {
     return records;
   }
@@ -296,8 +389,12 @@ function assert_record_equals(actual_record, expected_record) {
       'The record must have the expected key');
 
   
-  const actual_value = actual_record.value;
-  const expected_value = expected_record.value;
+  assert_idb_value_equals(actual_record.value, expected_record.value);
+}
+
+
+
+function assert_idb_value_equals(actual_value, expected_value) {
   if (isArrayOrArrayBufferView(expected_value)) {
     assert_large_array_equals(
         actual_value, expected_value,
@@ -330,6 +427,28 @@ function assert_record_equals(actual_record, expected_record) {
 }
 
 
+function assert_record_equals(actual_record, expected_record) {
+  assert_class_string(
+      actual_record, 'IDBRecord', 'The record must be an IDBRecord');
+  assert_idl_attribute(
+      actual_record, 'key', 'The record must have a key attribute');
+  assert_idl_attribute(
+      actual_record, 'primaryKey',
+      'The record must have a primaryKey attribute');
+  assert_idl_attribute(
+      actual_record, 'value', 'The record must have a value attribute');
+
+  
+  assert_equals(
+      actual_record.primaryKey, expected_record.primaryKey,
+      'The record must have the expected primaryKey');
+  assert_equals(
+      actual_record.key, expected_record.key,
+      'The record must have the expected key');
+  assert_idb_value_equals(actual_record.value, expected_record.value);
+}
+
+
 
 
 
@@ -345,5 +464,18 @@ function assert_records_equals(actual_records, expected_records) {
 
   for (let i = 0; i < actual_records.length; i++) {
     assert_record_equals(actual_records[i], expected_records[i]);
+  }
+}
+
+
+
+function assert_idb_values_equals(actual_values, expected_values) {
+  assert_true(Array.isArray(actual_values), 'The values must be an array');
+  assert_equals(
+      actual_values.length, expected_values.length,
+      'The values array must contain the expected number of values');
+
+  for (let i = 0; i < actual_values.length; i++) {
+    assert_idb_value_equals(actual_values[i], expected_values[i]);
   }
 }
