@@ -547,14 +547,14 @@ static bool WasmHandleDebugTrap() {
 
   
   
-  const CallSite* site = code.lookupCallSite(fp->returnAddress());
-  MOZ_ASSERT(site);
+  CallSite site;
+  MOZ_ALWAYS_TRUE(code.lookupCallSite(fp->returnAddress(), &site));
 
   
   fp = fp->wasmCaller();
   DebugFrame* debugFrame = DebugFrame::from(fp);
 
-  if (site->kind() == CallSite::EnterFrame) {
+  if (site.kind() == CallSiteKind::EnterFrame) {
     if (!instance->debug().enterFrameTrapsEnabled()) {
       return true;
     }
@@ -574,13 +574,13 @@ static bool WasmHandleDebugTrap() {
     }
     return true;
   }
-  if (site->kind() == CallSite::LeaveFrame ||
-      site->kind() == CallSite::CollapseFrame) {
-    if (site->kind() == CallSite::LeaveFrame &&
+  if (site.kind() == CallSiteKind::LeaveFrame ||
+      site.kind() == CallSiteKind::CollapseFrame) {
+    if (site.kind() == CallSiteKind::LeaveFrame &&
         !debugFrame->updateReturnJSValue(cx)) {
       return false;
     }
-    if (site->kind() == CallSite::CollapseFrame) {
+    if (site.kind() == CallSiteKind::CollapseFrame) {
       debugFrame->discardReturnJSValue();
     }
     bool ok = ForwardToMainStack(DebugAPI::onLeaveFrame, cx,
@@ -591,7 +591,7 @@ static bool WasmHandleDebugTrap() {
   }
 
   DebugState& debug = instance->debug();
-  MOZ_ASSERT(debug.hasBreakpointTrapAtOffset(site->lineOrBytecode()));
+  MOZ_ASSERT(debug.hasBreakpointTrapAtOffset(site.lineOrBytecode()));
   if (debug.stepModeEnabled(debugFrame->funcIndex())) {
     if (!ForwardToMainStack(DebugAPI::onSingleStep, cx)) {
       if (cx->isPropagatingForcedReturn()) {
@@ -603,7 +603,7 @@ static bool WasmHandleDebugTrap() {
       return false;
     }
   }
-  if (debug.hasBreakpointSite(site->lineOrBytecode())) {
+  if (debug.hasBreakpointSite(site.lineOrBytecode())) {
     if (!ForwardToMainStack(DebugAPI::onTrap, cx)) {
       if (cx->isPropagatingForcedReturn()) {
         cx->clearPropagatingForcedReturn();
@@ -828,8 +828,9 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
       if (tryNote) {
         
         
-        const CallSite* site = code.lookupCallSite((void*)pc);
-        if (site && site->kind() == CallSite::ReturnStub) {
+        CallSite site;
+        if (code.lookupCallSite((void*)pc, &site) &&
+            site.kind() == CallSiteKind::ReturnStub) {
           continue;
         }
 

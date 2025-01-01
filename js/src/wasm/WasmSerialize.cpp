@@ -132,14 +132,16 @@ CoderResult Coder<MODE_DECODE>::readBytesRef(size_t length,
 
 
 
-template <typename T,
-          typename std::enable_if_t<is_cacheable_pod<T>, bool> = true>
-CoderResult CodePod(Coder<MODE_DECODE>& coder, T* item) {
+template <CoderMode mode, typename T,
+          typename = std::enable_if_t<is_cacheable_pod<T>>,
+          typename = std::enable_if_t<mode == MODE_DECODE>>
+CoderResult CodePod(Coder<mode>& coder, T* item) {
   return coder.readBytes((void*)item, sizeof(T));
 }
 
 template <CoderMode mode, typename T,
-          typename std::enable_if_t<is_cacheable_pod<T>, bool> = true>
+          typename = std::enable_if_t<is_cacheable_pod<T>>,
+          typename = std::enable_if_t<mode != MODE_DECODE>>
 CoderResult CodePod(Coder<mode>& coder, const T* item) {
   STATIC_ASSERT_ENCODING_OR_SIZING;
   return coder.writeBytes((const void*)item, sizeof(T));
@@ -258,9 +260,10 @@ CoderResult CodeMaybe(Coder<mode>& coder, const Maybe<T>* item) {
 
 
 
-template <typename T, size_t N,
-          typename std::enable_if_t<is_cacheable_pod<T>, bool> = true>
-CoderResult CodePodVector(Coder<MODE_DECODE>& coder,
+template <CoderMode mode, typename T, size_t N,
+          typename = std::enable_if_t<is_cacheable_pod<T>>,
+          typename = std::enable_if_t<mode == MODE_DECODE>>
+CoderResult CodePodVector(Coder<mode>& coder,
                           Vector<T, N, SystemAllocPolicy>* item) {
   
   size_t length;
@@ -277,7 +280,8 @@ CoderResult CodePodVector(Coder<MODE_DECODE>& coder,
 }
 
 template <CoderMode mode, typename T, size_t N,
-          typename std::enable_if_t<is_cacheable_pod<T>, bool> = true>
+          typename = std::enable_if_t<is_cacheable_pod<T>>,
+          typename = std::enable_if_t<mode != MODE_DECODE>>
 CoderResult CodePodVector(Coder<mode>& coder,
                           const Vector<T, N, SystemAllocPolicy>* item) {
   STATIC_ASSERT_ENCODING_OR_SIZING;
@@ -486,12 +490,10 @@ CoderResult CodeCacheableName(Coder<mode>& coder,
 }
 
 
-
 template <CoderMode mode>
 CoderResult CodeShareableBytes(Coder<mode>& coder,
                                CoderArg<mode, ShareableBytes> item) {
-  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::ShareableBytes, 48);
-  return CodePodVector(coder, &item->bytes);
+  return CodePodVector<mode>(coder, &item->vector);
 }
 
 
@@ -925,6 +927,17 @@ CoderResult CodeTrapSiteVectorArray(Coder<mode>& coder,
   return Ok();
 }
 
+template <CoderMode mode>
+CoderResult CodeCallSites(Coder<mode>& coder, CoderArg<mode, CallSites> item) {
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CallSites, 160);
+  MOZ_TRY(CodePodVector(coder, &item->kinds_));
+  MOZ_TRY(CodePodVector(coder, &item->lineOrBytecodes_));
+  MOZ_TRY(CodePodVector(coder, &item->returnAddressOffsets_));
+  
+  MOZ_RELEASE_ASSERT(item->inlinedCallerOffsets_.empty());
+  return Ok();
+}
+
 
 
 template <CoderMode mode>
@@ -1325,7 +1338,7 @@ CoderResult CodeFuncToCodeRangeMap(
 CoderResult CodeCodeBlock(Coder<MODE_DECODE>& coder,
                           wasm::UniqueCodeBlock* item,
                           const wasm::LinkData& linkData) {
-  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeBlock, 904);
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeBlock, 1024);
   *item = js::MakeUnique<CodeBlock>(CodeBlock::kindFromTier(Tier::Serialized));
   if (!*item) {
     return Err(OutOfMemory());
@@ -1338,7 +1351,7 @@ CoderResult CodeCodeBlock(Coder<MODE_DECODE>& coder,
   (*item)->codeLength = codeSegment->lengthBytes();
   MOZ_TRY(CodeFuncToCodeRangeMap(coder, &(*item)->funcToCodeRange));
   MOZ_TRY(CodePodVector(coder, &(*item)->codeRanges));
-  MOZ_TRY(CodePodVector(coder, &(*item)->callSites));
+  MOZ_TRY(CodeCallSites(coder, &(*item)->callSites));
   MOZ_TRY(CodeTrapSiteVectorArray(coder, &(*item)->trapSites));
   MOZ_TRY(CodePodVector(coder, &(*item)->funcExports));
   MOZ_TRY(CodeStackMaps(coder, &(*item)->stackMaps, (*item)->segment->base()));
@@ -1351,7 +1364,7 @@ template <CoderMode mode>
 CoderResult CodeCodeBlock(Coder<mode>& coder,
                           CoderArg<mode, wasm::CodeBlock> item,
                           const wasm::LinkData& linkData) {
-  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeBlock, 904);
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeBlock, 1024);
   STATIC_ASSERT_ENCODING_OR_SIZING;
   MOZ_TRY(Magic(coder, Marker::CodeBlock));
   
@@ -1361,7 +1374,7 @@ CoderResult CodeCodeBlock(Coder<mode>& coder,
   MOZ_TRY(CodeCodeSegment(coder, &item->segment, linkData));
   MOZ_TRY(CodeFuncToCodeRangeMap(coder, &item->funcToCodeRange));
   MOZ_TRY(CodePodVector(coder, &item->codeRanges));
-  MOZ_TRY(CodePodVector(coder, &item->callSites));
+  MOZ_TRY(CodeCallSites(coder, &item->callSites));
   MOZ_TRY(CodeTrapSiteVectorArray(coder, &item->trapSites));
   MOZ_TRY(CodePodVector(coder, &item->funcExports));
   MOZ_TRY(CodeStackMaps(coder, &item->stackMaps, item->segment->base()));

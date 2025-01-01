@@ -945,7 +945,7 @@ struct BaseCompiler final {
 
   
   
-  void insertBreakablePoint(CallSiteDesc::Kind kind);
+  void insertBreakablePoint(CallSiteKind kind);
 
   
   void insertPerFunctionDebugStub();

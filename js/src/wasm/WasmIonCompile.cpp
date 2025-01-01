@@ -300,6 +300,12 @@ class RootCompiler {
   uint32_t loopDepth_;
 
   
+  
+  BytecodeOffsetVector inlinedCallerOffsets_;
+  
+  SharedBytecodeOffsetVector inlinedCallerOffsetsVector_;
+
+  
   InliningStats inliningStats_;
   
   
@@ -349,12 +355,18 @@ class RootCompiler {
 
   [[nodiscard]] bool generate();
 
+  const ShareableBytecodeOffsetVector* inlinedCallerOffsets() {
+    return inlinedCallerOffsetsVector_.get();
+  }
+
   
   
   
-  [[nodiscard]] CompileInfo* addInlineCall(
+  [[nodiscard]] CompileInfo* startInlineCall(
+      uint32_t callerFuncIndex, BytecodeOffset callerOffset,
       uint32_t calleeFuncIndex, uint32_t numLocals, size_t inlineeBytecodeSize,
       InliningHeuristics::CallKind callKind);
+  void finishInlineCall();
 
   
   [[nodiscard]] bool addTryNote(uint32_t* tryNoteIndex) {
@@ -2709,7 +2721,8 @@ class FunctionCompiler {
     MOZ_ASSERT(!inDeadCode());
 
     CallCompileState callState;
-    CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Func);
+    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsets(),
+                      CallSiteKind::Func);
     ResultType resultType = ResultType::Vector(funcType.results());
     auto callee = CalleeDesc::function(funcIndex);
     ArgTypeVector argTypes(funcType);
@@ -2730,7 +2743,7 @@ class FunctionCompiler {
 
     CallCompileState callState;
     callState.returnCall = true;
-    CallSiteDesc desc(lineOrBytecode, CallSiteDesc::ReturnFunc);
+    CallSiteDesc desc(lineOrBytecode, CallSiteKind::ReturnFunc);
     auto callee = CalleeDesc::function(funcIndex);
     ArgTypeVector argTypes(funcType);
 
@@ -2760,7 +2773,7 @@ class FunctionCompiler {
 
     CallCompileState callState;
     callState.returnCall = true;
-    CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Import);
+    CallSiteDesc desc(lineOrBytecode, CallSiteKind::Import);
     auto callee = CalleeDesc::import(globalDataOffset);
     ArgTypeVector argTypes(funcType);
 
@@ -2800,7 +2813,7 @@ class FunctionCompiler {
     callee =
         CalleeDesc::wasmTable(codeMeta(), table, tableIndex, callIndirectId);
 
-    CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Indirect);
+    CallSiteDesc desc(lineOrBytecode, CallSiteKind::Indirect);
     ArgTypeVector argTypes(funcType);
 
     if (!emitCallArgs(funcType, args, &callState)) {
@@ -2862,7 +2875,8 @@ class FunctionCompiler {
       }
     }
 
-    CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Indirect);
+    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsets(),
+                      CallSiteKind::Indirect);
     ArgTypeVector argTypes(funcType);
     ResultType resultType = ResultType::Vector(funcType.results());
 
@@ -2878,7 +2892,8 @@ class FunctionCompiler {
     MOZ_ASSERT(!inDeadCode());
 
     CallCompileState callState;
-    CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Import);
+    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsets(),
+                      CallSiteKind::Import);
     auto callee = CalleeDesc::import(instanceDataOffset);
     ArgTypeVector argTypes(funcType);
     ResultType resultType = ResultType::Vector(funcType.results());
@@ -2899,7 +2914,8 @@ class FunctionCompiler {
 
     MOZ_ASSERT(builtin.failureMode == FailureMode::Infallible);
 
-    CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Symbolic);
+    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsets(),
+                      CallSiteKind::Symbolic);
     auto callee = CalleeDesc::builtin(builtin.identity);
 
     auto* ins =
@@ -2978,7 +2994,8 @@ class FunctionCompiler {
       return true;
     }
 
-    CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Symbolic);
+    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsets(),
+                      CallSiteKind::Symbolic);
     if (builtin.failureMode != FailureMode::Infallible &&
         !beginCatchableCall(callState)) {
       return false;
@@ -3168,7 +3185,8 @@ class FunctionCompiler {
 
     CallCompileState callState;
     CalleeDesc callee = CalleeDesc::wasmFuncRef();
-    CallSiteDesc desc(lineOrBytecode, CallSiteDesc::FuncRef);
+    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsets(),
+                      CallSiteKind::FuncRef);
     ArgTypeVector argTypes(funcType);
     ResultType resultType = ResultType::Vector(funcType.results());
 
@@ -3182,11 +3200,12 @@ class FunctionCompiler {
                      uint32_t lineOrBytecode, const DefVector& args,
                      DefVector* results) {
     MOZ_ASSERT(!inDeadCode());
+    MOZ_ASSERT(!isInlined());
 
     CallCompileState callState;
     callState.returnCall = true;
     CalleeDesc callee = CalleeDesc::wasmFuncRef();
-    CallSiteDesc desc(lineOrBytecode, CallSiteDesc::FuncRef);
+    CallSiteDesc desc(lineOrBytecode, CallSiteKind::FuncRef);
     ArgTypeVector argTypes(funcType);
 
     if (!emitCallArgs(funcType, args, &callState)) {
@@ -6359,8 +6378,9 @@ bool FunctionCompiler::emitInlineCall(const FuncType& funcType,
     return false;
   }
 
-  CompileInfo* compileInfo = rootCompiler().addInlineCall(
-      this->funcIndex(), locals.length(), funcRange.size, callKind);
+  CompileInfo* compileInfo = rootCompiler().startInlineCall(
+      this->funcIndex(), bytecodeOffset(), funcIndex, locals.length(),
+      funcRange.size, callKind);
   if (!compileInfo) {
     return false;
   }
@@ -6382,6 +6402,7 @@ bool FunctionCompiler::emitInlineCall(const FuncType& funcType,
   }
 
   calleeCompiler.finish();
+  rootCompiler_.finishInlineCall();
 
   return finishInlinedCallDirect(calleeCompiler, results);
 }
@@ -10437,7 +10458,8 @@ bool RootCompiler::generate() {
   return true;
 }
 
-CompileInfo* RootCompiler::addInlineCall(
+CompileInfo* RootCompiler::startInlineCall(
+    uint32_t callerFuncIndex, BytecodeOffset callerOffset,
     uint32_t calleeFuncIndex, uint32_t numLocals, size_t inlineeBytecodeSize,
     InliningHeuristics::CallKind callKind) {
   
@@ -10459,12 +10481,27 @@ CompileInfo* RootCompiler::addInlineCall(
 #ifdef JS_JITSPEW
     if (inliningBudget_ <= 0) {
       JS_LOG(wasmPerf, mozilla::LogLevel::Info,
-             "CM=..%06lx  RC::addInlineCall     "
+             "CM=..%06lx  RC::startInlineCall     "
              "Inlining budget for fI=%u exceeded",
-             0xFFFFFF & (unsigned long)uintptr_t(&codeMeta_), calleeFuncIndex);
+             0xFFFFFF & (unsigned long)uintptr_t(&codeMeta_), callerFuncIndex);
     }
 #endif
   }
+
+  
+  if (!inlinedCallerOffsets_.append(callerOffset)) {
+    return nullptr;
+  }
+
+  
+  
+  MutableBytecodeOffsetVector inlinedCallerOffsetsVector =
+      js_new<ShareableBytecodeOffsetVector>();
+  if (!inlinedCallerOffsetsVector ||
+      !inlinedCallerOffsetsVector->appendAll(inlinedCallerOffsets_)) {
+    return nullptr;
+  }
+  inlinedCallerOffsetsVector_ = inlinedCallerOffsetsVector;
 
   UniqueCompileInfo compileInfo = MakeUnique<CompileInfo>(numLocals);
   if (!compileInfo || !compileInfos_.append(std::move(compileInfo))) {
@@ -10472,6 +10509,8 @@ CompileInfo* RootCompiler::addInlineCall(
   }
   return compileInfos_[compileInfos_.length() - 1].get();
 }
+
+void RootCompiler::finishInlineCall() { inlinedCallerOffsets_.popBack(); }
 
 bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
                                const CompilerEnvironment& compilerEnv,

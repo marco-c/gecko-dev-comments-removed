@@ -52,23 +52,33 @@ struct ShareableBase : AtomicRefCounted<T> {
 
 
 
-struct ShareableBytes : ShareableBase<ShareableBytes> {
-  
-  Bytes bytes;
 
-  ShareableBytes() = default;
-  explicit ShareableBytes(Bytes&& bytes) : bytes(std::move(bytes)) {}
+
+template <typename T, size_t MinInlineCapacity, class AllocPolicy>
+struct ShareableVector
+    : public ShareableBase<ShareableVector<T, MinInlineCapacity, AllocPolicy>> {
+  using VecT = mozilla::Vector<T, MinInlineCapacity, AllocPolicy>;
+
+  VecT vector;
+
+  size_t length() const { return vector.length(); }
+  bool empty() const { return vector.empty(); }
+  const T* begin() const { return vector.begin(); }
+  const T* end() const { return vector.end(); }
+  mozilla::Span<const T> span() const {
+    return mozilla::Span<const T>(begin(), end());
+  }
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-    return bytes.sizeOfExcludingThis(mallocSizeOf);
+    return vector.sizeOfExcludingThis(mallocSizeOf);
   }
-  const uint8_t* begin() const { return bytes.begin(); }
-  const uint8_t* end() const { return bytes.end(); }
-  size_t length() const { return bytes.length(); }
-  bool append(const uint8_t* start, size_t len) {
-    return bytes.append(start, len);
-  }
+  bool append(const T* start, size_t len) { return vector.append(start, len); }
+  bool appendAll(const VecT& other) { return vector.appendAll(other); }
+
+  ShareableVector() = default;
+  explicit ShareableVector(VecT&& vector) : vector(std::move(vector)) {}
 };
 
+using ShareableBytes = ShareableVector<uint8_t, 0, SystemAllocPolicy>;
 using MutableBytes = RefPtr<ShareableBytes>;
 using SharedBytes = RefPtr<const ShareableBytes>;
 

@@ -120,7 +120,7 @@ class Module::CompleteTier2GeneratorTaskImpl
       
       UniqueChars error;
       UniqueCharsVector warnings;
-      bool success = CompileCompleteTier2(bytecode_->bytes, *module_, &error,
+      bool success = CompileCompleteTier2(bytecode_->vector, *module_, &error,
                                           &warnings, &cancelled_);
       if (!cancelled_) {
         
