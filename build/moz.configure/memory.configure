@@ -12,6 +12,11 @@ def jemalloc_default(target, js_package):
     return target.kernel in ("Darwin", "Linux", "WINNT")
 
 
+
+
+
+imply_option("--enable-jemalloc", False, when=asan | msan | tsan)
+
 option(
     "--enable-jemalloc",
     env="MOZ_MEMORY",
