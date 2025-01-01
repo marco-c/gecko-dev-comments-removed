@@ -19366,6 +19366,15 @@ bool Document::UsingStorageAccess() {
   return loadInfo->GetStoragePermission() != nsILoadInfo::NoStoragePermission;
 }
 
+bool Document::IsOn3PCBExceptionList() const {
+  if (!mChannel) {
+    return false;
+  }
+  nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+
+  return loadInfo->GetIsOn3PCBExceptionList();
+}
+
 bool Document::HasStorageAccessPermissionGrantedByAllowList() {
   
   

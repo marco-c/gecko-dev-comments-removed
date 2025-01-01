@@ -727,6 +727,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
 
       storageAccess, isThirdPartyContextToTopWindow, shouldResistFingerprinting,
       overriddenFingerprintingSettingsArg,
+      false ,
       
       
       OriginTrials(), std::move(serviceWorkerData), regInfo->AgentClusterId(),
