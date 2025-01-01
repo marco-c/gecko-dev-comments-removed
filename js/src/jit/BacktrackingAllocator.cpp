@@ -808,16 +808,29 @@ void LiveRange::tryToMoveDefAndUsesInto(LiveRange* other) {
   MOZ_ASSERT(this != other);
 
   
-  for (UsePositionIterator iter = usesBegin(); iter;) {
-    UsePosition* use = *iter;
-    if (other->covers(use->pos)) {
-      uses_.removeAndIncrement(iter);
-      noteRemovedUse(use);
-      other->addUse(use);
-    } else {
-      iter++;
-    }
+  
+  MOZ_ASSERT(intersects(other));
+
+  CodePosition otherFrom = other->from();
+  CodePosition otherTo = other->to();
+
+  
+  
+  UsePositionIterator iter = usesBegin();
+  while (iter && iter->pos < otherFrom) {
+    iter++;
   }
+
+  
+  while (iter && iter->pos < otherTo) {
+    UsePosition* use = *iter;
+    MOZ_ASSERT(other->covers(use->pos));
+    uses_.removeAndIncrement(iter);
+    noteRemovedUse(use);
+    other->addUse(use);
+  }
+
+  MOZ_ASSERT_IF(iter, !other->covers(iter->pos));
 
   
   if (hasDefinition() && from() == other->from()) {
