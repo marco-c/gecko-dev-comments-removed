@@ -4,6 +4,13 @@
 
 
 
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Unexpected undefined tabState for onMoveToNewWindow/
+);
+
+
+
 let monitor;
 add_task(async function startup() {
   monitor = await startIncognitoMonitorExtension();
