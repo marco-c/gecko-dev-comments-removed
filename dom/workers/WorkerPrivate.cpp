@@ -3006,7 +3006,6 @@ nsresult WorkerPrivate::GetLoadInfo(
         aParent->GetOverriddenFingerprintingSettings();
     loadInfo.mParentController = aParent->GlobalScope()->GetController();
     loadInfo.mWatchedByDevTools = aParent->IsWatchedByDevTools();
-    loadInfo.mIsOn3PCBExceptionList = aParent->IsOn3PCBExceptionList();
   } else {
     AssertIsOnMainThread();
 
@@ -3154,7 +3153,6 @@ nsresult WorkerPrivate::GetLoadInfo(
               RFPTarget::IsAlwaysEnabledForPrecompute);
       loadInfo.mOverriddenFingerprintingSettings =
           document->GetOverriddenFingerprintingSettings();
-      loadInfo.mIsOn3PCBExceptionList = document->IsOn3PCBExceptionList();
 
       
       
@@ -3227,7 +3225,6 @@ nsresult WorkerPrivate::GetLoadInfo(
 
       loadInfo.mOriginAttributes = OriginAttributes();
       loadInfo.mIsThirdPartyContext = false;
-      loadInfo.mIsOn3PCBExceptionList = false;
     }
 
     MOZ_ASSERT(loadInfo.mLoadingPrincipal);

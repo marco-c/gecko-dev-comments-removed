@@ -611,14 +611,6 @@ interface nsILoadInfo : nsISupports
 
 
 
-  [infallible] attribute boolean isOn3PCBExceptionList;
-
-  
-
-
-
-
-
   [infallible] readonly attribute unsigned long cookiePolicy;
 
   
