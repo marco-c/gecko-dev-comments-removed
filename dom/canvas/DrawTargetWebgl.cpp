@@ -3660,7 +3660,9 @@ bool SharedContextWebgl::DrawPathAccel(
     DrawTargetWebgl* oldTarget = mCurrentTarget;
     {
       RefPtr<const Path> path;
-      if (color || !aPathXform) {
+      if (!aPathXform || (color && !aStrokeOptions)) {
+        
+        
         
         
         path = aPath;
