@@ -51,7 +51,7 @@ class ParseRecordObject : public NativeObject {
 
   
   
-  EntryMap* getEntries(JSContext* cx);
+  bool getEntries(JSContext* cx, MutableHandle<EntryMap*> entries);
 
   bool setEntries(JSContext* cx, Handle<EntryMap*> entries);
 };
