@@ -25,12 +25,8 @@
 
 class nsICacheEntry;
 
-#define HTTP_CHANNEL_PARENT_IID                      \
-  {                                                  \
-    0x982b2372, 0x7aa5, 0x4e8a, {                    \
-      0xbd, 0x9f, 0x89, 0x74, 0xd7, 0xf0, 0x58, 0xeb \
-    }                                                \
-  }
+#define HTTP_CHANNEL_PARENT_IID \
+  {0x982b2372, 0x7aa5, 0x4e8a, {0xbd, 0x9f, 0x89, 0x74, 0xd7, 0xf0, 0x58, 0xeb}}
 
 namespace mozilla {
 
@@ -118,7 +114,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   
   
-  void SetCookie(nsCString&& aCookie);
+  void SetCookieHeaders(const nsTArray<nsCString>& aCookieHeaders);
 
   using ChildEndpointPromise =
       MozPromise<ipc::Endpoint<extensions::PStreamFilterChild>, bool, true>;
@@ -296,7 +292,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
 
   
   
-  nsCString mCookie;
+  nsTArray<nsCString> mCookieHeaders;
 
   
   
