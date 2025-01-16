@@ -150,6 +150,9 @@ var tooBigNameSection = {
 wasmEval(moduleWithSections([tooBigNameSection]));
 
 
+assertErrorMessage(() => wasmEval(toU8([0,97,115,109,1,0,0,0,0,3,2,254,255,])), CompileError, /failed to start custom section/);
+
+
 var customDefSec = customSection("wee", 42, 13);
 var declSec = declSection([0]);
 var bodySec = bodySection([v2vBody]);
