@@ -42,9 +42,6 @@ class NetEqTestFactory {
     static constexpr int default_pcma() { return 8; }
     int pcma = default_pcma();
     
-    static constexpr int default_ilbc() { return 102; }
-    int ilbc = default_ilbc();
-    
     static constexpr int default_isac() { return 103; }
     int isac = default_isac();
     

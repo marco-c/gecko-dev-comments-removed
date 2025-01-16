@@ -8,17 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 
 void WebRtcSpl_ReverseOrderMultArrayElements(int16_t *out, const int16_t *in,

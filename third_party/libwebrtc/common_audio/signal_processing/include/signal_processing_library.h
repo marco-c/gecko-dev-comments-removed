@@ -391,34 +391,119 @@ int WebRtcSpl_ScaleAndAddVectorsWithRound_mips(const int16_t* in_vector1,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void WebRtcSpl_ReverseOrderMultArrayElements(int16_t* out_vector,
                                              const int16_t* in_vector,
                                              const int16_t* window,
                                              size_t vector_length,
                                              int16_t right_shifts);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void WebRtcSpl_ElementwiseVectorMult(int16_t* out_vector,
                                      const int16_t* in_vector,
                                      const int16_t* window,
                                      size_t vector_length,
                                      int16_t right_shifts);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void WebRtcSpl_AddVectorsAndShift(int16_t* out_vector,
                                   const int16_t* in_vector1,
                                   const int16_t* in_vector2,
                                   size_t vector_length,
                                   int16_t right_shifts);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void WebRtcSpl_AddAffineVectorToVector(int16_t* out_vector,
                                        const int16_t* in_vector,
                                        int16_t gain,
                                        int32_t add_constant,
                                        int16_t right_shifts,
                                        size_t vector_length);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void WebRtcSpl_AffineTransformVector(int16_t* out_vector,
                                      const int16_t* in_vector,
                                      int16_t gain,
                                      int32_t add_constant,
                                      int16_t right_shifts,
                                      size_t vector_length);
-
 
 
 
@@ -930,95 +1015,6 @@ void WebRtcSpl_SynthesisQMF(const int16_t* low_band,
 }
 #endif  
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

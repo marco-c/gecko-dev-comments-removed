@@ -117,7 +117,6 @@ void Receiver::Setup(NetEq* neteq,
                       {109, {"L16", 32000, 1}},
                       {0, {"PCMU", 8000, 1}},
                       {8, {"PCMA", 8000, 1}},
-                      {102, {"ILBC", 8000, 1}},
                       {9, {"G722", 8000, 1}},
                       {120, {"OPUS", 48000, 2}},
                       {13, {"CN", 8000, 1}},
@@ -241,9 +240,6 @@ void EncodeDecodeTest::Perform() {
       {8, {"PCMA", 8000, 1}},
 
 #if defined(__has_feature) && !__has_feature(undefined_behavior_sanitizer)
-#ifdef WEBRTC_CODEC_ILBC
-      {102, {"ILBC", 8000, 1}},
-#endif
       {9, {"G722", 8000, 1}},
 #endif
   };
