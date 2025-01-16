@@ -17,6 +17,7 @@
 
 #include <string>
 
+#include "absl/base/macros.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/time_utils.h"
 
@@ -214,10 +215,10 @@ struct RTC_EXPORT VideoFormat : VideoFormatPod {
 };
 
 
-int GreatestCommonDivisor(int a, int b);
+ABSL_DEPRECATE_AND_INLINE() int GreatestCommonDivisor(int a, int b);
 
 
-int LeastCommonMultiple(int a, int b);
+ABSL_DEPRECATE_AND_INLINE() int LeastCommonMultiple(int a, int b);
 
 }  
 
