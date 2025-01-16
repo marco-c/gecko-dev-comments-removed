@@ -51,7 +51,7 @@ namespace mozilla {
 namespace net {
 
 NS_IMPL_ISUPPORTS(TRR, nsIHttpPushListener, nsIInterfaceRequestor,
-                  nsIStreamListener, nsIRunnable, nsITimerCallback, nsINamed)
+                  nsIStreamListener, nsIRunnable, nsITimerCallback)
 
 
 TRR::TRR(AHostResolver* aResolver, nsHostRecord* aRec, enum TrrType aType)
