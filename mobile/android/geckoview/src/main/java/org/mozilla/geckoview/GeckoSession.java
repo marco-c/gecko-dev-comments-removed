@@ -2807,7 +2807,15 @@ public class GeckoSession {
       final GeckoBundle formdata = updateData.getBundle("formdata");
 
       if (history != null) {
-        mState.putBundle("history", history);
+        
+        
+        
+        if (history.getInt("fromIdx") == -1) {
+          mState.putBundle("history", history);
+        } else {
+          mState.putBundle(
+              "history", getPartiallyUpdatedHistoryChange(history).getBundle("history"));
+        }
       }
 
       if (scroll != null) {
@@ -2819,6 +2827,44 @@ public class GeckoSession {
       }
 
       return;
+    }
+
+    private @NonNull GeckoBundle getPartiallyUpdatedHistoryChange(
+        final @NonNull GeckoBundle update) {
+      final int kLastIndex = Integer.MAX_VALUE - 1;
+      final GeckoBundle historyBundle = new GeckoBundle();
+      final GeckoBundle[] updateHistoryEntries = update.getBundleArray("entries");
+      final int updateFromIdx = update.getInt("fromIdx");
+
+      
+      
+      update.putBundleArray("entries", new GeckoBundle[] {});
+
+      
+      update.remove("fromIdx");
+
+      historyBundle.putBundle("history", update);
+
+      if (updateFromIdx != kLastIndex) {
+        final int start = updateFromIdx + 1;
+        historyBundle
+            .getBundle("history")
+            .putBundleArray("entries", spliceSessionHistory(start, updateHistoryEntries));
+      }
+      return historyBundle;
+    }
+
+    private GeckoBundle[] spliceSessionHistory(final int startIndex, final GeckoBundle[] entries) {
+      final GeckoBundle[] historyEntries = getHistoryEntries();
+      if (historyEntries != null) {
+        
+        
+        final GeckoBundle[] newHistoryEntries = new GeckoBundle[startIndex + entries.length];
+        System.arraycopy(historyEntries, 0, newHistoryEntries, 0, startIndex);
+        System.arraycopy(entries, 0, newHistoryEntries, startIndex, entries.length);
+        return newHistoryEntries;
+      }
+      return new GeckoBundle[] {};
     }
 
     @Override
@@ -2968,7 +3014,9 @@ public class GeckoSession {
         throw new IllegalStateException("No history state exists.");
       }
 
-      return history.getInt("index") + history.getInt("fromIdx");
+      
+      
+      return history.getInt("index") - 1;
     }
 
     
