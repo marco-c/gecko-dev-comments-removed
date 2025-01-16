@@ -149,11 +149,11 @@ var PointerlockFsWarning = {
     this._timeoutShow.cancel();
     
     this._state = "hidden";
+    this._doHide();
     
     this._element
       .querySelector(".pointerlockfswarning-domain-text")
       .removeAttribute("data-l10n-id");
-    this._element.hidden = true;
     
     this._element.removeEventListener("transitionend", this);
     this._element.removeEventListener("transitioncancel", this);
@@ -186,6 +186,14 @@ var PointerlockFsWarning = {
     }
     return "hiding";
   },
+
+  _doHide() {
+    try {
+      this._element.hidePopover();
+    } catch (e) {}
+    this._element.hidden = true;
+  },
+
   set _state(newState) {
     let currentState = this._state;
     if (currentState == newState) {
@@ -195,24 +203,12 @@ var PointerlockFsWarning = {
       this._lastState = currentState;
       this._element.removeAttribute(currentState);
     }
+    if (currentState == "hidden") {
+      this._element.showPopover();
+    }
+    
     if (newState != "hidden") {
-      if (currentState != "hidden") {
-        this._element.setAttribute(newState, "");
-      } else {
-        
-        
-        
-        
-        
-        
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            if (this._element) {
-              this._element.setAttribute(newState, "");
-            }
-          });
-        });
-      }
+      this._element.setAttribute(newState, "");
     }
   },
 
@@ -253,7 +249,7 @@ var PointerlockFsWarning = {
       case "transitionend":
       case "transitioncancel": {
         if (this._state == "hiding") {
-          this._element.hidden = true;
+          this._doHide();
         }
         if (this._state == "onscreen") {
           window.dispatchEvent(new CustomEvent("FullscreenWarningOnScreen"));

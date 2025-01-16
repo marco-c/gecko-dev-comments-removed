@@ -148,8 +148,7 @@ add_task(async () => {
       
       
       
-      
-      let baseRootChildCount = 6;
+      let baseRootChildCount = 5;
       is(
         rootChildCount(),
         baseRootChildCount,
