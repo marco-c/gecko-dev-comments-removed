@@ -6,6 +6,11 @@
 
 #include "wasm/WasmSummarizeInsn.h"
 
+
+#if defined(JS_CODEGEN_MIPS64)
+#  include "jit/mips-shared/Architecture-mips-shared.h"
+#endif
+
 using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::Some;
@@ -1462,10 +1467,27 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
   
   
+  
+  
+
+  
+  
   if (insn == 0x000001b4) {
     return Some(TrapMachineInsn::OfficialUD);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -1575,8 +1597,26 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       case 0b000:
       
       case 0b001:
+        return Some(TrapMachineInsn::Load32);
       
       case 0b010:
+        if (jit::isLoongson()) {
+          switch (INSN(2, 0)) {
+            
+            case 0b100:
+            
+            case 0b101:
+              return Some(TrapMachineInsn::Load32);
+            
+            case 0b110:
+            
+            case 0b111:
+              return Some(TrapMachineInsn::Load64);
+            
+            default:
+              return Nothing();
+          }
+        }
         return Some(TrapMachineInsn::Load32);
       
       case 0b011:
@@ -1585,8 +1625,33 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       case 0b100:
       
       case 0b101:
+        return Some(TrapMachineInsn::Load64);
       
       case 0b110:
+        if (jit::isLoongson()) {
+          switch (INSN(2, 0)) {
+            
+            case 0b000:
+              return Some(TrapMachineInsn::Load8);
+            
+            case 0b001:
+              return Some(TrapMachineInsn::Load16);
+            
+            case 0b010:
+            
+            case 0b110:
+              return Some(TrapMachineInsn::Load32);
+            
+            case 0b011:
+            
+            case 0b111:
+              return Some(TrapMachineInsn::Load64);
+            
+            default:
+              return Nothing();
+          }
+        }
+        return Some(TrapMachineInsn::Load64);
       
       case 0b111:
         return Some(TrapMachineInsn::Load64);
@@ -1597,8 +1662,26 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       case 0b000:
       
       case 0b001:
+        return Some(TrapMachineInsn::Store32);
       
       case 0b010:
+        if (jit::isLoongson()) {
+          switch (INSN(2, 0)) {
+            
+            case 0b100:
+            
+            case 0b101:
+              return Some(TrapMachineInsn::Store32);
+            
+            case 0b110:
+            
+            case 0b111:
+              return Some(TrapMachineInsn::Store64);
+            
+            default:
+              return Nothing();
+          }
+        }
         return Some(TrapMachineInsn::Store32);
       
       case 0b011:
@@ -1607,8 +1690,33 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       case 0b100:
       
       case 0b101:
+        return Some(TrapMachineInsn::Store64);
       
       case 0b110:
+        if (jit::isLoongson()) {
+          switch (INSN(2, 0)) {
+            
+            case 0b000:
+              return Some(TrapMachineInsn::Store8);
+            
+            case 0b001:
+              return Some(TrapMachineInsn::Store16);
+            
+            case 0b010:
+            
+            case 0b110:
+              return Some(TrapMachineInsn::Store32);
+            
+            case 0b011:
+            
+            case 0b111:
+              return Some(TrapMachineInsn::Store64);
+            
+            default:
+              return Nothing();
+          }
+        }
+        return Some(TrapMachineInsn::Store64);
       
       case 0b111:
         return Some(TrapMachineInsn::Store64);
