@@ -733,19 +733,19 @@ FragmentOrElement::~FragmentOrElement() {
   }
 }
 
-static nsINode* FindChromeAccessOnlySubtreeOwner(nsINode* aNode) {
-  if (!aNode->ChromeOnlyAccess()) {
+static nsINode* FindChromeAccessOnlySubtreeOwnerForEvents(nsINode* aNode) {
+  if (!aNode->ChromeOnlyAccessForEvents()) {
     return aNode;
   }
   return const_cast<nsIContent*>(aNode->GetChromeOnlyAccessSubtreeRootParent());
 }
 
-nsINode* FindChromeAccessOnlySubtreeOwner(EventTarget* aTarget) {
+nsINode* FindChromeAccessOnlySubtreeOwnerForEvents(EventTarget* aTarget) {
   nsINode* node = nsINode::FromEventTargetOrNull(aTarget);
   if (!node) {
     return nullptr;
   }
-  return FindChromeAccessOnlySubtreeOwner(node);
+  return FindChromeAccessOnlySubtreeOwnerForEvents(node);
 }
 
 void nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
@@ -782,20 +782,20 @@ void nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
       if (isAnonForEvents || aVisitor.mRelatedTargetIsInAnon ||
           (aVisitor.mEvent->mOriginalTarget == this &&
            (aVisitor.mRelatedTargetIsInAnon =
-                relatedTarget->ChromeOnlyAccess()))) {
-        nsINode* anonOwner = FindChromeAccessOnlySubtreeOwner(this);
+                relatedTarget->ChromeOnlyAccessForEvents()))) {
+        nsINode* anonOwner = FindChromeAccessOnlySubtreeOwnerForEvents(this);
         if (anonOwner) {
           nsINode* anonOwnerRelated =
-              FindChromeAccessOnlySubtreeOwner(relatedTarget);
+              FindChromeAccessOnlySubtreeOwnerForEvents(relatedTarget);
           if (anonOwnerRelated) {
             
             
             
             
             while (anonOwner != anonOwnerRelated &&
-                   anonOwnerRelated->ChromeOnlyAccess()) {
+                   anonOwnerRelated->ChromeOnlyAccessForEvents()) {
               anonOwnerRelated =
-                  FindChromeAccessOnlySubtreeOwner(anonOwnerRelated);
+                  FindChromeAccessOnlySubtreeOwnerForEvents(anonOwnerRelated);
             }
             if (anonOwner == anonOwnerRelated) {
 #ifdef DEBUG_smaug
@@ -853,7 +853,7 @@ void nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
     
     nsIContent* t =
         nsIContent::FromEventTargetOrNull(aVisitor.mEvent->mOriginalTarget);
-    NS_ASSERTION(!t || !t->ChromeOnlyAccess() ||
+    NS_ASSERTION(!t || !t->ChromeOnlyAccessForEvents() ||
                      aVisitor.mEvent->mClass != eMutationEventClass ||
                      aVisitor.mDOMEvent,
                  "Mutation event dispatched in native anonymous content!?!");
@@ -875,7 +875,7 @@ void nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   }
 
   if (!aVisitor.mEvent->mFlags.mComposedInNativeAnonymousContent &&
-      IsRootOfNativeAnonymousSubtree() && OwnerDoc()->GetWindow()) {
+      isAnonForEvents && OwnerDoc()->GetWindow()) {
     aVisitor.SetParentTarget(OwnerDoc()->GetWindow()->GetParentTarget(), true);
   } else if (parent) {
     aVisitor.SetParentTarget(parent, false);
@@ -889,7 +889,8 @@ void nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
     aVisitor.SetParentTarget(GetComposedDoc(), false);
   }
 
-  if (!ChromeOnlyAccess() && !aVisitor.mRelatedTargetRetargetedInCurrentScope) {
+  if (!ChromeOnlyAccessForEvents() &&
+      !aVisitor.mRelatedTargetRetargetedInCurrentScope) {
     
     aVisitor.mRelatedTargetRetargetedInCurrentScope = true;
     if (aVisitor.mEvent->mOriginalRelatedTarget) {
@@ -903,16 +904,17 @@ void nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
       
       
       bool initialTarget = this == aVisitor.mEvent->mOriginalTarget;
-      nsCOMPtr<nsINode> originalTargetAsNode;
+      nsINode* originalTargetAsNode = nullptr;
       
       if (!initialTarget && aVisitor.mOriginalTargetIsInAnon) {
-        originalTargetAsNode =
-            FindChromeAccessOnlySubtreeOwner(aVisitor.mEvent->mOriginalTarget);
+        originalTargetAsNode = FindChromeAccessOnlySubtreeOwnerForEvents(
+            aVisitor.mEvent->mOriginalTarget);
         initialTarget = originalTargetAsNode == this;
       }
       if (initialTarget) {
-        nsINode* relatedTargetAsNode = FindChromeAccessOnlySubtreeOwner(
-            aVisitor.mEvent->mOriginalRelatedTarget);
+        nsINode* relatedTargetAsNode =
+            FindChromeAccessOnlySubtreeOwnerForEvents(
+                aVisitor.mEvent->mOriginalRelatedTarget);
         if (!originalTargetAsNode) {
           originalTargetAsNode =
               nsINode::FromEventTargetOrNull(aVisitor.mEvent->mOriginalTarget);
@@ -941,52 +943,49 @@ void nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
           
           aVisitor.mRetargetedRelatedTarget = retargetedRelatedTarget;
         }
-      } else {
-        nsCOMPtr<nsINode> relatedTargetAsNode =
-            FindChromeAccessOnlySubtreeOwner(
-                aVisitor.mEvent->mOriginalRelatedTarget);
-        if (relatedTargetAsNode) {
+      } else if (nsINode* relatedTargetAsNode =
+                     FindChromeAccessOnlySubtreeOwnerForEvents(
+                         aVisitor.mEvent->mOriginalRelatedTarget)) {
+        
+        
+        
+        
+        nsINode* retargetedRelatedTarget =
+            nsContentUtils::Retarget(relatedTargetAsNode, this);
+        nsINode* targetInKnownToBeHandledScope =
+            FindChromeAccessOnlySubtreeOwnerForEvents(
+                aVisitor.mTargetInKnownToBeHandledScope);
+        
+        
+        
+        
+        if (targetInKnownToBeHandledScope &&
+            IsShadowIncludingInclusiveDescendantOf(
+                targetInKnownToBeHandledScope->SubtreeRoot())) {
           
           
           
           
-          nsINode* retargetedRelatedTarget =
-              nsContentUtils::Retarget(relatedTargetAsNode, this);
-          nsCOMPtr<nsINode> targetInKnownToBeHandledScope =
-              FindChromeAccessOnlySubtreeOwner(
-                  aVisitor.mTargetInKnownToBeHandledScope);
+          
+          aVisitor.mRetargetedRelatedTarget = retargetedRelatedTarget;
+        } else if (this == retargetedRelatedTarget) {
+          
+          
+          
+          aVisitor.IgnoreCurrentTargetBecauseOfShadowDOMRetargeting();
           
           
           
           
-          if (targetInKnownToBeHandledScope &&
-              IsShadowIncludingInclusiveDescendantOf(
-                  targetInKnownToBeHandledScope->SubtreeRoot())) {
-            
-            
-            
-            
-            
-            aVisitor.mRetargetedRelatedTarget = retargetedRelatedTarget;
-          } else if (this == retargetedRelatedTarget) {
-            
-            
-            
-            aVisitor.IgnoreCurrentTargetBecauseOfShadowDOMRetargeting();
-            
-            
-            
-            
-            aVisitor.mEvent->mTarget = aVisitor.mTargetInKnownToBeHandledScope;
-            return;
-          } else if (targetInKnownToBeHandledScope) {
-            
-            
-            
+          aVisitor.mEvent->mTarget = aVisitor.mTargetInKnownToBeHandledScope;
+          return;
+        } else if (targetInKnownToBeHandledScope) {
+          
+          
+          
 
-            
-            aVisitor.mRetargetedRelatedTarget = retargetedRelatedTarget;
-          }
+          
+          aVisitor.mRetargetedRelatedTarget = retargetedRelatedTarget;
         }
       }
     }

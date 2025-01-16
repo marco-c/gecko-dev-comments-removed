@@ -1606,6 +1606,12 @@ class nsINode : public mozilla::dom::EventTarget {
   
   bool ChromeOnlyAccess() const { return IsInNativeAnonymousSubtree(); }
 
+  
+  
+  bool ChromeOnlyAccessForEvents() const {
+    return ChromeOnlyAccess() && !HasBeenInUAWidget();
+  }
+
   const nsIContent* GetChromeOnlyAccessSubtreeRootParent() const {
     return GetClosestNativeAnonymousSubtreeRootParentOrHost();
   }
