@@ -6,53 +6,29 @@
 add_task(function () {
   let tests = [
     
-    {
-      blob: "place:type=0&sort=1:",
-      type: PlacesUtils.TYPE_X_MOZ_URL,
-      invalidCount: 1,
-    },
+    ["place:type=0&sort=1:", PlacesUtils.TYPE_X_MOZ_URL],
     
-    {
-      blob: "place:type=0&sort=1:\nfirst\nplace:type=0&sort=1\nsecond",
-      type: PlacesUtils.TYPE_X_MOZ_URL,
-      invalidCount: 2,
-    },
+    [
+      "place:type=0&sort=1:\nfirst\nplace:type=0&sort=1\nsecond",
+      PlacesUtils.TYPE_X_MOZ_URL,
+    ],
     
-    {
-      blob: "place:type=0&sort=1:\nplace:type=0&sort=1",
-      type: PlacesUtils.TYPE_X_MOZ_URL,
-      invalidCount: 1,
-    },
+    ["place:type=0&sort=1:\nplace:type=0&sort=1", PlacesUtils.TYPE_X_MOZ_URL],
     
-    {
-      blob: "place:type=0&sort=1:\nplace:type=0&sort=1\nmalformed",
-      type: PlacesUtils.TYPE_X_MOZ_URL,
-      invalidCount: 0,
-    },
+    [
+      "place:type=0&sort=1:\nplace:type=0&sort=1\nmalformed",
+      PlacesUtils.TYPE_X_MOZ_URL,
+    ],
     
-    {
-      blob: "place:type=0&sort=1:",
-      type: PlacesUtils.TYPE_PLAINTEXT,
-      invalidCount: 1,
-    },
+    ["place:type=0&sort=1:", PlacesUtils.TYPE_PLAINTEXT],
     
-    {
-      blob: "place:type=0&sort=1:\nplace:type=0&sort=1",
-      type: PlacesUtils.TYPE_PLAINTEXT,
-      invalidCount: 2,
-    },
+    ["place:type=0&sort=1:\nplace:type=0&sort=1", PlacesUtils.TYPE_PLAINTEXT],
   ];
-  for (let { blob, type, invalidCount } of tests) {
+  for (let [blob, type] of tests) {
     Assert.deepEqual(
-      PlacesUtils.unwrapNodes(blob, type).validNodes,
+      PlacesUtils.unwrapNodes(blob, type),
       [],
       "No valid entries should be found"
-    );
-
-    Assert.equal(
-      PlacesUtils.unwrapNodes(blob, type).invalidNodes.length,
-      invalidCount,
-      "Should correctly mark all invalid entries"
     );
   }
 });
