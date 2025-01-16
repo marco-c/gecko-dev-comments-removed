@@ -1825,6 +1825,14 @@ class EditorBase : public nsIEditor,
   
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  InsertBRElement(WithTransaction aWithTransaction,
+                  BRElementType aBRElementType,
+                  const EditorDOMPoint& aPointToInsert);
+
+  
+
+
 
 
   MOZ_CAN_RUN_SCRIPT void CloneAttributesWithTransaction(
