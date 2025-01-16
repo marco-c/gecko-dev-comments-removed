@@ -1,3 +1,4 @@
+
 import pytest
 import pytest_asyncio
 
@@ -376,9 +377,16 @@ async def test_params_key_action_value_invalid_type(perform_actions,
 
 @pytest.mark.parametrize(
     "value",
-    ["fa", "\u0BA8\u0BBFb", "\u0BA8\u0BBF\u0BA8", "\u1100\u1161\u11A8c"],
+    [
+        "fa",  
+        "\U0001F604a",  
+        "\u0BA8\u0BBFa",  
+        "\u1100\u1161\u11A8a",  
+        "\u2764\ufe0fa",  
+        "\U0001F604\U0001F60D",  
+    ],
 )
-async def test_params_key_action_value_invalid_multiple_codepoints(
+async def test_params_key_action_value_invalid_multiple_graphemes(
         perform_actions, value):
     actions = [
         create_key_action("keyDown", {"value": value}),

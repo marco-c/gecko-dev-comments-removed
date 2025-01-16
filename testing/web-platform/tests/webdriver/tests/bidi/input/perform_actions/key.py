@@ -71,13 +71,13 @@ async def test_key_backspace(bidi_session, top_context, setup_key_test):
 @pytest.mark.parametrize(
     "value",
     [
-        ("\U0001F604"),
-        ("\U0001F60D"),
-        ("\u0BA8\u0BBF"),
-        ("\u1100\u1161\u11A8"),
+        "\U0001F604",  
+        "\u0BA8\u0BBF",  
+        "\u1100\u1161\u11A8",  
+        "\u2764\ufe0f",  
     ],
 )
-async def test_key_codepoint(
+async def test_key_grapheme(
     bidi_session, top_context, setup_key_test, value
 ):
     
