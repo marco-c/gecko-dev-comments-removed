@@ -615,6 +615,11 @@ class MOZ_RAII InlinableNativeIRGenerator {
 
   ValOperandId loadThis(ObjOperandId calleeId);
 
+  ValOperandId loadArgument(ObjOperandId calleeId, ArgumentKind kind,
+                            CallFlags flags = CallFlags(CallFlags::Standard));
+
+  bool hasBoundArguments() const;
+
   void initializeInputOperand() {
     
     if (flags_.getArgFormat() == CallFlags::FunCall ||
