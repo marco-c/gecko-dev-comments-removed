@@ -159,15 +159,18 @@ void UIEvent::DuplicatePrivateData() {
   mLayerPoint = GetLayerPoint();
 
   
+  
+  
   const CSSIntPoint screenPoint = RoundedToInt(
       Event::GetScreenCoords(mPresContext, mEvent, mEvent->mRefPoint)
           .valueOr(CSSIntPoint{0, 0}));
+  const CSSToLayoutDeviceScale scale = mPresContext
+                                           ? mPresContext->CSSToDevPixelScale()
+                                           : CSSToLayoutDeviceScale(1);
 
   Event::DuplicatePrivateData();
+  MOZ_ASSERT_IF(!mEventIsInternal, !mPresContext);
 
-  CSSToLayoutDeviceScale scale = mPresContext
-                                     ? mPresContext->CSSToDevPixelScale()
-                                     : CSSToLayoutDeviceScale(1);
   mEvent->mRefPoint = RoundedToInt(screenPoint * scale);
 }
 

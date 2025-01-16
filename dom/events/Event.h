@@ -402,6 +402,12 @@ class Event : public nsISupports, public nsWrapperCache {
                                const WidgetEvent& aEvent);
 
   mozilla::WidgetEvent* mEvent;
+  
+  
+  
+  
+  
+  
   RefPtr<nsPresContext> mPresContext;
   nsCOMPtr<EventTarget> mExplicitOriginalTarget;
   nsCOMPtr<nsIGlobalObject> mOwner;
