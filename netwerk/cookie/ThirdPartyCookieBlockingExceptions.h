@@ -22,8 +22,7 @@ namespace net {
 class ThirdPartyCookieBlockingExceptions final {
  public:
   
-  
-  RefPtr<GenericNonExclusivePromise> EnsureInitialized();
+  void Initialize();
 
   
   
@@ -32,22 +31,14 @@ class ThirdPartyCookieBlockingExceptions final {
   
   bool CheckExceptionForChannel(nsIChannel* aChannel);
 
-  
-  
-  
-  bool CheckWildcardException(const nsACString& aThirdPartySite);
-
-  
-  
-  bool CheckException(const nsACString& aFirstPartySite,
-                      const nsACString& aThirdPartySite);
-
   void Insert(const nsACString& aException);
   void Remove(const nsACString& aException);
 
   void GetExceptions(nsTArray<nsCString>& aExceptions);
 
   void Shutdown();
+
+  bool IsInitialized() const { return mIsInitialized; }
 
  private:
   nsCOMPtr<nsIThirdPartyCookieBlockingExceptionListService>
@@ -64,7 +55,17 @@ class ThirdPartyCookieBlockingExceptions final {
   }
 
   
-  RefPtr<GenericNonExclusivePromise::Private> mInitPromise;
+  
+  
+  bool CheckWildcardException(const nsACString& aThirdPartySite);
+
+  
+  
+  bool CheckException(const nsACString& aFirstPartySite,
+                      const nsACString& aThirdPartySite);
+
+  
+  bool mIsInitialized = false;
   nsTHashSet<nsCStringHashKey> m3PCBExceptionsSet;
 };
 
