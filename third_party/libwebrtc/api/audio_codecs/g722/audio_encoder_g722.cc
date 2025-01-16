@@ -74,7 +74,7 @@ std::unique_ptr<AudioEncoder> AudioEncoderG722::MakeAudioEncoder(
     const AudioEncoderG722Config& config,
     int payload_type,
     std::optional<AudioCodecPairId> ,
-    const FieldTrialsView* field_trials) {
+    const FieldTrialsView* ) {
   if (!config.IsOk()) {
     RTC_DCHECK_NOTREACHED();
     return nullptr;

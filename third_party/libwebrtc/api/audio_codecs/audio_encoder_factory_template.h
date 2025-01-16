@@ -35,15 +35,16 @@ struct Helper;
 
 template <>
 struct Helper<> {
-  static void AppendSupportedEncoders(std::vector<AudioCodecSpec>* specs) {}
+  static void AppendSupportedEncoders(
+      std::vector<AudioCodecSpec>* ) {}
   static std::optional<AudioCodecInfo> QueryAudioEncoder(
-      const SdpAudioFormat& format) {
+      const SdpAudioFormat& ) {
     return std::nullopt;
   }
   static absl::Nullable<std::unique_ptr<AudioEncoder>> CreateAudioEncoder(
-      const Environment& env,
-      const SdpAudioFormat& format,
-      const AudioEncoderFactory::Options& options) {
+      const Environment& ,
+      const SdpAudioFormat& ,
+      const AudioEncoderFactory::Options& ) {
     return nullptr;
   }
 };
@@ -76,7 +77,7 @@ template <typename Trait,
               std::unique_ptr<AudioEncoder>>>>
 absl::Nullable<std::unique_ptr<AudioEncoder>> CreateEncoder(
     Rank0,
-    const Environment& env,
+    const Environment& ,
     const typename Trait::Config& config,
     const AudioEncoderFactory::Options& options) {
   return Trait::MakeAudioEncoder(config, options.payload_type,

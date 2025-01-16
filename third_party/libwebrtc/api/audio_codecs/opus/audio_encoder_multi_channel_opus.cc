@@ -67,7 +67,7 @@ std::unique_ptr<AudioEncoder> AudioEncoderMultiChannelOpus::MakeAudioEncoder(
     const AudioEncoderMultiChannelOpusConfig& config,
     int payload_type,
     std::optional<AudioCodecPairId> ,
-    const FieldTrialsView* field_trials) {
+    const FieldTrialsView* ) {
   return AudioEncoderMultiChannelOpusImpl::MakeAudioEncoder(config,
                                                             payload_type);
 }

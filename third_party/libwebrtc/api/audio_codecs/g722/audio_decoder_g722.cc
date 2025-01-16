@@ -43,7 +43,7 @@ void AudioDecoderG722::AppendSupportedDecoders(
 std::unique_ptr<AudioDecoder> AudioDecoderG722::MakeAudioDecoder(
     Config config,
     std::optional<AudioCodecPairId> ,
-    const FieldTrialsView* field_trials) {
+    const FieldTrialsView* ) {
   if (!config.IsOk()) {
     RTC_DCHECK_NOTREACHED();
     return nullptr;

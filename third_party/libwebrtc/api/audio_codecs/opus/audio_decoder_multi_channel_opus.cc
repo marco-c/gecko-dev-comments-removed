@@ -69,7 +69,7 @@ void AudioDecoderMultiChannelOpus::AppendSupportedDecoders(
 std::unique_ptr<AudioDecoder> AudioDecoderMultiChannelOpus::MakeAudioDecoder(
     AudioDecoderMultiChannelOpusConfig config,
     std::optional<AudioCodecPairId> ,
-    const FieldTrialsView* field_trials) {
+    const FieldTrialsView* ) {
   return AudioDecoderMultiChannelOpusImpl::MakeAudioDecoder(config);
 }
 }  

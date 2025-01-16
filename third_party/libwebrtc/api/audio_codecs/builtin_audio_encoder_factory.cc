@@ -40,7 +40,8 @@ struct NotAdvertised {
   static std::optional<Config> SdpToConfig(const SdpAudioFormat& audio_format) {
     return T::SdpToConfig(audio_format);
   }
-  static void AppendSupportedEncoders(std::vector<AudioCodecSpec>* specs) {
+  static void AppendSupportedEncoders(
+      std::vector<AudioCodecSpec>* ) {
     
   }
   static AudioCodecInfo QueryAudioEncoder(const Config& config) {

@@ -58,15 +58,15 @@ uint64_t DataChannelInterface::MaxSendQueueSize() {
 }
 
 
-bool DataChannelInterface::Send(const DataBuffer& buffer) {
+bool DataChannelInterface::Send(const DataBuffer& ) {
   RTC_DCHECK_NOTREACHED();
   return false;
 }
 
 
 void DataChannelInterface::SendAsync(
-    DataBuffer buffer,
-    absl::AnyInvocable<void(RTCError) &&> on_complete) {
+    DataBuffer ,
+    absl::AnyInvocable<void(RTCError) &&> ) {
   RTC_DCHECK_NOTREACHED();
 }
 
