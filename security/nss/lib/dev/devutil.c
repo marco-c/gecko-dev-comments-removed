@@ -579,9 +579,7 @@ get_token_objects_for_cache(
         for (j = 0; j < i; j++) {
             
 
-
-
-            cache->objects[objectType][j]->object->token = NULL;
+            nssToken_AddRef(cache->objects[objectType][j]->object->token);
             nssArena_Destroy(cache->objects[objectType][j]->arena);
         }
         nss_ZFreeIf(cache->objects[objectType]);

@@ -2,15 +2,11 @@
 
 
 
-#ifndef TLS_SERVER_CERT_H_
-#define TLS_SERVER_CERT_H_
+#ifndef tls_server_certs_h__
+#define tls_server_certs_h__
 
 #include "prio.h"
 
-namespace TlsServer {
-
 void InstallServerCertificates(PRFileDesc* fd);
-
-}  
 
 #endif  

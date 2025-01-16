@@ -2,8 +2,6 @@
 
 
 
-#include "mutators.h"
-
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -12,6 +10,12 @@
 #include <vector>
 
 #include "tls_parser.h"
+
+using namespace nss_test;
+
+
+
+static size_t gExtraHeaderBytes = 0;
 
 
 class Record {
@@ -36,9 +40,9 @@ class Record {
   }
 
   void truncate(size_t length) {
-    assert(length >= 5 + EXTRA_HEADER_BYTES);
+    assert(length >= 5 + gExtraHeaderBytes);
     uint8_t *dest = const_cast<uint8_t *>(data_);
-    size_t l = length - (5 + EXTRA_HEADER_BYTES);
+    size_t l = length - (5 + gExtraHeaderBytes);
     dest[3] = (l >> 8) & 0xff;
     dest[4] = l & 0xff;
     memmove(dest + length, data_ + size_, remaining_);
@@ -66,23 +70,23 @@ class Record {
 std::vector<std::unique_ptr<Record>> ParseRecords(const uint8_t *data,
                                                   size_t size) {
   std::vector<std::unique_ptr<Record>> records;
-  nss_test::TlsParser parser(data, size);
+  TlsParser parser(data, size);
 
   while (parser.remaining()) {
     size_t offset = parser.consumed();
 
     
-    if (!parser.Skip(3 + EXTRA_HEADER_BYTES)) {
+    if (!parser.Skip(3 + gExtraHeaderBytes)) {
       break;
     }
 
-    nss_test::DataBuffer fragment;
+    DataBuffer fragment;
     if (!parser.ReadVariable(&fragment, 2)) {
       break;
     }
 
     records.push_back(Record::Create(data + offset,
-                                     fragment.len() + 5 + EXTRA_HEADER_BYTES,
+                                     fragment.len() + 5 + gExtraHeaderBytes,
                                      parser.remaining()));
   }
 
@@ -92,7 +96,10 @@ std::vector<std::unique_ptr<Record>> ParseRecords(const uint8_t *data,
 namespace TlsMutators {
 
 
-size_t DropRecord(uint8_t *data, size_t size, size_t maxSize,
+void SetIsDTLS() { gExtraHeaderBytes = 8; }
+
+
+size_t DropRecord(uint8_t *data, size_t size, size_t max_size,
                   unsigned int seed) {
   std::mt19937 rng(seed);
 
@@ -114,7 +121,7 @@ size_t DropRecord(uint8_t *data, size_t size, size_t maxSize,
 }
 
 
-size_t ShuffleRecords(uint8_t *data, size_t size, size_t maxSize,
+size_t ShuffleRecords(uint8_t *data, size_t size, size_t max_size,
                       unsigned int seed) {
   std::mt19937 rng(seed);
 
@@ -145,7 +152,7 @@ size_t ShuffleRecords(uint8_t *data, size_t size, size_t maxSize,
 }
 
 
-size_t DuplicateRecord(uint8_t *data, size_t size, size_t maxSize,
+size_t DuplicateRecord(uint8_t *data, size_t size, size_t max_size,
                        unsigned int seed) {
   std::mt19937 rng(seed);
 
@@ -158,7 +165,7 @@ size_t DuplicateRecord(uint8_t *data, size_t size, size_t maxSize,
   
   std::uniform_int_distribution<size_t> dist(0, records.size() - 1);
   auto &rec = records.at(dist(rng));
-  if (size + rec->size() > maxSize) {
+  if (size + rec->size() > max_size) {
     return 0;
   }
 
@@ -170,7 +177,7 @@ size_t DuplicateRecord(uint8_t *data, size_t size, size_t maxSize,
 }
 
 
-size_t TruncateRecord(uint8_t *data, size_t size, size_t maxSize,
+size_t TruncateRecord(uint8_t *data, size_t size, size_t max_size,
                       unsigned int seed) {
   std::mt19937 rng(seed);
 
@@ -185,12 +192,12 @@ size_t TruncateRecord(uint8_t *data, size_t size, size_t maxSize,
   auto &rec = records.at(dist(rng));
 
   
-  if (rec->size() <= 5 + EXTRA_HEADER_BYTES) {
+  if (rec->size() <= 5 + gExtraHeaderBytes) {
     return 0;
   }
 
   
-  std::uniform_int_distribution<size_t> dist2(5 + EXTRA_HEADER_BYTES,
+  std::uniform_int_distribution<size_t> dist2(5 + gExtraHeaderBytes,
                                               rec->size() - 1);
   size_t new_length = dist2(rng);
   rec->truncate(new_length);
@@ -200,16 +207,16 @@ size_t TruncateRecord(uint8_t *data, size_t size, size_t maxSize,
 }
 
 
-size_t FragmentRecord(uint8_t *data, size_t size, size_t maxSize,
+size_t FragmentRecord(uint8_t *data, size_t size, size_t max_size,
                       unsigned int seed) {
   std::mt19937 rng(seed);
 
   
-  if (EXTRA_HEADER_BYTES > 0) {
+  if (gExtraHeaderBytes > 0) {
     return 0;
   }
 
-  if (size + 5 > maxSize) {
+  if (size + 5 > max_size) {
     return 0;
   }
 
@@ -252,7 +259,7 @@ size_t FragmentRecord(uint8_t *data, size_t size, size_t maxSize,
 
 
 size_t CrossOver(const uint8_t *data1, size_t size1, const uint8_t *data2,
-                 size_t size2, uint8_t *out, size_t maxOutSize,
+                 size_t size2, uint8_t *out, size_t max_out_size,
                  unsigned int seed) {
   std::mt19937 rng(seed);
 
@@ -276,7 +283,7 @@ size_t CrossOver(const uint8_t *data1, size_t size1, const uint8_t *data2,
   size_t total = 0;
   for (auto &rec : records1) {
     size_t length = rec->size();
-    if (total + length > maxOutSize) {
+    if (total + length > max_out_size) {
       break;
     }
 

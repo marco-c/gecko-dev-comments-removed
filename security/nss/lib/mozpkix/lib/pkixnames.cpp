@@ -1967,9 +1967,8 @@ IsValidDNSID(Input hostname, IDRole idRole, AllowWildcards allowWildcards)
     }
     switch (b) {
       case '-':
-        
-        if (labelLength == 0 && idRole != IDRole::ReferenceID) {
-          return false;
+        if (labelLength == 0) {
+          return false; 
         }
         labelIsAllNumeric = false;
         labelEndsWithHyphen = true;
@@ -2029,9 +2028,8 @@ IsValidDNSID(Input hostname, IDRole idRole, AllowWildcards allowWildcards)
             (idRole != IDRole::NameConstraint || !isFirstByte)) {
           return false;
         }
-        
-        if (labelEndsWithHyphen && idRole != IDRole::ReferenceID) {
-          return false;
+        if (labelEndsWithHyphen) {
+          return false; 
         }
         labelLength = 0;
         break;
@@ -2048,9 +2046,8 @@ IsValidDNSID(Input hostname, IDRole idRole, AllowWildcards allowWildcards)
     return false;
   }
 
-  
-  if (labelEndsWithHyphen && idRole != IDRole::ReferenceID) {
-    return false;
+  if (labelEndsWithHyphen) {
+    return false; 
   }
 
   if (labelIsAllNumeric) {
