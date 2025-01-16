@@ -4144,7 +4144,12 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
 
   switch (aEventMessage) {
     case eMouseDown:
-      CaptureMouse(true);
+      
+      
+      
+      if (!bool(aIsNonclient)) {
+        CaptureMouse(true);
+      }
       break;
 
     
@@ -5553,6 +5558,19 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
                            MOUSE_INPUT_SOURCE(), nullptr, IsNonclient::Yes);
         DispatchPendingEvents();
         result = true;
+      }
+      break;
+    }
+
+    case WM_NCLBUTTONUP: {
+      if (mCustomNonClient) {
+        result = DispatchMouseEvent(eMouseUp, wParamFromGlobalMouseState(),
+                                    lParamToClient(lParam), false,
+                                    MouseButton::ePrimary, MOUSE_INPUT_SOURCE(),
+                                    nullptr, IsNonclient::Yes);
+        DispatchPendingEvents();
+      } else {
+        result = false;
       }
       break;
     }
