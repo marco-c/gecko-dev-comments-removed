@@ -577,6 +577,10 @@ impl ColorComponent<NumberOrPercentageComponent> {
         match self {
             Self::None | Self::AlphaOmitted => true,
             Self::Value(value) => matches!(value, NumberOrPercentageComponent::Number { .. }),
+            Self::ChannelKeyword(_) => {
+                
+                true
+            },
             Self::Calc(node) => {
                 if let Ok(unit) = node.unit() {
                     unit.is_empty()
@@ -593,6 +597,10 @@ impl ColorComponent<NumberOrPercentageComponent> {
         match self {
             Self::None | Self::AlphaOmitted => true,
             Self::Value(value) => matches!(value, NumberOrPercentageComponent::Percentage { .. }),
+            Self::ChannelKeyword(_) => {
+                
+                false
+            },
             Self::Calc(node) => {
                 if let Ok(unit) = node.unit() {
                     unit == CalcUnits::PERCENTAGE
