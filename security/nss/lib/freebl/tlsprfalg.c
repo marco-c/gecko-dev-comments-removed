@@ -82,8 +82,8 @@ loser:
     
     if (cx)
         HMAC_Destroy(cx, PR_TRUE);
-    PORT_Memset(state, 0, sizeof(state));
-    PORT_Memset(outbuf, 0, sizeof(outbuf));
+    PORT_SafeZero(state, sizeof(state));
+    PORT_SafeZero(outbuf, sizeof(outbuf));
     return rv;
 }
 

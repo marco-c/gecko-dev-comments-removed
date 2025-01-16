@@ -1,0 +1,20 @@
+
+
+
+
+#ifndef ASN1_MUTATORS_H_
+#define ASN1_MUTATORS_H_
+
+#include <cstddef>
+#include <cstdint>
+
+namespace ASN1Mutators {
+
+size_t FlipConstructed(uint8_t *data, size_t size, size_t maxSize,
+                       unsigned int seed);
+size_t ChangeType(uint8_t *data, size_t size, size_t maxSize,
+                  unsigned int seed);
+
+}  
+
+#endif  

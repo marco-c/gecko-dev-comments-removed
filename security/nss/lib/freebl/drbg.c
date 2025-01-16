@@ -135,7 +135,7 @@ prng_Hash_df(PRUint8 *requested_bytes, unsigned int no_of_bytes_to_return,
         unsigned int hash_return_len;
         SHA256_Begin(&ctx);
         SHA256_Update(&ctx, &counter, 1);
-        SHA256_Update(&ctx, (unsigned char *)&tmp, sizeof tmp);
+        SHA256_Update(&ctx, (unsigned char *)&tmp, sizeof(tmp));
         SHA256_Update(&ctx, input_string_1, input_string_1_len);
         if (input_string_2) {
             SHA256_Update(&ctx, input_string_2, input_string_2_len);
@@ -168,7 +168,8 @@ prng_instantiate(RNGContext *rng, const PRUint8 *bytes, unsigned int len)
     }
     prng_Hash_df(V(rng), VSize(rng), bytes, len, NULL, 0);
     rng->V_type = prngCGenerateType;
-    prng_Hash_df(rng->C, sizeof rng->C, rng->V_Data, sizeof rng->V_Data, NULL, 0);
+    prng_Hash_df(rng->C, sizeof(rng->C), rng->V_Data, sizeof(rng->V_Data),
+                 NULL, 0);
     PRNG_RESET_RESEED_COUNT(rng)
     return SECSuccess;
 }
@@ -197,7 +198,7 @@ prng_initEntropy(void)
     SHA256_Update(&ctx, block, sizeof(block));
     SHA256_End(&ctx, globalrng->previousEntropyHash, NULL,
                sizeof(globalrng->previousEntropyHash));
-    PORT_Memset(block, 0, sizeof(block));
+    PORT_SafeZero(block, sizeof(block));
     SHA256_DestroyContext(&ctx, PR_FALSE);
     return PR_SUCCESS;
 }
@@ -246,8 +247,8 @@ prng_getEntropy(PRUint8 *buffer, size_t requestLength)
     }
 
 out:
-    PORT_Memset(hash, 0, sizeof hash);
-    PORT_Memset(block, 0, sizeof block);
+    PORT_SafeZero(hash, sizeof(hash));
+    PORT_SafeZero(block, sizeof(block));
     return rv;
 }
 
@@ -262,14 +263,14 @@ static SECStatus
 prng_reseed(RNGContext *rng, const PRUint8 *entropy, unsigned int entropy_len,
             const PRUint8 *additional_input, unsigned int additional_input_len)
 {
-    PRUint8 noiseData[(sizeof rng->V_Data) + PRNG_SEEDLEN];
+    PRUint8 noiseData[(sizeof(rng->V_Data)) + PRNG_SEEDLEN];
     PRUint8 *noise = &noiseData[0];
     SECStatus rv;
 
     
     if (entropy == NULL) {
         entropy_len = PRNG_SEEDLEN;
-        rv = prng_getEntropy(&noiseData[sizeof rng->V_Data], entropy_len);
+        rv = prng_getEntropy(&noiseData[sizeof(rng->V_Data)], entropy_len);
         if (rv != SECSuccess) {
             return SECFailure; 
         }
@@ -277,12 +278,12 @@ prng_reseed(RNGContext *rng, const PRUint8 *entropy, unsigned int entropy_len,
         
         
         if (entropy_len > PRNG_SEEDLEN) {
-            noise = PORT_Alloc(entropy_len + (sizeof rng->V_Data));
+            noise = PORT_Alloc(entropy_len + (sizeof(rng->V_Data)));
             if (noise == NULL) {
                 return SECFailure;
             }
         }
-        PORT_Memcpy(&noise[sizeof rng->V_Data], entropy, entropy_len);
+        PORT_Memcpy(&noise[sizeof(rng->V_Data)], entropy, entropy_len);
     }
 
     if (entropy_len < 256 / PR_BITS_PER_BYTE) {
@@ -292,13 +293,14 @@ prng_reseed(RNGContext *rng, const PRUint8 *entropy, unsigned int entropy_len,
     }
 
     rng->V_type = prngReseedType;
-    PORT_Memcpy(noise, rng->V_Data, sizeof rng->V_Data);
-    prng_Hash_df(V(rng), VSize(rng), noise, (sizeof rng->V_Data) + entropy_len,
+    PORT_Memcpy(noise, rng->V_Data, sizeof(rng->V_Data));
+    prng_Hash_df(V(rng), VSize(rng), noise, (sizeof(rng->V_Data)) + entropy_len,
                  additional_input, additional_input_len);
     
-    PORT_Memset(noise, 0, (sizeof rng->V_Data) + entropy_len);
+    PORT_Memset(noise, 0, (sizeof(rng->V_Data)) + entropy_len);
     rng->V_type = prngCGenerateType;
-    prng_Hash_df(rng->C, sizeof rng->C, rng->V_Data, sizeof rng->V_Data, NULL, 0);
+    prng_Hash_df(rng->C, sizeof(rng->C), rng->V_Data, sizeof(rng->V_Data),
+                 NULL, 0);
     PRNG_RESET_RESEED_COUNT(rng)
 
     if (noise != &noiseData[0]) {
@@ -379,7 +381,7 @@ prng_Hashgen(RNGContext *rng, PRUint8 *returned_bytes,
         unsigned int carry;
 
         SHA256_Begin(&ctx);
-        SHA256_Update(&ctx, data, sizeof data);
+        SHA256_Update(&ctx, data, sizeof(data));
         SHA256_End(&ctx, thisHash, &len, SHA256_LENGTH);
         if (no_of_returned_bytes < SHA256_LENGTH) {
             len = no_of_returned_bytes;
@@ -390,11 +392,11 @@ prng_Hashgen(RNGContext *rng, PRUint8 *returned_bytes,
         
 
         carry = no_of_returned_bytes;
-        PRNG_ADD_CARRY_ONLY(data, (sizeof data) - 1, carry);
+        PRNG_ADD_CARRY_ONLY(data, (sizeof(data)) - 1, carry);
         SHA256_DestroyContext(&ctx, PR_FALSE);
     }
-    PORT_Memset(data, 0, sizeof data);
-    PORT_Memset(thisHash, 0, sizeof thisHash);
+    PORT_SafeZero(data, sizeof(data));
+    PORT_SafeZero(thisHash, sizeof(thisHash));
 }
 
 
@@ -429,11 +431,11 @@ prng_generateNewBytes(RNGContext *rng,
 #define w H
         rng->V_type = prngAdditionalDataType;
         SHA256_Begin(&ctx);
-        SHA256_Update(&ctx, rng->V_Data, sizeof rng->V_Data);
+        SHA256_Update(&ctx, rng->V_Data, sizeof(rng->V_Data));
         SHA256_Update(&ctx, additional_input, additional_input_len);
-        SHA256_End(&ctx, w, NULL, sizeof w);
-        PRNG_ADD_BITS_AND_CARRY(V(rng), VSize(rng), w, sizeof w, carry)
-        PORT_Memset(w, 0, sizeof w);
+        SHA256_End(&ctx, w, NULL, sizeof(w));
+        PRNG_ADD_BITS_AND_CARRY(V(rng), VSize(rng), w, sizeof(w), carry)
+        PORT_Memset(w, 0, sizeof(w));
         SHA256_DestroyContext(&ctx, PR_FALSE);
 #undef w
     }
@@ -446,16 +448,16 @@ prng_generateNewBytes(RNGContext *rng,
     }
     
     rng->V_type = prngGenerateByteType;
-    SHA256_HashBuf(H, rng->V_Data, sizeof rng->V_Data);
-    PRNG_ADD_BITS_AND_CARRY(V(rng), VSize(rng), H, sizeof H, carry)
-    PRNG_ADD_BITS(V(rng), VSize(rng), rng->C, sizeof rng->C, carry);
+    SHA256_HashBuf(H, rng->V_Data, sizeof(rng->V_Data));
+    PRNG_ADD_BITS_AND_CARRY(V(rng), VSize(rng), H, sizeof(H), carry)
+    PRNG_ADD_BITS(V(rng), VSize(rng), rng->C, sizeof(rng->C), carry);
     PRNG_ADD_BITS_AND_CARRY(V(rng), VSize(rng), rng->reseed_counter,
-                            sizeof rng->reseed_counter, carry)
+                            sizeof(rng->reseed_counter), carry)
     carry = 1;
-    PRNG_ADD_CARRY_ONLY(rng->reseed_counter, (sizeof rng->reseed_counter) - 1, carry);
+    PRNG_ADD_CARRY_ONLY(rng->reseed_counter, (sizeof(rng->reseed_counter)) - 1, carry);
 
     
-    PORT_Memset(H, 0, sizeof H);
+    PORT_SafeZero(H, sizeof(H));
     if (!rng->isValid) {
         PORT_Memset(returned_bytes, 0, no_of_returned_bytes);
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
@@ -491,17 +493,17 @@ rng_init(void)
         }
 
         
-        rv = prng_getEntropy(bytes, sizeof bytes);
+        rv = prng_getEntropy(bytes, sizeof(bytes));
         if (rv == SECSuccess) {
             
 
 
             if (V(globalrng)[0] == 0) {
-                rv = prng_instantiate(globalrng, bytes, sizeof bytes);
+                rv = prng_instantiate(globalrng, bytes, sizeof(bytes));
             } else {
-                rv = prng_reseed_test(globalrng, bytes, sizeof bytes, NULL, 0);
+                rv = prng_reseed_test(globalrng, bytes, sizeof(bytes), NULL, 0);
             }
-            memset(bytes, 0, sizeof bytes);
+            memset(bytes, 0, sizeof(bytes));
         } else {
             PZ_DestroyLock(globalrng->lock);
             globalrng->lock = NULL;
@@ -532,20 +534,20 @@ rng_init(void)
 static void
 prng_freeRNGContext(RNGContext *rng)
 {
-    PRUint8 inputhash[VSize(rng) + (sizeof rng->C)];
+    PRUint8 inputhash[VSize(rng) + (sizeof(rng->C))];
 
     
     SKIP_AFTER_FORK(PZ_DestroyLock(globalrng->lock));
 
     
-    prng_Hash_df(inputhash, sizeof rng->C, rng->C, sizeof rng->C, NULL, 0);
-    prng_Hash_df(&inputhash[sizeof rng->C], VSize(rng), V(rng), VSize(rng),
+    prng_Hash_df(inputhash, sizeof(rng->C), rng->C, sizeof(rng->C), NULL, 0);
+    prng_Hash_df(&inputhash[sizeof(rng->C)], VSize(rng), V(rng), VSize(rng),
                  NULL, 0);
-    memset(rng, 0, sizeof *rng);
-    memcpy(rng->C, inputhash, sizeof rng->C);
-    memcpy(V(rng), &inputhash[sizeof rng->C], VSize(rng));
+    memset(rng, 0, sizeof(*rng));
+    memcpy(rng->C, inputhash, sizeof(rng->C));
+    memcpy(V(rng), &inputhash[sizeof(rng->C)], VSize(rng));
 
-    memset(inputhash, 0, sizeof inputhash);
+    memset(inputhash, 0, sizeof(inputhash));
 }
 
 
@@ -621,7 +623,7 @@ RNG_RandomUpdate(const void *data, size_t bytes)
     if (bytes > sizeof(globalrng->additionalDataCache)) {
         rv = prng_reseed_test(globalrng, NULL, 0, data, (unsigned int)bytes);
         
-    } else if (bytes < ((sizeof globalrng->additionalDataCache) - globalrng->additionalAvail)) {
+    } else if (bytes < ((sizeof(globalrng->additionalDataCache)) - globalrng->additionalAvail)) {
         PORT_Memcpy(globalrng->additionalDataCache + globalrng->additionalAvail,
                     data, bytes);
         globalrng->additionalAvail += (PRUint32)bytes;
@@ -632,7 +634,7 @@ RNG_RandomUpdate(const void *data, size_t bytes)
 
 
 
-        size_t bufRemain = (sizeof globalrng->additionalDataCache) - globalrng->additionalAvail;
+        size_t bufRemain = (sizeof(globalrng->additionalDataCache)) - globalrng->additionalAvail;
         
         if (bufRemain) {
             PORT_Memcpy(globalrng->additionalDataCache + globalrng->additionalAvail,
@@ -643,7 +645,7 @@ RNG_RandomUpdate(const void *data, size_t bytes)
         
         rv = prng_reseed_test(globalrng, NULL, 0,
                               globalrng->additionalDataCache,
-                              sizeof globalrng->additionalDataCache);
+                              sizeof(globalrng->additionalDataCache));
 
         
         PORT_Memcpy(globalrng->additionalDataCache, data, bytes);
@@ -693,21 +695,21 @@ prng_GenerateGlobalRandomBytes(RNGContext *rng,
 
 
     if (len <= rng->dataAvail) {
-        memcpy(output, rng->data + ((sizeof rng->data) - rng->dataAvail), len);
-        memset(rng->data + ((sizeof rng->data) - rng->dataAvail), 0, len);
+        memcpy(output, rng->data + ((sizeof(rng->data)) - rng->dataAvail), len);
+        memset(rng->data + ((sizeof(rng->data)) - rng->dataAvail), 0, len);
         rng->dataAvail -= len;
         rv = SECSuccess;
         
 
-    } else if (len < sizeof rng->data) {
-        rv = prng_generateNewBytes(rng, rng->data, sizeof rng->data,
+    } else if (len < sizeof(rng->data)) {
+        rv = prng_generateNewBytes(rng, rng->data, sizeof(rng->data),
                                    rng->additionalAvail ? rng->additionalDataCache : NULL,
                                    rng->additionalAvail);
         rng->additionalAvail = 0;
         if (rv == SECSuccess) {
             memcpy(output, rng->data, len);
             memset(rng->data, 0, len);
-            rng->dataAvail = (sizeof rng->data) - len;
+            rng->dataAvail = (sizeof(rng->data)) - len;
         }
         
     } else {
@@ -858,7 +860,7 @@ PRNGTEST_Uninstantiate()
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
         return SECFailure;
     }
-    PORT_Memset(&testContext, 0, sizeof testContext);
+    PORT_Memset(&testContext, 0, sizeof(testContext));
     return SECSuccess;
 }
 
@@ -943,31 +945,31 @@ PRNGTEST_RunHealthTests()
     
     
     
-    rng_status = PRNGTEST_Instantiate(entropy, sizeof entropy,
+    rng_status = PRNGTEST_Instantiate(entropy, sizeof(entropy),
                                       NULL, 0, NULL, 0);
     if (rng_status != SECSuccess) {
         
         return SECFailure;
     }
-    rng_status = PRNGTEST_Generate(result, sizeof rng_known_result, NULL, 0);
+    rng_status = PRNGTEST_Generate(result, sizeof(rng_known_result), NULL, 0);
     if ((rng_status != SECSuccess) ||
         (PORT_Memcmp(result, rng_known_result,
-                     sizeof rng_known_result) != 0)) {
+                     sizeof(rng_known_result)) != 0)) {
         PRNGTEST_Uninstantiate();
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
         return SECFailure;
     }
-    rng_status = PRNGTEST_Reseed(reseed_entropy, sizeof reseed_entropy,
-                                 additional_input, sizeof additional_input);
+    rng_status = PRNGTEST_Reseed(reseed_entropy, sizeof(reseed_entropy),
+                                 additional_input, sizeof(additional_input));
     if (rng_status != SECSuccess) {
         
         PRNGTEST_Uninstantiate();
         return SECFailure;
     }
-    rng_status = PRNGTEST_Generate(result, sizeof rng_reseed_result, NULL, 0);
+    rng_status = PRNGTEST_Generate(result, sizeof(rng_reseed_result), NULL, 0);
     if ((rng_status != SECSuccess) ||
         (PORT_Memcmp(result, rng_reseed_result,
-                     sizeof rng_reseed_result) != 0)) {
+                     sizeof(rng_reseed_result)) != 0)) {
         PRNGTEST_Uninstantiate();
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
         return SECFailure;
@@ -981,13 +983,13 @@ PRNGTEST_RunHealthTests()
         return SECFailure;
     }
     
-    rng_status = PRNGTEST_Generate(result, sizeof rng_reseed_result, NULL, 0);
+    rng_status = PRNGTEST_Generate(result, sizeof(rng_reseed_result), NULL, 0);
     if ((rng_status != SECSuccess) ||
         
 
 
         (PORT_Memcmp(result, rng_no_reseed_result,
-                     sizeof rng_no_reseed_result) == 0)) {
+                     sizeof(rng_no_reseed_result)) == 0)) {
         PRNGTEST_Uninstantiate();
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
         return SECFailure;
