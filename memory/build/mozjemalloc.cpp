@@ -1452,8 +1452,8 @@ class ArenaCollection {
     MOZ_PUSH_IGNORE_THREAD_SAFETY
     mArenas.Init();
     mPrivateArenas.Init();
-    MOZ_POP_THREAD_SAFETY
     mMainThreadArenas.Init();
+    MOZ_POP_THREAD_SAFETY
     arena_params_t params;
     
     params.mMaxDirty = opt_dirty_max;
@@ -1563,11 +1563,13 @@ class ArenaCollection {
   arena_id_t mLastPublicArenaId MOZ_GUARDED_BY(mLock);
 
   
-  
-  
   Tree mArenas MOZ_GUARDED_BY(mLock);
   Tree mPrivateArenas MOZ_GUARDED_BY(mLock);
-  Tree mMainThreadArenas;
+
+  
+  
+  Tree mMainThreadArenas MOZ_GUARDED_BY(mLock);
+
   Atomic<int32_t, MemoryOrdering::Relaxed> mDefaultMaxDirtyPageModifier;
   
   Maybe<ThreadId> mMainThreadId;
@@ -5550,7 +5552,16 @@ inline arena_t* ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate) {
   if (aIsPrivate) {
     if (ArenaIdIsMainThreadOnly(aArenaId)) {
       
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(IsOnMainThread());
+      MOZ_PUSH_IGNORE_THREAD_SAFETY
       arena_t* result = GetByIdInternal(mMainThreadArenas, aArenaId);
+      MOZ_POP_THREAD_SAFETY
       MOZ_RELEASE_ASSERT(result);
       return result;
     }
