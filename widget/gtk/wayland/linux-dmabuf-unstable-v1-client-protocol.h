@@ -43,9 +43,36 @@ extern "C" {
 
 
 
+
 struct wl_buffer;
+struct wl_surface;
 struct zwp_linux_buffer_params_v1;
+struct zwp_linux_dmabuf_feedback_v1;
 struct zwp_linux_dmabuf_v1;
+
+#ifndef ZWP_LINUX_DMABUF_V1_INTERFACE
+#  define ZWP_LINUX_DMABUF_V1_INTERFACE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -173,6 +200,9 @@ struct zwp_linux_dmabuf_v1;
 
 
 extern const struct wl_interface zwp_linux_dmabuf_v1_interface;
+#endif
+#ifndef ZWP_LINUX_BUFFER_PARAMS_V1_INTERFACE
+#  define ZWP_LINUX_BUFFER_PARAMS_V1_INTERFACE
 
 
 
@@ -214,6 +244,73 @@ extern const struct wl_interface zwp_linux_dmabuf_v1_interface;
 
 
 extern const struct wl_interface zwp_linux_buffer_params_v1_interface;
+#endif
+#ifndef ZWP_LINUX_DMABUF_FEEDBACK_V1_INTERFACE
+#  define ZWP_LINUX_DMABUF_FEEDBACK_V1_INTERFACE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern const struct wl_interface zwp_linux_dmabuf_feedback_v1_interface;
+#endif
 
 
 
@@ -221,7 +318,6 @@ extern const struct wl_interface zwp_linux_buffer_params_v1_interface;
 
 struct zwp_linux_dmabuf_v1_listener {
   
-
 
 
 
@@ -256,6 +352,22 @@ struct zwp_linux_dmabuf_v1_listener {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   void (*modifier)(void* data, struct zwp_linux_dmabuf_v1* zwp_linux_dmabuf_v1,
                    uint32_t format, uint32_t modifier_hi, uint32_t modifier_lo);
 };
@@ -272,6 +384,8 @@ static inline int zwp_linux_dmabuf_v1_add_listener(
 
 #define ZWP_LINUX_DMABUF_V1_DESTROY 0
 #define ZWP_LINUX_DMABUF_V1_CREATE_PARAMS 1
+#define ZWP_LINUX_DMABUF_V1_GET_DEFAULT_FEEDBACK 2
+#define ZWP_LINUX_DMABUF_V1_GET_SURFACE_FEEDBACK 3
 
 
 
@@ -290,6 +404,14 @@ static inline int zwp_linux_dmabuf_v1_add_listener(
 
 
 #define ZWP_LINUX_DMABUF_V1_CREATE_PARAMS_SINCE_VERSION 1
+
+
+
+#define ZWP_LINUX_DMABUF_V1_GET_DEFAULT_FEEDBACK_SINCE_VERSION 4
+
+
+
+#define ZWP_LINUX_DMABUF_V1_GET_SURFACE_FEEDBACK_SINCE_VERSION 4
 
 
 static inline void zwp_linux_dmabuf_v1_set_user_data(
@@ -316,10 +438,10 @@ static inline uint32_t zwp_linux_dmabuf_v1_get_version(
 
 static inline void zwp_linux_dmabuf_v1_destroy(
     struct zwp_linux_dmabuf_v1* zwp_linux_dmabuf_v1) {
-  wl_proxy_marshal((struct wl_proxy*)zwp_linux_dmabuf_v1,
-                   ZWP_LINUX_DMABUF_V1_DESTROY);
-
-  wl_proxy_destroy((struct wl_proxy*)zwp_linux_dmabuf_v1);
+  wl_proxy_marshal_flags(
+      (struct wl_proxy*)zwp_linux_dmabuf_v1, ZWP_LINUX_DMABUF_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy*)zwp_linux_dmabuf_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 
@@ -335,11 +457,60 @@ zwp_linux_dmabuf_v1_create_params(
     struct zwp_linux_dmabuf_v1* zwp_linux_dmabuf_v1) {
   struct wl_proxy* params_id;
 
-  params_id = wl_proxy_marshal_constructor(
+  params_id = wl_proxy_marshal_flags(
       (struct wl_proxy*)zwp_linux_dmabuf_v1, ZWP_LINUX_DMABUF_V1_CREATE_PARAMS,
-      &zwp_linux_buffer_params_v1_interface, NULL);
+      &zwp_linux_buffer_params_v1_interface,
+      wl_proxy_get_version((struct wl_proxy*)zwp_linux_dmabuf_v1), 0, NULL);
 
   return (struct zwp_linux_buffer_params_v1*)params_id;
+}
+
+
+
+
+
+
+
+
+
+static inline struct zwp_linux_dmabuf_feedback_v1*
+zwp_linux_dmabuf_v1_get_default_feedback(
+    struct zwp_linux_dmabuf_v1* zwp_linux_dmabuf_v1) {
+  struct wl_proxy* id;
+
+  id = wl_proxy_marshal_flags(
+      (struct wl_proxy*)zwp_linux_dmabuf_v1,
+      ZWP_LINUX_DMABUF_V1_GET_DEFAULT_FEEDBACK,
+      &zwp_linux_dmabuf_feedback_v1_interface,
+      wl_proxy_get_version((struct wl_proxy*)zwp_linux_dmabuf_v1), 0, NULL);
+
+  return (struct zwp_linux_dmabuf_feedback_v1*)id;
+}
+
+
+
+
+
+
+
+
+
+
+
+static inline struct zwp_linux_dmabuf_feedback_v1*
+zwp_linux_dmabuf_v1_get_surface_feedback(
+    struct zwp_linux_dmabuf_v1* zwp_linux_dmabuf_v1,
+    struct wl_surface* surface) {
+  struct wl_proxy* id;
+
+  id = wl_proxy_marshal_flags(
+      (struct wl_proxy*)zwp_linux_dmabuf_v1,
+      ZWP_LINUX_DMABUF_V1_GET_SURFACE_FEEDBACK,
+      &zwp_linux_dmabuf_feedback_v1_interface,
+      wl_proxy_get_version((struct wl_proxy*)zwp_linux_dmabuf_v1), 0, NULL,
+      surface);
+
+  return (struct zwp_linux_dmabuf_feedback_v1*)id;
 }
 
 #ifndef ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_ENUM
@@ -500,11 +671,18 @@ static inline uint32_t zwp_linux_buffer_params_v1_get_version(
 
 static inline void zwp_linux_buffer_params_v1_destroy(
     struct zwp_linux_buffer_params_v1* zwp_linux_buffer_params_v1) {
-  wl_proxy_marshal((struct wl_proxy*)zwp_linux_buffer_params_v1,
-                   ZWP_LINUX_BUFFER_PARAMS_V1_DESTROY);
-
-  wl_proxy_destroy((struct wl_proxy*)zwp_linux_buffer_params_v1);
+  wl_proxy_marshal_flags(
+      (struct wl_proxy*)zwp_linux_buffer_params_v1,
+      ZWP_LINUX_BUFFER_PARAMS_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy*)zwp_linux_buffer_params_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
+
+
+
+
+
+
 
 
 
@@ -527,9 +705,11 @@ static inline void zwp_linux_buffer_params_v1_add(
     struct zwp_linux_buffer_params_v1* zwp_linux_buffer_params_v1, int32_t fd,
     uint32_t plane_idx, uint32_t offset, uint32_t stride, uint32_t modifier_hi,
     uint32_t modifier_lo) {
-  wl_proxy_marshal((struct wl_proxy*)zwp_linux_buffer_params_v1,
-                   ZWP_LINUX_BUFFER_PARAMS_V1_ADD, fd, plane_idx, offset,
-                   stride, modifier_hi, modifier_lo);
+  wl_proxy_marshal_flags(
+      (struct wl_proxy*)zwp_linux_buffer_params_v1,
+      ZWP_LINUX_BUFFER_PARAMS_V1_ADD, NULL,
+      wl_proxy_get_version((struct wl_proxy*)zwp_linux_buffer_params_v1), 0, fd,
+      plane_idx, offset, stride, modifier_hi, modifier_lo);
 }
 
 
@@ -598,9 +778,11 @@ static inline void zwp_linux_buffer_params_v1_add(
 static inline void zwp_linux_buffer_params_v1_create(
     struct zwp_linux_buffer_params_v1* zwp_linux_buffer_params_v1,
     int32_t width, int32_t height, uint32_t format, uint32_t flags) {
-  wl_proxy_marshal((struct wl_proxy*)zwp_linux_buffer_params_v1,
-                   ZWP_LINUX_BUFFER_PARAMS_V1_CREATE, width, height, format,
-                   flags);
+  wl_proxy_marshal_flags(
+      (struct wl_proxy*)zwp_linux_buffer_params_v1,
+      ZWP_LINUX_BUFFER_PARAMS_V1_CREATE, NULL,
+      wl_proxy_get_version((struct wl_proxy*)zwp_linux_buffer_params_v1), 0,
+      width, height, format, flags);
 }
 
 
@@ -635,12 +817,288 @@ static inline struct wl_buffer* zwp_linux_buffer_params_v1_create_immed(
     int32_t width, int32_t height, uint32_t format, uint32_t flags) {
   struct wl_proxy* buffer_id;
 
-  buffer_id = wl_proxy_marshal_constructor(
+  buffer_id = wl_proxy_marshal_flags(
       (struct wl_proxy*)zwp_linux_buffer_params_v1,
-      ZWP_LINUX_BUFFER_PARAMS_V1_CREATE_IMMED, &wl_buffer_interface, NULL,
-      width, height, format, flags);
+      ZWP_LINUX_BUFFER_PARAMS_V1_CREATE_IMMED, &wl_buffer_interface,
+      wl_proxy_get_version((struct wl_proxy*)zwp_linux_buffer_params_v1), 0,
+      NULL, width, height, format, flags);
 
   return (struct wl_buffer*)buffer_id;
+}
+
+#ifndef ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FLAGS_ENUM
+#  define ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FLAGS_ENUM
+enum zwp_linux_dmabuf_feedback_v1_tranche_flags {
+  
+
+
+  ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FLAGS_SCANOUT = 1,
+};
+#endif 
+
+
+
+
+
+struct zwp_linux_dmabuf_feedback_v1_listener {
+  
+
+
+
+
+
+
+
+
+  void (*done)(
+      void* data,
+      struct zwp_linux_dmabuf_feedback_v1* zwp_linux_dmabuf_feedback_v1);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void (*format_table)(
+      void* data,
+      struct zwp_linux_dmabuf_feedback_v1* zwp_linux_dmabuf_feedback_v1,
+      int32_t fd, uint32_t size);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void (*main_device)(
+      void* data,
+      struct zwp_linux_dmabuf_feedback_v1* zwp_linux_dmabuf_feedback_v1,
+      struct wl_array* device);
+  
+
+
+
+
+
+
+
+
+  void (*tranche_done)(
+      void* data,
+      struct zwp_linux_dmabuf_feedback_v1* zwp_linux_dmabuf_feedback_v1);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void (*tranche_target_device)(
+      void* data,
+      struct zwp_linux_dmabuf_feedback_v1* zwp_linux_dmabuf_feedback_v1,
+      struct wl_array* device);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void (*tranche_formats)(
+      void* data,
+      struct zwp_linux_dmabuf_feedback_v1* zwp_linux_dmabuf_feedback_v1,
+      struct wl_array* indices);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void (*tranche_flags)(
+      void* data,
+      struct zwp_linux_dmabuf_feedback_v1* zwp_linux_dmabuf_feedback_v1,
+      uint32_t flags);
+};
+
+
+
+
+static inline int zwp_linux_dmabuf_feedback_v1_add_listener(
+    struct zwp_linux_dmabuf_feedback_v1* zwp_linux_dmabuf_feedback_v1,
+    const struct zwp_linux_dmabuf_feedback_v1_listener* listener, void* data) {
+  return wl_proxy_add_listener((struct wl_proxy*)zwp_linux_dmabuf_feedback_v1,
+                               (void (**)(void))listener, data);
+}
+
+#define ZWP_LINUX_DMABUF_FEEDBACK_V1_DESTROY 0
+
+
+
+
+#define ZWP_LINUX_DMABUF_FEEDBACK_V1_DONE_SINCE_VERSION 1
+
+
+
+#define ZWP_LINUX_DMABUF_FEEDBACK_V1_FORMAT_TABLE_SINCE_VERSION 1
+
+
+
+#define ZWP_LINUX_DMABUF_FEEDBACK_V1_MAIN_DEVICE_SINCE_VERSION 1
+
+
+
+#define ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_DONE_SINCE_VERSION 1
+
+
+
+#define ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_TARGET_DEVICE_SINCE_VERSION 1
+
+
+
+#define ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FORMATS_SINCE_VERSION 1
+
+
+
+#define ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FLAGS_SINCE_VERSION 1
+
+
+
+
+#define ZWP_LINUX_DMABUF_FEEDBACK_V1_DESTROY_SINCE_VERSION 1
+
+
+static inline void zwp_linux_dmabuf_feedback_v1_set_user_data(
+    struct zwp_linux_dmabuf_feedback_v1* zwp_linux_dmabuf_feedback_v1,
+    void* user_data) {
+  wl_proxy_set_user_data((struct wl_proxy*)zwp_linux_dmabuf_feedback_v1,
+                         user_data);
+}
+
+
+static inline void* zwp_linux_dmabuf_feedback_v1_get_user_data(
+    struct zwp_linux_dmabuf_feedback_v1* zwp_linux_dmabuf_feedback_v1) {
+  return wl_proxy_get_user_data((struct wl_proxy*)zwp_linux_dmabuf_feedback_v1);
+}
+
+static inline uint32_t zwp_linux_dmabuf_feedback_v1_get_version(
+    struct zwp_linux_dmabuf_feedback_v1* zwp_linux_dmabuf_feedback_v1) {
+  return wl_proxy_get_version((struct wl_proxy*)zwp_linux_dmabuf_feedback_v1);
+}
+
+
+
+
+
+
+
+static inline void zwp_linux_dmabuf_feedback_v1_destroy(
+    struct zwp_linux_dmabuf_feedback_v1* zwp_linux_dmabuf_feedback_v1) {
+  wl_proxy_marshal_flags(
+      (struct wl_proxy*)zwp_linux_dmabuf_feedback_v1,
+      ZWP_LINUX_DMABUF_FEEDBACK_V1_DESTROY, NULL,
+      wl_proxy_get_version((struct wl_proxy*)zwp_linux_dmabuf_feedback_v1),
+      WL_MARSHAL_FLAG_DESTROY);
 }
 
 #ifdef __cplusplus
