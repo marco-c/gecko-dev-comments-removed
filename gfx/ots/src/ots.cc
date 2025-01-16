@@ -102,11 +102,18 @@ bool CheckTag(uint32_t tag_value) {
 
 namespace {
 
-#define OTS_MSG_TAG_(level,otf_,msg_,tag_) \
-  (OTS_MESSAGE_(level,otf_,"%c%c%c%c: %s", OTS_UNTAG(tag_), msg_), false)
 
 
-#define OTS_FAILURE_MSG_TAG(msg_,tag_) OTS_MSG_TAG_(0, header, msg_, tag_)
+static inline void ots_msg_tag(int level, const ots::FontFile* otf, const char* msg, uint32_t tag) {
+  if (ots::CheckTag(tag)) {
+    OTS_MESSAGE_(level, otf, "%c%c%c%c: %s", OTS_UNTAG(tag), msg);
+  } else {
+    OTS_MESSAGE_(level, otf, "<%08X>: %s", tag, msg);
+  }
+}
+
+
+#define OTS_FAILURE_MSG_TAG(msg_,tag_) (ots_msg_tag(0, header, msg_, tag_), false)
 #define OTS_FAILURE_MSG_HDR(...)       OTS_FAILURE_MSG_(header, __VA_ARGS__)
 #define OTS_WARNING_MSG_HDR(...)       OTS_WARNING_MSG_(header, __VA_ARGS__)
 
