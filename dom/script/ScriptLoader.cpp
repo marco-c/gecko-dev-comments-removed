@@ -4445,8 +4445,7 @@ bool ScriptLoader::MaybeRemovedDeferRequests() {
 DocGroup* ScriptLoader::GetDocGroup() const { return mDocument->GetDocGroup(); }
 
 void ScriptLoader::BeginDeferringScripts() {
-  mDeferEnabled = true;
-  if (mDeferCheckpointReached) {
+  if (mDeferEnabled || mDeferCheckpointReached) {
     
     
     
@@ -4456,11 +4455,10 @@ void ScriptLoader::BeginDeferringScripts() {
     
     
     mDeferCheckpointReached = false;
-  } else {
-    if (mDocument) {
-      mDocument->BlockOnload();
-    }
+  } else if (mDocument) {
+    mDocument->BlockOnload();
   }
+  mDeferEnabled = true;
 }
 
 nsAutoScriptLoaderDisabler::nsAutoScriptLoaderDisabler(Document* aDoc) {
