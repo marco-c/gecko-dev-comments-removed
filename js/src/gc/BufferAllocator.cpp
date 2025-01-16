@@ -1658,11 +1658,17 @@ void BufferAllocator::recommitRegion(FreeRegion* region) {
   MOZ_ASSERT(region->hasDecommittedPages);
 
   BufferChunk* chunk = BufferChunk::from(region);
-  uintptr_t startAddr = RoundDown(region->startAddr, PageSize);
+  uintptr_t startAddr = RoundUp(region->startAddr, PageSize);
   uintptr_t endAddr = RoundDown(uintptr_t(region), PageSize);
 
   size_t startPage = (startAddr - uintptr_t(chunk)) / PageSize;
   size_t endPage = (endAddr - uintptr_t(chunk)) / PageSize;
+
+  
+  
+  
+  MOZ_ASSERT_IF((region->startAddr % PageSize) != 0,
+                !chunk->decommittedPages.ref()[startPage - 1]);
 
   
   MOZ_ASSERT(!chunk->decommittedPages.ref()[endPage]);
