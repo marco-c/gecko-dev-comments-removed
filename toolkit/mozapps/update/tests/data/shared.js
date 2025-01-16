@@ -369,6 +369,21 @@ function writeFile(aFile, aText) {
 
 
 
+function ensureRemoved(file) {
+  try {
+    file.remove(false);
+  } catch (ex) {
+    if (ex.result != Cr.NS_ERROR_FILE_NOT_FOUND) {
+      throw ex;
+    }
+  }
+}
+
+
+
+
+
+
 
 function readStatusFile() {
   let file = getUpdateDirFile(FILE_UPDATE_STATUS);
