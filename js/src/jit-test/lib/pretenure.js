@@ -21,6 +21,8 @@ function setupPretenureTest() {
   
   gczeal(0);
 
+  setJitCompilerOption("offthread-compilation.enable", 0)
+
   
   let size = 1024 * 1024;
   if (gcparam("semispaceNurseryEnabled")) {
