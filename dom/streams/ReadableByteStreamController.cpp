@@ -751,18 +751,15 @@ void ReadableByteStreamControllerCommitPullIntoDescriptor(
 MOZ_CAN_RUN_SCRIPT
 void ReadableByteStreamControllerProcessPullIntoDescriptorsUsingQueue(
     JSContext* aCx, ReadableByteStreamController* aController,
-    nsTArray<RefPtr<PullIntoDescriptor>>& aFilledPullIntos, ErrorResult& aRv) {
+    ErrorResult& aRv) {
   
   MOZ_ASSERT(!aController->CloseRequested());
-
-  
-  MOZ_ASSERT(aFilledPullIntos.IsEmpty());
 
   
   while (!aController->PendingPullIntos().isEmpty()) {
     
     if (aController->QueueTotalSize() == 0) {
-      break;
+      return;
     }
 
     
@@ -785,11 +782,16 @@ void ReadableByteStreamControllerProcessPullIntoDescriptorsUsingQueue(
           ReadableByteStreamControllerShiftPendingPullInto(aController);
 
       
-      aFilledPullIntos.AppendElement(pullIntoDescriptor);
+      
+      
+      RefPtr<ReadableStream> stream(aController->Stream());
+      ReadableByteStreamControllerCommitPullIntoDescriptor(
+          aCx, stream, pullIntoDescriptor, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
     }
   }
-
-  
 }
 
 MOZ_CAN_RUN_SCRIPT
@@ -1026,23 +1028,10 @@ void ReadableByteStreamControllerEnqueue(
 
     
     
-    nsTArray<RefPtr<PullIntoDescriptor>> filledPullIntos;
     ReadableByteStreamControllerProcessPullIntoDescriptorsUsingQueue(
-        aCx, aController, filledPullIntos, aRv);
+        aCx, aController, aRv);
     if (aRv.Failed()) {
       return;
-    }
-
-    
-    for (auto& filledPullInto : filledPullIntos) {
-      
-      
-      
-      ReadableByteStreamControllerCommitPullIntoDescriptor(
-          aCx, stream, MOZ_KnownLive(filledPullInto), aRv);
-      if (aRv.Failed()) {
-        return;
-      }
     }
 
     
@@ -1364,31 +1353,17 @@ static void ReadableByteStreamControllerRespondInClosedState(
   
   if (ReadableStreamHasBYOBReader(stream)) {
     
-    nsTArray<RefPtr<PullIntoDescriptor>> filledPullIntos;
-
-    
-    
-    while (filledPullIntos.Length() <
-           ReadableStreamGetNumReadIntoRequests(stream)) {
+    while (ReadableStreamGetNumReadIntoRequests(stream) > 0) {
       
       
       RefPtr<PullIntoDescriptor> pullIntoDescriptor =
           ReadableByteStreamControllerShiftPendingPullInto(aController);
 
       
-      filledPullIntos.AppendElement(pullIntoDescriptor);
-    }
-
-    
-    for (auto& filledPullInto : filledPullIntos) {
-      
       
       
       ReadableByteStreamControllerCommitPullIntoDescriptor(
-          aCx, stream, MOZ_KnownLive(filledPullInto), aRv);
-      if (aRv.Failed()) {
-        return;
-      }
+          aCx, stream, pullIntoDescriptor, aRv);
     }
   }
 }
@@ -1440,25 +1415,8 @@ static void ReadableByteStreamControllerRespondInReadableState(
 
     
     
-    nsTArray<RefPtr<PullIntoDescriptor>> filledPullIntos;
     ReadableByteStreamControllerProcessPullIntoDescriptorsUsingQueue(
-        aCx, aController, filledPullIntos, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-
-    
-    for (auto& filledPullInto : filledPullIntos) {
-      
-      
-      
-      ReadableByteStreamControllerCommitPullIntoDescriptor(
-          aCx, MOZ_KnownLive(aController->Stream()),
-          MOZ_KnownLive(filledPullInto), aRv);
-      if (aRv.Failed()) {
-        return;
-      }
-    }
+        aCx, aController, aRv);
 
     
     return;
@@ -1507,15 +1465,6 @@ static void ReadableByteStreamControllerRespondInReadableState(
 
   
   
-  nsTArray<RefPtr<PullIntoDescriptor>> filledPullIntos;
-  ReadableByteStreamControllerProcessPullIntoDescriptorsUsingQueue(
-      aCx, aController, filledPullIntos, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  
-  
   
   RefPtr<ReadableStream> stream(aController->Stream());
   ReadableByteStreamControllerCommitPullIntoDescriptor(
@@ -1525,16 +1474,9 @@ static void ReadableByteStreamControllerRespondInReadableState(
   }
 
   
-  for (auto& filledPullInto : filledPullIntos) {
-    
-    
-    
-    ReadableByteStreamControllerCommitPullIntoDescriptor(
-        aCx, stream, MOZ_KnownLive(filledPullInto), aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-  }
+  
+  ReadableByteStreamControllerProcessPullIntoDescriptorsUsingQueue(
+      aCx, aController, aRv);
 }
 
 
@@ -1727,60 +1669,6 @@ void ReadableByteStreamControllerRespondWithNewView(
                                               aRv);
 }
 
-#ifdef DEBUG
-
-bool CanCopyDataBlockBytes(JS::Handle<JSObject*> aToBuffer, size_t aToIndex,
-                           JS::Handle<JSObject*> aFromBuffer, size_t aFromIndex,
-                           size_t aCount) {
-  
-  
-  MOZ_ASSERT(JS::IsArrayBufferObject(aToBuffer));
-
-  
-  
-  MOZ_ASSERT(JS::IsArrayBufferObject(aFromBuffer));
-
-  
-  
-  if (aToBuffer == aFromBuffer) {
-    return false;
-  }
-
-  
-  if (JS::IsDetachedArrayBufferObject(aToBuffer)) {
-    return false;
-  }
-
-  
-  if (JS::IsDetachedArrayBufferObject(aFromBuffer)) {
-    return false;
-  }
-
-  
-  
-  if (aToIndex + aCount > JS::GetArrayBufferByteLength(aToBuffer)) {
-    return false;
-  }
-  
-  if (aToIndex + aCount < aToIndex) {
-    return false;
-  }
-
-  
-  
-  if (aFromIndex + aCount > JS::GetArrayBufferByteLength(aFromBuffer)) {
-    return false;
-  }
-  
-  if (aFromIndex + aCount < aFromIndex) {
-    return false;
-  }
-
-  
-  return true;
-}
-#endif
-
 
 bool ReadableByteStreamControllerFillPullIntoDescriptorFromQueue(
     JSContext* aCx, ReadableByteStreamController* aController,
@@ -1801,9 +1689,6 @@ bool ReadableByteStreamControllerFillPullIntoDescriptorFromQueue(
 
   
   bool ready = false;
-
-  
-  MOZ_ASSERT(!JS::IsDetachedArrayBufferObject(aPullIntoDescriptor->Buffer()));
 
   
   
@@ -1847,24 +1732,13 @@ bool ReadableByteStreamControllerFillPullIntoDescriptorFromQueue(
         aPullIntoDescriptor->ByteOffset() + aPullIntoDescriptor->BytesFilled();
 
     
+    
+    
+    
     JS::Rooted<JSObject*> descriptorBuffer(aCx, aPullIntoDescriptor->Buffer());
-
-    
     JS::Rooted<JSObject*> queueBuffer(aCx, headOfQueue->Buffer());
-
-    
-    size_t queueByteOffset = headOfQueue->ByteOffset();
-
-    
-    
-    MOZ_ASSERT(CanCopyDataBlockBytes(descriptorBuffer, destStart, queueBuffer,
-                                     queueByteOffset, bytesToCopy));
-
-    
-    
-    
     if (!JS::ArrayBufferCopyData(aCx, descriptorBuffer, destStart, queueBuffer,
-                                 queueByteOffset, bytesToCopy)) {
+                                 headOfQueue->ByteOffset(), bytesToCopy)) {
       aRv.StealExceptionFromJSContext(aCx);
       return false;
     }
