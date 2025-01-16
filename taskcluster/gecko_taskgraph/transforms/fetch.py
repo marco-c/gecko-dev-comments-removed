@@ -397,6 +397,12 @@ def create_chromium_fetch_task(config, name, fetch):
         Required("platform"): str,
         
         Required("artifact-name"): str,
+        
+        Optional("channel"): str,
+        
+        Optional("backup"): bool,
+        
+        Optional("version"): str,
     },
 )
 def create_cft_canary_fetch_task(config, name, fetch):
@@ -405,8 +411,19 @@ def create_cft_canary_fetch_task(config, name, fetch):
     workdir = "/builds/worker"
 
     platform = fetch.get("platform")
+    channel = fetch.get("channel")
+    version = fetch.get("version")
+    backup = fetch.get("backup", False)
 
     args = "--platform " + shell_quote(platform)
+    if channel:
+        args += " --channel " + shell_quote(channel)
+
+    if backup:
+        args += " --backup"
+        
+        if version:
+            args += " --version " + shell_quote(version)
 
     cmd = [
         "bash",
