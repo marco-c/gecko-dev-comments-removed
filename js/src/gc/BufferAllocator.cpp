@@ -163,12 +163,11 @@ class alignas(CellAlignBytes) LargeBuffer
   bool isPointerWithinAllocation(void* ptr) const;
 };
 
+BufferAllocator::AutoLock::AutoLock(GCRuntime* gc)
+    : LockGuard(gc->bufferAllocatorLock) {}
 
-class BufferAllocator::AutoLock : public LockGuard<Mutex> {
- public:
-  explicit AutoLock(BufferAllocator* allocator)
-      : LockGuard(allocator->lock()) {}
-};
+BufferAllocator::AutoLock::AutoLock(BufferAllocator* allocator)
+    : LockGuard(allocator->lock()) {}
 
 
 
@@ -940,22 +939,13 @@ bool BufferAllocator::MarkTenuredAlloc(void* alloc) {
   return chunk->markBits.ref().markIfUnmarkedAtomic(alloc, MarkColor::Black);
 }
 
-#ifdef DEBUG
-template <typename T>
-
-bool BufferAllocator::listIsEmpty(const MutexData<SlimLinkedList<T>>& list) {
-  AutoLock lock(this);
-  return list.ref().isEmpty();
-}
-#endif
-
-void BufferAllocator::startMinorCollection() {
-  maybeMergeSweptData();
+void BufferAllocator::startMinorCollection(MaybeLock& lock) {
+  maybeMergeSweptData(lock);
 
 #ifdef DEBUG
   MOZ_ASSERT(minorState == State::NotCollecting);
   if (majorState == State::NotCollecting) {
-    checkGCStateNotInUse();
+    checkGCStateNotInUse(lock);
   } else {
     
     
@@ -1027,8 +1017,11 @@ void BufferAllocator::sweepForMinorCollection() {
   
 
   MOZ_ASSERT(minorState.refNoCheck() == State::Sweeping);
+  {
+    AutoLock lock(this);
+    MOZ_ASSERT(sweptMediumMixedChunks.ref().isEmpty());
+  }
 
-  MOZ_ASSERT(listIsEmpty(sweptMediumMixedChunks));
   while (!mediumMixedChunksToSweep.ref().isEmpty()) {
     BufferChunk* chunk = mediumMixedChunksToSweep.ref().popFirst();
     FreeLists sweptFreeLists;
@@ -1063,12 +1056,12 @@ void BufferAllocator::FreeLargeAllocs(LargeAllocList& largeAllocsToFree) {
   }
 }
 
-void BufferAllocator::startMajorCollection() {
-  maybeMergeSweptData();
+void BufferAllocator::startMajorCollection(MaybeLock& lock) {
+  maybeMergeSweptData(lock);
 
 #ifdef DEBUG
   MOZ_ASSERT(majorState == State::NotCollecting);
-  checkGCStateNotInUse();
+  checkGCStateNotInUse(lock);
 
   
   
@@ -1098,7 +1091,7 @@ void BufferAllocator::startMajorCollection() {
   majorState = State::Marking;
 }
 
-void BufferAllocator::startMajorSweeping() {
+void BufferAllocator::startMajorSweeping(MaybeLock& lock) {
   
 
 #ifdef DEBUG
@@ -1106,7 +1099,7 @@ void BufferAllocator::startMajorSweeping() {
   MOZ_ASSERT(zone->isGCFinished());
 #endif
 
-  maybeMergeSweptData();
+  maybeMergeSweptData(lock);
   MOZ_ASSERT(!majorStartedWhileMinorSweeping);
 
   majorState = State::Sweeping;
@@ -1162,17 +1155,18 @@ static void ClearAllocatedDuringCollection(SlimLinkedList<LargeBuffer>& list) {
   }
 }
 
-void BufferAllocator::finishMajorCollection() {
-  maybeMergeSweptData();
-
-#ifdef DEBUG
+void BufferAllocator::finishMajorCollection(const AutoLock& lock) {
   
   MOZ_ASSERT(majorState == State::Marking || majorState == State::Sweeping);
+
+  if (minorState == State::Sweeping || majorState == State::Sweeping) {
+    mergeSweptData(lock);
+  }
+
   MOZ_ASSERT_IF(majorState == State::Marking,
-                listIsEmpty(sweptMediumTenuredChunks));
+                sweptMediumTenuredChunks.ref().isEmpty());
   MOZ_ASSERT_IF(majorState == State::Sweeping,
                 mediumTenuredChunksToSweep.ref().isEmpty());
-#endif
 
   
   
@@ -1211,7 +1205,7 @@ void BufferAllocator::finishMajorCollection() {
   majorState = State::NotCollecting;
 
 #ifdef DEBUG
-  checkGCStateNotInUse();
+  checkGCStateNotInUse(lock);
 #endif
 }
 
@@ -1222,9 +1216,21 @@ void BufferAllocator::maybeMergeSweptData() {
 }
 
 void BufferAllocator::mergeSweptData() {
-  MOZ_ASSERT(minorState == State::Sweeping || majorState == State::Sweeping);
-
   AutoLock lock(this);
+  mergeSweptData(lock);
+}
+
+void BufferAllocator::maybeMergeSweptData(MaybeLock& lock) {
+  if (minorState == State::Sweeping || majorState == State::Sweeping) {
+    if (lock.isNothing()) {
+      lock.emplace(this);
+    }
+    mergeSweptData(lock.ref());
+  }
+}
+
+void BufferAllocator::mergeSweptData(const AutoLock& lock) {
+  MOZ_ASSERT(minorState == State::Sweeping || majorState == State::Sweeping);
 
   
   
@@ -1353,6 +1359,15 @@ bool LargeBuffer::isPointerWithinAllocation(void* ptr) const {
 void BufferAllocator::checkGCStateNotInUse() {
   AutoLock lock(this);  
   checkGCStateNotInUse(lock);
+}
+
+void BufferAllocator::checkGCStateNotInUse(MaybeLock& maybeLock) {
+  if (maybeLock.isNothing()) {
+    
+    maybeLock.emplace(this);
+  }
+
+  checkGCStateNotInUse(maybeLock.ref());
 }
 
 void BufferAllocator::checkGCStateNotInUse(const AutoLock& lock) {
