@@ -127,45 +127,47 @@ class VideoQualityAnalyzerInterface
   
   
   virtual void OnFrameRendered(absl::string_view ,
-                               const VideoFrame& frame) {}
+                               const VideoFrame& ) {}
   
   
   
   
-  virtual void OnEncoderError(absl::string_view peer_name,
-                              const VideoFrame& frame,
-                              int32_t error_code) {}
+  virtual void OnEncoderError(absl::string_view ,
+                              const VideoFrame& ,
+                              int32_t ) {}
   
   
   
   
-  virtual void OnDecoderError(absl::string_view peer_name,
-                              uint16_t frame_id,
-                              int32_t error_code,
-                              const DecoderStats& stats) {}
+  virtual void OnDecoderError(absl::string_view ,
+                              uint16_t ,
+                              int32_t ,
+                              const DecoderStats& ) {}
   
   
   void OnStatsReports(
-      absl::string_view pc_label,
-      const rtc::scoped_refptr<const RTCStatsReport>& report) override {}
+      absl::string_view ,
+      const rtc::scoped_refptr<const RTCStatsReport>& ) override {}
 
   
-  virtual void RegisterParticipantInCall(absl::string_view peer_name) {}
+  virtual void RegisterParticipantInCall(absl::string_view ) {}
   
   
-  virtual void UnregisterParticipantInCall(absl::string_view peer_name) {}
-
-  
-  
-  
-  virtual void OnPauseAllStreamsFrom(absl::string_view sender_peer_name,
-                                     absl::string_view receiver_peer_name) {}
+  virtual void UnregisterParticipantInCall(absl::string_view ) {}
 
   
   
   
-  virtual void OnResumeAllStreamsFrom(absl::string_view sender_peer_name,
-                                      absl::string_view receiver_peer_name) {}
+  virtual void OnPauseAllStreamsFrom(
+      absl::string_view ,
+      absl::string_view ) {}
+
+  
+  
+  
+  virtual void OnResumeAllStreamsFrom(
+      absl::string_view ,
+      absl::string_view ) {}
 
   
   
@@ -179,7 +181,7 @@ class VideoQualityAnalyzerInterface
   
   
   
-  virtual std::string GetSenderPeerName(uint16_t frame_id) const {
+  virtual std::string GetSenderPeerName(uint16_t ) const {
     RTC_CHECK(false) << "Not implemented.";
   }
 };

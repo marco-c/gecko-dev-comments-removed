@@ -68,7 +68,7 @@ struct BarEncoderTemplateAdapter {
 
   static std::unique_ptr<VideoEncoder> CreateEncoder(
       const Environment& ,
-      const SdpVideoFormat& format) {
+      const SdpVideoFormat& ) {
     return std::make_unique<StrictMock<MockVideoEncoder>>();
   }
 

@@ -39,8 +39,8 @@ class MockTaskQueueFactory : public TaskQueueFactory {
       : task_queue_(task_queue) {}
 
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> CreateTaskQueue(
-      absl::string_view name,
-      Priority priority) const override {
+      absl::string_view ,
+      Priority ) const override {
     
     
     return std::unique_ptr<TaskQueueBase, TaskQueueDeleter>(task_queue_);

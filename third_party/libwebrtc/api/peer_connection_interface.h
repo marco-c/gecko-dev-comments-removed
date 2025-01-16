@@ -1041,15 +1041,17 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   virtual void SetLocalDescription(
-      std::unique_ptr<SessionDescriptionInterface> desc,
-      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer) {}
+      std::unique_ptr<SessionDescriptionInterface> ,
+      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> ) {
+  }
   
   
   
   
   
   virtual void SetLocalDescription(
-      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer) {}
+      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> ) {
+  }
   
   
   
@@ -1059,7 +1061,8 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   virtual void SetLocalDescription(SetSessionDescriptionObserver* observer,
                                    SessionDescriptionInterface* desc) = 0;
-  virtual void SetLocalDescription(SetSessionDescriptionObserver* observer) {}
+  virtual void SetLocalDescription(
+      SetSessionDescriptionObserver* ) {}
 
   
   
@@ -1078,8 +1081,9 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual void SetRemoteDescription(SetSessionDescriptionObserver* observer,
-                                    SessionDescriptionInterface* desc) {}
+  virtual void SetRemoteDescription(
+      SetSessionDescriptionObserver* ,
+      SessionDescriptionInterface* ) {}
 
   
   
@@ -1124,8 +1128,9 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   virtual bool AddIceCandidate(const IceCandidateInterface* candidate) = 0;
   
   
-  virtual void AddIceCandidate(std::unique_ptr<IceCandidateInterface> candidate,
-                               std::function<void(RTCError)> callback) {}
+  virtual void AddIceCandidate(
+      std::unique_ptr<IceCandidateInterface> ,
+      std::function<void(RTCError)> ) {}
 
   
   
