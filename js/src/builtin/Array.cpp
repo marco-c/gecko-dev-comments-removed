@@ -670,10 +670,46 @@ static bool TryFastDeleteElementsForNewLength(JSContext* cx,
     return true;
   }
 
-  
   if (arr->isIndexed()) {
-    *success = false;
-    return true;
+    
+    if (arr->compartment()->objectMaybeInIteration(arr)) {
+      *success = false;
+      return true;
+    }
+
+    
+    
+    JS::RootedVector<PropertyKey> keys(cx);
+    for (ShapePropertyIter<NoGC> iter(arr->shape()); !iter.done(); iter++) {
+      uint32_t index;
+      if (!IdIsIndex(iter->key(), &index)) {
+        continue;
+      }
+      if (index < newLen) {
+        continue;
+      }
+      
+      if (!iter->configurable()) {
+        *success = false;
+        return true;
+      }
+      if (!keys.append(iter->key())) {
+        return false;
+      }
+    }
+
+    
+    
+    
+    
+    
+    for (size_t i = 0, len = keys.length(); i < len; i++) {
+      MOZ_ASSERT(arr->containsPure(keys[i]), "must still be a sparse element");
+      if (!NativeObject::removeProperty(cx, arr, keys[i])) {
+        MOZ_ASSERT(cx->isThrowingOutOfMemory());
+        return false;
+      }
+    }
   }
 
   
