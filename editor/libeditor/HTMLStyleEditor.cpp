@@ -2462,9 +2462,6 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
         NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
         return Err(rv);
       }
-      
-      
-      lineBreak.reset();
     }
   }
 
