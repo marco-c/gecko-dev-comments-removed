@@ -211,9 +211,6 @@ pub struct Options {
     pub bounds_check_policies: index::BoundsCheckPolicies,
     
     pub zero_initialize_workgroup_memory: bool,
-    
-    
-    pub force_loop_bounding: bool,
 }
 
 impl Default for Options {
@@ -226,7 +223,6 @@ impl Default for Options {
             fake_missing_bindings: true,
             bounds_check_policies: index::BoundsCheckPolicies::default(),
             zero_initialize_workgroup_memory: true,
-            force_loop_bounding: true,
         }
     }
 }
@@ -239,95 +235,71 @@ impl Default for Options {
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub enum VertexFormat {
     
-    Uint8 = 0,
+    Uint8x2 = 0,
     
-    Uint8x2 = 1,
+    Uint8x4 = 1,
     
-    Uint8x4 = 2,
+    Sint8x2 = 2,
     
-    Sint8 = 3,
+    Sint8x4 = 3,
     
-    Sint8x2 = 4,
+    Unorm8x2 = 4,
     
-    Sint8x4 = 5,
+    Unorm8x4 = 5,
     
-    Unorm8 = 6,
+    Snorm8x2 = 6,
     
-    Unorm8x2 = 7,
+    Snorm8x4 = 7,
     
-    Unorm8x4 = 8,
+    Uint16x2 = 8,
     
-    Snorm8 = 9,
+    Uint16x4 = 9,
     
-    Snorm8x2 = 10,
+    Sint16x2 = 10,
     
-    Snorm8x4 = 11,
+    Sint16x4 = 11,
     
-    Uint16 = 12,
+    Unorm16x2 = 12,
     
-    Uint16x2 = 13,
+    Unorm16x4 = 13,
     
-    Uint16x4 = 14,
+    Snorm16x2 = 14,
     
-    Sint16 = 15,
+    Snorm16x4 = 15,
     
-    Sint16x2 = 16,
+    Float16x2 = 16,
     
-    Sint16x4 = 17,
+    Float16x4 = 17,
     
-    Unorm16 = 18,
+    Float32 = 18,
     
-    Unorm16x2 = 19,
+    Float32x2 = 19,
     
-    Unorm16x4 = 20,
+    Float32x3 = 20,
     
-    Snorm16 = 21,
+    Float32x4 = 21,
     
-    Snorm16x2 = 22,
+    Uint32 = 22,
     
-    Snorm16x4 = 23,
+    Uint32x2 = 23,
     
-    Float16 = 24,
+    Uint32x3 = 24,
     
-    Float16x2 = 25,
+    Uint32x4 = 25,
     
-    Float16x4 = 26,
+    Sint32 = 26,
     
-    Float32 = 27,
+    Sint32x2 = 27,
     
-    Float32x2 = 28,
+    Sint32x3 = 28,
     
-    Float32x3 = 29,
-    
-    Float32x4 = 30,
-    
-    Uint32 = 31,
-    
-    Uint32x2 = 32,
-    
-    Uint32x3 = 33,
-    
-    Uint32x4 = 34,
-    
-    Sint32 = 35,
-    
-    Sint32x2 = 36,
-    
-    Sint32x3 = 37,
-    
-    Sint32x4 = 38,
+    Sint32x4 = 29,
     
     #[cfg_attr(
         any(feature = "serialize", feature = "deserialize"),
         serde(rename = "unorm10-10-10-2")
     )]
-    Unorm10_10_10_2 = 43,
-    
-    #[cfg_attr(
-        any(feature = "serialize", feature = "deserialize"),
-        serde(rename = "unorm8x4-bgra")
-    )]
-    Unorm8x4Bgra = 44,
+    Unorm10_10_10_2 = 34,
 }
 
 

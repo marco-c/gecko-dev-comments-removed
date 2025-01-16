@@ -37,8 +37,8 @@ use crate::ray_tracing::{BlasAction, TlasAction};
 use crate::resource::{Fallible, InvalidResourceError, Labeled, ParentDevice as _, QuerySet};
 use crate::storage::Storage;
 use crate::track::{DeviceTracker, Tracker, UsageScope};
+use crate::LabelHelpers;
 use crate::{api_log, global::Global, id, resource_log, Label};
-use crate::{hal_label, LabelHelpers};
 
 use thiserror::Error;
 
@@ -150,10 +150,10 @@ impl CommandEncoderStatus {
         }
     }
 
-    fn finish(&mut self) -> Result<(), CommandEncoderError> {
+    fn finish(&mut self, device: &Device) -> Result<(), CommandEncoderError> {
         match mem::replace(self, Self::Error) {
             Self::Recording(mut inner) => {
-                if let Err(e) = inner.encoder.close_if_open() {
+                if let Err(e) = inner.encoder.close(device) {
                     Err(e.into())
                 } else {
                     *self = Self::Finished(inner);
@@ -276,6 +276,7 @@ pub(crate) struct CommandEncoder {
     pub(crate) hal_label: Option<String>,
 }
 
+
 impl CommandEncoder {
     
     
@@ -302,34 +303,12 @@ impl CommandEncoder {
     
     
     
-    fn close_and_swap(&mut self) -> Result<(), DeviceError> {
-        assert!(self.is_open);
-        self.is_open = false;
-
-        let new =
-            unsafe { self.raw.end_encoding() }.map_err(|e| self.device.handle_hal_error(e))?;
-        self.list.insert(self.list.len() - 1, new);
-
-        Ok(())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub(crate) fn close_and_push_front(&mut self) -> Result<(), DeviceError> {
-        assert!(self.is_open);
-        self.is_open = false;
-
-        let new =
-            unsafe { self.raw.end_encoding() }.map_err(|e| self.device.handle_hal_error(e))?;
-        self.list.insert(0, new);
+    fn close_and_swap(&mut self, device: &Device) -> Result<(), DeviceError> {
+        if self.is_open {
+            self.is_open = false;
+            let new = unsafe { self.raw.end_encoding() }.map_err(|e| device.handle_hal_error(e))?;
+            self.list.insert(self.list.len() - 1, new);
+        }
 
         Ok(())
     }
@@ -344,32 +323,11 @@ impl CommandEncoder {
     
     
     
-    pub(crate) fn close(&mut self) -> Result<(), DeviceError> {
-        assert!(self.is_open);
-        self.is_open = false;
-
-        let cmd_buf =
-            unsafe { self.raw.end_encoding() }.map_err(|e| self.device.handle_hal_error(e))?;
-        self.list.push(cmd_buf);
-
-        Ok(())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn close_if_open(&mut self) -> Result<(), DeviceError> {
+    fn close(&mut self, device: &Device) -> Result<(), DeviceError> {
         if self.is_open {
             self.is_open = false;
             let cmd_buf =
-                unsafe { self.raw.end_encoding() }.map_err(|e| self.device.handle_hal_error(e))?;
+                unsafe { self.raw.end_encoding() }.map_err(|e| device.handle_hal_error(e))?;
             self.list.push(cmd_buf);
         }
 
@@ -379,12 +337,15 @@ impl CommandEncoder {
     
     
     
-    pub(crate) fn open(&mut self) -> Result<&mut dyn hal::DynCommandEncoder, DeviceError> {
+    pub(crate) fn open(
+        &mut self,
+        device: &Device,
+    ) -> Result<&mut dyn hal::DynCommandEncoder, DeviceError> {
         if !self.is_open {
             self.is_open = true;
             let hal_label = self.hal_label.as_deref();
             unsafe { self.raw.begin_encoding(hal_label) }
-                .map_err(|e| self.device.handle_hal_error(e))?;
+                .map_err(|e| device.handle_hal_error(e))?;
         }
 
         Ok(self.raw.as_mut())
@@ -394,22 +355,11 @@ impl CommandEncoder {
     
     
     
-    
-    
-    
-    
-    pub(crate) fn open_pass(
-        &mut self,
-        label: Option<&str>,
-    ) -> Result<&mut dyn hal::DynCommandEncoder, DeviceError> {
-        assert!(!self.is_open);
+    fn open_pass(&mut self, hal_label: Option<&str>, device: &Device) -> Result<(), DeviceError> {
         self.is_open = true;
+        unsafe { self.raw.begin_encoding(hal_label) }.map_err(|e| device.handle_hal_error(e))?;
 
-        let hal_label = hal_label(label, self.device.instance_flags);
-        unsafe { self.raw.begin_encoding(hal_label) }
-            .map_err(|e| self.device.handle_hal_error(e))?;
-
-        Ok(self.raw.as_mut())
+        Ok(())
     }
 }
 
@@ -468,8 +418,9 @@ pub struct CommandBufferMutable {
 impl CommandBufferMutable {
     pub(crate) fn open_encoder_and_tracker(
         &mut self,
+        device: &Device,
     ) -> Result<(&mut dyn hal::DynCommandEncoder, &mut Tracker), DeviceError> {
-        let encoder = self.encoder.open()?;
+        let encoder = self.encoder.open(device)?;
         let tracker = &mut self.trackers;
 
         Ok((encoder, tracker))
@@ -725,8 +676,6 @@ pub enum CommandEncoderError {
     #[error(transparent)]
     InvalidColorAttachment(#[from] ColorAttachmentError),
     #[error(transparent)]
-    InvalidAttachment(#[from] AttachmentError),
-    #[error(transparent)]
     InvalidResource(#[from] InvalidResourceError),
     #[error(transparent)]
     MissingFeatures(#[from] MissingFeatures),
@@ -752,7 +701,7 @@ impl Global {
 
         let cmd_buf = hub.command_buffers.get(encoder_id.into_command_buffer_id());
 
-        let error = match cmd_buf.data.lock().finish() {
+        let error = match cmd_buf.data.lock().finish(&cmd_buf.device) {
             Ok(_) => None,
             Err(e) => Some(e),
         };
@@ -780,7 +729,7 @@ impl Global {
             list.push(TraceCommand::PushDebugGroup(label.to_string()));
         }
 
-        let cmd_buf_raw = cmd_buf_data.encoder.open()?;
+        let cmd_buf_raw = cmd_buf_data.encoder.open(&cmd_buf.device)?;
         if !cmd_buf
             .device
             .instance_flags
@@ -820,7 +769,7 @@ impl Global {
             .instance_flags
             .contains(wgt::InstanceFlags::DISCARD_HAL_LABELS)
         {
-            let cmd_buf_raw = cmd_buf_data.encoder.open()?;
+            let cmd_buf_raw = cmd_buf_data.encoder.open(&cmd_buf.device)?;
             unsafe {
                 cmd_buf_raw.insert_debug_marker(label);
             }
@@ -849,7 +798,7 @@ impl Global {
             list.push(TraceCommand::PopDebugGroup);
         }
 
-        let cmd_buf_raw = cmd_buf_data.encoder.open()?;
+        let cmd_buf_raw = cmd_buf_data.encoder.open(&cmd_buf.device)?;
         if !cmd_buf
             .device
             .instance_flags

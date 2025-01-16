@@ -25,10 +25,6 @@ impl<T> HandleSet<T> {
         }
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.members.is_empty()
-    }
-
     
     pub fn for_arena(arena: &impl ArenaType<T>) -> Self {
         let len = arena.len();

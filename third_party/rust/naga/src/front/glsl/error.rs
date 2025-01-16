@@ -75,7 +75,7 @@ pub enum ErrorKind {
     
     
     
-    #[error("Expected {expected_tokens}, found {found_token:?}", found_token = .0, expected_tokens = join_with_comma(.1))]
+    #[error("Expected {}, found {0:?}", join_with_comma(.1))]
     InvalidToken(TokenValue, Vec<ExpectedToken>),
     
     
