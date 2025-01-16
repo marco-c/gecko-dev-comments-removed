@@ -8700,7 +8700,13 @@ void nsIFrame::ListGeneric(nsACString& aTo, const char* aPrefix,
     aTo += nsPrintfCString(" combines-3d-transform-with-ancestors");
   }
   if (mContent) {
-    aTo += nsPrintfCString(" [content=%p]", static_cast<void*>(mContent));
+    aTo += nsPrintfCString(" [content=%p", static_cast<void*>(mContent));
+    if (IsPrimaryFrame() && DisplayPortUtils::HasDisplayPort(mContent)) {
+      
+      
+      aTo += ",displayport"_ns;
+    }
+    aTo += "]"_ns;
   }
   aTo += nsPrintfCString(" [cs=%p", static_cast<void*>(mComputedStyle));
   if (mComputedStyle) {
