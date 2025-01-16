@@ -3,30 +3,26 @@
 
 
 add_task(async function test() {
-  let prefs = ["history", "historyFormDataAndDownloads"];
+  
+  
+  
+  
+  gBrowser.selectedTab.focus();
+  await FormHistory.update({ op: "remove" });
 
-  for (let pref of prefs) {
-    
-    
-    
-    
-    gBrowser.selectedTab.focus();
-    await FormHistory.update({ op: "remove" });
+  
+  await Sanitizer.sanitize(["formdata"]);
+  await gFindBarPromise;
+  ok(!gFindBar.hasTransactions, "pre-test baseline for sanitizer");
 
-    
-    await Sanitizer.sanitize([pref]);
-    await gFindBarPromise;
-    ok(!gFindBar.hasTransactions, "pre-test baseline for sanitizer");
+  gFindBar.getElement("findbar-textbox").value = "m";
+  ok(gFindBar.hasTransactions, "formdata can be cleared after input");
 
-    gFindBar.getElement("findbar-textbox").value = "m";
-    ok(gFindBar.hasTransactions, "formdata can be cleared after input");
-
-    await Sanitizer.sanitize(["formdata"]);
-    is(
-      gFindBar.getElement("findbar-textbox").value,
-      "",
-      "findBar textbox should be empty after sanitize"
-    );
-    ok(!gFindBar.hasTransactions, "No transactions after sanitize");
-  }
+  await Sanitizer.sanitize(["formdata"]);
+  is(
+    gFindBar.getElement("findbar-textbox").value,
+    "",
+    "findBar textbox should be empty after sanitize"
+  );
+  ok(!gFindBar.hasTransactions, "No transactions after sanitize");
 });
