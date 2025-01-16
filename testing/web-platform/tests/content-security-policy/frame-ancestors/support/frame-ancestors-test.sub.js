@@ -145,3 +145,16 @@ function testNestedSandboxedIFrame(policy, parent, child, expectation) {
         injectNestedIframe(policy, parent == SAME_ORIGIN ? "same" : "cross", child == SAME_ORIGIN ? "same" : "cross", expectation == EXPECT_LOAD ? "allowed" : "blocked", true );
     };
 }
+
+function testUrlWithPathIgnored() {
+    window.onload = function () {
+        
+        
+        
+        
+        
+        injectIFrame(SAMEORIGIN_ORIGIN + "/test", SAME_ORIGIN, EXPECT_BLOCK);
+        
+        injectIFrame(SAMEORIGIN_ORIGIN, SAME_ORIGIN, EXPECT_LOAD);
+    };
+}
