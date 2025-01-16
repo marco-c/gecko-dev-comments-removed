@@ -605,7 +605,7 @@ class MOZ_RAII InlinableNativeIRGenerator {
   
   bool isCalleeBoundFunction() const { return callee_ != target_; }
 
-  ObjOperandId emitNativeCalleeGuard();
+  ObjOperandId emitNativeCalleeGuard(Int32OperandId argcId);
   void emitOptimisticClassGuard(ObjOperandId objId, JSObject* obj,
                                 GuardClassKind kind) {
     generator_.emitOptimisticClassGuard(objId, obj, kind);
@@ -624,13 +624,8 @@ class MOZ_RAII InlinableNativeIRGenerator {
 
   bool hasBoundArguments() const;
 
-  void initializeInputOperand() {
-    
-    if (flags_.getArgFormat() == CallFlags::FunCall ||
-        flags_.getArgFormat() == CallFlags::FunApplyArray) {
-      return;
-    }
-    (void)writer.setInputOperandId(0);
+  Int32OperandId initializeInputOperand() {
+    return Int32OperandId(writer.setInputOperandId(0));
   }
 
   auto emitToStringGuard(ValOperandId id, const Value& v) {

@@ -6324,7 +6324,8 @@ CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
       newTarget_(newTarget),
       args_(args) {}
 
-ObjOperandId InlinableNativeIRGenerator::emitNativeCalleeGuard() {
+ObjOperandId InlinableNativeIRGenerator::emitNativeCalleeGuard(
+    Int32OperandId argcId) {
   
   
   MOZ_ASSERT(target_->isNativeWithoutJitEntry());
@@ -6339,17 +6340,13 @@ ObjOperandId InlinableNativeIRGenerator::emitNativeCalleeGuard() {
         writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_, flags_);
     calleeObjId = writer.guardToObject(calleeValId);
   } else if (flags_.getArgFormat() == CallFlags::FunCall) {
-    MOZ_ASSERT(generator_.writer.numOperandIds() > 0, "argcId is initialized");
     MOZ_ASSERT(!isCalleeBoundFunction(), "unexpected bound function");
 
-    Int32OperandId argcId(0);
     calleeObjId = generator_.emitFunCallOrApplyGuard(argcId);
   } else {
     MOZ_ASSERT(flags_.getArgFormat() == CallFlags::FunApplyArray);
-    MOZ_ASSERT(generator_.writer.numOperandIds() > 0, "argcId is initialized");
     MOZ_ASSERT(!isCalleeBoundFunction(), "unexpected bound function");
 
-    Int32OperandId argcId(0);
     calleeObjId = generator_.emitFunApplyGuard(argcId);
   }
 
@@ -6571,10 +6568,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayPush() {
   
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -6624,10 +6621,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayPopShift(
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
@@ -6665,10 +6662,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayJoin() {
   
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -6743,10 +6740,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
@@ -6806,10 +6803,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayIsArray() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
@@ -6858,10 +6855,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewGet(
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -6930,10 +6927,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewSet(
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -7838,10 +7835,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachString() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
@@ -7870,10 +7867,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringConstructor() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0, flags_);
@@ -7898,10 +7895,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToStringValueOf() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -7982,11 +7979,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringChar(
   bool handleOOB = attach == AttachStringChar::OutOfBounds;
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -8079,10 +8076,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCharCode() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
@@ -8116,10 +8113,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCodePoint() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
@@ -8145,10 +8142,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringIncludes() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -8177,10 +8174,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringIndexOf() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -8209,10 +8206,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringLastIndexOf() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -8241,10 +8238,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringStartsWith() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -8273,10 +8270,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringEndsWith() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -8305,10 +8302,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToLowerCase() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -8334,10 +8331,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToUpperCase() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -8363,10 +8360,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringTrim() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -8391,10 +8388,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringTrimStart() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -8419,10 +8416,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringTrimEnd() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -8445,10 +8442,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathRandom() {
              "Shouldn't inline cross-realm Math.random because per-realm RNG");
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  emitNativeCalleeGuard(argcId);
 
   mozilla::non_crypto::XorShift128PlusRNG* rng =
       &cx_->realm()->getOrCreateRandomNumberGenerator();
@@ -8471,10 +8468,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathAbs() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
 
@@ -8500,10 +8497,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathClz32() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
 
@@ -8529,10 +8526,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathSign() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
 
@@ -8567,10 +8564,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathImul() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
   ValOperandId arg1Id = loadArgument(calleeId, ArgumentKind::Arg1);
@@ -8605,10 +8602,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFloor() {
   bool resultIsInt32 = mozilla::NumberIsInt32(res, &unused);
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
 
@@ -8648,10 +8645,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathCeil() {
   bool resultIsInt32 = mozilla::NumberIsInt32(res, &unused);
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
 
@@ -8691,10 +8688,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathTrunc() {
   bool resultIsInt32 = mozilla::NumberIsInt32(res, &unused);
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
 
@@ -8733,10 +8730,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathRound() {
   bool resultIsInt32 = mozilla::NumberIsInt32(res, &unused);
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
 
@@ -8771,10 +8768,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathSqrt() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
   NumberOperandId numberId = writer.guardIsNumber(argumentId);
@@ -8792,10 +8789,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFRound() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
   NumberOperandId numberId = writer.guardIsNumber(argumentId);
@@ -8813,10 +8810,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathF16Round() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
   NumberOperandId numberId = writer.guardIsNumber(argumentId);
@@ -8862,10 +8859,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathPow() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId baseId = loadArgument(calleeId, ArgumentKind::Arg0);
   ValOperandId exponentId = loadArgument(calleeId, ArgumentKind::Arg1);
@@ -8900,10 +8897,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathHypot() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId firstId = loadArgument(calleeId, ArgumentKind::Arg0);
   ValOperandId secondId = loadArgument(calleeId, ArgumentKind::Arg1);
@@ -8950,10 +8947,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathATan2() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId yId = loadArgument(calleeId, ArgumentKind::Arg0);
   ValOperandId xId = loadArgument(calleeId, ArgumentKind::Arg1);
@@ -8986,10 +8983,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathMinMax(bool isMax) {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   if (allInt32) {
     ValOperandId valId = loadArgument(calleeId, ArgumentKind::Arg0);
@@ -9035,10 +9032,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSpreadMathMinMax(
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  emitNativeCalleeGuard(argcId);
 
   
   ObjOperandId argsId = emitLoadArgsArray();
@@ -9084,10 +9081,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFunction(
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
   NumberOperandId numberId = writer.guardIsNumber(argumentId);
@@ -9111,10 +9108,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumber() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
@@ -9160,10 +9157,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberParseInt() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   auto guardRadix = [&]() {
     ValOperandId radixId = loadArgument(calleeId, ArgumentKind::Arg1);
@@ -9266,10 +9263,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
   MOZ_ASSERT(2 <= base && base <= 36);
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -9321,10 +9318,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachReflectGetPrototypeOf() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
   ObjOperandId objId = writer.guardToObject(argumentId);
@@ -9407,10 +9404,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsCompareExchange() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
   ObjOperandId objId = writer.guardToObject(arg0Id);
@@ -9476,10 +9473,10 @@ InlinableNativeIRGenerator::emitAtomicsReadWriteModifyOperands() {
   auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
   ObjOperandId objId = writer.guardToObject(arg0Id);
@@ -9641,10 +9638,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsLoad() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
   ObjOperandId objId = writer.guardToObject(arg0Id);
@@ -9707,10 +9704,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsStore() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
   ObjOperandId objId = writer.guardToObject(arg0Id);
@@ -9750,10 +9747,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsIsLockFree() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId valueId = loadArgument(calleeId, ArgumentKind::Arg0);
@@ -9773,10 +9770,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsPause() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  emitNativeCalleeGuard(argcId);
 
   writer.atomicsPauseResult();
   writer.returnFromIC();
@@ -9792,10 +9789,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBoolean() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   if (args_.length() == 0) {
     writer.loadBooleanResult(false);
@@ -9818,10 +9815,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBailout() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  emitNativeCalleeGuard(argcId);
 
   writer.bailout();
   writer.loadUndefinedResult();
@@ -9842,10 +9839,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAssertFloat32() {
   bool mustBeFloat32 = args_[1].toBoolean();
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId valId = loadArgument(calleeId, ArgumentKind::Arg0);
 
@@ -9867,10 +9864,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAssertRecoveredOnBailout() {
   bool mustBeRecovered = args_[1].toBoolean();
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId valId = loadArgument(calleeId, ArgumentKind::Arg0);
 
@@ -9888,10 +9885,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectIs() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId lhsId = loadArgument(calleeId, ArgumentKind::Arg0);
   ValOperandId rhsId = loadArgument(calleeId, ArgumentKind::Arg1);
@@ -9994,10 +9991,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectIsPrototypeOf() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -10033,10 +10030,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectKeys() {
 
   
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   
@@ -10076,10 +10073,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectToString() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -10099,10 +10096,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBigInt() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
@@ -10129,10 +10126,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBigIntAsIntN() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId bitsId = loadArgument(calleeId, ArgumentKind::Arg0);
@@ -10163,10 +10160,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBigIntAsUintN() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId bitsId = loadArgument(calleeId, ArgumentKind::Arg0);
@@ -10197,10 +10194,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetHas() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -10283,10 +10280,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetDelete() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -10313,10 +10310,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetAdd() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -10343,10 +10340,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetSize() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -10372,10 +10369,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapHas() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -10458,10 +10455,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapGet() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -10544,10 +10541,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapDelete() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -10580,10 +10577,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapSet() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -10616,12 +10613,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDateGetTime(
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   ObjOperandId calleeId;
   if (native == InlinableNative::DateGetTime) {
     
-    calleeId = emitNativeCalleeGuard();
+    calleeId = emitNativeCalleeGuard(argcId);
   } else {
     
     MOZ_ASSERT(native == InlinableNative::IntrinsicThisTimeValue);
@@ -10660,10 +10657,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDateGet(
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -10752,7 +10749,6 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   if (target->isClassConstructor()) {
     return AttachDecision::NoAction;
   }
-  Int32OperandId argcId(writer.setInputOperandId(0));
 
   CallFlags targetFlags(CallFlags::FunCall);
   if (mode_ == ICState::Mode::Specialized) {
@@ -10804,6 +10800,7 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
     TRY_ATTACH(nativeGen.tryAttachStub());
   }
 
+  Int32OperandId argcId(writer.setInputOperandId(0));
   ObjOperandId thisObjId = emitFunCallGuard(argcId);
 
   if (mode_ == ICState::Mode::Specialized) {
@@ -11219,10 +11216,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectCreate() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
@@ -11272,11 +11269,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectConstructor() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   if (args_.length() == 0) {
     uint32_t numFixedSlots = templateObj->numUsedFixedSlots();
@@ -11343,11 +11340,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayConstructor() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   Int32OperandId lengthId;
   if (args_.length() == 1) {
@@ -11415,10 +11412,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayConstructor() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0, flags_);
 
@@ -11498,10 +11495,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapSetConstructor(
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   if (args_.length() == 1) {
     ValOperandId iterableId = loadArgument(calleeId, ArgumentKind::Arg0,
@@ -11612,8 +11609,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSpecializedFunctionBind(
     return AttachDecision::NoAction;
   }
 
-  initializeInputOperand();
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  Int32OperandId argcId = initializeInputOperand();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId targetId = writer.guardToObject(thisValId);
@@ -11701,9 +11698,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachFunctionBind() {
 
   TRY_ATTACH(tryAttachSpecializedFunctionBind(target, templateObj));
 
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
-  ObjOperandId calleeId = emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   
   ValOperandId thisValId = loadThis(calleeId);
@@ -11772,8 +11769,6 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
     return AttachDecision::NoAction;
   }
 
-  Int32OperandId argcId(writer.setInputOperandId(0));
-
   CallFlags targetFlags(format);
   if (mode_ == ICState::Mode::Specialized) {
     if (cx_->realm() == target->realm()) {
@@ -11812,6 +11807,7 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
     TRY_ATTACH(nativeGen.tryAttachStub());
   }
 
+  Int32OperandId argcId(writer.setInputOperandId(0));
   ObjOperandId thisObjId = emitFunApplyGuard(argcId);
 
   uint32_t fixedArgc;
@@ -12020,13 +12016,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachFuzzilliHash() {
   }
 
   
-  initializeInputOperand();
+  Int32OperandId argcId = initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
-  ValOperandId argValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ValOperandId argValId = loadArgument(calleeId, ArgumentKind::Arg0);
 
   writer.fuzzilliHashResult(argValId);
   writer.returnFromIC();
