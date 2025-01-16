@@ -543,6 +543,12 @@ pub struct SceneBuilder<'a> {
 
     
     clip_tree_builder: ClipTreeBuilder,
+
+    
+    
+    
+    
+    extra_stacking_context_stack: Vec<StackingContextInfo>,
 }
 
 impl<'a> SceneBuilder<'a> {
@@ -602,6 +608,7 @@ impl<'a> SceneBuilder<'a> {
             pipeline_instance_ids: FastHashMap::default(),
             surfaces: mem::take(&mut recycler.surfaces),
             clip_tree_builder: recycler.clip_tree_builder.take().unwrap_or_else(|| ClipTreeBuilder::new()),
+            extra_stacking_context_stack: Vec::new(),
         };
 
         
@@ -2150,16 +2157,49 @@ impl<'a> SceneBuilder<'a> {
     
     fn push_stacking_context(
         &mut self,
-        composite_ops: CompositeOps,
+        mut composite_ops: CompositeOps,
         transform_style: TransformStyle,
         prim_flags: PrimitiveFlags,
         spatial_node_index: SpatialNodeIndex,
-        clip_chain_id: Option<api::ClipChainId>,
+        mut clip_chain_id: Option<api::ClipChainId>,
         requested_raster_space: RasterSpace,
         flags: StackingContextFlags,
         subregion_offset: LayoutVector2D,
     ) -> StackingContextInfo {
         profile_scope!("push_stacking_context");
+
+        
+        
+        
+        
+        
+        
+        
+        
+        let needs_extra_stacking_context = composite_ops.snapshot.is_some()
+            && composite_ops.has_valid_filters();
+
+        if needs_extra_stacking_context {
+            let snapshot = mem::take(&mut composite_ops.snapshot);
+            let mut info = self.push_stacking_context(
+                CompositeOps {
+                    filters: Vec::new(),
+                    filter_datas: Vec::new(),
+                    filter_primitives: Vec::new(),
+                    mix_blend_mode: None,
+                    snapshot,
+                },
+                TransformStyle::Flat,
+                prim_flags,
+                spatial_node_index,
+                clip_chain_id.take(),
+                requested_raster_space,
+                flags,
+                LayoutVector2D::zero(),
+            );
+            info.pop_stacking_context = true;
+            self.extra_stacking_context_stack.push(info);
+        }
 
         let clip_node_id = match clip_chain_id {
             Some(id) => {
@@ -2342,6 +2382,7 @@ impl<'a> SceneBuilder<'a> {
             pop_stacking_context: false,
             pop_containing_block: false,
             set_tile_cache_barrier,
+            needs_extra_stacking_context,
         };
 
         
@@ -2699,6 +2740,11 @@ impl<'a> SceneBuilder<'a> {
             self.pending_shadow_items.is_empty(),
             "Found unpopped shadows when popping stacking context!"
         );
+
+        if info.needs_extra_stacking_context {
+            let inner_info = self.extra_stacking_context_stack.pop().unwrap();
+            self.pop_stacking_context(inner_info);
+        }
     }
 
     pub fn push_reference_frame(
@@ -4498,6 +4544,10 @@ struct StackingContextInfo {
     pop_stacking_context: bool,
     
     set_tile_cache_barrier: bool,
+    
+    
+    
+    needs_extra_stacking_context: bool,
 }
 
 
