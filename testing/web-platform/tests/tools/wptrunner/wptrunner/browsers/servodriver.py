@@ -10,8 +10,10 @@ from .base import (WebDriverBrowser,
                    get_free_port)
 from .base import get_timeout_multiplier   
 from ..executors import executor_kwargs as base_executor_kwargs
+from ..executors.base import WdspecExecutor  
 from ..executors.executorservodriver import (ServoWebDriverTestharnessExecutor,  
-                                             ServoWebDriverRefTestExecutor)  
+                                             ServoWebDriverRefTestExecutor,  
+                                             ServoWebDriverCrashtestExecutor)  
 
 here = os.path.dirname(__file__)
 
@@ -22,6 +24,8 @@ __wptrunner__ = {
     "executor": {
         "testharness": "ServoWebDriverTestharnessExecutor",
         "reftest": "ServoWebDriverRefTestExecutor",
+        "crashtest": "ServoWebDriverCrashtestExecutor",
+        "wdspec": "WdspecExecutor",
     },
     "browser_kwargs": "browser_kwargs",
     "executor_kwargs": "executor_kwargs",
