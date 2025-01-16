@@ -4313,11 +4313,16 @@ bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
 }
 
 
-size_t BacktrackingAllocator::findFirstNonCallSafepoint(CodePosition from) {
-  size_t i = 0;
+size_t BacktrackingAllocator::findFirstNonCallSafepoint(CodePosition pos,
+                                                        size_t startFrom) {
+  
+  MOZ_ASSERT_IF(startFrom > 0,
+                inputOf(graph.getSafepoint(startFrom - 1)) < pos);
+
+  size_t i = startFrom;
   for (; i < graph.numNonCallSafepoints(); i++) {
     const LInstruction* ins = graph.getNonCallSafepoint(i);
-    if (from <= inputOf(ins)) {
+    if (pos <= inputOf(ins)) {
       break;
     }
   }
@@ -4325,8 +4330,8 @@ size_t BacktrackingAllocator::findFirstNonCallSafepoint(CodePosition from) {
 }
 
 
-void BacktrackingAllocator::addLiveRegistersForRange(VirtualRegister& reg,
-                                                     LiveRange* range) {
+void BacktrackingAllocator::addLiveRegistersForRange(
+    VirtualRegister& reg, LiveRange* range, size_t* firstNonCallSafepoint) {
   
   LAllocation a = range->bundle()->allocation();
   if (!a.isRegister()) {
@@ -4349,8 +4354,11 @@ void BacktrackingAllocator::addLiveRegistersForRange(VirtualRegister& reg,
     start = start.next();
   }
 
-  size_t i = findFirstNonCallSafepoint(start);
-  for (; i < graph.numNonCallSafepoints(); i++) {
+  *firstNonCallSafepoint =
+      findFirstNonCallSafepoint(range->from(), *firstNonCallSafepoint);
+
+  for (size_t i = *firstNonCallSafepoint; i < graph.numNonCallSafepoints();
+       i++) {
     LInstruction* ins = graph.getNonCallSafepoint(i);
     CodePosition pos = inputOf(ins);
 
@@ -4388,6 +4396,12 @@ static inline size_t NumReusingDefs(LInstruction* ins) {
 bool BacktrackingAllocator::installAllocationsInLIR() {
   JitSpew(JitSpew_RegAlloc, "Installing Allocations");
 
+  
+  
+  
+  
+  size_t firstNonCallSafepoint = 0;
+
   MOZ_ASSERT(!vregs[0u].hasRanges());
   for (size_t i = 1; i < graph.numVirtualRegisters(); i++) {
     VirtualRegister& reg = vregs[i];
@@ -4395,6 +4409,13 @@ bool BacktrackingAllocator::installAllocationsInLIR() {
     if (mir->shouldCancel("Backtracking Install Allocations (main loop)")) {
       return false;
     }
+
+    firstNonCallSafepoint =
+        findFirstNonCallSafepoint(inputOf(reg.ins()), firstNonCallSafepoint);
+
+    
+    
+    size_t firstNonCallSafepointForRange = firstNonCallSafepoint;
 
     for (VirtualRegister::RangeIterator iter(reg); iter; iter++) {
       LiveRange* range = *iter;
@@ -4446,7 +4467,7 @@ bool BacktrackingAllocator::installAllocationsInLIR() {
         }
       }
 
-      addLiveRegistersForRange(reg, range);
+      addLiveRegistersForRange(reg, range, &firstNonCallSafepointForRange);
     }
   }
 
