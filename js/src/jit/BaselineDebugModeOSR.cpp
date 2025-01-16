@@ -419,8 +419,11 @@ static bool RecompileBaselineScriptForDebugMode(
   BaselineScript* oldBaselineScript =
       script->jitScript()->clearBaselineScript(cx->gcContext(), script);
 
-  MethodStatus status =
-      BaselineCompile(cx, script,  observing);
+  BaselineOptions options({BaselineOption::ForceMainThreadCompilation});
+  if (observing) {
+    options.setFlag(BaselineOption::ForceDebugInstrumentation);
+  }
+  MethodStatus status = BaselineCompile(cx, script, options);
   if (status != Method_Compiled) {
     
     
