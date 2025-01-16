@@ -104,13 +104,13 @@ PeerConnectionFactoryInterface::CreatePeerConnection(
 
 RTCErrorOr<rtc::scoped_refptr<PeerConnectionInterface>>
 PeerConnectionFactoryInterface::CreatePeerConnectionOrError(
-    const PeerConnectionInterface::RTCConfiguration& configuration,
-    PeerConnectionDependencies dependencies) {
+    const PeerConnectionInterface::RTCConfiguration& ,
+    PeerConnectionDependencies ) {
   return RTCError(RTCErrorType::INTERNAL_ERROR);
 }
 
 RtpCapabilities PeerConnectionFactoryInterface::GetRtpSenderCapabilities(
-    cricket::MediaType kind) const {
+    cricket::MediaType ) const {
   return {};
 }
 

@@ -58,7 +58,7 @@ FakeWebRtcVideoDecoder::~FakeWebRtcVideoDecoder() {
   }
 }
 
-bool FakeWebRtcVideoDecoder::Configure(const Settings& settings) {
+bool FakeWebRtcVideoDecoder::Configure(const Settings& ) {
   return true;
 }
 
@@ -99,7 +99,7 @@ FakeWebRtcVideoDecoderFactory::GetSupportedFormats() const {
 }
 
 std::unique_ptr<webrtc::VideoDecoder> FakeWebRtcVideoDecoderFactory::Create(
-    const webrtc::Environment& env,
+    const webrtc::Environment& ,
     const webrtc::SdpVideoFormat& format) {
   if (format.IsCodecInList(supported_codec_formats_)) {
     num_created_decoders_++;
@@ -147,13 +147,13 @@ FakeWebRtcVideoEncoder::~FakeWebRtcVideoEncoder() {
 }
 
 void FakeWebRtcVideoEncoder::SetFecControllerOverride(
-    webrtc::FecControllerOverride* fec_controller_override) {
+    webrtc::FecControllerOverride* ) {
   
 }
 
 int32_t FakeWebRtcVideoEncoder::InitEncode(
     const webrtc::VideoCodec* codecSettings,
-    const VideoEncoder::Settings& settings) {
+    const VideoEncoder::Settings& ) {
   webrtc::MutexLock lock(&mutex_);
   codec_settings_ = *codecSettings;
   init_encode_event_.Set();
@@ -161,8 +161,8 @@ int32_t FakeWebRtcVideoEncoder::InitEncode(
 }
 
 int32_t FakeWebRtcVideoEncoder::Encode(
-    const webrtc::VideoFrame& inputImage,
-    const std::vector<webrtc::VideoFrameType>* frame_types) {
+    const webrtc::VideoFrame& ,
+    const std::vector<webrtc::VideoFrameType>* ) {
   webrtc::MutexLock lock(&mutex_);
   ++num_frames_encoded_;
   init_encode_event_.Set();
@@ -170,7 +170,7 @@ int32_t FakeWebRtcVideoEncoder::Encode(
 }
 
 int32_t FakeWebRtcVideoEncoder::RegisterEncodeCompleteCallback(
-    webrtc::EncodedImageCallback* callback) {
+    webrtc::EncodedImageCallback* ) {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -178,8 +178,8 @@ int32_t FakeWebRtcVideoEncoder::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-void FakeWebRtcVideoEncoder::SetRates(const RateControlParameters& parameters) {
-}
+void FakeWebRtcVideoEncoder::SetRates(
+    const RateControlParameters& ) {}
 
 webrtc::VideoEncoder::EncoderInfo FakeWebRtcVideoEncoder::GetEncoderInfo()
     const {

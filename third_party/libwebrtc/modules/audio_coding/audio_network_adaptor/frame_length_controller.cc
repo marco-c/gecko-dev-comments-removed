@@ -97,7 +97,7 @@ bool FrameLengthController::Config::FrameLengthChange::operator<(
 }
 
 bool FrameLengthController::FrameLengthIncreasingDecision(
-    const AudioEncoderRuntimeConfig& config) {
+    const AudioEncoderRuntimeConfig& ) {
   
   
   
@@ -153,7 +153,7 @@ bool FrameLengthController::FrameLengthIncreasingDecision(
 }
 
 bool FrameLengthController::FrameLengthDecreasingDecision(
-    const AudioEncoderRuntimeConfig& config) {
+    const AudioEncoderRuntimeConfig& ) {
   
   
   

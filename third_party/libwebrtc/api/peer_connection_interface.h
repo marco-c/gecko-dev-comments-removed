@@ -1351,7 +1351,7 @@ class PeerConnectionObserver {
   
   
   virtual void OnTrack(
-      rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {}
+      rtc::scoped_refptr<RtpTransceiverInterface> ) {}
 
   
   
@@ -1362,7 +1362,7 @@ class PeerConnectionObserver {
   
   
   virtual void OnRemoveTrack(
-      rtc::scoped_refptr<RtpReceiverInterface> receiver) {}
+      rtc::scoped_refptr<RtpReceiverInterface> ) {}
 
   
   
@@ -1370,7 +1370,7 @@ class PeerConnectionObserver {
   
   
   
-  virtual void OnInterestingUsage(int usage_pattern) {}
+  virtual void OnInterestingUsage(int ) {}
 };
 
 
@@ -1614,7 +1614,7 @@ class RTC_EXPORT PeerConnectionFactoryInterface
   
   
   
-  virtual bool StartAecDump(FILE* file, int64_t max_size_bytes) {
+  virtual bool StartAecDump(FILE* , int64_t ) {
     return false;
   }
 
