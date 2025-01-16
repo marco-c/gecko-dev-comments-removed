@@ -161,6 +161,16 @@ struct MediumBuffer;
 
 
 
+
+
+
+
+
+
+
+
+
+
 class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
  public:
   static constexpr size_t MinMediumAllocShift = 8;   
@@ -343,8 +353,10 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void* allocMedium(size_t bytes, bool nurseryOwned, bool inGC);
   void* bumpAllocOrRetry(size_t sizeClass, bool inGC);
   void* bumpAlloc(size_t sizeClass);
-  void* allocFromFreeList(FreeLists* freeLists, FreeRegion* region,
-                          size_t requestedBytes, size_t sizeClass);
+  void* allocFromRegion(FreeRegion* region, size_t requestedBytes,
+                        size_t sizeClass);
+  void updateFreeListsAfterAlloc(FreeLists* freeLists, FreeRegion* region,
+                                 size_t sizeClass);
   void recommitRegion(FreeRegion* region);
   bool allocNewChunk(bool inGC);
   bool sweepChunk(BufferChunk* chunk, OwnerKind ownerKindToSweep,
@@ -353,6 +365,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
                       uintptr_t freeEnd, bool shouldDecommit,
                       bool expectUnchanged, FreeLists& freeLists);
   void freeMedium(void* alloc);
+  bool growMedium(void* alloc, size_t newBytes);
+  bool shrinkMedium(void* alloc, size_t newBytes);
   FreeRegion* findFollowingFreeRegion(uintptr_t start);
   FreeRegion* findPrecedingFreeRegion(uintptr_t start);
   enum class ListPosition { Front, Back };
