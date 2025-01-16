@@ -124,12 +124,10 @@ class APZCCallbackHelper {
 
 
 
-
   MOZ_CAN_RUN_SCRIPT
-  static PreventDefaultResult DispatchMouseEvent(
-      PresShell* aPresShell, const nsString& aType, const CSSPoint& aPoint,
-      int32_t aButton, int32_t aClickCount, int32_t aModifiers,
-      unsigned short aInputSourceArg, uint32_t aPointerId);
+  static PreventDefaultResult DispatchSynthesizedContextmenuEvent(
+      const LayoutDevicePoint& aRefPoint, Modifiers aModifiers,
+      nsIWidget* aWidget);
 
   
 
