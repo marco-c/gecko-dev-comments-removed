@@ -261,6 +261,9 @@ nsresult CookieService::Init() {
   os->AddObserver(this, "profile-do-change", true);
   os->AddObserver(this, "last-pb-context-exited", true);
 
+  
+  mThirdPartyCookieBlockingExceptions.Initialize();
+
   RunOnShutdown([self = RefPtr{this}] {
     self->mThirdPartyCookieBlockingExceptions.Shutdown();
   });
@@ -1748,8 +1751,11 @@ void CookieService::Update3PCBExceptionInfo(nsIChannel* aChannel) {
   
   if (loadInfo->GetExternalContentPolicyType() ==
       ExtContentPolicy::TYPE_DOCUMENT) {
-    Unused
-        << csSingleton->mThirdPartyCookieBlockingExceptions.EnsureInitialized();
+    return;
+  }
+
+  
+  if (!csSingleton->mThirdPartyCookieBlockingExceptions.IsInitialized()) {
     return;
   }
 
@@ -1759,29 +1765,11 @@ void CookieService::Update3PCBExceptionInfo(nsIChannel* aChannel) {
     return;
   }
 
-  
-  
-  aChannel->Suspend();
+  bool isInExceptionList =
+      csSingleton->mThirdPartyCookieBlockingExceptions.CheckExceptionForChannel(
+          aChannel);
 
-  
-  
-  csSingleton->mThirdPartyCookieBlockingExceptions.EnsureInitialized()->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [channel = nsCOMPtr{aChannel}, csSingleton, loadInfo](
-          const GenericNonExclusivePromise::ResolveOrRejectValue& aValue) {
-        
-        
-        
-        
-        bool isInExceptionList =
-            csSingleton->mThirdPartyCookieBlockingExceptions
-                .CheckExceptionForChannel(channel);
-
-        Unused << loadInfo->SetIsOn3PCBExceptionList(isInExceptionList);
-
-        channel->Resume();
-        return NS_OK;
-      });
+  Unused << loadInfo->SetIsOn3PCBExceptionList(isInExceptionList);
 }
 
 NS_IMETHODIMP
