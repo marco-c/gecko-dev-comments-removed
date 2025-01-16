@@ -10,6 +10,7 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_CONGESTION_CONTROL_FEEDBACK_H_
 #define MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_CONGESTION_CONTROL_FEEDBACK_H_
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
@@ -30,12 +31,14 @@ class CongestionControlFeedback : public Rtpfb {
     uint32_t ssrc = 0;
     uint16_t sequence_number = 0;
     
-    TimeDelta arrival_time_offset = TimeDelta::Zero();
+    
+    TimeDelta arrival_time_offset = TimeDelta::MinusInfinity();
     rtc::EcnMarking ecn = rtc::EcnMarking::kNotEct;
   };
 
   static constexpr uint8_t kFeedbackMessageType = 11;
 
+  
   
   
   CongestionControlFeedback(std::vector<PacketInfo> packets,
