@@ -3233,17 +3233,7 @@ pref("browser.firefox-view.virtual-list.enabled", true);
 pref("browser.pdfjs.feature-tour", "{\"screen\":\"\",\"complete\":false}");
 
 
-
-#ifdef NIGHTLY_BUILD
-  pref("cookiebanners.service.mode.privateBrowsing", 1);
-#endif
-
-#if defined(EARLY_BETA_OR_EARLIER)
-  
-  pref("cookiebanners.ui.desktop.enabled", true);
-#else
-  pref("cookiebanners.ui.desktop.enabled", false);
-#endif
+pref("cookiebanners.ui.desktop.enabled", false);
 
 
 pref("cookiebanners.ui.desktop.showCallout", false);
