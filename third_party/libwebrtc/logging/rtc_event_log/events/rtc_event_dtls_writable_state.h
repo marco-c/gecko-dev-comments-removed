@@ -50,15 +50,15 @@ class RtcEventDtlsWritableState : public RtcEvent {
 
   bool writable() const { return writable_; }
 
-  static std::string Encode(rtc::ArrayView<const RtcEvent*> batch) {
+  static std::string Encode(rtc::ArrayView<const RtcEvent*> ) {
     
     return "";
   }
 
   static RtcEventLogParseStatus Parse(
-      absl::string_view encoded_bytes,
-      bool batched,
-      std::vector<LoggedDtlsWritableState>& output) {
+      absl::string_view ,
+      bool ,
+      std::vector<LoggedDtlsWritableState>& ) {
     
     return RtcEventLogParseStatus::Error("Not Implemented", __FILE__, __LINE__);
   }

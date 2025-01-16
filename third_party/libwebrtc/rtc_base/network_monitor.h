@@ -113,9 +113,9 @@ class NetworkMonitorInterface {
   
   
   virtual NetworkBindingResult BindSocketToNetwork(
-      int socket_fd,
-      const IPAddress& address,
-      absl::string_view interface_name) {
+      int ,
+      const IPAddress& ,
+      absl::string_view ) {
     return NetworkBindingResult::NOT_IMPLEMENTED;
   }
 

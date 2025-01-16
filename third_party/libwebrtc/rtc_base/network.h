@@ -185,7 +185,7 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
   
   webrtc::MdnsResponderInterface* GetMdnsResponder() const override;
 
-  virtual void set_vpn_list(const std::vector<NetworkMask>& vpn) {}
+  virtual void set_vpn_list(const std::vector<NetworkMask>& ) {}
 };
 
 

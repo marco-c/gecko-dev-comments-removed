@@ -50,15 +50,15 @@ class RtcEventDtlsTransportState : public RtcEvent {
     return dtls_transport_state_;
   }
 
-  static std::string Encode(rtc::ArrayView<const RtcEvent*> batch) {
+  static std::string Encode(rtc::ArrayView<const RtcEvent*> ) {
     
     return "";
   }
 
   static RtcEventLogParseStatus Parse(
-      absl::string_view encoded_bytes,
-      bool batched,
-      std::vector<LoggedDtlsTransportState>& output) {
+      absl::string_view ,
+      bool ,
+      std::vector<LoggedDtlsTransportState>& ) {
     
     return RtcEventLogParseStatus::Error("Not Implemented", __FILE__, __LINE__);
   }

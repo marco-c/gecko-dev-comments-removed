@@ -134,8 +134,8 @@ class StunRequest {
   StunMessage* mutable_msg() { return msg_.get(); }
 
   
-  virtual void OnResponse(StunMessage* response) {}
-  virtual void OnErrorResponse(StunMessage* response) {}
+  virtual void OnResponse(StunMessage* ) {}
+  virtual void OnErrorResponse(StunMessage* ) {}
   virtual void OnTimeout() {}
   
   virtual void OnSent();

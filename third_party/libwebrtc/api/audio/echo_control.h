@@ -53,7 +53,7 @@ class EchoControl {
   
   
   
-  virtual void SetCaptureOutputUsage(bool capture_output_used) {}
+  virtual void SetCaptureOutputUsage(bool ) {}
 
   
   virtual bool ActiveProcessing() const = 0;

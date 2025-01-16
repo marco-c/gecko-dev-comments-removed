@@ -345,7 +345,7 @@ class StunAttribute {
   virtual StunAttributeValueType value_type() const = 0;
 
   
-  virtual void SetOwner(StunMessage* owner) {}
+  virtual void SetOwner(StunMessage* ) {}
 
   
   
