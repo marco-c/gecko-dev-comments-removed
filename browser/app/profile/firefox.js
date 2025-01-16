@@ -1817,6 +1817,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config",
 
 pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", true);
 pref("browser.newtabpage.activity-stream.newtabWallpapers.v2.enabled", true);
+pref("browser.newtabpage.activity-stream.newtabWallpapers.customColor.enabled", false);
 
 
 pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper-light", "");
