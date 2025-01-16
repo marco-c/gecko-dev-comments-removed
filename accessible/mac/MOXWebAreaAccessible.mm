@@ -242,11 +242,7 @@ using namespace mozilla::a11y;
 }
 
 - (id)rootGroup {
-  NSArray* children = [super moxUnignoredChildren];
-  if (mRole == roles::DOCUMENT && [children count] == 1 &&
-      [[[children firstObject] moxUnignoredChildren] count] != 0) {
-    
-    
+  if (mRole == roles::DOCUMENT) {
     
     
     return nil;
