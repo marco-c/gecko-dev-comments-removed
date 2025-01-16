@@ -1134,14 +1134,15 @@ TEST_P(SSLStreamAdapterTestDTLSHandshake, TestGetSslCipherSuite) {
 INSTANTIATE_TEST_SUITE_P(
     SSLStreamAdapterTestDTLSHandshakeKeyParameters,
     SSLStreamAdapterTestDTLSHandshake,
-    Combine(Values(rtc::KeyParams::RSA(rtc::kRsaDefaultModSize,
-                                       rtc::kRsaDefaultExponent),
-                   rtc::KeyParams::RSA(1152, rtc::kRsaDefaultExponent),
-                   rtc::KeyParams::ECDSA(rtc::EC_NIST_P256)),
-            Values(rtc::KeyParams::RSA(rtc::kRsaDefaultModSize,
-                                       rtc::kRsaDefaultExponent),
-                   rtc::KeyParams::ECDSA(rtc::EC_NIST_P256)),
-            Values(std::make_pair(rtc::DIGEST_SHA_256, SHA256_DIGEST_LENGTH))));
+    Values(std::make_tuple(rtc::KeyParams::ECDSA(rtc::EC_NIST_P256),
+                           rtc::KeyParams::RSA(rtc::kRsaDefaultModSize,
+                                               rtc::kRsaDefaultExponent),
+                           std::make_pair(rtc::DIGEST_SHA_256,
+                                          SHA256_DIGEST_LENGTH)),
+           std::make_tuple(rtc::KeyParams::RSA(1152, rtc::kRsaDefaultExponent),
+                           rtc::KeyParams::ECDSA(rtc::EC_NIST_P256),
+                           std::make_pair(rtc::DIGEST_SHA_256,
+                                          SHA256_DIGEST_LENGTH))));
 
 INSTANTIATE_TEST_SUITE_P(
     SSLStreamAdapterTestDTLSHandshakeSignatureAlgorithms,
