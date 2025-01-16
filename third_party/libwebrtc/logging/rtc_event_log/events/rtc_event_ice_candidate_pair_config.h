@@ -118,15 +118,15 @@ class RtcEventIceCandidatePairConfig final : public RtcEvent {
     return candidate_pair_desc_;
   }
 
-  static std::string Encode(rtc::ArrayView<const RtcEvent*> batch) {
+  static std::string Encode(rtc::ArrayView<const RtcEvent*> ) {
     
     return "";
   }
 
   static RtcEventLogParseStatus Parse(
-      absl::string_view encoded_bytes,
-      bool batched,
-      std::vector<LoggedIceCandidatePairConfig>& output) {
+      absl::string_view ,
+      bool ,
+      std::vector<LoggedIceCandidatePairConfig>& ) {
     
     return RtcEventLogParseStatus::Error("Not Implemented", __FILE__, __LINE__);
   }
