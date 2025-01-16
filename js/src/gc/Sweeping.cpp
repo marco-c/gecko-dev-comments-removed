@@ -25,6 +25,7 @@
 #include "builtin/WeakRefObject.h"
 #include "debugger/DebugAPI.h"
 #include "gc/AllocKind.h"
+#include "gc/BufferAllocator.h"
 #include "gc/FinalizationObservers.h"
 #include "gc/GCInternals.h"
 #include "gc/GCLock.h"
@@ -330,6 +331,7 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
 
     
     
+
     for (const auto& phase : BackgroundFinalizePhases) {
       for (auto kind : phase.kinds) {
         backgroundFinalize(gcx, zone, kind, &emptyArenas);
@@ -355,6 +357,9 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
       Arena* arenasToRelease[BatchSize];
       size_t count = 0;
 
+      size_t gcHeapBytesFreed = 0;
+      size_t mallocHeapBytesFreed = 0;
+
       {
         mozilla::Maybe<AutoLockGC> maybeLock;
         if (zone->isAtomsZone()) {
@@ -367,13 +372,20 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
           Arena* arena = emptyArenas;
           emptyArenas = arena->next;
 
+          if (IsBufferAllocKind(arena->getAllocKind())) {
+            mallocHeapBytesFreed += ArenaSize - arena->getFirstThingOffset();
+          } else {
+            gcHeapBytesFreed += ArenaSize;
+          }
+
           arena->release(this, maybeLock.ptrOr(nullptr));
           arenasToRelease[i] = arena;
           count++;
         }
       }
 
-      zone->gcHeapSize.removeBytes(ArenaSize * count, true, heapSize);
+      zone->mallocHeapSize.removeBytes(mallocHeapBytesFreed, true);
+      zone->gcHeapSize.removeBytes(gcHeapBytesFreed, true, heapSize);
 
       AutoLockGC lock(this);
       for (size_t i = 0; i < count; i++) {
@@ -381,6 +393,11 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
         arena->chunk()->releaseArena(this, arena, lock);
       }
     }
+
+    
+    
+    
+    zone->bufferAllocator.sweepForMajorCollection(shouldDecommit());
 
     
     TimeStamp endTime = TimeStamp::Now();
@@ -1732,6 +1749,12 @@ IncrementalProgress GCRuntime::endSweepingSweepGroup(JS::GCContext* gcx,
   }
 
   
+  MOZ_ASSERT(minorGCNumber >= initialMinorGCNumber);
+  if (minorGCNumber == initialMinorGCNumber) {
+    nursery().joinSweepTask();
+  }
+
+  
 
 
 
@@ -1742,6 +1765,8 @@ IncrementalProgress GCRuntime::endSweepingSweepGroup(JS::GCContext* gcx,
     } else {
       zones.prepend(zone);
     }
+
+    zone->bufferAllocator.startMajorSweeping();
   }
 
   queueZonesAndStartBackgroundSweep(std::move(zones));

@@ -603,6 +603,8 @@ class GCRuntime {
   
   bool isPointerWithinTenuredCell(
       void* ptr, JS::TraceKind traceKind = JS::TraceKind::Null);
+  
+  bool isPointerWithinBufferAlloc(void* ptr);
 
 #ifdef DEBUG
   bool hasZone(Zone* target);
@@ -1223,6 +1225,9 @@ class GCRuntime {
   HelperThreadLockData<Nursery::BufferSet> buffersToFreeAfterMinorGC;
   HelperThreadLockData<Nursery::StringBufferVector>
       stringBuffersToReleaseAfterMinorGC;
+
+  
+  MainThreadData<uint64_t> initialMinorGCNumber;
 
   
   MainThreadData<unsigned> sweepGroupIndex;

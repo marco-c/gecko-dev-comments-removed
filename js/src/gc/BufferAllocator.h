@@ -9,6 +9,10 @@
 #ifndef gc_BufferAllocator_h
 #define gc_BufferAllocator_h
 
+#include "mozilla/Array.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/BitSet.h"
+
 #include <cstdint>
 #include <stddef.h>
 #include <utility>
@@ -16,6 +20,7 @@
 #include "jstypes.h"  
 
 #include "ds/SlimLinkedList.h"
+#include "threading/Mutex.h"
 #include "threading/ProtectedData.h"
 
 class JS_PUBLIC_API JSTracer;
@@ -33,7 +38,81 @@ namespace gc {
 
 enum class AllocKind : uint8_t;
 
+struct BufferChunk;
 struct Cell;
+struct MediumBuffer;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -82,11 +161,111 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
       MaxMediumAllocShift - MinMediumAllocShift + 1;
 
  private:
+  class AutoLockAllocator;
+
+  using BufferChunkList = SlimLinkedList<BufferChunk>;
+
+  struct FreeRegion;
+  using FreeList = SlimLinkedList<FreeRegion>;
+
+  
+  class FreeLists {
+    using FreeListArray = mozilla::Array<FreeList, MediumAllocClasses>;
+    FreeListArray lists;
+    mozilla::BitSet<MediumAllocClasses, uint32_t> available;
+
+   public:
+    FreeLists() = default;
+
+    FreeLists(FreeLists&& other);
+    FreeLists& operator=(FreeLists&& other);
+
+    using const_iterator = FreeListArray::const_iterator;
+    auto begin() const { return lists.begin(); }
+    auto end() const { return lists.end(); }
+
+    
+    size_t getFirstAvailableSizeClass(size_t minSizeClass) const;
+
+    FreeRegion* getFirstRegion(size_t sizeClass);
+
+    void pushFront(size_t sizeClass, FreeRegion* region);
+    void pushBack(size_t sizeClass, FreeRegion* region);
+
+    void append(FreeLists&& other);
+    void prepend(FreeLists&& other);
+
+    void remove(size_t sizeClass, FreeRegion* region);
+
+    void clear();
+
+    template <typename Pred>
+    void eraseIf(Pred&& pred);
+
+    void assertEmpty() const;
+    void assertContains(size_t sizeClass, FreeRegion* region) const;
+    void checkAvailable() const;
+  };
+
+  enum class State : uint8_t { NotCollecting, Marking, Sweeping };
+
+  enum class OwnerKind : uint8_t { Tenured = 0, Nursery, None };
+
   
   MainThreadOrGCTaskData<JS::Zone*> zone;
 
+  
+  
+  Mutex lock MOZ_UNANNOTATED;
+
+  
+  
+  MainThreadData<BufferChunkList> mediumMixedChunks;
+
+  
+  MainThreadData<BufferChunkList> mediumTenuredChunks;
+
+  
+  MainThreadData<FreeLists> mediumFreeLists;
+
+  
+  
+  MainThreadOrGCTaskData<BufferChunkList> mediumMixedChunksToSweep;
+
+  
+  
+  MainThreadOrGCTaskData<BufferChunkList> mediumTenuredChunksToSweep;
+
+  
+  MutexData<BufferChunkList> sweptMediumMixedChunks;
+  MutexData<BufferChunkList> sweptMediumTenuredChunks;
+  MutexData<FreeLists> sweptMediumNurseryFreeLists;
+  MutexData<FreeLists> sweptMediumTenuredFreeLists;
+
+  
+  
+  mozilla::Atomic<bool, mozilla::Relaxed> sweptChunksAvailable;
+
+  
+  MainThreadData<State> minorState;
+  MainThreadData<State> majorState;
+
+  
+  
+  
+  MainThreadData<bool> majorStartedWhileMinorSweeping;
+
+  
+  
+  MainThreadData<bool> majorFinishedWhileMinorSweeping;
+
+  
+  
+  MutexData<bool> minorSweepingFinished;
+
  public:
   explicit BufferAllocator(JS::Zone* zone);
+  ~BufferAllocator();
 
   static size_t GetGoodAllocSize(size_t requiredBytes);
   static size_t GetGoodElementCount(size_t requiredElements,
@@ -107,12 +286,35 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void* realloc(void* ptr, size_t bytes, bool nurseryOwned);
   void free(void* ptr);
 
+  void startMinorCollection();
+  bool startMinorSweeping();
+  void sweepForMinorCollection();
+
+  void startMajorCollection();
+  void startMajorSweeping();
+  void sweepForMajorCollection(bool shouldDecommit);
+  void finishMajorCollection();
+
+  void maybeMergeSweptData();
+  void mergeSweptData();
+
+  bool isEmpty() const;
+
+  
+  
+  bool isPointerWithinMediumOrLargeBuffer(void* ptr);
+
+#ifdef DEBUG
+  void checkGCStateNotInUse();
+  void checkGCStateNotInUse(const AutoLockAllocator& lock);
+#endif
+
  private:
   
   static bool MarkTenuredAlloc(void* alloc);
   friend class js::GCMarker;
 
-  void markNurseryOwned(void* alloc, bool ownerWasTenured);
+  void markNurseryOwnedAlloc(void* alloc, bool ownerWasTenured);
   friend class js::Nursery;
 
   
@@ -124,6 +326,59 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void* allocSmallInGC(size_t bytes, bool nurseryOwned);
 
   static AllocKind AllocKindForSmallAlloc(size_t bytes);
+
+  
+
+  static bool IsMediumAlloc(void* alloc);
+
+  void* allocMedium(size_t bytes, bool nurseryOwned, bool inGC);
+  void* bumpAllocOrRetry(size_t sizeClass, bool inGC);
+  void* bumpAlloc(size_t sizeClass);
+  void* allocFromFreeList(FreeLists* freeLists, FreeRegion* region,
+                          size_t requestedBytes, size_t sizeClass);
+  void recommitRegion(FreeRegion* region);
+  bool allocNewChunk(bool inGC);
+  bool sweepChunk(BufferChunk* chunk, OwnerKind ownerKindToSweep,
+                  bool shouldDecommit, FreeLists& freeLists);
+  void addSweptRegion(BufferChunk* chunk, uintptr_t freeStart,
+                      uintptr_t freeEnd, bool shouldDecommit,
+                      bool expectUnchanged, FreeLists& freeLists);
+  enum class ListPosition { Front, Back };
+  FreeRegion* addFreeRegion(FreeLists* freeLists, size_t sizeClass,
+                            uintptr_t start, uintptr_t end, bool anyDecommitted,
+                            ListPosition position,
+                            bool expectUnchanged = false);
+  void updateFreeRegionStart(FreeLists* freeLists, FreeRegion* region,
+                             uintptr_t newStart);
+  FreeLists* getChunkFreeLists(BufferChunk* chunk);
+
+  
+  
+  static size_t SizeClassForAlloc(size_t bytes);
+
+  
+  
+  static size_t SizeClassForFreeRegion(size_t bytes);
+
+  static size_t SizeClassBytes(size_t sizeClass);
+  friend struct MediumBuffer;
+
+  static bool IsLargeAllocSize(size_t bytes);
+
+  void updateHeapSize(size_t bytes, bool checkThresholds,
+                      bool updateRetainedSize);
+#ifdef DEBUG
+  void checkChunkListGCStateNotInUse(BufferChunkList& chunks,
+                                     bool hasNurseryOwnedAllocs,
+                                     bool allowAllocatedDuringCollection);
+  void checkChunkGCStateNotInUse(BufferChunk* chunk,
+                                 bool allowAllocatedDuringCollection);
+  void verifyChunk(BufferChunk* chunk, bool hasNurseryOwnedAllocs);
+  void verifyFreeRegion(BufferChunk* chunk, uintptr_t endOffset,
+                        size_t expectedSize);
+  template <typename T>
+  bool listIsEmpty(const MutexData<SlimLinkedList<T>>& list);
+#endif
 };
 
 }  

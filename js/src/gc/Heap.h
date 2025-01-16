@@ -635,6 +635,7 @@ enum class MarkInfo : int {
   NURSERY_FROMSPACE = -2,
   NURSERY_TOSPACE = -3,  
   UNKNOWN = -4,
+  BUFFER = -5,
 };
 
 

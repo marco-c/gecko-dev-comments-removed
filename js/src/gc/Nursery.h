@@ -14,6 +14,8 @@
 #include <tuple>
 
 #include "ds/LifoAlloc.h"
+#include "ds/SlimLinkedList.h"
+#include "gc/Allocator.h"
 #include "gc/GCEnum.h"
 #include "gc/GCProbes.h"
 #include "gc/Heap.h"
@@ -70,13 +72,16 @@ class HeapSlot;
 class JSONPrinter;
 class MapObject;
 class NurseryDecommitTask;
+class NurserySweepTask;
 class SetObject;
 class JS_PUBLIC_API Sprinter;
 
 namespace gc {
+
 class AutoGCSession;
 struct Cell;
 class GCSchedulingTunables;
+class LargeBuffer;
 class StoreBuffer;
 class TenuringTracer;
 
@@ -152,6 +157,7 @@ class Nursery {
   std::tuple<void*, bool> allocNurseryOrMallocBuffer(JS::Zone* zone,
                                                      size_t nbytes,
                                                      arena_id_t arenaId);
+  std::tuple<void*, bool> allocateBuffer(JS::Zone* zone, size_t nbytes);
 
   
   
@@ -162,6 +168,7 @@ class Nursery {
   
   void* allocNurseryOrMallocBuffer(JS::Zone* zone, gc::Cell* owner,
                                    size_t nbytes, arena_id_t arenaId);
+  void* allocateBuffer(JS::Zone* zone, gc::Cell* owner, size_t nbytes);
 
   
   
@@ -179,6 +186,10 @@ class Nursery {
   void* reallocNurseryOrMallocBuffer(JS::Zone* zone, gc::Cell* cell,
                                      void* oldBuffer, size_t oldBytes,
                                      size_t newBytes, arena_id_t arena);
+
+  
+  void* reallocateBuffer(JS::Zone* zone, gc::Cell* cell, void* oldBuffer,
+                         size_t oldBytes, size_t newBytes);
 
   
   void freeBuffer(void* buffer, size_t nbytes);
@@ -224,10 +235,20 @@ class Nursery {
     return maybeMoveBufferOnPromotion(bufferp, owner, nbytes, use, MallocArena);
   }
 
+  WasBufferMoved maybeMoveRawBufferOnPromotion(void** bufferp, gc::Cell* owner,
+                                               size_t nbytes);
+  template <typename T>
+  WasBufferMoved maybeMoveBufferOnPromotion(T** bufferp, gc::Cell* owner,
+                                            size_t nbytes) {
+    return maybeMoveRawBufferOnPromotion(reinterpret_cast<void**>(bufferp),
+                                         owner, nbytes);
+  }
+
   
   
   
   [[nodiscard]] bool registerMallocedBuffer(void* buffer, size_t nbytes);
+  void registerBuffer(void* buffer, size_t nbytes);
 
   
   inline void removeMallocedBuffer(void* buffer, size_t nbytes);
@@ -332,7 +353,12 @@ class Nursery {
     return setsWithNurseryIterators_.append(obj);
   }
 
+  void joinSweepTask();
   void joinDecommitTask();
+
+#ifdef DEBUG
+  bool sweepTaskIsIdle();
+#endif
 
   mozilla::TimeStamp collectionStartTime() {
     return startTimes_[ProfileKey::Total];
@@ -354,6 +380,7 @@ class Nursery {
 
   void trackMallocedBufferOnPromotion(void* buffer, gc::Cell* owner,
                                       size_t nbytes, MemoryUse use);
+  void trackBufferOnPromotion(void* buffer, gc::Cell* owner, size_t nbytes);
   void trackTrailerOnPromotion(void* buffer, gc::Cell* owner, size_t nbytes,
                                size_t overhead, MemoryUse use);
 
@@ -513,6 +540,8 @@ class Nursery {
   void sweepMapAndSetObjects();
 
   void sweepStringsWithBuffer();
+
+  void sweepBuffers();
 
   
   size_t maxSpaceSize() const;
@@ -742,6 +771,7 @@ class Nursery {
       Vector<mozilla::StringBuffer*, 8, SystemAllocPolicy>;
   StringBufferVector stringBuffersToReleaseAfterMinorGC_;
 
+  UniquePtr<NurserySweepTask> sweepTask;
   UniquePtr<NurseryDecommitTask> decommitTask;
 
   
@@ -775,6 +805,13 @@ MOZ_ALWAYS_INLINE bool Nursery::Space::isInside(const void* p) const {
     }
   }
   return false;
+}
+
+
+
+
+MOZ_ALWAYS_INLINE bool ChunkPtrIsInsideNursery(void* ptr) {
+  return gc::detail::ChunkPtrHasStoreBuffer(ptr);
 }
 
 }  
