@@ -1551,46 +1551,6 @@ function TypedArrayCreateSameType(exemplar, length) {
 
 
 
-function TypedArrayToReversed() {
-  
-  if (!IsObject(this) || !IsTypedArray(this)) {
-    return callFunction(
-      CallTypedArrayMethodIfWrapped,
-      this,
-      "TypedArrayToReversed"
-    );
-  }
-
-  GetAttachedArrayBuffer(this);
-
-  
-  var O = this;
-
-  
-  var len = TypedArrayLength(O);
-
-  
-  var A = TypedArrayCreateSameType(O, len);
-
-  
-  
-  for (var k = 0; k < len; k++) {
-    
-    var from = len - k - 1;
-    
-    
-    
-    var fromValue = O[from];
-    
-    A[k] = fromValue;
-  }
-
-  
-  return A;
-}
-
-
-
 function TypedArrayWith(index, value) {
   
   if (!IsObject(this) || !IsTypedArray(this)) {

@@ -3036,6 +3036,115 @@ static bool TypedArray_reverse(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
+
+
+static TypedArrayObject* TypedArrayCreateSameType(
+    JSContext* cx, Handle<TypedArrayObject*> exemplar, size_t length) {
+  switch (exemplar->type()) {
+#define TYPED_ARRAY_CREATE(_, NativeType, Name) \
+  case Scalar::Name:                            \
+    return TypedArrayObjectTemplate<NativeType>::fromLength(cx, length);
+    JS_FOR_EACH_TYPED_ARRAY(TYPED_ARRAY_CREATE)
+#undef TYPED_ARRAY_CREATE
+    default:
+      MOZ_CRASH("Unsupported TypedArray type");
+  }
+}
+
+template <typename NativeType>
+static void TypedArrayCopyElements(TypedArrayObject* source,
+                                   TypedArrayObject* target, size_t length) {
+  MOZ_ASSERT(source->type() == target->type());
+  MOZ_ASSERT(!target->isSharedMemory());
+  MOZ_ASSERT(length > 0);
+  MOZ_RELEASE_ASSERT(length <= source->length().valueOr(0));
+  MOZ_RELEASE_ASSERT(length <= target->length().valueOr(0));
+
+  auto dest = UnsharedOps::extract(target).cast<NativeType*>();
+  if (source->isSharedMemory()) {
+    auto src = SharedOps::extract(source).cast<NativeType*>();
+    SharedOps::podCopy(dest, src, length);
+  } else {
+    auto src = UnsharedOps::extract(source).cast<NativeType*>();
+    UnsharedOps::podCopy(dest, src, length);
+  }
+}
+
+static void TypedArrayCopyElements(TypedArrayObject* source,
+                                   TypedArrayObject* target, size_t length) {
+  switch (source->type()) {
+#define TYPED_ARRAY_COPY_ELEMENTS(_, NativeType, Name) \
+  case Scalar::Name:                                   \
+    return TypedArrayCopyElements<NativeType>(source, target, length);
+    JS_FOR_EACH_TYPED_ARRAY(TYPED_ARRAY_COPY_ELEMENTS)
+#undef TYPED_ARRAY_COPY_ELEMENTS
+    default:
+      MOZ_CRASH("Unsupported TypedArray type");
+  }
+}
+
+
+
+
+
+
+static bool TypedArray_toReversed(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(IsTypedArrayObject(args.thisv()));
+
+  
+  Rooted<TypedArrayObject*> tarray(
+      cx, &args.thisv().toObject().as<TypedArrayObject>());
+
+  auto arrayLength = tarray->length();
+  if (!arrayLength) {
+    ReportOutOfBounds(cx, tarray);
+    return false;
+  }
+  size_t length = *arrayLength;
+
+  
+  TypedArrayObject* result = TypedArrayCreateSameType(cx, tarray, length);
+  if (!result) {
+    return false;
+  }
+
+  
+  if (length > 0) {
+    TypedArrayCopyElements(tarray, result, length);
+
+    switch (result->type()) {
+#define TYPED_ARRAY_TOREVERSED(_, NativeType, Name)              \
+  case Scalar::Name:                                             \
+    TypedArrayReverse<UnsharedOps, NativeType>(result, length);  \
+    break;
+      JS_FOR_EACH_TYPED_ARRAY(TYPED_ARRAY_TOREVERSED)
+#undef TYPED_ARRAY_TOREVERSED
+      default:
+        MOZ_CRASH("Unsupported TypedArray type");
+    }
+  }
+
+  
+  args.rval().setObject(*result);
+  return true;
+}
+
+
+
+
+
+
+static bool TypedArray_toReversed(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "[TypedArray].prototype",
+                                        "toReversed");
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsTypedArrayObject, TypedArray_toReversed>(cx,
+                                                                         args);
+}
+
+
+
 using ByteVector =
     js::Vector<uint8_t, FixedLengthTypedArrayObject::INLINE_BUFFER_LIMIT>;
 
@@ -4151,7 +4260,7 @@ static bool uint8array_toHex(JSContext* cx, unsigned argc, Value* vp) {
     JS_SELF_HOSTED_FN("toString", "ArrayToString", 0, 0),
     JS_SELF_HOSTED_FN("toLocaleString", "TypedArrayToLocaleString", 2, 0),
     JS_SELF_HOSTED_FN("at", "TypedArrayAt", 1, 0),
-    JS_SELF_HOSTED_FN("toReversed", "TypedArrayToReversed", 0, 0),
+    JS_FN("toReversed", TypedArray_toReversed, 0, 0),
     JS_SELF_HOSTED_FN("toSorted", "TypedArrayToSorted", 1, 0),
     JS_SELF_HOSTED_FN("with", "TypedArrayWith", 2, 0),
     JS_FS_END,
