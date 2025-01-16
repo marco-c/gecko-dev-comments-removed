@@ -7269,14 +7269,24 @@ nsresult EditorBase::GetDataFromDataTransferOrClipboard(
   MOZ_ASSERT(aTransferable);
   if (aDataTransfer) {
     MOZ_ASSERT(aDataTransfer->ClipboardType() == Some(aClipboardType));
-    nsresult rv = [aDataTransfer, aTransferable]() -> nsresult {
+    bool readFromClipboard = true;
+    nsresult rv = [aDataTransfer, aTransferable,
+                   &readFromClipboard]() -> nsresult {
       nsIClipboardDataSnapshot* snapshot =
           aDataTransfer->GetClipboardDataSnapshot();
       MOZ_ASSERT(snapshot);
       bool snapshotIsValid = false;
       snapshot->GetValid(&snapshotIsValid);
+      
+      
+      
+      
+      readFromClipboard = !snapshotIsValid;
       if (!snapshotIsValid) {
-        NS_WARNING("DataTransfer::GetClipboardDataSnapshot() is not valid");
+        NS_WARNING(
+            "DataTransfer::GetClipboardDataSnapshot() is not valid, falling "
+            "back "
+            "to clipboard");
         return NS_ERROR_FAILURE;
       }
       AutoTArray<nsCString, 10> transferableFlavors;
@@ -7289,8 +7299,12 @@ nsresult EditorBase::GetDataFromDataTransferOrClipboard(
       if (transferableFlavors.Length() == 1) {
         
         rv = snapshot->GetDataSync(aTransferable);
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                             "nsIClipboardDataSnapshot::GetDataSync() failed");
+        if (NS_FAILED(rv)) {
+          NS_WARNING("nsIClipboardDataSnapshot::GetDataSync() failed");
+        }
+        
+        
+        readFromClipboard = rv == NS_ERROR_NOT_AVAILABLE;
         return rv;
       }
       AutoTArray<nsCString, 5> snapshotFlavors;
@@ -7313,6 +7327,10 @@ nsresult EditorBase::GetDataFromDataTransferOrClipboard(
           rv = snapshot->GetDataSync(singleTransferable);
           if (NS_FAILED(rv)) {
             NS_WARNING("nsIClipboardDataSnapshot::GetDataSync() failed");
+            
+            
+            
+            readFromClipboard = rv == NS_ERROR_NOT_AVAILABLE;
             return rv;
           }
           nsCOMPtr<nsISupports> data;
@@ -7331,13 +7349,14 @@ nsresult EditorBase::GetDataFromDataTransferOrClipboard(
         }
       }
       
-      return NS_ERROR_FAILURE;
-    }();
-    if (NS_SUCCEEDED(rv)) {
+      
+      
       return NS_OK;
+    }();
+    
+    if (NS_SUCCEEDED(rv) || !readFromClipboard) {
+      return rv;
     }
-    
-    
   }
 
   
