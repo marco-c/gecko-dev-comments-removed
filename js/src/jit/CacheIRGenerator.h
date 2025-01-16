@@ -586,7 +586,8 @@ class MOZ_RAII InlinableNativeIRGenerator {
   CacheIRWriter& writer;
   JSContext* cx_;
 
-  HandleFunction callee_;
+  HandleObject callee_;
+  HandleFunction target_;
   HandleValue newTarget_;
   HandleValue thisval_;
   HandleValueArray args_;
@@ -596,6 +597,11 @@ class MOZ_RAII InlinableNativeIRGenerator {
   HandleScript script() const { return generator_.script_; }
   bool isFirstStub() const { return generator_.isFirstStub_; }
   bool ignoresResult() const { return generator_.op_ == JSOp::CallIgnoresRv; }
+
+  
+  
+  
+  bool isCalleeBoundFunction() const { return callee_ != target_; }
 
   void emitNativeCalleeGuard();
   void emitOptimisticClassGuard(ObjOperandId objId, JSObject* obj,
@@ -789,13 +795,15 @@ class MOZ_RAII InlinableNativeIRGenerator {
   }
 
  public:
-  InlinableNativeIRGenerator(CallIRGenerator& generator, HandleFunction callee,
-                             HandleValue newTarget, HandleValue thisValue,
-                             HandleValueArray args, CallFlags flags)
+  InlinableNativeIRGenerator(CallIRGenerator& generator, HandleObject callee,
+                             HandleFunction target, HandleValue newTarget,
+                             HandleValue thisValue, HandleValueArray args,
+                             CallFlags flags)
       : generator_(generator),
         writer(generator.writer),
         cx_(generator.cx_),
         callee_(callee),
+        target_(target),
         newTarget_(newTarget),
         thisval_(thisValue),
         args_(args),
