@@ -80,14 +80,16 @@ function createSpan(doc) {
 
 
 
+
 async function testCompletion(
-  [key, completion, index, total, postLabel, colorSwatch],
+  [key, completion, index, items, postLabel, colorSwatch],
   editor
 ) {
   info("Pressing key " + key);
   info("Expecting " + completion);
 
   let onVisibilityChange = null;
+  const total = Array.isArray(items) ? items.length : items;
   const open = total > 0;
   if (editor.popup.isOpen != open) {
     onVisibilityChange = editor.popup.once(
@@ -158,7 +160,23 @@ async function testCompletion(
     ok(!(editor.popup && editor.popup.isOpen), "Popup is closed");
   } else {
     ok(editor.popup.isOpen, "Popup is open");
-    is(editor.popup.getItems().length, total, "Number of suggestions match");
+    const popupItems = editor.popup.getItems();
+    if (Array.isArray(items)) {
+      Assert.deepEqual(
+        popupItems.map(item => item.label),
+        items,
+        "Suggestions match"
+      );
+    } else {
+      is(
+        popupItems.length,
+        total,
+        "Number of suggestions match" +
+          (popupItems.length !== total
+            ? ` - got ${JSON.stringify(popupItems.map(item => item.label))}`
+            : "")
+      );
+    }
     is(editor.popup.selectedIndex, index, "Expected item is selected");
   }
 }

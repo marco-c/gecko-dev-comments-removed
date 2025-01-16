@@ -29,6 +29,13 @@ const {
   findMostRelevantCssPropertyIndex,
 } = require("resource://devtools/client/shared/suggestion-picker.js");
 
+loader.lazyRequireGetter(
+  this,
+  "InspectorCSSParserWrapper",
+  "resource://devtools/shared/css/lexer.js",
+  true
+);
+
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const CONTENT_TYPES = {
   PLAIN_TEXT: 0,
@@ -1617,32 +1624,105 @@ class InplaceEditor extends EventEmitter {
         list = this.#getCSSVariableNames().concat(this.#getCSSPropertyList());
       } else if (this.contentType == CONTENT_TYPES.CSS_VALUE) {
         
-        const match = /([^\s,.\/]+$)/.exec(query);
-        if (match) {
-          startCheckQuery = match[0];
-        } else {
-          startCheckQuery = "";
+        
+        
+        
+        const lexer = new InspectorCSSParserWrapper(query);
+        const functionStack = [];
+        let token;
+        
+        let lastMeaningfulToken;
+        let foundImportant = false;
+        let importantState = "";
+
+        let queryStartIndex = 0;
+        while ((token = lexer.nextToken())) {
+          const currentFunction = functionStack.at(-1);
+          if (
+            token.tokenType !== "WhiteSpace" &&
+            token.tokenType !== "Comment"
+          ) {
+            lastMeaningfulToken = token;
+            if (currentFunction) {
+              currentFunction.tokens.push(token);
+            }
+          }
+          if (
+            token.tokenType === "Function" ||
+            token.tokenType === "ParenthesisBlock"
+          ) {
+            functionStack.push({ fnToken: token, tokens: [] });
+          } else if (token.tokenType === "CloseParenthesis") {
+            functionStack.pop();
+          }
+
+          if (
+            token.tokenType === "WhiteSpace" ||
+            token.tokenType === "Comma" ||
+            token.tokenType === "Function" ||
+            (token.tokenType === "Comment" &&
+              
+              
+              
+              token.text.length >= 4 &&
+              token.text.endsWith("*/"))
+          ) {
+            queryStartIndex = token.endOffset;
+          }
+
+          
+          if (!foundImportant) {
+            
+            
+            if (token.tokenType === "Delim" && token.text === "!") {
+              importantState = "!";
+            } else if (importantState === "!") {
+              
+              if (token.tokenType === "Ident" && token.text === "important") {
+                foundImportant = true;
+                break;
+              } else {
+                
+                importantState = "";
+              }
+            }
+          }
         }
+
+        startCheckQuery = query.substring(queryStartIndex);
+
+        const lastFunctionEntry = functionStack.at(-1);
+        const functionValues = lastFunctionEntry
+          ? this.#getAutocompleteDataForFunction(lastFunctionEntry)
+          : null;
 
         
-        const varMatch = /^var\(([^\s]+$)/.exec(startCheckQuery);
-
-        if (varMatch && varMatch.length == 2) {
-          startCheckQuery = varMatch[1];
-          list = this.#getCSSVariableNames();
-          postLabelValues = list.map(varName =>
-            this.#getCSSVariableValue(varName)
-          );
+        if (foundImportant) {
+          list = [];
+          postLabelValues = [];
+        } else if (functionValues) {
+          list = functionValues.list;
+          postLabelValues = functionValues.postLabelValues;
         } else {
-          list = [
-            "!important",
-            ...this.#getCSSValuesForPropertyName(this.property.name),
-          ];
-        }
-
-        if (query == "") {
+          list = this.#getCSSValuesForPropertyName(this.property.name);
           
-          list.splice(0, 1);
+          if (
+            
+            !functionStack.length &&
+            
+            !input.value.slice(input.selectionStart).trim() &&
+            
+            lastMeaningfulToken &&
+            (lastMeaningfulToken.tokenType !== "Delim" ||
+              lastMeaningfulToken.text !== "/") &&
+            lastMeaningfulToken.tokenType !== "Comma" &&
+            
+            
+            
+            !input.value.trim().startsWith("!")
+          ) {
+            list.unshift("!important");
+          }
         }
       } else if (
         this.contentType == CONTENT_TYPES.CSS_MIXED &&
@@ -1781,11 +1861,59 @@ class InplaceEditor extends EventEmitter {
   
 
 
+
+
+
+
+
+
+
+
+
+  #getAutocompleteDataForFunction(functionStackEntry) {
+    const functionName = functionStackEntry?.fnToken?.value;
+    if (!functionName) {
+      return null;
+    }
+
+    let list = [];
+    let postLabelValues = [];
+
+    if (functionName === "var") {
+      
+      
+      
+      if (functionStackEntry.tokens.length > 1) {
+        
+        return null;
+      }
+      list = this.#getCSSVariableNames();
+      postLabelValues = list.map(varName => this.#getCSSVariableValue(varName));
+    } else if (functionName.includes("gradient")) {
+      
+      
+      list = this.#getCSSValuesForPropertyName("color");
+    }
+
+    
+    
+    
+
+    return { list, postLabelValues };
+  }
+
+  
+
+
   #autocloseParenthesis() {
     
+    const { selectionStart, selectionEnd } = this.input;
+
     const parts = this.#splitStringAt(
       this.input.value,
-      this.input.selectionStart
+      
+      
+      selectionEnd
     );
 
     
@@ -1802,6 +1930,9 @@ class InplaceEditor extends EventEmitter {
     if (this.#pressedKey == ")" && nextChar == ")") {
       this.#updateValue(parts[0] + parts[1].substring(1));
     }
+
+    
+    this.input.setSelectionRange(selectionStart, selectionEnd);
 
     this.#pressedKey = null;
   }
