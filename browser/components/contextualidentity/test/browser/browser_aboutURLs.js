@@ -28,6 +28,12 @@ add_task(async function () {
     
     
     "protections",
+
+    
+    "profilemanager",
+    "editprofile",
+    "deleteprofile",
+    "newprofile",
   ];
 
   for (let cid in Cc) {
