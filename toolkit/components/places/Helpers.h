@@ -326,6 +326,6 @@ class AsyncStatementTelemetryTimer : public AsyncStatementCallback {
   const TimeStamp mStart;
 };
 
-} 
+}  
 
 #endif  
