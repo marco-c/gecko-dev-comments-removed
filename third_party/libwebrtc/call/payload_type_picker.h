@@ -17,8 +17,9 @@
 #include <vector>
 
 #include "api/rtc_error.h"
-#include "media/base/codec.h"
 #include "call/payload_type.h"
+#include "media/base/codec.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 
@@ -57,11 +58,23 @@ class PayloadTypeRecorder {
  public:
   explicit PayloadTypeRecorder(PayloadTypePicker& suggester)
       : suggester_(suggester) {}
+  ~PayloadTypeRecorder() {
+    
+    RTC_DCHECK(disallow_redefinition_level_ == 0);
+  }
 
   RTCError AddMapping(PayloadType payload_type, cricket::Codec codec);
   std::vector<std::pair<PayloadType, cricket::Codec>> GetMappings() const;
   RTCErrorOr<PayloadType> LookupPayloadType(cricket::Codec codec) const;
   RTCErrorOr<cricket::Codec> LookupCodec(PayloadType payload_type) const;
+  
+  
+  
+  
+  
+  
+  void DisallowRedefinition();
+  void ReallowRedefinition();
   
   
   void Commit();
@@ -72,6 +85,8 @@ class PayloadTypeRecorder {
   PayloadTypePicker& suggester_;
   std::map<PayloadType, cricket::Codec> payload_type_to_codec_;
   std::map<PayloadType, cricket::Codec> checkpoint_payload_type_to_codec_;
+  int disallow_redefinition_level_ = 0;
+  std::set<PayloadType> accepted_definitions_;
 };
 
 }  
