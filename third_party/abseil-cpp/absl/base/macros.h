@@ -138,4 +138,40 @@ ABSL_NAMESPACE_END
 #define ABSL_INTERNAL_RETHROW do {} while (false)
 #endif  
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(deprecated) && \
+    ABSL_HAVE_CPP_ATTRIBUTE(clang::annotate)
+#define ABSL_DEPRECATE_AND_INLINE() [[deprecated, clang::annotate("inline-me")]]
+#elif ABSL_HAVE_CPP_ATTRIBUTE(deprecated)
+#define ABSL_DEPRECATE_AND_INLINE() [[deprecated]]
+#else
+#define ABSL_DEPRECATE_AND_INLINE()
+#endif
+
 #endif  
