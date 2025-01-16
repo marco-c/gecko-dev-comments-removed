@@ -65,6 +65,8 @@ const HarExporter = {
 
 
 
+
+
   async save(options) {
     
     const defaultFileName = Services.prefs.getCharPref(
@@ -80,11 +82,18 @@ const HarExporter = {
 
     const host = new URL(options.connector.currentTarget.url);
 
+    if (typeof options.isSingleRequest != "boolean") {
+      options.isSingleRequest = false;
+    }
+
     const fileName = HarUtils.getHarFileName(
       defaultFileName,
       options.jsonp,
       compress,
-      host.hostname
+      host.hostname,
+      options.isSingleRequest && options.items.length
+        ? new URL(options.items[0].url).pathname
+        : ""
     );
 
     if (compress) {

@@ -43,6 +43,15 @@ var HarMenuUtils = {
   
 
 
+  saveAsHar(clickedRequest, connector) {
+    const options = this.getDefaultHarOptions([clickedRequest], connector);
+    options.isSingleRequest = true;
+    return HarExporter.save(options);
+  },
+
+  
+
+
   saveAllAsHar(requests, connector) {
     
     
