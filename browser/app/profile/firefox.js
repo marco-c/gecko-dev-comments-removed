@@ -1221,9 +1221,11 @@ pref("privacy.sanitize.timeSpan", 1);
 pref("privacy.sanitize.useOldClearHistoryDialog", false);
 
 pref("privacy.sanitize.clearOnShutdown.hasMigratedToNewPrefs2", false);
+pref("privacy.sanitize.clearOnShutdown.hasMigratedToNewPrefs3", false);
 
 
 pref("privacy.sanitize.cpd.hasMigratedToNewPrefs2", false);
+pref("privacy.sanitize.cpd.hasMigratedToNewPrefs3", false);
 
 pref("privacy.panicButton.enabled",         true);
 
