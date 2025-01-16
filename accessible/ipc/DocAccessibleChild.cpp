@@ -474,7 +474,18 @@ void DocAccessibleChild::MutationEventBatcher::AppendMutationEventData(
   
   
   MOZ_ASSERT(aAccCount <= kMaxAccsPerMessage,
-             "More accessibles given than can fit in a single batch");
+             "More Accessibles given than can fit in a single batch");
+  MOZ_ASSERT(aAccCount > 0, "Attempting to send an empty mutation event.");
+
+  
+  
+  
+  if (mCurrentBatchAccCount + aAccCount == kMaxAccsPerMessage) {
+    mMutationEventData.AppendElement(std::move(aData));
+    mBatchBoundaries.AppendElement(mMutationEventData.Length());
+    mCurrentBatchAccCount = 0;
+    return;
+  }
 
   
   
@@ -489,7 +500,9 @@ void DocAccessibleChild::MutationEventBatcher::AppendMutationEventData(
 void DocAccessibleChild::MutationEventBatcher::SendQueuedMutationEvents(
     DocAccessibleChild& aDocAcc) {
   
-  mBatchBoundaries.AppendElement(mMutationEventData.Length());
+  if (mCurrentBatchAccCount > 0) {
+    mBatchBoundaries.AppendElement(mMutationEventData.Length());
+  }
 
   
   size_t batchStartIndex = 0;
