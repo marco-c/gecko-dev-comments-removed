@@ -27,11 +27,14 @@
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/random.h"
+#include "test/explicit_key_value_config.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 namespace {
+
+using test::ExplicitKeyValueConfig;
 
 using DecodeResult = ::webrtc::AudioDecoder::EncodedAudioFrame::DecodeResult;
 using ParseResult = ::webrtc::AudioDecoder::ParseResult;
@@ -225,7 +228,8 @@ TEST(AudioDecoderOpusTest, MonoEncoderStereoDecoderOutputsTrivialStereo) {
   }
 }
 
-TEST(AudioDecoderOpusTest, MonoEncoderStereoDecoderOutputsNonTrivialStereoDtx) {
+TEST(AudioDecoderOpusTest,
+     MonoEncoderStereoDecoderOutputsTrivialStereoComfortNoise) {
   const Environment env = EnvironmentFactory().Create();
   
   const AudioEncoderOpusConfig encoder_config =
@@ -259,12 +263,45 @@ TEST(AudioDecoderOpusTest, MonoEncoderStereoDecoderOutputsNonTrivialStereoDtx) {
   
   ASSERT_FALSE(IsZeroedFrame(decoded_view));
 
+  EXPECT_TRUE(IsTrivialStereo(decoded_view));
+}
+
+TEST(AudioDecoderOpusTest, MonoEncoderStereoDecoderOutputsTrivialStereoPlc) {
+  const ExplicitKeyValueConfig trials("WebRTC-Audio-OpusGeneratePlc/Enabled/");
+  EnvironmentFactory env_factory;
+  env_factory.Set(&trials);
+  const Environment env = env_factory.Create();
   
-  EXPECT_FALSE(IsTrivialStereo(decoded_view));
+  const AudioEncoderOpusConfig encoder_config =
+      GetEncoderConfig(1, false);
+  AudioEncoderOpusImpl encoder(env, encoder_config, kPayloadType);
+  
+  constexpr size_t kDecoderNumChannels = 2;
+  AudioDecoderOpusImpl decoder(env.field_trials(), kDecoderNumChannels,
+                               kSampleRateHz);
+
+  uint32_t rtp_timestamp = 0xFFFu;
+  uint32_t timestamp = 0;
+  
+  EncodeDecodeSpeech(encoder, decoder, rtp_timestamp, timestamp,
+                     100);
+
+  
+  rtc::BufferT<int16_t> concealment_audio;
+  constexpr int kIgnored = 123;
+  decoder.GeneratePlc(kIgnored,
+                      &concealment_audio);
+  RTC_CHECK_GT(concealment_audio.size(), 0);
+  rtc::ArrayView<const int16_t> decoded_view(concealment_audio.data(),
+                                             concealment_audio.size());
+  
+  ASSERT_FALSE(IsZeroedFrame(decoded_view));
+
+  EXPECT_TRUE(IsTrivialStereo(decoded_view));
 }
 
 TEST(AudioDecoderOpusTest,
-     StereoEncoderStereoDecoderOutputsNonTrivialStereoDtx) {
+     StereoEncoderStereoDecoderOutputsNonTrivialStereoComfortNoise) {
   const Environment env = EnvironmentFactory().Create();
   
   const AudioEncoderOpusConfig encoder_config =
@@ -295,6 +332,41 @@ TEST(AudioDecoderOpusTest,
   RTC_CHECK_LE(num_decoded_samples, decoded_frame.size());
   rtc::ArrayView<const int16_t> decoded_view(decoded_frame.data(),
                                              num_decoded_samples);
+  
+  ASSERT_FALSE(IsZeroedFrame(decoded_view));
+
+  EXPECT_FALSE(IsTrivialStereo(decoded_view));
+}
+
+TEST(AudioDecoderOpusTest,
+     StereoEncoderStereoDecoderOutputsNonTrivialStereoPlc) {
+  const ExplicitKeyValueConfig trials("WebRTC-Audio-OpusGeneratePlc/Enabled/");
+  EnvironmentFactory env_factory;
+  env_factory.Set(&trials);
+  const Environment env = env_factory.Create();
+  
+  const AudioEncoderOpusConfig encoder_config =
+      GetEncoderConfig(2, false);
+  AudioEncoderOpusImpl encoder(env, encoder_config, kPayloadType);
+  
+  constexpr size_t kDecoderNumChannels = 2;
+  AudioDecoderOpusImpl decoder(env.field_trials(), kDecoderNumChannels,
+                               kSampleRateHz);
+
+  uint32_t rtp_timestamp = 0xFFFu;
+  uint32_t timestamp = 0;
+  
+  EncodeDecodeSpeech(encoder, decoder, rtp_timestamp, timestamp,
+                     100);
+
+  
+  rtc::BufferT<int16_t> concealment_audio;
+  constexpr int kIgnored = 123;
+  decoder.GeneratePlc(kIgnored,
+                      &concealment_audio);
+  RTC_CHECK_GT(concealment_audio.size(), 0);
+  rtc::ArrayView<const int16_t> decoded_view(concealment_audio.data(),
+                                             concealment_audio.size());
   
   ASSERT_FALSE(IsZeroedFrame(decoded_view));
 
