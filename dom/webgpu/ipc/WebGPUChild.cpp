@@ -223,8 +223,11 @@ void WebGPUChild::SwapChainPresent(RawId aTextureId,
                                    const RemoteTextureOwnerId& aOwnerId) {
   
   
+  
+  
   RawId encoderId = ffi::wgpu_client_make_encoder_id(mClient.get());
   SendSwapChainPresent(aTextureId, encoderId, aRemoteTextureId, aOwnerId);
+  ffi::wgpu_client_free_command_encoder_id(mClient.get(), encoderId);
 }
 
 void WebGPUChild::RegisterDevice(Device* const aDevice) {
