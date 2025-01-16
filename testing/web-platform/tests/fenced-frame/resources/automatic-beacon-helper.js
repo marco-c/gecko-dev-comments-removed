@@ -61,7 +61,6 @@ async function setupAutomaticBeacon(
             });
             
             
-            
             const iframe = await attachIFrameContext({
               origin: get_host_info().HTTPS_REMOTE_ORIGIN,
               headers: [[
