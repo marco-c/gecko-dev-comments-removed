@@ -31,14 +31,24 @@ struct VoipEngineConfig {
   
   
   
-  
-  rtc::scoped_refptr<AudioEncoderFactory> encoder_factory;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  VoipEngineConfig() = default;
+  VoipEngineConfig(VoipEngineConfig&&) = default;
+  VoipEngineConfig& operator=(VoipEngineConfig&&) = default;
+#pragma clang diagnostic pop
 
   
   
   
   
-  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory;
+  scoped_refptr<AudioEncoderFactory> encoder_factory;
+
+  
+  
+  
+  
+  scoped_refptr<AudioDecoderFactory> decoder_factory;
 
   
   
@@ -49,7 +59,7 @@ struct VoipEngineConfig {
   
   
   
-  rtc::scoped_refptr<AudioDeviceModule> audio_device_module;
+  scoped_refptr<AudioDeviceModule> audio_device_module;
 
   
   
@@ -57,7 +67,11 @@ struct VoipEngineConfig {
   
   
   
-  rtc::scoped_refptr<AudioProcessing> audio_processing;
+  std::unique_ptr<AudioProcessingFactory> audio_processing_factory;
+
+  
+  
+  [[deprecated]] scoped_refptr<AudioProcessing> audio_processing;
 };
 
 
