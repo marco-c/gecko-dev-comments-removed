@@ -102,6 +102,7 @@ def ensure_compatible_histogram(metric, probe):
     assert probe.kind() in [
         "linear",
         "exponential",
+        "enumerated",
     ], f"Histogram {probe.name()}'s kind is not mirror-compatible."
     assert (
         hasattr(metric, "labeled") and metric.labeled
