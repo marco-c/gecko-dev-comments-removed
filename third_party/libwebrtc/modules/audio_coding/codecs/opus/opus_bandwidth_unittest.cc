@@ -50,7 +50,7 @@ class PowerRatioEstimator : public LappedTransform::Callback {
                          size_t num_input_channels,
                          size_t ,
                          size_t ,
-                         std::complex<float>* const* output) override {
+                         std::complex<float>* const* ) override {
     float low_pow = 0.f;
     float high_pow = 0.f;
     for (size_t i = 0u; i < num_input_channels; ++i) {

@@ -61,7 +61,7 @@ std::vector<AudioDecoder::ParseResult> AudioDecoderPcm16B::ParsePayload(
       samples_per_ms);
 }
 
-int AudioDecoderPcm16B::PacketDuration(const uint8_t* encoded,
+int AudioDecoderPcm16B::PacketDuration(const uint8_t* ,
                                        size_t encoded_len) const {
   
   return static_cast<int>(encoded_len / (2 * Channels()));
