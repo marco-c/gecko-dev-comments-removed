@@ -51,6 +51,10 @@ bool DecommitEnabled();
 
 
 
+void DisableDecommit();
+
+
+
 bool MarkPagesUnusedSoft(void* region, size_t length);
 
 

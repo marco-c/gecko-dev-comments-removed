@@ -72,6 +72,12 @@ static size_t numAddressBits = 0;
 static size_t virtualMemoryLimit = size_t(-1);
 
 
+static bool decommitEnabled = false;
+
+
+static bool disableDecommitRequested = false;
+
+
 
 
 
@@ -199,7 +205,14 @@ void* TestMapAlignedPagesLastDitch(size_t length, size_t alignment) {
   return MapAlignedPagesLastDitch(length, alignment, StallAndRetry::No);
 }
 
-bool DecommitEnabled() { return SystemPageSize() == PageSize; }
+bool DecommitEnabled() { return decommitEnabled; }
+
+void DisableDecommit() {
+  MOZ_RELEASE_ASSERT(
+      pageSize == 0,
+      "DisableDecommit should be called before InitMemorySubsystem");
+  disableDecommitRequested = true;
+}
 
 
 static inline size_t OffsetFromAligned(void* region, size_t alignment) {
@@ -403,6 +416,11 @@ void InitMemorySubsystem() {
     pageSize = size_t(sysconf(_SC_PAGESIZE));
     allocGranularity = pageSize;
 #endif
+
+    
+    
+    decommitEnabled = pageSize == PageSize && !disableDecommitRequested;
+
 #ifdef JS_64BIT
 #  ifdef XP_WIN
     minValidAddress = size_t(sysinfo.lpMinimumApplicationAddress);
