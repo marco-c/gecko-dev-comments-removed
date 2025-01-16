@@ -3,21 +3,21 @@
 
 
 #include "ViewTransition.h"
-#include "nsPresContext.h"
+
+#include "mozilla/gfx/2D.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/ViewTransitionBinding.h"
+#include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/SVGIntegrationUtils.h"
 #include "mozilla/WritingModes.h"
+#include "nsDisplayList.h"
 #include "nsITimer.h"
+#include "nsLayoutUtils.h"
+#include "nsPresContext.h"
 #include "Units.h"
-
-static inline void ImplCycleCollectionTraverse(
-    nsCycleCollectionTraversalCallback&, const nsRefPtrHashKey<nsAtom>&,
-    const char* aName, uint32_t aFlags = 0) {
-  
-}
 
 namespace mozilla::dom {
 
@@ -48,9 +48,40 @@ static CSSToCSSMatrix4x4Flagged EffectiveTransform(nsIFrame* aFrame) {
   return matrix;
 }
 
-struct CapturedElementOldState {
+static RefPtr<gfx::DataSourceSurface> CaptureFallbackSnapshot(
+    nsIFrame* aFrame) {
+  const nsRect rect = aFrame->InkOverflowRectRelativeToSelf();
+  const auto surfaceRect = LayoutDeviceIntRect::FromAppUnitsToOutside(
+      rect, aFrame->PresContext()->AppUnitsPerDevPixel());
+
   
-  bool mHasImage = false;
+  const auto format = gfx::SurfaceFormat::B8G8R8A8;
+  RefPtr<gfx::DrawTarget> dt = gfx::Factory::CreateDrawTarget(
+      gfxPlatform::GetPlatform()->GetSoftwareBackend(),
+      surfaceRect.Size().ToUnknownSize(), format);
+  if (NS_WARN_IF(!dt) || NS_WARN_IF(!dt->IsValid())) {
+    return nullptr;
+  }
+
+  {
+    using PaintFrameFlags = nsLayoutUtils::PaintFrameFlags;
+    gfxContext thebes(dt);
+    
+    
+    const PaintFrameFlags flags = PaintFrameFlags::InTransform;
+    nsLayoutUtils::PaintFrame(&thebes, aFrame, rect, NS_RGBA(0, 0, 0, 0),
+                              nsDisplayListBuilderMode::Painting, flags);
+  }
+
+  RefPtr<gfx::SourceSurface> surf = dt->GetBackingSurface();
+  if (NS_WARN_IF(!surf)) {
+    return nullptr;
+  }
+  return surf->GetDataSurface();
+}
+
+struct CapturedElementOldState {
+  RefPtr<gfx::DataSourceSurface> mImage;
 
   
   nsSize mSize;
@@ -63,7 +94,7 @@ struct CapturedElementOldState {
 
   CapturedElementOldState(nsIFrame* aFrame,
                           const nsSize& aSnapshotContainingBlockSize)
-      : mHasImage(true),
+      : mImage(CaptureFallbackSnapshot(aFrame)),
         mSize(aFrame->Style()->IsRootElementStyle()
                   ? aSnapshotContainingBlockSize
                   : aFrame->GetRect().Size()),
@@ -92,9 +123,9 @@ struct ViewTransition::CapturedElement {
 
 static inline void ImplCycleCollectionTraverse(
     nsCycleCollectionTraversalCallback& aCb,
-    const UniquePtr<ViewTransition::CapturedElement>& aField, const char* aName,
+    const ViewTransition::CapturedElement& aField, const char* aName,
     uint32_t aFlags = 0) {
-  ImplCycleCollectionTraverse(aCb, aField->mNewElement, aName, aFlags);
+  ImplCycleCollectionTraverse(aCb, aField.mNewElement, aName, aFlags);
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ViewTransition, mDocument,
@@ -116,6 +147,14 @@ ViewTransition::ViewTransition(Document& aDoc,
     : mDocument(&aDoc), mUpdateCallback(aCb) {}
 
 ViewTransition::~ViewTransition() { ClearTimeoutTimer(); }
+
+gfx::DataSourceSurface* ViewTransition::GetOldSurface(nsAtom* aName) const {
+  auto el = mNamedElements.Get(aName);
+  if (NS_WARN_IF(!el)) {
+    return nullptr;
+  }
+  return el->mOldState.mImage;
+}
 
 nsIGlobalObject* ViewTransition::GetParentObject() const {
   return mDocument ? mDocument->GetParentObject() : nullptr;
@@ -325,7 +364,7 @@ void ViewTransition::SetupTransitionPseudoElements() {
     
     group->AppendChildTo(imagePair, kNotify, IgnoreErrors());
     
-    if (capturedElement.mOldState.mHasImage) {
+    if (capturedElement.mOldState.mImage) {
       
       
       
