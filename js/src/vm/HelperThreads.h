@@ -295,6 +295,9 @@ void RunPendingSourceCompressions(JSRuntime* runtime);
 
 bool IsOffThreadSourceCompressionEnabled();
 
+void AttachFinishedBaselineCompilations(JSContext* cx,
+                                        AutoLockHelperThreadState& lock);
+
 }  
 
 #endif 

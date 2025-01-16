@@ -6,7 +6,11 @@
 
 #include "jit/BaselineCompileTask.h"
 #include "jit/JitRuntime.h"
+#include "jit/JitScript.h"
 #include "vm/HelperThreadState.h"
+
+#include "vm/JSScript-inl.h"
+#include "vm/Realm-inl.h"
 
 using namespace js;
 using namespace js::jit;
@@ -22,6 +26,8 @@ void BaselineCompileTask::runHelperThreadTask(
 
   
   
+  runtimeFromAnyThread()->mainContextFromAnyThread()->requestInterrupt(
+      InterruptReason::AttachOffThreadCompilations);
 }
 
 
@@ -57,6 +63,60 @@ void BaselineCompileTask::runTask() {
   MethodStatus status = compiler_->compileOffThread();
   if (status == Method_Error) {
     failed_ = true;
+  }
+}
+
+
+void BaselineCompileTask::FinishOffThreadTask(BaselineCompileTask* task) {
+  JSScript* script = task->script();
+  if (script->isBaselineCompilingOffThread()) {
+    script->jitScript()->clearIsBaselineCompiling(script);
+  }
+
+  task->masm_.reset();
+
+  
+  
+  js_delete(task->alloc_->lifoAlloc());
+}
+
+void BaselineCompileTask::finishOnMainThread(JSContext* cx) {
+  if (!compiler_->finishCompile(cx)) {
+    cx->recoverFromOutOfMemory();
+  }
+}
+
+void js::AttachFinishedBaselineCompilations(JSContext* cx,
+                                            AutoLockHelperThreadState& lock) {
+  JSRuntime* rt = cx->runtime();
+
+  while (true) {
+    GlobalHelperThreadState::BaselineCompileTaskVector& finished =
+        HelperThreadState().baselineFinishedList(lock);
+
+    
+    bool found = false;
+    for (size_t i = 0; i < finished.length(); i++) {
+      BaselineCompileTask* task = finished[i];
+      if (task->runtimeFromAnyThread() != rt) {
+        continue;
+      }
+      found = true;
+
+      HelperThreadState().remove(finished, &i);
+      rt->jitRuntime()->numFinishedOffThreadTasksRef(lock)--;
+      {
+        if (!task->failed()) {
+          AutoUnlockHelperThreadState unlock(lock);
+          AutoRealm ar(cx, task->script());
+          task->finishOnMainThread(cx);
+          BaselineCompileTask::FinishOffThreadTask(task);
+        }
+      }
+    }
+    if (!found) {
+      break;
+    }
   }
 }
 
