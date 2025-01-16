@@ -16,7 +16,6 @@ import android.view.ViewGroup
 import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatDialogFragment
-import androidx.compose.material.SnackbarDuration
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.setFragmentResultListener
@@ -43,6 +42,7 @@ import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
+import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.compose.core.Action
 import org.mozilla.fenix.compose.snackbar.Snackbar
@@ -271,7 +271,10 @@ class TabsTrayFragment : AppCompatDialogFragment() {
                         onTabMediaClick = tabsTrayInteractor::onMediaClicked,
                         onTabClick = { tab ->
                             run outer@{
-                                if (!requireContext().settings().hasShownTabSwipeCFR) {
+                                if (!requireContext().settings().hasShownTabSwipeCFR &&
+                                    !requireContext().isTabStripEnabled() &&
+                                    requireContext().settings().isSwipeToolbarToSwitchTabsEnabled
+                                ) {
                                     val normalTabs = tabsTrayStore.state.normalTabs
                                     val currentTabId = tabsTrayStore.state.selectedTabId
 
@@ -868,7 +871,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
                             }
                         },
                     ),
-                    duration = SnackbarDuration.Long,
+                    duration = SnackbarState.Duration.Preset.Long,
                     action = Action(
                         label = getString(R.string.create_collection_view),
                         onClick = {
@@ -904,7 +907,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
             snackBarParentView = requireView(),
             snackbarState = SnackbarState(
                 message = getString(displayResId, displayFolderTitle),
-                duration = SnackbarDuration.Long,
+                duration = SnackbarState.Duration.Preset.Long,
                 action = Action(
                     label = getString(R.string.create_collection_view),
                     onClick = {
@@ -934,7 +937,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
             snackBarParentView = tabsTrayComposeBinding.root,
             snackbarState = SnackbarState(
                 message = getString(R.string.inactive_tabs_auto_close_message_snackbar),
-                duration = SnackbarDuration.Long,
+                duration = SnackbarState.Duration.Preset.Long,
             ),
         )
     }
