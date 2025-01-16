@@ -478,13 +478,11 @@ struct MediaReceiverInfo {
 
   
   
+  std::optional<webrtc::Timestamp> last_sender_report_timestamp;
   
   
-  std::optional<int64_t> last_sender_report_timestamp_ms;
-  
-  
-  std::optional<int64_t> last_sender_report_utc_timestamp_ms;
-  std::optional<int64_t> last_sender_report_remote_utc_timestamp_ms;
+  std::optional<webrtc::Timestamp> last_sender_report_utc_timestamp;
+  std::optional<webrtc::Timestamp> last_sender_report_remote_utc_timestamp;
   uint64_t sender_reports_packets_sent = 0;
   uint64_t sender_reports_bytes_sent = 0;
   uint64_t sender_reports_reports_count = 0;
