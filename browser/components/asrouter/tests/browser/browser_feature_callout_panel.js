@@ -280,11 +280,25 @@ add_task(async function feature_callout_split_dismiss_button() {
       ok(secondaryButton, "Callout should have a split secondary button");
       ok(submenuButton, "Callout should have a split submenu button");
       ok(submenu, "Callout should have a submenu");
+      is(
+        submenuButton.getAttribute("aria-expanded"),
+        "false",
+        "Submenu aria-expanded attribute should be false by default"
+      );
+      ok(
+        submenuButton.getAttribute("aria-haspopup"),
+        "Submenu should have aria-haspopup attribute"
+      );
 
       
       let opened = BrowserTestUtils.waitForEvent(submenu, "popupshown");
       submenuButton.click();
       await opened;
+      is(
+        submenuButton.getAttribute("aria-expanded"),
+        "true",
+        "Submenu aria-expanded attribute should be true"
+      );
 
       
       
