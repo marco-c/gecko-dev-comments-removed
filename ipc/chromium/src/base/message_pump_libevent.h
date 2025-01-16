@@ -83,48 +83,6 @@ class MessagePumpLibevent : public MessagePump {
                            Watcher* delegate);
 
   
-  
-  
-  
-  
-  
-  
-  
-  class SignalEvent {
-    friend class MessagePumpLibevent;
-
-   public:
-    SignalEvent();
-    ~SignalEvent();  
-
-    
-    bool StopCatching();
-
-   private:
-    void Init(event* e);
-    event* ReleaseEvent();
-
-    event* event_;
-
-    DISALLOW_COPY_AND_ASSIGN(SignalEvent);
-  };
-
-  class SignalWatcher {
-   public:
-    virtual ~SignalWatcher() {}
-    
-    
-    virtual void OnSignal(int sig) = 0;
-  };
-
-  
-  
-  
-  
-  
-  bool CatchSignal(int sig, SignalEvent* sigevent, SignalWatcher* delegate);
-
-  
   virtual void Run(Delegate* delegate) override;
   virtual void Quit() override;
   virtual void ScheduleWork() override;
@@ -152,9 +110,6 @@ class MessagePumpLibevent : public MessagePump {
 
   
   static void OnLibeventNotification(int fd, short flags, void* context);
-
-  
-  static void OnLibeventSignalNotification(int sig, short flags, void* context);
 
   
   
