@@ -150,6 +150,8 @@ const MOCK_RECOMMENDED_ADS_RESPONSE = [
   },
 ];
 
+const SUPPORTED_SITE_URL = "https://example.com";
+
 function verifyAnalysisDetailsVisible(shoppingContainer) {
   ok(
     shoppingContainer.reviewReliabilityEl,
