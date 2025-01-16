@@ -152,7 +152,9 @@ void MemoryTelemetry::Poke() {
   TimeStamp now = TimeStamp::Now();
 
   if (mLastRun &&
-      mLastRun + TimeDuration::FromSeconds(kTelemetryCooldownS) < now) {
+      now - mLastRun < TimeDuration::FromSeconds(kTelemetryCooldownS)) {
+    
+    
     
     
     return;
