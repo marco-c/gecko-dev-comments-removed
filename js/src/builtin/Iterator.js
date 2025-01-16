@@ -1061,6 +1061,88 @@ function IteratorZipKeyed(predicate) {
 
 
 
+
+function* IteratorRangeGenerator(start, end, step, inclusiveEnd, zero, one) {
+  
+
+  
+  
+  
+  var ifIncrease = end > start;
+
+  
+  
+  var ifStepIncrease = step > zero;
+
+  
+  if (ifIncrease !== ifStepIncrease) {
+    return undefined;
+  }
+
+  
+  var hitsEnd = false;
+
+  
+  var currentCount = zero;
+
+  
+  while (hitsEnd === false) {
+    
+    var currentYieldingValue = start + (step * currentCount);
+
+    
+    if (currentYieldingValue === end) {
+      hitsEnd = true;
+    }
+
+    
+    currentCount = currentCount + one;
+
+    
+    if (ifIncrease === true) {
+      
+      if (inclusiveEnd === true) {
+        
+        if (currentYieldingValue > end) {
+          return undefined;
+        }
+      } else {
+        
+        if (currentYieldingValue >= end) {
+          return undefined;
+        }
+      }
+    }
+    
+    else {
+      
+      if (inclusiveEnd === true) {
+        
+        if (end > currentYieldingValue) {
+          return undefined;
+        }
+      } else {
+        
+        if (end >= currentYieldingValue) {
+          return undefined;
+        }
+      }
+    }
+
+    
+    yield currentYieldingValue;
+  }
+
+  
+  return undefined;
+}
+
+
+
+
+
+
+
 function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
   
   if (isNumberRange && Number_isNaN(start)) {
@@ -1146,8 +1228,11 @@ function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
   if (step === zero && start !== end) {
     ThrowRangeError(JSMSG_ITERATOR_RANGE_STEP_ZERO);
   }
-
+  
+  return IteratorRangeGenerator(start, end, step, inclusiveEnd, zero, one);
 }
+
+
 
 
 
