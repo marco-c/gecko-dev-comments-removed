@@ -49,6 +49,11 @@ inline constexpr int64_t ToNtpUnits(TimeDelta delta) {
 
 
 
+TimeDelta CompactNtpIntervalToTimeDelta(uint32_t compact_ntp_interval);
+
+
+
+
 
 TimeDelta CompactNtpRttToTimeDelta(uint32_t compact_ntp_interval);
 
