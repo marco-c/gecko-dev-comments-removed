@@ -3563,9 +3563,6 @@ pref("reader.content_width", 3);
 pref("reader.line_height", 4);
 
 
-pref("reader.improved_text_menu.enabled", true);
-
-
 pref("reader.character_spacing", 0);
 
 
@@ -3581,9 +3578,6 @@ pref("reader.color_scheme", "auto");
 
 
 pref("reader.color_scheme.values", "[\"auto\",\"light\",\"dark\",\"sepia\",\"contrast\",\"gray\"]");
-
-
-pref("reader.colors_menu.enabled", true);
 
 
 pref("reader.custom_colors.foreground", "");
