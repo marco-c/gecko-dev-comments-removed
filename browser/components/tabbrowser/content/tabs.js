@@ -1934,7 +1934,10 @@
 
       if (this._hasTabTempMaxWidth) {
         this._hasTabTempMaxWidth = false;
-        let tabs = this.visibleTabs;
+        
+        
+        
+        let tabs = this.allTabs;
         for (let i = 0; i < tabs.length; i++) {
           tabs[i].style.maxWidth = "";
         }
