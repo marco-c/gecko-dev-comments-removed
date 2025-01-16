@@ -1041,9 +1041,17 @@ reinitialize_stream(cubeb_stream * stm)
                        state == stream_state::DRAINING;
     int err = aaudio_stream_stop_locked(stm, lock);
     
-    uint64_t total_frames = stm->pos_estimate.initial_position() +
-                            WRAP(AAudioStream_getFramesWritten)(stm->ostream);
+
     
+    uint64_t total_frames = stm->pos_estimate.initial_position();
+    if (stm->ostream) {
+      
+      total_frames += WRAP(AAudioStream_getFramesWritten)(stm->ostream);
+    } else if (stm->istream) {
+      
+      total_frames += WRAP(AAudioStream_getFramesWritten)(stm->istream);
+    }
+
     aaudio_stream_destroy_locked(stm, lock);
     err = aaudio_stream_init_impl(stm, lock);
 

@@ -217,8 +217,6 @@ TEST(cubeb, duplex_collection_change_no_unregister)
   cubeb * ctx;
   int r;
 
-  mozilla::gtest::DisableCrashReporter();
-
   r = common_init(&ctx, "Cubeb duplex example with collection change");
   ASSERT_EQ(r, CUBEB_OK) << "Error initializing cubeb library";
 
@@ -230,11 +228,17 @@ TEST(cubeb, duplex_collection_change_no_unregister)
   }
 
   std::unique_ptr<cubeb, decltype(&cubeb_destroy)> cleanup_cubeb_at_exit(
-      ctx, [](cubeb* p) noexcept {
-        EXPECT_DEATH(CauseDeath(p), "");
-      });
+      ctx, [](cubeb * p) noexcept { EXPECT_DEATH(CauseDeath(p), ""); });
 
   duplex_collection_change_impl(ctx);
+
+#  if defined(XP_MACOSX) && !defined(MOZ_DEBUG)
+  
+  
+  
+  
+  mozilla::gtest::DisableCrashReporter();
+#  endif
 }
 #endif
 
