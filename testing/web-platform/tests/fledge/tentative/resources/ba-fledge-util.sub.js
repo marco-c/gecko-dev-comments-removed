@@ -360,6 +360,15 @@ BA.authorizeServerResponseHashes = async function(hashes) {
   await fetch(authorizeURL, {adAuctionHeaders: true});
 };
 
+
+
+BA.authorizeServerResponseNonces = async function(nonces) {
+  let authorizeURL =
+      new URL('resources/authorize-server-response.py', window.location);
+  authorizeURL.searchParams.append('nonces', nonces.join(','));
+  await fetch(authorizeURL, {adAuctionHeaders: true});
+};
+
 BA.configureCoordinator = async function() {
   
   return 'https://{{hosts[][]}}';
