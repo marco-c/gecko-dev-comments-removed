@@ -2110,13 +2110,8 @@ pref("browser.ml.chat.sidebar", true);
 pref("security.mixed_content.block_active_content", true);
 
 
-#ifdef NIGHTLY_BUILD
 pref("security.insecure_connection_text.enabled", true);
 pref("security.insecure_connection_text.pbmode.enabled", true);
-#else
-pref("security.insecure_connection_text.enabled", false);
-pref("security.insecure_connection_text.pbmode.enabled", false);
-#endif
 
 
 
