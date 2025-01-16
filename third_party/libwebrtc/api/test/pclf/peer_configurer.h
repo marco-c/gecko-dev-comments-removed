@@ -101,7 +101,17 @@ class PeerConfigurer {
   
   
   
+  
   PeerConfigurer* SetPortAllocatorExtraFlags(uint32_t extra_flags);
+  
+  
+  
+  
+  
+  
+  
+  
+  PeerConfigurer* SetPortAllocatorFlags(uint32_t flags);
 
   
   

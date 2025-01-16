@@ -130,7 +130,12 @@ struct Params {
   std::optional<AudioConfig> audio_config;
   
   
-  uint32_t port_allocator_extra_flags = cricket::kDefaultPortAllocatorFlags;
+  
+  
+  
+  
+  
+  std::optional<uint32_t> port_allocator_flags = std::nullopt;
   
   
   std::optional<std::string> rtc_event_log_path;
