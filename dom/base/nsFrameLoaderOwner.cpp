@@ -128,6 +128,11 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
       
       
       bc = mFrameLoader->GetMaybePendingBrowsingContext();
+
+      if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+        fm->FixUpFocusBeforeFrameLoaderChange(*owner, bc);
+      }
+
       networkCreated = mFrameLoader->IsNetworkCreated();
 
       MOZ_ASSERT_IF(aOptions.mTryUseBFCache, aOptions.mReplaceBrowsingContext);
@@ -231,10 +236,9 @@ void nsFrameLoaderOwner::UpdateFocusAndMouseEnterStateAfterFrameLoaderChange(
     Element* aOwner) {
   
   
-  if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+  if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
     if (fm->GetFocusedElement() == aOwner) {
-      fm->ActivateRemoteFrameIfNeeded(*aOwner,
-                                      nsFocusManager::GenerateFocusActionId());
+      fm->FixUpFocusAfterFrameLoaderChange(*aOwner);
     }
   }
 

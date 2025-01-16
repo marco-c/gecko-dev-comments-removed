@@ -223,6 +223,13 @@ class nsFocusManager final : public nsIFocusManager,
   
   MOZ_CAN_RUN_SCRIPT void FixUpFocusAfterFrameLoaderChange(
       mozilla::dom::Element&);
+  
+
+
+
+
+  void FixUpFocusBeforeFrameLoaderChange(mozilla::dom::Element&,
+                                         mozilla::dom::BrowsingContext* aBc);
 
   
 
