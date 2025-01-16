@@ -120,6 +120,12 @@ var gSyncPane = {
     
     Services.obs.notifyObservers(window, "sync-pane-loaded");
 
+    this._maybeShowSyncAction();
+  },
+
+  
+  
+  _maybeShowSyncAction() {
     if (
       location.hash == "#sync" &&
       UIState.get().status == UIState.STATUS_SIGNED_IN
@@ -313,6 +319,13 @@ var gSyncPane = {
                 console.error("Failed to enable sync", err);
               });
           }
+          
+          
+          const browser = window.docShell.chromeEventHandler;
+          browser.loadURI(Services.io.newURI("about:preferences#sync"), {
+            triggeringPrincipal:
+              Services.scriptSecurityManager.getSystemPrincipal(),
+          });
         },
       },
       params 
