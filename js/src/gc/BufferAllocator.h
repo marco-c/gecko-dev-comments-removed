@@ -152,6 +152,15 @@ struct MediumBuffer;
 
 
 
+
+
+
+
+
+
+
+
+
 class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
  public:
   static constexpr size_t MinMediumAllocShift = 8;   
@@ -343,6 +352,9 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void addSweptRegion(BufferChunk* chunk, uintptr_t freeStart,
                       uintptr_t freeEnd, bool shouldDecommit,
                       bool expectUnchanged, FreeLists& freeLists);
+  void freeMedium(void* alloc);
+  FreeRegion* findFollowingFreeRegion(uintptr_t start);
+  FreeRegion* findPrecedingFreeRegion(uintptr_t start);
   enum class ListPosition { Front, Back };
   FreeRegion* addFreeRegion(FreeLists* freeLists, size_t sizeClass,
                             uintptr_t start, uintptr_t end, bool anyDecommitted,
@@ -351,6 +363,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void updateFreeRegionStart(FreeLists* freeLists, FreeRegion* region,
                              uintptr_t newStart);
   FreeLists* getChunkFreeLists(BufferChunk* chunk);
+  bool isSweepingChunk(BufferChunk* chunk);
 
   
   
