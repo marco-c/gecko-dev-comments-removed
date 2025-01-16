@@ -18,7 +18,6 @@
 #include "mozilla/ProfilerCounts.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/ThreadSafety.h"
-#include "mozilla/UniquePtr.h"
 
 #include "GeckoProfiler.h"
 #include "prenv.h"
@@ -44,21 +43,6 @@
 #ifdef ANDROID
 #  include <android/log.h>
 #endif
-
-namespace mozilla::profiler {
-class MemoryCounter : public BaseProfilerCount {
- public:
-  MemoryCounter()
-      : BaseProfilerCount("malloc", "Memory", "Amount of allocated memory") {};
-
-  virtual ~MemoryCounter() {
-    
-  }
-
-  CountSample Sample() override;
-};
-
-}  
 
 
 
@@ -462,20 +446,6 @@ static void FreeCallback(void* aPtr) {
   }
 }
 
-MemoryCounter::CountSample MemoryCounter::Sample() {
-  jemalloc_stats_lite_t stats;
-
-  jemalloc_stats_lite(&stats);
-
-  CountSample sample = {
-      .count = int64_t(stats.allocated_bytes),
-      .number = stats.num_operations,
-      .isSampleNew = true,
-  };
-
-  return sample;
-}
-
 }  
 
 
@@ -591,10 +561,6 @@ namespace mozilla::profiler {
 
 
 
-
-UniquePtr<BaseProfilerCount> create_memory_counter() {
-  return MakeUnique<MemoryCounter>();
-}
 
 void remove_memory_hooks() { jemalloc_replace_dynamic(nullptr); }
 
