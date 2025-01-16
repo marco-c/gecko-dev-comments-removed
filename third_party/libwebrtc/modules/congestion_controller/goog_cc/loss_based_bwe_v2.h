@@ -169,12 +169,12 @@ class LossBasedBweV2 {
   bool IsConfigValid() const;
 
   
-  double GetAverageReportedLossRatio() const;
-  double GetAverageReportedPacketLossRatio() const;
+  void UpdateAverageReportedLossRatio();
+  double CalculateAverageReportedPacketLossRatio() const;
   
   
   
-  double GetAverageReportedByteLossRatio() const;
+  double CalculateAverageReportedByteLossRatio() const;
   std::vector<ChannelParameters> GetCandidates(bool in_alr) const;
   DataRate GetCandidateBandwidthUpperBound() const;
   Derivatives GetDerivatives(const ChannelParameters& channel_parameters) const;
@@ -220,6 +220,7 @@ class LossBasedBweV2 {
   LossBasedBweV2::Result loss_based_result_ = LossBasedBweV2::Result();
   HoldInfo last_hold_info_ = HoldInfo();
   PaddingInfo last_padding_info_ = PaddingInfo();
+  double average_reported_loss_ratio_ = 0.0;
 };
 
 }  
