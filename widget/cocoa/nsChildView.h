@@ -105,7 +105,8 @@ class WidgetRenderingContext;
                            NSTextInputClient,
                            NSDraggingSource,
                            NSDraggingDestination,
-                           NSPasteboardItemDataProvider> {
+                           NSPasteboardItemDataProvider,
+                           NSStandardKeyBindingResponding> {
  @private
   
   
@@ -229,6 +230,8 @@ class WidgetRenderingContext;
 
 - (void)viewWillStartLiveResize;
 - (void)viewDidEndLiveResize;
+
+- (void)showContextMenuForSelection:(id)sender;
 
 
 
