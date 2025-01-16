@@ -106,52 +106,6 @@ document.addEventListener(
           break;
 
         
-        case "open-tab-group-context-menu_moveToNewWindow":
-          {
-            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
-            let tabGroup = gBrowser.getTabGroupById(tabGroupId);
-            gBrowser.replaceGroupWithWindow(tabGroup);
-          }
-          break;
-        case "open-tab-group-context-menu_moveToThisWindow":
-          {
-            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
-            let tabGroup = gBrowser.getTabGroupById(tabGroupId);
-            gBrowser.adoptTabGroup(tabGroup, gBrowser.tabs.length);
-          }
-          break;
-        case "open-tab-group-context-menu_delete":
-          {
-            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
-            let tabGroup = gBrowser.getTabGroupById(tabGroupId);
-            
-            
-            tabGroup.ownerGlobal.gBrowser.removeTabGroup(tabGroup);
-          }
-          break;
-
-        
-        case "saved-tab-group-context-menu_openInThisWindow":
-          {
-            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
-            SessionStore.openSavedTabGroup(tabGroupId, window);
-          }
-          break;
-        case "saved-tab-group-context-menu_openInNewWindow":
-          {
-            
-            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
-            let tabGroup = SessionStore.openSavedTabGroup(tabGroupId, window);
-            gBrowser.replaceGroupWithWindow(tabGroup);
-          }
-          break;
-        case "saved-tab-group-context-menu_delete":
-          {
-            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
-            SessionStore.forgetSavedTabGroup(tabGroupId);
-          }
-          break;
-        
         case "editBookmarkPanel_showForNewBookmarks":
           StarUI.onShowForNewBookmarksCheckboxCommand();
           break;
@@ -465,23 +419,6 @@ document.addEventListener(
       .addEventListener("popupshowing", event => {
         if (event.target.id == "tabContextMenu") {
           TabContextMenu.updateContextMenu(event.target);
-        }
-      });
-
-    
-    
-    document
-      .getElementById("open-tab-group-context-menu")
-      .addEventListener("popupshowing", event => {
-        if (event.target.id == "open-tab-group-context-menu") {
-          
-          
-          let { tabGroupId } = event.target.triggerNode.dataset;
-          let tabGroup = gBrowser.getTabGroupById(tabGroupId);
-          let tabGroupIsInThisWindow = tabGroup.ownerDocument == document;
-          event.target.querySelector(
-            "#open-tab-group-context-menu_moveToThisWindow"
-          ).disabled = tabGroupIsInThisWindow;
         }
       });
 
