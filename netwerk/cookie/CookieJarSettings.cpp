@@ -462,8 +462,7 @@ void CookieJarSettings::Serialize(CookieJarSettingsArgs& aData) {
   cookieJarSettings.forget(aCookieJarSettings);
 }
 
-already_AddRefed<nsICookieJarSettings> CookieJarSettings::Merge(
-    const CookieJarSettingsArgs& aData) {
+void CookieJarSettings::Merge(const CookieJarSettingsArgs& aData) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(
       mCookieBehavior == aData.cookieBehavior() ||
@@ -475,50 +474,39 @@ already_AddRefed<nsICookieJarSettings> CookieJarSettings::Merge(
        aData.cookieBehavior() == nsICookieService::BEHAVIOR_REJECT_TRACKER));
 
   if (mState == eFixed) {
-    return do_AddRef(this);
+    return;
   }
 
-  RefPtr<CookieJarSettings> newCookieJarSettings;
-  newCookieJarSettings = Clone();
-
   
-  if (newCookieJarSettings->mCookieBehavior ==
-          nsICookieService::BEHAVIOR_REJECT_TRACKER &&
+  if (mCookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
       aData.cookieBehavior() ==
           nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
     
     
-    if (!newCookieJarSettings->mIsFirstPartyIsolated) {
-      newCookieJarSettings->mCookieBehavior =
+    if (!mIsFirstPartyIsolated) {
+      mCookieBehavior =
           nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
     }
   }
-  if (newCookieJarSettings->mCookieBehavior ==
+  if (mCookieBehavior ==
           nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN &&
       aData.cookieBehavior() == nsICookieService::BEHAVIOR_REJECT_TRACKER) {
     
     
     if (aData.isFirstPartyIsolated()) {
-      newCookieJarSettings->mCookieBehavior =
-          nsICookieService::BEHAVIOR_REJECT_TRACKER;
-      newCookieJarSettings->mIsFirstPartyIsolated = true;
+      mCookieBehavior = nsICookieService::BEHAVIOR_REJECT_TRACKER;
+      mIsFirstPartyIsolated = true;
     }
   }
   
   MOZ_ASSERT_IF(
-      newCookieJarSettings->mIsFirstPartyIsolated,
-      newCookieJarSettings->mCookieBehavior !=
+      mIsFirstPartyIsolated,
+      mCookieBehavior !=
           nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN);
 
   if (aData.shouldResistFingerprinting()) {
-    newCookieJarSettings->mShouldResistFingerprinting = true;
+    mShouldResistFingerprinting = true;
   }
-
-  
-  
-  
-  
-  newCookieJarSettings->mPartitionKey = aData.partitionKey();
 
   PermissionComparator comparator;
 
@@ -535,13 +523,10 @@ already_AddRefed<nsICookieJarSettings> CookieJarSettings::Merge(
       continue;
     }
 
-    if (!newCookieJarSettings->mCookiePermissions.Contains(permission,
-                                                           comparator)) {
-      newCookieJarSettings->mCookiePermissions.AppendElement(permission);
+    if (!mCookiePermissions.Contains(permission, comparator)) {
+      mCookiePermissions.AppendElement(permission);
     }
   }
-
-  return newCookieJarSettings.forget();
 }
 
 void CookieJarSettings::SetPartitionKey(nsIURI* aURI,

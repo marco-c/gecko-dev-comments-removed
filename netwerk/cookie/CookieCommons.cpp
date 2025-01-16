@@ -32,7 +32,6 @@
 #include "nsNetUtil.h"
 #include "nsSandboxFlags.h"
 #include "nsScriptSecurityManager.h"
-#include "nsReadableUtils.h"
 #include "ThirdPartyUtil.h"
 
 namespace mozilla {
@@ -577,24 +576,6 @@ bool CookieCommons::IsFirstPartyPartitionedCookieWithoutCHIPS(
   
   return aBaseDomain.Equals(NS_ConvertUTF16toUTF8(baseDomain)) &&
          !foreignByAncestorContext;
-}
-
-
-bool CookieCommons::ShouldEnforceSessionForOriginAttributes(
-    const OriginAttributes& aOriginAttributes) {
-  
-  if (aOriginAttributes.mPartitionKey.IsEmpty()) {
-    return false;
-  }
-
-  
-  
-  
-  if (StringEndsWith(aOriginAttributes.mPartitionKey, u".mozilla"_ns)) {
-    return true;
-  }
-
-  return false;
 }
 
 bool CookieCommons::IsSafeTopLevelNav(nsIChannel* aChannel) {

@@ -997,22 +997,12 @@ bool AntiTrackingUtils::IsThirdPartyWindow(nsPIDOMWindowInner* aWindow,
 
 bool AntiTrackingUtils::IsThirdPartyDocument(Document* aDocument) {
   MOZ_ASSERT(aDocument);
-
-  if (aDocument->IsTopLevelContentDocument()) {
-    return false;
-  }
-
   nsCOMPtr<mozIThirdPartyUtil> tpuService =
       mozilla::components::ThirdPartyUtil::Service();
   if (!tpuService) {
     return true;
   }
   bool thirdParty = true;
-
-  if (aDocument->GetSandboxFlags() & SANDBOXED_ORIGIN) {
-    return true;
-  }
-
   if (!aDocument->GetChannel()) {
     
     

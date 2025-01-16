@@ -2939,7 +2939,6 @@ void Document::Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) {
 
   mChannel = aChannel;
   RecomputeResistFingerprinting();
-  MaybeRecomputePartitionKey();
 }
 
 void Document::DisconnectNodeTree() {
@@ -3677,8 +3676,6 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
 
   rv = loadInfo->GetCookieJarSettings(getter_AddRefs(mCookieJarSettings));
   NS_ENSURE_SUCCESS(rv, rv);
-
-  MaybeRecomputePartitionKey();
 
   
   
@@ -16771,56 +16768,6 @@ void Document::SendPageUseCounters() {
 
   UseCounters counters = mUseCounters | mChildDocumentUseCounters;
   wgc->SendAccumulatePageUseCounters(counters);
-}
-
-void Document::MaybeRecomputePartitionKey() {
-  
-  
-  if (!IsTopLevelContentDocument()) {
-    return;
-  }
-
-  
-  
-  if (!mCookieJarSettings) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  nsAutoCString originNoSuffix;
-  nsresult rv = NodePrincipal()->GetOriginNoSuffix(originNoSuffix);
-  NS_ENSURE_SUCCESS_VOID(rv);
-
-  nsCOMPtr<nsIURI> originURI;
-  rv = NS_NewURI(getter_AddRefs(originURI), originNoSuffix);
-  NS_ENSURE_SUCCESS_VOID(rv);
-
-  
-  if (!originURI) {
-    return;
-  }
-
-  OriginAttributes attrs;
-  attrs.SetPartitionKey(originURI, false);
-
-  
-  
-  if (attrs.mPartitionKey.Equals(
-          net::CookieJarSettings::Cast(mCookieJarSettings)
-              ->GetPartitionKey())) {
-    return;
-  }
-
-  
-  
-  mozilla::net::CookieJarSettings::Cast(mCookieJarSettings)
-      ->SetPartitionKey(originURI, false);
 }
 
 bool Document::RecomputeResistFingerprinting() {

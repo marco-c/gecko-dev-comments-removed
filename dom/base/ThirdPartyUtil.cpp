@@ -16,7 +16,6 @@
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MacroForEach.h"
-#include "mozilla/NullPrincipal.h"
 #include "mozilla/Components.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StorageAccess.h"
@@ -46,7 +45,6 @@
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
 #include "nsPIDOMWindowInlines.h"
-#include "nsSandboxFlags.h"
 #include "nsServiceManagerUtils.h"
 #include "nsTLiteralString.h"
 
@@ -215,18 +213,6 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
   auto* const browsingContext = current->GetBrowsingContext();
   MOZ_ASSERT(browsingContext);
 
-  if (browsingContext->IsTopContent()) {
-    *aResult = false;
-    return NS_OK;
-  }
-
-  
-  RefPtr<Document> doc = current->GetExtantDoc();
-  if (doc && (doc->GetSandboxFlags() & SANDBOXED_ORIGIN)) {
-    *aResult = true;
-    return NS_OK;
-  }
-
   WindowContext* wc = browsingContext->GetCurrentWindowContext();
   if (NS_WARN_IF(!wc)) {
     *aResult = true;
@@ -249,13 +235,6 @@ nsresult ThirdPartyUtil::IsThirdPartyGlobal(
       *aResult = false;
       return NS_OK;
     }
-
-    
-    if (currentWGP->SandboxFlags() & SANDBOXED_ORIGIN) {
-      *aResult = true;
-      return NS_OK;
-    }
-
     nsCOMPtr<nsIPrincipal> currentPrincipal = currentWGP->DocumentPrincipal();
     RefPtr<WindowGlobalParent> parent =
         currentWGP->BrowsingContext()->GetEmbedderWindowGlobal();
@@ -438,12 +417,6 @@ ThirdPartyUtil::GetBaseDomain(nsIURI* aHostURI, nsACString& aBaseDomain) {
     }
   } else {
     rv = mTLDService->GetBaseDomain(aHostURI, 0, aBaseDomain);
-  }
-
-  
-  
-  if (aHostURI->SchemeIs(NS_NULLPRINCIPAL_SCHEME)) {
-    rv = aHostURI->GetFilePath(aBaseDomain);
   }
 
   
