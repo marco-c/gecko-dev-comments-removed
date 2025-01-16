@@ -787,10 +787,6 @@ bool NativeObject::tryUnshiftDenseElements(uint32_t count) {
 
 
 
-
-
-
-
 bool NativeObject::goodElementsAllocationAmount(JSContext* cx,
                                                 uint32_t reqCapacity,
                                                 uint32_t length,
