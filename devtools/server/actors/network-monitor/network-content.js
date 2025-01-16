@@ -60,7 +60,7 @@ class NetworkContentActor extends Actor {
 
   async sendHTTPRequest(request) {
     return new Promise(resolve => {
-      const { url, method, headers, body, cause } = request;
+      const { url, method, headers, body, cause, securityFlags } = request;
       
       
       const doc = this.targetActor.window.document;
@@ -70,6 +70,7 @@ class NetworkContentActor extends Actor {
         uri: channelURI,
         loadingNode: doc,
         securityFlags:
+          securityFlags ||
           Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT,
         contentPolicyType:
           lazy.NetworkUtils.stringToCauseType(cause.type) ||
