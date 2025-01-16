@@ -181,6 +181,7 @@
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "nsContentUtils.h"
 #include "nsCycleCollectionNoteRootCallback.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsCycleCollector.h"
@@ -284,6 +285,11 @@ static void SuspectUsingNurseryPurpleBuffer(
 
 
 
+
+
+
+
+
 struct nsCycleCollectorParams {
   bool mLogAll;
   bool mLogShutdown;
@@ -291,6 +297,7 @@ struct nsCycleCollectorParams {
   bool mAllTracesShutdown;
   bool mLogThisThread;
   bool mLogGC;
+  bool mLogWindowOnly;
   int32_t mLogShutdownSkip = 0;
 
   nsCycleCollectorParams()
@@ -298,7 +305,8 @@ struct nsCycleCollectorParams {
         mLogShutdown(PR_GetEnv("MOZ_CC_LOG_SHUTDOWN") != nullptr),
         mAllTracesAll(false),
         mAllTracesShutdown(false),
-        mLogGC(!PR_GetEnv("MOZ_CC_DISABLE_GC_LOG")) {
+        mLogGC(!PR_GetEnv("MOZ_CC_DISABLE_GC_LOG")),
+        mLogWindowOnly(PR_GetEnv("MOZ_CC_LOG_WINDOW_ONLY")) {
     if (const char* lssEnv = PR_GetEnv("MOZ_CC_LOG_SHUTDOWN_SKIP")) {
       mLogShutdown = true;
       nsDependentCString lssString(lssEnv);
@@ -350,6 +358,12 @@ struct nsCycleCollectorParams {
   
   
   bool LogThisCC(int32_t aShutdownCount) {
+#ifdef DEBUG
+    if (mLogWindowOnly && NS_IsMainThread() &&
+        nsContentUtils::GetCurrentInnerOrOuterWindowCount() == 0) {
+      return false;
+    }
+#endif
     if (mLogAll) {
       return mLogThisThread;
     }
