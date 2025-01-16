@@ -43,19 +43,44 @@ void LIRGenerator::visitPowHalf(MPowHalf* ins) {
   define(lir, ins);
 }
 
+LUse LIRGeneratorX86Shared::useShiftRegister(MDefinition* mir) {
+  
+  
+  if (Assembler::HasBMI2()) {
+    return useRegister(mir);
+  }
+  return useFixed(mir, ecx);
+}
+
+LUse LIRGeneratorX86Shared::useShiftRegisterAtStart(MDefinition* mir) {
+  
+  
+  if (Assembler::HasBMI2()) {
+    return useRegisterAtStart(mir);
+  }
+  return useFixedAtStart(mir, ecx);
+}
+
+LDefinition LIRGeneratorX86Shared::tempShift() {
+  
+  
+  if (Assembler::HasBMI2()) {
+    return temp();
+  }
+  return tempFixed(ecx);
+}
+
 void LIRGeneratorX86Shared::lowerForShift(LInstructionHelper<1, 2, 0>* ins,
                                           MDefinition* mir, MDefinition* lhs,
                                           MDefinition* rhs) {
   ins->setOperand(0, useRegisterAtStart(lhs));
 
-  
-  
   if (rhs->isConstant()) {
     ins->setOperand(1, useOrConstantAtStart(rhs));
-  } else if (Assembler::HasBMI2() && !mir->isRotate()) {
+  } else if (!mir->isRotate()) {
     ins->setOperand(1, willHaveDifferentLIRNodes(lhs, rhs)
-                           ? useRegister(rhs)
-                           : useRegisterAtStart(rhs));
+                           ? useShiftRegister(rhs)
+                           : useShiftRegisterAtStart(rhs));
   } else {
     ins->setOperand(1, willHaveDifferentLIRNodes(lhs, rhs)
                            ? useFixed(rhs, ecx)
@@ -81,13 +106,11 @@ void LIRGeneratorX86Shared::lowerForShiftInt64(
   static_assert(LRotateI64::Count == INT64_PIECES,
                 "Assume Count is located at INT64_PIECES.");
 
-  
-  
   if (rhs->isConstant()) {
     ins->setOperand(INT64_PIECES, useOrConstantAtStart(rhs));
 #ifdef JS_CODEGEN_X64
-  } else if (Assembler::HasBMI2() && !mir->isRotate()) {
-    ins->setOperand(INT64_PIECES, useRegister(rhs));
+  } else if (!mir->isRotate()) {
+    ins->setOperand(INT64_PIECES, useShiftRegister(rhs));
 #endif
   } else {
     
@@ -466,15 +489,12 @@ void LIRGeneratorX86Shared::lowerUrshD(MUrsh* mir) {
   static_assert(ecx == rcx);
 #endif
 
-  
   LUse lhsUse = useRegisterAtStart(lhs);
   LAllocation rhsAlloc;
   if (rhs->isConstant()) {
     rhsAlloc = useOrConstant(rhs);
-  } else if (Assembler::HasBMI2()) {
-    rhsAlloc = useRegister(rhs);
   } else {
-    rhsAlloc = useFixed(rhs, ecx);
+    rhsAlloc = useShiftRegister(rhs);
   }
 
   LUrshD* lir = new (alloc()) LUrshD(lhsUse, rhsAlloc, tempCopy(lhs, 0));
@@ -485,31 +505,21 @@ void LIRGeneratorX86Shared::lowerPowOfTwoI(MPow* mir) {
   int32_t base = mir->input()->toConstant()->toInt32();
   MDefinition* power = mir->power();
 
-  
-  
-  LAllocation powerAlloc =
-      Assembler::HasBMI2() ? useRegister(power) : useFixed(power, ecx);
-  auto* lir = new (alloc()) LPowOfTwoI(powerAlloc, base);
+  auto* lir = new (alloc()) LPowOfTwoI(useShiftRegister(power), base);
   assignSnapshot(lir, mir->bailoutKind());
   define(lir, mir);
 }
 
 void LIRGeneratorX86Shared::lowerBigIntPtrLsh(MBigIntPtrLsh* ins) {
-  
-  
-  LDefinition shiftAlloc = Assembler::HasBMI2() ? temp() : tempFixed(ecx);
   auto* lir = new (alloc()) LBigIntPtrLsh(
-      useRegister(ins->lhs()), useRegister(ins->rhs()), temp(), shiftAlloc);
+      useRegister(ins->lhs()), useRegister(ins->rhs()), temp(), tempShift());
   assignSnapshot(lir, ins->bailoutKind());
   define(lir, ins);
 }
 
 void LIRGeneratorX86Shared::lowerBigIntPtrRsh(MBigIntPtrRsh* ins) {
-  
-  
-  LDefinition shiftAlloc = Assembler::HasBMI2() ? temp() : tempFixed(ecx);
   auto* lir = new (alloc()) LBigIntPtrRsh(
-      useRegister(ins->lhs()), useRegister(ins->rhs()), temp(), shiftAlloc);
+      useRegister(ins->lhs()), useRegister(ins->rhs()), temp(), tempShift());
   assignSnapshot(lir, ins->bailoutKind());
   define(lir, ins);
 }
