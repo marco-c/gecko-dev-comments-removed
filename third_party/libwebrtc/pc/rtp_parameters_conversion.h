@@ -34,63 +34,14 @@ namespace webrtc {
 
 
 
-
-
-
-
-
-
-
-
-
-RTCErrorOr<cricket::FeedbackParam> ToCricketFeedbackParam(
-    const RtcpFeedback& feedback);
-
-
-
-RTCErrorOr<cricket::Codec> ToCricketCodec(const RtpCodecParameters& codec);
-
-
-
-RTCErrorOr<std::vector<cricket::Codec>> ToCricketCodecs(
-    const std::vector<RtpCodecParameters>& codecs);
-
-
-
-RTCErrorOr<cricket::StreamParamsVec> ToCricketStreamParamsVec(
-    const std::vector<RtpEncodingParameters>& encodings);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 std::optional<RtcpFeedback> ToRtcpFeedback(
     const cricket::FeedbackParam& cricket_feedback);
 
-std::vector<RtpEncodingParameters> ToRtpEncodings(
-    const cricket::StreamParamsVec& stream_params);
-
-RtpCodecParameters ToRtpCodecParameters(const cricket::Codec& cricket_codec);
 RtpCodecCapability ToRtpCodecCapability(const cricket::Codec& cricket_codec);
 
 RtpCapabilities ToRtpCapabilities(
     const std::vector<cricket::Codec>& cricket_codecs,
     const cricket::RtpHeaderExtensions& cricket_extensions);
-
-RtpParameters ToRtpParameters(
-    const std::vector<cricket::Codec>& cricket_codecs,
-    const cricket::RtpHeaderExtensions& cricket_extensions,
-    const cricket::StreamParamsVec& stream_params);
 
 }  
 
