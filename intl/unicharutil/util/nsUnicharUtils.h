@@ -153,12 +153,7 @@ namespace mozilla {
 
 uint32_t HashUTF8AsUTF16(const char* aUTF8, size_t aLength, bool* aErr);
 
-
-
-
-
 bool IsSegmentBreakSkipChar(uint32_t u);
-bool IsEastAsianPunctuation(uint32_t u);
 
 
 
