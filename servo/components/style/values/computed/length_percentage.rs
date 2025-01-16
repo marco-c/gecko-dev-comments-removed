@@ -887,10 +887,15 @@ impl calc::CalcNodeLeaf for CalcLengthPercentageLeaf {
 pub type CalcNode = calc::GenericCalcNode<CalcLengthPercentageLeaf>;
 
 
+
+
+
+
+
 #[derive(
     Clone, Debug, Deserialize, MallocSizeOf, Serialize, ToAnimatedZero, ToResolvedValue, ToCss,
 )]
-#[repr(C)]
+#[repr(C, align(16))]
 pub struct CalcLengthPercentage {
     #[animation(constant)]
     #[css(skip)]
