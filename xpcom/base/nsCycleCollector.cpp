@@ -1684,14 +1684,15 @@ class nsCycleCollectorLogSinkToFile final : public nsICycleCollectorLogSink {
       return NS_ERROR_UNEXPECTED;
     }
 
-    aLog->mFile->MoveTo( nullptr, logFileFinalDestinationName);
-
-    
-    aLog->mFile = logFileFinalDestination;
+    if (NS_SUCCEEDED(aLog->mFile->MoveTo( nullptr,
+                                         logFileFinalDestinationName))) {
+      
+      aLog->mFile = logFileFinalDestination;
+    }
 
     
     nsAutoString logPath;
-    logFileFinalDestination->GetPath(logPath);
+    aLog->mFile->GetPath(logPath);
     nsAutoString msg =
         aCollectorKind + u" Collector log dumped to "_ns + logPath;
 
