@@ -326,6 +326,7 @@ const nsStaticAtom* const kElementsSVG[] = {
     nsGkAtoms::cursor,               
     nsGkAtoms::defs,                 
     nsGkAtoms::desc,                 
+    nsGkAtoms::discard,              
     nsGkAtoms::ellipse,              
     nsGkAtoms::elevation,            
     nsGkAtoms::erode,                

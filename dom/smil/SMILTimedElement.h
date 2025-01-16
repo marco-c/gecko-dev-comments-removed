@@ -44,6 +44,7 @@ class SMILTimedElement {
   ~SMILTimedElement();
 
   using Element = dom::Element;
+  using DiscardArray = nsTObserverArray<RefPtr<Element>>;
 
   
 
@@ -205,8 +206,7 @@ class SMILTimedElement {
 
 
 
-  void SampleAt(SMILTime aContainerTime);
-
+  void SampleAt(SMILTime aContainerTime, DiscardArray& aDiscards);
   
 
 
@@ -219,7 +219,7 @@ class SMILTimedElement {
 
 
 
-  void SampleEndAt(SMILTime aContainerTime);
+  void SampleEndAt(SMILTime aContainerTime, DiscardArray& aDiscards);
 
   
 
@@ -399,7 +399,8 @@ class SMILTimedElement {
   void ClearSpecs(TimeValueSpecList& aSpecs, InstanceTimeList& aInstances,
                   RemovalTestFunction aRemove);
   void ClearIntervals();
-  void DoSampleAt(SMILTime aContainerTime, bool aEndOnly);
+  void DoSampleAt(SMILTime aContainerTime, DiscardArray& aDiscards,
+                  bool aEndOnly);
 
   
 
