@@ -50,4 +50,10 @@ ABSL_DECLARE_FLAG(std::string, log_backtrace_at);
 
 ABSL_DECLARE_FLAG(bool, log_prefix);
 
+
+ABSL_DECLARE_FLAG(int, v);
+
+
+ABSL_DECLARE_FLAG(std::string, vmodule);
+
 #endif  

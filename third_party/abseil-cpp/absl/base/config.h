@@ -612,6 +612,22 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
+
+
+
+
+#ifdef ABSL_HAVE_STD_ORDERING
+#error "ABSL_HAVE_STD_ORDERING cannot be directly set."
+#elif (defined(__cpp_lib_three_way_comparison) &&    \
+       __cpp_lib_three_way_comparison >= 201907L) || \
+    (defined(ABSL_INTERNAL_CPLUSPLUS_LANG) &&        \
+     ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L)
+#define ABSL_HAVE_STD_ORDERING 1
+#endif
+
+
+
+
 #if !defined(ABSL_OPTION_USE_STD_ANY)
 #error options.h is misconfigured.
 #elif ABSL_OPTION_USE_STD_ANY == 0 || \
@@ -667,6 +683,22 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
     (ABSL_OPTION_USE_STD_STRING_VIEW == 2 &&  \
      defined(ABSL_HAVE_STD_STRING_VIEW))
 #define ABSL_USES_STD_STRING_VIEW 1
+#else
+#error options.h is misconfigured.
+#endif
+
+
+
+
+
+#if !defined(ABSL_OPTION_USE_STD_ORDERING)
+#error options.h is misconfigured.
+#elif ABSL_OPTION_USE_STD_ORDERING == 0 || \
+    (ABSL_OPTION_USE_STD_ORDERING == 2 && !defined(ABSL_HAVE_STD_ORDERING))
+#undef ABSL_USES_STD_ORDERING
+#elif ABSL_OPTION_USE_STD_ORDERING == 1 || \
+    (ABSL_OPTION_USE_STD_ORDERING == 2 && defined(ABSL_HAVE_STD_ORDERING))
+#define ABSL_USES_STD_ORDERING 1
 #else
 #error options.h is misconfigured.
 #endif

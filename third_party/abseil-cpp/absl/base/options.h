@@ -199,6 +199,32 @@
 
 
 
+
+
+#define ABSL_OPTION_USE_STD_ORDERING 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define ABSL_OPTION_USE_INLINE_NAMESPACE 0
 #define ABSL_OPTION_INLINE_NAMESPACE_NAME head
 

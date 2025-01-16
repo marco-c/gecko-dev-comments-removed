@@ -186,10 +186,19 @@
 
 
 
+
+
+
+
+
+
+
+
 #ifndef ABSL_LOG_LOG_H_
 #define ABSL_LOG_LOG_H_
 
 #include "absl/log/internal/log_impl.h"
+#include "absl/log/vlog_is_on.h"  
 
 
 
@@ -212,6 +221,27 @@
 
 
 #define DLOG(severity) ABSL_LOG_INTERNAL_DLOG_IMPL(_##severity)
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define VLOG(severity) ABSL_LOG_INTERNAL_VLOG_IMPL(severity)
+
+
+
+#define DVLOG(severity) ABSL_LOG_INTERNAL_DVLOG_IMPL(severity)
+
+
+
 
 
 
@@ -284,6 +314,15 @@
   ABSL_LOG_INTERNAL_DLOG_EVERY_POW_2_IMPL(_##severity)
 #define DLOG_EVERY_N_SEC(severity, n_seconds) \
   ABSL_LOG_INTERNAL_DLOG_EVERY_N_SEC_IMPL(_##severity, n_seconds)
+
+#define VLOG_EVERY_N(severity, n) \
+  ABSL_LOG_INTERNAL_VLOG_EVERY_N_IMPL(severity, n)
+#define VLOG_FIRST_N(severity, n) \
+  ABSL_LOG_INTERNAL_VLOG_FIRST_N_IMPL(severity, n)
+#define VLOG_EVERY_POW_2(severity) \
+  ABSL_LOG_INTERNAL_VLOG_EVERY_POW_2_IMPL(severity)
+#define VLOG_EVERY_N_SEC(severity, n_seconds) \
+  ABSL_LOG_INTERNAL_VLOG_EVERY_N_SEC_IMPL(severity, n_seconds)
 
 
 

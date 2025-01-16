@@ -19,6 +19,7 @@
 #include <cstdint>
 
 #include "absl/base/config.h"
+#include "absl/base/nullability.h"
 #include "absl/strings/internal/cord_internal.h"
 
 namespace absl {
@@ -28,7 +29,7 @@ namespace cord_internal {
 
 
 
-size_t GetEstimatedMemoryUsage(const CordRep* rep);
+size_t GetEstimatedMemoryUsage(absl::Nonnull<const CordRep*> rep);
 
 
 
@@ -46,13 +47,13 @@ size_t GetEstimatedMemoryUsage(const CordRep* rep);
 
 
 
-size_t GetMorePreciseMemoryUsage(const CordRep* rep);
+size_t GetMorePreciseMemoryUsage(absl::Nonnull<const CordRep*> rep);
 
 
 
 
 
-size_t GetEstimatedFairShareMemoryUsage(const CordRep* rep);
+size_t GetEstimatedFairShareMemoryUsage(absl::Nonnull<const CordRep*> rep);
 
 }  
 ABSL_NAMESPACE_END

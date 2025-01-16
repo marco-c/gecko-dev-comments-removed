@@ -43,6 +43,7 @@
 #include <vector>
 
 #include "absl/base/attributes.h"
+#include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 
 namespace absl {
@@ -113,7 +114,7 @@ std::string StrReplaceAll(absl::string_view s,
 int StrReplaceAll(
     std::initializer_list<std::pair<absl::string_view, absl::string_view>>
         replacements,
-    std::string* target);
+    absl::Nonnull<std::string*> target);
 
 
 
@@ -128,7 +129,8 @@ int StrReplaceAll(
 
 
 template <typename StrToStrMapping>
-int StrReplaceAll(const StrToStrMapping& replacements, std::string* target);
+int StrReplaceAll(const StrToStrMapping& replacements,
+                  absl::Nonnull<std::string*> target);
 
 
 namespace strings_internal {
@@ -185,8 +187,8 @@ std::vector<ViableSubstitution> FindSubstitutions(
 }
 
 int ApplySubstitutions(absl::string_view s,
-                       std::vector<ViableSubstitution>* subs_ptr,
-                       std::string* result_ptr);
+                       absl::Nonnull<std::vector<ViableSubstitution>*> subs_ptr,
+                       absl::Nonnull<std::string*> result_ptr);
 
 }  
 
@@ -201,7 +203,8 @@ std::string StrReplaceAll(absl::string_view s,
 }
 
 template <typename StrToStrMapping>
-int StrReplaceAll(const StrToStrMapping& replacements, std::string* target) {
+int StrReplaceAll(const StrToStrMapping& replacements,
+                  absl::Nonnull<std::string*> target) {
   auto subs = strings_internal::FindSubstitutions(*target, replacements);
   if (subs.empty()) return 0;
 

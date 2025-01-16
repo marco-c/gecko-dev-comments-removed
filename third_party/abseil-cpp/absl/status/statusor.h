@@ -39,15 +39,20 @@
 #include <exception>
 #include <initializer_list>
 #include <new>
+#include <ostream>
 #include <string>
 #include <type_traits>
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/base/nullability.h"
 #include "absl/base/call_once.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/internal/statusor_internal.h"
 #include "absl/status/status.h"
+#include "absl/strings/has_absl_stringify.h"
+#include "absl/strings/has_ostream_operator.h"
+#include "absl/strings/str_format.h"
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
@@ -88,7 +93,7 @@ class BadStatusOrAccess : public std::exception {
   
   
   
-  const char* what() const noexcept override;
+  absl::Nonnull<const char*> what() const noexcept override;
 
   
   
@@ -654,6 +659,41 @@ bool operator!=(const StatusOr<T>& lhs, const StatusOr<T>& rhs) {
 
 
 
+template <typename T, typename std::enable_if<
+                          absl::HasOstreamOperator<T>::value, int>::type = 0>
+std::ostream& operator<<(std::ostream& os, const StatusOr<T>& status_or) {
+  if (status_or.ok()) {
+    os << status_or.value();
+  } else {
+    os << internal_statusor::StringifyRandom::OpenBrackets()
+       << status_or.status()
+       << internal_statusor::StringifyRandom::CloseBrackets();
+  }
+  return os;
+}
+
+
+
+
+
+template <
+    typename Sink, typename T,
+    typename std::enable_if<absl::HasAbslStringify<T>::value, int>::type = 0>
+void AbslStringify(Sink& sink, const StatusOr<T>& status_or) {
+  if (status_or.ok()) {
+    absl::Format(&sink, "%v", status_or.value());
+  } else {
+    absl::Format(&sink, "%s%v%s",
+                 internal_statusor::StringifyRandom::OpenBrackets(),
+                 status_or.status(),
+                 internal_statusor::StringifyRandom::CloseBrackets());
+  }
+}
+
+
+
+
+
 
 template <typename T>
 StatusOr<T>::StatusOr() : Base(Status(absl::StatusCode::kUnknown, "")) {}
@@ -750,13 +790,13 @@ T&& StatusOr<T>::operator*() && {
 }
 
 template <typename T>
-const T* StatusOr<T>::operator->() const {
+absl::Nonnull<const T*> StatusOr<T>::operator->() const {
   this->EnsureOk();
   return &this->data_;
 }
 
 template <typename T>
-T* StatusOr<T>::operator->() {
+absl::Nonnull<T*> StatusOr<T>::operator->() {
   this->EnsureOk();
   return &this->data_;
 }

@@ -638,6 +638,14 @@ struct GroupSse2Impl {
   }
 
   
+  
+  
+  BitMask<uint16_t, kWidth> MaskFull() const {
+    return BitMask<uint16_t, kWidth>(
+        static_cast<uint16_t>(_mm_movemask_epi8(ctrl) ^ 0xffff));
+  }
+
+  
   NonIterableBitMask<uint16_t, kWidth> MaskEmptyOrDeleted() const {
     auto special = _mm_set1_epi8(static_cast<char>(ctrl_t::kSentinel));
     return NonIterableBitMask<uint16_t, kWidth>(static_cast<uint16_t>(
@@ -690,6 +698,17 @@ struct GroupAArch64Impl {
                           vreinterpret_s8_u8(ctrl))),
                       0);
     return NonIterableBitMask<uint64_t, kWidth, 3>(mask);
+  }
+
+  
+  
+  
+  BitMask<uint64_t, kWidth, 3> MaskFull() const {
+    uint64_t mask = vget_lane_u64(
+        vreinterpret_u64_u8(vcge_s8(vreinterpret_s8_u8(ctrl),
+                                    vdup_n_s8(static_cast<int8_t>(0)))),
+        0);
+    return BitMask<uint64_t, kWidth, 3>(mask);
   }
 
   NonIterableBitMask<uint64_t, kWidth, 3> MaskEmptyOrDeleted() const {
@@ -758,6 +777,14 @@ struct GroupPortableImpl {
     constexpr uint64_t msbs = 0x8080808080808080ULL;
     return NonIterableBitMask<uint64_t, kWidth, 3>((ctrl & ~(ctrl << 6)) &
                                                    msbs);
+  }
+
+  
+  
+  
+  BitMask<uint64_t, kWidth, 3> MaskFull() const {
+    constexpr uint64_t msbs = 0x8080808080808080ULL;
+    return BitMask<uint64_t, kWidth, 3>((ctrl ^ msbs) & msbs);
   }
 
   NonIterableBitMask<uint64_t, kWidth, 3> MaskEmptyOrDeleted() const {
@@ -1379,6 +1406,12 @@ struct FindInfo {
 inline bool is_small(size_t capacity) { return capacity < Group::kWidth - 1; }
 
 
+
+inline bool is_single_group(size_t capacity) {
+  return capacity <= Group::kWidth;
+}
+
+
 inline probe_seq<Group::kWidth> probe(const ctrl_t* ctrl, const size_t capacity,
                                       size_t hash) {
   return probe_seq<Group::kWidth>(H1(hash, ctrl), capacity);
@@ -1440,7 +1473,6 @@ inline void ResetCtrl(CommonFields& common, size_t slot_size) {
               capacity + 1 + NumClonedBytes());
   ctrl[capacity] = ctrl_t::kSentinel;
   SanitizerPoisonMemoryRegion(common.slot_array(), slot_size * capacity);
-  ResetGrowthLeft(common);
 }
 
 
@@ -1475,40 +1507,262 @@ constexpr size_t BackingArrayAlignment(size_t align_of_slot) {
   return (std::max)(align_of_slot, alignof(size_t));
 }
 
-template <typename Alloc, size_t SizeOfSlot, size_t AlignOfSlot>
-ABSL_ATTRIBUTE_NOINLINE void InitializeSlots(CommonFields& c, Alloc alloc) {
-  assert(c.capacity());
-  
-  
-  
-  
-  
-  const size_t sample_size =
-      (std::is_same<Alloc, std::allocator<char>>::value &&
-       c.slot_array() == nullptr)
-          ? SizeOfSlot
-          : 0;
-  HashtablezInfoHandle infoz =
-      sample_size > 0 ? Sample(sample_size) : c.infoz();
 
-  const bool has_infoz = infoz.IsSampled();
-  const size_t cap = c.capacity();
-  const size_t alloc_size = AllocSize(cap, SizeOfSlot, AlignOfSlot, has_infoz);
-  char* mem = static_cast<char*>(
-      Allocate<BackingArrayAlignment(AlignOfSlot)>(&alloc, alloc_size));
-  const GenerationType old_generation = c.generation();
-  c.set_generation_ptr(reinterpret_cast<GenerationType*>(
-      mem + GenerationOffset(cap, has_infoz)));
-  c.set_generation(NextGeneration(old_generation));
-  c.set_control(reinterpret_cast<ctrl_t*>(mem + ControlOffset(has_infoz)));
-  c.set_slots(mem + SlotOffset(cap, AlignOfSlot, has_infoz));
-  ResetCtrl(c, SizeOfSlot);
-  c.set_has_infoz(has_infoz);
-  if (has_infoz) {
-    infoz.RecordStorageChanged(c.size(), cap);
-    c.set_infoz(infoz);
-  }
+
+inline void* SlotAddress(void* slot_array, size_t slot, size_t slot_size) {
+  return reinterpret_cast<void*>(reinterpret_cast<char*>(slot_array) +
+                                 (slot * slot_size));
 }
+
+
+
+
+
+class HashSetResizeHelper {
+ public:
+  explicit HashSetResizeHelper(CommonFields& c)
+      : old_ctrl_(c.control()),
+        old_capacity_(c.capacity()),
+        had_infoz_(c.has_infoz()) {}
+
+  
+  
+  
+  
+  
+  
+  static FindInfo FindFirstNonFullAfterResize(const CommonFields& c,
+                                              size_t old_capacity,
+                                              size_t hash) {
+    if (!IsGrowingIntoSingleGroupApplicable(old_capacity, c.capacity())) {
+      return find_first_non_full(c, hash);
+    }
+    
+    
+    
+    
+    size_t offset = probe(c, hash).offset();
+
+    
+    if (offset - (old_capacity + 1) >= old_capacity) {
+      
+      offset = old_capacity / 2;
+    }
+    assert(IsEmpty(c.control()[offset]));
+    return FindInfo{offset, 0};
+  }
+
+  ctrl_t* old_ctrl() const { return old_ctrl_; }
+  size_t old_capacity() const { return old_capacity_; }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename Alloc, size_t SizeOfSlot, bool TransferUsesMemcpy,
+            size_t AlignOfSlot>
+  ABSL_ATTRIBUTE_NOINLINE bool InitializeSlots(CommonFields& c, void* old_slots,
+                                               Alloc alloc) {
+    assert(c.capacity());
+    
+    
+    
+    
+    
+    const size_t sample_size =
+        (std::is_same<Alloc, std::allocator<char>>::value &&
+         c.slot_array() == nullptr)
+            ? SizeOfSlot
+            : 0;
+    HashtablezInfoHandle infoz =
+        sample_size > 0 ? Sample(sample_size) : c.infoz();
+
+    const bool has_infoz = infoz.IsSampled();
+    const size_t cap = c.capacity();
+    const size_t alloc_size =
+        AllocSize(cap, SizeOfSlot, AlignOfSlot, has_infoz);
+    char* mem = static_cast<char*>(
+        Allocate<BackingArrayAlignment(AlignOfSlot)>(&alloc, alloc_size));
+    const GenerationType old_generation = c.generation();
+    c.set_generation_ptr(reinterpret_cast<GenerationType*>(
+        mem + GenerationOffset(cap, has_infoz)));
+    c.set_generation(NextGeneration(old_generation));
+    c.set_control(reinterpret_cast<ctrl_t*>(mem + ControlOffset(has_infoz)));
+    c.set_slots(mem + SlotOffset(cap, AlignOfSlot, has_infoz));
+    ResetGrowthLeft(c);
+
+    const bool grow_single_group =
+        IsGrowingIntoSingleGroupApplicable(old_capacity_, c.capacity());
+    if (old_capacity_ != 0 && grow_single_group) {
+      if (TransferUsesMemcpy) {
+        GrowSizeIntoSingleGroupTransferable(c, old_slots, SizeOfSlot);
+        DeallocateOld<AlignOfSlot>(alloc, SizeOfSlot, old_slots);
+      } else {
+        GrowIntoSingleGroupShuffleControlBytes(c.control(), c.capacity());
+      }
+    } else {
+      ResetCtrl(c, SizeOfSlot);
+    }
+
+    c.set_has_infoz(has_infoz);
+    if (has_infoz) {
+      infoz.RecordStorageChanged(c.size(), cap);
+      if (grow_single_group || old_capacity_ == 0) {
+        infoz.RecordRehash(0);
+      }
+      c.set_infoz(infoz);
+    }
+    return grow_single_group;
+  }
+
+  
+  
+  
+  
+  
+  template <class PolicyTraits, class Alloc>
+  void GrowSizeIntoSingleGroup(CommonFields& c, Alloc& alloc_ref,
+                               typename PolicyTraits::slot_type* old_slots) {
+    assert(old_capacity_ < Group::kWidth / 2);
+    assert(IsGrowingIntoSingleGroupApplicable(old_capacity_, c.capacity()));
+    using slot_type = typename PolicyTraits::slot_type;
+    assert(is_single_group(c.capacity()));
+
+    auto* new_slots = reinterpret_cast<slot_type*>(c.slot_array());
+
+    size_t shuffle_bit = old_capacity_ / 2 + 1;
+    for (size_t i = 0; i < old_capacity_; ++i) {
+      if (IsFull(old_ctrl_[i])) {
+        size_t new_i = i ^ shuffle_bit;
+        SanitizerUnpoisonMemoryRegion(new_slots + new_i, sizeof(slot_type));
+        PolicyTraits::transfer(&alloc_ref, new_slots + new_i, old_slots + i);
+      }
+    }
+    PoisonSingleGroupEmptySlots(c, sizeof(slot_type));
+  }
+
+  
+  template <size_t AlignOfSlot, class CharAlloc>
+  void DeallocateOld(CharAlloc alloc_ref, size_t slot_size, void* old_slots) {
+    SanitizerUnpoisonMemoryRegion(old_slots, slot_size * old_capacity_);
+    Deallocate<BackingArrayAlignment(AlignOfSlot)>(
+        &alloc_ref, old_ctrl_ - ControlOffset(had_infoz_),
+        AllocSize(old_capacity_, slot_size, AlignOfSlot, had_infoz_));
+  }
+
+ private:
+  
+  static bool IsGrowingIntoSingleGroupApplicable(size_t old_capacity,
+                                                 size_t new_capacity) {
+    
+    
+    return is_single_group(new_capacity) && old_capacity < new_capacity;
+  }
+
+  
+  
+  
+  void GrowSizeIntoSingleGroupTransferable(CommonFields& c, void* old_slots,
+                                           size_t slot_size);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void GrowIntoSingleGroupShuffleControlBytes(ctrl_t* new_ctrl,
+                                              size_t new_capacity) const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void GrowIntoSingleGroupShuffleTransferableSlots(void* old_slots,
+                                                   void* new_slots,
+                                                   size_t slot_size) const;
+
+  
+  
+  
+  
+  
+  
+  
+  void PoisonSingleGroupEmptySlots(CommonFields& c, size_t slot_size) const {
+    
+    for (size_t i = 0; i < c.capacity(); ++i) {
+      if (!IsFull(c.control()[i])) {
+        SanitizerPoisonMemoryRegion(SlotAddress(c.slot_array(), i, slot_size),
+                                    slot_size);
+      }
+    }
+  }
+
+  ctrl_t* old_ctrl_;
+  size_t old_capacity_;
+  bool had_infoz_;
+};
 
 
 
@@ -1534,7 +1788,7 @@ void ClearBackingArray(CommonFields& c, const PolicyFunctions& policy,
                        bool reuse);
 
 
-void EraseMetaOnly(CommonFields& c, ctrl_t* it, size_t slot_size);
+void EraseMetaOnly(CommonFields& c, size_t index, size_t slot_size);
 
 
 
@@ -1627,6 +1881,11 @@ class raw_hash_set {
   using AllocTraits = absl::allocator_traits<allocator_type>;
   using SlotAlloc = typename absl::allocator_traits<
       allocator_type>::template rebind_alloc<slot_type>;
+  
+  
+  
+  using CharAlloc =
+      typename absl::allocator_traits<Alloc>::template rebind_alloc<char>;
   using SlotAllocTraits = typename absl::allocator_traits<
       allocator_type>::template rebind_traits<slot_type>;
 
@@ -1819,8 +2078,7 @@ class raw_hash_set {
       const allocator_type& alloc = allocator_type())
       : settings_(CommonFields{}, hash, eq, alloc) {
     if (bucket_count) {
-      common().set_capacity(NormalizeCapacity(bucket_count));
-      initialize_slots();
+      resize(NormalizeCapacity(bucket_count));
     }
   }
 
@@ -2613,7 +2871,8 @@ class raw_hash_set {
   
   
   void erase_meta_only(const_iterator it) {
-    EraseMetaOnly(common(), it.control(), sizeof(slot_type));
+    EraseMetaOnly(common(), static_cast<size_t>(it.control() - control()),
+                  sizeof(slot_type));
   }
 
   
@@ -2621,47 +2880,58 @@ class raw_hash_set {
   
   
   
-  inline void initialize_slots() {
-    
-    
-    
-    using CharAlloc =
-        typename absl::allocator_traits<Alloc>::template rebind_alloc<char>;
-    InitializeSlots<CharAlloc, sizeof(slot_type), alignof(slot_type)>(
-        common(), CharAlloc(alloc_ref()));
-  }
-
+  
+  
+  
   ABSL_ATTRIBUTE_NOINLINE void resize(size_t new_capacity) {
     assert(IsValidCapacity(new_capacity));
-    auto* old_ctrl = control();
+    HashSetResizeHelper resize_helper(common());
     auto* old_slots = slot_array();
-    const bool had_infoz = common().has_infoz();
-    const size_t old_capacity = common().capacity();
     common().set_capacity(new_capacity);
-    initialize_slots();
+    
+    
+    
+    const bool grow_single_group =
+        resize_helper.InitializeSlots<CharAlloc, sizeof(slot_type),
+                                      PolicyTraits::transfer_uses_memcpy(),
+                                      alignof(slot_type)>(
+            common(), const_cast<std::remove_const_t<slot_type>*>(old_slots),
+            CharAlloc(alloc_ref()));
 
-    auto* new_slots = slot_array();
-    size_t total_probe_length = 0;
-    for (size_t i = 0; i != old_capacity; ++i) {
-      if (IsFull(old_ctrl[i])) {
-        size_t hash = PolicyTraits::apply(HashElement{hash_ref()},
-                                          PolicyTraits::element(old_slots + i));
-        auto target = find_first_non_full(common(), hash);
-        size_t new_i = target.offset;
-        total_probe_length += target.probe_length;
-        SetCtrl(common(), new_i, H2(hash), sizeof(slot_type));
-        transfer(new_slots + new_i, old_slots + i);
+    if (resize_helper.old_capacity() == 0) {
+      
+      return;
+    }
+
+    if (grow_single_group) {
+      if (PolicyTraits::transfer_uses_memcpy()) {
+        
+        return;
       }
+      
+      
+      resize_helper.GrowSizeIntoSingleGroup<PolicyTraits>(common(), alloc_ref(),
+                                                          old_slots);
+    } else {
+      
+      auto* new_slots = slot_array();
+      size_t total_probe_length = 0;
+      for (size_t i = 0; i != resize_helper.old_capacity(); ++i) {
+        if (IsFull(resize_helper.old_ctrl()[i])) {
+          size_t hash = PolicyTraits::apply(
+              HashElement{hash_ref()}, PolicyTraits::element(old_slots + i));
+          auto target = find_first_non_full(common(), hash);
+          size_t new_i = target.offset;
+          total_probe_length += target.probe_length;
+          SetCtrl(common(), new_i, H2(hash), sizeof(slot_type));
+          transfer(new_slots + new_i, old_slots + i);
+        }
+      }
+      infoz().RecordRehash(total_probe_length);
     }
-    if (old_capacity) {
-      SanitizerUnpoisonMemoryRegion(old_slots,
-                                    sizeof(slot_type) * old_capacity);
-      Deallocate<BackingArrayAlignment(alignof(slot_type))>(
-          &alloc_ref(), old_ctrl - ControlOffset(had_infoz),
-          AllocSize(old_capacity, sizeof(slot_type), alignof(slot_type),
-                    had_infoz));
-    }
-    infoz().RecordRehash(total_probe_length);
+    resize_helper.DeallocateOld<alignof(slot_type)>(
+        CharAlloc(alloc_ref()), sizeof(slot_type),
+        const_cast<std::remove_const_t<slot_type>*>(old_slots));
   }
 
   
@@ -2830,8 +3100,17 @@ class raw_hash_set {
     if (!rehash_for_bug_detection &&
         ABSL_PREDICT_FALSE(growth_left() == 0 &&
                            !IsDeleted(control()[target.offset]))) {
+      size_t old_capacity = capacity();
       rehash_and_grow_if_necessary();
-      target = find_first_non_full(common(), hash);
+      
+      
+      
+      
+      
+      
+      
+      target = HashSetResizeHelper::FindFirstNonFullAfterResize(
+          common(), old_capacity, hash);
     }
     common().increment_size();
     set_growth_left(growth_left() - IsEmpty(control()[target.offset]));

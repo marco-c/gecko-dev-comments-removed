@@ -97,6 +97,7 @@ class LogEntry final {
   
   
   
+  
   int verbosity() const { return verbose_level_; }
 
   

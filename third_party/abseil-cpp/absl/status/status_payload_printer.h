@@ -16,6 +16,7 @@
 
 #include <string>
 
+#include "absl/base/nullability.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -34,8 +35,8 @@ namespace status_internal {
 
 
 
-using StatusPayloadPrinter = absl::optional<std::string> (*)(absl::string_view,
-                                                             const absl::Cord&);
+using StatusPayloadPrinter = absl::Nullable<absl::optional<std::string> (*)(
+    absl::string_view, const absl::Cord&)>;
 
 
 

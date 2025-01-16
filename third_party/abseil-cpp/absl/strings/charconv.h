@@ -18,6 +18,7 @@
 #include <system_error>  
 
 #include "absl/base/config.h"
+#include "absl/base/nullability.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -44,7 +45,7 @@ enum class chars_format {
 
 
 struct from_chars_result {
-  const char* ptr;
+  absl::Nonnull<const char*> ptr;
   std::errc ec;
 };
 
@@ -76,11 +77,13 @@ struct from_chars_result {
 
 
 
-absl::from_chars_result from_chars(const char* first, const char* last,
+absl::from_chars_result from_chars(absl::Nonnull<const char*> first,
+                                   absl::Nonnull<const char*> last,
                                    double& value,  
                                    chars_format fmt = chars_format::general);
 
-absl::from_chars_result from_chars(const char* first, const char* last,
+absl::from_chars_result from_chars(absl::Nonnull<const char*> first,
+                                   absl::Nonnull<const char*> last,
                                    float& value,  
                                    chars_format fmt = chars_format::general);
 

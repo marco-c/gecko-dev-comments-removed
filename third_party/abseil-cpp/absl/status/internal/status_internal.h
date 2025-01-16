@@ -22,6 +22,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
+#include "absl/base/nullability.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/string_view.h"
@@ -99,7 +100,7 @@ class StatusRep {
   
   
   
-  StatusRep* CloneAndUnref() const;
+  absl::Nonnull<StatusRep*> CloneAndUnref() const;
 
  private:
   mutable std::atomic<int32_t> ref_;
@@ -118,8 +119,10 @@ absl::StatusCode MapToLocalCode(int value);
 
 
 
-std::string* MakeCheckFailString(const absl::Status* status,
-                                 const char* prefix);
+ABSL_ATTRIBUTE_PURE_FUNCTION
+absl::Nonnull<std::string*> MakeCheckFailString(
+    absl::Nonnull<const absl::Status*> status,
+    absl::Nonnull<const char*> prefix);
 
 }  
 

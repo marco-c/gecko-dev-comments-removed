@@ -170,13 +170,15 @@ class LogMessage {
 
   
   template <typename T,
-            typename std::enable_if<HasAbslStringify<T>::value, int>::type = 0>
+            typename std::enable_if<absl::HasAbslStringify<T>::value,
+                                    int>::type = 0>
   LogMessage& operator<<(const T& v) ABSL_ATTRIBUTE_NOINLINE;
 
   
   
   template <typename T,
-            typename std::enable_if<!HasAbslStringify<T>::value, int>::type = 0>
+            typename std::enable_if<!absl::HasAbslStringify<T>::value,
+                                    int>::type = 0>
   LogMessage& operator<<(const T& v) ABSL_ATTRIBUTE_NOINLINE;
 
   
@@ -281,7 +283,7 @@ class StringifySink final {
 
 
 template <typename T,
-          typename std::enable_if<HasAbslStringify<T>::value, int>::type>
+          typename std::enable_if<absl::HasAbslStringify<T>::value, int>::type>
 LogMessage& LogMessage::operator<<(const T& v) {
   StringifySink sink(*this);
   
@@ -291,7 +293,7 @@ LogMessage& LogMessage::operator<<(const T& v) {
 
 
 template <typename T,
-          typename std::enable_if<!HasAbslStringify<T>::value, int>::type>
+          typename std::enable_if<!absl::HasAbslStringify<T>::value, int>::type>
 LogMessage& LogMessage::operator<<(const T& v) {
   OstreamView view(*data_);
   view.stream() << log_internal::NullGuard<T>().Guard(v);

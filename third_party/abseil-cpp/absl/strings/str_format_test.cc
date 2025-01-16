@@ -635,6 +635,10 @@ TEST(StrFormat, BehavesAsDocumented) {
   EXPECT_EQ(StrFormat("%p", &something), StrFormat("0x%x", ptr_value));
 
   
+  
+  (void)StrFormat("%p", nullptr);
+
+  
   EXPECT_EQ(StrFormat("%3d", 1), "  1");
   EXPECT_EQ(StrFormat("%3d", 123456), "123456");
   EXPECT_EQ(StrFormat("%06.2f", 1.234), "001.23");

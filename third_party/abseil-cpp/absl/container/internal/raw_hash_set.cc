@@ -17,11 +17,13 @@
 #include <atomic>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/dynamic_annotations.h"
+#include "absl/container/internal/container_memory.h"
 #include "absl/hash/hash.h"
 
 namespace absl {
@@ -128,14 +130,6 @@ FindInfo find_first_non_full_outofline(const CommonFields& common,
 
 
 
-static inline void* SlotAddress(void* slot_array, size_t slot,
-                                size_t slot_size) {
-  return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(slot_array) +
-                                 (slot * slot_size));
-}
-
-
-
 static inline void* NextSlot(void* slot, size_t slot_size) {
   return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(slot) + slot_size);
 }
@@ -227,26 +221,35 @@ void DropDeletesWithoutResize(CommonFields& common,
   common.infoz().RecordRehash(total_probe_length);
 }
 
-void EraseMetaOnly(CommonFields& c, ctrl_t* it, size_t slot_size) {
-  assert(IsFull(*it) && "erasing a dangling iterator");
-  c.decrement_size();
-  const auto index = static_cast<size_t>(it - c.control());
+static bool WasNeverFull(CommonFields& c, size_t index) {
+  if (is_single_group(c.capacity())) {
+    return true;
+  }
   const size_t index_before = (index - Group::kWidth) & c.capacity();
-  const auto empty_after = Group(it).MaskEmpty();
+  const auto empty_after = Group(c.control() + index).MaskEmpty();
   const auto empty_before = Group(c.control() + index_before).MaskEmpty();
 
   
   
   
-  bool was_never_full = empty_before && empty_after &&
-                        static_cast<size_t>(empty_after.TrailingZeros()) +
-                                empty_before.LeadingZeros() <
-                            Group::kWidth;
+  return empty_before && empty_after &&
+         static_cast<size_t>(empty_after.TrailingZeros()) +
+                 empty_before.LeadingZeros() <
+             Group::kWidth;
+}
 
-  SetCtrl(c, index, was_never_full ? ctrl_t::kEmpty : ctrl_t::kDeleted,
-          slot_size);
-  c.set_growth_left(c.growth_left() + (was_never_full ? 1 : 0));
+void EraseMetaOnly(CommonFields& c, size_t index, size_t slot_size) {
+  assert(IsFull(c.control()[index]) && "erasing a dangling iterator");
+  c.decrement_size();
   c.infoz().RecordErase();
+
+  if (WasNeverFull(c, index)) {
+    SetCtrl(c, index, ctrl_t::kEmpty, slot_size);
+    c.set_growth_left(c.growth_left() + 1);
+    return;
+  }
+
+  SetCtrl(c, index, ctrl_t::kDeleted, slot_size);
 }
 
 void ClearBackingArray(CommonFields& c, const PolicyFunctions& policy,
@@ -254,6 +257,7 @@ void ClearBackingArray(CommonFields& c, const PolicyFunctions& policy,
   c.set_size(0);
   if (reuse) {
     ResetCtrl(c, policy.slot_size);
+    ResetGrowthLeft(c);
     c.infoz().RecordStorageChanged(0, c.capacity());
   } else {
     
@@ -266,6 +270,109 @@ void ClearBackingArray(CommonFields& c, const PolicyFunctions& policy,
     c.set_slots(nullptr);
     c.set_capacity(0);
   }
+}
+
+void HashSetResizeHelper::GrowIntoSingleGroupShuffleControlBytes(
+    ctrl_t* new_ctrl, size_t new_capacity) const {
+  assert(is_single_group(new_capacity));
+  constexpr size_t kHalfWidth = Group::kWidth / 2;
+  assert(old_capacity_ < kHalfWidth);
+
+  const size_t half_old_capacity = old_capacity_ / 2;
+
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::memcpy(new_ctrl, old_ctrl_ + half_old_capacity + 1, kHalfWidth);
+  
+  new_ctrl[half_old_capacity] = ctrl_t::kEmpty;
+
+  
+
+  
+  
+  
+  
+  
+  std::memset(new_ctrl + old_capacity_ + 1, static_cast<int8_t>(ctrl_t::kEmpty),
+              kHalfWidth);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::memset(new_ctrl + kHalfWidth, static_cast<int8_t>(ctrl_t::kEmpty),
+              kHalfWidth);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::memset(new_ctrl + new_capacity + kHalfWidth,
+              static_cast<int8_t>(ctrl_t::kEmpty), kHalfWidth);
+
+  
+  
+  
+  
+  
+  ctrl_t g[kHalfWidth];
+  std::memcpy(g, new_ctrl, kHalfWidth);
+  std::memcpy(new_ctrl + new_capacity + 1, g, kHalfWidth);
+
+  
+  new_ctrl[new_capacity] = ctrl_t::kSentinel;
+}
+
+void HashSetResizeHelper::GrowIntoSingleGroupShuffleTransferableSlots(
+    void* old_slots, void* new_slots, size_t slot_size) const {
+  assert(old_capacity_ > 0);
+  const size_t half_old_capacity = old_capacity_ / 2;
+
+  SanitizerUnpoisonMemoryRegion(old_slots, slot_size * old_capacity_);
+  std::memcpy(new_slots,
+              SlotAddress(old_slots, half_old_capacity + 1, slot_size),
+              slot_size * half_old_capacity);
+  std::memcpy(SlotAddress(new_slots, half_old_capacity + 1, slot_size),
+              old_slots, slot_size * (half_old_capacity + 1));
+}
+
+void HashSetResizeHelper::GrowSizeIntoSingleGroupTransferable(
+    CommonFields& c, void* old_slots, size_t slot_size) {
+  assert(old_capacity_ < Group::kWidth / 2);
+  assert(is_single_group(c.capacity()));
+  assert(IsGrowingIntoSingleGroupApplicable(old_capacity_, c.capacity()));
+
+  GrowIntoSingleGroupShuffleControlBytes(c.control(), c.capacity());
+  GrowIntoSingleGroupShuffleTransferableSlots(old_slots, c.slot_array(),
+                                              slot_size);
+
+  
+  
+  PoisonSingleGroupEmptySlots(c, slot_size);
 }
 
 }  
