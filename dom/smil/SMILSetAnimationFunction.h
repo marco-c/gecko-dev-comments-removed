@@ -20,7 +20,21 @@ namespace mozilla {
 
 class SMILSetAnimationFunction : public SMILAnimationFunction {
  protected:
-  bool IsDisallowedAttribute(const nsAtom* aAttribute) const override;
+  bool IsDisallowedAttribute(const nsAtom* aAttribute) const override {
+    
+    
+    
+    
+    
+    
+    return aAttribute == nsGkAtoms::calcMode ||
+           aAttribute == nsGkAtoms::values ||
+           aAttribute == nsGkAtoms::keyTimes ||
+           aAttribute == nsGkAtoms::keySplines ||
+           aAttribute == nsGkAtoms::from || aAttribute == nsGkAtoms::by ||
+           aAttribute == nsGkAtoms::additive ||
+           aAttribute == nsGkAtoms::accumulate;
+  }
 
   
   
