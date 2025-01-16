@@ -163,6 +163,8 @@ class GeckoInstance(object):
         
         "security.remote_settings.intermediates.enabled": False,
         
+        "services.settings.loglevel": "off",
+        
         "services.settings.server": "data:,#remote-settings-dummy/v1",
         
         
