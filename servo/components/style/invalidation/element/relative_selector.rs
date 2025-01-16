@@ -1105,7 +1105,11 @@ where
                 descendant_invalidations.dom_descendants.push(invalidation)
             },
             NormalDependencyInvalidationKind::Siblings => sibling_invalidations.push(invalidation),
-            _ => unreachable!(),
+            
+            
+            
+            
+            _ => (),
         }
     }
 
