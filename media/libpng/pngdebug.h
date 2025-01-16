@@ -30,7 +30,6 @@
 
 
 
-
 #ifndef PNGDEBUG_H
 #define PNGDEBUG_H
 

@@ -15,7 +15,6 @@
 
 
 
-
 #include "pngpriv.h"
 
 #ifdef PNG_ARM_NEON_IMPLEMENTATION

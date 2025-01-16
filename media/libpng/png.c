@@ -10,11 +10,10 @@
 
 
 
-
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_44 Your_png_h_is_not_version_1_6_44;
+typedef png_libpng_version_1_6_45 Your_png_h_is_not_version_1_6_45;
 
 
 
@@ -794,8 +793,8 @@ png_get_copyright(png_const_structrp png_ptr)
    return PNG_STRING_COPYRIGHT
 #else
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.44" PNG_STRING_NEWLINE \
-      "Copyright (c) 2018-2024 Cosmin Truta" PNG_STRING_NEWLINE \
+      "libpng version 1.6.45" PNG_STRING_NEWLINE \
+      "Copyright (c) 2018-2025 Cosmin Truta" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \
       "Copyright (c) 1996-1997 Andreas Dilger" PNG_STRING_NEWLINE \
@@ -1203,22 +1202,66 @@ png_colorspace_sync(png_const_structrp png_ptr, png_inforp info_ptr)
 #endif 
 
 #ifdef PNG_COLORSPACE_SUPPORTED
-static int
-png_safe_add(png_int_32 *addend0_and_result, png_int_32 addend1,
-      png_int_32 addend2) {
+static png_int_32
+png_fp_add(png_int_32 addend0, png_int_32 addend1, int *error)
+{
    
 
 
 
 
-   int addend0 = *addend0_and_result;
-   if (0x7fffffff - addend0 < addend1)
-      return 1;
-   addend0 += addend1;
-   if (0x7fffffff - addend1 < addend2)
-      return 1;
-   *addend0_and_result = addend0 + addend2;
-   return 0;
+
+   if (addend0 > 0)
+   {
+      if (0x7fffffff - addend0 >= addend1)
+         return addend0+addend1;
+   }
+   else if (addend0 < 0)
+   {
+      if (-0x7fffffff - addend0 <= addend1)
+         return addend0+addend1;
+   }
+   else
+      return addend1;
+
+   *error = 1;
+   return PNG_FP_1/2;
+}
+
+static png_int_32
+png_fp_sub(png_int_32 addend0, png_int_32 addend1, int *error)
+{
+   
+   if (addend1 > 0)
+   {
+      if (-0x7fffffff + addend1 <= addend0)
+         return addend0-addend1;
+   }
+   else if (addend1 < 0)
+   {
+      if (0x7fffffff + addend1 >= addend0)
+         return addend0-addend1;
+   }
+   else
+      return addend0;
+
+   *error = 1;
+   return PNG_FP_1/2;
+}
+
+static int
+png_safe_add(png_int_32 *addend0_and_result, png_int_32 addend1,
+      png_int_32 addend2)
+{
+   
+
+
+   int error = 0;
+   int result = png_fp_add(*addend0_and_result,
+                           png_fp_add(addend1, addend2, &error),
+                           &error);
+   if (!error) *addend0_and_result = result;
+   return error;
 }
 
 
@@ -1229,7 +1272,7 @@ png_safe_add(png_int_32 *addend0_and_result, png_int_32 addend1,
 static int
 png_xy_from_XYZ(png_xy *xy, const png_XYZ *XYZ)
 {
-   png_int_32 d, dred, dgreen, dwhite, whiteX, whiteY;
+   png_int_32 d, dred, dgreen, dblue, dwhite, whiteX, whiteY;
 
    
 
@@ -1237,43 +1280,51 @@ png_xy_from_XYZ(png_xy *xy, const png_XYZ *XYZ)
    d = XYZ->red_X;
    if (png_safe_add(&d, XYZ->red_Y, XYZ->red_Z))
       return 1;
-   if (png_muldiv(&xy->redx, XYZ->red_X, PNG_FP_1, d) == 0)
-      return 1;
-   if (png_muldiv(&xy->redy, XYZ->red_Y, PNG_FP_1, d) == 0)
-      return 1;
    dred = d;
-   whiteX = XYZ->red_X;
-   whiteY = XYZ->red_Y;
+   if (png_muldiv(&xy->redx, XYZ->red_X, PNG_FP_1, dred) == 0)
+      return 1;
+   if (png_muldiv(&xy->redy, XYZ->red_Y, PNG_FP_1, dred) == 0)
+      return 1;
 
    d = XYZ->green_X;
    if (png_safe_add(&d, XYZ->green_Y, XYZ->green_Z))
       return 1;
-   if (png_muldiv(&xy->greenx, XYZ->green_X, PNG_FP_1, d) == 0)
-      return 1;
-   if (png_muldiv(&xy->greeny, XYZ->green_Y, PNG_FP_1, d) == 0)
-      return 1;
    dgreen = d;
-   whiteX += XYZ->green_X;
-   whiteY += XYZ->green_Y;
+   if (png_muldiv(&xy->greenx, XYZ->green_X, PNG_FP_1, dgreen) == 0)
+      return 1;
+   if (png_muldiv(&xy->greeny, XYZ->green_Y, PNG_FP_1, dgreen) == 0)
+      return 1;
 
    d = XYZ->blue_X;
    if (png_safe_add(&d, XYZ->blue_Y, XYZ->blue_Z))
       return 1;
-   if (png_muldiv(&xy->bluex, XYZ->blue_X, PNG_FP_1, d) == 0)
+   dblue = d;
+   if (png_muldiv(&xy->bluex, XYZ->blue_X, PNG_FP_1, dblue) == 0)
       return 1;
-   if (png_muldiv(&xy->bluey, XYZ->blue_Y, PNG_FP_1, d) == 0)
+   if (png_muldiv(&xy->bluey, XYZ->blue_Y, PNG_FP_1, dblue) == 0)
       return 1;
-   whiteX += XYZ->blue_X;
-   whiteY += XYZ->blue_Y;
 
    
 
 
 
+   d = dblue;
    if (png_safe_add(&d, dred, dgreen))
       return 1;
-
    dwhite = d;
+
+   
+
+
+   d = XYZ->red_X;
+   if (png_safe_add(&d, XYZ->green_X, XYZ->blue_X))
+      return 1;
+   whiteX = d;
+
+   d = XYZ->red_Y;
+   if (png_safe_add(&d, XYZ->green_Y, XYZ->blue_Y))
+      return 1;
+   whiteY = d;
 
    if (png_muldiv(&xy->whitex, whiteX, PNG_FP_1, dwhite) == 0)
       return 1;
@@ -1302,212 +1353,252 @@ png_XYZ_from_xy(png_XYZ *XYZ, const png_xy *xy)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   
-
-
-   if (png_muldiv(&left, xy->greenx-xy->bluex, xy->redy - xy->bluey, 7) == 0)
-      return 1;
-   if (png_muldiv(&right, xy->greeny-xy->bluey, xy->redx - xy->bluex, 7) == 0)
-      return 1;
-   denominator = left - right;
-
-   
-   if (png_muldiv(&left, xy->greenx-xy->bluex, xy->whitey-xy->bluey, 7) == 0)
-      return 1;
-   if (png_muldiv(&right, xy->greeny-xy->bluey, xy->whitex-xy->bluex, 7) == 0)
-      return 1;
+   const png_fixed_point fpLimit = PNG_FP_1+(PNG_FP_1/10);
+   if (xy->redx   < 0 || xy->redx > fpLimit) return 1;
+   if (xy->redy   < 0 || xy->redy > fpLimit-xy->redx) return 1;
+   if (xy->greenx < 0 || xy->greenx > fpLimit) return 1;
+   if (xy->greeny < 0 || xy->greeny > fpLimit-xy->greenx) return 1;
+   if (xy->bluex  < 0 || xy->bluex > fpLimit) return 1;
+   if (xy->bluey  < 0 || xy->bluey > fpLimit-xy->bluex) return 1;
+   if (xy->whitex < 0 || xy->whitex > fpLimit) return 1;
+   if (xy->whitey < 5 || xy->whitey > fpLimit-xy->whitex) return 1;
 
    
 
 
 
 
-   if (png_muldiv(&red_inverse, xy->whitey, denominator, left-right) == 0 ||
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   int error = 0;
+
+   
+
+
+
+
+
+   if (png_muldiv(&left, xy->greenx-xy->bluex, xy->redy - xy->bluey, 8) == 0)
+      return 1;
+   if (png_muldiv(&right, xy->greeny-xy->bluey, xy->redx - xy->bluex, 8) == 0)
+      return 1;
+   denominator = png_fp_sub(left, right, &error);
+   if (error) return 1;
+
+   
+   if (png_muldiv(&left, xy->greenx-xy->bluex, xy->whitey-xy->bluey, 8) == 0)
+      return 1;
+   if (png_muldiv(&right, xy->greeny-xy->bluey, xy->whitex-xy->bluex, 8) == 0)
+      return 1;
+
+   
+
+
+
+
+   if (png_muldiv(&red_inverse, xy->whitey, denominator,
+                  png_fp_sub(left, right, &error)) == 0 || error ||
        red_inverse <= xy->whitey )
       return 1;
 
    
-   if (png_muldiv(&left, xy->redy-xy->bluey, xy->whitex-xy->bluex, 7) == 0)
+   if (png_muldiv(&left, xy->redy-xy->bluey, xy->whitex-xy->bluex, 8) == 0)
       return 1;
-   if (png_muldiv(&right, xy->redx-xy->bluex, xy->whitey-xy->bluey, 7) == 0)
+   if (png_muldiv(&right, xy->redx-xy->bluex, xy->whitey-xy->bluey, 8) == 0)
       return 1;
-   if (png_muldiv(&green_inverse, xy->whitey, denominator, left-right) == 0 ||
+   if (png_muldiv(&green_inverse, xy->whitey, denominator,
+                  png_fp_sub(left, right, &error)) == 0 || error ||
        green_inverse <= xy->whitey)
       return 1;
 
    
 
 
-   blue_scale = png_reciprocal(xy->whitey) - png_reciprocal(red_inverse) -
-       png_reciprocal(green_inverse);
-   if (blue_scale <= 0)
+   blue_scale = png_fp_sub(png_fp_sub(png_reciprocal(xy->whitey),
+                                      png_reciprocal(red_inverse), &error),
+                           png_reciprocal(green_inverse), &error);
+   if (error || blue_scale <= 0)
       return 1;
 
 
    
+
+
+
    if (png_muldiv(&XYZ->red_X, xy->redx, PNG_FP_1, red_inverse) == 0)
       return 1;
    if (png_muldiv(&XYZ->red_Y, xy->redy, PNG_FP_1, red_inverse) == 0)

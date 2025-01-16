@@ -11,9 +11,26 @@
 
 
 
+
+
 #include "pngpriv.h"
 
 #ifdef PNG_WRITE_SUPPORTED
+
+#ifdef PNG_WRITE_INTERLACING_SUPPORTED
+
+
+
+static const png_byte png_pass_start[7] = {0, 4, 0, 2, 0, 1, 0};
+
+static const png_byte png_pass_inc[7] = {8, 8, 4, 4, 2, 2, 1};
+
+static const png_byte png_pass_ystart[7] = {0, 0, 4, 0, 2, 0, 1};
+
+static const png_byte png_pass_yinc[7] = {8, 8, 8, 4, 4, 2, 2};
+
+
+#endif
 
 #ifdef PNG_WRITE_INT_FUNCTIONS_SUPPORTED
 
@@ -1502,6 +1519,29 @@ png_write_bKGD(png_structrp png_ptr, png_const_color_16p back, int color_type)
 }
 #endif
 
+#ifdef PNG_WRITE_cICP_SUPPORTED
+
+void 
+png_write_cICP(png_structrp png_ptr,
+               png_byte colour_primaries, png_byte transfer_function,
+               png_byte matrix_coefficients, png_byte video_full_range_flag)
+{
+   png_byte buf[4];
+
+   png_debug(1, "in png_write_cICP");
+
+   png_write_chunk_header(png_ptr, png_cICP, 4);
+
+   buf[0] = colour_primaries;
+   buf[1] = transfer_function;
+   buf[2] = matrix_coefficients;
+   buf[3] = video_full_range_flag;
+   png_write_chunk_data(png_ptr, buf, 4);
+
+   png_write_chunk_end(png_ptr);
+}
+#endif
+
 #ifdef PNG_WRITE_eXIf_SUPPORTED
 
 void 
@@ -1996,22 +2036,6 @@ png_write_fdAT(png_structp png_ptr,
 void 
 png_write_start_row(png_structrp png_ptr)
 {
-#ifdef PNG_WRITE_INTERLACING_SUPPORTED
-   
-
-   
-   static const png_byte png_pass_start[7] = {0, 4, 0, 2, 0, 1, 0};
-
-   
-   static const png_byte png_pass_inc[7] = {8, 8, 4, 4, 2, 2, 1};
-
-   
-   static const png_byte png_pass_ystart[7] = {0, 0, 4, 0, 2, 0, 1};
-
-   
-   static const png_byte png_pass_yinc[7] = {8, 8, 8, 4, 4, 2, 2};
-#endif
-
    png_alloc_size_t buf_size;
    int usr_pixel_depth;
 
@@ -2111,22 +2135,6 @@ png_write_start_row(png_structrp png_ptr)
 void 
 png_write_finish_row(png_structrp png_ptr)
 {
-#ifdef PNG_WRITE_INTERLACING_SUPPORTED
-   
-
-   
-   static const png_byte png_pass_start[7] = {0, 4, 0, 2, 0, 1, 0};
-
-   
-   static const png_byte png_pass_inc[7] = {8, 8, 4, 4, 2, 2, 1};
-
-   
-   static const png_byte png_pass_ystart[7] = {0, 0, 4, 0, 2, 0, 1};
-
-   
-   static const png_byte png_pass_yinc[7] = {8, 8, 8, 4, 4, 2, 2};
-#endif
-
    png_debug(1, "in png_write_finish_row");
 
    
@@ -2202,14 +2210,6 @@ png_write_finish_row(png_structrp png_ptr)
 void 
 png_do_write_interlace(png_row_infop row_info, png_bytep row, int pass)
 {
-   
-
-   
-   static const png_byte png_pass_start[7] = {0, 4, 0, 2, 0, 1, 0};
-
-   
-   static const png_byte png_pass_inc[7] = {8, 8, 4, 4, 2, 2, 1};
-
    png_debug(1, "in png_do_write_interlace");
 
    

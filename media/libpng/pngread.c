@@ -13,7 +13,6 @@
 
 
 
-
 #include "pngpriv.h"
 #if defined(PNG_SIMPLIFIED_READ_SUPPORTED) && defined(PNG_STDIO_SUPPORTED)
 #  include <errno.h>
@@ -176,6 +175,11 @@ png_read_info(png_structrp png_ptr, png_inforp info_ptr)
 #ifdef PNG_READ_cHRM_SUPPORTED
       else if (chunk_name == png_cHRM)
          png_handle_cHRM(png_ptr, info_ptr, length);
+#endif
+
+#ifdef PNG_READ_cICP_SUPPORTED
+      else if (chunk_name == png_cICP)
+         png_handle_cICP(png_ptr, info_ptr, length);
 #endif
 
 #ifdef PNG_READ_eXIf_SUPPORTED
@@ -930,6 +934,11 @@ png_read_end(png_structrp png_ptr, png_inforp info_ptr)
 #ifdef PNG_READ_cHRM_SUPPORTED
       else if (chunk_name == png_cHRM)
          png_handle_cHRM(png_ptr, info_ptr, length);
+#endif
+
+#ifdef PNG_READ_cICP_SUPPORTED
+      else if (chunk_name == png_cICP)
+         png_handle_cICP(png_ptr, info_ptr, length);
 #endif
 
 #ifdef PNG_READ_eXIf_SUPPORTED

@@ -17,7 +17,6 @@
 
 
 
-
 #include "pngpriv.h"
 
 #ifdef PNG_WRITE_SUPPORTED

@@ -10,7 +10,6 @@
 
 
 
-
 #include "pngpriv.h"
 
 #ifdef PNG_PROGRESSIVE_READ_SUPPORTED
@@ -31,6 +30,21 @@ if (png_ptr->push_length + 4 > png_ptr->buffer_size) \
 #define PNG_PUSH_SAVE_BUFFER_IF_LT(N) \
 if (png_ptr->buffer_size < N) \
    { png_push_save_buffer(png_ptr); return; }
+
+#ifdef PNG_READ_INTERLACING_SUPPORTED
+
+
+
+static const png_byte png_pass_start[7] = {0, 4, 0, 2, 0, 1, 0};
+
+static const png_byte png_pass_inc[7] = {8, 8, 4, 4, 2, 2, 1};
+
+static const png_byte png_pass_ystart[7] = {0, 0, 4, 0, 2, 0, 1};
+
+static const png_byte png_pass_yinc[7] = {8, 8, 8, 4, 4, 2, 2};
+
+
+#endif
 
 void PNGAPI
 png_process_data(png_structrp png_ptr, png_inforp info_ptr,
@@ -378,6 +392,14 @@ png_push_read_chunk(png_structrp png_ptr, png_inforp info_ptr)
    {
       PNG_PUSH_SAVE_BUFFER_IF_FULL
       png_handle_cHRM(png_ptr, info_ptr, png_ptr->push_length);
+   }
+
+#endif
+#ifdef PNG_READ_cICP_SUPPORTED
+   else if (png_ptr->chunk_name == png_cICP)
+   {
+      PNG_PUSH_SAVE_BUFFER_IF_FULL
+      png_handle_cICP(png_ptr, info_ptr, png_ptr->push_length);
    }
 
 #endif
@@ -1133,27 +1155,6 @@ png_push_process_row(png_structrp png_ptr)
 void 
 png_read_push_finish_row(png_structrp png_ptr)
 {
-#ifdef PNG_READ_INTERLACING_SUPPORTED
-   
-
-   
-   static const png_byte png_pass_start[] = {0, 4, 0, 2, 0, 1, 0};
-
-   
-   static const png_byte png_pass_inc[] = {8, 8, 4, 4, 2, 2, 1};
-
-   
-   static const png_byte png_pass_ystart[] = {0, 0, 4, 0, 2, 0, 1};
-
-   
-   static const png_byte png_pass_yinc[] = {8, 8, 8, 4, 4, 2, 2};
-
-   
-
-
-
-#endif
-
    png_ptr->row_number++;
    if (png_ptr->row_number < png_ptr->num_rows)
       return;

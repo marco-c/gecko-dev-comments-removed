@@ -10,7 +10,6 @@
 
 
 
-
 #include "pngpriv.h"
 #ifdef PNG_SIMPLIFIED_WRITE_STDIO_SUPPORTED
 #  include <errno.h>
@@ -132,29 +131,61 @@ png_write_info_before_PLTE(png_structrp png_ptr, png_const_inforp info_ptr)
    if ((info_ptr->valid & PNG_INFO_acTL) != 0)
       png_write_acTL(png_ptr, info_ptr->num_frames, info_ptr->num_plays);
 #endif
-#ifdef PNG_GAMMA_SUPPORTED
-#  ifdef PNG_WRITE_gAMA_SUPPORTED
-      if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
-          (info_ptr->colorspace.flags & PNG_COLORSPACE_FROM_gAMA) != 0 &&
-          (info_ptr->valid & PNG_INFO_gAMA) != 0)
-         png_write_gAMA_fixed(png_ptr, info_ptr->colorspace.gamma);
-#  endif
+#ifdef PNG_WRITE_UNKNOWN_CHUNKS_SUPPORTED
+         
+
+
+
+
+
+
+
+
+         write_unknown_chunks(png_ptr, info_ptr, PNG_HAVE_IHDR);
 #endif
 
+#ifdef PNG_WRITE_sBIT_SUPPORTED
+         
+
+
+
+
+
+
+
+         if ((info_ptr->valid & PNG_INFO_sBIT) != 0)
+            png_write_sBIT(png_ptr, &(info_ptr->sig_bit), info_ptr->color_type);
+#endif
+
+   
+
+
+
+
 #ifdef PNG_COLORSPACE_SUPPORTED
+#  ifdef PNG_WRITE_cICP_SUPPORTED 
+   if ((info_ptr->valid & PNG_INFO_cICP) != 0)
+      {
+         png_write_cICP(png_ptr,
+                        info_ptr->cicp_colour_primaries,
+                        info_ptr->cicp_transfer_function,
+                        info_ptr->cicp_matrix_coefficients,
+                        info_ptr->cicp_video_full_range_flag);
+      }
+#  endif
+
       
 
 
-#  ifdef PNG_WRITE_iCCP_SUPPORTED
+
+
+
+
+
+#  ifdef PNG_WRITE_iCCP_SUPPORTED 
          if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
              (info_ptr->valid & PNG_INFO_iCCP) != 0)
          {
-#    ifdef PNG_WRITE_sRGB_SUPPORTED
-               if ((info_ptr->valid & PNG_INFO_sRGB) != 0)
-                  png_app_warning(png_ptr,
-                      "profile matches sRGB but writing iCCP instead");
-#     endif
-
             png_write_iCCP(png_ptr, info_ptr->iccp_name,
                 info_ptr->iccp_profile);
          }
@@ -163,29 +194,29 @@ png_write_info_before_PLTE(png_structrp png_ptr, png_const_inforp info_ptr)
 #     endif
 #  endif
 
-#  ifdef PNG_WRITE_sRGB_SUPPORTED
+#  ifdef PNG_WRITE_sRGB_SUPPORTED 
          if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
              (info_ptr->valid & PNG_INFO_sRGB) != 0)
             png_write_sRGB(png_ptr, info_ptr->colorspace.rendering_intent);
 #  endif 
 #endif 
 
-#ifdef PNG_WRITE_sBIT_SUPPORTED
-         if ((info_ptr->valid & PNG_INFO_sBIT) != 0)
-            png_write_sBIT(png_ptr, &(info_ptr->sig_bit), info_ptr->color_type);
+#ifdef PNG_GAMMA_SUPPORTED
+#  ifdef PNG_WRITE_gAMA_SUPPORTED 
+      if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
+          (info_ptr->colorspace.flags & PNG_COLORSPACE_FROM_gAMA) != 0 &&
+          (info_ptr->valid & PNG_INFO_gAMA) != 0)
+         png_write_gAMA_fixed(png_ptr, info_ptr->colorspace.gamma);
+#  endif
 #endif
 
 #ifdef PNG_COLORSPACE_SUPPORTED
-#  ifdef PNG_WRITE_cHRM_SUPPORTED
+#  ifdef PNG_WRITE_cHRM_SUPPORTED 
          if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
              (info_ptr->colorspace.flags & PNG_COLORSPACE_FROM_cHRM) != 0 &&
              (info_ptr->valid & PNG_INFO_cHRM) != 0)
             png_write_cHRM_fixed(png_ptr, &info_ptr->colorspace.end_points_xy);
 #  endif
-#endif
-
-#ifdef PNG_WRITE_UNKNOWN_CHUNKS_SUPPORTED
-         write_unknown_chunks(png_ptr, info_ptr, PNG_HAVE_IHDR);
 #endif
 
       png_ptr->mode |= PNG_WROTE_INFO_BEFORE_PLTE;
