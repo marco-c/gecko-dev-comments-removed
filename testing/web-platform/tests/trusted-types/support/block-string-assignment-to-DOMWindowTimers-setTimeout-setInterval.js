@@ -52,10 +52,13 @@ const kTimeoutTestString = "timeoutTestString";
 const kIntervalTestString = "intervalTestString";
 
 let policy = globalThis.trustedTypes.createPolicy("default", { createScript: (x, _, sink) => {
+   
+  
+  const expectedSink = globalThisStr.includes("Window") ? "Window" : "Worker";
   if (x === kTimeoutTestString) {
-    assert_equals(sink, `${globalThisStr} setTimeout`);
+    assert_equals(sink, `${expectedSink} setTimeout`);
   } else if (x === kIntervalTestString) {
-    assert_equals(sink, `${globalThisStr} setInterval`);
+    assert_equals(sink, `${expectedSink} setInterval`);
   }
   return "0";
 }});
