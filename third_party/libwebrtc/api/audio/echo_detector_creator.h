@@ -19,7 +19,7 @@ namespace webrtc {
 
 
 
-rtc::scoped_refptr<EchoDetector> CreateEchoDetector();
+scoped_refptr<EchoDetector> CreateEchoDetector();
 
 }  
 

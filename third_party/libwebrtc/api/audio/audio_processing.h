@@ -781,8 +781,7 @@ class CustomProcessing {
 };
 
 
-
-class RTC_EXPORT AudioProcessingBuilder {
+class RTC_EXPORT [[deprecated]] AudioProcessingBuilder {
  public:
   AudioProcessingBuilder();
   AudioProcessingBuilder(const AudioProcessingBuilder&) = delete;
