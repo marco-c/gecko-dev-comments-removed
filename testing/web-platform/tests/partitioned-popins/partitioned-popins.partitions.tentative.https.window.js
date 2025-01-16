@@ -28,7 +28,11 @@ async function openPopin(test, remoteContextWrapper, origin) {
      { features: "popin" });
   assert_equals(await popin.executeScript(() => { return window.popinContextType(); }), "partitioned");
   test.add_cleanup(async () => {
-    await popin.executeScript(() => { window.close(); });
+    await popin.executeScript(() => {
+      
+      
+      setTimeout(() => window.close(), 0);
+    });
   });
   return popin;
 }
