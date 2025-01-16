@@ -43,9 +43,8 @@ class WaylandSurface final {
 #endif
 
   void InitialFrameCallbackHandler(struct wl_callback* aCallback);
-  void AddOrFireInitialDrawCallback(
-      const std::function<void(void)>& aInitialDrawCB);
-  void ClearInitialDrawCallbacks();
+  void AddOrFireReadyToDrawCallback(const std::function<void(void)>& aDrawCB);
+  void ClearReadyToDrawCallbacks();
 
   void FrameCallbackHandler(struct wl_callback* aCallback, uint32_t aTime,
                             bool aRoutedFromChildSurface);
@@ -71,29 +70,47 @@ class WaylandSurface final {
   
   
   bool SetEGLWindowSize(nsIntSize aScaledSize);
-  bool HasEGLWindow() { return !!mEGLWindow; }
+  bool HasEGLWindow() const { return !!mEGLWindow; }
 
-  bool DoesCommitToParentSurface() { return mCommitToParentSurface; }
+  bool DoesCommitToParentSurface() const { return mCommitToParentSurface; }
 
   
   
-  bool IsReadyToDraw() { return mIsReadyToDraw; }
+  bool IsReadyToDraw() const { return mIsReadyToDraw; }
   
-  bool IsMapped() { return mIsMapped; }
+  bool IsMapped() const { return mIsMapped; }
+  
+  
+  
+  
+  bool IsPendingGdkCleanup() const { return mIsPendingGdkCleanup; }
 
-  bool IsOpaqueSurfaceHandlerSetLocked(const WaylandSurfaceLock& aProofOfLock) {
-    return mIsOpaqueSurfaceHandlerSet;
+  bool IsOpaqueSurfaceHandlerSet() const { return mIsOpaqueSurfaceHandlerSet; }
+
+  bool HasBufferAttachedLocked(const WaylandSurfaceLock& aProofOfLock) const {
+    return mBufferAttached;
   }
 
   
-  bool MapLocked(const WaylandSurfaceLock& aProofOfLock, GdkWindow* aGdkWindow,
+  bool MapLocked(const WaylandSurfaceLock& aProofOfLock,
                  wl_surface* aParentWLSurface,
                  gfx::IntPoint aSubsurfacePosition, bool aCommitToParent);
   
-  bool MapLocked(const WaylandSurfaceLock& aProofOfLock, GdkWindow* aGdkWindow,
+  bool MapLocked(const WaylandSurfaceLock& aProofOfLock,
                  WaylandSurfaceLock* aParentWaylandSurfaceLock,
                  gfx::IntPoint aSubsurfacePosition);
-  void Unmap();
+  
+  void UnmapLocked(const WaylandSurfaceLock& aProofOfLock);
+
+  
+  void GdkCleanUpLocked(const WaylandSurfaceLock& aProofOfLock);
+
+  
+  
+  
+  void SetUnmapCallbackLocked(const WaylandSurfaceLock& aProofOfLock,
+                              const std::function<void(void)>& aUnmapCB);
+  void RunUnmapCallback();
 
   
   
@@ -101,7 +118,7 @@ class WaylandSurface final {
   bool CreateViewportLocked(const WaylandSurfaceLock& aProofOfLock,
                             bool aFollowsSizeChanges);
 
-  void AddInitialDrawCallbackLocked(
+  void AddReadyToDrawCallbackLocked(
       const WaylandSurfaceLock& aProofOfLock,
       const std::function<void(void)>& aInitialDrawCB);
 
@@ -109,11 +126,11 @@ class WaylandSurface final {
   
   bool AttachLocked(const WaylandSurfaceLock& aProofOfLock,
                     RefPtr<WaylandBuffer> aWaylandBuffer);
+
   
   
-  
-  void DetachedLocked(const WaylandSurfaceLock& aProofOfLock,
-                      RefPtr<WaylandBuffer> aWaylandBuffer);
+  void DetachedByWaylandCompositorLocked(const WaylandSurfaceLock& aProofOfLock,
+                                         RefPtr<WaylandBuffer> aWaylandBuffer);
 
   
   
@@ -136,7 +153,7 @@ class WaylandSurface final {
   void PlaceAboveLocked(const WaylandSurfaceLock& aProofOfLock,
                         WaylandSurfaceLock& aLowerSurfaceLock);
   void MoveLocked(const WaylandSurfaceLock& aProofOfLock,
-                  gfx::IntPoint& aPosition);
+                  gfx::IntPoint aPosition);
   void SetViewPortSourceRectLocked(const WaylandSurfaceLock& aProofOfLock,
                                    gfx::Rect aRect);
   void SetViewPortDestLocked(const WaylandSurfaceLock& aProofOfLock,
@@ -148,6 +165,7 @@ class WaylandSurface final {
   void SetOpaqueRegionLocked(const WaylandSurfaceLock& aProofOfLock,
                              const gfx::IntRegion& aRegion);
   void SetOpaqueLocked(const WaylandSurfaceLock& aProofOfLock);
+  void ClearOpaqueRegionLocked(const WaylandSurfaceLock& aProofOfLock);
 
   bool DisableUserInputLocked(const WaylandSurfaceLock& aProofOfLock);
   void InvalidateRegionLocked(const WaylandSurfaceLock& aProofOfLock,
@@ -159,13 +177,13 @@ class WaylandSurface final {
       std::function<void(void)> aFractionalScaleCallback, bool aManageViewport);
   bool EnableCeiledScaleLocked(const WaylandSurfaceLock& aProofOfLock);
 
-  bool IsFractionalScaleLocked(const WaylandSurfaceLock& aProofOfLock) {
+  bool IsFractionalScaleLocked(const WaylandSurfaceLock& aProofOfLock) const {
     return mScaleType == ScaleType::Disabled;
   }
-  bool IsCeiledScaleLocked(const WaylandSurfaceLock& aProofOfLock) {
+  bool IsCeiledScaleLocked(const WaylandSurfaceLock& aProofOfLock) const {
     return mScaleType == ScaleType::Ceiled;
   }
-  bool IsScaleEnabledLocked(const WaylandSurfaceLock& aProofOfLock) {
+  bool IsScaleEnabledLocked(const WaylandSurfaceLock& aProofOfLock) const {
     return mScaleType != ScaleType::Disabled;
   }
 
@@ -189,15 +207,40 @@ class WaylandSurface final {
                                      struct wp_fractional_scale_v1* info,
                                      uint32_t wire_scale);
 
-  static void OpaqueSurfaceHandler(GdkFrameClock* aClock, void* aData);
+  static void AfterPaintHandler(GdkFrameClock* aClock, void* aData);
 
   
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool AddOpaqueSurfaceHandlerLocked(const WaylandSurfaceLock& aProofOfLock,
-                                     bool aRegisterCommitHandler = true);
+                                     GdkWindow* aGdkWindow,
+                                     bool aRegisterCommitHandler);
   bool RemoveOpaqueSurfaceHandlerLocked(const WaylandSurfaceLock& aProofOfLock);
+
+  
+  
+  
+  void SetGdkCommitCallbackLocked(
+      const WaylandSurfaceLock& aProofOfLock,
+      const std::function<void(void)>& aGdkCommitCB);
+  void RequestFrameCallbackForceCommitLocked(
+      const WaylandSurfaceLock& aProofOfLock) {
+    mFrameCallbackForceCommit = true;
+  }
 
   GdkWindow* GetGdkWindow() const;
 
@@ -209,11 +252,11 @@ class WaylandSurface final {
  private:
   ~WaylandSurface();
 
-  bool MapLocked(const WaylandSurfaceLock& aProofOfLock, GdkWindow* aGdkWindow,
+  bool MapLocked(const WaylandSurfaceLock& aProofOfLock,
                  wl_surface* aParentWLSurface,
                  WaylandSurfaceLock* aParentWaylandSurfaceLock,
                  gfx::IntPoint aSubsurfacePosition, bool aCommitToParent,
-                 bool aSubsurfaceDesync, bool aRegisterAsOpaqueSurface);
+                 bool aSubsurfaceDesync, bool aUseReadyToDrawCallback = true);
 
   void SetSizeLocked(const WaylandSurfaceLock& aProofOfLock,
                      gfx::IntSize aSizeScaled, gfx::IntSize aUnscaledSize);
@@ -224,14 +267,17 @@ class WaylandSurface final {
   void Commit(WaylandSurfaceLock* aProofOfLock, bool aForceCommit,
               bool aForceDisplayFlush);
 
-  bool CheckAndRemoveWaylandBuffer(WaylandBuffer* aWaylandBuffer, bool aRemove);
+  bool UntrackWaylandBufferLocked(const WaylandSurfaceLock& aProofOfLock,
+                                  WaylandBuffer* aWaylandBuffer, bool aRemove);
+  void ReleaseAllWaylandBuffersLocked(const WaylandSurfaceLock& aProofOfLock);
 
   void RequestFrameCallbackLocked(const WaylandSurfaceLock& aProofOfLock,
                                   bool aRequestEmulated);
   void ClearFrameCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
-  bool IsEmulatedFrameCallbackPending() const;
+  bool IsEmulatedFrameCallbackPendingLocked(
+      const WaylandSurfaceLock& aProofOfLock) const;
 
-  void ClearInitialDrawCallbacksLocked(const WaylandSurfaceLock& aProofOfLock);
+  void ClearReadyToDrawCallbacksLocked(const WaylandSurfaceLock& aProofOfLock);
 
   void ClearScaleLocked(const WaylandSurfaceLock& aProofOfLock);
 
@@ -241,7 +287,17 @@ class WaylandSurface final {
 
   
   mozilla::Atomic<bool, mozilla::Relaxed> mIsMapped{false};
+
+  
+  
+  
   mozilla::Atomic<bool, mozilla::Relaxed> mIsReadyToDraw{false};
+
+  
+  mozilla::Atomic<bool, mozilla::Relaxed> mIsPendingGdkCleanup{false};
+
+  std::function<void(void)> mGdkCommitCallback;
+  std::function<void(void)> mUnmapCallback;
 
   
   
@@ -304,11 +360,15 @@ class WaylandSurface final {
 
   
   
-  wl_callback* mInitialFrameCallback = nullptr;
-  std::vector<std::function<void(void)>> mInitialDrawCallbacks;
+  wl_callback* mReadyToDrawFrameCallback = nullptr;
+  std::vector<std::function<void(void)>> mReadToDrawCallbacks;
 
   
   wl_callback* mFrameCallback = nullptr;
+
+  
+  
+  bool mFrameCallbackForceCommit = false;
 
   struct FrameCallback {
     std::function<void(wl_callback*, uint32_t)> mCb;
@@ -330,15 +390,15 @@ class WaylandSurface final {
 
   
   
-  bool mIsOpaqueSurfaceHandlerSet = false;
+  mozilla::Atomic<bool, mozilla::Relaxed> mIsOpaqueSurfaceHandlerSet{false};
   gulong mGdkAfterPaintId = 0;
   static bool sIsOpaqueRegionEnabled;
   static void (*sGdkWaylandWindowAddCallbackSurface)(GdkWindow*,
                                                      struct wl_surface*);
   static void (*sGdkWaylandWindowRemoveCallbackSurface)(GdkWindow*,
                                                         struct wl_surface*);
-  guint mFrameCheckTimerID = 0;
-  constexpr static int sFrameCheckTimeoutMs = (int)(1000.0 / 60.0);
+  guint mEmulatedFrameCallbackTimerID = 0;
+  constexpr static int sEmulatedFrameCallbackTimeoutMs = (int)(1000.0 / 60.0);
 
   
   
