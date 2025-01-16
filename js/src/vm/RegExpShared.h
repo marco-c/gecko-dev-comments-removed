@@ -412,7 +412,7 @@ class RegExpRealm {
   
   
   static const size_t MatchResultObjectSlotSpan = 3;
-  static const size_t MatchResultObjectNumDynamicSlots = 6;
+  static const size_t MatchResultObjectNumDynamicSlots = 5;
 
   static const size_t IndicesGroupsSlot = 0;
 

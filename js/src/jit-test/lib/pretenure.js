@@ -41,7 +41,10 @@ function setupPretenureTest() {
   
   let o = {};
 
-  gc();
+  
+  
+  
+  gc(undefined, 'shrinking');
 }
 
 function allocateObjects(count, longLived) {
