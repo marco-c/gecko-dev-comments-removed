@@ -202,9 +202,12 @@ impl ToResolvedValue for LengthPercentage {
 
 
 #[derive(Clone, Debug, PartialEq, ToCss)]
-enum Unpacked<'a> {
+pub enum Unpacked<'a> {
+    
     Calc(&'a CalcLengthPercentage),
+    
     Length(Length),
+    
     Percentage(Percentage),
 }
 
@@ -397,8 +400,10 @@ impl LengthPercentage {
         }
     }
 
+    
+    
     #[inline]
-    fn unpack<'a>(&'a self) -> Unpacked<'a> {
+    pub fn unpack<'a>(&'a self) -> Unpacked<'a> {
         unsafe {
             match self.tag() {
                 Tag::Calc => Unpacked::Calc(&*self.calc_ptr()),
