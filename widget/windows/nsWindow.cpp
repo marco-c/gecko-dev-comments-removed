@@ -4097,7 +4097,7 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
                                   LPARAM lParam, bool aIsContextMenuKey,
                                   int16_t aButton, uint16_t aInputSource,
                                   WinPointerInfo* aPointerInfo,
-                                  bool aIgnoreAPZ) {
+                                  IsNonclient aIsNonclient) {
   ContextMenuPreventer contextMenuPreventer(this);
   bool result = false;
 
@@ -4122,7 +4122,7 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
     sLastMouseMovePoint.y = mpScreen.y;
   }
 
-  if (!aIgnoreAPZ && WinUtils::GetIsMouseFromTouch(aEventMessage)) {
+  if (!bool(aIsNonclient) && WinUtils::GetIsMouseFromTouch(aEventMessage)) {
     if (mTouchWindow) {
       
       
@@ -5535,18 +5535,22 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
     case WM_NCLBUTTONDOWN: {
       
       
+      auto const hitTest =
+          ClientMarginHitTestPoint(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+
       
       
-      if (ClientMarginHitTestPoint(GET_X_LPARAM(lParam),
-                                   GET_Y_LPARAM(lParam)) == HTCAPTION) {
+      
+      
+      if (hitTest == HTCAPTION) {
         DispatchCustomEvent(u"draggableregionleftmousedown"_ns);
         mDraggingWindowWithMouse = true;
       }
 
-      if (IsWindowButton(wParam) && mCustomNonClient) {
+      if (IsWindowButton(int32_t(wParam)) && mCustomNonClient) {
         DispatchMouseEvent(eMouseDown, wParamFromGlobalMouseState(),
                            lParamToClient(lParam), false, MouseButton::ePrimary,
-                           MOUSE_INPUT_SOURCE(), nullptr, true);
+                           MOUSE_INPUT_SOURCE(), nullptr, IsNonclient::Yes);
         DispatchPendingEvents();
         result = true;
       }
