@@ -989,6 +989,11 @@ void nsCSPContext::logToConsole(const char* aName,
 void StripURIForReporting(nsIURI* aSelfURI, nsIURI* aURI,
                           const nsAString& aEffectiveDirective,
                           nsACString& outStrippedURI) {
+  if (aSelfURI->SchemeIs("chrome")) {
+    aURI->GetSpecIgnoringRef(outStrippedURI);
+    return;
+  }
+
   
   
   
