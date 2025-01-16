@@ -338,11 +338,11 @@ class alignas(uintptr_t) JitScript final
   mozilla::Maybe<HeapPtr<EnvironmentObject*>> templateEnv_;
 
   
-  
-  mozilla::Maybe<bool> usesEnvironmentChain_;
+  Offset endOffset_ = 0;
 
   
-  Offset endOffset_ = 0;
+  
+  mozilla::Maybe<bool> usesEnvironmentChain_;
 
   struct Flags {
     
