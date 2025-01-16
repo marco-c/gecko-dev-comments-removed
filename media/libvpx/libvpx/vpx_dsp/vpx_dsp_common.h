@@ -51,9 +51,8 @@ typedef int16_t tran_coef_t;
 
 
 
-
-
-#if defined(_MSC_VER) && defined(_M_ARM64) && !defined(__clang__)
+#if defined(_MSC_VER) && _MSC_VER < 1937 && defined(_M_ARM64) && \
+    !defined(__clang__)
 static INLINE int clip_pixel(int val) {
   return (val > 255) ? 255 : (val < 0) ? 0 : val;
 }

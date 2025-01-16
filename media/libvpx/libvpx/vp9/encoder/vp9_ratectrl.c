@@ -1299,6 +1299,30 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
   } else {
     q = vp9_rc_regulate_q(cpi, rc->this_frame_target, active_best_quality,
                           active_worst_quality);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const int qp_thresh = 32;
+    const int64_t bitrate_err =
+        (int64_t)(cpi->framerate *
+                  (rc->buffer_level - rc->starting_buffer_level -
+                   rc->avg_frame_bandwidth) /
+                  (cm->current_video_frame + 1));
+    
+    if (cpi->oxcf.lag_in_frames == 0 && bitrate_err / 1000 < -10 &&
+        qp_thresh < rc->worst_quality &&
+        (q < qp_thresh || *top_index < qp_thresh)) {
+      q = qp_thresh;
+      *top_index = VPXMAX(*top_index, q);
+    }
+
     if (q > *top_index) {
       
       if (rc->this_frame_target >= rc->max_frame_bandwidth)
@@ -2126,6 +2150,7 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
   else
     target = vp9_calc_pframe_target_size_one_pass_vbr(cpi);
   vp9_rc_set_frame_target(cpi, target);
+  if (cm->show_frame) vp9_update_buffer_level_preencode(cpi);
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cpi->oxcf.pass == 0)
     vp9_cyclic_refresh_update_parameters(cpi);
 }

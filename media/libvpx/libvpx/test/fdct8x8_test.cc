@@ -137,9 +137,12 @@ void idct8x8_64_add_12_sse2(const tran_low_t *in, uint8_t *out, int stride) {
 
 
 
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER < 194234435 && \
+    defined(_M_ARM64) && !defined(__clang__)
+#define AOM_WORK_AROUND_MSVC_BUG_10369786
+#endif
 
-
-#if defined(_MSC_VER) && defined(_M_ARM64) && !defined(__clang__)
+#ifdef AOM_WORK_AROUND_MSVC_BUG_10369786
 #pragma optimize("", off)
 #endif
 class FwdTrans8x8TestBase {
@@ -533,7 +536,7 @@ class FwdTrans8x8TestBase {
   vpx_bit_depth_t bit_depth_;
   int mask_;
 };
-#if defined(_MSC_VER) && defined(_M_ARM64) && !defined(__clang__)
+#ifdef AOM_WORK_AROUND_MSVC_BUG_10369786
 #pragma optimize("", on)
 #endif
 
