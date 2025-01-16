@@ -119,7 +119,7 @@ class RTC_EXPORT RtpSenderInterface : public webrtc::RefCountInterface,
   
   
   void SetFrameTransformer(rtc::scoped_refptr<FrameTransformerInterface>
-                               frame_transformer) override {}
+                           ) override {}
 
  protected:
   ~RtpSenderInterface() override = default;

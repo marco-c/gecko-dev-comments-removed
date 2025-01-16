@@ -27,12 +27,12 @@ class DtmfSenderObserverInterface {
   
   
   
-  virtual void OnToneChange(const std::string& tone,
-                            const std::string& tone_buffer) {}
+  virtual void OnToneChange(const std::string& ,
+                            const std::string& ) {}
   
   
   
-  virtual void OnToneChange(const std::string& tone) {}
+  virtual void OnToneChange(const std::string& ) {}
 
  protected:
   virtual ~DtmfSenderObserverInterface() = default;
@@ -91,7 +91,7 @@ class DtmfSenderInterface : public webrtc::RefCountInterface {
   virtual bool InsertDtmf(const std::string& tones,
                           int duration,
                           int inter_tone_gap,
-                          int comma_delay) {
+                          int ) {
     
     
     return InsertDtmf(tones, duration, inter_tone_gap);

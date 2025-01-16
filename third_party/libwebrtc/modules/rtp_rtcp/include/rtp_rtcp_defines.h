@@ -168,20 +168,22 @@ class NetworkLinkRtcpObserver {
  public:
   virtual ~NetworkLinkRtcpObserver() = default;
 
-  virtual void OnTransportFeedback(Timestamp receive_time,
-                                   const rtcp::TransportFeedback& feedback) {}
+  virtual void OnTransportFeedback(
+      Timestamp ,
+      const rtcp::TransportFeedback& ) {}
   
   virtual void OnCongestionControlFeedback(
-      Timestamp receive_time,
-      const rtcp::CongestionControlFeedback& feedback) {}
-  virtual void OnReceiverEstimatedMaxBitrate(Timestamp receive_time,
-                                             DataRate bitrate) {}
+      Timestamp ,
+      const rtcp::CongestionControlFeedback& ) {}
+  virtual void OnReceiverEstimatedMaxBitrate(Timestamp ,
+                                             DataRate ) {}
 
   
   
-  virtual void OnReport(Timestamp receive_time,
-                        rtc::ArrayView<const ReportBlockData> report_blocks) {}
-  virtual void OnRttUpdate(Timestamp receive_time, TimeDelta rtt) {}
+  virtual void OnReport(
+      Timestamp ,
+      rtc::ArrayView<const ReportBlockData> ) {}
+  virtual void OnRttUpdate(Timestamp , TimeDelta ) {}
 };
 
 class RtcpEventObserver {

@@ -54,7 +54,7 @@ class VideoEncoderFactory {
     
     
     virtual std::optional<SdpVideoFormat> OnResolutionChange(
-        const RenderResolution& resolution) {
+        const RenderResolution& ) {
       return std::nullopt;
     }
 

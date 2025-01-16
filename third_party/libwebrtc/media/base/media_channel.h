@@ -242,9 +242,9 @@ class MediaSendChannelInterface {
   
   
   virtual void SetEncoderSelector(
-      uint32_t ssrc,
-      webrtc::VideoEncoderFactory::EncoderSelectorInterface* encoder_selector) {
-  }
+      uint32_t ,
+      webrtc::VideoEncoderFactory::
+          EncoderSelectorInterface* ) {}
   virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
   virtual bool SendCodecHasNack() const = 0;
   

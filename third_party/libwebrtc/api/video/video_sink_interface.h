@@ -29,7 +29,7 @@ class VideoSinkInterface {
   
   
   virtual void OnConstraintsChanged(
-      const webrtc::VideoTrackSourceConstraints& constraints) {}
+      const webrtc::VideoTrackSourceConstraints& ) {}
 };
 
 }  

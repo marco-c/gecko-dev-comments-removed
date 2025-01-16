@@ -107,7 +107,7 @@ class RTC_EXPORT VideoDecoder {
   
   
   virtual int32_t Decode(const EncodedImage& input_image,
-                         bool missing_frames,
+                         bool ,
                          int64_t render_time_ms) {
     return Decode(input_image, render_time_ms);
   }

@@ -161,7 +161,7 @@ class VideoTrackSourceInterface : public MediaSourceInterface,
   
   
   virtual void ProcessConstraints(
-      const webrtc::VideoTrackSourceConstraints& constraints) {}
+      const webrtc::VideoTrackSourceConstraints& ) {}
 
  protected:
   ~VideoTrackSourceInterface() override = default;
@@ -184,14 +184,14 @@ class RTC_EXPORT VideoTrackInterface
 
   
   
-  void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
-                       const rtc::VideoSinkWants& wants) override {}
-  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override {}
+  void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* ,
+                       const rtc::VideoSinkWants& ) override {}
+  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* ) override {}
 
   virtual VideoTrackSourceInterface* GetSource() const = 0;
 
   virtual ContentHint content_hint() const;
-  virtual void set_content_hint(ContentHint hint) {}
+  virtual void set_content_hint(ContentHint ) {}
 
  protected:
   ~VideoTrackInterface() override = default;
@@ -200,11 +200,11 @@ class RTC_EXPORT VideoTrackInterface
 
 class AudioTrackSinkInterface {
  public:
-  virtual void OnData(const void* audio_data,
-                      int bits_per_sample,
-                      int sample_rate,
-                      size_t number_of_channels,
-                      size_t number_of_frames) {
+  virtual void OnData(const void* ,
+                      int ,
+                      int ,
+                      size_t ,
+                      size_t ) {
     RTC_DCHECK_NOTREACHED() << "This method must be overridden, or not used.";
   }
 
@@ -212,12 +212,13 @@ class AudioTrackSinkInterface {
   
   
   
-  virtual void OnData(const void* audio_data,
-                      int bits_per_sample,
-                      int sample_rate,
-                      size_t number_of_channels,
-                      size_t number_of_frames,
-                      std::optional<int64_t> absolute_capture_timestamp_ms) {
+  virtual void OnData(
+      const void* audio_data,
+      int bits_per_sample,
+      int sample_rate,
+      size_t number_of_channels,
+      size_t number_of_frames,
+      std::optional<int64_t> ) {
     
     
     return OnData(audio_data, bits_per_sample, sample_rate, number_of_channels,
@@ -251,15 +252,15 @@ class RTC_EXPORT AudioSourceInterface : public MediaSourceInterface {
   
   
   
-  virtual void SetVolume(double volume) {}
+  virtual void SetVolume(double ) {}
 
   
-  virtual void RegisterAudioObserver(AudioObserver* observer) {}
-  virtual void UnregisterAudioObserver(AudioObserver* observer) {}
+  virtual void RegisterAudioObserver(AudioObserver* ) {}
+  virtual void UnregisterAudioObserver(AudioObserver* ) {}
 
   
-  virtual void AddSink(AudioTrackSinkInterface* sink) {}
-  virtual void RemoveSink(AudioTrackSinkInterface* sink) {}
+  virtual void AddSink(AudioTrackSinkInterface* ) {}
+  virtual void RemoveSink(AudioTrackSinkInterface* ) {}
 
   
   
@@ -339,16 +340,18 @@ class MediaStreamInterface : public webrtc::RefCountInterface,
   
   
   
-  virtual bool AddTrack(rtc::scoped_refptr<AudioTrackInterface> track) {
+  virtual bool AddTrack(rtc::scoped_refptr<AudioTrackInterface> ) {
     RTC_CHECK_NOTREACHED();
   }
-  virtual bool AddTrack(rtc::scoped_refptr<VideoTrackInterface> track) {
+  virtual bool AddTrack(rtc::scoped_refptr<VideoTrackInterface> ) {
     RTC_CHECK_NOTREACHED();
   }
-  virtual bool RemoveTrack(rtc::scoped_refptr<AudioTrackInterface> track) {
+  virtual bool RemoveTrack(
+      rtc::scoped_refptr<AudioTrackInterface> ) {
     RTC_CHECK_NOTREACHED();
   }
-  virtual bool RemoveTrack(rtc::scoped_refptr<VideoTrackInterface> track) {
+  virtual bool RemoveTrack(
+      rtc::scoped_refptr<VideoTrackInterface> ) {
     RTC_CHECK_NOTREACHED();
   }
 

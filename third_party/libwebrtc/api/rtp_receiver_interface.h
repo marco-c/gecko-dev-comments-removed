@@ -80,7 +80,9 @@ class RTC_EXPORT RtpReceiverInterface : public webrtc::RefCountInterface,
   virtual RtpParameters GetParameters() const = 0;
   
   
-  virtual bool SetParameters(const RtpParameters& parameters) { return false; }
+  virtual bool SetParameters(const RtpParameters& ) {
+    return false;
+  }
 
   
   

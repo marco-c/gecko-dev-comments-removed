@@ -439,7 +439,7 @@ class LogMessageVoidify {
   
   
   template <typename... Ts>
-  void operator&(LogStreamer<Ts...>&& streamer) {}
+  void operator&(LogStreamer<Ts...>&& ) {}
 };
 
 }  
