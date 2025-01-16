@@ -91,9 +91,20 @@ ABSL_NAMESPACE_END
 
 
 
+
 #if defined(NDEBUG)
-#define ABSL_ASSERT(expr) \
-  (false ? static_cast<void>(expr) : static_cast<void>(0))
+#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
+
+
+
+
+
+#define ABSL_ASSERT(expr) (decltype((expr) ? void() : void())())
+#else
+
+
+#define ABSL_ASSERT(expr) (false ? ((expr) ? void() : void()) : void())
+#endif
 #else
 #define ABSL_ASSERT(expr)                           \
   (ABSL_PREDICT_TRUE((expr)) ? static_cast<void>(0) \

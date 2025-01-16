@@ -651,6 +651,13 @@ static const intptr_t kMuSpin = 0x0040L;
 static const intptr_t kMuLow = 0x00ffL;   
 static const intptr_t kMuHigh = ~kMuLow;  
 
+static_assert((0xab & (kMuWriter | kMuReader)) == (kMuWriter | kMuReader),
+              "The debug allocator's uninitialized pattern (0xab) must be an "
+              "invalid mutex state");
+static_assert((0xcd & (kMuWriter | kMuReader)) == (kMuWriter | kMuReader),
+              "The debug allocator's freed pattern (0xcd) must be an invalid "
+              "mutex state");
+
 
 enum {
   kGdbMuSpin = kMuSpin,
@@ -1713,25 +1720,44 @@ void Mutex::Unlock() {
   
   bool should_try_cas = ((v & (kMuEvent | kMuWriter)) == kMuWriter &&
                          (v & (kMuWait | kMuDesig)) != kMuWait);
-  
-  
-  
-  intptr_t x = (v ^ (kMuWriter | kMuWait)) & (kMuWriter | kMuEvent);
-  intptr_t y = (v ^ (kMuWriter | kMuWait)) & (kMuWait | kMuDesig);
+
   
   
   
   
-  if (kDebugMode && should_try_cas != (x < y)) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static_assert(kMuEvent > kMuWait, "Needed for should_try_cas_fast");
+  static_assert(kMuEvent > kMuDesig, "Needed for should_try_cas_fast");
+  static_assert(kMuWriter > kMuWait, "Needed for should_try_cas_fast");
+  static_assert(kMuWriter > kMuDesig, "Needed for should_try_cas_fast");
+
+  bool should_try_cas_fast =
+      ((v ^ (kMuWriter | kMuDesig)) &
+       (kMuEvent | kMuWriter | kMuWait | kMuDesig)) < (kMuWait | kMuDesig);
+
+  if (kDebugMode && should_try_cas != should_try_cas_fast) {
     
     
     ABSL_RAW_LOG(FATAL, "internal logic error %llx %llx %llx\n",
-                 static_cast<long long>(v), static_cast<long long>(x),
-                 static_cast<long long>(y));
+                 static_cast<long long>(v),
+                 static_cast<long long>(should_try_cas),
+                 static_cast<long long>(should_try_cas_fast));
   }
-  if (x < y && mu_.compare_exchange_strong(v, v & ~(kMuWrWait | kMuWriter),
-                                           std::memory_order_release,
-                                           std::memory_order_relaxed)) {
+  if (should_try_cas_fast &&
+      mu_.compare_exchange_strong(v, v & ~(kMuWrWait | kMuWriter),
+                                  std::memory_order_release,
+                                  std::memory_order_relaxed)) {
     
   } else {
     this->UnlockSlow(nullptr );  

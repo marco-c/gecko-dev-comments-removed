@@ -114,8 +114,16 @@ inline void *non_temporal_store_memcpy(void *__restrict dst,
 
 
 
-#if ABSL_HAVE_CPP_ATTRIBUTE(gnu::target) && \
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(gnu::target) && !defined(_MSC_VER) && \
     (defined(__x86_64__) || defined(__i386__))
+#define ABSL_INTERNAL_CAN_FORCE_AVX 1
+#endif
+
+
+
+
+#ifdef ABSL_INTERNAL_CAN_FORCE_AVX
 [[gnu::target("avx")]]
 #endif
 inline void *non_temporal_store_memcpy_avx(void *__restrict dst,
@@ -124,7 +132,10 @@ inline void *non_temporal_store_memcpy_avx(void *__restrict dst,
   
   
   
-#if defined(__SSE3__) || (defined(_MSC_VER) && defined(__AVX__))
+  
+#if ((defined(__AVX__) || defined(ABSL_INTERNAL_CAN_FORCE_AVX)) && \
+     defined(__SSE3__)) ||                                         \
+    (defined(_MSC_VER) && defined(__AVX__))
   uint8_t *d = reinterpret_cast<uint8_t *>(dst);
   const uint8_t *s = reinterpret_cast<const uint8_t *>(src);
 
@@ -170,9 +181,12 @@ inline void *non_temporal_store_memcpy_avx(void *__restrict dst,
   }
   return dst;
 #else
+  
   return memcpy(dst, src, len);
-#endif  
+#endif
 }
+
+#undef ABSL_INTERNAL_CAN_FORCE_AVX
 
 }  
 ABSL_NAMESPACE_END

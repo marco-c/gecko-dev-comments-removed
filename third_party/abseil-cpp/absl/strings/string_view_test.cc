@@ -894,7 +894,11 @@ TEST(StringViewTest, NULLInput) {
   EXPECT_EQ(s.size(), 0u);
 
 #ifdef ABSL_HAVE_STRING_VIEW_FROM_NULLPTR
-  s = absl::string_view(nullptr);
+  
+  
+  
+  char* null_str = nullptr;
+  s = absl::string_view(null_str);
   EXPECT_EQ(s.data(), nullptr);
   EXPECT_EQ(s.size(), 0u);
 
@@ -1076,8 +1080,21 @@ TEST(StringViewTest, ConstexprNullSafeStringView) {
 
 TEST(StringViewTest, ConstexprCompiles) {
   constexpr absl::string_view sp;
+  
+  
+  
+  
+  
+  
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnonnull"
+#endif
 #ifdef ABSL_HAVE_STRING_VIEW_FROM_NULLPTR
   constexpr absl::string_view cstr(nullptr);
+#endif
+#if defined(__clang__)
+#pragma clang diagnostic pop
 #endif
   constexpr absl::string_view cstr_len("cstr", 4);
 

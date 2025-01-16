@@ -178,9 +178,10 @@ constexpr bool AsciiInAZRange(unsigned char c) {
 }
 
 
+
 template <bool ToUpper>
 ABSL_ATTRIBUTE_ALWAYS_INLINE inline constexpr void AsciiStrCaseFoldImpl(
-    absl::Nonnull<char*> dst, absl::Nonnull<const char*> src, size_t size) {
+    absl::Nonnull<char*> dst, absl::Nullable<const char*> src, size_t size) {
   
   
   
@@ -199,28 +200,30 @@ ABSL_ATTRIBUTE_ALWAYS_INLINE inline constexpr void AsciiStrCaseFoldImpl(
 constexpr size_t kCaseFoldThreshold = 16;
 
 
+
 template <bool ToUpper>
 ABSL_ATTRIBUTE_NOINLINE constexpr void AsciiStrCaseFoldLong(
-    absl::Nonnull<char*> dst, absl::Nonnull<const char*> src, size_t size) {
+    absl::Nonnull<char*> dst, absl::Nullable<const char*> src, size_t size) {
   ABSL_ASSUME(size >= kCaseFoldThreshold);
   AsciiStrCaseFoldImpl<ToUpper>(dst, src, size);
 }
 
 
 
+
 template <bool ToUpper>
 constexpr void AsciiStrCaseFold(absl::Nonnull<char*> dst,
-                                absl::Nonnull<const char*> src, size_t size) {
+                                absl::Nullable<const char*> src, size_t size) {
   size < kCaseFoldThreshold ? AsciiStrCaseFoldImpl<ToUpper>(dst, src, size)
                             : AsciiStrCaseFoldLong<ToUpper>(dst, src, size);
 }
 
-void AsciiStrToLower(absl::Nonnull<char*> dst, absl::Nonnull<const char*> src,
+void AsciiStrToLower(absl::Nonnull<char*> dst, absl::Nullable<const char*> src,
                      size_t n) {
   return AsciiStrCaseFold<false>(dst, src, n);
 }
 
-void AsciiStrToUpper(absl::Nonnull<char*> dst, absl::Nonnull<const char*> src,
+void AsciiStrToUpper(absl::Nonnull<char*> dst, absl::Nullable<const char*> src,
                      size_t n) {
   return AsciiStrCaseFold<true>(dst, src, n);
 }

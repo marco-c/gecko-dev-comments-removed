@@ -207,7 +207,14 @@ int PrependVModuleLocked(absl::string_view module_pattern, int log_level)
   get_vmodule_info().erase(
       std::remove_if(++iter, get_vmodule_info().end(),
                      [module_pattern](const VModuleInfo& info) {
-                       return FNMatch(info.module_pattern, module_pattern);
+                       
+                       
+                       
+                       
+                       
+                       
+                       
+                       return FNMatch(module_pattern, info.module_pattern);
                      }),
       get_vmodule_info().cend());
   return old_log_level.value_or(global_v);
