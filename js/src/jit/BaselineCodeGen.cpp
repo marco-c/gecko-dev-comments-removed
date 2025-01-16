@@ -1547,10 +1547,8 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
 
   
   
-  masm.branchPtr(Assembler::Equal, scriptReg, ImmPtr(IonCompilingScriptPtr),
-                 &done);
-  masm.branchPtr(Assembler::Equal, scriptReg, ImmPtr(IonDisabledScriptPtr),
-                 &done);
+  masm.branchTestPtr(Assembler::NonZero, scriptReg,
+                     Imm32(CompilingOrDisabledBit), &done);
 
   
   if (JSOp(*pc) == JSOp::LoopHead) {
@@ -1665,9 +1663,10 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
   Label done;
   masm.branch32(Assembler::BelowOrEqual, countReg,
                 Imm32(JitOptions.baselineJitWarmUpThreshold), &done);
-  masm.branchPtr(Assembler::Equal,
-                 Address(scriptReg, JitScript::offsetOfBaselineScript()),
-                 ImmPtr(BaselineDisabledScriptPtr), &done);
+
+  masm.branchTestPtr(Assembler::NonZero,
+                     Address(scriptReg, JitScript::offsetOfBaselineScript()),
+                     Imm32(CompilingOrDisabledBit), &done);
   {
     prepareVMCall();
 
@@ -5981,7 +5980,7 @@ bool BaselineCodeGen<Handler>::emitEnterGeneratorCode(Register script,
                                                       Register scratch) {
   
 
-  static_assert(BaselineDisabledScript == 0x1,
+  static_assert(CompilingScript == 0x3,
                 "Comparison below requires specific sentinel encoding");
 
   
@@ -5995,7 +5994,7 @@ bool BaselineCodeGen<Handler>::emitEnterGeneratorCode(Register script,
   masm.loadJitScript(script, scratch);
   masm.loadPtr(Address(scratch, JitScript::offsetOfBaselineScript()), scratch);
   masm.branchPtr(Assembler::BelowOrEqual, scratch,
-                 ImmPtr(BaselineDisabledScriptPtr), &noBaselineScript);
+                 ImmPtr(BaselineCompilingScriptPtr), &noBaselineScript);
 
   masm.load32(Address(scratch, BaselineScript::offsetOfResumeEntriesOffset()),
               script);

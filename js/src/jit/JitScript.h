@@ -56,20 +56,23 @@ class JitScript;
 class JitZone;
 
 
-static constexpr uintptr_t BaselineDisabledScript = 0x1;
+
+static constexpr uintptr_t DisabledScript = 0x1;
+static constexpr uintptr_t CompilingScript = 0x3;
+
+static constexpr uint32_t CompilingOrDisabledBit = 0x1;
+static_assert((DisabledScript & CompilingOrDisabledBit) != 0);
+static_assert((CompilingScript & CompilingOrDisabledBit) != 0);
 
 static BaselineScript* const BaselineDisabledScriptPtr =
-    reinterpret_cast<BaselineScript*>(BaselineDisabledScript);
-
-
-
-static constexpr uintptr_t IonDisabledScript = 0x1;
-static constexpr uintptr_t IonCompilingScript = 0x2;
+    reinterpret_cast<BaselineScript*>(DisabledScript);
+static BaselineScript* const BaselineCompilingScriptPtr =
+    reinterpret_cast<BaselineScript*>(CompilingScript);
 
 static IonScript* const IonDisabledScriptPtr =
-    reinterpret_cast<IonScript*>(IonDisabledScript);
+    reinterpret_cast<IonScript*>(DisabledScript);
 static IonScript* const IonCompilingScriptPtr =
-    reinterpret_cast<IonScript*>(IonCompilingScript);
+    reinterpret_cast<IonScript*>(CompilingScript);
 
 
 
@@ -472,7 +475,9 @@ class alignas(uintptr_t) JitScript final
  public:
   
   bool hasBaselineScript() const {
-    bool res = baselineScript_ && baselineScript_ != BaselineDisabledScriptPtr;
+    bool res = baselineScript_ &&
+               baselineScript_ != BaselineDisabledScriptPtr &&
+               baselineScript_ != BaselineCompilingScriptPtr;
     MOZ_ASSERT_IF(!res, !hasIonScript());
     return res;
   }
@@ -490,6 +495,17 @@ class alignas(uintptr_t) JitScript final
     BaselineScript* baseline = baselineScript();
     setBaselineScriptImpl(gcx, script, nullptr);
     return baseline;
+  }
+  bool isBaselineCompiling() const {
+    return baselineScript_ == BaselineCompilingScriptPtr;
+  }
+  void setIsBaselineCompiling(JSScript* script) {
+    MOZ_ASSERT(baselineScript_ == nullptr);
+    setBaselineScriptImpl(script, BaselineCompilingScriptPtr);
+  }
+  void clearIsBaselineCompiling(JSScript* script) {
+    MOZ_ASSERT(isBaselineCompiling());
+    setBaselineScriptImpl(script, nullptr);
   }
 
  private:
