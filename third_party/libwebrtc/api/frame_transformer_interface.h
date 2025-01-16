@@ -60,6 +60,12 @@ class TransformableFrameInterface {
     return std::nullopt;
   }
 
+  
+  
+  virtual std::optional<Timestamp> GetPresentationTimestamp() const {
+    return std::nullopt;
+  }
+
   enum class Direction {
     kUnknown,
     kReceiver,

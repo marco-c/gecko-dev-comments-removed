@@ -1532,8 +1532,8 @@ void VideoStreamEncoder::OnFrame(Timestamp post_time,
 
   
   
-  incoming_frame.set_capture_time_identifier(
-      video_frame.capture_time_identifier());
+  incoming_frame.set_presentation_timestamp(
+      video_frame.presentation_timestamp());
 
   if (incoming_frame.ntp_time_ms() <= last_captured_timestamp_) {
     
@@ -1987,8 +1987,7 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
     out_frame.set_video_frame_buffer(cropped_buffer);
     out_frame.set_update_rect(update_rect);
     out_frame.set_ntp_time_ms(video_frame.ntp_time_ms());
-    out_frame.set_capture_time_identifier(
-        video_frame.capture_time_identifier());
+    out_frame.set_presentation_timestamp(video_frame.presentation_timestamp());
     
     
     
