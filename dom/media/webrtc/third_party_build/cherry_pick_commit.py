@@ -233,7 +233,7 @@ if __name__ == "__main__":
         
         
         
-        if not (resume_state == "resume2" or resume_state == "resume3"):
+        if resume_state not in ("resume2", "resume3"):
             
             stdout_lines = run_hg("hg log --template {desc|firstline}\n -r .")
             
