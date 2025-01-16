@@ -7,36 +7,14 @@
 
 
 
-
 #ifndef RTC_BASE_NETWORK_ECN_MARKING_H_
 #define RTC_BASE_NETWORK_ECN_MARKING_H_
 
+
+#include "api/transport/ecn_marking.h"
+
 namespace rtc {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum class EcnMarking {
-  kNotEct = 0,  
-  kEct1 = 1,    
-  kEct0 = 2,    
-  kCe = 3,      
-};
-
+using ::webrtc::EcnMarking;
 }  
 
 #endif  
