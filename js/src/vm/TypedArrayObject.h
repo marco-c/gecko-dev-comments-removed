@@ -132,23 +132,17 @@ class TypedArrayObject : public ArrayBufferViewObject {
 
   
 
-  static const JSFunctionSpec protoFunctions[];
-  static const JSPropertySpec protoAccessors[];
-  static const JSFunctionSpec staticFunctions[];
-  static const JSPropertySpec staticProperties[];
-
-  
-
-  static bool set(JSContext* cx, unsigned argc, Value* vp);
-  static bool copyWithin(JSContext* cx, unsigned argc, Value* vp);
   static bool sort(JSContext* cx, unsigned argc, Value* vp);
 
   bool convertValue(JSContext* cx, HandleValue v,
                     MutableHandleValue result) const;
 
- private:
-  static bool set_impl(JSContext* cx, const CallArgs& args);
-  static bool copyWithin_impl(JSContext* cx, const CallArgs& args);
+  
+
+  static const JSFunctionSpec protoFunctions[];
+  static const JSPropertySpec protoAccessors[];
+  static const JSFunctionSpec staticFunctions[];
+  static const JSPropertySpec staticProperties[];
 };
 
 class FixedLengthTypedArrayObject : public TypedArrayObject {
