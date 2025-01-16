@@ -289,6 +289,7 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
   net::CookieJarSettings::Deserialize(aData.cookieJarSettings(),
                                       getter_AddRefs(info.mCookieJarSettings));
   info.mCookieJarSettingsArgs = aData.cookieJarSettings();
+  info.mIsOn3PCBExceptionList = aData.isOn3PCBExceptionList();
 
   
   
