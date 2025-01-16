@@ -4922,6 +4922,8 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElement(
 
 static bool CanAttachAddElement(NativeObject* obj, bool isInit,
                                 AllowIndexedReceiver allowIndexedReceiver) {
+  MOZ_ASSERT(!obj->is<TypedArrayObject>());
+
   
   
   if (allowIndexedReceiver == AllowIndexedReceiver::No && obj->isIndexed()) {
@@ -4949,6 +4951,12 @@ static bool CanAttachAddElement(NativeObject* obj, bool isInit,
     }
 
     if (!proto->is<NativeObject>()) {
+      return false;
+    }
+
+    
+    
+    if (proto->is<TypedArrayObject>()) {
       return false;
     }
 
