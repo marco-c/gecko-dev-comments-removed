@@ -15,6 +15,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.gecko.EventDispatcher
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.TranslationsController
@@ -32,6 +33,7 @@ import org.mozilla.geckoview.TranslationsController.SessionTranslation.Delegate
 import org.mozilla.geckoview.TranslationsController.SessionTranslation.TranslationOptions
 import org.mozilla.geckoview.TranslationsController.SessionTranslation.TranslationState
 import org.mozilla.geckoview.TranslationsController.TranslationsException
+import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_COULD_NOT_TRANSLATE
 import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_MODEL_COULD_NOT_DELETE
 import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_MODEL_COULD_NOT_DOWNLOAD
 import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_MODEL_DOWNLOAD_REQUIRED
@@ -223,6 +225,62 @@ class TranslationsTest : BaseSessionTest() {
             assertTrue(
                 "Correctly rejected performing a download for a translation.",
                 te.code == ERROR_MODEL_DOWNLOAD_REQUIRED,
+            )
+        }
+    }
+
+    @Test
+    fun testInvalidLanguageCode() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf(
+                "browser.translations.geckoview.enableAllTestMocks" to false,
+            ),
+        )
+        mainSession.loadTestPath(TRANSLATIONS_ES)
+        mainSession.waitForPageStop()
+
+        val invalidCode = "xyz-not-a-language"
+
+        
+        val translate = sessionRule.session.sessionTranslation!!.translate("es", invalidCode, null)
+        try {
+            sessionRule.waitForResult(translate)
+            fail("Should not complete requests on an translate invalid code.")
+        } catch (e: RuntimeException) {
+            
+            val te = e.cause as TranslationsException
+            assertEquals(
+                "Correctly could not translate.",
+                ERROR_COULD_NOT_TRANSLATE,
+                te.code,
+            )
+        }
+
+        
+        try {
+            sessionRule.waitForResult(RuntimeTranslation.setLanguageSettings(invalidCode, NEVER))
+            fail("Should not complete requests on an invalid language setting code.")
+        } catch (e: RuntimeException) {
+            
+            val qe = e.cause as EventDispatcher.QueryException
+            assertEquals(
+                "Correctly could not set language setting.",
+                "The language tag $invalidCode is not valid.",
+                qe.data.toString(),
+            )
+        }
+
+        
+        try {
+            sessionRule.waitForResult(RuntimeTranslation.checkPairDownloadSize("es", invalidCode))
+            fail("Should not complete requests on an invalid download size check code.")
+        } catch (e: RuntimeException) {
+            
+            val qe = e.cause as EventDispatcher.QueryException
+            assertEquals(
+                "Correctly could not complete a size check.",
+                "The language tag es or $invalidCode is not valid.",
+                qe.data.toString(),
             )
         }
     }
@@ -455,20 +513,23 @@ class TranslationsTest : BaseSessionTest() {
         sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("BG", ALWAYS))
         sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("fr", OFFER))
         sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("de", NEVER))
+        sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("zh-Hans", NEVER))
 
         
         val alwaysTranslate = (sessionRule.getPrefs("browser.translations.alwaysTranslateLanguages").get(0) as String).split(",")
         val neverTranslate = (sessionRule.getPrefs("browser.translations.neverTranslateLanguages").get(0) as String).split(",")
 
         
-        assertTrue("BG was correctly set to ALWAYS", alwaysTranslate.contains("bg"))
+        assertTrue("BG was correctly set to ALWAYS", alwaysTranslate.contains("BG"))
         assertTrue("FR was correctly set to OFFER", !alwaysTranslate.contains("fr") && !neverTranslate.contains("fr"))
         assertTrue("DE was correctly set to NEVER", neverTranslate.contains("de"))
+        assertTrue("zh-Hans was correctly set to NEVER", neverTranslate.contains("zh-Hans"))
 
         
         sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("BG", OFFER))
         sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("fr", OFFER))
         sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("de", OFFER))
+        sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("zh-Hans", OFFER))
 
         
         val alwaysTranslateReset = (sessionRule.getPrefs("browser.translations.alwaysTranslateLanguages").get(0) as String).split(",")
@@ -478,6 +539,7 @@ class TranslationsTest : BaseSessionTest() {
         assertTrue("BG was correctly set back to OFFER", !alwaysTranslateReset.contains("bg") && !neverTranslateReset.contains("bg"))
         assertTrue("FR was correctly set back to OFFER", !alwaysTranslateReset.contains("fr") && !neverTranslateReset.contains("fr"))
         assertTrue("DE was correctly set back to OFFER", !alwaysTranslateReset.contains("de") && !neverTranslateReset.contains("de"))
+        assertTrue("zh-Hans was correctly set back to OFFER", !alwaysTranslateReset.contains("zh-Hans") && !neverTranslateReset.contains("zh-Hans"))
     }
 
     @Test
