@@ -6355,15 +6355,14 @@ ObjOperandId InlinableNativeIRGenerator::emitNativeCalleeGuard() {
 
   ObjOperandId targetId = calleeObjId;
   if (isCalleeBoundFunction()) {
-    MOZ_ASSERT(callee_->as<BoundFunctionObject>().numBoundArgs() == 0);
-
     
     writer.guardClass(calleeObjId, GuardClassKind::BoundFunction);
 
     
+    size_t numBoundArgs = callee_->as<BoundFunctionObject>().numBoundArgs();
     Int32OperandId numBoundArgsId =
         writer.loadBoundFunctionNumArgs(calleeObjId);
-    writer.guardSpecificInt32(numBoundArgsId, 0);
+    writer.guardSpecificInt32(numBoundArgsId, numBoundArgs);
 
     
     targetId = writer.loadBoundFunctionTarget(calleeObjId);
@@ -6414,6 +6413,29 @@ ValOperandId InlinableNativeIRGenerator::loadArgument(ObjOperandId calleeId,
                                                       ArgumentKind kind,
                                                       CallFlags flags) {
   MOZ_ASSERT(kind >= ArgumentKind::Arg0);
+
+  if (isCalleeBoundFunction()) {
+    MOZ_ASSERT(flags.getArgFormat() == CallFlags::Standard);
+
+    size_t numBoundArgs = callee_->as<BoundFunctionObject>().numBoundArgs();
+    size_t argIndex = uint8_t(kind) - uint8_t(ArgumentKind::Arg0);
+
+    
+    if (argIndex < numBoundArgs) {
+      if (numBoundArgs <= BoundFunctionObject::MaxInlineBoundArgs) {
+        constexpr size_t inlineArgsOffset =
+            BoundFunctionObject::offsetOfFirstInlineBoundArg();
+
+        size_t argSlot = inlineArgsOffset + argIndex * sizeof(Value);
+        return writer.loadFixedSlot(calleeId, argSlot);
+      }
+      return writer.loadBoundFunctionArgument(calleeId, argIndex);
+    }
+
+    
+    kind = ArgumentKindForArgIndex(argIndex - numBoundArgs);
+  }
+
   return writer.loadArgumentFixedSlot(kind, argc_, flags);
 }
 
@@ -12992,7 +13014,15 @@ AttachDecision CallIRGenerator::tryAttachBoundNative(
   }
 
   
-  if (calleeObj->numBoundArgs() != 0) {
+  
+  static constexpr size_t MaxBoundArgs = 10;
+  size_t numBoundArgs = calleeObj->numBoundArgs();
+  if (numBoundArgs > MaxBoundArgs) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (numBoundArgs + argc_ > JIT_ARGS_LENGTH_MAX) {
     return AttachDecision::NoAction;
   }
 
@@ -13016,11 +13046,31 @@ AttachDecision CallIRGenerator::tryAttachBoundNative(
   }
 
   
+  if (isSpread && numBoundArgs != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
   Rooted<Value> thisValue(cx_, calleeObj->getBoundThis());
 
   
+  JS::RootedVector<Value> concatenatedArgs(cx_);
+  if (numBoundArgs != 0) {
+    if (!concatenatedArgs.reserve(numBoundArgs + args_.length())) {
+      cx_->recoverFromOutOfMemory();
+      return AttachDecision::NoAction;
+    }
+
+    for (size_t i = 0; i < numBoundArgs; i++) {
+      concatenatedArgs.infallibleAppend(calleeObj->getBoundArg(i));
+    }
+    concatenatedArgs.infallibleAppend(args_.begin(), args_.length());
+  }
+  auto args = numBoundArgs != 0 ? concatenatedArgs : args_;
+
+  
   InlinableNativeIRGenerator nativeGen(*this, calleeObj, target, newTarget_,
-                                       thisValue, args_, argc_, flags);
+                                       thisValue, args, argc_, flags);
   return nativeGen.tryAttachStub();
 }
 
