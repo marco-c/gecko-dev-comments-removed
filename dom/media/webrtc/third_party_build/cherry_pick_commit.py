@@ -251,7 +251,6 @@ if __name__ == "__main__":
             os.path.abspath(args.patch_path),
             args.state_path,
             args.tar_name,
-            "https",  
         )
         
         print("reset resume file")
@@ -276,18 +275,6 @@ if __name__ == "__main__":
             
             
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
             print("restoring patch stack")
             restore_patch_stack(
                 args.repo_path,
@@ -295,7 +282,6 @@ if __name__ == "__main__":
                 os.path.abspath(args.patch_path),
                 args.state_path,
                 args.tar_name,
-                "https",  
             )
         update_resume_state("resume2", resume_state_filename)
 

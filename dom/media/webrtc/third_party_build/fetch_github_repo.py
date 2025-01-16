@@ -5,7 +5,6 @@ import argparse
 import os
 import re
 import shutil
-import sys
 
 from run_operations import run_git, run_shell
 
@@ -17,18 +16,13 @@ from run_operations import run_git, run_shell
 
 
 
-def fetch_repo(github_path, clone_protocol, force_fetch, tar_path):
+def fetch_repo(github_path, force_fetch, tar_path):
     capture_output = False
 
     
     if force_fetch and os.path.exists(github_path):
         print(f"Removing existing repo: {github_path}")
         shutil.rmtree(github_path)
-
-    
-    
-    
-    
 
     
     if not os.path.exists(github_path):
@@ -39,17 +33,8 @@ def fetch_repo(github_path, clone_protocol, force_fetch, tar_path):
             run_shell(cmd, capture_output)
         else:
             print("Cloning github repo")
-            
-            if clone_protocol == "ssh":
-                url_prefix = "git@github.com:"
-            elif clone_protocol == "https":
-                url_prefix = "https://github.com/"
-            else:
-                print("clone protocol should be either https or ssh")
-                sys.exit(1)
-
             run_shell(
-                f"git clone {url_prefix}mozilla/libwebrtc {github_path}",
+                f"git clone https://github.com/mozilla/libwebrtc {github_path}",
                 capture_output,
             )
 
@@ -126,12 +111,6 @@ if __name__ == "__main__":
         help="force rebuild an existing repo directory",
     )
     parser.add_argument(
-        "--clone-protocol",
-        choices=["https", "ssh"],
-        required=True,
-        help="Use either https or ssh to clone the git repo",
-    )
-    parser.add_argument(
         "--tar-name",
         default=default_tar_name,
         help=f"name of tar file (defaults to {default_tar_name})",
@@ -145,7 +124,6 @@ if __name__ == "__main__":
 
     fetch_repo(
         args.repo_path,
-        args.clone_protocol,
         args.force_fetch,
         os.path.join(args.state_path, args.tar_name),
     )
