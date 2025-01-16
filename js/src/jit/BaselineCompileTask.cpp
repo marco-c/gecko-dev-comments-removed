@@ -5,6 +5,7 @@
 
 
 #include "jit/BaselineCompileTask.h"
+#include "jit/JitRuntime.h"
 #include "vm/HelperThreadState.h"
 
 using namespace js;
@@ -23,6 +24,51 @@ void BaselineCompileTask::runHelperThreadTask(
   
 }
 
-void BaselineCompileTask::runTask() { MOZ_CRASH("TODO"); }
 
-void BaselineCompileTask::trace(JSTracer* trc) { MOZ_CRASH("TODO"); }
+
+class MOZ_RAII AutoEnterBaselineBackend {
+ public:
+  AutoEnterBaselineBackend() {
+#ifdef DEBUG
+    JitContext* jcx = GetJitContext();
+    jcx->enterBaselineBackend();
+#endif
+  }
+
+#ifdef DEBUG
+  ~AutoEnterBaselineBackend() {
+    JitContext* jcx = GetJitContext();
+    jcx->leaveBaselineBackend();
+  }
+#endif
+};
+
+void BaselineCompileTask::runTask() {
+  jit::JitContext jctx(realm_->runtime());
+  AutoEnterBaselineBackend enter;
+
+  masm_.emplace(*alloc_, realm_);
+  compiler_.emplace(*alloc_, realm_->runtime(), masm_.ref(), snapshot_);
+
+  if (!compiler_->init()) {
+    failed_ = true;
+    return;
+  }
+  MethodStatus status = compiler_->compileOffThread();
+  if (status == Method_Error) {
+    failed_ = true;
+  }
+}
+
+void BaselineSnapshot::trace(JSTracer* trc) {
+  TraceOffthreadGCPtr(trc, script_, "baseline-snapshot-script");
+  TraceOffthreadGCPtr(trc, globalLexical_, "baseline-snapshot-lexical");
+  TraceOffthreadGCPtr(trc, globalThis_, "baseline-snapshot-this");
+}
+
+void BaselineCompileTask::trace(JSTracer* trc) {
+  if (!realm_->runtime()->runtimeMatches(trc->runtime())) {
+    return;
+  }
+  snapshot_->trace(trc);
+}
