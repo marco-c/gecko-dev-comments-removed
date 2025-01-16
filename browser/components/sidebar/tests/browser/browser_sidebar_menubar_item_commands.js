@@ -9,7 +9,10 @@ add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [[SIDEBAR_VISIBILITY_PREF, "hide-sidebar"]],
   });
-  await SidebarController.setUIState({ expanded: false, hidden: true });
+  await SidebarController.initializeUIState({
+    launcherExpanded: false,
+    launcherVisible: false,
+  });
   
   registerCleanupFunction(async () => {
     await SidebarController.sidebarMain.updateComplete;
