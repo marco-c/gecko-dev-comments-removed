@@ -271,13 +271,8 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
 
     static RawNodePosition Before(const nsIContent& aContent) {
-      if (!aContent.IsBeingRemoved()) {
-        return RawNodePosition(aContent.GetParentNode(),
-                               aContent.GetPreviousSibling());
-      }
-      RawNodePosition ret(const_cast<nsIContent*>(&aContent), 0u);
-      ret.mAfterOpenTag = false;
-      return ret;
+      return RawNodePosition(aContent.GetParentNode(),
+                             aContent.GetPreviousSibling());
     }
 
     RawNodePosition(nsINode* aContainer, uint32_t aOffset)
@@ -616,6 +611,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
                                   const WritingMode& aWritingMode);
 
   nsresult QueryHittestImpl(WidgetQueryContentEvent* aEvent, bool aFlushLayout,
+                            bool aPerformRetargeting,
                             Element** aContentUnderMouse);
 };
 
