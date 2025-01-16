@@ -523,6 +523,20 @@ void DCLayerTree::MaybeCommit() {
 }
 
 void DCLayerTree::WaitForCommitCompletion() {
+  
+  
+  
+  
+  
+  
+  for (auto it = mDCSurfaces.begin(); it != mDCSurfaces.end(); it++) {
+    auto* surface = it->second->AsDCSwapChain();
+    if (surface) {
+      surface->Present();
+      surface->Present();
+    }
+  }
+
   mCompositionDevice->WaitForCommitCompletion();
 }
 
