@@ -330,6 +330,83 @@ SetIsInlinableLargeFunction(TypedArrayEvery);
 
 
 
+
+
+function TypedArrayFill(value, start = 0, end = undefined) {
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      value,
+      start,
+      end,
+      "TypedArrayFill"
+    );
+  }
+
+  
+  var O = this;
+
+  
+  var buffer = GetAttachedArrayBuffer(this);
+
+  
+  var len = TypedArrayLength(O);
+
+  
+  var kind = GetTypedArrayKind(O);
+  if (kind === TYPEDARRAY_KIND_BIGINT64 || kind === TYPEDARRAY_KIND_BIGUINT64) {
+    value = ToBigInt(value);
+  } else {
+    value = ToNumber(value);
+  }
+
+  
+  var relativeStart = ToInteger(start);
+
+  
+  var k =
+    relativeStart < 0
+      ? std_Math_max(len + relativeStart, 0)
+      : std_Math_min(relativeStart, len);
+
+  
+  var relativeEnd = end === undefined ? len : ToInteger(end);
+
+  
+  var final =
+    relativeEnd < 0
+      ? std_Math_max(len + relativeEnd, 0)
+      : std_Math_min(relativeEnd, len);
+
+  
+  if (buffer === null) {
+    
+    
+    buffer = ViewedArrayBufferIfReified(O);
+  }
+
+  if (IsDetachedBuffer(buffer)) {
+    ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+  }
+
+  len = TypedArrayLength(O);
+
+  
+  final = std_Math_min(final, len);
+
+  
+  for (; k < final; k++) {
+    O[k] = value;
+  }
+
+  
+  return O;
+}
+
+
+
 function TypedArrayFilter(callbackfn ) {
   
   var O = this;
@@ -511,6 +588,156 @@ function TypedArrayForEach(callbackfn ) {
 SetIsInlinableLargeFunction(TypedArrayForEach);
 
 
+
+
+function TypedArrayIndexOf(searchElement, fromIndex = 0) {
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      searchElement,
+      fromIndex,
+      "TypedArrayIndexOf"
+    );
+  }
+
+  GetAttachedArrayBuffer(this);
+
+  
+  var O = this;
+
+  
+  var len = TypedArrayLength(O);
+
+  
+  if (len === 0) {
+    return -1;
+  }
+
+  
+  var n = ToInteger(fromIndex);
+
+  
+  assert(fromIndex !== undefined || n === 0, "ToInteger(undefined) is zero");
+
+  
+  
+  len = std_Math_min(len, TypedArrayLengthZeroOnOutOfBounds(O));
+
+  assert(
+    len === 0 || !IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
+    "TypedArrays with detached buffers have a length of zero"
+  );
+
+  
+  if (n >= len) {
+    return -1;
+  }
+
+  
+  
+  var k;
+  if (n >= 0) {
+    
+    k = n;
+  } else {
+    
+    k = len + n;
+
+    
+    if (k < 0) {
+      k = 0;
+    }
+  }
+
+  
+  for (; k < len; k++) {
+    
+    assert(k in O, "unexpected missing element");
+
+    
+    if (O[k] === searchElement) {
+      return k;
+    }
+  }
+
+  
+  return -1;
+}
+
+
+
+
+function TypedArrayJoin(separator) {
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      separator,
+      "TypedArrayJoin"
+    );
+  }
+
+  GetAttachedArrayBuffer(this);
+
+  
+  var O = this;
+
+  
+  var len = TypedArrayLength(O);
+
+  
+  var sep = separator === undefined ? "," : ToString(separator);
+
+  
+  if (len === 0) {
+    return "";
+  }
+
+  var limit = std_Math_min(len, TypedArrayLengthZeroOnOutOfBounds(O));
+
+  
+  
+  if (limit === 0) {
+    return callFunction(String_repeat, sep, len - 1);
+  }
+
+  assert(
+    !IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
+    "TypedArrays with detached buffers have a length of zero"
+  );
+
+  var element0 = O[0];
+
+  
+  assert(element0 !== undefined, "unexpected undefined element");
+
+  
+  var R = ToString(element0);
+
+  
+  for (var k = 1; k < limit; k++) {
+    
+    var element = O[k];
+
+    
+    assert(element !== undefined, "unexpected undefined element");
+
+    
+    R += sep + ToString(element);
+  }
+
+  if (limit < len) {
+    R += callFunction(String_repeat, sep, len - limit);
+  }
+
+  
+  return R;
+}
+
+
 function TypedArrayKeys() {
   
   var O = this;
@@ -523,6 +750,72 @@ function TypedArrayKeys() {
 
   
   return CreateArrayIterator(O, ITEM_KIND_KEY);
+}
+
+
+
+
+function TypedArrayLastIndexOf(searchElement ) {
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    if (ArgumentsLength() > 1) {
+      return callFunction(
+        CallTypedArrayMethodIfWrapped,
+        this,
+        searchElement,
+        GetArgument(1),
+        "TypedArrayLastIndexOf"
+      );
+    }
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      searchElement,
+      "TypedArrayLastIndexOf"
+    );
+  }
+
+  GetAttachedArrayBuffer(this);
+
+  
+  var O = this;
+
+  
+  var len = TypedArrayLength(O);
+
+  
+  if (len === 0) {
+    return -1;
+  }
+
+  
+  var n = ArgumentsLength() > 1 ? ToInteger(GetArgument(1)) : len - 1;
+
+  
+  
+  len = std_Math_min(len, TypedArrayLengthZeroOnOutOfBounds(O));
+
+  assert(
+    len === 0 || !IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
+    "TypedArrays with detached buffers have a length of zero"
+  );
+
+  
+  var k = n >= 0 ? std_Math_min(n, len - 1) : len + n;
+
+  
+  for (; k >= 0; k--) {
+    
+    assert(k in O, "unexpected missing element");
+
+    
+    if (O[k] === searchElement) {
+      return k;
+    }
+  }
+
+  
+  return -1;
 }
 
 
@@ -672,6 +965,50 @@ function TypedArrayReduceRight(callbackfn ) {
 
   
   return accumulator;
+}
+
+
+
+
+function TypedArrayReverse() {
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      "TypedArrayReverse"
+    );
+  }
+
+  GetAttachedArrayBuffer(this);
+
+  
+  var O = this;
+
+  
+  var len = TypedArrayLength(O);
+
+  
+  var middle = std_Math_floor(len / 2);
+
+  
+  for (var lower = 0; lower !== middle; lower++) {
+    
+    var upper = len - lower - 1;
+
+    
+    var lowerValue = O[lower];
+
+    
+    var upperValue = O[upper];
+
+    
+    O[lower] = upperValue;
+    O[upper] = lowerValue;
+  }
+
+  
+  return O;
 }
 
 
@@ -1096,6 +1433,71 @@ function $TypedArrayValues() {
   return CreateArrayIterator(O, ITEM_KIND_VALUE);
 }
 SetCanonicalName($TypedArrayValues, "values");
+
+
+
+
+function TypedArrayIncludes(searchElement, fromIndex = 0) {
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      searchElement,
+      fromIndex,
+      "TypedArrayIncludes"
+    );
+  }
+
+  GetAttachedArrayBuffer(this);
+
+  
+  var O = this;
+
+  
+  var len = TypedArrayLength(O);
+
+  
+  if (len === 0) {
+    return false;
+  }
+
+  
+  var n = ToInteger(fromIndex);
+
+  
+  assert(fromIndex !== undefined || n === 0, "ToInteger(undefined) is zero");
+
+  
+  
+  var k;
+  if (n >= 0) {
+    
+    k = n;
+  } else {
+    
+    k = len + n;
+
+    
+    if (k < 0) {
+      k = 0;
+    }
+  }
+
+  
+  while (k < len) {
+    
+    if (SameValueZero(searchElement, O[k])) {
+      return true;
+    }
+
+    
+    k++;
+  }
+
+  
+  return false;
+}
 
 
 
@@ -1547,6 +1949,123 @@ function TypedArrayCreateSameType(exemplar, length) {
   
   
   return TypedArrayCreateWithLength(constructor, length);
+}
+
+
+
+function TypedArrayToReversed() {
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      "TypedArrayToReversed"
+    );
+  }
+
+  GetAttachedArrayBuffer(this);
+
+  
+  var O = this;
+
+  
+  var len = TypedArrayLength(O);
+
+  
+  var A = TypedArrayCreateSameType(O, len);
+
+  
+  
+  for (var k = 0; k < len; k++) {
+    
+    var from = len - k - 1;
+    
+    
+    
+    var fromValue = O[from];
+    
+    A[k] = fromValue;
+  }
+
+  
+  return A;
+}
+
+
+
+function TypedArrayWith(index, value) {
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      index,
+      value,
+      "TypedArrayWith"
+    );
+  }
+
+  GetAttachedArrayBuffer(this);
+
+  
+  var O = this;
+
+  
+  var len = TypedArrayLength(O);
+
+  
+  var relativeIndex = ToInteger(index);
+
+  var actualIndex;
+  if (relativeIndex >= 0) {
+    
+    actualIndex = relativeIndex;
+  } else {
+    
+    actualIndex = len + relativeIndex;
+  }
+
+  var kind = GetTypedArrayKind(O);
+  if (kind === TYPEDARRAY_KIND_BIGINT64 || kind === TYPEDARRAY_KIND_BIGUINT64) {
+    
+    value = ToBigInt(value);
+  } else {
+    
+    value = ToNumber(value);
+  }
+
+  
+  var currentLen = TypedArrayLengthZeroOnOutOfBounds(O);
+  assert(
+    !IsDetachedBuffer(ViewedArrayBufferIfReified(O)) || currentLen === 0,
+    "length is set to zero when the buffer has been detached"
+  );
+
+  
+  
+  if (actualIndex < 0 || actualIndex >= currentLen) {
+    ThrowRangeError(JSMSG_BAD_INDEX);
+  }
+
+  
+  var A = TypedArrayCreateSameType(O, len);
+
+  
+  
+  for (var k = 0; k < len; k++) {
+    
+    
+
+    
+    
+    var fromValue = k === actualIndex ? value : O[k];
+
+    
+    A[k] = fromValue;
+  }
+
+  
+  return A;
 }
 
 
