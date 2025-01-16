@@ -2303,7 +2303,9 @@ TEST(GeckoProfiler, Markers)
   PROFILER_MARKER("tracing event with stack", OTHER,
                   MarkerStack::TakeBacktrace(std::move(bt)), Tracing, "B");
 
-  { AUTO_PROFILER_TRACING_MARKER("C", "auto tracing", OTHER); }
+  {
+    AUTO_PROFILER_TRACING_MARKER("C", "auto tracing", OTHER);
+  }
 
   PROFILER_MARKER_UNTYPED("M1", OTHER, {});
   PROFILER_MARKER_UNTYPED("M3", OTHER, {});
@@ -2500,6 +2502,7 @@ TEST(GeckoProfiler, Markers)
       
 
       
+      
 
       
       
@@ -2524,6 +2527,8 @@ TEST(GeckoProfiler, Markers)
       
 
       nullptr,
+      
+      Some(200),
       
 
       Some(nsDependentCString("text/html")),
@@ -2553,6 +2558,8 @@ TEST(GeckoProfiler, Markers)
 
       nullptr,
       
+      Some(0),
+      
 
       mozilla::Nothing(),
        redirectURI,
@@ -2579,6 +2586,8 @@ TEST(GeckoProfiler, Markers)
       
 
       nullptr,
+      
+      mozilla::Nothing(),
       
 
       mozilla::Nothing(),
@@ -2608,6 +2617,8 @@ TEST(GeckoProfiler, Markers)
 
       nullptr,
       
+      mozilla::Nothing(),
+      
 
       mozilla::Nothing(),
        redirectURI,
@@ -2635,6 +2646,8 @@ TEST(GeckoProfiler, Markers)
 
       nullptr,
       
+      mozilla::Nothing(),
+      
 
       mozilla::Nothing(),
        redirectURI,
@@ -2659,6 +2672,7 @@ TEST(GeckoProfiler, Markers)
       
       
 
+      
       
 
       
@@ -3075,6 +3089,7 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_TRUE(payload["redirectType"].isNull());
                   EXPECT_TRUE(payload["isHttpToHttpsRedirect"].isNull());
                   EXPECT_TRUE(payload["redirectId"].isNull());
+                  EXPECT_EQ_JSON(payload["responseStatus"], Int64, 200);
                   EXPECT_EQ_JSON(payload["contentType"], String, "text/html");
 
                 } else if (nameString == "Load 3: http://mozilla.org/") {
@@ -4514,7 +4529,9 @@ TEST(GeckoProfiler, CPUUsage)
         GET_JSON(configuration, meta["configuration"], Object);
         {
           GET_JSON(features, configuration["features"], Array);
-          { EXPECT_JSON_ARRAY_CONTAINS(features, String, "cpu"); }
+          {
+            EXPECT_JSON_ARRAY_CONTAINS(features, String, "cpu");
+          }
         }
       }
 
