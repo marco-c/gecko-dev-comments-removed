@@ -1665,6 +1665,7 @@ void BufferAllocator::updateFreeListsAfterAlloc(FreeLists* freeLists,
 
 void BufferAllocator::recommitRegion(FreeRegion* region) {
   MOZ_ASSERT(region->hasDecommittedPages);
+  MOZ_ASSERT(DecommitEnabled());
 
   BufferChunk* chunk = BufferChunk::from(region);
   uintptr_t startAddr = RoundUp(region->startAddr, PageSize);
@@ -1706,6 +1707,7 @@ bool BufferAllocator::allocNewChunk(bool inGC) {
 
   
   if (!baseChunk->decommittedPages.IsEmpty()) {
+    MOZ_ASSERT(DecommitEnabled());
     MarkPagesInUseSoft(baseChunk, ChunkSize);
   }
 
@@ -1830,6 +1832,7 @@ void BufferAllocator::addSweptRegion(BufferChunk* chunk, uintptr_t freeStart,
   MOZ_ASSERT(freeEnd <= ChunkSize);
   MOZ_ASSERT((freeStart % MinMediumAllocSize) == 0);
   MOZ_ASSERT((freeEnd % MinMediumAllocSize) == 0);
+  MOZ_ASSERT_IF(shouldDecommit, DecommitEnabled());
 
   
   
@@ -1856,11 +1859,8 @@ void BufferAllocator::addSweptRegion(BufferChunk* chunk, uintptr_t freeStart,
   }
 
   
-  if (chunk->decommittedPages.ref()[endPage]) {
-    void* ptr = reinterpret_cast<void*>(decommitEnd + uintptr_t(chunk));
-    MarkPagesInUseSoft(ptr, PageSize);
-    chunk->decommittedPages.ref()[endPage] = false;
-  }
+  
+  MOZ_ASSERT(!chunk->decommittedPages.ref()[endPage]);
 
   freeStart += uintptr_t(chunk);
   freeEnd += uintptr_t(chunk);

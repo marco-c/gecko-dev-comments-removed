@@ -397,7 +397,8 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
     
     
     
-    zone->bufferAllocator.sweepForMajorCollection(shouldDecommit());
+    bool decommit = shouldDecommit() && DecommitEnabled();
+    zone->bufferAllocator.sweepForMajorCollection(decommit);
 
     
     TimeStamp endTime = TimeStamp::Now();
