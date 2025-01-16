@@ -858,7 +858,7 @@ void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
                          CookieStatus aStatus, nsCString& aCookieHeader,
                          const nsACString& aDateHeader, bool aFromHttp,
                          bool aIsForeignAndNotAddon, bool aPartitionedOnly,
-                         bool aIsInPrivateBrowsing, bool aOn3pcbException) {
+                         bool aIsInPrivateBrowsing) {
   MOZ_ASSERT(!mContainsCookie);
 
   
@@ -1007,19 +1007,6 @@ void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
 
   
   
-  if (aOn3pcbException) {
-    
-    
-    if (aPartitionedOnly && !mCookieData.isPartitioned() &&
-        aIsForeignAndNotAddon) {
-      mWarnings.mForeignNoPartitionedWarning = true;
-    }
-
-    mCookieData.isPartitioned() = true;
-  }
-
-  
-  
   
   
   if (aPartitionedOnly && !mCookieData.isPartitioned() &&
@@ -1033,7 +1020,6 @@ void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
       RejectCookie(RejectedForeignNoPartitionedError);
       return;
     }
-
     mWarnings.mForeignNoPartitionedWarning = true;
   }
 

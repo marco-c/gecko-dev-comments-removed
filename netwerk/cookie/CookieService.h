@@ -13,12 +13,10 @@
 
 #include "Cookie.h"
 #include "CookieCommons.h"
-#include "ThirdPartyCookieBlockingExceptions.h"
 
 #include "nsString.h"
 #include "nsIMemoryReporter.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/MozPromise.h"
 
 class nsIConsoleReportCollector;
 class nsICookieJarSettings;
@@ -59,12 +57,6 @@ class CookieService final : public nsICookieService,
   CookieService();
   static already_AddRefed<nsICookieService> GetXPCOMSingleton();
   nsresult Init();
-
-  static void Update3PCBExceptionInfo(nsIChannel* aChannel);
-
-  ThirdPartyCookieBlockingExceptions& ThirdPartyCookieBlockingExceptionsRef() {
-    return mThirdPartyCookieBlockingExceptions;
-  }
 
   
 
@@ -133,8 +125,6 @@ class CookieService final : public nsICookieService,
   
   nsCOMPtr<mozIThirdPartyUtil> mThirdPartyUtil;
   nsCOMPtr<nsIEffectiveTLDService> mTLDService;
-
-  ThirdPartyCookieBlockingExceptions mThirdPartyCookieBlockingExceptions;
 
   
   

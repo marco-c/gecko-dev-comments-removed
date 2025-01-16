@@ -72,7 +72,6 @@
 #include "nsContentUtils.h"
 #include "nsContentSecurityManager.h"
 #include "nsIClassOfService.h"
-#include "CookieService.h"
 #include "nsIPrincipal.h"
 #include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
@@ -7176,10 +7175,6 @@ nsresult nsHttpChannel::BeginConnect() {
   }
 
   MaybeStartDNSPrefetch();
-
-  
-  
-  CookieService::Update3PCBExceptionInfo(this);
 
   rv = CallOrWaitForResume(
       [](nsHttpChannel* self) { return self->PrepareToConnect(); });
