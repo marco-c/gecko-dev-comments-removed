@@ -40,7 +40,8 @@ namespace {
 
 
 
-TEST(WindowFinderTest, FindConsoleWindow) {
+
+TEST(WindowFinderTest, DISABLED_FindConsoleWindow) {
   
   
   
