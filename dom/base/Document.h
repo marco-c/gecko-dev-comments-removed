@@ -4207,6 +4207,12 @@ class Document : public nsINode,
   
   bool RecomputeResistFingerprinting();
 
+  
+  
+  
+  
+  void MaybeRecomputePartitionKey();
+
   void RecordCanvasUsage(CanvasUsage& aUsage);
   void RecordFontFingerprinting();
 
