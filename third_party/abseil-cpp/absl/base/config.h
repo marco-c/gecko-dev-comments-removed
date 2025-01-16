@@ -739,14 +739,12 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
-#if 0 
 #ifdef ABSL_HAVE_THREAD_SANITIZER
 #error "ABSL_HAVE_THREAD_SANITIZER cannot be directly set."
 #elif defined(__SANITIZE_THREAD__)
 #define ABSL_HAVE_THREAD_SANITIZER 1
 #elif ABSL_HAVE_FEATURE(thread_sanitizer)
 #define ABSL_HAVE_THREAD_SANITIZER 1
-#endif
 #endif
 
 
