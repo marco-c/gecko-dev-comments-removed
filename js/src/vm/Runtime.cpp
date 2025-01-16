@@ -233,7 +233,7 @@ void JSRuntime::destroyRuntime() {
 
 
 
-    CancelOffThreadIonCompile(this);
+    CancelOffThreadCompile(this);
     CancelOffThreadDelazify(this);
     CancelOffThreadCompressions(this);
 

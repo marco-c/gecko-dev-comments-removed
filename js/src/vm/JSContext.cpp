@@ -210,7 +210,7 @@ void js::DestroyContext(JSContext* cx) {
 
   
   
-  CancelOffThreadIonCompile(cx->runtime());
+  CancelOffThreadCompile(cx->runtime());
 
   cx->jobQueue = nullptr;
   cx->internalJobQueue = nullptr;
