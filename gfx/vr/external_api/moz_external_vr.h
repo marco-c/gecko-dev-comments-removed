@@ -13,7 +13,14 @@
    (uint64_t)(c7) << 8 | (uint64_t)(c8))
 
 #ifdef MOZILLA_INTERNAL_API
-#  define __STDC_WANT_LIB_EXT1__ 1
+
+
+#  ifndef __STDC_WANT_LIB_EXT1__
+#    define __STDC_WANT_LIB_EXT1__ 1
+#  endif  
+
+static_assert(__STDC_WANT_LIB_EXT1__ == 1,
+              "__STDC_WANT_LIB_EXT1__ must be set");
 
 #  include <stdlib.h>
 #  include <string.h>
