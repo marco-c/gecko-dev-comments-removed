@@ -63,6 +63,5 @@ assertDeepEq(result4, []);
 
 
 
-if (typeof reportCompare === 'function') {
+if (typeof reportCompare === 'function')
     reportCompare(0, 0);
-}
