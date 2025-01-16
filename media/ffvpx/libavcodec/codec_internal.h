@@ -22,6 +22,7 @@
 #include <stdint.h>
 
 #include "libavutil/attributes.h"
+#include "avcodec.h"
 #include "codec.h"
 #include "config.h"
 
@@ -65,8 +66,7 @@
 
 
 
-
-#define FF_CODEC_CAP_ALLOCATE_PROGRESS      (1 << 6)
+#define FF_CODEC_CAP_USES_PROGRESSFRAMES    (1 << 6)
 
 
 
@@ -133,7 +133,13 @@ typedef struct FFCodec {
     
 
 
-    unsigned caps_internal:29;
+    unsigned caps_internal:27;
+
+    
+
+
+
+    unsigned color_ranges:2;
 
     
 
@@ -166,14 +172,6 @@ typedef struct FFCodec {
 
 
     const FFCodecDefault *defaults;
-
-    
-
-
-
-
-
-    void (*init_static_data)(struct FFCodec *codec);
 
     int (*init)(struct AVCodecContext *);
 
@@ -264,7 +262,33 @@ typedef struct FFCodec {
 
 
     const uint32_t *codec_tags;
+
+    
+
+
+
+
+    int (*get_supported_config)(const AVCodecContext *avctx,
+                                const AVCodec *codec,
+                                enum AVCodecConfig config,
+                                unsigned flags,
+                                const void **out_configs,
+                                int *out_num_configs);
 } FFCodec;
+
+
+
+
+
+
+
+
+int ff_default_get_supported_config(const AVCodecContext *avctx,
+                                    const AVCodec *codec,
+                                    enum AVCodecConfig config,
+                                    unsigned flags,
+                                    const void **out_configs,
+                                    int *out_num_configs);
 
 #if CONFIG_SMALL
 #define CODEC_LONG_NAME(str) .p.long_name = NULL

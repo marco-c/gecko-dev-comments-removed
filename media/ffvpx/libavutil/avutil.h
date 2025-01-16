@@ -314,6 +314,7 @@ static inline void *av_x_if_null(const void *p, const void *x)
     return (void *)(intptr_t)(p ? p : x);
 }
 
+#if FF_API_OPT_INT_LIST
 
 
 
@@ -322,6 +323,7 @@ static inline void *av_x_if_null(const void *p, const void *x)
 
 
 
+attribute_deprecated
 unsigned av_int_list_length_for_size(unsigned elsize,
                                      const void *list, uint64_t term) av_pure;
 
@@ -334,6 +336,7 @@ unsigned av_int_list_length_for_size(unsigned elsize,
 
 #define av_int_list_length(list, term) \
     av_int_list_length_for_size(sizeof(*(list)), list, term)
+#endif
 
 
 

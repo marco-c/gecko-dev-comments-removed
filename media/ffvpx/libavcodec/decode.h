@@ -173,7 +173,16 @@ int ff_frame_new_side_data(const AVCodecContext *avctx, AVFrame *frame,
 
 int ff_frame_new_side_data_from_buf(const AVCodecContext *avctx,
                                     AVFrame *frame, enum AVFrameSideDataType type,
-                                    AVBufferRef **buf, AVFrameSideData **sd);
+                                    AVBufferRef **buf);
+
+
+
+
+
+int ff_frame_new_side_data_from_buf_ext(const AVCodecContext *avctx,
+                                        AVFrameSideData ***sd, int *nb_sd,
+                                        enum AVFrameSideDataType type,
+                                        AVBufferRef **buf);
 
 struct AVMasteringDisplayMetadata;
 struct AVContentLightMetadata;
@@ -191,9 +200,24 @@ int ff_decode_mastering_display_new(const AVCodecContext *avctx, AVFrame *frame,
 
 
 
+int ff_decode_mastering_display_new_ext(const AVCodecContext *avctx,
+                                        AVFrameSideData ***sd, int *nb_sd,
+                                        struct AVMasteringDisplayMetadata **mdm);
+
+
+
+
+
 
 
 int ff_decode_content_light_new(const AVCodecContext *avctx, AVFrame *frame,
                                 struct AVContentLightMetadata **clm);
 
+
+
+
+
+int ff_decode_content_light_new_ext(const AVCodecContext *avctx,
+                                    AVFrameSideData ***sd, int *nb_sd,
+                                    struct AVContentLightMetadata **clm);
 #endif 

@@ -422,6 +422,12 @@ typedef struct RcOverride{
 
 
 
+
+#define AV_CODEC_EXPORT_DATA_ENHANCEMENTS (1 << 4)
+
+
+
+
 #define AV_GET_BUFFER_FLAG_REF (1 << 0)
 
 
@@ -509,6 +515,14 @@ typedef struct AVCodecContext {
     int flags2;
 
     
+
+
+
+
+
+
+
+
 
 
 
@@ -1219,6 +1233,10 @@ typedef struct AVCodecContext {
 
 
 
+
+
+
+
     int (*get_buffer2)(struct AVCodecContext *s, AVFrame *frame, int flags);
 
     
@@ -1538,6 +1556,7 @@ typedef struct AVCodecContext {
 #define FF_DCT_MMX     3
 #define FF_DCT_ALTIVEC 5
 #define FF_DCT_FAAN    6
+#define FF_DCT_NEON    7
 
     
 
@@ -1787,15 +1806,18 @@ typedef struct AVCodecContext {
 #define FF_LEVEL_UNKNOWN -99
 #endif
 
+#if FF_API_CODEC_PROPS
     
 
 
 
 
+    attribute_deprecated
     unsigned properties;
 #define FF_CODEC_PROPERTY_LOSSLESS        0x00000001
 #define FF_CODEC_PROPERTY_CLOSED_CAPTIONS 0x00000002
 #define FF_CODEC_PROPERTY_FILM_GRAIN      0x00000004
+#endif
 
     
 
@@ -1880,6 +1902,14 @@ typedef struct AVCodecContext {
 #define FF_SUB_CHARENC_MODE_IGNORE       2  ///< neither convert the subtitles, nor check them for valid UTF-8
 
     
+
+
+
+
+
+
+
+
 
 
 
@@ -2689,6 +2719,36 @@ int avcodec_get_hw_frames_parameters(AVCodecContext *avctx,
                                      AVBufferRef *device_ref,
                                      enum AVPixelFormat hw_pix_fmt,
                                      AVBufferRef **out_frames_ref);
+
+enum AVCodecConfig {
+    AV_CODEC_CONFIG_PIX_FORMAT,     
+    AV_CODEC_CONFIG_FRAME_RATE,     
+    AV_CODEC_CONFIG_SAMPLE_RATE,    
+    AV_CODEC_CONFIG_SAMPLE_FORMAT,  
+    AV_CODEC_CONFIG_CHANNEL_LAYOUT, 
+    AV_CODEC_CONFIG_COLOR_RANGE,    
+    AV_CODEC_CONFIG_COLOR_SPACE,    
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int avcodec_get_supported_config(const AVCodecContext *avctx,
+                                 const AVCodec *codec, enum AVCodecConfig config,
+                                 unsigned flags, const void **out_configs,
+                                 int *out_num_configs);
 
 
 

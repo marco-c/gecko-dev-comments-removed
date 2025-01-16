@@ -21,83 +21,132 @@
 #ifndef AVCODEC_MPEGPICTURE_H
 #define AVCODEC_MPEGPICTURE_H
 
+#include <limits.h>
+#include <stddef.h>
 #include <stdint.h>
 
-#include "libavutil/frame.h"
-
 #include "avcodec.h"
-#include "motion_est.h"
-#include "threadframe.h"
+#include "threadprogress.h"
 
-#define MPEGVIDEO_MAX_PLANES 4
-#define MAX_PICTURE_COUNT 36
+#define MPV_MAX_PLANES 3
 #define EDGE_WIDTH 16
 
 typedef struct ScratchpadContext {
     uint8_t *edge_emu_buffer;     
-    uint8_t *rd_scratchpad;       
     uint8_t *obmc_scratchpad;
-    uint8_t *b_scratchpad;        
+    union {
+        uint8_t *scratchpad_buf;  
+        uint8_t *rd_scratchpad;   
+    };
+    int      linesize;            
 } ScratchpadContext;
 
+typedef struct BufferPoolContext {
+    struct AVRefStructPool *mbskip_table_pool;
+    struct AVRefStructPool *qscale_table_pool;
+    struct AVRefStructPool *mb_type_pool;
+    struct AVRefStructPool *motion_val_pool;
+    struct AVRefStructPool *ref_index_pool;
+    int alloc_mb_width;                         
+    int alloc_mb_height;                        
+    int alloc_mb_stride;                        
+} BufferPoolContext;
 
 
 
-typedef struct Picture {
+
+typedef struct MPVPicture {
     struct AVFrame *f;
-    ThreadFrame tf;
 
-    AVBufferRef *qscale_table_buf;
+    int8_t *qscale_table_base;
     int8_t *qscale_table;
 
-    AVBufferRef *motion_val_buf[2];
+    int16_t (*motion_val_base[2])[2];
     int16_t (*motion_val[2])[2];
 
-    AVBufferRef *mb_type_buf;
+    uint32_t *mb_type_base;
     uint32_t *mb_type;          
 
-    AVBufferRef *mbskip_table_buf;
     uint8_t *mbskip_table;
 
-    AVBufferRef *ref_index_buf[2];
     int8_t *ref_index[2];
-
-    int alloc_mb_width;         
-    int alloc_mb_height;        
-    int alloc_mb_stride;        
 
     
     void *hwaccel_picture_private;
 
+    int mb_width;               
+    int mb_height;              
+    int mb_stride;              
+
+    int dummy;                  
     int field_picture;          
 
     int b_frame_score;
-    int needs_realloc;          
 
     int reference;
     int shared;
 
     int display_picture_number;
     int coded_picture_number;
-} Picture;
+
+    ThreadProgress progress;
+} MPVPicture;
+
+typedef struct MPVWorkPicture {
+    uint8_t  *data[MPV_MAX_PLANES];
+    ptrdiff_t linesize[MPV_MAX_PLANES];
+
+    MPVPicture *ptr;            
+
+    int8_t *qscale_table;
+
+    int16_t (*motion_val[2])[2];
+
+    uint32_t *mb_type;          
+
+    uint8_t *mbskip_table;
+
+    int8_t *ref_index[2];
+
+    int reference;
+} MPVWorkPicture;
 
 
 
 
-int ff_alloc_picture(AVCodecContext *avctx, Picture *pic, MotionEstContext *me,
-                     ScratchpadContext *sc, int encoding, int out_format,
-                     int mb_stride, int mb_width, int mb_height, int b8_stride,
-                     ptrdiff_t *linesize, ptrdiff_t *uvlinesize);
+struct AVRefStructPool *ff_mpv_alloc_pic_pool(int init_progress);
 
-int ff_mpeg_framesize_alloc(AVCodecContext *avctx, MotionEstContext *me,
-                            ScratchpadContext *sc, int linesize);
 
-int ff_mpeg_ref_picture(Picture *dst, Picture *src);
-void ff_mpeg_unref_picture(Picture *picture);
 
-void ff_mpv_picture_free(Picture *pic);
-int ff_update_picture_tables(Picture *dst, const Picture *src);
 
-int ff_find_unused_picture(AVCodecContext *avctx, Picture *picture, int shared);
+
+int ff_mpv_alloc_pic_accessories(AVCodecContext *avctx, MPVWorkPicture *pic,
+                                 ScratchpadContext *sc,
+                                 BufferPoolContext *pools, int mb_height);
+
+
+
+
+
+
+
+int ff_mpv_pic_check_linesize(void *logctx, const struct AVFrame *f,
+                              ptrdiff_t *linesizep, ptrdiff_t *uvlinesizep);
+
+int ff_mpv_framesize_alloc(AVCodecContext *avctx,
+                           ScratchpadContext *sc, int linesize);
+
+
+
+
+
+static inline void ff_mpv_framesize_disable(ScratchpadContext *sc)
+{
+    sc->linesize = INT_MAX;
+}
+
+void ff_mpv_unref_picture(MPVWorkPicture *pic);
+void ff_mpv_workpic_from_pic(MPVWorkPicture *wpic, MPVPicture *pic);
+void ff_mpv_replace_picture(MPVWorkPicture *dst, const MPVWorkPicture *src);
 
 #endif 

@@ -40,6 +40,7 @@
 typedef struct ERPicture {
     AVFrame *f;
     const struct ThreadFrame *tf;
+    const struct ThreadProgress *progress;
 
     
     int16_t (*motion_val[2])[2];

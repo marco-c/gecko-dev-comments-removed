@@ -151,6 +151,7 @@ struct vp56_context {
     VP56Macroblock *macroblocks;
     DECLARE_ALIGNED(16, int16_t, block_coeff)[6][64];
     int idct_selector[6];
+    const uint8_t *def_coeff_reorder;
 
     
     VP56mv mv[6];  
@@ -170,6 +171,11 @@ struct vp56_context {
     uint8_t coeff_ctx_last[4];             
 
     int has_alpha;
+
+    
+    int interlaced;
+    int il_prob;
+    int il_block;
 
     
     int flip;  

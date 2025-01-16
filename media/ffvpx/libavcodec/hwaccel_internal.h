@@ -26,7 +26,7 @@
 #include <stdint.h>
 
 #include "avcodec.h"
-#include "refstruct.h"
+#include "libavutil/refstruct.h"
 
 #define HWACCEL_CAP_ASYNC_SAFE      (1 << 0)
 #define HWACCEL_CAP_THREAD_SAFE     (1 << 1)
@@ -155,7 +155,7 @@ typedef struct FFHWAccel {
 
 
 
-    void (*free_frame_priv)(FFRefStructOpaque hwctx, void *data);
+    void (*free_frame_priv)(AVRefStructOpaque hwctx, void *data);
 
     
 

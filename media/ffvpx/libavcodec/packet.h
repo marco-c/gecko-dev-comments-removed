@@ -66,10 +66,6 @@ enum AVPacketSideDataType {
 
 
 
-
-
-
-
     AV_PKT_DATA_PARAM_CHANGE,
 
     
@@ -329,6 +325,25 @@ enum AVPacketSideDataType {
 
 
     AV_PKT_DATA_AMBIENT_VIEWING_ENVIRONMENT,
+
+    
+
+
+
+
+
+
+
+
+
+
+    AV_PKT_DATA_FRAME_CROPPING,
+
+    
+
+
+
+    AV_PKT_DATA_LCEVC,
 
     
 
@@ -864,6 +879,13 @@ int av_packet_make_writable(AVPacket *pkt);
 
 
 void av_packet_rescale_ts(AVPacket *pkt, AVRational tb_src, AVRational tb_dst);
+
+
+
+
+
+
+struct AVContainerFifo *av_container_fifo_alloc_avpacket(unsigned flags);
 
 
 

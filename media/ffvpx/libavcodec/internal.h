@@ -57,9 +57,18 @@ typedef struct AVCodecInternal {
 
 
 
+
+    int is_frame_mt;
+
+    
+
+
+
     int pad_samples;
 
     struct FramePool *pool;
+
+    struct AVRefStructPool *progress_frame_pool;
 
     void *thread_ctx;
 
@@ -121,6 +130,10 @@ typedef struct AVCodecInternal {
     void *hwaccel_priv_data;
 
     
+
+
+
+
 
 
     int draining;

@@ -19,6 +19,8 @@
 #ifndef AVUTIL_FLOAT_DSP_H
 #define AVUTIL_FLOAT_DSP_H
 
+#include <stddef.h>
+
 typedef struct AVFloatDSPContext {
     
 
@@ -187,6 +189,21 @@ typedef struct AVFloatDSPContext {
 
     void (*vector_dmul)(double *dst, const double *src0, const double *src1,
                         int len);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    double (*scalarproduct_double)(const double *v1, const double *v2,
+                                   size_t len);
 } AVFloatDSPContext;
 
 
@@ -199,6 +216,18 @@ typedef struct AVFloatDSPContext {
 
 
 float avpriv_scalarproduct_float_c(const float *v1, const float *v2, int len);
+
+
+
+
+
+
+
+
+
+
+double ff_scalarproduct_double_c(const double *v1, const double *v2,
+                                 size_t len);
 
 void ff_float_dsp_init_aarch64(AVFloatDSPContext *fdsp);
 void ff_float_dsp_init_arm(AVFloatDSPContext *fdsp);

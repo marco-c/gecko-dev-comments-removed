@@ -228,6 +228,21 @@ enum AVFrameSideDataType {
 
 
     AV_FRAME_DATA_VIDEO_HINT,
+
+    
+
+
+
+    AV_FRAME_DATA_LCEVC,
+
+    
+
+
+
+
+
+
+    AV_FRAME_DATA_VIEW_ID,
 };
 
 enum AVActiveFormatDescription {
@@ -268,6 +283,20 @@ enum AVSideDataProps {
 
 
     AV_SIDE_DATA_PROP_MULTI  = (1 << 1),
+
+    
+
+
+
+
+    AV_SIDE_DATA_PROP_SIZE_DEPENDENT = (1 << 2),
+
+    
+
+
+
+
+    AV_SIDE_DATA_PROP_COLOR_DEPENDENT = (1 << 3),
 };
 
 
@@ -341,7 +370,6 @@ typedef struct AVRegionOfInterest {
 
     AVRational qoffset;
 } AVRegionOfInterest;
-
 
 
 
@@ -640,6 +668,10 @@ typedef struct AVFrame {
 
 
 
+#define AV_FRAME_FLAG_LOSSLESS        (1 << 5)
+
+
+
 
     
 
@@ -879,6 +911,7 @@ void av_frame_move_ref(AVFrame *dst, AVFrame *src);
 
 
 
+
 int av_frame_get_buffer(AVFrame *frame, int align);
 
 
@@ -1040,7 +1073,17 @@ const AVSideDataDescriptor *av_frame_side_data_desc(enum AVFrameSideDataType typ
 
 void av_frame_side_data_free(AVFrameSideData ***sd, int *nb_sd);
 
+
+
+
 #define AV_FRAME_SIDE_DATA_FLAG_UNIQUE (1 << 0)
+
+
+
+
+#define AV_FRAME_SIDE_DATA_FLAG_REPLACE (1 << 1)
+
+
 
 
 
@@ -1061,6 +1104,34 @@ void av_frame_side_data_free(AVFrameSideData ***sd, int *nb_sd);
 AVFrameSideData *av_frame_side_data_new(AVFrameSideData ***sd, int *nb_sd,
                                         enum AVFrameSideDataType type,
                                         size_t size, unsigned int flags);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+AVFrameSideData *av_frame_side_data_add(AVFrameSideData ***sd, int *nb_sd,
+                                        enum AVFrameSideDataType type,
+                                        AVBufferRef **buf, unsigned int flags);
+
+
 
 
 
@@ -1110,6 +1181,19 @@ const AVFrameSideData *av_frame_side_data_get(AVFrameSideData * const *sd,
     return av_frame_side_data_get_c((const AVFrameSideData * const *)sd,
                                     nb_sd, type);
 }
+
+
+
+
+void av_frame_side_data_remove(AVFrameSideData ***sd, int *nb_sd,
+                               enum AVFrameSideDataType type);
+
+
+
+
+
+void av_frame_side_data_remove_by_props(AVFrameSideData ***sd, int *nb_sd,
+                                        int props);
 
 
 

@@ -68,8 +68,43 @@ void ff_decode_flush_buffers(struct AVCodecContext *avctx);
 void ff_encode_flush_buffers(struct AVCodecContext *avctx);
 
 struct AVCodecInternal *ff_decode_internal_alloc(void);
+void ff_decode_internal_sync(struct AVCodecContext *dst,
+                             const struct AVCodecContext *src);
+void ff_decode_internal_uninit(struct AVCodecContext *avctx);
+
 struct AVCodecInternal *ff_encode_internal_alloc(void);
 
 void ff_codec_close(struct AVCodecContext *avctx);
+
+int ff_thread_init(struct AVCodecContext *s);
+void ff_thread_free(struct AVCodecContext *s);
+
+
+
+
+
+
+
+void ff_thread_flush(struct AVCodecContext *avctx);
+
+
+
+
+
+
+
+int ff_thread_receive_frame(struct AVCodecContext *avctx, AVFrame *frame);
+
+
+
+
+
+
+int ff_decode_receive_frame_internal(struct AVCodecContext *avctx, AVFrame *frame);
+
+
+
+
+int ff_thread_get_packet(struct AVCodecContext *avctx, AVPacket *pkt);
 
 #endif 

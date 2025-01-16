@@ -230,26 +230,109 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum AVOptionType{
+    
+
+
     AV_OPT_TYPE_FLAGS = 1,
+    
+
+
     AV_OPT_TYPE_INT,
+    
+
+
     AV_OPT_TYPE_INT64,
+    
+
+
     AV_OPT_TYPE_DOUBLE,
+    
+
+
     AV_OPT_TYPE_FLOAT,
+    
+
+
+
     AV_OPT_TYPE_STRING,
+    
+
+
     AV_OPT_TYPE_RATIONAL,
-    AV_OPT_TYPE_BINARY,  
+    
+
+
+
+
+    AV_OPT_TYPE_BINARY,
+    
+
+
     AV_OPT_TYPE_DICT,
+    
+
+
     AV_OPT_TYPE_UINT64,
+    
+
+
+
     AV_OPT_TYPE_CONST,
-    AV_OPT_TYPE_IMAGE_SIZE, 
+    
+
+
+    AV_OPT_TYPE_IMAGE_SIZE,
+    
+
+
     AV_OPT_TYPE_PIXEL_FMT,
+    
+
+
     AV_OPT_TYPE_SAMPLE_FMT,
-    AV_OPT_TYPE_VIDEO_RATE, 
+    
+
+
+    AV_OPT_TYPE_VIDEO_RATE,
+    
+
+
     AV_OPT_TYPE_DURATION,
+    
+
+
     AV_OPT_TYPE_COLOR,
+    
+
+
     AV_OPT_TYPE_BOOL,
+    
+
+
     AV_OPT_TYPE_CHLAYOUT,
+    
+
+
+    AV_OPT_TYPE_UINT,
 
     
 
@@ -539,6 +622,12 @@ const AVClass *av_opt_child_class_iterate(const AVClass *parent, void **iter);
 
 
 
+#define AV_OPT_ARRAY_REPLACE (1 << 3)
+
+
+
+
+
 
 #define AV_OPT_MULTI_COMPONENT_RANGE (1 << 12)
 
@@ -786,6 +875,10 @@ int av_opt_set_image_size(void *obj, const char *name, int w, int h, int search_
 int av_opt_set_pixel_fmt (void *obj, const char *name, enum AVPixelFormat fmt, int search_flags);
 int av_opt_set_sample_fmt(void *obj, const char *name, enum AVSampleFormat fmt, int search_flags);
 int av_opt_set_video_rate(void *obj, const char *name, AVRational val, int search_flags);
+
+
+
+
 int av_opt_set_chlayout(void *obj, const char *name, const AVChannelLayout *layout, int search_flags);
 
 
@@ -793,6 +886,7 @@ int av_opt_set_chlayout(void *obj, const char *name, const AVChannelLayout *layo
 
 int av_opt_set_dict_val(void *obj, const char *name, const AVDictionary *val, int search_flags);
 
+#if FF_API_OPT_INT_LIST
 
 
 
@@ -808,6 +902,57 @@ int av_opt_set_dict_val(void *obj, const char *name, const AVDictionary *val, in
      AVERROR(EINVAL) : \
      av_opt_set_bin(obj, name, (const uint8_t *)(val), \
                     av_int_list_length(val, term) * sizeof(*(val)), flags))
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_opt_set_array(void *obj, const char *name, int search_flags,
+                     unsigned int start_elem, unsigned int nb_elems,
+                     enum AVOptionType val_type, const void *val);
 
 
 
@@ -847,12 +992,56 @@ int av_opt_get_image_size(void *obj, const char *name, int search_flags, int *w_
 int av_opt_get_pixel_fmt (void *obj, const char *name, int search_flags, enum AVPixelFormat *out_fmt);
 int av_opt_get_sample_fmt(void *obj, const char *name, int search_flags, enum AVSampleFormat *out_fmt);
 int av_opt_get_video_rate(void *obj, const char *name, int search_flags, AVRational *out_val);
+
+
+
+
 int av_opt_get_chlayout(void *obj, const char *name, int search_flags, AVChannelLayout *layout);
 
 
 
 
 int av_opt_get_dict_val(void *obj, const char *name, int search_flags, AVDictionary **out_val);
+
+
+
+
+int av_opt_get_array_size(void *obj, const char *name, int search_flags,
+                          unsigned int *out_val);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_opt_get_array(void *obj, const char *name, int search_flags,
+                     unsigned int start_elem, unsigned int nb_elems,
+                     enum AVOptionType out_type, void *out_val);
 
 
 
@@ -873,6 +1062,7 @@ int av_opt_get_dict_val(void *obj, const char *name, int search_flags, AVDiction
 
 int av_opt_eval_flags (void *obj, const AVOption *o, const char *val, int        *flags_out);
 int av_opt_eval_int   (void *obj, const AVOption *o, const char *val, int        *int_out);
+int av_opt_eval_uint  (void *obj, const AVOption *o, const char *val, unsigned   *uint_out);
 int av_opt_eval_int64 (void *obj, const AVOption *o, const char *val, int64_t    *int64_out);
 int av_opt_eval_float (void *obj, const AVOption *o, const char *val, float      *float_out);
 int av_opt_eval_double(void *obj, const AVOption *o, const char *val, double     *double_out);
@@ -881,6 +1071,7 @@ int av_opt_eval_q     (void *obj, const AVOption *o, const char *val, AVRational
 
 
 
+#if FF_API_OPT_PTR
 
 
 
@@ -889,7 +1080,11 @@ int av_opt_eval_q     (void *obj, const AVOption *o, const char *val, AVRational
 
 
 
+
+
+attribute_deprecated
 void *av_opt_ptr(const AVClass *avclass, void *obj, const char *name);
+#endif
 
 
 
@@ -929,6 +1124,7 @@ int av_opt_flag_is_set(void *obj, const char *field_name, const char *flag_name)
 
 #define AV_OPT_SERIALIZE_SKIP_DEFAULTS              0x00000001  ///< Serialize options that are not set to default values only.
 #define AV_OPT_SERIALIZE_OPT_FLAGS_EXACT            0x00000002  ///< Serialize options that exactly match opt_flags only.
+#define AV_OPT_SERIALIZE_SEARCH_CHILDREN            0x00000004  ///< Serialize options in possible children of the given object.
 
 
 

@@ -46,6 +46,15 @@ typedef enum {
     AV_CLASS_CATEGORY_NB  
 }AVClassCategory;
 
+enum AVClassStateFlags {
+    
+
+
+
+
+    AV_CLASS_STATE_INITIALIZED         = (1 << 0),
+};
+
 #define AV_IS_INPUT_DEVICE(category) \
     (((category) == AV_CLASS_CATEGORY_DEVICE_VIDEO_INPUT) || \
      ((category) == AV_CLASS_CATEGORY_DEVICE_AUDIO_INPUT) || \
@@ -81,6 +90,8 @@ typedef struct AVClass {
 
 
 
+
+
     const struct AVOption *option;
 
     
@@ -95,9 +106,14 @@ typedef struct AVClass {
 
 
 
+
+
+
     int log_level_offset_offset;
 
     
+
+
 
 
 
@@ -111,16 +127,18 @@ typedef struct AVClass {
 
 
 
+
+
     AVClassCategory category;
 
     
 
 
 
+
     AVClassCategory (*get_category)(void* ctx);
 
     
-
 
 
     int (*query_ranges)(struct AVOptionRanges **, void *obj, const char *key, int flags);
@@ -143,7 +161,18 @@ typedef struct AVClass {
 
 
 
+
+
     const struct AVClass* (*child_class_iterate)(void **iter);
+
+    
+
+
+
+
+
+
+    int state_flags_offset;
 } AVClass;
 
 

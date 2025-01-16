@@ -32,9 +32,15 @@
 #include "cbs.h"
 #include "cbs_av1.h"
 #include "dovi_rpu.h"
+#include "progressframe.h"
 
 typedef struct AV1Frame {
-    AVFrame *f;
+    union {
+        struct {
+            struct AVFrame *f;
+        };
+        ProgressFrame pf;
+    };
 
     void *hwaccel_picture_private; 
 
@@ -53,6 +59,20 @@ typedef struct AV1Frame {
     AV1RawFilmGrainParams film_grain;
 
     uint8_t coded_lossless;
+
+    
+    uint8_t order_hint;
+    
+    uint8_t ref_frame_sign_bias[AV1_TOTAL_REFS_PER_FRAME];
+    
+    
+    uint8_t order_hints[AV1_TOTAL_REFS_PER_FRAME];
+
+    
+    
+    
+    
+    uint8_t force_integer_mv;
 } AV1Frame;
 
 typedef struct TileGroupInfo {
@@ -94,7 +114,8 @@ typedef struct AV1DecContext {
     AV1Frame ref[AV1_NUM_REF_FRAMES];
     AV1Frame cur_frame;
 
-    int nb_unit;
+    int nb_unit;           
+    int start_unit;        
 
     
     int operating_point;

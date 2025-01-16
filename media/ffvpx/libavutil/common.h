@@ -42,6 +42,7 @@
 #include "attributes.h"
 #include "error.h"
 #include "macros.h"
+#include "version.h"
 
 #ifdef HAVE_AV_CONFIG_H
 #   include "config.h"
@@ -122,9 +123,6 @@
 #ifndef av_clip_uintp2
 #   define av_clip_uintp2   av_clip_uintp2_c
 #endif
-#ifndef av_mod_uintp2
-#   define av_mod_uintp2    av_mod_uintp2_c
-#endif
 #ifndef av_sat_add32
 #   define av_sat_add32     av_sat_add32_c
 #endif
@@ -148,6 +146,9 @@
 #endif
 #ifndef av_clipd
 #   define av_clipd         av_clipd_c
+#endif
+#ifndef av_zero_extend
+#   define av_zero_extend   av_zero_extend_c
 #endif
 #ifndef av_popcount
 #   define av_popcount      av_popcount_c
@@ -252,8 +253,8 @@ static av_always_inline av_const int16_t av_clip_int16_c(int a)
 
 static av_always_inline av_const int32_t av_clipl_int32_c(int64_t a)
 {
-    if ((a+0x80000000u) & ~UINT64_C(0xFFFFFFFF)) return (int32_t)((a>>63) ^ 0x7FFFFFFF);
-    else                                         return (int32_t)a;
+    if ((a+UINT64_C(0x80000000)) & ~UINT64_C(0xFFFFFFFF)) return (int32_t)((a>>63) ^ 0x7FFFFFFF);
+    else                                                  return (int32_t)a;
 }
 
 
@@ -264,7 +265,7 @@ static av_always_inline av_const int32_t av_clipl_int32_c(int64_t a)
 
 static av_always_inline av_const int av_clip_intp2_c(int a, int p)
 {
-    if (((unsigned)a + (1 << p)) & ~((2 << p) - 1))
+    if (((unsigned)a + (1U << p)) & ~((2U << p) - 1))
         return (a >> 31) ^ ((1 << p) - 1);
     else
         return a;
@@ -278,8 +279,8 @@ static av_always_inline av_const int av_clip_intp2_c(int a, int p)
 
 static av_always_inline av_const unsigned av_clip_uintp2_c(int a, int p)
 {
-    if (a & ~((1<<p) - 1)) return (~a) >> 31 & ((1<<p) - 1);
-    else                   return  a;
+    if (a & ~((1U<<p) - 1)) return (~a) >> 31 & ((1U<<p) - 1);
+    else                    return  a;
 }
 
 
@@ -288,10 +289,24 @@ static av_always_inline av_const unsigned av_clip_uintp2_c(int a, int p)
 
 
 
-static av_always_inline av_const unsigned av_mod_uintp2_c(unsigned a, unsigned p)
+static av_always_inline av_const unsigned av_zero_extend_c(unsigned a, unsigned p)
 {
+#if defined(HAVE_AV_CONFIG_H) && defined(ASSERT_LEVEL) && ASSERT_LEVEL >= 2
+    if (p > 31) abort();
+#endif
     return a & ((1U << p) - 1);
 }
+
+#if FF_API_MOD_UINTP2
+#ifndef av_mod_uintp2
+#   define av_mod_uintp2 av_mod_uintp2_c
+#endif
+attribute_deprecated
+static av_always_inline av_const unsigned av_mod_uintp2_c(unsigned a, unsigned p)
+{
+    return av_zero_extend_c(a, p);
+}
+#endif
 
 
 

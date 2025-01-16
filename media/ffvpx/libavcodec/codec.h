@@ -205,10 +205,19 @@ typedef struct AVCodec {
 
     int capabilities;
     uint8_t max_lowres;                     
+
+    
+
+
+    attribute_deprecated
     const AVRational *supported_framerates; 
+    attribute_deprecated
     const enum AVPixelFormat *pix_fmts;     
+    attribute_deprecated
     const int *supported_samplerates;       
+    attribute_deprecated
     const enum AVSampleFormat *sample_fmts; 
+
     const AVClass *priv_class;              
     const AVProfile *profiles;              
 
@@ -227,6 +236,8 @@ typedef struct AVCodec {
     
 
 
+
+    attribute_deprecated
     const AVChannelLayout *ch_layouts;
 } AVCodec;
 

@@ -31,8 +31,9 @@
 #include "libavutil/mem_internal.h"
 #include "libavutil/thread.h"
 
+#include "avcodec.h"
 #include "h264pred.h"
-#include "threadframe.h"
+#include "progressframe.h"
 #include "videodsp.h"
 #include "vp8dsp.h"
 #include "vpx_rac.h"
@@ -150,7 +151,7 @@ typedef struct VP8ThreadData {
 } VP8ThreadData;
 
 typedef struct VP8Frame {
-    ThreadFrame tf;
+    ProgressFrame tf;
     uint8_t *seg_map; 
 
     void *hwaccel_picture_private; 

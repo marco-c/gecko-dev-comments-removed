@@ -31,27 +31,6 @@
 
 #include "avcodec.h"
 
-
-
-
-
-
-
-void ff_thread_flush(AVCodecContext *avctx);
-
-
-
-
-
-
-
-
-
-
-
-int ff_thread_decode_frame(AVCodecContext *avctx, AVFrame *picture,
-                           int *got_picture_ptr, AVPacket *avpkt);
-
 int ff_thread_can_start_frame(AVCodecContext *avctx);
 
 
@@ -74,14 +53,38 @@ void ff_thread_finish_setup(AVCodecContext *avctx);
 
 int ff_thread_get_buffer(AVCodecContext *avctx, AVFrame *f, int flags);
 
-int ff_thread_init(AVCodecContext *s);
 int ff_slice_thread_execute_with_mainfunc(AVCodecContext *avctx,
         int (*action_func2)(AVCodecContext *c, void *arg, int jobnr, int threadnr),
         int (*main_func)(AVCodecContext *c), void *arg, int *ret, int job_count);
-void ff_thread_free(AVCodecContext *s);
-int ff_slice_thread_allocz_entries(AVCodecContext *avctx, int count);
-int ff_slice_thread_init_progress(AVCodecContext *avctx);
-void ff_thread_report_progress2(AVCodecContext *avctx, int field, int thread, int n);
-void ff_thread_await_progress2(AVCodecContext *avctx,  int field, int thread, int shift);
+
+enum ThreadingStatus {
+    FF_THREAD_IS_COPY,
+    FF_THREAD_IS_FIRST_THREAD,
+    FF_THREAD_NO_FRAME_THREADING,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum ThreadingStatus ff_thread_sync_ref(AVCodecContext *avctx, size_t offset);
 
 #endif 

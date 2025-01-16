@@ -402,6 +402,7 @@ static inline int get_ur_golomb(GetBitContext *gb, int k, int limit,
     log = av_log2(buf);
 
     if (log > 31 - limit) {
+        av_assert2(log >= k);
         buf >>= log - k;
         buf  += (30U - log) << k;
         LAST_SKIP_BITS(re, gb, 32 + k - log);
@@ -421,6 +422,8 @@ static inline int get_ur_golomb(GetBitContext *gb, int k, int limit,
     }
 #endif
 }
+
+
 
 
 
@@ -532,6 +535,8 @@ static inline int get_sr_golomb(GetBitContext *gb, int k, int limit,
     unsigned v = get_ur_golomb(gb, k, limit, esc_len);
     return (v >> 1) ^ -(v & 1);
 }
+
+
 
 
 

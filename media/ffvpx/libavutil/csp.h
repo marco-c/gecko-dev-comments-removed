@@ -84,6 +84,10 @@ typedef struct AVColorPrimariesDesc {
 
 
 
+
+
+
+
 typedef double (*av_csp_trc_function)(double);
 
 
@@ -142,6 +146,44 @@ double av_csp_approximate_trc_gamma(enum AVColorTransferCharacteristic trc);
 
 
 av_csp_trc_function av_csp_trc_func_from_id(enum AVColorTransferCharacteristic trc);
+
+
+
+
+av_csp_trc_function av_csp_trc_func_inv_from_id(enum AVColorTransferCharacteristic trc);
+
+
+
+
+
+
+
+
+typedef void (*av_csp_eotf_function)(double Lw, double Lb, double c[3]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+av_csp_eotf_function av_csp_itu_eotf(enum AVColorTransferCharacteristic trc);
+
+
+
+
+av_csp_eotf_function av_csp_itu_eotf_inv(enum AVColorTransferCharacteristic trc);
 
 
 
