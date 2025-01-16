@@ -1224,6 +1224,14 @@ class FinalTargetPreprocessedFiles(ContextDerived):
         ContextDerived.__init__(self, sandbox)
         self.files = files
 
+    @staticmethod
+    def get_obj_basename(f):
+        
+        basename = f.target_basename
+        if basename.endswith(".in"):
+            basename = basename[:-3]
+        return basename
+
 
 class LocalizedFiles(FinalTargetFiles):
     """Sandbox container object for LOCALIZED_FILES, which is a
