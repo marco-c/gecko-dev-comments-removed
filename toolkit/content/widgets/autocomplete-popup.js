@@ -359,7 +359,7 @@
 
       
       
-      this.richlistbox.style.height = Math.ceil(height) + "px";
+      this.richlistbox.style.maxHeight = Math.ceil(height) + "px";
     }
 
     _appendCurrentResult(invalidateReason) {
