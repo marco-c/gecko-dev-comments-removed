@@ -818,6 +818,10 @@
         
         
         for (let [tag, script] of [
+          [
+            "moz-box-button",
+            "chrome://global/content/elements/moz-box-button.mjs",
+          ],
           ["moz-button", "chrome://global/content/elements/moz-button.mjs"],
           [
             "moz-button-group",
