@@ -38,7 +38,7 @@ typedef long long int int64_t;
 
 #ifndef WEBP_NODISCARD
 #if defined(WEBP_ENABLE_NODISCARD) && WEBP_ENABLE_NODISCARD
-#if (defined(__cplusplus) && __cplusplus >= 201700L) || \
+#if (defined(__cplusplus) && __cplusplus >= 201703L) || \
     (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L)
 #define WEBP_NODISCARD [[nodiscard]]
 #else

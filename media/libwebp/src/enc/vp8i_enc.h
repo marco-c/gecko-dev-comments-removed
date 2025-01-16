@@ -16,6 +16,7 @@
 
 #include <string.h>     
 #include "src/dec/common_dec.h"
+#include "src/dsp/cpu.h"
 #include "src/dsp/dsp.h"
 #include "src/utils/bit_writer_utils.h"
 #include "src/utils/thread_utils.h"
@@ -31,7 +32,7 @@ extern "C" {
 
 
 #define ENC_MAJ_VERSION 1
-#define ENC_MIN_VERSION 4
+#define ENC_MIN_VERSION 5
 #define ENC_REV_VERSION 0
 
 enum { MAX_LF_LEVELS = 64,       
@@ -78,7 +79,6 @@ typedef enum {
 extern const uint16_t VP8Scan[16];
 extern const uint16_t VP8UVModeOffsets[4];
 extern const uint16_t VP8I16ModeOffsets[4];
-extern const uint16_t VP8I4ModeOffsets[NUM_BMODES];
 
 
 
@@ -234,7 +234,11 @@ typedef struct {
   VP8BitWriter* bw_;               
   uint8_t*      preds_;            
   uint32_t*     nz_;               
+#if WEBP_AARCH64 && BPS == 32
+  uint8_t       i4_boundary_[40];  
+#else
   uint8_t       i4_boundary_[37];  
+#endif
   uint8_t*      i4_top_;           
   int           i4_;               
   int           top_nz_[9];        
@@ -267,8 +271,6 @@ typedef struct {
   
 
 void VP8IteratorInit(VP8Encoder* const enc, VP8EncIterator* const it);
-
-void VP8IteratorReset(VP8EncIterator* const it);
 
 void VP8IteratorSetRow(VP8EncIterator* const it, int y);
 
@@ -444,9 +446,6 @@ extern const uint8_t VP8Cat6[];
 void VP8MakeLuma16Preds(const VP8EncIterator* const it);
 
 void VP8MakeChroma8Preds(const VP8EncIterator* const it);
-
-
-void VP8MakeIntra4Preds(const VP8EncIterator* const it);
 
 int VP8GetCostLuma16(VP8EncIterator* const it, const VP8ModeScore* const rd);
 int VP8GetCostLuma4(VP8EncIterator* const it, const int16_t levels[16]);

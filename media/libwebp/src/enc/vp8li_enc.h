@@ -34,7 +34,7 @@ extern "C" {
 #endif
 
 
-#define MAX_TRANSFORM_BITS 6
+#define MAX_TRANSFORM_BITS (MIN_TRANSFORM_BITS + (1 << NUM_TRANSFORM_BITS) - 1)
 
 typedef enum {
   kEncoderNone = 0,
@@ -59,7 +59,8 @@ typedef struct {
 
   
   int histo_bits_;
-  int transform_bits_;    
+  int predictor_transform_bits_;    
+  int cross_color_transform_bits_;  
   int cache_bits_;        
 
   
@@ -104,16 +105,21 @@ int VP8ApplyNearLossless(const WebPPicture* const picture, int quality,
 
 
 
-int VP8LResidualImage(int width, int height, int bits, int low_effort,
-                      uint32_t* const argb, uint32_t* const argb_scratch,
-                      uint32_t* const image, int near_lossless, int exact,
-                      int used_subtract_green, const WebPPicture* const pic,
-                      int percent_range, int* const percent);
+int VP8LResidualImage(int width, int height, int min_bits, int max_bits,
+                      int low_effort, uint32_t* const argb,
+                      uint32_t* const argb_scratch, uint32_t* const image,
+                      int near_lossless, int exact, int used_subtract_green,
+                      const WebPPicture* const pic, int percent_range,
+                      int* const percent, int* const best_bits);
 
 int VP8LColorSpaceTransform(int width, int height, int bits, int quality,
                             uint32_t* const argb, uint32_t* image,
                             const WebPPicture* const pic, int percent_range,
-                            int* const percent);
+                            int* const percent, int* const best_bits);
+
+void VP8LOptimizeSampling(uint32_t* const image, int full_width,
+                          int full_height, int bits, int max_bits,
+                          int* best_bits_out);
 
 
 

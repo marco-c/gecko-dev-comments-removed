@@ -46,7 +46,12 @@
 #define CODE_LENGTH_CODES            19
 
 #define MIN_HUFFMAN_BITS             2  // min number of Huffman bits
-#define MAX_HUFFMAN_BITS             9  // max number of Huffman bits
+#define NUM_HUFFMAN_BITS             3
+
+
+
+#define MIN_TRANSFORM_BITS           2
+#define NUM_TRANSFORM_BITS           3
 
 #define TRANSFORM_PRESENT            1  // The bit to be written when next data
                                         

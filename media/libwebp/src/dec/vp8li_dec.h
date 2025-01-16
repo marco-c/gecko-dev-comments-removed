@@ -122,10 +122,6 @@ WEBP_NODISCARD int VP8LDecodeHeader(VP8LDecoder* const dec, VP8Io* const io);
 WEBP_NODISCARD int VP8LDecodeImage(VP8LDecoder* const dec);
 
 
-
-void VP8LClear(VP8LDecoder* const dec);
-
-
 void VP8LDelete(VP8LDecoder* const dec);
 
 

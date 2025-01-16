@@ -41,10 +41,15 @@ SHARPYUV_EXTERN void SharpYuvComputeConversionMatrix(
 
 
 typedef enum {
+  
   kSharpYuvMatrixWebp = 0,
+  
   kSharpYuvMatrixRec601Limited,
+  
   kSharpYuvMatrixRec601Full,
+  
   kSharpYuvMatrixRec709Limited,
+  
   kSharpYuvMatrixRec709Full,
   kSharpYuvMatrixNum
 } SharpYuvMatrixType;

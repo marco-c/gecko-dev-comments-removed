@@ -40,10 +40,10 @@ typedef struct {
   int palette_code_bits_;
   uint32_t trivial_symbol_;  
                              
-  float bit_cost_;           
-  float literal_cost_;       
-  float red_cost_;           
-  float blue_cost_;
+  uint64_t bit_cost_;        
+  uint64_t literal_cost_;    
+  uint64_t red_cost_;        
+  uint64_t blue_cost_;
   uint8_t is_used_[5];       
 } VP8LHistogram;
 
@@ -63,9 +63,6 @@ typedef struct {
 void VP8LHistogramCreate(VP8LHistogram* const p,
                          const VP8LBackwardRefs* const refs,
                          int palette_code_bits);
-
-
-int VP8LGetHistogramSize(int cache_bits);
 
 
 
@@ -112,16 +109,16 @@ int VP8LGetHistoImageSymbols(int xsize, int ysize,
                              int low_effort, int histogram_bits, int cache_bits,
                              VP8LHistogramSet* const image_histo,
                              VP8LHistogram* const tmp_histo,
-                             uint16_t* const histogram_symbols,
+                             uint32_t* const histogram_symbols,
                              const WebPPicture* const pic, int percent_range,
                              int* const percent);
 
 
-float VP8LBitsEntropy(const uint32_t* const array, int n);
+uint64_t VP8LBitsEntropy(const uint32_t* const array, int n);
 
 
 
-float VP8LHistogramEstimateBits(VP8LHistogram* const p);
+uint64_t VP8LHistogramEstimateBits(VP8LHistogram* const p);
 
 #ifdef __cplusplus
 }

@@ -60,53 +60,66 @@ extern "C" {
 
 
 
-typedef void (*VP8Idct)(const uint8_t* ref, const int16_t* in, uint8_t* dst,
-                        int do_two);
-typedef void (*VP8Fdct)(const uint8_t* src, const uint8_t* ref, int16_t* out);
-typedef void (*VP8WHT)(const int16_t* in, int16_t* out);
+typedef void (*VP8Idct)(const uint8_t* WEBP_RESTRICT ref,
+                        const int16_t* WEBP_RESTRICT in,
+                        uint8_t* WEBP_RESTRICT dst, int do_two);
+typedef void (*VP8Fdct)(const uint8_t* WEBP_RESTRICT src,
+                        const uint8_t* WEBP_RESTRICT ref,
+                        int16_t* WEBP_RESTRICT out);
+typedef void (*VP8WHT)(const int16_t* WEBP_RESTRICT in,
+                       int16_t* WEBP_RESTRICT out);
 extern VP8Idct VP8ITransform;
 extern VP8Fdct VP8FTransform;
 extern VP8Fdct VP8FTransform2;   
 extern VP8WHT VP8FTransformWHT;
 
 
-typedef void (*VP8IntraPreds)(uint8_t* dst, const uint8_t* left,
-                              const uint8_t* top);
-typedef void (*VP8Intra4Preds)(uint8_t* dst, const uint8_t* top);
+typedef void (*VP8IntraPreds)(uint8_t* WEBP_RESTRICT dst,
+                              const uint8_t* WEBP_RESTRICT left,
+                              const uint8_t* WEBP_RESTRICT top);
+typedef void (*VP8Intra4Preds)(uint8_t* WEBP_RESTRICT dst,
+                               const uint8_t* WEBP_RESTRICT top);
 extern VP8Intra4Preds VP8EncPredLuma4;
 extern VP8IntraPreds VP8EncPredLuma16;
 extern VP8IntraPreds VP8EncPredChroma8;
 
-typedef int (*VP8Metric)(const uint8_t* pix, const uint8_t* ref);
+typedef int (*VP8Metric)(const uint8_t* WEBP_RESTRICT pix,
+                         const uint8_t* WEBP_RESTRICT ref);
 extern VP8Metric VP8SSE16x16, VP8SSE16x8, VP8SSE8x8, VP8SSE4x4;
-typedef int (*VP8WMetric)(const uint8_t* pix, const uint8_t* ref,
-                          const uint16_t* const weights);
+typedef int (*VP8WMetric)(const uint8_t* WEBP_RESTRICT pix,
+                          const uint8_t* WEBP_RESTRICT ref,
+                          const uint16_t* WEBP_RESTRICT const weights);
 
 
 extern VP8WMetric VP8TDisto4x4, VP8TDisto16x16;
 
 
 
-typedef void (*VP8MeanMetric)(const uint8_t* ref, uint32_t dc[4]);
+typedef void (*VP8MeanMetric)(const uint8_t* WEBP_RESTRICT ref,
+                              uint32_t dc[4]);
 extern VP8MeanMetric VP8Mean16x4;
 
-typedef void (*VP8BlockCopy)(const uint8_t* src, uint8_t* dst);
+typedef void (*VP8BlockCopy)(const uint8_t* WEBP_RESTRICT src,
+                             uint8_t* WEBP_RESTRICT dst);
 extern VP8BlockCopy VP8Copy4x4;
 extern VP8BlockCopy VP8Copy16x8;
 
 struct VP8Matrix;   
-typedef int (*VP8QuantizeBlock)(int16_t in[16], int16_t out[16],
-                                const struct VP8Matrix* const mtx);
+typedef int (*VP8QuantizeBlock)(
+    int16_t in[16], int16_t out[16],
+    const struct VP8Matrix* WEBP_RESTRICT const mtx);
 
-typedef int (*VP8Quantize2Blocks)(int16_t in[32], int16_t out[32],
-                                  const struct VP8Matrix* const mtx);
+typedef int (*VP8Quantize2Blocks)(
+    int16_t in[32], int16_t out[32],
+    const struct VP8Matrix* WEBP_RESTRICT const mtx);
 
 extern VP8QuantizeBlock VP8EncQuantizeBlock;
 extern VP8Quantize2Blocks VP8EncQuantize2Blocks;
 
 
-typedef int (*VP8QuantizeBlockWHT)(int16_t in[16], int16_t out[16],
-                                   const struct VP8Matrix* const mtx);
+typedef int (*VP8QuantizeBlockWHT)(
+    int16_t in[16], int16_t out[16],
+    const struct VP8Matrix* WEBP_RESTRICT const mtx);
 extern VP8QuantizeBlockWHT VP8EncQuantizeBlockWHT;
 
 extern const int VP8DspScan[16 + 4 + 4];
@@ -118,9 +131,10 @@ typedef struct {
   int max_value;
   int last_non_zero;
 } VP8Histogram;
-typedef void (*VP8CHisto)(const uint8_t* ref, const uint8_t* pred,
+typedef void (*VP8CHisto)(const uint8_t* WEBP_RESTRICT ref,
+                          const uint8_t* WEBP_RESTRICT pred,
                           int start_block, int end_block,
-                          VP8Histogram* const histo);
+                          VP8Histogram* WEBP_RESTRICT const histo);
 extern VP8CHisto VP8CollectHistogram;
 
 void VP8SetHistogramData(const int distribution[MAX_COEFF_THRESH + 1],
@@ -138,8 +152,9 @@ extern const uint16_t VP8LevelFixedCosts[2047  + 1];
 extern const uint8_t VP8EncBands[16 + 1];
 
 struct VP8Residual;
-typedef void (*VP8SetResidualCoeffsFunc)(const int16_t* const coeffs,
-                                         struct VP8Residual* const res);
+typedef void (*VP8SetResidualCoeffsFunc)(
+    const int16_t* WEBP_RESTRICT const coeffs,
+    struct VP8Residual* WEBP_RESTRICT const res);
 extern VP8SetResidualCoeffsFunc VP8SetResidualCoeffs;
 
 
@@ -193,9 +208,11 @@ void VP8SSIMDspInit(void);
 
 
 
-typedef void (*VP8DecIdct)(const int16_t* coeffs, uint8_t* dst);
+typedef void (*VP8DecIdct)(const int16_t* WEBP_RESTRICT coeffs,
+                           uint8_t* WEBP_RESTRICT dst);
 
-typedef void (*VP8DecIdct2)(const int16_t* coeffs, uint8_t* dst, int do_two);
+typedef void (*VP8DecIdct2)(const int16_t* WEBP_RESTRICT coeffs,
+                            uint8_t* WEBP_RESTRICT dst, int do_two);
 extern VP8DecIdct2 VP8Transform;
 extern VP8DecIdct VP8TransformAC3;
 extern VP8DecIdct VP8TransformUV;
@@ -233,7 +250,8 @@ extern VP8SimpleFilterFunc VP8SimpleHFilter16i;
 
 typedef void (*VP8LumaFilterFunc)(uint8_t* luma, int stride,
                                   int thresh, int ithresh, int hev_t);
-typedef void (*VP8ChromaFilterFunc)(uint8_t* u, uint8_t* v, int stride,
+typedef void (*VP8ChromaFilterFunc)(uint8_t* WEBP_RESTRICT u,
+                                    uint8_t* WEBP_RESTRICT v, int stride,
                                     int thresh, int ithresh, int hev_t);
 
 extern VP8LumaFilterFunc VP8VFilter16;
@@ -253,8 +271,8 @@ extern VP8ChromaFilterFunc VP8HFilter8i;
 #define VP8_DITHER_DESCALE_ROUNDER (1 << (VP8_DITHER_DESCALE - 1))
 #define VP8_DITHER_AMP_BITS 7
 #define VP8_DITHER_AMP_CENTER (1 << VP8_DITHER_AMP_BITS)
-extern void (*VP8DitherCombine8x8)(const uint8_t* dither, uint8_t* dst,
-                                   int dst_stride);
+extern void (*VP8DitherCombine8x8)(const uint8_t* WEBP_RESTRICT dither,
+                                   uint8_t* WEBP_RESTRICT dst, int dst_stride);
 
 
 void VP8DspInit(void);
@@ -267,10 +285,10 @@ void VP8DspInit(void);
 
 
 typedef void (*WebPUpsampleLinePairFunc)(
-    const uint8_t* top_y, const uint8_t* bottom_y,
-    const uint8_t* top_u, const uint8_t* top_v,
-    const uint8_t* cur_u, const uint8_t* cur_v,
-    uint8_t* top_dst, uint8_t* bottom_dst, int len);
+    const uint8_t* WEBP_RESTRICT top_y, const uint8_t* WEBP_RESTRICT bottom_y,
+    const uint8_t* WEBP_RESTRICT top_u, const uint8_t* WEBP_RESTRICT top_v,
+    const uint8_t* WEBP_RESTRICT cur_u, const uint8_t* WEBP_RESTRICT cur_v,
+    uint8_t* WEBP_RESTRICT top_dst, uint8_t* WEBP_RESTRICT bottom_dst, int len);
 
 #ifdef FANCY_UPSAMPLING
 
@@ -280,13 +298,15 @@ extern WebPUpsampleLinePairFunc WebPUpsamplers[];
 #endif    
 
 
-typedef void (*WebPSamplerRowFunc)(const uint8_t* y,
-                                   const uint8_t* u, const uint8_t* v,
-                                   uint8_t* dst, int len);
+typedef void (*WebPSamplerRowFunc)(const uint8_t* WEBP_RESTRICT y,
+                                   const uint8_t* WEBP_RESTRICT u,
+                                   const uint8_t* WEBP_RESTRICT v,
+                                   uint8_t* WEBP_RESTRICT dst, int len);
 
-void WebPSamplerProcessPlane(const uint8_t* y, int y_stride,
-                             const uint8_t* u, const uint8_t* v, int uv_stride,
-                             uint8_t* dst, int dst_stride,
+void WebPSamplerProcessPlane(const uint8_t* WEBP_RESTRICT y, int y_stride,
+                             const uint8_t* WEBP_RESTRICT u,
+                             const uint8_t* WEBP_RESTRICT v, int uv_stride,
+                             uint8_t* WEBP_RESTRICT dst, int dst_stride,
                              int width, int height, WebPSamplerRowFunc func);
 
 
@@ -298,9 +318,10 @@ extern WebPSamplerRowFunc WebPSamplers[];
 WebPUpsampleLinePairFunc WebPGetLinePairConverter(int alpha_is_last);
 
 
-typedef void (*WebPYUV444Converter)(const uint8_t* y,
-                                    const uint8_t* u, const uint8_t* v,
-                                    uint8_t* dst, int len);
+typedef void (*WebPYUV444Converter)(const uint8_t* WEBP_RESTRICT y,
+                                    const uint8_t* WEBP_RESTRICT u,
+                                    const uint8_t* WEBP_RESTRICT v,
+                                    uint8_t* WEBP_RESTRICT dst, int len);
 
 extern WebPYUV444Converter WebPYUV444Converters[];
 
@@ -316,26 +337,35 @@ void WebPInitYUV444Converters(void);
 
 
 
-extern void (*WebPConvertARGBToY)(const uint32_t* argb, uint8_t* y, int width);
+extern void (*WebPConvertARGBToY)(const uint32_t* WEBP_RESTRICT argb,
+                                  uint8_t* WEBP_RESTRICT y, int width);
 
 
 
-extern void (*WebPConvertARGBToUV)(const uint32_t* argb, uint8_t* u, uint8_t* v,
+extern void (*WebPConvertARGBToUV)(const uint32_t* WEBP_RESTRICT argb,
+                                   uint8_t* WEBP_RESTRICT u,
+                                   uint8_t* WEBP_RESTRICT v,
                                    int src_width, int do_store);
 
 
-extern void (*WebPConvertRGBA32ToUV)(const uint16_t* rgb,
-                                     uint8_t* u, uint8_t* v, int width);
+extern void (*WebPConvertRGBA32ToUV)(const uint16_t* WEBP_RESTRICT rgb,
+                                     uint8_t* WEBP_RESTRICT u,
+                                     uint8_t* WEBP_RESTRICT v, int width);
 
 
-extern void (*WebPConvertRGB24ToY)(const uint8_t* rgb, uint8_t* y, int width);
-extern void (*WebPConvertBGR24ToY)(const uint8_t* bgr, uint8_t* y, int width);
+extern void (*WebPConvertRGB24ToY)(const uint8_t* WEBP_RESTRICT rgb,
+                                   uint8_t* WEBP_RESTRICT y, int width);
+extern void (*WebPConvertBGR24ToY)(const uint8_t* WEBP_RESTRICT bgr,
+                                   uint8_t* WEBP_RESTRICT y, int width);
 
 
-extern void WebPConvertARGBToUV_C(const uint32_t* argb, uint8_t* u, uint8_t* v,
+extern void WebPConvertARGBToUV_C(const uint32_t* WEBP_RESTRICT argb,
+                                  uint8_t* WEBP_RESTRICT u,
+                                  uint8_t* WEBP_RESTRICT v,
                                   int src_width, int do_store);
-extern void WebPConvertRGBA32ToUV_C(const uint16_t* rgb,
-                                    uint8_t* u, uint8_t* v, int width);
+extern void WebPConvertRGBA32ToUV_C(const uint16_t* WEBP_RESTRICT rgb,
+                                    uint8_t* WEBP_RESTRICT u,
+                                    uint8_t* WEBP_RESTRICT v, int width);
 
 
 void WebPInitConvertARGBToYUV(void);
@@ -348,8 +378,9 @@ struct WebPRescaler;
 
 
 
-typedef void (*WebPRescalerImportRowFunc)(struct WebPRescaler* const wrk,
-                                          const uint8_t* src);
+typedef void (*WebPRescalerImportRowFunc)(
+    struct WebPRescaler* WEBP_RESTRICT const wrk,
+    const uint8_t* WEBP_RESTRICT src);
 
 extern WebPRescalerImportRowFunc WebPRescalerImportRowExpand;
 extern WebPRescalerImportRowFunc WebPRescalerImportRowShrink;
@@ -362,16 +393,19 @@ extern WebPRescalerExportRowFunc WebPRescalerExportRowExpand;
 extern WebPRescalerExportRowFunc WebPRescalerExportRowShrink;
 
 
-extern void WebPRescalerImportRowExpand_C(struct WebPRescaler* const wrk,
-                                          const uint8_t* src);
-extern void WebPRescalerImportRowShrink_C(struct WebPRescaler* const wrk,
-                                          const uint8_t* src);
+extern void WebPRescalerImportRowExpand_C(
+    struct WebPRescaler* WEBP_RESTRICT const wrk,
+    const uint8_t* WEBP_RESTRICT src);
+extern void WebPRescalerImportRowShrink_C(
+    struct WebPRescaler* WEBP_RESTRICT const wrk,
+    const uint8_t* WEBP_RESTRICT src);
 extern void WebPRescalerExportRowExpand_C(struct WebPRescaler* const wrk);
 extern void WebPRescalerExportRowShrink_C(struct WebPRescaler* const wrk);
 
 
-extern void WebPRescalerImportRow(struct WebPRescaler* const wrk,
-                                  const uint8_t* src);
+extern void WebPRescalerImportRow(
+    struct WebPRescaler* WEBP_RESTRICT const wrk,
+    const uint8_t* WEBP_RESTRICT src);
 
 extern void WebPRescalerExportRow(struct WebPRescaler* const wrk);
 
@@ -480,8 +514,9 @@ typedef enum {
   WEBP_FILTER_FAST
 } WEBP_FILTER_TYPE;
 
-typedef void (*WebPFilterFunc)(const uint8_t* in, int width, int height,
-                               int stride, uint8_t* out);
+typedef void (*WebPFilterFunc)(const uint8_t* WEBP_RESTRICT in,
+                               int width, int height, int stride,
+                               uint8_t* WEBP_RESTRICT out);
 
 
 typedef void (*WebPUnfilterFunc)(const uint8_t* prev_line, const uint8_t* preds,

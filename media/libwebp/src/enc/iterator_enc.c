@@ -13,6 +13,7 @@
 
 #include <string.h>
 
+#include "src/dsp/cpu.h"
 #include "src/enc/vp8i_enc.h"
 
 
@@ -54,7 +55,8 @@ void VP8IteratorSetRow(VP8EncIterator* const it, int y) {
   InitLeft(it);
 }
 
-void VP8IteratorReset(VP8EncIterator* const it) {
+
+static void VP8IteratorReset(VP8EncIterator* const it) {
   VP8Encoder* const enc = it->enc_;
   VP8IteratorSetRow(it, 0);
   VP8IteratorSetCountDown(it, enc->mb_w_ * enc->mb_h_);  
@@ -424,6 +426,15 @@ void VP8IteratorStartI4(VP8EncIterator* const it) {
       it->i4_boundary_[17 + i] = it->i4_boundary_[17 + 15];
     }
   }
+#if WEBP_AARCH64 && BPS == 32 && defined(WEBP_MSAN)
+  
+  
+  
+  
+  
+  
+  memset(it->i4_boundary_ + sizeof(it->i4_boundary_) - 3, 0xaa, 3);
+#endif
   VP8IteratorNzToBytes(it);  
 }
 

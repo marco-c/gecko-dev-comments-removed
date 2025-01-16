@@ -53,6 +53,8 @@ int GetColorPalette(const struct WebPPicture* const pic,
 
 
 
+
+
 int PaletteSort(PaletteSorting method, const struct WebPPicture* const pic,
                 const uint32_t* const palette_sorted, uint32_t num_colors,
                 uint32_t* const palette);

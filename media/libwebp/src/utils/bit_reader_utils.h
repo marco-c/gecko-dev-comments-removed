@@ -69,6 +69,8 @@ extern "C" {
 #define BITS 56
 #elif defined(__mips__)                        
 #define BITS 24
+#elif defined(__wasm__)                        
+#define BITS 56
 #else                                          
 #define BITS 24
 #endif

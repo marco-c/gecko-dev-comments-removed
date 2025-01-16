@@ -52,7 +52,7 @@ extern "C" {
 
 #define SHARPYUV_VERSION_MAJOR 0
 #define SHARPYUV_VERSION_MINOR 4
-#define SHARPYUV_VERSION_PATCH 0
+#define SHARPYUV_VERSION_PATCH 1
 
 
 #define SHARPYUV_MAKE_VERSION(MAJOR, MINOR, PATCH) \
@@ -64,6 +64,13 @@ extern "C" {
 
 
 SHARPYUV_EXTERN int SharpYuvGetVersion(void);
+
+
+
+
+
+
+
 
 
 
@@ -102,6 +109,8 @@ typedef enum SharpYuvTransferFunctionType {
   kSharpYuvTransferFunctionHlg = 18,
   kSharpYuvTransferFunctionNum
 } SharpYuvTransferFunctionType;
+
+
 
 
 
