@@ -230,7 +230,9 @@ const clickOnInspectIcon = async function (animationInspector, panel, index) {
     ".animation-target .objectBox .highlight-node"
   );
   iconEl.scrollIntoView(false);
-  EventUtils.synthesizeMouseAtCenter(iconEl, {}, iconEl.ownerGlobal);
+  
+  
+  iconEl.click();
 };
 
 
