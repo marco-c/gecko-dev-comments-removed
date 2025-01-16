@@ -332,7 +332,7 @@ TEST(VideoBroadcasterTest, ForwardsConstraintsToSink) {
   broadcaster.ProcessConstraints(webrtc::VideoTrackSourceConstraints{2, 3});
 }
 
-TEST(VideoBroadcasterTest, AppliesMaxOfSinkWantsRequestedResolution) {
+TEST(VideoBroadcasterTest, AppliesMaxOfSinkWantsScaleResolutionDownTo) {
   VideoBroadcaster broadcaster;
 
   FakeVideoRenderer sink1;
@@ -374,7 +374,7 @@ TEST(VideoBroadcasterTest, AnyActive) {
   EXPECT_EQ(false, broadcaster.wants().is_active);
 }
 
-TEST(VideoBroadcasterTest, AnyActiveWithoutRequestedResolution) {
+TEST(VideoBroadcasterTest, AnyActiveWithoutScaleResolutionDownTo) {
   VideoBroadcaster broadcaster;
 
   FakeVideoRenderer sink1;
@@ -400,6 +400,7 @@ TEST(VideoBroadcasterTest, AnyActiveWithoutRequestedResolution) {
       false,
       broadcaster.wants().aggregates->any_active_without_requested_resolution);
 }
+
 
 
 

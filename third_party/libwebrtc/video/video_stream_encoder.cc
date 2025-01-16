@@ -886,7 +886,7 @@ void VideoStreamEncoder::ConfigureEncoder(VideoEncoderConfig config,
   
   bool active = false;
   
-  std::optional<rtc::VideoSinkWants::FrameSize> requested_resolution;
+  std::optional<rtc::VideoSinkWants::FrameSize> scale_resolution_down_to;
   for (const auto& stream : config.simulcast_layers) {
     active |= stream.active;
     if (stream.active) {
@@ -894,25 +894,27 @@ void VideoStreamEncoder::ConfigureEncoder(VideoEncoderConfig config,
     }
     
     
-    if (stream.requested_resolution) {
-      if (!requested_resolution) {
-        requested_resolution.emplace(stream.requested_resolution->width,
-                                     stream.requested_resolution->height);
+    if (stream.scale_resolution_down_to) {
+      if (!scale_resolution_down_to) {
+        scale_resolution_down_to.emplace(
+            stream.scale_resolution_down_to->width,
+            stream.scale_resolution_down_to->height);
       } else {
-        requested_resolution.emplace(
-            std::max(stream.requested_resolution->width,
-                     requested_resolution->width),
-            std::max(stream.requested_resolution->height,
-                     requested_resolution->height));
+        scale_resolution_down_to.emplace(
+            std::max(stream.scale_resolution_down_to->width,
+                     scale_resolution_down_to->width),
+            std::max(stream.scale_resolution_down_to->height,
+                     scale_resolution_down_to->height));
       }
     }
   }
-  if (requested_resolution !=
-          video_source_sink_controller_.requested_resolution() ||
+  if (scale_resolution_down_to !=
+          video_source_sink_controller_.scale_resolution_down_to() ||
       active != video_source_sink_controller_.active() ||
       max_framerate !=
           video_source_sink_controller_.frame_rate_upper_limit().value_or(-1)) {
-    video_source_sink_controller_.SetRequestedResolution(requested_resolution);
+    video_source_sink_controller_.SetScaleResolutionDownTo(
+        scale_resolution_down_to);
     if (max_framerate >= 0) {
       video_source_sink_controller_.SetFrameRateUpperLimit(max_framerate);
     } else {
@@ -2426,7 +2428,7 @@ void VideoStreamEncoder::OnVideoSourceRestrictionsUpdated(
   
   
   if (encoder_ && max_pixels_updated &&
-      encoder_config_.HasRequestedResolution()) {
+      encoder_config_.HasScaleResolutionDownTo()) {
     
     pending_encoder_reconfiguration_ = true;
   }

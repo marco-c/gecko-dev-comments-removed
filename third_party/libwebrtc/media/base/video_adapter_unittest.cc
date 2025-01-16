@@ -52,15 +52,15 @@ rtc::VideoSinkWants BuildSinkWants(std::optional<int> target_pixel_count,
 }
 
 rtc::VideoSinkWants BuildSinkWants(
-    std::optional<webrtc::Resolution> requested_resolution,
+    std::optional<webrtc::Resolution> scale_resolution_down_to,
     bool any_active_without_requested_resolution) {
   rtc::VideoSinkWants wants;
   wants.max_framerate_fps = kDefaultFps;
   wants.resolution_alignment = 1;
   wants.is_active = true;
-  if (requested_resolution) {
+  if (scale_resolution_down_to) {
     wants.requested_resolution.emplace(rtc::VideoSinkWants::FrameSize(
-        requested_resolution->width, requested_resolution->height));
+        scale_resolution_down_to->width, scale_resolution_down_to->height));
   }
   wants.aggregates.emplace(rtc::VideoSinkWants::Aggregates());
   wants.aggregates->any_active_without_requested_resolution =
@@ -1203,7 +1203,8 @@ TEST_P(VideoAdapterTest, AdaptResolutionWithSinkAlignment) {
 
 
 
-TEST_P(VideoAdapterTest, UseRequestedResolutionInsteadOfOnOutputFormatRequest) {
+TEST_P(VideoAdapterTest,
+       UseScaleResolutionDownToInsteadOfOnOutputFormatRequest) {
   {
     
     OnOutputFormatRequest(640, 360, kDefaultFps);
@@ -1276,7 +1277,7 @@ TEST_P(VideoAdapterTest, UseRequestedResolutionInsteadOfOnOutputFormatRequest) {
   }
 }
 
-TEST_P(VideoAdapterTest, RequestedResolutionIsOrientationAgnostic) {
+TEST_P(VideoAdapterTest, ScaleResolutionDownToIsOrientationAgnostic) {
   
   {
     adapter_.OnSinkWants(
@@ -1301,7 +1302,7 @@ TEST_P(VideoAdapterTest, RequestedResolutionIsOrientationAgnostic) {
   }
 }
 
-TEST_P(VideoAdapterTest, RequestedResolutionMaintainsAspectRatio) {
+TEST_P(VideoAdapterTest, ScaleResolutionDownToMaintainsAspectRatio) {
   
   adapter_.OnSinkWants(
       BuildSinkWants(Resolution{.width = 720, .height = 720},
@@ -1366,7 +1367,7 @@ TEST_P(VideoAdapterWithSourceAlignmentTest, AdaptResolutionWithSinkAlignment) {
 }
 
 TEST_P(VideoAdapterWithSourceAlignmentTest,
-       RequestedResolutionMaintainsAspectRatioWithAlignment) {
+       ScaleResolutionDownToMaintainsAspectRatioWithAlignment) {
   
   adapter_.OnSinkWants(
       BuildSinkWants(Resolution{.width = 720, .height = 720},

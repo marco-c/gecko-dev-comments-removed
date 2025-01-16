@@ -83,6 +83,7 @@ struct RTC_EXPORT VideoSinkWants {
   std::vector<FrameSize> resolutions;
 
   
+  
   std::optional<FrameSize> requested_resolution;
 
   

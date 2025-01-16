@@ -246,25 +246,28 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
   
   
   
-  if (requested_resolution_.has_value()) {
+  if (scale_resolution_down_to_.has_value()) {
     
-    webrtc::Resolution requested_resolution = requested_resolution_.value();
-    if ((*out_width < *out_height) !=
-        (requested_resolution_->width < requested_resolution_->height)) {
-      requested_resolution = {.width = requested_resolution_->height,
-                              .height = requested_resolution_->width};
+    webrtc::Resolution scale_resolution_down_to =
+        scale_resolution_down_to_.value();
+    if ((*out_width < *out_height) != (scale_resolution_down_to_->width <
+                                       scale_resolution_down_to_->height)) {
+      scale_resolution_down_to = {.width = scale_resolution_down_to_->height,
+                                  .height = scale_resolution_down_to_->width};
     }
     
     if (*out_width > 0 && *out_height > 0 &&
-        (requested_resolution.width < *out_width ||
-         requested_resolution.height < *out_height)) {
+        (scale_resolution_down_to.width < *out_width ||
+         scale_resolution_down_to.height < *out_height)) {
       double scale_factor = std::min(
-          requested_resolution.width / static_cast<double>(*out_width),
-          requested_resolution.height / static_cast<double>(*out_height));
-      *out_width = roundUp(std::round(*out_width * scale_factor),
-                           resolution_alignment_, requested_resolution.width);
-      *out_height = roundUp(std::round(*out_height * scale_factor),
-                            resolution_alignment_, requested_resolution.height);
+          scale_resolution_down_to.width / static_cast<double>(*out_width),
+          scale_resolution_down_to.height / static_cast<double>(*out_height));
+      *out_width =
+          roundUp(std::round(*out_width * scale_factor), resolution_alignment_,
+                  scale_resolution_down_to.width);
+      *out_height =
+          roundUp(std::round(*out_height * scale_factor), resolution_alignment_,
+                  scale_resolution_down_to.height);
       RTC_DCHECK_EQ(0, *out_width % resolution_alignment_);
       RTC_DCHECK_EQ(0, *out_height % resolution_alignment_);
     }
@@ -370,10 +373,11 @@ void VideoAdapter::OnSinkWants(const rtc::VideoSinkWants& sink_wants) {
       source_resolution_alignment_, sink_wants.resolution_alignment);
   
   
-  requested_resolution_ = std::nullopt;
+  scale_resolution_down_to_ = std::nullopt;
   if (sink_wants.requested_resolution.has_value()) {
-    requested_resolution_ = {.width = sink_wants.requested_resolution->width,
-                             .height = sink_wants.requested_resolution->height};
+    scale_resolution_down_to_ = {
+        .width = sink_wants.requested_resolution->width,
+        .height = sink_wants.requested_resolution->height};
   }
 
   
@@ -393,6 +397,7 @@ void VideoAdapter::OnSinkWants(const rtc::VideoSinkWants& sink_wants) {
     return;
   }
 
+  
   
   
   

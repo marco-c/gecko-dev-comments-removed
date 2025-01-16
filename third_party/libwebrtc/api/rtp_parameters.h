@@ -508,12 +508,11 @@ struct RTC_EXPORT RtpEncodingParameters {
   
   
   
+  std::optional<Resolution> scale_resolution_down_to;
   
   
   
-  
-  
-  std::optional<Resolution> requested_resolution;
+  std::optional<Resolution>& requested_resolution;
 
   
   
@@ -545,10 +544,30 @@ struct RTC_EXPORT RtpEncodingParameters {
            scale_resolution_down_by == o.scale_resolution_down_by &&
            active == o.active && rid == o.rid &&
            adaptive_ptime == o.adaptive_ptime &&
-           requested_resolution == o.requested_resolution && codec == o.codec;
+           scale_resolution_down_to == o.scale_resolution_down_to &&
+           codec == o.codec;
   }
   bool operator!=(const RtpEncodingParameters& o) const {
     return !(*this == o);
+  }
+  
+  
+  void operator=(const RtpEncodingParameters& o) {
+    ssrc = o.ssrc;
+    bitrate_priority = o.bitrate_priority;
+    network_priority = o.network_priority;
+    max_bitrate_bps = o.max_bitrate_bps;
+    min_bitrate_bps = o.min_bitrate_bps;
+    max_framerate = o.max_framerate;
+    num_temporal_layers = o.num_temporal_layers;
+    scale_resolution_down_by = o.scale_resolution_down_by;
+    scalability_mode = o.scalability_mode;
+    scale_resolution_down_to = o.scale_resolution_down_to;
+    active = o.active;
+    rid = o.rid;
+    request_key_frame = o.request_key_frame;
+    adaptive_ptime = o.adaptive_ptime;
+    codec = o.codec;
   }
 };
 

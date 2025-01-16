@@ -82,7 +82,7 @@ struct VideoStream {
   
   
   
-  std::optional<Resolution> requested_resolution;
+  std::optional<Resolution> scale_resolution_down_to;
 };
 
 class VideoEncoderConfig {
@@ -166,7 +166,7 @@ class VideoEncoderConfig {
   ~VideoEncoderConfig();
   std::string ToString() const;
 
-  bool HasRequestedResolution() const;
+  bool HasScaleResolutionDownTo() const;
 
   
   VideoCodecType codec_type;
