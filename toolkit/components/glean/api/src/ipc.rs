@@ -56,7 +56,10 @@ static PAYLOAD_ACCESS_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 
 
-const PAYLOAD_ACCESS_WATERMARK: usize = 100000 - 1;
+
+
+
+const PAYLOAD_ACCESS_WATERMARK: usize = 90000 - 1;
 
 pub fn with_ipc_payload<F, R>(f: F) -> R
 where
