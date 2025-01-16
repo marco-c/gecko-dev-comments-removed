@@ -2,7 +2,7 @@
 
 
 
-use super::LangStrings;
+use super::LanguageBundle;
 use anyhow::Context;
 use fluent::{bundle::FluentBundle, FluentResource};
 use unic_langid::LanguageIdentifier;
@@ -39,7 +39,17 @@ impl LanguageInfo {
     }
 
     
-    pub fn load_strings(self) -> anyhow::Result<LangStrings> {
+    pub(super) fn load_strings(self) -> anyhow::Result<LanguageBundle> {
+        let result = self.load_strings_fallible();
+        
+        #[cfg(debug_assertions)]
+        if let Err(e) = &result {
+            panic!("bad localization: {e:#}");
+        }
+        result
+    }
+
+    fn load_strings_fallible(self) -> anyhow::Result<LanguageBundle> {
         let Self {
             identifier: lang,
             ftl_definitions: definitions,
@@ -69,6 +79,6 @@ impl LanguageInfo {
         add_ftl(&mut bundle, branding).context("failed to add branding")?;
         add_ftl(&mut bundle, definitions).context("failed to add localization")?;
 
-        Ok(LangStrings::new(bundle, rtl))
+        Ok(LanguageBundle::new(bundle, rtl))
     }
 }
