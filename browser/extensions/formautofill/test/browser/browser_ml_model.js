@@ -48,7 +48,13 @@ add_setup(async function () {
     
 
 
-    const match = context.match(/id="([^"]*)"/);
+
+
+
+
+
+
+    const match = context.match(/\s+([^\s<]+)<SEP>/);
     return [
       {
         label: match[1],
