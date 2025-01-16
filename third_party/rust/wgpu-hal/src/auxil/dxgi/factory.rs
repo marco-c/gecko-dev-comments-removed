@@ -35,7 +35,7 @@ fn should_keep_adapter(adapter: &Dxgi::IDXGIAdapter1) -> bool {
     
     
     if desc.VendorId == 5140
-        && Dxgi::DXGI_ADAPTER_FLAG(desc.Flags as i32).contains(Dxgi::DXGI_ADAPTER_FLAG_SOFTWARE)
+        && !Dxgi::DXGI_ADAPTER_FLAG(desc.Flags as i32).contains(Dxgi::DXGI_ADAPTER_FLAG_SOFTWARE)
     {
         let adapter_name = super::conv::map_adapter_name(desc.Description);
         if adapter_name.contains("Microsoft Basic Render Driver") {
@@ -141,9 +141,6 @@ pub fn create_factory(
         if let Ok(Some(_)) = lib_dxgi.debug_interface1() {
             factory_flags |= Dxgi::DXGI_CREATE_FACTORY_DEBUG;
         }
-
-        
-        super::exception::register_exception_handler();
     }
 
     let factory4 = match lib_dxgi.create_factory4(factory_flags) {
