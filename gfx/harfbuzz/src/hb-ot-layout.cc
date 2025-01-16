@@ -246,6 +246,18 @@ OT::GDEF::is_blocklisted (hb_blob_t *blob,
     
 
     case HB_CODEPOINT_ENCODE3 (1004, 59092, 14836):
+    
+    case HB_CODEPOINT_ENCODE3 (588, 5078, 14418):
+    
+    case HB_CODEPOINT_ENCODE3 (588, 5078, 14238):
+    
+    case HB_CODEPOINT_ENCODE3 (894, 17162, 33960):
+    
+    case HB_CODEPOINT_ENCODE3 (894, 17154, 34472):
+    
+    case HB_CODEPOINT_ENCODE3 (816, 7868, 17052):
+    
+    case HB_CODEPOINT_ENCODE3 (816, 7868, 17138):
       return true;
   }
   return false;

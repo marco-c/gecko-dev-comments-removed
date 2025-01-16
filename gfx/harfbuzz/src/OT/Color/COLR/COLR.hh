@@ -1003,7 +1003,7 @@ struct PaintTransform
   void paint_glyph (hb_paint_context_t *c) const
   {
     TRACE_PAINT (this);
-    (this+transform).paint_glyph (c);
+    (this+transform).paint_glyph (c); 
     c->recurse (this+src);
     c->funcs->pop_transform (c->data);
   }

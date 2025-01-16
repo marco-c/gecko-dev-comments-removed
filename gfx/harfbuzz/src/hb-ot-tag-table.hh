@@ -830,6 +830,7 @@ static const LangTag ot_languages3[] = {
   {HB_TAG('k','f','x',' '),	HB_TAG('K','U','L',' ')},	
   {HB_TAG('k','f','y',' '),	HB_TAG('K','M','N',' ')},	
   {HB_TAG('k','g','e',' '),	HB_TAG_NONE	       },	
+	
   {HB_TAG('k','h','a',' '),	HB_TAG('K','S','I',' ')},	
   {HB_TAG('k','h','b',' '),	HB_TAG('X','B','D',' ')},	
   {HB_TAG('k','h','k',' '),	HB_TAG('M','N','G',' ')},	
@@ -855,6 +856,7 @@ static const LangTag ot_languages3[] = {
   {HB_TAG('k','l','m',' '),	HB_TAG_NONE	       },	
   {HB_TAG('k','l','n',' '),	HB_TAG('K','A','L',' ')},	
   {HB_TAG('k','m','b',' '),	HB_TAG('M','B','N',' ')},	
+	
   {HB_TAG('k','m','n',' '),	HB_TAG_NONE	       },	
   {HB_TAG('k','m','o',' '),	HB_TAG_NONE	       },	
   {HB_TAG('k','m','r',' '),	HB_TAG('K','U','R',' ')},	
@@ -898,6 +900,7 @@ static const LangTag ot_languages3[] = {
   {HB_TAG('k','s','i',' '),	HB_TAG_NONE	       },	
   {HB_TAG('k','s','m',' '),	HB_TAG_NONE	       },	
   {HB_TAG('k','s','s',' '),	HB_TAG('K','I','S',' ')},	
+	
   {HB_TAG('k','s','w',' '),	HB_TAG('K','S','W',' ')},	
   {HB_TAG('k','s','w',' '),	HB_TAG('K','R','N',' ')},	
   {HB_TAG('k','t','b',' '),	HB_TAG('K','E','B',' ')},	
@@ -911,6 +914,7 @@ static const LangTag ot_languages3[] = {
   {HB_TAG('k','u','y',' '),	HB_TAG_NONE	       },	
   {HB_TAG('k','v','b',' '),	HB_TAG('M','L','Y',' ')},	
   {HB_TAG('k','v','l',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('k','v','q',' '),	HB_TAG('K','V','Q',' ')},	
   {HB_TAG('k','v','q',' '),	HB_TAG('K','R','N',' ')},	
   {HB_TAG('k','v','r',' '),	HB_TAG('M','L','Y',' ')},	
   {HB_TAG('k','v','t',' '),	HB_TAG('K','R','N',' ')},	
@@ -1147,6 +1151,7 @@ static const LangTag ot_languages3[] = {
 	
 	
 	
+	
   {HB_TAG('n','p','i',' '),	HB_TAG('N','E','P',' ')},	
   {HB_TAG('n','p','l',' '),	HB_TAG('N','A','H',' ')},	
   {HB_TAG('n','q','o',' '),	HB_TAG('N','K','O',' ')},	
@@ -1156,6 +1161,7 @@ static const LangTag ot_languages3[] = {
   {HB_TAG('n','s','u',' '),	HB_TAG('N','A','H',' ')},	
   {HB_TAG('n','t','o',' '),	HB_TAG_NONE	       },	
   {HB_TAG('n','u','e',' '),	HB_TAG('B','A','D','0')},	
+	
   {HB_TAG('n','u','u',' '),	HB_TAG('B','A','D','0')},	
   {HB_TAG('n','u','z',' '),	HB_TAG('N','A','H',' ')},	
   {HB_TAG('n','w','e',' '),	HB_TAG('B','M','L',' ')},	
@@ -1399,8 +1405,10 @@ static const LangTag ot_languages3[] = {
   {HB_TAG('s','i','z',' '),	HB_TAG('B','B','R',' ')},	
 	
   {HB_TAG('s','j','d',' '),	HB_TAG('K','S','M',' ')},	
+	
   {HB_TAG('s','j','o',' '),	HB_TAG('S','I','B',' ')},	
   {HB_TAG('s','j','s',' '),	HB_TAG('B','B','R',' ')},	
+	
   {HB_TAG('s','k','g',' '),	HB_TAG('M','L','G',' ')},	
   {HB_TAG('s','k','r',' '),	HB_TAG('S','R','K',' ')},	
   {HB_TAG('s','k','s',' '),	HB_TAG_NONE	       },	
@@ -1461,6 +1469,7 @@ static const LangTag ot_languages3[] = {
   {HB_TAG('t','a','q',' '),	HB_TAG('B','B','R',' ')},	
   {HB_TAG('t','a','s',' '),	HB_TAG('C','P','P',' ')},	
   {HB_TAG('t','a','u',' '),	HB_TAG('A','T','H',' ')},	
+	
   {HB_TAG('t','c','b',' '),	HB_TAG('A','T','H',' ')},	
   {HB_TAG('t','c','e',' '),	HB_TAG('A','T','H',' ')},	
   {HB_TAG('t','c','h',' '),	HB_TAG('C','P','P',' ')},	
@@ -1623,7 +1632,7 @@ static const LangTag ot_languages3[] = {
   {HB_TAG('y','b','a',' '),	HB_TAG_NONE	       },	
   {HB_TAG('y','b','b',' '),	HB_TAG('B','M','L',' ')},	
   {HB_TAG('y','b','d',' '),	HB_TAG('A','R','K',' ')},	
-  {HB_TAG('y','c','r',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('y','c','r',' '),	HB_TAG('C','P','P',' ')},	
   {HB_TAG('y','d','d',' '),	HB_TAG('J','I','I',' ')},	
 	
   {HB_TAG('y','i','h',' '),	HB_TAG('J','I','I',' ')},	

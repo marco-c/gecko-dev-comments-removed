@@ -886,8 +886,8 @@ struct TupleVariationData
     hb_vector_t<char> *shared_points_bytes = nullptr;
 
     
-
-    unsigned compiled_byte_size = 4;
+    unsigned compiled_byte_size = 0;
+    bool needs_padding = false;
 
     
     bool is_composite = false;
@@ -1219,11 +1219,20 @@ struct TupleVariationData
     bool compile_bytes (const hb_map_t& axes_index_map,
                         const hb_map_t& axes_old_index_tag_map,
                         bool use_shared_points,
+                        bool is_gvar = false,
                         const hb_hashmap_t<const hb_vector_t<char>*, unsigned>* shared_tuples_idx_map = nullptr)
     {
       
+      if (!tuple_vars)
+        return true;
+
+      
       if (!compile_all_point_sets ())
         return false;
+
+      
+
+      compiled_byte_size += 4;
 
       if (use_shared_points)
       {
@@ -1253,6 +1262,13 @@ struct TupleVariationData
           return false;
         compiled_byte_size += tuple.compiled_tuple_header.length + points_data_length + tuple.compiled_deltas.length;
       }
+
+      if (is_gvar && (compiled_byte_size % 2))
+      {
+        needs_padding = true;
+        compiled_byte_size += 1;
+      }
+
       return true;
     }
 
@@ -1295,7 +1311,7 @@ struct TupleVariationData
       }
 
       
-      if (is_gvar && (compiled_byte_size % 2))
+      if (is_gvar && needs_padding)
       {
         HBUINT8 pad;
         pad = 0;

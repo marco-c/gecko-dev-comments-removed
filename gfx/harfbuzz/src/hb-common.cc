@@ -625,6 +625,9 @@ hb_script_get_horizontal_direction (hb_script_t script)
     
     case HB_SCRIPT_OLD_UYGHUR:
 
+    
+    case HB_SCRIPT_GARAY:
+
       return HB_DIRECTION_RTL;
 
 
