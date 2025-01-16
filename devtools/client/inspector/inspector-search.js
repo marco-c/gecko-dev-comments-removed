@@ -147,54 +147,52 @@ InspectorSearch.prototype = {
 
 
 
-function SelectorAutocompleter(inspector, inputNode) {
-  this.inspector = inspector;
-  this.searchBox = inputNode;
-  this.panelDoc = this.searchBox.ownerDocument;
+class SelectorAutocompleter extends EventEmitter {
+  constructor(inspector, inputNode) {
+    super();
 
-  this.showSuggestions = this.showSuggestions.bind(this);
-  this._onSearchKeypress = this._onSearchKeypress.bind(this);
-  this._onSearchPopupClick = this._onSearchPopupClick.bind(this);
-  this._onMarkupMutation = this._onMarkupMutation.bind(this);
+    this.inspector = inspector;
+    this.searchBox = inputNode;
+    this.panelDoc = this.searchBox.ownerDocument;
 
-  
-  const options = {
-    listId: "searchbox-panel-listbox",
-    autoSelect: true,
-    position: "top",
-    onClick: this._onSearchPopupClick,
-  };
+    this.showSuggestions = this.showSuggestions.bind(this);
+    this._onSearchKeypress = this._onSearchKeypress.bind(this);
+    this._onSearchPopupClick = this._onSearchPopupClick.bind(this);
+    this._onMarkupMutation = this._onMarkupMutation.bind(this);
 
-  
-  this.searchPopup = new AutocompletePopup(inspector._toolbox.doc, options);
+    
+    const options = {
+      listId: "searchbox-panel-listbox",
+      autoSelect: true,
+      position: "top",
+      onClick: this._onSearchPopupClick,
+    };
 
-  this.searchBox.addEventListener("input", this.showSuggestions, true);
-  this.searchBox.addEventListener("keypress", this._onSearchKeypress, true);
-  this.inspector.on("markupmutation", this._onMarkupMutation);
+    
+    this.searchPopup = new AutocompletePopup(inspector._toolbox.doc, options);
 
-  EventEmitter.decorate(this);
-}
-
-exports.SelectorAutocompleter = SelectorAutocompleter;
-
-SelectorAutocompleter.prototype = {
-  get walker() {
-    return this.inspector.walker;
-  },
+    this.searchBox.addEventListener("input", this.showSuggestions, true);
+    this.searchBox.addEventListener("keypress", this._onSearchKeypress, true);
+    this.inspector.on("markupmutation", this._onMarkupMutation);
+  }
 
   
-  States: {
+  States = {
     CLASS: "class",
     ID: "id",
     TAG: "tag",
     ATTRIBUTE: "attribute",
-  },
+  };
 
   
-  _state: null,
+  _state = null;
 
   
-  _lastStateCheckAt: null,
+  _lastStateCheckAt = null;
+
+  get walker() {
+    return this.inspector.walker;
+  }
 
   
 
@@ -299,7 +297,7 @@ SelectorAutocompleter.prototype = {
       }
     }
     return this._state;
-  },
+  }
 
   
 
@@ -316,7 +314,7 @@ SelectorAutocompleter.prototype = {
     this.searchPopup = null;
     this.searchBox = null;
     this.panelDoc = null;
-  },
+  }
 
   
 
@@ -370,7 +368,7 @@ SelectorAutocompleter.prototype = {
     event.preventDefault();
     event.stopPropagation();
     this.emitForTests("processing-done");
-  },
+  }
 
   
 
@@ -384,7 +382,7 @@ SelectorAutocompleter.prototype = {
 
     event.preventDefault();
     event.stopPropagation();
-  },
+  }
 
   
 
@@ -393,7 +391,7 @@ SelectorAutocompleter.prototype = {
   _onMarkupMutation() {
     this._searchResults = null;
     this._lastSearched = null;
-  },
+  }
 
   
 
@@ -457,7 +455,7 @@ SelectorAutocompleter.prototype = {
     }
 
     return this.hidePopup();
-  },
+  }
 
   
 
@@ -466,7 +464,7 @@ SelectorAutocompleter.prototype = {
     const onPopupClosed = this.searchPopup.once("popup-closed");
     this.searchPopup.hidePopup();
     return onPopupClosed;
-  },
+  }
 
   
 
@@ -531,5 +529,7 @@ SelectorAutocompleter.prototype = {
     
     await this._showPopup(suggestions, state);
     this.emitForTests("processing-done", { query: originalQuery });
-  },
-};
+  }
+}
+
+exports.SelectorAutocompleter = SelectorAutocompleter;
