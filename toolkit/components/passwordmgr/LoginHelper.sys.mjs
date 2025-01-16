@@ -1337,7 +1337,7 @@ export const LoginHelper = {
    * @returns {boolean} True if any of the rules matches
    */
   isInferredNonUsernameField(element) {
-    const expr = /search|code|add/i;
+    const expr = /\b(search|code|add)\b/i;
 
     if (
       Logic.elementAttrsMatchRegex(element, expr) ||
@@ -1599,13 +1599,15 @@ export const LoginHelper = {
    * @param expirationTime Optional timestamp indicating next required re-authentication
    * @param messageText Formatted and localized string to be displayed when the OS auth dialog is used.
    * @param captionText Formatted and localized string to be displayed when the OS auth dialog is used.
+   * @param reason The reason for requesting reauthentication, used for telemetry.
    */
   async requestReauth(
     browser,
     OSReauthEnabled,
     expirationTime,
     messageText,
-    captionText
+    captionText,
+    reason
   ) {
     let isAuthorized = false;
     let telemetryEvent;
@@ -1644,13 +1646,25 @@ export const LoginHelper = {
     }
     // Use the OS auth dialog if there is no primary password
     if (!token.hasPassword && OSReauthEnabled) {
-      let isAuthorized = await this.verifyUserOSAuth(
-        OS_AUTH_FOR_PASSWORDS_PREF,
-        messageText,
-        captionText,
-        browser.ownerGlobal,
-        false
-      );
+      let result;
+      try {
+        isAuthorized = await this.verifyUserOSAuth(
+          OS_AUTH_FOR_PASSWORDS_PREF,
+          messageText,
+          captionText,
+          browser.ownerGlobal,
+          false
+        );
+        result = isAuthorized ? "success" : "fail_user_canceled";
+      } catch (ex) {
+        result = "fail_error";
+        throw ex;
+      } finally {
+        Glean.pwmgr.promptShownOsReauth.record({
+          trigger: reason,
+          result,
+        });
+      }
       let value = lazy.OSKeyStore.canReauth()
         ? "success"
         : "success_unsupported_platform";
