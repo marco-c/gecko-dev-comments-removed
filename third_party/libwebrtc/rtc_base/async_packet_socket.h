@@ -11,18 +11,24 @@
 #ifndef RTC_BASE_ASYNC_PACKET_SOCKET_H_
 #define RTC_BASE_ASYNC_PACKET_SOCKET_H_
 
+#include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "api/sequence_checker.h"
 #include "rtc_base/callback_list.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/dscp.h"
 #include "rtc_base/network/received_packet.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/socket.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
+#include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
 
 namespace rtc {
@@ -51,8 +57,6 @@ struct RTC_EXPORT PacketOptions {
 
   DiffServCodePoint dscp = DSCP_NO_CHANGE;
 
-  
-  
   
   
   
