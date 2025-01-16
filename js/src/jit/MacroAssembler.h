@@ -6163,9 +6163,9 @@ class MOZ_RAII WasmMacroAssembler : public MacroAssembler {
 
 
 
-class IonHeapMacroAssembler : public MacroAssembler {
+class OffThreadMacroAssembler : public MacroAssembler {
  public:
-  IonHeapMacroAssembler(TempAllocator& alloc, CompileRealm* realm);
+  OffThreadMacroAssembler(TempAllocator& alloc, CompileRealm* realm);
 };
 
 

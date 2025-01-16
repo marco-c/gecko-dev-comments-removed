@@ -82,6 +82,9 @@ static_assert(sizeof(AbortReasonOr<uint16_t*>) == sizeof(uintptr_t),
 class MOZ_RAII JitContext {
 #ifdef DEBUG
   
+  bool inBaselineBackend_ = false;
+
+  
   
   bool inIonBackend_ = false;
 
@@ -119,8 +122,17 @@ class MOZ_RAII JitContext {
   bool hasOOM() { return oom_; }
   void setOOM() { oom_ = true; }
 
+  bool inBaselineBackend() const { return inBaselineBackend_; }
   bool inIonBackend() const { return inIonBackend_; }
 
+  void enterBaselineBackend() {
+    MOZ_ASSERT(!inBaselineBackend_);
+    inBaselineBackend_ = true;
+  }
+  void leaveBaselineBackend() {
+    MOZ_ASSERT(inBaselineBackend_);
+    inBaselineBackend_ = false;
+  }
   void enterIonBackend() {
     MOZ_ASSERT(!inIonBackend_);
     inIonBackend_ = true;
