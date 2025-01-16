@@ -1199,6 +1199,10 @@ class ActivePS {
         "mMaybePowerCounters should have been deleted before ~ActivePS()");
     MOZ_ASSERT(!mMaybeCPUFreq,
                "mMaybeCPUFreq should have been deleted before ~ActivePS()");
+#if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
+    MOZ_ASSERT(!mMemoryCounter,
+               "mMemoryCounter should have been deleted before ~ActivePS()");
+#endif
 
 #if !defined(RELEASE_OR_BETA)
     if (ShouldInterposeIOs()) {
@@ -1287,6 +1291,14 @@ class ActivePS {
       delete sInstance->mMaybeCPUFreq;
       sInstance->mMaybeCPUFreq = nullptr;
     }
+
+#if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
+    if (sInstance->mMemoryCounter) {
+      locked_profiler_remove_sampled_counter(aLock,
+                                             sInstance->mMemoryCounter.get());
+      sInstance->mMemoryCounter = nullptr;
+    }
+#endif
 
     ProfilerBandwidthCounter* counter = CorePS::GetBandwidthCounter();
     if (counter && counter->IsRegistered()) {
@@ -1760,16 +1772,18 @@ class ActivePS {
   }
 
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-  static void SetMemoryCounter(const BaseProfilerCount* aMemoryCounter) {
+  static void SetMemoryCounter(UniquePtr<BaseProfilerCount> aMemoryCounter,
+                               PSLockRef aLock) {
     MOZ_ASSERT(sInstance);
 
-    sInstance->mMemoryCounter = aMemoryCounter;
+    sInstance->mMemoryCounter = std::move(aMemoryCounter);
   }
 
-  static bool IsMemoryCounter(const BaseProfilerCount* aMemoryCounter) {
+  static bool IsMemoryCounter(const BaseProfilerCount* aMemoryCounter,
+                              PSLockRef aLock) {
     MOZ_ASSERT(sInstance);
 
-    return sInstance->mMemoryCounter == aMemoryCounter;
+    return sInstance->mMemoryCounter.get() == aMemoryCounter;
   }
 #endif
 
@@ -1872,7 +1886,7 @@ class ActivePS {
   Vector<ExitProfile> mExitProfiles;
 
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-  Atomic<const BaseProfilerCount*> mMemoryCounter;
+  UniquePtr<BaseProfilerCount> mMemoryCounter;
 #endif
 };
 
@@ -4656,7 +4670,7 @@ void SamplerThread::Run() {
             buffer.AddEntry(
                 ProfileBufferEntry::Time(counterSampleStartDeltaMs));
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-            if (ActivePS::IsMemoryCounter(counter)) {
+            if (ActivePS::IsMemoryCounter(counter, lock)) {
               
               
               
@@ -6104,19 +6118,6 @@ void profiler_init(void* aStackTop) {
   
   profiler_mark_thread_awake();
 
-#if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-  if (ProfilerFeature::ShouldInstallMemoryHooks(features)) {
-    
-    
-    ActivePS::SetMemoryCounter(mozilla::profiler::install_memory_counter());
-  } else {
-    
-    
-    
-    mozilla::profiler::unregister_memory_counter();
-  }
-#endif
-
   invoke_profiler_state_change_callbacks(ProfilingState::Started);
 
   
@@ -6675,6 +6676,12 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
 #endif
 
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
+  if (ActivePS::FeatureMemory(aLock)) {
+    auto counter = mozilla::profiler::create_memory_counter();
+    locked_profiler_add_sampled_counter(aLock, counter.get());
+    ActivePS::SetMemoryCounter(std::move(counter), aLock);
+  }
+
   if (ActivePS::FeatureNativeAllocations(aLock)) {
     if (isMainThreadBeingProfiled) {
       mozilla::profiler::enable_native_allocations();
@@ -6732,19 +6739,6 @@ RefPtr<GenericPromise> profiler_start(PowerOfTwo32 aCapacity, double aInterval,
   }
 
   PollJSSamplingForCurrentThread();
-
-#if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-  if (ProfilerFeature::ShouldInstallMemoryHooks(aFeatures)) {
-    
-    
-    ActivePS::SetMemoryCounter(mozilla::profiler::install_memory_counter());
-  } else {
-    
-    
-    
-    mozilla::profiler::unregister_memory_counter();
-  }
-#endif
 
   invoke_profiler_state_change_callbacks(ProfilingState::Started);
 
