@@ -943,7 +943,6 @@ add_task(
     
     await new Promise(r => setTimeout(r, 3000));
 
-    Services.fog.initializeFOG();
     Services.fog.testResetFOG();
     
     Services.prefs.setBoolPref("network.dns.disableIPv6", true);
