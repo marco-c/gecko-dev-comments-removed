@@ -49,6 +49,23 @@ class RTC_EXPORT Clock {
   }
 
   
+  
+  static Timestamp NtpToUtc(NtpTime ntp_time) {
+    if (!ntp_time.Valid()) {
+      return Timestamp::MinusInfinity();
+    }
+    
+    int64_t time = ntp_time.seconds() - kNtpJan1970;
+    
+    time = time * 1'000'000;
+    
+    int64_t time_fraction =
+        DivideRoundToNearest(int64_t{ntp_time.fractions()} * 1'000'000,
+                             NtpTime::kFractionsPerSecond);
+    return Timestamp::Micros(time + time_fraction);
+  }
+
+  
   static Clock* GetRealTimeClockRaw();
 };
 

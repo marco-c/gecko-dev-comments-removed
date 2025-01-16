@@ -634,9 +634,8 @@ void RTCPReceiver::HandleReportBlock(const ReportBlock& report_block,
   NtpTime now_ntp = env_.clock().ConvertTimestampToNtpTime(now);
   
   
-  report_block_data->SetReportBlock(
-      remote_ssrc, report_block,
-      Timestamp::Millis(now_ntp.ToMs() - rtc::kNtpJan1970Millisecs), now);
+  report_block_data->SetReportBlock(remote_ssrc, report_block,
+                                    Clock::NtpToUtc(now_ntp), now);
 
   uint32_t send_time_ntp = report_block.last_sr();
   
