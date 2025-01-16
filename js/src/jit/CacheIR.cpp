@@ -6455,7 +6455,8 @@ ObjOperandId InlinableNativeIRGenerator::emitNativeCalleeGuard(
   
   if (isTargetBoundFunction()) {
     MOZ_ASSERT(!isCalleeBoundFunction(), "unexpected nested bound functions");
-    MOZ_ASSERT(flags_.getArgFormat() == CallFlags::FunCall,
+    MOZ_ASSERT(flags_.getArgFormat() == CallFlags::FunCall ||
+                   flags_.getArgFormat() == CallFlags::FunApplyNullUndefined,
                "unsupported arg-format for bound target");
 
     
@@ -6617,7 +6618,10 @@ ValOperandId InlinableNativeIRGenerator::loadArgument(ObjOperandId calleeId,
                                                       ArgumentKind kind) {
   MOZ_ASSERT(kind >= ArgumentKind::Arg0);
   MOZ_ASSERT(flags_.getArgFormat() == CallFlags::Standard ||
-             flags_.getArgFormat() == CallFlags::FunCall);
+             flags_.getArgFormat() == CallFlags::FunCall ||
+             flags_.getArgFormat() == CallFlags::FunApplyNullUndefined);
+  MOZ_ASSERT_IF(flags_.getArgFormat() == CallFlags::FunApplyNullUndefined,
+                isTargetBoundFunction() && hasBoundArguments());
 
   
   bool thisFromBoundArgs = flags_.getArgFormat() == CallFlags::FunCall &&
@@ -13528,6 +13532,92 @@ AttachDecision CallIRGenerator::tryAttachFunCallBound(
   return nativeGen.tryAttachStub();
 }
 
+AttachDecision CallIRGenerator::tryAttachFunApplyBound(
+    Handle<JSFunction*> callee) {
+  MOZ_ASSERT(callee->isNativeWithoutJitEntry());
+
+  if (callee->native() != fun_apply) {
+    return AttachDecision::NoAction;
+  }
+
+  if (argc_ > 2) {
+    return AttachDecision::NoAction;
+  }
+
+  if (!thisval_.isObject() || !thisval_.toObject().is<BoundFunctionObject>()) {
+    return AttachDecision::NoAction;
+  }
+  Rooted<BoundFunctionObject*> bound(
+      cx_, &thisval_.toObject().as<BoundFunctionObject>());
+
+  
+  Rooted<JSObject*> boundTarget(cx_, bound->getTarget());
+  if (!boundTarget->is<JSFunction>()) {
+    return AttachDecision::NoAction;
+  }
+  auto target = boundTarget.as<JSFunction>();
+
+  bool isScripted = target->hasJitEntry();
+  MOZ_ASSERT_IF(!isScripted, target->isNativeWithoutJitEntry());
+
+  
+  if (isScripted) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  
+  static constexpr size_t MaxBoundArgs = 10;
+  size_t numBoundArgs = bound->numBoundArgs();
+  if (numBoundArgs > MaxBoundArgs) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  
+  CallFlags::ArgFormat format;
+  if (argc_ < 2) {
+    format = CallFlags::FunCall;
+  } else if (args_[1].isNullOrUndefined()) {
+    format = CallFlags::FunApplyNullUndefined;
+  } else {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (mode_ != ICState::Mode::Specialized) {
+    return AttachDecision::NoAction;
+  }
+
+  CallFlags targetFlags(format);
+  if (cx_->realm() == target->realm()) {
+    targetFlags.setIsSameRealm();
+  }
+
+  HandleValue newTarget = NullHandleValue;
+
+  
+  Rooted<Value> thisValue(cx_, bound->getBoundThis());
+
+  
+  JS::RootedVector<Value> args(cx_);
+  if (numBoundArgs != 0) {
+    if (!args.reserve(numBoundArgs)) {
+      cx_->recoverFromOutOfMemory();
+      return AttachDecision::NoAction;
+    }
+
+    for (size_t i = 0; i < numBoundArgs; i++) {
+      args.infallibleAppend(bound->getBoundArg(i));
+    }
+  }
+
+  
+  InlinableNativeIRGenerator nativeGen(*this, target, newTarget, thisValue,
+                                       args, argc_, targetFlags);
+  return nativeGen.tryAttachStub();
+}
+
 AttachDecision CallIRGenerator::tryAttachStub() {
   AutoAssertNoPendingException aanpe(cx_);
 
@@ -13587,6 +13677,7 @@ AttachDecision CallIRGenerator::tryAttachStub() {
     TRY_ATTACH(tryAttachFunCall(calleeFunc));
     TRY_ATTACH(tryAttachFunApply(calleeFunc));
     TRY_ATTACH(tryAttachFunCallBound(calleeFunc));
+    TRY_ATTACH(tryAttachFunApplyBound(calleeFunc));
   }
 
   return tryAttachCallNative(calleeFunc);
