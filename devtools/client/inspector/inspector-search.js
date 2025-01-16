@@ -391,16 +391,16 @@ class SelectorAutocompleter extends EventEmitter {
     const items = [];
 
     for (let [value, , state] of list) {
-      if (query.match(/[\s>+]$/)) {
+      if (query.match(/[\s>+~]$/)) {
         
         value = query + value;
-      } else if (query.match(/[\s>+][\.#a-zA-Z][^\s>+\.#\[]*$/)) {
+      } else if (query.match(/[\s>+~][\.#a-zA-Z][^\s>+~\.#\[]*$/)) {
         
-        const lastPart = query.match(/[\s>+][\.#a-zA-Z][^\s>+\.#\[]*$/)[0];
+        const lastPart = query.match(/[\s>+~][\.#a-zA-Z][^\s>+~\.#\[]*$/)[0];
         value = query.slice(0, -1 * lastPart.length + 1) + value;
-      } else if (query.match(/[a-zA-Z][#\.][^#\.\s+>]*$/)) {
+      } else if (query.match(/[a-zA-Z][#\.][^#\.\s+>~]*$/)) {
         
-        const lastPart = query.match(/[a-zA-Z][#\.][^#\.\s+>]*$/)[0];
+        const lastPart = query.match(/[a-zA-Z][#\.][^#\.\s+>~]*$/)[0];
         value = query.slice(0, -1 * lastPart.length + 1) + value;
       } else if (query.match(/[a-zA-Z]*\[[^\]]*\][^\]]*/)) {
         
@@ -479,7 +479,8 @@ class SelectorAutocompleter extends EventEmitter {
       
       
       
-      const matches = query.match(/[\s>+]?(?<tag>[a-zA-Z0-9_-]*)$/);
+      
+      const matches = query.match(/[\s>+~]?(?<tag>[a-zA-Z0-9_-]*)$/);
       firstPart = matches.groups.tag;
       query = query.slice(0, query.length - firstPart.length);
     } else if (state === this.States.CLASS) {
