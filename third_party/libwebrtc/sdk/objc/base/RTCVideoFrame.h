@@ -49,29 +49,6 @@ RTC_OBJC_EXPORT
 
 
 
-
-- (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer
-                           rotation:(RTCVideoRotation)rotation
-                        timeStampNs:(int64_t)timeStampNs
-    DEPRECATED_MSG_ATTRIBUTE("use initWithBuffer instead");
-
-
-
-
-
-- (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer
-                        scaledWidth:(int)scaledWidth
-                       scaledHeight:(int)scaledHeight
-                          cropWidth:(int)cropWidth
-                         cropHeight:(int)cropHeight
-                              cropX:(int)cropX
-                              cropY:(int)cropY
-                           rotation:(RTCVideoRotation)rotation
-                        timeStampNs:(int64_t)timeStampNs
-    DEPRECATED_MSG_ATTRIBUTE("use initWithBuffer instead");
-
-
-
 - (instancetype)initWithBuffer:(id<RTC_OBJC_TYPE(RTCVideoFrameBuffer)>)frameBuffer
                       rotation:(RTCVideoRotation)rotation
                    timeStampNs:(int64_t)timeStampNs;
