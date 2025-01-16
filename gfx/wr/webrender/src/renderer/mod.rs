@@ -1444,7 +1444,7 @@ impl Renderer {
         &mut self,
         doc_id: DocumentId,
         active_doc: &mut RenderedDocument,
-        device_size: Option<DeviceIntSize>,
+        mut device_size: Option<DeviceIntSize>,
         buffer_age: usize,
     ) -> Result<RenderResults, Vec<RendererError>> {
         profile_scope!("render");
@@ -1511,6 +1511,12 @@ impl Renderer {
 
             frame_id
         };
+
+        if !active_doc.frame.present {
+            
+            
+            device_size = None;
+        }
 
         if let Some(device_size) = device_size {
             
