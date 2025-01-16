@@ -7,6 +7,13 @@ const { SearchTestUtils } = ChromeUtils.importESModule(
 const { SearchUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/SearchUtils.sys.mjs"
 );
+
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.scotchBonnet.enableOverride", true]],
+  });
+});
+
 add_task(async function test_restore_functionality() {
   
   for (let engine of await Services.search.getAppProvidedEngines()) {
