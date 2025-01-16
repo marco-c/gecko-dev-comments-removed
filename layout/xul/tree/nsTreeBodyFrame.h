@@ -40,13 +40,12 @@ class ScrollbarActivity;
 
 
 struct nsTreeImageCacheEntry {
-  nsTreeImageCacheEntry() = default;
-  nsTreeImageCacheEntry(imgIRequest* aRequest,
-                        imgINotificationObserver* aListener)
-      : request(aRequest), listener(aListener) {}
+  nsTreeImageCacheEntry();
+  nsTreeImageCacheEntry(imgIRequest* aRequest, nsTreeImageListener* aListener);
+  ~nsTreeImageCacheEntry();
 
   nsCOMPtr<imgIRequest> request;
-  nsCOMPtr<imgINotificationObserver> listener;
+  RefPtr<nsTreeImageListener> listener;
 };
 
 
@@ -391,16 +390,6 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
     }
   }
 
- public:
-  
-
-
-
-
-
-
-  void RemoveTreeImageListener(nsTreeImageListener* aListener);
-
  protected:
   
   
@@ -533,8 +522,7 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
   
   
   
-  
-  nsTHashMap<nsStringHashKey, nsTreeImageCacheEntry> mImageCache;
+  nsTHashMap<nsURIHashKey, nsTreeImageCacheEntry> mImageCache;
 
   
   mozilla::AtomArray mScratchArray;
@@ -587,11 +575,6 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
   
   
   bool mCheckingOverflow;
-
-  
-  
-  nsTHashSet<nsTreeImageListener*> mCreatedListeners;
-
 };  
 
 #endif
