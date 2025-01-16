@@ -124,7 +124,7 @@ class WebGLParent : public PWebGLParent, public SupportsWeakPtr {
                                          layers::RemoteTextureTxnType aTxnType,
                                          layers::RemoteTextureTxnId aTxnId);
 
-  UniquePtr<HostWebGLContext> mHost;
+  std::unique_ptr<HostWebGLContext> mHost;
 
   
   RefPtr<Runnable> mRunCommandsRunnable;
