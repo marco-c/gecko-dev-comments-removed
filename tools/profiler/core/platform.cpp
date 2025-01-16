@@ -1594,11 +1594,11 @@ class ActivePS {
   
   
   
-  class ProcessCPUCounter final : public BaseProfilerCount {
+  class ProcessCPUCounter final : public AtomicProfilerCount {
    public:
     explicit ProcessCPUCounter(PSLockRef aLock)
-        : BaseProfilerCount("processCPU", &mCounter, nullptr, "CPU",
-                            "Process CPU utilization") {
+        : AtomicProfilerCount("processCPU", &mCounter, nullptr, "CPU",
+                              "Process CPU utilization") {
       
       locked_profiler_add_sampled_counter(aLock, this);
       
