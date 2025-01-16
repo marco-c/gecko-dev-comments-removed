@@ -2795,8 +2795,8 @@ Result<CaretPoint, nsresult> HTMLEditor::HandleInsertParagraphInMailCiteElement(
   
   
   
-  if (HTMLEditUtils::IsInlineContent(
-          aMailCiteElement, BlockInlineCheck::UseComputedDisplayStyle)) {
+  if (HTMLEditUtils::IsInlineContent(aMailCiteElement,
+                                     BlockInlineCheck::UseHTMLDefaultStyle)) {
     nsresult rvOfInsertPaddingBRElement = [&]() MOZ_CAN_RUN_SCRIPT {
       const auto pointToCreateNewBRElement =
           insertBRElementResult.AtLineBreak<EditorDOMPoint>();
@@ -2806,7 +2806,7 @@ Result<CaretPoint, nsresult> HTMLEditor::HandleInsertParagraphInMailCiteElement(
       const WSScanResult backwardScanFromPointToCreateNewBRElementResult =
           WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
               &aEditingHost, pointToCreateNewBRElement,
-              BlockInlineCheck::UseComputedDisplayStyle);
+              BlockInlineCheck::UseHTMLDefaultStyle);
       if (MOZ_UNLIKELY(
               backwardScanFromPointToCreateNewBRElementResult.Failed())) {
         NS_WARNING(
@@ -2824,7 +2824,7 @@ Result<CaretPoint, nsresult> HTMLEditor::HandleInsertParagraphInMailCiteElement(
           WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
               &aEditingHost,
               EditorRawDOMPoint::After(pointToCreateNewBRElement),
-              BlockInlineCheck::UseComputedDisplayStyle);
+              BlockInlineCheck::UseHTMLDefaultStyle);
       if (MOZ_UNLIKELY(forwardScanFromPointAfterNewBRElementResult.Failed())) {
         NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
         return NS_ERROR_FAILURE;
@@ -11178,9 +11178,28 @@ HTMLEditor::InsertPaddingBRElementIfNeeded(
     const Element& aEditingHost) {
   MOZ_ASSERT(aPoint.IsInContentNode());
 
-  EditorDOMPoint pointToInsertPaddingBR =
-      HTMLEditUtils::LineRequiresPaddingLineBreakToBeVisible(aPoint,
-                                                             aEditingHost);
+  auto pointToInsertPaddingBR = [&]() MOZ_NEVER_INLINE_DEBUG -> EditorDOMPoint {
+    
+    
+    
+    
+    
+    if (IsPlaintextMailComposer()) {
+      const WSScanResult nextVisibleThing =
+          WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+              &aEditingHost, aPoint,
+              BlockInlineCheck::UseComputedDisplayOutsideStyle);
+      if (nextVisibleThing.ReachedBlockBoundary() &&
+          HTMLEditUtils::IsMailCite(*nextVisibleThing.ElementPtr()) &&
+          HTMLEditUtils::IsInlineContent(
+              *nextVisibleThing.ElementPtr(),
+              BlockInlineCheck::UseHTMLDefaultStyle)) {
+        return EditorDOMPoint::AtEndOf(*nextVisibleThing.ElementPtr());
+      }
+    }
+    return HTMLEditUtils::LineRequiresPaddingLineBreakToBeVisible(aPoint,
+                                                                  aEditingHost);
+  }();
   if (!pointToInsertPaddingBR.IsSet()) {
     return CreateLineBreakResult::NotHandled();
   }

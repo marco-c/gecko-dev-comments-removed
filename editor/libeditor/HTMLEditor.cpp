@@ -4518,6 +4518,23 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
     const Element& aEditingHost) {
   MOZ_ASSERT(aNextOrAfterModifiedPoint.IsInContentNode());
 
+  
+  
+  
+  
+  if (IsPlaintextMailComposer()) {
+    const Element* const blockElement =
+        HTMLEditUtils::GetInclusiveAncestorElement(
+            *aNextOrAfterModifiedPoint.ContainerAs<nsIContent>(),
+            HTMLEditUtils::ClosestEditableBlockElement,
+            BlockInlineCheck::UseComputedDisplayStyle);
+    if (blockElement && HTMLEditUtils::IsMailCite(*blockElement) &&
+        HTMLEditUtils::IsInlineContent(*blockElement,
+                                       BlockInlineCheck::UseHTMLDefaultStyle)) {
+      return NS_OK;
+    }
+  }
+
   const bool isWhiteSpacePreformatted = EditorUtils::IsWhiteSpacePreformatted(
       *aNextOrAfterModifiedPoint.ContainerAs<nsIContent>());
   const DebugOnly<bool> isNewLinePreformatted =
