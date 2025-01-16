@@ -334,7 +334,8 @@ class AnyRef {
     debugAssertCanonicalInt32(value_);
 #endif
     
-    uint32_t truncatedValue = *reinterpret_cast<const uint32_t*>(&value_);
+    uint32_t truncatedValue;
+    memcpy(&truncatedValue, &value_, sizeof(uint32_t));
     
     
     uint32_t shiftedValue = value_ >> 1;
@@ -342,7 +343,7 @@ class AnyRef {
       shiftedValue |= (1 << 31);
     }
     
-    return *reinterpret_cast<int32_t*>(&shiftedValue);
+    return mozilla::BitwiseCast<int32_t>(shiftedValue);
   }
 
   
