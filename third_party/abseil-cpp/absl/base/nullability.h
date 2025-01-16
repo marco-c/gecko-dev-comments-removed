@@ -161,6 +161,43 @@
 #include "absl/base/config.h"
 #include "absl/base/internal/nullability_impl.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define ABSL_POINTERS_DEFAULT_NONNULL
+
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 
@@ -196,6 +233,7 @@ using Nonnull = nullability_internal::NonnullImpl<T>;
 
 template <typename T>
 using Nullable = nullability_internal::NullableImpl<T>;
+
 
 
 

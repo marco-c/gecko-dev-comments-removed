@@ -13,25 +13,28 @@
 
 
 #include "absl/time/time.h"
-
-#include <cstdint>
-#include <ios>
-
 #include "absl/time/civil_time.h"
 
 #if defined(_MSC_VER)
 #include <winsock2.h>  
 #endif
 
-#include <chrono>  
+#include "absl/base/config.h"
 
-#ifdef __cpp_impl_three_way_comparison
+
+#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
+#include <version>
+#endif
+
+#include <chrono>  
+#ifdef __cpp_lib_three_way_comparison
 #include <compare>
 #endif  
-
+#include <cstdint>
 #include <cstring>
 #include <ctime>
 #include <iomanip>
+#include <ios>
 #include <limits>
 #include <string>
 
@@ -213,7 +216,7 @@ TEST(Time, RelationalOperators) {
   static_assert(t1 >= t1, "");
   static_assert(t3 >= t1, "");
 
-#ifdef __cpp_impl_three_way_comparison
+#ifdef ABSL_INTERNAL_TIME_HAS_THREE_WAY_COMPARISON
 
   static_assert((t1 <=> t1) == std::strong_ordering::equal, "");
   static_assert((t2 <=> t2) == std::strong_ordering::equal, "");
@@ -239,7 +242,7 @@ TEST(Time, Infinity) {
   static_assert(ipast < ifuture, "");
   static_assert(ifuture > ipast, "");
 
-#ifdef __cpp_impl_three_way_comparison
+#ifdef ABSL_INTERNAL_TIME_HAS_THREE_WAY_COMPARISON
 
   static_assert((ifuture <=> ifuture) == std::strong_ordering::equal, "");
   static_assert((ipast <=> ipast) == std::strong_ordering::equal, "");
@@ -263,7 +266,7 @@ TEST(Time, Infinity) {
   static_assert(t < ifuture, "");
   static_assert(t > ipast, "");
 
-#ifdef __cpp_impl_three_way_comparison
+#ifdef ABSL_INTERNAL_TIME_HAS_THREE_WAY_COMPARISON
 
   static_assert((t <=> ifuture) == std::strong_ordering::less, "");
   static_assert((t <=> ipast) == std::strong_ordering::greater, "");

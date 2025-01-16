@@ -836,10 +836,27 @@
 
 
 
-#if ABSL_HAVE_CPP_ATTRIBUTE(gsl::Pointer)
-#define ABSL_INTERNAL_ATTRIBUTE_VIEW [[gsl::Pointer]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(gsl::Pointer) && \
+    (!defined(__clang_major__) || __clang_major__ >= 13)
+#define ABSL_ATTRIBUTE_VIEW [[gsl::Pointer]]
 #else
-#define ABSL_INTERNAL_ATTRIBUTE_VIEW
+#define ABSL_ATTRIBUTE_VIEW
 #endif
 
 
@@ -849,10 +866,28 @@
 
 
 
-#if ABSL_HAVE_CPP_ATTRIBUTE(gsl::Owner)
-#define ABSL_INTERNAL_ATTRIBUTE_OWNER [[gsl::Owner]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(gsl::Owner) && \
+    (!defined(__clang_major__) || __clang_major__ >= 13)
+#define ABSL_ATTRIBUTE_OWNER [[gsl::Owner]]
 #else
-#define ABSL_INTERNAL_ATTRIBUTE_OWNER
+#define ABSL_ATTRIBUTE_OWNER
 #endif
 
 

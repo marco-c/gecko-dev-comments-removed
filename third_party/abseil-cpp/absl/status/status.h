@@ -653,7 +653,7 @@ class ABSL_ATTRIBUTE_TRIVIAL_ABI Status final {
 
   
   
-  static uintptr_t PointerToRep(status_internal::StatusRep* r);
+  static uintptr_t PointerToRep(absl::Nonnull<status_internal::StatusRep*> r);
   static absl::Nonnull<const status_internal::StatusRep*> RepToPointer(
       uintptr_t r);
 

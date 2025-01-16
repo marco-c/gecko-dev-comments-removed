@@ -34,6 +34,7 @@
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/optimization.h"
+#include "absl/base/options.h"
 #include "absl/base/port.h"
 
 
@@ -120,12 +121,31 @@ ABSL_NAMESPACE_END
 
 
 
-#if ABSL_OPTION_HARDENED == 1 && defined(NDEBUG)
+#if (ABSL_OPTION_HARDENED == 1 || ABSL_OPTION_HARDENED == 2) && defined(NDEBUG)
 #define ABSL_HARDENING_ASSERT(expr)                 \
   (ABSL_PREDICT_TRUE((expr)) ? static_cast<void>(0) \
                              : [] { ABSL_INTERNAL_HARDENING_ABORT(); }())
 #else
 #define ABSL_HARDENING_ASSERT(expr) ABSL_ASSERT(expr)
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+#if ABSL_OPTION_HARDENED == 1 && defined(NDEBUG)
+#define ABSL_HARDENING_ASSERT_SLOW(expr)            \
+  (ABSL_PREDICT_TRUE((expr)) ? static_cast<void>(0) \
+                             : [] { ABSL_INTERNAL_HARDENING_ABORT(); }())
+#else
+#define ABSL_HARDENING_ASSERT_SLOW(expr) ABSL_ASSERT(expr)
 #endif
 
 #ifdef ABSL_HAVE_EXCEPTIONS

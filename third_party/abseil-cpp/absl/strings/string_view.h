@@ -168,7 +168,7 @@ ABSL_NAMESPACE_BEGIN
 
 
 
-class ABSL_INTERNAL_ATTRIBUTE_VIEW string_view {
+class ABSL_ATTRIBUTE_VIEW string_view {
  public:
   using traits_type = std::char_traits<char>;
   using value_type = char;

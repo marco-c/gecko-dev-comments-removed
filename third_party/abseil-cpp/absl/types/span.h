@@ -151,7 +151,7 @@ ABSL_NAMESPACE_BEGIN
 
 
 template <typename T>
-class ABSL_INTERNAL_ATTRIBUTE_VIEW Span {
+class ABSL_ATTRIBUTE_VIEW Span {
  private:
   
   

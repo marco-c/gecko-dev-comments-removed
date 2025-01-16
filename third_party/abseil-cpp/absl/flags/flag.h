@@ -293,7 +293,6 @@ ABSL_NAMESPACE_END
 
 
 
-
 #define ABSL_RETIRED_FLAG(type, name, default_value, explanation)      \
   static absl::flags_internal::RetiredFlag<type> RETIRED_FLAGS_##name; \
   ABSL_ATTRIBUTE_UNUSED static const auto RETIRED_FLAGS_REG_##name =   \

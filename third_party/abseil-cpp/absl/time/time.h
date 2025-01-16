@@ -74,13 +74,19 @@
 
 struct timeval;
 #endif
-#include <chrono>  
 
-#ifdef __cpp_impl_three_way_comparison
+#include "absl/base/config.h"
+
+
+#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
+#include <version>
+#endif
+
+#include <chrono>  
+#include <cmath>
+#ifdef __cpp_lib_three_way_comparison
 #include <compare>
 #endif  
-
-#include <cmath>
 #include <cstdint>
 #include <ctime>
 #include <limits>
@@ -91,11 +97,15 @@ struct timeval;
 #include <utility>
 
 #include "absl/base/attributes.h"
-#include "absl/base/config.h"
 #include "absl/base/macros.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/civil_time.h"
 #include "absl/time/internal/cctz/include/cctz/time_zone.h"
+
+#if defined(__cpp_impl_three_way_comparison) && \
+    defined(__cpp_lib_three_way_comparison)
+#define ABSL_INTERNAL_TIME_HAS_THREE_WAY_COMPARISON 1
+#endif
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -313,7 +323,7 @@ class Duration {
 
 
 
-#ifdef __cpp_impl_three_way_comparison
+#ifdef ABSL_INTERNAL_TIME_HAS_THREE_WAY_COMPARISON
 
 ABSL_ATTRIBUTE_CONST_FUNCTION constexpr std::strong_ordering operator<=>(
     Duration lhs, Duration rhs);
@@ -853,7 +863,7 @@ class Time {
   friend constexpr Time time_internal::FromUnixDuration(Duration d);
   friend constexpr Duration time_internal::ToUnixDuration(Time t);
 
-#ifdef __cpp_impl_three_way_comparison
+#ifdef ABSL_INTERNAL_TIME_HAS_THREE_WAY_COMPARISON
   friend constexpr std::strong_ordering operator<=>(Time lhs, Time rhs);
 #endif  
 
@@ -868,7 +878,7 @@ class Time {
 };
 
 
-#ifdef __cpp_impl_three_way_comparison
+#ifdef ABSL_INTERNAL_TIME_HAS_THREE_WAY_COMPARISON
 
 ABSL_ATTRIBUTE_CONST_FUNCTION constexpr std::strong_ordering operator<=>(
     Time lhs, Time rhs) {
@@ -1752,8 +1762,7 @@ ABSL_ATTRIBUTE_CONST_FUNCTION constexpr bool operator<(Duration lhs,
              : time_internal::GetRepLo(lhs) < time_internal::GetRepLo(rhs);
 }
 
-
-#ifdef __cpp_impl_three_way_comparison
+#ifdef ABSL_INTERNAL_TIME_HAS_THREE_WAY_COMPARISON
 
 ABSL_ATTRIBUTE_CONST_FUNCTION constexpr std::strong_ordering operator<=>(
     Duration lhs, Duration rhs) {
