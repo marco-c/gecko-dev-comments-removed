@@ -122,9 +122,6 @@ pub enum GenerateFrame {
         
         
         id: u64,
-        
-        
-        present: bool,
     },
     
     No,
@@ -140,18 +137,9 @@ impl GenerateFrame {
     }
 
     
-    
-    pub fn present(&self) -> bool {
-        match self {
-            GenerateFrame::Yes { present, .. } => *present,
-            GenerateFrame::No => false,
-        }
-    }
-
-    
     pub fn id(&self) -> Option<u64> {
         match self {
-            GenerateFrame::Yes { id, .. } => Some(*id),
+            GenerateFrame::Yes { id } => Some(*id),
             GenerateFrame::No => None,
         }
     }
@@ -375,8 +363,8 @@ impl Transaction {
     
     
     
-    pub fn generate_frame(&mut self, id: u64, present: bool, reasons: RenderReasons) {
-        self.generate_frame = GenerateFrame::Yes{ id, present };
+    pub fn generate_frame(&mut self, id: u64, reasons: RenderReasons) {
+        self.generate_frame = GenerateFrame::Yes{ id };
         self.render_reasons |= reasons;
     }
 

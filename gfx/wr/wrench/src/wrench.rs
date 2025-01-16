@@ -21,19 +21,6 @@ use webrender::api::units::*;
 use webrender::{DebugFlags, RenderResults, ShaderPrecacheFlags, LayerCompositor};
 use crate::{WindowWrapper, NotifierEvent};
 
-#[derive(Clone)]
-pub struct DisplayList {
-    pub pipeline: PipelineId,
-    pub payload: BuiltDisplayList,
-    
-    
-    
-    
-    pub present: bool,
-    
-    pub send_transaction: bool,
-}
-
 
 
 
@@ -564,36 +551,24 @@ impl Wrench {
 
     pub fn send_lists(
         &mut self,
-        frame_number: &mut u32,
-        display_lists: Vec<DisplayList>,
+        frame_number: u32,
+        display_lists: Vec<(PipelineId, BuiltDisplayList)>,
         scroll_offsets: &HashMap<ExternalScrollId, Vec<SampledScrollOffset>>,
     ) {
         let mut txn = Transaction::new();
-        let mut present = false;
         for display_list in display_lists {
-            present |= display_list.present;
-
             txn.set_display_list(
-                Epoch(*frame_number),
-                (display_list.pipeline, display_list.payload),
+                Epoch(frame_number),
+                display_list,
             );
-
-            if display_list.send_transaction {
-                for (id, offsets) in scroll_offsets {
-                    txn.set_scroll_offsets(*id, offsets.clone());
-                }
-
-                txn.generate_frame(0, present, RenderReasons::TESTING);
-                self.api.send_transaction(self.document_id, txn);
-                txn = Transaction::new();
-
-                present = false;
-                *frame_number += 1;
-            }
         }
 
-        
-        assert!(txn.is_empty());
+        for (id, offsets) in scroll_offsets {
+            txn.set_scroll_offsets(*id, offsets.clone());
+        }
+
+        txn.generate_frame(0, RenderReasons::TESTING);
+        self.api.send_transaction(self.document_id, txn);
     }
 
     pub fn get_frame_profiles(
@@ -613,7 +588,7 @@ impl Wrench {
     pub fn refresh(&mut self) {
         self.begin_frame();
         let mut txn = Transaction::new();
-        txn.generate_frame(0, true, RenderReasons::TESTING);
+        txn.generate_frame(0, RenderReasons::TESTING);
         self.api.send_transaction(self.document_id, txn);
     }
 
