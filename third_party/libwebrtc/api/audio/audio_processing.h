@@ -734,11 +734,11 @@ class RTC_EXPORT AudioProcessing : public RefCountInterface {
   static int GetFrameSize(int sample_rate_hz) { return sample_rate_hz / 100; }
 };
 
-class AudioProcessingFactory {
+class AudioProcessingBuilderInterface {
  public:
-  virtual ~AudioProcessingFactory() = default;
+  virtual ~AudioProcessingBuilderInterface() = default;
 
-  virtual absl::Nullable<scoped_refptr<AudioProcessing>> Create(
+  virtual absl::Nullable<scoped_refptr<AudioProcessing>> Build(
       const Environment& env) = 0;
 };
 
@@ -747,7 +747,8 @@ class AudioProcessingFactory {
 
 
 
-absl::Nonnull<std::unique_ptr<AudioProcessingFactory>> CustomAudioProcessing(
+absl::Nonnull<std::unique_ptr<AudioProcessingBuilderInterface>>
+CustomAudioProcessing(
     absl::Nonnull<scoped_refptr<AudioProcessing>> audio_processing);
 
 

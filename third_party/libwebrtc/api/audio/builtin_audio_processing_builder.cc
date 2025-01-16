@@ -7,7 +7,7 @@
 
 
 
-#include "api/audio/builtin_audio_processing_factory.h"
+#include "api/audio/builtin_audio_processing_builder.h"
 
 #include <utility>
 
@@ -22,14 +22,7 @@
 namespace webrtc {
 
 absl::Nullable<scoped_refptr<AudioProcessing>>
-BuiltinAudioProcessingFactory::Create(const Environment& ) {
-  if (called_create_) {
-    RTC_DLOG(LS_ERROR)
-        << "Calling BuiltinAudioProcessingFactory::Create more than once "
-           "is currently unsupported.";
-  }
-  called_create_ = true;
-
+BuiltinAudioProcessingBuilder::Build(const Environment& ) {
   
   
   return make_ref_counted<AudioProcessingImpl>(

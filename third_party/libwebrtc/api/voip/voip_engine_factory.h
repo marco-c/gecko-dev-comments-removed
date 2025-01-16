@@ -67,7 +67,7 @@ struct VoipEngineConfig {
   
   
   
-  std::unique_ptr<AudioProcessingFactory> audio_processing_factory;
+  std::unique_ptr<AudioProcessingBuilderInterface> audio_processing_builder;
 
   
   

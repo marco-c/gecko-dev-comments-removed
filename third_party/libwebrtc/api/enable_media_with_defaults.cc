@@ -35,7 +35,7 @@ void EnableMediaWithDefaults(PeerConnectionFactoryDependencies& deps) {
     deps.audio_decoder_factory = CreateBuiltinAudioDecoderFactory();
   }
   if (deps.audio_processing == nullptr &&
-      deps.audio_processing_factory == nullptr) {
+      deps.audio_processing_builder == nullptr) {
     
     
     

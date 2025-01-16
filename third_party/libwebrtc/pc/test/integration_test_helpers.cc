@@ -10,7 +10,7 @@
 
 #include "pc/test/integration_test_helpers.h"
 
-#include "api/audio/builtin_audio_processing_factory.h"
+#include "api/audio/builtin_audio_processing_builder.h"
 
 namespace webrtc {
 
@@ -230,8 +230,8 @@ bool PeerConnectionIntegrationWrapper::Init(
     
     
     
-    pc_factory_dependencies.audio_processing_factory =
-        std::make_unique<BuiltinAudioProcessingFactory>();
+    pc_factory_dependencies.audio_processing_builder =
+        std::make_unique<BuiltinAudioProcessingBuilder>();
     EnableMediaWithDefaults(pc_factory_dependencies);
   }
 

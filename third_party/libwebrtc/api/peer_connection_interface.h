@@ -1473,7 +1473,7 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   
   
   rtc::scoped_refptr<AudioProcessing> audio_processing;
-  std::unique_ptr<AudioProcessingFactory> audio_processing_factory;
+  std::unique_ptr<AudioProcessingBuilderInterface> audio_processing_builder;
   std::unique_ptr<AudioFrameProcessor> audio_frame_processor;
   std::unique_ptr<VideoEncoderFactory> video_encoder_factory;
   std::unique_ptr<VideoDecoderFactory> video_decoder_factory;
