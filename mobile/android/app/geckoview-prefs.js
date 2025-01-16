@@ -375,6 +375,17 @@ pref("network.protocol-handler.warn-external.vnd.youtube", false);
 pref("network.tickle-wifi.enabled", true);
 
 
+
+
+
+
+#ifdef NIGHTLY_BUILD
+  pref("page_load.progressbar_completion", 2);
+#else
+  pref("page_load.progressbar_completion", 0);
+#endif
+
+
 pref("pdfjs.handleOctetStream", true);
 
 
