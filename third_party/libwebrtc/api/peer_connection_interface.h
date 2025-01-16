@@ -1315,22 +1315,22 @@ class PeerConnectionObserver {
   
   virtual void OnIceCandidateError(const std::string& ,
                                    int ,
-                                   const std::string& url,
-                                   int error_code,
-                                   const std::string& error_text) {}
+                                   const std::string& ,
+                                   int ,
+                                   const std::string& ) {}
 
   
   
   
   virtual void OnIceCandidatesRemoved(
-      const std::vector<cricket::Candidate>& candidates) {}
+      const std::vector<cricket::Candidate>& ) {}
 
   
-  virtual void OnIceConnectionReceivingChange(bool receiving) {}
+  virtual void OnIceConnectionReceivingChange(bool ) {}
 
   
   virtual void OnIceSelectedCandidatePairChanged(
-      const cricket::CandidatePairChangeEvent& event) {}
+      const cricket::CandidatePairChangeEvent& ) {}
 
   
   
@@ -1338,8 +1338,9 @@ class PeerConnectionObserver {
   
   
   virtual void OnAddTrack(
-      rtc::scoped_refptr<RtpReceiverInterface> receiver,
-      const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) {}
+      rtc::scoped_refptr<RtpReceiverInterface> ,
+      const std::vector<
+          rtc::scoped_refptr<MediaStreamInterface>>& ) {}
 
   
   

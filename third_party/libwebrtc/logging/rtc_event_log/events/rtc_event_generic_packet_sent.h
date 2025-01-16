@@ -94,7 +94,7 @@ class RtcEventGenericPacketSent final : public RtcEvent {
   static RtcEventLogParseStatus Parse(
       absl::string_view ,
       bool ,
-      std::vector<LoggedGenericPacketSent>& output) {
+      std::vector<LoggedGenericPacketSent>& ) {
     
     return RtcEventLogParseStatus::Error("Not Implemented", __FILE__, __LINE__);
   }

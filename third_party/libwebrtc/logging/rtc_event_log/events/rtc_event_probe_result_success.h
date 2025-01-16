@@ -56,15 +56,15 @@ class RtcEventProbeResultSuccess final : public RtcEvent {
   int32_t id() const { return id_; }
   int32_t bitrate_bps() const { return bitrate_bps_; }
 
-  static std::string Encode(rtc::ArrayView<const RtcEvent*> batch) {
+  static std::string Encode(rtc::ArrayView<const RtcEvent*> ) {
     
     return "";
   }
 
   static RtcEventLogParseStatus Parse(
-      absl::string_view encoded_bytes,
-      bool batched,
-      std::vector<LoggedBweProbeSuccessEvent>& output) {
+      absl::string_view ,
+      bool ,
+      std::vector<LoggedBweProbeSuccessEvent>& ) {
     
     return RtcEventLogParseStatus::Error("Not Implemented", __FILE__, __LINE__);
   }

@@ -105,22 +105,22 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
   virtual rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const = 0;
 
   virtual std::unique_ptr<VoiceMediaSendChannelInterface> CreateSendChannel(
-      webrtc::Call* call,
-      const MediaConfig& config,
-      const AudioOptions& options,
-      const webrtc::CryptoOptions& crypto_options,
-      webrtc::AudioCodecPairId codec_pair_id) {
+      webrtc::Call* ,
+      const MediaConfig& ,
+      const AudioOptions& ,
+      const webrtc::CryptoOptions& ,
+      webrtc::AudioCodecPairId ) {
     
     RTC_CHECK_NOTREACHED();
     return nullptr;
   }
 
   virtual std::unique_ptr<VoiceMediaReceiveChannelInterface>
-  CreateReceiveChannel(webrtc::Call* call,
-                       const MediaConfig& config,
-                       const AudioOptions& options,
-                       const webrtc::CryptoOptions& crypto_options,
-                       webrtc::AudioCodecPairId codec_pair_id) {
+  CreateReceiveChannel(webrtc::Call* ,
+                       const MediaConfig& ,
+                       const AudioOptions& ,
+                       const webrtc::CryptoOptions& ,
+                       webrtc::AudioCodecPairId ) {
     
     RTC_CHECK_NOTREACHED();
     return nullptr;
@@ -155,21 +155,22 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
   VideoEngineInterface& operator=(const VideoEngineInterface&) = delete;
 
   virtual std::unique_ptr<VideoMediaSendChannelInterface> CreateSendChannel(
-      webrtc::Call* call,
-      const MediaConfig& config,
-      const VideoOptions& options,
-      const webrtc::CryptoOptions& crypto_options,
-      webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory) {
+      webrtc::Call* ,
+      const MediaConfig& ,
+      const VideoOptions& ,
+      const webrtc::CryptoOptions& ,
+      webrtc::
+          VideoBitrateAllocatorFactory* ) {
     
     RTC_CHECK_NOTREACHED();
     return nullptr;
   }
 
   virtual std::unique_ptr<VideoMediaReceiveChannelInterface>
-  CreateReceiveChannel(webrtc::Call* call,
-                       const MediaConfig& config,
-                       const VideoOptions& options,
-                       const webrtc::CryptoOptions& crypto_options) {
+  CreateReceiveChannel(webrtc::Call* ,
+                       const MediaConfig& ,
+                       const VideoOptions& ,
+                       const webrtc::CryptoOptions& ) {
     
     RTC_CHECK_NOTREACHED();
     return nullptr;

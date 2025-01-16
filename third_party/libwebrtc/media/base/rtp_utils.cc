@@ -238,7 +238,7 @@ bool ValidateRtpHeader(const uint8_t* rtp,
 
 
 bool UpdateRtpAbsSendTimeExtension(uint8_t* rtp,
-                                   size_t length,
+                                   size_t ,
                                    int extension_id,
                                    uint64_t time_us) {
   
