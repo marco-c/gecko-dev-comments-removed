@@ -1662,13 +1662,6 @@ class NativeObject : public JSObject {
   }
 
   inline bool hasDynamicElements() const {
-    
-
-
-
-
-
-
     return !hasEmptyElements() && !hasFixedElements();
   }
 

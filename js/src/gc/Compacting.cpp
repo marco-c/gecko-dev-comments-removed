@@ -278,16 +278,17 @@ static void RelocateCell(Zone* zone, TenuredCell* src, AllocKind thingKind,
   
   
   
+  
 #ifdef DEBUG
-  JSObject* srcObj = IsObjectAllocKind(thingKind)
-                         ? static_cast<JSObject*>(static_cast<Cell*>(src))
-                         : nullptr;
-  bool doNotPoison =
-      srcObj && ((srcObj->is<NativeObject>() &&
-                  srcObj->as<NativeObject>().hasFixedElements()) ||
-                 (srcObj->is<WasmArrayObject>() &&
-                  srcObj->as<WasmArrayObject>().isDataInline()));
-  if (!doNotPoison) {
+  bool poison = true;
+  if (IsObjectAllocKind(thingKind)) {
+    JSObject* srcObj = static_cast<JSObject*>(static_cast<Cell*>(src));
+    poison = !(srcObj->is<WasmArrayObject>() &&
+               srcObj->as<WasmArrayObject>().isDataInline());
+  } else if (IsBufferAllocKind(thingKind)) {
+    poison = false;
+  }
+  if (poison) {
     AlwaysPoison(reinterpret_cast<uint8_t*>(src) + sizeof(uintptr_t),
                  JS_MOVED_TENURED_PATTERN, thingSize - sizeof(uintptr_t),
                  MemCheckKind::MakeNoAccess);
@@ -900,8 +901,13 @@ void GCRuntime::clearRelocatedArenasWithoutUnlocking(Arena* arenaList,
     
     bool allArenasRelocated = ShouldRelocateAllArenas(reason);
     bool updateRetainedSize = !allArenasRelocated && !arena->isNewlyCreated();
-    arena->zone()->gcHeapSize.removeBytes(ArenaSize, updateRetainedSize,
-                                          heapSize);
+    Zone* zone = arena->zone();
+    if (IsBufferAllocKind(arena->getAllocKind())) {
+      size_t usableBytes = ArenaSize - arena->getFirstThingOffset();
+      zone->mallocHeapSize.removeBytes(usableBytes, updateRetainedSize);
+    } else {
+      zone->gcHeapSize.removeBytes(ArenaSize, updateRetainedSize, heapSize);
+    }
 
     
     arena->release(this, &lock);
