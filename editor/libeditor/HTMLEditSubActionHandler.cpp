@@ -1357,67 +1357,98 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     
     
     if (!isWhiteSpaceCollapsible || IsPlaintextMailComposer()) {
-      uint32_t nextOffset = 0;
-      while (nextOffset < aInsertionString.Length()) {
-        const uint32_t lineStartOffset = nextOffset;
-        const int32_t inclusiveNextLinefeedOffset =
-            aInsertionString.FindChar(nsCRT::LF, lineStartOffset);
-        const uint32_t lineLength =
-            inclusiveNextLinefeedOffset != -1
-                ? static_cast<uint32_t>(inclusiveNextLinefeedOffset) -
-                      lineStartOffset
-                : aInsertionString.Length() - lineStartOffset;
-        if (lineLength) {
-          
-          const nsDependentSubstring lineText(aInsertionString, lineStartOffset,
-                                              lineLength);
-          Result<InsertTextResult, nsresult> insertTextResult =
-              InsertTextWithTransaction(
-                  *document, lineText, currentPoint,
-                  GetInsertTextTo(inclusiveNextLinefeedOffset,
-                                  lineStartOffset));
-          if (MOZ_UNLIKELY(insertTextResult.isErr())) {
-            NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
-            return insertTextResult.propagateErr();
-          }
-          
-          
-          insertTextResult.inspect().IgnoreCaretPointSuggestion();
-          if (insertTextResult.inspect().Handled()) {
-            pointToInsert = currentPoint = insertTextResult.unwrap()
-                                               .EndOfInsertedTextRef()
-                                               .To<EditorDOMPoint>();
-          } else {
-            pointToInsert = currentPoint;
-          }
-          if (inclusiveNextLinefeedOffset < 0) {
-            break;  
-          }
+      if (*lineBreakType == LineBreakType::Linefeed) {
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(*lineBreakType == LineBreakType::Linefeed);
+        Result<InsertTextResult, nsresult> insertTextResult =
+            InsertTextWithTransaction(
+                *document, aInsertionString, currentPoint,
+                InsertTextTo::ExistingTextNodeIfAvailable);
+        if (MOZ_UNLIKELY(insertTextResult.isErr())) {
+          NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
+          return insertTextResult.propagateErr();
         }
-        MOZ_ASSERT(inclusiveNextLinefeedOffset >= 0);
-        Result<CreateLineBreakResult, nsresult> insertLineBreakResultOrError =
-            InsertLineBreak(WithTransaction::Yes, *lineBreakType, currentPoint);
-        if (MOZ_UNLIKELY(insertLineBreakResultOrError.isErr())) {
-          NS_WARNING(nsPrintfCString("HTMLEditor::InsertLineBreak("
-                                     "WithTransaction::Yes, %s) failed",
-                                     ToString(*lineBreakType).c_str())
-                         .get());
-          return insertLineBreakResultOrError.propagateErr();
+        
+        
+        insertTextResult.inspect().IgnoreCaretPointSuggestion();
+        if (insertTextResult.inspect().Handled()) {
+          pointToInsert = currentPoint = insertTextResult.unwrap()
+                                             .EndOfInsertedTextRef()
+                                             .To<EditorDOMPoint>();
+        } else {
+          pointToInsert = currentPoint;
         }
-        CreateLineBreakResult insertLineBreakResult =
-            insertLineBreakResultOrError.unwrap();
-        
-        
-        
-        insertLineBreakResult.IgnoreCaretPointSuggestion();
-        MOZ_ASSERT(!AllowsTransactionsToChangeSelection());
+      } else {
+        MOZ_ASSERT(*lineBreakType == LineBreakType::BRElement);
+        uint32_t nextOffset = 0;
+        while (nextOffset < aInsertionString.Length()) {
+          const uint32_t lineStartOffset = nextOffset;
+          const int32_t inclusiveNextLinefeedOffset =
+              aInsertionString.FindChar(nsCRT::LF, lineStartOffset);
+          const uint32_t lineLength =
+              inclusiveNextLinefeedOffset != -1
+                  ? static_cast<uint32_t>(inclusiveNextLinefeedOffset) -
+                        lineStartOffset
+                  : aInsertionString.Length() - lineStartOffset;
+          if (lineLength) {
+            
+            const nsDependentSubstring lineText(aInsertionString,
+                                                lineStartOffset, lineLength);
+            Result<InsertTextResult, nsresult> insertTextResult =
+                InsertTextWithTransaction(
+                    *document, lineText, currentPoint,
+                    GetInsertTextTo(inclusiveNextLinefeedOffset,
+                                    lineStartOffset));
+            if (MOZ_UNLIKELY(insertTextResult.isErr())) {
+              NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
+              return insertTextResult.propagateErr();
+            }
+            
+            
+            insertTextResult.inspect().IgnoreCaretPointSuggestion();
+            if (insertTextResult.inspect().Handled()) {
+              pointToInsert = currentPoint = insertTextResult.unwrap()
+                                                 .EndOfInsertedTextRef()
+                                                 .To<EditorDOMPoint>();
+            } else {
+              pointToInsert = currentPoint;
+            }
+            if (inclusiveNextLinefeedOffset < 0) {
+              break;  
+            }
+          }
+          MOZ_ASSERT(inclusiveNextLinefeedOffset >= 0);
+          Result<CreateLineBreakResult, nsresult> insertLineBreakResultOrError =
+              InsertLineBreak(WithTransaction::Yes, *lineBreakType,
+                              currentPoint);
+          if (MOZ_UNLIKELY(insertLineBreakResultOrError.isErr())) {
+            NS_WARNING(nsPrintfCString("HTMLEditor::InsertLineBreak("
+                                       "WithTransaction::Yes, %s) failed",
+                                       ToString(*lineBreakType).c_str())
+                           .get());
+            return insertLineBreakResultOrError.propagateErr();
+          }
+          CreateLineBreakResult insertLineBreakResult =
+              insertLineBreakResultOrError.unwrap();
+          
+          
+          
+          insertLineBreakResult.IgnoreCaretPointSuggestion();
+          MOZ_ASSERT(!AllowsTransactionsToChangeSelection());
 
-        nextOffset = inclusiveNextLinefeedOffset + 1;
-        pointToInsert = insertLineBreakResult.AfterLineBreak<EditorDOMPoint>();
-        currentPoint.SetAfter(&insertLineBreakResult.LineBreakContentRef());
-        if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc()) ||
-            NS_WARN_IF(!currentPoint.IsSetAndValidInComposedDoc())) {
-          return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+          nextOffset = inclusiveNextLinefeedOffset + 1;
+          pointToInsert =
+              insertLineBreakResult.AfterLineBreak<EditorDOMPoint>();
+          currentPoint.SetAfter(&insertLineBreakResult.LineBreakContentRef());
+          if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc()) ||
+              NS_WARN_IF(!currentPoint.IsSetAndValidInComposedDoc())) {
+            return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+          }
         }
       }
     } else {
