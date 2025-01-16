@@ -743,6 +743,14 @@ class AudioProcessingFactory {
 };
 
 
+
+
+
+
+absl::Nonnull<std::unique_ptr<AudioProcessingFactory>> CustomAudioProcessing(
+    absl::Nonnull<scoped_refptr<AudioProcessing>> audio_processing);
+
+
 class CustomAudioAnalyzer {
  public:
   
