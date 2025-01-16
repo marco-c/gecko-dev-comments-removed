@@ -133,19 +133,22 @@
             true
           );
           if (this.tabs && this.handleCtrlTab) {
-            this.tabs.advanceSelectedTab(event.shiftKey ? -1 : 1, true);
+            this.tabs.advanceSelectedTab(
+              event.shiftKey ? DIRECTION_BACKWARD : DIRECTION_FORWARD,
+              true
+            );
             event.preventDefault();
           }
           break;
         case ShortcutUtils.PREVIOUS_TAB:
           if (this.tabs) {
-            this.tabs.advanceSelectedTab(-1, true);
+            this.tabs.advanceSelectedTab(DIRECTION_BACKWARD, true);
             event.preventDefault();
           }
           break;
         case ShortcutUtils.NEXT_TAB:
           if (this.tabs) {
-            this.tabs.advanceSelectedTab(1, true);
+            this.tabs.advanceSelectedTab(DIRECTION_FORWARD, true);
             event.preventDefault();
           }
           break;
@@ -332,6 +335,9 @@
       super();
 
       this.addEventListener("mousedown", this);
+      this.addEventListener("keydown", this);
+
+      this.arrowKeysShouldWrap = AppConstants.platform == "macosx";
     }
 
     static get inheritedAttributes() {
@@ -393,6 +399,74 @@
       }
     }
 
+    
+
+
+    #getDirection() {
+      return window.getComputedStyle(this).direction;
+    }
+
+    
+
+
+    on_keydown(event) {
+      if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) {
+        return;
+      }
+
+      
+      switch (event.keyCode) {
+        case KeyEvent.DOM_VK_LEFT: {
+          this.container.advanceSelectedItem(
+            this.#getDirection() == "ltr"
+              ? DIRECTION_BACKWARD
+              : DIRECTION_FORWARD,
+            this.arrowKeysShouldWrap
+          );
+          event.preventDefault();
+          break;
+        }
+
+        case KeyEvent.DOM_VK_RIGHT: {
+          this.container.advanceSelectedItem(
+            this.#getDirection() == "ltr"
+              ? DIRECTION_FORWARD
+              : DIRECTION_BACKWARD,
+            this.arrowKeysShouldWrap
+          );
+          event.preventDefault();
+          break;
+        }
+
+        case KeyEvent.DOM_VK_UP:
+          this.container.advanceSelectedItem(
+            DIRECTION_BACKWARD,
+            this.arrowKeysShouldWrap
+          );
+          event.preventDefault();
+          break;
+
+        case KeyEvent.DOM_VK_DOWN:
+          this.container.advanceSelectedItem(
+            DIRECTION_FORWARD,
+            this.arrowKeysShouldWrap
+          );
+          event.preventDefault();
+          break;
+
+        case KeyEvent.DOM_VK_HOME:
+          this.container._selectNewTab(this.allTabs.at(0), DIRECTION_FORWARD);
+          event.preventDefault();
+          break;
+
+        case KeyEvent.DOM_VK_END: {
+          this.container._selectNewTab(this.allTabs.at(-1), DIRECTION_BACKWARD);
+          event.preventDefault();
+          break;
+        }
+      }
+    }
+
     set value(val) {
       this.setAttribute("value", val);
     }
@@ -448,7 +522,6 @@
   class TabsBase extends MozElements.BaseControl {
     constructor() {
       super();
-      this.arrowKeysShouldWrap = AppConstants.platform == "macosx";
 
       this.addEventListener("DOMMouseScroll", event => {
         if (Services.prefs.getBoolPref("toolkit.tabbox.switchByScrolling")) {
@@ -460,7 +533,6 @@
           event.stopPropagation();
         }
       });
-      this.addEventListener("keydown", this);
     }
 
     
@@ -682,76 +754,6 @@
     
 
 
-    #getDirection() {
-      return window.getComputedStyle(this).direction;
-    }
-
-    
-
-
-    on_keydown(event) {
-      if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) {
-        return;
-      }
-
-      
-      if (document.activeElement == this.selectedItem) {
-        switch (event.keyCode) {
-          case KeyEvent.DOM_VK_LEFT: {
-            this.advanceSelectedTab(
-              this.#getDirection() == "ltr"
-                ? DIRECTION_BACKWARD
-                : DIRECTION_FORWARD,
-              this.arrowKeysShouldWrap
-            );
-            event.preventDefault();
-            break;
-          }
-
-          case KeyEvent.DOM_VK_RIGHT: {
-            this.advanceSelectedTab(
-              this.#getDirection() == "ltr"
-                ? DIRECTION_FORWARD
-                : DIRECTION_BACKWARD,
-              this.arrowKeysShouldWrap
-            );
-            event.preventDefault();
-            break;
-          }
-
-          case KeyEvent.DOM_VK_UP:
-            this.advanceSelectedTab(
-              DIRECTION_BACKWARD,
-              this.arrowKeysShouldWrap
-            );
-            event.preventDefault();
-            break;
-
-          case KeyEvent.DOM_VK_DOWN:
-            this.advanceSelectedTab(
-              DIRECTION_FORWARD,
-              this.arrowKeysShouldWrap
-            );
-            event.preventDefault();
-            break;
-
-          case KeyEvent.DOM_VK_HOME:
-            this._selectNewTab(this.allTabs.at(0), DIRECTION_FORWARD);
-            event.preventDefault();
-            break;
-
-          case KeyEvent.DOM_VK_END: {
-            this._selectNewTab(this.allTabs.at(-1), DIRECTION_BACKWARD);
-            event.preventDefault();
-            break;
-          }
-        }
-      }
-    }
-
-    
-
-
 
     getIndexOfItem(item) {
       return Array.prototype.indexOf.call(this.allTabs, item);
@@ -879,6 +881,8 @@
 
 
 
+
+
     advanceSelectedTab(aDir, aWrap) {
       let { ariaFocusedItem } = this;
       let startTab = ariaFocusedItem;
@@ -906,6 +910,20 @@
       if (newTab && newTab != startTab) {
         this._selectNewTab(newTab, aDir, aWrap);
       }
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    advanceSelectedItem(aDir, aWrap) {
+      this.advanceSelectedTab(aDir, aWrap);
     }
 
     appendItem(label, value) {

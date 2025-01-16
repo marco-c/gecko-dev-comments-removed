@@ -65,6 +65,7 @@
       this.addEventListener("dblclick", this);
       this.addEventListener("click", this);
       this.addEventListener("click", this, true);
+      this.addEventListener("keydown", this, { mozSystemGroup: true });
       this.addEventListener("dragstart", this);
       this.addEventListener("dragover", this);
       this.addEventListener("drop", this);
@@ -500,12 +501,9 @@
             case KeyEvent.DOM_VK_RETURN: {
               ariaFocusedItem.click();
               event.preventDefault();
-              return;
             }
           }
         }
-        
-        MozElements.TabsBase.prototype.on_keydown.call(this, event);
       } else if (keyComboForMove) {
         switch (event.keyCode) {
           case KeyEvent.DOM_VK_UP:
@@ -633,6 +631,56 @@
 
       let itemToFocus = this.ariaFocusableItems[newIndex];
       this.ariaFocusedItem = itemToFocus;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    advanceSelectedItem(aDir, aWrap) {
+      let { ariaFocusableItems, ariaFocusedIndex } = this;
+
+      
+      
+      let currentItemIndex =
+        ariaFocusedIndex >= 0
+          ? ariaFocusedIndex
+          : ariaFocusableItems.indexOf(this.selectedItem);
+
+      let newItemIndex = currentItemIndex + aDir;
+
+      if (aWrap) {
+        if (newItemIndex >= ariaFocusableItems.length) {
+          newItemIndex = 0;
+        } else if (newItemIndex < 0) {
+          newItemIndex = ariaFocusableItems.length - 1;
+        }
+      } else {
+        newItemIndex = Math.min(
+          ariaFocusableItems.length - 1,
+          Math.max(0, newItemIndex)
+        );
+      }
+
+      if (currentItemIndex == newItemIndex) {
+        return;
+      }
+
+      
+      
+      
+      let newItem = ariaFocusableItems[newItemIndex];
+      if (isTab(newItem)) {
+        this._selectNewTab(newItem, aDir, aWrap);
+      }
+      this.ariaFocusedItem = newItem;
     }
 
     on_keypress(event) {
