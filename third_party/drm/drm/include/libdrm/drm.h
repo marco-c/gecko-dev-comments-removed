@@ -670,6 +670,9 @@ struct drm_gem_open {
 
 
 
+
+
+
 #define DRM_CAP_PRIME			0x5
 
 
@@ -677,7 +680,11 @@ struct drm_gem_open {
 
 
 
+
+
 #define  DRM_PRIME_CAP_IMPORT		0x1
+
+
 
 
 
@@ -697,6 +704,7 @@ struct drm_gem_open {
 
 
 #define DRM_CAP_TIMESTAMP_MONOTONIC	0x6
+
 
 
 
@@ -752,7 +760,6 @@ struct drm_gem_open {
 
 
 
-
 #define DRM_CAP_SYNCOBJ		0x13
 
 
@@ -761,6 +768,13 @@ struct drm_gem_open {
 
 
 #define DRM_CAP_SYNCOBJ_TIMELINE	0x14
+
+
+
+
+
+
+#define DRM_CAP_ATOMIC_ASYNC_PAGE_FLIP	0x15
 
 
 struct drm_get_cap {
@@ -831,6 +845,31 @@ struct drm_get_cap {
 #define DRM_CLIENT_CAP_WRITEBACK_CONNECTORS	5
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define DRM_CLIENT_CAP_CURSOR_PLANE_HOTSPOT	6
+
+
 struct drm_set_client_cap {
 	__u64 capability;
 	__u64 value;
@@ -881,6 +920,7 @@ struct drm_syncobj_transfer {
 #define DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL (1 << 0)
 #define DRM_SYNCOBJ_WAIT_FLAGS_WAIT_FOR_SUBMIT (1 << 1)
 #define DRM_SYNCOBJ_WAIT_FLAGS_WAIT_AVAILABLE (1 << 2) /* wait for time point to become available */
+#define DRM_SYNCOBJ_WAIT_FLAGS_WAIT_DEADLINE (1 << 3) /* set fence deadline to deadline_nsec */
 struct drm_syncobj_wait {
 	__u64 handles;
 	
@@ -889,6 +929,14 @@ struct drm_syncobj_wait {
 	__u32 flags;
 	__u32 first_signaled; 
 	__u32 pad;
+	
+
+
+
+
+
+
+	__u64 deadline_nsec;
 };
 
 struct drm_syncobj_timeline_wait {
@@ -900,6 +948,35 @@ struct drm_syncobj_timeline_wait {
 	__u32 count_handles;
 	__u32 flags;
 	__u32 first_signaled; 
+	__u32 pad;
+	
+
+
+
+
+
+
+	__u64 deadline_nsec;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct drm_syncobj_eventfd {
+	__u32 handle;
+	__u32 flags;
+	__u64 point;
+	__s32 fd;
 	__u32 pad;
 };
 
@@ -966,6 +1043,19 @@ extern "C" {
 #define DRM_IOCTL_GET_STATS             DRM_IOR( 0x06, struct drm_stats)
 #define DRM_IOCTL_SET_VERSION		DRM_IOWR(0x07, struct drm_set_version)
 #define DRM_IOCTL_MODESET_CTL           DRM_IOW(0x08, struct drm_modeset_ctl)
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define DRM_IOCTL_GEM_CLOSE		DRM_IOW (0x09, struct drm_gem_close)
 #define DRM_IOCTL_GEM_FLINK		DRM_IOWR(0x0a, struct drm_gem_flink)
 #define DRM_IOCTL_GEM_OPEN		DRM_IOWR(0x0b, struct drm_gem_open)
@@ -1006,7 +1096,37 @@ extern "C" {
 #define DRM_IOCTL_UNLOCK		DRM_IOW( 0x2b, struct drm_lock)
 #define DRM_IOCTL_FINISH		DRM_IOW( 0x2c, struct drm_lock)
 
+
+
+
+
+
+
+
+
+
+
+
+
 #define DRM_IOCTL_PRIME_HANDLE_TO_FD    DRM_IOWR(0x2d, struct drm_prime_handle)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define DRM_IOCTL_PRIME_FD_TO_HANDLE    DRM_IOWR(0x2e, struct drm_prime_handle)
 
 #define DRM_IOCTL_AGP_ACQUIRE		DRM_IO(  0x30)
@@ -1044,9 +1164,39 @@ extern "C" {
 #define DRM_IOCTL_MODE_GETPROPBLOB	DRM_IOWR(0xAC, struct drm_mode_get_blob)
 #define DRM_IOCTL_MODE_GETFB		DRM_IOWR(0xAD, struct drm_mode_fb_cmd)
 #define DRM_IOCTL_MODE_ADDFB		DRM_IOWR(0xAE, struct drm_mode_fb_cmd)
+
+
+
+
+
+
+
+
+
+
 #define DRM_IOCTL_MODE_RMFB		DRM_IOWR(0xAF, unsigned int)
 #define DRM_IOCTL_MODE_PAGE_FLIP	DRM_IOWR(0xB0, struct drm_mode_crtc_page_flip)
 #define DRM_IOCTL_MODE_DIRTYFB		DRM_IOWR(0xB1, struct drm_mode_fb_dirty_cmd)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define DRM_IOCTL_MODE_CREATE_DUMB DRM_IOWR(0xB2, struct drm_mode_create_dumb)
 #define DRM_IOCTL_MODE_MAP_DUMB    DRM_IOWR(0xB3, struct drm_mode_map_dumb)
@@ -1080,7 +1230,57 @@ extern "C" {
 #define DRM_IOCTL_SYNCOBJ_TRANSFER	DRM_IOWR(0xCC, struct drm_syncobj_transfer)
 #define DRM_IOCTL_SYNCOBJ_TIMELINE_SIGNAL	DRM_IOWR(0xCD, struct drm_syncobj_timeline_array)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define DRM_IOCTL_MODE_GETFB2		DRM_IOWR(0xCE, struct drm_mode_fb_cmd2)
+
+#define DRM_IOCTL_SYNCOBJ_EVENTFD	DRM_IOWR(0xCF, struct drm_syncobj_eventfd)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define DRM_IOCTL_MODE_CLOSEFB		DRM_IOWR(0xD0, struct drm_mode_closefb)
 
 
 
@@ -1105,13 +1305,38 @@ extern "C" {
 
 
 
+
+
 struct drm_event {
 	__u32 type;
 	__u32 length;
 };
 
+
+
+
+
+
+
+
+
 #define DRM_EVENT_VBLANK 0x01
+
+
+
+
+
+
+
+
 #define DRM_EVENT_FLIP_COMPLETE 0x02
+
+
+
+
+
+
+
 #define DRM_EVENT_CRTC_SEQUENCE	0x03
 
 struct drm_event_vblank {

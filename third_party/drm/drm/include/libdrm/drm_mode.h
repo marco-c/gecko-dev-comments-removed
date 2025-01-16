@@ -312,16 +312,48 @@ struct drm_mode_set_plane {
 	__u32 src_w;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct drm_mode_get_plane {
+	
+
+
+
 	__u32 plane_id;
 
+	
 	__u32 crtc_id;
+	
 	__u32 fb_id;
 
+	
+
+
+
+
+
 	__u32 possible_crtcs;
+	
 	__u32 gamma_size;
 
+	
 	__u32 count_format_types;
+	
+
+
+
 	__u64 format_type_ptr;
 };
 
@@ -457,6 +489,9 @@ struct drm_mode_get_connector {
 
 
 
+
+
+
 	__u32 connector_type_id;
 
 	
@@ -509,22 +544,74 @@ struct drm_mode_get_connector {
 
 #define DRM_MODE_PROP_ATOMIC        0x80000000
 
+
+
+
+
+
+
+
 struct drm_mode_property_enum {
 	__u64 value;
 	char name[DRM_PROP_NAME_LEN];
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct drm_mode_get_property {
-	__u64 values_ptr; 
-	__u64 enum_blob_ptr; 
+	
+	__u64 values_ptr;
+	
+	__u64 enum_blob_ptr;
 
-	__u32 prop_id;
-	__u32 flags;
-	char name[DRM_PROP_NAME_LEN];
-
-	__u32 count_values;
 	
 
+
+
+	__u32 prop_id;
+	
+
+
+
+	__u32 flags;
+	
+
+
+
+	char name[DRM_PROP_NAME_LEN];
+
+	
+	__u32 count_values;
+	
 	__u32 count_enum_blobs;
 };
 
@@ -577,43 +664,75 @@ struct drm_mode_fb_cmd {
 };
 
 #define DRM_MODE_FB_INTERLACED	(1<<0) /* for interlaced framebuffers */
-#define DRM_MODE_FB_MODIFIERS	(1<<1) /* enables ->modifer[] */
+#define DRM_MODE_FB_MODIFIERS	(1<<1) /* enables ->modifier[] */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 struct drm_mode_fb_cmd2 {
+	
 	__u32 fb_id;
+	
 	__u32 width;
+	
 	__u32 height;
-	__u32 pixel_format; 
-	__u32 flags; 
+	
+
+
+
+	__u32 pixel_format;
+	
+
+
+
+	__u32 flags;
 
 	
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	__u32 handles[4];
-	__u32 pitches[4]; 
-	__u32 offsets[4]; 
-	__u64 modifier[4]; 
+	
+	__u32 pitches[4];
+	
+	__u32 offsets[4];
+	
+
+
+
+
+	__u64 modifier[4];
 };
 
 #define DRM_MODE_FB_DIRTY_ANNOTATE_COPY 0x01
@@ -719,6 +838,11 @@ struct drm_color_ctm {
 
 
 
+
+
+
+
+
 	__u64 matrix[9];
 };
 
@@ -731,6 +855,17 @@ struct drm_color_lut {
 	__u16 green;
 	__u16 blue;
 	__u16 reserved;
+};
+
+
+
+
+
+
+
+struct drm_plane_size_hint {
+	__u16 width;
+	__u16 height;
 };
 
 
@@ -762,7 +897,7 @@ struct hdr_metadata_infoframe {
 
 	struct {
 		__u16 x, y;
-		} display_primaries[3];
+	} display_primaries[3];
 	
 
 
@@ -773,7 +908,7 @@ struct hdr_metadata_infoframe {
 
 	struct {
 		__u16 x, y;
-		} white_point;
+	} white_point;
 	
 
 
@@ -819,12 +954,40 @@ struct hdr_output_metadata {
 	};
 };
 
+
+
+
+
+
+
+
 #define DRM_MODE_PAGE_FLIP_EVENT 0x01
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define DRM_MODE_PAGE_FLIP_ASYNC 0x02
 #define DRM_MODE_PAGE_FLIP_TARGET_ABSOLUTE 0x4
 #define DRM_MODE_PAGE_FLIP_TARGET_RELATIVE 0x8
 #define DRM_MODE_PAGE_FLIP_TARGET (DRM_MODE_PAGE_FLIP_TARGET_ABSOLUTE | \
 				   DRM_MODE_PAGE_FLIP_TARGET_RELATIVE)
+
+
+
+
+
 #define DRM_MODE_PAGE_FLIP_FLAGS (DRM_MODE_PAGE_FLIP_EVENT | \
 				  DRM_MODE_PAGE_FLIP_ASYNC | \
 				  DRM_MODE_PAGE_FLIP_TARGET)
@@ -890,12 +1053,24 @@ struct drm_mode_crtc_page_flip_target {
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 struct drm_mode_create_dumb {
 	__u32 height;
 	__u32 width;
 	__u32 bpp;
 	__u32 flags;
-	
+
 	__u32 handle;
 	__u32 pitch;
 	__u64 size;
@@ -919,9 +1094,51 @@ struct drm_mode_destroy_dumb {
 };
 
 
+
+
+
+
+
+
+
+
 #define DRM_MODE_ATOMIC_TEST_ONLY 0x0100
+
+
+
+
+
+
+
+
 #define DRM_MODE_ATOMIC_NONBLOCK  0x0200
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define DRM_MODE_ATOMIC_ALLOW_MODESET 0x0400
+
+
+
+
+
+
 
 #define DRM_MODE_ATOMIC_FLAGS (\
 		DRM_MODE_PAGE_FLIP_EVENT |\
@@ -1027,6 +1244,10 @@ struct drm_mode_destroy_blob {
 
 
 
+
+
+
+
 struct drm_mode_create_lease {
 	
 	__u64 object_ids;
@@ -1120,6 +1341,16 @@ struct drm_mode_rect {
 	__s32 y1;
 	__s32 x2;
 	__s32 y2;
+};
+
+
+
+
+
+
+struct drm_mode_closefb {
+	__u32 fb_id;
+	__u32 pad;
 };
 
 #if defined(__cplusplus)
