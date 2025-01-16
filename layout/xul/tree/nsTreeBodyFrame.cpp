@@ -206,6 +206,7 @@ void nsTreeBodyFrame::CancelImageRequests() {
   for (nsTreeImageCacheEntry entry : mImageCache.Values()) {
     
     
+    static_cast<nsTreeImageListener*>(entry.listener.get())->ClearFrame();
     nsLayoutUtils::DeregisterImageRequest(PresContext(), entry.request,
                                           nullptr);
     entry.request->UnlockImage();
@@ -1873,41 +1874,15 @@ nsresult nsTreeBodyFrame::GetImage(int32_t aRowIndex, nsTreeColumn* aCol,
   
   nsTreeImageCacheEntry entry;
   if (mImageCache.Get(imageSrc, &entry)) {
-    
-    uint32_t status;
-    imgIRequest* imgReq = entry.request;
-    imgReq->GetImageStatus(&status);
-    imgReq->GetImage(aResult);  
-                                
-    bool animated = true;       
-
-    
-    if (*aResult && (status & imgIRequest::STATUS_DECODE_COMPLETE)) {
-      (*aResult)->GetAnimated(&animated);
-    }
-
-    if ((!(status & imgIRequest::STATUS_LOAD_COMPLETE)) || animated) {
-      
-      
-      nsCOMPtr<imgINotificationObserver> obs;
-      imgReq->GetNotificationObserver(getter_AddRefs(obs));
-
-      if (obs) {
-        static_cast<nsTreeImageListener*>(obs.get())->AddCell(aRowIndex, aCol);
-      }
-
-      return NS_OK;
-    }
+    static_cast<nsTreeImageListener*>(entry.listener.get())
+        ->AddCell(aRowIndex, aCol);
+    return NS_OK;
   }
 
   if (!*aResult) {
     
     
     nsTreeImageListener* listener = new nsTreeImageListener(this);
-    if (!listener) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-
     mCreatedListeners.Insert(listener);
 
     listener->AddCell(aRowIndex, aCol);
@@ -3804,6 +3779,7 @@ void nsTreeBodyFrame::RemoveImageCacheEntry(int32_t aRowIndex,
   if (!mImageCache.Get(imageSrc, &entry)) {
     return;
   }
+  static_cast<nsTreeImageListener*>(entry.listener.get())->ClearFrame();
   nsLayoutUtils::DeregisterImageRequest(PresContext(), entry.request, nullptr);
   entry.request->UnlockImage();
   entry.request->CancelAndForgetObserver(NS_BINDING_ABORTED);
