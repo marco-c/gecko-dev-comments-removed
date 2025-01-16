@@ -3034,7 +3034,7 @@
 
 
  \
-    MACRO(GetImport, get_import, NULL, 5, 0, 1, JOF_ATOM) \
+    MACRO(GetImport, get_import, NULL, 5, 0, 1, JOF_ATOM|JOF_IC) \
     
 
 
