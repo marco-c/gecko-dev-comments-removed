@@ -806,7 +806,7 @@ bool NativeObject::goodElementsAllocationAmount(JSContext* cx,
   const uint32_t Mebi = 1 << 20;
   if (reqAllocated < Mebi) {
     uint32_t amount =
-        mozilla::AssertedCast<uint32_t>(RoundUpPow2(reqAllocated));
+        gc::GetGoodPower2ElementCount(reqAllocated, sizeof(Value));
 
     
     
@@ -816,11 +816,18 @@ bool NativeObject::goodElementsAllocationAmount(JSContext* cx,
     
     uint32_t goodCapacity = amount - ObjectElements::VALUES_PER_HEADER;
     if (length >= reqCapacity && goodCapacity > (length / 3) * 2) {
-      amount = length + ObjectElements::VALUES_PER_HEADER;
+      amount = gc::GetGoodElementCount(
+          length + ObjectElements::VALUES_PER_HEADER, sizeof(Value));
     }
 
-    if (amount < ELEMENT_CAPACITY_MIN) {
-      amount = ELEMENT_CAPACITY_MIN;
+    const size_t AmountMin =
+        ELEMENT_CAPACITY_MIN + ObjectElements::VALUES_PER_HEADER;
+
+    
+    MOZ_ASSERT(AmountMin == gc::GetGoodElementCount(AmountMin, sizeof(Value)));
+
+    if (amount < AmountMin) {
+      amount = AmountMin;
     }
 
     *goodAmount = amount;
@@ -857,7 +864,7 @@ bool NativeObject::goodElementsAllocationAmount(JSContext* cx,
   
   for (uint32_t b : BigBuckets) {
     if (b >= reqAllocated) {
-      *goodAmount = b;
+      *goodAmount = gc::GetGoodElementCount(b, sizeof(Value));
       return true;
     }
   }
@@ -961,8 +968,8 @@ bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
     oldAllocated = oldCapacity + ObjectElements::VALUES_PER_HEADER + numShifted;
 
     
-    newHeaderSlots = ReallocNurseryOrMallocBuffer<HeapSlot>(
-        cx, this, oldHeaderSlots, oldAllocated, newAllocated, js::MallocArena);
+    newHeaderSlots = ReallocateCellBuffer<HeapSlot>(cx, this, oldHeaderSlots,
+                                                    oldAllocated, newAllocated);
     if (!newHeaderSlots) {
       return false;  
                      
@@ -971,8 +978,7 @@ bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
     
     
     
-    newHeaderSlots =
-        AllocNurseryOrMallocBuffer<HeapSlot>(cx, this, newAllocated);
+    newHeaderSlots = AllocateCellBuffer<HeapSlot>(cx, this, newAllocated);
     if (!newHeaderSlots) {
       return false;  
     }
@@ -980,13 +986,6 @@ bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
     
     PodCopy(newHeaderSlots, oldHeaderSlots,
             ObjectElements::VALUES_PER_HEADER + initlen + numShifted);
-  }
-
-  
-  
-  if (oldAllocated) {
-    RemoveCellMemory(this, oldAllocated * sizeof(HeapSlot),
-                     MemoryUse::ObjectElements);
   }
 
   ObjectElements* newheader = reinterpret_cast<ObjectElements*>(newHeaderSlots);
@@ -1000,10 +999,6 @@ bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
 
   
   Debug_SetSlotRangeToCrashOnTouch(elements_ + initlen, newCapacity - initlen);
-
-  
-  AddCellMemory(this, newAllocated * sizeof(HeapSlot),
-                MemoryUse::ObjectElements);
 
   return true;
 }
@@ -1044,22 +1039,16 @@ void NativeObject::shrinkElements(JSContext* cx, uint32_t reqCapacity) {
 
   HeapSlot* oldHeaderSlots =
       reinterpret_cast<HeapSlot*>(getUnshiftedElementsHeader());
-  HeapSlot* newHeaderSlots = ReallocNurseryOrMallocBuffer<HeapSlot>(
-      cx, this, oldHeaderSlots, oldAllocated, newAllocated, js::MallocArena);
+  HeapSlot* newHeaderSlots = ReallocateCellBuffer<HeapSlot>(
+      cx, this, oldHeaderSlots, oldAllocated, newAllocated);
   if (!newHeaderSlots) {
     cx->recoverFromOutOfMemory();
     return;  
   }
 
-  RemoveCellMemory(this, oldAllocated * sizeof(HeapSlot),
-                   MemoryUse::ObjectElements);
-
   ObjectElements* newheader = reinterpret_cast<ObjectElements*>(newHeaderSlots);
   elements_ = newheader->elements() + numShifted;
   getElementsHeader()->capacity = newCapacity;
-
-  AddCellMemory(this, newAllocated * sizeof(HeapSlot),
-                MemoryUse::ObjectElements);
 }
 
 void NativeObject::shrinkCapacityToInitializedLength(JSContext* cx) {
@@ -1084,19 +1073,7 @@ void NativeObject::shrinkCapacityToInitializedLength(JSContext* cx) {
 
   shrinkElements(cx, len);
 
-  header = getElementsHeader();
-  uint32_t oldAllocated = header->numAllocatedElements();
-  header->capacity = len;
-
-  
-  
-  if (!hasFixedElements()) {
-    uint32_t newAllocated = header->numAllocatedElements();
-    RemoveCellMemory(this, oldAllocated * sizeof(HeapSlot),
-                     MemoryUse::ObjectElements);
-    AddCellMemory(this, newAllocated * sizeof(HeapSlot),
-                  MemoryUse::ObjectElements);
-  }
+  getElementsHeader()->capacity = len;
 }
 
 

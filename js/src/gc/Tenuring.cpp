@@ -930,8 +930,7 @@ size_t js::gc::TenuringTracer::moveElements(NativeObject* dst,
   
 
   Nursery::WasBufferMoved result =
-      nursery().maybeMoveNurseryOrMallocBufferOnPromotion(
-          &unshiftedHeader, dst, allocSize, MemoryUse::ObjectElements);
+      nursery().maybeMoveBufferOnPromotion(&unshiftedHeader, dst, allocSize);
   if (result == Nursery::BufferNotMoved) {
     return 0;
   }
