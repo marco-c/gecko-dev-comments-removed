@@ -228,6 +228,25 @@ class float16 final {
     return half::half2float_impl<double>(val);
   }
 
+  bool operator==(float16 x) const {
+    uint16_t abs = val & 0x7FFF;
+
+    
+    if (abs == 0) {
+      return (x.val & 0x7FFF) == 0;
+    }
+
+    
+    if (abs <= 0x7C00) {
+      return val == x.val;
+    }
+
+    
+    return false;
+  }
+
+  bool operator!=(float16 x) const { return !(*this == x); }
+
   uint16_t toRawBits() const { return val; }
 
   static constexpr float16 fromRawBits(uint16_t bits) {
