@@ -705,7 +705,7 @@ struct arena_stats_t {
   size_t allocated_large;
 
   
-  size_t operations;
+  uint64_t operations;
 };
 
 
@@ -1170,7 +1170,7 @@ struct arena_t {
   }
 
   
-  size_t Operations() const MOZ_NO_THREAD_SAFETY_ANALYSIS {
+  uint64_t Operations() const MOZ_NO_THREAD_SAFETY_ANALYSIS {
     return mStats.operations;
   }
 
@@ -1572,7 +1572,7 @@ class ArenaCollection {
 
   
   
-  size_t OperationsDisposedArenas() MOZ_REQUIRES(mLock) {
+  uint64_t OperationsDisposedArenas() MOZ_REQUIRES(mLock) {
     return mNumOperationsDisposedArenas;
   }
 
@@ -1604,7 +1604,7 @@ class ArenaCollection {
 
   
   
-  size_t mNumOperationsDisposedArenas = 0;
+  uint64_t mNumOperationsDisposedArenas = 0;
 };
 
 MOZ_RUNINIT static ArenaCollection gArenas;
@@ -1635,7 +1635,7 @@ static RedBlackTree<extent_node_t, ExtentTreeTrait> huge
 
 static size_t huge_allocated MOZ_GUARDED_BY(huge_mtx);
 static size_t huge_mapped MOZ_GUARDED_BY(huge_mtx);
-static size_t huge_operations MOZ_GUARDED_BY(huge_mtx);
+static uint64_t huge_operations MOZ_GUARDED_BY(huge_mtx);
 
 
 

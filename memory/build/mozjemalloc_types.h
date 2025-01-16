@@ -150,7 +150,7 @@ typedef struct {
   
   
   
-  size_t num_operations;
+  uint64_t num_operations;
 } jemalloc_stats_lite_t;
 
 enum PtrInfoTag {
