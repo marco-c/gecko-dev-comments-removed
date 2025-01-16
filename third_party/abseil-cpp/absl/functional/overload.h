@@ -49,14 +49,30 @@ ABSL_NAMESPACE_BEGIN
 #if defined(ABSL_INTERNAL_CPLUSPLUS_LANG) && \
     ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L
 
-template <int&... ExplicitArgumentBarrier, typename... T>
-auto Overload(T&&... ts) {
-  struct OverloadImpl : absl::remove_cvref_t<T>... {
-    using absl::remove_cvref_t<T>::operator()...;
-  };
-  return OverloadImpl{std::forward<T>(ts)...};
-}
+template <typename... T>
+struct Overload final : T... {
+  using T::operator()...;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  constexpr explicit Overload(T... ts) : T(std::move(ts))... {}
+};
+
+
+
+
+template <typename... T>
+Overload(T...) -> Overload<T...>;
+
 #else
+
 namespace functional_internal {
 template <typename T>
 constexpr bool kDependentFalse = false;
@@ -69,6 +85,7 @@ auto Overload(T&&...) {
 }
 
 #endif
+
 ABSL_NAMESPACE_END
 }  
 

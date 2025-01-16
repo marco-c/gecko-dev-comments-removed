@@ -17,10 +17,12 @@
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
 #include "absl/log/globals.h"
+#include "absl/log/internal/flags.h"
 #include "absl/log/log.h"
 #include "absl/log/log_entry.h"
 #include "absl/log/log_sink.h"
 #include "absl/log/log_sink_registry.h"
+#include "absl/log/vlog_is_on.h"
 #include "benchmark/benchmark.h"
 
 namespace {
@@ -92,6 +94,71 @@ static void BM_EnabledLogOverhead(benchmark::State& state) {
   }
 }
 BENCHMARK(BM_EnabledLogOverhead);
+
+static void BM_VlogIsOnOverhead(benchmark::State& state) {
+  
+  
+  
+  
+  absl::SetFlag(&FLAGS_v, 0);
+
+  while (state.KeepRunningBatch(10)) {
+    benchmark::DoNotOptimize(VLOG_IS_ON(0));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(0));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(0));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(0));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(0));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(0));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(0));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(0));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(0));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(0));  
+  }
+}
+BENCHMARK(BM_VlogIsOnOverhead)->ThreadRange(1, 64);
+
+static void BM_VlogIsNotOnOverhead(benchmark::State& state) {
+  
+  
+  
+  
+  absl::SetFlag(&FLAGS_v, 0);
+
+  while (state.KeepRunningBatch(10)) {
+    benchmark::DoNotOptimize(VLOG_IS_ON(1));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(1));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(1));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(1));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(1));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(1));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(1));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(1));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(1));  
+    benchmark::DoNotOptimize(VLOG_IS_ON(1));  
+  }
+}
+BENCHMARK(BM_VlogIsNotOnOverhead)->ThreadRange(1, 64);
+
+static void BM_LogEveryNOverhead(benchmark::State& state) {
+  absl::ScopedStderrThreshold disable_stderr_logging(
+      absl::LogSeverityAtLeast::kInfinity);
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+  ABSL_ATTRIBUTE_UNUSED NullLogSink null_sink;
+
+  while (state.KeepRunningBatch(10)) {
+    LOG_EVERY_N_SEC(INFO, 10);
+    LOG_EVERY_N_SEC(INFO, 20);
+    LOG_EVERY_N_SEC(INFO, 30);
+    LOG_EVERY_N_SEC(INFO, 40);
+    LOG_EVERY_N_SEC(INFO, 50);
+    LOG_EVERY_N_SEC(INFO, 60);
+    LOG_EVERY_N_SEC(INFO, 70);
+    LOG_EVERY_N_SEC(INFO, 80);
+    LOG_EVERY_N_SEC(INFO, 90);
+    LOG_EVERY_N_SEC(INFO, 100);
+  }
+}
+BENCHMARK(BM_LogEveryNOverhead)->ThreadRange(1, 64);
 
 }  
 

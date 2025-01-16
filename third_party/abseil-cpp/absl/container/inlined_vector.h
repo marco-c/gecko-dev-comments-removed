@@ -775,7 +775,20 @@ class InlinedVector {
     ABSL_HARDENING_ASSERT(pos >= begin());
     ABSL_HARDENING_ASSERT(pos < end());
 
+    
+    
+    
+    
+    
+#if !defined(__clang__) && defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#pragma GCC diagnostic ignored "-Wuninitialized"
+#endif
     return storage_.Erase(pos, pos + 1);
+#if !defined(__clang__) && defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
   }
 
   

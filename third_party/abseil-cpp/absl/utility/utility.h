@@ -51,11 +51,14 @@ ABSL_NAMESPACE_BEGIN
 
 
 
+using std::exchange;
+using std::forward;
 using std::index_sequence;
 using std::index_sequence_for;
 using std::integer_sequence;
 using std::make_index_sequence;
 using std::make_integer_sequence;
+using std::move;
 
 namespace utility_internal {
 
@@ -129,27 +132,6 @@ template <size_t I>
 void in_place_index(utility_internal::InPlaceIndexTag<I>) {}
 #endif  
 
-
-
-
-
-
-
-template <typename T>
-constexpr absl::remove_reference_t<T>&& move(T&& t) noexcept {
-  return static_cast<absl::remove_reference_t<T>&&>(t);
-}
-
-
-
-
-
-template <typename T>
-constexpr T&& forward(
-    absl::remove_reference_t<T>& t) noexcept {  
-  return static_cast<T&&>(t);
-}
-
 namespace utility_internal {
 
 template <typename Functor, typename Tuple, std::size_t... Indexes>
@@ -213,26 +195,6 @@ auto apply(Functor&& functor, Tuple&& t)
       absl::forward<Functor>(functor), absl::forward<Tuple>(t),
       absl::make_index_sequence<std::tuple_size<
           typename std::remove_reference<Tuple>::type>::value>{});
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T, typename U = T>
-T exchange(T& obj, U&& new_value) {
-  T old_value = absl::move(obj);
-  obj = absl::forward<U>(new_value);
-  return old_value;
 }
 
 namespace utility_internal {

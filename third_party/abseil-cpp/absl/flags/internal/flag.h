@@ -297,9 +297,6 @@ constexpr FlagDefaultArg DefaultArg(char) {
 
 
 
-constexpr int64_t UninitializedFlagValue() {
-  return static_cast<int64_t>(0xababababababababll);
-}
 
 template <typename T>
 using FlagUseValueAndInitBitStorage =
@@ -321,8 +318,10 @@ enum class FlagValueStorageKind : uint8_t {
   kValueAndInitBit = 0,
   kOneWordAtomic = 1,
   kSequenceLocked = 2,
-  kAlignedBuffer = 3,
+  kHeapAllocated = 3,
 };
+
+
 
 template <typename T>
 static constexpr FlagValueStorageKind StorageKind() {
@@ -332,13 +331,23 @@ static constexpr FlagValueStorageKind StorageKind() {
              ? FlagValueStorageKind::kOneWordAtomic
          : FlagUseSequenceLockStorage<T>::value
              ? FlagValueStorageKind::kSequenceLocked
-             : FlagValueStorageKind::kAlignedBuffer;
+             : FlagValueStorageKind::kHeapAllocated;
 }
 
+
+
+
+
 struct FlagOneWordValue {
+  constexpr static int64_t Uninitialized() {
+    return static_cast<int64_t>(0xababababababababll);
+  }
+
+  constexpr FlagOneWordValue() : value(Uninitialized()) {}
   constexpr explicit FlagOneWordValue(int64_t v) : value(v) {}
   std::atomic<int64_t> value;
 };
+
 
 template <typename T>
 struct alignas(8) FlagValueAndInitBit {
@@ -348,9 +357,80 @@ struct alignas(8) FlagValueAndInitBit {
   uint8_t init;
 };
 
+
+
+
+
+
+
+
+
+
+class MaskedPointer {
+ public:
+  using mask_t = uintptr_t;
+  using ptr_t = void*;
+
+  static constexpr int RequiredAlignment() { return 4; }
+
+  constexpr explicit MaskedPointer(ptr_t rhs) : ptr_(rhs) {}
+  MaskedPointer(ptr_t rhs, bool is_candidate);
+
+  void* Ptr() const {
+    return reinterpret_cast<void*>(reinterpret_cast<mask_t>(ptr_) &
+                                   kPtrValueMask);
+  }
+  bool AllowsUnprotectedRead() const {
+    return (reinterpret_cast<mask_t>(ptr_) & kAllowsUnprotectedRead) ==
+           kAllowsUnprotectedRead;
+  }
+  bool IsUnprotectedReadCandidate() const;
+  bool HasBeenRead() const;
+
+  void Set(FlagOpFn op, const void* src, bool is_candidate);
+  void MarkAsRead();
+
+ private:
+  
+  
+  
+  static constexpr mask_t kUnprotectedReadCandidate = 0x1u;
+  
+  static constexpr mask_t kHasBeenRead = 0x2u;
+  static constexpr mask_t kAllowsUnprotectedRead =
+      kUnprotectedReadCandidate | kHasBeenRead;
+  static constexpr mask_t kPtrValueMask = ~kAllowsUnprotectedRead;
+
+  void ApplyMask(mask_t mask);
+  bool CheckMask(mask_t mask) const;
+
+  ptr_t ptr_;
+};
+
+
+
+
+
+
+
+struct FlagMaskedPointerValue {
+  constexpr explicit FlagMaskedPointerValue(MaskedPointer::ptr_t initial_buffer)
+      : value(MaskedPointer(initial_buffer)) {}
+
+  std::atomic<MaskedPointer> value;
+};
+
+
+
+
+
 template <typename T,
           FlagValueStorageKind Kind = flags_internal::StorageKind<T>()>
 struct FlagValue;
+
+
+
+
 
 template <typename T>
 struct FlagValue<T, FlagValueStorageKind::kValueAndInitBit> : FlagOneWordValue {
@@ -358,6 +438,10 @@ struct FlagValue<T, FlagValueStorageKind::kValueAndInitBit> : FlagOneWordValue {
   bool Get(const SequenceLock&, T& dst) const {
     int64_t storage = value.load(std::memory_order_acquire);
     if (ABSL_PREDICT_FALSE(storage == 0)) {
+      
+      
+      static_assert(offsetof(FlagValueAndInitBit<T>, init) == sizeof(T),
+                    "Unexpected memory layout of FlagValueAndInitBit");
       return false;
     }
     dst = absl::bit_cast<FlagValueAndInitBit<T>>(storage).value;
@@ -365,18 +449,28 @@ struct FlagValue<T, FlagValueStorageKind::kValueAndInitBit> : FlagOneWordValue {
   }
 };
 
+
+
+
+
 template <typename T>
 struct FlagValue<T, FlagValueStorageKind::kOneWordAtomic> : FlagOneWordValue {
-  constexpr FlagValue() : FlagOneWordValue(UninitializedFlagValue()) {}
+  constexpr FlagValue() : FlagOneWordValue() {}
   bool Get(const SequenceLock&, T& dst) const {
     int64_t one_word_val = value.load(std::memory_order_acquire);
-    if (ABSL_PREDICT_FALSE(one_word_val == UninitializedFlagValue())) {
+    if (ABSL_PREDICT_FALSE(one_word_val == FlagOneWordValue::Uninitialized())) {
       return false;
     }
     std::memcpy(&dst, static_cast<const void*>(&one_word_val), sizeof(T));
     return true;
   }
 };
+
+
+
+
+
+
 
 template <typename T>
 struct FlagValue<T, FlagValueStorageKind::kSequenceLocked> {
@@ -391,11 +485,62 @@ struct FlagValue<T, FlagValueStorageKind::kSequenceLocked> {
       std::atomic<uint64_t>) std::atomic<uint64_t> value_words[kNumWords];
 };
 
-template <typename T>
-struct FlagValue<T, FlagValueStorageKind::kAlignedBuffer> {
-  bool Get(const SequenceLock&, T&) const { return false; }
 
-  alignas(T) char value[sizeof(T)];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+struct FlagValue<T, FlagValueStorageKind::kHeapAllocated>
+    : FlagMaskedPointerValue {
+  
+  
+  
+  constexpr FlagValue() : FlagMaskedPointerValue(&buffer[0]) {}
+
+  bool Get(const SequenceLock&, T& dst) const {
+    MaskedPointer ptr_value = value.load(std::memory_order_acquire);
+
+    if (ABSL_PREDICT_TRUE(ptr_value.AllowsUnprotectedRead())) {
+      ::new (static_cast<void*>(&dst)) T(*static_cast<T*>(ptr_value.Ptr()));
+      return true;
+    }
+    return false;
+  }
+
+  alignas(MaskedPointer::RequiredAlignment()) alignas(
+      T) char buffer[sizeof(T)]{};
 };
 
 
@@ -424,6 +569,13 @@ struct DynValueDeleter {
 
 class FlagState;
 
+
+
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#endif
 class FlagImpl final : public CommandLineFlag {
  public:
   constexpr FlagImpl(const char* name, const char* filename, FlagOpFn op,
@@ -504,10 +656,6 @@ class FlagImpl final : public CommandLineFlag {
   
   template <typename StorageT>
   StorageT* OffsetValue() const;
-  
-  
-  
-  void* AlignedBufferValue() const;
 
   
   std::atomic<uint64_t>* AtomicBufferValue() const;
@@ -516,13 +664,16 @@ class FlagImpl final : public CommandLineFlag {
   
   std::atomic<int64_t>& OneWordValue() const;
 
+  std::atomic<MaskedPointer>& PtrStorage() const;
+
   
   
   std::unique_ptr<void, DynValueDeleter> TryParse(absl::string_view value,
                                                   std::string& err) const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*DataGuard());
   
-  void StoreValue(const void* src) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*DataGuard());
+  void StoreValue(const void* src, ValueSource source)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*DataGuard());
 
   
   
@@ -623,6 +774,9 @@ class FlagImpl final : public CommandLineFlag {
   
   alignas(absl::Mutex) mutable char data_guard_[sizeof(absl::Mutex)];
 };
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 
 
@@ -710,16 +864,21 @@ class FlagImplPeer {
 
 template <typename T>
 void* FlagOps(FlagOp op, const void* v1, void* v2, void* v3) {
+  struct AlignedSpace {
+    alignas(MaskedPointer::RequiredAlignment()) alignas(T) char buf[sizeof(T)];
+  };
+  using Allocator = std::allocator<AlignedSpace>;
   switch (op) {
     case FlagOp::kAlloc: {
-      std::allocator<T> alloc;
-      return std::allocator_traits<std::allocator<T>>::allocate(alloc, 1);
+      Allocator alloc;
+      return std::allocator_traits<Allocator>::allocate(alloc, 1);
     }
     case FlagOp::kDelete: {
       T* p = static_cast<T*>(v2);
       p->~T();
-      std::allocator<T> alloc;
-      std::allocator_traits<std::allocator<T>>::deallocate(alloc, p, 1);
+      Allocator alloc;
+      std::allocator_traits<Allocator>::deallocate(
+          alloc, reinterpret_cast<AlignedSpace*>(p), 1);
       return nullptr;
     }
     case FlagOp::kCopy:
@@ -753,8 +912,7 @@ void* FlagOps(FlagOp op, const void* v1, void* v2, void* v3) {
       
       
       size_t round_to = alignof(FlagValue<T>);
-      size_t offset =
-          (sizeof(FlagImpl) + round_to - 1) / round_to * round_to;
+      size_t offset = (sizeof(FlagImpl) + round_to - 1) / round_to * round_to;
       return reinterpret_cast<void*>(offset);
     }
   }
@@ -788,6 +946,10 @@ class FlagRegistrar {
  private:
   Flag<T>& flag_;  
 };
+
+
+
+uint64_t NumLeakedFlagValues();
 
 }  
 ABSL_NAMESPACE_END

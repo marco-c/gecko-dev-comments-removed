@@ -44,6 +44,7 @@
 #include <cassert>
 #include <iterator>
 #include <numeric>
+#include <random>
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
@@ -51,6 +52,7 @@
 #include <vector>
 
 #include "absl/algorithm/algorithm.h"
+#include "absl/base/config.h"
 #include "absl/base/macros.h"
 #include "absl/base/nullability.h"
 #include "absl/meta/type_traits.h"
@@ -97,12 +99,12 @@ using ContainerPointerType =
 
 
 template <typename C>
-ContainerIter<C> c_begin(C& c) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17 ContainerIter<C> c_begin(C& c) {
   return begin(c);
 }
 
 template <typename C>
-ContainerIter<C> c_end(C& c) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17 ContainerIter<C> c_end(C& c) {
   return end(c);
 }
 
@@ -130,7 +132,8 @@ struct IsUnorderedContainer<std::unordered_set<Key, Hash, KeyEqual, Allocator>>
 
 
 template <typename C, typename EqualityComparable>
-bool c_linear_search(const C& c, EqualityComparable&& value) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 bool c_linear_search(
+    const C& c, EqualityComparable&& value) {
   return linear_search(container_algorithm_internal::c_begin(c),
                        container_algorithm_internal::c_end(c),
                        std::forward<EqualityComparable>(value));
@@ -145,8 +148,9 @@ bool c_linear_search(const C& c, EqualityComparable&& value) {
 
 
 template <typename C>
-container_algorithm_internal::ContainerDifferenceType<const C> c_distance(
-    const C& c) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17
+    container_algorithm_internal::ContainerDifferenceType<const C>
+    c_distance(const C& c) {
   return std::distance(container_algorithm_internal::c_begin(c),
                        container_algorithm_internal::c_end(c));
 }
@@ -160,7 +164,7 @@ container_algorithm_internal::ContainerDifferenceType<const C> c_distance(
 
 
 template <typename C, typename Pred>
-bool c_all_of(const C& c, Pred&& pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 bool c_all_of(const C& c, Pred&& pred) {
   return std::all_of(container_algorithm_internal::c_begin(c),
                      container_algorithm_internal::c_end(c),
                      std::forward<Pred>(pred));
@@ -171,7 +175,7 @@ bool c_all_of(const C& c, Pred&& pred) {
 
 
 template <typename C, typename Pred>
-bool c_any_of(const C& c, Pred&& pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 bool c_any_of(const C& c, Pred&& pred) {
   return std::any_of(container_algorithm_internal::c_begin(c),
                      container_algorithm_internal::c_end(c),
                      std::forward<Pred>(pred));
@@ -182,7 +186,7 @@ bool c_any_of(const C& c, Pred&& pred) {
 
 
 template <typename C, typename Pred>
-bool c_none_of(const C& c, Pred&& pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 bool c_none_of(const C& c, Pred&& pred) {
   return std::none_of(container_algorithm_internal::c_begin(c),
                       container_algorithm_internal::c_end(c),
                       std::forward<Pred>(pred));
@@ -193,7 +197,8 @@ bool c_none_of(const C& c, Pred&& pred) {
 
 
 template <typename C, typename Function>
-decay_t<Function> c_for_each(C&& c, Function&& f) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 decay_t<Function> c_for_each(C&& c,
+                                                                 Function&& f) {
   return std::for_each(container_algorithm_internal::c_begin(c),
                        container_algorithm_internal::c_end(c),
                        std::forward<Function>(f));
@@ -204,7 +209,9 @@ decay_t<Function> c_for_each(C&& c, Function&& f) {
 
 
 template <typename C, typename T>
-container_algorithm_internal::ContainerIter<C> c_find(C& c, T&& value) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIter<C>
+    c_find(C& c, T&& value) {
   return std::find(container_algorithm_internal::c_begin(c),
                    container_algorithm_internal::c_end(c),
                    std::forward<T>(value));
@@ -214,8 +221,21 @@ container_algorithm_internal::ContainerIter<C> c_find(C& c, T&& value) {
 
 
 
+template <typename Sequence, typename T>
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 bool c_contains(const Sequence& sequence,
+                                                    T&& value) {
+  return absl::c_find(sequence, std::forward<T>(value)) !=
+         container_algorithm_internal::c_end(sequence);
+}
+
+
+
+
+
 template <typename C, typename Pred>
-container_algorithm_internal::ContainerIter<C> c_find_if(C& c, Pred&& pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIter<C>
+    c_find_if(C& c, Pred&& pred) {
   return std::find_if(container_algorithm_internal::c_begin(c),
                       container_algorithm_internal::c_end(c),
                       std::forward<Pred>(pred));
@@ -226,8 +246,9 @@ container_algorithm_internal::ContainerIter<C> c_find_if(C& c, Pred&& pred) {
 
 
 template <typename C, typename Pred>
-container_algorithm_internal::ContainerIter<C> c_find_if_not(C& c,
-                                                             Pred&& pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIter<C>
+    c_find_if_not(C& c, Pred&& pred) {
   return std::find_if_not(container_algorithm_internal::c_begin(c),
                           container_algorithm_internal::c_end(c),
                           std::forward<Pred>(pred));
@@ -238,8 +259,9 @@ container_algorithm_internal::ContainerIter<C> c_find_if_not(C& c,
 
 
 template <typename Sequence1, typename Sequence2>
-container_algorithm_internal::ContainerIter<Sequence1> c_find_end(
-    Sequence1& sequence, Sequence2& subsequence) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIter<Sequence1>
+    c_find_end(Sequence1& sequence, Sequence2& subsequence) {
   return std::find_end(container_algorithm_internal::c_begin(sequence),
                        container_algorithm_internal::c_end(sequence),
                        container_algorithm_internal::c_begin(subsequence),
@@ -249,8 +271,10 @@ container_algorithm_internal::ContainerIter<Sequence1> c_find_end(
 
 
 template <typename Sequence1, typename Sequence2, typename BinaryPredicate>
-container_algorithm_internal::ContainerIter<Sequence1> c_find_end(
-    Sequence1& sequence, Sequence2& subsequence, BinaryPredicate&& pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIter<Sequence1>
+    c_find_end(Sequence1& sequence, Sequence2& subsequence,
+               BinaryPredicate&& pred) {
   return std::find_end(container_algorithm_internal::c_begin(sequence),
                        container_algorithm_internal::c_end(sequence),
                        container_algorithm_internal::c_begin(subsequence),
@@ -264,8 +288,9 @@ container_algorithm_internal::ContainerIter<Sequence1> c_find_end(
 
 
 template <typename C1, typename C2>
-container_algorithm_internal::ContainerIter<C1> c_find_first_of(C1& container,
-                                                                C2& options) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIter<C1>
+    c_find_first_of(C1& container, C2& options) {
   return std::find_first_of(container_algorithm_internal::c_begin(container),
                             container_algorithm_internal::c_end(container),
                             container_algorithm_internal::c_begin(options),
@@ -275,8 +300,9 @@ container_algorithm_internal::ContainerIter<C1> c_find_first_of(C1& container,
 
 
 template <typename C1, typename C2, typename BinaryPredicate>
-container_algorithm_internal::ContainerIter<C1> c_find_first_of(
-    C1& container, C2& options, BinaryPredicate&& pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIter<C1>
+    c_find_first_of(C1& container, C2& options, BinaryPredicate&& pred) {
   return std::find_first_of(container_algorithm_internal::c_begin(container),
                             container_algorithm_internal::c_end(container),
                             container_algorithm_internal::c_begin(options),
@@ -289,8 +315,9 @@ container_algorithm_internal::ContainerIter<C1> c_find_first_of(
 
 
 template <typename Sequence>
-container_algorithm_internal::ContainerIter<Sequence> c_adjacent_find(
-    Sequence& sequence) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIter<Sequence>
+    c_adjacent_find(Sequence& sequence) {
   return std::adjacent_find(container_algorithm_internal::c_begin(sequence),
                             container_algorithm_internal::c_end(sequence));
 }
@@ -298,8 +325,9 @@ container_algorithm_internal::ContainerIter<Sequence> c_adjacent_find(
 
 
 template <typename Sequence, typename BinaryPredicate>
-container_algorithm_internal::ContainerIter<Sequence> c_adjacent_find(
-    Sequence& sequence, BinaryPredicate&& pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIter<Sequence>
+    c_adjacent_find(Sequence& sequence, BinaryPredicate&& pred) {
   return std::adjacent_find(container_algorithm_internal::c_begin(sequence),
                             container_algorithm_internal::c_end(sequence),
                             std::forward<BinaryPredicate>(pred));
@@ -310,8 +338,9 @@ container_algorithm_internal::ContainerIter<Sequence> c_adjacent_find(
 
 
 template <typename C, typename T>
-container_algorithm_internal::ContainerDifferenceType<const C> c_count(
-    const C& c, T&& value) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerDifferenceType<const C>
+    c_count(const C& c, T&& value) {
   return std::count(container_algorithm_internal::c_begin(c),
                     container_algorithm_internal::c_end(c),
                     std::forward<T>(value));
@@ -322,8 +351,9 @@ container_algorithm_internal::ContainerDifferenceType<const C> c_count(
 
 
 template <typename C, typename Pred>
-container_algorithm_internal::ContainerDifferenceType<const C> c_count_if(
-    const C& c, Pred&& pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerDifferenceType<const C>
+    c_count_if(const C& c, Pred&& pred) {
   return std::count_if(container_algorithm_internal::c_begin(c),
                        container_algorithm_internal::c_end(c),
                        std::forward<Pred>(pred));
@@ -335,8 +365,9 @@ container_algorithm_internal::ContainerDifferenceType<const C> c_count_if(
 
 
 template <typename C1, typename C2>
-container_algorithm_internal::ContainerIterPairType<C1, C2> c_mismatch(C1& c1,
-                                                                       C2& c2) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIterPairType<C1, C2>
+    c_mismatch(C1& c1, C2& c2) {
   return std::mismatch(container_algorithm_internal::c_begin(c1),
                        container_algorithm_internal::c_end(c1),
                        container_algorithm_internal::c_begin(c2),
@@ -347,8 +378,9 @@ container_algorithm_internal::ContainerIterPairType<C1, C2> c_mismatch(C1& c1,
 
 
 template <typename C1, typename C2, typename BinaryPredicate>
-container_algorithm_internal::ContainerIterPairType<C1, C2> c_mismatch(
-    C1& c1, C2& c2, BinaryPredicate pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIterPairType<C1, C2>
+    c_mismatch(C1& c1, C2& c2, BinaryPredicate pred) {
   return std::mismatch(container_algorithm_internal::c_begin(c1),
                        container_algorithm_internal::c_end(c1),
                        container_algorithm_internal::c_begin(c2),
@@ -360,7 +392,7 @@ container_algorithm_internal::ContainerIterPairType<C1, C2> c_mismatch(
 
 
 template <typename C1, typename C2>
-bool c_equal(const C1& c1, const C2& c2) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 bool c_equal(const C1& c1, const C2& c2) {
   return std::equal(container_algorithm_internal::c_begin(c1),
                     container_algorithm_internal::c_end(c1),
                     container_algorithm_internal::c_begin(c2),
@@ -370,7 +402,8 @@ bool c_equal(const C1& c1, const C2& c2) {
 
 
 template <typename C1, typename C2, typename BinaryPredicate>
-bool c_equal(const C1& c1, const C2& c2, BinaryPredicate&& pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 bool c_equal(const C1& c1, const C2& c2,
+                                                 BinaryPredicate&& pred) {
   return std::equal(container_algorithm_internal::c_begin(c1),
                     container_algorithm_internal::c_end(c1),
                     container_algorithm_internal::c_begin(c2),
@@ -383,7 +416,8 @@ bool c_equal(const C1& c1, const C2& c2, BinaryPredicate&& pred) {
 
 
 template <typename C1, typename C2>
-bool c_is_permutation(const C1& c1, const C2& c2) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 bool c_is_permutation(const C1& c1,
+                                                          const C2& c2) {
   return std::is_permutation(container_algorithm_internal::c_begin(c1),
                              container_algorithm_internal::c_end(c1),
                              container_algorithm_internal::c_begin(c2),
@@ -393,7 +427,8 @@ bool c_is_permutation(const C1& c1, const C2& c2) {
 
 
 template <typename C1, typename C2, typename BinaryPredicate>
-bool c_is_permutation(const C1& c1, const C2& c2, BinaryPredicate&& pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 bool c_is_permutation(
+    const C1& c1, const C2& c2, BinaryPredicate&& pred) {
   return std::is_permutation(container_algorithm_internal::c_begin(c1),
                              container_algorithm_internal::c_end(c1),
                              container_algorithm_internal::c_begin(c2),
@@ -406,8 +441,9 @@ bool c_is_permutation(const C1& c1, const C2& c2, BinaryPredicate&& pred) {
 
 
 template <typename Sequence1, typename Sequence2>
-container_algorithm_internal::ContainerIter<Sequence1> c_search(
-    Sequence1& sequence, Sequence2& subsequence) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIter<Sequence1>
+    c_search(Sequence1& sequence, Sequence2& subsequence) {
   return std::search(container_algorithm_internal::c_begin(sequence),
                      container_algorithm_internal::c_end(sequence),
                      container_algorithm_internal::c_begin(subsequence),
@@ -417,8 +453,10 @@ container_algorithm_internal::ContainerIter<Sequence1> c_search(
 
 
 template <typename Sequence1, typename Sequence2, typename BinaryPredicate>
-container_algorithm_internal::ContainerIter<Sequence1> c_search(
-    Sequence1& sequence, Sequence2& subsequence, BinaryPredicate&& pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIter<Sequence1>
+    c_search(Sequence1& sequence, Sequence2& subsequence,
+             BinaryPredicate&& pred) {
   return std::search(container_algorithm_internal::c_begin(sequence),
                      container_algorithm_internal::c_end(sequence),
                      container_algorithm_internal::c_begin(subsequence),
@@ -430,9 +468,31 @@ container_algorithm_internal::ContainerIter<Sequence1> c_search(
 
 
 
+template <typename Sequence1, typename Sequence2>
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 bool c_contains_subrange(
+    Sequence1& sequence, Sequence2& subsequence) {
+  return absl::c_search(sequence, subsequence) !=
+         container_algorithm_internal::c_end(sequence);
+}
+
+
+
+template <typename Sequence1, typename Sequence2, typename BinaryPredicate>
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 bool c_contains_subrange(
+    Sequence1& sequence, Sequence2& subsequence, BinaryPredicate&& pred) {
+  return absl::c_search(sequence, subsequence,
+                        std::forward<BinaryPredicate>(pred)) !=
+         container_algorithm_internal::c_end(sequence);
+}
+
+
+
+
+
 template <typename Sequence, typename Size, typename T>
-container_algorithm_internal::ContainerIter<Sequence> c_search_n(
-    Sequence& sequence, Size count, T&& value) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIter<Sequence>
+    c_search_n(Sequence& sequence, Size count, T&& value) {
   return std::search_n(container_algorithm_internal::c_begin(sequence),
                        container_algorithm_internal::c_end(sequence), count,
                        std::forward<T>(value));
@@ -442,8 +502,10 @@ container_algorithm_internal::ContainerIter<Sequence> c_search_n(
 
 template <typename Sequence, typename Size, typename T,
           typename BinaryPredicate>
-container_algorithm_internal::ContainerIter<Sequence> c_search_n(
-    Sequence& sequence, Size count, T&& value, BinaryPredicate&& pred) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
+    container_algorithm_internal::ContainerIter<Sequence>
+    c_search_n(Sequence& sequence, Size count, T&& value,
+               BinaryPredicate&& pred) {
   return std::search_n(container_algorithm_internal::c_begin(sequence),
                        container_algorithm_internal::c_end(sequence), count,
                        std::forward<T>(value),
@@ -1500,8 +1562,9 @@ c_is_heap_until(RandomAccessContainer& sequence, LessThan&& comp) {
 
 
 template <typename Sequence>
-container_algorithm_internal::ContainerIter<Sequence> c_min_element(
-    Sequence& sequence) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17
+    container_algorithm_internal::ContainerIter<Sequence>
+    c_min_element(Sequence& sequence) {
   return std::min_element(container_algorithm_internal::c_begin(sequence),
                           container_algorithm_internal::c_end(sequence));
 }
@@ -1509,8 +1572,9 @@ container_algorithm_internal::ContainerIter<Sequence> c_min_element(
 
 
 template <typename Sequence, typename LessThan>
-container_algorithm_internal::ContainerIter<Sequence> c_min_element(
-    Sequence& sequence, LessThan&& comp) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17
+    container_algorithm_internal::ContainerIter<Sequence>
+    c_min_element(Sequence& sequence, LessThan&& comp) {
   return std::min_element(container_algorithm_internal::c_begin(sequence),
                           container_algorithm_internal::c_end(sequence),
                           std::forward<LessThan>(comp));
@@ -1522,8 +1586,9 @@ container_algorithm_internal::ContainerIter<Sequence> c_min_element(
 
 
 template <typename Sequence>
-container_algorithm_internal::ContainerIter<Sequence> c_max_element(
-    Sequence& sequence) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17
+    container_algorithm_internal::ContainerIter<Sequence>
+    c_max_element(Sequence& sequence) {
   return std::max_element(container_algorithm_internal::c_begin(sequence),
                           container_algorithm_internal::c_end(sequence));
 }
@@ -1531,8 +1596,9 @@ container_algorithm_internal::ContainerIter<Sequence> c_max_element(
 
 
 template <typename Sequence, typename LessThan>
-container_algorithm_internal::ContainerIter<Sequence> c_max_element(
-    Sequence& sequence, LessThan&& comp) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17
+    container_algorithm_internal::ContainerIter<Sequence>
+    c_max_element(Sequence& sequence, LessThan&& comp) {
   return std::max_element(container_algorithm_internal::c_begin(sequence),
                           container_algorithm_internal::c_end(sequence),
                           std::forward<LessThan>(comp));
@@ -1545,8 +1611,9 @@ container_algorithm_internal::ContainerIter<Sequence> c_max_element(
 
 
 template <typename C>
-container_algorithm_internal::ContainerIterPairType<C, C> c_minmax_element(
-    C& c) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17
+    container_algorithm_internal::ContainerIterPairType<C, C>
+    c_minmax_element(C& c) {
   return std::minmax_element(container_algorithm_internal::c_begin(c),
                              container_algorithm_internal::c_end(c));
 }
@@ -1554,8 +1621,9 @@ container_algorithm_internal::ContainerIterPairType<C, C> c_minmax_element(
 
 
 template <typename C, typename LessThan>
-container_algorithm_internal::ContainerIterPairType<C, C> c_minmax_element(
-    C& c, LessThan&& comp) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17
+    container_algorithm_internal::ContainerIterPairType<C, C>
+    c_minmax_element(C& c, LessThan&& comp) {
   return std::minmax_element(container_algorithm_internal::c_begin(c),
                              container_algorithm_internal::c_end(c),
                              std::forward<LessThan>(comp));

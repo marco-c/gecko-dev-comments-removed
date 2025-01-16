@@ -12,7 +12,7 @@
 
 
 
-#include <cstdint>
+#include <cstddef>
 
 #include "absl/base/config.h"
 #include "absl/crc/crc32c.h"

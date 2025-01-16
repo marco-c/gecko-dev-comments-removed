@@ -19,19 +19,8 @@
 #include <intrin.h>
 #endif
 
-#ifdef __SSE__
-#include <xmmintrin.h>
-#endif
+#if defined(__SSE__) || defined(__AVX__)
 
-#ifdef __SSE2__
-#include <emmintrin.h>
-#endif
-
-#ifdef __SSE3__
-#include <pmmintrin.h>
-#endif
-
-#ifdef __AVX__
 #include <immintrin.h>
 #endif
 
@@ -44,6 +33,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/optimization.h"
 
@@ -56,6 +46,8 @@ namespace crc_internal {
 
 
 constexpr size_t kCacheLineSize = ABSL_CACHELINE_SIZE;
+
+
 
 
 inline void *non_temporal_store_memcpy(void *__restrict dst,
@@ -119,10 +111,20 @@ inline void *non_temporal_store_memcpy(void *__restrict dst,
 #endif  
 }
 
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(gnu::target) && \
+    (defined(__x86_64__) || defined(__i386__))
+[[gnu::target("avx")]]
+#endif
 inline void *non_temporal_store_memcpy_avx(void *__restrict dst,
                                            const void *__restrict src,
                                            size_t len) {
-#ifdef __AVX__
+  
+  
+  
+#if defined(__SSE3__) || (defined(_MSC_VER) && defined(__AVX__))
   uint8_t *d = reinterpret_cast<uint8_t *>(dst);
   const uint8_t *s = reinterpret_cast<const uint8_t *>(src);
 
@@ -168,7 +170,6 @@ inline void *non_temporal_store_memcpy_avx(void *__restrict dst,
   }
   return dst;
 #else
-  
   return memcpy(dst, src, len);
 #endif  
 }

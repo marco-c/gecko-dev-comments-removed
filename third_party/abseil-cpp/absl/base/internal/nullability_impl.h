@@ -19,10 +19,11 @@
 #include <type_traits>
 
 #include "absl/base/attributes.h"
+#include "absl/base/config.h"
 #include "absl/meta/type_traits.h"
 
 namespace absl {
-
+ABSL_NAMESPACE_BEGIN
 namespace nullability_internal {
 
 
@@ -101,6 +102,7 @@ using NullabilityUnknownImpl
     = T;
 
 }  
+ABSL_NAMESPACE_END
 }  
 
 #endif  

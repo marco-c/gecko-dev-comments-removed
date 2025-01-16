@@ -15,9 +15,13 @@
 #include "absl/synchronization/blocking_counter.h"
 
 #include <thread>  
+#include <tuple>
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "absl/base/attributes.h"
+#include "absl/base/config.h"
+#include "absl/base/internal/tracing.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
@@ -76,5 +80,67 @@ TEST(BlockingCounterTest, WaitNegativeInitialCount) {
 #endif
 
 }  
+
+#if ABSL_HAVE_ATTRIBUTE_WEAK
+
+namespace base_internal {
+
+namespace {
+
+using TraceRecord = std::tuple<const void*, ObjectKind>;
+
+thread_local TraceRecord tls_signal;
+thread_local TraceRecord tls_wait;
+thread_local TraceRecord tls_continue;
+
+}  
+
+
+extern "C" {
+
+void ABSL_INTERNAL_C_SYMBOL(AbslInternalTraceWait)(const void* object,
+                                                   ObjectKind kind) {
+  tls_wait = {object, kind};
+}
+
+void ABSL_INTERNAL_C_SYMBOL(AbslInternalTraceContinue)(const void* object,
+                                                       ObjectKind kind) {
+  tls_continue = {object, kind};
+}
+
+void ABSL_INTERNAL_C_SYMBOL(AbslInternalTraceSignal)(const void* object,
+                                                     ObjectKind kind) {
+  tls_signal = {object, kind};
+}
+
+}  
+
+TEST(BlockingCounterTest, TracesSignal) {
+  BlockingCounter counter(2);
+
+  tls_signal = {};
+  counter.DecrementCount();
+  EXPECT_EQ(tls_signal, TraceRecord(nullptr, ObjectKind::kUnknown));
+
+  tls_signal = {};
+  counter.DecrementCount();
+  EXPECT_EQ(tls_signal, TraceRecord(&counter, ObjectKind::kBlockingCounter));
+}
+
+TEST(BlockingCounterTest, TracesWaitContinue) {
+  BlockingCounter counter(1);
+  counter.DecrementCount();
+
+  tls_wait = {};
+  tls_continue = {};
+  counter.Wait();
+  EXPECT_EQ(tls_wait, TraceRecord(&counter, ObjectKind::kBlockingCounter));
+  EXPECT_EQ(tls_continue, TraceRecord(&counter, ObjectKind::kBlockingCounter));
+}
+
+}  
+
+#endif  
+
 ABSL_NAMESPACE_END
 }  

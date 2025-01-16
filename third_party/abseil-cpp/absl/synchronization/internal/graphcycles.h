@@ -127,6 +127,11 @@ class GraphCycles {
   bool CheckInvariants() const;
 
   
+  
+  
+  void TestOnlyAddNodes(uint32_t n);
+
+  
   struct Rep;
  private:
   Rep *rep_;      

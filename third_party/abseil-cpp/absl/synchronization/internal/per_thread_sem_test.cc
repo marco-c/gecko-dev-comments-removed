@@ -159,7 +159,11 @@ TEST_F(PerThreadSemTest, Timeouts) {
   const absl::Duration elapsed = absl::Now() - start;
   
   
-  const absl::Duration slop = absl::Milliseconds(1);
+  absl::Duration slop = absl::Milliseconds(1);
+#ifdef _MSC_VER
+  
+  slop = absl::Milliseconds(16);
+#endif
   EXPECT_LE(delay - slop, elapsed)
       << "Wait returned " << delay - elapsed
       << " early (with " << slop << " slop), start time was " << start;

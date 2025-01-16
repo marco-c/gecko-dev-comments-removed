@@ -28,83 +28,37 @@
 #ifndef ABSL_RANDOM_MOCKING_BIT_GEN_H_
 #define ABSL_RANDOM_MOCKING_BIT_GEN_H_
 
-#include <iterator>
-#include <limits>
 #include <memory>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 
 #include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include "absl/base/attributes.h"
+#include "absl/base/config.h"
 #include "absl/base/internal/fast_type_id.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/meta/type_traits.h"
-#include "absl/random/distributions.h"
-#include "absl/random/internal/distribution_caller.h"
+#include "absl/random/internal/mock_helpers.h"
 #include "absl/random/random.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/types/span.h"
-#include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
+
+class BitGenRef;
 
 namespace random_internal {
 template <typename>
 struct DistributionCaller;
 class MockHelpers;
 
-}  
-class BitGenRef;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MockingBitGen {
+template <bool EnableValidation>
+class MockingBitGenImpl {
  public:
-  MockingBitGen() = default;
-  ~MockingBitGen() = default;
+  MockingBitGenImpl() = default;
+  ~MockingBitGenImpl() = default;
 
   
   using result_type = absl::BitGen::result_type;
@@ -125,15 +79,19 @@ class MockingBitGen {
   
   
   
-  template <typename MockFnType, typename ResultT, typename Tuple>
+  template <typename MockFnType, typename ValidatorT, typename ResultT,
+            typename Tuple>
   struct MockFnCaller;
 
   
-  template <typename MockFnType, typename ResultT, typename... Args>
-  struct MockFnCaller<MockFnType, ResultT, std::tuple<Args...>> {
+  template <typename MockFnType, typename ValidatorT, typename ResultT,
+            typename... Args>
+  struct MockFnCaller<MockFnType, ValidatorT, ResultT, std::tuple<Args...>> {
     MockFnType* fn;
     inline ResultT operator()(Args... args) {
-      return fn->Call(std::move(args)...);
+      ResultT result = fn->Call(args...);
+      ValidatorT::Validate(result, args...);
+      return result;
     }
   };
 
@@ -150,16 +108,17 @@ class MockingBitGen {
                         void* result) = 0;
   };
 
-  template <typename MockFnType, typename ResultT, typename ArgTupleT>
+  template <typename MockFnType, typename ValidatorT, typename ResultT,
+            typename ArgTupleT>
   class FunctionHolderImpl final : public FunctionHolder {
    public:
-    void Apply(void* args_tuple, void* result) override {
+    void Apply(void* args_tuple, void* result) final {
       
       
       
-      *static_cast<ResultT*>(result) =
-          absl::apply(MockFnCaller<MockFnType, ResultT, ArgTupleT>{&mock_fn_},
-                      *static_cast<ArgTupleT*>(args_tuple));
+      *static_cast<ResultT*>(result) = absl::apply(
+          MockFnCaller<MockFnType, ValidatorT, ResultT, ArgTupleT>{&mock_fn_},
+          *static_cast<ArgTupleT*>(args_tuple));
     }
 
     MockFnType mock_fn_;
@@ -175,26 +134,29 @@ class MockingBitGen {
   
   
   
-  template <typename ResultT, typename ArgTupleT, typename SelfT>
-  auto RegisterMock(SelfT&, base_internal::FastTypeIdType type)
+  template <typename ResultT, typename ArgTupleT, typename SelfT,
+            typename ValidatorT>
+  auto RegisterMock(SelfT&, base_internal::FastTypeIdType type, ValidatorT)
       -> decltype(GetMockFnType(std::declval<ResultT>(),
                                 std::declval<ArgTupleT>()))& {
+    using ActualValidatorT =
+        std::conditional_t<EnableValidation, ValidatorT, NoOpValidator>;
     using MockFnType = decltype(GetMockFnType(std::declval<ResultT>(),
                                               std::declval<ArgTupleT>()));
 
     using WrappedFnType = absl::conditional_t<
-        std::is_same<SelfT, ::testing::NiceMock<absl::MockingBitGen>>::value,
+        std::is_same<SelfT, ::testing::NiceMock<MockingBitGenImpl>>::value,
         ::testing::NiceMock<MockFnType>,
         absl::conditional_t<
-            std::is_same<SelfT,
-                         ::testing::NaggyMock<absl::MockingBitGen>>::value,
+            std::is_same<SelfT, ::testing::NaggyMock<MockingBitGenImpl>>::value,
             ::testing::NaggyMock<MockFnType>,
             absl::conditional_t<
                 std::is_same<SelfT,
-                             ::testing::StrictMock<absl::MockingBitGen>>::value,
+                             ::testing::StrictMock<MockingBitGenImpl>>::value,
                 ::testing::StrictMock<MockFnType>, MockFnType>>>;
 
-    using ImplT = FunctionHolderImpl<WrappedFnType, ResultT, ArgTupleT>;
+    using ImplT =
+        FunctionHolderImpl<WrappedFnType, ActualValidatorT, ResultT, ArgTupleT>;
     auto& mock = mocks_[type];
     if (!mock) {
       mock = absl::make_unique<ImplT>();
@@ -233,6 +195,58 @@ class MockingBitGen {
   friend class ::absl::random_internal::MockHelpers;  
                                                       
 };
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+using MockingBitGen = random_internal::MockingBitGenImpl<true>;
+
+
+
+
+
+using UnvalidatedMockingBitGen ABSL_DEPRECATED("Use MockingBitGen instead") =
+    random_internal::MockingBitGenImpl<false>;
 
 ABSL_NAMESPACE_END
 }  

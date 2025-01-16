@@ -55,7 +55,7 @@ namespace log_internal {
 
 
 
-ABSL_ATTRIBUTE_NORETURN ABSL_ATTRIBUTE_NOINLINE void DieBecauseNull(
+[[noreturn]] ABSL_ATTRIBUTE_NOINLINE void DieBecauseNull(
     const char* file, int line, const char* exprtext);
 
 

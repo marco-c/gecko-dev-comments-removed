@@ -37,10 +37,20 @@
 
 #include <cstddef>
 #include <functional>
+#include <string>
 #include <type_traits>
+#include <vector>
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
+
+#ifdef __cpp_lib_span
+#include <span>  
+#endif
+
+#ifdef ABSL_HAVE_STD_STRING_VIEW
+#include <string_view>
+#endif
 
 
 
@@ -278,27 +288,6 @@ using remove_extent_t = typename std::remove_extent<T>::type;
 
 template <typename T>
 using remove_all_extents_t = typename std::remove_all_extents<T>::type;
-
-ABSL_INTERNAL_DISABLE_DEPRECATED_DECLARATION_WARNING
-namespace type_traits_internal {
-
-
-
-template <size_t Len, typename T = std::aligned_storage<Len>>
-struct default_alignment_of_aligned_storage;
-
-template <size_t Len, size_t Align>
-struct default_alignment_of_aligned_storage<
-    Len, std::aligned_storage<Len, Align>> {
-  static constexpr size_t value = Align;
-};
-}  
-
-
-template <size_t Len, size_t Align = type_traits_internal::
-                          default_alignment_of_aligned_storage<Len>::value>
-using aligned_storage_t = typename std::aligned_storage<Len, Align>::type;
-ABSL_INTERNAL_RESTORE_DEPRECATED_DECLARATION_WARNING
 
 template <typename T>
 using decay_t = typename std::decay<T>::type;
@@ -574,6 +563,97 @@ constexpr bool is_constant_evaluated() noexcept {
 #endif
 }
 #endif  
+
+namespace type_traits_internal {
+
+
+
+
+
+
+
+
+
+template <typename T, typename = void>
+struct IsOwnerImpl : std::false_type {
+  static_assert(std::is_same<T, absl::remove_cvref_t<T>>::value,
+                "type must lack qualifiers");
+};
+
+template <typename T>
+struct IsOwnerImpl<
+    T,
+    std::enable_if_t<std::is_class<typename T::absl_internal_is_view>::value>>
+    : absl::negation<typename T::absl_internal_is_view> {};
+
+
+
+
+
+
+
+
+template <typename T>
+struct IsOwner : IsOwnerImpl<T> {};
+
+template <typename T, typename Traits, typename Alloc>
+struct IsOwner<std::basic_string<T, Traits, Alloc>> : std::true_type {};
+
+template <typename T, typename Alloc>
+struct IsOwner<std::vector<T, Alloc>> : std::true_type {};
+
+
+
+
+
+template <typename T, typename = void>
+struct IsViewImpl : std::false_type {
+  static_assert(std::is_same<T, absl::remove_cvref_t<T>>::value,
+                "type must lack qualifiers");
+};
+
+template <typename T>
+struct IsViewImpl<
+    T,
+    std::enable_if_t<std::is_class<typename T::absl_internal_is_view>::value>>
+    : T::absl_internal_is_view {};
+
+
+
+
+
+
+
+
+
+template <typename T>
+struct IsView : std::integral_constant<bool, std::is_pointer<T>::value ||
+                                                 IsViewImpl<T>::value> {};
+
+#ifdef ABSL_HAVE_STD_STRING_VIEW
+template <typename Char, typename Traits>
+struct IsView<std::basic_string_view<Char, Traits>> : std::true_type {};
+#endif
+
+#ifdef __cpp_lib_span
+template <typename T>
+struct IsView<std::span<T>> : std::true_type {};
+#endif
+
+
+
+
+
+
+
+
+template <typename T, typename U>
+using IsLifetimeBoundAssignment =
+    std::integral_constant<bool, IsView<absl::remove_cvref_t<T>>::value &&
+                                     IsOwner<absl::remove_cvref_t<U>>::value>;
+
+}  
+
 ABSL_NAMESPACE_END
 }  
 

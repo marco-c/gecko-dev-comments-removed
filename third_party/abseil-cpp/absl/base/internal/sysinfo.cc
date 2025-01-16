@@ -46,6 +46,10 @@
 #include <rtems.h>
 #endif
 
+#if defined(__Fuchsia__)
+#include <zircon/process.h>
+#endif
+
 #include <string.h>
 
 #include <cassert>
@@ -459,6 +463,16 @@ pid_t GetTID() {
   static_assert(sizeof(pid_t) == sizeof(thread),
                 "In NaCL int expected to be the same size as a pointer");
   return reinterpret_cast<pid_t>(thread);
+}
+
+#elif defined(__Fuchsia__)
+
+pid_t GetTID() {
+  
+  
+  
+  
+  return static_cast<pid_t>(zx_thread_self());
 }
 
 #else

@@ -116,20 +116,21 @@ def main(argv):
                   datestamp)
       })
   ReplaceStringsInFile(
-      'CMakeLists.txt', {
-          'project(absl LANGUAGES CXX)':
+      'CMakeLists.txt',
+      {
+          'project(absl LANGUAGES CXX)': (
               'project(absl LANGUAGES CXX VERSION {})'.format(datestamp)
-      })
-  
-  
-  
-  
-  
-  
-  
-  ReplaceStringsInFile(
-      'CMake/AbseilHelpers.cmake',
-      {'SOVERSION 0': 'SOVERSION "{}.0.0"'.format(datestamp[2:6])})
+          ),
+          
+          
+          
+          
+          
+          
+          
+          'ABSL_SOVERSION 0': 'ABSL_SOVERSION "{}.0.0"'.format(datestamp[2:6]),
+      },
+  )
   StripContentBetweenTags('CMakeLists.txt', '# absl:lts-remove-begin',
                           '# absl:lts-remove-end')
 

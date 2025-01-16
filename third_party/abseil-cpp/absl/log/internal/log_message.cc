@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <ios>
 #include <memory>
 #include <ostream>
 #include <string>
@@ -67,7 +68,14 @@ namespace log_internal {
 namespace {
 
 enum EventTag : uint8_t {
+  kFileName = 2,
+  kFileLine = 3,
+  kTimeNsecs = 4,
+  kSeverity = 5,
+  kThreadId = 6,
   kValue = 7,
+  kSequenceNumber = 9,
+  kThreadName = 10,
 };
 
 
@@ -98,6 +106,23 @@ bool PrintValue(absl::Span<char>& dst, absl::Span<const char> buf) {
     }
   }
   return true;
+}
+
+
+int32_t ProtoSeverity(absl::LogSeverity severity, int verbose_level) {
+  switch (severity) {
+    case absl::LogSeverity::kInfo:
+      if (verbose_level == absl::LogEntry::kNoVerbosityLevel) return 800;
+      return 600 - verbose_level;
+    case absl::LogSeverity::kWarning:
+      return 900;
+    case absl::LogSeverity::kError:
+      return 950;
+    case absl::LogSeverity::kFatal:
+      return 1100;
+    default:
+      return 800;
+  }
 }
 
 absl::string_view Basename(absl::string_view filepath) {
@@ -150,21 +175,32 @@ struct LogMessage::LogMessageData final {
   
   
   
-  absl::Span<char> encoded_remaining;
+  
+  
+  
+  
+  
+  absl::Span<char>& encoded_remaining() {
+    if (encoded_remaining_actual_do_not_use_directly.data() == nullptr) {
+      encoded_remaining_actual_do_not_use_directly =
+          absl::MakeSpan(encoded_buf);
+      InitializeEncodingAndFormat();
+    }
+    return encoded_remaining_actual_do_not_use_directly;
+  }
+  absl::Span<char> encoded_remaining_actual_do_not_use_directly;
 
   
   std::array<char, kLogMessageBufferSize> string_buf;
 
+  void InitializeEncodingAndFormat();
   void FinalizeEncodingAndFormat();
 };
 
 LogMessage::LogMessageData::LogMessageData(const char* file, int line,
                                            absl::LogSeverity severity,
                                            absl::Time timestamp)
-    : extra_sinks_only(false),
-      manipulated(nullptr),
-      
-      encoded_remaining(absl::MakeSpan(encoded_buf)) {
+    : extra_sinks_only(false), manipulated(nullptr) {
   
   manipulated.setf(std::ios_base::showbase | std::ios_base::boolalpha);
   entry.full_filename_ = file;
@@ -177,13 +213,25 @@ LogMessage::LogMessageData::LogMessageData(const char* file, int line,
   entry.tid_ = absl::base_internal::GetCachedTID();
 }
 
+void LogMessage::LogMessageData::InitializeEncodingAndFormat() {
+  EncodeStringTruncate(EventTag::kFileName, entry.source_filename(),
+                       &encoded_remaining());
+  EncodeVarint(EventTag::kFileLine, entry.source_line(), &encoded_remaining());
+  EncodeVarint(EventTag::kTimeNsecs, absl::ToUnixNanos(entry.timestamp()),
+               &encoded_remaining());
+  EncodeVarint(EventTag::kSeverity,
+               ProtoSeverity(entry.log_severity(), entry.verbosity()),
+               &encoded_remaining());
+  EncodeVarint(EventTag::kThreadId, entry.tid(), &encoded_remaining());
+}
+
 void LogMessage::LogMessageData::FinalizeEncodingAndFormat() {
   
   
   
   absl::Span<const char> encoded_data(
       encoded_buf.data(),
-      static_cast<size_t>(encoded_remaining.data() - encoded_buf.data()));
+      static_cast<size_t>(encoded_remaining().data() - encoded_buf.data()));
   
   
   absl::Span<char> string_remaining(string_buf);
@@ -211,7 +259,6 @@ void LogMessage::LogMessageData::FinalizeEncodingAndFormat() {
         if (PrintValue(string_remaining, field.bytes_value())) continue;
         break;
     }
-    break;
   }
   auto chars_written =
       static_cast<size_t>(string_remaining.data() - string_buf.data());
@@ -240,8 +287,6 @@ LogMessage::LogMessage(const char* file, int line, WarningTag)
     : LogMessage(file, line, absl::LogSeverity::kWarning) {}
 LogMessage::LogMessage(const char* file, int line, ErrorTag)
     : LogMessage(file, line, absl::LogSeverity::kError) {}
-LogMessage::LogMessage(const char* file, int line, FatalTag)
-    : LogMessage(file, line, absl::LogSeverity::kFatal) {}
 
 LogMessage::~LogMessage() {
 #ifdef ABSL_MIN_LOG_LEVEL
@@ -415,7 +460,7 @@ void LogMessage::Flush() {
   data_->FinalizeEncodingAndFormat();
   data_->entry.encoding_ =
       absl::string_view(data_->encoded_buf.data(),
-                        static_cast<size_t>(data_->encoded_remaining.data() -
+                        static_cast<size_t>(data_->encoded_remaining().data() -
                                             data_->encoded_buf.data()));
   SendToLog();
 }
@@ -423,7 +468,7 @@ void LogMessage::Flush() {
 void LogMessage::SetFailQuietly() { data_->fail_quietly = true; }
 
 LogMessage::OstreamView::OstreamView(LogMessageData& message_data)
-    : data_(message_data), encoded_remaining_copy_(data_.encoded_remaining) {
+    : data_(message_data), encoded_remaining_copy_(data_.encoded_remaining()) {
   
   
   
@@ -447,7 +492,7 @@ LogMessage::OstreamView::~OstreamView() {
     
     
     
-    data_.encoded_remaining.remove_suffix(data_.encoded_remaining.size());
+    data_.encoded_remaining().remove_suffix(data_.encoded_remaining().size());
     return;
   }
   const absl::Span<const char> contents(pbase(),
@@ -456,7 +501,7 @@ LogMessage::OstreamView::~OstreamView() {
   encoded_remaining_copy_.remove_prefix(contents.size());
   EncodeMessageLength(string_start_, &encoded_remaining_copy_);
   EncodeMessageLength(message_start_, &encoded_remaining_copy_);
-  data_.encoded_remaining = encoded_remaining_copy_;
+  data_.encoded_remaining() = encoded_remaining_copy_;
 }
 
 std::ostream& LogMessage::OstreamView::stream() { return data_.manipulated; }
@@ -529,7 +574,7 @@ void LogMessage::LogBacktraceIfNeeded() {
 
 template <LogMessage::StringType str_type>
 void LogMessage::CopyToEncodedBuffer(absl::string_view str) {
-  auto encoded_remaining_copy = data_->encoded_remaining;
+  auto encoded_remaining_copy = data_->encoded_remaining();
   auto start = EncodeMessageStart(
       EventTag::kValue, BufferSizeFor(WireType::kLengthDelimited) + str.size(),
       &encoded_remaining_copy);
@@ -542,11 +587,11 @@ void LogMessage::CopyToEncodedBuffer(absl::string_view str) {
                            str, &encoded_remaining_copy)) {
     
     EncodeMessageLength(start, &encoded_remaining_copy);
-    data_->encoded_remaining = encoded_remaining_copy;
+    data_->encoded_remaining() = encoded_remaining_copy;
   } else {
     
     
-    data_->encoded_remaining.remove_suffix(data_->encoded_remaining.size());
+    data_->encoded_remaining().remove_suffix(data_->encoded_remaining().size());
   }
 }
 template void LogMessage::CopyToEncodedBuffer<LogMessage::StringType::kLiteral>(
@@ -555,7 +600,7 @@ template void LogMessage::CopyToEncodedBuffer<
     LogMessage::StringType::kNotLiteral>(absl::string_view str);
 template <LogMessage::StringType str_type>
 void LogMessage::CopyToEncodedBuffer(char ch, size_t num) {
-  auto encoded_remaining_copy = data_->encoded_remaining;
+  auto encoded_remaining_copy = data_->encoded_remaining();
   auto value_start = EncodeMessageStart(
       EventTag::kValue, BufferSizeFor(WireType::kLengthDelimited) + num,
       &encoded_remaining_copy);
@@ -568,17 +613,24 @@ void LogMessage::CopyToEncodedBuffer(char ch, size_t num) {
     log_internal::AppendTruncated(ch, num, encoded_remaining_copy);
     EncodeMessageLength(str_start, &encoded_remaining_copy);
     EncodeMessageLength(value_start, &encoded_remaining_copy);
-    data_->encoded_remaining = encoded_remaining_copy;
+    data_->encoded_remaining() = encoded_remaining_copy;
   } else {
     
     
-    data_->encoded_remaining.remove_suffix(data_->encoded_remaining.size());
+    data_->encoded_remaining().remove_suffix(data_->encoded_remaining().size());
   }
 }
 template void LogMessage::CopyToEncodedBuffer<LogMessage::StringType::kLiteral>(
     char ch, size_t num);
 template void LogMessage::CopyToEncodedBuffer<
     LogMessage::StringType::kNotLiteral>(char ch, size_t num);
+
+
+
+#if defined(_MSC_VER) && !defined(__clang__)
+#pragma warning(push)
+#pragma warning(disable : 4722)
+#endif
 
 LogMessageFatal::LogMessageFatal(const char* file, int line)
     : LogMessage(file, line, absl::LogSeverity::kFatal) {}
@@ -589,33 +641,38 @@ LogMessageFatal::LogMessageFatal(const char* file, int line,
   *this << "Check failed: " << failure_msg << " ";
 }
 
-
-
-#if defined(_MSC_VER) && !defined(__clang__)
-#pragma warning(push)
-#pragma warning(disable : 4722)
-#endif
 LogMessageFatal::~LogMessageFatal() {
   Flush();
   FailWithoutStackTrace();
 }
 
-LogMessageQuietly::LogMessageQuietly(const char* file, int line)
+LogMessageDebugFatal::LogMessageDebugFatal(const char* file, int line)
+    : LogMessage(file, line, absl::LogSeverity::kFatal) {}
+
+LogMessageDebugFatal::~LogMessageDebugFatal() {
+  Flush();
+  FailWithoutStackTrace();
+}
+
+LogMessageQuietlyDebugFatal::LogMessageQuietlyDebugFatal(const char* file,
+                                                         int line)
     : LogMessage(file, line, absl::LogSeverity::kFatal) {
   SetFailQuietly();
 }
 
-LogMessageQuietly::~LogMessageQuietly() {
+LogMessageQuietlyDebugFatal::~LogMessageQuietlyDebugFatal() {
   Flush();
   FailQuietly();
 }
 
 LogMessageQuietlyFatal::LogMessageQuietlyFatal(const char* file, int line)
-    : LogMessageQuietly(file, line) {}
+    : LogMessage(file, line, absl::LogSeverity::kFatal) {
+  SetFailQuietly();
+}
 
 LogMessageQuietlyFatal::LogMessageQuietlyFatal(const char* file, int line,
                                                absl::string_view failure_msg)
-    : LogMessageQuietly(file, line) {
+    : LogMessageQuietlyFatal(file, line) {
     *this << "Check failed: " << failure_msg << " ";
 }
 

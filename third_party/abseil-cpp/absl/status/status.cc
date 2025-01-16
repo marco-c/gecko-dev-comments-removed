@@ -273,14 +273,12 @@ StatusCode ErrnoToStatusCode(int error_number) {
     case EFAULT:        
     case EILSEQ:        
     case ENOPROTOOPT:   
-    case ENOSTR:        
     case ENOTSOCK:      
     case ENOTTY:        
     case EPROTOTYPE:    
     case ESPIPE:        
       return StatusCode::kInvalidArgument;
     case ETIMEDOUT:  
-    case ETIME:      
       return StatusCode::kDeadlineExceeded;
     case ENODEV:  
     case ENOENT:  
@@ -339,9 +337,7 @@ StatusCode ErrnoToStatusCode(int error_number) {
     case EMLINK:   
     case ENFILE:   
     case ENOBUFS:  
-    case ENODATA:  
     case ENOMEM:   
-    case ENOSR:    
 #ifdef EUSERS
     case EUSERS:  
 #endif

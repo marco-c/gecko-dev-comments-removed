@@ -26,6 +26,9 @@
 
 
 
+
+
+
 #ifndef ABSL_CONTAINER_FLAT_HASH_SET_H_
 #define ABSL_CONTAINER_FLAT_HASH_SET_H_
 
@@ -35,11 +38,13 @@
 #include <utility>
 
 #include "absl/algorithm/container.h"
+#include "absl/base/attributes.h"
 #include "absl/base/macros.h"
+#include "absl/container/hash_container_defaults.h"
 #include "absl/container/internal/container_memory.h"
-#include "absl/container/internal/hash_function_defaults.h"  
 #include "absl/container/internal/raw_hash_set.h"  
 #include "absl/memory/memory.h"
+#include "absl/meta/type_traits.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -114,10 +119,10 @@ struct FlatHashSetPolicy;
 
 
 
-template <class T, class Hash = absl::container_internal::hash_default_hash<T>,
-          class Eq = absl::container_internal::hash_default_eq<T>,
+template <class T, class Hash = DefaultHashContainerHash<T>,
+          class Eq = DefaultHashContainerEq<T>,
           class Allocator = std::allocator<T>>
-class flat_hash_set
+class ABSL_INTERNAL_ATTRIBUTE_OWNER flat_hash_set
     : public absl::container_internal::raw_hash_set<
           absl::container_internal::FlatHashSetPolicy<T>, Hash, Eq, Allocator> {
   using Base = typename flat_hash_set::raw_hash_set;
@@ -366,7 +371,6 @@ class flat_hash_set
   
   
   
-  
   using Base::swap;
 
   
@@ -472,6 +476,48 @@ typename flat_hash_set<T, H, E, A>::size_type erase_if(
     flat_hash_set<T, H, E, A>& c, Predicate pred) {
   return container_internal::EraseIf(pred, &c);
 }
+
+
+
+
+
+
+
+
+
+
+template <typename T, typename H, typename E, typename A>
+void swap(flat_hash_set<T, H, E, A>& x,
+          flat_hash_set<T, H, E, A>& y) noexcept(noexcept(x.swap(y))) {
+  return x.swap(y);
+}
+
+namespace container_internal {
+
+
+
+
+
+
+
+template <typename T, typename H, typename E, typename A, typename Function>
+decay_t<Function> c_for_each_fast(const flat_hash_set<T, H, E, A>& c,
+                                  Function&& f) {
+  container_internal::ForEach(f, &c);
+  return f;
+}
+template <typename T, typename H, typename E, typename A, typename Function>
+decay_t<Function> c_for_each_fast(flat_hash_set<T, H, E, A>& c, Function&& f) {
+  container_internal::ForEach(f, &c);
+  return f;
+}
+template <typename T, typename H, typename E, typename A, typename Function>
+decay_t<Function> c_for_each_fast(flat_hash_set<T, H, E, A>&& c, Function&& f) {
+  container_internal::ForEach(f, &c);
+  return f;
+}
+
+}  
 
 namespace container_internal {
 

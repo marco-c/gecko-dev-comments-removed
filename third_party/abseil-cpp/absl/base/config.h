@@ -235,8 +235,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_HAVE_TLS
 #error ABSL_HAVE_TLS cannot be directly set
-#elif (defined(__linux__) || defined(__ASYLO__)) && \
-    (defined(__clang__) || defined(_GLIBCXX_HAVE_TLS))
+#elif (defined(__linux__)) && (defined(__clang__) || defined(_GLIBCXX_HAVE_TLS))
 #define ABSL_HAVE_TLS 1
 #endif
 
@@ -279,48 +278,13 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
+
+
 #ifdef ABSL_HAVE_THREAD_LOCAL
 #error ABSL_HAVE_THREAD_LOCAL cannot be directly set
-#elif defined(__APPLE__)
-
-
-
-
-
-
-
-
-#if ABSL_HAVE_FEATURE(cxx_thread_local) && \
-    !(TARGET_OS_IPHONE && __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_9_0)
+#else
 #define ABSL_HAVE_THREAD_LOCAL 1
 #endif
-#else  
-#define ABSL_HAVE_THREAD_LOCAL 1
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(__ANDROID__) && defined(__clang__)
-#if __has_include(<android/ndk-version.h>)
-#include <android/ndk-version.h>
-#endif  
-#if defined(__ANDROID__) && defined(__clang__) && defined(__NDK_MAJOR__) && \
-    defined(__NDK_MINOR__) &&                                               \
-    ((__NDK_MAJOR__ < 12) || ((__NDK_MAJOR__ == 12) && (__NDK_MINOR__ < 1)))
-#undef ABSL_HAVE_TLS
-#undef ABSL_HAVE_THREAD_LOCAL
-#endif
-#endif  
 
 
 
@@ -414,9 +378,9 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) ||    \
     defined(_AIX) || defined(__ros__) || defined(__native_client__) ||       \
     defined(__asmjs__) || defined(__EMSCRIPTEN__) || defined(__Fuchsia__) || \
-    defined(__sun) || defined(__ASYLO__) || defined(__myriad2__) ||          \
-    defined(__HAIKU__) || defined(__OpenBSD__) || defined(__NetBSD__) ||     \
-    defined(__QNX__) || defined(__VXWORKS__) || defined(__hexagon__)
+    defined(__sun) || defined(__myriad2__) || defined(__HAIKU__) ||          \
+    defined(__OpenBSD__) || defined(__NetBSD__) || defined(__QNX__) ||       \
+    defined(__VXWORKS__) || defined(__hexagon__)
 #define ABSL_HAVE_MMAP 1
 #endif
 
@@ -900,7 +864,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #error ABSL_INTERNAL_HAS_CXA_DEMANGLE cannot be directly set
 #elif defined(OS_ANDROID) && (defined(__i386__) || defined(__x86_64__))
 #define ABSL_INTERNAL_HAS_CXA_DEMANGLE 0
-#elif defined(__GNUC__) && !defined(__mips__)
+#elif defined(__GNUC__)
 #define ABSL_INTERNAL_HAS_CXA_DEMANGLE 1
 #elif defined(__clang__) && !defined(_MSC_VER)
 #define ABSL_INTERNAL_HAS_CXA_DEMANGLE 1
@@ -962,7 +926,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_INTERNAL_HAVE_ARM_NEON
 #error ABSL_INTERNAL_HAVE_ARM_NEON cannot be directly set
-#elif defined(__ARM_NEON) && !defined(__CUDA_ARCH__)
+#elif defined(__ARM_NEON) && !(defined(__NVCC__) && defined(__CUDACC__))
 #define ABSL_INTERNAL_HAVE_ARM_NEON 1
 #endif
 
@@ -975,6 +939,27 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #define ABSL_HAVE_CONSTANT_EVALUATED 1
 #elif ABSL_HAVE_BUILTIN(__builtin_is_constant_evaluated)
 #define ABSL_HAVE_CONSTANT_EVALUATED 1
+#endif
+
+
+
+
+
+
+
+
+
+#if defined(ABSL_INTERNAL_CPLUSPLUS_LANG) && \
+    ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L
+#define ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17 constexpr
+#else
+#define ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17
+#endif
+#if defined(ABSL_INTERNAL_CPLUSPLUS_LANG) && \
+    ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
+#define ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 constexpr
+#else
+#define ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
 #endif
 
 
@@ -997,4 +982,4 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #endif
 #endif
 
-#endif
+#endif  

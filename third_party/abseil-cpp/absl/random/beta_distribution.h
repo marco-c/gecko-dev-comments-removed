@@ -181,18 +181,18 @@ class beta_distribution {
     result_type alpha_;
     result_type beta_;
 
-    result_type a_;  
-    result_type b_;  
-    result_type x_;  
-    result_type log_x_;  
-    result_type y_;      
-    result_type gamma_;  
+    result_type a_{};  
+    result_type b_{};  
+    result_type x_{};  
+    result_type log_x_{};  
+    result_type y_{};      
+    result_type gamma_{};  
 
-    Method method_;
+    Method method_{};
 
     
     
-    bool inverted_;
+    bool inverted_{};
 
     static_assert(std::is_floating_point<RealType>::value,
                   "Class-template absl::beta_distribution<> must be "

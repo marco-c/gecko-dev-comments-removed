@@ -27,20 +27,23 @@
 
 
 
+
+
 #ifndef ABSL_CONTAINER_FLAT_HASH_MAP_H_
 #define ABSL_CONTAINER_FLAT_HASH_MAP_H_
 
 #include <cstddef>
-#include <new>
+#include <memory>
 #include <type_traits>
 #include <utility>
 
 #include "absl/algorithm/container.h"
+#include "absl/base/attributes.h"
 #include "absl/base/macros.h"
+#include "absl/container/hash_container_defaults.h"
 #include "absl/container/internal/container_memory.h"
-#include "absl/container/internal/hash_function_defaults.h"  
 #include "absl/container/internal/raw_hash_map.h"  
-#include "absl/memory/memory.h"
+#include "absl/meta/type_traits.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -119,13 +122,13 @@ struct FlatHashMapPolicy;
 
 
 
-template <class K, class V,
-          class Hash = absl::container_internal::hash_default_hash<K>,
-          class Eq = absl::container_internal::hash_default_eq<K>,
+template <class K, class V, class Hash = DefaultHashContainerHash<K>,
+          class Eq = DefaultHashContainerEq<K>,
           class Allocator = std::allocator<std::pair<const K, V>>>
-class flat_hash_map : public absl::container_internal::raw_hash_map<
-                          absl::container_internal::FlatHashMapPolicy<K, V>,
-                          Hash, Eq, Allocator> {
+class ABSL_INTERNAL_ATTRIBUTE_OWNER flat_hash_map
+    : public absl::container_internal::raw_hash_map<
+          absl::container_internal::FlatHashMapPolicy<K, V>, Hash, Eq,
+          Allocator> {
   using Base = typename flat_hash_map::raw_hash_map;
 
  public:
@@ -434,7 +437,6 @@ class flat_hash_map : public absl::container_internal::raw_hash_map<
   
   
   
-  
   using Base::swap;
 
   
@@ -570,6 +572,53 @@ typename flat_hash_map<K, V, H, E, A>::size_type erase_if(
     flat_hash_map<K, V, H, E, A>& c, Predicate pred) {
   return container_internal::EraseIf(pred, &c);
 }
+
+
+
+
+
+
+
+
+
+
+template <typename K, typename V, typename H, typename E, typename A>
+void swap(flat_hash_map<K, V, H, E, A>& x,
+          flat_hash_map<K, V, H, E, A>& y) noexcept(noexcept(x.swap(y))) {
+  x.swap(y);
+}
+
+namespace container_internal {
+
+
+
+
+
+
+
+template <typename K, typename V, typename H, typename E, typename A,
+          typename Function>
+decay_t<Function> c_for_each_fast(const flat_hash_map<K, V, H, E, A>& c,
+                                  Function&& f) {
+  container_internal::ForEach(f, &c);
+  return f;
+}
+template <typename K, typename V, typename H, typename E, typename A,
+          typename Function>
+decay_t<Function> c_for_each_fast(flat_hash_map<K, V, H, E, A>& c,
+                                  Function&& f) {
+  container_internal::ForEach(f, &c);
+  return f;
+}
+template <typename K, typename V, typename H, typename E, typename A,
+          typename Function>
+decay_t<Function> c_for_each_fast(flat_hash_map<K, V, H, E, A>&& c,
+                                  Function&& f) {
+  container_internal::ForEach(f, &c);
+  return f;
+}
+
+}  
 
 namespace container_internal {
 

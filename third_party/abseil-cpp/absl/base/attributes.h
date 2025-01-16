@@ -136,9 +136,11 @@
 
 
 
-#if (ABSL_HAVE_ATTRIBUTE(weak) ||                                         \
-     (defined(__GNUC__) && !defined(__clang__))) &&                       \
-    (!defined(_WIN32) || (defined(__clang__) && __clang_major__ >= 9)) && \
+#if (ABSL_HAVE_ATTRIBUTE(weak) ||                                 \
+     (defined(__GNUC__) && !defined(__clang__))) &&               \
+    (!defined(_WIN32) ||                                          \
+     (defined(__clang__) && __clang_major__ >= 9 &&               \
+      !defined(ABSL_BUILD_DLL) && !defined(ABSL_CONSUME_DLL))) && \
     !defined(__MINGW32__)
 #undef ABSL_ATTRIBUTE_WEAK
 #define ABSL_ATTRIBUTE_WEAK __attribute__((weak))
@@ -191,6 +193,9 @@
 #else
 #define ABSL_ATTRIBUTE_NONNULL(...)
 #endif
+
+
+
 
 
 
@@ -702,6 +707,11 @@
   _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
 #define ABSL_INTERNAL_RESTORE_DEPRECATED_DECLARATION_WARNING \
   _Pragma("GCC diagnostic pop")
+#elif defined(_MSC_VER)
+#define ABSL_INTERNAL_DISABLE_DEPRECATED_DECLARATION_WARNING \
+  _Pragma("warning(push)") _Pragma("warning(disable: 4996)")
+#define ABSL_INTERNAL_RESTORE_DEPRECATED_DECLARATION_WARNING \
+  _Pragma("warning(pop)")
 #else
 #define ABSL_INTERNAL_DISABLE_DEPRECATED_DECLARATION_WARNING
 #define ABSL_INTERNAL_RESTORE_DEPRECATED_DECLARATION_WARNING
@@ -808,12 +818,41 @@
 
 
 
+
 #if ABSL_HAVE_CPP_ATTRIBUTE(clang::lifetimebound)
 #define ABSL_ATTRIBUTE_LIFETIME_BOUND [[clang::lifetimebound]]
+#elif ABSL_HAVE_CPP_ATTRIBUTE(msvc::lifetimebound)
+#define ABSL_ATTRIBUTE_LIFETIME_BOUND [[msvc::lifetimebound]]
 #elif ABSL_HAVE_ATTRIBUTE(lifetimebound)
 #define ABSL_ATTRIBUTE_LIFETIME_BOUND __attribute__((lifetimebound))
 #else
 #define ABSL_ATTRIBUTE_LIFETIME_BOUND
+#endif
+
+
+
+
+
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(gsl::Pointer)
+#define ABSL_INTERNAL_ATTRIBUTE_VIEW [[gsl::Pointer]]
+#else
+#define ABSL_INTERNAL_ATTRIBUTE_VIEW
+#endif
+
+
+
+
+
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(gsl::Owner)
+#define ABSL_INTERNAL_ATTRIBUTE_OWNER [[gsl::Owner]]
+#else
+#define ABSL_INTERNAL_ATTRIBUTE_OWNER
 #endif
 
 

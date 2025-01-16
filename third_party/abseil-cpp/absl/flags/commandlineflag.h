@@ -59,6 +59,14 @@ class PrivateHandleAccessor;
 
 
 
+
+
+
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#endif
 class CommandLineFlag {
  public:
   constexpr CommandLineFlag() = default;
@@ -193,6 +201,9 @@ class CommandLineFlag {
   
   virtual void CheckDefaultValueParsingRoundtrip() const = 0;
 };
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 ABSL_NAMESPACE_END
 }  

@@ -55,10 +55,12 @@
 #include <algorithm>
 #include <cstddef>
 #include <string>
+#include <utility>
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/nullability.h"
+#include "absl/strings/internal/resize_uninitialized.h"
 #include "absl/strings/string_view.h"
 
 namespace absl {
@@ -73,6 +75,12 @@ ABSL_DLL extern const char kToUpper[256];
 
 
 ABSL_DLL extern const char kToLower[256];
+
+void AsciiStrToLower(absl::Nonnull<char*> dst, absl::Nonnull<const char*> src,
+                     size_t n);
+
+void AsciiStrToUpper(absl::Nonnull<char*> dst, absl::Nonnull<const char*> src,
+                     size_t n);
 
 }  
 
@@ -171,7 +179,18 @@ void AsciiStrToLower(absl::Nonnull<std::string*> s);
 
 
 ABSL_MUST_USE_RESULT inline std::string AsciiStrToLower(absl::string_view s) {
-  std::string result(s);
+  std::string result;
+  strings_internal::STLStringResizeUninitialized(&result, s.size());
+  ascii_internal::AsciiStrToLower(&result[0], s.data(), s.size());
+  return result;
+}
+
+
+
+
+template <int&... DoNotSpecify>
+ABSL_MUST_USE_RESULT inline std::string AsciiStrToLower(std::string&& s) {
+  std::string result = std::move(s);
   absl::AsciiStrToLower(&result);
   return result;
 }
@@ -189,7 +208,18 @@ void AsciiStrToUpper(absl::Nonnull<std::string*> s);
 
 
 ABSL_MUST_USE_RESULT inline std::string AsciiStrToUpper(absl::string_view s) {
-  std::string result(s);
+  std::string result;
+  strings_internal::STLStringResizeUninitialized(&result, s.size());
+  ascii_internal::AsciiStrToUpper(&result[0], s.data(), s.size());
+  return result;
+}
+
+
+
+
+template <int&... DoNotSpecify>
+ABSL_MUST_USE_RESULT inline std::string AsciiStrToUpper(std::string&& s) {
+  std::string result = std::move(s);
   absl::AsciiStrToUpper(&result);
   return result;
 }

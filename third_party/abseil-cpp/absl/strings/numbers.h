@@ -32,7 +32,6 @@
 #endif
 
 #include <cstddef>
-#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -40,12 +39,10 @@
 #include <string>
 #include <type_traits>
 
-#include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/internal/endian.h"
 #include "absl/base/macros.h"
 #include "absl/base/nullability.h"
-#include "absl/base/optimization.h"
 #include "absl/base/port.h"
 #include "absl/numeric/bits.h"
 #include "absl/numeric/int128.h"
@@ -161,96 +158,6 @@ bool safe_strtou128_base(absl::string_view text,
 static const int kFastToBufferSize = 32;
 static const int kSixDigitsToBufferSize = 16;
 
-template <class T>
-std::enable_if_t<!std::is_unsigned<T>::value, bool> IsNegative(const T& v) {
-  return v < T();
-}
-
-template <class T>
-std::enable_if_t<std::is_unsigned<T>::value, std::false_type> IsNegative(
-    const T&) {
-  
-  
-  return std::false_type();
-}
-
-template <class T>
-std::enable_if_t<std::is_unsigned<std::decay_t<T>>::value, T&&>
-UnsignedAbsoluteValue(T&& v ABSL_ATTRIBUTE_LIFETIME_BOUND) {
-  
-  return std::forward<T>(v);
-}
-
-template <class T>
-ABSL_ATTRIBUTE_CONST_FUNCTION
-    std::enable_if_t<!std::is_unsigned<T>::value, std::make_unsigned_t<T>>
-    UnsignedAbsoluteValue(T v) {
-  using U = std::make_unsigned_t<T>;
-  return IsNegative(v) ? U() - static_cast<U>(v) : static_cast<U>(v);
-}
-
-
-
-
-
-
-template <typename T>
-std::enable_if_t<std::is_unsigned<T>::value, uint32_t> Base10Digits(
-    T v, const uint32_t initial_digits = 1) {
-  uint32_t r = initial_digits;
-  
-  
-  for (;;) {
-    if (ABSL_PREDICT_TRUE(v < 10 * 10)) {
-      r += (v >= 10);
-      break;
-    }
-    if (ABSL_PREDICT_TRUE(v < 1000 * 10)) {
-      r += (v >= 1000) + 2;
-      break;
-    }
-    if (ABSL_PREDICT_TRUE(v < 100000 * 10)) {
-      r += (v >= 100000) + 4;
-      break;
-    }
-    r += 6;
-    v = static_cast<T>(v / 1000000);
-  }
-  return r;
-}
-
-template <typename T>
-std::enable_if_t<std::is_signed<T>::value, uint32_t> Base10Digits(
-    T v, uint32_t r = 1) {
-  
-  r += static_cast<uint32_t>(IsNegative(v));
-  return Base10Digits(UnsignedAbsoluteValue(v), r);
-}
-
-
-
-
-
-ABSL_ATTRIBUTE_CONST_FUNCTION int GetNumDigitsOrNegativeIfNegative(
-    signed char v);
-ABSL_ATTRIBUTE_CONST_FUNCTION int GetNumDigitsOrNegativeIfNegative(
-    unsigned char v);
-ABSL_ATTRIBUTE_CONST_FUNCTION int GetNumDigitsOrNegativeIfNegative(
-    short v);  
-ABSL_ATTRIBUTE_CONST_FUNCTION int GetNumDigitsOrNegativeIfNegative(
-    unsigned short v);  
-ABSL_ATTRIBUTE_CONST_FUNCTION int GetNumDigitsOrNegativeIfNegative(int v);
-ABSL_ATTRIBUTE_CONST_FUNCTION int GetNumDigitsOrNegativeIfNegative(
-    unsigned int v);
-ABSL_ATTRIBUTE_CONST_FUNCTION int GetNumDigitsOrNegativeIfNegative(
-    long v);  
-ABSL_ATTRIBUTE_CONST_FUNCTION int GetNumDigitsOrNegativeIfNegative(
-    unsigned long v);  
-ABSL_ATTRIBUTE_CONST_FUNCTION int GetNumDigitsOrNegativeIfNegative(
-    long long v);  
-ABSL_ATTRIBUTE_CONST_FUNCTION int GetNumDigitsOrNegativeIfNegative(
-    unsigned long long v);  
-
 
 
 
@@ -262,15 +169,21 @@ size_t SixDigitsToBuffer(double d, absl::Nonnull<char*> buffer);
 
 
 
-absl::Nonnull<char*> FastIntToBuffer(int32_t i, absl::Nonnull<char*> buffer);
-absl::Nonnull<char*> FastIntToBuffer(uint32_t i, absl::Nonnull<char*> buffer);
-absl::Nonnull<char*> FastIntToBuffer(int64_t i, absl::Nonnull<char*> buffer);
-absl::Nonnull<char*> FastIntToBuffer(uint64_t i, absl::Nonnull<char*> buffer);
+
+absl::Nonnull<char*> FastIntToBuffer(int32_t i, absl::Nonnull<char*> buffer)
+    ABSL_INTERNAL_NEED_MIN_SIZE(buffer, kFastToBufferSize);
+absl::Nonnull<char*> FastIntToBuffer(uint32_t n, absl::Nonnull<char*> out_str)
+    ABSL_INTERNAL_NEED_MIN_SIZE(out_str, kFastToBufferSize);
+absl::Nonnull<char*> FastIntToBuffer(int64_t i, absl::Nonnull<char*> buffer)
+    ABSL_INTERNAL_NEED_MIN_SIZE(buffer, kFastToBufferSize);
+absl::Nonnull<char*> FastIntToBuffer(uint64_t i, absl::Nonnull<char*> buffer)
+    ABSL_INTERNAL_NEED_MIN_SIZE(buffer, kFastToBufferSize);
 
 
 
 template <typename int_type>
-absl::Nonnull<char*> FastIntToBuffer(int_type i, absl::Nonnull<char*> buffer) {
+absl::Nonnull<char*> FastIntToBuffer(int_type i, absl::Nonnull<char*> buffer)
+    ABSL_INTERNAL_NEED_MIN_SIZE(buffer, kFastToBufferSize) {
   static_assert(sizeof(i) <= 64 / 8,
                 "FastIntToBuffer works only with 64-bit-or-less integers.");
   
@@ -290,58 +203,6 @@ absl::Nonnull<char*> FastIntToBuffer(int_type i, absl::Nonnull<char*> buffer) {
       return FastIntToBuffer(static_cast<uint64_t>(i), buffer);
     } else {
       return FastIntToBuffer(static_cast<uint32_t>(i), buffer);
-    }
-  }
-}
-
-
-
-
-
-
-absl::Nonnull<char*> FastIntToBufferBackward(int32_t i,
-                                             absl::Nonnull<char*> buffer_end,
-                                             uint32_t exact_digit_count);
-absl::Nonnull<char*> FastIntToBufferBackward(uint32_t i,
-                                             absl::Nonnull<char*> buffer_end,
-                                             uint32_t exact_digit_count);
-absl::Nonnull<char*> FastIntToBufferBackward(int64_t i,
-                                             absl::Nonnull<char*> buffer_end,
-                                             uint32_t exact_digit_count);
-absl::Nonnull<char*> FastIntToBufferBackward(uint64_t i,
-                                             absl::Nonnull<char*> buffer_end,
-                                             uint32_t exact_digit_count);
-
-
-
-template <typename int_type>
-absl::Nonnull<char*> FastIntToBufferBackward(int_type i,
-                                             absl::Nonnull<char*> buffer_end,
-                                             uint32_t exact_digit_count) {
-  static_assert(
-      sizeof(i) <= 64 / 8,
-      "FastIntToBufferBackward works only with 64-bit-or-less integers.");
-  
-  
-  
-  
-  constexpr bool kIsSigned = static_cast<int_type>(1) - 2 < 0;
-  constexpr bool kUse64Bit = sizeof(i) > 32 / 8;
-  if (kIsSigned) {
-    if (kUse64Bit) {
-      return FastIntToBufferBackward(static_cast<int64_t>(i), buffer_end,
-                                     exact_digit_count);
-    } else {
-      return FastIntToBufferBackward(static_cast<int32_t>(i), buffer_end,
-                                     exact_digit_count);
-    }
-  } else {
-    if (kUse64Bit) {
-      return FastIntToBufferBackward(static_cast<uint64_t>(i), buffer_end,
-                                     exact_digit_count);
-    } else {
-      return FastIntToBufferBackward(static_cast<uint32_t>(i), buffer_end,
-                                     exact_digit_count);
     }
   }
 }

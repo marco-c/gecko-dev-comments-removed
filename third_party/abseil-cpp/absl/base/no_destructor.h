@@ -32,7 +32,6 @@
 
 
 
-
 #ifndef ABSL_BASE_NO_DESTRUCTOR_H_
 #define ABSL_BASE_NO_DESTRUCTOR_H_
 
@@ -41,14 +40,10 @@
 #include <utility>
 
 #include "absl/base/config.h"
+#include "absl/base/nullability.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
-
-
-
-
-
 
 
 
@@ -140,11 +135,11 @@ class NoDestructor {
   
   
   T& operator*() { return *get(); }
-  T* operator->() { return get(); }
-  T* get() { return impl_.get(); }
+  absl::Nonnull<T*> operator->() { return get(); }
+  absl::Nonnull<T*> get() { return impl_.get(); }
   const T& operator*() const { return *get(); }
-  const T* operator->() const { return get(); }
-  const T* get() const { return impl_.get(); }
+  absl::Nonnull<const T*> operator->() const { return get(); }
+  absl::Nonnull<const T*> get() const { return impl_.get(); }
 
  private:
   class DirectImpl {
@@ -152,8 +147,8 @@ class NoDestructor {
     template <typename... Args>
     explicit constexpr DirectImpl(Args&&... args)
         : value_(std::forward<Args>(args)...) {}
-    const T* get() const { return &value_; }
-    T* get() { return &value_; }
+    absl::Nonnull<const T*> get() const { return &value_; }
+    absl::Nonnull<T*> get() { return &value_; }
 
    private:
     T value_;
@@ -165,14 +160,14 @@ class NoDestructor {
     explicit PlacementImpl(Args&&... args) {
       new (&space_) T(std::forward<Args>(args)...);
     }
-    const T* get() const {
+    absl::Nonnull<const T*> get() const {
       return Launder(reinterpret_cast<const T*>(&space_));
     }
-    T* get() { return Launder(reinterpret_cast<T*>(&space_)); }
+    absl::Nonnull<T*> get() { return Launder(reinterpret_cast<T*>(&space_)); }
 
    private:
     template <typename P>
-    static P* Launder(P* p) {
+    static absl::Nonnull<P*> Launder(absl::Nonnull<P*> p) {
 #if defined(__cpp_lib_launder) && __cpp_lib_launder >= 201606L
       return std::launder(p);
 #elif ABSL_HAVE_BUILTIN(__builtin_launder)

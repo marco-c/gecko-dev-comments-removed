@@ -230,8 +230,8 @@ class LogEveryNSecState final {
 
 
 
-ABSL_ATTRIBUTE_NORETURN inline void AbortQuietly() { abort(); }
-ABSL_ATTRIBUTE_NORETURN inline void ExitQuietly() { _exit(1); }
+[[noreturn]] inline void AbortQuietly() { abort(); }
+[[noreturn]] inline void ExitQuietly() { _exit(1); }
 }  
 ABSL_NAMESPACE_END
 }  

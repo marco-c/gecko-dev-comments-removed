@@ -34,6 +34,7 @@
 #define ABSL_FUNCTIONAL_ANY_INVOCABLE_H_
 
 #include <cstddef>
+#include <functional>
 #include <initializer_list>
 #include <type_traits>
 #include <utility>
@@ -45,6 +46,12 @@
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
+
+
+
+
+
+
 
 
 
@@ -167,6 +174,7 @@ class AnyInvocable : private internal_any_invocable::Impl<Sig> {
   
 
   
+  
   AnyInvocable() noexcept = default;
   AnyInvocable(std::nullptr_t) noexcept {}  
 
@@ -266,6 +274,8 @@ class AnyInvocable : private internal_any_invocable::Impl<Sig> {
   
   void swap(AnyInvocable& other) noexcept { std::swap(*this, other); }
 
+  
+  
   
   
   

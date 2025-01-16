@@ -148,7 +148,7 @@ struct SynchWaitParams;
 
 
 
-class ABSL_LOCKABLE Mutex {
+class ABSL_LOCKABLE ABSL_ATTRIBUTE_WARN_UNUSED Mutex {
  public:
   
   
@@ -190,7 +190,7 @@ class ABSL_LOCKABLE Mutex {
   
   
   
-  bool TryLock() ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true);
+  ABSL_MUST_USE_RESULT bool TryLock() ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true);
 
   
   
@@ -255,7 +255,7 @@ class ABSL_LOCKABLE Mutex {
   
   
   
-  bool ReaderTryLock() ABSL_SHARED_TRYLOCK_FUNCTION(true);
+  ABSL_MUST_USE_RESULT bool ReaderTryLock() ABSL_SHARED_TRYLOCK_FUNCTION(true);
 
   
   
@@ -281,7 +281,8 @@ class ABSL_LOCKABLE Mutex {
 
   void WriterUnlock() ABSL_UNLOCK_FUNCTION() { this->Unlock(); }
 
-  bool WriterTryLock() ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
+  ABSL_MUST_USE_RESULT bool WriterTryLock()
+      ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
     return this->TryLock();
   }
 

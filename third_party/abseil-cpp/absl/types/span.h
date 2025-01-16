@@ -151,7 +151,7 @@ ABSL_NAMESPACE_BEGIN
 
 
 template <typename T>
-class Span {
+class ABSL_INTERNAL_ATTRIBUTE_VIEW Span {
  private:
   
   
@@ -185,6 +185,7 @@ class Span {
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
   using size_type = size_t;
   using difference_type = ptrdiff_t;
+  using absl_internal_is_view = std::true_type;
 
   static const size_type npos = ~(size_type(0));
 

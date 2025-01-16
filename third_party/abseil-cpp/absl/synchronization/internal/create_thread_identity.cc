@@ -40,6 +40,7 @@ ABSL_CONST_INIT static base_internal::ThreadIdentity* thread_identity_freelist;
 
 
 
+
 static void ReclaimThreadIdentity(void* v) {
   base_internal::ThreadIdentity* identity =
       static_cast<base_internal::ThreadIdentity*>(v);
@@ -124,6 +125,9 @@ static base_internal::ThreadIdentity* NewThreadIdentity() {
     identity = reinterpret_cast<base_internal::ThreadIdentity*>(
         RoundUp(reinterpret_cast<intptr_t>(allocation),
                 base_internal::PerThreadSynch::kAlignment));
+    
+    
+    
     OneTimeInitThreadIdentity(identity);
   }
   ResetThreadIdentityBetweenReuse(identity);

@@ -89,7 +89,8 @@ class ABSL_LOCKABLE ABSL_ATTRIBUTE_WARN_UNUSED SpinLock {
   
   
   
-  inline bool TryLock() ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
+  ABSL_MUST_USE_RESULT inline bool TryLock()
+      ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
     ABSL_TSAN_MUTEX_PRE_LOCK(this, __tsan_mutex_try_lock);
     bool res = TryLockImpl();
     ABSL_TSAN_MUTEX_POST_LOCK(
@@ -120,7 +121,7 @@ class ABSL_LOCKABLE ABSL_ATTRIBUTE_WARN_UNUSED SpinLock {
   
   
   
-  inline bool IsHeld() const {
+  ABSL_MUST_USE_RESULT inline bool IsHeld() const {
     return (lockword_.load(std::memory_order_relaxed) & kSpinLockHeld) != 0;
   }
 
@@ -201,6 +202,15 @@ class ABSL_LOCKABLE ABSL_ATTRIBUTE_WARN_UNUSED SpinLock {
 };
 
 
+
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(nodiscard)
+class [[nodiscard]] SpinLockHolder;
+#else
+class ABSL_MUST_USE_RESULT ABSL_ATTRIBUTE_TRIVIAL_ABI SpinLockHolder;
+#endif
 
 class ABSL_SCOPED_LOCKABLE SpinLockHolder {
  public:

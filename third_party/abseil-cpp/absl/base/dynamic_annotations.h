@@ -249,24 +249,8 @@ ABSL_INTERNAL_END_EXTERN_C
 
 #else  
 
-
-#ifdef ABSL_HAVE_THREAD_SANITIZER
-#define ABSL_ANNOTATE_MEMORY_IS_INITIALIZED(address, size) \
-  do {                                                     \
-    (void)(address);                                       \
-    (void)(size);                                          \
-  } while (0)
-#define ABSL_ANNOTATE_MEMORY_IS_UNINITIALIZED(address, size) \
-  do {                                                       \
-    (void)(address);                                         \
-    (void)(size);                                            \
-  } while (0)
-#else
-
 #define ABSL_ANNOTATE_MEMORY_IS_INITIALIZED(address, size)
 #define ABSL_ANNOTATE_MEMORY_IS_UNINITIALIZED(address, size)
-
-#endif
 
 #endif  
 

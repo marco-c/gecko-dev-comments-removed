@@ -53,11 +53,11 @@
 #include <functional>
 #include <iterator>
 #include <limits>
-#include <new>
 #include <string>
 #include <type_traits>
 #include <utility>
 
+#include "absl/base/config.h"
 #include "absl/base/internal/raw_logging.h"
 #include "absl/base/macros.h"
 #include "absl/container/internal/common.h"
@@ -70,7 +70,6 @@
 #include "absl/strings/cord.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/compare.h"
-#include "absl/utility/utility.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -78,9 +77,10 @@ namespace container_internal {
 
 #ifdef ABSL_BTREE_ENABLE_GENERATIONS
 #error ABSL_BTREE_ENABLE_GENERATIONS cannot be directly set
-#elif defined(ABSL_HAVE_ADDRESS_SANITIZER) || \
-    defined(ABSL_HAVE_HWADDRESS_SANITIZER) || \
-    defined(ABSL_HAVE_MEMORY_SANITIZER)
+#elif (defined(ABSL_HAVE_ADDRESS_SANITIZER) ||   \
+       defined(ABSL_HAVE_HWADDRESS_SANITIZER) || \
+       defined(ABSL_HAVE_MEMORY_SANITIZER)) &&   \
+    !defined(NDEBUG_SANITIZER)  
 
 
 
@@ -475,7 +475,7 @@ struct SearchResult {
 
 template <typename V>
 struct SearchResult<V, false> {
-  SearchResult() {}
+  SearchResult() = default;
   explicit SearchResult(V v) : value(v) {}
   SearchResult(V v, MatchKind ) : value(v) {}
 
@@ -580,14 +580,12 @@ class btree_node {
   using layout_type =
       absl::container_internal::Layout<btree_node *, uint32_t, field_type,
                                        slot_type, btree_node *>;
+  using leaf_layout_type = typename layout_type::template WithStaticSizes<
+       1,
+       BtreeGenerationsEnabled() ? 1 : 0,
+       4>;
   constexpr static size_type SizeWithNSlots(size_type n) {
-    return layout_type(
-                1,
-                BtreeGenerationsEnabled() ? 1 : 0,
-                4,
-                n,
-                0)
-        .AllocSize();
+    return leaf_layout_type( n,  0).AllocSize();
   }
   
   constexpr static size_type MinimumOverhead() {
@@ -619,27 +617,22 @@ class btree_node {
   constexpr static size_type kNodeSlots =
       kNodeTargetSlots >= kMinNodeSlots ? kNodeTargetSlots : kMinNodeSlots;
 
+  using internal_layout_type = typename layout_type::template WithStaticSizes<
+       1,
+       BtreeGenerationsEnabled() ? 1 : 0,
+       4,  kNodeSlots,
+       kNodeSlots + 1>;
+
   
   
   constexpr static field_type kInternalNodeMaxCount = 0;
 
-  constexpr static layout_type Layout(const size_type slot_count,
-                                      const size_type child_count) {
-    return layout_type(
-         1,
-         BtreeGenerationsEnabled() ? 1 : 0,
-         4,
-         slot_count,
-         child_count);
-  }
   
-  constexpr static layout_type LeafLayout(
+  constexpr static leaf_layout_type LeafLayout(
       const size_type slot_count = kNodeSlots) {
-    return Layout(slot_count, 0);
+    return leaf_layout_type(slot_count, 0);
   }
-  constexpr static layout_type InternalLayout() {
-    return Layout(kNodeSlots, kNodeSlots + 1);
-  }
+  constexpr static auto InternalLayout() { return internal_layout_type(); }
   constexpr static size_type LeafSize(const size_type slot_count = kNodeSlots) {
     return LeafLayout(slot_count).AllocSize();
   }
@@ -1407,9 +1400,9 @@ class btree {
     copy_or_move_values_in_order(other);
   }
   btree(btree &&other) noexcept
-      : root_(absl::exchange(other.root_, EmptyNode())),
+      : root_(std::exchange(other.root_, EmptyNode())),
         rightmost_(std::move(other.rightmost_)),
-        size_(absl::exchange(other.size_, 0u)) {
+        size_(std::exchange(other.size_, 0u)) {
     other.mutable_rightmost() = EmptyNode();
   }
   btree(btree &&other, const allocator_type &alloc)

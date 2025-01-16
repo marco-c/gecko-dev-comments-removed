@@ -75,15 +75,22 @@
 struct timeval;
 #endif
 #include <chrono>  
+
+#ifdef __cpp_impl_three_way_comparison
+#include <compare>
+#endif  
+
 #include <cmath>
 #include <cstdint>
 #include <ctime>
 #include <limits>
 #include <ostream>
+#include <ratio>  
 #include <string>
 #include <type_traits>
 #include <utility>
 
+#include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/macros.h"
 #include "absl/strings/string_view.h"
@@ -304,6 +311,14 @@ class Duration {
   uint32_t rep_lo_;
 };
 
+
+
+#ifdef __cpp_impl_three_way_comparison
+
+ABSL_ATTRIBUTE_CONST_FUNCTION constexpr std::strong_ordering operator<=>(
+    Duration lhs, Duration rhs);
+
+#endif  
 
 ABSL_ATTRIBUTE_CONST_FUNCTION constexpr bool operator<(Duration lhs,
                                                        Duration rhs);
@@ -837,6 +852,11 @@ class Time {
  private:
   friend constexpr Time time_internal::FromUnixDuration(Duration d);
   friend constexpr Duration time_internal::ToUnixDuration(Time t);
+
+#ifdef __cpp_impl_three_way_comparison
+  friend constexpr std::strong_ordering operator<=>(Time lhs, Time rhs);
+#endif  
+
   friend constexpr bool operator<(Time lhs, Time rhs);
   friend constexpr bool operator==(Time lhs, Time rhs);
   friend Duration operator-(Time lhs, Time rhs);
@@ -847,6 +867,15 @@ class Time {
   Duration rep_;
 };
 
+
+#ifdef __cpp_impl_three_way_comparison
+
+ABSL_ATTRIBUTE_CONST_FUNCTION constexpr std::strong_ordering operator<=>(
+    Time lhs, Time rhs) {
+  return lhs.rep_ <=> rhs.rep_;
+}
+
+#endif  
 
 ABSL_ATTRIBUTE_CONST_FUNCTION constexpr bool operator<(Time lhs, Time rhs) {
   return lhs.rep_ < rhs.rep_;
@@ -1722,6 +1751,25 @@ ABSL_ATTRIBUTE_CONST_FUNCTION constexpr bool operator<(Duration lhs,
                    time_internal::GetRepLo(rhs) + 1
              : time_internal::GetRepLo(lhs) < time_internal::GetRepLo(rhs);
 }
+
+
+#ifdef __cpp_impl_three_way_comparison
+
+ABSL_ATTRIBUTE_CONST_FUNCTION constexpr std::strong_ordering operator<=>(
+    Duration lhs, Duration rhs) {
+  const int64_t lhs_hi = time_internal::GetRepHi(lhs);
+  const int64_t rhs_hi = time_internal::GetRepHi(rhs);
+  if (auto c = lhs_hi <=> rhs_hi; c != std::strong_ordering::equal) {
+    return c;
+  }
+  const uint32_t lhs_lo = time_internal::GetRepLo(lhs);
+  const uint32_t rhs_lo = time_internal::GetRepLo(rhs);
+  return (lhs_hi == (std::numeric_limits<int64_t>::min)())
+             ? (lhs_lo + 1) <=> (rhs_lo + 1)
+             : lhs_lo <=> rhs_lo;
+}
+
+#endif  
 
 ABSL_ATTRIBUTE_CONST_FUNCTION constexpr bool operator==(Duration lhs,
                                                         Duration rhs) {

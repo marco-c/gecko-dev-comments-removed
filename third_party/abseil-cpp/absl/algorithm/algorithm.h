@@ -53,8 +53,8 @@ using std::rotate;
 
 
 template <typename InputIterator, typename EqualityComparable>
-bool linear_search(InputIterator first, InputIterator last,
-                   const EqualityComparable& value) {
+ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 bool linear_search(
+    InputIterator first, InputIterator last, const EqualityComparable& value) {
   return std::find(first, last, value) != last;
 }
 

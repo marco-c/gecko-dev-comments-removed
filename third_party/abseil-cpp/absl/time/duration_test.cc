@@ -19,6 +19,11 @@
 #include <array>
 #include <cfloat>
 #include <chrono>  
+
+#ifdef __cpp_impl_three_way_comparison
+#include <compare>
+#endif  
+
 #include <cmath>
 #include <cstdint>
 #include <ctime>
@@ -431,6 +436,15 @@ TEST(Duration, InfinityComparison) {
   EXPECT_LT(-inf, any_dur);
   EXPECT_LT(-inf, inf);
   EXPECT_GT(inf, -inf);
+
+#ifdef __cpp_impl_three_way_comparison
+  EXPECT_EQ(inf <=> inf, std::strong_ordering::equal);
+  EXPECT_EQ(-inf <=> -inf, std::strong_ordering::equal);
+  EXPECT_EQ(-inf <=> inf, std::strong_ordering::less);
+  EXPECT_EQ(inf <=> -inf, std::strong_ordering::greater);
+  EXPECT_EQ(any_dur <=> inf, std::strong_ordering::less);
+  EXPECT_EQ(any_dur <=> -inf, std::strong_ordering::greater);
+#endif  
 }
 
 TEST(Duration, InfinityAddition) {
@@ -496,8 +510,19 @@ TEST(Duration, InfinitySubtraction) {
   
   absl::Duration almost_neg_inf = sec_min;
   EXPECT_LT(-inf, almost_neg_inf);
+
+#ifdef __cpp_impl_three_way_comparison
+  EXPECT_EQ(-inf <=> almost_neg_inf, std::strong_ordering::less);
+  EXPECT_EQ(almost_neg_inf <=> -inf, std::strong_ordering::greater);
+#endif  
+
   almost_neg_inf -= -absl::Nanoseconds(1);
   EXPECT_LT(-inf, almost_neg_inf);
+
+#ifdef __cpp_impl_three_way_comparison
+  EXPECT_EQ(-inf <=> almost_neg_inf, std::strong_ordering::less);
+  EXPECT_EQ(almost_neg_inf <=> -inf, std::strong_ordering::greater);
+#endif  
 
   
   const double dbl_inf = std::numeric_limits<double>::infinity();
@@ -857,6 +882,21 @@ TEST(Duration, Range) {
 
   EXPECT_LT(neg_full_range, full_range);
   EXPECT_EQ(neg_full_range, -full_range);
+
+#ifdef __cpp_impl_three_way_comparison
+  EXPECT_EQ(range_future <=> absl::InfiniteDuration(),
+            std::strong_ordering::less);
+  EXPECT_EQ(range_past <=> -absl::InfiniteDuration(),
+            std::strong_ordering::greater);
+  EXPECT_EQ(full_range <=> absl::ZeroDuration(),  
+            std::strong_ordering::greater);
+  EXPECT_EQ(full_range <=> -absl::InfiniteDuration(),
+            std::strong_ordering::greater);
+  EXPECT_EQ(neg_full_range <=> -absl::InfiniteDuration(),
+            std::strong_ordering::greater);
+  EXPECT_EQ(neg_full_range <=> full_range, std::strong_ordering::less);
+  EXPECT_EQ(neg_full_range <=> -full_range, std::strong_ordering::equal);
+#endif  
 }
 
 TEST(Duration, RelationalOperators) {
@@ -879,6 +919,27 @@ TEST(Duration, RelationalOperators) {
 
 #undef TEST_REL_OPS
 }
+
+
+#ifdef __cpp_impl_three_way_comparison
+
+TEST(Duration, SpaceshipOperators) {
+#define TEST_REL_OPS(UNIT)               \
+  static_assert(UNIT(2) <=> UNIT(2) == std::strong_ordering::equal, ""); \
+  static_assert(UNIT(1) <=> UNIT(2) == std::strong_ordering::less, ""); \
+  static_assert(UNIT(3) <=> UNIT(2) == std::strong_ordering::greater, "");
+
+  TEST_REL_OPS(absl::Nanoseconds);
+  TEST_REL_OPS(absl::Microseconds);
+  TEST_REL_OPS(absl::Milliseconds);
+  TEST_REL_OPS(absl::Seconds);
+  TEST_REL_OPS(absl::Minutes);
+  TEST_REL_OPS(absl::Hours);
+
+#undef TEST_REL_OPS
+}
+
+#endif  
 
 TEST(Duration, Addition) {
 #define TEST_ADD_OPS(UNIT)                  \

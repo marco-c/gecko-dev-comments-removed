@@ -707,6 +707,13 @@ TEST(Escaping, HexStringToBytesBackToHex) {
   EXPECT_EQ(hex, kTestHexLower);
 
   
+  
+  
+  
+  bytes = std::string(kTestHexUpper);
+  (void)absl::HexStringToBytes(bytes, &bytes);
+
+  
   EXPECT_FALSE(absl::HexStringToBytes("1c2f003", &bytes));
 
   

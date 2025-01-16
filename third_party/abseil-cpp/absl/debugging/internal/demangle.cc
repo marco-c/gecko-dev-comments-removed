@@ -15,17 +15,18 @@
 
 
 
-
-
 #include "absl/debugging/internal/demangle.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <limits>
 #include <string>
 
 #include "absl/base/config.h"
+#include "absl/debugging/internal/demangle_rust.h"
 
 #if ABSL_INTERNAL_HAS_CXA_DEMANGLE
 #include <cxxabi.h>
@@ -51,6 +52,8 @@ static const AbbrevPair kOperatorList[] = {
     
     {"dl", "delete", 1},
     {"da", "delete[]", 1},
+
+    {"aw", "co_await", 1},
 
     {"ps", "+", 1},  
     {"ng", "-", 1},  
@@ -79,6 +82,7 @@ static const AbbrevPair kOperatorList[] = {
     {"rs", ">>", 2},
     {"lS", "<<=", 2},
     {"rS", ">>=", 2},
+    {"ss", "<=>", 2},
     {"eq", "==", 2},
     {"ne", "!=", 2},
     {"lt", "<", 2},
@@ -98,6 +102,7 @@ static const AbbrevPair kOperatorList[] = {
     {"qu", "?", 3},
     {"st", "sizeof", 0},  
     {"sz", "sizeof", 1},  
+    {"sZ", "sizeof...", 0},  
     {nullptr, nullptr, 0},
 };
 
@@ -187,9 +192,50 @@ typedef struct {
   int recursion_depth;        
   int steps;               
   ParseState parse_state;  
+
+  
+  
+  
+  
+#ifdef ABSL_INTERNAL_DEMANGLE_RECORDS_HIGH_WATER_MARK
+  int high_water_mark;  
+  bool too_complex;  
+#endif
 } State;
 
 namespace {
+
+#ifdef ABSL_INTERNAL_DEMANGLE_RECORDS_HIGH_WATER_MARK
+void UpdateHighWaterMark(State *state) {
+  if (state->high_water_mark < state->parse_state.mangled_idx) {
+    state->high_water_mark = state->parse_state.mangled_idx;
+  }
+}
+
+void ReportHighWaterMark(State *state) {
+  
+  
+  
+  
+  const size_t input_length = std::strlen(state->mangled_begin);
+  if (input_length + 6 > static_cast<size_t>(state->out_end_idx) ||
+      state->too_complex) {
+    if (state->out_end_idx > 0) state->out[0] = '\0';
+    return;
+  }
+  const size_t high_water_mark = static_cast<size_t>(state->high_water_mark);
+  std::memcpy(state->out, state->mangled_begin, high_water_mark);
+  std::memcpy(state->out + high_water_mark, "--!--", 5);
+  std::memcpy(state->out + high_water_mark + 5,
+              state->mangled_begin + high_water_mark,
+              input_length - high_water_mark);
+  state->out[input_length + 5] = '\0';
+}
+#else
+void UpdateHighWaterMark(State *) {}
+void ReportHighWaterMark(State *) {}
+#endif
+
 
 
 class ComplexityGuard {
@@ -222,8 +268,14 @@ class ComplexityGuard {
   static constexpr int kParseStepsLimit = 1 << 17;
 
   bool IsTooComplex() const {
-    return state_->recursion_depth > kRecursionDepthLimit ||
-           state_->steps > kParseStepsLimit;
+    if (state_->recursion_depth > kRecursionDepthLimit ||
+        state_->steps > kParseStepsLimit) {
+#ifdef ABSL_INTERNAL_DEMANGLE_RECORDS_HIGH_WATER_MARK
+      state_->too_complex = true;
+#endif
+      return true;
+    }
+    return false;
   }
 
  private:
@@ -270,6 +322,10 @@ static void InitState(State* state,
   state->out_end_idx = static_cast<int>(out_size);
   state->recursion_depth = 0;
   state->steps = 0;
+#ifdef ABSL_INTERNAL_DEMANGLE_RECORDS_HIGH_WATER_MARK
+  state->high_water_mark = 0;
+  state->too_complex = false;
+#endif
 
   state->parse_state.mangled_idx = 0;
   state->parse_state.out_cur_idx = 0;
@@ -291,6 +347,7 @@ static bool ParseOneCharToken(State *state, const char one_char_token) {
   if (guard.IsTooComplex()) return false;
   if (RemainingInput(state)[0] == one_char_token) {
     ++state->parse_state.mangled_idx;
+    UpdateHighWaterMark(state);
     return true;
   }
   return false;
@@ -305,9 +362,43 @@ static bool ParseTwoCharToken(State *state, const char *two_char_token) {
   if (RemainingInput(state)[0] == two_char_token[0] &&
       RemainingInput(state)[1] == two_char_token[1]) {
     state->parse_state.mangled_idx += 2;
+    UpdateHighWaterMark(state);
     return true;
   }
   return false;
+}
+
+
+
+
+static bool ParseThreeCharToken(State *state, const char *three_char_token) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+  if (RemainingInput(state)[0] == three_char_token[0] &&
+      RemainingInput(state)[1] == three_char_token[1] &&
+      RemainingInput(state)[2] == three_char_token[2]) {
+    state->parse_state.mangled_idx += 3;
+    UpdateHighWaterMark(state);
+    return true;
+  }
+  return false;
+}
+
+
+
+static bool ParseLongToken(State *state, const char *long_token) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+  int i = 0;
+  for (; long_token[i] != '\0'; ++i) {
+    
+    
+    
+    if (RemainingInput(state)[i] != long_token[i]) return false;
+  }
+  state->parse_state.mangled_idx += i;
+  UpdateHighWaterMark(state);
+  return true;
 }
 
 
@@ -322,6 +413,7 @@ static bool ParseCharClass(State *state, const char *char_class) {
   for (; *p != '\0'; ++p) {
     if (RemainingInput(state)[0] == *p) {
       ++state->parse_state.mangled_idx;
+      UpdateHighWaterMark(state);
       return true;
     }
   }
@@ -554,6 +646,7 @@ static bool ParseFloatNumber(State *state);
 static bool ParseSeqId(State *state);
 static bool ParseIdentifier(State *state, size_t length);
 static bool ParseOperatorName(State *state, int *arity);
+static bool ParseConversionOperatorType(State *state);
 static bool ParseSpecialName(State *state);
 static bool ParseCallOffset(State *state);
 static bool ParseNVOffset(State *state);
@@ -563,9 +656,12 @@ static bool ParseCtorDtorName(State *state);
 static bool ParseDecltype(State *state);
 static bool ParseType(State *state);
 static bool ParseCVQualifiers(State *state);
+static bool ParseExtendedQualifier(State *state);
 static bool ParseBuiltinType(State *state);
+static bool ParseVendorExtendedType(State *state);
 static bool ParseFunctionType(State *state);
 static bool ParseBareFunctionType(State *state);
+static bool ParseOverloadAttribute(State *state);
 static bool ParseClassEnumType(State *state);
 static bool ParseArrayType(State *state);
 static bool ParsePointerToMemberType(State *state);
@@ -576,10 +672,17 @@ static bool ParseTemplateArgs(State *state);
 static bool ParseTemplateArg(State *state);
 static bool ParseBaseUnresolvedName(State *state);
 static bool ParseUnresolvedName(State *state);
+static bool ParseUnresolvedQualifierLevel(State *state);
+static bool ParseUnionSelector(State* state);
+static bool ParseFunctionParam(State* state);
+static bool ParseBracedExpression(State *state);
 static bool ParseExpression(State *state);
+static bool ParseInitializer(State *state);
 static bool ParseExprPrimary(State *state);
-static bool ParseExprCastValue(State *state);
+static bool ParseExprCastValueAndTrailingE(State *state);
 static bool ParseQRequiresClauseExpr(State *state);
+static bool ParseRequirement(State *state);
+static bool ParseTypeConstraint(State *state);
 static bool ParseLocalName(State *state);
 static bool ParseLocalNameSuffix(State *state);
 static bool ParseDiscriminator(State *state);
@@ -742,14 +845,21 @@ static bool ParseNestedName(State *state) {
 
 
 
+
+
 static bool ParsePrefix(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
   bool has_something = false;
   while (true) {
     MaybeAppendSeparator(state);
-    if (ParseTemplateParam(state) ||
+    if (ParseTemplateParam(state) || ParseDecltype(state) ||
         ParseSubstitution(state, true) ||
+        
+        
+        
+        
+        ParseVendorExtendedType(state) ||
         ParseUnscopedName(state) ||
         (ParseOneCharToken(state, 'M') && ParseUnnamedTypeName(state))) {
       has_something = true;
@@ -773,6 +883,12 @@ static bool ParsePrefix(State *state) {
 
 
 
+
+
+
+
+
+
 static bool ParseUnqualifiedName(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
@@ -781,6 +897,23 @@ static bool ParseUnqualifiedName(State *state) {
       ParseUnnamedTypeName(state)) {
     return ParseAbiTags(state);
   }
+
+  
+  ParseState copy = state->parse_state;
+  if (ParseTwoCharToken(state, "DC") && OneOrMore(ParseSourceName, state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  
+  if (ParseOneCharToken(state, 'F') && MaybeAppend(state, "friend ") &&
+      (ParseSourceName(state) || ParseOperatorName(state, nullptr))) {
+    return true;
+  }
+  state->parse_state = copy;
+
   return false;
 }
 
@@ -839,6 +972,10 @@ static bool ParseLocalSourceName(State *state) {
 
 
 
+
+
+
+
 static bool ParseUnnamedTypeName(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
@@ -861,6 +998,7 @@ static bool ParseUnnamedTypeName(State *state) {
   
   which = -1;
   if (ParseTwoCharToken(state, "Ul") && DisableAppend(state) &&
+      ZeroOrMore(ParseTemplateParamDecl, state) &&
       OneOrMore(ParseType, state) && RestoreAppend(state, copy.append) &&
       ParseOneCharToken(state, 'E') && Optional(ParseNumber(state, &which)) &&
       which <= std::numeric_limits<int>::max() - 2 &&  
@@ -902,6 +1040,7 @@ static bool ParseNumber(State *state, int *number_out) {
   }
   if (p != RemainingInput(state)) {  
     state->parse_state.mangled_idx += p - RemainingInput(state);
+    UpdateHighWaterMark(state);
     if (number_out != nullptr) {
       
       *number_out = static_cast<int>(number);
@@ -924,6 +1063,7 @@ static bool ParseFloatNumber(State *state) {
   }
   if (p != RemainingInput(state)) {  
     state->parse_state.mangled_idx += p - RemainingInput(state);
+    UpdateHighWaterMark(state);
     return true;
   }
   return false;
@@ -942,6 +1082,7 @@ static bool ParseSeqId(State *state) {
   }
   if (p != RemainingInput(state)) {  
     state->parse_state.mangled_idx += p - RemainingInput(state);
+    UpdateHighWaterMark(state);
     return true;
   }
   return false;
@@ -960,8 +1101,10 @@ static bool ParseIdentifier(State *state, size_t length) {
     MaybeAppendWithLength(state, RemainingInput(state), length);
   }
   state->parse_state.mangled_idx += length;
+  UpdateHighWaterMark(state);
   return true;
 }
+
 
 
 
@@ -975,11 +1118,18 @@ static bool ParseOperatorName(State *state, int *arity) {
   
   ParseState copy = state->parse_state;
   if (ParseTwoCharToken(state, "cv") && MaybeAppend(state, "operator ") &&
-      EnterNestedName(state) && ParseType(state) &&
+      EnterNestedName(state) && ParseConversionOperatorType(state) &&
       LeaveNestedName(state, copy.nest_level)) {
     if (arity != nullptr) {
       *arity = 1;
     }
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  if (ParseTwoCharToken(state, "li") && MaybeAppend(state, "operator\"\" ") &&
+      ParseSourceName(state)) {
     return true;
   }
   state->parse_state = copy;
@@ -1011,11 +1161,80 @@ static bool ParseOperatorName(State *state, int *arity) {
       }
       MaybeAppend(state, p->real_name);
       state->parse_state.mangled_idx += 2;
+      UpdateHighWaterMark(state);
       return true;
     }
   }
   return false;
 }
+
+
+
+
+
+
+
+
+static bool ParseConversionOperatorType(State *state) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+  ParseState copy = state->parse_state;
+
+  
+  
+  
+  
+  const char* begin_simple_prefixes = RemainingInput(state);
+  while (ParseCharClass(state, "OPRCGrVK")) {}
+  const char* end_simple_prefixes = RemainingInput(state);
+
+  
+  if (!ParseType(state)) {
+    state->parse_state = copy;
+    return false;
+  }
+
+  
+  
+  while (begin_simple_prefixes != end_simple_prefixes) {
+    switch (*--end_simple_prefixes) {
+      case 'P':
+        MaybeAppend(state, "*");
+        break;
+      case 'R':
+        MaybeAppend(state, "&");
+        break;
+      case 'O':
+        MaybeAppend(state, "&&");
+        break;
+      case 'C':
+        MaybeAppend(state, " _Complex");
+        break;
+      case 'G':
+        MaybeAppend(state, " _Imaginary");
+        break;
+      case 'r':
+        MaybeAppend(state, " restrict");
+        break;
+      case 'V':
+        MaybeAppend(state, " volatile");
+        break;
+      case 'K':
+        MaybeAppend(state, " const");
+        break;
+    }
+  }
+  return true;
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1040,7 +1259,22 @@ static bool ParseSpecialName(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
   ParseState copy = state->parse_state;
-  if (ParseOneCharToken(state, 'T') && ParseCharClass(state, "VTISH") &&
+
+  if (ParseTwoCharToken(state, "TW")) {
+    MaybeAppend(state, "thread-local wrapper routine for ");
+    if (ParseName(state)) return true;
+    state->parse_state = copy;
+    return false;
+  }
+
+  if (ParseTwoCharToken(state, "TH")) {
+    MaybeAppend(state, "thread-local initialization routine for ");
+    if (ParseName(state)) return true;
+    state->parse_state = copy;
+    return false;
+  }
+
+  if (ParseOneCharToken(state, 'T') && ParseCharClass(state, "VTIS") &&
       ParseType(state)) {
     return true;
   }
@@ -1078,12 +1312,30 @@ static bool ParseSpecialName(State *state) {
   }
   state->parse_state = copy;
 
-  if (ParseTwoCharToken(state, "GR") && ParseName(state)) {
+  
+  
+  if (ParseTwoCharToken(state, "GR")) {
+    MaybeAppend(state, "reference temporary for ");
+    if (!ParseName(state)) {
+      state->parse_state = copy;
+      return false;
+    }
+    const bool has_seq_id = ParseSeqId(state);
+    const bool has_underscore = ParseOneCharToken(state, '_');
+    if (has_seq_id && !has_underscore) {
+      state->parse_state = copy;
+      return false;
+    }
+    return true;
+  }
+
+  if (ParseTwoCharToken(state, "GA") && ParseEncoding(state)) {
     return true;
   }
   state->parse_state = copy;
 
-  if (ParseTwoCharToken(state, "GA") && ParseEncoding(state)) {
+  if (ParseThreeCharToken(state, "GTt") &&
+      MaybeAppend(state, "transaction clone for ") && ParseEncoding(state)) {
     return true;
   }
   state->parse_state = copy;
@@ -1093,6 +1345,18 @@ static bool ParseSpecialName(State *state) {
     return true;
   }
   state->parse_state = copy;
+
+  if (ParseTwoCharToken(state, "TA")) {
+    bool append = state->parse_state.append;
+    DisableAppend(state);
+    if (ParseTemplateArg(state)) {
+      RestoreAppend(state, append);
+      MaybeAppend(state, "template parameter object");
+      return true;
+    }
+  }
+  state->parse_state = copy;
+
   return false;
 }
 
@@ -1209,6 +1473,7 @@ static bool ParseDecltype(State *state) {
 
 
 
+
 static bool ParseType(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
@@ -1250,12 +1515,6 @@ static bool ParseType(State *state) {
   }
   state->parse_state = copy;
 
-  if (ParseOneCharToken(state, 'U') && ParseSourceName(state) &&
-      ParseType(state)) {
-    return true;
-  }
-  state->parse_state = copy;
-
   if (ParseBuiltinType(state) || ParseFunctionType(state) ||
       ParseClassEnumType(state) || ParseArrayType(state) ||
       ParsePointerToMemberType(state) || ParseDecltype(state) ||
@@ -1274,14 +1533,32 @@ static bool ParseType(State *state) {
     return true;
   }
 
+  
   if (ParseTwoCharToken(state, "Dv") && ParseNumber(state, nullptr) &&
-      ParseOneCharToken(state, '_')) {
+      ParseOneCharToken(state, '_') && ParseType(state)) {
     return true;
   }
   state->parse_state = copy;
 
-  return false;
+  
+  if (ParseTwoCharToken(state, "Dv") && ParseExpression(state) &&
+      ParseOneCharToken(state, '_') && ParseType(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  if (ParseTwoCharToken(state, "Dk") && ParseTypeConstraint(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  
+  
+  return ParseLongToken(state, "_SUBSTPACK_");
 }
+
+
 
 
 
@@ -1290,11 +1567,36 @@ static bool ParseCVQualifiers(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
   int num_cv_qualifiers = 0;
+  while (ParseExtendedQualifier(state)) ++num_cv_qualifiers;
   num_cv_qualifiers += ParseOneCharToken(state, 'r');
   num_cv_qualifiers += ParseOneCharToken(state, 'V');
   num_cv_qualifiers += ParseOneCharToken(state, 'K');
   return num_cv_qualifiers > 0;
 }
+
+
+static bool ParseExtendedQualifier(State *state) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+  ParseState copy = state->parse_state;
+
+  if (!ParseOneCharToken(state, 'U')) return false;
+
+  bool append = state->parse_state.append;
+  DisableAppend(state);
+  if (!ParseSourceName(state)) {
+    state->parse_state = copy;
+    return false;
+  }
+  Optional(ParseTemplateArgs(state));
+  RestoreAppend(state, append);
+  return true;
+}
+
+
+
+
+
 
 
 
@@ -1307,6 +1609,59 @@ static bool ParseCVQualifiers(State *state) {
 static bool ParseBuiltinType(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
+  ParseState copy = state->parse_state;
+
+  
+  
+  if (ParseTwoCharToken(state, "DB") ||
+      (ParseTwoCharToken(state, "DU") && MaybeAppend(state, "unsigned "))) {
+    bool append = state->parse_state.append;
+    DisableAppend(state);
+    int number = -1;
+    if (!ParseNumber(state, &number) && !ParseExpression(state)) {
+      state->parse_state = copy;
+      return false;
+    }
+    RestoreAppend(state, append);
+
+    if (!ParseOneCharToken(state, '_')) {
+      state->parse_state = copy;
+      return false;
+    }
+
+    MaybeAppend(state, "_BitInt(");
+    if (number >= 0) {
+      MaybeAppendDecimal(state, number);
+    } else {
+      MaybeAppend(state, "?");  
+    }
+    MaybeAppend(state, ")");
+    return true;
+  }
+
+  
+  
+  
+  if (ParseTwoCharToken(state, "DF")) {
+    if (ParseThreeCharToken(state, "16b")) {
+      MaybeAppend(state, "std::bfloat16_t");
+      return true;
+    }
+    int number = 0;
+    if (!ParseNumber(state, &number)) {
+      state->parse_state = copy;
+      return false;
+    }
+    MaybeAppend(state, "_Float");
+    MaybeAppendDecimal(state, number);
+    if (ParseOneCharToken(state, 'x')) {
+      MaybeAppend(state, "x");
+      return true;
+    }
+    if (ParseOneCharToken(state, '_')) return true;
+    state->parse_state = copy;
+    return false;
+  }
 
   for (const AbbrevPair *p = kBuiltinTypeList; p->abbrev != nullptr; ++p) {
     
@@ -1321,15 +1676,18 @@ static bool ParseBuiltinType(State *state) {
     }
   }
 
+  return ParseVendorExtendedType(state);
+}
+
+
+static bool ParseVendorExtendedType(State *state) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+
   ParseState copy = state->parse_state;
-  if (ParseOneCharToken(state, 'u') && ParseSourceName(state)) {
-    copy = state->parse_state;
-    if (ParseOneCharToken(state, 'I') && ParseType(state) &&
-        ParseOneCharToken(state, 'E')) {
-      return true;  
-    }
-    state->parse_state = copy;
-    return true;  
+  if (ParseOneCharToken(state, 'u') && ParseSourceName(state) &&
+      Optional(ParseTemplateArgs(state))) {
+    return true;
   }
   state->parse_state = copy;
   return false;
@@ -1364,19 +1722,34 @@ static bool ParseExceptionSpec(State *state) {
 }
 
 
+
+
+
 static bool ParseFunctionType(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
   ParseState copy = state->parse_state;
-  if (Optional(ParseExceptionSpec(state)) && ParseOneCharToken(state, 'F') &&
-      Optional(ParseOneCharToken(state, 'Y')) && ParseBareFunctionType(state) &&
-      Optional(ParseOneCharToken(state, 'O')) &&
-      ParseOneCharToken(state, 'E')) {
-    return true;
+  Optional(ParseExceptionSpec(state));
+  Optional(ParseTwoCharToken(state, "Dx"));
+  if (!ParseOneCharToken(state, 'F')) {
+    state->parse_state = copy;
+    return false;
   }
-  state->parse_state = copy;
-  return false;
+  Optional(ParseOneCharToken(state, 'Y'));
+  if (!ParseBareFunctionType(state)) {
+    state->parse_state = copy;
+    return false;
+  }
+  Optional(ParseCharClass(state, "RO"));
+  if (!ParseOneCharToken(state, 'E')) {
+    state->parse_state = copy;
+    return false;
+  }
+  return true;
 }
+
+
+
 
 
 static bool ParseBareFunctionType(State *state) {
@@ -1384,7 +1757,8 @@ static bool ParseBareFunctionType(State *state) {
   if (guard.IsTooComplex()) return false;
   ParseState copy = state->parse_state;
   DisableAppend(state);
-  if (OneOrMore(ParseType, state)) {
+  if (ZeroOrMore(ParseOverloadAttribute, state) &&
+      OneOrMore(ParseType, state)) {
     RestoreAppend(state, copy.append);
     MaybeAppend(state, "()");
     return true;
@@ -1394,10 +1768,42 @@ static bool ParseBareFunctionType(State *state) {
 }
 
 
+
+
+
+
+
+
+
+static bool ParseOverloadAttribute(State *state) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+  ParseState copy = state->parse_state;
+  if (ParseTwoCharToken(state, "Ua") && ParseName(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+  return false;
+}
+
+
+
+
+
+
+
 static bool ParseClassEnumType(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
-  return ParseName(state);
+  ParseState copy = state->parse_state;
+  if (Optional(ParseTwoCharToken(state, "Ts") ||
+               ParseTwoCharToken(state, "Tu") ||
+               ParseTwoCharToken(state, "Te")) &&
+      ParseName(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+  return false;
 }
 
 
@@ -1626,7 +2032,7 @@ static bool ParseTemplateArg(State *state) {
   
   if (ParseLocalSourceName(state) && Optional(ParseTemplateArgs(state))) {
     copy = state->parse_state;
-    if (ParseExprCastValue(state) && ParseOneCharToken(state, 'E')) {
+    if (ParseExprCastValueAndTrailingE(state)) {
       return true;
     }
     state->parse_state = copy;
@@ -1705,6 +2111,13 @@ static bool ParseBaseUnresolvedName(State *state) {
 
 
 
+
+
+
+
+
+
+
 static bool ParseUnresolvedName(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
@@ -1724,7 +2137,7 @@ static bool ParseUnresolvedName(State *state) {
 
   if (ParseTwoCharToken(state, "sr") && ParseOneCharToken(state, 'N') &&
       ParseUnresolvedType(state) &&
-      OneOrMore( ParseSimpleId, state) &&
+      OneOrMore(ParseUnresolvedQualifierLevel, state) &&
       ParseOneCharToken(state, 'E') && ParseBaseUnresolvedName(state)) {
     return true;
   }
@@ -1732,14 +2145,139 @@ static bool ParseUnresolvedName(State *state) {
 
   if (Optional(ParseTwoCharToken(state, "gs")) &&
       ParseTwoCharToken(state, "sr") &&
-      OneOrMore( ParseSimpleId, state) &&
+      OneOrMore(ParseUnresolvedQualifierLevel, state) &&
       ParseOneCharToken(state, 'E') && ParseBaseUnresolvedName(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  if (ParseTwoCharToken(state, "sr") && ParseTwoCharToken(state, "St") &&
+      ParseSimpleId(state) && ParseSimpleId(state)) {
     return true;
   }
   state->parse_state = copy;
 
   return false;
 }
+
+
+
+
+
+
+
+
+
+static bool ParseUnresolvedQualifierLevel(State *state) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+
+  if (ParseSimpleId(state)) return true;
+
+  ParseState copy = state->parse_state;
+  if (ParseSubstitution(state, false) &&
+      ParseTemplateArgs(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+  return false;
+}
+
+
+
+
+static bool ParseUnionSelector(State *state) {
+  return ParseOneCharToken(state, '_') && Optional(ParseNumber(state, nullptr));
+}
+
+
+
+
+
+
+static bool ParseFunctionParam(State *state) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+
+  ParseState copy = state->parse_state;
+
+  
+  if (ParseTwoCharToken(state, "fp") && Optional(ParseCVQualifiers(state)) &&
+      Optional(ParseNumber(state, nullptr)) && ParseOneCharToken(state, '_')) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  if (ParseTwoCharToken(state, "fL") && Optional(ParseNumber(state, nullptr)) &&
+      ParseOneCharToken(state, 'p') && Optional(ParseCVQualifiers(state)) &&
+      Optional(ParseNumber(state, nullptr)) && ParseOneCharToken(state, '_')) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  return ParseThreeCharToken(state, "fpT");
+}
+
+
+
+
+
+static bool ParseBracedExpression(State *state) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+
+  ParseState copy = state->parse_state;
+
+  if (ParseTwoCharToken(state, "di") && ParseSourceName(state) &&
+      ParseBracedExpression(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  if (ParseTwoCharToken(state, "dx") && ParseExpression(state) &&
+      ParseBracedExpression(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  if (ParseTwoCharToken(state, "dX") &&
+      ParseExpression(state) && ParseExpression(state) &&
+      ParseBracedExpression(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  return ParseExpression(state);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1779,6 +2317,15 @@ static bool ParseExpression(State *state) {
 
   
   
+  if ((ParseThreeCharToken(state, "pp_") ||
+       ParseThreeCharToken(state, "mm_")) &&
+      ParseExpression(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  
   if (ParseTwoCharToken(state, "cp") && ParseSimpleId(state) &&
       ZeroOrMore(ParseExpression, state) && ParseOneCharToken(state, 'E')) {
     return true;
@@ -1786,16 +2333,64 @@ static bool ParseExpression(State *state) {
   state->parse_state = copy;
 
   
-  if (ParseTwoCharToken(state, "fp") && Optional(ParseCVQualifiers(state)) &&
-      Optional(ParseNumber(state, nullptr)) && ParseOneCharToken(state, '_')) {
+  
+  
+  if (ParseTwoCharToken(state, "so") && ParseType(state) &&
+      ParseExpression(state) && Optional(ParseNumber(state, nullptr)) &&
+      ZeroOrMore(ParseUnionSelector, state) &&
+      Optional(ParseOneCharToken(state, 'p')) &&
+      ParseOneCharToken(state, 'E')) {
     return true;
   }
   state->parse_state = copy;
 
   
-  if (ParseTwoCharToken(state, "fL") && Optional(ParseNumber(state, nullptr)) &&
-      ParseOneCharToken(state, 'p') && Optional(ParseCVQualifiers(state)) &&
-      Optional(ParseNumber(state, nullptr)) && ParseOneCharToken(state, '_')) {
+  if (ParseFunctionParam(state)) return true;
+  state->parse_state = copy;
+
+  
+  if (ParseTwoCharToken(state, "tl") && ParseType(state) &&
+      ZeroOrMore(ParseBracedExpression, state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  if (ParseTwoCharToken(state, "il") &&
+      ZeroOrMore(ParseBracedExpression, state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  
+  
+  
+  if (Optional(ParseTwoCharToken(state, "gs")) &&
+      (ParseTwoCharToken(state, "nw") || ParseTwoCharToken(state, "na")) &&
+      ZeroOrMore(ParseExpression, state) && ParseOneCharToken(state, '_') &&
+      ParseType(state) &&
+      (ParseOneCharToken(state, 'E') || ParseInitializer(state))) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  
+  if (Optional(ParseTwoCharToken(state, "gs")) &&
+      (ParseTwoCharToken(state, "dl") || ParseTwoCharToken(state, "da")) &&
+      ParseExpression(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  
+  
+  if (ParseCharClass(state, "dscr") && ParseOneCharToken(state, 'c') &&
+      ParseType(state) && ParseExpression(state)) {
     return true;
   }
   state->parse_state = copy;
@@ -1838,14 +2433,95 @@ static bool ParseExpression(State *state) {
   state->parse_state = copy;
 
   
+  if (ParseTwoCharToken(state, "ti") && ParseType(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  if (ParseTwoCharToken(state, "te") && ParseExpression(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
   if (ParseTwoCharToken(state, "st") && ParseType(state)) {
     return true;
   }
   state->parse_state = copy;
 
   
+  if (ParseTwoCharToken(state, "at") && ParseType(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  if (ParseTwoCharToken(state, "az") && ParseExpression(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  if (ParseTwoCharToken(state, "nx") && ParseExpression(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  
+  
+  
+  if (ParseTwoCharToken(state, "sZ") &&
+      (ParseFunctionParam(state) || ParseTemplateParam(state))) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  
+  
+  if (ParseTwoCharToken(state, "sP") && ZeroOrMore(ParseTemplateArg, state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  
+  
+  
+  if ((ParseTwoCharToken(state, "fl") || ParseTwoCharToken(state, "fr")) &&
+      ParseOperatorName(state, nullptr) && ParseExpression(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  
+  
+  
+  if ((ParseTwoCharToken(state, "fL") || ParseTwoCharToken(state, "fR")) &&
+      ParseOperatorName(state, nullptr) && ParseExpression(state) &&
+      ParseExpression(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  if (ParseTwoCharToken(state, "tw") && ParseExpression(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  if (ParseTwoCharToken(state, "tr")) return true;
+
+  
+  
+  
   if ((ParseTwoCharToken(state, "dt") || ParseTwoCharToken(state, "pt")) &&
-      ParseExpression(state) && ParseType(state)) {
+      ParseExpression(state) && ParseUnresolvedName(state)) {
     return true;
   }
   state->parse_state = copy;
@@ -1865,7 +2541,59 @@ static bool ParseExpression(State *state) {
   }
   state->parse_state = copy;
 
+  
+  if (ParseOneCharToken(state, 'u') && ParseSourceName(state) &&
+      ZeroOrMore(ParseTemplateArg, state) && ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  
+  
+  if (ParseTwoCharToken(state, "rq") && OneOrMore(ParseRequirement, state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  
+  
+  if (ParseTwoCharToken(state, "rQ") && ParseBareFunctionType(state) &&
+      ParseOneCharToken(state, '_') && OneOrMore(ParseRequirement, state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  state->parse_state = copy;
+
   return ParseUnresolvedName(state);
+}
+
+
+
+
+
+
+
+static bool ParseInitializer(State *state) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+  ParseState copy = state->parse_state;
+
+  if (ParseTwoCharToken(state, "pi") && ZeroOrMore(ParseExpression, state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  if (ParseTwoCharToken(state, "il") &&
+      ZeroOrMore(ParseBracedExpression, state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  state->parse_state = copy;
+  return false;
 }
 
 
@@ -1910,10 +2638,35 @@ static bool ParseExprPrimary(State *state) {
     return false;
   }
 
-  
-  if (ParseOneCharToken(state, 'L') && ParseType(state) &&
-      ParseExprCastValue(state)) {
-    return true;
+  if (ParseOneCharToken(state, 'L')) {
+    
+    
+    
+    
+    if (ParseThreeCharToken(state, "DnE")) return true;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (RemainingInput(state)[0] == 'A' ) {
+      if (ParseType(state) && ParseOneCharToken(state, 'E')) return true;
+      state->parse_state = copy;
+      return false;
+    }
+
+    
+    if (ParseType(state) && ParseExprCastValueAndTrailingE(state)) {
+      return true;
+    }
   }
   state->parse_state = copy;
 
@@ -1927,7 +2680,7 @@ static bool ParseExprPrimary(State *state) {
 }
 
 
-static bool ParseExprCastValue(State *state) {
+static bool ParseExprCastValueAndTrailingE(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
   
@@ -1939,8 +2692,15 @@ static bool ParseExprCastValue(State *state) {
   }
   state->parse_state = copy;
 
-  if (ParseFloatNumber(state) && ParseOneCharToken(state, 'E')) {
-    return true;
+  if (ParseFloatNumber(state)) {
+    
+    if (ParseOneCharToken(state, 'E')) return true;
+
+    
+    if (ParseOneCharToken(state, '_') && ParseFloatNumber(state) &&
+        ParseOneCharToken(state, 'E')) {
+      return true;
+    }
   }
   state->parse_state = copy;
 
@@ -1988,24 +2748,92 @@ static bool ParseQRequiresClauseExpr(State *state) {
 
 
 
+static bool ParseRequirement(State *state) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+
+  ParseState copy = state->parse_state;
+
+  if (ParseOneCharToken(state, 'X') && ParseExpression(state) &&
+      Optional(ParseOneCharToken(state, 'N')) &&
+      
+      
+      (!ParseOneCharToken(state, 'R') || ParseTypeConstraint(state))) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  if (ParseOneCharToken(state, 'T') && ParseType(state)) return true;
+  state->parse_state = copy;
+
+  if (ParseOneCharToken(state, 'Q') && ParseExpression(state)) return true;
+  state->parse_state = copy;
+
+  return false;
+}
+
+
+static bool ParseTypeConstraint(State *state) {
+  return ParseName(state);
+}
+
+
+
+
+
+
+
+
+
+
 
 
 static bool ParseLocalNameSuffix(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
+  ParseState copy = state->parse_state;
 
+  
+  if (ParseOneCharToken(state, 'd') &&
+      (IsDigit(RemainingInput(state)[0]) || RemainingInput(state)[0] == '_')) {
+    int number = -1;
+    Optional(ParseNumber(state, &number));
+    if (number < -1 || number > 2147483645) {
+      
+      
+      
+      number = -1;
+    }
+    number += 2;
+
+    
+    
+    MaybeAppend(state, "::{default arg#");
+    MaybeAppendDecimal(state, number);
+    MaybeAppend(state, "}::");
+    if (ParseOneCharToken(state, '_') && ParseName(state)) return true;
+
+    
+    
+    state->parse_state = copy;
+    if (state->parse_state.append) {
+      state->out[state->parse_state.out_cur_idx] = '\0';
+    }
+    return false;
+  }
+  state->parse_state = copy;
+
+  
   if (MaybeAppend(state, "::") && ParseName(state) &&
       Optional(ParseDiscriminator(state))) {
     return true;
   }
-
-  
-  
-  
+  state->parse_state = copy;
   if (state->parse_state.append) {
-    state->out[state->parse_state.out_cur_idx - 2] = '\0';
+    state->out[state->parse_state.out_cur_idx] = '\0';
   }
 
+  
   return ParseOneCharToken(state, 's') && Optional(ParseDiscriminator(state));
 }
 
@@ -2022,11 +2850,21 @@ static bool ParseLocalName(State *state) {
 }
 
 
+
 static bool ParseDiscriminator(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
   ParseState copy = state->parse_state;
-  if (ParseOneCharToken(state, '_') && ParseNumber(state, nullptr)) {
+
+  
+  if (!ParseOneCharToken(state, '_')) return false;
+
+  
+  if (ParseDigit(state, nullptr)) return true;
+
+  
+  if (ParseOneCharToken(state, '_') && ParseNumber(state, nullptr) &&
+      ParseOneCharToken(state, '_')) {
     return true;
   }
   state->parse_state = copy;
@@ -2072,6 +2910,7 @@ static bool ParseSubstitution(State *state, bool accept_std) {
           MaybeAppend(state, p->real_name);
         }
         ++state->parse_state.mangled_idx;
+        UpdateHighWaterMark(state);
         return true;
       }
     }
@@ -2097,10 +2936,13 @@ static bool ParseTopLevelMangledName(State *state) {
         MaybeAppend(state, RemainingInput(state));
         return true;
       }
+      ReportHighWaterMark(state);
       return false;  
     }
     return true;
   }
+
+  ReportHighWaterMark(state);
   return false;
 }
 
@@ -2110,6 +2952,10 @@ static bool Overflowed(const State *state) {
 
 
 bool Demangle(const char* mangled, char* out, size_t out_size) {
+  if (mangled[0] == '_' && mangled[1] == 'R') {
+    return DemangleRustSymbolEncoding(mangled, out, out_size);
+  }
+
   State state;
   InitState(&state, mangled, out, out_size);
   return ParseTopLevelMangledName(&state) && !Overflowed(&state) &&

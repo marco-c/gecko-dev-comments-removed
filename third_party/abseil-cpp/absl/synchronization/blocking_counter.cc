@@ -17,6 +17,7 @@
 #include <atomic>
 
 #include "absl/base/internal/raw_logging.h"
+#include "absl/base/internal/tracing.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -40,6 +41,7 @@ bool BlockingCounter::DecrementCount() {
   ABSL_RAW_CHECK(count >= 0,
                  "BlockingCounter::DecrementCount() called too many times");
   if (count == 0) {
+    base_internal::TraceSignal(this, TraceObjectKind());
     MutexLock l(&lock_);
     done_ = true;
     return true;
@@ -48,19 +50,23 @@ bool BlockingCounter::DecrementCount() {
 }
 
 void BlockingCounter::Wait() {
-  MutexLock l(&this->lock_);
+  base_internal::TraceWait(this, TraceObjectKind());
+  {
+    MutexLock l(&this->lock_);
 
-  
-  
-  ABSL_RAW_CHECK(num_waiting_ == 0, "multiple threads called Wait()");
-  num_waiting_++;
+    
+    
+    ABSL_RAW_CHECK(num_waiting_ == 0, "multiple threads called Wait()");
+    num_waiting_++;
 
-  this->lock_.Await(Condition(IsDone, &this->done_));
+    this->lock_.Await(Condition(IsDone, &this->done_));
 
-  
-  
-  
-  
+    
+    
+    
+    
+  }
+  base_internal::TraceContinue(this, TraceObjectKind());
 }
 
 ABSL_NAMESPACE_END

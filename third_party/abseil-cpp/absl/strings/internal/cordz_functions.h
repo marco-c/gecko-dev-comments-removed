@@ -41,23 +41,33 @@ void set_cordz_mean_interval(int32_t mean_interval);
 
 #ifdef ABSL_INTERNAL_CORDZ_ENABLED
 
+struct SamplingState {
+  int64_t next_sample;
+  int64_t sample_stride;
+};
 
 
 
 
-ABSL_CONST_INIT extern thread_local int64_t cordz_next_sample;
+
+ABSL_CONST_INIT extern thread_local SamplingState cordz_next_sample;
 
 
 
-bool cordz_should_profile_slow();
 
 
-inline bool cordz_should_profile() {
-  if (ABSL_PREDICT_TRUE(cordz_next_sample > 1)) {
-    cordz_next_sample--;
-    return false;
+int64_t cordz_should_profile_slow(SamplingState& state);
+
+
+
+
+
+inline int64_t cordz_should_profile() {
+  if (ABSL_PREDICT_TRUE(cordz_next_sample.next_sample > 1)) {
+    cordz_next_sample.next_sample--;
+    return 0;
   }
-  return cordz_should_profile_slow();
+  return cordz_should_profile_slow(cordz_next_sample);
 }
 
 
@@ -65,7 +75,7 @@ void cordz_set_next_sample_for_testing(int64_t next_sample);
 
 #else  
 
-inline bool cordz_should_profile() { return false; }
+inline int64_t cordz_should_profile() { return 0; }
 inline void cordz_set_next_sample_for_testing(int64_t) {}
 
 #endif  

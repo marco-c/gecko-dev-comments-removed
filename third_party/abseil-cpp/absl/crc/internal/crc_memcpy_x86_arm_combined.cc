@@ -52,6 +52,7 @@
 #include <cstring>
 #include <memory>
 
+#include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/optimization.h"
 #include "absl/base/prefetch.h"
@@ -88,9 +89,11 @@ inline crc32c_t ShortCrcCopy(char* dst, const char* src, std::size_t length,
 constexpr size_t kIntLoadsPerVec = sizeof(V128) / sizeof(uint64_t);
 
 
+
 template <size_t vec_regions, size_t int_regions>
-inline void LargeTailCopy(crc32c_t* crcs, char** dst, const char** src,
-                          size_t region_size, size_t copy_rounds) {
+ABSL_ATTRIBUTE_NO_SANITIZE_UNDEFINED inline void LargeTailCopy(
+    crc32c_t* crcs, char** dst, const char** src, size_t region_size,
+    size_t copy_rounds) {
   std::array<V128, vec_regions> data;
   std::array<uint64_t, kIntLoadsPerVec * int_regions> int_data;
 
@@ -127,8 +130,8 @@ inline void LargeTailCopy(crc32c_t* crcs, char** dst, const char** src,
         size_t data_index = i * kIntLoadsPerVec + j;
 
         int_data[data_index] = *(usrc + j);
-        crcs[region] = crc32c_t{static_cast<uint32_t>(CRC32_u64(
-            static_cast<uint32_t>(crcs[region]), int_data[data_index]))};
+        crcs[region] = crc32c_t{CRC32_u64(static_cast<uint32_t>(crcs[region]),
+                                          int_data[data_index])};
 
         *(udst + j) = int_data[data_index];
       }
@@ -155,8 +158,10 @@ class AcceleratedCrcMemcpyEngine : public CrcMemcpyEngine {
                    std::size_t length, crc32c_t initial_crc) const override;
 };
 
+
 template <size_t vec_regions, size_t int_regions>
-crc32c_t AcceleratedCrcMemcpyEngine<vec_regions, int_regions>::Compute(
+ABSL_ATTRIBUTE_NO_SANITIZE_UNDEFINED crc32c_t
+AcceleratedCrcMemcpyEngine<vec_regions, int_regions>::Compute(
     void* __restrict dst, const void* __restrict src, std::size_t length,
     crc32c_t initial_crc) const {
   constexpr std::size_t kRegions = vec_regions + int_regions;
@@ -194,7 +199,6 @@ crc32c_t AcceleratedCrcMemcpyEngine<vec_regions, int_regions>::Compute(
     return crc;
   }
 
-  
   
   
   initial_crc = crc32c_t{static_cast<uint32_t>(initial_crc) ^ kCrcDataXor};
@@ -295,8 +299,8 @@ crc32c_t AcceleratedCrcMemcpyEngine<vec_regions, int_regions>::Compute(
 
           
           int_data[data_index] = *(usrc + i * kIntLoadsPerVec + k);
-          crcs[region] = crc32c_t{static_cast<uint32_t>(CRC32_u64(
-              static_cast<uint32_t>(crcs[region]), int_data[data_index]))};
+          crcs[region] = crc32c_t{CRC32_u64(static_cast<uint32_t>(crcs[region]),
+                                            int_data[data_index])};
 
           
           *(udst + i * kIntLoadsPerVec + k) = int_data[data_index];

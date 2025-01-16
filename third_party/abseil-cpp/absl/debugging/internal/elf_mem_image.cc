@@ -20,8 +20,11 @@
 #ifdef ABSL_HAVE_ELF_MEM_IMAGE  
 
 #include <string.h>
+
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
+
 #include "absl/base/config.h"
 #include "absl/base/internal/raw_logging.h"
 
@@ -86,20 +89,14 @@ ElfMemImage::ElfMemImage(const void *base) {
   Init(base);
 }
 
-int ElfMemImage::GetNumSymbols() const {
-  if (!hash_) {
-    return 0;
-  }
-  
-  return static_cast<int>(hash_[1]);
-}
+uint32_t ElfMemImage::GetNumSymbols() const { return num_syms_; }
 
-const ElfW(Sym) *ElfMemImage::GetDynsym(int index) const {
+const ElfW(Sym) * ElfMemImage::GetDynsym(uint32_t index) const {
   ABSL_RAW_CHECK(index < GetNumSymbols(), "index out of range");
   return dynsym_ + index;
 }
 
-const ElfW(Versym) *ElfMemImage::GetVersym(int index) const {
+const ElfW(Versym) *ElfMemImage::GetVersym(uint32_t index) const {
   ABSL_RAW_CHECK(index < GetNumSymbols(), "index out of range");
   return versym_ + index;
 }
@@ -154,7 +151,7 @@ void ElfMemImage::Init(const void *base) {
   dynstr_    = nullptr;
   versym_    = nullptr;
   verdef_    = nullptr;
-  hash_      = nullptr;
+  num_syms_ = 0;
   strsize_   = 0;
   verdefnum_ = 0;
   
@@ -219,12 +216,17 @@ void ElfMemImage::Init(const void *base) {
       base_as_char - reinterpret_cast<const char *>(link_base_);
   ElfW(Dyn)* dynamic_entry = reinterpret_cast<ElfW(Dyn)*>(
       static_cast<intptr_t>(dynamic_program_header->p_vaddr) + relocation);
+  uint32_t *sysv_hash = nullptr;
+  uint32_t *gnu_hash = nullptr;
   for (; dynamic_entry->d_tag != DT_NULL; ++dynamic_entry) {
     const auto value =
         static_cast<intptr_t>(dynamic_entry->d_un.d_val) + relocation;
     switch (dynamic_entry->d_tag) {
       case DT_HASH:
-        hash_ = reinterpret_cast<ElfW(Word) *>(value);
+        sysv_hash = reinterpret_cast<uint32_t *>(value);
+        break;
+      case DT_GNU_HASH:
+        gnu_hash = reinterpret_cast<uint32_t *>(value);
         break;
       case DT_SYMTAB:
         dynsym_ = reinterpret_cast<ElfW(Sym) *>(value);
@@ -249,12 +251,37 @@ void ElfMemImage::Init(const void *base) {
         break;
     }
   }
-  if (!hash_ || !dynsym_ || !dynstr_ || !versym_ ||
+  if ((!sysv_hash && !gnu_hash) || !dynsym_ || !dynstr_ || !versym_ ||
       !verdef_ || !verdefnum_ || !strsize_) {
     assert(false);  
     
     Init(nullptr);
     return;
+  }
+  if (sysv_hash) {
+    num_syms_ = sysv_hash[1];
+  } else {
+    assert(gnu_hash);
+    
+    
+    uint32_t nbuckets = gnu_hash[0];
+    
+    
+    uint32_t *buckets = gnu_hash + 4 + sizeof(size_t) / 4 * gnu_hash[2];
+    
+    uint32_t idx = 0;
+    for (uint32_t i = nbuckets; i > 0;) {
+      idx = buckets[--i];
+      if (idx != 0) break;
+    }
+    if (idx != 0) {
+      
+      
+      uint32_t *chain = buckets + nbuckets - gnu_hash[1];
+      while (chain[idx++] % 2 == 0) {
+      }
+    }
+    num_syms_ = idx;
   }
 }
 
@@ -300,9 +327,9 @@ bool ElfMemImage::LookupSymbolByAddress(const void *address,
   return false;
 }
 
-ElfMemImage::SymbolIterator::SymbolIterator(const void *const image, int index)
-    : index_(index), image_(image) {
-}
+ElfMemImage::SymbolIterator::SymbolIterator(const void *const image,
+                                            uint32_t index)
+    : index_(index), image_(image) {}
 
 const ElfMemImage::SymbolInfo *ElfMemImage::SymbolIterator::operator->() const {
   return &info_;
@@ -335,7 +362,7 @@ ElfMemImage::SymbolIterator ElfMemImage::end() const {
   return SymbolIterator(this, GetNumSymbols());
 }
 
-void ElfMemImage::SymbolIterator::Update(int increment) {
+void ElfMemImage::SymbolIterator::Update(uint32_t increment) {
   const ElfMemImage *image = reinterpret_cast<const ElfMemImage *>(image_);
   ABSL_RAW_CHECK(image->IsPresent() || increment == 0, "");
   if (!image->IsPresent()) {

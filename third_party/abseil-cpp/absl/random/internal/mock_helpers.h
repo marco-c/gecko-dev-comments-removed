@@ -16,16 +16,25 @@
 #ifndef ABSL_RANDOM_INTERNAL_MOCK_HELPERS_H_
 #define ABSL_RANDOM_INTERNAL_MOCK_HELPERS_H_
 
-#include <tuple>
-#include <type_traits>
 #include <utility>
 
+#include "absl/base/config.h"
 #include "absl/base/internal/fast_type_id.h"
 #include "absl/types/optional.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace random_internal {
+
+
+
+
+
+struct NoOpValidator {
+  
+  template <typename ResultT, typename... Args>
+  static void Validate(ResultT, Args&&...) {}
+};
 
 
 
@@ -116,15 +125,32 @@ class MockHelpers {
   
   
   
-  template <typename KeyT, typename MockURBG>
-  static auto MockFor(MockURBG& m)
+  
+  
+  
+  
+  
+  template <typename KeyT, typename ValidatorT, typename MockURBG>
+  static auto MockFor(MockURBG& m, ValidatorT)
       -> decltype(m.template RegisterMock<
                   typename KeySignature<KeyT>::result_type,
                   typename KeySignature<KeyT>::arg_tuple_type>(
-          m, std::declval<IdType>())) {
+          m, std::declval<IdType>(), ValidatorT())) {
     return m.template RegisterMock<typename KeySignature<KeyT>::result_type,
                                    typename KeySignature<KeyT>::arg_tuple_type>(
-        m, ::absl::base_internal::FastTypeId<KeyT>());
+        m, ::absl::base_internal::FastTypeId<KeyT>(), ValidatorT());
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  template <typename KeyT, typename MockURBG>
+  static decltype(auto) MockFor(MockURBG& m) {
+    return MockFor<KeyT>(m, NoOpValidator());
   }
 };
 

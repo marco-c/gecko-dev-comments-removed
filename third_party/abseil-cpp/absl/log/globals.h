@@ -160,8 +160,23 @@ void EnableLogPrefix(bool on_off);
 
 
 
-inline int SetGlobalVLogLevel(int log_level) {
-  return absl::log_internal::UpdateGlobalVLogLevel(log_level);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline int SetGlobalVLogLevel(int threshold) {
+  return absl::log_internal::UpdateGlobalVLogLevel(threshold);
 }
 
 
@@ -169,10 +184,8 @@ inline int SetGlobalVLogLevel(int log_level) {
 
 
 
-
-
-inline int SetVLogLevel(absl::string_view module_pattern, int log_level) {
-  return absl::log_internal::PrependVModule(module_pattern, log_level);
+inline int SetVLogLevel(absl::string_view module_pattern, int threshold) {
+  return absl::log_internal::PrependVModule(module_pattern, threshold);
 }
 
 

@@ -20,6 +20,7 @@
 #ifndef ABSL_LOG_INTERNAL_STRIP_H_
 #define ABSL_LOG_INTERNAL_STRIP_H_
 
+#include "absl/base/attributes.h"  
 #include "absl/base/log_severity.h"
 #include "absl/log/internal/log_message.h"
 #include "absl/log/internal/nullstream.h"
@@ -29,6 +30,16 @@
 
 
 #if defined(STRIP_LOG) && STRIP_LOG
+
+
+
+
+
+
+
+
+#define ABSL_LOG_INTERNAL_ATTRIBUTE_UNUSED_IF_STRIP_LOG ABSL_ATTRIBUTE_UNUSED
+
 #define ABSL_LOGGING_INTERNAL_LOG_INFO ::absl::log_internal::NullStream()
 #define ABSL_LOGGING_INTERNAL_LOG_WARNING ::absl::log_internal::NullStream()
 #define ABSL_LOGGING_INTERNAL_LOG_ERROR ::absl::log_internal::NullStream()
@@ -39,14 +50,20 @@
 #define ABSL_LOGGING_INTERNAL_LOG_LEVEL(severity) \
   ::absl::log_internal::NullStreamMaybeFatal(absl_log_internal_severity)
 
-#define ABSL_LOGGING_INTERNAL_DLOG_QFATAL \
-  ::absl::log_internal::NullStreamMaybeFatal(::absl::LogSeverity::kFatal)
+
 #define ABSL_LOGGING_INTERNAL_DLOG_FATAL \
   ::absl::log_internal::NullStreamMaybeFatal(::absl::LogSeverity::kFatal)
+#define ABSL_LOGGING_INTERNAL_DLOG_QFATAL \
+  ::absl::log_internal::NullStreamMaybeFatal(::absl::LogSeverity::kFatal)
+
 #define ABSL_LOG_INTERNAL_CHECK(failure_message) ABSL_LOGGING_INTERNAL_LOG_FATAL
 #define ABSL_LOG_INTERNAL_QCHECK(failure_message) \
   ABSL_LOGGING_INTERNAL_LOG_QFATAL
+
 #else  
+
+#define ABSL_LOG_INTERNAL_ATTRIBUTE_UNUSED_IF_STRIP_LOG
+
 #define ABSL_LOGGING_INTERNAL_LOG_INFO \
   ::absl::log_internal::LogMessage(    \
       __FILE__, __LINE__, ::absl::log_internal::LogMessage::InfoTag{})
@@ -67,11 +84,10 @@
                                    absl_log_internal_severity)
 
 
+#define ABSL_LOGGING_INTERNAL_DLOG_FATAL \
+  ::absl::log_internal::LogMessageDebugFatal(__FILE__, __LINE__)
 #define ABSL_LOGGING_INTERNAL_DLOG_QFATAL \
-  ::absl::log_internal::LogMessageQuietly(__FILE__, __LINE__)
-#define ABSL_LOGGING_INTERNAL_DLOG_FATAL               \
-  ::absl::log_internal::LogMessage(__FILE__, __LINE__, \
-                                   ::absl::log_internal::LogMessage::FatalTag{})
+  ::absl::log_internal::LogMessageQuietlyDebugFatal(__FILE__, __LINE__)
 
 
 

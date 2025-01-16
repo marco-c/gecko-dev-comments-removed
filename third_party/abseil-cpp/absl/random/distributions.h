@@ -46,23 +46,23 @@
 #ifndef ABSL_RANDOM_DISTRIBUTIONS_H_
 #define ABSL_RANDOM_DISTRIBUTIONS_H_
 
-#include <algorithm>
-#include <cmath>
 #include <limits>
-#include <random>
 #include <type_traits>
 
+#include "absl/base/config.h"
 #include "absl/base/internal/inline_variable.h"
+#include "absl/meta/type_traits.h"
 #include "absl/random/bernoulli_distribution.h"
 #include "absl/random/beta_distribution.h"
 #include "absl/random/exponential_distribution.h"
 #include "absl/random/gaussian_distribution.h"
 #include "absl/random/internal/distribution_caller.h"  
+#include "absl/random/internal/traits.h"
 #include "absl/random/internal/uniform_helper.h"  
 #include "absl/random/log_uniform_int_distribution.h"
 #include "absl/random/poisson_distribution.h"
-#include "absl/random/uniform_int_distribution.h"
-#include "absl/random/uniform_real_distribution.h"
+#include "absl/random/uniform_int_distribution.h"  
+#include "absl/random/uniform_real_distribution.h"  
 #include "absl/random/zipf_distribution.h"
 
 namespace absl {
@@ -176,7 +176,7 @@ Uniform(TagType tag,
 
   return random_internal::DistributionCaller<gen_t>::template Call<
       distribution_t>(&urbg, tag, static_cast<return_t>(lo),
-                                static_cast<return_t>(hi));
+                      static_cast<return_t>(hi));
 }
 
 
@@ -200,7 +200,7 @@ Uniform(URBG&& urbg,
 
   return random_internal::DistributionCaller<gen_t>::template Call<
       distribution_t>(&urbg, static_cast<return_t>(lo),
-                                static_cast<return_t>(hi));
+                      static_cast<return_t>(hi));
 }
 
 
@@ -208,7 +208,7 @@ Uniform(URBG&& urbg,
 
 
 template <typename R, typename URBG>
-typename absl::enable_if_t<!std::is_signed<R>::value, R>  
+typename absl::enable_if_t<!std::numeric_limits<R>::is_signed, R>  
 Uniform(URBG&& urbg) {  
   using gen_t = absl::decay_t<URBG>;
   using distribution_t = random_internal::UniformDistributionWrapper<R>;
