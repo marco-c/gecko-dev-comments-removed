@@ -541,11 +541,15 @@ static pid_t ForkWithFlags(int aFlags) {
   if (setjmp(ctx) == 0) {
     
     ret = DoClone(aFlags | SIGCHLD, &ctx);
+    
+    MOZ_DIAGNOSTIC_ASSERT(ret != 0);
   }
-  RestoreSignals(&oldSigs);
   
+  RestoreSignals(&oldSigs);
 #if defined(LIBC_GLIBC)
-  MaybeUpdateGlibcTidCache();
+  if (ret == 0) {
+    MaybeUpdateGlibcTidCache();
+  }
 #endif
   return ret;
 }
