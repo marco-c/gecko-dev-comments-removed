@@ -7,8 +7,8 @@ indexeddb_test(
 
   (t, db) => {
     
-    const tx1 = db.transaction('store', 'readwrite', { durability: 'relaxed' });
-    const tx2 = db.transaction('store', 'readwrite', { durability: 'relaxed' });
+    const tx1 = db.transaction('store', 'readwrite');
+    const tx2 = db.transaction('store', 'readwrite');
 
     
     tx2.objectStore('store').get(0);
