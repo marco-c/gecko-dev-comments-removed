@@ -7,6 +7,7 @@
 #include "CookieCommons.h"
 #include "CookieLogging.h"
 #include "CookieParser.h"
+#include "CookieService.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
@@ -16,6 +17,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/Promise-inl.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/CookiePersistentStorage.h"
 #include "mozilla/net/CookiePrivateStorage.h"
@@ -258,6 +260,10 @@ nsresult CookieService::Init() {
   os->AddObserver(this, "profile-before-change", true);
   os->AddObserver(this, "profile-do-change", true);
   os->AddObserver(this, "last-pb-context-exited", true);
+
+  RunOnShutdown([self = RefPtr{this}] {
+    self->mThirdPartyCookieBlockingExceptions.Shutdown();
+  });
 
   return NS_OK;
 }
@@ -1721,6 +1727,78 @@ void CookieService::AddCookieFromDocument(
       ->AddCookie(&aCookieParser, aBaseDomain, aOriginAttributes, &aCookie,
                   aCurrentTimeInUsec, aDocumentURI, cookieString, false,
                   aThirdParty, aDocument->GetBrowsingContext());
+}
+
+
+void CookieService::Update3PCBExceptionInfo(nsIChannel* aChannel) {
+  MOZ_ASSERT(aChannel);
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  RefPtr<CookieService> csSingleton = CookieService::GetSingleton();
+
+  
+  
+  if (loadInfo->GetExternalContentPolicyType() ==
+      ExtContentPolicy::TYPE_DOCUMENT) {
+    Unused
+        << csSingleton->mThirdPartyCookieBlockingExceptions.EnsureInitialized();
+    return;
+  }
+
+  
+  
+  if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal()) {
+    return;
+  }
+
+  
+  
+  aChannel->Suspend();
+
+  
+  
+  csSingleton->mThirdPartyCookieBlockingExceptions.EnsureInitialized()->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [channel = nsCOMPtr{aChannel}, csSingleton, loadInfo](
+          const GenericNonExclusivePromise::ResolveOrRejectValue& aValue) {
+        
+        
+        
+        
+        bool isInExceptionList =
+            csSingleton->mThirdPartyCookieBlockingExceptions
+                .CheckExceptionForChannel(channel);
+
+        Unused << loadInfo->SetIsOn3PCBExceptionList(isInExceptionList);
+
+        channel->Resume();
+        return NS_OK;
+      });
+}
+
+NS_IMETHODIMP
+CookieService::AddThirdPartyCookieBlockingExceptions(
+    const nsTArray<RefPtr<nsIThirdPartyCookieExceptionEntry>>& aExceptions) {
+  for (const auto& ex : aExceptions) {
+    nsAutoCString exception;
+    MOZ_ALWAYS_SUCCEEDS(ex->Serialize(exception));
+    mThirdPartyCookieBlockingExceptions.Insert(exception);
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+CookieService::RemoveThirdPartyCookieBlockingExceptions(
+    const nsTArray<RefPtr<nsIThirdPartyCookieExceptionEntry>>& aExceptions) {
+  for (const auto& ex : aExceptions) {
+    nsAutoCString exception;
+    MOZ_ALWAYS_SUCCEEDS(ex->Serialize(exception));
+    mThirdPartyCookieBlockingExceptions.Remove(exception);
+  }
+
+  return NS_OK;
 }
 
 }  
