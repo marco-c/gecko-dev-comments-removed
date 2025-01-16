@@ -11254,16 +11254,20 @@ HTMLEditor::InsertPaddingBRElementIfNeeded(
       return Err(rv);
     }
   }
+
+  
+  
   
   
   
   Result<CreateElementResult, nsresult> insertPaddingBRResultOrError =
-      InsertBRElement(WithTransaction::Yes, BRElementType::Normal,
+      InsertBRElement(WithTransaction::Yes,
+                      BRElementType::PaddingForEmptyLastLine,
                       pointToInsertPaddingBR);
   if (MOZ_UNLIKELY(insertPaddingBRResultOrError.isErr())) {
     NS_WARNING(
         "EditorBase::InsertBRElement(WithTransaction::Yes, "
-        "BRElementType::Normal) failed");
+        "BRElementType::PaddingForEmptyLastLine) failed");
     return insertPaddingBRResultOrError.propagateErr();
   }
   return CreateLineBreakResult(insertPaddingBRResultOrError.unwrap());
