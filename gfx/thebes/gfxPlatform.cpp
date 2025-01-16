@@ -2244,10 +2244,9 @@ void gfxPlatform::FlushFontAndWordCaches() {
 }
 
 
-void gfxPlatform::ForceGlobalReflow(NeedsReframe aNeedsReframe,
-                                    BroadcastToChildren aBroadcastToChildren) {
+void gfxPlatform::ForceGlobalReflow(GlobalReflowFlags aFlags) {
   MOZ_ASSERT(NS_IsMainThread());
-  const bool reframe = aNeedsReframe == NeedsReframe::Yes;
+  bool reframe = !!(aFlags & GlobalReflowFlags::NeedsReframe);
   
   
   if (nsCOMPtr<nsIObserverService> obs = services::GetObserverService()) {
@@ -2255,11 +2254,11 @@ void gfxPlatform::ForceGlobalReflow(NeedsReframe aNeedsReframe,
     obs->NotifyObservers(nullptr, "font-info-updated", needsReframe);
   }
   if (XRE_IsParentProcess() &&
-      aBroadcastToChildren == BroadcastToChildren::Yes) {
+      aFlags & GlobalReflowFlags::BroadcastToChildren) {
     
     for (auto* process :
          dom::ContentParent::AllProcesses(dom::ContentParent::eLive)) {
-      Unused << process->SendForceGlobalReflow(reframe);
+      Unused << process->SendForceGlobalReflow(aFlags);
     }
   }
 }

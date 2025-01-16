@@ -269,8 +269,6 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
   bool InitFontList();
 
-  void FontListChanged();
-
   
 
 
@@ -894,10 +892,10 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   bool LoadFontInfo() override;
   void CleanupLoader() override;
 
-  void ForceGlobalReflowLocked(
-      gfxPlatform::NeedsReframe aNeedsReframe,
-      gfxPlatform::BroadcastToChildren aBroadcastToChildren =
-          gfxPlatform::BroadcastToChildren::Yes) MOZ_REQUIRES(mLock);
+  void ForceGlobalReflow(gfxPlatform::GlobalReflowFlags aFlags);
+
+  void ForceGlobalReflowLocked(gfxPlatform::GlobalReflowFlags aFlags)
+      MOZ_REQUIRES(mLock);
 
   
   void GetPrefsAndStartLoader();

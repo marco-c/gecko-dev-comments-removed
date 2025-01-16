@@ -204,7 +204,10 @@ gfxFontListPrefObserver::Observe(nsISupports* aSubject, const char* aTopic,
   FontListPrefChanged(nullptr);
 
   if (XRE_IsParentProcess()) {
-    gfxPlatform::ForceGlobalReflow(gfxPlatform::NeedsReframe::No);
+    gfxPlatform::GlobalReflowFlags flags =
+        gfxPlatform::GlobalReflowFlags::BroadcastToChildren |
+        gfxPlatform::GlobalReflowFlags::FontsChanged;
+    gfxPlatform::ForceGlobalReflow(flags);
   }
   return NS_OK;
 }
@@ -584,8 +587,10 @@ bool gfxPlatformFontList::InitFontList() {
     
     
     
-    ForceGlobalReflowLocked(gfxPlatform::NeedsReframe::Yes,
-                            gfxPlatform::BroadcastToChildren::No);
+    gfxPlatform::GlobalReflowFlags flags =
+        gfxPlatform::GlobalReflowFlags::NeedsReframe |
+        gfxPlatform::GlobalReflowFlags::FontsChanged;
+    ForceGlobalReflowLocked(flags);
 
     mAliasTable.Clear();
     mLocalNameTable.Clear();
@@ -717,19 +722,6 @@ void gfxPlatformFontList::InitializeCodepointsWithNoFonts() {
       bitset = first;
     }
   }
-}
-
-void gfxPlatformFontList::FontListChanged() {
-  MOZ_ASSERT(!XRE_IsParentProcess());
-  AutoLock lock(mLock);
-  InitializeCodepointsWithNoFonts();
-  if (SharedFontList()) {
-    
-    
-    
-    RebuildLocalFonts( true);
-  }
-  ForceGlobalReflowLocked(gfxPlatform::NeedsReframe::Yes);
 }
 
 void gfxPlatformFontList::GenerateFontListKey(const nsACString& aKeyName,
@@ -1008,7 +1000,10 @@ void gfxPlatformFontList::UpdateFontList(bool aFullRebuild) {
     if (mStartedLoadingCmapsFrom != 0xffffffffu) {
       InitializeCodepointsWithNoFonts();
       mStartedLoadingCmapsFrom = 0xffffffffu;
-      ForceGlobalReflowLocked(gfxPlatform::NeedsReframe::No);
+      gfxPlatform::GlobalReflowFlags flags =
+          gfxPlatform::GlobalReflowFlags::FontsChanged |
+          gfxPlatform::GlobalReflowFlags::BroadcastToChildren;
+      ForceGlobalReflowLocked(flags);
     }
   }
 }
@@ -2798,7 +2793,9 @@ void gfxPlatformFontList::CleanupLoader() {
                FindFamiliesFlags::eNoAddToNamesMissedWhenSearching));
         });
     if (forceReflow) {
-      ForceGlobalReflowLocked(gfxPlatform::NeedsReframe::No);
+      gfxPlatform::GlobalReflowFlags flags =
+          gfxPlatform::GlobalReflowFlags::FontsChanged;
+      ForceGlobalReflowLocked(flags);
     }
 
     mOtherNamesMissed = nullptr;
@@ -2819,20 +2816,47 @@ void gfxPlatformFontList::CleanupLoader() {
   gfxFontInfoLoader::CleanupLoader();
 }
 
-void gfxPlatformFontList::ForceGlobalReflowLocked(
-    gfxPlatform::NeedsReframe aNeedsReframe,
-    gfxPlatform::BroadcastToChildren aBroadcastToChildren) {
+void gfxPlatformFontList::ForceGlobalReflow(
+    gfxPlatform::GlobalReflowFlags aFlags) {
   if (!NS_IsMainThread()) {
     NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "gfxPlatformFontList::ForceGlobalReflowLocked",
-        [aNeedsReframe, aBroadcastToChildren] {
-          gfxPlatform::ForceGlobalReflow(aNeedsReframe, aBroadcastToChildren);
-        }));
+        "gfxPlatformFontList::ForceGlobalReflow",
+        [this, aFlags] { this->ForceGlobalReflow(aFlags); }));
     return;
   }
 
+  if (aFlags & gfxPlatform::GlobalReflowFlags::FontsChanged) {
+    AutoLock lock(mLock);
+    InitializeCodepointsWithNoFonts();
+    if (SharedFontList()) {
+      
+      
+      
+      RebuildLocalFonts( true);
+    }
+  }
+
+  gfxPlatform::ForceGlobalReflow(aFlags);
+}
+
+void gfxPlatformFontList::ForceGlobalReflowLocked(
+    gfxPlatform::GlobalReflowFlags aFlags) {
+  if (!NS_IsMainThread()) {
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "gfxPlatformFontList::ForceGlobalReflow",
+        [this, aFlags] { this->ForceGlobalReflow(aFlags); }));
+    return;
+  }
+
+  if (aFlags & gfxPlatform::GlobalReflowFlags::FontsChanged) {
+    InitializeCodepointsWithNoFonts();
+    if (SharedFontList()) {
+      RebuildLocalFonts( true);
+    }
+  }
+
   AutoUnlock unlock(mLock);
-  gfxPlatform::ForceGlobalReflow(aNeedsReframe, aBroadcastToChildren);
+  gfxPlatform::ForceGlobalReflow(aFlags);
 }
 
 void gfxPlatformFontList::GetPrefsAndStartLoader() {
@@ -3075,8 +3099,14 @@ void gfxPlatformFontList::CancelInitOtherFamilyNamesTask() {
       mLocalNameTable.Clear();
       forceReflow = true;
     }
-    if (forceReflow) {
-      dom::ContentParent::BroadcastFontListChanged();
+    
+    
+    
+    if (forceReflow && !mLoadCmapsRunnable) {
+      gfxPlatform::GlobalReflowFlags flags =
+          gfxPlatform::GlobalReflowFlags::BroadcastToChildren |
+          gfxPlatform::GlobalReflowFlags::FontsChanged;
+      gfxPlatform::ForceGlobalReflow(flags);
     }
   }
 }

@@ -162,7 +162,7 @@ void gfxDWriteFont::SystemTextQualityChanged() {
   
   
   gfxPlatform::FlushFontAndWordCaches();
-  gfxPlatform::ForceGlobalReflow(gfxPlatform::NeedsReframe::No);
+  gfxPlatform::ForceGlobalReflow(gfxPlatform::GlobalReflowFlags::None);
 }
 
 mozilla::Atomic<bool> gfxDWriteFont::sForceGDIClassicEnabled{true};

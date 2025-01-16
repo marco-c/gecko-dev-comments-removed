@@ -1311,7 +1311,9 @@ void CoreTextFontList::RegisteredFontsChangedNotificationCallback(
   
   fl->UpdateFontList();
 
-  gfxPlatform::ForceGlobalReflow(gfxPlatform::NeedsReframe::Yes);
+  auto flags = gfxPlatform::GlobalReflowFlags::NeedsReframe |
+               gfxPlatform::GlobalReflowFlags::FontsChanged;
+  gfxPlatform::ForceGlobalReflow(flags);
   dom::ContentParent::NotifyUpdatedFonts(true);
 }
 
