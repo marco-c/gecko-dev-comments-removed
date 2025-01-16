@@ -681,6 +681,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("network.cookie.cookieBehavior.optInPartitioning", false);
    final Pref<Boolean> mCookieBehaviorOptInPartitioningPBM =
       new Pref<Boolean>("network.cookie.cookieBehavior.optInPartitioning.pbmode", false);
+   final Pref<Integer> mCertificateTransparencyMode =
+      new Pref<Integer>("security.pki.certificate_transparency.mode", 0);
 
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -1026,6 +1028,28 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public boolean getFetchPriorityEnabled() {
     return mFetchPriorityEnabled.get();
+  }
+
+  
+
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setCertificateTransparencyMode(final int mode) {
+    mCertificateTransparencyMode.commit(mode);
+    return this;
+  }
+
+  
+
+
+
+
+  public @NonNull int getCertificateTransparencyMode() {
+    return mCertificateTransparencyMode.get();
   }
 
   
