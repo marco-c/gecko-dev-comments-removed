@@ -2984,22 +2984,15 @@ var gPrivacyPane = {
         },
       ]);
       let win = Services.wm.getMostRecentBrowserWindow();
-
-      
-      
-      
       let loggedIn = await OSKeyStore.ensureLoggedIn(
         messageText.value,
         captionText.value,
         win,
         false
       );
-
-      const result = loggedIn.authenticated ? "success" : "fail_user_canceled";
-      Glean.pwmgr.promptShownOsReauth.record({
-        trigger: "toggle_pref_primary_password",
-        result,
-      });
+      if (!loggedIn.authenticated) {
+        return;
+      }
     }
 
     gSubDialog.open("chrome://mozapps/content/preferences/changemp.xhtml", {
@@ -3099,29 +3092,19 @@ var gPrivacyPane = {
 
     
     
-
-    
-    
-    
     let isAuthorized = (
       await OSKeyStore.ensureLoggedIn(messageText, captionText, win, false)
     ).authenticated;
     if (!isAuthorized) {
       osReauthCheckbox.checked = !osReauthCheckbox.checked;
-      Glean.pwmgr.promptShownOsReauth.record({
-        trigger: "toggle_pref_os_auth",
-        result: isAuthorized ? "success" : "fail_user_canceled",
-      });
+      return;
     }
+
     
     LoginHelper.setOSAuthEnabled(
       LoginHelper.OS_AUTH_FOR_PASSWORDS_PREF,
       osReauthCheckbox.checked
     );
-
-    Glean.pwmgr.requireOsReauthToggle.record({
-      toggle_state: osReauthCheckbox.checked,
-    });
   },
 
   _initOSAuthentication() {
