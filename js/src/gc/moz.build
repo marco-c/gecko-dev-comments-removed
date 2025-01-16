@@ -37,7 +37,6 @@ UNIFIED_SOURCES += [
     "Heap.cpp",
     "MallocedBlockCache.cpp",
     "Marking.cpp",
-    "Memory.cpp",
     "Nursery.cpp",
     "ParallelMarking.cpp",
     "Pretenuring.cpp",
@@ -54,9 +53,12 @@ UNIFIED_SOURCES += [
     "Zone.cpp",
 ]
 
-
-
-
 SOURCES += [
+    
+    
+    "Memory.cpp",
+    
+    
+    
     "StoreBuffer.cpp",
 ]
