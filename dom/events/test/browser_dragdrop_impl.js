@@ -7,6 +7,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 "use strict";
 
 const { MockRegistrar } = ChromeUtils.importESModule(
@@ -43,11 +52,11 @@ async function runDnd(
   });
 }
 
-async function openWindow(tabIdx) {
+async function openWindow(tabIdx, configParams) {
   let win =
     tabIdx == 0 ? window : await BrowserTestUtils.openNewBrowserWindow();
-  const OUTER_BASE_ARRAY = [OUTER_BASE_1, OUTER_BASE_2];
-  let url = OUTER_BASE_ARRAY[tabIdx] + "browser_dragdrop_outer.html";
+  const OUTER_URL_ARRAY = [configParams.outerURL1, configParams.outerURL2];
+  let url = OUTER_URL_ARRAY[tabIdx];
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser: win.gBrowser,
     url,
@@ -62,16 +71,20 @@ async function openWindow(tabIdx) {
   
   
   
-  const INNER_BASE_ARRAY = [INNER_BASE_1, INNER_BASE_2];
+  const INNER_URL_ARRAY = [configParams.innerURL1, configParams.innerURL2];
   await SpecialPowers.spawn(
     tab.linkedBrowser.browsingContext,
-    [INNER_BASE_ARRAY[tabIdx]],
-    async iframeUrl => {
+    [tabIdx, INNER_URL_ARRAY[tabIdx]],
+    async (tabIdx, iframeUrl) => {
       let iframe = content.document.getElementById("iframe");
+      if (!iframe && content.document.body.shadowRoot) {
+        iframe = content.document.body.shadowRoot.getElementById("iframe");
+      }
+      ok(iframe, `Found iframe in window ${tabIdx}`);
       let loadedPromise = new Promise(res => {
         iframe.addEventListener("load", res, { once: true });
       });
-      iframe.src = iframeUrl + "browser_dragdrop_inner.html";
+      iframe.src = iframeUrl;
       await loadedPromise;
       const ds = SpecialPowers.Cc[
         "@mozilla.org/widget/dragservice;1"
@@ -94,7 +107,29 @@ async function openWindow(tabIdx) {
   return tab.linkedBrowser.browsingContext;
 }
 
-async function setup() {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function setup(configParams) {
   const oldDragService = SpecialPowers.Cc[
     "@mozilla.org/widget/dragservice;1"
   ].getService(SpecialPowers.Ci.nsIDragService);
@@ -114,8 +149,8 @@ async function setup() {
   });
   dragController.mockDragService.neverAllowSessionIsSynthesizedForTests = true;
 
-  tab1Cxt = await openWindow(0);
-  tab2Cxt = await openWindow(1);
+  tab1Cxt = await openWindow(0, configParams);
+  tab2Cxt = await openWindow(1, configParams);
 }
 
 
@@ -123,7 +158,7 @@ async function setup() {
 
 
 
-var runTest;
+var runTest = runDnd;
 
 add_task(async function test_dnd_tab1_to_tab1() {
   await runTest("tab1->tab1", tab1Cxt, tab1Cxt);
