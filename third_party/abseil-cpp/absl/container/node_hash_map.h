@@ -36,6 +36,7 @@
 #ifndef ABSL_CONTAINER_NODE_HASH_MAP_H_
 #define ABSL_CONTAINER_NODE_HASH_MAP_H_
 
+#include <cstddef>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -54,6 +55,19 @@ namespace container_internal {
 template <class Key, class Value>
 class NodeHashMapPolicy;
 }  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -590,6 +604,13 @@ class NodeHashMapPolicy
 
   static Value& value(value_type* elem) { return elem->second; }
   static const Value& value(const value_type* elem) { return elem->second; }
+
+  template <class Hash>
+  static constexpr HashSlotFn get_hash_slot_fn() {
+    return memory_internal::IsLayoutCompatible<Key, Value>::value
+               ? &TypeErasedDerefAndApplyToSlotFn<Hash, Key>
+               : nullptr;
+  }
 };
 }  
 

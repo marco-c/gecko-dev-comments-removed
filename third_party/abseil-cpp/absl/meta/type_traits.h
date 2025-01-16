@@ -152,8 +152,8 @@ template <typename... Ts>
 struct disjunction : std::false_type {};
 
 template <typename T, typename... Ts>
-struct disjunction<T, Ts...> :
-      std::conditional<T::value, T, disjunction<Ts...>>::type {};
+struct disjunction<T, Ts...>
+    : std::conditional<T::value, T, disjunction<Ts...>>::type {};
 
 template <typename T>
 struct disjunction<T> : T {};
@@ -315,22 +315,23 @@ using common_type_t = typename std::common_type<T...>::type;
 template <typename T>
 using underlying_type_t = typename std::underlying_type<T>::type;
 
-
 namespace type_traits_internal {
 
 #if (defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703L) || \
     (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 
-template<typename> struct result_of;
-template<typename F, typename... Args>
+template <typename>
+struct result_of;
+template <typename F, typename... Args>
 struct result_of<F(Args...)> : std::invoke_result<F, Args...> {};
 #else
-template<typename F> using result_of = std::result_of<F>;
+template <typename F>
+using result_of = std::result_of<F>;
 #endif
 
 }  
 
-template<typename F>
+template <typename F>
 using result_of_t = typename type_traits_internal::result_of<F>::type;
 
 namespace type_traits_internal {
@@ -463,8 +464,8 @@ namespace type_traits_internal {
 
 using swap_internal::IsNothrowSwappable;
 using swap_internal::IsSwappable;
-using swap_internal::Swap;
 using swap_internal::StdSwapIsUnconstrained;
+using swap_internal::Swap;
 
 }  
 
@@ -503,9 +504,26 @@ using swap_internal::StdSwapIsUnconstrained;
 
 
 
-#if ABSL_HAVE_BUILTIN(__is_trivially_relocatable) &&                 \
-    !(defined(__clang__) && (defined(_WIN32) || defined(_WIN64))) && \
-    !defined(__NVCC__)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if ABSL_HAVE_BUILTIN(__is_trivially_relocatable) && \
+    (defined(__cpp_impl_trivially_relocatable) ||    \
+     (!defined(__clang__) && !defined(__APPLE__) && !defined(__NVCC__)))
 template <class T>
 struct is_trivially_relocatable
     : std::integral_constant<bool, __is_trivially_relocatable(T)> {};
@@ -514,9 +532,7 @@ struct is_trivially_relocatable
 
 
 template <class T>
-struct is_trivially_relocatable
-    : absl::conjunction<absl::is_trivially_move_constructible<T>,
-                        absl::is_trivially_destructible<T>> {};
+struct is_trivially_relocatable : std::is_trivially_copyable<T> {};
 #endif
 
 

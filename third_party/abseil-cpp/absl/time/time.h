@@ -98,7 +98,6 @@ class Time;
 class TimeZone;  
 
 namespace time_internal {
-int64_t IDivDuration(bool satq, Duration num, Duration den, Duration* rem);
 ABSL_ATTRIBUTE_CONST_FUNCTION constexpr Time FromUnixDuration(Duration d);
 ABSL_ATTRIBUTE_CONST_FUNCTION constexpr Duration ToUnixDuration(Time t);
 ABSL_ATTRIBUTE_CONST_FUNCTION constexpr int64_t GetRepHi(Duration d);
@@ -340,27 +339,6 @@ ABSL_ATTRIBUTE_CONST_FUNCTION inline Duration operator-(Duration lhs,
 
 
 
-template <typename T>
-ABSL_ATTRIBUTE_CONST_FUNCTION Duration operator*(Duration lhs, T rhs) {
-  return lhs *= rhs;
-}
-template <typename T>
-ABSL_ATTRIBUTE_CONST_FUNCTION Duration operator*(T lhs, Duration rhs) {
-  return rhs *= lhs;
-}
-template <typename T>
-ABSL_ATTRIBUTE_CONST_FUNCTION Duration operator/(Duration lhs, T rhs) {
-  return lhs /= rhs;
-}
-ABSL_ATTRIBUTE_CONST_FUNCTION inline int64_t operator/(Duration lhs,
-                                                       Duration rhs) {
-  return time_internal::IDivDuration(true, lhs, rhs,
-                                     &lhs);  
-}
-ABSL_ATTRIBUTE_CONST_FUNCTION inline Duration operator%(Duration lhs,
-                                                        Duration rhs) {
-  return lhs %= rhs;
-}
 
 
 
@@ -387,13 +365,7 @@ ABSL_ATTRIBUTE_CONST_FUNCTION inline Duration operator%(Duration lhs,
 
 
 
-
-
-
-inline int64_t IDivDuration(Duration num, Duration den, Duration* rem) {
-  return time_internal::IDivDuration(true, num, den,
-                                     rem);  
-}
+int64_t IDivDuration(Duration num, Duration den, Duration* rem);
 
 
 
@@ -408,6 +380,30 @@ inline int64_t IDivDuration(Duration num, Duration den, Duration* rem) {
 
 
 ABSL_ATTRIBUTE_CONST_FUNCTION double FDivDuration(Duration num, Duration den);
+
+
+
+template <typename T>
+ABSL_ATTRIBUTE_CONST_FUNCTION Duration operator*(Duration lhs, T rhs) {
+  return lhs *= rhs;
+}
+template <typename T>
+ABSL_ATTRIBUTE_CONST_FUNCTION Duration operator*(T lhs, Duration rhs) {
+  return rhs *= lhs;
+}
+template <typename T>
+ABSL_ATTRIBUTE_CONST_FUNCTION Duration operator/(Duration lhs, T rhs) {
+  return lhs /= rhs;
+}
+ABSL_ATTRIBUTE_CONST_FUNCTION inline int64_t operator/(Duration lhs,
+                                                       Duration rhs) {
+  return IDivDuration(lhs, rhs,
+                      &lhs);  
+}
+ABSL_ATTRIBUTE_CONST_FUNCTION inline Duration operator%(Duration lhs,
+                                                        Duration rhs) {
+  return lhs %= rhs;
+}
 
 
 

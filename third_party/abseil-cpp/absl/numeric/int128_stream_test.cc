@@ -135,11 +135,11 @@ TEST(Uint128, OStreamValueTest) {
                     "2000000000000000000000000000000000000000000"});
   CheckUint128Case({absl::MakeUint128(0x8000000000000000, 0), kHex,
                      0, "80000000000000000000000000000000"});
-  CheckUint128Case({absl::kuint128max, kDec,  0,
+  CheckUint128Case({absl::Uint128Max(), kDec,  0,
                     "340282366920938463463374607431768211455"});
-  CheckUint128Case({absl::kuint128max, kOct,  0,
+  CheckUint128Case({absl::Uint128Max(), kOct,  0,
                     "3777777777777777777777777777777777777777777"});
-  CheckUint128Case({absl::kuint128max, kHex,  0,
+  CheckUint128Case({absl::Uint128Max(), kHex,  0,
                     "ffffffffffffffffffffffffffffffff"});
 }
 

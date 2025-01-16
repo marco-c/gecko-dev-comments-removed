@@ -93,6 +93,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <initializer_list>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -311,6 +312,10 @@ class AlphaNum {
  public:
   
   
+
+  
+  template <typename T>
+  AlphaNum(std::initializer_list<T>) = delete;  
 
   AlphaNum(int x)  
       : piece_(digits_, static_cast<size_t>(

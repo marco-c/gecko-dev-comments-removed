@@ -362,8 +362,8 @@ TEST(TypeTraitsTest, TestIsFunction) {
   EXPECT_TRUE(absl::is_function<void() noexcept>::value);
   EXPECT_TRUE(absl::is_function<void(...) noexcept>::value);
 
-  EXPECT_FALSE(absl::is_function<void(*)()>::value);
-  EXPECT_FALSE(absl::is_function<void(&)()>::value);
+  EXPECT_FALSE(absl::is_function<void (*)()>::value);
+  EXPECT_FALSE(absl::is_function<void (&)()>::value);
   EXPECT_FALSE(absl::is_function<int>::value);
   EXPECT_FALSE(absl::is_function<Callable>::value);
 }
@@ -382,8 +382,8 @@ TEST(TypeTraitsTest, TestRemoveCVRef) {
   
   EXPECT_TRUE((std::is_same<typename absl::remove_cvref<const int*>::type,
                             const int*>::value));
-  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<int[2]>::type,
-                            int[2]>::value));
+  EXPECT_TRUE(
+      (std::is_same<typename absl::remove_cvref<int[2]>::type, int[2]>::value));
   EXPECT_TRUE((std::is_same<typename absl::remove_cvref<int(&)[2]>::type,
                             int[2]>::value));
   EXPECT_TRUE((std::is_same<typename absl::remove_cvref<int(&&)[2]>::type,
@@ -580,7 +580,7 @@ TEST(TypeTraitsTest, TestDecay) {
   ABSL_INTERNAL_EXPECT_ALIAS_EQUIVALENCE(decay, int[][1]);
 
   ABSL_INTERNAL_EXPECT_ALIAS_EQUIVALENCE(decay, int());
-  ABSL_INTERNAL_EXPECT_ALIAS_EQUIVALENCE(decay, int(float));  
+  ABSL_INTERNAL_EXPECT_ALIAS_EQUIVALENCE(decay, int(float));      
   ABSL_INTERNAL_EXPECT_ALIAS_EQUIVALENCE(decay, int(char, ...));  
 }
 
@@ -664,8 +664,7 @@ TEST(TypeTraitsTest, TestResultOf) {
 
 namespace adl_namespace {
 
-struct DeletedSwap {
-};
+struct DeletedSwap {};
 
 void swap(DeletedSwap&, DeletedSwap&) = delete;
 
@@ -751,7 +750,7 @@ TEST(TriviallyRelocatable, PrimitiveTypes) {
 
 
 
-TEST(TriviallyRelocatable, UserDefinedTriviallyReconstructible) {
+TEST(TriviallyRelocatable, UserDefinedTriviallyRelocatable) {
   struct S {
     int x;
     int y;
@@ -782,6 +781,30 @@ TEST(TriviallyRelocatable, UserProvidedCopyConstructor) {
 
 
 
+TEST(TriviallyRelocatable, UserProvidedCopyAssignment) {
+  struct S {
+    S(const S&) = default;
+    S& operator=(const S&) {  
+      return *this;
+    }
+  };
+
+  static_assert(!absl::is_trivially_relocatable<S>::value, "");
+}
+
+
+
+TEST(TriviallyRelocatable, UserProvidedMoveAssignment) {
+  struct S {
+    S(S&&) = default;
+    S& operator=(S&&) { return *this; }  
+  };
+
+  static_assert(!absl::is_trivially_relocatable<S>::value, "");
+}
+
+
+
 TEST(TriviallyRelocatable, UserProvidedDestructor) {
   struct S {
     ~S() {}  
@@ -792,17 +815,21 @@ TEST(TriviallyRelocatable, UserProvidedDestructor) {
 
 
 
+
+
 #if defined(ABSL_HAVE_ATTRIBUTE_TRIVIAL_ABI) &&      \
     ABSL_HAVE_BUILTIN(__is_trivially_relocatable) && \
-    !(defined(__clang__) && (defined(_WIN32) || defined(_WIN64)))
+    (defined(__cpp_impl_trivially_relocatable) ||    \
+     (!defined(__clang__) && !defined(__APPLE__) && !defined(__NVCC__)))
 
 
-
-TEST(TrivallyRelocatable, TrivialAbi) {
+TEST(TriviallyRelocatable, TrivialAbi) {
   struct ABSL_ATTRIBUTE_TRIVIAL_ABI S {
     S(S&&) {}       
     S(const S&) {}  
-    ~S() {}         
+    void operator=(S&&) {}
+    void operator=(const S&) {}
+    ~S() {}  
   };
 
   static_assert(absl::is_trivially_relocatable<S>::value, "");
@@ -821,7 +848,7 @@ constexpr int64_t NegateIfConstantEvaluated(int64_t i) {
 
 #endif  
 
-TEST(TrivallyRelocatable, is_constant_evaluated) {
+TEST(IsConstantEvaluated, is_constant_evaluated) {
 #ifdef ABSL_HAVE_CONSTANT_EVALUATED
   constexpr int64_t constant = NegateIfConstantEvaluated(42);
   EXPECT_EQ(constant, -42);
@@ -836,6 +863,5 @@ TEST(TrivallyRelocatable, is_constant_evaluated) {
   GTEST_SKIP() << "absl::is_constant_evaluated is not defined";
 #endif  
 }
-
 
 }  

@@ -90,9 +90,23 @@ ABSL_NAMESPACE_BEGIN
 namespace time_internal {
 
 
+
+
+
+
+#if !defined(NDEBUG) && defined(__x86_64__)
+constexpr int64_t kCycleClockNowMask = ~int64_t{0xff};
+#else
+constexpr int64_t kCycleClockNowMask = ~int64_t{0};
+#endif
+
+
+
 class UnscaledCycleClockWrapperForGetCurrentTime {
  public:
-  static int64_t Now() { return base_internal::UnscaledCycleClock::Now(); }
+  static int64_t Now() {
+    return base_internal::UnscaledCycleClock::Now() & kCycleClockNowMask;
+  }
 };
 }  
 

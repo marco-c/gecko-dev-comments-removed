@@ -245,11 +245,6 @@ class
 };
 
 
-
-
-ABSL_DLL extern const uint128 kuint128max;
-
-
 std::ostream& operator<<(std::ostream& os, uint128 v);
 
 

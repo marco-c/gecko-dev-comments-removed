@@ -843,15 +843,11 @@
 
 
 
-#if ABSL_HAVE_CPP_ATTRIBUTE(clang::trivial_abi)
-#define ABSL_ATTRIBUTE_TRIVIAL_ABI [[clang::trivial_abi]]
-#define ABSL_HAVE_ATTRIBUTE_TRIVIAL_ABI 1
-#elif ABSL_HAVE_ATTRIBUTE(trivial_abi)
-#define ABSL_ATTRIBUTE_TRIVIAL_ABI __attribute__((trivial_abi))
-#define ABSL_HAVE_ATTRIBUTE_TRIVIAL_ABI 1
-#else
+
+
+
+
 #define ABSL_ATTRIBUTE_TRIVIAL_ABI
-#endif
 
 
 
@@ -873,6 +869,53 @@
 #define ABSL_ATTRIBUTE_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #else
 #define ABSL_ATTRIBUTE_NO_UNIQUE_ADDRESS
+#endif
+
+
+
+
+
+
+
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(clang::uninitialized)
+#define ABSL_ATTRIBUTE_UNINITIALIZED [[clang::uninitialized]]
+#elif ABSL_HAVE_CPP_ATTRIBUTE(gnu::uninitialized)
+#define ABSL_ATTRIBUTE_UNINITIALIZED [[gnu::uninitialized]]
+#elif ABSL_HAVE_ATTRIBUTE(uninitialized)
+#define ABSL_ATTRIBUTE_UNINITIALIZED __attribute__((uninitialized))
+#else
+#define ABSL_ATTRIBUTE_UNINITIALIZED
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(gnu::warn_unused)
+#define ABSL_ATTRIBUTE_WARN_UNUSED [[gnu::warn_unused]]
+#else
+#define ABSL_ATTRIBUTE_WARN_UNUSED
 #endif
 
 #endif  

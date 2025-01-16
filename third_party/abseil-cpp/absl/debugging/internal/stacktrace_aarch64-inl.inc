@@ -122,19 +122,20 @@ static void **NextStackFrame(void **old_frame_pointer, const void *uc,
       if (pre_signal_frame_pointer >= old_frame_pointer) {
         new_frame_pointer = pre_signal_frame_pointer;
       }
-      
-      
-      
-      if (!absl::debugging_internal::AddressIsReadable(
-              new_frame_pointer))
-        return nullptr;
-    }
   }
 #endif
 
-  
+
   if ((reinterpret_cast<uintptr_t>(new_frame_pointer) & 7) != 0)
     return nullptr;
+
+  
+  
+  
+  if (!absl::debugging_internal::AddressIsReadable(
+          new_frame_pointer))
+    return nullptr;
+  }
 
   
   if (InsideSignalStack(new_frame_pointer, stack_info) ==

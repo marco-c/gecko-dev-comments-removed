@@ -45,6 +45,7 @@ class LogSink {
   
   
   
+  
   virtual void Send(const absl::LogEntry& entry) = 0;
 
   
@@ -52,6 +53,12 @@ class LogSink {
   
   
   virtual void Flush() {}
+
+ protected:
+  LogSink() = default;
+  
+  LogSink(const LogSink&) = default;
+  LogSink& operator=(const LogSink&) = default;
 
  private:
   

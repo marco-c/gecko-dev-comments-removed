@@ -22,7 +22,6 @@
 #include <atomic>
 #include <cstring>
 #include <memory>
-#include <new>
 #include <string>
 #include <type_traits>
 #include <typeinfo>
@@ -770,7 +769,8 @@ struct FlagRegistrarEmpty {};
 template <typename T, bool do_register>
 class FlagRegistrar {
  public:
-  explicit FlagRegistrar(Flag<T>& flag, const char* filename) : flag_(flag) {
+  constexpr explicit FlagRegistrar(Flag<T>& flag, const char* filename)
+      : flag_(flag) {
     if (do_register)
       flags_internal::RegisterCommandLineFlag(flag_.impl_, filename);
   }
@@ -783,7 +783,7 @@ class FlagRegistrar {
   
   
   
-  operator FlagRegistrarEmpty() const { return {}; }  
+  constexpr operator FlagRegistrarEmpty() const { return {}; }  
 
  private:
   Flag<T>& flag_;  

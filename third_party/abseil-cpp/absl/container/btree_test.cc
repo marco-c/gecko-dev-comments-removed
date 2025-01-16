@@ -1346,7 +1346,8 @@ void ExpectOperationCounts(const int expected_moves,
   tracker->ResetCopiesMovesSwaps();
 }
 
-#ifdef ABSL_HAVE_ADDRESS_SANITIZER
+#if defined(ABSL_HAVE_ADDRESS_SANITIZER) || \
+    defined(ABSL_HAVE_HWADDRESS_SANITIZER)
 constexpr bool kAsan = true;
 #else
 constexpr bool kAsan = false;
@@ -3082,7 +3083,7 @@ TEST(Btree, InvalidIteratorUse) {
   
   
   constexpr const char *kInvalidMemoryDeathMessage =
-      "heap-use-after-free|invalidated iterator";
+      "use-after-free|invalidated iterator";
 
   {
     absl::btree_set<int> set;
@@ -3411,12 +3412,12 @@ TEST(Btree, InvalidPointerUse) {
   set.insert(0);
   const int *ptr = &*set.begin();
   set.insert(1);
-  EXPECT_DEATH(std::cout << *ptr, "heap-use-after-free");
+  EXPECT_DEATH(std::cout << *ptr, "use-after-free");
   size_t slots_per_node = BtreeNodePeer::GetNumSlotsPerNode<decltype(set)>();
   for (int i = 2; i < slots_per_node - 1; ++i) set.insert(i);
   ptr = &*set.begin();
   set.insert(static_cast<int>(slots_per_node));
-  EXPECT_DEATH(std::cout << *ptr, "heap-use-after-free");
+  EXPECT_DEATH(std::cout << *ptr, "use-after-free");
 }
 
 template<typename Set>

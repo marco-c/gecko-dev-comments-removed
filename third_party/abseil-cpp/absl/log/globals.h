@@ -24,6 +24,7 @@
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/log_severity.h"
+#include "absl/log/internal/vlog_config.h"
 #include "absl/strings/string_view.h"
 
 namespace absl {
@@ -151,6 +152,28 @@ ABSL_MUST_USE_RESULT bool ShouldPrependLogPrefix();
 
 
 void EnableLogPrefix(bool on_off);
+
+
+
+
+
+
+
+
+inline int SetGlobalVLogLevel(int log_level) {
+  return absl::log_internal::UpdateGlobalVLogLevel(log_level);
+}
+
+
+
+
+
+
+
+
+inline int SetVLogLevel(absl::string_view module_pattern, int log_level) {
+  return absl::log_internal::PrependVModule(module_pattern, log_level);
+}
 
 
 

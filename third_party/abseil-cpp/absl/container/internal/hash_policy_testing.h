@@ -174,8 +174,7 @@ ABSL_NAMESPACE_END
 
 
 
-#if (defined(__GLIBCXX__) && __GLIBCXX__ <= 20140425 ) || \
-( __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 9 ))
+#if defined(__GLIBCXX__) && __GLIBCXX__ <= 20140425
 #define ABSL_UNORDERED_SUPPORTS_ALLOC_CTORS 0
 #else
 #define ABSL_UNORDERED_SUPPORTS_ALLOC_CTORS 1

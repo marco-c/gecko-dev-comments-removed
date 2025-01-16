@@ -38,6 +38,11 @@
   ::absl::log_internal::NullStreamMaybeFatal(::absl::kLogDebugFatal)
 #define ABSL_LOGGING_INTERNAL_LOG_LEVEL(severity) \
   ::absl::log_internal::NullStreamMaybeFatal(absl_log_internal_severity)
+
+#define ABSL_LOGGING_INTERNAL_DLOG_QFATAL \
+  ::absl::log_internal::NullStreamMaybeFatal(::absl::LogSeverity::kFatal)
+#define ABSL_LOGGING_INTERNAL_DLOG_FATAL \
+  ::absl::log_internal::NullStreamMaybeFatal(::absl::LogSeverity::kFatal)
 #define ABSL_LOG_INTERNAL_CHECK(failure_message) ABSL_LOGGING_INTERNAL_LOG_FATAL
 #define ABSL_LOG_INTERNAL_QCHECK(failure_message) \
   ABSL_LOGGING_INTERNAL_LOG_QFATAL
@@ -62,11 +67,26 @@
                                    absl_log_internal_severity)
 
 
+#define ABSL_LOGGING_INTERNAL_DLOG_QFATAL \
+  ::absl::log_internal::LogMessageQuietly(__FILE__, __LINE__)
+#define ABSL_LOGGING_INTERNAL_DLOG_FATAL               \
+  ::absl::log_internal::LogMessage(__FILE__, __LINE__, \
+                                   ::absl::log_internal::LogMessage::FatalTag{})
+
+
+
 #define ABSL_LOG_INTERNAL_CHECK(failure_message) \
   ::absl::log_internal::LogMessageFatal(__FILE__, __LINE__, failure_message)
 #define ABSL_LOG_INTERNAL_QCHECK(failure_message)                  \
   ::absl::log_internal::LogMessageQuietlyFatal(__FILE__, __LINE__, \
                                                failure_message)
 #endif  
+
+
+#define ABSL_LOGGING_INTERNAL_DLOG_INFO ABSL_LOGGING_INTERNAL_LOG_INFO
+#define ABSL_LOGGING_INTERNAL_DLOG_WARNING ABSL_LOGGING_INTERNAL_LOG_WARNING
+#define ABSL_LOGGING_INTERNAL_DLOG_ERROR ABSL_LOGGING_INTERNAL_LOG_ERROR
+#define ABSL_LOGGING_INTERNAL_DLOG_DFATAL ABSL_LOGGING_INTERNAL_LOG_DFATAL
+#define ABSL_LOGGING_INTERNAL_DLOG_LEVEL ABSL_LOGGING_INTERNAL_LOG_LEVEL
 
 #endif  

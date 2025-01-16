@@ -27,7 +27,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "absl/base/macros.h"
+#include "absl/base/nullability.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -69,10 +71,12 @@ ABSL_NAMESPACE_BEGIN
 
 
 
-bool CUnescape(absl::string_view source, std::string* dest, std::string* error);
+bool CUnescape(absl::string_view source, absl::Nonnull<std::string*> dest,
+               absl::Nullable<std::string*> error);
 
 
-inline bool CUnescape(absl::string_view source, std::string* dest) {
+inline bool CUnescape(absl::string_view source,
+                      absl::Nonnull<std::string*> dest) {
   return CUnescape(source, dest, nullptr);
 }
 
@@ -122,7 +126,7 @@ std::string Utf8SafeCHexEscape(absl::string_view src);
 
 
 
-void Base64Escape(absl::string_view src, std::string* dest);
+void Base64Escape(absl::string_view src, absl::Nonnull<std::string*> dest);
 std::string Base64Escape(absl::string_view src);
 
 
@@ -130,7 +134,8 @@ std::string Base64Escape(absl::string_view src);
 
 
 
-void WebSafeBase64Escape(absl::string_view src, std::string* dest);
+void WebSafeBase64Escape(absl::string_view src,
+                         absl::Nonnull<std::string*> dest);
 std::string WebSafeBase64Escape(absl::string_view src);
 
 
@@ -140,7 +145,7 @@ std::string WebSafeBase64Escape(absl::string_view src);
 
 
 
-bool Base64Unescape(absl::string_view src, std::string* dest);
+bool Base64Unescape(absl::string_view src, absl::Nonnull<std::string*> dest);
 
 
 
@@ -149,12 +154,24 @@ bool Base64Unescape(absl::string_view src, std::string* dest);
 
 
 
-bool WebSafeBase64Unescape(absl::string_view src, std::string* dest);
+bool WebSafeBase64Unescape(absl::string_view src,
+                           absl::Nonnull<std::string*> dest);
 
 
 
 
 
+
+
+ABSL_MUST_USE_RESULT bool HexStringToBytes(absl::string_view hex,
+                                           absl::Nonnull<std::string*> bytes);
+
+
+
+
+
+
+ABSL_DEPRECATED("Use the HexStringToBytes() that returns a bool")
 std::string HexStringToBytes(absl::string_view from);
 
 

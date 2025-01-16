@@ -570,6 +570,7 @@ static bool ParseClassEnumType(State *state);
 static bool ParseArrayType(State *state);
 static bool ParsePointerToMemberType(State *state);
 static bool ParseTemplateParam(State *state);
+static bool ParseTemplateParamDecl(State *state);
 static bool ParseTemplateTemplateParam(State *state);
 static bool ParseTemplateArgs(State *state);
 static bool ParseTemplateArg(State *state);
@@ -578,6 +579,7 @@ static bool ParseUnresolvedName(State *state);
 static bool ParseExpression(State *state);
 static bool ParseExprPrimary(State *state);
 static bool ParseExprCastValue(State *state);
+static bool ParseQRequiresClauseExpr(State *state);
 static bool ParseLocalName(State *state);
 static bool ParseLocalNameSuffix(State *state);
 static bool ParseDiscriminator(State *state);
@@ -624,6 +626,9 @@ static bool ParseMangledName(State *state) {
 
 
 
+
+
+
 static bool ParseEncoding(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
@@ -632,12 +637,21 @@ static bool ParseEncoding(State *state) {
   
   
   
-  if (ParseName(state) && Optional(ParseBareFunctionType(state))) {
+  
+  
+  if (ParseName(state)) {
+    if (!ParseBareFunctionType(state)) {
+      return true;  
+    }
+
+    
+    
+    ParseQRequiresClauseExpr(state);  
     return true;
   }
 
   if (ParseSpecialName(state)) {
-    return true;
+    return true;  
   }
   return false;
 }
@@ -1289,26 +1303,33 @@ static bool ParseCVQualifiers(State *state) {
 
 
 
+
 static bool ParseBuiltinType(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
-  const AbbrevPair *p;
-  for (p = kBuiltinTypeList; p->abbrev != nullptr; ++p) {
+
+  for (const AbbrevPair *p = kBuiltinTypeList; p->abbrev != nullptr; ++p) {
     
     if (p->abbrev[1] == '\0') {
       if (ParseOneCharToken(state, p->abbrev[0])) {
         MaybeAppend(state, p->real_name);
-        return true;
+        return true;  
       }
     } else if (p->abbrev[2] == '\0' && ParseTwoCharToken(state, p->abbrev)) {
       MaybeAppend(state, p->real_name);
-      return true;
+      return true;  
     }
   }
 
   ParseState copy = state->parse_state;
   if (ParseOneCharToken(state, 'u') && ParseSourceName(state)) {
-    return true;
+    copy = state->parse_state;
+    if (ParseOneCharToken(state, 'I') && ParseType(state) &&
+        ParseOneCharToken(state, 'E')) {
+      return true;  
+    }
+    state->parse_state = copy;
+    return true;  
   }
   state->parse_state = copy;
   return false;
@@ -1413,21 +1434,83 @@ static bool ParsePointerToMemberType(State *state) {
 
 
 
+
+
 static bool ParseTemplateParam(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
   if (ParseTwoCharToken(state, "T_")) {
     MaybeAppend(state, "?");  
-    return true;
+    return true;              
   }
 
   ParseState copy = state->parse_state;
   if (ParseOneCharToken(state, 'T') && ParseNumber(state, nullptr) &&
       ParseOneCharToken(state, '_')) {
     MaybeAppend(state, "?");  
+    return true;              
+  }
+  state->parse_state = copy;
+
+  if (ParseTwoCharToken(state, "TL") && ParseNumber(state, nullptr)) {
+    if (ParseTwoCharToken(state, "__")) {
+      MaybeAppend(state, "?");  
+      return true;              
+    }
+
+    if (ParseOneCharToken(state, '_') && ParseNumber(state, nullptr) &&
+        ParseOneCharToken(state, '_')) {
+      MaybeAppend(state, "?");  
+      return true;  
+    }
+  }
+  state->parse_state = copy;
+  return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+static bool ParseTemplateParamDecl(State *state) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+  ParseState copy = state->parse_state;
+
+  if (ParseTwoCharToken(state, "Ty")) {
     return true;
   }
   state->parse_state = copy;
+
+  if (ParseTwoCharToken(state, "Tk") && ParseName(state) &&
+      Optional(ParseTemplateArgs(state))) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  if (ParseTwoCharToken(state, "Tn") && ParseType(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  if (ParseTwoCharToken(state, "Tt") &&
+      ZeroOrMore(ParseTemplateParamDecl, state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  if (ParseTwoCharToken(state, "Tp") && ParseTemplateParamDecl(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
   return false;
 }
 
@@ -1448,6 +1531,7 @@ static bool ParseTemplateArgs(State *state) {
   ParseState copy = state->parse_state;
   DisableAppend(state);
   if (ParseOneCharToken(state, 'I') && OneOrMore(ParseTemplateArg, state) &&
+      Optional(ParseQRequiresClauseExpr(state)) &&
       ParseOneCharToken(state, 'E')) {
     RestoreAppend(state, copy.append);
     MaybeAppend(state, "<>");
@@ -1456,6 +1540,7 @@ static bool ParseTemplateArgs(State *state) {
   state->parse_state = copy;
   return false;
 }
+
 
 
 
@@ -1560,6 +1645,12 @@ static bool ParseTemplateArg(State *state) {
     return true;
   }
   state->parse_state = copy;
+
+  if (ParseTemplateParamDecl(state) && ParseTemplateArg(state)) {
+    return true;
+  }
+  state->parse_state = copy;
+
   return false;
 }
 
@@ -1853,6 +1944,40 @@ static bool ParseExprCastValue(State *state) {
   }
   state->parse_state = copy;
 
+  return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool ParseQRequiresClauseExpr(State *state) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+  ParseState copy = state->parse_state;
+  DisableAppend(state);
+
+  
+  if (ParseOneCharToken(state, 'Q') && ParseExpression(state)) {
+    RestoreAppend(state, copy.append);
+    return true;
+  }
+
+  
+  state->parse_state = copy;
   return false;
 }
 

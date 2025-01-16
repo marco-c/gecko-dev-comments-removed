@@ -307,6 +307,35 @@ TEST(UniquePtr, MoveAssign) {
 
 
 
+
+
+TEST(UniquePtr, Swap) {
+  for (size_t size1 = 0; size1 < 5; ++size1) {
+    for (size_t size2 = 0; size2 < 5; ++size2) {
+      absl::InlinedVector<std::unique_ptr<size_t>, 2> a;
+      absl::InlinedVector<std::unique_ptr<size_t>, 2> b;
+      for (size_t i = 0; i < size1; ++i) {
+        a.push_back(std::make_unique<size_t>(i + 10));
+      }
+      for (size_t i = 0; i < size2; ++i) {
+        b.push_back(std::make_unique<size_t>(i + 20));
+      }
+      a.swap(b);
+      ASSERT_THAT(a, SizeIs(size2));
+      ASSERT_THAT(b, SizeIs(size1));
+      for (size_t i = 0; i < a.size(); ++i) {
+        ASSERT_THAT(a[i], Pointee(i + 20));
+      }
+      for (size_t i = 0; i < b.size(); ++i) {
+        ASSERT_THAT(b[i], Pointee(i + 10));
+      }
+    }
+  }
+}
+
+
+
+
 TEST(RefCountedVec, EraseBeginEnd) {
   for (size_t len = 1; len < 20; ++len) {
     for (size_t erase_begin = 0; erase_begin < len; ++erase_begin) {
@@ -783,7 +812,9 @@ TEST(OverheadTest, Storage) {
   
   
 
-  struct T { void* val; };
+  struct T {
+    void* val;
+  };
   size_t expected_overhead = sizeof(T);
 
   EXPECT_EQ((2 * expected_overhead),

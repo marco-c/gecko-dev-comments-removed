@@ -70,6 +70,18 @@ void* Allocate(Alloc* alloc, size_t n) {
 
 
 
+template <class Allocator, class ValueType>
+constexpr auto IsDestructionTrivial() {
+  constexpr bool result =
+      std::is_trivially_destructible<ValueType>::value &&
+      std::is_same<typename absl::allocator_traits<
+                       Allocator>::template rebind_alloc<char>,
+                   std::allocator<char>>::value;
+  return std::integral_constant<bool, result>();
+}
+
+
+
 template <size_t Alignment, class Alloc>
 void Deallocate(Alloc* alloc, void* p, size_t n) {
   static_assert(Alignment > 0, "");
@@ -414,12 +426,13 @@ struct map_slot_policy {
   }
 
   template <class Allocator>
-  static void destroy(Allocator* alloc, slot_type* slot) {
+  static auto destroy(Allocator* alloc, slot_type* slot) {
     if (kMutableKeys::value) {
       absl::allocator_traits<Allocator>::destroy(*alloc, &slot->mutable_value);
     } else {
       absl::allocator_traits<Allocator>::destroy(*alloc, &slot->value);
     }
+    return IsDestructionTrivial<Allocator, value_type>();
   }
 
   template <class Allocator>
@@ -450,6 +463,26 @@ struct map_slot_policy {
     return is_relocatable;
   }
 };
+
+
+using HashSlotFn = size_t (*)(const void* hash_fn, void* slot);
+
+
+
+template <class Fn, class T>
+size_t TypeErasedApplyToSlotFn(const void* fn, void* slot) {
+  const auto* f = static_cast<const Fn*>(fn);
+  return (*f)(*static_cast<const T*>(slot));
+}
+
+
+
+template <class Fn, class T>
+size_t TypeErasedDerefAndApplyToSlotFn(const void* fn, void* slot_ptr) {
+  const auto* f = static_cast<const Fn*>(fn);
+  const T* slot = *static_cast<const T**>(slot_ptr);
+  return (*f)(*slot);
+}
 
 }  
 ABSL_NAMESPACE_END
