@@ -180,7 +180,7 @@ class DtlsTransport : public DtlsTransportInternal {
   
   
   bool ExportSrtpKeyingMaterial(
-      rtc::ZeroOnFreeBuffer<unsigned char>& keying_material) override;
+      rtc::ZeroOnFreeBuffer<uint8_t>& keying_material) override;
 
   [[deprecated("Use ExportSrtpKeyingMaterial instead")]] bool
   ExportKeyingMaterial(absl::string_view label,
