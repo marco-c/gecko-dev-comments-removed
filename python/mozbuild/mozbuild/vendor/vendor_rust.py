@@ -163,8 +163,8 @@ class VendorRust(MozbuildObject):
         
         
         minimum_rust_version = MINIMUM_RUST_VERSION
-        if LooseVersion("1.83.0") >= MINIMUM_RUST_VERSION:
-            minimum_rust_version = "1.83.0"
+        if LooseVersion("1.84.0") >= MINIMUM_RUST_VERSION:
+            minimum_rust_version = "1.84.0"
         if version < minimum_rust_version:
             self.log(
                 logging.ERROR,
