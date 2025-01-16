@@ -1,10 +1,6 @@
 
 
 
-
-
-
-
 assertThrowsInstanceOf(() => Iterator.range('1'), TypeError);
 assertThrowsInstanceOf(() => Iterator.range(null), TypeError);
 assertThrowsInstanceOf(() => Iterator.range(undefined), TypeError);
@@ -67,5 +63,6 @@ assertDeepEq(result4, []);
 
 
 
-if (typeof reportCompare === 'function')
+if (typeof reportCompare === 'function') {
     reportCompare(0, 0);
+}

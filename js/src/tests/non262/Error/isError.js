@@ -1,10 +1,6 @@
 
 
 
-
-
-
-
 assertEq(Error.isError(null), false);
 assertEq(Error.isError(undefined), false);
 assertEq(Error.isError(123), false);
