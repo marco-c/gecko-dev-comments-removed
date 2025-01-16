@@ -38,6 +38,7 @@ bool nsBaseColorPicker::MaybeBlockColorPicker(
   if (!mBrowsingContext->Canonical()->CanOpenModalPicker()) {
     if (aCallback) {
       
+      
       aCallback->Done(EmptyString());
     }
     return true;
