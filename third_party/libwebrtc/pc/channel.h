@@ -149,6 +149,7 @@ class BaseChannel : public ChannelInterface,
 
   
   void SetFirstPacketReceivedCallback(std::function<void()> callback) override;
+  void SetFirstPacketSentCallback(std::function<void()> callback) override;
 
   
   void OnTransportReadyToSend(bool ready);
@@ -316,8 +317,10 @@ class BaseChannel : public ChannelInterface,
   webrtc::TaskQueueBase* const signaling_thread_;
   rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> alive_;
 
+  
   std::function<void()> on_first_packet_received_
       RTC_GUARDED_BY(network_thread());
+  std::function<void()> on_first_packet_sent_ RTC_GUARDED_BY(network_thread());
 
   webrtc::RtpTransportInternal* rtp_transport_
       RTC_GUARDED_BY(network_thread()) = nullptr;

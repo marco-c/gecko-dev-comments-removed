@@ -38,6 +38,16 @@
 
 namespace webrtc {
 
+class RtpSenderObserverInterface {
+ public:
+  
+  
+  virtual void OnFirstPacketSent(cricket::MediaType media_type) = 0;
+
+ protected:
+  virtual ~RtpSenderObserverInterface() {}
+};
+
 class RTC_EXPORT RtpSenderInterface : public webrtc::RefCountInterface,
                                       public FrameTransformerHost {
  public:
@@ -87,6 +97,12 @@ class RTC_EXPORT RtpSenderInterface : public webrtc::RefCountInterface,
   virtual RTCError SetParameters(const RtpParameters& parameters) = 0;
   virtual void SetParametersAsync(const RtpParameters& parameters,
                                   SetParametersCallback callback);
+
+  
+  
+  
+  
+  virtual void SetObserver(RtpSenderObserverInterface* observer) {}
 
   
   virtual rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const = 0;

@@ -106,6 +106,8 @@ class RtpSenderInternal : public RtpSenderInterface {
   
   virtual void SetSendCodecs(std::vector<cricket::Codec> send_codecs) = 0;
   virtual std::vector<cricket::Codec> GetSendCodecs() const = 0;
+
+  virtual void NotifyFirstPacketSent() = 0;
 };
 
 
@@ -230,6 +232,9 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
     return send_codecs_;
   }
 
+  void NotifyFirstPacketSent() override;
+  void SetObserver(RtpSenderObserverInterface* observer) override;
+
  protected:
   
   
@@ -288,6 +293,8 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   std::vector<std::string> disabled_rids_;
 
   SetStreamsObserver* set_streams_observer_ = nullptr;
+  RtpSenderObserverInterface* observer_ = nullptr;
+  bool sent_first_packet_ = false;
 
   rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
   std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface>

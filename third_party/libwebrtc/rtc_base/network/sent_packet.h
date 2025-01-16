@@ -44,6 +44,9 @@ struct RTC_EXPORT PacketInfo {
 
   bool included_in_feedback = false;
   bool included_in_allocation = false;
+  
+  
+  bool is_media = false;
   PacketType packet_type = PacketType::kUnknown;
   PacketInfoProtocolType protocol = PacketInfoProtocolType::kUnknown;
   

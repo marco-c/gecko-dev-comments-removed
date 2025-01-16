@@ -302,6 +302,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   }
   ConnectionContext* context() const { return context_; }
   void OnFirstPacketReceived();
+  void OnFirstPacketSent();
   void StopSendingAndReceiving();
   
   

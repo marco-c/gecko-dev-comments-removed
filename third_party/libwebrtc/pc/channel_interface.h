@@ -11,6 +11,7 @@
 #ifndef PC_CHANNEL_INTERFACE_H_
 #define PC_CHANNEL_INTERFACE_H_
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -78,6 +79,7 @@ class ChannelInterface {
   
   virtual void SetFirstPacketReceivedCallback(
       std::function<void()> callback) = 0;
+  virtual void SetFirstPacketSentCallback(std::function<void()> callback) = 0;
 
   
   virtual bool SetLocalContent(const MediaContentDescription* content,
