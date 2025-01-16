@@ -557,34 +557,10 @@ void CodeGenerator::visitModI(LModI* ins) {
   Register dest = ToRegister(ins->output());
   Register callTemp = ToRegister(ins->callTemp());
   MMod* mir = ins->mir();
-  Label done, prevent;
+  Label done;
 
   masm.move32(lhs, callTemp);
 
-  
-  
-  if (mir->canBeNegativeDividend()) {
-    masm.ma_b(lhs, Imm32(INT_MIN), &prevent, Assembler::NotEqual, ShortJump);
-    if (mir->isTruncated()) {
-      
-      Label skip;
-      masm.ma_b(rhs, Imm32(-1), &skip, Assembler::NotEqual, ShortJump);
-      masm.move32(Imm32(0), dest);
-      masm.ma_b(&done, ShortJump);
-      masm.bind(&skip);
-    } else {
-      MOZ_ASSERT(mir->fallible());
-      bailoutCmp32(Assembler::Equal, rhs, Imm32(-1), ins->snapshot());
-    }
-    masm.bind(&prevent);
-  }
-
-  
-  
-  
-  
-
-  
   
   
   
@@ -601,6 +577,7 @@ void CodeGenerator::visitModI(LModI* ins) {
       } else {
         Label skip;
         masm.ma_b(rhs, Imm32(0), &skip, Assembler::NotEqual, ShortJump);
+        
         masm.move32(Imm32(0), dest);
         masm.ma_b(&done, ShortJump);
         masm.bind(&skip);
@@ -611,22 +588,6 @@ void CodeGenerator::visitModI(LModI* ins) {
     }
   }
 
-  if (mir->canBeNegativeDividend()) {
-    Label notNegative;
-    masm.ma_b(rhs, Imm32(0), &notNegative, Assembler::GreaterThan, ShortJump);
-    if (mir->isTruncated()) {
-      
-      Label skip;
-      masm.ma_b(lhs, Imm32(0), &skip, Assembler::NotEqual, ShortJump);
-      masm.move32(Imm32(0), dest);
-      masm.ma_b(&done, ShortJump);
-      masm.bind(&skip);
-    } else {
-      MOZ_ASSERT(mir->fallible());
-      bailoutCmp32(Assembler::Equal, lhs, Imm32(0), ins->snapshot());
-    }
-    masm.bind(&notNegative);
-  }
 #ifdef MIPSR6
   masm.as_mod(dest, lhs, rhs);
 #else
@@ -634,6 +595,7 @@ void CodeGenerator::visitModI(LModI* ins) {
   masm.as_mfhi(dest);
 #endif
 
+  
   
   if (mir->canBeNegativeDividend()) {
     if (mir->isTruncated()) {
