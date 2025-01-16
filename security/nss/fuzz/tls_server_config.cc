@@ -2,7 +2,7 @@
 
 
 
-#include "server_config.h"
+#include "tls_server_config.h"
 
 #include <cassert>
 #include <cstddef>
@@ -16,17 +16,16 @@
 #include "sslexp.h"
 #include "sslt.h"
 
-#include "common.h"
+#include "tls_common.h"
 
 const SSLCertificateCompressionAlgorithm kCompressionAlg = {
-    0x1337, "fuzz", TlsCommon::DummyCompressionEncode,
-    TlsCommon::DummyCompressionDecode};
+    0x1337, "fuzz", DummyCompressionEncode, DummyCompressionDecode};
 const PRUint8 kPskIdentity[] = "fuzz-psk-identity";
 
 static SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checksig,
                                      PRBool isServer) {
   assert(isServer);
-  auto config = reinterpret_cast<TlsServer::Config*>(arg);
+  auto config = reinterpret_cast<ServerConfig*>(arg);
   if (config->FailCertificateAuthentication()) return SECFailure;
 
   return SECSuccess;
@@ -38,12 +37,10 @@ static SECStatus CanFalseStartCallback(PRFileDesc* fd, void* arg,
   return SECSuccess;
 }
 
-namespace TlsServer {
 
 
 
-
-Config::Config(const uint8_t* data, size_t len) {
+ServerConfig::ServerConfig(const uint8_t* data, size_t len) {
   union {
     uint64_t bitmap;
     struct {
@@ -74,7 +71,7 @@ Config::Config(const uint8_t* data, size_t len) {
   };
 }
 
-void Config::SetCallbacks(PRFileDesc* fd) {
+void ServerConfig::SetCallbacks(PRFileDesc* fd) {
   SECStatus rv = SSL_AuthCertificateHook(fd, AuthCertificateHook, this);
   assert(rv == SECSuccess);
 
@@ -82,7 +79,7 @@ void Config::SetCallbacks(PRFileDesc* fd) {
   assert(rv == SECSuccess);
 }
 
-void Config::SetSocketOptions(PRFileDesc* fd) {
+void ServerConfig::SetSocketOptions(PRFileDesc* fd) {
   SECStatus rv = SSL_OptionSet(fd, SSL_ENABLE_EXTENDED_MASTER_SECRET,
                                this->EnableExtendedMasterSecret());
   assert(rv == SECSuccess);
@@ -148,17 +145,6 @@ void Config::SetSocketOptions(PRFileDesc* fd) {
   rv = SSL_OptionSet(fd, SSL_NO_LOCKS, this->NoLocks());
   assert(rv == SECSuccess);
 
-  rv = SSL_EnableTls13BackendEch(fd, this->EnableTls13BackendEch());
-  assert(rv == SECSuccess);
-
-  rv = SSL_OptionSet(fd, SSL_ENABLE_DELEGATED_CREDENTIALS,
-                     this->EnableDelegatedCredentials());
-  assert(rv == SECSuccess);
-
-  rv = SSL_OptionSet(fd, SSL_ENABLE_DTLS_SHORT_HEADER,
-                     this->EnableDtlsShortHeader());
-  assert(rv == SECSuccess);
-
 #ifndef IS_DTLS_FUZZ
   rv =
       SSL_OptionSet(fd, SSL_ENABLE_RENEGOTIATION, SSL_RENEGOTIATE_UNRESTRICTED);
@@ -166,7 +152,7 @@ void Config::SetSocketOptions(PRFileDesc* fd) {
 #endif
 }
 
-std::ostream& operator<<(std::ostream& out, Config& config) {
+std::ostream& operator<<(std::ostream& out, ServerConfig& config) {
   out << "============= ServerConfig ============="
       << "\n";
   out << "SSL_NO_CACHE:                           " << config.NoCache() << "\n";
@@ -209,5 +195,3 @@ std::ostream& operator<<(std::ostream& out, Config& config) {
 
   return out;
 }
-
-}  
