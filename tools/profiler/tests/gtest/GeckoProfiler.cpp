@@ -2496,10 +2496,9 @@ TEST(GeckoProfiler, Markers)
       net::kCacheHit,
        78,
        false,
+       net::HttpVersion::v3_0,
        nsIClassOfService::Leader
       
-      
-
       
 
       
@@ -2522,14 +2521,12 @@ TEST(GeckoProfiler, Markers)
       net::kCacheUnresolved,
        78,
        false,
+       net::HttpVersion::v3_0,
        nsIClassOfService::Follower,
        nullptr,
       
 
       nullptr,
-      
-
-      Some(net::HttpVersion::v3_0),
       
       Some(200),
       
@@ -2554,14 +2551,12 @@ TEST(GeckoProfiler, Markers)
       net::kCacheUnresolved,
        78,
        false,
+       net::HttpVersion::v3_0,
        nsIClassOfService::Speculative,
        nullptr,
       
 
       nullptr,
-      
-
-      mozilla::Nothing(),
       
       Some(0),
       
@@ -2585,14 +2580,12 @@ TEST(GeckoProfiler, Markers)
       net::kCacheUnresolved,
        78,
        false,
+       net::HttpVersion::v3_0,
        nsIClassOfService::Background,
        nullptr,
       
 
       nullptr,
-      
-
-      mozilla::Nothing(),
       
       mozilla::Nothing(),
       
@@ -2616,15 +2609,13 @@ TEST(GeckoProfiler, Markers)
       net::kCacheUnresolved,
        78,
        false,
+       net::HttpVersion::v3_0,
        nsIClassOfService::Unblocked |
           nsIClassOfService::TailForbidden,
        nullptr,
       
 
       nullptr,
-      
-
-      mozilla::Nothing(),
       
       mozilla::Nothing(),
       
@@ -2647,15 +2638,13 @@ TEST(GeckoProfiler, Markers)
       net::kCacheUnresolved,
        78,
        false,
+       net::HttpVersion::v3_0,
        nsIClassOfService::Unblocked |
           nsIClassOfService::Throttleable | nsIClassOfService::TailForbidden,
        nullptr,
       
 
       nullptr,
-      
-
-      mozilla::Nothing(),
       
       mozilla::Nothing(),
       
@@ -2678,10 +2667,9 @@ TEST(GeckoProfiler, Markers)
       net::kCacheUnresolved,
        78,
        true,
+       net::HttpVersion::v3_0,
        nsIClassOfService::Tail
       
-      
-
       
 
       
@@ -3074,6 +3062,7 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_EQ_JSON(payload["count"], Int64, 56);
                   EXPECT_EQ_JSON(payload["cache"], String, "Hit");
                   EXPECT_TRUE(payload["isPrivateBrowsing"].isNull());
+                  EXPECT_EQ_JSON(payload["httpVersion"], String, "h3");
                   EXPECT_EQ_JSON(payload["classOfService"], String, "Leader");
                   EXPECT_TRUE(payload["RedirectURI"].isNull());
                   EXPECT_TRUE(payload["redirectType"].isNull());
@@ -3116,6 +3105,7 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_EQ_JSON(payload["count"], Int64, 56);
                   EXPECT_EQ_JSON(payload["cache"], String, "Unresolved");
                   EXPECT_TRUE(payload["isPrivateBrowsing"].isNull());
+                  EXPECT_EQ_JSON(payload["httpVersion"], String, "h3");
                   EXPECT_EQ_JSON(payload["classOfService"], String,
                                  "Speculative");
                   EXPECT_EQ_JSON(payload["RedirectURI"], String,
@@ -3138,6 +3128,7 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_EQ_JSON(payload["count"], Int64, 56);
                   EXPECT_EQ_JSON(payload["cache"], String, "Unresolved");
                   EXPECT_TRUE(payload["isPrivateBrowsing"].isNull());
+                  EXPECT_EQ_JSON(payload["httpVersion"], String, "h3");
                   EXPECT_EQ_JSON(payload["classOfService"], String,
                                  "Background");
                   EXPECT_EQ_JSON(payload["RedirectURI"], String,
@@ -3160,6 +3151,7 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_EQ_JSON(payload["count"], Int64, 56);
                   EXPECT_EQ_JSON(payload["cache"], String, "Unresolved");
                   EXPECT_TRUE(payload["isPrivateBrowsing"].isNull());
+                  EXPECT_EQ_JSON(payload["httpVersion"], String, "h3");
                   EXPECT_EQ_JSON(payload["classOfService"], String,
                                  "Unblocked | TailForbidden");
                   EXPECT_EQ_JSON(payload["RedirectURI"], String,
@@ -3184,6 +3176,7 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_EQ_JSON(payload["count"], Int64, 56);
                   EXPECT_EQ_JSON(payload["cache"], String, "Unresolved");
                   EXPECT_TRUE(payload["isPrivateBrowsing"].isNull());
+                  EXPECT_EQ_JSON(payload["httpVersion"], String, "h3");
                   EXPECT_EQ_JSON(payload["classOfService"], String,
                                  "Unblocked | Throttleable | TailForbidden");
                   EXPECT_EQ_JSON(payload["RedirectURI"], String,
@@ -3206,6 +3199,7 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_EQ_JSON(payload["count"], Int64, 56);
                   EXPECT_EQ_JSON(payload["cache"], String, "Unresolved");
                   EXPECT_EQ_JSON(payload["isPrivateBrowsing"], Bool, true);
+                  EXPECT_EQ_JSON(payload["httpVersion"], String, "h3");
                   EXPECT_EQ_JSON(payload["classOfService"], String, "Tail");
                   EXPECT_TRUE(payload["RedirectURI"].isNull());
                   EXPECT_TRUE(payload["redirectType"].isNull());
