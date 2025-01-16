@@ -1871,6 +1871,40 @@ static bool TypedArray_set(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
+
+static bool ToIntegerIndex(JSContext* cx, Handle<Value> value, size_t length,
+                           size_t* result) {
+  
+  
+  if (value.isInt32()) {
+    int32_t relative = value.toInt32();
+
+    if (relative >= 0) {
+      *result = std::min(size_t(relative), length);
+    } else if (mozilla::Abs(relative) <= length) {
+      *result = length - mozilla::Abs(relative);
+    } else {
+      *result = 0;
+    }
+    return true;
+  }
+
+  double relative;
+  if (!ToInteger(cx, value, &relative)) {
+    return false;
+  }
+
+  if (relative >= 0) {
+    *result = size_t(std::min(relative, double(length)));
+  } else {
+    *result = size_t(std::max(relative + double(length), 0.0));
+  }
+  return true;
+}
+
+
+
 static bool TypedArray_copyWithin(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(IsTypedArrayObject(args.thisv()));
 
@@ -1888,54 +1922,32 @@ static bool TypedArray_copyWithin(JSContext* cx, const CallArgs& args) {
   size_t len = *arrayLength;
 
   
-  double relativeTarget;
-  if (!ToInteger(cx, args.get(0), &relativeTarget)) {
-    return false;
-  }
-
-  
-  uint64_t to;
-  if (relativeTarget < 0) {
-    to = std::max(len + relativeTarget, 0.0);
-  } else {
-    to = std::min(relativeTarget, double(len));
-  }
-
-  
-  double relativeStart;
-  if (!ToInteger(cx, args.get(1), &relativeStart)) {
-    return false;
-  }
-
-  
-  uint64_t from;
-  if (relativeStart < 0) {
-    from = std::max(len + relativeStart, 0.0);
-  } else {
-    from = std::min(relativeStart, double(len));
-  }
-
-  
-  double relativeEnd;
-  if (!args.hasDefined(2)) {
-    relativeEnd = len;
-  } else {
-    if (!ToInteger(cx, args[2], &relativeEnd)) {
+  size_t to = 0;
+  if (args.hasDefined(0)) {
+    if (!ToIntegerIndex(cx, args[0], len, &to)) {
       return false;
     }
   }
 
   
-  uint64_t final_;
-  if (relativeEnd < 0) {
-    final_ = std::max(len + relativeEnd, 0.0);
-  } else {
-    final_ = std::min(relativeEnd, double(len));
+  size_t from = 0;
+  if (args.hasDefined(1)) {
+    if (!ToIntegerIndex(cx, args[1], len, &from)) {
+      return false;
+    }
+  }
+
+  
+  size_t final_ = len;
+  if (args.hasDefined(2)) {
+    if (!ToIntegerIndex(cx, args[2], len, &final_)) {
+      return false;
+    }
   }
 
   
   MOZ_ASSERT(to <= len);
-  uint64_t count;
+  size_t count;
   if (from <= final_) {
     count = std::min(final_ - from, len - to);
   } else {
@@ -2378,8 +2390,7 @@ static bool TypedArray_indexOf(JSContext* cx, const CallArgs& args) {
   size_t k = 0;
   if (args.hasDefined(1)) {
     
-    double fromIndex;
-    if (!ToInteger(cx, args[1], &fromIndex)) {
+    if (!ToIntegerIndex(cx, args[1], len, &k)) {
       return false;
     }
 
@@ -2388,20 +2399,9 @@ static bool TypedArray_indexOf(JSContext* cx, const CallArgs& args) {
     len = std::min(len, tarray->length().valueOr(0));
 
     
-    if (len == 0) {
+    if (k >= len) {
       args.rval().setInt32(-1);
       return true;
-    }
-
-    
-    if (fromIndex >= 0) {
-      if (fromIndex >= double(len)) {
-        args.rval().setInt32(-1);
-        return true;
-      }
-      k = size_t(fromIndex);
-    } else {
-      k = size_t(std::max(0.0, fromIndex + double(len)));
     }
   }
   MOZ_ASSERT(k < len);
@@ -2721,23 +2721,9 @@ static bool TypedArray_includes(JSContext* cx, const CallArgs& args) {
   
   size_t k = 0;
   if (args.hasDefined(1)) {
-    
-    double fromIndex;
-    if (!ToInteger(cx, args[1], &fromIndex)) {
+    if (!ToIntegerIndex(cx, args[1], len, &k)) {
       return false;
     }
-
-    
-    if (fromIndex >= 0) {
-      if (fromIndex >= double(len)) {
-        args.rval().setBoolean(false);
-        return true;
-      }
-      k = size_t(fromIndex);
-    } else {
-      k = size_t(std::max(0.0, fromIndex + double(len)));
-    }
-    MOZ_ASSERT(k < len);
 
     
     
@@ -2749,20 +2735,19 @@ static bool TypedArray_includes(JSContext* cx, const CallArgs& args) {
     if (currentLength < len) {
       
       
-      if (args[0].isUndefined()) {
+      if (k < len && args[0].isUndefined()) {
         args.rval().setBoolean(true);
         return true;
       }
 
       
-      
-      if (k >= currentLength) {
-        args.rval().setBoolean(false);
-        return true;
-      }
-
-      
       len = currentLength;
+    }
+
+    
+    if (k >= len) {
+      args.rval().setBoolean(false);
+      return true;
     }
   }
   MOZ_ASSERT(k < len);
@@ -2916,34 +2901,16 @@ static bool TypedArray_fill(JSContext* cx, const CallArgs& args) {
   
   size_t startIndex = 0;
   if (args.hasDefined(1)) {
-    
-    double relativeStart;
-    if (!ToInteger(cx, args[1], &relativeStart)) {
+    if (!ToIntegerIndex(cx, args[1], len, &startIndex)) {
       return false;
-    }
-
-    
-    if (relativeStart < 0) {
-      startIndex = size_t(std::max(double(len) + relativeStart, 0.0));
-    } else {
-      startIndex = size_t(std::min(relativeStart, double(len)));
     }
   }
 
   
   size_t endIndex = len;
   if (args.hasDefined(2)) {
-    
-    double relativeEnd;
-    if (!ToInteger(cx, args[2], &relativeEnd)) {
+    if (!ToIntegerIndex(cx, args[2], len, &endIndex)) {
       return false;
-    }
-
-    
-    if (relativeEnd < 0) {
-      endIndex = size_t(std::max(double(len) + relativeEnd, 0.0));
-    } else {
-      endIndex = size_t(std::min(relativeEnd, double(len)));
     }
   }
 
