@@ -48,6 +48,24 @@ function validateAutomaticallyAddedHeaderVal(chan) {
   Assert.notEqual(valueFromRequest, "");
   Assert.notEqual(valueFromResponse, "");
   Assert.equal(valueFromRequest, valueFromResponse);
+
+  
+  
+  
+  
+  Assert.greaterOrEqual(valueFromRequest.length, 3);
+  Assert.ok(valueFromRequest.startsWith('"'));
+  Assert.ok(valueFromRequest.endsWith('"'));
+
+  
+  
+  
+  
+  
+  let quotedPortion = valueFromRequest.slice(1, -1);
+  let parsedInteger = Number.parseInt(quotedPortion);
+  Assert.ok(!Number.isNaN(parsedInteger));
+  Assert.greaterOrEqual(parsedInteger, 0);
 }
 
 add_setup(async () => {
