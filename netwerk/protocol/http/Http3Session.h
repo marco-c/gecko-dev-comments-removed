@@ -349,7 +349,6 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   int64_t mTotalBytesRead = 0;     
   int64_t mTotalBytesWritten = 0;  
   PRIntervalTime mLastWriteTime = 0;
-  PRIntervalTime mLastReadTime = 0;
   nsCString mServer;
 
   
