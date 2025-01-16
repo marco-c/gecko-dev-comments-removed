@@ -311,4 +311,7 @@ interface nsICookieManager : nsISupports
 
   void removeThirdPartyCookieBlockingExceptions(
     in Array<nsIThirdPartyCookieExceptionEntry> aExceptions);
+
+  
+  Array<ACString> testGet3PCBExceptions();
 };
