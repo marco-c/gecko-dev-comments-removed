@@ -640,6 +640,10 @@ static inline void VirtualCopyPages(void* dst, const void* src, size_t bytes) {
 #endif
 
 void* BufferAllocator::realloc(void* ptr, size_t bytes, bool nurseryOwned) {
+  
+  
+  
+
   if (!ptr) {
     return alloc(bytes, nurseryOwned);
   }
