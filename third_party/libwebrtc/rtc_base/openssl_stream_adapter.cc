@@ -63,6 +63,12 @@
 #error "webrtc requires at least OpenSSL version 1.1.0, to support DTLS-SRTP"
 #endif
 
+namespace {
+
+static constexpr absl::string_view kDtlsSrtpExporterLabel =
+    "EXTRACTOR-dtls_srtp";
+}  
+
 namespace rtc {
 namespace {
 using ::webrtc::SafeTask;
@@ -377,6 +383,23 @@ bool OpenSSLStreamAdapter::GetSslVersionBytes(int* version) const {
   return true;
 }
 
+bool OpenSSLStreamAdapter::ExportSrtpKeyingMaterial(
+    rtc::ZeroOnFreeBuffer<unsigned char>& keying_material) {
+  
+  
+  
+  
+  
+  
+  
+  if (SSL_export_keying_material(
+          ssl_, keying_material.data(), keying_material.size(),
+          kDtlsSrtpExporterLabel.data(), kDtlsSrtpExporterLabel.size(), nullptr,
+          0, false) != 1) {
+    return false;
+  }
+  return true;
+}
 
 bool OpenSSLStreamAdapter::ExportKeyingMaterial(absl::string_view label,
                                                 const uint8_t* context,
