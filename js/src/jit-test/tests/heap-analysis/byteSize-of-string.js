@@ -42,8 +42,6 @@ else
 
 
 
-
-
 function copyString(str) {
   if (str.length == 0)
     return str; 
@@ -130,10 +128,10 @@ assertEq(nByteSize("123456789.123456"),                               s(Nursery(
 assertEq(nByteSize("123456789.1234567"),                              s(Nursery(FN), Nursery(FN)));
 assertEq(nByteSize("123456789.123456789.123"),                        s(Nursery(FN), Nursery(FN)));
 assertEq(nByteSize("123456789.123456789.1234"),                       s(Nursery(FN), Nursery(FN)));
-assertEq(nByteSize("123456789.123456789.12345"),                      s(Nursery(XN)+32,Nursery(XN)+32));
-assertEq(nByteSize("123456789.123456789.123456789.1"),                s(Nursery(XN)+32,Nursery(XN)+32));
-assertEq(nByteSize("123456789.123456789.123456789.12"),               s(Nursery(XN)+32,Nursery(XN)+32));
-assertEq(nByteSize("123456789.123456789.123456789.123"),              s(Nursery(XN)+64,Nursery(XN)+64));
+assertEq(nByteSize("123456789.123456789.12345"),                      s(Nursery(XN), Nursery(XN)));
+assertEq(nByteSize("123456789.123456789.123456789.1"),                s(Nursery(XN), Nursery(XN)));
+assertEq(nByteSize("123456789.123456789.123456789.12"),               s(Nursery(XN), Nursery(XN)));
+assertEq(nByteSize("123456789.123456789.123456789.123"),              s(Nursery(XN), Nursery(XN)));
 
 function Atom(s) { return Object.keys({ [s]: true })[0]; }
 assertEq(byteSize(Atom("1234567")),                                   s(TA, TA));
@@ -185,13 +183,13 @@ assertEq(nByteSize("千早ぶる神代もき"),					s(Nursery(FN), Nursery(TN)))
 assertEq(nByteSize("千早ぶる神代もきか"),					s(Nursery(FN), Nursery(FN)));
 assertEq(nByteSize("千早ぶる神代もきかず龍"),				s(Nursery(FN), Nursery(FN)));
 assertEq(nByteSize("千早ぶる神代もきかず龍田"),				s(Nursery(FN), Nursery(FN)));
-assertEq(nByteSize("千早ぶる神代もきかず龍田川"),				s(Nursery(XN)+32, Nursery(XN)+32));
-assertEq(nByteSize("千早ぶる神代もきかず龍田川 か"),				s(Nursery(XN)+32, Nursery(XN)+32));
-assertEq(nByteSize("千早ぶる神代もきかず龍田川 から"),			s(Nursery(XN)+32, Nursery(XN)+32));
-assertEq(nByteSize("千早ぶる神代もきかず龍田川 からく"),		s(Nursery(XN)+64, Nursery(XN)+64));
-assertEq(nByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水く"),		s(Nursery(XN)+64, Nursery(XN)+64));
-assertEq(nByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水くく"),		s(Nursery(XN)+64, Nursery(XN)+64));
-assertEq(nByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水くくるとは"),	s(Nursery(XN)+64, Nursery(XN)+64));
+assertEq(nByteSize("千早ぶる神代もきかず龍田川"),				s(Nursery(XN), Nursery(XN)));
+assertEq(nByteSize("千早ぶる神代もきかず龍田川 か"),				s(Nursery(XN), Nursery(XN)));
+assertEq(nByteSize("千早ぶる神代もきかず龍田川 から"),			s(Nursery(XN), Nursery(XN)));
+assertEq(nByteSize("千早ぶる神代もきかず龍田川 からく"),		s(Nursery(XN), Nursery(XN)));
+assertEq(nByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水く"),		s(Nursery(XN), Nursery(XN)));
+assertEq(nByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水くく"),		s(Nursery(XN), Nursery(XN)));
+assertEq(nByteSize("千早ぶる神代もきかず龍田川 からくれなゐに水くくるとは"),	s(Nursery(XN), Nursery(XN)));
 
 
 
