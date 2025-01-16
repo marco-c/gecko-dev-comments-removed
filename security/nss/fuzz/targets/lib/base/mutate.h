@@ -2,27 +2,16 @@
 
 
 
+#ifndef BASE_MUTATE_H_
+#define BASE_MUTATE_H_
 
-
-#ifndef SHARED_H_
-#define SHARED_H_
-
-#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
 
-#include "nss.h"
-
 extern "C" size_t LLVMFuzzerMutate(uint8_t* data, size_t size, size_t maxSize);
 extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* data, size_t size,
                                           size_t maxSize, unsigned int seed);
-
-class NSSDatabase {
- public:
-  NSSDatabase() { assert(NSS_NoDB_Init(nullptr) == SECSuccess); }
-  ~NSSDatabase() { assert(NSS_Shutdown() == SECSuccess); }
-};
 
 typedef std::vector<decltype(LLVMFuzzerCustomMutator)*> Mutators;
 

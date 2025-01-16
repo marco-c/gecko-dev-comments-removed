@@ -2,17 +2,20 @@
 
 
 
-#include "tls_common.h"
+#include "common.h"
 
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 
 #include "prio.h"
+#include "secport.h"
 #include "ssl.h"
 #include "sslexp.h"
 
 static PRTime FixedTime(void*) { return 1234; }
+
+namespace TlsCommon {
 
 
 void FixTime(PRFileDesc* fd) {
@@ -68,7 +71,7 @@ void DoHandshake(PRFileDesc* fd, bool isServer) {
 
 SECStatus DummyCompressionEncode(const SECItem* input, SECItem* output) {
   if (!input || !input->data || input->len == 0 || !output) {
-    PR_SetError(SEC_ERROR_INVALID_ARGS, 0);
+    PORT_SetError(SEC_ERROR_INVALID_ARGS);
     return SECFailure;
   }
 
@@ -80,12 +83,12 @@ SECStatus DummyCompressionEncode(const SECItem* input, SECItem* output) {
 SECStatus DummyCompressionDecode(const SECItem* input, unsigned char* output,
                                  size_t outputLen, size_t* usedLen) {
   if (!input || !input->data || input->len == 0 || !output || outputLen == 0) {
-    PR_SetError(SEC_ERROR_INVALID_ARGS, 0);
+    PORT_SetError(SEC_ERROR_INVALID_ARGS);
     return SECFailure;
   }
 
   if (input->len > outputLen) {
-    PR_SetError(SEC_ERROR_BAD_DATA, 0);
+    PORT_SetError(SEC_ERROR_BAD_DATA);
     return SECFailure;
   }
 
@@ -94,3 +97,5 @@ SECStatus DummyCompressionDecode(const SECItem* input, unsigned char* output,
 
   return SECSuccess;
 }
+
+}  

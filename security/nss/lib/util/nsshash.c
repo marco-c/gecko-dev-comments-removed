@@ -107,6 +107,9 @@ HASH_GetHashOidTagByHMACOidTag(SECOidTag hmacOid)
     switch (hmacOid) {
         
         
+        case SEC_OID_HMAC_MD5:
+            hashOid = SEC_OID_MD5;
+            break;
         case SEC_OID_HMAC_SHA1:
             hashOid = SEC_OID_SHA1;
             break;
@@ -150,6 +153,9 @@ HASH_GetHMACOidTagByHashOidTag(SECOidTag hashOid)
     switch (hashOid) {
         
         
+        case SEC_OID_MD5:
+            hmacOid = SEC_OID_HMAC_MD5;
+            break;
         case SEC_OID_SHA1:
             hmacOid = SEC_OID_HMAC_SHA1;
             break;
