@@ -530,3 +530,36 @@ async function doRustProvidersTests({ searchString, tests }) {
     await QuickSuggestTestUtils.forceSync();
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function triggerCommand({ feature, command, result, searchString = "" }) {
+  info(`Calling ${feature.name}.onEngagement() to trigger command: ${command}`);
+  feature.onEngagement(
+    
+    {},
+    
+    {
+      removeResult() {},
+      view: {
+        acknowledgeFeedback() {},
+        invalidateResultMenuCommands() {},
+      },
+    },
+    
+    { result, selType: command },
+    searchString
+  );
+}
