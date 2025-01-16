@@ -329,6 +329,11 @@ void TraceRootRange(JSTracer* trc, size_t len, T* vec, const char* name) {
 }
 
 
+
+void TraceEdgeToBuffer(JSTracer* trc, gc::Cell* owner, void* buffer,
+                       const char* name);
+
+
 template <typename T>
 void TraceManuallyBarrieredCrossCompartmentEdge(JSTracer* trc, JSObject* src,
                                                 T* dst, const char* name);

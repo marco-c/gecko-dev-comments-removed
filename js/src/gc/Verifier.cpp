@@ -119,6 +119,21 @@ class js::VerifyPreTracer final : public JS::CallbackTracer {
   ~VerifyPreTracer() { js_free(root); }
 };
 
+inline bool IgnoreForPreBarrierVerifier(JSRuntime* runtime,
+                                        JS::GCCellPtr thing) {
+  
+  if (thing.asCell()->asTenured().runtimeFromAnyThread() != runtime) {
+    return true;
+  }
+
+  
+  if (thing.kind() == JS::TraceKind::SmallBuffer) {
+    return true;
+  }
+
+  return false;
+}
+
 
 
 
@@ -126,8 +141,7 @@ class js::VerifyPreTracer final : public JS::CallbackTracer {
 void VerifyPreTracer::onChild(JS::GCCellPtr thing, const char* name) {
   MOZ_ASSERT(!IsInsideNursery(thing.asCell()));
 
-  
-  if (thing.asCell()->asTenured().runtimeFromAnyThread() != runtime()) {
+  if (IgnoreForPreBarrierVerifier(runtime(), thing)) {
     return;
   }
 
@@ -290,8 +304,7 @@ static const uint32_t MAX_VERIFIER_EDGES = 1000;
 
 
 void CheckEdgeTracer::onChild(JS::GCCellPtr thing, const char* name) {
-  
-  if (thing.asCell()->asTenured().runtimeFromAnyThread() != runtime()) {
+  if (IgnoreForPreBarrierVerifier(runtime(), thing)) {
     return;
   }
 

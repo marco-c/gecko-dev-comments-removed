@@ -4,6 +4,8 @@
 
 
 
+
+
 #ifndef gc_Allocator_h
 #define gc_Allocator_h
 
@@ -13,6 +15,7 @@
 
 #include "gc/AllocKind.h"
 #include "gc/GCEnum.h"
+#include "js/HeapAPI.h"
 #include "js/TypeDecls.h"
 
 namespace js {
@@ -20,6 +23,7 @@ namespace gc {
 
 class AllocSite;
 struct Cell;
+class BufferAllocator;
 class TenuredCell;
 class TenuringTracer;
 
@@ -51,6 +55,7 @@ class CellAllocator {
   
   template <typename T, AllowGC allowGC = CanGC, typename... Args>
   static inline T* NewCell(JSContext* cx, Args&&... args);
+  friend class BufferAllocator;
 
  private:
   
@@ -108,6 +113,31 @@ class CellAllocator {
 
   static inline Heap CheckedHeap(Heap heap);
 };
+
+
+
+size_t GetGoodAllocSize(size_t requiredBytes);
+size_t GetGoodPower2AllocSize(size_t requiredBytes);
+size_t GetGoodElementCount(size_t requiredCount, size_t elementSize);
+size_t GetGoodPower2ElementCount(size_t requiredCount, size_t elementSize);
+void* AllocBuffer(JS::Zone* zone, size_t bytes, bool nurseryOwned);
+void* ReallocBuffer(JS::Zone* zone, void* alloc, size_t bytes,
+                    bool nurseryOwned);
+void FreeBuffer(JS::Zone* zone, void* alloc);
+
+
+
+bool IsBufferAlloc(void* alloc);
+
+bool IsNurseryOwned(void* alloc);
+
+size_t GetAllocSize(void* alloc);
+JS::Zone* GetAllocZone(void* alloc);
+
+
+
+void* AllocBufferInGC(JS::Zone* zone, size_t bytes, bool nurseryOwned);
+bool IsBufferAllocMarkedBlack(void* alloc);
 
 }  
 }  

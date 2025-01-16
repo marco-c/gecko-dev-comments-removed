@@ -22,6 +22,9 @@ class PropMap;
 class RegExpShared;
 class Shape;
 class Scope;
+namespace gc {
+class SmallBuffer;
+}  
 namespace jit {
 class JitCode;
 }  
@@ -63,6 +66,7 @@ enum class TraceKind {
   RegExpShared,
   GetterSetter,
   PropMap,
+  SmallBuffer
 };
 
 
@@ -90,18 +94,19 @@ struct MapTypeToTraceKind {
 
 #define JS_FOR_EACH_TRACEKIND(D)
  \
-  D(BaseShape,    js::BaseShape,    true,           false)       \
-  D(JitCode,      js::jit::JitCode, true,           false)       \
-  D(Scope,        js::Scope,        true,           true)        \
-  D(Object,       JSObject,         true,           true)        \
-  D(Script,       js::BaseScript,   true,           true)        \
-  D(Shape,        js::Shape,        true,           false)       \
-  D(String,       JSString,         false,          false)       \
-  D(Symbol,       JS::Symbol,       false,          false)       \
-  D(BigInt,       JS::BigInt,       false,          false)       \
-  D(RegExpShared, js::RegExpShared, true,           true)        \
-  D(GetterSetter, js::GetterSetter, true,           true)        \
-  D(PropMap,      js::PropMap,      false,          false)
+  D(BaseShape,    js::BaseShape,       true,      false)       \
+  D(JitCode,      js::jit::JitCode,    true,      false)       \
+  D(Scope,        js::Scope,           true,      true)        \
+  D(Object,       JSObject,            true,      true)        \
+  D(Script,       js::BaseScript,      true,      true)        \
+  D(Shape,        js::Shape,           true,      false)       \
+  D(String,       JSString,            false,     false)       \
+  D(Symbol,       JS::Symbol,          false,     false)       \
+  D(BigInt,       JS::BigInt,          false,     false)       \
+  D(RegExpShared, js::RegExpShared,    true,      true)        \
+  D(GetterSetter, js::GetterSetter,    true,      true)        \
+  D(PropMap,      js::PropMap,         false,     false)       \
+  D(SmallBuffer,  js::gc::SmallBuffer, false,     false)
 
 
 
