@@ -128,6 +128,9 @@ var allowlist = [
   { file: "chrome://pippki/content/load_device.xhtml" },
 
   
+  { file: "resource://gre/res/designmode.css" },
+
+  
   
   {
     file: "chrome://global/locale/fallbackMenubar.properties",
