@@ -2470,8 +2470,10 @@ void MediaFormatReader::Update(TrackType aTrack) {
       
       
       
-      if (UpdateReceivedNewData(aTrack) || decoder.mSeekRequest.Exists()) {
-        LOGV("Nothing more to do");
+      if (UpdateReceivedNewData(aTrack) || decoder.HasInternalSeekPending()) {
+        LOGV("%s: Nothing more to do", decoder.HasInternalSeekWaiting()
+                                           ? "Waiting during internal seek"
+                                           : "Completed drain");
         return;
       }
     } else if (decoder.mDemuxEOS && !decoder.HasPendingDrain() &&
