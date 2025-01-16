@@ -141,7 +141,6 @@ public class VideoFrameDrawer {
   final static float[] srcPoints =
       new float[] {0f , 0f , 1f , 0f , 0f , 1f };
   private final float[] dstPoints = new float[6];
-  private final Point renderSize = new Point();
   private int renderWidth;
   private int renderHeight;
 
