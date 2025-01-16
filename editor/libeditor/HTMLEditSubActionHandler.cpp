@@ -1218,22 +1218,37 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       
       
       
-      Result<InsertTextResult, nsresult> insertTextResult =
+      Result<InsertTextResult, nsresult> insertEmptyTextResultOrError =
           InsertTextWithTransaction(*document, aInsertionString, pointToInsert,
                                     InsertTextTo::ExistingTextNodeIfAvailable);
-      if (MOZ_UNLIKELY(insertTextResult.isErr())) {
+      if (MOZ_UNLIKELY(insertEmptyTextResultOrError.isErr())) {
         NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
-        return insertTextResult.propagateErr();
+        return insertEmptyTextResultOrError.propagateErr();
       }
-      InsertTextResult unwrappedInsertTextResult = insertTextResult.unwrap();
+      const InsertTextResult insertEmptyTextResult =
+          insertEmptyTextResultOrError.unwrap();
       nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
-          unwrappedInsertTextResult.EndOfInsertedTextRef(), *editingHost);
+          insertEmptyTextResult.EndOfInsertedTextRef(), *editingHost);
       if (NS_FAILED(rv)) {
         NS_WARNING(
             "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
         return Err(rv);
       }
-      rv = unwrappedInsertTextResult.SuggestCaretPointTo(
+      
+      
+      
+      Result<CreateLineBreakResult, nsresult>
+          insertPaddingBRElementResultOrError = InsertPaddingBRElementIfNeeded(
+              insertEmptyTextResult.EndOfInsertedTextRef(), nsIEditor::eNoStrip,
+              *editingHost);
+      if (MOZ_UNLIKELY(insertPaddingBRElementResultOrError.isErr())) {
+        NS_WARNING(
+            "HTMLEditor::InsertPaddingBRElementIfNeeded(eNoStrip) failed");
+        insertEmptyTextResult.IgnoreCaretPointSuggestion();
+        return insertPaddingBRElementResultOrError.propagateErr();
+      }
+      insertPaddingBRElementResultOrError.unwrap().IgnoreCaretPointSuggestion();
+      rv = insertEmptyTextResult.SuggestCaretPointTo(
           *this, {SuggestCaret::OnlyIfHasSuggestion,
                   SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
                   SuggestCaret::AndIgnoreTrivialError});
