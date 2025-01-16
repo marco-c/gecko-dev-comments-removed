@@ -196,7 +196,7 @@ std::string SimulcastSdpSerializer::SerializeSimulcastDescription(
        << simulcast.receive_layers();
   }
 
-  return sb.str();
+  return sb.Release();
 }
 
 
@@ -305,7 +305,7 @@ std::string SimulcastSdpSerializer::SerializeRidDescription(
     propertyDelimiter = kDelimiterSemicolon;
   }
 
-  return builder.str();
+  return builder.Release();
 }
 
 
