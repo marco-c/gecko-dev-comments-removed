@@ -19,6 +19,11 @@
 #ifndef ABSL_HASH_INTERNAL_HASH_H_
 #define ABSL_HASH_INTERNAL_HASH_H_
 
+#ifdef __APPLE__
+#include <Availability.h>
+#include <TargetConditionals.h>
+#endif
+
 #include <algorithm>
 #include <array>
 #include <bitset>
@@ -55,6 +60,11 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
+
+#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L && \
+    !defined(_LIBCPP_HAS_NO_FILESYSTEM_LIBRARY)
+#include <filesystem>  
+#endif
 
 #ifdef ABSL_HAVE_STD_STRING_VIEW
 #include <string_view>
@@ -574,6 +584,29 @@ H AbslHashValue(H hash_state, std::basic_string_view<Char> str) {
   return H::combine(
       H::combine_contiguous(std::move(hash_state), str.data(), str.size()),
       str.size());
+}
+
+#endif  
+
+#if defined(__cpp_lib_filesystem) && __cpp_lib_filesystem >= 201703L && \
+    !defined(_LIBCPP_HAS_NO_FILESYSTEM_LIBRARY) && \
+    (!defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) ||        \
+     __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ >= 130000)
+
+#define ABSL_INTERNAL_STD_FILESYSTEM_PATH_HASH_AVAILABLE 1
+
+
+
+template <typename Path, typename H,
+          typename = absl::enable_if_t<
+              std::is_same_v<Path, std::filesystem::path>>>
+H AbslHashValue(H hash_state, const Path& path) {
+  
+  
+  
+  
+  
+  return H::combine(std::move(hash_state), std::filesystem::hash_value(path));
 }
 
 #endif  
