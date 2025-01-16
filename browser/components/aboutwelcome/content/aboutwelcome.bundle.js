@@ -2735,31 +2735,43 @@ function applyValidStyles(element, style, validStyles) {
 }
 const EmbeddedBrowser = props => {
   
-  return document.createXULElement ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(EmbeddedBrowserInner, props) : null;
+  return document.createXULElement && props.url ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(EmbeddedBrowserInner, props) : null;
 };
 const EmbeddedBrowserInner = ({
   url,
   style
 }) => {
   const ref = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  const browserRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    const browser = document.createXULElement("browser");
-    browser.setAttribute("disableglobalhistory", "true");
-    browser.setAttribute("type", "content");
-    browser.setAttribute("remote", "true");
-    ref.current.appendChild(browser);
-  }, []);
+    if (!ref.current || browserRef.current) {
+      return;
+    }
+    const browserEl = document.createXULElement("browser");
+    const remoteType = window.AWPredictRemoteType({
+      browserEl,
+      url
+    });
+    const attributes = [["disableglobalhistory", "true"], ["type", "content"], ["remote", "true"], ["maychangeremoteness", "true"], ["nodefaultsrc", "true"], ["remoteType", remoteType]];
+    attributes.forEach(([attr, val]) => browserEl.setAttribute(attr, val));
+    browserRef.current = browserEl;
+    ref.current.appendChild(browserEl);
+    
+    
+  }, []); 
+
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    const browser = ref.current.querySelector("browser");
-    if (browser) {
-      if (style) {
-        applyValidStyles(browser, style, BROWSER_STYLES);
-      }
-      browser.fixupAndLoadURIString(url, {
+    if (browserRef.current) {
+      browserRef.current.fixupAndLoadURIString(url, {
         triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
       });
     }
-  }, [url, style]);
+  }, [url]);
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (browserRef.current && style) {
+      applyValidStyles(browserRef.current, style, BROWSER_STYLES);
+    }
+  }, [style]);
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "embedded-browser-container",
     ref: ref
