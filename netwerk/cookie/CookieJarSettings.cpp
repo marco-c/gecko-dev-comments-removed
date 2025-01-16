@@ -508,6 +508,12 @@ void CookieJarSettings::Merge(const CookieJarSettingsArgs& aData) {
     mShouldResistFingerprinting = true;
   }
 
+  
+  
+  
+  
+  mPartitionKey = aData.partitionKey();
+
   PermissionComparator comparator;
 
   for (const CookiePermissionData& data : aData.cookiePermissions()) {
