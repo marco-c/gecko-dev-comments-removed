@@ -46,9 +46,9 @@ def restore_patch_stack(
 
     
     print(
-        "lookup latest vendored commit from third_party/libwebrtc/README.moz-ff-commit"
+        "lookup latest vendored commit from third_party/libwebrtc/README.mozilla.last-vendor"
     )
-    file = os.path.abspath("third_party/libwebrtc/README.moz-ff-commit")
+    file = os.path.abspath("third_party/libwebrtc/README.mozilla.last-vendor")
     last_vendored_commit = get_last_line(file)
 
     
