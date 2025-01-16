@@ -876,7 +876,14 @@ VideoReceiveStream2::HandleEncodedFrameOnDecodeQueue(
     for (const Decoder& decoder : config_.decoders) {
       if (decoder.payload_type == frame->PayloadType()) {
         CreateAndRegisterExternalDecoder(decoder);
-        break;
+      } else {
+        
+        
+        
+        
+        
+        
+        video_receiver_.RegisterExternalDecoder(nullptr, decoder.payload_type);
       }
     }
   }
