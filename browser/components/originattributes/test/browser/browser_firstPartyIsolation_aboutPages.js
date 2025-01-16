@@ -212,7 +212,12 @@ add_task(async function test_aboutURL() {
         aboutType !== "newtab" &&
         
         
-        aboutType !== "protections"
+        aboutType !== "protections" &&
+        
+        aboutType !== "profilemanager" &&
+        aboutType !== "editprofile" &&
+        aboutType !== "deleteprofile" &&
+        aboutType !== "newprofile"
       ) {
         aboutURLs.push(aboutType);
       }
