@@ -849,23 +849,36 @@ HTMLBreadcrumbs.prototype = {
       return false;
     }
 
-    for (const { type, added, removed, target, attributeName } of mutations) {
-      if (type === "childList") {
-        
-        
-        return (
-          added.some(node => this.indexOf(node) > -1) ||
-          removed.some(node => this.indexOf(node) > -1)
-        );
-      } else if (type === "attributes" && this.indexOf(target) > -1) {
-        
-        
-        return attributeName === "class" || attributeName === "id";
+    for (const mutation of mutations) {
+      if (this._isInterestingMutation(mutation)) {
+        return true;
       }
     }
 
-    
-    
+    return false;
+  },
+
+  
+
+
+
+
+
+
+  _isInterestingMutation(mutation) {
+    const { type, added, removed, target, attributeName } = mutation;
+    if (type === "childList") {
+      
+      
+      return (
+        added.some(node => this.indexOf(node) > -1) ||
+        removed.some(node => this.indexOf(node) > -1)
+      );
+    } else if (type === "attributes" && this.indexOf(target) > -1) {
+      
+      
+      return attributeName === "class" || attributeName === "id";
+    }
     return false;
   },
 
