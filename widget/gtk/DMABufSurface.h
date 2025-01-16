@@ -220,6 +220,9 @@ class DMABufSurface {
   SurfaceType mSurfaceType;
 
   
+  int32_t mFOURCCFormat = 0;
+
+  
   
   
   int mBufferPlaneCount = 0;
