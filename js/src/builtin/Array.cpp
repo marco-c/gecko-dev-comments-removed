@@ -650,6 +650,52 @@ struct ReverseIndexComparator {
 };
 
 
+
+static bool TryFastDeleteElementsForNewLength(JSContext* cx,
+                                              Handle<ArrayObject*> arr,
+                                              uint32_t newLen, bool* success) {
+  MOZ_ASSERT(newLen < arr->length());
+
+  
+  
+  
+  if (arr->denseElementsMaybeInIteration()) {
+    *success = false;
+    return true;
+  }
+
+  
+  if (arr->denseElementsAreSealed()) {
+    *success = false;
+    return true;
+  }
+
+  
+  if (arr->isIndexed()) {
+    *success = false;
+    return true;
+  }
+
+  
+  uint32_t oldCapacity = arr->getDenseCapacity();
+  uint32_t oldInitializedLength = arr->getDenseInitializedLength();
+  MOZ_ASSERT(oldCapacity >= oldInitializedLength);
+  if (oldInitializedLength > newLen) {
+    arr->setDenseInitializedLengthMaybeNonExtensible(cx, newLen);
+  }
+  if (oldCapacity > newLen) {
+    if (arr->isExtensible()) {
+      arr->shrinkElements(cx, newLen);
+    } else {
+      MOZ_ASSERT(arr->getDenseInitializedLength() == arr->getDenseCapacity());
+    }
+  }
+
+  *success = true;
+  return true;
+}
+
+
 bool js::ArraySetLength(JSContext* cx, Handle<ArrayObject*> arr, HandleId id,
                         Handle<PropertyDescriptor> desc,
                         ObjectOpResult& result) {
@@ -728,39 +774,12 @@ bool js::ArraySetLength(JSContext* cx, Handle<ArrayObject*> arr, HandleId id,
       break;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!arr->isIndexed() && !arr->denseElementsMaybeInIteration() &&
-        !arr->denseElementsAreSealed()) {
-      uint32_t oldCapacity = arr->getDenseCapacity();
-      uint32_t oldInitializedLength = arr->getDenseInitializedLength();
-      MOZ_ASSERT(oldCapacity >= oldInitializedLength);
-      if (oldInitializedLength > newLen) {
-        arr->setDenseInitializedLengthMaybeNonExtensible(cx, newLen);
-      }
-      if (oldCapacity > newLen) {
-        if (arr->isExtensible()) {
-          arr->shrinkElements(cx, newLen);
-        } else {
-          MOZ_ASSERT(arr->getDenseInitializedLength() ==
-                     arr->getDenseCapacity());
-        }
-      }
+    bool success;
+    if (!TryFastDeleteElementsForNewLength(cx, arr, newLen, &success)) {
+      return false;
+    }
 
-      
+    if (success) {
       
       
       break;
