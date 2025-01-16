@@ -1167,21 +1167,22 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
   
   
   
-  
-  
-  
-  
-  
   if (mType != ObjectType::Fallback) {
-    ObjectType type = ObjectType::Fallback;
-    for (const auto& candidate :
-         {"about", "blob", "data", "file", "http", "https"}) {
-      if (mURI->SchemeIs(candidate)) {
-        type = mType;
+    nsCOMPtr<nsIURI> tempURI = mURI;
+    nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(tempURI);
+    while (nestedURI) {
+      
+      
+      if (tempURI->SchemeIs("view-source")) {
+        LOG(("OBJLC [%p]: Blocking as effective URI has view-source scheme",
+             this));
+        mType = ObjectType::Fallback;
         break;
       }
+
+      nestedURI->GetInnerURI(getter_AddRefs(tempURI));
+      nestedURI = do_QueryInterface(tempURI);
     }
-    mType = type;
   }
 
   
