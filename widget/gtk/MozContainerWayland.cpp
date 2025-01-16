@@ -124,7 +124,11 @@ void moz_container_wayland_unmap(GtkWidget* widget) {
                (void*)moz_container_get_nsWindow(MOZ_CONTAINER(widget)));
 
   WaylandSurface* surface = MOZ_WL_SURFACE(MOZ_CONTAINER(widget));
-  surface->RunUnmapCallback();
+  
+  
+  if (surface->IsMapped()) {
+    surface->RunUnmapCallback();
+  }
 
   WaylandSurfaceLock lock(surface);
   if (surface->IsPendingGdkCleanup()) {
