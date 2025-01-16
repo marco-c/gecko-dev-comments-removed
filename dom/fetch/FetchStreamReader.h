@@ -51,6 +51,7 @@ class OutputStreamHolder final : public nsIOutputStreamCallback {
  private:
   ~OutputStreamHolder();
 
+  RefPtr<FetchStreamReader> mAsyncWaitReader;
   
   WeakPtr<FetchStreamReader> mReader;
   
