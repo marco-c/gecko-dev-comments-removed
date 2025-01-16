@@ -298,6 +298,10 @@ class RTC_EXPORT RTCInboundRtpStreamStats final
   std::optional<uint32_t> nack_count;
   std::optional<uint64_t> qp_sum;
   
+  std::optional<double> corruption_score_sum;
+  std::optional<double> corruption_score_squared_sum;
+  std::optional<uint32_t> corruption_score_count;
+  
   
   
   
