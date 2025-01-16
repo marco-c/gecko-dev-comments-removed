@@ -3550,53 +3550,6 @@ var XULBrowserWindow = {
     );
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-  _securityURIOverride(browser) {
-    let uri = browser.currentURI;
-    if (!uri) {
-      return null;
-    }
-
-    
-    
-    
-    let { URI_INHERITS_SECURITY_CONTEXT } = Ci.nsIProtocolHandler;
-    if (
-      !(doGetProtocolFlags(uri) & URI_INHERITS_SECURITY_CONTEXT) &&
-      !(uri.scheme == "about" && uri.filePath == "srcdoc") &&
-      !(uri.scheme == "about" && uri.filePath == "blank")
-    ) {
-      return null;
-    }
-
-    let principal = browser.contentPrincipal;
-
-    if (principal.isNullPrincipal) {
-      principal = principal.precursorPrincipal;
-    }
-
-    if (!principal) {
-      return null;
-    }
-
-    
-    if (principal.originNoSuffix == "resource://pdf.js") {
-      return null;
-    }
-
-    return principal.URI;
-  },
-
   asyncUpdateUI() {
     BrowserSearch.updateOpenSearchBadge();
   },
@@ -3662,7 +3615,7 @@ var XULBrowserWindow = {
     
     
     let uri = gBrowser.currentURI;
-    let uriOverride = this._securityURIOverride(gBrowser.selectedBrowser);
+    let uriOverride = gBrowser.selectedBrowser.currentAboutBlankControllingURI;
     if (uriOverride) {
       uri = uriOverride;
       aState |= Ci.nsIWebProgressListener.STATE_IDENTITY_ASSOCIATED;
