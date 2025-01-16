@@ -6108,7 +6108,7 @@ void profiler_init(void* aStackTop) {
   if (ProfilerFeature::ShouldInstallMemoryHooks(features)) {
     
     
-    ActivePS::SetMemoryCounter(mozilla::profiler::install_memory_hooks());
+    ActivePS::SetMemoryCounter(mozilla::profiler::install_memory_counter());
   } else {
     
     
@@ -6737,7 +6737,7 @@ RefPtr<GenericPromise> profiler_start(PowerOfTwo32 aCapacity, double aInterval,
   if (ProfilerFeature::ShouldInstallMemoryHooks(aFeatures)) {
     
     
-    ActivePS::SetMemoryCounter(mozilla::profiler::install_memory_hooks());
+    ActivePS::SetMemoryCounter(mozilla::profiler::install_memory_counter());
   } else {
     
     

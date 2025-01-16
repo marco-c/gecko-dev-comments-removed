@@ -44,16 +44,24 @@
 #  include <android/log.h>
 #endif
 
+namespace mozilla::profiler {
+class MemoryCounter : public BaseProfilerCount {
+ public:
+  MemoryCounter()
+      : BaseProfilerCount("malloc", "Memory", "Amount of allocated memory") {
+    profiler_add_sampled_counter(this);
+  };
 
+  virtual ~MemoryCounter() {
+    
+  }
 
+  CountSample Sample() override;
+};
 
+static MemoryCounter* sCounter;
 
-
-
-
-
-
-static ProfilerCounterTotal* sCounter;
+}  
 
 
 
@@ -391,12 +399,6 @@ static void AllocCallback(void* aPtr, size_t aReqSize) {
     return;
   }
 
-  
-  size_t actualSize = gMallocTable.malloc_usable_size(aPtr);
-  if (actualSize > 0) {
-    sCounter->Add(actualSize);
-  }
-
   ThreadIntercept threadIntercept;
   if (threadIntercept.IsBlocked()) {
     
@@ -406,6 +408,8 @@ static void AllocCallback(void* aPtr, size_t aReqSize) {
   }
 
   AUTO_PROFILER_LABEL("AllocCallback", PROFILER);
+
+  size_t actualSize = gMallocTable.malloc_usable_size(aPtr);
 
   
   
@@ -435,11 +439,6 @@ static void FreeCallback(void* aPtr) {
     return;
   }
 
-  
-  size_t unsignedSize = MallocSizeOf(aPtr);
-  int64_t signedSize = -(static_cast<int64_t>(unsignedSize));
-  sCounter->Add(signedSize);
-
   ThreadIntercept threadIntercept;
   if (threadIntercept.IsBlocked()) {
     
@@ -457,10 +456,27 @@ static void FreeCallback(void* aPtr) {
       gAllocationTracker,
       "gAllocationTracker must be properly installed for the memory hooks.");
   if (gAllocationTracker->RemoveMemoryAddressIfFound(aPtr)) {
+    size_t unsignedSize = MallocSizeOf(aPtr);
+    int64_t signedSize = -(static_cast<int64_t>(unsignedSize));
+
     
     profiler_add_native_allocation_marker(signedSize,
                                           reinterpret_cast<uintptr_t>(aPtr));
   }
+}
+
+MemoryCounter::CountSample MemoryCounter::Sample() {
+  jemalloc_stats_lite_t stats;
+
+  jemalloc_stats_lite(&stats);
+
+  CountSample sample = {
+      .count = int64_t(stats.allocated_bytes),
+      .number = stats.num_operations,
+      .isSampleNew = true,
+  };
+
+  return sample;
 }
 
 }  
@@ -579,21 +595,20 @@ namespace mozilla::profiler {
 
 
 
-BaseProfilerCount* install_memory_hooks() {
+BaseProfilerCount* install_memory_counter() {
   if (!sCounter) {
-    sCounter = new ProfilerCounterTotal("malloc", "Memory",
-                                        "Amount of allocated memory");
-  } else {
-    sCounter->Clear();
-    sCounter->Register();
+    sCounter = new MemoryCounter();
   }
-  jemalloc_replace_dynamic(replace_init);
   return sCounter;
 }
 
-
-
-
+void unregister_memory_counter() {
+  if (sCounter) {
+    profiler_remove_sampled_counter(sCounter);
+    delete sCounter;
+    sCounter = nullptr;
+  }
+}
 
 void remove_memory_hooks() { jemalloc_replace_dynamic(nullptr); }
 
@@ -627,6 +642,8 @@ void enable_native_allocations() {
   EnsureBernoulliIsInstalled();
   EnsureAllocationTrackerIsInstalled();
   ThreadIntercept::EnableAllocationFeature();
+
+  jemalloc_replace_dynamic(replace_init);
 }
 
 
@@ -634,12 +651,6 @@ void disable_native_allocations() {
   ThreadIntercept::DisableAllocationFeature();
   if (gAllocationTracker) {
     gAllocationTracker->Reset();
-  }
-}
-
-void unregister_memory_counter() {
-  if (sCounter) {
-    sCounter->Unregister();
   }
 }
 
