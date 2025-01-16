@@ -299,7 +299,6 @@ const rollouts = [
     
     
     files: [
-      "dom/push/test/mockpushserviceparent.js",
       "browser/components/extensions/**",
       "toolkit/components/extensions/**",
       "toolkit/mozapps/extensions/**",
