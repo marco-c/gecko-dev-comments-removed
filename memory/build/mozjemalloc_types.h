@@ -122,6 +122,13 @@ typedef struct {
   size_t bookkeeping;     
                           
   size_t bin_unused;      
+
+  size_t num_operations;  
+                          
+                          
+                          
+                          
+                          
 } jemalloc_stats_t;
 
 typedef struct {
@@ -133,6 +140,18 @@ typedef struct {
   size_t bytes_total;        
   size_t bytes_per_run;      
 } jemalloc_bin_stats_t;
+
+
+
+
+typedef struct {
+  size_t allocated_bytes;
+
+  
+  
+  
+  size_t num_operations;
+} jemalloc_stats_lite_t;
 
 enum PtrInfoTag {
   
