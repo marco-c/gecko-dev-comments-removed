@@ -62,15 +62,15 @@ class RtcEventGenericPacketReceived final : public RtcEvent {
   
   size_t packet_length() const { return packet_length_; }
 
-  static std::string Encode(rtc::ArrayView<const RtcEvent*> batch) {
+  static std::string Encode(rtc::ArrayView<const RtcEvent*> ) {
     
     return "";
   }
 
   static RtcEventLogParseStatus Parse(
-      absl::string_view encoded_bytes,
-      bool batched,
-      std::vector<LoggedGenericPacketReceived>& output) {
+      absl::string_view ,
+      bool ,
+      std::vector<LoggedGenericPacketReceived>& ) {
     
     return RtcEventLogParseStatus::Error("Not Implemented", __FILE__, __LINE__);
   }

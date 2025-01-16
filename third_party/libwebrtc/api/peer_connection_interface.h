@@ -1260,11 +1260,12 @@ class PeerConnectionObserver {
       PeerConnectionInterface::SignalingState new_state) = 0;
 
   
-  virtual void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) {}
+  virtual void OnAddStream(
+      rtc::scoped_refptr<MediaStreamInterface> ) {}
 
   
-  virtual void OnRemoveStream(rtc::scoped_refptr<MediaStreamInterface> stream) {
-  }
+  virtual void OnRemoveStream(
+      rtc::scoped_refptr<MediaStreamInterface> ) {}
 
   
   virtual void OnDataChannel(
@@ -1282,7 +1283,7 @@ class PeerConnectionObserver {
   
   
   
-  virtual void OnNegotiationNeededEvent(uint32_t event_id) {}
+  virtual void OnNegotiationNeededEvent(uint32_t ) {}
 
   
   
@@ -1293,15 +1294,15 @@ class PeerConnectionObserver {
   
   
   virtual void OnIceConnectionChange(
-      PeerConnectionInterface::IceConnectionState new_state) {}
+      PeerConnectionInterface::IceConnectionState ) {}
 
   
   virtual void OnStandardizedIceConnectionChange(
-      PeerConnectionInterface::IceConnectionState new_state) {}
+      PeerConnectionInterface::IceConnectionState ) {}
 
   
   virtual void OnConnectionChange(
-      PeerConnectionInterface::PeerConnectionState new_state) {}
+      PeerConnectionInterface::PeerConnectionState ) {}
 
   
   virtual void OnIceGatheringChange(
@@ -1312,8 +1313,8 @@ class PeerConnectionObserver {
 
   
   
-  virtual void OnIceCandidateError(const std::string& address,
-                                   int port,
+  virtual void OnIceCandidateError(const std::string& ,
+                                   int ,
                                    const std::string& url,
                                    int error_code,
                                    const std::string& error_text) {}

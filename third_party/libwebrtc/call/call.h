@@ -111,7 +111,7 @@ class Call {
     RTC_CHECK_NOTREACHED();
     return nullptr;
   }
-  virtual void SetPayloadTypeSuggester(PayloadTypeSuggester* suggester) {
+  virtual void SetPayloadTypeSuggester(PayloadTypeSuggester* ) {
     
     RTC_CHECK_NOTREACHED();
   }

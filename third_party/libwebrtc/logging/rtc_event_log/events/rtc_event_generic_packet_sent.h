@@ -86,14 +86,14 @@ class RtcEventGenericPacketSent final : public RtcEvent {
 
   size_t padding_length() const { return padding_length_; }
 
-  static std::string Encode(rtc::ArrayView<const RtcEvent*> batch) {
+  static std::string Encode(rtc::ArrayView<const RtcEvent*> ) {
     
     return "";
   }
 
   static RtcEventLogParseStatus Parse(
-      absl::string_view encoded_bytes,
-      bool batched,
+      absl::string_view ,
+      bool ,
       std::vector<LoggedGenericPacketSent>& output) {
     
     return RtcEventLogParseStatus::Error("Not Implemented", __FILE__, __LINE__);
