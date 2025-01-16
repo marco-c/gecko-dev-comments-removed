@@ -213,10 +213,6 @@ OpenSSLAdapter::OpenSSLAdapter(Socket* socket,
       ssl_ctx_(nullptr),
       ssl_mode_(SSL_MODE_TLS),
       ignore_bad_cert_(false),
-#ifdef OPENSSL_IS_BORINGSSL
-      permute_extension_(
-          !webrtc::field_trial::IsDisabled("WebRTC-PermuteTlsClientHello")),
-#endif
       custom_cert_verifier_status_(false) {
   
   
@@ -304,13 +300,7 @@ int OpenSSLAdapter::BeginSSL() {
   
   if (ssl_session_cache_ == nullptr) {
     RTC_DCHECK(!ssl_ctx_);
-#ifdef OPENSSL_IS_BORINGSSL
-    ssl_ctx_ =
-        CreateContext(ssl_mode_,  false, permute_extension_);
-#else
-    ssl_ctx_ = CreateContext(ssl_mode_,  false,
-                              false);
-#endif
+    ssl_ctx_ = CreateContext(ssl_mode_,  false);
   }
 
   if (!ssl_ctx_) {
@@ -945,9 +935,7 @@ int OpenSSLAdapter::NewSSLSessionCallback(SSL* ssl, SSL_SESSION* session) {
   return 1;  
 }
 
-SSL_CTX* OpenSSLAdapter::CreateContext(SSLMode mode,
-                                       bool enable_cache,
-                                       bool permute_extension) {
+SSL_CTX* OpenSSLAdapter::CreateContext(SSLMode mode, bool enable_cache) {
 #ifdef WEBRTC_USE_CRYPTO_BUFFER_CALLBACK
   
   
@@ -1006,7 +994,7 @@ SSL_CTX* OpenSSLAdapter::CreateContext(SSLMode mode,
   }
 
 #ifdef OPENSSL_IS_BORINGSSL
-  SSL_CTX_set_permute_extensions(ctx, permute_extension);
+  SSL_CTX_set_permute_extensions(ctx, true);
 #endif
   return ctx;
 }
@@ -1066,11 +1054,9 @@ void OpenSSLAdapterFactory::SetIgnoreBadCert(bool ignore) {
   ignore_bad_cert_ = ignore;
 }
 
-OpenSSLAdapter* OpenSSLAdapterFactory::CreateAdapter(Socket* socket,
-                                                     bool permute_extension) {
+OpenSSLAdapter* OpenSSLAdapterFactory::CreateAdapter(Socket* socket) {
   if (ssl_session_cache_ == nullptr) {
-    SSL_CTX* ssl_ctx =
-        OpenSSLAdapter::CreateContext(ssl_mode_, true, permute_extension);
+    SSL_CTX* ssl_ctx = OpenSSLAdapter::CreateContext(ssl_mode_, true);
     if (ssl_ctx == nullptr) {
       return nullptr;
     }

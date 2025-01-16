@@ -78,9 +78,7 @@ class OpenSSLAdapter final : public SSLAdapter {
   
   
   
-  static SSL_CTX* CreateContext(SSLMode mode,
-                                bool enable_cache,
-                                bool permute_extension);
+  static SSL_CTX* CreateContext(SSLMode mode, bool enable_cache);
 
  protected:
   void OnConnectEvent(Socket* socket) override;
@@ -172,9 +170,6 @@ class OpenSSLAdapter final : public SSLAdapter {
   std::vector<std::string> alpn_protocols_;
   
   std::vector<std::string> elliptic_curves_;
-#ifdef OPENSSL_IS_BORINGSSL
-  const bool permute_extension_;
-#endif
   
   bool custom_cert_verifier_status_;
   
@@ -211,11 +206,7 @@ class OpenSSLAdapterFactory : public SSLAdapterFactory {
   
   
   
-  OpenSSLAdapter* CreateAdapter(Socket* socket,
-                                bool permute_extensions) override;
-  OpenSSLAdapter* CreateAdapter(Socket* socket) override {
-    return CreateAdapter(socket, true);
-  }
+  OpenSSLAdapter* CreateAdapter(Socket* socket) override;
 
  private:
   
