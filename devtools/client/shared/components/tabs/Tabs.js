@@ -228,7 +228,7 @@ define(function (require, exports) {
     }
 
     onClickTab(index, event) {
-      this.setActive(index);
+      this.setActive(index, { fromMouseEvent: true });
 
       if (event) {
         event.preventDefault();
@@ -244,7 +244,16 @@ define(function (require, exports) {
 
     
 
-    setActive(index) {
+    
+
+
+
+
+
+
+
+
+    setActive(index, options = {}) {
       const onAfterChange = this.props.onAfterChange;
       const onBeforeChange = this.props.onBeforeChange;
 
@@ -270,9 +279,11 @@ define(function (require, exports) {
         const selectedTab = this.tabsEl.current.querySelector(
           `a[data-tab-index="${index}"]`
         );
-        if (selectedTab) {
-          selectedTab.focus();
-        }
+        selectedTab.focus({
+          
+          
+          focusVisible: !options.fromMouseEvent,
+        });
 
         if (onAfterChange) {
           onAfterChange(index);
