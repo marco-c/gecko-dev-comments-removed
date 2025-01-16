@@ -8,7 +8,7 @@ import {
   GPUTestSubcaseBatchState,
   initUncanonicalizedDeviceDescriptor,
 } from '../../../gpu_test.js';
-import { CanonicalDeviceDescriptor, DescriptorModifierFn } from '../../../util/device_pool.js';
+import { CanonicalDeviceDescriptor, DescriptorModifier } from '../../../util/device_pool.js';
 
 
 
@@ -41,13 +41,20 @@ function setAllLimitsToAdapterLimitsAndAddAllFeatures(
 export class AllLimitsAndFeaturesGPUTestSubcaseBatchState extends GPUTestSubcaseBatchState {
   override selectDeviceOrSkipTestCase(
     descriptor: DeviceSelectionDescriptor,
-    descriptorModifierFn?: DescriptorModifierFn
+    descriptorModifier?: DescriptorModifier
   ): void {
-    const wrapper = (adapter: GPUAdapter, desc: CanonicalDeviceDescriptor | undefined) => {
-      desc = descriptorModifierFn ? descriptorModifierFn(adapter, desc) : desc;
-      return setAllLimitsToAdapterLimitsAndAddAllFeatures(adapter, desc);
+    const mod: DescriptorModifier = {
+      descriptorModifier(adapter: GPUAdapter, desc: CanonicalDeviceDescriptor | undefined) {
+        desc = descriptorModifier?.descriptorModifier
+          ? descriptorModifier.descriptorModifier(adapter, desc)
+          : desc;
+        return setAllLimitsToAdapterLimitsAndAddAllFeatures(adapter, desc);
+      },
+      keyModifier(baseKey: string) {
+        return `${baseKey}:AllLimitsAndFeaturesTest`;
+      },
     };
-    super.selectDeviceOrSkipTestCase(initUncanonicalizedDeviceDescriptor(descriptor), wrapper);
+    super.selectDeviceOrSkipTestCase(initUncanonicalizedDeviceDescriptor(descriptor), mod);
   }
 }
 

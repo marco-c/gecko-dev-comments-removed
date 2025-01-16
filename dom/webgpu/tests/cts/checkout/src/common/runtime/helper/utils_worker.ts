@@ -27,7 +27,7 @@ export function setupWorkerEnvironment(ctsOptions: CTSOptions): Logger {
     setDefaultRequestAdapterOptions({
       ...(powerPreference && { powerPreference }),
       
-      ...(compatibility && { compatibilityMode: true }),
+      ...(compatibility && { compatibilityMode: true, featureLevel: 'compatibility' }),
     });
   }
 

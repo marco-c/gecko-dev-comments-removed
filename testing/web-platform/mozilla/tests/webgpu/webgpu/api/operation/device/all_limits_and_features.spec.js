@@ -41,13 +41,20 @@ desc)
 export class AllLimitsAndFeaturesGPUTestSubcaseBatchState extends GPUTestSubcaseBatchState {
   selectDeviceOrSkipTestCase(
   descriptor,
-  descriptorModifierFn)
+  descriptorModifier)
   {
-    const wrapper = (adapter, desc) => {
-      desc = descriptorModifierFn ? descriptorModifierFn(adapter, desc) : desc;
-      return setAllLimitsToAdapterLimitsAndAddAllFeatures(adapter, desc);
+    const mod = {
+      descriptorModifier(adapter, desc) {
+        desc = descriptorModifier?.descriptorModifier ?
+        descriptorModifier.descriptorModifier(adapter, desc) :
+        desc;
+        return setAllLimitsToAdapterLimitsAndAddAllFeatures(adapter, desc);
+      },
+      keyModifier(baseKey) {
+        return `${baseKey}:AllLimitsAndFeaturesTest`;
+      }
     };
-    super.selectDeviceOrSkipTestCase(initUncanonicalizedDeviceDescriptor(descriptor), wrapper);
+    super.selectDeviceOrSkipTestCase(initUncanonicalizedDeviceDescriptor(descriptor), mod);
   }
 }
 

@@ -5603,6 +5603,15 @@ const kSmoothStepIntervalCases = {
     { input: [0, 2, kValue.f32.positive.subnormal.min], expected: [0, kValue.f32.positive.subnormal.min] },
     { input: [0, 2, kValue.f32.negative.subnormal.max], expected: [0, kValue.f32.positive.subnormal.min] },
     { input: [0, 2, kValue.f32.negative.subnormal.min], expected: [0, kValue.f32.positive.subnormal.min] },
+    
+    
+    { input: [1, 0, 1], expected: [0, kValue.f32.positive.subnormal.min] },
+    { input: [1, 0, 0], expected: [reinterpretU32AsF32(0x3f7ffffa), reinterpretU32AsF32(0x3f800003)] },  
+    
+    { input: [2, kValue.f32.positive.subnormal.max, 1], expected: [reinterpretU32AsF32(0x3efffff8), reinterpretU32AsF32(0x3f000007)] },  
+    { input: [2, kValue.f32.positive.subnormal.min, 1], expected: [reinterpretU32AsF32(0x3efffff8), reinterpretU32AsF32(0x3f000007)] },  
+    { input: [2, kValue.f32.negative.subnormal.max, 1], expected: [reinterpretU32AsF32(0x3efffff8), reinterpretU32AsF32(0x3f000007)] },  
+    { input: [2, kValue.f32.negative.subnormal.min, 1], expected: [reinterpretU32AsF32(0x3efffff8), reinterpretU32AsF32(0x3f000007)] },  
   ] as ScalarTripleToIntervalCase[],
   f16: [
     
@@ -5625,6 +5634,15 @@ const kSmoothStepIntervalCases = {
     { input: [0, 2, kValue.f16.positive.subnormal.min], expected: [0, reinterpretU16AsF16(0x0002)] },
     { input: [0, 2, kValue.f32.negative.subnormal.max], expected: [0, reinterpretU16AsF16(0x0002)] },
     { input: [0, 2, kValue.f32.negative.subnormal.min], expected: [0, reinterpretU16AsF16(0x0002)] },
+    
+    
+    { input: [1, 0, 1], expected: [0, reinterpretU16AsF16(0x0002)] },
+    { input: [1, 0, 0], expected: [reinterpretU16AsF16(0x3bfa), reinterpretU16AsF16(0x3c03)] },  
+    
+    { input: [2, kValue.f16.positive.subnormal.max, 1], expected: [reinterpretU16AsF16(0x37f6), reinterpretU16AsF16(0x380b)] },  
+    { input: [2, kValue.f16.positive.subnormal.min, 1], expected: [reinterpretU16AsF16(0x37f6), reinterpretU16AsF16(0x380b)] },  
+    { input: [2, kValue.f16.negative.subnormal.max, 1], expected: [reinterpretU16AsF16(0x37f4), reinterpretU16AsF16(0x3808)] },  
+    { input: [2, kValue.f16.negative.subnormal.min, 1], expected: [reinterpretU16AsF16(0x37f4), reinterpretU16AsF16(0x3808)] },  
   ] as ScalarTripleToIntervalCase[],
 } as const;
 

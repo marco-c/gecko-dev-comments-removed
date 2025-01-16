@@ -1,5 +1,6 @@
 import { GPUTest } from '../../../../../gpu_test.js';
 import { Type, Value } from '../../../../../util/conversion.js';
+import { align } from '../../../../../util/math.js';
 import { Case } from '../../case.js';
 import { toComparator } from '../../expectation.js';
 import { packScalarsToVector } from '../../expression.js';
@@ -49,18 +50,29 @@ export function runDerivativeTest(
   
   
   
+  
 
   
   const dir = builtin[3];
 
   
-  let valueStride = 4;
-  let wgslType = 'f32';
+  const valueStride = 16;
+  let conversionFromInput = 'input.x';
+  let conversionToOutput = `vec4f(v)`;
   if (vectorize) {
-    wgslType = `vec${vectorize}f`;
-    valueStride = vectorize * 4;
-    if (vectorize === 3) {
-      valueStride = 16;
+    switch (vectorize) {
+      case 2:
+        conversionFromInput = 'input.xy';
+        conversionToOutput = 'vec4f(v, 0, 0)';
+        break;
+      case 3:
+        conversionFromInput = 'input.xyz';
+        conversionToOutput = 'vec4f(v, 0)';
+        break;
+      case 4:
+        conversionFromInput = 'input';
+        conversionToOutput = 'v';
+        break;
     }
   }
 
@@ -84,17 +96,17 @@ fn vert(@builtin(vertex_index) vertex_idx: u32,
   return CaseInfo(vec4(kVertices[vertex_idx], 0, 1), instance_idx);
 }
 
-@group(0) @binding(0) var<storage, read> inputs : array<${wgslType}>;
-@group(0) @binding(1) var<storage, read_write> outputs : array<${wgslType}>;
+@group(0) @binding(0) var<uniform> inputs : array<vec4f, ${cases.length * 2}>;
 
 @fragment
-fn frag(info : CaseInfo) {
+fn frag(info : CaseInfo) -> @location(0) vec4u {
   let case_idx = u32(info.position.${dir === 'x' ? 'y' : 'x'});
   let inv_idx = u32(info.position.${dir});
   let index = info.quad_idx*4 + case_idx*2 + inv_idx;
   let input = inputs[index];
   ${non_uniform_discard ? 'if inv_idx == 0 { discard; }' : ''}
-  outputs[index] = ${builtin}(input);
+  let v = ${builtin}(${conversionFromInput});
+  return bitcast<vec4u>(${conversionToOutput});
 }
 `;
 
@@ -103,19 +115,15 @@ fn frag(info : CaseInfo) {
   const pipeline = t.device.createRenderPipeline({
     layout: 'auto',
     vertex: { module },
-    fragment: { module, targets: [{ format: 'rgba8unorm', writeMask: 0 }] },
+    fragment: { module, targets: [{ format: 'rgba32uint' }] },
   });
 
   
   const bufferSize = cases.length * 2 * valueStride;
   const inputBuffer = t.createBufferTracked({
     size: bufferSize,
-    usage: GPUBufferUsage.STORAGE,
+    usage: GPUBufferUsage.UNIFORM,
     mappedAtCreation: true,
-  });
-  const outputBuffer = t.createBufferTracked({
-    size: bufferSize,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
   });
 
   
@@ -129,61 +137,72 @@ fn frag(info : CaseInfo) {
 
   
   const group = t.device.createBindGroup({
-    entries: [
-      { binding: 0, resource: { buffer: inputBuffer } },
-      { binding: 1, resource: { buffer: outputBuffer } },
-    ],
+    entries: [{ binding: 0, resource: { buffer: inputBuffer } }],
     layout: pipeline.getBindGroupLayout(0),
   });
 
-  
-  
   const colorAttachment = t.createTextureTracked({
     size: { width: 2, height: 2 },
-    format: 'rgba8unorm',
-    usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    format: 'rgba32uint',
+    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
   });
+  const bytesPerRow = align(valueStride * colorAttachment.width, 256);
 
   
+  const results = [];
   const encoder = t.device.createCommandEncoder();
-  const pass = encoder.beginRenderPass({
-    colorAttachments: [
-      {
-        view: colorAttachment.createView(),
-        loadOp: 'clear',
-        storeOp: 'discard',
-      },
-    ],
-  });
-  pass.setPipeline(pipeline);
-  pass.setBindGroup(0, group);
   for (let quad = 0; quad < cases.length / 2; quad++) {
-    pass.draw(3, 1, undefined, quad);
+    const pass = encoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: colorAttachment.createView(),
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    });
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(0, group);
+    pass.draw(3, 1, 0, quad);
+    pass.end();
+    const outputBuffer = t.createBufferTracked({
+      size: bytesPerRow * colorAttachment.height,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+    });
+    results.push(outputBuffer);
+    encoder.copyTextureToBuffer(
+      { texture: colorAttachment },
+      { buffer: outputBuffer, bytesPerRow },
+      [colorAttachment.width, colorAttachment.height]
+    );
   }
-  pass.end();
+
   t.queue.submit([encoder.finish()]);
 
   
-  t.expectGPUBufferValuesPassCheck(
-    outputBuffer,
-    (outputData: Uint8Array) => {
-      for (let i = 0; i < cases.length; i++) {
-        const c = cases[i];
+  results.forEach((outputBuffer, quadNdx) => {
+    t.expectGPUBufferValuesPassCheck(
+      outputBuffer,
+      (outputData: Uint8Array) => {
+        for (let i = 0; i < 4; ++i) {
+          const tx = i % 2;
+          const ty = (i / 2) | 0;
+          const [inputNdx, caseNdx] = dir === 'x' ? [tx, ty] : [ty, tx];
+          const c = cases[quadNdx * 2 + caseNdx];
 
-        
-        for (let d = 0; d < 2; d++) {
-          if (non_uniform_discard && d === 0) {
+          
+          if (non_uniform_discard && inputNdx === 0) {
             continue;
           }
 
-          const index = (i * 2 + d) * valueStride;
+          const index = ty * bytesPerRow + tx * valueStride;
           const result = type.read(outputData, index);
           const cmp = toComparator(c.expected).compare(result);
           if (!cmp.matched) {
             
             
             if (!builtin.endsWith('Fine')) {
-              const c0 = cases[i % 2 === 0 ? i + 1 : i - 1];
+              const c0 = cases[inputNdx];
               const cmp0 = toComparator(c0.expected).compare(result);
               if (!cmp0.matched) {
                 return new Error(`
@@ -204,12 +223,12 @@ fn frag(info : CaseInfo) {
             }
           }
         }
+        return undefined;
+      },
+      {
+        type: Uint8Array,
+        typedLength: outputBuffer.size,
       }
-      return undefined;
-    },
-    {
-      type: Uint8Array,
-      typedLength: bufferSize,
-    }
-  );
+    );
+  });
 }
