@@ -1653,7 +1653,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  
   inline void branchTruncateFloat32MaybeModUint32(FloatRegister src,
                                                   Register dest, Label* fail)
       DEFINED_ON(arm, arm64, mips_shared, x86, x64, loong64, riscv64, wasm32);

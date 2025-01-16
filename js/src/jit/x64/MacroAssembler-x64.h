@@ -1216,6 +1216,19 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
     vcvtsq2ss(src, dest, dest);
   }
 
+  void truncateFloat32ModUint32(FloatRegister src, Register dest) {
+    
+    
+    
+    
+    
+    
+    
+
+    vcvttss2sq(src, dest);
+    movl(dest, dest);  
+  }
+
   inline void incrementInt32Value(const Address& addr);
 
  public:

@@ -720,10 +720,7 @@ void CodeGenerator::visitTruncateFToInt32(LTruncateFToInt32* ins) {
   FloatRegister input = ToFloatRegister(ins->input());
   Register output = ToRegister(ins->output());
 
-  
-  
-  
-  emitTruncateFloat32(input, output, ins->mir());
+  masm.truncateFloat32ModUint32(input, output);
 }
 
 void CodeGenerator::visitWrapInt64ToInt32(LWrapInt64ToInt32* lir) {
