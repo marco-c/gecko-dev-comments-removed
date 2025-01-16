@@ -851,8 +851,16 @@ nsresult EditorBase::GetSelection(SelectionType aSelectionType,
 
 nsresult EditorBase::DoTransactionInternal(nsITransaction* aTransaction) {
   MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(!ShouldAlreadyHaveHandledBeforeInputEventDispatching(),
-             "beforeinput event hasn't been dispatched yet");
+  MOZ_ASSERT_IF(
+      
+      
+      
+      
+      
+      
+      GetEditAction() != EditAction::ePaste &&
+          GetEditAction() != EditAction::eCut,
+      !ShouldAlreadyHaveHandledBeforeInputEventDispatching());
 
   if (mPlaceholderBatch && !mPlaceholderTransaction) {
     MOZ_DIAGNOSTIC_ASSERT(mPlaceholderName);

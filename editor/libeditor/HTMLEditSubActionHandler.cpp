@@ -379,6 +379,14 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubAction() {
 nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
+  
+  
+  
+  if (GetTopLevelEditSubAction() ==
+      EditSubAction::eMaintainWhiteSpaceVisibility) {
+    return NS_OK;
+  }
+
   nsresult rv = EnsureSelectionInBodyOrDocumentElement();
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
     return NS_ERROR_EDITOR_DESTROYED;

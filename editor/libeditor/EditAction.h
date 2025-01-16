@@ -503,6 +503,11 @@ enum class EditSubAction : int32_t {
   
   
   eCreatePaddingBRElementForEmptyEditor,
+
+  
+  
+  
+  eMaintainWhiteSpaceVisibility,
 };
 
 

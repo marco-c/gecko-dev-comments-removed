@@ -7760,85 +7760,101 @@ nsresult HTMLEditor::OnModifyDocument(const DocumentModifiedEvent& aRunner) {
   
   nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
 
-  
-  
-  
-  
-  
-  
-  if (mLastCollapsibleWhiteSpaceAppendedTextNode &&
-      MOZ_LIKELY(
-          mLastCollapsibleWhiteSpaceAppendedTextNode->IsInComposedDoc() &&
-          mLastCollapsibleWhiteSpaceAppendedTextNode->IsEditable() &&
-          mLastCollapsibleWhiteSpaceAppendedTextNode->TextDataLength())) {
-    const auto atLastChar = EditorRawDOMPointInText::AtEndOf(
-        *mLastCollapsibleWhiteSpaceAppendedTextNode);
-    if (MOZ_LIKELY(atLastChar.IsPreviousCharCollapsibleASCIISpace())) {
-      if (const RefPtr<Element> editingHost = ComputeEditingHostInternal(
-              mLastCollapsibleWhiteSpaceAppendedTextNode,
-              LimitInBodyElement::No)) {
-        Result<CreateLineBreakResult, nsresult> insertPaddingBRResultOrError =
-            InsertPaddingBRElementIfNeeded(atLastChar.To<EditorDOMPoint>(),
-                                           eNoStrip, *editingHost);
-        if (MOZ_UNLIKELY(insertPaddingBRResultOrError.isErr())) {
-          if (insertPaddingBRResultOrError.inspectErr() ==
-              NS_ERROR_EDITOR_DESTROYED) {
+  {
+    
+    
+    
+    
+    
+    
+    IgnoredErrorResult error;
+    AutoEditSubActionNotifier topLevelEditSubAction(
+        *this, EditSubAction::eMaintainWhiteSpaceVisibility, eNone, error);
+    NS_WARNING_ASSERTION(!error.Failed(),
+                         "Failed to set the toplevel edit sub-action to "
+                         "maintain white-space visibility, but ignored");
+
+    
+    
+    
+    
+    
+    
+    if (mLastCollapsibleWhiteSpaceAppendedTextNode &&
+        MOZ_LIKELY(
+            mLastCollapsibleWhiteSpaceAppendedTextNode->IsInComposedDoc() &&
+            mLastCollapsibleWhiteSpaceAppendedTextNode->IsEditable() &&
+            mLastCollapsibleWhiteSpaceAppendedTextNode->TextDataLength())) {
+      const auto atLastChar = EditorRawDOMPointInText::AtEndOf(
+          *mLastCollapsibleWhiteSpaceAppendedTextNode);
+      if (MOZ_LIKELY(atLastChar.IsPreviousCharCollapsibleASCIISpace())) {
+        if (const RefPtr<Element> editingHost = ComputeEditingHostInternal(
+                mLastCollapsibleWhiteSpaceAppendedTextNode,
+                LimitInBodyElement::No)) {
+          Result<CreateLineBreakResult, nsresult> insertPaddingBRResultOrError =
+              InsertPaddingBRElementIfNeeded(atLastChar.To<EditorDOMPoint>(),
+                                             eNoStrip, *editingHost);
+          if (MOZ_UNLIKELY(insertPaddingBRResultOrError.isErr())) {
+            if (insertPaddingBRResultOrError.inspectErr() ==
+                NS_ERROR_EDITOR_DESTROYED) {
+              NS_WARNING(
+                  "HTMLEditor::InsertPaddingBRElementIfNeeded(nsIEditor::"
+                  "eNoStrip) destroyed the editor");
+              return insertPaddingBRResultOrError.unwrapErr();
+            }
             NS_WARNING(
                 "HTMLEditor::InsertPaddingBRElementIfNeeded(nsIEditor::"
-                "eNoStrip) destroyed the editor");
-            return insertPaddingBRResultOrError.unwrapErr();
+                "eNoStrip) failed, but ignored");
+          } else {
+            
+            
+            insertPaddingBRResultOrError.unwrap().IgnoreCaretPointSuggestion();
           }
-          NS_WARNING(
-              "HTMLEditor::InsertPaddingBRElementIfNeeded(nsIEditor::eNoStrip) "
-              "failed, but ignored");
-        } else {
-          
-          
-          insertPaddingBRResultOrError.unwrap().IgnoreCaretPointSuggestion();
         }
       }
     }
-  }
 
-  
-  
-  
-  if (!aRunner.NewInvisibleWhiteSpacesRef().IsEmpty()) {
-    AutoSelectionRestorer restoreSelection(this);
-    bool doRestoreSelection = false;
-    for (const EditorDOMPointInText& atCollapsibleWhiteSpace :
-         aRunner.NewInvisibleWhiteSpacesRef()) {
-      if (!atCollapsibleWhiteSpace.IsInComposedDoc() ||
-          !atCollapsibleWhiteSpace.IsAtLastContent() ||
-          !HTMLEditUtils::IsSimplyEditableNode(
-              *atCollapsibleWhiteSpace.ContainerAs<Text>()) ||
-          !atCollapsibleWhiteSpace.IsCharCollapsibleASCIISpace()) {
-        continue;
+    
+    
+    
+    
+    if (!aRunner.NewInvisibleWhiteSpacesRef().IsEmpty()) {
+      AutoSelectionRestorer restoreSelection(this);
+      bool doRestoreSelection = false;
+      for (const EditorDOMPointInText& atCollapsibleWhiteSpace :
+           aRunner.NewInvisibleWhiteSpacesRef()) {
+        if (!atCollapsibleWhiteSpace.IsInComposedDoc() ||
+            !atCollapsibleWhiteSpace.IsAtLastContent() ||
+            !HTMLEditUtils::IsSimplyEditableNode(
+                *atCollapsibleWhiteSpace.ContainerAs<Text>()) ||
+            !atCollapsibleWhiteSpace.IsCharCollapsibleASCIISpace()) {
+          continue;
+        }
+        const Element* const editingHost =
+            atCollapsibleWhiteSpace.ContainerAs<Text>()->GetEditingHost();
+        MOZ_ASSERT(editingHost);
+        const WSScanResult nextThing =
+            WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+                editingHost,
+                atCollapsibleWhiteSpace.AfterContainer<EditorRawDOMPoint>(),
+                BlockInlineCheck::UseComputedDisplayStyle);
+        if (!nextThing.ReachedBlockBoundary()) {
+          continue;
+        }
+        Result<InsertTextResult, nsresult> replaceToNBSPResultOrError =
+            ReplaceTextWithTransaction(
+                MOZ_KnownLive(*atCollapsibleWhiteSpace.ContainerAs<Text>()),
+                atCollapsibleWhiteSpace.Offset(), 1u, u"\xA0"_ns);
+        if (MOZ_UNLIKELY(replaceToNBSPResultOrError.isErr())) {
+          NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
+          continue;
+        }
+        doRestoreSelection = true;
+        replaceToNBSPResultOrError.unwrap().IgnoreCaretPointSuggestion();
       }
-      const Element* const editingHost =
-          atCollapsibleWhiteSpace.ContainerAs<Text>()->GetEditingHost();
-      MOZ_ASSERT(editingHost);
-      const WSScanResult nextThing =
-          WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-              editingHost,
-              atCollapsibleWhiteSpace.AfterContainer<EditorRawDOMPoint>(),
-              BlockInlineCheck::UseComputedDisplayStyle);
-      if (!nextThing.ReachedBlockBoundary()) {
-        continue;
+      if (!doRestoreSelection) {
+        restoreSelection.Abort();
       }
-      Result<InsertTextResult, nsresult> replaceToNBSPResultOrError =
-          ReplaceTextWithTransaction(
-              MOZ_KnownLive(*atCollapsibleWhiteSpace.ContainerAs<Text>()),
-              atCollapsibleWhiteSpace.Offset(), 1u, u"\xA0"_ns);
-      if (MOZ_UNLIKELY(replaceToNBSPResultOrError.isErr())) {
-        NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
-        continue;
-      }
-      doRestoreSelection = true;
-      replaceToNBSPResultOrError.unwrap().IgnoreCaretPointSuggestion();
-    }
-    if (!doRestoreSelection) {
-      restoreSelection.Abort();
     }
   }
 
