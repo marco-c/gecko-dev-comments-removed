@@ -85,9 +85,7 @@ std::optional<double> GetCorruptionScore(const FrameInstrumentationData& data,
     return std::nullopt;
   }
 
-  
-  
-  CorruptionClassifier classifier(2.5);
+  CorruptionClassifier classifier(0.5);
 
   return classifier.CalculateCorruptionProbability(data_samples, samples,
                                                    data.luma_error_threshold,
