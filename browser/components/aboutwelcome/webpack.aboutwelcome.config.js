@@ -3,7 +3,7 @@
 
 
 const path = require("path");
-const config = require("../newtab/webpack.system-addon.config.js");
+const config = require("../asrouter/webpack.base.config.js");
 const webpack = require("webpack");
 const absolute = relPath => path.join(__dirname, relPath);
 const banner = `
