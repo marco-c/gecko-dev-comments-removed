@@ -37,9 +37,9 @@ ABSL_NAMESPACE_BEGIN
 
 
 #if ABSL_HAVE_CPP_ATTRIBUTE(nodiscard)
-class [[nodiscard]] Status;
+class [[nodiscard]] ABSL_ATTRIBUTE_TRIVIAL_ABI Status;
 #else
-class ABSL_MUST_USE_RESULT Status;
+class ABSL_MUST_USE_RESULT ABSL_ATTRIBUTE_TRIVIAL_ABI Status;
 #endif
 ABSL_NAMESPACE_END
 }  

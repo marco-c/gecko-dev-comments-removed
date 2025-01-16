@@ -157,8 +157,8 @@ ABSL_ATTRIBUTE_ALWAYS_INLINE inline void PrefetchToLocalCacheForWrite(
   
   
   
-#if defined(__x86_64__)
-  asm("prefetchw (%0)" : : "r"(addr));
+#if defined(__x86_64__) && !defined(__PRFCHW__)
+  asm("prefetchw %0" : : "m"(*reinterpret_cast<const char*>(addr)));
 #else
   __builtin_prefetch(addr, 1, 3);
 #endif
@@ -187,7 +187,7 @@ ABSL_ATTRIBUTE_ALWAYS_INLINE inline void PrefetchToLocalCacheForWrite(
   
   
   
-  asm("prefetchw (%0)" : : "r"(addr));
+  asm("prefetchw %0" : : "m"(*reinterpret_cast<const char*>(addr)));
 #endif
 }
 

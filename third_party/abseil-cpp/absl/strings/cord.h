@@ -766,6 +766,14 @@ class Cord {
   }
 
   
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const absl::Cord& cord) {
+    for (absl::string_view chunk : cord.Chunks()) {
+      sink.Append(chunk);
+    }
+  }
+
+  
   
   
   

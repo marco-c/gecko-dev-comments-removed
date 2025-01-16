@@ -116,18 +116,6 @@ template <class Key, class Hash, class KeyEqual, class Allocator>
 struct IsUnorderedContainer<std::unordered_set<Key, Hash, KeyEqual, Allocator>>
     : std::true_type {};
 
-
-
-template <class C>
-auto c_size(C& c) -> decltype(c.size()) {
-  return c.size();
-}
-
-template <class T, std::size_t N>
-constexpr std::size_t c_size(T (&)[N]) {
-  return N;
-}
-
 }  
 
 
@@ -348,20 +336,10 @@ container_algorithm_internal::ContainerDifferenceType<const C> c_count_if(
 template <typename C1, typename C2>
 container_algorithm_internal::ContainerIterPairType<C1, C2> c_mismatch(C1& c1,
                                                                        C2& c2) {
-  auto first1 = container_algorithm_internal::c_begin(c1);
-  auto last1 = container_algorithm_internal::c_end(c1);
-  auto first2 = container_algorithm_internal::c_begin(c2);
-  auto last2 = container_algorithm_internal::c_end(c2);
-
-  for (; first1 != last1 && first2 != last2; ++first1, (void)++first2) {
-    
-    
-    if (!(*first1 == *first2)) {
-      break;
-    }
-  }
-
-  return std::make_pair(first1, first2);
+  return std::mismatch(container_algorithm_internal::c_begin(c1),
+                       container_algorithm_internal::c_end(c1),
+                       container_algorithm_internal::c_begin(c2),
+                       container_algorithm_internal::c_end(c2));
 }
 
 
@@ -370,32 +348,11 @@ container_algorithm_internal::ContainerIterPairType<C1, C2> c_mismatch(C1& c1,
 template <typename C1, typename C2, typename BinaryPredicate>
 container_algorithm_internal::ContainerIterPairType<C1, C2> c_mismatch(
     C1& c1, C2& c2, BinaryPredicate pred) {
-  auto first1 = container_algorithm_internal::c_begin(c1);
-  auto last1 = container_algorithm_internal::c_end(c1);
-  auto first2 = container_algorithm_internal::c_begin(c2);
-  auto last2 = container_algorithm_internal::c_end(c2);
-
-  for (; first1 != last1 && first2 != last2; ++first1, (void)++first2) {
-    if (!pred(*first1, *first2)) {
-      break;
-    }
-  }
-
-  return std::make_pair(first1, first2);
+  return std::mismatch(container_algorithm_internal::c_begin(c1),
+                       container_algorithm_internal::c_end(c1),
+                       container_algorithm_internal::c_begin(c2),
+                       container_algorithm_internal::c_end(c2), pred);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -403,23 +360,21 @@ container_algorithm_internal::ContainerIterPairType<C1, C2> c_mismatch(
 
 template <typename C1, typename C2>
 bool c_equal(const C1& c1, const C2& c2) {
-  return ((container_algorithm_internal::c_size(c1) ==
-           container_algorithm_internal::c_size(c2)) &&
-          std::equal(container_algorithm_internal::c_begin(c1),
-                     container_algorithm_internal::c_end(c1),
-                     container_algorithm_internal::c_begin(c2)));
+  return std::equal(container_algorithm_internal::c_begin(c1),
+                    container_algorithm_internal::c_end(c1),
+                    container_algorithm_internal::c_begin(c2),
+                    container_algorithm_internal::c_end(c2));
 }
 
 
 
 template <typename C1, typename C2, typename BinaryPredicate>
 bool c_equal(const C1& c1, const C2& c2, BinaryPredicate&& pred) {
-  return ((container_algorithm_internal::c_size(c1) ==
-           container_algorithm_internal::c_size(c2)) &&
-          std::equal(container_algorithm_internal::c_begin(c1),
-                     container_algorithm_internal::c_end(c1),
-                     container_algorithm_internal::c_begin(c2),
-                     std::forward<BinaryPredicate>(pred)));
+  return std::equal(container_algorithm_internal::c_begin(c1),
+                    container_algorithm_internal::c_end(c1),
+                    container_algorithm_internal::c_begin(c2),
+                    container_algorithm_internal::c_end(c2),
+                    std::forward<BinaryPredicate>(pred));
 }
 
 
@@ -428,20 +383,20 @@ bool c_equal(const C1& c1, const C2& c2, BinaryPredicate&& pred) {
 
 template <typename C1, typename C2>
 bool c_is_permutation(const C1& c1, const C2& c2) {
-  using std::begin;
-  using std::end;
-  return c1.size() == c2.size() &&
-         std::is_permutation(begin(c1), end(c1), begin(c2));
+  return std::is_permutation(container_algorithm_internal::c_begin(c1),
+                             container_algorithm_internal::c_end(c1),
+                             container_algorithm_internal::c_begin(c2),
+                             container_algorithm_internal::c_end(c2));
 }
 
 
 
 template <typename C1, typename C2, typename BinaryPredicate>
 bool c_is_permutation(const C1& c1, const C2& c2, BinaryPredicate&& pred) {
-  using std::begin;
-  using std::end;
-  return c1.size() == c2.size() &&
-         std::is_permutation(begin(c1), end(c1), begin(c2),
+  return std::is_permutation(container_algorithm_internal::c_begin(c1),
+                             container_algorithm_internal::c_end(c1),
+                             container_algorithm_internal::c_begin(c2),
+                             container_algorithm_internal::c_end(c2),
                              std::forward<BinaryPredicate>(pred));
 }
 

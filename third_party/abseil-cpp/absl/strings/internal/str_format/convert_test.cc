@@ -1245,9 +1245,16 @@ TEST_F(FormatConvertTest, ExpectedFailures) {
 
 
 TEST_F(FormatConvertTest, GlibcHasCorrectTraits) {
-#if !defined(__GLIBC__) || !defined(__x86_64__)
-  return;
+#if defined(__GLIBC__) && defined(__x86_64__)
+  constexpr bool kIsSupportedGlibc = true;
+#else
+  constexpr bool kIsSupportedGlibc = false;
 #endif
+
+  if (!kIsSupportedGlibc) {
+    GTEST_SKIP() << "Test does not support this platform";
+  }
+
   const NativePrintfTraits &native_traits = VerifyNativeImplementation();
   
   

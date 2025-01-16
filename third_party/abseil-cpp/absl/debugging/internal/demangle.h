@@ -12,47 +12,10 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef ABSL_DEBUGGING_INTERNAL_DEMANGLE_H_
 #define ABSL_DEBUGGING_INTERNAL_DEMANGLE_H_
 
+#include <string>
 #include "absl/base/config.h"
 
 namespace absl {
@@ -62,7 +25,46 @@ namespace debugging_internal {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool Demangle(const char* mangled, char* out, size_t out_size);
+
+
+
+
+
+std::string DemangleString(const char* mangled);
 
 }  
 ABSL_NAMESPACE_END

@@ -215,8 +215,8 @@ T& ObjectInLocalStorage(TypeErasedState* const state) {
   
   
 #if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
   return *reinterpret_cast<T*>(&state->storage);
 #if !defined(__clang__) && defined(__GNUC__)
@@ -526,10 +526,10 @@ class CoreImpl {
 
 
 #if !defined(__clang__) && defined(__GNUC__)
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Waddress"
 #pragma GCC diagnostic ignored "-Wnonnull-compare"
-#pragma GCC diagnostic push
 #endif
     if (static_cast<RemoveCVRef<QualDecayedTRef>>(f) == nullptr) {
 #if !defined(__clang__) && defined(__GNUC__)

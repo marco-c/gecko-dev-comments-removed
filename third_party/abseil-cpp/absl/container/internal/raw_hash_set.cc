@@ -67,6 +67,16 @@ inline size_t RandomSeed() {
   return value ^ static_cast<size_t>(reinterpret_cast<uintptr_t>(&counter));
 }
 
+bool ShouldRehashForBugDetection(const ctrl_t* ctrl, size_t capacity) {
+  
+  
+  
+  
+  
+  return probe(ctrl, capacity, absl::HashOf(RandomSeed())).offset() <
+         RehashProbabilityConstant();
+}
+
 }  
 
 GenerationType* EmptyGeneration() {
@@ -84,13 +94,12 @@ bool CommonFieldsGenerationInfoEnabled::
                                               size_t capacity) const {
   if (reserved_growth_ == kReservedGrowthJustRanOut) return true;
   if (reserved_growth_ > 0) return false;
-  
-  
-  
-  
-  
-  return probe(ctrl, capacity, absl::HashOf(RandomSeed())).offset() <
-         RehashProbabilityConstant();
+  return ShouldRehashForBugDetection(ctrl, capacity);
+}
+
+bool CommonFieldsGenerationInfoEnabled::should_rehash_for_bug_detection_on_move(
+    const ctrl_t* ctrl, size_t capacity) const {
+  return ShouldRehashForBugDetection(ctrl, capacity);
 }
 
 bool ShouldInsertBackwards(size_t hash, const ctrl_t* ctrl) {

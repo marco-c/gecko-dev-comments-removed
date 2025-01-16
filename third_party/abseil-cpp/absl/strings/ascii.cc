@@ -159,6 +159,20 @@ ABSL_DLL const char kToUpper[256] = {
 };
 
 
+
+
+
+
+template <bool ToUpper>
+constexpr bool AsciiInAZRange(unsigned char c) {
+  constexpr unsigned char sub = (ToUpper ? 'a' : 'A') - SCHAR_MIN;
+  constexpr signed char threshold = SCHAR_MIN + 26;  
+  
+  unsigned char u = c - sub;
+  
+  return static_cast<signed char>(u) < threshold;
+}
+
 template <bool ToUpper>
 constexpr void AsciiStrCaseFold(char* p, char* end) {
   
@@ -168,15 +182,9 @@ constexpr void AsciiStrCaseFold(char* p, char* end) {
   
   constexpr unsigned char kAsciiCaseBitFlip = 'a' ^ 'A';
 
-  constexpr char ch_a = ToUpper ? 'a' : 'A';
-  constexpr char ch_z = ToUpper ? 'z' : 'Z';
   for (; p < end; ++p) {
     unsigned char v = static_cast<unsigned char>(*p);
-    
-    
-    bool is_in_range = static_cast<bool>(static_cast<int>(ch_a <= v) &
-                                         static_cast<int>(v <= ch_z));
-    v ^= is_in_range ? kAsciiCaseBitFlip : 0;
+    v ^= AsciiInAZRange<ToUpper>(v) ? kAsciiCaseBitFlip : 0;
     *p = static_cast<char>(v);
   }
 }

@@ -431,7 +431,7 @@ inline StatusToStringMode& operator^=(StatusToStringMode& lhs,
 
 
 
-class Status final {
+class ABSL_ATTRIBUTE_TRIVIAL_ABI Status final {
  public:
   
 

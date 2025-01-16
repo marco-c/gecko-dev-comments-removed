@@ -64,6 +64,7 @@
 #include <iterator>
 #include <string>
 
+#include "absl/base/attributes.h"
 #include "absl/base/const_init.h"
 #include "absl/base/internal/identity.h"
 #include "absl/base/internal/low_level_alloc.h"
@@ -536,6 +537,7 @@ class ABSL_LOCKABLE Mutex {
   void Block(base_internal::PerThreadSynch* s);
   
   base_internal::PerThreadSynch* Wakeup(base_internal::PerThreadSynch* w);
+  void Dtor();
 
   friend class CondVar;   
   void Trans(MuHow how);  
@@ -909,7 +911,6 @@ class CondVar {
   
   
   CondVar();
-  ~CondVar();
 
   
   
@@ -1060,6 +1061,21 @@ inline Mutex::Mutex() : mu_(0) {
 }
 
 inline constexpr Mutex::Mutex(absl::ConstInitType) : mu_(0) {}
+
+#if !defined(__APPLE__) && !defined(ABSL_BUILD_DLL)
+ABSL_ATTRIBUTE_ALWAYS_INLINE
+inline Mutex::~Mutex() { Dtor(); }
+#endif
+
+#if defined(NDEBUG) && !defined(ABSL_HAVE_THREAD_SANITIZER)
+
+
+
+
+
+ABSL_ATTRIBUTE_ALWAYS_INLINE
+inline void Mutex::Dtor() {}
+#endif
 
 inline CondVar::CondVar() : cv_(0) {}
 

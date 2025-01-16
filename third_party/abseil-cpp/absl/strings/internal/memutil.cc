@@ -27,10 +27,18 @@ int memcasecmp(const char* s1, const char* s2, size_t len) {
   const unsigned char* us2 = reinterpret_cast<const unsigned char*>(s2);
 
   for (size_t i = 0; i < len; i++) {
-    const int diff =
-        int{static_cast<unsigned char>(absl::ascii_tolower(us1[i]))} -
-        int{static_cast<unsigned char>(absl::ascii_tolower(us2[i]))};
-    if (diff != 0) return diff;
+    unsigned char c1 = us1[i];
+    unsigned char c2 = us2[i];
+    
+    
+    
+    
+    if (c1 != c2) {
+      c1 = c1 >= 'A' && c1 <= 'Z' ? c1 - 'A' + 'a' : c1;
+      c2 = c2 >= 'A' && c2 <= 'Z' ? c2 - 'A' + 'a' : c2;
+      const int diff = int{c1} - int{c2};
+      if (diff != 0) return diff;
+    }
   }
   return 0;
 }

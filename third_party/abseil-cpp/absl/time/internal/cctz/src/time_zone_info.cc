@@ -474,7 +474,8 @@ std::unique_ptr<ZoneInfoSource> AndroidZoneInfoSource::Open(
   const std::size_t pos = (name.compare(0, 5, "file:") == 0) ? 5 : 0;
 
   
-  for (const char* tzdata : {"/data/misc/zoneinfo/current/tzdata",
+  for (const char* tzdata : {"/apex/com.android.tzdata/etc/tz/tzdata",
+                             "/data/misc/zoneinfo/current/tzdata",
                              "/system/usr/share/zoneinfo/tzdata"}) {
     auto fp = FOpen(tzdata, "rb");
     if (fp == nullptr) continue;
@@ -539,9 +540,16 @@ std::unique_ptr<ZoneInfoSource> FuchsiaZoneInfoSource::Open(
   
   
   const auto kTzdataPrefixes = {
+      
       "/config/data/tzdata/",
+      
       "/pkg/data/tzdata/",
+      
       "/data/tzdata/",
+      
+      
+      
+      "/config/tzdata/",
   };
   const auto kEmptyPrefix = {""};
   const bool name_absolute = (pos != name.size() && name[pos] == '/');

@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include <string>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/base/config.h"
 #include "absl/debugging/internal/stack_consumption.h"
@@ -28,15 +29,7 @@ ABSL_NAMESPACE_BEGIN
 namespace debugging_internal {
 namespace {
 
-
-static const char *DemangleIt(const char * const mangled) {
-  static char demangled[4096];
-  if (Demangle(mangled, demangled, sizeof(demangled))) {
-    return demangled;
-  } else {
-    return mangled;
-  }
-}
+using ::testing::ContainsRegex;
 
 
 TEST(Demangle, CornerCases) {
@@ -235,6 +228,25 @@ TEST(DemangleRegression, DeeplyNestedArrayType) {
     data += "A1_";
   }
   TestOnInput(data.c_str());
+}
+
+struct Base {
+  virtual ~Base() = default;
+};
+
+struct Derived : public Base {};
+
+TEST(DemangleStringTest, SupportsSymbolNameReturnedByTypeId) {
+  EXPECT_EQ(DemangleString(typeid(int).name()), "int");
+  
+  
+  
+  EXPECT_THAT(
+      DemangleString(typeid(Base).name()),
+      ContainsRegex("absl.*debugging_internal.*anonymous namespace.*::Base"));
+  EXPECT_THAT(DemangleString(typeid(Derived).name()),
+              ContainsRegex(
+                  "absl.*debugging_internal.*anonymous namespace.*::Derived"));
 }
 
 }  

@@ -4,6 +4,7 @@
 
 
 #if defined(__linux__)
+#include <signal.h>
 #include <sys/mman.h>
 #include <ucontext.h>
 #include <unistd.h>
@@ -70,12 +71,26 @@ static const unsigned char* GetKernelRtSigreturnAddress() {
 
 
 template<typename T>
-static inline size_t ComputeStackFrameSize(const T* low,
+static size_t ComputeStackFrameSize(const T* low,
                                            const T* high) {
   const char* low_char_ptr = reinterpret_cast<const char *>(low);
   const char* high_char_ptr = reinterpret_cast<const char *>(high);
   return low < high ? static_cast<size_t>(high_char_ptr - low_char_ptr)
                     : kUnknownFrameSize;
+}
+
+
+struct StackInfo {
+  uintptr_t stack_low;
+  uintptr_t stack_high;
+  uintptr_t sig_stack_low;
+  uintptr_t sig_stack_high;
+};
+
+static bool InsideSignalStack(void** ptr, const StackInfo* stack_info) {
+  uintptr_t comparable_ptr = reinterpret_cast<uintptr_t>(ptr);
+  return (comparable_ptr >= stack_info->sig_stack_low &&
+          comparable_ptr < stack_info->sig_stack_high);
 }
 
 
@@ -86,9 +101,8 @@ template<bool STRICT_UNWINDING, bool WITH_CONTEXT>
 ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS  
 ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY  
 static void **NextStackFrame(void **old_frame_pointer, const void *uc,
-                             size_t stack_low, size_t stack_high) {
+                             const StackInfo *stack_info) {
   void **new_frame_pointer = reinterpret_cast<void**>(*old_frame_pointer);
-  bool check_frame_size = true;
 
 #if defined(__linux__)
   if (WITH_CONTEXT && uc != nullptr) {
@@ -114,10 +128,6 @@ static void **NextStackFrame(void **old_frame_pointer, const void *uc,
       if (!absl::debugging_internal::AddressIsReadable(
               new_frame_pointer))
         return nullptr;
-
-      
-      
-      check_frame_size = false;
     }
   }
 #endif
@@ -127,8 +137,10 @@ static void **NextStackFrame(void **old_frame_pointer, const void *uc,
     return nullptr;
 
   
-  
-  if (check_frame_size) {
+  if (InsideSignalStack(new_frame_pointer, stack_info) ==
+      InsideSignalStack(old_frame_pointer, stack_info)) {
+    
+    
     const size_t max_size = STRICT_UNWINDING ? 100000 : 1000000;
     const size_t frame_size =
         ComputeStackFrameSize(old_frame_pointer, new_frame_pointer);
@@ -138,7 +150,13 @@ static void **NextStackFrame(void **old_frame_pointer, const void *uc,
     
     
     if (frame_size > max_size) {
-       if (stack_high < kUnknownStackEnd &&
+      size_t stack_low = stack_info->stack_low;
+      size_t stack_high = stack_info->stack_high;
+      if (InsideSignalStack(new_frame_pointer, stack_info)) {
+        stack_low = stack_info->sig_stack_low;
+        stack_high = stack_info->sig_stack_high;
+      }
+      if (stack_high < kUnknownStackEnd &&
           static_cast<size_t>(getpagesize()) < stack_low) {
         const uintptr_t new_fp_u =
             reinterpret_cast<uintptr_t>(new_frame_pointer);
@@ -158,6 +176,9 @@ static void **NextStackFrame(void **old_frame_pointer, const void *uc,
 }
 
 template <bool IS_STACK_FRAMES, bool IS_WITH_CONTEXT>
+
+
+ABSL_ATTRIBUTE_NOINLINE
 ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS  
 ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY   
 static int UnwindImpl(void** result, int* sizes, int max_depth, int skip_count,
@@ -171,8 +192,11 @@ static int UnwindImpl(void** result, int* sizes, int max_depth, int skip_count,
   int n = 0;
 
   
-  size_t stack_low = static_cast<size_t>(getpagesize());
-  size_t stack_high = kUnknownStackEnd;
+  StackInfo stack_info;
+  stack_info.stack_low = static_cast<uintptr_t>(getpagesize());
+  stack_info.stack_high = kUnknownStackEnd;
+  stack_info.sig_stack_low = stack_info.stack_low;
+  stack_info.sig_stack_high = kUnknownStackEnd;
 
   
   
@@ -207,7 +231,7 @@ static int UnwindImpl(void** result, int* sizes, int max_depth, int skip_count,
     
     
     frame_pointer = NextStackFrame<!IS_STACK_FRAMES, IS_WITH_CONTEXT>(
-        frame_pointer, ucp, stack_low, stack_high);
+        frame_pointer, ucp, &stack_info);
   }
 
   if (min_dropped_frames != nullptr) {
@@ -222,7 +246,7 @@ static int UnwindImpl(void** result, int* sizes, int max_depth, int skip_count,
         num_dropped_frames++;
       }
       frame_pointer = NextStackFrame<!IS_STACK_FRAMES, IS_WITH_CONTEXT>(
-          frame_pointer, ucp, stack_low, stack_high);
+          frame_pointer, ucp, &stack_info);
     }
     *min_dropped_frames = num_dropped_frames;
   }

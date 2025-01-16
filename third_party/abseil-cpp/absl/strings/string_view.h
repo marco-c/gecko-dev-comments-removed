@@ -515,7 +515,7 @@ class string_view {
   
   
   size_type find_first_of(const char* s, size_type pos,
-                                    size_type count) const {
+                          size_type count) const {
     return find_first_of(string_view(s, count), pos);
   }
 
@@ -598,6 +598,58 @@ class string_view {
   size_type find_last_not_of(const char* s, size_type pos = npos) const {
     return find_last_not_of(string_view(s), pos);
   }
+
+#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
+  
+  
+  
+  
+  
+  
+  
+  constexpr bool starts_with(string_view s) const noexcept {
+    return s.empty() ||
+           (size() >= s.size() &&
+            ABSL_INTERNAL_STRING_VIEW_MEMCMP(data(), s.data(), s.size()) == 0);
+  }
+
+  
+  
+  constexpr bool starts_with(char c) const noexcept {
+    return !empty() && front() == c;
+  }
+
+  
+  
+  constexpr bool starts_with(const char* s) const {
+    return starts_with(string_view(s));
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  constexpr bool ends_with(string_view s) const noexcept {
+    return s.empty() || (size() >= s.size() && ABSL_INTERNAL_STRING_VIEW_MEMCMP(
+                                                   data() + (size() - s.size()),
+                                                   s.data(), s.size()) == 0);
+  }
+
+  
+  
+  constexpr bool ends_with(char c) const noexcept {
+    return !empty() && back() == c;
+  }
+
+  
+  
+  constexpr bool ends_with(const char* s) const {
+    return ends_with(string_view(s));
+  }
+#endif  
 
  private:
   
