@@ -413,8 +413,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   already_AddRefed<BounceTrackingState> GetBounceTrackingState();
 
-  bool CanOpenModalPicker();
-
  protected:
   
   void CanonicalDiscard();
