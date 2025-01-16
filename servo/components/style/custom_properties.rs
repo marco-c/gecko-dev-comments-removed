@@ -1425,6 +1425,9 @@ fn substitute_all(
         non_custom_references: NonCustomReferences,
         
         has_color_scheme: bool,
+        
+        
+        contains_computed_custom_property: bool,
         map: &'a mut ComputedCustomProperties,
         
         
@@ -1516,6 +1519,7 @@ fn substitute_all(
                         entry.insert(context.count);
                     },
                 }
+                context.contains_computed_custom_property |= !registration.syntax.is_universal();
 
                 
                 
@@ -1623,21 +1627,25 @@ fn substitute_all(
         let name;
 
         let handle_variable_in_loop = |name: &Name, context: &mut Context<'a, 'b>| {
-            if context
-                .non_custom_references
-                .intersects(NonCustomReferences::FONT_UNITS | NonCustomReferences::ROOT_FONT_UNITS)
-            {
-                context
-                    .invalid_non_custom_properties
-                    .insert(LonghandId::FontSize);
-            }
-            if context
-                .non_custom_references
-                .intersects(NonCustomReferences::LH_UNITS | NonCustomReferences::ROOT_LH_UNITS)
-            {
-                context
-                    .invalid_non_custom_properties
-                    .insert(LonghandId::LineHeight);
+            if context.contains_computed_custom_property {
+                
+                
+                if context
+                    .non_custom_references
+                    .intersects(NonCustomReferences::FONT_UNITS | NonCustomReferences::ROOT_FONT_UNITS)
+                {
+                    context
+                        .invalid_non_custom_properties
+                        .insert(LonghandId::FontSize);
+                }
+                if context
+                    .non_custom_references
+                    .intersects(NonCustomReferences::LH_UNITS | NonCustomReferences::ROOT_LH_UNITS)
+                {
+                    context
+                        .invalid_non_custom_properties
+                        .insert(LonghandId::LineHeight);
+                }
             }
             
             handle_invalid_at_computed_value_time(name, context.map, context.computed_context);
@@ -1743,6 +1751,7 @@ fn substitute_all(
             computed_context,
             invalid_non_custom_properties,
             deferred_properties: deferred_properties_map.as_deref_mut(),
+            contains_computed_custom_property: false,
         };
         traverse(
             VarType::Custom((*name).clone()),
