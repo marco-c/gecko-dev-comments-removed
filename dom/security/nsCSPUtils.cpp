@@ -149,6 +149,17 @@ void CSP_ApplyMetaCSPToDoc(mozilla::dom::Document& aDoc,
   }
 
   
+  if (nsIURI* uri = aDoc.GetDocumentURI();
+      uri->SchemeIs("chrome") &&
+      !StaticPrefs::security_browser_xhtml_csp_enabled()) {
+    nsAutoCString spec;
+    uri->GetSpec(spec);
+    if (spec.EqualsLiteral("chrome://browser/content/browser.xhtml")) {
+      return;
+    }
+  }
+
+  
   
   
   nsresult rv =
