@@ -50,6 +50,7 @@ class GCRuntime;
 }
 
 namespace jit {
+class BaselineCompileTask;
 class IonCompileTask;
 class IonFreeTask;
 class JitRuntime;
@@ -174,6 +175,15 @@ bool StartOffThreadPromiseHelperTask(JSContext* cx,
 
 
 bool StartOffThreadPromiseHelperTask(PromiseHelperTask* task);
+
+
+
+
+bool StartOffThreadBaselineCompile(jit::BaselineCompileTask* task,
+                                   const AutoLockHelperThreadState& lock);
+
+void FinishOffThreadBaselineCompile(jit::BaselineCompileTask* task,
+                                    const AutoLockHelperThreadState& lock);
 
 
 
