@@ -891,6 +891,25 @@ void av1_set_quantizer(AV1_COMMON *const cm, int min_qmlevel, int max_qmlevel,
         
         chroma_dc_delta_q = -clamp((quant_params->base_qindex / 2) - 14, 0, 16);
         chroma_ac_delta_q = chroma_dc_delta_q;
+      } else if (cm->seq_params->subsampling_x == 1 &&
+                 cm->seq_params->subsampling_y == 0) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        chroma_dc_delta_q = 0;
+        chroma_ac_delta_q = clamp((quant_params->base_qindex / 2), 0, 6);
       } else if (cm->seq_params->subsampling_x == 0 &&
                  cm->seq_params->subsampling_y == 0) {
         
@@ -949,23 +968,27 @@ void av1_set_quantizer(AV1_COMMON *const cm, int min_qmlevel, int max_qmlevel,
   int (*get_chroma_qmlevel)(int, int, int);
 
   if (is_allintra) {
-    get_luma_qmlevel = aom_get_qmlevel_allintra;
-  } else {
-    get_luma_qmlevel = aom_get_qmlevel;
-  }
+    if (tuning == AOM_TUNE_SSIMULACRA2) {
+      
+      get_luma_qmlevel = aom_get_qmlevel_luma_ssimulacra2;
 
-  if (is_allintra) {
-    if (tuning == AOM_TUNE_SSIMULACRA2 && cm->seq_params->subsampling_x == 0 &&
-        cm->seq_params->subsampling_y == 0) {
-      
-      
-      
-      
-      get_chroma_qmlevel = aom_get_qmlevel_444_chroma_ssimulacra2;
+      if (cm->seq_params->subsampling_x == 0 &&
+          cm->seq_params->subsampling_y == 0) {
+        
+        
+        
+        
+        get_chroma_qmlevel = aom_get_qmlevel_444_chroma_ssimulacra2;
+      } else {
+        
+        get_chroma_qmlevel = aom_get_qmlevel_allintra;
+      }
     } else {
+      get_luma_qmlevel = aom_get_qmlevel_allintra;
       get_chroma_qmlevel = aom_get_qmlevel_allintra;
     }
   } else {
+    get_luma_qmlevel = aom_get_qmlevel;
     get_chroma_qmlevel = aom_get_qmlevel;
   }
 

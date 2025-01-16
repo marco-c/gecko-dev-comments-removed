@@ -98,7 +98,8 @@ uint32_t av1_write_sequence_header_obu(const SequenceHeader *seq_params,
 uint32_t av1_write_obu_header(AV1LevelParams *const level_params,
                               int *frame_header_count, OBU_TYPE obu_type,
                               bool has_nonzero_operating_point_idc,
-                              int obu_extension, uint8_t *const dst);
+                              bool is_layer_specific_obu, int obu_extension,
+                              uint8_t *const dst);
 
 
 

@@ -1792,6 +1792,8 @@ static aom_codec_err_t handle_tuning(aom_codec_alg_priv_t *ctx,
     
     
     
+    
+    
     extra_cfg->enable_qm = 1;
     extra_cfg->qm_min = QM_FIRST_SSIMULACRA2;
     extra_cfg->qm_max = QM_LAST_SSIMULACRA2;
@@ -1802,6 +1804,10 @@ static aom_codec_err_t handle_tuning(aom_codec_alg_priv_t *ctx,
     
     
     extra_cfg->dist_metric = AOM_DIST_METRIC_QM_PSNR;
+    
+    
+    
+    
     
     
     extra_cfg->enable_cdef = CDEF_ADAPTIVE;
@@ -3501,7 +3507,8 @@ static aom_codec_err_t encoder_encode(aom_codec_alg_priv_t *ctx,
         obu_header_size = av1_write_obu_header(
             &ppi->level_params, &cpi->frame_header_count,
             OBU_TEMPORAL_DELIMITER,
-            ppi->seq_params.has_nonzero_operating_point_idc, 0, ctx->cx_data);
+            ppi->seq_params.has_nonzero_operating_point_idc,
+            false, 0, ctx->cx_data);
         if (obu_header_size != 1) {
           aom_internal_error(&ppi->error, AOM_CODEC_ERROR, NULL);
         }

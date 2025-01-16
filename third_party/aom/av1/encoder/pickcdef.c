@@ -832,7 +832,7 @@ void av1_cdef_search(AV1_COMP *cpi) {
        cpi->ppi->rtc_ref.non_reference_frame) ||
       (cdef_control == CDEF_ADAPTIVE && cpi->oxcf.mode == ALLINTRA &&
        (cpi->oxcf.rc_cfg.mode == AOM_Q || cpi->oxcf.rc_cfg.mode == AOM_CQ) &&
-       cpi->oxcf.rc_cfg.cq_level < 100)) {
+       cpi->oxcf.rc_cfg.cq_level <= 32)) {
     CdefInfo *const cdef_info = &cm->cdef_info;
     cdef_info->nb_cdef_strengths = 1;
     cdef_info->cdef_bits = 0;
@@ -955,6 +955,44 @@ void av1_cdef_search(AV1_COMP *cpi) {
                                  luma_strength);
       STORE_CDEF_FILTER_STRENGTH(cdef_info->cdef_uv_strengths[j], pick_method,
                                  chroma_strength);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (cdef_control == CDEF_ADAPTIVE && cpi->oxcf.mode == ALLINTRA &&
+      (cpi->oxcf.rc_cfg.mode == AOM_Q || cpi->oxcf.rc_cfg.mode == AOM_CQ) &&
+      cpi->oxcf.rc_cfg.cq_level <= 220) {
+    for (int j = 0; j < cdef_info->nb_cdef_strengths; j++) {
+      const int luma_strength = cdef_info->cdef_strengths[j];
+      const int chroma_strength = cdef_info->cdef_uv_strengths[j];
+
+      const int new_pri_luma_strength =
+          (luma_strength / CDEF_SEC_STRENGTHS) >> 1;
+      const int new_sec_luma_strength =
+          (luma_strength % CDEF_SEC_STRENGTHS) >> 1;
+      const int new_pri_chroma_strength =
+          (chroma_strength / CDEF_SEC_STRENGTHS) >> 1;
+      const int new_sec_chroma_strength =
+          (chroma_strength % CDEF_SEC_STRENGTHS) >> 1;
+
+      cdef_info->cdef_strengths[j] =
+          new_pri_luma_strength * CDEF_SEC_STRENGTHS + new_sec_luma_strength;
+      cdef_info->cdef_uv_strengths[j] =
+          new_pri_chroma_strength * CDEF_SEC_STRENGTHS +
+          new_sec_chroma_strength;
     }
   }
 

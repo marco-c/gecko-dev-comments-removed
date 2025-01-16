@@ -64,8 +64,9 @@ inline FILE *OpenTestDataFile(const std::string &file_name) {
   return fopen(path_to_source.c_str(), "rb");
 }
 
-static FILE *GetTempOutFile(std::string *file_name) {
+static FILE *GetTempOutFile(std::string *file_name, bool text_mode = false) {
   file_name->clear();
+  const char *mode = text_mode ? "w+" : "wb+";
 #if defined(_WIN32)
   char fname[MAX_PATH];
   char tmppath[MAX_PATH];
@@ -73,7 +74,7 @@ static FILE *GetTempOutFile(std::string *file_name) {
     
     if (GetTempFileNameA(tmppath, "lvx", 0, fname)) {
       file_name->assign(fname);
-      return fopen(fname, "wb+");
+      return fopen(fname, mode);
     }
   }
   return nullptr;
@@ -94,13 +95,15 @@ static FILE *GetTempOutFile(std::string *file_name) {
   const int fd = mkstemp(temp_file_name.get());
   if (fd == -1) return nullptr;
   *file_name = temp_file_name.get();
-  return fdopen(fd, "wb+");
+  return fdopen(fd, mode);
 #endif
 }
 
 class TempOutFile {
  public:
-  TempOutFile() { file_ = GetTempOutFile(&file_name_); }
+  explicit TempOutFile(bool text_mode = false) {
+    file_ = GetTempOutFile(&file_name_, text_mode);
+  }
   ~TempOutFile() {
     CloseFile();
     if (!file_name_.empty()) {
@@ -131,6 +134,7 @@ class VideoSource {
   virtual void Begin() = 0;
 
   
+  
   virtual void Next() = 0;
 
   
@@ -145,6 +149,7 @@ class VideoSource {
   
   virtual aom_rational_t timebase() const = 0;
 
+  
   
   virtual unsigned int frame() const = 0;
 
