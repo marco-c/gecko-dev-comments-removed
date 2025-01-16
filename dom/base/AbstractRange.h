@@ -218,8 +218,7 @@ class AbstractRange : public nsISupports,
   
 
 
-  void UnregisterClosestCommonInclusiveAncestor(nsINode* aNode,
-                                                bool aIsUnlinking);
+  void UnregisterClosestCommonInclusiveAncestor(bool aIsUnlinking = false);
 
   void UpdateCommonAncestorIfNecessary();
 
