@@ -58,13 +58,24 @@ function testStringCharCodeAt() {
 }
 testStringCharCodeAt();
 
-function testStringCharCodeAtWithBoundArgs() {
+function testStringCharCodeAtWithBoundThis() {
   
   var str = "abcdefgh";
   var CharCodeAt = Function.prototype.call.bind(String.prototype.charCodeAt, str);
 
   for (var i = 0; i < 100; ++i) {
     assertEq(CharCodeAt(i & 7), str.charCodeAt(i & 7));
+  }
+}
+testStringCharCodeAtWithBoundThis();
+
+function testStringCharCodeAtWithBoundArgs() {
+  
+  var str = "abcdefgh";
+  var CharCodeAt = Function.prototype.call.bind(String.prototype.charCodeAt, str, 0);
+
+  for (var i = 0; i < 100; ++i) {
+    assertEq(CharCodeAt(), str.charCodeAt(0));
   }
 }
 testStringCharCodeAtWithBoundArgs();
@@ -79,3 +90,14 @@ function testMathRandomWithNoArgs() {
   }
 }
 testMathRandomWithNoArgs();
+
+function testMathMinBoundArgsAndStackArgs() {
+  
+  var str = "abcdefgh";
+  var MathMin = Function.prototype.call.bind(Math.min, null, 50);
+
+  for (var i = 0; i < 100; ++i) {
+    assertEq(MathMin(i), Math.min(50, i));
+  }
+}
+testMathMinBoundArgsAndStackArgs();

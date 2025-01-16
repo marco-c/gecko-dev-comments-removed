@@ -6433,6 +6433,23 @@ ObjOperandId InlinableNativeIRGenerator::emitLoadArgsArray() {
   return generator_.emitFunApplyArgsGuard(flags_.getArgFormat()).ref();
 }
 
+ValOperandId InlinableNativeIRGenerator::loadBoundArgument(
+    ObjOperandId calleeId, size_t argIndex) {
+  MOZ_ASSERT(isCalleeBoundFunction());
+
+  size_t numBoundArgs = callee_->as<BoundFunctionObject>().numBoundArgs();
+  MOZ_ASSERT(argIndex < numBoundArgs);
+
+  if (numBoundArgs <= BoundFunctionObject::MaxInlineBoundArgs) {
+    constexpr size_t inlineArgsOffset =
+        BoundFunctionObject::offsetOfFirstInlineBoundArg();
+
+    size_t argSlot = inlineArgsOffset + argIndex * sizeof(Value);
+    return writer.loadFixedSlot(calleeId, argSlot);
+  }
+  return writer.loadBoundFunctionArgument(calleeId, argIndex);
+}
+
 ValOperandId InlinableNativeIRGenerator::loadThis(ObjOperandId calleeId) {
   switch (flags_.getArgFormat()) {
     case CallFlags::Standard:
@@ -6444,7 +6461,10 @@ ValOperandId InlinableNativeIRGenerator::loadThis(ObjOperandId calleeId) {
       }
       return writer.loadArgumentFixedSlot(ArgumentKind::This, argc_, flags_);
     case CallFlags::FunCall:
-      MOZ_ASSERT(!hasBoundArguments(), "|this| from bound args not supported");
+      
+      if (hasBoundArguments()) {
+        return loadBoundArgument(calleeId, 0);
+      }
 
       
       
@@ -6496,23 +6516,19 @@ ValOperandId InlinableNativeIRGenerator::loadArgument(ObjOperandId calleeId,
   MOZ_ASSERT(flags_.getArgFormat() == CallFlags::Standard ||
              flags_.getArgFormat() == CallFlags::FunCall);
 
-  if (isCalleeBoundFunction()) {
-    MOZ_ASSERT_IF(flags_.getArgFormat() == CallFlags::FunCall,
-                  !hasBoundArguments());
-
+  if (hasBoundArguments()) {
     size_t numBoundArgs = callee_->as<BoundFunctionObject>().numBoundArgs();
     size_t argIndex = uint8_t(kind) - uint8_t(ArgumentKind::Arg0);
 
     
-    if (argIndex < numBoundArgs) {
-      if (numBoundArgs <= BoundFunctionObject::MaxInlineBoundArgs) {
-        constexpr size_t inlineArgsOffset =
-            BoundFunctionObject::offsetOfFirstInlineBoundArg();
+    
+    if (flags_.getArgFormat() == CallFlags::FunCall) {
+      argIndex += 1;
+    }
 
-        size_t argSlot = inlineArgsOffset + argIndex * sizeof(Value);
-        return writer.loadFixedSlot(calleeId, argSlot);
-      }
-      return writer.loadBoundFunctionArgument(calleeId, argIndex);
+    
+    if (argIndex < numBoundArgs) {
+      return loadBoundArgument(calleeId, argIndex);
     }
 
     
@@ -6523,6 +6539,9 @@ ValOperandId InlinableNativeIRGenerator::loadArgument(ObjOperandId calleeId,
     case CallFlags::Standard:
       return writer.loadArgumentFixedSlot(kind, argc_, flags_);
     case CallFlags::FunCall:
+      if (hasBoundArguments()) {
+        return writer.loadArgumentFixedSlot(kind, argc_);
+      }
       MOZ_ASSERT(argc_ > 1);
       
       return writer.loadArgumentFixedSlot(kind, argc_ - 1);
@@ -13144,12 +13163,20 @@ AttachDecision CallIRGenerator::tryAttachBoundFunCall(
   }
 
   
-  if (mode_ != ICState::Mode::Specialized) {
+  
+  static constexpr size_t MaxBoundArgs = 10;
+  size_t numBoundArgs = calleeObj->numBoundArgs();
+  if (numBoundArgs > MaxBoundArgs) {
     return AttachDecision::NoAction;
   }
 
   
-  if (calleeObj->numBoundArgs() != 0) {
+  if (numBoundArgs + argc_ > JIT_ARGS_LENGTH_MAX) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (mode_ != ICState::Mode::Specialized) {
     return AttachDecision::NoAction;
   }
 
@@ -13172,10 +13199,45 @@ AttachDecision CallIRGenerator::tryAttachBoundFunCall(
 
   Rooted<JSFunction*> target(cx_, boundThis);
   HandleValue newTarget = NullHandleValue;
-  HandleValue thisValue = argc_ > 0 ? args_[0] : UndefinedHandleValue;
-  HandleValueArray args =
-      argc_ > 0 ? HandleValueArray::subarray(args_, 1, args_.length() - 1)
-                : HandleValueArray::empty();
+
+  Rooted<Value> thisValue(cx_);
+  if (numBoundArgs > 0) {
+    thisValue = calleeObj->getBoundArg(0);
+  } else if (argc_ > 0) {
+    thisValue = args_[0];
+  } else {
+    MOZ_ASSERT(thisValue.isUndefined());
+  }
+
+  
+  JS::RootedVector<Value> concatenatedArgs(cx_);
+  if (numBoundArgs > 1) {
+    if (!concatenatedArgs.reserve((numBoundArgs - 1) + args_.length())) {
+      cx_->recoverFromOutOfMemory();
+      return AttachDecision::NoAction;
+    }
+
+    for (size_t i = 1; i < numBoundArgs; i++) {
+      concatenatedArgs.infallibleAppend(calleeObj->getBoundArg(i));
+    }
+    concatenatedArgs.infallibleAppend(args_.begin(), args_.length());
+  }
+  auto args = ([&]() -> HandleValueArray {
+    if (numBoundArgs > 1) {
+      
+      return concatenatedArgs;
+    }
+    if (numBoundArgs > 0) {
+      
+      return args_;
+    }
+    if (argc_ > 0) {
+      
+      return HandleValueArray::subarray(args_, 1, args_.length() - 1);
+    }
+    
+    return HandleValueArray::empty();
+  })();
 
   
   InlinableNativeIRGenerator nativeGen(*this, calleeObj, target, newTarget,
