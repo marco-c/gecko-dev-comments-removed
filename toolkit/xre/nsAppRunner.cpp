@@ -3822,75 +3822,60 @@ void mozilla::startup::IncreaseDescriptorLimits() {
 
 #ifdef XP_WIN
 
-static uint32_t GetMicrocodeVersionByVendor(HKEY key, DWORD upper,
-                                            DWORD lower) {
-  WCHAR data[13];  
-  DWORD len = sizeof(data);
-  DWORD vtype;
+static uint32_t FindCPUMicrocodeVersion(HKEY key) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  LPCWSTR choices[] = {L"Current Record Version", L"Update Revision",
+                       L"Update Signature", L"CurrentPatchLevel"};
+  for (const auto& oneChoice : choices) {
+    DWORD keyValue[2] = {};
+    DWORD len = sizeof(keyValue);
+    DWORD vtype;
 
-  if (RegQueryValueExW(key, L"VendorIdentifier", nullptr, &vtype,
-                       reinterpret_cast<LPBYTE>(data), &len) == ERROR_SUCCESS) {
-    if (wcscmp(L"GenuineIntel", data) == 0) {
-      
-      return upper;
+    if (RegQueryValueExW(key, oneChoice, nullptr, &vtype,
+                         reinterpret_cast<LPBYTE>(keyValue),
+                         &len) == ERROR_SUCCESS) {
+      if ((vtype == REG_BINARY) || (vtype == REG_DWORD)) {
+        for (size_t i = 0; i < (len / sizeof(DWORD)); i++) {
+          uint32_t value = keyValue[i];
+
+          if (value != 0) {
+            return value;
+          }
+        }
+      }
     }
-
-    if (wcscmp(L"AuthenticAMD", data) == 0) {
-      
-      return lower;
-    }
-
-    
-    return lower ? lower : upper;
   }
 
-  return 0;  
+  return 0;
 }
-
-#endif  
+#endif
 
 static void MaybeAddCPUMicrocodeCrashAnnotation() {
 #ifdef XP_WIN
   
   
-  uint32_t cpuUpdateRevision = 0;
   HKEY key;
   static const WCHAR keyName[] =
       L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0";
 
   if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyName, 0, KEY_QUERY_VALUE, &key) ==
       ERROR_SUCCESS) {
-    DWORD updateRevision[2];
-    DWORD len = sizeof(updateRevision);
-    DWORD vtype;
+    uint32_t cpuMicrocodeVersion = FindCPUMicrocodeVersion(key);
 
-    
-    
-    
-    LPCWSTR choices[] = {L"Update Signature", L"Update Revision",
-                         L"CurrentPatchLevel"};
-    for (const auto& oneChoice : choices) {
-      if (RegQueryValueExW(key, oneChoice, nullptr, &vtype,
-                           reinterpret_cast<LPBYTE>(updateRevision),
-                           &len) == ERROR_SUCCESS) {
-        if (vtype == REG_BINARY && len == sizeof(updateRevision)) {
-          cpuUpdateRevision = GetMicrocodeVersionByVendor(
-              key, updateRevision[1], updateRevision[0]);
-          break;
-        }
-
-        if (vtype == REG_DWORD && len == sizeof(updateRevision[0])) {
-          cpuUpdateRevision = static_cast<int>(updateRevision[0]);
-          break;
-        }
-      }
+    if (cpuMicrocodeVersion != 0) {
+      CrashReporter::RecordAnnotationNSCString(
+          CrashReporter::Annotation::CPUMicrocodeVersion,
+          nsPrintfCString("0x%" PRIx32, cpuMicrocodeVersion));
     }
-  }
-
-  if (cpuUpdateRevision > 0) {
-    CrashReporter::RecordAnnotationNSCString(
-        CrashReporter::Annotation::CPUMicrocodeVersion,
-        nsPrintfCString("0x%" PRIx32, cpuUpdateRevision));
   }
 #endif
 }
