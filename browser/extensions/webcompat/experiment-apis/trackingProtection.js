@@ -188,7 +188,7 @@ this.trackingProtection = class extends ExtensionAPI {
           register: fire => {
             const callback = (subject, topic, data) => {
               
-              let hostname = subject.linkedBrowser.currentURI.displayHost;
+              let hostname = subject.linkedBrowser.currentURI.host;
               let tabId = tabManager.convert(subject).id;
               fire.sync(tabId, data, hostname);
             };
@@ -204,7 +204,7 @@ this.trackingProtection = class extends ExtensionAPI {
           register: fire => {
             const callback = (subject, topic, data) => {
               
-              let hostname = subject.linkedBrowser.currentURI.displayHost;
+              let hostname = subject.linkedBrowser.currentURI.host;
               let tabId = tabManager.convert(subject).id;
               fire.sync(tabId, data, hostname);
             };
