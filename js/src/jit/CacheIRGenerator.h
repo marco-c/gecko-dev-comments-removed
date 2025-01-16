@@ -597,6 +597,7 @@ class MOZ_RAII InlinableNativeIRGenerator {
   HandleScript script() const { return generator_.script_; }
   bool isFirstStub() const { return generator_.isFirstStub_; }
   bool ignoresResult() const { return generator_.op_ == JSOp::CallIgnoresRv; }
+  JSOp op() const { return generator_.op_; }
 
   
   
