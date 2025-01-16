@@ -1492,56 +1492,11 @@ class ThreadActor extends Actor {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     const urlMap = {};
     for (const url of this.dbg.findSourceURLs()) {
       if (url !== "self-hosted") {
         if (!urlMap[url]) {
-          urlMap[url] = { count: 0, sources: [], hasWasm: false };
+          urlMap[url] = { count: 0, sources: [] };
         }
         urlMap[url].count++;
       }
@@ -1551,13 +1506,6 @@ class ThreadActor extends Actor {
 
     for (const source of sources) {
       this._addSource(source);
-
-      if (source.introductionType === "wasm") {
-        const origURL = source.url.replace(/^wasm:/, "");
-        if (urlMap[origURL]) {
-          urlMap[origURL].hasWasm = true;
-        }
-      }
 
       
       
@@ -1576,7 +1524,7 @@ class ThreadActor extends Actor {
     
     for (const [url, data] of Object.entries(urlMap)) {
       if (data.count > 0) {
-        this._resurrectSource(url, data.sources, data.hasWasm);
+        this._resurrectSource(url, data.sources);
       }
     }
   }
@@ -2204,10 +2152,7 @@ class ThreadActor extends Actor {
 
 
 
-
-
-
-  async _resurrectSource(url, existingInlineSources, forceEnableAsmJS) {
+  async _resurrectSource(url, existingInlineSources) {
     let { content, contentType, sourceMapURL } =
       await this.sourcesManager.urlContents(
         url,
@@ -2297,7 +2242,6 @@ class ThreadActor extends Actor {
               startLine,
               startColumn,
               isScriptElement: true,
-              forceEnableAsmJS,
             })
           );
         } catch (e) {
@@ -2323,7 +2267,6 @@ class ThreadActor extends Actor {
           url,
           startLine: 1,
           sourceMapURL,
-          forceEnableAsmJS,
         })
       );
     } catch (e) {
