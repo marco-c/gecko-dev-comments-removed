@@ -42,7 +42,7 @@ using mozilla::dom::AutoJSAPI;
 using mozilla::dom::ContentParent;
 
 
-static constexpr uint32_t kTelemetryIntervalMS = 60 * 1000;
+static constexpr uint32_t kTelemetryIntervalS = 60;
 
 
 
@@ -150,15 +150,11 @@ void MemoryTelemetry::Poke() {
 
   mLastPoke = now;
   if (!mTimer) {
-    uint32_t delay = kTelemetryIntervalMS;
+    TimeDuration delay = TimeDuration::FromSeconds(kTelemetryIntervalS);
     if (mLastRun) {
-      delay = uint32_t(
-          std::min(
-              TimeDuration::FromMilliseconds(kTelemetryIntervalMS),
-              std::max(TimeDuration::FromSeconds(kTelemetryCooldownS),
-                       TimeDuration::FromMilliseconds(kTelemetryIntervalMS) -
-                           (now - mLastRun)))
-              .ToMilliseconds());
+      delay = std::min(delay,
+                       std::max(TimeDuration::FromSeconds(kTelemetryCooldownS),
+                                delay - (now - mLastRun)));
     }
     RefPtr<MemoryTelemetry> self(this);
     auto res = NS_NewTimerWithCallback(
