@@ -559,7 +559,6 @@ bitflags::bitflags! {
         /// - `buffer myBuffer { ... } buffer_array[10]` (GLSL)
         ///
         /// Supported platforms:
-        /// - DX12
         /// - Vulkan
         ///
         /// This is a native only feature.
@@ -628,6 +627,10 @@ bitflags::bitflags! {
         /// This is a native only feature.
         const UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING = 1 << 31;
         /// Allows the user to create bind groups containing arrays with less bindings than the BindGroupLayout.
+        ///
+        /// Supported platforms:
+        /// - Vulkan
+        /// - DX12
         ///
         /// This is a native only feature.
         const PARTIALLY_BOUND_BINDING_ARRAY = 1 << 32;
@@ -939,6 +942,16 @@ bitflags::bitflags! {
         /// [VK_GOOGLE_display_timing]: https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_GOOGLE_display_timing.html
         /// [`Surface::as_hal()`]: https://docs.rs/wgpu/latest/wgpu/struct.Surface.html#method.as_hal
         const VULKAN_GOOGLE_DISPLAY_TIMING = 1 << 62;
+
+        /// Allows using the [VK_KHR_external_memory_win32] Vulkan extension.
+        ///
+        /// Supported platforms:
+        /// - Vulkan (with [VK_KHR_external_memory_win32])
+        ///
+        /// This is a native only feature.
+        ///
+        /// [VK_KHR_external_memory_win32]: https://registry.khronos.org/vulkan/specs/latest/man/html/VK_KHR_external_memory_win32.html
+        const VULKAN_EXTERNAL_MEMORY_WIN32 = 1 << 63;
     }
 }
 
@@ -2369,15 +2382,15 @@ bitflags::bitflags! {
         const MULTISAMPLE_RESOLVE = 1 << 5;
         /// When used as a STORAGE texture, then a texture with this format can be bound with
         /// [`StorageTextureAccess::ReadOnly`].
-        const STORAGE_READ_ONLY = 1 << 8;
+        const STORAGE_READ_ONLY = 1 << 6;
         /// When used as a STORAGE texture, then a texture with this format can be bound with
         /// [`StorageTextureAccess::WriteOnly`].
-        const STORAGE_WRITE_ONLY = 1 << 6;
+        const STORAGE_WRITE_ONLY = 1 << 7;
         /// When used as a STORAGE texture, then a texture with this format can be bound with
         /// [`StorageTextureAccess::ReadWrite`].
-        const STORAGE_READ_WRITE = 1 << 9;
+        const STORAGE_READ_WRITE = 1 << 8;
         /// If not present, the texture can't be blended into the render target.
-        const BLENDABLE = 1 << 7;
+        const BLENDABLE = 1 << 9;
     }
 }
 
@@ -4873,6 +4886,95 @@ impl Eq for DepthBiasState {}
 
 
 
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+pub enum LoadOp<V> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Clear(V) = 0,
+    
+    Load = 1,
+}
+
+impl<V> LoadOp<V> {
+    
+    pub fn eq_variant<T>(&self, other: LoadOp<T>) -> bool {
+        matches!(
+            (self, other),
+            (LoadOp::Clear(_), LoadOp::Clear(_)) | (LoadOp::Load, LoadOp::Load)
+        )
+    }
+}
+
+impl<V: Default> Default for LoadOp<V> {
+    fn default() -> Self {
+        Self::Clear(Default::default())
+    }
+}
+
+
+
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+pub enum StoreOp {
+    
+    #[default]
+    Store = 0,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Discard = 1,
+}
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Operations<V> {
+    
+    pub load: LoadOp<V>,
+    
+    
+    
+    
+    pub store: StoreOp,
+}
+
+impl<V: Default> Default for Operations<V> {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            load: LoadOp::<V>::default(),
+            store: StoreOp::default(),
+        }
+    }
+}
+
+
+
+
+
 #[repr(C)]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -5164,76 +5266,97 @@ pub struct VertexAttribute {
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
 pub enum VertexFormat {
     
-    Uint8x2 = 0,
+    Uint8 = 0,
     
-    Uint8x4 = 1,
+    Uint8x2 = 1,
     
-    Sint8x2 = 2,
+    Uint8x4 = 2,
     
-    Sint8x4 = 3,
+    Sint8 = 3,
     
-    Unorm8x2 = 4,
+    Sint8x2 = 4,
     
-    Unorm8x4 = 5,
+    Sint8x4 = 5,
     
-    Snorm8x2 = 6,
+    Unorm8 = 6,
     
-    Snorm8x4 = 7,
+    Unorm8x2 = 7,
     
-    Uint16x2 = 8,
+    Unorm8x4 = 8,
     
-    Uint16x4 = 9,
+    Snorm8 = 9,
     
-    Sint16x2 = 10,
+    Snorm8x2 = 10,
     
-    Sint16x4 = 11,
+    Snorm8x4 = 11,
     
-    Unorm16x2 = 12,
+    Uint16 = 12,
     
-    Unorm16x4 = 13,
+    Uint16x2 = 13,
     
-    Snorm16x2 = 14,
+    Uint16x4 = 14,
     
-    Snorm16x4 = 15,
+    Sint16 = 15,
     
-    Float16x2 = 16,
+    Sint16x2 = 16,
     
-    Float16x4 = 17,
+    Sint16x4 = 17,
     
-    Float32 = 18,
+    Unorm16 = 18,
     
-    Float32x2 = 19,
+    Unorm16x2 = 19,
     
-    Float32x3 = 20,
+    Unorm16x4 = 20,
     
-    Float32x4 = 21,
+    Snorm16 = 21,
     
-    Uint32 = 22,
+    Snorm16x2 = 22,
     
-    Uint32x2 = 23,
+    Snorm16x4 = 23,
     
-    Uint32x3 = 24,
+    Float16 = 24,
     
-    Uint32x4 = 25,
+    Float16x2 = 25,
     
-    Sint32 = 26,
+    Float16x4 = 26,
     
-    Sint32x2 = 27,
+    Float32 = 27,
     
-    Sint32x3 = 28,
+    Float32x2 = 28,
     
-    Sint32x4 = 29,
+    Float32x3 = 29,
     
-    Float64 = 30,
+    Float32x4 = 30,
     
-    Float64x2 = 31,
+    Uint32 = 31,
     
-    Float64x3 = 32,
+    Uint32x2 = 32,
     
-    Float64x4 = 33,
+    Uint32x3 = 33,
+    
+    Uint32x4 = 34,
+    
+    Sint32 = 35,
+    
+    Sint32x2 = 36,
+    
+    Sint32x3 = 37,
+    
+    Sint32x4 = 38,
+    
+    Float64 = 39,
+    
+    Float64x2 = 40,
+    
+    Float64x3 = 41,
+    
+    Float64x4 = 42,
     
     #[cfg_attr(feature = "serde", serde(rename = "unorm10-10-10-2"))]
-    Unorm10_10_10_2 = 34,
+    Unorm10_10_10_2 = 43,
+    
+    #[cfg_attr(feature = "serde", serde(rename = "unorm8x4-bgra"))]
+    Unorm8x4Bgra = 44,
 }
 
 impl VertexFormat {
@@ -5241,7 +5364,16 @@ impl VertexFormat {
     #[must_use]
     pub const fn size(&self) -> u64 {
         match self {
-            Self::Uint8x2 | Self::Sint8x2 | Self::Unorm8x2 | Self::Snorm8x2 => 2,
+            Self::Uint8 | Self::Sint8 | Self::Unorm8 | Self::Snorm8 => 1,
+            Self::Uint8x2
+            | Self::Sint8x2
+            | Self::Unorm8x2
+            | Self::Snorm8x2
+            | Self::Uint16
+            | Self::Sint16
+            | Self::Unorm16
+            | Self::Snorm16
+            | Self::Float16 => 2,
             Self::Uint8x4
             | Self::Sint8x4
             | Self::Unorm8x4
@@ -5254,7 +5386,8 @@ impl VertexFormat {
             | Self::Float32
             | Self::Uint32
             | Self::Sint32
-            | Self::Unorm10_10_10_2 => 4,
+            | Self::Unorm10_10_10_2
+            | Self::Unorm8x4Bgra => 4,
             Self::Uint16x4
             | Self::Sint16x4
             | Self::Unorm16x4
@@ -6068,6 +6201,9 @@ pub struct TextureViewDescriptor<L> {
     
     
     pub dimension: Option<TextureViewDimension>,
+    
+    
+    pub usage: Option<TextureUsages>,
     
     pub aspect: TextureAspect,
     
@@ -7448,19 +7584,52 @@ impl DispatchIndirectArgs {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ShaderBoundChecks {
-    runtime_checks: bool,
+pub struct ShaderRuntimeChecks {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub bounds_checks: bool,
+    
+    
+    
+    
+    
+    
+    pub force_loop_bounding: bool,
 }
 
-impl ShaderBoundChecks {
+impl ShaderRuntimeChecks {
     
     #[must_use]
-    pub fn new() -> Self {
-        ShaderBoundChecks {
-            runtime_checks: true,
-        }
+    pub fn checked() -> Self {
+        unsafe { Self::all(true) }
+    }
+
+    
+    
+    
+    
+    
+    
+    #[must_use]
+    pub fn unchecked() -> Self {
+        unsafe { Self::all(false) }
     }
 
     
@@ -7470,28 +7639,18 @@ impl ShaderBoundChecks {
     
     
     
-    
-    
-    
-    
-    
     #[must_use]
-    pub unsafe fn unchecked() -> Self {
-        ShaderBoundChecks {
-            runtime_checks: false,
+    pub unsafe fn all(all_checks: bool) -> Self {
+        Self {
+            bounds_checks: all_checks,
+            force_loop_bounding: all_checks,
         }
-    }
-
-    
-    #[must_use]
-    pub fn runtime_checks(&self) -> bool {
-        self.runtime_checks
     }
 }
 
-impl Default for ShaderBoundChecks {
+impl Default for ShaderRuntimeChecks {
     fn default() -> Self {
-        Self::new()
+        Self::checked()
     }
 }
 

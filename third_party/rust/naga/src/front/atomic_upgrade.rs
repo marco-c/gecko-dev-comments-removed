@@ -30,8 +30,6 @@
 
 
 
-
-
 use std::sync::{atomic::AtomicUsize, Arc};
 
 use crate::{GlobalVariable, Handle, Module, Type, TypeInner};
@@ -40,8 +38,8 @@ use crate::{GlobalVariable, Handle, Module, Type, TypeInner};
 pub enum Error {
     #[error("encountered an unsupported expression")]
     Unsupported,
-    #[error("upgrading structs of more than one member is not yet implemented")]
-    MultiMemberStruct,
+    #[error("unexpected end of struct field access indices")]
+    UnexpectedEndOfIndices,
     #[error("encountered unsupported global initializer in an atomic variable")]
     GlobalInitUnsupported,
     #[error("expected to find a global variable")]
@@ -87,9 +85,50 @@ impl Padding {
     }
 }
 
+#[derive(Debug, Default)]
+pub struct Upgrades {
+    
+    
+    
+    
+    globals: crate::arena::HandleSet<GlobalVariable>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fields: crate::FastHashMap<Handle<Type>, bit_set::BitSet>,
+}
+
+impl Upgrades {
+    pub fn insert_global(&mut self, global: Handle<GlobalVariable>) {
+        self.globals.insert(global);
+    }
+
+    pub fn insert_field(&mut self, struct_type: Handle<Type>, field: usize) {
+        self.fields.entry(struct_type).or_default().insert(field);
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.globals.is_empty()
+    }
+}
+
 struct UpgradeState<'a> {
     padding: Padding,
     module: &'a mut Module,
+
+    
+    
+    
+    upgraded_types: crate::FastHashMap<Handle<Type>, Handle<Type>>,
 }
 
 impl UpgradeState<'_> {
@@ -99,9 +138,36 @@ impl UpgradeState<'_> {
 
     
     
-    fn upgrade_type(&mut self, ty: Handle<Type>) -> Result<Handle<Type>, Error> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn upgrade_type(
+        &mut self,
+        ty: Handle<Type>,
+        upgrades: &Upgrades,
+    ) -> Result<Handle<Type>, Error> {
         let padding = self.inc_padding();
-        padding.trace("upgrading type: ", ty);
+        padding.trace("visiting type: ", ty);
+
+        
+        
+        if let Some(&new) = self.upgraded_types.get(&ty) {
+            return Ok(new);
+        }
 
         let inner = match self.module.types[ty].inner {
             TypeInner::Scalar(scalar) => {
@@ -109,50 +175,39 @@ impl UpgradeState<'_> {
                 TypeInner::Atomic(scalar)
             }
             TypeInner::Pointer { base, space } => TypeInner::Pointer {
-                base: self.upgrade_type(base)?,
+                base: self.upgrade_type(base, upgrades)?,
                 space,
             },
             TypeInner::Array { base, size, stride } => TypeInner::Array {
-                base: self.upgrade_type(base)?,
+                base: self.upgrade_type(base, upgrades)?,
                 size,
                 stride,
             },
             TypeInner::Struct { ref members, span } => {
                 
                 
-                
-                let &[crate::StructMember {
-                    ref name,
-                    ty,
-                    ref binding,
-                    offset,
-                }] = &members[..]
-                else {
-                    return Err(Error::MultiMemberStruct);
+                let Some(fields) = upgrades.fields.get(&ty) else {
+                    unreachable!("global or field incorrectly flagged as atomically accessed");
                 };
 
-                
-                
-                let name = name.clone();
-                let binding = binding.clone();
-                let upgraded_member_type = self.upgrade_type(ty)?;
+                let mut new_members = members.clone();
+                for field in fields {
+                    new_members[field].ty = self.upgrade_type(new_members[field].ty, upgrades)?;
+                }
+
                 TypeInner::Struct {
-                    members: vec![crate::StructMember {
-                        name,
-                        ty: upgraded_member_type,
-                        binding,
-                        offset,
-                    }],
+                    members: new_members,
                     span,
                 }
             }
             TypeInner::BindingArray { base, size } => TypeInner::BindingArray {
-                base: self.upgrade_type(base)?,
+                base: self.upgrade_type(base, upgrades)?,
                 size,
             },
             _ => return Ok(ty),
         };
 
+        
         
         
         let r#type = &self.module.types[ty];
@@ -165,27 +220,32 @@ impl UpgradeState<'_> {
         padding.debug("from: ", r#type);
         padding.debug("to:   ", &new_type);
         let new_handle = self.module.types.insert(new_type, span);
+        self.upgraded_types.insert(ty, new_handle);
         Ok(new_handle)
     }
 
-    fn upgrade_global_variable(&mut self, handle: Handle<GlobalVariable>) -> Result<(), Error> {
-        let padding = self.inc_padding();
-        padding.trace("upgrading global variable: ", handle);
+    fn upgrade_all(&mut self, upgrades: &Upgrades) -> Result<(), Error> {
+        for handle in upgrades.globals.iter() {
+            let padding = self.inc_padding();
 
-        let var = &self.module.global_variables[handle];
+            let global = &self.module.global_variables[handle];
+            padding.trace("visiting global variable: ", handle);
+            padding.trace("var: ", global);
 
-        if var.init.is_some() {
-            return Err(Error::GlobalInitUnsupported);
+            if global.init.is_some() {
+                return Err(Error::GlobalInitUnsupported);
+            }
+
+            let var_ty = global.ty;
+            let new_ty = self.upgrade_type(var_ty, upgrades)?;
+            if new_ty != var_ty {
+                padding.debug("upgrading global variable: ", handle);
+                padding.debug("from ty: ", var_ty);
+                padding.debug("to ty:   ", new_ty);
+                self.module.global_variables[handle].ty = new_ty;
+            }
         }
 
-        let var_ty = var.ty;
-        let new_ty = self.upgrade_type(var.ty)?;
-        if new_ty != var_ty {
-            padding.debug("upgrading global variable: ", handle);
-            padding.debug("from ty: ", var_ty);
-            padding.debug("to ty:   ", new_ty);
-            self.module.global_variables[handle].ty = new_ty;
-        }
         Ok(())
     }
 }
@@ -194,18 +254,17 @@ impl Module {
     
     
     
-    pub(crate) fn upgrade_atomics(
-        &mut self,
-        global_var_handles: impl IntoIterator<Item = Handle<GlobalVariable>>,
-    ) -> Result<(), Error> {
+    pub(crate) fn upgrade_atomics(&mut self, upgrades: &Upgrades) -> Result<(), Error> {
         let mut state = UpgradeState {
             padding: Default::default(),
             module: self,
+            upgraded_types: crate::FastHashMap::with_capacity_and_hasher(
+                upgrades.fields.len(),
+                Default::default(),
+            ),
         };
 
-        for handle in global_var_handles {
-            state.upgrade_global_variable(handle)?;
-        }
+        state.upgrade_all(upgrades)?;
 
         Ok(())
     }
