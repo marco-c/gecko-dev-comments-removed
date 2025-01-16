@@ -8,18 +8,22 @@
 
 #include "mozilla/CaretAssociationHint.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/TextControlElement.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "gfxContext.h"
+#include "nsBlockFrame.h"
 #include "nsCOMPtr.h"
+#include "nsComputedDOMStyle.h"
 #include "nsContainerFrame.h"
 #include "nsFontMetrics.h"
+#include "nsGkAtoms.h"
 #include "nsHTMLParts.h"
 #include "nsIFrame.h"
-#include "nsPresContext.h"
-#include "nsLineLayout.h"
-#include "nsStyleConsts.h"
-#include "nsGkAtoms.h"
 #include "nsLayoutUtils.h"
+#include "nsLineLayout.h"
+#include "nsPresContext.h"
+#include "nsStyleConsts.h"
+#include "nsTextFrame.h"
 
 
 #include "nsIContent.h"
@@ -237,13 +241,64 @@ nsIFrame::FrameSearchResult BRFrame::PeekOffsetWord(
 #ifdef ACCESSIBILITY
 a11y::AccType BRFrame::AccessibleType() {
   dom::HTMLBRElement* brElement = dom::HTMLBRElement::FromNode(mContent);
-  if (brElement->IsPaddingForEmptyEditor() ||
-      brElement->IsPaddingForEmptyLastLine()) {
+
+  if (!brElement->IsPaddingForEmptyLastLine()) {
     
     
-    return a11y::eNoType;
+    
+    return a11y::eHTMLBRType;
   }
 
+  
+  
+  
+  if (brElement->IsInNativeAnonymousSubtree()) {
+    const auto* textControlElement = TextControlElement::FromNodeOrNull(
+        brElement->GetClosestNativeAnonymousSubtreeRootParentOrHost());
+    if (textControlElement &&
+        textControlElement->IsSingleLineTextControlOrTextArea()) {
+      return a11y::eNoType;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsIFrame* const parentFrame = GetParent();
+  if (!parentFrame) {
+    return a11y::eHTMLBRType;
+  }
+  nsIFrame* const currentBlock =
+      nsBlockFrame::GetNearestAncestorBlock(parentFrame);
+  nsIContent* const currentBlockContent =
+      currentBlock ? currentBlock->GetContent() : nullptr;
+  for (nsIContent* previousContent =
+           brElement->GetPrevNode(currentBlockContent);
+       previousContent;
+       previousContent = previousContent->GetPrevNode(currentBlockContent)) {
+    nsIFrame* const precedingContentFrame = previousContent->GetPrimaryFrame();
+    if (!precedingContentFrame || precedingContentFrame->IsEmpty()) {
+      continue;
+    }
+    if (precedingContentFrame->IsBlockFrameOrSubclass()) {
+      break;  
+    }
+    return a11y::eHTMLBRType;
+  }
   return a11y::eHTMLBRType;
 }
+
 #endif
