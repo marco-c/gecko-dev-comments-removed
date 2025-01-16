@@ -13,6 +13,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/dom/AutocompleteInfoBinding.h"
 #include "mozilla/dom/BlobImpl.h"
+#include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/Directory.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/dom/ElementBinding.h"
@@ -3265,28 +3266,6 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   }
 
   nsGenericHTMLFormControlElementWithState::GetEventTargetParent(aVisitor);
-
-  
-  
-  
-  
-  
-  if (CreatesDateTimeWidget() && aVisitor.mEvent->IsTrusted() &&
-      (aVisitor.mEvent->mMessage == eFocus ||
-       aVisitor.mEvent->mMessage == eFocusIn ||
-       aVisitor.mEvent->mMessage == eFocusOut ||
-       aVisitor.mEvent->mMessage == eBlur)) {
-    nsIContent* originalTarget = nsIContent::FromEventTargetOrNull(
-        aVisitor.mEvent->AsFocusEvent()->mOriginalTarget);
-    nsIContent* relatedTarget = nsIContent::FromEventTargetOrNull(
-        aVisitor.mEvent->AsFocusEvent()->mRelatedTarget);
-
-    if (originalTarget && relatedTarget &&
-        originalTarget->FindFirstNonChromeOnlyAccessContent() ==
-            relatedTarget->FindFirstNonChromeOnlyAccessContent()) {
-      aVisitor.mCanHandle = false;
-    }
-  }
 }
 
 void HTMLInputElement::LegacyPreActivationBehavior(
@@ -3373,10 +3352,44 @@ void HTMLInputElement::LegacyPreActivationBehavior(
   }
 }
 
+void HTMLInputElement::MaybeDispatchWillBlur(EventChainVisitor& aVisitor) {
+  if (!CreatesDateTimeWidget() || !aVisitor.mEvent->IsTrusted()) {
+    return;
+  }
+  RefPtr<Element> dateTimeBoxElement = GetDateTimeBoxElement();
+  if (!dateTimeBoxElement) {
+    return;
+  }
+  AutoJSAPI jsapi;
+  if (NS_WARN_IF(!jsapi.Init(GetOwnerGlobal()))) {
+    return;
+  }
+  if (!aVisitor.mDOMEvent) {
+    RefPtr<Event> event = EventDispatcher::CreateEvent(
+        aVisitor.mEvent->mOriginalTarget, aVisitor.mPresContext,
+        aVisitor.mEvent, u""_ns);
+    event.swap(aVisitor.mDOMEvent);
+  }
+  JS::Rooted<JS::Value> detail(jsapi.cx(), JS::NullHandleValue);
+  if (NS_WARN_IF(!ToJSValue(jsapi.cx(), aVisitor.mDOMEvent, &detail))) {
+    return;
+  }
+  
+  RefPtr<CustomEvent> event =
+      NS_NewDOMCustomEvent(OwnerDoc(), aVisitor.mPresContext, nullptr);
+  event->InitCustomEvent(jsapi.cx(), u"MozDateTimeWillBlur"_ns,
+                          false,
+                          false, detail);
+  event->SetTrusted(true);
+  dateTimeBoxElement->DispatchEvent(*event);
+}
+
 nsresult HTMLInputElement::PreHandleEvent(EventChainVisitor& aVisitor) {
   if (aVisitor.mItemFlags & NS_PRE_HANDLE_BLUR_EVENT) {
     MOZ_ASSERT(aVisitor.mEvent->mMessage == eBlur);
+    
     FireChangeEventIfNeeded();
+    MaybeDispatchWillBlur(aVisitor);
   }
   return nsGenericHTMLFormControlElementWithState::PreHandleEvent(aVisitor);
 }
@@ -5905,7 +5918,7 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
     if (CreatesDateTimeWidget()) {
       if (RefPtr<Element> dateTimeBoxElement = GetDateTimeBoxElement()) {
         
-        RefPtr<Document> doc = dateTimeBoxElement->OwnerDoc();
+        RefPtr<Document> doc = OwnerDoc();
         nsContentUtils::DispatchTrustedEvent(doc, dateTimeBoxElement,
                                              u"MozDateTimeShowPickerForJS"_ns,
                                              CanBubble::eNo, Cancelable::eNo);
