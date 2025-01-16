@@ -426,8 +426,6 @@ void WebRtcOpus_DecoderInit(OpusDecInst* inst);
 
 
 
-
-
 int WebRtcOpus_Decode(OpusDecInst* inst,
                       const uint8_t* encoded,
                       size_t encoded_bytes,
