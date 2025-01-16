@@ -475,7 +475,12 @@ class SelectorAutocompleter extends EventEmitter {
     if (state === this.States.TAG) {
       
       
-      firstPart = (query.match(/[\s>+]?([a-zA-Z]*)$/) || ["", query])[1];
+      
+      
+      
+      
+      const matches = query.match(/[\s>+]?(?<tag>[a-zA-Z0-9_-]*)$/);
+      firstPart = matches.groups.tag;
       query = query.slice(0, query.length - firstPart.length);
     } else if (state === this.States.CLASS) {
       
