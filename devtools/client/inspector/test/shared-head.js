@@ -565,9 +565,7 @@ var focusEditableField = async function (
   await onFocus;
 
   info("Editable field gained focus, returning the input field now");
-  const onEdit = inplaceEditor(editable.ownerDocument.activeElement);
-
-  return onEdit;
+  return inplaceEditor(editable.ownerDocument.activeElement);
 };
 
 
@@ -1083,7 +1081,7 @@ async function setProperty(
   { blurNewProperty = true, flushCount = 1 } = {}
 ) {
   info("Set property to: " + value);
-  await focusEditableField(ruleView, textProp.editor.valueSpan);
+  const editor = await focusEditableField(ruleView, textProp.editor.valueSpan);
 
   
   
@@ -1104,6 +1102,11 @@ async function setProperty(
     await onPopupOpened;
   } else {
     await wait(500);
+    
+    
+    
+    
+    editor.input.focus();
     EventUtils.sendString(value, ruleView.styleWindow);
   }
 
@@ -1138,6 +1141,11 @@ async function setProperty(
     onPopupClosed = once(ruleView.popup, "popup-closed");
   }
 
+  
+  
+  
+  
+  editor.input.focus();
   EventUtils.synthesizeKey(
     blurNewProperty ? "VK_RETURN" : "VK_TAB",
     {},
