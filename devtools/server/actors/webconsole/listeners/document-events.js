@@ -109,7 +109,7 @@ DocumentEventsListener.prototype = {
       return;
     }
 
-    const time = window.performance.timing.navigationStart;
+    const time = this._getPerformanceTiming(window, "navigationStart");
 
     this.emit("dom-loading", {
       time,
@@ -161,7 +161,7 @@ DocumentEventsListener.prototype = {
     
     
     const window = event.target.defaultView;
-    const time = window.performance.timing.domInteractive;
+    const time = this._getPerformanceTiming(window, "domInteractive");
     this.emit("dom-interactive", { time, isFrameSwitching });
   },
 
@@ -173,7 +173,7 @@ DocumentEventsListener.prototype = {
     
     
     const window = event.target.defaultView;
-    const time = window.performance.timing.domComplete;
+    const time = this._getPerformanceTiming(window, "domComplete");
     this.emit("dom-complete", {
       time,
       isFrameSwitching,
@@ -193,10 +193,10 @@ DocumentEventsListener.prototype = {
     const isWindow = flag & Ci.nsIWebProgressListener.STATE_IS_WINDOW;
     const window = progress.DOMWindow;
     if (isDocument && isStop) {
-      const time = window.performance.timing.domInteractive;
+      const time = this._getPerformanceTiming(window, "domInteractive");
       this.emit("dom-interactive", { time });
     } else if (isWindow && isStop) {
-      const time = window.performance.timing.domComplete;
+      const time = this._getPerformanceTiming(window, "domComplete");
       this.emit("dom-complete", {
         time,
         hasNativeConsoleAPI: this.hasNativeConsoleAPI(window),
@@ -246,6 +246,29 @@ DocumentEventsListener.prototype = {
       } catch (e) {}
       this.webProgress = null;
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  _getPerformanceTiming(window, timing) {
+    if (!window.performance?.timing) {
+      
+      
+      return -1;
+    }
+
+    return window.performance.timing[timing];
   },
 
   QueryInterface: ChromeUtils.generateQI([
