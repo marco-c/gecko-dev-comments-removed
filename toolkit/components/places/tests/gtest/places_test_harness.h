@@ -4,9 +4,6 @@
 
 
 
-#ifndef places_test_harness_h__
-#define places_test_harness_h__
-
 #include "gtest/gtest.h"
 #include "mozilla/dom/PlacesEventBinding.h"
 #include "nsIWeakReference.h"
@@ -27,8 +24,6 @@
 #include "mozIStorageStatementCallback.h"
 #include "mozIStoragePendingStatement.h"
 #include "nsIObserver.h"
-#include "nsIUserIdleService.h"
-#include "nsWidgetsCID.h"
 #include "prinrval.h"
 #include "prtime.h"
 #include "mozilla/Attributes.h"
@@ -55,8 +50,6 @@ struct Test {
   const char* const name;
 };
 #define PTEST(aName) {aName, #aName}
-
-#define TEST_INFO_STR "TEST-INFO | "
 
 
 
@@ -425,13 +418,3 @@ class WaitForConnectionClosed final : public nsIObserver {
 };
 
 NS_IMPL_ISUPPORTS(WaitForConnectionClosed, nsIObserver)
-
-void disable_idle_service() {
-  (void)fprintf(stderr, TEST_INFO_STR "Disabling Idle Service.\n");
-
-  nsCOMPtr<nsIUserIdleService> idle =
-      do_GetService("@mozilla.org/widget/useridleservice;1");
-  idle->SetDisabled(true);
-}
-
-#endif  

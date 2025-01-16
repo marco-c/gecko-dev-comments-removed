@@ -20,10 +20,8 @@
 
 class nsIFile;
 
-namespace mozilla::places {
-
-
-
+namespace mozilla {
+namespace places {
 
 
 
@@ -37,9 +35,6 @@ class WeakAsyncStatementCallback : public mozIStorageStatementCallback {
   virtual ~WeakAsyncStatementCallback() = default;
 };
 
-
-
-
 class AsyncStatementCallback : public WeakAsyncStatementCallback {
  public:
   NS_DECL_ISUPPORTS
@@ -47,21 +42,6 @@ class AsyncStatementCallback : public WeakAsyncStatementCallback {
 
  protected:
   virtual ~AsyncStatementCallback() = default;
-};
-
-
-
-
-class PendingStatementCallback : public AsyncStatementCallback {
- public:
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(PendingStatementCallback,
-                                       AsyncStatementCallback);
-  PendingStatementCallback() = default;
-
-  virtual nsresult BindParams(mozIStorageBindingParamsArray*) MOZ_MUST_OVERRIDE;
-
- protected:
-  virtual ~PendingStatementCallback() = default;
 };
 
 
@@ -220,9 +200,8 @@ class QueryKeyValuePair final {
                     int32_t aEquals, int32_t aPastEnd) {
     if (aEquals == aKeyBegin) aEquals = aPastEnd;
     key = Substring(aSource, aKeyBegin, aEquals - aKeyBegin);
-    if (aPastEnd - aEquals > 0) {
+    if (aPastEnd - aEquals > 0)
       value = Substring(aSource, aEquals + 1, aPastEnd - aEquals - 1);
-    }
   }
   nsCString key;
   nsCString value;
@@ -326,6 +305,7 @@ class AsyncStatementTelemetryTimer : public AsyncStatementCallback {
   const TimeStamp mStart;
 };
 
+}  
 }  
 
 #endif  

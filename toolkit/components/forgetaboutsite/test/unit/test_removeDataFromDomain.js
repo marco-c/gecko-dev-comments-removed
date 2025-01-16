@@ -549,18 +549,6 @@ var tests = [
   test_storage_cleared_base_domain,
 ];
 
-add_setup(async function () {
-  
-  
-  
-  
-  
-  Assert.equal(
-    PlacesUtils.history.databaseStatus,
-    PlacesUtils.history.DATABASE_STATUS_CREATE
-  );
-});
-
 function run_test() {
   for (let i = 0; i < tests.length; i++) {
     add_task(tests[i]);

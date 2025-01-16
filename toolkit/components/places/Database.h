@@ -17,12 +17,6 @@
 #include "nsCategoryCache.h"
 
 
-#define DATABASE_FILENAME u"places.sqlite"_ns
-
-#define DATABASE_FAVICONS_FILENAME u"favicons.sqlite"_ns
-#define DATABASE_FAVICONS_SCHEMANAME "favicons"_ns
-
-
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
 
 
@@ -209,11 +203,6 @@ class Database final : public nsIObserver, public nsSupportsWeakReference {
     return mTagsRootId;
   }
 
-  
-
-
-  static nsresult InitFunctions(mozIStorageConnection*);
-
  protected:
   
 
@@ -288,6 +277,11 @@ class Database final : public nsIObserver, public nsSupportsWeakReference {
 
   nsresult EnsureBookmarkRoots(const int32_t startPosition,
                                bool shouldReparentRoots);
+
+  
+
+
+  nsresult InitFunctions();
 
   
 

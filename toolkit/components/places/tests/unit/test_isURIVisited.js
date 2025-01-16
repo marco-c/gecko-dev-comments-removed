@@ -22,18 +22,6 @@ const SCHEMES = {
   "javascript:": false,
 };
 
-add_setup(async function () {
-  
-  
-  
-  
-  
-  Assert.equal(
-    PlacesUtils.history.databaseStatus,
-    PlacesUtils.history.DATABASE_STATUS_CREATE
-  );
-});
-
 add_task(async function test_isURIVisited() {
   let history = Cc["@mozilla.org/browser/history;1"].getService(
     Ci.mozIAsyncHistory
