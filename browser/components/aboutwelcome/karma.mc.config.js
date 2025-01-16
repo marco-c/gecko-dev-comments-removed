@@ -15,7 +15,6 @@ const PATHS = {
 
   
   moduleResolveDirectory: __dirname,
-  newtabResolveDirectory: "../newtab",
 
   
   resourcePathRegEx: /^resource:\/\/activity-stream\//,
@@ -182,13 +181,8 @@ module.exports = function (config) {
       
       resolve: {
         extensions: [".js", ".jsx"],
-        modules: [
-          PATHS.moduleResolveDirectory,
-          "node_modules",
-          PATHS.newtabResolveDirectory,
-        ],
+        modules: [PATHS.moduleResolveDirectory, "node_modules"],
         alias: {
-          newtab: path.join(__dirname, "../newtab"),
           asrouter: path.join(__dirname, "../asrouter"),
         },
       },
