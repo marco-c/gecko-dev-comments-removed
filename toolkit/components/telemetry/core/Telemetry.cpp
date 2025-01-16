@@ -67,7 +67,6 @@
 #  include "other/UntrustedModules.h"
 #endif
 #include "nsJSUtils.h"
-#include "nsLocalFile.h"
 #include "nsNativeCharsetUtils.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
@@ -1158,7 +1157,7 @@ already_AddRefed<nsITelemetry> TelemetryImpl::CreateTelemetryInstance() {
                                         XRE_IsParentProcess());
 
   
-  TelemetryUserInteraction::InitializeGlobalState(useTelemetry, useTelemetry);
+  TelemetryUserInteraction::InitializeGlobalState(useTelemetry);
 
   
   TelemetryImpl* telemetry = new TelemetryImpl();
