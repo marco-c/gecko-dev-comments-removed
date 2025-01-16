@@ -9,12 +9,29 @@
 
 namespace mozilla {
 
+template <typename PT, typename CT>
+class RangeBoundaryBase;
+
+namespace intl {
+class BidiEmbeddingLevel;
+};
+
 
 
 
 
 
 enum class CaretAssociationHint { Before, After };
+
+
+
+
+
+
+template <typename PT, typename CT>
+CaretAssociationHint ComputeCaretAssociationHint(
+    CaretAssociationHint aDefault, intl::BidiEmbeddingLevel aBidiLevel,
+    const RangeBoundaryBase<PT, CT>& aCaretPoint);
 
 }  
 

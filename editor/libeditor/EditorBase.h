@@ -2642,7 +2642,7 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual Result<CaretPoint, nsresult>
   DeleteRangesWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
                               nsIEditor::EStripWrappers aStripWrappers,
-                              const AutoRangeArray& aRangesToDelete);
+                              const AutoClonedRangeArray& aRangesToDelete);
 
   
 
@@ -2657,7 +2657,7 @@ class EditorBase : public nsIEditor,
   already_AddRefed<DeleteMultipleRangesTransaction>
   CreateTransactionForDeleteSelection(
       HowToHandleCollapsedRange aHowToHandleCollapsedRange,
-      const AutoRangeArray& aRangesToDelete);
+      const AutoClonedRangeArray& aRangesToDelete);
 
   
 
@@ -3001,9 +3001,11 @@ class EditorBase : public nsIEditor,
   
   bool mIsHTMLEditorClass;
 
-  friend class AlignStateAtSelection;  
-                                       
-  friend class AutoRangeArray;  
+  friend class AlignStateAtSelection;          
+                                               
+  friend class AutoClonedRangeArray;           
+                                               
+  friend class AutoClonedSelectionRangeArray;  
   friend class AutoSelectionRestorer;   
   friend class CaretPoint;              
                                         

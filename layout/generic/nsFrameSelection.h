@@ -193,6 +193,8 @@ struct MOZ_STACK_CLASS PeekOffsetStruct {
   CaretAssociationHint mAttach;
 };
 
+struct LimitersAndCaretData;
+
 }  
 
 struct nsPrevNextBidiLevels {
@@ -515,7 +517,11 @@ class nsFrameSelection final {
 
   nsresult RepaintSelection(mozilla::SelectionType aSelectionType);
 
-  bool IsValidSelectionPoint(nsINode* aNode) const;
+  [[nodiscard]] bool NodeIsInLimiters(const nsINode* aContainerNode) const;
+
+  [[nodiscard]] static bool NodeIsInLimiters(
+      const nsINode* aContainerNode, const nsIContent* aSelectionLimiter,
+      const nsIContent* aSelectionAncestorLimiter);
 
   
 
@@ -622,11 +628,23 @@ class nsFrameSelection final {
 
 
 
+
+
+
+
+
+
+
+
   template <typename RangeType>
-  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
-  CreateRangeExtendedToNextGraphemeClusterBoundary() {
-    return CreateRangeExtendedToSomewhere<RangeType>(eDirNext, eSelectCluster,
-                                                     eLogical);
+  MOZ_CAN_RUN_SCRIPT static mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToNextGraphemeClusterBoundary(
+      mozilla::PresShell& aPresShell,
+      const mozilla::LimitersAndCaretData& aLimitersAndCaretData,
+      const mozilla::dom::AbstractRange& aRange, nsDirection aRangeDirection) {
+    return CreateRangeExtendedToSomewhere<RangeType>(
+        aPresShell, aLimitersAndCaretData, aRange, aRangeDirection, eDirNext,
+        eSelectCluster, eLogical);
   }
 
   
@@ -634,10 +652,22 @@ class nsFrameSelection final {
 
 
 
+
+
+
+
+
+
+
+
   template <typename RangeType>
-  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
-  CreateRangeExtendedToPreviousCharacterBoundary() {
+  MOZ_CAN_RUN_SCRIPT static mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToPreviousCharacterBoundary(
+      mozilla::PresShell& aPresShell,
+      const mozilla::LimitersAndCaretData& aLimitersAndCaretData,
+      const mozilla::dom::AbstractRange& aRange, nsDirection aRangeDirection) {
     return CreateRangeExtendedToSomewhere<RangeType>(
+        aPresShell, aLimitersAndCaretData, aRange, aRangeDirection,
         eDirPrevious, eSelectCharacter, eLogical);
   }
 
@@ -645,32 +675,68 @@ class nsFrameSelection final {
 
 
 
-  template <typename RangeType>
-  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
-  CreateRangeExtendedToNextWordBoundary() {
-    return CreateRangeExtendedToSomewhere<RangeType>(eDirNext, eSelectWord,
-                                                     eLogical);
-  }
 
-  
+
+
+
+
 
 
 
   template <typename RangeType>
-  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
-  CreateRangeExtendedToPreviousWordBoundary() {
-    return CreateRangeExtendedToSomewhere<RangeType>(eDirPrevious, eSelectWord,
-                                                     eLogical);
-  }
-
-  
-
-
-
-  template <typename RangeType>
-  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
-  CreateRangeExtendedToPreviousHardLineBreak() {
+  MOZ_CAN_RUN_SCRIPT static mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToNextWordBoundary(
+      mozilla::PresShell& aPresShell,
+      const mozilla::LimitersAndCaretData& aLimitersAndCaretData,
+      const mozilla::dom::AbstractRange& aRange, nsDirection aRangeDirection) {
     return CreateRangeExtendedToSomewhere<RangeType>(
+        aPresShell, aLimitersAndCaretData, aRange, aRangeDirection, eDirNext,
+        eSelectWord, eLogical);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  template <typename RangeType>
+  MOZ_CAN_RUN_SCRIPT static mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToPreviousWordBoundary(
+      mozilla::PresShell& aPresShell,
+      const mozilla::LimitersAndCaretData& aLimitersAndCaretData,
+      const mozilla::dom::AbstractRange& aRange, nsDirection aRangeDirection) {
+    return CreateRangeExtendedToSomewhere<RangeType>(
+        aPresShell, aLimitersAndCaretData, aRange, aRangeDirection,
+        eDirPrevious, eSelectWord, eLogical);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  template <typename RangeType>
+  MOZ_CAN_RUN_SCRIPT static mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToPreviousHardLineBreak(
+      mozilla::PresShell& aPresShell,
+      const mozilla::LimitersAndCaretData& aLimitersAndCaretData,
+      const mozilla::dom::AbstractRange& aRange, nsDirection aRangeDirection) {
+    return CreateRangeExtendedToSomewhere<RangeType>(
+        aPresShell, aLimitersAndCaretData, aRange, aRangeDirection,
         eDirPrevious, eSelectBeginLine, eLogical);
   }
 
@@ -678,11 +744,23 @@ class nsFrameSelection final {
 
 
 
+
+
+
+
+
+
+
+
   template <typename RangeType>
-  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
-  CreateRangeExtendedToNextHardLineBreak() {
-    return CreateRangeExtendedToSomewhere<RangeType>(eDirNext, eSelectEndLine,
-                                                     eLogical);
+  MOZ_CAN_RUN_SCRIPT static mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToNextHardLineBreak(
+      mozilla::PresShell& aPresShell,
+      const mozilla::LimitersAndCaretData& aLimitersAndCaretData,
+      const mozilla::dom::AbstractRange& aRange, nsDirection aRangeDirection) {
+    return CreateRangeExtendedToSomewhere<RangeType>(
+        aPresShell, aLimitersAndCaretData, aRange, aRangeDirection, eDirNext,
+        eSelectEndLine, eLogical);
   }
 
   
@@ -917,7 +995,20 @@ class nsFrameSelection final {
   mozilla::Result<mozilla::PeekOffsetOptions, nsresult>
   CreatePeekOffsetOptionsForCaretMove(mozilla::dom::Selection* aSelection,
                                       ExtendSelection aExtendSelection,
-                                      CaretMovementStyle aMovementStyle) const;
+                                      CaretMovementStyle aMovementStyle) const {
+    MOZ_ASSERT(aSelection);
+    return CreatePeekOffsetOptionsForCaretMove(
+        mLimiters.mLimiter,
+        static_cast<ForceEditableRegion>(aSelection->IsEditorSelection()),
+        aExtendSelection, aMovementStyle);
+  }
+
+  enum class ForceEditableRegion : bool { No, Yes };
+  static mozilla::Result<mozilla::PeekOffsetOptions, nsresult>
+  CreatePeekOffsetOptionsForCaretMove(const nsIContent* aSelectionLimiter,
+                                      ForceEditableRegion aForceEditableRegion,
+                                      ExtendSelection aExtendSelection,
+                                      CaretMovementStyle aMovementStyle);
 
   
 
@@ -936,11 +1027,26 @@ class nsFrameSelection final {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
   template <typename RangeType>
-  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
-  CreateRangeExtendedToSomewhere(nsDirection aDirection,
-                                 const nsSelectionAmount aAmount,
-                                 CaretMovementStyle aMovementStyle);
+  MOZ_CAN_RUN_SCRIPT static mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToSomewhere(
+      mozilla::PresShell& aPresShell,
+      const mozilla::LimitersAndCaretData& aLimitersAndCaretData,
+      const mozilla::dom::AbstractRange& aRange, nsDirection aRangeDirection,
+      nsDirection aExtendDirection, const nsSelectionAmount aAmount,
+      CaretMovementStyle aMovementStyle);
 
   void InvalidateDesiredCaretPos();  
                                      
@@ -1106,8 +1212,8 @@ class nsFrameSelection final {
     CaretAssociationHint mHint = CaretAssociationHint::Before;
     mozilla::intl::BidiEmbeddingLevel mBidiLevel = BIDI_LEVEL_UNDEFINED;
 
-    bool IsVisualMovement(ExtendSelection aExtendSelection,
-                          CaretMovementStyle aMovementStyle) const;
+    static bool IsVisualMovement(ExtendSelection aExtendSelection,
+                                 CaretMovementStyle aMovementStyle);
   };
 
   Caret mCaret;
@@ -1182,5 +1288,39 @@ class MOZ_RAII AutoFrameSelectionBatcher final {
   const char* mFunctionName;
   AutoTArray<RefPtr<nsFrameSelection>, 1> mFrameSelections;
 };
+
+namespace mozilla {
+
+
+
+struct LimitersAndCaretData {
+  LimitersAndCaretData() = default;
+  explicit LimitersAndCaretData(const nsFrameSelection& aFrameSelection)
+      : mLimiter(aFrameSelection.GetLimiter()),
+        mAncestorLimiter(aFrameSelection.GetAncestorLimiter()),
+        mCaretAssociationHint(aFrameSelection.GetHint()),
+        mCaretBidiLevel(aFrameSelection.GetCaretBidiLevel()) {}
+
+  [[nodiscard]] bool NodeIsInLimiters(const nsINode* aContainerNode) const {
+    return nsFrameSelection::NodeIsInLimiters(aContainerNode, mLimiter,
+                                              mAncestorLimiter);
+  }
+  [[nodiscard]] bool RangeInLimiters(const dom::AbstractRange& aRange) const {
+    return NodeIsInLimiters(aRange.GetStartContainer()) &&
+           (!aRange.IsPositionedAndSameContainer() ||
+            NodeIsInLimiters(aRange.GetEndContainer()));
+  }
+
+  
+  nsCOMPtr<nsIContent> mLimiter;
+  
+  nsCOMPtr<nsIContent> mAncestorLimiter;
+  
+  CaretAssociationHint mCaretAssociationHint = CaretAssociationHint::Before;
+  
+  intl::BidiEmbeddingLevel mCaretBidiLevel;
+};
+
+}  
 
 #endif 

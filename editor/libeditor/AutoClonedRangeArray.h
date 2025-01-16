@@ -3,64 +3,53 @@
 
 
 
-#ifndef AutoRangeArray_h
-#define AutoRangeArray_h
+#ifndef AutoClonedRangeArray_h
+#define AutoClonedRangeArray_h
 
 #include "EditAction.h"      
 #include "EditorBase.h"      
 #include "EditorDOMPoint.h"  
 #include "EditorForwards.h"
 #include "HTMLEditHelpers.h"  
+#include "HTMLEditor.h"       
 #include "SelectionState.h"   
 
-#include "mozilla/ErrorResult.h"        
-#include "mozilla/IntegerRange.h"       
-#include "mozilla/Maybe.h"              
-#include "mozilla/RangeBoundary.h"      
-#include "mozilla/Result.h"             
-#include "mozilla/dom/Element.h"        
-#include "mozilla/dom/HTMLBRElement.h"  
-#include "mozilla/dom/Selection.h"      
-#include "mozilla/dom/Text.h"           
+#include "mozilla/ErrorResult.h"              
+#include "mozilla/IntegerRange.h"             
+#include "mozilla/Maybe.h"                    
+#include "mozilla/RangeBoundary.h"            
+#include "mozilla/Result.h"                   
+#include "mozilla/dom/Element.h"              
+#include "mozilla/dom/HTMLBRElement.h"        
+#include "mozilla/dom/Selection.h"            
+#include "mozilla/dom/Text.h"                 
+#include "mozilla/intl/BidiEmbeddingLevel.h"  
 
-#include "nsDebug.h"      
-#include "nsDirection.h"  
-#include "nsError.h"      
-#include "nsRange.h"      
+#include "nsDebug.h"           
+#include "nsDirection.h"       
+#include "nsError.h"           
+#include "nsFrameSelection.h"  
+#include "nsRange.h"           
 
 namespace mozilla {
 
+enum class CaretAssociationHint;
 
 
 
 
 
-
-class MOZ_STACK_CLASS AutoRangeArray final {
+class MOZ_STACK_CLASS AutoClonedRangeArray {
  public:
-  explicit AutoRangeArray(const dom::Selection& aSelection);
   template <typename PointType>
-  explicit AutoRangeArray(const EditorDOMRangeBase<PointType>& aRange);
+  explicit AutoClonedRangeArray(const EditorDOMRangeBase<PointType>& aRange);
   template <typename PT, typename CT>
-  explicit AutoRangeArray(const EditorDOMPointBase<PT, CT>& aPoint);
-  explicit AutoRangeArray(nsRange& aRange);
+  explicit AutoClonedRangeArray(const EditorDOMPointBase<PT, CT>& aPoint);
+  explicit AutoClonedRangeArray(const nsRange& aRange);
   
-  explicit AutoRangeArray(const AutoRangeArray& aOther);
+  explicit AutoClonedRangeArray(const AutoClonedRangeArray& aOther);
 
-  ~AutoRangeArray();
-
-  void Initialize(const dom::Selection& aSelection) {
-    ClearSavedRanges();
-    mDirection = aSelection.GetDirection();
-    mRanges.Clear();
-    for (const uint32_t i : IntegerRange(aSelection.RangeCount())) {
-      MOZ_ASSERT(aSelection.GetRangeAt(i));
-      mRanges.AppendElement(aSelection.GetRangeAt(i)->CloneRange());
-      if (aSelection.GetRangeAt(i) == aSelection.GetAnchorFocusRange()) {
-        mAnchorFocusRange = mRanges.LastElement();
-      }
-    }
-  }
+  virtual ~AutoClonedRangeArray() = default;
 
   
 
@@ -199,17 +188,6 @@ class MOZ_STACK_CLASS AutoRangeArray final {
 
 
 
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<nsIEditor::EDirection, nsresult>
-  ExtendAnchorFocusRangeFor(const EditorBase& aEditorBase,
-                            nsIEditor::EDirection aDirectionAndAmount);
-
-  
-
-
-
-
-
   enum class IfSelectingOnlyOneAtomicContent {
     Collapse,  
                
@@ -248,6 +226,8 @@ class MOZ_STACK_CLASS AutoRangeArray final {
       }
     }
     mRanges.AppendElement(*mAnchorFocusRange);
+    SetNewCaretAssociationHint(aPoint.ToRawRangeBoundary(),
+                               aPoint.GetInterlinePosition());
     return NS_OK;
   }
   template <typename SPT, typename SCT, typename EPT, typename ECT>
@@ -345,42 +325,6 @@ class MOZ_STACK_CLASS AutoRangeArray final {
 
 
 
-  [[nodiscard]] bool SaveAndTrackRanges(HTMLEditor& aHTMLEditor);
-  [[nodiscard]] bool HasSavedRanges() const { return mSavedRanges.isSome(); }
-  void ClearSavedRanges();
-  void RestoreFromSavedRanges() {
-    MOZ_DIAGNOSTIC_ASSERT(mSavedRanges.isSome());
-    if (mSavedRanges.isNothing()) {
-      return;
-    }
-    mSavedRanges->ApplyTo(*this);
-    ClearSavedRanges();
-  }
-
-  
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult ApplyTo(dom::Selection& aSelection) {
-    dom::SelectionBatcher selectionBatcher(aSelection, __FUNCTION__);
-    aSelection.RemoveAllRanges(IgnoreErrors());
-    MOZ_ASSERT(!aSelection.RangeCount());
-    aSelection.SetDirection(mDirection);
-    IgnoredErrorResult error;
-    for (const OwningNonNull<nsRange>& range : mRanges) {
-      
-      aSelection.AddRangeAndSelectFramesAndNotifyListeners(MOZ_KnownLive(range),
-                                                           error);
-      if (error.Failed()) {
-        return error.StealNSResult();
-      }
-    }
-    return NS_OK;
-  }
-
-  
-
-
-
 
   static void UpdatePointsToSelectAllChildrenIfCollapsedInEmptyBlockElement(
       EditorDOMPoint& aStartPoint, EditorDOMPoint& aEndPoint,
@@ -460,16 +404,213 @@ class MOZ_STACK_CLASS AutoRangeArray final {
 
   dom::Element* GetClosestAncestorAnyListElementOfRange() const;
 
- private:
+  [[nodiscard]] virtual bool HasSavedRanges() const { return false; }
+
+ protected:
+  AutoClonedRangeArray() = default;
+
   static nsresult ExtendRangeToWrapStartAndEndLinesContainingBoundaries(
       nsRange& aRange, EditSubAction aEditSubAction,
       BlockInlineCheck aBlockInlineCheck, const dom::Element& aEditingHost);
 
+  using InterlinePosition = dom::Selection::InterlinePosition;
+  virtual void SetNewCaretAssociationHint(
+      const RawRangeBoundary& aPoint, InterlinePosition aInterlinePosition) {}
+
   AutoTArray<mozilla::OwningNonNull<nsRange>, 8> mRanges;
   RefPtr<nsRange> mAnchorFocusRange;
   nsDirection mDirection = nsDirection::eDirNext;
+};
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS AutoClonedSelectionRangeArray final
+    : public AutoClonedRangeArray {
+  using Selection = dom::Selection;
+
+ public:
+  AutoClonedSelectionRangeArray() = delete;
+  explicit AutoClonedSelectionRangeArray(const Selection& aSelection);
+  template <typename PointType>
+  AutoClonedSelectionRangeArray(
+      const EditorDOMRangeBase<PointType>& aRange,
+      const LimitersAndCaretData& aLimitersAndCaretData);
+  template <typename PT, typename CT>
+  AutoClonedSelectionRangeArray(
+      const EditorDOMPointBase<PT, CT>& aPoint,
+      const LimitersAndCaretData& aLimitersAndCaretData);
+  AutoClonedSelectionRangeArray(
+      const nsRange& aRange, const LimitersAndCaretData& aLimitersAndCaretData);
+  
+  explicit AutoClonedSelectionRangeArray(
+      const AutoClonedSelectionRangeArray& aOther);
+
+  ~AutoClonedSelectionRangeArray() override {
+    if (HasSavedRanges()) {
+      ClearSavedRanges();
+    }
+  }
+
+  void Initialize(const Selection& aSelection) {
+    ClearSavedRanges();
+    mDirection = aSelection.GetDirection();
+    mRanges.Clear();
+    if (nsFrameSelection* frameSelection = aSelection.GetFrameSelection()) {
+      mLimitersAndCaretData = LimitersAndCaretData(*frameSelection);
+    }
+    for (const uint32_t i : IntegerRange(aSelection.RangeCount())) {
+      MOZ_ASSERT(aSelection.GetRangeAt(i));
+      const nsRange* const range = aSelection.GetRangeAt(i);
+      if (!RangeIsInLimiters(*range)) {
+        continue;
+      }
+      mRanges.AppendElement(range->CloneRange());
+      if (range == aSelection.GetAnchorFocusRange()) {
+        mAnchorFocusRange = mRanges.LastElement();
+      }
+    }
+  }
+
+  
+
+
+
+  [[nodiscard]] bool SaveAndTrackRanges(HTMLEditor& aHTMLEditor);
+  [[nodiscard]] bool HasSavedRanges() const override {
+    return mSavedRanges.isSome();
+  }
+  void ClearSavedRanges();
+  void RestoreFromSavedRanges() {
+    MOZ_DIAGNOSTIC_ASSERT(mSavedRanges.isSome());
+    if (MOZ_UNLIKELY(mSavedRanges.isNothing())) {
+      return;
+    }
+    mSavedRanges->ApplyTo(*this);
+    ClearSavedRanges();
+  }
+
+  
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult ApplyTo(dom::Selection& aSelection) {
+    dom::SelectionBatcher selectionBatcher(aSelection, __FUNCTION__);
+    aSelection.RemoveAllRanges(IgnoreErrors());
+    MOZ_ASSERT(!aSelection.RangeCount());
+    aSelection.SetDirection(mDirection);
+    IgnoredErrorResult error;
+    for (const OwningNonNull<nsRange>& range : mRanges) {
+      
+      aSelection.AddRangeAndSelectFramesAndNotifyListeners(MOZ_KnownLive(range),
+                                                           error);
+      if (MOZ_UNLIKELY(error.Failed())) {
+        return error.StealNSResult();
+      }
+    }
+    
+    
+    
+    return NS_OK;
+  }
+
+  [[nodiscard]] const LimitersAndCaretData& LimitersAndCaretDataRef() const {
+    return mLimitersAndCaretData;
+  }
+
+  
+
+
+
+  [[nodiscard]] nsIContent* GetLimiter() const {
+    return mLimitersAndCaretData.mLimiter;
+  }
+  
+
+
+
+  [[nodiscard]] nsIContent* GetAncestorLimiter() const {
+    return mLimitersAndCaretData.mAncestorLimiter;
+  }
+  
+
+
+
+
+
+  [[nodiscard]] CaretAssociationHint GetHint() const {
+    return mLimitersAndCaretData.mCaretAssociationHint;
+  }
+  
+
+
+
+
+
+  [[nodiscard]] intl::BidiEmbeddingLevel GetCaretBidiLevel() const {
+    return mLimitersAndCaretData.mCaretBidiLevel;
+  }
+
+  void SetAncestorLimiter(const nsIContent* aSelectionAncestorLimiter) {
+    if (mLimitersAndCaretData.mAncestorLimiter == aSelectionAncestorLimiter) {
+      return;
+    }
+    mLimitersAndCaretData.mAncestorLimiter =
+        const_cast<nsIContent*>(aSelectionAncestorLimiter);
+    if (NodeIsInLimiters(GetFocusNode())) {
+      return;
+    }
+    RemoveAllRanges();
+  }
+
+  void SetInterlinePosition(Selection::InterlinePosition aInterlinePosition) {
+    switch (aInterlinePosition) {
+      case Selection::InterlinePosition::EndOfLine:
+        mLimitersAndCaretData.mCaretAssociationHint =
+            CaretAssociationHint::Before;
+        break;
+      case Selection::InterlinePosition::StartOfNextLine:
+        mLimitersAndCaretData.mCaretAssociationHint =
+            CaretAssociationHint::After;
+        break;
+      case Selection::InterlinePosition::Undefined:
+        break;
+    }
+  }
+
+  void SetCaretBidiLevel(intl::BidiEmbeddingLevel aBidiLevel) {
+    mLimitersAndCaretData.mCaretBidiLevel = aBidiLevel;
+  }
+
+  [[nodiscard]] bool NodeIsInLimiters(const nsINode* aContainerNode) const {
+    return mLimitersAndCaretData.NodeIsInLimiters(aContainerNode);
+  }
+  [[nodiscard]] bool RangeIsInLimiters(const dom::AbstractRange& aRange) const {
+    return mLimitersAndCaretData.RangeInLimiters(aRange);
+  }
+
+  
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<nsIEditor::EDirection, nsresult>
+  ExtendAnchorFocusRangeFor(const EditorBase& aEditorBase,
+                            nsIEditor::EDirection aDirectionAndAmount);
+
+ private:
+  void SetNewCaretAssociationHint(
+      const RawRangeBoundary& aRawRangeBoundary,
+      InterlinePosition aInternlinePosition) override;
+
   Maybe<SelectionState> mSavedRanges;
   RefPtr<HTMLEditor> mTrackingHTMLEditor;
+  LimitersAndCaretData mLimitersAndCaretData;
 };
 
 }  

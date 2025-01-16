@@ -91,7 +91,8 @@ class RangeUpdater;
 class SelectionState;              
 class TextEditor;                  
 
-class AutoRangeArray;                   
+class AutoClonedRangeArray;             
+class AutoClonedSelectionRangeArray;    
 class AutoSelectionRestorer;            
 class AutoSelectionRangeArray;          
 class CaretPoint;                       

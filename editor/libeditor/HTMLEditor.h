@@ -48,7 +48,6 @@ class nsTArray;
 namespace mozilla {
 class AlignStateAtSelection;
 class AutoSelectionSetterAfterTableEdit;
-class AutoSetTemporaryAncestorLimiter;
 class EmptyEditableFunctor;
 class ListElementSelectionState;
 class ListItemElementSelectionState;
@@ -1612,10 +1611,10 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
-  FormatBlockContainerWithTransaction(AutoRangeArray& aSelectionRanges,
-                                      const nsStaticAtom& aNewFormatTagName,
-                                      FormatBlockMode aFormatBlockMode,
-                                      const Element& aEditingHost);
+  FormatBlockContainerWithTransaction(
+      AutoClonedSelectionRangeArray& aSelectionRanges,
+      const nsStaticAtom& aNewFormatTagName, FormatBlockMode aFormatBlockMode,
+      const Element& aEditingHost);
 
   
 
@@ -1665,9 +1664,10 @@ class HTMLEditor final : public EditorBase,
                                  const Element& aEditingHost);
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
-  DeleteRangesWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
-                              nsIEditor::EStripWrappers aStripWrappers,
-                              const AutoRangeArray& aRangesToDelete) override;
+  DeleteRangesWithTransaction(
+      nsIEditor::EDirection aDirectionAndAmount,
+      nsIEditor::EStripWrappers aStripWrappers,
+      const AutoClonedRangeArray& aRangesToDelete) override;
 
   
 
@@ -2322,7 +2322,7 @@ class HTMLEditor final : public EditorBase,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   ComputeTargetRanges(nsIEditor::EDirection aDirectionAndAmount,
-                      AutoRangeArray& aRangesToDelete) const;
+                      AutoClonedSelectionRangeArray& aRangesToDelete) const;
 
   
 
@@ -2422,7 +2422,7 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleCSSIndentAroundRanges(
-      AutoRangeArray& aRanges, const Element& aEditingHost);
+      AutoClonedSelectionRangeArray& aRanges, const Element& aEditingHost);
 
   
 
@@ -2431,13 +2431,14 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleHTMLIndentAroundRanges(
-      AutoRangeArray& aRanges, const Element& aEditingHost);
+      AutoClonedSelectionRangeArray& aRanges, const Element& aEditingHost);
 
   
 
 
 
 
+  
   
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
   HandleIndentAtSelection(const Element& aEditingHost);
@@ -2646,9 +2647,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  AlignContentsAtRanges(AutoRangeArray& aRanges, const nsAString& aAlignType,
-                        const Element& aEditingHost);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult AlignContentsAtRanges(
+      AutoClonedSelectionRangeArray& aRanges, const nsAString& aAlignType,
+      const Element& aEditingHost);
 
   
 
@@ -3427,7 +3428,7 @@ class HTMLEditor final : public EditorBase,
 
   template <size_t N>
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SetInlinePropertiesAroundRanges(
-      AutoRangeArray& aRanges,
+      AutoClonedRangeArray& aRanges,
       const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet,
       const Element& aEditingHost);
 
@@ -4620,22 +4621,22 @@ class HTMLEditor final : public EditorBase,
 
   friend class AlignStateAtSelection;  
                                        
-  friend class AutoRangeArray;  
-                                
+  friend class AutoClonedRangeArray;   
+                                       
+                                       
+  friend class AutoClonedSelectionRangeArray;  
   friend class AutoSelectionRestore;
   friend class AutoSelectionSetterAfterTableEdit;  
-  friend class
-      AutoSetTemporaryAncestorLimiter;  
-  friend class CSSEditUtils;            
-                                        
-  friend class EditorBase;              
-                            
-                            
-                            
-                            
-                            
-                            
-                            
+  friend class CSSEditUtils;  
+                              
+  friend class EditorBase;    
+                              
+                              
+                              
+                              
+                              
+                              
+                              
   friend class JoinNodesTransaction;  
                                       
   friend class ListElementSelectionState;      
@@ -4795,6 +4796,7 @@ class MOZ_STACK_CLASS ParagraphStateAtSelection final {
       FormatBlockMode aFormatBlockMode, dom::Element& aNonFormatBlockElement);
 
   
+
 
 
 

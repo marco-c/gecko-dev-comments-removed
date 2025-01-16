@@ -97,7 +97,7 @@ struct RangeItem final {
 class SelectionState final {
  public:
   SelectionState() = default;
-  explicit SelectionState(const AutoRangeArray& aRanges);
+  explicit SelectionState(const AutoClonedSelectionRangeArray& aRanges);
 
   
 
@@ -130,7 +130,7 @@ class SelectionState final {
   
 
 
-  void ApplyTo(AutoRangeArray& aRanges);
+  void ApplyTo(AutoClonedSelectionRangeArray& aRanges);
 
   
 
