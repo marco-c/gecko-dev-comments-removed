@@ -104,3 +104,14 @@ function check_TouchEvent(ev) {
         }
     });
 }
+
+
+
+
+
+
+async function waitTillReadyForTouchInput() {
+  const animation =
+    document.body.animate({ opacity: [ 0, 1 ] }, {duration: 1 });
+  return animation.finished;
+}
