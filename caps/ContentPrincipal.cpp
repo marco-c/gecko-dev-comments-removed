@@ -397,6 +397,15 @@ static nsresult GetSpecialBaseDomain(const nsCOMPtr<nsIURI>& aURI,
     return aURI->GetSpec(aBaseDomain);
   }
 
+  
+  bool isUIResource = false;
+  if (NS_SUCCEEDED(NS_URIChainHasFlags(
+          aURI, nsIProtocolHandler::URI_IS_UI_RESOURCE, &isUIResource)) &&
+      isUIResource) {
+    *aHandled = true;
+    return aURI->GetPrePath(aBaseDomain);
+  }
+
   if (aURI->SchemeIs("indexeddb")) {
     *aHandled = true;
     return aURI->GetSpec(aBaseDomain);
