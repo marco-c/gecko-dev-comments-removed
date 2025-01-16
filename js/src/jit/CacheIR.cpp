@@ -6324,7 +6324,7 @@ CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
       newTarget_(newTarget),
       args_(args) {}
 
-void InlinableNativeIRGenerator::emitNativeCalleeGuard() {
+ObjOperandId InlinableNativeIRGenerator::emitNativeCalleeGuard() {
   
   
   MOZ_ASSERT(target_->isNativeWithoutJitEntry());
@@ -6366,6 +6366,8 @@ void InlinableNativeIRGenerator::emitNativeCalleeGuard() {
     ObjOperandId newTargetObjId = writer.guardToObject(newTargetValId);
     writer.guardSpecificFunction(newTargetObjId, target_);
   }
+
+  return calleeObjId;
 }
 
 ObjOperandId InlinableNativeIRGenerator::emitLoadArgsArray() {
@@ -6375,6 +6377,10 @@ ObjOperandId InlinableNativeIRGenerator::emitLoadArgsArray() {
 
   MOZ_ASSERT(flags_.getArgFormat() == CallFlags::FunApplyArray);
   return generator_.emitFunApplyArgsGuard(flags_.getArgFormat()).ref();
+}
+
+ValOperandId InlinableNativeIRGenerator::loadThis(ObjOperandId calleeId) {
+  return writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
 }
 
 void IRGenerator::emitCalleeGuard(ObjOperandId calleeId, JSFunction* callee) {
@@ -6505,11 +6511,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayPush() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId thisObjId = writer.guardToObject(thisValId);
 
   
@@ -6559,10 +6564,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayPopShift(
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
   emitOptimisticClassGuard(objId, arr, GuardClassKind::Array);
 
@@ -6601,11 +6605,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayJoin() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId thisObjId = writer.guardToObject(thisValId);
   emitOptimisticClassGuard(thisObjId, &thisval_.toObject(),
                            GuardClassKind::Array);
@@ -6681,10 +6684,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
 
   if (isPackedArray) {
@@ -6799,11 +6801,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewGet(
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
 
   if (dv->is<FixedLengthDataViewObject>()) {
@@ -6874,11 +6875,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewSet(
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
 
   if (dv->is<FixedLengthDataViewObject>()) {
@@ -7847,11 +7847,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToStringValueOf() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   StringOperandId strId = writer.guardToString(thisValId);
 
   
@@ -7933,11 +7932,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringChar(
 
   
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   StringOperandId strId = writer.guardToString(thisValId);
 
   
@@ -8097,11 +8095,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringIncludes() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   StringOperandId strId = writer.guardToString(thisValId);
 
   
@@ -8130,11 +8127,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringIndexOf() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   StringOperandId strId = writer.guardToString(thisValId);
 
   
@@ -8163,11 +8159,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringLastIndexOf() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   StringOperandId strId = writer.guardToString(thisValId);
 
   
@@ -8196,11 +8191,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringStartsWith() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   StringOperandId strId = writer.guardToString(thisValId);
 
   
@@ -8229,11 +8223,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringEndsWith() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   StringOperandId strId = writer.guardToString(thisValId);
 
   
@@ -8262,11 +8255,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToLowerCase() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   StringOperandId strId = writer.guardToString(thisValId);
 
   
@@ -8292,11 +8284,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToUpperCase() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   StringOperandId strId = writer.guardToString(thisValId);
 
   
@@ -8322,11 +8313,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringTrim() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   StringOperandId strId = writer.guardToString(thisValId);
 
   writer.stringTrimResult(strId);
@@ -8351,11 +8341,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringTrimStart() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   StringOperandId strId = writer.guardToString(thisValId);
 
   writer.stringTrimStartResult(strId);
@@ -8380,11 +8369,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringTrimEnd() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   StringOperandId strId = writer.guardToString(thisValId);
 
   writer.stringTrimEndResult(strId);
@@ -9246,11 +9234,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
 
   
   if (base == 10) {
@@ -9988,11 +9975,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectIsPrototypeOf() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId thisObjId = writer.guardToObject(thisValId);
 
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -10071,11 +10057,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectToString() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId thisObjId = writer.guardToObject(thisValId);
 
   writer.objectToStringResult(thisObjId);
@@ -10193,11 +10178,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetHas() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
   emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Set);
 
@@ -10280,11 +10264,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetDelete() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
   emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Set);
 
@@ -10311,11 +10294,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetAdd() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
   emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Set);
 
@@ -10342,11 +10324,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetSize() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
   writer.guardClass(objId, GuardClassKind::Set);
 
@@ -10372,11 +10353,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapHas() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
   emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Map);
 
@@ -10459,11 +10439,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapGet() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
   emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Map);
 
@@ -10546,11 +10525,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapDelete() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
   emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Map);
 
@@ -10583,11 +10561,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapSet() {
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
   emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Map);
 
@@ -10619,17 +10596,17 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDateGetTime(
   
   initializeInputOperand();
 
+  ObjOperandId calleeId;
   if (native == InlinableNative::DateGetTime) {
     
-    emitNativeCalleeGuard();
+    calleeId = emitNativeCalleeGuard();
   } else {
     
     MOZ_ASSERT(native == InlinableNative::IntrinsicThisTimeValue);
   }
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
   emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Date);
 
@@ -10664,11 +10641,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDateGet(
   initializeInputOperand();
 
   
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
   emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Date);
 
@@ -11620,10 +11596,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSpecializedFunctionBind(
   }
 
   initializeInputOperand();
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId targetId = writer.guardToObject(thisValId);
 
   
@@ -11705,11 +11680,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachFunctionBind() {
 
   initializeInputOperand();
 
-  emitNativeCalleeGuard();
+  ObjOperandId calleeId = emitNativeCalleeGuard();
 
   
-  ValOperandId thisValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId targetId = writer.guardToObject(thisValId);
   if (target->is<JSFunction>()) {
     writer.guardClass(targetId, GuardClassKind::JSFunction);
