@@ -2,13 +2,14 @@
 
 
 
-const { Interactions } = ChromeUtils.importESModule(
+const { Interactions, TIMERS } = ChromeUtils.importESModule(
   "resource:///modules/Interactions.sys.mjs"
 );
 
 ChromeUtils.defineESModuleGetters(this, {
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -197,7 +198,17 @@ async function getDatabaseValue(url, property) {
       `,
         { url }
       );
-      return rows?.[0].getResultByName(property);
+      return rows?.[0]?.getResultByName(property);
     }
   );
+}
+
+const DEFAULT_TAB_SELECT_IDLE_TIME = TIMERS.tabSelectIdleTimeMs;
+registerCleanupFunction(() => {
+  TIMERS.tabSelectIdleTimeMs = DEFAULT_TAB_SELECT_IDLE_TIME;
+});
+
+
+function setTabSelectIdleTimer(timerMs) {
+  TIMERS.tabSelectIdleTimeMs = timerMs;
 }
