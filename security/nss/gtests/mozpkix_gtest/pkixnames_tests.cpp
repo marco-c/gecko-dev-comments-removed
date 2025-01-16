@@ -107,6 +107,16 @@ static const PresentedMatchesReference DNSID_MATCH_PARAMS[] =
 
   
   
+  DNS_ID_MATCH("*.example.com", "-.example.com"),
+  DNS_ID_MATCH("*.example.com", "-hyphenstart.example.com"),
+  DNS_ID_MATCH("*.example.com", "hyphenend-.example.com"),
+  
+  DNS_ID_BAD_DER("-.example.com", "-.example.com"),
+  DNS_ID_BAD_DER("-hyphenstart.example.com", "-hyphenstart.example.com"),
+  DNS_ID_BAD_DER("hyphenend-.example.com", "hyphenend-.example.com"),
+
+  
+  
   
   DNS_ID_MATCH("_1", "_1"),
   DNS_ID_MATCH("example._1", "example._1"),
@@ -371,13 +381,13 @@ static const InputValidity DNSNAMES_VALIDITY[] =
   I("a...", false, false),
 
   
-  I("xn--", false, false),
-  I("xn--.", false, false),
-  I("xn--.a", false, false),
-  I("a.xn--", false, false),
-  I("a.xn--.", false, false),
-  I("a.xn--.b", false, false),
-  I("a.xn--.b", false, false),
+  I("xn--", true, false),
+  I("xn--.", true, false),
+  I("xn--.a", true, false),
+  I("a.xn--", true, false),
+  I("a.xn--.", true, false),
+  I("a.xn--.b", true, false),
+  I("a.xn--.b", true, false),
   I("a.xn--\0.b", false, false),
   I("a.xn--a.b", true, true),
   I("xn--a", true, true),
@@ -470,16 +480,16 @@ static const InputValidity DNSNAMES_VALIDITY[] =
   I("a.1-a", true, true),
 
   
-  I("-", false, false),
-  I("-1", false, false),
+  I("-", true, false),
+  I("-1", true, false),
 
   
-  I("1-", false, false),
-  I("1-.a", false, false),
-  I("a-", false, false),
-  I("a-.a", false, false),
-  I("a.1-.a", false, false),
-  I("a.a-.a", false, false),
+  I("1-", true, false),
+  I("1-.a", true, false),
+  I("a-", true, false),
+  I("a-.a", true, false),
+  I("a.1-.a", true, false),
+  I("a.a-.a", true, false),
 
   
   I("a-b", true, true),

@@ -387,30 +387,18 @@ CK_RV NSC_GetInterface(CK_UTF8CHAR_PTR pInterfaceName,
 char **NSC_ModuleDBFunc(unsigned long function, char *parameters, void *args);
 #endif
 
-
-
-
 SECStatus
-secmod_LoadPKCS11Module(SECMODModule *mod, SECMODModule **oldModule)
+secmod_DetermineModuleFunctionList(SECMODModule *mod)
 {
     PRLibrary *library = NULL;
     CK_C_GetInterface ientry = NULL;
     CK_C_GetFunctionList fentry = NULL;
-    CK_INFO info;
-    CK_ULONG slotCount = 0;
-    SECStatus rv;
-    PRBool alreadyLoaded = PR_FALSE;
     char *disableUnload = NULL;
 #ifndef NSS_STATIC_SOFTOKEN
     const char *nss_interface;
     const char *nss_function;
 #endif
     CK_INTERFACE_PTR interface;
-
-    if (mod->loaded)
-        return SECSuccess;
-
-    mod->fipsIndicator = NULL;
 
     
     if (mod->internal && (mod->dllName == NULL)) {
@@ -553,6 +541,25 @@ secmod_LoadPKCS11Module(SECMODModule *mod, SECMODModule **oldModule)
     }
 #endif
 
+    return SECSuccess;
+
+fail:
+    mod->functionList = NULL;
+    disableUnload = PR_GetEnvSecure("NSS_DISABLE_UNLOAD");
+    if (library && !disableUnload) {
+        PR_UnloadLibrary(library);
+    }
+    return SECFailure;
+}
+
+SECStatus
+secmod_InitializeModuleAndGetSlotInfo(SECMODModule *mod, SECMODModule **oldModule)
+{
+    CK_INFO info;
+    CK_ULONG slotCount = 0;
+    SECStatus rv;
+    PRBool alreadyLoaded = PR_FALSE;
+
     
 
 
@@ -643,11 +650,78 @@ fail2:
     }
 fail:
     mod->functionList = NULL;
-    disableUnload = PR_GetEnvSecure("NSS_DISABLE_UNLOAD");
-    if (library && !disableUnload) {
-        PR_UnloadLibrary(library);
-    }
     return SECFailure;
+}
+
+
+
+
+SECStatus
+secmod_LoadPKCS11Module(SECMODModule *mod, SECMODModule **oldModule)
+{
+    SECStatus rv = SECFailure;
+    if (mod->loaded) {
+        return SECSuccess;
+    }
+
+    mod->fipsIndicator = NULL;
+
+    rv = secmod_DetermineModuleFunctionList(mod);
+    if (rv != SECSuccess) { 
+        return rv;
+    }
+
+    if (mod->loaded == PR_TRUE) {
+        return SECSuccess;
+    }
+
+    rv = secmod_InitializeModuleAndGetSlotInfo(mod, oldModule);
+    if (rv != SECSuccess) { 
+        return rv;
+    }
+
+    return SECSuccess;
+}
+
+
+
+
+SECStatus
+secmod_LoadPKCS11ModuleFromFunction(SECMODModule *mod, SECMODModule **oldModule,
+                                    CK_C_GetFunctionList fentry)
+{
+    SECStatus rv = SECFailure;
+    CK_RV crv;
+    if (mod->loaded) {
+        return SECSuccess;
+    }
+
+    mod->fipsIndicator = NULL;
+
+    if (!fentry) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+
+    crv = fentry((CK_FUNCTION_LIST_PTR *)&mod->functionList);
+    if (crv != CKR_OK) {
+        mod->functionList = NULL;
+        PORT_SetError(PK11_MapError(crv));
+        return SECFailure;
+    }
+
+    if (mod->functionList == NULL) {
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        return SECFailure;
+    }
+
+    mod->flags = 0;
+    rv = secmod_InitializeModuleAndGetSlotInfo(mod, oldModule);
+    if (rv != SECSuccess) {
+        return rv;
+    }
+
+    return SECSuccess;
 }
 
 SECStatus
@@ -694,7 +768,7 @@ SECMOD_UnloadModule(SECMODModule *mod)
     library = (PRLibrary *)mod->library;
     
     if (library == NULL) {
-        return SECFailure;
+        return SECSuccess;
     }
 
     disableUnload = PR_GetEnvSecure("NSS_DISABLE_UNLOAD");
