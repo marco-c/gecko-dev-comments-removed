@@ -137,6 +137,12 @@ async function waitForElevationDialog() {
   let updates = getLocalUpdateString(updateProps, patches);
   writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), true);
   writeStatusFile(STATE_PENDING_ELEVATE);
+
+  
+  const readyMarFile = getUpdateDirFile(FILE_UPDATE_MAR, DIR_PATCH);
+  writeFile(readyMarFile, "test mar contents");
+  Assert.ok(readyMarFile.exists(), `exists: ${readyMarFile.path}`);
+
   await reloadUpdateManagerData();
   await testPostUpdateProcessing();
 
