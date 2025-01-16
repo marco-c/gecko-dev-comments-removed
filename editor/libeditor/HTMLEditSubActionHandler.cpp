@@ -12431,12 +12431,16 @@ Result<EditActionResult, nsresult> HTMLEditor::AddZIndexAsSubAction(
   return EditActionResult::HandledResult();
 }
 
-nsresult HTMLEditor::OnDocumentModified() {
+nsresult HTMLEditor::OnDocumentModified(
+    const nsIContent* aContentWillBeRemoved ) {
   if (mPendingDocumentModifiedRunner) {
+    mPendingDocumentModifiedRunner->MaybeAppendNewInvisibleWhiteSpace(
+        aContentWillBeRemoved);
     return NS_OK;  
   }
-  mPendingDocumentModifiedRunner = NewRunnableMethod(
-      "HTMLEditor::OnModifyDocument", this, &HTMLEditor::OnModifyDocument);
+  mPendingDocumentModifiedRunner = new DocumentModifiedEvent(*this);
+  mPendingDocumentModifiedRunner->MaybeAppendNewInvisibleWhiteSpace(
+      aContentWillBeRemoved);
   nsContentUtils::AddScriptRunner(do_AddRef(mPendingDocumentModifiedRunner));
   
   

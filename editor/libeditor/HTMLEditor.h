@@ -1027,12 +1027,37 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   SetPositionToStatic(Element& aElement);
 
+  class DocumentModifiedEvent final : public Runnable {
+   public:
+    explicit DocumentModifiedEvent(HTMLEditor& aHTMLEditor)
+        : Runnable("DocumentModifiedEvent"), mHTMLEditor(aHTMLEditor) {}
+
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() {
+      Unused << MOZ_KnownLive(mHTMLEditor)->OnModifyDocument(*this);
+      return NS_OK;
+    }
+
+    const nsTArray<EditorDOMPointInText>& NewInvisibleWhiteSpacesRef() const {
+      return mNewInvisibleWhiteSpaces;
+    }
+
+    void MaybeAppendNewInvisibleWhiteSpace(
+        const nsIContent* aContentWillBeRemoved);
+
+   private:
+    ~DocumentModifiedEvent() = default;
+
+    const OwningNonNull<HTMLEditor> mHTMLEditor;
+    nsTArray<EditorDOMPointInText> mNewInvisibleWhiteSpaces;
+  };
+
   
 
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult OnModifyDocument();
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  OnModifyDocument(const DocumentModifiedEvent& aRunner);
 
   
 
@@ -2764,7 +2789,8 @@ class HTMLEditor final : public EditorBase,
   
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult OnDocumentModified();
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnDocumentModified(const nsIContent* aContentWillBeRemoved = nullptr);
 
  protected:  
   MOZ_CAN_RUN_SCRIPT void OnStartToHandleTopLevelEditSubAction(
@@ -4392,11 +4418,6 @@ class HTMLEditor final : public EditorBase,
   
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult OnModifyDocumentInternal();
-
-  
-
-
 
 
 
@@ -4510,7 +4531,7 @@ class HTMLEditor final : public EditorBase,
   mutable RefPtr<nsRange> mChangedRangeForTopLevelEditSubAction;
 
   RefPtr<Runnable> mPendingRootElementUpdatedRunner;
-  RefPtr<Runnable> mPendingDocumentModifiedRunner;
+  RefPtr<DocumentModifiedEvent> mPendingDocumentModifiedRunner;
 
   
   
