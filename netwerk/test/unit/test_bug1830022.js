@@ -36,6 +36,20 @@ function pathHandler(metadata, response) {
   response.bodyOutputStream.write(body, body.length);
 }
 
+
+
+
+function validateAutomaticallyAddedHeaderVal(chan) {
+  let valueFromRequest = chan.getRequestHeader("Idempotency-Key");
+  let valueFromResponse = chan.getResponseHeader("Idempotency-Key");
+
+  
+  
+  Assert.notEqual(valueFromRequest, "");
+  Assert.notEqual(valueFromResponse, "");
+  Assert.equal(valueFromRequest, valueFromResponse);
+}
+
 add_setup(async () => {
   httpServer = new HttpServer();
   httpServer.registerPathHandler("/test_bug1830022", pathHandler);
@@ -50,12 +64,7 @@ add_task(async function idempotency_key_addition_for_post() {
   await new Promise(resolve => {
     chan.asyncOpen(new ChannelListener(resolve));
   });
-  Assert.notEqual(chan.getResponseHeader("Idempotency-Key"), "");
-  Assert.notEqual(chan.getRequestHeader("Idempotency-Key"), "");
-  Assert.equal(
-    chan.getResponseHeader("Idempotency-Key"),
-    chan.getRequestHeader("Idempotency-Key")
-  );
+  validateAutomaticallyAddedHeaderVal(chan);
 });
 
 
@@ -65,12 +74,7 @@ add_task(async function idempotency_key_addition_for_patch() {
   await new Promise(resolve => {
     chan.asyncOpen(new ChannelListener(resolve));
   });
-  Assert.notEqual(chan.getResponseHeader("Idempotency-Key"), "");
-  Assert.notEqual(chan.getRequestHeader("Idempotency-Key"), "");
-  Assert.equal(
-    chan.getResponseHeader("Idempotency-Key"),
-    chan.getRequestHeader("Idempotency-Key")
-  );
+  validateAutomaticallyAddedHeaderVal(chan);
 });
 
 
