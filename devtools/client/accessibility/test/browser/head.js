@@ -812,7 +812,9 @@ function addA11YPanelTask(msg, uri, task, options = {}) {
   add_task(async function a11YPanelTask() {
     info(msg);
 
-    const env = await addTestTab(buildURL(uri, options));
+    const env = await addTestTab(
+      uri.startsWith("http") ? uri : buildURL(uri, options)
+    );
     await task(env);
     await closeTabToolboxAccessibility(env.tab);
   });

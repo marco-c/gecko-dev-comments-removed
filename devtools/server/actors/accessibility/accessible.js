@@ -602,37 +602,20 @@ class AccessibleActor extends Actor {
       auditTypes = auditTypes.filter(auditType => types.includes(auditType));
     }
 
-    
-    
-    
-    
-    
-    
-    
-    let keyboardAuditResult;
-    const keyboardAuditIndex = auditTypes.indexOf(AUDIT_TYPE.KEYBOARD);
-    if (keyboardAuditIndex > -1) {
-      
-      
-      auditTypes.splice(keyboardAuditIndex, 1);
-      keyboardAuditResult = this._getAuditByType(AUDIT_TYPE.KEYBOARD);
-    }
-
-    this._auditing = Promise.resolve(keyboardAuditResult)
-      .then(keyboardResult => {
-        const audits = auditTypes.map(auditType =>
-          this._getAuditByType(auditType)
-        );
-
+    this._auditing = (async () => {
+      const results = [];
+      for (const auditType of auditTypes) {
         
         
-        if (keyboardAuditIndex > -1) {
-          auditTypes.splice(keyboardAuditIndex, 0, AUDIT_TYPE.KEYBOARD);
-          audits.splice(keyboardAuditIndex, 0, keyboardResult);
-        }
-
-        return Promise.all(audits);
-      })
+        
+        
+        
+        
+        const audit = await this._getAuditByType(auditType);
+        results.push(audit);
+      }
+      return results;
+    })()
       .then(results => {
         if (this.isDefunct || this.isDestroyed()) {
           return null;
