@@ -1551,7 +1551,7 @@ void Mutex::ReaderLock() {
     }
     
     
-    if (ABSL_PREDICT_TRUE(mu_.compare_exchange_strong(
+    if (ABSL_PREDICT_TRUE(mu_.compare_exchange_weak(
             v, (kMuReader | v) + kMuOne, std::memory_order_acquire,
             std::memory_order_relaxed))) {
       break;

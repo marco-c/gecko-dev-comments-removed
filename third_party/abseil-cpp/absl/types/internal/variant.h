@@ -1047,7 +1047,7 @@ class VariantStateBase {
   std::size_t index_;
 };
 
-using absl::internal::identity;
+using absl::internal::type_identity;
 
 
 
@@ -1062,7 +1062,7 @@ struct OverloadSet;
 template <typename T, typename... Ts>
 struct OverloadSet<T, Ts...> : OverloadSet<Ts...> {
   using Base = OverloadSet<Ts...>;
-  static identity<T> Overload(const T&);
+  static type_identity<T> Overload(const T&);
   using Base::Overload;
 };
 

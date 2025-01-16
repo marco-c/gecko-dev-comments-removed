@@ -120,7 +120,7 @@ struct FloatTraits<double> {
   
   static constexpr int kEiselLemireMaxExclusiveExp10 = 309;
 
-  static double MakeNan(absl::Nullable<const char*> tagp) {
+  static double MakeNan(absl::Nonnull<const char*> tagp) {
 #if ABSL_HAVE_BUILTIN(__builtin_nan)
     
     
@@ -193,7 +193,7 @@ struct FloatTraits<float> {
   static constexpr int kEiselLemireMinInclusiveExp10 = -46 - 18;
   static constexpr int kEiselLemireMaxExclusiveExp10 = 39;
 
-  static float MakeNan(absl::Nullable<const char*> tagp) {
+  static float MakeNan(absl::Nonnull<const char*> tagp) {
 #if ABSL_HAVE_BUILTIN(__builtin_nanf)
     
     

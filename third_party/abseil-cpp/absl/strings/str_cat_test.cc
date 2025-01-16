@@ -39,6 +39,24 @@
 
 namespace {
 
+template <typename Integer>
+void VerifyInteger(Integer value) {
+  const std::string expected = std::to_string(value);
+
+  EXPECT_EQ(absl::StrCat(value), expected);
+
+  const char* short_prefix = "x";
+  const char* long_prefix = "2;k.msabxiuow2[09i;o3k21-93-9=29]";
+
+  std::string short_str = short_prefix;
+  absl::StrAppend(&short_str, value);
+  EXPECT_EQ(short_str, short_prefix + expected);
+
+  std::string long_str = long_prefix;
+  absl::StrAppend(&long_str, value);
+  EXPECT_EQ(long_str, long_prefix + expected);
+}
+
 
 TEST(StrCat, Ints) {
   const short s = -1;  
@@ -68,6 +86,34 @@ TEST(StrCat, Ints) {
   EXPECT_EQ(answer, "-9-12");
   answer = absl::StrCat(uintptr, 0);
   EXPECT_EQ(answer, "130");
+
+  for (const uint32_t base : {2u, 10u}) {
+    for (const int extra_shift : {0, 12}) {
+      for (uint64_t i = 0; i < (1 << 8); ++i) {
+        uint64_t j = i;
+        while (true) {
+          uint64_t v = j ^ (extra_shift != 0 ? (j << extra_shift) * base : 0);
+          VerifyInteger(static_cast<bool>(v));
+          VerifyInteger(static_cast<wchar_t>(v));
+          VerifyInteger(static_cast<signed char>(v));
+          VerifyInteger(static_cast<unsigned char>(v));
+          VerifyInteger(static_cast<short>(v));               
+          VerifyInteger(static_cast<unsigned short>(v));      
+          VerifyInteger(static_cast<int>(v));                 
+          VerifyInteger(static_cast<unsigned int>(v));        
+          VerifyInteger(static_cast<long>(v));                
+          VerifyInteger(static_cast<unsigned long>(v));       
+          VerifyInteger(static_cast<long long>(v));           
+          VerifyInteger(static_cast<unsigned long long>(v));  
+          const uint64_t next = j == 0 ? 1 : j * base;
+          if (next <= j) {
+            break;
+          }
+          j = next;
+        }
+      }
+    }
+  }
 }
 
 TEST(StrCat, Enums) {

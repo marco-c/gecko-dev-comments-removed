@@ -22,13 +22,15 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace internal {
 
+
 template <typename T>
-struct identity {
+struct type_identity {
   typedef T type;
 };
 
+
 template <typename T>
-using identity_t = typename identity<T>::type;
+using type_identity_t = typename type_identity<T>::type;
 
 }  
 ABSL_NAMESPACE_END

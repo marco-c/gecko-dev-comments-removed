@@ -756,19 +756,6 @@ bool TimeZoneInfo::Load(ZoneInfoSource* zip) {
   
   
   
-  while (hdr.timecnt > 1) {
-    if (!EquivTransitions(transitions_[hdr.timecnt - 1].type_index,
-                          transitions_[hdr.timecnt - 2].type_index)) {
-      break;
-    }
-    hdr.timecnt -= 1;
-  }
-  transitions_.resize(hdr.timecnt);
-
-  
-  
-  
-  
   if (transitions_.empty() || transitions_.front().unix_time >= 0) {
     Transition& tr(*transitions_.emplace(transitions_.begin()));
     tr.unix_time = -(1LL << 59);  

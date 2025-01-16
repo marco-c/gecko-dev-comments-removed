@@ -25,5 +25,17 @@ constexpr int LogEntry::kNoVerbosityLevel;
 constexpr int LogEntry::kNoVerboseLevel;
 #endif
 
+
+
+
+
+
+#ifdef __APPLE__
+namespace log_internal {
+extern const char kAvoidEmptyLogEntryLibraryWarning;
+const char kAvoidEmptyLogEntryLibraryWarning = 0;
+}  
+#endif  
+
 ABSL_NAMESPACE_END
 }  

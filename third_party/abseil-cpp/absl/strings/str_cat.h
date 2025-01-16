@@ -93,7 +93,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <limits>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -259,10 +258,9 @@ struct Dec {
                typename std::enable_if<(sizeof(Int) <= 8)>::type* = nullptr)
       : value(v >= 0 ? static_cast<uint64_t>(v)
                      : uint64_t{0} - static_cast<uint64_t>(v)),
-        width(spec == absl::kNoPad
-                  ? 1
-                  : spec >= absl::kSpacePad2 ? spec - absl::kSpacePad2 + 2
-                                             : spec - absl::kZeroPad2 + 2),
+        width(spec == absl::kNoPad       ? 1
+              : spec >= absl::kSpacePad2 ? spec - absl::kSpacePad2 + 2
+                                         : spec - absl::kZeroPad2 + 2),
         fill(spec >= absl::kSpacePad2 ? ' ' : '0'),
         neg(v < 0) {}
 
@@ -450,76 +448,35 @@ std::string CatPieces(std::initializer_list<absl::string_view> pieces);
 void AppendPieces(absl::Nonnull<std::string*> dest,
                   std::initializer_list<absl::string_view> pieces);
 
-template <typename Integer>
-std::string IntegerToString(Integer i) {
-  
-  
-  constexpr size_t kMaxDigits10 = 22;
-  std::string result;
-  strings_internal::STLStringResizeUninitialized(&result, kMaxDigits10);
-  char* start = &result[0];
-  
-  char* end = numbers_internal::FastIntToBuffer(i, start);
-  auto size = static_cast<size_t>(end - start);
-  assert((size < result.size()) &&
-         "StrCat(Integer) does not fit into kMaxDigits10");
-  result.erase(size);
-  return result;
-}
-template <typename Float>
-std::string FloatToString(Float f) {
-  std::string result;
-  strings_internal::STLStringResizeUninitialized(
-      &result, numbers_internal::kSixDigitsToBufferSize);
-  char* start = &result[0];
-  result.erase(numbers_internal::SixDigitsToBuffer(f, start));
-  return result;
-}
+void STLStringAppendUninitializedAmortized(std::string* dest, size_t to_append);
 
 
 
 
 
-inline std::string SingleArgStrCat(int x) { return IntegerToString(x); }
-inline std::string SingleArgStrCat(unsigned int x) {
-  return IntegerToString(x);
-}
-
-inline std::string SingleArgStrCat(long x) { return IntegerToString(x); }
-
-inline std::string SingleArgStrCat(unsigned long x) {
-  return IntegerToString(x);
-}
-
-inline std::string SingleArgStrCat(long long x) { return IntegerToString(x); }
-
-inline std::string SingleArgStrCat(unsigned long long x) {
-  return IntegerToString(x);
-}
-inline std::string SingleArgStrCat(float x) { return FloatToString(x); }
-inline std::string SingleArgStrCat(double x) { return FloatToString(x); }
+std::string SingleArgStrCat(int x);
+std::string SingleArgStrCat(unsigned int x);
+std::string SingleArgStrCat(long x);                
+std::string SingleArgStrCat(unsigned long x);       
+std::string SingleArgStrCat(long long x);           
+std::string SingleArgStrCat(unsigned long long x);  
+std::string SingleArgStrCat(float x);
+std::string SingleArgStrCat(double x);
 
 
 
+void SingleArgStrAppend(std::string& str, int x);
+void SingleArgStrAppend(std::string& str, unsigned int x);
+void SingleArgStrAppend(std::string& str, long x);                
+void SingleArgStrAppend(std::string& str, unsigned long x);       
+void SingleArgStrAppend(std::string& str, long long x);           
+void SingleArgStrAppend(std::string& str, unsigned long long x);  
 
-
-
-
-
-
-
-#ifdef _LIBCPP_VERSION
-#define ABSL_INTERNAL_STRCAT_ENABLE_FAST_CASE true
-#else
-#define ABSL_INTERNAL_STRCAT_ENABLE_FAST_CASE false
-#endif
-
-template <typename T, typename = std::enable_if_t<
-                          ABSL_INTERNAL_STRCAT_ENABLE_FAST_CASE &&
-                          std::is_arithmetic<T>{} && !std::is_same<T, char>{}>>
+template <typename T,
+          typename = std::enable_if_t<std::is_arithmetic<T>::value &&
+                                      !std::is_same<T, char>::value &&
+                                      !std::is_same<T, bool>::value>>
 using EnableIfFastCase = T;
-
-#undef ABSL_INTERNAL_STRCAT_ENABLE_FAST_CASE
 
 }  
 
@@ -594,6 +551,68 @@ inline void StrAppend(absl::Nonnull<std::string*> dest, const AlphaNum& a,
   strings_internal::AppendPieces(
       dest, {a.Piece(), b.Piece(), c.Piece(), d.Piece(), e.Piece(),
              static_cast<const AlphaNum&>(args).Piece()...});
+}
+
+template <class String, class T>
+std::enable_if_t<
+    std::is_integral<absl::strings_internal::EnableIfFastCase<T>>::value, void>
+StrAppend(absl::Nonnull<String*> result, T i) {
+  return absl::strings_internal::SingleArgStrAppend(*result, i);
+}
+
+
+
+
+
+template <typename String, typename... T>
+std::enable_if_t<
+    (sizeof...(T) > 1),
+    std::common_type_t<std::conditional_t<
+        true, void, absl::strings_internal::EnableIfFastCase<T>>...>>
+StrAppend(absl::Nonnull<String*> str, T... args) {
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  size_t total_length = 0;
+  const ptrdiff_t lengths[] = {
+      absl::numbers_internal::GetNumDigitsOrNegativeIfNegative(args)...};
+  for (const ptrdiff_t possibly_negative_length : lengths) {
+    
+    
+    total_length += possibly_negative_length < 0
+                        ? static_cast<size_t>(-possibly_negative_length)
+                        : static_cast<size_t>(possibly_negative_length);
+  }
+
+  
+  const size_t old_size = str->size();
+  absl::strings_internal::STLStringAppendUninitializedAmortized(str,
+                                                                total_length);
+
+  
+  size_t i = 0;  
+  ptrdiff_t n;   
+  typename String::pointer pos = &(*str)[old_size];
+  using SomeTrivialEmptyType = std::false_type;
+  
+  const SomeTrivialEmptyType dummy1;
+  for (const SomeTrivialEmptyType& dummy2 :
+       {(
+         (void)(n = lengths[i]),
+         (void)(n < 0 ? (void)(*pos++ = '-'), (n = ~n) : 0),
+         (void)absl::numbers_internal::FastIntToBufferBackward(
+             absl::numbers_internal::UnsignedAbsoluteValue(std::move(args)),
+             pos += n, static_cast<uint32_t>(n)),
+         (void)++i, dummy1)...}) {
+    (void)dummy2;  
+  }
 }
 
 

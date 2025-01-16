@@ -740,7 +740,8 @@ class Condition {
   
   
   template <typename T, typename = void>
-  Condition(bool (*func)(T*), typename absl::internal::identity<T>::type* arg);
+  Condition(bool (*func)(T*),
+            typename absl::internal::type_identity<T>::type* arg);
 
   
   
@@ -751,12 +752,13 @@ class Condition {
   
   
   template <typename T>
-  Condition(T* object, bool (absl::internal::identity<T>::type::*method)());
+  Condition(T* object,
+            bool (absl::internal::type_identity<T>::type::*method)());
 
   
   template <typename T>
   Condition(const T* object,
-            bool (absl::internal::identity<T>::type::*method)() const);
+            bool (absl::internal::type_identity<T>::type::*method)() const);
 
   
   explicit Condition(const bool* cond);
@@ -1107,14 +1109,14 @@ inline Condition::Condition(bool (*func)(T*), T* arg)
 }
 
 template <typename T, typename>
-inline Condition::Condition(bool (*func)(T*),
-                            typename absl::internal::identity<T>::type* arg)
+inline Condition::Condition(
+    bool (*func)(T*), typename absl::internal::type_identity<T>::type* arg)
     
     : Condition(func, arg) {}
 
 template <typename T>
-inline Condition::Condition(T* object,
-                            bool (absl::internal::identity<T>::type::*method)())
+inline Condition::Condition(
+    T* object, bool (absl::internal::type_identity<T>::type::*method)())
     : eval_(&CastAndCallMethod<T, decltype(method)>), arg_(object) {
   static_assert(sizeof(&method) <= sizeof(callback_),
                 "An overlarge method pointer was passed to Condition.");
@@ -1122,9 +1124,9 @@ inline Condition::Condition(T* object,
 }
 
 template <typename T>
-inline Condition::Condition(const T* object,
-                            bool (absl::internal::identity<T>::type::*method)()
-                                const)
+inline Condition::Condition(
+    const T* object,
+    bool (absl::internal::type_identity<T>::type::*method)() const)
     : eval_(&CastAndCallMethod<const T, decltype(method)>),
       arg_(reinterpret_cast<void*>(const_cast<T*>(object))) {
   StoreCallback(method);

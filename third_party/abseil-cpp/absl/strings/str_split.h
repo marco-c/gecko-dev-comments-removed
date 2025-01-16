@@ -143,6 +143,24 @@ class ByString {
 
 
 
+class ByAsciiWhitespace {
+ public:
+  absl::string_view Find(absl::string_view text, size_t pos) const;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

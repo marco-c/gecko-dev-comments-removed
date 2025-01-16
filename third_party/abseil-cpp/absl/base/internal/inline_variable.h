@@ -68,7 +68,7 @@
 
 #if defined(__clang__)
 #define ABSL_INTERNAL_EXTERN_DECL(type, name) \
-  extern const ::absl::internal::identity_t<type> name;
+  extern const ::absl::internal::type_identity_t<type> name;
 #else  
 #define ABSL_INTERNAL_EXTERN_DECL(type, name)
 #endif  
@@ -76,7 +76,7 @@
 
 #define ABSL_INTERNAL_INLINE_CONSTEXPR(type, name, init) \
   ABSL_INTERNAL_EXTERN_DECL(type, name)                  \
-  inline constexpr ::absl::internal::identity_t<type> name = init
+  inline constexpr ::absl::internal::type_identity_t<type> name = init
 
 #else
 
@@ -86,20 +86,21 @@
 
 
 
-#define ABSL_INTERNAL_INLINE_CONSTEXPR(var_type, name, init)                  \
-  template <class /*AbslInternalDummy*/ = void>                               \
-  struct AbslInternalInlineVariableHolder##name {                             \
-    static constexpr ::absl::internal::identity_t<var_type> kInstance = init; \
-  };                                                                          \
-                                                                              \
-  template <class AbslInternalDummy>                                          \
-  constexpr ::absl::internal::identity_t<var_type>                            \
-      AbslInternalInlineVariableHolder##name<AbslInternalDummy>::kInstance;   \
-                                                                              \
-  static constexpr const ::absl::internal::identity_t<var_type>&              \
-      name = /* NOLINT */                                                     \
-      AbslInternalInlineVariableHolder##name<>::kInstance;                    \
-  static_assert(sizeof(void (*)(decltype(name))) != 0,                        \
+#define ABSL_INTERNAL_INLINE_CONSTEXPR(var_type, name, init)                 \
+  template <class /*AbslInternalDummy*/ = void>                              \
+  struct AbslInternalInlineVariableHolder##name {                            \
+    static constexpr ::absl::internal::type_identity_t<var_type> kInstance = \
+        init;                                                                \
+  };                                                                         \
+                                                                             \
+  template <class AbslInternalDummy>                                         \
+  constexpr ::absl::internal::type_identity_t<var_type>                      \
+      AbslInternalInlineVariableHolder##name<AbslInternalDummy>::kInstance;  \
+                                                                             \
+  static constexpr const ::absl::internal::type_identity_t<var_type>&        \
+      name = /* NOLINT */                                                    \
+      AbslInternalInlineVariableHolder##name<>::kInstance;                   \
+  static_assert(sizeof(void (*)(decltype(name))) != 0,                       \
                 "Silence unused variable warnings.")
 
 #endif  

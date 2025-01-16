@@ -15,8 +15,10 @@
 #include "absl/strings/ascii.h"
 
 #include <climits>
+#include <cstdint>
 #include <cstring>
 #include <string>
+#include <type_traits>
 
 #include "absl/base/config.h"
 #include "absl/base/nullability.h"
@@ -160,6 +162,19 @@ ABSL_DLL const char kToUpper[256] = {
 };
 
 
+template <class T>
+static constexpr T BroadcastByte(unsigned char value) {
+  static_assert(std::is_integral<T>::value && sizeof(T) <= sizeof(uint64_t) &&
+                    std::is_unsigned<T>::value,
+                "only unsigned integers up to 64-bit allowed");
+  T result = value;
+  constexpr size_t result_bit_width = sizeof(result) * CHAR_BIT;
+  result |= result << ((CHAR_BIT << 0) & (result_bit_width - 1));
+  result |= result << ((CHAR_BIT << 1) & (result_bit_width - 1));
+  result |= result << ((CHAR_BIT << 2) & (result_bit_width - 1));
+  return result;
+}
+
 
 
 
@@ -175,8 +190,46 @@ constexpr bool AsciiInAZRange(unsigned char c) {
 }
 
 template <bool ToUpper>
-constexpr void AsciiStrCaseFold(absl::Nonnull<char*> p,
-                                absl::Nonnull<char*> end) {
+static constexpr char* PartialAsciiStrCaseFold(absl::Nonnull<char*> p,
+                                               absl::Nonnull<char*> end) {
+  using vec_t = size_t;
+  const size_t n = static_cast<size_t>(end - p);
+
+  
+  constexpr char ch_a = ToUpper ? 'a' : 'A', ch_z = ToUpper ? 'z' : 'Z';
+  char* const swar_end = p + (n / sizeof(vec_t)) * sizeof(vec_t);
+  while (p < swar_end) {
+    vec_t v = vec_t();
+
+    
+    for (size_t i = 0; i < sizeof(vec_t); ++i) {
+      v |= static_cast<vec_t>(static_cast<unsigned char>(p[i]))
+           << (i * CHAR_BIT);
+    }
+
+    constexpr unsigned int msb = 1u << (CHAR_BIT - 1);
+    const vec_t v_msb = v & BroadcastByte<vec_t>(msb);
+    const vec_t v_nonascii_mask = (v_msb << 1) - (v_msb >> (CHAR_BIT - 1));
+    const vec_t v_nonascii = v & v_nonascii_mask;
+    const vec_t v_ascii = v & ~v_nonascii_mask;
+    const vec_t a = v_ascii + BroadcastByte<vec_t>(msb - ch_a - 0),
+                z = v_ascii + BroadcastByte<vec_t>(msb - ch_z - 1);
+    v = v_nonascii | (v_ascii ^ ((a ^ z) & BroadcastByte<vec_t>(msb)) >> 2);
+
+    
+    for (size_t i = 0; i < sizeof(vec_t); ++i) {
+      p[i] = static_cast<char>(v >> (i * CHAR_BIT));
+    }
+
+    p += sizeof(v);
+  }
+
+  return p;
+}
+
+template <bool ToUpper>
+static constexpr void AsciiStrCaseFold(absl::Nonnull<char*> p,
+                                       absl::Nonnull<char*> end) {
   
   
   
@@ -184,10 +237,17 @@ constexpr void AsciiStrCaseFold(absl::Nonnull<char*> p,
   
   constexpr unsigned char kAsciiCaseBitFlip = 'a' ^ 'A';
 
-  for (; p < end; ++p) {
+  using vec_t = size_t;
+  
+  
+  if (static_cast<size_t>(end - p) >= sizeof(vec_t)) {
+    p = ascii_internal::PartialAsciiStrCaseFold<ToUpper>(p, end);
+  }
+  while (p < end) {
     unsigned char v = static_cast<unsigned char>(*p);
     v ^= AsciiInAZRange<ToUpper>(v) ? kAsciiCaseBitFlip : 0;
     *p = static_cast<char>(v);
+    ++p;
   }
 }
 

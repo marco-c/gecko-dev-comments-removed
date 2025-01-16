@@ -2016,6 +2016,12 @@ class raw_hash_set {
     union {
       slot_type* slot_;
     };
+
+    
+    
+    
+    
+    bool unchecked_equals(const iterator& b) { return ctrl_ == b.control(); }
   };
 
   class const_iterator {
@@ -2060,6 +2066,10 @@ class raw_hash_set {
     slot_type* slot() const { return inner_.slot(); }
 
     iterator inner_;
+
+    bool unchecked_equals(const const_iterator& b) {
+      return inner_.unchecked_equals(b.inner_);
+    }
   };
 
   using node_type = node_handle<Policy, hash_policy_traits<Policy>, Alloc>;
@@ -2707,7 +2717,11 @@ class raw_hash_set {
 
   template <class K = key_type>
   bool contains(const key_arg<K>& key) const {
-    return find(key) != end();
+    
+    
+    
+    
+    return !find(key).unchecked_equals(end());
   }
 
   template <class K = key_type>

@@ -241,4 +241,22 @@ constexpr string_view::size_type string_view::kMaxSize;
 ABSL_NAMESPACE_END
 }  
 
+#else
+
+
+
+
+
+
+#ifdef __APPLE__
+namespace absl {
+ABSL_NAMESPACE_BEGIN
+namespace strings_internal {
+extern const char kAvoidEmptyStringViewLibraryWarning;
+const char kAvoidEmptyStringViewLibraryWarning = 0;
+}  
+ABSL_NAMESPACE_END
+}  
+#endif  
+
 #endif  

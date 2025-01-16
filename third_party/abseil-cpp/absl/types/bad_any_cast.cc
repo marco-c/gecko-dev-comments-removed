@@ -43,4 +43,22 @@ void ThrowBadAnyCast() {
 ABSL_NAMESPACE_END
 }  
 
+#else
+
+
+
+
+
+
+#ifdef __APPLE__
+namespace absl {
+ABSL_NAMESPACE_BEGIN
+namespace types_internal {
+extern const char kAvoidEmptyBadAnyCastLibraryWarning;
+const char kAvoidEmptyBadAnyCastLibraryWarning = 0;
+}  
+ABSL_NAMESPACE_END
+}  
+#endif  
+
 #endif  

@@ -45,4 +45,22 @@ void throw_bad_optional_access() {
 ABSL_NAMESPACE_END
 }  
 
+#else
+
+
+
+
+
+
+#ifdef __APPLE__
+namespace absl {
+ABSL_NAMESPACE_BEGIN
+namespace types_internal {
+extern const char kAvoidEmptyBadOptionalAccessLibraryWarning;
+const char kAvoidEmptyBadOptionalAccessLibraryWarning = 0;
+}  
+ABSL_NAMESPACE_END
+}  
+#endif  
+
 #endif  

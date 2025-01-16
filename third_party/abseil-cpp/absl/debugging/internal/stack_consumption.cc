@@ -185,4 +185,22 @@ int GetSignalHandlerStackConsumption(void (*signal_handler)(int)) {
 ABSL_NAMESPACE_END
 }  
 
+#else
+
+
+
+
+
+
+#ifdef __APPLE__
+namespace absl {
+ABSL_NAMESPACE_BEGIN
+namespace debugging_internal {
+extern const char kAvoidEmptyStackConsumptionLibraryWarning;
+const char kAvoidEmptyStackConsumptionLibraryWarning = 0;
+}  
+ABSL_NAMESPACE_END
+}  
+#endif  
+
 #endif  
