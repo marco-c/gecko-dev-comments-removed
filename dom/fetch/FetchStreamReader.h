@@ -10,6 +10,7 @@
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/FetchBinding.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "nsIAsyncOutputStream.h"
@@ -21,17 +22,55 @@ class ReadableStream;
 class ReadableStreamDefaultReader;
 class StrongWorkerRef;
 
-class FetchStreamReader final : public nsIOutputStreamCallback {
+class FetchStreamReader;
+
+class OutputStreamHolder final : public nsIOutputStreamCallback {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOUTPUTSTREAMCALLBACK
+
+  OutputStreamHolder(FetchStreamReader* aReader, nsIAsyncOutputStream* aOutput);
+
+  nsresult Init(JSContext* aCx);
+
+  void Shutdown();
+
+  
+  nsresult AsyncWait(uint32_t aFlags, uint32_t aRequestedCount,
+                     nsIEventTarget* aEventTarget);
+  nsresult Write(char* aBuffer, uint32_t aLength, uint32_t* aWritten) {
+    return mOutput->Write(aBuffer, aLength, aWritten);
+  }
+  nsresult CloseWithStatus(nsresult aStatus) {
+    return mOutput->CloseWithStatus(aStatus);
+  }
+  nsresult StreamStatus() { return mOutput->StreamStatus(); }
+
+  nsIAsyncOutputStream* GetOutputStream() { return mOutput; }
+
+ private:
+  ~OutputStreamHolder();
+
+  
+  WeakPtr<FetchStreamReader> mReader;
+  
+  RefPtr<StrongWorkerRef> mAsyncWaitWorkerRef;
+  RefPtr<StrongWorkerRef> mWorkerRef;
+  nsCOMPtr<nsIAsyncOutputStream> mOutput;
+};
+
+class FetchStreamReader final : public nsISupports, public SupportsWeakPtr {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(FetchStreamReader)
-  NS_DECL_NSIOUTPUTSTREAMCALLBACK
 
   
   
   static nsresult Create(JSContext* aCx, nsIGlobalObject* aGlobal,
                          FetchStreamReader** aStreamReader,
                          nsIInputStream** aInputStream);
+
+  bool OnOutputStreamReady();
 
   MOZ_CAN_RUN_SCRIPT
   void ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
@@ -60,8 +99,6 @@ class FetchStreamReader final : public nsIOutputStreamCallback {
   explicit FetchStreamReader(nsIGlobalObject* aGlobal);
   ~FetchStreamReader();
 
-  nsresult MaybeGrabStrongWorkerRef(JSContext* aCx);
-
   nsresult WriteBuffer();
 
   
@@ -75,19 +112,7 @@ class FetchStreamReader final : public nsIOutputStreamCallback {
   nsCOMPtr<nsIGlobalObject> mGlobal;
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
 
-  nsCOMPtr<nsIAsyncOutputStream> mPipeOut;
-
-  RefPtr<StrongWorkerRef> mWorkerRef;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<StrongWorkerRef> mAsyncWaitWorkerRef;
+  RefPtr<OutputStreamHolder> mOutput;
 
   RefPtr<ReadableStreamDefaultReader> mReader;
 
