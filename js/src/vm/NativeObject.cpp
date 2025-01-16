@@ -362,7 +362,7 @@ bool NativeObject::growSlots(JSContext* cx, uint32_t oldCapacity,
   ObjectSlots* oldHeaderSlots = ObjectSlots::fromSlots(slots_);
   MOZ_ASSERT(oldHeaderSlots->capacity() == oldCapacity);
 
-  HeapSlot* allocation = ReallocateCellBuffer<HeapSlot>(
+  HeapSlot* allocation = ReallocNurseryOrMallocBuffer<HeapSlot>(
       cx, this, reinterpret_cast<HeapSlot*>(oldHeaderSlots), oldAllocated,
       newAllocated, js::MallocArena);
   if (!allocation) {
@@ -401,7 +401,7 @@ bool NativeObject::growSlotsForNewSlot(JSContext* cx, uint32_t numFixed,
 
 bool NativeObject::allocateInitialSlots(JSContext* cx, uint32_t capacity) {
   uint32_t count = ObjectSlots::allocCount(capacity);
-  HeapSlot* allocation = AllocateCellBuffer<HeapSlot>(cx, this, count);
+  HeapSlot* allocation = AllocNurseryOrMallocBuffer<HeapSlot>(cx, this, count);
   if (MOZ_UNLIKELY(!allocation)) {
     
     
@@ -435,7 +435,7 @@ bool NativeObject::allocateSlots(Nursery& nursery, uint32_t newCapacity) {
   uint32_t dictionarySpan = getSlotsHeader()->dictionarySlotSpan();
 
   HeapSlot* allocation =
-      AllocateCellBuffer<HeapSlot>(nursery, this, newAllocated);
+      AllocNurseryOrMallocBuffer<HeapSlot>(nursery, this, newAllocated);
   if (!allocation) {
     return false;
   }
@@ -532,7 +532,7 @@ void NativeObject::shrinkSlots(JSContext* cx, uint32_t oldCapacity,
 
   uint32_t newAllocated = ObjectSlots::allocCount(newCapacity);
 
-  HeapSlot* allocation = ReallocateCellBuffer<HeapSlot>(
+  HeapSlot* allocation = ReallocNurseryOrMallocBuffer<HeapSlot>(
       cx, this, reinterpret_cast<HeapSlot*>(oldHeaderSlots), oldAllocated,
       newAllocated, js::MallocArena);
   if (!allocation) {
@@ -993,7 +993,7 @@ bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
     oldAllocated = oldCapacity + ObjectElements::VALUES_PER_HEADER + numShifted;
 
     
-    newHeaderSlots = ReallocateCellBuffer<HeapSlot>(
+    newHeaderSlots = ReallocNurseryOrMallocBuffer<HeapSlot>(
         cx, this, oldHeaderSlots, oldAllocated, newAllocated, js::MallocArena);
     if (!newHeaderSlots) {
       return false;  
@@ -1003,7 +1003,8 @@ bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
     
     
     
-    newHeaderSlots = AllocateCellBuffer<HeapSlot>(cx, this, newAllocated);
+    newHeaderSlots =
+        AllocNurseryOrMallocBuffer<HeapSlot>(cx, this, newAllocated);
     if (!newHeaderSlots) {
       return false;  
     }
@@ -1075,7 +1076,7 @@ void NativeObject::shrinkElements(JSContext* cx, uint32_t reqCapacity) {
 
   HeapSlot* oldHeaderSlots =
       reinterpret_cast<HeapSlot*>(getUnshiftedElementsHeader());
-  HeapSlot* newHeaderSlots = ReallocateCellBuffer<HeapSlot>(
+  HeapSlot* newHeaderSlots = ReallocNurseryOrMallocBuffer<HeapSlot>(
       cx, this, oldHeaderSlots, oldAllocated, newAllocated, js::MallocArena);
   if (!newHeaderSlots) {
     cx->recoverFromOutOfMemory();

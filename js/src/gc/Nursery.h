@@ -148,8 +148,9 @@ class Nursery {
   
   
   
-  std::tuple<void*, bool> allocateBuffer(JS::Zone* zone, size_t nbytes,
-                                         arena_id_t arenaId);
+  std::tuple<void*, bool> allocNurseryOrMallocBuffer(JS::Zone* zone,
+                                                     size_t nbytes,
+                                                     arena_id_t arenaId);
 
   
   
@@ -158,8 +159,8 @@ class Nursery {
 
   
   
-  void* allocateBuffer(JS::Zone* zone, gc::Cell* owner, size_t nbytes,
-                       arena_id_t arenaId);
+  void* allocNurseryOrMallocBuffer(JS::Zone* zone, gc::Cell* owner,
+                                   size_t nbytes, arena_id_t arenaId);
 
   
   
@@ -174,8 +175,9 @@ class Nursery {
   void* allocateZeroedBuffer(gc::Cell* owner, size_t nbytes, arena_id_t arena);
 
   
-  void* reallocateBuffer(JS::Zone* zone, gc::Cell* cell, void* oldBuffer,
-                         size_t oldBytes, size_t newBytes, arena_id_t arena);
+  void* reallocNurseryOrMallocBuffer(JS::Zone* zone, gc::Cell* cell,
+                                     void* oldBuffer, size_t oldBytes,
+                                     size_t newBytes, arena_id_t arena);
 
   
   void freeBuffer(void* buffer, size_t nbytes);
@@ -214,8 +216,10 @@ class Nursery {
                                          owner, nbytes, use, arena);
   }
   template <typename T>
-  WasBufferMoved maybeMoveBufferOnPromotion(T** bufferp, gc::Cell* owner,
-                                            size_t nbytes, MemoryUse use) {
+  WasBufferMoved maybeMoveNurseryOrMallocBufferOnPromotion(T** bufferp,
+                                                           gc::Cell* owner,
+                                                           size_t nbytes,
+                                                           MemoryUse use) {
     return maybeMoveBufferOnPromotion(bufferp, owner, nbytes, use, MallocArena);
   }
 
@@ -508,9 +512,6 @@ class Nursery {
   void sweepMapAndSetObjects();
 
   void sweepStringsWithBuffer();
-
-  
-  void* allocateBuffer(JS::Zone* zone, size_t nbytes);
 
   
   size_t maxSpaceSize() const;
