@@ -998,7 +998,14 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
-  void DoSetChecked(bool aValue, bool aNotify, bool aSetValueChanged);
+  void VisitGroup(const RadioGroupContainer::VisitCallback& aCallback);
+
+  
+
+
+
+  void DoSetChecked(bool aValue, bool aNotify, bool aSetValueChanged,
+                    bool aUpdateOtherElement = true);
 
   
 
@@ -1013,7 +1020,7 @@ class HTMLInputElement final : public TextControlElement,
 
   void SetCheckedInternal(bool aValue, bool aNotify);
 
-  void RadioSetChecked(bool aNotify);
+  void RadioSetChecked(bool aNotify, bool aUpdateOtherElement);
   void SetCheckedChanged(bool aCheckedChanged);
 
   

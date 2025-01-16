@@ -1177,7 +1177,8 @@ nsresult HTMLInputElement::Clone(dom::NodeInfo* aNodeInfo,
   if (mCheckedChanged) {
     
     
-    it->DoSetChecked(mChecked, false, true);
+    it->DoSetChecked(mChecked,  false,
+                      true);
     
     it->mShouldInitChecked = false;
   }
@@ -1278,7 +1279,7 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         if (!mDoneCreating) {
           mShouldInitChecked = true;
         } else {
-          DoSetChecked(!!aValue, aNotify, false);
+          DoSetChecked(!!aValue, aNotify,  false);
         }
       }
       needValidityUpdate = true;
@@ -2867,11 +2868,12 @@ void HTMLInputElement::SetCheckedChangedInternal(bool aCheckedChanged) {
 }
 
 void HTMLInputElement::SetChecked(bool aChecked) {
-  DoSetChecked(aChecked, true, true);
+  DoSetChecked(aChecked,  true,  true);
 }
 
 void HTMLInputElement::DoSetChecked(bool aChecked, bool aNotify,
-                                    bool aSetValueChanged) {
+                                    bool aSetValueChanged,
+                                    bool aUpdateOtherElement) {
   
   
   
@@ -2894,7 +2896,7 @@ void HTMLInputElement::DoSetChecked(bool aChecked, bool aNotify,
 
   
   if (aChecked) {
-    RadioSetChecked(aNotify);
+    RadioSetChecked(aNotify, aUpdateOtherElement);
     return;
   }
 
@@ -2909,15 +2911,16 @@ void HTMLInputElement::DoSetChecked(bool aChecked, bool aNotify,
   SetCheckedInternal(false, aNotify);
 }
 
-void HTMLInputElement::RadioSetChecked(bool aNotify) {
-  
-  HTMLInputElement* currentlySelected = GetSelectedRadioButton();
-
-  
-  if (currentlySelected) {
+void HTMLInputElement::RadioSetChecked(bool aNotify, bool aUpdateOtherElement) {
+  if (aUpdateOtherElement) {
     
     
-    currentlySelected->SetCheckedInternal(false, true);
+    VisitGroup([self = RefPtr{this}](HTMLInputElement* aRadio) {
+      if (aRadio != self) {
+        aRadio->SetCheckedInternal(false, true);
+      }
+      return true;
+    });
   }
 
   
@@ -3301,7 +3304,8 @@ void HTMLInputElement::LegacyPreActivationBehavior(
     }
 
     originalCheckedValue = Checked();
-    DoSetChecked(!originalCheckedValue, true, true);
+    DoSetChecked(!originalCheckedValue,  true,
+                  true);
     mCheckedIsToggled = true;
 
     if (aVisitor.mEventStatus != nsEventStatus_eConsumeNoDefault) {
@@ -3313,7 +3317,8 @@ void HTMLInputElement::LegacyPreActivationBehavior(
 
     originalCheckedValue = Checked();
     if (!originalCheckedValue) {
-      DoSetChecked(true, true, true);
+      DoSetChecked( true,  true,
+                    true);
       mCheckedIsToggled = true;
     }
 
@@ -4205,13 +4210,15 @@ void HTMLInputElement::LegacyCanceledActivationBehavior(
       
       
       if (!selectedRadioButton || mType != FormControlType::InputRadio) {
-        DoSetChecked(false, true, true);
+        DoSetChecked( false,  true,
+                      true);
       }
     } else if (oldType == FormControlType::InputCheckbox) {
       bool originalIndeterminateValue =
           !!(aVisitor.mItemFlags & NS_ORIGINAL_INDETERMINATE_VALUE);
       SetIndeterminateInternal(originalIndeterminateValue, false);
-      DoSetChecked(originalCheckedValue, true, true);
+      DoSetChecked(originalCheckedValue,  true,
+                    true);
     }
   }
 
@@ -5983,7 +5990,8 @@ HTMLInputElement::Reset() {
       return result;
     }
     case VALUE_MODE_DEFAULT_ON:
-      DoSetChecked(DefaultChecked(), true, false);
+      DoSetChecked(DefaultChecked(),  true,
+                    false);
       return NS_OK;
     case VALUE_MODE_FILENAME:
       ClearFiles(false);
@@ -6230,7 +6238,8 @@ void HTMLInputElement::DoneCreatingElement() {
   
   
   if (!restoredCheckedState && mShouldInitChecked) {
-    DoSetChecked(DefaultChecked(), false, false);
+    DoSetChecked(DefaultChecked(),  false,
+                  false, mForm || IsInComposedDoc());
   }
 
   
@@ -6324,7 +6333,7 @@ bool HTMLInputElement::RestoreState(PresState* aState) {
       if (inputState.type() == PresContentData::TCheckedContentData) {
         restoredCheckedState = true;
         bool checked = inputState.get_CheckedContentData().checked();
-        DoSetChecked(checked, true, true);
+        DoSetChecked(checked,  true,  true);
       }
       break;
     case VALUE_MODE_FILENAME:
@@ -6403,7 +6412,7 @@ void HTMLInputElement::AddToRadioGroup() {
     
     
     
-    RadioSetChecked(mDoneCreating);
+    RadioSetChecked(mDoneCreating, mForm || IsInComposedDoc());
   } else {
     bool indeterminate = !container->GetCurrentRadioButton(name);
     SetStates(ElementState::INDETERMINATE, indeterminate, mDoneCreating);
@@ -6540,6 +6549,18 @@ nsresult HTMLInputElement::VisitGroup(nsIRadioVisitor* aVisitor) {
 
   aVisitor->Visit(this);
   return NS_OK;
+}
+
+void HTMLInputElement::VisitGroup(
+    const RadioGroupContainer::VisitCallback& aCallback) {
+  if (auto* container = GetCurrentRadioGroupContainer()) {
+    nsAutoString name;
+    GetAttr(nsGkAtoms::name, name);
+    container->WalkRadioGroup(name, aCallback);
+    return;
+  }
+
+  aCallback(this);
 }
 
 HTMLInputElement::ValueModeType HTMLInputElement::GetValueMode() const {
