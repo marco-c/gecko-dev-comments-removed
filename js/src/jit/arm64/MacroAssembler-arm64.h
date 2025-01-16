@@ -700,6 +700,29 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     }
   }
 
+  void truncateFloat32ModUint32(FloatRegister src, Register dest) {
+    vixl::UseScratchRegisterScope temps(this);
+    const ARMRegister scratch64 = temps.AcquireX();
+
+    ARMFPRegister src32(src, 32);
+    ARMRegister dest64(dest, 64);
+
+    MOZ_ASSERT(!scratch64.Is(dest64));
+
+    
+    
+    
+    Fcvtzs(dest64, src32);
+
+    
+    Add(scratch64, dest64, Operand(0x7fff'ffff'ffff'ffff));
+    Cmn(scratch64, 3);
+    Csel(dest64, dest64, vixl::xzr, Assembler::BelowOrEqual);
+
+    
+    Uxtw(dest64, dest64);
+  }
+
   void jump(Label* label) { B(label); }
   void jump(JitCode* code) { branch(code); }
   void jump(ImmPtr ptr) {
