@@ -3,12 +3,13 @@
 
 "use strict";
 
-const initialReducerState = {
-  mutableOverrides: {},
-};
-
 exports.reducer = networkOverridesReducer;
-function networkOverridesReducer(state = initialReducerState, action) {
+function networkOverridesReducer(
+  state = {
+    mutableOverrides: {},
+  },
+  action
+) {
   switch (action.type) {
     case "SET_NETWORK_OVERRIDE": {
       state.mutableOverrides[action.url] = action.path;
