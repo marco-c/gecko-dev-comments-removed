@@ -86,8 +86,7 @@ static CharT* TransformWhiteSpaces(
     const CharT* aText, uint32_t aLength, uint32_t aBegin, uint32_t aEnd,
     bool aHasSegmentBreak, bool& aInWhitespace, CharT* aOutput,
     nsTextFrameUtils::Flags& aFlags,
-    nsTextFrameUtils::CompressionMode aCompression, gfxSkipChars* aSkipChars,
-    bool aLangIsJapaneseOrChinese) {
+    nsTextFrameUtils::CompressionMode aCompression, gfxSkipChars* aSkipChars) {
   MOZ_ASSERT(aCompression == nsTextFrameUtils::COMPRESS_WHITESPACE ||
                  aCompression == nsTextFrameUtils::COMPRESS_WHITESPACE_NEWLINE,
              "whitespaces should be skippable!!");
@@ -129,13 +128,8 @@ static CharT* TransformWhiteSpaces(
 
     
     
-    
-    
     isSegmentBreakSkippable =
-        (IsSegmentBreakSkipChar(ucs4before) &&
-         IsSegmentBreakSkipChar(ucs4after)) ||
-        (aLangIsJapaneseOrChinese && (IsEastAsianPunctuation(ucs4before) ||
-                                      IsEastAsianPunctuation(ucs4after)));
+        IsSegmentBreakSkipChar(ucs4before) && IsSegmentBreakSkipChar(ucs4after);
   }
 
   for (uint32_t i = aBegin; i < aEnd; ++i) {
@@ -207,10 +201,12 @@ static CharT* TransformWhiteSpaces(
 }
 
 template <class CharT>
-CharT* nsTextFrameUtils::TransformText(
-    const CharT* aText, uint32_t aLength, CharT* aOutput,
-    CompressionMode aCompression, uint8_t* aIncomingFlags,
-    gfxSkipChars* aSkipChars, Flags* aAnalysisFlags, const nsAtom* aLanguage) {
+CharT* nsTextFrameUtils::TransformText(const CharT* aText, uint32_t aLength,
+                                       CharT* aOutput,
+                                       CompressionMode aCompression,
+                                       uint8_t* aIncomingFlags,
+                                       gfxSkipChars* aSkipChars,
+                                       Flags* aAnalysisFlags) {
   Flags flags = Flags();
 #ifdef DEBUG
   int32_t skipCharsOffset = aSkipChars->GetOriginalCharCount();
@@ -251,19 +247,6 @@ CharT* nsTextFrameUtils::TransformText(
     }
     *aIncomingFlags &= ~INCOMING_WHITESPACE;
   } else {
-    bool langIsJapaneseOrChinese = [=]() {
-      if (!aLanguage || aLanguage->GetLength() < 2) {
-        return false;
-      }
-      const char16_t* text = aLanguage->GetUTF16String();
-      if ((ToLowerCaseASCII(text[0]) == char16_t('j') &&
-           ToLowerCaseASCII(text[1]) == char16_t('a')) ||
-          (ToLowerCaseASCII(text[0]) == char16_t('z') &&
-           ToLowerCaseASCII(text[1]) == char16_t('h'))) {
-        return aLanguage->GetLength() == 2 || text[2] == '-';
-      }
-      return false;
-    }();
     bool inWhitespace = (*aIncomingFlags & INCOMING_WHITESPACE) != 0;
     uint32_t i;
     for (i = 0; i < aLength; ++i) {
@@ -301,9 +284,9 @@ CharT* nsTextFrameUtils::TransformText(
           j--;
         }
         if (j > i) {
-          aOutput = TransformWhiteSpaces(
-              aText, aLength, i, j, hasSegmentBreak, inWhitespace, aOutput,
-              flags, aCompression, aSkipChars, langIsJapaneseOrChinese);
+          aOutput = TransformWhiteSpaces(aText, aLength, i, j, hasSegmentBreak,
+                                         inWhitespace, aOutput, flags,
+                                         aCompression, aSkipChars);
         }
         
         
@@ -364,11 +347,11 @@ CharT* nsTextFrameUtils::TransformText(
 template uint8_t* nsTextFrameUtils::TransformText(
     const uint8_t* aText, uint32_t aLength, uint8_t* aOutput,
     CompressionMode aCompression, uint8_t* aIncomingFlags,
-    gfxSkipChars* aSkipChars, Flags* aAnalysisFlags, const nsAtom* aLanguage);
+    gfxSkipChars* aSkipChars, Flags* aAnalysisFlags);
 template char16_t* nsTextFrameUtils::TransformText(
     const char16_t* aText, uint32_t aLength, char16_t* aOutput,
     CompressionMode aCompression, uint8_t* aIncomingFlags,
-    gfxSkipChars* aSkipChars, Flags* aAnalysisFlags, const nsAtom* aLanguage);
+    gfxSkipChars* aSkipChars, Flags* aAnalysisFlags);
 template bool nsTextFrameUtils::IsSkippableCharacterForTransformText(
     uint8_t aChar);
 template bool nsTextFrameUtils::IsSkippableCharacterForTransformText(

@@ -122,14 +122,11 @@ class nsTextFrameUtils {
 
 
 
-
-
   template <class CharT>
   static CharT* TransformText(const CharT* aText, uint32_t aLength,
                               CharT* aOutput, CompressionMode aCompression,
                               uint8_t* aIncomingFlags, gfxSkipChars* aSkipChars,
-                              nsTextFrameUtils::Flags* aAnalysisFlags,
-                              const nsAtom* aLanguage);
+                              nsTextFrameUtils::Flags* aAnalysisFlags);
 
   
 
