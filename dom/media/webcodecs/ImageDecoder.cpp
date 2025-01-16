@@ -213,9 +213,14 @@ MessageProcessedResult ImageDecoder::ProcessConfigureMessage(
   
   
   
+  
+  
+  
+  
   NS_ConvertUTF16toUTF8 mimeType(mType);
   image::DecoderType type = image::ImageUtils::GetDecoderType(mimeType);
-  if (NS_WARN_IF(type == image::DecoderType::UNKNOWN)) {
+  if (NS_WARN_IF(type == image::DecoderType::UNKNOWN) ||
+      NS_WARN_IF(type == image::DecoderType::ICON)) {
     MOZ_LOG(gWebCodecsLog, LogLevel::Error,
             ("ImageDecoder %p Initialize -- unsupported mime type '%s'", this,
              mimeType.get()));
