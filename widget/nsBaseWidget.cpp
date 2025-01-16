@@ -538,8 +538,10 @@ void nsBaseWidget::Destroy() {
   
   if (mParent) {
     mParent->RemoveFromChildList(this);
+    mParent = nullptr;
   }
-  mParent = nullptr;
+  
+  RemoveAllChildren();
 }
 
 nsIWidget* nsIWidget::GetTopLevelWidget() {

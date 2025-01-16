@@ -2252,8 +2252,6 @@ void nsWindow::Destroy() {
   
   nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
 
-  RemoveAllChildren();
-
   
   
   nsBaseWidget::DestroyCompositor();

@@ -564,8 +564,6 @@ void nsWindow::OnDestroy(void) {
   
   nsBaseWidget::Destroy();
 
-  RemoveAllChildren();
-
   NotifyWindowDestroyed();
 }
 
