@@ -1,30 +1,30 @@
+// META: script=/resources/testdriver.js
+// META: script=/resources/testdriver-vendor.js
+// META: script=/common/utils.js
+// META: script=resources/ba-fledge-util.sub.js
+// META: script=resources/fledge-util.sub.js
+// META: script=third_party/cbor-js/cbor.js
+// META: script=/common/subset-tests.js
+// META: timeout=long
+// META: variant=?1-4
+// META: variant=?5-8
+// META: variant=?9-12
+// META: variant=?13-16
+// META: variant=?17-20
+// META: variant=?21-24
+// META: variant=?25-28
+// META: variant=?29-32
+// META: variant=?33-36
+// META: variant=?37-40
+// META: variant=?41-44
+// META: variant=?45-48
+// META: variant=?49-52
+// META: variant=?53-56
+// META: variant=?57-60
+// META: variant=?61-64
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// These tests focus on the serverResponse field in AuctionConfig, e.g.
+// auctions involving bidding and auction services.
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
@@ -34,8 +34,10 @@ subsetTest(promise_test, async test => {
       [{renderURL: adA, adRenderId: 'a'}, {renderURL: adB, adRenderId: 'b'}];
   await joinInterestGroup(test, uuid, {ads: adsArray});
 
-  const result = await navigator.getInterestGroupAdAuctionData(
-      {seller: window.location.origin});
+  const result = await navigator.getInterestGroupAdAuctionData({
+    coordinatorOrigin: await BA.configureCoordinator(),
+    seller: window.location.origin
+  });
   assert_true(result.requestId !== null);
   assert_true(result.request.length > 0);
 
@@ -74,8 +76,10 @@ subsetTest(promise_test, async test => {
       [{renderURL: adA, adRenderId: 'a'}, {renderURL: adB, adRenderId: 'b'}];
   await joinInterestGroup(test, uuid, {ads: adsArray});
 
-  const result = await navigator.getInterestGroupAdAuctionData(
-      {seller: window.location.origin});
+  const result = await navigator.getInterestGroupAdAuctionData({
+    coordinatorOrigin: await BA.configureCoordinator(),
+    seller: window.location.origin
+  });
   assert_true(result.requestId !== null);
   assert_true(result.request.length > 0);
 
@@ -83,8 +87,8 @@ subsetTest(promise_test, async test => {
 
   const trackSeller = createSellerReportURL(uuid);
   const trackBuyer = createBidderReportURL(uuid);
-  
-  
+  // This one should still work since the server may have run an auction with
+  // components on its own.
   const trackComponentSeller = createSellerReportURL(uuid, 'component');
   let serverResponseMsg = {
     'biddingGroups': {},
@@ -128,15 +132,17 @@ subsetTest(promise_test, async test => {
     biddingLogicURL: createBiddingScriptURL({allowComponentAuction: true})
   });
 
-  const result = await navigator.getInterestGroupAdAuctionData(
-      {seller: window.location.origin});
+  const result = await navigator.getInterestGroupAdAuctionData({
+      coordinatorOrigin: await BA.configureCoordinator(),
+      seller: window.location.origin
+  });
   assert_true(result.requestId !== null);
   assert_true(result.request.length > 0);
 
   let decoded = await BA.decodeInterestGroupData(result.request);
 
-  
-  
+  // The server-side auction uses a bid of 10, for second ad, so it should
+  // win over the client-side component auctions bid of 9.
   let serverResponseMsg = {
     'biddingGroups': {},
     'adRenderURL': adsArray[1].renderURL,
@@ -189,18 +195,20 @@ subsetTest(promise_test, async test => {
     biddingLogicURL: createBiddingScriptURL({allowComponentAuction: true})
   });
 
-  const result = await navigator.getInterestGroupAdAuctionData(
-      {seller: window.location.origin});
+  const result = await navigator.getInterestGroupAdAuctionData({
+    coordinatorOrigin: await BA.configureCoordinator(),
+    seller: window.location.origin
+  });
   assert_true(result.requestId !== null);
   assert_true(result.request.length > 0);
 
   let decoded = await BA.decodeInterestGroupData(result.request);
 
-  
-  
+  // The server-side auction uses a bid of 10, for second ad, so it should
+  // win over the client-side component auctions bid of 9.
   const trackServerSeller = createSellerReportURL(uuid);
   const trackBuyer = createBidderReportURL(uuid);
-  
+  // This one shouldn't show up.
   const trackTopLevelServerSeller = createSellerReportURL(uuid, 'top');
   let serverResponseMsg = {
     'biddingGroups': {},
@@ -261,8 +269,10 @@ async function runFaultInjectTest(test, fault) {
       [{renderURL: adA, adRenderId: 'a'}, {renderURL: adB, adRenderId: 'b'}];
   await joinInterestGroup(test, uuid, {ads: adsArray});
 
-  const result = await navigator.getInterestGroupAdAuctionData(
-      {seller: window.location.origin});
+  const result = await navigator.getInterestGroupAdAuctionData({
+    coordinatorOrigin: await BA.configureCoordinator(),
+    seller: window.location.origin
+  });
   assert_true(result.requestId !== null);
   assert_true(result.request.length > 0);
 
@@ -315,8 +325,10 @@ subsetTest(promise_test, async test => {
       [{renderURL: adA, adRenderId: 'a'}, {renderURL: adB, adRenderId: 'b'}];
   await joinInterestGroup(test, uuid, {ads: adsArray});
 
-  const result = await navigator.getInterestGroupAdAuctionData(
-      {seller: window.location.origin});
+  const result = await navigator.getInterestGroupAdAuctionData({
+    coordinatorOrigin: await BA.configureCoordinator(),
+    seller: window.location.origin
+  });
   assert_true(result.requestId !== null);
   assert_true(result.request.length > 0);
 
@@ -333,8 +345,8 @@ subsetTest(promise_test, async test => {
   let serverResponse =
       await BA.encodeServerResponse(serverResponseMsg, decoded);
 
-  
-  
+  // Mess up the array for a bit before computing hash to get the wrong hash,
+  // then undo.
   serverResponse[0] ^= 0xBE;
   let hashString = await BA.payloadHash(serverResponse);
   await BA.authorizeServerResponseHashes([hashString]);
@@ -357,8 +369,10 @@ subsetTest(promise_test, async test => {
       [{renderURL: adA, adRenderId: 'a'}, {renderURL: adB, adRenderId: 'b'}];
   await joinInterestGroup(test, uuid, {ads: adsArray});
 
-  const result =
-      await navigator.getInterestGroupAdAuctionData({seller: OTHER_ORIGIN1});
+  const result = await navigator.getInterestGroupAdAuctionData({
+    coordinatorOrigin: await BA.configureCoordinator(),
+    seller: OTHER_ORIGIN1
+  });
   assert_true(result.requestId !== null);
   assert_true(result.request.length > 0);
 
@@ -395,8 +409,10 @@ subsetTest(promise_test, async test => {
       [{renderURL: adA, adRenderId: 'a'}, {renderURL: adB, adRenderId: 'b'}];
   await joinInterestGroup(test, uuid, {ads: adsArray});
 
-  const result = await navigator.getInterestGroupAdAuctionData(
-      {seller: window.location.origin});
+  const result = await navigator.getInterestGroupAdAuctionData({
+    coordinatorOrigin: await BA.configureCoordinator(),
+    seller: window.location.origin
+  });
   assert_true(result.requestId !== null);
   assert_true(result.request.length > 0);
 
@@ -425,8 +441,8 @@ subsetTest(promise_test, async test => {
   expectNoWinner(auctionResult);
 }, 'Basic B&A auction - Wrong request Id');
 
-
-
+// Runs responseMutator on a minimal correct server response, and expects
+// either success/failure based on expectWin.
 async function testWithMutatedServerResponse(
     test, expectWin, responseMutator, igMutator = undefined) {
   const uuid = generateUuid(test);
@@ -440,8 +456,10 @@ async function testWithMutatedServerResponse(
   }
   await joinInterestGroup(test, uuid, ig);
 
-  const result = await navigator.getInterestGroupAdAuctionData(
-      {seller: window.location.origin});
+  const result = await navigator.getInterestGroupAdAuctionData({
+    coordinatorOrigin: await BA.configureCoordinator(),
+    seller: window.location.origin
+  });
   assert_true(result.requestId !== null);
   assert_true(result.request.length > 0);
 
@@ -479,130 +497,130 @@ async function testWithMutatedServerResponse(
 
 subsetTest(promise_test, async test => {
   await testWithMutatedServerResponse(
-      test,  false, msg => {msg.error = {}});
+      test, /*expectSuccess=*/ false, msg => {msg.error = {}});
 }, 'Basic B&A auction - response marked as error');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  true, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ true, msg => {
     msg.error = 4;
   });
 }, 'Basic B&A auction - nonsense error field');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ false, msg => {
     msg.error = {message: 'oh no'};
   });
 }, 'Basic B&A auction - response marked as error, with message');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ false, msg => {
     msg.error = {message: {}};
   });
 }, 'Basic B&A auction - response marked as error, with bad message');
 
 subsetTest(promise_test, async test => {
   await testWithMutatedServerResponse(
-      test,  false, msg => {msg.isChaff = true});
+      test, /*expectSuccess=*/ false, msg => {msg.isChaff = true});
 }, 'Basic B&A auction - response marked as chaff');
 
 subsetTest(promise_test, async test => {
   await testWithMutatedServerResponse(
-      test,  true, msg => {msg.isChaff = false});
+      test, /*expectSuccess=*/ true, msg => {msg.isChaff = false});
 }, 'Basic B&A auction - response marked as non-chaff');
 
-
-
-
-
-
-
+// Disabled while spec clarifying expected behavior is in-progress.
+//
+// subsetTest(promise_test, async test => {
+//   await testWithMutatedServerResponse(
+//       test, /*expectSuccess=*/ true, msg => {msg.isChaff = 'yes'});
+// }, 'Basic B&A auction - response marked as chaff incorrectly');
 
 subsetTest(promise_test, async test => {
   await testWithMutatedServerResponse(
-      test,  false,
+      test, /*expectSuccess=*/ false,
       msg => {msg.topLevelSeller = 'https://example.org/'});
 }, 'Basic B&A auction - incorrectly includes topLevelSeller');
 
-
-
-
-
-
-
+// Disabled while spec clarifying expected behavior is in-progress.
+//
+// subsetTest(promise_test, async test => {
+//   await testWithMutatedServerResponse(
+//       test, /*expectSuccess=*/ true, msg => {msg.topLevelSeller = 1});
+// }, 'Basic B&A auction - non-string top-level seller ignored');
 
 subsetTest(promise_test, async test => {
   await testWithMutatedServerResponse(
-      test,  false,
+      test, /*expectSuccess=*/ false,
       msg => {msg.topLevelSeller = 'http://example.org/'});
 }, 'Basic B&A auction - http:// topLevelSeller is bad, too');
 
-
-
-
-
-
-
+// Disabled while spec clarifying expected behavior is in-progress.
+//
+// subsetTest(promise_test, async test => {
+//   await testWithMutatedServerResponse(
+//       test, /*expectSuccess=*/ true, msg => {msg.bid = '10 cents'});
+// }, 'Basic B&A auction - non-number bid is ignored');
 
 subsetTest(promise_test, async test => {
   await testWithMutatedServerResponse(
-      test,  true, msg => {msg.bid = 50});
+      test, /*expectSuccess=*/ true, msg => {msg.bid = 50});
 }, 'Basic B&A auction - positive bid is good');
 
 subsetTest(promise_test, async test => {
   await testWithMutatedServerResponse(
-      test,  false, msg => {msg.bid = -50});
+      test, /*expectSuccess=*/ false, msg => {msg.bid = -50});
 }, 'Basic B&A auction - negative bid is bad');
 
 subsetTest(promise_test, async test => {
   await testWithMutatedServerResponse(
-      test,  false, msg => {msg.bid = 0});
+      test, /*expectSuccess=*/ false, msg => {msg.bid = 0});
 }, 'Basic B&A auction - zero bid is bad');
 
 subsetTest(promise_test, async test => {
   await testWithMutatedServerResponse(
-      test,  false,
+      test, /*expectSuccess=*/ false,
       msg => {msg.biddingGroups[window.location.origin] = []});
 }, 'Basic B&A auction - winning group did not bid');
 
 subsetTest(promise_test, async test => {
   await testWithMutatedServerResponse(
-      test,  false,
+      test, /*expectSuccess=*/ false,
       msg => {msg.biddingGroups[window.location.origin] = [-1, 0]});
 }, 'Basic B&A auction - negative bidding group index');
 
 subsetTest(promise_test, async test => {
   await testWithMutatedServerResponse(
-      test,  false,
+      test, /*expectSuccess=*/ false,
       msg => {msg.biddingGroups[window.location.origin] = [0, 1]});
 }, 'Basic B&A auction - too large bidding group index');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ false, msg => {
     msg.interestGroupName += 'not';
   });
 }, 'Basic B&A auction - wrong IG name');
 
 subsetTest(promise_test, async test => {
   await testWithMutatedServerResponse(
-      test,  false, async msg => {
+      test, /*expectSuccess=*/ false, async msg => {
         await leaveInterestGroup();
       });
 }, 'Basic B&A auction - left IG in the middle');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ false, msg => {
     msg.adRenderURL += 'not';
   });
 }, 'Basic B&A auction - ad URL not in ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ false, msg => {
     msg.buyerReportingId = 'bid1';
   });
 }, 'Basic B&A auction - buyerReportingId not in ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  true, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ true, msg => {
     msg.buyerReportingId = 'bid1';
   }, ig => {
     ig.ads[0].buyerReportingId = 'bid1';
@@ -611,7 +629,7 @@ subsetTest(promise_test, async test => {
 }, 'Basic B&A auction - buyerReportingId in ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ false, msg => {
     msg.buyerReportingId = 'bid2';
   }, ig => {
     ig.ads[0].buyerReportingId = 'bid1';
@@ -620,13 +638,13 @@ subsetTest(promise_test, async test => {
 }, 'Basic B&A auction - buyerReportingId in wrong ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ false, msg => {
     msg.buyerAndSellerReportingId = 'bsid1';
   });
 }, 'Basic B&A auction - buyerAndSellerReportingId not in ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  true, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ true, msg => {
     msg.buyerAndSellerReportingId = 'bsid1';
   }, ig => {
     ig.ads[0].buyerAndSellerReportingId = 'bsid1';
@@ -635,7 +653,7 @@ subsetTest(promise_test, async test => {
 }, 'Basic B&A auction - buyerAndSellerReportingId in ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ false, msg => {
     msg.buyerAndSellerReportingId = 'bsid2';
   }, ig => {
     ig.ads[0].buyerAndSellerReportingId = 'bsid1';
@@ -644,14 +662,14 @@ subsetTest(promise_test, async test => {
 }, 'Basic B&A auction - buyerAndSellerReportingId in wrong ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ false, msg => {
     msg.components = ["https://example.org"];
   });
 }, 'Basic B&A auction - ad component URL not in ad');
 
 subsetTest(promise_test, async test => {
   await testWithMutatedServerResponse(
-      test,  true,
+      test, /*expectSuccess=*/ true,
       msg => {
         msg.components = ['https://example.org'];
       },
@@ -664,7 +682,7 @@ subsetTest(promise_test, async test => {
   let savedUuid;
   let savedExpectUrls;
   let result = await testWithMutatedServerResponse(
-      test,  true,
+      test, /*expectSuccess=*/ true,
       (msg, uuid) => {
         savedUuid = uuid;
         msg.components = [
@@ -711,7 +729,7 @@ subsetTest(promise_test, async test => {
 subsetTest(promise_test, async test => {
   let savedUuid;
   let result = await testWithMutatedServerResponse(
-      test,  true,
+      test, /*expectWin=*/ true,
       (msg, uuid) => {
         savedUuid = uuid;
         msg.winReportingURLs = {
@@ -743,8 +761,8 @@ subsetTest(promise_test, async test => {
       });
 
   createAndNavigateFencedFrame(test, result);
-  
-  
+  // The script triggers seller and buyer 'click', and seller 'cluck'.
+  // No tracker for page itself.
   await waitForObservedRequests(savedUuid, [
     createBidderBeaconURL(savedUuid, 'i') + ', body: click_body',
     createSellerBeaconURL(savedUuid, 'i') + ', body: click_body',
@@ -753,20 +771,20 @@ subsetTest(promise_test, async test => {
 }, 'Basic B&A auction --- beacon reporting');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ false, msg => {
     msg.bidCurrency = 'cents';
   });
 }, 'Basic B&A auction - invalid ad currency');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  true, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ true, msg => {
     msg.bidCurrency = 'USD';
   });
 }, 'Basic B&A auction - valid ad currency');
 
-
-
-
+// Runs whatever is set in `mutators` on a minimal correct hybrid B&A/local
+// auction, and expects either the B&A bid or local bid to win depending on
+// expectBaWin.
 async function testHybridAuctionWithMutatedServerResponse(
     test, expectBaWin, mutators = {
       responseMutator: undefined,
@@ -788,16 +806,18 @@ async function testHybridAuctionWithMutatedServerResponse(
   }
   await joinInterestGroup(test, uuid, interestGroup);
 
-  const result = await navigator.getInterestGroupAdAuctionData(
-      {seller: window.location.origin});
+  const result = await navigator.getInterestGroupAdAuctionData({
+    coordinatorOrigin: await BA.configureCoordinator(),
+    seller: window.location.origin
+  });
   assert_true(result.requestId !== null);
   assert_true(result.request.length > 0);
 
   let decoded = await BA.decodeInterestGroupData(result.request);
 
-  
-  
-  
+  // The server-side auction uses a bid of 10, for second ad, so it should
+  // win over the client-side component auctions bid of 9 (unless something
+  // mutators did made the server response unacceptable).
   let serverResponseMsg = {
     'biddingGroups': {},
     'adRenderURL': interestGroup.ads[1].renderURL,
@@ -851,7 +871,7 @@ async function testHybridAuctionWithMutatedServerResponse(
 
 subsetTest(promise_test, async test => {
   await testHybridAuctionWithMutatedServerResponse(
-      test,  false, {
+      test, /*expectBaWin=*/ false, {
         responseMutator: (response) => {
           delete response.topLevelSeller;
         }
@@ -860,7 +880,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await testHybridAuctionWithMutatedServerResponse(
-      test,  false, {
+      test, /*expectBaWin=*/ false, {
         responseMutator: (response) => {
           response.topLevelSeller = 'https://www.example.org/';
         }
@@ -869,7 +889,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await testHybridAuctionWithMutatedServerResponse(
-      test,  false, {
+      test, /*expectBaWin=*/ false, {
         responseMutator: (response) => {
           delete response.bid;
         }
@@ -878,7 +898,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await testHybridAuctionWithMutatedServerResponse(
-      test,  true, {
+      test, /*expectBaWin=*/ true, {
         responseMutator: (response) => {
           response.bidCurrency = 'USD';
         }
@@ -887,7 +907,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await testHybridAuctionWithMutatedServerResponse(
-      test,  false, {
+      test, /*expectBaWin=*/ false, {
         responseMutator: (response) => {
           response.bidCurrency = 'USD';
         },
@@ -899,7 +919,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await testHybridAuctionWithMutatedServerResponse(
-      test,  true, {
+      test, /*expectBaWin=*/ true, {
         auctionConfigMutator: (auctionConfig) => {
           auctionConfig.componentAuctions[1].sellerCurrency = 'EUR';
         }
@@ -908,7 +928,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await testHybridAuctionWithMutatedServerResponse(
-      test,  false, {
+      test, /*expectBaWin=*/ false, {
         responseMutator: (response) => {
           response.bidCurrency = 'USD';
         },
@@ -921,7 +941,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await testHybridAuctionWithMutatedServerResponse(
-      test,  true, {
+      test, /*expectBaWin=*/ true, {
         auctionConfigMutator: (auctionConfig) => {
           auctionConfig.perBuyerCurrencies = {};
           auctionConfig.perBuyerCurrencies[window.location.origin] = 'EUR';
@@ -931,7 +951,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await testHybridAuctionWithMutatedServerResponse(
-      test,  true, {
+      test, /*expectBaWin=*/ true, {
         responseMutator: (response) => {
           response.bidCurrency = 'USD';
           response.bid = 50;
@@ -940,8 +960,8 @@ subsetTest(promise_test, async test => {
         auctionConfigMutator: (auctionConfig, uuid) => {
           let trackTopSeller = createSellerReportURL(uuid, 'top');
           auctionConfig.decisionLogicURL = createDecisionScriptURL(uuid, {
-            
-            
+            // Note: this will throw on the local bid as well as an incorrect
+            // server bid.
             scoreAd: `
               let origin = '${window.location.origin}';
               if (!(adMetadata instanceof Array) ||
@@ -967,7 +987,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await testHybridAuctionWithMutatedServerResponse(
-      test,  true, {
+      test, /*expectBaWin=*/ true, {
         responseMutator: (response) => {
           response.bidCurrency = 'USD';
           response.bid = 50;
@@ -993,7 +1013,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await testHybridAuctionWithMutatedServerResponse(
-      test,  true, {
+      test, /*expectBaWin=*/ true, {
         igMutator: (ig, uuid) => {
           ig.ads[1].renderURL =
               createRenderURL(uuid, `window.fence.reportEvent({
@@ -1024,8 +1044,8 @@ subsetTest(promise_test, async test => {
           };
         },
         expectUrlsMutator: (expectUrls, uuid) => {
-          
-          
+          // The script triggers seller and buyer 'click', and seller 'clack'.
+          // No tracker for page itself.
           expectUrls.pop();
           expectUrls.push(
               createBidderBeaconURL(uuid, 'i') + ', body: click_body',
@@ -1035,16 +1055,16 @@ subsetTest(promise_test, async test => {
       });
 }, 'Hybrid B&A auction --- beacon reporting');
 
-
-
-
-
-
-
-
+/////////////////////////////////////////////////////////////////////////////
+// updateIfOlderThanMs tests
+//
+// NOTE: Due to the lack of mock time in wpt, these test just exercise the code
+// paths and ensure that no crash occurs -- they don't otherwise verify
+// behavior.
+/////////////////////////////////////////////////////////////////////////////
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  true, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ true, msg => {
     msg.updateGroups =
         {[window.location.origin]: [{index: 2048, updateIfOlderThanMs: 1000}]};
   });
@@ -1052,7 +1072,7 @@ subsetTest(promise_test, async test => {
 
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  true, msg => {
+  await testWithMutatedServerResponse(test, /*expectSuccess=*/ true, msg => {
     msg.updateGroups = {
       [window.location.origin]: [
         {index: 0, updateIfOlderThanMs: 1000},
@@ -1062,14 +1082,14 @@ subsetTest(promise_test, async test => {
   });
 }, 'Basic B&A auction - updateIfOlderThanMs');
 
+/////////////////////////////////////////////////////////////////////////////
+//
+// K-anonymity support tests
+//
+/////////////////////////////////////////////////////////////////////////////
 
-
-
-
-
-
-
-
+// Runs responseMutator on a minimal correct server response, and expects
+// either success/failure based on expectWin.
 async function kAnonTestWithMutatedServerResponse(
     test, expectWin, responseMutator, igMutator = undefined) {
   const uuid = generateUuid(test);
@@ -1141,8 +1161,10 @@ async function kAnonTestWithMutatedServerResponse(
 
   await joinInterestGroup(test, uuid, ig);
 
-  const result = await navigator.getInterestGroupAdAuctionData(
-      {seller: window.location.origin});
+  const result = await navigator.getInterestGroupAdAuctionData({
+    coordinatorOrigin: await BA.configureCoordinator(),
+    seller: window.location.origin
+  });
   assert_true(result.requestId !== null);
   assert_true(result.request.length > 0);
 
@@ -1181,7 +1203,7 @@ async function kAnonTestWithMutatedServerResponse(
 
 subsetTest(promise_test, async test => {
   await kAnonTestWithMutatedServerResponse(
-      test,  true, (msg, ig, hashes) => {
+      test, /*expectSuccess=*/ true, (msg, ig, hashes) => {
         msg.kAnonWinnerJoinCandidates = {
           adRenderURLHash: hashes.adARenderKAnonKeyHash,
           reportingIdHash: hashes.adANameReportingIdKAnonKeyHash,
@@ -1191,7 +1213,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await kAnonTestWithMutatedServerResponse(
-      test,  false, (msg, ig, hashes) => {
+      test, /*expectSuccess=*/ false, (msg, ig, hashes) => {
         msg.kAnonWinnerJoinCandidates = {
           adRenderURLHash: new Uint8Array(),
           reportingIdHash: hashes.adANameReportingIdKAnonKeyHash,
@@ -1201,7 +1223,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await kAnonTestWithMutatedServerResponse(
-      test,  false, (msg, ig, hashes) => {
+      test, /*expectSuccess=*/ false, (msg, ig, hashes) => {
         msg.kAnonWinnerJoinCandidates = {
           adRenderURLHash: hashes.adARenderKAnonKeyHash,
           reportingIdHash: new Uint8Array(),
@@ -1211,13 +1233,13 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await kAnonTestWithMutatedServerResponse(
-      test,  false, (msg, ig, hashes) => {
+      test, /*expectSuccess=*/ false, (msg, ig, hashes) => {
         delete msg.adRenderURL;
         delete msg.interestGroupName;
         delete msg.interestGroupOwner;
         msg.kAnonGhostWinners = [{
           kAnonJoinCandidates: {
-            
+            // missing adRenderURLHash
             reportingIdHash: hashes.adANameReportingIdKAnonKeyHash,
           },
           interestGroupIndex: 0,
@@ -1228,7 +1250,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await kAnonTestWithMutatedServerResponse(
-      test,  false, (msg, ig, hashes) => {
+      test, /*expectSuccess=*/ false, (msg, ig, hashes) => {
         delete msg.adRenderURL;
         delete msg.interestGroupName;
         delete msg.interestGroupOwner;
@@ -1245,7 +1267,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await kAnonTestWithMutatedServerResponse(
-      test,  false, (msg, ig, hashes) => {
+      test, /*expectSuccess=*/ false, (msg, ig, hashes) => {
         delete msg.adRenderURL;
         delete msg.interestGroupName;
         delete msg.interestGroupOwner;
@@ -1272,7 +1294,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await kAnonTestWithMutatedServerResponse(
-      test,  false, (msg, ig, hashes) => {
+      test, /*expectSuccess=*/ false, (msg, ig, hashes) => {
         delete msg.adRenderURL;
         delete msg.interestGroupName;
         delete msg.interestGroupOwner;
@@ -1287,7 +1309,7 @@ subsetTest(promise_test, async test => {
           },
           {
             kAnonJoinCandidates: {
-              
+              // missing adRenderURLHash
               reportingIdHash: hashes.adBNameReportingIdKAnonKeyHash,
             },
             interestGroupIndex: 0,
@@ -1299,7 +1321,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await kAnonTestWithMutatedServerResponse(
-      test,  true, (msg, ig, hashes) => {
+      test, /*expectSuccess=*/ true, (msg, ig, hashes) => {
         msg.kAnonWinnerJoinCandidates = {
           adRenderURLHash: hashes.adARenderKAnonKeyHash,
           reportingIdHash: hashes.adANameReportingIdKAnonKeyHash,
@@ -1317,7 +1339,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await kAnonTestWithMutatedServerResponse(
-      test,  true, (msg, ig, hashes) => {
+      test, /*expectSuccess=*/ true, (msg, ig, hashes) => {
         msg.kAnonWinnerJoinCandidates = {
           adRenderURLHash: hashes.adARenderKAnonKeyHash,
           reportingIdHash: hashes.adANameReportingIdKAnonKeyHash,
@@ -1330,7 +1352,7 @@ subsetTest(promise_test, async test => {
           interestGroupIndex: 0,
           owner: window.location.origin,
           ghostWinnerForTopLevelAuction: {
-            
+            // missing adRenderURL
             modifiedBid: 100,
           },
         }];
@@ -1339,7 +1361,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   await kAnonTestWithMutatedServerResponse(
-      test,  true, (msg, ig, hashes) => {
+      test, /*expectSuccess=*/ true, (msg, ig, hashes) => {
         msg.kAnonWinnerJoinCandidates = {
           adRenderURLHash: hashes.adARenderKAnonKeyHash,
           reportingIdHash: hashes.adANameReportingIdKAnonKeyHash,
@@ -1359,15 +1381,15 @@ subsetTest(promise_test, async test => {
       });
 }, 'Basic B&A auction - winner with full ghost winner');
 
+// TODO(behamilton): Add Multi-seller k-anon tests.
+// TODO(behamilton): Add k-anon tests with different reporting IDs.
 
+/* Some things that are not currently tested that probably should be; this is
+   not exhaustive, merely to keep track of things that come to mind as tests are
+   written:
 
-
-
-
-
-
-
-
-
-
-
+   - forDebugOnly --- it will be straightforward now, but will break.
+   - privateAggregation --- currently no away to test it, may be doable with
+     proper key config.
+   - Some of the parsing details that need to match the spec language exactly.
+*/

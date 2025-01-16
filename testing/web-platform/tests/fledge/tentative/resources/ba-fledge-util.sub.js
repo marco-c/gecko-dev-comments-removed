@@ -360,4 +360,9 @@ BA.authorizeServerResponseHashes = async function(hashes) {
   await fetch(authorizeURL, {adAuctionHeaders: true});
 };
 
+BA.configureCoordinator = async function() {
+  
+  return 'https://{{hosts[][]}}';
+}
+
 })(BA);
