@@ -111,10 +111,6 @@ class nsFilePicker::AsyncShowFilePicker : public mozilla::Runnable {
     NS_ASSERTION(NS_IsMainThread(),
                  "AsyncShowFilePicker should be on the main thread!");
 
-    if (mFilePicker->MaybeBlockFilePicker(mCallback)) {
-      return NS_OK;
-    }
-
     
     
     

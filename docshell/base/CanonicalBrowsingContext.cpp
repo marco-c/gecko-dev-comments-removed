@@ -3233,32 +3233,6 @@ CanonicalBrowsingContext::GetBounceTrackingState() {
   return mWebProgress->GetBounceTrackingState();
 }
 
-bool CanonicalBrowsingContext::CanOpenModalPicker() {
-  if (!mozilla::StaticPrefs::browser_disable_pickers_background_tabs()) {
-    return true;
-  }
-
-  
-  if (IsChrome()) {
-    return true;
-  }
-
-  if (!IsActive()) {
-    return false;
-  }
-
-  RefPtr<Document> chromeDoc = TopCrossChromeBoundary()->GetExtantDocument();
-  if (!chromeDoc || !chromeDoc->HasFocus(mozilla::IgnoreErrors())) {
-    return false;
-  }
-
-  
-  
-  
-  mozilla::dom::Element* topFrameElement = GetTopFrameElement();
-  return !topFrameElement || topFrameElement == chromeDoc->GetActiveElement();
-}
-
 NS_IMPL_CYCLE_COLLECTION_CLASS(CanonicalBrowsingContext)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(CanonicalBrowsingContext,
