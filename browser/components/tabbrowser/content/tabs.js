@@ -2772,14 +2772,12 @@
               selectedTab = {
                 left: selectedTab.left,
                 right: selectedTab.right,
-                top: selectedTab.top,
-                bottom: selectedTab.bottom
               };
             }
             return [
               this._lastTabToScrollIntoView,
               this.arrowScrollbox.scrollClientRect,
-              lastTabRect,
+              { left: lastTabRect.left, right: lastTabRect.right },
               selectedTab,
             ];
           })
@@ -2796,13 +2794,8 @@
             delete this._lastTabToScrollIntoView;
             
             if (
-              this.verticalMode ? (
-                scrollRect.top <= tabRect.top &&
-                tabRect.bottom <= scrollRect.bottom
-              ) : (
-                scrollRect.left <= tabRect.left &&
-                tabRect.right <= scrollRect.right
-              )
+              scrollRect.left <= tabRect.left &&
+              tabRect.right <= scrollRect.right
             ) {
               return;
             }
@@ -2811,30 +2804,19 @@
               
               if (
                 !selectedRect ||
-                this.verticalMode ? (
-                  Math.max(
-                    tabRect.bottom - selectedRect.top,
-                    selectedRect.bottom - tabRect.top
-                  ) <= scrollRect.height
-                ) : (
-                  Math.max(
-                    tabRect.right - selectedRect.left,
-                    selectedRect.right - tabRect.left
-                  ) <= scrollRect.width
-                )
+                Math.max(
+                  tabRect.right - selectedRect.left,
+                  selectedRect.right - tabRect.left
+                ) <= scrollRect.width
               ) {
                 this.arrowScrollbox.ensureElementIsVisible(tabToScrollIntoView);
                 return;
               }
 
               this.arrowScrollbox.scrollByPixels(
-                this.verticalMode ? (
-                  tabRect.top - selectedRect.top
-                ) : (
-                  this.#rtlMode
-                    ? selectedRect.right - scrollRect.right
-                    : selectedRect.left - scrollRect.left
-                )
+                this.#rtlMode
+                  ? selectedRect.right - scrollRect.right
+                  : selectedRect.left - scrollRect.left
               );
             }
 
