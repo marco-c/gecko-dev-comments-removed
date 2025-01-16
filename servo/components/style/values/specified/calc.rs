@@ -979,7 +979,13 @@ impl CalcNode {
                                     return InPlaceDivisionResult::Merged;
                                 }
                             } else {
-                                return InPlaceDivisionResult::Invalid;
+                                
+                                
+                                return if resolved.unit().contains(CalcUnits::COLOR_COMPONENT) {
+                                    InPlaceDivisionResult::Unchanged
+                                } else {
+                                    InPlaceDivisionResult::Invalid
+                                };
                             }
                         }
                         InPlaceDivisionResult::Unchanged
