@@ -160,7 +160,7 @@ int GetSpeechLevelErrorDb(float speech_level_dbfs, float speech_probability) {
 
 }  
 
-MonoAgc::MonoAgc(ApmDataDumper* data_dumper,
+MonoAgc::MonoAgc(ApmDataDumper* ,
                  int clipped_level_min,
                  bool disable_digital_adaptive,
                  int min_mic_level)

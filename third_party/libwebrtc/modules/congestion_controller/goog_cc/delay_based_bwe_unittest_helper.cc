@@ -232,7 +232,7 @@ void DelayBasedBweTest::IncomingFeedback(Timestamp receive_time,
 
 
 
-bool DelayBasedBweTest::GenerateAndProcessFrame(uint32_t ssrc,
+bool DelayBasedBweTest::GenerateAndProcessFrame(uint32_t ,
                                                 uint32_t bitrate_bps) {
   stream_generator_->SetBitrateBps(bitrate_bps);
   std::vector<PacketResult> packets;
@@ -419,7 +419,7 @@ void DelayBasedBweTest::RateIncreaseRtpTimestampsTestHelper(
 
 void DelayBasedBweTest::CapacityDropTestHelper(
     int number_of_streams,
-    bool wrap_time_stamp,
+    bool ,
     uint32_t expected_bitrate_drop_delta,
     int64_t receiver_clock_offset_change_ms) {
   const int kFramerate = 30;

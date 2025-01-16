@@ -182,11 +182,11 @@ void ComputeAutoCorrelation(
 
 
 int ComputePitchPeriod48kHz(
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
+    rtc::ArrayView<const float, kBufSize24kHz> ,
     rtc::ArrayView<const int> inverted_lags,
     rtc::ArrayView<const float, kInitialNumLags24kHz> auto_correlation,
     rtc::ArrayView<const float, kRefineNumLags24kHz> y_energy,
-    const VectorMath& vector_math) {
+    const VectorMath& ) {
   static_assert(kMaxPitch24kHz > kInitialNumLags24kHz, "");
   static_assert(kMaxPitch24kHz < kBufSize24kHz, "");
   int best_inverted_lag = 0;     

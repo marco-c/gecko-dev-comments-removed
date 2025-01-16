@@ -53,8 +53,8 @@ class MouseCursorMonitor {
     
     
     
-    virtual void OnMouseCursorPosition(CursorState state,
-                                       const DesktopVector& position) {}
+    virtual void OnMouseCursorPosition(CursorState ,
+                                       const DesktopVector& ) {}
 
     
     
@@ -64,7 +64,7 @@ class MouseCursorMonitor {
     
     
     
-    virtual void OnMouseCursorPosition(const DesktopVector& position) {}
+    virtual void OnMouseCursorPosition(const DesktopVector& ) {}
 
    protected:
     virtual ~Callback() {}

@@ -33,7 +33,7 @@ class WindowCapturerTest : public ::testing::Test,
   void TearDown() override {}
 
   
-  void OnCaptureResult(DesktopCapturer::Result result,
+  void OnCaptureResult(DesktopCapturer::Result ,
                        std::unique_ptr<DesktopFrame> frame) override {
     frame_ = std::move(frame);
   }

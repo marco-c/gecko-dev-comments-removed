@@ -271,7 +271,7 @@ int32_t WebRtcAgc_AddFarendToDigital(DigitalAgc* stt,
 
 int32_t WebRtcAgc_ComputeDigitalGains(DigitalAgc* stt,
                                       const int16_t* const* in_near,
-                                      size_t num_bands,
+                                      size_t ,
                                       uint32_t FS,
                                       int16_t lowlevelSignal,
                                       int32_t gains[11]) {

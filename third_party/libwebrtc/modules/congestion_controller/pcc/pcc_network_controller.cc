@@ -339,12 +339,12 @@ void PccNetworkController::UpdateSendingRateAndMode() {
 }
 
 NetworkControlUpdate PccNetworkController::OnNetworkAvailability(
-    NetworkAvailability msg) {
+    NetworkAvailability ) {
   return NetworkControlUpdate();
 }
 
 NetworkControlUpdate PccNetworkController::OnNetworkRouteChange(
-    NetworkRouteChange msg) {
+    NetworkRouteChange ) {
   return NetworkControlUpdate();
 }
 
@@ -354,7 +354,7 @@ NetworkControlUpdate PccNetworkController::OnProcessInterval(
 }
 
 NetworkControlUpdate PccNetworkController::OnTargetRateConstraints(
-    TargetRateConstraints msg) {
+    TargetRateConstraints ) {
   return NetworkControlUpdate();
 }
 
@@ -373,17 +373,18 @@ NetworkControlUpdate PccNetworkController::OnTransportLossReport(
   return NetworkControlUpdate();
 }
 
-NetworkControlUpdate PccNetworkController::OnStreamsConfig(StreamsConfig msg) {
+NetworkControlUpdate PccNetworkController::OnStreamsConfig(
+    StreamsConfig ) {
   return NetworkControlUpdate();
 }
 
 NetworkControlUpdate PccNetworkController::OnReceivedPacket(
-    ReceivedPacket msg) {
+    ReceivedPacket ) {
   return NetworkControlUpdate();
 }
 
 NetworkControlUpdate PccNetworkController::OnNetworkStateEstimate(
-    NetworkStateEstimate msg) {
+    NetworkStateEstimate ) {
   return NetworkControlUpdate();
 }
 

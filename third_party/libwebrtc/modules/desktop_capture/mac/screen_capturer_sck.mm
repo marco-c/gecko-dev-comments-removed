@@ -225,7 +225,7 @@ void ScreenCapturerSck::Start(DesktopCapturer::Callback* callback) {
   StartOrReconfigureCapturer();
 }
 
-void ScreenCapturerSck::SetMaxFrameRate(uint32_t max_frame_rate) {
+void ScreenCapturerSck::SetMaxFrameRate(uint32_t ) {
   
 }
 
@@ -650,7 +650,7 @@ void ScreenCapturerSck::StartOrReconfigureCapturer() {
   
   
   SckHelper* local_helper = helper_;
-  auto handler = ^(SCShareableContent* content, NSError* error) {
+  auto handler = ^(SCShareableContent* content, NSError* ) {
     [local_helper onShareableContentCreated:content];
   };
 

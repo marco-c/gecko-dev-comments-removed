@@ -107,7 +107,7 @@ bool VerifyOutputFrameBitexactness(rtc::ArrayView<const float> reference,
 
 class CaptureTransportVerificationProcessor : public BlockProcessor {
  public:
-  explicit CaptureTransportVerificationProcessor(size_t num_bands) {}
+  explicit CaptureTransportVerificationProcessor(size_t ) {}
 
   CaptureTransportVerificationProcessor() = delete;
   CaptureTransportVerificationProcessor(
@@ -117,27 +117,27 @@ class CaptureTransportVerificationProcessor : public BlockProcessor {
 
   ~CaptureTransportVerificationProcessor() override = default;
 
-  void ProcessCapture(bool level_change,
-                      bool saturated_microphone_signal,
-                      Block* linear_output,
-                      Block* capture_block) override {}
+  void ProcessCapture(bool ,
+                      bool ,
+                      Block* ,
+                      Block* ) override {}
 
-  void BufferRender(const Block& block) override {}
+  void BufferRender(const Block& ) override {}
 
-  void UpdateEchoLeakageStatus(bool leakage_detected) override {}
+  void UpdateEchoLeakageStatus(bool ) override {}
 
-  void GetMetrics(EchoControl::Metrics* metrics) const override {}
+  void GetMetrics(EchoControl::Metrics* ) const override {}
 
-  void SetAudioBufferDelay(int delay_ms) override {}
+  void SetAudioBufferDelay(int ) override {}
 
-  void SetCaptureOutputUsage(bool capture_output_used) {}
+  void SetCaptureOutputUsage(bool ) {}
 };
 
 
 
 class RenderTransportVerificationProcessor : public BlockProcessor {
  public:
-  explicit RenderTransportVerificationProcessor(size_t num_bands) {}
+  explicit RenderTransportVerificationProcessor(size_t ) {}
 
   RenderTransportVerificationProcessor() = delete;
   RenderTransportVerificationProcessor(
@@ -147,9 +147,9 @@ class RenderTransportVerificationProcessor : public BlockProcessor {
 
   ~RenderTransportVerificationProcessor() override = default;
 
-  void ProcessCapture(bool level_change,
-                      bool saturated_microphone_signal,
-                      Block* linear_output,
+  void ProcessCapture(bool ,
+                      bool ,
+                      Block* ,
                       Block* capture_block) override {
     Block render_block = received_render_blocks_.front();
     received_render_blocks_.pop_front();
@@ -160,9 +160,9 @@ class RenderTransportVerificationProcessor : public BlockProcessor {
     received_render_blocks_.push_back(block);
   }
 
-  void UpdateEchoLeakageStatus(bool leakage_detected) override {}
+  void UpdateEchoLeakageStatus(bool ) override {}
 
-  void GetMetrics(EchoControl::Metrics* metrics) const override {}
+  void GetMetrics(EchoControl::Metrics* ) const override {}
 
   void SetAudioBufferDelay(int delay_ms) override {}
 

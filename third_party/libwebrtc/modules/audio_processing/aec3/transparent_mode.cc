@@ -45,13 +45,13 @@ class TransparentModeImpl : public TransparentMode {
     prob_transparent_state_ = kInitialTransparentStateProbability;
   }
 
-  void Update(int filter_delay_blocks,
-              bool any_filter_consistent,
-              bool any_filter_converged,
+  void Update(int ,
+              bool ,
+              bool ,
               bool any_coarse_filter_converged,
-              bool all_filters_diverged,
+              bool ,
               bool active_render,
-              bool saturated_capture) override {
+              bool ) override {
     
     
     
@@ -145,7 +145,7 @@ class LegacyTransparentModeImpl : public TransparentMode {
   void Update(int filter_delay_blocks,
               bool any_filter_consistent,
               bool any_filter_converged,
-              bool any_coarse_filter_converged,
+              bool ,
               bool all_filters_diverged,
               bool active_render,
               bool saturated_capture) override {
