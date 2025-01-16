@@ -33,7 +33,7 @@
 
     static get inheritedAttributes() {
       return {
-        ".tab-group-label": "text=label,tooltiptext=label",
+        ".tab-group-label": "text=label,tooltiptext=data-tooltip",
       };
     }
 
@@ -148,6 +148,8 @@
       
       
       this.setAttribute("label", val || "\u200b");
+
+      this.dataset.tooltip = val;
 
       this.#updateLabelAriaAttributes();
     }
