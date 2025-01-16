@@ -455,11 +455,13 @@ class Toolbar extends Component {
 
 
   renderThrottlingMenu() {
-    const { networkThrottling, onChangeNetworkThrottling } = this.props;
+    const { networkThrottling, onChangeNetworkThrottling, toolboxDoc } =
+      this.props;
 
     return NetworkThrottlingMenu({
       networkThrottling,
       onChangeNetworkThrottling,
+      toolboxDoc,
     });
   }
 

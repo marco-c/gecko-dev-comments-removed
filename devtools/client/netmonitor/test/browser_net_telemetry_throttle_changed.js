@@ -9,12 +9,12 @@ const ALL_CHANNELS = Ci.nsITelemetry.DATASET_ALL_CHANNELS;
 
 
 add_task(async function () {
-  const { monitor, toolbox } = await initNetMonitor(SIMPLE_URL, {
+  const { monitor } = await initNetMonitor(SIMPLE_URL, {
     requestCount: 1,
   });
   info("Starting test... ");
 
-  const { document, store, windowRequire } = monitor.panelWin;
+  const { store, windowRequire } = monitor.panelWin;
   const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
   store.dispatch(Actions.batchEnable(false));
 
@@ -25,17 +25,7 @@ add_task(async function () {
   const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
   ok(!snapshot.parent, "No events have been logged for the main process");
 
-  document.getElementById("network-throttling-menu").click();
-  
-  
-  
-  const item = toolbox.topWindow.document.querySelector(
-    "menuitem[label='GPRS']"
-  );
-  await BrowserTestUtils.waitForPopupEvent(item.parentNode, "shown");
-  item.parentNode.activateItem(item);
-  await monitor.panelWin.api.once(TEST_EVENTS.THROTTLING_CHANGED);
-
+  await selectThrottle(monitor, "GPRS");
   
   checkTelemetryEvent(
     {

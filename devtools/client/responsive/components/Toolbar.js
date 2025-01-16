@@ -162,6 +162,10 @@ class Toolbar extends PureComponent {
         }),
         dom.div({ className: "devtools-separator" }),
         NetworkThrottlingMenu({
+          
+          
+          
+          toolboxDoc: window.document,
           networkThrottling,
           onChangeNetworkThrottling,
         }),
