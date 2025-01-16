@@ -148,11 +148,12 @@ add_task(async () => {
       
       
       
-      let baseRootChildCount = 5;
+      
+      let baseRootChildCount = 6;
       is(
         rootChildCount(),
         baseRootChildCount,
-        "Root with no popups has 5 children"
+        `Root with no popups has ${baseRootChildCount} children`
       );
 
       
