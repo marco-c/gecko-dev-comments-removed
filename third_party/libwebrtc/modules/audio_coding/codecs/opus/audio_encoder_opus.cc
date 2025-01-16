@@ -245,6 +245,7 @@ std::optional<AudioEncoderOpusConfig> AudioEncoderOpusImpl::SdpToConfig(
   config.bitrate_bps =
       CalculateBitrate(config.max_playback_rate_hz, config.num_channels,
                        GetFormatParameter(format, "maxaveragebitrate"));
+  
   config.application = config.num_channels == 1
                            ? AudioEncoderOpusConfig::ApplicationMode::kVoip
                            : AudioEncoderOpusConfig::ApplicationMode::kAudio;
