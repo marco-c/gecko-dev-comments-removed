@@ -204,9 +204,9 @@ void MouseEvent::DuplicatePrivateData() {
   {
     
     
-    RefPtr<nsPresContext> presContext = mPresContext;
+    RefPtr<nsPresContext> presContext = mPresContext.get();
     UIEvent::DuplicatePrivateData();
-    mPresContext = std::move(presContext);
+    mPresContext = presContext.get();
   }
   if (maybeScreenPoint.isSome()) {
     CSSToLayoutDeviceScale scale = mPresContext
