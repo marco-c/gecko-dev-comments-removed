@@ -21,6 +21,10 @@
 
 
 
+const {
+  gDevTools,
+} = require("resource://devtools/client/framework/devtools.js");
+
 
 const UI_BASE_URL_PREF = "devtools.performance.recording.ui-base-url";
 
@@ -176,9 +180,54 @@ function openFilePickerForObjdir(window, objdirs, changeObjdirs) {
   });
 }
 
+
+
+
+
+
+
+
+
+
+
+async function openScriptInDebugger(tabId, scriptUrl, line, columnOneBased) {
+  const win = Services.wm.getMostRecentWindow("navigator:browser");
+
+  
+  const foundTab = win.gBrowser.tabs.find(
+    tab => tab.linkedBrowser.browserId === tabId
+  );
+
+  if (!foundTab) {
+    console.log(`No tab found with the tab id: ${tabId}`);
+    return;
+  }
+
+  
+  win.gBrowser.selectedTab = foundTab;
+
+  
+  const toolbox = await gDevTools.showToolboxForTab(foundTab, {
+    toolId: "jsdebugger",
+  });
+
+  toolbox.win.focus();
+
+  
+  const columnZeroBased = columnOneBased > 0 ? columnOneBased - 1 : 0;
+  await toolbox.viewSourceInDebugger(
+    scriptUrl,
+    line,
+    columnZeroBased,
+     null,
+    "ProfilerOpenScript"
+  );
+}
+
 module.exports = {
   openProfilerTab,
   sharedLibrariesFromProfile,
   restartBrowserWithEnvironmentVariable,
   openFilePickerForObjdir,
+  openScriptInDebugger,
 };

@@ -69,6 +69,7 @@ declare namespace MockedExports {
     selectedBrowser?: ChromeBrowser;
     messageManager: MessageManager;
     ownerDocument?: ChromeDocument;
+    tabs: BrowserTab[];
   }
 
   
@@ -86,6 +87,7 @@ declare namespace MockedExports {
   
   interface ChromeBrowser {
     browsingContext?: BrowsingContext;
+    browserId: number;
   }
 
   interface BrowsingContext {
