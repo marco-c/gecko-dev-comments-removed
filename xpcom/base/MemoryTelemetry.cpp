@@ -49,6 +49,12 @@ static constexpr uint32_t kTelemetryIntervalS = 60;
 
 static constexpr uint32_t kTelemetryCooldownS = 10;
 
+
+
+
+static constexpr unsigned kPokeWindowEvents = 10;
+static constexpr unsigned kPokeWindowSeconds = 1;
+
 static constexpr const char* kTopicShutdown = "content-child-shutdown";
 
 namespace {
@@ -90,6 +96,49 @@ static uint32_t PrevValueIndex(Telemetry::HistogramID aId) {
       return 0;
   }
 }
+
+
+
+
+
+
+
+
+
+class TimeStampWindow {
+ public:
+  void push(TimeStamp aNow) {
+    mEvents.insertBack(new Event(aNow));
+    mNumEvents++;
+  }
+
+  
+  void clearExpired(TimeStamp aOld) {
+    Event* e = mEvents.getFirst();
+    while (e && e->olderThan(aOld)) {
+      e->removeFrom(mEvents);
+      mNumEvents--;
+      delete e;
+      e = mEvents.getFirst();
+    }
+  }
+
+  size_t numEvents() const { return mNumEvents; }
+
+ private:
+  class Event : public LinkedListElement<Event> {
+   public:
+    explicit Event(TimeStamp aTime) : mTime(aTime) {}
+
+    bool olderThan(TimeStamp aOld) const { return mTime < aOld; }
+
+   private:
+    TimeStamp mTime;
+  };
+
+  size_t mNumEvents = 0;
+  AutoCleanLinkedList<Event> mEvents;
+};
 
 NS_IMPL_ISUPPORTS(MemoryTelemetry, nsIObserver, nsISupportsWeakReference)
 
@@ -150,6 +199,10 @@ void MemoryTelemetry::Poke() {
   }
 
   TimeStamp now = TimeStamp::Now();
+  if (mPokeWindow) {
+    mPokeWindow->clearExpired(now -
+                              TimeDuration::FromSeconds(kPokeWindowSeconds));
+  }
 
   if (mLastRun &&
       now - mLastRun < TimeDuration::FromSeconds(kTelemetryCooldownS)) {
@@ -159,6 +212,17 @@ void MemoryTelemetry::Poke() {
     
     return;
   }
+
+  
+  
+  if (!mPokeWindow) {
+    mPokeWindow = MakeUnique<TimeStampWindow>();
+  }
+  mPokeWindow->push(now);
+  if (mPokeWindow->numEvents() < kPokeWindowEvents) {
+    return;
+  }
+  mPokeWindow = nullptr;
 
   mLastPoke = now;
   if (!mTimer) {
