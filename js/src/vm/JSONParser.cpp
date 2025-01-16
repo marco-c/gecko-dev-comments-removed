@@ -44,8 +44,8 @@
 #include "vm/ErrorReporting.h"   
 #include "vm/JSAtomUtils.h"      
 #include "vm/JSContext.h"        
-#include "vm/PlainObject.h"      
-#include "vm/Realm.h"            
+#include "vm/PlainObject.h"  
+#include "vm/Realm.h"  
 #include "vm/StringType.h"  
 
 #include "vm/JSAtomUtils-inl.h"  
@@ -1109,7 +1109,7 @@ template class js::JSONParser<char16_t>;
 template <typename CharT>
 inline bool JSONReviveHandler<CharT>::objectOpen(Vector<StackEntry, 10>& stack,
                                                  PropertyVector** properties) {
-  ParseRecordEntry* newParseEntry = NewPlainObject(context());
+  ParseRecordEntry* newParseEntry = NewPlainObjectWithProto(context(), nullptr);
   if (!newParseEntry) {
     return false;
   }
@@ -1154,7 +1154,7 @@ inline bool JSONReviveHandler<CharT>::finishObject(
 template <typename CharT>
 inline bool JSONReviveHandler<CharT>::arrayOpen(Vector<StackEntry, 10>& stack,
                                                 ElementVector** elements) {
-  ParseRecordEntry* newParseEntry = NewPlainObject(context());
+  ParseRecordEntry* newParseEntry = NewPlainObjectWithProto(context(), nullptr);
   if (!newParseEntry) {
     return false;
   }
