@@ -154,9 +154,14 @@ void PerformanceObserver::Observe(const PerformanceObserverInit& aOptions,
     return;
   }
 
-  if (maybeEntryTypes.WasPassed() &&
-      (maybeType.WasPassed() || maybeBuffered.WasPassed())) {
+  if (maybeEntryTypes.WasPassed() && maybeType.WasPassed()) {
     
+    
+
+
+
+
+
     aRv.ThrowTypeError("Can't call observe with both `type` and `entryTypes`");
     return;
   }
