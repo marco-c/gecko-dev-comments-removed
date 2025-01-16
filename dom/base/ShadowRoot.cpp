@@ -583,14 +583,14 @@ void ShadowRoot::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 
   
   if (!aVisitor.mEvent->mFlags.mComposed) {
-    nsCOMPtr<nsIContent> originalTarget =
+    nsIContent* originalTarget =
         nsIContent::FromEventTargetOrNull(aVisitor.mEvent->mOriginalTarget);
     if (originalTarget && originalTarget->GetContainingShadow() == this) {
       
       
       
       
-      nsCOMPtr<nsPIDOMWindowOuter> win = OwnerDoc()->GetWindow();
+      nsPIDOMWindowOuter* win = OwnerDoc()->GetWindow();
       EventTarget* parentTarget = win && aVisitor.mEvent->mMessage != eLoad
                                       ? win->GetParentTarget()
                                       : nullptr;
@@ -603,8 +603,8 @@ void ShadowRoot::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   nsIContent* shadowHost = GetHost();
   aVisitor.SetParentTarget(shadowHost, false);
 
-  nsCOMPtr<nsIContent> content(
-      nsIContent::FromEventTargetOrNull(aVisitor.mEvent->mTarget));
+  nsIContent* content =
+      nsIContent::FromEventTargetOrNull(aVisitor.mEvent->mTarget);
   if (content && content->GetContainingShadow() == this) {
     aVisitor.mEventTargetAtParent = shadowHost;
   }
