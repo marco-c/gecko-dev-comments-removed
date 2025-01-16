@@ -50,31 +50,64 @@ class WaylandBuffer {
   virtual void* GetImageData() { return nullptr; }
   virtual GLuint GetTexture() { return 0; }
   virtual void DestroyGLResources() {};
+  virtual gfx::SurfaceFormat GetSurfaceFormat() = 0;
 
   LayoutDeviceIntSize GetSize() { return mSize; };
   bool IsMatchingSize(const LayoutDeviceIntSize& aSize) {
     return aSize == mSize;
   }
 
+  bool IsAttached() { return !!mSurface; }
+
+  
+  
   
   
   
   wl_buffer* BorrowBuffer(RefPtr<WaylandSurface> aWaylandSurface);
-  bool IsAttached() { return !!mSurface; }
 
-  static gfx::SurfaceFormat GetSurfaceFormat() { return mFormat; }
+  
+  void ReturnBuffer(RefPtr<WaylandSurface> aWaylandSurface);
 
-  void BufferReleaseCallbackHandler(wl_buffer* aBuffer);
+  
+  
+  
+  
+  
+  
+  
+  void BufferDetachedCallbackHandler(wl_buffer* aBuffer, bool aWlBufferDeleted);
 
  protected:
   explicit WaylandBuffer(const LayoutDeviceIntSize& aSize);
   virtual ~WaylandBuffer() = default;
 
+  
+  
+  
+  virtual wl_buffer* CreateWlBuffer() = 0;
+
+  
+  
+  
+  virtual void DeleteWlBuffer() = 0;
+
   virtual wl_buffer* GetWlBuffer() = 0;
+  bool HasWlBuffer() { return !!GetWlBuffer(); }
+
+  bool IsWaitingToBufferDelete() const { return !!mBufferDeleteSyncCallback; }
+
+  
+  
+  mozilla::Mutex mBufferReleaseMutex{"WaylandBufferRelease"};
+
+  
+  wl_callback* mBufferDeleteSyncCallback = nullptr;
 
   LayoutDeviceIntSize mSize;
+  
   RefPtr<WaylandSurface> mSurface;
-  static gfx::SurfaceFormat mFormat;
+  static gfx::SurfaceFormat sFormat;
 };
 
 
@@ -86,6 +119,10 @@ class WaylandBufferSHM final : public WaylandBuffer {
   already_AddRefed<gfx::DrawTarget> Lock() override;
   void* GetImageData() override { return mShmPool->GetImageData(); }
 
+  gfx::SurfaceFormat GetSurfaceFormat() override {
+    return gfx::SurfaceFormat::B8G8R8A8;
+  }
+
   void Clear();
   size_t GetBufferAge() { return mBufferAge; };
   RefPtr<WaylandShmPool> GetShmPool() { return mShmPool; }
@@ -96,8 +133,11 @@ class WaylandBufferSHM final : public WaylandBuffer {
 #ifdef MOZ_LOGGING
   void DumpToFile(const char* aHint);
 #endif
+
  protected:
-  wl_buffer* GetWlBuffer() override { return mWLBuffer; };
+  wl_buffer* CreateWlBuffer() override;
+  void DeleteWlBuffer() override;
+  wl_buffer* GetWlBuffer() override;
 
  private:
   explicit WaylandBufferSHM(const LayoutDeviceIntSize& aSize);
@@ -127,9 +167,14 @@ class WaylandBufferDMABUF final : public WaylandBuffer {
 
   GLuint GetTexture() override { return mDMABufSurface->GetTexture(); };
   void DestroyGLResources() override { mDMABufSurface->ReleaseTextures(); };
+  gfx::SurfaceFormat GetSurfaceFormat() override {
+    return mDMABufSurface->GetFormat();
+  }
 
  protected:
-  wl_buffer* GetWlBuffer() override { return mDMABufSurface->GetWlBuffer(); };
+  wl_buffer* CreateWlBuffer() override;
+  void DeleteWlBuffer() override;
+  wl_buffer* GetWlBuffer() override;
 
  private:
   explicit WaylandBufferDMABUF(const LayoutDeviceIntSize& aSize);
