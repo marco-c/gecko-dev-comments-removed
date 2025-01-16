@@ -5,158 +5,168 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
-});
+var NonBrowserWindow = {
+  delayedStartupTimeoutId: null,
+  MAC_HIDDEN_WINDOW: "chrome://browser/content/hiddenWindowMac.xhtml",
 
-let delayedStartupTimeoutId = null;
+  openBrowserWindowFromDockMenu(options = {}) {
+    let existingWindow = BrowserWindowTracker.getTopWindow();
+    options.openerWindow = existingWindow || window;
+    let win = OpenBrowserWindow(options);
+    win.addEventListener(
+      "load",
+      () => this.dockSupport.activateApplication(true),
+      { once: true }
+    );
 
-function OpenBrowserWindowFromDockMenu(options = {}) {
-  let existingWindow = BrowserWindowTracker.getTopWindow();
-  options.openerWindow = existingWindow || window;
-  let win = OpenBrowserWindow(options);
-  win.addEventListener(
-    "load",
-    function () {
-      let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"].getService(
-        Ci.nsIMacDockSupport
-      );
-      dockSupport.activateApplication(true);
-    },
-    { once: true }
-  );
+    return win;
+  },
 
-  return win;
-}
-
-function nonBrowserWindowStartup() {
-  
-  var disabledItems = [
-    "Browser:SavePage",
-    "Browser:SendLink",
-    "cmd_pageSetup",
-    "cmd_print",
-    "cmd_find",
-    "cmd_findAgain",
-    "viewToolbarsMenu",
-    "viewSidebarMenuMenu",
-    "Browser:Reload",
-    "viewFullZoomMenu",
-    "pageStyleMenu",
-    "repair-text-encoding",
-    "View:PageSource",
-    "View:FullScreen",
-    "enterFullScreenItem",
-    "viewHistorySidebar",
-    "Browser:AddBookmarkAs",
-    "Browser:BookmarkAllTabs",
-    "View:PageInfo",
-    "History:UndoCloseTab",
-    "menu_openFirefoxView",
-  ];
-  var element;
-
-  for (let disabledItem of disabledItems) {
-    element = document.getElementById(disabledItem);
-    if (element) {
-      element.setAttribute("disabled", "true");
-    }
-  }
-
-  
-  let shownItems = ["menu_openLocation"];
-  for (let shownItem of shownItems) {
-    element = document.getElementById(shownItem);
-    if (element) {
-      element.removeAttribute("hidden");
-    }
-  }
-
-  if (
-    window.location.href == "chrome://browser/content/hiddenWindowMac.xhtml"
-  ) {
+  startup() {
     
-    
-    var hiddenWindowDisabledItems = [
-      "cmd_close",
-      "cmd_minimizeWindow",
-      "zoomWindow",
+    var disabledItems = [
+      "Browser:SavePage",
+      "Browser:SendLink",
+      "cmd_pageSetup",
+      "cmd_print",
+      "cmd_find",
+      "cmd_findAgain",
+      "viewToolbarsMenu",
+      "viewSidebarMenuMenu",
+      "Browser:Reload",
+      "viewFullZoomMenu",
+      "pageStyleMenu",
+      "repair-text-encoding",
+      "View:PageSource",
+      "View:FullScreen",
+      "enterFullScreenItem",
+      "viewHistorySidebar",
+      "Browser:AddBookmarkAs",
+      "Browser:BookmarkAllTabs",
+      "View:PageInfo",
+      "History:UndoCloseTab",
+      "menu_openFirefoxView",
     ];
-    for (let hiddenWindowDisabledItem of hiddenWindowDisabledItems) {
-      element = document.getElementById(hiddenWindowDisabledItem);
+    var element;
+
+    for (let disabledItem of disabledItems) {
+      element = document.getElementById(disabledItem);
       if (element) {
         element.setAttribute("disabled", "true");
       }
     }
 
     
-    element = document.getElementById("sep-window-list");
-    element.hidden = true;
+    let shownItems = ["menu_openLocation"];
+    for (let shownItem of shownItems) {
+      element = document.getElementById(shownItem);
+      if (element) {
+        element.removeAttribute("hidden");
+      }
+    }
+
+    if (window.location.href == this.MAC_HIDDEN_WINDOW) {
+      
+      
+      var hiddenWindowDisabledItems = [
+        "cmd_close",
+        "cmd_minimizeWindow",
+        "zoomWindow",
+      ];
+      for (let hiddenWindowDisabledItem of hiddenWindowDisabledItems) {
+        element = document.getElementById(hiddenWindowDisabledItem);
+        if (element) {
+          element.setAttribute("disabled", "true");
+        }
+      }
+
+      
+      element = document.getElementById("sep-window-list");
+      element.hidden = true;
+
+      
+      let dockMenuElement = document.getElementById("menu_mac_dockmenu");
+      if (dockMenuElement != null) {
+        let nativeMenu = Cc[
+          "@mozilla.org/widget/standalonenativemenu;1"
+        ].createInstance(Ci.nsIStandaloneNativeMenu);
+
+        try {
+          nativeMenu.init(dockMenuElement);
+          this.dockSupport.dockMenu = nativeMenu;
+        } catch (e) {}
+      }
+
+      dockMenuElement.addEventListener("command", this);
+
+      
+      if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
+        document.getElementById("macDockMenuNewWindow").hidden = true;
+      }
+      if (!PrivateBrowsingUtils.enabled) {
+        document.getElementById("macDockMenuNewPrivateWindow").hidden = true;
+      }
+      if (BrowserUIUtils.quitShortcutDisabled) {
+        document.getElementById("key_quitApplication").remove();
+        document.getElementById("menu_FileQuitItem").removeAttribute("key");
+      }
+    }
+
+    this.delayedStartupTimeoutId = setTimeout(() => this.delayedStartup(), 0);
+  },
+
+  delayedStartup() {
+    this.delayedStartupTimeoutId = null;
 
     
-    let dockMenuElement = document.getElementById("menu_mac_dockmenu");
-    if (dockMenuElement != null) {
-      let nativeMenu = Cc[
-        "@mozilla.org/widget/standalonenativemenu;1"
-      ].createInstance(Ci.nsIStandaloneNativeMenu);
+    BrowserOffline.init();
 
-      try {
-        nativeMenu.init(dockMenuElement);
+    
+    gPrivateBrowsingUI.init();
+  },
 
-        let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"].getService(
-          Ci.nsIMacDockSupport
-        );
-        dockSupport.dockMenu = nativeMenu;
-      } catch (e) {}
+  shutdown() {
+    
+    
+    if (window.location.href == this.MAC_HIDDEN_WINDOW) {
+      this.dockSupport.dockMenu = null;
     }
 
     
-    if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
-      document.getElementById("macDockMenuNewWindow").hidden = true;
+    
+    if (this.delayedStartupTimeoutId) {
+      clearTimeout(this.delayedStartupTimeoutId);
+      return;
     }
-    if (!PrivateBrowsingUtils.enabled) {
-      document.getElementById("macDockMenuNewPrivateWindow").hidden = true;
+
+    BrowserOffline.uninit();
+  },
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "load":
+        this.startup();
+        break;
+      case "unload":
+        this.shutdown();
+        break;
+      case "command":
+        if (event.target.id.startsWith("macDockMenuNew")) {
+          let wantPrivate = event.target.id == "macDockMenuNewPrivateWindow";
+          this.openBrowserWindowFromDockMenu(
+            wantPrivate ? { private: true } : {}
+          );
+        }
+        break;
     }
-    if (BrowserUIUtils.quitShortcutDisabled) {
-      document.getElementById("key_quitApplication").remove();
-      document.getElementById("menu_FileQuitItem").removeAttribute("key");
-    }
-  }
+  },
+};
 
-  delayedStartupTimeoutId = setTimeout(nonBrowserWindowDelayedStartup, 0);
-}
-
-function nonBrowserWindowDelayedStartup() {
-  delayedStartupTimeoutId = null;
-
-  
-  BrowserOffline.init();
-
-  
-  gPrivateBrowsingUI.init();
-}
-
-function nonBrowserWindowShutdown() {
-  
-  
-  if (
-    window.location.href == "chrome://browser/content/hiddenWindowMac.xhtml"
-  ) {
-    let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"].getService(
-      Ci.nsIMacDockSupport
-    );
-    dockSupport.dockMenu = null;
-  }
-
-  
-  
-  if (delayedStartupTimeoutId) {
-    clearTimeout(delayedStartupTimeoutId);
-    return;
-  }
-
-  BrowserOffline.uninit();
-}
-
-addEventListener("load", nonBrowserWindowStartup, false);
-addEventListener("unload", nonBrowserWindowShutdown, false);
+addEventListener("load", NonBrowserWindow, false);
+addEventListener("unload", NonBrowserWindow, false);
+XPCOMUtils.defineLazyServiceGetter(
+  NonBrowserWindow,
+  "dockSupport",
+  "@mozilla.org/widget/macdocksupport;1",
+  Ci.nsIMacDockSupport
+);
