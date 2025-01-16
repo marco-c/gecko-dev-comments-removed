@@ -102,7 +102,7 @@ class RTC_EXPORT RtpSenderInterface : public webrtc::RefCountInterface,
   
   
   
-  virtual void SetObserver(RtpSenderObserverInterface* observer) {}
+  virtual void SetObserver(RtpSenderObserverInterface* ) {}
 
   
   virtual rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const = 0;

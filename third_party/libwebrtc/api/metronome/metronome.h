@@ -36,7 +36,8 @@ class RTC_EXPORT Metronome {
   
   
   
-  virtual void RequestCallOnNextTick(absl::AnyInvocable<void() &&> callback) {}
+  virtual void RequestCallOnNextTick(
+      absl::AnyInvocable<void() &&> ) {}
 
   
   virtual TimeDelta TickPeriod() const = 0;

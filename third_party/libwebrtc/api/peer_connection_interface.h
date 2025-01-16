@@ -830,7 +830,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   virtual RTCError RemoveTrackOrError(
-      rtc::scoped_refptr<RtpSenderInterface> sender) {
+      rtc::scoped_refptr<RtpSenderInterface> ) {
     RTC_CHECK_NOTREACHED();
     return RTCError();
   }
@@ -971,8 +971,8 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   virtual RTCErrorOr<rtc::scoped_refptr<DataChannelInterface>>
-  CreateDataChannelOrError(const std::string& label,
-                           const DataChannelInit* config) {
+  CreateDataChannelOrError(const std::string& ,
+                           const DataChannelInit* ) {
     return RTCError(RTCErrorType::INTERNAL_ERROR, "dummy function called");
   }
   

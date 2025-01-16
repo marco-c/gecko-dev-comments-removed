@@ -32,7 +32,7 @@ class RtpPacketSender {
   
   
   
-  virtual void RemovePacketsForSsrc(uint32_t ssrc) {}
+  virtual void RemovePacketsForSsrc(uint32_t ) {}
 };
 
 }  

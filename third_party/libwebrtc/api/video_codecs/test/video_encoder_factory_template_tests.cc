@@ -50,8 +50,8 @@ struct FooEncoderTemplateAdapter {
   static std::vector<SdpVideoFormat> SupportedFormats() { return {kFooSdp}; }
 
   static std::unique_ptr<VideoEncoder> CreateEncoder(
-      const Environment& env,
-      const SdpVideoFormat& format) {
+      const Environment& ,
+      const SdpVideoFormat& ) {
     return std::make_unique<StrictMock<MockVideoEncoder>>();
   }
 
@@ -67,7 +67,7 @@ struct BarEncoderTemplateAdapter {
   }
 
   static std::unique_ptr<VideoEncoder> CreateEncoder(
-      const Environment& env,
+      const Environment& ,
       const SdpVideoFormat& format) {
     return std::make_unique<StrictMock<MockVideoEncoder>>();
   }

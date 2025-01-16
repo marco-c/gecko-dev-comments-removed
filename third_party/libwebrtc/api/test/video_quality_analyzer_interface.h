@@ -87,9 +87,9 @@ class VideoQualityAnalyzerInterface
   
   
   
-  virtual void Start(std::string test_case_name,
-                     rtc::ArrayView<const std::string> peer_names,
-                     int max_threads_count) {}
+  virtual void Start(std::string ,
+                     rtc::ArrayView<const std::string> ,
+                     int ) {}
 
   
   
@@ -99,34 +99,34 @@ class VideoQualityAnalyzerInterface
                                    const VideoFrame& frame) = 0;
   
   
-  virtual void OnFramePreEncode(absl::string_view peer_name,
-                                const VideoFrame& frame) {}
+  virtual void OnFramePreEncode(absl::string_view ,
+                                const VideoFrame& ) {}
   
   
   
   
-  virtual void OnFrameEncoded(absl::string_view peer_name,
-                              uint16_t frame_id,
-                              const EncodedImage& encoded_image,
-                              const EncoderStats& stats,
-                              bool discarded) {}
+  virtual void OnFrameEncoded(absl::string_view ,
+                              uint16_t ,
+                              const EncodedImage& ,
+                              const EncoderStats& ,
+                              bool ) {}
   
   
-  virtual void OnFrameDropped(absl::string_view peer_name,
-                              EncodedImageCallback::DropReason reason) {}
+  virtual void OnFrameDropped(absl::string_view ,
+                              EncodedImageCallback::DropReason ) {}
   
   
-  virtual void OnFramePreDecode(absl::string_view peer_name,
-                                uint16_t frame_id,
-                                const EncodedImage& encoded_image) {}
+  virtual void OnFramePreDecode(absl::string_view ,
+                                uint16_t ,
+                                const EncodedImage& ) {}
   
   
-  virtual void OnFrameDecoded(absl::string_view peer_name,
-                              const VideoFrame& frame,
-                              const DecoderStats& stats) {}
+  virtual void OnFrameDecoded(absl::string_view ,
+                              const VideoFrame& ,
+                              const DecoderStats& ) {}
   
   
-  virtual void OnFrameRendered(absl::string_view peer_name,
+  virtual void OnFrameRendered(absl::string_view ,
                                const VideoFrame& frame) {}
   
   

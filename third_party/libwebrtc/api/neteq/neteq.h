@@ -194,7 +194,7 @@ class NetEq {
   
   virtual int InsertPacket(const RTPHeader& rtp_header,
                            rtc::ArrayView<const uint8_t> payload,
-                           Timestamp receive_time) {
+                           Timestamp ) {
     
     return InsertPacket(rtp_header, payload);
   }
@@ -300,7 +300,7 @@ class NetEq {
   
   [[deprecated(
       "Use GetCurrentDecoderFormat")]] virtual std::optional<DecoderFormat>
-  GetDecoderFormat(int payload_type) const {
+  GetDecoderFormat(int ) const {
     return std::nullopt;
   }
 
