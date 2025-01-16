@@ -19,7 +19,6 @@
 
 
 
-
 "use strict;"
 
 
@@ -348,27 +347,6 @@ makeTest({
   expect: EXPECT_PROMISE_ERROR,
   expectPromiseError: EXPECT_EXCEPTION(TypeError),
   auctionConfigOverrides: { sellerSignals: { sig: BigInt(13) } },
-});
-
-makeTest({
-  name: 'directFromSellerSignals is invalid',
-  expect: EXPECT_PROMISE_ERROR,
-  expectPromiseError: EXPECT_EXCEPTION(TypeError),
-  auctionConfigOverrides: { directFromSellerSignals: "https://foo:99999999999" },
-});
-
-makeTest({
-  name: 'directFromSellerSignals is cross-origin with seller',
-  expect: EXPECT_PROMISE_ERROR,
-  expectPromiseError: EXPECT_EXCEPTION(TypeError),
-  auctionConfigOverrides: { directFromSellerSignals: "https://example.com" },
-});
-
-makeTest({
-  name: 'directFromSellerSignals has nonempty query',
-  expect: EXPECT_PROMISE_ERROR,
-  expectPromiseError: EXPECT_EXCEPTION(TypeError),
-  auctionConfigOverrides: { directFromSellerSignals: window.location.origin + "?foo=bar" },
 });
 
 makeTest({

@@ -503,6 +503,17 @@ subsetTest(promise_test, async test => {
   assert_true(dfss);
 }, 'Test directFromSellerSignals feature detection.');
 
+
+
+
+subsetTest(promise_test, async test => {
+  let dfss = false;
+  navigator.runAdAuction({
+      get directFromSellerSignals() { dfss = true; }
+  }).catch((e) => {});
+  assert_false(dfss);
+}, 'Negative test for deprecated and removed web-bundle directFromSellerSignals.');
+
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await fetchDirectFromSellerSignals({ 'Buyer-Origin': window.location.origin });
