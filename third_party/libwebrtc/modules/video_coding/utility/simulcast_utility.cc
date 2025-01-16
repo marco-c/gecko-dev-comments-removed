@@ -105,10 +105,11 @@ int SimulcastUtility::NumberOfTemporalLayers(const VideoCodec& codec,
       case kVideoCodecH264:
         num_temporal_layers = codec.H264().numberOfTemporalLayers;
         break;
+      
+      
+      case kVideoCodecAV1:
       case kVideoCodecH265:
-        
-        break;
-      default:
+      case kVideoCodecGeneric:
         break;
     }
   }

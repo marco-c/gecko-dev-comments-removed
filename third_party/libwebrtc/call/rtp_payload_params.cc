@@ -111,11 +111,10 @@ void PopulateRtpWithCodecSpecifics(const CodecSpecificInfo& info,
           info.codecSpecific.H264.packetization_mode;
       return;
     }
-    case kVideoCodecGeneric:
-      rtp->codec = kVideoCodecGeneric;
-      return;
     
-    default:
+    case kVideoCodecGeneric:
+    case kVideoCodecH265:
+    case kVideoCodecAV1:
       return;
   }
 }
@@ -354,6 +353,7 @@ void RtpPayloadParams::SetGeneric(const CodecSpecificInfo* codec_specific_info,
       return;
     case VideoCodecType::kVideoCodecAV1:
       
+      
       return;
     case VideoCodecType::kVideoCodecH264:
       if (codec_specific_info) {
@@ -362,6 +362,7 @@ void RtpPayloadParams::SetGeneric(const CodecSpecificInfo* codec_specific_info,
       }
       return;
     case VideoCodecType::kVideoCodecH265:
+      
       
       return;
   }

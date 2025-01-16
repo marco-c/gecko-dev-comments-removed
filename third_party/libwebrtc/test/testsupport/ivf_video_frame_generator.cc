@@ -45,7 +45,7 @@ std::unique_ptr<VideoDecoder> CreateDecoder(const Environment& env,
     case VideoCodecType::kVideoCodecH265:
       
       return nullptr;
-    default:
+    case VideoCodecType::kVideoCodecGeneric:
       return nullptr;
   }
 }

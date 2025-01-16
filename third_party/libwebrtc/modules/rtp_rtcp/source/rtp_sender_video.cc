@@ -102,6 +102,12 @@ bool MinimizeDescriptor(RTPVideoHeader* video_header) {
 }
 
 bool IsBaseLayer(const RTPVideoHeader& video_header) {
+  
+  if (video_header.generic) {
+    const auto& generic = video_header.generic.value();
+    return (generic.temporal_index == 0 ||
+            generic.temporal_index == kNoTemporalIdx);
+  }
   switch (video_header.codec) {
     case kVideoCodecVP8: {
       const auto& vp8 =
@@ -117,11 +123,11 @@ bool IsBaseLayer(const RTPVideoHeader& video_header) {
       
       
       break;
+    
+    
     case kVideoCodecH265:
-      
-      
-      break;
-    default:
+    case kVideoCodecAV1:
+    case kVideoCodecGeneric:
       break;
   }
   return true;
