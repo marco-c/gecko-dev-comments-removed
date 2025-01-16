@@ -15,12 +15,8 @@
 
 #define COOKIEJARSETTINGS_CONTRACTID "@mozilla.org/cookieJarSettings;1"
 
-#define COOKIEJARSETTINGS_CID                        \
-  {                                                  \
-    0x4ce234f1, 0x52e8, 0x47a9, {                    \
-      0x8c, 0x8d, 0xb0, 0x2f, 0x81, 0x57, 0x33, 0xc7 \
-    }                                                \
-  }
+#define COOKIEJARSETTINGS_CID \
+  {0x4ce234f1, 0x52e8, 0x47a9, {0x8c, 0x8d, 0xb0, 0x2f, 0x81, 0x57, 0x33, 0xc7}}
 
 namespace mozilla {
 namespace net {
