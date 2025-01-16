@@ -29,7 +29,7 @@ set("-v");
 for (let srcPath of Object.keys(filesToVendor)) {
   cp(
     path.join("node_modules", srcPath),
-    path.join("vendor", filesToVendor[srcPath])
+    path.join("../../../toolkit/content/vendor/react", filesToVendor[srcPath])
   );
 }
 

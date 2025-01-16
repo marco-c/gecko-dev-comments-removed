@@ -16,7 +16,9 @@ const DEFAULT_OPTIONS = {
   addonPath: "..",
   
   baseUrl: "resource://activity-stream/",
+  baseVendorUrl: "chrome://global/content/",
 };
+
 
 
 
@@ -35,12 +37,12 @@ function templateHTML(options) {
     "chrome://browser/content/contentSearchUI.js",
     "chrome://browser/content/contentSearchHandoffUI.js",
     "chrome://browser/content/contentTheme.js",
-    `${options.baseUrl}vendor/react${debugString}.js`,
-    `${options.baseUrl}vendor/react-dom${debugString}.js`,
-    `${options.baseUrl}vendor/prop-types.js`,
-    `${options.baseUrl}vendor/redux.js`,
-    `${options.baseUrl}vendor/react-redux.js`,
-    `${options.baseUrl}vendor/react-transition-group.js`,
+    `${options.baseVendorUrl}vendor/react${debugString}.js`,
+    `${options.baseVendorUrl}vendor/react-dom${debugString}.js`,
+    `${options.baseVendorUrl}vendor/prop-types.js`,
+    `${options.baseVendorUrl}vendor/redux.js`,
+    `${options.baseVendorUrl}vendor/react-redux.js`,
+    `${options.baseVendorUrl}vendor/react-transition-group.js`,
     `${options.baseUrl}data/content/activity-stream.bundle.js`,
     `${options.baseUrl}data/content/newtab-render.js`,
   ];
@@ -182,6 +184,11 @@ async function main() {
           type: "string",
           shortFlag: "b",
           default: DEFAULT_OPTIONS.baseUrl,
+        },
+        baseVendorUrl: {
+          type: "string",
+          shortFlag: "v",
+          default: DEFAULT_OPTIONS.baseVendorUrl,
         },
       },
     }

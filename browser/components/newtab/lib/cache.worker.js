@@ -39,13 +39,13 @@ importScripts("resource://gre/modules/workers/require.js");
   
   
   importScripts(
-    "resource://activity-stream/vendor/react.js",
-    "resource://activity-stream/vendor/react-dom.js",
-    "resource://activity-stream/vendor/react-dom-server.js",
-    "resource://activity-stream/vendor/redux.js",
-    "resource://activity-stream/vendor/react-transition-group.js",
-    "resource://activity-stream/vendor/prop-types.js",
-    "resource://activity-stream/vendor/react-redux.js",
+    "chrome://global/content/vendor/react.js",
+    "chrome://global/content/vendor/react-dom.js",
+    "chrome://global/content/vendor/react-dom-server.js",
+    "chrome://global/content/vendor/redux.js",
+    "chrome://global/content/vendor/react-transition-group.js",
+    "chrome://global/content/vendor/prop-types.js",
+    "chrome://global/content/vendor/react-redux.js",
     "resource://activity-stream/data/content/activity-stream.bundle.js"
   );
 

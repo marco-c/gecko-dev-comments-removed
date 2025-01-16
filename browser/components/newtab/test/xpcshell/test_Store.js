@@ -19,7 +19,7 @@ const { sinon } = ChromeUtils.importESModule(
 
 
 Services.scriptloader.loadSubScript(
-  "resource://activity-stream/vendor/redux.js",
+  "chrome://global/content/vendor/redux.js",
   this
 );
 
