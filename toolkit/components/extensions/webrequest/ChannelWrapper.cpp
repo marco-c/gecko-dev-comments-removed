@@ -817,6 +817,13 @@ already_AddRefed<nsITraceableChannel> ChannelWrapper::GetTraceableChannel(
     dom::ContentParent* aContentParent) const {
   nsCOMPtr<nsIRemoteTab> remoteTab;
   if (mAddonEntries.Get(aAddon.Id(), getter_AddRefs(remoteTab))) {
+    
+    
+    
+    
+    
+    
+    
     if (!HaveChannel() ||
         !aAddon.CanAccessURI(FinalURLInfo(), false, true, true)) {
       return nullptr;
