@@ -888,7 +888,8 @@ size_t js::gc::TenuringTracer::moveSlots(NativeObject* dst, NativeObject* src) {
 
   ObjectSlots* header = src->getSlotsHeader();
   Nursery::WasBufferMoved result =
-      nursery().maybeMoveBufferOnPromotion(&header, dst, allocSize);
+      nursery().maybeMoveNurseryOrMallocBufferOnPromotion(
+          &header, dst, allocSize, MemoryUse::ObjectSlots);
   if (result == Nursery::BufferNotMoved) {
     return 0;
   }
@@ -930,7 +931,8 @@ size_t js::gc::TenuringTracer::moveElements(NativeObject* dst,
   
 
   Nursery::WasBufferMoved result =
-      nursery().maybeMoveBufferOnPromotion(&unshiftedHeader, dst, allocSize);
+      nursery().maybeMoveNurseryOrMallocBufferOnPromotion(
+          &unshiftedHeader, dst, allocSize, MemoryUse::ObjectElements);
   if (result == Nursery::BufferNotMoved) {
     return 0;
   }

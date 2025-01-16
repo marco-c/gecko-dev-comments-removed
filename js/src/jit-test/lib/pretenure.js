@@ -6,7 +6,7 @@ const is64bit = getBuildConfiguration("pointer-byte-size") === 8;
 const nurseryCount = is64bit ? 25000 : 50000;
 
 
-const tenuredCount = is64bit ? 400000 : 800000;
+const tenuredCount = is64bit ? 300000 : 600000;
 
 function setupPretenureTest() {
   
@@ -41,10 +41,7 @@ function setupPretenureTest() {
   
   let o = {};
 
-  
-  
-  
-  gc(undefined, 'shrinking');
+  gc();
 }
 
 function allocateObjects(count, longLived) {
