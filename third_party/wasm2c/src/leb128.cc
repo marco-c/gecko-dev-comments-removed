@@ -240,7 +240,7 @@ size_t ReadU64Leb128(const uint8_t* p,
     return 9;
   } else if (p + 9 < end && (p[9] & 0x80) == 0) {
     
-    if (p[9] & 0xf0) {
+    if (p[9] & 0xfe) {
       return 0;
     }
     *out_value = LEB128_10(uint64_t);

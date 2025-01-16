@@ -14,7 +14,7 @@
 
 
 
-#include "wabt/binary-reader-opcnt.h"
+#include "wabt/binary-reader-stats.h"
 
 #include <cassert>
 #include <cinttypes>
