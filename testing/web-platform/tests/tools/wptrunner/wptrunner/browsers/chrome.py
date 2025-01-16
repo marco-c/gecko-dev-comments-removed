@@ -206,6 +206,11 @@ def update_properties():
     return (["debug", "os", "processor"], {"os": ["version"], "processor": ["bits"]})
 
 class ChromeBrowser(WebDriverBrowser):
+
+    
+    
+    init_timeout: float = 65
+
     def __init__(self,
                  logger: StructuredLogger,
                  leak_check: bool = False,
