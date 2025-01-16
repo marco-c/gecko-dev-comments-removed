@@ -314,14 +314,14 @@ mozilla::PresShell* nsSubDocumentFrame::GetSubdocumentPresShellForPainting(
   return presShell;
 }
 
-nsRect nsSubDocumentFrame::GetDestRect() {
-  nsRect rect = GetContent()->IsHTMLElement(nsGkAtoms::frame)
-                    ? GetRectRelativeToSelf()
-                    : GetContentRectRelativeToSelf();
+nsRect nsSubDocumentFrame::GetDestRect() const {
+  const nsRect rect = GetContent()->IsHTMLElement(nsGkAtoms::frame)
+                          ? GetRectRelativeToSelf()
+                          : GetContentRectRelativeToSelf();
   return GetDestRect(rect);
 }
 
-nsRect nsSubDocumentFrame::GetDestRect(const nsRect& aConstraintRect) {
+nsRect nsSubDocumentFrame::GetDestRect(const nsRect& aConstraintRect) const {
   
   
   return nsLayoutUtils::ComputeObjectDestRect(
@@ -329,21 +329,24 @@ nsRect nsSubDocumentFrame::GetDestRect(const nsRect& aConstraintRect) {
       GetIntrinsicRatio(), StylePosition());
 }
 
-LayoutDeviceIntSize nsSubDocumentFrame::GetSubdocumentSize() {
-  if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
-    if (RefPtr<nsFrameLoader> frameloader = FrameLoader()) {
-      nsIFrame* detachedFrame = frameloader->GetDetachedSubdocFrame();
-      if (nsView* view = detachedFrame ? detachedFrame->GetView() : nullptr) {
-        nsSize size = view->GetBounds().Size();
-        nsPresContext* presContext = detachedFrame->PresContext();
-        return LayoutDeviceIntSize(
-            presContext->AppUnitsToDevPixels(size.width),
-            presContext->AppUnitsToDevPixels(size.height));
-      }
+LayoutDeviceIntSize nsSubDocumentFrame::GetInitialSubdocumentSize() const {
+  if (RefPtr<nsFrameLoader> frameloader = FrameLoader()) {
+    nsIFrame* detachedFrame = frameloader->GetDetachedSubdocFrame();
+    if (nsView* view = detachedFrame ? detachedFrame->GetView() : nullptr) {
+      nsSize size = view->GetBounds().Size();
+      nsPresContext* presContext = detachedFrame->PresContext();
+      return LayoutDeviceIntSize(presContext->AppUnitsToDevPixels(size.width),
+                                 presContext->AppUnitsToDevPixels(size.height));
     }
-    
-    
-    return LayoutDeviceIntSize(10, 10);
+  }
+  
+  
+  return LayoutDeviceIntSize(10, 10);
+}
+
+LayoutDeviceIntSize nsSubDocumentFrame::GetSubdocumentSize() const {
+  if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
+    return GetInitialSubdocumentSize();
   }
 
   nsSize docSizeAppUnits = GetDestRect().Size();
