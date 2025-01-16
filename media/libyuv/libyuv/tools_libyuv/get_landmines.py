@@ -9,31 +9,30 @@
 
 
 """
-This file emits the list of reasons why a particular build needs to be clobbered
-(or a list of 'landmines').
+This file emits the list of reasons why a particular build needs to be
+clobbered (or a list of 'landmines').
 """
 
 import sys
 
 
 def print_landmines():
-  """
-  ALL LANDMINES ARE EMITTED FROM HERE.
-  """
-  
-  
-  
-  
-  
-  
-  print('Clobber to remove GYP artifacts after switching bots to GN.')
-  print('Another try to remove GYP artifacts after switching bots to GN.')
+    """ALL LANDMINES ARE EMITTED FROM HERE."""
+    
+    
+    
+    
+    
+    
+    
+    print('Clobber to remove GYP artifacts after switching bots to GN.')
+    print('Another try to remove GYP artifacts after switching bots to GN.')
 
 
 def main():
-  print_landmines()
-  return 0
+    print_landmines()
+    return 0
 
 
 if __name__ == '__main__':
-  sys.exit(main())
+    sys.exit(main())

@@ -26,4 +26,4 @@ import vs_toolchain
 
 
 if __name__ == '__main__':
-  sys.exit(vs_toolchain.main())
+    sys.exit(vs_toolchain.main())

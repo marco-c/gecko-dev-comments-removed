@@ -65,9 +65,9 @@ int num_threads = 0;
 #endif
 
 
-bool ExtractResolutionFromFilename(const char* name,
-                                   int* width_ptr,
-                                   int* height_ptr) {
+static bool ExtractResolutionFromFilename(const char* name,
+                                          int* width_ptr,
+                                          int* height_ptr) {
   
   
   for (int i = 0; name[i]; ++i) {
@@ -106,24 +106,11 @@ bool ExtractResolutionFromFilename(const char* name,
 }
 
 
-
-uint8_t ScaleY(uint8_t y) {
-  int ny = (y - 16) * 256 / 224;
-  if (ny < 0) {
-    ny = 0;
-  }
-  if (ny > 255) {
-    ny = 255;
-  }
-  return static_cast<uint8_t>(ny);
-}
-
-
-double GetMSE(double sse, double size) {
+static double GetMSE(double sse, double size) {
   return sse / size;
 }
 
-void PrintHelp(const char* program) {
+static void PrintHelp(const char* program) {
   printf("%s [-options] org_seq rec_seq [rec_seq2.. etc]\n", program);
 #ifdef HAVE_JPEG
   printf("jpeg or raw YUV 420 supported.\n");
@@ -151,7 +138,7 @@ void PrintHelp(const char* program) {
   exit(0);
 }
 
-void ParseOptions(int argc, const char* argv[]) {
+static void ParseOptions(int argc, const char* argv[]) {
   if (argc <= 1) {
     PrintHelp(argv[0]);
   }
@@ -240,15 +227,15 @@ void ParseOptions(int argc, const char* argv[]) {
   }
 }
 
-bool UpdateMetrics(uint8_t* ch_org,
-                   uint8_t* ch_rec,
-                   const int y_size,
-                   const int uv_size,
-                   const size_t total_size,
-                   int number_of_frames,
-                   metric* cur_distortion_psnr,
-                   metric* distorted_frame,
-                   bool compute_psnr) {
+static bool UpdateMetrics(uint8_t* ch_org,
+                          uint8_t* ch_rec,
+                          const int y_size,
+                          const int uv_size,
+                          const size_t total_size,
+                          int number_of_frames,
+                          metric* cur_distortion_psnr,
+                          metric* distorted_frame,
+                          bool compute_psnr) {
   const int uv_offset = (do_swap_uv ? uv_size : 0);
   const uint8_t* const u_org = ch_org + y_size + uv_offset;
   const uint8_t* const u_rec = ch_rec + y_size;

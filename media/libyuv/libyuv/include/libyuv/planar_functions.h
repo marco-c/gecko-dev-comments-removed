@@ -766,6 +766,10 @@ int ARGBPolynomial(const uint8_t* src_argb,
 
 
 
+
+
+
+
 LIBYUV_API
 int HalfFloatPlane(const uint16_t* src_y,
                    int src_stride_y,
