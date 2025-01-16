@@ -37,6 +37,7 @@ impl OpaqueElement {
     }
 
     
+    
     pub unsafe fn as_const_ptr<T>(&self) -> *const T {
         self.0.as_ptr() as *const T
     }

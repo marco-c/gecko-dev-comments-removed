@@ -397,9 +397,6 @@ pub trait TElement:
     type TraversalChildrenIterator: Iterator<Item = Self::ConcreteNode>;
 
     
-    fn unopaque(opaque: OpaqueElement) -> Self;
-
-    
     fn as_node(&self) -> Self::ConcreteNode;
 
     
@@ -916,6 +913,14 @@ pub trait TElement:
 
     
     fn relative_selector_search_direction(&self) -> ElementSelectorFlags;
+
+    
+    fn implicit_scope_for_sheet_in_shadow_root(
+        _opaque_host: OpaqueElement,
+        _sheet_index: usize,
+    ) -> Option<ImplicitScopeRoot> {
+        None
+    }
 }
 
 
