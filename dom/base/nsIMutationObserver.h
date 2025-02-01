@@ -16,17 +16,14 @@ class nsAttrValue;
 class nsAtom;
 class nsIContent;
 class nsINode;
+struct BatchRemovalState;
 
 namespace mozilla::dom {
 class Element;
 }  
 
-#define NS_IMUTATION_OBSERVER_IID                    \
-  {                                                  \
-    0x6d674c17, 0x0fbc, 0x4633, {                    \
-      0x8f, 0x46, 0x73, 0x4e, 0x87, 0xeb, 0xf0, 0xc7 \
-    }                                                \
-  }
+#define NS_IMUTATION_OBSERVER_IID \
+  {0x6d674c17, 0x0fbc, 0x4633, {0x8f, 0x46, 0x73, 0x4e, 0x87, 0xeb, 0xf0, 0xc7}}
 
 
 
@@ -255,9 +252,8 @@ class nsIMutationObserver
 
 
 
-
-  virtual void ContentRemoved(nsIContent* aChild,
-                              nsIContent* aPreviousSibling) = 0;
+  virtual void ContentWillBeRemoved(nsIContent* aChild,
+                                    const BatchRemovalState*) = 0;
 
   
 
@@ -312,7 +308,7 @@ class nsIMutationObserver
     kAttributeSetToCurrentValue = 1 << 4,
     kContentAppended = 1 << 5,
     kContentInserted = 1 << 6,
-    kContentRemoved = 1 << 7,
+    kContentWillBeRemoved = 1 << 7,
     kNodeWillBeDestroyed = 1 << 8,
     kParentChainChanged = 1 << 9,
     kARIAAttributeDefaultWillChange = 1 << 10,
@@ -370,9 +366,9 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIMutationObserver, NS_IMUTATION_OBSERVER_IID)
 #define NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED \
   virtual void ContentInserted(nsIContent* aChild) override;
 
-#define NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED \
-  virtual void ContentRemoved(nsIContent* aChild,  \
-                              nsIContent* aPreviousSibling) override;
+#define NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED      \
+  virtual void ContentWillBeRemoved(nsIContent* aChild, \
+                                    const BatchRemovalState*) override;
 
 #define NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED \
   virtual void NodeWillBeDestroyed(nsINode* aNode) override;
@@ -419,8 +415,8 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIMutationObserver, NS_IMUTATION_OBSERVER_IID)
       nsAtom* aAttribute, int32_t aModType, const nsAttrValue* aOldValue) {}   \
   void _class::ContentAppended(nsIContent* aFirstNewContent) {}                \
   void _class::ContentInserted(nsIContent* aChild) {}                          \
-  void _class::ContentRemoved(nsIContent* aChild,                              \
-                              nsIContent* aPreviousSibling) {}                 \
+  void _class::ContentWillBeRemoved(nsIContent* aChild,                        \
+                                    const BatchRemovalState*) {}               \
   void _class::ParentChainChanged(nsIContent* aContent) {}                     \
   void _class::ARIAAttributeDefaultWillChange(                                 \
       mozilla::dom::Element* aElement, nsAtom* aAttribute, int32_t aModType) { \

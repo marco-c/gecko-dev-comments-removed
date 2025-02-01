@@ -172,8 +172,8 @@ void nsXMLPrettyPrinter::ContentInserted(nsIContent* aChild) {
   MaybeUnhook(aChild->GetParent());
 }
 
-void nsXMLPrettyPrinter::ContentRemoved(nsIContent* aChild,
-                                        nsIContent* aPreviousSibling) {
+void nsXMLPrettyPrinter::ContentWillBeRemoved(nsIContent* aChild,
+                                              const BatchRemovalState*) {
   MaybeUnhook(aChild->GetParent());
 }
 

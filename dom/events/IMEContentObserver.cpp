@@ -1087,8 +1087,7 @@ void IMEContentObserver::NotifyIMEOfCachedConsecutiveNewNodes(
       aOffsetOfFirstContent.isSome()
           ? aOffsetOfFirstContent
           : mEndOfAddedTextCache.GetFlatTextLengthBeforeContent(
-                *mAddedContentCache.mFirst,
-                mAddedContentCache.mFirst->GetPreviousSibling(), mRootElement);
+                *mAddedContentCache.mFirst, mRootElement);
   if (offset.isNothing()) {
     Result<uint32_t, nsresult> textLengthBeforeFirstContentOrError =
         FlatTextCache::ComputeTextLengthBeforeContent(
@@ -1155,8 +1154,8 @@ void IMEContentObserver::ContentInserted(nsIContent* aChild) {
   ContentAdded(aChild->GetParentNode(), aChild, aChild);
 }
 
-void IMEContentObserver::ContentRemoved(nsIContent* aChild,
-                                        nsIContent* aPreviousSibling) {
+void IMEContentObserver::ContentWillBeRemoved(nsIContent* aChild,
+                                              const BatchRemovalState*) {
   if (!NeedsTextChangeNotification() ||
       !nsContentUtils::IsInSameAnonymousTree(mRootElement, aChild)) {
     return;
@@ -1172,8 +1171,9 @@ void IMEContentObserver::ContentRemoved(nsIContent* aChild,
     }
   }
 
-  Result<uint32_t, nsresult> textLengthOrError =
-      FlatTextCache::ComputeTextLengthOfContent(*aChild, mRootElement);
+  const Result<uint32_t, nsresult> textLengthOrError =
+      FlatTextCache::ComputeTextLengthOfContent(*aChild, mRootElement,
+                                                ForRemoval::Yes);
   if (NS_WARN_IF(textLengthOrError.isErr())) {
     mEndOfAddedTextCache.Clear(__FUNCTION__);
     mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
@@ -1181,56 +1181,48 @@ void IMEContentObserver::ContentRemoved(nsIContent* aChild,
     return;
   }
 
-  uint32_t pendingAddedLength = 0;
   if (mAddedContentCache.HasCache()) {
     mEndOfAddedTextCache.Clear(__FUNCTION__);
     mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
-    if (mAddedContentCache.ContentRemoved(*aChild, aPreviousSibling,
-                                          mRootElement)) {
-      
-      
-      pendingAddedLength = textLengthOrError.inspect();
-    }
-    if (mAddedContentCache.HasCache()) {
-      NotifyIMEOfCachedConsecutiveNewNodes(__FUNCTION__);
-    }
+    NotifyIMEOfCachedConsecutiveNewNodes(__FUNCTION__);
+    MOZ_DIAGNOSTIC_ASSERT(!mAddedContentCache.HasCache());
   }
 
   nsINode* containerNode = aChild->GetParentNode();
   MOZ_ASSERT(containerNode);
 
-  mEndOfAddedTextCache.ContentRemoved(
-      *aChild, aPreviousSibling, textLengthOrError.inspect(), mRootElement);
+  mEndOfAddedTextCache.ContentWillBeRemoved(
+      *aChild, textLengthOrError.inspect(), mRootElement);
 
   Maybe<uint32_t> offset =
       mStartOfRemovingTextRangeCache.GetFlatTextLengthBeforeContent(
-          *aChild, aPreviousSibling, mRootElement);
+          *aChild, mRootElement, ForRemoval::Yes);
+  nsIContent* const prevSibling = aChild->GetPreviousSibling();
   if (offset.isSome()) {
     
     
     
-    if (aPreviousSibling) {
+    if (prevSibling) {
       mStartOfRemovingTextRangeCache.CacheFlatTextLengthBeforeEndOfContent(
-          __FUNCTION__, *aPreviousSibling, *offset, mRootElement);
+          __FUNCTION__, *prevSibling, *offset, mRootElement);
     } else {
       mStartOfRemovingTextRangeCache.CacheFlatTextLengthBeforeFirstContent(
           __FUNCTION__, *containerNode, *offset, mRootElement);
     }
   } else {
-    if (aPreviousSibling) {
+    if (prevSibling) {
       
       
       
       
       
-      if (NS_WARN_IF(NS_FAILED(
-              mStartOfRemovingTextRangeCache
-                  .ComputeAndCacheFlatTextLengthBeforeEndOfContent(
-                      __FUNCTION__, *aPreviousSibling, mRootElement)))) {
+      if (NS_WARN_IF(
+              NS_FAILED(mStartOfRemovingTextRangeCache
+                            .ComputeAndCacheFlatTextLengthBeforeEndOfContent(
+                                __FUNCTION__, *prevSibling, mRootElement)))) {
         return;
       }
     } else {
-      
       
       
       if (NS_WARN_IF(
@@ -1245,12 +1237,11 @@ void IMEContentObserver::ContentRemoved(nsIContent* aChild,
 
   
   
-  if (textLengthOrError.inspect() == 0u && pendingAddedLength == 0u) {
+  if (textLengthOrError.inspect() == 0u) {
     return;
   }
 
-  TextChangeData data(*offset, *offset + textLengthOrError.inspect(),
-                      *offset + pendingAddedLength,
+  TextChangeData data(*offset, *offset + textLengthOrError.inspect(), *offset,
                       IsEditorHandlingEventForComposition(),
                       IsEditorComposing());
   MaybeNotifyIMEOfTextChange(data);
@@ -2380,24 +2371,20 @@ void IMEContentObserver::FlatTextCache::CacheFlatTextLengthBeforeFirstContent(
 
 Maybe<uint32_t>
 IMEContentObserver::FlatTextCache::GetFlatTextLengthBeforeContent(
-    const nsIContent& aContent, const nsIContent* aPreviousSibling,
-    const dom::Element* aRootElement) const {
+    const nsIContent& aContent, const dom::Element* aRootElement,
+    ForRemoval aForRemoval) const {
   MOZ_ASSERT(aRootElement);
-  MOZ_ASSERT_IF(!aContent.IsBeingRemoved(),
-                aContent.GetPreviousSibling() == aPreviousSibling);
-
   if (!mContainerNode) {
     return Nothing();
   }
 
+  nsIContent* const prevSibling = aContent.GetPreviousSibling();
   if (IsCachingToStartOfContainer()) {
     MOZ_ASSERT(!mContent);
     
     
     
-    
-    
-    if (!aPreviousSibling && mContainerNode == aContent.GetParentNode()) {
+    if (!prevSibling && mContainerNode == aContent.GetParentNode()) {
       return Some(mFlatTextLength);
     }
     return Nothing();
@@ -2408,7 +2395,7 @@ IMEContentObserver::FlatTextCache::GetFlatTextLengthBeforeContent(
 
   
   
-  if (mContent == aPreviousSibling) {
+  if (mContent == prevSibling) {
     return Some(mFlatTextLength);
   }
 
@@ -2420,7 +2407,8 @@ IMEContentObserver::FlatTextCache::GetFlatTextLengthBeforeContent(
   
   if (mContent == &aContent) {
     const Result<uint32_t, nsresult> textLength =
-        FlatTextCache::ComputeTextLengthOfContent(aContent, aRootElement);
+        FlatTextCache::ComputeTextLengthOfContent(aContent, aRootElement,
+                                                  aForRemoval);
     if (NS_WARN_IF(textLength.isErr()) ||
         NS_WARN_IF(mFlatTextLength < textLength.inspect())) {
       return Nothing();
@@ -2493,15 +2481,15 @@ Maybe<uint32_t> IMEContentObserver::FlatTextCache::GetFlatTextOffsetOnInsertion(
 
 Result<uint32_t, nsresult>
 IMEContentObserver::FlatTextCache::ComputeTextLengthOfContent(
-    const nsIContent& aContent, const dom::Element* aRootElement) {
+    const nsIContent& aContent, const dom::Element* aRootElement,
+    ForRemoval aForRemoval) {
   MOZ_ASSERT(aRootElement);
 
-  if (const Text* textNode = Text::FromNode(&aContent)) {
+  if (const Text* textNode = Text::FromNode(aContent)) {
     return ContentEventHandler::GetNativeTextLength(*textNode);
   }
 
-  if (aContent.IsBeingRemoved()) {
-    
+  if (aForRemoval == ForRemoval::Yes) {
     
     
     
@@ -2512,9 +2500,11 @@ IMEContentObserver::FlatTextCache::ComputeTextLengthOfContent(
     
     
     uint32_t textLength = 0;
+    RawNodePosition start(const_cast<nsIContent*>(&aContent), 0u);
+    start.mAfterOpenTag = false;
     nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
-        RawNodePosition::Before(aContent), RawNodePosition::AtEndOf(aContent),
-        aRootElement, &textLength, LineBreakType::LINE_BREAK_TYPE_NATIVE, true);
+        start, RawNodePosition::AtEndOf(aContent), aRootElement, &textLength,
+        LineBreakType::LINE_BREAK_TYPE_NATIVE,  true);
     if (NS_FAILED(rv)) {
       return Err(rv);
     }
@@ -2688,20 +2678,15 @@ void IMEContentObserver::FlatTextCache::ContentAdded(
   Clear(aCallerName);
 }
 
-void IMEContentObserver::FlatTextCache::ContentRemoved(
-    const nsIContent& aContent, const nsIContent* aPreviousSibling,
-    uint32_t aFlatTextLengthOfContent, const Element* aRootElement) {
+void IMEContentObserver::FlatTextCache::ContentWillBeRemoved(
+    const nsIContent& aContent, uint32_t aFlatTextLengthOfContent,
+    const Element* aRootElement) {
   if (!mContainerNode) {
     return;  
   }
 
-  MOZ_ASSERT_IF(aPreviousSibling,
-                aContent.GetPreviousSibling() != aPreviousSibling);
-  MOZ_ASSERT_IF(aPreviousSibling,
-                aPreviousSibling->GetNextSibling() != &aContent);
-
   
-  if (mContent && mContent == aPreviousSibling) {
+  if (mContent && mContent == aContent.GetPreviousSibling()) {
     return;
   }
 
@@ -2733,9 +2718,9 @@ void IMEContentObserver::FlatTextCache::ContentRemoved(
     
     
     
-    if (aPreviousSibling) {
+    if (nsIContent* prevSibling = aContent.GetPreviousSibling()) {
       CacheFlatTextLengthBeforeEndOfContent(
-          "FlatTextCache::ContentRemoved", *aPreviousSibling,
+          "FlatTextCache::ContentRemoved", *prevSibling,
           mFlatTextLength - aFlatTextLengthOfContent, aRootElement);
       return;
     }
@@ -2914,147 +2899,6 @@ bool IMEContentObserver::AddedContentCache::TryToCache(
   }
   MOZ_ASSERT(!CanMergeWith(aFirstContent, aLastContent, aRootElement));
   return false;
-}
-
-bool IMEContentObserver::AddedContentCache::ContentRemoved(
-    const nsIContent& aContent, const nsIContent* aPreviousSibling,
-    const dom::Element* aRootElement) {
-  if (!HasCache()) {
-    return false;
-  }
-
-  if ((mFirst == mLast && mFirst == &aContent) ||
-      mFirst->IsInclusiveDescendantOf(&aContent)) {
-    
-    Clear("AddedContentCache::ContentRemoved");
-    return true;
-  }
-
-  if (mFirst == &aContent) {
-    mFirst = aPreviousSibling
-                 ? aPreviousSibling->GetNextNonChildNode(aRootElement)
-                 : aContent.GetParentNode()->GetNextNode(aRootElement);
-    MOZ_LOG(sCacheLog, LogLevel::Info,
-            ("AddedContentCache::ContentRemoved: The first node was removed "
-             "(new first content: %s)",
-             ToString(mFirst).c_str()));
-    MOZ_ASSERT(mFirst);
-    MOZ_ASSERT(mFirst != &aContent);
-    MOZ_ASSERT(nsContentUtils::ComparePoints(
-                   RawRangeBoundary(mFirst->GetParentNode(),
-                                    mFirst->GetPreviousSibling()),
-                   RawRangeBoundary(mLast->GetParentNode(),
-                                    mLast->GetPreviousSibling()))
-                   .value() <= 0);
-    return true;
-  }
-
-  if (mLast == &aContent) {
-    if (aPreviousSibling) {
-      mLast = const_cast<nsIContent*>(aPreviousSibling);
-      MOZ_LOG(sCacheLog, LogLevel::Info,
-              ("AddedContentCache::ContentRemoved: The last node was removed "
-               "(new last content: %s)",
-               ToString(mLast).c_str()));
-    } else {
-      mLast = aPreviousSibling->GetParent();
-      MOZ_LOG(sCacheLog, LogLevel::Info,
-              ("AddedContentCache::ContentRemoved: The last node which was the "
-               "last child of the container was removed (new last content: %s)",
-               ToString(mLast).c_str()));
-      MOZ_ASSERT(mLast);
-      
-      
-      
-      
-      MOZ_RELEASE_ASSERT(!mLast->GetChildCount());
-    }
-    return true;
-  }
-
-  if (mFirst == mLast) {
-    
-    
-    return aContent.GetParentNode() != mFirst->GetParentNode() &&
-           aContent.IsInclusiveDescendantOf(mFirst);
-  }
-
-  if (!aPreviousSibling) {
-    
-    
-    if (aContent.GetParentNode() == mFirst->GetParentNode()) {
-      return false;
-    }
-  } else {
-    if (
-        
-        mLast == aPreviousSibling ||
-        
-        aPreviousSibling->GetNextSibling() == mFirst) {
-      return false;
-    }
-    if (
-        
-        mFirst == aPreviousSibling ||
-        
-        aPreviousSibling->GetNextSibling() == mLast) {
-      return true;
-    }
-  }
-
-  
-  
-  
-  
-  const auto* const sibling = [&]() -> const nsIContent* {
-    const nsINode* const container = mFirst->GetParentNode();
-    for (const nsIContent* content :
-         aContent.InclusiveAncestorsOfType<nsIContent>()) {
-      if (content->GetParentNode() == container) {
-        return content;
-      }
-    }
-    return nullptr;
-  }();
-  if (!sibling) {
-    
-    return false;
-  }
-  const uint32_t contentIndex = [&]() -> uint32_t {
-    if (sibling != &aContent) {
-      MOZ_ASSERT(!sibling->IsBeingRemoved());
-      const Maybe<uint32_t> indexOfSibling =
-          sibling->ComputeIndexInParentNode();
-      MOZ_RELEASE_ASSERT(indexOfSibling.isSome());
-      return indexOfSibling.value();
-    }
-    if (!aPreviousSibling) {
-      return 0u;
-    }
-    const nsIContent* nextSibling = aPreviousSibling->GetNextSibling();
-    if (!nextSibling) {
-      
-      return aContent.GetParentNode()->GetChildCount();
-    }
-    const Maybe<uint32_t> indexOfNextSibling =
-        nextSibling->ComputeIndexInParentNode();
-    MOZ_RELEASE_ASSERT(indexOfNextSibling.isSome());
-    return indexOfNextSibling.value();
-  }();
-  const Maybe<uint32_t> firstIndex = mFirst->ComputeIndexInParentNode();
-  MOZ_RELEASE_ASSERT(firstIndex.isSome());
-  if (contentIndex < *firstIndex) {
-    return false;  
-  }
-  if (contentIndex == *firstIndex) {
-    return true;  
-  }
-  const Maybe<uint32_t> lastIndex = mLast->ComputeIndexInParentNode();
-  MOZ_RELEASE_ASSERT(lastIndex.isSome());
-  
-  
-  
-  return contentIndex <= *lastIndex;
 }
 
 Result<std::pair<uint32_t, uint32_t>, nsresult> IMEContentObserver::

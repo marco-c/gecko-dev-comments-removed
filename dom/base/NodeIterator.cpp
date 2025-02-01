@@ -52,40 +52,46 @@ bool NodeIterator::NodePointer::MoveToPrevious(nsINode* aRoot) {
     return true;
   }
 
-  if (mNode == aRoot) return false;
+  if (mNode == aRoot) {
+    return false;
+  }
 
   MoveBackward(mNode->GetParentNode(), mNode->GetPreviousSibling());
 
   return true;
 }
 
-void NodeIterator::NodePointer::AdjustAfterRemoval(
-    nsINode* aRoot, nsINode* aContainer, nsIContent* aChild,
-    nsIContent* aPreviousSibling) {
+void NodeIterator::NodePointer::AdjustForRemoval(nsINode* aRoot,
+                                                 nsINode* aContainer,
+                                                 nsIContent* aChild) {
   
-  if (!mNode || mNode == aRoot) return;
+  if (!mNode || mNode == aRoot) {
+    return;
+  }
 
   
-  if (!mNode->IsInclusiveDescendantOf(aChild)) return;
+  if (!mNode->IsInclusiveDescendantOf(aChild)) {
+    return;
+  }
 
   if (mBeforeNode) {
     
-    nsINode* nextSibling = aPreviousSibling ? aPreviousSibling->GetNextSibling()
-                                            : aContainer->GetFirstChild();
-
+    nsINode* nextSibling = aChild->GetNextSibling();
     if (nextSibling) {
       mNode = nextSibling;
       return;
     }
 
     
-    if (MoveForward(aRoot, aContainer)) return;
+    if (MoveForward(aRoot, aContainer)) {
+      return;
+    }
 
     
     mBeforeNode = false;
   }
 
-  MoveBackward(aContainer, aPreviousSibling);
+  MoveBackward(aContainer, aChild->GetPreviousSibling());
 }
 
 bool NodeIterator::NodePointer::MoveForward(nsINode* aRoot, nsINode* aNode) {
@@ -195,13 +201,11 @@ void NodeIterator::Detach() {
 
 
 
-void NodeIterator::ContentRemoved(nsIContent* aChild,
-                                  nsIContent* aPreviousSibling) {
+void NodeIterator::ContentWillBeRemoved(nsIContent* aChild,
+                                        const BatchRemovalState*) {
   nsINode* container = aChild->GetParentNode();
-
-  mPointer.AdjustAfterRemoval(mRoot, container, aChild, aPreviousSibling);
-  mWorkingPointer.AdjustAfterRemoval(mRoot, container, aChild,
-                                     aPreviousSibling);
+  mPointer.AdjustForRemoval(mRoot, container, aChild);
+  mWorkingPointer.AdjustForRemoval(mRoot, container, aChild);
 }
 
 bool NodeIterator::WrapObject(JSContext* cx, JS::Handle<JSObject*> aGivenProto,

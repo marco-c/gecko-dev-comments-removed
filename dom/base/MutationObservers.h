@@ -14,6 +14,7 @@
 
 class nsAtom;
 class nsAttrValue;
+struct BatchRemovalState;
 
 namespace mozilla::dom {
 class Animation;
@@ -100,8 +101,10 @@ class MutationObservers {
 
 
 
-  static void NotifyContentRemoved(nsINode* aContainer, nsIContent* aChild,
-                                   nsIContent* aPreviousSibling);
+
+  static void NotifyContentWillBeRemoved(nsINode* aContainer,
+                                         nsIContent* aChild,
+                                         const BatchRemovalState*);
 
   
 

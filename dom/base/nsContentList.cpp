@@ -814,8 +814,8 @@ void nsContentList::ContentInserted(nsIContent* aChild) {
   ASSERT_IN_SYNC;
 }
 
-void nsContentList::ContentRemoved(nsIContent* aChild,
-                                   nsIContent* aPreviousSibling) {
+void nsContentList::ContentWillBeRemoved(nsIContent* aChild,
+                                         const BatchRemovalState*) {
   if (mState != State::Dirty &&
       MayContainRelevantNodes(aChild->GetParentNode()) &&
       nsContentUtils::IsInSameAnonymousTree(mRootNode, aChild) &&
@@ -1120,7 +1120,7 @@ void nsLabelsNodeList::ContentAppended(nsIContent* aFirstNewContent) {
   
   
   
-  if (mState != State::Dirty ||
+  if (mState != State::Dirty &&
       nsContentUtils::IsInSameAnonymousTree(mRootNode, container)) {
     SetDirty();
     return;
@@ -1131,18 +1131,18 @@ void nsLabelsNodeList::ContentInserted(nsIContent* aChild) {
   
   
   
-  if (mState != State::Dirty ||
+  if (mState != State::Dirty &&
       nsContentUtils::IsInSameAnonymousTree(mRootNode, aChild)) {
     SetDirty();
     return;
   }
 }
 
-void nsLabelsNodeList::ContentRemoved(nsIContent* aChild,
-                                      nsIContent* aPreviousSibling) {
+void nsLabelsNodeList::ContentWillBeRemoved(nsIContent* aChild,
+                                            const BatchRemovalState* aState) {
   
   
-  if (mState != State::Dirty ||
+  if (mState != State::Dirty &&
       nsContentUtils::IsInSameAnonymousTree(mRootNode, aChild)) {
     SetDirty();
     return;

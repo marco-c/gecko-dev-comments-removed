@@ -245,6 +245,10 @@ enum class BatchRemovalOrder {
   BackToFront,
 };
 
+struct BatchRemovalState {
+  bool mIsFirst = true;
+};
+
 
 #define ASSERT_NODE_FLAGS_SPACE(n)                         \
   static_assert(WRAPPER_CACHE_FLAGS_BITS_USED + (n) <=     \
@@ -1000,11 +1004,13 @@ class nsINode : public mozilla::dom::EventTarget {
     if (!HasChildren()) {
       return;
     }
+    BatchRemovalState state{};
     do {
       nsIContent* nodeToRemove = aOrder == BatchRemovalOrder::FrontToBack
                                      ? GetFirstChild()
                                      : GetLastChild();
-      RemoveChildNode(nodeToRemove, aNotify);
+      RemoveChildNode(nodeToRemove, aNotify, &state);
+      state.mIsFirst = false;
     } while (HasChildren());
   }
 
@@ -1016,7 +1022,9 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  virtual void RemoveChildNode(nsIContent* aKid, bool aNotify);
+
+  virtual void RemoveChildNode(nsIContent* aKid, bool aNotify,
+                               const BatchRemovalState* = nullptr);
 
   
 
