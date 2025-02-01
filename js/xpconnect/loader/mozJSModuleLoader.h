@@ -87,17 +87,10 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
   static mozJSModuleLoader* GetOrCreateDevToolsLoader(JSContext* aCx);
 
   
-  nsresult Import(JSContext* aCx, const nsACString& aResourceURI,
-                  JS::MutableHandleObject aModuleGlobal,
-                  JS::MutableHandleObject aModuleExports,
-                  bool aIgnoreExports = false);
-
-  
   nsresult ImportESModule(JSContext* aCx, const nsACString& aResourceURI,
                           JS::MutableHandleObject aModuleNamespace);
 
 #ifdef STARTUP_RECORDER_ENABLED
-  void RecordImportStack(JSContext* aCx, const nsACString& aLocation);
   void RecordImportStack(JSContext* aCx,
                          JS::loader::ModuleLoadRequest* aRequest);
 #endif
@@ -154,15 +147,6 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
 
   static bool LocationIsRealFile(nsIURI* aURI);
 
-  JSObject* PrepareObjectForLocation(JSContext* aCx, nsIFile* aModuleFile,
-                                     nsIURI* aURI, bool aRealFile);
-
-  nsresult ObjectForLocation(ModuleLoaderInfo& aInfo, nsIFile* aModuleFile,
-                             JS::MutableHandleObject aObject,
-                             JS::MutableHandleScript aTableScript,
-                             char** aLocation, bool aCatchException,
-                             JS::MutableHandleValue aException);
-
   static void SetModuleOptions(JS::CompileOptions& aOptions);
 
   
@@ -172,11 +156,7 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
                                        JS::MutableHandleScript aScriptOut,
                                        char** aLocationOut = nullptr);
 
-  static already_AddRefed<JS::Stencil> CompileStencil(
-      JSContext* aCx, const JS::CompileOptions& aOptions,
-      JS::SourceText<mozilla::Utf8Unit>& aSource, bool aIsModule);
-  static JSScript* InstantiateStencil(JSContext* aCx, JS::Stencil* aStencil,
-                                      bool aIsModule);
+  static JSScript* InstantiateStencil(JSContext* aCx, JS::Stencil* aStencil);
 
   class ModuleEntry {
    public:
@@ -217,19 +197,9 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
     nsCString resolvedURL;
   };
 
-  nsresult ExtractExports(JSContext* aCx, ModuleLoaderInfo& aInfo,
-                          ModuleEntry* aMod, JS::MutableHandleObject aExports);
-
-  nsClassHashtable<nsCStringHashKey, ModuleEntry> mImports;
-  nsTHashMap<nsCStringHashKey, ModuleEntry*> mInProgressImports;
 #ifdef STARTUP_RECORDER_ENABLED
   nsTHashMap<nsCStringHashKey, nsCString> mImportStacks;
 #endif
-
-  
-  
-  
-  nsClassHashtable<nsCStringHashKey, nsCString> mLocations;
 
   bool mInitialized;
   bool mIsUnloaded = false;

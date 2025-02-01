@@ -46,7 +46,6 @@ declare namespace MockedExports {
 
 
 
-    import: <S extends keyof KnownModules>(module: S) => KnownModules[S];
     importESModule: <S extends keyof KnownModules>(
       module: S
     ) => KnownModules[S];
