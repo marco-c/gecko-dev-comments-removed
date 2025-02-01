@@ -2119,13 +2119,14 @@ void nsFocusManager::AdjustWindowFocus(
 }
 
 bool nsFocusManager::IsWindowVisible(nsPIDOMWindowOuter* aWindow) {
-  if (!aWindow || aWindow->IsFrozen()) {
+  if (!aWindow || nsGlobalWindowOuter::Cast(aWindow)->IsFrozen()) {
     return false;
   }
 
   
   
-  nsPIDOMWindowInner* innerWindow = aWindow->GetCurrentInnerWindow();
+  auto* innerWindow =
+      nsGlobalWindowInner::Cast(aWindow->GetCurrentInnerWindow());
   if (!innerWindow || innerWindow->IsFrozen()) {
     return false;
   }

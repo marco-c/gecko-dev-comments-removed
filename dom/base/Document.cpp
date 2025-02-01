@@ -11717,7 +11717,7 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest,
   
   
   
-  nsPIDOMWindowInner* win = GetInnerWindow();
+  auto* win = nsGlobalWindowInner::Cast(GetInnerWindow());
   if (win && win->IsSuspended() && !win->IsFrozen()) {
     MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
             ("Save of %s blocked on suspended Window", uri.get()));

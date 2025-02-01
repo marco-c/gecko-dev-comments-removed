@@ -144,7 +144,7 @@ class Timeout final : protected LinkedListElement<RefPtr<Timeout>> {
   
 
   
-  RefPtr<nsGlobalWindowInner> mWindow;
+  RefPtr<nsIGlobalObject> mGlobal;
 
   
   RefPtr<TimeoutHandler> mScriptHandler;

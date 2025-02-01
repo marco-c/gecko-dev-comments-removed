@@ -28,7 +28,7 @@ Timeout::Timeout()
 NS_IMPL_CYCLE_COLLECTION_CLASS(Timeout)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Timeout)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mWindow)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mScriptHandler)
   if (tmp->isInList()) {
     tmp->remove();
@@ -36,13 +36,13 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Timeout)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Timeout)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWindow)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGlobal)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mScriptHandler)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 void Timeout::SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
                                      const TimeDuration& aDelay) {
-  MOZ_DIAGNOSTIC_ASSERT(mWindow);
+  MOZ_DIAGNOSTIC_ASSERT(mGlobal);
   mSubmitTime = aBaseTime;
 
   mSubmitTime = aBaseTime;
@@ -54,7 +54,7 @@ void Timeout::SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
   
   
   
-  if (mWindow->IsFrozen()) {
+  if (mGlobal->IsFrozen()) {
     mWhen = TimeStamp();
     mTimeRemaining = aDelay;
     return;

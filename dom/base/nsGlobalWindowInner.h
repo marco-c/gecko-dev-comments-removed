@@ -335,6 +335,9 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void Freeze(bool aIncludeSubWindows = true);
   void Thaw(bool aIncludeSubWindows = true);
   virtual bool IsFrozen() const override;
+  virtual bool HasActiveIndexedDBDatabases() override;
+  virtual bool HasActivePeerConnections() override;
+  virtual bool HasOpenWebSockets() const override;
   void SyncStateFromParentWindow();
 
   
@@ -1076,8 +1079,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   
   MOZ_CAN_RUN_SCRIPT
-  bool RunTimeoutHandler(mozilla::dom::Timeout* aTimeout,
-                         nsIScriptContext* aScx);
+  bool RunTimeoutHandler(mozilla::dom::Timeout* aTimeout) override;
 
   
   already_AddRefed<nsIDocShellTreeOwner> GetTreeOwner();
@@ -1171,6 +1173,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   friend class nsPIDOMWindowOuter;
 
   bool IsBackgroundInternal() const override;
+  bool IsPlayingAudio() override;
 
   
   void DisconnectAndClearGroupMessageManagers() {

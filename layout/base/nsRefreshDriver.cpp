@@ -2666,7 +2666,11 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   if (StaticPrefs::layout_skip_ticks_while_page_suspended()) {
     Document* doc = mPresContext->Document();
-    nsPIDOMWindowInner* win = doc ? doc->GetInnerWindow() : nullptr;
+    nsGlobalWindowInner* win =
+        doc ? nsGlobalWindowInner::Cast(doc->GetInnerWindow()) : nullptr;
+    if (doc && doc->GetInnerWindow()) {
+      MOZ_ASSERT(nsGlobalWindowInner::Cast(doc->GetInnerWindow()));
+    }
     
     
     

@@ -83,20 +83,12 @@ enum class FullscreenReason {
 };
 
 
-#define NS_PIDOMWINDOWINNER_IID                      \
-  {                                                  \
-    0x775dabc9, 0x8f43, 0x4277, {                    \
-      0x9a, 0xdb, 0xf1, 0x99, 0x0d, 0x77, 0xcf, 0xfb \
-    }                                                \
-  }
+#define NS_PIDOMWINDOWINNER_IID \
+  {0x775dabc9, 0x8f43, 0x4277, {0x9a, 0xdb, 0xf1, 0x99, 0x0d, 0x77, 0xcf, 0xfb}}
 
 
-#define NS_PIDOMWINDOWOUTER_IID                      \
-  {                                                  \
-    0x769693d4, 0xb009, 0x4fe2, {                    \
-      0xaf, 0x18, 0x7d, 0xc8, 0xdf, 0x74, 0x96, 0xdf \
-    }                                                \
-  }
+#define NS_PIDOMWINDOWOUTER_IID \
+  {0x769693d4, 0xb009, 0x4fe2, {0xaf, 0x18, 0x7d, 0xc8, 0xdf, 0x74, 0x96, 0xdf}}
 
 class nsPIDOMWindowInner : public mozIDOMWindow {
  protected:
@@ -341,13 +333,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   void RemovePeerConnection();
 
-  
-
-
-  bool HasActivePeerConnections();
-
-  bool IsPlayingAudio();
-
   bool IsDocumentLoaded() const;
 
   
@@ -359,15 +344,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   void UpdateActiveIndexedDBDatabaseCount(int32_t aDelta);
 
   
-  
-  bool HasActiveIndexedDBDatabases();
-
-  
   void UpdateWebSocketCount(int32_t aDelta);
-
-  
-  
-  bool HasOpenWebSockets() const;
 
   mozilla::Maybe<mozilla::dom::ClientInfo> GetClientInfo() const;
   mozilla::Maybe<mozilla::dom::ClientState> GetClientState() const;
@@ -420,13 +397,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   
   bool RemoveFromBFCacheSync();
-
-  
-  
-  
-  
-  virtual bool IsSuspended() const = 0;
-  virtual bool IsFrozen() const = 0;
 
   
   
@@ -920,13 +890,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   
   virtual nsresult RestoreWindowState(nsISupports* aState) = 0;
-
-  
-  
-  
-  
-  virtual bool IsSuspended() const = 0;
-  virtual bool IsFrozen() const = 0;
 
   
   

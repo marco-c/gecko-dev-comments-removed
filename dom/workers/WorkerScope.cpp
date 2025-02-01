@@ -196,6 +196,26 @@ namespace workerinternals {
 void NamedWorkerGlobalScopeMixin::GetName(DOMString& aName) const {
   aName.AsAString() = mName;
 }
+static const char* GetTimeoutReasonString(Timeout* aTimeout) {
+  switch (aTimeout->mReason) {
+    case Timeout::Reason::eTimeoutOrInterval:
+      if (aTimeout->mIsInterval) {
+        return "setInterval handler";
+      }
+      return "setTimeout handler";
+    case Timeout::Reason::eIdleCallbackTimeout:
+      return "setIdleCallback handler (timed out)";
+    case Timeout::Reason::eAbortSignalTimeout:
+      return "AbortSignal timeout";
+    case Timeout::Reason::eDelayedWebTaskTimeout:
+      return "delayedWebTaskCallback handler (timed out)";
+    default:
+      MOZ_CRASH("Unexpected enum value");
+      return "";
+  }
+  MOZ_CRASH("Unexpected enum value");
+  return "";
+}
 }  
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(WorkerGlobalScopeBase)
@@ -249,9 +269,9 @@ WorkerGlobalScopeBase::WorkerGlobalScopeBase(
     : mWorkerPrivate(aWorkerPrivate),
       mClientSource(std::move(aClientSource)),
       mSerialEventTarget(aWorkerPrivate->HybridEventTarget()) {
-  if (StaticPrefs::dom_workers_throttling_enabled() && XRE_IsContentProcess()) {
-    mTimeoutManager =
-        MakeUnique<dom::TimeoutManager>(*this,  0);
+  if (StaticPrefs::dom_workers_timeoutmanager() && XRE_IsContentProcess()) {
+    mTimeoutManager = MakeUnique<dom::TimeoutManager>(
+        *this,  0, mSerialEventTarget);
   }
   LOG(("WorkerGlobalScopeBase::WorkerGlobalScopeBase [%p]", this));
   MOZ_ASSERT(mWorkerPrivate);
@@ -275,6 +295,60 @@ WorkerGlobalScopeBase::~WorkerGlobalScopeBase() = default;
 JSObject* WorkerGlobalScopeBase::GetGlobalJSObject() {
   AssertIsOnWorkerThread();
   return GetWrapper();
+}
+
+bool WorkerGlobalScopeBase::RunTimeoutHandler(mozilla::dom::Timeout* aTimeout) {
+  
+
+  
+  
+  
+  
+  RefPtr<Timeout> timeout = aTimeout;
+  Timeout* last_running_timeout = mTimeoutManager->BeginRunningTimeout(timeout);
+  timeout->mRunning = true;
+
+  uint32_t nestingLevel = mTimeoutManager->GetNestingLevel();
+  mTimeoutManager->SetNestingLevel(timeout->mNestingLevel);
+
+  const char* reason = workerinternals::GetTimeoutReasonString(timeout);
+
+  bool abortIntervalHandler;
+  {
+    RefPtr<TimeoutHandler> handler(timeout->mScriptHandler);
+
+    CallbackDebuggerNotificationGuard guard(
+        this, timeout->mIsInterval
+                  ? DebuggerNotificationType::SetIntervalCallback
+                  : DebuggerNotificationType::SetTimeoutCallback);
+    abortIntervalHandler = !handler->Call(reason);
+  }
+
+  
+  
+  
+  if (abortIntervalHandler) {
+    
+    
+    
+    timeout->mIsInterval = false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  mTimeoutManager->SetNestingLevel(nestingLevel);
+
+  mTimeoutManager->EndRunningTimeout(last_running_timeout);
+  timeout->mRunning = false;
+
+  return timeout->mCleared;
 }
 
 JSObject* WorkerGlobalScopeBase::GetGlobalJSObjectPreserveColor() const {

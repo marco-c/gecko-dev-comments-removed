@@ -23,12 +23,8 @@
 #include "js/TypeDecls.h"
 
 
-#define NS_IGLOBALOBJECT_IID                         \
-  {                                                  \
-    0x11afa8be, 0xd997, 0x4e07, {                    \
-      0xa6, 0xa3, 0x6f, 0x87, 0x2e, 0xc3, 0xee, 0x7f \
-    }                                                \
-  }
+#define NS_IGLOBALOBJECT_IID \
+  {0x11afa8be, 0xd997, 0x4e07, {0xa6, 0xa3, 0x6f, 0x87, 0x2e, 0xc3, 0xee, 0x7f}}
 
 class nsCycleCollectionTraversalCallback;
 class nsICookieJarSettings;
@@ -44,6 +40,7 @@ template <typename V, typename E>
 class Result;
 enum class StorageAccess;
 namespace dom {
+class WorkerGlobalScopeBase;
 class VoidFunction;
 class DebuggerNotificationManager;
 class FontFaceSet;
@@ -316,6 +313,27 @@ class nsIGlobalObject : public nsISupports {
   virtual bool IsBackgroundInternal() const { return false; }
   virtual mozilla::dom::TimeoutManager* GetTimeoutManager() { return nullptr; }
   virtual bool IsRunningTimeout() { return false; }
+  virtual bool IsPlayingAudio() { return false; }
+  
+  
+  
+  
+  virtual bool IsSuspended() const { return false; }
+  virtual bool IsFrozen() const { return false; }
+  MOZ_CAN_RUN_SCRIPT
+  virtual bool RunTimeoutHandler(mozilla::dom::Timeout* aTimeout) {
+    return false;
+  }
+  
+  
+  virtual bool HasActiveIndexedDBDatabases() { return false; }
+  
+
+
+  virtual bool HasActivePeerConnections() { return false; }
+  
+  
+  virtual bool HasOpenWebSockets() const { return false; }
 
   virtual bool IsXPCSandbox() { return false; }
 
