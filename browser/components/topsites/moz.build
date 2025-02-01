@@ -5,6 +5,7 @@
 
 
 EXTRA_JS_MODULES.topsites += [
+    "constants.mjs",
     "TippyTopProvider.sys.mjs",
     "TopSites.sys.mjs",
 ]
