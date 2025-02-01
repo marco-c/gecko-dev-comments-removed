@@ -1564,13 +1564,15 @@ function waitAppMenuNotificationShown(
           );
         }
       }
+
+      let popupnotificationID = PanelUI._getPopupId(notification);
+      let popupnotification = document.getElementById(popupnotificationID);
+
       if (accept) {
-        let popupnotificationID = PanelUI._getPopupId(notification);
-        let popupnotification = document.getElementById(popupnotificationID);
         popupnotification.button.click();
       }
 
-      resolve();
+      resolve(popupnotification);
     }
     
     let notification = AppMenuNotifications.activeNotification;
