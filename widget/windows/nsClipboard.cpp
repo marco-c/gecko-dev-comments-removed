@@ -274,9 +274,18 @@ nsresult nsClipboard::SetupNativeDataObject(
                flavorStr.EqualsLiteral(kNativeImageMime)) {
       
       FORMATETC imageFE;
+
+      
+      if (mozilla::StaticPrefs::clipboard_copy_image_as_png()) {
+        static const CLIPFORMAT CF_PNG = ::RegisterClipboardFormat(TEXT("PNG"));
+        SET_FORMATETC(imageFE, CF_PNG, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
+        dObj->AddDataFlavor(flavorStr.get(), &imageFE);
+      }
+
       
       SET_FORMATETC(imageFE, CF_DIBV5, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
       dObj->AddDataFlavor(flavorStr.get(), &imageFE);
+
       
       SET_FORMATETC(imageFE, CF_DIB, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
       dObj->AddDataFlavor(flavorStr.get(), &imageFE);
