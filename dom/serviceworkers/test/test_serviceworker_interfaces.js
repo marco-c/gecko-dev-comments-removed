@@ -152,8 +152,6 @@ let interfaceNamesInGlobalScope = [
   
   "CountQueuingStrategy",
   
-  { name: "CookieChangeEvent", earlyBetaOrEarlier: true },
-  
   { name: "CookieStore", earlyBetaOrEarlier: true },
   
   "Crypto",
