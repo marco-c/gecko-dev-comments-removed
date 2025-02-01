@@ -266,7 +266,9 @@ already_AddRefed<CookieStore> CookieStore::Create(nsIGlobalObject* aGlobal) {
 
 CookieStore::CookieStore(nsIGlobalObject* aGlobal)
     : DOMEventTargetHelper(aGlobal) {
-  mNotifier = CookieStoreNotifier::Create(this);
+  if (NS_IsMainThread()) {
+    mNotifier = CookieStoreNotifier::Create(this);
+  }
 
   
   

@@ -36,9 +36,6 @@ class CookieStoreNotifier final : public nsIObserver {
                       const OriginAttributes& aOriginAttributes);
   ~CookieStoreNotifier();
 
-  void AddObserversOnMainThread(bool aPrivateBrowsing);
-  void RemoveObserversOnMainThread(bool aPrivateBrowsing);
-
   void DispatchEvent(const CookieListItem& aItem, bool aDeletedEvent);
 
   
@@ -46,8 +43,6 @@ class CookieStoreNotifier final : public nsIObserver {
 
   nsCString mBaseDomain;
   OriginAttributes mOriginAttributes;
-
-  RefPtr<nsISerialEventTarget> mEventTarget;
 
   nsTArray<RefPtr<Event>> mDelayedDOMEvents;
 };
