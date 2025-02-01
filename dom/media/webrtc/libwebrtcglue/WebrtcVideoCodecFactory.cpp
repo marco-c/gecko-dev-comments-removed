@@ -72,14 +72,21 @@ std::unique_ptr<webrtc::VideoEncoder> WebrtcVideoEncoderFactory::Create(
   switch (type) {
     
     
+    
+    
+    case webrtc::VideoCodecType::kVideoCodecH264:
+      if (StaticPrefs::media_webrtc_simulcast_h264_enabled()) {
+        return std::make_unique<webrtc::SimulcastEncoderAdapter>(
+            aEnv, mInternalFactory.get(), nullptr, aFormat);
+      }
+      break;
     case webrtc::VideoCodecType::kVideoCodecVP8:
-      
-      
       return std::make_unique<webrtc::SimulcastEncoderAdapter>(
           aEnv, mInternalFactory.get(), nullptr, aFormat);
     default:
-      return mInternalFactory->Create(aEnv, aFormat);
+      break;
   }
+  return mInternalFactory->Create(aEnv, aFormat);
 }
 
 bool WebrtcVideoEncoderFactory::InternalFactory::Supports(
