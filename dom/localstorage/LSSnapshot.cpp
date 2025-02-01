@@ -383,7 +383,12 @@ nsresult LSSnapshot::SetItem(const nsAString& aKey, const nsAString& aValue,
       QM_TRY(MOZ_TO_RESULT(UpdateUsage(delta)), QM_PROPAGATE, QM_NO_CLEANUP,
              ([]() {
                static uint32_t counter = 0u;
-               const bool result = 0u != (counter & (1u + counter));
+               
+               
+               
+               
+               
+               const bool result = 0u == (counter & (1u + counter));
                ++counter;
                return result;
              }));
