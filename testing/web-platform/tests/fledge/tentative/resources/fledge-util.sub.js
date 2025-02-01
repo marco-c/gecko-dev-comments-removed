@@ -782,78 +782,65 @@ function directFromSellerSignalsValidatorCode(uuid, expectedSellerSignals,
 }
 
 let additionalBidHelper = function() {
+
   
   
   
   
   
   
-  function createAdditionalBid(uuid, auctionNonce, seller, buyer, interestGroupName, bidAmount,
-                               additionalBidOverrides = {}) {
+  
+  
+  
+  
+  function createAdditionalBid(uuid, seller, buyer, interestGroupName, bidAmount) {
     return {
       interestGroup: {
         name: interestGroupName,
-        biddingLogicURL: createBiddingScriptURL(
-          {
-            origin: buyer,
-            reportAdditionalBidWin: `sendReportTo("${createBidderReportURL(uuid, interestGroupName)}");`
-          }),
+        biddingLogicURL: createBiddingScriptURL({
+          origin: buyer,
+          reportAdditionalBidWin: `sendReportTo("${
+              createBidderReportURL(uuid, interestGroupName)}");`
+        }),
         owner: buyer
       },
-      bid: {
-        ad: ['metadata'],
-        bid: bidAmount,
-        render: createRenderURL(uuid)
-      },
-      auctionNonce: auctionNonce,
+      bid: {ad: ['metadata'], bid: bidAmount, render: createRenderURL(uuid)},
       seller: seller,
-      ...additionalBidOverrides
+      testMetadata: {}
     };
   }
 
   
-  function getAndMaybeInitializeTestMetadata(additionalBid) {
-    if (additionalBid.testMetadata === undefined) {
-      additionalBid.testMetadata = {};
-    }
-    return additionalBid.testMetadata;
+  
+  
+  
+  function setAuctionNonceInHeader(additionalBid, auctionNonce) {
+    additionalBid.testMetadata.auctionNonce = auctionNonce;
   }
 
+  
+  
+  function setSellerNonceInHeader(additionalBid, sellerNonce) {
+    additionalBid.testMetadata.sellerNonce = sellerNonce;
+  }
+
+  
+  
+  
   
   
   function signWithSecretKeys(additionalBid, secretKeys) {
-    getAndMaybeInitializeTestMetadata(additionalBid).
-        secretKeysForValidSignatures = secretKeys;
+    additionalBid.testMetadata.secretKeysForValidSignatures = secretKeys;
   }
 
+  
+  
   
   
   
   
   function incorrectlySignWithSecretKeys(additionalBid, secretKeys) {
-    getAndMaybeInitializeTestMetadata(additionalBid).
-        secretKeysForInvalidSignatures = secretKeys;
-  }
-
-  
-  function setSellerNonce(additionalBid, sellerNonce) {
-    getAndMaybeInitializeTestMetadata(additionalBid).
-        sellerNonce = sellerNonce;
-  }
-
-  
-  
-  function removeAuctionNonceFromBid(additionalBid) {
-    getAndMaybeInitializeTestMetadata(additionalBid).
-        removeAuctionNonceFromBid = true;
-  }
-
-  
-  
-  
-  function setBidAuctionNonceOverride(additionalBid, bidAuctionNonceOverride) {
-    getAndMaybeInitializeTestMetadata(additionalBid).
-        bidAuctionNonceOverride = bidAuctionNonceOverride;
+    additionalBid.testMetadata.secretKeysForInvalidSignatures = secretKeys;
   }
 
   
@@ -870,25 +857,125 @@ let additionalBidHelper = function() {
   
   
   function addNegativeInterestGroup(additionalBid, negativeInterestGroup) {
-    additionalBid["negativeInterestGroup"] = negativeInterestGroup;
+    additionalBid.negativeInterestGroup = negativeInterestGroup;
   }
 
   
   
-  function addNegativeInterestGroups(additionalBid, negativeInterestGroups,
-                                     joiningOrigin) {
-    additionalBid["negativeInterestGroups"] = {
+  function addNegativeInterestGroups(
+      additionalBid, negativeInterestGroups, joiningOrigin) {
+    additionalBid.negativeInterestGroups = {
       joiningOrigin: joiningOrigin,
       interestGroupNames: negativeInterestGroups
+    };
+  }
+
+  const _ed25519ModulePromise =
+      import('../third_party/noble-ed25519/noble-ed25519.js');
+
+  
+  
+  
+  
+  
+  
+  
+  
+  async function _generateSignature(message, base64EncodedSecretKey) {
+    const ed25519 = await _ed25519ModulePromise;
+    const secretKey =
+        Uint8Array.from(atob(base64EncodedSecretKey), c => c.charCodeAt(0));
+    const [publicKey, signature] = await Promise.all([
+      ed25519.getPublicKeyAsync(secretKey),
+      ed25519.signAsync(new TextEncoder().encode(message), secretKey)
+    ]);
+
+    return {
+      'key': btoa(String.fromCharCode(...publicKey)),
+      'signature': btoa(String.fromCharCode(...signature))
     };
   }
 
   
   
   
+  
+  
+  
+  
+  
+  
+  async function _signAdditionalBid(
+      additionalBid, secretKeysForValidSignatures,
+      secretKeysForInvalidSignatures) {
+    async function _signString(string, secretKeys) {
+      if (!secretKeys) {
+        return [];
+      }
+      return await Promise.all(secretKeys.map(
+             async secretKey => await _generateSignature(
+                  string, secretKey)));
+    }
+
+    assert_not_own_property(
+        additionalBid, 'testMetadata',
+        'testMetadata should be removed from additionalBid before signing');
+    const additionalBidString = JSON.stringify(additionalBid);
+    let [validSignatures, invalidSignatures] = await Promise.all([
+        _signString(additionalBidString, secretKeysForValidSignatures),
+
+        
+        
+        
+        
+        _signString('invalid' + additionalBidString, secretKeysForInvalidSignatures)
+    ]);
+    return {
+        'bid': additionalBidString,
+        'signatures': validSignatures.concat(invalidSignatures)
+    };
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  async function _convertAdditionalBidToResponseHeader(additionalBid) {
+    const testMetadata = additionalBid.testMetadata;
+    delete additionalBid.testMetadata;
+
+    const signedAdditionalBid = await _signAdditionalBid(
+        additionalBid,
+        testMetadata.secretKeysForValidSignatures,
+        testMetadata.secretKeysForInvalidSignatures);
+
+
+    return [
+        testMetadata.auctionNonce,
+        testMetadata.sellerNonce,
+        btoa(JSON.stringify(signedAdditionalBid))
+    ].filter(k => k !== undefined).join(':');
+  }
+
+  
+  
+  
+  
+  
+  
+  
   async function fetchAdditionalBids(seller, additionalBids) {
+    additionalBidHeaderValues = await Promise.all(additionalBids.map(
+        async additionalBid =>
+            await _convertAdditionalBidToResponseHeader(additionalBid)));
+
     const url = new URL(`${seller}${RESOURCE_PATH}additional-bids.py`);
-    url.searchParams.append('additionalBids', JSON.stringify(additionalBids));
+    url.searchParams.append(
+        'additionalBidHeaderValues', JSON.stringify(additionalBidHeaderValues));
     const response = await fetch(url.href, {adAuctionHeaders: true});
 
     assert_equals(response.status, 200, 'Failed to fetch additional bid: ' + await response.text());
@@ -899,11 +986,10 @@ let additionalBidHelper = function() {
 
   return {
     createAdditionalBid: createAdditionalBid,
+    setAuctionNonceInHeader: setAuctionNonceInHeader,
+    setSellerNonceInHeader: setSellerNonceInHeader,
     signWithSecretKeys: signWithSecretKeys,
     incorrectlySignWithSecretKeys: incorrectlySignWithSecretKeys,
-    setSellerNonce: setSellerNonce,
-    removeAuctionNonceFromBid: removeAuctionNonceFromBid,
-    setBidAuctionNonceOverride: setBidAuctionNonceOverride,
     computeBidNonce: computeBidNonce,
     addNegativeInterestGroup: addNegativeInterestGroup,
     addNegativeInterestGroups: addNegativeInterestGroups,

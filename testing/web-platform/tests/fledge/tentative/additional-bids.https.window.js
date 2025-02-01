@@ -76,9 +76,6 @@
 
 
 
-
-
-
 const SINGLE_SELLER_AUCTION_SELLER = window.location.origin;
 
 const ADDITIONAL_BID_SECRET_KEY = 'nWGxne/9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A=';
@@ -93,7 +90,9 @@ subsetTest(promise_test, async test => {
 
   const buyer = OTHER_ORIGIN1;
   const additionalBid = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer, 'horses', 1.99);
+      uuid, seller, buyer, 'horses', 1.99);
+  additionalBid.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid, auctionNonce);
 
   await runAdditionalBidTest(
       test, uuid, [buyer], auctionNonce,
@@ -110,11 +109,15 @@ subsetTest(promise_test, async test => {
 
   const buyer1 = OTHER_ORIGIN1;
   const additionalBid1 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer1, 'horses', 1.99);
+      uuid, seller, buyer1, 'horses', 1.99);
+  additionalBid1.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid1, auctionNonce);
 
   const buyer2 = OTHER_ORIGIN2;
   const additionalBid2 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer2, 'planes', 2.99);
+      uuid, seller, buyer2, 'planes', 2.99);
+  additionalBid2.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid2, auctionNonce);
 
   await runAdditionalBidTest(
       test, uuid, [buyer1, buyer2], auctionNonce,
@@ -133,11 +136,15 @@ subsetTest(promise_test, async test => {
 
   const buyer1 = OTHER_ORIGIN1;
   const additionalBid1 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer1, 'horses', 1.99);
+      uuid, seller, buyer1, 'horses', 1.99);
+  additionalBid1.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid1, auctionNonce);
 
   const buyer2 = OTHER_ORIGIN2;
   const additionalBid2 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer2, 'planes', 2.99);
+      uuid, seller, buyer2, 'planes', 2.99);
+  additionalBid2.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid2, auctionNonce);
 
   await runAdditionalBidTest(
     test, uuid, [buyer1, buyer2], auctionNonce,
@@ -153,20 +160,19 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
-  const auctionNonce = await navigator.createAuctionNonce();
+  const auctionNonceInHeader = await navigator.createAuctionNonce();
   const auctionNonceInBid = crypto.randomUUID();
   const seller = SINGLE_SELLER_AUCTION_SELLER;
 
   const buyer = OTHER_ORIGIN1;
   const additionalBid = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer, 'horses', 1.99);
-  additionalBidHelper.setBidAuctionNonceOverride(
-      additionalBid, auctionNonceInBid);
+      uuid, seller, buyer, 'horses', 1.99);
+  additionalBid.additionalBid = auctionNonceInBid;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid, auctionNonceInHeader);
 
   await runAdditionalBidTestNoWinner(
-      test, uuid, [buyer], auctionNonce,
-      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]),
-      0);
+      test, uuid, [buyer], auctionNonceInHeader,
+      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]));
 }, 'single valid additional bid with wrong auctionNonce in bid');
 
 
@@ -178,39 +184,39 @@ subsetTest(promise_test, async test => {
 
   const buyer = OTHER_ORIGIN1;
   const additionalBid = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer, 'horses', 1.99);
-  additionalBidHelper.removeAuctionNonceFromBid(additionalBid);
+      uuid, seller, buyer, 'horses', 1.99);
+  
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid, auctionNonce);
 
   await runAdditionalBidTestNoWinner(
       test, uuid, [buyer], auctionNonce,
-      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]),
-      0);
+      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]));
 }, 'single valid additional bid with no auctionNonce in bid');
 
 
 
 
+
+
+
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   const auctionNonce = await navigator.createAuctionNonce();
   const sellerNonce = crypto.randomUUID();
-  const bidNonce =
-      await additionalBidHelper.computeBidNonce(auctionNonce, sellerNonce);
   const seller = SINGLE_SELLER_AUCTION_SELLER;
-  const additionalBidOverrides = {
-    bidNonce: bidNonce,
-  };
 
   const buyer = OTHER_ORIGIN1;
   const additionalBid = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer, 'horses', 1.99,
-       additionalBidOverrides);
+      uuid, seller, buyer, 'horses', 1.99);
+  additionalBid.bidNonce =
+      await additionalBidHelper.computeBidNonce(auctionNonce, sellerNonce);
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid, auctionNonce);
+  
 
   await runAdditionalBidTestNoWinner(
       test, uuid, [buyer], auctionNonce,
-      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]),
-      0);
-}, 'single valid additional bid with auctionNonce and bidNonce in bid (but no seller nonce)');
+      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]));
+}, 'single valid additional bid with bidNonce in bid but no sellerNonce in header');
 
 
 
@@ -218,46 +224,23 @@ subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   const auctionNonce = await navigator.createAuctionNonce();
   const sellerNonce = crypto.randomUUID();
-  const bidNonce =
-      await additionalBidHelper.computeBidNonce(auctionNonce, sellerNonce);
   const seller = SINGLE_SELLER_AUCTION_SELLER;
-  const additionalBidOverrides = {
-    bidNonce: bidNonce,
-  };
 
   const buyer = OTHER_ORIGIN1;
   const additionalBid = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer, 'horses', 1.99,
-       additionalBidOverrides);
-  additionalBidHelper.setSellerNonce(additionalBid, sellerNonce);
-  additionalBidHelper.removeAuctionNonceFromBid(additionalBid);
+      uuid, seller, buyer, 'horses', 1.99);
+  additionalBid.bidNonce =
+      await additionalBidHelper.computeBidNonce(auctionNonce, sellerNonce);
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid, auctionNonce);
+  additionalBidHelper.setSellerNonceInHeader(additionalBid, sellerNonce);
 
   await runAdditionalBidTest(
       test, uuid, [buyer], auctionNonce,
       additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]),
       0,
       'horses');
-}, 'single valid additional bid with seller nonce');
+}, 'single valid additional bid with bidNonce and sellerNonce');
 
-
-
-
-subsetTest(promise_test, async test => {
-  const uuid = generateUuid(test);
-  const auctionNonce = await navigator.createAuctionNonce();
-  const sellerNonce = crypto.randomUUID();
-  const seller = SINGLE_SELLER_AUCTION_SELLER;
-
-  const buyer = OTHER_ORIGIN1;
-  const additionalBid = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer, 'horses', 1.99);
-  additionalBidHelper.setSellerNonce(additionalBid, sellerNonce);
-
-  await runAdditionalBidTestNoWinner(
-      test, uuid, [buyer], auctionNonce,
-      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]),
-      0);
-}, 'single additional bid with seller nonce with no bidNonce');
 
 
 
@@ -270,15 +253,16 @@ subsetTest(promise_test, async test => {
 
   const buyer = OTHER_ORIGIN1;
   const additionalBid = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer, 'horses', 1.99);
-  additionalBidHelper.setSellerNonce(additionalBid, sellerNonce);
-  additionalBidHelper.removeAuctionNonceFromBid(additionalBid);
+      uuid, seller, buyer, 'horses', 1.99);
+  additionalBid.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid, auctionNonce);
+  additionalBidHelper.setSellerNonceInHeader(additionalBid, sellerNonce);
 
   await runAdditionalBidTestNoWinner(
       test, uuid, [buyer], auctionNonce,
-      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]),
-      0);
-}, 'single additional bid with seller nonce with no bidNonce or auctionNonce');
+      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]));
+}, 'single additional bid with sellerNonce in the header but auctionNonce in the bid');
+
 
 
 
@@ -287,25 +271,69 @@ subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   const auctionNonce = await navigator.createAuctionNonce();
   const sellerNonce = crypto.randomUUID();
+  const seller = SINGLE_SELLER_AUCTION_SELLER;
+
+  const buyer = OTHER_ORIGIN1;
+  const additionalBid = additionalBidHelper.createAdditionalBid(
+      uuid, seller, buyer, 'horses', 1.99);
   
-  const bidNonce = 'ID01Nr1irTOscLfqPU9eELbVLr0Mt1goQaBTrrtxhqM=';
-  const seller = SINGLE_SELLER_AUCTION_SELLER;
-  const additionalBidOverrides = {
-    bidNonce: bidNonce,
-  };
-
-  const buyer = OTHER_ORIGIN1;
-  const additionalBid = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer, 'horses', 1.99,
-       additionalBidOverrides);
-  additionalBidHelper.setSellerNonce(additionalBid, sellerNonce);
-  additionalBidHelper.removeAuctionNonceFromBid(additionalBid);
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid, auctionNonce);
+  additionalBidHelper.setSellerNonceInHeader(additionalBid, sellerNonce);
 
   await runAdditionalBidTestNoWinner(
       test, uuid, [buyer], auctionNonce,
-      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]),
-      0);
-}, 'single invalid additional bid with seller nonce');
+      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]));
+}, 'single additional bid with sellerNonce in the header but no bidNonce or ' +
+   'auctionNonce in the bid');
+
+
+
+
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  const auctionNonce = await navigator.createAuctionNonce();
+  const sellerNonce = crypto.randomUUID();
+  const seller = SINGLE_SELLER_AUCTION_SELLER;
+
+  const buyer = OTHER_ORIGIN1;
+  const additionalBid = additionalBidHelper.createAdditionalBid(
+      uuid, seller, buyer, 'horses', 1.99);
+  additionalBid.auctionNonce = auctionNonce;
+  additionalBid.bidNonce =
+      await additionalBidHelper.computeBidNonce(auctionNonce, sellerNonce);
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid, auctionNonce);
+  additionalBidHelper.setSellerNonceInHeader(additionalBid, sellerNonce);
+
+  await runAdditionalBidTestNoWinner(
+      test, uuid, [buyer], auctionNonce,
+      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]));
+}, 'single additional bid with sellerNonce in the header but with both ' +
+   ' bidNonce and auctionNonce in the bid');
+
+
+
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  const auctionNonce = await navigator.createAuctionNonce();
+  const sellerNonce = crypto.randomUUID();
+  const seller = SINGLE_SELLER_AUCTION_SELLER;
+
+  const buyer = OTHER_ORIGIN1;
+  const additionalBid = additionalBidHelper.createAdditionalBid(
+      uuid, seller, buyer, 'horses', 1.99);
+  
+  
+  additionalBid.bidNonce = await additionalBidHelper.computeBidNonce(
+      auctionNonce, crypto.randomUUID());
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid, auctionNonce);
+  additionalBidHelper.setSellerNonceInHeader(additionalBid, sellerNonce);
+
+  await runAdditionalBidTestNoWinner(
+      test, uuid, [buyer], auctionNonce,
+      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]));
+}, 'single additional bid with invalid bidNonce');
 
 
 
@@ -314,31 +342,23 @@ subsetTest(promise_test, async test => {
   const auctionNonce = await navigator.createAuctionNonce();
   const sellerNonce1 = crypto.randomUUID();
   const sellerNonce2 = crypto.randomUUID();
-  const bidNonce1 =
-      await additionalBidHelper.computeBidNonce(auctionNonce, sellerNonce1);
-  const bidNonce2 =
-      await additionalBidHelper.computeBidNonce(auctionNonce, sellerNonce2);
   const seller = SINGLE_SELLER_AUCTION_SELLER;
-  const additionalBidOverrides1 = {
-    bidNonce: bidNonce1,
-  };
-  const additionalBidOverrides2 = {
-    bidNonce: bidNonce2,
-  };
 
   const buyer1 = OTHER_ORIGIN1;
   const additionalBid1 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer1, 'horses', 1.99,
-       additionalBidOverrides1);
-  additionalBidHelper.setSellerNonce(additionalBid1, sellerNonce1);
-  additionalBidHelper.removeAuctionNonceFromBid(additionalBid1);
+      uuid, seller, buyer1, 'horses', 1.99);
+  additionalBid1.bidNonce =
+      await additionalBidHelper.computeBidNonce(auctionNonce, sellerNonce1);
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid1, auctionNonce);
+  additionalBidHelper.setSellerNonceInHeader(additionalBid1, sellerNonce1);
 
   const buyer2 = OTHER_ORIGIN2;
   const additionalBid2 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer2, 'planes', 2.99,
-       additionalBidOverrides2);
-  additionalBidHelper.setSellerNonce(additionalBid2, sellerNonce2);
-  additionalBidHelper.removeAuctionNonceFromBid(additionalBid2);
+      uuid, seller, buyer2, 'planes', 2.99);
+  additionalBid2.bidNonce =
+      await additionalBidHelper.computeBidNonce(auctionNonce, sellerNonce2);
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid2, auctionNonce);
+  additionalBidHelper.setSellerNonceInHeader(additionalBid2, sellerNonce2);
 
   await runAdditionalBidTest(
       test, uuid, [buyer1, buyer2], auctionNonce,
@@ -346,60 +366,7 @@ subsetTest(promise_test, async test => {
           seller, [additionalBid1, additionalBid2]),
       1.99,
       'planes');
-}, 'two valid additional bids using seller nonce');
-
-
-
-
-subsetTest(promise_test, async test => {
-  const uuid = generateUuid(test);
-  const auctionNonce = await navigator.createAuctionNonce();
-  const sellerNonce = crypto.randomUUID();
-  const bidNonce =
-      await additionalBidHelper.computeBidNonce(auctionNonce, sellerNonce);
-  const seller = SINGLE_SELLER_AUCTION_SELLER;
-  const additionalBidOverrides = {
-    bidNonce: bidNonce,
-  };
-
-  const buyer = OTHER_ORIGIN1;
-  const additionalBid = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer, 'horses', 1.99,
-       additionalBidOverrides);
-  additionalBidHelper.setSellerNonce(additionalBid, sellerNonce);
-  
-
-  await runAdditionalBidTestNoWinner(
-      test, uuid, [buyer], auctionNonce,
-      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]),
-      0);
-}, 'single additional bid with seller nonce, but also with auctionNonce in bid');
-
-
-
-
-subsetTest(promise_test, async test => {
-  const uuid = generateUuid(test);
-  const auctionNonce = await navigator.createAuctionNonce();
-  const sellerNonce = crypto.randomUUID();
-  const bidNonce =
-      await additionalBidHelper.computeBidNonce(auctionNonce, sellerNonce);
-  const seller = SINGLE_SELLER_AUCTION_SELLER;
-  const additionalBidOverrides = {
-    bidNonce: bidNonce,
-  };
-
-  const buyer = OTHER_ORIGIN1;
-  const additionalBid = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer, 'horses', 1.99,
-       additionalBidOverrides);
-  additionalBidHelper.setSellerNonce(additionalBid, sellerNonce);
-
-  await runAdditionalBidTestNoWinner(
-      test, uuid, [buyer], auctionNonce,
-      additionalBidHelper.fetchAdditionalBids(seller, [additionalBid]),
-      0);
-}, 'single valid additional bid with auctionNonce and bidNonce in bid (with seller nonce)');
+}, 'two valid additional bids using distinct bidNonces and sellerNonces');
 
 
 
@@ -412,7 +379,9 @@ subsetTest(promise_test, async test => {
 
   const buyer = OTHER_ORIGIN1;
   const additionalBid = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer, 'planes', 2.99);
+      uuid, seller, buyer, 'planes', 2.99);
+  additionalBid.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid, auctionNonce);
   additionalBidHelper.addNegativeInterestGroup(
       additionalBid, negativeInterestGroupName);
   additionalBidHelper.signWithSecretKeys(
@@ -442,11 +411,15 @@ subsetTest(promise_test, async test => {
 
   const buyer1 = OTHER_ORIGIN1;
   const additionalBid1 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer1, 'horses', 1.99);
+      uuid, seller, buyer1, 'horses', 1.99);
+  additionalBid1.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid1, auctionNonce);
 
   const buyer2 = OTHER_ORIGIN2;
   const additionalBid2 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer2, 'planes', 2.99);
+      uuid, seller, buyer2, 'planes', 2.99);
+  additionalBid2.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid2, auctionNonce);
   additionalBidHelper.addNegativeInterestGroup(
       additionalBid2, negativeInterestGroupName);
   additionalBidHelper.signWithSecretKeys(
@@ -462,7 +435,7 @@ subsetTest(promise_test, async test => {
     0,
     'horses');
 }, 'higher additional bid is filtered by negative targeting, so ' +
-   'lower additional bid win');
+   'lower additional bid wins');
 
 
 
@@ -476,11 +449,15 @@ subsetTest(promise_test, async test => {
 
   const buyer1 = OTHER_ORIGIN1;
   const additionalBid1 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer1, 'horses', 1.99);
+      uuid, seller, buyer1, 'horses', 1.99);
+  additionalBid1.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid1, auctionNonce);
 
   const buyer2 = OTHER_ORIGIN2;
   const additionalBid2 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer2, 'planes', 2.99);
+      uuid, seller, buyer2, 'planes', 2.99);
+  additionalBid2.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid2, auctionNonce);
   additionalBidHelper.addNegativeInterestGroup(
       additionalBid2, negativeInterestGroupName);
 
@@ -508,11 +485,15 @@ subsetTest(promise_test, async test => {
 
   const buyer1 = OTHER_ORIGIN1;
   const additionalBid1 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer1, 'horses', 1.99);
+      uuid, seller, buyer1, 'horses', 1.99);
+  additionalBid1.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid1, auctionNonce);
 
   const buyer2 = OTHER_ORIGIN2;
   const additionalBid2 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer2, 'planes', 2.99);
+      uuid, seller, buyer2, 'planes', 2.99);
+  additionalBid2.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid2, auctionNonce);
   additionalBidHelper.addNegativeInterestGroup(
       additionalBid2, negativeInterestGroupName);
   additionalBidHelper.incorrectlySignWithSecretKeys(
@@ -541,11 +522,15 @@ subsetTest(promise_test, async test => {
 
   const buyer1 = OTHER_ORIGIN1;
   const additionalBid1 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer1, 'horses', 1.99);
+      uuid, seller, buyer1, 'horses', 1.99);
+  additionalBid1.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid1, auctionNonce);
 
   const buyer2 = OTHER_ORIGIN2;
   const additionalBid2 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer2, 'planes', 2.99);
+      uuid, seller, buyer2, 'planes', 2.99);
+  additionalBid2.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid2, auctionNonce);
   additionalBidHelper.addNegativeInterestGroups(
       additionalBid2, [negativeInterestGroupName1, negativeInterestGroupName2],
       window.location.origin);
@@ -575,11 +560,15 @@ subsetTest(promise_test, async test => {
 
   const buyer1 = OTHER_ORIGIN1;
   const additionalBid1 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer1, 'horses', 1.99);
+      uuid, seller, buyer1, 'horses', 1.99);
+  additionalBid1.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid1, auctionNonce);
 
   const buyer2 = OTHER_ORIGIN2;
   const additionalBid2 = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer2, 'planes', 2.99);
+      uuid, seller, buyer2, 'planes', 2.99);
+  additionalBid2.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid2, auctionNonce);
   additionalBidHelper.addNegativeInterestGroups(
       additionalBid2, [negativeInterestGroupName1, negativeInterestGroupName2],
       OTHER_ORIGIN1);
@@ -606,7 +595,9 @@ subsetTest(promise_test, async test => {
 
   const buyer = OTHER_ORIGIN1;
   const additionalBid = additionalBidHelper.createAdditionalBid(
-      uuid, auctionNonce, seller, buyer, 'horses', 1.99);
+      uuid, seller, buyer, 'horses', 1.99);
+  additionalBid.auctionNonce = auctionNonce;
+  additionalBidHelper.setAuctionNonceInHeader(additionalBid, auctionNonce);
 
   let renderURL = createRenderURL(uuid);
   await runBasicFledgeTestExpectingWinner(
