@@ -31,9 +31,22 @@ import { memoizeableAction } from "../../utils/memoizableAction";
 
 import DevToolsUtils from "devtools/shared/DevToolsUtils";
 
+
+
+
 const LINE_BREAK_REGEX = /\r\n?|\n|\u2028|\u2029/g;
+function sanitizeLineBreaks(str) {
+  return str.replace(LINE_BREAK_REGEX, "\n");
+}
+
+
+
+
+
+
+const SIMPLE_LINE_BREAK_REGEX = /\n/g;
 function matchAllLineBreaks(str) {
-  return Array.from(str.matchAll(LINE_BREAK_REGEX));
+  return Array.from(str.matchAll(SIMPLE_LINE_BREAK_REGEX));
 }
 
 function getPrettyOriginalSourceURL(generatedSource) {
@@ -117,7 +130,11 @@ async function prettyPrintHtmlFile({
 }) {
   const url = getPrettyOriginalSourceURL(generatedSource);
   const contentValue = content.value;
-  const htmlFileText = contentValue.value;
+
+  
+  
+  
+  const htmlFileText = sanitizeLineBreaks(contentValue.value);
   const prettyPrintWorkerResult = { code: htmlFileText };
 
   const allLineBreaks = matchAllLineBreaks(htmlFileText);
