@@ -618,12 +618,18 @@ class TargetCommand extends EventEmitter {
     if (this.listenForWorkers && !types.includes(TargetCommand.TYPES.WORKER)) {
       types.push(TargetCommand.TYPES.WORKER);
     }
+
+    
+    
+    
     if (
       this.listenForWorkers &&
+      this.descriptorFront.isBrowserProcessDescriptor &&
       !types.includes(TargetCommand.TYPES.SHARED_WORKER)
     ) {
       types.push(TargetCommand.TYPES.SHARED_WORKER);
     }
+
     if (
       this.listenForServiceWorkers &&
       !types.includes(TargetCommand.TYPES.SERVICE_WORKER)

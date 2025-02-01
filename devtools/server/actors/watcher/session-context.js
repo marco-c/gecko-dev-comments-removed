@@ -147,7 +147,10 @@ function getWatcherSupportedTargets(type) {
     [Targets.TYPES.WORKER]: true,
     [Targets.TYPES.SERVICE_WORKER]:
       type == SESSION_TYPES.BROWSER_ELEMENT || type == SESSION_TYPES.ALL,
+
+    
     [Targets.TYPES.SHARED_WORKER]: type == SESSION_TYPES.ALL,
+
     
     
     [Targets.TYPES.CONTENT_SCRIPT]: type == SESSION_TYPES.BROWSER_ELEMENT,
