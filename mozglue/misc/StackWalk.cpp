@@ -996,7 +996,7 @@ static _Unwind_Reason_Code unwind_callback(struct _Unwind_Context* context,
   _Unwind_Reason_Code ret = _URC_NO_REASON;
   unwind_info* info = static_cast<unwind_info*>(closure);
   void* pc = reinterpret_cast<void*>(_Unwind_GetIP(context));
-#    if defined(HAVE___LIBC_STACK_END) && defined(__aarch64__)
+#    if HAVE___LIBC_STACK_END && defined(__aarch64__)
   
   
   
