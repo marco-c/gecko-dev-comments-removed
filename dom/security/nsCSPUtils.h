@@ -706,6 +706,10 @@ class nsCSPPolicy {
     return mDeliveredViaMetaTag;
   }
 
+  inline bool hasRequireTrustedTypesForDirective() const {
+    return mHasRequireTrustedTypesForDirective;
+  }
+
   inline void setReportOnlyFlag(bool aFlag) { mReportOnly = aFlag; }
 
   
