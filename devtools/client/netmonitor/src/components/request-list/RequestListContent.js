@@ -188,9 +188,11 @@ class RequestListContent extends Component {
     
     
     requestAnimationFrame(() => {
-      const parent = this.refs.scrollEl.parentNode;
-      this.refs.scrollEl.style.width = parent.offsetWidth + "px";
-      this.refs.scrollEl.style.height = parent.offsetHeight + "px";
+      if (document.visibilityState == "visible") {
+        const parent = this.refs.scrollEl.parentNode;
+        this.refs.scrollEl.style.width = parent.offsetWidth + "px";
+        this.refs.scrollEl.style.height = parent.offsetHeight + "px";
+      }
     });
   }
 
