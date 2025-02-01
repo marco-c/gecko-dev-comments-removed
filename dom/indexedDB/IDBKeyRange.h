@@ -31,7 +31,7 @@ namespace indexedDB {
 class SerializedKeyRange;
 }  
 
-class IDBKeyRange : public nsISupports {
+class IDBKeyRange {
  protected:
   nsCOMPtr<nsISupports> mGlobal;
   indexedDB::Key mLower;
@@ -47,8 +47,8 @@ class IDBKeyRange : public nsISupports {
   bool mRooted : 1;
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(IDBKeyRange)
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(IDBKeyRange)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(IDBKeyRange)
 
   
   static void FromJSVal(JSContext* aCx, JS::Handle<JS::Value> aVal,
