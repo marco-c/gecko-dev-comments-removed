@@ -22,7 +22,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoSystemStateListener;
@@ -644,6 +646,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new PrefWithoutDefault<>("network.trr.mode");
    final PrefWithoutDefault<String> mTrustedRecursiveResolverUri =
       new PrefWithoutDefault<>("network.trr.uri");
+   final PrefWithoutDefault<String> mTrustedRecursiveResolverExcludedDomains =
+      new PrefWithoutDefault<>("network.trr.excluded-domains");
    final PrefWithoutDefault<Integer> mLargeKeepalivefactor =
       new PrefWithoutDefault<>("network.http.largeKeepaliveFactor");
    final Pref<Integer> mProcessCount = new Pref<>("dom.ipc.processCount", 2);
@@ -1914,6 +1918,32 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public @NonNull GeckoRuntimeSettings setTrustedRecursiveResolverUri(final @NonNull String uri) {
     mTrustedRecursiveResolverUri.commit(uri);
+    return this;
+  }
+
+  
+
+
+
+
+  public @NonNull List<String> getTrustedRecursiveResolverExcludedDomains() {
+    final String domains = mTrustedRecursiveResolverExcludedDomains.get();
+    if (domains.isEmpty()) {
+      return List.of();
+    }
+    return Arrays.asList(domains.split("[\\s,]+"));
+  }
+
+  
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setTrustedRecursiveResolverExcludedDomains(
+      final @NonNull List<String> domains) {
+    mTrustedRecursiveResolverExcludedDomains.commit(String.join(",", domains));
     return this;
   }
 
