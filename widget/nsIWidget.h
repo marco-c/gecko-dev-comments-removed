@@ -1890,6 +1890,11 @@ class nsIWidget : public nsISupports {
   
 
 
+  virtual LayersId GetLayersId() const = 0;
+
+  
+
+
 
   virtual CompositorBridgeChild* GetRemoteRenderer() { return nullptr; }
 
