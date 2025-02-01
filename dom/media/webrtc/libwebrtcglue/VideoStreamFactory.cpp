@@ -242,13 +242,6 @@ std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
       
     }
 
-    if (mCodecConfig.mName == "H264") {
-      if (mCodecConfig.mEncodingConstraints.maxMbps > 0) {
-        
-        CSFLogError(LOGTAG, "%s H.264 max_mbps not supported yet",
-                    __FUNCTION__);
-      }
-    }
     streams.push_back(video_stream);
   }
 
