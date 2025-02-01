@@ -111,7 +111,9 @@ export function getTracerPreview(target, tokenPos, editor) {
     const resultGrip = result?.getGrip ? result?.getGrip() : result;
 
     const root = {
-      path: expression,
+      
+      
+      path: `${selectedTraceIndex}-${expression}`,
       contents: {
         value: resultGrip,
         front: getFront(result),
