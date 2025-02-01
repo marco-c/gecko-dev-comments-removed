@@ -455,11 +455,6 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
         
         jitScript->resetAllActiveFlags();
-
-        
-        if (options.traceWeakJitScripts) {
-          jitScript->traceWeak(options.traceWeakJitScripts);
-        }
       });
 
   

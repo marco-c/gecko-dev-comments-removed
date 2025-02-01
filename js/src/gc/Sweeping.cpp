@@ -1424,18 +1424,10 @@ void GCRuntime::sweepJitDataOnMainThread(JS::GCContext* gcx) {
   }
 
   
-  
-  
   {
-    gcstats::AutoPhase apdc(stats(), gcstats::PhaseKind::SWEEP_DISCARD_CODE);
-    Zone::DiscardOptions options;
-    options.traceWeakJitScripts = &trc;
+    gcstats::AutoPhase apdc(stats(), gcstats::PhaseKind::SWEEP_JIT_SCRIPTS);
     for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
-      if (!haveDiscardedJITCodeThisSlice && !zone->isPreservingCode()) {
-        zone->forceDiscardJitCode(gcx, options);
-      } else {
-        zone->traceWeakJitScripts(&trc);
-      }
+      zone->traceWeakJitScripts(&trc);
     }
   }
 
@@ -1598,12 +1590,6 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
   }
   cellsToAssertNotGray.ref().clearAndFree();
 #endif
-
-  
-  
-  if (!haveDiscardedJITCodeThisSlice) {
-    js::CancelOffThreadIonCompile(rt, JS::Zone::Sweep);
-  }
 
   
   

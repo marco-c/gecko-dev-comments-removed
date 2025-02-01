@@ -541,9 +541,6 @@ bool RecompileInfo::traceWeak(JSTracer* trc) {
 void JitZone::traceWeak(JSTracer* trc, Zone* zone) {
   MOZ_ASSERT(this == zone->jitZone());
 
-  
-  MOZ_ASSERT(!HasOffThreadIonCompile(zone));
-
   for (WeakHeapPtr<JitCode*>& stub : stubs_) {
     TraceWeakEdge(trc, &stub, "JitZone::stubs_");
   }

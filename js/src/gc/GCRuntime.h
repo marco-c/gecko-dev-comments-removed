@@ -1198,10 +1198,6 @@ class GCRuntime {
   
   MainThreadData<bool> useBackgroundThreads;
 
-  
-  
-  MainThreadData<bool> haveDiscardedJITCodeThisSlice;
-
 #ifdef DEBUG
   
   MainThreadData<bool> hadShutdownGC;
