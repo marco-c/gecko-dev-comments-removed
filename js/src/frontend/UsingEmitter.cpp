@@ -132,14 +132,6 @@ bool DisposalEmitter::prepareForDisposeCapability() {
 
   if (hasAsyncDisposables_) {
     
-    
-    
-    if (!bce_->emit1(JSOp::GetRval)) {
-      
-      return false;
-    }
-
-    
     if (!bce_->emit1(JSOp::False)) {
       
       return false;
@@ -151,12 +143,12 @@ bool DisposalEmitter::prepareForDisposeCapability() {
       return false;
     }
 
-    if (!bce_->emitPickN(4)) {
+    if (!bce_->emitPickN(3)) {
       
       return false;
     }
 
-    if (!bce_->emitPickN(4)) {
+    if (!bce_->emitPickN(3)) {
       
       return false;
     }
@@ -675,20 +667,6 @@ bool DisposalEmitter::emitEnd(EmitterScope& es) {
     return false;
   }
 
-  if (hasAsyncDisposables_) {
-    
-
-    if (!bce_->emitPickN(2)) {
-      
-      return false;
-    }
-
-    if (!bce_->emit1(JSOp::SetRval)) {
-      
-      return false;
-    }
-  }
-
 #ifdef DEBUG
   state_ = State::End;
 #endif
@@ -731,7 +709,7 @@ bool UsingEmitter::prepareForDisposableScopeBody(BlockKind blockKind) {
   
   if (blockKind != BlockKind::ForOf) {
     tryEmitter_.emplace(bce_, TryEmitter::Kind::TryFinally,
-                        TryEmitter::ControlKind::NonSyntactic);
+                        TryEmitter::ControlKind::Disposal);
     if (!tryEmitter_->emitTry()) {
       return false;
     }
@@ -1104,34 +1082,44 @@ bool ForOfDisposalEmitter::emitEnd() {
   return true;
 }
 
-bool UsingEmitter::emitNonLocalJump(EmitterScope* present) {
-  MOZ_ASSERT(state_ == State::DisposableScopeBody);
-  MOZ_ASSERT(present->hasDisposables());
-
-  if (!bce_->emit1(JSOp::False)) {
-    
-    return false;
-  }
-
-  if (!bce_->emit1(JSOp::Undefined)) {
-    
-    return false;
-  }
-
-  if (!emitDisposeResourcesForEnvironment(*present)) {
-    
-    return false;
-  }
-
-  return emitThrowIfException();
-}
-
 bool UsingEmitter::emitEnd() {
   MOZ_ASSERT(state_ == State::DisposableScopeBody);
   EmitterScope* es = bce_->innermostEmitterScopeNoCheck();
   MOZ_ASSERT(es->hasDisposables());
   MOZ_ASSERT(tryEmitter_.isSome());
 
+  if (!tryEmitter_->emitFinally()) {
+    
+    return false;
+  }
+
+  if (!bce_->emitDupAt(tryEmitter_->shouldUpdateRval() ? 1 : 0)) {
+    
+    return false;
+  }
+
+  InternalIfEmitter ifThrowing(bce_);
+
+  if (!ifThrowing.emitThenElse()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::True)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitDupAt(tryEmitter_->shouldUpdateRval() ? 4 : 3)) {
+    
+    return false;
+  }
+
+  if (!ifThrowing.emitElse()) {
+    
+    return false;
+  }
+
   if (!bce_->emit1(JSOp::False)) {
     
     return false;
@@ -1142,57 +1130,47 @@ bool UsingEmitter::emitEnd() {
     return false;
   }
 
-  
-  
-  
+  if (!ifThrowing.emitEnd()) {
+    
+    return false;
+  }
+
   if (!emitDisposeResourcesForEnvironment(*es)) {
     
     return false;
+  }
+
+  if (bce_->sc->isSuspendableContext() &&
+      bce_->sc->asSuspendableContext()->isGenerator()) {
+    
+
+    if (!bce_->emit1(JSOp::Swap)) {
+      
+      return false;
+    }
+
+    if (!bce_->emit1(JSOp::IsGenClosing)) {
+      
+      return false;
+    }
+
+    if (!bce_->emit1(JSOp::Not)) {
+      
+      return false;
+    }
+
+    if (!bce_->emitPickN(2)) {
+      
+      return false;
+    }
+
+    if (!bce_->emit1(JSOp::BitAnd)) {
+      
+      return false;
+    }
   }
 
   if (!emitThrowIfException()) {
-    
-    return false;
-  }
-
-#ifdef DEBUG
-  
-  
-  
-  MOZ_ASSERT(!tryEmitter_->hasControlInfo());
-#endif
-
-  if (!tryEmitter_->emitFinally()) {
-    
-    return false;
-  }
-
-  if (!bce_->emitPickN(2)) {
-    
-    return false;
-  }
-
-  if (!bce_->emitDupAt(1)) {
-    
-    return false;
-  }
-
-  if (!bce_->emit1(JSOp::Swap)) {
-    
-    return false;
-  }
-
-  if (!emitDisposeResourcesForEnvironment(*es)) {
-    
-    return false;
-  }
-
-  if (!bce_->emit1(JSOp::Pop)) {
-    
-    return false;
-  }
-
-  if (!bce_->emitUnpickN(2)) {
     
     return false;
   }

@@ -108,7 +108,17 @@ class MOZ_STACK_CLASS TryEmitter {
   
   
   
-  enum class ControlKind { Syntactic, NonSyntactic };
+  
+  
+  enum class ControlKind {
+    Syntactic,
+    NonSyntactic,
+
+    
+    
+    
+    Disposal,
+  };
 
  private:
   BytecodeEmitter* bce_;
@@ -187,13 +197,14 @@ class MOZ_STACK_CLASS TryEmitter {
     return kind_ == Kind::TryCatchFinally || kind_ == Kind::TryFinally;
   }
 
+  bool requiresControlInfo() const {
+    return controlKind_ == ControlKind::Syntactic ||
+           controlKind_ == ControlKind::Disposal;
+  }
+
   BytecodeOffset offsetAfterTryOp() const {
     return tryOpOffset_ + BytecodeOffsetDiff(JSOpLength_Try);
   }
-
-  
-  
-  bool shouldUpdateRval() const;
 
   
   
@@ -201,6 +212,10 @@ class MOZ_STACK_CLASS TryEmitter {
 
  public:
   TryEmitter(BytecodeEmitter* bce, Kind kind, ControlKind controlKind);
+
+  
+  
+  bool shouldUpdateRval() const;
 
 #ifdef DEBUG
   bool hasControlInfo();
