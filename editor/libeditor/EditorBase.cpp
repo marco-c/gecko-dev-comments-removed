@@ -4132,6 +4132,13 @@ nsresult EditorBase::OnCompositionChange(
     MOZ_ASSERT_IF(mComposition, mComposition->String() == data);
     NotifyEditorObservers(eNotifyEditorObserversOfEnd);
   }
+  
+  
+  
+  else if (StaticPrefs::dom_input_events_dispatch_before_compositionend() &&
+           mDispatchInputEvent && !IsEditActionAborted()) {
+    DispatchInputEvent();
+  }
 
   return EditorBase::ToGenericNSResult(rv);
 }
