@@ -152,10 +152,6 @@ function expectNoPopup() {
 }
 
 async function requestStorageAccessAndExpectSuccess() {
-  const aps = SpecialPowers.Services.prefs.getBoolPref(
-    "privacy.partition.always_partition_third_party_non_cookie_storage"
-  );
-
   
   
   
@@ -165,9 +161,6 @@ async function requestStorageAccessAndExpectSuccess() {
     db.success = resolve;
     db.onerror = reject;
   });
-
-  const hadAccessAlready = await document.hasStorageAccess();
-  const shouldClearIDB = !aps && !hadAccessAlready;
 
   SpecialPowers.wrap(document).notifyUserGestureActivation();
   let p = document.requestStorageAccess();
@@ -182,12 +175,12 @@ async function requestStorageAccessAndExpectSuccess() {
     const req = window.indexedDB.open("rSATest", 1);
     req.onerror = reject;
     req.onupgradeneeded = () => {
-      ok(shouldClearIDB, "iDB was cleared");
+      ok(false, "iDB was cleared");
       req.onsuccess = undefined;
       resolve();
     };
     req.onsuccess = () => {
-      ok(!shouldClearIDB, "iDB was not cleared");
+      ok(true, "iDB was not cleared");
       resolve();
     };
   });
@@ -253,7 +246,7 @@ async function cleanUpData() {
   ok(true, "Deleted all data.");
 }
 
-async function setPreferences(alwaysPartitionStorage = true) {
+async function setPreferences() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["dom.storage_access.auto_grants", true],
@@ -271,7 +264,7 @@ async function setPreferences(alwaysPartitionStorage = true) {
       ],
       [
         "privacy.partition.always_partition_third_party_non_cookie_storage",
-        alwaysPartitionStorage,
+        true,
       ],
       ["privacy.trackingprotection.enabled", false],
       ["privacy.trackingprotection.pbmode.enabled", false],
