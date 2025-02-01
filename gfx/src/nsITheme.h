@@ -159,6 +159,11 @@ class nsITheme : public nsISupports {
   }
 
   
+  virtual mozilla::CSSCoord GetCheckboxRadioBorderWidth() {
+    return mozilla::CSSCoord(1.0f);
+  }
+
+  
 
 
   virtual mozilla::LayoutDeviceIntSize GetMinimumWidgetSize(
