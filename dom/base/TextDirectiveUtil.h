@@ -232,6 +232,18 @@ class TextDirectiveUtil final {
 
   static uint32_t FindCommonSuffix(const nsAString& aFoldedStr1,
                                    const nsAString& aFoldedStr2);
+
+  
+
+
+
+
+
+
+
+
+  static RangeBoundary CreateRangeBoundaryByMovingOffsetFromRangeStart(
+      nsRange* aRange, uint32_t aLogicalOffset);
 };
 }  
 

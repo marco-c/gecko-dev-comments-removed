@@ -51,8 +51,22 @@ class RangeContentCache {
 
 
 
+
+
+
+
+
+
+
+
+
 class TextDirectiveCandidate {
  public:
+  TextDirectiveCandidate(TextDirectiveCandidate&&) = default;
+  TextDirectiveCandidate& operator=(TextDirectiveCandidate&&) = default;
+  TextDirectiveCandidate(const TextDirectiveCandidate&) = delete;
+  TextDirectiveCandidate& operator=(const TextDirectiveCandidate&) = delete;
+
   
 
 
@@ -70,6 +84,69 @@ class TextDirectiveCandidate {
 
   static Result<TextDirectiveCandidate, ErrorResult> CreateFromStartAndEndRange(
       const nsRange* aStartRange, const nsRange* aEndRange);
+
+  
+
+
+
+
+
+  Result<nsTArray<TextDirectiveCandidate>, ErrorResult>
+  CreateNewCandidatesForMatches(
+      const nsTArray<const TextDirectiveCandidate*>& aMatches,
+      RangeContentCache& aRangeContentCache);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Result<nsTArray<TextDirectiveCandidate>, ErrorResult>
+  CreateNewCandidatesForGivenMatch(const TextDirectiveCandidate& aOther,
+                                   RangeContentCache& aRangeContentCache) const;
+
+  
+
+
+
+
+
+  Result<TextDirectiveCandidate, ErrorResult> CloneWith(
+      RefPtr<nsRange>&& aNewPrefixRange, RefPtr<nsRange>&& aNewStartRange,
+      RefPtr<nsRange>&& aNewEndRange, RefPtr<nsRange>&& aNewSuffixRange) const;
+
+  
+
+
+
+
+
+
+  Result<bool, ErrorResult> ThisCandidateMatchesOther(
+      const TextDirectiveCandidate& aOther,
+      RangeContentCache& aRangeContentCache) const;
+
+  
+
+
+
+
+
+
+  nsTArray<const TextDirectiveCandidate*> FilterNonMatchingCandidates(
+      const nsTArray<const TextDirectiveCandidate*>& aMatches,
+      RangeContentCache& aRangeContentCache);
 
   
   bool UseExactMatch() const { return !mEndRange; }
@@ -218,6 +295,7 @@ class TextDirectiveCreator final {
   Document& mDocument;
   RefPtr<nsRange> mInputRange;
   TextDirectiveCandidate mTextDirective;
+  RangeContentCache mRangeContentCache;
 };
 }  
 #endif
