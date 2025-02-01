@@ -31,8 +31,7 @@ class DynamicFpiNavigationHeuristic {
   
   
   static void MaybeGrantStorageAccess(
-      dom::CanonicalBrowsingContext* aBrowsingContext,
-      nsIChannel* aChannel);
+      dom::CanonicalBrowsingContext* aBrowsingContext, nsIChannel* aChannel);
 };
 
 }  
