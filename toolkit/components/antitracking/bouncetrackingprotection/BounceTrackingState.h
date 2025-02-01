@@ -119,6 +119,10 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   [[nodiscard]] nsresult OnStorageAccess(nsIPrincipal* aPrincipal);
 
+  
+  
+  [[nodiscard]] nsresult OnUserActivation(const nsACString& aSiteHost);
+
  private:
   explicit BounceTrackingState();
   virtual ~BounceTrackingState();

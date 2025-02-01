@@ -28,8 +28,10 @@ class ClearDataCallback;
 class OriginAttributes;
 
 namespace dom {
+class CanonicalBrowsingContext;
 class WindowContext;
-}
+class WindowGlobalParent;
+}  
 
 using ClearDataMozPromise =
     MozPromise<RefPtr<BounceTrackingPurgeEntry>, uint32_t, true>;
@@ -61,8 +63,11 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
   
   
   
+  
+  
   [[nodiscard]] static nsresult RecordUserActivation(
-      nsIPrincipal* aPrincipal, Maybe<PRTime> aActivationTime = Nothing());
+      nsIPrincipal* aPrincipal, Maybe<PRTime> aActivationTime = Nothing(),
+      dom::CanonicalBrowsingContext* aTopBrowsingContext = nullptr);
 
   
   

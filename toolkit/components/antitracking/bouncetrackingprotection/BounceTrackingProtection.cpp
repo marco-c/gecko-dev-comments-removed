@@ -402,9 +402,12 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
 }
 
 nsresult BounceTrackingProtection::RecordUserActivation(
-    nsIPrincipal* aPrincipal, Maybe<PRTime> aActivationTime) {
+    nsIPrincipal* aPrincipal, Maybe<PRTime> aActivationTime,
+    dom::CanonicalBrowsingContext* aTopBrowsingContext) {
   MOZ_ASSERT(XRE_IsParentProcess());
   NS_ENSURE_ARG_POINTER(aPrincipal);
+  NS_ENSURE_TRUE(!aTopBrowsingContext || aTopBrowsingContext->IsTop(),
+                 NS_ERROR_INVALID_ARG);
 
   RefPtr<BounceTrackingProtection> btp = GetSingleton();
   
@@ -428,8 +431,26 @@ nsresult BounceTrackingProtection::RecordUserActivation(
   MOZ_ASSERT(globalState);
 
   
-  return globalState->RecordUserActivation(siteHost,
-                                           aActivationTime.valueOr(PR_Now()));
+  rv = globalState->RecordUserActivation(siteHost,
+                                         aActivationTime.valueOr(PR_Now()));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (aTopBrowsingContext) {
+    MOZ_ASSERT(aTopBrowsingContext->IsTop());
+    dom::BrowsingContextWebProgress* webProgress =
+        aTopBrowsingContext->GetWebProgress();
+    NS_ENSURE_TRUE(webProgress, NS_ERROR_FAILURE);
+
+    RefPtr<BounceTrackingState> bounceTrackingState =
+        webProgress->GetBounceTrackingState();
+    
+    
+    
+    NS_ENSURE_TRUE(bounceTrackingState, NS_OK);
+
+    return bounceTrackingState->OnUserActivation(siteHost);
+  }
+  return NS_OK;
 }
 
 nsresult BounceTrackingProtection::RecordUserActivation(
