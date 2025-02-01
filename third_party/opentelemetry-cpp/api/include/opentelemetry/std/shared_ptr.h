@@ -1,0 +1,22 @@
+
+
+
+#pragma once
+
+
+
+#include <memory>  
+
+#include "opentelemetry/version.h"
+
+OPENTELEMETRY_BEGIN_NAMESPACE
+
+namespace nostd
+{
+
+
+template <class... _Types>
+using shared_ptr = std::shared_ptr<_Types...>;
+
+}  
+OPENTELEMETRY_END_NAMESPACE
