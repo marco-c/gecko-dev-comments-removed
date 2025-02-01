@@ -1364,7 +1364,9 @@ pub trait Compositor {
 #[derive(Debug)]
 pub struct CompositorInputLayer {
     
-    pub rect: DeviceIntRect,
+    pub offset: DeviceIntPoint,
+    
+    pub clip_rect: DeviceIntRect,
     
     pub usage: CompositorSurfaceUsage,
     
