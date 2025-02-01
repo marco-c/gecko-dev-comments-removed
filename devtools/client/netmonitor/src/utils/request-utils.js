@@ -191,6 +191,9 @@ function getFileName(baseNameWithQuery) {
 
 function getUrl(url) {
   try {
+    if (url instanceof URL) {
+      return url;
+    }
     return new URL(url);
   } catch (err) {
     return null;
@@ -238,15 +241,15 @@ function getUrlQuery(url) {
 
 
 
-function getUrlBaseNameWithQuery(url) {
-  if (url.startsWith("data:")) {
+function getUrlBaseNameWithQuery(urlObject) {
+  if (urlObject.href.startsWith("data:")) {
     
     
-    return url;
+    return urlObject.href;
   }
 
-  const basename = getUrlBaseName(url);
-  const search = getUrlProperty(url, "search");
+  const basename = getUrlBaseName(urlObject);
+  const search = getUrlProperty(urlObject, "search");
   return basename + getUnicodeUrlPath(search);
 }
 
@@ -286,11 +289,12 @@ function getUrlScheme(url) {
 
 
 function getUrlDetails(url) {
-  const baseNameWithQuery = getUrlBaseNameWithQuery(url);
-  let host = getUrlHost(url);
-  const hostname = getUrlHostName(url);
-  const unicodeUrl = getUnicodeUrl(url);
-  const scheme = getUrlScheme(url);
+  const urlObject = getUrl(url);
+  const baseNameWithQuery = getUrlBaseNameWithQuery(urlObject);
+  let host = getUrlHost(urlObject);
+  const hostname = getUrlHostName(urlObject);
+  const unicodeUrl = getUnicodeUrl(urlObject);
+  const scheme = getUrlScheme(urlObject);
 
   
   

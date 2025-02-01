@@ -79,9 +79,18 @@ function getUnicodeUrlPath(urlPath) {
 
 
 
+
 function getUnicodeUrl(url) {
   try {
-    const { protocol, hostname } = new URL(url);
+    let urlObject;
+    if (typeof url === "string") {
+      urlObject = new URL(url);
+    } else {
+      urlObject = url;
+      url = urlObject.href;
+    }
+
+    const { protocol, hostname } = urlObject;
     if (protocol === "data:") {
       
       return url;
