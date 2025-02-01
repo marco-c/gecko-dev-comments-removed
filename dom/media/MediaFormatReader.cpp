@@ -2419,7 +2419,9 @@ void MediaFormatReader::Update(TrackType aTrack) {
       
       decoder.mTimeThreshold.reset();
       
-      mPreviousDecodedKeyframeTime_us = sNoPreviousDecodedKeyframe;
+      if (aTrack == TrackType::kVideoTrack) {
+        mPreviousDecodedKeyframeTime_us = sNoPreviousDecodedKeyframe;
+      }
     }
     if (time < target.Time() || (target.mDropTarget && target.Contains(time))) {
       LOGV("Internal Seeking: Dropping %s frame time:%f wanted:%f (kf:%d)",
