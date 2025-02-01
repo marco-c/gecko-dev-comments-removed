@@ -11,13 +11,10 @@
 #include "mozilla/Attributes.h"  
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/FileLocation.h"
-#include "mozilla/Maybe.h"  
-#include "mozilla/MemoryReporting.h"
+#include "mozilla/Maybe.h"   
 #include "mozilla/RefPtr.h"  
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadLocal.h"  
-#include "nsIMemoryReporter.h"
-#include "nsISupports.h"
 #include "nsIURI.h"
 #include "nsClassHashtable.h"
 #include "jsapi.h"
@@ -47,10 +44,9 @@ class NonSharedGlobalSyncModuleLoaderScope;
 
 }  
 
-class mozJSModuleLoader final : public nsIMemoryReporter {
+class mozJSModuleLoader final {
  public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIMEMORYREPORTER
+  NS_INLINE_DECL_REFCOUNTING(mozJSModuleLoader);
 
   
   nsresult GetLoadedESModules(nsTArray<nsCString>& aLoadedModules);
