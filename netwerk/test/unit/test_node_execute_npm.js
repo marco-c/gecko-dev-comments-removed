@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+"use strict";
+
+add_task(async function test_socks5_installed() {
+  let id = await NodeServer.fork();
+  
+  
+  equal(
+    await NodeServer.execute(
+      id,
+      `const leftPad = require('left-pad'); leftPad('foo', 5)`
+    ),
+    "  foo"
+  );
+  await NodeServer.kill(id);
+});

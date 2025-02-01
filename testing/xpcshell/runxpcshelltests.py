@@ -1912,6 +1912,33 @@ class XPCShellTests(object):
 
         self.cleanup_dir_list = []
 
+        
+        
+        
+        
+        installNPM = False
+        for test in self.alltests:
+            if "usesNPM" in test:
+                installNPM = True
+                break
+
+        if installNPM:
+            command = "npm ci"
+            working_directory = os.path.join(SCRIPT_DIR, "moz-http2")
+            result = subprocess.run(
+                command,
+                shell=True,
+                cwd=working_directory,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            
+            self.log.info("npm output: " + result.stdout)
+            self.log.info("npm error: " + result.stderr)
+            self.log.info("npm return code: " + str(result.returncode))
+
         kwargs = {
             "appPath": self.appPath,
             "xrePath": self.xrePath,
