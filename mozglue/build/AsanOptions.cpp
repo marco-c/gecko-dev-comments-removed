@@ -4,7 +4,8 @@
 
 
 #include "mozilla/Attributes.h"
-#include "mozilla/Types.h"
+
+#ifndef _MSC_VER  
 
 
 
@@ -63,14 +64,14 @@
 
 
 
-extern "C" MOZ_ASAN_IGNORE MOZ_EXPORT const char* __asan_default_options() {
+extern "C" MOZ_ASAN_IGNORE const char* __asan_default_options() {
   return "allow_user_segv_handler=1:alloc_dealloc_mismatch=0:detect_leaks=0"
-#ifdef MOZ_ASAN_REPORTER
+#  ifdef MOZ_ASAN_REPORTER
          ":malloc_context_size=20"
-#endif
-#ifdef __ANDROID__
+#  endif
+#  ifdef __ANDROID__
          ":fast_unwind_on_check=1:fast_unwind_on_fatal=1"
-#endif
+#  endif
          ":max_free_fill_size=268435456:max_malloc_fill_size=268435456"
          ":malloc_fill_byte=228:free_fill_byte=229"
          ":handle_sigill=1:handle_abort=1:handle_sigtrap=1"
@@ -80,7 +81,7 @@ extern "C" MOZ_ASAN_IGNORE MOZ_EXPORT const char* __asan_default_options() {
 
 
 
-extern "C" MOZ_EXPORT const char* __lsan_default_suppressions() {
+extern "C" const char* __lsan_default_suppressions() {
   return "# Add your suppressions below\n"
 
          
@@ -189,3 +190,5 @@ extern "C" MOZ_EXPORT const char* __lsan_default_suppressions() {
       
       ;  
 }
+
+#endif  

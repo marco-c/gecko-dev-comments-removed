@@ -1,0 +1,16 @@
+
+
+
+
+
+#include "mozilla/Attributes.h"
+
+#ifndef _MSC_VER  
+
+extern "C" const char* __ubsan_default_options() {
+  return "print_stacktrace=1:handle_sigill=1:handle_abort=1:handle_sigtrap=1";
+}
+
+extern "C" const char* __ubsan_default_suppressions() { return ""; }
+
+#endif

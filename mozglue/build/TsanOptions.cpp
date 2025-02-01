@@ -5,7 +5,8 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/TsanOptions.h"
-#include "mozilla/Types.h"
+
+#ifndef _MSC_VER  
 
 
 
@@ -30,7 +31,7 @@
 
 
 
-extern "C" MOZ_EXPORT const char* __tsan_default_suppressions() {
+extern "C" const char* __tsan_default_suppressions() {
   return "# Add your suppressions below\n"
 
          
@@ -322,3 +323,4 @@ extern "C" MOZ_EXPORT const char* __tsan_default_suppressions() {
       ;  
 }
 
+#endif  
