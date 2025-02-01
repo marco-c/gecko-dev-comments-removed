@@ -158,6 +158,25 @@ class TextDirectiveUtil final {
 
 
   static void AdvanceStartToNextNonWhitespacePosition(nsRange& aRange);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static bool NormalizedRangeBoundariesAreEqual(
+      const RangeBoundary& aRangeBoundary1,
+      const RangeBoundary& aRangeBoundary2);
 };
 }  
 
