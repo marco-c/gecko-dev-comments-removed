@@ -19853,14 +19853,6 @@ void CodeGenerator::visitIsNullOrUndefinedAndBranch(
   }
 }
 
-void CodeGenerator::loadJSScriptForBlock(MBasicBlock* block, Register reg) {
-  
-  
-
-  JSScript* script = block->info().script();
-  masm.movePtr(ImmGCPtr(script), reg);
-}
-
 void CodeGenerator::visitHasClass(LHasClass* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register output = ToRegister(ins->output());
