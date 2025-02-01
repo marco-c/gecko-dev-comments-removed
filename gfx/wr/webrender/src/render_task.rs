@@ -1649,10 +1649,8 @@ impl RenderTask {
         source_subregion: LayoutRect,
         target_subregion: LayoutRect,
         prim_subregion: LayoutRect,
-        subregion_to_device_scale_x: f32,
-        subregion_to_device_scale_y: f32,
-        subregion_to_device_offset_x: f32,
-        subregion_to_device_offset_y: f32,
+        surface_rects_clipped: LayoutRect,
+        surface_rects_clipped_local: LayoutRect,
     ) -> RenderTaskId {
         const BUFFER_LIMIT: usize = SVGFE_GRAPH_MAX;
         let mut task_by_buffer_id: [RenderTaskId; BUFFER_LIMIT] = [RenderTaskId::INVALID; BUFFER_LIMIT];
@@ -1700,6 +1698,20 @@ impl RenderTask {
                     0.0, 1.0),
             }
         }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let subregion_to_device_scale_x = surface_rects_clipped.width() / surface_rects_clipped_local.width();
+        let subregion_to_device_scale_y = surface_rects_clipped.height() / surface_rects_clipped_local.height();
+        let subregion_to_device_offset_x = surface_rects_clipped.min.x - (surface_rects_clipped_local.min.x * subregion_to_device_scale_x).floor();
+        let subregion_to_device_offset_y = surface_rects_clipped.min.y - (surface_rects_clipped_local.min.y * subregion_to_device_scale_y).floor();
 
         
         let mut made_dependency_on_source = false;
