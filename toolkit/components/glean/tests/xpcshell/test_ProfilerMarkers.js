@@ -78,6 +78,20 @@ async function runWithProfilerAndGetMarkers(type, func) {
   }
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  markers = markers.filter(marker => marker.id.startsWith("testOnly"));
+
+  
   return markers;
 }
 
@@ -93,18 +107,7 @@ add_task(async function test_fog_counter_markers() {
     Glean.testOnly.mabelsKitchenCounters["1".repeat(72)].add(1);
   });
 
-  
-  
-  
-  
-  
-  let testMarkers = markers.filter(
-    marker =>
-      marker.id == "testOnly.badCode" ||
-      marker.id == "testOnly.mabelsKitchenCounters"
-  );
-
-  Assert.deepEqual(testMarkers, [
+  Assert.deepEqual(markers, [
     {
       type: "IntLikeMetric",
       id: "testOnly.badCode",
@@ -592,19 +595,7 @@ add_task(async function test_fog_memory_distribution() {
     Glean.testOnly.whatDoYouRemember.twenty_years_ago.accumulate(17);
   });
 
-  
-  
-  
-  
-  
-  
-  let testMarkers = markers.filter(
-    marker =>
-      marker.id == "testOnly.doYouRemember" ||
-      marker.id == "testOnly.whatDoYouRemember"
-  );
-
-  Assert.deepEqual(testMarkers, [
+  Assert.deepEqual(markers, [
     {
       type: "DistMetric",
       id: "testOnly.doYouRemember",
@@ -651,15 +642,7 @@ add_task(async function test_fog_custom_distribution() {
     ].accumulateSingleSample(3);
   });
 
-  
-  
-  let testMarkers = markers.filter(
-    marker =>
-      marker.id == "testOnlyIpc.aCustomDist" ||
-      marker.id == "testOnly.mabelsCustomLabelLengths"
-  );
-
-  Assert.deepEqual(testMarkers, [
+  Assert.deepEqual(markers, [
     {
       type: "DistMetric",
       id: "testOnlyIpc.aCustomDist",
@@ -732,16 +715,7 @@ add_task(async function test_fog_timing_distribution() {
     Glean.testOnly.whereHasTheTimeGone.west.accumulateSamples([2000, 8000]); 
   });
 
-  
-  
-  
-  let testMarkers = markers.filter(
-    marker =>
-      marker.id == "testOnly.whatTimeIsIt" ||
-      marker.id == "testOnly.whereHasTheTimeGone"
-  );
-
-  Assert.deepEqual(testMarkers, [
+  Assert.deepEqual(markers, [
     { type: "TimingDist", id: "testOnly.whatTimeIsIt", timer_id: 1 },
     { type: "TimingDist", id: "testOnly.whatTimeIsIt", timer_id: 2 },
     { type: "TimingDist", id: "testOnly.whatTimeIsIt", timer_id: 3 },
@@ -812,6 +786,7 @@ add_task(async function test_fog_quantity() {
     
     Glean.testOnly.buttonJars["1".repeat(72)].set(0);
   });
+
   Assert.deepEqual(markers, [
     { type: "IntLikeMetric", id: "testOnly.meaningOfLife", val: 42 },
     { type: "IntLikeMetric", id: "testOnly.buttonJars", label: "up", val: 2 },
@@ -874,6 +849,7 @@ add_task(async function test_fog_text() {
   let markers = await runWithProfilerAndGetMarkers("StringLikeMetric", () => {
     Glean.testOnlyIpc.aText.set(value);
   });
+
   Assert.deepEqual(markers, [
     { type: "StringLikeMetric", id: "testOnlyIpc.aText", val: value },
   ]);
