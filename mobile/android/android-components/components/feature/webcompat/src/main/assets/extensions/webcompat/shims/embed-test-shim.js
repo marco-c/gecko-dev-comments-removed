@@ -4,18 +4,22 @@
 
 
 
-if (!window.smartblockTikTokShimInitialized) {
+if (!window.smartblockTestShimInitialized) {
   
-  window.smartblockTikTokShimInitialized = true;
+  window.smartblockTestShimInitialized = true;
 
-  const SHIM_ID = "TiktokEmbed";
+  const SHIM_ID = "EmbedTestShim";
 
   
-  const ORIGINAL_URL = "https://www.tiktok.com/embed.js";
+  const ORIGINAL_URL =
+    "https://itisatracker.org/browser/browser/extensions/webcompat/tests/browser/embed_test.js";
 
-  const LOGO_URL = "https://smartblock.firefox.etp/tiktok.svg";
+  
+  const LOGO_URL = "https://smartblock.firefox.etp/instagram.svg";
 
-  let originalEmbedContainers = document.querySelectorAll(".tiktok-embed");
+  let originalEmbedContainers = document.querySelectorAll(
+    ".broken-embed-content"
+  );
   let embedPlaceholders = [];
 
   
@@ -126,6 +130,9 @@ if (!window.smartblockTikTokShimInitialized) {
       const placeholderDiv = document.createElement("div");
       embedPlaceholders.push(placeholderDiv);
 
+      
+      placeholderDiv.classList.add("shimmed-embedded-content");
+
       const shadowRoot = placeholderDiv.attachShadow({ mode: "closed" });
 
       shadowRoot.innerHTML = SMARTBLOCK_PLACEHOLDER_HTML_STRING;
@@ -154,6 +161,13 @@ if (!window.smartblockTikTokShimInitialized) {
 
       sendMessageToAddon("smartblockEmbedReplaced");
     });
+
+    
+    const finishedEvent = new CustomEvent("smartblockEmbedScriptFinished", {
+      bubbles: true,
+      composed: true,
+    });
+    window.dispatchEvent(finishedEvent);
   }
 
   
