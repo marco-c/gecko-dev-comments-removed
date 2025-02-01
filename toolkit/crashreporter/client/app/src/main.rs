@@ -78,7 +78,8 @@ mod test;
 fn main() {
     
     
-    if std::env::args_os()
+    
+    if ::std::env::args_os()
         .nth(1)
         .map(|s| s == "--analyze")
         .unwrap_or(false)
@@ -94,8 +95,8 @@ fn report_main() {
     let log_target = logging::init();
 
     let mut config = Config::new();
-    config.read_from_environment();
     config.log_target = Some(log_target);
+    config.read_from_environment();
 
     let mut config = Arc::new(config);
 
@@ -108,7 +109,7 @@ fn report_main() {
         }
         Err(message) => {
             
-            log::error!("exiting with error: {message}");
+            log::error!("exiting with error: {message:#}");
             if !config.auto_submit {
                 
                 ui::error_dialog(&config, message);
