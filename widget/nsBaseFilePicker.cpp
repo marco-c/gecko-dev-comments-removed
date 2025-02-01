@@ -345,15 +345,15 @@ NS_IMETHODIMP nsBaseFilePicker::SetDisplaySpecialDirectory(
 
 bool nsBaseFilePicker::MaybeBlockFilePicker(
     nsIFilePickerShownCallback* aCallback) {
-  if (!mozilla::StaticPrefs::widget_disable_file_pickers()) {
-    return false;
-  }
+  MOZ_ASSERT(mBrowsingContext);
+  MOZ_ASSERT(XRE_IsParentProcess());
 
-  if (aCallback) {
-    
-    aCallback->Done(nsIFilePicker::returnCancel);
-  }
-  if (mBrowsingContext) {
+  if (mozilla::StaticPrefs::widget_disable_file_pickers()) {
+    if (aCallback) {
+      
+      aCallback->Done(nsIFilePicker::returnCancel);
+    }
+
     RefPtr<Element> topFrameElement = mBrowsingContext->GetTopFrameElement();
     if (topFrameElement) {
       
@@ -361,6 +361,18 @@ bool nsBaseFilePicker::MaybeBlockFilePicker(
           topFrameElement->OwnerDoc(), topFrameElement, u"FilePickerBlocked"_ns,
           mozilla::CanBubble::eYes, mozilla::Cancelable::eNo);
     }
+
+    return true;
+  }
+
+  if (mBrowsingContext->Canonical()->CanOpenModalPicker()) {
+    return false;
+  }
+
+  if (aCallback) {
+    
+    
+    aCallback->Done(nsIFilePicker::returnCancel);
   }
 
   return true;
