@@ -32,10 +32,6 @@ const FETCH_URI = "https://example.com/document-builder.sjs?html=foo";
 const uuid = `${Date.now()}-${Math.random()}`;
 const IMAGE_URI = URL_ROOT_SSL + "test_image.png?" + uuid;
 
-
-
-const ignoreRequestPatterns = "file:///";
-
 add_task(async function testParentProcessRequests() {
   
   
@@ -50,7 +46,13 @@ add_task(async function testParentProcessRequests() {
   const onAvailable = resources => {
     for (const resource of resources) {
       if (resource.resourceType == resourceCommand.TYPES.NETWORK_EVENT) {
-        if (resource.url.startsWith(ignoreRequestPatterns)) {
+        if (!resource.url.startsWith("https://example")) {
+          
+          
+          info(
+            "Skipping network event resource not starting with https://example: " +
+              resource.url
+          );
           return;
         }
         receivedNetworkEvents.push(resource);
