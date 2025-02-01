@@ -2641,6 +2641,10 @@
         delete dragData.shouldCreateGroupOnDrop;
       }
 
+      dragData.dropElement = dropElement;
+      dragData.dropBefore = dropBefore;
+      dragData.animDropElementIndex = newDropElementIndex;
+
       if (
         newDropElementIndex == oldDropElementIndex ||
         
@@ -2648,10 +2652,6 @@
       ) {
         return;
       }
-
-      dragData.dropElement = dropElement;
-      dragData.dropBefore = dropBefore;
-      dragData.animDropElementIndex = newDropElementIndex;
 
       
       
