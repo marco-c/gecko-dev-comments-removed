@@ -39,7 +39,6 @@ pref("security.signed_app_signatures.policy", 2);
 
 pref("security.xfocsp.errorReporting.enabled", true);
 pref("security.xfocsp.errorReporting.automatic", false);
-pref("security.xfocsp.hideOpenInNewWindow", true);
 
 
 

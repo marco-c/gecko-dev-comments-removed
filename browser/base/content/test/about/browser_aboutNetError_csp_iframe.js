@@ -8,71 +8,12 @@ const BLOCKED_PAGE =
   "http://example.org:8000/browser/browser/base/content/test/about/csp_iframe.sjs";
 
 add_task(async function test_csp() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["security.xfocsp.hideOpenInNewWindow", false]],
-  });
-
-  let { iframePageTab, blockedPageTab } = await setupPage(
-    "iframe_page_csp.html",
-    BLOCKED_PAGE
-  );
-
-  let cspBrowser = gBrowser.selectedTab.linkedBrowser;
-
-  
-  await SpecialPowers.spawn(
-    cspBrowser,
-    [BLOCKED_PAGE],
-    async function (cspBlockedPage) {
-      let cookieHeader = content.document.getElementById("strictCookie");
-      let location = content.document.location.href;
-
-      Assert.ok(
-        cookieHeader.textContent.includes("No same site strict cookie header"),
-        "Same site strict cookie has not been set"
-      );
-      Assert.equal(
-        location,
-        cspBlockedPage,
-        "Location of new page is correct!"
-      );
-    }
-  );
-
-  Services.cookies.removeAll();
-  BrowserTestUtils.removeTab(iframePageTab);
-  BrowserTestUtils.removeTab(blockedPageTab);
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-async function setupPage(htmlPageName, blockedPage) {
   let iFramePage =
     getRootDirectory(gTestPath).replace(
       "chrome://mochitests/content",
       
       "http://example.com"
-    ) + htmlPageName;
-
-  
-  let blockedPageTab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    blockedPage
-  );
-  let blockedPageBrowser = blockedPageTab.linkedBrowser;
-
-  let cookies = Services.cookies.getCookiesFromHost(
-    "example.org",
-    blockedPageBrowser.contentPrincipal.originAttributes
-  );
-  let strictCookie = cookies[0];
-
-  is(
-    strictCookie.value,
-    "green",
-    "Same site strict cookie has the expected value"
-  );
-
-  is(strictCookie.sameSite, 2, "The cookie is a same site strict cookie");
+    ) + "iframe_page_csp.html";
 
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
@@ -80,7 +21,7 @@ async function setupPage(htmlPageName, blockedPage) {
   let browserLoaded = BrowserTestUtils.browserLoaded(
     browser,
     true,
-    blockedPage,
+    BLOCKED_PAGE,
     true
   );
 
@@ -100,9 +41,6 @@ async function setupPage(htmlPageName, blockedPage) {
 
   let iframe = browser.browsingContext.children[0];
 
-  let newTabLoaded = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
-
-  
   
   await SpecialPowers.spawn(iframe, [], async function () {
     let doc = content.document;
@@ -111,10 +49,7 @@ async function setupPage(htmlPageName, blockedPage) {
     
     
     
-    let elements = [
-      doc.getElementById("errorLongDesc"),
-      doc.getElementById("openInNewWindowButton"),
-    ];
+    let elements = [doc.getElementById("errorLongDesc")];
     await ContentTaskUtils.waitForCondition(() => {
       return elements.every(elem => !!elem.textContent.trim().length);
     });
@@ -129,29 +64,11 @@ async function setupPage(htmlPageName, blockedPage) {
       "Correct error message found"
     );
 
-    let button = doc.getElementById("openInNewWindowButton");
-    Assert.ok(
-      button.textContent.includes("Open Site in New Window"),
-      "We see the correct button to open the site in a new window"
-    );
-
     Assert.ok(
       learnMoreLinkLocation.includes("xframe-neterror-page"),
       "Correct Learn More URL for CSP error page"
     );
-
-    
-    await EventUtils.synthesizeMouseAtCenter(button, {}, content);
   });
-  info("Button was clicked!");
 
-  
-  await newTabLoaded;
-  info("The new tab has loaded!");
-
-  let iframePageTab = tab;
-  return {
-    iframePageTab,
-    blockedPageTab,
-  };
-}
+  BrowserTestUtils.removeTab(tab);
+});
