@@ -3028,7 +3028,8 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetTargetAPZCForMouseInput(
     const MouseInput& aMouseInput) {
   
   
-  if (aMouseInput.mType != MouseInput::MOUSE_MOVE ||
+  if (!StaticPrefs::apz_mousemove_hittest_optimization_enabled() ||
+      aMouseInput.mType != MouseInput::MOUSE_MOVE ||
       mInputQueue->GetActiveWheelTransaction()) {
     return GetTargetAPZC(aMouseInput.mOrigin);
   }
