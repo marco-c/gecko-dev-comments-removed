@@ -3,6 +3,7 @@
 
 
 
+import pytest
 from failedplatform import FailedPlatform
 from mozunit import main
 
@@ -129,6 +130,37 @@ def test_is_full_fail():
     fp.failures["build_type1"] = {"test_variant1", "test_variant2"}
     fp.failures["build_type2"] = {"test_variant1", "test_variant2"}
     assert fp.is_full_fail()
+
+
+def test_get_cleaned_build_types():
+    """Test get_cleaned_build_types"""
+
+    
+    fp = FailedPlatform({})
+    with pytest.raises(ValueError):
+        fp.get_cleaned_build_type([])
+    with pytest.raises(ValueError):
+        fp.get_cleaned_build_type(["build_type1"])
+    fp = FailedPlatform({"build_type1": []})
+    with pytest.raises(ValueError):
+        fp.get_cleaned_build_type([])
+    with pytest.raises(ValueError):
+        fp.get_cleaned_build_type(["build_type2"])
+
+    
+    fp = FailedPlatform({"build_type1": []})
+    assert fp.get_cleaned_build_type(["build_type1"]) == "build_type1"
+    assert fp.get_cleaned_build_type(["build_type1", "build_type2"]) == "build_type1"
+
+    
+    fp = FailedPlatform({"build_type1": [], "opt": []})
+    assert fp.get_cleaned_build_type(["opt", "build_type1"]) == "build_type1"
+    assert fp.get_cleaned_build_type(["opt"]) == "opt"
+
+    
+    fp = FailedPlatform({"build_type1": [], "build_type2": []})
+    with pytest.raises(ValueError):
+        fp.get_cleaned_build_type(["build_type1", "build_type2"])
 
 
 def test_get_no_variant_conditions():
@@ -275,68 +307,87 @@ def test_get_test_variant_condition():
     )
 
 
+def test_get_cleaned_test_variants():
+    """Test get_cleaned_test_variants"""
+
+    fp = FailedPlatform({})
+    assert fp.get_cleaned_test_variant("build_type1", []) == "no_variant"
+    assert fp.get_cleaned_test_variant("build_type1", ["test_variant1"]) == "no_variant"
+
+    fp = FailedPlatform({"build_type1": ["test_variant1"]})
+    assert fp.get_cleaned_test_variant("build_type1", []) == "no_variant"
+    assert (
+        fp.get_cleaned_test_variant("build_type1", ["test_variant1"]) == "test_variant1"
+    )
+    assert fp.get_cleaned_test_variant("build_type1", ["test_variant2"]) == "no_variant"
+
+    fp = FailedPlatform({"build_type1": ["!fission"]})
+    assert fp.get_cleaned_test_variant("build_type1", ["no-fission"]) == "!fission"
+
+    fp = FailedPlatform({"build_type1": ["test_variant1+test_variant2"]})
+    assert (
+        fp.get_cleaned_test_variant("build_type1", ["test_variant1", "test_variant2"])
+        == "test_variant1+test_variant2"
+    )
+
+
 def test_get_skip_string():
     """Test get_skip_string"""
 
     
-    fp = FailedPlatform({"build_type1": ["no_variant"]})
-    assert fp.get_skip_string(" && ", "build_type1", "no_variant") == ""
+    fp = FailedPlatform({"build_type1": []})
+    assert fp.get_skip_string(" && ", ["build_type1"], []) == ""
 
     fp = FailedPlatform({"build_type1": ["test_variant1"]})
-    assert fp.get_skip_string(" && ", "build_type1", "test_variant1") == ""
+    assert fp.get_skip_string(" && ", ["build_type1"], ["test_variant1"]) == ""
 
     fp = FailedPlatform({"build_type1": ["test_variant1+test_variant2"]})
     assert (
-        fp.get_skip_string(" && ", "build_type1", "test_variant1+test_variant2") == ""
+        fp.get_skip_string(" && ", ["build_type1"], ["test_variant1", "test_variant2"])
+        == ""
     )
 
     
     
-    fp = FailedPlatform({"build_type1": ["no_variant"], "build_type2": ["no_variant"]})
-    assert fp.get_skip_string(" && ", "build_type1", "no_variant") == " && build_type1"
+    fp = FailedPlatform({"build_type1": [], "build_type2": []})
+    assert fp.get_skip_string(" && ", ["build_type1"], []) == " && build_type1"
 
     
     
-    fp = FailedPlatform(
-        {"build_type1": ["no_variant", "test_variant1"], "build_type2": ["no_variant"]}
-    )
+    fp = FailedPlatform({"build_type1": ["test_variant1"], "build_type2": []})
     assert (
-        fp.get_skip_string(" && ", "build_type1", "no_variant")
+        fp.get_skip_string(" && ", ["build_type1"], [])
         == " && build_type1 && !test_variant1"
     )
 
     
-    fp = FailedPlatform(
-        {"build_type1": ["test_variant1"], "build_type2": ["no_variant"]}
-    )
+    fp = FailedPlatform({"build_type1": ["test_variant1"], "build_type2": []})
     assert (
-        fp.get_skip_string(" && ", "build_type1", "test_variant1") == " && build_type1"
+        fp.get_skip_string(" && ", ["build_type1"], ["test_variant1"])
+        == " && build_type1"
     )
 
     fp = FailedPlatform(
-        {"build_type1": ["test_variant1+test_variant2"], "build_type2": ["no_variant"]}
+        {"build_type1": ["test_variant1+test_variant2"], "build_type2": []}
     )
     assert (
-        fp.get_skip_string(" && ", "build_type1", "test_variant1+test_variant2")
+        fp.get_skip_string(" && ", ["build_type1"], ["test_variant1", "test_variant2"])
         == " && build_type1"
     )
 
     
     fp = FailedPlatform(
-        {
-            "build_type1": ["test_variant1", "test_variant2"],
-            "build_type2": ["no_variant"],
-        }
+        {"build_type1": ["test_variant1", "test_variant2"], "build_type2": []}
     )
     assert (
-        fp.get_skip_string(" && ", "build_type1", "test_variant1")
+        fp.get_skip_string(" && ", ["build_type1"], ["test_variant1"])
         == " && build_type1 && test_variant1"
     )
 
     
-    fp = FailedPlatform({"build_type1": ["no_variant"], "build_type2": ["no_variant"]})
-    assert fp.get_skip_string(" && ", "build_type1", "no_variant") == " && build_type1"
-    assert fp.get_skip_string(" && ", "build_type2", "no_variant") == ""
+    fp = FailedPlatform({"build_type1": [], "build_type2": []})
+    assert fp.get_skip_string(" && ", ["build_type1"], []) == " && build_type1"
+    assert fp.get_skip_string(" && ", ["build_type2"], []) == ""
 
     
     fp = FailedPlatform(
@@ -346,29 +397,30 @@ def test_get_skip_string():
         }
     )
     assert (
-        fp.get_skip_string(" && ", "build_type1", "test_variant1+test_variant2")
+        fp.get_skip_string(" && ", ["build_type1"], ["test_variant1", "test_variant2"])
         == " && build_type1"
     )
     assert (
-        fp.get_skip_string(" && ", "build_type2", "test_variant1+test_variant2") == ""
+        fp.get_skip_string(" && ", ["build_type2"], ["test_variant1", "test_variant2"])
+        == ""
     )
 
     fp = FailedPlatform({"build_type1": ["test_variant1", "test_variant2"]})
     assert (
-        fp.get_skip_string(" && ", "build_type1", "test_variant1")
+        fp.get_skip_string(" && ", ["build_type1"], ["test_variant1"])
         == " && build_type1 && test_variant1"
     )
-    assert fp.get_skip_string(" && ", "build_type1", "test_variant2") == ""
+    assert fp.get_skip_string(" && ", ["build_type1"], ["test_variant2"]) == ""
 
     
     fp = FailedPlatform(
-        {"build_type1": ["test_variant1", "no_variant"], "build_type2": ["no_variant"]}
+        {"build_type1": ["test_variant1", "no_variant"], "build_type2": []}
     )
     assert (
-        fp.get_skip_string(" && ", "build_type1", "test_variant1")
+        fp.get_skip_string(" && ", ["build_type1"], ["test_variant1"])
         == " && build_type1 && test_variant1"
     )
-    assert fp.get_skip_string(" && ", "build_type1", "no_variant") == " && build_type1"
+    assert fp.get_skip_string(" && ", ["build_type1"], []) == " && build_type1"
 
     
     fp = FailedPlatform(
@@ -382,26 +434,26 @@ def test_get_skip_string():
         }
     )
     assert (
-        fp.get_skip_string(" && ", "build_type1", "test_variant1")
+        fp.get_skip_string(" && ", ["build_type1"], ["test_variant1"])
         == " && build_type1 && test_variant1 && !test_variant2"
     )
     assert (
-        fp.get_skip_string(" && ", "build_type2", "no_variant")
+        fp.get_skip_string(" && ", ["build_type2"], [])
         == " && build_type2 && !test_variant1 && !test_variant2"
     )
     assert (
-        fp.get_skip_string(" && ", "build_type1", "test_variant2")
+        fp.get_skip_string(" && ", ["build_type1"], ["test_variant2"])
         == " && build_type1 && test_variant2 && !test_variant1"
     )
     assert (
-        fp.get_skip_string(" && ", "build_type1", "test_variant1+test_variant2")
+        fp.get_skip_string(" && ", ["build_type1"], ["test_variant1", "test_variant2"])
         == " && build_type1"
     )
     assert (
-        fp.get_skip_string(" && ", "build_type2", "test_variant1")
+        fp.get_skip_string(" && ", ["build_type2"], ["test_variant1"])
         == " && build_type2 && test_variant1"
     )
-    assert fp.get_skip_string(" && ", "build_type2", "test_variant2") == ""
+    assert fp.get_skip_string(" && ", ["build_type2"], ["test_variant2"]) == ""
 
 
 if __name__ == "__main__":
