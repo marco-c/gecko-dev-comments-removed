@@ -2239,55 +2239,53 @@ bool TypeAnalyzer::adjustPhiInputs(MPhi* phi) {
         continue;
       }
 
+      if (in->isBox() && in->toBox()->input()->type() == phiType) {
+        phi->replaceOperand(i, in->toBox()->input());
+        continue;
+      }
+
       if (!alloc().ensureBallast()) {
         return false;
       }
 
-      if (in->isBox() && in->toBox()->input()->type() == phiType) {
-        phi->replaceOperand(i, in->toBox()->input());
-      } else {
-        MInstruction* replacement;
-        MBasicBlock* predecessor = phi->block()->getPredecessor(i);
+      MBasicBlock* predecessor = phi->block()->getPredecessor(i);
 
-        if (phiType == MIRType::Double && IsFloatType(in->type())) {
-          
+      MInstruction* replacement;
+      if (IsFloatingPointType(phiType) &&
+          IsTypeRepresentableAsDouble(in->type())) {
+        
+        if (phiType == MIRType::Double) {
           replacement = MToDouble::New(alloc(), in);
-        } else if (phiType == MIRType::Float32) {
-          if (in->type() == MIRType::Int32 || in->type() == MIRType::Double) {
-            replacement = MToFloat32::New(alloc(), in);
-          } else {
-            
-            if (in->type() != MIRType::Value) {
-              MBox* box = MBox::New(alloc(), in);
-              predecessor->insertAtEnd(box);
-              in = box;
-            }
-
-            MUnbox* unbox =
-                MUnbox::New(alloc(), in, MIRType::Double, MUnbox::Fallible);
-            unbox->setBailoutKind(BailoutKind::SpeculativePhi);
-            predecessor->insertAtEnd(unbox);
-            replacement = MToFloat32::New(alloc(), in);
-          }
         } else {
-          
-          
-          
-          if (in->type() != MIRType::Value) {
-            MBox* box = MBox::New(alloc(), in);
-            predecessor->insertAtEnd(box);
-            in = box;
-          }
-
-          
-          
-          replacement = MUnbox::New(alloc(), in, phiType, MUnbox::Fallible);
+          MOZ_ASSERT(phiType == MIRType::Float32);
+          replacement = MToFloat32::New(alloc(), in);
+        }
+      } else {
+        
+        
+        if (in->type() != MIRType::Value) {
+          auto* box = MBox::New(alloc(), in);
+          predecessor->insertAtEnd(box);
+          in = box;
         }
 
-        replacement->setBailoutKind(BailoutKind::SpeculativePhi);
-        predecessor->insertAtEnd(replacement);
-        phi->replaceOperand(i, replacement);
+        
+        if (phiType == MIRType::Float32) {
+          
+          auto* unbox =
+              MUnbox::New(alloc(), in, MIRType::Double, MUnbox::Fallible);
+          unbox->setBailoutKind(BailoutKind::SpeculativePhi);
+          predecessor->insertAtEnd(unbox);
+          replacement = MToFloat32::New(alloc(), in);
+        } else {
+          replacement = MUnbox::New(alloc(), in, phiType, MUnbox::Fallible);
+        }
       }
+      MOZ_ASSERT(replacement->type() == phiType);
+
+      replacement->setBailoutKind(BailoutKind::SpeculativePhi);
+      predecessor->insertAtEnd(replacement);
+      phi->replaceOperand(i, replacement);
     }
 
     return true;
