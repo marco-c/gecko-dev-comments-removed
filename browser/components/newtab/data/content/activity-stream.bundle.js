@@ -12152,52 +12152,33 @@ const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state =>
 
 
 
-function ThumbsUpToast({
+function ThumbUpThumbDownToast({
   onDismissClick,
   onAnimationEnd
 }) {
-  return external_React_default().createElement("div", {
-    className: "notification-feed-item is-success",
+  const mozMessageBarRef = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const {
+      current: mozMessageBarElement
+    } = mozMessageBarRef;
+    mozMessageBarElement.addEventListener("message-bar:user-dismissed", onDismissClick, {
+      once: true
+    });
+    return () => {
+      mozMessageBarElement.removeEventListener("message-bar:user-dismissed", onDismissClick);
+    };
+  }, [onDismissClick]);
+  return external_React_default().createElement("moz-message-bar", {
+    type: "success",
+    class: "notification-feed-item",
+    dismissable: true,
+    "data-l10n-id": "newtab-toast-thumbs-up-or-down2",
+    ref: mozMessageBarRef,
     onAnimationEnd: onAnimationEnd
-  }, external_React_default().createElement("div", {
-    className: "icon icon-check-filled icon-themed"
-  }), external_React_default().createElement("div", {
-    className: "notification-feed-item-text",
-    "data-l10n-id": "newtab-toast-thumbs-up-or-down"
-  }), external_React_default().createElement("button", {
-    onClick: onDismissClick,
-    className: "icon icon-dismiss",
-    "data-l10n-id": "newtab-toast-dismiss-button"
-  }));
+  });
 }
 
 ;
-
-
-
-
-
-function ThumbsDownToast({
-  onDismissClick,
-  onAnimationEnd
-}) {
-  return external_React_default().createElement("div", {
-    className: "notification-feed-item is-success",
-    onAnimationEnd: onAnimationEnd
-  }, external_React_default().createElement("div", {
-    className: "icon icon-check-filled icon-themed"
-  }), external_React_default().createElement("div", {
-    className: "notification-feed-item-text",
-    "data-l10n-id": "newtab-toast-thumbs-up-or-down"
-  }), external_React_default().createElement("button", {
-    onClick: onDismissClick,
-    className: "icon icon-dismiss",
-    "data-l10n-id": "newtab-toast-dismiss-button"
-  }));
-}
-
-;
-
 
 
 
@@ -12233,31 +12214,21 @@ function Notifications_Notifications({
   const getToast = (0,external_React_namespaceObject.useCallback)(() => {
     
     const latestToastItem = toastQueue[toastQueue.length - 1];
-    switch (latestToastItem) {
-      case "thumbsDownToast":
-        return external_React_default().createElement(ThumbsDownToast, {
-          onDismissClick: syncHiddenToastData,
-          onAnimationEnd: syncHiddenToastData,
-          key: toastCounter
-        });
-      case "thumbsUpToast":
-        return external_React_default().createElement(ThumbsUpToast, {
-          onDismissClick: syncHiddenToastData,
-          onAnimationEnd: syncHiddenToastData,
-          key: toastCounter
-        });
-      default:
-        throw new Error("No toast found");
+    if (!latestToastItem) {
+      throw new Error("No toast found");
     }
+    return external_React_default().createElement(ThumbUpThumbDownToast, {
+      onDismissClick: syncHiddenToastData,
+      onAnimationEnd: syncHiddenToastData,
+      key: toastCounter
+    });
   }, [syncHiddenToastData, toastCounter, toastQueue]);
   (0,external_React_namespaceObject.useEffect)(() => {
     getToast();
   }, [toastQueue, getToast]);
   return toastQueue.length ? external_React_default().createElement("div", {
     className: "notification-wrapper"
-  }, external_React_default().createElement("ul", {
-    className: "notification-feed"
-  }, getToast())) : "";
+  }, getToast()) : "";
 }
 
 ;
