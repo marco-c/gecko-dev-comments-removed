@@ -272,30 +272,28 @@ class RestyleManager {
     void Put(nsIContent* aContent, ComputedStyle* aComputedStyle) {
       MOZ_ASSERT(aContent);
       PseudoStyleType pseudoType = aComputedStyle->GetPseudoType();
-      
-      
-      
-      if (pseudoType == PseudoStyleType::NotPseudo) {
-        mContents.AppendElement(aContent);
+      if (pseudoType == PseudoStyleType::NotPseudo ||
+          PseudoStyle::IsViewTransitionPseudoElement(pseudoType)) {
+        mContents.AppendElement(aContent->AsElement());
       } else if (pseudoType == PseudoStyleType::before) {
         MOZ_ASSERT(aContent->NodeInfo()->NameAtom() ==
                    nsGkAtoms::mozgeneratedcontentbefore);
-        mBeforeContents.AppendElement(aContent->GetParent());
+        mBeforeContents.AppendElement(aContent->GetParent()->AsElement());
       } else if (pseudoType == PseudoStyleType::after) {
         MOZ_ASSERT(aContent->NodeInfo()->NameAtom() ==
                    nsGkAtoms::mozgeneratedcontentafter);
-        mAfterContents.AppendElement(aContent->GetParent());
+        mAfterContents.AppendElement(aContent->GetParent()->AsElement());
       } else if (pseudoType == PseudoStyleType::marker) {
         MOZ_ASSERT(aContent->NodeInfo()->NameAtom() ==
                    nsGkAtoms::mozgeneratedcontentmarker);
-        mMarkerContents.AppendElement(aContent->GetParent());
+        mMarkerContents.AppendElement(aContent->GetParent()->AsElement());
       }
     }
 
     void StopAnimationsForElementsWithoutFrames();
 
    private:
-    void StopAnimationsWithoutFrame(nsTArray<RefPtr<nsIContent>>& aArray,
+    void StopAnimationsWithoutFrame(nsTArray<RefPtr<Element>>& aArray,
                                     const PseudoStyleRequest& aPseudoRequest);
 
     RestyleManager* mRestyleManager;
@@ -307,10 +305,10 @@ class RestyleManager {
     
     
     
-    nsTArray<RefPtr<nsIContent>> mContents;
-    nsTArray<RefPtr<nsIContent>> mBeforeContents;
-    nsTArray<RefPtr<nsIContent>> mAfterContents;
-    nsTArray<RefPtr<nsIContent>> mMarkerContents;
+    nsTArray<RefPtr<Element>> mContents;
+    nsTArray<RefPtr<Element>> mBeforeContents;
+    nsTArray<RefPtr<Element>> mAfterContents;
+    nsTArray<RefPtr<Element>> mMarkerContents;
   };
 
   
