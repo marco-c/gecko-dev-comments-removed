@@ -38,6 +38,9 @@ class TextDirectiveUtil final {
   }
 
   static Result<nsString, ErrorResult> RangeContentAsString(nsRange* aRange);
+
+  static Result<nsString, ErrorResult> RangeContentAsFoldCase(nsRange* aRange);
+
   
 
 
