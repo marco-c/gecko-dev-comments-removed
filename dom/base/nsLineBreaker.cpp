@@ -443,7 +443,7 @@ void nsLineBreaker::FindHyphenationPoints(nsHyphenator* aHyphenator,
     
     
     
-    using intl::GeneralCategory;
+    using mozilla::intl::GeneralCategory;
     switch (UnicodeProperties::CharType(ch)) {
       case GeneralCategory::Nonspacing_Mark:
       case GeneralCategory::Dash_Punctuation:
