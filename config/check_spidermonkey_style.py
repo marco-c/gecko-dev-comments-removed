@@ -50,6 +50,7 @@ ignored_js_src_dirs = [
     "js/src/gdb/",  
     "js/src/vtune/",  
     "js/src/zydis/",  
+    "js/src/xsum/",  
 ]
 
 
@@ -113,6 +114,7 @@ included_inclnames_to_ignore = set(
         "vtune/VTuneWrapper.h",  
         "wasm/WasmBuiltinModuleGenerated.h",  
         "zydis/ZydisAPI.h",  
+        "xsum/xsum.h",  
     ]
 )
 
