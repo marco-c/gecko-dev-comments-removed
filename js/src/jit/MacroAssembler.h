@@ -6063,9 +6063,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void convertDoubleToInt(FloatRegister src, Register output,
-                          FloatRegister temp, Label* truncateFail, Label* fail,
-                          IntConversionBehavior behavior);
 
   
   
