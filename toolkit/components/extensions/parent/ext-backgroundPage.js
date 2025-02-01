@@ -676,11 +676,9 @@ class BackgroundBuilder {
     let { manifest } = extension;
     extension.backgroundState = BACKGROUND_STATE.STARTING;
 
-    this.isWorker =
-      !!manifest.background.service_worker &&
-      WebExtensionPolicy.backgroundServiceWorkerEnabled;
-
-    let BackgroundClass = this.isWorker ? BackgroundWorker : BackgroundPage;
+    let BackgroundClass = extension.workerBackground
+      ? BackgroundWorker
+      : BackgroundPage;
 
     const bgInstance = new BackgroundClass(extension, manifest.background);
     this.backgroundContextOwner.setBgStateStarting(bgInstance);
@@ -793,7 +791,7 @@ class BackgroundBuilder {
 
       this.idleManager.resetTimer();
 
-      if (this.isWorker) {
+      if (extension.workerBackground) {
         
         return;
       }
@@ -957,7 +955,7 @@ class BackgroundBuilder {
       extension.off("background-script-idle-waituntil", idleWaitUntil);
 
       
-      if (!this.isWorker) {
+      if (!extension.workerBackground) {
         ExtensionTelemetry.eventPageIdleResult.histogramAdd({
           extension,
           category: "suspend",
@@ -1006,7 +1004,7 @@ class BackgroundBuilder {
       if (
         now &&
         
-        !(this.isWorker || extension.persistentBackground)
+        !(extension.workerBackground || extension.persistentBackground)
       ) {
         ExtensionTelemetry.eventPageRunningTime.histogramAdd({
           extension,
