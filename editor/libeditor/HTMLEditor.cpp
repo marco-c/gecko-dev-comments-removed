@@ -5643,7 +5643,7 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
   if (NS_WARN_IF(!aStartOfRightNode.IsInContentNode())) {
     return Err(NS_ERROR_INVALID_ARG);
   }
-  MOZ_ASSERT(aStartOfRightNode.IsSetAndValid());
+  MOZ_DIAGNOSTIC_ASSERT(aStartOfRightNode.IsSetAndValid());
 
   
   AutoTArray<SavedRange, 10> savedRanges;
@@ -5680,23 +5680,21 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
   }
 
   
-  nsIContent* firstChildOfRightNode = aStartOfRightNode.GetChild();
-  IgnoredErrorResult error;
-  parent->InsertBefore(
-      aNewNode, aStartOfRightNode.GetContainer()->GetNextSibling(), error);
-  if (MOZ_UNLIKELY(error.Failed())) {
-    NS_WARNING("nsINode::InsertBefore() failed");
-    return Err(error.StealNSResult());
-  }
+  
+  
 
+  
+  
   MOZ_DIAGNOSTIC_ASSERT_IF(aStartOfRightNode.IsInTextNode(), aNewNode.IsText());
   MOZ_DIAGNOSTIC_ASSERT_IF(!aStartOfRightNode.IsInTextNode(),
                            !aNewNode.IsText());
-
-  
-  
-  if (aStartOfRightNode.IsInTextNode()) {
-    if (!aStartOfRightNode.IsEndOfContainer()) {
+  const nsCOMPtr<nsIContent> firstChildOfRightNode =
+      aStartOfRightNode.GetChild();
+  nsresult rv = [&]() MOZ_NEVER_INLINE_DEBUG MOZ_CAN_RUN_SCRIPT {
+    if (aStartOfRightNode.IsEndOfContainer()) {
+      return NS_OK;  
+    }
+    if (aStartOfRightNode.IsInTextNode()) {
       Text* originalTextNode = aStartOfRightNode.ContainerAs<Text>();
       Text* newTextNode = aNewNode.AsText();
       nsAutoString movingText;
@@ -5721,49 +5719,54 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
       DoSetText(MOZ_KnownLive(*newTextNode), movingText, error);
       NS_WARNING_ASSERTION(!error.Failed(),
                            "EditorBase::DoSetText() failed, but ignored");
+      return NS_OK;
     }
-  }
-  
-  
-  else if (firstChildOfRightNode &&
-           aStartOfRightNode.GetContainer() !=
-               firstChildOfRightNode->GetParentNode()) {
-    NS_WARNING(
-        "The web app interrupted us and touched the DOM tree, we stopped "
-        "splitting anything");
-  } else {
+
     
     
-    if (!firstChildOfRightNode) {
-      
-    }
-    
-    
-    else if (!firstChildOfRightNode->GetPreviousSibling()) {
+    if (!firstChildOfRightNode->GetPreviousSibling()) {
       
       
       nsresult rv = MoveAllChildren(*aStartOfRightNode.GetContainer(),
                                     EditorRawDOMPoint(&aNewNode, 0u));
-      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-        return Err(NS_ERROR_EDITOR_DESTROYED);
-      }
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "HTMLEditor::MoveAllChildren() failed, but ignored");
+                           "HTMLEditor::MoveAllChildren() failed");
+      return rv;
     }
+
     
     
-    else {
-      
-      
-      nsresult rv = MoveInclusiveNextSiblings(*firstChildOfRightNode,
-                                              EditorRawDOMPoint(&aNewNode, 0u));
-      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-        return Err(NS_ERROR_EDITOR_DESTROYED);
-      }
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "HTMLEditor::MoveInclusiveNextSiblings() failed, but ignored");
-    }
+    
+    
+    nsresult rv = MoveInclusiveNextSiblings(*firstChildOfRightNode,
+                                            EditorRawDOMPoint(&aNewNode, 0u));
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "HTMLEditor::MoveInclusiveNextSiblings() failed");
+    return rv;
+  }();
+
+  
+  
+  if (NS_WARN_IF(!aStartOfRightNode.GetContainerParent())) {
+    return NS_WARN_IF(Destroyed()) ? Err(NS_ERROR_EDITOR_DESTROYED)
+                                   : Err(NS_ERROR_FAILURE);
+  }
+
+  
+  
+  IgnoredErrorResult error;
+  parent->InsertBefore(
+      aNewNode, aStartOfRightNode.GetContainer()->GetNextSibling(), error);
+  if (NS_WARN_IF(Destroyed())) {
+    return Err(NS_ERROR_EDITOR_DESTROYED);
+  }
+  if (MOZ_UNLIKELY(error.Failed())) {
+    NS_WARNING("nsINode::InsertBefore() failed");
+    return Err(error.StealNSResult());
+  }
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Moving children from left node to right node failed");
+    return Err(rv);
   }
 
   
@@ -6040,17 +6043,20 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
   }
 
   
-  nsresult rv = [&]() MOZ_CAN_RUN_SCRIPT {
+  nsresult rv = [&]() MOZ_NEVER_INLINE_DEBUG MOZ_CAN_RUN_SCRIPT {
     
     if (aContentToKeep.IsText() && aContentToRemove.IsText()) {
       nsAutoString rightText;
-      nsAutoString leftText;
       aContentToRemove.AsText()->GetData(rightText);
-      aContentToKeep.AsText()->GetData(leftText);
-      leftText += rightText;
+      
+      
+      aContentToRemove.Remove();
+      
+      
       IgnoredErrorResult ignoredError;
-      DoSetText(MOZ_KnownLive(*aContentToKeep.AsText()), leftText,
-                ignoredError);
+      DoInsertText(MOZ_KnownLive(*aContentToKeep.AsText()),
+                   aContentToKeep.AsText()->TextDataLength(), rightText,
+                   ignoredError);
       if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
@@ -6061,28 +6067,25 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
     
     AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfChildContents;
     HTMLEditUtils::CollectAllChildren(aContentToRemove, arrayOfChildContents);
-
+    
+    
+    aContentToRemove.Remove();
+    
+    
+    nsresult rv = NS_OK;
     for (const OwningNonNull<nsIContent>& child : arrayOfChildContents) {
       IgnoredErrorResult error;
       aContentToKeep.AppendChild(child, error);
-      if (NS_WARN_IF(Destroyed())) {
-        return NS_ERROR_EDITOR_DESTROYED;
-      }
-      if (error.Failed()) {
+      if (MOZ_UNLIKELY(error.Failed())) {
         NS_WARNING("nsINode::AppendChild() failed");
-        return error.StealNSResult();
+        rv = error.StealNSResult();
       }
     }
-    return NS_OK;
-  }();
-
-  
-  if (NS_SUCCEEDED(rv)) {
-    aContentToRemove.Remove();
     if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
-  }
+    return rv;
+  }();
 
   if (MOZ_LIKELY(oldPointAtRightContent.IsSet())) {
     DebugOnly<nsresult> rvIgnored = RangeUpdaterRef().SelAdjJoinNodes(
