@@ -1223,13 +1223,16 @@ struct arena_t {
   size_t mNumDirty MOZ_GUARDED_BY(mLock);
 
   
+  size_t mMaxDirty MOZ_GUARDED_BY(mLock);
+
+  
   
   size_t mNumMAdvised MOZ_GUARDED_BY(mLock);
   size_t mNumFresh MOZ_GUARDED_BY(mLock);
 
   
   
-  size_t mMaxDirty;
+  size_t mMaxDirtyBase;
 
   
   int32_t mMaxDirtyIncreaseOverride;
@@ -1362,17 +1365,17 @@ struct arena_t {
 
   void* Ralloc(void* aPtr, size_t aSize, size_t aOldSize) MOZ_EXCLUDES(mLock);
 
-  size_t EffectiveMaxDirty();
+  void UpdateMaxDirty() MOZ_EXCLUDES(mLock);
 
   
   bool ShouldStartPurge(bool aForce = false) MOZ_REQUIRES(mLock) {
-    return (mNumDirty > ((aForce) ? 0 : EffectiveMaxDirty()));
+    return (mNumDirty > ((aForce) ? 0 : mMaxDirty));
   }
 
   
   
   bool ShouldContinuePurge(bool aForce = false) MOZ_REQUIRES(mLock) {
-    return (mNumDirty > ((aForce) ? 0 : EffectiveMaxDirty() >> 1));
+    return (mNumDirty > ((aForce) ? 0 : mMaxDirty >> 1));
   }
 
 #ifdef MALLOC_DECOMMIT
@@ -1508,8 +1511,15 @@ class ArenaCollection {
   }
 
   void SetDefaultMaxDirtyPageModifier(int32_t aModifier) {
-    mDefaultMaxDirtyPageModifier = aModifier;
+    {
+      MutexAutoLock lock(mLock);
+      mDefaultMaxDirtyPageModifier = aModifier;
+      for (auto* arena : iter()) {
+        arena->UpdateMaxDirty();
+      }
+    }
   }
+
   int32_t DefaultMaxDirtyPageModifier() { return mDefaultMaxDirtyPageModifier; }
 
   using Tree = RedBlackTree<arena_t, ArenaTreeTrait>;
@@ -3162,7 +3172,8 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
   return SplitRun(run, aSize, aLarge, aZero) ? run : nullptr;
 }
 
-size_t arena_t::EffectiveMaxDirty() {
+void arena_t::UpdateMaxDirty() {
+  MaybeMutexAutoLock lock(mLock);
   int32_t modifier = gArenas.DefaultMaxDirtyPageModifier();
   if (modifier) {
     int32_t arenaOverride =
@@ -3172,7 +3183,8 @@ size_t arena_t::EffectiveMaxDirty() {
     }
   }
 
-  return modifier >= 0 ? mMaxDirty << modifier : mMaxDirty >> -modifier;
+  mMaxDirty =
+      modifier >= 0 ? mMaxDirtyBase << modifier : mMaxDirtyBase >> -modifier;
 }
 
 #ifdef MALLOC_DECOMMIT
@@ -3184,7 +3196,7 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
   }
 
   
-  const size_t max_page_cache = EffectiveMaxDirty();
+  const size_t max_page_cache = mMaxDirty;
 
   
   
@@ -4674,8 +4686,9 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
   mNumMAdvised = 0;
   
   
-  mMaxDirty = (aParams && aParams->mMaxDirty) ? aParams->mMaxDirty
-                                              : (opt_dirty_max / 8);
+  mMaxDirtyBase = (aParams && aParams->mMaxDirty) ? aParams->mMaxDirty
+                                                  : (opt_dirty_max / 8);
+  UpdateMaxDirty();
 
   mRunsAvail.Init();
 
@@ -5680,7 +5693,9 @@ inline void MozJemalloc::moz_dispose_arena(arena_id_t aArenaId) {
 }
 
 inline void MozJemalloc::moz_set_max_dirty_page_modifier(int32_t aModifier) {
-  gArenas.SetDefaultMaxDirtyPageModifier(aModifier);
+  if (malloc_init()) {
+    gArenas.SetDefaultMaxDirtyPageModifier(aModifier);
+  }
 }
 
 inline void MozJemalloc::jemalloc_reset_small_alloc_randomization(
