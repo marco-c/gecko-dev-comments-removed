@@ -1078,10 +1078,8 @@ void LIRGenerator::visitWasmAtomicBinopHeap(MWasmAtomicBinopHeap* ins) {
     return;
   }
 
-  LWasmAtomicBinopHeap* lir = new (alloc())
-      LWasmAtomicBinopHeap(useRegister(base), useRegister(ins->value()),
-                            LDefinition::BogusTemp(),
-                            temp(), memoryBase);
+  auto* lir = new (alloc()) LWasmAtomicBinopHeap(
+      useRegister(base), useRegister(ins->value()), memoryBase, temp());
   define(lir, ins);
 }
 
