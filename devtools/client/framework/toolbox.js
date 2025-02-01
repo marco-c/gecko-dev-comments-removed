@@ -1270,10 +1270,10 @@ Toolbox.prototype = {
         ["reload2", false],
         ["forceReload", true],
         ["forceReload2", true],
-      ].forEach(([id, force]) => {
+      ].forEach(([id, bypassCache]) => {
         const key = L10N.getStr("toolbox." + id + ".key");
         this.shortcuts.on(key, event => {
-          this.commands.targetCommand.reloadTopLevelTarget(force);
+          this.reload(bypassCache);
 
           
           event.preventDefault();
@@ -1286,6 +1286,35 @@ Toolbox.prototype = {
       
       
       ZoomKeys.register(this.win, this.shortcuts);
+    }
+  },
+
+  
+
+
+
+
+
+  async reload(bypassCache) {
+    const box = this.getNotificationBox();
+    const notification = box.getNotificationWithValue("reload-error");
+    if (notification) {
+      notification.close();
+    }
+    try {
+      await this.commands.targetCommand.reloadTopLevelTarget(bypassCache);
+    } catch (e) {
+      let { message } = e;
+
+      
+      message = message.replace("Protocol error (SyntaxError):", "");
+
+      box.appendNotification(
+        L10N.getFormatStr("toolbox.errorOnReload", message),
+        "reload-error",
+        "",
+        box.PRIORITY_CRITICAL_HIGH
+      );
     }
   },
 
@@ -1831,7 +1860,7 @@ Toolbox.prototype = {
       
       const box = this.doc.getElementById("toolbox-notificationbox");
       this._notificationBox = Object.assign(
-        this.ReactDOM.render(NotificationBox({}), box),
+        this.ReactDOM.render(NotificationBox({ wrapping: true }), box),
         PriorityLevels
       );
     }
