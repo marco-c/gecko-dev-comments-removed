@@ -170,7 +170,10 @@ nsHttpChannelAuthProvider::ProcessAuthentication(uint32_t httpStatus,
 
   nsAutoCString creds;
   rv = GetCredentials(challenges, mProxyAuth, creds);
-  if (rv == NS_ERROR_IN_PROGRESS) return rv;
+  if (rv == NS_ERROR_IN_PROGRESS || rv == NS_ERROR_BASIC_HTTP_AUTH_DISABLED) {
+    return rv;
+  }
+
   if (NS_FAILED(rv)) {
     LOG(("unable to authenticate\n"));
   } else {
@@ -359,7 +362,7 @@ nsresult nsHttpChannelAuthProvider::GenCredsAndSetEntry(
   sessionState.swap(ss);
   if (NS_FAILED(rv)) return rv;
 
-    
+  
 #ifdef DEBUG
   LOG(("generated creds: %s\n", result.BeginReading()));
 #endif
@@ -632,6 +635,17 @@ nsresult nsHttpChannelAuthProvider::GetCredentials(
 
       return lhs.algorithm < rhs.algorithm ? 1 : -1;
     });
+  }
+
+  nsAutoCString scheme;
+
+  
+  
+  if (NS_SUCCEEDED(mURI->GetScheme(scheme)) && scheme == "http"_ns &&
+      !StaticPrefs::network_http_basic_http_auth_enabled() &&
+      cc[0].rank == ChallengeRank::Basic) {
+    
+    return NS_ERROR_BASIC_HTTP_AUTH_DISABLED;
   }
 
   nsCOMPtr<nsIHttpAuthenticator> auth;

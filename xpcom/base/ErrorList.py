@@ -355,6 +355,9 @@ with modules["NETWORK"]:
     
     
     errors["NS_ERROR_SUPERFLUOS_AUTH"] = FAILURE(91)
+    
+    
+    errors["NS_ERROR_BASIC_HTTP_AUTH_DISABLED"] = FAILURE(92)
 
     
     
