@@ -1938,7 +1938,7 @@ async function closeContextMenu() {
 
 
 function getSmoothScrollPrefs(aInputType, aMsdPhysics) {
-  let result = [["apz.test.logging_enabled", true]];
+  let result = [];
   
   if (aMsdPhysics !== undefined) {
     result.push(["general.smoothScroll.msdPhysics.enabled", aMsdPhysics]);
@@ -1994,7 +1994,10 @@ function buildRelativeScrollSmoothnessVariants(aInputType, aScrollMethods) {
   for (let scrollMethod of aScrollMethods) {
     subtests.push({
       file: `helper_relative_scroll_smoothness.html?input-type=${aInputType}&scroll-method=${scrollMethod}&strict=true`,
-      prefs: getSmoothScrollPrefs(aInputType,  false),
+      prefs: [
+        ["apz.test.logging_enabled", true],
+        ...getSmoothScrollPrefs(aInputType,  false),
+      ],
     });
     
     
@@ -2002,7 +2005,10 @@ function buildRelativeScrollSmoothnessVariants(aInputType, aScrollMethods) {
     
     subtests.push({
       file: `helper_relative_scroll_smoothness.html?input-type=${aInputType}&scroll-method=${scrollMethod}&strict=false`,
-      prefs: getSmoothScrollPrefs(aInputType,  true),
+      prefs: [
+        ["apz.test.logging_enabled", true],
+        ...getSmoothScrollPrefs(aInputType,  true),
+      ],
     });
   }
   return subtests;
