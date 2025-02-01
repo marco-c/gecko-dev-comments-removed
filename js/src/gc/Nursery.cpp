@@ -102,6 +102,7 @@ class NurserySweepTask : public GCParallelTask {
   }
 
   void queueAllocatorToSweep(BufferAllocator& allocator) {
+    MOZ_ASSERT(isIdle());
     allocatorsToSweep.pushBack(&allocator);
   }
 
@@ -1405,6 +1406,12 @@ void js::Nursery::collect(JS::GCOptions options, JS::GCReason reason) {
   
   
   
+  
+  joinSweepTask();
+
+  
+  
+  
   bool wasEmpty = isEmpty();
   if (!wasEmpty) {
     CollectionResult result = doCollection(session, options, reason);
@@ -1632,7 +1639,7 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
 
   clearMapAndSetNurseryIterators();
 
-  sweepTask->join();
+  MOZ_ASSERT(sweepTask->isIdle());
   {
     BufferAllocator::MaybeLock lock;
     for (ZonesIter zone(runtime(), WithAtoms); !zone.done(); zone.next()) {
