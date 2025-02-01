@@ -2,9 +2,13 @@
 
 
 
-if (!window.smartblockTiktokShimInitialized) {
+
+
+if (!window.smartblockTikTokShimInitialized) {
   
-  window.smartblockTiktokShimInitialized = Object.freeze(true);
+  window.smartblockTikTokShimInitialized = true;
+
+  const SHIM_ID = "TiktokEmbed";
 
   
   const ORIGINAL_URL = "https://www.tiktok.com/embed.js";
@@ -15,44 +19,17 @@ if (!window.smartblockTiktokShimInitialized) {
   let embedPlaceholders = [];
 
   
-  const sendMessageToAddon = (function () {
-    const shimId = "TiktokEmbed";
-    const pendingMessages = new Map();
-    const channel = new MessageChannel();
-    channel.port1.onerror = console.error;
-    channel.port1.onmessage = event => {
-      const { messageId, response, message } = event.data;
-      const resolve = pendingMessages.get(messageId);
-      if (resolve) {
-        
-        pendingMessages.delete(messageId);
-        resolve(response);
-      } else {
-        addonMessageHandler(message);
-      }
-    };
-    function reconnect() {
-      const detail = {
-        pendingMessages: [...pendingMessages.values()],
-        port: channel.port2,
-        shimId,
-      };
-      window.dispatchEvent(new CustomEvent("ShimConnects", { detail }));
-    }
-    window.addEventListener("ShimHelperReady", reconnect);
-    reconnect();
-    return function (message) {
-      const messageId = crypto.randomUUID();
-      return new Promise(resolve => {
-        const payload = { message, messageId, shimId };
-        pendingMessages.set(messageId, resolve);
-        channel.port1.postMessage(payload);
-      });
-    };
-  })();
+  function sendMessageToAddon(message) {
+    return browser.runtime.sendMessage({ message, shimId: SHIM_ID });
+  }
 
   function addonMessageHandler(message) {
-    let { topic, data } = message;
+    let { topic, data, shimId } = message;
+    
+    if (shimId != SHIM_ID) {
+      return;
+    }
+
     if (topic === "smartblock:unblock-embed") {
       if (data != window.location.hostname) {
         
@@ -66,7 +43,11 @@ if (!window.smartblockTiktokShimInitialized) {
 
       
       let scriptElement = document.createElement("script");
-      scriptElement.src = ORIGINAL_URL;
+
+      
+      
+      
+      scriptElement.wrappedJSObject.src = ORIGINAL_URL;
       document.body.appendChild(scriptElement);
     }
   }
@@ -174,6 +155,11 @@ if (!window.smartblockTiktokShimInitialized) {
       originalEmbedContainer.replaceWith(placeholderDiv);
     });
   }
+
+  
+  browser.runtime.onMessage.addListener(request => {
+    addonMessageHandler(request);
+  });
 
   createShimPlaceholders();
 }
