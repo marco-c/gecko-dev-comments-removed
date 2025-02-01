@@ -129,6 +129,13 @@ mod test {
             static GLOBAL_LOCK: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 
             let lock = GLOBAL_LOCK.lock().unwrap();
+
+            
+            
+            
+            
+            _ = &*crash;
+
             glean::test_reset_glean(config(cfg), client_info_metrics(cfg), true);
             GleanTest { _guard: lock }
         }
