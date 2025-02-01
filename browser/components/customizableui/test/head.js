@@ -452,7 +452,6 @@ function checkContextMenu(aContextMenu, aExpectedEntries, aWindow = window) {
   let children = [...aContextMenu.children];
   
   children = children.filter(n => !n.hidden);
-
   for (let i = 0; i < children.length; i++) {
     let menuitem = children[i];
     try {
