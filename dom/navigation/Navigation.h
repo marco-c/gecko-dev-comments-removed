@@ -20,10 +20,6 @@ struct NavigationUpdateCurrentEntryOptions;
 struct NavigationReloadOptions;
 struct NavigationResult;
 
-
-
-enum class UserNavigationInvolvement : uint8_t { BrowserUI, Activation, None };
-
 class Navigation final : public DOMEventTargetHelper {
  public:
   NS_DECL_ISUPPORTS_INHERITED
