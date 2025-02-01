@@ -975,8 +975,7 @@ uint32_t nsRFPService::GetSpoofedPresentedFrames(double aTime, uint32_t aWidth,
 
 
 
-void nsRFPService::GetSpoofedUserAgent(nsACString& userAgent,
-                                       bool isForHTTPHeader) {
+void nsRFPService::GetSpoofedUserAgent(nsACString& userAgent) {
   
   
   
@@ -986,30 +985,19 @@ void nsRFPService::GetSpoofedUserAgent(nsACString& userAgent,
 
   
   
-  size_t preallocatedLength = 13 +
-                              (isForHTTPHeader ? std::size(SPOOFED_HTTP_UA_OS)
-                                               : std::size(SPOOFED_UA_OS)) -
-                              1 + 5 + 3 + 10 +
+  size_t preallocatedLength = 13 + std::size(SPOOFED_UA_OS) - 1 + 5 + 3 + 10 +
                               std::size(LEGACY_UA_GECKO_TRAIL) - 1 + 9 + 3 + 2;
   userAgent.SetCapacity(preallocatedLength);
 
   
   userAgent.AssignLiteral("Mozilla/5.0 (");
-
-  if (isForHTTPHeader) {
-    userAgent.AppendLiteral(SPOOFED_HTTP_UA_OS);
-  } else {
-    userAgent.AppendLiteral(SPOOFED_UA_OS);
-  }
-
+  userAgent.AppendLiteral(SPOOFED_UA_OS);
   userAgent.AppendLiteral("; rv:" MOZILLA_UAVERSION ") Gecko/");
-
 #if defined(ANDROID)
   userAgent.AppendLiteral(MOZILLA_UAVERSION);
 #else
   userAgent.AppendLiteral(LEGACY_UA_GECKO_TRAIL);
 #endif
-
   userAgent.AppendLiteral(" Firefox/" MOZILLA_UAVERSION);
 
   MOZ_ASSERT(userAgent.Length() <= preallocatedLength);
