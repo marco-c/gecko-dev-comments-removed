@@ -4,9 +4,12 @@
 
 "use strict";
 
-const {
-  BreakpointActor,
-} = require("resource://devtools/server/actors/breakpoint.js");
+loader.lazyRequireGetter(
+  this,
+  "BreakpointActor",
+  "resource://devtools/server/actors/breakpoint.js",
+  true
+);
 
 
 
