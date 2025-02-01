@@ -49,7 +49,7 @@ function trapReport(context) {
         astUtils.isSpecificMemberAccess(
           initialization.callee,
           "ChromeUtils",
-          /^import(ESModule|)$/
+          /^importESModule$/
         )
       ) {
         
@@ -138,13 +138,6 @@ module.exports = {
   },
 
   create(context) {
-    
-    
-    
-    
-    if (context.getFilename().endsWith(".jsm")) {
-      return {};
-    }
     let newOptions = [{ builtinGlobals: true }];
     const contextForBaseRule = Object.create(context, {
       report: {
