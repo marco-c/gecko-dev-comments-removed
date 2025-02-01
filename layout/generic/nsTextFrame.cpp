@@ -8442,6 +8442,19 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
   }
 
   
+  while (i < length) {
+    char16_t ch = aFrag->CharAt(AssertedCast<uint32_t>(aOffset + i));
+    if (ch == ' ' || ch == CH_NBSP) {
+      ++i;
+    } else {
+      break;
+    }
+  }
+  if (i == length) {
+    return false;
+  }
+
+  
   
   
   const char32_t usv =
