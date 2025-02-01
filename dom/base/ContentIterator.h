@@ -39,15 +39,13 @@ class ContentIteratorBase {
 
 
 
-  [[nodiscard]] virtual nsresult Init(nsINode* aRoot);
+  virtual nsresult Init(nsINode* aRoot);
 
-  [[nodiscard]] virtual nsresult Init(dom::AbstractRange* aRange);
-  [[nodiscard]] virtual nsresult Init(nsINode* aStartContainer,
-                                      uint32_t aStartOffset,
-                                      nsINode* aEndContainer,
-                                      uint32_t aEndOffset);
-  [[nodiscard]] virtual nsresult Init(const RawRangeBoundary& aStart,
-                                      const RawRangeBoundary& aEnd);
+  virtual nsresult Init(dom::AbstractRange* aRange);
+  virtual nsresult Init(nsINode* aStartContainer, uint32_t aStartOffset,
+                        nsINode* aEndContainer, uint32_t aEndOffset);
+  virtual nsresult Init(const RawRangeBoundary& aStart,
+                        const RawRangeBoundary& aEnd);
 
   virtual void First();
   virtual void Last();
@@ -58,7 +56,7 @@ class ContentIteratorBase {
 
   bool IsDone() const { return !mCurNode; }
 
-  [[nodiscard]] virtual nsresult PositionAt(nsINode* aCurNode);
+  virtual nsresult PositionAt(nsINode* aCurNode);
 
  protected:
   enum class Order {
@@ -78,8 +76,8 @@ class ContentIteratorBase {
 
 
 
-  [[nodiscard]] nsresult InitInternal(const RawRangeBoundary& aStart,
-                                      const RawRangeBoundary& aEnd);
+  nsresult InitInternal(const RawRangeBoundary& aStart,
+                        const RawRangeBoundary& aEnd);
 
   
   
@@ -110,11 +108,11 @@ class ContentIteratorBase {
 
   void SetEmpty();
 
-  NodeType mCurNode = nullptr;
-  NodeType mFirst = nullptr;
-  NodeType mLast = nullptr;
+  NodeType mCurNode;
+  NodeType mFirst;
+  NodeType mLast;
   
-  NodeType mClosestCommonInclusiveAncestor = nullptr;
+  NodeType mClosestCommonInclusiveAncestor;
 
   Maybe<nsMutationGuard> mMutationGuard;
   Maybe<JS::AutoAssertNoGC> mAssertNoGC;
@@ -229,9 +227,9 @@ class ContentSubtreeIterator final : public SafeContentIteratorBase {
   
 
 
-  [[nodiscard]] virtual nsresult Init(nsINode* aRoot) override;
+  virtual nsresult Init(nsINode* aRoot) override;
 
-  [[nodiscard]] virtual nsresult Init(dom::AbstractRange* aRange) override;
+  virtual nsresult Init(dom::AbstractRange* aRange) override;
 
   
 
@@ -254,15 +252,11 @@ class ContentSubtreeIterator final : public SafeContentIteratorBase {
 
 
 
-  [[nodiscard]] nsresult InitWithAllowCrossShadowBoundary(
-      dom::AbstractRange* aRange);
-  [[nodiscard]] virtual nsresult Init(nsINode* aStartContainer,
-                                      uint32_t aStartOffset,
-                                      nsINode* aEndContainer,
-                                      uint32_t aEndOffset) override;
-  [[nodiscard]] virtual nsresult Init(
-      const RawRangeBoundary& aStartBoundary,
-      const RawRangeBoundary& aEndBoundary) override;
+  nsresult InitWithAllowCrossShadowBoundary(dom::AbstractRange* aRange);
+  virtual nsresult Init(nsINode* aStartContainer, uint32_t aStartOffset,
+                        nsINode* aEndContainer, uint32_t aEndOffset) override;
+  virtual nsresult Init(const RawRangeBoundary& aStartBoundary,
+                        const RawRangeBoundary& aEndBoundary) override;
 
   void Next() override;
   void Prev() override;
@@ -271,7 +265,7 @@ class ContentSubtreeIterator final : public SafeContentIteratorBase {
   
   void Last() override;
 
-  [[nodiscard]] nsresult PositionAt(nsINode* aCurNode) override;
+  nsresult PositionAt(nsINode* aCurNode) override;
 
   friend void ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback&,
                                           ContentSubtreeIterator&, const char*,
@@ -307,7 +301,7 @@ class ContentSubtreeIterator final : public SafeContentIteratorBase {
   
 
 
-  [[nodiscard]] nsresult InitWithRange();
+  nsresult InitWithRange();
 
   
   
