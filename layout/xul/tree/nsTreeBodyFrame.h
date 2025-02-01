@@ -295,8 +295,9 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
                      ComputedStyle* aTwistyContext);
 
   
-  nsresult GetImage(int32_t aRowIndex, nsTreeColumn* aCol, bool aUseContext,
-                    ComputedStyle* aComputedStyle, imgIContainer** aResult);
+  already_AddRefed<imgIContainer> GetImage(int32_t aRowIndex,
+                                           nsTreeColumn* aCol, bool aUseContext,
+                                           ComputedStyle* aComputedStyle);
 
   
   

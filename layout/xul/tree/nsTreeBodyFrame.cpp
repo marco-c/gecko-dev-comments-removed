@@ -1855,12 +1855,9 @@ void nsTreeBodyFrame::GetTwistyRect(int32_t aRowIndex, nsTreeColumn* aColumn,
   }
 }
 
-nsresult nsTreeBodyFrame::GetImage(int32_t aRowIndex, nsTreeColumn* aCol,
-                                   bool aUseContext,
-                                   ComputedStyle* aComputedStyle,
-                                   imgIContainer** aResult) {
-  *aResult = nullptr;
-
+already_AddRefed<imgIContainer> nsTreeBodyFrame::GetImage(
+    int32_t aRowIndex, nsTreeColumn* aCol, bool aUseContext,
+    ComputedStyle* aComputedStyle) {
   Document* doc = PresContext()->Document();
   nsAutoString imageSrc;
   mView->GetImageSrc(aRowIndex, aCol, imageSrc);
@@ -1871,7 +1868,7 @@ nsresult nsTreeBodyFrame::GetImage(int32_t aRowIndex, nsTreeColumn* aCol,
     styleRequest =
         aComputedStyle->StyleList()->mListStyleImage.GetImageRequest();
     if (!styleRequest) {
-      return NS_OK;
+      return nullptr;
     }
     styleRequest->GetURI(getter_AddRefs(uri));
   } else {
@@ -1879,17 +1876,15 @@ nsresult nsTreeBodyFrame::GetImage(int32_t aRowIndex, nsTreeColumn* aCol,
                                               doc, mContent->GetBaseURI());
   }
   if (!uri) {
-    return NS_OK;
+    return nullptr;
   }
   
   nsTreeImageCacheEntry entry;
   if (mImageCache.Get(uri, &entry)) {
-    
-    imgIRequest* imgReq = entry.request;
-    imgReq->GetImage(aResult);  
-                                
+    nsCOMPtr<imgIContainer> result;
+    entry.request->GetImage(getter_AddRefs(result));
     entry.listener->AddCell(aRowIndex, aCol);
-    return NS_OK;
+    return result.forget();
   }
 
   
@@ -1904,28 +1899,28 @@ nsresult nsTreeBodyFrame::GetImage(int32_t aRowIndex, nsTreeColumn* aCol,
     auto referrerInfo = MakeRefPtr<ReferrerInfo>(*doc);
     
     
-    MOZ_TRY(nsContentUtils::LoadImage(
-        uri, mContent, doc, mContent->NodePrincipal(), 0, referrerInfo,
-        listener, nsIRequest::LOAD_NORMAL, u""_ns,
-        getter_AddRefs(imageRequest)));
-    
-    
-    
+    nsContentUtils::LoadImage(uri, mContent, doc, mContent->NodePrincipal(), 0,
+                              referrerInfo, listener, nsIRequest::LOAD_NORMAL,
+                              u""_ns, getter_AddRefs(imageRequest));
   }
   listener->UnsuppressInvalidation();
   if (!imageRequest) {
-    return NS_ERROR_FAILURE;
+    return nullptr;
   }
 
+  
+  
+  
   
   imageRequest->StartDecoding(imgIContainer::FLAG_ASYNC_NOTIFY);
   imageRequest->LockImage();
 
   
-  imageRequest->GetImage(aResult);
   mImageCache.InsertOrUpdate(uri,
                              nsTreeImageCacheEntry(imageRequest, listener));
-  return NS_OK;
+  nsCOMPtr<imgIContainer> result;
+  imageRequest->GetImage(getter_AddRefs(result));
+  return result.forget();
 }
 
 nsRect nsTreeBodyFrame::GetImageSize(int32_t aRowIndex, nsTreeColumn* aCol,
@@ -1949,8 +1944,8 @@ nsRect nsTreeBodyFrame::GetImageSize(int32_t aRowIndex, nsTreeColumn* aCol,
 
   
   
-  nsCOMPtr<imgIContainer> image;
-  GetImage(aRowIndex, aCol, aUseContext, aComputedStyle, getter_AddRefs(image));
+  nsCOMPtr<imgIContainer> image =
+      GetImage(aRowIndex, aCol, aUseContext, aComputedStyle);
 
   const nsStylePosition* myPosition = aComputedStyle->StylePosition();
   if (myPosition->GetWidth().ConvertsToLength()) {
@@ -3045,8 +3040,8 @@ ImgDrawResult nsTreeBodyFrame::PaintTwisty(
   imageSize.Deflate(bp);
 
   
-  nsCOMPtr<imgIContainer> image;
-  GetImage(aRowIndex, aColumn, true, twistyContext, getter_AddRefs(image));
+  nsCOMPtr<imgIContainer> image =
+      GetImage(aRowIndex, aColumn, true, twistyContext);
   if (!image) {
     return result;
   }
@@ -3091,8 +3086,8 @@ ImgDrawResult nsTreeBodyFrame::PaintImage(
   imageRect.Deflate(imageMargin);
 
   
-  nsCOMPtr<imgIContainer> image;
-  GetImage(aRowIndex, aColumn, false, imageContext, getter_AddRefs(image));
+  nsCOMPtr<imgIContainer> image =
+      GetImage(aRowIndex, aColumn, false, imageContext);
 
   
   nsSize imageDestSize = GetImageDestSize(imageContext, image);
@@ -3404,8 +3399,8 @@ ImgDrawResult nsTreeBodyFrame::PaintCheckbox(int32_t aRowIndex,
   checkboxRect.Deflate(bp);
 
   
-  nsCOMPtr<imgIContainer> image;
-  GetImage(aRowIndex, aColumn, true, checkboxContext, getter_AddRefs(image));
+  nsCOMPtr<imgIContainer> image =
+      GetImage(aRowIndex, aColumn, true, checkboxContext);
   if (image) {
     nsPoint pt = checkboxRect.TopLeft();
 
