@@ -3142,11 +3142,11 @@ pref("devtools.debugger.features.async-live-stacks", false);
 pref("devtools.debugger.show-content-scripts", false);
 
 pref("devtools.debugger.hide-ignored-sources", false);
-#if defined(NIGHTLY_BUILD)
-  pref("devtools.debugger.features.codemirror-next", true);
-#else
-  pref("devtools.debugger.features.codemirror-next", false);
-#endif
+
+
+
+
+pref("devtools.debugger.features.codemirror-next", true);
 
 
 
