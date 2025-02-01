@@ -1120,9 +1120,6 @@ class GCRuntime {
   mozilla::Atomic<size_t, mozilla::ReleaseAcquire> numActiveZoneIters;
 
   
-  MainThreadData<bool> cleanUpEverything;
-
-  
 
 
 
