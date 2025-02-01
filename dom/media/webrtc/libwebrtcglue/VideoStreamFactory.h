@@ -32,8 +32,7 @@ class VideoStreamFactory
     int max_bitrate_bps;
   };
 
-  static ResolutionAndBitrateLimits GetLimitsFor(unsigned int aWidth,
-                                                 unsigned int aHeight,
+  static ResolutionAndBitrateLimits GetLimitsFor(gfx::IntSize aSize,
                                                  int aCapBps = 0);
 
   VideoStreamFactory(VideoCodecConfig aConfig, int aMinBitrate,
@@ -56,17 +55,16 @@ class VideoStreamFactory
 
 
 
-  void SelectMaxFramerate(int aWidth, int aHeight,
-                          const VideoCodecConfig::Encoding& aEncoding,
-                          webrtc::VideoStream& aVideoStream);
+  void SelectResolutionAndMaxFramerate(
+      gfx::IntSize aSize, const VideoCodecConfig::Encoding& aEncoding,
+      webrtc::VideoStream& aVideoStream);
 
   
 
 
 
 
-  void SelectMaxFramerateForAllStreams(unsigned short aWidth,
-                                       unsigned short aHeight);
+  void SelectMaxFramerateForAllStreams(gfx::IntSize aSize);
 
  private:
   
@@ -77,8 +75,7 @@ class VideoStreamFactory
 
 
 
-
-  gfx::IntSize CalculateScaledResolution(int aWidth, int aHeight,
+  gfx::IntSize CalculateScaledResolution(gfx::IntSize aSize,
                                          double aScaleDownByResolution);
 
   
@@ -88,10 +85,7 @@ class VideoStreamFactory
 
 
 
-
-  unsigned int SelectFrameRate(unsigned int aOldFramerate,
-                               unsigned short aSendingWidth,
-                               unsigned short aSendingHeight);
+  unsigned int SelectFrameRate(unsigned int aOldFramerate, gfx::IntSize aSize);
 
   
   Atomic<unsigned int> mMaxFramerateForAllStreams;
