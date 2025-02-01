@@ -1666,6 +1666,12 @@ class PrivateDatastore {
 
     return *mDatastore;
   }
+
+  Datastore& MutableDatastoreRef() const {
+    AssertIsOnBackgroundThread();
+
+    return *mDatastore;
+  }
 };
 
 class PreparedDatastore {
@@ -8801,12 +8807,24 @@ void QuotaClient::AbortOperationsForLocks(
 
       
       
-      const auto& datastore = privateDatastore->DatastoreRef();
+      auto& datastore = privateDatastore->MutableDatastoreRef();
 
       
       
       
-      return IsLockForObjectContainedInLockTable(datastore, aDirectoryLockIds);
+      bool result =
+          IsLockForObjectContainedInLockTable(datastore, aDirectoryLockIds);
+
+      
+      
+      
+      
+      
+      if (result) {
+        datastore.Clear(nullptr);
+      }
+
+      return result;
     });
 
     if (!gPrivateDatastores->Count()) {
