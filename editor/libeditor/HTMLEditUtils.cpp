@@ -2093,7 +2093,7 @@ EditorDOMPointType HTMLEditUtils::GetPreviousEditablePoint(
     
     
     return WSRunScanner::GetAfterLastVisiblePoint<EditorDOMPointType>(
-        *textNode, aAncestorLimiter);
+        *textNode);
   }
 
   
@@ -2204,8 +2204,7 @@ EditorDOMPointType HTMLEditUtils::GetNextEditablePoint(
     }
     
     
-    return WSRunScanner::GetFirstVisiblePoint<EditorDOMPointType>(
-        *textNode, aAncestorLimiter);
+    return WSRunScanner::GetFirstVisiblePoint<EditorDOMPointType>(*textNode);
   }
 
   
