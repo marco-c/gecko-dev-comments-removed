@@ -225,7 +225,7 @@ class AssociatedElementsIterator : public AccIterable {
   
 
 
-  nsIContent* NextElem();
+  dom::Element* NextElem();
 
   
 

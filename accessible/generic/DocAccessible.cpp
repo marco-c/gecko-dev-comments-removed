@@ -1018,6 +1018,18 @@ void DocAccessible::ElementStateChanged(dom::Document* aDocument,
           new AccStateChangeEvent(accessible, states::READONLY, !isEditable);
       FireDelayedEvent(event);
     }
+
+    if (aElement->HasAttr(nsGkAtoms::aria_owns)) {
+      
+      
+      
+      mNotificationController->ScheduleRelocation(accessible);
+    }
+
+    
+    
+    
+    RelocateARIAOwnedIfNeeded(aElement);
   }
 
   if (aStateMask.HasState(dom::ElementState::CHECKED)) {
@@ -2460,9 +2472,24 @@ void DocAccessible::DoARIAOwnsRelocation(LocalAccessible* aOwner) {
   nsTArray<RefPtr<LocalAccessible>>* owned =
       mARIAOwnsHash.GetOrInsertNew(aOwner);
 
+  if (aOwner->Elm()->State().HasState(dom::ElementState::READWRITE)) {
+    
+    PutChildrenBack(owned, 0);
+    return;
+  }
+
   AssociatedElementsIterator iter(this, aOwner->Elm(), nsGkAtoms::aria_owns);
   uint32_t idx = 0;
-  while (nsIContent* childEl = iter.NextElem()) {
+  while (dom::Element* childEl = iter.NextElem()) {
+    if (childEl->State().HasState(dom::ElementState::READWRITE)) {
+      nsINode* parentEl = childEl->GetFlattenedTreeParentNode();
+      if (parentEl->IsElement() && parentEl->AsElement()->State().HasState(
+                                       dom::ElementState::READWRITE)) {
+        
+        continue;
+      }
+    }
+
     LocalAccessible* child = GetAccessible(childEl);
     auto insertIdx = aOwner->ChildCount() - owned->Length() + idx;
 
