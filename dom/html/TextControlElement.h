@@ -122,7 +122,7 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
 
 
   MOZ_CAN_RUN_SCRIPT virtual TextEditor* GetTextEditor() = 0;
-  virtual TextEditor* GetTextEditorWithoutCreation() const = 0;
+  virtual TextEditor* GetExtantTextEditor() const = 0;
 
   
 

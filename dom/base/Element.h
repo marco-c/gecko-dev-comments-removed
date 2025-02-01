@@ -238,12 +238,8 @@ class TrustedHTMLOrNullIsEmptyString;
 class TrustedHTMLOrTrustedScriptOrTrustedScriptURLOrString;
 
 
-#define NS_ELEMENT_IID                               \
-  {                                                  \
-    0xc67ed254, 0xfd3b, 0x4b10, {                    \
-      0x96, 0xa2, 0xc5, 0x8b, 0x7b, 0x64, 0x97, 0xd1 \
-    }                                                \
-  }
+#define NS_ELEMENT_IID \
+  {0xc67ed254, 0xfd3b, 0x4b10, {0x96, 0xa2, 0xc5, 0x8b, 0x7b, 0x64, 0x97, 0xd1}}
 
 #define REFLECT_NULLABLE_DOMSTRING_ATTR(method, attr)            \
   void Get##method(nsAString& aValue) const {                    \
@@ -1403,7 +1399,7 @@ class Element : public FragmentOrElement {
 
 
 
-  EditorBase* GetEditorWithoutCreation() const;
+  EditorBase* GetExtantEditor() const;
 
  private:
   
