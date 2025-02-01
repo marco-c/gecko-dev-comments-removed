@@ -2041,15 +2041,20 @@ class TestTranslationsTelemetry {
         true,
         `Telemetry event ${name} should contain values if assertForMostRecentEvent are specified`
       );
-      for (const [key, expectedEntry] of Object.entries(
-        assertForMostRecentEvent
-      )) {
+      for (const [key, expected] of Object.entries(assertForAllEvents)) {
         for (const event of events) {
-          is(
-            event.extra[key],
-            String(expectedEntry),
-            `Telemetry event ${name} value for ${key} should match the expected entry`
-          );
+          if (typeof expected === "function") {
+            ok(
+              expected(event.extra[key]),
+              `Telemetry event ${name} value for ${key} should match the expected predicate`
+            );
+          } else {
+            is(
+              event.extra[key],
+              String(expected),
+              `Telemetry event ${name} value for ${key} should match the expected entry`
+            );
+          }
         }
       }
     }
@@ -2060,14 +2065,19 @@ class TestTranslationsTelemetry {
         true,
         `Telemetry event ${name} should contain values if assertForMostRecentEvent are specified`
       );
-      for (const [key, expectedEntry] of Object.entries(
-        assertForMostRecentEvent
-      )) {
-        is(
-          events[eventCount - 1].extra[key],
-          String(expectedEntry),
-          `Telemetry event ${name} value for ${key} should match the expected entry`
-        );
+      for (const [key, expected] of Object.entries(assertForMostRecentEvent)) {
+        if (typeof expected === "function") {
+          ok(
+            expected(events[eventCount - 1].extra[key]),
+            `Telemetry event ${name} value for ${key} should match the expected predicate`
+          );
+        } else {
+          is(
+            events[eventCount - 1].extra[key],
+            String(expected),
+            `Telemetry event ${name} value for ${key} should match the expected entry`
+          );
+        }
       }
     }
   }
@@ -2099,6 +2109,41 @@ class TestTranslationsTelemetry {
       denominator,
       expectedDenominator,
       `Telemetry rate ${name} should have expected denominator`
+    );
+  }
+
+  
+
+
+
+
+
+  static async assertTranslationsEnginePerformance({ expectedEventCount }) {
+    info("Destroying the TranslationsEngine.");
+    await EngineProcess.destroyTranslationsEngine();
+
+    const isNotEmptyString = entry => typeof entry === "string" && entry !== "";
+    const isGreaterThanZero = entry => parseFloat(entry) > 0;
+
+    const assertForAllEvents =
+      expectedEventCount === 0
+        ? {}
+        : {
+            from_language: isNotEmptyString,
+            to_language: isNotEmptyString,
+            average_words_per_request: isGreaterThanZero,
+            average_words_per_second: isGreaterThanZero,
+            total_completed_requests: isGreaterThanZero,
+            total_inference_seconds: isGreaterThanZero,
+            total_translated_words: isGreaterThanZero,
+          };
+
+    await TestTranslationsTelemetry.assertEvent(
+      Glean.translations.enginePerformance,
+      {
+        expectedEventCount,
+        assertForAllEvents,
+      }
     );
   }
 }
