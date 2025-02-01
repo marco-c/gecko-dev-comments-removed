@@ -545,21 +545,60 @@ async function doRustProvidersTests({ searchString, tests }) {
 
 
 
-function triggerCommand({ feature, command, result, searchString = "" }) {
+
+
+
+
+
+
+function triggerCommand({
+  feature,
+  command,
+  result,
+  searchString = "",
+  expectedCountsByCall = null,
+}) {
   info(`Calling ${feature.name}.onEngagement() to trigger command: ${command}`);
+
+  let countsByCall = new Map();
+  let addCall = name => {
+    if (!countsByCall.has(name)) {
+      countsByCall.set(name, 0);
+    }
+    countsByCall.set(name, countsByCall.get(name) + 1);
+  };
+
   feature.onEngagement(
     
     {},
     
     {
-      removeResult() {},
+      removeResult() {
+        addCall("removeResult");
+      },
       view: {
-        acknowledgeFeedback() {},
-        invalidateResultMenuCommands() {},
+        acknowledgeFeedback() {
+          addCall("acknowledgeFeedback");
+        },
+        invalidateResultMenuCommands() {
+          addCall("invalidateResultMenuCommands");
+        },
       },
     },
     
     { result, selType: command },
     searchString
   );
+
+  if (expectedCountsByCall) {
+    for (let [name, expectedCount] of Object.entries(expectedCountsByCall)) {
+      Assert.equal(
+        countsByCall.get(name) ?? 0,
+        expectedCount,
+        "Function should have been called the expected number of times: " + name
+      );
+    }
+  }
+
+  return countsByCall;
 }
