@@ -412,6 +412,7 @@ class MachSiteManager:
                 *stdlib_paths,
                 *self._requirements.pths_as_absolute(self._topsrcdir),
                 *system_site_paths,
+                *self._requirements.pths_fallback_as_absolute(self._topsrcdir),
             ]
         elif self._site_packages_source == SitePackagesSource.NONE:
             stdlib_paths = self._metadata.original_python.sys_path_stdlib()
@@ -794,6 +795,12 @@ class CommandSiteManager:
         
         lines.extend(
             _deprioritize_venv_packages(self._virtualenv, self._populate_virtualenv)
+        )
+        
+        lines.extend(
+            resolve_requirements(self._topsrcdir, "mach").pths_fallback_as_absolute(
+                self._topsrcdir
+            )
         )
 
         
