@@ -17,9 +17,6 @@ add_task(async function () {
   info(" ### Test reloading a Tab");
 
   
-  await fetch(TEST_URL + "?setup");
-
-  
   const tab = await addTab(TEST_URL);
   const commands = await CommandsFactory.forTab(tab);
   const targetCommand = commands.targetCommand;
