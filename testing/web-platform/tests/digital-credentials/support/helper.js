@@ -12,29 +12,29 @@
 
 
 
-export function makeGetOptions(providersToUse, mediation = "required") {
-  if (typeof providersToUse === "string") {
-    if (providersToUse === "default" || providersToUse === "openid4vp"){
-      return makeGetOptions([providersToUse], mediation);
+export function makeGetOptions(requestsToUse, mediation = "required") {
+  if (typeof requestsToUse === "string") {
+    if (requestsToUse === "default" || requestsToUse === "openid4vp") {
+      return makeGetOptions([requestsToUse], mediation);
     }
   }
-  if (!Array.isArray(providersToUse) || !providersToUse?.length) {
-    return { digital: { providers: providersToUse }, mediation };
+  if (!Array.isArray(requestsToUse) || !requestsToUse?.length) {
+    return { digital: { requests: requestsToUse }, mediation };
   }
-  const providers = [];
-  for (const provider of providersToUse) {
-    switch (provider) {
+  const requests = [];
+  for (const request of requestsToUse) {
+    switch (request) {
       case "openid4vp":
-        providers.push(makeOID4VPDict());
+        requests.push(makeOID4VPDict());
         break;
       case "default":
-        providers.push(makeIdentityRequestProvider(undefined, undefined));
+        requests.push(makeDigitalCredentialRequest(undefined, undefined));
         break;
       default:
-        throw new Error(`Unknown provider type: ${provider}`);
+        throw new Error(`Unknown request type: ${request}`);
     }
   }
-  return { digital: { providers }, mediation };
+  return { digital: { requests }, mediation };
 }
 
 
@@ -42,10 +42,10 @@ export function makeGetOptions(providersToUse, mediation = "required") {
 
 
 
-function makeIdentityRequestProvider(protocol = "protocol", request = {}) {
+function makeDigitalCredentialRequest(protocol = "protocol", data = {}) {
   return {
     protocol,
-    request,
+    data,
   };
 }
 
@@ -55,7 +55,7 @@ function makeIdentityRequestProvider(protocol = "protocol", request = {}) {
 
 
 function makeOID4VPDict() {
-  return makeIdentityRequestProvider("openid4vp", {
+  return makeDigitalCredentialRequest("openid4vp", {
     
   });
 }

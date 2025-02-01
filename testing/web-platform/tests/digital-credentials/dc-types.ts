@@ -8,9 +8,9 @@ export type CredentialMediationRequirement =
 
 
 
-export interface IdentityRequestProvider {
+export interface DigitalCredentialRequest {
   protocol: string;
-  request: object;
+  data: object;
 }
 
 
@@ -20,7 +20,7 @@ export interface DigitalCredentialRequestOptions {
   
 
 
-  providers: IdentityRequestProvider[] | any;
+  requests: DigitalCredentialRequest[] | any;
 }
 
 
