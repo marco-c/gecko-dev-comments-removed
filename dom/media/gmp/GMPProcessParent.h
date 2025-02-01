@@ -12,6 +12,7 @@
 #include "base/file_path.h"
 #include "base/thread.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "mozilla/media/MediaUtils.h"
 #include "nsIFile.h"
 
 class nsIRunnable;
@@ -88,6 +89,9 @@ class GMPProcessParent final : public mozilla::ipc::GeckoChildProcessHost {
   static bool sIsMainThreadInitDone;
 #  endif
 #endif
+
+  
+  UniquePtr<media::ShutdownBlockingTicket> mShutdownBlocker;
 
   
   
