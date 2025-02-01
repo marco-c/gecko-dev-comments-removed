@@ -37,6 +37,7 @@
 #include "mozilla/ProfilerLabels.h"
 #include "nsJSUtils.h"  
 #include "nsString.h"
+#include "nsFmtString.h"
 #include "ETWTools.h"
 
 class nsIDocShell;
@@ -247,6 +248,18 @@ using Tracing = mozilla::baseprofiler::markers::Tracing;
     profiler_add_marker(markerName, ::geckoprofiler::category::categoryName, \
                         options, ::geckoprofiler::markers::TextMarker{},     \
                         text);                                               \
+  } while (false)
+
+#define PROFILER_MARKER_FMT(markerName, categoryName, options, format, ...)   \
+  do {                                                                        \
+    if (profiler_is_collecting_markers()) {                                   \
+      AUTO_PROFILER_STATS(PROFILER_MARKER_TEXT);                              \
+      nsFmtCString fmt(FMT_STRING(format), ##__VA_ARGS__);                    \
+      profiler_add_marker(                                                    \
+          markerName, ::geckoprofiler::category::categoryName, options,       \
+          ::geckoprofiler::markers::TextMarker{},                             \
+          mozilla::ProfilerString8View::WrapNullTerminatedString(fmt.get())); \
+    }                                                                         \
   } while (false)
 
 
