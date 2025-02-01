@@ -2,9 +2,13 @@
 
 
 
+
+
 if (!window.smartblockTestShimInitialized) {
   
   window.smartblockTestShimInitialized = Object.freeze(true);
+
+  const SHIM_ID = "EmbedTestShim";
 
   
   const ORIGINAL_URL =
@@ -19,44 +23,17 @@ if (!window.smartblockTestShimInitialized) {
   let embedPlaceholders = [];
 
   
-  const sendMessageToAddon = (function () {
-    const shimId = "EmbedTestShim";
-    const pendingMessages = new Map();
-    const channel = new MessageChannel();
-    channel.port1.onerror = console.error;
-    channel.port1.onmessage = event => {
-      const { messageId, response, message } = event.data;
-      const resolve = pendingMessages.get(messageId);
-      if (resolve) {
-        
-        pendingMessages.delete(messageId);
-        resolve(response);
-      } else {
-        addonMessageHandler(message);
-      }
-    };
-    function reconnect() {
-      const detail = {
-        pendingMessages: [...pendingMessages.values()],
-        port: channel.port2,
-        shimId,
-      };
-      window.dispatchEvent(new CustomEvent("ShimConnects", { detail }));
-    }
-    window.addEventListener("ShimHelperReady", reconnect);
-    reconnect();
-    return function (message) {
-      const messageId = crypto.randomUUID();
-      return new Promise(resolve => {
-        const payload = { message, messageId, shimId };
-        pendingMessages.set(messageId, resolve);
-        channel.port1.postMessage(payload);
-      });
-    };
-  })();
+  function sendMessageToAddon(message) {
+    return browser.runtime.sendMessage({ message, shimId: SHIM_ID });
+  }
 
   function addonMessageHandler(message) {
-    let { topic, data } = message;
+    let { topic, data, shimId } = message;
+    
+    if (shimId != SHIM_ID) {
+      return;
+    }
+
     if (topic === "smartblock:unblock-embed") {
       if (data != window.location.hostname) {
         
@@ -67,6 +44,10 @@ if (!window.smartblockTestShimInitialized) {
       embedPlaceholders.forEach((p, idx) => {
         p.replaceWith(originalEmbedContainers[idx]);
       });
+
+      
+      
+      let document = window.document.wrappedJSObject;
 
       
       let scriptElement = document.createElement("script");
@@ -83,72 +64,72 @@ if (!window.smartblockTestShimInitialized) {
       
       
       const SMARTBLOCK_PLACEHOLDER_HTML_STRING = `
-        <style>
-          #smartblock-placeholder-wrapper {
-            min-height: 225px;
-            width: 400px;
-            padding: 32px 24px;
-  
-            display: block;
-            align-content: center;
-            text-align: center;
-  
-            background-color: light-dark(rgb(255, 255, 255), rgb(28, 27, 34));
-            color: light-dark(rgb(43, 42, 51), rgb(251, 251, 254));
-  
-            border-radius: 8px;
-            border: 2px dashed #0250bb;
-  
-            font-size: 14px;
-            line-height: 1.2;
-            font-family: system-ui;
-          }
-  
-          #smartblock-placeholder-button {
-            min-height: 32px;
-            padding: 8px 14px;
-  
-            border-radius: 4px;
-            font-weight: 600;
-            border: 0;
-  
-            /* Colours match light/dark theme from
-              https://searchfox.org/mozilla-central/source/browser/themes/addons/light/manifest.json
-              https://searchfox.org/mozilla-central/source/browser/themes/addons/dark/manifest.json */
-            background-color: light-dark(rgb(0, 97, 224), rgb(0, 221, 255));
-            color: light-dark(rgb(251, 251, 254), rgb(43, 42, 51));
-          }
-  
-          #smartblock-placeholder-button:hover {
-            /* Colours match light/dark theme from
-              https://searchfox.org/mozilla-central/source/browser/themes/addons/light/manifest.json
-              https://searchfox.org/mozilla-central/source/browser/themes/addons/dark/manifest.json */
-            background-color: light-dark(rgb(2, 80, 187), rgb(128, 235, 255));
-          }
-  
-          #smartblock-placeholder-button:hover:active {
-            /* Colours match light/dark theme from
-              https://searchfox.org/mozilla-central/source/browser/themes/addons/light/manifest.json
-              https://searchfox.org/mozilla-central/source/browser/themes/addons/dark/manifest.json */
-            background-color: light-dark(rgb(5, 62, 148), rgb(170, 242, 255));
-          }
-  
-          #smartblock-placeholder-title {
-            margin-block: 14px;
-            font-size: 16px;
-            font-weight: bold;
-          }
-  
-          #smartblock-placeholder-desc {
-            margin-block: 14px;
-          }
-        </style>
-        <div id="smartblock-placeholder-wrapper">
-          <img id="smartblock-placeholder-image" width="24" height="24" />
-          <p id="smartblock-placeholder-title"></p>
-          <p id="smartblock-placeholder-desc"></p>
-          <button id="smartblock-placeholder-button"></button>
-        </div>`;
+      <style>
+        #smartblock-placeholder-wrapper {
+          min-height: 225px;
+          width: 400px;
+          padding: 32px 24px;
+
+          display: block;
+          align-content: center;
+          text-align: center;
+
+          background-color: light-dark(rgb(255, 255, 255), rgb(28, 27, 34));
+          color: light-dark(rgb(43, 42, 51), rgb(251, 251, 254));
+
+          border-radius: 8px;
+          border: 2px dashed #0250bb;
+
+          font-size: 14px;
+          line-height: 1.2;
+          font-family: system-ui;
+        }
+
+        #smartblock-placeholder-button {
+          min-height: 32px;
+          padding: 8px 14px;
+
+          border-radius: 4px;
+          font-weight: 600;
+          border: 0;
+
+          /* Colours match light/dark theme from
+            https://searchfox.org/mozilla-central/source/browser/themes/addons/light/manifest.json
+            https://searchfox.org/mozilla-central/source/browser/themes/addons/dark/manifest.json */
+          background-color: light-dark(rgb(0, 97, 224), rgb(0, 221, 255));
+          color: light-dark(rgb(251, 251, 254), rgb(43, 42, 51));
+        }
+
+        #smartblock-placeholder-button:hover {
+          /* Colours match light/dark theme from
+            https://searchfox.org/mozilla-central/source/browser/themes/addons/light/manifest.json
+            https://searchfox.org/mozilla-central/source/browser/themes/addons/dark/manifest.json */
+          background-color: light-dark(rgb(2, 80, 187), rgb(128, 235, 255));
+        }
+
+        #smartblock-placeholder-button:hover:active {
+          /* Colours match light/dark theme from
+            https://searchfox.org/mozilla-central/source/browser/themes/addons/light/manifest.json
+            https://searchfox.org/mozilla-central/source/browser/themes/addons/dark/manifest.json */
+          background-color: light-dark(rgb(5, 62, 148), rgb(170, 242, 255));
+        }
+
+        #smartblock-placeholder-title {
+          margin-block: 14px;
+          font-size: 16px;
+          font-weight: bold;
+        }
+
+        #smartblock-placeholder-desc {
+          margin-block: 14px;
+        }
+      </style>
+      <div id="smartblock-placeholder-wrapper">
+        <img id="smartblock-placeholder-image" width="24" height="24" />
+        <p id="smartblock-placeholder-title"></p>
+        <p id="smartblock-placeholder-desc"></p>
+        <button id="smartblock-placeholder-button"></button>
+      </div>`;
 
       
       const placeholderDiv = document.createElement("div");
@@ -171,7 +152,10 @@ if (!window.smartblockTestShimInitialized) {
       
       shadowRoot
         .getElementById("smartblock-placeholder-button")
-        .addEventListener("click", () => {
+        .addEventListener("click", ({ isTrusted }) => {
+          if (!isTrusted) {
+            return;
+          }
           
           
           sendMessageToAddon("embedClicked");
@@ -189,6 +173,11 @@ if (!window.smartblockTestShimInitialized) {
     });
     window.dispatchEvent(finishedEvent);
   }
+
+  
+  browser.runtime.onMessage.addListener(request => {
+    addonMessageHandler(request);
+  });
 
   createShimPlaceholders();
 }
