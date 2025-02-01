@@ -253,7 +253,9 @@ void ProcessRuntime::InitInsideApartment() {
     
     
     mInitResult = InitializeSecurity(mProcessCategory);
-    MOZ_DIAGNOSTIC_ASSERT(SUCCEEDED(mInitResult));
+    
+    
+    MOZ_ASSERT(SUCCEEDED(mInitResult));
 
     
     
