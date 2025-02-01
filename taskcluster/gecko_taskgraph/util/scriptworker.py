@@ -55,6 +55,8 @@ SIGNING_SCOPE_ALIAS_TO_PROJECT = [
             "pine",
             
             "larch",
+            
+            "maple",
         },
     ],
     [
