@@ -68,6 +68,23 @@ const NEVER_TRANSLATE_LANGS_PREF =
 
 
 
+function languageModelNames(languagePairs) {
+  return languagePairs
+    .flatMap(({ fromLang, toLang }) => [
+      `model.${fromLang}${toLang}.intgemm.alphas.bin`,
+      `vocab.${fromLang}${toLang}.spm`,
+      `lex.50.50.${fromLang}${toLang}.s2t.bin`,
+    ])
+    .sort();
+}
+
+
+
+
+
+
+
+
 
 
 
