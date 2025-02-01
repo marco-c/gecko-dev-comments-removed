@@ -1,6 +1,4 @@
-var EXPORTED_SYMBOLS = ["checkFromJSM"];
-
-function checkFromJSM(target, is_op) {
+function checkFromESM(target, is_op) {
   is_op(target.numProp, 42, "Number expando works");
   is_op(target.strProp, "foo", "String expando works");
   
