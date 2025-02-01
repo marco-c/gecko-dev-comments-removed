@@ -10,14 +10,21 @@ async function isUnloadAllowed(remoteContextWrapper) {
 }
 
 
-
-
-async function assertWindowRunsUnload(
+async function assertWindowAllowsUnload(
     remoteContextWrapper, name, {shouldRunUnload}) {
   const maybeNot = shouldRunUnload ? '' : 'not ';
   assert_equals(
       await isUnloadAllowed(remoteContextWrapper), shouldRunUnload,
       `${name}: unload in ${name} should ${maybeNot}be allowed`);
+}
+
+
+
+
+async function assertWindowRunsUnload(
+    remoteContextWrapper, name, {shouldRunUnload}) {
+  await assertWindowAllowsUnload(remoteContextWrapper, name, {shouldRunUnload});
+  const maybeNot = shouldRunUnload ? '' : 'not ';
 
   
   await remoteContextWrapper.executeScript((name) => {
