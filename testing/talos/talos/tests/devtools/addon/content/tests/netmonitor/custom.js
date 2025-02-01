@@ -6,8 +6,10 @@
 
 const {
   openToolboxAndLog,
+  navigatePageAndLog,
   reloadPageAndLog,
   closeToolboxAndLog,
+  runTest,
   testSetup,
   testTeardown,
   PAGES_BASE_URL,
@@ -18,35 +20,51 @@ const {
   waitForNetworkRequests,
 } = require("damp-test/tests/netmonitor/netmonitor-helpers");
 
+function getExpectedRequests({
+  bigFileRequests,
+  postDataRequests,
+  xhrRequests,
+  dataRequests,
+}) {
+  
+  
+  const expectedSyncCssRequests = 10,
+    expectedSyncJSRequests = 10;
+  
+  
+  const expectedSyncIframeRequests = 2 * 10 + 1;
 
-const bigFileRequests = 20,
-  postDataRequests = 20,
-  xhrRequests = 50;
+  return (
+    1 + 
+    expectedSyncCssRequests +
+    expectedSyncJSRequests +
+    expectedSyncIframeRequests +
+    bigFileRequests +
+    postDataRequests +
+    xhrRequests +
+    dataRequests
+  );
+}
 
+function getTestUrl({
+  bigFileRequests,
+  postDataRequests,
+  xhrRequests,
+  dataRequests,
+}) {
+  return (
+    PAGES_BASE_URL +
+    "custom/netmonitor/index.html" +
+    `?bigFileRequests=${bigFileRequests}` +
+    `&postDataRequests=${postDataRequests}` +
+    `&xhrRequests=${xhrRequests}` +
+    `&dataRequests=${dataRequests}`
+  );
+}
 
-const expectedSyncCssRequests = 10,
-  expectedSyncJSRequests = 10;
-
-
-const expectedSyncIframeRequests = 2 * 10 + 1;
-const expectedRequests =
-  1 + 
-  expectedSyncCssRequests +
-  expectedSyncJSRequests +
-  expectedSyncIframeRequests +
-  bigFileRequests +
-  postDataRequests +
-  xhrRequests;
-
-const CUSTOM_URL = PAGES_BASE_URL + "custom/netmonitor/index.html";
-
-module.exports = async function () {
-  const url =
-    CUSTOM_URL +
-    `?bigFileRequests=${bigFileRequests}&postDataRequests=${postDataRequests}&xhrRequests=${xhrRequests}`;
-  let tab = await testSetup(url);
-  let { messageManager } = tab.linkedBrowser;
-  let onReady = new Promise(done => {
+function waitForRequests(tab) {
+  const { messageManager } = tab.linkedBrowser;
+  const onReady = new Promise(done => {
     messageManager.addMessageListener("ready", done);
   });
   messageManager.loadFrameScript(
@@ -65,6 +83,21 @@ module.exports = async function () {
       ")()",
     true
   );
+  return onReady;
+}
+
+module.exports = async function () {
+  
+  let requests = {
+    bigFileRequests: 20,
+    postDataRequests: 20,
+    xhrRequests: 50,
+    dataRequests: 0,
+  };
+
+  let tab = await testSetup(getTestUrl(requests));
+  let expectedRequests = getExpectedRequests(requests);
+  const onReady = waitForRequests(tab);
 
   
   
@@ -74,7 +107,7 @@ module.exports = async function () {
   dump("Waiting for document to be ready and have sent all its requests\n");
   await onReady;
 
-  const toolbox = await openToolboxAndLog("custom.netmonitor", "netmonitor");
+  let toolbox = await openToolboxAndLog("custom.netmonitor", "netmonitor");
 
   
   
@@ -84,7 +117,7 @@ module.exports = async function () {
     window.requestIdleCallback(done);
   });
 
-  const requestsDone = waitForNetworkRequests(
+  let requestsDone = waitForNetworkRequests(
     "custom.netmonitor",
     toolbox,
     expectedRequests,
@@ -94,6 +127,40 @@ module.exports = async function () {
   await requestsDone;
 
   await exportHar("custom.netmonitor", toolbox);
+
+  
+  
+  dump("Test panel performance when the request list contains many requests\n");
+
+  
+  
+  requests = {
+    bigFileRequests: 0,
+    postDataRequests: 0,
+    xhrRequests: 0,
+    dataRequests: 2000,
+  };
+
+  requestsDone = waitForNetworkRequests(
+    "custom.netmonitor.manyrequests",
+    toolbox,
+    expectedRequests,
+    expectedRequests
+  );
+  await navigatePageAndLog(
+    getTestUrl(requests),
+    "custom.netmonitor.manyrequests",
+    toolbox
+  );
+  await requestsDone;
+
+  
+  
+  
+  let test = runTest("custom.netmonitor.manyrequests.togglepanel");
+  await toolbox.selectTool("webconsole");
+  await toolbox.selectTool("netmonitor");
+  test.done();
 
   await closeToolboxAndLog("custom.netmonitor", toolbox);
 
