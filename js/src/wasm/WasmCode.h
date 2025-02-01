@@ -1217,9 +1217,6 @@ class Code : public ShareableBase<Code> {
     }
     return block->lookupUnwindInfo(pc);
   }
-  
-  
-  bool lookupFunctionTier(const CodeRange* codeRange, Tier* tier) const;
 
   
   
