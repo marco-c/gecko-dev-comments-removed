@@ -4302,18 +4302,26 @@ static StyleAlignFlags GetAlignJustifyValue(StyleAlignFlags aAlignment,
   return aAlignment;
 }
 
-static Maybe<StyleAlignFlags> GetAlignJustifyFallbackIfAny(
-    const StyleContentDistribution& aDistribution, const WritingMode aWM,
-    const bool aIsAlign, bool* aOverflowSafe) {
+static Maybe<StyleAlignFlags> GetAlignJustifyDistributionFallback(
+    const StyleContentDistribution& aDistribution, bool* aOverflowSafe) {
   
   
-  if (aDistribution.primary == StyleAlignFlags::STRETCH ||
-      aDistribution.primary == StyleAlignFlags::SPACE_BETWEEN) {
+  
+  
+  
+  
+  if (aDistribution.primary == StyleAlignFlags::SPACE_BETWEEN) {
+    *aOverflowSafe = true;
     return Some(StyleAlignFlags::START);
   }
   if (aDistribution.primary == StyleAlignFlags::SPACE_AROUND ||
       aDistribution.primary == StyleAlignFlags::SPACE_EVENLY) {
+    *aOverflowSafe = true;
     return Some(StyleAlignFlags::CENTER);
+  }
+  if (aDistribution.primary == StyleAlignFlags::STRETCH) {
+    *aOverflowSafe = false;
+    return Some(StyleAlignFlags::START);
   }
   return Nothing();
 }
@@ -7295,8 +7303,8 @@ void nsGridContainerFrame::Tracks::AlignJustifyContent(
     
     if (space < 0 ||
         (alignment == StyleAlignFlags::SPACE_BETWEEN && mSizes.Length() == 1)) {
-      auto fallback = ::GetAlignJustifyFallbackIfAny(aAligmentStyleValue, aWM,
-                                                     isAlign, &overflowSafe);
+      auto fallback = GetAlignJustifyDistributionFallback(aAligmentStyleValue,
+                                                          &overflowSafe);
       if (fallback) {
         alignment = *fallback;
       }
