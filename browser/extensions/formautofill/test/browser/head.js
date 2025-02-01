@@ -1502,6 +1502,9 @@ async function triggerCapture(browser, submitButtonSelector, fillSelectors) {
 
 
 
+
+
+
 async function add_heuristic_tests(
   patterns,
   fixturePathPrefix = "",
@@ -1570,6 +1573,10 @@ async function add_heuristic_tests(
         }
       }
 
+      if (testPattern.onTestStart) {
+        await testPattern.onTestStart();
+      }
+
       info(`Waiting for expected section count`);
       const actor =
         browser.browsingContext.currentWindowGlobal.getActor("FormAutofill");
@@ -1620,11 +1627,11 @@ async function add_heuristic_tests(
         verifyCaptureRecord(guid, testPattern.captureExpectedRecord);
         await removeAllRecords();
       }
-    });
 
-    if (testPattern.onTestComplete) {
-      await testPattern.onTestComplete();
-    }
+      if (testPattern.onTestComplete) {
+        await testPattern.onTestComplete();
+      }
+    });
 
     if (testPattern.profile) {
       await removeAllRecords();
