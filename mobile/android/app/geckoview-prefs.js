@@ -391,8 +391,6 @@ pref("pdfjs.handleOctetStream", true);
 
 pref("privacy.trackingprotection.pbmode.enabled", false);
 
-pref("privacy.fingerprintingProtection.pbmode", true);
-
 
 pref("signon.firefoxRelay.feature", "not available");
 
