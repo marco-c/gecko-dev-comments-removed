@@ -19,19 +19,16 @@
 #include "nsCOMPtr.h"
 #include "nsHashKeys.h"
 #include "nsIMemoryReporter.h"
-#include "nsIObserver.h"
 #include "nsString.h"
 
 class nsIIDNService;
 
 class nsEffectiveTLDService final : public nsIEffectiveTLDService,
-                                    public nsIObserver,
                                     public nsIMemoryReporter {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEFFECTIVETLDSERVICE
   NS_DECL_NSIMEMORYREPORTER
-  NS_DECL_NSIOBSERVER
 
   nsEffectiveTLDService();
   nsresult Init();
@@ -47,13 +44,7 @@ class nsEffectiveTLDService final : public nsIEffectiveTLDService,
   ~nsEffectiveTLDService();
 
   
-  mozilla::Maybe<mozilla::Dafsa> mGraph MOZ_GUARDED_BY(mGraphLock);
-
-  
-  mozilla::loader::AutoMemMap mDafsaMap MOZ_GUARDED_BY(mGraphLock);
-
-  
-  mozilla::RWLock mGraphLock;
+  mozilla::Dafsa mGraph;
 
   
   
