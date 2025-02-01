@@ -6,7 +6,6 @@
 
 
 static const char* kBaseFonts[] = {
-  "AlternateGothic2 BT",
   "Arial",
   "Arial Black",
   "Bahnschrift",
