@@ -50,7 +50,8 @@ const {
 } = require("resource://devtools/shared/l10n.js");
 const L10N = new MultiLocalizationHelper(
   "devtools/client/locales/toolbox.properties",
-  "chrome://branding/locale/brand.properties"
+  "chrome://branding/locale/brand.properties",
+  "devtools/client/locales/menus.properties"
 );
 
 loader.lazyRequireGetter(
@@ -916,8 +917,8 @@ Toolbox.prototype = {
   
 
 
-  open() {
-    return async function () {
+  async open() {
+    try {
       
       const fluentL10n = new FluentL10n();
       const fluentInitPromise = fluentL10n.init([
@@ -930,7 +931,9 @@ Toolbox.prototype = {
         this._URL = this.win.location.href;
       }
 
-      const domReady = new Promise(resolve => {
+      
+      
+      await new Promise(resolve => {
         DOMHelpers.onceDOMReady(
           this.win,
           () => {
@@ -940,6 +943,24 @@ Toolbox.prototype = {
         );
       });
 
+      
+      
+      this.browserRequire = BrowserLoader({
+        window: this.win,
+        useOnlyShared: true,
+      }).require;
+
+      
+      
+      await fluentInitPromise;
+
+      
+      
+      this._mountReactComponent(fluentL10n.getBundles());
+
+      
+      this.resourceCommand = this.commands.resourceCommand;
+
       this.commands.targetCommand.on(
         "target-thread-wrong-order-on-resume",
         this._onTargetThreadFrontResumeWrongOrder.bind(this)
@@ -948,9 +969,6 @@ Toolbox.prototype = {
         this.commands.targetCommand.store,
         this._onTargetCommandStateChange.bind(this)
       );
-
-      
-      this.resourceCommand = this.commands.resourceCommand;
 
       
       
@@ -1011,13 +1029,6 @@ Toolbox.prototype = {
         }
       );
 
-      await domReady;
-
-      this.browserRequire = BrowserLoader({
-        window: this.win,
-        useOnlyShared: true,
-      }).require;
-
       this.isReady = true;
 
       const framesPromise = this._listFrames();
@@ -1027,14 +1038,6 @@ Toolbox.prototype = {
         this._refreshHostTitle
       );
 
-      
-      this._componentMount = this.doc.getElementById("toolbox-toolbar-mount");
-
-      await fluentInitPromise;
-
-      
-      
-      this._mountReactComponent(fluentL10n.getBundles());
       this._buildDockOptions();
       this._buildInitialPanelDefinitions();
       this._setDebugTargetData();
@@ -1140,14 +1143,32 @@ Toolbox.prototype = {
 
       this.emit("ready");
       this._resolveIsOpen();
+    } catch (error) {
+      console.error(
+        "Exception while opening the toolbox",
+        String(error),
+        error
+      );
+      
+      
+      dump(error.stack + "\n");
+      if (error.serverStack) {
+        dump("Server stack:" + error.serverStack + "\n");
+      }
+
+      
+      
+      if (this._appBoundary) {
+        this._appBoundary.setState({
+          errorMsg: error.toString(),
+          errorStack: error.stack,
+          errorInfo: {
+            serverStack: error.serverStack,
+          },
+          toolbox: this,
+        });
+      }
     }
-      .bind(this)()
-      .catch(e => {
-        console.error("Exception while opening the toolbox", String(e), e);
-        
-        
-        dump(e.stack + "\n");
-      });
   },
 
   
@@ -1490,6 +1511,12 @@ Toolbox.prototype = {
   get ToolboxController() {
     return this.browserRequire(
       "devtools/client/framework/components/ToolboxController"
+    );
+  },
+
+  get AppErrorBoundary() {
+    return this.browserRequire(
+      "resource://devtools/client/shared/components/AppErrorBoundary.js"
     );
   },
 
@@ -1990,25 +2017,37 @@ Toolbox.prototype = {
 
   _mountReactComponent(fluentBundles) {
     
-    const element = this.React.createElement(this.ToolboxController, {
-      L10N,
-      fluentBundles,
-      currentToolId: this.currentToolId,
-      selectTool: this.selectTool,
-      toggleOptions: this.toggleOptions,
-      toggleSplitConsole: this.toggleSplitConsole,
-      toggleNoAutohide: this.toggleNoAutohide,
-      toggleAlwaysOnTop: this.toggleAlwaysOnTop,
-      disablePseudoLocale: this.disablePseudoLocale,
-      enableAccentedPseudoLocale: this.enableAccentedPseudoLocale,
-      enableBidiPseudoLocale: this.enableBidiPseudoLocale,
-      closeToolbox: this.closeToolbox,
-      focusButton: this._onToolbarFocus,
-      toolbox: this,
-      onTabsOrderUpdated: this._onTabsOrderUpdated,
-    });
+    const element = this.React.createElement(
+      this.AppErrorBoundary,
+      {
+        componentName: "General",
+        panel: L10N.getStr("webDeveloperToolsMenu.label"),
+      },
+      this.React.createElement(this.ToolboxController, {
+        ref: r => {
+          this.component = r;
+        },
+        L10N,
+        fluentBundles,
+        currentToolId: this.currentToolId,
+        selectTool: this.selectTool,
+        toggleOptions: this.toggleOptions,
+        toggleSplitConsole: this.toggleSplitConsole,
+        toggleNoAutohide: this.toggleNoAutohide,
+        toggleAlwaysOnTop: this.toggleAlwaysOnTop,
+        disablePseudoLocale: this.disablePseudoLocale,
+        enableAccentedPseudoLocale: this.enableAccentedPseudoLocale,
+        enableBidiPseudoLocale: this.enableBidiPseudoLocale,
+        closeToolbox: this.closeToolbox,
+        focusButton: this._onToolbarFocus,
+        toolbox: this,
+        onTabsOrderUpdated: this._onTabsOrderUpdated,
+      })
+    );
 
-    this.component = this.ReactDOM.render(element, this._componentMount);
+    
+    this._componentMount = this.doc.getElementById("toolbox-toolbar-mount");
+    this._appBoundary = this.ReactDOM.render(element, this._componentMount);
   },
 
   
@@ -4247,15 +4286,18 @@ Toolbox.prototype = {
       );
       this.webconsolePanel = null;
     }
-    if (this._componentMount) {
+    if (this._tabBar) {
       this._tabBar.removeEventListener(
         "keypress",
         this._onToolbarArrowKeypress
       );
+    }
+    if (this._componentMount) {
       this.ReactDOM.unmountComponentAtNode(this._componentMount);
       this.component = null;
       this._componentMount = null;
       this._tabBar = null;
+      this._appBoundary = null;
     }
     this.destroyHarAutomation();
 
@@ -4317,12 +4359,14 @@ Toolbox.prototype = {
     });
 
     
-    this.toolbarButtons.forEach(button => {
-      if (typeof button.teardown == "function") {
-        
-        button.teardown();
-      }
-    });
+    if (this.toolbarButtons) {
+      this.toolbarButtons.forEach(button => {
+        if (typeof button.teardown == "function") {
+          
+          button.teardown();
+        }
+      });
+    }
 
     
     const win = this.win;
