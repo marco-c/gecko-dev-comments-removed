@@ -26,3 +26,90 @@ function WeakMapConstructorInit(iterable) {
     callContentFunction(adder, map, nextItem[0], nextItem[1]);
   }
 }
+
+#ifdef NIGHTLY_BUILD
+
+
+
+
+
+
+
+function WeakMapGetOrInsert(key, value) {
+  
+  var M = this;
+
+  
+  if (!IsObject(M) || (M = GuardToWeakMapObject(M)) === null) {
+    return callFunction(
+      CallWeakMapMethodIfWrapped,
+      this,
+      key,
+      value,
+      "WeakMapGetOrInsert"
+    );
+  }
+
+  
+  
+  
+  if (callFunction(std_WeakMap_has, M, key)) {
+    return callFunction(std_WeakMap_get, M, key);
+  }
+
+  
+  
+  callFunction(std_WeakMap_set, M, key, value);
+
+  
+  return value;
+}
+
+
+
+
+
+
+
+
+function WeakMapGetOrInsertComputed(key, callbackfn) {
+  
+  var M = this;
+
+  
+  if (!IsObject(M) || (M = GuardToWeakMapObject(M)) === null) {
+    return callFunction(
+      CallWeakMapMethodIfWrapped,
+      this,
+      key,
+      callbackfn,
+      "WeakMapGetOrInsertComputed"
+    );
+  }
+
+  
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(1, callbackfn));
+  }
+
+  
+  
+  
+  if (callFunction(std_WeakMap_has, M, key)) {
+    return callFunction(std_WeakMap_get, M, key);
+  }
+
+  
+  var value = callContentFunction(callbackfn, undefined, key);
+
+  
+  
+  
+  
+  
+  callFunction(std_WeakMap_set, M, key, value);
+
+  
+  return value;
+}
+#endif  // #ifdef NIGHTLY_BUILD
