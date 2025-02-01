@@ -239,6 +239,12 @@ mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
 
   
   
+  auto isSegmentEnd = [](char aChar) {
+    return aChar == '/' || aChar == '?' || aChar == '#' || aChar == '\0';
+  };
+
+  
+  
   constexpr int PERCENT_2E_LENGTH = sizeof("%2e") - 1;
   constexpr uint32_t PERCENT_2E_WITH_PERIOD_LENGTH = PERCENT_2E_LENGTH + 1;
 
@@ -246,8 +252,7 @@ mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
     
     if (*fwdPtr == '/' &&
         nsCRT::strncasecmp(fwdPtr + 1, "%2e", PERCENT_2E_LENGTH) == 0 &&
-        (*(fwdPtr + PERCENT_2E_LENGTH + 1) == '\0' ||
-         *(fwdPtr + PERCENT_2E_LENGTH + 1) == '/')) {
+        isSegmentEnd(*(fwdPtr + PERCENT_2E_LENGTH + 1))) {
       *urlPtr++ = '/';
       *urlPtr++ = '.';
       fwdPtr += PERCENT_2E_LENGTH;
@@ -256,8 +261,7 @@ mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
     else if (*fwdPtr == '/' &&
              nsCRT::strncasecmp(fwdPtr + 1, "%2e%2e", PERCENT_2E_LENGTH * 2) ==
                  0 &&
-             (*(fwdPtr + PERCENT_2E_LENGTH * 2 + 1) == '\0' ||
-              *(fwdPtr + PERCENT_2E_LENGTH * 2 + 1) == '/')) {
+             isSegmentEnd(*(fwdPtr + PERCENT_2E_LENGTH * 2 + 1))) {
       *urlPtr++ = '/';
       *urlPtr++ = '.';
       *urlPtr++ = '.';
@@ -269,8 +273,7 @@ mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
                                  PERCENT_2E_WITH_PERIOD_LENGTH) == 0 ||
               nsCRT::strncasecmp(fwdPtr + 1, ".%2e",
                                  PERCENT_2E_WITH_PERIOD_LENGTH) == 0) &&
-             (*(fwdPtr + PERCENT_2E_WITH_PERIOD_LENGTH + 1) == '\0' ||
-              *(fwdPtr + PERCENT_2E_WITH_PERIOD_LENGTH + 1) == '/')) {
+             isSegmentEnd(*(fwdPtr + PERCENT_2E_WITH_PERIOD_LENGTH + 1))) {
       *urlPtr++ = '/';
       *urlPtr++ = '.';
       *urlPtr++ = '.';
@@ -294,10 +297,8 @@ mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
       
       ++fwdPtr;
     } else if (*fwdPtr == '/' && *(fwdPtr + 1) == '.' && *(fwdPtr + 2) == '.' &&
-               (*(fwdPtr + 3) == '/' ||
-                *(fwdPtr + 3) == '\0' ||  
-                *(fwdPtr + 3) == '?' ||   
-                *(fwdPtr + 3) == '#')) {
+               isSegmentEnd(*(fwdPtr + 3))) {
+      
       
       
       
@@ -322,7 +323,9 @@ mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
         }
         
         
-        if (*fwdPtr == '.' && *(fwdPtr + 1) == '\0') ++urlPtr;
+        if (*fwdPtr == '.' && (*(fwdPtr + 1) == '\0' || *(fwdPtr + 1) == '?' ||
+                               *(fwdPtr + 1) == '#'))
+          ++urlPtr;
       } else {
         
         
