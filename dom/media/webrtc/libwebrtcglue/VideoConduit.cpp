@@ -774,24 +774,42 @@ void WebrtcVideoConduit::OnControlConfigChange() {
         mEncoderConfig.bitrate_priority = 1.0;
 
         
-        
-        
         mEncoderConfig.simulcast_layers.clear();
-        {
-          auto videoStreamFactory = mVideoStreamFactory.Lock();
-          auto& videoStreamFactoryRef = videoStreamFactory.ref();
-          for (size_t idx = 0; idx < streamCount; ++idx) {
-            webrtc::VideoStream video_stream;
-            auto& encoding = codecConfig->mEncodings[idx];
-            video_stream.active = encoding.active;
+        const auto& codecConstraints = codecConfig->mEncodingConstraints;
+        for (size_t idx = 0; idx < streamCount; ++idx) {
+          webrtc::VideoStream video_stream;
+          const auto& encoding = codecConfig->mEncodings[idx];
+          const auto& encodingConstraints = encoding.constraints;
 
-            if (videoStreamFactoryRef) {
-              videoStreamFactoryRef->SelectMaxFramerate(mLastWidth, mLastHeight,
-                                                        encoding, video_stream);
+          video_stream.active = encoding.active;
+
+          
+          
+          
+          
+          
+          video_stream.width = codecConfig->mEncodingConstraints.maxWidth;
+          video_stream.height = codecConfig->mEncodingConstraints.maxHeight;
+
+          
+          
+          
+          
+          video_stream.max_framerate = static_cast<int>(([&]() {
+            if (codecConstraints.maxFps && encodingConstraints.maxFps) {
+              return std::min(*codecConstraints.maxFps,
+                              *encodingConstraints.maxFps);
             }
+            return codecConstraints.maxFps
+                .orElse([&] { return encodingConstraints.maxFps; })
+                .valueOr(-1);
+          })());
 
-            mEncoderConfig.simulcast_layers.push_back(video_stream);
-          }
+          
+          
+          
+
+          mEncoderConfig.simulcast_layers.push_back(video_stream);
         }
 
         
