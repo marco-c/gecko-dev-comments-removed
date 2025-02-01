@@ -25,11 +25,19 @@ function getExpectedRequests({
   postDataRequests,
   xhrRequests,
   dataRequests,
+  bigDataRequests,
 }) {
   
   
   const expectedSyncCssRequests = 10,
     expectedSyncJSRequests = 10;
+
+  
+  
+  
+  
+  
+  
   
   
   const expectedSyncIframeRequests = 2 * 10 + 1;
@@ -42,7 +50,8 @@ function getExpectedRequests({
     bigFileRequests +
     postDataRequests +
     xhrRequests +
-    dataRequests
+    dataRequests +
+    bigDataRequests
   );
 }
 
@@ -51,6 +60,7 @@ function getTestUrl({
   postDataRequests,
   xhrRequests,
   dataRequests,
+  bigDataRequests,
 }) {
   return (
     PAGES_BASE_URL +
@@ -58,7 +68,8 @@ function getTestUrl({
     `?bigFileRequests=${bigFileRequests}` +
     `&postDataRequests=${postDataRequests}` +
     `&xhrRequests=${xhrRequests}` +
-    `&dataRequests=${dataRequests}`
+    `&dataRequests=${dataRequests}` +
+    `&bigDataRequests=${bigDataRequests}`
   );
 }
 
@@ -93,6 +104,7 @@ module.exports = async function () {
     postDataRequests: 20,
     xhrRequests: 50,
     dataRequests: 0,
+    bigDataRequests: 0,
   };
 
   let tab = await testSetup(getTestUrl(requests));
@@ -139,7 +151,9 @@ module.exports = async function () {
     postDataRequests: 0,
     xhrRequests: 0,
     dataRequests: 2000,
+    bigDataRequests: 0,
   };
+  expectedRequests = getExpectedRequests(requests);
 
   requestsDone = waitForNetworkRequests(
     "custom.netmonitor.manyrequests",
