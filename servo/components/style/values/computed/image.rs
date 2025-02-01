@@ -9,7 +9,7 @@
 
 use crate::values::computed::percentage::Percentage;
 use crate::values::computed::position::Position;
-use crate::values::computed::url::ComputedImageUrl;
+use crate::values::computed::url::ComputedUrl;
 use crate::values::computed::{Angle, Color, Context};
 use crate::values::computed::{
     AngleOrPercentage, LengthPercentage, NonNegativeLength, NonNegativeLengthPercentage,
@@ -26,7 +26,7 @@ pub use specified::ImageRendering;
 
 
 
-pub type Image = generic::GenericImage<Gradient, ComputedImageUrl, Color, Percentage, Resolution>;
+pub type Image = generic::GenericImage<Gradient, ComputedUrl, Color, Percentage, Resolution>;
 
 
 size_of_test!(Image, 16);

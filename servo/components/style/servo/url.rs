@@ -205,9 +205,6 @@ impl ToComputedValue for SpecifiedUrl {
 }
 
 
-pub type SpecifiedImageUrl = CssUrl;
-
-
 #[derive(Clone, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum ComputedUrl {
     
@@ -241,6 +238,3 @@ impl ToCss for ComputedUrl {
         dest.write_char(')')
     }
 }
-
-
-pub type ComputedImageUrl = ComputedUrl;
