@@ -1234,6 +1234,12 @@ bool GetThenValue(JSContext* cx, JS::Handle<JSObject*> obj,
   
   
   RootedId thenId(cx, NameToId(cx->names().then));
+
+  
+  
+  
+  
+  bool maybeOnPromiseProto = false;
   do {
     if (LookupPropertyPure(cx, obj, thenId, &holder, &prop)) {
       if (prop.isNotFound()) {
@@ -1245,13 +1251,25 @@ bool GetThenValue(JSContext* cx, JS::Handle<JSObject*> obj,
 
         auto key = JS::IdentifyStandardPrototype(holder);
         if (key != JSProto_Null) {
-          *isOnStandardProto = true;
+          if (key == JSProto_Promise) {
+            maybeOnPromiseProto = true;
+          } else {
+            *isOnStandardProto = true;
+          }
         }
       }
     }
   } while (false);
 
-  return GetProperty(cx, obj, reciever, cx->names().then, thenVal);
+  if (!GetProperty(cx, obj, reciever, cx->names().then, thenVal)) {
+    return false;
+  }
+
+  if (maybeOnPromiseProto) {
+    *isOnStandardProto = !IsNativeFunction(thenVal, Promise_then);
+  }
+
+  return true;
 }
 
 void ReportThenable(JSContext* cx, bool isOnProto, bool isOnStandardProto) {
@@ -1260,11 +1278,13 @@ void ReportThenable(JSContext* cx, bool isOnProto, bool isOnStandardProto) {
   if (isOnProto) {
     cx->runtime()->setUseCounter(cx->global(),
                                  JSUseCounter::THENABLE_USE_PROTO);
+    JS_LOG(thenable, mozilla::LogLevel::Debug, "Thenable on proto");
   }
 
   if (isOnStandardProto) {
     cx->runtime()->setUseCounter(cx->global(),
                                  JSUseCounter::THENABLE_USE_STANDARD_PROTO);
+    JS_LOG(thenable, mozilla::LogLevel::Info, "Thenable on standard proto");
   }
 }
 
