@@ -716,19 +716,40 @@ static inline bool SortBefore(LiveRange* a, LiveRange* b) {
 }
 
 template <typename T>
-static inline void InsertSortedList(InlineForwardList<T>& list, T* value) {
+static void InsertSortedList(InlineForwardList<T>& list, T* value,
+                             T* startAt = nullptr) {
   if (list.empty()) {
+    MOZ_ASSERT(!startAt);
     list.pushFront(value);
     return;
   }
+
+#ifdef DEBUG
+  if (startAt) {
+    
+    MOZ_ASSERT(SortBefore(startAt, value));
+    MOZ_ASSERT_IF(*list.begin() == list.back(), list.back() == startAt);
+    MOZ_ASSERT_IF(startAt != *list.begin(), SortBefore(*list.begin(), startAt));
+    MOZ_ASSERT_IF(startAt != list.back(), SortBefore(startAt, list.back()));
+  }
+#endif
 
   if (SortBefore(list.back(), value)) {
     list.pushBack(value);
     return;
   }
 
+  
   T* prev = nullptr;
-  for (InlineForwardListIterator<T> iter = list.begin(); iter; iter++) {
+  InlineForwardListIterator<T> iter =
+      startAt ? list.begin(startAt) : list.begin();
+  if (startAt) {
+    
+    MOZ_ASSERT(!SortBefore(value, *iter));
+    ++iter;
+    prev = startAt;
+  }
+  for (; iter; iter++) {
     if (SortBefore(value, *iter)) {
       break;
     }
@@ -925,11 +946,13 @@ LiveRange* LiveBundle::rangeFor(CodePosition pos) const {
   return nullptr;
 }
 
-void LiveBundle::addRange(LiveRange* range) {
+void LiveBundle::addRange(LiveRange* range,
+                          LiveRange* startAt ) {
   MOZ_ASSERT(!range->bundle());
   MOZ_ASSERT(range->hasVreg());
+  MOZ_ASSERT_IF(startAt, startAt->bundle() == this);
   range->setBundle(this);
-  InsertSortedList(ranges_, range);
+  InsertSortedList(ranges_, range, startAt);
 }
 
 void LiveBundle::addRangeAtEnd(LiveRange* range) {
@@ -2161,8 +2184,10 @@ bool BacktrackingAllocator::tryMergeBundles(LiveBundle* bundle0,
       bundle0->addRangeAtEnd(range);
     }
   } else {
+    LiveRange* prevRange = nullptr;
     while (LiveRange* range = bundle1->popFirstRange()) {
-      bundle0->addRange(range);
+      bundle0->addRange(range, prevRange);
+      prevRange = range;
     }
   }
 
