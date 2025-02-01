@@ -71,6 +71,7 @@ class Shim {
     );
 
     this._hostOptIns = new Set();
+    this._pBModeHostOptIns = new Set();
 
     this._disabledByConfig = opts.disabled;
     this._disabledGlobally = false;
@@ -350,6 +351,7 @@ class Shim {
   async _allowRequestsInETP() {
     const matches = this.matches.map(m => m.patterns).flat();
     if (matches.length) {
+      
       await browser.trackingProtection.shim(this.id, matches);
     }
 
@@ -359,7 +361,20 @@ class Shim {
         await browser.trackingProtection.allow(
           this.id,
           this._optInPatterns,
+          false,
           Array.from(this._hostOptIns)
+        );
+      }
+    }
+
+    if (this._pBModeHostOptIns.size) {
+      const optIns = this.getApplicableOptIns();
+      if (optIns.length) {
+        await browser.trackingProtection.allow(
+          this.id,
+          this._optInPatterns,
+          true,
+          Array.from(this._pBModeHostOptIns)
         );
       }
     }
@@ -456,21 +471,27 @@ class Shim {
     return optins;
   }
 
-  async onUserOptIn(host) {
+  async onUserOptIn(host, isPrivateMode) {
     const optins = await this.getApplicableOptIns();
+    const activeHostOptIns = isPrivateMode
+      ? this._pBModeHostOptIns
+      : this._hostOptIns;
     if (optins.length) {
-      this.userHasOptedIn = true;
-      this._hostOptIns.add(host);
+      activeHostOptIns.add(host);
       await browser.trackingProtection.allow(
         this.id,
         optins,
-        Array.from(this._hostOptIns)
+        isPrivateMode,
+        Array.from(activeHostOptIns)
       );
     }
   }
 
-  hasUserOptedInAlready(host) {
-    return this._hostOptIns.has(host);
+  hasUserOptedInAlready(host, isPrivateMode) {
+    const activeHostOptIns = isPrivateMode
+      ? this._pBModeHostOptIns
+      : this._hostOptIns;
+    return activeHostOptIns.has(host);
   }
 
   showOptInWarningOnce(tabId, origin) {
@@ -489,18 +510,35 @@ class Shim {
       .catch(() => {});
   }
 
-  async onUserOptOut(host) {
+  async onUserOptOut(host, isPrivateMode) {
     const optIns = await this.getApplicableOptIns();
+    const activeHostOptIns = isPrivateMode
+      ? this._pBModeHostOptIns
+      : this._hostOptIns;
     if (optIns.length) {
-      this._hostOptIns.delete(host);
+      activeHostOptIns.delete(host);
       await browser.trackingProtection.allow(
         this.id,
         optIns,
-        Array.from(this._hostOptIns)
+        isPrivateMode,
+        Array.from(activeHostOptIns)
       );
     }
-    if (!this._hostOptIns.length) {
-      this.userHasOptedIn = false;
+  }
+
+  async clearUserOptIns(forPrivateMode) {
+    const optIns = await this.getApplicableOptIns();
+    const activeHostOptIns = forPrivateMode
+      ? this._pBModeHostOptIns
+      : this._hostOptIns;
+    if (optIns.length) {
+      activeHostOptIns.clear();
+      await browser.trackingProtection.allow(
+        this.id,
+        optIns,
+        forPrivateMode,
+        Array.from(activeHostOptIns)
+      );
     }
   }
 }
@@ -539,7 +577,8 @@ class Shims {
           console.warn("Smartblock shim not found", { tabId, shimId });
           return;
         }
-        await shim.onUserOptIn(hostname);
+        const isPB = (await browser.tabs.get(tabId)).incognito;
+        await shim.onUserOptIn(hostname, isPB);
 
         
         await browser.tabs.sendMessage(tabId, {
@@ -558,14 +597,21 @@ class Shims {
           console.warn("Smartblock shim not found", { tabId, shimId });
           return;
         }
-
-        await shim.onUserOptOut(hostname);
+        const isPB = (await browser.tabs.get(tabId)).incognito;
+        await shim.onUserOptOut(hostname, isPB);
 
         
         
         browser.tabs.reload(tabId);
       }
     );
+
+    
+    browser.trackingProtection.onPrivateSessionEnd.addListener(() => {
+      for (const shim of this.shims.values()) {
+        shim.clearUserOptIns(true);
+      }
+    });
   }
 
   bindAboutCompatBroker(broker) {
@@ -918,7 +964,7 @@ class Shims {
       );
     } else if (message === "optIn") {
       try {
-        await shim.onUserOptIn(new URL(url).hostname);
+        await shim.onUserOptIn(new URL(url).hostname, tab.incognito);
         const origin = new URL(tab.url).origin;
         warn(
           "** User opted in for",
@@ -1097,8 +1143,11 @@ class Shims {
 
     
     const topHost = new URL((await browser.tabs.get(tabId)).url).hostname;
-    const unblocked =
-      await browser.trackingProtection.wasRequestUnblocked(requestId);
+    const isPB = (await browser.tabs.get(details.tabId)).incognito;
+    const unblocked = await browser.trackingProtection.wasRequestUnblocked(
+      requestId,
+      isPB
+    );
 
     let match;
     let shimToApply;
@@ -1110,7 +1159,6 @@ class Shims {
       }
 
       if (shim.onlyIfDFPIActive || shim.onlyIfPrivateBrowsing) {
-        const isPB = (await browser.tabs.get(details.tabId)).incognito;
         if (!isPB && shim.onlyIfPrivateBrowsing) {
           continue;
         }
@@ -1141,7 +1189,7 @@ class Shims {
 
         
         
-        if (shim.hasUserOptedInAlready(topHost)) {
+        if (shim.hasUserOptedInAlready(topHost, isPB)) {
           warn(
             `Allowing tracking ${type} ${url} on tab ${tabId} frame ${frameId} due to opt-in`
           );
