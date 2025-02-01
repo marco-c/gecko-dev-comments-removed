@@ -2879,7 +2879,16 @@ void gfxPlatformFontList::GetPrefsAndStartLoader() {
 }
 
 void gfxPlatformFontList::RebuildLocalFonts(bool aForgetLocalFaces) {
+  
+  AutoTArray<RefPtr<gfxUserFontSet>, 16> fontSets;
+  fontSets.SetCapacity(mUserFontSetList.Count());
   for (auto* fontset : mUserFontSetList) {
+    fontSets.AppendElement(fontset);
+  }
+  
+  
+  AutoUnlock unlock(mLock);
+  for (auto fontset : fontSets) {
     if (aForgetLocalFaces) {
       fontset->ForgetLocalFaces();
     }
