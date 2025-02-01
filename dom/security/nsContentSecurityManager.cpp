@@ -965,7 +965,8 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
   
   
   if (innerURI->SchemeIs("jar") || innerURI->SchemeIs("about") ||
-      innerURI->SchemeIs("moz-extension") || innerURI->SchemeIs("moz-safe-about")) {
+      innerURI->SchemeIs("moz-extension") ||
+      innerURI->SchemeIs("moz-safe-about")) {
     return NS_OK;
   }
 
