@@ -53,6 +53,9 @@ function requestBlockingReducer(state = RequestBlocking(), action) {
 }
 
 function syncedBlockedUrls(state, action) {
+  if (state.blockingSynced == action.synced) {
+    return state;
+  }
   
   
   return {

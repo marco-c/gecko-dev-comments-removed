@@ -107,8 +107,10 @@ class MonitorPanel extends Component {
   }
 
   componentDidUpdate() {
-    const { selectedRequestVisible, openNetworkDetails } = this.props;
-    if (!selectedRequestVisible) {
+    const { selectedRequestVisible, openNetworkDetails, networkDetailsOpen } =
+      this.props;
+    
+    if (!selectedRequestVisible && networkDetailsOpen) {
       openNetworkDetails(false);
     }
   }

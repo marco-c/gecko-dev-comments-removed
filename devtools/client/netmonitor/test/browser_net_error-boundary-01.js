@@ -17,7 +17,7 @@ add_task(async function () {
 
   
   const state = store.getState();
-  state.ui.columns = null;
+  state.ui = "foo";
 
   await reloadBrowser();
 

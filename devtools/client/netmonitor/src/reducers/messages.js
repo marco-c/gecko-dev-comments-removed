@@ -162,6 +162,12 @@ function addMessage(state, action) {
 
 
 function selectMessage(state, action) {
+  if (
+    state.selectedMessage == action.message &&
+    state.messageDetailsOpen == action.open
+  ) {
+    return state;
+  }
   return {
     ...state,
     selectedMessage: action.message,
@@ -173,6 +179,9 @@ function selectMessage(state, action) {
 
 
 function openMessageDetails(state, action) {
+  if (state.messageDetailsOpen == action.open) {
+    return state;
+  }
   return {
     ...state,
     messageDetailsOpen: action.open,
@@ -199,6 +208,9 @@ function clearMessages(state) {
 
 
 function toggleMessageFilterType(state, action) {
+  if (state.messageFilterType == action.filter) {
+    return state;
+  }
   return {
     ...state,
     messageFilterType: action.filter,
@@ -219,6 +231,9 @@ function toggleControlFrames(state) {
 
 
 function setMessageFilterText(state, action) {
+  if (state.messageFilterText == action.text) {
+    return state;
+  }
   return {
     ...state,
     messageFilterText: action.text,
