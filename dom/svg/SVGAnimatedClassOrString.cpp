@@ -8,6 +8,8 @@
 
 #include "DOMSVGAnimatedString.h"
 #include "SVGAttrTearoffTable.h"
+#include "mozilla/dom/TrustedScriptURL.h"
+#include "mozilla/dom/UnionTypes.h"
 
 namespace mozilla {
 
@@ -29,6 +31,24 @@ SVGAnimatedClassOrString::ToDOMAnimatedString(SVGElement* aSVGElement) {
 
 void SVGAnimatedClassOrString::RemoveTearoff() {
   sSVGAnimatedClassOrStringTearoffTable.RemoveTearoff(this);
+}
+
+void SVGAnimatedClassOrString::SetBaseValue(
+    const TrustedScriptURLOrString& aValue, SVGElement* aSVGElement,
+    bool aDoSetAttr, ErrorResult&) {
+  
+  
+  
+  const nsAString& stringValue = aValue.IsString()
+                                     ? aValue.GetAsString()
+                                     : aValue.GetAsTrustedScriptURL().mData;
+  SetBaseValue(stringValue, aSVGElement, aDoSetAttr);
+}
+
+void SVGAnimatedClassOrString::GetBaseValue(
+    OwningTrustedScriptURLOrString& aValue,
+    const SVGElement* aSVGElement) const {
+  GetBaseValue(aValue.SetAsString(), aSVGElement);
 }
 
 }  
