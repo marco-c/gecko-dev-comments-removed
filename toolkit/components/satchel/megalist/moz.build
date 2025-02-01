@@ -5,8 +5,6 @@
 
 
 BROWSER_CHROME_MANIFESTS += ["content/tests/browser/browser.toml"]
-
-
 XPCSHELL_TESTS_MANIFESTS += ["aggregator/tests/unit/xpcshell.toml"]
 
 DIRS += [
