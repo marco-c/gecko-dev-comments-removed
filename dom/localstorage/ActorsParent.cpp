@@ -5553,8 +5553,18 @@ mozilla::ipc::IPCResult Database::RecvAllowToClose() {
     return IPC_FAIL(this, "mAllowedToClose already set!");
   }
 
-  glean::localstorage_database::request_allow_to_close_response_time
-      .StopAndAccumulate(std::move(mRequestAllowToCloseTimerId));
+  
+  
+  
+  if (mRequestedAllowToClose) {
+    
+    
+    
+    MOZ_ASSERT(mRequestAllowToCloseTimerId);
+
+    glean::localstorage_database::request_allow_to_close_response_time
+        .StopAndAccumulate(std::move(mRequestAllowToCloseTimerId));
+  }
 
   AllowToClose();
 
