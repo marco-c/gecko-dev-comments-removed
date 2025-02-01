@@ -7,9 +7,12 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/ViewTransitionBinding.h"
 #include "mozilla/webrender/WebRenderAPI.h"
+#include "mozilla/AnimationEventDispatcher.h"
+#include "mozilla/EffectSet.h"
 #include "mozilla/ElementAnimationData.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/SVGIntegrationUtils.h"
@@ -230,6 +233,13 @@ void ViewTransition::CallUpdateCallback(ErrorResult& aRv) {
       [](JSContext*, JS::Handle<JS::Value>, ErrorResult& aRv,
          ViewTransition* aVt) {
         
+        
+        
+        
+        
+        aVt->ClearTimeoutTimer();
+
+        
         if (Promise* ucd = aVt->GetUpdateCallbackDone(aRv)) {
           
           
@@ -246,6 +256,9 @@ void ViewTransition::CallUpdateCallback(ErrorResult& aRv) {
       },
       [](JSContext*, JS::Handle<JS::Value> aReason, ErrorResult& aRv,
          ViewTransition* aVt) {
+        
+        aVt->ClearTimeoutTimer();
+
         
         if (Promise* ucd = aVt->GetUpdateCallbackDone(aRv)) {
           
@@ -434,6 +447,11 @@ void ViewTransition::Activate() {
   if (Promise* ready = GetReady(IgnoreErrors())) {
     ready->MaybeResolveWithUndefined();
   }
+
+  
+  
+  MOZ_ASSERT(mDocument);
+  mDocument->EnsureViewTransitionOperationsHappen();
 }
 
 
@@ -626,7 +644,8 @@ void ViewTransition::Setup() {
 
 void ViewTransition::HandleFrame() {
   
-  bool hasActiveAnimations = false;
+  bool hasActiveAnimations = CheckForActiveAnimations();
+
   
   if (!hasActiveAnimations) {
     
@@ -638,8 +657,109 @@ void ViewTransition::HandleFrame() {
       finished->MaybeResolveWithUndefined();
     }
     return;
+  } else {
+    
+    
+    
+    mDocument->EnsureViewTransitionOperationsHappen();
   }
+
   
+}
+
+static bool CheckForActiveAnimationsForEachPseudo(
+    const Element& aRoot, const AnimationTimeline& aDocTimeline,
+    const AnimationEventDispatcher& aDispatcher,
+    PseudoStyleRequest&& aRequest) {
+  
+  
+  
+  
+  
+  EffectSet* effects = EffectSet::Get(&aRoot, aRequest);
+  if (!effects) {
+    return false;
+  }
+
+  for (const auto* effect : *effects) {
+    
+    
+    
+    
+    
+    
+    
+
+    MOZ_ASSERT(effect && effect->GetAnimation(),
+               "Only effects associated with an animation should be "
+               "added to an element's effect set");
+    const Animation* anim = effect->GetAnimation();
+
+    
+    if (anim->GetTimeline() != &aDocTimeline) {
+      continue;
+    }
+
+    
+    
+    
+    
+    const auto playState = anim->PlayState();
+    if (playState != AnimationPlayState::Paused &&
+        playState != AnimationPlayState::Running &&
+        !aDispatcher.HasQueuedEventsFor(anim)) {
+      continue;
+    }
+    return true;
+  }
+  return false;
+}
+
+
+
+
+bool ViewTransition::CheckForActiveAnimations() const {
+  MOZ_ASSERT(mDocument);
+
+  const Element* root = mDocument->GetRootElement();
+  if (!root) {
+    
+    return false;
+  }
+
+  const AnimationTimeline* timeline = mDocument->Timeline();
+  if (!timeline) {
+    return false;
+  }
+
+  nsPresContext* presContext = mDocument->GetPresContext();
+  if (!presContext) {
+    return false;
+  }
+
+  const AnimationEventDispatcher* dispatcher =
+      presContext->AnimationEventDispatcher();
+  MOZ_ASSERT(dispatcher);
+
+  auto checkForEachPseudo = [&](PseudoStyleRequest&& aRequest) {
+    return CheckForActiveAnimationsForEachPseudo(*root, *timeline, *dispatcher,
+                                                 std::move(aRequest));
+  };
+
+  bool hasActiveAnimations =
+      checkForEachPseudo(PseudoStyleRequest(PseudoStyleType::viewTransition));
+  for (nsAtom* name : mNamedElements.Keys()) {
+    if (hasActiveAnimations) {
+      break;
+    }
+
+    hasActiveAnimations =
+        checkForEachPseudo({PseudoStyleType::viewTransitionGroup, name}) ||
+        checkForEachPseudo({PseudoStyleType::viewTransitionImagePair, name}) ||
+        checkForEachPseudo({PseudoStyleType::viewTransitionOld, name}) ||
+        checkForEachPseudo({PseudoStyleType::viewTransitionNew, name});
+  }
+  return hasActiveAnimations;
 }
 
 void ViewTransition::ClearNamedElements() {

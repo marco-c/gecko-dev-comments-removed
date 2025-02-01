@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_AnimationEventDispatcher_h
 #define mozilla_AnimationEventDispatcher_h
@@ -29,15 +29,15 @@ struct AnimationEventInfo {
     OwningAnimationTarget mTarget;
     const EventMessage mMessage;
     const double mElapsedTime;
-    
-    
-    
-    
-    
+    // The transition generation or animation relative position in the global
+    // animation list. We use this information to determine the order of
+    // cancelled transitions or animations. (i.e. We override the animation
+    // index of the cancelled transitions/animations because their animation
+    // indexes have been changed.)
     const uint64_t mAnimationIndex;
-    
-    
-    
+    // FIXME(emilio): is this needed? This preserves behavior from before
+    // bug 1847200, but it's unclear what the timeStamp of the event should be.
+    // See also https://github.com/w3c/csswg-drafts/issues/9167
     const TimeStamp mEventEnqueueTimeStamp{TimeStamp::Now()};
   };
 
@@ -46,7 +46,7 @@ struct AnimationEventInfo {
   };
 
   struct CssTransitionData : public CssAnimationOrTransitionData {
-    
+    // For transition events only.
     const AnimatedPropertyID mProperty;
   };
 
@@ -73,8 +73,8 @@ struct AnimationEventInfo {
     return nullptr;
   }
 
-  
-  
+  // Return the event context if the event is animationcancel or
+  // transitioncancel.
   Maybe<dom::Animation::EventContext> GetEventContext() const {
     if (mData.is<CssAnimationData>()) {
       const auto& data = mData.as<CssAnimationData>();
@@ -99,7 +99,7 @@ struct AnimationEventInfo {
 
   void MaybeAddMarker() const;
 
-  
+  // For CSS animation events
   AnimationEventInfo(RefPtr<nsAtom> aAnimationName,
                      const NonOwningAnimationTarget& aTarget,
                      EventMessage aMessage, double aElapsedTime,
@@ -117,7 +117,7 @@ struct AnimationEventInfo {
     }
   }
 
-  
+  // For CSS transition events
   AnimationEventInfo(const AnimatedPropertyID& aProperty,
                      const NonOwningAnimationTarget& aTarget,
                      EventMessage aMessage, double aElapsedTime,
@@ -135,7 +135,7 @@ struct AnimationEventInfo {
     }
   }
 
-  
+  // For web animation events
   AnimationEventInfo(nsAtom* aOnEvent,
                      const dom::Nullable<double>& aCurrentTime,
                      const dom::Nullable<double>& aTimelineTime,
@@ -154,7 +154,7 @@ struct AnimationEventInfo {
 
   bool operator<(const AnimationEventInfo& aOther) const {
     if (this->mScheduledEventTimeStamp != aOther.mScheduledEventTimeStamp) {
-      
+      // Null timestamps sort first
       if (this->mScheduledEventTimeStamp.IsNull() ||
           aOther.mScheduledEventTimeStamp.IsNull()) {
         return this->mScheduledEventTimeStamp.IsNull();
@@ -162,7 +162,7 @@ struct AnimationEventInfo {
       return this->mScheduledEventTimeStamp < aOther.mScheduledEventTimeStamp;
     }
 
-    
+    // Events in the Web Animations spec are prior to CSS events.
     if (this->IsWebAnimationEvent() != aOther.IsWebAnimationEvent()) {
       return this->IsWebAnimationEvent();
     }
@@ -173,7 +173,7 @@ struct AnimationEventInfo {
 
   bool IsWebAnimationEvent() const { return mData.is<WebAnimationData>(); }
 
-  
+  // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void Dispatch(nsPresContext* aPresContext) {
     if (mData.is<WebAnimationData>()) {
       const auto& data = mData.as<WebAnimationData>();
@@ -195,9 +195,9 @@ struct AnimationEventInfo {
       event->WidgetEventPtr()->AssignEventTime(
           WidgetEventTime(data.mEventEnqueueTimeStamp));
       RefPtr target = mAnimation;
-      EventDispatcher::DispatchDOMEvent(target, nullptr ,
+      EventDispatcher::DispatchDOMEvent(target, nullptr /* WidgetEvent */,
                                         event, aPresContext,
-                                        nullptr );
+                                        nullptr /* nsEventStatus */);
       return;
     }
 
@@ -249,8 +249,8 @@ class AnimationEventDispatcher final {
   void QueueEvent(AnimationEventInfo&& aEvent);
   void QueueEvents(nsTArray<AnimationEventInfo>&& aEvents);
 
-  
-  
+  // This will call SortEvents automatically if it has not already been
+  // called.
   void DispatchEvents() {
     mIsObserving = false;
     if (!mPresContext || mPendingEvents.IsEmpty()) {
@@ -260,13 +260,13 @@ class AnimationEventDispatcher final {
     SortEvents();
 
     EventArray events = std::move(mPendingEvents);
-    
-    
+    // mIsSorted will be set to true by SortEvents above, and we leave it
+    // that way since mPendingEvents is now empty
     for (AnimationEventInfo& info : events) {
       info.Dispatch(mPresContext);
 
-      
-      
+      // Bail out if our mPresContext was nullified due to destroying the pres
+      // context.
       if (!mPresContext) {
         break;
       }
@@ -279,6 +279,17 @@ class AnimationEventDispatcher final {
   }
   bool HasQueuedEvents() const { return !mPendingEvents.IsEmpty(); }
 
+  // There shouldn't be a lot of events in the queue, so linear search should be
+  // fine.
+  bool HasQueuedEventsFor(const dom::Animation* aAnimation) const {
+    for (const AnimationEventInfo& info : mPendingEvents) {
+      if (info.mAnimation.get() == aAnimation) {
+        return true;
+      }
+    }
+    return false;
+  }
+
  private:
 #ifndef DEBUG
   ~AnimationEventDispatcher() = default;
@@ -290,9 +301,9 @@ class AnimationEventDispatcher final {
   }
 #endif
 
-  
-  
-  
+  // Sort all pending CSS animation/transition events by scheduled event time
+  // and composite order.
+  // https://drafts.csswg.org/web-animations/#update-animations-and-send-events
   void SortEvents() {
     if (mIsSorted) {
       return;
@@ -314,6 +325,6 @@ class AnimationEventDispatcher final {
   bool mIsObserving;
 };
 
-}  
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_AnimationEventDispatcher_h
