@@ -3,9 +3,6 @@
 
 
 __all__ = ("loads", "load", "TOMLDecodeError")
-__version__ = "2.0.1"  
+__version__ = "2.2.1"  
 
 from ._parser import TOMLDecodeError, load, loads
-
-
-TOMLDecodeError.__module__ = __name__
