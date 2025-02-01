@@ -4396,7 +4396,7 @@ class HTMLEditor final : public EditorBase,
 
 
   ManualNACPtr CreateAnonymousElement(nsAtom* aTag, nsIContent& aParentContent,
-                                      const nsAString& aAnonClass,
+                                      const nsAString& aClass,
                                       bool aIsCreatedHidden);
 
   

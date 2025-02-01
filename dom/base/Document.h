@@ -4276,8 +4276,6 @@ class Document : public nsINode,
     
     return mCompatMode == eCompatibility_NavQuirks && !IsSVGDocument();
   }
-  void AddContentEditableStyleSheetToStyleSet();
-  void RemoveContentEditableStyleSheet();
   void AddStyleSheetToStyleSets(StyleSheet&);
   void RemoveStyleSheetFromStyleSets(StyleSheet&);
   void NotifyStyleSheetApplicableStateChanged();
@@ -4833,9 +4831,6 @@ class Document : public nsINode,
 
   
   bool mQuirkSheetAdded : 1;
-
-  
-  bool mContentEditableSheetAdded : 1;
 
   
   

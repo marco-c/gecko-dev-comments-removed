@@ -129,6 +129,7 @@ var allowlist = [
 
   
   { file: "resource://gre/res/designmode.css" },
+  { file: "resource://gre/res/EditorOverride.css" },
 
   
   
