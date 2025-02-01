@@ -173,7 +173,9 @@ test_description_schema = Schema(
             Optional("actions"): [str],
             
             
-            Required("extra-options"): optionally_keyed_by("test-platform", [str]),
+            Required("extra-options"): optionally_keyed_by(
+                "test-platform", "variant", [str]
+            ),
             
             
             Optional("build-artifact-name"): str,
@@ -297,7 +299,6 @@ def handle_keyed_by_mozharness(config, tasks):
         "mozharness",
         "mozharness.chunked",
         "mozharness.config",
-        "mozharness.extra-options",
         "mozharness.script",
     ]
     for task in tasks:
