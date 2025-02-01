@@ -203,12 +203,7 @@ CPUFeatures CPU::InferCPUFeaturesFromOS(
   static const size_t kFeatureBitCount =
       sizeof(kFeatureBits) / sizeof(kFeatureBits[0]);
 
-  
-#ifdef JS_SIMULATOR_ARM64
-  unsigned long auxv = ~(0UL);  
-#else
   unsigned long auxv = getauxval(AT_HWCAP);  
-#endif
 
   VIXL_STATIC_ASSERT(kFeatureBitCount < (sizeof(auxv) * kBitsPerByte));
   for (size_t i = 0; i < kFeatureBitCount; i++) {
