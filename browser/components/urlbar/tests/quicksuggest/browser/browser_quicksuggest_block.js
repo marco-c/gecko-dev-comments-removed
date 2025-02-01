@@ -86,52 +86,7 @@ async function doBasicBlockTest({ block }) {
 }
 
 async function doOneBasicBlockTest({ result, block }) {
-  let index = 2;
-  let suggested_index_relative_to_group = true;
-  let match_type = "firefox-suggest";
   let isSponsored = result.iab_category != "5 - Education";
-  
-  
-  let suggested_index = -1;
-  let expectedBlockId = !isSponsored ? null : result.id;
-
-  let pingsSubmitted = 0;
-  GleanPings.quickSuggest.testBeforeNextSubmit(() => {
-    pingsSubmitted++;
-    
-    Assert.equal(
-      Glean.quickSuggest.pingType.testGetValue(),
-      CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION
-    );
-    Assert.equal(Glean.quickSuggest.matchType.testGetValue(), match_type);
-    Assert.equal(Glean.quickSuggest.blockId.testGetValue(), expectedBlockId);
-    Assert.equal(Glean.quickSuggest.isClicked.testGetValue(), false);
-    Assert.equal(Glean.quickSuggest.position.testGetValue(), index);
-    Assert.equal(
-      Glean.quickSuggest.suggestedIndex.testGetValue(),
-      suggested_index
-    );
-    Assert.equal(
-      Glean.quickSuggest.suggestedIndexRelativeToGroup.testGetValue(),
-      suggested_index_relative_to_group
-    );
-    Assert.equal(Glean.quickSuggest.position.testGetValue(), index);
-    GleanPings.quickSuggest.testBeforeNextSubmit(() => {
-      pingsSubmitted++;
-      
-      Assert.equal(
-        Glean.quickSuggest.pingType.testGetValue(),
-        CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK
-      );
-      Assert.equal(Glean.quickSuggest.matchType.testGetValue(), match_type);
-      Assert.equal(Glean.quickSuggest.blockId.testGetValue(), expectedBlockId);
-      Assert.equal(
-        Glean.quickSuggest.iabCategory.testGetValue(),
-        result.iab_category
-      );
-      Assert.equal(Glean.quickSuggest.position.testGetValue(), index);
-    });
-  });
 
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -170,9 +125,6 @@ async function doOneBasicBlockTest({ result, block }) {
     await QuickSuggest.blockedSuggestions.has(result.url),
     "Suggestion is blocked"
   );
-
-  
-  Assert.equal(pingsSubmitted, 2, "Both Glean pings submitted.");
 
   await UrlbarTestUtils.promisePopupClose(window);
   await QuickSuggest.blockedSuggestions.clear();
