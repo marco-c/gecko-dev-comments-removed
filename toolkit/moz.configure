@@ -3680,17 +3680,6 @@ with only_when(target_has_linux_kernel & compile_environment):
 
 
 
-check_header(
-    "linux/joystick.h",
-    onerror=lambda: die(
-        "Can't find header linux/joystick.h, needed for gamepad support."
-        " Please install Linux kernel headers."
-    ),
-    when=target_has_linux_kernel & compile_environment,
-)
-
-
-
 
 @depends(build_project)
 def disable_smart_cards(build_project):
