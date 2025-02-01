@@ -930,17 +930,10 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
-
-
-
-
-
       template <typename EditorDOMPointType>
       static BoundaryData ScanCollapsibleWhiteSpaceStartFrom(
-          const EditorDOMPointType& aPoint,
-          const Element& aEditableBlockParentOrTopmostEditableInlineElement,
-          const Element* aEditingHost, NoBreakingSpaceData* aNBSPData,
-          BlockInlineCheck aBlockInlineCheck);
+          const EditorDOMPointType& aPoint, NoBreakingSpaceData* aNBSPData,
+          BlockInlineCheck aBlockInlineCheck, const Element& aAncestorLimiter);
 
       
 
@@ -952,17 +945,10 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
-
-
-
-
-
       template <typename EditorDOMPointType>
       static BoundaryData ScanCollapsibleWhiteSpaceEndFrom(
-          const EditorDOMPointType& aPoint,
-          const Element& aEditableBlockParentOrTopmostEditableInlineElement,
-          const Element* aEditingHost, NoBreakingSpaceData* aNBSPData,
-          BlockInlineCheck aBlockInlineCheck);
+          const EditorDOMPointType& aPoint, NoBreakingSpaceData* aNBSPData,
+          BlockInlineCheck aBlockInlineCheck, const Element& aAncestorLimiter);
 
       BoundaryData() = default;
       template <typename EditorDOMPointType>

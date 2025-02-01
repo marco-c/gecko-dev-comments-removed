@@ -1300,15 +1300,9 @@ class HTMLEditUtils final {
 
 
 
-
-
-
-
-
-
   static nsIContent* GetNextLeafContentOrNextBlockElement(
-      const nsIContent& aStartContent, const nsIContent& aCurrentBlock,
-      const LeafNodeTypes& aLeafNodeTypes, BlockInlineCheck aBlockInlineCheck,
+      const nsIContent& aStartContent, const LeafNodeTypes& aLeafNodeTypes,
+      BlockInlineCheck aBlockInlineCheck,
       const Element* aAncestorLimiter = nullptr) {
     MOZ_ASSERT_IF(
         aLeafNodeTypes.contains(LeafNodeType::OnlyEditableLeafNode),
@@ -1325,11 +1319,8 @@ class HTMLEditUtils final {
         return nullptr;
       }
       for (Element* parentElement : aStartContent.AncestorsOfType<Element>()) {
-        if (parentElement == &aCurrentBlock) {
-          return nullptr;
-        }
-        if (parentElement == aAncestorLimiter) {
-          NS_WARNING("Reached editing host while climbing up the DOM tree");
+        if (parentElement == aAncestorLimiter ||
+            HTMLEditUtils::IsBlockElement(*parentElement, aBlockInlineCheck)) {
           return nullptr;
         }
         nextContent = parentElement->GetNextSibling();
@@ -1371,8 +1362,7 @@ class HTMLEditUtils final {
   template <typename PT, typename CT>
   static nsIContent* GetNextLeafContentOrNextBlockElement(
       const EditorDOMPointBase<PT, CT>& aStartPoint,
-      const nsIContent& aCurrentBlock, const LeafNodeTypes& aLeafNodeTypes,
-      BlockInlineCheck aBlockInlineCheck,
+      const LeafNodeTypes& aLeafNodeTypes, BlockInlineCheck aBlockInlineCheck,
       const Element* aAncestorLimiter = nullptr) {
     MOZ_ASSERT(aStartPoint.IsSet());
     MOZ_ASSERT_IF(
@@ -1386,28 +1376,30 @@ class HTMLEditUtils final {
     }
     if (aStartPoint.IsInTextNode()) {
       return HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-          *aStartPoint.template ContainerAs<Text>(), aCurrentBlock,
-          aLeafNodeTypes, aBlockInlineCheck, aAncestorLimiter);
+          *aStartPoint.template ContainerAs<Text>(), aLeafNodeTypes,
+          aBlockInlineCheck, aAncestorLimiter);
     }
     if (!HTMLEditUtils::IsContainerNode(
             *aStartPoint.template ContainerAs<nsIContent>())) {
       return HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-          *aStartPoint.template ContainerAs<nsIContent>(), aCurrentBlock,
-          aLeafNodeTypes, aBlockInlineCheck, aAncestorLimiter);
+          *aStartPoint.template ContainerAs<nsIContent>(), aLeafNodeTypes,
+          aBlockInlineCheck, aAncestorLimiter);
     }
 
     nsCOMPtr<nsIContent> nextContent = aStartPoint.GetChild();
     if (!nextContent) {
-      if (aStartPoint.GetContainer() == &aCurrentBlock) {
+      if (aStartPoint.GetContainer() == aAncestorLimiter ||
+          HTMLEditUtils::IsBlockElement(
+              *aStartPoint.template ContainerAs<nsIContent>(),
+              aBlockInlineCheck)) {
         
         return nullptr;
       }
 
       
       return HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-          *aStartPoint.template ContainerAs<nsIContent>(), aCurrentBlock,
-          aLeafNodeTypes, IgnoreInsideBlockBoundary(aBlockInlineCheck),
-          aAncestorLimiter);
+          *aStartPoint.template ContainerAs<nsIContent>(), aLeafNodeTypes,
+          IgnoreInsideBlockBoundary(aBlockInlineCheck), aAncestorLimiter);
     }
 
     
@@ -1441,15 +1433,9 @@ class HTMLEditUtils final {
 
 
 
-
-
-
-
-
-
   static nsIContent* GetPreviousLeafContentOrPreviousBlockElement(
-      const nsIContent& aStartContent, const nsIContent& aCurrentBlock,
-      const LeafNodeTypes& aLeafNodeTypes, BlockInlineCheck aBlockInlineCheck,
+      const nsIContent& aStartContent, const LeafNodeTypes& aLeafNodeTypes,
+      BlockInlineCheck aBlockInlineCheck,
       const Element* aAncestorLimiter = nullptr) {
     MOZ_ASSERT_IF(
         aLeafNodeTypes.contains(LeafNodeType::OnlyEditableLeafNode),
@@ -1468,11 +1454,8 @@ class HTMLEditUtils final {
         return nullptr;
       }
       for (Element* parentElement : aStartContent.AncestorsOfType<Element>()) {
-        if (parentElement == &aCurrentBlock) {
-          return nullptr;
-        }
-        if (parentElement == aAncestorLimiter) {
-          NS_WARNING("Reached editing host while climbing up the DOM tree");
+        if (parentElement == aAncestorLimiter ||
+            HTMLEditUtils::IsBlockElement(*parentElement, aBlockInlineCheck)) {
           return nullptr;
         }
         previousContent = parentElement->GetPreviousSibling();
@@ -1514,8 +1497,7 @@ class HTMLEditUtils final {
   template <typename PT, typename CT>
   static nsIContent* GetPreviousLeafContentOrPreviousBlockElement(
       const EditorDOMPointBase<PT, CT>& aStartPoint,
-      const nsIContent& aCurrentBlock, const LeafNodeTypes& aLeafNodeTypes,
-      BlockInlineCheck aBlockInlineCheck,
+      const LeafNodeTypes& aLeafNodeTypes, BlockInlineCheck aBlockInlineCheck,
       const Element* aAncestorLimiter = nullptr) {
     MOZ_ASSERT(aStartPoint.IsSet());
     MOZ_ASSERT_IF(
@@ -1529,27 +1511,29 @@ class HTMLEditUtils final {
     }
     if (aStartPoint.IsInTextNode()) {
       return HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-          *aStartPoint.template ContainerAs<Text>(), aCurrentBlock,
-          aLeafNodeTypes, aBlockInlineCheck, aAncestorLimiter);
+          *aStartPoint.template ContainerAs<Text>(), aLeafNodeTypes,
+          aBlockInlineCheck, aAncestorLimiter);
     }
     if (!HTMLEditUtils::IsContainerNode(
             *aStartPoint.template ContainerAs<nsIContent>())) {
       return HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-          *aStartPoint.template ContainerAs<nsIContent>(), aCurrentBlock,
-          aLeafNodeTypes, aBlockInlineCheck, aAncestorLimiter);
+          *aStartPoint.template ContainerAs<nsIContent>(), aLeafNodeTypes,
+          aBlockInlineCheck, aAncestorLimiter);
     }
 
     if (aStartPoint.IsStartOfContainer()) {
-      if (aStartPoint.GetContainer() == &aCurrentBlock) {
+      if (aStartPoint.GetContainer() == aAncestorLimiter ||
+          HTMLEditUtils::IsBlockElement(
+              *aStartPoint.template ContainerAs<nsIContent>(),
+              aBlockInlineCheck)) {
         
         return nullptr;
       }
 
       
       return HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-          *aStartPoint.template ContainerAs<nsIContent>(), aCurrentBlock,
-          aLeafNodeTypes, IgnoreInsideBlockBoundary(aBlockInlineCheck),
-          aAncestorLimiter);
+          *aStartPoint.template ContainerAs<nsIContent>(), aLeafNodeTypes,
+          IgnoreInsideBlockBoundary(aBlockInlineCheck), aAncestorLimiter);
     }
 
     nsCOMPtr<nsIContent> previousContent =
@@ -1620,11 +1604,23 @@ class HTMLEditUtils final {
 
 
   enum class AncestorType {
+    
     ClosestBlockElement,
+    
+    
     MostDistantInlineElementInBlock,
-    EditableElement,
-    IgnoreHRElement,  
+    
+    IgnoreHRElement,
+    
+    
     ButtonElement,
+    
+    
+    AllowRootOrAncestorLimiterElement,
+
+    
+    
+    EditableElement,
   };
   using AncestorTypes = EnumSet<AncestorType>;
   constexpr static AncestorTypes

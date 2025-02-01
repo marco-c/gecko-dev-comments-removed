@@ -1181,7 +1181,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
         
         
         leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-            *leafElement, *editingHost,
+            *leafElement,
             {LeafNodeType::LeafNodeOrNonEditableNode,
              LeafNodeType::LeafNodeOrChildBlock},
             BlockInlineCheck::UseComputedDisplayStyle, editingHost);
@@ -1207,7 +1207,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
       }
       
       leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-          *leafContent, *editingHost,
+          *leafContent,
           {LeafNodeType::LeafNodeOrNonEditableNode,
            LeafNodeType::LeafNodeOrChildBlock},
           BlockInlineCheck::UseComputedDisplayStyle, editingHost);
@@ -1254,7 +1254,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
     
     
     leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-        *leafContent, *editingHost,
+        *leafContent,
         {LeafNodeType::LeafNodeOrNonEditableNode,
          LeafNodeType::LeafNodeOrChildBlock},
         BlockInlineCheck::UseComputedDisplayStyle, editingHost);
