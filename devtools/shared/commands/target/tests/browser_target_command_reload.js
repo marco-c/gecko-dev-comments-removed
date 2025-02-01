@@ -17,7 +17,14 @@ add_task(async function () {
   info(" ### Test reloading a Tab");
 
   
-  const tab = await addTab(TEST_URL);
+  const tab = await addTab(TEST_URL + "?setup");
+
+  
+  const onLoaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, TEST_URL);
+  await onLoaded;
+
+  
   const commands = await CommandsFactory.forTab(tab);
   const targetCommand = commands.targetCommand;
 
