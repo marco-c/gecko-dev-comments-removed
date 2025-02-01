@@ -2487,23 +2487,36 @@ bool GCRuntime::shouldPreserveJITCode(Realm* realm,
     return false;
   }
 
+  
   if (!canAllocateMoreCode) {
     return false;
   }
 
+  
+  
   if (isActiveCompartment) {
     return true;
   }
+
+  
   if (alwaysPreserveCode) {
     return true;
   }
+
+  
   if (realm->preserveJitCode()) {
     return true;
   }
+
+  
+  
+  
   if (IsCurrentlyAnimating(realm->lastAnimationTime, currentTime) &&
       DiscardedCodeRecently(realm->zone(), currentTime)) {
     return true;
   }
+
+  
   if (reason == JS::GCReason::DEBUG_GC) {
     return true;
   }
