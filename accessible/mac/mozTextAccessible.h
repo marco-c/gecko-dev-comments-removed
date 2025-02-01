@@ -28,6 +28,9 @@
 - (NSString*)moxRole;
 
 
+- (NSString*)moxSubrole;
+
+
 - (NSNumber*)moxNumberOfCharacters;
 
 

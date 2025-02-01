@@ -86,9 +86,6 @@ addAccessibleTask(
   <!-- True HTML5 search box -->
   <input type="search" id="htmlSearch" />
 
-  <!-- Password input -->
-  <input type="password" id="password" />
-
   <!-- A button morphed into a toggle via ARIA -->
   <button id="toggle" aria-pressed="false"></button>
 
@@ -210,9 +207,6 @@ addAccessibleTask(
 
     
     testRoleAndSubRole(accDoc, "htmlSearch", "AXTextField", "AXSearchField");
-
-    
-    testRoleAndSubRole(accDoc, "password", "AXTextField", "AXSecureTextField");
 
     
     testRoleAndSubRole(accDoc, "toggle", "AXCheckBox", "AXToggle");

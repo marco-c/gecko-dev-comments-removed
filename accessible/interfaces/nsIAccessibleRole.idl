@@ -813,9 +813,4 @@ interface nsIAccessibleRole : nsISupports
 
 
   const unsigned long ROLE_ROWGROUP = 139;
-
-  
-
-
-  const unsigned long ROLE_SEARCHBOX = 140;
 };
