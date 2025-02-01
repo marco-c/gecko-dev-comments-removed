@@ -231,7 +231,7 @@ function handleMessages(engine) {
             
             
             
-            let targetText = await engine.translate(
+            let { targetText, inferenceMilliseconds } = await engine.translate(
               cleanedSourceText,
               isHTML,
               innerWindowId,
@@ -254,6 +254,7 @@ function handleMessages(engine) {
             postMessage({
               type: "translation-response",
               targetText,
+              inferenceMilliseconds,
               translationId,
               messageId,
             });
@@ -370,6 +371,7 @@ class Engine {
 
 
 
+
   translate(sourceText, isHTML, innerWindowId, translationId) {
     return this.#getWorkQueue(innerWindowId).runTask(translationId, () =>
       this.#syncTranslate(sourceText, isHTML, innerWindowId)
@@ -436,6 +438,7 @@ class Engine {
 
 
 
+
   #syncTranslate(sourceText, isHTML, innerWindowId) {
     const startTime = performance.now();
     let response;
@@ -478,8 +481,9 @@ class Engine {
         `Translated ${sourceText.length} code units.`
       );
 
+      const endTime = performance.now();
       const targetText = responses.get(0).getTranslatedText();
-      return targetText;
+      return { targetText, inferenceMilliseconds: endTime - startTime };
     } finally {
       
       messages?.delete();
@@ -681,6 +685,7 @@ class BergamotUtils {
 
 
 
+
   static getTranslationArgs(bergamot, sourceText, isHTML) {
     const messages = new bergamot.VectorString();
     const options = new bergamot.VectorResponseOptions();
@@ -723,11 +728,17 @@ class MockedEngine {
 
 
 
+
+
   translate(sourceText, isHTML) {
+    const startTime = performance.now();
+
     
     let html = isHTML ? ", html" : "";
-    const targetText = sourceText.toUpperCase();
-    return `${targetText} [${this.sourceLanguage} to ${this.targetLanguage}${html}]`;
+    const targetText = `${sourceText.toUpperCase()} [${this.sourceLanguage} to ${this.targetLanguage}${html}]`;
+    const endTime = performance.now();
+
+    return { targetText, inferenceMilliseconds: endTime - startTime };
   }
 
   discardTranslations() {}
