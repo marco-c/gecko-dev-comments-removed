@@ -87,9 +87,7 @@ class WaylandSurface final {
 
   bool IsOpaqueSurfaceHandlerSet() const { return mIsOpaqueSurfaceHandlerSet; }
 
-  bool HasBufferAttachedLocked(const WaylandSurfaceLock& aProofOfLock) const {
-    return mBufferAttached;
-  }
+  bool HasBufferAttached() const { return mBufferAttached; }
 
   
   bool MapLocked(const WaylandSurfaceLock& aProofOfLock,
@@ -100,7 +98,7 @@ class WaylandSurface final {
                  WaylandSurfaceLock* aParentWaylandSurfaceLock,
                  gfx::IntPoint aSubsurfacePosition);
   
-  void UnmapLocked(const WaylandSurfaceLock& aProofOfLock);
+  void UnmapLocked(WaylandSurfaceLock& aSurfaceLock);
 
   
   void GdkCleanUpLocked(const WaylandSurfaceLock& aProofOfLock);
@@ -124,18 +122,16 @@ class WaylandSurface final {
 
   
   
-  bool AttachLocked(const WaylandSurfaceLock& aProofOfLock,
+  bool AttachLocked(WaylandSurfaceLock& aSurfaceLock,
                     RefPtr<WaylandBuffer> aWaylandBuffer);
 
-  
-  
-  void DetachedByWaylandCompositorLocked(const WaylandSurfaceLock& aProofOfLock,
-                                         RefPtr<WaylandBuffer> aWaylandBuffer);
+  void UntrackWaylandBufferLocked(const WaylandSurfaceLock& aProofOfLock,
+                                  WaylandBuffer* aWaylandBuffer);
 
   
   
   
-  void RemoveAttachedBufferLocked(const WaylandSurfaceLock& aProofOfLock);
+  void RemoveAttachedBufferLocked(WaylandSurfaceLock& aProofOfLock);
 
   
   
@@ -267,9 +263,7 @@ class WaylandSurface final {
   void Commit(WaylandSurfaceLock* aProofOfLock, bool aForceCommit,
               bool aForceDisplayFlush);
 
-  bool UntrackWaylandBufferLocked(const WaylandSurfaceLock& aProofOfLock,
-                                  WaylandBuffer* aWaylandBuffer, bool aRemove);
-  void ReleaseAllWaylandBuffersLocked(const WaylandSurfaceLock& aProofOfLock);
+  void ReleaseAllWaylandBuffersLocked(WaylandSurfaceLock& aSurfaceLock);
 
   void RequestFrameCallbackLocked(const WaylandSurfaceLock& aProofOfLock,
                                   bool aRequestEmulated);
@@ -326,17 +320,21 @@ class WaylandSurface final {
   gfx::IntPoint mSubsurfacePosition{-1, -1};
 
   
-  
-  
-  
-  
-  AutoTArray<RefPtr<WaylandBuffer>, 3> mAttachedBuffers;
+  RefPtr<WaylandBuffer> mAttachedBuffer;
 
   
   
   
   
-  bool mBufferAttached = false;
+  
+  
+  AutoTArray<RefPtr<WaylandBuffer>, 3> mTrackedBuffers;
+
+  
+  
+  
+  
+  mozilla::Atomic<bool, mozilla::Relaxed> mBufferAttached{false};
 
   
   
