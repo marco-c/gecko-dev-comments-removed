@@ -68,3 +68,14 @@ async function trusted_type_violation_without_exception_for(fn) {
   assert_equals(exception, null, "no exception thrown");
   return violations[0];
 }
+
+function clipSampleIfNeeded(sample) {
+  const clippedSampleLength = 40;
+
+  
+  
+  
+  assert_equals(sample.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]/), null);
+
+  return sample.substring(0, clippedSampleLength);
+}
