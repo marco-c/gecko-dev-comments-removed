@@ -8,10 +8,13 @@ import android.os.Build;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import androidx.annotation.NonNull;
 import androidx.core.graphics.Insets;
+import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 
 public class WindowUtils {
@@ -65,6 +68,73 @@ public class WindowUtils {
       window.setSoftInputMode(
           WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
               | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  public static void enterImmersiveMode(Window window) {
+    WindowInsetsControllerCompat insetsController =
+        new WindowInsetsControllerCompat(window, window.getDecorView());
+    insetsController.hide(WindowInsetsCompat.Type.systemBars());
+    insetsController.setSystemBarsBehavior(
+        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+
+    OnApplyWindowInsetsListener insetsListener =
+        new OnApplyWindowInsetsListener() {
+          @NonNull
+          @Override
+          public WindowInsetsCompat onApplyWindowInsets(
+              @NonNull View view, WindowInsetsCompat insetsCompat) {
+            if (insetsCompat.isVisible(WindowInsetsCompat.Type.statusBars())) {
+              insetsController.hide(WindowInsetsCompat.Type.systemBars());
+              insetsController.setSystemBarsBehavior(
+                  WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+            
+            return ViewCompat.onApplyWindowInsets(view, insetsCompat);
+          }
+        };
+
+    ViewCompat.setOnApplyWindowInsetsListener(window.getDecorView(), insetsListener);
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      window.setFlags(
+          WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+          WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+      WindowManager.LayoutParams attributes = window.getAttributes();
+      attributes.layoutInDisplayCutoutMode =
+          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+      window.setAttributes(attributes);
+    }
+  }
+
+  
+
+
+
+
+
+
+  public static void exitImmersiveMode(Window window) {
+    WindowInsetsControllerCompat insetsController =
+        new WindowInsetsControllerCompat(window, window.getDecorView());
+    insetsController.show(WindowInsetsCompat.Type.systemBars());
+
+    ViewCompat.setOnApplyWindowInsetsListener(window.getDecorView(), null);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+      WindowManager.LayoutParams attributes = window.getAttributes();
+      attributes.layoutInDisplayCutoutMode =
+          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT;
+      window.setAttributes(attributes);
     }
   }
 }
