@@ -593,6 +593,10 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
 
   using vixl::MacroAssembler::B;
 
+  bool hasFjcvtzs() const {
+    return CPUHas(vixl::CPUFeatures::kFP, vixl::CPUFeatures::kJSCVT);
+  }
+
   void convertDoubleToInt32(FloatRegister src, Register dest, Label* fail,
                             bool negativeZeroCheck = true) {
     ARMFPRegister fsrc64(src, 64);
@@ -600,7 +604,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
 
     
     
-    if (CPUHas(vixl::CPUFeatures::kFP, vixl::CPUFeatures::kJSCVT)) {
+    if (hasFjcvtzs()) {
       
       
       Fjcvtzs(dest32, fsrc64);
