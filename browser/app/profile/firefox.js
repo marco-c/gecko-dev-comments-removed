@@ -1354,13 +1354,6 @@ pref("browser.backspace_action", 2);
 
 pref("intl.regional_prefs.use_os_locales", false);
 
-
-
-
-
-
-pref("layout.spellcheckDefault", 1);
-
 pref("browser.send_pings", false);
 
 pref("browser.geolocation.warning.infoURL", "https://www.mozilla.org/%LOCALE%/firefox/geolocation/");

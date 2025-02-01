@@ -16,11 +16,11 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/FormData.h"
@@ -470,7 +470,7 @@ bool nsGenericHTMLElement::Spellcheck() {
   
   
   
-  int32_t spellcheckLevel = Preferences::GetInt("layout.spellcheckDefault", 1);
+  int32_t spellcheckLevel = StaticPrefs::layout_spellcheckDefault();
   return spellcheckLevel == 2;  
 }
 

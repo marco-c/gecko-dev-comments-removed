@@ -539,7 +539,7 @@ bool EditorBase::GetDesiredSpellCheckState() {
   }
 
   
-  int32_t spellcheckLevel = Preferences::GetInt("layout.spellcheckDefault", 1);
+  int32_t spellcheckLevel = StaticPrefs::layout_spellcheckDefault();
 
   if (!spellcheckLevel) {
     return false;  
