@@ -23,7 +23,6 @@
 #include "jsapi.h"
 #include "js/CompileOptions.h"
 #include "js/experimental/JSStencil.h"
-#include "SkipCheckForBrokenURLOrZeroSized.h"
 
 #include "xpcpublic.h"
 
@@ -104,28 +103,8 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
                   bool aIgnoreExports = false);
 
   
-  nsresult ImportESModule(
-      JSContext* aCx, const nsACString& aResourceURI,
-      JS::MutableHandleObject aModuleNamespace,
-      mozilla::loader::SkipCheckForBrokenURLOrZeroSized aSkipCheck =
-          mozilla::loader::SkipCheckForBrokenURLOrZeroSized::No);
-
-  
-  nsresult TryFallbackToImportESModule(JSContext* aCx,
-                                       const nsACString& aResourceURI,
-                                       JS::MutableHandleObject aModuleGlobal,
-                                       JS::MutableHandleObject aModuleExports,
-                                       bool aIgnoreExports);
-
-  
-  
-  
-  
-  nsresult TryCachedFallbackToImportESModule(
-      JSContext* aCx, const nsACString& aResourceURI,
-      JS::MutableHandleObject aModuleGlobal,
-      JS::MutableHandleObject aModuleExports, bool aIgnoreExports,
-      bool* aFound);
+  nsresult ImportESModule(JSContext* aCx, const nsACString& aResourceURI,
+                          JS::MutableHandleObject aModuleNamespace);
 
 #ifdef STARTUP_RECORDER_ENABLED
   void RecordImportStack(JSContext* aCx, const nsACString& aLocation);
@@ -254,32 +233,11 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
     nsCString resolvedURL;
   };
 
-  class FallbackModuleEntry {
-   public:
-    explicit FallbackModuleEntry(JS::RootingContext* aRootingCx)
-        : globalProxy(aRootingCx), moduleNamespace(aRootingCx) {}
-
-    ~FallbackModuleEntry() { Clear(); }
-
-    void Clear() {
-      globalProxy = nullptr;
-      moduleNamespace = nullptr;
-    }
-
-    size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
-      return aMallocSizeOf(this);
-    }
-
-    JS::PersistentRootedObject globalProxy;
-    JS::PersistentRootedObject moduleNamespace;
-  };
-
   nsresult ExtractExports(JSContext* aCx, ModuleLoaderInfo& aInfo,
                           ModuleEntry* aMod, JS::MutableHandleObject aExports);
 
   nsClassHashtable<nsCStringHashKey, ModuleEntry> mImports;
   nsTHashMap<nsCStringHashKey, ModuleEntry*> mInProgressImports;
-  nsClassHashtable<nsCStringHashKey, FallbackModuleEntry> mFallbackImports;
 #ifdef STARTUP_RECORDER_ENABLED
   nsTHashMap<nsCStringHashKey, nsCString> mImportStacks;
 #endif
