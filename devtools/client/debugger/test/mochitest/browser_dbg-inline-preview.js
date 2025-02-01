@@ -73,6 +73,8 @@ add_task(async function () {
   
   
   await checkInspectorIcon(dbg);
+
+  await dbg.toolbox.closeToolbox();
 });
 
 async function checkInlinePreview(dbg, fnName, inlinePreviews) {
