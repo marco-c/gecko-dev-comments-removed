@@ -1269,7 +1269,7 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
   }
 
   
-  if (it != mExternalTextures.end()) {
+  if (it == mExternalTextures.end()) {
     if (!mRemoteTextureOwner || !mRemoteTextureOwner->IsRegistered(aOwnerId)) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
       return IPC_OK();
