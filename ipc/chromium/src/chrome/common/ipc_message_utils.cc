@@ -9,14 +9,13 @@
 
 namespace IPC {
 
-static uint32_t kShmemThreshold = 64 * 1024;
-
 MessageBufferWriter::MessageBufferWriter(MessageWriter* writer,
                                          uint32_t full_len)
     : writer_(writer) {
   
   
-  if (full_len > kShmemThreshold) {
+  
+  if (full_len > kMessageBufferShmemThreshold) {
     shmem_ = new mozilla::ipc::SharedMemory();
     bool shmem_ok = shmem_->Create(full_len) && shmem_->Map(full_len);
     writer->WriteBool(shmem_ok);
@@ -67,7 +66,8 @@ MessageBufferReader::MessageBufferReader(MessageReader* reader,
     : reader_(reader) {
   
   
-  if (full_len > kShmemThreshold) {
+  
+  if (full_len > kMessageBufferShmemThreshold) {
     bool shmem_ok = false;
     if (!reader->ReadBool(&shmem_ok)) {
       reader->FatalError("MessageReader::ReadBool failed!");
