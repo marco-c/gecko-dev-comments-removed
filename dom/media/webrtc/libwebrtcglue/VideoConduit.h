@@ -116,6 +116,8 @@ class WebrtcVideoConduit : public VideoSessionConduit,
 
   void SetTrackSource(webrtc::VideoTrackSourceInterface* aSource) override;
 
+  bool LockScaling() const override { return mLockScaling; }
+
   bool SendRtp(const uint8_t* aData, size_t aLength,
                const webrtc::PacketOptions& aOptions) override;
   bool SendSenderRtcp(const uint8_t* aData, size_t aLength) override;
@@ -409,6 +411,7 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   
   const bool mDenoising;
 
+  
   
   const bool mLockScaling;
 

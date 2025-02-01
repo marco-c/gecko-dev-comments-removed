@@ -1375,7 +1375,13 @@ webrtc::VideoCodecMode WebrtcVideoConduit::CodecMode() const {
 webrtc::DegradationPreference WebrtcVideoConduit::DegradationPreference()
     const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
-  return webrtc::DegradationPreference::BALANCED;
+  if (mLockScaling || CodecMode() == webrtc::VideoCodecMode::kScreensharing) {
+    return webrtc::DegradationPreference::MAINTAIN_RESOLUTION;
+  }
+  
+  
+  
+  return webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
 }
 
 MediaConduitErrorCode WebrtcVideoConduit::AttachRenderer(
