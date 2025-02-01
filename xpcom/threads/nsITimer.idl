@@ -4,7 +4,7 @@
 
 
 #include "nsISupports.idl"
-#include  "nsINamed.idl"
+#include "nsINamed.idl"
 
 interface nsIObserver;
 interface nsIEventTarget;
@@ -22,8 +22,9 @@ interface nsIEventTarget;
 
 
 
+
 class nsITimer;
-typedef void (*nsTimerCallbackFunc) (nsITimer *aTimer, void *aClosure);
+typedef void (*nsTimerCallbackFunc) (nsITimer* aTimer, void* aClosure);
 %}
 
 native MallocSizeOf(mozilla::MallocSizeOf);
@@ -172,7 +173,6 @@ interface nsITimer : nsISupports
   void cancel();
 
   
-
 
 
 
