@@ -16,10 +16,7 @@ const { TestUtils } = ChromeUtils.importESModule(
 async function check_osclientcerts_module_loaded() {
   
   await TestUtils.topicObserved("psm:load-os-client-certs-module-task-ran");
-  let testModule = checkPKCS11ModuleExists(
-    "OS Client Cert Module",
-    "osclientcerts"
-  );
+  let testModule = checkPKCS11ModuleExists("OS Client Cert Module");
 
   
   let testModuleSlotNames = Array.from(
@@ -38,7 +35,7 @@ async function check_osclientcerts_module_loaded() {
 add_task(async function run_test() {
   
   
-  checkPKCS11ModuleNotPresent("OS Client Cert Module", "osclientcerts");
+  checkPKCS11ModuleNotPresent("OS Client Cert Module");
 
   
   
@@ -48,7 +45,7 @@ add_task(async function run_test() {
   
   
   Services.prefs.setBoolPref("security.osclientcerts.autoload", false);
-  checkPKCS11ModuleNotPresent("OS Client Cert Module", "osclientcerts");
+  checkPKCS11ModuleNotPresent("OS Client Cert Module");
 
   
   Services.prefs.setBoolPref("security.osclientcerts.autoload", true);
@@ -56,5 +53,5 @@ add_task(async function run_test() {
 
   
   Services.prefs.setBoolPref("security.osclientcerts.autoload", false);
-  checkPKCS11ModuleNotPresent("OS Client Cert Module", "osclientcerts");
+  checkPKCS11ModuleNotPresent("OS Client Cert Module");
 });

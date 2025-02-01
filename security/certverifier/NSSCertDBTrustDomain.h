@@ -82,10 +82,7 @@ bool LoadLoadableRoots(const nsCString& dir);
 
 
 
-
-
-
-bool LoadOSClientCertsModule(const nsCString& dir);
+bool LoadOSClientCertsModule();
 
 
 

@@ -1789,6 +1789,27 @@ bool LoadUserModuleAt(const char* moduleName, const char* libraryName,
   return true;
 }
 
+bool LoadUserModuleFromXul(const char* moduleName,
+                           CK_C_GetFunctionList fentry) {
+  
+  
+  
+  int unusedModType;
+  Unused << SECMOD_DeleteModule(moduleName, &unusedModType);
+
+  UniqueSECMODModule userModule(
+      SECMOD_LoadUserModuleWithFunction(moduleName, fentry));
+  if (!userModule) {
+    return false;
+  }
+
+  if (!userModule->loaded) {
+    return false;
+  }
+
+  return true;
+}
+
 bool LoadIPCClientCertsModule(const nsCString& dir) {
   
   
@@ -1812,13 +1833,24 @@ bool LoadIPCClientCertsModule(const nsCString& dir) {
   return true;
 }
 
-bool LoadOSClientCertsModule(const nsCString& dir) {
-  nsLiteralCString params =
-      StaticPrefs::security_osclientcerts_assume_rsa_pss_support()
-          ? "RSA-PSS"_ns
-          : ""_ns;
-  return LoadUserModuleAt(kOSClientCertsModuleName.get(), "osclientcerts", dir,
-                          params.get());
+extern "C" {
+
+
+
+CK_RV OSClientCerts_C_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList);
+}  
+
+bool LoadOSClientCertsModule() {
+
+
+
+
+#if defined(__APPLE__) || (defined WIN32 && !defined(__aarch64__))
+  return LoadUserModuleFromXul(kOSClientCertsModuleName.get(),
+                               OSClientCerts_C_GetFunctionList);
+#else
+  return false;
+#endif
 }
 
 bool LoadLoadableRoots(const nsCString& dir) {
