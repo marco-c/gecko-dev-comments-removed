@@ -442,7 +442,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   void UpdateKeyboardHeight(mozilla::ScreenIntCoord aHeight);
 
-  mozilla::ScreenIntCoord GetKeyboardHeight() const { return mKeyboardHeight; }
+  mozilla::ScreenIntCoord GetKeyboardHeight() const;
 
   
 
@@ -743,7 +743,10 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
 
 
-  mozilla::dom::Element* UpdateViewportScrollStylesOverride();
+
+
+  mozilla::dom::Element* UpdateViewportScrollStylesOverride(
+      const mozilla::dom::Element* aRemovedChild = nullptr);
 
   
 
@@ -1244,8 +1247,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   mozilla::ScreenIntCoord mDynamicToolbarMaxHeight;
   mozilla::ScreenIntCoord mDynamicToolbarHeight;
-  
-  mozilla::ScreenIntCoord mKeyboardHeight;
   
   mozilla::LayoutDeviceIntMargin mSafeAreaInsets;
   nsSize mPageSize;
