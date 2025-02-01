@@ -506,6 +506,7 @@ class RestyleManager {
 
   ServoStyleSet* StyleSet() const { return PresContext()->StyleSet(); }
 
+  void RestyleWholeContainer(nsINode* aContainer, NodeSelectorFlags);
   void RestylePreviousSiblings(nsIContent* aStartingSibling);
   void RestyleSiblingsStartingWith(nsIContent* aStartingSibling);
 
@@ -547,6 +548,9 @@ class RestyleManager {
   
   
   mozilla::UniquePtr<nsTHashSet<const nsIFrame*>> mDestroyedFrames;
+
+  
+  nsTHashSet<RefPtr<nsINode>> mRestyledAsWholeContainer;
 
  protected:
   
