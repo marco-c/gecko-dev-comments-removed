@@ -6152,8 +6152,13 @@ void profiler_shutdown(IsFastShutdown aIsFastShutdown) {
   }
   invoke_profiler_state_change_callbacks(ProfilingState::ShuttingDown);
 
-  const auto preRecordedMetaInformation =
-      PreRecordMetaInformation( true);
+  
+  
+  const char* filename = getenv("MOZ_PROFILER_SHUTDOWN");
+  PreRecordedMetaInformation preRecordedMetaInformation = {};
+  if (filename && filename[0] != '\0') {
+    preRecordedMetaInformation = PreRecordMetaInformation( true);
+  }
 
   ProfilerParent::ProfilerWillStopIfStarted();
 
@@ -6165,7 +6170,6 @@ void profiler_shutdown(IsFastShutdown aIsFastShutdown) {
 
     
     if (ActivePS::Exists(lock)) {
-      const char* filename = getenv("MOZ_PROFILER_SHUTDOWN");
       if (filename && filename[0] != '\0') {
         locked_profiler_save_profile_to_file(lock, filename,
                                              preRecordedMetaInformation,
