@@ -65,7 +65,7 @@ nsTArray_base<Alloc, RelocationStrategy>::GetAutoArrayBufferUnsafe(
   
 
   static_assert(
-      sizeof(void*) != 4 || (MOZ_ALIGNOF(mozilla::AlignedElem<8>) == 8 &&
+      sizeof(void*) != 4 || (alignof(mozilla::AlignedElem<8>) == 8 &&
                              sizeof(AutoTArray<mozilla::AlignedElem<8>, 1>) ==
                                  sizeof(void*) + sizeof(nsTArrayHeader) + 4 +
                                      sizeof(mozilla::AlignedElem<8>)),

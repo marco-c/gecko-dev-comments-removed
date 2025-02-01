@@ -19,48 +19,6 @@ namespace mozilla {
 
 
 
-template <typename T>
-class AlignmentFinder {
-  struct Aligner {
-    char mChar;
-    T mT;
-
-    
-    
-    
-    
-    ~Aligner() = delete;
-  };
-
- public:
-  static const size_t alignment = sizeof(Aligner) - sizeof(T);
-};
-
-#define MOZ_ALIGNOF(T) mozilla::AlignmentFinder<T>::alignment
-
-namespace detail {
-template <typename T>
-struct AlignasHelper {
-  T mT;
-};
-}  
-
-
-
-
-
-
-
-
-
-
-
-#define MOZ_ALIGNAS_IN_STRUCT(T) alignas(mozilla::detail::AlignasHelper<T>)
-
-
-
-
-
 
 
 
