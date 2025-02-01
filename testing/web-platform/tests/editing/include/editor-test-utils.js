@@ -30,6 +30,11 @@ class EditorTestUtils {
     return this.window.getSelection();
   }
 
+  
+  get deleteWordModifier() {
+    return this.window.navigator.platform.includes("Mac") ? this.kAlt : this.kControl;
+  }
+
   sendKey(key, modifier) {
     if (!modifier) {
       
