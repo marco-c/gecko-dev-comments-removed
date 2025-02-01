@@ -6,6 +6,18 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 'use strict';
 
 const TEST_VALUE = "popin-partition-test";
@@ -26,13 +38,9 @@ async function openPopin(test, remoteContextWrapper, origin) {
   const popin = await remoteContextWrapper.addWindow(
      origin ? { origin } : null,
      { features: "popin" });
-  assert_equals(await popin.executeScript(() => { return window.popinContextType(); }), "partitioned");
+  assert_equals(await popin.executeScript(() => window.popinContextType()), "partitioned");
   test.add_cleanup(async () => {
-    await popin.executeScript(() => {
-      
-      
-      setTimeout(() => window.close(), 0);
-    });
+    await popin.executeScript(() => window.close());
   });
   return popin;
 }
@@ -106,7 +114,7 @@ promise_setup(async () => {
   await seedPartition(handles.crossSiteFrameSameSite, "crossSiteFrameSameSite");
 });
 
-promise_test(async t => {
+subsetTestByKey("variant-1-test", promise_test, async t => {
   const popin = await openPopin(t, handles.main);
 
   
@@ -134,7 +142,7 @@ promise_test(async t => {
   t.done();
 }, "Verify Partitioned Popins have access to the proper cookie/storage partitions - Main site opens same-site popin.");
 
-promise_test(async t => {
+subsetTestByKey("variant-2-test", promise_test, async t => {
   const popin = await openPopin(t, handles.main, "HTTPS_NOTSAMESITE_ORIGIN");
 
   
@@ -146,7 +154,7 @@ promise_test(async t => {
   t.done();
 }, "Verify Partitioned Popins have access to the proper cookie/storage partitions - Main site opens cross-site popin.");
 
-promise_test(async t => {
+subsetTestByKey("variant-3-test", promise_test, async t => {
   const popin = await openPopin(t, handles.frameSameSite);
 
   
@@ -174,7 +182,7 @@ promise_test(async t => {
   t.done();
 }, "Verify Partitioned Popins have access to the proper cookie/storage partitions - Same-site frame opens same-site popin.");
 
-promise_test(async t => {
+subsetTestByKey("variant-4-test", promise_test, async t => {
   const popin = await openPopin(t, handles.frameCrossSite);
 
   
@@ -194,7 +202,7 @@ promise_test(async t => {
   t.done();
 }, "Verify Partitioned Popins have access to the proper cookie/storage partitions - Cross-site frame opens main-host popin.");
 
-promise_test(async t => {
+subsetTestByKey("variant-5-test", promise_test, async t => {
   const popin = await openPopin(t, handles.frameCrossSite, "HTTPS_NOTSAMESITE_ORIGIN");
 
   
@@ -207,7 +215,7 @@ promise_test(async t => {
   t.done();
 }, "Verify Partitioned Popins have access to the proper cookie/storage partitions - Cross-site frame opens alternative-host popin.");
 
-promise_test(async t => {
+subsetTestByKey("variant-6-test", promise_test, async t => {
   const popin = await openPopin(t, handles.frameSameSiteWithCrossSiteAncestor);
 
   
@@ -227,7 +235,7 @@ promise_test(async t => {
   t.done();
 }, "Verify Partitioned Popins have access to the proper cookie/storage partitions - Same-site frame with cross-site ancestor opens main-host popin.");
 
-promise_test(async t => {
+subsetTestByKey("variant-7-test", promise_test, async t => {
   const popin = await openPopin(t, handles.main);
 
   
@@ -257,7 +265,7 @@ promise_test(async t => {
   t.done();
 }, "Verify Partitioned Popins have access to the proper cookie/storage partitions - Main site opens same-site popin with same-site frame.");
 
-promise_test(async t => {
+subsetTestByKey("variant-8-test", promise_test, async t => {
   const popin = await openPopin(t, handles.main);
 
   const popinFrame = await popin.addIframe(
@@ -279,7 +287,7 @@ promise_test(async t => {
   t.done();
 }, "Verify Partitioned Popins have access to the proper cookie/storage partitions - Main site opens same-site popin with cross-site frame.");
 
-promise_test(async t => {
+subsetTestByKey("variant-9-test", promise_test, async t => {
   const popin = await openPopin(t, handles.main, "HTTPS_NOTSAMESITE_ORIGIN");
 
   const popinFrame = await popin.addIframe();
@@ -301,7 +309,7 @@ promise_test(async t => {
   t.done();
 }, "Verify Partitioned Popins have access to the proper cookie/storage partitions - Main site opens cross-site popin with main-host frame.");
 
-promise_test(async t => {
+subsetTestByKey("variant-10-test", promise_test, async t => {
   const popin = await openPopin(t, handles.frameCrossSite);
 
   const popinFrame = await popin.addIframe(
@@ -323,7 +331,7 @@ promise_test(async t => {
   t.done();
 }, "Verify Partitioned Popins have access to the proper cookie/storage partitions - Cross-site frame opens main-host popin with cross-site frame.");
 
-promise_test(async t => {
+subsetTestByKey("variant-11-test", promise_test, async t => {
   const popin = await openPopin(t, handles.frameCrossSite, "HTTPS_NOTSAMESITE_ORIGIN");
 
   const popinFrame = await popin.addIframe();
