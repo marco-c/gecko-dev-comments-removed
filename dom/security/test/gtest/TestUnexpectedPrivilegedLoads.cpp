@@ -11,6 +11,7 @@
 #include "js/TypeDecls.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
@@ -36,6 +37,12 @@ extern Atomic<bool, mozilla::Relaxed> sCSSHacksChecked;
 extern Atomic<bool, mozilla::Relaxed> sCSSHacksPresent;
 
 TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
+  
+  bool prefDefault = Preferences::GetBool(
+      "dom.security.unexpected_system_load_telemetry_enabled");
+  Preferences::SetBool("dom.security.unexpected_system_load_telemetry_enabled",
+                       true);
+
   
   
   bool origJSHacksPresent = sJSHacksPresent;
@@ -302,4 +309,8 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
   sJSHacksChecked = origJSHacksChecked;
   sCSSHacksPresent = origCSSHacksPresent;
   sCSSHacksChecked = origCSSHacksChecked;
+
+  
+  Preferences::SetBool("dom.security.unexpected_system_load_telemetry_enabled",
+                       prefDefault);
 }
