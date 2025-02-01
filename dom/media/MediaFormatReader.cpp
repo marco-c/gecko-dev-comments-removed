@@ -1558,6 +1558,11 @@ void MediaFormatReader::OnDemuxFailed(TrackType aTrack,
             aError);
       if (!decoder.mWaitingForDataStartTime) {
         decoder.RequestDrain();
+      } else {
+        
+        
+        MOZ_ASSERT(decoder.mTimeThreshold.isSome() ||
+                   decoder.mNumSamplesInput == decoder.mNumSamplesOutput);
       }
       NotifyWaitingForData(aTrack);
       break;
@@ -1879,8 +1884,14 @@ void MediaFormatReader::NotifyWaitingForData(TrackType aTrack) {
   MOZ_ASSERT(OnTaskQueue());
   LOGV("%s", TrackTypeToStr(aTrack));
   auto& decoder = GetDecoderData(aTrack);
+  
+  
   decoder.mWaitingForDataStartTime = Some(TimeStamp::Now());
   if (decoder.mTimeThreshold) {
+    
+    
+    
+    
     decoder.mTimeThreshold.ref().mWaiting = true;
   }
   ScheduleUpdate(aTrack);
@@ -1970,6 +1981,8 @@ bool MediaFormatReader::UpdateReceivedNewData(TrackType aTrack) {
 
   if (decoder.HasPendingDrain()) {
     LOGV("decoder.HasPendingDrain()");
+    
+    
     
     
     return false;
@@ -2665,6 +2678,9 @@ void MediaFormatReader::Update(TrackType aTrack) {
   }
 
   if ((decoder.IsWaitingForData() &&
+       
+       
+       
        (!decoder.mTimeThreshold || decoder.mTimeThreshold.ref().mWaiting)) ||
       (decoder.IsWaitingForKey())) {
     
@@ -2688,6 +2704,10 @@ void MediaFormatReader::Update(TrackType aTrack) {
   RequestDemuxSamples(aTrack);
 
   HandleDemuxedSamples(aTrack, a);
+  
+  
+  MOZ_ASSERT(!decoder.mDemuxRequest.Exists() ||
+             !decoder.mDecodeRequest.Exists());
 }
 
 void MediaFormatReader::ReturnOutput(MediaData* aData, TrackType aTrack) {

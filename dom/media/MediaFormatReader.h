@@ -299,7 +299,11 @@ class MediaFormatReader final
 
     media::TimeInterval mTime;
     bool mDropTarget;
+    
+    
     bool mWaiting;
+    
+    
     bool mHasSeeked;
   };
 
@@ -610,6 +614,8 @@ class MediaFormatReader final
       }
     }
 
+    
+    
     bool HasInternalSeekPending() const {
       return mTimeThreshold && !mTimeThreshold.ref().mHasSeeked;
     }
