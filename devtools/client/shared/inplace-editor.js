@@ -1305,7 +1305,13 @@ class InplaceEditor extends EventEmitter {
         !multilineNavigation &&
         !event.metaKey &&
         !event.altKey &&
-        !event.ctrlKey)
+        !event.ctrlKey &&
+        
+        
+        
+        
+        
+        !(isKeyIn(key, "UP", "DOWN") && event.shiftKey))
     ) {
       this.#maybeSuggestCompletion(true);
     }

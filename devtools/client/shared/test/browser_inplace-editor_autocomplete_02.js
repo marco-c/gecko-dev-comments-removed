@@ -40,6 +40,26 @@ add_task(async function () {
     ["VK_DOWN", "inline-block", 1, ["inline", "inline-block"]],
     ["VK_DOWN", "inline", 0, ["inline", "inline-block"]],
     ["VK_LEFT", "inline", -1, []],
+    
+    [{ key: "VK_UP", shiftKey: true }, "inline", -1, [], null, false, true],
+    [{ key: "VK_DOWN", shiftKey: true }, "inline", -1, [], null, false, true],
+    [{ key: "VK_LEFT", shiftKey: true }, "inline", -1, [], null, false, true],
+    [{ key: "VK_RIGHT", shiftKey: true }, "inline", -1, [], null, false, true],
+    [{ key: "VK_HOME", shiftKey: true }, "inline", -1, [], null, false, true],
+    [{ key: "VK_END", shiftKey: true }, "inline", -1, [], null, false, true],
+    
+    [
+      {
+        key: "a",
+        [AppConstants.platform == "macosx" ? "metaKey" : "ctrlKey"]: true,
+      },
+      "inline",
+      -1,
+      [],
+      null,
+      false,
+      true,
+    ],
   ]);
 
   info("Test for css property completion after css comment");
