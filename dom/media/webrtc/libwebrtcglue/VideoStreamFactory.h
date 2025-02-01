@@ -9,12 +9,9 @@
 
 #include "CodecConfig.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/DataMutex.h"
 #include "mozilla/EventTargetCapability.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/UniquePtr.h"
-#include "api/video/video_source_interface.h"
-#include "common_video/framerate_controller.h"
 #include "rtc_base/time_utils.h"
 #include "video/config/video_encoder_config.h"
 
@@ -40,21 +37,15 @@ class VideoStreamFactory
                                                  unsigned int aHeight,
                                                  int aCapBps = 0);
 
-  VideoStreamFactory(VideoCodecConfig aConfig,
-                     webrtc::VideoCodecMode aCodecMode, int aMinBitrate,
+  VideoStreamFactory(VideoCodecConfig aConfig, int aMinBitrate,
                      int aStartBitrate, int aPrefMaxBitrate,
-                     int aNegotiatedMaxBitrate,
-                     const rtc::VideoSinkWants& aWants, bool aLockScaling)
-      : mCodecMode(aCodecMode),
-        mMaxFramerateForAllStreams(std::numeric_limits<unsigned int>::max()),
+                     int aNegotiatedMaxBitrate)
+      : mMaxFramerateForAllStreams(std::numeric_limits<unsigned int>::max()),
         mCodecConfig(std::forward<VideoCodecConfig>(aConfig)),
         mMinBitrate(aMinBitrate),
         mStartBitrate(aStartBitrate),
         mPrefMaxBitrate(aPrefMaxBitrate),
-        mNegotiatedMaxBitrate(aNegotiatedMaxBitrate),
-        mFramerateController("VideoStreamFactory::mFramerateController"),
-        mWants(aWants),
-        mLockScaling(aLockScaling) {}
+        mNegotiatedMaxBitrate(aNegotiatedMaxBitrate) {}
 
   
   
@@ -85,15 +76,6 @@ class VideoStreamFactory
   void SelectMaxFramerateForAllStreams(unsigned short aWidth,
                                        unsigned short aHeight);
 
-  
-
-
-
-
-
-
-  bool ShouldDropFrame(const webrtc::VideoFrame& aFrame);
-
  private:
   
 
@@ -104,10 +86,8 @@ class VideoStreamFactory
 
 
 
-
   gfx::IntSize CalculateScaledResolution(int aWidth, int aHeight,
-                                         double aScaleDownByResolution,
-                                         unsigned int aMaxPixelCount)
+                                         double aScaleDownByResolution)
       MOZ_REQUIRES(mEncodeQueue);
 
   
@@ -123,9 +103,6 @@ class VideoStreamFactory
                                unsigned short aSendingHeight);
 
   
-  Atomic<webrtc::VideoCodecMode> mCodecMode;
-
-  
   Atomic<unsigned int> mMaxFramerateForAllStreams;
 
   Maybe<EventTargetCapability<nsISerialEventTarget>> mEncodeQueue;
@@ -139,13 +116,6 @@ class VideoStreamFactory
   const int mStartBitrate = 0;
   const int mPrefMaxBitrate = 0;
   const int mNegotiatedMaxBitrate = 0;
-
-  
-  
-  DataMutex<webrtc::FramerateController> mFramerateController;
-
-  const rtc::VideoSinkWants mWants;
-  const bool mLockScaling;
 };
 
 }  

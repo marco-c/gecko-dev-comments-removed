@@ -25,6 +25,7 @@
 
 #include "api/audio/audio_frame.h"
 #include "api/call/transport.h"
+#include "api/media_stream_interface.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
 #include "api/transport/rtp/rtp_source.h"
@@ -363,15 +364,7 @@ class VideoSessionConduit : public MediaSessionConduit {
       RefPtr<mozilla::VideoRenderer> aRenderer) = 0;
   virtual void DetachRenderer() = 0;
 
-  
-
-
-
-
-
-
-
-  virtual MediaConduitErrorCode SendVideoFrame(webrtc::VideoFrame aFrame) = 0;
+  virtual void SetTrackSource(webrtc::VideoTrackSourceInterface* aSource) = 0;
 
   
 
