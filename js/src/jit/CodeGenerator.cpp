@@ -19853,16 +19853,6 @@ void CodeGenerator::visitIsNullOrUndefinedAndBranch(
   }
 }
 
-void CodeGenerator::loadOutermostJSScript(Register reg) {
-  
-  
-  
-
-  MIRGraph& graph = current->mir()->graph();
-  MBasicBlock* entryBlock = graph.entryBlock();
-  masm.movePtr(ImmGCPtr(entryBlock->info().script()), reg);
-}
-
 void CodeGenerator::loadJSScriptForBlock(MBasicBlock* block, Register reg) {
   
   
