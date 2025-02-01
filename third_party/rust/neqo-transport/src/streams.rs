@@ -183,7 +183,7 @@ impl Streams {
             }
             Frame::DataBlocked { data_limit } => {
                 
-                qwarn!("Received DataBlocked with data limit {data_limit}");
+                qwarn!("Received DataBlocked with data limit {}", data_limit);
                 stats.data_blocked += 1;
                 self.handle_data_blocked();
             }
@@ -205,7 +205,7 @@ impl Streams {
                 
                 
             }
-            _ => return Err(Error::InternalError), 
+            _ => unreachable!("This is not a stream Frame"),
         }
         Ok(())
     }
@@ -405,27 +405,15 @@ impl Streams {
     
     
     
-    
     pub fn obtain_stream(
         &mut self,
         stream_id: StreamId,
     ) -> Res<(Option<&mut SendStream>, Option<&mut RecvStream>)> {
         self.ensure_created_if_remote(stream_id)?;
-        let ss = self.send.get_mut(stream_id).ok();
-        let rs = self.recv.get_mut(stream_id).ok();
-        
-        
-        
-        
-        
-        if ss.is_none()
-            && rs.is_none()
-            && !stream_id.is_remote_initiated(self.role)
-            && self.local_stream_limits[stream_id.stream_type()].used() <= stream_id.index()
-        {
-            return Err(Error::StreamStateError);
-        }
-        Ok((ss, rs))
+        Ok((
+            self.send.get_mut(stream_id).ok(),
+            self.recv.get_mut(stream_id).ok(),
+        ))
     }
 
     

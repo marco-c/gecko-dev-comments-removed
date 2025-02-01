@@ -6,12 +6,13 @@
 
 use std::{
     cell::RefCell,
+    mem,
     net::{IpAddr, Ipv6Addr, SocketAddr},
     rc::Rc,
     time::Duration,
 };
 
-use neqo_common::{event::Provider as _, qdebug, Datagram};
+use neqo_common::{event::Provider, qdebug, Datagram};
 use neqo_crypto::{
     constants::TLS_CHACHA20_POLY1305_SHA256, generate_ech_keys, AuthenticationStatus,
 };
@@ -250,8 +251,8 @@ fn crypto_frame_split() {
     
     assert!(client3.as_dgram_ref().is_some() ^ client4.as_dgram_ref().is_some());
 
-    drop(server.process(client3.dgram(), now()));
-    drop(server.process(client4.dgram(), now()));
+    mem::drop(server.process(client3.dgram(), now()));
+    mem::drop(server.process(client4.dgram(), now()));
 
     assert_eq!(*client.state(), State::Connected);
     assert_eq!(*server.state(), State::Confirmed);
@@ -370,7 +371,7 @@ fn reorder_05rtt_with_0rtt() {
 
     
     let c1 = send_something(&mut client, now);
-    assert_coalesced_0rtt(&c1[..]);
+    assertions::assert_coalesced_0rtt(&c1[..]);
     
     
     let (c1, _) = split_datagram(&c1);
@@ -378,7 +379,7 @@ fn reorder_05rtt_with_0rtt() {
 
     
     now += RTT / 2;
-    drop(server.process(Some(c1), now).dgram().unwrap());
+    mem::drop(server.process(Some(c1), now).dgram().unwrap());
     
     server.process_input(c2, now);
     let s2 = send_something(&mut server, now);
@@ -451,7 +452,7 @@ fn coalesce_05rtt() {
     
     now += RTT / 2;
     assert_eq!(client.stats().dropped_rx, 0);
-    drop(client.process(s2, now).dgram());
+    mem::drop(client.process(s2, now).dgram());
     
     assert_eq!(client.stats().dropped_rx, 0);
     assert_eq!(client.stats().packets_rx, 3);
@@ -472,7 +473,7 @@ fn coalesce_05rtt() {
     assert!(s3.is_some());
     assert_eq!(*server.state(), State::Confirmed);
     now += RTT / 2;
-    drop(client.process(s3, now).dgram());
+    mem::drop(client.process(s3, now).dgram());
     assert_eq!(*client.state(), State::Confirmed);
 
     assert_eq!(client.stats().dropped_rx, 0); 
@@ -860,7 +861,7 @@ fn drop_handshake_packet_from_wrong_address() {
     let (s_in, s_hs) = split_datagram(&out.dgram().unwrap());
 
     
-    drop(client.process(Some(s_in), now()).dgram());
+    mem::drop(client.process(Some(s_in), now()).dgram());
 
     let p = s_hs.unwrap();
     let dgram = Datagram::new(
@@ -1198,7 +1199,7 @@ fn client_initial_retransmits_identical() {
         assert_eq!(
             client.stats().frame_tx,
             FrameStats {
-                crypto: 2 * i,
+                crypto: i,
                 ..Default::default()
             }
         );
@@ -1217,7 +1218,7 @@ fn server_initial_retransmits_identical() {
     
     
     let mut server = default_server();
-    let mut total_ptos = Duration::from_secs(0);
+    let mut total_ptos: Duration = Duration::from_secs(0);
     for i in 1..=3 {
         let si = server.process(ci.take(), now).dgram().unwrap();
         assert_eq!(si.len(), server.plpmtu());

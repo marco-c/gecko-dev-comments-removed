@@ -4,7 +4,10 @@
 
 
 
-use std::time::{Duration, Instant};
+use std::{
+    mem,
+    time::{Duration, Instant},
+};
 
 use neqo_common::qdebug;
 use neqo_crypto::AuthenticationStatus;
@@ -343,7 +346,7 @@ fn pto_handshake_frames() {
     let pkt = client.process(pkt.dgram(), now);
 
     now += Duration::from_millis(10);
-    drop(server.process(pkt.dgram(), now));
+    mem::drop(server.process(pkt.dgram(), now));
 
     now += Duration::from_millis(10);
     client.authenticated(AuthenticationStatus::Ok, now);
@@ -440,7 +443,7 @@ fn loss_recovery_crash() {
     let now = now();
 
     
-    drop(send_something(&mut server, now));
+    mem::drop(send_something(&mut server, now));
 
     
     let ack = send_and_receive(&mut server, &mut client, now);
@@ -456,7 +459,7 @@ fn loss_recovery_crash() {
     assert!(dgram.is_some());
 
     
-    drop(send_something(&mut server, now + AT_LEAST_PTO));
+    mem::drop(send_something(&mut server, now + AT_LEAST_PTO));
 }
 
 
@@ -471,7 +474,7 @@ fn ack_after_pto() {
     let mut now = now();
 
     
-    drop(send_something(&mut client, now));
+    mem::drop(send_something(&mut client, now));
 
     
     now += AT_LEAST_PTO;
@@ -487,7 +490,7 @@ fn ack_after_pto() {
     
     
     
-    drop(send_something(&mut server, now));
+    mem::drop(send_something(&mut server, now));
     let dgram = send_something(&mut server, now);
 
     
@@ -643,7 +646,7 @@ fn trickle(sender: &mut Connection, receiver: &mut Connection, mut count: usize,
     let id = sender.stream_create(StreamType::UniDi).unwrap();
     let mut maybe_ack = None;
     while count > 0 {
-        qdebug!("trickle: remaining={count}");
+        qdebug!("trickle: remaining={}", count);
         assert_eq!(sender.stream_send(id, &[9]).unwrap(), 1);
         let dgram = sender.process(maybe_ack, now).dgram();
 

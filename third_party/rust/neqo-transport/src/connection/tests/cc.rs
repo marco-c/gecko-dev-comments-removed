@@ -4,7 +4,7 @@
 
 
 
-use std::time::Duration;
+use std::{mem, time::Duration};
 
 use neqo_common::{qdebug, qinfo, Datagram, IpTosEcn};
 
@@ -19,7 +19,8 @@ use crate::{
     recovery::{ACK_ONLY_SIZE_LIMIT, PACKET_THRESHOLD},
     sender::PACING_BURST_SIZE,
     stream_id::StreamType,
-    CongestionControlAlgorithm, ConnectionParameters,
+    tracking::DEFAULT_ACK_PACKET_TOLERANCE,
+    ConnectionParameters,
 };
 
 #[test]
@@ -210,11 +211,12 @@ fn single_packet_on_recovery() {
     assert!(dgram.is_some());
 }
 
+#[test]
 
 
-fn cc_cong_avoidance_recovery_period_to_cong_avoidance(cc_algorithm: CongestionControlAlgorithm) {
-    let mut client = new_client(ConnectionParameters::default().cc_algorithm(cc_algorithm));
-    let mut server = new_server(ConnectionParameters::default().cc_algorithm(cc_algorithm));
+fn cc_cong_avoidance_recovery_period_to_cong_avoidance() {
+    let mut client = default_client();
+    let mut server = default_server();
     let now = connect_rtt_idle(&mut client, &mut server, DEFAULT_RTT);
 
     
@@ -231,45 +233,60 @@ fn cc_cong_avoidance_recovery_period_to_cong_avoidance(cc_algorithm: CongestionC
     now += DEFAULT_RTT / 2;
     let s_ack = ack_bytes(&mut server, stream_id, c_tx_dgrams, now);
 
-    let cwnd_before_loss = cwnd(&client);
-
     
     now += DEFAULT_RTT / 2;
     client.process_input(s_ack, now);
 
-    let cwnd_after_loss = cwnd(&client);
-
     
     now += DEFAULT_RTT / 2;
-    assert!(cwnd_before_loss > cwnd_after_loss);
     qinfo!("moving to congestion avoidance {}", cwnd(&client));
 
-    for i in 0..6 {
-        qinfo!("iteration {i}");
+    
+    
+    
+    let mut expected_cwnd = cwnd(&client);
+    
+    let (mut c_tx_dgrams, next_now) = fill_cwnd(&mut client, stream_id, now);
+    now = next_now;
+    for i in 0..5 {
+        qinfo!("iteration {}", i);
 
-        let (c_tx_dgrams, next_now) = fill_cwnd(&mut client, stream_id, now);
+        let c_tx_size: usize = c_tx_dgrams.iter().map(Datagram::len).sum();
         qinfo!(
             "client sending {} bytes into cwnd of {}",
-            c_tx_dgrams.iter().map(Datagram::len).sum::<usize>(),
+            c_tx_size,
             cwnd(&client)
         );
+        assert_eq!(c_tx_size, expected_cwnd);
+
+        
+        
+        let mut next_c_tx_dgrams: Vec<Datagram> = Vec::new();
+
+        
+        
+        
+        let most = c_tx_dgrams.len() - usize::try_from(DEFAULT_ACK_PACKET_TOLERANCE).unwrap() - 1;
+        let s_ack = ack_bytes(&mut server, stream_id, c_tx_dgrams.drain(..most), now);
+        assert_eq!(cwnd(&client), expected_cwnd);
+        client.process_input(s_ack, now);
+        
+        let (mut new_pkts, next_now) = fill_cwnd(&mut client, stream_id, now);
         now = next_now;
+        next_c_tx_dgrams.append(&mut new_pkts);
 
         let s_ack = ack_bytes(&mut server, stream_id, c_tx_dgrams, now);
+        assert_eq!(cwnd(&client), expected_cwnd);
         client.process_input(s_ack, now);
+        
+        let (mut new_pkts, next_now) = fill_cwnd(&mut client, stream_id, now);
+        now = next_now;
+        next_c_tx_dgrams.append(&mut new_pkts);
+
+        expected_cwnd += client.plpmtu();
+        assert_eq!(cwnd(&client), expected_cwnd);
+        c_tx_dgrams = next_c_tx_dgrams;
     }
-
-    assert!(cwnd_before_loss < cwnd(&client));
-}
-
-#[test]
-fn cc_cong_avoidance_recovery_period_to_cong_avoidance_new_reno() {
-    cc_cong_avoidance_recovery_period_to_cong_avoidance(CongestionControlAlgorithm::NewReno);
-}
-
-#[test]
-fn cc_cong_avoidance_recovery_period_to_cong_avoidance_cubic() {
-    cc_cong_avoidance_recovery_period_to_cong_avoidance(CongestionControlAlgorithm::Cubic);
 }
 
 #[test]
@@ -287,7 +304,7 @@ fn cc_slow_start_to_persistent_congestion_no_acks() {
 
     
     now += DEFAULT_RTT / 2;
-    drop(ack_bytes(&mut server, stream, c_tx_dgrams, now));
+    mem::drop(ack_bytes(&mut server, stream, c_tx_dgrams, now));
 
     
     induce_persistent_congestion(&mut client, &mut server, stream, now);
@@ -338,7 +355,7 @@ fn cc_persistent_congestion_to_slow_start() {
 
     
     now += Duration::from_millis(10);
-    drop(ack_bytes(&mut server, stream, c_tx_dgrams, now));
+    mem::drop(ack_bytes(&mut server, stream, c_tx_dgrams, now));
 
     
 
@@ -381,7 +398,7 @@ fn ack_are_not_cc() {
 
     
     
-    qdebug!("[{server}] Sending ack-eliciting");
+    qdebug!([server], "Sending ack-eliciting");
     let other_stream = server.stream_create(StreamType::BiDi).unwrap();
     assert_eq!(other_stream, 1);
     server.stream_send(other_stream, b"dropped").unwrap();
@@ -395,10 +412,10 @@ fn ack_are_not_cc() {
     assert!(ack_eliciting_packet.is_some());
 
     
-    qdebug!("[{client}] Process ack-eliciting");
+    qdebug!([client], "Process ack-eliciting");
     let ack_pkt = client.process(ack_eliciting_packet, now).dgram();
     assert!(ack_pkt.is_some());
-    qdebug!("[{server}] Handle ACK");
+    qdebug!([server], "Handle ACK");
     let prev_ack_count = server.stats().frame_rx.ack;
     server.process_input(ack_pkt.unwrap(), now);
     assert_eq!(server.stats().frame_rx.ack, prev_ack_count + 1);

@@ -93,7 +93,9 @@ impl QPackEncoder {
         }
 
         qdebug!(
-            "[{self}] Set max capacity to new capacity:{cap} old:{} max_table_size={}",
+            [self],
+            "Set max capacity to new capacity:{} old:{} max_table_size={}.",
+            cap,
             self.table.capacity(),
             self.max_table_size,
         );
@@ -127,7 +129,7 @@ impl QPackEncoder {
     }
 
     fn read_instructions(&mut self, conn: &mut Connection, stream_id: StreamId) -> Res<()> {
-        qdebug!("[{self}] read a new instruction");
+        qdebug!([self], "read a new instruction");
         loop {
             let mut recv = ReceiverConnWrapper::new(conn, stream_id);
             match self.instruction_reader.read_instructions(&mut recv) {
@@ -170,7 +172,7 @@ impl QPackEncoder {
                     }
                 }
             } else {
-                debug_assert!(false, "We should have at least one header block");
+                debug_assert!(false, "We should have at least one header block.");
             }
             if hb_list.is_empty() {
                 self.unacked_header_blocks.remove(&stream_id);
@@ -201,7 +203,7 @@ impl QPackEncoder {
     }
 
     fn call_instruction(&mut self, instruction: DecoderInstruction, qlog: &NeqoQlog) -> Res<()> {
-        qdebug!("[{self}] call instruction {instruction:?}");
+        qdebug!([self], "call intruction {:?}", instruction);
         match instruction {
             DecoderInstruction::InsertCountIncrement { increment } => {
                 qlog::qpack_read_insert_count_increment_instruction(
@@ -245,7 +247,7 @@ impl QPackEncoder {
         name: &[u8],
         value: &[u8],
     ) -> Res<u64> {
-        qdebug!("[{self}] insert {name:?} {value:?}");
+        qdebug!([self], "insert {:?} {:?}.", name, value);
 
         let entry_size = name.len() + value.len() + ADDITIONAL_TABLE_ENTRY_SIZE;
 
@@ -278,7 +280,7 @@ impl QPackEncoder {
     }
 
     fn change_capacity(&mut self, value: u64) {
-        qdebug!("[{self}] change capacity: {value}");
+        qdebug!([self], "change capacity: {}", value);
         self.next_capacity = Some(value);
     }
 
@@ -319,7 +321,7 @@ impl QPackEncoder {
     pub fn send_encoder_updates(&mut self, conn: &mut Connection) -> Res<()> {
         match self.local_stream {
             LocalStreamState::NoStream => {
-                qerror!("Send call but there is no stream yet");
+                qerror!("Send call but there is no stream yet.");
                 Ok(())
             }
             LocalStreamState::Uninitialized(stream_id) => {
@@ -366,7 +368,7 @@ impl QPackEncoder {
         h: &[Header],
         stream_id: StreamId,
     ) -> HeaderEncoder {
-        qdebug!("[{self}] encoding headers");
+        qdebug!([self], "encoding headers.");
 
         
         
@@ -391,7 +393,7 @@ impl QPackEncoder {
         for iter in h {
             let name = iter.name().as_bytes().to_vec();
             let value = iter.value().as_bytes().to_vec();
-            qtrace!("encoding {name:x?} {value:x?}");
+            qtrace!("encoding {:x?} {:x?}.", name, value);
 
             if let Some(LookupResult {
                 index,
@@ -400,8 +402,10 @@ impl QPackEncoder {
             }) = self.table.lookup(&name, &value, can_block)
             {
                 qtrace!(
-                    "[{self}] found a {} entry, value-match={value_matches}",
-                    if static_table { "static" } else { "dynamic" }
+                    [self],
+                    "found a {} entry, value-match={}",
+                    if static_table { "static" } else { "dynamic" },
+                    value_matches
                 );
                 if value_matches {
                     if static_table {
@@ -524,6 +528,8 @@ fn map_stream_send_atomic_error(err: &TransportError) -> Error {
 
 #[cfg(test)]
 mod tests {
+    use std::mem;
+
     use neqo_transport::{ConnectionParameters, StreamId, StreamType};
     use test_fixture::{default_client, default_server, handshake, new_server, now, DEFAULT_ALPN};
 
@@ -570,7 +576,7 @@ mod tests {
             self.encoder.send_encoder_updates(&mut self.conn).unwrap();
             let out = self.conn.process_output(now());
             let out2 = self.peer_conn.process(out.dgram(), now());
-            drop(self.conn.process(out2.dgram(), now()));
+            mem::drop(self.conn.process(out2.dgram(), now()));
             let mut buf = [0_u8; 100];
             let (amount, fin) = self
                 .peer_conn
@@ -632,7 +638,7 @@ mod tests {
             .stream_send(encoder.recv_stream_id, decoder_instruction)
             .unwrap();
         let out = encoder.peer_conn.process_output(now());
-        drop(encoder.conn.process(out.dgram(), now()));
+        mem::drop(encoder.conn.process(out.dgram(), now()));
         assert!(encoder
             .encoder
             .read_instructions(&mut encoder.conn, encoder.recv_stream_id)
@@ -1560,7 +1566,7 @@ mod tests {
 
         
         let out = encoder.peer_conn.process_output(now());
-        drop(encoder.conn.process(out.dgram(), now()));
+        mem::drop(encoder.conn.process(out.dgram(), now()));
 
         
         
@@ -1607,7 +1613,7 @@ mod tests {
             .send_encoder_updates(&mut encoder.conn)
             .unwrap();
         let out = encoder.conn.process_output(now());
-        drop(encoder.peer_conn.process(out.dgram(), now()));
+        mem::drop(encoder.peer_conn.process(out.dgram(), now()));
         
         recv_instruction(&mut encoder, &[0x01]);
 

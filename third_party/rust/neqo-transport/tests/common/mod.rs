@@ -8,7 +8,7 @@
 
 use std::{cell::RefCell, mem, ops::Range, rc::Rc};
 
-use neqo_common::{event::Provider as _, hex_with_len, qtrace, Datagram, Decoder, Role};
+use neqo_common::{event::Provider, hex_with_len, qtrace, Datagram, Decoder, Role};
 use neqo_crypto::{
     constants::{TLS_AES_128_GCM_SHA256, TLS_VERSION_1_3},
     hkdf,
@@ -112,7 +112,7 @@ pub fn generate_ticket(server: &mut Server) -> ResumptionToken {
     
     client.close(now(), 0, "got a ticket");
     let out = client.process_output(now());
-    drop(server.process(out.dgram(), now()));
+    mem::drop(server.process(out.dgram(), now()));
     
     assert_eq!(server.active_connections().len(), 1);
     ticket

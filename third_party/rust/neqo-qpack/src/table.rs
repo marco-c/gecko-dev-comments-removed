@@ -116,7 +116,7 @@ impl HeaderTable {
     
     
     pub fn set_capacity(&mut self, cap: u64) -> Res<()> {
-        qtrace!("[{self}] set capacity to {cap}");
+        qtrace!([self], "set capacity to {}", cap);
         if !self.evict_to(cap) {
             return Err(Error::ChangeCapacity);
         }
@@ -181,7 +181,7 @@ impl HeaderTable {
 
     
     pub fn remove_ref(&mut self, index: u64) {
-        qtrace!("[{self}] remove reference to entry {index}");
+        qtrace!([self], "remove reference to entry {}", index);
         self.get_dynamic_with_abs_index(index)
             .expect("we should have the entry")
             .remove_ref();
@@ -189,7 +189,7 @@ impl HeaderTable {
 
     
     pub fn add_ref(&mut self, index: u64) {
-        qtrace!("[{self}] add reference to entry {index}");
+        qtrace!([self], "add reference to entry {}", index);
         self.get_dynamic_with_abs_index(index)
             .expect("we should have the entry")
             .add_ref();
@@ -199,7 +199,13 @@ impl HeaderTable {
     
     
     pub fn lookup(&mut self, name: &[u8], value: &[u8], can_block: bool) -> Option<LookupResult> {
-        qtrace!("[{self}] lookup name:{name:?} value {value:?} can_block={can_block}",);
+        qtrace!(
+            [self],
+            "lookup name:{:?} value {:?} can_block={}",
+            name,
+            value,
+            can_block
+        );
         let mut name_match = None;
         for iter in HEADER_STATIC_TABLE {
             if iter.name() == name {
@@ -247,9 +253,20 @@ impl HeaderTable {
     }
 
     fn evict_to(&mut self, reduce: u64) -> bool {
+        self.evict_to_internal(reduce, false)
+    }
+
+    pub fn can_evict_to(&mut self, reduce: u64) -> bool {
+        self.evict_to_internal(reduce, true)
+    }
+
+    pub fn evict_to_internal(&mut self, reduce: u64, only_check: bool) -> bool {
         qtrace!(
-            "[{self}] reduce table to {reduce}, currently used:{}",
+            [self],
+            "reduce table to {}, currently used:{} only_check:{}",
+            reduce,
             self.used,
+            only_check
         );
         let mut used = self.used;
         while (!self.dynamic.is_empty()) && used > reduce {
@@ -258,26 +275,16 @@ impl HeaderTable {
                     return false;
                 }
                 used -= u64::try_from(e.size()).unwrap();
-                self.used -= u64::try_from(e.size()).unwrap();
-                self.dynamic.pop_back();
+                if !only_check {
+                    self.used -= u64::try_from(e.size()).unwrap();
+                    self.dynamic.pop_back();
+                }
             }
         }
         true
     }
 
-    pub fn can_evict_to(&self, reduce: u64) -> bool {
-        let evictable_size: usize = self
-            .dynamic
-            .iter()
-            .rev()
-            .take_while(|e| e.can_reduce(self.acked_inserts_cnt))
-            .map(DynamicTableEntry::size)
-            .sum();
-
-        self.used - u64::try_from(evictable_size).unwrap() <= reduce
-    }
-
-    pub fn insert_possible(&self, size: usize) -> bool {
+    pub fn insert_possible(&mut self, size: usize) -> bool {
         u64::try_from(size).unwrap() <= self.capacity
             && self.can_evict_to(self.capacity - u64::try_from(size).unwrap())
     }
@@ -289,7 +296,7 @@ impl HeaderTable {
     
     
     pub fn insert(&mut self, name: &[u8], value: &[u8]) -> Res<u64> {
-        qtrace!("[{self}] insert name={name:?} value={value:?}");
+        qtrace!([self], "insert name={:?} value={:?}", name, value);
         let entry = DynamicTableEntry {
             name: name.to_vec(),
             value: value.to_vec(),
@@ -322,12 +329,15 @@ impl HeaderTable {
         value: &[u8],
     ) -> Res<u64> {
         qtrace!(
-            "[{self}] insert with ref to index={name_index} in {} value={value:?}",
+            [self],
+            "insert with ref to index={} in {} value={:?}",
+            name_index,
             if name_static_table {
                 "static"
             } else {
                 "dynamic"
             },
+            value
         );
         let name = if name_static_table {
             Self::get_static(name_index)?.name().to_vec()
@@ -347,7 +357,7 @@ impl HeaderTable {
     
     
     pub fn duplicate(&mut self, index: u64) -> Res<u64> {
-        qtrace!("[{self}] duplicate entry={index}");
+        qtrace!([self], "duplicate entry={}", index);
         
         let name: Vec<u8>;
         let value: Vec<u8>;
@@ -355,7 +365,7 @@ impl HeaderTable {
             let entry = self.get_dynamic(index, self.base, false)?;
             name = entry.name().to_vec();
             value = entry.value().to_vec();
-            qtrace!("[{self}] duplicate name={name:?} value={value:?}");
+            qtrace!([self], "dumplicate name={:?} value={:?}", name, value);
         }
         self.insert(&name, &value)
     }
@@ -366,7 +376,7 @@ impl HeaderTable {
     
     
     pub fn increment_acked(&mut self, increment: u64) -> Res<()> {
-        qtrace!("[{self}] increment acked by {increment}");
+        qtrace!([self], "increment acked by {}", increment);
         self.acked_inserts_cnt += increment;
         if self.base < self.acked_inserts_cnt {
             return Err(Error::IncrementAck);
@@ -377,56 +387,5 @@ impl HeaderTable {
     
     pub const fn get_acked_inserts_cnt(&self) -> u64 {
         self.acked_inserts_cnt
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    
-    
-    
-    
-    
-    mod issue_2306 {
-        use super::*;
-
-        const VALUE: &[u8; 2] = b"42";
-
-        
-        
-        
-        #[test]
-        fn can_evict_to_no_underflow() {
-            let mut table = HeaderTable::new(true);
-            table.set_capacity(10000).unwrap();
-
-            table.insert(b"header1", VALUE).unwrap();
-            table.insert(b"larger-header1", VALUE).unwrap();
-
-            table.increment_acked(2).unwrap();
-
-            assert!(table.can_evict_to(0));
-        }
-
-        
-        
-        
-        #[test]
-        fn can_evict_to_false() {
-            let mut table = HeaderTable::new(true);
-            table.set_capacity(10000).unwrap();
-
-            table.insert(b"header1", VALUE).unwrap();
-            table.insert(b"header2", VALUE).unwrap();
-
-            table.increment_acked(1).unwrap();
-
-            let first_entry_size = table.get_dynamic_with_abs_index(0).unwrap().size() as u64;
-
-            assert!(table.can_evict_to(first_entry_size));
-            assert!(!table.can_evict_to(0));
-        }
     }
 }

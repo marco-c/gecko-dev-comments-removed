@@ -83,15 +83,13 @@ pub struct ConnectionParameters {
     pacing: bool,
     
     pmtud: bool,
-    
-    sni_slicing: bool,
 }
 
 impl Default for ConnectionParameters {
     fn default() -> Self {
         Self {
             versions: VersionConfig::default(),
-            cc_algorithm: CongestionControlAlgorithm::Cubic,
+            cc_algorithm: CongestionControlAlgorithm::NewReno,
             max_data: LOCAL_MAX_DATA,
             max_stream_data_bidi_remote: u64::try_from(RECV_BUFFER_SIZE).unwrap(),
             max_stream_data_bidi_local: u64::try_from(RECV_BUFFER_SIZE).unwrap(),
@@ -109,7 +107,6 @@ impl Default for ConnectionParameters {
             disable_migration: false,
             pacing: true,
             pmtud: false,
-            sni_slicing: true,
         }
     }
 }
@@ -192,7 +189,7 @@ impl ConnectionParameters {
             (StreamType::BiDi, false) => self.max_stream_data_bidi_local,
             (StreamType::BiDi, true) => self.max_stream_data_bidi_remote,
             (StreamType::UniDi, false) => {
-                panic!("Can't get receive limit on a stream that can only be sent")
+                panic!("Can't get receive limit on a stream that can only be sent.")
             }
             (StreamType::UniDi, true) => self.max_stream_data_uni,
         }
@@ -215,7 +212,7 @@ impl ConnectionParameters {
                 self.max_stream_data_bidi_remote = v;
             }
             (StreamType::UniDi, false) => {
-                panic!("Can't set receive limit on a stream that can only be sent")
+                panic!("Can't set receive limit on a stream that can only be sent.")
             }
             (StreamType::UniDi, true) => {
                 self.max_stream_data_uni = v;
@@ -367,17 +364,6 @@ impl ConnectionParameters {
     #[must_use]
     pub const fn pmtud(mut self, pmtud: bool) -> Self {
         self.pmtud = pmtud;
-        self
-    }
-
-    #[must_use]
-    pub const fn sni_slicing_enabled(&self) -> bool {
-        self.sni_slicing
-    }
-
-    #[must_use]
-    pub const fn sni_slicing(mut self, sni_slicing: bool) -> Self {
-        self.sni_slicing = sni_slicing;
         self
     }
 

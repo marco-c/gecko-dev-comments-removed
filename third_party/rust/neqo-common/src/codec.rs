@@ -44,26 +44,32 @@ impl<'a> Decoder<'a> {
     }
 
     
-    
-    #[cfg(any(test, feature = "test-fixture"))]
     fn skip_inner(&mut self, n: Option<u64>) {
         self.skip(usize::try_from(n.expect("invalid length")).unwrap());
     }
 
     
     
-    #[cfg(any(test, feature = "test-fixture"))]
     pub fn skip_vec(&mut self, n: usize) {
-        let len = self.decode_n(n);
+        let len = self.decode_uint(n);
         self.skip_inner(len);
     }
 
     
     
-    #[cfg(any(test, feature = "test-fixture"))]
     pub fn skip_vvec(&mut self) {
         let len = self.decode_varint();
         self.skip_inner(len);
+    }
+
+    
+    pub fn decode_byte(&mut self) -> Option<u8> {
+        if self.remaining() < 1 {
+            return None;
+        }
+        let b = self.buf[self.offset];
+        self.offset += 1;
+        Some(b)
     }
 
     
@@ -86,43 +92,33 @@ impl<'a> Decoder<'a> {
         Some(res)
     }
 
-    #[inline]
-    pub(crate) fn decode_n(&mut self, n: usize) -> Option<u64> {
-        debug_assert!(n > 0 && n <= 8);
+    
+    
+    
+    
+    
+    pub fn decode_uint(&mut self, n: usize) -> Option<u64> {
+        assert!(n > 0 && n <= 8);
         if self.remaining() < n {
             return None;
         }
-        Some(if n == 1 {
-            let v = u64::from(self.buf[self.offset]);
-            self.offset += 1;
-            v
-        } else {
-            let mut buf = [0; 8];
-            buf[8 - n..].copy_from_slice(&self.buf[self.offset..self.offset + n]);
-            self.offset += n;
-            u64::from_be_bytes(buf)
-        })
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn decode_uint<T: TryFrom<u64>>(&mut self) -> Option<T> {
-        let v = self.decode_n(std::mem::size_of::<T>());
-        v.and_then(|v| T::try_from(v).ok())
+        let mut v = 0_u64;
+        for i in 0..n {
+            let b = self.buf[self.offset + i];
+            v = v << 8 | u64::from(b);
+        }
+        self.offset += n;
+        Some(v)
     }
 
     
     pub fn decode_varint(&mut self) -> Option<u64> {
-        let b1 = self.decode_n(1)?;
+        let b1 = self.decode_byte()?;
         match b1 >> 6 {
-            0 => Some(b1),
-            1 => Some(((b1 & 0x3f) << 8) | self.decode_n(1)?),
-            2 => Some(((b1 & 0x3f) << 24) | self.decode_n(3)?),
-            3 => Some(((b1 & 0x3f) << 56) | self.decode_n(7)?),
+            0 => Some(u64::from(b1 & 0x3f)),
+            1 => Some((u64::from(b1 & 0x3f) << 8) | self.decode_uint(1)?),
+            2 => Some((u64::from(b1 & 0x3f) << 24) | self.decode_uint(3)?),
+            3 => Some((u64::from(b1 & 0x3f) << 56) | self.decode_uint(7)?),
             _ => unreachable!(),
         }
     }
@@ -147,7 +143,7 @@ impl<'a> Decoder<'a> {
 
     
     pub fn decode_vec(&mut self, n: usize) -> Option<&'a [u8]> {
-        let len = self.decode_n(n);
+        let len = self.decode_uint(n);
         self.decode_checked(len)
     }
 
@@ -276,7 +272,6 @@ impl Encoder {
     
     
     
-    #[cfg(any(test, feature = "test-fixture"))]
     #[must_use]
     pub fn from_hex(s: impl AsRef<str>) -> Self {
         let s = s.as_ref();
@@ -486,28 +481,16 @@ mod tests {
         let enc = Encoder::from_hex("0123");
         let mut dec = enc.as_decoder();
 
-        assert_eq!(dec.decode_uint::<u8>().unwrap(), 0x01);
-        assert_eq!(dec.decode_uint::<u8>().unwrap(), 0x23);
-        assert!(dec.decode_uint::<u8>().is_none());
-    }
-
-    #[test]
-    fn peek_byte() {
-        let enc = Encoder::from_hex("01");
-        let mut dec = enc.as_decoder();
-
-        assert_eq!(dec.offset(), 0);
-        assert_eq!(dec.peek_byte().unwrap(), 0x01);
-        dec.skip(1);
-        assert_eq!(dec.offset(), 1);
-        assert!(dec.peek_byte().is_none());
+        assert_eq!(dec.decode_byte().unwrap(), 0x01);
+        assert_eq!(dec.decode_byte().unwrap(), 0x23);
+        assert!(dec.decode_byte().is_none());
     }
 
     #[test]
     fn decode_byte_short() {
         let enc = Encoder::from_hex("");
         let mut dec = enc.as_decoder();
-        assert!(dec.decode_uint::<u8>().is_none());
+        assert!(dec.decode_byte().is_none());
     }
 
     #[test]
@@ -518,7 +501,7 @@ mod tests {
         assert!(dec.decode(2).is_none());
 
         let mut dec = Decoder::from(&[]);
-        assert!(dec.decode_remainder().is_empty());
+        assert_eq!(dec.decode_remainder().len(), 0);
     }
 
     #[test]

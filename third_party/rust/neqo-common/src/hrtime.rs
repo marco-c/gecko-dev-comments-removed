@@ -80,7 +80,7 @@ impl PeriodSet {
 #[cfg(target_os = "macos")]
 #[allow(non_camel_case_types)]
 mod mac {
-    use std::ptr::addr_of_mut;
+    use std::{mem::size_of, ptr::addr_of_mut};
 
     
     
@@ -126,7 +126,7 @@ mod mac {
     const THREAD_TIME_CONSTRAINT_POLICY: thread_policy_flavor_t = 2;
     #[allow(clippy::cast_possible_truncation)]
     const THREAD_TIME_CONSTRAINT_POLICY_COUNT: mach_msg_type_number_t =
-        (std::mem::size_of::<thread_time_constraint_policy>() / std::mem::size_of::<integer_t>())
+        (size_of::<thread_time_constraint_policy>() / size_of::<integer_t>())
             as mach_msg_type_number_t;
 
     
@@ -372,7 +372,12 @@ impl Drop for Time {
 
 
 
-#[cfg(all(test, target_os = "linux", not(neqo_sanitize)))]
+#[cfg(all(
+    test,
+    not(all(any(target_os = "macos", target_os = "windows"), feature = "ci")),
+    
+    not(neqo_sanitize),
+))]
 mod test {
     use std::{
         thread::{sleep, spawn},

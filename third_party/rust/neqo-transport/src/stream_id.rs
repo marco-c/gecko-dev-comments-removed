@@ -106,12 +106,6 @@ impl StreamId {
 
     
     #[must_use]
-    pub const fn index(&self) -> u64 {
-        self.0 >> 2
-    }
-
-    
-    #[must_use]
     pub const fn role_bit(role: Role) -> u64 {
         match role {
             Role::Server => 1,

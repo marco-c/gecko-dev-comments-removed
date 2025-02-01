@@ -4,6 +4,8 @@
 
 
 
+use std::mem;
+
 use neqo_common::{qdebug, Datagram};
 use test_fixture::now;
 
@@ -28,7 +30,7 @@ fn check_discarded(
     dups: usize,
 ) {
     
-    drop(peer.process_output(now()));
+    mem::drop(peer.process_output(now()));
 
     let before = peer.stats();
     let out = peer.process(Some(pkt.clone()), now());
@@ -143,7 +145,7 @@ fn key_update_client() {
     let dgram = client.process_output(now).dgram();
     assert!(dgram.is_some()); 
     assert_eq!(client.get_epochs(), (Some(4), Some(3)));
-    drop(server.process_output(now));
+    mem::drop(server.process_output(now));
     assert_eq!(server.get_epochs(), (Some(4), Some(4)));
 
     
@@ -168,7 +170,7 @@ fn key_update_client() {
     assert_update_blocked(&mut server);
 
     now += AT_LEAST_PTO;
-    drop(client.process_output(now));
+    mem::drop(client.process_output(now));
     assert_eq!(client.get_epochs(), (Some(4), Some(4)));
 }
 
@@ -184,7 +186,7 @@ fn key_update_consecutive() {
 
     
     
-    drop(send_something(&mut server, now)); 
+    mem::drop(send_something(&mut server, now)); 
 
     
     let dgram = send_and_receive(&mut server, &mut client, now);
@@ -196,7 +198,7 @@ fn key_update_consecutive() {
         assert_eq!(server.get_epochs(), (Some(4), Some(3)));
         
         
-        drop(server.process_output(now + AT_LEAST_PTO));
+        mem::drop(server.process_output(now + AT_LEAST_PTO));
         assert_eq!(server.get_epochs(), (Some(4), Some(4)));
     } else {
         panic!("server should have a timer set");
@@ -302,7 +304,7 @@ fn automatic_update_write_keys() {
     connect_force_idle(&mut client, &mut server);
 
     overwrite_invocations(UPDATE_WRITE_KEYS_AT);
-    drop(send_something(&mut client, now()));
+    mem::drop(send_something(&mut client, now()));
     assert_eq!(client.get_epochs(), (Some(4), Some(3)));
 }
 
@@ -314,10 +316,10 @@ fn automatic_update_write_keys_later() {
 
     overwrite_invocations(UPDATE_WRITE_KEYS_AT + 2);
     
-    drop(send_something(&mut client, now()));
+    mem::drop(send_something(&mut client, now()));
     assert_eq!(client.get_epochs(), (Some(3), Some(3)));
     
-    drop(send_something(&mut client, now()));
+    mem::drop(send_something(&mut client, now()));
     assert_eq!(client.get_epochs(), (Some(4), Some(3)));
 }
 

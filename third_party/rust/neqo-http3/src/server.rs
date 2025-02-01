@@ -119,13 +119,13 @@ impl Http3Server {
     }
 
     pub fn process(&mut self, dgram: Option<Datagram<impl AsRef<[u8]>>>, now: Instant) -> Output {
-        qtrace!("[{self}] Process");
+        qtrace!([self], "Process.");
         let out = self.server.process(dgram, now);
         self.process_http3(now);
         
         match out {
             Output::Datagram(d) => {
-                qtrace!("[{self}] Send packet: {d:?}");
+                qtrace!([self], "Send packet: {:?}", d);
                 Output::Datagram(d)
             }
             _ => self.server.process(Option::<Datagram>::None, now),
@@ -134,7 +134,7 @@ impl Http3Server {
 
     
     fn process_http3(&mut self, now: Instant) {
-        qtrace!("[{self}] Process http3 internal");
+        qtrace!([self], "Process http3 internal.");
         
         
         #[allow(clippy::mutable_key_type)]
@@ -152,7 +152,6 @@ impl Http3Server {
         }
     }
 
-    #[allow(clippy::too_many_lines)]
     fn process_events(&mut self, conn: &ConnectionRef, now: Instant) {
         let mut remove = false;
         let http3_parameters = &self.http3_parameters;
@@ -173,11 +172,7 @@ impl Http3Server {
                         headers,
                         fin,
                     } => self.events.headers(
-                        Http3OrWebTransportStream::new(
-                            conn.clone(),
-                            Rc::clone(handler),
-                            stream_info,
-                        ),
+                        Http3OrWebTransportStream::new(conn.clone(), handler.clone(), stream_info),
                         headers,
                         fin,
                     ),
@@ -193,19 +188,15 @@ impl Http3Server {
                     }
                     Http3ServerConnEvent::DataWritable { stream_info } => self
                         .events
-                        .data_writable(conn.clone(), Rc::clone(handler), stream_info),
+                        .data_writable(conn.clone(), handler.clone(), stream_info),
                     Http3ServerConnEvent::StreamReset { stream_info, error } => {
-                        self.events.stream_reset(
-                            conn.clone(),
-                            Rc::clone(handler),
-                            stream_info,
-                            error,
-                        );
+                        self.events
+                            .stream_reset(conn.clone(), handler.clone(), stream_info, error);
                     }
                     Http3ServerConnEvent::StreamStopSending { stream_info, error } => {
                         self.events.stream_stop_sending(
                             conn.clone(),
-                            Rc::clone(handler),
+                            handler.clone(),
                             stream_info,
                             error,
                         );
@@ -225,7 +216,7 @@ impl Http3Server {
                     }
                     Http3ServerConnEvent::ExtendedConnect { stream_id, headers } => {
                         self.events.webtransport_new_session(
-                            WebTransportRequest::new(conn.clone(), Rc::clone(handler), stream_id),
+                            WebTransportRequest::new(conn.clone(), handler.clone(), stream_id),
                             headers,
                         );
                     }
@@ -235,7 +226,7 @@ impl Http3Server {
                         headers,
                         ..
                     } => self.events.webtransport_session_closed(
-                        WebTransportRequest::new(conn.clone(), Rc::clone(handler), stream_id),
+                        WebTransportRequest::new(conn.clone(), handler.clone(), stream_id),
                         reason,
                         headers,
                     ),
@@ -243,14 +234,14 @@ impl Http3Server {
                         .events
                         .webtransport_new_stream(Http3OrWebTransportStream::new(
                             conn.clone(),
-                            Rc::clone(handler),
+                            handler.clone(),
                             stream_info,
                         )),
                     Http3ServerConnEvent::ExtendedConnectDatagram {
                         session_id,
                         datagram,
                     } => self.events.webtransport_datagram(
-                        WebTransportRequest::new(conn.clone(), Rc::clone(handler), session_id),
+                        WebTransportRequest::new(conn.clone(), handler.clone(), session_id),
                         datagram,
                     ),
                 }
@@ -303,7 +294,7 @@ fn prepare_data(
                     data.resize(amount, 0);
                 }
 
-                events.data(conn.clone(), Rc::clone(handler), stream_info, data, fin);
+                events.data(conn.clone(), handler.clone(), stream_info, data, fin);
             }
             if amount < MAX_EVENT_DATA_SIZE || fin {
                 break;
@@ -320,10 +311,11 @@ fn prepare_data(
 mod tests {
     use std::{
         collections::HashMap,
+        mem,
         ops::{Deref, DerefMut},
     };
 
-    use neqo_common::{event::Provider as _, Encoder};
+    use neqo_common::{event::Provider, Encoder};
     use neqo_crypto::{AuthenticationStatus, ZeroRttCheckResult, ZeroRttChecker};
     use neqo_qpack::{encoder::QPackEncoder, QpackSettings};
     use neqo_transport::{
@@ -514,7 +506,7 @@ mod tests {
     
     #[test]
     fn server_connect() {
-        drop(connect_and_receive_settings());
+        mem::drop(connect_and_receive_settings());
     }
 
     struct PeerConnection {
@@ -567,7 +559,7 @@ mod tests {
         assert_eq!(sent, Ok(1));
         let out1 = neqo_trans_conn.process_output(now());
         let out2 = server.process(out1.dgram(), now());
-        drop(neqo_trans_conn.process(out2.dgram(), now()));
+        mem::drop(neqo_trans_conn.process(out2.dgram(), now()));
 
         
         assert_not_closed(server);
@@ -587,7 +579,7 @@ mod tests {
     
     #[test]
     fn server_receive_control_frame() {
-        drop(connect());
+        mem::drop(connect());
     }
 
     
@@ -718,9 +710,9 @@ mod tests {
             .unwrap();
         let out = peer_conn.process_output(now());
         let out = hconn.process(out.dgram(), now());
-        drop(peer_conn.process(out.dgram(), now()));
+        mem::drop(peer_conn.process(out.dgram(), now()));
         let out = hconn.process_output(now());
-        drop(peer_conn.process(out.dgram(), now()));
+        mem::drop(peer_conn.process(out.dgram(), now()));
 
         
         let mut stop_sending_event_found = false;
@@ -749,7 +741,7 @@ mod tests {
         _ = peer_conn.stream_send(push_stream_id, &[0x1]).unwrap();
         let out = peer_conn.process_output(now());
         let out = hconn.process(out.dgram(), now());
-        drop(peer_conn.conn.process(out.dgram(), now()));
+        mem::drop(peer_conn.conn.process(out.dgram(), now()));
         assert_closed(&hconn, &Error::HttpStreamCreation);
     }
 

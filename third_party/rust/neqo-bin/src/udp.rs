@@ -7,7 +7,7 @@
 use std::{io, net::SocketAddr};
 
 use neqo_common::Datagram;
-use neqo_udp::{DatagramIter, RecvBuf};
+use neqo_udp::DatagramIter;
 
 
 
@@ -59,7 +59,7 @@ impl Socket {
     pub fn recv<'a>(
         &self,
         local_address: SocketAddr,
-        recv_buf: &'a mut RecvBuf,
+        recv_buf: &'a mut [u8],
     ) -> Result<Option<DatagramIter<'a>>, io::Error> {
         self.inner
             .try_io(tokio::io::Interest::READABLE, || {

@@ -4,8 +4,6 @@
 
 
 
-
-
 use std::{
     fmt::{self, Display},
     time::{Duration, Instant},
@@ -19,31 +17,12 @@ use crate::cc::classic_cc::WindowAdjustment;
 
 
 
-
-
-
-
 pub const CUBIC_C: f64 = 0.4;
-
-
-
 pub const CUBIC_ALPHA: f64 = 3.0 * (1.0 - 0.7) / (1.0 + 0.7);
-
-
-
-
-
-
-
-
 
 
 pub const CUBIC_BETA_USIZE_DIVIDEND: usize = 7;
 pub const CUBIC_BETA_USIZE_DIVISOR: usize = 10;
-
-
-
-
 
 
 
@@ -68,41 +47,11 @@ pub fn convert_to_f64(v: usize) -> f64 {
 
 #[derive(Debug)]
 pub struct Cubic {
-    
-    
-    
-    
-    
-    
-    
-    
     last_max_cwnd: f64,
-    
-    
-    
-    
-    
-    
-    
-    
-    
     estimated_tcp_cwnd: f64,
-    
-    
-    
-    
     k: f64,
-    
-    
-    
-    
     w_max: f64,
-    
-    
-    
-    
     ca_epoch_start: Option<Instant>,
-    
     tcp_acked_bytes: f64,
 }
 
@@ -142,14 +91,10 @@ impl Cubic {
     
     
     
-    
-    
     fn calc_k(&self, curr_cwnd: f64, max_datagram_size: usize) -> f64 {
         ((self.w_max - curr_cwnd) / CUBIC_C / convert_to_f64(max_datagram_size)).cbrt()
     }
 
-    
-    
     
     
     fn w_cubic(&self, t: f64, max_datagram_size: usize) -> f64 {
@@ -174,7 +119,7 @@ impl Cubic {
             self.w_max = self.last_max_cwnd;
             self.k = self.calc_k(curr_cwnd_f64, max_datagram_size);
         }
-        qtrace!("[{self}] New epoch");
+        qtrace!([self], "New epoch");
     }
 }
 
@@ -199,10 +144,6 @@ impl WindowAdjustment for Cubic {
             self.tcp_acked_bytes += new_acked_f64;
         }
 
-        
-        
-        
-        
         let time_ca = self
             .ca_epoch_start
             .map_or(min_rtt, |t| {
@@ -217,9 +158,6 @@ impl WindowAdjustment for Cubic {
             .as_secs_f64();
         let target_cubic = self.w_cubic(time_ca, max_datagram_size);
 
-        
-        
-        
         let max_datagram_size = convert_to_f64(max_datagram_size);
         let tcp_cnt = self.estimated_tcp_cwnd / CUBIC_ALPHA;
         let incr = (self.tcp_acked_bytes / tcp_cnt).floor();
@@ -228,15 +166,6 @@ impl WindowAdjustment for Cubic {
             self.estimated_tcp_cwnd += incr * max_datagram_size;
         }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
         let target_cwnd = target_cubic.max(self.estimated_tcp_cwnd);
 
         
@@ -261,9 +190,6 @@ impl WindowAdjustment for Cubic {
         max_datagram_size: usize,
     ) -> (usize, usize) {
         let curr_cwnd_f64 = convert_to_f64(curr_cwnd);
-        
-        
-        
         
         
         
