@@ -10,6 +10,7 @@
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/ViewTransitionBinding.h"
 #include "mozilla/webrender/WebRenderAPI.h"
+#include "mozilla/ElementAnimationData.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/SVGIntegrationUtils.h"
 #include "mozilla/WritingModes.h"
@@ -631,7 +632,7 @@ void ViewTransition::HandleFrame() {
     
     mPhase = Phase::Done;
     
-    ClearActiveTransition();
+    ClearActiveTransition(false);
     
     if (Promise* finished = GetFinished(IgnoreErrors())) {
       finished->MaybeResolveWithUndefined();
@@ -646,8 +647,20 @@ void ViewTransition::ClearNamedElements() {
   mNamedElements.Clear();
 }
 
+static void ClearViewTransitionsAnimationData(Element* aRoot) {
+  if (!aRoot) {
+    return;
+  }
 
-void ViewTransition::ClearActiveTransition() {
+  auto* data = aRoot->GetAnimationData();
+  if (!data) {
+    return;
+  }
+  data->ClearViewTransitionPseudos();
+}
+
+
+void ViewTransition::ClearActiveTransition(bool aIsDocumentHidden) {
   
   MOZ_ASSERT(mDocument);
   MOZ_ASSERT(mDocument->GetActiveViewTransition() == this);
@@ -664,6 +677,17 @@ void ViewTransition::ClearActiveTransition() {
     }
     mViewTransitionRoot->UnbindFromTree();
     mViewTransitionRoot = nullptr;
+
+    
+    
+    
+    
+    
+    
+    
+    if (!aIsDocumentHidden) {
+      ClearViewTransitionsAnimationData(mDocument->GetRootElement());
+    }
   }
   mDocument->ClearActiveViewTransition();
 }
@@ -700,7 +724,7 @@ void ViewTransition::SkipTransition(
   
   
   if (mDocument->GetActiveViewTransition() == this) {
-    ClearActiveTransition();
+    ClearActiveTransition(aReason == SkipTransitionReason::DocumentHidden);
   }
 
   

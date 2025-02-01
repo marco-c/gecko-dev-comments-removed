@@ -91,7 +91,8 @@ class AnimationUtils {
 
   static bool IsSupportedPseudoForAnimations(PseudoStyleType aType) {
     
-    return aType == PseudoStyleType::before ||
+    return PseudoStyle::IsViewTransitionPseudoElement(aType) ||
+           aType == PseudoStyleType::before ||
            aType == PseudoStyleType::after || aType == PseudoStyleType::marker;
   }
   static bool IsSupportedPseudoForAnimations(
