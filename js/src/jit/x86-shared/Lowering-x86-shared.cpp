@@ -1807,8 +1807,8 @@ void LIRGenerator::visitWasmReduceSimd128(MWasmReduceSimd128* ins) {
     
     
     
-    auto* lir = new (alloc()) LWasmReduceSimd128(
-        useRegisterAtStart(ins->input()), LDefinition::BogusTemp());
+    auto* lir =
+        new (alloc()) LWasmReduceSimd128(useRegisterAtStart(ins->input()));
     define(lir, ins);
   }
 #else
