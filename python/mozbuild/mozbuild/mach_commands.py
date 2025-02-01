@@ -266,10 +266,18 @@ def cargo(
     if ret != 0:
         return ret
 
+    if command_context.substs.get("commtopsrcdir"):
+        
+        gkrust_path = "comm/rust/gkrust"
+        gtest_path = "comm/rust/gtest"
+    else:
+        gkrust_path = "toolkit/library/rust"
+        gtest_path = "toolkit/library/gtest/rust"
+
     
     crates_and_roots = {
-        "gkrust": {"directory": "toolkit/library/rust", "library": True},
-        "gkrust-gtest": {"directory": "toolkit/library/gtest/rust", "library": True},
+        "gkrust": {"directory": gkrust_path, "library": True},
+        "gkrust-gtest": {"directory": gtest_path, "library": True},
         "geckodriver": {"directory": "testing/geckodriver", "library": False},
     }
 
