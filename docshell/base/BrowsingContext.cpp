@@ -798,7 +798,7 @@ void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
     }
 
     if (IsEmbedderTypeObjectOrEmbed()) {
-      Unused << SetSyntheticDocumentContainer(true);
+      Unused << SetIsSyntheticDocumentContainer(true);
     }
   }
 }
@@ -2297,7 +2297,7 @@ PopupBlocker::PopupControlState BrowsingContext::RevisePopupAbuseLevel(
     
     if ((abuse == PopupBlocker::openAllowed ||
          abuse == PopupBlocker::openControlled) &&
-        StaticPrefs::dom_block_multiple_popups() && !IsPopupAllowed() &&
+        !IsPopupAllowed() &&
         !ConsumeTransientUserActivationForMultiplePopupBlocking()) {
       nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
                                       doc, nsContentUtils::eDOM_PROPERTIES,
@@ -3059,10 +3059,10 @@ void BrowsingContext::DidSet(FieldIndex<IDX_IsInBFCache>) {
   }
 }
 
-void BrowsingContext::DidSet(FieldIndex<IDX_SyntheticDocumentContainer>) {
+void BrowsingContext::DidSet(FieldIndex<IDX_IsSyntheticDocumentContainer>) {
   if (WindowContext* parentWindowContext = GetParentWindowContext()) {
-    parentWindowContext->UpdateChildSynthetic(this,
-                                              GetSyntheticDocumentContainer());
+    parentWindowContext->UpdateChildSynthetic(
+        this, GetIsSyntheticDocumentContainer());
   }
 }
 
@@ -3832,9 +3832,8 @@ void BrowsingContext::HistoryGo(
     RefPtr<CanonicalBrowsingContext> self = Canonical();
     aResolver(self->HistoryGo(
         aOffset, aHistoryEpoch, aRequireUserInteraction, aUserActivation,
-        Canonical()->GetContentParent()
-            ? Some(Canonical()->GetContentParent()->ChildID())
-            : Nothing()));
+        self->GetContentParent() ? Some(self->GetContentParent()->ChildID())
+                                 : Nothing()));
   }
 }
 
