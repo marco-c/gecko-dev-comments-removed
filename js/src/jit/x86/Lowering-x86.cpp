@@ -215,11 +215,10 @@ void LIRGeneratorX86::lowerForMulInt64(LMulI64* ins, MMul* mir,
   }
 
   
-  ins->setInt64Operand(
-      0, useInt64Fixed(lhs, Register64(edx, eax),  true));
-  ins->setInt64Operand(INT64_PIECES, useInt64OrConstant(rhs));
+  ins->setLhs(useInt64Fixed(lhs, Register64(edx, eax),  true));
+  ins->setRhs(useInt64OrConstant(rhs));
   if (needsTemp) {
-    ins->setTemp(0, temp());
+    ins->setTemp0(temp());
   }
 
   defineInt64Fixed(ins, mir,
