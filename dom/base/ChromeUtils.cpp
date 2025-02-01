@@ -942,10 +942,7 @@ static bool DefineLazyGetter(JSContext* aCx, JS::Handle<JSObject*> aTarget,
                                JSPROP_ENUMERATE);
 }
 
-enum class ModuleType { JSM, ESM };
-
-static bool ModuleGetterImpl(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
-                             ModuleType aType) {
+static bool ESModuleGetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
   JS::CallArgs args = JS::CallArgsFromVp(aArgc, aVp);
 
   JS::Rooted<JSObject*> callee(aCx);
@@ -964,59 +961,41 @@ static bool ModuleGetterImpl(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   nsDependentCString uri(bytes.get());
 
   JS::Rooted<JS::Value> value(aCx);
-  if (aType == ModuleType::JSM) {
-    RefPtr moduleloader = mozJSModuleLoader::Get();
-    MOZ_ASSERT(moduleloader);
+  EncodedOptions encodedOptions(
+    js::GetFunctionNativeReserved(callee, SLOT_OPTIONS).toInt32());
 
-    JS::Rooted<JSObject*> moduleGlobal(aCx);
-    JS::Rooted<JSObject*> moduleExports(aCx);
-    nsresult rv = moduleloader->Import(aCx, uri, &moduleGlobal, &moduleExports);
-    if (NS_FAILED(rv)) {
-      Throw(aCx, rv);
+  ImportESModuleOptionsDictionary options;
+  encodedOptions.DecodeInto(options);
+
+  GlobalObject global(aCx, callee);
+
+  Maybe<loader::NonSharedGlobalSyncModuleLoaderScope> maybeSyncLoaderScope;
+  RefPtr<mozJSModuleLoader> moduleloader =
+      GetModuleLoaderForOptions(aCx, global, options, maybeSyncLoaderScope);
+  if (!moduleloader) {
+    return false;
+  }
+
+  JS::Rooted<JSObject*> moduleNamespace(aCx);
+  nsresult rv = moduleloader->ImportESModule(aCx, uri, &moduleNamespace);
+  if (NS_FAILED(rv)) {
+    Throw(aCx, rv);
+    return false;
+  }
+
+  
+  {
+    JSAutoRealm ar(aCx, moduleNamespace);
+    if (!JS_GetPropertyById(aCx, moduleNamespace, id, &value)) {
       return false;
     }
+  }
+  if (!JS_WrapValue(aCx, &value)) {
+    return false;
+  }
 
-    
-    if (!JS_GetPropertyById(aCx, moduleExports, id, &value)) {
-      return false;
-    }
-  } else {
-    EncodedOptions encodedOptions(
-        js::GetFunctionNativeReserved(callee, SLOT_OPTIONS).toInt32());
-
-    ImportESModuleOptionsDictionary options;
-    encodedOptions.DecodeInto(options);
-
-    GlobalObject global(aCx, callee);
-
-    Maybe<loader::NonSharedGlobalSyncModuleLoaderScope> maybeSyncLoaderScope;
-    RefPtr<mozJSModuleLoader> moduleloader =
-        GetModuleLoaderForOptions(aCx, global, options, maybeSyncLoaderScope);
-    if (!moduleloader) {
-      return false;
-    }
-
-    JS::Rooted<JSObject*> moduleNamespace(aCx);
-    nsresult rv = moduleloader->ImportESModule(aCx, uri, &moduleNamespace);
-    if (NS_FAILED(rv)) {
-      Throw(aCx, rv);
-      return false;
-    }
-
-    
-    {
-      JSAutoRealm ar(aCx, moduleNamespace);
-      if (!JS_GetPropertyById(aCx, moduleNamespace, id, &value)) {
-        return false;
-      }
-    }
-    if (!JS_WrapValue(aCx, &value)) {
-      return false;
-    }
-
-    if (maybeSyncLoaderScope) {
-      maybeSyncLoaderScope->Finish();
-    }
+  if (maybeSyncLoaderScope) {
+    maybeSyncLoaderScope->Finish();
   }
 
   if (!JS_DefinePropertyById(aCx, thisObj, id, value, JSPROP_ENUMERATE)) {
@@ -1027,15 +1006,7 @@ static bool ModuleGetterImpl(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   return true;
 }
 
-static bool JSModuleGetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
-  return ModuleGetterImpl(aCx, aArgc, aVp, ModuleType::JSM);
-}
-
-static bool ESModuleGetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
-  return ModuleGetterImpl(aCx, aArgc, aVp, ModuleType::ESM);
-}
-
-static bool ModuleSetterImpl(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
+static bool ESModuleSetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
   JS::CallArgs args = JS::CallArgsFromVp(aArgc, aVp);
 
   JS::Rooted<JSObject*> callee(aCx);
@@ -1046,49 +1017,6 @@ static bool ModuleSetterImpl(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
   }
 
   return JS_DefinePropertyById(aCx, thisObj, id, args.get(0), JSPROP_ENUMERATE);
-}
-
-static bool JSModuleSetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
-  return ModuleSetterImpl(aCx, aArgc, aVp);
-}
-
-static bool ESModuleSetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
-  return ModuleSetterImpl(aCx, aArgc, aVp);
-}
-
-static bool DefineJSModuleGetter(JSContext* aCx, JS::Handle<JSObject*> aTarget,
-                                 const nsAString& aId,
-                                 const nsAString& aResourceURI) {
-  JS::Rooted<JS::Value> uri(aCx);
-  JS::Rooted<JS::Value> idValue(aCx);
-  JS::Rooted<jsid> id(aCx);
-  if (!xpc::NonVoidStringToJsval(aCx, aResourceURI, &uri) ||
-      !xpc::NonVoidStringToJsval(aCx, aId, &idValue) ||
-      !JS_ValueToId(aCx, idValue, &id)) {
-    return false;
-  }
-  idValue = js::IdToValue(id);
-
-  JS::Rooted<JSObject*> getter(
-      aCx, JS_GetFunctionObject(
-               js::NewFunctionByIdWithReserved(aCx, JSModuleGetter, 0, 0, id)));
-
-  JS::Rooted<JSObject*> setter(
-      aCx, JS_GetFunctionObject(
-               js::NewFunctionByIdWithReserved(aCx, JSModuleSetter, 0, 0, id)));
-
-  if (!getter || !setter) {
-    JS_ReportOutOfMemory(aCx);
-    return false;
-  }
-
-  js::SetFunctionNativeReserved(getter, SLOT_ID, idValue);
-  js::SetFunctionNativeReserved(setter, SLOT_ID, idValue);
-
-  js::SetFunctionNativeReserved(getter, SLOT_URI, uri);
-
-  return JS_DefinePropertyById(aCx, aTarget, id, getter, setter,
-                               JSPROP_ENUMERATE);
 }
 
 static bool DefineESModuleGetter(JSContext* aCx, JS::Handle<JSObject*> aTarget,
@@ -1136,18 +1064,6 @@ void ChromeUtils::DefineLazyGetter(const GlobalObject& aGlobal,
   if (!lazy_getter::DefineLazyGetter(cx, aTarget, aName, aLambda)) {
     aRv.NoteJSContextException(cx);
     return;
-  }
-}
-
-
-void ChromeUtils::DefineModuleGetter(const GlobalObject& global,
-                                     JS::Handle<JSObject*> target,
-                                     const nsAString& id,
-                                     const nsAString& resourceURI,
-                                     ErrorResult& aRv) {
-  if (!lazy_getter::DefineJSModuleGetter(global.Context(), target, id,
-                                         resourceURI)) {
-    aRv.NoteJSContextException(global.Context());
   }
 }
 
