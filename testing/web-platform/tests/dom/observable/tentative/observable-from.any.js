@@ -135,6 +135,12 @@ test(() => {
 
 
 
+
+
+
+
+
+
 test(() => {
   let results = [];
   const iterable = {
@@ -149,10 +155,83 @@ test(() => {
   }
 
   assert_true(errorThrown instanceof TypeError);
-  assert_equals(errorThrown.message,
-      "Failed to execute 'from' on 'Observable': @@iterator must be a " +
-      "callable.");
 }, "from(): [Symbol.iterator] not callable");
+
+test(() => {
+  let results = [];
+  const iterable = {
+    calledOnce: false,
+    get [Symbol.iterator]() {
+      if (this.calledOnce) {
+        
+        
+        return 10;
+      }
+
+      this.calledOnce = true;
+      return this.validImplementation;
+    },
+    validImplementation: () => {
+      return {
+        next() { return {done: true}; }
+      }
+    }
+  };
+
+  let errorThrown = null;
+
+  const observable = Observable.from(iterable);
+  observable.subscribe({
+    next: v => results.push("should not be called"),
+    error: e => {
+      errorThrown = e;
+      results.push(e);
+    },
+  });
+
+  assert_array_equals(results, [errorThrown],
+      "An error was plumbed through the Observable");
+  assert_true(errorThrown instanceof TypeError);
+}, "from(): [Symbol.iterator] not callable AFTER SUBSCRIBE throws");
+
+test(() => {
+  let results = [];
+  const iterable = {
+    calledOnce: false,
+    validImplementation: () => {
+      return {
+        next() { return {done: true}; }
+      }
+    },
+    get [Symbol.iterator]() {
+      if (this.calledOnce) {
+        
+        return null;
+      }
+
+      this.calledOnce = true;
+      return this.validImplementation;
+    }
+  };
+
+  let errorThrown = null;
+
+  const observable = Observable.from(iterable);
+  observable.subscribe({
+    next: v => results.push("should not be called"),
+    error: e => {
+      errorThrown = e;
+      results.push(e);
+    },
+  });
+
+  assert_array_equals(results, [errorThrown],
+      "An error was plumbed through the Observable");
+  assert_true(errorThrown instanceof TypeError);
+  assert_equals(errorThrown.message,
+      "Failed to execute 'subscribe' on 'Observable': @@iterator must not be " +
+      "undefined or null");
+}, "from(): [Symbol.iterator] returns null AFTER SUBSCRIBE throws");
 
 test(() => {
   let results = [];
@@ -519,24 +598,6 @@ test(() => {
   }
 }, "from(): Rethrows the error when Converting an object whose @@iterator " +
    "method *getter* throws an error");
-
-test(() => {
-  const obj = {};
-  
-  
-  
-  obj[Symbol.iterator] = 10;
-
-  try {
-    Observable.from(obj);
-    assert_unreached("from() conversion throws");
-  } catch(e) {
-    assert_true(e instanceof TypeError);
-    assert_equals(e.message,
-        "Failed to execute 'from' on 'Observable': @@iterator must be a callable.");
-  }
-}, "from(): Throws 'callable' error when @@iterator property is a " +
-   "non-callable primitive");
 
 
 
