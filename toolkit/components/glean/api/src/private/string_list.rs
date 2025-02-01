@@ -43,10 +43,6 @@ impl StringListMetric {
     pub(crate) fn child_metric(&self) -> Self {
         match self {
             StringListMetric::Parent { id, .. } => {
-                
-                
-                
-                
                 StringListMetric::Child(StringListMetricIpc(*id))
             }
             StringListMetric::Child(_) => panic!("Can't get a child metric from a child metric"),

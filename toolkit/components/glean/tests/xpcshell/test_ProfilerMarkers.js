@@ -72,6 +72,9 @@ async function runWithProfilerAndGetMarkers(type, func) {
   
   for (let marker of markers) {
     marker.id = stringTable[marker.id];
+    if (marker.label != undefined) {
+      marker.label = stringTable[marker.label];
+    }
   }
 
   
@@ -81,6 +84,13 @@ async function runWithProfilerAndGetMarkers(type, func) {
 add_task(async function test_fog_counter_markers() {
   let markers = await runWithProfilerAndGetMarkers("IntLikeMetric", () => {
     Glean.testOnly.badCode.add(31);
+
+    
+    Glean.testOnly.mabelsKitchenCounters.near_the_sink.add(1);
+    Glean.testOnly.mabelsKitchenCounters.with_junk_on_them.add(2);
+
+    
+    Glean.testOnly.mabelsKitchenCounters["1".repeat(72)].add(1);
   });
 
   Assert.deepEqual(markers, [
@@ -88,6 +98,98 @@ add_task(async function test_fog_counter_markers() {
       type: "IntLikeMetric",
       id: "testOnly.badCode",
       val: 31,
+    },
+    {
+      type: "IntLikeMetric",
+      id: "testOnly.mabelsKitchenCounters",
+      label: "near_the_sink",
+      val: 1,
+    },
+    {
+      type: "IntLikeMetric",
+      id: "testOnly.mabelsKitchenCounters",
+      label: "with_junk_on_them",
+      val: 2,
+    },
+    {
+      type: "IntLikeMetric",
+      id: "testOnly.mabelsKitchenCounters",
+      label: "1".repeat(72),
+      val: 1,
+    },
+  ]);
+});
+
+add_task(async function test_fog_static_labeled_counter_markers() {
+  let markers = await runWithProfilerAndGetMarkers("IntLikeMetric", () => {
+    
+    Glean.testOnly.mabelsLabeledCounters.next_to_the_fridge.add(1);
+    Glean.testOnly.mabelsLabeledCounters.clean.add(2);
+    Glean.testOnly.mabelsLabeledCounters["1st_counter"].add(2);
+
+    Glean.testOnlyIpc.aLabeledCounterForCategorical.CommonLabel.add(1);
+    Glean.testOnlyIpc.aLabeledCounterForCategorical.Label4.add(1);
+    Glean.testOnlyIpc.aLabeledCounterForCategorical.Label5.add(1);
+    Glean.testOnlyIpc.aLabeledCounterForCategorical.Label6.add(1);
+
+    Glean.testOnlyIpc.aLabeledCounterForHgram.false.add(1);
+    Glean.testOnlyIpc.aLabeledCounterForHgram.true.add(1);
+  });
+
+  Assert.deepEqual(markers, [
+    {
+      type: "IntLikeMetric",
+      id: "testOnly.mabelsLabeledCounters",
+      label: "next_to_the_fridge",
+      val: 1,
+    },
+    {
+      type: "IntLikeMetric",
+      id: "testOnly.mabelsLabeledCounters",
+      label: "clean",
+      val: 2,
+    },
+    {
+      type: "IntLikeMetric",
+      id: "testOnly.mabelsLabeledCounters",
+      label: "1st_counter",
+      val: 2,
+    },
+    {
+      type: "IntLikeMetric",
+      id: "testOnlyIpc.aLabeledCounterForCategorical",
+      label: "CommonLabel",
+      val: 1,
+    },
+    {
+      type: "IntLikeMetric",
+      id: "testOnlyIpc.aLabeledCounterForCategorical",
+      label: "Label4",
+      val: 1,
+    },
+    {
+      type: "IntLikeMetric",
+      id: "testOnlyIpc.aLabeledCounterForCategorical",
+      label: "Label5",
+      val: 1,
+    },
+    {
+      type: "IntLikeMetric",
+      id: "testOnlyIpc.aLabeledCounterForCategorical",
+      label: "Label6",
+      val: 1,
+    },
+    {
+      type: "IntLikeMetric",
+      id: "testOnlyIpc.aLabeledCounterForHgram",
+      label: "false",
+      val: 1,
+    },
+    {
+      type: "IntLikeMetric",
+      id: "testOnlyIpc.aLabeledCounterForHgram",
+      label: "true",
+      val: 1,
     },
   ]);
 });
@@ -97,6 +199,16 @@ add_task(async function test_fog_string_markers() {
   let markers = await runWithProfilerAndGetMarkers("StringLikeMetric", () => {
     Glean.testOnly.cheesyString.set(value);
     Glean.testOnly.cheesyString.set("a".repeat(2048));
+
+    
+    Glean.testOnly.mabelsLabelMaker.singleword.set("portmanteau");
+    Glean.testOnly.mabelsLabelMaker.snake_case.set("snek");
+    Glean.testOnly.mabelsLabelMaker["dash-character"].set("Dash Rendar");
+    Glean.testOnly.mabelsLabelMaker["dot.separated"].set("dot product");
+    Glean.testOnly.mabelsLabelMaker.camelCase.set("wednesday");
+    
+    const veryLong = "1".repeat(72);
+    Glean.testOnly.mabelsLabelMaker[veryLong].set("seventy-two");
   });
 
   
@@ -112,6 +224,67 @@ add_task(async function test_fog_string_markers() {
       type: "StringLikeMetric",
       id: "testOnly.cheesyString",
       val: truncatedLongString,
+    },
+    {
+      type: "StringLikeMetric",
+      id: "testOnly.mabelsLabelMaker",
+      label: "singleword",
+      val: "portmanteau",
+    },
+    {
+      type: "StringLikeMetric",
+      id: "testOnly.mabelsLabelMaker",
+      label: "snake_case",
+      val: "snek",
+    },
+    {
+      type: "StringLikeMetric",
+      id: "testOnly.mabelsLabelMaker",
+      label: "dash-character",
+      val: "Dash Rendar",
+    },
+    {
+      type: "StringLikeMetric",
+      id: "testOnly.mabelsLabelMaker",
+      label: "dot.separated",
+      val: "dot product",
+    },
+    {
+      type: "StringLikeMetric",
+      id: "testOnly.mabelsLabelMaker",
+      label: "camelCase",
+      val: "wednesday",
+    },
+    {
+      type: "StringLikeMetric",
+      id: "testOnly.mabelsLabelMaker",
+      label: "1".repeat(72),
+      val: "seventy-two",
+    },
+  ]);
+});
+
+add_task(async function test_fog_static_labeled_string_markers() {
+  let markers = await runWithProfilerAndGetMarkers("StringLikeMetric", () => {
+    
+    Glean.testOnly.mabelsBalloonLabels.celebratory.set("hooray");
+    Glean.testOnly.mabelsBalloonLabels.celebratory_and_snarky.set(
+      "oh yay, hooray"
+    );
+  });
+
+  Assert.deepEqual(markers, [
+    {
+      type: "StringLikeMetric",
+      id: "testOnly.mabelsBalloonLabels",
+      label: "celebratory",
+      val: "hooray",
+    },
+    {
+      type: "StringLikeMetric",
+      id: "testOnly.mabelsBalloonLabels",
+      label: "celebratory_and_snarky",
+      val: "oh yay, hooray",
     },
   ]);
 });
@@ -232,6 +405,12 @@ add_task(async function test_fog_boolean_markers() {
   let markers = await runWithProfilerAndGetMarkers("BooleanMetric", () => {
     Glean.testOnly.canWeFlagIt.set(false);
     Glean.testOnly.canWeFlagIt.set(true);
+
+    
+    Glean.testOnly.mabelsLikeBalloons.at_parties.set(true);
+    Glean.testOnly.mabelsLikeBalloons.at_funerals.set(false);
+    
+    Glean.testOnly.mabelsLikeBalloons["1".repeat(72)].set(true);
   });
 
   Assert.deepEqual(markers, [
@@ -244,6 +423,47 @@ add_task(async function test_fog_boolean_markers() {
       type: "BooleanMetric",
       id: "testOnly.canWeFlagIt",
       val: true,
+    },
+    {
+      type: "BooleanMetric",
+      id: "testOnly.mabelsLikeBalloons",
+      label: "at_parties",
+      val: true,
+    },
+    {
+      type: "BooleanMetric",
+      id: "testOnly.mabelsLikeBalloons",
+      label: "at_funerals",
+      val: false,
+    },
+    {
+      type: "BooleanMetric",
+      id: "testOnly.mabelsLikeBalloons",
+      label: "1".repeat(72),
+      val: true,
+    },
+  ]);
+});
+
+add_task(async function test_fog_static_labeled_boolean_markers() {
+  let markers = await runWithProfilerAndGetMarkers("BooleanMetric", () => {
+    
+    Glean.testOnly.mabelsLikeLabeledBalloons.water.set(true);
+    Glean.testOnly.mabelsLikeLabeledBalloons.birthday_party.set(false);
+  });
+
+  Assert.deepEqual(markers, [
+    {
+      type: "BooleanMetric",
+      id: "testOnly.mabelsLikeLabeledBalloons",
+      label: "water",
+      val: true,
+    },
+    {
+      type: "BooleanMetric",
+      id: "testOnly.mabelsLikeLabeledBalloons",
+      label: "birthday_party",
+      val: false,
     },
   ]);
 });
@@ -355,6 +575,10 @@ add_task(async function test_fog_memory_distribution() {
     
     
     
+
+    
+    Glean.testOnly.whatDoYouRemember.twenty_years_ago.accumulate(7);
+    Glean.testOnly.whatDoYouRemember.twenty_years_ago.accumulate(17);
   });
 
   
@@ -364,7 +588,9 @@ add_task(async function test_fog_memory_distribution() {
   
   
   let testMarkers = markers.filter(
-    marker => marker.id == "testOnly.doYouRemember"
+    marker =>
+      marker.id == "testOnly.doYouRemember" ||
+      marker.id == "testOnly.whatDoYouRemember"
   );
 
   Assert.deepEqual(testMarkers, [
@@ -378,6 +604,18 @@ add_task(async function test_fog_memory_distribution() {
       id: "testOnly.doYouRemember",
       sample: 17,
     },
+    {
+      type: "DistMetric",
+      id: "testOnly.whatDoYouRemember",
+      label: "twenty_years_ago",
+      sample: 7,
+    },
+    {
+      type: "DistMetric",
+      id: "testOnly.whatDoYouRemember",
+      label: "twenty_years_ago",
+      sample: 17,
+    },
   ]);
 });
 
@@ -389,12 +627,25 @@ add_task(async function test_fog_custom_distribution() {
     
     
     Glean.testOnlyIpc.aCustomDist.accumulateSamples([-7]);
+
+    
+    Glean.testOnly.mabelsCustomLabelLengths.monospace.accumulateSamples([
+      1, 42,
+    ]);
+    Glean.testOnly.mabelsCustomLabelLengths.sanserif.accumulateSingleSample(13);
+
+    
+    Glean.testOnly.mabelsCustomLabelLengths[
+      "1".repeat(72)
+    ].accumulateSingleSample(3);
   });
 
   
   
   let testMarkers = markers.filter(
-    marker => marker.id == "testOnlyIpc.aCustomDist"
+    marker =>
+      marker.id == "testOnlyIpc.aCustomDist" ||
+      marker.id == "testOnly.mabelsCustomLabelLengths"
   );
 
   Assert.deepEqual(testMarkers, [
@@ -412,6 +663,24 @@ add_task(async function test_fog_custom_distribution() {
       type: "DistMetric",
       id: "testOnlyIpc.aCustomDist",
       samples: "[-7]",
+    },
+    {
+      type: "DistMetric",
+      id: "testOnly.mabelsCustomLabelLengths",
+      label: "monospace",
+      samples: "[1,42]",
+    },
+    {
+      type: "DistMetric",
+      id: "testOnly.mabelsCustomLabelLengths",
+      label: "sanserif",
+      sample: "13",
+    },
+    {
+      type: "DistMetric",
+      id: "testOnly.mabelsCustomLabelLengths",
+      label: "1".repeat(72),
+      sample: "3",
     },
   ]);
 });
@@ -433,13 +702,32 @@ add_task(async function test_fog_timing_distribution() {
     
     Glean.testOnly.whatTimeIsIt.accumulateSingleSample(5000); 
     Glean.testOnly.whatTimeIsIt.accumulateSamples([2000, 8000]); 
+
+    
+    let t4 = Glean.testOnly.whereHasTheTimeGone.west.start();
+    let t5 = Glean.testOnly.whereHasTheTimeGone.west.start();
+
+    await sleep(5);
+
+    let t6 = Glean.testOnly.whereHasTheTimeGone.west.start();
+    Glean.testOnly.whereHasTheTimeGone.west.cancel(t4);
+
+    await sleep(5);
+
+    Glean.testOnly.whereHasTheTimeGone.west.stopAndAccumulate(t5); 
+    Glean.testOnly.whereHasTheTimeGone.west.stopAndAccumulate(t6); 
+
+    Glean.testOnly.whereHasTheTimeGone.west.accumulateSingleSample(5000); 
+    Glean.testOnly.whereHasTheTimeGone.west.accumulateSamples([2000, 8000]); 
   });
 
   
   
   
   let testMarkers = markers.filter(
-    marker => marker.id == "testOnly.whatTimeIsIt"
+    marker =>
+      marker.id == "testOnly.whatTimeIsIt" ||
+      marker.id == "testOnly.whereHasTheTimeGone"
   );
 
   Assert.deepEqual(testMarkers, [
@@ -451,15 +739,83 @@ add_task(async function test_fog_timing_distribution() {
     { type: "TimingDist", id: "testOnly.whatTimeIsIt", timer_id: 3 },
     { type: "TimingDist", id: "testOnly.whatTimeIsIt", sample: "5000" },
     { type: "TimingDist", id: "testOnly.whatTimeIsIt", samples: "[2000,8000]" },
+    {
+      type: "TimingDist",
+      id: "testOnly.whereHasTheTimeGone",
+      label: "west",
+      timer_id: 1,
+    },
+    {
+      type: "TimingDist",
+      id: "testOnly.whereHasTheTimeGone",
+      label: "west",
+      timer_id: 2,
+    },
+    {
+      type: "TimingDist",
+      id: "testOnly.whereHasTheTimeGone",
+      label: "west",
+      timer_id: 3,
+    },
+    {
+      type: "TimingDist",
+      id: "testOnly.whereHasTheTimeGone",
+      label: "west",
+      timer_id: 1,
+    },
+    {
+      type: "TimingDist",
+      id: "testOnly.whereHasTheTimeGone",
+      label: "west",
+      timer_id: 2,
+    },
+    {
+      type: "TimingDist",
+      id: "testOnly.whereHasTheTimeGone",
+      label: "west",
+      timer_id: 3,
+    },
+    {
+      type: "TimingDist",
+      id: "testOnly.whereHasTheTimeGone",
+      label: "west",
+      sample: "5000",
+    },
+    {
+      type: "TimingDist",
+      id: "testOnly.whereHasTheTimeGone",
+      label: "west",
+      samples: "[2000,8000]",
+    },
   ]);
 });
 
 add_task(async function test_fog_quantity() {
   let markers = await runWithProfilerAndGetMarkers("IntLikeMetric", () => {
     Glean.testOnly.meaningOfLife.set(42);
+
+    
+    Glean.testOnly.buttonJars.up.set(2);
+    Glean.testOnly.buttonJars.curling.set(0);
+
+    
+    Glean.testOnly.buttonJars["1".repeat(72)].set(0);
   });
   Assert.deepEqual(markers, [
     { type: "IntLikeMetric", id: "testOnly.meaningOfLife", val: 42 },
+    { type: "IntLikeMetric", id: "testOnly.buttonJars", label: "up", val: 2 },
+    {
+      type: "IntLikeMetric",
+      id: "testOnly.buttonJars",
+      label: "curling",
+      val: 0,
+    },
+    {
+      type: "IntLikeMetric",
+      id: "testOnly.buttonJars",
+      label: "1".repeat(72),
+      val: 0,
+    },
   ]);
 });
 
