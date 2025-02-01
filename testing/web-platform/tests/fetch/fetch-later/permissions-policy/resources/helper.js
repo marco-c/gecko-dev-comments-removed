@@ -4,6 +4,7 @@
 
 
 
+
 function getDeferredFetchPolicyInIframeHelperUrl(iframeOrigin) {
   if (!iframeOrigin.endsWith('/')) {
     iframeOrigin += '/';

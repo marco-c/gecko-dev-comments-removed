@@ -13,6 +13,7 @@ const {
 } = get_host_info();
 
 const baseUrl = '/permissions-policy/resources/redirect-on-load.html#';
+
 const description = 'Permissions policy allow="deferred-fetch"';
 
 async_test(t => {
@@ -20,12 +21,14 @@ async_test(t => {
       'fetchLater()', t,
       getDeferredFetchPolicyInIframeHelperUrl(`${baseUrl}${HTTPS_ORIGIN}`),
       expect_feature_available_default,  'deferred-fetch');
-}, `${description} allows same-origin navigation in an iframe.`);
+}, `${description} allows fetchLater() from a redirected same-origin iframe.`);
+
+
 
 async_test(t => {
   test_feature_availability(
       'fetchLater()', t,
       getDeferredFetchPolicyInIframeHelperUrl(
           `${baseUrl}${HTTPS_NOTSAMESITE_ORIGIN}`),
-      expect_feature_available_default,  'deferred-fetch');
-}, `${description} allows cross-origin navigation in an iframe.`);
+      expect_feature_unavailable_default,  'deferred-fetch');
+}, `${description} disallows fetchLater() from a redirected cross-origin iframe.`);
