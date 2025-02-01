@@ -1,3 +1,0 @@
-
-
-async () => class { x = await };

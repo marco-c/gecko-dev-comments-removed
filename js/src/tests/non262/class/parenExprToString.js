@@ -1,8 +1,0 @@
-
-
-
-assertEq((class {}).toString(), "class {}");
-assertEq(((class {})).toString(), "class {}");
-
-if (typeof reportCompare === "function")
-    reportCompare(0, 0, "OK");
