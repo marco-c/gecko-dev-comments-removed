@@ -22,6 +22,7 @@ pub enum RateMetric {
         
         
         
+        
         id: MetricId,
         inner: glean::private::RateMetric,
     },
@@ -85,7 +86,7 @@ impl Rate for RateMetric {
                 "Rate::addToNumerator",
                 super::profiler_utils::TelemetryProfilerCategory,
                 Default::default(),
-                super::profiler_utils::IntLikeMetricMarker::new(id, None, amount),
+                super::profiler_utils::IntLikeMetricMarker::new(id.into(), None, amount),
             );
         }
     }
@@ -115,7 +116,7 @@ impl Rate for RateMetric {
                 "Rate::addToDenominator",
                 super::profiler_utils::TelemetryProfilerCategory,
                 Default::default(),
-                super::profiler_utils::IntLikeMetricMarker::new(id, None, amount),
+                super::profiler_utils::IntLikeMetricMarker::new(id.into(), None, amount),
             );
         }
     }

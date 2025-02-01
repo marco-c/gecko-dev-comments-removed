@@ -19,6 +19,7 @@ pub enum StringListMetric {
         
         
         
+        
         id: MetricId,
         inner: glean::private::StringListMetric,
     },
@@ -42,6 +43,10 @@ impl StringListMetric {
     pub(crate) fn child_metric(&self) -> Self {
         match self {
             StringListMetric::Parent { id, .. } => {
+                
+                
+                
+                
                 StringListMetric::Child(StringListMetricIpc(*id))
             }
             StringListMetric::Child(_) => panic!("Can't get a child metric from a child metric"),
@@ -70,7 +75,7 @@ impl StringList for StringListMetric {
                 gecko_profiler::lazy_add_marker!(
                     "StringList::add",
                     super::profiler_utils::TelemetryProfilerCategory,
-                    super::profiler_utils::StringLikeMetricMarker::new(*id, &value)
+                    super::profiler_utils::StringLikeMetricMarker::new((*id).into(), &value)
                 );
                 inner.add(value);
             }
@@ -107,7 +112,7 @@ impl StringList for StringListMetric {
                     "StringList::set",
                     super::profiler_utils::TelemetryProfilerCategory,
                     super::profiler_utils::StringLikeMetricMarker::new_owned(
-                        *id,
+                        (*id).into(),
                         format!("[{}]", value.clone().join(","))
                     )
                 );

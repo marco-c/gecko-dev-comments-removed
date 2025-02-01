@@ -5,7 +5,7 @@
 use inherent::inherent;
 use std::sync::Arc;
 
-use super::{CommonMetricData, MetricId};
+use super::{CommonMetricData, MetricGetter, MetricId};
 use crate::ipc::need_ipc;
 
 
@@ -40,7 +40,10 @@ use crate::ipc::need_ipc;
 #[derive(Clone)]
 pub enum StringMetric {
     Parent {
-        id: MetricId,
+        
+        
+        
+        id: MetricGetter,
         inner: Arc<glean::private::StringMetric>,
     },
     Child(StringMetricIpc),
@@ -55,7 +58,7 @@ impl StringMetric {
             StringMetric::Child(StringMetricIpc)
         } else {
             StringMetric::Parent {
-                id,
+                id: id.into(),
                 inner: Arc::new(glean::private::StringMetric::new(meta)),
             }
         }

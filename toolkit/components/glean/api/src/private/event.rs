@@ -14,7 +14,7 @@ use glean::traits::Event;
 pub use glean::traits::{EventRecordingError, ExtraKeys, NoExtraKeys};
 
 #[cfg(feature = "with_gecko")]
-use super::profiler_utils::{lookup_canonical_metric_name, LookupError, TelemetryProfilerCategory};
+use super::profiler_utils::TelemetryProfilerCategory;
 
 #[cfg(feature = "with_gecko")]
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -45,10 +45,8 @@ impl gecko_profiler::ProfilerMarker for EventMetricMarker {
     }
 
     fn stream_json_marker_data(&self, json_writer: &mut gecko_profiler::JSONWriter) {
-        json_writer.unique_string_property(
-            "id",
-            lookup_canonical_metric_name(&self.id).unwrap_or_else(LookupError::as_str),
-        );
+        let name = self.id.get_name();
+        json_writer.unique_string_property("id", &name);
 
         
         if !self.extra.is_empty() {
@@ -73,6 +71,7 @@ impl gecko_profiler::ProfilerMarker for EventMetricMarker {
 
 pub enum EventMetric<K> {
     Parent {
+        
         
         
         
@@ -235,7 +234,7 @@ mod test {
         let _lock = lock_test();
 
         let metric = EventMetric::<NoExtraKeys>::new(
-            0.into(),
+            MetricId(0),
             CommonMetricData {
                 name: "event_metric".into(),
                 category: "telemetry".into(),

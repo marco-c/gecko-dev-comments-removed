@@ -9,8 +9,8 @@ use glean::traits::Quantity;
 
 use super::CommonMetricData;
 
+use super::{MetricGetter, MetricId};
 use crate::ipc::need_ipc;
-use crate::private::MetricId;
 
 
 
@@ -18,7 +18,10 @@ use crate::private::MetricId;
 #[derive(Clone)]
 pub enum QuantityMetric {
     Parent {
-        id: MetricId,
+        
+        
+        
+        id: MetricGetter,
         inner: Arc<glean::private::QuantityMetric>,
     },
     Child(QuantityMetricIpc),
@@ -33,7 +36,7 @@ impl QuantityMetric {
             QuantityMetric::Child(QuantityMetricIpc)
         } else {
             QuantityMetric::Parent {
-                id,
+                id: id.into(),
                 inner: Arc::new(glean::private::QuantityMetric::new(meta)),
             }
         }

@@ -13,8 +13,7 @@ use glean::traits::Datetime;
 
 #[cfg(feature = "with_gecko")]
 use super::profiler_utils::{
-    glean_to_chrono_datetime, local_now_with_offset, lookup_canonical_metric_name, LookupError,
-    TelemetryProfilerCategory,
+    glean_to_chrono_datetime, local_now_with_offset, TelemetryProfilerCategory,
 };
 
 #[cfg(feature = "with_gecko")]
@@ -48,10 +47,8 @@ impl gecko_profiler::ProfilerMarker for DatetimeMetricMarker {
     }
 
     fn stream_json_marker_data(&self, json_writer: &mut gecko_profiler::JSONWriter) {
-        json_writer.unique_string_property(
-            "id",
-            lookup_canonical_metric_name(&self.id).unwrap_or_else(LookupError::as_str),
-        );
+        let name = self.id.get_name();
+        json_writer.unique_string_property("id", &name);
         
         
         
@@ -99,7 +96,7 @@ impl DatetimeMetric {
             DatetimeMetric::Child(DatetimeMetricIpc)
         } else {
             DatetimeMetric::Parent {
-                id: id,
+                id,
                 inner: glean::private::DatetimeMetric::new(meta, time_unit),
             }
         }
@@ -177,18 +174,10 @@ impl DatetimeMetric {
                         
                         #[cfg(feature = "with_gecko")]
                         if gecko_profiler::can_accept_markers() {
+                            let name = id.get_name();
                             let payload = format!(
                                 "Conversion failed for metric {}: {} {} {} {} {} {} {} {}",
-                                lookup_canonical_metric_name(id)
-                                    .unwrap_or_else(LookupError::as_str),
-                                year,
-                                month,
-                                day,
-                                hour,
-                                minute,
-                                second,
-                                nano,
-                                offset_seconds
+                                &name, year, month, day, hour, minute, second, nano, offset_seconds
                             );
                             gecko_profiler::add_text_marker(
                                 "Datetime::set",

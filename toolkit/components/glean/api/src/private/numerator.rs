@@ -23,6 +23,7 @@ pub enum NumeratorMetric {
         
         
         
+        
         id: MetricId,
         inner: glean::private::NumeratorMetric,
     },
@@ -86,7 +87,7 @@ impl Numerator for NumeratorMetric {
                 "Rate::addToNumerator",
                 super::profiler_utils::TelemetryProfilerCategory,
                 Default::default(),
-                super::profiler_utils::IntLikeMetricMarker::new(id, None, amount),
+                super::profiler_utils::IntLikeMetricMarker::new(id.into(), None, amount),
             );
         }
     }
