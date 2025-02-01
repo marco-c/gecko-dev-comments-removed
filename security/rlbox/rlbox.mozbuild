@@ -53,6 +53,8 @@ def RLBoxLibrary(name, use_segue=True):
         and CONFIG["CC_TYPE"] in ("clang", "gcc")
         and CONFIG["TARGET_CPU"] == "x86_64"
         and CONFIG["OS_TARGET"] != "Android"
+        
+        and not (CONFIG["MOZ_ASAN"] or CONFIG["MOZ_TSAN"])
     ):
         
         
