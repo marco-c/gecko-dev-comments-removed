@@ -19,6 +19,9 @@
 #include "nsString.h"
 #include "js/PropertyAndElement.h"  
 
+using mozilla::TimeDuration;
+using mozilla::TimeStamp;
+
 namespace mozilla::glean {
 
 using MetricId = uint32_t;  
@@ -200,7 +203,7 @@ extern "C" NS_EXPORT void GIFFT_TimingDistributionStart(uint32_t aMetricId,
 
 
 extern "C" NS_EXPORT void GIFFT_TimingDistributionStopAndAccumulate(
-    uint32_t aMetricId, TimerId aTimerId) {
+    uint32_t aMetricId, TimerId aTimerId, int32_t aUnit) {
   auto mirrorId = mozilla::glean::HistogramIdForMetric(aMetricId);
   if (mirrorId) {
     mozilla::glean::GetTimerIdToStartsLock().apply([&](const auto& lock) {
@@ -209,18 +212,54 @@ extern "C" NS_EXPORT void GIFFT_TimingDistributionStopAndAccumulate(
       
       
       if (!NS_WARN_IF(!optStart)) {
-        AccumulateTimeDelta(mirrorId.extract(), optStart.extract());
+        TimeDuration duration = TimeStamp::Now() - optStart.extract();
+        
+        switch (aUnit) {
+          case 0:  
+            Accumulate(mirrorId.extract(), duration.ToMicroseconds() * 1000);
+            break;
+          case 1:  
+            Accumulate(mirrorId.extract(), duration.ToMicroseconds());
+            break;
+          case 2:  
+            Accumulate(mirrorId.extract(), duration.ToMilliseconds());
+            break;
+          case 3:  
+            Accumulate(mirrorId.extract(), duration.ToSeconds());
+            break;
+          case 4:  
+            Accumulate(mirrorId.extract(), duration.ToSeconds() / 60);
+            break;
+          case 5:  
+            Accumulate(mirrorId.extract(), duration.ToSeconds() / 60 / 60);
+            break;
+          case 6:  
+            Accumulate(mirrorId.extract(), duration.ToSeconds() / 60 / 60 / 24);
+            break;
+          default:
+            MOZ_ASSERT_UNREACHABLE("Invalid/Unsupported time unit");
+            return;
+        }
       }
     });
   }
 }
 
 
-extern "C" NS_EXPORT void GIFFT_TimingDistributionAccumulateRawMillis(
-    uint32_t aMetricId, uint32_t aMS) {
+extern "C" NS_EXPORT void GIFFT_TimingDistributionAccumulateRawSample(
+    uint32_t aMetricId, uint32_t aSample) {
   auto mirrorId = mozilla::glean::HistogramIdForMetric(aMetricId);
   if (mirrorId) {
-    Accumulate(mirrorId.extract(), aMS);
+    Accumulate(mirrorId.extract(), aSample);
+  }
+}
+
+
+extern "C" NS_EXPORT void GIFFT_TimingDistributionAccumulateRawSamples(
+    uint32_t aMetricId, const nsTArray<uint32_t>& aSamples) {
+  auto mirrorId = mozilla::glean::HistogramIdForMetric(aMetricId);
+  if (mirrorId) {
+    Accumulate(mirrorId.extract(), aSamples);
   }
 }
 
