@@ -16,6 +16,7 @@
 #include "mozilla/gfx/Types.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
+#include "mozilla/widget/DMABufFormats.h"
 
 typedef void* EGLImageKHR;
 typedef void* EGLSyncKHR;
@@ -59,6 +60,8 @@ typedef enum {
   
   DMABUF_TEXTURE = 1 << 1,
   
+  DMABUF_SCANOUT = 1 << 2,
+  
   
   
   DMABUF_USE_MODIFIERS = 1 << 3,
@@ -67,10 +70,6 @@ typedef enum {
 class DMABufSurfaceRGBA;
 class DMABufSurfaceYUV;
 struct wl_buffer;
-
-namespace mozilla::widget {
-struct GbmFormat;
-}
 
 class DMABufSurface {
  public:
@@ -111,7 +110,7 @@ class DMABufSurface {
   const char* GetSurfaceTypeName() {
     return sSurfaceTypeNames[static_cast<int>(mSurfaceType)];
   };
-  int32_t GetFOURCCFormat();
+  int32_t GetFOURCCFormat() const { return mFOURCCFormat; };
   virtual int GetTextureCount() = 0;
 
   bool IsMapped(int aPlane = 0) { return (mMappedRegion[aPlane] != nullptr); };
@@ -179,9 +178,16 @@ class DMABufSurface {
 #endif
 
 #ifdef MOZ_WAYLAND
-  virtual bool CreateWlBuffer() = 0;
-  void ReleaseWlBuffer();
-  wl_buffer* GetWlBuffer() { return mWlBuffer; };
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual wl_buffer* CreateWlBuffer() = 0;
 #endif
 
   DMABufSurface(SurfaceType aSurfaceType);
@@ -248,10 +254,6 @@ class DMABufSurface {
   uint32_t mUID;
   mozilla::Mutex mSurfaceLock MOZ_UNANNOTATED;
 
-#ifdef MOZ_WAYLAND
-  wl_buffer* mWlBuffer = nullptr;
-#endif
-
   mozilla::gfx::ColorRange mColorRange = mozilla::gfx::ColorRange::LIMITED;
 };
 
@@ -259,11 +261,12 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
  public:
   static already_AddRefed<DMABufSurfaceRGBA> CreateDMABufSurface(
       int aWidth, int aHeight, int aDMABufSurfaceFlags);
-
+  static already_AddRefed<DMABufSurfaceRGBA> CreateDMABufSurface(
+      int aWidth, int aHeight, RefPtr<mozilla::widget::DRMFormat> aFormat,
+      int aDMABufSurfaceFlags);
   static already_AddRefed<DMABufSurface> CreateDMABufSurface(
       mozilla::gl::GLContext* aGLContext, const EGLImageKHR aEGLImage,
       int aWidth, int aHeight);
-
   static already_AddRefed<DMABufSurface> CreateDMABufSurface(
       RefPtr<mozilla::gfx::FileHandleWrapper>&& aFd,
       const mozilla::webgpu::ffi::WGPUDMABufInfo& aDMABufInfo, int aWidth,
@@ -303,7 +306,7 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
   EGLImageKHR GetEGLImage(int aPlane = 0) override { return mEGLImage; };
 
 #ifdef MOZ_WAYLAND
-  bool CreateWlBuffer() override;
+  wl_buffer* CreateWlBuffer() override;
 #endif
 
   int GetTextureCount() override { return 1; };
@@ -320,6 +323,9 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
   ~DMABufSurfaceRGBA();
 
   bool Create(int aWidth, int aHeight, int aDMABufSurfaceFlags);
+  bool Create(int aWidth, int aHeight,
+              RefPtr<mozilla::widget::DRMFormat> aFormat,
+              int aDMABufSurfaceFlags);
   bool Create(const mozilla::layers::SurfaceDescriptor& aDesc) override;
   bool Create(mozilla::gl::GLContext* aGLContext, const EGLImageKHR aEGLImage,
               int aWidth, int aHeight);
@@ -335,11 +341,8 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
                                    int aPlane, bool aForceClose) override;
 
  private:
-  int mSurfaceFlags;
-
   int mWidth;
   int mHeight;
-  mozilla::widget::GbmFormat* mGmbFormat;
 
   EGLImageKHR mEGLImage;
   GLuint mTexture;
@@ -408,7 +411,7 @@ class DMABufSurfaceYUV final : public DMABufSurface {
   bool VerifyTextureCreation();
 
 #ifdef MOZ_WAYLAND
-  bool CreateWlBuffer() override;
+  wl_buffer* CreateWlBuffer() override;
 #endif
 
  private:
