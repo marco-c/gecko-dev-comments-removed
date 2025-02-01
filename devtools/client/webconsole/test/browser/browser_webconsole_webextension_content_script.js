@@ -23,9 +23,19 @@ add_task(async function () {
 
     files: {
       "content-script.js": function () {
+        
         console.log("def");
+
+        
+        const iframe = document.createElement("iframe");
+        iframe.src = browser.runtime.getURL(`iframe.html`);
+        document.body.appendChild(iframe);
+
         Promise.reject("abc");
       },
+
+      "iframe.html": `<div>Extension iframe</div> <script src="iframe.js"></script>`,
+      "iframe.js": `console.log("iframe log"); throw new Error("iframe exception")`,
     },
   });
 
@@ -36,6 +46,13 @@ add_task(async function () {
   
   await checkUniqueMessageExists(hud, "uncaught exception: abc", ".error");
   await checkUniqueMessageExists(hud, "def", ".console-api");
+
+  await checkUniqueMessageExists(hud, "iframe log", ".console-api");
+  await checkUniqueMessageExists(
+    hud,
+    "Uncaught Error: iframe exception",
+    ".error"
+  );
 
   
   
