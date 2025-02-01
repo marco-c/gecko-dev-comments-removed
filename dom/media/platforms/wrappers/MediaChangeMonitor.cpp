@@ -205,8 +205,9 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     }
 
     RefPtr<MediaByteBuffer> extraData =
-        aSample->mKeyframe || !mGotSPS ? H265::ExtractHVCCExtraData(aSample)
-                                       : nullptr;
+        aSample->mKeyframe || !mSPS.IsEmpty()
+            ? H265::ExtractHVCCExtraData(aSample)
+            : nullptr;
     
     auto curConfig = HVCCConfig::Parse(mCurrentConfig.mExtraData);
     if ((!extraData || extraData->IsEmpty()) && curConfig.unwrap().HasSPS()) {
@@ -227,7 +228,6 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       return NS_ERROR_NOT_INITIALIZED;
     }
 
-    mGotSPS = true;
     if (H265::CompareExtraData(extraData, mCurrentConfig.mExtraData)) {
       return NS_OK;
     }
@@ -271,32 +271,71 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
 
  private:
   void UpdateConfigFromExtraData(MediaByteBuffer* aExtraData) {
-    if (auto rv = H265::DecodeSPSFromHVCCExtraData(aExtraData); rv.isOk()) {
-      const auto sps = rv.unwrap();
-      mCurrentConfig.mImage.width = sps.GetImageSize().Width();
-      mCurrentConfig.mImage.height = sps.GetImageSize().Height();
-      mCurrentConfig.mDisplay.width = sps.GetDisplaySize().Width();
-      mCurrentConfig.mDisplay.height = sps.GetDisplaySize().Height();
-      mCurrentConfig.mColorDepth = sps.ColorDepth();
-      mCurrentConfig.mColorSpace = Some(sps.ColorSpace());
-      mCurrentConfig.mColorPrimaries = gfxUtils::CicpToColorPrimaries(
-          static_cast<gfx::CICP::ColourPrimaries>(sps.ColorPrimaries()),
-          gMediaDecoderLog);
-      mCurrentConfig.mTransferFunction = gfxUtils::CicpToTransferFunction(
-          static_cast<gfx::CICP::TransferCharacteristics>(
-              sps.TransferFunction()));
-      mCurrentConfig.mColorRange = sps.IsFullColorRange()
-                                       ? gfx::ColorRange::FULL
-                                       : gfx::ColorRange::LIMITED;
+    auto rv = HVCCConfig::Parse(aExtraData);
+    MOZ_ASSERT(rv.isOk());
+    const auto hvcc = rv.unwrap();
+
+    
+    if (auto nalu = hvcc.GetFirstAvaiableNALU(H265NALU::NAL_TYPES::SPS_NUT)) {
+      mSPS.Clear();
+      mSPS.AppendElements(nalu->mNALU);
+      if (auto rv = H265::DecodeSPSFromSPSNALU(*nalu); rv.isOk()) {
+        const auto sps = rv.unwrap();
+        mCurrentConfig.mImage.width = sps.GetImageSize().Width();
+        mCurrentConfig.mImage.height = sps.GetImageSize().Height();
+        mCurrentConfig.mDisplay.width = sps.GetDisplaySize().Width();
+        mCurrentConfig.mDisplay.height = sps.GetDisplaySize().Height();
+        mCurrentConfig.mColorDepth = sps.ColorDepth();
+        mCurrentConfig.mColorSpace = Some(sps.ColorSpace());
+        mCurrentConfig.mColorPrimaries = gfxUtils::CicpToColorPrimaries(
+            static_cast<gfx::CICP::ColourPrimaries>(sps.ColorPrimaries()),
+            gMediaDecoderLog);
+        mCurrentConfig.mTransferFunction = gfxUtils::CicpToTransferFunction(
+            static_cast<gfx::CICP::TransferCharacteristics>(
+                sps.TransferFunction()));
+        mCurrentConfig.mColorRange = sps.IsFullColorRange()
+                                         ? gfx::ColorRange::FULL
+                                         : gfx::ColorRange::LIMITED;
+      }
     }
-    MOZ_ASSERT(HVCCConfig::Parse(aExtraData).isOk());
-    mCurrentConfig.mExtraData = aExtraData;
+    if (auto nalu = hvcc.GetFirstAvaiableNALU(H265NALU::NAL_TYPES::PPS_NUT)) {
+      mPPS.Clear();
+      mPPS.AppendElements(nalu->mNALU);
+    }
+    if (auto nalu = hvcc.GetFirstAvaiableNALU(H265NALU::NAL_TYPES::VPS_NUT)) {
+      mVPS.Clear();
+      mVPS.AppendElements(nalu->mNALU);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!mSPS.IsEmpty());  
+    Maybe<H265NALU> sps = Some(H265NALU(mSPS.Elements(), mSPS.Length()));
+    Maybe<H265NALU> pps = !mPPS.IsEmpty()
+                              ? Some(H265NALU(mPPS.Elements(), mPPS.Length()))
+                              : Nothing();
+    Maybe<H265NALU> vps = !mVPS.IsEmpty()
+                              ? Some(H265NALU(mVPS.Elements(), mVPS.Length()))
+                              : Nothing();
+    mCurrentConfig.mExtraData = H265::CreateNewExtraData(hvcc, sps, pps, vps);
     mTrackInfo = new TrackInfoSharedPtr(mCurrentConfig, mStreamID++);
+    LOG("Updated extradata, hasSPS=%d, hasPPS=%d, hasVPS=%d", !!sps, !!pps,
+        !!vps);
   }
 
   VideoInfo mCurrentConfig;
+
+  
+  nsTArray<uint8_t> mSPS;
+  nsTArray<uint8_t> mPPS;
+  nsTArray<uint8_t> mVPS;
+
   uint32_t mStreamID = 0;
-  bool mGotSPS = false;
   RefPtr<TrackInfoSharedPtr> mTrackInfo;
 };
 

@@ -33,6 +33,8 @@ enum {
 };
 
 
+
+
 class H265NALU final {
  public:
   H265NALU(const uint8_t* aData, uint32_t aByteSize);
@@ -281,6 +283,10 @@ struct HVCCConfig final {
   uint32_t NumSPS() const;
   bool HasSPS() const;
 
+  
+  
+  Maybe<H265NALU> GetFirstAvaiableNALU(H265NALU::NAL_TYPES aType) const;
+
   uint8_t configurationVersion;
   uint8_t general_profile_space;
   bool general_tier_flag;
@@ -332,6 +338,13 @@ class H265 final {
   
   
   static already_AddRefed<mozilla::MediaByteBuffer> CreateFakeExtraData();
+
+  
+  
+  
+  static already_AddRefed<mozilla::MediaByteBuffer> CreateNewExtraData(
+      const HVCCConfig& aConfig, const Maybe<H265NALU>& aSPS,
+      const Maybe<H265NALU>& aPPS, const Maybe<H265NALU>& aVPS);
 
  private:
   
