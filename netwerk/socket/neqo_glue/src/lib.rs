@@ -189,7 +189,7 @@ impl NeqoHttp3Conn {
                 };
                 neqo_udp::Socket::new(borrowed).map_err(|e| {
                     qerror!("failed to initialize socket {}: {}", socket, e);
-                    NS_ERROR_FAILURE
+                    into_nsresult(e)
                 })
             })
             .transpose()?;
@@ -588,7 +588,7 @@ pub unsafe extern "C" fn neqo_http3conn_process_input(
                 Err(e) => {
                     qwarn!("failed to receive datagrams: {}", e);
                     return ProcessInputResult {
-                        result: NS_ERROR_FAILURE,
+                        result: into_nsresult(e),
                         bytes_read: 0,
                     };
                 }
@@ -770,7 +770,7 @@ pub extern "C" fn neqo_http3conn_process_output_and_send(
                     Err(e) => {
                         qwarn!("failed to send datagram: {}", e);
                         return ProcessOutputAndSendResult {
-                            result: NS_ERROR_FAILURE,
+                            result: into_nsresult(e),
                             bytes_written: 0,
                         };
                     }
@@ -1902,5 +1902,110 @@ pub extern "C" fn neqo_http3conn_webtransport_set_sendorder(
             Ok(()) => NS_OK,
             Err(_) => NS_ERROR_UNEXPECTED,
         }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+fn into_nsresult(e: io::Error) -> nsresult {
+    match e.kind() {
+        io::ErrorKind::ConnectionRefused => NS_ERROR_CONNECTION_REFUSED,
+        io::ErrorKind::ConnectionReset => NS_ERROR_NET_RESET,
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        io::ErrorKind::AddrNotAvailable => NS_ERROR_CONNECTION_REFUSED,
+
+        
+        io::ErrorKind::ConnectionAborted => NS_ERROR_NET_RESET,
+
+        io::ErrorKind::NotConnected => NS_ERROR_NOT_CONNECTED,
+        io::ErrorKind::AddrInUse => NS_ERROR_SOCKET_ADDRESS_IN_USE,
+        io::ErrorKind::AlreadyExists => NS_ERROR_FILE_ALREADY_EXISTS,
+        io::ErrorKind::WouldBlock => NS_BASE_STREAM_WOULD_BLOCK,
+
+        
+        
+        
+
+        
+        
+        
+
+        
+        
+        
+
+        
+        
+        
+
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        io::ErrorKind::InvalidInput => NS_ERROR_FAILURE,
+
+        io::ErrorKind::TimedOut => NS_ERROR_NET_TIMEOUT,
+        io::ErrorKind::Interrupted => NS_ERROR_NET_INTERRUPT,
+
+        
+        io::ErrorKind::UnexpectedEof => NS_ERROR_NET_INTERRUPT,
+
+        io::ErrorKind::OutOfMemory => NS_ERROR_OUT_OF_MEMORY,
+
+        
+        
+
+        
+        
+        io::ErrorKind::NotFound
+        | io::ErrorKind::PermissionDenied
+        | io::ErrorKind::BrokenPipe
+        | io::ErrorKind::InvalidData
+        | io::ErrorKind::WriteZero
+        | io::ErrorKind::Unsupported
+        | io::ErrorKind::Other => NS_ERROR_FAILURE,
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+
+        _ => NS_ERROR_FAILURE,
     }
 }
