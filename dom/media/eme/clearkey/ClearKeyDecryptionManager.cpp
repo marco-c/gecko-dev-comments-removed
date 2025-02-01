@@ -167,6 +167,11 @@ void ClearKeyDecryptor::InitKey(const Key& aKey) { mKey = aKey; }
 Status ClearKeyDecryptor::Decrypt(uint8_t* aBuffer, uint32_t aBufferSize,
                                   const CryptoMetaData& aMetadata) {
   CK_LOGD("ClearKeyDecryptor::Decrypt");
+  if (aBufferSize == 0) {
+    
+    return Status::kSuccess;
+  }
+
   
   
   std::vector<uint8_t> tmp(aBufferSize);
