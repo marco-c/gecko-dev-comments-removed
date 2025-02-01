@@ -524,6 +524,16 @@ var SidebarController = {
   
 
 
+  toggleVerticalTabs() {
+    Services.prefs.setBoolPref(
+      "sidebar.verticalTabs",
+      !this.sidebarVerticalTabsEnabled
+    );
+  },
+
+  
+
+
   observe(_subject, topic, _data) {
     switch (topic) {
       case "intl:app-locales-changed": {
