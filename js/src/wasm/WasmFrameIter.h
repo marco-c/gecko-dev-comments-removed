@@ -23,6 +23,7 @@
 #include "js/ProfilingFrameIterator.h"
 #include "js/TypeDecls.h"
 
+#include "wasm/WasmCode.h"          
 #include "wasm/WasmCodegenTypes.h"  
 
 namespace js {
@@ -276,8 +277,17 @@ class ExitReason {
 
 
 class ProfilingFrameIterator {
+ public:
+  enum class Category {
+    Baseline,
+    Ion,
+    Other,
+  };
+
+ private:
   const Code* code_;
   const CodeRange* codeRange_;
+  Category category_;
   uint8_t* callerFP_;
   void* callerPC_;
   void* stackAddress_;
@@ -304,12 +314,6 @@ class ProfilingFrameIterator {
   ProfilingFrameIterator(const jit::JitActivation& activation,
                          const RegisterState& state);
 
-  enum Category {
-    Baseline,
-    Ion,
-    Other,
-  };
-
   void operator++();
 
   bool done() const {
@@ -330,6 +334,18 @@ class ProfilingFrameIterator {
   Category category() const;
 
   void* endStackAddress() const { return endStackAddress_; }
+
+  
+  static ProfilingFrameIterator::Category categoryFromCodeBlock(
+      CodeBlockKind kind) {
+    if (kind == CodeBlockKind::BaselineTier) {
+      return ProfilingFrameIterator::Category::Baseline;
+    }
+    if (kind == CodeBlockKind::OptimizedTier) {
+      return ProfilingFrameIterator::Category::Ion;
+    }
+    return ProfilingFrameIterator::Category::Other;
+  }
 };
 
 

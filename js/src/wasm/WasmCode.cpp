@@ -1331,22 +1331,6 @@ void Code::clearLinkData() const {
   }
 }
 
-bool Code::lookupFunctionTier(const CodeRange* codeRange, Tier* tier) const {
-  
-  
-  
-  MOZ_ASSERT(codeRange->isFunction());
-  for (Tier t : completeTiers()) {
-    const CodeBlock& code = completeTierCodeBlock(t);
-    if (codeRange >= code.codeRanges.begin() &&
-        codeRange < code.codeRanges.end()) {
-      *tier = t;
-      return true;
-    }
-  }
-  return false;
-}
-
 
 
 
