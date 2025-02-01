@@ -4200,7 +4200,7 @@ class Document : public nsINode,
   bool ShouldResistFingerprinting(RFPTarget aTarget) const;
   bool IsInPrivateBrowsing() const;
 
-  const Maybe<RFPTarget>& GetOverriddenFingerprintingSettings() const {
+  const Maybe<RFPTargetSet>& GetOverriddenFingerprintingSettings() const {
     return mOverriddenFingerprintingSettings;
   }
 
@@ -4986,7 +4986,7 @@ class Document : public nsINode,
   
   
   
-  Maybe<RFPTarget> mOverriddenFingerprintingSettings;
+  Maybe<RFPTargetSet> mOverriddenFingerprintingSettings;
 
   uint8_t mXMLDeclarationBits;
 

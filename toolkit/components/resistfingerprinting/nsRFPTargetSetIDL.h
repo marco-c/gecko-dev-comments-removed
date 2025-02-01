@@ -1,0 +1,28 @@
+
+
+
+
+#ifndef mozilla_RFPTargetSetIDL_h__
+#define mozilla_RFPTargetSetIDL_h__
+
+#include "nsIRFPTargetSetIDL.h"
+#include "nsRFPService.h"
+
+namespace mozilla {
+
+class nsRFPTargetSetIDL final : public nsIRFPTargetSetIDL {
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIRFPTARGETSETIDL
+
+ public:
+  nsRFPTargetSetIDL() = default;
+  explicit nsRFPTargetSetIDL(RFPTargetSet& aBits) : mBits(aBits) {};
+
+ private:
+  ~nsRFPTargetSetIDL() = default;
+
+  RFPTargetSet mBits;
+};
+}  
+
+#endif  
