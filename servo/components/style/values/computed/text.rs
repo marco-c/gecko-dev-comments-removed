@@ -7,8 +7,9 @@
 #[cfg(feature = "servo")]
 use crate::properties::StyleBuilder;
 use crate::values::computed::length::LengthPercentage;
+use crate::values::generics::NumberOrAuto;
 use crate::values::generics::text::{
-    GenericInitialLetter, GenericTextDecorationLength, GenericTextIndent,
+    GenericHyphenateLimitChars, GenericInitialLetter, GenericTextDecorationLength, GenericTextIndent,
 };
 use crate::values::specified::text as specified;
 use crate::values::specified::text::{TextEmphasisFillMode, TextEmphasisShapeKeyword};
@@ -34,6 +35,21 @@ pub type TextAlign = specified::TextAlignKeyword;
 
 
 pub type TextIndent = GenericTextIndent<LengthPercentage>;
+
+
+pub type HyphenateLimitChars = GenericHyphenateLimitChars<CSSInteger>;
+
+impl HyphenateLimitChars {
+    
+    #[inline]
+    pub fn auto() -> Self {
+        Self {
+            total_word_length: NumberOrAuto::Auto,
+            pre_hyphen_length: NumberOrAuto::Auto,
+            post_hyphen_length: NumberOrAuto::Auto,
+        }
+    }
+}
 
 
 #[repr(transparent)]

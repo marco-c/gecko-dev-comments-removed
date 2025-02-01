@@ -192,6 +192,8 @@ impl<L> ClipRectOrAuto<L> {
 
 pub use page::PageSize;
 
+pub use text::NumberOrAuto;
+
 
 
 
