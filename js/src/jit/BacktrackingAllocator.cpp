@@ -1408,6 +1408,14 @@ bool BacktrackingAllocator::minimalUse(LiveRange* range, UsePosition* use) {
 }
 
 bool BacktrackingAllocator::minimalBundle(LiveBundle* bundle, bool* pfixed) {
+  
+  
+  
+  
+  
+  
+  
+
   LiveBundle::RangeIterator iter = bundle->rangesBegin();
   LiveRange* range = *iter;
 
@@ -1421,11 +1429,14 @@ bool BacktrackingAllocator::minimalBundle(LiveBundle* bundle, bool* pfixed) {
 
   if (range->hasDefinition()) {
     VirtualRegister& reg = range->vreg();
+    if (!minimalDef(range, reg.ins())) {
+      return false;
+    }
     if (pfixed) {
       *pfixed = reg.def()->policy() == LDefinition::FIXED &&
                 reg.def()->output()->isRegister();
     }
-    return minimalDef(range, reg.ins());
+    return true;
   }
 
   bool fixed = false, minimal = false, multiple = false;
@@ -1460,13 +1471,16 @@ bool BacktrackingAllocator::minimalBundle(LiveBundle* bundle, bool* pfixed) {
   
   
   if (multiple && fixed) {
-    minimal = false;
+    return false;
   }
 
+  if (!minimal) {
+    return false;
+  }
   if (pfixed) {
     *pfixed = fixed;
   }
-  return minimal;
+  return true;
 }
 
 size_t BacktrackingAllocator::computeSpillWeight(LiveBundle* bundle) {
