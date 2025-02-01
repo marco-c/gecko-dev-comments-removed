@@ -1589,6 +1589,19 @@ void nsHttpTransaction::Close(nsresult reason) {
     mResponseIsComplete = true;
   }
 
+  if (reason == NS_ERROR_NET_RESET && mResponseIsComplete && isHttp2or3) {
+    
+    
+    
+    
+    
+    
+    
+    
+    LOG(("Transaction is already done, overriding error code to NS_OK"));
+    reason = NS_OK;
+  }
+
   if ((mChunkedDecoder || (mContentLength >= int64_t(0))) &&
       (NS_SUCCEEDED(reason) && !mResponseIsComplete)) {
     NS_WARNING("Partial transfer, incomplete HTTP response received");
