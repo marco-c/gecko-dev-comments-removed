@@ -1111,7 +1111,7 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
   
   
   
-  Maybe<RFPTargetSet> overriddenFingerprintingSettings =
+  Maybe<RFPTarget> overriddenFingerprintingSettings =
       nsRFPService::GetOverriddenFingerprintingSettingsForChannel(aChannel);
 
   if (overriddenFingerprintingSettings) {

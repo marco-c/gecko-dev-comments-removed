@@ -62,9 +62,6 @@ class Instance final : public nsWrapperCache {
       const dom::GPURequestAdapterOptions& aOptions, ErrorResult& aRv);
 
   dom::GPUTextureFormat GetPreferredCanvasFormat() const {
-    
-    
-    
     if (kIsAndroid) {
       return dom::GPUTextureFormat::Rgba8unorm;
     }

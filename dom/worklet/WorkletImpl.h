@@ -128,7 +128,7 @@ class WorkletImpl {
   
   
   
-  Maybe<RFPTargetSet> mOverriddenFingerprintingSettings;
+  Maybe<RFPTarget> mOverriddenFingerprintingSettings;
 
   const OriginTrials mTrials;
 };

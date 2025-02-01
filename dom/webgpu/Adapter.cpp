@@ -178,45 +178,6 @@ struct FeatureImplementationStatus {
   }
 };
 
-double GetLimitDefault(Limit aLimit) {
-  switch (aLimit) {
-      
-      case Limit::MaxTextureDimension1D: return 8192;
-      case Limit::MaxTextureDimension2D: return 8192;
-      case Limit::MaxTextureDimension3D: return 2048;
-      case Limit::MaxTextureArrayLayers: return 256;
-      case Limit::MaxBindGroups: return 4;
-      case Limit::MaxBindGroupsPlusVertexBuffers: return 24;
-      case Limit::MaxBindingsPerBindGroup: return 1000;
-      case Limit::MaxDynamicUniformBuffersPerPipelineLayout: return 8;
-      case Limit::MaxDynamicStorageBuffersPerPipelineLayout: return 4;
-      case Limit::MaxSampledTexturesPerShaderStage: return 16;
-      case Limit::MaxSamplersPerShaderStage: return 16;
-      case Limit::MaxStorageBuffersPerShaderStage: return 8;
-      case Limit::MaxStorageTexturesPerShaderStage: return 4;
-      case Limit::MaxUniformBuffersPerShaderStage: return 12;
-      case Limit::MaxUniformBufferBindingSize: return 65536;
-      case Limit::MaxStorageBufferBindingSize: return 134217728;
-      case Limit::MinUniformBufferOffsetAlignment: return 256;
-      case Limit::MinStorageBufferOffsetAlignment: return 256;
-      case Limit::MaxVertexBuffers: return 8;
-      case Limit::MaxBufferSize: return 268435456;
-      case Limit::MaxVertexAttributes: return 16;
-      case Limit::MaxVertexBufferArrayStride: return 2048;
-      case Limit::MaxInterStageShaderVariables: return 16;
-      case Limit::MaxColorAttachments: return 8;
-      case Limit::MaxColorAttachmentBytesPerSample: return 32;
-      case Limit::MaxComputeWorkgroupStorageSize: return 16384;
-      case Limit::MaxComputeInvocationsPerWorkgroup: return 256;
-      case Limit::MaxComputeWorkgroupSizeX: return 256;
-      case Limit::MaxComputeWorkgroupSizeY: return 256;
-      case Limit::MaxComputeWorkgroupSizeZ: return 64;
-      case Limit::MaxComputeWorkgroupsPerDimension: return 65535;
-      
-  }
-  MOZ_CRASH("Bad Limit");
-}
-
 Adapter::Adapter(Instance* const aParent, WebGPUChild* const aBridge,
                  const std::shared_ptr<ffi::WGPUAdapterInformation>& aInfo)
     : ChildOf(aParent),
@@ -273,15 +234,6 @@ Adapter::Adapter(Instance* const aParent, WebGPUChild* const aBridge,
       
     }
   }
-
-  
-  
-  
-  if (GetParentObject()->ShouldResistFingerprinting(RFPTarget::WebGPULimits)) {
-    for (const auto limit : MakeInclusiveEnumeratedRange(Limit::_LAST)) {
-      SetLimit(mLimits->mFfi.get(), limit, GetLimitDefault(limit));
-    }
-  }
 }
 
 Adapter::~Adapter() { Cleanup(); }
@@ -298,13 +250,6 @@ const RefPtr<SupportedLimits>& Adapter::Limits() const { return mLimits; }
 const RefPtr<AdapterInfo>& Adapter::Info() const { return mInfo; }
 
 bool Adapter::IsFallbackAdapter() const {
-  if (GetParentObject()->ShouldResistFingerprinting(
-          RFPTarget::WebGPUIsFallbackAdapter)) {
-    
-    
-    return false;
-  }
-
   return mInfoInner->device_type == ffi::WGPUDeviceType::WGPUDeviceType_Cpu;
 }
 
@@ -380,37 +325,6 @@ static std::string_view ToJsKey(const Limit limit) {
   MOZ_CRASH("Bad Limit");
 }
 
-uint64_t Adapter::MissingFeatures() const {
-  uint64_t missingFeatures = 0;
-
-  
-  for (const auto feature :
-       dom::MakeWebIDLEnumeratedRange<dom::GPUFeatureName>()) {
-    const auto status = FeatureImplementationStatus::fromDomFeature(feature);
-    switch (status.tag) {
-      case FeatureImplementationStatusTag::Implemented:
-        missingFeatures |= status.value.implemented.wgpuBit;
-        break;
-      case FeatureImplementationStatusTag::NotImplemented:
-        break;
-    }
-  }
-
-  
-  for (auto feature : mFeatures->Features()) {
-    const auto status = FeatureImplementationStatus::fromDomFeature(feature);
-    switch (status.tag) {
-      case FeatureImplementationStatusTag::Implemented:
-        missingFeatures &= ~status.value.implemented.wgpuBit;
-        break;
-      case FeatureImplementationStatusTag::NotImplemented:
-        break;
-    }
-  }
-
-  return missingFeatures;
-}
-
 
 
 
@@ -428,7 +342,45 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
 
   ffi::WGPULimits deviceLimits = *mLimits->mFfi;
   for (const auto limit : MakeInclusiveEnumeratedRange(Limit::_LAST)) {
-    SetLimit(&deviceLimits, limit, GetLimitDefault(limit));
+    const auto defaultValue = [&]() -> double {
+      switch (limit) {
+          
+      case Limit::MaxTextureDimension1D: return 8192;
+      case Limit::MaxTextureDimension2D: return 8192;
+      case Limit::MaxTextureDimension3D: return 2048;
+      case Limit::MaxTextureArrayLayers: return 256;
+      case Limit::MaxBindGroups: return 4;
+      case Limit::MaxBindGroupsPlusVertexBuffers: return 24;
+      case Limit::MaxBindingsPerBindGroup: return 1000;
+      case Limit::MaxDynamicUniformBuffersPerPipelineLayout: return 8;
+      case Limit::MaxDynamicStorageBuffersPerPipelineLayout: return 4;
+      case Limit::MaxSampledTexturesPerShaderStage: return 16;
+      case Limit::MaxSamplersPerShaderStage: return 16;
+      case Limit::MaxStorageBuffersPerShaderStage: return 8;
+      case Limit::MaxStorageTexturesPerShaderStage: return 4;
+      case Limit::MaxUniformBuffersPerShaderStage: return 12;
+      case Limit::MaxUniformBufferBindingSize: return 65536;
+      case Limit::MaxStorageBufferBindingSize: return 134217728;
+      case Limit::MinUniformBufferOffsetAlignment: return 256;
+      case Limit::MinStorageBufferOffsetAlignment: return 256;
+      case Limit::MaxVertexBuffers: return 8;
+      case Limit::MaxBufferSize: return 268435456;
+      case Limit::MaxVertexAttributes: return 16;
+      case Limit::MaxVertexBufferArrayStride: return 2048;
+      case Limit::MaxInterStageShaderVariables: return 16;
+      case Limit::MaxColorAttachments: return 8;
+      case Limit::MaxColorAttachmentBytesPerSample: return 32;
+      case Limit::MaxComputeWorkgroupStorageSize: return 16384;
+      case Limit::MaxComputeInvocationsPerWorkgroup: return 256;
+      case Limit::MaxComputeWorkgroupSizeX: return 256;
+      case Limit::MaxComputeWorkgroupSizeY: return 256;
+      case Limit::MaxComputeWorkgroupSizeZ: return 64;
+      case Limit::MaxComputeWorkgroupsPerDimension: return 65535;
+          
+      }
+      MOZ_CRASH("Bad Limit");
+    }();
+    SetLimit(&deviceLimits, limit, defaultValue);
   }
 
   
@@ -538,9 +490,6 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
               return;
             }
           }
-          
-          
-          
           
           requestedValue =
               std::min(requestedValue, GetLimit(deviceLimits, limit));

@@ -5,97 +5,95 @@
 
 
 
-ITEM_VALUE(TouchEvents,                 1)
-ITEM_VALUE(PointerEvents,               2)
-ITEM_VALUE(KeyboardEvents,              3)
-ITEM_VALUE(ScreenOrientation,           4)
+ITEM_VALUE(TouchEvents,                 1llu << 0)
+ITEM_VALUE(PointerEvents,               1llu << 1)
+ITEM_VALUE(KeyboardEvents,              1llu << 2)
+ITEM_VALUE(ScreenOrientation,           1llu << 3)
 
-ITEM_VALUE(SpeechSynthesis,             5)
+ITEM_VALUE(SpeechSynthesis,             1llu << 4)
 
-ITEM_VALUE(CSSPrefersColorScheme,       6)
+ITEM_VALUE(CSSPrefersColorScheme,       1llu << 5)
 
-ITEM_VALUE(CSSPrefersReducedMotion,     7)
+ITEM_VALUE(CSSPrefersReducedMotion,     1llu << 6)
 
-ITEM_VALUE(CSSPrefersContrast,          8)
+ITEM_VALUE(CSSPrefersContrast,          1llu << 7)
 
-ITEM_VALUE(CanvasRandomization,         9)
-
-
-ITEM_VALUE(CanvasImageExtractionPrompt, 10)
-ITEM_VALUE(CanvasExtractionFromThirdPartiesIsBlocked, 11)
-ITEM_VALUE(CanvasExtractionBeforeUserInputIsBlocked,  12)
-
-ITEM_VALUE(JSLocale,                13)
+ITEM_VALUE(CanvasRandomization,         1llu << 8)
 
 
-ITEM_VALUE(NavigatorAppVersion,         14)
-ITEM_VALUE(NavigatorBuildID,            15)
-ITEM_VALUE(NavigatorHWConcurrency,      16)
-ITEM_VALUE(NavigatorOscpu,              17)
-ITEM_VALUE(NavigatorPlatform,           18)
-ITEM_VALUE(NavigatorUserAgent,          19)
-ITEM_VALUE(PointerId,                   20)
-ITEM_VALUE(StreamVideoFacingMode,       21)
-ITEM_VALUE(JSDateTimeUTC,               22)
-ITEM_VALUE(JSMathFdlibm,                23)
-ITEM_VALUE(Gamepad,                     24)
-ITEM_VALUE(HttpUserAgent,               25)
-ITEM_VALUE(WindowOuterSize,             26)
-ITEM_VALUE(WindowScreenXY,              27)
-ITEM_VALUE(WindowInnerScreenXY,         28)
-ITEM_VALUE(ScreenPixelDepth,            29)
-ITEM_VALUE(ScreenRect,                  30)
-ITEM_VALUE(ScreenAvailRect,             31)
+ITEM_VALUE(CanvasImageExtractionPrompt, 1llu << 9)
+ITEM_VALUE(CanvasExtractionFromThirdPartiesIsBlocked, 1llu << 10)
+ITEM_VALUE(CanvasExtractionBeforeUserInputIsBlocked, 1llu << 11)
+
+ITEM_VALUE(JSLocale,                1llu << 12)
 
 
-ITEM_VALUE(VideoElementMozFrames,       32)
-
-ITEM_VALUE(VideoElementMozFrameDelay,   33)
-
-ITEM_VALUE(VideoElementPlaybackQuality, 34)
-
-ITEM_VALUE(ReduceTimerPrecision,        35)
-
-ITEM_VALUE(WidgetEvents,                36)
-ITEM_VALUE(MediaDevices,                37)
-ITEM_VALUE(MediaCapabilities,           38)
-ITEM_VALUE(AudioSampleRate,             39)
-ITEM_VALUE(NavigatorConnection,         40)
-ITEM_VALUE(WindowDevicePixelRatio,      41)
-ITEM_VALUE(MouseEventScreenPoint,       42)
-
-ITEM_VALUE(FontVisibilityBaseSystem,    43)
-ITEM_VALUE(FontVisibilityLangPack,      44)
-ITEM_VALUE(DeviceSensors,               45)
-ITEM_VALUE(FrameRate,                   46)
-ITEM_VALUE(RoundWindowSize,             47)
-ITEM_VALUE(UseStandinsForNativeColors,  48)
-ITEM_VALUE(AudioContext,                49)
-ITEM_VALUE(MediaError,                  50)
-ITEM_VALUE(DOMStyleOsxFontSmoothing,    51)
-
-ITEM_VALUE(CSSDeviceSize,               52)
-
-ITEM_VALUE(CSSColorInfo,                53)
-
-ITEM_VALUE(CSSResolution,               54)
-
-ITEM_VALUE(CSSPrefersReducedTransparency, 55)
-
-ITEM_VALUE(CSSInvertedColors,           56)
-
-ITEM_VALUE(CSSVideoDynamicRange,        57)
-ITEM_VALUE(CSSPointerCapabilities,      58)
-
-ITEM_VALUE(WebGLRenderCapability,       59)
-ITEM_VALUE(WebGLRenderInfo,             60)
-ITEM_VALUE(SiteSpecificZoom,            61)
+ITEM_VALUE(NavigatorAppVersion,         1llu << 13)
+ITEM_VALUE(NavigatorBuildID,            1llu << 14)
+ITEM_VALUE(NavigatorHWConcurrency,      1llu << 15)
+ITEM_VALUE(NavigatorOscpu,              1llu << 16)
+ITEM_VALUE(NavigatorPlatform,           1llu << 17)
+ITEM_VALUE(NavigatorUserAgent,          1llu << 18)
+ITEM_VALUE(PointerId,                   1llu << 19)
+ITEM_VALUE(StreamVideoFacingMode,       1llu << 20)
+ITEM_VALUE(JSDateTimeUTC,               1llu << 21)
+ITEM_VALUE(JSMathFdlibm,                1llu << 22)
+ITEM_VALUE(Gamepad,                     1llu << 23)
+ITEM_VALUE(HttpUserAgent,               1llu << 24)
+ITEM_VALUE(WindowOuterSize,             1llu << 25)
+ITEM_VALUE(WindowScreenXY,              1llu << 26)
+ITEM_VALUE(WindowInnerScreenXY,         1llu << 27)
+ITEM_VALUE(ScreenPixelDepth,            1llu << 28)
+ITEM_VALUE(ScreenRect,                  1llu << 29)
+ITEM_VALUE(ScreenAvailRect,             1llu << 30)
 
 
-ITEM_VALUE(FontVisibilityRestrictGenerics, 62)
-ITEM_VALUE(WebVTT,                      63)
-ITEM_VALUE(WebGPULimits,                64)
-ITEM_VALUE(WebGPUIsFallbackAdapter,     65)
+ITEM_VALUE(VideoElementMozFrames,       1llu << 31)
+
+ITEM_VALUE(VideoElementMozFrameDelay,   1llu << 32)
+
+ITEM_VALUE(VideoElementPlaybackQuality, 1llu << 33)
+
+ITEM_VALUE(ReduceTimerPrecision,        1llu << 34)
+
+ITEM_VALUE(WidgetEvents,                1llu << 35)
+ITEM_VALUE(MediaDevices,                1llu << 36)
+ITEM_VALUE(MediaCapabilities,           1llu << 37)
+ITEM_VALUE(AudioSampleRate,             1llu << 38)
+ITEM_VALUE(NavigatorConnection,         1llu << 39)
+ITEM_VALUE(WindowDevicePixelRatio,      1llu << 40)
+ITEM_VALUE(MouseEventScreenPoint,       1llu << 41)
+
+ITEM_VALUE(FontVisibilityBaseSystem,    1llu << 42)
+ITEM_VALUE(FontVisibilityLangPack,      1llu << 43)
+ITEM_VALUE(DeviceSensors,               1llu << 44)
+ITEM_VALUE(FrameRate,                   1llu << 45)
+ITEM_VALUE(RoundWindowSize,             1llu << 46)
+ITEM_VALUE(UseStandinsForNativeColors,  1llu << 47)
+ITEM_VALUE(AudioContext,                1llu << 48)
+ITEM_VALUE(MediaError,                  1llu << 49)
+ITEM_VALUE(DOMStyleOsxFontSmoothing,    1llu << 50)
+
+ITEM_VALUE(CSSDeviceSize,               1llu << 51)
+
+ITEM_VALUE(CSSColorInfo,                1llu << 52)
+
+ITEM_VALUE(CSSResolution,               1llu << 53)
+
+ITEM_VALUE(CSSPrefersReducedTransparency, 1llu << 54)
+
+ITEM_VALUE(CSSInvertedColors,           1llu << 55)
+
+ITEM_VALUE(CSSVideoDynamicRange,        1llu << 56)
+ITEM_VALUE(CSSPointerCapabilities,      1llu << 57)
+
+ITEM_VALUE(WebGLRenderCapability,       1llu << 58)
+ITEM_VALUE(WebGLRenderInfo,             1llu << 59)
+ITEM_VALUE(SiteSpecificZoom,            1llu << 60)
+
+
+ITEM_VALUE(FontVisibilityRestrictGenerics, 1llu << 61)
+ITEM_VALUE(WebVTT,                      1llu << 62)
 
 
 
@@ -121,4 +119,4 @@ ITEM_VALUE(IsAlwaysEnabledForPrecompute, 0)
 
 
 
-ITEM_VALUE(AllTargets, 127)
+ITEM_VALUE(AllTargets, 0xFFFFFFFF'FFFFFFFF)

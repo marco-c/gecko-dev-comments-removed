@@ -553,8 +553,8 @@ nsresult ServiceWorkerPrivate::Initialize() {
   
   
   
-  Maybe<RFPTargetSet> overriddenFingerprintingSettingsArg;
-  Maybe<RFPTargetSet> overriddenFingerprintingSettings;
+  Maybe<uint64_t> overriddenFingerprintingSettingsArg;
+  Maybe<RFPTarget> overriddenFingerprintingSettings;
   nsCOMPtr<nsIURI> firstPartyURI;
   bool foreignByAncestorContext = false;
   bool isOn3PCBExceptionList = false;
@@ -583,7 +583,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
                 firstPartyURI, uri);
         if (overriddenFingerprintingSettings.isSome()) {
           overriddenFingerprintingSettingsArg.emplace(
-              overriddenFingerprintingSettings.ref());
+              uint64_t(overriddenFingerprintingSettings.ref()));
         }
 
         RefPtr<net::CookieService> csSingleton =
@@ -626,7 +626,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
 
       if (overriddenFingerprintingSettings.isSome()) {
         overriddenFingerprintingSettingsArg.emplace(
-            overriddenFingerprintingSettings.ref());
+            uint64_t(overriddenFingerprintingSettings.ref()));
       }
     }
   } else {
@@ -642,7 +642,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
 
     if (overriddenFingerprintingSettings.isSome()) {
       overriddenFingerprintingSettingsArg.emplace(
-          overriddenFingerprintingSettings.ref());
+          uint64_t(overriddenFingerprintingSettings.ref()));
     }
   }
 

@@ -8,7 +8,6 @@
 
 #include <cstdint>
 #include <tuple>
-#include <bitset>
 #include "ErrorList.h"
 #include "PLDHashTable.h"
 #include "mozilla/BasicEvents.h"
@@ -203,12 +202,7 @@ enum class RFPTarget : uint64_t {
 
 #undef ITEM_VALUE
 
-using RFPTargetSet = EnumSet<RFPTarget, std::bitset<128>>;
-
-template <>
-struct MaxEnumValue<RFPTarget> {
-  static constexpr unsigned int value = 127;
-};
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(RFPTarget);
 
 
 
@@ -227,7 +221,7 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
 
   static bool IsRFPEnabledFor(
       bool aIsPrivateMode, RFPTarget aTarget,
-      const Maybe<RFPTargetSet>& aOverriddenFingerprintingSettings,
+      const Maybe<RFPTarget>& aOverriddenFingerprintingSettings,
       bool aSkipChromePrincipalCheck = false);
 
   static bool IsSystemPrincipalOrAboutFingerprintingProtection(JSContext*,
@@ -355,7 +349,7 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
   
   
-  static Maybe<RFPTargetSet> GetOverriddenFingerprintingSettingsForChannel(
+  static Maybe<RFPTarget> GetOverriddenFingerprintingSettingsForChannel(
       nsIChannel* aChannel);
 
   
@@ -363,7 +357,7 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
   
   
-  static Maybe<RFPTargetSet> GetOverriddenFingerprintingSettingsForURI(
+  static Maybe<RFPTarget> GetOverriddenFingerprintingSettingsForURI(
       nsIURI* aFirstPartyURI, nsIURI* aThirdPartyURI);
 
   
@@ -480,7 +474,7 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   nsTHashMap<nsCStringHashKey, nsID> mBrowsingSessionKeys;
 
   nsCOMPtr<nsIFingerprintingWebCompatService> mWebCompatService;
-  nsTHashMap<nsCStringHashKey, RFPTargetSet> mFingerprintingOverrides;
+  nsTHashMap<nsCStringHashKey, RFPTarget> mFingerprintingOverrides;
 
   
   
@@ -499,9 +493,8 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
   
   
-  static RFPTargetSet CreateOverridesFromText(
-      const nsString& aOverridesText,
-      RFPTargetSet aBaseOverrides = RFPTargetSet());
+  static RFPTarget CreateOverridesFromText(
+      const nsString& aOverridesText, RFPTarget aBaseOverrides = RFPTarget(0));
 };
 
 }  
