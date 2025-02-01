@@ -1169,13 +1169,26 @@ function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
 
     
     var one = 1;
-  }
+    
+  } else {
+    
+    assert(typeof start === 'bigint', "The 'start' argument must be a bigint");
 
+    
+    if (typeof end !== 'bigint' && !(Number_isFinite(end))) {
+      ThrowTypeError(JSMSG_ITERATOR_RANGE_INVALID_END);
+    }
+
+    
+    var zero = 0n;
+
+    
+    var one = 1n;
+  }
   
-  if (!Number_isFinite(start)) {
+  if (typeof start === 'number' && !Number_isFinite(start)) {
     ThrowRangeError(JSMSG_ITERATOR_RANGE_START_INFINITY);
   }
-
   
   var inclusiveEnd = false;
 
@@ -1197,6 +1210,12 @@ function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
     
     step = optionOrStep;
   }
+
+  
+  
+  else if (!isNumberRange && typeof optionOrStep === 'bigint') {
+    step = optionOrStep;
+  }
   
   else if (optionOrStep !== undefined && optionOrStep !== null) {
     ThrowTypeError(JSMSG_ITERATOR_RANGE_INVALID_STEP);
@@ -1210,7 +1229,7 @@ function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
   }
 
   
-  if (Number_isNaN(step)) {
+  if (typeof step === "number" && Number_isNaN(step)) {
     ThrowRangeError(JSMSG_ITERATOR_RANGE_STEP_NAN);
   }
 
@@ -1220,7 +1239,12 @@ function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
   }
 
   
-  if (!Number_isFinite(step)) {
+  else if (!isNumberRange && typeof step !== 'bigint') {
+    ThrowTypeError(JSMSG_ITERATOR_RANGE_STEP_NOT_BIGINT);
+  }
+
+  
+  if (typeof step === 'number' && !Number_isFinite(step)) {
     ThrowRangeError(JSMSG_ITERATOR_RANGE_STEP_NOT_FINITE);
   }
 
