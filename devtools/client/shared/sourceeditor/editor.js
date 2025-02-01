@@ -2188,6 +2188,20 @@ class Editor extends EventEmitter {
       from: line.from,
       to: line.to,
     });
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -2195,9 +2209,9 @@ class Editor extends EventEmitter {
     
     
     return expressions.sort((a, b) => {
-      if (a.from < b.from || a.to < b.to) {
+      if (a.to < b.to) {
         return -1;
-      } else if (a.from > b.from || a.to > b.to) {
+      } else if (a.to > b.to) {
         return 1;
       }
       return 0;

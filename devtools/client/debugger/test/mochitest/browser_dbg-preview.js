@@ -104,6 +104,10 @@ add_task(async function () {
     },
   ]);
 
+  await testPreviews(dbg, "valueOfExpression", [
+    { line: 107, column: 6, expression: "value", result: "foo" },
+  ]);
+
   
   
   
