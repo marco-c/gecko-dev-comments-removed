@@ -16,6 +16,7 @@ static bool IsValidOverflowRect(const nsRect& aRect) {
   
   
   
+  
   return aRect.Size() != nsSize{0, 0} && aRect.Width() >= 0 &&
          aRect.Height() >= 0;
 }
