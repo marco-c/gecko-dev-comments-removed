@@ -17069,9 +17069,6 @@ void CodeGenerator::visitUnboxFloatingPoint(LUnboxFloatingPoint* lir) {
   FloatRegister resultReg = ToFloatRegister(result);
   masm.branchTestDouble(Assembler::NotEqual, box, ool->entry());
   masm.unboxDouble(box, resultReg);
-  if (lir->type() == MIRType::Float32) {
-    masm.convertDoubleToFloat32(resultReg, resultReg);
-  }
   masm.bind(ool->rejoin());
 }
 
@@ -17085,13 +17082,8 @@ void CodeGenerator::visitOutOfLineUnboxFloatingPoint(
     masm.branchTestInt32(Assembler::NotEqual, value, &bail);
     bailoutFrom(&bail, ins->snapshot());
   }
-  if (ins->type() == MIRType::Float32) {
-    masm.convertInt32ToFloat32(value.payloadOrValueReg(),
-                               ToFloatRegister(ins->output()));
-  } else {
-    masm.convertInt32ToDouble(value.payloadOrValueReg(),
-                              ToFloatRegister(ins->output()));
-  }
+  masm.convertInt32ToDouble(value.payloadOrValueReg(),
+                            ToFloatRegister(ins->output()));
   masm.jump(ool->rejoin());
 }
 
