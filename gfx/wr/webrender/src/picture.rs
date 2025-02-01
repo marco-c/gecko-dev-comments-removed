@@ -8050,7 +8050,11 @@ fn get_surface_rects(
         }
     };
 
+    
+    
+    
     let (mut clipped, mut unclipped, mut source) = if surface.raster_spatial_node_index != surface.surface_spatial_node_index {
+        
         assert_eq!(surface.device_pixel_scale.0, 1.0);
 
         let local_to_world = SpaceMapper::new_with_target(
@@ -8060,19 +8064,30 @@ fn get_surface_rects(
             spatial_tree,
         );
 
-        let clipped = (local_to_world.map(&clipped_local.cast_unit()).unwrap() * surface.device_pixel_scale).round_out();
+        let clipped = local_to_world.map(&clipped_local.cast_unit()).unwrap() * surface.device_pixel_scale;
         let unclipped = local_to_world.map(&unclipped_local).unwrap() * surface.device_pixel_scale;
-        let source = (local_to_world.map(&source_local.cast_unit()).unwrap() * surface.device_pixel_scale).round_out();
+        let source = local_to_world.map(&source_local.cast_unit()).unwrap() * surface.device_pixel_scale;
 
         (clipped, unclipped, source)
     } else {
-        let clipped = (clipped_local.cast_unit() * surface.device_pixel_scale).round_out();
+        
+        let clipped = clipped_local.cast_unit() * surface.device_pixel_scale;
         let unclipped = unclipped_local.cast_unit() * surface.device_pixel_scale;
-        let source = (source_local.cast_unit() * surface.device_pixel_scale).round_out();
+        let source = source_local.cast_unit() * surface.device_pixel_scale;
 
         (clipped, unclipped, source)
     };
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -8084,7 +8099,9 @@ fn get_surface_rects(
                 source.width().max(
                     source.height()
                 ))).ceil();
-    if max_dimension > max_surface_size {
+    let max_allowed_dimension = max_surface_size - 4.0;
+    if max_dimension > max_allowed_dimension {
+        
         let max_dimension =
             clipped_local.width().max(
                 clipped_local.height().max(
@@ -8092,20 +8109,26 @@ fn get_surface_rects(
                         source_local.height()
                     ))).ceil();
         surface.raster_spatial_node_index = surface.surface_spatial_node_index;
-        surface.device_pixel_scale = Scale::new(max_surface_size / max_dimension);
+        surface.device_pixel_scale = Scale::new(max_allowed_dimension / max_dimension);
         surface.local_scale = (1.0, 1.0);
 
-        clipped = (clipped_local.cast_unit() * surface.device_pixel_scale).round();
+        clipped = clipped_local.cast_unit() * surface.device_pixel_scale;
         unclipped = unclipped_local.cast_unit() * surface.device_pixel_scale;
-        source = (source_local.cast_unit() * surface.device_pixel_scale).round();
+        source = source_local.cast_unit() * surface.device_pixel_scale;
     }
 
-    let task_size = clipped.size().to_i32();
-    debug_assert!(task_size.width <= max_surface_size as i32);
-    debug_assert!(task_size.height <= max_surface_size as i32);
+    let source = source.round_out();
+    let clipped_snapped = clipped.round_out();
+    let task_size = clipped_snapped.size().to_i32();
+    assert!(
+        task_size.width <= max_surface_size as i32 &&
+        task_size.height <= max_surface_size as i32,
+        "task_size {:?} must be within max_surface_size {}",
+        task_size,
+        max_surface_size);
 
     let uv_rect_kind = calculate_uv_rect_kind(
-        clipped,
+        clipped_snapped,
         unclipped,
     );
 
@@ -8125,7 +8148,7 @@ fn get_surface_rects(
     Some(SurfaceAllocInfo {
         task_size,
         needs_scissor_rect,
-        clipped,
+        clipped: clipped_snapped,
         unclipped,
         source,
         clipped_local,
