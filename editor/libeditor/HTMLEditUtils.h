@@ -2369,12 +2369,10 @@ class HTMLEditUtils final {
 
 
 
-
   template <typename EditorDOMPointType, typename EditorDOMPointTypeInput>
   static EditorDOMPointType GetBetterInsertionPointFor(
       const nsIContent& aContentToInsert,
-      const EditorDOMPointTypeInput& aPointToInsert,
-      const Element& aEditingHost);
+      const EditorDOMPointTypeInput& aPointToInsert);
 
   
 

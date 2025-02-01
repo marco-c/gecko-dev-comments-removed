@@ -2244,12 +2244,16 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
   if (!SelectionRef().GetAnchorNode()) {
     return NS_OK;
   }
+  if (NS_WARN_IF(!SelectionRef().GetAnchorNode()->IsInclusiveDescendantOf(
+          editingHost))) {
+    return NS_ERROR_FAILURE;
+  }
 
   EditorRawDOMPoint atAnchor(SelectionRef().AnchorRef());
   
   EditorDOMPoint pointToInsert =
-      HTMLEditUtils::GetBetterInsertionPointFor<EditorDOMPoint>(
-          *aElement, atAnchor, *editingHost);
+      HTMLEditUtils::GetBetterInsertionPointFor<EditorDOMPoint>(*aElement,
+                                                                atAnchor);
   if (!pointToInsert.IsSet()) {
     NS_WARNING("HTMLEditUtils::GetBetterInsertionPointFor() failed");
     return NS_ERROR_FAILURE;
