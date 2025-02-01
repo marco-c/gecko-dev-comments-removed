@@ -1083,55 +1083,22 @@ void CodeGenerator::visitModI(LModI* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
   Register dest = ToRegister(ins->output());
-  Register callTemp = ToRegister(ins->callTemp());
+  MOZ_ASSERT(rhs != dest && lhs != dest);
   MMod* mir = ins->mir();
-  Label done, prevent;
-
-  masm.move32(lhs, callTemp);
+  Label done;
 
   
-  
-  if (mir->canBeNegativeDividend()) {
-    masm.ma_b(lhs, Imm32(INT_MIN), &prevent, Assembler::NotEqual, ShortJump);
-    if (mir->isTruncated()) {
-      
-      Label skip;
-      masm.ma_b(rhs, Imm32(-1), &skip, Assembler::NotEqual, ShortJump);
-      masm.move32(Imm32(0), dest);
-      masm.ma_b(&done, ShortJump);
-      masm.bind(&skip);
-    } else {
-      MOZ_ASSERT(mir->fallible());
-      bailoutCmp32(Assembler::Equal, rhs, Imm32(-1), ins->snapshot());
-    }
-    masm.bind(&prevent);
-  }
-
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-
   if (mir->canBeDivideByZero()) {
     if (mir->isTruncated()) {
       if (mir->trapOnError()) {
         Label nonZero;
-        masm.ma_b(rhs, rhs, &nonZero, Assembler::NonZero);
+        masm.ma_b(rhs, rhs, &nonZero, Assembler::NonZero, ShortJump);
         masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
         masm.bind(&nonZero);
       } else {
-        Label skip;
-        masm.ma_b(rhs, Imm32(0), &skip, Assembler::NotEqual, ShortJump);
-        masm.move32(Imm32(0), dest);
-        masm.ma_b(&done, ShortJump);
-        masm.bind(&skip);
+        
+        masm.move32(rhs, dest);
+        masm.ma_b(rhs, rhs, &done, Assembler::Zero, ShortJump);
       }
     } else {
       MOZ_ASSERT(mir->fallible());
@@ -1139,35 +1106,13 @@ void CodeGenerator::visitModI(LModI* ins) {
     }
   }
 
-  if (mir->canBeNegativeDividend()) {
-    Label notNegative;
-    masm.ma_b(rhs, Imm32(0), &notNegative, Assembler::GreaterThan, ShortJump);
-    if (mir->isTruncated()) {
-      
-      Label skip;
-      masm.ma_b(lhs, Imm32(0), &skip, Assembler::NotEqual, ShortJump);
-      masm.move32(Imm32(0), dest);
-      masm.ma_b(&done, ShortJump);
-      masm.bind(&skip);
-    } else {
-      MOZ_ASSERT(mir->fallible());
-      bailoutCmp32(Assembler::Equal, lhs, Imm32(0), ins->snapshot());
-    }
-    masm.bind(&notNegative);
-  }
-
   masm.as_mod_w(dest, lhs, rhs);
 
   
-  if (mir->canBeNegativeDividend()) {
-    if (mir->isTruncated()) {
-      
-    } else {
-      MOZ_ASSERT(mir->fallible());
-      
-      masm.ma_b(dest, Imm32(0), &done, Assembler::NotEqual, ShortJump);
-      bailoutCmp32(Assembler::Signed, callTemp, Imm32(0), ins->snapshot());
-    }
+  if (mir->canBeNegativeDividend() && !mir->isTruncated()) {
+    MOZ_ASSERT(mir->fallible());
+    masm.ma_b(dest, Imm32(0), &done, Assembler::NotEqual, ShortJump);
+    bailoutCmp32(Assembler::Signed, lhs, Imm32(0), ins->snapshot());
   }
   masm.bind(&done);
 }
