@@ -6,7 +6,7 @@ use bitflags::bitflags;
 
 
 
-#[derive(zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes)]
+#[derive(zerocopy::IntoBytes, zerocopy::FromBytes, zerocopy::KnownLayout, zerocopy::Immutable)]
 #[repr(transparent)]
 pub struct ManualFlags(u32);
 
