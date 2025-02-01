@@ -339,8 +339,6 @@ void MutableBlobStorage::GetBlobImplWhenReady(
       return;
     }
 
-    MOZ_ASSERT(mActor);
-
     
     
     
@@ -594,9 +592,19 @@ void MutableBlobStorage::AskForBlob(TemporaryIPCBlobChildCallback* aCallback,
 
   MutexAutoLock lock(mMutex);
   MOZ_ASSERT(mStorageState == eClosed);
+  MOZ_ASSERT(aCallback);
+
+  
+  
+  if (NS_FAILED(mErrorResult)) {
+    MOZ_ASSERT(!mFD);
+    MOZ_ASSERT(!mActor);
+    aCallback->OperationFailed(mErrorResult);
+    return;
+  }
+
   MOZ_ASSERT(mFD);
   MOZ_ASSERT(mActor);
-  MOZ_ASSERT(aCallback);
 
   
   
