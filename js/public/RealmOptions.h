@@ -113,6 +113,12 @@ class JS_PUBLIC_API RealmCreationOptions {
 
   
   
+  
+  
+  
+  
+  
+  
   bool preserveJitCode() const { return preserveJitCode_; }
   RealmCreationOptions& setPreserveJitCode(bool flag) {
     preserveJitCode_ = flag;
