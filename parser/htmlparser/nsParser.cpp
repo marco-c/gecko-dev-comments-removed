@@ -126,6 +126,7 @@ void nsParser::Initialize() {
   mFlags = NS_PARSER_FLAG_CAN_TOKENIZE;
 
   mProcessingNetworkData = false;
+  mOnStopPending = false;
   mIsAboutBlank = false;
 }
 
@@ -1025,6 +1026,19 @@ nsresult nsParser::OnDataAvailable(nsIRequest* request,
         sinkDeathGrip->WillParse();
       }
       rv = ResumeParse();
+      
+      
+      
+      if ((mParserContext->mRequest == request) && mOnStopPending) {
+        mOnStopPending = false;
+        mParserContext->mStreamListenerState = eOnStop;
+        mParserContext->mScanner.SetIncremental(false);
+
+        if (sinkDeathGrip) {
+          sinkDeathGrip->WillParse();
+        }
+        rv = ResumeParse(true, true);
+      }
       mProcessingNetworkData = false;
     }
   } else {
@@ -1047,20 +1061,23 @@ nsresult nsParser::OnStopRequest(nsIRequest* request, nsresult status) {
 
   nsresult rv = NS_OK;
 
-  if (mParserContext->mRequest == request) {
-    mParserContext->mStreamListenerState = eOnStop;
-    mParserContext->mScanner.SetIncremental(false);
-  }
-
   mStreamStatus = status;
 
-  if (IsOkToProcessNetworkData() && NS_SUCCEEDED(rv)) {
+  if (IsOkToProcessNetworkData()) {
+    if (mParserContext->mRequest == request) {
+      mParserContext->mStreamListenerState = eOnStop;
+      mParserContext->mScanner.SetIncremental(false);
+    }
+
     mProcessingNetworkData = true;
     if (mSink) {
       mSink->WillParse();
     }
     rv = ResumeParse(true, true);
     mProcessingNetworkData = false;
+  } else {
+    
+    mOnStopPending = true;
   }
 
   
