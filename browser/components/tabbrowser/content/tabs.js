@@ -72,6 +72,7 @@
       this.addEventListener("mouseleave", this);
       this.addEventListener("focusin", this);
       this.addEventListener("focusout", this);
+      this.addEventListener("contextmenu", this);
     }
 
     init() {
@@ -1484,6 +1485,23 @@
       document
         .getElementById("tab-preview-panel")
         ?.removeAttribute("rolluponmousewheel");
+    }
+
+    on_contextmenu(event) {
+      
+      
+      
+      
+      if (
+        event.button == 0 &&
+        this.ariaFocusedItem &&
+        isTabGroupLabel(this.ariaFocusedItem)
+      ) {
+        gBrowser.tabGroupMenu.openEditModal(
+          this.ariaFocusedItem.closest("tab-group")
+        );
+        event.preventDefault();
+      }
     }
 
     get emptyTabTitle() {
