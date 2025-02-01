@@ -13,6 +13,8 @@ const LABEL_STORAGE_ACCESS_API = 1;
 const LABEL_OPENER_AFTER_UI = 2;
 const LABEL_OPENER = 3;
 const LABEL_REDIRECT = 4;
+const LABEL_REDIRECT_TRACKER = 5;
+const LABEL_NAVIGATION = 6;
 
 function clearTelemetry() {
   Services.telemetry.getSnapshotForHistograms("main", true );
@@ -412,5 +414,10 @@ add_task(async function testTelemetryForRedirectHeuristic() {
 
   
   
-  await testTelemetry(true, 1, LABEL_REDIRECT, expectedExpiredDaysRedirect);
+  await testTelemetry(
+    true,
+    1,
+    LABEL_REDIRECT_TRACKER,
+    expectedExpiredDaysRedirect
+  );
 });
