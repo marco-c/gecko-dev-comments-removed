@@ -3506,6 +3506,7 @@ toolbar#nav-bar {
                 "headless": options.headless,
                 "http3": options.useHttp3Server,
                 "http2": options.useHttp2Server,
+                "inc_origin_init": os.environ.get("MOZ_ENABLE_INC_ORIGIN_INIT") == "1",
                 
                 
                 
