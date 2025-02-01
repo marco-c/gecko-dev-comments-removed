@@ -117,20 +117,6 @@ async function updatePreviewText(view, text) {
 
 
 
-
-
-
-
-function getUsedFontsEls_obsolete(viewDoc) {
-  return viewDoc.querySelectorAll("#font-editor .fonts-list li");
-}
-
-
-
-
-
-
-
 function getUsedFontsEls(viewDoc) {
   return viewDoc.querySelectorAll(
     "#font-editor .font-control-used-fonts .font-name"

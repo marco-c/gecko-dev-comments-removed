@@ -94,21 +94,6 @@ const IS_DRAGGING_CLASSNAME = "ruleview-propertyvalue-dragging";
 
 
 
-const GENERIC_FONT_FAMILIES = [
-  "serif",
-  "sans-serif",
-  "cursive",
-  "fantasy",
-  "monospace",
-  "system-ui",
-];
-
-
-
-
-
-
-
 
 
 
@@ -665,28 +650,14 @@ TextPropertyEditor.prototype = {
       this.rule.elementStyle
         .getUsedFontFamilies()
         .then(families => {
-          const usedFontFamilies = families.map(font => font.toLowerCase());
-          let foundMatchingFamily = false;
-          let firstGenericSpan = null;
-
           for (const span of fontFamilySpans) {
             const authoredFont = span.textContent.toLowerCase();
-
-            if (
-              !firstGenericSpan &&
-              GENERIC_FONT_FAMILIES.includes(authoredFont)
-            ) {
-              firstGenericSpan = span;
-            }
-
-            if (usedFontFamilies.includes(authoredFont)) {
+            if (families.has(authoredFont)) {
               span.classList.add("used-font");
-              foundMatchingFamily = true;
+              
+              
+              families.delete(authoredFont);
             }
-          }
-
-          if (!foundMatchingFamily && firstGenericSpan) {
-            firstGenericSpan.classList.add("used-font");
           }
 
           this.ruleView.emit("font-highlighted", this.valueSpan);

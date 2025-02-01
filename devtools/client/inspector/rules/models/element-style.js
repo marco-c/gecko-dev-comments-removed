@@ -195,7 +195,6 @@ class ElementStyle {
 
 
 
-
   getUsedFontFamilies() {
     return new Promise((resolve, reject) => {
       this.ruleView.styleWindow.requestIdleCallback(async () => {
@@ -207,7 +206,20 @@ class ElementStyle {
           const fonts = await this.pageStyle.getUsedFontFaces(this.element, {
             includePreviews: false,
           });
-          resolve(fonts.map(font => font.CSSFamilyName));
+          const familyNames = new Set();
+          for (const font of fonts) {
+            if (font.CSSFamilyName) {
+              familyNames.add(font.CSSFamilyName.toLowerCase());
+            }
+
+            
+            
+            
+            if (font.CSSGeneric) {
+              familyNames.add(font.CSSGeneric.toLowerCase());
+            }
+          }
+          resolve(familyNames);
         } catch (e) {
           reject(e);
         }
