@@ -6,6 +6,8 @@
 
 #include "TemporaryAccessGrantObserver.h"
 
+#include "mozilla/AppShutdown.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/PermissionManager.h"
 #include "mozilla/Services.h"
 #include "nsIObserverService.h"
@@ -32,9 +34,20 @@ void TemporaryAccessGrantObserver::Create(PermissionManager* aPM,
                                           nsIPrincipal* aPrincipal,
                                           const nsACString& aType) {
   MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(NS_IsMainThread());
 
   if (!sObservers) {
+    
+    
+    if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
+      return;
+    }
     sObservers = new ObserversTable();
+    
+    
+    
+    
+    ClearOnShutdown(&sObservers, ShutdownPhase::XPCOMWillShutdown);
   }
   sObservers->LookupOrInsertWith(
       std::make_pair(nsCOMPtr<nsIPrincipal>(aPrincipal), nsCString(aType)),
@@ -59,11 +72,6 @@ void TemporaryAccessGrantObserver::Create(PermissionManager* aPM,
 
 void TemporaryAccessGrantObserver::SetTimer(nsITimer* aTimer) {
   mTimer = aTimer;
-  nsCOMPtr<nsIObserverService> observerService =
-      mozilla::services::GetObserverService();
-  if (observerService) {
-    observerService->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
-  }
 }
 
 NS_IMETHODIMP
@@ -74,17 +82,6 @@ TemporaryAccessGrantObserver::Observe(nsISupports* aSubject, const char* aTopic,
 
     MOZ_ASSERT(sObservers);
     sObservers->Remove(std::make_pair(mPrincipal, mType));
-  } else if (strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0) {
-    nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
-    if (observerService) {
-      observerService->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
-    }
-    if (mTimer) {
-      mTimer->Cancel();
-      mTimer = nullptr;
-    }
-    sObservers = nullptr;
   }
 
   return NS_OK;
