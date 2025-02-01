@@ -156,8 +156,6 @@ def _expand_test_code(code: str) -> str:
 
     code = re.sub(r'@moz-UniversalBrowserRead;', '', code)
 
-    code = _remove_extra_newlines(code)
-
     code = re.sub(r'@nonfinite ([^(]+)\(([^)]+)\)(.*)', lambda m:
                   _expand_nonfinite(m.group(1), m.group(2), m.group(3)),
                   code)  
@@ -283,11 +281,15 @@ def _render(jinja_env: jinja2.Environment, template_name: str,
 
 def _preprocess_code(jinja_env: jinja2.Environment, code: str,
                      params: _TestParams) -> str:
-    code = _expand_test_code(code)
+    code = _remove_extra_newlines(code)
+
     
     
     
     code = _render_template(jinja_env, jinja_env.from_string(code), params)
+
+    
+    code = _expand_test_code(code)
     return code
 
 
