@@ -1544,16 +1544,6 @@ nsresult nsStandardURL::SetUserPass(const nsACString& input) {
     NS_WARNING("uninitialized");
     return NS_ERROR_NOT_INITIALIZED;
   }
-  if (mAuthority.mLen == 0) {
-    
-    
-    
-    if (input.Length() == 0) {
-      return NS_OK;
-    } else {
-      return NS_ERROR_UNEXPECTED;
-    }
-  }
 
   if (mSpec.Length() + input.Length() - Userpass(true).Length() >
       StaticPrefs::network_standard_url_max_length()) {
@@ -1654,16 +1644,6 @@ nsresult nsStandardURL::SetUsername(const nsACString& input) {
     NS_WARNING("cannot set username on no-auth url");
     return NS_ERROR_UNEXPECTED;
   }
-  if (mAuthority.mLen == 0) {
-    
-    
-    
-    if (input.Length() == 0) {
-      return NS_OK;
-    } else {
-      return NS_ERROR_UNEXPECTED;
-    }
-  }
 
   if (mSpec.Length() + input.Length() - Username().Length() >
       StaticPrefs::network_standard_url_max_length()) {
@@ -1735,16 +1715,6 @@ nsresult nsStandardURL::SetPassword(const nsACString& input) {
     }
     NS_WARNING("cannot set password on no-auth url");
     return NS_ERROR_UNEXPECTED;
-  }
-  if (mAuthority.mLen == 0) {
-    
-    
-    
-    if (input.Length() == 0) {
-      return NS_OK;
-    } else {
-      return NS_ERROR_UNEXPECTED;
-    }
   }
 
   if (mSpec.Length() + input.Length() - Password().Length() >
@@ -1903,8 +1873,8 @@ nsresult nsStandardURL::SetHost(const nsACString& input) {
     NS_WARNING("cannot set host on no-auth url");
     return NS_ERROR_UNEXPECTED;
   }
-
-  if (mURLType == URLTYPE_AUTHORITY && flat.IsEmpty()) {
+  if (flat.IsEmpty()) {
+    
     
     return NS_ERROR_UNEXPECTED;
   }
@@ -1946,7 +1916,7 @@ nsresult nsStandardURL::SetHost(const nsACString& input) {
   
   len = hostBuf.Length();
 
-  if (!len && (mPort != -1 || Userpass(true).Length() > 0)) {
+  if (!len) {
     return NS_ERROR_MALFORMED_URI;
   }
 
@@ -1994,16 +1964,6 @@ nsresult nsStandardURL::SetPort(int32_t port) {
   if (mURLType == URLTYPE_NO_AUTHORITY) {
     NS_WARNING("cannot set port on no-auth url");
     return NS_ERROR_UNEXPECTED;
-  }
-  if (mAuthority.mLen == 0) {
-    
-    
-    
-    if (port == -1) {
-      return NS_OK;
-    } else {
-      return NS_ERROR_UNEXPECTED;
-    }
   }
 
   auto onExitGuard = MakeScopeExit([&] { SanityCheck(); });
