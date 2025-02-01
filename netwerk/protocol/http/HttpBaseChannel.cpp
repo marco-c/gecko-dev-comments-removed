@@ -4467,11 +4467,18 @@ already_AddRefed<nsILoadInfo> HttpBaseChannel::CloneLoadInfoForRedirect(
     }
     newLoadInfo->ResetSandboxedNullPrincipalID();
 
-    
-    
     if (isTopLevelDoc) {
+      
+      
+      
       Unused << newLoadInfo->SetHttpsOnlyStatus(
           nsILoadInfo::HTTPS_ONLY_UNINITIALIZED);
+
+      
+      
+      
+      Unused << newLoadInfo->SetSchemelessInput(
+          nsILoadInfo::SchemelessInputTypeUnset);
     }
   }
 
