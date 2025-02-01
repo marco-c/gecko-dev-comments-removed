@@ -3586,9 +3586,10 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         }
       }
 
-      if (viewportCache.Length()) {
-        fields->SetAttribute(CacheKey::Viewport, std::move(viewportCache));
-      }
+      
+      
+      
+      fields->SetAttribute(CacheKey::Viewport, std::move(viewportCache));
     }
   }
 
