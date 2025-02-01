@@ -334,7 +334,7 @@ CookieJarSettings::CookiePermission(nsIPrincipal* aPrincipal,
   }
 
   
-  PermissionManager* pm = PermissionManager::GetInstance();
+  RefPtr<PermissionManager> pm = PermissionManager::GetInstance();
   if (NS_WARN_IF(!pm)) {
     return NS_ERROR_FAILURE;
   }

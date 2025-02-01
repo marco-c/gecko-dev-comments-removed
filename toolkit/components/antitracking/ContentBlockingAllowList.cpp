@@ -124,7 +124,7 @@ nsresult ContentBlockingAllowList::Check(
             _spec),
            aContentBlockingAllowListPrincipal);
 
-  PermissionManager* permManager = PermissionManager::GetInstance();
+  RefPtr<PermissionManager> permManager = PermissionManager::GetInstance();
   NS_ENSURE_TRUE(permManager, NS_ERROR_FAILURE);
 
   
@@ -317,7 +317,7 @@ nsresult ContentBlockingAllowListCache::EnsureInit() {
   mIsInitialized = true;
 
   
-  PermissionManager* permManager = PermissionManager::GetInstance();
+  RefPtr<PermissionManager> permManager = PermissionManager::GetInstance();
   NS_ENSURE_TRUE(permManager, NS_ERROR_FAILURE);
 
   nsTArray<nsCString> types = GetAllowListPermissionTypes();

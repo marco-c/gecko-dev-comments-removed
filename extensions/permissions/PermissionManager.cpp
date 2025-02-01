@@ -69,8 +69,6 @@ constexpr char kPermissionChangeNotification[] = PERM_CHANGE_NOTIFICATION;
 
 constexpr int64_t cIDPermissionIsDefault = -1;
 
-static StaticRefPtr<PermissionManager> gPermissionManager;
-
 #define ENSURE_NOT_CHILD_PROCESS_(onError)                 \
   PR_BEGIN_MACRO                                           \
   if (IsChildProcess()) {                                  \
@@ -712,42 +710,38 @@ PermissionManager::~PermissionManager() {
 
 
 StaticMutex PermissionManager::sCreationMutex;
+StaticRefPtr<PermissionManager> PermissionManager::sInstanceHolder;
+bool PermissionManager::sInstanceDead(false);
 
 
 already_AddRefed<nsIPermissionManager> PermissionManager::GetXPCOMSingleton() {
-  
-  StaticMutexAutoLock lock(sCreationMutex);
-
-  if (gPermissionManager) {
-    return do_AddRef(gPermissionManager);
-  }
-
-  
-  
-  
-  
-  
-  
-  auto permManager = MakeRefPtr<PermissionManager>();
-  if (NS_SUCCEEDED(permManager->Init())) {
-    gPermissionManager = permManager.get();
-    return permManager.forget();
-  }
-
-  return nullptr;
+  return GetInstance();
 }
 
 
-PermissionManager* PermissionManager::GetInstance() {
+already_AddRefed<PermissionManager> PermissionManager::GetInstance() {
   
-  
-  
-  if (!gPermissionManager) {
-    
-    nsCOMPtr<nsIPermissionManager> permManager = GetXPCOMSingleton();
+  StaticMutexAutoLock lock(sCreationMutex);
+
+  if (sInstanceDead) {
+    return nullptr;
   }
 
-  return gPermissionManager;
+  if (sInstanceHolder) {
+    RefPtr<PermissionManager> ret(sInstanceHolder);
+    return ret.forget();
+  }
+
+  auto permManager = MakeRefPtr<PermissionManager>();
+  if (NS_SUCCEEDED(permManager->Init())) {
+    
+    
+    sInstanceHolder = permManager.get();
+    return permManager.forget();
+  }
+
+  sInstanceDead = true;
+  return nullptr;
 }
 
 nsresult PermissionManager::Init() {
@@ -777,7 +771,7 @@ nsresult PermissionManager::Init() {
 
     
     
-    ClearOnShutdown(&gPermissionManager);
+    ClearOnShutdown(&sInstanceHolder);
     return NS_OK;
   }
 
@@ -2382,9 +2376,9 @@ void PermissionManager::CloseDB(CloseDBNextOp aNextOp) {
         }
 
         if (aNextOp == eShutdown) {
-          NS_DispatchToMainThread(NS_NewRunnableFunction(
-              "PermissionManager::MaybeCompleteShutdown",
-              [self] { self->MaybeCompleteShutdown(); }));
+          NS_DispatchToMainThread(
+              NS_NewRunnableFunction("PermissionManager::FinishAsyncShutdown",
+                                     [self] { self->FinishAsyncShutdown(); }));
         }
       }));
 }
@@ -4082,7 +4076,7 @@ nsresult PermissionManager::TestPermissionWithoutDefaultsFromPrincipal(
                               true);
 }
 
-void PermissionManager::MaybeCompleteShutdown() {
+void PermissionManager::FinishAsyncShutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsCOMPtr<nsIAsyncShutdownClient> asc = GetAsyncShutdownBarrier();
@@ -4090,6 +4084,13 @@ void PermissionManager::MaybeCompleteShutdown() {
 
   DebugOnly<nsresult> rv = asc->RemoveBlocker(this);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+  
+  StaticMutexAutoLock lock(sCreationMutex);
+  MOZ_ASSERT(sInstanceDead);
+  if (sInstanceHolder) {
+    sInstanceHolder = nullptr;
+  }
 }
 
 
@@ -4101,11 +4102,15 @@ NS_IMETHODIMP PermissionManager::GetName(nsAString& aName) {
 
 NS_IMETHODIMP PermissionManager::BlockShutdown(
     nsIAsyncShutdownClient* aClient) {
+  {
+    
+    StaticMutexAutoLock lock(sCreationMutex);
+    sInstanceDead = true;
+  }
   RemoveIdleDailyMaintenanceJob();
   RemoveAllFromMemory();
+  
   CloseDB(eShutdown);
-
-  gPermissionManager = nullptr;
   return NS_OK;
 }
 
