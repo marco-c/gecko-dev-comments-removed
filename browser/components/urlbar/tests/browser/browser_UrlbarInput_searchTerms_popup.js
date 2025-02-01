@@ -20,11 +20,11 @@ function waitForPopupNotification() {
 
 
 const SEARCH_TERM = "chocolate";
-const PREF_FEATUREGATE = "browser.urlbar.showSearchTerms.featureGate";
+const PREF_SEARCHTERMS = "browser.urlbar.showSearchTerms.enabled";
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [[PREF_FEATUREGATE, true]],
+    set: [["browser.urlbar.scotchBonnet.enableOverride", true]],
   });
   let cleanup = await installPersistTestEngines();
   registerCleanupFunction(async function () {
@@ -60,7 +60,7 @@ add_task(async function generic_popup_when_persist_is_enabled() {
 
 add_task(async function generic_popup_no_revert_when_persist_is_disabled() {
   await SpecialPowers.pushPrefEnv({
-    set: [[PREF_FEATUREGATE, false]],
+    set: [[PREF_SEARCHTERMS, false]],
   });
 
   let { tab } = await searchWithTab(

@@ -635,11 +635,7 @@ pref("browser.urlbar.sponsoredTopSites", false);
 
 
 
-#if defined(EARLY_BETA_OR_EARLIER)
-pref("browser.urlbar.showSearchTerms.featureGate", true);
-#else
 pref("browser.urlbar.showSearchTerms.featureGate", false);
-#endif
 
 
 
