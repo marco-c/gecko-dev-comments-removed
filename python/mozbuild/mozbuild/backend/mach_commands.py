@@ -308,10 +308,23 @@ def setup_clangd_rust_in_vscode(command_context):
 
     clang_tidy_cfg = ClangTidyConfig(command_context.topsrcdir)
 
-    if sys.platform == "win32":
-        cargo_check_command = [sys.executable, "mach"]
+    
+    
+    commtopsrcdir = command_context.substs.get("commtopsrcdir")
+
+    if commtopsrcdir:
+        
+        
+        
+        if sys.platform == "win32":
+            cargo_check_command = [sys.executable, "../../mach"]
+        else:
+            cargo_check_command = ["../../mach"]
     else:
-        cargo_check_command = ["./mach"]
+        if sys.platform == "win32":
+            cargo_check_command = [sys.executable, "mach"]
+        else:
+            cargo_check_command = ["./mach"]
 
     cargo_check_command += [
         "--log-no-times",
@@ -349,7 +362,7 @@ def setup_clangd_rust_in_vscode(command_context):
     ):
         rust_analyzer_extra_includes.append(windows_rs_dir)
 
-    return {
+    config = {
         "clangd.path": clangd_path,
         "clangd.arguments": [
             "-j",
@@ -377,6 +390,17 @@ def setup_clangd_rust_in_vscode(command_context):
         "rust-analyzer.cargo.buildScripts.overrideCommand": cargo_check_command,
         "rust-analyzer.check.overrideCommand": cargo_check_command,
     }
+
+    
+    
+    
+    
+    if commtopsrcdir:
+        config["rust-analyzer.linkedProjects"] = [
+            os.path.join(commtopsrcdir, "rust", "Cargo.toml")
+        ]
+
+    return config
 
 
 def get_clang_tools(command_context, clang_tools_path):
