@@ -118,11 +118,6 @@ class FrameSkipper {
 #    error Too old imagehlp.h
 #  endif
 
-
-
-
-CRITICAL_SECTION gDbgHelpCS;
-
 #  if defined(_M_AMD64) || defined(_M_ARM64)
 
 
@@ -262,26 +257,109 @@ static void PrintError(const char* aPrefix) {
   LocalFree(lpMsgBuf);
 }
 
-enum class DbgHelpInitFlags : bool {
-  BasicInit,
-  WithSymbolSupport,
+class MOZ_RAII AutoCriticalSection {
+ public:
+  explicit inline AutoCriticalSection(LPCRITICAL_SECTION aCriticalSection)
+      : mCriticalSection{aCriticalSection} {
+    ::EnterCriticalSection(mCriticalSection);
+  }
+  inline ~AutoCriticalSection() { ::LeaveCriticalSection(mCriticalSection); }
+
+  AutoCriticalSection(AutoCriticalSection&& other) = delete;
+  AutoCriticalSection operator=(AutoCriticalSection&& other) = delete;
+  AutoCriticalSection(const AutoCriticalSection&) = delete;
+  AutoCriticalSection operator=(const AutoCriticalSection&) = delete;
+
+ private:
+  LPCRITICAL_SECTION mCriticalSection;
 };
 
 
 
 
 
+class DbgHelpWrapper {
+ public:
+  explicit inline DbgHelpWrapper() : DbgHelpWrapper(InitFlag::BasicInit) {}
+  DbgHelpWrapper(DbgHelpWrapper&& other) = delete;
+  DbgHelpWrapper operator=(DbgHelpWrapper&& other) = delete;
+  DbgHelpWrapper(const DbgHelpWrapper&) = delete;
+  DbgHelpWrapper operator=(const DbgHelpWrapper&) = delete;
+
+  inline bool ReadyToUse() { return mInitSuccess; }
+
+  inline BOOL StackWalk64(
+      DWORD aMachineType, HANDLE aThread, LPSTACKFRAME64 aStackFrame,
+      PVOID aContextRecord, PREAD_PROCESS_MEMORY_ROUTINE64 aReadMemoryRoutine,
+      PFUNCTION_TABLE_ACCESS_ROUTINE64 aFunctionTableAccessRoutine,
+      PGET_MODULE_BASE_ROUTINE64 aGetModuleBaseRoutine,
+      PTRANSLATE_ADDRESS_ROUTINE64 aTranslateAddress) {
+    if (!ReadyToUse()) {
+      return FALSE;
+    }
+
+    AutoCriticalSection guard(&sCriticalSection);
+    return ::StackWalk64(aMachineType, sSessionId, aThread, aStackFrame,
+                         aContextRecord, aReadMemoryRoutine,
+                         aFunctionTableAccessRoutine, aGetModuleBaseRoutine,
+                         aTranslateAddress);
+  }
+
+ protected:
+  enum class InitFlag : bool {
+    BasicInit,
+    WithSymbolSupport,
+  };
+
+  explicit inline DbgHelpWrapper(InitFlag initFlag) {
+    mInitSuccess = Initialize(initFlag);
+  }
+
+  
+  
+  static CRITICAL_SECTION sCriticalSection;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static HANDLE sSessionId;
+
+ private:
+  bool mInitSuccess;
+
+  
+  
+  
+  [[nodiscard]] static bool Initialize(InitFlag aInitFlag);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static Atomic<DWORD> sInitializationThreadId;
+};
+
+CRITICAL_SECTION DbgHelpWrapper::sCriticalSection{};
+Atomic<DWORD> DbgHelpWrapper::sInitializationThreadId{0};
+HANDLE DbgHelpWrapper::sSessionId{nullptr};
 
 
 
 
-
-
-
-
-
-[[nodiscard]] static bool InitializeDbgHelp(
-    DbgHelpInitFlags aInitFlags = DbgHelpInitFlags::BasicInit) {
+[[nodiscard]]  bool DbgHelpWrapper::Initialize(
+    DbgHelpWrapper::InitFlag aInitFlag) {
   
   
   static Atomic<DWORD> sInitializationThreadId{0};
@@ -299,9 +377,17 @@ enum class DbgHelpInitFlags : bool {
   }
 
   static const bool sHasInitializedDbgHelp = [currentThreadId]() {
+    
     sInitializationThreadId = currentThreadId;
 
-    ::InitializeCriticalSection(&gDbgHelpCS);
+    ::InitializeCriticalSection(&sCriticalSection);
+
+    if (!::DuplicateHandle(GetCurrentProcess(), GetCurrentProcess(),
+                           GetCurrentProcess(), &sSessionId, 0, FALSE,
+                           DUPLICATE_SAME_ACCESS)) {
+      return false;
+    }
+
     bool dbgHelpLoaded = static_cast<bool>(::LoadLibraryW(L"dbghelp.dll"));
 
     MOZ_ASSERT(dbgHelpLoaded);
@@ -311,18 +397,23 @@ enum class DbgHelpInitFlags : bool {
 
   
   
-  if (aInitFlags == DbgHelpInitFlags::BasicInit || !sHasInitializedDbgHelp) {
+  if (aInitFlag == InitFlag::BasicInit || !sHasInitializedDbgHelp) {
     return sHasInitializedDbgHelp;
   }
 
   static const bool sHasInitializedSymbols = [currentThreadId]() {
+    
     sInitializationThreadId = currentThreadId;
 
-    EnterCriticalSection(&gDbgHelpCS);
-    SymSetOptions(SYMOPT_LOAD_LINES | SYMOPT_UNDNAME);
-    bool symbolsInitialized = SymInitialize(GetCurrentProcess(), nullptr, TRUE);
-    
-    LeaveCriticalSection(&gDbgHelpCS);
+    bool symbolsInitialized = false;
+
+    {
+      AutoCriticalSection guard(&sCriticalSection);
+      ::SymSetOptions(SYMOPT_LOAD_LINES | SYMOPT_UNDNAME);
+      symbolsInitialized =
+          static_cast<bool>(::SymInitializeW(sSessionId, nullptr, TRUE));
+      
+    }
 
     if (!symbolsInitialized) {
       PrintError("SymInitialize");
@@ -335,6 +426,38 @@ enum class DbgHelpInitFlags : bool {
 
   return sHasInitializedSymbols;
 }
+
+
+
+class DbgHelpWrapperSym : public DbgHelpWrapper {
+ public:
+  explicit DbgHelpWrapperSym() : DbgHelpWrapper(InitFlag::WithSymbolSupport) {}
+
+  inline BOOL SymFromAddr(DWORD64 aAddress, PDWORD64 aDisplacement,
+                          PSYMBOL_INFO aSymbol) {
+    if (!ReadyToUse()) {
+      return FALSE;
+    }
+
+    AutoCriticalSection guard(&sCriticalSection);
+    return ::SymFromAddr(sSessionId, aAddress, aDisplacement, aSymbol);
+  }
+
+  BOOL SymGetModuleInfoEspecial64(DWORD64 aAddr, PIMAGEHLP_MODULE64 aModuleInfo,
+                                  PIMAGEHLP_LINE64 aLineInfo);
+
+ private:
+  
+  struct CallbackEspecial64UserContext {
+    HANDLE mSessionId;
+    DWORD64 mAddr;
+  };
+
+  static BOOL CALLBACK CallbackEspecial64(PCSTR aModuleName,
+                                          DWORD64 aModuleBase,
+                                          ULONG aModuleSize,
+                                          PVOID aUserContext);
+};
 
 
 
@@ -398,7 +521,8 @@ static void DoMozStackWalkThread(MozWalkStackCallback aCallback,
                                  void* aClosure, HANDLE aThread,
                                  CONTEXT* aContext) {
 #  if defined(_M_IX86)
-  if (!InitializeDbgHelp()) {
+  DbgHelpWrapper dbgHelp;
+  if (!dbgHelp.ReadyToUse()) {
     return;
   }
 #  endif
@@ -470,15 +594,12 @@ static void DoMozStackWalkThread(MozWalkStackCallback aCallback,
 
 #  if defined(_M_IX86)
     
-    
-    EnterCriticalSection(&gDbgHelpCS);
-    BOOL ok =
-        StackWalk64(IMAGE_FILE_MACHINE_I386, ::GetCurrentProcess(),
-                    targetThread, &frame64, context.CONTEXTPtr(), nullptr,
-                    SymFunctionTableAccess64,  
-                    SymGetModuleBase64,        
-                    0);
-    LeaveCriticalSection(&gDbgHelpCS);
+    BOOL ok = dbgHelp.StackWalk64(
+        IMAGE_FILE_MACHINE_I386, targetThread, &frame64, context.CONTEXTPtr(),
+        nullptr,
+        ::SymFunctionTableAccess64,  
+        ::SymGetModuleBase64,        
+        0);
 
     if (ok) {
       addr = frame64.AddrPC.Offset;
@@ -582,10 +703,12 @@ MFBT_API void MozStackWalk(MozWalkStackCallback aCallback,
                        aMaxFrames, aClosure, nullptr, nullptr);
 }
 
-static BOOL CALLBACK callbackEspecial64(PCSTR aModuleName, DWORD64 aModuleBase,
-                                        ULONG aModuleSize, PVOID aUserContext) {
+ BOOL CALLBACK
+DbgHelpWrapperSym::CallbackEspecial64(PCSTR aModuleName, DWORD64 aModuleBase,
+                                      ULONG aModuleSize, PVOID aUserContext) {
   BOOL retval = TRUE;
-  DWORD64 addr = *(DWORD64*)aUserContext;
+  auto context = reinterpret_cast<CallbackEspecial64UserContext*>(aUserContext);
+  DWORD64 addr = context->mAddr;
 
   
 
@@ -600,8 +723,8 @@ static BOOL CALLBACK callbackEspecial64(PCSTR aModuleName, DWORD64 aModuleBase,
   if (addressIncreases
           ? (addr >= aModuleBase && addr <= (aModuleBase + aModuleSize))
           : (addr <= aModuleBase && addr >= (aModuleBase - aModuleSize))) {
-    retval = !!SymLoadModule64(GetCurrentProcess(), nullptr, (PSTR)aModuleName,
-                               nullptr, aModuleBase, aModuleSize);
+    retval = !!::SymLoadModule64(context->mSessionId, nullptr, aModuleName,
+                                 nullptr, aModuleBase, aModuleSize);
     if (!retval) {
       PrintError("SymLoadModule64");
     }
@@ -638,9 +761,13 @@ static BOOL CALLBACK callbackEspecial64(PCSTR aModuleName, DWORD64 aModuleBase,
 #    define NS_IMAGEHLP_MODULE64_SIZE sizeof(IMAGEHLP_MODULE64)
 #  endif
 
-BOOL SymGetModuleInfoEspecial64(HANDLE aProcess, DWORD64 aAddr,
-                                PIMAGEHLP_MODULE64 aModuleInfo,
-                                PIMAGEHLP_LINE64 aLineInfo) {
+BOOL DbgHelpWrapperSym::SymGetModuleInfoEspecial64(
+    DWORD64 aAddr, PIMAGEHLP_MODULE64 aModuleInfo, PIMAGEHLP_LINE64 aLineInfo) {
+  if (!ReadyToUse()) {
+    return FALSE;
+  }
+
+  AutoCriticalSection guard(&sCriticalSection);
   BOOL retval = FALSE;
 
   
@@ -655,26 +782,24 @@ BOOL SymGetModuleInfoEspecial64(HANDLE aProcess, DWORD64 aAddr,
 
 
 
-  retval = SymGetModuleInfo64(aProcess, aAddr, aModuleInfo);
+  retval = ::SymGetModuleInfo64(sSessionId, aAddr, aModuleInfo);
   if (retval == FALSE) {
     
 
 
 
-    
-    
-    
-    
-    
-    BOOL enumRes = EnumerateLoadedModules64(
-        aProcess, (PENUMLOADED_MODULES_CALLBACK64)callbackEspecial64,
-        (PVOID)&aAddr);
+    CallbackEspecial64UserContext context{
+        .mSessionId = sSessionId,
+        .mAddr = aAddr,
+    };
+    BOOL enumRes = ::EnumerateLoadedModules64(
+        sSessionId, CallbackEspecial64, reinterpret_cast<PVOID>(&context));
     if (enumRes != FALSE) {
       
 
 
 
-      retval = SymGetModuleInfo64(aProcess, aAddr, aModuleInfo);
+      retval = ::SymGetModuleInfo64(sSessionId, aAddr, aModuleInfo);
     }
   }
 
@@ -685,7 +810,8 @@ BOOL SymGetModuleInfoEspecial64(HANDLE aProcess, DWORD64 aAddr,
   if (retval != FALSE && aLineInfo) {
     DWORD displacement = 0;
     BOOL lineRes = FALSE;
-    lineRes = SymGetLineFromAddr64(aProcess, aAddr, &displacement, aLineInfo);
+    lineRes =
+        ::SymGetLineFromAddr64(sSessionId, aAddr, &displacement, aLineInfo);
     if (!lineRes) {
       
       memset(aLineInfo, 0, sizeof(*aLineInfo));
@@ -704,26 +830,18 @@ MFBT_API bool MozDescribeCodeAddress(void* aPC,
   aDetails->function[0] = '\0';
   aDetails->foffset = 0;
 
-  if (!InitializeDbgHelp(DbgHelpInitFlags::WithSymbolSupport)) {
+  DbgHelpWrapperSym dbgHelp;
+  if (!dbgHelp.ReadyToUse()) {
     return false;
   }
 
-  HANDLE myProcess = ::GetCurrentProcess();
-  BOOL ok;
-
-  
-  EnterCriticalSection(&gDbgHelpCS);
-
   
   
-  
-  
-
   DWORD64 addr = (DWORD64)aPC;
   IMAGEHLP_MODULE64 modInfo;
   IMAGEHLP_LINE64 lineInfo;
   BOOL modInfoRes;
-  modInfoRes = SymGetModuleInfoEspecial64(myProcess, addr, &modInfo, &lineInfo);
+  modInfoRes = dbgHelp.SymGetModuleInfoEspecial64(addr, &modInfo, &lineInfo);
 
   if (modInfoRes) {
     strncpy(aDetails->library, modInfo.LoadedImageName,
@@ -747,7 +865,7 @@ MFBT_API bool MozDescribeCodeAddress(void* aPC,
   pSymbol->MaxNameLen = MAX_SYM_NAME;
 
   DWORD64 displacement;
-  ok = SymFromAddr(myProcess, addr, &displacement, pSymbol);
+  BOOL ok = dbgHelp.SymFromAddr(addr, &displacement, pSymbol);
 
   if (ok) {
     strncpy(aDetails->function, pSymbol->Name, sizeof(aDetails->function));
@@ -755,7 +873,6 @@ MFBT_API bool MozDescribeCodeAddress(void* aPC,
     aDetails->foffset = static_cast<ptrdiff_t>(displacement);
   }
 
-  LeaveCriticalSection(&gDbgHelpCS);  
   return true;
 }
 
