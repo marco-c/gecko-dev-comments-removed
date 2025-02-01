@@ -68,19 +68,23 @@ let gContainersManager = {
     const colorWrapper = document.getElementById("colorWrapper");
     colorWrapper.appendChild(this.createColorSwatches());
 
+    const name = document.getElementById("name");
+    name.addEventListener("input", () => this.checkForm());
+
     if (this.identity.name) {
-      const name = document.getElementById("name");
       name.value = this.identity.name;
       this.checkForm();
     }
+
+    document
+      .getElementById("key_close")
+      .addEventListener("command", () => window.close());
 
     document.addEventListener("dialogaccept", () => this.onApplyChanges());
 
     
     document.getElementById("containers-content").removeAttribute("hidden");
   },
-
-  uninit() {},
 
   
   checkForm() {
@@ -165,3 +169,5 @@ let gContainersManager = {
     window.parent.location.reload();
   },
 };
+
+window.addEventListener("load", () => gContainersManager.onLoad());
