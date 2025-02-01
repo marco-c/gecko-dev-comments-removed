@@ -288,16 +288,6 @@ declare namespace MockedExports {
   }
 
   interface Cu {
-    
-
-
-
-
-
-
-
-
-    import: <S extends keyof KnownModules>(module: S) => KnownModules[S];
     exportFunction: (fn: Function, scope: object, options?: object) => void;
     cloneInto: (value: any, scope: object, options?: object) => void;
     isInAutomation: boolean;
