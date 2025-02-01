@@ -219,9 +219,9 @@ VideoDecoder::SampleToVideoFrame(IMFSample* aSample, int32_t aPictureWidth,
   uint32_t srcUVSize = stride * (aFrameHeight + padding) / 4;
   uint32_t halfStride = (stride + 1) / 2;
 
-  aVideoFrame->SetStride(cdm::VideoPlane::kYPlane, stride);
-  aVideoFrame->SetStride(cdm::VideoPlane::kUPlane, halfStride);
-  aVideoFrame->SetStride(cdm::VideoPlane::kVPlane, halfStride);
+  aVideoFrame->SetStride(cdm::kYPlane, stride);
+  aVideoFrame->SetStride(cdm::kUPlane, halfStride);
+  aVideoFrame->SetStride(cdm::kVPlane, halfStride);
 
   aVideoFrame->SetSize(cdm::Size{aPictureWidth, aPictureHeight});
 
@@ -252,17 +252,17 @@ VideoDecoder::SampleToVideoFrame(IMFSample* aSample, int32_t aPictureWidth,
 
   uint8_t* outBuffer = buffer->Data();
 
-  aVideoFrame->SetPlaneOffset(cdm::VideoPlane::kYPlane, 0);
+  aVideoFrame->SetPlaneOffset(cdm::kYPlane, 0);
 
   
   
   uint32_t dstUOffset = stride * aPictureHeight;
-  aVideoFrame->SetPlaneOffset(cdm::VideoPlane::kUPlane, dstUOffset);
+  aVideoFrame->SetPlaneOffset(cdm::kUPlane, dstUOffset);
 
   
   
   uint32_t dstVOffset = stride * aPictureHeight + (stride * aPictureHeight) / 4;
-  aVideoFrame->SetPlaneOffset(cdm::VideoPlane::kVPlane, dstVOffset);
+  aVideoFrame->SetPlaneOffset(cdm::kVPlane, dstVOffset);
 
   
   memcpy(outBuffer, data, stride * aPictureHeight);
