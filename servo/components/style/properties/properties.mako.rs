@@ -885,6 +885,16 @@ impl LonghandIdSet {
     }
 
     
+    #[inline]
+    pub fn margin_properties() -> &'static Self {
+        ${static_longhand_id_set(
+            "MARGIN_PROPERTIES",
+            lambda p: p.logical_group == "margin"
+        )}
+        &MARGIN_PROPERTIES
+    }
+
+    
     
     #[inline]
     pub fn border_background_properties() -> &'static Self {
