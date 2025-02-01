@@ -161,8 +161,8 @@ static StorageAccess InternalStorageAllowedCheck(
   bool disabled = true;
   if (aWindow) {
     nsIURI* documentURI = aURI ? aURI : aWindow->GetDocumentURI();
-    disabled = !documentURI ||
-               !ShouldAllowAccessFor(aWindow, documentURI, &aRejectedReason);
+    disabled = !documentURI || !ShouldAllowAccessFor(aWindow, documentURI, true,
+                                                     &aRejectedReason);
 
     
     
@@ -481,7 +481,7 @@ int32_t CookiesBehavior(nsIPrincipal* aPrincipal,
 }
 
 bool ShouldAllowAccessFor(nsPIDOMWindowInner* aWindow, nsIURI* aURI,
-                          uint32_t* aRejectedReason) {
+                          bool aCookies, uint32_t* aRejectedReason) {
   MOZ_ASSERT(aWindow);
   MOZ_ASSERT(aURI);
 
@@ -625,7 +625,10 @@ bool ShouldAllowAccessFor(nsPIDOMWindowInner* aWindow, nsIURI* aURI,
   
   
   
-  bool allowed = document->UsingStorageAccess();
+  
+  
+  
+  bool allowed = aCookies && document->UsingStorageAccess();
 
   if (!allowed) {
     *aRejectedReason = blockedReason;

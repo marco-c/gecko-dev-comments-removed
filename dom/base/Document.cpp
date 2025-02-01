@@ -19507,9 +19507,19 @@ nsIPrincipal* Document::EffectiveStoragePrincipal() const {
     return mActiveStoragePrincipal = NodePrincipal();
   }
 
-  StorageAccess storageAccess = StorageAllowedForDocument(this);
-  if (!ShouldPartitionStorage(storageAccess) ||
-      !StoragePartitioningEnabled(storageAccess, cookieJarSettings)) {
+  
+  
+  uint32_t rejectedReason = 0;
+  if (ShouldAllowAccessFor(inner, GetDocumentURI(), false, &rejectedReason)) {
+    return mActiveStoragePrincipal = NodePrincipal();
+  }
+
+  
+  
+  
+  if (ShouldPartitionStorage(rejectedReason) &&
+      !StoragePartitioningEnabled(
+          rejectedReason, const_cast<Document*>(this)->CookieJarSettings())) {
     return mActiveStoragePrincipal = NodePrincipal();
   }
 
@@ -19548,7 +19558,7 @@ nsIPrincipal* Document::EffectiveCookiePrincipal() const {
   
   
   uint32_t rejectedReason = 0;
-  if (ShouldAllowAccessFor(inner, GetDocumentURI(), &rejectedReason)) {
+  if (ShouldAllowAccessFor(inner, GetDocumentURI(), true, &rejectedReason)) {
     return mActiveCookiePrincipal = NodePrincipal();
   }
 

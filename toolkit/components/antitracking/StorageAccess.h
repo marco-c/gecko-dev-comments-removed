@@ -117,8 +117,12 @@ bool StoragePartitioningEnabled(uint32_t aRejectedReason,
 
 
 
+
+
+
 bool ShouldAllowAccessFor(nsPIDOMWindowInner* a3rdPartyTrackingWindow,
-                          nsIURI* aURI, uint32_t* aRejectedReason);
+                          nsIURI* aURI, bool aCookies,
+                          uint32_t* aRejectedReason);
 
 
 
