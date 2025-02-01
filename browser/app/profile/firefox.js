@@ -2473,11 +2473,7 @@ pref("privacy.webrtc.deviceGracePeriodTimeoutMs", 3600000);
 pref("privacy.webrtc.showIndicatorsOnMacos14AndAbove", true);
 
 
-#ifdef NIGHTLY_BUILD
-  pref("extensions.webcompat.smartblockEmbeds.enabled", true);
-#else
-  pref("extensions.webcompat.smartblockEmbeds.enabled", false);
-#endif
+pref("extensions.webcompat.smartblockEmbeds.enabled", true);
 
 
 
