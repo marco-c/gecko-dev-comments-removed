@@ -94,3 +94,7 @@ user_pref("network.http.http2.websockets", true);
 user_pref("app.update.disabledForTesting", true);
 
 user_pref("geo.provider.network.url", "https://web-platform.test:8444/_mozilla/geolocation-API/dummy.py");
+
+
+
+user_pref("geo.prompt.open_system_prefs", false);
