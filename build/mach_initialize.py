@@ -136,11 +136,13 @@ def initialize(topsrcdir, args=()):
 
     
     
+    
     sys.path[0:0] = [
         os.path.join(topsrcdir, module)
         for module in (
             os.path.join("python", "mach"),
             os.path.join("third_party", "python", "packaging"),
+            os.path.join("third_party", "python", "filelock"),
         )
     ]
 

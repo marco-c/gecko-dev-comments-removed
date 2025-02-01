@@ -50,11 +50,13 @@ def _activate_virtualenvs(flavor):
 
     
     
+    
     sys.path[0:0] = [
         os.path.join(SRC_ROOT, module)
         for module in (
             os.path.join("python", "mach"),
             os.path.join("third_party", "python", "packaging"),
+            os.path.join("third_party", "python", "filelock"),
         )
     ]
 
