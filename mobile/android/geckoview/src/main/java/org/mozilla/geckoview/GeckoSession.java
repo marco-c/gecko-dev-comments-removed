@@ -1046,6 +1046,8 @@ public class GeckoSession {
         }
       };
 
+  private CompositorScrollDelegate mCompositorScrollDelegate = null;
+
   private final GeckoSessionHandler<ContentBlocking.Delegate> mContentBlockingHandler =
       new GeckoSessionHandler<ContentBlocking.Delegate>(
           "GeckoViewContentBlocking", this, new String[] {"GeckoView:ContentBlockingEvent"}) {
@@ -3375,11 +3377,37 @@ public class GeckoSession {
     mScrollHandler.setDelegate(delegate, this);
   }
 
+  
+
+
+
+
   @UiThread
-  @SuppressWarnings("checkstyle:javadocmethod")
   public @Nullable ScrollDelegate getScrollDelegate() {
     ThreadUtils.assertOnUiThread();
     return mScrollHandler.getDelegate();
+  }
+
+  
+
+
+
+
+  @UiThread
+  public void setCompositorScrollDelegate(final @Nullable CompositorScrollDelegate delegate) {
+    ThreadUtils.assertOnUiThread();
+    mCompositorScrollDelegate = delegate;
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @Nullable CompositorScrollDelegate getCompositorScrollDelegate() {
+    ThreadUtils.assertOnUiThread();
+    return mCompositorScrollDelegate;
   }
 
   
@@ -6911,6 +6939,55 @@ public class GeckoSession {
   }
 
   
+  public class ScrollPositionUpdate {
+    
+    public static final int SOURCE_USER_INTERACTION = 0;
+    
+    
+    
+    public static final int SOURCE_OTHER = 1;
+
+    
+    public float scrollX;
+    
+    public float scrollY;
+    
+    
+    
+    
+    public float zoom;
+    
+    
+    public int source;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  public interface CompositorScrollDelegate {
+    
+
+
+
+
+
+    @UiThread
+    default void onScrollChanged(
+        @NonNull final GeckoSession session, @NonNull final ScrollPositionUpdate update) {}
+  }
+
+  
 
 
 
@@ -7915,6 +7992,18 @@ public class GeckoSession {
     mViewportLeft = scrollX;
     mViewportTop = scrollY;
     mViewportZoom = zoom;
+
+    final ScrollPositionUpdate update = new ScrollPositionUpdate();
+    
+    
+    update.scrollX = scrollX / zoom;
+    update.scrollY = scrollY / zoom;
+    update.zoom = zoom;
+    
+    update.source = ScrollPositionUpdate.SOURCE_USER_INTERACTION;
+    if (mCompositorScrollDelegate != null) {
+      mCompositorScrollDelegate.onScrollChanged(this, update);
+    }
   }
 
    void onWindowBoundsChanged() {
