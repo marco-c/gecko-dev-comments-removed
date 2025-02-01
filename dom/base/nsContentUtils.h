@@ -396,6 +396,12 @@ class nsContentUtils {
   static bool ShouldResistFingerprinting(const char* aJustification,
                                          RFPTarget aTarget);
 
+  static bool ETPSaysShouldNotResistFingerprinting(
+      nsICookieJarSettings* aCookieJarSettings, bool aIsPBM);
+
+  static bool ETPSaysShouldNotResistFingerprinting(nsIChannel* aChannel,
+                                                   nsILoadInfo* aLoadInfo);
+
   
   
   

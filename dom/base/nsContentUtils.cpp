@@ -2256,12 +2256,11 @@ inline already_AddRefed<nsICookieJarSettings> GetCookieJarSettings(
   return cookieJarSettings.forget();
 }
 
-bool ETPSaysShouldNotResistFingerprinting(nsIChannel* aChannel,
-                                          nsILoadInfo* aLoadInfo) {
+bool nsContentUtils::ETPSaysShouldNotResistFingerprinting(
+    nsICookieJarSettings* aCookieJarSettings, bool aIsPBM) {
   
   
 
-  bool isPBM = NS_UsePrivateBrowsing(aChannel);
   
   
   
@@ -2271,12 +2270,12 @@ bool ETPSaysShouldNotResistFingerprinting(nsIChannel* aChannel,
   if (StaticPrefs::privacy_fingerprintingProtection_DoNotUseDirectly() &&
       !StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() &&
       StaticPrefs::privacy_resistFingerprinting_pbmode_DoNotUseDirectly()) {
-    if (isPBM) {
+    if (aIsPBM) {
       
       return false;
     }
   } else if (StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() ||
-             (isPBM &&
+             (aIsPBM &&
               StaticPrefs::
                   privacy_resistFingerprinting_pbmode_DoNotUseDirectly())) {
     
@@ -2286,13 +2285,20 @@ bool ETPSaysShouldNotResistFingerprinting(nsIChannel* aChannel,
     return false;
   }
 
+  return ContentBlockingAllowList::Check(aCookieJarSettings);
+}
+
+bool nsContentUtils::ETPSaysShouldNotResistFingerprinting(
+    nsIChannel* aChannel, nsILoadInfo* aLoadInfo) {
+  bool isPBM = NS_UsePrivateBrowsing(aChannel);
+
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
       GetCookieJarSettings(aLoadInfo);
   if (!cookieJarSettings) {
     return false;
   }
 
-  return ContentBlockingAllowList::Check(cookieJarSettings);
+  return ETPSaysShouldNotResistFingerprinting(cookieJarSettings, isPBM);
 }
 
 inline bool CookieJarSettingsSaysShouldResistFingerprinting(
