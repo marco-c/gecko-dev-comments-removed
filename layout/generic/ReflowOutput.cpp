@@ -16,12 +16,7 @@ static bool IsValidOverflowRect(const nsRect& aRect) {
   
   
   
-  if (MOZ_LIKELY(!aRect.IsEmpty())) {
-    return true;
-  }
-
-  
-  return !aRect.IsEqualEdges(nsRect()) && aRect.Width() >= 0 &&
+  return aRect.Size() != nsSize{0, 0} && aRect.Width() >= 0 &&
          aRect.Height() >= 0;
 }
 
