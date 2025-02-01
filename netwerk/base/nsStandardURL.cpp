@@ -1903,8 +1903,8 @@ nsresult nsStandardURL::SetHost(const nsACString& input) {
     NS_WARNING("cannot set host on no-auth url");
     return NS_ERROR_UNEXPECTED;
   }
-  if (flat.IsEmpty()) {
-    
+
+  if (mURLType == URLTYPE_AUTHORITY && flat.IsEmpty()) {
     
     return NS_ERROR_UNEXPECTED;
   }
@@ -1946,7 +1946,8 @@ nsresult nsStandardURL::SetHost(const nsACString& input) {
   
   len = hostBuf.Length();
 
-  if (!len) {
+  if (!len && (mURLType == URLTYPE_AUTHORITY || mPort != -1 ||
+               Userpass(true).Length() > 0)) {
     return NS_ERROR_MALFORMED_URI;
   }
 
