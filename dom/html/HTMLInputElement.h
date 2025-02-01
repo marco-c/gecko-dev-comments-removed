@@ -783,6 +783,7 @@ class HTMLInputElement final : public TextControlElement,
   void OpenDateTimePicker(const DateTimeValue& aInitialValue);
   void UpdateDateTimePicker(const DateTimeValue& aValue);
   void CloseDateTimePicker();
+  void SetDateTimePickerState(bool aIsOpen);
 
   
 
