@@ -23,6 +23,7 @@ add_task(async function () {
 
     files: {
       "content-script.js": function () {
+        console.log("def");
         Promise.reject("abc");
       },
     },
@@ -31,11 +32,26 @@ add_task(async function () {
   await extension.startup();
 
   const hud = await openNewTabAndConsole(TEST_URI);
-  await waitFor(() => findErrorMessage(hud, "uncaught exception: abc"));
+
+  
+  await checkUniqueMessageExists(hud, "uncaught exception: abc", ".error");
+  await checkUniqueMessageExists(hud, "def", ".console-api");
 
   
   
+  const onTargetProcessed = waitForTargetProcessed(
+    hud.commands,
+    target => target.targetType == "content_script"
+  );
   await pushPref("devtools.debugger.show-content-scripts", true);
+  await onTargetProcessed;
+
+  
+  await wait(500);
+
+  await checkUniqueMessageExists(hud, "uncaught exception: abc", ".error");
+  await checkUniqueMessageExists(hud, "def", ".console-api");
+
   await hud.toolbox.selectTool("jsdebugger");
 
   const evaluationContextSelectorButton = hud.ui.outputNode.querySelector(
