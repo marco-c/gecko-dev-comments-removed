@@ -1203,14 +1203,56 @@ class MOZ_STACK_CLASS WSRunScanner final {
                                                       GetStartReasonContent());
     }
 
-    template <typename EditorDOMPointType = EditorDOMPointInText>
-    EditorDOMPointType GetEndOfCollapsibleASCIIWhiteSpaces(
+    
+
+
+
+
+
+
+    template <typename EditorDOMPointType>
+    [[nodiscard]] static EditorDOMPointType GetEndOfCollapsibleASCIIWhiteSpaces(
         const EditorDOMPointInText& aPointAtASCIIWhiteSpace,
-        nsIEditor::EDirection aDirectionToDelete) const;
-    template <typename EditorDOMPointType = EditorDOMPointInText>
-    EditorDOMPointType GetFirstASCIIWhiteSpacePointCollapsedTo(
+        nsIEditor::EDirection aDirectionToDelete,
+        BlockInlineCheck aBlockInlineCheck,
+        IgnoreNonEditableNodes aIgnoreNonEditableNodes,
+        const nsIContent* aFollowingLimiterContent = nullptr);
+
+    template <typename EditorDOMPointType>
+    [[nodiscard]] EditorDOMPointType GetEndOfCollapsibleASCIIWhiteSpaces(
         const EditorDOMPointInText& aPointAtASCIIWhiteSpace,
-        nsIEditor::EDirection aDirectionToDelete) const;
+        nsIEditor::EDirection aDirectionToDelete,
+        IgnoreNonEditableNodes aIgnoreNonEditableNodes) const {
+      return GetEndOfCollapsibleASCIIWhiteSpaces<EditorDOMPointType>(
+          aPointAtASCIIWhiteSpace, aDirectionToDelete, mBlockInlineCheck,
+          aIgnoreNonEditableNodes, GetEndReasonContent());
+    }
+
+    
+
+
+
+
+
+
+    template <typename EditorDOMPointType>
+    [[nodiscard]] static EditorDOMPointType
+    GetFirstASCIIWhiteSpacePointCollapsedTo(
+        const EditorDOMPointInText& aPointAtASCIIWhiteSpace,
+        nsIEditor::EDirection aDirectionToDelete,
+        BlockInlineCheck aBlockInlineCheck,
+        IgnoreNonEditableNodes aIgnoreNonEditableNodes,
+        const nsIContent* aPrecedingLimiterContent = nullptr);
+
+    template <typename EditorDOMPointType>
+    [[nodiscard]] EditorDOMPointType GetFirstASCIIWhiteSpacePointCollapsedTo(
+        const EditorDOMPointInText& aPointAtASCIIWhiteSpace,
+        nsIEditor::EDirection aDirectionToDelete,
+        IgnoreNonEditableNodes aIgnoreNonEditableNodes) const {
+      return GetFirstASCIIWhiteSpacePointCollapsedTo<EditorDOMPointType>(
+          aPointAtASCIIWhiteSpace, aDirectionToDelete, mBlockInlineCheck,
+          aIgnoreNonEditableNodes, GetStartReasonContent());
+    }
 
     
 

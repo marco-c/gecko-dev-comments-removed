@@ -464,17 +464,21 @@ WSRunScanner::GetRangeInTextNodesToBackspaceFrom(const EditorDOMPoint& aPoint,
   EditorDOMRangeInTexts rangeToDelete;
   if (atPreviousChar.IsCharCollapsibleASCIISpace() ||
       atPreviousChar.IsCharPreformattedNewLineCollapsedWithWhiteSpaces()) {
-    const EditorDOMPointInText startToDelete =
-        textFragmentDataAtCaret.GetFirstASCIIWhiteSpacePointCollapsedTo(
-            atPreviousChar, nsIEditor::ePrevious);
+    const auto startToDelete =
+        textFragmentDataAtCaret
+            .GetFirstASCIIWhiteSpacePointCollapsedTo<EditorDOMPointInText>(
+                atPreviousChar, nsIEditor::ePrevious,
+                IgnoreNonEditableNodes::Yes);
     if (!startToDelete.IsSet()) {
       NS_WARNING(
           "WSRunScanner::GetFirstASCIIWhiteSpacePointCollapsedTo() failed");
       return Err(NS_ERROR_FAILURE);
     }
-    const EditorDOMPointInText endToDelete =
-        textFragmentDataAtCaret.GetEndOfCollapsibleASCIIWhiteSpaces(
-            atPreviousChar, nsIEditor::ePrevious);
+    const auto endToDelete =
+        textFragmentDataAtCaret
+            .GetEndOfCollapsibleASCIIWhiteSpaces<EditorDOMPointInText>(
+                atPreviousChar, nsIEditor::ePrevious,
+                IgnoreNonEditableNodes::Yes);
     if (!endToDelete.IsSet()) {
       NS_WARNING("WSRunScanner::GetEndOfCollapsibleASCIIWhiteSpaces() failed");
       return Err(NS_ERROR_FAILURE);
@@ -559,17 +563,19 @@ WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom(
   EditorDOMRangeInTexts rangeToDelete;
   if (atCaret.IsCharCollapsibleASCIISpace() ||
       atCaret.IsCharPreformattedNewLineCollapsedWithWhiteSpaces()) {
-    const EditorDOMPointInText startToDelete =
-        textFragmentDataAtCaret.GetFirstASCIIWhiteSpacePointCollapsedTo(
-            atCaret, nsIEditor::eNext);
+    const auto startToDelete =
+        textFragmentDataAtCaret
+            .GetFirstASCIIWhiteSpacePointCollapsedTo<EditorDOMPointInText>(
+                atCaret, nsIEditor::eNext, IgnoreNonEditableNodes::Yes);
     if (!startToDelete.IsSet()) {
       NS_WARNING(
           "WSRunScanner::GetFirstASCIIWhiteSpacePointCollapsedTo() failed");
       return Err(NS_ERROR_FAILURE);
     }
     const EditorDOMPointInText endToDelete =
-        textFragmentDataAtCaret.GetEndOfCollapsibleASCIIWhiteSpaces(
-            atCaret, nsIEditor::eNext);
+        textFragmentDataAtCaret
+            .GetEndOfCollapsibleASCIIWhiteSpaces<EditorDOMPointInText>(
+                atCaret, nsIEditor::eNext, IgnoreNonEditableNodes::Yes);
     if (!endToDelete.IsSet()) {
       NS_WARNING("WSRunScanner::GetEndOfCollapsibleASCIIWhiteSpaces() failed");
       return Err(NS_ERROR_FAILURE);
