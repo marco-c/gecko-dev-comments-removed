@@ -10,6 +10,7 @@
 
 #include <assert.h>
 #include <limits.h>
+#include <stdint.h>
 
 #include "vpx_scale/yv12config.h"
 #include "vpx_mem/vpx_mem.h"
@@ -199,11 +200,13 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
     if (frame_size > VPX_MAX_ALLOCABLE_MEMORY / REF_FRAMES) return -1;
 #endif  
 
+#if UINT64_MAX > SIZE_MAX
     
     
     if (frame_size > SIZE_MAX) {
       return -1;
     }
+#endif
 
     if (cb != NULL) {
       const int align_addr_extra_size = 31;

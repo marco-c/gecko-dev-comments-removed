@@ -40,10 +40,12 @@ void vpx_fdct4x4_1_neon(const int16_t *input, tran_low_t *output, int stride) {
 
 
 
+#if defined(_MSC_VER) && _MSC_VER < 1937 && defined(_M_ARM64) && \
+    !defined(__clang__)
+#define AOM_WORK_AROUND_MSVC_BUG_10346110
+#endif
 
-
-
-#if defined(_MSC_VER) && defined(_M_ARM64) && !defined(__clang__)
+#ifdef AOM_WORK_AROUND_MSVC_BUG_10346110
 #pragma optimize("", off)
 #endif
 void vpx_fdct8x8_1_neon(const int16_t *input, tran_low_t *output, int stride) {
@@ -58,9 +60,10 @@ void vpx_fdct8x8_1_neon(const int16_t *input, tran_low_t *output, int stride) {
   output[0] = (tran_low_t)horizontal_add_int16x8(sum);
   output[1] = 0;
 }
-#if defined(_MSC_VER) && defined(_M_ARM64) && !defined(__clang__)
+#ifdef AOM_WORK_AROUND_MSVC_BUG_10346110
 #pragma optimize("", on)
 #endif
+#undef AOM_WORK_AROUND_MSVC_BUG_10346110
 
 void vpx_fdct16x16_1_neon(const int16_t *input, tran_low_t *output,
                           int stride) {

@@ -965,9 +965,11 @@ std::vector<std::vector<double>> SimpleEncode::ObserveFirstPassStats() {
     double *buf_start =
         reinterpret_cast<double *>(&impl_ptr_->first_pass_stats[i]);
     
+    
+    
     double *buf_end =
         buf_start + sizeof(impl_ptr_->first_pass_stats[i]) / sizeof(*buf_end) -
-        1;
+        2;
     std::vector<double> this_stats(buf_start, buf_end);
     output_stats.push_back(this_stats);
   }
