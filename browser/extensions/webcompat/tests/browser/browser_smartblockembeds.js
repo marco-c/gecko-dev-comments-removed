@@ -5,55 +5,34 @@
 
 const SEC_DELAY_PREF = "security.notification_enable_delay";
 
-add_setup(async function () {
-  await UrlClassifierTestUtils.addTestTrackers();
-  
-  
-  Services.prefs.setIntPref(SEC_DELAY_PREF, 1000);
+async function closeProtectionsPanel(win = window) {
+  let protectionsPopup = win.document.getElementById("protections-popup");
+  if (!protectionsPopup) {
+    return;
+  }
+  let popuphiddenPromise = BrowserTestUtils.waitForEvent(
+    protectionsPopup,
+    "popuphidden"
+  );
 
-  registerCleanupFunction(() => {
-    UrlClassifierTestUtils.cleanupTestTrackers();
-    Services.prefs.clearUserPref(TRACKING_PREF);
-  });
-});
+  PanelMultiView.hidePopup(protectionsPopup);
+  await popuphiddenPromise;
+}
 
-add_task(async function test_smartblock_embed_replaced() {
-  Services.prefs.setBoolPref(TRACKING_PREF, true);
-  Services.fog.testResetFOG();
+async function openProtectionsPanel(win = window) {
+  let popupShownPromise = BrowserTestUtils.waitForEvent(
+    win,
+    "popupshown",
+    true,
+    e => e.target.id == "protections-popup"
+  );
 
-  let closeProtectionsPanel = async (win = window) => {
-    let protectionsPopup = win.document.getElementById("protections-popup");
-    if (!protectionsPopup) {
-      return;
-    }
-    let popuphiddenPromise = BrowserTestUtils.waitForEvent(
-      protectionsPopup,
-      "popuphidden"
-    );
+  win.gProtectionsHandler.showProtectionsPopup();
 
-    PanelMultiView.hidePopup(protectionsPopup);
-    await popuphiddenPromise;
-  };
+  await popupShownPromise;
+}
 
-  let openProtectionsPanel = async (win = window) => {
-    let popupShownPromise = BrowserTestUtils.waitForEvent(
-      win,
-      "popupshown",
-      true,
-      e => e.target.id == "protections-popup"
-    );
-
-    win.gProtectionsHandler.showProtectionsPopup();
-
-    await popupShownPromise;
-  };
-
-  
-  const tab = await BrowserTestUtils.openNewForegroundTab({
-    gBrowser,
-    waitForLoad: true,
-  });
-
+async function loadSmartblockPageOnTab(tab) {
   let smartblockScriptFinished = BrowserTestUtils.waitForContentEvent(
     tab.linkedBrowser,
     "smartblockEmbedScriptFinished",
@@ -67,13 +46,10 @@ add_task(async function test_smartblock_embed_replaced() {
     TEST_PAGE_WITH_SMARTBLOCK_COMPATIBLE_EMBED
   );
 
-  await smartblockScriptFinished;
+  return smartblockScriptFinished;
+}
 
-  
-  const TrackingProtection = gProtectionsHandler.blockers.TrackingProtection;
-  ok(TrackingProtection, "TP is attached to the tab");
-  ok(TrackingProtection.enabled, "TP is enabled");
-
+const clickOnPagePlaceholder = async tab => {
   
   let popupShownPromise = BrowserTestUtils.waitForEvent(
     window,
@@ -119,7 +95,39 @@ add_task(async function test_smartblock_embed_replaced() {
   });
 
   
-  await popupShownPromise;
+  return popupShownPromise;
+};
+
+add_setup(async function () {
+  await UrlClassifierTestUtils.addTestTrackers();
+  
+  
+  Services.prefs.setIntPref(SEC_DELAY_PREF, 1000);
+  Services.prefs.setBoolPref(TRACKING_PREF, true);
+
+  registerCleanupFunction(() => {
+    UrlClassifierTestUtils.cleanupTestTrackers();
+    Services.prefs.clearUserPref(TRACKING_PREF);
+  });
+
+  Services.fog.testResetFOG();
+});
+
+add_task(async function test_smartblock_embed_replaced() {
+  
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    waitForLoad: true,
+  });
+
+  await loadSmartblockPageOnTab(tab);
+
+  
+  const TrackingProtection = gProtectionsHandler.blockers.TrackingProtection;
+  ok(TrackingProtection, "TP is attached to the tab");
+  ok(TrackingProtection.enabled, "TP is enabled");
+
+  await clickOnPagePlaceholder(tab);
 
   
   let protectionsPanelOpenEvents =
@@ -267,7 +275,7 @@ add_task(async function test_smartblock_embed_replaced() {
   );
 
   
-  smartblockScriptFinished = BrowserTestUtils.waitForContentEvent(
+  let smartblockScriptFinished = BrowserTestUtils.waitForContentEvent(
     tab.linkedBrowser,
     "smartblockEmbedScriptFinished",
     false,
@@ -309,6 +317,34 @@ add_task(async function test_smartblock_embed_replaced() {
     undefined,
     "Smartblock shown event has correct reason"
   );
+
+  await BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function test_smartblock_click_while_panel_open() {
+  
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    waitForLoad: true,
+  });
+
+  await loadSmartblockPageOnTab(tab);
+
+  
+  const TrackingProtection = gProtectionsHandler.blockers.TrackingProtection;
+  ok(TrackingProtection, "TP is attached to the tab");
+  ok(TrackingProtection.enabled, "TP is enabled");
+
+  
+  await clickOnPagePlaceholder(tab);
+
+  
+  
+  clickOnPagePlaceholder(tab);
+
+  
+  
+  await clickOnPagePlaceholder(tab);
 
   await BrowserTestUtils.removeTab(tab);
 });

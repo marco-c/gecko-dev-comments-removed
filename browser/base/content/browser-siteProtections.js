@@ -1849,6 +1849,12 @@ var gProtectionsHandler = {
 
       
       
+      
+      
+      this._trackingProtectionIconContainer.setAttribute("open", "true");
+
+      
+      
       if (this._protectionsPopupOpeningReason == "embedPlaceholderButton") {
         this._disablePopupToggles();
         this._protectionsPopupToggleDelayTimer = setTimeout(() => {
@@ -1865,24 +1871,24 @@ var gProtectionsHandler = {
     if (event.target == this._protectionsPopup) {
       window.removeEventListener("focus", this, true);
       this._protectionsPopupTPSwitch.removeEventListener("toggle", this);
-    }
 
-    
-    if (!event.target.hasAttribute("toast")) {
-      Glean.securityUiProtectionspopup.closeProtectionsPopup.record({
-        openingReason: this._protectionsPopupOpeningReason,
-        smartblockToggleClicked: this._hasClickedSmartBlockEmbedToggle,
-      });
-    }
+      
+      if (!event.target.hasAttribute("toast")) {
+        Glean.securityUiProtectionspopup.closeProtectionsPopup.record({
+          openingReason: this._protectionsPopupOpeningReason,
+          smartblockToggleClicked: this._hasClickedSmartBlockEmbedToggle,
+        });
+      }
 
-    if (this._protectionsPopupToggleDelayTimer) {
-      clearTimeout(this._protectionsPopupToggleDelayTimer);
-      this._enablePopupToggles();
-      delete this._protectionsPopupToggleDelayTimer;
-    }
+      if (this._protectionsPopupToggleDelayTimer) {
+        clearTimeout(this._protectionsPopupToggleDelayTimer);
+        this._enablePopupToggles();
+        delete this._protectionsPopupToggleDelayTimer;
+      }
 
-    this._hasClickedSmartBlockEmbedToggle = false;
-    this._protectionsPopupOpeningReason = null;
+      this._hasClickedSmartBlockEmbedToggle = false;
+      this._protectionsPopupOpeningReason = null;
+    }
   },
 
   async onTrackingProtectionIconHoveredOrFocused() {
@@ -2279,16 +2285,12 @@ var gProtectionsHandler = {
           break;
         }
 
-        if (this._protectionsPopup?.state == "open") {
-          
-          
-          
-          break;
-        }
-
         if (gBrowser.selectedBrowser.browserId !== subject.browserId) {
           break;
         }
+
+        
+        this._hidePopup();
 
         this.showProtectionsPopup({
           openingReason: "embedPlaceholderButton",
@@ -2777,10 +2779,6 @@ var gProtectionsHandler = {
         { once: true }
       );
     }
-
-    
-    
-    this._trackingProtectionIconContainer.setAttribute("open", "true");
 
     
     let openPanels = Array.from(document.querySelectorAll("panel[openpanel]"));
