@@ -41,43 +41,14 @@ def main(request, response):
             headers += [(b"Clear-Site-Data", b'"' + clear + b'"')]
 
     if response_type == b"single_html":
-        iframe = ""
-        if b"iframe" in request.GET:
-            
-            iframe_url = request.GET.first(b"iframe").decode()
-            content = f'''
-                <script>
-                    // forward iframe uuid to opener
-                    window.addEventListener('message', function(event) {{
-                        if(window.opener) {{
-                            window.opener.postMessage(event.data, "*");
-                        }} else {{
-                            window.parent.postMessage(event.data, "*");
-                        }}
-                        window.close();
-                    }});
-                </script>
-                <br>
-                {request.url}<br>
-                {iframe_url}<br>
-                <iframe src="{iframe_url}"></iframe>
-                </body>
-            '''
-        else:
-            
-            u = uuid.uuid4()
-            content = f'''
-                <script>
-                    if(window.opener) {{
-                        window.opener.postMessage("{u}", "*");
-                    }} else {{
-                        window.parent.postMessage("{u}", "*");
-                    }}
-                    window.close();
-                </script>
-                <body>
-                    {request.url}
-                </body>'''
+        
+        content = f'''
+            <script>
+                window.opener.postMessage("{uuid.uuid4()}" , "*");
+            </script>
+            <body>
+                {request.url}
+            </body>'''
     elif response_type == b"json":
         
         content = f'''["{uuid.uuid4()}"]'''
@@ -87,10 +58,7 @@ def main(request, response):
             <script>
                 fetch("{url}")
                     .then(response => response.json())
-                    .then(uuid => {{
-                        window.opener.postMessage(uuid[0], "*");
-                        window.close();
-                    }});
+                    .then(uuid => window.opener.postMessage(uuid[0], "*"));
             </script>
             <body>
                 {request.url}<br>
