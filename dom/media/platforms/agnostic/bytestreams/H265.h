@@ -191,13 +191,22 @@ struct H265VUIParameters {
 
   bool operator==(const H265VUIParameters& aOther) const;
 
+  bool HasValidAspectRatio() const;
+
   
+  double GetPixelAspectRatio() const;
+
+  
+  bool aspect_ratio_info_present_flag = false;
   uint32_t sar_width = {};
   uint32_t sar_height = {};
   bool video_full_range_flag = {};
   Maybe<uint8_t> colour_primaries;
   Maybe<uint8_t> transfer_characteristics;
   Maybe<uint8_t> matrix_coeffs;
+
+  
+  bool mIsSARValid = false;
 };
 
 
