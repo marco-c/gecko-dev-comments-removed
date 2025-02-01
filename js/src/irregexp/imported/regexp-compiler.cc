@@ -3860,15 +3860,28 @@ class Analysis : public NodeVisitor {
     DCHECK_EQ(that->alternatives()->length(), 2);  
 
     
+    
+    
+    RegExpFlags orig_flags = flags();
+
     EnsureAnalyzed(that->continue_node());
     if (has_failed()) return;
+    
+    
     STATIC_FOR_EACH(Propagators::VisitLoopChoiceContinueNode(that));
+
+    RegExpFlags continuation_flags = flags();
 
     
     
+    set_flags(orig_flags);
     EnsureAnalyzed(that->loop_node());
     if (has_failed()) return;
+    
+    
     STATIC_FOR_EACH(Propagators::VisitLoopChoiceLoopNode(that));
+
+    set_flags(continuation_flags);
   }
 
   void VisitNegativeLookaroundChoice(
