@@ -338,6 +338,21 @@ impl CustomWindowClass for AppWindow {
                 for child in children {
                     renderer.render_window(child);
                 }
+
+                
+                
+                
+                unsafe {
+                    win::SetWindowPos(
+                        hwnd,
+                        win::HWND_TOP,
+                        0,
+                        0,
+                        me.renderer.min_width().try_into().unwrap(),
+                        me.renderer.min_height().try_into().unwrap(),
+                        win::SWP_NOZORDER | win::SWP_NOACTIVATE | win::SWP_NOMOVE,
+                    )
+                };
             }
             win::WM_CLOSE => {
                 if model.modal {
