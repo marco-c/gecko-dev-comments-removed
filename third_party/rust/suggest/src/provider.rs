@@ -130,4 +130,26 @@ pub struct SuggestionProviderConstraints {
     
     #[uniffi(default = None)]
     pub exposure_suggestion_types: Option<Vec<String>>,
+    
+    
+    #[uniffi(default = None)]
+    pub amp_alternative_matching: Option<AmpMatchingStrategy>,
+}
+
+#[derive(Clone, Debug, uniffi::Enum)]
+pub enum AmpMatchingStrategy {
+    
+    
+    
+    NoKeywordExpansion,
+    
+    FtsAgainstFullKeywords,
+    
+    FtsAgainstTitle,
+}
+
+impl AmpMatchingStrategy {
+    pub fn uses_fts(&self) -> bool {
+        matches!(self, Self::FtsAgainstFullKeywords | Self::FtsAgainstTitle)
+    }
 }

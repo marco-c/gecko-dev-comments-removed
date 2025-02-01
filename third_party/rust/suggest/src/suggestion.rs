@@ -38,6 +38,7 @@ pub enum Suggestion {
         click_url: String,
         raw_click_url: String,
         score: f64,
+        fts_match_info: Option<FtsMatchInfo>,
     },
     Pocket {
         title: String,
@@ -96,11 +97,24 @@ pub enum Suggestion {
         icon: Option<Vec<u8>>,
         icon_mimetype: Option<String>,
         score: f64,
+        
+        
+        
+        match_info: Option<FtsMatchInfo>,
     },
     Exposure {
         suggestion_type: String,
         score: f64,
     },
+}
+
+
+#[derive(Debug, Clone, PartialEq, uniffi::Record)]
+pub struct FtsMatchInfo {
+    
+    pub prefix: bool,
+    
+    pub stemming: bool,
 }
 
 impl PartialOrd for Suggestion {
@@ -183,6 +197,13 @@ impl Suggestion {
             | Self::Fakespot { score, .. }
             | Self::Exposure { score, .. } => *score,
             Self::Wikipedia { .. } => DEFAULT_SUGGESTION_SCORE,
+        }
+    }
+
+    pub fn fts_match_info(&self) -> Option<&FtsMatchInfo> {
+        match self {
+            Self::Fakespot { match_info, .. } => match_info.as_ref(),
+            _ => None,
         }
     }
 }

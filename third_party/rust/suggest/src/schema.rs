@@ -23,7 +23,7 @@ use sql_support::{
 
 
 
-pub const VERSION: u32 = 31;
+pub const VERSION: u32 = 32;
 
 
 pub const SQL: &str = "
@@ -142,6 +142,14 @@ CREATE TRIGGER fakespot_ai AFTER INSERT ON fakespot_custom_details BEGIN
     FROM suggestions
     WHERE id = new.suggestion_id;
 END;
+
+CREATE VIRTUAL TABLE IF NOT EXISTS amp_fts USING FTS5(
+  full_keywords,
+  title,
+  content='',
+  contentless_delete=1,
+  tokenize=\"porter unicode61 remove_diacritics 2 tokenchars '''-'\"
+);
 
 -- DELETE/UPDATE triggers are difficult to implement, since the FTS contents are split between the fakespot_custom_details and suggestions tables.
 -- If you use an AFTER trigger, then the data from the other table has already been deleted.
@@ -593,6 +601,23 @@ CREATE TABLE geonames_alternates(
                 tx.execute_batch(
                     "
 CREATE INDEX geonames_alternates_geoname_id ON geonames_alternates(geoname_id);
+                    ",
+                )?;
+                Ok(())
+            }
+            31 => {
+                
+                clear_database(tx)?;
+                tx.execute_batch(
+                    "
+CREATE VIRTUAL TABLE IF NOT EXISTS amp_fts USING FTS5(
+  full_keywords,
+  title,
+  content='',
+  contentless_delete=1,
+  tokenize=\"porter unicode61 remove_diacritics 2 tokenchars '''-'\"
+);
+
                     ",
                 )?;
                 Ok(())

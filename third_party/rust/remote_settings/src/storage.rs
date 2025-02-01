@@ -2,11 +2,16 @@
 
 
 
-use crate::{Attachment, RemoteSettingsRecord, Result};
+use crate::{
+    client::CollectionMetadata, client::CollectionSignature,
+    schema::RemoteSettingsConnectionInitializer, Attachment, RemoteSettingsRecord, Result,
+};
 use camino::Utf8PathBuf;
-use rusqlite::{params, Connection, OptionalExtension, Transaction};
+use rusqlite::{params, Connection, OpenFlags, OptionalExtension, Transaction};
 use serde_json;
 use sha2::{Digest, Sha256};
+
+use sql_support::{open_database::open_database_with_flags, ConnExt};
 
 
 
@@ -27,35 +32,12 @@ pub struct Storage {
 
 impl Storage {
     pub fn new(path: Utf8PathBuf) -> Result<Self> {
-        let conn = Connection::open(path)?;
-        let storage = Self { conn };
-        storage.initialize_database()?;
-
-        Ok(storage)
-    }
-
-    
-    fn initialize_database(&self) -> Result<()> {
-        self.conn.execute_batch(
-            "
-        CREATE TABLE IF NOT EXISTS records (
-            id TEXT PRIMARY KEY,
-            collection_url TEXT NOT NULL,
-            data BLOB NOT NULL
-        );
-       CREATE TABLE IF NOT EXISTS attachments (
-            id TEXT PRIMARY KEY,
-            collection_url TEXT NOT NULL,
-            data BLOB NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS collection_metadata (
-            collection_url TEXT PRIMARY KEY,
-            last_modified INTEGER,
-            fetched BOOLEAN
-        );
-        ",
+        let conn = open_database_with_flags(
+            path,
+            OpenFlags::default(),
+            &RemoteSettingsConnectionInitializer,
         )?;
-        Ok(())
+        Ok(Self { conn })
     }
 
     
@@ -82,27 +64,55 @@ impl Storage {
     ) -> Result<Option<Vec<RemoteSettingsRecord>>> {
         let tx = self.conn.transaction()?;
 
-        let fetched: Option<bool> = tx
-            .prepare("SELECT fetched FROM collection_metadata WHERE collection_url = ?")?
-            .query_row(params![collection_url], |row| row.get(0))
-            .optional()?;
+        let fetched = tx.exists(
+            "SELECT 1 FROM collection_metadata WHERE collection_url = ?",
+            (collection_url,),
+        )?;
+        let result = if fetched {
+            
+            let records: Vec<RemoteSettingsRecord> = tx
+                .prepare("SELECT data FROM records WHERE collection_url = ?")?
+                .query_map(params![collection_url], |row| row.get::<_, Vec<u8>>(0))?
+                .map(|data| serde_json::from_slice(&data.unwrap()).unwrap())
+                .collect();
 
-        let result = match fetched {
-            Some(true) => {
-                
-                let records: Vec<RemoteSettingsRecord> = tx
-                    .prepare("SELECT data FROM records WHERE collection_url = ?")?
-                    .query_map(params![collection_url], |row| row.get::<_, Vec<u8>>(0))?
-                    .map(|data| serde_json::from_slice(&data.unwrap()).unwrap())
-                    .collect();
-
-                Ok(Some(records))
-            }
-            _ => Ok(None),
+            Ok(Some(records))
+        } else {
+            Ok(None)
         };
 
         tx.commit()?;
         result
+    }
+
+    
+    
+    
+    
+    pub fn get_collection_metadata(
+        &self,
+        collection_url: &str,
+    ) -> Result<Option<CollectionMetadata>> {
+        let mut stmt_metadata = self.conn.prepare(
+            "SELECT bucket, signature, x5u FROM collection_metadata WHERE collection_url = ?",
+        )?;
+
+        if let Some(metadata) = stmt_metadata
+            .query_row(params![collection_url], |row| {
+                Ok(CollectionMetadata {
+                    bucket: row.get(0).unwrap_or_default(),
+                    signature: CollectionSignature {
+                        signature: row.get(1).unwrap_or_default(),
+                        x5u: row.get(2).unwrap_or_default(),
+                    },
+                })
+            })
+            .optional()?
+        {
+            Ok(Some(metadata))
+        } else {
+            Ok(None)
+        }
     }
 
     
@@ -141,29 +151,12 @@ impl Storage {
     }
 
     
-    pub fn set_records(
+    pub fn insert_collection_content(
         &mut self,
         collection_url: &str,
         records: &[RemoteSettingsRecord],
-    ) -> Result<()> {
-        let tx = self.conn.transaction()?;
-
-        tx.execute("DELETE FROM records", [])?;
-        tx.execute("DELETE FROM collection_metadata", [])?;
-        let max_last_modified = Self::update_record_rows(&tx, collection_url, records)?;
-        Self::update_collection_metadata(&tx, collection_url, max_last_modified)?;
-        tx.commit()?;
-        Ok(())
-    }
-
-    
-    
-    
-    
-    pub fn merge_records(
-        &mut self,
-        collection_url: &str,
-        records: &[RemoteSettingsRecord],
+        last_modified: u64,
+        metadata: CollectionMetadata,
     ) -> Result<()> {
         let tx = self.conn.transaction()?;
 
@@ -179,8 +172,9 @@ impl Storage {
             "DELETE FROM collection_metadata where collection_url <> ?",
             [collection_url],
         )?;
-        let max_last_modified = Self::update_record_rows(&tx, collection_url, records)?;
-        Self::update_collection_metadata(&tx, collection_url, max_last_modified)?;
+
+        Self::update_record_rows(&tx, collection_url, records)?;
+        Self::update_collection_metadata(&tx, collection_url, last_modified, metadata)?;
         tx.commit()?;
         Ok(())
     }
@@ -218,12 +212,20 @@ impl Storage {
         tx: &Transaction<'_>,
         collection_url: &str,
         last_modified: u64,
+        metadata: CollectionMetadata,
     ) -> Result<()> {
         
-        let fetched = true;
         tx.execute(
-            "INSERT OR REPLACE INTO collection_metadata (collection_url, last_modified, fetched) VALUES (?, ?, ?)",
-            (collection_url, last_modified, fetched),
+            "INSERT OR REPLACE INTO collection_metadata \
+            (collection_url, last_modified, bucket, signature, x5u) \
+            VALUES (?, ?, ?, ?, ?)",
+            (
+                collection_url,
+                last_modified,
+                metadata.bucket,
+                metadata.signature.signature,
+                metadata.signature.x5u,
+            ),
         )?;
         Ok(())
     }
@@ -271,7 +273,10 @@ impl Storage {
 #[cfg(test)]
 mod tests {
     use super::Storage;
-    use crate::{Attachment, RemoteSettingsRecord, Result, RsJsonObject};
+    use crate::{
+        client::CollectionMetadata, client::CollectionSignature, Attachment, RemoteSettingsRecord,
+        Result, RsJsonObject,
+    };
     use sha2::{Digest, Sha256};
 
     #[test]
@@ -303,7 +308,12 @@ mod tests {
         ];
 
         
-        storage.set_records(collection_url, &records)?;
+        storage.insert_collection_content(
+            collection_url,
+            &records,
+            300,
+            CollectionMetadata::default(),
+        )?;
 
         
         let fetched_records = storage.get_records(collection_url)?;
@@ -316,7 +326,7 @@ mod tests {
 
         
         let last_modified = storage.get_last_modified_timestamp(collection_url)?;
-        assert_eq!(last_modified, Some(200));
+        assert_eq!(last_modified, Some(300));
 
         Ok(())
     }
@@ -345,7 +355,12 @@ mod tests {
         let collection_url = "https://example.com/api";
 
         
-        storage.set_records(collection_url, &Vec::<RemoteSettingsRecord>::default())?;
+        storage.insert_collection_content(
+            collection_url,
+            &Vec::<RemoteSettingsRecord>::default(),
+            42,
+            CollectionMetadata::default(),
+        )?;
 
         
         let fetched_records = storage.get_records(collection_url)?;
@@ -353,7 +368,7 @@ mod tests {
 
         
         let last_modified = storage.get_last_modified_timestamp(collection_url)?;
-        assert_eq!(last_modified, Some(0));
+        assert_eq!(last_modified, Some(42));
 
         Ok(())
     }
@@ -540,7 +555,12 @@ mod tests {
             .expect("No attachment metadata for record");
 
         
-        storage.set_records(collection_url, &records)?;
+        storage.insert_collection_content(
+            collection_url,
+            &records,
+            42,
+            CollectionMetadata::default(),
+        )?;
         storage.set_attachment(collection_url, &metadata.location, attachment)?;
 
         
@@ -589,8 +609,12 @@ mod tests {
         }];
 
         
-        storage.set_records(collection_url1, &records_collection_url1)?;
-
+        storage.insert_collection_content(
+            collection_url1,
+            &records_collection_url1,
+            42,
+            CollectionMetadata::default(),
+        )?;
         
         let fetched_records = storage.get_records(collection_url1)?;
         assert!(fetched_records.is_some());
@@ -599,7 +623,12 @@ mod tests {
         assert_eq!(fetched_records, records_collection_url1);
 
         
-        storage.set_records(collection_url2, &records_collection_url2)?;
+        storage.insert_collection_content(
+            collection_url2,
+            &records_collection_url2,
+            300,
+            CollectionMetadata::default(),
+        )?;
 
         
         let fetched_records = storage.get_records(collection_url1)?;
@@ -616,13 +645,13 @@ mod tests {
         let last_modified1 = storage.get_last_modified_timestamp(collection_url1)?;
         assert_eq!(last_modified1, None);
         let last_modified2 = storage.get_last_modified_timestamp(collection_url2)?;
-        assert_eq!(last_modified2, Some(200));
+        assert_eq!(last_modified2, Some(300));
 
         Ok(())
     }
 
     #[test]
-    fn test_storage_set_records() -> Result<()> {
+    fn test_storage_insert_collection_content() -> Result<()> {
         let mut storage = Storage::new(":memory:".into())?;
 
         let collection_url = "https://example.com/api";
@@ -638,7 +667,12 @@ mod tests {
         }];
 
         
-        storage.set_records(collection_url, &initial_records)?;
+        storage.insert_collection_content(
+            collection_url,
+            &initial_records,
+            42,
+            CollectionMetadata::default(),
+        )?;
 
         
         let fetched_records = storage.get_records(collection_url)?;
@@ -656,7 +690,12 @@ mod tests {
                 .unwrap()
                 .clone(),
         }];
-        storage.set_records(collection_url, &updated_records)?;
+        storage.insert_collection_content(
+            collection_url,
+            &updated_records,
+            300,
+            CollectionMetadata::default(),
+        )?;
 
         
         let fetched_records = storage.get_records(collection_url)?;
@@ -665,7 +704,7 @@ mod tests {
 
         
         let last_modified = storage.get_last_modified_timestamp(collection_url)?;
-        assert_eq!(last_modified, Some(200));
+        assert_eq!(last_modified, Some(300));
 
         Ok(())
     }
@@ -759,14 +798,24 @@ mod tests {
         ];
 
         
-        storage.set_records(collection_url, &initial_records)?;
+        storage.insert_collection_content(
+            collection_url,
+            &initial_records,
+            1000,
+            CollectionMetadata::default(),
+        )?;
 
         
         let fetched_records = storage.get_records(collection_url)?.unwrap();
         assert_eq!(fetched_records, initial_records);
 
         
-        storage.merge_records(collection_url, &updated_records)?;
+        storage.insert_collection_content(
+            collection_url,
+            &updated_records,
+            1300,
+            CollectionMetadata::default(),
+        )?;
 
         
         let mut fetched_records = storage.get_records(collection_url)?.unwrap();
@@ -776,6 +825,42 @@ mod tests {
         
         let last_modified = storage.get_last_modified_timestamp(collection_url)?;
         assert_eq!(last_modified, Some(1300));
+        Ok(())
+    }
+    #[test]
+    fn test_storage_get_collection_metadata() -> Result<()> {
+        let mut storage = Storage::new(":memory:".into())?;
+
+        let collection_url = "https://example.com/api";
+        let initial_records = vec![RemoteSettingsRecord {
+            id: "2".to_string(),
+            last_modified: 200,
+            deleted: false,
+            attachment: None,
+            fields: serde_json::json!({"key": "value2"})
+                .as_object()
+                .unwrap()
+                .clone(),
+        }];
+
+        
+        storage.insert_collection_content(
+            collection_url,
+            &initial_records,
+            1337,
+            CollectionMetadata {
+                bucket: "main".into(),
+                signature: CollectionSignature {
+                    signature: "b64encodedsig".into(),
+                    x5u: "http://15u/".into(),
+                },
+            },
+        )?;
+
+        let metadata = storage.get_collection_metadata(collection_url)?.unwrap();
+
+        assert_eq!(metadata.signature.signature, "b64encodedsig");
+        assert_eq!(metadata.signature.x5u, "http://15u/");
 
         Ok(())
     }
