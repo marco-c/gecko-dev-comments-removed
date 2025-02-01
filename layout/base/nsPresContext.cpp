@@ -1773,7 +1773,7 @@ void nsPresContext::RecordInteractionTime(InteractionType aType,
 
   
   
-  TimeStamp nsPresContext::*interactionTimes[] = {
+  TimeStamp nsPresContext::* interactionTimes[] = {
       &nsPresContext::mFirstClickTime, &nsPresContext::mFirstKeyTime,
       &nsPresContext::mFirstMouseMoveTime, &nsPresContext::mFirstScrollTime};
 
@@ -1809,7 +1809,7 @@ void nsPresContext::RecordInteractionTime(InteractionType aType,
 
   
   bool isFirstInteraction = true;
-  for (TimeStamp nsPresContext::*memberPtr : interactionTimes) {
+  for (TimeStamp nsPresContext::* memberPtr : interactionTimes) {
     TimeStamp& timeStamp = this->*(memberPtr);
     if (!timeStamp.IsNull()) {
       isFirstInteraction = false;
