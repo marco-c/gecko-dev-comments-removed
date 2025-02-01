@@ -238,6 +238,8 @@ dom::Element* nsIContent::GetEditingHost() {
 
   
   if (IsInDesignMode() && !IsInShadowTree()) {
+    
+    
     return doc->GetBodyElement();
   }
 
