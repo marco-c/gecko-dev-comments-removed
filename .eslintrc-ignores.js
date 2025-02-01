@@ -79,7 +79,7 @@ module.exports = [
   
   "browser/locales/",
   
-  "browser/extensions/formautofill/phonenumberutils/PhoneNumberMetaData.jsm",
+  "browser/extensions/formautofill/phonenumberutils/PhoneNumberMetaData.sys.mjs",
 
   
   "devtools/client/debugger/bin/",
