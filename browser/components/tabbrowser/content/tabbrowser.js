@@ -8696,6 +8696,11 @@ var TabContextMenu = {
       this.contextTab.multiselected ? gBrowser.selectedTabs : [this.contextTab],
       { insertBefore: this.contextTab, showCreateUI: true }
     );
+
+    
+    
+    
+    gTabsPanel.hideAllTabsPanel();
   },
 
   moveTabsToGroup(group) {
