@@ -1844,7 +1844,7 @@ pref("browser.newtabpage.activity-stream.newNewtabExperience.colors", "#0090ED,#
 
 
 pref("browser.newtabpage.activity-stream.newtabLayouts.variant-a", false);
-pref("browser.newtabpage.activity-stream.newtabLayouts.variant-b", false);
+pref("browser.newtabpage.activity-stream.newtabLayouts.variant-b", true);
 
 
 pref("browser.newtabpage.activity-stream.newtabAdSize.variant-a", false);
@@ -1960,6 +1960,8 @@ pref("browser.newtabpage.activity-stream.discoverystream.contextualContent.regio
 pref("browser.newtabpage.activity-stream.discoverystream.sections.locale-content-config", "en-US,en-CA");
 
 pref("browser.newtabpage.activity-stream.discoverystream.sections.region-content-config", "");
+
+pref("browser.newtabpage.activity-stream.discoverystream.sections.cards.enabled", true);
 
 
 pref("browser.newtabpage.activity-stream.discoverystream.merino-provider.endpoint", "merino.services.mozilla.com");
