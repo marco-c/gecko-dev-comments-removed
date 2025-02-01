@@ -338,7 +338,7 @@ static bool GetGREFileContents(const char* aFilePath, nsCString* aOutString) {
   
   RefPtr<nsZipArchive> zip = Omnijar::GetReader(Omnijar::GRE);
   if (zip) {
-    nsZipItemPtr<char> item(zip, aFilePath);
+    nsZipItemPtr<char> item(zip, nsDependentCString(aFilePath));
     if (!item) {
       return false;
     }

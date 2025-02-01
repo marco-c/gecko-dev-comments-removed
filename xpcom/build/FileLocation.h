@@ -47,23 +47,23 @@ class FileLocation {
 
 
 
-  FileLocation(nsIFile* aZip, const char* aPath);
+  FileLocation(nsIFile* aZip, const nsACString& aPath);
 
-  FileLocation(nsZipArchive* aZip, const char* aPath);
+  FileLocation(nsZipArchive* aZip, const nsACString& aPath);
 
   
 
 
-  FileLocation(const FileLocation& aFile, const char* aPath);
+  FileLocation(const FileLocation& aFile, const nsACString& aPath);
 
   
 
 
   void Init(nsIFile* aFile);
 
-  void Init(nsIFile* aZip, const char* aPath);
+  void Init(nsIFile* aZip, const nsACString& aPath);
 
-  void Init(nsZipArchive* aZip, const char* aPath);
+  void Init(nsZipArchive* aZip, const nsACString& aPath);
 
   
 
