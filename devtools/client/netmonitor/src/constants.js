@@ -610,6 +610,9 @@ const general = {
   AUTO_EXPAND_MAX_NODES: 50,
   CHANNEL_TYPE,
   WEB_SOCKET_OPCODE,
+  
+  
+  MAX_UI_STRING_LENGTH: 10000,
 };
 
 
