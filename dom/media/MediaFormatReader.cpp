@@ -1888,7 +1888,9 @@ void MediaFormatReader::NotifyWaitingForData(TrackType aTrack) {
   auto& decoder = GetDecoderData(aTrack);
   
   
-  decoder.mWaitingForDataStartTime = Some(TimeStamp::Now());
+  if (!decoder.mWaitingForDataStartTime) {
+    decoder.mWaitingForDataStartTime.emplace(TimeStamp::Now());
+  }
   if (decoder.mTimeThreshold) {
     
     
