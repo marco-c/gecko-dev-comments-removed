@@ -117,13 +117,6 @@ function showDefaultopenPopoversOnLoad() {
     window.addEventListener('load',show,{once:true});
   }
 }
-function popoverHintSupported() {
-  
-  
-  const testElement = document.createElement('div');
-  testElement.popover = 'hint';
-  return testElement.popover === 'hint';
-}
 
 function assertPopoverVisibility(popover, isPopover, expectedVisibility, message) {
   const isVisible = isElementVisible(popover);
