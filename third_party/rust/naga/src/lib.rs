@@ -597,6 +597,8 @@ bitflags::bitflags! {
         const LOAD = 0x1;
         /// Storage can be used as a target for store ops.
         const STORE = 0x2;
+        /// Storage can be used as a target for atomic ops.
+        const ATOMIC = 0x4;
     }
 }
 
@@ -1957,8 +1959,22 @@ pub enum Statement {
         
         
         
+        
+        
+        
+        
         pointer: Handle<Expression>,
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
@@ -2002,6 +2018,49 @@ pub enum Statement {
         
         
         result: Option<Handle<Expression>>,
+    },
+    
+    
+    
+    
+    ImageAtomic {
+        
+        
+        
+        
+        
+        
+        
+        
+        image: Handle<Expression>,
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        coordinate: Handle<Expression>,
+
+        
+        
+        
+        
+        
+        
+        array_index: Option<Handle<Expression>>,
+
+        
+        fun: AtomicFunction,
+
+        
+        value: Handle<Expression>,
     },
     
     
@@ -2217,11 +2276,11 @@ pub enum PredeclaredType {
     AtomicCompareExchangeWeakResult(Scalar),
     ModfResult {
         size: Option<VectorSize>,
-        width: Bytes,
+        scalar: Scalar,
     },
     FrexpResult {
         size: Option<VectorSize>,
-        width: Bytes,
+        scalar: Scalar,
     },
 }
 

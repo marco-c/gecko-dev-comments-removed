@@ -2,11 +2,13 @@
 
 
 
+use strum::VariantArray;
+
 
 
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub(crate) enum LanguageExtension {
+pub enum LanguageExtension {
     #[allow(unused)]
     Implemented(ImplementedLanguageExtension),
     Unimplemented(UnimplementedLanguageExtension),
@@ -41,7 +43,7 @@ impl LanguageExtension {
     
     pub const fn to_ident(self) -> &'static str {
         match self {
-            Self::Implemented(kind) => match kind {},
+            Self::Implemented(kind) => kind.to_ident(),
             Self::Unimplemented(kind) => match kind {
                 UnimplementedLanguageExtension::ReadOnlyAndReadWriteStorageTextures => {
                     Self::READONLY_AND_READWRITE_STORAGE_TEXTURES
@@ -61,12 +63,24 @@ impl LanguageExtension {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub(crate) enum ImplementedLanguageExtension {}
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, VariantArray)]
+pub enum ImplementedLanguageExtension {}
+
+impl ImplementedLanguageExtension {
+    
+    pub const fn all() -> &'static [Self] {
+        Self::VARIANTS
+    }
+
+    
+    pub const fn to_ident(self) -> &'static str {
+        match self {}
+    }
+}
 
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub(crate) enum UnimplementedLanguageExtension {
+pub enum UnimplementedLanguageExtension {
     ReadOnlyAndReadWriteStorageTextures,
     Packed4x8IntegerDotProduct,
     UnrestrictedPointerParameters,

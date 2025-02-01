@@ -9,7 +9,6 @@ use crate::{
 };
 use smallvec::SmallVec;
 
-use crate::resource::{Blas, Tlas};
 use std::sync::Arc;
 use thiserror::Error;
 
@@ -28,9 +27,6 @@ struct ActiveSubmission {
     
     
     index: SubmissionIndex,
-
-    
-    temp_resources: Vec<TempResource>,
 
     
     mapped: Vec<Arc<Buffer>>,
@@ -98,44 +94,6 @@ impl ActiveSubmission {
                 .pending_textures
                 .contains_key(&texture.tracker_index())
             {
-                return true;
-            }
-        }
-
-        false
-    }
-
-    pub fn contains_blas(&self, blas: &Blas) -> bool {
-        for encoder in &self.encoders {
-            
-            
-            
-            
-
-            if encoder.trackers.blas_s.contains(blas) {
-                return true;
-            }
-
-            if encoder.pending_blas_s.contains_key(&blas.tracker_index()) {
-                return true;
-            }
-        }
-
-        false
-    }
-
-    pub fn contains_tlas(&self, tlas: &Tlas) -> bool {
-        for encoder in &self.encoders {
-            
-            
-            
-            
-
-            if encoder.trackers.tlas_s.contains(tlas) {
-                return true;
-            }
-
-            if encoder.pending_tlas_s.contains_key(&tlas.tracker_index()) {
                 return true;
             }
         }
@@ -211,15 +169,9 @@ impl LifetimeTracker {
     }
 
     
-    pub fn track_submission(
-        &mut self,
-        index: SubmissionIndex,
-        temp_resources: impl Iterator<Item = TempResource>,
-        encoders: Vec<EncoderInFlight>,
-    ) {
+    pub fn track_submission(&mut self, index: SubmissionIndex, encoders: Vec<EncoderInFlight>) {
         self.active.push(ActiveSubmission {
             index,
-            temp_resources: temp_resources.collect(),
             mapped: Vec::new(),
             encoders,
             work_done_closures: SmallVec::new(),
@@ -250,34 +202,6 @@ impl LifetimeTracker {
         
         self.active.iter().rev().find_map(|submission| {
             if submission.contains_buffer(buffer) {
-                Some(submission.index)
-            } else {
-                None
-            }
-        })
-    }
-
-    
-    
-    pub fn get_blas_latest_submission_index(&self, blas: &Blas) -> Option<SubmissionIndex> {
-        
-        
-        self.active.iter().rev().find_map(|submission| {
-            if submission.contains_blas(blas) {
-                Some(submission.index)
-            } else {
-                None
-            }
-        })
-    }
-
-    
-    
-    pub fn get_tlas_latest_submission_index(&self, tlas: &Tlas) -> Option<SubmissionIndex> {
-        
-        
-        self.active.iter().rev().find_map(|submission| {
-            if submission.contains_tlas(tlas) {
                 Some(submission.index)
             } else {
                 None
@@ -340,7 +264,6 @@ impl LifetimeTracker {
                 profiling::scope!("drop command buffer trackers");
                 drop(encoder);
             }
-            drop(a.temp_resources);
             work_done_closures.extend(a.work_done_closures);
         }
         work_done_closures
@@ -355,7 +278,12 @@ impl LifetimeTracker {
             .active
             .iter_mut()
             .find(|a| a.index == last_submit_index)
-            .map(|a| &mut a.temp_resources);
+            .map(|a| {
+                
+                
+                
+                &mut a.encoders.last_mut().unwrap().temp_resources
+            });
         if let Some(resources) = resources {
             resources.push(temp_resource);
         }

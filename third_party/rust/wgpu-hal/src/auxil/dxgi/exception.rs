@@ -1,6 +1,6 @@
 use std::{borrow::Cow, slice};
 
-use parking_lot::{lock_api::RawMutex, Mutex};
+use parking_lot::Mutex;
 use windows::Win32::{Foundation, System::Diagnostics::Debug};
 
 
@@ -9,7 +9,7 @@ use windows::Win32::{Foundation, System::Diagnostics::Debug};
 
 
 
-static EXCEPTION_HANDLER_COUNT: Mutex<usize> = Mutex::const_new(parking_lot::RawMutex::INIT, 0);
+static EXCEPTION_HANDLER_COUNT: Mutex<usize> = Mutex::new(0);
 
 pub fn register_exception_handler() {
     let mut count_guard = EXCEPTION_HANDLER_COUNT.lock();
