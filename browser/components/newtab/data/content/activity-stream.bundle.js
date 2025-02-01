@@ -4245,7 +4245,7 @@ const AdBanner = ({
   
   const clampedRow = Math.max(1, Math.min(9, row));
   return external_React_default().createElement("aside", {
-    className: `ad-banner-wrapper`,
+    className: "ad-banner-wrapper",
     style: {
       gridRow: clampedRow
     }
@@ -4709,14 +4709,37 @@ class _CardGrid extends (external_React_default()).PureComponent {
       }) => format === "billboard" && billboardEnabled);
       if (spocToRender && !spocs.blocked.includes(spocToRender.url)) {
         const row = spocToRender.format === "leaderboard" ? prefs[PREF_LEADERBOARD_POSITION] : prefs[PREF_BILLBOARD_POSITION];
-        cards.push( external_React_default().createElement(AdBanner, {
-          spoc: spocToRender,
-          key: `dscard-${spocToRender.id}`,
-          dispatch: this.props.dispatch,
-          type: this.props.type,
-          firstVisibleTimestamp: this.props.firstVisibleTimestamp,
-          row: row
-        }));
+        function displayCardsPerRow() {
+          
+          
+          
+          
+          if (window.innerWidth <= 1122) {
+            return 2;
+          } else if (window.innerWidth > 1122 && window.innerWidth < 1698) {
+            return 3;
+          }
+          return 4;
+        }
+        const injectAdBanner = bannerIndex => {
+          
+          
+          cards.splice(bannerIndex, 0, external_React_default().createElement(AdBanner, {
+            spoc: spocToRender,
+            key: `dscard-${spocToRender.id}`,
+            dispatch: this.props.dispatch,
+            type: this.props.type,
+            firstVisibleTimestamp: this.props.firstVisibleTimestamp,
+            row: row
+          }));
+        };
+        const getBannerIndex = () => {
+          
+          const cardsPerRow = displayCardsPerRow();
+          let bannerIndex = (row - 1) * cardsPerRow;
+          return bannerIndex;
+        };
+        injectAdBanner(getBannerIndex());
       }
     }
     let moreRecsHeader = "";
