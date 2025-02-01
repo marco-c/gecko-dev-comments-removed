@@ -220,9 +220,13 @@ inline constexpr bool holds_alternative(const variant<Ts...> &v) noexcept
   return v.index() == I;
 }
 
-template <typename T, typename... Ts>
-inline constexpr bool holds_alternative(const variant<Ts...> &v) noexcept
+template <typename T, template<typename...> typename U, typename... Ts>
+inline constexpr bool holds_alternative(const U<Ts...> &v) noexcept
 {
+  
+  
+  static_assert(std::is_same_v<U<Ts...>, std::variant<Ts...>>,
+                "Unsupported argument type");
   return std::holds_alternative<T, Ts...>(v);
 }
 
