@@ -4058,6 +4058,16 @@ void Instance::addSizeOfMisc(
 
 
 
+void wasm::MarkPendingExceptionAsTrap(JSContext* cx) {
+  RootedValue exn(cx);
+  if (!cx->getPendingException(&exn)) {
+    return;
+  }
+
+  MOZ_RELEASE_ASSERT(exn.isObject() && exn.toObject().is<ErrorObject>());
+  exn.toObject().as<ErrorObject>().setFromWasmTrap();
+}
+
 void wasm::ReportTrapError(JSContext* cx, unsigned errorNumber) {
   JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, errorNumber);
 
@@ -4067,11 +4077,5 @@ void wasm::ReportTrapError(JSContext* cx, unsigned errorNumber) {
 
   
   
-  RootedValue exn(cx);
-  if (!cx->getPendingException(&exn)) {
-    return;
-  }
-
-  MOZ_ASSERT(exn.isObject() && exn.toObject().is<ErrorObject>());
-  exn.toObject().as<ErrorObject>().setFromWasmTrap();
+  MarkPendingExceptionAsTrap(cx);
 }

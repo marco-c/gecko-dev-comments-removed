@@ -657,6 +657,10 @@ void ReportTrapError(JSContext* cx, unsigned errorNumber);
 
 
 
+void MarkPendingExceptionAsTrap(JSContext* cx);
+
+
+
 void TraceInstanceEdge(JSTracer* trc, Instance* instance, const char* name);
 
 }  
