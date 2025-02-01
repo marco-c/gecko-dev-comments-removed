@@ -10,15 +10,34 @@
 
 
 
+
 def convert_yaml_path_to_header_name(filepath):
+    
+    
     filepath = filepath[: -(len(".yaml"))]
     path_components = filepath.replace("-", "_").split("/")
+
+    
+    
+    
     if path_components[1] == "base":
         path_components.pop(1)
+    
+    
+    
     if len(path_components) > 3 and path_components[1] == "components":
         path_components.pop(1)
         if path_components[0] in ["browser", "toolkit"]:
             path_components.pop(0)
+
+    
+    if len(path_components) > 2 and path_components[0] == "modules":
+        path_components.pop(0)
+
+    
+    if filepath.startswith("mobile/shared/modules/") and len(path_components) > 4:
+        path_components = ["geckoview", "metrics"]
+
     path_components = "_".join(path_components).split("_")
     return "".join(
         [
