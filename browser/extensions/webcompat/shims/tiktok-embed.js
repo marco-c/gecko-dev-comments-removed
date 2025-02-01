@@ -145,7 +145,10 @@ if (!window.smartblockTikTokShimInitialized) {
       
       shadowRoot
         .getElementById("smartblock-placeholder-button")
-        .addEventListener("click", () => {
+        .addEventListener("click", ({ isTrusted }) => {
+          if (!isTrusted) {
+            return;
+          }
           
           
           sendMessageToAddon("embedClicked");
