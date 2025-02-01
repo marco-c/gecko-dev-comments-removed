@@ -217,6 +217,16 @@ class nsLineBreaker {
     mWordContinuation = aContinuation;
   }
 
+  
+
+
+  void SetHyphenateLimitChars(uint32_t aWordLength, uint32_t aStartLength,
+                              uint32_t aEndLength) {
+    mHyphenateLimitWord = std::min(255u, aWordLength);
+    mHyphenateLimitStart = std::min(255u, aStartLength);
+    mHyphenateLimitEnd = std::min(255u, aEndLength);
+  }
+
  private:
   
   
@@ -262,25 +272,38 @@ class nsLineBreaker {
   AutoTArray<char16_t, 100> mCurrentWord;
   
   AutoTArray<TextItem, 2> mTextItems;
-  nsAtom* mCurrentWordLanguage;
-  bool mCurrentWordContainsMixedLang;
-  bool mCurrentWordMightBeBreakable = false;
-  bool mScriptIsChineseOrJapanese;
+  nsAtom* mCurrentWordLanguage = nullptr;
 
   
-  bool mAfterBreakableSpace;
-  
-  
-  bool mBreakHere;
-  
-  mozilla::intl::WordBreakRule mWordBreak;
-  
-  mozilla::intl::LineBreakRule mLineBreak;
   
   
   
   
-  bool mWordContinuation;
+  
+  
+  uint8_t mHyphenateLimitWord = 0;   
+  uint8_t mHyphenateLimitStart = 0;  
+  uint8_t mHyphenateLimitEnd = 0;    
+
+  bool mCurrentWordContainsMixedLang = false;
+  bool mCurrentWordMightBeBreakable = false;
+  bool mScriptIsChineseOrJapanese = false;
+
+  
+  bool mAfterBreakableSpace = false;
+  
+  
+  bool mBreakHere = false;
+  
+  mozilla::intl::WordBreakRule mWordBreak =
+      mozilla::intl::WordBreakRule::Normal;
+  
+  mozilla::intl::LineBreakRule mLineBreak = mozilla::intl::LineBreakRule::Auto;
+  
+  
+  
+  
+  bool mWordContinuation = false;
   
   const bool mLegacyBehavior;
 };

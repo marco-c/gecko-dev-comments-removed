@@ -64,15 +64,7 @@ static constexpr bool IsNonBreakableChar(T aChar, bool aLegacyBehavior) {
 }
 
 nsLineBreaker::nsLineBreaker()
-    : mCurrentWordLanguage(nullptr),
-      mCurrentWordContainsMixedLang(false),
-      mScriptIsChineseOrJapanese(false),
-      mAfterBreakableSpace(false),
-      mBreakHere(false),
-      mWordBreak(WordBreakRule::Normal),
-      mLineBreak(LineBreakRule::Auto),
-      mWordContinuation(false),
-      mLegacyBehavior(!mozilla::StaticPrefs::intl_icu4x_segmenter_enabled()) {}
+    : mLegacyBehavior(!mozilla::StaticPrefs::intl_icu4x_segmenter_enabled()) {}
 
 nsLineBreaker::~nsLineBreaker() {
   NS_ASSERTION(mCurrentWord.Length() == 0,
@@ -422,14 +414,88 @@ void nsLineBreaker::FindHyphenationPoints(nsHyphenator* aHyphenator,
                                           const char16_t* aTextStart,
                                           const char16_t* aTextLimit,
                                           uint8_t* aBreakState) {
+  
+  if (aTextLimit - aTextStart < mHyphenateLimitWord) {
+    return;
+  }
+
   nsDependentSubstring string(aTextStart, aTextLimit);
   AutoTArray<bool, 200> hyphens;
-  if (NS_SUCCEEDED(aHyphenator->Hyphenate(string, hyphens))) {
-    for (uint32_t i = 0; i + 1 < string.Length(); ++i) {
-      if (hyphens[i]) {
-        aBreakState[i + 1] =
-            gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_HYPHEN;
+  if (NS_FAILED(aHyphenator->Hyphenate(string, hyphens))) {
+    return;
+  }
+
+  
+  
+  uint32_t length = 0;
+  AutoTArray<std::pair<uint32_t, uint32_t>, 16> positionAndLength;
+  for (uint32_t i = 0; i + 1 < string.Length(); ++i) {
+    
+    
+    uint32_t ch = string[i];
+    if (NS_IS_HIGH_SURROGATE(ch) && i + 1 < string.Length() &&
+        NS_IS_LOW_SURROGATE(string[i + 1])) {
+      ch = SURROGATE_TO_UCS4(ch, string[i + 1]);
+    }
+
+    
+    
+    
+    
+    
+    using intl::GeneralCategory;
+    switch (UnicodeProperties::CharType(ch)) {
+      case GeneralCategory::Nonspacing_Mark:
+      case GeneralCategory::Dash_Punctuation:
+      case GeneralCategory::Open_Punctuation:
+      case GeneralCategory::Close_Punctuation:
+      case GeneralCategory::Connector_Punctuation:
+      case GeneralCategory::Other_Punctuation:
+      case GeneralCategory::Initial_Punctuation:
+      case GeneralCategory::Final_Punctuation:
+      case GeneralCategory::Control:
+      case GeneralCategory::Format:
+      case GeneralCategory::Surrogate:
+        break;
+      default:
+        ++length;
+        break;
+    }
+
+    
+    if (length >= mHyphenateLimitStart && hyphens[i]) {
+      MOZ_ASSERT(aBreakState[i + 1] ==
+                     gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NONE);
+      aBreakState[i + 1] = gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_HYPHEN;
+      
+      positionAndLength.AppendElement(
+          std::pair<uint32_t, uint32_t>(i + 1, length));
+    }
+
+    
+    if (!IS_IN_BMP(ch)) {
+      ++i;
+    }
+  }
+  ++length;  
+
+  if (length < mHyphenateLimitWord) {
+    
+    
+    
+    while (!positionAndLength.IsEmpty()) {
+      auto [lastPos, lastLen] = positionAndLength.PopLastElement();
+      aBreakState[lastPos] = gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NONE;
+    }
+  } else {
+    
+    
+    while (!positionAndLength.IsEmpty()) {
+      auto [lastPos, lastLen] = positionAndLength.PopLastElement();
+      if (length - lastLen >= mHyphenateLimitEnd) {
+        break;
       }
+      aBreakState[lastPos] = gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NONE;
     }
   }
 }
