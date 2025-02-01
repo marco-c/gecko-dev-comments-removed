@@ -91,9 +91,7 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
                 } else {
                     ValueType::units()
                 });
-                let node = GenericCalcNode::parse(context, input, function, allow)?;
-                debug_assert!(!node.has_anchor_function, "Anchor function used for color?");
-                let mut node = node.node;
+                let mut node = GenericCalcNode::parse(context, input, function, allow)?;
 
                 
                 

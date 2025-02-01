@@ -726,18 +726,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   
   
   bool NeedsHypotheticalPositionIfAbsPos() const {
-    return (GetAnchorResolvedInset(mozilla::eSideRight,
-                                   mozilla::StylePositionProperty::Absolute)
-                .IsAuto() &&
-            GetAnchorResolvedInset(mozilla::eSideLeft,
-                                   mozilla::StylePositionProperty::Absolute)
-                .IsAuto()) ||
-           (GetAnchorResolvedInset(mozilla::eSideTop,
-                                   mozilla::StylePositionProperty::Absolute)
-                .IsAuto() &&
-            GetAnchorResolvedInset(mozilla::eSideBottom,
-                                   mozilla::StylePositionProperty::Absolute)
-                .IsAuto());
+    return (GetInset(mozilla::eSideRight).IsAuto() &&
+            GetInset(mozilla::eSideLeft).IsAuto()) ||
+           (GetInset(mozilla::eSideTop).IsAuto() &&
+            GetInset(mozilla::eSideBottom).IsAuto());
   }
 
   const mozilla::StyleContainIntrinsicSize& ContainIntrinsicBSize(
@@ -845,41 +837,31 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   inline bool MinBSizeDependsOnContainer(WritingMode) const;
   inline bool MaxBSizeDependsOnContainer(WritingMode) const;
 
-  struct InsetAuto {};
-  using LengthPercentageReference =
-      std::reference_wrapper<const mozilla::StyleLengthPercentage>;
-  struct AnchorResolvedInset {
-    using V = mozilla::Variant<InsetAuto, LengthPercentageReference,
-                               mozilla::StyleLengthPercentage>;
-    V mVariant;
-
-    bool IsAuto() const { return mVariant.is<InsetAuto>(); }
-
-    const mozilla::StyleLengthPercentage& AsLengthPercentage() const {
-      const bool isReference = mVariant.is<LengthPercentageReference>();
-      MOZ_ASSERT(isReference || mVariant.is<mozilla::StyleLengthPercentage>(),
-                 "Not LengthPercentage type");
-      if (isReference) {
-        return mVariant.as<LengthPercentageReference>().get();
-      }
-      return mVariant.as<mozilla::StyleLengthPercentage>();
+  
+  
+  
+  static const mozilla::StyleInset kAutoInset;
+  const mozilla::StyleInset& GetInset(mozilla::Side aSide) const {
+    const auto& result = mOffset.Get(aSide);
+    if (MOZ_UNLIKELY(result.IsAnchorPositioningFunction())) {
+      return kAutoInset;
     }
+    return result;
+  }
 
-    bool HasPercent() const {
-      if (IsAuto()) {
+  bool InsetEquals(const nsStylePosition& aOther) const {
+    for (const auto side : mozilla::AllPhysicalSides()) {
+      if (GetInset(side) != aOther.GetInset(side)) {
         return false;
       }
-      return AsLengthPercentage().HasPercent();
     }
-  };
+    return true;
+  }
 
   
   
-  AnchorResolvedInset GetAnchorResolvedInset(
-      mozilla::Side aSide, mozilla::StylePositionProperty aPosition) const;
-  AnchorResolvedInset GetAnchorResolvedInset(
-      mozilla::LogicalSide aSide, WritingMode aWM,
-      mozilla::StylePositionProperty aPosition) const;
+  inline const mozilla::StyleInset& GetInset(mozilla::LogicalSide aSide,
+                                             WritingMode) const;
 
   
   

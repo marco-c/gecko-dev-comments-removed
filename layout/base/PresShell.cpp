@@ -3793,10 +3793,8 @@ bool PresShell::ScrollFrameIntoView(
     
     
     const auto* stylePosition = aFrame->StylePosition();
-    const auto positionProperty = aFrame->StyleDisplay()->mPosition;
     for (auto side : AllPhysicalSides()) {
-      if (stylePosition->GetAnchorResolvedInset(side, positionProperty)
-              .IsAuto()) {
+      if (stylePosition->GetInset(side).IsAuto()) {
         continue;
       }
       
