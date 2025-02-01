@@ -2,9 +2,13 @@
 
 
 
+
+
 if (!window.smartblockInstagramShimInitialized) {
   
-  window.smartblockInstagramShimInitialized = Object.freeze(true);
+  window.smartblockInstagramShimInitialized = true;
+
+  const SHIM_ID = "InstagramEmbed";
 
   
   const ORIGINAL_URL = "https://www.instagram.com/embed.js";
@@ -14,45 +18,17 @@ if (!window.smartblockInstagramShimInitialized) {
   let originalEmbedContainers = document.querySelectorAll(".instagram-media");
   let embedPlaceholders = [];
 
-  
-  const sendMessageToAddon = (function () {
-    const shimId = "InstagramEmbed";
-    const pendingMessages = new Map();
-    const channel = new MessageChannel();
-    channel.port1.onerror = console.error;
-    channel.port1.onmessage = event => {
-      const { messageId, response, message } = event.data;
-      const resolve = pendingMessages.get(messageId);
-      if (resolve) {
-        
-        pendingMessages.delete(messageId);
-        resolve(response);
-      } else {
-        addonMessageHandler(message);
-      }
-    };
-    function reconnect() {
-      const detail = {
-        pendingMessages: [...pendingMessages.values()],
-        port: channel.port2,
-        shimId,
-      };
-      window.dispatchEvent(new CustomEvent("ShimConnects", { detail }));
-    }
-    window.addEventListener("ShimHelperReady", reconnect);
-    reconnect();
-    return function (message) {
-      const messageId = crypto.randomUUID();
-      return new Promise(resolve => {
-        const payload = { message, messageId, shimId };
-        pendingMessages.set(messageId, resolve);
-        channel.port1.postMessage(payload);
-      });
-    };
-  })();
+  function sendMessageToAddon(message) {
+    return browser.runtime.sendMessage({ message, shimId: SHIM_ID });
+  }
 
   function addonMessageHandler(message) {
-    let { topic, data } = message;
+    let { topic, data, shimId } = message;
+    
+    if (shimId != SHIM_ID) {
+      return;
+    }
+
     if (topic === "smartblock:unblock-embed") {
       if (data != window.location.hostname) {
         
@@ -66,7 +42,11 @@ if (!window.smartblockInstagramShimInitialized) {
 
       
       let scriptElement = document.createElement("script");
-      scriptElement.src = ORIGINAL_URL;
+
+      
+      
+      
+      scriptElement.wrappedJSObject.src = ORIGINAL_URL;
       document.body.appendChild(scriptElement);
     }
   }
@@ -164,7 +144,10 @@ if (!window.smartblockInstagramShimInitialized) {
       
       shadowRoot
         .getElementById("smartblock-placeholder-button")
-        .addEventListener("click", () => {
+        .addEventListener("click", ({ isTrusted }) => {
+          if (!isTrusted) {
+            return;
+          }
           
           
           sendMessageToAddon("embedClicked");
@@ -174,6 +157,11 @@ if (!window.smartblockInstagramShimInitialized) {
       originalEmbedContainer.replaceWith(placeholderDiv);
     });
   }
+
+  
+  browser.runtime.onMessage.addListener(request => {
+    addonMessageHandler(request);
+  });
 
   createShimPlaceholders();
 }
