@@ -214,13 +214,18 @@ class AlpnComparator {
   }
 };
 
-nsTArray<std::tuple<nsCString, SupportedAlpnRank>> SVCB::GetAllAlpn() const {
+nsTArray<std::tuple<nsCString, SupportedAlpnRank>> SVCB::GetAllAlpn(
+    bool& aHasNoDefaultAlpn) const {
+  aHasNoDefaultAlpn = false;
   nsTArray<std::tuple<nsCString, SupportedAlpnRank>> alpnList;
   for (const auto& value : mSvcFieldValue) {
     if (value.mValue.is<SvcParamAlpn>()) {
       for (const auto& alpn : value.mValue.as<SvcParamAlpn>().mValue) {
         alpnList.AppendElement(std::make_tuple(alpn, IsAlpnSupported(alpn)));
       }
+    } else if (value.mValue.is<SvcParamKeyNoDefaultAlpn>()) {
+      
+      aHasNoDefaultAlpn = true;
     }
   }
   alpnList.Sort(AlpnComparator());
@@ -342,17 +347,41 @@ static bool CheckAlpnIsUsable(SupportedAlpnRank aAlpnType, bool aNoHttp2,
   return true;
 }
 
-static nsTArray<SVCBWrapper> FlattenRecords(const nsTArray<SVCB>& aRecords) {
+static nsTArray<SVCBWrapper> FlattenRecords(const nsACString& aHost,
+                                            const nsTArray<SVCB>& aRecords,
+                                            uint32_t& aH3RecordCount) {
   nsTArray<SVCBWrapper> result;
+  aH3RecordCount = 0;
   for (const auto& record : aRecords) {
+    bool hasNoDefaultAlpn = false;
     nsTArray<std::tuple<nsCString, SupportedAlpnRank>> alpnList =
-        record.GetAllAlpn();
+        record.GetAllAlpn(hasNoDefaultAlpn);
     if (alpnList.IsEmpty()) {
       result.AppendElement(SVCBWrapper(record));
     } else {
+      if (!hasNoDefaultAlpn) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!aHost.Equals(record.mSvcDomainName) || record.mHasEchConfig) {
+          alpnList.AppendElement(
+              std::make_tuple(""_ns, SupportedAlpnRank::HTTP_1_1));
+        }
+      }
       for (const auto& alpn : alpnList) {
         SVCBWrapper wrapper(record);
         wrapper.mAlpn = Some(alpn);
+        if (IsHttp3(std::get<1>(alpn))) {
+          aH3RecordCount++;
+        }
         result.AppendElement(wrapper);
       }
     }
@@ -379,8 +408,9 @@ DNSHTTPSSVCRecordBase::GetServiceModeRecordInternal(
   aRecordsAllExcluded = false;
   nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
   uint32_t h3ExcludedCount = 0;
-
-  nsTArray<SVCBWrapper> records = FlattenRecords(aRecords);
+  uint32_t h3RecordCount = 0;
+  nsTArray<SVCBWrapper> records =
+      FlattenRecords(mHost, aRecords, h3RecordCount);
   for (const auto& record : records) {
     if (record.mRecord.mSvcFieldPriority == 0) {
       
@@ -454,7 +484,8 @@ DNSHTTPSSVCRecordBase::GetServiceModeRecordInternal(
 
     
     
-    if (h3ExcludedCount == records.Length() && aCheckHttp3ExcludedList) {
+    if (h3ExcludedCount && h3ExcludedCount == h3RecordCount &&
+        aCheckHttp3ExcludedList) {
       return GetServiceModeRecordInternal(aNoHttp2, aNoHttp3, aRecords,
                                           aRecordsAllExcluded, false, aCname);
     }
@@ -477,11 +508,11 @@ DNSHTTPSSVCRecordBase::GetServiceModeRecordInternal(
   return selectedRecord.forget();
 }
 
-void DNSHTTPSSVCRecordBase::GetAllRecordsWithEchConfigInternal(
+void DNSHTTPSSVCRecordBase::GetAllRecordsInternal(
     bool aNoHttp2, bool aNoHttp3, const nsACString& aCname,
-    const nsTArray<SVCB>& aRecords, bool* aAllRecordsHaveEchConfig,
-    bool* aAllRecordsInH3ExcludedList, nsTArray<RefPtr<nsISVCBRecord>>& aResult,
-    bool aCheckHttp3ExcludedList) {
+    const nsTArray<SVCB>& aRecords, bool aOnlyRecordsWithECH,
+    bool* aAllRecordsHaveEchConfig, bool* aAllRecordsInH3ExcludedList,
+    nsTArray<RefPtr<nsISVCBRecord>>& aResult, bool aCheckHttp3ExcludedList) {
   if (aRecords.IsEmpty()) {
     return;
   }
@@ -489,12 +520,14 @@ void DNSHTTPSSVCRecordBase::GetAllRecordsWithEchConfigInternal(
   *aAllRecordsHaveEchConfig = aRecords[0].mHasEchConfig;
   *aAllRecordsInH3ExcludedList = false;
   
-  if (!(*aAllRecordsHaveEchConfig)) {
+  if (aOnlyRecordsWithECH && !(*aAllRecordsHaveEchConfig)) {
     return;
   }
 
   uint32_t h3ExcludedCount = 0;
-  nsTArray<SVCBWrapper> records = FlattenRecords(aRecords);
+  uint32_t h3RecordCount = 0;
+  nsTArray<SVCBWrapper> records =
+      FlattenRecords(mHost, aRecords, h3RecordCount);
   for (const auto& record : records) {
     if (record.mRecord.mSvcFieldPriority == 0) {
       
@@ -507,7 +540,7 @@ void DNSHTTPSSVCRecordBase::GetAllRecordsWithEchConfigInternal(
     
     
     *aAllRecordsHaveEchConfig &= record.mRecord.mHasEchConfig;
-    if (!(*aAllRecordsHaveEchConfig)) {
+    if (aOnlyRecordsWithECH && !(*aAllRecordsHaveEchConfig)) {
       aResult.Clear();
       return;
     }
@@ -537,10 +570,11 @@ void DNSHTTPSSVCRecordBase::GetAllRecordsWithEchConfigInternal(
 
   
   
-  if (h3ExcludedCount == records.Length() && aCheckHttp3ExcludedList) {
-    GetAllRecordsWithEchConfigInternal(
-        aNoHttp2, aNoHttp3, aCname, aRecords, aAllRecordsHaveEchConfig,
-        aAllRecordsInH3ExcludedList, aResult, false);
+  if (h3ExcludedCount && h3ExcludedCount == h3RecordCount &&
+      aCheckHttp3ExcludedList) {
+    GetAllRecordsInternal(aNoHttp2, aNoHttp3, aCname, aRecords,
+                          aOnlyRecordsWithECH, aAllRecordsHaveEchConfig,
+                          aAllRecordsInH3ExcludedList, aResult, false);
     *aAllRecordsInH3ExcludedList = true;
   }
 }
