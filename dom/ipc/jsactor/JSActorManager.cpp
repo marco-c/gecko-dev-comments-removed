@@ -75,21 +75,11 @@ already_AddRefed<JSActor> JSActorManager::GetActor(JSContext* aCx,
 
   
   JS::Rooted<JSObject*> actorObj(aCx);
-  if (side.mModuleURI || side.mESModuleURI) {
+  if (side.mESModuleURI) {
     JS::Rooted<JSObject*> exports(aCx);
-    if (side.mModuleURI) {
-      
-      
-      JS::Rooted<JSObject*> global(aCx);
-      aRv = loader->Import(aCx, side.mModuleURI.ref(), &global, &exports);
-      if (aRv.Failed()) {
-        return nullptr;
-      }
-    } else {
-      aRv = loader->ImportESModule(aCx, side.mESModuleURI.ref(), &exports);
-      if (aRv.Failed()) {
-        return nullptr;
-      }
+    aRv = loader->ImportESModule(aCx, side.mESModuleURI.ref(), &exports);
+    if (aRv.Failed()) {
+      return nullptr;
     }
     MOZ_ASSERT(exports, "null exports!");
 
