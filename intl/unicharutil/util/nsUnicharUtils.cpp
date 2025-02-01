@@ -521,8 +521,13 @@ bool IsSegmentBreakSkipChar(uint32_t u) {
 }
 
 bool IsEastAsianPunctuation(uint32_t u) {
+  
+  
+  
+  
+  constexpr uint32_t kFullwidthTilde = 0xFF5E;
   return intl::UnicodeProperties::IsEastAsianWidthFHW(u) &&
-         intl::UnicodeProperties::IsPunctuation(u);
+         (intl::UnicodeProperties::IsPunctuation(u) || u == kFullwidthTilde);
 }
 
 bool IsPunctuationForWordSelect(char16_t aCh) {
