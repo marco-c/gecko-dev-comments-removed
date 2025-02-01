@@ -4,28 +4,28 @@
 
 
 
-use std::{cmp::max, collections::HashMap, mem};
+use std::{cmp::max, collections::HashMap};
 
-use neqo_common::{event::Provider, qdebug};
+use neqo_common::{event::Provider as _, qdebug};
 use test_fixture::now;
 
 use super::{
     super::State, assert_error, connect, connect_force_idle, default_client, default_server,
-    maybe_authenticate, new_client, new_server, send_something, DEFAULT_STREAM_DATA,
+    maybe_authenticate, new_client, new_server, send_something, send_with_extra,
+    DEFAULT_STREAM_DATA,
 };
 use crate::{
     events::ConnectionEvent,
+    frame::{
+        FRAME_TYPE_MAX_STREAM_DATA, FRAME_TYPE_RESET_STREAM, FRAME_TYPE_STOP_SENDING,
+        FRAME_TYPE_STREAM_CLIENT_BIDI, FRAME_TYPE_STREAM_DATA_BLOCKED,
+    },
+    packet::PacketBuilder,
     recv_stream::RECV_BUFFER_SIZE,
     send_stream::{OrderGroup, SendStreamState, SEND_BUFFER_SIZE},
     streams::{SendOrder, StreamOrder},
     tparams::{self, TransportParameter},
-    CloseReason,
-    
-    Connection,
-    ConnectionParameters,
-    Error,
-    StreamId,
-    StreamType,
+    CloseReason, Connection, ConnectionParameters, Error, StreamId, StreamType,
 };
 
 #[test]
@@ -37,7 +37,7 @@ fn stream_create() {
     let out = server.process(out.dgram(), now());
 
     let out = client.process(out.dgram(), now());
-    mem::drop(server.process(out.dgram(), now()));
+    drop(server.process(out.dgram(), now()));
     assert!(maybe_authenticate(&mut client));
     let out = client.process_output(now());
 
@@ -47,7 +47,7 @@ fn stream_create() {
     assert_eq!(client.stream_create(StreamType::BiDi).unwrap(), 0);
     assert_eq!(client.stream_create(StreamType::BiDi).unwrap(), 4);
 
-    mem::drop(server.process(out.dgram(), now()));
+    drop(server.process(out.dgram(), now()));
     
     assert_eq!(server.stream_create(StreamType::UniDi).unwrap(), 3);
     assert_eq!(server.stream_create(StreamType::UniDi).unwrap(), 7);
@@ -131,8 +131,8 @@ fn sendorder_test(order_of_sendorder: &[Option<SendOrder>]) {
         streams.push(id);
         ordered.push((id, *sendorder));
         
-        client.streams.set_fairness(id, true).ok();
-        client.streams.set_sendorder(id, *sendorder).ok();
+        client.streams.set_fairness(id, true).unwrap();
+        client.streams.set_sendorder(id, *sendorder).unwrap();
     }
     
     for stream_id in streams {
@@ -318,11 +318,11 @@ fn report_fin_when_stream_closed_wo_data() {
     let stream_id = client.stream_create(StreamType::BiDi).unwrap();
     client.stream_send(stream_id, &[0x00]).unwrap();
     let out = client.process_output(now());
-    mem::drop(server.process(out.dgram(), now()));
+    drop(server.process(out.dgram(), now()));
 
     server.stream_close_send(stream_id).unwrap();
     let out = server.process_output(now());
-    mem::drop(client.process(out.dgram(), now()));
+    drop(client.process(out.dgram(), now()));
     let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable { .. });
     assert!(client.events().any(stream_readable));
 }
@@ -512,7 +512,7 @@ fn do_not_accept_data_after_stop_sending() {
     let stream_id = client.stream_create(StreamType::BiDi).unwrap();
     client.stream_send(stream_id, &[0x00]).unwrap();
     let out = client.process_output(now());
-    mem::drop(server.process(out.dgram(), now()));
+    drop(server.process(out.dgram(), now()));
 
     let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable { .. });
     assert!(server.events().any(stream_readable));
@@ -532,10 +532,88 @@ fn do_not_accept_data_after_stop_sending() {
     let out = server.process(out_second_data_frame.dgram(), now());
     assert!(!server.events().any(stream_readable));
 
-    mem::drop(client.process(out.dgram(), now()));
+    drop(client.process(out.dgram(), now()));
     assert_eq!(
         Err(Error::FinalSizeError),
         client.stream_send(stream_id, &[0x00])
+    );
+}
+
+struct Writer(Vec<u64>);
+
+impl crate::connection::test_internal::FrameWriter for Writer {
+    fn write_frames(&mut self, builder: &mut PacketBuilder) {
+        builder.write_varint_frame(&self.0);
+    }
+}
+
+#[test]
+
+
+fn illegal_stream_related_frames() {
+    fn test_with_illegal_frame(frame: &[u64]) {
+        let mut client = default_client();
+        let mut server = default_server();
+        connect(&mut client, &mut server);
+        let dgram = send_with_extra(&mut server, Writer(frame.to_vec()), now());
+        client.process_input(dgram, now());
+        assert!(client.state().closed());
+    }
+
+    
+    for stream_id in [0, 2] {
+        for frame_type in [
+            FRAME_TYPE_RESET_STREAM,
+            FRAME_TYPE_STOP_SENDING,
+            FRAME_TYPE_MAX_STREAM_DATA,
+            FRAME_TYPE_STREAM_DATA_BLOCKED,
+            FRAME_TYPE_STREAM_CLIENT_BIDI,
+        ] {
+            
+            
+            test_with_illegal_frame(&[frame_type, stream_id, 0, 0]);
+        }
+    }
+}
+
+#[test]
+
+fn legal_out_of_order_frame_on_remote_initiated_closed_stream() {
+    const REQUEST: &[u8] = b"ping";
+    let mut client = default_client();
+    let mut server = default_server();
+    connect(&mut client, &mut server);
+
+    
+    let stream_id = client.stream_create(StreamType::BiDi).unwrap();
+    _ = client.stream_send(stream_id, REQUEST).unwrap();
+    client.stream_close_send(stream_id).unwrap();
+    let dgram = client.process_output(now()).dgram();
+
+    
+    server.process_input(dgram.unwrap(), now());
+    let mut buf = [0; REQUEST.len()];
+    server.stream_recv(stream_id, &mut buf).unwrap();
+    server.stream_close_send(stream_id).unwrap();
+    let dgram = server.process_output(now()).dgram();
+    client.process_input(dgram.unwrap(), now());
+
+    
+    let dgram = send_something(&mut client, now());
+    let dgram = server.process(Some(dgram), now()).dgram();
+    client.process_input(dgram.unwrap(), now());
+
+    
+    let dgram = send_with_extra(
+        &mut client,
+        Writer(vec![FRAME_TYPE_MAX_STREAM_DATA, stream_id.as_u64(), 0, 0]),
+        now(),
+    );
+    server.process_input(dgram, now());
+
+    assert!(
+        !server.state().closed(),
+        "expect server to ignore out-of-order frame on forgotten stream"
     );
 }
 
@@ -580,6 +658,92 @@ fn simultaneous_stop_sending_and_reset() {
         Err(Error::InvalidStreamId),
         client.stream_send(stream_id, &[0x00])
     );
+}
+
+#[test]
+
+fn late_stream_related_frames() {
+    fn late_stream_related_frame(frame_type: u64) {
+        let mut client = default_client();
+        let mut server = default_server();
+        connect(&mut client, &mut server);
+
+        
+        let stream_id = client.stream_create(StreamType::BiDi).unwrap();
+        client.stream_send(stream_id, &[0x00]).unwrap();
+        let out = client.process_output(now());
+        _ = server.process(out.dgram(), now()).dgram();
+
+        
+        let before = server.stats().frame_tx;
+        match frame_type {
+            FRAME_TYPE_RESET_STREAM => {
+                server.stream_reset_send(stream_id, 0).unwrap();
+            }
+            FRAME_TYPE_STOP_SENDING => {
+                server.stream_stop_sending(stream_id, 0).unwrap();
+            }
+            FRAME_TYPE_STREAM_CLIENT_BIDI => {
+                server.stream_send(stream_id, &[0x00]).unwrap();
+                server.stream_close_send(stream_id).unwrap();
+            }
+            FRAME_TYPE_MAX_STREAM_DATA => {
+                server
+                    .streams
+                    .get_recv_stream_mut(stream_id)
+                    .unwrap()
+                    .set_stream_max_data(u32::MAX.into());
+            }
+            FRAME_TYPE_STREAM_DATA_BLOCKED => {
+                let internal_stream = server.streams.get_send_stream_mut(stream_id).unwrap();
+                if let SendStreamState::Ready { fc, .. } = internal_stream.state() {
+                    fc.blocked();
+                } else {
+                    panic!("unexpected stream state");
+                }
+            }
+            _ => panic!("unexpected frame type"),
+        }
+        let tester = server.process_output(now()).dgram();
+        let after = server.stats().frame_tx;
+        match frame_type {
+            FRAME_TYPE_RESET_STREAM => {
+                assert_eq!(after.reset_stream, before.reset_stream + 1);
+            }
+            FRAME_TYPE_STOP_SENDING => {
+                assert_eq!(after.stop_sending, before.stop_sending + 1);
+            }
+            FRAME_TYPE_STREAM_CLIENT_BIDI => {
+                assert_eq!(after.stream, before.stream + 1);
+            }
+            FRAME_TYPE_MAX_STREAM_DATA => {
+                assert_eq!(after.max_stream_data, before.max_stream_data + 1);
+            }
+            FRAME_TYPE_STREAM_DATA_BLOCKED => {
+                assert_eq!(after.stream_data_blocked, before.stream_data_blocked + 1);
+            }
+            _ => panic!("unexpected frame type"),
+        }
+
+        
+        client.streams.clear_streams();
+        let (ss, rs) = client.streams.obtain_stream(stream_id).unwrap();
+        assert!(ss.is_none() && rs.is_none());
+        _ = client.process(tester, now()).dgram();
+
+        
+        assert_eq!(*client.state(), State::Confirmed);
+    }
+
+    for frame_type in [
+        FRAME_TYPE_RESET_STREAM,
+        FRAME_TYPE_STOP_SENDING,
+        FRAME_TYPE_MAX_STREAM_DATA,
+        FRAME_TYPE_STREAM_DATA_BLOCKED,
+        FRAME_TYPE_STREAM_CLIENT_BIDI,
+    ] {
+        late_stream_related_frame(frame_type);
+    }
 }
 
 #[test]
@@ -632,7 +796,7 @@ fn after_fin_is_read_conn_events_for_stream_should_be_removed() {
     let out = server.process_output(now()).dgram();
     assert!(out.is_some());
 
-    mem::drop(client.process(out, now()));
+    drop(client.process(out, now()));
 
     
     let mut buf = vec![0; 4000];
@@ -657,7 +821,7 @@ fn after_stream_stop_sending_is_called_conn_events_for_stream_should_be_removed(
     let out = server.process_output(now()).dgram();
     assert!(out.is_some());
 
-    mem::drop(client.process(out, now()));
+    drop(client.process(out, now()));
 
     
     client
@@ -791,7 +955,7 @@ fn no_dupdata_readable_events() {
     let stream_id = client.stream_create(StreamType::BiDi).unwrap();
     client.stream_send(stream_id, &[0x00]).unwrap();
     let out = client.process_output(now());
-    mem::drop(server.process(out.dgram(), now()));
+    drop(server.process(out.dgram(), now()));
 
     
     let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable { .. });
@@ -801,7 +965,7 @@ fn no_dupdata_readable_events() {
     
     client.stream_send(stream_id, &[0x00]).unwrap();
     let out_second_data_frame = client.process_output(now());
-    mem::drop(server.process(out_second_data_frame.dgram(), now()));
+    drop(server.process(out_second_data_frame.dgram(), now()));
     assert!(!server.events().any(stream_readable));
 
     
@@ -809,7 +973,7 @@ fn no_dupdata_readable_events() {
     client.stream_send(stream_id, &[0x00]).unwrap();
     client.stream_close_send(stream_id).unwrap();
     let out_third_data_frame = client.process_output(now());
-    mem::drop(server.process(out_third_data_frame.dgram(), now()));
+    drop(server.process(out_third_data_frame.dgram(), now()));
     assert!(!server.events().any(stream_readable));
 }
 
@@ -823,7 +987,7 @@ fn no_dupdata_readable_events_empty_last_frame() {
     let stream_id = client.stream_create(StreamType::BiDi).unwrap();
     client.stream_send(stream_id, &[0x00]).unwrap();
     let out = client.process_output(now());
-    mem::drop(server.process(out.dgram(), now()));
+    drop(server.process(out.dgram(), now()));
 
     
     let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable { .. });
@@ -833,7 +997,7 @@ fn no_dupdata_readable_events_empty_last_frame() {
     
     client.stream_close_send(stream_id).unwrap();
     let out_second_data_frame = client.process_output(now());
-    mem::drop(server.process(out_second_data_frame.dgram(), now()));
+    drop(server.process(out_second_data_frame.dgram(), now()));
     assert!(!server.events().any(stream_readable));
 }
 
@@ -855,7 +1019,7 @@ fn change_flow_control(stream_type: StreamType, new_fc: u64) {
 
     
     let out = server.process_output(now());
-    mem::drop(client.process(out.dgram(), now()));
+    drop(client.process(out.dgram(), now()));
 
     
     client.set_stream_max_data(stream_id, new_fc).unwrap();
@@ -877,7 +1041,7 @@ fn change_flow_control(stream_type: StreamType, new_fc: u64) {
     
     let out4 = client.process(out3.dgram(), now());
     let out5 = server.process(out4.dgram(), now());
-    mem::drop(client.process(out5.dgram(), now()));
+    drop(client.process(out5.dgram(), now()));
 
     
     let mut buf = [0x0; 10000];
@@ -885,7 +1049,7 @@ fn change_flow_control(stream_type: StreamType, new_fc: u64) {
     assert_eq!(u64::try_from(read).unwrap(), max(RECV_BUFFER_START, new_fc));
 
     let out4 = client.process_output(now());
-    mem::drop(server.process(out4.dgram(), now()));
+    drop(server.process(out4.dgram(), now()));
 
     let written3 = server.stream_send(stream_id, &[0x0; 10000]).unwrap();
     assert_eq!(u64::try_from(written3).unwrap(), new_fc);
@@ -1117,7 +1281,7 @@ fn connect_w_different_limit(bidi_limit: u64, unidi_limit: u64) {
     let out = server.process(out.dgram(), now());
 
     let out = client.process(out.dgram(), now());
-    mem::drop(server.process(out.dgram(), now()));
+    drop(server.process(out.dgram(), now()));
 
     assert!(maybe_authenticate(&mut client));
 
