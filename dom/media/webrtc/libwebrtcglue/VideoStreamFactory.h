@@ -10,6 +10,7 @@
 #include "CodecConfig.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/DataMutex.h"
+#include "mozilla/EventTargetCapability.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/UniquePtr.h"
 #include "api/video/video_source_interface.h"
@@ -59,7 +60,13 @@ class VideoStreamFactory
   
   std::vector<webrtc::VideoStream> CreateEncoderStreams(
       const webrtc::FieldTrialsView& field_trials, int aWidth, int aHeight,
-      const webrtc::VideoEncoderConfig& aConfig) override;
+      const webrtc::VideoEncoderConfig& aConfig) override
+      MOZ_EXCLUDES(mEncodeQueue);
+
+  
+  
+  void SetEncoderInfo(const webrtc::VideoEncoder::EncoderInfo& aInfo) override
+      MOZ_EXCLUDES(mEncodeQueue);
 
   
 
@@ -67,7 +74,8 @@ class VideoStreamFactory
 
   void SelectMaxFramerate(int aWidth, int aHeight,
                           const VideoCodecConfig::Encoding& aEncoding,
-                          webrtc::VideoStream& aVideoStream);
+                          webrtc::VideoStream& aVideoStream)
+      MOZ_REQUIRES(mEncodeQueue);
 
   
 
@@ -99,7 +107,8 @@ class VideoStreamFactory
 
   gfx::IntSize CalculateScaledResolution(int aWidth, int aHeight,
                                          double aScaleDownByResolution,
-                                         unsigned int aMaxPixelCount);
+                                         unsigned int aMaxPixelCount)
+      MOZ_REQUIRES(mEncodeQueue);
 
   
 
@@ -118,6 +127,9 @@ class VideoStreamFactory
 
   
   Atomic<unsigned int> mMaxFramerateForAllStreams;
+
+  Maybe<EventTargetCapability<nsISerialEventTarget>> mEncodeQueue;
+  Maybe<int> mRequestedResolutionAlignment MOZ_GUARDED_BY(mEncodeQueue);
 
   
   const VideoCodecConfig mCodecConfig;
