@@ -72,8 +72,8 @@
       this.menu = null;
 
       this.eventSeq = [
-        new invokerChecker(EVENT_HIDE, getMenu, this),
         new invokerChecker(EVENT_MENUPOPUP_END, getMenu, this),
+        new invokerChecker(EVENT_HIDE, getMenu, this),
         new invokerChecker(EVENT_REORDER, getNode(aParentMenuID)),
       ];
 
@@ -233,7 +233,7 @@
   </div>
   <div tabindex="0" id="outsidemenu">outsidemenu</div>
 
-  
+  <!-- aria-owns relations -->
   <div id="menubar3" role="menubar" aria-owns="mb3-mi-outside"></div>
   <div id="mb3-mi-outside" role="menuitem" tabindex="0">Outside</div>
 
@@ -246,7 +246,7 @@
     <div role="menuitem" tabindex="0">Item 1.2</div>
   </div>
 
-  
+  <!-- focus top-level menu item having haspopup -->
   <div id="menubar5" role="menubar">
     <div role="menuitem" aria-haspopup="true" id="mb5-mi" tabindex="0">
       Item
@@ -257,7 +257,7 @@
     </div>
   </div>
 
-  
+  <!-- other aria-owns relations -->
   <div id="mi6" tabindex="0" role="menuitem">aria-owned item</div>
   <div aria-owns="mi6">Obla</div>
 

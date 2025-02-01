@@ -595,23 +595,6 @@ void NotificationController::ProcessMutationEvents() {
       }
     }
 
-    
-
-    
-    
-    
-    
-    
-    
-    
-    if (event->mAccessible->ARIARole() == roles::MENUPOPUP) {
-      nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_MENUPOPUP_END,
-                              event->mAccessible);
-      if (!mDocument) {
-        return;
-      }
-    }
-
     AccHideEvent* hideEvent = downcast_accEvent(event);
     if (hideEvent->NeedsShutdown()) {
       mDocument->ShutdownChildrenInSubtree(event->mAccessible);
