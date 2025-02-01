@@ -682,22 +682,6 @@ include("ffi.configure", when=ctypes_and_compile_environment)
 
 
 
-option("--enable-pipeline-operator", default=False, help="Enable pipeline operator")
-
-
-@depends("--enable-pipeline-operator")
-def enable_pipeline_operator(value):
-    if value:
-        return True
-
-
-set_config("ENABLE_PIPELINE_OPERATOR", enable_pipeline_operator)
-set_define("ENABLE_PIPELINE_OPERATOR", enable_pipeline_operator)
-
-
-
-
-
 option(
     "--enable-rust-simd", env="MOZ_RUST_SIMD", help="Enable explicit SIMD in Rust code"
 )
