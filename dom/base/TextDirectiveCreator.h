@@ -6,7 +6,11 @@
 
 #ifndef DOM_TEXTDIRECTIVECREATOR_H_
 #define DOM_TEXTDIRECTIVECREATOR_H_
+
+#include <tuple>
+#include "RangeBoundary.h"
 #include "nsStringFwd.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 
 class nsRange;
@@ -18,6 +22,91 @@ class ErrorResult;
 namespace mozilla::dom {
 class Document;
 
+
+
+
+
+
+
+
+class TextDirectiveCandidate {
+ public:
+  
+
+
+
+
+
+
+
+
+
+
+
+  static Result<TextDirectiveCandidate, ErrorResult> CreateFromInputRange(
+      const nsRange* aInputRange);
+
+ private:
+  TextDirectiveCandidate(nsRange* aStartRange, nsRange* aFullStartRange,
+                         nsRange* aEndRange, nsRange* aFullEndRange,
+                         nsRange* aPrefixRange, nsRange* aFullPrefixRange,
+                         nsRange* aSuffixRange, nsRange* aFullSuffixRange);
+
+  
+
+
+
+
+
+  static Result<RefPtr<nsRange>, ErrorResult>
+  MaybeCreateStartToBlockBoundaryRange(const nsRange& aRange);
+
+  
+
+
+
+
+
+  static Result<RefPtr<nsRange>, ErrorResult>
+  MaybeCreateEndToBlockBoundaryRange(const nsRange& aRange);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static Result<std::tuple<RefPtr<nsRange>, RefPtr<nsRange>>, ErrorResult>
+  CreatePrefixRanges(const RangeBoundary& aRangeBoundary);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static Result<std::tuple<RefPtr<nsRange>, RefPtr<nsRange>>, ErrorResult>
+  CreateSuffixRanges(const RangeBoundary& aRangeBoundary);
+  RefPtr<nsRange> mStartRange;
+  RefPtr<nsRange> mFullStartRange;
+  RefPtr<nsRange> mEndRange;
+  RefPtr<nsRange> mFullEndRange;
+
+  RefPtr<nsRange> mPrefixRange;
+  RefPtr<nsRange> mFullPrefixRange;
+  RefPtr<nsRange> mSuffixRange;
+  RefPtr<nsRange> mFullSuffixRange;
+};
 
 
 
