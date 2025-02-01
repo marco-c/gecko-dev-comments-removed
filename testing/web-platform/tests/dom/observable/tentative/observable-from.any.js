@@ -1617,3 +1617,45 @@ test(() => {
   ac.abort(); 
   assert_array_equals(results, [0, 1, 2, 3, 'complete']);
 }, "from(): Abort after complete does NOT call IteratorRecord#return()");
+
+test(() => {
+  const controller = new AbortController();
+  
+  
+  
+  
+  
+  const asyncIterable = {
+    calledOnce: false,
+    get[Symbol.asyncIterator]() {
+      
+      
+      
+      if (this.calledOnce) {
+        controller.abort();
+        return null;
+      } else {
+        this.calledOnce = true;
+        return this.validImplementation;
+      }
+    },
+    validImplementation() {
+      controller.abort();
+      return null;
+    }
+  };
+
+  let reportedError = null;
+  self.addEventListener("error", e => reportedError = e.error, {once: true});
+
+  let errorThrown = null;
+  const observable = Observable.from(asyncIterable);
+  observable.subscribe({
+    error: e => errorThrown = e,
+  }, {signal: controller.signal});
+
+  assert_equals(errorThrown, null, "Protocol error is not surfaced to the Subscriber");
+
+  assert_not_equals(reportedError, null, "Protocol error is reported to the global");
+  assert_true(reportedError instanceof TypeError);
+}, "Invalid async iterator protocol error is surfaced before Subscriber#signal is consulted");
