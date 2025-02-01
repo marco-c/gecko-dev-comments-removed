@@ -2526,9 +2526,24 @@ void MediaFormatReader::Update(TrackType aTrack) {
       
       
       if (UpdateReceivedNewData(aTrack) || decoder.mSeekRequest.Exists()) {
-        LOGV("Nothing more to do");
+        LOGV("Completed drain: Nothing more to do");
         return;
       }
+    } else if (decoder.IsWaitingForData() && !decoder.HasPendingDrain()) {
+      
+      
+      
+      
+      MOZ_ASSERT(!decoder.mDemuxRequest.Exists());
+      MOZ_ASSERT(decoder.mQueuedSamples.IsEmpty());
+      
+      
+      MOZ_ASSERT(!decoder.mReceivedNewData);
+      LOG("Rejecting %s promise: WAITING_FOR_DATA during internal seek",
+          TrackTypeToStr(aTrack));
+      decoder.RejectPromise(NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA, __func__);
+      
+      return;
     } else if (decoder.mDemuxEOS && !decoder.HasPendingDrain() &&
                decoder.mQueuedSamples.IsEmpty()) {
       
