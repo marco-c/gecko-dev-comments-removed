@@ -472,12 +472,17 @@ void MemOperand::AddOffset(int64_t offset) {
 }
 
 static CPUFeatures InitCachedCPUFeatures() {
+#ifdef JS_SIMULATOR_ARM64
+  
+  return CPUFeatures::All();
+#else
   CPUFeatures cpu_features = CPUFeatures::AArch64LegacyBaseline();
 
   
   cpu_features.Combine(CPUFeatures::InferFromOS());
 
   return cpu_features;
+#endif
 }
 
 
