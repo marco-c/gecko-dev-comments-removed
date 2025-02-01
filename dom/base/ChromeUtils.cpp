@@ -2487,8 +2487,13 @@ bool ChromeUtils::ShouldResistFingerprinting(
   
   
   
+  
+  
+  
+  
   return nsRFPService::IsRFPEnabledFor(isPBM, target,
-                                       overriddenFingerprintingSettings);
+                                       overriddenFingerprintingSettings,
+                                        true);
 }
 
 
