@@ -41,18 +41,22 @@ promise_test(async _ => {
     bodySize: getRemainingQuota(QUOTA_PER_ORIGIN, requestUrl, headers),
     
     referrer: '',
+    expect: new FetchLaterIframeExpectation(
+        FetchLaterExpectationType.ERROR_DOM, 'QuotaExceededError'),
   });
 
   
   
   
-  fetchLater(requestUrl, {
-    method: 'POST',
-    body: generatePayload(
-        getRemainingQuota(QUOTA_PER_ORIGIN, requestUrl, headers), dataType),
-    
-    referrer: ''
-  });
+  assert_throws_dom(
+      'QuotaExceededError',
+      () => fetchLater(requestUrl, {
+        method: 'POST',
+        body: generatePayload(
+            getRemainingQuota(QUOTA_PER_ORIGIN, requestUrl, headers), dataType),
+        
+        referrer: '',
+      }));
 
   
   for (const element of document.querySelectorAll('iframe')) {
