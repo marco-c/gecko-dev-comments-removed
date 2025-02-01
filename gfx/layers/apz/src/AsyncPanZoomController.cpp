@@ -41,7 +41,7 @@
 #include "mozilla/ServoStyleConsts.h"   
 #include "mozilla/EventForwards.h"      
 #include "mozilla/EventStateManager.h"  
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/MouseEvents.h"     
 #include "mozilla/Preferences.h"     
 #include "mozilla/RecursiveMutex.h"  

@@ -3,7 +3,7 @@
 
 
 #include "StartupTimeline.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/StartupMetrics.h"
 #include "mozilla/TimeStamp.h"
 #include "nsXULAppAPI.h"
 

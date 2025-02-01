@@ -3,7 +3,7 @@
 
 
 #include "ClearDataCallback.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/AntitrackingBouncetrackingprotectionMetrics.h"
 #include "nsIBounceTrackingProtection.h"
 #include "nsIURIClassifier.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"

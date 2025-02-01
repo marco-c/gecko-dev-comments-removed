@@ -63,7 +63,7 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Telemetry.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/GfxMetrics.h"
 #include "nsCOMPtr.h"         
 #include "nsDebug.h"          
 #include "nsISupportsImpl.h"  

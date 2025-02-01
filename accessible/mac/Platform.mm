@@ -22,7 +22,7 @@
 #include "nsAppShell.h"
 #include "nsCocoaUtils.h"
 #include "mozilla/EnumSet.h"
-#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/AccessibleMetrics.h"
 
 
 @interface NSWorkspace (AvailableSinceHighSierra)
