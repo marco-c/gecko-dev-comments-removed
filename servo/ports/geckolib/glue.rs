@@ -9781,3 +9781,29 @@ pub extern "C" fn Servo_ResolveAnchorSizeFunction(
 ) {
     *out = AnchorPositioningFunctionResolution::new(func.resolve(prop));
 }
+
+
+
+#[repr(u8)]
+pub enum CalcAnchorPositioningFunctionResolution {
+    
+    
+    
+    Invalid,
+    
+    
+    Valid(computed::LengthPercentage),
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_ResolveAnchorPositioningFunctionInCalc(
+    calc: &computed::length_percentage::CalcLengthPercentage,
+    side: PhysicalSide,
+    prop: PositionProperty,
+    out: &mut CalcAnchorPositioningFunctionResolution,
+) {
+    *out = match calc.resolve_anchor_functions(side, prop) {
+        Ok(l) => CalcAnchorPositioningFunctionResolution::Valid(l.into()),
+        Err(_) => CalcAnchorPositioningFunctionResolution::Invalid,
+    };
+}
