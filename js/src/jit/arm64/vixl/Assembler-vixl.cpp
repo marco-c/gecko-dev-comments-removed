@@ -477,15 +477,6 @@ static CPUFeatures InitCachedCPUFeatures() {
   
   cpu_features.Combine(CPUFeatures::InferFromOS());
 
-  
-#ifndef MOZ_AARCH64_JSCVT
-#  error "MOZ_AARCH64_JSCVT must be defined."
-#elif MOZ_AARCH64_JSCVT >= 1
-  
-  
-  cpu_features.Combine(CPUFeatures::kJSCVT);
-#endif
-
   return cpu_features;
 }
 
