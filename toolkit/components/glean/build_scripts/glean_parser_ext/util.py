@@ -8,6 +8,7 @@
 Utility functions for the glean_parser-based code generator
 """
 import copy
+from hashlib import sha1
 from typing import Dict, List, Tuple
 
 from glean_parser import util
@@ -46,14 +47,23 @@ def generate_metric_ids(objs):
     """
 
     
-    metric_id = 1
+    metric_ids = {0}
 
     
     metric_id_mapping = {}
     for category_name, metrics in objs.items():
+        if category_name == "tags":
+            continue
         for metric in metrics.values():
+            metric_id = (
+                int(sha1(str.encode(metric.identifier())).hexdigest(), 16) % 2**25
+            )
+            
+            while metric_id in metric_ids:
+                metric_id = (metric_id + 1) % 2**25
+            assert metric_id < 2**25
+            metric_ids.add(metric_id)
             metric_id_mapping[(category_name, metric.name)] = metric_id
-            metric_id += 1
 
     return lambda metric: metric_id_mapping[(metric.category, metric.name)]
 
