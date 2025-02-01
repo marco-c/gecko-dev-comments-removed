@@ -44,12 +44,13 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_security.h"
-#include "mozilla/dom/CSPReportBinding.h"
 #include "mozilla/dom/CSPDictionariesBinding.h"
+#include "mozilla/dom/CSPReportBinding.h"
 #include "mozilla/dom/CSPViolationReportBody.h"
-#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/dom/ReportingUtils.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/glean/DomSecurityMetrics.h"
+#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsINetworkInterceptController.h"
 #include "nsSandboxFlags.h"
 #include "nsIScriptElement.h"
@@ -1428,6 +1429,59 @@ nsresult nsCSPContext::SendReportsToURIs(
   return NS_OK;
 }
 
+void nsCSPContext::RecordInternalViolationTelemetry(
+    const CSPViolationData& aCSPViolationData,
+    const SecurityPolicyViolationEventInit& aInit) {
+  if (!mSelfURI || !mSelfURI->SchemeIs("chrome")) {
+    return;
+  }
+
+  nsAutoCString selfURISpec;
+  mSelfURI->GetSpec(selfURISpec);
+
+  
+  if (selfURISpec.EqualsLiteral("chrome://browser/content/browser.xhtml")) {
+    return;
+  }
+
+  glean::security::CspViolationInternalPageExtra extra;
+  extra.directive = Some(NS_ConvertUTF16toUTF8(aInit.mEffectiveDirective));
+
+  FilenameTypeAndDetails self =
+      nsContentSecurityUtils::FilenameToFilenameType(selfURISpec, true);
+  extra.selftype = Some(self.first);
+  extra.selfdetails = self.second;
+
+  FilenameTypeAndDetails source =
+      nsContentSecurityUtils::FilenameToFilenameType(
+          NS_ConvertUTF16toUTF8(aInit.mSourceFile), true);
+  extra.sourcetype = Some(source.first);
+  extra.sourcedetails = source.second;
+
+  extra.linenumber = Some(aInit.mLineNumber);
+  extra.columnnumber = Some(aInit.mColumnNumber);
+
+  
+  if (source.first.EqualsLiteral("chromeuri") ||
+      source.first.EqualsLiteral("resourceuri") ||
+      source.first.EqualsLiteral("abouturi")) {
+    
+    extra.sample = Some(NS_ConvertUTF16toUTF8(aCSPViolationData.mSample));
+  }
+
+  if (aInit.mBlockedURI.EqualsLiteral("inline")) {
+    extra.blockeduritype = Some("inline"_ns);
+  } else {
+    FilenameTypeAndDetails blocked =
+        nsContentSecurityUtils::FilenameToFilenameType(
+            NS_ConvertUTF16toUTF8(aInit.mBlockedURI), true);
+    extra.blockeduritype = Some(blocked.first);
+    extra.blockeduridetails = blocked.second;
+  }
+
+  glean::security::csp_violation_internal_page.Record(Some(extra));
+}
+
 nsresult nsCSPContext::FireViolationEvent(
     Element* aTriggeringElement, nsICSPEventListener* aCSPEventListener,
     const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit) {
@@ -1560,6 +1614,9 @@ class CSPReportSenderRunnable final : public Runnable {
 
     
     ReportToConsole();
+
+    
+    mCSPContext->RecordInternalViolationTelemetry(mCSPViolationData, init);
 
     
     
