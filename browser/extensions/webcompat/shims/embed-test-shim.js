@@ -6,7 +6,7 @@
 
 if (!window.smartblockTestShimInitialized) {
   
-  window.smartblockTestShimInitialized = Object.freeze(true);
+  window.smartblockTestShimInitialized = true;
 
   const SHIM_ID = "EmbedTestShim";
 
@@ -28,30 +28,25 @@ if (!window.smartblockTestShimInitialized) {
   }
 
   function addonMessageHandler(message) {
-    let { topic, data, shimId } = message;
+    let { topic, shimId } = message;
     
     if (shimId != SHIM_ID) {
       return;
     }
 
     if (topic === "smartblock:unblock-embed") {
-      if (data != window.location.hostname) {
-        
-        
-        return;
-      }
       
       embedPlaceholders.forEach((p, idx) => {
         p.replaceWith(originalEmbedContainers[idx]);
       });
 
       
-      
-      let document = window.document.wrappedJSObject;
+      let scriptElement = document.createElement("script");
 
       
-      let scriptElement = document.createElement("script");
-      scriptElement.src = ORIGINAL_URL;
+      
+      
+      scriptElement.wrappedJSObject.src = ORIGINAL_URL;
       document.body.appendChild(scriptElement);
     }
   }
@@ -167,6 +162,7 @@ if (!window.smartblockTestShimInitialized) {
       sendMessageToAddon("smartblockEmbedReplaced");
     });
 
+    
     const finishedEvent = new CustomEvent("smartblockEmbedScriptFinished", {
       bubbles: true,
       composed: true,
