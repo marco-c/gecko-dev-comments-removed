@@ -75,14 +75,19 @@
 
 
 
+
+
+
 #![deny(missing_docs, missing_debug_implementations)]
 #![doc(html_root_url = "https://docs.rs/jobserver/0.1")]
 
 use std::env;
+use std::ffi::OsString;
 use std::io;
 use std::process::Command;
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 
+mod error;
 #[cfg(unix)]
 #[path = "unix.rs"]
 mod imp;
@@ -146,6 +151,34 @@ struct HelperInner {
     requests: usize,
     producer_done: bool,
     consumer_done: bool,
+}
+
+use error::FromEnvErrorInner;
+pub use error::{FromEnvError, FromEnvErrorKind};
+
+
+#[derive(Debug)]
+pub struct FromEnv {
+    
+    pub client: Result<Client, FromEnvError>,
+    
+    
+    pub var: Option<(&'static str, OsString)>,
+}
+
+impl FromEnv {
+    fn new_ok(client: Client, var_name: &'static str, var_value: OsString) -> FromEnv {
+        FromEnv {
+            client: Ok(client),
+            var: Some((var_name, var_value)),
+        }
+    }
+    fn new_err(kind: FromEnvErrorInner, var_name: &'static str, var_value: OsString) -> FromEnv {
+        FromEnv {
+            client: Err(FromEnvError { inner: kind }),
+            var: Some((var_name, var_value)),
+        }
+    }
 }
 
 impl Client {
@@ -217,6 +250,44 @@ impl Client {
     
     
     
+    pub unsafe fn from_env_ext(check_pipe: bool) -> FromEnv {
+        let (env, var_os) = match ["CARGO_MAKEFLAGS", "MAKEFLAGS", "MFLAGS"]
+            .iter()
+            .map(|&env| env::var_os(env).map(|var| (env, var)))
+            .find_map(|p| p)
+        {
+            Some((env, var_os)) => (env, var_os),
+            None => return FromEnv::new_err(FromEnvErrorInner::NoEnvVar, "", Default::default()),
+        };
+
+        let var = match var_os.to_str() {
+            Some(var) => var,
+            None => {
+                let err = FromEnvErrorInner::CannotParse("not valid UTF-8".to_string());
+                return FromEnv::new_err(err, env, var_os);
+            }
+        };
+
+        let s = match find_jobserver_auth(var) {
+            Some(s) => s,
+            None => return FromEnv::new_err(FromEnvErrorInner::NoJobserver, env, var_os),
+        };
+        match imp::Client::open(s, check_pipe) {
+            Ok(c) => FromEnv::new_ok(Client { inner: Arc::new(c) }, env, var_os),
+            Err(err) => FromEnv::new_err(err, env, var_os),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -225,27 +296,7 @@ impl Client {
     
     
     pub unsafe fn from_env() -> Option<Client> {
-        let var = match env::var("CARGO_MAKEFLAGS")
-            .or_else(|_| env::var("MAKEFLAGS"))
-            .or_else(|_| env::var("MFLAGS"))
-        {
-            Ok(s) => s,
-            Err(_) => return None,
-        };
-        let mut arg = "--jobserver-fds=";
-        let pos = match var.find(arg) {
-            Some(i) => i,
-            None => {
-                arg = "--jobserver-auth=";
-                match var.find(arg) {
-                    Some(i) => i,
-                    None => return None,
-                }
-            }
-        };
-
-        let s = var[pos + arg.len()..].split(' ').next().unwrap();
-        imp::Client::open(s).map(|c| Client { inner: Arc::new(c) })
+        Self::from_env_ext(false).client.ok()
     }
 
     
@@ -282,10 +333,37 @@ impl Client {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_acquire(&self) -> io::Result<Option<Acquired>> {
+        let ret = self.inner.try_acquire()?;
+
+        Ok(ret.map(|data| Acquired {
+            client: self.inner.clone(),
+            data,
+            disabled: false,
+        }))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn available(&self) -> io::Result<usize> {
         self.inner.available()
     }
 
+    
     
     
     
@@ -324,6 +402,7 @@ impl Client {
     
     
     
+    
     pub fn configure_make(&self, cmd: &mut Command) {
         let value = self.mflags_env();
         cmd.env("CARGO_MAKEFLAGS", &value);
@@ -340,7 +419,6 @@ impl Client {
         format!("-j --jobserver-fds={0} --jobserver-auth={0}", arg)
     }
 
-    
     
     
     
@@ -527,15 +605,100 @@ impl HelperState {
         lock.consumer_done = true;
         self.cvar.notify_one();
     }
-
-    fn producer_done(&self) -> bool {
-        self.lock().producer_done
-    }
 }
 
-#[test]
-fn no_helper_deadlock() {
-    let x = crate::Client::new(32).unwrap();
-    let _y = x.clone();
-    std::mem::drop(x.into_helper_thread(|_| {}).unwrap());
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn find_jobserver_auth(var: &str) -> Option<&str> {
+    ["--jobserver-auth=", "--jobserver-fds="]
+        .iter()
+        .find_map(|&arg| var.rsplit_once(arg).map(|(_, s)| s))
+        .and_then(|s| s.split(' ').next())
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    pub(super) fn run_named_fifo_try_acquire_tests(client: &Client) {
+        assert!(client.try_acquire().unwrap().is_none());
+        client.release_raw().unwrap();
+
+        let acquired = client.try_acquire().unwrap().unwrap();
+        assert!(client.try_acquire().unwrap().is_none());
+
+        drop(acquired);
+        client.try_acquire().unwrap().unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn test_try_acquire() {
+        let client = Client::new(0).unwrap();
+
+        run_named_fifo_try_acquire_tests(&client);
+    }
+
+    #[test]
+    fn no_helper_deadlock() {
+        let x = crate::Client::new(32).unwrap();
+        let _y = x.clone();
+        std::mem::drop(x.into_helper_thread(|_| {}).unwrap());
+    }
+
+    #[test]
+    fn test_find_jobserver_auth() {
+        let cases = [
+            ("", None),
+            ("-j2", None),
+            ("-j2 --jobserver-auth=3,4", Some("3,4")),
+            ("--jobserver-auth=3,4 -j2", Some("3,4")),
+            ("--jobserver-auth=3,4", Some("3,4")),
+            ("--jobserver-auth=fifo:/myfifo", Some("fifo:/myfifo")),
+            ("--jobserver-auth=", Some("")),
+            ("--jobserver-auth", None),
+            ("--jobserver-fds=3,4", Some("3,4")),
+            ("--jobserver-fds=fifo:/myfifo", Some("fifo:/myfifo")),
+            ("--jobserver-fds=", Some("")),
+            ("--jobserver-fds", None),
+            (
+                "--jobserver-auth=auth-a --jobserver-auth=auth-b",
+                Some("auth-b"),
+            ),
+            (
+                "--jobserver-auth=auth-b --jobserver-auth=auth-a",
+                Some("auth-a"),
+            ),
+            ("--jobserver-fds=fds-a --jobserver-fds=fds-b", Some("fds-b")),
+            ("--jobserver-fds=fds-b --jobserver-fds=fds-a", Some("fds-a")),
+            (
+                "--jobserver-auth=auth-a --jobserver-fds=fds-a --jobserver-auth=auth-b",
+                Some("auth-b"),
+            ),
+            (
+                "--jobserver-fds=fds-a --jobserver-auth=auth-a --jobserver-fds=fds-b",
+                Some("auth-a"),
+            ),
+        ];
+        for (var, expected) in cases {
+            let actual = find_jobserver_auth(var);
+            assert_eq!(
+                actual, expected,
+                "expect {expected:?}, got {actual:?}, input `{var:?}`"
+            );
+        }
+    }
 }
