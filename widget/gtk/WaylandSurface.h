@@ -64,6 +64,9 @@ class WaylandSurface final {
       bool aEmulateFrameCallback = false);
 
   
+  void SetFrameCallbackState(bool aEnabled);
+
+  
   
   
   wl_egl_window* GetEGLWindow(nsIntSize aUnscaledSize);
@@ -373,6 +376,7 @@ class WaylandSurface final {
     bool mEmulated = false;
   };
 
+  bool mFrameCallbackEnabled = true;
   
   std::vector<FrameCallback> mPersistentFrameCallbackHandlers;
   
