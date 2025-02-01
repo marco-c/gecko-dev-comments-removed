@@ -3095,12 +3095,6 @@ pref("network.tcp.keepalive.idle_time", 600);
   pref("network.tcp.keepalive.probe_count", 4);
 #endif
 
-
-
-
-
-pref("network.psl.onUpdate_notify", false);
-
 #ifdef MOZ_WIDGET_GTK
   pref("widget.disable-workspace-management", false);
 #endif
