@@ -1309,48 +1309,15 @@ function validateRequests(requests, monitor, options = {}) {
 
 
 
-
-
-
-
-
 function getContextMenuItem(monitor, id) {
-  const Menu = require("resource://devtools/client/framework/menu.js");
-  return Menu.getMenuElementById(id, monitor.panelWin.document);
+  return getNetmonitorContextMenuItem(monitor, id);
 }
-
-async function maybeOpenAncestorMenu(menuItem) {
-  const parentPopup = menuItem.parentNode;
-  if (parentPopup.state == "shown") {
-    return;
-  }
-  const shown = BrowserTestUtils.waitForEvent(parentPopup, "popupshown");
-  if (parentPopup.state == "showing") {
-    await shown;
-    return;
-  }
-  const parentMenu = parentPopup.parentNode;
-  await maybeOpenAncestorMenu(parentMenu);
-  parentMenu.openMenu(true);
-  await shown;
-}
-
-
-
-
-
 
 
 
 
 async function selectContextMenuItem(monitor, id) {
-  const contextMenuItem = getContextMenuItem(monitor, id);
-
-  const popup = contextMenuItem.parentNode;
-  await maybeOpenAncestorMenu(contextMenuItem);
-  const hidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
-  popup.activateItem(contextMenuItem);
-  await hidden;
+  return selectNetmonitorContextMenuItem(monitor, id);
 }
 
 

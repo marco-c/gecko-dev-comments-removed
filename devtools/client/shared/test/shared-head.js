@@ -2452,7 +2452,7 @@ async function toggleJsTracer(toolbox) {
 
 
 
-function getContextMenuItem(monitor, id) {
+function getNetmonitorContextMenuItem(monitor, id) {
   const Menu = require("resource://devtools/client/framework/menu.js");
   return Menu.getMenuElementById(id, monitor.panelWin.document);
 }
@@ -2465,19 +2465,19 @@ function getContextMenuItem(monitor, id) {
 
 
 
-async function selectContextMenuItem(monitor, id) {
-  const contextMenuItem = getContextMenuItem(monitor, id);
+async function selectNetmonitorContextMenuItem(monitor, id) {
+  const contextMenuItem = getNetmonitorContextMenuItem(monitor, id);
 
   const popup = contextMenuItem.parentNode;
-  await maybeOpenAncestorMenu(contextMenuItem);
+  await _maybeOpenAncestorMenu(contextMenuItem);
   const hidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
   popup.activateItem(contextMenuItem);
   await hidden;
 }
 
-async function maybeOpenAncestorMenu(menuItem) {
+async function _maybeOpenAncestorMenu(menuItem) {
   const parentPopup = menuItem.parentNode;
-  if (parentPopup.state == "shown") {
+  if (parentPopup.state == "open") {
     return;
   }
   const shown = BrowserTestUtils.waitForEvent(parentPopup, "popupshown");
@@ -2486,7 +2486,7 @@ async function maybeOpenAncestorMenu(menuItem) {
     return;
   }
   const parentMenu = parentPopup.parentNode;
-  await maybeOpenAncestorMenu(parentMenu);
+  await _maybeOpenAncestorMenu(parentMenu);
   parentMenu.openMenu(true);
   await shown;
 }
