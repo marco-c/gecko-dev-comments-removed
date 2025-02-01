@@ -21,12 +21,15 @@ class ImageContainer;
 class KnowsCompositor;
 }  
 
+enum class DXVA2Usage { Playback, ColorConversionOnly };
+
 class DXVA2Manager {
  public:
   
   static DXVA2Manager* CreateD3D11DXVA(
       layers::KnowsCompositor* aKnowsCompositor, nsACString& aFailureReason,
-      ID3D11Device* aDevice = nullptr);
+      ID3D11Device* aDevice = nullptr,
+      DXVA2Usage aUsage = DXVA2Usage::Playback);
 
   
   
