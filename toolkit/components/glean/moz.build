@@ -113,6 +113,10 @@ SOURCES += [
 include("metrics_index.py")
 
 
+include("build_scripts/glean_parser_ext/metrics_header_names.py")
+
+
+
 
 
 if CONFIG["MOZ_GLEAN_EXTRA_METRICS_FILES"]:
@@ -126,6 +130,15 @@ if CONFIG["MOZ_GLEAN_EXTRA_PINGS_FILES"]:
 if CONFIG["MOZ_GLEAN_EXTRA_TAGS_FILES"]:
     tags_yamls.extend(CONFIG["MOZ_GLEAN_EXTRA_TAGS_FILES"])
     tags_yamls = sorted(tags_yamls)
+
+metrics_headers = sorted(
+    {
+        convert_yaml_path_to_header_name(path) + ".h"
+        for path in metrics_yamls
+        if path != "toolkit/components/glean/metrics.yaml"
+    }
+)
+EXPORTS.mozilla.glean += [("!" + filename) for filename in metrics_headers]
 
 
 
@@ -153,6 +166,7 @@ GeneratedFile(
 
 GeneratedFile(
     "GleanMetrics.h",
+    *metrics_headers,
     "GleanJSMetricsLookup.h",
     "GleanJSMetricsLookup.cpp",
     "api/src/metrics.rs",
