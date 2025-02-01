@@ -584,8 +584,6 @@ void nsWindow::Destroy() {
   mIsDestroyed = true;
   mCreated = false;
 
-  MozClearHandleID(mCompositorPauseTimeoutID, g_source_remove);
-
 #ifdef MOZ_WAYLAND
   
   
@@ -5363,12 +5361,6 @@ void nsWindow::RefreshScale(bool aRefreshScreen) {
     return;
   }
 
-  
-  
-  
-  
-  PauseCompositorFlickering();
-
   GtkAllocation allocation;
   gtk_widget_get_allocation(GTK_WIDGET(mContainer), &allocation);
   LayoutDeviceIntSize size = GdkRectToDevicePixels(allocation).Size();
@@ -5773,7 +5765,6 @@ void nsWindow::EnsureGdkWindow() {
 
 void nsWindow::ConfigureCompositor() {
   MOZ_DIAGNOSTIC_ASSERT(mIsMapped);
-  MOZ_DIAGNOSTIC_ASSERT(mCompositorState == COMPOSITOR_ENABLED);
 
   LOG("nsWindow::ConfigureCompositor()");
   auto startCompositing = [self = RefPtr{this}, this]() -> void {
@@ -5784,11 +5775,6 @@ void nsWindow::ConfigureCompositor() {
     if (mIsDestroyed || !mIsMapped) {
       LOG("  quit, mIsDestroyed = %d mIsMapped = %d", !!mIsDestroyed,
           !!mIsMapped);
-      return;
-    }
-    
-    if (mCompositorState == COMPOSITOR_PAUSED_FLICKERING) {
-      LOG("  quit, will be resumed by ResumeCompositorFlickering.");
       return;
     }
     
@@ -6498,78 +6484,6 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
   }
 }
 
-
-
-
-
-
-
-
-#define COMPOSITOR_PAUSE_TIMEOUT (1000)
-
-void nsWindow::PauseCompositorFlickering() {
-  bool pauseCompositor = IsTopLevelWidget() &&
-                         mCompositorState == COMPOSITOR_ENABLED &&
-                         mCompositorWidgetDelegate && !mIsDestroyed;
-  if (!pauseCompositor) {
-    return;
-  }
-
-  LOG("nsWindow::PauseCompositorFlickering()");
-
-  MozClearHandleID(mCompositorPauseTimeoutID, g_source_remove);
-
-  CompositorBridgeChild* remoteRenderer = GetRemoteRenderer();
-  if (remoteRenderer) {
-    mCompositorState = COMPOSITOR_PAUSED_FLICKERING;
-    remoteRenderer->SendPause();
-    mCompositorPauseTimeoutID = (int)g_timeout_add(
-        COMPOSITOR_PAUSE_TIMEOUT,
-        [](void* data) -> gint {
-          nsWindow* window = static_cast<nsWindow*>(data);
-          if (!window->IsDestroyed()) {
-            window->ResumeCompositorFlickering();
-          }
-          return true;
-        },
-        this);
-  }
-}
-
-bool nsWindow::IsWaitingForCompositorResume() {
-  return mCompositorState == COMPOSITOR_PAUSED_FLICKERING;
-}
-
-void nsWindow::ResumeCompositorFlickering() {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  LOG("nsWindow::ResumeCompositorFlickering()\n");
-
-  if (mIsDestroyed || !IsWaitingForCompositorResume()) {
-    LOG("  early quit\n");
-    return;
-  }
-
-  MozClearHandleID(mCompositorPauseTimeoutID, g_source_remove);
-
-  
-  
-  
-  if (!mCompositorWidgetDelegate) {
-    mCompositorState = COMPOSITOR_ENABLED;
-    return;
-  }
-
-  ResumeCompositorImpl();
-}
-
-void nsWindow::ResumeCompositorFromCompositorThread() {
-  nsCOMPtr<nsIRunnable> event =
-      NewRunnableMethod("nsWindow::ResumeCompositorFlickering", this,
-                        &nsWindow::ResumeCompositorFlickering);
-  NS_DispatchToMainThread(event.forget());
-}
-
 void nsWindow::ResumeCompositorImpl() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
@@ -6586,7 +6500,6 @@ void nsWindow::ResumeCompositorImpl() {
   MOZ_RELEASE_ASSERT(remoteRenderer);
   remoteRenderer->SendResume();
   remoteRenderer->SendForcePresent(wr::RenderReasons::WIDGET);
-  mCompositorState = COMPOSITOR_ENABLED;
 }
 
 void nsWindow::WaylandStartVsync() {
@@ -9642,12 +9555,6 @@ bool nsWindow::SetEGLNativeWindowSize(
     const LayoutDeviceIntSize& aEGLWindowSize) {
   if (!GdkIsWaylandDisplay() || !mIsMapped) {
     return true;
-  }
-
-  if (mCompositorState == COMPOSITOR_PAUSED_FLICKERING) {
-    LOG("nsWindow::SetEGLNativeWindowSize() return, "
-        "COMPOSITOR_PAUSED_FLICKERING is set");
-    return false;
   }
 
   float scale = FractionalScaleFactor();

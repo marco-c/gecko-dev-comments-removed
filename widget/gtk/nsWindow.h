@@ -470,20 +470,7 @@ class nsWindow final : public nsBaseWidget {
   };
 #endif
 
-  typedef enum {
-    
-    COMPOSITOR_ENABLED,
-    
-    
-    COMPOSITOR_PAUSED_FLICKERING
-  } WindowCompositorState;
-
-  
   void ResumeCompositorImpl();
-  void ResumeCompositorFlickering();
-  void ResumeCompositorFromCompositorThread();
-  void PauseCompositorFlickering();
-  bool IsWaitingForCompositorResume();
 
   
   
@@ -586,11 +573,6 @@ class nsWindow final : public nsBaseWidget {
   mozilla::Maybe<GdkPoint> mGdkWindowRootOrigin;
 
   PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate = nullptr;
-  mozilla::Atomic<WindowCompositorState, mozilla::Relaxed> mCompositorState{
-      COMPOSITOR_ENABLED};
-  
-  
-  guint mCompositorPauseTimeoutID = 0;
 
   
   nsSizeMode mSizeMode = nsSizeMode_Normal;
