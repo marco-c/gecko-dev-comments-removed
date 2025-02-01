@@ -33,13 +33,28 @@ const {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function waitForAllRequestsFinished(
   minExpectedRequests,
-  maxExpectedRequests
+  maxExpectedRequests,
+  predicate
 ) {
   let toolbox = getToolbox();
   let window = toolbox.getCurrentPanel().panelWin;
 
+  const requests = [];
   return new Promise(resolve => {
     
     let payloadReady = 0;
@@ -47,8 +62,14 @@ async function waitForAllRequestsFinished(
 
     
     let remainingLastDump = Infinity;
-    function onPayloadReady() {
+    function onPayloadReady(request) {
       payloadReady++;
+
+      
+      
+      if (predicate != null) {
+        requests.push(request);
+      }
       const remaining = maxExpectedRequests - payloadReady;
       if (remainingLastDump - remaining > maxExpectedRequests / 20) {
         remainingLastDump = remaining;
@@ -73,8 +94,12 @@ async function waitForAllRequestsFinished(
         resolveWithLessThanMaxRequestsTimer = null;
       }
 
-      
+      if (predicate != null && !predicate(requests)) {
+        return;
+      }
+
       if (payloadReady >= maxExpectedRequests) {
+        
         dump(
           `[waitForAllRequestsFinished] Received more than ${maxExpectedRequests} (max) requests, resolving\n`
         );
@@ -124,10 +149,15 @@ exports.waitForNetworkRequests = async function (
   label,
   toolbox,
   minExpectedRequests,
-  maxExpectedRequests = minExpectedRequests
+  maxExpectedRequests = minExpectedRequests,
+  predicate = null
 ) {
   let test = runTest(label + ".requestsFinished.DAMP");
-  await waitForAllRequestsFinished(minExpectedRequests, maxExpectedRequests);
+  await waitForAllRequestsFinished(
+    minExpectedRequests,
+    maxExpectedRequests,
+    predicate
+  );
   test.done();
 };
 
