@@ -56,7 +56,6 @@ addAccessibleTask(
     
     testComputedARIARole("ariaDirectory", "list");
     
-    
     testComputedARIARole("ariaAlertdialog", "alertdialog");
     testComputedARIARole("ariaFeed", "feed");
     testComputedARIARole("ariaRowgroup", "rowgroup");
