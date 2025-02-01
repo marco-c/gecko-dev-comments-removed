@@ -418,7 +418,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  RefPtr<MobileViewportManager> GetMobileViewportManager() const;
+  MobileViewportManager* GetMobileViewportManager() const;
 
   
 
