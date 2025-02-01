@@ -435,14 +435,14 @@ class MOZ_STACK_CLASS WSRunScanner final {
   }
 
   template <typename EditorDOMPointType>
-  WSRunScanner(const Element* aEditingHost,
-               const EditorDOMPointType& aScanStartPoint,
-               BlockInlineCheck aBlockInlineCheck)
+  WSRunScanner(Scan aScanMode, const EditorDOMPointType& aScanStartPoint,
+               BlockInlineCheck aBlockInlineCheck,
+               const Element* aAncestorLimiter = nullptr)
       : mScanStartPoint(aScanStartPoint.template To<EditorDOMPoint>()),
-        mEditingHost(const_cast<Element*>(aEditingHost)),
-        mTextFragmentDataAtStart(Scan::EditableNodes, mScanStartPoint,
-                                 aBlockInlineCheck),
-        mBlockInlineCheck(aBlockInlineCheck) {}
+        mTextFragmentDataAtStart(aScanMode, mScanStartPoint, aBlockInlineCheck,
+                                 aAncestorLimiter),
+        mBlockInlineCheck(aBlockInlineCheck),
+        mScanMode(aScanMode) {}
 
   
   
@@ -457,7 +457,8 @@ class MOZ_STACK_CLASS WSRunScanner final {
   static WSScanResult ScanInclusiveNextVisibleNodeOrBlockBoundary(
       const Element* aEditingHost, const EditorDOMPointBase<PT, CT>& aPoint,
       BlockInlineCheck aBlockInlineCheck) {
-    return WSRunScanner(aEditingHost, aPoint, aBlockInlineCheck)
+    return WSRunScanner(Scan::EditableNodes, aPoint, aBlockInlineCheck,
+                        aEditingHost)
         .ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(aPoint);
   }
 
@@ -474,7 +475,8 @@ class MOZ_STACK_CLASS WSRunScanner final {
   static WSScanResult ScanPreviousVisibleNodeOrBlockBoundary(
       const Element* aEditingHost, const EditorDOMPointBase<PT, CT>& aPoint,
       BlockInlineCheck aBlockInlineCheck) {
-    return WSRunScanner(aEditingHost, aPoint, aBlockInlineCheck)
+    return WSRunScanner(Scan::EditableNodes, aPoint, aBlockInlineCheck,
+                        aEditingHost)
         .ScanPreviousVisibleNodeOrBlockBoundaryFrom(aPoint);
   }
 
@@ -494,8 +496,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
       return EditorDOMPointType(aPoint.template ContainerAs<Text>(),
                                 aPoint.Offset());
     }
-    return WSRunScanner(aEditingHost, aPoint, aBlockInlineCheck)
-        .GetInclusiveNextEditableCharPoint<EditorDOMPointType>(aPoint);
+    return WSRunScanner(Scan::EditableNodes, aPoint, aBlockInlineCheck,
+                        aEditingHost)
+        .GetInclusiveNextCharPoint<EditorDOMPointType>(aPoint);
   }
 
   
@@ -513,8 +516,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
       return EditorDOMPointType(aPoint.template ContainerAs<Text>(),
                                 aPoint.Offset() - 1);
     }
-    return WSRunScanner(aEditingHost, aPoint, aBlockInlineCheck)
-        .GetPreviousEditableCharPoint<EditorDOMPointType>(aPoint);
+    return WSRunScanner(Scan::EditableNodes, aPoint, aBlockInlineCheck,
+                        aEditingHost)
+        .GetPreviousCharPoint<EditorDOMPointType>(aPoint);
   }
 
   
@@ -719,11 +723,6 @@ class MOZ_STACK_CLASS WSRunScanner final {
     return TextFragmentDataAtStartRef().EndReasonBRElementPtr();
   }
 
-  
-
-
-  Element* GetEditingHost() const { return mEditingHost; }
-
  protected:
   using EditorType = EditorBase::EditorType;
 
@@ -850,13 +849,14 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
-  template <typename EditorDOMPointType = EditorDOMPointInText, typename PT,
-            typename CT>
-  EditorDOMPointType GetInclusiveNextEditableCharPoint(
+  template <typename EditorDOMPointType, typename PT, typename CT>
+  EditorDOMPointType GetInclusiveNextCharPoint(
       const EditorDOMPointBase<PT, CT>& aPoint) const {
     return TextFragmentDataAtStartRef()
         .GetInclusiveNextCharPoint<EditorDOMPointType>(
-            aPoint, IgnoreNonEditableNodes::Yes);
+            aPoint, mScanMode == Scan::EditableNodes
+                        ? IgnoreNonEditableNodes::Yes
+                        : IgnoreNonEditableNodes::No);
   }
 
   
@@ -866,13 +866,14 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
-  template <typename EditorDOMPointType = EditorDOMPointInText, typename PT,
-            typename CT>
-  EditorDOMPointType GetPreviousEditableCharPoint(
+  template <typename EditorDOMPointType, typename PT, typename CT>
+  EditorDOMPointType GetPreviousCharPoint(
       const EditorDOMPointBase<PT, CT>& aPoint) const {
     return TextFragmentDataAtStartRef()
-        .GetPreviousCharPoint<EditorDOMPointType>(aPoint,
-                                                  IgnoreNonEditableNodes::Yes);
+        .GetPreviousCharPoint<EditorDOMPointType>(
+            aPoint, mScanMode == Scan::EditableNodes
+                        ? IgnoreNonEditableNodes::Yes
+                        : IgnoreNonEditableNodes::No);
   }
 
   
@@ -882,7 +883,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
-  template <typename EditorDOMPointType = EditorDOMPointInText>
+  template <typename EditorDOMPointType>
   EditorDOMPointType GetEndOfCollapsibleASCIIWhiteSpaces(
       const EditorDOMPointInText& aPointAtASCIIWhiteSpace,
       nsIEditor::EDirection aDirectionToDelete) const {
@@ -902,7 +903,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
-  template <typename EditorDOMPointType = EditorDOMPointInText>
+  template <typename EditorDOMPointType>
   EditorDOMPointType GetFirstASCIIWhiteSpacePointCollapsedTo(
       const EditorDOMPointInText& aPointAtASCIIWhiteSpace,
       nsIEditor::EDirection aDirectionToDelete) const {
@@ -913,11 +914,6 @@ class MOZ_STACK_CLASS WSRunScanner final {
         .GetFirstASCIIWhiteSpacePointCollapsedTo<EditorDOMPointType>(
             aPointAtASCIIWhiteSpace, aDirectionToDelete);
   }
-
-  EditorDOMPointInText GetPreviousCharPointFromPointInText(
-      const EditorDOMPointInText& aPoint) const;
-
-  char16_t GetCharAt(Text* aTextNode, uint32_t aOffset) const;
 
   
 
@@ -1524,9 +1520,6 @@ class MOZ_STACK_CLASS WSRunScanner final {
   
   
 
-  
-  RefPtr<Element> mEditingHost;
-
  private:
   
 
@@ -1545,6 +1538,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
   TextFragmentData mTextFragmentDataAtStart;
 
   const BlockInlineCheck mBlockInlineCheck;
+  const Scan mScanMode;
 
   friend class WhiteSpaceVisibilityKeeper;
 };
