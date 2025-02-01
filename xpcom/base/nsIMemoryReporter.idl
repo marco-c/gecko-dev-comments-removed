@@ -288,7 +288,7 @@ interface nsIMemoryReporterManager : nsISupports
 
 
 
-  [noscript] void
+  void
     getReportsExtended(in nsIHandleReportCallback handleReport,
                        in nsISupports handleReportData,
                        in nsIFinishReportingCallback finishReporting,
