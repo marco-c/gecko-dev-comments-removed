@@ -11,9 +11,6 @@ use once_cell::sync::Lazy;
 
 #[allow(non_upper_case_globals)]
 
-
-
-
 pub static not_baseline: Lazy<Ping> = Lazy::new(|| {
     Ping::new(
         "not-baseline",
@@ -29,10 +26,6 @@ pub static not_baseline: Lazy<Ping> = Lazy::new(|| {
 });
 
 #[allow(non_upper_case_globals)]
-
-
-
-
 
 pub static not_deletion_request: Lazy<Ping> = Lazy::new(|| {
     Ping::new(
@@ -50,8 +43,6 @@ pub static not_deletion_request: Lazy<Ping> = Lazy::new(|| {
 
 #[allow(non_upper_case_globals)]
 
-
-
 pub static not_events: Lazy<Ping> = Lazy::new(|| {
     Ping::new(
         "not-events",
@@ -67,12 +58,6 @@ pub static not_events: Lazy<Ping> = Lazy::new(|| {
 });
 
 #[allow(non_upper_case_globals)]
-
-
-
-
-
-
 
 pub static not_metrics: Lazy<Ping> = Lazy::new(|| {
     Ping::new(

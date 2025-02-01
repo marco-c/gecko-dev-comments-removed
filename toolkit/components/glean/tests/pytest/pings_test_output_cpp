@@ -18,14 +18,7 @@ namespace mozilla::glean_pings {
 
 
 
-
-
-
 constexpr glean::impl::Ping NotBaseline(1);
-
-
-
-
 
 
 
@@ -39,15 +32,7 @@ constexpr glean::impl::Ping NotDeletionRequest(2);
 
 
 
-
-
 constexpr glean::impl::Ping NotEvents(3);
-
-
-
-
-
-
 
 
 
