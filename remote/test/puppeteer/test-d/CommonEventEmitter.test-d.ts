@@ -6,16 +6,15 @@
 
 import {EventEmitter as NodeEventEmitter} from 'node:events';
 
-import {expectAssignable} from 'tsd';
-
 import type {CommonEventEmitter, EventEmitter, EventType} from 'puppeteer';
+import {expectAssignable} from 'tsd';
 
 declare const emitter: EventEmitter<Record<EventType, any>>;
 
 {
   {
     expectAssignable<CommonEventEmitter<Record<EventType, any>>>(
-      new NodeEventEmitter()
+      new NodeEventEmitter(),
     );
   }
   {

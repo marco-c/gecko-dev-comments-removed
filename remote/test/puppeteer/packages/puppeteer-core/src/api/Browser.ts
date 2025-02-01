@@ -15,6 +15,8 @@ import {
   raceWith,
 } from '../../third_party/rxjs/rxjs.js';
 import type {ProtocolType} from '../common/ConnectOptions.js';
+import type {Cookie} from '../common/Cookie.js';
+import type {DownloadBehavior} from '../common/DownloadBehavior.js';
 import {EventEmitter, type EventType} from '../common/EventEmitter.js';
 import {
   debugError,
@@ -41,6 +43,13 @@ export interface BrowserContextOptions {
 
 
   proxyBypassList?: string[];
+  
+
+
+
+
+
+  downloadBehavior?: DownloadBehavior;
 }
 
 
@@ -273,7 +282,7 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
 
 
   abstract createBrowserContext(
-    options?: BrowserContextOptions
+    options?: BrowserContextOptions,
   ): Promise<BrowserContext>;
 
   
@@ -293,7 +302,6 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
   abstract defaultBrowserContext(): BrowserContext;
 
   
-
 
 
 
@@ -346,18 +354,18 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
 
   async waitForTarget(
     predicate: (x: Target) => boolean | Promise<boolean>,
-    options: WaitForTargetOptions = {}
+    options: WaitForTargetOptions = {},
   ): Promise<Target> {
     const {timeout: ms = 30000, signal} = options;
     return await firstValueFrom(
       merge(
         fromEmitterEvent(this, BrowserEvent.TargetCreated),
         fromEmitterEvent(this, BrowserEvent.TargetChanged),
-        from(this.targets())
+        from(this.targets()),
       ).pipe(
         filterAsync(predicate),
-        raceWith(fromAbortSignal(signal), timeout(ms))
-      )
+        raceWith(fromAbortSignal(signal), timeout(ms)),
+      ),
     );
   }
 
@@ -375,7 +383,7 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
     const contextPages = await Promise.all(
       this.browserContexts().map(context => {
         return context.pages();
-      })
+      }),
     );
     
     return contextPages.reduce((acc, x) => {
@@ -422,6 +430,42 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
 
 
 
+
+
+
+  async cookies(): Promise<Cookie[]> {
+    return await this.defaultBrowserContext().cookies();
+  }
+
+  
+
+
+
+
+
+
+
+  async setCookie(...cookies: Cookie[]): Promise<void> {
+    return await this.defaultBrowserContext().setCookie(...cookies);
+  }
+
+  
+
+
+
+
+
+
+
+  async deleteCookie(...cookies: Cookie[]): Promise<void> {
+    return await this.defaultBrowserContext().deleteCookie(...cookies);
+  }
+
+  
+
+
+
+
   isConnected(): boolean {
     return this.connected;
   }
@@ -432,7 +476,7 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
   abstract get connected(): boolean;
 
   
-  [disposeSymbol](): void {
+  override [disposeSymbol](): void {
     if (this.process()) {
       return void this.close().catch(debugError);
     }

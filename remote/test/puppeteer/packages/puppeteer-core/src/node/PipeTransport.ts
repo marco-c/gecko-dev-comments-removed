@@ -24,13 +24,15 @@ export class PipeTransport implements ConnectionTransport {
 
   constructor(
     pipeWrite: NodeJS.WritableStream,
-    pipeRead: NodeJS.ReadableStream
+    pipeRead: NodeJS.ReadableStream,
   ) {
     this.#pipeWrite = pipeWrite;
     const pipeReadEmitter = this.#subscriptions.use(
       
       
-      new EventEmitter(pipeRead as unknown as EventEmitter<Record<string, any>>)
+      new EventEmitter(
+        pipeRead as unknown as EventEmitter<Record<string, any>>,
+      ),
     );
     pipeReadEmitter.on('data', (buffer: Buffer) => {
       return this.#dispatch(buffer);
@@ -44,7 +46,9 @@ export class PipeTransport implements ConnectionTransport {
     const pipeWriteEmitter = this.#subscriptions.use(
       
       
-      new EventEmitter(pipeRead as unknown as EventEmitter<Record<string, any>>)
+      new EventEmitter(
+        pipeRead as unknown as EventEmitter<Record<string, any>>,
+      ),
     );
     pipeWriteEmitter.on('error', debugError);
   }

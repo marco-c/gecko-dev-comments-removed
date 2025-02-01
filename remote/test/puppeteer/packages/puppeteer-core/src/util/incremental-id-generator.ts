@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+export function createIncrementalIdGenerator(): GetIdFn {
+  let id = 0;
+  return (): number => {
+    return ++id;
+  };
+}
+
+
+
+
+export type GetIdFn = () => number;

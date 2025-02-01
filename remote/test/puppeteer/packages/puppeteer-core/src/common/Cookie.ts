@@ -34,6 +34,28 @@ export type CookieSourceScheme = 'Unset' | 'NonSecure' | 'Secure';
 
 
 
+export interface CookiePartitionKey {
+  
+
+
+
+
+
+  sourceOrigin: string;
+  
+
+
+
+
+
+  hasCrossSiteAncestor?: boolean;
+}
+
+
+
+
+
+
 export interface Cookie {
   
 
@@ -94,12 +116,13 @@ export interface Cookie {
 
 
 
-  partitionKey?: string;
+  partitionKey?: CookiePartitionKey | string;
   
 
 
   partitionKeyOpaque?: boolean;
 }
+
 
 
 
@@ -162,7 +185,67 @@ export interface CookieParam {
 
 
 
-  partitionKey?: string;
+  partitionKey?: CookiePartitionKey | string;
+}
+
+
+
+
+
+
+
+export interface CookieData {
+  
+
+
+  name: string;
+  
+
+
+  value: string;
+  
+
+
+  domain: string;
+  
+
+
+  path?: string;
+  
+
+
+  secure?: boolean;
+  
+
+
+  httpOnly?: boolean;
+  
+
+
+  sameSite?: CookieSameSite;
+  
+
+
+  expires?: number;
+  
+
+
+  priority?: CookiePriority;
+  
+
+
+  sameParty?: boolean;
+  
+
+
+  sourceScheme?: CookieSourceScheme;
+  
+
+
+
+
+
+  partitionKey?: CookiePartitionKey | string;
 }
 
 
@@ -192,5 +275,5 @@ export interface DeleteCookiesRequest {
 
 
 
-  partitionKey?: string;
+  partitionKey?: CookiePartitionKey | string;
 }

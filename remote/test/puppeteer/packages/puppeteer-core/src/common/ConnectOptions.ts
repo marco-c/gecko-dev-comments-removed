@@ -12,12 +12,16 @@ import type {
 } from '../api/Browser.js';
 
 import type {ConnectionTransport} from './ConnectionTransport.js';
+import type {DownloadBehavior} from './DownloadBehavior.js';
 import type {Viewport} from './Viewport.js';
 
 
 
 
 export type ProtocolType = 'cdp' | 'webDriverBiDi';
+
+
+
 
 export type SupportedWebDriverCapability = Exclude<
   Session.CapabilityRequest,
@@ -39,7 +43,7 @@ export interface SupportedWebDriverCapabilities {
 
 
 
-export interface BrowserConnectOptions {
+export interface ConnectOptions {
   
 
 
@@ -51,6 +55,10 @@ export interface BrowserConnectOptions {
 
 
   defaultViewport?: Viewport | null;
+  
+
+
+  downloadBehavior?: DownloadBehavior;
   
 
 
@@ -83,12 +91,7 @@ export interface BrowserConnectOptions {
 
 
   protocolTimeout?: number;
-}
 
-
-
-
-export interface ConnectOptions extends BrowserConnectOptions {
   browserWSEndpoint?: string;
   browserURL?: string;
   transport?: ConnectionTransport;

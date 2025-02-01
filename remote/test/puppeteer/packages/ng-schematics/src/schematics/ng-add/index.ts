@@ -68,11 +68,11 @@ function addDependencies(options: SchematicsOptions): Rule {
           new NodePackageInstallTask({
             
             allowScripts: true,
-          })
+          }),
         );
 
         return tree;
-      })
+      }),
     );
   };
 }

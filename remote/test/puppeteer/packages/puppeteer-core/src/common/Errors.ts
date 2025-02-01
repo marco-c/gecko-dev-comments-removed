@@ -43,6 +43,13 @@ export class TimeoutError extends PuppeteerError {}
 
 
 
+export class TouchError extends PuppeteerError {}
+
+
+
+
+
+
 export class ProtocolError extends PuppeteerError {
   #code?: number;
   #originalMessage = '';

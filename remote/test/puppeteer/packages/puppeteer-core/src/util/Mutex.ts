@@ -28,7 +28,7 @@ export class Mutex {
 
   
   async acquire(
-    onRelease?: () => void
+    onRelease?: () => void,
   ): Promise<InstanceType<typeof Mutex.Guard>> {
     if (!this.#locked) {
       this.#locked = true;

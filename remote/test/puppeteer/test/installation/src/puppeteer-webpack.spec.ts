@@ -25,13 +25,13 @@ describe('`puppeteer` with Webpack', () => {
     
     await writeFile(
       join(this.sandbox, 'webpack.config.mjs'),
-      await readAsset('puppeteer', 'webpack', 'webpack.config.js')
+      await readAsset('puppeteer', 'webpack', 'webpack.config.js'),
     );
 
     
     await writeFile(
       join(this.sandbox, 'index.js'),
-      await readAsset('puppeteer', 'basic.js')
+      await readAsset('puppeteer', 'basic.js'),
     );
 
     

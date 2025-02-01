@@ -110,7 +110,7 @@ export abstract class CDPSession extends EventEmitter<CDPSessionEvents> {
   abstract send<T extends keyof ProtocolMapping.Commands>(
     method: T,
     params?: ProtocolMapping.Commands[T]['paramsType'][0],
-    options?: CommandOptions
+    options?: CommandOptions,
   ): Promise<ProtocolMapping.Commands[T]['returnType']>;
 
   

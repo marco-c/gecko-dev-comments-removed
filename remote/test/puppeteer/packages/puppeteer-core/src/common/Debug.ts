@@ -97,7 +97,6 @@ export const debug = (prefix: string): ((...args: unknown[]) => void) => {
       return;
     }
 
-    
     console.log(`${prefix}:`, ...logArgs);
   };
 };

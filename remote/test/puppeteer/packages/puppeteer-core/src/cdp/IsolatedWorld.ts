@@ -33,6 +33,7 @@ import type {CdpWebWorker} from './WebWorker.js';
 
 export interface PageBinding {
   name: string;
+  
   pptrFunction: Function;
 }
 
@@ -48,7 +49,7 @@ export interface IsolatedWorldChart {
 
 
 
-type IsolatedWorldEmitter = EventEmitter<{
+export type IsolatedWorldEmitter = EventEmitter<{
   
   context: ExecutionContext;
   
@@ -70,7 +71,7 @@ export class IsolatedWorld extends Realm {
 
   constructor(
     frameOrWorker: CdpFrame | CdpWebWorker,
-    timeoutSettings: TimeoutSettings
+    timeoutSettings: TimeoutSettings,
   ) {
     super(timeoutSettings);
     this.#frameOrWorker = frameOrWorker;
@@ -106,7 +107,7 @@ export class IsolatedWorld extends Realm {
   }
 
   #onContextConsoleApiCalled(
-    event: Protocol.Runtime.ConsoleAPICalledEvent
+    event: Protocol.Runtime.ConsoleAPICalledEvent,
   ): void {
     this.#emitter.emit('consoleapicalled', event);
   }
@@ -126,7 +127,7 @@ export class IsolatedWorld extends Realm {
   #executionContext(): ExecutionContext | undefined {
     if (this.disposed) {
       throw new Error(
-        `Execution context is not available in detached frame or worker "${this.environment.url()}" (are you trying to evaluate?)`
+        `Execution context is not available in detached frame or worker "${this.environment.url()}" (are you trying to evaluate?)`,
       );
     }
     return this.#context;
@@ -136,18 +137,19 @@ export class IsolatedWorld extends Realm {
 
 
   async #waitForExecutionContext(): Promise<ExecutionContext> {
+    const error = new Error('Execution context was destroyed');
     const result = await firstValueFrom(
       fromEmitterEvent(this.#emitter, 'context').pipe(
         raceWith(
           fromEmitterEvent(this.#emitter, 'disposed').pipe(
             map(() => {
               
-              throw new Error('Execution context was destroyed');
-            })
+              throw error;
+            }),
           ),
-          timeout(this.timeoutSettings.timeout())
-        )
-      )
+          timeout(this.timeoutSettings.timeout()),
+        ),
+      ),
     );
     return result;
   }
@@ -161,7 +163,7 @@ export class IsolatedWorld extends Realm {
   ): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
     pageFunction = withSourcePuppeteerURLIfNone(
       this.evaluateHandle.name,
-      pageFunction
+      pageFunction,
     );
     
     
@@ -182,7 +184,7 @@ export class IsolatedWorld extends Realm {
   ): Promise<Awaited<ReturnType<Func>>> {
     pageFunction = withSourcePuppeteerURLIfNone(
       this.evaluate.name,
-      pageFunction
+      pageFunction,
     );
     
     
@@ -195,7 +197,7 @@ export class IsolatedWorld extends Realm {
   }
 
   override async adoptBackendNode(
-    backendNodeId?: Protocol.DOM.BackendNodeId
+    backendNodeId?: Protocol.DOM.BackendNodeId,
   ): Promise<JSHandle<Node>> {
     
     
@@ -237,7 +239,7 @@ export class IsolatedWorld extends Realm {
       objectId: handle.remoteObject().objectId,
     });
     const newHandle = (await this.adoptBackendNode(
-      info.node.backendNodeId
+      info.node.backendNodeId,
     )) as T;
     await handle.dispose();
     return newHandle;
@@ -247,7 +249,7 @@ export class IsolatedWorld extends Realm {
 
 
   createCdpHandle(
-    remoteObject: Protocol.Runtime.RemoteObject
+    remoteObject: Protocol.Runtime.RemoteObject,
   ): JSHandle | ElementHandle<Node> {
     if (remoteObject.subtype === 'node') {
       return new CdpElementHandle(this, remoteObject);
@@ -255,7 +257,7 @@ export class IsolatedWorld extends Realm {
     return new CdpJSHandle(this, remoteObject);
   }
 
-  [disposeSymbol](): void {
+  override [disposeSymbol](): void {
     this.#context?.[disposeSymbol]();
     this.#emitter.emit('disposed', undefined);
     super[disposeSymbol]();

@@ -1,2 +1,2 @@
 
-window.MAGIC = 42;
+globalThis.MAGIC = 42;

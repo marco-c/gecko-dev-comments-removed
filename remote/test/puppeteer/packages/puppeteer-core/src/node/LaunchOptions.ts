@@ -4,52 +4,9 @@
 
 
 
-import type {BrowserConnectOptions} from '../common/ConnectOptions.js';
+import type {ConnectOptions} from '../common/ConnectOptions.js';
 import type {SupportedBrowser} from '../common/SupportedBrowser.js';
 
-
-
-
-
-
-export interface BrowserLaunchArgumentOptions {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  headless?: boolean | 'shell';
-  
-
-
-
-
-  userDataDir?: string;
-  
-
-
-
-
-  devtools?: boolean;
-  
-
-
-  debuggingPort?: number;
-  
-
-
-  args?: string[];
-}
 
 
 
@@ -63,12 +20,16 @@ export type ChromeReleaseChannel =
 
 
 
-export interface LaunchOptions {
+export interface LaunchOptions extends ConnectOptions {
   
 
 
   channel?: ChromeReleaseChannel;
   
+
+
+
+
 
 
 
@@ -135,13 +96,40 @@ export interface LaunchOptions {
 
 
   waitForInitialPage?: boolean;
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  headless?: boolean | 'shell';
+  
+
+
+
+
+  userDataDir?: string;
+  
+
+
+
+
+  devtools?: boolean;
+  
+
+
+  debuggingPort?: number;
+  
+
+
+  args?: string[];
 }
-
-
-
-
-
-
-export type PuppeteerNodeLaunchOptions = BrowserLaunchArgumentOptions &
-  LaunchOptions &
-  BrowserConnectOptions;

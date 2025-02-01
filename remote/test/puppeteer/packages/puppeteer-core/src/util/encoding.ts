@@ -9,7 +9,7 @@
 
 export function stringToTypedArray(
   string: string,
-  base64Encoded = false
+  base64Encoded = false,
 ): Uint8Array {
   if (base64Encoded) {
     const binaryString = atob(string);
@@ -32,9 +32,17 @@ export function stringToBase64(str: string): string {
 
 
 export function typedArrayToBase64(typedArray: Uint8Array): string {
-  const binaryString = Array.from(typedArray, byte => {
-    return String.fromCodePoint(byte);
-  }).join('');
+  
+  
+  const chunkSize = 65534;
+  const chunks = [];
+
+  for (let i = 0; i < typedArray.length; i += chunkSize) {
+    const chunk = typedArray.subarray(i, i + chunkSize);
+    chunks.push(String.fromCodePoint.apply(null, chunk as unknown as number[]));
+  }
+
+  const binaryString = chunks.join('');
   return btoa(binaryString);
 }
 

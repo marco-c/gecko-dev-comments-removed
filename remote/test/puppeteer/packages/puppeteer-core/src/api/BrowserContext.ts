@@ -10,6 +10,7 @@ import {
   merge,
   raceWith,
 } from '../../third_party/rxjs/rxjs.js';
+import type {Cookie, CookieData} from '../common/Cookie.js';
 import {EventEmitter, type EventType} from '../common/EventEmitter.js';
 import {
   debugError,
@@ -160,15 +161,15 @@ export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> 
 
   async waitForTarget(
     predicate: (x: Target) => boolean | Promise<boolean>,
-    options: WaitForTargetOptions = {}
+    options: WaitForTargetOptions = {},
   ): Promise<Target> {
     const {timeout: ms = 30000} = options;
     return await firstValueFrom(
       merge(
         fromEmitterEvent(this, BrowserContextEvent.TargetCreated),
         fromEmitterEvent(this, BrowserContextEvent.TargetChanged),
-        from(this.targets())
-      ).pipe(filterAsync(predicate), raceWith(timeout(ms)))
+        from(this.targets()),
+      ).pipe(filterAsync(predicate), raceWith(timeout(ms))),
     );
   }
 
@@ -202,7 +203,7 @@ export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> 
 
   abstract overridePermissions(
     origin: string,
-    permissions: Permission[]
+    permissions: Permission[],
   ): Promise<void>;
 
   
@@ -246,6 +247,31 @@ export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> 
   
 
 
+  abstract cookies(): Promise<Cookie[]>;
+
+  
+
+
+  abstract setCookie(...cookies: CookieData[]): Promise<void>;
+
+  
+
+
+
+  async deleteCookie(...cookies: Cookie[]): Promise<void> {
+    return await this.setCookie(
+      ...cookies.map(cookie => {
+        return {
+          ...cookie,
+          expires: 1,
+        };
+      }),
+    );
+  }
+
+  
+
+
   get closed(): boolean {
     return !this.browser().browserContexts().includes(this);
   }
@@ -258,7 +284,7 @@ export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> 
   }
 
   
-  [disposeSymbol](): void {
+  override [disposeSymbol](): void {
     return void this.close().catch(debugError);
   }
 

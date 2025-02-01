@@ -14,10 +14,7 @@ import {
 
 import type {Browser} from '../api/Browser.js';
 import type {Configuration} from '../common/Configuration.js';
-import type {
-  ConnectOptions,
-  BrowserConnectOptions,
-} from '../common/ConnectOptions.js';
+import type {ConnectOptions} from '../common/ConnectOptions.js';
 import {type CommonPuppeteerSettings, Puppeteer} from '../common/Puppeteer.js';
 import type {SupportedBrowser} from '../common/SupportedBrowser.js';
 import {PUPPETEER_REVISIONS} from '../revisions.js';
@@ -25,22 +22,7 @@ import {PUPPETEER_REVISIONS} from '../revisions.js';
 import type {BrowserLauncher} from './BrowserLauncher.js';
 import {ChromeLauncher} from './ChromeLauncher.js';
 import {FirefoxLauncher} from './FirefoxLauncher.js';
-import type {
-  BrowserLaunchArgumentOptions,
-  ChromeReleaseChannel,
-  LaunchOptions,
-} from './LaunchOptions.js';
-
-
-
-
-export interface PuppeteerLaunchOptions
-  extends LaunchOptions,
-    BrowserLaunchArgumentOptions,
-    BrowserConnectOptions {
-  browser?: SupportedBrowser;
-  extraPrefsFirefox?: Record<string, unknown>;
-}
+import type {ChromeReleaseChannel, LaunchOptions} from './LaunchOptions.js';
 
 
 
@@ -78,7 +60,7 @@ export interface PuppeteerLaunchOptions
 
 
 export class PuppeteerNode extends Puppeteer {
-  #_launcher?: BrowserLauncher;
+  #launcher?: BrowserLauncher;
   #lastLaunchedBrowser?: SupportedBrowser;
 
   
@@ -97,7 +79,7 @@ export class PuppeteerNode extends Puppeteer {
   constructor(
     settings: {
       configuration?: Configuration;
-    } & CommonPuppeteerSettings
+    } & CommonPuppeteerSettings,
   ) {
     const {configuration, ...commonSettings} = settings;
     super(commonSettings);
@@ -167,42 +149,68 @@ export class PuppeteerNode extends Puppeteer {
 
 
 
-  launch(options: PuppeteerLaunchOptions = {}): Promise<Browser> {
-    const {browser: product = this.defaultBrowser} = options;
-    this.#lastLaunchedBrowser = product;
+  launch(options: LaunchOptions = {}): Promise<Browser> {
+    const {browser = this.defaultBrowser} = options;
+    this.#lastLaunchedBrowser = browser;
+    switch (browser) {
+      case 'chrome':
+        this.defaultBrowserRevision = PUPPETEER_REVISIONS.chrome;
+        break;
+      case 'firefox':
+        this.defaultBrowserRevision = PUPPETEER_REVISIONS.firefox;
+        break;
+      default:
+        throw new Error(`Unknown product: ${browser}`);
+    }
+    this.#launcher = this.#getLauncher(browser);
     return this.#launcher.launch(options);
   }
 
   
 
 
-  get #launcher(): BrowserLauncher {
-    if (
-      this.#_launcher &&
-      this.#_launcher.browser === this.lastLaunchedBrowser
-    ) {
-      return this.#_launcher;
+  #getLauncher(browser: SupportedBrowser): BrowserLauncher {
+    if (this.#launcher && this.#launcher.browser === browser) {
+      return this.#launcher;
     }
-    switch (this.lastLaunchedBrowser) {
+    switch (browser) {
       case 'chrome':
-        this.defaultBrowserRevision = PUPPETEER_REVISIONS.chrome;
-        this.#_launcher = new ChromeLauncher(this);
-        break;
+        return new ChromeLauncher(this);
       case 'firefox':
-        this.defaultBrowserRevision = PUPPETEER_REVISIONS.firefox;
-        this.#_launcher = new FirefoxLauncher(this);
-        break;
+        return new FirefoxLauncher(this);
       default:
-        throw new Error(`Unknown product: ${this.#lastLaunchedBrowser}`);
+        throw new Error(`Unknown product: ${browser}`);
     }
-    return this.#_launcher;
   }
 
   
 
 
-  executablePath(channel?: ChromeReleaseChannel): string {
-    return this.#launcher.executablePath(channel);
+  executablePath(channel: ChromeReleaseChannel): string;
+  
+
+
+  executablePath(options: LaunchOptions): string;
+  
+
+
+  executablePath(): string;
+  executablePath(optsOrChannel?: ChromeReleaseChannel | LaunchOptions): string {
+    if (optsOrChannel === undefined) {
+      return this.#getLauncher(this.lastLaunchedBrowser).executablePath(
+        undefined,
+         false,
+      );
+    }
+    if (typeof optsOrChannel === 'string') {
+      return this.#getLauncher('chrome').executablePath(
+        optsOrChannel,
+         false,
+      );
+    }
+    return this.#getLauncher(
+      optsOrChannel.browser ?? this.lastLaunchedBrowser,
+    ).resolveExecutablePath(optsOrChannel.headless,  false);
   }
 
   
@@ -250,7 +258,7 @@ export class PuppeteerNode extends Puppeteer {
 
 
   get product(): string {
-    return this.#launcher.browser;
+    return this.lastLaunchedBrowser;
   }
 
   
@@ -258,8 +266,10 @@ export class PuppeteerNode extends Puppeteer {
 
 
 
-  defaultArgs(options: BrowserLaunchArgumentOptions = {}): string[] {
-    return this.#launcher.defaultArgs(options);
+  defaultArgs(options: LaunchOptions = {}): string[] {
+    return this.#getLauncher(
+      options.browser ?? this.lastLaunchedBrowser,
+    ).defaultArgs(options);
   }
 
   
@@ -316,13 +326,13 @@ export class PuppeteerNode extends Puppeteer {
     const currentBrowserBuilds = new Set(
       puppeteerBrowsers.map(browser => {
         return `${browser.browser}_${browser.currentBuildId}`;
-      })
+      }),
     );
 
     const currentBrowsers = new Set(
       puppeteerBrowsers.map(browser => {
         return browser.browser;
-      })
+      }),
     );
 
     for (const installedBrowser of installedBrowsers) {
@@ -333,7 +343,7 @@ export class PuppeteerNode extends Puppeteer {
       
       if (
         currentBrowserBuilds.has(
-          `${installedBrowser.browser}_${installedBrowser.buildId}`
+          `${installedBrowser.browser}_${installedBrowser.buildId}`,
         )
       ) {
         continue;

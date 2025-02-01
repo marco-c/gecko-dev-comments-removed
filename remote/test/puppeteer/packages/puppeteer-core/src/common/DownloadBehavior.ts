@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+export type DownloadPolicy = 'deny' | 'allow' | 'allowAndName' | 'default';
+
+
+
+
+export interface DownloadBehavior {
+  
+
+
+
+
+
+
+  policy: DownloadPolicy;
+  
+
+
+
+
+
+  downloadPath?: string;
+}

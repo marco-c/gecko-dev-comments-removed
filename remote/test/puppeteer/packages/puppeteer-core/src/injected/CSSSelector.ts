@@ -6,14 +6,14 @@
 
 export const cssQuerySelector = (
   root: Node,
-  selector: string
+  selector: string,
 ): Element | null => {
   
   return root.querySelector(selector);
 };
 export const cssQuerySelectorAll = function (
   root: Node,
-  selector: string
+  selector: string,
 ): Iterable<Element> {
   
   return root.querySelectorAll(selector);

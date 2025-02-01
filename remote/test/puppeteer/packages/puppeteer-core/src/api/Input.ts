@@ -6,7 +6,9 @@
 
 import type {Protocol} from 'devtools-protocol';
 
+import {TouchError} from '../common/Errors.js';
 import type {KeyInput} from '../common/USKeyboardLayout.js';
+import {createIncrementalIdGenerator} from '../util/incremental-id-generator.js';
 
 import type {Point} from './ElementHandle.js';
 
@@ -112,7 +114,7 @@ export abstract class Keyboard {
 
   abstract down(
     key: KeyInput,
-    options?: Readonly<KeyDownOptions>
+    options?: Readonly<KeyDownOptions>,
   ): Promise<void>;
 
   
@@ -167,7 +169,7 @@ export abstract class Keyboard {
 
   abstract type(
     text: string,
-    options?: Readonly<KeyboardTypeOptions>
+    options?: Readonly<KeyboardTypeOptions>,
   ): Promise<void>;
 
   
@@ -194,7 +196,7 @@ export abstract class Keyboard {
 
   abstract press(
     key: KeyInput,
-    options?: Readonly<KeyPressOptions>
+    options?: Readonly<KeyPressOptions>,
   ): Promise<void>;
 }
 
@@ -367,7 +369,7 @@ export abstract class Mouse {
   abstract move(
     x: number,
     y: number,
-    options?: Readonly<MouseMoveOptions>
+    options?: Readonly<MouseMoveOptions>,
   ): Promise<void>;
 
   
@@ -394,7 +396,7 @@ export abstract class Mouse {
   abstract click(
     x: number,
     y: number,
-    options?: Readonly<MouseClickOptions>
+    options?: Readonly<MouseClickOptions>,
   ): Promise<void>;
 
   
@@ -435,7 +437,7 @@ export abstract class Mouse {
 
   abstract dragEnter(
     target: Point,
-    data: Protocol.Input.DragData
+    data: Protocol.Input.DragData,
   ): Promise<void>;
 
   
@@ -445,7 +447,7 @@ export abstract class Mouse {
 
   abstract dragOver(
     target: Point,
-    data: Protocol.Input.DragData
+    data: Protocol.Input.DragData,
   ): Promise<void>;
 
   
@@ -466,10 +468,25 @@ export abstract class Mouse {
   abstract dragAndDrop(
     start: Point,
     target: Point,
-    options?: {delay?: number}
+    options?: {delay?: number},
   ): Promise<void>;
 }
 
+
+
+
+export interface TouchHandle {
+  
+
+
+
+
+  move(x: number, y: number): Promise<void>;
+  
+
+
+  end(): Promise<void>;
+}
 
 
 
@@ -478,16 +495,25 @@ export abstract class Touchscreen {
   
 
 
+  idGenerator = createIncrementalIdGenerator();
+  
+
+
+  touches: TouchHandle[] = [];
+  
+
+
   constructor() {}
 
   
 
 
-
-
-  async tap(x: number, y: number): Promise<void> {
-    await this.touchStart(x, y);
-    await this.touchEnd();
+  removeHandle(handle: TouchHandle): void {
+    const index = this.touches.indexOf(handle);
+    if (index === -1) {
+      return;
+    }
+    this.touches.splice(index, 1);
   }
 
   
@@ -495,7 +521,18 @@ export abstract class Touchscreen {
 
 
 
-  abstract touchStart(x: number, y: number): Promise<void>;
+  async tap(x: number, y: number): Promise<void> {
+    const touch = await this.touchStart(x, y);
+    await touch.end();
+  }
+
+  
+
+
+
+
+
+  abstract touchStart(x: number, y: number): Promise<TouchHandle>;
 
   
 
@@ -509,10 +546,22 @@ export abstract class Touchscreen {
 
 
 
-  abstract touchMove(x: number, y: number): Promise<void>;
+  async touchMove(x: number, y: number): Promise<void> {
+    const touch = this.touches[0];
+    if (!touch) {
+      throw new TouchError('Must start a new Touch first');
+    }
+    return await touch.move(x, y);
+  }
 
   
 
 
-  abstract touchEnd(): Promise<void>;
+  async touchEnd(): Promise<void> {
+    const touch = this.touches.shift();
+    if (!touch) {
+      throw new TouchError('Must start a new Touch first');
+    }
+    await touch.end();
+  }
 }
