@@ -89,7 +89,13 @@ async function runWithProfilerAndGetMarkers(type, func) {
   
   
   
-  markers = markers.filter(marker => marker.id.startsWith("testOnly"));
+  markers = markers.filter(
+    marker =>
+      
+      marker.id.startsWith("testOnly") ||
+      
+      ["test-ping", "one-ping-only", "ride-along-ping"].includes(marker.id)
+  );
 
   
   return markers;
@@ -1047,3 +1053,38 @@ add_task(async function test_fog_object_markers() {
 
   Assert.deepEqual(markers, expected_markers);
 });
+
+add_task(
+  
+  {
+    skip_if: () =>
+      Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
+  },
+
+  async function test_fog_ping_markers() {
+    let markers = await runWithProfilerAndGetMarkers("Ping", () => {
+      
+      
+      Glean.testOnly.onePingOneBool.set(false);
+      GleanPings.onePingOnly.submit();
+
+      
+      Glean.testOnly.onePingOneBool.set(false);
+      GleanPings.onePingOnly.submit();
+      GleanPings.onePingOnly.submit();
+      GleanPings.onePingOnly.submit();
+
+      
+      Glean.testOnly.badCode.add(37);
+      GleanPings.testPing.submit();
+    });
+
+    Assert.deepEqual(markers, [
+      { type: "Ping", id: "one-ping-only" },
+      { type: "Ping", id: "one-ping-only" },
+      { type: "Ping", id: "one-ping-only" },
+      { type: "Ping", id: "one-ping-only" },
+      { type: "Ping", id: "test-ping" },
+    ]);
+  }
+);
