@@ -151,8 +151,15 @@ add_task(async function testDelayPlayWhenUsingButton() {
   let tab2BlockPromise = wait_for_tab_media_blocked_event(tab2, false);
 
   
+  let isPinned = tab2.pinned;
+  let isVerticalAndCollapsed =
+    Services.prefs.getBoolPref("sidebar.revamp", false) &&
+    Services.prefs.getBoolPref("sidebar.verticalTabs", false) &&
+    !window.SidebarController._state.launcherExpanded;
+  let icon =
+    isPinned || isVerticalAndCollapsed ? tab2.overlayIcon : tab2.audioButton;
   info("Press play tab2 icon");
-  await pressIcon(tab2.overlayIcon);
+  await pressIcon(icon);
 
   
   

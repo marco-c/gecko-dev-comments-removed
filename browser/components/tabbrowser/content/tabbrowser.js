@@ -2093,9 +2093,6 @@
         
         
         tab.removeAttribute("crashed");
-        
-        
-        this.tabContainer.updateTabIndicatorAttr(tab);
       }
 
       
@@ -6488,8 +6485,13 @@
       event.stopPropagation();
       let tab = event.target.triggerNode?.closest("tab");
       if (!tab) {
-        event.preventDefault();
-        return;
+        if (event.target.triggerNode?.getRootNode()?.host?.closest("tab")) {
+          
+          tab = event.target.triggerNode?.getRootNode().host.closest("tab");
+        } else {
+          event.preventDefault();
+          return;
+        }
       }
 
       const tooltip = event.target;
@@ -6498,7 +6500,7 @@
       const tabCount = this.selectedTabs.includes(tab)
         ? this.selectedTabs.length
         : 1;
-      if (tab._overPlayingIcon) {
+      if (tab._overPlayingIcon || tab._overAudioButton) {
         let l10nId;
         const l10nArgs = { tabCount };
         if (tab.selected) {
@@ -7112,7 +7114,6 @@
             
             
             tab.removeAttribute("crashed");
-            gBrowser.tabContainer.updateTabIndicatorAttr(tab);
           }
 
           if (this.isFindBarInitialized(tab)) {
@@ -7437,7 +7438,6 @@
           delete this.mBrowser.initialPageLoadedFromUserAction;
           
           this.mTab.removeAttribute("crashed");
-          gBrowser.tabContainer.updateTabIndicatorAttr(this.mTab);
         }
 
         if (this._shouldShowProgress(aRequest)) {
