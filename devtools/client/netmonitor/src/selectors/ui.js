@@ -53,23 +53,17 @@ function getVisibleColumns(columns) {
 }
 
 const getColumns = createSelector(
-  state => state.ui,
-  state => state.search,
-  (ui, search) => {
-    if (
-      ((ui.networkDetailsOpen || search.panelOpen) &&
-        getVisibleColumns(ui.columns).length === 1 &&
-        ui.columns.waterfall) ||
-      (!ui.networkDetailsOpen && !search.panelOpen)
-    ) {
-      return ui.columns;
+  state => state.ui.columns,
+  state => state.ui.networkDetailsOpen || state.search.panelOpen,
+  (columns, isSidePanelOpen) => {
+    const isWaterfallOnly =
+      getVisibleColumns(columns).length === 1 && columns.waterfall;
+    if (isSidePanelOpen && !isWaterfallOnly) {
+      
+      
+      columns = { ...columns };
+      delete columns.waterfall;
     }
-
-    
-    
-    
-    const columns = { ...ui.columns };
-    delete columns.waterfall;
     return columns;
   }
 );
