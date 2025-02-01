@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var map = new Map();
+
+assertThrowsInstanceOf(function() {
+  map.getOrInsertComputed(1, function() {
+    throw new Error('throw in callback');
+  })
+}, Error);
+
+reportCompare(0, 0);

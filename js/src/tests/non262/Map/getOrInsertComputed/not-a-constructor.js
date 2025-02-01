@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assertEq(isConstructor(Map.prototype.getOrInsertComputed), false, 'isConstructor(Map.prototype.getOrInsertComputed) must return false');
+
+assertThrowsInstanceOf(() => {
+  let m = new Map(); new m.getOrInsertComputed();
+}, TypeError);
+
+reportCompare(0, 0);

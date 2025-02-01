@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assertDeepEq(Object.getOwnPropertyDescriptor(Map.prototype.getOrInsertComputed, "name"), {
+  value: "getOrInsertComputed",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assertEq(
+  typeof WeakMap.prototype.getOrInsertComputed,
+  'function',
+  'typeof WeakMap.prototype.getOrInsertComputed is "function"'
+);
+
+assertDeepEq(Object.getOwnPropertyDescriptor(WeakMap.prototype, "getOrInsertComputed"), {
+  value: WeakMap.prototype.getOrInsertComputed,
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

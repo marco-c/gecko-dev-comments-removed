@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assertEq(
+  isConstructor(WeakMap.prototype.getOrInsert),
+  false,
+  'isConstructor(WeakMap.prototype.getOrInsert) must return false'
+);
+
+assertThrowsInstanceOf(() => {
+  let wm = new WeakMap(); new wm.getOrInsert({}, 1);
+}, TypeError);
+
+reportCompare(0, 0);

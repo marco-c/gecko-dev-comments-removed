@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var map = new Map();
+
+assertThrowsInstanceOf(function () {
+    Map.prototype.getOrInsertComputed.call([], 1, () => 1);
+}, TypeError);
+
+assertThrowsInstanceOf(function () {
+    map.getOrInsertComputed.call([], 1, () => 1);
+}, TypeError);
+
+assertThrowsInstanceOf(function () {
+    Map.prototype.getOrInsertComputed.call({}, 1, () => 1);
+}, TypeError);
+
+assertThrowsInstanceOf(function () {
+    map.getOrInsertComputed.call({}, 1, () => 1);
+}, TypeError);
+
+reportCompare(0, 0);
