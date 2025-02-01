@@ -21,7 +21,9 @@ class FailedPlatform:
         
         
         
-        oop_permutations: Dict[str, list[str]],
+        
+        
+        oop_permutations: Dict[str, Dict[str, Dict[str, int]]],
     ) -> None:
         
         self.failures: Dict[str, Set[str]] = {}

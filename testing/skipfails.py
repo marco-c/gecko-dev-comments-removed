@@ -212,8 +212,10 @@ class Skipfails(object):
                     str,  
                     Dict[
                         str,  
-                        
-                        Dict[str, list[str]],
+                        Dict[
+                            str,  
+                            Dict[str, int],  
+                        ],
                     ],
                 ],
             ],
