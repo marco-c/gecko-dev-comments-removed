@@ -4,9 +4,14 @@
 
 
 
-EXTRA_JS_MODULES += ["TopSites.sys.mjs"]
+EXTRA_JS_MODULES.topsites += [
+    "TippyTopProvider.sys.mjs",
+    "TopSites.sys.mjs",
+]
 
 XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.toml"]
 
 with Files("**"):
     BUG_COMPONENT = ("Firefox", "Top Sites")
+
+JAR_MANIFESTS += ["jar.mn"]
