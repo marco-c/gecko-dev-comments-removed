@@ -83,17 +83,14 @@ class WaylandBuffer {
   virtual ~WaylandBuffer() = default;
 
   
-  
-  
-  virtual wl_buffer* CreateWlBuffer() = 0;
+  virtual bool CreateWlBuffer() = 0;
 
   
   
   
-  virtual void DeleteWlBuffer() = 0;
-
-  virtual wl_buffer* GetWlBuffer() = 0;
-  bool HasWlBuffer() { return !!GetWlBuffer(); }
+  void DeleteWlBuffer();
+  wl_buffer* GetWlBuffer() { return mWLBuffer; }
+  bool HasWlBuffer() { return !!mWLBuffer; }
 
   bool IsWaitingToBufferDelete() const { return !!mBufferDeleteSyncCallback; }
 
@@ -103,6 +100,10 @@ class WaylandBuffer {
 
   
   wl_callback* mBufferDeleteSyncCallback = nullptr;
+
+  
+  
+  wl_buffer* mWLBuffer = nullptr;
 
   LayoutDeviceIntSize mSize;
   
@@ -135,9 +136,7 @@ class WaylandBufferSHM final : public WaylandBuffer {
 #endif
 
  protected:
-  wl_buffer* CreateWlBuffer() override;
-  void DeleteWlBuffer() override;
-  wl_buffer* GetWlBuffer() override;
+  bool CreateWlBuffer() override;
 
  private:
   explicit WaylandBufferSHM(const LayoutDeviceIntSize& aSize);
@@ -145,10 +144,6 @@ class WaylandBufferSHM final : public WaylandBuffer {
 
   
   RefPtr<WaylandShmPool> mShmPool;
-
-  
-  
-  wl_buffer* mWLBuffer = nullptr;
 
   size_t mBufferAge = 0;
 
@@ -161,7 +156,8 @@ class WaylandBufferSHM final : public WaylandBuffer {
 class WaylandBufferDMABUF final : public WaylandBuffer {
  public:
   static already_AddRefed<WaylandBufferDMABUF> CreateRGBA(
-      const LayoutDeviceIntSize& aSize, gl::GLContext* aGL);
+      const LayoutDeviceIntSize& aSize, gl::GLContext* aGL,
+      RefPtr<DRMFormat> aFormat);
   static already_AddRefed<WaylandBufferDMABUF> CreateExternal(
       RefPtr<DMABufSurface> aSurface);
 
@@ -172,9 +168,7 @@ class WaylandBufferDMABUF final : public WaylandBuffer {
   }
 
  protected:
-  wl_buffer* CreateWlBuffer() override;
-  void DeleteWlBuffer() override;
-  wl_buffer* GetWlBuffer() override;
+  bool CreateWlBuffer() override;
 
  private:
   explicit WaylandBufferDMABUF(const LayoutDeviceIntSize& aSize);
