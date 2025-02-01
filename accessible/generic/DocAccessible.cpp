@@ -999,22 +999,26 @@ void DocAccessible::ContentAppended(nsIContent* aFirstNewContent) {
 void DocAccessible::ElementStateChanged(dom::Document* aDocument,
                                         dom::Element* aElement,
                                         dom::ElementState aStateMask) {
-  if (aStateMask.HasState(dom::ElementState::READWRITE) &&
-      aElement == mDocumentNode->GetRootElement()) {
-    
-    
-    
+  LocalAccessible* accessible =
+      aElement == mContent ? this : GetAccessible(aElement);
+
+  if (!accessible) {
+    return;
+  }
+
+  if (aStateMask.HasState(dom::ElementState::READWRITE)) {
     const bool isEditable =
         aElement->State().HasState(dom::ElementState::READWRITE);
     RefPtr<AccEvent> event =
-        new AccStateChangeEvent(this, states::EDITABLE, isEditable);
+        new AccStateChangeEvent(accessible, states::EDITABLE, isEditable);
     FireDelayedEvent(event);
-    event = new AccStateChangeEvent(this, states::READONLY, !isEditable);
-    FireDelayedEvent(event);
+    if (accessible == this || aElement->IsHTMLElement(nsGkAtoms::article)) {
+      
+      event =
+          new AccStateChangeEvent(accessible, states::READONLY, !isEditable);
+      FireDelayedEvent(event);
+    }
   }
-
-  LocalAccessible* accessible = GetAccessible(aElement);
-  if (!accessible) return;
 
   if (aStateMask.HasState(dom::ElementState::CHECKED)) {
     LocalAccessible* widget = accessible->ContainerWidget();
