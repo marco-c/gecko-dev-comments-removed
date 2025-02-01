@@ -93,7 +93,18 @@ add_task(async function test_fog_counter_markers() {
     Glean.testOnly.mabelsKitchenCounters["1".repeat(72)].add(1);
   });
 
-  Assert.deepEqual(markers, [
+  
+  
+  
+  
+  
+  let testMarkers = markers.filter(
+    marker =>
+      marker.id == "testOnly.badCode" ||
+      marker.id == "testOnly.mabelsKitchenCounters"
+  );
+
+  Assert.deepEqual(testMarkers, [
     {
       type: "IntLikeMetric",
       id: "testOnly.badCode",
