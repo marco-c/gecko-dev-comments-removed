@@ -1216,9 +1216,11 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
   HandleInsertParagraphInMailCiteElement(Element& aMailCiteElement,
-                                         const EditorDOMPoint& aPointToSplit);
+                                         const EditorDOMPoint& aPointToSplit,
+                                         const Element& aEditingHost);
 
   
 
@@ -1655,7 +1657,7 @@ class HTMLEditor final : public EditorBase,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateLineBreakResult, nsresult>
   InsertPaddingBRElementToMakeEmptyLineVisibleIfNeeded(
-      const EditorDOMPoint& aPointToInsert);
+      const EditorDOMPoint& aPointToInsert, const Element& aEditingHost);
 
   
 
@@ -3399,9 +3401,11 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   EnsureNoFollowingUnnecessaryLineBreak(
-      const EditorDOMPoint& aNextOrAfterModifiedPoint);
+      const EditorDOMPoint& aNextOrAfterModifiedPoint,
+      const Element& aEditingHost);
 
   
 
@@ -3451,7 +3455,8 @@ class HTMLEditor final : public EditorBase,
   template <size_t N>
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SetInlinePropertiesAroundRanges(
       AutoClonedRangeArray& aRanges,
-      const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet);
+      const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet,
+      const Element& aEditingHost);
 
   
 

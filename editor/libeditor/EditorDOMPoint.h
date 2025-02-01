@@ -287,11 +287,6 @@ class EditorDOMPointBase final {
   
 
 
-  [[nodiscard]] bool IsContainerEditableRoot() const;
-
-  
-
-
 
   bool IsContainerHTMLElement(nsAtom* aTag) const {
     return mParent && mParent->IsHTMLElement(aTag);

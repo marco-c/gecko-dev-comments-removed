@@ -41,7 +41,6 @@
 #include "nsError.h"             
 #include "nsGkAtoms.h"           
 #include "nsHTMLTags.h"
-#include "nsIContentInlines.h"   
 #include "nsIFrameInlines.h"     
 #include "nsLiteralString.h"     
 #include "nsNameSpaceManager.h"  
@@ -115,24 +114,26 @@ template nsIContent* HTMLEditUtils::GetContentToPreserveInlineStyles(
     const EditorRawDOMPoint& aPoint, const Element& aEditingHost);
 
 template EditorDOMPoint HTMLEditUtils::GetBetterInsertionPointFor(
-    const nsIContent& aContentToInsert, const EditorDOMPoint& aPointToInsert);
+    const nsIContent& aContentToInsert, const EditorDOMPoint& aPointToInsert,
+    const Element& aEditingHost);
 template EditorRawDOMPoint HTMLEditUtils::GetBetterInsertionPointFor(
-    const nsIContent& aContentToInsert,
-    const EditorRawDOMPoint& aPointToInsert);
+    const nsIContent& aContentToInsert, const EditorRawDOMPoint& aPointToInsert,
+    const Element& aEditingHost);
 template EditorDOMPoint HTMLEditUtils::GetBetterInsertionPointFor(
-    const nsIContent& aContentToInsert,
-    const EditorRawDOMPoint& aPointToInsert);
+    const nsIContent& aContentToInsert, const EditorRawDOMPoint& aPointToInsert,
+    const Element& aEditingHost);
 template EditorRawDOMPoint HTMLEditUtils::GetBetterInsertionPointFor(
-    const nsIContent& aContentToInsert, const EditorDOMPoint& aPointToInsert);
+    const nsIContent& aContentToInsert, const EditorDOMPoint& aPointToInsert,
+    const Element& aEditingHost);
 
 template EditorDOMPoint HTMLEditUtils::GetBetterCaretPositionToInsertText(
-    const EditorDOMPoint& aPoint);
+    const EditorDOMPoint& aPoint, const Element& aEditingHost);
 template EditorDOMPoint HTMLEditUtils::GetBetterCaretPositionToInsertText(
-    const EditorRawDOMPoint& aPoint);
+    const EditorRawDOMPoint& aPoint, const Element& aEditingHost);
 template EditorRawDOMPoint HTMLEditUtils::GetBetterCaretPositionToInsertText(
-    const EditorDOMPoint& aPoint);
+    const EditorDOMPoint& aPoint, const Element& aEditingHost);
 template EditorRawDOMPoint HTMLEditUtils::GetBetterCaretPositionToInsertText(
-    const EditorRawDOMPoint& aPoint);
+    const EditorRawDOMPoint& aPoint, const Element& aEditingHost);
 
 template Result<EditorDOMPoint, nsresult>
 HTMLEditUtils::ComputePointToPutCaretInElementIfOutside(
@@ -153,53 +154,47 @@ template bool HTMLEditUtils::IsSameCSSColorValue(const nsACString& aColorA,
                                                  const nsACString& aColorB);
 
 template Maybe<EditorLineBreak> HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
-    const EditorDOMPoint& aPoint);
+    const EditorDOMPoint& aPoint, const Element& aEditingHost);
 template Maybe<EditorLineBreak> HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
-    const EditorRawDOMPoint& aPoint);
+    const EditorRawDOMPoint& aPoint, const Element& aEditingHost);
 template Maybe<EditorLineBreak> HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
-    const EditorDOMPointInText& aPoint);
+    const EditorDOMPointInText& aPoint, const Element& aEditingHost);
 template Maybe<EditorLineBreak> HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
-    const EditorRawDOMPointInText& aPoint);
+    const EditorRawDOMPointInText& aPoint, const Element& aEditingHost);
 template Maybe<EditorRawLineBreak>
-HTMLEditUtils::GetFollowingUnnecessaryLineBreak(const EditorDOMPoint& aPoint);
+HTMLEditUtils::GetFollowingUnnecessaryLineBreak(const EditorDOMPoint& aPoint,
+                                                const Element& aEditingHost);
+template Maybe<EditorRawLineBreak>
+HTMLEditUtils::GetFollowingUnnecessaryLineBreak(const EditorRawDOMPoint& aPoint,
+                                                const Element& aEditingHost);
 template Maybe<EditorRawLineBreak>
 HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
-    const EditorRawDOMPoint& aPoint);
+    const EditorDOMPointInText& aPoint, const Element& aEditingHost);
 template Maybe<EditorRawLineBreak>
 HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
-    const EditorDOMPointInText& aPoint);
-template Maybe<EditorRawLineBreak>
-HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
-    const EditorRawDOMPointInText& aPoint);
+    const EditorRawDOMPointInText& aPoint, const Element& aEditingHost);
 
 template bool HTMLEditUtils::PointIsImmediatelyBeforeCurrentBlockBoundary(
     const EditorDOMPoint& aPoint,
-    IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak);
+    IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak,
+    const Element& aEditingHost);
 template bool HTMLEditUtils::PointIsImmediatelyBeforeCurrentBlockBoundary(
     const EditorRawDOMPoint& aPoint,
-    IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak);
+    IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak,
+    const Element& aEditingHost);
 template bool HTMLEditUtils::PointIsImmediatelyBeforeCurrentBlockBoundary(
     const EditorDOMPointInText& aPoint,
-    IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak);
+    IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak,
+    const Element& aEditingHost);
 template bool HTMLEditUtils::PointIsImmediatelyBeforeCurrentBlockBoundary(
     const EditorRawDOMPointInText& aPoint,
-    IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak);
+    IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak,
+    const Element& aEditingHost);
 
 template Maybe<EditorLineBreak> HTMLEditUtils::GetUnnecessaryLineBreak(
     const Element& aBlockElement, ScanLineBreak aScanLineBreak);
 template Maybe<EditorRawLineBreak> HTMLEditUtils::GetUnnecessaryLineBreak(
     const Element& aBlockElement, ScanLineBreak aScanLineBreak);
-
-bool HTMLEditUtils::ElementIsEditableRoot(const Element& aElement) {
-  MOZ_ASSERT(!aElement.IsInNativeAnonymousSubtree());
-  if (NS_WARN_IF(!aElement.IsEditable()) ||
-      NS_WARN_IF(!aElement.IsInComposedDoc())) {
-    return false;
-  }
-  return !aElement.GetParent() ||                      
-         !aElement.GetParent()->IsEditable() ||        
-         aElement.OwnerDoc()->GetBody() == &aElement;  
-}
 
 bool HTMLEditUtils::CanContentsBeJoined(const nsIContent& aLeftContent,
                                         const nsIContent& aRightContent) {
@@ -816,7 +811,7 @@ EditorDOMPoint HTMLEditUtils::LineRequiresPaddingLineBreakToBeVisible(
     }
     const WSScanResult nextThing =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::EditableNodes, point,
+            &aEditingHost, point,
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
     if (nextThing.ReachedBlockBoundary()) {
       if (nextThing.ReachedCurrentBlockBoundary()) {
@@ -838,7 +833,7 @@ EditorDOMPoint HTMLEditUtils::LineRequiresPaddingLineBreakToBeVisible(
     }
     const WSScanResult previousThing =
         WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::EditableNodes, preferredPaddingLineBreakPoint,
+            &aEditingHost, preferredPaddingLineBreakPoint,
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
     if (previousThing.ContentIsText()) {
       if (MOZ_UNLIKELY(!previousThing.TextPtr()->TextDataLength())) {
@@ -989,15 +984,16 @@ Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(
 template <typename PT, typename CT>
 bool HTMLEditUtils::PointIsImmediatelyBeforeCurrentBlockBoundary(
     const EditorDOMPointBase<PT, CT>& aPoint,
-    IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak) {
+    IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak,
+    const Element& aEditingHost) {
   MOZ_ASSERT(aPoint.IsSetAndValidInComposedDoc());
 
   if (MOZ_UNLIKELY(!aPoint.IsInContentNode())) {
     return false;
   }
-  const WSScanResult nextThing =
+  WSScanResult nextThing =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes, aPoint,
+          &aEditingHost, aPoint,
           BlockInlineCheck::UseComputedDisplayOutsideStyle);
   if (nextThing.ReachedCurrentBlockBoundary()) {
     return true;
@@ -1006,9 +1002,9 @@ bool HTMLEditUtils::PointIsImmediatelyBeforeCurrentBlockBoundary(
     if (aIgnoreInvisibleLineBreak == IgnoreInvisibleLineBreak::No) {
       return false;
     }
-    const WSScanResult afterInvisibleBRThing =
+    WSScanResult afterInvisibleBRThing =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::EditableNodes,
+            &aEditingHost,
             nextThing.PointAfterReachedContent<EditorRawDOMPoint>(),
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
     return afterInvisibleBRThing.ReachedCurrentBlockBoundary();
@@ -1017,9 +1013,9 @@ bool HTMLEditUtils::PointIsImmediatelyBeforeCurrentBlockBoundary(
     if (aIgnoreInvisibleLineBreak == IgnoreInvisibleLineBreak::No) {
       return false;
     }
-    const WSScanResult afterPreformattedLineBreakThing =
+    WSScanResult afterPreformattedLineBreakThing =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::EditableNodes,
+            &aEditingHost,
             nextThing.PointAfterReachedContent<EditorRawDOMPoint>(),
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
     return afterPreformattedLineBreakThing.ReachedCurrentBlockBoundary();
@@ -1198,23 +1194,22 @@ Maybe<EditorLineBreakType> HTMLEditUtils::GetUnnecessaryLineBreak(
 
 template <typename EditorLineBreakType, typename EditorDOMPointType>
 Maybe<EditorLineBreakType> HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
-    const EditorDOMPointType& aPoint) {
+    const EditorDOMPointType& aPoint, const Element& aEditingHost) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
   MOZ_ASSERT(aPoint.IsInContentNode());
 
-  const WSScanResult nextThing =
+  WSScanResult nextThing =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes, aPoint,
-          BlockInlineCheck::UseComputedDisplayStyle);
+          &aEditingHost, aPoint, BlockInlineCheck::UseComputedDisplayStyle);
   if (!nextThing.ReachedBRElement() &&
       !(nextThing.ReachedPreformattedLineBreak() &&
         nextThing.PointAtReachedContent<EditorRawDOMPoint>()
             .IsAtLastContent())) {
     return Nothing();  
   }
-  const WSScanResult nextThingOfLineBreak =
+  WSScanResult nextThingOfLineBreak =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes,
+          &aEditingHost,
           nextThing.PointAfterReachedContent<EditorRawDOMPoint>(),
           BlockInlineCheck::UseComputedDisplayStyle);
   const Element* const blockElement =
@@ -2098,7 +2093,7 @@ EditorDOMPointType HTMLEditUtils::GetPreviousEditablePoint(
     
     
     return WSRunScanner::GetAfterLastVisiblePoint<EditorDOMPointType>(
-        WSRunScanner::Scan::EditableNodes, *textNode);
+        *textNode);
   }
 
   
@@ -2209,8 +2204,7 @@ EditorDOMPointType HTMLEditUtils::GetNextEditablePoint(
     }
     
     
-    return WSRunScanner::GetFirstVisiblePoint<EditorDOMPointType>(
-        WSRunScanner::Scan::EditableNodes, *textNode);
+    return WSRunScanner::GetFirstVisiblePoint<EditorDOMPointType>(*textNode);
   }
 
   
@@ -2547,13 +2541,10 @@ nsIContent* HTMLEditUtils::GetContentToPreserveInlineStyles(
   for (auto point = aPoint.template To<EditorRawDOMPoint>(); point.IsSet();) {
     const WSScanResult nextVisibleThing =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::EditableNodes, point,
+            &aEditingHost, point,
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
     if (nextVisibleThing.InVisibleOrCollapsibleCharacters()) {
       return nextVisibleThing.TextPtr();
-    }
-    if (nextVisibleThing.IsContentEditableRoot()) {
-      break;
     }
     
     
@@ -2575,16 +2566,18 @@ nsIContent* HTMLEditUtils::GetContentToPreserveInlineStyles(
 template <typename EditorDOMPointType, typename EditorDOMPointTypeInput>
 EditorDOMPointType HTMLEditUtils::GetBetterInsertionPointFor(
     const nsIContent& aContentToInsert,
-    const EditorDOMPointTypeInput& aPointToInsert) {
+    const EditorDOMPointTypeInput& aPointToInsert,
+    const Element& aEditingHost) {
   if (NS_WARN_IF(!aPointToInsert.IsSet())) {
     return EditorDOMPointType();
   }
 
   auto pointToInsert =
       aPointToInsert.template GetNonAnonymousSubtreePoint<EditorDOMPointType>();
-  if (NS_WARN_IF(!pointToInsert.IsSet()) ||
-      NS_WARN_IF(!HTMLEditUtils::IsSimplyEditableNode(
-          *pointToInsert.GetContainer()))) {
+  if (MOZ_UNLIKELY(
+          NS_WARN_IF(!pointToInsert.IsSet()) ||
+          NS_WARN_IF(!pointToInsert.GetContainer()->IsInclusiveDescendantOf(
+              &aEditingHost)))) {
     
     return EditorDOMPointType();
   }
@@ -2596,8 +2589,8 @@ EditorDOMPointType HTMLEditUtils::GetBetterInsertionPointFor(
     return pointToInsert;
   }
 
-  const WSRunScanner wsScannerForPointToInsert(
-      WSRunScanner::Scan::EditableNodes, pointToInsert,
+  WSRunScanner wsScannerForPointToInsert(
+      const_cast<Element*>(&aEditingHost), pointToInsert,
       BlockInlineCheck::UseComputedDisplayStyle);
 
   
@@ -2638,9 +2631,10 @@ EditorDOMPointType HTMLEditUtils::GetBetterInsertionPointFor(
 
 template <typename EditorDOMPointType, typename EditorDOMPointTypeInput>
 EditorDOMPointType HTMLEditUtils::GetBetterCaretPositionToInsertText(
-    const EditorDOMPointTypeInput& aPoint) {
+    const EditorDOMPointTypeInput& aPoint, const Element& aEditingHost) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
-  MOZ_ASSERT(HTMLEditUtils::IsSimplyEditableNode(*aPoint.GetContainer()));
+  MOZ_ASSERT(
+      aPoint.GetContainer()->IsInclusiveFlatTreeDescendantOf(&aEditingHost));
 
   if (aPoint.IsInTextNode()) {
     return aPoint.template To<EditorDOMPointType>();
@@ -2650,10 +2644,10 @@ EditorDOMPointType HTMLEditUtils::GetBetterCaretPositionToInsertText(
     return EditorDOMPointType(aPoint.GetChild(), 0u);
   }
   if (aPoint.IsEndOfContainer()) {
+    WSRunScanner scanner(&aEditingHost, aPoint,
+                         BlockInlineCheck::UseComputedDisplayStyle);
     const WSScanResult previousThing =
-        WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::EditableNodes, aPoint,
-            BlockInlineCheck::UseComputedDisplayStyle);
+        scanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(aPoint);
     if (previousThing.InVisibleOrCollapsibleCharacters()) {
       return EditorDOMPointType::AtEndOf(*previousThing.TextPtr());
     }
@@ -2662,7 +2656,7 @@ EditorDOMPointType HTMLEditUtils::GetBetterCaretPositionToInsertText(
                                     *nsGkAtoms::textTagName)) {
     return aPoint.template To<EditorDOMPointType>();
   }
-  if (MOZ_UNLIKELY(aPoint.GetContainer()->IsEditingHost() ||
+  if (MOZ_UNLIKELY(aPoint.GetContainer() == &aEditingHost ||
                    !aPoint.template GetContainerParentAs<nsIContent>() ||
                    !HTMLEditUtils::CanNodeContain(
                        *aPoint.template ContainerParentAs<nsIContent>(),
