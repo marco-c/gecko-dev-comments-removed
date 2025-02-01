@@ -26,8 +26,7 @@ nsTArray<RefPtr<nsRange>> TextDirectiveFinder::FindTextDirectivesInDocument() {
   auto uri = TextDirectiveUtil::ShouldLog() && mDocument.GetDocumentURI()
                  ? mDocument.GetDocumentURI()->GetSpecOrDefault()
                  : nsCString();
-  TEXT_FRAGMENT_LOG("Trying to find text directives in document '%s'.",
-                    uri.Data());
+  TEXT_FRAGMENT_LOG("Trying to find text directives in document '{}'.", uri);
   mDocument.FlushPendingNotifications(FlushType::Layout);
   
   
@@ -49,7 +48,7 @@ nsTArray<RefPtr<nsRange>> TextDirectiveFinder::FindTextDirectivesInDocument() {
     
     if (RefPtr<nsRange> range = FindRangeForTextDirective(textDirective)) {
       textDirectiveRanges.AppendElement(range);
-      TEXT_FRAGMENT_LOG("Found text directive '%s'",
+      TEXT_FRAGMENT_LOG("Found text directive '{}'",
                         ToString(textDirective).c_str());
     } else {
       uninvokedTextDirectives.AppendElement(std::move(textDirective));
@@ -57,23 +56,22 @@ nsTArray<RefPtr<nsRange>> TextDirectiveFinder::FindTextDirectivesInDocument() {
   }
   if (TextDirectiveUtil::ShouldLog()) {
     if (uninvokedTextDirectives.Length() == mUninvokedTextDirectives.Length()) {
-      TEXT_FRAGMENT_LOG(
-          "Did not find any of the %zu uninvoked text directives.",
-          mUninvokedTextDirectives.Length());
+      TEXT_FRAGMENT_LOG("Did not find any of the {} uninvoked text directives.",
+                        mUninvokedTextDirectives.Length());
     } else {
       TEXT_FRAGMENT_LOG(
-          "Found %zu of %zu text directives in the document.",
+          "Found {} of {} text directives in the document.",
           mUninvokedTextDirectives.Length() - uninvokedTextDirectives.Length(),
           mUninvokedTextDirectives.Length());
     }
     if (uninvokedTextDirectives.IsEmpty()) {
       TEXT_FRAGMENT_LOG("No uninvoked text directives left.");
     } else {
-      TEXT_FRAGMENT_LOG("There are %zu uninvoked text directives left:",
+      TEXT_FRAGMENT_LOG("There are {} uninvoked text directives left:",
                         uninvokedTextDirectives.Length());
       for (size_t index = 0; index < uninvokedTextDirectives.Length();
            ++index) {
-        TEXT_FRAGMENT_LOG(" [%zu]: %s", index,
+        TEXT_FRAGMENT_LOG(" [{}]: {}", index,
                           ToString(uninvokedTextDirectives[index]).c_str());
       }
     }
@@ -86,7 +84,7 @@ nsTArray<RefPtr<nsRange>> TextDirectiveFinder::FindTextDirectivesInDocument() {
 
 RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
     const TextDirective& aTextDirective) {
-  TEXT_FRAGMENT_LOG("Find range for text directive '%s'.",
+  TEXT_FRAGMENT_LOG("Find range for text directive '{}'.",
                     ToString(aTextDirective).c_str());
   
   
@@ -110,13 +108,13 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       if (!prefixMatch) {
         TEXT_FRAGMENT_LOG(
-            "Did not find prefix '%s'. The text directive does not exist "
+            "Did not find prefix '{}'. The text directive does not exist "
             "in the document.",
-            NS_ConvertUTF16toUTF8(aTextDirective.prefix).Data());
+            NS_ConvertUTF16toUTF8(aTextDirective.prefix));
         return nullptr;
       }
-      TEXT_FRAGMENT_LOG("Did find prefix '%s'.",
-                        NS_ConvertUTF16toUTF8(aTextDirective.prefix).Data());
+      TEXT_FRAGMENT_LOG("Did find prefix '{}'.",
+                        NS_ConvertUTF16toUTF8(aTextDirective.prefix));
 
       
       
@@ -165,13 +163,13 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       if (!potentialMatch) {
         TEXT_FRAGMENT_LOG(
-            "Did not find start '%s'. The text directive does not exist "
+            "Did not find start '{}'. The text directive does not exist "
             "in the document.",
-            NS_ConvertUTF16toUTF8(aTextDirective.start).Data());
+            NS_ConvertUTF16toUTF8(aTextDirective.start));
         return nullptr;
       }
-      TEXT_FRAGMENT_LOG("Did find start '%s'.",
-                        NS_ConvertUTF16toUTF8(aTextDirective.start).Data());
+      TEXT_FRAGMENT_LOG("Did find start '{}'.",
+                        NS_ConvertUTF16toUTF8(aTextDirective.start));
       
       
       
@@ -198,9 +196,9 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       if (!potentialMatch) {
         TEXT_FRAGMENT_LOG(
-            "Did not find start '%s'. The text directive does not exist "
+            "Did not find start '{}'. The text directive does not exist "
             "in the document.",
-            NS_ConvertUTF16toUTF8(aTextDirective.start).Data());
+            NS_ConvertUTF16toUTF8(aTextDirective.start));
         return nullptr;
       }
       
@@ -243,9 +241,9 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
         
         if (!endMatch) {
           TEXT_FRAGMENT_LOG(
-              "Did not find end '%s'. The text directive does not exist "
+              "Did not find end '{}'. The text directive does not exist "
               "in the document.",
-              NS_ConvertUTF16toUTF8(aTextDirective.end).Data());
+              NS_ConvertUTF16toUTF8(aTextDirective.end));
           return nullptr;
         }
         
@@ -283,9 +281,9 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       if (!suffixMatch) {
         TEXT_FRAGMENT_LOG(
-            "Did not find suffix '%s'. The text directive does not exist "
+            "Did not find suffix '{}'. The text directive does not exist "
             "in the document.",
-            NS_ConvertUTF16toUTF8(aTextDirective.suffix).Data());
+            NS_ConvertUTF16toUTF8(aTextDirective.suffix));
         return nullptr;
       }
       
