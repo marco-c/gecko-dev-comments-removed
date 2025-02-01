@@ -446,7 +446,7 @@ class VideoInfo : public TrackInfo {
   }
 
   nsCString ToString() const override;
-    
+
   
   
   gfx::IntSize mDisplay;
