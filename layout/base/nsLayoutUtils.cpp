@@ -8159,19 +8159,7 @@ bool nsLayoutUtils::UpdateCompositionBoundsForRCDRSF(
           ? SubtractDynamicToolbar::Yes
           : SubtractDynamicToolbar::No;
 
-  const bool isKeyboardVisibleOnOverlaysContent =
-      aPresContext->GetKeyboardHeight() &&
-      aPresContext->Document()->InteractiveWidget() ==
-          InteractiveWidget::OverlaysContent;
-  if (shouldSubtractDynamicToolbar == SubtractDynamicToolbar::Yes &&
-      
-      
-      
-      
-      
-      
-      
-      !isKeyboardVisibleOnOverlaysContent) {
+  if (shouldSubtractDynamicToolbar == SubtractDynamicToolbar::Yes) {
     if (RefPtr<MobileViewportManager> MVM =
             aPresContext->PresShell()->GetMobileViewportManager()) {
       
@@ -8204,7 +8192,9 @@ bool nsLayoutUtils::UpdateCompositionBoundsForRCDRSF(
   
   
   
-  if (isKeyboardVisibleOnOverlaysContent) {
+  if (aPresContext->GetKeyboardHeight() &&
+      aPresContext->Document()->InteractiveWidget() ==
+          InteractiveWidget::OverlaysContent) {
     contentSize.height += ViewAs<LayoutDevicePixel>(
         aPresContext->GetKeyboardHeight(),
         PixelCastJustification::LayoutDeviceIsScreenForBounds);
