@@ -3491,6 +3491,22 @@ MainAxisPositionTracker::MainAxisPositionTracker(
   
   mPackingSpaceRemaining -= aLine->SumOfGaps();
 
+  
+  
+  
+  
+  
+  if (mPackingSpaceRemaining < 0 || aLine->NumItems() == 1) {
+    if (mJustifyContent.primary == StyleAlignFlags::SPACE_BETWEEN) {
+      justifyContentFlags = StyleAlignFlags::SAFE;
+      mJustifyContent.primary = StyleAlignFlags::FLEX_START;
+    } else if (mJustifyContent.primary == StyleAlignFlags::SPACE_AROUND ||
+               mJustifyContent.primary == StyleAlignFlags::SPACE_EVENLY) {
+      justifyContentFlags = StyleAlignFlags::SAFE;
+      mJustifyContent.primary = StyleAlignFlags::CENTER;
+    }
+  }
+
   if (mPackingSpaceRemaining <= 0) {
     
     mNumAutoMarginsInMainAxis = 0;
@@ -3498,19 +3514,6 @@ MainAxisPositionTracker::MainAxisPositionTracker(
     
     if (justifyContentFlags & StyleAlignFlags::SAFE) {
       mJustifyContent.primary = StyleAlignFlags::START;
-    }
-  }
-
-  
-  
-  
-  
-  if (mPackingSpaceRemaining < 0 || aLine->NumItems() == 1) {
-    if (mJustifyContent.primary == StyleAlignFlags::SPACE_BETWEEN) {
-      mJustifyContent.primary = StyleAlignFlags::FLEX_START;
-    } else if (mJustifyContent.primary == StyleAlignFlags::SPACE_AROUND ||
-               mJustifyContent.primary == StyleAlignFlags::SPACE_EVENLY) {
-      mJustifyContent.primary = StyleAlignFlags::CENTER;
     }
   }
 
