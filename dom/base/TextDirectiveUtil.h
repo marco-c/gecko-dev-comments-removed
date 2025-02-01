@@ -36,11 +36,6 @@ class TextDirectiveUtil final {
   MOZ_ALWAYS_INLINE static bool ShouldLog() {
     return MOZ_LOG_TEST(sFragmentDirectiveLog, LogLevel::Debug);
   }
-
-  static Result<nsString, ErrorResult> RangeContentAsString(nsRange* aRange);
-
-  static Result<nsString, ErrorResult> RangeContentAsFoldCase(nsRange* aRange);
-
   
 
 
@@ -163,87 +158,6 @@ class TextDirectiveUtil final {
 
 
   static void AdvanceStartToNextNonWhitespacePosition(nsRange& aRange);
-
-  static RangeBoundary MoveBoundaryToNextNonWhitespacePosition(
-      const RangeBoundary& aRangeBoundary);
-  static RangeBoundary MoveBoundaryToPreviousNonWhitespacePosition(
-      const RangeBoundary& aRangeBoundary);
-
-  static Result<Maybe<RangeBoundary>, ErrorResult> FindBlockBoundaryInRange(
-      const nsRange& aRange, TextScanDirection aDirection);
-
-  static Result<RangeBoundary, ErrorResult> FindNextBlockBoundary(
-      const RangeBoundary& aRangeBoundary, TextScanDirection aDirection);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static bool NormalizedRangeBoundariesAreEqual(
-      const RangeBoundary& aRangeBoundary1,
-      const RangeBoundary& aRangeBoundary2);
-
-  
-
-
-
-
-
-
-  static Result<Ok, ErrorResult> ExtendRangeToWordBoundaries(nsRange& aRange);
-
-  
-
-
-
-
-
-
-
-
-
-
-  static Result<TextDirective, ErrorResult> CreateTextDirectiveFromRanges(
-      nsRange* aPrefix, nsRange* aStart, nsRange* aEnd, nsRange* aSuffix);
-
-  
-
-
-
-
-  static uint32_t FindCommonPrefix(const nsAString& aFoldedStr1,
-                                   const nsAString& aFoldedStr2);
-
-  
-
-
-
-
-  static uint32_t FindCommonSuffix(const nsAString& aFoldedStr1,
-                                   const nsAString& aFoldedStr2);
-
-  
-
-
-
-
-
-
-
-
-  static RangeBoundary CreateRangeBoundaryByMovingOffsetFromRangeStart(
-      nsRange* aRange, uint32_t aLogicalOffset);
 };
 }  
 

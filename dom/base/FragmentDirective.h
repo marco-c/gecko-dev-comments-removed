@@ -20,7 +20,6 @@ class nsIURI;
 class nsRange;
 namespace mozilla::dom {
 class Document;
-class Promise;
 class Text;
 class TextDirectiveFinder;
 
@@ -137,15 +136,6 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
 
 
   MOZ_CAN_RUN_SCRIPT void RemoveAllTextDirectives(ErrorResult& aRv);
-
-  
-
-
-
-
-
-
-  already_AddRefed<Promise> CreateTextDirective(nsRange& aRange);
 
  private:
   RefPtr<Document> mDocument;
