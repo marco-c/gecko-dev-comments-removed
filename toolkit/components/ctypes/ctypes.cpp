@@ -4,13 +4,19 @@
 
 
 #include "ctypes.h"
-#include "jsapi.h"
+
+#include "js/CallArgs.h"     
+#include "js/ErrorReport.h"  
 #include "js/experimental/CTypes.h"  
-#include "js/MemoryFunctions.h"
+#include "js/MemoryFunctions.h"     
 #include "js/PropertyAndElement.h"  
-#include "nsString.h"
-#include "nsNativeCharsetUtils.h"
-#include "mozJSModuleLoader.h"
+#include "js/RootingAPI.h"          
+#include "js/TypeDecls.h"           
+#include "js/Value.h"               
+#include "ErrorList.h"              
+#include "nsError.h"                
+#include "nsString.h"               
+#include "nsNativeCharsetUtils.h"   
 #include "xpc_make_class.h"
 
 namespace mozilla::ctypes {
@@ -48,15 +54,15 @@ Module::~Module() = default;
 #include "xpc_map_end.h"
 
 static bool InitCTypesClassAndSetCallbacks(JSContext* cx,
-                                           JS::Handle<JSObject*> global) {
+                                           JS::Handle<JSObject*> scope) {
   
-  if (!JS::InitCTypesClass(cx, global)) {
+  if (!JS::InitCTypesClass(cx, scope)) {
     return false;
   }
 
   
   JS::Rooted<JS::Value> ctypes(cx);
-  if (!JS_GetProperty(cx, global, "ctypes", &ctypes)) {
+  if (!JS_GetProperty(cx, scope, "ctypes", &ctypes)) {
     return false;
   }
 
@@ -67,12 +73,21 @@ static bool InitCTypesClassAndSetCallbacks(JSContext* cx,
 
 NS_IMETHODIMP
 Module::Call(nsIXPConnectWrappedNative* wrapper, JSContext* cx, JSObject* obj,
-             const JS::CallArgs& args, bool* _retval) {
-  mozJSModuleLoader* loader = mozJSModuleLoader::Get();
-  JS::Rooted<JSObject*> targetObj(cx);
-  loader->FindTargetObject(cx, &targetObj);
+             const JS::CallArgs& args, bool* retval) {
+  if (!args.get(0).isObject()) {
+    JS_ReportErrorASCII(cx, "Argument must be an object");
+    return NS_ERROR_FAILURE;
+  }
 
-  *_retval = InitCTypesClassAndSetCallbacks(cx, targetObj);
+  JS::Rooted<JSObject*> scope(cx, &args.get(0).toObject());
+
+  if (!InitCTypesClassAndSetCallbacks(cx, scope)) {
+    *retval = false;
+    return NS_ERROR_FAILURE;
+  }
+
+  args.rval().setUndefined();
+  *retval = true;
   return NS_OK;
 }
 
