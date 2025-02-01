@@ -444,26 +444,30 @@ var FullPageTranslationsPanel = new (class {
       this.elements;
     const { requestedLanguagePair, isEngineReady } = languageState;
 
+    // Remove the model variant. e.g. "ru,base" -> "ru"
+    const selectedFrom = fromMenuList.value.split(",")[0];
+    const selectedTo = toMenuList.value.split(",")[0];
+
     if (
       requestedLanguagePair &&
       !isEngineReady &&
       TranslationsUtils.langTagsMatch(
-        fromMenuList.value,
-        requestedLanguagePair.fromLanguage
+        selectedFrom,
+        requestedLanguagePair.sourceLanguage
       ) &&
       TranslationsUtils.langTagsMatch(
-        toMenuList.value,
-        requestedLanguagePair.toLanguage
+        selectedTo,
+        requestedLanguagePair.targetLanguage
       )
     ) {
-      // A translation has been requested, but is not ready yet.
+      
       document.l10n.setAttributes(
         translateButton,
         "translations-panel-translate-button-loading"
       );
       translateButton.disabled = true;
       cancelButton.hidden = false;
-      this.updateUIForReTranslation(false /* isReTranslation */);
+      this.updateUIForReTranslation(false );
     } else {
       document.l10n.setAttributes(
         translateButton,
@@ -475,29 +479,29 @@ var FullPageTranslationsPanel = new (class {
         
         !fromMenuList.value ||
         
-        TranslationsUtils.langTagsMatch(toMenuList.value, fromMenuList.value) ||
+        TranslationsUtils.langTagsMatch(selectedFrom, selectedTo) ||
         
         (requestedLanguagePair &&
           TranslationsUtils.langTagsMatch(
-            requestedLanguagePair.fromLanguage,
-            fromMenuList.value
+            requestedLanguagePair.sourceLanguage,
+            selectedFrom
           ) &&
           TranslationsUtils.langTagsMatch(
-            requestedLanguagePair.toLanguage,
-            toMenuList.value
+            requestedLanguagePair.targetLanguage,
+            selectedTo
           ));
     }
 
     if (requestedLanguagePair && isEngineReady) {
-      const { fromLanguage, toLanguage } = requestedLanguagePair;
+      const { sourceLanguage, targetLanguage } = requestedLanguagePair;
       const languageDisplayNames =
         TranslationsParent.createLanguageDisplayNames();
       cancelButton.hidden = true;
       this.updateUIForReTranslation(true );
 
       document.l10n.setAttributes(header, "translations-panel-revisit-header", {
-        fromLanguage: languageDisplayNames.of(fromLanguage),
-        toLanguage: languageDisplayNames.of(toLanguage),
+        fromLanguage: languageDisplayNames.of(sourceLanguage),
+        toLanguage: languageDisplayNames.of(targetLanguage),
       });
     } else {
       document.l10n.setAttributes(header, "translations-panel-header");
@@ -588,12 +592,14 @@ var FullPageTranslationsPanel = new (class {
     fromMenuList.value = "";
     error.hidden = true;
     langSelection.hidden = false;
+    
+    const selectedSource = fromMenuList.value.split(",")[0];
 
     const { userLangTag, docLangTag, isDocLangTagSupported } =
       await this.#fetchDetectedLanguages().then(langTags => langTags ?? {});
 
     if (isDocLangTagSupported || force) {
-      
+      // Show the default view with the language selection
       const { cancelButton } = this.elements;
 
       if (isDocLangTagSupported) {
@@ -609,31 +615,32 @@ var FullPageTranslationsPanel = new (class {
           this.#manuallySelectedToLanguage
         )
       ) {
-        
+        // Use the manually selected language if available
         toMenuList.value = this.#manuallySelectedToLanguage;
       } else if (
         userLangTag &&
         !TranslationsUtils.langTagsMatch(userLangTag, docLangTag)
       ) {
-        
+        // The userLangTag is specified and does not match the doc lang tag, so we should use it.
         toMenuList.value = userLangTag;
       } else {
-        
-        
+        // No userLangTag is specified in the cache and no #manuallySelectedToLanguage is available,
+        // so we will attempt to find a suitable one.
         toMenuList.value =
           await TranslationsParent.getTopPreferredSupportedToLang({
             excludeLangTags: [
-              
+              // Avoid offering to translate into the original source language.
               docLangTag,
-              
-              fromMenuList.value,
+              // Avoid same-language to same-language translations if possible.
+              selectedSource,
             ],
           });
       }
 
-      if (
-        TranslationsUtils.langTagsMatch(fromMenuList.value, toMenuList.value)
-      ) {
+      const resolvedSource = fromMenuList.value.split(",")[0];
+      const resolvedTarget = toMenuList.value.split(",")[0];
+
+      if (TranslationsUtils.langTagsMatch(resolvedSource, resolvedTarget)) {
         
         
         
@@ -850,7 +857,7 @@ var FullPageTranslationsPanel = new (class {
 
 
 
-  async #showRevisitView({ fromLanguage, toLanguage }) {
+  async #showRevisitView({ sourceLanguage, targetLanguage, sourceVariant }) {
     const { fromMenuList, toMenuList, intro } = this.elements;
     if (!this.#isShowingDefaultView()) {
       await this.#showDefaultView(
@@ -858,13 +865,17 @@ var FullPageTranslationsPanel = new (class {
       );
     }
     intro.hidden = true;
-    fromMenuList.value = fromLanguage;
+    if (sourceVariant) {
+      fromMenuList.value = `${sourceLanguage},${sourceVariant}`;
+    } else {
+      fromMenuList.value = sourceLanguage;
+    }
     toMenuList.value = await TranslationsParent.getTopPreferredSupportedToLang({
       excludeLangTags: [
         
-        fromLanguage,
+        sourceLanguage,
         
-        toLanguage,
+        targetLanguage,
       ],
     });
     this.onChangeLanguages();
@@ -1241,9 +1252,13 @@ var FullPageTranslationsPanel = new (class {
     const actor = TranslationsParent.getTranslationsActor(
       gBrowser.selectedBrowser
     );
+    const [sourceLanguage, sourceVariant] =
+      this.elements.fromMenuList.value.split(",");
+    const [targetLanguage, targetVariant] =
+      this.elements.toMenuList.value.split(",");
+
     actor.translate(
-      this.elements.fromMenuList.value,
-      this.elements.toMenuList.value,
+      { sourceLanguage, targetLanguage, sourceVariant, targetVariant },
       false 
     );
   }
@@ -1604,10 +1619,10 @@ var FullPageTranslationsPanel = new (class {
                 "urlbar-translations-button-translated",
                 {
                   fromLanguage: languageDisplayNames.of(
-                    requestedLanguagePair.fromLanguage
+                    requestedLanguagePair.sourceLanguage
                   ),
                   toLanguage: languageDisplayNames.of(
-                    requestedLanguagePair.toLanguage
+                    requestedLanguagePair.targetLanguage
                   ),
                 }
               );
@@ -1615,7 +1630,7 @@ var FullPageTranslationsPanel = new (class {
               buttonLocale.hidden = false;
               buttonCircleArrows.hidden = true;
               buttonLocale.innerText =
-                requestedLanguagePair.toLanguage.split("-")[0];
+                requestedLanguagePair.targetLanguage.split("-")[0];
             } else {
               document.l10n.setAttributes(
                 button,

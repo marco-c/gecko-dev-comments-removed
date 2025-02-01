@@ -37,6 +37,9 @@ export interface TranslationModelRecord {
   
   toLang: string;
   
+  
+  variant?: string;
+  
   version: string;
   
   fileType: string;
@@ -209,6 +212,7 @@ interface LanguageTranslationModelFile {
 interface TranslationModelPayload {
   sourceLanguage: string,
   targetLanguage: string,
+  variant?: string,
   languageModelFiles: LanguageTranslationModelFiles,
 };
 
@@ -264,16 +268,43 @@ export interface LangTags {
   userLangTag: string | null,
 }
 
-export interface LanguagePair { fromLang: string, toLang: string };
+
+
+
+
+export interface LanguagePair {
+  sourceLanguage: string,
+  targetLanguage: string,
+  sourceVariant?: string,
+  targetVariant?: string
+};
+
+
+
+
+
+
+export interface NonPivotLanguagePair {
+  sourceLanguage: string,
+  targetLanguage: string,
+  variant?: string,
+}
+
+export interface SupportedLanguage {
+  langTag: string,
+  langTagKey: string,
+  variant: string
+  displayName: string,
+}
 
 
 
 
 
 export interface SupportedLanguages {
-  languagePairs: LanguagePair[],
-  fromLanguages: Array<{ langTag: string, displayName: string, }>,
-  toLanguages: Array<{ langTag: string, displayName: string }>,
+  languagePairs: NonPivotLanguagePair[],
+  sourceLanguages: Array<SupportedLanguage>,
+  targetLanguages: Array<SupportedLanguage>,
 }
 
 export type TranslationErrors = "engine-load-error";
@@ -283,23 +314,25 @@ export type SelectTranslationsPanelState =
   | { phase: "closed"; }
 
   
-  | { phase: "idle"; fromLanguage: string; toLanguage: string, sourceText: string, }
+  | { phase: "idle"; sourceLanguage: string; targetLanguage: string, sourceText: string, }
 
   
   
-  | { phase: "init-failure"; event: Event, screenX: number, screenY: number, sourceText: string, isTextSelected: boolean, langPairPromise: Promise<{fromLang?: string, toLang?: string}> }
+  | { phase: "init-failure"; event: Event, screenX: number, screenY: number, sourceText: string, isTextSelected: boolean, langPairPromise: Promise<{sourceLanguage?: string, targetLanguage?: string}> }
 
   
-  | { phase: "translation-failure"; fromLanguage: string; toLanguage: string, sourceText: string, }
+  | { phase: "translation-failure"; sourceLanguage: string; targetLanguage: string, sourceText: string, }
 
   
-  | { phase: "translatable"; fromLanguage: string; toLanguage: string, sourceText: string, }
+  | { phase: "translatable"; sourceLanguage: string; targetLanguage: string, sourceText: string, }
 
   
-  | { phase: "translating"; fromLanguage: string; toLanguage: string, sourceText: string, }
+  | { phase: "translating"; sourceLanguage: string; targetLanguage: string, sourceText: string, }
 
   
-  | { phase: "translated"; fromLanguage: string; toLanguage: string, sourceText: string, translatedText: string, }
+  | { phase: "translated"; sourceLanguage: string; targetLanguage: string, sourceText: string, translatedText: string, }
 
   
-  | { phase: "unsupported"; detectedLanguage: string; toLanguage: string, sourceText: string }
+  | { phase: "unsupported"; detectedLanguage: string; targetLanguage: string, sourceText: string }
+
+export type RequestTranslationsPort = (languagePair: LanguagePair) => Promise<MessagePort>

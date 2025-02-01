@@ -136,14 +136,19 @@ async function handleInitializationMessage({ data }) {
   }
 
   try {
-    const { fromLanguage, toLanguage, enginePayload, logLevel, innerWindowId } =
-      data;
+    const {
+      sourceLanguage,
+      targetLanguage,
+      enginePayload,
+      logLevel,
+      innerWindowId,
+    } = data;
 
-    if (!fromLanguage) {
-      throw new Error('Worker initialization missing "fromLanguage"');
+    if (!sourceLanguage) {
+      throw new Error('Worker initialization missing "sourceLanguage"');
     }
-    if (!toLanguage) {
-      throw new Error('Worker initialization missing "toLanguage"');
+    if (!targetLanguage) {
+      throw new Error('Worker initialization missing "targetLanguage"');
     }
 
     if (logLevel) {
@@ -154,7 +159,7 @@ async function handleInitializationMessage({ data }) {
     let engine;
     if (enginePayload.isMocked) {
       
-      engine = new MockedEngine(fromLanguage, toLanguage);
+      engine = new MockedEngine(sourceLanguage, targetLanguage);
     } else {
       const { bergamotWasmArrayBuffer, translationModelPayloads } =
         enginePayload;
@@ -162,8 +167,8 @@ async function handleInitializationMessage({ data }) {
         bergamotWasmArrayBuffer
       );
       engine = new Engine(
-        fromLanguage,
-        toLanguage,
+        sourceLanguage,
+        targetLanguage,
         bergamot,
         translationModelPayloads
       );
@@ -220,7 +225,7 @@ function handleMessages(engine) {
           }
           try {
             const { whitespaceBefore, whitespaceAfter, cleanedSourceText } =
-              cleanText(engine.fromLanguage, sourceText);
+              cleanText(engine.sourceLanguage, sourceText);
 
             
             
@@ -323,11 +328,16 @@ class Engine {
 
 
 
-  constructor(fromLanguage, toLanguage, bergamot, translationModelPayloads) {
+  constructor(
+    sourceLanguage,
+    targetLanguage,
+    bergamot,
+    translationModelPayloads
+  ) {
     
-    this.fromLanguage = fromLanguage;
+    this.sourceLanguage = sourceLanguage;
     
-    this.toLanguage = toLanguage;
+    this.targetLanguage = targetLanguage;
     
     this.bergamot = bergamot;
     
@@ -699,11 +709,11 @@ class MockedEngine {
 
 
 
-  constructor(fromLanguage, toLanguage) {
+  constructor(sourceLanguage, targetLanguage) {
     
-    this.fromLanguage = fromLanguage;
+    this.sourceLanguage = sourceLanguage;
     
-    this.toLanguage = toLanguage;
+    this.targetLanguage = targetLanguage;
   }
 
   
@@ -717,7 +727,7 @@ class MockedEngine {
     
     let html = isHTML ? ", html" : "";
     const targetText = sourceText.toUpperCase();
-    return `${targetText} [${this.fromLanguage} to ${this.toLanguage}${html}]`;
+    return `${targetText} [${this.sourceLanguage} to ${this.targetLanguage}${html}]`;
   }
 
   discardTranslations() {}

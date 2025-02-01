@@ -7,6 +7,10 @@
 
 
 
+
+
+
+
 const TRANSLATIONS_PERMISSION = "translations";
 
 
@@ -167,10 +171,10 @@ let gTranslationsPane = {
 
 
   buildLanguageDropDowns() {
-    const { fromLanguages } = this.supportedLanguages;
+    const { sourceLanguages } = this.supportedLanguages;
     const { alwaysTranslateMenuPopup, neverTranslateMenuPopup } = this.elements;
 
-    for (const { langTag, displayName } of fromLanguages) {
+    for (const { langTag, displayName } of sourceLanguages) {
       const alwaysLang = document.createXULElement("menuitem");
       alwaysLang.setAttribute("value", langTag);
       alwaysLang.setAttribute("label", displayName);

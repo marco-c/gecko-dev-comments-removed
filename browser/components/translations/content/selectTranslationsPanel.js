@@ -8,13 +8,14 @@
 
 
 
+
 ChromeUtils.defineESModuleGetters(this, {
   LanguageDetector:
     "resource://gre/modules/translation/LanguageDetector.sys.mjs",
   TranslationsPanelShared:
     "chrome://browser/content/translations/TranslationsPanelShared.sys.mjs",
   TranslationsUtils:
-    "chrome://global/content/translations/TranslationsUtils.sys.mjs",
+    "chrome://global/content/translations/TranslationsUtils.mjs",
   Translator: "chrome://global/content/translations/Translator.mjs",
 });
 
@@ -313,7 +314,7 @@ var SelectTranslationsPanel = new (class {
     
     const { language, languages } =
       await LanguageDetector.detectLanguage(textToTranslate);
-    const languagePairs = await TranslationsParent.getLanguagePairs();
+    const languagePairs = await TranslationsParent.getNonPivotLanguagePairs();
     for (const { languageCode } of languages) {
       const compatibleLangTag =
         TranslationsParent.findCompatibleSourceLangTagSync(
@@ -423,19 +424,20 @@ var SelectTranslationsPanel = new (class {
       
       
       
-      return { toLang: "en" };
+      return { targetLanguage: "en" };
     }
 
-    const fromLanguage =
+    const sourceLanguage =
       await SelectTranslationsPanel.getTopSupportedDetectedLanguage(
         textToTranslate
       );
-    const toLanguage = await TranslationsParent.getTopPreferredSupportedToLang({
-      
-      excludeLangTags: [fromLanguage],
-    });
+    const targetLanguage =
+      await TranslationsParent.getTopPreferredSupportedToLang({
+        
+        excludeLangTags: [sourceLanguage],
+      });
 
-    return { fromLanguage, toLanguage };
+    return { sourceLanguage, targetLanguage };
   }
 
   
@@ -490,7 +492,7 @@ var SelectTranslationsPanel = new (class {
 
 
   async #initializeLanguageMenuLists(langPairPromise) {
-    const { fromLanguage, toLanguage } = await langPairPromise;
+    const { sourceLanguage, targetLanguage } = await langPairPromise;
     const {
       fromMenuList,
       fromMenuPopup,
@@ -500,8 +502,8 @@ var SelectTranslationsPanel = new (class {
     } = this.elements;
 
     await Promise.all([
-      this.#initializeLanguageMenuList(fromLanguage, fromMenuList),
-      this.#initializeLanguageMenuList(toLanguage, toMenuList),
+      this.#initializeLanguageMenuList(sourceLanguage, fromMenuList),
+      this.#initializeLanguageMenuList(targetLanguage, toMenuList),
       this.#initializeLanguageMenuList(null, tryAnotherSourceMenuList),
     ]);
 
@@ -576,7 +578,7 @@ var SelectTranslationsPanel = new (class {
       return;
     }
 
-    const { fromLanguage, toLanguage } = await langPairPromise;
+    const { sourceLanguage, targetLanguage } = await langPairPromise;
     const { docLangTag, topPreferredLanguage } = this.#getLanguageInfo();
 
     TranslationsParent.telemetry()
@@ -584,8 +586,8 @@ var SelectTranslationsPanel = new (class {
       .onOpen({
         maintainFlow,
         docLangTag,
-        fromLanguage,
-        toLanguage,
+        sourceLanguage,
+        targetLanguage,
         topPreferredLanguage,
         textSource: isTextSelected ? "selection" : "hyperlink",
       });
@@ -627,7 +629,7 @@ var SelectTranslationsPanel = new (class {
       const { requestedLanguagePair } = TranslationsParent.getTranslationsActor(
         gBrowser.selectedBrowser
       ).languageState;
-      return requestedLanguagePair?.toLanguage;
+      return requestedLanguagePair?.targetLanguage;
     } catch {
       this.console.warn("Failed to retrieve the TranslationsParent actor.");
     }
@@ -724,21 +726,21 @@ var SelectTranslationsPanel = new (class {
 
   async #registerSourceText(sourceText, langPairPromise) {
     const { textArea } = this.elements;
-    const { fromLanguage, toLanguage } = await langPairPromise;
+    const { sourceLanguage, targetLanguage } = await langPairPromise;
     const compatibleFromLang =
-      await TranslationsParent.findCompatibleSourceLangTag(fromLanguage);
+      await TranslationsParent.findCompatibleSourceLangTag(sourceLanguage);
 
     if (compatibleFromLang) {
       this.#changeStateTo("idle", /* retainEntries */ false, {
         sourceText,
-        fromLanguage: compatibleFromLang,
-        toLanguage,
+        sourceLanguage: compatibleFromLang,
+        targetLanguage,
       });
     } else {
       this.#changeStateTo("unsupported", /* retainEntries */ false, {
         sourceText,
-        detectedLanguage: fromLanguage,
-        toLanguage,
+        detectedLanguage: sourceLanguage,
+        targetLanguage,
       });
     }
 
@@ -1286,14 +1288,14 @@ var SelectTranslationsPanel = new (class {
 
   onClickTranslateButton() {
     const { fromMenuList, tryAnotherSourceMenuList } = this.elements;
-    const { detectedLanguage, toLanguage } = this.#translationState;
+    const { detectedLanguage, targetLanguage } = this.#translationState;
 
     fromMenuList.value = tryAnotherSourceMenuList.value;
 
     TranslationsParent.telemetry().selectTranslationsPanel().onTranslateButton({
       detectedLanguage,
-      fromLanguage: fromMenuList.value,
-      toLanguage,
+      sourceLanguage: fromMenuList.value,
+      targetLanguage,
     });
 
     this.#maybeRequestTranslation();
@@ -1308,7 +1310,7 @@ var SelectTranslationsPanel = new (class {
       .onTranslateFullPageButton();
 
     const { panel } = this.elements;
-    const { fromLanguage, toLanguage } = this.#getSelectedLanguagePair();
+    const languagePair = this.#getSelectedLanguagePair();
 
     try {
       const actor = TranslationsParent.getTranslationsActor(
@@ -1318,8 +1320,7 @@ var SelectTranslationsPanel = new (class {
         "popuphidden",
         () =>
           actor.translate(
-            fromLanguage,
-            toLanguage,
+            languagePair,
             false 
           ),
         { once: true }
@@ -1473,12 +1474,14 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  #isSelectedLangPair(fromLanguage, toLanguage) {
-    const { fromLanguage: selectedFromLang, toLanguage: selectedToLang } =
-      this.#getSelectedLanguagePair();
+  #isSelectedLangPair(sourceLanguage, targetLanguage) {
+    const selected = this.#getSelectedLanguagePair();
     return (
-      TranslationsUtils.langTagsMatch(fromLanguage, selectedFromLang) &&
-      TranslationsUtils.langTagsMatch(toLanguage, selectedToLang)
+      TranslationsUtils.langTagsMatch(
+        sourceLanguage,
+        selected.sourceLanguage
+      ) &&
+      TranslationsUtils.langTagsMatch(targetLanguage, selected.targetLanguage)
     );
   }
 
@@ -1489,9 +1492,13 @@ var SelectTranslationsPanel = new (class {
 
   #getSelectedLanguagePair() {
     const { fromMenuList, toMenuList } = this.elements;
+    const [sourceLanguage, sourceVariant] = fromMenuList.value.split(",");
+    const [targetLanguage, targetVariant] = toMenuList.value.split(",");
     return {
-      fromLanguage: fromMenuList.value,
-      toLanguage: toMenuList.value,
+      sourceLanguage,
+      targetLanguage,
+      sourceVariant,
+      targetVariant,
     };
   }
 
@@ -1584,12 +1591,11 @@ var SelectTranslationsPanel = new (class {
       return;
     }
 
-    const { fromLanguage, toLanguage, detectedLanguage } =
+    const { sourceLanguage, targetLanguage, detectedLanguage } =
       this.#translationState;
-    const sourceLanguage = fromLanguage ? fromLanguage : detectedLanguage;
     this.console?.debug(
-      `SelectTranslationsPanel (${sourceLanguage ? sourceLanguage : "??"}-${
-        toLanguage ? toLanguage : "??"
+      `SelectTranslationsPanel (${sourceLanguage ?? detectedLanguage ?? "??"}-${
+        targetLanguage ? targetLanguage : "??"
       }) state change (${previousPhase} => ${phase})`
     );
 
@@ -1684,15 +1690,15 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  #maybeChangeStateToTranslatable(fromLanguage, toLanguage) {
-    const {
-      fromLanguage: previousFromLanguage,
-      toLanguage: previousToLanguage,
-    } = this.#translationState;
+  #maybeChangeStateToTranslatable(sourceLanguage, targetLanguage) {
+    const previous = this.#translationState;
 
     const langSelectionChanged = () =>
-      !TranslationsUtils.langTagsMatch(previousFromLanguage, fromLanguage) ||
-      !TranslationsUtils.langTagsMatch(previousToLanguage, toLanguage);
+      !TranslationsUtils.langTagsMatch(
+        previous.sourceLanguage,
+        sourceLanguage
+      ) ||
+      !TranslationsUtils.langTagsMatch(previous.targetLanguage, targetLanguage);
 
     const shouldTranslateEvenIfLangSelectionHasNotChanged = () => {
       const phase = this.phase();
@@ -1706,17 +1712,17 @@ var SelectTranslationsPanel = new (class {
 
     if (
       
-      fromLanguage &&
+      sourceLanguage &&
       
-      toLanguage &&
+      targetLanguage &&
       
       (langSelectionChanged() ||
         
         shouldTranslateEvenIfLangSelectionHasNotChanged())
     ) {
       this.#changeStateTo("translatable", /* retainEntries */ true, {
-        fromLanguage,
-        toLanguage,
+        sourceLanguage,
+        targetLanguage,
       });
     }
   }
@@ -1841,14 +1847,14 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  #shouldContinueTranslation(translationId, fromLanguage, toLanguage) {
+  #shouldContinueTranslation(translationId, sourceLanguage, targetLanguage) {
     return (
       
       this.#isOpen() &&
       
       translationId === this.#translationId &&
       
-      this.#isSelectedLangPair(fromLanguage, toLanguage)
+      this.#isSelectedLangPair(sourceLanguage, targetLanguage)
     );
   }
 
@@ -1884,10 +1890,10 @@ var SelectTranslationsPanel = new (class {
   #displayTranslatedText() {
     this.#showMainContent();
 
-    const { toLanguage } = this.#getSelectedLanguagePair();
+    const { targetLanguage } = this.#getSelectedLanguagePair();
     const { textArea } = SelectTranslationsPanel.elements;
     textArea.value = this.getTranslatedText();
-    this.#updateTextDirection(toLanguage);
+    this.#updateTextDirection(targetLanguage);
     this.#updateConditionalUIEnabledState();
     this.#indicateTranslatedTextArea({ overflow: "auto" });
     this.#maybeEnableTextAreaResizer();
@@ -1920,7 +1926,7 @@ var SelectTranslationsPanel = new (class {
 
 
   #updateConditionalUIEnabledState() {
-    const { fromLanguage, toLanguage } = this.#getSelectedLanguagePair();
+    const { sourceLanguage, targetLanguage } = this.#getSelectedLanguagePair();
     const {
       copyButton,
       textArea,
@@ -1929,7 +1935,7 @@ var SelectTranslationsPanel = new (class {
       tryAnotherSourceMenuList,
     } = this.elements;
 
-    const invalidLangPairSelected = !fromLanguage || !toLanguage;
+    const invalidLangPairSelected = !sourceLanguage || !targetLanguage;
     const isTranslating = this.phase() === "translating";
 
     textArea.disabled = invalidLangPairSelected;
@@ -1937,7 +1943,7 @@ var SelectTranslationsPanel = new (class {
     translateButton.disabled = !tryAnotherSourceMenuList.value;
     translateFullPageButton.disabled =
       invalidLangPairSelected ||
-      TranslationsUtils.langTagsMatch(fromLanguage, toLanguage) ||
+      TranslationsUtils.langTagsMatch(sourceLanguage, targetLanguage) ||
       this.#shouldHideTranslateFullPageButton();
   }
 
@@ -2077,10 +2083,11 @@ var SelectTranslationsPanel = new (class {
 
   #displayTranslationFailureMessage() {
     if (this.#mostRecentUIPhase !== "translation-failure") {
-      const { fromLanguage, toLanguage } = this.#getSelectedLanguagePair();
+      const { sourceLanguage, targetLanguage } =
+        this.#getSelectedLanguagePair();
       TranslationsParent.telemetry()
         .selectTranslationsPanel()
-        .onTranslationFailureMessage({ fromLanguage, toLanguage });
+        .onTranslationFailureMessage({ sourceLanguage, targetLanguage });
     }
 
     const {
@@ -2187,14 +2194,8 @@ var SelectTranslationsPanel = new (class {
 
 
 
-
-
-  async #requestTranslationsPort(fromLanguage, toLanguage) {
-    const port = await TranslationsParent.requestTranslationsPort(
-      fromLanguage,
-      toLanguage
-    );
-    return port;
+  async #requestTranslationsPort(languagePair) {
+    return TranslationsParent.requestTranslationsPort(languagePair);
   }
 
   
@@ -2205,16 +2206,16 @@ var SelectTranslationsPanel = new (class {
 
 
 
-
-  async #createTranslator(fromLanguage, toLanguage) {
+  async #createTranslator(languagePair) {
     this.console?.log(
-      `Creating new Translator (${fromLanguage}-${toLanguage})`
+      `Creating new Translator (${TranslationsUtils.serializeLanguagePair(languagePair)})`
     );
 
-    const translator = await Translator.create(fromLanguage, toLanguage, {
-      allowSameLanguage: true,
-      requestTranslationsPort: this.#requestTranslationsPort,
-    });
+    const translator = await Translator.create(
+      languagePair,
+      this.#requestTranslationsPort,
+      true 
+    );
     return translator;
   }
 
@@ -2227,8 +2228,9 @@ var SelectTranslationsPanel = new (class {
       return;
     }
 
-    const { fromLanguage, toLanguage } = this.#getSelectedLanguagePair();
-    this.#maybeChangeStateToTranslatable(fromLanguage, toLanguage);
+    const languagePair = this.#getSelectedLanguagePair();
+    const { sourceLanguage, targetLanguage } = languagePair;
+    this.#maybeChangeStateToTranslatable(sourceLanguage, targetLanguage);
 
     if (this.phase() !== "translatable") {
       return;
@@ -2238,15 +2240,15 @@ var SelectTranslationsPanel = new (class {
     const sourceText = this.getSourceText();
     const translationId = ++this.#translationId;
 
-    TranslationsParent.storeMostRecentTargetLanguage(toLanguage);
+    TranslationsParent.storeMostRecentTargetLanguage(targetLanguage);
 
-    this.#createTranslator(fromLanguage, toLanguage)
+    this.#createTranslator(languagePair)
       .then(translator => {
         if (
           this.#shouldContinueTranslation(
             translationId,
-            fromLanguage,
-            toLanguage
+            sourceLanguage,
+            targetLanguage
           )
         ) {
           this.#changeStateToTranslating();
@@ -2259,8 +2261,8 @@ var SelectTranslationsPanel = new (class {
           translatedText &&
           this.#shouldContinueTranslation(
             translationId,
-            fromLanguage,
-            toLanguage
+            sourceLanguage,
+            targetLanguage
           )
         ) {
           this.#changeStateToTranslated(translatedText);
@@ -2274,7 +2276,7 @@ var SelectTranslationsPanel = new (class {
     try {
       if (!this.#sourceTextWordCount) {
         this.#sourceTextWordCount = TranslationsParent.countWords(
-          fromLanguage,
+          sourceLanguage,
           sourceText
         );
       }
@@ -2286,8 +2288,8 @@ var SelectTranslationsPanel = new (class {
 
     TranslationsParent.telemetry().onTranslate({
       docLangTag,
-      fromLanguage,
-      toLanguage,
+      sourceLanguage,
+      targetLanguage,
       topPreferredLanguage,
       autoTranslate: false,
       requestTarget: "select",
@@ -2302,36 +2304,33 @@ var SelectTranslationsPanel = new (class {
 
 
   #maybeReportLanguageChangeToTelemetry() {
-    const {
-      fromLanguage: previousFromLanguage,
-      toLanguage: previousToLanguage,
-    } = this.#translationState;
-    const {
-      fromLanguage: selectedFromLanguage,
-      toLanguage: selectedToLanguage,
-    } = this.#getSelectedLanguagePair();
+    const previous = this.#translationState;
+    const selected = this.#getSelectedLanguagePair();
 
     if (
       !TranslationsUtils.langTagsMatch(
-        selectedFromLanguage,
-        previousFromLanguage
+        selected.sourceLanguage,
+        previous.sourceLanguage
       )
     ) {
       const { docLangTag } = this.#getLanguageInfo();
       TranslationsParent.telemetry()
         .selectTranslationsPanel()
         .onChangeFromLanguage({
-          previousLangTag: previousFromLanguage,
-          currentLangTag: selectedFromLanguage,
+          previousLangTag: previous.sourceLanguage,
+          currentLangTag: selected.sourceLanguage,
           docLangTag,
         });
     }
     if (
-      !TranslationsUtils.langTagsMatch(selectedToLanguage, previousToLanguage)
+      !TranslationsUtils.langTagsMatch(
+        selected.targetLanguage,
+        previous.targetLanguage
+      )
     ) {
       TranslationsParent.telemetry()
         .selectTranslationsPanel()
-        .onChangeToLanguage(selectedToLanguage);
+        .onChangeToLanguage(selected.targetLanguage);
     }
   }
 
