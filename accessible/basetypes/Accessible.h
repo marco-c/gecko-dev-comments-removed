@@ -445,11 +445,6 @@ class Accessible {
   
 
 
-  virtual already_AddRefed<nsAtom> InputType() const = 0;
-
-  
-
-
   nsStaticAtom* LandmarkRole() const;
 
   
