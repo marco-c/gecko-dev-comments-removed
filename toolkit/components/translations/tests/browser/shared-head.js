@@ -1818,6 +1818,44 @@ async function setupAboutPreferences(
   };
 }
 
+
+
+
+
+
+async function testWithAndWithoutLexicalShortlist(callback) {
+  for (const prefs of [
+    [[USE_LEXICAL_SHORTLIST_PREF, true]],
+    [[USE_LEXICAL_SHORTLIST_PREF, false]],
+  ]) {
+    await callback(prefs);
+  }
+}
+
+
+
+
+
+
+
+
+
+async function waitForTranslationsPrefChanged(callback) {
+  const { promise, resolve } = Promise.withResolvers();
+
+  function onChange() {
+    Services.obs.removeObserver(onChange, "translations:pref-changed");
+    resolve();
+  }
+  Services.obs.addObserver(onChange, "translations:pref-changed");
+
+  if (callback) {
+    await callback();
+  }
+
+  await promise;
+}
+
 function waitForAppLocaleChanged() {
   new Promise(resolve => {
     function onChange() {
