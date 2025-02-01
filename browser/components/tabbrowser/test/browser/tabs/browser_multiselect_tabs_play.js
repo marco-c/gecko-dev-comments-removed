@@ -152,7 +152,7 @@ add_task(async function testDelayPlayWhenUsingButton() {
 
   
   info("Press play tab2 icon");
-  await pressIcon(tab2.audioButton);
+  await pressIcon(tab2.overlayIcon);
 
   
   
