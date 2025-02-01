@@ -12,7 +12,7 @@ namespace jit {
 
 
 
-class LUnboxBase : public LInstructionHelper<1, BOX_PIECES, 0> {
+class LUnboxBase : public LInstructionHelper<1, 1, 0> {
  public:
   LUnboxBase(LNode::Opcode op, const LAllocation& input)
       : LInstructionHelper<1, 1, 0>(op) {
@@ -20,8 +20,6 @@ class LUnboxBase : public LInstructionHelper<1, BOX_PIECES, 0> {
   }
 
   static const size_t Input = 0;
-
-  LBoxAllocation input() const { return getBoxOperand(Input); }
 
   MUnbox* mir() const { return mir_->toUnbox(); }
 };
