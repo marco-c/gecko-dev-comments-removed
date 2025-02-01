@@ -388,7 +388,7 @@ customElements.define(
     }
 
     #createPrivateBrowsingCheckbox() {
-      const { onPrivateBrowsingAllowedChanged, grantPrivateBrowsingAllowed } =
+      const { grantPrivateBrowsingAllowed } =
         this.notification.options.customElementOptions;
 
       const doc = this.ownerDocument;
@@ -396,6 +396,12 @@ customElements.define(
       let checkboxEl = doc.createXULElement("checkbox");
       checkboxEl.checked = grantPrivateBrowsingAllowed;
       checkboxEl.addEventListener("CheckboxStateChange", () => {
+        
+        
+        
+        
+        const { onPrivateBrowsingAllowedChanged } =
+          this.notification.options.customElementOptions;
         onPrivateBrowsingAllowedChanged?.(checkboxEl.checked);
       });
       doc.l10n.setAttributes(
