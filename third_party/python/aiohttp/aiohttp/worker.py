@@ -26,7 +26,7 @@ except ImportError:
     SSLContext = object  
 
 
-__all__ = ("GunicornWebWorker", "GunicornUVLoopWebWorker", "GunicornTokioWebWorker")
+__all__ = ("GunicornWebWorker", "GunicornUVLoopWebWorker")
 
 
 class GunicornWebWorker(base.Worker):  
@@ -89,6 +89,7 @@ class GunicornWebWorker(base.Worker):
                 access_log_format=self._get_valid_log_format(
                     self.cfg.access_log_format
                 ),
+                shutdown_timeout=self.cfg.graceful_timeout / 100 * 95,
             )
         await runner.setup()
 
@@ -103,7 +104,6 @@ class GunicornWebWorker(base.Worker):
                 runner,
                 sock,
                 ssl_context=ctx,
-                shutdown_timeout=self.cfg.graceful_timeout / 100 * 95,
             )
             await site.start()
 
@@ -114,7 +114,7 @@ class GunicornWebWorker(base.Worker):
                 self.notify()
 
                 cnt = server.requests_count
-                if self.cfg.max_requests and cnt > self.cfg.max_requests:
+                if self.max_requests and cnt > self.max_requests:
                     self.alive = False
                     self.log.info("Max requests, shutting down: %s", self)
 
@@ -182,14 +182,8 @@ class GunicornWebWorker(base.Worker):
         signal.siginterrupt(signal.SIGUSR1, False)
         
         
-        if sys.version_info < (3, 8):
-            
-            
-            
-            
-            signal.signal(signal.SIGCHLD, signal.SIG_DFL)
 
-    def handle_quit(self, sig: int, frame: FrameType) -> None:
+    def handle_quit(self, sig: int, frame: Optional[FrameType]) -> None:
         self.alive = False
 
         
@@ -198,7 +192,7 @@ class GunicornWebWorker(base.Worker):
         
         self._notify_waiter_done()
 
-    def handle_abort(self, sig: int, frame: FrameType) -> None:
+    def handle_abort(self, sig: int, frame: Optional[FrameType]) -> None:
         self.alive = False
         self.exit_code = 1
         self.cfg.worker_abort(self)
@@ -249,21 +243,5 @@ class GunicornUVLoopWebWorker(GunicornWebWorker):
         
         
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
-        super().init_process()
-
-
-class GunicornTokioWebWorker(GunicornWebWorker):
-    def init_process(self) -> None:  
-        import tokio
-
-        
-        
-        asyncio.get_event_loop().close()
-
-        
-        
-        
-        asyncio.set_event_loop_policy(tokio.EventLoopPolicy())
 
         super().init_process()

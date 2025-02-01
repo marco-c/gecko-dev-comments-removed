@@ -39,13 +39,33 @@ int llhttp__after_headers_complete(llhttp_t* parser, const char* p,
   int hasBody;
 
   hasBody = parser->flags & F_CHUNKED || parser->content_length > 0;
-  if (parser->upgrade && (parser->method == HTTP_CONNECT ||
-                          (parser->flags & F_SKIPBODY) || !hasBody)) {
+  if (
+      (parser->upgrade && (parser->method == HTTP_CONNECT ||
+                          (parser->flags & F_SKIPBODY) || !hasBody)) ||
+      
+      (parser->type == HTTP_RESPONSE && parser->status_code == 101)
+  ) {
     
     return 1;
   }
 
-  if (parser->flags & F_SKIPBODY) {
+  if (parser->type == HTTP_RESPONSE && parser->status_code == 100) {
+    
+    return 0;
+  }
+
+  
+  if (
+    parser->flags & F_SKIPBODY ||         
+    (
+      parser->type == HTTP_RESPONSE && (
+        parser->status_code == 102 ||     
+        parser->status_code == 103 ||     
+        parser->status_code == 204 ||     
+        parser->status_code == 304        
+      )
+    )
+  ) {
     return 0;
   } else if (parser->flags & F_CHUNKED) {
     
