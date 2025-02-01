@@ -521,91 +521,38 @@ subsetTest(promise_test, async test => {
   expectNoWinner(auctionResult);
 }, 'Basic B&A auction - Wrong request Id');
 
-
-
-
-async function testWithMutatedServerResponse(
-    test, expectWin, responseMutator, igMutator = undefined) {
-  const uuid = generateUuid(test);
-  const adA = createTrackerURL(window.location.origin, uuid, 'track_get', 'a');
-  const adB = createTrackerURL(window.location.origin, uuid, 'track_get', 'b');
-  const adsArray =
-      [{renderURL: adA, adRenderId: 'a'}, {renderURL: adB, adRenderId: 'b'}];
-  let ig = {ads: adsArray};
-  if (igMutator) {
-    igMutator(ig, uuid);
-  }
-  await joinInterestGroup(test, uuid, ig);
-
-  const result = await navigator.getInterestGroupAdAuctionData({
-    coordinatorOrigin: await BA.configureCoordinator(),
-    seller: window.location.origin
-  });
-  assert_true(result.requestId !== null);
-  assert_true(result.request.length > 0);
-
-  let decoded = await BA.decodeInterestGroupData(result.request);
-
-  let serverResponseMsg = {
-    'biddingGroups': {},
-    'adRenderURL': ig.ads[0].renderURL,
-    'interestGroupName': DEFAULT_INTEREST_GROUP_NAME,
-    'interestGroupOwner': window.location.origin,
-  };
-  serverResponseMsg.biddingGroups[window.location.origin] = [0];
-  await responseMutator(serverResponseMsg, uuid);
-
-  let serverResponse =
-      await BA.encodeServerResponse(serverResponseMsg, decoded);
-
-  let hashString = await BA.payloadHash(serverResponse);
-  await BA.authorizeServerResponseHashes([hashString]);
-
-  let auctionResult = await navigator.runAdAuction({
-    'seller': window.location.origin,
-    'interestGroupBuyers': [window.location.origin],
-    'requestId': result.requestId,
-    'serverResponse': serverResponse,
-    'resolveToConfig': true,
-  });
-  if (expectWin) {
-    expectSuccess(auctionResult);
-    return auctionResult;
-  } else {
-    expectNoWinner(auctionResult);
-  }
-}
-
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(
+  await BA.testWithMutatedServerResponse(
       test,  false, msg => {msg.error = {}});
 }, 'Basic B&A auction - response marked as error');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  true, msg => {
+  await BA.testWithMutatedServerResponse(test,  true, msg => {
     msg.error = 4;
   });
 }, 'Basic B&A auction - nonsense error field');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
-    msg.error = {message: 'oh no'};
-  });
+  await BA.testWithMutatedServerResponse(
+      test,  false, msg => {
+        msg.error = {message: 'oh no'};
+      });
 }, 'Basic B&A auction - response marked as error, with message');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
-    msg.error = {message: {}};
-  });
+  await BA.testWithMutatedServerResponse(
+      test,  false, msg => {
+        msg.error = {message: {}};
+      });
 }, 'Basic B&A auction - response marked as error, with bad message');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(
+  await BA.testWithMutatedServerResponse(
       test,  false, msg => {msg.isChaff = true});
 }, 'Basic B&A auction - response marked as chaff');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(
+  await BA.testWithMutatedServerResponse(
       test,  true, msg => {msg.isChaff = false});
 }, 'Basic B&A auction - response marked as non-chaff');
 
@@ -617,7 +564,7 @@ subsetTest(promise_test, async test => {
 
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(
+  await BA.testWithMutatedServerResponse(
       test,  false,
       msg => {msg.topLevelSeller = 'https://example.org/'});
 }, 'Basic B&A auction - incorrectly includes topLevelSeller');
@@ -630,7 +577,7 @@ subsetTest(promise_test, async test => {
 
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(
+  await BA.testWithMutatedServerResponse(
       test,  false,
       msg => {msg.topLevelSeller = 'http://example.org/'});
 }, 'Basic B&A auction - http:// topLevelSeller is bad, too');
@@ -643,113 +590,130 @@ subsetTest(promise_test, async test => {
 
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(
+  await BA.testWithMutatedServerResponse(
       test,  true, msg => {msg.bid = 50});
 }, 'Basic B&A auction - positive bid is good');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(
+  await BA.testWithMutatedServerResponse(
       test,  false, msg => {msg.bid = -50});
 }, 'Basic B&A auction - negative bid is bad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(
+  await BA.testWithMutatedServerResponse(
       test,  false, msg => {msg.bid = 0});
 }, 'Basic B&A auction - zero bid is bad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(
+  await BA.testWithMutatedServerResponse(
       test,  false,
       msg => {msg.biddingGroups[window.location.origin] = []});
 }, 'Basic B&A auction - winning group did not bid');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(
+  await BA.testWithMutatedServerResponse(
       test,  false,
       msg => {msg.biddingGroups[window.location.origin] = [-1, 0]});
 }, 'Basic B&A auction - negative bidding group index');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(
+  await BA.testWithMutatedServerResponse(
       test,  false,
       msg => {msg.biddingGroups[window.location.origin] = [0, 1]});
 }, 'Basic B&A auction - too large bidding group index');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
-    msg.interestGroupName += 'not';
-  });
+  await BA.testWithMutatedServerResponse(
+      test,  false, msg => {
+        msg.interestGroupName += 'not';
+      });
 }, 'Basic B&A auction - wrong IG name');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(
+  await BA.testWithMutatedServerResponse(
       test,  false, async msg => {
         await leaveInterestGroup();
       });
 }, 'Basic B&A auction - left IG in the middle');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
-    msg.adRenderURL += 'not';
-  });
+  await BA.testWithMutatedServerResponse(
+      test,  false, msg => {
+        msg.adRenderURL += 'not';
+      });
 }, 'Basic B&A auction - ad URL not in ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
-    msg.buyerReportingId = 'bid1';
-  });
+  await BA.testWithMutatedServerResponse(
+      test,  false, msg => {
+        msg.buyerReportingId = 'bid1';
+      });
 }, 'Basic B&A auction - buyerReportingId not in ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  true, msg => {
-    msg.buyerReportingId = 'bid1';
-  }, ig => {
-    ig.ads[0].buyerReportingId = 'bid1';
-    ig.ads[1].buyerReportingId = 'bid2';
-  });
+  await BA.testWithMutatedServerResponse(
+      test,  true,
+      msg => {
+        msg.buyerReportingId = 'bid1';
+      },
+      ig => {
+        ig.ads[0].buyerReportingId = 'bid1';
+        ig.ads[1].buyerReportingId = 'bid2';
+      });
 }, 'Basic B&A auction - buyerReportingId in ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
-    msg.buyerReportingId = 'bid2';
-  }, ig => {
-    ig.ads[0].buyerReportingId = 'bid1';
-    ig.ads[1].buyerReportingId = 'bid2';
-  });
+  await BA.testWithMutatedServerResponse(
+      test,  false,
+      msg => {
+        msg.buyerReportingId = 'bid2';
+      },
+      ig => {
+        ig.ads[0].buyerReportingId = 'bid1';
+        ig.ads[1].buyerReportingId = 'bid2';
+      });
 }, 'Basic B&A auction - buyerReportingId in wrong ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
-    msg.buyerAndSellerReportingId = 'bsid1';
-  });
+  await BA.testWithMutatedServerResponse(
+      test,  false, msg => {
+        msg.buyerAndSellerReportingId = 'bsid1';
+      });
 }, 'Basic B&A auction - buyerAndSellerReportingId not in ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  true, msg => {
-    msg.buyerAndSellerReportingId = 'bsid1';
-  }, ig => {
-    ig.ads[0].buyerAndSellerReportingId = 'bsid1';
-    ig.ads[1].buyerAndSellerReportingId = 'bsid2';
-  });
+  await BA.testWithMutatedServerResponse(
+      test,  true,
+      msg => {
+        msg.buyerAndSellerReportingId = 'bsid1';
+      },
+      ig => {
+        ig.ads[0].buyerAndSellerReportingId = 'bsid1';
+        ig.ads[1].buyerAndSellerReportingId = 'bsid2';
+      });
 }, 'Basic B&A auction - buyerAndSellerReportingId in ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
-    msg.buyerAndSellerReportingId = 'bsid2';
-  }, ig => {
-    ig.ads[0].buyerAndSellerReportingId = 'bsid1';
-    ig.ads[1].buyerAndSellerReportingId = 'bsid2';
-  });
+  await BA.testWithMutatedServerResponse(
+      test,  false,
+      msg => {
+        msg.buyerAndSellerReportingId = 'bsid2';
+      },
+      ig => {
+        ig.ads[0].buyerAndSellerReportingId = 'bsid1';
+        ig.ads[1].buyerAndSellerReportingId = 'bsid2';
+      });
 }, 'Basic B&A auction - buyerAndSellerReportingId in wrong ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
-    msg.components = ["https://example.org"];
-  });
+  await BA.testWithMutatedServerResponse(
+      test,  false, msg => {
+        msg.components = ['https://example.org'];
+      });
 }, 'Basic B&A auction - ad component URL not in ad');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(
+  await BA.testWithMutatedServerResponse(
       test,  true,
       msg => {
         msg.components = ['https://example.org'];
@@ -762,7 +726,7 @@ subsetTest(promise_test, async test => {
 subsetTest(promise_test, async test => {
   let savedUuid;
   let savedExpectUrls;
-  let result = await testWithMutatedServerResponse(
+  let result = await BA.testWithMutatedServerResponse(
       test,  true,
       (msg, uuid) => {
         savedUuid = uuid;
@@ -809,7 +773,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   let savedUuid;
-  let result = await testWithMutatedServerResponse(
+  let result = await BA.testWithMutatedServerResponse(
       test,  true,
       (msg, uuid) => {
         savedUuid = uuid;
@@ -852,13 +816,14 @@ subsetTest(promise_test, async test => {
 }, 'Basic B&A auction --- beacon reporting');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  false, msg => {
-    msg.bidCurrency = 'cents';
-  });
+  await BA.testWithMutatedServerResponse(
+      test,  false, msg => {
+        msg.bidCurrency = 'cents';
+      });
 }, 'Basic B&A auction - invalid ad currency');
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  true, msg => {
+  await BA.testWithMutatedServerResponse(test,  true, msg => {
     msg.bidCurrency = 'USD';
   });
 }, 'Basic B&A auction - valid ad currency');
@@ -1145,7 +1110,7 @@ subsetTest(promise_test, async test => {
 
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  true, msg => {
+  await BA.testWithMutatedServerResponse(test,  true, msg => {
     msg.updateGroups =
         {[window.location.origin]: [{index: 2048, updateIfOlderThanMs: 1000}]};
   });
@@ -1153,7 +1118,7 @@ subsetTest(promise_test, async test => {
 
 
 subsetTest(promise_test, async test => {
-  await testWithMutatedServerResponse(test,  true, msg => {
+  await BA.testWithMutatedServerResponse(test,  true, msg => {
     msg.updateGroups = {
       [window.location.origin]: [
         {index: 0, updateIfOlderThanMs: 1000},
