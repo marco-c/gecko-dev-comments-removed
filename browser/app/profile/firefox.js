@@ -2269,9 +2269,6 @@ pref("privacy.trackingprotection.fingerprinting.enabled", true);
 
 pref("privacy.trackingprotection.cryptomining.enabled", true);
 
-
-pref("privacy.resistFingerprinting.skipEarlyBlankFirstPaint", true);
-
 pref("browser.contentblocking.database.enabled", true);
 
 
