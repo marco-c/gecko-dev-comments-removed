@@ -35,7 +35,8 @@ bool js::InvalidatingRuntimeFuse::addFuseDependency(JSContext* cx,
 void js::InvalidatingRuntimeFuse::popFuse(JSContext* cx) {
   
   GuardFuse::popFuse(cx);
-  JS_LOG(fuseInvalidation, Verbose, "Invalidating fuse popping: %s", name());
+  JS_LOG(fuseInvalidation, mozilla::LogLevel::Verbose,
+         "Invalidating fuse popping: %s", name());
   
   for (AllZonesIter z(cx->runtime()); !z.done(); z.next()) {
     
@@ -73,7 +74,7 @@ void js::jit::InvalidateAndClearScriptSet(JSContext* cx,
     if (script->hasIonScript()) {
       JitSpew(jit::JitSpew_IonInvalidate, "Invalidating ion script %p for %s",
               script->ionScript(), reason);
-      JS_LOG(fuseInvalidation, Debug,
+      JS_LOG(fuseInvalidation, mozilla::LogLevel::Debug,
              "Invalidating ion script %s:%d for reason %s", script->filename(),
              script->lineno(), reason);
       js::jit::Invalidate(cx, script);
