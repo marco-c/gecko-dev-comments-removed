@@ -45,7 +45,7 @@ struct BufferChunk;
 struct Cell;
 class GCRuntime;
 struct MediumBuffer;
-class LargeBuffer;
+struct LargeBuffer;
 
 
 
