@@ -73,7 +73,7 @@ class WMFClearKeyCDM final
 
 
 
-class SessionManagerWrapper final : public RefCounted, private cdm::Host_10 {
+class SessionManagerWrapper final : public RefCounted, private cdm::Host_11 {
  public:
   explicit SessionManagerWrapper(WMFClearKeyCDM* aCDM);
 
@@ -133,6 +133,7 @@ class SessionManagerWrapper final : public RefCounted, private cdm::Host_10 {
   void OnDeferredInitializationDone(cdm::StreamType aStreamType,
                                     cdm::Status aDecoderStatus) override {}
   void RequestStorageId(uint32_t aVersion) override {}
+  void ReportMetrics(cdm::MetricName aMetricName, uint64_t aValue) override {}
   cdm::Buffer* Allocate(uint32_t aCapacity) override;
   void SetTimer(int64_t aDelayMs, void* aContext) override {}
   cdm::Time GetCurrentWallTime() override { return 0.0; }
