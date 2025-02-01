@@ -3945,6 +3945,31 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
 
   StartupTimeline::Record(StartupTimeline::MAIN);
 
+  
+  
+  nsresult rv = NS_CreateNativeAppSupport(getter_AddRefs(mNativeApp));
+  if (NS_FAILED(rv)) return 1;
+
+  
+  
+  if (CheckArg("h") || CheckArg("help") || CheckArg("?")) {
+    DumpHelp();
+    *aExitFlag = true;
+    return 0;
+  }
+
+  if (CheckArg("v") || CheckArg("version")) {
+    DumpVersion();
+    *aExitFlag = true;
+    return 0;
+  }
+
+  if (CheckArg("full-version")) {
+    DumpFullVersion();
+    *aExitFlag = true;
+    return 0;
+  }
+
   if (CheckForUserMismatch()) {
     return 1;
   }
@@ -4047,7 +4072,6 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   }
 #endif
 
-  nsresult rv;
   ArgResult ar;
 
 #ifdef DEBUG
@@ -4399,31 +4423,6 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
       ARG_FOUND == CheckArg("origin-to-force-quic-on", &origin,
                             CheckArgFlag::RemoveArg)) {
     mOriginToForceQUIC.Assign(origin);
-  }
-
-  
-  
-  rv = NS_CreateNativeAppSupport(getter_AddRefs(mNativeApp));
-  if (NS_FAILED(rv)) return 1;
-
-  
-  
-  if (CheckArg("h") || CheckArg("help") || CheckArg("?")) {
-    DumpHelp();
-    *aExitFlag = true;
-    return 0;
-  }
-
-  if (CheckArg("v") || CheckArg("version")) {
-    DumpVersion();
-    *aExitFlag = true;
-    return 0;
-  }
-
-  if (CheckArg("full-version")) {
-    DumpFullVersion();
-    *aExitFlag = true;
-    return 0;
   }
 
 #ifdef MOZ_ENABLE_DBUS
