@@ -24,18 +24,13 @@ if (!window.smartblockTikTokShimInitialized) {
   }
 
   function addonMessageHandler(message) {
-    let { topic, data, shimId } = message;
+    let { topic, shimId } = message;
     
     if (shimId != SHIM_ID) {
       return;
     }
 
     if (topic === "smartblock:unblock-embed") {
-      if (data != window.location.hostname) {
-        
-        
-        return;
-      }
       
       embedPlaceholders.forEach((p, idx) => {
         p.replaceWith(originalEmbedContainers[idx]);
