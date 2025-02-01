@@ -46,6 +46,18 @@ class TextDirectiveCandidate {
   static Result<TextDirectiveCandidate, ErrorResult> CreateFromInputRange(
       const nsRange* aInputRange);
 
+  static Result<TextDirectiveCandidate, ErrorResult> CreateFromStartAndEndRange(
+      const nsRange* aStartRange, const nsRange* aEndRange);
+
+  
+  bool UseExactMatch() const { return !mEndRange; }
+
+  nsRange* StartRange() { return mStartRange; }
+  const nsRange* StartRange() const { return mStartRange; }
+
+  nsRange* EndRange() { return mEndRange; }
+  const nsRange* EndRange() const { return mEndRange; }
+
   
 
 
@@ -146,6 +158,38 @@ class TextDirectiveCreator final {
 
   static Result<nsCString, ErrorResult> CreateTextDirectiveFromRange(
       Document& aDocument, nsRange* aInputRange);
+
+ private:
+  TextDirectiveCreator(Document& aDocument, nsRange* aInputRange,
+                       TextDirectiveCandidate&& aTextDirective);
+  
+
+
+
+
+
+  Result<nsTArray<TextDirectiveCandidate>, ErrorResult>
+  FindAllMatchingCandidates();
+
+  
+
+
+
+
+
+
+
+
+
+  Result<nsTArray<RefPtr<nsRange>>, ErrorResult> FindAllMatchingRanges(
+      const nsString& aSearchQuery);
+
+  Result<nsCString, ErrorResult> CreateTextDirectiveFromMatches(
+      const nsTArray<TextDirectiveCandidate>& aTextDirectiveMatches);
+
+  Document& mDocument;
+  RefPtr<nsRange> mInputRange;
+  TextDirectiveCandidate mTextDirective;
 };
 }  
 #endif

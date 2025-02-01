@@ -9,7 +9,10 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/dom/fragmentdirectives_ffi_generated.h"
+#include "nsDeque.h"
+#include "nsINode.h"
 #include "nsRange.h"
+#include "Document.h"
 
 namespace mozilla::dom {
 
@@ -138,6 +141,64 @@ TextDirectiveCandidate::CreateFromInputRange(const nsRange* aInputRange) {
   return instance;
 }
 
+
+Result<TextDirectiveCandidate, ErrorResult>
+TextDirectiveCandidate::CreateFromStartAndEndRange(const nsRange* aStartRange,
+                                                   const nsRange* aEndRange) {
+  MOZ_ASSERT(aStartRange);
+  MOZ_ASSERT(aEndRange);
+  ErrorResult rv;
+  RefPtr<nsRange> startRange = aStartRange->CloneRange();
+  RefPtr<nsRange> endRange = aEndRange->CloneRange();
+  RefPtr<nsRange> fullRange =
+      nsRange::Create(startRange->StartRef(), endRange->EndRef(), rv);
+  if (MOZ_UNLIKELY(rv.Failed())) {
+    return Err(std::move(rv));
+  }
+  Result<RefPtr<nsRange>, ErrorResult> maybeFullStartRange =
+      MaybeCreateStartToBlockBoundaryRange(*fullRange);
+  if (MOZ_UNLIKELY(maybeFullStartRange.isErr())) {
+    return maybeFullStartRange.propagateErr();
+  }
+  RefPtr<nsRange> fullStartRange = maybeFullStartRange.unwrap();
+
+  
+  
+  
+  
+  
+  
+  if (!fullStartRange) {
+    fullStartRange = fullRange->CloneRange();
+  }
+
+  Result<RefPtr<nsRange>, ErrorResult> maybeFullEndRange =
+      MaybeCreateEndToBlockBoundaryRange(*fullRange);
+  if (MOZ_UNLIKELY(maybeFullEndRange.isErr())) {
+    return maybeFullStartRange.propagateErr();
+  }
+  RefPtr<nsRange> fullEndRange = maybeFullStartRange.unwrap();
+  if (!fullEndRange) {
+    fullEndRange = fullRange->CloneRange();
+  }
+
+  auto prefixRanges = CreatePrefixRanges(startRange->StartRef());
+  if (MOZ_UNLIKELY(prefixRanges.isErr())) {
+    return prefixRanges.propagateErr();
+  }
+  auto [prefixRange, fullPrefixRange] = prefixRanges.unwrap();
+  auto suffixRanges = CreateSuffixRanges(endRange->EndRef());
+  if (MOZ_UNLIKELY(suffixRanges.isErr())) {
+    return suffixRanges.propagateErr();
+  }
+  auto [suffixRange, fullSuffixRange] = suffixRanges.unwrap();
+  auto instance = TextDirectiveCandidate{
+      startRange,  fullStartRange,  endRange,    fullEndRange,
+      prefixRange, fullPrefixRange, suffixRange, fullSuffixRange};
+  MOZ_TRY(instance.CreateTextDirectiveString());
+  return instance;
+}
+
  Result<RefPtr<nsRange>, ErrorResult>
 TextDirectiveCandidate::MaybeCreateStartToBlockBoundaryRange(
     const nsRange& aRange) {
@@ -254,6 +315,13 @@ Result<Ok, ErrorResult> TextDirectiveCandidate::CreateTextDirectiveString() {
   return Ok();
 }
 
+TextDirectiveCreator::TextDirectiveCreator(
+    Document& aDocument, nsRange* aInputRange,
+    TextDirectiveCandidate&& aTextDirective)
+    : mDocument(aDocument),
+      mInputRange(aInputRange),
+      mTextDirective(std::move(aTextDirective)) {}
+
 
 mozilla::Result<nsCString, ErrorResult>
 TextDirectiveCreator::CreateTextDirectiveFromRange(Document& aDocument,
@@ -291,15 +359,146 @@ TextDirectiveCreator::CreateTextDirectiveFromRange(Document& aDocument,
   }
   auto textDirectiveCandidate = maybeTextDirectiveCandidate.unwrap();
 
-  Result<nsCString, ErrorResult> maybeTextDirectiveString =
-      textDirectiveCandidate.TextDirectiveString();
-  if (MOZ_UNLIKELY(maybeTextDirectiveString.isErr())) {
-    return maybeTextDirectiveString.propagateErr();
-  }
-  nsCString textDirectiveString = maybeTextDirectiveString.unwrap();
-  TEXT_FRAGMENT_LOG("Returning text directive '%s'.",
-                    textDirectiveString.Data());
+  TextDirectiveCreator creator(aDocument, inputRangeExtendedToWordBoundaries,
+                               std::move(textDirectiveCandidate));
 
-  return textDirectiveString;
+  
+  
+  
+  return creator.FindAllMatchingCandidates().andThen(
+      [&creator](nsTArray<TextDirectiveCandidate>&& previousMatches)
+          -> Result<nsCString, ErrorResult> {
+        return creator.CreateTextDirectiveFromMatches(previousMatches);
+      });
 }
+
+Result<nsTArray<TextDirectiveCandidate>, ErrorResult>
+TextDirectiveCreator::FindAllMatchingCandidates() {
+  ErrorResult rv;
+
+  if (mTextDirective.UseExactMatch()) {
+    Result<nsString, ErrorResult> rangeContent =
+        TextDirectiveUtil::RangeContentAsString(mInputRange);
+    if (MOZ_UNLIKELY(rangeContent.isErr())) {
+      return rangeContent.propagateErr();
+    }
+    Result<nsTArray<RefPtr<nsRange>>, ErrorResult> maybeRangeMatches =
+        FindAllMatchingRanges(rangeContent.unwrap());
+    if (MOZ_UNLIKELY(maybeRangeMatches.isErr())) {
+      return maybeRangeMatches.propagateErr();
+    }
+    auto rangeMatches = maybeRangeMatches.unwrap();
+    nsTArray<TextDirectiveCandidate> textDirectiveMatches(
+        rangeMatches.Length());
+    for (const auto& rangeMatch : rangeMatches) {
+      auto candidate = TextDirectiveCandidate::CreateFromInputRange(rangeMatch);
+      if (MOZ_UNLIKELY(candidate.isErr())) {
+        return candidate.propagateErr();
+      }
+      textDirectiveMatches.AppendElement(candidate.unwrap());
+    }
+
+    return textDirectiveMatches;
+  }
+  Result<nsString, ErrorResult> startRangeContent =
+      TextDirectiveUtil::RangeContentAsString(mTextDirective.StartRange());
+  if (MOZ_UNLIKELY(startRangeContent.isErr())) {
+    return startRangeContent.propagateErr();
+  }
+  Result<nsTArray<RefPtr<nsRange>>, ErrorResult> maybeStartRangeMatches =
+      FindAllMatchingRanges(startRangeContent.unwrap());
+  if (MOZ_UNLIKELY(maybeStartRangeMatches.isErr())) {
+    return maybeStartRangeMatches.propagateErr();
+  }
+  auto startRangeMatches = maybeStartRangeMatches.unwrap();
+
+  Result<nsString, ErrorResult> endRangeContent =
+      TextDirectiveUtil::RangeContentAsString(mTextDirective.EndRange());
+  if (MOZ_UNLIKELY(endRangeContent.isErr())) {
+    return endRangeContent.propagateErr();
+  }
+  Result<nsTArray<RefPtr<nsRange>>, ErrorResult> maybeEndRangeMatches =
+      FindAllMatchingRanges(endRangeContent.unwrap());
+  if (MOZ_UNLIKELY(maybeEndRangeMatches.isErr())) {
+    return maybeEndRangeMatches.propagateErr();
+  }
+  nsDeque<nsRange> endRangeMatches;
+  for (auto& element : maybeEndRangeMatches.unwrap()) {
+    endRangeMatches.Push(element.get());
+  }
+  nsTArray<TextDirectiveCandidate> textDirectiveCandidates(
+      startRangeMatches.Length());
+  for (const auto& matchStartRange : startRangeMatches) {
+    for (auto* matchEndRange : endRangeMatches) {
+      Maybe<int32_t> compare = nsContentUtils::ComparePoints(
+          matchStartRange->EndRef(), matchEndRange->StartRef());
+      if (!compare || *compare == -1) {
+        endRangeMatches.PopFront();
+        continue;
+      }
+      auto candidate = TextDirectiveCandidate::CreateFromStartAndEndRange(
+          matchStartRange, matchEndRange);
+      if (MOZ_UNLIKELY(candidate.isErr())) {
+        return candidate.propagateErr();
+      }
+      textDirectiveCandidates.AppendElement(candidate.unwrap());
+    }
+  }
+  return textDirectiveCandidates;
+}
+
+Result<nsTArray<RefPtr<nsRange>>, ErrorResult>
+TextDirectiveCreator::FindAllMatchingRanges(const nsString& aSearchQuery) {
+  MOZ_ASSERT(!aSearchQuery.IsEmpty());
+  ErrorResult rv;
+  RangeBoundary documentStart{&mDocument, 0u};
+  RefPtr<nsRange> searchRange =
+      nsRange::Create(documentStart, mInputRange->EndRef(), rv);
+  if (rv.Failed()) {
+    return Err(std::move(rv));
+  }
+  nsTArray<RefPtr<nsRange>> matchingRanges;
+  while (!searchRange->Collapsed()) {
+    RefPtr<nsRange> searchResult = TextDirectiveUtil::FindStringInRange(
+        searchRange, aSearchQuery, true, true);
+    if (!searchResult) {
+      
+      
+      break;
+    }
+    if (TextDirectiveUtil::NormalizedRangeBoundariesAreEqual(
+            searchResult->EndRef(), mInputRange->EndRef())) {
+      
+      
+      
+      break;
+    }
+    matchingRanges.AppendElement(searchResult);
+    RangeBoundary newStartBoundary =
+        TextDirectiveUtil::MoveRangeBoundaryOneWord(searchResult->StartRef(),
+                                                    TextScanDirection::Right);
+
+    searchRange->SetStart(newStartBoundary.AsRaw(), rv);
+  }
+
+  TEXT_FRAGMENT_LOG(
+      "Found %zu matches for the input '%s' in the document until the end of "
+      "the input range.",
+      matchingRanges.Length(), NS_ConvertUTF16toUTF8(aSearchQuery).Data());
+  return matchingRanges;
+}
+
+Result<nsCString, ErrorResult>
+TextDirectiveCreator::CreateTextDirectiveFromMatches(
+    const nsTArray<TextDirectiveCandidate>& aTextDirectiveMatches) {
+  TextDirectiveCandidate currentCandidate = std::move(mTextDirective);
+  if (aTextDirectiveMatches.IsEmpty()) {
+    TEXT_FRAGMENT_LOG(
+        "There are no conflicting matches. Returning text directive '%s'.",
+        currentCandidate.TextDirectiveString().Data());
+    return currentCandidate.TextDirectiveString();
+  }
+  return nsCString{};
+}
+
 }  
