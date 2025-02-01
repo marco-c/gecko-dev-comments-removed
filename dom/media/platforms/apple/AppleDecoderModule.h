@@ -7,6 +7,7 @@
 #ifndef mozilla_AppleDecoderModule_h
 #define mozilla_AppleDecoderModule_h
 
+#include "MediaCodecsSupport.h"
 #include "PlatformDecoderModule.h"
 
 namespace mozilla {
@@ -38,9 +39,6 @@ class AppleDecoderModule : public PlatformDecoderModule {
 
   static void Init();
 
-  static bool sCanUseVP9Decoder;
-  static bool sCanUseAV1Decoder;
-
   static constexpr int kCMVideoCodecType_H264{'avc1'};
   static constexpr int kCMVideoCodecType_VP9{'vp09'};
 
@@ -48,14 +46,18 @@ class AppleDecoderModule : public PlatformDecoderModule {
   AppleDecoderModule() = default;
   virtual ~AppleDecoderModule() = default;
 
-  static bool sInitialized;
+  static inline bool sInitialized = false;
+  static inline EnumeratedArray<media::MediaCodec, bool,
+                                size_t(media::MediaCodec::SENTINEL)>
+      sCanUseHWDecoder;
+
   bool IsVideoSupported(const VideoInfo& aConfig,
                         const CreateDecoderParams::OptionSet& aOptions =
                             CreateDecoderParams::OptionSet()) const;
   
-  static bool RegisterSupplementalVP9Decoder();
+  static bool RegisterSupplementalDecoder(const media::MediaCodec& aCodec);
   
-  static bool CanCreateHWDecoder(media::MediaCodec aCodec);
+  static bool CanCreateHWDecoder(const media::MediaCodec& aCodec);
 };
 
 }  
