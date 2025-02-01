@@ -54,6 +54,10 @@ struct RTCStatsTimestampState {
   const RTPCallerType mRTPCallerType;
   
   const DOMHighResTimeStamp mStartWallClockRaw;
+
+ protected:
+  RTCStatsTimestampState(TimeStamp aStartDomRealtime,
+                         webrtc::Timestamp aStartRealtime);
 };
 
 
@@ -114,7 +118,7 @@ class RTCStatsTimestampMaker {
 
   const RTCStatsTimestampState mState;
 
- private:
+ protected:
   explicit RTCStatsTimestampMaker(RTCStatsTimestampState aState);
 };
 
