@@ -89,7 +89,6 @@ class nsTypeAheadFind : public nsITypeAheadFind,
   
   
   bool mStartLinksOnlyPref;
-  bool mCaretBrowsingOn;
   bool mDidAddObservers;
   nsCOMPtr<mozilla::dom::Element>
       mFoundLink;  
