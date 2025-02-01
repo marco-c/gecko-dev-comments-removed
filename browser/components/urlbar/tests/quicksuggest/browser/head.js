@@ -595,11 +595,7 @@ function assertQuickSuggestPing(expectedPing) {
   }
 
   let expectedValueOverrides = {
-    
-    
-    contextId: Services.prefs
-      .getCharPref("browser.contextual-services.contextId")
-      .substring(1, 37),
+    contextId: expectedPingContextId(),
   };
 
   for (let key of expectedKeys) {
@@ -632,4 +628,12 @@ function assertQuickSuggestPing(expectedPing) {
       );
     }
   }
+}
+
+function expectedPingContextId() {
+  
+  
+  return Services.prefs
+    .getCharPref("browser.contextual-services.contextId")
+    .substring(1, 37);
 }
