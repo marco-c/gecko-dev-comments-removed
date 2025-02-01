@@ -13,7 +13,6 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include "ScreenHelperGTK.h"
-#include "DMABufFormats.h"
 
 #undef LOG
 #ifdef MOZ_LOGGING
@@ -90,9 +89,7 @@ WaylandSurface::~WaylandSurface() {
   LOGWAYLAND("WaylandSurface::~WaylandSurface()");
   MOZ_RELEASE_ASSERT(!mIsMapped, "We can't release mapped WaylandSurface!");
   MOZ_RELEASE_ASSERT(!mSurfaceLock, "We can't release locked WaylandSurface!");
-  MOZ_RELEASE_ASSERT(mTrackedBuffers.Length() == 0,
-                     "We can't release surface with buffers tracked!");
-  MOZ_RELEASE_ASSERT(!mAttachedBuffer,
+  MOZ_RELEASE_ASSERT(mAttachedBuffers.Length() == 0,
                      "We can't release surface with buffer attached!");
   MOZ_RELEASE_ASSERT(!mEmulatedFrameCallbackTimerID,
                      "We can't release WaylandSurface with active timer");
@@ -346,6 +343,7 @@ void WaylandSurface::RequestFrameCallbackLocked(
   }
 
   
+  
   if (aRequestEmulated && !mBufferAttached && !mEmulatedFrameCallbackTimerID) {
     LOGVERBOSE(
         "WaylandSurface::RequestFrameCallbackLocked() emulated, schedule "
@@ -590,7 +588,7 @@ void WaylandSurface::GdkCleanUpLocked(const WaylandSurfaceLock& aProofOfLock) {
   }
 }
 
-void WaylandSurface::UnmapLocked(WaylandSurfaceLock& aSurfaceLock) {
+void WaylandSurface::UnmapLocked(const WaylandSurfaceLock& aProofOfLock) {
   if (!mIsMapped) {
     return;
   }
@@ -607,9 +605,9 @@ void WaylandSurface::UnmapLocked(WaylandSurfaceLock& aSurfaceLock) {
     mSurface = nullptr;
   }
 
-  ClearReadyToDrawCallbacksLocked(aSurfaceLock);
-  ClearFrameCallbackLocked(aSurfaceLock);
-  ClearScaleLocked(aSurfaceLock);
+  ClearReadyToDrawCallbacksLocked(aProofOfLock);
+  ClearFrameCallbackLocked(aProofOfLock);
+  ClearScaleLocked(aProofOfLock);
 
   MozClearPointer(mViewport, wp_viewport_destroy);
   mViewportDestinationSize = gfx::IntSize(-1, -1);
@@ -627,15 +625,15 @@ void WaylandSurface::UnmapLocked(WaylandSurfaceLock& aSurfaceLock) {
     MozClearPointer(mSurface, wl_surface_destroy);
   }
 
+  
+  
+  ReleaseAllWaylandBuffersLocked(aProofOfLock);
+
   mIsReadyToDraw = false;
   mBufferAttached = false;
 
   mUnmapCallback = nullptr;
   mGdkCommitCallback = nullptr;
-
-  
-  
-  ReleaseAllWaylandBuffersLocked(aSurfaceLock);
 }
 
 void WaylandSurface::Commit(WaylandSurfaceLock* aProofOfLock, bool aForceCommit,
@@ -1077,50 +1075,35 @@ void WaylandSurface::InvalidateLocked(const WaylandSurfaceLock& aProofOfLock) {
   mSurfaceNeedsCommit = true;
 }
 
-void WaylandSurface::UntrackWaylandBufferLocked(
-    const WaylandSurfaceLock& aProofOfLock, WaylandBuffer* aWaylandBuffer) {
-  LOGWAYLAND("WaylandSurface::UntrackWaylandBufferLocked() WaylandBuffer [%p]",
-             aWaylandBuffer);
-  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
-
-  for (size_t i = 0; i < mTrackedBuffers.Length(); i++) {
-    if (mTrackedBuffers[i] == aWaylandBuffer) {
-      mTrackedBuffers.RemoveElementAt(i);
-      return;
+bool WaylandSurface::UntrackWaylandBufferLocked(
+    const WaylandSurfaceLock& aProofOfLock, WaylandBuffer* aWaylandBuffer,
+    bool aRemove) {
+  for (size_t i = 0; i < mAttachedBuffers.Length(); i++) {
+    if (mAttachedBuffers[i] == aWaylandBuffer) {
+      if (aRemove) {
+        mAttachedBuffers.RemoveElementAt(i);
+      }
+      return true;
     }
   }
-  MOZ_DIAGNOSTIC_CRASH("UntrackWaylandBufferLocked(): Missing tracked buffer!");
+  return false;
 }
 
 void WaylandSurface::ReleaseAllWaylandBuffersLocked(
-    WaylandSurfaceLock& aSurfaceLock) {
+    const WaylandSurfaceLock& aProofOfLock) {
   LOGWAYLAND("WaylandSurface::ReleaseAllWaylandBuffersLocked(), buffers num %d",
-             (int)mTrackedBuffers.Length());
-  MOZ_DIAGNOSTIC_ASSERT(!mIsMapped);
-
-  mAttachedBuffer = nullptr;
-
-  
-  nsTArray<RefPtr<WaylandBuffer>> buffers = mTrackedBuffers.Clone();
-  for (auto& buffer : buffers) {
-    buffer->ReturnBuffer(aSurfaceLock);
+             (int)mAttachedBuffers.Length());
+  for (auto& buffer : mAttachedBuffers) {
+    buffer->ReturnBuffer(this);
   }
 }
 
-bool WaylandSurface::AttachLocked(WaylandSurfaceLock& aSurfaceLock,
+bool WaylandSurface::AttachLocked(const WaylandSurfaceLock& aProofOfLock,
                                   RefPtr<WaylandBuffer> aWaylandBuffer) {
-  MOZ_DIAGNOSTIC_ASSERT(&aSurfaceLock == mSurfaceLock);
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
   MOZ_DIAGNOSTIC_ASSERT(mSurface);
 
-  
-  if (mAttachedBuffer == aWaylandBuffer) {
-    MOZ_DIAGNOSTIC_ASSERT(aWaylandBuffer->IsAttachedToSurface(this));
-    mBufferAttached = true;
-    mSurfaceNeedsCommit = true;
-    return true;
-  }
-
-  wl_buffer* buffer = aWaylandBuffer->BorrowBuffer(aSurfaceLock);
+  wl_buffer* buffer = aWaylandBuffer->BorrowBuffer(this);
   if (!buffer) {
     LOGWAYLAND("WaylandSurface::AttachLocked() failed, BorrowBuffer() failed");
     return false;
@@ -1129,7 +1112,7 @@ bool WaylandSurface::AttachLocked(WaylandSurfaceLock& aSurfaceLock,
   auto scale = GetScaleSafe();
   LayoutDeviceIntSize bufferSize = aWaylandBuffer->GetSize();
   
-  SetSizeLocked(aSurfaceLock, gfx::IntSize(bufferSize.width, bufferSize.height),
+  SetSizeLocked(aProofOfLock, gfx::IntSize(bufferSize.width, bufferSize.height),
                 gfx::IntSize((int)round(bufferSize.width / scale),
                              (int)round(bufferSize.height / scale)));
   LOGWAYLAND(
@@ -1137,15 +1120,11 @@ bool WaylandSurface::AttachLocked(WaylandSurfaceLock& aSurfaceLock,
       "fractional scale %f",
       aWaylandBuffer.get(), bufferSize.width, bufferSize.height, scale);
 
-  mTrackedBuffers.AppendElement(aWaylandBuffer);
-
   
-  
-  if (mAttachedBuffer) {
-    mAttachedBuffer->ReturnBuffer(aSurfaceLock);
-  }
-  mAttachedBuffer = std::move(aWaylandBuffer);
-
+  MOZ_DIAGNOSTIC_ASSERT(!UntrackWaylandBufferLocked(
+                            aProofOfLock, aWaylandBuffer,  false),
+                        "Wayland buffer is already attached?");
+  mAttachedBuffers.AppendElement(std::move(aWaylandBuffer));
   if (mCommitToParentSurface) {
     wl_surface_set_buffer_scale(mSurface, 1);
   }
@@ -1156,22 +1135,39 @@ bool WaylandSurface::AttachLocked(WaylandSurfaceLock& aSurfaceLock,
 }
 
 void WaylandSurface::RemoveAttachedBufferLocked(
-    WaylandSurfaceLock& aSurfaceLock) {
-  MOZ_DIAGNOSTIC_ASSERT(&aSurfaceLock == mSurfaceLock);
+    const WaylandSurfaceLock& aProofOfLock) {
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
   MOZ_DIAGNOSTIC_ASSERT(mSurface);
 
   LOGWAYLAND("WaylandSurface::RemoveAttachedBufferLocked()");
 
   
-  SetSizeLocked(aSurfaceLock, gfx::IntSize(0, 0), gfx::IntSize(0, 0));
+  SetSizeLocked(aProofOfLock, gfx::IntSize(0, 0), gfx::IntSize(0, 0));
   wl_surface_attach(mSurface, nullptr, 0, 0);
   mSurfaceNeedsCommit = true;
   mBufferAttached = false;
+}
 
-  if (mAttachedBuffer) {
-    mAttachedBuffer->ReturnBuffer(aSurfaceLock);
+void WaylandSurface::DetachedByWaylandCompositorLocked(
+    const WaylandSurfaceLock& aProofOfLock,
+    RefPtr<WaylandBuffer> aWaylandBuffer) {
+  
+  AssertIsOnMainThread();
+
+  LOGWAYLAND(
+      "WaylandSurface::DetachedByWaylandCompositorLocked() WaylandBuffer [%p]",
+      aWaylandBuffer.get());
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
+
+  
+  if (!UntrackWaylandBufferLocked(aProofOfLock, aWaylandBuffer,
+                                   true)) {
+    MOZ_DIAGNOSTIC_CRASH("Wayland buffer is not attached?");
   }
-  mAttachedBuffer = nullptr;
+
+  
+  
+  
 }
 
 
