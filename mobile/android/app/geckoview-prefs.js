@@ -260,6 +260,9 @@ pref("extensions.webextOptionalPermissionPrompts", true);
 pref("extensions.webextensions.early_background_wakeup_on_request", true);
 
 
+pref("extensions.userScripts.mv3.enabled", false);
+
+
 pref("formhelper.autozoom", true);
 
 
