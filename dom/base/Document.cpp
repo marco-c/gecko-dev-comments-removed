@@ -10311,6 +10311,20 @@ void Document::WriteCommon(const nsAString& aText, bool aNewlineTerminate,
     return;
   }
 
+  Maybe<nsAutoString> compliantStringHolder;
+  const nsAString* compliantString = &aText;
+  if (!aIsTrusted) {
+    constexpr nsLiteralString sinkWrite = u"Document write"_ns;
+    constexpr nsLiteralString sinkWriteLn = u"Document writeln"_ns;
+    compliantString =
+        TrustedTypeUtils::GetTrustedTypesCompliantStringForTrustedHTML(
+            aText, aNewlineTerminate ? sinkWriteLn : sinkWrite,
+            kTrustedTypesOnlySinkGroup, *this, compliantStringHolder, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+  }
+
   if (!IsHTMLDocument() || mDisableDocWrite) {
     
 
@@ -10377,36 +10391,17 @@ void Document::WriteCommon(const nsAString& aText, bool aNewlineTerminate,
 
   ++mWriteLevel;
 
-  auto parseString =
-      [this, &aNewlineTerminate, &aRv, &key](const nsAString& aString)
-          MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION -> void {
-    
-    
-    
-    
-    if (aNewlineTerminate) {
-      aRv = (static_cast<nsHtml5Parser*>(mParser.get()))
-                ->Parse(aString + new_line, key, false);
-    } else {
-      aRv = (static_cast<nsHtml5Parser*>(mParser.get()))
-                ->Parse(aString, key, false);
-    }
-  };
-
-  if (aIsTrusted) {
-    parseString(aText);
+  
+  
+  
+  
+  if (aNewlineTerminate) {
+    aRv = (static_cast<nsHtml5Parser*>(mParser.get()))
+              ->Parse(*compliantString + new_line, key, false);
   } else {
-    constexpr nsLiteralString sinkWrite = u"Document write"_ns;
-    constexpr nsLiteralString sinkWriteLn = u"Document writeln"_ns;
-    Maybe<nsAutoString> compliantStringHolder;
-    const nsAString* compliantString =
-        TrustedTypeUtils::GetTrustedTypesCompliantStringForTrustedHTML(
-            aText, aNewlineTerminate ? sinkWriteLn : sinkWrite,
-            kTrustedTypesOnlySinkGroup, *this, compliantStringHolder, aRv);
-    if (!aRv.Failed()) {
-      parseString(*compliantString);
-    }
-  }
+    aRv = (static_cast<nsHtml5Parser*>(mParser.get()))
+              ->Parse(*compliantString, key, false);
+  };
 
   --mWriteLevel;
 
