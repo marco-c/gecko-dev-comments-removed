@@ -1015,7 +1015,7 @@ bool js::ObjectMayBeSwapped(const JSObject* obj) {
   return clasp->isProxyObject() || clasp->isDOMClass();
 }
 
-bool NativeObject::prepareForSwap(JSContext* cx,
+bool NativeObject::prepareForSwap(JSContext* cx, JSObject* other,
                                   MutableHandleValueVector slotValuesOut) {
   MOZ_ASSERT(slotValuesOut.empty());
 
@@ -1029,24 +1029,27 @@ bool NativeObject::prepareForSwap(JSContext* cx,
     setEmptyDynamicSlots(0);
   }
 
-  if (hasDynamicElements()) {
+  
+  
+  
+  
+  if (hasDynamicElements() && IsInsideNursery(this) != IsInsideNursery(other)) {
     ObjectElements* elements = getElementsHeader();
-    void* allocatedElements = getUnshiftedElementsHeader();
     size_t count = elements->numAllocatedElements();
     size_t size = count * sizeof(HeapSlot);
-
-    if (ChunkPtrIsInsideNursery(allocatedElements)) {
-      
-      
-      ObjectElements* newElements = static_cast<ObjectElements*>(
-          AllocBuffer(cx->zone(), size, !isTenured()));
-      if (!newElements) {
-        return false;
-      }
-
-      memmove(newElements, elements, size);
-      elements_ = newElements->elements();
+    void* buffer = AllocBuffer(cx->zone(), size, IsInsideNursery(other));
+    if (!buffer) {
+      return false;
     }
+
+    memmove(buffer, getUnshiftedElementsHeader(), size);
+
+    uint32_t numShifted = elements->numShiftedElements();
+    auto* newElements = reinterpret_cast<ObjectElements*>(
+        reinterpret_cast<HeapSlot*>(buffer) + numShifted);
+
+    elements_ = newElements->elements();
+
     MOZ_ASSERT(hasDynamicElements());
   }
 
@@ -1094,8 +1097,14 @@ bool NativeObject::fixupAfterSwap(JSContext* cx, Handle<NativeObject*> obj,
     obj->initSlotUnchecked(i, slotValues[i]);
   }
 
-  MOZ_ASSERT_IF(obj->hasDynamicElements(),
-                gc::IsBufferAlloc(obj->getUnshiftedElementsHeader()));
+  MOZ_ASSERT_IF(
+      obj->hasDynamicSlots() && gc::IsBufferAlloc(obj->getSlotsHeader()),
+      gc::IsNurseryOwned(obj->getSlotsHeader()) == IsInsideNursery(obj));
+
+  MOZ_ASSERT_IF(obj->hasDynamicElements() &&
+                    gc::IsBufferAlloc(obj->getUnshiftedElementsHeader()),
+                gc::IsNurseryOwned(obj->getUnshiftedElementsHeader()) ==
+                    IsInsideNursery(obj));
 
   return true;
 }
@@ -1301,10 +1310,10 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
     
     RootedValueVector avals(cx);
     RootedValueVector bvals(cx);
-    if (na && !na->prepareForSwap(cx, &avals)) {
+    if (na && !na->prepareForSwap(cx, b, &avals)) {
       oomUnsafe.crash("NativeObject::prepareForSwap");
     }
-    if (nb && !nb->prepareForSwap(cx, &bvals)) {
+    if (nb && !nb->prepareForSwap(cx, a, &bvals)) {
       oomUnsafe.crash("NativeObject::prepareForSwap");
     }
 
