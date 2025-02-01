@@ -76,6 +76,14 @@ using AbsPosReflowFlags = nsAbsoluteContainingBlock::AbsPosReflowFlags;
 using ClearFloatsResult = BlockReflowState::ClearFloatsResult;
 using ShapeType = nsFloatManager::ShapeType;
 
+static void MarkAllInlineLinesDirty(nsBlockFrame* aBlock) {
+  for (auto& line : aBlock->Lines()) {
+    if (line.IsInline()) {
+      line.MarkDirty();
+    }
+  }
+}
+
 static void MarkAllDescendantLinesDirty(nsBlockFrame* aBlock) {
   for (auto& line : aBlock->Lines()) {
     if (line.IsBlock()) {
@@ -1503,11 +1511,11 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   
   
-  
   auto countLinesUpTo = [&](int32_t aLimit) -> int32_t {
     int32_t n = 0;
     for (auto iter = mLines.begin(); iter != mLines.end(); ++iter) {
-      if (++n > aLimit || iter->IsBlock()) {
+      
+      if (iter->IsInline() && ++n > aLimit) {
         return -1;
       }
     }
@@ -1916,7 +1924,7 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
   
   
   if (aTrialState.mBalancing) {
-    MarkAllDescendantLinesDirty(this);
+    MarkAllInlineLinesDirty(this);
   } else {
     LazyMarkLinesDirty();
   }
