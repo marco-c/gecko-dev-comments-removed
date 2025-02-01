@@ -119,14 +119,6 @@ class MOZ_RAII SelectionNodeCache final {
 
 
 
-
-  void MaybeCollect(const nsTArray<Selection*>& aSelections);
-  
-
-
-
-
-
   const nsTHashSet<const nsINode*>& MaybeCollect(const Selection* aSelection);
 
   nsTHashMap<const Selection*, nsTHashSet<const nsINode*>> mSelectedNodes;
