@@ -468,6 +468,11 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
   mozilla::InitPHCState();
 #endif
 
+#ifdef MOZ_MEMORY
+  
+  mozilla::TaskController::SetupIdleMemoryCleanup();
+#endif
+
   
   
   

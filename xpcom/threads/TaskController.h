@@ -288,7 +288,7 @@ class IdleTaskManager : public TaskManager {
 
 class TaskController {
  public:
-  TaskController();
+  explicit TaskController();
 
   static TaskController* Get() {
     MOZ_ASSERT(sSingleton.get());
@@ -357,6 +357,18 @@ class TaskController {
 
   static int32_t GetPoolThreadCount();
   static size_t GetThreadStackSize();
+
+#ifdef MOZ_MEMORY
+  
+  static void SetupIdleMemoryCleanup();
+
+  
+  void UpdateIdleMemoryCleanupPrefs();
+
+  
+  
+  void MayScheduleIdleMemoryCleanup();
+#endif
 
  private:
   friend void ThreadFuncPoolThread(void* aIndex);
@@ -432,6 +444,11 @@ class TaskController {
   
   bool mMayHaveMainThreadTask = true;
   bool mShuttingDown = false;
+
+#ifdef MOZ_MEMORY
+  
+  bool mIsLazyPurgeEnabled;
+#endif
 
   
   

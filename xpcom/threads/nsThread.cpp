@@ -1108,12 +1108,12 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
 #endif
   nsresult rv = NS_OK;
 
+  bool usingTaskController = mIsMainThread;
   {
     
     
     
     nsCOMPtr<nsIRunnable> event;
-    bool usingTaskController = mIsMainThread;
     if (usingTaskController) {
       event = TaskController::Get()->GetRunnableForMTTask(reallyWait);
     } else {
@@ -1180,6 +1180,24 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
   }
 
   DrainDirectTasks();
+
+#ifdef MOZ_MEMORY
+  if (usingTaskController) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    TaskController::Get()->MayScheduleIdleMemoryCleanup();
+  }
+#endif
 
   NOTIFY_EVENT_OBSERVERS(EventQueue()->EventObservers(), AfterProcessNextEvent,
                          (this, *aResult));
