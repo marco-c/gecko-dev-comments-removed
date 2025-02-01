@@ -1064,17 +1064,6 @@ struct IMENotification final {
   }
 };
 
-struct CandidateWindowPosition {
-  
-  
-  LayoutDeviceIntPoint mPoint;
-  
-  
-  LayoutDeviceIntRect mRect;
-  
-  bool mExcludeRect;
-};
-
 std::ostream& operator<<(std::ostream& aStream, const IMEEnabled& aEnabled);
 std::ostream& operator<<(std::ostream& aStream, const IMEState::Open& aOpen);
 std::ostream& operator<<(std::ostream& aStream, const IMEState& aState);
