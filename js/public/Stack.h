@@ -19,7 +19,7 @@
 
 #include "js/NativeStackLimits.h"
 #include "js/Principals.h"  
-#include "js/TypeDecls.h"   
+#include "js/RootingAPI.h"
 
 
 
@@ -142,7 +142,8 @@ using StackCapture = mozilla::Variant<AllFrames, MaxFrames, FirstSubsumedFrame>;
 
 extern JS_PUBLIC_API bool CaptureCurrentStack(
     JSContext* cx, MutableHandleObject stackp,
-    StackCapture&& capture = StackCapture(AllFrames()));
+    StackCapture&& capture = StackCapture(AllFrames()),
+    HandleObject startAfter = nullptr);
 
 
 

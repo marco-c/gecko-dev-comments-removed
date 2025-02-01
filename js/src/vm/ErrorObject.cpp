@@ -55,6 +55,7 @@
 #include "vm/JSContext-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/ObjectOperations-inl.h"
+#include "vm/Realm-inl.h"
 #include "vm/SavedStacks-inl.h"
 #include "vm/Shape-inl.h"
 
@@ -96,11 +97,13 @@ static const JSFunctionSpec error_methods[] = {
 
 #ifdef NIGHTLY_BUILD
 static bool exn_isError(JSContext* cx, unsigned argc, Value* vp);
+static bool exn_captureStackTrace(JSContext* cx, unsigned argc, Value* vp);
 #endif
 
 static const JSFunctionSpec error_static_methods[] = {
 #ifdef NIGHTLY_BUILD
     JS_FN("isError", exn_isError, 1, 0),
+    JS_FN("captureStackTrace", exn_captureStackTrace, 2, 0),
 #endif
     JS_FS_END,
 };
@@ -969,4 +972,85 @@ static bool exn_isError(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool exn_captureStackTrace(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  const char* callerName = "Error.captureStackTrace";
+
+  if (!args.requireAtLeast(cx, callerName, 1)) {
+    return false;
+  }
+
+  Rooted<JSObject*> obj(cx,
+                        RequireObjectArg(cx, "`target`", callerName, args[0]));
+  if (!obj) {
+    return false;
+  }
+
+  Rooted<JSObject*> caller(cx, nullptr);
+  if (args.length() > 1 && args[1].isObject() &&
+      args[1].toObject().isCallable()) {
+    caller = CheckedUnwrapStatic(&args[1].toObject());
+    if (!caller) {
+      ReportAccessDenied(cx);
+      return false;
+    }
+  }
+
+  RootedObject stack(cx);
+  if (!CaptureCurrentStack(
+          cx, &stack, JS::StackCapture(JS::MaxFrames(MAX_REPORTED_STACK_DEPTH)),
+          caller)) {
+    return false;
+  }
+
+  RootedString stackString(cx);
+
+  
+  
+  JSPrincipals* principals = cx->realm()->principals();
+  if (!BuildStackString(cx, principals, stack, &stackString)) {
+    return false;
+  }
+
+  
+  
+  
+  RootedValue string(cx, StringValue(stackString));
+  if (!DefineDataProperty(cx, obj, cx->names().stack, string, 0)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
 #endif
