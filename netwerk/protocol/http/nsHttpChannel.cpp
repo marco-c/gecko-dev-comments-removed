@@ -9022,6 +9022,9 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
 
   ReleaseListeners();
 
+  
+  mUploadStream = nullptr;
+
   return NS_OK;
 }
 
