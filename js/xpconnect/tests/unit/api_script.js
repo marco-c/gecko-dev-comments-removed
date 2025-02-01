@@ -3,16 +3,8 @@
 
 
 
-let module3, module4;
-
-
-if (ChromeUtils.importESModule) {
-  module3 = ChromeUtils.importESModule("resource://test/esmified-3.sys.mjs");
-  module4 = ChromeUtils.importESModule("resource://test/esmified-4.sys.mjs");
-} else {
-  module3 = ChromeUtils.import("resource://test/esmified-3.jsm");
-  module4 = ChromeUtils.import("resource://test/esmified-4.jsm");
-}
+let module3 = ChromeUtils.importESModule("resource://test/esmified-3.sys.mjs");
+let module4 = ChromeUtils.importESModule("resource://test/esmified-4.sys.mjs");
 
 injected3.obj.value += 3;
 module3.obj.value += 3;
