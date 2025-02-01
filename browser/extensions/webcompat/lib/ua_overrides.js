@@ -12,7 +12,12 @@ class UAOverrides {
 
     this._overridesEnabled = true;
 
-    this._availableOverrides = availableOverrides;
+    this._availableOverrides = Object.entries(availableOverrides).map(
+      ([id, obj]) => {
+        obj.id = id;
+        return obj;
+      }
+    );
     this._activeListeners = new Map();
   }
 
@@ -52,28 +57,41 @@ class UAOverrides {
       return;
     }
 
-    const { blocks, matches, uaTransformer } = override.config;
+    const { bugs, label } = override;
+    const blocks = Object.values(bugs)
+      .map(bug => bug.blocks)
+      .flat()
+      .filter(v => v !== undefined);
+    const matches = Object.values(bugs)
+      .map(bug => bug.matches)
+      .flat()
+      .filter(v => v !== undefined);
+
     const listener = details => {
       
       
-      if (
-        !override.config.experiment ||
-        override.permanentPrefEnabled === true
-      ) {
+      if (!override.experiment || override.permanentPrefEnabled === true) {
         for (const header of details.requestHeaders) {
-          if (header.name.toLowerCase() === "user-agent") {
-            
-            
-            
-            
-            let isMobileWithDesktopMode =
-              override.currentPlatform == "android" &&
-              header.value.includes("X11; Linux x86_64");
+          if (header.name.toLowerCase() !== "user-agent") {
+            continue;
+          }
 
-            if (!isMobileWithDesktopMode) {
-              header.value = uaTransformer(
+          
+          
+          
+          
+          let isMobileWithDesktopMode =
+            override.currentPlatform == "android" &&
+            header.value.includes("X11; Linux x86_64");
+          if (isMobileWithDesktopMode) {
+            continue;
+          }
+
+          for (const { enabled, ua_string } of override.interventions) {
+            if (ua_string && enabled) {
+              header.value = InterventionHelpers.applyUAChanges(
                 header.value,
-                override.currentPlatform
+                ua_string
               );
             }
           }
@@ -89,7 +107,7 @@ class UAOverrides {
     );
 
     const listeners = { onBeforeSendHeaders: listener };
-    if (blocks) {
+    if (blocks.length) {
       const blistener = () => {
         return { cancel: true };
       };
@@ -101,15 +119,16 @@ class UAOverrides {
       );
 
       listeners.onBeforeRequest = blistener;
+
+      console.info(`Blocking requests as specified for ${label}`);
     }
     this._activeListeners.set(override, listeners);
     override.active = true;
+
+    console.info(`Enabled UA override for ${label}`);
   }
 
   onOverrideConfigChanged(override) {
-    
-    override.hidden = override.config.hidden;
-
     
     if (override.permanentPrefEnabled !== undefined) {
       override.hidden = !override.permanentPrefEnabled;
@@ -126,7 +145,7 @@ class UAOverrides {
     
     
     
-    if (override.config.experiment && override.permanentPrefEnabled !== true) {
+    if (override.experiment && override.permanentPrefEnabled !== true) {
       shouldBeActive = false;
     }
 
@@ -146,36 +165,48 @@ class UAOverrides {
   }
 
   async registerUAOverrides() {
-    const platformMatches = ["all"];
     const { os } = await browser.runtime.getPlatformInfo();
-    platformMatches.push(os);
-    platformMatches.push(os == "android" ? "android" : "desktop");
-
     for (const override of this._availableOverrides) {
-      if (platformMatches.includes(override.platform)) {
+      for (const intervention of override.interventions) {
+        const { label, ua_string } = intervention;
+        if (!ua_string) {
+          continue;
+        }
+        if (await InterventionHelpers.shouldSkip(intervention)) {
+          console.warn(`Skipping un-needed injection for ${label}`);
+          continue;
+        }
+        if (!(await InterventionHelpers.checkPlatformMatches(intervention))) {
+          continue;
+        }
+        intervention.enabled = true;
         override.availableOnPlatform = true;
         override.currentPlatform = os;
-
-        
-        
-        const pref = override.config.permanentPref;
-        override.permanentPrefEnabled =
-          pref && (await browser.aboutConfigPrefs.getPref(pref));
-        if (pref) {
-          const checkOverridePref = () => {
-            browser.aboutConfigPrefs.getPref(pref).then(value => {
-              override.permanentPrefEnabled = value;
-              this.onOverrideConfigChanged(override);
-            });
-          };
-          browser.aboutConfigPrefs.onPrefChange.addListener(
-            checkOverridePref,
-            pref
-          );
-        }
-
-        this.onOverrideConfigChanged(override);
       }
+
+      if (!override.availableOnPlatform) {
+        continue;
+      }
+
+      
+      
+      const pref = override.permanentPref;
+      override.permanentPrefEnabled =
+        pref && (await browser.aboutConfigPrefs.getPref(pref));
+      if (pref) {
+        const checkOverridePref = () => {
+          browser.aboutConfigPrefs.getPref(pref).then(value => {
+            override.permanentPrefEnabled = value;
+            this.onOverrideConfigChanged(override);
+          });
+        };
+        browser.aboutConfigPrefs.onPrefChange.addListener(
+          checkOverridePref,
+          pref
+        );
+      }
+
+      this.onOverrideConfigChanged(override);
     }
 
     this._overridesEnabled = true;
@@ -208,6 +239,8 @@ class UAOverrides {
     }
     override.active = false;
     this._activeListeners.delete(override);
+
+    console.info(`Disabled UA override for ${override.label}`);
   }
 }
 

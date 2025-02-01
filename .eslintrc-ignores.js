@@ -82,6 +82,10 @@ module.exports = [
   "browser/extensions/formautofill/phonenumberutils/PhoneNumberMetaData.sys.mjs",
 
   
+  "browser/extensions/webcompat/data/injections.js",
+  "browser/extensions/webcompat/data/ua_overrides.js",
+
+  
   "devtools/client/debugger/bin/",
   "devtools/client/debugger/configs/",
   "devtools/client/debugger/dist/",
