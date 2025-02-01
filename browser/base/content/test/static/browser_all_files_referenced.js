@@ -26,8 +26,8 @@ var gExceptionPaths = [
   "chrome://global/content/certviewer/components/",
 
   
-  "chrome://browser/content/topsites/tippytop/images/",
-  "chrome://browser/content/topsites/tippytop/favicons/",
+  "chrome://activity-stream/content/data/content/tippytop/images/",
+  "chrome://activity-stream/content/data/content/tippytop/favicons/",
   
   "chrome://activity-stream/content/data/content/assets/mobile-download-qr-new-user-cn.svg",
   "chrome://activity-stream/content/data/content/assets/mobile-download-qr-existing-user-cn.svg",
