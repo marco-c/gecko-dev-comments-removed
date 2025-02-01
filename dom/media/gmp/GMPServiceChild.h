@@ -11,8 +11,8 @@
 #include "base/process.h"
 #include "mozilla/dom/PContent.h"
 #include "mozilla/gmp/PGMPServiceChild.h"
+#include "mozilla/media/MediaUtils.h"
 #include "mozilla/MozPromise.h"
-#include "nsIAsyncShutdown.h"
 #include "nsRefPtrHashtable.h"
 
 namespace mozilla::gmp {
@@ -21,8 +21,7 @@ class GMPContentParent;
 class GMPContentParentCloseBlocker;
 class GMPServiceChild;
 
-class GeckoMediaPluginServiceChild : public GeckoMediaPluginService,
-                                     public nsIAsyncShutdownBlocker {
+class GeckoMediaPluginServiceChild : public GeckoMediaPluginService {
   friend class GMPServiceChild;
 
  public:
@@ -30,7 +29,6 @@ class GeckoMediaPluginServiceChild : public GeckoMediaPluginService,
   nsresult Init() override;
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
   NS_IMETHOD HasPluginForAPI(const nsACString& aAPI,
                              const nsTArray<nsCString>& aTags,
@@ -124,11 +122,8 @@ class GeckoMediaPluginServiceChild : public GeckoMediaPluginService,
   
   void RemoveShutdownBlockerIfNeeded();
 
-#ifdef DEBUG
   
-  
-  bool mShutdownBlockerAdded = false;
-#endif  
+  UniquePtr<media::ShutdownBlockingTicket> mShutdownBlocker;
   
   
   
