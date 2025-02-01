@@ -870,6 +870,9 @@ class nsWindow final : public nsBaseWidget {
   
   bool mIsChildWindow : 1;
 
+  
+  bool mPIPWindow : 1;
+
   int32_t mCachedHitTestResult = 0;
 
   
