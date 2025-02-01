@@ -86,6 +86,12 @@ class TextDirectiveCandidate {
 
   const nsCString& TextDirectiveString() const;
 
+  
+
+
+
+
+  void LogCurrentState(const char* aCallerFunc) const;
 
  private:
   TextDirectiveCandidate(nsRange* aStartRange, nsRange* aFullStartRange,
