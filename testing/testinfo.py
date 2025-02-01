@@ -480,15 +480,19 @@ class TestInfoReport(TestInfo):
                 print("Warning: Missing job type names from date: %s" % datekey)
                 continue
 
+            
             for m in runcounts[datekey]["manifests"]:
-                man_name = list(m.keys())[0]
+                for man_name in m.keys():
+                    for job_type_id, result, classification, count in m[man_name]:
+                        
+                        job_name = jtn[job_type_id].replace("-shippable", "")
 
-                for job_type_id, result, classification, count in m[man_name]:
-                    
-                    
-                    job_name = jtn[job_type_id]
-                    key = (job_name, result, classification)
-                    testgroup_runinfo[man_name][key] += count
+                        
+                        
+                        key = (job_name, result, classification)
+
+                        
+                        testgroup_runinfo[man_name.split(":")[0]][key] += count
 
         for m in testgroup_runinfo:
             retVal[m] = [
@@ -1071,7 +1075,8 @@ class TestInfoReport(TestInfo):
                 json.dump(data, f)
 
         for task in data.values():
-            task_label = task["label"]
+            
+            task_label = task["label"].replace("-shippable", "")
 
             
             if not task_label.startswith("test-"):
@@ -1091,7 +1096,11 @@ class TestInfoReport(TestInfo):
 
             mhtp = json.loads(env.get("MOZHARNESS_TEST_PATHS", "{}"))
             if not mhtp:
-                continue
+                
+                suite = self.find_non_test_path_loader(task_label)
+                if not suite:
+                    continue
+                mhtp[suite] = [suite]
 
             
             
@@ -1099,7 +1108,12 @@ class TestInfoReport(TestInfo):
             
             
             if json.loads(env.get("MOZHARNESS_TEST_TAG", "{}")):
-                continue
+                if not json.loads(env.get("MOZHARNESS_TEST_PATHS", "{}")):
+                    
+                    suite = self.find_non_test_path_loader(task_label)
+                    if not suite:
+                        continue
+                    mhtp[suite] = [suite]
 
             for suite in mhtp:
                 for manifest in mhtp[suite]:
@@ -1165,6 +1179,24 @@ class TestInfoReport(TestInfo):
     matrix_map = defaultdict(list)
     task_tuples = defaultdict(tuple)
 
+    def find_non_test_path_loader(self, label):
+        
+        known_suites = [
+            "mochitest-browser-media",
+            "telemetry-tests-client",
+            "mochitest-webgl2-ext",
+            "mochitest-webgl1-ext",
+            "jittest-1proc",
+            "mochitest-browser-translations",
+            "jsreftest",
+            "mochitest-browser-screenshots",
+            "marionette-unittest",
+        ]
+        match = [x for x in known_suites if x in label]
+        if match:
+            return match[0]
+        return ""
+
     
     
     def create_matrix_from_task_graph(self, target_manifest, runcount):
@@ -1173,7 +1205,13 @@ class TestInfoReport(TestInfo):
         if not self.matrix_map:
             self.build_matrix_cache()
 
-        for task_label in self.matrix_map.get(target_manifest, []):
+        
+        if self.find_non_test_path_loader(runcount[target_manifest][0][0]):
+            suite = self.find_non_test_path_loader(runcount[target_manifest][0][0])
+            self.matrix_map[target_manifest] = self.matrix_map[suite]
+
+        for tl in self.matrix_map.get(target_manifest, []):
+            task_label = tl.replace("-shippable", "")
             
             osname, os_version, processor, build_type, test_variants = self.task_tuples[
                 task_label
@@ -1189,9 +1227,9 @@ class TestInfoReport(TestInfo):
                     x for x in runcount[target_manifest] if task_label == x[0]
                 ]:
                     if data[1] == "passed":
-                        passed += data[3]
+                        passed += data[-1]
                     else:
-                        failed += data[3]
+                        failed += data[-1]
 
             
             if passed == 0 and failed == 0:
