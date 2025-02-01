@@ -6066,37 +6066,20 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
-  
-  
-  void convertValueToInt(
-      ValueOperand value, Label* handleStringEntry, Label* handleStringRejoin,
-      Label* truncateDoubleSlow, Register stringReg, FloatRegister temp,
-      Register output, Label* fail, IntConversionBehavior behavior,
-      IntConversionInputKind conversion = IntConversionInputKind::Any);
+  void convertValueToInt32(ValueOperand value, FloatRegister temp,
+                           Register output, Label* fail, bool negativeZeroCheck,
+                           IntConversionInputKind conversion);
 
   
   
-  void convertValueToInt32(
-      ValueOperand value, FloatRegister temp, Register output, Label* fail,
-      bool negativeZeroCheck,
-      IntConversionInputKind conversion = IntConversionInputKind::Any) {
-    convertValueToInt(
-        value, nullptr, nullptr, nullptr, InvalidReg, temp, output, fail,
-        negativeZeroCheck ? IntConversionBehavior::NegativeZeroCheck
-                          : IntConversionBehavior::Normal,
-        conversion);
-  }
-
+  
+  
   
   
   void truncateValueToInt32(ValueOperand value, Label* handleStringEntry,
                             Label* handleStringRejoin,
                             Label* truncateDoubleSlow, Register stringReg,
-                            FloatRegister temp, Register output, Label* fail) {
-    convertValueToInt(value, handleStringEntry, handleStringRejoin,
-                      truncateDoubleSlow, stringReg, temp, output, fail,
-                      IntConversionBehavior::Truncate);
-  }
+                            FloatRegister temp, Register output, Label* fail);
 
   void truncateValueToInt32(ValueOperand value, FloatRegister temp,
                             Register output, Label* fail) {
@@ -6105,13 +6088,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
   }
 
   
+  
+  
+  
+  
   void clampValueToUint8(ValueOperand value, Label* handleStringEntry,
                          Label* handleStringRejoin, Register stringReg,
-                         FloatRegister temp, Register output, Label* fail) {
-    convertValueToInt(value, handleStringEntry, handleStringRejoin, nullptr,
-                      stringReg, temp, output, fail,
-                      IntConversionBehavior::ClampToUint8);
-  }
+                         FloatRegister temp, Register output, Label* fail);
 
   [[nodiscard]] bool icBuildOOLFakeExitFrame(void* fakeReturnAddr,
                                              AutoSaveLiveRegisters& save);

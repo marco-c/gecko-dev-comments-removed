@@ -484,16 +484,6 @@ class SimdConstant {
   }
 };
 
-enum class IntConversionBehavior {
-  
-  
-  Normal,             
-  NegativeZeroCheck,  
-  
-  Truncate,
-  ClampToUint8,
-};
-
 enum class IntConversionInputKind { NumbersOnly, Any };
 
 

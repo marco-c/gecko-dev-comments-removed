@@ -4169,47 +4169,21 @@ void MacroAssembler::outOfLineTruncateSlow(FloatRegister src, Register dest,
   }
 }
 
-void MacroAssembler::convertValueToInt(
-    ValueOperand value, Label* handleStringEntry, Label* handleStringRejoin,
-    Label* truncateDoubleSlow, Register stringReg, FloatRegister temp,
-    Register output, Label* fail, IntConversionBehavior behavior,
-    IntConversionInputKind conversion) {
-  Label done, isInt32, isBool, isDouble, isNull, isString;
-
-  bool handleStrings = (behavior == IntConversionBehavior::Truncate ||
-                        behavior == IntConversionBehavior::ClampToUint8) &&
-                       handleStringEntry && handleStringRejoin;
-
-  MOZ_ASSERT_IF(handleStrings, conversion == IntConversionInputKind::Any);
+void MacroAssembler::convertValueToInt32(ValueOperand value, FloatRegister temp,
+                                         Register output, Label* fail,
+                                         bool negativeZeroCheck,
+                                         IntConversionInputKind conversion) {
+  Label done, isInt32, isBool, isDouble, isString;
 
   {
     ScratchTagScope tag(*this, value);
     splitTagForTest(value, tag);
 
     branchTestInt32(Equal, tag, &isInt32);
+    branchTestDouble(Equal, tag, &isDouble);
     if (conversion == IntConversionInputKind::Any) {
       branchTestBoolean(Equal, tag, &isBool);
-    }
-    branchTestDouble(Equal, tag, &isDouble);
-
-    if (conversion == IntConversionInputKind::Any) {
-      
-      
-      switch (behavior) {
-        case IntConversionBehavior::Normal:
-        case IntConversionBehavior::NegativeZeroCheck:
-          branchTestNull(Assembler::NotEqual, tag, fail);
-          break;
-
-        case IntConversionBehavior::Truncate:
-        case IntConversionBehavior::ClampToUint8:
-          branchTestNull(Equal, tag, &isNull);
-          if (handleStrings) {
-            branchTestString(Equal, tag, &isString);
-          }
-          branchTestUndefined(Assembler::NotEqual, tag, fail);
-          break;
-      }
+      branchTestNull(Assembler::NotEqual, tag, fail);
     } else {
       jump(fail);
     }
@@ -4217,15 +4191,65 @@ void MacroAssembler::convertValueToInt(
 
   
   if (conversion == IntConversionInputKind::Any) {
-    if (isNull.used()) {
-      bind(&isNull);
-    }
-    mov(ImmWord(0), output);
+    move32(Imm32(0), output);
     jump(&done);
   }
 
   
-  bool handleStringIndices = handleStrings && output != stringReg;
+  {
+    bind(&isDouble);
+    unboxDouble(value, temp);
+    convertDoubleToInt32(temp, output, fail, negativeZeroCheck);
+    jump(&done);
+  }
+
+  
+  if (conversion == IntConversionInputKind::Any) {
+    bind(&isBool);
+    unboxBoolean(value, output);
+    jump(&done);
+  }
+
+  
+  {
+    bind(&isInt32);
+    unboxInt32(value, output);
+  }
+
+  bind(&done);
+}
+
+void MacroAssembler::truncateValueToInt32(
+    ValueOperand value, Label* handleStringEntry, Label* handleStringRejoin,
+    Label* truncateDoubleSlow, Register stringReg, FloatRegister temp,
+    Register output, Label* fail) {
+  Label done, isInt32, isBool, isDouble, isNull, isString;
+
+  bool handleStrings = handleStringEntry && handleStringRejoin;
+
+  
+  MOZ_ASSERT_IF(handleStrings, stringReg != output);
+
+  {
+    ScratchTagScope tag(*this, value);
+    splitTagForTest(value, tag);
+
+    branchTestInt32(Equal, tag, &isInt32);
+    branchTestDouble(Equal, tag, &isDouble);
+    branchTestBoolean(Equal, tag, &isBool);
+    branchTestNull(Equal, tag, &isNull);
+    if (handleStrings) {
+      branchTestString(Equal, tag, &isString);
+    }
+    branchTestUndefined(Assembler::NotEqual, tag, fail);
+  }
+
+  
+  {
+    bind(&isNull);
+    move32(Imm32(0), output);
+    jump(&done);
+  }
 
   
   
@@ -4233,12 +4257,8 @@ void MacroAssembler::convertValueToInt(
   if (handleStrings) {
     bind(&isString);
     unboxString(value, stringReg);
-    if (handleStringIndices) {
-      loadStringIndexValue(stringReg, output, handleStringEntry);
-      jump(&handleStringIndex);
-    } else {
-      jump(handleStringEntry);
-    }
+    loadStringIndexValue(stringReg, output, handleStringEntry);
+    jump(&done);
   }
 
   
@@ -4249,28 +4269,13 @@ void MacroAssembler::convertValueToInt(
     if (handleStrings) {
       bind(handleStringRejoin);
     }
-
-    switch (behavior) {
-      case IntConversionBehavior::Normal:
-      case IntConversionBehavior::NegativeZeroCheck:
-        convertDoubleToInt32(
-            temp, output, fail,
-            behavior == IntConversionBehavior::NegativeZeroCheck);
-        break;
-      case IntConversionBehavior::Truncate:
-        branchTruncateDoubleMaybeModUint32(
-            temp, output, truncateDoubleSlow ? truncateDoubleSlow : fail);
-        break;
-      case IntConversionBehavior::ClampToUint8:
-        clampDoubleToUint8(temp, output);
-        break;
-    }
-
+    branchTruncateDoubleMaybeModUint32(
+        temp, output, truncateDoubleSlow ? truncateDoubleSlow : fail);
     jump(&done);
   }
 
   
-  if (isBool.used()) {
+  {
     bind(&isBool);
     unboxBoolean(value, output);
     jump(&done);
@@ -4280,14 +4285,64 @@ void MacroAssembler::convertValueToInt(
   {
     bind(&isInt32);
     unboxInt32(value, output);
+  }
 
-    if (handleStringIndices) {
-      bind(&handleStringIndex);
-    }
+  bind(&done);
+}
 
-    if (behavior == IntConversionBehavior::ClampToUint8) {
-      clampIntToUint8(output);
-    }
+void MacroAssembler::clampValueToUint8(ValueOperand value,
+                                       Label* handleStringEntry,
+                                       Label* handleStringRejoin,
+                                       Register stringReg, FloatRegister temp,
+                                       Register output, Label* fail) {
+  Label done, isInt32, isBool, isDouble, isNull, isString;
+  {
+    ScratchTagScope tag(*this, value);
+    splitTagForTest(value, tag);
+
+    branchTestInt32(Equal, tag, &isInt32);
+    branchTestDouble(Equal, tag, &isDouble);
+    branchTestBoolean(Equal, tag, &isBool);
+    branchTestNull(Equal, tag, &isNull);
+    branchTestString(Equal, tag, &isString);
+    branchTestUndefined(Assembler::NotEqual, tag, fail);
+  }
+
+  
+  {
+    bind(&isNull);
+    move32(Imm32(0), output);
+    jump(&done);
+  }
+
+  
+  {
+    bind(&isString);
+    unboxString(value, stringReg);
+    jump(handleStringEntry);
+  }
+
+  
+  {
+    bind(&isDouble);
+    unboxDouble(value, temp);
+    bind(handleStringRejoin);
+    clampDoubleToUint8(temp, output);
+    jump(&done);
+  }
+
+  
+  {
+    bind(&isBool);
+    unboxBoolean(value, output);
+    jump(&done);
+  }
+
+  
+  {
+    bind(&isInt32);
+    unboxInt32(value, output);
+    clampIntToUint8(output);
   }
 
   bind(&done);
