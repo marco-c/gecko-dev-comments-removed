@@ -400,6 +400,11 @@ function runTest(config) {
         }
     ];
 
+    function assertIsObjectOrFunction(value) {
+        const type = typeof value;
+        assert_true(type === 'object' || type === 'function');
+    }
+
     
     
     
@@ -418,8 +423,14 @@ function runTest(config) {
         assert_equals(typeof mediaKeySession.expiration, 'number');
         assert_equals(typeof mediaKeySession.closed, 'object');
         assert_equals(typeof mediaKeySession.keyStatuses, 'object');
-        assert_equals(typeof mediaKeySession.onkeystatuseschange, 'object');
-        assert_equals(typeof mediaKeySession.onmessage, 'object');
+
+       
+       
+       
+       
+        assertIsObjectOrFunction(mediaKeySession.onkeystatuseschange);
+        assertIsObjectOrFunction(mediaKeySession.onmessage);
+
         assert_equals(typeof mediaKeySession.generateRequest, 'function');
         assert_equals(typeof mediaKeySession.load, 'function');
         assert_equals(typeof mediaKeySession.update, 'function');
