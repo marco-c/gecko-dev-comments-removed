@@ -18,68 +18,6 @@
 
 
 
-
-
-async function testWithMutatedServerResponse(
-    test, expectWin, responseMutator, igMutator = undefined,
-    ownerOverride = null) {
-  let finalIgOwner = ownerOverride ? ownerOverride : window.location.origin;
-  const uuid = generateUuid(test);
-  const adA = createTrackerURL(finalIgOwner, uuid, 'track_get', 'a');
-  const adB = createTrackerURL(finalIgOwner, uuid, 'track_get', 'b');
-  const adsArray =
-      [{renderURL: adA, adRenderId: 'a'}, {renderURL: adB, adRenderId: 'b'}];
-  let ig = {ads: adsArray};
-  if (igMutator) {
-    igMutator(ig, uuid);
-  }
-  if (ownerOverride !== null) {
-    await joinCrossOriginInterestGroup(test, uuid, ownerOverride, ig);
-  } else {
-    await joinInterestGroup(test, uuid, ig);
-  }
-
-  const result = await navigator.getInterestGroupAdAuctionData({
-    coordinatorOrigin: await BA.configureCoordinator(),
-    seller: window.location.origin
-  });
-  assert_true(result.requestId !== null);
-  assert_true(result.request.length > 0);
-
-  let decoded = await BA.decodeInterestGroupData(result.request);
-
-  let serverResponseMsg = {
-    'biddingGroups': {},
-    'adRenderURL': ig.ads[0].renderURL,
-    'interestGroupName': DEFAULT_INTEREST_GROUP_NAME,
-    'interestGroupOwner': finalIgOwner,
-  };
-  serverResponseMsg.biddingGroups[finalIgOwner] = [0];
-  await responseMutator(serverResponseMsg, uuid);
-
-  let serverResponse =
-      await BA.encodeServerResponse(serverResponseMsg, decoded);
-
-  let hashString = await BA.payloadHash(serverResponse);
-  await BA.authorizeServerResponseHashes([hashString]);
-
-  let auctionResult = await navigator.runAdAuction({
-    'seller': window.location.origin,
-    'interestGroupBuyers': [finalIgOwner],
-    'requestId': result.requestId,
-    'serverResponse': serverResponse,
-    'resolveToConfig': true,
-  });
-  if (expectWin) {
-    expectSuccess(auctionResult);
-    return auctionResult;
-  } else {
-    expectNoWinner(auctionResult);
-  }
-}
-
-
-
 const MAIN_ORIGIN = OTHER_ORIGIN1;
 const MAIN_PATH = '/.well-known/private-aggregation/report-protected-audience';
 
@@ -123,7 +61,7 @@ async function privateAggregationTestWithMutatedServerResponse(
     test, expectWin, paggResponse, timeout = 5000 ,
     ownerOverride = null) {
   await resetReports(MAIN_ORIGIN + MAIN_PATH);
-  let result = await testWithMutatedServerResponse(
+  let result = await BA.testWithMutatedServerResponse(
       test, expectWin,
       (msg, uuid) => {
         msg.paggResponse = paggResponse;
