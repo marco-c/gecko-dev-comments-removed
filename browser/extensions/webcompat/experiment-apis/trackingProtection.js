@@ -241,7 +241,7 @@ this.trackingProtection = class extends ExtensionAPI {
         },
         openProtectionsPanel(tabId) {
           let tab = tabManager.get(tabId);
-          if (!tab.active) {
+          if (!tab?.active) {
             
             return;
           }
@@ -251,6 +251,9 @@ this.trackingProtection = class extends ExtensionAPI {
             win.gBrowser.selectedBrowser.browsingContext,
             "smartblock:open-protections-panel"
           );
+        },
+        incrementSmartblockEmbedShownTelemetry() {
+          Glean.securityUiProtectionspopup.smartblockembedsShown.add();
         },
         async getSmartBlockEmbedFluentString(tabId, shimId, websiteHost) {
           let win = tabManager.get(tabId).window;

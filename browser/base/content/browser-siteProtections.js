@@ -1399,6 +1399,18 @@ var gProtectionsHandler = {
     },
   ],
 
+  
+
+
+
+  _hasClickedSmartBlockEmbedToggle: false,
+
+  
+
+
+
+  _protectionsPopupOpeningReason: null,
+
   _protectionsPopup: null,
   _initializePopup() {
     if (!this._protectionsPopup) {
@@ -1800,7 +1812,7 @@ var gProtectionsHandler = {
       return; 
     }
 
-    this.showProtectionsPopup({ event });
+    this.showProtectionsPopup({ event, openingReason: "shieldButtonClicked" });
   },
 
   onPopupShown(event) {
@@ -1814,8 +1826,13 @@ var gProtectionsHandler = {
       
       this._insertProtectionsPanelInfoMessage(event);
 
+      
       if (!event.target.hasAttribute("toast")) {
-        Glean.securityUiProtectionspopup.openProtectionsPopup.record();
+        Glean.securityUiProtectionspopup.openProtectionsPopup.record({
+          openingReason: this._protectionsPopupOpeningReason,
+          smartblockEmbedTogglesShown:
+            !this._protectionsPopupSmartblockContainer.hidden,
+        });
       }
 
       ReportBrokenSite.updateParentMenu(event);
@@ -1827,6 +1844,17 @@ var gProtectionsHandler = {
       window.removeEventListener("focus", this, true);
       this._protectionsPopupTPSwitch.removeEventListener("toggle", this);
     }
+
+    
+    if (!event.target.hasAttribute("toast")) {
+      Glean.securityUiProtectionspopup.closeProtectionsPopup.record({
+        openingReason: this._protectionsPopupOpeningReason,
+        smartblockToggleClicked: this._hasClickedSmartBlockEmbedToggle,
+      });
+    }
+
+    this._hasClickedSmartBlockEmbedToggle = false;
+    this._protectionsPopupOpeningReason = null;
   },
 
   async onTrackingProtectionIconHoveredOrFocused() {
@@ -2163,7 +2191,10 @@ var gProtectionsHandler = {
         PanelMultiView.hidePopup(this._protectionsPopup);
 
         
-        this.showProtectionsPopup({ event });
+        this.showProtectionsPopup({
+          event,
+          openingReason: "toastButtonClicked",
+        });
         break;
     }
   },
@@ -2230,7 +2261,10 @@ var gProtectionsHandler = {
         if (gBrowser.selectedBrowser.browserId !== subject.browserId) {
           break;
         }
-        this.showProtectionsPopup();
+
+        this.showProtectionsPopup({
+          openingReason: "embedPlaceholderButton",
+        });
         break;
     }
   },
@@ -2468,11 +2502,19 @@ var gProtectionsHandler = {
       
       toggle.addEventListener("toggle", event => {
         let newToggleState = event.target.pressed;
+
         if (newToggleState) {
           this._sendUnblockMessageToSmartblock(shimId);
         } else {
           this._sendReblockMessageToSmartblock(shimId);
         }
+
+        Glean.securityUiProtectionspopup.clickSmartblockembedsToggle.record({
+          isBlock: !newToggleState,
+          openingReason: this._protectionsPopupOpeningReason,
+        });
+
+        this._hasClickedSmartBlockEmbedToggle = true;
       });
 
       this._protectionsPopupSmartblockToggleContainer.insertAdjacentElement(
@@ -2665,10 +2707,16 @@ var gProtectionsHandler = {
 
 
 
+
+
+
   showProtectionsPopup(options = {}) {
-    const { event, toast } = options;
+    const { event, toast, openingReason } = options;
 
     this._initializePopup();
+
+    
+    this._protectionsPopupOpeningReason = openingReason;
 
     
     if (this.hasOwnProperty("_lastEvent")) {

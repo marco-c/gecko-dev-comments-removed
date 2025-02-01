@@ -155,6 +155,8 @@ if (!window.smartblockInstagramShimInitialized) {
 
       
       originalEmbedContainer.replaceWith(placeholderDiv);
+
+      sendMessageToAddon("smartblockEmbedReplaced");
     });
   }
 

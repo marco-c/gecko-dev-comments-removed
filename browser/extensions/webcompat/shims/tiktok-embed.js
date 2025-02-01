@@ -156,6 +156,8 @@ if (!window.smartblockTikTokShimInitialized) {
 
       
       originalEmbedContainer.replaceWith(placeholderDiv);
+
+      sendMessageToAddon("smartblockEmbedReplaced");
     });
   }
 
