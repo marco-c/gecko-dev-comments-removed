@@ -278,6 +278,8 @@ bool RemoteDecoderManagerChild::Supports(
         }
         return aLocation == RemoteDecodeIn::UtilityProcess_MFMediaEngineCDM ||
                aLocation == RemoteDecodeIn::GpuProcess;
+#elif defined(MOZ_APPLEMEDIA)
+        return trackSupport.contains(TrackSupport::Video);
 #else
         
         return false;

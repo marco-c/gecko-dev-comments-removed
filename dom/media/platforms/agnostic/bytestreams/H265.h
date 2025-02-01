@@ -318,6 +318,15 @@ class H265 final {
   static bool CompareExtraData(const mozilla::MediaByteBuffer* aExtraData1,
                                const mozilla::MediaByteBuffer* aExtraData2);
 
+  
+  
+  static uint32_t ComputeMaxRefFrames(
+      const mozilla::MediaByteBuffer* aExtraData);
+
+  
+  
+  static already_AddRefed<mozilla::MediaByteBuffer> CreateFakeExtraData();
+
  private:
   
   static already_AddRefed<mozilla::MediaByteBuffer> DecodeNALUnit(
