@@ -1,10 +1,17 @@
 
 
-evalInWorker(`
+if ('oomTest' in this) {
+  function b() {
+    throw new Error
+  }
   function c() {
-    d = new AsyncDisposableStack
-    d.defer(() => e)
-    d.defer(() => c())
-    d.disposeAsync()
-  } c();
-`)
+    for (let i = 0; i < 100; i++) {
+      d = new AsyncDisposableStack
+      d.defer(() => e)
+      d.defer(() => b())
+      d.disposeAsync()
+    }
+  }
+
+  oomTest(() => c());
+}
