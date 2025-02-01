@@ -3,19 +3,9 @@
 
 
 
-
-
 "use strict";
 
-const REMOTE_SETTINGS_RESULT = {
-  id: 1,
-  url: "https://example.com/nonsponsored",
-  title: "Non-sponsored suggestion",
-  keywords: ["nonsponsored"],
-  advertiser: "Wikipedia",
-  iab_category: "5 - Education",
-  icon: "1234",
-};
+const SUGGESTION = QuickSuggestTestUtils.wikipediaRemoteSettings();
 
 const index = 1;
 const position = index + 1;
@@ -24,19 +14,19 @@ const position = index + 1;
 requestLongerTimeout(3);
 
 add_setup(async function () {
-  await setUpTelemetryTest({
+  await initQuickSuggestPingTest({
     remoteSettingsRecords: [
       {
         type: "data",
-        attachment: [REMOTE_SETTINGS_RESULT],
+        attachment: [SUGGESTION],
       },
     ],
   });
 });
 
-add_task(async function nonsponsored() {
+add_task(async function wikipedia() {
   let matchType = "firefox-suggest";
-  let advertiser = REMOTE_SETTINGS_RESULT.advertiser.toLowerCase();
+  let advertiser = SUGGESTION.advertiser.toLowerCase();
   let source = "rust";
 
   
@@ -50,12 +40,26 @@ add_task(async function nonsponsored() {
         ],
       ],
     });
-    await doTelemetryTest({
+    await doQuickSuggestPingTest({
       index,
-      suggestion: REMOTE_SETTINGS_RESULT,
-      
+      suggestion: SUGGESTION,
       impressionOnly: {
-        ping: {
+        pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+        matchType,
+        advertiser,
+        blockId: undefined,
+        improveSuggestExperience,
+        position,
+        suggestedIndex: "-1",
+        suggestedIndexRelativeToGroup: true,
+        requestId: undefined,
+        source,
+        contextId: "",
+        isClicked: false,
+        reportingUrl: undefined,
+      },
+      click: [
+        {
           pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
           matchType,
           advertiser,
@@ -67,46 +71,25 @@ add_task(async function nonsponsored() {
           requestId: undefined,
           source,
           contextId: "",
-          isClicked: false,
+          isClicked: true,
           reportingUrl: undefined,
         },
-      },
-      
-      click: {
-        pings: [
-          {
-            pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
-            matchType,
-            advertiser,
-            blockId: undefined,
-            improveSuggestExperience,
-            position,
-            suggestedIndex: "-1",
-            suggestedIndexRelativeToGroup: true,
-            requestId: undefined,
-            source,
-            contextId: "",
-            isClicked: true,
-            reportingUrl: undefined,
-          },
-          {
-            pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
-            matchType,
-            advertiser,
-            blockId: undefined,
-            improveSuggestExperience,
-            position,
-            suggestedIndex: "-1",
-            suggestedIndexRelativeToGroup: true,
-            requestId: undefined,
-            source,
-            contextId: "",
-            reportingUrl: undefined,
-          },
-        ],
-      },
+        {
+          pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
+          matchType,
+          advertiser,
+          blockId: undefined,
+          improveSuggestExperience,
+          position,
+          suggestedIndex: "-1",
+          suggestedIndexRelativeToGroup: true,
+          requestId: undefined,
+          source,
+          contextId: "",
+          reportingUrl: undefined,
+        },
+      ],
       commands: [
-        
         {
           command: "dismiss",
           pings: [
@@ -137,11 +120,10 @@ add_task(async function nonsponsored() {
               requestId: undefined,
               source,
               contextId: "",
-              iabCategory: REMOTE_SETTINGS_RESULT.iab_category,
+              iabCategory: SUGGESTION.iab_category,
             },
           ],
         },
-        
         {
           command: "manage",
           pings: [

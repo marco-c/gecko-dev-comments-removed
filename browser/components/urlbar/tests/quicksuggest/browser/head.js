@@ -91,7 +91,7 @@ async function updateTopSites(condition, searchShortcuts = false) {
 
 
 
-async function setUpTelemetryTest({
+async function initQuickSuggestPingTest({
   remoteSettingsRecords,
   merinoSuggestions = null,
   config = QuickSuggestTestUtils.DEFAULT_CONFIG,
@@ -156,13 +156,7 @@ async function setUpTelemetryTest({
 
 
 
-
-
-
-
-
-
-async function doTelemetryTest({
+async function doQuickSuggestPingTest({
   index,
   suggestion,
   impressionOnly,
@@ -186,7 +180,7 @@ async function doTelemetryTest({
     suggestion,
     providerName,
     showSuggestion,
-    expected: impressionOnly,
+    expectedPing: impressionOnly,
   });
 
   await doClickTest({
@@ -194,7 +188,7 @@ async function doTelemetryTest({
     providerName,
     showSuggestion,
     index,
-    expected: click,
+    expectedPings: click,
   });
 
   for (let command of commands) {
@@ -204,7 +198,7 @@ async function doTelemetryTest({
       showSuggestion,
       index,
       commandOrArray: command.command,
-      expected: command,
+      expectedPings: command.pings,
     });
 
     if (teardown) {
@@ -232,20 +226,16 @@ async function doTelemetryTest({
 
 
 
-
-
-
-
 async function doImpressionOnlyTest({
   index,
   suggestion,
   providerName,
-  expected,
+  expectedPing,
   showSuggestion,
 }) {
   info("Starting impression-only test");
 
-  let expectedPings = expected.ping ? [expected.ping] : [];
+  let expectedPings = [expectedPing];
   let gleanPingCount = watchQuickSuggestPings(expectedPings);
 
   info("Showing suggestion");
@@ -336,21 +326,15 @@ async function doImpressionOnlyTest({
 
 
 
-
-
-
-
-
 async function doClickTest({
   index,
   suggestion,
   providerName,
-  expected,
+  expectedPings,
   showSuggestion,
 }) {
   info("Starting click test");
 
-  let expectedPings = expected.pings ?? [];
   let gleanPingCount = watchQuickSuggestPings(expectedPings);
 
   info("Showing suggestion");
@@ -404,22 +388,16 @@ async function doClickTest({
 
 
 
-
-
-
-
-
 async function doCommandTest({
   index,
   suggestion,
   providerName,
   commandOrArray,
-  expected,
+  expectedPings,
   showSuggestion,
 }) {
   info("Starting command test: " + JSON.stringify({ commandOrArray }));
 
-  let expectedPings = expected.pings ?? [];
   let gleanPingCount = watchQuickSuggestPings(expectedPings);
 
   info("Showing suggestion");
