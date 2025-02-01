@@ -108,18 +108,45 @@ impl DeepCloneWithLock for ImportSheet {
 
 #[cfg(feature = "servo")]
 #[derive(Debug)]
-pub struct ImportSheet(pub ::servo_arc::Arc<crate::stylesheets::Stylesheet>);
+pub enum ImportSheet {
+    
+    Sheet(::servo_arc::Arc<crate::stylesheets::Stylesheet>),
+
+    
+    Refused,
+}
 
 #[cfg(feature = "servo")]
 impl ImportSheet {
     
+    pub fn new(sheet: ::servo_arc::Arc<crate::stylesheets::Stylesheet>) -> Self {
+        ImportSheet::Sheet(sheet)
+    }
+
+    
+    pub fn new_refused() -> Self {
+        ImportSheet::Refused
+    }
+
+    
+    pub fn as_sheet(&self) -> Option<&::servo_arc::Arc<crate::stylesheets::Stylesheet>> {
+        match *self {
+            ImportSheet::Sheet(ref s) => Some(s),
+            ImportSheet::Refused => None,
+        }
+    }
+
+    
     pub fn media<'a>(&'a self, guard: &'a SharedRwLockReadGuard) -> Option<&'a MediaList> {
-        self.0.media(guard)
+        self.as_sheet().and_then(|s| s.media(guard))
     }
 
     
     pub fn rules<'a>(&'a self, guard: &'a SharedRwLockReadGuard) -> &'a [CssRule] {
-        self.0.rules()
+        match self.as_sheet() {
+            Some(s) => s.rules(guard),
+            None => &[],
+        }
     }
 }
 
@@ -130,8 +157,13 @@ impl DeepCloneWithLock for ImportSheet {
         _lock: &SharedRwLock,
         _guard: &SharedRwLockReadGuard,
     ) -> Self {
-        use servo_arc::Arc;
-        ImportSheet(Arc::new((&*self.0).clone()))
+        match *self {
+            ImportSheet::Sheet(ref s) => {
+                use servo_arc::Arc;
+                ImportSheet::Sheet(Arc::new((&**s).clone()))
+            },
+            ImportSheet::Refused => ImportSheet::Refused,
+        }
     }
 }
 

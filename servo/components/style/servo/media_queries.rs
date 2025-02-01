@@ -7,20 +7,43 @@
 use crate::color::AbsoluteColor;
 use crate::context::QuirksMode;
 use crate::custom_properties::CssEnvironment;
-use crate::media_queries::media_feature::{AllowsRanges, ParsingRequirements};
-use crate::media_queries::media_feature::{Evaluator, MediaFeatureDescription};
-use crate::media_queries::media_feature_expression::RangeOrOperator;
+use crate::font_metrics::FontMetrics;
+use crate::queries::feature::{AllowsRanges, Evaluator, FeatureFlags, QueryFeatureDescription};
+use crate::queries::values::PrefersColorScheme;
+use crate::logical_geometry::WritingMode;
 use crate::media_queries::MediaType;
+use crate::properties::style_structs::Font;
 use crate::properties::ComputedValues;
-use crate::values::computed::CSSPixelLength;
+use crate::values::computed::{CSSPixelLength, Context, Length, LineHeight, NonNegativeLength, Resolution};
+use crate::values::computed::font::GenericFontFamily;
 use crate::values::specified::color::{ColorSchemeFlags, ForcedColors};
-use crate::values::specified::font::FONT_MEDIUM_PX;
+use crate::values::specified::font::{FONT_MEDIUM_LINE_HEIGHT_PX, FONT_MEDIUM_PX};
+use crate::values::specified::ViewportVariant;
 use crate::values::KeyframesName;
-use app_units::Au;
+use app_units::{Au, AU_PER_PX};
 use euclid::default::Size2D as UntypedSize2D;
 use euclid::{Scale, SideOffsets2D, Size2D};
+use mime::Mime;
+use servo_arc::Arc;
+use std::fmt::Debug;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use style_traits::{CSSPixel, DevicePixel};
+
+
+
+pub trait FontMetricsProvider: Debug + Sync {
+    
+    fn query_font_metrics(
+        &self,
+        vertical: bool,
+        font: &Font,
+        base_size: CSSPixelLength,
+        in_media_query: bool,
+        retrieve_math_scales: bool,
+    ) -> FontMetrics;
+    
+    fn base_size_for_generic(&self, generic: GenericFontFamily) -> Length;
+}
 
 
 
@@ -49,15 +72,33 @@ pub struct Device {
     #[ignore_malloc_size_of = "Pure stack type"]
     root_font_size: AtomicU32,
     
+    #[ignore_malloc_size_of = "Pure stack type"]
+    root_line_height: AtomicU32,
+    
     
     #[ignore_malloc_size_of = "Pure stack type"]
     used_root_font_size: AtomicBool,
     
+    
+    #[ignore_malloc_size_of = "Pure stack type"]
+    used_root_line_height: AtomicBool,
+    
+    used_font_metrics: AtomicBool,
+    
     #[ignore_malloc_size_of = "Pure stack type"]
     used_viewport_units: AtomicBool,
     
+    #[ignore_malloc_size_of = "Pure stack type"]
+    prefers_color_scheme: PrefersColorScheme,
+    
     
     environment: CssEnvironment,
+    
+    #[ignore_malloc_size_of = "Owned by embedder"]
+    font_metrics_provider: Box<dyn FontMetricsProvider>,
+    
+    #[ignore_malloc_size_of = "Arc is shared"]
+    default_computed_values: Arc<ComputedValues>,
 }
 
 impl Device {
@@ -67,17 +108,25 @@ impl Device {
         quirks_mode: QuirksMode,
         viewport_size: Size2D<f32, CSSPixel>,
         device_pixel_ratio: Scale<f32, CSSPixel, DevicePixel>,
+        font_metrics_provider: Box<dyn FontMetricsProvider>,
+        default_computed_values: Arc<ComputedValues>,
+        prefers_color_scheme: PrefersColorScheme,
     ) -> Device {
         Device {
             media_type,
             viewport_size,
             device_pixel_ratio,
             quirks_mode,
-            
             root_font_size: AtomicU32::new(FONT_MEDIUM_PX.to_bits()),
+            root_line_height: AtomicU32::new(FONT_MEDIUM_LINE_HEIGHT_PX.to_bits()),
             used_root_font_size: AtomicBool::new(false),
+            used_root_line_height: AtomicBool::new(false),
+            used_font_metrics: AtomicBool::new(false),
             used_viewport_units: AtomicBool::new(false),
+            prefers_color_scheme,
             environment: CssEnvironment,
+            font_metrics_provider,
+            default_computed_values,
         }
     }
 
@@ -89,10 +138,7 @@ impl Device {
 
     
     pub fn default_computed_values(&self) -> &ComputedValues {
-        
-        
-        
-        ComputedValues::initial_values()
+        &self.default_computed_values
     }
 
     
@@ -102,9 +148,38 @@ impl Device {
     }
 
     
-    pub fn set_root_font_size(&self, size: CSSPixelLength) {
-        self.root_font_size
-            .store(size.px().to_bits(), Ordering::Relaxed)
+    pub fn set_root_font_size(&self, size: f32) {
+        self.root_font_size.store(size.to_bits(), Ordering::Relaxed)
+    }
+
+    
+    pub fn root_line_height(&self) -> CSSPixelLength {
+        self.used_root_line_height.store(true, Ordering::Relaxed);
+        CSSPixelLength::new(f32::from_bits(
+            self.root_line_height.load(Ordering::Relaxed),
+        ))
+    }
+
+    
+    pub fn set_root_line_height(&self, size: f32) {
+        self.root_line_height.store(size.to_bits(), Ordering::Relaxed);
+    }
+
+    
+    
+    
+    pub fn calc_line_height(
+        &self,
+        font: &crate::properties::style_structs::Font,
+        _writing_mode: WritingMode,
+        _element: Option<()>,
+    ) -> NonNegativeLength {
+        (match font.line_height {
+            
+            LineHeight::Normal => CSSPixelLength::new(0.),
+            LineHeight::Number(number) => font.font_size.computed_size() * number.0,
+            LineHeight::Length(length) => length.0,
+        }).into()
     }
 
     
@@ -120,6 +195,11 @@ impl Device {
     }
 
     
+    pub fn base_size_for_generic(&self, generic: GenericFontFamily) -> Length {
+        self.font_metrics_provider.base_size_for_generic(generic)
+    }
+
+    
     pub fn animation_name_may_be_referenced(&self, _: &KeyframesName) -> bool {
         
         true
@@ -128,6 +208,16 @@ impl Device {
     
     pub fn used_root_font_size(&self) -> bool {
         self.used_root_font_size.load(Ordering::Relaxed)
+    }
+
+    
+    pub fn used_root_line_height(&self) -> bool {
+        self.used_root_line_height.load(Ordering::Relaxed)
+    }
+
+    
+    pub fn used_font_metrics(&self) -> bool {
+        self.used_font_metrics.load(Ordering::Relaxed)
     }
 
     
@@ -141,8 +231,13 @@ impl Device {
     }
 
     
-    pub fn au_viewport_size_for_viewport_unit_resolution(&self) -> UntypedSize2D<Au> {
+    pub fn au_viewport_size_for_viewport_unit_resolution(
+        &self,
+        _: ViewportVariant,
+    ) -> UntypedSize2D<Au> {
         self.used_viewport_units.store(true, Ordering::Relaxed);
+        
+        
         self.au_viewport_size()
     }
 
@@ -152,8 +247,38 @@ impl Device {
     }
 
     
+    pub fn app_units_per_device_pixel(&self) -> i32 {
+        (AU_PER_PX as f32 / self.device_pixel_ratio.0) as i32
+    }
+
+    
     pub fn device_pixel_ratio(&self) -> Scale<f32, CSSPixel, DevicePixel> {
         self.device_pixel_ratio
+    }
+
+    
+    pub fn scrollbar_inline_size(&self) -> CSSPixelLength {
+        
+        CSSPixelLength::new(0.0)
+    }
+
+    
+    pub fn query_font_metrics(
+        &self,
+        vertical: bool,
+        font: &Font,
+        base_size: CSSPixelLength,
+        in_media_query: bool,
+        retrieve_math_scales: bool,
+    ) -> FontMetrics {
+        self.used_font_metrics.store(true, Ordering::Relaxed);
+        self.font_metrics_provider.query_font_metrics(
+            vertical,
+            font,
+            base_size,
+            in_media_query,
+            retrieve_math_scales,
+        )
     }
 
     
@@ -176,6 +301,11 @@ impl Device {
         AbsoluteColor::BLACK
     }
 
+    
+    pub fn color_scheme(&self) -> PrefersColorScheme {
+        self.prefers_color_scheme
+    }
+
     pub(crate) fn is_dark_color_scheme(&self, _: ColorSchemeFlags) -> bool {
         false
     }
@@ -184,19 +314,34 @@ impl Device {
     pub fn safe_area_insets(&self) -> SideOffsets2D<f32, CSSPixel> {
         SideOffsets2D::zero()
     }
+
+    
+    pub fn is_supported_mime_type(&self, mime_type: &str) -> bool {
+        match mime_type.parse::<Mime>() {
+            Ok(m) => {
+                
+                
+                m == mime::IMAGE_BMP
+                    || m == mime::IMAGE_GIF
+                    || m == mime::IMAGE_PNG
+                    || m == mime::IMAGE_JPEG
+                    || m == "image/x-icon"
+                    || m == "image/webp"
+            }
+            _ => false,
+        }
+    }
+
+    
+    #[inline]
+    pub fn chrome_rules_enabled_for_document(&self) -> bool {
+        false
+    }
 }
 
 
-fn eval_width(
-    device: &Device,
-    value: Option<CSSPixelLength>,
-    range_or_operator: Option<RangeOrOperator>,
-) -> bool {
-    RangeOrOperator::evaluate(
-        range_or_operator,
-        value.map(Au::from),
-        device.au_viewport_size().width,
-    )
+fn eval_width(context: &Context) -> CSSPixelLength {
+    CSSPixelLength::new(context.device().au_viewport_size().width.to_f32_px())
 }
 
 #[derive(Clone, Copy, Debug, FromPrimitive, Parse, ToCss)]
@@ -207,26 +352,65 @@ enum Scan {
 }
 
 
-fn eval_scan(_: &Device, _: Option<Scan>) -> bool {
+fn eval_scan(_: &Context, _: Option<Scan>) -> bool {
     
     
     false
 }
 
-lazy_static! {
-    /// A list with all the media features that Servo supports.
-    pub static ref MEDIA_FEATURES: [MediaFeatureDescription; 2] = [
-        feature!(
-            atom!("width"),
-            AllowsRanges::Yes,
-            Evaluator::Length(eval_width),
-            ParsingRequirements::empty(),
-        ),
-        feature!(
-            atom!("scan"),
-            AllowsRanges::No,
-            keyword_evaluator!(eval_scan, Scan),
-            ParsingRequirements::empty(),
-        ),
-    ];
+
+fn eval_resolution(context: &Context) -> Resolution {
+    Resolution::from_dppx(context.device().device_pixel_ratio.0)
 }
+
+
+fn eval_device_pixel_ratio(context: &Context) -> f32 {
+    eval_resolution(context).dppx()
+}
+
+fn eval_prefers_color_scheme(context: &Context, query_value: Option<PrefersColorScheme>) -> bool {
+    match query_value {
+        Some(v) => context.device().prefers_color_scheme == v,
+        None => true,
+    }
+}
+
+
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 6] = [
+    feature!(
+        atom!("width"),
+        AllowsRanges::Yes,
+        Evaluator::Length(eval_width),
+        FeatureFlags::empty(),
+    ),
+    feature!(
+        atom!("scan"),
+        AllowsRanges::No,
+        keyword_evaluator!(eval_scan, Scan),
+        FeatureFlags::empty(),
+    ),
+    feature!(
+        atom!("resolution"),
+        AllowsRanges::Yes,
+        Evaluator::Resolution(eval_resolution),
+        FeatureFlags::empty(),
+    ),
+    feature!(
+        atom!("device-pixel-ratio"),
+        AllowsRanges::Yes,
+        Evaluator::Float(eval_device_pixel_ratio),
+        FeatureFlags::WEBKIT_PREFIX,
+    ),
+    feature!(
+        atom!("-moz-device-pixel-ratio"),
+        AllowsRanges::Yes,
+        Evaluator::Float(eval_device_pixel_ratio),
+        FeatureFlags::empty(),
+    ),
+    feature!(
+        atom!("prefers-color-scheme"),
+        AllowsRanges::No,
+        keyword_evaluator!(eval_prefers_color_scheme, PrefersColorScheme),
+        FeatureFlags::empty(),
+    ),
+];

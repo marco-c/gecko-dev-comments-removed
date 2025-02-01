@@ -178,3 +178,11 @@ pub type CssStringWriter = ::nsstring::nsACString;
 
 #[cfg(feature = "gecko")]
 pub type CssString = ::nsstring::nsCString;
+
+
+#[cfg(feature = "servo")]
+pub type CssStringWriter = String;
+
+
+#[cfg(feature = "servo")]
+pub type CssString = String;
