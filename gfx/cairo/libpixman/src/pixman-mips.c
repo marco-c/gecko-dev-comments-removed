@@ -59,6 +59,19 @@ have_feature (const char *search_string)
     fclose (f);
 #endif
 
+#if defined (CI_HAS_ALL_MIPS_CPU_FEATURES)
+    
+
+
+
+
+
+
+
+    #warning "Building with disabled MIPS feature discovery. SHOULD NOT BE USED IN RELEASE BUILD!"
+    return TRUE;
+#endif
+
     
     return FALSE;
 }
