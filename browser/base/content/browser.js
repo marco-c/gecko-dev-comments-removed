@@ -5977,10 +5977,6 @@ function restoreLastClosedTabOrWindowOrSession() {
         undoCloseTab();
         break;
       }
-      case SessionStore.LAST_ACTION_CLOSED_TAB_GROUP: {
-        undoCloseTabGroup(lastActionTaken.closedId);
-        break;
-      }
       case SessionStore.LAST_ACTION_CLOSED_WINDOW: {
         undoCloseWindow();
         break;
@@ -6033,18 +6029,38 @@ function undoCloseTab(aIndex, sourceWindowSSId) {
     blankTabToRemove = targetWindow.gBrowser.selectedTab;
   }
 
-  
-  
-  let lastClosedTabCount = SessionStore.getLastClosedTabCount(sourceWindow);
-  let tab = null;
-  
-  let tabsToRemove =
-    aIndex !== undefined ? [aIndex] : new Array(lastClosedTabCount).fill(0);
   let tabsRemoved = false;
-  for (let index of tabsToRemove) {
-    if (SessionStore.getClosedTabCountForWindow(sourceWindow) > index) {
-      tab = SessionStore.undoCloseTab(sourceWindow, index, targetWindow);
-      tabsRemoved = true;
+  let tab = null;
+  const lastClosedTabGroupId =
+    SessionStore.getLastClosedTabGroupId(sourceWindow);
+  if (aIndex === undefined && lastClosedTabGroupId) {
+    let group;
+    if (SessionStore.getSavedTabGroup(lastClosedTabGroupId)) {
+      group = SessionStore.openSavedTabGroup(
+        lastClosedTabGroupId,
+        targetWindow
+      );
+    } else {
+      group = SessionStore.undoCloseTabGroup(
+        window,
+        lastClosedTabGroupId,
+        targetWindow
+      );
+    }
+    tabsRemoved = true;
+    tab = group.tabs.at(-1);
+  } else {
+    
+    
+    let lastClosedTabCount = SessionStore.getLastClosedTabCount(sourceWindow);
+    
+    let tabsToRemove =
+      aIndex !== undefined ? [aIndex] : new Array(lastClosedTabCount).fill(0);
+    for (let index of tabsToRemove) {
+      if (SessionStore.getClosedTabCountForWindow(sourceWindow) > index) {
+        tab = SessionStore.undoCloseTab(sourceWindow, index, targetWindow);
+        tabsRemoved = true;
+      }
     }
   }
 
@@ -6053,38 +6069,6 @@ function undoCloseTab(aIndex, sourceWindowSSId) {
   }
 
   return tab;
-}
-
-
-
-
-
-
-
-function undoCloseTabGroup(tabGroupId) {
-  let targetWindow = window;
-
-  
-  let blankTabToRemove = null;
-  if (
-    targetWindow.gBrowser.visibleTabs.length == 1 &&
-    targetWindow.gBrowser.selectedTab.isEmpty
-  ) {
-    blankTabToRemove = targetWindow.gBrowser.selectedTab;
-  }
-
-  let group;
-  try {
-    group = SessionStore.undoCloseTabGroup(window, tabGroupId, targetWindow);
-  } catch (err) {
-    group = SessionStore.openSavedTabGroup(tabGroupId, targetWindow);
-  }
-
-  if (group && blankTabToRemove) {
-    targetWindow.gBrowser.removeTab(blankTabToRemove);
-  }
-
-  return group;
 }
 
 
