@@ -1439,6 +1439,17 @@ bool BacktrackingAllocator::minimalBundle(LiveBundle* bundle, bool* pfixed) {
     return true;
   }
 
+  
+  
+  if (range->to() - range->from() > 2) {
+#ifdef DEBUG
+    for (UsePositionIterator iter = range->usesBegin(); iter; iter++) {
+      MOZ_ASSERT(!minimalUse(range, *iter));
+    }
+#endif
+    return false;
+  }
+
   bool fixed = false, minimal = false, multiple = false;
 
   for (UsePositionIterator iter = range->usesBegin(); iter; iter++) {
