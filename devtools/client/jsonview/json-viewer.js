@@ -15,6 +15,9 @@ define(function (require) {
     require("resource://devtools/client/jsonview/components/MainTabbedArea.js")
   );
   const TreeViewClass = require("resource://devtools/client/shared/components/tree/TreeView.js");
+  const {
+    JSON_NUMBER,
+  } = require("resource://devtools/client/shared/components/reps/reps/constants.js");
 
   const AUTO_EXPAND_MAX_SIZE = 100 * 1024;
   const AUTO_EXPAND_MAX_LEVEL = 7;
@@ -175,7 +178,27 @@ define(function (require) {
     
     const jsonString = input.jsonText.textContent;
     try {
-      input.json = JSON.parse(jsonString);
+      input.json = JSON.parse(jsonString, (key, parsedValue, { source }) => {
+        
+        
+        if (
+          typeof parsedValue === "number" &&
+          source !== parsedValue.toString() &&
+          
+          
+          source !== "-0"
+        ) {
+          
+          
+          return {
+            source,
+            type: JSON_NUMBER,
+            parsedValue,
+          };
+        }
+
+        return parsedValue;
+      });
     } catch (err) {
       input.json = err;
       

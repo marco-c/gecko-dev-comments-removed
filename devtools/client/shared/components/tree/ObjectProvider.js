@@ -5,6 +5,10 @@
 
 
 define(function (require, exports) {
+  const {
+    JSON_NUMBER,
+  } = require("resource://devtools/client/shared/components/reps/reps/constants.js");
+
   
 
 
@@ -19,6 +23,10 @@ define(function (require, exports) {
       }
 
       if (!object) {
+        return [];
+      }
+
+      if (object?.type === JSON_NUMBER) {
         return [];
       }
 
@@ -42,6 +50,10 @@ define(function (require, exports) {
       }
 
       if (!object) {
+        return false;
+      }
+
+      if (object.type === JSON_NUMBER) {
         return false;
       }
 
