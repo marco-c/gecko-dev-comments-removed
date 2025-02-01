@@ -13,7 +13,7 @@
 #include "EditorForwards.h"        
 #include "EditorUtils.h"           
 #include "HTMLEditHelpers.h"       
-#include "WSRunObject.h"           
+#include "WSRunScanner.h"          
 
 #include "mozilla/ArrayUtils.h"  
 #include "mozilla/Assertions.h"  
