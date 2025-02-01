@@ -44,9 +44,6 @@ namespace mozilla {
 
 
 
-
-
-
 template <class T, size_t RequestedItemsPerPage = 256>
 class Queue {
  public:
@@ -55,18 +52,18 @@ class Queue {
   Queue(Queue&& aOther) noexcept
       : mHead(std::exchange(aOther.mHead, nullptr)),
         mTail(std::exchange(aOther.mTail, nullptr)),
+        mCount(std::exchange(aOther.mCount, 0)),
         mOffsetHead(std::exchange(aOther.mOffsetHead, 0)),
-        mHeadLength(std::exchange(aOther.mHeadLength, 0)),
-        mTailLength(std::exchange(aOther.mTailLength, 0)) {}
+        mHeadLength(std::exchange(aOther.mHeadLength, 0)) {}
 
   Queue& operator=(Queue&& aOther) noexcept {
     Clear();
 
     mHead = std::exchange(aOther.mHead, nullptr);
     mTail = std::exchange(aOther.mTail, nullptr);
+    mCount = std::exchange(aOther.mCount, 0);
     mOffsetHead = std::exchange(aOther.mOffsetHead, 0);
     mHeadLength = std::exchange(aOther.mHeadLength, 0);
-    mTailLength = std::exchange(aOther.mTailLength, 0);
     return *this;
   }
 
@@ -84,10 +81,10 @@ class Queue {
   }
 
   T& Push(T&& aElement) {
-#if defined(EXTRA_ASSERTS) && DEBUG
-    size_t original_length = Count();
-#endif
+    MOZ_ASSERT(mCount < std::numeric_limits<uint32_t>::max());
+
     if (!mHead) {
+      
       mHead = NewPage();
       MOZ_ASSERT(mHead);
 
@@ -95,15 +92,24 @@ class Queue {
       T* eltPtr = &mTail->mEvents[0];
       new (eltPtr) T(std::move(aElement));
       mOffsetHead = 0;
+      mCount = 1;
       mHeadLength = 1;
-#ifdef EXTRA_ASSERTS
-      MOZ_ASSERT(Count() == original_length + 1);
-#endif
       return *eltPtr;
     }
-    if ((mHead == mTail && mHeadLength == ItemsPerPage) ||
-        (mHead != mTail && mTailLength == ItemsPerPage)) {
+    if (mHead == mTail && mCount < ItemsPerPage) {
       
+      uint16_t offsetTail = (mOffsetHead + mCount) % ItemsPerPage;
+      T* eltPtr = &mHead->mEvents[offsetTail];
+      new (eltPtr) T(std::move(aElement));
+      ++mCount;
+      ++mHeadLength;
+      MOZ_ASSERT(mCount == mHeadLength);
+      return *eltPtr;
+    }
+
+    
+    uint16_t offsetTail = (mCount - mHeadLength) % ItemsPerPage;
+    if (offsetTail == 0) {
       
       Page* page = NewPage();
       MOZ_ASSERT(page);
@@ -112,65 +118,41 @@ class Queue {
       mTail = page;
       T* eltPtr = &page->mEvents[0];
       new (eltPtr) T(std::move(aElement));
-      mTailLength = 1;
-#ifdef EXTRA_ASSERTS
-      MOZ_ASSERT(Count() == original_length + 1);
-#endif
+      ++mCount;
       return *eltPtr;
     }
-    if (mHead == mTail) {
-      
-      uint16_t offset = (mOffsetHead + mHeadLength++) % ItemsPerPage;
-      T* eltPtr = &mTail->mEvents[offset];
-      new (eltPtr) T(std::move(aElement));
-#ifdef EXTRA_ASSERTS
-      MOZ_ASSERT(Count() == original_length + 1);
-#endif
-      return *eltPtr;
-    }
-    
-    T* eltPtr = &mTail->mEvents[mTailLength++];
+
+    MOZ_ASSERT(mHead != mTail, "can't have a non-circular single buffer");
+    T* eltPtr = &mTail->mEvents[offsetTail];
     new (eltPtr) T(std::move(aElement));
-#ifdef EXTRA_ASSERTS
-    MOZ_ASSERT(Count() == original_length + 1);
-#endif
+    ++mCount;
     return *eltPtr;
   }
 
-  bool IsEmpty() const {
-    return !mHead || (mHead == mTail && mHeadLength == 0);
-  }
+  bool IsEmpty() const { return !mCount; }
 
   T Pop() {
-#if defined(EXTRA_ASSERTS) && DEBUG
-    size_t original_length = Count();
-#endif
     MOZ_ASSERT(!IsEmpty());
 
     T result = std::move(mHead->mEvents[mOffsetHead]);
     mHead->mEvents[mOffsetHead].~T();
+    
     mOffsetHead = (mOffsetHead + 1) % ItemsPerPage;
+    mCount -= 1;
     mHeadLength -= 1;
 
-    
     
     if (mHead != mTail && mHeadLength == 0) {
       Page* dead = mHead;
       mHead = mHead->mNext;
       free(dead);
-      mOffsetHead = 0;
       
-      if (mHead != mTail) {
-        mHeadLength = ItemsPerPage;
-      } else {
-        mHeadLength = mTailLength;
-        mTailLength = 0;
-      }
+      mOffsetHead = 0;
+      mHeadLength =
+          static_cast<uint16_t>(std::min<uint32_t>(mCount, ItemsPerPage));
+      
     }
 
-#ifdef EXTRA_ASSERTS
-    MOZ_ASSERT(Count() == original_length - 1);
-#endif
     return result;
   }
 
@@ -184,39 +166,7 @@ class Queue {
     return mHead->mEvents[mOffsetHead];
   }
 
-  T& LastElement() {
-    MOZ_ASSERT(!IsEmpty());
-    uint16_t offset =
-        mHead == mTail ? mOffsetHead + mHeadLength - 1 : mTailLength - 1;
-    return mTail->mEvents[offset];
-  }
-
-  const T& LastElement() const {
-    MOZ_ASSERT(!IsEmpty());
-    uint16_t offset =
-        mHead == mTail ? mOffsetHead + mHeadLength - 1 : mTailLength - 1;
-    return mTail->mEvents[offset];
-  }
-
-  size_t Count() const {
-    
-    if (!mHead) {
-      return 0;
-    }
-
-    
-    int count = 0;
-    
-    for (Page* page = mHead; page != mTail && page->mNext != mTail;
-         page = page->mNext) {
-      count += ItemsPerPage;
-    }
-    
-    count += mHeadLength + mTailLength;
-    MOZ_ASSERT(count >= 0);
-
-    return count;
-  }
+  size_t Count() const { return mCount; }
 
   size_t ShallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
     size_t n = 0;
@@ -255,9 +205,9 @@ class Queue {
   Page* mHead = nullptr;
   Page* mTail = nullptr;
 
+  uint32_t mCount = 0;       
   uint16_t mOffsetHead = 0;  
   uint16_t mHeadLength = 0;  
-  uint16_t mTailLength = 0;  
 };
 
 }  
