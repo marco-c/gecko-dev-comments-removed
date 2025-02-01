@@ -53,13 +53,7 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
   NS_DECL_NSIMEMORYREPORTER
 
   
-  void GetLoadedModules(nsTArray<nsCString>& aLoadedModules);
-
-  
   nsresult GetLoadedESModules(nsTArray<nsCString>& aLoadedModules);
-
-  
-  nsresult GetLoadedJSAndESModules(nsTArray<nsCString>& aLoadedModules);
 
   nsresult GetModuleImportStack(const nsACString& aLocation,
                                 nsACString& aRetval);
