@@ -180,7 +180,7 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
   
   
   const bool usingMemoryDC =
-      renderer->GetBackendType() == LayersBackend::LAYERS_NONE &&
+      IsPopup() && renderer->GetBackendType() == LayersBackend::LAYERS_NONE &&
       mTransparencyMode == TransparencyMode::Transparent;
   const LayoutDeviceIntRect winRect = [&] {
     RECT r;
@@ -265,7 +265,7 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
       RefPtr<gfxASurface> targetSurface;
 
       
-      if (TransparencyMode::Transparent == mTransparencyMode) {
+      if (usingMemoryDC) {
         
         
         MutexAutoLock lock(mBasicLayersSurface->GetTransparentSurfaceLock());
@@ -316,7 +316,7 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
         }
       }
 
-      if (TransparencyMode::Transparent == mTransparencyMode) {
+      if (usingMemoryDC) {
         
         
         
