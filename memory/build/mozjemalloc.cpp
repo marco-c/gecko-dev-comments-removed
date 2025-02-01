@@ -1023,6 +1023,12 @@ struct GetDoublyLinkedListElement<arena_chunk_t> {
 }  
 #endif
 
+enum class purge_action_t {
+  None,
+  PurgeNow,
+  Queue,
+};
+
 struct arena_run_t {
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
   uint32_t mMagic;
@@ -1157,6 +1163,9 @@ struct arena_t {
   
   
   
+  
+  
+  
   MaybeMutex mLock MOZ_UNANNOTATED;
 
   
@@ -1202,6 +1211,13 @@ struct arena_t {
   
   
   
+  mozilla::non_crypto::XorShift128PlusRNG* mPRNG MOZ_GUARDED_BY(mLock);
+  bool mIsPRNGInitializing MOZ_GUARDED_BY(mLock);
+
+ public:
+  
+  
+  
   
   
   
@@ -1209,13 +1225,6 @@ struct arena_t {
   
   bool mIsPrivate;
 
-  
-  
-  
-  mozilla::non_crypto::XorShift128PlusRNG* mPRNG MOZ_GUARDED_BY(mLock);
-  bool mIsPRNGInitializing MOZ_GUARDED_BY(mLock);
-
- public:
   
   
   
@@ -1237,6 +1246,20 @@ struct arena_t {
   
   int32_t mMaxDirtyIncreaseOverride;
   int32_t mMaxDirtyDecreaseOverride;
+
+  
+  
+  
+  DoublyLinkedListElement<arena_t> mPurgeListElem;
+  
+  
+  
+  
+  
+  bool mIsDeferredPurgePending MOZ_GUARDED_BY(mLock);
+  
+  
+  bool mIsDeferredPurgeEnabled MOZ_GUARDED_BY(mLock);
 
  private:
   
@@ -1367,17 +1390,6 @@ struct arena_t {
 
   void UpdateMaxDirty() MOZ_EXCLUDES(mLock);
 
-  
-  bool ShouldStartPurge(bool aForce = false) MOZ_REQUIRES(mLock) {
-    return (mNumDirty > ((aForce) ? 0 : mMaxDirty));
-  }
-
-  
-  
-  bool ShouldContinuePurge(bool aForce = false) MOZ_REQUIRES(mLock) {
-    return (mNumDirty > ((aForce) ? 0 : mMaxDirty >> 1));
-  }
-
 #ifdef MALLOC_DECOMMIT
   
   
@@ -1450,6 +1462,27 @@ struct arena_t {
 
   void HardPurge();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  inline purge_action_t ShouldStartPurge() MOZ_REQUIRES(mLock);
+
+  
+  inline void MayDoOrQueuePurge(purge_action_t aAction) MOZ_EXCLUDES(mLock);
+
+  
+  
+  bool ShouldContinuePurge(bool aForce = false) MOZ_REQUIRES(mLock) {
+    return (mNumDirty > ((aForce) ? 0 : mMaxDirty >> 1));
+  }
+
   bool IsMainThreadOnly() const { return !mLock.LockIsEnabled(); }
 
   void* operator new(size_t aCount) = delete;
@@ -1458,6 +1491,17 @@ struct arena_t {
 
   void operator delete(void*);
 };
+
+namespace mozilla {
+
+template <>
+struct GetDoublyLinkedListElement<arena_t> {
+  static DoublyLinkedListElement<arena_t>& Get(arena_t* aThis) {
+    return aThis->mPurgeListElem;
+  }
+};
+
+}  
 
 struct ArenaTreeTrait {
   static RedBlackTreeNode<arena_t>& GetTreeNode(arena_t* aThis) {
@@ -1489,9 +1533,12 @@ class ArenaCollection {
     params.mMaxDirty = opt_dirty_max;
     mDefaultArena =
         mLock.Init() ? CreateArena( false, &params) : nullptr;
+    mPurgeListLock.Init();
+    mIsDeferredPurgeEnabled = false;
     return bool(mDefaultArena);
   }
 
+  
   inline arena_t* GetById(arena_id_t aArenaId, bool aIsPrivate)
       MOZ_EXCLUDES(mLock);
 
@@ -1499,15 +1546,19 @@ class ArenaCollection {
       MOZ_EXCLUDES(mLock);
 
   void DisposeArena(arena_t* aArena) MOZ_EXCLUDES(mLock) {
-    MutexAutoLock lock(mLock);
-    Tree& tree =
-        aArena->IsMainThreadOnly() ? mMainThreadArenas : mPrivateArenas;
+    
+    RemoveObsoletePurgeFromList(aArena);
+    {
+      MutexAutoLock lock(mLock);
+      Tree& tree =
+          aArena->IsMainThreadOnly() ? mMainThreadArenas : mPrivateArenas;
 
-    MOZ_RELEASE_ASSERT(tree.Search(aArena), "Arena not in tree");
-    tree.Remove(aArena);
-    mNumOperationsDisposedArenas += aArena->Operations();
+      MOZ_RELEASE_ASSERT(tree.Search(aArena), "Arena not in tree");
+      tree.Remove(aArena);
+      mNumOperationsDisposedArenas += aArena->Operations();
 
-    delete aArena;
+      delete aArena;
+    }
   }
 
   void SetDefaultMaxDirtyPageModifier(int32_t aModifier) {
@@ -1564,7 +1615,14 @@ class ArenaCollection {
 
   inline arena_t* GetDefault() { return mDefaultArena; }
 
+  
+  
   Mutex mLock MOZ_UNANNOTATED;
+
+  
+  
+  
+  Mutex mPurgeListLock;
 
   
   bool IsOnMainThread() const {
@@ -1597,6 +1655,50 @@ class ArenaCollection {
     return mNumOperationsDisposedArenas;
   }
 
+  
+  
+  
+  
+  
+  bool SetDeferredPurge(bool aEnable) {
+    MOZ_ASSERT(IsOnMainThreadWeak());
+
+    bool ret = mIsDeferredPurgeEnabled;
+    {
+      MutexAutoLock lock(mLock);
+      mIsDeferredPurgeEnabled = aEnable;
+      for (auto* arena : iter()) {
+        MaybeMutexAutoLock lock(arena->mLock);
+        arena->mIsDeferredPurgeEnabled = aEnable;
+      }
+    }
+    if (ret != aEnable) {
+      MayPurgeAll(false);
+    }
+    return ret;
+  }
+
+  bool IsDeferredPurgeEnabled() { return mIsDeferredPurgeEnabled; }
+
+  
+  void AddToOutstandingPurges(arena_t* aArena) MOZ_EXCLUDES(mPurgeListLock);
+
+  
+  void RemoveObsoletePurgeFromList(arena_t* aArena)
+      MOZ_EXCLUDES(mPurgeListLock);
+
+  
+  void MayPurgeAll(bool aForce);
+
+  
+  
+  
+  
+  
+  
+  
+  bool MayPurgeStep(bool aPeekOnly);
+
  private:
   const static arena_id_t MAIN_THREAD_ARENA_BIT = 0x1;
 
@@ -1626,6 +1728,12 @@ class ArenaCollection {
   
   
   uint64_t mNumOperationsDisposedArenas = 0;
+
+  
+  DoublyLinkedList<arena_t> mOutstandingPurges MOZ_GUARDED_BY(mPurgeListLock);
+  
+  
+  Atomic<bool, Relaxed> mIsDeferredPurgeEnabled;
 };
 
 MOZ_RUNINIT static ArenaCollection gArenas;
@@ -3289,6 +3397,7 @@ bool arena_t::Purge(bool aForce) {
 #endif
 
     if (!ShouldContinuePurge(aForce)) {
+      mIsDeferredPurgePending = false;
       return false;
     }
 
@@ -3339,6 +3448,12 @@ bool arena_t::Purge(bool aForce) {
 
       continue_purge_chunk = purge_info.FindDirtyPages(purged_once);
       continue_purge_arena = purge_info.mArena.ShouldContinuePurge(aForce);
+
+      
+      
+      if (!continue_purge_chunk && !continue_purge_arena) {
+        purge_info.mArena.mIsDeferredPurgePending = false;
+      }
     }
     if (!continue_purge_chunk) {
       if (chunk->mDying) {
@@ -3377,6 +3492,7 @@ bool arena_t::Purge(bool aForce) {
       if (!continue_purge_chunk || !continue_purge_arena) {
         
         purge_info.FinishPurgingInChunk(true);
+        purge_info.mArena.mIsDeferredPurgePending = false;
       }
     }  
 
@@ -4452,7 +4568,7 @@ static inline void arena_dalloc(void* aPtr, size_t aOffset, arena_t* aArena) {
   }
 
   arena_chunk_t* chunk_dealloc_delay = nullptr;
-  bool should_purge;
+  purge_action_t purge_action;
   {
     MaybeMutexAutoLock lock(arena->mLock);
     arena_chunk_map_t* mapelm = &chunk->map[pageind];
@@ -4470,16 +4586,14 @@ static inline void arena_dalloc(void* aPtr, size_t aOffset, arena_t* aArena) {
       chunk_dealloc_delay = arena->DallocLarge(chunk, aPtr);
     }
 
-    should_purge = arena->ShouldStartPurge();
+    purge_action = arena->ShouldStartPurge();
   }
 
   if (chunk_dealloc_delay) {
     chunk_dealloc((void*)chunk_dealloc_delay, kChunkSize, ARENA_CHUNK);
   }
 
-  while (should_purge) {
-    should_purge = arena->Purge();
-  }
+  arena->MayDoOrQueuePurge(purge_action);
 }
 
 static inline void idalloc(void* ptr, arena_t* aArena) {
@@ -4495,24 +4609,51 @@ static inline void idalloc(void* ptr, arena_t* aArena) {
   }
 }
 
+inline purge_action_t arena_t::ShouldStartPurge() {
+  if (mNumDirty > mMaxDirty) {
+    if (!mIsDeferredPurgeEnabled) {
+      return purge_action_t::PurgeNow;
+    }
+    if (mIsDeferredPurgePending) {
+      return purge_action_t::None;
+    }
+    mIsDeferredPurgePending = true;
+    return purge_action_t::Queue;
+  }
+  return purge_action_t::None;
+}
+
+inline void arena_t::MayDoOrQueuePurge(purge_action_t aAction) {
+  switch (aAction) {
+    case purge_action_t::Queue:
+      gArenas.AddToOutstandingPurges(this);
+      break;
+    case purge_action_t::PurgeNow:
+      while (Purge()) {
+      }
+      break;
+    case purge_action_t::None:
+      
+      break;
+  }
+}
+
 void arena_t::RallocShrinkLarge(arena_chunk_t* aChunk, void* aPtr, size_t aSize,
                                 size_t aOldSize) {
   MOZ_ASSERT(aSize < aOldSize);
 
   
   
-  bool should_purge;
+  purge_action_t purge_action;
   {
     MaybeMutexAutoLock lock(mLock);
     TrimRunTail(aChunk, (arena_run_t*)aPtr, aOldSize, aSize, true);
     mStats.allocated_large -= aOldSize - aSize;
     mStats.operations++;
 
-    should_purge = ShouldStartPurge();
+    purge_action = ShouldStartPurge();
   }
-  while (should_purge) {
-    should_purge = Purge();
-  }
+  MayDoOrQueuePurge(purge_action);
 }
 
 
@@ -4521,35 +4662,38 @@ bool arena_t::RallocGrowLarge(arena_chunk_t* aChunk, void* aPtr, size_t aSize,
   size_t pageind = (uintptr_t(aPtr) - uintptr_t(aChunk)) >> gPageSize2Pow;
   size_t npages = aOldSize >> gPageSize2Pow;
 
-  MaybeMutexAutoLock lock(mLock);
-  MOZ_DIAGNOSTIC_ASSERT(aOldSize ==
-                        (aChunk->map[pageind].bits & ~gPageSizeMask));
+  {
+    MaybeMutexAutoLock lock(mLock);
+    MOZ_DIAGNOSTIC_ASSERT(aOldSize ==
+                          (aChunk->map[pageind].bits & ~gPageSizeMask));
 
-  
-  MOZ_ASSERT(aSize > aOldSize);
-  if (pageind + npages < gChunkNumPages - 1 &&
-      (aChunk->map[pageind + npages].bits &
-       (CHUNK_MAP_ALLOCATED | CHUNK_MAP_BUSY)) == 0 &&
-      (aChunk->map[pageind + npages].bits & ~gPageSizeMask) >=
-          aSize - aOldSize) {
     
-    
-    
-    if (!SplitRun((arena_run_t*)(uintptr_t(aChunk) +
-                                 ((pageind + npages) << gPageSize2Pow)),
-                  aSize - aOldSize, true, false)) {
-      return false;
+    MOZ_ASSERT(aSize > aOldSize);
+    if (pageind + npages < gChunkNumPages - 1 &&
+        (aChunk->map[pageind + npages].bits &
+         (CHUNK_MAP_ALLOCATED | CHUNK_MAP_BUSY)) == 0 &&
+        (aChunk->map[pageind + npages].bits & ~gPageSizeMask) >=
+            aSize - aOldSize) {
+      
+      
+      
+      if (!SplitRun((arena_run_t*)(uintptr_t(aChunk) +
+                                   ((pageind + npages) << gPageSize2Pow)),
+                    aSize - aOldSize, true, false)) {
+        return false;
+      }
+
+      aChunk->map[pageind].bits = aSize | CHUNK_MAP_LARGE | CHUNK_MAP_ALLOCATED;
+      aChunk->map[pageind + npages].bits =
+          CHUNK_MAP_LARGE | CHUNK_MAP_ALLOCATED;
+
+      mStats.allocated_large += aSize - aOldSize;
+      mStats.operations++;
+
+      return true;
     }
-
-    aChunk->map[pageind].bits = aSize | CHUNK_MAP_LARGE | CHUNK_MAP_ALLOCATED;
-    aChunk->map[pageind + npages].bits = CHUNK_MAP_LARGE | CHUNK_MAP_ALLOCATED;
-
-    mStats.allocated_large += aSize - aOldSize;
-    mStats.operations++;
-    return true;
+    return false;
   }
-
-  return false;
 }
 
 void* arena_t::RallocSmallOrLarge(void* aPtr, size_t aSize, size_t aOldSize) {
@@ -4674,6 +4818,9 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
     mMaxDirtyDecreaseOverride = 0;
   }
 
+  mIsDeferredPurgePending = false;
+  mIsDeferredPurgeEnabled = gArenas.IsDeferredPurgeEnabled();
+
   MOZ_RELEASE_ASSERT(mLock.Init(doLock));
 
   mPRNG = nullptr;
@@ -4715,6 +4862,7 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
 arena_t::~arena_t() {
   size_t i;
   MaybeMutexAutoLock lock(mLock);
+
   MOZ_RELEASE_ASSERT(!mLink.Left() && !mLink.Right(),
                      "Arena is still registered");
   MOZ_RELEASE_ASSERT(!mStats.allocated_small && !mStats.allocated_large,
@@ -5612,26 +5760,13 @@ inline void MozJemalloc::jemalloc_purge_freed_pages() {
 
 inline void MozJemalloc::jemalloc_free_dirty_pages(void) {
   if (malloc_initialized) {
-    MutexAutoLock lock(gArenas.mLock);
-    MOZ_ASSERT(gArenas.IsOnMainThreadWeak());
-    for (auto* arena : gArenas.iter()) {
-      bool do_purge = true;
-      while (do_purge) {
-        do_purge = arena->Purge(true);
-      }
-    }
+    gArenas.MayPurgeAll(true);
   }
 }
 
 inline void MozJemalloc::jemalloc_free_excess_dirty_pages(void) {
   if (malloc_initialized) {
-    MutexAutoLock lock(gArenas.mLock);
-    for (auto* arena : gArenas.iter()) {
-      bool do_purge = true;
-      while (do_purge) {
-        do_purge = arena->Purge();
-      }
-    }
+    gArenas.MayPurgeAll(false);
   }
 }
 
@@ -5732,6 +5867,83 @@ inline void MozJemalloc::jemalloc_reset_small_alloc_randomization(
   }
 }
 
+inline bool MozJemalloc::moz_enable_deferred_purge(bool aEnabled) {
+  return gArenas.SetDeferredPurge(aEnabled);
+}
+
+inline bool MozJemalloc::moz_may_purge_one_now(bool aPeekOnly) {
+  return gArenas.MayPurgeStep(aPeekOnly);
+}
+
+inline void ArenaCollection::AddToOutstandingPurges(arena_t* aArena) {
+  MOZ_ASSERT(aArena);
+
+  
+  
+  MutexAutoLock lock(mPurgeListLock);
+  if (!mOutstandingPurges.ElementProbablyInList(aArena)) {
+    mOutstandingPurges.pushBack(aArena);
+  }
+}
+
+inline void ArenaCollection::RemoveObsoletePurgeFromList(arena_t* aArena) {
+  
+  
+  MutexAutoLock lock(mPurgeListLock);
+  if (mOutstandingPurges.ElementProbablyInList(aArena)) {
+    mOutstandingPurges.remove(aArena);
+  }
+}
+
+void ArenaCollection::MayPurgeAll(bool aForce) {
+  MutexAutoLock lock(mLock);
+  for (auto* arena : iter()) {
+    
+    
+    if (!arena->IsMainThreadOnly() || IsOnMainThreadWeak()) {
+      while (arena->Purge(aForce)) {
+      }
+      RemoveObsoletePurgeFromList(arena);
+    }
+  }
+}
+
+bool ArenaCollection::MayPurgeStep(bool aPeekOnly) {
+  
+  
+  MOZ_ASSERT(gArenas.IsOnMainThreadWeak());
+
+  if (!aPeekOnly) {
+    arena_t* current = nullptr;
+    {
+      MutexAutoLock lock(mPurgeListLock);
+      if (!mOutstandingPurges.isEmpty()) {
+        current = mOutstandingPurges.popFront();
+      }
+    }
+    
+    
+    if (current && current->Purge(false)) {
+      MutexAutoLock lock(mPurgeListLock);
+      
+      
+      if (!mOutstandingPurges.ElementProbablyInList(current)) {
+        
+        
+        mOutstandingPurges.pushFront(current);
+      }
+      return true;
+    }
+  }
+
+  bool hasMore = false;
+  {
+    MutexAutoLock lock(mPurgeListLock);
+    hasMore = !mOutstandingPurges.isEmpty();
+  }
+  return hasMore;
+}
+
 #define MALLOC_DECL(name, return_type, ...)                          \
   inline return_type MozJemalloc::moz_arena_##name(                  \
       arena_id_t aArenaId, ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__)) { \
@@ -5778,6 +5990,8 @@ void _malloc_prefork(void) MOZ_NO_THREAD_SAFETY_ANALYSIS {
     }
   }
 
+  gArenas.mPurgeListLock.Lock();
+
   base_mtx.Lock();
 
   huge_mtx.Lock();
@@ -5789,6 +6003,8 @@ void _malloc_postfork_parent(void) MOZ_NO_THREAD_SAFETY_ANALYSIS {
   huge_mtx.Unlock();
 
   base_mtx.Unlock();
+
+  gArenas.mPurgeListLock.Unlock();
 
   for (auto arena : gArenas.iter()) {
     if (arena->mLock.LockIsEnabled()) {
@@ -5808,6 +6024,8 @@ void _malloc_postfork_child(void) {
   huge_mtx.Init();
 
   base_mtx.Init();
+
+  gArenas.mPurgeListLock.Init();
 
   MOZ_PUSH_IGNORE_THREAD_SAFETY
   for (auto arena : gArenas.iter()) {

@@ -112,7 +112,11 @@ MALLOC_DECL(jemalloc_purge_freed_pages, void)
 
 
 
+
 MALLOC_DECL(jemalloc_free_dirty_pages, void)
+
+
+
 
 
 
@@ -146,6 +150,23 @@ MALLOC_DECL(moz_dispose_arena, void, arena_id_t)
 
 
 MALLOC_DECL(moz_set_max_dirty_page_modifier, void, int32_t)
+
+
+
+
+
+
+
+MALLOC_DECL(moz_enable_deferred_purge, bool, bool)
+
+
+
+
+
+
+
+
+MALLOC_DECL(moz_may_purge_one_now, bool, bool)
 
 #  endif
 
