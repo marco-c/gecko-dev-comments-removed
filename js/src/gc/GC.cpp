@@ -2470,21 +2470,23 @@ void GCRuntime::purgeRuntime() {
   marker().unmarkGrayStack.clearAndFree();
 }
 
-static bool ShouldCleanUpEverything(JS::GCOptions options) {
-  
-  
-  
-  return options == JS::GCOptions::Shutdown || options == JS::GCOptions::Shrink;
-}
-
 bool GCRuntime::shouldPreserveJITCode(Realm* realm,
                                       const TimeStamp& currentTime,
                                       JS::GCReason reason,
                                       bool canAllocateMoreCode,
                                       bool isActiveCompartment) {
-  if (ShouldCleanUpEverything(gcOptions())) {
+  
+  
+  if (isShutdownGC()) {
     return false;
   }
+
+  
+  
+  if (isShrinkingGC()) {
+    return false;
+  }
+
   if (!canAllocateMoreCode) {
     return false;
   }
