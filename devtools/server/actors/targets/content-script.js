@@ -51,7 +51,9 @@ class WebExtensionContentScriptTargetActor extends BaseTargetActor {
     
     this.makeDebugger = makeDebugger.bind(null, {
       findDebuggees: _dbg => [this.contentScriptSandbox],
-      shouldAddNewGlobalAsDebuggee: () => true,
+
+      
+      shouldAddNewGlobalAsDebuggee: () => false,
     });
   }
 

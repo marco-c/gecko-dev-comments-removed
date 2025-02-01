@@ -489,11 +489,10 @@ export function sortThreads(a, b) {
   }
 
   
-  if (a.targetType == "frame" && b.targetType == "frame") {
-    return a.name.localeCompare(b.name);
-  } else if (
-    a.targetType.endsWith("worker") &&
-    b.targetType.endsWith("worker")
+  if (
+    (a.targetType == "frame" && b.targetType == "frame") ||
+    (a.targetType.endsWith("worker") && b.targetType.endsWith("worker")) ||
+    (a.targetType == "content_script" && b.targetType == "content_script")
   ) {
     return a.name.localeCompare(b.name);
   }
