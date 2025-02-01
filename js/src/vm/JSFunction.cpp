@@ -60,6 +60,8 @@
 #include "vm/Shape.h"
 #include "vm/StringObject.h"
 #include "wasm/AsmJS.h"
+#include "wasm/WasmCode.h"
+#include "wasm/WasmInstance.h"
 #ifdef ENABLE_RECORD_TUPLE
 #  include "vm/RecordType.h"
 #  include "vm/TupleType.h"
@@ -452,6 +454,75 @@ bool JSFunction::hasNonConfigurablePrototypeDataProperty() {
   PropertyName* prototypeName = runtimeFromMainThread()->commonNames->prototype;
   Maybe<PropertyInfo> prop = lookupPure(prototypeName);
   return prop.isSome() && prop->isDataProperty() && !prop->configurable();
+}
+
+uint32_t JSFunction::wasmFuncIndex() const {
+  MOZ_ASSERT(isWasm() || isAsmJSNative());
+  if (!isNativeWithJitEntry()) {
+    uintptr_t tagged = uintptr_t(nativeJitInfoOrInterpretedScript());
+    MOZ_ASSERT(tagged & 1);
+    return tagged >> 1;
+  }
+  return wasmInstance().code().funcIndexFromJitEntry(wasmJitEntry());
+}
+
+void JSFunction::initWasm(uint32_t funcIndex, wasm::Instance* instance,
+                          const wasm::SuperTypeVector* superTypeVector,
+                          void* uncheckedCallEntry) {
+  MOZ_ASSERT(isWasm() || isAsmJSNative());
+  MOZ_ASSERT(!isWasmWithJitEntry());
+  MOZ_ASSERT(!nativeJitInfoOrInterpretedScript());
+
+  
+  uintptr_t tagged = (uintptr_t(funcIndex) << 1) | 1;
+  setNativeJitInfoOrInterpretedScript(reinterpret_cast<void*>(tagged));
+  
+  setExtendedSlot(FunctionExtended::WASM_INSTANCE_SLOT,
+                  JS::PrivateValue(instance));
+  
+  setExtendedSlot(FunctionExtended::WASM_STV_SLOT,
+                  JS::PrivateValue((void*)superTypeVector));
+  
+  setExtendedSlot(FunctionExtended::WASM_FUNC_UNCHECKED_ENTRY_SLOT,
+                  JS::PrivateValue(uncheckedCallEntry));
+}
+
+void JSFunction::initWasmWithJitEntry(
+    void** entry, wasm::Instance* instance,
+    const wasm::SuperTypeVector* superTypeVector, void* uncheckedCallEntry) {
+  MOZ_ASSERT(*entry);
+  MOZ_ASSERT(isWasm());
+  MOZ_ASSERT(!isWasmWithJitEntry());
+
+  
+  setFlags(flags().setNativeJitEntry());
+  setNativeJitInfoOrInterpretedScript(entry);
+
+  
+  setExtendedSlot(FunctionExtended::WASM_INSTANCE_SLOT,
+                  JS::PrivateValue(instance));
+  
+  setExtendedSlot(FunctionExtended::WASM_STV_SLOT,
+                  JS::PrivateValue((void*)superTypeVector));
+  
+  setExtendedSlot(FunctionExtended::WASM_FUNC_UNCHECKED_ENTRY_SLOT,
+                  JS::PrivateValue(uncheckedCallEntry));
+
+  MOZ_ASSERT(isWasmWithJitEntry());
+}
+
+void* JSFunction::wasmUncheckedCallEntry() const {
+  MOZ_ASSERT(isWasm());
+  return getExtendedSlot(FunctionExtended::WASM_FUNC_UNCHECKED_ENTRY_SLOT)
+      .toPrivate();
+}
+
+void* JSFunction::wasmCheckedCallEntry() const {
+  uint8_t* codeRangeBase;
+  const wasm::CodeRange* codeRange;
+  wasmInstance().code().funcCodeRange(wasmFuncIndex(), &codeRange,
+                                      &codeRangeBase);
+  return codeRangeBase + codeRange->funcCheckedCallEntry();
 }
 
 static bool fun_mayResolve(const JSAtomState& names, jsid id, JSObject*) {

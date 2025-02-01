@@ -99,20 +99,6 @@ struct ImportValues;
 [[nodiscard]] bool DeserializeModule(JSContext* cx, const Bytes& serialized,
                                      MutableHandleObject module);
 
-
-
-
-
-
-
-
-bool IsWasmExportedFunction(JSFunction* fun);
-
-Instance& ExportedFunctionToInstance(JSFunction* fun);
-WasmInstanceObject* ExportedFunctionToInstanceObject(JSFunction* fun);
-uint32_t ExportedFunctionToFuncIndex(JSFunction* fun);
-const wasm::TypeDef& ExportedFunctionToTypeDef(JSFunction* fun);
-
 bool IsSharedWasmMemoryObject(JSObject* obj);
 
 }  
@@ -241,10 +227,6 @@ class WasmInstanceObject : public NativeObject {
   [[nodiscard]] static bool getExportedFunction(
       JSContext* cx, Handle<WasmInstanceObject*> instanceObj,
       uint32_t funcIndex, MutableHandleFunction fun);
-
-  void getExportedFunctionCodeRange(JSFunction* fun,
-                                    const wasm::CodeRange** range,
-                                    uint8_t** codeBase);
 
   static WasmInstanceScope* getScope(JSContext* cx,
                                      Handle<WasmInstanceObject*> instanceObj);
