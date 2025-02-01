@@ -52,31 +52,29 @@ class WaylandBuffer {
   virtual void DestroyGLResources() {};
   virtual gfx::SurfaceFormat GetSurfaceFormat() = 0;
 
-  LayoutDeviceIntSize GetSize() { return mSize; };
-  bool IsMatchingSize(const LayoutDeviceIntSize& aSize) {
+  LayoutDeviceIntSize GetSize() const { return mSize; };
+  bool IsMatchingSize(const LayoutDeviceIntSize& aSize) const {
     return aSize == mSize;
   }
 
-  bool IsAttached() { return !!mSurface; }
+  bool IsAttached() { return mIsAttachedToCompositor; }
+
+  bool IsAttachedToSurface(WaylandSurface* aWaylandSurface);
+
+  
+  wl_buffer* BorrowBuffer(WaylandSurfaceLock& aSurfaceLock);
 
   
   
-  
-  
-  
-  wl_buffer* BorrowBuffer(RefPtr<WaylandSurface> aWaylandSurface);
-
-  
-  void ReturnBuffer(RefPtr<WaylandSurface> aWaylandSurface);
+  void ReturnBuffer(WaylandSurfaceLock& aSurfaceLock);
 
   
   
+  void BufferDetachedCallbackHandler(wl_buffer* aBuffer);
+
   
   
-  
-  
-  
-  void BufferDetachedCallbackHandler(wl_buffer* aBuffer, bool aWlBufferDeleted);
+  void BufferDeletedCallbackHandler();
 
  protected:
   explicit WaylandBuffer(const LayoutDeviceIntSize& aSize);
@@ -89,25 +87,29 @@ class WaylandBuffer {
   
   
   void DeleteWlBuffer();
-  wl_buffer* GetWlBuffer() { return mWLBuffer; }
-  bool HasWlBuffer() { return !!mWLBuffer; }
-
-  bool IsWaitingToBufferDelete() const { return !!mBufferDeleteSyncCallback; }
 
   
   
-  mozilla::Mutex mBufferReleaseMutex{"WaylandBufferRelease"};
+  mozilla::Mutex mMutex{"WaylandBuffer"};
 
   
-  wl_callback* mBufferDeleteSyncCallback = nullptr;
+  wl_callback* mBufferDeleteSyncCallback MOZ_GUARDED_BY(mMutex) = nullptr;
 
   
   
-  wl_buffer* mWLBuffer = nullptr;
+  wl_buffer* mWLBuffer MOZ_GUARDED_BY(mMutex) = nullptr;
+
+  
+  
+  
+  RefPtr<WaylandSurface> mAttachedToSurface MOZ_GUARDED_BY(mMutex);
 
   LayoutDeviceIntSize mSize;
+
   
-  RefPtr<WaylandSurface> mSurface;
+  
+  mozilla::Atomic<bool, mozilla::Relaxed> mIsAttachedToCompositor{false};
+
   static gfx::SurfaceFormat sFormat;
 };
 
@@ -125,8 +127,8 @@ class WaylandBufferSHM final : public WaylandBuffer {
   }
 
   void Clear();
-  size_t GetBufferAge() { return mBufferAge; };
-  RefPtr<WaylandShmPool> GetShmPool() { return mShmPool; }
+  size_t GetBufferAge() const { return mBufferAge; };
+  RefPtr<WaylandShmPool> GetShmPool() const { return mShmPool; }
 
   void IncrementBufferAge() { mBufferAge++; };
   void ResetBufferAge() { mBufferAge = 0; };
