@@ -136,6 +136,10 @@ const SharedMemoryHandle& SharedPreferenceDeserializer::GetPrefMapHandle()
 
 void ExportSharedJSInit(mozilla::ipc::GeckoChildProcessHost& procHost,
                         geckoargs::ChildProcessArgs& aExtraOpts) {
+#if defined(ANDROID) || defined(XP_IOS)
+  
+  return;
+#else
   auto& shmem = xpc::SelfHostedShmem::GetSingleton();
   SharedMemoryHandle handle = SharedMemory::CloneHandle(shmem.Handle());
   size_t len = shmem.Content().Length();
@@ -143,13 +147,13 @@ void ExportSharedJSInit(mozilla::ipc::GeckoChildProcessHost& procHost,
   
   
   if (!SharedMemory::IsHandleValid(handle) || !len) {
-    NS_ERROR("Can't use SelfHosted shared memory handle.");
     return;
   }
 
   
   geckoargs::sJsInitHandle.Put(std::move(handle), aExtraOpts);
   geckoargs::sJsInitLen.Put((uintptr_t)(len), aExtraOpts);
+#endif
 }
 
 bool ImportSharedJSInit(SharedMemoryHandle aJsInitHandle, uint64_t aJsInitLen) {
