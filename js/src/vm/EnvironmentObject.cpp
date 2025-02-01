@@ -3663,15 +3663,7 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
   mozilla::Maybe<PropertyInfo> prop;
   bool shadowsExistingProperty = false;
 
-#ifndef NIGHTLY_BUILD
-  if (varObj->is<GlobalObject>() &&
-      varObj->as<GlobalObject>().isInVarNames(name)) {
-    
-    redeclKind = "var";
-  } else
-#endif
-
-      if ((prop = lexicalEnv->lookup(cx, name))) {
+  if ((prop = lexicalEnv->lookup(cx, name))) {
     
     redeclKind = prop->writable() ? "let" : "const";
   } else if (varObj->is<NativeObject>() &&
@@ -3705,7 +3697,7 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
   if (shadowsExistingProperty && varObj->is<GlobalObject>()) {
     
     
-    varObj->as<GlobalObject>().bumpGenerationCount();
+    varObj->as<GlobalObject>().bumpGenerationCount(cx);
   }
 
   return true;
@@ -3810,14 +3802,6 @@ static bool InitGlobalOrEvalDeclarations(
           }
         }
 
-#ifndef NIGHTLY_BUILD
-        if (varObj->is<GlobalObject>()) {
-          if (!varObj->as<GlobalObject>().addToVarNames(cx, name)) {
-            return false;
-          }
-        }
-#endif
-
         break;
       }
 
@@ -3890,14 +3874,6 @@ static bool InitHoistedFunctionDeclarations(JSContext* cx, HandleScript script,
         return false;
       }
 
-#ifndef NIGHTLY_BUILD
-      if (varObj->is<GlobalObject>()) {
-        if (!varObj->as<GlobalObject>().addToVarNames(cx, name)) {
-          return false;
-        }
-      }
-#endif
-
       
       continue;
     }
@@ -3922,14 +3898,6 @@ static bool InitHoistedFunctionDeclarations(JSContext* cx, HandleScript script,
         MOZ_ASSERT(propInfo.writable());
         MOZ_ASSERT(propInfo.enumerable());
       }
-
-#ifndef NIGHTLY_BUILD
-      
-      
-      if (!varObj->as<GlobalObject>().addToVarNames(cx, name)) {
-        return false;
-      }
-#endif
     }
 
     
