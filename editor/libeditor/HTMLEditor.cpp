@@ -24,8 +24,7 @@
 #include "PendingStyles.h"
 #include "ReplaceTextTransaction.h"
 #include "SplitNodeTransaction.h"
-#include "WhiteSpaceVisibilityKeeper.h"
-#include "WSRunScanner.h"
+#include "WSRunObject.h"
 
 #include "mozilla/ComposerCommandsUpdater.h"
 #include "mozilla/ContentIterator.h"
@@ -1181,7 +1180,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
         
         
         leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-            *leafElement,
+            *leafElement, *editingHost,
             {LeafNodeType::LeafNodeOrNonEditableNode,
              LeafNodeType::LeafNodeOrChildBlock},
             BlockInlineCheck::UseComputedDisplayStyle, editingHost);
@@ -1207,7 +1206,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
       }
       
       leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-          *leafContent,
+          *leafContent, *editingHost,
           {LeafNodeType::LeafNodeOrNonEditableNode,
            LeafNodeType::LeafNodeOrChildBlock},
           BlockInlineCheck::UseComputedDisplayStyle, editingHost);
@@ -1254,7 +1253,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
     
     
     leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-        *leafContent,
+        *leafContent, *editingHost,
         {LeafNodeType::LeafNodeOrNonEditableNode,
          LeafNodeType::LeafNodeOrChildBlock},
         BlockInlineCheck::UseComputedDisplayStyle, editingHost);

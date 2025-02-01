@@ -15,6 +15,7 @@
 #include "EditorUtils.h"
 #include "HTMLEditHelpers.h"
 #include "HTMLEditUtils.h"
+#include "WSRunObject.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/OwningNonNull.h"
@@ -37,8 +38,6 @@
 
 
 namespace mozilla {
-
-using namespace dom;
 
 using EditorType = EditorUtils::EditorType;
 using WalkTreeOption = HTMLEditUtils::WalkTreeOption;

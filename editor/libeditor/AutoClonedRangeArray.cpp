@@ -11,7 +11,7 @@
 #include "HTMLEditUtils.h"    
 #include "HTMLEditHelpers.h"  
 #include "TextEditor.h"       
-#include "WSRunScanner.h"     
+#include "WSRunObject.h"      
 
 #include "mozilla/CaretAssociationHint.h"  
 #include "mozilla/IntegerRange.h"          
@@ -224,7 +224,8 @@ void AutoClonedRangeArray::EnsureRangesInTextNode(const Text& aTextNode) {
 Result<bool, nsresult>
 AutoClonedRangeArray::ShrinkRangesIfStartFromOrEndAfterAtomicContent(
     const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-    IfSelectingOnlyOneAtomicContent aIfSelectingOnlyOneAtomicContent) {
+    IfSelectingOnlyOneAtomicContent aIfSelectingOnlyOneAtomicContent,
+    const Element* aEditingHost) {
   if (IsCollapsed()) {
     return false;
   }
@@ -245,7 +246,7 @@ AutoClonedRangeArray::ShrinkRangesIfStartFromOrEndAfterAtomicContent(
                "Changing range in selection may cause running script");
     Result<bool, nsresult> result =
         WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
-            aHTMLEditor, range);
+            aHTMLEditor, range, aEditingHost);
     if (result.isErr()) {
       NS_WARNING(
           "WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent() "
