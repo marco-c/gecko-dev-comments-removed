@@ -4946,11 +4946,16 @@
       if (tabs.some(tab => tab.selected)) {
         
         
+        
+        
         unloadSelectedTab = true;
-        let newTab = this._findTabToBlurTo(this.selectedTab, tabs);
+        const tabsToExclude = tabs.concat(
+          this.tabContainer.allTabs.filter(tab => !tab.linkedPanel)
+        );
+        let newTab = this._findTabToBlurTo(this.selectedTab, tabsToExclude);
         if (newTab) {
           this.selectedTab = newTab;
-        } else if (FirefoxViewHandler.tab) {
+        } else {
           
           FirefoxViewHandler.openTab("opentabs");
           allTabsUnloaded = true;
