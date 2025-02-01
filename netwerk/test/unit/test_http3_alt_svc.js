@@ -148,7 +148,7 @@ function test_https_alt_svc() {
     .then(() => {
       h3Port = server.port();
       setupAltSvc();
-      doTest(httpsOrigin + "http3-test2", h3Route, h3AltSvc, "h3-29");
+      doTest(httpsOrigin + "http3-test2", h3Route, h3AltSvc, "h3");
     })
     .catch(_ => {});
 }

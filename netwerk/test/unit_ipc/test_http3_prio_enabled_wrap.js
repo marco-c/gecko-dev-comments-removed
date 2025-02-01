@@ -10,7 +10,7 @@ registerCleanupFunction(async () => {
 
 
 add_task(async function setup() {
-  await http3_setup_tests("h3-29");
+  await http3_setup_tests("h3");
 });
 
 async function run_test() {
