@@ -386,8 +386,7 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   
   
   
-  
-  Maybe<uint64_t> mLastTimestampSendUs;
+  Maybe<webrtc::Timestamp> mLastTimestampSend;
 
   
   
