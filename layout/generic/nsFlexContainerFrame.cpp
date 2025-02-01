@@ -3672,12 +3672,6 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
 
   
   
-  if ((alignContentFlags & StyleAlignFlags::SAFE) &&
-      mPackingSpaceRemaining < 0) {
-    mAlignContent.primary = StyleAlignFlags::START;
-  }
-
-  
   
   
   
@@ -3688,11 +3682,20 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
     mAlignContent.primary = StyleAlignFlags::FLEX_START;
   } else if (mPackingSpaceRemaining < 0 || numLines == 1) {
     if (mAlignContent.primary == StyleAlignFlags::SPACE_BETWEEN) {
+      alignContentFlags = StyleAlignFlags::SAFE;
       mAlignContent.primary = StyleAlignFlags::FLEX_START;
     } else if (mAlignContent.primary == StyleAlignFlags::SPACE_AROUND ||
                mAlignContent.primary == StyleAlignFlags::SPACE_EVENLY) {
+      alignContentFlags = StyleAlignFlags::SAFE;
       mAlignContent.primary = StyleAlignFlags::CENTER;
     }
+  }
+
+  
+  
+  if ((alignContentFlags & StyleAlignFlags::SAFE) &&
+      mPackingSpaceRemaining < 0) {
+    mAlignContent.primary = StyleAlignFlags::START;
   }
 
   
