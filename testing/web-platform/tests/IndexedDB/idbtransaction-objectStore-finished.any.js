@@ -1,11 +1,10 @@
-<!doctype html>
-<meta charset=utf-8>
-<title>IndexedDB: IDBTransaction objectStore() when transaction is finished</title>
-<link rel="help" href="https://w3c.github.io/IndexedDB/#dom-idbtransaction-objectstore">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="resources/support.js"></script>
-<script>
+
+
+
+
+
+
+'use strict';
 
 indexeddb_test(
   (t, db) => {
@@ -20,5 +19,3 @@ indexeddb_test(
   },
   'IDBTransaction objectStore() behavior when transaction is finished'
 );
-
-</script>
