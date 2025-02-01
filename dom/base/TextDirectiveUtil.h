@@ -217,6 +217,21 @@ class TextDirectiveUtil final {
   static Result<TextDirective, ErrorResult> CreateTextDirectiveFromRanges(
       nsRange* aPrefix, nsRange* aStart, nsRange* aEnd, nsRange* aSuffix);
 
+  
+
+
+
+
+  static uint32_t FindCommonPrefix(const nsAString& aFoldedStr1,
+                                   const nsAString& aFoldedStr2);
+
+  
+
+
+
+
+  static uint32_t FindCommonSuffix(const nsAString& aFoldedStr1,
+                                   const nsAString& aFoldedStr2);
 };
 }  
 
