@@ -20,10 +20,6 @@
 
 add_task(async function () {
   
-  if (isCm6Enabled) {
-    return;
-  }
-  
   
   const tab = await addTab(EXAMPLE_URL + "doc-wasm-sourcemaps.html");
   const toolbox = await openToolboxForTab(tab, "webconsole");
@@ -110,10 +106,12 @@ add_task(async function () {
   is(
     "0x" + virtualBinaryLine.toString(16),
     "0x" + generatedLine.toString(16),
-    "The hardcoded binary line matches the mapped location when we set the breakpoint on the original line. If you rebuilt the binary, you may just need to update the virtualBinaryLine variable to the new location."
+    "The hardcoded binary line (0x" +
+      generatedLine.toString(16) +
+      ") matches the mapped location when we set the breakpoint on the original line. If you rebuilt the binary, you may just need to update the virtualBinaryLine variable to the new location."
   );
-  const binaryLine =
-    dbg.wasmOffsetToLine(binarySource.id, virtualBinaryLine) + 1;
+
+  const binaryLine = wasmOffsetToLine(dbg, binarySource.id, virtualBinaryLine);
 
   
   
@@ -121,6 +119,8 @@ add_task(async function () {
     keepContext: false,
   });
 
+  
+  await scrollEditorIntoView(dbg, binaryLine, 0);
   await assertLineIsBreakable(dbg, binarySource.url, binaryLine, true);
 
   await addBreakpoint(dbg, binarySource, virtualBinaryLine);

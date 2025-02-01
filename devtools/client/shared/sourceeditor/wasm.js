@@ -10,6 +10,10 @@ const wasmdis = require("resource://devtools/client/shared/vendor/WasmDis.js");
 const wasmStates = new WeakMap();
 
 function getWasmText(subject, data) {
+  if (wasmStates.has(subject)) {
+    const wasmState = wasmStates.get(subject);
+    return { lines: wasmState.result.lines, done: wasmState.result.done };
+  }
   const parser = new wasmparser.BinaryReader();
   parser.setData(data.buffer, 0, data.length);
   const dis = new wasmdis.WasmDisassembler();
@@ -19,17 +23,24 @@ function getWasmText(subject, data) {
   if (result.lines.length === 0) {
     result = { lines: ["No luck with wast conversion"], offsets: [0], done };
   }
-
+  
   const offsets = result.offsets,
     lines = [];
-  for (let i = 0; i < offsets.length; i++) {
-    lines[offsets[i]] = i;
+  for (let line = 0; line < offsets.length; line++) {
+    const offset = offsets[line];
+    lines[offset] = line;
   }
-
-  wasmStates.set(subject, { offsets, lines });
+  wasmStates.set(subject, { offsets, lines, result });
 
   return { lines: result.lines, done: result.done };
 }
+
+
+
+
+
+
+
 
 function getWasmLineNumberFormatter(subject) {
   const codeOf0 = 48,
@@ -45,8 +56,8 @@ function getWasmLineNumberFormatter(subject) {
     codeOf0,
   ];
   let last0 = 7;
-  return function (number) {
-    const offset = lineToWasmOffset(subject, number - 1);
+  return function (line) {
+    const offset = lineToWasmOffset(subject, line - 1);
     if (offset === undefined) {
       return "";
     }
@@ -63,25 +74,80 @@ function getWasmLineNumberFormatter(subject) {
   };
 }
 
+
+
+
+
+
+
+
 function isWasm(subject) {
   return wasmStates.has(subject);
 }
 
-function lineToWasmOffset(subject, number) {
+
+
+
+
+
+
+
+
+
+
+
+function lineToWasmOffset(subject, line, findNextOffset = false) {
   const wasmState = wasmStates.get(subject);
   if (!wasmState) {
     return undefined;
   }
-  let offset = wasmState.offsets[number];
-  while (offset === undefined && number > 0) {
-    offset = wasmState.offsets[--number];
+
+  let offset = wasmState.offsets[line];
+  if (findNextOffset) {
+    while (offset === undefined && line > 0) {
+      offset = wasmState.offsets[--line];
+    }
   }
   return offset;
 }
 
+
+
+
+
+
+
+
 function wasmOffsetToLine(subject, offset) {
   const wasmState = wasmStates.get(subject);
   return wasmState.lines[offset];
+}
+
+
+
+
+const wasmLines = new WeakMap();
+
+function renderWasmText(subject, content) {
+  if (wasmLines.has(content)) {
+    return wasmLines.get(content) || [];
+  }
+
+  
+  const { binary } = content.value;
+  const data = new Uint8Array(binary.length);
+  for (let i = 0; i < data.length; i++) {
+    data[i] = binary.charCodeAt(i);
+  }
+  const { lines } = getWasmText(subject, data);
+  const MAX_LINES = 1000000;
+  if (lines.length > MAX_LINES) {
+    lines.splice(MAX_LINES, lines.length - MAX_LINES);
+    lines.push(";; .... text is truncated due to the size");
+  }
+
+  wasmLines.set(content, lines);
+  return lines;
 }
 
 module.exports = {
@@ -90,4 +156,5 @@ module.exports = {
   isWasm,
   lineToWasmOffset,
   wasmOffsetToLine,
+  renderWasmText,
 };

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+
+
+
 
 import { showMenu } from "../../context-menu/menu";
 
@@ -100,7 +100,7 @@ export function showEditorGutterContextMenu(event, line, location, lineText) {
   };
 }
 
-// Menu Items
+
 const continueToHereItem = (location, isPaused, dispatch) => ({
   accesskey: L10N.getStr("editor.continueToHere.accesskey"),
   disabled: !isPaused,
@@ -181,14 +181,14 @@ const blackBoxLineMenuItem = (
   { from, to },
   blackboxedRanges,
   isSourceOnIgnoreList,
-  // the clickedLine is passed when the context menu
-  // is opened from the gutter, it is not available when the
-  // the context menu is opened from the editor.
+  
+  
+  
   clickedLine = null,
   dispatch
 ) => {
-  const startLine = clickedLine ?? toSourceLine(selectedSource.id, from.line);
-  const endLine = clickedLine ?? toSourceLine(selectedSource.id, to.line);
+  const startLine = clickedLine ?? toSourceLine(selectedSource, from.line);
+  const endLine = clickedLine ?? toSourceLine(selectedSource, to.line);
 
   const blackboxRange = findBlackBoxRange(selectedSource, blackboxedRanges, {
     start: startLine,
@@ -205,11 +205,11 @@ const blackBoxLineMenuItem = (
     blackboxedRanges[selectedSource.url] &&
     !blackboxedRanges[selectedSource.url].length;
 
-  // The ignore/unignore line context menu item should be disabled when
-  // 1) The source is on the sourcemap ignore list
-  // 2) The whole source is blackboxed or
-  // 3) Multiple lines are blackboxed or
-  // 4) Multiple lines are selected in the editor
+  
+  
+  
+  
+  
   const shouldDisable =
     isSourceOnIgnoreList || isSourceFullyBlackboxed || !isSingleLine;
 
@@ -253,8 +253,8 @@ const blackBoxLinesMenuItem = (
   clickedLine,
   dispatch
 ) => {
-  const startLine = toSourceLine(selectedSource.id, from.line);
-  const endLine = toSourceLine(selectedSource.id, to.line);
+  const startLine = toSourceLine(selectedSource, from.line);
+  const endLine = toSourceLine(selectedSource, to.line);
 
   const blackboxRange = findBlackBoxRange(selectedSource, blackboxedRanges, {
     start: startLine,
@@ -368,10 +368,10 @@ function editorMenuItems({
     blackBoxMenuItem(source, blackboxedRanges, isSourceOnIgnoreList, dispatch)
   );
 
-  const startLine = toSourceLine(source.id, lineObject.from.line);
-  const endLine = toSourceLine(source.id, lineObject.to.line);
+  const startLine = toSourceLine(source, lineObject.from.line);
+  const endLine = toSourceLine(source, lineObject.to.line);
 
-  // Find any blackbox ranges that exist for the selected lines
+  
   const blackboxRange = findBlackBoxRange(source, blackboxedRanges, {
     start: startLine,
     end: endLine,
@@ -381,8 +381,8 @@ function editorMenuItems({
     ? blackboxRange.start.line !== blackboxRange.end.line
     : startLine !== endLine;
 
-  // When the range is defined and is an empty array,
-  // the whole source is blackboxed
+  
+  
   const theWholeSourceIsBlackBoxed =
     blackboxedRanges[source.url] && !blackboxedRanges[source.url].length;
 

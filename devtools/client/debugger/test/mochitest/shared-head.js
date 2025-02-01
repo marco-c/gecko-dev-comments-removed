@@ -368,7 +368,7 @@ async function _assertDebugLine(dbg, line, column) {
   const source = dbg.selectors.getSelectedSource();
   
   if (isWasmBinarySource(source)) {
-    line = dbg.wasmOffsetToLine(source.id, line) + 1;
+    line = wasmOffsetToLine(dbg, source.id, line);
   }
 
   
@@ -1566,7 +1566,15 @@ async function getEditorLineGutter(dbg, line) {
 
 
 async function scrollAndGetEditorLineGutterElement(dbg, line) {
-  await scrollEditorIntoView(dbg, isCm6Enabled ? line : line - 1, 0);
+  const editor = getCMEditor(dbg);
+  await scrollEditorIntoView(dbg, line, 0);
+  const selectedSource = dbg.selectors.getSelectedSource();
+  
+  if (editor.isWasm && !selectedSource.isOriginal) {
+    const wasmLineFormatter = editor.getWasmLineNumberFormatter();
+    line = wasmLineFormatter(line);
+  }
+
   const els = findAllElementsWithSelector(
     dbg,
     isCm6Enabled
@@ -1602,6 +1610,8 @@ async function getNodeAtEditorGutterLine(dbg, line) {
   if (isCm6Enabled) {
     return scrollAndGetEditorLineGutterElement(dbg, line);
   }
+  
+  
   return getEditorLineGutter(dbg, line);
 }
 
@@ -2268,6 +2278,13 @@ function rightClickObjectInspectorNode(dbg, node) {
 
 function getCMEditor(dbg) {
   return dbg.win.codeMirrorSourceEditorTestInstance;
+}
+
+function wasmOffsetToLine(dbg, sourceId, offset) {
+  if (isCm6Enabled) {
+    return getCMEditor(dbg).wasmOffsetToLine(offset) + 1;
+  }
+  return dbg.wasmOffsetToLine(sourceId, offset) + 1;
 }
 
 

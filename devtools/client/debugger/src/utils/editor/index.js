@@ -8,7 +8,6 @@ export * from "../ui";
 export * from "./tokens";
 
 import { createEditor } from "./create-editor";
-
 import { isWasm, lineToWasmOffset, wasmOffsetToLine } from "../wasm";
 import { createLocation } from "../location";
 import { features } from "../prefs";
@@ -60,28 +59,48 @@ export function endOperation() {
   codeMirror.endOperation();
 }
 
-export function toEditorLine(sourceId, lineOrOffset) {
-  if (isWasm(sourceId)) {
-    
-    return wasmOffsetToLine(sourceId, lineOrOffset) || 0;
-  }
-
+export function toWasmSourceLine(sourceId, offset) {
   if (features.codemirrorNext) {
+    return editor.wasmOffsetToLine(offset) || 0;
+  }
+  return wasmOffsetToLine(sourceId, offset) || 0;
+}
+
+
+
+
+
+
+
+export function toEditorLine(source, lineOrOffset) {
+  if (features.codemirrorNext) {
+    if (editor.isWasm && !source.isOriginal) {
+      
+      return toWasmSourceLine(source.id, lineOrOffset) + 1;
+    }
     return lineOrOffset;
   }
 
+  
+  if (isWasm(source.id)) {
+    return toWasmSourceLine(source.id, lineOrOffset);
+  }
   return lineOrOffset ? lineOrOffset - 1 : 1;
 }
 
-export function fromEditorLine(sourceId, line, sourceIsWasm) {
-  if (sourceIsWasm) {
-    return lineToWasmOffset(sourceId, line) || 0;
-  }
-
+export function fromEditorLine(source, line) {
   if (features.codemirrorNext) {
+    
+    if (editor.isWasm && !source.isOriginal) {
+      
+      return editor.lineToWasmOffset(line - 1);
+    }
     return line;
   }
-
+  
+  if (isWasm(source.id)) {
+    return lineToWasmOffset(source.id, line);
+  }
   return line + 1;
 }
 
@@ -89,21 +108,27 @@ export function toEditorPosition(location) {
   
   
   
+  const isSourceWasm = features.codemirrorNext
+    ? editor.isWasm
+    : isWasm(location.source.id);
   return {
-    line: toEditorLine(location.source.id, location.line),
-    column:
-      isWasm(location.source.id) || (!location.column ? 0 : location.column),
+    line: toEditorLine(location.source, location.line),
+    column: isSourceWasm || !location.column ? 0 : location.column,
   };
 }
 
-export function toSourceLine(sourceId, line) {
-  if (isWasm(sourceId)) {
-    return lineToWasmOffset(sourceId, line);
+export function toSourceLine(source, line) {
+  if (features.codemirrorNext) {
+    if (editor.isWasm && !source.isOriginal) {
+      return editor.lineToWasmOffset(line - 1);
+    }
+    return line;
   }
   
   
-  if (features.codemirrorNext) {
-    return line;
+  
+  if (isWasm(source.id)) {
+    return lineToWasmOffset(source.id, line);
   }
   return line + 1;
 }
@@ -116,9 +141,9 @@ export function markText({ codeMirror }, className, { start, end }) {
   );
 }
 
-export function lineAtHeight({ codeMirror }, sourceId, event) {
+export function lineAtHeight({ codeMirror }, source, event) {
   const _editorLine = codeMirror.lineAtHeight(event.clientY);
-  return toSourceLine(sourceId, _editorLine);
+  return toSourceLine(source, _editorLine);
 }
 
 export function getSourceLocationFromMouseEvent({ codeMirror }, source, e) {
@@ -126,11 +151,13 @@ export function getSourceLocationFromMouseEvent({ codeMirror }, source, e) {
     left: e.clientX,
     top: e.clientY,
   });
-
+  const isSourceWasm = features.codemirrorNext
+    ? editor.isWasm
+    : isWasm(location.source.id);
   return createLocation({
     source,
-    line: fromEditorLine(source.id, line, isWasm(source.id)),
-    column: isWasm(source.id) ? 0 : ch + 1,
+    line: fromEditorLine(source, line),
+    column: isSourceWasm ? 0 : ch + 1,
   });
 }
 

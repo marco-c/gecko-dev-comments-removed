@@ -2,6 +2,8 @@
 
 
 
+
+
 import { BinaryReader } from "devtools/client/shared/vendor/WasmParser";
 import {
   WasmDisassembler,
