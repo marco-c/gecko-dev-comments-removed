@@ -2372,6 +2372,8 @@ void MediaFormatReader::DrainDecoder(TrackType aTrack) {
   LOG("Requesting %s decoder to drain", TrackTypeToStr(aTrack));
 }
 
+
+
 void MediaFormatReader::Update(TrackType aTrack) {
   AUTO_PROFILER_LABEL("MediaFormatReader::Update", MEDIA_PLAYBACK);
   MOZ_ASSERT(OnTaskQueue());
