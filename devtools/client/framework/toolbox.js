@@ -1301,6 +1301,24 @@ Toolbox.prototype = {
     if (notification) {
       notification.close();
     }
+
+    
+    
+    const consolePanel = this.getPanel("webconsole");
+    if (consolePanel) {
+      
+      
+      consolePanel.hud.ui.handleWillNavigate({
+        timeStamp: new Date(),
+        url: null,
+      });
+    }
+    const netPanel = this.getPanel("netmonitor");
+    if (netPanel) {
+      
+      netPanel.panelWin.connector.willNavigate();
+    }
+
     try {
       await this.commands.targetCommand.reloadTopLevelTarget(bypassCache);
     } catch (e) {
