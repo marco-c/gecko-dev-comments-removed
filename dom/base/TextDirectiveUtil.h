@@ -162,6 +162,17 @@ class TextDirectiveUtil final {
 
   static void AdvanceStartToNextNonWhitespacePosition(nsRange& aRange);
 
+  static RangeBoundary MoveBoundaryToNextNonWhitespacePosition(
+      const RangeBoundary& aRangeBoundary);
+  static RangeBoundary MoveBoundaryToPreviousNonWhitespacePosition(
+      const RangeBoundary& aRangeBoundary);
+
+  static Result<Maybe<RangeBoundary>, ErrorResult> FindBlockBoundaryInRange(
+      const nsRange& aRange, TextScanDirection aDirection);
+
+  static Result<RangeBoundary, ErrorResult> FindNextBlockBoundary(
+      const RangeBoundary& aRangeBoundary, TextScanDirection aDirection);
+
   
 
 
@@ -189,6 +200,20 @@ class TextDirectiveUtil final {
 
 
   static Result<Ok, ErrorResult> ExtendRangeToWordBoundaries(nsRange& aRange);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static Result<TextDirective, ErrorResult> CreateTextDirectiveFromRanges(
+      nsRange* aPrefix, nsRange* aStart, nsRange* aEnd, nsRange* aSuffix);
 };
 }  
 
