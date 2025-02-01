@@ -380,6 +380,37 @@ static std::string_view ToJsKey(const Limit limit) {
   MOZ_CRASH("Bad Limit");
 }
 
+uint64_t Adapter::MissingFeatures() const {
+  uint64_t missingFeatures = 0;
+
+  
+  for (const auto feature :
+       dom::MakeWebIDLEnumeratedRange<dom::GPUFeatureName>()) {
+    const auto status = FeatureImplementationStatus::fromDomFeature(feature);
+    switch (status.tag) {
+      case FeatureImplementationStatusTag::Implemented:
+        missingFeatures |= status.value.implemented.wgpuBit;
+        break;
+      case FeatureImplementationStatusTag::NotImplemented:
+        break;
+    }
+  }
+
+  
+  for (auto feature : mFeatures->Features()) {
+    const auto status = FeatureImplementationStatus::fromDomFeature(feature);
+    switch (status.tag) {
+      case FeatureImplementationStatusTag::Implemented:
+        missingFeatures &= ~status.value.implemented.wgpuBit;
+        break;
+      case FeatureImplementationStatusTag::NotImplemented:
+        break;
+    }
+  }
+
+  return missingFeatures;
+}
+
 
 
 
