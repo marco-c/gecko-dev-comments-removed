@@ -112,7 +112,9 @@ class MediaTrackDemuxer : public DecoderDoctorLifeLogger<MediaTrackDemuxer> {
     
     
     
-    nsTArray<RefPtr<MediaRawData>>& GetMovableSamples() { return mSamples; }
+    nsTArray<RefPtr<MediaRawData>>&& GetMovableSamples() {
+      return std::move(mSamples);
+    }
 
    private:
     ~SamplesHolder() = default;
