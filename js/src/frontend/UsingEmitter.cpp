@@ -9,7 +9,6 @@
 #include "frontend/IfEmitter.h"
 #include "frontend/TryEmitter.h"
 #include "frontend/WhileEmitter.h"
-#include "vm/CompletionKind.h"
 
 using namespace js;
 using namespace js::frontend;
@@ -128,12 +127,9 @@ bool DisposalEmitter::emitResourcePropertyAccess(TaggedParserAtomIndex prop,
 
 bool DisposalEmitter::prepareForDisposeCapability() {
   MOZ_ASSERT(state_ == State::Start);
-  MOZ_ASSERT(initialCompletion_ != CompletionKind::Return);
 
   
-  
-  
-  
+
   if (hasAsyncDisposables_) {
     
     
@@ -154,39 +150,19 @@ bool DisposalEmitter::prepareForDisposeCapability() {
       
       return false;
     }
+
+    if (!bce_->emitPickN(4)) {
+      
+      return false;
+    }
+
+    if (!bce_->emitPickN(4)) {
+      
+      return false;
+    }
   }
 
   
-  if (initialCompletion_ == CompletionKind::Throw) {
-    if (!bce_->emit1(JSOp::True)) {
-      
-      return false;
-    }
-
-    if (hasAsyncDisposables_) {
-      
-      if (!bce_->emitPickN(4)) {
-        
-        return false;
-      }
-    } else {
-      
-      if (!bce_->emit1(JSOp::Swap)) {
-        
-        return false;
-      }
-    }
-  } else {
-    if (!bce_->emit1(JSOp::False)) {
-      
-      return false;
-    }
-
-    if (!bce_->emit1(JSOp::Undefined)) {
-      
-      return false;
-    }
-  }
 
 #ifdef DEBUG
   state_ = State::DisposeCapability;
@@ -205,7 +181,6 @@ bool DisposalEmitter::prepareForDisposeCapability() {
 
 bool DisposalEmitter::emitEnd(EmitterScope& es) {
   MOZ_ASSERT(state_ == State::DisposeCapability);
-  MOZ_ASSERT(initialCompletion_ != CompletionKind::Return);
 
   
 
@@ -481,8 +456,7 @@ bool DisposalEmitter::emitEnd(EmitterScope& es) {
     return false;
   }
 
-  if (initialCompletion_ == CompletionKind::Throw &&
-      bce_->sc->isSuspendableContext() &&
+  if (bce_->sc->isSuspendableContext() &&
       bce_->sc->asSuspendableContext()->isGenerator()) {
     
 
@@ -721,9 +695,10 @@ bool DisposalEmitter::emitEnd(EmitterScope& es) {
   return true;
 }
 
-bool UsingEmitter::emitDisposeResourcesForEnvironment(
-    EmitterScope& es, CompletionKind initialCompletion) {
-  DisposalEmitter de(bce_, hasAwaitUsing_, initialCompletion);
+bool UsingEmitter::emitDisposeResourcesForEnvironment(EmitterScope& es) {
+  
+
+  DisposalEmitter de(bce_, hasAwaitUsing_);
   if (!de.prepareForDisposeCapability()) {
     
     return false;
@@ -1060,6 +1035,16 @@ bool ForOfDisposalEmitter::prepareForForOfLoopIteration() {
   EmitterScope* es = bce_->innermostEmitterScopeNoCheck();
   MOZ_ASSERT(es->hasDisposables());
 
+  if (!bce_->emit1(JSOp::False)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Undefined)) {
+    
+    return false;
+  }
+
   if (!emitDisposeResourcesForEnvironment(*es)) {
     
     return false;
@@ -1088,7 +1073,17 @@ bool ForOfDisposalEmitter::emitEnd() {
     return false;
   }
 
-  if (!emitDisposeResourcesForEnvironment(*es, CompletionKind::Throw)) {
+  if (!bce_->emit1(JSOp::True)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Swap)) {
+    
+    return false;
+  }
+
+  if (!emitDisposeResourcesForEnvironment(*es)) {
     
     return false;
   }
@@ -1113,6 +1108,16 @@ bool UsingEmitter::emitNonLocalJump(EmitterScope* present) {
   MOZ_ASSERT(state_ == State::DisposableScopeBody);
   MOZ_ASSERT(present->hasDisposables());
 
+  if (!bce_->emit1(JSOp::False)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Undefined)) {
+    
+    return false;
+  }
+
   if (!emitDisposeResourcesForEnvironment(*present)) {
     
     return false;
@@ -1126,6 +1131,16 @@ bool UsingEmitter::emitEnd() {
   EmitterScope* es = bce_->innermostEmitterScopeNoCheck();
   MOZ_ASSERT(es->hasDisposables());
   MOZ_ASSERT(tryEmitter_.isSome());
+
+  if (!bce_->emit1(JSOp::False)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Undefined)) {
+    
+    return false;
+  }
 
   
   
@@ -1157,7 +1172,17 @@ bool UsingEmitter::emitEnd() {
     return false;
   }
 
-  if (!emitDisposeResourcesForEnvironment(*es, CompletionKind::Throw)) {
+  if (!bce_->emitDupAt(1)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Swap)) {
+    
+    return false;
+  }
+
+  if (!emitDisposeResourcesForEnvironment(*es)) {
     
     return false;
   }
@@ -1203,6 +1228,16 @@ bool NonLocalIteratorCloseUsingEmitter::prepareForIteratorClose(
   setHasAwaitUsing(es.hasAsyncDisposables());
 
   
+
+  if (!bce_->emit1(JSOp::False)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Undefined)) {
+    
+    return false;
+  }
 
   if (!emitDisposeResourcesForEnvironment(es)) {
     
