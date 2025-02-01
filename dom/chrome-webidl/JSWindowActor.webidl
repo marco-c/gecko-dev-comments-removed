@@ -131,6 +131,22 @@ dictionary WindowActorSidedOptions {
 
 
 
+
+
+
+
+
+  ByteString moduleURI;
+
+  
+
+
+
+
+
+
+
+
   ByteString esModuleURI;
 };
 
