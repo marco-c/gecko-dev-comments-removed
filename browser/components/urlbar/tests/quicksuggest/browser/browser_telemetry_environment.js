@@ -1,0 +1,175 @@
+
+
+
+
+
+"use strict";
+
+ChromeUtils.defineESModuleGetters(this, {
+  TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
+});
+
+add_setup(async function () {
+  await QuickSuggestTestUtils.ensureQuickSuggestInit();
+});
+
+
+add_task(function nonsponsoredToggled() {
+  doToggleTest("suggest.quicksuggest.nonsponsored");
+});
+
+
+add_task(async function sponsoredToggled() {
+  doToggleTest("suggest.quicksuggest.sponsored");
+});
+
+
+add_task(async function dataCollectionToggled() {
+  doToggleTest("quicksuggest.dataCollection.enabled");
+});
+
+function doToggleTest(pref) {
+  let enabled = UrlbarPrefs.get(pref);
+  Assert.equal(
+    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar." + pref
+    ],
+    enabled,
+    "Initial value of pref should be correct in TelemetryEnvironment: " + pref
+  );
+
+  for (let i = 0; i < 2; i++) {
+    enabled = !enabled;
+    UrlbarPrefs.set(pref, enabled);
+    Assert.equal(
+      TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+        "browser.urlbar." + pref
+      ],
+      enabled,
+      "Pref should be correct in TelemetryEnvironment: " + pref
+    );
+  }
+}
+
+
+
+
+add_task(async function telemetryEnvironmentOnStartup() {
+  await QuickSuggestTestUtils.setScenario(null);
+
+  
+  
+  await TelemetryEnvironment.testCleanRestart().onInitialized();
+
+  
+  
+  
+  let prefs = [
+    ...new Set([
+      ...Object.values(UrlbarPrefs.FIREFOX_SUGGEST_UI_PREFS_BY_VARIABLE),
+      ...Object.values(UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS)
+        .map(valuesByPrefName => Object.keys(valuesByPrefName))
+        .flat(),
+    ]),
+  ];
+
+  
+  
+  prefs = prefs.filter(
+    p =>
+      `browser.urlbar.${p}` in
+      TelemetryEnvironment.currentEnvironment.settings.userPrefs
+  );
+
+  info("Got startup prefs: " + JSON.stringify(prefs));
+
+  
+  
+  
+  
+  
+  Assert.deepEqual(
+    prefs.sort(),
+    [
+      "quicksuggest.dataCollection.enabled",
+      "suggest.quicksuggest.nonsponsored",
+      "suggest.quicksuggest.sponsored",
+    ],
+    "Expected startup prefs"
+  );
+
+  
+  
+  for (let p of prefs) {
+    UrlbarPrefs.clear(p);
+  }
+
+  
+  let defaultValues = Object.fromEntries(
+    prefs.map(p => [p, UrlbarPrefs.get(p)])
+  );
+
+  
+  
+  
+  
+  let environmentInitPromise =
+    TelemetryEnvironment.testCleanRestart().onInitialized();
+
+  
+  
+  await UrlbarPrefs.updateFirefoxSuggestScenario({
+    isStartup: true,
+    scenario: "online",
+    defaultPrefs: {
+      online: Object.fromEntries(
+        Object.entries(defaultValues).map(([p, value]) => [p, !value])
+      ),
+    },
+  });
+
+  
+  
+  await environmentInitPromise;
+
+  
+  for (let [p, value] of Object.entries(defaultValues)) {
+    let expected = !value;
+    Assert.strictEqual(
+      TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+        `browser.urlbar.${p}`
+      ],
+      expected,
+      `Check 1: ${p} is ${expected} in TelemetryEnvironment`
+    );
+  }
+
+  
+  
+  environmentInitPromise =
+    TelemetryEnvironment.testCleanRestart().onInitialized();
+
+  await UrlbarPrefs.updateFirefoxSuggestScenario({
+    isStartup: true,
+    scenario: "online",
+    defaultPrefs: {
+      online: defaultValues,
+    },
+  });
+
+  await environmentInitPromise;
+
+  
+  for (let [p, value] of Object.entries(defaultValues)) {
+    let expected = value;
+    Assert.strictEqual(
+      TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+        `browser.urlbar.${p}`
+      ],
+      expected,
+      `Check 2: ${p} is ${expected} in TelemetryEnvironment`
+    );
+  }
+
+  await TelemetryEnvironment.testCleanRestart().onInitialized();
+});
