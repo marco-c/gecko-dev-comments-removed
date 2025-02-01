@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_navigation_api_ipc_utils_h__
+#define mozilla_dom_navigation_api_ipc_utils_h__
+#include "ipc/EnumSerializer.h"
+#include "mozilla/dom/UserNavigationInvolvement.h"
+
+namespace IPC {
+template <>
+struct ParamTraits<mozilla::dom::UserNavigationInvolvement>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::dom::UserNavigationInvolvement,
+          mozilla::dom::UserNavigationInvolvement::None,
+          mozilla::dom::UserNavigationInvolvement::BrowserUI> {};
+}  
+#endif
