@@ -528,23 +528,31 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
   template <typename EditorDOMPointType>
-  static EditorDOMPointType GetAfterLastVisiblePoint(Text& aTextNode);
+  static EditorDOMPointType GetAfterLastVisiblePoint(
+      Scan aScanMode, Text& aTextNode,
+      const Element* aAncestorLimiter = nullptr);
   template <typename EditorDOMPointType>
-  static EditorDOMPointType GetFirstVisiblePoint(Text& aTextNode);
+  static EditorDOMPointType GetFirstVisiblePoint(
+      Scan aScanMode, Text& aTextNode,
+      const Element* aAncestorLimiter = nullptr);
 
   
 
 
 
   static Result<EditorDOMRangeInTexts, nsresult>
-  GetRangeInTextNodesToForwardDeleteFrom(const EditorDOMPoint& aPoint);
+  GetRangeInTextNodesToForwardDeleteFrom(
+      Scan aScanMode, const EditorDOMPoint& aPoint,
+      const Element* aAncestorLimiter = nullptr);
 
   
 
 
 
   static Result<EditorDOMRangeInTexts, nsresult>
-  GetRangeInTextNodesToBackspaceFrom(const EditorDOMPoint& aPoint);
+  GetRangeInTextNodesToBackspaceFrom(Scan aScanMode,
+                                     const EditorDOMPoint& aPoint,
+                                     const Element* aAncestorLimiter = nullptr);
 
   
 
@@ -552,10 +560,10 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
   static EditorDOMRange GetRangesForDeletingAtomicContent(
-      const nsIContent& aAtomicContent);
+      Scan aScanMode, const nsIContent& aAtomicContent,
+      const Element* aAncestorLimiter = nullptr);
 
   
-
 
 
 
@@ -575,9 +583,10 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
   static EditorDOMRange GetRangeForDeletingBlockElementBoundaries(
-      const HTMLEditor& aHTMLEditor, const Element& aLeftBlockElement,
+      Scan aScanMode, const Element& aLeftBlockElement,
       const Element& aRightBlockElement,
-      const EditorDOMPoint& aPointContainingTheOtherBlock);
+      const EditorDOMPoint& aPointContainingTheOtherBlock,
+      const Element* aAncestorLimiter = nullptr);
 
   
 
@@ -585,14 +594,16 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
   static Result<bool, nsresult> ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
-      const HTMLEditor& aHTMLEditor, nsRange& aRange);
+      Scan aScanMode, nsRange& aRange,
+      const Element* aAncestorLimiter = nullptr);
 
   
 
 
 
   static EditorDOMRange GetRangeContainingInvisibleWhiteSpacesAtRangeBoundaries(
-      const EditorDOMRange& aRange);
+      Scan aScanMode, const EditorDOMRange& aRange,
+      const Element* aAncestorLimiter = nullptr);
 
   
 
@@ -603,8 +614,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
   template <typename EditorDOMPointType>
   MOZ_NEVER_INLINE_DEBUG static HTMLBRElement*
   GetPrecedingBRElementUnlessVisibleContentFound(
-      const Element* aEditingHost, const EditorDOMPointType& aPoint,
-      BlockInlineCheck aBlockInlineCheck) {
+      Scan aScanMode, const EditorDOMPointType& aPoint,
+      BlockInlineCheck aBlockInlineCheck,
+      const Element* aAncestorLimiter = nullptr) {
     MOZ_ASSERT(aPoint.IsSetAndValid());
     
     
@@ -618,8 +630,8 @@ class MOZ_STACK_CLASS WSRunScanner final {
     }
     
     
-    TextFragmentData textFragmentData(Scan::EditableNodes, aPoint,
-                                      aBlockInlineCheck, aEditingHost);
+    TextFragmentData textFragmentData(aScanMode, aPoint, aBlockInlineCheck,
+                                      aAncestorLimiter);
     return textFragmentData.StartsFromBRElement()
                ? textFragmentData.StartReasonBRElementPtr()
                : nullptr;
@@ -1074,6 +1086,8 @@ class MOZ_STACK_CLASS WSRunScanner final {
     bool IsInitialized() const {
       return mStart.Initialized() && mEnd.Initialized();
     }
+
+    constexpr Scan ScanMode() const { return mScanMode; }
 
     nsIContent* GetStartReasonContent() const {
       return mStart.GetReasonContent();
