@@ -895,7 +895,7 @@ class JumpTables {
     
     
     MOZ_ASSERT(i < numFuncs_);
-    jit_.get()[i] = target;
+    __atomic_store_n(&jit_.get()[i], target, __ATOMIC_RELAXED);
   }
   void setJitEntryIfNull(size_t i, void* target) const {
     
@@ -903,7 +903,8 @@ class JumpTables {
     MOZ_ASSERT(i < numFuncs_);
     void* expected = nullptr;
     (void)__atomic_compare_exchange_n(&jit_.get()[i], &expected, target,
-                                      false, __ATOMIC_RELAXED,
+                                      false,
+                                      __ATOMIC_RELAXED,
                                       __ATOMIC_RELAXED);
   }
   void** getAddressOfJitEntry(size_t i) const {
