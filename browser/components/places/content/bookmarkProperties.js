@@ -224,12 +224,9 @@ var BookmarkPropertiesPanel = {
 
 
   async onDialogLoad() {
-    document.addEventListener("dialogaccept", function () {
-      BookmarkPropertiesPanel.onDialogAccept();
-    });
-    document.addEventListener("dialogcancel", function () {
-      BookmarkPropertiesPanel.onDialogCancel();
-    });
+    document.addEventListener("dialogaccept", () => this.onDialogAccept());
+    document.addEventListener("dialogcancel", () => this.onDialogCancel());
+    window.addEventListener("unload", () => this.onDialogUnload());
 
     
     let acceptButton = document
