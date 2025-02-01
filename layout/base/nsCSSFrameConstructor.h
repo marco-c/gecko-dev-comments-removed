@@ -1447,6 +1447,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   static const FrameConstructionData* FindCanvasData(const Element&,
                                                      ComputedStyle&);
   
+  
+  
   static const FrameConstructionData* FindDetailsData(const Element&,
                                                       ComputedStyle&);
 
