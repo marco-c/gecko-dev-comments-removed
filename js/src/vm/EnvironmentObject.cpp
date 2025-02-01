@@ -3697,7 +3697,7 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
   if (shadowsExistingProperty && varObj->is<GlobalObject>()) {
     
     
-    varObj->as<GlobalObject>().bumpGenerationCount(cx);
+    varObj->as<GlobalObject>().bumpGenerationCount();
   }
 
   return true;

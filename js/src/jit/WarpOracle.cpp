@@ -54,8 +54,6 @@ class MOZ_STACK_CLASS WarpScriptOracle {
   const CompileInfo* info_;
   ICScript* icScript_;
 
-  bool registerForGenerationCounterBumpOffThreadCancellation = false;
-
   
   
   uint32_t icEntryIndex_ = 0;
@@ -741,18 +739,6 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
     return abort(AbortReason::Alloc);
   }
 
-  if (registerForGenerationCounterBumpOffThreadCancellation) {
-    Realm* realm = script_->realm();
-
-    auto& dependentScripts = realm->generationCounterDependentScripts;
-    Realm::WeakScriptSet::AddPtr p = dependentScripts.lookupForAdd(script_);
-    if (!p) {
-      if (!dependentScripts.add(p, script_)) {
-        return abort(AbortReason::Alloc);
-      }
-    }
-  }
-
   autoClearOpSnapshots.release();
   return scriptSnapshot;
 }
@@ -963,15 +949,6 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
           return abort(AbortReason::Error);
         }
         break;
-      case CacheOp::GuardGlobalGeneration:
-        
-        
-        
-        
-        
-        
-        registerForGenerationCounterBumpOffThreadCancellation = true;
-        break;
       default:
         break;
     }
@@ -1144,11 +1121,6 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
       default:
         MOZ_CRASH("Unexpected abort reason");
     }
-  }
-
-  
-  if (scriptOracle.registerForGenerationCounterBumpOffThreadCancellation) {
-    registerForGenerationCounterBumpOffThreadCancellation = true;
   }
 
   WarpScriptSnapshot* scriptSnapshot = maybeScriptSnapshot.unwrap();
