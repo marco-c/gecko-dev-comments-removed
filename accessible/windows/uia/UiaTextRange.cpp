@@ -11,6 +11,7 @@
 #include "nsIAccessibleTypes.h"
 #include "TextLeafRange.h"
 #include <comdef.h>
+#include <propvarutil.h>
 #include <unordered_set>
 
 
@@ -19,6 +20,10 @@
 #endif
 
 namespace mozilla::a11y {
+
+template <typename T>
+HRESULT GetAttribute(TEXTATTRIBUTEID aAttributeId, T const& aRangeOrPoint,
+                     VARIANT& aRetVal);
 
 
 
@@ -121,7 +126,7 @@ static NotNull<Accessible*> GetSelectionContainer(TextLeafRange& aRange) {
 
 
 
-UiaTextRange::UiaTextRange(TextLeafRange& aRange) {
+UiaTextRange::UiaTextRange(const TextLeafRange& aRange) {
   MOZ_ASSERT(aRange);
   SetRange(aRange);
 }
@@ -349,11 +354,94 @@ UiaTextRange::ExpandToEnclosingUnit(enum TextUnit aUnit) {
   return S_OK;
 }
 
+
+
+
 STDMETHODIMP
 UiaTextRange::FindAttribute(TEXTATTRIBUTEID aAttributeId, VARIANT aVal,
                             BOOL aBackward,
                             __RPC__deref_out_opt ITextRangeProvider** aRetVal) {
-  return E_NOTIMPL;
+  if (!aRetVal) {
+    return E_INVALIDARG;
+  }
+  *aRetVal = nullptr;
+  TextLeafRange range = GetRange();
+  if (!range) {
+    return CO_E_OBJNOTCONNECTED;
+  }
+  MOZ_ASSERT(range.Start() <= range.End(), "Range must be valid to proceed.");
+
+  VARIANT value{};
+
+  if (!aBackward) {
+    Maybe<TextLeafPoint> matchingRangeStart{};
+    
+    
+    TextLeafPoint startPoint = range.Start();
+    TextLeafPoint endPoint = startPoint;
+    endPoint = endPoint.FindTextAttrsStart(eDirNext);
+    do {
+      
+      
+      
+      GetAttribute(aAttributeId, startPoint, value);
+      
+      
+      if (aVal.vt == value.vt && VariantCompare(aVal, value) == 0) {
+        if (!matchingRangeStart) {
+          matchingRangeStart = Some(startPoint);
+        }
+      } else if (matchingRangeStart) {
+        
+        
+        RefPtr uiaRange = new UiaTextRange(
+            TextLeafRange{matchingRangeStart.value(), startPoint});
+        uiaRange.forget(aRetVal);
+        return S_OK;
+      }
+      startPoint = endPoint;
+    } while ((endPoint = endPoint.FindTextAttrsStart(eDirNext)) &&
+             endPoint <= range.End() && startPoint != endPoint);
+    if (matchingRangeStart) {
+      
+      
+      RefPtr uiaRange = new UiaTextRange(
+          TextLeafRange{matchingRangeStart.value(), range.End()});
+      uiaRange.forget(aRetVal);
+      return S_OK;
+    }
+  } else {
+    Maybe<TextLeafPoint> matchingRangeEnd{};
+    TextLeafPoint endPoint = range.End();
+    TextLeafPoint startPoint = endPoint;
+    startPoint = startPoint.FindTextAttrsStart(eDirPrevious);
+    do {
+      GetAttribute(aAttributeId, startPoint, value);
+      if (aVal.vt == value.vt && VariantCompare(aVal, value) == 0) {
+        if (!matchingRangeEnd) {
+          matchingRangeEnd = Some(endPoint);
+        }
+      } else if (matchingRangeEnd) {
+        
+        
+        RefPtr uiaRange =
+            new UiaTextRange(TextLeafRange{endPoint, matchingRangeEnd.value()});
+        uiaRange.forget(aRetVal);
+        return S_OK;
+      }
+      endPoint = startPoint;
+    } while ((startPoint = startPoint.FindTextAttrsStart(eDirPrevious)) &&
+             range.Start() <= startPoint);
+    if (matchingRangeEnd) {
+      
+      
+      RefPtr uiaRange = new UiaTextRange(
+          TextLeafRange{range.Start(), matchingRangeEnd.value()});
+      uiaRange.forget(aRetVal);
+      return S_OK;
+    }
+  }
+  return S_OK;
 }
 
 STDMETHODIMP
@@ -427,6 +515,62 @@ HRESULT GetAttribute(const TextLeafRange& aRange, VARIANT& aVariant) {
   return Traits::WriteToVariant(aVariant, *val);
 }
 
+template <TEXTATTRIBUTEID Attr>
+HRESULT GetAttribute(TextLeafPoint const& aPoint, VARIANT& aVariant) {
+  
+  
+  using Traits = AttributeTraits<Attr>;
+  using AttrType = typename Traits::AttrType;
+
+  
+  Maybe<AttrType> val = Traits::GetValue(aPoint);
+  if (!val) {
+    
+    val = Some(Traits::DefaultValue());
+  }
+  
+  return Traits::WriteToVariant(aVariant, *val);
+}
+
+
+
+
+template <typename T>
+HRESULT GetAttribute(TEXTATTRIBUTEID aAttributeId, T const& aRangeOrPoint,
+                     VARIANT& aRetVal) {
+  switch (aAttributeId) {
+    case UIA_AnnotationTypesAttributeId:
+      return GetAttribute<UIA_AnnotationTypesAttributeId>(aRangeOrPoint,
+                                                          aRetVal);
+    case UIA_FontNameAttributeId:
+      return GetAttribute<UIA_FontNameAttributeId>(aRangeOrPoint, aRetVal);
+    case UIA_FontSizeAttributeId:
+      return GetAttribute<UIA_FontSizeAttributeId>(aRangeOrPoint, aRetVal);
+    case UIA_FontWeightAttributeId:
+      return GetAttribute<UIA_FontWeightAttributeId>(aRangeOrPoint, aRetVal);
+    case UIA_IsHiddenAttributeId:
+      return GetAttribute<UIA_IsHiddenAttributeId>(aRangeOrPoint, aRetVal);
+    case UIA_IsItalicAttributeId:
+      return GetAttribute<UIA_IsItalicAttributeId>(aRangeOrPoint, aRetVal);
+    case UIA_IsReadOnlyAttributeId:
+      return GetAttribute<UIA_IsReadOnlyAttributeId>(aRangeOrPoint, aRetVal);
+    case UIA_StyleIdAttributeId:
+      return GetAttribute<UIA_StyleIdAttributeId>(aRangeOrPoint, aRetVal);
+    case UIA_IsSubscriptAttributeId:
+      return GetAttribute<UIA_IsSubscriptAttributeId>(aRangeOrPoint, aRetVal);
+    case UIA_IsSuperscriptAttributeId:
+      return GetAttribute<UIA_IsSuperscriptAttributeId>(aRangeOrPoint, aRetVal);
+    default:
+      
+      
+      aRetVal.vt = VT_UNKNOWN;
+      return UiaGetReservedNotSupportedValue(&aRetVal.punkVal);
+      break;
+  }
+  MOZ_ASSERT_UNREACHABLE("Unhandled UIA Attribute ID");
+  return S_OK;
+}
+
 STDMETHODIMP
 UiaTextRange::GetAttributeValue(TEXTATTRIBUTEID aAttributeId,
                                 __RPC__out VARIANT* aRetVal) {
@@ -438,39 +582,8 @@ UiaTextRange::GetAttributeValue(TEXTATTRIBUTEID aAttributeId,
   if (!range) {
     return CO_E_OBJNOTCONNECTED;
   }
-
   MOZ_ASSERT(range.Start() <= range.End(), "Range must be valid to proceed.");
-
-  switch (aAttributeId) {
-    case UIA_AnnotationTypesAttributeId:
-      return GetAttribute<UIA_AnnotationTypesAttributeId>(range, *aRetVal);
-    case UIA_FontNameAttributeId:
-      return GetAttribute<UIA_FontNameAttributeId>(range, *aRetVal);
-    case UIA_FontSizeAttributeId:
-      return GetAttribute<UIA_FontSizeAttributeId>(range, *aRetVal);
-    case UIA_FontWeightAttributeId:
-      return GetAttribute<UIA_FontWeightAttributeId>(range, *aRetVal);
-    case UIA_IsHiddenAttributeId:
-      return GetAttribute<UIA_IsHiddenAttributeId>(range, *aRetVal);
-    case UIA_IsItalicAttributeId:
-      return GetAttribute<UIA_IsItalicAttributeId>(range, *aRetVal);
-    case UIA_IsReadOnlyAttributeId:
-      return GetAttribute<UIA_IsReadOnlyAttributeId>(range, *aRetVal);
-    case UIA_StyleIdAttributeId:
-      return GetAttribute<UIA_StyleIdAttributeId>(range, *aRetVal);
-    case UIA_IsSubscriptAttributeId:
-      return GetAttribute<UIA_IsSubscriptAttributeId>(range, *aRetVal);
-    case UIA_IsSuperscriptAttributeId:
-      return GetAttribute<UIA_IsSuperscriptAttributeId>(range, *aRetVal);
-    default:
-      
-      
-      aRetVal->vt = VT_UNKNOWN;
-      return UiaGetReservedNotSupportedValue(&aRetVal->punkVal);
-  }
-
-  MOZ_ASSERT_UNREACHABLE("Unhandled UIA Attribute ID");
-  return S_OK;
+  return GetAttribute(aAttributeId, range, *aRetVal);
 }
 
 STDMETHODIMP
