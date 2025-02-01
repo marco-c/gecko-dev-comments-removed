@@ -2590,7 +2590,13 @@
 
         if (shouldCreateGroupOnDrop) {
           this.#dragOverCreateGroupTimer = setTimeout(
-            () => this.#triggerDragOverCreateGroup(dragData, dropElement),
+            () =>
+              this.#triggerDragOverCreateGroup(
+                dragData,
+                newDropElementIndex,
+                dropElement,
+                dropBefore
+              ),
             Services.prefs.getIntPref("browser.tabs.groups.dragOverDelayMS")
           );
         } else {
@@ -2641,10 +2647,6 @@
         delete dragData.shouldCreateGroupOnDrop;
       }
 
-      dragData.dropElement = dropElement;
-      dragData.dropBefore = dropBefore;
-      dragData.animDropElementIndex = newDropElementIndex;
-
       if (
         newDropElementIndex == oldDropElementIndex ||
         
@@ -2652,6 +2654,10 @@
       ) {
         return;
       }
+
+      dragData.dropElement = dropElement;
+      dragData.dropBefore = dropBefore;
+      dragData.animDropElementIndex = newDropElementIndex;
 
       
       
@@ -2674,12 +2680,25 @@
 
 
 
-    #triggerDragOverCreateGroup(dragData, dragoverTab) {
+
+
+    #triggerDragOverCreateGroup(
+      dragData,
+      animDropElementIndex,
+      dropElement,
+      dropBefore
+    ) {
       this.#clearDragOverCreateGroupTimer();
+
+      dragData.dropElement = dropElement;
+      dragData.dropBefore = dropBefore;
+      dragData.animDropElementIndex = animDropElementIndex;
       dragData.shouldCreateGroupOnDrop = true;
+
       this.toggleAttribute("movingtab-createGroup", true);
       this.removeAttribute("movingtab-ungroup");
-      dragoverTab.toggleAttribute("dragover-createGroup", true);
+      dropElement.toggleAttribute("dragover-createGroup", true);
+
       this.#setDragOverGroupColor(dragData.tabGroupCreationColor);
     }
 
