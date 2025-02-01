@@ -11377,6 +11377,8 @@ static bool InstanceClassHasProtoAtDepth(const JSClass* clasp, uint32_t protoID,
   return clasp == GetDomClass();
 }
 
+static bool InstanceClassIsError(const JSClass* clasp) { return false; }
+
 static bool ShellBuildId(JS::BuildIdCharVector* buildId) {
   
   
@@ -11515,7 +11517,8 @@ static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
     }
 
     
-    static const js::DOMCallbacks DOMcallbacks = {InstanceClassHasProtoAtDepth};
+    static const js::DOMCallbacks DOMcallbacks = {InstanceClassHasProtoAtDepth,
+                                                  InstanceClassIsError};
     SetDOMCallbacks(cx, &DOMcallbacks);
 
     RootedObject domProto(
