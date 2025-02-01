@@ -199,6 +199,7 @@ promise_test(t => {
           return response.arrayBuffer();
         })
         .then(buffer => {
+          
           decoder =
               new ImageDecoder({data: buffer.slice(0, 100), type: 'image/png'});
           return decoder.tracks.ready;
@@ -207,14 +208,28 @@ promise_test(t => {
           
           
           p1 = decoder.decode({frameIndex: 0});
-          return promise_rejects_js(
-              t, RangeError, decoder.decode({frameIndex: 1}));
+          return promise_rejects_dom(
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              t, 'EncodingError', decoder.decode({frameIndex: 1}));
         })
         .then(_ => {
-          return promise_rejects_js(t, RangeError, p1);
+          
+          
+          
+          return promise_rejects_dom(t, 'EncodingError', p1);
         })
   });
-}, 'Test partial decoding without a frame results in an error');
+}, 'Test decoding a partial ArrayBuffer results in EncodingError');
 
 promise_test(t => {
   var decoder;
