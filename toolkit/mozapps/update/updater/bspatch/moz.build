@@ -5,7 +5,7 @@
 
 
 if CONFIG["OS_ARCH"] == "WINNT":
-    USE_STATIC_LIBS = True
+    USE_STATIC_MSVCRT = True
 
 EXPORTS += [
     "bspatch.h",
