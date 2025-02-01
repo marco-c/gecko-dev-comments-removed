@@ -15,7 +15,7 @@ def _quote(s):
     not enclosed in quotes.
     """
     if isinstance(s, int):
-        return "%d" % s
+        return f"{s}"
 
     
     if s and not SHELL_QUOTE_RE.search(s) and not s.startswith("~"):
