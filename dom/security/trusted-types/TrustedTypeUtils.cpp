@@ -440,8 +440,10 @@ MOZ_CAN_RUN_SCRIPT inline const nsAString* GetTrustedTypesCompliantString(
     }
     piDOMWindowInner = globalObject->GetAsInnerWindow();
     if (!piDOMWindowInner) {
-      aError.ThrowTypeError("globalObject isn't an inner window");
-      return nullptr;
+      
+      
+      
+      return GetAsString(aInput);
     }
     if (ownerDocLoadedAsData && piDOMWindowInner->GetExtantDoc() &&
         !piDOMWindowInner->GetExtantDoc()
@@ -482,8 +484,7 @@ MOZ_CAN_RUN_SCRIPT inline const nsAString* GetTrustedTypesCompliantString(
     
     MOZ_ASSERT(requireTrustedTypesForDirectiveState !=
                RequireTrustedTypesForDirectiveState::NONE);
-  } else {
-    MOZ_ASSERT(IsWorkerGlobal(globalObject->GetGlobalJSObject()));
+  } else if (IsWorkerGlobal(globalObject->GetGlobalJSObject())) {
     MOZ_ASSERT(!NS_IsMainThread());
     WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
     const mozilla::ipc::CSPInfo& cspInfo = workerPrivate->GetCSPInfo();
@@ -493,6 +494,11 @@ MOZ_CAN_RUN_SCRIPT inline const nsAString* GetTrustedTypesCompliantString(
         RequireTrustedTypesForDirectiveState::NONE) {
       return GetAsString(aInput);
     }
+  } else {
+    
+    
+    
+    return GetAsString(aInput);
   }
 
   RefPtr<ExpectedType> convertedInput;
@@ -746,6 +752,9 @@ bool AreArgumentsTrustedForEnsureCSPDoesNotBlockStringCompilation(
   } else {
     JSObject* globalJSObject = global->GetGlobalJSObject();
     if (!globalJSObject || !IsWorkerGlobal(globalJSObject)) {
+      
+      
+      
       return true;
     }
     MOZ_ASSERT(!NS_IsMainThread());
