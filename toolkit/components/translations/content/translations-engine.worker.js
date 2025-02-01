@@ -503,7 +503,10 @@ class BergamotUtils {
 
     let memoryLog = `Model memory sizes in wasm heap:`;
     memoryLog += `\n  Model: ${getMemory(model)}`;
-    memoryLog += `\n  Shortlist: ${getMemory(lex)}`;
+
+    if (lex) {
+      memoryLog += `\n  Shortlist: ${getMemory(lex)}`;
+    }
 
     
     
@@ -553,7 +556,7 @@ class BergamotUtils {
       targetLanguage,
       config,
       model,
-      lex,
+      lex ?? null,
       vocabList,
       qualityModel ?? null
     );

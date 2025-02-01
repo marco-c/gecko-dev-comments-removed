@@ -3672,6 +3672,9 @@ pref("browser.translations.useHTML", false);
 pref("browser.translations.automaticallyPopup", true);
 
 
+
+
+pref("browser.translations.useLexicalShortlist", false);
 pref("browser.translations.simulateUnsupportedEngine", false);
 
 

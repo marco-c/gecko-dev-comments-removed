@@ -220,7 +220,7 @@ interface LanguageTranslationModelFiles {
   model: LanguageTranslationModelFile,
   
   
-  lex: LanguageTranslationModelFile,
+  lex?: LanguageTranslationModelFile,
   
   qualityModel?: LanguageTranslationModelFile,
 
