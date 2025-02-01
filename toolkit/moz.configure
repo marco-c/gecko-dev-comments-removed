@@ -3234,12 +3234,6 @@ wine = check_prog(
 
 
 
-
-set_config("MOZ_DOM_STREAMS", True)
-set_define("MOZ_DOM_STREAMS", True)
-
-
-
 with only_when(compile_environment):
     system_lib_option(
         "--with-system-libevent",
