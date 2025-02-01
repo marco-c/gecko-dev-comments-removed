@@ -2791,6 +2791,17 @@ class MinimizeMemoryUsageRunnable : public Runnable {
     }
 
     if (mRemainingIters == 0) {
+#ifdef MOZ_MEMORY
+      
+      
+      
+      
+      
+      
+      
+      jemalloc_free_dirty_pages();
+#endif
+
       os->NotifyObservers(nullptr, "after-minimize-memory-usage",
                           u"MinimizeMemoryUsageRunnable");
       if (mCallback) {
