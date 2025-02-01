@@ -8174,7 +8174,6 @@ var TabBarVisibility = {
       
       
       
-      
       hideTabstrip = true;
       CustomTitlebar.allowedBy("tabs-visible", true);
     } else {
