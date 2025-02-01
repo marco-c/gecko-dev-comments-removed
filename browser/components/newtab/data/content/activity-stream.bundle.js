@@ -5840,7 +5840,7 @@ class _Card extends (external_React_default()).PureComponent {
 
         
         gImageLoading.set(imageUrl, loaderPromise);
-        loaderPromise.catch(ex => ex).then(() => gImageLoading.delete(imageUrl)).catch();
+        loaderPromise.catch(ex => ex).then(() => gImageLoading.delete(imageUrl));
       }
 
       

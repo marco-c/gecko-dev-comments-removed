@@ -168,7 +168,7 @@ function startMedia({
       );
       
 
-      let didPlay = await Promise.race(playPromise, tooSlowPromise).catch(
+      let didPlay = await Promise.race([playPromise, tooSlowPromise]).catch(
         err => {
           info("videoHDR failed to decode with error: " + err.message);
           didDecode = false;

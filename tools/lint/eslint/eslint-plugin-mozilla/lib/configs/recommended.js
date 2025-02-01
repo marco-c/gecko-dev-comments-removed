@@ -232,6 +232,9 @@ const coreRules = {
 
     
     "prefer-arrow-callback": "off",
+
+    
+    "promise/valid-params": "error",
   },
 };
 

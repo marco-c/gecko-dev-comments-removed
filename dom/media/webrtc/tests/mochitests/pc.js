@@ -1767,6 +1767,7 @@ PeerConnectionWrapper.prototype = {
     ).then(_ => info("Element " + element.id + " has enough data."));
 
     const startTime = element.currentTime;
+    
     const timeProgressed = timeout(
       listenUntil(element, "timeupdate", _ => element.currentTime > startTime),
       60000,
