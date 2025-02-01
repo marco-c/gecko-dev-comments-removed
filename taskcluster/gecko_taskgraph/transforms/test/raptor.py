@@ -362,13 +362,13 @@ def add_extra_options(config, tests):
                 )
 
         if (
-            "android-hw-p6" in test_platform
-            or "android-hw-s24" in test_platform
-            or (
-                "android-hw-a55" in test_platform
-                and any(t in test["test-name"] for t in ("tp6", "speedometer3"))
-                
-            )
+            ("android-hw-p6" in test_platform or "android-hw-s24" in test_platform)
+            and "speedometer-" not in test["test-name"]
+            
+        ) or (
+            "android-hw-a55" in test_platform
+            and any(t in test["test-name"] for t in ("tp6", "speedometer3"))
+            
         ):
             if "--power-test" not in extra_options:
                 extra_options.append("--power-test")
