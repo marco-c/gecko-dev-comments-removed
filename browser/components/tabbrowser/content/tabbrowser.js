@@ -855,50 +855,6 @@
       }
     }
 
-    syncThrobberAnimations(aTab) {
-      aTab.ownerGlobal.promiseDocumentFlushed(() => {
-        if (!aTab.container) {
-          return;
-        }
-
-        const animations = Array.from(
-          aTab.container.getElementsByTagName("tab")
-        )
-          .filter(tab => tab.hasAttribute("busy"))
-          .flatMap(tab => tab.throbber?.getAnimations({ subtree: true }) ?? [])
-          .filter(
-            anim =>
-              CSSAnimation.isInstance(anim) &&
-              (anim.animationName === "tab-throbber-animation" ||
-                anim.animationName === "tab-throbber-animation-rtl") &&
-              anim.playState === "running"
-          );
-
-        
-        const firstStartTime = Math.min(
-          ...animations.map(anim =>
-            anim.startTime === null ? Infinity : anim.startTime
-          )
-        );
-        if (firstStartTime === Infinity) {
-          return;
-        }
-        requestAnimationFrame(() => {
-          for (let animation of animations) {
-            
-            
-            
-            
-            
-            
-            if (animation.currentTime !== null) {
-              animation.startTime = firstStartTime;
-            }
-          }
-        });
-      });
-    }
-
     getBrowserAtIndex(aIndex) {
       return this.browsers[aIndex];
     }
@@ -7454,7 +7410,6 @@
             this.mTab.setAttribute("busy", "true");
             gBrowser._tabAttrModified(this.mTab, ["busy"]);
             this.mTab._notselectedsinceload = !this.mTab.selected;
-            gBrowser.syncThrobberAnimations(this.mTab);
           }
 
           if (this.mTab.selected) {

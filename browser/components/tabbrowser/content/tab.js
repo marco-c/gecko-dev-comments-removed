@@ -49,6 +49,7 @@
       this.addEventListener("mouseup", this);
       this.addEventListener("click", this);
       this.addEventListener("dblclick", this, true);
+      this.addEventListener("animationstart", this);
       this.addEventListener("animationend", this);
       this.addEventListener("focus", this);
       this.addEventListener("AriaFocus", this);
@@ -567,6 +568,21 @@
           animate: true,
           triggeringEvent: event,
         });
+      }
+    }
+
+    on_animationstart(event) {
+      if (!event.animationName.startsWith("tab-throbber-animation")) {
+        return;
+      }
+      
+      
+      for (let animation of event.target.getAnimations({ subtree: true })) {
+        if (animation.animationName === event.animationName) {
+          
+          
+          animation.startTime = 0;
+        }
       }
     }
 
