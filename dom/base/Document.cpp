@@ -7364,7 +7364,7 @@ bool Document::ShouldThrottleFrameRequests() const {
     return false;
   }
 
-  if (Hidden()) {
+  if (Hidden() && !StaticPrefs::layout_testing_top_level_always_active()) {
     
     return true;
   }
