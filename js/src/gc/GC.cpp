@@ -2705,7 +2705,9 @@ bool GCRuntime::prepareZonesForCollection(JS::GCReason reason,
   return any;
 }
 
-void GCRuntime::discardJITCodeForGC() {
+
+
+void GCRuntime::maybeDiscardJitCodeForGC() {
   size_t nurserySiteResetCount = 0;
   size_t pretenuredSiteResetCount = 0;
 
@@ -2948,7 +2950,7 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
 
     AutoUnlockHelperThreadState unlock(helperLock);
 
-    discardJITCodeForGC();
+    maybeDiscardJitCodeForGC();
 
     
 
