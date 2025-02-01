@@ -9,20 +9,27 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/ReentrantMonitor.h"
+#include "mozilla/SharedThreadPool.h"
 #include "mozilla/StateMirroring.h"
 #include "mozilla/UniquePtr.h"
+#include "nsITimer.h"
 
 #include "MediaConduitInterface.h"
 #include "RtpRtcpConfig.h"
 #include "RunningStat.h"
+#include "transport/runnable_utils.h"
 
 
 #undef FF
 
-#include "api/media_stream_interface.h"
 #include "api/video_codecs/video_decoder.h"
 #include "api/video_codecs/video_encoder.h"
+#include "api/video_codecs/sdp_video_format.h"
 #include "call/call_basic_stats.h"
+#include "common_video/include/video_frame_buffer_pool.h"
+#include "media/base/video_broadcaster.h"
+#include <functional>
+#include <memory>
 
 
 
@@ -30,7 +37,7 @@
 namespace mozilla {
 
 
-#define KBPS(kbps) ((kbps) * 1000)
+#define KBPS(kbps) kbps * 1000
 
 const int kViEMinCodecBitrate_bps = KBPS(30);
 const unsigned int kVideoMtu = 1200;
@@ -43,7 +50,6 @@ T MinIgnoreZero(const T& a, const T& b) {
 
 class VideoStreamFactory;
 class WebrtcAudioConduit;
-class WebrtcVideoConduit;
 
 
 class WebrtcVideoEncoder : public VideoEncoder, public webrtc::VideoEncoder {};
@@ -51,34 +57,15 @@ class WebrtcVideoEncoder : public VideoEncoder, public webrtc::VideoEncoder {};
 
 class WebrtcVideoDecoder : public VideoDecoder, public webrtc::VideoDecoder {};
 
-class RecvSinkProxy : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
- public:
-  explicit RecvSinkProxy(WebrtcVideoConduit* aOwner) : mOwner(aOwner) {}
-
- private:
-  void OnFrame(const webrtc::VideoFrame& aFrame) override;
-
-  WebrtcVideoConduit* const mOwner;
-};
-
-class SendSinkProxy : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
- public:
-  explicit SendSinkProxy(WebrtcVideoConduit* aOwner) : mOwner(aOwner) {}
-
- private:
-  void OnFrame(const webrtc::VideoFrame& aFrame) override;
-
-  WebrtcVideoConduit* const mOwner;
-};
 
 
 
 
-
-class WebrtcVideoConduit : public VideoSessionConduit,
-                           public webrtc::RtcpEventObserver {
-  friend class SendSinkProxy;
-
+class WebrtcVideoConduit
+    : public VideoSessionConduit,
+      public webrtc::RtcpEventObserver,
+      public rtc::VideoSinkInterface<webrtc::VideoFrame>,
+      public rtc::VideoSourceInterface<webrtc::VideoFrame> {
  public:
   
   static bool HasH264Hardware();
@@ -107,17 +94,6 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   void StopReceiving();
   void StartReceiving();
 
-  void SetTrackSource(webrtc::VideoTrackSourceInterface* aSource) override;
-
-  bool LockScaling() const override { return mLockScaling; }
-
-  bool SendRtp(const uint8_t* aData, size_t aLength,
-               const webrtc::PacketOptions& aOptions) override;
-  bool SendSenderRtcp(const uint8_t* aData, size_t aLength) override;
-  bool SendReceiverRtcp(const uint8_t* aData, size_t aLength) override;
-
-  void OnRecvFrame(const webrtc::VideoFrame& aFrame);
-
   
 
 
@@ -126,8 +102,26 @@ class WebrtcVideoConduit : public VideoSessionConduit,
 
 
 
+  MediaConduitErrorCode SendVideoFrame(webrtc::VideoFrame aFrame) override;
 
-  void OnSendFrame(const webrtc::VideoFrame& aFrame);
+  bool SendRtp(const uint8_t* aData, size_t aLength,
+               const webrtc::PacketOptions& aOptions) override;
+  bool SendSenderRtcp(const uint8_t* aData, size_t aLength) override;
+  bool SendReceiverRtcp(const uint8_t* aData, size_t aLength) override;
+
+  
+
+
+
+  void OnFrame(const webrtc::VideoFrame& frame) override;
+
+  
+
+
+
+  void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
+                       const rtc::VideoSinkWants& wants) override;
+  void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
 
   bool HasCodecPluginID(uint64_t aPluginID) const override;
 
@@ -140,8 +134,6 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   uint8_t TemporalLayers() const { return mTemporalLayers; }
 
   webrtc::VideoCodecMode CodecMode() const;
-
-  webrtc::DegradationPreference DegradationPreference() const;
 
   WebrtcVideoConduit(RefPtr<WebrtcCallWrapper> aCall,
                      nsCOMPtr<nsISerialEventTarget> aStsThread,
@@ -162,7 +154,7 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   Maybe<Ssrc> GetAssociatedLocalRtxSSRC(Ssrc aSsrc) const override;
   Maybe<Ssrc> GetRemoteSSRC() const override;
 
-  Maybe<gfx::IntSize> GetLastResolution() const override;
+  Maybe<VideoSessionConduit::Resolution> GetLastResolution() const override;
 
   
   void UnsetRemoteSSRC(uint32_t aSsrc) override;
@@ -340,12 +332,15 @@ class WebrtcVideoConduit : public VideoSessionConduit,
 
   
   
-  RecvSinkProxy mRecvSinkProxy;
-  SendSinkProxy mSendSinkProxy;
+  AutoTArray<rtc::VideoSinkInterface<webrtc::VideoFrame>*, 1> mRegisteredSinks;
 
   
   
-  RefPtr<webrtc::VideoTrackSourceInterface> mTrackSource;
+  rtc::VideoBroadcaster mVideoBroadcaster;
+
+  
+  
+  webrtc::VideoFrameBufferPool mBufferPool;
 
   
   
@@ -374,12 +369,17 @@ class WebrtcVideoConduit : public VideoSessionConduit,
 
   
   
-  Maybe<gfx::IntSize> mLastSize;
+  unsigned short mLastWidth = 0;
+
+  
+  
+  unsigned short mLastHeight = 0;
 
   
   
   
-  Maybe<webrtc::Timestamp> mLastTimestampSend;
+  
+  Maybe<uint64_t> mLastTimestampSendUs;
 
   
   
@@ -403,7 +403,6 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   
   const bool mDenoising;
 
-  
   
   const bool mLockScaling;
 
