@@ -93,8 +93,7 @@ Maybe<nscoord> nsCheckboxRadioFrame::GetNaturalBaselineBOffset(
   
   
   
-  CSSCoord border = PresContext()->Theme()->GetCheckboxRadioBorderWidth();
-  auto bp = CSSPixel::ToAppUnits(Style()->EffectiveZoom().Zoom(border));
+  auto bp = CSSPixel::ToAppUnits(Style()->EffectiveZoom().Zoom(2.0f));
   return Some(aWM.IsLineInverted() ? std::min(bp, BSize(aWM))
                                    : std::max(0, BSize(aWM) - bp));
 }
