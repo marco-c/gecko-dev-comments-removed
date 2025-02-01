@@ -17,11 +17,6 @@
 #include <memory>
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef __APPLE__
-#include <sys/utsname.h>
-#endif
-
-#include "mozilla/gtest/MozHelpers.h"
 
 
 
@@ -206,11 +201,6 @@ TEST(cubeb, duplex_collection_change)
   ASSERT_EQ(r, CUBEB_OK);
 }
 
-void CauseDeath(cubeb * p) {
-  mozilla::gtest::DisableCrashReporter();
-  cubeb_destroy(p);
-}
-
 #ifdef GTEST_HAS_DEATH_TEST
 TEST(cubeb, duplex_collection_change_no_unregister)
 {
@@ -228,17 +218,9 @@ TEST(cubeb, duplex_collection_change_no_unregister)
   }
 
   std::unique_ptr<cubeb, decltype(&cubeb_destroy)> cleanup_cubeb_at_exit(
-      ctx, [](cubeb * p) noexcept { EXPECT_DEATH(CauseDeath(p), ""); });
+      ctx, [](cubeb * p) noexcept { EXPECT_DEATH(cubeb_destroy(p), ""); });
 
   duplex_collection_change_impl(ctx);
-
-#  if defined(XP_MACOSX) && !defined(MOZ_DEBUG)
-  
-  
-  
-  
-  mozilla::gtest::DisableCrashReporter();
-#  endif
 }
 #endif
 
@@ -312,17 +294,6 @@ TEST(cubeb, one_duplex_one_input)
   int r;
   user_state_duplex duplex_stream_state;
   uint32_t latency_frames = 0;
-
-  
-#ifdef __APPLE__
-  struct utsname uts;
-  uname(&uts);
-  
-  if (strncmp(uts.release, "19", 2) == 0) {
-    printf("Test disabled on macOS 10.15, exiting.\n");
-    return;
-  }
-#endif
 
   r = common_init(&ctx, "Cubeb duplex example");
   ASSERT_EQ(r, CUBEB_OK) << "Error initializing cubeb library";

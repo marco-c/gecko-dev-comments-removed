@@ -1780,16 +1780,7 @@ stop_and_join_render_thread(cubeb_stream * stm)
     return false;
   }
 
-  
-
-
-  DWORD r;
-  for (int i = 0; i < 5; ++i) {
-    r = WaitForSingleObject(stm->thread, 1000);
-    if (r == WAIT_OBJECT_0) {
-      break;
-    }
-  }
+  DWORD r = WaitForSingleObject(stm->thread, INFINITE);
   if (r != WAIT_OBJECT_0) {
     LOG("stop_and_join_render_thread: WaitForSingleObject on thread failed: "
         "%lx, %lx",
