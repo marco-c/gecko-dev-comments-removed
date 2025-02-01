@@ -42,6 +42,7 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "nsIConsoleService.h"
 #include "mozilla/intl/Localization.h"
+#include "mozilla/browser/NimbusFeatures.h"
 
 #define TEST_OBSERVER_MSG_RECORD_BOUNCES_FINISHED "test-record-bounces-finished"
 
@@ -1010,10 +1011,19 @@ BounceTrackingProtection::PurgeBounceTrackers() {
                           "Failed to record purged tracker in log.");
                     }
 
-                    
-                    
                     if (purgedSites.Length() > 0) {
+                      
+                      
                       ReportPurgedTrackersToAntiTrackingDB(purgedSites);
+
+                      
+                      
+                      
+                      
+                      
+                      
+                      Unused << NimbusFeatures::RecordExposureEvent(
+                          "bounceTrackingProtection"_ns, false);
                     }
                   }
 

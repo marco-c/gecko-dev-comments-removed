@@ -26,6 +26,7 @@ NIMBUS_FALLBACK_PREFS = (
 
 ALLOWED_ISEARLYSTARTUP_FEATURE_IDS = {
     "aboutwelcome",
+    "bounceTrackingProtection",
     "newtab",
     "pocketNewtab",
     "testFeature",
