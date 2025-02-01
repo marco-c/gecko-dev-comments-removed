@@ -6,7 +6,7 @@
 #include "mozilla/Assertions.h"
 #include "chrome/common/safe_browsing/csd.pb.h"
 
-using ServerLabel = mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2;
+using ServerLabel = mozilla::glean::application_reputation::Server2Label;
 using ServerVerdictLabel =
     mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_VERDICT_2;
 
@@ -18,64 +18,63 @@ struct NSErrorTelemetryResult {
 static const NSErrorTelemetryResult sResult[] = {
     {
         NS_ERROR_ALREADY_CONNECTED,
-        ServerLabel::ErrAlreadyConnected,
+        ServerLabel::eErralreadyconnected,
     },
     {
         NS_ERROR_NOT_CONNECTED,
-        ServerLabel::ErrNotConnected,
+        ServerLabel::eErrnotconnected,
     },
     {
         NS_ERROR_CONNECTION_REFUSED,
-        ServerLabel::ErrConnectionRefused,
+        ServerLabel::eErrconnectionrefused,
     },
     {
         NS_ERROR_NET_TIMEOUT,
-        ServerLabel::ErrNetTimeout,
+        ServerLabel::eErrnettimeout,
     },
     {
         NS_ERROR_OFFLINE,
-        ServerLabel::ErrOffline,
+        ServerLabel::eErroffline,
     },
     {
         NS_ERROR_PORT_ACCESS_NOT_ALLOWED,
-        ServerLabel::ErrPortAccess,
+        ServerLabel::eErrportaccess,
     },
     {
         NS_ERROR_NET_RESET,
-        ServerLabel::ErrNetReset,
+        ServerLabel::eErrnetreset,
     },
     {
         NS_ERROR_NET_INTERRUPT,
-        ServerLabel::ErrNetInterrupt,
+        ServerLabel::eErrnetinterrupt,
     },
     {
         NS_ERROR_PROXY_CONNECTION_REFUSED,
-        ServerLabel::ErrProxyConnection,
+        ServerLabel::eErrproxyconnection,
     },
     {
         NS_ERROR_NET_PARTIAL_TRANSFER,
-        ServerLabel::ErrNetPartial,
+        ServerLabel::eErrnetpartial,
     },
     {
         NS_ERROR_NET_INADEQUATE_SECURITY,
-        ServerLabel::ErrNetInadequate,
+        ServerLabel::eErrnetinadequate,
     },
     {
         NS_ERROR_UNKNOWN_HOST,
-        ServerLabel::ErrUnknownHost,
+        ServerLabel::eErrunknownhost,
     },
     {
         NS_ERROR_DNS_LOOKUP_QUEUE_FULL,
-        ServerLabel::ErrDNSLookupQueue,
+        ServerLabel::eErrdnslookupqueue,
     },
     {
         NS_ERROR_UNKNOWN_PROXY_HOST,
-        ServerLabel::ErrUnknownProxyHost,
+        ServerLabel::eErrunknownproxyhost,
     },
 };
 
-mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2 NSErrorToLabel(
-    nsresult aRv) {
+ServerLabel NSErrorToLabel(nsresult aRv) {
   MOZ_ASSERT(aRv != NS_OK);
 
   for (const auto& p : sResult) {
@@ -83,28 +82,27 @@ mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2 NSErrorToLabel(
       return p.mLabel;
     }
   }
-  return ServerLabel::ErrOthers;
+  return ServerLabel::eErrothers;
 }
 
-mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2 HTTPStatusToLabel(
-    uint32_t aStatus) {
+ServerLabel HTTPStatusToLabel(uint32_t aStatus) {
   MOZ_ASSERT(aStatus != 200);
 
   switch (aStatus) {
     case 100:
     case 101:
       
-      return ServerLabel::HTTP1xx;
+      return ServerLabel::eHttp1xx;
     case 201:
     case 202:
     case 203:
     case 205:
     case 206:
       
-      return ServerLabel::HTTP2xx;
+      return ServerLabel::eHttp2xx;
     case 204:
       
-      return ServerLabel::HTTP204;
+      return ServerLabel::eHttp204;
     case 300:
     case 301:
     case 302:
@@ -114,11 +112,11 @@ mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2 HTTPStatusToLabel(
     case 307:
     case 308:
       
-      return ServerLabel::HTTP3xx;
+      return ServerLabel::eHttp3xx;
     case 400:
       
       
-      return ServerLabel::HTTP400;
+      return ServerLabel::eHttp400;
     case 401:
     case 402:
     case 405:
@@ -139,40 +137,40 @@ mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2 HTTPStatusToLabel(
     case 431:
     case 451:
       
-      return ServerLabel::HTTP4xx;
+      return ServerLabel::eHttp4xx;
     case 403:
       
-      return ServerLabel::HTTP403;
+      return ServerLabel::eHttp403;
     case 404:
       
-      return ServerLabel::HTTP404;
+      return ServerLabel::eHttp404;
     case 408:
       
-      return ServerLabel::HTTP408;
+      return ServerLabel::eHttp408;
     case 413:
       
-      return ServerLabel::HTTP413;
+      return ServerLabel::eHttp413;
     case 500:
     case 501:
     case 510:
       
-      return ServerLabel::HTTP5xx;
+      return ServerLabel::eHttp5xx;
     case 502:
     case 504:
     case 511:
       
-      return ServerLabel::HTTP502_504_511;
+      return ServerLabel::eHttp502504511;
     case 503:
       
       
       
-      return ServerLabel::HTTP503;
+      return ServerLabel::eHttp503;
     case 505:
       
       
-      return ServerLabel::HTTP505;
+      return ServerLabel::eHttp505;
     default:
-      return ServerLabel::HTTPOthers;
+      return ServerLabel::eHttpothers;
   }
 }
 
