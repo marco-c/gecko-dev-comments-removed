@@ -62,6 +62,9 @@ using namespace mozilla;
 
 #if HAVE___LIBC_STACK_END
 extern MOZ_EXPORT void* __libc_stack_end;  
+#  ifdef __aarch64__
+static Atomic<uintptr_t> ldso_base;
+#  endif
 #endif
 
 #ifdef ANDROID
@@ -990,8 +993,38 @@ struct unwind_info {
 
 static _Unwind_Reason_Code unwind_callback(struct _Unwind_Context* context,
                                            void* closure) {
+  _Unwind_Reason_Code ret = _URC_NO_REASON;
   unwind_info* info = static_cast<unwind_info*>(closure);
   void* pc = reinterpret_cast<void*>(_Unwind_GetIP(context));
+#    if defined(HAVE___LIBC_STACK_END) && defined(__aarch64__)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!ldso_base) {
+    Dl_info info;
+    dladdr(&__libc_stack_end, &info);
+    ldso_base = (uintptr_t)info.dli_fbase;
+  }
+  if (ldso_base && ((uintptr_t)pc > ldso_base) &&
+      (uintptr_t)pc < (uintptr_t)&__libc_stack_end) {
+    
+    
+    ret = _URC_FOREIGN_EXCEPTION_CAUGHT;
+  }
+#    endif
   
   if (!info->skipper.ShouldSkipPC(pc)) {
     info->numFrames++;
@@ -1001,7 +1034,7 @@ static _Unwind_Reason_Code unwind_callback(struct _Unwind_Context* context,
       return _URC_FOREIGN_EXCEPTION_CAUGHT;
     }
   }
-  return _URC_NO_REASON;
+  return ret;
 }
 
 MFBT_API void MozStackWalk(MozWalkStackCallback aCallback,
