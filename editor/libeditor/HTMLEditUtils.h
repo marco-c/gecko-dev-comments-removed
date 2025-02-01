@@ -79,6 +79,14 @@ class HTMLEditUtils final {
   
 
 
+
+
+
+  [[nodiscard]] static bool ElementIsEditableRoot(const Element& aElement);
+
+  
+
+
   static bool ContentIsInert(const nsIContent& aContent);
 
   
@@ -540,8 +548,7 @@ class HTMLEditUtils final {
   template <typename PT, typename CT>
   [[nodiscard]] static bool PointIsImmediatelyBeforeCurrentBlockBoundary(
       const EditorDOMPointBase<PT, CT>& aPoint,
-      IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak,
-      const Element& aEditingHost);
+      IgnoreInvisibleLineBreak aIgnoreInvisibleLineBreak);
 
   
 
@@ -2071,8 +2078,7 @@ class HTMLEditUtils final {
 
   template <typename EditorLineBreakType, typename EditorDOMPointType>
   [[nodiscard]] static Maybe<EditorLineBreakType>
-  GetFollowingUnnecessaryLineBreak(const EditorDOMPointType& aPoint,
-                                   const Element& aEditingHost);
+  GetFollowingUnnecessaryLineBreak(const EditorDOMPointType& aPoint);
 
   
 
@@ -2382,7 +2388,7 @@ class HTMLEditUtils final {
 
   template <typename EditorDOMPointType, typename EditorDOMPointTypeInput>
   static EditorDOMPointType GetBetterCaretPositionToInsertText(
-      const EditorDOMPointTypeInput& aPoint, const Element& aEditingHost);
+      const EditorDOMPointTypeInput& aPoint);
 
   
 
