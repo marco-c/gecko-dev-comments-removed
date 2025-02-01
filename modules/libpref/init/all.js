@@ -3773,6 +3773,7 @@ pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
     
     
     pref("datareporting.healthreport.uploadEnabled", true);
+    pref("datareporting.usage.uploadEnabled", true);
   #endif
 #endif
 
