@@ -1550,12 +1550,6 @@ interface nsILoadInfo : nsISupports
 
 
 
-  [infallible] readonly attribute boolean shouldSkipCheckForBrokenURLOrZeroSized;
-
-  
-
-
-
   attribute nsIURI unstrippedURI;
 
   
