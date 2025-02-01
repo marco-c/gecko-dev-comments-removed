@@ -36,20 +36,28 @@ add_task(async function httpsOnlyRadioGroupIsWorking() {
   check(radioGroup, HTTPS_ONLY_DISABLED);
 
   
+  let changePromise = BrowserTestUtils.waitForEvent(radioGroup, "change");
   enableAllRadio.click();
+  await changePromise;
   check(radioGroup, HTTPS_ONLY_ENABLED);
 
   
   
   enableAllRadio.click();
+  await TestUtils.waitForTick(); 
+  
   check(radioGroup, HTTPS_ONLY_ENABLED);
 
   
+  changePromise = BrowserTestUtils.waitForEvent(radioGroup, "change");
   enablePbmRadio.click();
+  await changePromise;
   check(radioGroup, HTTPS_ONLY_PBM_ONLY);
 
   
+  changePromise = BrowserTestUtils.waitForEvent(radioGroup, "change");
   disableRadio.click();
+  await changePromise;
   check(radioGroup, HTTPS_ONLY_DISABLED);
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -93,24 +101,9 @@ add_task(async function httpsOnlyCorrectLabels() {
           );
         }
 
-        ensureL10nId(
-          "httpsOnlyRadioEnabled",
-          _httpsFirstEnabled
-            ? "httpsonly-radio-enabled2"
-            : "httpsonly-radio-enabled"
-        );
-        ensureL10nId(
-          "httpsOnlyRadioEnabledPBM",
-          _httpsFirstEnabled
-            ? "httpsonly-radio-enabled-pbm2"
-            : "httpsonly-radio-enabled-pbm"
-        );
-        ensureL10nId(
-          "httpsOnlyRadioDisabled",
-          _httpsFirstEnabled
-            ? "httpsonly-radio-disabled2"
-            : "httpsonly-radio-disabled"
-        );
+        ensureL10nId("httpsOnlyRadioEnabled", "httpsonly-radio-enabled");
+        ensureL10nId("httpsOnlyRadioEnabledPBM", "httpsonly-radio-enabled-pbm");
+        ensureL10nId("httpsOnlyRadioDisabled", "httpsonly-radio-disabled3");
       }
     );
   }
