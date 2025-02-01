@@ -2020,8 +2020,6 @@ pref("browser.aboutwelcome.enabled", true);
 
 pref("browser.aboutwelcome.screens", "");
 
-pref("browser.aboutwelcome.showModal", false);
-
 
 
 pref("messaging-system.log", "warn");
