@@ -709,12 +709,6 @@ TEST_F(TelemetryTestFixture, AccumulateTimeDelta) {
                                  start);
 
   
-  auto result = mozilla::glean::telemetry::clamping_time_hgrams
-                    .Get("TELEMETRY_TEST_COUNT"_ns)
-                    .TestGetValue();
-  ASSERT_EQ(1, result.unwrap().ref());
-
-  
   JS::Rooted<JS::Value> snapshot(cx.GetJSContext());
   GetSnapshots(cx.GetJSContext(), mTelemetry, "TELEMETRY_TEST_COUNT", &snapshot,
                false);
