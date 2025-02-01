@@ -30,6 +30,12 @@
 #  include "mozilla/ipc/ForkServiceChild.h"
 #endif
 
+
+
+#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
+#  error Unsupported OS
+#endif
+
 #if !defined(XP_DARWIN)
 
 #  define HAVE_PIPE2 1
