@@ -604,11 +604,17 @@ var FullPageTranslationsPanel = new (class {
 
       if (
         this.#manuallySelectedToLanguage &&
-        this.#manuallySelectedToLanguage !== docLangTag
+        !TranslationsUtils.langTagsMatch(
+          docLangTag,
+          this.#manuallySelectedToLanguage
+        )
       ) {
         
         toMenuList.value = this.#manuallySelectedToLanguage;
-      } else if (userLangTag && userLangTag !== docLangTag) {
+      } else if (
+        userLangTag &&
+        !TranslationsUtils.langTagsMatch(userLangTag, docLangTag)
+      ) {
         
         toMenuList.value = userLangTag;
       } else {
