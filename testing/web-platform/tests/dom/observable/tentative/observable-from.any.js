@@ -1437,90 +1437,126 @@ promise_test(async t => {
 test(() => {
   const results = [];
   const iterable = {
-    impl() {
-      return {
-        next() {
-          results.push('next() running');
-          return {done: true};
-        }
+    getter() {
+      results.push('GETTER called');
+      return () => {
+        results.push('Obtaining iterator');
+        return {
+          next() {
+            results.push('next() running');
+            return {done: true};
+          }
+        };
       };
     }
   };
 
-  iterable[Symbol.iterator] = iterable.impl;
+  Object.defineProperty(iterable, Symbol.iterator, {
+    get: iterable.getter
+  });
   {
     const source = Observable.from(iterable);
+    assert_array_equals(results, ["GETTER called"]);
     source.subscribe({}, {signal: AbortSignal.abort()});
-    assert_array_equals(results, []);
+    assert_array_equals(results, ["GETTER called"]);
   }
   iterable[Symbol.iterator] = undefined;
-  iterable[Symbol.asyncIterator] = iterable.impl;
+  Object.defineProperty(iterable, Symbol.asyncIterator, {
+    get: iterable.getter
+  });
   {
     const source = Observable.from(iterable);
+    assert_array_equals(results, ["GETTER called", "GETTER called"]);
     source.subscribe({}, {signal: AbortSignal.abort()});
-    assert_array_equals(results, []);
+    assert_array_equals(results, ["GETTER called", "GETTER called"]);
   }
 }, "from(): Subscribing to an iterable Observable with an aborted signal " +
    "does not call next()");
 
 test(() => {
-  const results = [];
-  const ac = new AbortController();
+  let results = [];
 
   const iterable = {
-    [Symbol.iterator]() {
-      ac.abort();
-      return {
-        val: 0,
-        next() {
-          results.push('next() called');
-          return {done: true};
-        },
-        return() {
-          results.push('return() called');
-        }
-      };
-    }
- };
+    controller: null,
+    calledOnce: false,
+    getter() {
+      results.push('GETTER called');
+      if (!this.calledOnce) {
+        this.calledOnce = true;
+        return () => {
+          results.push('NOT CALLED');
+          
+          
+          
+          
+        };
+      }
 
-  const source = Observable.from(iterable);
-  source.subscribe({
-    next: v => results.push(v),
-    complete: () => results.push('complete'),
-  }, {signal: ac.signal});
-
-  assert_array_equals(results, []);
-}, "from(): When iterable conversion aborts the subscription, next() is " +
-   "never called");
-test(() => {
-  const results = [];
-  const ac = new AbortController();
-
-  const iterable = {
-    [Symbol.asyncIterator]() {
-      ac.abort();
-      return {
-        val: 0,
-        next() {
-          results.push('next() called');
-          return {done: true};
-        },
-        return() {
-          results.push('return() called');
-        }
+      
+      
+      this.controller.abort();
+      return () => {
+        results.push('iterator obtained');
+        return {
+          val: 0,
+          next() {
+            results.push('next() called');
+            return {done: true};
+          },
+          return() {
+            results.push('return() called');
+          }
+        };
       };
     }
   };
 
-  const source = Observable.from(iterable);
-  source.subscribe({
-    next: v => results.push(v),
-    complete: () => results.push('complete'),
-  }, {signal: ac.signal});
+  
+  {
+    const ac = new AbortController();
+    iterable.controller = ac;
+    Object.defineProperty(iterable, Symbol.iterator, {
+      get: iterable.getter,
+    });
 
-  assert_array_equals(results, []);
-}, "from(): When async iterable conversion aborts the subscription, next() " +
-   "is never called");
+    const source = Observable.from(iterable);
+    assert_false(ac.signal.aborted, "[Sync iterator]: signal is not yet aborted after from() conversion");
+    assert_array_equals(results, ["GETTER called"]);
+
+    source.subscribe({
+      next: n => results.push(n),
+      complete: () => results.push('complete'),
+    }, {signal: ac.signal});
+    assert_true(ac.signal.aborted, "[Sync iterator]: signal is aborted during subscription");
+    assert_array_equals(results, ["GETTER called", "GETTER called", "iterator obtained"]);
+  }
+
+  results = [];
+
+  
+  {
+    
+    const ac = new AbortController();
+    iterable.controller = ac;
+    iterable.calledOnce = false;
+    iterable[Symbol.iterator] = undefined;
+    Object.defineProperty(iterable, Symbol.asyncIterator, {
+      get: iterable.getter
+    });
+
+    const source = Observable.from(iterable);
+    assert_false(ac.signal.aborted, "[Async iterator]: signal is not yet aborted after from() conversion");
+    assert_array_equals(results, ["GETTER called"]);
+
+    source.subscribe({
+      next: n => results.push(n),
+      complete: () => results.push('complete'),
+    }, {signal: ac.signal});
+    assert_true(ac.signal.aborted, "[Async iterator]: signal is aborted during subscription");
+    assert_array_equals(results, ["GETTER called", "GETTER called", "iterator obtained"]);
+  }
+}, "from(): When iterable conversion aborts the subscription, next() is " +
+   "never called");
 
 
 
@@ -1659,3 +1695,37 @@ test(() => {
   assert_not_equals(reportedError, null, "Protocol error is reported to the global");
   assert_true(reportedError instanceof TypeError);
 }, "Invalid async iterator protocol error is surfaced before Subscriber#signal is consulted");
+
+test(() => {
+  const controller = new AbortController();
+  const iterable = {
+    calledOnce: false,
+    get[Symbol.iterator]() {
+      if (this.calledOnce) {
+        controller.abort();
+        return null;
+      } else {
+        this.calledOnce = true;
+        return this.validImplementation;
+      }
+    },
+    validImplementation() {
+      controller.abort();
+      return null;
+    }
+  };
+
+  let reportedError = null;
+  self.addEventListener("error", e => reportedError = e.error, {once: true});
+
+  let errorThrown = null;
+  const observable = Observable.from(iterable);
+  observable.subscribe({
+    error: e => errorThrown = e,
+  }, {signal: controller.signal});
+
+  assert_equals(errorThrown, null, "Protocol error is not surfaced to the Subscriber");
+
+  assert_not_equals(reportedError, null, "Protocol error is reported to the global");
+  assert_true(reportedError instanceof TypeError);
+}, "Invalid iterator protocol error is surfaced before Subscriber#signal is consulted");
