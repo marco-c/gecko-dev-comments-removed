@@ -12,6 +12,7 @@
 
 
 
+
 export function makeGetOptions(requestsToUse, mediation = "required") {
   if (typeof requestsToUse === "string") {
     if (requestsToUse === "default" || requestsToUse === "openid4vp") {

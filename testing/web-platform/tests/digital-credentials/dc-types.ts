@@ -1,4 +1,4 @@
-export type ProviderType = "default" | "openid4vp";
+export type Protocol = "default" | "openid4vp";
 export type CredentialMediationRequirement =
   | "conditional"
   | "optional"
@@ -27,9 +27,6 @@ export interface DigitalCredentialRequestOptions {
 
 
 export interface CredentialRequestOptions {
-  
-
-
   digital: DigitalCredentialRequestOptions;
   mediation: CredentialMediationRequirement;
 }
