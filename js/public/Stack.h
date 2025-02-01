@@ -17,44 +17,9 @@
 
 #include "jstypes.h"  
 
+#include "js/NativeStackLimits.h"
 #include "js/Principals.h"  
 #include "js/TypeDecls.h"   
-
-namespace JS {
-
-using NativeStackSize = size_t;
-
-using NativeStackBase = uintptr_t;
-
-using NativeStackLimit = uintptr_t;
-
-#if JS_STACK_GROWTH_DIRECTION > 0
-constexpr NativeStackLimit NativeStackLimitMin = 0;
-constexpr NativeStackLimit NativeStackLimitMax = UINTPTR_MAX;
-#else
-constexpr NativeStackLimit NativeStackLimitMin = UINTPTR_MAX;
-constexpr NativeStackLimit NativeStackLimitMax = 0;
-#endif
-
-#ifdef __wasi__
-
-
-
-constexpr NativeStackLimit WASINativeStackLimit = 1024;
-#endif  
-
-inline NativeStackLimit GetNativeStackLimit(NativeStackBase base,
-                                            NativeStackSize size) {
-#if JS_STACK_GROWTH_DIRECTION > 0
-  MOZ_ASSERT(base <= size_t(-1) - size);
-  return base + size - 1;
-#else   
-  MOZ_ASSERT(base >= size);
-  return base - (size - 1);
-#endif  
-}
-
-}  
 
 
 
