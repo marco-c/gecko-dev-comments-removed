@@ -420,7 +420,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   
   void AddAdopter(dom::DocumentOrShadowRoot& aAdopter) {
-    MOZ_ASSERT(IsConstructed());
+    
     MOZ_ASSERT(!mAdopters.Contains(&aAdopter));
     mAdopters.AppendElement(&aAdopter);
   }
