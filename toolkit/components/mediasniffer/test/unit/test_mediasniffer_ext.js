@@ -132,4 +132,13 @@ function run_test() {
   } catch (e) {
     print("ERROR - " + e + "\n");
   }
+
+  
+  
+  
+  
+  let mimeSvc = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
+  let file = do_get_file("data/audio.ogg");
+  let type = mimeSvc.getTypeFromFile(file);
+  Assert.equal(type, "application/ogg");
 }
