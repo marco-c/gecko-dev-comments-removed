@@ -571,7 +571,7 @@ public class TranslationsController {
         final List<Language> fromLanguages = new ArrayList<>();
         final List<Language> toLanguages = new ArrayList<>();
         try {
-          final GeckoBundle[] fromBundle = bundle.getBundleArray("fromLanguages");
+          final GeckoBundle[] fromBundle = bundle.getBundleArray("sourceLanguages");
           for (final var item : fromBundle) {
             final var result = Language.fromBundle(item);
             if (result != null) {
@@ -579,7 +579,7 @@ public class TranslationsController {
             }
           }
 
-          final GeckoBundle[] toBundle = bundle.getBundleArray("toLanguages");
+          final GeckoBundle[] toBundle = bundle.getBundleArray("targetLanguages");
           for (final var item : toBundle) {
             final var result = Language.fromBundle(item);
             if (result != null) {
@@ -806,11 +806,11 @@ public class TranslationsController {
 
     @AnyThread
     private @NonNull GeckoResult<Void> baseTranslate(
-        @NonNull final String fromLanguage, @NonNull final String toLanguage) {
+        @NonNull final String sourceLanguage, @NonNull final String targetLanguage) {
 
       final GeckoBundle bundle = new GeckoBundle(2);
-      bundle.putString("fromLanguage", fromLanguage);
-      bundle.putString("toLanguage", toLanguage);
+      bundle.putString("sourceLanguage", sourceLanguage);
+      bundle.putString("targetLanguage", targetLanguage);
       return mSession
           .getEventDispatcher()
           .queryVoid(TRANSLATE_EVENT, bundle)
@@ -1288,6 +1288,11 @@ public class TranslationsController {
         return null;
       }
       try {
+        final String variant = bundle.getString("variant", "");
+        if (!variant.isEmpty()) {
+          
+          return null;
+        }
         final String code = bundle.getString("langTag", "");
         if (code.equals("")) {
           Log.w(LOGTAG, "Deserialized an empty language code.");
