@@ -78,6 +78,14 @@ static bool areSmpte432ColorPrimariesBuggy() {
   return false;
 }
 
+static bool areBT709ColorPrimariesMisreported() {
+  const auto socModel = java::sdk::Build::SOC_MODEL()->ToString();
+  if (socModel.EqualsASCII("Tensor") || socModel.EqualsASCII("GS201")) {
+    return true;
+  }
+  return false;
+}
+
 class RemoteVideoDecoder final : public RemoteDataDecoder {
  public:
   
@@ -403,15 +411,32 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
     }
 
     if (ok && (size > 0 || presentationTimeUs >= 0)) {
+      bool forceBT709ColorSpace = false;
       
       
       
       
       
       static bool isSmpte432Buggy = areSmpte432ColorPrimariesBuggy();
-      bool forceBT709ColorSpace =
-          isSmpte432Buggy &&
-          (mColorSpace == Some(10) || mColorSpace == Some(65800));
+      if (isSmpte432Buggy &&
+          (mColorSpace == Some(10) || mColorSpace == Some(65800))) {
+        forceBT709ColorSpace = true;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      static bool isBT709Misreported = areBT709ColorPrimariesMisreported();
+      if (isBT709Misreported && mMediaInfoFlag & MediaInfoFlag::VIDEO_AV1 &&
+          mConfig.mColorPrimaries == Some(gfx::ColorSpace2::BT709) &&
+          
+          mColorSpace == Some(4)) {
+        forceBT709ColorSpace = true;
+      }
 
       RefPtr<layers::Image> img = new layers::SurfaceTextureImage(
           mSurfaceHandle, inputInfo.mImageSize, false ,
