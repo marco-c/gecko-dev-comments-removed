@@ -77,7 +77,7 @@ mozharness_run_schema = Schema(
         Optional("job-script"): str,
         Required("requires-signed-builds"): bool,
         
-        Optional("use-caches"): bool,
+        Optional("use-caches"): Any(bool, [str]),
         
         
         Required("use-simple-package"): bool,
