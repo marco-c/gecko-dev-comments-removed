@@ -22,6 +22,28 @@ class ErrorResult;
 namespace mozilla::dom {
 class Document;
 
+class RangeContentCache {
+ public:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  Result<std::tuple<const nsString&, const nsString&>, ErrorResult> Get(
+      nsRange* aRange1, nsRange* aRange2);
+
+ private:
+  nsTHashMap<nsRange*, nsString> mCache;
+};
+
 
 
 
