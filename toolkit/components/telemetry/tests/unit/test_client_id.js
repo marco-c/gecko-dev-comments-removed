@@ -31,6 +31,11 @@ add_task(function test_setup() {
   
   do_get_profile();
   Services.fog.initializeFOG();
+
+  
+  
+  GleanPings.usageReporting.setEnabled(true);
+  GleanPings.usageDeletionRequest.setEnabled(true);
 });
 
 add_task(async function test_client_id() {
