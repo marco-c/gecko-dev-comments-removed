@@ -3949,8 +3949,6 @@ static JSFunction* WasmFunctionCreate(JSContext* cx, HandleObject func,
                                       wasm::ValTypeVector&& results,
                                       HandleObject proto) {
   MOZ_ASSERT(IsCallableNonCCW(ObjectValue(*func)));
-  MOZ_RELEASE_ASSERT(!func->is<JSFunction>() ||
-                     !func->as<JSFunction>().isWasm());
 
   
   
@@ -3984,6 +3982,7 @@ static JSFunction* WasmFunctionCreate(JSContext* cx, HandleObject func,
     return nullptr;
   }
   codeMeta->numFuncImports = 1;
+  codeMeta->funcImportsAreJS = true;
 
   
   codeMeta->funcs[0].declareFuncExported( true,
@@ -4081,7 +4080,7 @@ bool WasmFunctionConstruct(JSContext* cx, unsigned argc, Value* vp) {
 
   
 
-  if (!IsCallableNonCCW(args[1]) || IsWasmFunction(args[1])) {
+  if (!IsCallableNonCCW(args[1])) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                              JSMSG_WASM_BAD_FUNCTION_VALUE);
     return false;

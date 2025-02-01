@@ -59,6 +59,9 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   BuiltinModuleFuncIdVector knownFuncImports;
   
+  
+  bool funcImportsAreJS;
+  
   uint32_t numGlobalImports;
 
   
@@ -232,6 +235,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
       : kind(kind),
         compileArgs(compileArgs),
         numFuncImports(0),
+        funcImportsAreJS(false),
         numGlobalImports(0),
         callRefHints(nullptr),
         debugEnabled(false),
