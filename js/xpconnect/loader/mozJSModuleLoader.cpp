@@ -86,13 +86,6 @@ using namespace JS;
   "jsloader/" aScopeType "/" aCompilationTarget
 
 
-
-
-
-#define XPC_SERIALIZATION_BUFFER_SIZE (64 * 1024)
-#define XPC_DESERIALIZATION_BUFFER_SIZE (12 * 8192)
-
-
 static LazyLogModule gJSCLLog("JSModuleLoader");
 
 #define LOG(args) MOZ_LOG(gJSCLLog, mozilla::LogLevel::Debug, args)
