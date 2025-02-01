@@ -515,9 +515,16 @@ uint32_t HashUTF8AsUTF16(const char* aUTF8, size_t aLength, bool* aErr) {
   return hash;
 }
 
+
+
+
+
+static constexpr uint32_t kWonCurrencySign = 0x20A9;
+
 bool IsSegmentBreakSkipChar(uint32_t u) {
   return intl::UnicodeProperties::IsEastAsianWidthFHWexcludingEmoji(u) &&
-         intl::UnicodeProperties::GetScriptCode(u) != intl::Script::HANGUL;
+         intl::UnicodeProperties::GetScriptCode(u) != intl::Script::HANGUL &&
+         u != kWonCurrencySign;
 }
 
 bool IsEastAsianPunctuation(uint32_t u) {
@@ -527,7 +534,9 @@ bool IsEastAsianPunctuation(uint32_t u) {
   
   constexpr uint32_t kFullwidthTilde = 0xFF5E;
   return intl::UnicodeProperties::IsEastAsianWidthFHW(u) &&
-         (intl::UnicodeProperties::IsPunctuation(u) || u == kFullwidthTilde);
+         ((intl::UnicodeProperties::IsPunctuation(u) &&
+           u != kWonCurrencySign) ||
+          u == kFullwidthTilde);
 }
 
 bool IsPunctuationForWordSelect(char16_t aCh) {
