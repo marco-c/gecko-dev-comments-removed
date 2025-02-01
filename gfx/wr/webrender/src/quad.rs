@@ -450,15 +450,6 @@ pub fn prepare_quad(
 
                     let rect = int_rect.to_f32();
 
-                    
-                    
-                    
-                    
-                    let int_rect_size = int_rect.round().to_i32().size();
-                    if int_rect_size.is_empty() {
-                        continue;
-                    }
-
                     if is_direct {
                         scratch.quad_direct_segments.push(QuadSegment { rect: rect.cast_unit(), task_id: RenderTaskId::INVALID });
                     } else {
@@ -489,7 +480,7 @@ pub fn prepare_quad(
 
                         let task_id = add_render_task_with_mask(
                             &pattern,
-                            int_rect_size,
+                            int_rect.round().to_i32().size(),
                             rect.min,
                             clip_chain.clips_range,
                             prim_spatial_node_index,
