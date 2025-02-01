@@ -505,8 +505,7 @@ WSRunScanner::TextFragmentData::InvisibleTrailingWhiteSpaceRangeRef() const {
   
   
   
-  if (!EndsByBlockBoundary() && !EndsByInlineEditingHostBoundary() &&
-      !EndsByInvisiblePreformattedLineBreak()) {
+  if (!EndsByBlockBoundary() && !EndsByInlineEditingHostBoundary()) {
     mTrailingWhiteSpaceRange.emplace();
     return mTrailingWhiteSpaceRange.ref();
   }
