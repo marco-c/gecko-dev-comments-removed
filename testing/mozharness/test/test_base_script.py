@@ -7,8 +7,6 @@ import types
 import unittest
 from unittest import mock
 
-import mozunit
-
 PYWIN32 = False
 if os.name == "nt":
     try:
@@ -984,4 +982,4 @@ class TestScriptDecorators(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    mozunit.main()
+    unittest.main()
