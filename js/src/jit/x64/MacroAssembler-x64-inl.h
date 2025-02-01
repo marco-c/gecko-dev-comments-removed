@@ -1150,7 +1150,7 @@ void MacroAssemblerX64::fallibleUnboxPtrImpl(const Operand& src, Register dest,
   
   
   ScratchRegisterScope scratch(asMasm());
-  mov(ImmWord(JSVAL_TYPE_TO_SHIFTED_TAG(type)), scratch);
+  mov(ImmShiftedTag(type), scratch);
   xorq(src, scratch);
   mov(scratch, dest);
   shrq(Imm32(JSVAL_TAG_SHIFT), scratch);
