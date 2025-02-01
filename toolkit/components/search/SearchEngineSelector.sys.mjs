@@ -67,7 +67,7 @@ export class SearchEngineSelector {
   /**
    * Handles getting the configuration from remote settings.
    *
-   * @returns {object}
+   * @returns {Promise<object>}
    *   The configuration data.
    */
   async getEngineConfiguration() {
@@ -103,6 +103,15 @@ export class SearchEngineSelector {
     return this._configuration;
   }
 
+  /**
+   * Finds an engine configuration that has a matching host.
+   *
+   * @param {string} host
+   *   The host to match.
+   *
+   * @returns {Promise<object>}
+   *   The configuration data for an engine.
+   */
   async findContextualSearchEngineByHost(host) {
     for (let config of this._configuration) {
       if (config.recordType !== "engine") {
@@ -122,9 +131,32 @@ export class SearchEngineSelector {
   }
 
   /**
+   * Finds an engine configuration that has a matching identifier.
+   *
+   * @param {string} id
+   *   The identifier to match.
+   *
+   * @returns {Promise<object>}
+   *   The configuration data for an engine.
+   */
+  async findContextualSearchEngineById(id) {
+    for (let config of this._configuration) {
+      if (config.recordType !== "engine") {
+        continue;
+      }
+      if (config.identifier == id) {
+        let engine = structuredClone(config.base);
+        engine.identifier = config.identifier;
+        return engine;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Used by tests to get the configuration overrides.
    *
-   * @returns {object}
+   * @returns {Promise<object>}
    *   The engine overrides data.
    */
   async getEngineConfigurationOverrides() {
@@ -144,7 +176,7 @@ export class SearchEngineSelector {
    *
    * @param {boolean} [firstTime]
    *   Internal boolean to indicate if this is the first time check or not.
-   * @returns {Array}
+   * @returns {Promise<object[]>}
    *   An array of objects in the database, or an empty array if none
    *   could be obtained.
    */
@@ -213,7 +245,7 @@ export class SearchEngineSelector {
   /**
    * Obtains the configuration overrides from remote settings.
    *
-   * @returns {Array}
+   * @returns {Promise<object[]>}
    *   An array of objects in the database, or an empty array if none
    *   could be obtained.
    */
@@ -244,7 +276,7 @@ export class SearchEngineSelector {
    *   The name of the application.
    * @param {string} [options.version]
    *   The version of the application.
-   * @returns {RefinedConfig}
+   * @returns {Promise<RefinedConfig>}
    *   An object which contains the refined configuration with a filtered list
    *   of search engines, and the identifiers for the application default engines.
    */
@@ -385,7 +417,7 @@ export class SearchEngineSelector {
    *   The default engine, for comparison to obj.
    * @param {object} defaultPrivateEngine
    *   The default private engine, for comparison to obj.
-   * @returns {integer}
+   * @returns {number}
    *  Number indicating how this engine should be sorted.
    */
   _sortIndex(obj, defaultEngine, defaultPrivateEngine) {
@@ -727,7 +759,7 @@ export class SearchEngineSelector {
    *
    * @param {Array} engines
    *   The engines for the user environment.
-   * @param {string} config
+   * @param {object} config
    *   The defaultEngines record from the config.
    * @param {string} [engineType]
    *   A string to identify default or default private.
@@ -753,7 +785,7 @@ export class SearchEngineSelector {
    *
    * @param {Array} engines
    *   The engines for the user environment.
-   * @param {string} config
+   * @param {object} config
    *   The specific defaults record that contains the default engine or default
    *   private engine identifer for the environment.
    * @param {string} [engineType]
