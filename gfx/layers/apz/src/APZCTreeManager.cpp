@@ -526,11 +526,6 @@ std::vector<LayersId> APZCTreeManager::UpdateHitTestingTree(
             MOZ_ASSERT(aLayerMetrics.Metrics().GetFixedLayerMargins() ==
                            ScreenMargin(),
                        "fixed-layer-margins should be 0 on non-root layer");
-            if (currentRootContentLayersId.IsValid() &&
-                currentRootContentLayersId != layersId &&
-                mRootLayersId != layersId) {
-              mHaveOOPIframes = true;
-            }
           }
 
           
@@ -606,6 +601,15 @@ std::vector<LayersId> APZCTreeManager::UpdateHitTestingTree(
           if (Maybe<LayersId> newLayersId = aLayerMetrics.GetReferentId()) {
             layersId = *newLayersId;
             seenLayersIds.insert(layersId);
+
+            if (state.mOverrideFlags.size() > 1) {
+              
+              
+              
+              
+              
+              mHaveOOPIframes = true;
+            }
 
             
             
