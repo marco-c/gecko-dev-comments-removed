@@ -271,6 +271,7 @@ class HTMLTextAreaElement final : public TextControlElement,
       uint32_t aSelectionStart, uint32_t aSelectionEnd,
       const Optional<nsAString>& aDirecton, ErrorResult& aError);
   nsIControllers* GetControllers(ErrorResult& aError);
+  nsIControllers* GetControllersWithoutCreation() const { return mControllers; }
   
   nsresult GetControllers(nsIControllers** aResult);
 
@@ -292,6 +293,11 @@ class HTMLTextAreaElement final : public TextControlElement,
   using nsGenericHTMLFormControlElementWithState::IsSingleLineTextControl;
 
   JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
+  void ResetIfUnchanged() {
+    if (!mValueChanged) {
+      Reset();
+    }
+  }
 
   nsCOMPtr<nsIControllers> mControllers;
   

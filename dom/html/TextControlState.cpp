@@ -2408,15 +2408,17 @@ void TextControlState::UnbindFromFrame(nsTextControlFrame* aFrame) {
 
   
   if (!SuppressEventHandlers(mBoundFrame->PresContext())) {
-    nsCOMPtr<nsIControllers> controllers;
-    if (auto* inputElement = HTMLInputElement::FromNode(mTextCtrlElement)) {
-      inputElement->GetControllers(getter_AddRefs(controllers));
-    } else {
-      auto* textAreaElement = HTMLTextAreaElement::FromNode(mTextCtrlElement);
-      if (textAreaElement) {
-        textAreaElement->GetControllers(getter_AddRefs(controllers));
+    const nsCOMPtr<nsIControllers> controllers = [&]() -> nsIControllers* {
+      if (const auto* const inputElement =
+              HTMLInputElement::FromNode(mTextCtrlElement)) {
+        return inputElement->GetControllersWithoutCreation();
       }
-    }
+      if (const auto* const textAreaElement =
+              HTMLTextAreaElement::FromNode(mTextCtrlElement)) {
+        return textAreaElement->GetControllersWithoutCreation();
+      }
+      return nullptr;
+    }();
 
     if (controllers) {
       uint32_t numControllers;

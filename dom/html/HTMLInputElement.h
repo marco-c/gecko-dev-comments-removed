@@ -752,6 +752,7 @@ class HTMLInputElement final : public TextControlElement,
   }
 
   nsIControllers* GetControllers(ErrorResult& aRv);
+  nsIControllers* GetControllersWithoutCreation() const { return mControllers; }
   
   nsresult GetControllers(nsIControllers** aResult);
 
