@@ -3,8 +3,13 @@
 
 "use strict";
 
+const SEC_DELAY_PREF = "security.notification_enable_delay";
+
 add_setup(async function () {
   await UrlClassifierTestUtils.addTestTrackers();
+  
+  
+  Services.prefs.setIntPref(SEC_DELAY_PREF, 1000);
 
   registerCleanupFunction(() => {
     UrlClassifierTestUtils.cleanupTestTrackers();
@@ -15,12 +20,6 @@ add_setup(async function () {
 add_task(async function test_smartblock_embed_replaced() {
   Services.prefs.setBoolPref(TRACKING_PREF, true);
   Services.fog.testResetFOG();
-
-  let clickToggle = async toggle => {
-    let changed = BrowserTestUtils.waitForEvent(toggle, "toggle");
-    await EventUtils.synthesizeMouseAtCenter(toggle.buttonEl, {});
-    await changed;
-  };
 
   let closeProtectionsPanel = async (win = window) => {
     let protectionsPopup = win.document.getElementById("protections-popup");
@@ -155,10 +154,15 @@ add_task(async function test_smartblock_embed_replaced() {
       .firstElementChild;
   ok(blockedEmbedToggle, "Toggle exists in container");
   ok(BrowserTestUtils.isVisible(blockedEmbedToggle), "Toggle is visible");
-  ok(
-    !blockedEmbedToggle.hasAttribute("pressed"),
-    "Unblock toggle should be off"
-  );
+  ok(!blockedEmbedToggle.pressed, "Unblock toggle should be off");
+
+  
+  ok(blockedEmbedToggle.disabled, "Unblock toggle should be disabled");
+
+  
+  let delayTime = Services.prefs.getIntPref(SEC_DELAY_PREF);
+  
+  await new Promise(resolve => setTimeout(resolve, delayTime + 100));
 
   
   let embedScriptFinished = BrowserTestUtils.waitForContentEvent(
@@ -170,9 +174,11 @@ add_task(async function test_smartblock_embed_replaced() {
   );
 
   
-  await clickToggle(blockedEmbedToggle);
+  await EventUtils.synthesizeMouseAtCenter(blockedEmbedToggle.buttonEl, {});
 
   await embedScriptFinished;
+
+  ok(blockedEmbedToggle.pressed, "Unblock toggle should be on");
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     let unloadedEmbed = content.document.querySelector(".broken-embed-content");
@@ -236,7 +242,7 @@ add_task(async function test_smartblock_embed_replaced() {
       .firstElementChild;
   ok(blockedEmbedToggle, "Toggle exists in container");
   ok(BrowserTestUtils.isVisible(blockedEmbedToggle), "Toggle is visible");
-  ok(blockedEmbedToggle.hasAttribute("pressed"), "Unblock toggle should be on");
+  ok(blockedEmbedToggle.pressed, "Unblock toggle should be on");
 
   
   
@@ -270,10 +276,13 @@ add_task(async function test_smartblock_embed_replaced() {
   );
 
   
-  clickToggle(blockedEmbedToggle);
+  
+  await EventUtils.synthesizeMouseAtCenter(blockedEmbedToggle.buttonEl, {});
 
   
   await smartblockScriptFinished;
+
+  ok(!blockedEmbedToggle.pressed, "Unblock toggle should be off");
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     
