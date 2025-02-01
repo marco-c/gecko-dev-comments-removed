@@ -2517,8 +2517,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  virtual void InitializeSelectionAncestorLimit(
-      nsIContent& aAncestorLimit) const;
+  virtual void InitializeSelectionAncestorLimit(Element& aAncestorLimit) const;
 
   
 

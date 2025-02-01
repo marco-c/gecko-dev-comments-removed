@@ -15,6 +15,7 @@
 #include "mozilla/CompactPair.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/dom/Highlight.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/Result.h"
@@ -238,6 +239,7 @@ enum class TableSelectionMode : uint32_t {
 class nsFrameSelection final {
  public:
   using CaretAssociationHint = mozilla::CaretAssociationHint;
+  using Element = mozilla::dom::Element;
 
   
 
@@ -520,8 +522,8 @@ class nsFrameSelection final {
   [[nodiscard]] bool NodeIsInLimiters(const nsINode* aContainerNode) const;
 
   [[nodiscard]] static bool NodeIsInLimiters(
-      const nsINode* aContainerNode, const nsIContent* aSelectionLimiter,
-      const nsIContent* aSelectionAncestorLimiter);
+      const nsINode* aContainerNode, const Element* aSelectionLimiter,
+      const Element* aSelectionAncestorLimiter);
 
   
 
@@ -807,11 +809,21 @@ class nsFrameSelection final {
 
 
 
+  Element* GetLimiter() const { return mLimiters.mLimiter; }
 
-  nsIContent* GetLimiter() const { return mLimiters.mLimiter; }
+  
 
-  nsIContent* GetAncestorLimiter() const { return mLimiters.mAncestorLimiter; }
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void SetAncestorLimiter(nsIContent* aLimiter);
+
+
+
+  Element* GetAncestorLimiter() const { return mLimiters.mAncestorLimiter; }
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void SetAncestorLimiter(Element* aLimiter);
 
   
 
@@ -860,8 +872,10 @@ class nsFrameSelection final {
 
 
 
-  nsFrameSelection(mozilla::PresShell* aPresShell, nsIContent* aLimiter,
-                   bool aAccessibleCaretEnabled);
+
+
+  nsFrameSelection(mozilla::PresShell* aPresShell, bool aAccessibleCaretEnabled,
+                   Element* aEditorRootAnonymousDiv = nullptr);
 
   
 
@@ -1005,7 +1019,7 @@ class nsFrameSelection final {
 
   enum class ForceEditableRegion : bool { No, Yes };
   static mozilla::Result<mozilla::PeekOffsetOptions, nsresult>
-  CreatePeekOffsetOptionsForCaretMove(const nsIContent* aSelectionLimiter,
+  CreatePeekOffsetOptionsForCaretMove(const Element* aSelectionLimiter,
                                       ForceEditableRegion aForceEditableRegion,
                                       ExtendSelection aExtendSelection,
                                       CaretMovementStyle aMovementStyle);
@@ -1019,8 +1033,8 @@ class nsFrameSelection final {
 
 
 
-  mozilla::Result<mozilla::dom::Element*, nsresult>
-  GetAncestorLimiterForCaretMove(mozilla::dom::Selection* aSelection) const;
+  mozilla::Result<Element*, nsresult> GetAncestorLimiterForCaretMove(
+      mozilla::dom::Selection* aSelection) const;
 
   
 
@@ -1191,9 +1205,14 @@ class nsFrameSelection final {
 
   struct Limiters {
     
-    nsCOMPtr<nsIContent> mLimiter;
     
-    nsCOMPtr<nsIContent> mAncestorLimiter;
+    
+    
+    RefPtr<Element> mLimiter;
+    
+    
+    
+    RefPtr<Element> mAncestorLimiter;
   };
 
   Limiters mLimiters;
@@ -1294,6 +1313,8 @@ namespace mozilla {
 
 
 struct LimitersAndCaretData {
+  using Element = dom::Element;
+
   LimitersAndCaretData() = default;
   explicit LimitersAndCaretData(const nsFrameSelection& aFrameSelection)
       : mLimiter(aFrameSelection.GetLimiter()),
@@ -1312,9 +1333,9 @@ struct LimitersAndCaretData {
   }
 
   
-  nsCOMPtr<nsIContent> mLimiter;
+  RefPtr<Element> mLimiter;
   
-  nsCOMPtr<nsIContent> mAncestorLimiter;
+  RefPtr<Element> mAncestorLimiter;
   
   CaretAssociationHint mCaretAssociationHint = CaretAssociationHint::Before;
   

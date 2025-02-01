@@ -939,7 +939,7 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
     mAccessibleCaretEventHub->Init();
   }
 
-  mSelection = new nsFrameSelection(this, nullptr, accessibleCaretEnabled);
+  mSelection = new nsFrameSelection(this, accessibleCaretEnabled);
 
   
 #ifdef SHOW_CARET
@@ -2462,7 +2462,7 @@ PresShell::CompleteMove(bool aForward, bool aExtend) {
   
   
   RefPtr<nsFrameSelection> frameSelection = mSelection;
-  nsIContent* limiter = frameSelection->GetAncestorLimiter();
+  Element* const limiter = frameSelection->GetAncestorLimiter();
   nsIFrame* frame = limiter ? limiter->GetPrimaryFrame()
                             : FrameConstructor()->GetRootElementFrame();
   if (!frame) {

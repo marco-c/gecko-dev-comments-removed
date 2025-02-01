@@ -783,8 +783,8 @@ class Selection final : public nsSupportsWeakReference,
                              const TextRangeStyle& aTextRangeStyle);
 
   
-  nsIContent* GetAncestorLimiter() const;
-  void SetAncestorLimiter(nsIContent* aLimiter);
+  Element* GetAncestorLimiter() const;
+  void SetAncestorLimiter(Element* aLimiter);
 
   
 

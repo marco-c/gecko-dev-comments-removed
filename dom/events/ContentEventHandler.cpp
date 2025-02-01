@@ -364,8 +364,7 @@ nsresult ContentEventHandler::InitRootContent(
   if (!aNormalSelection.RangeCount()) {
     
     
-    mRootElement =
-        Element::FromNodeOrNull(aNormalSelection.GetAncestorLimiter());
+    mRootElement = aNormalSelection.GetAncestorLimiter();
     if (!mRootElement) {
       mRootElement = mDocument->GetRootElement();
       if (NS_WARN_IF(!mRootElement)) {

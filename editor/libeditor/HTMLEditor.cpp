@@ -1063,7 +1063,7 @@ nsresult HTMLEditor::CollapseSelectionToEndOfLastLeafNodeOfDocument() const {
 }
 
 void HTMLEditor::InitializeSelectionAncestorLimit(
-    nsIContent& aAncestorLimit) const {
+    Element& aAncestorLimit) const {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   
@@ -7450,7 +7450,7 @@ void HTMLEditor::NotifyEditingHostMaybeChanged() {
   }
 
   
-  nsIContent* editingHost = ComputeEditingHost();
+  Element* const editingHost = ComputeEditingHost();
   if (NS_WARN_IF(!editingHost)) {
     return;
   }

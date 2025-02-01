@@ -19,6 +19,7 @@
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Logging.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/PseudoStyleType.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/StaticAnalysisFunctions.h"
@@ -218,19 +219,35 @@ bool nsFrameSelection::NodeIsInLimiters(const nsINode* aContainerNode) const {
 
 
 bool nsFrameSelection::NodeIsInLimiters(
-    const nsINode* aContainerNode, const nsIContent* aSelectionLimiter,
-    const nsIContent* aSelectionAncestorLimiter) {
+    const nsINode* aContainerNode, const Element* aSelectionLimiter,
+    const Element* aSelectionAncestorLimiter) {
   if (!aContainerNode) {
     return false;
   }
 
-  if (aSelectionLimiter && aSelectionLimiter != aContainerNode &&
-      aSelectionLimiter != aContainerNode->GetParent()) {
-    
-    
-    return false;  
+  
+  
+  
+  
+  if (aSelectionLimiter) {
+    MOZ_ASSERT(aSelectionLimiter->GetPseudoElementType() ==
+               PseudoStyleType::mozTextControlEditingRoot);
+    MOZ_ASSERT(aSelectionLimiter->IsHTMLElement(nsGkAtoms::div));
+    if (aSelectionLimiter == aContainerNode) {
+      return true;
+    }
+    if (aSelectionLimiter == aContainerNode->GetParent()) {
+      NS_WARNING_ASSERTION(aContainerNode->IsText(),
+                           ToString(*aContainerNode).c_str());
+      MOZ_ASSERT(aContainerNode->IsText());
+      return true;
+    }
+    return false;
   }
 
+  
+  
+  
   return !aSelectionAncestorLimiter ||
          aContainerNode->IsInclusiveDescendantOf(aSelectionAncestorLimiter);
 }
@@ -376,8 +393,9 @@ nsFrameSelection::CreateRangeExtendedToSomewhere(
     nsDirection aExtendDirection, nsSelectionAmount aAmount,
     CaretMovementStyle aMovementStyle);
 
-nsFrameSelection::nsFrameSelection(PresShell* aPresShell, nsIContent* aLimiter,
-                                   const bool aAccessibleCaretEnabled) {
+nsFrameSelection::nsFrameSelection(
+    PresShell* aPresShell, const bool aAccessibleCaretEnabled,
+    Element* aEditorRootAnonymousDiv ) {
   for (size_t i = 0; i < std::size(mDomSelections); i++) {
     mDomSelections[i] = new Selection(kPresentSelectionTypes[i], this);
   }
@@ -389,7 +407,13 @@ nsFrameSelection::nsFrameSelection(PresShell* aPresShell, nsIContent* aLimiter,
 
   mPresShell = aPresShell;
   mDragState = false;
-  mLimiters.mLimiter = aLimiter;
+
+  MOZ_ASSERT_IF(aEditorRootAnonymousDiv,
+                aEditorRootAnonymousDiv->GetPseudoElementType() ==
+                    PseudoStyleType::mozTextControlEditingRoot);
+  MOZ_ASSERT_IF(aEditorRootAnonymousDiv,
+                aEditorRootAnonymousDiv->IsHTMLElement(nsGkAtoms::div));
+  mLimiters.mLimiter = aEditorRootAnonymousDiv;
 
   
   MOZ_ASSERT(NS_IsMainThread());
@@ -940,9 +964,8 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
 
 Result<PeekOffsetOptions, nsresult>
 nsFrameSelection::CreatePeekOffsetOptionsForCaretMove(
-    const nsIContent* aSelectionLimiter,
-    ForceEditableRegion aForceEditableRegion, ExtendSelection aExtendSelection,
-    CaretMovementStyle aMovementStyle) {
+    const Element* aSelectionLimiter, ForceEditableRegion aForceEditableRegion,
+    ExtendSelection aExtendSelection, CaretMovementStyle aMovementStyle) {
   PeekOffsetOptions options;
   
   
@@ -978,7 +1001,7 @@ Result<Element*, nsresult> nsFrameSelection::GetAncestorLimiterForCaretMove(
 
   MOZ_ASSERT(mPresShell->GetDocument() == content->GetComposedDoc());
 
-  Element* ancestorLimiter = Element::FromNodeOrNull(GetAncestorLimiter());
+  Element* ancestorLimiter = GetAncestorLimiter();
   if (aSelection->IsEditorSelection()) {
     
     
@@ -2051,9 +2074,7 @@ nsFrameSelection::CreateRangeExtendedToSomewhere(
                                       : aRange.EndRef().AsRaw(),
           aExtendDirection, aLimitersAndCaretData.mCaretAssociationHint,
           aLimitersAndCaretData.mCaretBidiLevel, aAmount, options.unwrap(),
-          
-          
-          Element::FromNodeOrNull(aLimitersAndCaretData.mAncestorLimiter));
+          aLimitersAndCaretData.mAncestorLimiter);
   if (result.isErr()) {
     return result.propagateErr();
   }
@@ -3022,7 +3043,7 @@ nsresult CreateAndAddRange(nsINode* aContainer, int32_t aOffset,
 
 
 
-void nsFrameSelection::SetAncestorLimiter(nsIContent* aLimiter) {
+void nsFrameSelection::SetAncestorLimiter(Element* aLimiter) {
   if (mLimiters.mAncestorLimiter != aLimiter) {
     mLimiters.mAncestorLimiter = aLimiter;
     const Selection& sel = NormalSelection();
