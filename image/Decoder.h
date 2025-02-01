@@ -8,6 +8,7 @@
 
 #include "FrameAnimator.h"
 #include "RasterImage.h"
+#include "mozilla/glean/ImageDecodersMetrics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
@@ -24,10 +25,6 @@
 enum class CMSMode : int32_t;
 
 namespace mozilla {
-
-namespace Telemetry {
-enum HistogramID : uint32_t;
-}  
 
 namespace image {
 
@@ -56,10 +53,10 @@ struct DecoderFinalStatus final {
 };
 
 struct DecoderTelemetry final {
-  DecoderTelemetry(const Maybe<Telemetry::HistogramID>& aSpeedHistogram,
-                   size_t aBytesDecoded, uint32_t aChunkCount,
-                   TimeDuration aDecodeTime)
-      : mSpeedHistogram(aSpeedHistogram),
+  DecoderTelemetry(
+      const Maybe<glean::impl::MemoryDistributionMetric>& aSpeedMetric,
+      size_t aBytesDecoded, uint32_t aChunkCount, TimeDuration aDecodeTime)
+      : mSpeedMetric(aSpeedMetric),
         mBytesDecoded(aBytesDecoded),
         mChunkCount(aChunkCount),
         mDecodeTime(aDecodeTime) {}
@@ -74,7 +71,7 @@ struct DecoderTelemetry final {
 
   
   
-  const Maybe<Telemetry::HistogramID> mSpeedHistogram;
+  const Maybe<glean::impl::MemoryDistributionMetric> mSpeedMetric;
 
   
   const size_t mBytesDecoded;
@@ -481,7 +478,7 @@ class Decoder {
 
 
 
-  virtual Maybe<Telemetry::HistogramID> SpeedHistogram() const {
+  virtual Maybe<glean::impl::MemoryDistributionMetric> SpeedMetric() const {
     return Nothing();
   }
 
