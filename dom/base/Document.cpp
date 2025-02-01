@@ -6471,7 +6471,7 @@ void Document::DeferredContentEditableCountChange(Element* aElement) {
             aElement->InclusiveDescendantMayNeedSpellchecking(htmlEditor)) {
           RefPtr<nsRange> range = nsRange::Create(aElement);
           IgnoredErrorResult res;
-          range->SelectNode(*aElement, res);
+          range->SelectNodeContents(*aElement, res);
           if (res.Failed()) {
             
             
