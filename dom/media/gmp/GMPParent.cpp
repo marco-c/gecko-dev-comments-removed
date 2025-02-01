@@ -814,7 +814,8 @@ static void GMPNotifyObservers(const uint32_t aPluginID,
 
 void GMPParent::ActorDestroy(ActorDestroyReason aWhy) {
   MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
-  GMP_PARENT_LOG_DEBUG("%s: (%d)", __FUNCTION__, (int)aWhy);
+  GMP_PARENT_LOG_DEBUG("%s: (%d), state=%u", __FUNCTION__, (int)aWhy,
+                       static_cast<GMPState>(mState));
 
   if (AbnormalShutdown == aWhy) {
     Telemetry::Accumulate(Telemetry::SUBPROCESS_ABNORMAL_ABORT, "gmplugin"_ns,
@@ -839,6 +840,7 @@ void GMPParent::ActorDestroy(ActorDestroyReason aWhy) {
   mAbnormalShutdownInProgress = true;
   CloseActive(false);
 
+  
   
   if (AbnormalShutdown == aWhy) {
     RefPtr<GMPParent> self(this);
