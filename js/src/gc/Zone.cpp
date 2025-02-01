@@ -433,6 +433,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
           jitScript = script->maybeJitScript();
           if (!jitScript) {
             
+            
             if (!script->realm()->collectCoverageForDebug() &&
                 !gcx->runtime()->profilingScripts) {
               script->destroyScriptCounts();
