@@ -94,6 +94,7 @@ ITEM_VALUE(SiteSpecificZoom,            61)
 
 ITEM_VALUE(FontVisibilityRestrictGenerics, 62)
 ITEM_VALUE(WebVTT,                      63)
+ITEM_VALUE(WebGPULimits,                64)
 
 
 

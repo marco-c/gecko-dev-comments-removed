@@ -56,6 +56,9 @@ class AdapterInfo final : public nsWrapperCache, public ChildOf<Adapter> {
       const std::shared_ptr<ffi::WGPUAdapterInformation>& aAboutSupportInfo)
       : ChildOf(aParent), mAboutSupportInfo(aAboutSupportInfo) {}
 
+  
+  
+  
   void GetVendor(nsString& s) const { s = nsString(); }
   void GetArchitecture(nsString& s) const { s = nsString(); }
   void GetDevice(nsString& s) const { s = nsString(); }
