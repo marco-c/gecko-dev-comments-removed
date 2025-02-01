@@ -624,6 +624,11 @@ void nsHtml5TreeOpExecutor::RunFlushLoop() {
       
       
       nsHtml5AutoFlush autoFlush(this);
+      
+      
+      AUTO_PROFILER_MARKER_TEXT(
+          "HTMLParserTreeOps", DOM,
+          MarkerOptions(MarkerInnerWindowIdFromDocShell(mDocShell)), ""_ns);
 
       nsHtml5TreeOperation* first = mOpQueue.Elements();
       nsHtml5TreeOperation* last = first + mOpQueue.Length() - 1;
@@ -650,6 +655,10 @@ void nsHtml5TreeOpExecutor::RunFlushLoop() {
           autoFlush.SetNumberOfOpsToRemove((iter - first) + 1);
 
           nsHtml5TreeOpExecutor::ContinueInterruptedParsingAsync();
+          if (!interrupted) {
+            PROFILER_MARKER_UNTYPED("HTMLParserTreeOpsYieldedOnDeadline", DOM,
+                                    MarkerInnerWindowIdFromDocShell(mDocShell));
+          }
           return;
         }
       }
@@ -741,6 +750,12 @@ nsresult nsHtml5TreeOpExecutor::FlushDocumentWrite() {
   {
     
     nsHtml5AutoFlush autoFlush(this);
+    
+    
+    AUTO_PROFILER_MARKER_TEXT(
+        "HTMLParserTreeOps", DOM,
+        MarkerOptions(MarkerInnerWindowIdFromDocShell(mDocShell)),
+        "document.write"_ns);
 
     nsHtml5TreeOperation* start = mOpQueue.Elements();
     nsHtml5TreeOperation* end = start + mOpQueue.Length();
