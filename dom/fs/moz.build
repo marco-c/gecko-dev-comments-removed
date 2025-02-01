@@ -4,6 +4,9 @@
 
 
 
+with Files("**"):
+    BUG_COMPONENT = ("Core", "Storage: Bucket File System")
+
 DIRS += [
     "api",
     "child",
