@@ -232,9 +232,7 @@ class gfxFontEntry {
   bool IsLocalUserFont() const { return mIsLocalUserFont; }
   bool IsFixedPitch() const { return mFixedPitch; }
   bool IsItalic() const { return SlantStyle().Min().IsItalic(); }
-  
-  
-  bool IsOblique() const { return !IsUpright() && !IsItalic(); }
+  bool IsOblique() const { return SlantStyle().Min().IsOblique(); }
   bool IsUpright() const { return SlantStyle().Min().IsNormal(); }
   inline bool SupportsItalic();  
   inline bool SupportsBold();
