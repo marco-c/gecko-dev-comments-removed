@@ -1,0 +1,8 @@
+
+
+
+
+
+
+with Files("**"):
+    BUG_COMPONENT = ("Firefox", "New Tab Page")
