@@ -2281,14 +2281,32 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       return Relation();
     }
 
-    case RelationType::CONTROLLED_BY:
-      return Relation(new RelatedAccIterator(Document(), mContent,
-                                             nsGkAtoms::aria_controls));
+    case RelationType::CONTROLLED_BY: {
+      Relation rel(new RelatedAccIterator(Document(), mContent,
+                                          nsGkAtoms::aria_controls));
 
+      RelatedAccIterator owners(Document(), mContent, nsGkAtoms::aria_owns);
+      if (LocalAccessible* owner = owners.Next()) {
+        if (nsAccUtils::IsEditableARIACombobox(owner)) {
+          MOZ_ASSERT(!IsRelocated(),
+                     "Child is not relocated to editable combobox");
+          rel.AppendTarget(owner);
+        }
+      }
+
+      return rel;
+    }
     case RelationType::CONTROLLER_FOR: {
       Relation rel(new AssociatedElementsIterator(mDoc, mContent,
                                                   nsGkAtoms::aria_controls));
       rel.AppendIter(new HTMLOutputIterator(Document(), mContent));
+      if (nsAccUtils::IsEditableARIACombobox(this)) {
+        AssociatedElementsIterator iter(mDoc, mContent, nsGkAtoms::aria_owns);
+        while (Accessible* owned_child = iter.Next()) {
+          MOZ_ASSERT(!owned_child->AsLocal()->IsRelocated());
+          rel.AppendTarget(owned_child->AsLocal());
+        }
+      }
       return rel;
     }
 
@@ -4080,11 +4098,17 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
                 dom::HTMLLabelElement::FromNode(mContent)) {
           rel.AppendTarget(mDoc, labelEl->GetControl());
         }
-      } else if (data.mType == RelationType::DETAILS) {
+      } else if (data.mType == RelationType::DETAILS ||
+                 data.mType == RelationType::CONTROLLER_FOR) {
         
         
         
-        rel = RelationByType(RelationType::DETAILS);
+        
+        
+        
+        
+        
+        rel = RelationByType(data.mType);
       } else {
         
         
