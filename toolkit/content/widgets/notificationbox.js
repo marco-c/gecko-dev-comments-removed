@@ -610,9 +610,10 @@
         this._securityDelayMS = securityDelayMS;
         
         
-        this._focusHandler = () => {
+        this._focusHandler = event => {
           
-          if (this.isConnected) {
+          
+          if (this.isConnected && event.target === window) {
             this._startClickJackingDelay();
           }
         };
