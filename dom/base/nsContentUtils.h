@@ -714,31 +714,6 @@ class nsContentUtils {
 
 
 
-
-
-
-
-
-  static int32_t ComparePoints_Deprecated(
-      const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
-      uint32_t aOffset2, bool* aDisconnected = nullptr,
-      NodeIndexCache* aIndexCache = nullptr);
-  template <typename PT1, typename RT1, typename PT2, typename RT2>
-  static int32_t ComparePoints_Deprecated(
-      const mozilla::RangeBoundaryBase<PT1, RT1>& aBoundary1,
-      const mozilla::RangeBoundaryBase<PT2, RT2>& aBoundary2,
-      bool* aDisconnected = nullptr);
-
-  
-
-
-
-
-
-
-
-
-
   static mozilla::Maybe<int32_t> ComparePoints_AllowNegativeOffsets(
       const nsINode* aParent1, int64_t aOffset1, const nsINode* aParent2,
       int64_t aOffset2) {
@@ -3609,7 +3584,6 @@ class nsContentUtils {
       NodeIndexCache* aIndexCache = nullptr);
 
   
-
 
 
 

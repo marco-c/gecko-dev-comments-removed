@@ -497,19 +497,6 @@ template Maybe<int32_t> nsContentUtils::ComparePoints(
     const RawRangeBoundary& aFirstBoundary,
     const RawRangeBoundary& aSecondBoundary);
 
-template int32_t nsContentUtils::ComparePoints_Deprecated(
-    const RangeBoundary& aFirstBoundary, const RangeBoundary& aSecondBoundary,
-    bool* aDisconnected);
-template int32_t nsContentUtils::ComparePoints_Deprecated(
-    const RangeBoundary& aFirstBoundary,
-    const RawRangeBoundary& aSecondBoundary, bool* aDisconnected);
-template int32_t nsContentUtils::ComparePoints_Deprecated(
-    const RawRangeBoundary& aFirstBoundary,
-    const RangeBoundary& aSecondBoundary, bool* aDisconnected);
-template int32_t nsContentUtils::ComparePoints_Deprecated(
-    const RawRangeBoundary& aFirstBoundary,
-    const RawRangeBoundary& aSecondBoundary, bool* aDisconnected);
-
 
 
 enum AutocompleteUnsupportedFieldName : uint8_t {
@@ -3385,45 +3372,20 @@ Maybe<int32_t> nsContentUtils::ComparePoints(const nsINode* aParent1,
                                              const nsINode* aParent2,
                                              uint32_t aOffset2,
                                              NodeIndexCache* aIndexCache) {
-  bool disconnected{false};
-
-  const int32_t order = ComparePoints_Deprecated(
-      aParent1, aOffset1, aParent2, aOffset2, &disconnected, aIndexCache);
-  if (disconnected) {
-    return Nothing();
-  }
-
-  return Some(order);
-}
-
-
-int32_t nsContentUtils::ComparePoints_Deprecated(
-    const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
-    uint32_t aOffset2, bool* aDisconnected, NodeIndexCache* aIndexCache) {
   MOZ_ASSERT(aParent1);
   MOZ_ASSERT(aParent2);
 
   if (aParent1 == aParent2) {
-    if (aDisconnected) {
-      *aDisconnected = false;
-    }
-    return aOffset1 < aOffset2 ? -1 : aOffset1 > aOffset2 ? 1 : 0;
+    return Some(aOffset1 < aOffset2 ? -1 : (aOffset1 > aOffset2 ? 1 : 0));
   }
 
   const CommonAncestors commonAncestors(*aParent1, *aParent2,
                                         GetParentOrShadowHostNode);
 
   if (MOZ_UNLIKELY(!commonAncestors.GetClosestCommonAncestor())) {
-    if (aDisconnected) {
-      *aDisconnected = true;
-    }
-    NS_ASSERTION(aDisconnected, "unexpected disconnected nodes");
-    return 1;
+    return Nothing();
   }
 
-  if (aDisconnected) {
-    *aDisconnected = false;
-  }
   const nsINode* closestCommonAncestorChild1 =
       commonAncestors.GetClosestCommonAncestorChild1();
   const nsINode* closestCommonAncestorChild2 =
@@ -3431,7 +3393,7 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
   MOZ_ASSERT(closestCommonAncestorChild1 != closestCommonAncestorChild2);
   commonAncestors.WarnIfClosestCommonAncestorChildrenAreNotInChildList();
   if (closestCommonAncestorChild1 && closestCommonAncestorChild2) {
-    return *CompareClosestCommonAncestorChildren(
+    return CompareClosestCommonAncestorChildren(
         *commonAncestors.GetClosestCommonAncestor(),
         closestCommonAncestorChild1, closestCommonAncestorChild2, aIndexCache);
   }
@@ -3444,7 +3406,7 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
             closestCommonAncestorChild2->IsRootOfNativeAnonymousSubtree() ||
             closestCommonAncestorChild2->IsDocumentFragment())) {
       
-      return 1;
+      return Some(1);
     }
     const Maybe<int32_t> comp = nsContentUtils::CompareChildOffsetAndChildNode(
         aOffset1, *closestCommonAncestorChild2, aIndexCache);
@@ -3454,15 +3416,15 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
           "nsContentUtils::CompareChildOffsetAndChildNode() must return Some "
           "here. It should've already checked before we call it.");
       
-      return 1;
+      return Some(1);
     }
     
     
     
     if (!*comp) {
-      return -1;
+      return Some(-1);
     }
-    return *comp;
+    return comp;
   }
 
   MOZ_ASSERT(closestCommonAncestorChild1);
@@ -3473,7 +3435,7 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
           closestCommonAncestorChild1->IsRootOfNativeAnonymousSubtree() ||
           closestCommonAncestorChild1->IsDocumentFragment())) {
     
-    return -1;
+    return Some(-1);
   }
   const Maybe<int32_t> comp = nsContentUtils::CompareChildNodeAndChildOffset(
       *closestCommonAncestorChild1, aOffset2, aIndexCache);
@@ -3482,15 +3444,15 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
                  "nsContentUtils::CompareChildOffsetAndChildNode() must return "
                  "Some here. It should've already checked before we call it.");
     
-    return -1;
+    return Some(-1);
   }
   
   
   
   if (!*comp) {
-    return 1;
+    return Some(1);
   }
-  return *comp;
+  return comp;
 }
 
 
@@ -3564,26 +3526,6 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
   if (!aBoundary1.IsSet() || !aBoundary2.IsSet()) {
     return Nothing{};
   }
-
-  bool disconnected{false};
-  const int32_t order =
-      ComparePoints_Deprecated(aBoundary1, aBoundary2, &disconnected);
-
-  if (disconnected) {
-    return Nothing{};
-  }
-  return Some(order);
-}
-
-
-template <typename PT1, typename RT1, typename PT2, typename RT2>
-int32_t nsContentUtils::ComparePoints_Deprecated(
-    const RangeBoundaryBase<PT1, RT1>& aBoundary1,
-    const RangeBoundaryBase<PT2, RT2>& aBoundary2, bool* aDisconnected) {
-  if (NS_WARN_IF(!aBoundary1.IsSet()) || NS_WARN_IF(!aBoundary2.IsSet())) {
-    return -1;
-  }
-
   const auto kValidOrInvalidOffsets1 =
       RangeBoundaryBase<PT1, RT1>::OffsetFilter::kValidOrInvalidOffsets;
   const auto kValidOrInvalidOffsets2 =
@@ -3593,10 +3535,9 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
   
   
   if (aBoundary1.HasOffset() && aBoundary2.HasOffset()) {
-    return ComparePoints_Deprecated(
+    return ComparePoints(
         aBoundary1.Container(), *aBoundary1.Offset(kValidOrInvalidOffsets1),
-        aBoundary2.Container(), *aBoundary2.Offset(kValidOrInvalidOffsets2),
-        aDisconnected);
+        aBoundary2.Container(), *aBoundary2.Offset(kValidOrInvalidOffsets2));
   }
 
   
@@ -3609,16 +3550,12 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
   
   
   if (aBoundary1.Container() == aBoundary2.Container()) {
-    if (aDisconnected) {
-      *aDisconnected = false;
-    }
     const nsIContent* const child1 = aBoundary1.GetChildAtOffset();
     const nsIContent* const child2 = aBoundary2.GetChildAtOffset();
-    return *CompareClosestCommonAncestorChildren(*aBoundary1.Container(),
-                                                 child1, child2);
+    return CompareClosestCommonAncestorChildren(*aBoundary1.Container(), child1,
+                                                child2);
   }
 
-  
   
   
   
@@ -3629,17 +3566,9 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
                                         GetParentOrShadowHostNode);
 
   if (MOZ_UNLIKELY(!commonAncestors.GetClosestCommonAncestor())) {
-    if (aDisconnected) {
-      *aDisconnected = true;
-    }
-    NS_ASSERTION(aDisconnected, "unexpected disconnected nodes");
-    return 1;
+    return Nothing();
   }
   MOZ_ASSERT(commonAncestors.GetClosestCommonAncestor());
-
-  if (aDisconnected) {
-    *aDisconnected = false;
-  }
 
   const nsINode* closestCommonAncestorChild1 =
       commonAncestors.GetClosestCommonAncestorChild1();
@@ -3648,7 +3577,7 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
   commonAncestors.WarnIfClosestCommonAncestorChildrenAreNotInChildList();
   MOZ_ASSERT(closestCommonAncestorChild1 != closestCommonAncestorChild2);
   if (closestCommonAncestorChild1 && closestCommonAncestorChild2) {
-    return *CompareClosestCommonAncestorChildren(
+    return CompareClosestCommonAncestorChildren(
         *commonAncestors.GetClosestCommonAncestor(),
         closestCommonAncestorChild1, closestCommonAncestorChild2);
   }
@@ -3661,7 +3590,7 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
             closestCommonAncestorChild2->IsRootOfNativeAnonymousSubtree() ||
             closestCommonAncestorChild2->IsDocumentFragment())) {
       
-      return 1;
+      return Some(1);
     }
     const Maybe<int32_t> comp = nsContentUtils::CompareChildNodes(
         aBoundary1.GetChildAtOffset(), closestCommonAncestorChild2);
@@ -3671,7 +3600,7 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
           "nsContentUtils::CompareChildOffsetAndChildNode() must return Some "
           "here. It should've already checked before we call it.");
       
-      return 1;
+      return Some(1);
     }
     
     
@@ -3679,7 +3608,7 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
     if (!*comp) {
       MOZ_ASSERT(*closestCommonAncestorChild2->ComputeIndexInParentNode() ==
                  *aBoundary1.Offset(kValidOrInvalidOffsets1));
-      return -1;
+      return Some(-1);
     }
     MOZ_ASSERT_IF(*comp < 0,
                   *aBoundary1.Offset(kValidOrInvalidOffsets1) <
@@ -3687,7 +3616,7 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
     MOZ_ASSERT_IF(*comp > 0,
                   *closestCommonAncestorChild2->ComputeIndexInParentNode() <
                       *aBoundary1.Offset(kValidOrInvalidOffsets1));
-    return *comp;
+    return comp;
   }
 
   MOZ_ASSERT(closestCommonAncestorChild1);
@@ -3698,7 +3627,7 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
           closestCommonAncestorChild1->IsRootOfNativeAnonymousSubtree() ||
           closestCommonAncestorChild1->IsDocumentFragment())) {
     
-    return -1;
+    return Some(-1);
   }
   const Maybe<int32_t> comp = nsContentUtils::CompareChildNodes(
       closestCommonAncestorChild1, aBoundary2.GetChildAtOffset());
@@ -3707,7 +3636,7 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
                  "nsContentUtils::CompareChildOffsetAndChildNode() must return "
                  "Some here. It should've already checked before we call it.");
     
-    return -1;
+    return Some(-1);
   }
   
   
@@ -3715,7 +3644,7 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
   if (!*comp) {
     MOZ_ASSERT(*closestCommonAncestorChild1->ComputeIndexInParentNode() ==
                *aBoundary2.Offset(kValidOrInvalidOffsets2));
-    return 1;
+    return Some(1);
   }
   MOZ_ASSERT_IF(*comp < 0,
                 *closestCommonAncestorChild1->ComputeIndexInParentNode() <
@@ -3723,7 +3652,7 @@ int32_t nsContentUtils::ComparePoints_Deprecated(
   MOZ_ASSERT_IF(*comp > 0,
                 *aBoundary2.Offset(kValidOrInvalidOffsets2) <
                     *closestCommonAncestorChild1->ComputeIndexInParentNode());
-  return *comp;
+  return comp;
 }
 
 inline bool IsCharInSet(const char* aSet, const char16_t aChar) {
