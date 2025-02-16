@@ -1260,14 +1260,6 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
   }
 
   auto it = mExternalTextures.find(data->mLastSubmittedTextureId.ref());
-
-  
-  if (data->mUseExternalTextureInSwapChain && it != mExternalTextures.end()) {
-    auto& externalTexture = it->second;
-    externalTexture->GetSnapshot(shmem, aSize);
-    return IPC_OK();
-  }
-
   
   if (it == mExternalTextures.end()) {
     if (!mRemoteTextureOwner || !mRemoteTextureOwner->IsRegistered(aOwnerId)) {
