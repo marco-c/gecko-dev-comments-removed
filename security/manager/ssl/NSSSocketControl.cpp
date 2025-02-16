@@ -460,9 +460,6 @@ void NSSSocketControl::ClientAuthCertificateSelected(
       const_cast<uint8_t*>(certBytes.Elements()),
       static_cast<unsigned int>(certBytes.Length()),
   };
-  
-  
-  AutoSearchingForClientAuthCertificates _;
   UniqueCERTCertificate cert(CERT_NewTempCertificate(
       CERT_GetDefaultCertDB(), &certItem, nullptr, false, true));
   UniqueSECKEYPrivateKey key;

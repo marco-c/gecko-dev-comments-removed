@@ -4,8 +4,6 @@
 
 
 
-#include <atomic>
-
 #include "nsNSSComponent.h"
 
 #include "BinaryPath.h"
@@ -1933,25 +1931,6 @@ nsNSSComponent::AsyncClearSSLExternalAndInternalSessionCache(
   return NS_OK;
 }
 
-std::atomic<bool> sSearchingForClientAuthCertificates{false};
-
-extern "C" {
-
-bool IsGeckoSearchingForClientAuthCertificates() {
-  return sSearchingForClientAuthCertificates;
-}
-}
-
-AutoSearchingForClientAuthCertificates::
-    AutoSearchingForClientAuthCertificates() {
-  sSearchingForClientAuthCertificates = true;
-}
-
-AutoSearchingForClientAuthCertificates::
-    ~AutoSearchingForClientAuthCertificates() {
-  sSearchingForClientAuthCertificates = false;
-}
-
 namespace mozilla {
 namespace psm {
 
@@ -1999,7 +1978,6 @@ static inline void CopyCertificatesTo(UniqueCERTCertList& from,
 UniqueCERTCertList FindClientCertificatesWithPrivateKeys() {
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
           ("FindClientCertificatesWithPrivateKeys"));
-  AutoSearchingForClientAuthCertificates _;
 
   (void)BlockUntilLoadableCertsLoaded();
   (void)CheckForSmartCardChanges();

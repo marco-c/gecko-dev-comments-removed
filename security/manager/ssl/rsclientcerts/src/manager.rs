@@ -12,10 +12,7 @@ use std::time::{Duration, Instant};
 
 use crate::error::{Error, ErrorType};
 use crate::error_here;
-
-extern "C" {
-    fn IsGeckoSearchingForClientAuthCertificates() -> bool;
-}
+use crate::util::*;
 
 
 
@@ -324,6 +321,37 @@ impl ManagerProxy {
     }
 }
 
+
+
+
+
+
+
+
+fn search_is_for_all_certificates_or_keys(
+    attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)],
+) -> Result<bool, Error> {
+    if attrs.len() != 2 {
+        return Ok(false);
+    }
+    let token_bytes = vec![1_u8];
+    let mut found_token = false;
+    let cko_certificate_bytes = serialize_uint(CKO_CERTIFICATE)?;
+    let cko_private_key_bytes = serialize_uint(CKO_PRIVATE_KEY)?;
+    let mut found_certificate_or_private_key = false;
+    for (attr_type, attr_value) in attrs.iter() {
+        if attr_type == &CKA_TOKEN && attr_value == &token_bytes {
+            found_token = true;
+        }
+        if attr_type == &CKA_CLASS
+            && (attr_value == &cko_certificate_bytes || attr_value == &cko_private_key_bytes)
+        {
+            found_certificate_or_private_key = true;
+        }
+    }
+    Ok(found_token && found_certificate_or_private_key)
+}
+
 const SUPPORTED_ATTRIBUTES: &[CK_ATTRIBUTE_TYPE] = &[
     CKA_CLASS,
     CKA_TOKEN,
@@ -439,7 +467,7 @@ impl<B: ClientCertsBackend> Manager<B> {
         let now = Instant::now();
         match self.last_scan_time {
             Some(last_scan_time) => {
-                if now.duration_since(last_scan_time) < Duration::new(2, 0) {
+                if now.duration_since(last_scan_time) < Duration::new(3, 0) {
                     return Ok(());
                 }
             }
@@ -528,7 +556,8 @@ impl<B: ClientCertsBackend> Manager<B> {
         
         
         
-        if unsafe { IsGeckoSearchingForClientAuthCertificates() } {
+        
+        if search_is_for_all_certificates_or_keys(&attrs)? {
             self.maybe_find_new_objects()?;
         }
         let mut handles = Vec::new();
