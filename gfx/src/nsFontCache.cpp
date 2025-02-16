@@ -87,7 +87,21 @@ already_AddRefed<nsFontMetrics> nsFontCache::GetMetricsFor(
     }
   }
 
-  DetectFontFingerprinting(aFont);
+  if (!mReportedProbableFingerprinting) {
+    
+    
+    
+    PRTime now = PR_Now();
+    if (now - mLastCacheMiss > kFingerprintingTimeout) {
+      mCacheMisses = 0;
+    }
+    mCacheMisses++;
+    mLastCacheMiss = now;
+    if (NS_IsMainThread() && mCacheMisses > kFingerprintingCacheMissThreshold) {
+      mContext->Document()->RecordFontFingerprinting();
+      mReportedProbableFingerprinting = true;
+    }
+  }
 
   
   
@@ -110,50 +124,6 @@ already_AddRefed<nsFontMetrics> nsFontCache::GetMetricsFor(
   
   mFontMetrics.AppendElement(do_AddRef(fm).take());
   return fm.forget();
-}
-
-void nsFontCache::DetectFontFingerprinting(const nsFont& aFont) {
-  
-  
-  
-
-  if (mReportedProbableFingerprinting || aFont.family.families.list.IsEmpty()) {
-    return;
-  }
-
-  PRTime now = PR_Now();
-  nsAutoString key;
-  for (const auto& family : aFont.family.families.list.AsSpan()) {
-    if (family.IsGeneric()) {
-      continue;
-    }
-    key.Append(family.AsFamilyName().name.AsAtom()->GetUTF16String());
-  }
-  if (key.IsEmpty()) {
-    return;
-  }
-
-  mMissedFontFamilyNames.InsertOrUpdate(key, now);
-  
-  
-  if (mMissedFontFamilyNames.Count() <= kFingerprintingCacheMissThreshold) {
-    return;
-  }
-  uint16_t fontsMissedRecently = 0;
-
-  for (auto iter = mMissedFontFamilyNames.Iter(); !iter.Done(); iter.Next()) {
-    if (now - kFingerprintingLastNSec <= iter.Data()) {
-      if (++fontsMissedRecently > kFingerprintingCacheMissThreshold) {
-        mContext->Document()->RecordFontFingerprinting();
-        mReportedProbableFingerprinting = true;
-        mMissedFontFamilyNames.Clear();
-        break;
-      }
-    } else {
-      
-      iter.Remove();
-    }
-  }
 }
 
 void nsFontCache::UpdateUserFonts(gfxUserFontSet* aUserFontSet) {
@@ -188,7 +158,6 @@ void nsFontCache::Compact() {
       NS_ADDREF(oldfm);
     }
   }
-  mMissedFontFamilyNames.Clear();
 }
 
 
@@ -206,4 +175,7 @@ void nsFontCache::Flush(int32_t aFlushCount) {
     NS_RELEASE(fm);
   }
   mFontMetrics.RemoveElementsAt(0, n);
+
+  mLastCacheMiss = 0;
+  mCacheMisses = 0;
 }

@@ -53,10 +53,11 @@ class nsFontCache final : public nsIObserver {
 
   
   
-  static constexpr int32_t kFingerprintingCacheMissThreshold = 20;
+  
+  static constexpr int32_t kFingerprintingCacheMissThreshold = 3 * 20;
   
   
-  static constexpr PRTime kFingerprintingLastNSec =
+  static constexpr PRTime kFingerprintingTimeout =
       PRTime(PR_USEC_PER_SEC) * 3;  
 
   static_assert(kFingerprintingCacheMissThreshold < kMaxCacheEntries);
@@ -92,9 +93,8 @@ class nsFontCache final : public nsIObserver {
     RefPtr<nsFontCache> mCache;
   };
 
-  void DetectFontFingerprinting(const nsFont& aFont);
-
-  nsTHashMap<nsStringHashKey, PRTime> mMissedFontFamilyNames;
+  PRTime mLastCacheMiss = 0;
+  uint64_t mCacheMisses = 0;
   bool mReportedProbableFingerprinting = false;
 };
 
