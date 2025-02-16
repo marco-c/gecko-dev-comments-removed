@@ -140,12 +140,6 @@ function waitForSources(dbg, expectedSources) {
 }
 exports.waitForSources = waitForSources;
 
-function waitForInlinePreviews(dbg) {
-  return waitForState(dbg, () =>
-    dbg.selectors.getInlinePreviews(dbg.store.getState())
-  );
-}
-
 function waitForSource(dbg, sourceURL) {
   const { selectors } = dbg;
   function hasSource(state) {
@@ -169,9 +163,7 @@ async function waitForPaused(
   dbg,
   pauseOptions = { shouldWaitForLoadedScopes: true }
 ) {
-  
-  
-  const promises = [waitForInlinePreviews(dbg)];
+  const promises = [];
 
   
   
@@ -180,13 +172,7 @@ async function waitForPaused(
     promises.push(waitForLoadedScopes(dbg));
   }
   const {
-    selectors: {
-      getSelectedScope,
-      getIsPaused,
-      getCurrentThread,
-      isMapScopesEnabled,
-      getSelectedLocation,
-    },
+    selectors: { getSelectedScope, getIsPaused, getCurrentThread },
   } = dbg;
   const onStateChange = waitForState(dbg, state => {
     const thread = getCurrentThread(state);
@@ -195,17 +181,7 @@ async function waitForPaused(
   promises.push(onStateChange);
 
   await Promise.all(promises);
-
-  const state = dbg.store.getState();
-  const selectedSource = getSelectedLocation(state);
-  
-  
-  if (
-    !pauseOptions.isCm6Enabled ||
-    (selectedSource.isOriginal && isMapScopesEnabled(state))
-  ) {
-    await waitForSymbols(dbg);
-  }
+  await waitForSymbols(dbg);
 }
 exports.waitForPaused = waitForPaused;
 
@@ -376,13 +352,7 @@ async function removeBreakpoints(dbg) {
 }
 exports.removeBreakpoints = removeBreakpoints;
 
-async function pauseDebugger(
-  dbg,
-  tab,
-  testFunction,
-  { line, file },
-  isCm6Enabled
-) {
+async function pauseDebugger(dbg, tab, testFunction, { line, file }) {
   const { getSelectedLocation, isMapScopesEnabled } = dbg.selectors;
 
   const state = dbg.store.getState();
@@ -396,7 +366,6 @@ async function pauseDebugger(
 
   const onPaused = waitForPaused(dbg, {
     shouldWaitForLoadedScopes: !shouldEnableOriginalScopes,
-    isCm6Enabled,
   });
   await evalInFrame(tab, testFunction);
 
@@ -415,11 +384,11 @@ async function resume(dbg) {
 }
 exports.resume = resume;
 
-async function step(dbg, stepType, isCm6Enabled) {
+async function step(dbg, stepType) {
   const resumed = waitForResumed(dbg);
   dbg.actions[stepType]();
   await resumed;
-  return waitForPaused(dbg, { isCm6Enabled });
+  return waitForPaused(dbg);
 }
 exports.step = step;
 
