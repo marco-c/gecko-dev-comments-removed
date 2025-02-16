@@ -521,6 +521,7 @@ def run_lldb_server(app, substs, device_serial):
 
 def _setup_or_run_lldb_server(app, substs, device_serial, setup=True):
     device = _get_device(substs, device_serial)
+    device.run_as_package = app
 
     
     
