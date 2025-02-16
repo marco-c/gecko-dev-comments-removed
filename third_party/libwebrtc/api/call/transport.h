@@ -31,6 +31,7 @@ struct PacketOptions {
   bool is_media = true;
   bool included_in_feedback = false;
   bool included_in_allocation = false;
+  bool send_as_ect1 = false;
   
   bool batchable = false;
   
