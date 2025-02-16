@@ -751,6 +751,47 @@ class LogicalPoint {
                               aContainerSize);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  LogicalPoint ConvertRectOriginTo(WritingMode aToMode, WritingMode aFromMode,
+                                   const nsSize& aRectSize,
+                                   const nsSize& aContainerSize) const {
+    CHECK_WRITING_MODE(aFromMode);
+    if (aFromMode == aToMode) {
+      return *this;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return ConvertTo(aToMode, aFromMode, aContainerSize - aRectSize);
+  }
+
   bool operator==(const LogicalPoint& aOther) const {
     CHECK_WRITING_MODE(aOther.GetWritingMode());
     return mPoint == aOther.mPoint;
