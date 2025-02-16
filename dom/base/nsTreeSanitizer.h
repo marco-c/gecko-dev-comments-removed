@@ -13,7 +13,6 @@
 #include "nsTHashSet.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/NameSpaceConstants.h"
-#include "mozilla/dom/SanitizerBinding.h"
 
 class nsIContent;
 class nsIGlobalObject;
@@ -28,10 +27,6 @@ enum class StyleSanitizationKind : uint8_t;
 namespace mozilla::dom {
 class DocumentFragment;
 class Element;
-
-class OwningStringOrSanitizerAttributeNamespace;
-class OwningStringOrSanitizerElementNamespace;
-class OwningStringOrSanitizerElementNamespaceWithAttributes;
 }  
 
 
@@ -64,14 +59,6 @@ class nsTreeSanitizer {
 
 
   void Sanitize(mozilla::dom::Document* aDocument);
-
-  
-
-
-
-  void WithWebSanitizerOptions(nsIGlobalObject* aGlobal,
-                               const mozilla::dom::SanitizerConfig& aOptions,
-                               mozilla::ErrorResult& aRv);
 
   
 
@@ -120,9 +107,6 @@ class nsTreeSanitizer {
   bool mLogRemovals;
 
   
-  uint64_t mInnerWindowID = 0;
-
-  
 
 
   class AtomsTable : public nsTHashSet<const nsStaticAtom*> {
@@ -137,55 +121,6 @@ class nsTreeSanitizer {
     }
   };
 
-  
-  class NamespaceAtom : public PLDHashEntryHdr {
-   public:
-    using KeyType = const NamespaceAtom&;
-    using KeyTypePointer = const NamespaceAtom*;
-
-    explicit NamespaceAtom(KeyTypePointer aKey)
-        : mNamespaceID(aKey->mNamespaceID), mLocalName(aKey->mLocalName) {}
-    NamespaceAtom(int32_t aNamespaceID, RefPtr<nsAtom> aLocalName)
-        : mNamespaceID(aNamespaceID), mLocalName(std::move(aLocalName)) {}
-    NamespaceAtom(NamespaceAtom&&) = default;
-    ~NamespaceAtom() = default;
-
-    bool KeyEquals(KeyTypePointer aKey) const {
-      return mNamespaceID == aKey->mNamespaceID &&
-             mLocalName == aKey->mLocalName;
-    }
-
-    static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
-    static PLDHashNumber HashKey(KeyTypePointer aKey) {
-      if (!aKey) {
-        return 0;
-      }
-
-      return mozilla::HashGeneric(aKey->mNamespaceID, aKey->mLocalName.get());
-    }
-
-    enum { ALLOW_MEMMOVE = true };
-
-   private:
-    int32_t mNamespaceID = kNameSpaceID_None;
-    RefPtr<nsAtom> mLocalName;
-  };
-
-  using ElementName = NamespaceAtom;
-  using AttributeName = NamespaceAtom;
-
-  using ElementNameSet = nsTHashSet<ElementName>;
-  using AttributeNameSet = nsTHashSet<AttributeName>;
-
-  class ElementWithAttributes {
-   public:
-    mozilla::Maybe<AttributeNameSet> mAttributes;
-    mozilla::Maybe<AttributeNameSet> mRemoveAttributes;
-  };
-
-  using ElementsToAttributesMap =
-      nsTHashMap<ElementName, ElementWithAttributes>;
-
   void SanitizeChildren(nsINode* aRoot);
 
   
@@ -196,7 +131,6 @@ class nsTreeSanitizer {
 
 
   bool MustFlatten(int32_t aNamespace, nsAtom* aLocal);
-  bool MustFlattenForSanitizerAPI(int32_t aNamespace, nsAtom* aLocal);
 
   
 
@@ -208,8 +142,6 @@ class nsTreeSanitizer {
 
   bool MustPrune(int32_t aNamespace, nsAtom* aLocal,
                  mozilla::dom::Element* aElement);
-  bool MustPruneForSanitizerAPI(int32_t aNamespace, nsAtom* aLocal,
-                                mozilla::dom::Element* aElement);
 
   
 
@@ -247,11 +179,6 @@ class nsTreeSanitizer {
 
   void SanitizeAttributes(mozilla::dom::Element* aElement,
                           AllowedAttributes aAllowed);
-  
-  bool MustDropAttribute(mozilla::dom::Element* aElement,
-                         int32_t aAttrNamespace, nsAtom* aAttrLocalName);
-  bool MustDropFunkyAttribute(mozilla::dom::Element* aElement,
-                              int32_t aAttrNamespace, nsAtom* aAttrLocalName);
 
   
 
@@ -293,27 +220,6 @@ class nsTreeSanitizer {
 
 
   static void RemoveAllAttributesFromDescendants(mozilla::dom::Element*);
-
-  static bool MatchesElementName(ElementNameSet& aNames, int32_t aNamespace,
-                                 nsAtom* aLocalName);
-  static bool MatchesAttributeName(AttributeNameSet& aNames, int32_t aNamespace,
-                                   nsAtom* aLocalName);
-
-  static ElementNameSet ConvertElements(
-      const nsTArray<mozilla::dom::OwningStringOrSanitizerElementNamespace>&
-          aElements,
-      mozilla::ErrorResult& aRv);
-
-  static ElementsToAttributesMap ConvertElementsWithAttributes(
-      const nsTArray<
-          mozilla::dom::OwningStringOrSanitizerElementNamespaceWithAttributes>&
-          aElements,
-      mozilla::ErrorResult& aRv);
-
-  static AttributeNameSet ConvertAttributes(
-      const nsTArray<mozilla::dom::OwningStringOrSanitizerAttributeNamespace>&
-          aAttributes,
-      mozilla::ErrorResult& aRv);
 
   
 
@@ -368,51 +274,7 @@ class nsTreeSanitizer {
   
 
 
-  static AtomsTable* sBaselineAttributeAllowlist;
-
-  
-
-
-  static AtomsTable* sBaselineElementAllowlist;
-
-  
-
-
-  static AtomsTable* sDefaultConfigurationAttributeAllowlist;
-
-  
-
-
-  static AtomsTable* sDefaultConfigurationElementAllowlist;
-
-  
-
-
   static nsIPrincipal* sNullPrincipal;
-
-  
-
-  
-  bool mIsForSanitizerAPI = false;
-
-  bool mAllowCustomElements = false;
-  bool mAllowUnknownMarkup = false;
-
-  
-  
-  mozilla::Maybe<ElementsToAttributesMap> mElements;
-
-  
-  mozilla::Maybe<ElementNameSet> mRemoveElements;
-
-  
-  mozilla::Maybe<ElementNameSet> mReplaceWithChildrenElements;
-
-  
-  mozilla::Maybe<AttributeNameSet> mAttributes;
-
-  
-  mozilla::Maybe<AttributeNameSet> mRemoveAttributes;
 };
 
 #endif  

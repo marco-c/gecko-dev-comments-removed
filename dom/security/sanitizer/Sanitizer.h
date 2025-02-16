@@ -13,7 +13,6 @@
 #include "nsString.h"
 #include "nsIGlobalObject.h"
 #include "nsIParserUtils.h"
-#include "nsTreeSanitizer.h"
 
 
 
@@ -30,8 +29,7 @@ namespace dom {
 class GlobalObject;
 
 class Sanitizer final : public nsISupports, public nsWrapperCache {
-  explicit Sanitizer(nsIGlobalObject* aGlobal, nsTreeSanitizer&& aTreeSanitizer)
-      : mGlobal(aGlobal), mTreeSanitizer(std::move(aTreeSanitizer)) {
+  explicit Sanitizer(nsIGlobalObject* aGlobal) : mGlobal(aGlobal) {
     MOZ_ASSERT(aGlobal);
   }
 
@@ -99,7 +97,6 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
                          uint64_t aInnerWindowID, bool aFromPrivateWindow);
 
   RefPtr<nsIGlobalObject> mGlobal;
-  nsTreeSanitizer mTreeSanitizer;
 };
 }  
 }  
