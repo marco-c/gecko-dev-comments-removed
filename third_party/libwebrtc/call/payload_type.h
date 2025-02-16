@@ -26,11 +26,25 @@ class PayloadType : public StrongAlias<class PayloadTypeTag, uint8_t> {
   
   PayloadType(uint8_t pt) { value_ = pt; }                
   constexpr operator uint8_t() const& { return value_; }  
+  static bool IsValid(PayloadType id, bool rtcp_mux) {
+    
+    
+    
+    if (rtcp_mux && (id > 63 && id < 96)) {
+      return false;
+    }
+    return id >= 0 && id <= 127;
+  }
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const PayloadType pt) {
+    absl::Format(&sink, "%d", pt.value_);
+  }
 };
 
 class PayloadTypeSuggester {
  public:
   virtual ~PayloadTypeSuggester() = default;
+
   
   
   

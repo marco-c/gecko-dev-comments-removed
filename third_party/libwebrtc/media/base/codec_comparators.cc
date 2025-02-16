@@ -342,6 +342,11 @@ bool MatchesWithCodecRules(const Codec& left_codec, const Codec& right_codec) {
   return matches_id && matches_type_specific();
 }
 
+bool MatchesWithReferenceAttributes(const Codec& codec1, const Codec& codec2) {
+  return MatchesWithReferenceAttributesAndComparator(
+      codec1, codec2, [](int a, int b) { return a == b; });
+}
+
 
 
 

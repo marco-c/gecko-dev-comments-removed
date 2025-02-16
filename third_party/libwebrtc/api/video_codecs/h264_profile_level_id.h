@@ -87,6 +87,10 @@ RTC_EXPORT std::optional<std::string> H264ProfileLevelIdToString(
 RTC_EXPORT bool H264IsSameProfile(const CodecParameterMap& params1,
                                   const CodecParameterMap& params2);
 
+
+RTC_EXPORT bool H264IsSameProfileAndLevel(const CodecParameterMap& params1,
+                                          const CodecParameterMap& params2);
+
 }  
 
 #endif  

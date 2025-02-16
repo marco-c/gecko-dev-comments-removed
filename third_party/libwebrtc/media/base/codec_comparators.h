@@ -20,12 +20,13 @@
 namespace webrtc {
 
 
-bool MatchesForSdp(const cricket::Codec& codec_1,
-                   const cricket::Codec& codec_2);
-
-
 bool MatchesWithCodecRules(const cricket::Codec& left_codec,
                            const cricket::Codec& codec);
+
+
+
+bool MatchesWithReferenceAttributes(const cricket::Codec& left_codec,
+                                    const cricket::Codec& right_codec);
 
 
 
