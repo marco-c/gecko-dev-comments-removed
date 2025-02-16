@@ -491,6 +491,15 @@ document.addEventListener(
           event.target.querySelector(
             "#open-tab-group-context-menu_moveToThisWindow"
           ).disabled = tabGroupIsInThisWindow;
+
+          
+          
+          let groupAloneInWindow =
+            tabGroup.tabs.length ==
+            tabGroup.ownerGlobal.gBrowser.openTabs.length;
+          event.target.querySelector(
+            "#open-tab-group-context-menu_moveToNewWindow"
+          ).disabled = groupAloneInWindow;
         }
       });
 
