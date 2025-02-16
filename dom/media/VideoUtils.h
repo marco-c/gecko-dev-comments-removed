@@ -130,12 +130,6 @@ CheckedInt64 UsecsToFrames(int64_t aUsecs, uint32_t aRate);
 CheckedInt64 TimeUnitToFrames(const media::TimeUnit& aTime, uint32_t aRate);
 
 
-#define MS_TO_SECONDS(ms) ((double)(ms) / (PR_MSEC_PER_SEC))
-
-
-#define SECONDS_TO_MS(s) ((int)((s) * (PR_MSEC_PER_SEC)))
-
-
 
 nsresult SecondsToUsecs(double aSeconds, int64_t& aOutUsecs);
 
