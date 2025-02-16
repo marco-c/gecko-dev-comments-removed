@@ -1064,6 +1064,7 @@ pub type FontStyleFixedPoint = FixedPoint<i16, FONT_STYLE_FRACTION_BITS>;
 
 
 
+
 /// cbindgen:derive-lt
 /// cbindgen:derive-lte
 /// cbindgen:derive-gt
@@ -1087,12 +1088,11 @@ pub struct FontStyle(FontStyleFixedPoint);
 impl FontStyle {
     
     pub const NORMAL: FontStyle = FontStyle(FontStyleFixedPoint {
-        value: 0 << FONT_STYLE_FRACTION_BITS,
+        value: 100 << FONT_STYLE_FRACTION_BITS,
     });
-
     
     pub const ITALIC: FontStyle = FontStyle(FontStyleFixedPoint {
-        value: 100 << FONT_STYLE_FRACTION_BITS,
+        value: 101 << FONT_STYLE_FRACTION_BITS,
     });
 
     
@@ -1121,6 +1121,7 @@ impl FontStyle {
 
     
     pub fn oblique_degrees(&self) -> f32 {
+        debug_assert_ne!(*self, Self::NORMAL);
         debug_assert_ne!(*self, Self::ITALIC);
         self.0.to_float()
     }
@@ -1137,12 +1138,12 @@ impl ToCss for FontStyle {
         if *self == Self::ITALIC {
             return dest.write_str("italic");
         }
-        dest.write_str("oblique")?;
-        if *self != Self::OBLIQUE {
-            
-            dest.write_char(' ')?;
-            Angle::from_degrees(self.oblique_degrees()).to_css(dest)?;
+        if *self == Self::OBLIQUE {
+            return dest.write_str("oblique");
         }
+        dest.write_str("oblique ")?;
+        let angle = Angle::from_degrees(self.oblique_degrees());
+        angle.to_css(dest)?;
         Ok(())
     }
 }
@@ -1152,6 +1153,12 @@ impl ToAnimatedValue for FontStyle {
 
     #[inline]
     fn to_animated_value(self, _: &crate::values::animated::Context) -> Self::AnimatedValue {
+        if self == Self::NORMAL {
+            
+            
+            
+            return generics::FontStyle::Oblique(Angle::from_degrees(0.0));
+        }
         if self == Self::ITALIC {
             return generics::FontStyle::Italic;
         }
@@ -1161,8 +1168,16 @@ impl ToAnimatedValue for FontStyle {
     #[inline]
     fn from_animated_value(animated: Self::AnimatedValue) -> Self {
         match animated {
+            generics::FontStyle::Normal => Self::NORMAL,
             generics::FontStyle::Italic => Self::ITALIC,
-            generics::FontStyle::Oblique(ref angle) => Self::oblique(angle.degrees()),
+            generics::FontStyle::Oblique(ref angle) => {
+                if angle.degrees() == 0.0 {
+                    
+                    Self::NORMAL
+                } else {
+                    Self::oblique(angle.degrees())
+                }
+            },
         }
     }
 }
