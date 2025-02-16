@@ -1853,9 +1853,6 @@ pref("browser.newtabpage.activity-stream.newtabAdSize.variant-a", false);
 pref("browser.newtabpage.activity-stream.newtabAdSize.variant-b", false);
 
 
-pref("browser.newtabpage.activity-stream.newtabLogo.aprilfools", false);
-
-
 #ifndef RELEASE_OR_BETA
   pref("browser.newtabpage.activity-stream.debug", false);
 #endif
