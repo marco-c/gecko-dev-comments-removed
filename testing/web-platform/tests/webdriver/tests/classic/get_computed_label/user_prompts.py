@@ -2,37 +2,29 @@
 
 import pytest
 
-from tests.support.asserts import (
-    assert_error,
-    assert_same_element,
-    assert_success,
-    assert_dialog_handled,
-)
+from tests.support.asserts import assert_error, assert_success, assert_dialog_handled
 
 
-def find_element(session, element_id, using, value):
+def get_computed_label(session, element_id):
     return session.transport.send(
-        "POST", "session/{session_id}/element/{element_id}/element".format(
+        "GET", "session/{session_id}/element/{element_id}/computedlabel".format(
             session_id=session.session_id,
-            element_id=element_id),
-        {"using": using, "value": value})
+            element_id=element_id))
 
 
 @pytest.fixture
 def check_user_prompt_closed_without_exception(session, create_dialog, inline):
     def check_user_prompt_closed_without_exception(dialog_type, retval):
-        session.url = inline("<div><p>bar</p><div>")
-        outer_element = session.find.css("div", all=False)
-        inner_element = session.find.css("p", all=False)
+        session.url = inline("<button>ok</button>")
+        element = session.find.css("button", all=False)
 
         create_dialog(dialog_type, text="cheese")
 
-        response = find_element(session, outer_element.id, "css selector", "p")
-        value = assert_success(response)
+        response = get_computed_label(session, element.id)
+        assert_success(response, "ok")
 
-        assert_dialog_handled(session, expected_text=dialog_type, expected_retval=retval)
-
-        assert_same_element(session, value, inner_element)
+        assert_dialog_handled(
+            session, expected_text=dialog_type, expected_retval=retval)
 
     return check_user_prompt_closed_without_exception
 
@@ -40,16 +32,17 @@ def check_user_prompt_closed_without_exception(session, create_dialog, inline):
 @pytest.fixture
 def check_user_prompt_closed_with_exception(session, create_dialog, inline):
     def check_user_prompt_closed_with_exception(dialog_type, retval):
-        session.url = inline("<div><p>bar</p><div>")
-        outer_element = session.find.css("div", all=False)
+        session.url = inline("<button>ok</button>")
+        element = session.find.css("button", all=False)
 
         create_dialog(dialog_type, text="cheese")
 
-        response = find_element(session, outer_element.id, "css selector", "p")
+        response = get_computed_label(session, element.id)
         assert_error(response, "unexpected alert open",
                      data={"text": "cheese"})
 
-        assert_dialog_handled(session, expected_text=dialog_type, expected_retval=retval)
+        assert_dialog_handled(
+            session, expected_text=dialog_type, expected_retval=retval)
 
     return check_user_prompt_closed_with_exception
 
@@ -57,12 +50,12 @@ def check_user_prompt_closed_with_exception(session, create_dialog, inline):
 @pytest.fixture
 def check_user_prompt_not_closed_but_exception(session, create_dialog, inline):
     def check_user_prompt_not_closed_but_exception(dialog_type):
-        session.url = inline("<div><p>bar</p><div>")
-        outer_element = session.find.css("div", all=False)
+        session.url = inline("<button>ok</button>")
+        element = session.find.css("button", all=False)
 
         create_dialog(dialog_type, text="cheese")
 
-        response = find_element(session, outer_element.id, "css selector", "p")
+        response = get_computed_label(session, element.id)
         assert_error(response, "unexpected alert open",
                      data={"text": "cheese"})
 
