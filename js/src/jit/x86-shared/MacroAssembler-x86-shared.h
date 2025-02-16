@@ -410,7 +410,7 @@ class MacroAssemblerX86Shared : public Assembler {
   void convertFloat16ToFloat32(FloatRegister src, FloatRegister dest) {
     
     
-    vpmovzxwq(Operand(dest), dest);
+    vpmovzxwq(Operand(src), dest);
 
     
     vcvtph2ps(dest, dest);
