@@ -324,6 +324,17 @@ class RTC_EXPORT NV12BufferInterface : public BiplanarYuv8Buffer {
   ~NV12BufferInterface() override {}
 };
 
+
+
+
+
+
+void CheckValidDimensions(int width,
+                          int height,
+                          int stride_y,
+                          int stride_u,
+                          int stride_v);
+
 }  
 
 #endif

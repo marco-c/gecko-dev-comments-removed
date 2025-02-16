@@ -15,7 +15,13 @@
 
 #include <memory>
 
+#include "api/video/i010_buffer.h"
+#include "api/video/i210_buffer.h"
+#include "api/video/i410_buffer.h"
 #include "api/video/i420_buffer.h"
+#include "api/video/i422_buffer.h"
+#include "api/video/i444_buffer.h"
+#include "api/video/nv12_buffer.h"
 #include "api/video/video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/logging.h"
@@ -397,14 +403,88 @@ TEST_F(TestLibYuv, I420DimensionsTooLarge) {
       (int64_t{kWidth} * int64_t{kHeight}) > std::numeric_limits<int>::max(),
       "");
 
-  
-  
-  const int stride_uv = (kWidth + 1) / 2;
-  EXPECT_DEATH(I420Buffer::Create(kWidth, kHeight, kWidth,
-                                  stride_uv,
-                                  stride_uv),
+  EXPECT_DEATH(I010Buffer::Create(kWidth, kHeight),
                "IsValueInRangeForNumericType");
+  EXPECT_DEATH(I210Buffer::Create(kWidth, kHeight),
+               "IsValueInRangeForNumericType");
+
+  int stride_uv = (kWidth + 1) / 2;
+  EXPECT_DEATH(I410Buffer::Create(kWidth, kHeight, kWidth,
+                                  stride_uv, stride_uv),
+               "IsValueInRangeForNumericType");
+  EXPECT_DEATH(I420Buffer::Create(kWidth, kHeight, kWidth,
+                                  stride_uv, stride_uv),
+               "IsValueInRangeForNumericType");
+  EXPECT_DEATH(I422Buffer::Create(kWidth, kHeight, kWidth,
+                                  stride_uv, stride_uv),
+               "IsValueInRangeForNumericType");
+  EXPECT_DEATH(I444Buffer::Create(kWidth, kHeight, kWidth,
+                                  stride_uv, stride_uv),
+               "IsValueInRangeForNumericType");
+  EXPECT_DEATH(
+      NV12Buffer::Create(kWidth, kHeight, kWidth, stride_uv),
+      "IsValueInRangeForNumericType");
 }
+
+template <typename T>
+void TestInvalidDimensions5Params() {
+  EXPECT_DEATH(T::Create(-11, 1, 1,
+                         1,
+                         1),
+               "> 0");
+  EXPECT_DEATH(T::Create(1, -11, 1,
+                         1,
+                         1),
+               "> 0");
+  EXPECT_DEATH(T::Create(1, 1, -12,
+                         1,
+                         1),
+               ">= width");
+  EXPECT_DEATH(T::Create(1, 1, 1,
+                         -12,
+                         1),
+               "> 0");
+  EXPECT_DEATH(T::Create(1, 1, 1,
+                         1,
+                         -12),
+               "> 0");
+}
+
+template <typename T>
+void TestInvalidDimensions4Params() {
+  EXPECT_DEATH(T::Create(-11, 1, 1,
+                         1),
+               "> 0");
+  EXPECT_DEATH(T::Create(1, -11, 1,
+                         1),
+               "> 0");
+  EXPECT_DEATH(T::Create(1, 1, -12,
+                         1),
+               ">= width");
+  EXPECT_DEATH(T::Create(1, 1, 1,
+                         -12),
+               "> 0");
+}
+
+template <typename T>
+void TestInvalidDimensions2Param() {
+  EXPECT_DEATH(T::Create(-11, 1), "> 0");
+  EXPECT_DEATH(T::Create(1, -11), "> 0");
+}
+
+TEST_F(TestLibYuv, I420InvalidDimensions) {
+  
+  TestInvalidDimensions2Param<I010Buffer>();
+  TestInvalidDimensions2Param<I210Buffer>();
+  
+  TestInvalidDimensions5Params<I410Buffer>();
+  TestInvalidDimensions5Params<I420Buffer>();
+  TestInvalidDimensions5Params<I422Buffer>();
+  TestInvalidDimensions5Params<I444Buffer>();
+  
+  TestInvalidDimensions4Params<NV12Buffer>();
+}
+
 #endif  
 
 }  
