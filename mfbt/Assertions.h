@@ -239,6 +239,40 @@ MOZ_NoReturn(int aLine) {
 
 
 
+#  if !defined(MOZ_ASAN)
+static inline void MOZ_CrashSequence(void* aAddress, intptr_t aLine) {
+#    if defined(__i386__) || defined(__x86_64__)
+  asm volatile(
+      "mov %1, (%0);\n"  
+      :                  
+      : "r"(aAddress), "r"(aLine));
+#    elif defined(__arm__) || defined(__aarch64__)
+  asm volatile(
+      "str %1,[%0];\n"  
+      :                 
+      : "r"(aAddress), "r"(aLine));
+#    elif defined(__riscv)
+  asm volatile(
+      "sw %1,0(%0);\n"  
+      :                 
+      : "r"(aAddress), "r"(aLine));
+#    else
+#      warning \
+          "Unsupported architecture, replace the code below with assembly suitable to crash the process"
+  asm volatile("" ::: "memory");
+  *((volatile int*)MOZ_CRASH_WRITE_ADDR) = line; 
+#    endif
+}
+#  else
+#    define MOZ_CrashSequence(x, y) __builtin_trap()
+#  endif
+
+
+
+
+
+
+
 
 
 
@@ -250,16 +284,16 @@ MOZ_NoReturn(int aLine) {
 #  endif
 
 #  ifdef __cplusplus
-#    define MOZ_REALLY_CRASH(line)                                  \
-      do {                                                          \
-        *((volatile int*)MOZ_CRASH_WRITE_ADDR) = line; /* NOLINT */ \
-        MOZ_NOMERGE ::abort();                                      \
+#    define MOZ_REALLY_CRASH(line)                     \
+      do {                                             \
+        MOZ_CrashSequence(MOZ_CRASH_WRITE_ADDR, line); \
+        MOZ_NOMERGE ::abort();                         \
       } while (false)
 #  else
-#    define MOZ_REALLY_CRASH(line)                                  \
-      do {                                                          \
-        *((volatile int*)MOZ_CRASH_WRITE_ADDR) = line; /* NOLINT */ \
-        MOZ_NOMERGE abort();                                        \
+#    define MOZ_REALLY_CRASH(line)                     \
+      do {                                             \
+        MOZ_CrashSequence(MOZ_CRASH_WRITE_ADDR, line); \
+        MOZ_NOMERGE abort();                           \
       } while (false)
 #  endif
 #endif
