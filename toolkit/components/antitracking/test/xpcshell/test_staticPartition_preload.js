@@ -122,10 +122,12 @@ add_task(async () => {
       "http://example.org/empty"
     );
 
-    await contentPage.spawn([], () =>
+    await contentPage.spawn([], () => {
       
-      content.windowUtils.clearSharedStyleSheetCache()
-    );
+      content.windowUtils.clearSharedStyleSheetCache();
+      
+      content.windowUtils.clearSharedScriptCache();
+    });
 
     await contentPage.close();
 
