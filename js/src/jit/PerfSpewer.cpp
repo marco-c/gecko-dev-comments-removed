@@ -141,8 +141,6 @@ static uint32_t GetMachineEncoding() {
   return 40;  
 #  elif defined(JS_CODEGEN_ARM64)
   return 183;  
-#  elif defined(JS_CODEGEN_MIPS32)
-  return 8;  
 #  elif defined(JS_CODEGEN_MIPS64)
   return 8;  
 #  else

@@ -10,7 +10,6 @@
 #include <unistd.h>
 
 #include "jit/FlushICache.h"  
-#include "jit/mips32/Simulator-mips32.h"
 #include "jit/mips64/Simulator-mips64.h"
 #include "jit/RegisterSets.h"
 
@@ -29,7 +28,7 @@ namespace jit {
 static uint32_t get_mips_flags() {
   uint32_t flags = HWCAP_MIPS;
 
-#if defined(JS_SIMULATOR_MIPS32) || defined(JS_SIMULATOR_MIPS64)
+#if defined(JS_SIMULATOR_MIPS64)
   flags |= HWCAP_FPU;
   flags |= HWCAP_R2;
 #else

@@ -26,10 +26,6 @@
 #  error "This file only for gcc-compatible compilers"
 #endif
 
-#if defined(JS_SIMULATOR_MIPS32) && !defined(__i386__)
-#  error "The MIPS32 simulator atomics assume x86"
-#endif
-
 namespace js {
 namespace jit {
 
@@ -76,6 +72,16 @@ inline bool js::jit::AtomicOperations::isLockfree8() {
 inline void js::jit::AtomicOperations::fenceSeqCst() {
   __atomic_thread_fence(__ATOMIC_SEQ_CST);
 }
+
+namespace js {
+namespace jit {
+
+inline void AtomicPause() { asm volatile("sync" ::: "memory"); }
+
+}  
+}  
+
+inline void js::jit::AtomicOperations::pause() { AtomicPause(); }
 
 template <typename T>
 inline T js::jit::AtomicOperations::loadSeqCst(T* addr) {
