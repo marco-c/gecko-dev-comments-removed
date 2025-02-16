@@ -5,8 +5,14 @@
 
 
 UNIFIED_SOURCES += [
+    "places_test_harness.cpp",
     "test_casing.cpp",
+    "test_ConcurrentConnection.cpp",
     "test_IHistory.cpp",
+]
+
+LOCAL_INCLUDES += [
+    "../..",
 ]
 
 FINAL_LIBRARY = "xul-gtest"
