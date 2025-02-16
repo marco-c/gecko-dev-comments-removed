@@ -515,8 +515,12 @@ void* MapAlignedPages(size_t length, size_t alignment,
 #  endif
 
   
-  
   void* region = MapMemory(length);
+  if (!region) {
+    return nullptr;
+  }
+
+  
   if (OffsetFromAligned(region, alignment) == 0) {
     RecordMemoryAlloc(length);
     return region;
@@ -552,15 +556,15 @@ void* MapAlignedPages(size_t length, size_t alignment,
     
     
     region = MapAlignedPagesLastDitch(length, alignment, stallAndRetry);
+    if (!region) {
+      return nullptr;
+    }
   }
 
   
   MOZ_ASSERT(OffsetFromAligned(region, alignment) == 0);
 
-  if (region) {
-    RecordMemoryAlloc(length);
-  }
-
+  RecordMemoryAlloc(length);
   return region;
 #endif  
 }
