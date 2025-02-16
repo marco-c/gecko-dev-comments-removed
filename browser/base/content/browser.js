@@ -1840,13 +1840,6 @@ const BrowserSearch = {
   
 
 
-  get searchBar() {
-    return document.getElementById("searchbar");
-  },
-
-  
-
-
 
 
 

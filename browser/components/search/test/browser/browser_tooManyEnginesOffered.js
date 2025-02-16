@@ -19,7 +19,7 @@ add_setup(async function () {
 });
 
 add_task(async function test() {
-  let searchbar = BrowserSearch.searchBar;
+  let searchbar = document.getElementById("searchbar");
 
   let rootDir = getRootDirectory(gTestPath);
   let url = rootDir + "tooManyEnginesOffered.html";
@@ -32,7 +32,7 @@ add_task(async function test() {
   searchbar.focus();
   
   await TestUtils.waitForCondition(
-    () => BrowserSearch.searchBar.textbox.controller.input,
+    () => document.getElementById("searchbar").textbox.controller.input,
     "Wait for the searchbar controller to connect"
   );
   EventUtils.synthesizeKey("KEY_ArrowDown");

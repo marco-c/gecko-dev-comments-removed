@@ -19,7 +19,7 @@ add_task(async function test_setup() {
 
 
 async function test_opensearch(shouldWork) {
-  let searchBar = BrowserSearch.searchBar;
+  let searchBar = document.getElementById("searchbar");
 
   let rootDir = getRootDirectory(gTestPath);
   let tab = await BrowserTestUtils.openNewForegroundTab(

@@ -6,21 +6,21 @@
 
 
 add_task(async function test_searchbar_width_persistence() {
-  await gCUITestUtils.addSearchBar();
+  let searchBar = await gCUITestUtils.addSearchBar();
   registerCleanupFunction(async function () {
     gCUITestUtils.removeSearchBar();
   });
 
   
   
-  let container = BrowserSearch.searchBar.parentNode;
+  let container = searchBar.parentNode;
   
   let oldWidth = container.getBoundingClientRect().width;
   let newWidth = "" + Math.round(oldWidth * 2);
   container.setAttribute("width", newWidth);
 
   let win = await BrowserTestUtils.openNewBrowserWindow();
-  let otherBar = win.BrowserSearch.searchBar;
+  let otherBar = win.document.getElementById("searchbar");
   ok(otherBar, "Should have a search bar in the other window");
   if (otherBar) {
     is(
