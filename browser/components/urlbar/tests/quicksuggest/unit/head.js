@@ -132,10 +132,10 @@ async function doMigrateTest({
   
   
   for (let i = 0; i < 2; i++) {
-    info(`Calling updateFirefoxSuggestScenario, i=${i}`);
+    info(`Reinitializing Suggest, i=${i}`);
 
     
-    await QuickSuggest.updateFirefoxSuggestScenario({
+    await QuickSuggest._test_reinit({
       ...testOverrides,
       scenario,
     });

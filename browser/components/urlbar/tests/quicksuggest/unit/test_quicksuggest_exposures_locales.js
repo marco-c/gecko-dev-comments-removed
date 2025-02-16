@@ -159,9 +159,9 @@ async function doLocaleTest({
       callback: async () => {
         
         
-        info("Updating Suggest scenario");
-        await QuickSuggest.updateFirefoxSuggestScenario();
-        info("Done updating Suggest scenario");
+        info("Reinitializing Suggest");
+        await QuickSuggest._test_reinit();
+        info("Done reinitializing Suggest");
 
         
         
@@ -208,7 +208,7 @@ async function doLocaleTest({
 
   
   
-  await QuickSuggest.updateFirefoxSuggestScenario();
+  await QuickSuggest._test_reinit();
 }
 
 function assertSuggestPrefs(expectedEnabled) {

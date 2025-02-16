@@ -55,7 +55,7 @@ function doToggleTest(pref) {
 
 
 add_task(async function telemetryEnvironmentOnStartup() {
-  await QuickSuggestTestUtils.setScenario(null);
+  await QuickSuggest._test_reinit();
 
   
   
@@ -118,7 +118,7 @@ add_task(async function telemetryEnvironmentOnStartup() {
 
   
   
-  await QuickSuggest.updateFirefoxSuggestScenario({
+  await QuickSuggest._test_reinit({
     scenario: "testScenario",
     defaultPrefs: {
       testScenario: Object.fromEntries(
@@ -148,7 +148,7 @@ add_task(async function telemetryEnvironmentOnStartup() {
   environmentInitPromise =
     TelemetryEnvironment.testCleanRestart().onInitialized();
 
-  await QuickSuggest.updateFirefoxSuggestScenario();
+  await QuickSuggest._test_reinit();
 
   await environmentInitPromise;
 

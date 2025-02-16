@@ -9,13 +9,19 @@
 
 
 
-
 const PREFS = [
   {
     name: "browser.urlbar.quicksuggest.enabled",
     get: "getBoolPref",
     set: "setBoolPref",
     expectedOfflineValue: true,
+    expectedOtherValue: false,
+  },
+  {
+    name: "browser.urlbar.quicksuggest.dataCollection.enabled",
+    get: "getBoolPref",
+    set: "setBoolPref",
+    expectedOfflineValue: false,
     expectedOtherValue: false,
   },
   {
@@ -68,7 +74,6 @@ add_task(async function test() {
 
 
 
-
 async function doTest({ locale, home, expectedOfflineDefault }) {
   
   for (let pref of PREFS) {
@@ -83,7 +88,7 @@ async function doTest({ locale, home, expectedOfflineDefault }) {
     homeRegion: home,
     locales: [locale],
     callback: async () => {
-      await QuickSuggest.updateFirefoxSuggestScenario();
+      await QuickSuggest._test_reinit();
       for (let {
         name,
         get,
