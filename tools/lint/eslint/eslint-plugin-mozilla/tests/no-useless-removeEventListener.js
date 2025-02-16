@@ -23,6 +23,12 @@ function invalidCode(code) {
 ruleTester.run("no-useless-removeEventListener", rule, {
   valid: [
     
+    
+    "elt.addEventListener(event1, function listener() {" +
+      "  elt.removeEventListener();" +
+      "});",
+
+    
     "elt.addEventListener('click', handler);",
     "elt.addEventListener('click', handler, true);",
     "elt.addEventListener('click', handler, {once: true});",

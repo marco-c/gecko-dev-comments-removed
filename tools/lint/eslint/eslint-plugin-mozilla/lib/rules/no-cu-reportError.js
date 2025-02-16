@@ -111,6 +111,7 @@ module.exports = {
               
               if (
                 checkNode == node.callee &&
+                node.arguments.length >= 1 &&
                 isConcatenation(node.arguments[0])
               ) {
                 let { fixes: recursiveFixes } = replaceConcatWithComma(
