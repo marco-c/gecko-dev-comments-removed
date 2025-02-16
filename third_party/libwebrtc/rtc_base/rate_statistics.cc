@@ -57,8 +57,17 @@ void RateStatistics::Reset() {
 void RateStatistics::Update(int64_t count, int64_t now_ms) {
   RTC_DCHECK_GE(count, 0);
 
+  
+  
+  
+  
+  const int64_t recent_sample_time_margin = 1.5 * current_window_size_ms_;
+  bool last_sample_is_recent =
+      !buckets_.empty() &&
+      buckets_.back().timestamp > now_ms - recent_sample_time_margin;
+
   EraseOld(now_ms);
-  if (first_timestamp_ == -1 || num_samples_ == 0) {
+  if (first_timestamp_ == -1 || (num_samples_ == 0 && !last_sample_is_recent)) {
     first_timestamp_ = now_ms;
   }
 
