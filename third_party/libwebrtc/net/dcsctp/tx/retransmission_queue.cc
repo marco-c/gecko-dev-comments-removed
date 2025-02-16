@@ -164,7 +164,8 @@ void RetransmissionQueue::HandleIncreasedCumulativeTsnAck(
   }
 }
 
-void RetransmissionQueue::HandlePacketLoss(UnwrappedTSN highest_tsn_acked) {
+void RetransmissionQueue::HandlePacketLoss(
+    UnwrappedTSN ) {
   if (!is_in_fast_recovery()) {
     
     

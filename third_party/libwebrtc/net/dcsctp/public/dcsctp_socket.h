@@ -287,7 +287,7 @@ class DcSctpSocketCallbacks {
   
   
   
-  virtual void SendPacket(rtc::ArrayView<const uint8_t> data) {}
+  virtual void SendPacket(rtc::ArrayView<const uint8_t> ) {}
 
   
   
@@ -312,7 +312,7 @@ class DcSctpSocketCallbacks {
   
   
   virtual std::unique_ptr<Timeout> CreateTimeout(
-      webrtc::TaskQueueBase::DelayPrecision precision) {
+      webrtc::TaskQueueBase::DelayPrecision ) {
     
     
     return CreateTimeout();
@@ -423,7 +423,7 @@ class DcSctpSocketCallbacks {
   
   
   
-  virtual void OnBufferedAmountLow(StreamID stream_id) {}
+  virtual void OnBufferedAmountLow(StreamID ) {}
 
   
   
@@ -456,7 +456,7 @@ class DcSctpSocketCallbacks {
   
   
   
-  virtual void OnLifecycleMessageFullySent(LifecycleId lifecycle_id) {}
+  virtual void OnLifecycleMessageFullySent(LifecycleId ) {}
 
   
   
@@ -474,8 +474,8 @@ class DcSctpSocketCallbacks {
   
   
   
-  virtual void OnLifecycleMessageExpired(LifecycleId lifecycle_id,
-                                         bool maybe_delivered) {}
+  virtual void OnLifecycleMessageExpired(LifecycleId ,
+                                         bool ) {}
 
   
   
@@ -493,7 +493,7 @@ class DcSctpSocketCallbacks {
   
   
   
-  virtual void OnLifecycleMessageDelivered(LifecycleId lifecycle_id) {}
+  virtual void OnLifecycleMessageDelivered(LifecycleId ) {}
 
   
   
@@ -513,7 +513,7 @@ class DcSctpSocketCallbacks {
   
   
   
-  virtual void OnLifecycleEnd(LifecycleId lifecycle_id) {}
+  virtual void OnLifecycleEnd(LifecycleId ) {}
 };
 
 

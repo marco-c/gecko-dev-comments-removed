@@ -463,7 +463,7 @@ int VCMFecMethod::BitsPerFrame(const VCMProtectionParameters* parameters) {
 }
 
 bool VCMFecMethod::EffectivePacketLoss(
-    const VCMProtectionParameters* parameters) {
+    const VCMProtectionParameters* ) {
   
   
   

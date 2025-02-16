@@ -518,9 +518,9 @@ class PseudoTcpTestReceiveWindow : public PseudoTcpTestBase {
 
  private:
   
-  virtual void OnTcpReadable(PseudoTcp* tcp) {}
+  virtual void OnTcpReadable(PseudoTcp* ) {}
 
-  virtual void OnTcpWriteable(PseudoTcp* tcp) {}
+  virtual void OnTcpWriteable(PseudoTcp* ) {}
 
   void ReadUntilIOPending() {
     char block[kBlockSize];

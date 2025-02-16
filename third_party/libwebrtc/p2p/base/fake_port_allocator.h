@@ -203,7 +203,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
     allocation_done_ = true;
     SignalCandidatesAllocationDone(this);
   }
-  void OnPortDestroyed(cricket::PortInterface* port) {
+  void OnPortDestroyed(cricket::PortInterface* ) {
     
     port_.release();
   }
@@ -242,7 +242,7 @@ class FakePortAllocator : public cricket::PortAllocator {
                           std::move(factory),
                           field_trials) {}
 
-  void SetNetworkIgnoreMask(int network_ignore_mask) override {}
+  void SetNetworkIgnoreMask(int ) override {}
 
   cricket::PortAllocatorSession* CreateSessionInternal(
       absl::string_view content_name,

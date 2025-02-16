@@ -116,7 +116,7 @@ class PayloadTypeSuggesterForTests : public PayloadTypeSuggester {
   }
   RTCError AddLocalMapping(const std::string& ,
                            PayloadType ,
-                           const cricket::Codec& codec) override {
+                           const cricket::Codec& ) override {
     return RTCError::OK();
   }
 
@@ -532,9 +532,9 @@ std::unique_ptr<Call> Call::Create(CallConfig config) {
 
 
 VideoSendStream* Call::CreateVideoSendStream(
-    VideoSendStream::Config config,
-    VideoEncoderConfig encoder_config,
-    std::unique_ptr<FecController> fec_controller) {
+    VideoSendStream::Config ,
+    VideoEncoderConfig ,
+    std::unique_ptr<FecController> ) {
   return nullptr;
 }
 

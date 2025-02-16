@@ -248,13 +248,13 @@ class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {
   
   
   virtual void GetCandidateStatsFromReadyPorts(
-      CandidateStatsList* candidate_stats_list) const {}
+      CandidateStatsList* ) const {}
   
   
   
   
   virtual void SetStunKeepaliveIntervalForReadyPorts(
-      const std::optional<int>& stun_keepalive_interval) {}
+      const std::optional<int>& ) {}
   
   
   
@@ -413,7 +413,8 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
 
   
   
-  virtual void SetVpnList(const std::vector<rtc::NetworkMask>& vpn_list) {}
+  virtual void SetVpnList(const std::vector<rtc::NetworkMask>& ) {
+  }
 
   std::unique_ptr<PortAllocatorSession> CreateSession(
       absl::string_view content_name,
