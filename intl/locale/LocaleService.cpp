@@ -411,7 +411,7 @@ LocaleService::GetDefaultLocale(nsACString& aRetVal) {
     
     
     
-    GetGREFileContents("update.locale", &locale);
+    GetGREFileContents("default.locale", &locale);
     locale.Trim(" \t\n\r");
 #ifdef MOZ_UPDATER
     
