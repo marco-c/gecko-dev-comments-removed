@@ -33,25 +33,16 @@ class nsDataHandler : public nsIProtocolHandler,
   
   
   
-  [[nodiscard]] static nsresult ParseURI(const nsACString& spec,
-                                         nsCString& contentType,
-                                         nsCString* contentCharset,
-                                         bool& isBase64, nsCString* dataBuffer);
-
   
   
   
   
   
-  
-  
-  
-  
-  
-  [[nodiscard]] static nsresult ParsePathWithoutRef(
-      const nsACString& aPath, nsCString& aContentType,
+  [[nodiscard]] static nsresult ParseURI(
+      const nsACString& aSpec, nsCString& aContentType,
       nsCString* aContentCharset, bool& aIsBase64,
-      nsDependentCSubstring* aDataBuffer, RefPtr<CMimeType>* = nullptr);
+      nsDependentCSubstring* aDataBuffer = nullptr,
+      RefPtr<CMimeType>* aMimeType = nullptr);
 };
 
 #endif 

@@ -56,20 +56,20 @@ nsresult nsDataChannel::OpenContentStream(bool async, nsIInputStream** result,
   
   
   
-  nsCOMPtr<nsIURI> uri;
-  rv = NS_GetURIWithoutRef(URI(), getter_AddRefs(uri));
-  if (NS_FAILED(rv)) return rv;
+  
+  
+  
 
-  nsAutoCString path;
-  rv = uri->GetPathQueryRef(path);
+  nsAutoCString spec;
+  rv = URI()->GetSpec(spec);
   if (NS_FAILED(rv)) return rv;
 
   nsCString contentType, contentCharset;
   nsDependentCSubstring dataRange;
   RefPtr<CMimeType> fullMimeType;
   bool lBase64;
-  rv = nsDataHandler::ParsePathWithoutRef(path, contentType, &contentCharset,
-                                          lBase64, &dataRange, &fullMimeType);
+  rv = nsDataHandler::ParseURI(spec, contentType, &contentCharset, lBase64,
+                               &dataRange, &fullMimeType);
   if (NS_FAILED(rv)) return rv;
 
   
