@@ -11,8 +11,28 @@
 #include "TextLeafRange.h"
 #include "UiaTextRange.h"
 
-using namespace mozilla;
-using namespace mozilla::a11y;
+namespace mozilla::a11y {
+
+
+
+static SAFEARRAY* TextLeafRangesToUiaRanges(
+    const nsTArray<TextLeafRange>& aRanges) {
+  
+  
+  
+  
+  
+  SAFEARRAY* uiaRanges = SafeArrayCreateVector(VT_UNKNOWN, 0, aRanges.Length());
+  LONG indices[1] = {0};
+  for (const TextLeafRange& range : aRanges) {
+    
+    
+    UiaTextRange* uiaRange = new UiaTextRange(range);
+    SafeArrayPutElement(uiaRanges, indices, uiaRange);
+    ++indices[0];
+  }
+  return uiaRanges;
+}
 
 
 
@@ -40,17 +60,7 @@ UiaText::GetSelection(__RPC__deref_out_opt SAFEARRAY** aRetVal) {
       ranges.EmplaceBack(caret, caret);
     }
   }
-  if (!ranges.IsEmpty()) {
-    *aRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, ranges.Length());
-    LONG indices[1] = {0};
-    for (TextLeafRange& range : ranges) {
-      
-      
-      UiaTextRange* uiaRange = new UiaTextRange(range);
-      SafeArrayPutElement(*aRetVal, indices, uiaRange);
-      ++indices[0];
-    }
-  }
+  *aRetVal = TextLeafRangesToUiaRanges(ranges);
   return S_OK;
 }
 
@@ -146,3 +156,5 @@ UiaText::get_SupportedTextSelection(
   }
   return S_OK;
 }
+
+}  
