@@ -190,14 +190,10 @@ function getFileName(baseNameWithQuery) {
 
 
 function getUrl(url) {
-  try {
-    if (url instanceof URL) {
-      return url;
-    }
-    return new URL(url);
-  } catch (err) {
-    return null;
+  if (URL.isInstance(url)) {
+    return url;
   }
+  return URL.parse(url);
 }
 
 
@@ -209,7 +205,7 @@ function getUrl(url) {
 
 function getUrlProperty(input, property) {
   const url = getUrl(input);
-  return url?.[property] ? url[property] : "";
+  return url?.[property] ?? "";
 }
 
 
@@ -705,7 +701,7 @@ function removeXSSIString(payloadUnclean) {
   const xssiRegexMatch = payloadUnclean.match(xssiRegex);
 
   
-  if (xssiRegexMatch?.length > 0) {
+  if (xssiRegexMatch?.length) {
     const xssiLen = xssiRegexMatch[0].length;
     try {
       
@@ -743,7 +739,7 @@ function getRequestHeadersRawText(
   requestHeaders,
   urlDetails
 ) {
-  const url = new URL(urlDetails.url);
+  const url = getUrl(urlDetails.url);
   const path = url ? `${url.pathname}${url.search}` : "<unknown>";
   const preHeaderText = `${method} ${path} ${httpVersion}`;
   return writeHeaderText(requestHeaders.headers, preHeaderText).trim();

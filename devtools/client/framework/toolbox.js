@@ -3462,11 +3462,11 @@ Toolbox.prototype = {
 
 
   getExtensionPathName(url) {
-    if (!URL.canParse(url)) {
+    const parsedURL = URL.parse(url);
+    if (!parsedURL) {
       
       return url;
     }
-    const parsedURL = new URL(url);
     
     if (parsedURL.protocol !== "moz-extension:") {
       return url;

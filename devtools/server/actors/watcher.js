@@ -865,12 +865,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
   async updateDomainSessionDataForServiceWorkers(newTargetUrl) {
-    let host = "";
     
-    
-    try {
-      host = new URL(newTargetUrl).host;
-    } catch (e) {}
+    const host = URL.parse(newTargetUrl)?.host ?? "";
 
     ParentProcessWatcherRegistry.addOrSetSessionDataEntry(
       this,

@@ -166,23 +166,19 @@ exports.shortSource = function (sheet) {
         : dataUrl[1];
   } else {
     
-    let url = {};
-    try {
-      url = new URL(sheet.href);
-    } catch (ex) {
-      
-    }
-
-    if (url.pathname) {
-      const index = url.pathname.lastIndexOf("/");
-      if (index !== -1 && index < url.pathname.length) {
-        name = url.pathname.slice(index + 1);
-      } else {
-        name = url.pathname;
+    const url = URL.parse(sheet.href);
+    if (url) {
+      if (url.pathname) {
+        const index = url.pathname.lastIndexOf("/");
+        if (index !== -1 && index < url.pathname.length) {
+          name = url.pathname.slice(index + 1);
+        } else {
+          name = url.pathname;
+        }
+      } else if (url.query) {
+        name = url.query;
       }
-    } else if (url.query) {
-      name = url.query;
-    }
+    } 
   }
 
   try {

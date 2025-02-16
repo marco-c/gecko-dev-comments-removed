@@ -283,15 +283,21 @@ this.proxy = class extends ExtensionAPIPersistent {
               for (let prop of ["http", "ssl", "socks"]) {
                 let host = value[prop];
                 if (host) {
-                  try {
-                    
-                    if (host.includes("://")) {
-                      value[prop] = new URL(host).host;
+                  let valid = true;
+                  
+                  if (host.includes("://")) {
+                    host = URL.parse(host)?.host;
+                    if (host) {
+                      value[prop] = host;
                     } else {
-                      
-                      new URL(`http://${host}`);
+                      valid = false;
                     }
-                  } catch (e) {
+                  } else {
+                    
+                    valid = URL.canParse(`http://${host}`);
+                  }
+
+                  if (!valid) {
                     throw new ExtensionError(
                       `${value[prop]} is not a valid value for ${prop}.`
                     );
@@ -300,9 +306,7 @@ this.proxy = class extends ExtensionAPIPersistent {
               }
 
               if (value.proxyType === "autoConfig" || value.autoConfigUrl) {
-                try {
-                  new URL(value.autoConfigUrl);
-                } catch (e) {
+                if (!URL.canParse(value.autoConfigUrl)) {
                   throw new ExtensionError(
                     `${value.autoConfigUrl} is not a valid value for autoConfigUrl.`
                   );
