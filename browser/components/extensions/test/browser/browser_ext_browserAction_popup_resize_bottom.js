@@ -16,6 +16,8 @@ add_task(async function testBrowserActionMenuResizeBottomArrow() {
 
   let win = await BrowserTestUtils.openNewBrowserWindow();
 
+  info(`Trying to position in (${left}, ${top})`);
+
   win.resizeTo(WIDTH, HEIGHT);
 
   
@@ -23,6 +25,8 @@ add_task(async function testBrowserActionMenuResizeBottomArrow() {
   
   for (let i = 0; i < 20; i++) {
     win.moveTo(left, top);
+
+    info(`got (${win.screenX}, ${win.screenY})`);
 
     if (win.screenX == left && win.screenY == top) {
       break;

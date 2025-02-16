@@ -441,12 +441,14 @@ static void CreateHeaderBarWidget(WidgetNodeType aAppearance) {
   gtk_style_context_add_class(fixedStyle, "titlebar");
 
   GtkWidget* headerBar = gtk_header_bar_new();
+  
+  g_object_set(headerBar, "title", "Title", "has-subtitle", FALSE,
+               "show-close-button", TRUE, NULL);
 
   
   GtkStyleContext* headerBarStyle = gtk_widget_get_style_context(headerBar);
-  gtk_style_context_add_class(headerBarStyle, "titlebar");
+  gtk_style_context_add_class(headerBarStyle, GTK_STYLE_CLASS_TITLEBAR);
 
-  
   
   
   
@@ -480,6 +482,7 @@ static void CreateHeaderBarWidget(WidgetNodeType aAppearance) {
 
   gtk_style_context_invalidate(headerBarStyle);
   gtk_style_context_invalidate(fixedStyle);
+  gtk_widget_show_all(headerBar);
 
   
   

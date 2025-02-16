@@ -168,7 +168,7 @@ class nsWindow final : public nsBaseWidget {
   void OnDestroy() override;
 
   
-  bool AreBoundsSane(void);
+  bool AreBoundsSane();
 
   
   using nsBaseWidget::Create;  
@@ -185,7 +185,7 @@ class nsWindow final : public nsBaseWidget {
   bool IsVisible() const override;
   bool IsMapped() const override;
   void ConstrainPosition(DesktopIntPoint&) override;
-  void SetSizeConstraints(const SizeConstraints& aConstraints) override;
+  void SetSizeConstraints(const SizeConstraints&) override;
   void LockAspectRatio(bool aShouldLock) override;
   void Move(double aX, double aY) override;
   void Show(bool aState) override;
@@ -200,21 +200,23 @@ class nsWindow final : public nsBaseWidget {
   void MoveToWorkspace(const nsAString& workspaceID) override;
   void Enable(bool aState) override;
   void SetFocus(Raise, mozilla::dom::CallerType aCallerType) override;
-  void ResetScreenBounds();
   LayoutDeviceIntRect GetScreenBounds() override;
   LayoutDeviceIntRect GetClientBounds() override;
   LayoutDeviceIntSize GetClientSize() override;
-  LayoutDeviceIntPoint GetClientOffset() override { return mClientOffset; }
+  LayoutDeviceIntPoint GetClientOffset() override {
+    return LayoutDeviceIntPoint(mClientMargin.left, mClientMargin.top);
+  }
   LayoutDeviceIntPoint GetScreenEdgeSlop() override;
+  nsresult GetRestoredBounds(LayoutDeviceIntRect&) override;
+  bool PersistClientBounds() const override { return true; }
+  LayoutDeviceIntMargin NormalSizeModeClientToWindowMargin() override;
 
   
   
-  
-  
-  
-  
-  
-  void RecomputeClientOffset(bool aNotify);
+  void RecomputeBounds();
+  void ConstrainSize(int* aWidth, int* aHeight) override;
+  void SchedulePendingBounds();
+  void MaybeRecomputeBounds();
 
   void SetCursor(const Cursor&) override;
   void Invalidate(const LayoutDeviceIntRect& aRect) override;
@@ -422,6 +424,7 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntPoint GdkPointToDevicePixels(const GdkPoint&);
   LayoutDeviceIntPoint GdkEventCoordsToDevicePixels(gdouble aX, gdouble aY);
   LayoutDeviceIntRect GdkRectToDevicePixels(const GdkRectangle&);
+  LayoutDeviceIntMargin GtkBorderToDevicePixels(const GtkBorder&);
 
   bool WidgetTypeSupportsAcceleration() override;
 
@@ -496,7 +499,6 @@ class nsWindow final : public nsBaseWidget {
   
   void DispatchActivateEvent(void);
   void DispatchDeactivateEvent(void);
-  void MaybeDispatchResized();
   void DispatchPanGesture(mozilla::PanGestureInput& aPanInput);
 
   void RegisterTouchWindow() override;
@@ -553,7 +555,7 @@ class nsWindow final : public nsBaseWidget {
   GtkTextDirection GetTextDirection();
 
   bool DrawsToCSDTitlebar() const;
-  void AddCSDDecorationSize(int* aWidth, int* aHeight);
+  bool ToplevelUsesCSD() const;
 
   void CreateAndPutGdkScrollEvent(mozilla::LayoutDeviceIntPoint aPoint,
                                   double aDeltaX, double aDeltaY);
@@ -569,8 +571,6 @@ class nsWindow final : public nsBaseWidget {
 #ifdef MOZ_WAYLAND
   RefPtr<mozilla::widget::WaylandSurface> mSurface;
 #endif
-  mozilla::Maybe<GdkPoint> mGdkWindowOrigin;
-  mozilla::Maybe<GdkPoint> mGdkWindowRootOrigin;
 
   PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate = nullptr;
 
@@ -596,9 +596,10 @@ class nsWindow final : public nsBaseWidget {
   
   
   LayoutDeviceIntSize mLastSizeRequest;
-  LayoutDeviceIntPoint mClientOffset;
   
-  LayoutDeviceIntSize mNeedsDispatchSize = LayoutDeviceIntSize(-1, -1);
+  LayoutDeviceIntPoint mLastMoveRequest;
+  
+  LayoutDeviceIntMargin mClientMargin;
 
   
   guint32 mLastScrollEventTime = GDK_CURRENT_TIME;
@@ -679,6 +680,7 @@ class nsWindow final : public nsBaseWidget {
   bool mWindowShouldStartDragging : 1;
   bool mHasMappedToplevel : 1;
   bool mPanInProgress : 1;
+  bool mPendingBounds : 1;
   
   bool mTitlebarBackdropState : 1;
   

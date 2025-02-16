@@ -215,9 +215,15 @@ add_task(async function testPopupTypeWithDimension() {
     "expected popup type windows are opened at given coordinates"
   );
 
-  const actualSizes = windows
-    .slice(0, 3)
-    .map(window => `${window.outerWidth}x${window.outerHeight}`);
+  const isGtk = Services.appinfo.widgetToolkit == "gtk";
+  const actualSizes = windows.slice(0, 3).map(window => {
+    
+    
+    
+    return isGtk
+      ? `${window.innerWidth}x${window.innerHeight}`
+      : `${window.outerWidth}x${window.outerHeight}`;
+  });
   const expectedSizes = [`151x152`, `152x153`, `153x154`];
   is(
     actualSizes.join(" / "),

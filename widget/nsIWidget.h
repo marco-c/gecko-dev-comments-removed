@@ -850,8 +850,18 @@ class nsIWidget : public nsISupports {
 
 
 
+
+
+
   [[nodiscard]] virtual nsresult GetRestoredBounds(
       LayoutDeviceIntRect& aRect) = 0;
+
+  
+
+
+
+
+  virtual bool PersistClientBounds() const { return false; }
 
   
 
@@ -1252,9 +1262,17 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual LayoutDeviceIntMargin ClientToWindowMargin() { return {}; }
 
-  LayoutDeviceIntSize ClientToWindowSizeDifference();
+
+  virtual LayoutDeviceIntMargin NormalSizeModeClientToWindowMargin() {
+    return {};
+  }
+
+  
+
+
+
+  LayoutDeviceIntSize NormalSizeModeClientToWindowSizeDifference();
 
   
 
