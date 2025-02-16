@@ -148,6 +148,11 @@ add_setup(async function () {
   
   
   BrowserPageActions.mainButtonNode.style.visibility = "visible";
+
+  
+  
+  await SidebarController.initializeUIState({ launcherVisible: true });
+
   registerCleanupFunction(() => {
     BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
   });
