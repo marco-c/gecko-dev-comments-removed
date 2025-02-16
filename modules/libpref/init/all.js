@@ -4111,3 +4111,10 @@ pref("privacy.query_stripping.strip_on_share.canDisable", true);
 
 pref("captchadetection.loglevel", "Warn");
 pref("captchadetection.actor.enabled", true);
+
+
+#ifdef EARLY_BETA_OR_EARLIER
+  pref("pdfjs.enableSignatureEditor", true);
+#else
+  pref("pdfjs.enableSignatureEditor", false);
+#endif
