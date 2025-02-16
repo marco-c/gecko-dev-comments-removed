@@ -537,8 +537,15 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   const nsRect& GetUntransformedAnchorRect() const {
     return mUntransformedAnchorRect;
   }
-  int GetPopupAlignment() const { return mPopupAlignment; }
-  int GetPopupAnchor() const { return mPopupAnchor; }
+  int8_t GetUntransformedPopupAlignment() const {
+    return mUntransformedPopupAlignment;
+  }
+  int8_t GetUntransformedPopupAnchor() const {
+    return mUntransformedPopupAnchor;
+  }
+
+  int8_t GetPopupAlignment() const { return mPopupAlignment; }
+  int8_t GetPopupAnchor() const { return mPopupAnchor; }
   FlipType GetFlipType() const { return mFlip; }
 
   void WidgetPositionOrSizeDidChange();
@@ -593,6 +600,9 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   nsPopupState mPopupState = ePopupClosed;  
 
   
+  
+  int8_t mUntransformedPopupAlignment = POPUPALIGNMENT_NONE;
+  int8_t mUntransformedPopupAnchor = POPUPALIGNMENT_NONE;
   int8_t mPopupAlignment = POPUPALIGNMENT_NONE;
   int8_t mPopupAnchor = POPUPALIGNMENT_NONE;
   int8_t mPosition = POPUPPOSITION_UNKNOWN;
