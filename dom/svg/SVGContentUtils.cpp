@@ -389,20 +389,16 @@ nsresult SVGContentUtils::ReportToConsole(const Document* doc,
                                          aWarning, aParams);
 }
 
-bool SVGContentUtils::EstablishesViewport(const nsIContent* aContent) {
-  
-  
-  
-  if (!aContent) {
-    return false;
-  }
+static bool EstablishesViewport(const nsIContent* aContent) {
+  MOZ_ASSERT(aContent, "Expecting aContent to be non-null");
+
   
   
   if (aContent->IsSVGElement(nsGkAtoms::symbol) &&
       aContent->IsInSVGUseShadowTree()) {
     return true;
   }
-  return aContent->IsAnyOfSVGElements(nsGkAtoms::svg, nsGkAtoms::foreignObject);
+  return aContent->IsSVGElement(nsGkAtoms::svg);
 }
 
 SVGViewportElement* SVGContentUtils::GetNearestViewportElement(
@@ -410,13 +406,10 @@ SVGViewportElement* SVGContentUtils::GetNearestViewportElement(
   nsIContent* element = aContent->GetFlattenedTreeParent();
 
   while (element && element->IsSVGElement()) {
+    if (element->IsSVGElement(nsGkAtoms::foreignObject)) {
+      return nullptr;
+    }
     if (EstablishesViewport(element)) {
-      if (element->IsSVGElement(nsGkAtoms::foreignObject)) {
-        return nullptr;
-      }
-      MOZ_ASSERT(element->IsAnyOfSVGElements(nsGkAtoms::svg, nsGkAtoms::symbol),
-                 "upcoming static_cast is only valid for "
-                 "SVGViewportElement subclasses");
       return static_cast<SVGViewportElement*>(element);
     }
     element = element->GetFlattenedTreeParent();
@@ -469,14 +462,14 @@ static gfx::Matrix GetCTMInternal(SVGElement* aElement, CTMType aCTMType,
       }
     }
     matrix *= getLocalTransformHelper(element, true);
-    if (aCTMType == CTMType::NearestViewport &&
-        SVGContentUtils::EstablishesViewport(element)) {
-      if (!element->IsAnyOfSVGElements(nsGkAtoms::svg, nsGkAtoms::symbol)) {
-        NS_ERROR("New (SVG > 1.1) SVG viewport establishing element?");
+    if (aCTMType == CTMType::NearestViewport) {
+      if (element->IsSVGElement(nsGkAtoms::foreignObject)) {
         return gfx::Matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);  
       }
-      
-      return gfx::ToMatrix(matrix);
+      if (EstablishesViewport(element)) {
+        
+        return gfx::ToMatrix(matrix);
+      }
     }
     ancestor = ancestor->GetFlattenedTreeParent();
   }

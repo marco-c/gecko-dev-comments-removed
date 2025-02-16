@@ -185,12 +185,6 @@ class SVGContentUtils {
                                          const Matrix& aToNonScalingStrokeSpace,
                                          float aStrokeWidth, Rect* aBounds);
 
-  
-
-
-
-  static bool EstablishesViewport(const nsIContent* aContent);
-
   static dom::SVGViewportElement* GetNearestViewportElement(
       const nsIContent* aContent);
 
