@@ -196,8 +196,12 @@ def filterpaths(
         
         
         for inc in include:
-            if inc.isfile:
+
+            
+            
+            if inc.isfile and path.path == inc.path:
                 keep.add(inc)
+                continue
 
             
             
