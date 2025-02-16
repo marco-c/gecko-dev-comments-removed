@@ -187,17 +187,12 @@ add_task(async function testInstallDialogShowsFullDomainsList() {
       
       
       ["extensions.ui.installDialogFullDomains", true],
-      ["extensions.ui.postInstallPrivateBrowsingCheckbox", false],
     ],
   });
   
   ok(
     ExtensionsUI.SHOW_FULL_DOMAINS_LIST,
     "Expect SHOW_FULL_DOMAINS_LIST to be enabled"
-  );
-  ok(
-    !ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX,
-    "Expect POSTINSTALL_PRIVATEBROWSING_CHECKBOX to be disabled"
   );
 
   const createTestExtensionXPI = ({

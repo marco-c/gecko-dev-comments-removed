@@ -15,11 +15,7 @@ function assertPermissionsListCount({ grantedPermissionsCount }) {
   let permsUL = document.getElementById("addon-webext-perm-list");
   
   
-  
-  
-  const count = ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX
-    ? grantedPermissionsCount
-    : grantedPermissionsCount + 1;
+  const count = grantedPermissionsCount + 1;
   is(
     permsUL.childElementCount,
     count,
