@@ -6,21 +6,19 @@
 #ifndef mozilla_contentanalysis_h
 #define mozilla_contentanalysis_h
 
-#include "mozilla/DataMutex.h"
 #include "mozilla/MoveOnlyFunction.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/MaybeDiscarded.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/WeakPtr.h"
 #include "nsIClipboard.h"
 #include "nsIContentAnalysis.h"
 #include "nsITransferable.h"
-#include "nsProxyRelease.h"
 #include "nsString.h"
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
 
-#include <atomic>
 #include <regex>
 #include <string>
 
@@ -46,6 +44,7 @@ class ContentAnalysisResponse;
 }  
 
 namespace mozilla::contentanalysis {
+class ContentAnalysisCallback;
 
 enum class DefaultResult : uint8_t {
   eBlock = 0,
@@ -68,7 +67,7 @@ class ContentAnalysisDiagnosticInfo final
         mRequestCount(aRequestCount) {}
 
  private:
-  ~ContentAnalysisDiagnosticInfo() = default;
+  virtual ~ContentAnalysisDiagnosticInfo() = default;
   bool mConnectedToAgent;
   nsString mAgentPath;
   bool mFailedSignatureVerification;
@@ -80,11 +79,18 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   NS_DECL_ISUPPORTS
   NS_DECL_NSICONTENTANALYSISREQUEST
 
+  ContentAnalysisRequest(
+      AnalysisType aAnalysisType, Reason aReason, nsString aString,
+      bool aStringIsFilePath, nsCString aSha256Digest, nsCOMPtr<nsIURI> aUrl,
+      OperationType aOperationType,
+      dom::WindowGlobalParent* aWindowGlobalParent,
+      dom::WindowGlobalParent* aSourceWindowGlobal = nullptr);
+
   ContentAnalysisRequest(AnalysisType aAnalysisType, Reason aReason,
-                         nsString aString, bool aStringIsFilePath,
-                         nsCString aSha256Digest, nsCOMPtr<nsIURI> aUrl,
-                         OperationType aOperationType,
-                         dom::WindowGlobalParent* aWindowGlobalParent);
+                         nsITransferable* aTransferable,
+                         dom::WindowGlobalParent* aWindowGlobal,
+                         dom::WindowGlobalParent* aSourceWindowGlobal);
+
   ContentAnalysisRequest(const nsTArray<uint8_t> aPrintData,
                          nsCOMPtr<nsIURI> aUrl, nsString aPrinterName,
                          Reason aReason,
@@ -93,7 +99,7 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
                                 nsCString& aDigestString);
 
  private:
-  ~ContentAnalysisRequest();
+  virtual ~ContentAnalysisRequest();
 
   
   ContentAnalysisRequest(const ContentAnalysisRequest&) = delete;
@@ -104,6 +110,9 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
 
   
   Reason mReason;
+
+  RefPtr<nsITransferable> mTransferable;
+  RefPtr<dom::DataTransfer> mDataTransfer;
 
   
   nsString mTextContent;
@@ -153,6 +162,9 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   uint64_t mPrintDataSize = 0;
 #endif
 
+  
+  RefPtr<mozilla::dom::WindowGlobalParent> mSourceWindowGlobal;
+
   friend class ::ContentAnalysisTest;
 };
 
@@ -164,7 +176,8 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   }
 
 class ContentAnalysisResponse;
-class ContentAnalysis final : public nsIContentAnalysis {
+class ContentAnalysis final : public nsIContentAnalysis,
+                              public SupportsWeakPtr {
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(CONTENTANALYSIS_IID)
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -206,28 +219,6 @@ class ContentAnalysis final : public nsIContentAnalysis {
       nsIPrintSettings* aPrintSettings);
 #endif  
 
-  class SafeContentAnalysisResultCallback final
-      : public nsIContentAnalysisCallback {
-   public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSICONTENTANALYSISCALLBACK
-    explicit SafeContentAnalysisResultCallback(
-        std::function<void(RefPtr<nsIContentAnalysisResult>&&)> aResolver)
-        : mResolver(std::move(aResolver)) {}
-    void Callback(RefPtr<nsIContentAnalysisResult>&& aResult) {
-      MOZ_ASSERT(mResolver, "Called SafeContentAnalysisResultCallback twice!");
-      if (auto resolver = std::move(mResolver)) {
-        resolver(std::move(aResult));
-      }
-    }
-
-   private:
-    ~SafeContentAnalysisResultCallback() {
-      MOZ_ASSERT(!mResolver, "SafeContentAnalysisResultCallback never called!");
-    }
-    mozilla::MoveOnlyFunction<void(RefPtr<nsIContentAnalysisResult>&&)>
-        mResolver;
-  };
   
   
   
@@ -241,10 +232,9 @@ class ContentAnalysis final : public nsIContentAnalysis {
       nsBaseClipboard* aClipboard, mozilla::dom::WindowGlobalParent* aWindow,
       nsITransferable* aTransferable,
       nsIClipboard::ClipboardType aClipboardType,
-      SafeContentAnalysisResultCallback* aResolver,
-      bool aForFullClipboard = false);
+      ContentAnalysisCallback* aResolver, bool aForFullClipboard = false);
   static RefPtr<ContentAnalysis> GetContentAnalysisFromService();
-  nsresult CancelWithError(nsCString aRequestToken, nsresult aResult);
+  void CancelWithError(nsCString&& aUserActionId, nsresult aResult);
 
   
   
@@ -255,16 +245,13 @@ class ContentAnalysis final : public nsIContentAnalysis {
       kTextMime, kHTMLMime, kCustomTypesMime, kFileMime};
 
  private:
-  ~ContentAnalysis();
+  virtual ~ContentAnalysis();
   
   ContentAnalysis(const ContentAnalysis&) = delete;
   ContentAnalysis& operator=(ContentAnalysis&) = delete;
   nsresult CreateContentAnalysisClient(nsCString&& aPipePathName,
                                        nsString&& aClientSignatureSetting,
                                        bool aIsPerUser);
-  nsresult AnalyzeContentRequestCallbackPrivate(
-      nsIContentAnalysisRequest* aRequest, bool aAutoAcknowledge,
-      nsIContentAnalysisCallback* aCallback);
 
   nsresult RunAnalyzeRequestTask(
       const RefPtr<nsIContentAnalysisRequest>& aRequest, bool aAutoAcknowledge,
@@ -273,26 +260,84 @@ class ContentAnalysis final : public nsIContentAnalysis {
       nsIContentAnalysisAcknowledgement* aAcknowledgement,
       const nsACString& aRequestToken);
   static void DoAnalyzeRequest(
-      nsCString aRequestToken,
+      nsCString&& aUserActionId,
       content_analysis::sdk::ContentAnalysisRequest&& aRequest,
       const std::shared_ptr<content_analysis::sdk::Client>& aClient);
-  void IssueResponse(RefPtr<ContentAnalysisResponse>& response);
+  void IssueResponse(ContentAnalysisResponse* response,
+                     nsCString&& aUserActionId);
+  void NotifyResponseObservers(ContentAnalysisResponse* aResponse,
+                               nsCString&& aUserActionId);
+  void NotifyObserversAndMaybeIssueResponse(ContentAnalysisResponse* aResponse,
+                                            nsCString&& aUserActionId);
   bool LastRequestSucceeded();
   
   
   enum UrlFilterResult { eCheck, eDeny, eAllow };
 
-  UrlFilterResult FilterByUrlLists(nsIContentAnalysisRequest* aRequest);
+  UrlFilterResult FilterByUrlLists(nsIContentAnalysisRequest* aRequest,
+                                   nsIURI* aUri);
   void EnsureParsedUrlFilters();
+
+  using ContentAnalysisRequestArray =
+      CopyableTArray<RefPtr<nsIContentAnalysisRequest>>;
+  using RequestsPromise =
+      MozPromise<ContentAnalysisRequestArray, nsresult, true>;
 
   
   
   
   
   
-  Result<bool, nsresult> MaybeExpandAndAnalyzeFolderContentRequest(
-      nsIContentAnalysisRequest* aRequest, bool aAutoAcknowledge,
-      nsIContentAnalysisCallback* aCallback);
+  
+  
+  
+  
+  
+  
+  class MultipartRequestCallback : public nsIContentAnalysisCallback {
+   public:
+    NS_INLINE_DECL_REFCOUNTING(MultipartRequestCallback, override)
+    NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
+
+    NS_DECL_NSICONTENTANALYSISCALLBACK
+
+    static RefPtr<MultipartRequestCallback> Create(
+        ContentAnalysis* aContentAnalysis,
+        const nsTArray<ContentAnalysis::ContentAnalysisRequestArray>& aRequests,
+        nsIContentAnalysisCallback* aCallback, bool aAutoAcknowledge);
+
+   private:
+    MultipartRequestCallback() = default;
+    virtual ~MultipartRequestCallback();
+
+    template <typename T, typename... Args>
+    friend RefPtr<T> mozilla::MakeRefPtr(Args&&...);
+
+    void Initialize(
+        ContentAnalysis* aContentAnalysis,
+        const nsTArray<ContentAnalysis::ContentAnalysisRequestArray>& aRequests,
+        nsIContentAnalysisCallback* aCallback, bool aAutoAcknowledge);
+
+    void CancelRequests();
+    void RemoveFromUserActionMap();
+
+    WeakPtr<ContentAnalysis> mWeakContentAnalysis;
+    RefPtr<nsIContentAnalysisCallback> mCallback;
+    nsCString mUserActionId;
+
+    
+    size_t mNumCARequestsRemaining;
+
+    
+    bool mResponded = false;
+  };
+
+  Result<RefPtr<RequestsPromise::AllPromiseType>,
+         RefPtr<nsIContentAnalysisResult>>
+  GetFinalRequestList(const ContentAnalysisRequestArray& aRequests);
+
+  Result<RefPtr<RequestsPromise>, nsresult> ExpandFolderRequest(
+      nsIContentAnalysisRequest* aRequest, nsIFile* file);
 
   using ClientPromise =
       MozPromise<std::shared_ptr<content_analysis::sdk::Client>, nsresult,
@@ -305,25 +350,16 @@ class ContentAnalysis final : public nsIContentAnalysis {
   bool mSetByEnterprise;
   nsresult mLastResult = NS_OK;
 
-  class CallbackData final {
-   public:
-    CallbackData(
-        nsMainThreadPtrHandle<nsIContentAnalysisCallback>&& aCallbackHolder,
-        bool aAutoAcknowledge)
-        : mCallbackHolder(aCallbackHolder), mAutoAcknowledge(aAutoAcknowledge) {
-      MOZ_ASSERT(mCallbackHolder);
-    }
-
-    nsMainThreadPtrHandle<nsIContentAnalysisCallback> TakeCallbackHolder() {
-      return std::move(mCallbackHolder);
-    }
-    bool AutoAcknowledge() const { return mAutoAcknowledge; }
-
-   private:
-    nsMainThreadPtrHandle<nsIContentAnalysisCallback> mCallbackHolder;
+  struct UserActionData final {
+    RefPtr<MultipartRequestCallback> mCallback;
+    nsTHashSet<nsCString> mRequestTokens;
     bool mAutoAcknowledge;
   };
-  DataMutex<nsTHashMap<nsCString, CallbackData>> mCallbackMap;
+
+  
+  
+  
+  nsTHashMap<nsCString, UserActionData> mUserActionMap;
 
   class CachedClipboardResponse {
    public:
@@ -342,23 +378,18 @@ class ContentAnalysis final : public nsIContentAnalysis {
   CachedClipboardResponse mCachedClipboardResponse;
 
   struct WarnResponseData {
-    WarnResponseData(CallbackData&& aCallbackData,
-                     RefPtr<ContentAnalysisResponse> aResponse)
-        : mCallbackData(std::move(aCallbackData)), mResponse(aResponse) {}
-    ContentAnalysis::CallbackData mCallbackData;
     RefPtr<ContentAnalysisResponse> mResponse;
+    nsCString mUserActionId;
   };
-  DataMutex<nsTHashMap<nsCString, WarnResponseData>> mWarnResponseDataMap;
-  void SendWarnResponse(nsCString&& aResponseRequestToken,
-                        CallbackData aCallbackData,
-                        RefPtr<ContentAnalysisResponse>& aResponse);
+  nsTHashMap<nsCString, WarnResponseData> mWarnResponseDataMap;
 
   std::vector<std::regex> mAllowUrlList;
   std::vector<std::regex> mDenyUrlList;
   bool mParsedUrlLists = false;
+  bool mForbidFutureRequests = false;
+  bool mIsShuttingDown = false;
 
   friend class ContentAnalysisResponse;
-  friend class AnalyzeFilesInDirectoryCallback;
   friend class ::ContentAnalysisTest;
 };
 
@@ -367,24 +398,27 @@ NS_DEFINE_STATIC_IID_ACCESSOR(ContentAnalysis, CONTENTANALYSIS_IID)
 class ContentAnalysisResponse final : public nsIContentAnalysisResponse {
  public:
   NS_DECL_ISUPPORTS
+  NS_DECL_NSICONTENTANALYSISRESULT
   NS_DECL_NSICONTENTANALYSISRESPONSE
 
-  static RefPtr<ContentAnalysisResponse> FromAction(
-      Action aAction, const nsACString& aRequestToken);
-
-  void SetOwner(RefPtr<ContentAnalysis> aOwner);
+  void SetOwner(ContentAnalysis* aOwner);
   void DoNotAcknowledge() { mDoNotAcknowledge = true; }
   void SetCancelError(CancelError aCancelError);
   void SetIsCachedResponse() { mIsCachedResponse = true; }
 
  private:
-  ~ContentAnalysisResponse() = default;
+  virtual ~ContentAnalysisResponse() = default;
   
   ContentAnalysisResponse(const ContentAnalysisResponse&) = delete;
   ContentAnalysisResponse& operator=(ContentAnalysisResponse&) = delete;
   explicit ContentAnalysisResponse(
       content_analysis::sdk::ContentAnalysisResponse&& aResponse);
   ContentAnalysisResponse(Action aAction, const nsACString& aRequestToken);
+
+  
+  template <typename T, typename... Args>
+  friend RefPtr<T> mozilla::MakeRefPtr(Args&&...);
+
   static already_AddRefed<ContentAnalysisResponse> FromProtobuf(
       content_analysis::sdk::ContentAnalysisResponse&& aResponse);
 
@@ -428,28 +462,62 @@ class ContentAnalysisAcknowledgement final
   ContentAnalysisAcknowledgement(Result aResult, FinalAction aFinalAction);
 
  private:
-  ~ContentAnalysisAcknowledgement() = default;
+  virtual ~ContentAnalysisAcknowledgement() = default;
 
   Result mResult;
   FinalAction mFinalAction;
 };
 
+
+
+
+
+
+
+
 class ContentAnalysisCallback final : public nsIContentAnalysisCallback {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSICONTENTANALYSISCALLBACK
-  ContentAnalysisCallback(std::function<void(nsIContentAnalysisResponse*)>&&
-                              aContentResponseCallback,
-                          std::function<void(nsresult)>&& aErrorCallback)
+  ContentAnalysisCallback(
+      std::function<void(nsIContentAnalysisResult*)>&& aContentResponseCallback,
+      std::function<void(nsresult)>&& aErrorCallback)
       : mContentResponseCallback(std::move(aContentResponseCallback)),
         mErrorCallback(std::move(aErrorCallback)) {}
 
+  explicit ContentAnalysisCallback(
+      std::function<void(nsIContentAnalysisResult*)>&&
+          aContentResponseCallback);
+
+  
+  
+  explicit ContentAnalysisCallback(nsIContentAnalysisCallback* aDecoratedCB) {
+    mContentResponseCallback = [decoratedCB = RefPtr{aDecoratedCB}](
+                                   nsIContentAnalysisResult* aResult) {
+      decoratedCB->ContentResult(aResult);
+    };
+    mErrorCallback = [decoratedCB = RefPtr{aDecoratedCB}](nsresult aRv) {
+      decoratedCB->Error(aRv);
+    };
+  }
+
  private:
-  ~ContentAnalysisCallback() = default;
-  explicit ContentAnalysisCallback(RefPtr<dom::Promise> aPromise);
-  std::function<void(nsIContentAnalysisResponse*)> mContentResponseCallback;
+  virtual ~ContentAnalysisCallback() {
+    MOZ_ASSERT(!mContentResponseCallback && !mErrorCallback && !mPromise,
+               "ContentAnalysisCallback never called!");
+  }
+
+  
+  void ClearCallbacks() {
+    mContentResponseCallback = nullptr;
+    mErrorCallback = nullptr;
+    mPromise = nullptr;
+  }
+
+  explicit ContentAnalysisCallback(dom::Promise* aPromise);
+  std::function<void(nsIContentAnalysisResult*)> mContentResponseCallback;
   std::function<void(nsresult)> mErrorCallback;
-  Maybe<nsMainThreadPtrHandle<dom::Promise>> mPromise;
+  RefPtr<dom::Promise> mPromise;
   friend class ContentAnalysis;
 };
 

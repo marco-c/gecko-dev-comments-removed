@@ -5,8 +5,10 @@
 
 #include "nsISupports.idl"
 
+interface nsITransferable;
 interface nsIURI;
 webidl BrowsingContext;
+webidl DataTransfer;
 webidl DragEvent;
 webidl WindowGlobalParent;
 
@@ -38,8 +40,14 @@ interface nsIContentAnalysisAcknowledgement : nsISupports
   readonly attribute nsIContentAnalysisAcknowledgement_FinalAction finalAction;
 };
 
-[scriptable, uuid(89088c61-15f6-4ace-a880-a1b5ea47ca66)]
-interface nsIContentAnalysisResponse : nsISupports
+[scriptable, builtinclass, uuid(9679545f-4256-4c90-9654-90292c355d25)]
+interface nsIContentAnalysisResult : nsISupports
+{
+  [infallible] readonly attribute boolean shouldAllowContent;
+};
+
+[scriptable, builtinclass, uuid(89088c61-15f6-4ace-a880-a1b5ea47ca66)]
+interface nsIContentAnalysisResponse : nsIContentAnalysisResult
 {
   
   
@@ -63,11 +71,11 @@ interface nsIContentAnalysisResponse : nsISupports
     eShutdown = 5
   };
 
-  readonly attribute nsIContentAnalysisResponse_Action action;
-  readonly attribute boolean shouldAllowContent;
+  [infallible] readonly attribute nsIContentAnalysisResponse_Action action;
+
   
   
-  readonly attribute nsIContentAnalysisResponse_CancelError cancelError;
+  [infallible] readonly attribute nsIContentAnalysisResponse_CancelError cancelError;
 
   
   readonly attribute ACString requestToken;
@@ -75,7 +83,7 @@ interface nsIContentAnalysisResponse : nsISupports
   
   
   
-  readonly attribute boolean isCachedResponse;
+  [infallible] readonly attribute boolean isCachedResponse;
 
   
 
@@ -168,8 +176,24 @@ interface nsIContentAnalysisRequest : nsISupports
   readonly attribute AString operationDisplayString;
 
   
+  
+  
+  
+  readonly attribute DataTransfer dataTransfer;
+
+  
+  
+  
+  
+  readonly attribute nsITransferable transferable;
+
+  
+  
+  
   readonly attribute AString textContent;
 
+  
+  
   
   readonly attribute AString filePath;
 
@@ -197,7 +221,7 @@ interface nsIContentAnalysisRequest : nsISupports
   readonly attribute AString email;
 
   
-  readonly attribute ACString requestToken;
+  attribute ACString requestToken;
 
   
   readonly attribute WindowGlobalParent windowGlobalParent;
@@ -209,18 +233,16 @@ interface nsIContentAnalysisRequest : nsISupports
   
   
   attribute int64_t userActionRequestsCount;
+
+  
+  
+  readonly attribute WindowGlobalParent sourceWindowGlobal;
 };
 
-[scriptable, builtinclass, uuid(9679545f-4256-4c90-9654-90292c355d25)]
-interface nsIContentAnalysisResult : nsISupports
-{
-  [infallible] readonly attribute boolean shouldAllowContent;
-};
-
-[scriptable, uuid(cb09fc88-118c-411b-aa89-2e1bc5e3eba6)]
+[scriptable, builtinclass, uuid(cb09fc88-118c-411b-aa89-2e1bc5e3eba6)]
 interface nsIContentAnalysisCallback : nsISupports
 {
-  void contentResult(in nsIContentAnalysisResponse aResult);
+  void contentResult(in nsIContentAnalysisResult aResult);
 
   void error(in nsresult aResult);
 };
@@ -285,7 +307,20 @@ interface nsIContentAnalysis : nsISupports
 
 
   [implicit_jscontext]
-  Promise analyzeContentRequest(in nsIContentAnalysisRequest aCar, in boolean aAutoAcknowledge);
+  Promise analyzeContentRequests(in Array<nsIContentAnalysisRequest> aCars,
+                                 in boolean aAutoAcknowledge);
+
+  
+
+
+
+
+
+
+
+  [implicit_jscontext]
+  Promise analyzeContentRequest(in nsIContentAnalysisRequest aCar,
+                                in boolean aAutoAcknowledge);
 
   
 
@@ -301,7 +336,23 @@ interface nsIContentAnalysis : nsISupports
 
 
 
-  void analyzeContentRequestCallback(in nsIContentAnalysisRequest aCar, in boolean aAutoAcknowledge, in nsIContentAnalysisCallback callback);
+  void analyzeContentRequestsCallback(in Array<nsIContentAnalysisRequest> aCars,
+                                      in boolean aAutoAcknowledge,
+                                      in nsIContentAnalysisCallback callback);
+
+  
+
+
+
+
+
+
+
+
+
+  void analyzeContentRequestCallback(in nsIContentAnalysisRequest aCar,
+                                     in boolean aAutoAcknowledge,
+                                     in nsIContentAnalysisCallback callback);
 
   
 
@@ -314,7 +365,32 @@ interface nsIContentAnalysis : nsISupports
 
 
 
-  void cancelContentAnalysisRequest(in ACString aRequestToken, in boolean aNotifyObservers);
+
+  void analyzeContentRequestPrivate(
+    in nsIContentAnalysisRequest aRequest, in boolean aAutoAcknowledge,
+    in nsIContentAnalysisCallback aCallback);
+
+  
+
+
+
+
+
+
+
+  void cancelRequestsByUserAction(in ACString aUserActionId);
+
+  
+
+
+
+
+
+
+
+
+
+  void cancelRequestsByRequestToken(in ACString aRequestToken);
 
   
 
@@ -325,7 +401,10 @@ interface nsIContentAnalysis : nsISupports
   
 
 
-  void cancelAllRequests();
+
+
+
+  void cancelAllRequests([optional] in boolean aForbidFutureRequests);
 
   
 
@@ -379,4 +458,25 @@ interface nsIContentAnalysis : nsISupports
 
   void getCachedResponse(in nsIURI aURI, in int32_t aSequenceNumber,
     out nsIContentAnalysisResponse_Action aAction, out boolean aIsValid);
+
+  
+
+
+
+
+
+
+
+
+  void showBlockedRequestDialog(in nsIContentAnalysisRequest aRequest);
+
+  
+
+
+
+
+
+  nsIContentAnalysisResponse makeResponseForTest(
+      in nsIContentAnalysisResponse_Action aAction,
+      in ACString aToken);
 };
