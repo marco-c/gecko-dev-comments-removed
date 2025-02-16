@@ -1334,7 +1334,7 @@ void gfxFontEntry::GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
     
     
     aResult.AppendElement(gfxFontVariation{HB_TAG('i', 't', 'a', 'l'), 1.0f});
-  } else if (aStyle.style != StyleFontStyle::NORMAL && HasSlantVariation()) {
+  } else if (HasSlantVariation()) {
     
     
     float angle = aStyle.style.SlantAngle();
