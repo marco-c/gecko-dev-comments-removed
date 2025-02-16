@@ -63,22 +63,7 @@ class VCMReceiveCallback {
     std::optional<double> corruption_score;
   };
 
-  
-  virtual int32_t FrameToRender(VideoFrame& ,  
-                                std::optional<uint8_t> ,
-                                TimeDelta ,
-                                VideoContentType ,
-                                VideoFrameType ) {
-    RTC_CHECK_NOTREACHED();
-    return 0;
-  }
-
-  
-  virtual int32_t OnFrameToRender(const struct FrameToRender& arguments) {
-    return FrameToRender(arguments.video_frame, arguments.qp,
-                         arguments.decode_time, arguments.content_type,
-                         arguments.frame_type);
-  }
+  virtual int32_t OnFrameToRender(const FrameToRender& arguments) = 0;
 
   virtual void OnDroppedFrames(uint32_t frames_dropped);
 
