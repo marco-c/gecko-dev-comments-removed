@@ -65,7 +65,6 @@ mod glean;
 mod lang;
 mod logging;
 mod logic;
-mod memory_test;
 mod net;
 mod process;
 mod settings;
@@ -80,10 +79,14 @@ fn main() {
     
     
     
-    match ::std::env::args_os().nth(1) {
-        Some(s) if s == "--analyze" => analyze::main(),
-        Some(s) if s == "--memtest" => memory_test::main(),
-        _ => report_main(),
+    if ::std::env::args_os()
+        .nth(1)
+        .map(|s| s == "--analyze")
+        .unwrap_or(false)
+    {
+        analyze::main()
+    } else {
+        report_main()
     }
 }
 
