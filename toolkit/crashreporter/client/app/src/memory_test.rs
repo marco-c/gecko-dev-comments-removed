@@ -15,6 +15,7 @@ use {
 
 #[cfg(windows)]
 #[link(name = "runtimeobject")]
+#[link(name = "propsys")]
 extern "C" {}
 
 
