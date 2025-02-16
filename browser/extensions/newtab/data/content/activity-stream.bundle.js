@@ -12850,6 +12850,14 @@ class BaseContent extends (external_React_default()).PureComponent {
       return;
     }
     const prefs = this.props.Prefs.values;
+    const {
+      showSearch
+    } = prefs;
+    if (!showSearch) {
+      
+      
+      return;
+    }
     const logoAlwaysVisible = prefs["logowordmark.alwaysVisible"];
     const layoutsVariantAEnabled = prefs["newtabLayouts.variant-a"];
     const layoutsVariantBEnabled = prefs["newtabLayouts.variant-b"];
