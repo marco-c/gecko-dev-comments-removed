@@ -147,7 +147,7 @@ void NSSSocketControl::SetHandshakeCompleted() {
     
     Telemetry::Accumulate(Telemetry::SSL_RESUMED_SESSION,
                           handshakeType == Resumption);
-    Telemetry::Accumulate(Telemetry::SSL_HANDSHAKE_TYPE, handshakeType);
+    glean::ssl_handshake::completed.AccumulateSingleSample(handshakeType);
   }
 
   

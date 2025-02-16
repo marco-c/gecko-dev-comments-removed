@@ -1011,7 +1011,7 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   
   unsigned int versionEnum = channelInfo.protocolVersion & 0xFF;
   MOZ_ASSERT(versionEnum > 0);
-  Telemetry::Accumulate(Telemetry::SSL_HANDSHAKE_VERSION, versionEnum);
+  glean::ssl_handshake::version.AccumulateSingleSample(versionEnum);
 
   SSLCipherSuiteInfo cipherInfo;
   rv = SSL_GetCipherSuiteInfo(channelInfo.cipherSuite, &cipherInfo,
