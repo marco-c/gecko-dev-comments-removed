@@ -569,6 +569,10 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
   }
   void NS_FASTCALL Replace(index_type aCutStart, size_type aCutLength,
                            const substring_tuple_type& aTuple);
+  [[nodiscard]] bool NS_FASTCALL Replace(index_type aCutStart,
+                                         size_type aCutLength,
+                                         const substring_tuple_type& aTuple,
+                                         const fallible_t& aFallible);
 
   
   
