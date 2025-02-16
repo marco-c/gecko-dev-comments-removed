@@ -307,10 +307,7 @@ nsresult nsHttpTransaction::Init(
 
   if (mHasRequestBody) {
     
-    nsCOMPtr<nsIMultiplexInputStream> multi;
-    rv = nsMultiplexInputStreamConstructor(NS_GET_IID(nsIMultiplexInputStream),
-                                           getter_AddRefs(multi));
-    if (NS_FAILED(rv)) return rv;
+    RefPtr<nsMultiplexInputStream> multi = new nsMultiplexInputStream();
 
     rv = multi->AppendStream(headers);
     if (NS_FAILED(rv)) return rv;
@@ -321,9 +318,8 @@ nsresult nsHttpTransaction::Init(
     
     
     
-    nsCOMPtr<nsIInputStream> stream(do_QueryInterface(multi));
     rv = NS_NewBufferedInputStream(getter_AddRefs(mRequestStream),
-                                   stream.forget(),
+                                   multi.forget(),
                                    nsIOService::gDefaultSegmentSize);
     if (NS_FAILED(rv)) return rv;
   } else {
