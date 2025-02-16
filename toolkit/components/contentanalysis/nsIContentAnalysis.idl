@@ -306,6 +306,10 @@ interface nsIContentAnalysis : nsISupports
 
 
 
+
+
+
+
   [implicit_jscontext]
   Promise analyzeContentRequests(in Array<nsIContentAnalysisRequest> aCars,
                                  in boolean aAutoAcknowledge);
