@@ -919,12 +919,6 @@ Toolbox.prototype = {
 
   async open() {
     try {
-      
-      const fluentL10n = new FluentL10n();
-      const fluentInitPromise = fluentL10n.init([
-        "devtools/client/toolbox.ftl",
-      ]);
-
       const isToolboxURL = this.win.location.href.startsWith(this._URL);
       if (isToolboxURL) {
         
@@ -932,31 +926,7 @@ Toolbox.prototype = {
       }
 
       
-      
-      await new Promise(resolve => {
-        DOMHelpers.onceDOMReady(
-          this.win,
-          () => {
-            resolve();
-          },
-          this._URL
-        );
-      });
-
-      
-      
-      this.browserRequire = BrowserLoader({
-        window: this.win,
-        useOnlyShared: true,
-      }).require;
-
-      
-      
-      await fluentInitPromise;
-
-      
-      
-      this._mountReactComponent(fluentL10n.getBundles());
+      this.onReactLoaded = this._initializeReactComponent();
 
       
       this.resourceCommand = this.commands.resourceCommand;
@@ -1028,6 +998,8 @@ Toolbox.prototype = {
           onUpdated: this._onResourceUpdated,
         }
       );
+
+      await this.onReactLoaded;
 
       this.isReady = true;
 
@@ -1153,17 +1125,26 @@ Toolbox.prototype = {
         dump("Server stack:" + error.serverStack + "\n");
       }
 
-      
-      
-      if (this._appBoundary) {
-        this._appBoundary.setState({
-          errorMsg: error.toString(),
-          errorStack: error.stack,
-          errorInfo: {
-            serverStack: error.serverStack,
-          },
-          toolbox: this,
-        });
+      try {
+        
+        
+        await this.onReactLoaded;
+
+        
+        
+        if (this._appBoundary && !this._appBoundary.state.errorInfo) {
+          this._appBoundary.setState({
+            errorMsg: error.toString(),
+            errorStack: error.stack,
+            errorInfo: {
+              serverStack: error.serverStack,
+            },
+            toolbox: this,
+          });
+        }
+      } catch (e) {
+        
+        
       }
     }
   },
@@ -2015,10 +1996,35 @@ Toolbox.prototype = {
   
 
 
+  async _initializeReactComponent() {
+    
+    const fluentL10n = new FluentL10n();
+    const fluentInitPromise = fluentL10n.init(["devtools/client/toolbox.ftl"]);
 
+    
+    
+    await new Promise(resolve => {
+      DOMHelpers.onceDOMReady(
+        this.win,
+        () => {
+          resolve();
+        },
+        this._URL
+      );
+    });
 
+    
+    
+    this.browserRequire = BrowserLoader({
+      window: this.win,
+      useOnlyShared: true,
+    }).require;
 
-  _mountReactComponent(fluentBundles) {
+    
+    await fluentInitPromise;
+    const fluentBundles = fluentL10n.getBundles();
+
+    
     
     const element = this.React.createElement(
       this.AppErrorBoundary,
