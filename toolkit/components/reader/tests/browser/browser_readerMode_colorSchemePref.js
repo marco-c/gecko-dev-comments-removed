@@ -145,7 +145,6 @@ async function testColorsFocus() {
         input.dispatchEvent(
           new Event("input", { bubbles: true, composed: true })
         );
-        
 
         
         await ContentTaskUtils.waitForCondition(() => {
