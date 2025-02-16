@@ -1855,14 +1855,14 @@ async function testWithAndWithoutLexicalShortlist(callback) {
 
 
 
-async function waitForTranslationsPrefChanged(callback) {
+async function waitForTranslationModelRecordsChanged(callback) {
   const { promise, resolve } = Promise.withResolvers();
 
   function onChange() {
-    Services.obs.removeObserver(onChange, "translations:pref-changed");
+    Services.obs.removeObserver(onChange, "translations:model-records-changed");
     resolve();
   }
-  Services.obs.addObserver(onChange, "translations:pref-changed");
+  Services.obs.addObserver(onChange, "translations:model-records-changed");
 
   if (callback) {
     await callback();
