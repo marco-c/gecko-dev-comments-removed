@@ -311,8 +311,6 @@ inline bool hasR2() { return mips_private::hasR2; }
 inline bool hasUnaliasedDouble() { return false; }
 
 
-
-
 inline bool hasMultiAlias() { return false; }
 
 }  
