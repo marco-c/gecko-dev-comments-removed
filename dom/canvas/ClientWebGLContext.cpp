@@ -4425,7 +4425,7 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
   mozilla::ipc::Shmem* pShmem = nullptr;
   
   RefPtr<layers::Image> keepAliveImage;
-  RefPtr<gfx::DataSourceSurface> keepAliveSurf;
+  RefPtr<gfx::SourceSurface> keepAliveSurf;
 
   if (desc->sd) {
     const auto& sd = *(desc->sd);
@@ -4441,12 +4441,23 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
     bool sameColorSpace = (srcColorSpace == dstColorSpace);
 
     const auto fallbackReason = [&]() -> Maybe<std::string> {
-      auto fallbackReason = BlitPreventReason(
-          level, offset, respecFormat, pi, *desc,
-          contextInfo.optionalRenderableFormatBits, sameColorSpace);
-      if (fallbackReason) return fallbackReason;
-
       const bool canUploadViaSd = contextInfo.uploadableSdTypes[sdType];
+      
+      
+      
+      
+      
+      const bool allowConversion =
+          canUploadViaSd &&
+          sdType == layers::SurfaceDescriptor::TSurfaceDescriptorCanvasSurface;
+      auto fallbackReason =
+          BlitPreventReason(level, offset, respecFormat, pi, *desc,
+                            contextInfo.optionalRenderableFormatBits,
+                            sameColorSpace, allowConversion);
+      if (fallbackReason) {
+        return fallbackReason;
+      }
+
       if (!canUploadViaSd) {
         const nsPrintfCString msg(
             "Fast uploads for resource type %i not implemented.", int(sdType));
@@ -4502,11 +4513,20 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
         } break;
         case layers::SurfaceDescriptor::TSurfaceDescriptorExternalImage: {
           const auto& inProcess = mNotLost->inProcess;
-          MOZ_ASSERT(desc->dataSurf);
-          keepAliveSurf = desc->dataSurf;
+          MOZ_ASSERT(desc->sourceSurf);
+          keepAliveSurf = desc->sourceSurf;
           if (inProcess) {
             return Some(std::string{
                 "SurfaceDescriptorExternalImage works only in GPU process."});
+          }
+        } break;
+        case layers::SurfaceDescriptor::TSurfaceDescriptorCanvasSurface: {
+          const auto& inProcess = mNotLost->inProcess;
+          MOZ_ASSERT(desc->sourceSurf);
+          keepAliveSurf = desc->sourceSurf;
+          if (inProcess) {
+            return Some(std::string{
+                "SurfaceDescriptorCanvasSurface works only in GPU process."});
           }
         } break;
       }
@@ -4538,10 +4558,15 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
         const RefPtr<gfx::SourceSurface> surf = image->GetAsSourceSurface();
         if (surf) {
           
-          desc->dataSurf = surf->GetDataSurface();
+          desc->sourceSurf = surf->GetDataSurface();
         }
+      } else if (desc->sourceSurf && !desc->sourceSurf->IsDataSourceSurface()) {
+        
+        
+        
+        desc->sourceSurf = desc->sourceSurf->GetDataSurface();
       }
-      if (!desc->dataSurf) {
+      if (!desc->sourceSurf) {
         EnqueueError(LOCAL_GL_OUT_OF_MEMORY,
                      "Failed to retrieve source bytes for CPU upload.");
         return;
@@ -4551,7 +4576,7 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
   }
   desc->image = nullptr;
   if (desc->sd) {
-    desc->dataSurf = nullptr;
+    desc->sourceSurf = nullptr;
   }
 
   desc->Shrink(pi);

@@ -635,6 +635,13 @@ RefPtr<WebGLContext> WebGLContext::Create(HostWebGLContext* host,
     
     
     
+    types[layers::SurfaceDescriptor::TSurfaceDescriptorCanvasSurface] =
+        gfx::gfxVars::UseAcceleratedCanvas2D();
+    
+    
+    
+    
+    
     
     const bool offCompositorThread = gfx::gfxVars::UseCanvasRenderThread() ||
                                      !gfx::gfxVars::SupportsThreadsafeGL();

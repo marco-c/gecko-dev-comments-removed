@@ -198,18 +198,33 @@ Maybe<webgl::TexUnpackBlobDesc> FromSurfaceFromElementResult(
     }
   }
 
-  RefPtr<gfx::DataSourceSurface> dataSurf;
+  RefPtr<gfx::SourceSurface> sourceSurf;
   if (!sd && sfer.GetSourceSurface()) {
     const auto surf = sfer.GetSourceSurface();
     elemSize = *uvec2::FromSize(surf->GetSize());
-
-    
-    dataSurf = surf->GetDataSurface();
+    if (surf->GetType() == gfx::SurfaceType::RECORDING) {
+      
+      
+      
+      
+      
+      
+      
+      layers::SurfaceDescriptor desc;
+      if (surf->GetSurfaceDescriptor(desc)) {
+        sd = Some(desc);
+        sourceSurf = surf;
+      }
+    }
+    if (!sd) {
+      
+      sourceSurf = surf->GetDataSurface();
+    }
   }
 
   if (!sd) {
     
-    layers::SharedSurfacesChild::Share(dataSurf, sd);
+    layers::SharedSurfacesChild::Share(sourceSurf, sd);
   }
 
   
@@ -220,7 +235,7 @@ Maybe<webgl::TexUnpackBlobDesc> FromSurfaceFromElementResult(
 
   
 
-  if (!sd && !dataSurf) {
+  if (!sd && !sourceSurf) {
     webgl.EnqueueWarning("Resource has no data (yet?). Uploading zeros.");
     if (!size) {
       size.emplace(0, 0, 1);
@@ -265,7 +280,7 @@ Maybe<webgl::TexUnpackBlobDesc> FromSurfaceFromElementResult(
                                 Some(elemSize),
                                 layersImage,
                                 sd,
-                                dataSurf});
+                                sourceSurf});
 }
 
 }  
