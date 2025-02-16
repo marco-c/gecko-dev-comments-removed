@@ -2,6 +2,7 @@
 
 
 
+import os
 import subprocess
 import sys
 
@@ -48,8 +49,9 @@ def execute_node_cmd(node_cmd_list):
     """
 
     try:
-        print('Executing "{}"'.format(shell_quote(*node_cmd_list)), file=sys.stderr)
-        sys.stderr.flush()
+        if os.environ.get("BUILD_VERBOSE_LOG"):
+            print('Executing "{}"'.format(shell_quote(*node_cmd_list)), file=sys.stderr)
+            sys.stderr.flush()
 
         
         
