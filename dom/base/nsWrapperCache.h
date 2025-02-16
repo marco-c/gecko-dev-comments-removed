@@ -19,20 +19,12 @@
 #include "nsISupportsUtils.h"
 #include <type_traits>
 
-namespace mozilla::dom {
-class ContentProcessMessageManager;
-class InProcessBrowserChildMessageManager;
-class BrowserChildMessageManager;
+namespace mozilla::dom::binding_detail {
+class CastableToWrapperCacheHelper;
 }  
-class SandboxPrivate;
-class nsWindowRoot;
 
-#define NS_WRAPPERCACHE_IID                          \
-  {                                                  \
-    0x6f3179a1, 0x36f7, 0x4a5c, {                    \
-      0x8c, 0xf1, 0xad, 0xc8, 0x7c, 0xde, 0x3e, 0x87 \
-    }                                                \
-  }
+#define NS_WRAPPERCACHE_IID \
+  {0x6f3179a1, 0x36f7, 0x4a5c, {0x8c, 0xf1, 0xad, 0xc8, 0x7c, 0xde, 0x3e, 0x87}}
 
 
 
@@ -380,9 +372,10 @@ class JS_HAZ_ROOTED nsWrapperCache {
  public:
   void CheckCCWrapperTraversal(void* aScriptObjectHolder,
                                nsScriptObjectTracer* aTracer);
+#endif  
 
  private:
-#endif  
+  friend class mozilla::dom::binding_detail::CastableToWrapperCacheHelper;
 
   
 
