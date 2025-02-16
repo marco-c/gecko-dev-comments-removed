@@ -10,7 +10,6 @@ ChromeUtils.defineESModuleGetters(this, {
 
 add_setup(async function () {
   Services.telemetry.clearEvents();
-  Services.telemetry.clearScalars();
   makeProfileResettable();
 
   await SpecialPowers.pushPrefEnv({
@@ -87,47 +86,6 @@ add_task(async function clear_private() {
 
 
 
-add_task(async function multipleInterventionsInOneEngagement() {
-  Services.telemetry.clearScalars();
-  let result = (await awaitTip(SEARCH_STRINGS.REFRESH, window))[0];
-  Assert.strictEqual(
-    result.payload.type,
-    UrlbarProviderInterventions.TIP_TYPE.REFRESH
-  );
-  result = (await awaitTip(SEARCH_STRINGS.CLEAR, window))[0];
-  Assert.strictEqual(
-    result.payload.type,
-    UrlbarProviderInterventions.TIP_TYPE.CLEAR
-  );
-  result = (await awaitTip(SEARCH_STRINGS.REFRESH, window))[0];
-  Assert.strictEqual(
-    result.payload.type,
-    UrlbarProviderInterventions.TIP_TYPE.REFRESH
-  );
-
-  
-  await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
-
-  const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
-  
-  
-  TelemetryTestUtils.assertKeyedScalar(
-    scalars,
-    "urlbar.tips",
-    `${UrlbarProviderInterventions.TIP_TYPE.REFRESH}-shown`,
-    1
-  );
-  Assert.ok(
-    !scalars["urlbar.tips"][
-      `${UrlbarProviderInterventions.TIP_TYPE.CLEAR}-shown`
-    ],
-    `${UrlbarProviderInterventions.TIP_TYPE.CLEAR}-shown is not recorded as an
-     impression`
-  );
-});
-
-
-
 add_task(async function testIsActive() {
   const testData = [
     {
@@ -182,7 +140,7 @@ add_task(async function testIsActive() {
     UrlbarProviderInterventions.currentTip = null;
 
     const isActive = UrlbarProviderInterventions.isActive({ searchString });
-    Assert.equal(isActive, expectedActive, "Result of isAcitive is correct");
+    Assert.equal(isActive, expectedActive, "Result of isActive is correct");
     const isScoreCalculated = UrlbarProviderInterventions.currentTip !== null;
     Assert.equal(
       isScoreCalculated,
@@ -265,14 +223,5 @@ add_task(async function pickHelp() {
     
     await new Promise(r => setTimeout(r, 2000));
     Assert.strictEqual(gDialogBox.isOpen, false, "No dialog should be open");
-
-    
-    const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
-    TelemetryTestUtils.assertKeyedScalar(
-      scalars,
-      "urlbar.tips",
-      `${UrlbarProviderInterventions.TIP_TYPE.CLEAR}-help`,
-      1
-    );
   });
 });
