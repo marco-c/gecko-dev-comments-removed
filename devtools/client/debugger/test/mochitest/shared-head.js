@@ -2189,12 +2189,16 @@ async function assertContextMenuLabel(dbg, selector, expectedLabel) {
 }
 
 async function typeInPanel(dbg, text, inLogPanel = false) {
-  await waitForElement(
-    dbg,
-    inLogPanel ? "logPanelInput" : "conditionalPanelInput"
-  );
+  const panelName = inLogPanel ? "logPanelInput" : "conditionalPanelInput";
+  await waitForElement(dbg, panelName);
+
+  
+  
+  await waitForInPanelDocumentLoadComplete(dbg, panelName);
+
   
   pressKey(dbg, "End");
+
   type(dbg, text);
   
   
@@ -2305,6 +2309,7 @@ function waitForSearchState(dbg) {
 
 
 
+
 function waitForDocumentLoadComplete(dbg) {
   return waitFor(() =>
     isCm6Enabled ? getCMEditor(dbg).codeMirror.isDocumentLoadComplete : true
@@ -2315,8 +2320,41 @@ function waitForDocumentLoadComplete(dbg) {
 
 
 
+function waitForInPanelDocumentLoadComplete(dbg, panelName) {
+  return waitFor(() =>
+    isCm6Enabled
+      ? getCodeMirrorInstance(dbg, panelName).isDocumentLoadComplete
+      : true
+  );
+}
+
+
+
+
+
 function getEditorContent(dbg) {
   return getCMEditor(dbg).getEditorContent();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function getCodeMirrorInstance(dbg, panelName = null) {
+  if (panelName !== null) {
+    const panel = findElement(dbg, panelName);
+    return dbg.win.codeMirrorSourceEditorTestInstance.CodeMirror.findFromDOM(
+      panel
+    );
+  }
+  return dbg.win.codeMirrorSourceEditorTestInstance.codeMirror;
 }
 
 
@@ -3334,15 +3372,21 @@ async function clickOnSourceMapMenuItem(dbg, className) {
 }
 
 async function setLogPoint(dbg, index, value) {
+  
+  
+  await waitForDocumentLoadComplete(dbg);
   rightClickElement(dbg, "gutterElement", index);
   await waitForContextMenu(dbg);
   selectDebuggerContextMenuItem(
     dbg,
     `${selectors.addLogItem},${selectors.editLogItem}`
   );
-  const onBreakpointSet = waitForDispatch(dbg.store, "SET_BREAKPOINT");
-  await typeInPanel(dbg, value, true);
-  await onBreakpointSet;
+  await waitForConditionalPanelFocus(dbg);
+  if (value) {
+    const onBreakpointSet = waitForDispatch(dbg.store, "SET_BREAKPOINT");
+    await typeInPanel(dbg, value, true);
+    await onBreakpointSet;
+  }
 }
 
 
