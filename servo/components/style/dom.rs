@@ -894,6 +894,14 @@ pub trait TElement:
         V: Push<ApplicableDeclarationBlock>;
 
     
+    
+    
+    fn synthesize_view_transition_dynamic_rules<V>(&self, _rules: &mut V)
+    where
+        V: Push<ApplicableDeclarationBlock>
+    {}
+
+    
     fn local_name(&self) -> &<SelectorImpl as selectors::parser::SelectorImpl>::BorrowedLocalName;
 
     

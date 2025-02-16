@@ -86,6 +86,9 @@ static RefPtr<gfx::DataSourceSurface> CaptureFallbackSnapshot(
 
 struct CapturedElementOldState {
   RefPtr<gfx::DataSourceSurface> mImage;
+  
+  
+  bool mTriedImage = false;
 
   
   nsSize mSize;
@@ -99,6 +102,7 @@ struct CapturedElementOldState {
   CapturedElementOldState(nsIFrame* aFrame,
                           const nsSize& aSnapshotContainingBlockSize)
       : mImage(CaptureFallbackSnapshot(aFrame)),
+        mTriedImage(true),
         mSize(aFrame->Style()->IsRootElementStyle()
                   ? aSnapshotContainingBlockSize
                   : aFrame->GetRect().Size()),
@@ -123,6 +127,13 @@ struct ViewTransition::CapturedElement {
 
   
   
+  RefPtr<StyleLockedDeclarationBlock> mGroupRule;
+  
+  RefPtr<StyleLockedDeclarationBlock> mImagePairRule;
+  
+  RefPtr<StyleLockedDeclarationBlock> mOldRule;
+  
+  RefPtr<StyleLockedDeclarationBlock> mNewRule;
 };
 
 static inline void ImplCycleCollectionTraverse(
@@ -153,7 +164,7 @@ ViewTransition::ViewTransition(Document& aDoc,
 ViewTransition::~ViewTransition() { ClearTimeoutTimer(); }
 
 gfx::DataSourceSurface* ViewTransition::GetOldSurface(nsAtom* aName) const {
-  auto el = mNamedElements.Get(aName);
+  auto* el = mNamedElements.Get(aName);
   if (NS_WARN_IF(!el)) {
     return nullptr;
   }
@@ -339,6 +350,23 @@ static already_AddRefed<Element> MakePseudo(Document& aDoc,
   return el.forget();
 }
 
+static void SetProp(StyleLockedDeclarationBlock* aDecls, Document* aDoc,
+                    const nsACString& aProp, const nsACString& aValue) {
+  Servo_DeclarationBlock_SetProperty(
+      aDecls, &aProp, &aValue,
+       false, aDoc->DefaultStyleAttrURLData(),
+      StyleParsingMode::DEFAULT, eCompatibility_FullStandards,
+      aDoc->CSSLoader(), StyleCssRuleType::Style, {});
+}
+
+static StyleLockedDeclarationBlock* EnsureRule(
+    RefPtr<StyleLockedDeclarationBlock>& aRule) {
+  if (!aRule) {
+    aRule = Servo_DeclarationBlock_CreateEmpty().Consume();
+  }
+  return aRule.get();
+}
+
 
 void ViewTransition::SetupTransitionPseudoElements() {
   MOZ_ASSERT(!mViewTransitionRoot);
@@ -370,7 +398,7 @@ void ViewTransition::SetupTransitionPseudoElements() {
     constexpr bool kNotify = false;
 
     nsAtom* transitionName = entry.GetKey();
-    const CapturedElement& capturedElement = *entry.GetData();
+    CapturedElement& capturedElement = *entry.GetData();
     
     
     RefPtr<Element> group = MakePseudo(
@@ -384,7 +412,7 @@ void ViewTransition::SetupTransitionPseudoElements() {
     
     group->AppendChildTo(imagePair, kNotify, IgnoreErrors());
     
-    if (capturedElement.mOldState.mImage) {
+    if (capturedElement.mOldState.mTriedImage) {
       
       
       
@@ -392,6 +420,14 @@ void ViewTransition::SetupTransitionPseudoElements() {
           *mDocument, PseudoStyleType::viewTransitionOld, transitionName);
       
       imagePair->AppendChildTo(old, kNotify, IgnoreErrors());
+    } else {
+      
+      
+      MOZ_ASSERT(capturedElement.mNewElement);
+      
+      auto* rule = EnsureRule(capturedElement.mNewRule);
+      SetProp(rule, mDocument, "animation-name"_ns,
+              "-ua-view-transition-fade-in"_ns);
     }
     
     if (capturedElement.mNewElement) {
@@ -401,9 +437,41 @@ void ViewTransition::SetupTransitionPseudoElements() {
           *mDocument, PseudoStyleType::viewTransitionNew, transitionName);
       
       imagePair->AppendChildTo(new_, kNotify, IgnoreErrors());
+    } else {
+      
+      
+      
+      
+      
+      MOZ_ASSERT(capturedElement.mOldState.mTriedImage);
+      auto* rule = EnsureRule(capturedElement.mOldRule);
+      SetProp(rule, mDocument, "animation-name"_ns,
+              "-ua-view-transition-fade-out"_ns);
     }
     
     
+    if (capturedElement.mOldState.mTriedImage && capturedElement.mNewElement) {
+      nsAutoCString dynamicAnimationName;
+      transitionName->ToUTF8String(dynamicAnimationName);
+      dynamicAnimationName.InsertLiteral("-ua-view-transition-group-anim-", 0);
+
+      
+      
+      SetProp(EnsureRule(capturedElement.mGroupRule), mDocument,
+              "animation-name"_ns, dynamicAnimationName);
+
+      
+      SetProp(EnsureRule(capturedElement.mImagePairRule), mDocument,
+              "isolation"_ns, "isolate"_ns);
+
+      
+      SetProp(
+          EnsureRule(capturedElement.mOldRule), mDocument, "animation-name"_ns,
+          "-ua-view-transition-fade-out, -ua-mix-blend-mode-plus-lighter"_ns);
+      SetProp(
+          EnsureRule(capturedElement.mNewRule), mDocument, "animation-name"_ns,
+          "-ua-view-transition-fade-in, -ua-mix-blend-mode-plus-lighter"_ns);
+    }
   }
   BindContext context(*docElement, BindContext::ForNativeAnonymous);
   if (NS_FAILED(mViewTransitionRoot->BindToTree(context, *docElement))) {
@@ -481,6 +549,31 @@ nsRect ViewTransition::SnapshotContainingBlockRect() const {
   
   
   return pc ? pc->GetVisibleArea() : nsRect();
+}
+
+const StyleLockedDeclarationBlock* ViewTransition::GetDynamicRuleFor(
+    const Element& aElement) const {
+  if (!aElement.HasName()) {
+    return nullptr;
+  }
+  nsAtom* name = aElement.GetParsedAttr(nsGkAtoms::name)->GetAtomValue();
+  auto* capture = mNamedElements.Get(name);
+  if (!capture) {
+    return nullptr;
+  }
+
+  switch (aElement.GetPseudoElementType()) {
+    case PseudoStyleType::viewTransitionNew:
+      return capture->mNewRule.get();
+    case PseudoStyleType::viewTransitionOld:
+      return capture->mOldRule.get();
+    case PseudoStyleType::viewTransitionImagePair:
+      return capture->mImagePairRule.get();
+    case PseudoStyleType::viewTransitionGroup:
+      return capture->mGroupRule.get();
+    default:
+      return nullptr;
+  }
 }
 
 
@@ -663,13 +756,11 @@ void ViewTransition::HandleFrame() {
       finished->MaybeResolveWithUndefined();
     }
     return;
-  } else {
-    
-    
-    
-    mDocument->EnsureViewTransitionOperationsHappen();
   }
-
+  
+  
+  
+  mDocument->EnsureViewTransitionOperationsHappen();
   
 }
 
