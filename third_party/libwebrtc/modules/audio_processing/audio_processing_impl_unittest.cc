@@ -64,7 +64,8 @@ class MockEchoControlFactory : public EchoControlFactory {
   MockEchoControlFactory() : next_mock_(std::make_unique<MockEchoControl>()) {}
   
   MockEchoControl* GetNext() const { return next_mock_.get(); }
-  std::unique_ptr<EchoControl> Create(int ,
+  std::unique_ptr<EchoControl> Create(const Environment& ,
+                                      int ,
                                       int ,
                                       int ) override {
     std::unique_ptr<EchoControl> mock = std::move(next_mock_);
