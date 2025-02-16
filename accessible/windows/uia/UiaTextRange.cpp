@@ -1307,15 +1307,20 @@ struct AttributeTraits<UIA_IsReadOnlyAttributeId> {
     if (!aPoint.mAcc) {
       return {};
     }
-    
-    
-    
     Accessible* acc = aPoint.mAcc;
-    Accessible* parent = acc->Parent();
-    if (parent && parent->IsHyperText()) {
-      acc = parent;
-    } else {
-      return Some(true);
+    
+    
+    if (!acc->IsHyperText()) {
+      
+      
+      
+      
+      Accessible* parent = acc->Parent();
+      if (parent && parent->IsHyperText()) {
+        acc = parent;
+      } else {
+        return Some(true);
+      }
     }
     const uint64_t state = acc->State();
     if (state & states::READONLY) {
