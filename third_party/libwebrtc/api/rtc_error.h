@@ -15,8 +15,10 @@
 
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>  
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -100,6 +102,14 @@ enum class RTCErrorDetailType {
 
 
 
+RTC_EXPORT absl::string_view ToString(RTCErrorType error);
+RTC_EXPORT absl::string_view ToString(RTCErrorDetailType error);
+
+
+
+
+
+
 class RTC_EXPORT RTCError {
  public:
   
@@ -146,20 +156,22 @@ class RTC_EXPORT RTCError {
   
   bool ok() const { return type_ == RTCErrorType::NONE; }
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const RTCError& error) {
+    sink.Append(ToString(error.type_));
+    if (!error.message_.empty()) {
+      sink.Append(" with message: \"");
+      sink.Append(error.message_);
+      sink.Append("\"");
+    }
+  }
+
  private:
   RTCErrorType type_ = RTCErrorType::NONE;
   std::string message_;
   RTCErrorDetailType error_detail_ = RTCErrorDetailType::NONE;
   std::optional<uint16_t> sctp_cause_code_;
 };
-
-
-
-
-
-
-RTC_EXPORT absl::string_view ToString(RTCErrorType error);
-RTC_EXPORT absl::string_view ToString(RTCErrorDetailType error);
 
 
 
@@ -305,6 +317,19 @@ class RTCErrorOr {
   T MoveValue() {
     RTC_DCHECK(ok());
     return std::move(*value_);
+  }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const RTCErrorOr<T>& error_or) {
+    if (error_or.ok()) {
+      sink.Append("OK");
+      if constexpr (std::is_convertible_v<T, absl::AlphaNum>) {
+        sink.Append(" with value: ");
+        sink.Append(absl::StrCat(error_or.value()));
+      }
+    } else {
+      sink.Append(absl::StrCat(error_or.error()));
+    }
   }
 
  private:
