@@ -48,6 +48,7 @@ namespace dom {
 class ClientInfo;
 class ClientSource;
 class EventTarget;
+enum class NavigationHistoryBehavior : uint8_t;
 class SessionHistoryInfo;
 struct LoadingSessionHistoryInfo;
 struct Wireframe;
@@ -1119,12 +1120,14 @@ class nsDocShell final : public nsDocLoader,
 
 
 
+  nsresult UpdateURLAndHistory(
+      mozilla::dom::Document* aDocument, nsIURI* aNewURI,
+      nsIStructuredCloneContainer* aData,
+      mozilla::dom::NavigationHistoryBehavior aHistoryHandling,
+      nsIURI* aCurrentURI, bool aEqualURIs);
 
-  nsresult UpdateURLAndHistory(mozilla::dom::Document* aDocument,
-                               nsIURI* aNewURI,
-                               nsIStructuredCloneContainer* aData,
-                               const nsAString& aTitle, bool aReplace,
-                               nsIURI* aCurrentURI, bool aEqualURIs);
+  bool IsSameDocumentAsActiveEntry(
+      const mozilla::dom::SessionHistoryInfo& aSHInfo);
 
  private:
   void SetCurrentURIInternal(nsIURI* aURI);

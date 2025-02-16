@@ -308,6 +308,9 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   void DetachFromDocShell(bool aIsBeingDiscarded);
 
+  
+  
+  
   virtual nsresult SetNewDocument(
       Document* aDocument, nsISupports* aState, bool aForceReuseInnerWindow,
       mozilla::dom::WindowGlobalChild* aActor = nullptr) override;

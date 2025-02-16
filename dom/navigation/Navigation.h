@@ -8,6 +8,7 @@
 #define mozilla_dom_Navigation_h___
 
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/dom/NavigationBinding.h"
 
 namespace mozilla::dom {
 
@@ -20,21 +21,33 @@ struct NavigationUpdateCurrentEntryOptions;
 struct NavigationReloadOptions;
 struct NavigationResult;
 
+class SessionHistoryInfo;
+
 class Navigation final : public DOMEventTargetHelper {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(Navigation, DOMEventTargetHelper)
 
-  void Entries(nsTArray<RefPtr<NavigationHistoryEntry>>& aResult) {}
-  already_AddRefed<NavigationHistoryEntry> GetCurrentEntry() { return {}; }
+  explicit Navigation(nsPIDOMWindowInner* aWindow);
+
+  
+  void Entries(nsTArray<RefPtr<NavigationHistoryEntry>>& aResult) const;
+  already_AddRefed<NavigationHistoryEntry> GetCurrentEntry() const;
+  MOZ_CAN_RUN_SCRIPT
   void UpdateCurrentEntry(JSContext* aCx,
                           const NavigationUpdateCurrentEntryOptions& aOptions,
-                          ErrorResult& aRv) {}
+                          ErrorResult& aRv);
   already_AddRefed<NavigationTransition> GetTransition() { return {}; }
   already_AddRefed<NavigationActivation> GetActivation() { return {}; }
 
-  bool CanGoBack() { return {}; }
-  bool CanGoForward() { return {}; }
+  bool CanGoBack() {
+    return !HasEntriesAndEventsDisabled() && mCurrentEntryIndex &&
+           *mCurrentEntryIndex != 0;
+  }
+  bool CanGoForward() {
+    return !HasEntriesAndEventsDisabled() && mCurrentEntryIndex &&
+           *mCurrentEntryIndex != mEntries.Length() - 1;
+  }
 
   void Navigate(JSContext* aCx, const nsAString& aUrl,
                 const NavigationNavigateOptions& aOptions,
@@ -55,15 +68,45 @@ class Navigation final : public DOMEventTargetHelper {
   IMPL_EVENT_HANDLER(navigateerror);
   IMPL_EVENT_HANDLER(currententrychange);
 
+  
+  void InitializeHistoryEntries(
+      mozilla::Span<const SessionHistoryInfo> aNewSHInfos,
+      const SessionHistoryInfo* aInitialSHInfo);
+
+  
+  MOZ_CAN_RUN_SCRIPT
+  void UpdateForReactivation(SessionHistoryInfo* aReactivatedEntry);
+
+  
+  void UpdateEntriesForSameDocumentNavigation(
+      SessionHistoryInfo* aDestinationSHE, NavigationType aNavigationType);
+
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   
   
-  static bool IsAPIEnabled(JSContext* , JSObject* );
+  static bool IsAPIEnabled(JSContext*  = nullptr,
+                           JSObject*  = nullptr);
 
  private:
   ~Navigation() = default;
+
+  
+  bool HasEntriesAndEventsDisabled() const;
+
+  void ScheduleEventsFromNavigation(
+      NavigationType aType,
+      const RefPtr<NavigationHistoryEntry>& aPreviousEntry,
+      nsTArray<RefPtr<NavigationHistoryEntry>>&& aDisposedEntries);
+
+  void LogHistory() const;
+
+  nsCOMPtr<nsPIDOMWindowInner> mWindow;
+  
+  nsTArray<RefPtr<NavigationHistoryEntry>> mEntries;
+  
+  Maybe<uint64_t> mCurrentEntryIndex;
 };
 
 }  
