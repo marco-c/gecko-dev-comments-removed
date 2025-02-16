@@ -1096,18 +1096,7 @@ TEST(FrameCadenceAdapterRealTimeTest, TimestampsDoNotDrift) {
   finalized.Wait(rtc::Event::kForever);
 }
 
-
-
-#if defined(WEBRTC_ENABLE_LIBEVENT)
-#define MAYBE_ScheduledRepeatAllowsForSlowEncode \
-  DISABLED_ScheduledRepeatAllowsForSlowEncode
-#else
-#define MAYBE_ScheduledRepeatAllowsForSlowEncode \
-  ScheduledRepeatAllowsForSlowEncode
-#endif
-
-TEST(FrameCadenceAdapterRealTimeTest,
-     MAYBE_ScheduledRepeatAllowsForSlowEncode) {
+TEST(FrameCadenceAdapterRealTimeTest, ScheduledRepeatAllowsForSlowEncode) {
   
   
   
