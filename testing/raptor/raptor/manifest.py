@@ -6,10 +6,10 @@ import os
 import pathlib
 import re
 
+from cmdline import DESKTOP_APPS, GECKO_PROFILER_APPS, TRACE_APPS
 from constants.raptor_tests_constants import YOUTUBE_PLAYBACK_MEASURE
 from logger.logger import RaptorLogger
 from manifestparser import TestManifest
-from perftest import GECKO_PROFILER_APPS, TRACE_APPS
 from six.moves.urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 from support_class_utils import import_support_class
 from utils import (
@@ -57,6 +57,19 @@ def get_browser_test_list(browser_app, run_local):
     )
 
 
+def validate_app_playback_settings(test_details):
+    
+    
+    
+    
+
+    
+    apps = [app.strip() for app in test_details["apps"].split(",")]
+    return any(app in apps for app in DESKTOP_APPS) and test_details.get(
+        "playback_pageset_manifest_backup"
+    )
+
+
 def validate_test_toml(test_details):
     
     valid_settings = True
@@ -84,7 +97,11 @@ def validate_test_toml(test_details):
 
     
     if test_details.get("playback") is not None:
-        for setting in playback_settings:
+        
+        pbs = playback_settings
+        if validate_app_playback_settings(test_details):
+            pbs += ["playback_pageset_manifest_backup"]
+        for setting in pbs:
             if test_details.get(setting) is None:
                 valid_settings = False
                 LOG.error(
@@ -400,10 +417,25 @@ def get_raptor_test_list(args, oskey):
         
         
         
-        if next_test.get("playback") is not None:
-            next_test["playback_pageset_manifest"] = transform_subtest(
-                next_test["playback_pageset_manifest"], next_test["name"]
-            )
+
+        
+        if oskey == "linux" and args.app in DESKTOP_APPS:
+            if next_test.get("playback") is not None:
+                
+                if next_test.get("playback_pageset_manifest_backup"):
+                    next_test["playback_pageset_manifest_backup"] = transform_subtest(
+                        next_test["playback_pageset_manifest_backup"], next_test["name"]
+                    )
+                else:
+                    next_test["playback_pageset_manifest"] = transform_subtest(
+                        next_test["playback_pageset_manifest"], next_test["name"]
+                    )
+
+        else:
+            if next_test.get("playback") is not None:
+                next_test["playback_pageset_manifest"] = transform_subtest(
+                    next_test["playback_pageset_manifest"], next_test["name"]
+                )
 
         
         if args.gecko_profile or (
