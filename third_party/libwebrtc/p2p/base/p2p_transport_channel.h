@@ -248,6 +248,10 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
     return stun_dict_writer_;
   }
 
+  const webrtc::FieldTrialsView* field_trials() const override {
+    return field_trials_;
+  }
+
  private:
   P2PTransportChannel(
       absl::string_view transport_name,
@@ -503,6 +507,8 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
 
   
   IceFieldTrials ice_field_trials_;
+  
+  const webrtc::FieldTrialsView* field_trials_;
 
   
   StunDictionaryWriter stun_dict_writer_;
