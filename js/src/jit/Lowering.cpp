@@ -3544,13 +3544,13 @@ void LIRGenerator::visitWasmWrapU32Index(MWasmWrapU32Index* ins) {
   
   
 
-  
-  
-#if defined(JS_NUNBOX32)
-  static_assert(INT64LOW_INDEX == 0);
+#ifdef JS_64BIT
+  LAllocation index = useRegisterAtStart(input);
+#else
+  LAllocation index = useLowWordRegisterAtStart(input);
 #endif
 
-  auto* lir = new (alloc()) LWasmWrapU32Index(useRegisterAtStart(input));
+  auto* lir = new (alloc()) LWasmWrapU32Index(index);
   defineReuseInput(lir, ins, 0);
 }
 

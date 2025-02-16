@@ -98,16 +98,17 @@ void LIRGeneratorX86Shared::lowerForShiftInt64(LInstr* ins, MDefinition* mir,
 #ifdef JS_CODEGEN_X64
   } else if (std::is_same_v<LInstr, LShiftI64>) {
     rhsAlloc = useShiftRegister(rhs);
-#endif
+  } else {
+    rhsAlloc = useFixed(rhs, rcx);
+  }
+#else
   } else {
     
     
     
-    ensureDefined(rhs);
-    LUse use(ecx);
-    use.setVirtualRegister(rhs->virtualRegister());
-    rhsAlloc = use;
+    rhsAlloc = useLowWordFixed(rhs, ecx);
   }
+#endif
 
   if constexpr (std::is_same_v<LInstr, LShiftI64>) {
     ins->setLhs(useInt64RegisterAtStart(lhs));

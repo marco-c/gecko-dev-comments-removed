@@ -292,13 +292,22 @@ void LIRGeneratorARM::lowerForShift(LInstructionHelper<1, 2, 0>* ins,
 template <class LInstr>
 void LIRGeneratorARM::lowerForShiftInt64(LInstr* ins, MDefinition* mir,
                                          MDefinition* lhs, MDefinition* rhs) {
+  LAllocation rhsAlloc;
+  if (rhs->isConstant()) {
+    rhsAlloc = useOrConstantAtStart(rhs);
+  } else {
+    
+    
+    rhsAlloc = useLowWordRegisterAtStart(rhs);
+  }
+
   if constexpr (std::is_same_v<LInstr, LShiftI64>) {
     ins->setLhs(useInt64RegisterAtStart(lhs));
-    ins->setRhs(useRegisterOrConstant(rhs));
+    ins->setRhs(rhsAlloc);
     defineInt64ReuseInput(ins, mir, LShiftI64::LhsIndex);
   } else {
     ins->setInput(useInt64RegisterAtStart(lhs));
-    ins->setCount(useRegisterOrConstant(rhs));
+    ins->setCount(rhsAlloc);
     if (!rhs->isConstant()) {
       ins->setTemp0(temp());
     }
