@@ -78,8 +78,7 @@ module.exports = [
   "browser/extensions/formautofill/phonenumberutils/PhoneNumberMetaData.sys.mjs",
 
   
-  "browser/extensions/webcompat/data/injections.js",
-  "browser/extensions/webcompat/data/ua_overrides.js",
+  "browser/extensions/webcompat/run.js",
 
   
   "browser/extensions/newtab/logs/",
