@@ -2104,10 +2104,25 @@ UniquePtr<uint8_t[]> CanvasRenderingContext2D::GetImageBuffer(
   mBufferProvider->ReturnSnapshot(snapshot.forget());
 
   if (ret && ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
-    nsRFPService::RandomizePixels(
-        GetCookieJarSettings(), ret.get(), out_imageSize->width,
-        out_imageSize->height, out_imageSize->width * out_imageSize->height * 4,
-        SurfaceFormat::A8R8G8B8_UINT32);
+    bool randomize = true;
+    
+    
+    
+    if (StaticPrefs::
+            privacy_resistFingerprinting_randomization_canvas_disable_for_chrome()) {
+      bool isCallerChrome =
+          NS_IsMainThread() && nsContentUtils::IsCallerChrome();
+      if (isCallerChrome) {
+        randomize = false;
+      }
+    }
+    if (randomize) {
+      nsRFPService::RandomizePixels(
+          GetCookieJarSettings(), ret.get(), out_imageSize->width,
+          out_imageSize->height,
+          out_imageSize->width * out_imageSize->height * 4,
+          SurfaceFormat::A8R8G8B8_UINT32);
+    }
   }
 
   return ret;
