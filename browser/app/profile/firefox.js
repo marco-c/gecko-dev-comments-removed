@@ -530,10 +530,6 @@ pref("browser.urlbar.quicksuggest.dataCollection.enabled", false, sticky);
 pref("browser.urlbar.quicksuggest.contextualOptIn", false);
 
 
-
-pref("browser.urlbar.quicksuggest.contextualOptIn.topPosition", true);
-
-
 pref("browser.urlbar.quicksuggest.enabled", false);
 
 
