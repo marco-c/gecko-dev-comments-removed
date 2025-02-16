@@ -1112,6 +1112,9 @@ void gfxWindowsPlatform::GetCommonFallbackFonts(
       (b >= 0x20 && b <= 0x2b) || b == 0x2e ||  
       GetGenCategory(aCh) == nsUGenCategory::kSymbol ||
       GetGenCategory(aCh) == nsUGenCategory::kPunctuation) {
+    
+    
+    aFontList.AppendElement("Segoe UI");
     aFontList.AppendElement("Segoe UI Symbol");
     aFontList.AppendElement("Cambria Math");
   }
