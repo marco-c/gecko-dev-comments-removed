@@ -7,11 +7,27 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 CK_RV BUILTINSC_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList);
 
 CK_RV C_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList) {
   return BUILTINSC_GetFunctionList(ppFunctionList);
 }
+
+
+
+
+
 
 #ifdef __MINGW32__
 #  include "mozilla/Assertions.h"

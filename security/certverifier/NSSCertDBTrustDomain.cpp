@@ -1810,15 +1810,20 @@ bool LoadUserModuleFromXul(const char* moduleName,
   return true;
 }
 
-bool LoadIPCClientCertsModule(const nsCString& dir) {
+extern "C" {
+
+
+
+CK_RV IPCCC_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList);
+}  
+
+bool LoadIPCClientCertsModule() {
   
   
   
-  
-  
-  nsPrintfCString addrs("%p,%p", DoFindObjects, DoSign);
-  if (!LoadUserModuleAt(kIPCClientCertsModuleName.get(), "ipcclientcerts", dir,
-                        addrs.get())) {
+
+  if (!LoadUserModuleFromXul(kIPCClientCertsModuleName.get(),
+                             IPCCC_GetFunctionList)) {
     return false;
   }
   RunOnShutdown(

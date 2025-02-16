@@ -92,7 +92,7 @@ bool LoadOSClientCertsModule();
 
 
 
-bool LoadIPCClientCertsModule(const nsCString& dir);
+bool LoadIPCClientCertsModule();
 
 
 

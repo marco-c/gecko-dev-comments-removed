@@ -139,34 +139,8 @@ void TruncateFromLastDirectorySeparator(nsCString& path) {
 }
 
 bool LoadIPCClientCerts() {
-  
-  
-  UniqueFreePtr<char> pluginContainerPath(BinaryPath::Get());
-  if (!pluginContainerPath) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("failed to get get plugin-container path"));
-    return false;
-  }
-  nsAutoCString ipcClientCertsDirString(pluginContainerPath.get());
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  TruncateFromLastDirectorySeparator(ipcClientCertsDirString);
-#ifdef XP_MACOSX
-  TruncateFromLastDirectorySeparator(ipcClientCertsDirString);
-  TruncateFromLastDirectorySeparator(ipcClientCertsDirString);
-  TruncateFromLastDirectorySeparator(ipcClientCertsDirString);
-#endif
-  if (!LoadIPCClientCertsModule(ipcClientCertsDirString)) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("failed to load ipcclientcerts from '%s'",
-             ipcClientCertsDirString.get()));
+  if (!LoadIPCClientCertsModule()) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("failed to load ipcclientcerts"));
     return false;
   }
   return true;
