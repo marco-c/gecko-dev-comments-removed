@@ -24,7 +24,7 @@
       
       var eolState = cm.getStateAfter(pos.line);
       var inner = CodeMirror.innerMode(cm.getMode(), eolState);
-      if (inner.mode.name !== "markdown" && inner.mode.helperType !== "markdown") {
+      if (inner.mode.name !== "markdown") {
         cm.execCommand("newlineAndIndent");
         return;
       } else {
@@ -41,9 +41,7 @@
         return;
       }
       if (emptyListRE.test(line)) {
-        var endOfQuote = inQuote && />\s*$/.test(line)
-        var endOfList = !/>\s*$/.test(line)
-        if (endOfQuote || endOfList) cm.replaceRange("", {
+        if (!/>\s*$/.test(line)) cm.replaceRange("", {
           line: pos.line, ch: 0
         }, {
           line: pos.line, ch: pos.ch + 1

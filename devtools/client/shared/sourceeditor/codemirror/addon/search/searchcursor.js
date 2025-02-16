@@ -72,8 +72,8 @@
     }
   }
 
-  function lastMatchIn(string, regexp, endMargin) {
-      var cutOff = 0, match
+  function lastMatchIn(string, regexp) {
+    var cutOff = 0, match
     for (;;) {
       regexp.lastIndex = cutOff
       var newMatch = regexp.exec(string)
@@ -98,7 +98,8 @@
   }
 
   function searchRegexpBackwardMultiline(doc, regexp, start) {
-   var string, chunk = 1
+    regexp = ensureFlags(regexp, "gm")
+    var string, chunk = 1
     for (var line = start.line, first = doc.firstLine(); line >= first;) {
       for (var i = 0; i < chunk; i++) {
         var curLine = doc.getLine(line--)
@@ -198,7 +199,6 @@
 
   function SearchCursor(doc, query, pos, options) {
     this.atOccurrence = false
-    this.afterEmptyMatch = false
     this.doc = doc
     pos = pos ? doc.clipPos(pos) : Pos(0, 0)
     this.pos = {from: pos, to: pos}
@@ -234,29 +234,21 @@
     findPrevious: function() {return this.find(true)},
 
     find: function(reverse) {
-      var head = this.doc.clipPos(reverse ? this.pos.from : this.pos.to);
-      if (this.afterEmptyMatch && this.atOccurrence) {
-        
-        head = Pos(head.line, head.ch)
+      var result = this.matches(reverse, this.doc.clipPos(reverse ? this.pos.from : this.pos.to))
+
+      
+      
+      while (result && CodeMirror.cmpPos(result.from, result.to) == 0) {
         if (reverse) {
-          head.ch--;
-          if (head.ch < 0) {
-            head.line--;
-            head.ch = (this.doc.getLine(head.line) || "").length;
-          }
+          if (result.from.ch) result.from = Pos(result.from.line, result.from.ch - 1)
+          else if (result.from.line == this.doc.firstLine()) result = null
+          else result = this.matches(reverse, this.doc.clipPos(Pos(result.from.line - 1)))
         } else {
-          head.ch++;
-          if (head.ch > (this.doc.getLine(head.line) || "").length) {
-            head.ch = 0;
-            head.line++;
-          }
-        }
-        if (CodeMirror.cmpPos(head, this.doc.clipPos(head)) != 0) {
-           return this.atOccurrence = false
+          if (result.to.ch < this.doc.getLine(result.to.line).length) result.to = Pos(result.to.line, result.to.ch + 1)
+          else if (result.to.line == this.doc.lastLine()) result = null
+          else result = this.matches(reverse, Pos(result.to.line + 1, 0))
         }
       }
-      var result = this.matches(reverse, head)
-      this.afterEmptyMatch = result && CodeMirror.cmpPos(result.from, result.to) == 0
 
       if (result) {
         this.pos = result
