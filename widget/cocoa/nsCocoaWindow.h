@@ -366,6 +366,7 @@ class nsCocoaWindow final : public nsBaseWidget {
   void DestroyNativeWindow();
   void UpdateBounds();
   int32_t GetWorkspaceID();
+  void MoveVisibleWindowToWorkspace(int32_t workspaceID);
 
   void DoResize(double aX, double aY, double aWidth, double aHeight,
                 bool aRepaint, bool aConstrainToCurrentScreen);
@@ -463,6 +464,11 @@ class nsCocoaWindow final : public nsBaseWidget {
   bool mWasShown = false;
 
   int32_t mNumModalDescendants = 0;
+
+  
+  
+  int32_t mDeferredWorkspaceID = 0;
+
   InputContext mInputContext;
   NSWindowAnimationBehavior mWindowAnimationBehavior;
 

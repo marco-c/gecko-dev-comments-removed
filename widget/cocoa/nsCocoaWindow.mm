@@ -818,6 +818,16 @@ void nsCocoaWindow::Show(bool aState) {
       NS_OBJC_END_TRY_IGNORE_BLOCK;
     }
     SetSupportsNativeFullscreen(savedValueForSupportsNativeFullscreen);
+
+    
+    
+    
+    if (mDeferredWorkspaceID) {
+      NS_OBJC_BEGIN_TRY_IGNORE_BLOCK
+      MoveVisibleWindowToWorkspace(mDeferredWorkspaceID);
+      NS_OBJC_END_TRY_IGNORE_BLOCK
+      mDeferredWorkspaceID = 0;
+    }
   } else {
     
     if (mWindowType == WindowType::TopLevel ||
@@ -1134,18 +1144,28 @@ int32_t nsCocoaWindow::GetWorkspaceID() {
 void nsCocoaWindow::MoveToWorkspace(const nsAString& workspaceIDStr) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
-  if ([NSScreen screensHaveSeparateSpaces] && [[NSScreen screens] count] > 1) {
-    
-    
-    return;
-  }
-
   nsresult rv = NS_OK;
   int32_t workspaceID = workspaceIDStr.ToInteger(&rv);
   if (NS_FAILED(rv)) {
     return;
   }
 
+  
+  
+  
+  
+  
+  
+  if (mWindow.isVisible) {
+    MoveVisibleWindowToWorkspace(workspaceID);
+  } else {
+    mDeferredWorkspaceID = workspaceID;
+  }
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+void nsCocoaWindow::MoveVisibleWindowToWorkspace(int32_t workspaceID) {
   CGSConnection cid = _CGSDefaultConnection();
   int32_t currentSpace = GetWorkspaceID();
   
@@ -1198,8 +1218,6 @@ void nsCocoaWindow::MoveToWorkspace(const nsAString& workspaceIDStr) {
   RemoveWindowsFromSpaces(cid,
                           (__bridge CFArrayRef) @[ @([mWindow windowNumber]) ],
                           (__bridge CFArrayRef) @[ @(currentSpace) ]);
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::SuppressAnimation(bool aSuppress) {
