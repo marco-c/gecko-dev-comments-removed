@@ -38,12 +38,8 @@ class nsHttpConnection;
 enum Http2StreamBaseType { Normal, WebSocket, Tunnel, ServerPush };
 
 
-#define NS_HTTP2SESSION_IID                          \
-  {                                                  \
-    0xb23b147c, 0xc4f8, 0x4d6e, {                    \
-      0x84, 0x1a, 0x09, 0xf2, 0x9a, 0x01, 0x0d, 0xe7 \
-    }                                                \
-  }
+#define NS_HTTP2SESSION_IID \
+  {0xb23b147c, 0xc4f8, 0x4d6e, {0x84, 0x1a, 0x09, 0xf2, 0x9a, 0x01, 0x0d, 0xe7}}
 
 class Http2Session final : public ASpdySession,
                            public nsAHttpConnection,
@@ -300,7 +296,7 @@ class Http2Session final : public ASpdySession,
   void SendPriorityUpdateFrame(uint32_t streamID, uint8_t urgency,
                                bool incremental);
 
-  WebSocketSupport GetWebSocketSupport() override;
+  ExtendedCONNECTSupport GetExtendedCONNECTSupport() override;
 
   already_AddRefed<nsHttpConnection> CreateTunnelStream(
       nsAHttpTransaction* aHttpTransaction, nsIInterfaceRequestor* aCallbacks,
@@ -619,15 +615,14 @@ class Http2Session final : public ASpdySession,
   uint32_t mTrrStreams;
 
   
-  bool mEnableWebsockets;      
-  bool mPeerAllowsWebsockets;  
-                               
-  bool mProcessedWaitingWebsockets;  
-                                     
+  bool mEnableWebsockets = false;
+  
+  bool mPeerAllowsExtendedCONNECT = false;
+
   
   
   
-  bool mHasTransactionWaitingForWebsockets = false;
+  bool mHasTransactionWaitingForExtendedCONNECT = false;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Http2Session, NS_HTTP2SESSION_IID);

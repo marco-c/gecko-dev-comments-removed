@@ -36,7 +36,7 @@ class nsHttpRequestHead;
 class nsHttpConnectionInfo;
 class NullHttpTransaction;
 
-enum class WebSocketSupport { UNSURE, NO_SUPPORT, SUPPORTED };
+enum class ExtendedCONNECTSupport { UNSURE, NO_SUPPORT, SUPPORTED };
 
 
 
@@ -48,12 +48,8 @@ enum class WebSocketSupport { UNSURE, NO_SUPPORT, SUPPORTED };
 
 
 
-#define NS_AHTTPTRANSACTION_IID                      \
-  {                                                  \
-    0x2af6d634, 0x13e3, 0x494c, {                    \
-      0x89, 0x03, 0xc9, 0xdc, 0xe5, 0xc2, 0x2f, 0xc0 \
-    }                                                \
-  }
+#define NS_AHTTPTRANSACTION_IID \
+  {0x2af6d634, 0x13e3, 0x494c, {0x89, 0x03, 0xc9, 0xdc, 0xe5, 0xc2, 0x2f, 0xc0}}
 
 class nsAHttpTransaction : public nsSupportsWeakReference {
  public:
