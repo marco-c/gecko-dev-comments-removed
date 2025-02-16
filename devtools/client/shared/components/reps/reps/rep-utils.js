@@ -70,6 +70,10 @@ define(function (require, exports, module) {
   const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
   const { span } = dom;
 
+  const {
+    JSON_NUMBER,
+  } = require("resource://devtools/client/shared/components/reps/reps/constants.js");
+
   function escapeNewLines(value) {
     return value.replace(/\r/gm, "\\r").replace(/\n/gm, "\\n");
   }
@@ -564,6 +568,36 @@ define(function (require, exports, module) {
     return `${className} has-rtl-char`;
   }
 
+  
+
+
+
+
+
+
+
+
+
+  function parseJsonLossless(str) {
+    return JSON.parse(str, (key, parsedValue, { source }) => {
+      
+      
+      if (
+        typeof parsedValue === "number" &&
+        source !== parsedValue.toString() &&
+        
+        
+        source !== "-0"
+      ) {
+        
+        
+        return { source, type: JSON_NUMBER, parsedValue };
+      }
+
+      return parsedValue;
+    });
+  }
+
   module.exports = {
     interleave,
     isURL,
@@ -575,6 +609,7 @@ define(function (require, exports, module) {
     escapeString,
     wrapRender,
     cropMultipleLines,
+    parseJsonLossless,
     parseURLParams,
     parseURLEncodedText,
     getFileName,
