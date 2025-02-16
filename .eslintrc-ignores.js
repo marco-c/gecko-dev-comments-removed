@@ -82,7 +82,6 @@ module.exports = [
   "browser/extensions/webcompat/data/ua_overrides.js",
 
   
-  "browser/extensions/newtab/data/",
   "browser/extensions/newtab/logs/",
 
   
