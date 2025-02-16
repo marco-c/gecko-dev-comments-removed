@@ -771,16 +771,6 @@ SECStatus SSLGetClientAuthDataHook(void* arg, PRFileDesc* socket,
 
   nsTArray<nsTArray<uint8_t>> caNames(CollectCANames(caNamesDecoded));
 
-  
-  
-  
-  
-  
-  
-  
-  UniqueCERTCertList potentialClientCertificates(
-      FindClientCertificatesWithPrivateKeys());
-
   RefPtr<ClientAuthCertificateSelected> continuation(
       new ClientAuthCertificateSelected(info));
   
@@ -865,6 +855,11 @@ SECStatus SSLGetClientAuthDataHook(void* arg, PRFileDesc* socket,
     PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
     return SECWouldBlock;
   }
+
+  
+  
+  UniqueCERTCertList potentialClientCertificates(
+      FindClientCertificatesWithPrivateKeys());
 
   nsTArray<nsTArray<nsTArray<uint8_t>>> potentialClientCertificateChains;
   FilterPotentialClientCertificatesByCANames(potentialClientCertificates,
