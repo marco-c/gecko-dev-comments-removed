@@ -23,8 +23,6 @@
 #include "mozilla/dom/WebAuthnTransactionChild.h"
 #include "mozilla/dom/WebAuthnUtil.h"
 #include "mozilla/dom/WindowGlobalChild.h"
-#include "mozilla/JSONStringWriteFuncs.h"
-#include "mozilla/JSONWriter.h"
 
 #ifdef XP_WIN
 #  include "WinWebAuthnService.h"
@@ -54,40 +52,6 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(WebAuthnHandler)
 
 
 
-
-static nsresult AssembleClientData(
-    const nsAString& aOrigin, const CryptoBuffer& aChallenge,
-    const nsACString& aType,
-    const AuthenticationExtensionsClientInputs& aExtensions,
-     nsACString& aJsonOut) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsAutoCString challengeBase64;
-  nsresult rv =
-      Base64URLEncode(aChallenge.Length(), aChallenge.Elements(),
-                      Base64URLEncodePaddingPolicy::Omit, challengeBase64);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  
-  JSONStringRefWriteFunc f(aJsonOut);
-  JSONWriter w(f, JSONWriter::CollectionStyle::SingleLineStyle);
-  w.Start();
-  
-  w.StringProperty("type", aType);
-  
-  w.StringProperty("challenge", challengeBase64);
-  
-  w.StringProperty("origin", NS_ConvertUTF16toUTF8(aOrigin));
-  
-  w.End();
-
-  return NS_OK;
-}
 
 static uint8_t SerializeTransports(
     const mozilla::dom::Sequence<nsString>& aTransports) {
@@ -340,22 +304,9 @@ already_AddRefed<Promise> WebAuthnHandler::MakeCredential(
   
   
   
-  
-  
-  
-  
-  
 
   CryptoBuffer challenge;
   if (!challenge.Assign(aOptions.mChallenge)) {
-    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return promise.forget();
-  }
-
-  nsAutoCString clientDataJSON;
-  nsresult srv = AssembleClientData(origin, challenge, "webauthn.create"_ns,
-                                    aOptions.mExtensions, clientDataJSON);
-  if (NS_WARN_IF(NS_FAILED(srv))) {
     promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
   }
@@ -478,12 +429,6 @@ already_AddRefed<Promise> WebAuthnHandler::MakeCredential(
   WebAuthnMakeCredentialUserInfo userInfo(userId, aOptions.mUser.mName,
                                           aOptions.mUser.mDisplayName);
 
-  BrowsingContext* context = mWindow->GetBrowsingContext();
-  if (!context) {
-    promise->MaybeReject(NS_ERROR_DOM_OPERATION_ERR);
-    return promise.forget();
-  }
-
   
   if (aSignal.WasPassed() && aSignal.Value().Aborted()) {
     AutoJSAPI jsapi;
@@ -499,9 +444,8 @@ already_AddRefed<Promise> WebAuthnHandler::MakeCredential(
   }
 
   WebAuthnMakeCredentialInfo info(
-      origin, NS_ConvertUTF8toUTF16(rpId), challenge, clientDataJSON,
-      adjustedTimeout, excludeList, rpInfo, userInfo, coseAlgos, extensions,
-      authSelection, attestation, context->Top()->Id());
+      NS_ConvertUTF8toUTF16(rpId), challenge, adjustedTimeout, excludeList,
+      rpInfo, userInfo, coseAlgos, extensions, authSelection, attestation);
 
   
   
@@ -599,20 +543,8 @@ already_AddRefed<Promise> WebAuthnHandler::GetAssertion(
     return promise.forget();
   }
 
-  
-  
-  
-  
   CryptoBuffer challenge;
   if (!challenge.Assign(aOptions.mChallenge)) {
-    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return promise.forget();
-  }
-
-  nsAutoCString clientDataJSON;
-  rv = AssembleClientData(origin, challenge, "webauthn.get"_ns,
-                          aOptions.mExtensions, clientDataJSON);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
     promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
   }
@@ -738,12 +670,6 @@ already_AddRefed<Promise> WebAuthnHandler::GetAssertion(
         WebAuthnExtensionPrf(eval, evalByCredentialMaybe, evalByCredential));
   }
 
-  BrowsingContext* context = mWindow->GetBrowsingContext();
-  if (!context) {
-    promise->MaybeReject(NS_ERROR_DOM_OPERATION_ERR);
-    return promise.forget();
-  }
-
   
   if (aSignal.WasPassed() && aSignal.Value().Aborted()) {
     AutoJSAPI jsapi;
@@ -758,10 +684,9 @@ already_AddRefed<Promise> WebAuthnHandler::GetAssertion(
     return promise.forget();
   }
 
-  WebAuthnGetAssertionInfo info(origin, NS_ConvertUTF8toUTF16(rpId), challenge,
-                                clientDataJSON, adjustedTimeout, allowList,
-                                extensions, aOptions.mUserVerification,
-                                aConditionallyMediated, context->Top()->Id());
+  WebAuthnGetAssertionInfo info(
+      NS_ConvertUTF8toUTF16(rpId), challenge, adjustedTimeout, allowList,
+      extensions, aOptions.mUserVerification, aConditionallyMediated);
 
   
   
