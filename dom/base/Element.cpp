@@ -2101,9 +2101,11 @@ void Element::GetElementsWithGrid(nsTArray<RefPtr<Element>>& aElements) {
                 elem->GetPrimaryFrame())) {
           aElements.AppendElement(elem);
         }
+      }
 
-        
-        
+      
+      
+      if (elem->HasServoData()) {
         cur = cur->GetNextNode(this);
         continue;
       }
