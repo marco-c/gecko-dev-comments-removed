@@ -69,10 +69,14 @@ struct DeleteEntry {
 struct TextOffsetAttribute {
   
   
+  static const int32_t kOutsideLeaf = -1;
+  
+  
   int32_t mStartOffset;
   
   
   int32_t mEndOffset;
+  
   
   
   
