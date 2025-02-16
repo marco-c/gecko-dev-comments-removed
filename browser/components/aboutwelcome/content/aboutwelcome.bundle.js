@@ -616,22 +616,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     if (action.theme) {
       let themeToUse = action.theme === "<event>" ? event.currentTarget.value : this.props.initialTheme || action.theme;
       this.props.setActiveTheme(themeToUse);
-      if (props.content.tiles?.category?.type === "wallpaper") {
-        const theme = themeToUse.split("-")?.[1];
-        let actionWallpaper = {
-          ...props.content.tiles.category.action
-        };
-        actionWallpaper.data.actions.forEach(async wpAction => {
-          if (wpAction.data.pref.name?.includes("dark")) {
-            wpAction.data.pref.value = `dark-${theme}`;
-          } else {
-            wpAction.data.pref.value = `light-${theme}`;
-          }
-          _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.handleUserAction(actionWallpaper);
-        });
-      } else {
-        window.AWSelectTheme(themeToUse);
-      }
+      window.AWSelectTheme(themeToUse);
     }
     if (action.picker) {
       let options = props.content.tiles.data;
@@ -2292,7 +2277,6 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
  var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
-
 
 
 
