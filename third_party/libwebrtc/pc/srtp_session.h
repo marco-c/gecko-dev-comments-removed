@@ -44,38 +44,18 @@ class SrtpSession {
 
   
   
-  [[deprecated("Pass ZeroOnFreeBuffer to SetSend")]] bool SetSend(
-      int crypto_suite,
-      const uint8_t* key,
-      size_t len,
-      const std::vector<int>& extension_ids);
   bool SetSend(int crypto_suite,
                const rtc::ZeroOnFreeBuffer<uint8_t>& key,
                const std::vector<int>& extension_ids);
-  [[deprecated("Pass ZeroOnFreeBuffer to UpdateSend")]] bool UpdateSend(
-      int crypto_suite,
-      const uint8_t* key,
-      size_t len,
-      const std::vector<int>& extension_ids);
   bool UpdateSend(int crypto_suite,
                   const rtc::ZeroOnFreeBuffer<uint8_t>& key,
                   const std::vector<int>& extension_ids);
 
   
   
-  [[deprecated("Pass ZeroOnFreeBuffer to SetReceive")]] bool SetRecv(
-      int crypto_suite,
-      const uint8_t* key,
-      size_t len,
-      const std::vector<int>& extension_ids);
   bool SetReceive(int crypto_suite,
                   const rtc::ZeroOnFreeBuffer<uint8_t>& key,
                   const std::vector<int>& extension_ids);
-  [[deprecated("Pass ZeroOnFreeBuffer to UpdateReceive")]] bool UpdateRecv(
-      int crypto_suite,
-      const uint8_t* key,
-      size_t len,
-      const std::vector<int>& extension_ids);
   bool UpdateReceive(int crypto_suite,
                      const rtc::ZeroOnFreeBuffer<uint8_t>& key,
                      const std::vector<int>& extension_ids);
