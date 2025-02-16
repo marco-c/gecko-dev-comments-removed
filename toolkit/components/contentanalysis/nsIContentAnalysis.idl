@@ -201,6 +201,14 @@ interface nsIContentAnalysisRequest : nsISupports
 
   
   readonly attribute WindowGlobalParent windowGlobalParent;
+
+  
+  
+  attribute ACString userActionId;
+
+  
+  
+  attribute int64_t userActionRequestsCount;
 };
 
 [scriptable, builtinclass, uuid(9679545f-4256-4c90-9654-90292c355d25)]
