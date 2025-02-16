@@ -12,6 +12,8 @@ ChromeUtils.defineESModuleGetters(this, {
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.sys.mjs",
   UpdateListener: "resource://gre/modules/UpdateListener.sys.mjs",
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
+  SelectableProfileService:
+    "resource:///modules/profiles/SelectableProfileService.sys.mjs",
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
   WindowsLaunchOnLogin: "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
@@ -530,6 +532,16 @@ var gMainPane = {
     ) {
       let backupGroup = document.getElementById("dataBackupGroup");
       backupGroup.removeAttribute("data-hidden-from-search");
+    }
+
+    if (!SelectableProfileService.isEnabled) {
+      
+      
+      document
+        .getElementById("profilesGroup")
+        .setAttribute("style", "display: none !important");
+    } else {
+      setEventListener("manage-profiles", "command", gMainPane.manageProfiles);
     }
 
     
@@ -1785,6 +1797,15 @@ var gMainPane = {
       let setDefaultPane = document.getElementById("setDefaultPane");
       setDefaultPane.classList.toggle("is-default", isDefault);
     }
+  },
+
+  
+
+
+  manageProfiles() {
+    SelectableProfileService.maybeSetupDataStore().then(() => {
+      gSubDialog.open("about:profilemanager");
+    });
   },
 
   

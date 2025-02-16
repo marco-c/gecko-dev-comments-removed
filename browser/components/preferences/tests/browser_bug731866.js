@@ -10,6 +10,7 @@ const cookieBannerHandlingDisabled = !SpecialPowers.getBoolPref(
 const backupGroupDisabled = !SpecialPowers.getBoolPref(
   "browser.backup.preferences.ui.enabled"
 );
+const profilesGroupDisabled = !SelectableProfileService.isEnabled;
 const updatePrefContainers = ["updatesCategory", "updateApp"];
 const updateContainersGroupDisabled =
   AppConstants.platform === "win" &&
@@ -66,6 +67,11 @@ function checkElements(expectedPane) {
     
     if (element.id == "dataBackupGroup" && backupGroupDisabled) {
       is_element_hidden(element, "Disabled dataBackupGroup should be hidden");
+      continue;
+    }
+
+    
+    if (element.id === "profilesGroup" && profilesGroupDisabled) {
       continue;
     }
 
