@@ -200,6 +200,8 @@ typedef struct {
   int last_target_size_keyframe;
   int frames_since_scene_change;
   int perc_spatial_flat_blocks;
+  int num_col_blscroll_last_tl0;
+  int num_row_blscroll_last_tl0;
 
   int avg_frame_bandwidth;  
   int min_frame_bandwidth;  
