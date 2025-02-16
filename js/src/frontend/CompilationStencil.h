@@ -1313,6 +1313,8 @@ struct CompilationStencil {
 
   bool isModule() const;
 
+  bool hasAsmJS() const;
+
   bool hasMultipleReference() const { return refCount_ > 1; }
 
   bool hasOwnedBorrow() const {
@@ -1463,6 +1465,8 @@ struct InitialStencilAndDelazifications {
   
   CompilationStencil* getMerged(FrontendContext* fc) const;
 
+  bool hasAsmJS() const;
+
   
   [[nodiscard]] static bool instantiateStencils(
       JSContext* cx, CompilationInput& input,
@@ -1610,6 +1614,8 @@ struct ExtensibleCompilationStencil {
   }
 
   bool isModule() const;
+
+  bool hasAsmJS() const;
 
   inline size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {

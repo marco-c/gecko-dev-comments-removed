@@ -128,7 +128,7 @@ static bool StartCollectingDelazifications(JSContext* cx,
   
   
   
-  if (stencil->getInitial()->asmJS) {
+  if (stencil->getInitial()->hasAsmJS()) {
     return true;
   }
 
