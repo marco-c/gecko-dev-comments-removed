@@ -21,8 +21,9 @@ namespace mozilla::dom {
 
 class WebAuthnTransactionChild final : public PWebAuthnTransactionChild {
  public:
-  NS_INLINE_DECL_REFCOUNTING(WebAuthnTransactionChild);
-  explicit WebAuthnTransactionChild(WebAuthnManagerBase* aManager);
+  NS_INLINE_DECL_REFCOUNTING(WebAuthnTransactionChild, override);
+
+  WebAuthnTransactionChild() = default;
 
   
   
@@ -47,6 +48,8 @@ class WebAuthnTransactionChild final : public PWebAuthnTransactionChild {
   void ActorDestroy(ActorDestroyReason why) override;
 
   void Disconnect();
+
+  void SetManager(WebAuthnManagerBase* aMananger);
 
  private:
   ~WebAuthnTransactionChild() = default;
