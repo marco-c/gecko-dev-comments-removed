@@ -3,29 +3,8 @@
 
 
 
+
 interface GleanImpl {
-
-  
-
-  addonsManager: {
-    install: GleanEvent;
-    update: GleanEvent;
-    installStats: GleanEvent;
-    manage: GleanEvent;
-    report: GleanEvent;
-    reportSuspiciousSite: GleanEvent;
-  }
-
-  blocklist: {
-    lastModifiedRsAddonsMblf: GleanDatetime;
-    mlbfSource: GleanString;
-    mlbfGenerationTime: GleanDatetime;
-    mlbfStashTimeOldest: GleanDatetime;
-    mlbfStashTimeNewest: GleanDatetime;
-    addonBlockChange: GleanEvent;
-  }
-
-  
 
   extensions: {
     useRemotePref: GleanBoolean;
@@ -50,12 +29,7 @@ interface GleanImpl {
   extensionsData: {
     migrateResult: GleanEvent;
     storageLocalError: GleanEvent;
-  }
-
-  extensionsQuarantinedDomains: {
-    listsize: GleanQuantity;
-    listhash: GleanString;
-    remotehash: GleanString;
+    syncUsageQuotas: GleanEvent;
   }
 
   extensionsCounters: {
@@ -70,10 +44,7 @@ interface GleanImpl {
     eventPageRunningTime: GleanCustomDistribution;
     extensionStartup: GleanTimingDistribution;
     pageActionPopupOpen: GleanTimingDistribution;
-    storageLocalGetJson: GleanTimingDistribution;
-    storageLocalSetJson: GleanTimingDistribution;
     storageLocalGetIdb: GleanTimingDistribution;
     storageLocalSetIdb: GleanTimingDistribution;
   }
-
 }
