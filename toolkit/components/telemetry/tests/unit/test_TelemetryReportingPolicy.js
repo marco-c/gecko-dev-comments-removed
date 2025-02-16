@@ -21,8 +21,8 @@ const { Policy, TelemetryReportingPolicy } = ChromeUtils.importESModule(
 
 
 
-const skipOnAndroid = () => ({
-  skip_if: () => AppConstants.platform === "android",
+const skipIfNotBrowser = () => ({
+  skip_if: () => AppConstants.MOZ_BUILD_APP != "browser",
 });
 
 const TEST_CHANNEL = "TestChannelABC";
@@ -112,13 +112,13 @@ add_setup(async function test_setup() {
   TelemetryReportingPolicy.setup();
 });
 
-add_setup(skipOnAndroid(), async () => {
+add_setup(skipIfNotBrowser(), async () => {
   
   await ExperimentManager.onStartup();
   await ExperimentAPI.ready();
 });
 
-add_task(skipOnAndroid(), async function test_firstRun() {
+add_task(skipIfNotBrowser(), async function test_firstRun() {
   await Services.search.init();
 
   const FIRST_RUN_TIMEOUT_MSEC = 60 * 1000; 
@@ -444,7 +444,7 @@ add_task(async function test_canSend() {
   await PingServer.stop();
 });
 
-add_task(skipOnAndroid(), async function test_feature_prefs() {
+add_task(skipIfNotBrowser(), async function test_feature_prefs() {
   
   
   function assertPrefs(
@@ -604,64 +604,76 @@ async function doOneModalFlow(version) {
   sinon.restore();
 }
 
-add_task(skipOnAndroid(), async function test_modal_flow_before_notification() {
-  
-  
-  
-  
+add_task(
+  skipIfNotBrowser(),
+  async function test_modal_flow_before_notification() {
+    
+    
+    
+    
 
-  fakeResetAcceptedPolicy();
-  Services.prefs.clearUserPref(TelemetryUtils.Preferences.FirstRun);
+    fakeResetAcceptedPolicy();
+    Services.prefs.clearUserPref(TelemetryUtils.Preferences.FirstRun);
 
-  await doOneModalFlow(900);
+    await doOneModalFlow(900);
 
-  
-  Assert.equal(
-    Services.prefs.getIntPref(TelemetryUtils.Preferences.AcceptedPolicyVersion),
-    900
-  );
-});
+    
+    Assert.equal(
+      Services.prefs.getIntPref(
+        TelemetryUtils.Preferences.AcceptedPolicyVersion
+      ),
+      900
+    );
+  }
+);
 
-add_task(skipOnAndroid(), async function test_modal_flow_after_notification() {
-  
-  
-  
-  
+add_task(
+  skipIfNotBrowser(),
+  async function test_modal_flow_after_notification() {
+    
+    
+    
+    
 
-  unsetMinimumPolicyVersion();
-  Services.prefs.clearUserPref(TelemetryUtils.Preferences.CurrentPolicyVersion);
+    unsetMinimumPolicyVersion();
+    Services.prefs.clearUserPref(
+      TelemetryUtils.Preferences.CurrentPolicyVersion
+    );
 
-  fakeResetAcceptedPolicy();
-  Services.prefs.setBoolPref(TelemetryUtils.Preferences.FirstRun, false);
+    fakeResetAcceptedPolicy();
+    Services.prefs.setBoolPref(TelemetryUtils.Preferences.FirstRun, false);
 
-  TelemetryReportingPolicy.reset();
+    TelemetryReportingPolicy.reset();
 
-  
-  fakeNow(2012, 11, 11);
-  TelemetryReportingPolicy.testInfobarShown();
-  Assert.ok(
-    TelemetryReportingPolicy.testIsUserNotified(),
-    "User is notified after seeing the legacy infobar"
-  );
+    
+    fakeNow(2012, 11, 11);
+    TelemetryReportingPolicy.testInfobarShown();
+    Assert.ok(
+      TelemetryReportingPolicy.testIsUserNotified(),
+      "User is notified after seeing the legacy infobar"
+    );
 
-  Assert.ok(
-    Services.prefs.getIntPref(
-      TelemetryUtils.Preferences.AcceptedPolicyVersion
-    ) < 900,
-    "Before, the user has not accepted experiment/rollout version"
-  );
+    Assert.ok(
+      Services.prefs.getIntPref(
+        TelemetryUtils.Preferences.AcceptedPolicyVersion
+      ) < 900,
+      "Before, the user has not accepted experiment/rollout version"
+    );
 
-  
-  await doOneModalFlow(900);
+    
+    await doOneModalFlow(900);
 
-  Assert.ok(
-    TelemetryReportingPolicy.testIsUserNotified(),
-    "User is notified after seeing the experiment modal"
-  );
+    Assert.ok(
+      TelemetryReportingPolicy.testIsUserNotified(),
+      "User is notified after seeing the experiment modal"
+    );
 
-  Assert.equal(
-    Services.prefs.getIntPref(TelemetryUtils.Preferences.AcceptedPolicyVersion),
-    900,
-    "After, the user has accepted the experiment/rollout version."
-  );
-});
+    Assert.equal(
+      Services.prefs.getIntPref(
+        TelemetryUtils.Preferences.AcceptedPolicyVersion
+      ),
+      900,
+      "After, the user has accepted the experiment/rollout version."
+    );
+  }
+);
