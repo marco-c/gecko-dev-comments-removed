@@ -239,6 +239,24 @@ MOZ_NoReturn(int aLine) {
 
 
 
+
+
+
+
+#  ifdef MOZ_UBSAN
+#    define MOZ_CRASH_WRITE_ADDR 0x1
+#  else
+#    define MOZ_CRASH_WRITE_ADDR NULL
+#  endif
+
+
+
+
+
+
+
+
+
 #  if !defined(MOZ_ASAN)
 static inline void MOZ_CrashSequence(void* aAddress, intptr_t aLine) {
 #    if defined(__i386__) || defined(__x86_64__)
@@ -260,27 +278,11 @@ static inline void MOZ_CrashSequence(void* aAddress, intptr_t aLine) {
 #      warning \
           "Unsupported architecture, replace the code below with assembly suitable to crash the process"
   asm volatile("" ::: "memory");
-  *((volatile int*)MOZ_CRASH_WRITE_ADDR) = line; 
+  *((volatile int*)MOZ_CRASH_WRITE_ADDR) = aLine; 
 #    endif
 }
 #  else
 #    define MOZ_CrashSequence(x, y) __builtin_trap()
-#  endif
-
-
-
-
-
-
-
-
-
-
-
-#  ifdef MOZ_UBSAN
-#    define MOZ_CRASH_WRITE_ADDR 0x1
-#  else
-#    define MOZ_CRASH_WRITE_ADDR NULL
 #  endif
 
 #  ifdef __cplusplus
