@@ -281,7 +281,22 @@ class DefaultLoader(BaseManifestLoader):
         manifests = {chunk_by_runtime.get_manifest(t) for t in tests}
 
         filters = []
-        if json.loads(mozinfo["tag"]):
+        
+        
+        
+        
+        
+        
+        
+        
+        assert suite not in ["gtest", "cppunittest", "jittest"]
+        if suite not in [
+            "crashtest",
+            "crashtest-qr",
+            "jsreftest",
+            "reftest",
+            "reftest-qr",
+        ] and json.loads(mozinfo["tag"]):
             filters.extend([tags([x]) for x in json.loads(mozinfo["tag"])])
 
         
