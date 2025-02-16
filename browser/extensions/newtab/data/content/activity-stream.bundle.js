@@ -10062,6 +10062,9 @@ const PREF_TOPIC_SELECTION_POSITION = "discoverystream.sections.topicSelection.p
 
 function InlineTopicSelection() {
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+  const focusedRef = (0,external_React_namespaceObject.useRef)(null);
+  const focusRef = (0,external_React_namespaceObject.useRef)(null);
+  const [focusedIndex, setFocusedIndex] = (0,external_React_namespaceObject.useState)(0);
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const following = prefs[PREF_FOLLOWED_SECTIONS] ? prefs[PREF_FOLLOWED_SECTIONS].split(", ") : [];
   
@@ -10108,6 +10111,29 @@ function InlineTopicSelection() {
     }));
   }, [dispatch, prefs]);
   const ref = useIntersectionObserver(handleIntersection);
+  const onKeyDown = (0,external_React_namespaceObject.useCallback)(e => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      
+      e.preventDefault();
+    }
+    if (focusedRef.current?.nextSibling?.querySelector("input") && e.key === "ArrowDown") {
+      focusedRef.current.nextSibling.querySelector("input").tabIndex = 0;
+      focusedRef.current.nextSibling.querySelector("input").focus();
+    }
+    if (focusedRef.current?.previousSibling?.querySelector("input") && e.key === "ArrowUp") {
+      focusedRef.current.previousSibling.querySelector("input").tabIndex = 0;
+      focusedRef.current.previousSibling.querySelector("input").focus();
+    }
+  }, []);
+  function onWrapperFocus() {
+    focusRef.current?.addEventListener("keydown", onKeyDown);
+  }
+  function onWrapperBlur() {
+    focusRef.current?.removeEventListener("keydown", onKeyDown);
+  }
+  function onItemFocus(index) {
+    setFocusedIndex(index);
+  }
 
   
   
@@ -10141,11 +10167,15 @@ function InlineTopicSelection() {
   }, external_React_default().createElement("h2", null, "Follow topics to personalize your feed"), external_React_default().createElement("p", {
     className: "inline-selection-copy"
   }, "We will bring you personalized content, all while respecting your privacy. You'll have powerful control over what content you see and what you don't."), external_React_default().createElement("ul", {
-    className: "topic-list"
+    className: "topic-list",
+    onFocus: onWrapperFocus,
+    onBlur: onWrapperBlur,
+    ref: focusRef
   }, topics.map((topic, index) => {
     const checked = following.includes(topic.id);
     return external_React_default().createElement("li", {
-      key: topic.id
+      key: topic.id,
+      ref: index === focusedIndex ? focusedRef : null
     }, external_React_default().createElement("label", null, external_React_default().createElement("input", {
       type: "checkbox",
       id: topic.id,
@@ -10153,7 +10183,10 @@ function InlineTopicSelection() {
       checked: checked,
       "aria-checked": checked,
       onChange: e => handleChange(e, index),
-      tabIndex: -1
+      tabIndex: index === focusedIndex ? 0 : -1,
+      onFocus: () => {
+        onItemFocus(index);
+      }
     }), external_React_default().createElement("span", {
       className: "topic-item-label"
     }, topic.label), external_React_default().createElement("div", {
