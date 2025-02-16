@@ -24,8 +24,7 @@ namespace a11y {
 
 
 
-static constexpr uint32_t kMaxAccsPerMessage =
-    IPC::Channel::kMaximumMessageSize / (2 * 1024);
+static constexpr uint32_t kMaxAccsPerMessage = 1000;
 
 
 void DocAccessibleChild::FlattenTree(LocalAccessible* aRoot,
@@ -88,13 +87,12 @@ void DocAccessibleChild::InsertIntoIpcTree(LocalAccessible* aChild,
   FlattenTree(aChild, shownTree);
   uint32_t totalAccs = shownTree.Length();
   nsTArray<AccessibleData> data(std::min(
-      kMaxAccsPerMessage - mMutationEventBatcher.GetCurrentBatchAccCount(),
-      totalAccs));
+      kMaxAccsPerMessage - mMutationEventBatcher.AccCount(), totalAccs));
 
   for (uint32_t accIndex = 0; accIndex < totalAccs; ++accIndex) {
     
     
-    if (data.Length() + mMutationEventBatcher.GetCurrentBatchAccCount() ==
+    if (data.Length() + mMutationEventBatcher.AccCount() ==
         kMaxAccsPerMessage) {
       if (ipc::ProcessChild::ExpectingShutdown()) {
         return;
@@ -102,7 +100,7 @@ void DocAccessibleChild::InsertIntoIpcTree(LocalAccessible* aChild,
       
       
       const uint32_t accCount = data.Length();
-      AppendMutationEventData(
+      PushMutationEventData(
           ShowEventData{std::move(data), std::move(aSuppressShowEvent), false,
                         false},
           accCount);
@@ -120,7 +118,7 @@ void DocAccessibleChild::InsertIntoIpcTree(LocalAccessible* aChild,
   }
   if (!data.IsEmpty()) {
     const uint32_t accCount = data.Length();
-    AppendMutationEventData(
+    PushMutationEventData(
         ShowEventData{std::move(data), std::move(aSuppressShowEvent), true,
                       false},
         accCount);
@@ -132,9 +130,10 @@ void DocAccessibleChild::ShowEvent(AccShowEvent* aShowEvent) {
   InsertIntoIpcTree(child,  false);
 }
 
-void DocAccessibleChild::AppendMutationEventData(MutationEventData aData,
-                                                 uint32_t aAccCount) {
-  mMutationEventBatcher.AppendMutationEventData(std::move(aData), aAccCount);
+void DocAccessibleChild::PushMutationEventData(MutationEventData aData,
+                                               uint32_t aAccCount) {
+  mMutationEventBatcher.PushMutationEventData(std::move(aData), aAccCount,
+                                              *this);
 }
 
 void DocAccessibleChild::SendQueuedMutationEvents() {
@@ -463,8 +462,8 @@ HyperTextAccessible* DocAccessibleChild::IdToHyperTextAccessible(
   return acc && acc->IsHyperText() ? acc->AsHyperText() : nullptr;
 }
 
-void DocAccessibleChild::MutationEventBatcher::AppendMutationEventData(
-    MutationEventData aData, uint32_t aAccCount) {
+void DocAccessibleChild::MutationEventBatcher::PushMutationEventData(
+    MutationEventData aData, uint32_t aAccCount, DocAccessibleChild& aDocAcc) {
   
   
   
@@ -480,49 +479,31 @@ void DocAccessibleChild::MutationEventBatcher::AppendMutationEventData(
   
   
   
-  if (mCurrentBatchAccCount + aAccCount == kMaxAccsPerMessage) {
+  if (mAccCount + aAccCount == kMaxAccsPerMessage) {
     mMutationEventData.AppendElement(std::move(aData));
-    mBatchBoundaries.AppendElement(mMutationEventData.Length());
-    mCurrentBatchAccCount = 0;
+    SendQueuedMutationEvents(aDocAcc);
     return;
   }
 
   
   
-  if (mCurrentBatchAccCount + aAccCount > kMaxAccsPerMessage) {
-    mBatchBoundaries.AppendElement(mMutationEventData.Length());
-    mCurrentBatchAccCount = 0;
+  if (mAccCount + aAccCount > kMaxAccsPerMessage) {
+    SendQueuedMutationEvents(aDocAcc);
   }
   mMutationEventData.AppendElement(std::move(aData));
-  mCurrentBatchAccCount += aAccCount;
+  mAccCount += aAccCount;
 }
 
 void DocAccessibleChild::MutationEventBatcher::SendQueuedMutationEvents(
     DocAccessibleChild& aDocAcc) {
-  
-  if (mCurrentBatchAccCount > 0) {
-    mBatchBoundaries.AppendElement(mMutationEventData.Length());
+  if (ipc::ProcessChild::ExpectingShutdown()) {
+    return;
   }
-
-  
-  size_t batchStartIndex = 0;
-  for (size_t batchEndIndex : mBatchBoundaries) {
-    Span<const MutationEventData> batch{
-        mMutationEventData.Elements() + batchStartIndex,
-        mMutationEventData.Elements() + batchEndIndex};
-    if (ipc::ProcessChild::ExpectingShutdown()) {
-      break;
-    }
-    if (!batch.IsEmpty()) {
-      aDocAcc.SendMutationEvents(batch);
-    }
-    batchStartIndex = batchEndIndex;
-  }
+  aDocAcc.SendMutationEvents(mMutationEventData);
 
   
   mMutationEventData.Clear();
-  mBatchBoundaries.Clear();
-  mCurrentBatchAccCount = 0;
+  mAccCount = 0;
 }
 
 }  

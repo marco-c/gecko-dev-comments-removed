@@ -55,7 +55,12 @@ class DocAccessibleChild : public PDocAccessibleChild {
   void InsertIntoIpcTree(LocalAccessible* aChild, bool aSuppressShowEvent);
   void ShowEvent(AccShowEvent* aShowEvent);
 
-  void AppendMutationEventData(MutationEventData aData, uint32_t aAccCount = 1);
+  
+
+
+
+
+  void PushMutationEventData(MutationEventData aData, uint32_t aAccCount = 1);
   void SendQueuedMutationEvents();
   size_t MutationEventQueueLength() const;
 
@@ -177,9 +182,10 @@ class DocAccessibleChild : public PDocAccessibleChild {
 
   
   struct MutationEventBatcher {
-    void AppendMutationEventData(MutationEventData aData, uint32_t aAccCount);
+    void PushMutationEventData(MutationEventData aData, uint32_t aAccCount,
+                               DocAccessibleChild& aDocAcc);
     void SendQueuedMutationEvents(DocAccessibleChild& aDocAcc);
-    uint32_t GetCurrentBatchAccCount() const { return mCurrentBatchAccCount; }
+    uint32_t AccCount() const { return mAccCount; }
     size_t EventCount() const { return mMutationEventData.Length(); }
 
    private:
@@ -189,13 +195,8 @@ class DocAccessibleChild : public PDocAccessibleChild {
     
     
     
-    nsTArray<size_t> mBatchBoundaries;
-
     
-    
-    
-    
-    uint32_t mCurrentBatchAccCount = 0;
+    uint32_t mAccCount = 0;
   };
   MutationEventBatcher mMutationEventBatcher;
 
