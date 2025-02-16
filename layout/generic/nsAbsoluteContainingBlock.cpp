@@ -285,11 +285,10 @@ static inline bool IsFixedPaddingSize(const LengthPercentage& aCoord) {
 static inline bool IsFixedMarginSize(const StyleMargin& aCoord) {
   return aCoord.ConvertsToLength();
 }
-static inline bool IsFixedOffset(
-    const nsStylePosition::AnchorResolvedInset& aInset) {
+static inline bool IsFixedOffset(const StyleInset& aInset) {
   
   
-  return aInset->ConvertsToLength();
+  return aInset.ConvertsToLength();
 }
 
 bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
@@ -331,7 +330,6 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
       return true;
     }
   }
-  const auto positionProperty = f->StyleDisplay()->mPosition;
   if (wm.IsVertical() ? aCBWidthChanged : aCBHeightChanged) {
     
     
@@ -344,11 +342,8 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
     
     if ((pos->BSizeDependsOnContainer(wm) &&
          !(pos->BSize(wm).IsAuto() &&
-           pos->GetAnchorResolvedInset(LogicalSide::BEnd, wm, positionProperty)
-               ->IsAuto() &&
-           !pos->GetAnchorResolvedInset(LogicalSide::BStart, wm,
-                                        positionProperty)
-                ->IsAuto())) ||
+           pos->mOffset.Get(LogicalSide::BEnd, wm).MaybeAuto() &&
+           !pos->mOffset.Get(LogicalSide::BStart, wm).MaybeAuto())) ||
         pos->MinBSizeDependsOnContainer(wm) ||
         pos->MaxBSizeDependsOnContainer(wm) ||
         !IsFixedPaddingSize(padding->mPadding.GetBStart(wm)) ||
@@ -370,8 +365,7 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
   
   
   if (aCBWidthChanged) {
-    if (!IsFixedOffset(
-            pos->GetAnchorResolvedInset(eSideLeft, positionProperty))) {
+    if (!IsFixedOffset(pos->mOffset.Get(eSideLeft))) {
       return true;
     }
     
@@ -383,18 +377,17 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
     
     if ((wm.GetInlineDir() == WritingMode::InlineDir::RTL ||
          wm.GetBlockDir() == WritingMode::BlockDir::RL) &&
-        !pos->GetAnchorResolvedInset(eSideRight, positionProperty)->IsAuto()) {
+        !pos->mOffset.Get(eSideRight).MaybeAuto()) {
       return true;
     }
   }
   if (aCBHeightChanged) {
-    if (!IsFixedOffset(
-            pos->GetAnchorResolvedInset(eSideTop, positionProperty))) {
+    if (!IsFixedOffset(pos->mOffset.Get(eSideTop))) {
       return true;
     }
     
     if (wm.GetInlineDir() == WritingMode::InlineDir::BTT &&
-        !pos->GetAnchorResolvedInset(eSideBottom, positionProperty)->IsAuto()) {
+        !pos->mOffset.Get(eSideBottom).MaybeAuto()) {
       return true;
     }
   }
@@ -939,20 +932,20 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
         stylePos
             ->GetAnchorResolvedInset(LogicalSide::IStart, outerWM,
                                      positionProperty)
-            ->IsAuto() ||
+            .IsAuto() ||
         stylePos
             ->GetAnchorResolvedInset(LogicalSide::IEnd, outerWM,
                                      positionProperty)
-            ->IsAuto();
+            .IsAuto();
     const bool bInsetAuto =
         stylePos
             ->GetAnchorResolvedInset(LogicalSide::BStart, outerWM,
                                      positionProperty)
-            ->IsAuto() ||
+            .IsAuto() ||
         stylePos
             ->GetAnchorResolvedInset(LogicalSide::BEnd, outerWM,
                                      positionProperty)
-            ->IsAuto();
+            .IsAuto();
     const LogicalSize logicalCBSizeOuterWM(outerWM, aContainingBlock.Size());
     const LogicalSize kidMarginBox{
         outerWM, margin.IStartEnd(outerWM) + kidSize.ISize(outerWM),

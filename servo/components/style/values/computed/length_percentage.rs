@@ -30,7 +30,10 @@ use crate::gecko_bindings::structs::GeckoFontMetrics;
 use crate::logical_geometry::PhysicalSide;
 use crate::values::animated::{Animate, Context as AnimatedContext, Procedure, ToAnimatedValue, ToAnimatedZero};
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
-use crate::values::generics::calc::{CalcUnits, PositivePercentageBasis};
+use crate::values::generics::calc::{
+    AnchorPositioningResolver, GenericCalcAnchorFunction, GenericCalcAnchorSizeFunction, CalcUnits,
+    PositivePercentageBasis,
+};
 use crate::values::generics::length::AnchorResolutionResult;
 use crate::values::generics::{calc, NonNegative};
 use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
@@ -228,6 +231,12 @@ enum Serializable {
     Percentage(Percentage),
 }
 
+impl From<CalcLengthPercentage> for LengthPercentage {
+    fn from(value: CalcLengthPercentage) -> Self {
+        Self::new_calc(value.node, value.clamping_mode, value.has_anchor_function)
+    }
+}
+
 impl LengthPercentage {
     
     #[inline]
@@ -241,11 +250,14 @@ impl LengthPercentage {
         Self::new_percent(Percentage::zero())
     }
 
-    fn to_calc_node(&self) -> CalcNode {
+    fn to_calc_node(&self) -> (CalcNode, bool) {
         match self.unpack() {
-            Unpacked::Length(l) => CalcNode::Leaf(CalcLengthPercentageLeaf::Length(l)),
-            Unpacked::Percentage(p) => CalcNode::Leaf(CalcLengthPercentageLeaf::Percentage(p)),
-            Unpacked::Calc(p) => p.node.clone(),
+            Unpacked::Length(l) => (CalcNode::Leaf(CalcLengthPercentageLeaf::Length(l)), false),
+            Unpacked::Percentage(p) => (
+                CalcNode::Leaf(CalcLengthPercentageLeaf::Percentage(p)),
+                false,
+            ),
+            Unpacked::Calc(p) => (p.node.clone(), p.has_anchor_function),
         }
     }
 
@@ -255,10 +267,9 @@ impl LengthPercentage {
             Unpacked::Percentage(p) => Self::new_percent(p),
             Unpacked::Calc(lp) => Self::new_calc_unchecked(Box::new(CalcLengthPercentage {
                 clamping_mode: lp.clamping_mode,
+                has_anchor_function: lp.has_anchor_function,
                 node: lp.node.map_leaves(|leaf| match *leaf {
-                    CalcLengthPercentageLeaf::Length(ref l) => {
-                        CalcLengthPercentageLeaf::Length(map_fn(*l))
-                    },
+                    CalcLengthPercentageLeaf::Length(ref l) => CalcLengthPercentageLeaf::Length(map_fn(*l)),
                     ref l => l.clone(),
                 }),
             })),
@@ -296,7 +307,7 @@ impl LengthPercentage {
     pub fn hundred_percent_minus(v: Self, clamping_mode: AllowedNumericType) -> Self {
         
         
-        let mut node = v.to_calc_node();
+        let (mut node, has_anchor_function) = v.to_calc_node();
         node.negate();
 
         let new_node = CalcNode::Sum(
@@ -307,7 +318,7 @@ impl LengthPercentage {
             .into(),
         );
 
-        Self::new_calc(new_node, clamping_mode)
+        Self::new_calc(new_node, clamping_mode, has_anchor_function)
     }
 
     
@@ -317,18 +328,38 @@ impl LengthPercentage {
             Percentage::hundred(),
         ))];
 
+        let mut has_anchor_function = false;
         for lp in list.iter() {
-            let mut node = lp.to_calc_node();
+            let (mut node, node_has_anchor_function) = lp.to_calc_node();
+            has_anchor_function |= node_has_anchor_function;
             node.negate();
             new_list.push(node)
         }
 
-        Self::new_calc(CalcNode::Sum(new_list.into()), clamping_mode)
+        Self::new_calc(
+            CalcNode::Sum(new_list.into()),
+            clamping_mode,
+            has_anchor_function,
+        )
     }
 
     
     #[inline]
-    pub fn new_calc(mut node: CalcNode, clamping_mode: AllowedNumericType) -> Self {
+    pub fn new_calc_from(calc_length_percentage: CalcLengthPercentage) -> Self {
+        Self::new_calc(
+            calc_length_percentage.node,
+            calc_length_percentage.clamping_mode,
+            calc_length_percentage.has_anchor_function,
+        )
+    }
+
+    
+    #[inline]
+    pub fn new_calc(
+        mut node: CalcNode,
+        clamping_mode: AllowedNumericType,
+        has_anchor_function: bool,
+    ) -> Self {
         node.simplify_and_sort();
 
         match node {
@@ -352,6 +383,7 @@ impl LengthPercentage {
             _ => Self::new_calc_unchecked(Box::new(CalcLengthPercentage {
                 clamping_mode,
                 node,
+                has_anchor_function,
             })),
         }
     }
@@ -460,7 +492,7 @@ impl LengthPercentage {
         match self.unpack() {
             Unpacked::Length(l) => l,
             Unpacked::Percentage(p) => (basis * p.0).normalized(),
-            Unpacked::Calc(ref c) => c.resolve_non_anchor(basis),
+            Unpacked::Calc(ref c) => c.resolve(basis),
         }
     }
 
@@ -508,7 +540,7 @@ impl LengthPercentage {
         Some(match self.unpack() {
             Unpacked::Length(l) => Percentage(l.px() / basis.px()),
             Unpacked::Percentage(p) => p,
-            Unpacked::Calc(ref c) => Percentage(c.resolve_non_anchor(basis).px() / basis.px()),
+            Unpacked::Calc(ref c) => Percentage(c.resolve(basis).px() / basis.px()),
         })
     }
 
@@ -887,6 +919,11 @@ impl calc::CalcNodeLeaf for CalcLengthPercentageLeaf {
 }
 
 
+pub type CalcAnchorFunction = GenericCalcAnchorFunction<CalcLengthPercentageLeaf>;
+
+pub type CalcAnchorSizeFunction = GenericCalcAnchorSizeFunction<CalcLengthPercentageLeaf>;
+
+
 pub type CalcNode = calc::GenericCalcNode<CalcLengthPercentageLeaf>;
 
 
@@ -898,174 +935,98 @@ pub struct CalcLengthPercentage {
     #[animation(constant)]
     #[css(skip)]
     clamping_mode: AllowedNumericType,
+    
+    #[animation(constant)]
+    #[css(skip)]
+    has_anchor_function: bool,
     node: CalcNode,
-}
-
-struct ResolveContext {
-    percentage_used: bool,
-    anchor_function_used: bool,
-}
-
-impl Default for ResolveContext {
-    fn default() -> Self {
-        Self {
-            percentage_used: false,
-            anchor_function_used: false,
-        }
-    }
-}
-
-fn leaf_to_output(
-    leaf: &CalcLengthPercentageLeaf,
-    basis: Length,
-    context: &mut ResolveContext,
-) -> Result<CalcLengthPercentageLeaf, ()> {
-    Ok(if let CalcLengthPercentageLeaf::Percentage(p) = leaf {
-        context.percentage_used = true;
-        CalcLengthPercentageLeaf::Length(Length::new(basis.px() * p.0))
-    } else {
-        leaf.clone()
-    })
-}
-
-fn map_node(
-    node: &CalcNode,
-    basis: Length,
-    info: &CalcAnchorFunctionResolutionInfo,
-    context: &mut ResolveContext,
-) -> Result<Option<CalcNode>, ()> {
-    match node {
-        CalcNode::Anchor(f) => {
-            context.anchor_function_used = true;
-            match f.resolve(info.side, info.position_property) {
-                AnchorResolutionResult::Invalid => return Err(()),
-                AnchorResolutionResult::Fallback(fb) => {
-                    let mut inner_context = ResolveContext::default();
-                    
-                    
-                    let resolved = fb
-                        .resolve_map(
-                            |leaf, percentage_used| leaf_to_output(leaf, basis, percentage_used),
-                            |_, _| Ok(None),
-                            &mut inner_context,
-                        )
-                        .expect("anchor() fallback should have been resolvable?");
-                    context.percentage_used |= inner_context.percentage_used;
-                    debug_assert!(
-                        !inner_context.anchor_function_used,
-                        "Nested anchor function used?"
-                    );
-                    Ok(Some(CalcNode::Leaf(resolved)))
-                },
-                AnchorResolutionResult::Resolved(v) => Ok(Some(*v.clone())),
-            }
-        },
-        CalcNode::AnchorSize(f) => {
-            context.anchor_function_used = true;
-            match f.resolve(info.position_property) {
-                AnchorResolutionResult::Invalid => return Err(()),
-                AnchorResolutionResult::Fallback(fb) => {
-                    let mut inner_context = ResolveContext::default();
-                    
-                    let resolved = fb
-                        .resolve_map(
-                            |leaf, percentage_used| leaf_to_output(leaf, basis, percentage_used),
-                            |_, _| Ok(None),
-                            &mut inner_context,
-                        )
-                        .expect("anchor-size() fallbaack should have been resolvable?");
-                    context.percentage_used |= inner_context.percentage_used;
-                    debug_assert!(
-                        !inner_context.anchor_function_used,
-                        "Nested anchor function used?"
-                    );
-                    Ok(Some(CalcNode::Leaf(resolved)))
-                },
-                AnchorResolutionResult::Resolved(v) => Ok(Some(*v.clone())),
-            }
-        },
-        _ => Ok(None),
-    }
-}
-
-
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct CalcAnchorFunctionResolutionInfo {
-    
-    
-    
-    
-    
-    pub side: PhysicalSide,
-    
-    pub position_property: PositionProperty,
-}
-
-impl CalcAnchorFunctionResolutionInfo {
-    fn invalid() -> Self {
-        Self {
-            
-            position_property: PositionProperty::Static,
-            
-            side: PhysicalSide::Left,
-        }
-    }
-}
-
-
-pub struct CalcLengthPercentageResolution {
-    
-    pub result: Length,
-    
-    pub percentage_used: bool,
 }
 
 impl CalcLengthPercentage {
     
-    pub fn resolve_non_anchor(&self, basis: Length) -> Length {
-        self.resolve(basis, None)
-            .expect("Non-anchor calc resolution returned None")
-            .result
+    #[inline]
+    pub fn resolve(&self, basis: Length) -> Length {
+        
+        if let CalcLengthPercentageLeaf::Length(px) = self
+            .node
+            .resolve_map(|leaf| {
+                Ok(if let CalcLengthPercentageLeaf::Percentage(p) = leaf {
+                    CalcLengthPercentageLeaf::Length(Length::new(basis.px() * p.0))
+                } else {
+                    leaf.clone()
+                })
+            }, |node| {
+                match node {
+                    CalcNode::Anchor(f) => {
+                        if let Some(fallback) = f.fallback.as_ref() {
+                            return Ok((**fallback).clone());
+                        }
+                        Ok(CalcNode::Leaf(CalcLengthPercentageLeaf::Length(Length::zero())))
+                    },
+                    CalcNode::AnchorSize(f) => {
+                        if let Some(fallback) = f.fallback.as_ref() {
+                            return Ok((**fallback).clone());
+                        }
+                        Ok(CalcNode::Leaf(CalcLengthPercentageLeaf::Length(Length::zero())))
+                    }
+                    _ => Err(()),
+                }
+            })
+            .unwrap()
+        {
+            Length::new(self.clamping_mode.clamp(px.px())).normalized()
+        } else {
+            unreachable!("resolve_map should turn percentages to lengths, and parsing should ensure that we don't end up with a number");
+        }
     }
 
     
     
+    
+    
     #[inline]
-    pub fn resolve(
+    pub fn resolve_anchor_functions(
         &self,
-        basis: Length,
-        anchor_resolution_info: Option<CalcAnchorFunctionResolutionInfo>,
-    ) -> Option<CalcLengthPercentageResolution> {
-        let mut context = ResolveContext::default();
-        let info = anchor_resolution_info.unwrap_or(CalcAnchorFunctionResolutionInfo::invalid());
-        let result = self.node.resolve_map(
-            |leaf, context| leaf_to_output(leaf, basis, context),
-            |node, context| map_node(node, basis, &info, context),
-            &mut context,
-        );
+        side: PhysicalSide,
+        prop: PositionProperty,
+    ) -> Result<Self, ()> {
+        let result = self.node.resolve_anchor(side, prop, &Resolver)?;
+        Ok(Self {
+            clamping_mode: self.clamping_mode,
+            
+            
+            
+            has_anchor_function: false,
+            node: result,
+        })
+    }
+}
 
-        match result {
-            Ok(r) => match r {
-                CalcLengthPercentageLeaf::Length(px) => Some(CalcLengthPercentageResolution{
-                    result: Length::new(self.clamping_mode.clamp(px.px())).normalized(),
-                    percentage_used: context.percentage_used,
-                }),
-                _ => unreachable!("resolve_map should turn percentages to lengths, and parsing should ensure that we don't end up with a number"),
-            },
-            Err(()) => {
-                if anchor_resolution_info.is_some() {
-                    None
-                } else {
-                    
-                    
-                    debug_assert!(context.anchor_function_used, "Anchor function not used but failed resolution?");
-                    Some(CalcLengthPercentageResolution{
-                        result: Length::zero(),
-                        percentage_used: false,
-                    })
-                }
-            },
+struct Resolver;
+
+impl AnchorPositioningResolver<CalcLengthPercentageLeaf> for Resolver {
+    fn resolve_anchor(
+        &self,
+        f: &CalcAnchorFunction,
+        side: PhysicalSide,
+        position: PositionProperty,
+    ) -> Result<CalcNode, ()> {
+        match f.resolve(side, position) {
+            AnchorResolutionResult::Resolved(v) => Ok(*v),
+            AnchorResolutionResult::Fallback(v) => Ok(*v.clone()),
+            AnchorResolutionResult::Invalid => Err(()),
+        }
+    }
+
+    fn resolve_anchor_size(
+        &self,
+        f: &CalcAnchorSizeFunction,
+        position: PositionProperty,
+    ) -> Result<CalcNode, ()> {
+        match f.resolve(position) {
+            AnchorResolutionResult::Resolved(v) => Ok(*v),
+            AnchorResolutionResult::Fallback(v) => Ok(*v.clone()),
+            AnchorResolutionResult::Invalid => Err(()),
         }
     }
 }
@@ -1119,7 +1080,7 @@ impl specified::CalcLengthPercentage {
             },
         });
 
-        LengthPercentage::new_calc(node, self.clamping_mode)
+        LengthPercentage::new_calc(node, self.clamping_mode, self.has_anchor_function)
     }
 
     
@@ -1198,6 +1159,7 @@ impl specified::CalcLengthPercentage {
                 CalcLengthPercentageLeaf::Percentage(ref p) => Leaf::Percentage(p.0),
                 CalcLengthPercentageLeaf::Number(n) => Leaf::Number(*n),
             }),
+            has_anchor_function: computed.has_anchor_function,
         }
     }
 }
@@ -1228,12 +1190,15 @@ impl Animate for LengthPercentage {
                 }
 
                 let (l, r) = procedure.weights();
-                let one = product_with(self.to_calc_node(), l as f32);
-                let other = product_with(other.to_calc_node(), r as f32);
+                let (one, one_has_anchor_function) = self.to_calc_node();
+                let (other, other_has_anchor_function) = other.to_calc_node();
+                let one = product_with(one, l as f32);
+                let other = product_with(other, r as f32);
 
                 Self::new_calc(
                     CalcNode::Sum(vec![one, other].into()),
                     AllowedNumericType::All,
+                    one_has_anchor_function || other_has_anchor_function,
                 )
             },
         })
