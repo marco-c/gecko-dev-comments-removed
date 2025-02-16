@@ -7159,7 +7159,9 @@ void nsWindow::SetTransparencyMode(TransparencyMode aMode) {
 }
 
 void nsWindow::UpdateOpaqueRegion(const LayoutDeviceIntRegion& aRegion) {
-  if (aRegion == mOpaqueRegion) {
+  if (aRegion == mOpaqueRegion || IsPopup()) {
+    
+    
     return;
   }
   mOpaqueRegion = aRegion;
