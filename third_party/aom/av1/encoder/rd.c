@@ -400,7 +400,7 @@ int av1_compute_rd_mult_based_on_qindex(aom_bit_depth_t bit_depth,
     rdmult = (int64_t)((double)rdmult * def_rd_q_mult);
   }
 
-  if (tuning == AOM_TUNE_SSIMULACRA2) {
+  if (tuning == AOM_TUNE_IQ) {
     
     
     

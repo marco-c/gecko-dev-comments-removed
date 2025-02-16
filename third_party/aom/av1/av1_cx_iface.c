@@ -32,6 +32,7 @@
 #include "av1/av1_iface_common.h"
 #include "av1/common/av1_common_int.h"
 #include "av1/common/enums.h"
+#include "av1/common/quant_common.h"
 #include "av1/common/scale.h"
 #include "av1/encoder/bitstream.h"
 #include "av1/encoder/enc_enums.h"
@@ -850,7 +851,7 @@ static aom_codec_err_t validate_config(aom_codec_alg_priv_t *ctx,
   }
 #endif
 
-  RANGE_CHECK(extra_cfg, tuning, AOM_TUNE_PSNR, AOM_TUNE_SSIMULACRA2);
+  RANGE_CHECK(extra_cfg, tuning, AOM_TUNE_PSNR, AOM_TUNE_IQ);
 
   RANGE_CHECK(extra_cfg, dist_metric, AOM_DIST_METRIC_PSNR,
               AOM_DIST_METRIC_QM_PSNR);
@@ -1786,7 +1787,7 @@ static aom_codec_err_t ctrl_set_arnr_strength(aom_codec_alg_priv_t *ctx,
 
 static aom_codec_err_t handle_tuning(aom_codec_alg_priv_t *ctx,
                                      struct av1_extracfg *extra_cfg) {
-  if (extra_cfg->tuning == AOM_TUNE_SSIMULACRA2) {
+  if (extra_cfg->tuning == AOM_TUNE_IQ) {
     if (ctx->cfg.g_usage != AOM_USAGE_ALL_INTRA) return AOM_CODEC_INCAPABLE;
     
     
@@ -1794,8 +1795,8 @@ static aom_codec_err_t handle_tuning(aom_codec_alg_priv_t *ctx,
     
     
     extra_cfg->enable_qm = 1;
-    extra_cfg->qm_min = QM_FIRST_SSIMULACRA2;
-    extra_cfg->qm_max = QM_LAST_SSIMULACRA2;
+    extra_cfg->qm_min = QM_FIRST_IQ;
+    extra_cfg->qm_max = QM_LAST_IQ;
     
     
     extra_cfg->sharpness = 7;

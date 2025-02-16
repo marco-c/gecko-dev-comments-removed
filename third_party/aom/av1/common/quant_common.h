@@ -38,8 +38,8 @@ extern "C" {
 #define DEFAULT_QM_LAST 9
 #define DEFAULT_QM_FIRST_ALLINTRA 4
 #define DEFAULT_QM_LAST_ALLINTRA 10
-#define QM_FIRST_SSIMULACRA2 2
-#define QM_LAST_SSIMULACRA2 10
+#define QM_FIRST_IQ 2
+#define QM_LAST_IQ 10
 #define LOSSLESS_Q_STEP 4  // this should equal to dc/ac_qlookup_QTX[0]
 
 struct AV1Common;
@@ -108,8 +108,7 @@ static inline int aom_get_qmlevel_allintra(int qindex, int first, int last) {
 
 
 
-static inline int aom_get_qmlevel_luma_ssimulacra2(int qindex, int first,
-                                                   int last) {
+static inline int aom_get_qmlevel_luma_iq(int qindex, int first, int last) {
   int qm_level = 0;
 
   if (qindex <= 40) {
@@ -147,8 +146,8 @@ static inline int aom_get_qmlevel_luma_ssimulacra2(int qindex, int first,
 
 
 
-static inline int aom_get_qmlevel_444_chroma_ssimulacra2(int qindex, int first,
-                                                         int last) {
+static inline int aom_get_qmlevel_444_chroma_iq(int qindex, int first,
+                                                int last) {
   int chroma_qm_level = 0;
 
   if (qindex <= 12) {

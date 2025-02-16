@@ -34,23 +34,19 @@ struct ColorProperties {
 enum AlphaUse {
   ALPHA_STRAIGHT = 0,
   ALPHA_PREMULTIPLIED = 1,
-  ALPHA_SEGMENTATION = 2,
-  ALPHA_UNSPECIFIED = 3,
+  ALPHA_UNSPECIFIED = 2,
+  
 };
 
 struct AlphaInformation {
   AlphaUse alpha_use_idc;   
+  bool alpha_simple_flag;   
   uint8_t alpha_bit_depth;  
   uint8_t alpha_clip_idc;   
   bool alpha_incr_flag;
   uint16_t alpha_transparent_value;  
   uint16_t alpha_opaque_value;       
-  
   std::pair<ColorProperties, bool> alpha_color_description;
-  
-  
-  
-  std::vector<uint16_t> label_type_id;
 };
 
 struct DepthRepresentationElement {
@@ -66,10 +62,8 @@ struct DepthInformation {
   std::pair<DepthRepresentationElement, bool> d_min;
   std::pair<DepthRepresentationElement, bool> d_max;
   uint8_t depth_representation_type;  
-  uint8_t disparity_ref_view_id;      
-  uint8_t depth_nonlinear_precision;  
   
-  std::vector<uint32_t> depth_nonlinear_representation_model;
+  uint8_t disparity_ref_view_id;  
 };
 
 enum MultilayerUseCase {
@@ -87,6 +81,7 @@ enum MultilayerUseCase {
   MULTILAYER_USE_CASE_444_GLOBAL_DEPTH = 11,
   MULTILAYER_USE_CASE_444 = 12,
   MULTILAYER_USE_CASE_420_444 = 13,
+  
 };
 
 enum LayerType {
@@ -97,6 +92,7 @@ enum LayerType {
   MULTILAYER_LAYER_TYPE_TEXTURE_3 = 4,
   MULTILAYER_LAYER_TYPE_ALPHA = 5,
   MULTILAYER_LAYER_TYPE_DEPTH = 6,
+  
 };
 
 enum MultilayerMetadataScope {
@@ -111,6 +107,7 @@ enum MultilayerViewType {
   VIEW_CENTER = 1,
   VIEW_LEFT = 2,
   VIEW_RIGHT = 3,
+  
 };
 
 struct LayerMetadata {
@@ -130,8 +127,8 @@ struct LayerMetadata {
 };
 
 struct MultilayerMetadata {
-  MultilayerUseCase use_case;  
-  std::vector<LayerMetadata> layers;
+  MultilayerUseCase use_case;         
+  std::vector<LayerMetadata> layers;  
 };
 
 

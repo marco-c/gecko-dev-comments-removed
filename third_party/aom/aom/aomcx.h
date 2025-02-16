@@ -673,6 +673,7 @@ enum aome_enc_control_id {
 
 
 
+
   AV1E_SET_ENABLE_CDEF = 58,
 
   
@@ -1691,13 +1692,12 @@ typedef enum {
   AOM_TUNE_BUTTERAUGLI = 8,
   AOM_TUNE_VMAF_SALIENCY_MAP = 9,
 
-
-
-#define AOM_HAVE_TUNE_SSIMULACRA2 1
+#define AOM_HAVE_TUNE_IQ 1
   
 
 
-  AOM_TUNE_SSIMULACRA2 = 10,
+
+  AOM_TUNE_IQ = 10,
 } aom_tune_metric;
 
 

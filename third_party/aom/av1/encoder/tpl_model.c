@@ -1378,7 +1378,7 @@ static inline void init_mc_flow_dispenser(AV1_COMP *cpi, int frame_idx,
   
   
   
-  assert(cpi->oxcf.tune_cfg.tuning != AOM_TUNE_SSIMULACRA2 &&
+  assert(cpi->oxcf.tune_cfg.tuning != AOM_TUNE_IQ &&
          cpi->oxcf.mode != ALLINTRA);
   
   rdmult = av1_compute_rd_mult(
