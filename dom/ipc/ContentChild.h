@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_ContentChild_h
 #define mozilla_dom_ContentChild_h
@@ -317,8 +317,8 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvGeolocationUpdate(nsIDOMGeoPosition* aPosition);
 
-  
-  
+  // MOZ_CAN_RUN_SCRIPT_BOUNDARY because we don't have MOZ_CAN_RUN_SCRIPT bits
+  // in IPC code yet.
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvGeolocationError(const uint16_t& errorCode);
 
@@ -364,8 +364,8 @@ class ContentChild final : public PContentChild,
 
   void PreallocInit();
 
-  
-  
+  // Call RemoteTypePrefix() on the result to remove URIs if you want to use
+  // this for telemetry.
   const nsACString& GetRemoteType() const override;
 
   mozilla::ipc::IPCResult RecvInitRemoteWorkerService(
@@ -422,9 +422,6 @@ class ContentChild final : public PContentChild,
                                            const nsString& aMessageId,
                                            nsTArray<uint8_t>&& aData);
 
-  mozilla::ipc::IPCResult RecvPushSubscriptionChange(const nsCString& aScope,
-                                                     nsIPrincipal* aPrincipal);
-
   mozilla::ipc::IPCResult RecvPushError(const nsCString& aScope,
                                         nsIPrincipal* aPrincipal,
                                         const nsString& aMessage,
@@ -441,8 +438,8 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvSocketProcessCrashed();
 
-  
-  
+  // Get the directory for IndexedDB files. We query the parent for this and
+  // cache the value
   nsString& GetIndexedDBPath();
 
   ContentParentId GetID() const {
@@ -474,8 +471,8 @@ class ContentChild final : public PContentChild,
   bool DeallocPContentPermissionRequestChild(
       PContentPermissionRequestChild* actor);
 
-  
-  
+  // GetFiles for WebKit/Blink FileSystem API and Directory API must run on the
+  // parent process.
   void CreateGetFilesRequest(const nsAString& aDirectoryPath,
                              bool aRecursiveFlag, nsID& aUUID,
                              GetFilesHelperChild* aChild);
@@ -500,7 +497,7 @@ class ContentChild final : public PContentChild,
   mozilla::ipc::IPCResult RecvGetUntrustedModulesData(
       GetUntrustedModulesDataResolver&& aResolver);
   mozilla::ipc::IPCResult RecvUnblockUntrustedModulesThread();
-#endif  
+#endif  // defined(XP_WIN)
 
   mozilla::ipc::IPCResult RecvSetXPCOMProcessAttributes(
       XPCOMInitData&& aXPCOMInit, const StructuredCloneData& aInitialData,
@@ -533,20 +530,20 @@ class ContentChild final : public PContentChild,
   mozilla::ipc::IPCResult RecvAddDynamicScalars(
       nsTArray<DynamicScalarDefinition>&& aDefs);
 
-  
-  
+  // Get a reference to the font list passed from the chrome process,
+  // for use during gfx initialization.
   SystemFontList& SystemFontList() { return mFontList; }
 
   nsTArray<SharedMemoryHandle>& SharedFontListBlocks() {
     return mSharedFontListBlocks;
   }
 
-  
+  // PURLClassifierChild
   PURLClassifierChild* AllocPURLClassifierChild(nsIPrincipal* aPrincipal,
                                                 bool* aSuccess);
   bool DeallocPURLClassifierChild(PURLClassifierChild* aActor);
 
-  
+  // PURLClassifierLocalChild
   PURLClassifierLocalChild* AllocPURLClassifierLocalChild(
       nsIURI* aUri, Span<const IPCURLClassifierFeature> aFeatures);
   bool DeallocPURLClassifierLocalChild(PURLClassifierLocalChild* aActor);
@@ -558,12 +555,12 @@ class ContentChild final : public PContentChild,
 
   FullLookAndFeel& BorrowLookAndFeelData() { return mLookAndFeelData; }
 
-  
-
-
-
-
-
+  /**
+   * Helper function for protocols that use the GPU process when available.
+   * Overrides FatalError to just be a warning when communicating with the
+   * GPU process since we don't want to crash the content process when the
+   * GPU process crashes.
+   */
   static void FatalErrorIfNotUsingGPUProcess(const char* const aErrorMsg,
                                              GeckoChildID aOtherChildID);
 
@@ -585,7 +582,7 @@ class ContentChild final : public PContentChild,
       const MaybeDiscarded<BrowsingContext>& aContext,
       const MediaControlAction& aAction);
 
-  
+  // See `BrowsingContext::mEpochs` for an explanation of this field.
   uint64_t GetBrowsingContextFieldEpoch() const {
     return mBrowsingContextFieldEpoch;
   }
@@ -606,10 +603,10 @@ class ContentChild final : public PContentChild,
       uint32_t aRejectedReason);
 
 #ifdef NIGHTLY_BUILD
-  
-  
-  
-  
+  // Fetch the current number of pending input events.
+  //
+  // NOTE: This method performs an atomic read, and is safe to call from all
+  // threads.
   uint32_t GetPendingInputEvents() { return mPendingInputEvents; }
 #endif
 
@@ -790,10 +787,10 @@ class ContentChild final : public PContentChild,
     return mPerformanceHintSession.get();
   }
 
-  
-  
-  
-  
+  // Returns the target work duration for the PerformanceHintSession, based on
+  // the refresh interval. Estimate that we want the tick to complete in at most
+  // half of the refresh period. This is fairly arbitrary and can be tweaked
+  // later.
   static TimeDuration GetPerformanceHintTarget(TimeDuration aRefreshInterval) {
     return aRefreshInterval / int64_t(2);
   }
@@ -822,13 +819,13 @@ class ContentChild final : public PContentChild,
 
   nsTArray<nsCString> mAvailableDictionaries;
 
-  
-  
-  
+  // Temporary storage for a list of available fonts, passed from the
+  // parent process and used to initialize gfx in the child. Currently used
+  // only on MacOSX and Linux.
   dom::SystemFontList mFontList;
-  
+  // Temporary storage for look and feel data.
   FullLookAndFeel mLookAndFeelData;
-  
+  // Temporary storage for list of shared-fontlist memory blocks.
   nsTArray<SharedMemoryHandle> mSharedFontListBlocks;
 
   AppInfo mAppInfo;
@@ -854,9 +851,9 @@ class ContentChild final : public PContentChild,
   nsCOMPtr<nsIFile> mProfileDir;
 #endif
 
-  
-  
-  
+  // Hashtable to keep track of the pending GetFilesHelper objects.
+  // This GetFilesHelperChild objects are removed when RecvGetFilesResponse is
+  // received.
   nsRefPtrHashtable<nsIDHashKey, GetFilesHelperChild> mGetFilesPendingRequests;
 
   nsClassHashtable<nsUint64HashKey, AnonymousTemporaryFileCallback>
@@ -865,21 +862,21 @@ class ContentChild final : public PContentChild,
   mozilla::Atomic<bool> mShuttingDown;
 
 #ifdef NIGHTLY_BUILD
-  
-  
+  // NOTE: This member is atomic because it can be accessed from
+  // off-main-thread.
   mozilla::Atomic<uint32_t> mPendingInputEvents;
 #endif
 
   uint32_t mNetworkLinkType = 0;
 
-  
+  // See `BrowsingContext::mEpochs` for an explanation of this field.
   uint64_t mBrowsingContextFieldEpoch = 0;
 
   hal::ProcessPriority mProcessPriority = hal::PROCESS_PRIORITY_UNKNOWN;
 
-  
-  
-  
+  // Session created when the process priority is FOREGROUND to ensure high
+  // priority scheduling of important threads. (Currently main thread and style
+  // threads.) The work duration is reported by the RefreshDriverTimer.
   UniquePtr<hal::PerformanceHintSession> mPerformanceHintSession;
 };
 
@@ -887,7 +884,7 @@ inline nsISupports* ToSupports(mozilla::dom::ContentChild* aContentChild) {
   return static_cast<nsIDOMProcessChild*>(aContentChild);
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_dom_ContentChild_h
