@@ -71,14 +71,10 @@ addAccessibleTask(
       1,
       "owned list is not relocated"
     );
-    
-    todo_is(
-      box.getAttributeValue("AXARIAControls").length,
-      1,
-      "box controls list"
-    );
 
     await testComboBox(browser, accDoc);
+
+    is(box.getAttributeValue("AXARIAControls").length, 1, "box controls list");
   }
 );
 
