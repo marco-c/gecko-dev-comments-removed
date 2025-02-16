@@ -297,6 +297,15 @@ document.addEventListener(
         case "context-media-eme-learnmore":
           gContextMenu.drmLearnMore(event);
           break;
+        case "context-copy-link-to-highlight":
+          gContextMenu.copyLinkToHighlight();
+          break;
+        case "context-copy-clean-link-to-highlight":
+          gContextMenu.copyLinkToHighlight( true);
+          break;
+        case "context-remove-all-highlights":
+          gContextMenu.removeAllTextFragments();
+          break;
       }
     });
     contextMenuPopup.addEventListener("popupshowing", event => {
@@ -311,6 +320,13 @@ document.addEventListener(
 
           if (!IS_WEBEXT_PANELS) {
             updateEditUIVisibility();
+          }
+
+          
+          
+          
+          if (gContextMenu.isContentSelected) {
+            gContextMenu.getTextDirective();
           }
           break;
         }
