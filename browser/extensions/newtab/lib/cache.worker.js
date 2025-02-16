@@ -5,9 +5,9 @@
 
 
 const PAGE_TEMPLATE_RESOURCE_PATH =
-  "resource://activity-stream/data/content/abouthomecache/page.html.template";
+  "resource://newtab/data/content/abouthomecache/page.html.template";
 const SCRIPT_TEMPLATE_RESOURCE_PATH =
-  "resource://activity-stream/data/content/abouthomecache/script.js.template";
+  "resource://newtab/data/content/abouthomecache/script.js.template";
 
 
 
@@ -46,7 +46,7 @@ importScripts("resource://gre/modules/workers/require.js");
     "chrome://global/content/vendor/react-transition-group.js",
     "chrome://global/content/vendor/prop-types.js",
     "chrome://global/content/vendor/react-redux.js",
-    "resource://activity-stream/data/content/activity-stream.bundle.js"
+    "resource://newtab/data/content/activity-stream.bundle.js"
   );
 
   

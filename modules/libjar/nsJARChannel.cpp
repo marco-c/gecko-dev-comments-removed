@@ -1008,7 +1008,7 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
 
     
     
-    if (fileName.EqualsLiteral("omni.ja!/chrome/browser/res/activity-stream/"
+    if (fileName.EqualsLiteral("omni.ja!/chrome/browser/res/newtab/"
                                "prerendered/activity-stream-noscripts.html") &&
         aStatus == NS_ERROR_FAILURE) {
       return;

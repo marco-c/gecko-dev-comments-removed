@@ -10,7 +10,7 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 const { DiscoveryStreamFeed } = ChromeUtils.importESModule(
-  "resource://activity-stream/lib/DiscoveryStreamFeed.sys.mjs"
+  "resource://newtab/lib/DiscoveryStreamFeed.sys.mjs"
 );
 
 
@@ -20,7 +20,7 @@ const { DiscoveryStreamFeed } = ChromeUtils.importESModule(
 
 {
   const { PREFS_CONFIG } = ChromeUtils.importESModule(
-    "resource://activity-stream/lib/ActivityStream.sys.mjs"
+    "resource://newtab/lib/ActivityStream.sys.mjs"
   );
 
   let defaultDSConfig = JSON.parse(
