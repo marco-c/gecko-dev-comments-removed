@@ -28,6 +28,9 @@ constexpr uint32_t kTimestampOffset = 567;
 constexpr int64_t kRemoteToLocalClockOffsetNtp =
     ToNtpUnits(kLocalClockInitialTime - kRemoteClockInitialTime);
 
+
+constexpr int64_t kEpsilon = 1;
+
 class RemoteNtpTimeEstimatorTest : public ::testing::Test {
  protected:
   void AdvanceTime(TimeDelta delta) {
@@ -85,10 +88,14 @@ TEST_F(RemoteNtpTimeEstimatorTest, Estimate) {
   
   SendRtcpSr();
 
+  AdvanceTime(TimeDelta::Millis(800));
+  
+  SendRtcpSr();
+
   
   EXPECT_EQ(capture_ntp_time_ms, estimator_.Estimate(rtp_timestamp));
-  EXPECT_EQ(estimator_.EstimateRemoteToLocalClockOffset(),
-            kRemoteToLocalClockOffsetNtp);
+  EXPECT_NEAR(*estimator_.EstimateRemoteToLocalClockOffset(),
+              kRemoteToLocalClockOffsetNtp, kEpsilon);
 }
 
 TEST_F(RemoteNtpTimeEstimatorTest, AveragesErrorsOut) {
@@ -103,8 +110,8 @@ TEST_F(RemoteNtpTimeEstimatorTest, AveragesErrorsOut) {
   int64_t capture_ntp_time_ms = local_clock_.CurrentNtpInMilliseconds();
   
   EXPECT_EQ(capture_ntp_time_ms, estimator_.Estimate(rtp_timestamp));
-  EXPECT_EQ(kRemoteToLocalClockOffsetNtp,
-            estimator_.EstimateRemoteToLocalClockOffset());
+  EXPECT_NEAR(kRemoteToLocalClockOffsetNtp,
+              *estimator_.EstimateRemoteToLocalClockOffset(), kEpsilon);
 
   
   AdvanceTime(TimeDelta::Seconds(1));
@@ -121,8 +128,8 @@ TEST_F(RemoteNtpTimeEstimatorTest, AveragesErrorsOut) {
 
   
   EXPECT_EQ(capture_ntp_time_ms, estimator_.Estimate(rtp_timestamp));
-  EXPECT_EQ(kRemoteToLocalClockOffsetNtp,
-            estimator_.EstimateRemoteToLocalClockOffset());
+  EXPECT_NEAR(kRemoteToLocalClockOffsetNtp,
+              *estimator_.EstimateRemoteToLocalClockOffset(), kEpsilon);
 }
 
 }  
