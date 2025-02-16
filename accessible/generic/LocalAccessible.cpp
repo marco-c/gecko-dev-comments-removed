@@ -3514,6 +3514,18 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       
       LocalAccessible* prevParentRow = nullptr;
       for (nsIFrame* frame : frames) {
+        if (frame->IsInlineFrame() && !frame->IsPrimaryFrame()) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          continue;
+        }
         nsIContent* content = frame->GetContent();
         if (!content) {
           continue;
