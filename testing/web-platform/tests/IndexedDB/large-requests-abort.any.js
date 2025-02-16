@@ -1,0 +1,245 @@
+
+
+
+
+
+
+
+'use strict';
+
+
+
+const wrapThreshold = 128 * 1024;
+
+function populateStore(store) {
+  store.put({id: 1, key: 'k1', value: largeValue(wrapThreshold, 1)});
+  store.put({id: 2, key: 'k2', value: ['small-2']});
+  store.put({id: 3, key: 'k3', value: largeValue(wrapThreshold, 3)});
+  store.put({id: 4, key: 'k4', value: ['small-4']});
+}
+
+
+
+
+
+function openCursors(testCase, index, operations, onerror, onsuccess) {
+  let pendingCursors = 0;
+
+  for (let operation of operations) {
+    const opcode = operation[0];
+    const primaryKey = operation[1];
+    let request;
+    switch (opcode) {
+      case 'continue':
+        request =
+            index.openCursor(IDBKeyRange.lowerBound(`k${primaryKey - 1}`));
+        break;
+      case 'continue-empty':
+        
+        
+        request = index.openCursor(IDBKeyRange.lowerBound('k4'));
+        break;
+      default:
+        continue;
+    }
+
+    operation[2] = request;
+    ++pendingCursors;
+
+    request.onsuccess = testCase.step_func(() => {
+      --pendingCursors;
+      if (!pendingCursors)
+        onsuccess();
+    });
+    request.onerror = testCase.step_func(onerror);
+  }
+
+  if (!pendingCursors)
+    onsuccess();
+}
+
+function doOperation(testCase, store, index, operation, requestId, results) {
+  const opcode = operation[0];
+  const primaryKey = operation[1];
+  const cursor = operation[2];
+
+  return new Promise((resolve, reject) => {
+    let request;
+    switch (opcode) {
+      case 'add':  
+        request =
+            store.add({key: `k${primaryKey}`, value: [`small-${primaryKey}`]});
+        break;
+      case 'put':  
+        request =
+            store.put({key: `k${primaryKey}`, value: [`small-${primaryKey}`]});
+        break;
+      case 'put-with-id':  
+        request = store.put({
+          key: `k${primaryKey}`,
+          value: [`small-${primaryKey}`],
+          id: primaryKey
+        });
+        break;
+      case 'get':        
+      case 'get-empty':  
+        request = store.get(primaryKey);
+        break;
+      case 'getall':  
+        request = store.getAll();
+        break;
+      case 'error':  
+        request =
+            store.put({key: `k${primaryKey}`, value: [`small-${primaryKey}`]});
+        break;
+      case 'continue':        
+      case 'continue-empty':  
+        request = cursor;
+        cursor.result.continue();
+        break;
+      case 'open':  
+      case 'open-empty':  
+        request = index.openCursor(IDBKeyRange.lowerBound(`k${primaryKey}`));
+        break;
+      case 'count':  
+        request = index.count();
+        break;
+    };
+
+    request.onsuccess = testCase.step_func(() => {
+      reject(new Error(
+          'requests should not succeed after the transaction is aborted'));
+    });
+    request.onerror = testCase.step_func(event => {
+      event.preventDefault();
+      results.push([requestId, request.error]);
+      resolve();
+    });
+  });
+}
+
+function abortTest(label, operations) {
+  promise_test(testCase => {
+    return createDatabase(
+               testCase,
+               (database, transaction) => {
+                 const store = database.createObjectStore(
+                     'test-store', {autoIncrement: true, keyPath: 'id'});
+                 store.createIndex('test-index', 'key', {unique: true});
+                 populateStore(store);
+               })
+        .then(database => {
+          const transaction = database.transaction(['test-store'], 'readwrite');
+          const store = transaction.objectStore('test-store');
+          const index = store.index('test-index');
+          return new Promise((resolve, reject) => {
+            openCursors(testCase, index, operations, reject, () => {
+              const results = [];
+              const promises = [];
+              for (let i = 0; i < operations.length; ++i) {
+                const promise = doOperation(
+                    testCase, store, index, operations[i], i, results);
+                promises.push(promise);
+              };
+              transaction.abort();
+              resolve(Promise.all(promises).then(() => results));
+            });
+          });
+        })
+        .then(results => {
+          assert_equals(
+              results.length, operations.length,
+              'Promise.all should resolve after all sub-promises resolve');
+          for (let i = 0; i < operations.length; ++i) {
+            assert_equals(
+                results[i][0], i,
+                'error event order should match request order');
+            assert_equals(
+                results[i][1].name, 'AbortError',
+                'transaction aborting should result in AbortError on all requests');
+          }
+        });
+  }, label);
+}
+
+abortTest('small values', [
+  ['get', 2],
+  ['count', null],
+  ['continue-empty', null],
+  ['get-empty', 5],
+  ['add', 5],
+  ['open', 2],
+  ['continue', 2],
+  ['get', 4],
+  ['get-empty', 6],
+  ['count', null],
+  ['put-with-id', 5],
+  ['put', 6],
+  ['error', 3],
+  ['continue', 4],
+  ['count', null],
+  ['get-empty', 7],
+  ['open', 4],
+  ['open-empty', 7],
+  ['add', 7],
+]);
+
+abortTest('large values', [
+  ['open', 1],
+  ['get', 1],
+  ['getall', 4],
+  ['get', 3],
+  ['continue', 3],
+  ['open', 3],
+]);
+
+abortTest('large value followed by small values', [
+  ['get', 1],
+  ['getall', null],
+  ['open', 2],
+  ['continue-empty', null],
+  ['get', 2],
+  ['get-empty', 5],
+  ['count', null],
+  ['continue-empty', null],
+  ['open-empty', 5],
+  ['add', 5],
+  ['error', 1],
+  ['continue', 2],
+  ['get-empty', 6],
+  ['put-with-id', 5],
+  ['put', 6],
+]);
+
+abortTest('large values mixed with small values', [
+  ['get', 1],
+  ['get', 2],
+  ['get-empty', 5],
+  ['count', null],
+  ['continue-empty', null],
+  ['open', 1],
+  ['continue', 2],
+  ['open-empty', 5],
+  ['getall', 4],
+  ['open', 2],
+  ['continue-empty', null],
+  ['add', 5],
+  ['get', 3],
+  ['count', null],
+  ['get-empty', 6],
+  ['put-with-id', 5],
+  ['getall', null],
+  ['continue', 3],
+  ['open-empty', 6],
+  ['put', 6],
+  ['error', 1],
+  ['continue', 2],
+  ['open', 4],
+  ['get-empty', 7],
+  ['count', null],
+  ['continue', 3],
+  ['add', 7],
+  ['getall', null],
+  ['error', 3],
+  ['count', null],
+]);
