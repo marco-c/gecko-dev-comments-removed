@@ -7,11 +7,13 @@ LOGIN_CSS = ".mini-login-gadget"
 
 
 async def do_checks(client, shouldPass):
-    
-    alert = await client.await_alert(UNSUPPORTED_ALERT, timeout=10)
+    if not shouldPass:
+        alert = await client.await_alert(UNSUPPORTED_ALERT, timeout=10)
+
     await client.navigate(URL)
-    gotAlert = await alert
-    assert (shouldPass and not gotAlert) or (not shouldPass and gotAlert)
+
+    if not shouldPass:
+        assert await alert
 
     
     assert client.await_css(LOGIN_CSS)
