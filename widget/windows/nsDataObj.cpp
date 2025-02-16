@@ -1480,11 +1480,26 @@ HRESULT nsDataObj::GetPreferredDropEffect(FORMATETC& aFE, STGMEDIUM& aSTG) {
 
 HRESULT nsDataObj::GetText(const nsACString& aDataFlavor, FORMATETC& aFE,
                            STGMEDIUM& aSTG) {
-  void* data = nullptr;
+  
+  
+  
+  auto const assignDataToStg = [&aSTG](void* data, size_t extent) -> HRESULT {
+    aSTG.tymed = TYMED_HGLOBAL;
+    aSTG.pUnkForRelease = nullptr;
+
+    ScopedOLEMemory<char[]> hGlobalMemory(extent);
+    if (hGlobalMemory) {
+      auto dest = hGlobalMemory.lock();
+      memcpy(dest.get(), data, extent);
+    }
+
+    aSTG.hGlobal = hGlobalMemory.forget();
+
+    return S_OK;
+  };
 
   const nsPromiseFlatCString& flavorStr = PromiseFlatCString(aDataFlavor);
 
-  
   nsCOMPtr<nsISupports> genericDataWrapper;
   nsresult rv = mTransferable->GetTransferData(
       flavorStr.get(), getter_AddRefs(genericDataWrapper));
@@ -1492,84 +1507,77 @@ HRESULT nsDataObj::GetText(const nsACString& aDataFlavor, FORMATETC& aFE,
     return E_FAIL;
   }
 
-  uint32_t len;
-  nsPrimitiveHelpers::CreateDataFromPrimitive(
-      nsDependentCString(flavorStr.get()), genericDataWrapper, &data, &len);
+  
+  
+  auto const [data, len] = [&]() {
+    void* data = nullptr;
+    uint32_t len;
+    nsPrimitiveHelpers::CreateDataFromPrimitive(
+        nsDependentCString(flavorStr.get()), genericDataWrapper, &data, &len);
+    return std::tuple{data, size_t(len)};
+  }();
   if (!data) return E_FAIL;
 
-  HGLOBAL hGlobalMemory = nullptr;
+  
+  auto const _release_data =
+      mozilla::MakeScopeExit([data = data]() { ::free(data); });
 
-  aSTG.tymed = TYMED_HGLOBAL;
-  aSTG.pUnkForRelease = nullptr;
+  
+  
+  
+  
+  
+  
+  
+  
 
-  
-  
-  
-  
-  
-  
-  
-  
-  DWORD allocLen = (DWORD)len;
   if (aFE.cfFormat == CF_TEXT) {
     
     
     size_t bufferSize = sizeof(char) * (len + 2);
     char* plainTextData = static_cast<char*>(moz_xmalloc(bufferSize));
+    auto const _release =
+        mozilla::MakeScopeExit([plainTextData]() { ::free(plainTextData); });
+
     char16_t* castedUnicode = reinterpret_cast<char16_t*>(data);
     int32_t plainTextLen =
         WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)castedUnicode, len / 2 + 1,
                             plainTextData, bufferSize, NULL, NULL);
-    
-    
-    free(data);
+
     if (plainTextLen) {
-      data = plainTextData;
-      allocLen = plainTextLen;
-    } else {
-      free(plainTextData);
-      NS_WARNING("Oh no, couldn't convert unicode to plain text");
-      return S_OK;
+      return assignDataToStg(plainTextData, plainTextLen);
     }
-  } else if (aFE.cfFormat == nsClipboard::GetHtmlClipboardFormat()) {
+
+    NS_WARNING("Oh no, couldn't convert unicode to plain text");
+    return S_OK;
+  }
+
+  if (aFE.cfFormat == nsClipboard::GetHtmlClipboardFormat()) {
     
     
     NS_ConvertUTF16toUTF8 converter(reinterpret_cast<char16_t*>(data));
     char* utf8HTML = nullptr;
     nsresult rv =
         BuildPlatformHTML(converter.get(), &utf8HTML);  
+    auto const _release =
+        mozilla::MakeScopeExit([utf8HTML]() { ::free(utf8HTML); });
 
-    free(data);
     if (NS_SUCCEEDED(rv) && utf8HTML) {
       
-      data = utf8HTML;
-      allocLen = strlen(utf8HTML) + sizeof(char);
-    } else {
-      NS_WARNING("Oh no, couldn't convert to HTML");
-      return S_OK;
+      return assignDataToStg(utf8HTML, strlen(utf8HTML) + sizeof(char));
     }
-  } else if (aFE.cfFormat != nsClipboard::GetCustomClipboardFormat()) {
-    
-    
-    allocLen += sizeof(char16_t);
+
+    NS_WARNING("Oh no, couldn't convert to HTML");
+    return S_OK;
   }
 
-  hGlobalMemory = (HGLOBAL)GlobalAlloc(GMEM_MOVEABLE, allocLen);
-
-  
-  if (hGlobalMemory) {
-    char* dest = reinterpret_cast<char*>(GlobalLock(hGlobalMemory));
-    char* source = reinterpret_cast<char*>(data);
-    memcpy(dest, source, allocLen);  
-    GlobalUnlock(hGlobalMemory);
-  }
-  aSTG.hGlobal = hGlobalMemory;
-
   
   
-  free(data);
+  
+  bool const excludeNull =
+      aFE.cfFormat == nsClipboard::GetCustomClipboardFormat();
 
-  return S_OK;
+  return assignDataToStg(data, len + (excludeNull ? 0 : sizeof(char16_t)));
 }
 
 
