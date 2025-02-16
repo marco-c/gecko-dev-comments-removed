@@ -77,8 +77,7 @@ class nsDOMWindowUtils final : public nsIDOMWindowUtils,
   
   
   nsIWidget* GetWidget(nsPoint* aOffset = nullptr);
-  nsIWidget* GetWidgetForElement(mozilla::dom::Element* aElement,
-                                 nsPoint* aOffset = nullptr);
+  nsIWidget* GetWidgetForElement(mozilla::dom::Element* aElement);
 
   nsIDocShell* GetDocShell();
   mozilla::PresShell* GetPresShell();
