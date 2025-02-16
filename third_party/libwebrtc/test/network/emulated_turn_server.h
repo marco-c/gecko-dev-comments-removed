@@ -42,7 +42,8 @@ class EmulatedTURNServer : public EmulatedTURNServerInterface,
   
   
   
-  EmulatedTURNServer(std::unique_ptr<rtc::Thread> thread,
+  EmulatedTURNServer(const EmulatedTURNServerConfig& config,
+                     std::unique_ptr<rtc::Thread> thread,
                      EmulatedEndpoint* client,
                      EmulatedEndpoint* peer);
   ~EmulatedTURNServer() override;
