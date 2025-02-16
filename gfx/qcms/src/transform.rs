@@ -285,6 +285,7 @@ fn build_RGB_to_XYZ_transfer_matrix(
     })
 }
 
+
 const D50_XYZ: CIE_XYZ = CIE_XYZ {
     X: 0.9642,
     Y: 1.0000,
@@ -292,17 +293,15 @@ const D50_XYZ: CIE_XYZ = CIE_XYZ {
 };
 
 
+
 fn xyY2XYZ(source: qcms_CIE_xyY) -> CIE_XYZ {
-    let mut dest: CIE_XYZ = CIE_XYZ {
-        X: 0.,
-        Y: 0.,
-        Z: 0.,
-    };
-    dest.X = source.x / source.y * source.Y;
-    dest.Y = source.Y;
-    dest.Z = (1f64 - source.x - source.y) / source.y * source.Y;
-    dest
+    CIE_XYZ {
+        X: source.x / source.y * source.Y,
+        Y: source.Y,
+        Z: (1. - source.x - source.y) / source.y * source.Y,
+    }
 }
+
 
 
 fn compute_chromatic_adaption(
@@ -310,9 +309,7 @@ fn compute_chromatic_adaption(
     dest_white_point: CIE_XYZ,
     chad: Matrix,
 ) -> Option<Matrix> {
-    let chad_inv = chad.invert()?;
-
-    let mut cone_source_XYZ = Vector {
+    let cone_source_XYZ = Vector {
         v: [
             source_white_point.X as f32,
             source_white_point.Y as f32,
@@ -320,7 +317,8 @@ fn compute_chromatic_adaption(
         ],
     };
     let cone_source_rgb = chad.eval(cone_source_XYZ);
-    let mut cone_dest_XYZ = Vector {
+
+    let cone_dest_XYZ = Vector {
         v: [
             dest_white_point.X as f32,
             dest_white_point.Y as f32,
@@ -329,7 +327,7 @@ fn compute_chromatic_adaption(
     };
     let cone_dest_rgb = chad.eval(cone_dest_XYZ);
 
-    let mut cone = Matrix {
+    let cone = Matrix {
         m: [
             [cone_dest_rgb.v[0] / cone_source_rgb.v[0], 0., 0.],
             [0., cone_dest_rgb.v[1] / cone_source_rgb.v[1], 0.],
@@ -337,9 +335,12 @@ fn compute_chromatic_adaption(
         ],
     };
 
+    let chad_inv = chad.invert()?;
+
     
     Some(Matrix::multiply(chad_inv, Matrix::multiply(cone, chad)))
 }
+
 
 
 
