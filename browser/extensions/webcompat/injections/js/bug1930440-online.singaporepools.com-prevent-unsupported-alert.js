@@ -14,9 +14,28 @@
 
 
 
+
 console.info(
   "window.alert is being overriden for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1923286 for details."
 );
+
+new MutationObserver(mutations => {
+  for (let { addedNodes } of mutations) {
+    for (const node of addedNodes) {
+      try {
+        if (
+          node.matches(".alert.views-row") &&
+          node.innerText.includes("Chrome")
+        ) {
+          node.remove();
+        }
+      } catch (_) {}
+    }
+  }
+}).observe(document.documentElement, {
+  childList: true,
+  subtree: true,
+});
 
 const originalAlert = Object.getOwnPropertyDescriptor(
   window.wrappedJSObject,
@@ -24,11 +43,9 @@ const originalAlert = Object.getOwnPropertyDescriptor(
 ).value;
 
 Object.defineProperty(window.wrappedJSObject, "alert", {
-  get: exportFunction(function (msg) {
-    if (!msg.includes("unsupported browser")) {
+  value: exportFunction(function (msg) {
+    if (!msg?.includes("unsupported browser")) {
       originalAlert.apply(this, arguments);
     }
   }, window),
-
-  set: exportFunction(function () {}, window),
 });
