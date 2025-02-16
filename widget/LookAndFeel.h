@@ -518,9 +518,13 @@ class LookAndFeel {
   static bool GetEchoPassword();
 
   
-
-
   static bool DrawInTitlebar();
+
+  static int32_t CaretBlinkCount() {
+    return GetInt(IntID::CaretBlinkCount, -1);
+  }
+
+  static int32_t CaretBlinkTime() { return GetInt(IntID::CaretBlinkTime, 500); }
 
   enum class TitlebarAction {
     None,
