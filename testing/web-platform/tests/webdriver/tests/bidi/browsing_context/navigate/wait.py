@@ -28,11 +28,9 @@ async def test_expected_url(bidi_session, inline, new_tab, value):
         context=new_tab["context"], url=url, wait=value
     )
     assert result["url"] == url
-    if value != "none":
-        contexts = await bidi_session.browsing_context.get_tree(
-            root=new_tab["context"], max_depth=0
-        )
-        assert contexts[0]["url"] == url
+    contexts = await bidi_session.browsing_context.get_tree(
+        root=new_tab["context"], max_depth=0)
+    assert contexts[0]["url"] == url
 
 
 @pytest.mark.parametrize(
@@ -52,7 +50,7 @@ async def test_slow_image_blocks_load(bidi_session, inline, new_tab, wait, expec
     
     
     
-    if wait == "interactive":
+    if wait != "complete":
         contexts = await bidi_session.browsing_context.get_tree(
             root=new_tab["context"], max_depth=0
         )
