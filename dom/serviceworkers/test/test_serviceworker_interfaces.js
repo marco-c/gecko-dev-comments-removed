@@ -374,17 +374,15 @@ let interfaceNamesInGlobalScope = [
   
   "PromiseRejectionEvent",
   
-  "PushEvent",
+  { name: "PushEvent" },
   
-  "PushManager",
+  { name: "PushManager" },
   
-  "PushMessageData",
+  { name: "PushMessageData" },
   
-  "PushSubscription",
+  { name: "PushSubscription" },
   
-  "PushSubscriptionChangeEvent",
-  
-  "PushSubscriptionOptions",
+  { name: "PushSubscriptionOptions" },
   
   "ReadableByteStreamController",
   
