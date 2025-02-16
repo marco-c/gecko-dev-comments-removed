@@ -23,6 +23,7 @@
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_format.h"
 #include "api/rtp_headers.h"
+#include "api/rtp_packet_info.h"
 #include "api/units/timestamp.h"
 
 namespace webrtc {
@@ -186,16 +187,24 @@ class NetEq {
 
   virtual int InsertPacket(const RTPHeader& rtp_header,
                            rtc::ArrayView<const uint8_t> payload) {
-    
     return InsertPacket(rtp_header, payload,
                         Timestamp::MinusInfinity());
   }
+
+  
+  virtual int InsertPacket(const RTPHeader& rtp_header,
+                           rtc::ArrayView<const uint8_t> payload,
+                           Timestamp receive_time) {
+    return InsertPacket(rtp_header, payload,
+                        RtpPacketInfo(rtp_header, receive_time));
+  }
+
+  
   
   
   virtual int InsertPacket(const RTPHeader& rtp_header,
                            rtc::ArrayView<const uint8_t> payload,
-                           Timestamp ) {
-    
+                           const RtpPacketInfo& ) {
     return InsertPacket(rtp_header, payload);
   }
 
