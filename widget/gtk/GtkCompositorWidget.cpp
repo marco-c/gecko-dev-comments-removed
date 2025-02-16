@@ -110,7 +110,8 @@ EGLNativeWindowType GtkCompositorWidget::GetEGLNativeWindow() {
 bool GtkCompositorWidget::SetEGLNativeWindowSize(
     const LayoutDeviceIntSize& aEGLWindowSize) {
 #if defined(MOZ_WAYLAND)
-  if (mWidget) {
+  
+  if (GdkIsWaylandDisplay() && mWidget) {
     return mWidget->SetEGLNativeWindowSize(aEGLWindowSize);
   }
 #endif

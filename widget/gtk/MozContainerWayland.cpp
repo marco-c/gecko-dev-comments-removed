@@ -99,16 +99,6 @@ static void moz_container_wayland_invalidate(MozContainer* container) {
   gdk_window_invalidate_rect(window, nullptr, true);
 }
 
-
-
-
-
-
-bool moz_container_wayland_egl_window_set_size(MozContainer* container,
-                                               nsIntSize aScaledSize) {
-  return MOZ_WL_SURFACE(container)->SetEGLWindowSize(aScaledSize);
-}
-
 void moz_container_wayland_add_or_fire_initial_draw_callback(
     MozContainer* container, const std::function<void(void)>& initial_draw_cb) {
   MOZ_WL_SURFACE(container)->AddOrFireReadyToDrawCallback(initial_draw_cb);
