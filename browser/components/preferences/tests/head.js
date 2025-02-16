@@ -365,53 +365,52 @@ async function mockDefaultFxAInstance() {
 
 
 async function doSuggestVisibilityTest({
-  initialScenarios,
+  initialSuggestEnabled,
   initialExpected,
   nimbusVariables,
   newExpected = initialExpected,
   pane = "search",
 }) {
-  for (let scenario of initialScenarios) {
-    info(
-      "Running Suggest visibility test: " +
-        JSON.stringify(
-          {
-            scenario,
-            initialExpected,
-            nimbusVariables,
-            newExpected,
-          },
-          null,
-          2
-        )
-    );
+  info(
+    "Running Suggest visibility test: " +
+      JSON.stringify(
+        {
+          initialSuggestEnabled,
+          initialExpected,
+          nimbusVariables,
+          newExpected,
+        },
+        null,
+        2
+      )
+  );
 
-    
-    await QuickSuggestTestUtils.setScenario(scenario);
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.quicksuggest.enabled", initialSuggestEnabled]],
+  });
 
-    
-    await openPreferencesViaOpenPreferencesAPI(pane, { leaveOpen: true });
-    assertSuggestVisibility(initialExpected);
+  
+  await openPreferencesViaOpenPreferencesAPI(pane, { leaveOpen: true });
+  assertSuggestVisibility(initialExpected);
 
-    
-    await QuickSuggestTestUtils.withExperiment({
-      valueOverrides: nimbusVariables,
-      callback: async () => {
-        
-        assertSuggestVisibility(newExpected);
+  
+  await QuickSuggestTestUtils.withExperiment({
+    valueOverrides: nimbusVariables,
+    callback: async () => {
+      
+      assertSuggestVisibility(newExpected);
 
-        
-        
-        gBrowser.removeCurrentTab();
-        await openPreferencesViaOpenPreferencesAPI(pane, { leaveOpen: true });
-        assertSuggestVisibility(newExpected);
-      },
-    });
+      
+      
+      gBrowser.removeCurrentTab();
+      await openPreferencesViaOpenPreferencesAPI(pane, { leaveOpen: true });
+      assertSuggestVisibility(newExpected);
+    },
+  });
 
-    gBrowser.removeCurrentTab();
-  }
-
-  await QuickSuggestTestUtils.setScenario(null);
+  gBrowser.removeCurrentTab();
+  await SpecialPowers.popPrefEnv();
 }
 
 
