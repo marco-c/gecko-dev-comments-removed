@@ -2731,8 +2731,7 @@ mozilla::ipc::IPCResult ContentChild::RecvInitBlobURLs(
     
     
     if (registration.revoked()) {
-      BlobURLProtocolHandler::RemoveDataEntries(nsTArray{registration.url()},
-                                                false);
+      BlobURLProtocolHandler::RemoveDataEntry(registration.url(), false);
     }
   }
 
@@ -3218,9 +3217,9 @@ mozilla::ipc::IPCResult ContentChild::RecvBlobURLRegistration(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvBlobURLUnregistration(
-    const nsTArray<nsCString>& aURIs) {
-  BlobURLProtocolHandler::RemoveDataEntries(
-      aURIs,
+    const nsCString& aURI) {
+  BlobURLProtocolHandler::RemoveDataEntry(
+      aURI,
        false);
   return IPC_OK();
 }

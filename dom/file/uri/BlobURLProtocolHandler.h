@@ -58,8 +58,8 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   
   
   
-  static void RemoveDataEntries(const nsTArray<nsCString>& aUris,
-                                bool aBroadcastToOTherProcesses = true);
+  static void RemoveDataEntry(const nsACString& aUri,
+                              bool aBroadcastToOTherProcesses = true);
   
   static bool RemoveDataEntry(const nsACString& aUri, nsIPrincipal* aPrincipal,
                               const nsCString& aPartitionKey);
