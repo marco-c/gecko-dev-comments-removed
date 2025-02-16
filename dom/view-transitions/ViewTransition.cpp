@@ -245,6 +245,12 @@ void ViewTransition::CallUpdateCallback(ErrorResult& aRv) {
           
           ucd->MaybeResolveWithUndefined();
         }
+        
+        
+        
+        
+        
+        aVt->mDocument->FlushPendingNotifications(FlushType::Frames);
         if (aVt->mPhase == Phase::Done) {
           
           
