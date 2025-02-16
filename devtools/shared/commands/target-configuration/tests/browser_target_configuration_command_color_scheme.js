@@ -1,9 +1,9 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-
+// Test color scheme simulation.
 const TEST_DOCUMENT = "target_configuration_test_doc.sjs";
 const TEST_URI = URL_ROOT_COM_SSL + TEST_DOCUMENT;
 
@@ -55,7 +55,9 @@ add_task(async function () {
   );
 
   info("Reload the page");
-  await BrowserTestUtils.reloadTab(tab,  true);
+  await BrowserTestUtils.reloadTab(tab, {
+    includeSubFrames: true,
+  });
 
   is(
     await topLevelDocumentMatchPrefersDarkColorSchemeMediaAtStartup(),
@@ -85,7 +87,7 @@ add_task(async function () {
 
   const onPageLoaded = BrowserTestUtils.browserLoaded(
     gBrowser.selectedBrowser,
-     true
+    /* includeSubFrames */ true
   );
   BrowserTestUtils.startLoadingURIString(
     gBrowser.selectedBrowser,
@@ -161,8 +163,8 @@ function topLevelDocumentMatchPrefersDarkColorSchemeMediaAtStartup() {
 
 function getIframeBrowsingContext() {
   return SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
-    
-    
+    // Ensure we've rendered the iframe so that the prefers-color-scheme
+    // value propagated from the embedder is up-to-date.
     await new Promise(resolve => {
       content.requestAnimationFrame(() =>
         content.requestAnimationFrame(resolve)

@@ -70,7 +70,9 @@ async function test_set_focus_after_reuse_bcg() {
   
   
   
-  await BrowserTestUtils.reloadTab(tab, true);
+  await BrowserTestUtils.reloadTab(tab, {
+    includeSubFrames: true,
+  });
 
   
   
