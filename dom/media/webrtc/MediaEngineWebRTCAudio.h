@@ -19,6 +19,7 @@ namespace mozilla {
 
 class AudioInputProcessing;
 class AudioProcessingTrack;
+class WebrtcEnvironmentWrapper;
 
 
 
@@ -194,6 +195,9 @@ class AudioInputProcessing : public AudioDataListener {
   
   bool HadAECAndDrift() const { return mHadAECAndDrift; }
 
+  void SetEnvironmentWrapper(AudioProcessingTrack* aTrack,
+                             RefPtr<WebrtcEnvironmentWrapper> aEnvWrapper);
+
  private:
   ~AudioInputProcessing() = default;
   webrtc::AudioProcessing::Config ConfigForPrefs(
@@ -275,6 +279,7 @@ class AudioInputProcessing : public AudioDataListener {
       mInterleavedBuffer;
   
   std::deque<std::pair<TrackTime, PrincipalHandle>> mChunksInPacketizer;
+  RefPtr<WebrtcEnvironmentWrapper> mEnvWrapper;
 };
 
 
