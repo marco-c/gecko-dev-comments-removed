@@ -13,6 +13,10 @@ add_setup(() => {
 
   
   Services.prefs.setBoolPref("network.auth.confirmAuth.enabled", false);
+
+  
+  
+  Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
 });
 
 const server = createHttpServer({

@@ -9,6 +9,13 @@
 
 
 
+
+
+Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("network.proxy.allow_hijacking_localhost");
+});
+
 const SIZE = 4096;
 const CONTENT = "x".repeat(SIZE);
 

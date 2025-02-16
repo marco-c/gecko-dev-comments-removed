@@ -10,6 +10,13 @@
 
 
 
+
+
+Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("network.proxy.allow_hijacking_localhost");
+});
+
 var CC = Components.Constructor;
 const ServerSocket = CC(
   "@mozilla.org/network/server-socket;1",

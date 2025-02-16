@@ -4,6 +4,13 @@
 
 Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
 
+
+
+Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("network.proxy.allow_hijacking_localhost");
+});
+
 const server = createHttpServer({
   
   

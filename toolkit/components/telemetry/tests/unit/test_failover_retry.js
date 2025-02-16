@@ -20,6 +20,13 @@ Services.prefs.setBoolPref(
 Services.prefs.setBoolPref("network.dns.native-is-localhost", true);
 
 
+
+Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("network.proxy.allow_hijacking_localhost");
+});
+
+
 do_get_profile(true);
 
 AddonTestUtils.init(this);
