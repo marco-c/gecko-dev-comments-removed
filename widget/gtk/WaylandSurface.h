@@ -152,6 +152,10 @@ class WaylandSurface final {
   void CommitLocked(const WaylandSurfaceLock& aProofOfLock,
                     bool aForceCommit = false, bool aForceDisplayFlush = false);
 
+  void EnableDMABufFormatsLocked(
+      const WaylandSurfaceLock& aProofOfLock,
+      const std::function<void(DMABufFormats*)>& aFormatRefreshCB);
+
   
   void PlaceAboveLocked(const WaylandSurfaceLock& aProofOfLock,
                         WaylandSurfaceLock& aLowerSurfaceLock);
@@ -244,6 +248,8 @@ class WaylandSurface final {
       const WaylandSurfaceLock& aProofOfLock) {
     mFrameCallbackForceCommit = true;
   }
+
+  RefPtr<DMABufFormats> GetDMABufFormats() const { return mFormats; }
 
   GdkWindow* GetGdkWindow() const;
 
@@ -448,6 +454,13 @@ class WaylandSurface final {
   
   
   std::function<void(void)> mFractionalScaleCallback = []() {};
+
+  bool mUseDMABufFormats = false;
+  
+  
+  
+  std::function<void(DMABufFormats*)> mDMABufFormatRefreshCallback;
+  RefPtr<DMABufFormats> mFormats;
 };
 
 }  
