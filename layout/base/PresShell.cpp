@@ -3506,6 +3506,25 @@ static WhereToScroll GetApplicableWhereToScroll(
   return aOriginal;
 }
 
+static ScrollMode GetScrollModeForScrollIntoView(
+    const ScrollContainerFrame* aScrollContainerFrame,
+    ScrollFlags aScrollFlags) {
+  ScrollMode scrollMode = ScrollMode::Instant;
+  
+  
+  
+  
+  ScrollBehavior behavior = ScrollBehavior::Instant;
+  if (aScrollFlags & ScrollFlags::ScrollSmooth) {
+    behavior = ScrollBehavior::Smooth;
+  } else if (aScrollFlags & ScrollFlags::ScrollSmoothAuto) {
+    behavior = ScrollBehavior::Auto;
+  }
+  if (aScrollContainerFrame->IsSmoothScroll(behavior)) {
+    scrollMode = ScrollMode::SmoothMsd;
+  }
+  return scrollMode;
+}
 
 
 
@@ -3514,12 +3533,13 @@ static WhereToScroll GetApplicableWhereToScroll(
 
 
 
-static void ScrollToShowRect(ScrollContainerFrame* aScrollContainerFrame,
-                             const nsIFrame* aScrollableFrame,
-                             const nsIFrame* aTarget, const nsRect& aRect,
-                             const Sides aScrollPaddingSkipSides,
-                             const nsMargin& aMargin, ScrollAxis aVertical,
-                             ScrollAxis aHorizontal, ScrollFlags aScrollFlags) {
+
+static Maybe<nsPoint> ScrollToShowRect(
+    ScrollContainerFrame* aScrollContainerFrame,
+    const nsIFrame* aScrollableFrame, const nsIFrame* aTarget,
+    const nsRect& aRect, const Sides aScrollPaddingSkipSides,
+    const nsMargin& aMargin, ScrollAxis aVertical, ScrollAxis aHorizontal,
+    ScrollFlags aScrollFlags) {
   nsPoint scrollPt = aScrollContainerFrame->GetVisualViewportOffset();
   const nsPoint originalScrollPt = scrollPt;
   const nsRect visibleRect(scrollPt,
@@ -3597,24 +3617,11 @@ static void ScrollToShowRect(ScrollContainerFrame* aScrollContainerFrame,
   
   
   if (scrollPt == originalScrollPt) {
-    return;
+    return Nothing();
   }
 
-  ScrollMode scrollMode = ScrollMode::Instant;
-  
-  
-  
-  
-  ScrollBehavior behavior = ScrollBehavior::Instant;
-  if (aScrollFlags & ScrollFlags::ScrollSmooth) {
-    behavior = ScrollBehavior::Smooth;
-  } else if (aScrollFlags & ScrollFlags::ScrollSmoothAuto) {
-    behavior = ScrollBehavior::Auto;
-  }
-  bool smoothScroll = aScrollContainerFrame->IsSmoothScroll(behavior);
-  if (smoothScroll) {
-    scrollMode = ScrollMode::SmoothMsd;
-  }
+  ScrollMode scrollMode =
+      GetScrollModeForScrollIntoView(aScrollContainerFrame, aScrollFlags);
   nsIFrame* frame = do_QueryFrame(aScrollContainerFrame);
   AutoWeakFrame weakFrame(frame);
   aScrollContainerFrame->ScrollTo(scrollPt, scrollMode, &allowedRange,
@@ -3622,19 +3629,7 @@ static void ScrollToShowRect(ScrollContainerFrame* aScrollContainerFrame,
                                   aScrollFlags & ScrollFlags::TriggeredByScript
                                       ? ScrollTriggeredByScript::Yes
                                       : ScrollTriggeredByScript::No);
-  if (!weakFrame.IsAlive()) {
-    return;
-  }
-
-  
-  
-  
-  
-  if (aScrollContainerFrame->IsRootScrollFrameOfDocument() &&
-      frame->PresContext()->IsRootContentDocumentCrossProcess()) {
-    frame->PresShell()->ScrollToVisual(scrollPt, FrameMetrics::eMainThread,
-                                       scrollMode);
-  }
+  return Some(scrollPt);
 }
 
 nsresult PresShell::ScrollContentIntoView(nsIContent* aContent,
@@ -3767,6 +3762,51 @@ void PresShell::DoScrollContentIntoView() {
                       data->mContentScrollHAxis, data->mContentToScrollToFlags);
 }
 
+void PresShell::ScrollFrameIntoVisualViewport(Maybe<nsPoint>& aDestination,
+                                              const nsRect& aPositionFixedRect,
+                                              ScrollFlags aScrollFlags) {
+  PresShell* root = GetRootPresShell();
+  if (!root) {
+    return;
+  }
+
+  if (!root->GetPresContext()->IsRootContentDocumentCrossProcess()) {
+    return;
+  }
+
+  ScrollContainerFrame* rootScrollContainer =
+      root->GetRootScrollContainerFrame();
+  if (!rootScrollContainer) {
+    return;
+  }
+
+  if (!aDestination) {
+    
+    
+    
+    
+
+    const nsSize visualViewportSize =
+        rootScrollContainer->GetVisualViewportSize();
+    
+    
+    if (aPositionFixedRect.y >= 0 &&
+        aPositionFixedRect.YMost() <= visualViewportSize.height &&
+        aPositionFixedRect.x >= 0 &&
+        aPositionFixedRect.XMost() <= visualViewportSize.width) {
+      return;
+    }
+
+    aDestination = Some(aPositionFixedRect.TopLeft());
+  }
+
+  
+  
+  ScrollMode scrollMode =
+      GetScrollModeForScrollIntoView(rootScrollContainer, aScrollFlags);
+  root->ScrollToVisual(*aDestination, FrameMetrics::eMainThread, scrollMode);
+}
+
 bool PresShell::ScrollFrameIntoView(
     nsIFrame* aTargetFrame, const Maybe<nsRect>& aKnownRectRelativeToTarget,
     ScrollAxis aVertical, ScrollAxis aHorizontal, ScrollFlags aScrollFlags) {
@@ -3852,10 +3892,17 @@ bool PresShell::ScrollFrameIntoView(
   }();
 
   bool didScroll = false;
+  bool inPositionFixedSubtree = false;
   const nsIFrame* target = aTargetFrame;
+  Maybe<nsPoint> rootScrollDestination;
   
   
   do {
+    if (container->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
+        nsLayoutUtils::IsReallyFixedPos(container)) {
+      inPositionFixedSubtree = true;
+    }
+
     if (ScrollContainerFrame* sf = do_QueryFrame(container)) {
       nsPoint oldPosition = sf->GetScrollPosition();
       nsRect targetRect = rect;
@@ -3885,10 +3932,16 @@ bool PresShell::ScrollFrameIntoView(
 
       {
         AutoWeakFrame wf(container);
-        ScrollToShowRect(sf, container, target, targetRect, skipPaddingSides,
-                         scrollMargin, aVertical, aHorizontal, aScrollFlags);
+        Maybe<nsPoint> destination = ScrollToShowRect(
+            sf, container, target, targetRect, skipPaddingSides, scrollMargin,
+            aVertical, aHorizontal, aScrollFlags);
         if (!wf.IsAlive()) {
           return didScroll;
+        }
+
+        if (sf->IsRootScrollFrameOfDocument() &&
+            sf->PresContext()->IsRootContentDocumentCrossProcess()) {
+          rootScrollDestination = destination;
         }
       }
 
@@ -3946,6 +3999,17 @@ bool PresShell::ScrollFrameIntoView(
     }
     container = parent;
   } while (container);
+
+  
+  
+  
+  
+  
+  if (!rootScrollDestination && !inPositionFixedSubtree) {
+    return didScroll;
+  }
+
+  ScrollFrameIntoVisualViewport(rootScrollDestination, rect, aScrollFlags);
 
   return didScroll;
 }
