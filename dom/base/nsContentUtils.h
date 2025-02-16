@@ -696,9 +696,20 @@ class nsContentUtils {
 
 
 
-  static mozilla::Maybe<int32_t> ComparePoints(
+  static mozilla::Maybe<int32_t> ComparePointsWithIndices(
       const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
       uint32_t aOffset2, NodeIndexCache* aIndexCache = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
   template <typename PT1, typename RT1, typename PT2, typename RT2>
   static mozilla::Maybe<int32_t> ComparePoints(
       const mozilla::RangeBoundaryBase<PT1, RT1>& aBoundary1,
@@ -737,12 +748,19 @@ class nsContentUtils {
       }
       
       
-      return ComparePoints(
-          aParent1, aOffset1 < 0 ? UINT32_MAX : static_cast<uint32_t>(aOffset1),
+      return ComparePointsWithIndices(
+          aParent1,
+          
+          aOffset1 < 0 ? aParent1->GetChildCount()
+                       : std::min(static_cast<uint32_t>(aOffset1),
+                                  aParent1->GetChildCount()),
           aParent2,
-          aOffset2 < 0 ? UINT32_MAX : static_cast<uint32_t>(aOffset2));
+          
+          aOffset2 < 0 ? aParent2->GetChildCount()
+                       : std::min(static_cast<uint32_t>(aOffset2),
+                                  aParent2->GetChildCount()));
     }
-    return ComparePoints(aParent1, aOffset1, aParent2, aOffset2);
+    return ComparePointsWithIndices(aParent1, aOffset1, aParent2, aOffset2);
   }
 
   
@@ -3585,6 +3603,7 @@ class nsContentUtils {
       NodeIndexCache* aIndexCache = nullptr);
 
   
+
 
 
 

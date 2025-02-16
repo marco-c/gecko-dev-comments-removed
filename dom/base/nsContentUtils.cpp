@@ -3388,11 +3388,9 @@ Maybe<int32_t> nsContentUtils::CompareChildNodeAndChildOffset(
 }
 
 
-Maybe<int32_t> nsContentUtils::ComparePoints(const nsINode* aParent1,
-                                             uint32_t aOffset1,
-                                             const nsINode* aParent2,
-                                             uint32_t aOffset2,
-                                             NodeIndexCache* aIndexCache) {
+Maybe<int32_t> nsContentUtils::ComparePointsWithIndices(
+    const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
+    uint32_t aOffset2, NodeIndexCache* aIndexCache) {
   MOZ_ASSERT(aParent1);
   MOZ_ASSERT(aParent2);
 
@@ -3557,7 +3555,7 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
   
   
   if (aBoundary1.HasOffset() && aBoundary2.HasOffset()) {
-    return ComparePoints(
+    return ComparePointsWithIndices(
         aBoundary1.Container(), *aBoundary1.Offset(kValidOrInvalidOffsets1),
         aBoundary2.Container(), *aBoundary2.Offset(kValidOrInvalidOffsets2),
         aIndexCache);
