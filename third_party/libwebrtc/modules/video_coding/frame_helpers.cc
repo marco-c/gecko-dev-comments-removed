@@ -74,6 +74,15 @@ std::unique_ptr<EncodedFrame> CombineAndDeleteFrames(
   
   
   first_frame->SetSpatialIndex(last_frame.SpatialIndex().value_or(0));
+  
+  
+  
+  
+  
+  
+  
+  first_frame->SetFrameInstrumentationData(
+      last_frame.CodecSpecific()->frame_instrumentation_data);
 
   first_frame->video_timing_mutable()->network2_timestamp_ms =
       last_frame.video_timing().network2_timestamp_ms;

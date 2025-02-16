@@ -119,6 +119,15 @@ FrameInstrumentationGenerator::OnEncodedImage(
     contexts_[layer_id].rtp_timestamp_of_last_key_frame =
         encoded_image.RtpTimestamp();
   } else if (contexts_.find(layer_id) == contexts_.end()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
     RTC_LOG(LS_INFO) << "The first frame of a spatial or simulcast layer is "
                         "not a key frame.";
     return std::nullopt;

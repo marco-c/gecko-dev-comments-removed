@@ -74,6 +74,12 @@ class EncodedFrame : public EncodedImage {
   void SetCodecSpecific(const CodecSpecificInfo* codec_specific) {
     _codecSpecificInfo = *codec_specific;
   }
+  void SetFrameInstrumentationData(
+      const std::optional<
+          absl::variant<FrameInstrumentationSyncData, FrameInstrumentationData>>
+          frame_instrumentation) {
+    _codecSpecificInfo.frame_instrumentation_data = frame_instrumentation;
+  }
 
   
   
