@@ -8499,17 +8499,6 @@ var TabContextMenu = {
     );
 
     
-    const toggleVerticalTabsItem = document.getElementById(
-      "context_toggleVerticalTabs"
-    );
-    document.l10n.setAttributes(
-      toggleVerticalTabsItem,
-      gBrowser.tabContainer?.verticalMode
-        ? "tab-context-disable-vertical-tabs"
-        : "tab-context-enable-vertical-tabs"
-    );
-
-    
     
     let noTabsToStart = !gBrowser._getTabsToTheStartFrom(this.contextTab)
       .length;
