@@ -188,13 +188,6 @@ std::unique_ptr<std::map<std::string, SpeakerOutputFilePaths>> Simulate(
   auto audiotracks = PreloadAudioTracks(audiotrack_readers);
 
   
-  
-  
-  
-  
-  
-
-  
   for (const auto& speaking_turn : multiend_call.speaking_turns()) {
     const std::string& active_speaker_name = speaking_turn.speaker_name;
     const auto source_audiotrack =
