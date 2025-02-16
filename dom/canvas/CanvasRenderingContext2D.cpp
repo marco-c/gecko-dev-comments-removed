@@ -4219,8 +4219,6 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   
   
   
-  StyleComputedFontStyleDescriptor style(
-      StyleComputedFontStyleDescriptor::Normal());
   StyleFontFamilyList list;
   gfxFontStyle fontStyle;
   float size = 0.0f;
