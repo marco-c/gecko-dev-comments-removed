@@ -2,7 +2,6 @@
 
 
 
-use nsstring::nsCString;
 use std::{
     alloc::{self, Layout},
     cmp::min,
@@ -305,6 +304,10 @@ fn store_annotation<T>(id: u32, contents: AnnotationContents, address: *const T)
 
     old
 }
+
+
+#[allow(non_camel_case_types)]
+pub struct nsCString {}
 
 
 
