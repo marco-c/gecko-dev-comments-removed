@@ -2193,6 +2193,8 @@ void JSScript::relazify(JSRuntime* rt) {
   
   MOZ_ASSERT_IF(jit::HasJitBackend(), isUsingInterpreterTrampoline(rt));
 
+  realm()->removeFromCompileQueue(this);
+
   
   
   destroyScriptCounts();

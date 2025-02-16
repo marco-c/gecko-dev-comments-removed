@@ -371,6 +371,10 @@ void Realm::purgeForOfPicChain() {
   }
 }
 
+void Realm::removeFromCompileQueue(JSScript* script) {
+  baselineCompileQueue_.remove(script);
+}
+
 
 
 
