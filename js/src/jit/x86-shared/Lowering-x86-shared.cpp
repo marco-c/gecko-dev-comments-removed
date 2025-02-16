@@ -1391,7 +1391,7 @@ void LIRGenerator::visitWasmShiftSimd128(MWasmShiftSimd128* ins) {
       define(lir, ins);
     } else {
       
-      defineReuseInput(lir, ins, LWasmConstantShiftSimd128::Src);
+      defineReuseInput(lir, ins, LWasmConstantShiftSimd128::SrcIndex);
     }
     return;
   }
