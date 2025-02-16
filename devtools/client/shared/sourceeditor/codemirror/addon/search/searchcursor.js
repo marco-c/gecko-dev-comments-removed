@@ -72,8 +72,8 @@
     }
   }
 
-  function lastMatchIn(string, regexp) {
-    var cutOff = 0, match
+  function lastMatchIn(string, regexp, endMargin) {
+      var cutOff = 0, match
     for (;;) {
       regexp.lastIndex = cutOff
       var newMatch = regexp.exec(string)
@@ -98,8 +98,7 @@
   }
 
   function searchRegexpBackwardMultiline(doc, regexp, start) {
-    regexp = ensureFlags(regexp, "gm")
-    var string, chunk = 1
+   var string, chunk = 1
     for (var line = start.line, first = doc.firstLine(); line >= first;) {
       for (var i = 0; i < chunk; i++) {
         var curLine = doc.getLine(line--)
@@ -234,7 +233,7 @@
     findPrevious: function() {return this.find(true)},
 
     find: function(reverse) {
-      var result = this.matches(reverse, this.doc.clipPos(reverse ? this.pos.from : this.pos.to))
+       var result = this.matches(reverse, this.doc.clipPos(reverse ? this.pos.from : this.pos.to))
 
       
       
