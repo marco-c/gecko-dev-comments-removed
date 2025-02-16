@@ -15,13 +15,14 @@ const XRE = Cc["@mozilla.org/xre/directory-provider;1"].getService(
 );
 const HASH = XRE.getInstallHash(false);
 const EXE = Services.dirsvc.get("XREExeF", Ci.nsIFile);
+const GREBIND = Services.dirsvc.get("GreBinD", Ci.nsIFile);
 const SCRIPT = do_get_file("show_hash.js", false);
 
 async function getHash(bin) {
   try {
     
     
-    let args = [];
+    let args = ["-g", GREBIND.path];
     if (!bin.leafName.startsWith("xpcshell")) {
       args.push("-xpcshell");
     }
