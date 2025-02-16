@@ -736,15 +736,19 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
                    ComputedLogicalBorderPadding(wm).BStartEnd(wm));
   }
 
+  const auto positionProperty = mStyleDisplay->mPosition;
   bool dependsOnCBBSize =
       (mStylePosition->BSizeDependsOnContainer(wm) &&
        
        !mStylePosition->BSize(wm).IsAuto()) ||
       mStylePosition->MinBSizeDependsOnContainer(wm) ||
       mStylePosition->MaxBSizeDependsOnContainer(wm) ||
-      mStylePosition->mOffset.Get(LogicalSide::BStart, wm)
-          .MaybePercentageAware() ||
-      !mStylePosition->mOffset.Get(LogicalSide::BEnd, wm).MaybeAuto();
+      mStylePosition
+          ->GetAnchorResolvedInset(LogicalSide::BStart, wm, positionProperty)
+          ->HasPercent() ||
+      !mStylePosition
+           ->GetAnchorResolvedInset(LogicalSide::BEnd, wm, positionProperty)
+           ->IsAuto();
 
   
   
