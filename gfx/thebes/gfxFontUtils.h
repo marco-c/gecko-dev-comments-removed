@@ -1225,11 +1225,14 @@ constexpr double kStyleFactor = 1.0e4;
 constexpr double kWeightFactor = 1.0e0;
 
 
+
+
 static inline double StyleDistance(const mozilla::SlantStyleRange& aRange,
                                    mozilla::FontSlantStyle aTargetStyle,
                                    bool aItalicToObliqueFallback) {
   const mozilla::FontSlantStyle minStyle = aRange.Min();
-  if (aTargetStyle == minStyle) {
+  const mozilla::FontSlantStyle maxStyle = aRange.Max();
+  if (aTargetStyle == minStyle || aTargetStyle == maxStyle) {
     return 0.0;  
   }
 
@@ -1246,22 +1249,19 @@ static inline double StyleDistance(const mozilla::SlantStyleRange& aRange,
   const double kBadFallback = 400.0;
 
   if (aTargetStyle.IsNormal()) {
-    if (minStyle.IsItalic()) {
+    if (minStyle.IsItalic() || maxStyle.IsItalic()) {
       
-      
-      return kReverse;
+      return kBadFallback + kNegate + kReverse;
     }
     const double minAngle = minStyle.ObliqueAngle();
     if (minAngle >= 0.0) {
       return minAngle;
     }
-    const mozilla::FontSlantStyle maxStyle = aRange.Max();
     const double maxAngle = maxStyle.ObliqueAngle();
     if (maxAngle >= 0.0) {
       
       return 0.0;
     }
-    
     return kNegate - maxAngle;
   }
 
@@ -1269,11 +1269,6 @@ static inline double StyleDistance(const mozilla::SlantStyleRange& aRange,
 
   if (aTargetStyle.IsItalic()) {
     MOZ_ASSERT(!minStyle.IsItalic());  
-    const mozilla::FontSlantStyle maxStyle = aRange.Max();
-    if (maxStyle.IsItalic()) {
-      
-      return 0.0;
-    }
     double targetAngle = kDefaultAngle;
     double fallbackBias = 0.0;
     if (!aItalicToObliqueFallback) {
@@ -1305,11 +1300,13 @@ static inline double StyleDistance(const mozilla::SlantStyleRange& aRange,
   
   
   const double targetAngle = aTargetStyle.ObliqueAngle();
-  const mozilla::FontSlantStyle maxStyle = aRange.Max();
+
+  
+  if (minStyle.IsItalic() || maxStyle.IsItalic()) {
+    return kBadFallback + kNegate + kReverse;
+  }
+
   if (targetAngle >= kDefaultAngle) {
-    if (minStyle.IsItalic() || maxStyle.IsItalic()) {
-      return kReverse + kNegate;
-    }
     const double minAngle = minStyle.ObliqueAngle();
     if (minAngle >= targetAngle) {
       return minAngle - targetAngle;
@@ -1325,9 +1322,6 @@ static inline double StyleDistance(const mozilla::SlantStyleRange& aRange,
   }
 
   if (targetAngle <= -kDefaultAngle) {
-    if (minStyle.IsItalic() || maxStyle.IsItalic()) {
-      return kReverse + kNegate;
-    }
     const double maxAngle = maxStyle.ObliqueAngle();
     if (maxAngle <= targetAngle) {
       return targetAngle - maxAngle;
@@ -1343,9 +1337,6 @@ static inline double StyleDistance(const mozilla::SlantStyleRange& aRange,
   }
 
   if (targetAngle >= 0.0) {
-    if (minStyle.IsItalic() || maxStyle.IsItalic()) {
-      return kReverse + kNegate - 1.0;
-    }
     const double minAngle = minStyle.ObliqueAngle();
     if (minAngle > targetAngle) {
       return kReverse + (minAngle - targetAngle);
@@ -1361,9 +1352,6 @@ static inline double StyleDistance(const mozilla::SlantStyleRange& aRange,
   }
 
   
-  if (minStyle.IsItalic() || maxStyle.IsItalic()) {
-    return kReverse + kNegate - 1.0;
-  }
   const double maxAngle = maxStyle.ObliqueAngle();
   if (maxAngle < targetAngle) {
     return kReverse + (targetAngle - maxAngle);
@@ -1377,6 +1365,8 @@ static inline double StyleDistance(const mozilla::SlantStyleRange& aRange,
   }
   return kReverse + kNegate + (minAngle - targetAngle);
 }
+
+
 
 
 static inline double StretchDistance(const mozilla::StretchRange& aRange,
@@ -1405,6 +1395,8 @@ static inline double StretchDistance(const mozilla::StretchRange& aRange,
   }
   return 0.0;
 }
+
+
 
 
 
