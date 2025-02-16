@@ -30,6 +30,7 @@
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
+#include "mozilla/glean/DomNotificationMetrics.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
@@ -715,6 +716,10 @@ nsresult Notification::ResolveIconURL(nsIGlobalObject* aGlobal,
                                       nsString& aIconUrl) {
   nsresult rv = NS_OK;
 
+  if (aIconUrl.IsEmpty()) {
+    return rv;
+  }
+
   nsCOMPtr<nsIURI> baseUri = nullptr;
 
   
@@ -739,17 +744,54 @@ nsresult Notification::ResolveIconURL(nsIGlobalObject* aGlobal,
     baseUri = workerPrivate->GetBaseURI();
   }
 
-  if (baseUri) {
-    if (aIconUrl.Length() > 0) {
-      nsCOMPtr<nsIURI> srcUri;
-      rv = NS_NewURI(getter_AddRefs(srcUri), aIconUrl, encoding, baseUri);
-      if (NS_SUCCEEDED(rv)) {
-        nsAutoCString src;
-        srcUri->GetSpec(src);
-        CopyUTF8toUTF16(src, aIconUrl);
-      }
-    }
+  if (!baseUri) {
+    return rv;
   }
+
+  nsCOMPtr<nsIURI> srcUri;
+  rv = NS_NewURI(getter_AddRefs(srcUri), aIconUrl, encoding, baseUri);
+  if (NS_SUCCEEDED(rv)) {
+    nsAutoCString src;
+    srcUri->GetSpec(src);
+    CopyUTF8toUTF16(src, aIconUrl);
+  }
+
+  if (encoding == UTF_8_ENCODING) {
+    return rv;
+  }
+
+  
+  
+  
+  glean::web_notification::IconUrlEncodingLabel label =
+      glean::web_notification::IconUrlEncodingLabel::eNeitherWay;
+
+  nsCOMPtr<nsIURI> srcUriUtf8;
+  nsresult rvUtf8 =
+      NS_NewURI(getter_AddRefs(srcUri), aIconUrl, UTF_8_ENCODING, baseUri);
+
+  if (NS_SUCCEEDED(rv)) {
+    if (NS_SUCCEEDED(rvUtf8)) {
+      bool equals = false;
+      if (NS_SUCCEEDED(baseUri->Equals(srcUri, &equals))) {
+        if (equals) {
+          
+          label = glean::web_notification::IconUrlEncodingLabel::eUtf8;
+        } else {
+          
+          
+          label = glean::web_notification::IconUrlEncodingLabel::eEitherWay;
+        }
+      }
+    } else {
+      label = glean::web_notification::IconUrlEncodingLabel::eDocumentCharset;
+    }
+  } else if (NS_SUCCEEDED(rvUtf8)) {
+    
+    label = glean::web_notification::IconUrlEncodingLabel::eUtf8;
+  }
+
+  glean::web_notification::icon_url_encoding.EnumGet(label).Add();
 
   return rv;
 }
