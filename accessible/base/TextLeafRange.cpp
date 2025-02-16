@@ -2318,7 +2318,16 @@ bool TextLeafRange::WalkLineRects(LineRectCallback aCallback) const {
     
     
     if (nextLineStartPoint == currPoint || mEnd <= lastPointInLine) {
-      lastPointInLine = mEnd;
+      
+      
+      
+      
+      
+      
+      lastPointInLine =
+          currPoint < mEnd ? mEnd.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR,
+                                               eDirPrevious)
+                           : mEnd;
       locatedFinalLine = true;
     }
 
