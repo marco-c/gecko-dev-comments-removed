@@ -19,6 +19,7 @@ const { isBrowsingContextPartOfContext } = ChromeUtils.importESModule(
 );
 const { SUPPORTED_DATA } = SessionDataHelpers;
 const { TARGET_CONFIGURATION } = SUPPORTED_DATA;
+const LOG_DISABLED = -1;
 
 
 
@@ -106,6 +107,8 @@ class TargetConfigurationActor extends Actor {
 
   
   #consolePrefValue;
+  
+  #pageMessagesPrefValue;
 
   form() {
     return {
@@ -518,12 +521,21 @@ class TargetConfigurationActor extends Actor {
 
   _setTracerOptions(options) {
     if (!options) {
-      if (this.#consolePrefValue === -1) {
+      if (this.#consolePrefValue === LOG_DISABLED) {
         Services.prefs.clearUserPref("logging.console");
       } else {
         Services.prefs.setIntPref("logging.console", this.#consolePrefValue);
       }
       this.#consolePrefValue = undefined;
+      if (this.#pageMessagesPrefValue === LOG_DISABLED) {
+        Services.prefs.clearUserPref("logging.PageMessages");
+      } else {
+        Services.prefs.setIntPref(
+          "logging.PageMessages",
+          this.#pageMessagesPrefValue
+        );
+      }
+      this.#pageMessagesPrefValue = undefined;
       return;
     }
     
@@ -531,13 +543,17 @@ class TargetConfigurationActor extends Actor {
     
     
     
-    const LOG_DISABLED = -1;
     const LOG_VERBOSE = 5;
     this.#consolePrefValue = Services.prefs.getIntPref(
       "logging.console",
       LOG_DISABLED
     );
     Services.prefs.setIntPref("logging.console", LOG_VERBOSE);
+    this.#pageMessagesPrefValue = Services.prefs.getIntPref(
+      "logging.PageMessages",
+      LOG_DISABLED
+    );
+    Services.prefs.setIntPref("logging.PageMessages", LOG_VERBOSE);
   }
 }
 
