@@ -233,17 +233,10 @@ class SelectionStyleProvider final {
   }
 
   
-  void AttachTo(GdkWindow* aGDKWindow) {
-    GtkWidget* widget = nullptr;
-    
-    
-    
-    gdk_window_get_user_data(aGDKWindow, (gpointer*)&widget);
-    if (GTK_IS_WIDGET(widget)) {
-      gtk_style_context_add_provider(gtk_widget_get_style_context(widget),
-                                     GTK_STYLE_PROVIDER(mProvider),
-                                     GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    }
+  void AttachTo(GtkWidget* aWidget) {
+    gtk_style_context_add_provider(gtk_widget_get_style_context(aWidget),
+                                   GTK_STYLE_PROVIDER(mProvider),
+                                   GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
   }
 
   void OnThemeChanged() {
@@ -424,7 +417,7 @@ void IMContextWrapper::Init() {
   
   
   
-  SelectionStyleProvider::GetInstance()->AttachTo(gdkWindow);
+  SelectionStyleProvider::GetInstance()->AttachTo(mOwnerWindow->GetGtkWidget());
 
   
   
