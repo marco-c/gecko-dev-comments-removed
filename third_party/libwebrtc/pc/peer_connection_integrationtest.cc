@@ -4121,13 +4121,13 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
 
   
   
-  
-  caller()->AddCorruptionDetectionHeader();
-
-  
-  
   caller()->AddAudioVideoTracks();
   callee()->AddAudioVideoTracks();
+  
+  
+  
+  caller()->NegotiateCorruptionDetectionHeader();
+
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   ASSERT_TRUE_WAIT(caller()->GetCorruptionScoreCount() > 0, kMaxWaitForStatsMs);
@@ -4174,16 +4174,18 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
   ConnectFakeSignaling();
 
-  
-  
-  
-  caller()->AddCorruptionDetectionHeader();
-  callee()->AddCorruptionDetectionHeader();
 
   
   
   caller()->AddAudioVideoTracks();
   callee()->AddAudioVideoTracks();
+
+  
+  
+  
+  caller()->NegotiateCorruptionDetectionHeader();
+  callee()->NegotiateCorruptionDetectionHeader();
+
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   ASSERT_TRUE_WAIT(caller()->GetCorruptionScoreCount() > 0, kMaxWaitForStatsMs);
@@ -4224,8 +4226,8 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   
   
   
-  caller()->AddCorruptionDetectionHeader();
-  callee()->AddCorruptionDetectionHeader();
+  caller()->NegotiateCorruptionDetectionHeader();
+  callee()->NegotiateCorruptionDetectionHeader();
 
   
   
