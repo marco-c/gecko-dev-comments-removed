@@ -55,15 +55,20 @@ function getVisibleColumns(columns) {
 const getColumns = createSelector(
   state => state.ui.columns,
   state => state.ui.networkDetailsOpen || state.search.panelOpen,
-  (columns, isSidePanelOpen) => {
+  (_, hasOverride) => hasOverride,
+  (columns, isSidePanelOpen, hasOverride) => {
+    columns = { ...columns };
     const isWaterfallOnly =
       getVisibleColumns(columns).length === 1 && columns.waterfall;
     if (isSidePanelOpen && !isWaterfallOnly) {
       
       
-      columns = { ...columns };
       delete columns.waterfall;
     }
+
+    
+    
+    columns.override = hasOverride;
     return columns;
   }
 );
