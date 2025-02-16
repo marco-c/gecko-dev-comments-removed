@@ -1451,99 +1451,6 @@ void nsNativeThemeCocoa::DrawDropdown(CGContextRef cgContext,
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
-MOZ_RUNINIT static const CellRenderSettings spinnerSettings = {
-    {
-        NSMakeSize(11,
-                   16),  
-        NSMakeSize(15, 22),  
-        NSMakeSize(19, 27)   
-    },
-    {
-        NSMakeSize(11,
-                   16),  
-        NSMakeSize(15, 22),  
-        NSMakeSize(19, 27)   
-    },
-    {{
-         
-         {0, 0, 0, 0},  
-         {0, 0, 0, 0},  
-         {0, 0, 0, 0}   
-     },
-     {
-         
-         {0, 0, 0, 0},  
-         {0, 0, 0, 0},  
-         {0, 0, 0, 0}   
-     }}};
-
-HIThemeButtonDrawInfo nsNativeThemeCocoa::SpinButtonDrawInfo(
-    ThemeButtonKind aKind, const SpinButtonParams& aParams) {
-  HIThemeButtonDrawInfo bdi;
-  bdi.version = 0;
-  bdi.kind = aKind;
-  bdi.value = kThemeButtonOff;
-  bdi.adornment = kThemeAdornmentNone;
-
-  if (aParams.disabled) {
-    bdi.state = kThemeStateUnavailable;
-  } else if (aParams.insideActiveWindow && aParams.pressedButton) {
-    if (*aParams.pressedButton == SpinButton::eUp) {
-      bdi.state = kThemeStatePressedUp;
-    } else {
-      bdi.state = kThemeStatePressedDown;
-    }
-  } else {
-    bdi.state = kThemeStateActive;
-  }
-
-  return bdi;
-}
-
-void nsNativeThemeCocoa::DrawSpinButtons(CGContextRef cgContext,
-                                         const HIRect& inBoxRect,
-                                         const SpinButtonParams& aParams) {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-
-  HIThemeButtonDrawInfo bdi = SpinButtonDrawInfo(kThemeIncDecButton, aParams);
-  HIThemeDrawButton(&inBoxRect, &bdi, cgContext, HITHEME_ORIENTATION, NULL);
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
-}
-
-void nsNativeThemeCocoa::DrawSpinButton(CGContextRef cgContext,
-                                        const HIRect& inBoxRect,
-                                        SpinButton aDrawnButton,
-                                        const SpinButtonParams& aParams) {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-
-  HIThemeButtonDrawInfo bdi =
-      SpinButtonDrawInfo(kThemeIncDecButtonMini, aParams);
-
-  
-  
-  
-  
-  HIRect drawRect = inBoxRect;
-  drawRect.size.height *= 2;
-  if (aDrawnButton == SpinButton::eDown) {
-    drawRect.origin.y -= inBoxRect.size.height;
-  }
-
-  
-  
-  drawRect.origin.x -= 1;
-
-  CGContextSaveGState(cgContext);
-  CGContextClipToRect(cgContext, inBoxRect);
-
-  HIThemeDrawButton(&drawRect, &bdi, cgContext, HITHEME_ORIENTATION, NULL);
-
-  CGContextRestoreGState(cgContext);
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
-}
-
 MOZ_RUNINIT static const CellRenderSettings progressSettings[2][2] = {
     
     {
@@ -2135,52 +2042,6 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
           ComputeControlParams(aFrame, elementState), buttonType}));
     }
 
-    case StyleAppearance::Spinner: {
-      bool isSpinner = (aAppearance == StyleAppearance::Spinner);
-      nsIContent* content = aFrame->GetContent();
-      if (isSpinner && content->IsHTMLElement()) {
-        
-        
-        
-        break;
-      }
-      SpinButtonParams params;
-      if (content->IsElement()) {
-        if (content->AsElement()->AttrValueIs(
-                kNameSpaceID_None, nsGkAtoms::state, u"up"_ns, eCaseMatters)) {
-          params.pressedButton = Some(SpinButton::eUp);
-        } else if (content->AsElement()->AttrValueIs(
-                       kNameSpaceID_None, nsGkAtoms::state, u"down"_ns,
-                       eCaseMatters)) {
-          params.pressedButton = Some(SpinButton::eDown);
-        }
-      }
-      params.disabled = elementState.HasState(ElementState::DISABLED);
-      params.insideActiveWindow = FrameIsInActiveWindow(aFrame);
-
-      return Some(WidgetInfo::SpinButtons(params));
-    }
-
-    case StyleAppearance::SpinnerUpbutton:
-    case StyleAppearance::SpinnerDownbutton: {
-      nsNumberControlFrame* numberControlFrame =
-          nsNumberControlFrame::GetNumberControlFrameForSpinButton(aFrame);
-      if (numberControlFrame) {
-        SpinButtonParams params;
-        if (numberControlFrame->SpinnerUpButtonIsDepressed()) {
-          params.pressedButton = Some(SpinButton::eUp);
-        } else if (numberControlFrame->SpinnerDownButtonIsDepressed()) {
-          params.pressedButton = Some(SpinButton::eDown);
-        }
-        params.disabled = elementState.HasState(ElementState::DISABLED);
-        params.insideActiveWindow = FrameIsInActiveWindow(aFrame);
-        if (aAppearance == StyleAppearance::SpinnerUpbutton) {
-          return Some(WidgetInfo::SpinButtonUp(params));
-        }
-        return Some(WidgetInfo::SpinButtonDown(params));
-      }
-    } break;
-
     case StyleAppearance::Toolbarbutton: {
       SegmentParams params = ComputeSegmentParams(aFrame, elementState,
                                                   SegmentType::eToolbarButton);
@@ -2396,21 +2257,6 @@ void nsNativeThemeCocoa::RenderWidget(const WidgetInfo& aWidgetInfo,
           DrawDropdown(cgContext, macRect, params);
           break;
         }
-        case Widget::eSpinButtons: {
-          SpinButtonParams params = aWidgetInfo.Params<SpinButtonParams>();
-          DrawSpinButtons(cgContext, macRect, params);
-          break;
-        }
-        case Widget::eSpinButtonUp: {
-          SpinButtonParams params = aWidgetInfo.Params<SpinButtonParams>();
-          DrawSpinButton(cgContext, macRect, SpinButton::eUp, params);
-          break;
-        }
-        case Widget::eSpinButtonDown: {
-          SpinButtonParams params = aWidgetInfo.Params<SpinButtonParams>();
-          DrawSpinButton(cgContext, macRect, SpinButton::eDown, params);
-          break;
-        }
         case Widget::eSegment: {
           SegmentParams params = aWidgetInfo.Params<SegmentParams>();
           DrawSegment(cgContext, macRect, params);
@@ -2521,9 +2367,6 @@ bool nsNativeThemeCocoa::CreateWebRenderCommandsForWidget(
     case StyleAppearance::MozMacHelpButton:
     case StyleAppearance::MozMacDisclosureButtonOpen:
     case StyleAppearance::MozMacDisclosureButtonClosed:
-    case StyleAppearance::Spinner:
-    case StyleAppearance::SpinnerUpbutton:
-    case StyleAppearance::SpinnerDownbutton:
     case StyleAppearance::Toolbarbutton:
     case StyleAppearance::Separator:
     case StyleAppearance::Statusbar:
@@ -2784,28 +2627,6 @@ LayoutDeviceIntSize nsNativeThemeCocoa::GetMinimumWidgetSize(
       break;
     }
 
-    case StyleAppearance::Spinner:
-    case StyleAppearance::SpinnerUpbutton:
-    case StyleAppearance::SpinnerDownbutton: {
-      SInt32 buttonHeight = 0, buttonWidth = 0;
-      if (aFrame->GetContent()->IsXULElement()) {
-        ::GetThemeMetric(kThemeMetricLittleArrowsWidth, &buttonWidth);
-        ::GetThemeMetric(kThemeMetricLittleArrowsHeight, &buttonHeight);
-      } else {
-        NSSize size =
-            spinnerSettings
-                .minimumSizes[EnumSizeForCocoaSize(NSControlSizeMini)];
-        buttonWidth = size.width;
-        buttonHeight = size.height;
-        if (aAppearance != StyleAppearance::Spinner) {
-          
-          buttonHeight /= 2;
-        }
-      }
-      result.SizeTo(buttonWidth, buttonHeight);
-      break;
-    }
-
     case StyleAppearance::Menulist:
     case StyleAppearance::MenulistButton: {
       SInt32 popupHeight = 0;
@@ -2942,9 +2763,6 @@ bool nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext,
     case StyleAppearance::MozMacWindow:
     case StyleAppearance::Button:
     case StyleAppearance::Toolbarbutton:
-    case StyleAppearance::Spinner:
-    case StyleAppearance::SpinnerUpbutton:
-    case StyleAppearance::SpinnerDownbutton:
     case StyleAppearance::Statusbar:
     case StyleAppearance::NumberInput:
     case StyleAppearance::PasswordInput:
@@ -3020,9 +2838,6 @@ bool nsNativeThemeCocoa::WidgetAppearanceDependsOnWindowFocus(
     case StyleAppearance::Tabpanels:
     case StyleAppearance::Menupopup:
     case StyleAppearance::Tooltip:
-    case StyleAppearance::Spinner:
-    case StyleAppearance::SpinnerUpbutton:
-    case StyleAppearance::SpinnerDownbutton:
     case StyleAppearance::Separator:
     case StyleAppearance::NumberInput:
     case StyleAppearance::PasswordInput:

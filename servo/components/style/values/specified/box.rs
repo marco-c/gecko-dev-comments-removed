@@ -1577,16 +1577,10 @@ pub enum Appearance {
     Separator,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Spinner,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     SpinnerUpbutton,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     SpinnerDownbutton,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    SpinnerTextfield,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Splitter,
