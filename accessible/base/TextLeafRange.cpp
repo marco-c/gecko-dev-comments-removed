@@ -2058,8 +2058,8 @@ bool TextLeafRange::Crop(Accessible* aContainer) {
 LayoutDeviceIntRect TextLeafRange::Bounds() const {
   
   LayoutDeviceIntRect result = TextLeafPoint{mStart}.CharBounds();
-  const bool succeeded =
-      WalkLineRects([&result](LayoutDeviceIntRect aLineRect) {
+  const bool succeeded = WalkLineRects(
+      [&result](TextLeafRange aLine, LayoutDeviceIntRect aLineRect) {
         result.UnionRect(result, aLineRect);
       });
 
@@ -2078,7 +2078,8 @@ nsTArray<LayoutDeviceIntRect> TextLeafRange::LineRects() const {
   }
 
   nsTArray<LayoutDeviceIntRect> lineRects;
-  WalkLineRects([&lineRects, &contentBounds](LayoutDeviceIntRect aLineRect) {
+  WalkLineRects([&lineRects, &contentBounds](TextLeafRange aLine,
+                                             LayoutDeviceIntRect aLineRect) {
     
     bool boundsVisible = true;
     if (contentBounds.isSome()) {
@@ -2253,22 +2254,25 @@ bool TextLeafRange::WalkLineRects(LineRectCallback aCallback) const {
     
     
     
-    TextLeafPoint lineStartPoint = currPoint.FindBoundary(
+    TextLeafPoint nextLineStartPoint = currPoint.FindBoundary(
         nsIAccessibleText::BOUNDARY_LINE_START, eDirNext);
-    TextLeafPoint lastPointInLine = lineStartPoint.FindBoundary(
+    TextLeafPoint lastPointInLine = nextLineStartPoint.FindBoundary(
         nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
     
     
-    if (lineStartPoint == currPoint || mEnd <= lastPointInLine) {
+    if (nextLineStartPoint == currPoint || mEnd <= lastPointInLine) {
       lastPointInLine = mEnd;
       locatedFinalLine = true;
     }
 
-    LayoutDeviceIntRect currLine = currPoint.CharBounds();
-    currLine.UnionRect(currLine, lastPointInLine.CharBounds());
-    aCallback(currLine);
+    LayoutDeviceIntRect currLineRect = currPoint.CharBounds();
+    currLineRect.UnionRect(currLineRect, lastPointInLine.CharBounds());
+    
+    
+    TextLeafRange currLine = TextLeafRange(currPoint, nextLineStartPoint);
+    aCallback(currLine, currLineRect);
 
-    currPoint = lineStartPoint;
+    currPoint = nextLineStartPoint;
   }
   return true;
 }
