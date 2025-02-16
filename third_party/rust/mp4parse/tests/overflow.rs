@@ -5,11 +5,12 @@
 
 
 #[test]
+#[allow(arithmetic_overflow)]
 #[should_panic(expected = "attempt to add with overflow")]
 fn overflow_protection() {
-    let edge = u32::max_value();
+    let edge = u32::MAX;
     assert_eq!(0u32, edge + 1);
 
-    let edge = u64::max_value();
+    let edge = u64::MAX;
     assert_eq!(0u64, edge + 1);
 }
