@@ -109,22 +109,14 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
       const MediaConfig& ,
       const AudioOptions& ,
       const webrtc::CryptoOptions& ,
-      webrtc::AudioCodecPairId ) {
-    
-    RTC_CHECK_NOTREACHED();
-    return nullptr;
-  }
+      webrtc::AudioCodecPairId ) = 0;
 
   virtual std::unique_ptr<VoiceMediaReceiveChannelInterface>
   CreateReceiveChannel(webrtc::Call* ,
                        const MediaConfig& ,
                        const AudioOptions& ,
                        const webrtc::CryptoOptions& ,
-                       webrtc::AudioCodecPairId ) {
-    
-    RTC_CHECK_NOTREACHED();
-    return nullptr;
-  }
+                       webrtc::AudioCodecPairId ) = 0;
 
   
   
@@ -159,22 +151,14 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
       const MediaConfig& ,
       const VideoOptions& ,
       const webrtc::CryptoOptions& ,
-      webrtc::
-          VideoBitrateAllocatorFactory* ) {
-    
-    RTC_CHECK_NOTREACHED();
-    return nullptr;
-  }
+      webrtc::VideoBitrateAllocatorFactory*
+      ) = 0;
 
   virtual std::unique_ptr<VideoMediaReceiveChannelInterface>
   CreateReceiveChannel(webrtc::Call* ,
                        const MediaConfig& ,
                        const VideoOptions& ,
-                       const webrtc::CryptoOptions& ) {
-    
-    RTC_CHECK_NOTREACHED();
-    return nullptr;
-  }
+                       const webrtc::CryptoOptions& ) = 0;
 
   
   
