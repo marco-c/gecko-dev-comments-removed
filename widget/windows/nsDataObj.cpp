@@ -1599,6 +1599,69 @@ HRESULT nsDataObj::GetFile(FORMATETC& aFE, STGMEDIUM& aSTG) {
   return E_FAIL;
 }
 
+static HRESULT AssignDropfile(STGMEDIUM& aSTG, nsAString const& aPath) {
+  
+  
+  struct DFWithPaths {
+    DROPFILES dropfiles;
+    
+    
+    WCHAR paths[];
+  };
+
+  
+  
+  
+  size_t const allocSize =
+      
+      sizeof(DFWithPaths) +
+      
+      ((aPath.Length() + 1) * sizeof(WCHAR)) +
+      
+      sizeof(L"");
+
+  nsAutoGlobalMem hGlobalMemory(
+      nsHGLOBAL(::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, allocSize)));
+
+  if (!hGlobalMemory) {
+    return E_FAIL;
+  }
+
+  {
+    ScopedOLELock<DFWithPaths*> pDFWithPaths(hGlobalMemory.get());
+
+    
+    DROPFILES* pDropFile = &pDFWithPaths->dropfiles;
+    pDropFile->pFiles =
+        offsetof(DFWithPaths, paths) - offsetof(DFWithPaths, dropfiles);
+    pDropFile->fNC = 0;
+    pDropFile->pt.x = 0;
+    pDropFile->pt.y = 0;
+    pDropFile->fWide = TRUE;
+
+    
+    WCHAR* dest = pDFWithPaths->paths;
+    WCHAR* after_dest [[maybe_unused]] =
+        std::copy_n(aPath.BeginReading(), aPath.Length(), dest);
+
+    
+    
+    size_t const offset [[maybe_unused]] =
+        (char*)after_dest - (char*)pDFWithPaths.get();
+    MOZ_ASSERT(allocSize - offset == sizeof(WCHAR) * 2);
+    MOZ_ASSERT(after_dest[0] == L'\0');
+    MOZ_ASSERT(after_dest[1] == L'\0');
+  }
+
+  aSTG = {
+      .tymed = TYMED_HGLOBAL,
+      .hGlobal = hGlobalMemory.disown(),
+      .pUnkForRelease = nullptr,
+  };
+
+  return S_OK;
+}
+
 HRESULT nsDataObj::DropFile(FORMATETC& aFE, STGMEDIUM& aSTG) {
   nsresult rv;
   nsCOMPtr<nsISupports> genericDataWrapper;
@@ -1610,44 +1673,11 @@ HRESULT nsDataObj::DropFile(FORMATETC& aFE, STGMEDIUM& aSTG) {
   nsCOMPtr<nsIFile> file(do_QueryInterface(genericDataWrapper));
   if (!file) return E_FAIL;
 
-  aSTG.tymed = TYMED_HGLOBAL;
-  aSTG.pUnkForRelease = nullptr;
-
   nsAutoString path;
   rv = file->GetPath(path);
   if (NS_FAILED(rv)) return E_FAIL;
 
-  uint32_t allocLen = path.Length() + 2;
-  HGLOBAL hGlobalMemory = nullptr;
-  char16_t* dest;
-
-  hGlobalMemory = GlobalAlloc(GMEM_MOVEABLE,
-                              sizeof(DROPFILES) + allocLen * sizeof(char16_t));
-  if (!hGlobalMemory) return E_FAIL;
-
-  DROPFILES* pDropFile = (DROPFILES*)GlobalLock(hGlobalMemory);
-
-  
-  pDropFile->pFiles = sizeof(DROPFILES);  
-  pDropFile->fNC = 0;
-  pDropFile->pt.x = 0;
-  pDropFile->pt.y = 0;
-  pDropFile->fWide = TRUE;
-
-  
-  dest = (char16_t*)(((char*)pDropFile) + pDropFile->pFiles);
-  memcpy(dest, path.get(), (allocLen - 1) * sizeof(char16_t));
-
-  
-  
-  
-  dest[allocLen - 1] = L'\0';
-
-  GlobalUnlock(hGlobalMemory);
-
-  aSTG.hGlobal = hGlobalMemory;
-
-  return S_OK;
+  return AssignDropfile(aSTG, path);
 }
 
 HRESULT nsDataObj::DropImage(FORMATETC& , STGMEDIUM& aSTG) {
@@ -1750,44 +1780,7 @@ HRESULT nsDataObj::DropImage(FORMATETC& , STGMEDIUM& aSTG) {
   rv = mCachedTempFile->GetPath(path);
   if (NS_FAILED(rv)) return E_FAIL;
 
-  
-  HGLOBAL hGlobalMemory = nullptr;
-
-  uint32_t allocLen = path.Length() + 2;
-
-  aSTG.tymed = TYMED_HGLOBAL;
-  aSTG.pUnkForRelease = nullptr;
-
-  hGlobalMemory = GlobalAlloc(GMEM_MOVEABLE,
-                              sizeof(DROPFILES) + allocLen * sizeof(char16_t));
-  if (!hGlobalMemory) return E_FAIL;
-
-  DROPFILES* pDropFile = (DROPFILES*)GlobalLock(hGlobalMemory);
-
-  
-  pDropFile->pFiles =
-      sizeof(DROPFILES);  
-  pDropFile->fNC = 0;
-  pDropFile->pt.x = 0;
-  pDropFile->pt.y = 0;
-  pDropFile->fWide = TRUE;
-
-  
-  char16_t* dest = (char16_t*)(((char*)pDropFile) + pDropFile->pFiles);
-  memcpy(dest, path.get(),
-         (allocLen - 1) *
-             sizeof(char16_t));  
-
-  
-  
-  
-  dest[allocLen - 1] = L'\0';
-
-  GlobalUnlock(hGlobalMemory);
-
-  aSTG.hGlobal = hGlobalMemory;
-
-  return S_OK;
+  return AssignDropfile(aSTG, path);
 }
 
 HRESULT nsDataObj::DropTempFile(FORMATETC& aFE, STGMEDIUM& aSTG) {
@@ -1844,44 +1837,7 @@ HRESULT nsDataObj::DropTempFile(FORMATETC& aFE, STGMEDIUM& aSTG) {
   rv = mCachedTempFile->GetPath(path);
   if (NS_FAILED(rv)) return E_FAIL;
 
-  uint32_t allocLen = path.Length() + 2;
-
-  
-  HGLOBAL hGlobalMemory = nullptr;
-
-  aSTG.tymed = TYMED_HGLOBAL;
-  aSTG.pUnkForRelease = nullptr;
-
-  hGlobalMemory = GlobalAlloc(GMEM_MOVEABLE,
-                              sizeof(DROPFILES) + allocLen * sizeof(char16_t));
-  if (!hGlobalMemory) return E_FAIL;
-
-  DROPFILES* pDropFile = (DROPFILES*)GlobalLock(hGlobalMemory);
-
-  
-  pDropFile->pFiles =
-      sizeof(DROPFILES);  
-  pDropFile->fNC = 0;
-  pDropFile->pt.x = 0;
-  pDropFile->pt.y = 0;
-  pDropFile->fWide = TRUE;
-
-  
-  char16_t* dest = (char16_t*)(((char*)pDropFile) + pDropFile->pFiles);
-  memcpy(dest, path.get(),
-         (allocLen - 1) *
-             sizeof(char16_t));  
-
-  
-  
-  
-  dest[allocLen - 1] = L'\0';
-
-  GlobalUnlock(hGlobalMemory);
-
-  aSTG.hGlobal = hGlobalMemory;
-
-  return S_OK;
+  return AssignDropfile(aSTG, path);
 }
 
 
