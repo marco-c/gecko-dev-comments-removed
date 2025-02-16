@@ -2197,6 +2197,18 @@
       browserSidebarContainer.className = "browserSidebarContainer";
       browserSidebarContainer.appendChild(browserContainer);
 
+      let visibility = Services.prefs.getStringPref(
+        "sidebar.visibility",
+        "always-show"
+      );
+      let expandOnHover = Services.prefs.getBoolPref(
+        "sidebar.expandOnHover",
+        false
+      );
+      if (visibility === "expand-on-hover" && expandOnHover) {
+        SidebarController.toggleExpandOnHover(true);
+      }
+
       
       
       if (!uriIsAboutBlank || skipLoad) {
