@@ -6,7 +6,7 @@
 
 use std::ops::{AddAssign, Deref, DerefMut, Sub};
 
-use enum_map::EnumMap;
+use enum_map::{Enum, EnumMap};
 use neqo_common::{qdebug, qinfo, qwarn, IpTosEcn};
 
 use crate::{
@@ -16,18 +16,18 @@ use crate::{
 };
 
 
-pub const ECN_TEST_COUNT: usize = 10;
+pub(crate) const TEST_COUNT: usize = 10;
 
 
 
 
 
-const ECN_TEST_COUNT_INITIAL_PHASE: usize = 3;
+const TEST_COUNT_INITIAL_PHASE: usize = 3;
 
 
 
 #[derive(Debug, PartialEq, Clone, Copy)]
-enum EcnValidationState {
+enum ValidationState {
     
     
     Testing {
@@ -37,12 +37,12 @@ enum EcnValidationState {
     
     Unknown,
     
-    Failed,
+    Failed(ValidationError),
     
     Capable,
 }
 
-impl Default for EcnValidationState {
+impl Default for ValidationState {
     fn default() -> Self {
         Self::Testing {
             probes_sent: 0,
@@ -51,19 +51,21 @@ impl Default for EcnValidationState {
     }
 }
 
-impl EcnValidationState {
+impl ValidationState {
     fn set(&mut self, new: Self, stats: &mut Stats) {
         let old = std::mem::replace(self, new);
 
         match old {
             Self::Testing { .. } | Self::Unknown => {}
-            Self::Failed => debug_assert!(false, "Failed is a terminal state"),
-            Self::Capable => stats.ecn_paths_capable -= 1,
+            Self::Failed(_) => debug_assert!(false, "Failed is a terminal state"),
+            Self::Capable => stats.ecn_path_validation[ValidationOutcome::Capable] -= 1,
         }
         match new {
             Self::Testing { .. } | Self::Unknown => {}
-            Self::Failed => stats.ecn_paths_not_capable += 1,
-            Self::Capable => stats.ecn_paths_capable += 1,
+            Self::Failed(error) => {
+                stats.ecn_path_validation[ValidationOutcome::NotCapable(error)] += 1;
+            }
+            Self::Capable => stats.ecn_path_validation[ValidationOutcome::Capable] += 1,
         }
     }
 }
@@ -78,9 +80,9 @@ impl EcnValidationState {
 
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Default)]
-pub struct EcnCount(EnumMap<IpTosEcn, u64>);
+pub struct Count(EnumMap<IpTosEcn, u64>);
 
-impl Deref for EcnCount {
+impl Deref for Count {
     type Target = EnumMap<IpTosEcn, u64>;
 
     fn deref(&self) -> &Self::Target {
@@ -88,63 +90,95 @@ impl Deref for EcnCount {
     }
 }
 
-impl DerefMut for EcnCount {
+impl DerefMut for Count {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl EcnCount {
+impl Count {
+    #[must_use]
     pub const fn new(not_ect: u64, ect0: u64, ect1: u64, ce: u64) -> Self {
         
         Self(EnumMap::from_array([not_ect, ect1, ect0, ce]))
     }
 
     
+    #[must_use]
     pub fn is_some(&self) -> bool {
         self[IpTosEcn::Ect0] > 0 || self[IpTosEcn::Ect1] > 0 || self[IpTosEcn::Ce] > 0
     }
 }
 
-impl Sub<Self> for EcnCount {
+impl Sub<Self> for Count {
     type Output = Self;
 
     
-    fn sub(self, other: Self) -> Self {
+    fn sub(self, rhs: Self) -> Self {
         let mut diff = Self::default();
         for (ecn, count) in &mut *diff {
-            *count = self[ecn].saturating_sub(other[ecn]);
+            *count = self[ecn].saturating_sub(rhs[ecn]);
         }
         diff
     }
 }
 
-impl AddAssign<IpTosEcn> for EcnCount {
-    fn add_assign(&mut self, ecn: IpTosEcn) {
-        self[ecn] += 1;
+impl AddAssign<IpTosEcn> for Count {
+    fn add_assign(&mut self, rhs: IpTosEcn) {
+        self[rhs] += 1;
     }
 }
 
+#[derive(PartialEq, Eq, Debug, Clone, Copy, Default)]
+pub struct ValidationCount(EnumMap<ValidationOutcome, u64>);
+
+impl Deref for ValidationCount {
+    type Target = EnumMap<ValidationOutcome, u64>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ValidationCount {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+#[derive(Debug, Clone, Copy, Enum, PartialEq, Eq)]
+pub enum ValidationError {
+    BlackHole,
+    Bleaching,
+    ReceivedUnsentECT1,
+}
+
+#[derive(Debug, Clone, Copy, Enum, PartialEq, Eq)]
+pub enum ValidationOutcome {
+    Capable,
+    NotCapable(ValidationError),
+}
+
 #[derive(Debug, Default)]
-pub struct EcnInfo {
+pub(crate) struct Info {
     
-    state: EcnValidationState,
+    state: ValidationState,
 
     
     largest_acked: PacketNumber,
 
     
-    baseline: EcnCount,
+    baseline: Count,
 }
 
-impl EcnInfo {
+impl Info {
     
-    pub fn set_baseline(&mut self, baseline: EcnCount) {
+    pub(crate) fn set_baseline(&mut self, baseline: Count) {
         self.baseline = baseline;
     }
 
     
-    pub const fn baseline(&self) -> EcnCount {
+    pub(crate) const fn baseline(&self) -> Count {
         self.baseline
     }
 
@@ -152,41 +186,41 @@ impl EcnInfo {
     
     
     
-    pub fn on_packet_sent(&mut self, stats: &mut Stats) {
-        if let EcnValidationState::Testing { probes_sent, .. } = &mut self.state {
+    pub(crate) fn on_packet_sent(&mut self, stats: &mut Stats) {
+        if let ValidationState::Testing { probes_sent, .. } = &mut self.state {
             *probes_sent += 1;
-            qdebug!("ECN probing: sent {} probes", probes_sent);
-            if *probes_sent == ECN_TEST_COUNT {
-                qdebug!("ECN probing concluded with {} probes sent", probes_sent);
-                self.state.set(EcnValidationState::Unknown, stats);
+            qdebug!("ECN probing: sent {probes_sent} probes");
+            if *probes_sent == TEST_COUNT {
+                qdebug!("ECN probing concluded with {probes_sent} probes sent");
+                self.state.set(ValidationState::Unknown, stats);
             }
         }
     }
 
     
-    pub fn disable_ecn(&mut self, stats: &mut Stats) {
-        self.state.set(EcnValidationState::Failed, stats);
+    pub(crate) fn disable_ecn(&mut self, stats: &mut Stats, reason: ValidationError) {
+        self.state.set(ValidationState::Failed(reason), stats);
     }
 
     
     
     
-    pub fn on_packets_acked(
+    pub(crate) fn on_packets_acked(
         &mut self,
         acked_packets: &[SentPacket],
-        ack_ecn: Option<EcnCount>,
+        ack_ecn: Option<Count>,
         stats: &mut Stats,
     ) -> bool {
         let prev_baseline = self.baseline;
 
         self.validate_ack_ecn_and_update(acked_packets, ack_ecn, stats);
 
-        matches!(self.state, EcnValidationState::Capable)
+        matches!(self.state, ValidationState::Capable)
             && (self.baseline - prev_baseline)[IpTosEcn::Ce] > 0
     }
 
-    pub fn on_packets_lost(&mut self, lost_packets: &[SentPacket], stats: &mut Stats) {
-        if let EcnValidationState::Testing {
+    pub(crate) fn on_packets_lost(&mut self, lost_packets: &[SentPacket], stats: &mut Stats) {
+        if let ValidationState::Testing {
             probes_sent,
             initial_probes_lost: probes_lost,
         } = &mut self.state
@@ -197,21 +231,20 @@ impl EcnInfo {
                 .count();
             
             
-            if probes_sent == probes_lost && *probes_lost == ECN_TEST_COUNT_INITIAL_PHASE {
+            if probes_sent == probes_lost && *probes_lost == TEST_COUNT_INITIAL_PHASE {
                 qdebug!(
-                    "ECN validation failed, all {} initial marked packets were lost",
-                    probes_lost
+                    "ECN validation failed, all {probes_lost} initial marked packets were lost"
                 );
-                self.disable_ecn(stats);
+                self.disable_ecn(stats, ValidationError::BlackHole);
             }
         }
     }
 
     
-    pub fn validate_ack_ecn_and_update(
+    pub(crate) fn validate_ack_ecn_and_update(
         &mut self,
         acked_packets: &[SentPacket],
-        ack_ecn: Option<EcnCount>,
+        ack_ecn: Option<Count>,
         stats: &mut Stats,
     ) {
         
@@ -220,8 +253,8 @@ impl EcnInfo {
         
         
         match self.state {
-            EcnValidationState::Testing { .. } | EcnValidationState::Failed => return,
-            EcnValidationState::Unknown | EcnValidationState::Capable => {}
+            ValidationState::Testing { .. } | ValidationState::Failed(_) => return,
+            ValidationState::Unknown | ValidationState::Capable => {}
         }
 
         
@@ -245,7 +278,7 @@ impl EcnInfo {
         
         let Some(ack_ecn) = ack_ecn else {
             qwarn!("ECN validation failed, no ECN counts in ACK frame");
-            self.disable_ecn(stats);
+            self.disable_ecn(stats, ValidationError::Bleaching);
             return;
         };
 
@@ -262,24 +295,22 @@ impl EcnInfo {
             .unwrap();
         if newly_acked_sent_with_ect0 == 0 {
             qwarn!("ECN validation failed, no ECT(0) packets were newly acked");
-            self.disable_ecn(stats);
+            self.disable_ecn(stats, ValidationError::Bleaching);
             return;
         }
         let ecn_diff = ack_ecn - self.baseline;
         let sum_inc = ecn_diff[IpTosEcn::Ect0] + ecn_diff[IpTosEcn::Ce];
         if sum_inc < newly_acked_sent_with_ect0 {
             qwarn!(
-                "ECN validation failed, ACK counted {} new marks, but {} of newly acked packets were sent with ECT(0)",
-                sum_inc,
-                newly_acked_sent_with_ect0
+                "ECN validation failed, ACK counted {sum_inc} new marks, but {newly_acked_sent_with_ect0} of newly acked packets were sent with ECT(0)"
             );
-            self.disable_ecn(stats);
+            self.disable_ecn(stats, ValidationError::Bleaching);
         } else if ecn_diff[IpTosEcn::Ect1] > 0 {
             qwarn!("ECN validation failed, ACK counted ECT(1) marks that were never sent");
-            self.disable_ecn(stats);
-        } else if self.state != EcnValidationState::Capable {
+            self.disable_ecn(stats, ValidationError::ReceivedUnsentECT1);
+        } else if self.state != ValidationState::Capable {
             qinfo!("ECN validation succeeded, path is capable");
-            self.state.set(EcnValidationState::Capable, stats);
+            self.state.set(ValidationState::Capable, stats);
         }
         self.baseline = ack_ecn;
         stats.ecn_tx = ack_ecn;
@@ -287,10 +318,10 @@ impl EcnInfo {
     }
 
     
-    pub const fn ecn_mark(&self) -> IpTosEcn {
+    pub(crate) const fn ecn_mark(&self) -> IpTosEcn {
         match self.state {
-            EcnValidationState::Testing { .. } | EcnValidationState::Capable => IpTosEcn::Ect0,
-            EcnValidationState::Failed | EcnValidationState::Unknown => IpTosEcn::NotEct,
+            ValidationState::Testing { .. } | ValidationState::Capable => IpTosEcn::Ect0,
+            ValidationState::Failed(_) | ValidationState::Unknown => IpTosEcn::NotEct,
         }
     }
 }

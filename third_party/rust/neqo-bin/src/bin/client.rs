@@ -4,7 +4,7 @@
 
 
 
-use clap::Parser;
+use clap::Parser as _;
 
 #[tokio::main]
 async fn main() -> Result<(), neqo_bin::client::Error> {

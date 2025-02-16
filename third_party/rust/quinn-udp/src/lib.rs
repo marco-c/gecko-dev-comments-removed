@@ -27,12 +27,13 @@
 #![warn(unreachable_pub)]
 #![warn(clippy::use_self)]
 
+use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 #[cfg(unix)]
 use std::os::unix::io::AsFd;
 #[cfg(windows)]
 use std::os::windows::io::AsSocket;
+#[cfg(not(wasm_browser))]
 use std::{
-    net::{IpAddr, Ipv6Addr, SocketAddr},
     sync::Mutex,
     time::{Duration, Instant},
 };
@@ -49,7 +50,7 @@ mod imp;
 mod imp;
 
 
-#[cfg(not(any(unix, windows)))]
+#[cfg(not(any(wasm_browser, unix, windows)))]
 #[path = "fallback.rs"]
 mod imp;
 
@@ -76,10 +77,15 @@ mod log {
     pub(crate) use no_op::*;
 }
 
+#[cfg(not(wasm_browser))]
 pub use imp::UdpSocketState;
 
 
+#[cfg(not(wasm_browser))]
 pub const BATCH_SIZE: usize = imp::BATCH_SIZE;
+
+#[cfg(wasm_browser)]
+pub const BATCH_SIZE: usize = 1;
 
 
 
@@ -141,13 +147,14 @@ pub struct Transmit<'a> {
 }
 
 
+#[cfg(not(wasm_browser))]
 const IO_ERROR_LOG_INTERVAL: Duration = std::time::Duration::from_secs(60);
 
 
 
 
 
-#[cfg(any(feature = "tracing", feature = "direct-log"))]
+#[cfg(all(not(wasm_browser), any(feature = "tracing", feature = "direct-log")))]
 fn log_sendmsg_error(
     last_send_error: &Mutex<Instant>,
     err: impl core::fmt::Debug,
@@ -164,7 +171,7 @@ fn log_sendmsg_error(
 }
 
 
-#[cfg(not(any(feature = "tracing", feature = "direct-log")))]
+#[cfg(not(any(wasm_browser, feature = "tracing", feature = "direct-log")))]
 fn log_sendmsg_error(_: &Mutex<Instant>, _: impl core::fmt::Debug, _: &Transmit) {}
 
 
@@ -172,6 +179,7 @@ fn log_sendmsg_error(_: &Mutex<Instant>, _: impl core::fmt::Debug, _: &Transmit)
 
 
 
+#[cfg(not(wasm_browser))]
 pub struct UdpSockRef<'a>(socket2::SockRef<'a>);
 
 #[cfg(unix)]
@@ -198,18 +206,18 @@ where
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum EcnCodepoint {
-    #[doc(hidden)]
+    
     Ect0 = 0b10,
-    #[doc(hidden)]
+    
     Ect1 = 0b01,
-    #[doc(hidden)]
+    
     Ce = 0b11,
 }
 
 impl EcnCodepoint {
     
     pub fn from_bits(x: u8) -> Option<Self> {
-        use self::EcnCodepoint::*;
+        use EcnCodepoint::*;
         Some(match x & 0b11 {
             0b10 => Ect0,
             0b01 => Ect1,

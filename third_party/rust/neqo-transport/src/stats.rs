@@ -16,7 +16,7 @@ use std::{
 
 use neqo_common::qwarn;
 
-use crate::{ecn::EcnCount, packet::PacketNumber};
+use crate::{ecn, packet::PacketNumber};
 
 pub const MAX_PTO_COUNTS: usize = 16;
 
@@ -168,6 +168,10 @@ pub struct Stats {
     pub pmtud_lost: usize,
     
     pub pmtud_change: usize,
+    
+    pub pmtud_iface_mtu: usize,
+    
+    pub pmtud_pmtu: usize,
 
     
     pub resumed: bool,
@@ -195,9 +199,7 @@ pub struct Stats {
     pub datagram_tx: DatagramStats,
 
     
-    pub ecn_paths_capable: usize,
-    
-    pub ecn_paths_not_capable: usize,
+    pub ecn_path_validation: ecn::ValidationCount,
     
     
     
@@ -209,9 +211,9 @@ pub struct Stats {
     
     
     
-    pub ecn_tx: EcnCount,
+    pub ecn_tx: ecn::Count,
     
-    pub ecn_rx: EcnCount,
+    pub ecn_rx: ecn::Count,
 }
 
 impl Stats {
@@ -222,8 +224,8 @@ impl Stats {
     pub fn pkt_dropped(&mut self, reason: impl AsRef<str>) {
         self.dropped_rx += 1;
         qwarn!(
-            [self.info],
-            "Dropped received packet: {}; Total: {}",
+            "[{}] Dropped received packet: {}; Total: {}",
+            self.info,
             reason.as_ref(),
             self.dropped_rx
         );
@@ -261,8 +263,13 @@ impl Debug for Stats {
         )?;
         writeln!(
             f,
-            "  pmtud: {} sent {} acked {} lost {} change",
-            self.pmtud_tx, self.pmtud_ack, self.pmtud_lost, self.pmtud_change
+            "  pmtud: {} sent {} acked {} lost {} change {} iface_mtu {} pmtu",
+            self.pmtud_tx,
+            self.pmtud_ack,
+            self.pmtud_lost,
+            self.pmtud_change,
+            self.pmtud_iface_mtu,
+            self.pmtud_pmtu
         )?;
         writeln!(f, "  resumed: {}", self.resumed)?;
         writeln!(f, "  frames rx:")?;
@@ -271,8 +278,8 @@ impl Debug for Stats {
         self.frame_tx.fmt(f)?;
         writeln!(
             f,
-            "  ecn: {:?} for tx {:?} for rx {} capable paths {} not capable paths",
-            self.ecn_tx, self.ecn_rx, self.ecn_paths_capable, self.ecn_paths_not_capable
+            "  ecn: {:?} for tx {:?} for rx {:?} path validation outcomes",
+            self.ecn_tx, self.ecn_rx, self.ecn_path_validation,
         )
     }
 }

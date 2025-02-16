@@ -4,9 +4,9 @@
 
 
 
-use std::{cell::RefCell, mem, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
-use neqo_common::event::Provider;
+use neqo_common::event::Provider as _;
 use test_fixture::now;
 
 use super::{
@@ -243,7 +243,7 @@ fn critical() {
 
     
     let stats_before = server.stats().frame_tx;
-    mem::drop(fill_cwnd(&mut server, id, now));
+    drop(fill_cwnd(&mut server, id, now));
     let stats_after = server.stats().frame_tx;
     assert_eq!(stats_after.crypto, stats_before.crypto);
     assert_eq!(stats_after.streams_blocked, 0);
@@ -295,7 +295,7 @@ fn important() {
 
     
     let stats_before = server.stats().frame_tx;
-    mem::drop(fill_cwnd(&mut server, id, now));
+    drop(fill_cwnd(&mut server, id, now));
     let stats_after = server.stats().frame_tx;
     assert_eq!(stats_after.crypto, stats_before.crypto);
     assert_eq!(stats_after.streams_blocked, 1);
@@ -350,7 +350,7 @@ fn high_normal() {
     
     let stats_before = server.stats().frame_tx;
     server.send_ticket(now, &[]).unwrap();
-    mem::drop(fill_cwnd(&mut server, id, now));
+    drop(fill_cwnd(&mut server, id, now));
     let stats_after = server.stats().frame_tx;
     assert_eq!(stats_after.crypto, stats_before.crypto);
     assert_eq!(stats_after.streams_blocked, 1);
@@ -387,7 +387,7 @@ fn low() {
     
     let stats_before = server.stats().frame_tx;
     server.send_ticket(now, &vec![0; server.plpmtu()]).unwrap();
-    mem::drop(server.process_output(now));
+    drop(server.process_output(now));
     let stats_after = server.stats().frame_tx;
     assert_eq!(stats_after.crypto, stats_before.crypto + 1);
     assert_eq!(stats_after.stream, stats_before.stream);
@@ -396,7 +396,7 @@ fn low() {
     
     
     let stats_before = server.stats().frame_tx;
-    mem::drop(server.process_output(now));
+    drop(server.process_output(now));
     let stats_after = server.stats().frame_tx;
     assert_eq!(stats_after.crypto, stats_before.crypto + 1);
     assert_eq!(stats_after.new_token, 1);
