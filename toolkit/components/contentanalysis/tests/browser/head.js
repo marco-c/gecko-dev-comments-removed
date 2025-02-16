@@ -83,23 +83,6 @@ async function mockContentAnalysisService(mockCAServiceTemplate) {
   return mockCAService;
 }
 
-
-
-
-
-
-
-
-
-function makeContentAnalysisResponse(action, token) {
-  return {
-    action,
-    shouldAllowContent: action != Ci.nsIContentAnalysisResponse.eBlock,
-    requestToken: token,
-    acknowledge: _acknowledgement => {},
-  };
-}
-
 async function waitForFileToAlmostMatchSize(filePath, expectedSize) {
   
   
@@ -174,55 +157,84 @@ function makeMockContentAnalysis() {
     },
 
     
-    async analyzeContentRequest(request, _autoAcknowledge) {
-      info(
-        "Mock ContentAnalysis service: analyzeContentRequest, this.shouldAllowRequest=" +
-          this.shouldAllowRequest +
-          ", this.errorValue=" +
-          this.errorValue
+
+    
+    
+    analyzeContentRequests(requests, autoAcknowledge) {
+      return this.realCAService.analyzeContentRequests(
+        requests,
+        autoAcknowledge
       );
-      this.calls.push(request);
+    },
+    analyzeContentRequest(request, autoAcknowledge) {
+      return this.realCAService.analyzeContentRequest(request, autoAcknowledge);
+    },
+    analyzeContentRequestsCallback(requests, autoAcknowledge, callback) {
+      this.realCAService.analyzeContentRequestsCallback(
+        requests,
+        autoAcknowledge,
+        callback
+      );
+    },
+    analyzeContentRequestCallback(request, autoAcknowledge, callback) {
       if (this.errorValue) {
+        
+        
+        
+        
+        
+        
+        request.userActionId = "user-action-for-error";
+        request.userActionRequestsCount = 1;
+        request.requestToken = "request-token-for-error";
+        this.calls.push(request);
+        callback.error(this.errorValue);
         throw this.errorValue;
       }
-      
-      await new Promise(res => setTimeout(res, 0));
-      if (this.waitForEvent) {
-        let waitPromise = new Promise(res => {
-          this.eventTarget.addEventListener(
-            "returnContentAnalysisResponse",
-            () => {
-              res();
-            },
-            { once: true }
-          );
-        });
-        this.eventTarget.dispatchEvent(
-          new CustomEvent("inAnalyzeContentRequest")
-        );
-        await waitPromise;
-      }
-      return makeContentAnalysisResponse(
-        this.getAction(),
-        request.requestToken
+      this.realCAService.analyzeContentRequestCallback(
+        request,
+        autoAcknowledge,
+        callback
       );
     },
 
-    analyzeContentRequestCallback(request, autoAcknowledge, callback) {
+    analyzeContentRequestPrivate(request, _autoAcknowledge, callback) {
       info(
-        "Mock ContentAnalysis service: analyzeContentRequestCallback, this.shouldAllowRequest=" +
+        "Mock ContentAnalysis service: analyzeContentRequestPrivate, this.shouldAllowRequest=" +
           this.shouldAllowRequest +
-          ", this.errorValue=" +
-          this.errorValue +
           ", this.waitForEvent=" +
           this.waitForEvent
       );
-      this.calls.push(request);
+      info(
+        `  Request type: ${request.analysisType} ` +
+          `| reason: ${request.reason} ` +
+          `| operation: ${request.operationTypeForDisplay} ` +
+          `| operation string: '${request.operationDisplayString}'`
+      );
+      info(
+        `  Text content: '${request.textContent}' ` +
+          `| filePath: '${request.filePath}' ` +
+          `| printDataHandle: ${request.printDataHandle} ` +
+          `| printDataSize: ${request.printDataSize}`
+      );
+      info(
+        `  Printer name: '${request.printerName}' ` +
+          `| url: '${request.url ? request.url.spec : ""}' ` +
+          `| Request token: ${request.requestToken} ` +
+          `| user action ID: ${request.userActionId} ` +
+          `| user action count: ${request.userActionRequestsCount}`
+      );
       if (this.errorValue) {
-        throw this.errorValue;
+        
+        
+        ok(
+          !this.errorValue,
+          "can't throw an exception in mock analyzeContentRequestPrivate"
+        );
       }
 
-      
+      this.calls.push(request);
+
       
       setTimeout(async () => {
         if (this.waitForEvent) {
@@ -240,23 +252,8 @@ function makeMockContentAnalysis() {
           );
           await waitPromise;
         }
-        let isDir = false;
-        try {
-          isDir = (await IOUtils.stat(request.filePath)).type == "directory";
-        } catch {}
-        if (isDir) {
-          
-          
-          
-          this.realCAService.analyzeContentRequestCallback(
-            request,
-            autoAcknowledge,
-            callback
-          );
-          return;
-        }
 
-        let response = makeContentAnalysisResponse(
+        let response = this.realCAService.makeResponseForTest(
           this.getAction(),
           request.requestToken
         );
@@ -288,6 +285,10 @@ function makeMockContentAnalysis() {
         aAction,
         aIsValid
       );
+    },
+
+    showBlockedRequestDialog(aRequest) {
+      info(`got showBlockedRequestDialog for request ${aRequest.requestToken}`);
     },
   };
 }
