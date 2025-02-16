@@ -3,6 +3,10 @@
 
 
 
+ChromeUtils.defineESModuleGetters(this, {
+  OpenSearchManager: "resource:///modules/OpenSearchManager.sys.mjs",
+});
+
 const searchPopup = document.getElementById("PopupSearchAutoComplete");
 
 add_setup(async function () {
@@ -19,10 +23,11 @@ add_task(async function test() {
 
   let rootDir = getRootDirectory(gTestPath);
   let url = rootDir + "tooManyEnginesOffered.html";
-  await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
 
   
   let promise = promiseEvent(searchPopup, "popupshown");
+  let promise2 = promiseEvent(searchPopup.oneOffButtons, "rebuild");
   info("Opening search panel");
   searchbar.focus();
   
@@ -31,9 +36,9 @@ add_task(async function test() {
     "Wait for the searchbar controller to connect"
   );
   EventUtils.synthesizeKey("KEY_ArrowDown");
-  await promise;
+  await Promise.all([promise, promise2]);
 
-  const addEngineList = searchPopup.oneOffButtons._getAddEngines();
+  const addEngineList = OpenSearchManager.getEngines(tab.linkedBrowser);
   Assert.equal(
     addEngineList.length,
     6,

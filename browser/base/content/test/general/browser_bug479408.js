@@ -1,3 +1,10 @@
+
+
+
+ChromeUtils.defineESModuleGetters(this, {
+  OpenSearchManager: "resource:///modules/OpenSearchManager.sys.mjs",
+});
+
 function test() {
   waitForExplicitFinish();
   let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(
@@ -11,8 +18,9 @@ function test() {
     true
   ).then(() => {
     executeSoon(function () {
-      ok(
-        !tab.linkedBrowser.engines,
+      Assert.equal(
+        OpenSearchManager.getEngines(tab.linkedBrowser).length,
+        0,
         "the subframe's search engine wasn't detected"
       );
 
