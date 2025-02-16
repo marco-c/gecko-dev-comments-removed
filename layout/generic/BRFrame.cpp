@@ -278,7 +278,7 @@ a11y::AccType BRFrame::AccessibleType() {
   
   
   nsIFrame* const parentFrame = GetParent();
-  if (!parentFrame) {
+  if (HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) || !parentFrame) {
     return a11y::eHTMLBRType;
   }
   nsIFrame* const currentBlock =
@@ -296,6 +296,7 @@ a11y::AccType BRFrame::AccessibleType() {
     if (precedingContentFrame->IsBlockFrameOrSubclass()) {
       break;  
     }
+    
     return a11y::eHTMLBRType;
   }
   return a11y::eHTMLBRType;
