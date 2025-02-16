@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/PWebAuthnTransactionParent.h"
 #include "mozilla/dom/WebAuthnPromiseHolder.h"
+#include "mozilla/RandomNum.h"
 #include "nsIWebAuthnService.h"
 
 
@@ -27,15 +28,14 @@ class WebAuthnTransactionParent final : public PWebAuthnTransactionParent {
   WebAuthnTransactionParent() = default;
 
   mozilla::ipc::IPCResult RecvRequestRegister(
-      const uint64_t& aTransactionId,
-      const WebAuthnMakeCredentialInfo& aTransactionInfo);
+      const WebAuthnMakeCredentialInfo& aTransactionInfo,
+      RequestRegisterResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvRequestSign(
-      const uint64_t& aTransactionId,
-      const WebAuthnGetAssertionInfo& aTransactionInfo);
+      const WebAuthnGetAssertionInfo& aTransactionInfo,
+      RequestSignResolver&& aResolver);
 
-  mozilla::ipc::IPCResult RecvRequestCancel(
-      const Tainted<uint64_t>& aTransactionId);
+  mozilla::ipc::IPCResult RecvRequestCancel();
 
   mozilla::ipc::IPCResult RecvRequestIsUVPAA(
       RequestIsUVPAAResolver&& aResolver);
@@ -54,6 +54,18 @@ class WebAuthnTransactionParent final : public PWebAuthnTransactionParent {
   Maybe<uint64_t> mTransactionId;
   MozPromiseRequestHolder<WebAuthnRegisterPromise> mRegisterPromiseRequest;
   MozPromiseRequestHolder<WebAuthnSignPromise> mSignPromiseRequest;
+
+  
+  
+  
+  static uint64_t NextId() {
+    static uint64_t counter = 0;
+    Maybe<uint64_t> rand = mozilla::RandomUint64();
+    uint64_t id =
+        rand.valueOr(++counter) & UINT64_C(0x1fffffffffffff);  
+    
+    return id ? id : 1;
+  }
 };
 
 }  
