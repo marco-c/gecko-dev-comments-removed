@@ -13,7 +13,7 @@
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_45 Your_png_h_is_not_version_1_6_45;
+typedef png_libpng_version_1_6_46 Your_png_h_is_not_version_1_6_46;
 
 
 
@@ -793,7 +793,7 @@ png_get_copyright(png_const_structrp png_ptr)
    return PNG_STRING_COPYRIGHT
 #else
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.45" PNG_STRING_NEWLINE \
+      "libpng version 1.6.46" PNG_STRING_NEWLINE \
       "Copyright (c) 2018-2025 Cosmin Truta" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \
@@ -1544,56 +1544,59 @@ png_XYZ_from_xy(png_XYZ *XYZ, const png_xy *xy)
 
 
 
-   int error = 0;
+   {
+      int error = 0;
 
-   
-
-
-
-
-
-   if (png_muldiv(&left, xy->greenx-xy->bluex, xy->redy - xy->bluey, 8) == 0)
-      return 1;
-   if (png_muldiv(&right, xy->greeny-xy->bluey, xy->redx - xy->bluex, 8) == 0)
-      return 1;
-   denominator = png_fp_sub(left, right, &error);
-   if (error) return 1;
-
-   
-   if (png_muldiv(&left, xy->greenx-xy->bluex, xy->whitey-xy->bluey, 8) == 0)
-      return 1;
-   if (png_muldiv(&right, xy->greeny-xy->bluey, xy->whitex-xy->bluex, 8) == 0)
-      return 1;
-
-   
+      
 
 
 
 
-   if (png_muldiv(&red_inverse, xy->whitey, denominator,
-                  png_fp_sub(left, right, &error)) == 0 || error ||
-       red_inverse <= xy->whitey )
-      return 1;
 
-   
-   if (png_muldiv(&left, xy->redy-xy->bluey, xy->whitex-xy->bluex, 8) == 0)
-      return 1;
-   if (png_muldiv(&right, xy->redx-xy->bluex, xy->whitey-xy->bluey, 8) == 0)
-      return 1;
-   if (png_muldiv(&green_inverse, xy->whitey, denominator,
-                  png_fp_sub(left, right, &error)) == 0 || error ||
-       green_inverse <= xy->whitey)
-      return 1;
+      if (png_muldiv(&left, xy->greenx-xy->bluex, xy->redy - xy->bluey, 8) == 0)
+         return 1;
+      if (png_muldiv(&right, xy->greeny-xy->bluey, xy->redx - xy->bluex, 8) ==
+            0)
+         return 1;
+      denominator = png_fp_sub(left, right, &error);
+      if (error) return 1;
 
-   
+      
+      if (png_muldiv(&left, xy->greenx-xy->bluex, xy->whitey-xy->bluey, 8) == 0)
+         return 1;
+      if (png_muldiv(&right, xy->greeny-xy->bluey, xy->whitex-xy->bluex, 8) ==
+            0)
+         return 1;
+
+      
 
 
-   blue_scale = png_fp_sub(png_fp_sub(png_reciprocal(xy->whitey),
-                                      png_reciprocal(red_inverse), &error),
-                           png_reciprocal(green_inverse), &error);
-   if (error || blue_scale <= 0)
-      return 1;
 
+
+      if (png_muldiv(&red_inverse, xy->whitey, denominator,
+                     png_fp_sub(left, right, &error)) == 0 || error ||
+          red_inverse <= xy->whitey )
+         return 1;
+
+      
+      if (png_muldiv(&left, xy->redy-xy->bluey, xy->whitex-xy->bluex, 8) == 0)
+         return 1;
+      if (png_muldiv(&right, xy->redx-xy->bluex, xy->whitey-xy->bluey, 8) == 0)
+         return 1;
+      if (png_muldiv(&green_inverse, xy->whitey, denominator,
+                     png_fp_sub(left, right, &error)) == 0 || error ||
+          green_inverse <= xy->whitey)
+         return 1;
+
+      
+
+
+      blue_scale = png_fp_sub(png_fp_sub(png_reciprocal(xy->whitey),
+                                         png_reciprocal(red_inverse), &error),
+                              png_reciprocal(green_inverse), &error);
+      if (error || blue_scale <= 0)
+         return 1;
+   }
 
    
 
@@ -3389,6 +3392,26 @@ png_fixed(png_const_structrp png_ptr, double fp, png_const_charp text)
    return (png_fixed_point)r;
 }
 #endif
+
+#if defined(PNG_FLOATING_POINT_SUPPORTED) && \
+   !defined(PNG_FIXED_POINT_MACRO_SUPPORTED) && \
+   (defined(PNG_cLLI_SUPPORTED) || defined(PNG_mDCV_SUPPORTED))
+png_uint_32
+png_fixed_ITU(png_const_structrp png_ptr, double fp, png_const_charp text)
+{
+   double r = floor(10000 * fp + .5);
+
+   if (r > 2147483647. || r < 0)
+      png_fixed_error(png_ptr, text);
+
+#  ifndef PNG_ERROR_TEXT_SUPPORTED
+   PNG_UNUSED(text)
+#  endif
+
+   return (png_uint_32)r;
+}
+#endif
+
 
 #if defined(PNG_GAMMA_SUPPORTED) || defined(PNG_COLORSPACE_SUPPORTED) ||\
     defined(PNG_INCH_CONVERSIONS_SUPPORTED) || defined(PNG_READ_pHYs_SUPPORTED)
