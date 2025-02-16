@@ -2439,21 +2439,26 @@
 
 
 
-      let greatestOverlap = (p1, s1, p2, s2) => {
+      function greatestOverlap(p1, s1, p2, s2) {
         let overlapSize;
-
         if (p1 < p2) {
+          
           overlapSize = p1 + s1 - p2;
         } else {
+          
           overlapSize = p2 + s2 - p1;
         }
 
-        let overlapPercent = Math.max(overlapSize / s1, overlapSize / s2);
-        if (overlapPercent < 0 || overlapPercent > 1) {
+        
+        if (overlapSize <= 0) {
           return 0;
         }
-        return overlapPercent;
-      };
+
+        
+        let overlapPercent = Math.max(overlapSize / s1, overlapSize / s2);
+
+        return Math.min(overlapPercent, 1);
+      }
 
       
 
