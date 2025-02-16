@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_WebAuthnManager_h
-#define mozilla_dom_WebAuthnManager_h
+#ifndef mozilla_dom_WebAuthnHandler_h
+#define mozilla_dom_WebAuthnHandler_h
 
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
@@ -15,9 +15,6 @@
 #include "mozilla/dom/PWebAuthnTransaction.h"
 #include "mozilla/dom/PWebAuthnTransactionChild.h"
 #include "mozilla/dom/WebAuthnTransactionChild.h"
-
-
-
 
 
 
@@ -77,12 +74,12 @@ class WebAuthnTransaction {
       mSignHolder;
 };
 
-class WebAuthnManager final : public AbortFollower {
+class WebAuthnHandler final : public AbortFollower {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(WebAuthnManager)
+  NS_DECL_CYCLE_COLLECTION_CLASS(WebAuthnHandler)
 
-  explicit WebAuthnManager(nsPIDOMWindowInner* aWindow) : mWindow(aWindow) {
+  explicit WebAuthnHandler(nsPIDOMWindowInner* aWindow) : mWindow(aWindow) {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(aWindow);
   }
@@ -107,7 +104,7 @@ class WebAuthnManager final : public AbortFollower {
   void RunAbortAlgorithm() override;
 
  private:
-  virtual ~WebAuthnManager();
+  virtual ~WebAuthnHandler();
 
   bool MaybeCreateActor();
 
