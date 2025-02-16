@@ -173,6 +173,13 @@ std::vector<FilteredSample> GetSampleValuesForFrame(
         << std_dev_gaussian_blur << ".\n";
     return {};
   }
+  if (scaled_width > i420_frame_buffer->width() ||
+      scaled_height > i420_frame_buffer->height()) {
+    RTC_LOG(LS_WARNING)
+        << "Upscaling causes corruption. Therefore, only down-scaling is "
+           "permissible.";
+    return {};
+  }
 
   
   
