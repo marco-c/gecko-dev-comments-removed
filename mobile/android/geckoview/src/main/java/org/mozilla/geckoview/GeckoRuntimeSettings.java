@@ -700,6 +700,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("network.cookie.cookieBehavior.optInPartitioning.pbmode", false);
    final Pref<Integer> mCertificateTransparencyMode =
       new Pref<Integer>("security.pki.certificate_transparency.mode", 0);
+   final Pref<Boolean> mPostQuantumKeyExchangeTLSEnabled =
+      new Pref<Boolean>("security.tls.enable_kyber", false);
+   final Pref<Boolean> mPostQuantumKeyExchangeHttp3Enabled =
+      new Pref<Boolean>("network.http.http3.enable_kyber", false);
 
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -2014,6 +2018,27 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public @Nullable Boolean getDisableShip() {
     return mDisableShip.get();
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setPostQuantumKeyExchangeEnabled(final boolean enable) {
+    mPostQuantumKeyExchangeTLSEnabled.commit(enable);
+    mPostQuantumKeyExchangeHttp3Enabled.commit(enable);
+    return this;
+  }
+
+  
+
+
+
+
+  public @NonNull boolean getPostQuantumKeyExchangeEnabled() {
+    return mPostQuantumKeyExchangeTLSEnabled.get() && mPostQuantumKeyExchangeHttp3Enabled.get();
   }
 
   
