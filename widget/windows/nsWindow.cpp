@@ -2943,30 +2943,6 @@ void nsWindow::SetCursor(const Cursor& aCursor) {
 
 
 
-TransparencyMode nsWindow::GetTransparencyMode() {
-  return GetTopLevelWindow(true)->GetWindowTranslucencyInner();
-}
-
-void nsWindow::SetTransparencyMode(TransparencyMode aMode) {
-  nsWindow* window = GetTopLevelWindow(true);
-  MOZ_ASSERT(window);
-
-  if (!window || window->DestroyCalled()) {
-    return;
-  }
-
-  window->SetWindowTranslucencyInner(aMode);
-}
-
-
-
-
-
-
-
-
-
-
 void nsWindow::UpdateWindowDraggingRegion(
     const LayoutDeviceIntRegion& aRegion) {
   mDraggableRegion = aRegion;
@@ -7165,22 +7141,13 @@ a11y::LocalAccessible* nsWindow::GetAccessible() {
 }
 #endif
 
-
-
-
-
-
-
-
-
-
-
-void nsWindow::SetWindowTranslucencyInner(TransparencyMode aMode) {
-  if (aMode == mTransparencyMode) {
+void nsWindow::SetTransparencyMode(TransparencyMode aMode) {
+  if (aMode == mTransparencyMode || DestroyCalled()) {
     return;
   }
 
   MOZ_ASSERT(WinUtils::GetTopLevelHWND(mWnd, true) == mWnd);
+  MOZ_ASSERT(GetTopLevelWindow(true) == this);
 
   mTransparencyMode = aMode;
 
