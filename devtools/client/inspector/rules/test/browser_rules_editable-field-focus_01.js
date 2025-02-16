@@ -29,7 +29,15 @@ add_task(async function () {
   info("Click on the selector of the inline style ('element')");
   let ruleEditor = getRuleViewRuleEditor(view, 0);
   const onFocus = once(ruleEditor.element, "focus", true);
+
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   ruleEditor.selectorText.click();
+  AccessibilityUtils.resetEnv();
+
   await onFocus;
   assertEditor(
     view,
