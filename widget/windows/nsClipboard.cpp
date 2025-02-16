@@ -47,6 +47,7 @@
 #include "nsMimeTypes.h"
 #include "imgITools.h"
 #include "imgIContainer.h"
+#include "WinOLELock.h"
 #include "WinUtils.h"
 
 
@@ -166,18 +167,17 @@ nsresult nsClipboard::CreateNativeDataObject(
 
 static nsresult StoreValueInDataObject(nsDataObj* aObj,
                                        LPCWSTR aClipboardFormat, DWORD value) {
-  HGLOBAL hGlobalMemory = ::GlobalAlloc(GMEM_MOVEABLE, sizeof(DWORD));
+  ScopedOLEMemory<DWORD> hGlobalMemory;
   if (!hGlobalMemory) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
-  DWORD* pdw = (DWORD*)::GlobalLock(hGlobalMemory);
-  *pdw = value;
-  ::GlobalUnlock(hGlobalMemory);
+
+  *hGlobalMemory.lock() = value;
 
   STGMEDIUM stg;
   stg.tymed = TYMED_HGLOBAL;
   stg.pUnkForRelease = nullptr;
-  stg.hGlobal = hGlobalMemory;
+  stg.hGlobal = hGlobalMemory.forget();
 
   FORMATETC fe;
   SET_FORMATETC(fe, ::RegisterClipboardFormat(aClipboardFormat), 0,
@@ -579,49 +579,52 @@ nsresult nsClipboard::GetGlobalData(HGLOBAL aHGBL, void** aData,
   
   
   
-  nsresult result = NS_ERROR_FAILURE;
+  
+  
+  
+  
+
   if (aHGBL != nullptr) {
-    LPSTR lpStr = (LPSTR)GlobalLock(aHGBL);
+    ScopedOLELock<CHAR[]> lpStr(aHGBL);
     mozilla::CheckedInt<uint32_t> allocSize =
-        mozilla::CheckedInt<uint32_t>(GlobalSize(aHGBL)) + 3;
+        mozilla::CheckedInt<uint32_t>(lpStr.size()) + 3;
     if (!allocSize.isValid()) {
       return NS_ERROR_INVALID_ARG;
     }
     char* data = static_cast<char*>(malloc(allocSize.value()));
-    if (data) {
-      uint32_t size = allocSize.value() - 3;
-      memcpy(data, lpStr, size);
-      
-      data[size] = data[size + 1] = data[size + 2] = '\0';
+    if (!data) return NS_ERROR_FAILURE;
 
-      GlobalUnlock(aHGBL);
-      *aData = data;
-      *aLen = size;
-
-      result = NS_OK;
-    }
-  } else {
-    
-    
-    *aData = nullptr;
-    *aLen = 0;
-    LPVOID lpMsgBuf;
-
-    FormatMessageW(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, nullptr,
-        GetLastError(),
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  
-        (LPWSTR)&lpMsgBuf, 0, nullptr);
+    std::copy(lpStr.begin(), lpStr.end(), data);
 
     
-    MessageBoxW(nullptr, (LPCWSTR)lpMsgBuf, L"GetLastError",
-                MB_OK | MB_ICONINFORMATION);
+    std::fill_n(data + lpStr.size(), 3, '\0');
 
-    
-    LocalFree(lpMsgBuf);
+    *aData = data;
+    *aLen = lpStr.size();
+
+    return NS_OK;
   }
 
-  return result;
+  
+  
+  *aData = nullptr;
+  *aLen = 0;
+
+  LPVOID lpMsgBuf;
+  ::FormatMessageW(
+      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, nullptr,
+      GetLastError(),
+      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  
+      (LPWSTR)&lpMsgBuf, 0, nullptr);
+
+  
+  ::MessageBoxW(nullptr, (LPCWSTR)lpMsgBuf, L"GetLastError",
+                MB_OK | MB_ICONINFORMATION);
+
+  
+  ::LocalFree(lpMsgBuf);
+
+  return NS_ERROR_FAILURE;
 }
 
 
