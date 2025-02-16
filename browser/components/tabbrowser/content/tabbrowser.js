@@ -5865,7 +5865,7 @@
               nextTab.group.after(selectedTab);
             } else {
               
-              nextTab.group.prepend(selectedTab);
+              nextTab.group.insertBefore(selectedTab, nextTab);
             }
           } else if (selectedTab.group != nextTab.group) {
             
@@ -5874,6 +5874,10 @@
             nextTab.after(selectedTab);
           }
         });
+      } else if (selectedTab.group) {
+        
+        
+        selectedTab.group.after(selectedTab);
       }
     }
 
@@ -5902,6 +5906,10 @@
             previousTab.before(selectedTab);
           }
         });
+      } else if (selectedTab.group) {
+        
+        
+        selectedTab.group.before(selectedTab);
       }
     }
 
