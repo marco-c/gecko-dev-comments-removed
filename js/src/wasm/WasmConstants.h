@@ -1076,7 +1076,18 @@ struct OpBytes {
     b0 = uint16_t(x);
     b1 = 0;
   }
+  OpBytes(uint16_t b0, uint16_t b1) : b0(b0), b1(b1) {}
   OpBytes() = default;
+
+  uint32_t toPacked() const {
+    
+    MOZ_RELEASE_ASSERT(b1 <= UINT16_MAX);
+    return b0 | (b1 << 16);
+  }
+
+  static OpBytes fromPacked(uint32_t packed) {
+    return OpBytes(packed & 0xFFFF, packed >> 16);
+  }
 
   
   
@@ -1110,10 +1121,8 @@ struct OpBytes {
     }
   }
 
-#ifdef DEBUG
   
   const char* toString() const;
-#endif
 };
 
 static const char NameSectionName[] = "name";

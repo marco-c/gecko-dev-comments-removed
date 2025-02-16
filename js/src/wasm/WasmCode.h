@@ -616,7 +616,8 @@ class CodeBlock {
   bool initialize(const Code& code, size_t codeBlockIndex);
   void sendToProfiler(const CodeMetadata& codeMeta,
                       const CodeMetadataForAsmJS* codeMetaForAsmJS,
-                      FuncIonPerfSpewerSpan ionSpewers) const;
+                      FuncIonPerfSpewerSpan ionSpewers,
+                      FuncBaselinePerfSpewerSpan baselineSpewers) const;
 
   
   Tier tier() const {
