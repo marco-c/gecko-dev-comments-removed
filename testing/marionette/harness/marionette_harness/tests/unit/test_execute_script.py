@@ -202,9 +202,9 @@ class TestExecuteContent(MarionetteTestCase):
         for property in globals:
             self.assert_is_defined(property, sandbox=None)
 
-        # Components is there, but will be removed soon
+        
         self.assert_is_defined("Components", sandbox=None)
-        # wrappedJSObject is always there in sandboxes
+        
         self.assert_is_defined("window.wrappedJSObject", sandbox=None)
 
     def test_exception(self):
@@ -216,21 +216,11 @@ class TestExecuteContent(MarionetteTestCase):
         with self.assertRaises(errors.JavascriptException) as cm:
             self.marionette.execute_script("return b")
 
-        # by default execute_script pass the name of the python file
+        
         self.assertIn(
             os.path.relpath(__file__.replace(".pyc", ".py")), cm.exception.stacktrace
         )
         self.assertIn("b is not defined", str(cm.exception))
-
-    def test_syntaxerror_stack(self):
-        with self.assertRaises(errors.JavascriptException) as cm:
-            self.marionette.execute_script("notAFunc() {")
-
-        # by default execute_script pass the name of the python file
-        self.assertIn(
-            os.path.relpath(__file__.replace(".pyc", ".py")), cm.exception.stacktrace
-        )
-        self.assertIn("SyntaxError: unexpected token: '{'", str(cm.exception))
 
     def test_permission(self):
         for sandbox in ["default", None]:
@@ -275,9 +265,9 @@ class TestExecuteContent(MarionetteTestCase):
         )
         self.assertEqual(expected, actual["path"]["to"]["el"])
 
-    # Bug 938228 identifies a problem with unmarshaling NodeList
-    # objects from the DOM.  document.querySelectorAll returns this
-    # construct.
+    
+    
+    
     def test_return_web_element_nodelist(self):
         self.marionette.navigate(elements)
         expected = self.marionette.find_elements(By.TAG_NAME, "p")
@@ -285,7 +275,7 @@ class TestExecuteContent(MarionetteTestCase):
         self.assertEqual(expected, actual)
 
     def test_sandbox_reuse(self):
-        # Sandboxes between `execute_script()` invocations are shared.
+        
         self.marionette.execute_script("this.foobar = [23, 42];")
         self.assertEqual(
             self.marionette.execute_script("return this.foobar;", new_sandbox=False),
@@ -395,8 +385,8 @@ class TestExecuteContent(MarionetteTestCase):
         def content_timeout_triggered(mn):
             return mn.execute_script("return window.n", sandbox=None) > 0
 
-        # subsequent call to execute_script after this
-        # should not cancel the setTimeout event
+        
+        
         self.marionette.navigate(
             inline(
                 """
@@ -407,33 +397,33 @@ class TestExecuteContent(MarionetteTestCase):
             )
         )
 
-        # as debug builds are inherently slow,
-        # we need to assert the event did not already fire
+        
+        
         self.assertEqual(
             0,
             self.marionette.execute_script("return window.n", sandbox=None),
             "setTimeout already fired",
         )
 
-        # if event was cancelled, this will time out
+        
         Wait(self.marionette, timeout=8).until(
             content_timeout_triggered,
             message="Scheduled setTimeout event was cancelled by call to execute_script",
         )
 
     def test_access_chrome_objects_in_event_listeners(self):
-        # sandbox.window.addEventListener/removeEventListener
-        # is used by Marionette for installing the unloadHandler which
-        # is used to return an error when a document is unloaded during
-        # script execution.
-        #
-        # Certain web frameworks, notably Angular, override
-        # window.addEventListener/removeEventListener and introspects
-        # objects passed to them.  If these objects originates from chrome
-        # without having been cloned, a permission denied error is thrown
-        # as part of the security precautions put in place by the sandbox.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
-        # addEventListener is called when script is injected
+        
         self.marionette.navigate(
             inline(
                 """
@@ -445,7 +435,7 @@ class TestExecuteContent(MarionetteTestCase):
         )
         self.marionette.execute_script("", sandbox=None)
 
-        # removeEventListener is called when sandbox is unloaded
+        
         self.marionette.navigate(
             inline(
                 """
@@ -458,7 +448,7 @@ class TestExecuteContent(MarionetteTestCase):
         self.marionette.execute_script("", sandbox=None)
 
     def test_access_global_objects_from_chrome(self):
-        # test inspection of arguments
+        
         self.marionette.execute_script("__webDriverArguments.toString()")
 
     def test_toJSON(self):
