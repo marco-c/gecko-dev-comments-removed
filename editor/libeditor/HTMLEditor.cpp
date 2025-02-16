@@ -4946,10 +4946,9 @@ void HTMLEditor::DoContentInserted(nsIContent* aChild,
   
   RefPtr<HTMLEditor> kungFuDeathGrip(this);
 
-  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
-  if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return;
-  }
+  
+  
+  
 
   if (ShouldReplaceRootElement()) {
     
@@ -5026,10 +5025,9 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLEditor::ContentWillBeRemoved(
   
   RefPtr<HTMLEditor> kungFuDeathGrip(this);
 
-  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
-  if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return;
-  }
+  
+  
+  
 
   
   
