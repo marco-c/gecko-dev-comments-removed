@@ -167,8 +167,7 @@ MouseScrollHandler* MouseScrollHandler::GetInstance() {
   return sInstance;
 }
 
-MouseScrollHandler::MouseScrollHandler()
-    : mIsWaitingInternalMessage(false), mSynthesizingEvent(nullptr) {
+MouseScrollHandler::MouseScrollHandler() {
   MOZ_LOG(gMouseScrollLog, LogLevel::Info,
           ("MouseScroll: Creating an instance, this=%p, sInstance=%p", this,
            sInstance));
@@ -283,7 +282,6 @@ bool MouseScrollHandler::ProcessMessageDirectly(UINT msg, WPARAM wParam,
     synth->NotifyInternalMessageHandlingFinished();
   }
 
-  MOZ_ASSERT(!IsWaitingInternalMessage());
   return true;
 }
 
@@ -558,57 +556,6 @@ nsWindow* MouseScrollHandler::FindTargetWindow(UINT aMessage, WPARAM aWParam,
   return nullptr;
 }
 
-void MouseScrollHandler::ProcessNativeMouseWheelMessage(nsWindow* aWidget,
-                                                        UINT aMessage,
-                                                        WPARAM aWParam,
-                                                        LPARAM aLParam) {
-  if (auto* synth = GetActiveSynthEvent()) {
-    synth->NativeMessageReceived(aWidget, aMessage, aWParam, aLParam);
-  }
-
-  nsWindow* const destWindow = FindTargetWindow(aMessage, aWParam, aLParam);
-  if (!destWindow) {
-    return;
-  }
-
-  
-  
-  if (mUserPrefs.ShouldEmulateToMakeWindowUnderCursorForeground() &&
-      (aMessage == WM_MOUSEWHEEL || aMessage == WM_MOUSEHWHEEL) &&
-      ::GetForegroundWindow() != destWindow->GetWindowHandle()) {
-    ::SetForegroundWindow(destWindow->GetWindowHandle());
-  }
-
-  MOZ_LOG(gMouseScrollLog, LogLevel::Info,
-          ("MouseScroll::ProcessNativeMouseWheelMessage: Succeeded, "
-           "Posting internal message to an nsWindow (%p)...",
-           destWindow));
-  mIsWaitingInternalMessage = true;
-  UINT internalMessage = WinUtils::GetInternalMessage(aMessage);
-  ::PostMessage(destWindow->GetWindowHandle(), internalMessage, aWParam,
-                aLParam);
-}
-
-bool MouseScrollHandler::ProcessNativeScrollMessage(nsWindow* aWidget,
-                                                    UINT aMessage,
-                                                    WPARAM aWParam,
-                                                    LPARAM aLParam) {
-  if (aLParam || mUserPrefs.IsScrollMessageHandledAsWheelMessage()) {
-    
-    
-    ProcessNativeMouseWheelMessage(aWidget, aMessage, aWParam, aLParam);
-    
-    
-    return true;
-  }
-
-  if (auto* synth = GetActiveSynthEvent()) {
-    synth->NativeMessageReceived(aWidget, aMessage, aWParam, aLParam);
-  }
-
-  return HandleScrollMessageAsItself(aWidget, aMessage, aWParam, aLParam);
-}
-
 bool MouseScrollHandler::HandleScrollMessageAsItself(nsWindow* aWidget,
                                                      UINT aMessage,
                                                      WPARAM aWParam,
@@ -697,8 +644,6 @@ bool MouseScrollHandler::HandleMouseWheelMessage(nsWindow* aWidget,
            "aMessage=%s, aWParam=0x%08zX, aLParam=0x%08" PRIXLPTR,
            aWidget, msgName, aWParam, aLParam));
 
-  mIsWaitingInternalMessage = false;
-
   
   
   mSystemSettings.TrustedScrollSettingsDriver();
@@ -774,8 +719,6 @@ bool MouseScrollHandler::HandleScrollMessageAsMouseWheelMessage(
   MOZ_ASSERT((aMessage == MOZ_WM_VSCROLL || aMessage == MOZ_WM_HSCROLL),
              "HandleScrollMessageAsMouseWheelMessage must be called with "
              "MOZ_WM_VSCROLL or MOZ_WM_HSCROLL");
-
-  mIsWaitingInternalMessage = false;
 
   ModifierKeyState modKeyState = GetModifierKeyState(aMessage);
 
@@ -1746,14 +1689,8 @@ void MouseScrollHandler::SynthesizingEvent::
 
   MOZ_LOG(gMouseScrollLog, LogLevel::Info,
           ("MouseScrollHandler::SynthesizingEvent::"
-           "NotifyNativeMessageHandlingFinished(): this=%p, "
-           "IsWaitingInternalMessage=%s",
-           this, GetBoolName(MouseScrollHandler::IsWaitingInternalMessage())));
-
-  if (MouseScrollHandler::IsWaitingInternalMessage()) {
-    mStatus = INTERNAL_MESSAGE_POSTED;
-    return;
-  }
+           "NotifyNativeMessageHandlingFinished(): this=%p",
+           this));
 
   
   
