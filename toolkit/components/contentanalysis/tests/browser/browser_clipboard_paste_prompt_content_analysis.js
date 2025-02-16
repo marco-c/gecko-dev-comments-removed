@@ -46,11 +46,17 @@ async function testClipboardPaste(testMode) {
   let prompt = await PromptTestUtils.waitForPrompt(browser, {
     modalType: Services.prompt.MODAL_TYPE_CONTENT,
   });
+
   
-  let pastePromise = new Promise(resolve => {
+  
+  
+  
+  
+  let selectionChangePromise = new Promise(resolve => {
     prompt.ui.loginTextbox.addEventListener(
-      "paste",
+      "selectionchange",
       () => {
+        ok(true, "got selectionchange");
         
         
         setTimeout(() => {
@@ -60,12 +66,21 @@ async function testClipboardPaste(testMode) {
       { once: true }
     );
   });
+
   
   setClipboardData(CLIPBOARD_TEXT_STRING);
   prompt.ui.loginTextbox.focus();
   await EventUtils.synthesizeKey("v", { accelKey: true });
 
-  await pastePromise;
+  
+  
+  if (testMode.shouldPaste) {
+    await selectionChangePromise;
+  } else {
+    await new Promise(res => {
+      setTimeout(res, 0);
+    });
+  }
 
   
   await PromptTestUtils.handlePrompt(prompt);
