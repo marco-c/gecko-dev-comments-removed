@@ -108,12 +108,32 @@ function assertContentAnalysisRequest(
 
 add_task(
   async function testClipboardPasteNoFormattingWithContentAnalysisAllow() {
+    
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [
+          "browser.contentanalysis.interception_point.clipboard.plain_text_only",
+          false,
+        ],
+      ],
+    });
     await testClipboardPasteNoFormatting(true);
+    await SpecialPowers.popPrefEnv();
   }
 );
 
 add_task(
   async function testClipboardPasteNoFormattingWithContentAnalysisBlock() {
+    
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [
+          "browser.contentanalysis.interception_point.clipboard.plain_text_only",
+          false,
+        ],
+      ],
+    });
     await testClipboardPasteNoFormatting(false);
+    await SpecialPowers.popPrefEnv();
   }
 );
