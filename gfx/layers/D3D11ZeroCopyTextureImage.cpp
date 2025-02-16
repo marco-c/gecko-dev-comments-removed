@@ -73,8 +73,8 @@ D3D11ZeroCopyTextureImage::GetAsSourceSurface() {
   }
 
   RefPtr<gfx::SourceSurface> sourceSurface =
-      gfx::Factory::CreateBGRA8DataSourceSurfaceForD3D11Texture(src,
-                                                                mArrayIndex);
+      gfx::Factory::CreateBGRA8DataSourceSurfaceForD3D11Texture(
+          src, mArrayIndex, mColorSpace, mColorRange);
 
   
   
