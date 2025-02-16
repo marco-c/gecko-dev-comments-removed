@@ -30,24 +30,11 @@
     Services.io.newURI("about:blank")
   );
 
-  XPCOMUtils.defineLazyServiceGetter(
-    lazy,
-    "contentAnalysis",
-    "@mozilla.org/contentanalysis;1",
-    Ci.nsIContentAnalysis
-  );
-
   let lazyPrefs = {};
   XPCOMUtils.defineLazyPreferenceGetter(
     lazyPrefs,
     "unloadTimeoutMs",
     "dom.beforeunload_timeout_ms"
-  );
-  XPCOMUtils.defineLazyPreferenceGetter(
-    lazyPrefs,
-    "_contentAnalysisDragDropEnabled",
-    "browser.contentanalysis.interception_point.drag_and_drop.enabled",
-    true
   );
 
   Object.defineProperty(lazy, "ProcessHangMonitor", {
@@ -173,10 +160,10 @@
       this.addEventListener(
         "drop",
         event => {
-          if (
-            lazy.contentAnalysis.isActive &&
-            lazyPrefs._contentAnalysisDragDropEnabled
-          ) {
+          const contentAnalysis = Cc[
+            "@mozilla.org/contentanalysis;1"
+          ].getService(Ci.nsIContentAnalysis);
+          if (contentAnalysis.isActive) {
             let dragService = Cc[
               "@mozilla.org/widget/dragservice;1"
             ].getService(Ci.nsIDragService);
@@ -185,102 +172,30 @@
               return;
             }
 
-            
-            
-            
-            let sourceWC = dragSession.sourceWindowContext;
-            let targetWC = this.browsingContext?.currentWindowContext;
-            if (!targetWC) {
-              return;
-            }
-            if (
-              sourceWC &&
-              sourceWC.browsingContext.top == targetWC.browsingContext.top &&
-              targetWC.documentPrincipal?.subsumes(sourceWC.documentPrincipal)
-            ) {
-              return;
-            }
-
-            
             try {
+              
+              
+              
+              let request = {
+                analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
+                dataTransfer: event.dataTransfer,
+                operationTypeForDisplay:
+                  Ci.nsIContentAnalysisRequest.eDroppedText,
+                reason: Ci.nsIContentAnalysisRequest.eDragAndDrop,
+                resources: [],
+                sourceWindowGlobal: dragSession.sourceWindowContext,
+                uri: contentAnalysis.getURIForDropEvent(event),
+                windowGlobalParent: this.browsingContext.currentWindowContext,
+              };
+
               
               
               dragSession.sendStoreDropTargetAndDelayEndDragSession(event);
 
-              
-              
-              
-              let caPromises = [];
-              let items = event.dataTransfer.items;
-              for (let elt of items) {
-                const kTextMimeTypes = [
-                  "text/plain",
-                  "text/html",
-                  "application/x-moz-nativehtml",
-                ];
-
-                let requestFields;
-                if (
-                  elt.kind === "string" &&
-                  kTextMimeTypes.includes(elt.type)
-                ) {
-                  let str = event.dataTransfer.getData(elt.type);
-                  if (!str) {
-                    continue;
-                  }
-                  requestFields = {
-                    analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
-                    operationTypeForDisplay:
-                      Ci.nsIContentAnalysisRequest.eDroppedText,
-                    textContent: str,
-                  };
-                } else if (elt.kind === "file") {
-                  let file = elt.getAsFile();
-                  requestFields = {
-                    analysisType: Ci.nsIContentAnalysisRequest.eFileAttached,
-                    operationTypeForDisplay:
-                      Ci.nsIContentAnalysisRequest.eCustomDisplayString,
-                    operationDisplayString: file.name,
-                    filePath: file.mozFullPath,
-                  };
-                } else {
-                  
-                  continue;
-                }
-
-                caPromises.push(
-                  lazy.contentAnalysis.analyzeContentRequest(
-                    {
-                      reason: Ci.nsIContentAnalysisRequest.eDragAndDrop,
-                      requestToken: Services.uuid.generateUUID().toString(),
-                      resources: [],
-                      url: lazy.contentAnalysis.getURIForDropEvent(event),
-                      windowGlobalParent:
-                        this.browsingContext.currentWindowContext,
-                      ...requestFields,
-                    },
-                    true 
-                  )
-                );
-              }
-
-              if (!caPromises.length) {
-                
-                dragSession.sendDispatchToDropTargetAndResumeEndDragSession(
-                  true
-                );
-                return;
-              }
-
-              
-              
-              Promise.all(caPromises).then(
-                caResults => {
-                  let allApproved = caResults.reduce((prev, current) => {
-                    return prev && current.shouldAllowContent;
-                  }, true);
+              contentAnalysis.analyzeContentRequest(request, true).then(
+                caResult => {
                   dragSession.sendDispatchToDropTargetAndResumeEndDragSession(
-                    allApproved
+                    caResult.shouldAllowContent
                   );
                 },
                 () => {
@@ -293,7 +208,9 @@
               
               event.preventDefault();
               event.stopPropagation();
-            } catch {
+            } catch (e) {
+              console.error(`content analysis dnd error: ${e}`);
+
               
               
               
