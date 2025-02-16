@@ -118,7 +118,9 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   already_AddRefed<nsIAsyncShutdownClient> GetAsyncShutdownBarrier() const;
 
   
-  [[nodiscard]] nsresult CreateDatabaseConnection();
+  
+  
+  [[nodiscard]] nsresult CreateDatabaseConnection(bool aShouldRetry = true);
 
   
   [[nodiscard]] nsresult EnsureTable();
