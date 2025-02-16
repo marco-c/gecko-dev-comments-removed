@@ -11,6 +11,10 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  SearchUIUtils: "resource:///modules/SearchUIUtils.sys.mjs",
+});
+
 const TEST_PROVIDER_INFO = [
   {
     telemetryId: "example",
@@ -332,7 +336,8 @@ add_task(async function test_source_system() {
 
       
       
-      BrowserSearch.loadSearchFromCommandLine(
+      SearchUIUtils.loadSearchFromCommandLine(
+        window,
         "searchSuggestion",
         false,
         Services.scriptSecurityManager.getSystemPrincipal(),
