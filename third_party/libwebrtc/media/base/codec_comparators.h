@@ -43,6 +43,9 @@ std::optional<cricket::Codec> FindMatchingCodec(
 
 bool IsSameRtpCodec(const cricket::Codec& codec, const RtpCodec& rtp_codec);
 
+
+bool IsSameRtpCodecIgnoringLevel(const cricket::Codec& codec,
+                                 const RtpCodec& rtp_codec);
 }  
 
 #endif  
