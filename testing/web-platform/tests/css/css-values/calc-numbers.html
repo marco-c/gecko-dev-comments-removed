@@ -4,13 +4,13 @@
 
   <title>CSS Values and Units Test: computed value of 'tab-size' and 'opacity' when specified with calc() function</title>
 
-  
+  <!--
 
+  Original test is:
 
+https://chromium.googlesource.com/chromium/src/+/c825d655f6aaf73484f9d56e9012793f5b9668cc/third_party/WebKit/LayoutTests/css3/calc/calc-numbers.html
 
-
-
-
+  -->
 
   <link rel="author" title="Gérard Talbot" href="http://www.gtalbot.org/BrowserBugsSection/css21testsuite/">
   <link rel="help" href="https://www.w3.org/TR/css-color-3/#transparency">
@@ -77,6 +77,8 @@
     */
 
     verifyComputedStyle("opacity", "0.9", "calc(2 / 4) * 1px", "0.9", "testing opacity: calc(2 / 4) * 1px");
+
+    verifyComputedStyle("opacity", "0.9", "calc(90%)", "0.9", "testing opacity: calc(90%)");
 
     verifyComputedStyle("tab-size", "12345", "calc(1 + 1px)", "12345", "testing tab-size: calc(1 + 1px)");
 
