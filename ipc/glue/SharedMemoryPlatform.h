@@ -87,8 +87,10 @@ class Platform {
 
 
 
-  static Maybe<void*> Map(const HandleBase& aHandle, void* aFixedAddress,
-                          bool aReadOnly);
+
+
+  static Maybe<void*> Map(const HandleBase& aHandle, uint64_t aOffset,
+                          size_t aSize, void* aFixedAddress, bool aReadOnly);
 
   
 
@@ -122,6 +124,13 @@ class Platform {
 
 
   static size_t PageSize();
+
+  
+
+
+
+
+  static size_t AllocationGranularity();
 };
 
 }  
