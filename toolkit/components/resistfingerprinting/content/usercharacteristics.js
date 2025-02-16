@@ -959,7 +959,7 @@ async function populateMathML() {
 
   return mathElements.reduce((acc, el) => {
     
-    acc["mathml" + el.id] = el.getBoundingClientRect().width * 10 ** 15;
+    acc["mathml" + el.id] = el.getBoundingClientRect().width.toString();
     return acc;
   }, {});
 }
