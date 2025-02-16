@@ -114,9 +114,6 @@ module.exports = {
     "accessor-pairs": ["error", { setWithoutGet: true, getWithoutSet: false }],
     "array-callback-return": "error",
     "block-scoped-var": "error",
-    
-    
-    complexity: ["error", 61],
     "consistent-this": ["error", "use-bind"],
     eqeqeq: "error",
     "func-name-matching": "error",
