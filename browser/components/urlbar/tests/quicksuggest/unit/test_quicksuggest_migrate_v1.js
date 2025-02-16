@@ -8,16 +8,11 @@
 
 
 const DEFAULT_PREFS = {
-  history: {
-    "quicksuggest.enabled": false,
-  },
-  offline: {
-    "quicksuggest.enabled": true,
-    "quicksuggest.dataCollection.enabled": false,
-    "quicksuggest.shouldShowOnboardingDialog": false,
-    "suggest.quicksuggest.nonsponsored": true,
-    "suggest.quicksuggest.sponsored": true,
-  },
+  "quicksuggest.enabled": true,
+  "quicksuggest.dataCollection.enabled": false,
+  "quicksuggest.shouldShowOnboardingDialog": false,
+  "suggest.quicksuggest.nonsponsored": true,
+  "suggest.quicksuggest.sponsored": true,
 };
 
 
@@ -47,9 +42,9 @@ add_setup(async () => {
 add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
-    scenario: "offline",
+    shouldEnable: true,
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
     },
   });
 });
@@ -72,9 +67,9 @@ add_task(async function () {
     initialUserBranch: {
       "suggest.quicksuggest.sponsored": false,
     },
-    scenario: "offline",
+    shouldEnable: true,
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
       userBranch: {
         "suggest.quicksuggest.sponsored": false,
       },
@@ -100,9 +95,9 @@ add_task(async function () {
     initialUserBranch: {
       "suggest.quicksuggest": false,
     },
-    scenario: "offline",
+    shouldEnable: true,
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
       userBranch: {
         "suggest.quicksuggest.nonsponsored": false,
         "suggest.quicksuggest.sponsored": false,
@@ -130,9 +125,9 @@ add_task(async function () {
       "suggest.quicksuggest": false,
       "suggest.quicksuggest.sponsored": false,
     },
-    scenario: "offline",
+    shouldEnable: true,
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
       userBranch: {
         "suggest.quicksuggest.nonsponsored": false,
         "suggest.quicksuggest.sponsored": false,
@@ -157,15 +152,12 @@ add_task(async function () {
 add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
-    scenario: "offline",
+    shouldEnable: true,
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
     },
   });
 });
-
-
-
 
 
 
@@ -195,9 +187,9 @@ add_task(async function () {
     initialUserBranch: {
       "suggest.quicksuggest.sponsored": true,
     },
-    scenario: "offline",
+    shouldEnable: true,
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
       userBranch: {
         "suggest.quicksuggest.sponsored": true,
       },
@@ -223,9 +215,9 @@ add_task(async function () {
     initialUserBranch: {
       "suggest.quicksuggest": true,
     },
-    scenario: "offline",
+    shouldEnable: true,
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
       userBranch: {
         "suggest.quicksuggest.nonsponsored": true,
       },
@@ -252,9 +244,9 @@ add_task(async function () {
       "suggest.quicksuggest": true,
       "suggest.quicksuggest.sponsored": true,
     },
-    scenario: "offline",
+    shouldEnable: true,
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
       userBranch: {
         "suggest.quicksuggest.nonsponsored": true,
         "suggest.quicksuggest.sponsored": true,

@@ -5,6 +5,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -14,29 +16,29 @@ const PREFS = [
     name: "browser.urlbar.quicksuggest.enabled",
     get: "getBoolPref",
     set: "setBoolPref",
-    expectedOfflineValue: true,
-    expectedOtherValue: false,
+    expectedWhenSuggestEnabled: true,
+    expectedWhenSuggestDisabled: false,
   },
   {
     name: "browser.urlbar.quicksuggest.dataCollection.enabled",
     get: "getBoolPref",
     set: "setBoolPref",
-    expectedOfflineValue: false,
-    expectedOtherValue: false,
+    expectedWhenSuggestEnabled: false,
+    expectedWhenSuggestDisabled: false,
   },
   {
     name: "browser.urlbar.suggest.quicksuggest.nonsponsored",
     get: "getBoolPref",
     set: "setBoolPref",
-    expectedOfflineValue: true,
-    expectedOtherValue: false,
+    expectedWhenSuggestEnabled: true,
+    expectedWhenSuggestDisabled: false,
   },
   {
     name: "browser.urlbar.suggest.quicksuggest.sponsored",
     get: "getBoolPref",
     set: "setBoolPref",
-    expectedOfflineValue: true,
-    expectedOtherValue: false,
+    expectedWhenSuggestEnabled: true,
+    expectedWhenSuggestDisabled: false,
   },
 ];
 
@@ -46,17 +48,17 @@ add_setup(async () => {
 
 add_task(async function test() {
   let tests = [
-    { locale: "en-US", home: "US", expectedOfflineDefault: true },
-    { locale: "en-US", home: "CA", expectedOfflineDefault: false },
-    { locale: "en-CA", home: "US", expectedOfflineDefault: true },
-    { locale: "en-CA", home: "CA", expectedOfflineDefault: false },
-    { locale: "en-GB", home: "US", expectedOfflineDefault: true },
-    { locale: "en-GB", home: "GB", expectedOfflineDefault: false },
-    { locale: "de", home: "US", expectedOfflineDefault: false },
-    { locale: "de", home: "DE", expectedOfflineDefault: false },
+    { locale: "en-US", home: "US", expectSuggestToBeEnabled: true },
+    { locale: "en-US", home: "CA", expectSuggestToBeEnabled: false },
+    { locale: "en-CA", home: "US", expectSuggestToBeEnabled: true },
+    { locale: "en-CA", home: "CA", expectSuggestToBeEnabled: false },
+    { locale: "en-GB", home: "US", expectSuggestToBeEnabled: true },
+    { locale: "en-GB", home: "GB", expectSuggestToBeEnabled: false },
+    { locale: "de", home: "US", expectSuggestToBeEnabled: false },
+    { locale: "de", home: "DE", expectSuggestToBeEnabled: false },
   ];
-  for (let { locale, home, expectedOfflineDefault } of tests) {
-    await doTest({ locale, home, expectedOfflineDefault });
+  for (let { locale, home, expectSuggestToBeEnabled } of tests) {
+    await doTest({ locale, home, expectSuggestToBeEnabled });
   }
 });
 
@@ -74,7 +76,7 @@ add_task(async function test() {
 
 
 
-async function doTest({ locale, home, expectedOfflineDefault }) {
+async function doTest({ locale, home, expectSuggestToBeEnabled }) {
   
   for (let pref of PREFS) {
     Services.prefs.clearUserPref(pref.name);
@@ -92,12 +94,12 @@ async function doTest({ locale, home, expectedOfflineDefault }) {
       for (let {
         name,
         get,
-        expectedOfflineValue,
-        expectedOtherValue,
+        expectedWhenSuggestEnabled,
+        expectedWhenSuggestDisabled,
       } of PREFS) {
-        let expectedValue = expectedOfflineDefault
-          ? expectedOfflineValue
-          : expectedOtherValue;
+        let expectedValue = expectSuggestToBeEnabled
+          ? expectedWhenSuggestEnabled
+          : expectedWhenSuggestDisabled;
 
         
         Assert.strictEqual(

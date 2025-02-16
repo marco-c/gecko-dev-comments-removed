@@ -8,15 +8,10 @@
 
 
 const DEFAULT_PREFS = {
-  history: {
-    "quicksuggest.enabled": false,
-  },
-  offline: {
-    "quicksuggest.enabled": true,
-    "quicksuggest.dataCollection.enabled": false,
-    "suggest.quicksuggest.nonsponsored": true,
-    "suggest.quicksuggest.sponsored": true,
-  },
+  "quicksuggest.enabled": true,
+  "quicksuggest.dataCollection.enabled": false,
+  "suggest.quicksuggest.nonsponsored": true,
+  "suggest.quicksuggest.sponsored": true,
 };
 
 
@@ -42,21 +37,14 @@ add_setup(async () => {
 
 
 
-
-
-
 add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
-    scenario: "offline",
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
     },
   });
 });
-
-
-
 
 
 
@@ -74,9 +62,8 @@ add_task(async function () {
     initialUserBranch: {
       "suggest.quicksuggest": false,
     },
-    scenario: "offline",
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
       userBranch: {
         "suggest.quicksuggest.nonsponsored": false,
         "suggest.quicksuggest.sponsored": false,
@@ -95,27 +82,20 @@ add_task(async function () {
 
 
 
-
-
-
 add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     initialUserBranch: {
       "suggest.quicksuggest.sponsored": false,
     },
-    scenario: "offline",
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
       userBranch: {
         "suggest.quicksuggest.sponsored": false,
       },
     },
   });
 });
-
-
-
 
 
 
@@ -134,9 +114,8 @@ add_task(async function () {
       "suggest.quicksuggest": false,
       "suggest.quicksuggest.sponsored": false,
     },
-    scenario: "offline",
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
       userBranch: {
         "suggest.quicksuggest.nonsponsored": false,
         "suggest.quicksuggest.sponsored": false,
@@ -144,9 +123,6 @@ add_task(async function () {
     },
   });
 });
-
-
-
 
 
 
@@ -168,15 +144,11 @@ add_task(async function () {
       "quicksuggest.migrationVersion": 1,
       "quicksuggest.scenario": "offline",
     },
-    scenario: "offline",
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
     },
   });
 });
-
-
-
 
 
 
@@ -197,18 +169,14 @@ add_task(async function () {
       "quicksuggest.scenario": "offline",
       "quicksuggest.dataCollection.enabled": true,
     },
-    scenario: "offline",
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
       userBranch: {
         "quicksuggest.dataCollection.enabled": true,
       },
     },
   });
 });
-
-
-
 
 
 
@@ -229,18 +197,14 @@ add_task(async function () {
       "quicksuggest.scenario": "offline",
       "suggest.quicksuggest.sponsored": false,
     },
-    scenario: "offline",
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
       userBranch: {
         "suggest.quicksuggest.sponsored": false,
       },
     },
   });
 });
-
-
-
 
 
 
@@ -262,9 +226,8 @@ add_task(async function () {
       "suggest.quicksuggest.nonsponsored": false,
       "suggest.quicksuggest.sponsored": false,
     },
-    scenario: "offline",
     expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS.offline,
+      defaultBranch: DEFAULT_PREFS,
       userBranch: {
         "suggest.quicksuggest.nonsponsored": false,
         "suggest.quicksuggest.sponsored": false,

@@ -571,10 +571,15 @@ async function checkEnrollments(options) {
     
     
     
-    let effectivePrefs = Object.assign({}, QuickSuggest.DEFAULT_PREFS.offline);
+    let effectivePrefs = { ...QuickSuggest.DEFAULT_PREFS };
     for (let [name, value] of Object.entries(expectedUserBranch)) {
       effectivePrefs[name] = value;
     }
+    Assert.greater(
+      Object.entries(effectivePrefs).length,
+      0,
+      "Sanity check: effectivePrefs should not be empty"
+    );
     for (let [name, value] of Object.entries(effectivePrefs)) {
       Assert.equal(
         UrlbarPrefs.get(name),

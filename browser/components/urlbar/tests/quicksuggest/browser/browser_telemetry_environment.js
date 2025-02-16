@@ -62,16 +62,7 @@ add_task(async function telemetryEnvironmentOnStartup() {
   await TelemetryEnvironment.testCleanRestart().onInitialized();
 
   
-  
-  
-  let prefs = [
-    ...new Set([
-      ...Object.values(QuickSuggest.UI_PREFS_BY_VARIABLE),
-      ...Object.values(QuickSuggest.DEFAULT_PREFS)
-        .map(valuesByPrefName => Object.keys(valuesByPrefName))
-        .flat(),
-    ]),
-  ];
+  let prefs = Object.keys(QuickSuggest.DEFAULT_PREFS);
 
   
   
@@ -112,19 +103,16 @@ add_task(async function telemetryEnvironmentOnStartup() {
   
   
   
-  
   let environmentInitPromise =
     TelemetryEnvironment.testCleanRestart().onInitialized();
 
   
   
   await QuickSuggest._test_reinit({
-    scenario: "testScenario",
-    defaultPrefs: {
-      testScenario: Object.fromEntries(
-        Object.entries(defaultValues).map(([p, value]) => [p, !value])
-      ),
-    },
+    shouldEnable: true,
+    defaultPrefs: Object.fromEntries(
+      Object.entries(defaultValues).map(([p, value]) => [p, !value])
+    ),
   });
 
   

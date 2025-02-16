@@ -52,8 +52,8 @@ add_setup(async function setUpQuickSuggestXpcshellTest() {
 
 async function doMigrateTest({
   testOverrides,
-  scenario,
   expectedPrefs,
+  shouldEnable = true,
   initialUserBranch = {},
 }) {
   info(
@@ -61,7 +61,7 @@ async function doMigrateTest({
       JSON.stringify({
         testOverrides,
         initialUserBranch,
-        scenario,
+        shouldEnable,
         expectedPrefs,
       })
   );
@@ -107,7 +107,6 @@ async function doMigrateTest({
 
   
   
-  
   UrlbarPrefs.clear("quicksuggest.migrationVersion");
   let initialDefaultBranch = {
     "suggest.quicksuggest.nonsponsored": false,
@@ -137,7 +136,7 @@ async function doMigrateTest({
     
     await QuickSuggest._test_reinit({
       ...testOverrides,
-      scenario,
+      shouldEnable,
     });
 
     
@@ -161,7 +160,7 @@ async function doMigrateTest({
       }
 
       info(
-        `Checking expected prefs on ${branchType} branch after updating scenario`
+        `Checking expected prefs on ${branchType} branch after Suggest init`
       );
       for (let [name, value] of entries) {
         expectedEffectivePrefs[name] = value;
