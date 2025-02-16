@@ -3,37 +3,45 @@
 
 
 
-
-
-DISABLE_SCREEN_SAVER = False
-ADJUST_MOUSE_AND_SCREEN = False
+import os
+import sys
 
 
 config = {
     "tooltool_cache": "/builds/tooltool_cache",
     "run_cmd_checks_enabled": True,
     "preflight_run_cmd_suites": [
-        
         {
-            "name": "disable_screen_saver",
-            "cmd": ["xset", "s", "off", "s", "reset"],
-            "architectures": ["32bit", "64bit"],
+            "name": "verify refresh rate",
+            "cmd": [
+                sys.executable,
+                os.path.join(
+                    os.getcwd(),
+                    "mozharness",
+                    "external_tools",
+                    "macosx_resolution_refreshrate.py",
+                ),
+                "--check=refresh-rate",
+            ],
+            "architectures": ["64bit"],
             "halt_on_failure": False,
-            "enabled": DISABLE_SCREEN_SAVER,
+            "enabled": True,
         },
         {
-            "name": "run mouse & screen adjustment script",
+            "name": "verify screen resolution",
             "cmd": [
-                
-                
-                "python",
-                "../scripts/external_tools/mouse_and_screen_resolution.py",
-                "--configuration-file",
-                "../scripts/external_tools/machine-configuration.json",
+                sys.executable,
+                os.path.join(
+                    os.getcwd(),
+                    "mozharness",
+                    "external_tools",
+                    "macosx_resolution_refreshrate.py",
+                ),
+                "--check=resolution",
             ],
-            "architectures": ["32bit"],
-            "halt_on_failure": True,
-            "enabled": ADJUST_MOUSE_AND_SCREEN,
+            "architectures": ["64bit"],
+            "halt_on_failure": False,
+            "enabled": True,
         },
     ],
 }
