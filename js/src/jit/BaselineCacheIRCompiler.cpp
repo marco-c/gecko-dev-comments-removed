@@ -3034,8 +3034,7 @@ void BaselineCacheIRCompiler::pushStandardArguments(
     
     
     Register countReg = scratch;
-    masm.move32(argcReg, countReg);
-    masm.add32(Imm32(additionalArgc), countReg);
+    masm.add32(Imm32(additionalArgc), argcReg, countReg);
 
     
     
