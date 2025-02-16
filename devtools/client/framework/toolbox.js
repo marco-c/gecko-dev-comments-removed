@@ -2785,7 +2785,6 @@ Toolbox.prototype = {
       iframe.setAttribute("flex", 1);
       iframe.setAttribute("forceOwnRefreshDriver", "");
       iframe.tooltip = "aHTMLTooltip";
-      iframe.style.visibility = "hidden";
 
       gDevTools.emit(id + "-init", this, iframe);
       this.emit(id + "-init", iframe);
@@ -2794,13 +2793,9 @@ Toolbox.prototype = {
       if (!iframe.parentNode) {
         const vbox = this.doc.getElementById("toolbox-panel-" + id);
         vbox.appendChild(iframe);
-        vbox.visibility = "visible";
       }
 
       const onLoad = async () => {
-        
-        iframe.style.visibility = "visible";
-
         
         this.setIframeDocumentDir(iframe);
 
@@ -3011,7 +3006,6 @@ Toolbox.prototype = {
 
     
     const toolboxPanels = this.doc.querySelectorAll(".toolbox-panel");
-    this.selectSingleNode(toolboxPanels, "toolbox-panel-" + id);
 
     this.lastUsedToolId = this.currentToolId;
     this.currentToolId = id;
@@ -3021,6 +3015,10 @@ Toolbox.prototype = {
     }
 
     return this.loadTool(id, options).then(panel => {
+      
+      
+      this.selectSingleNode(toolboxPanels, "toolbox-panel-" + id);
+
       
       this.focusTool(id);
 
