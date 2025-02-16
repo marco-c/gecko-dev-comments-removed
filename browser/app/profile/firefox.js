@@ -2515,6 +2515,10 @@ pref("browser.tabs.unloadTabInContextMenu", false);
 
 
 
+pref("browser.tabs.fadeOutUnloadedTabs", false);
+
+
+
 pref("extensions.experiments.enabled", false);
 
 #if defined(XP_WIN)
