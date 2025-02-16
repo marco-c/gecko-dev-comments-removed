@@ -23,6 +23,7 @@
 #include "api/scoped_refptr.h"
 #include "api/units/timestamp.h"
 #include "api/video/color_space.h"
+#include "api/video/corruption_detection_filter_settings.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame_type.h"
@@ -228,6 +229,15 @@ class RTC_EXPORT EncodedImage {
   VideoContentType contentType() const { return content_type_; }
   VideoRotation rotation() const { return rotation_; }
 
+  std::optional<CorruptionDetectionFilterSettings>
+  corruption_detection_filter_settings() const {
+    return corruption_detection_filter_settings_;
+  }
+  void set_corruption_detection_filter_settings(
+      const CorruptionDetectionFilterSettings& settings) {
+    corruption_detection_filter_settings_ = settings;
+  }
+
   uint32_t _encodedWidth = 0;
   uint32_t _encodedHeight = 0;
   
@@ -283,6 +293,12 @@ class RTC_EXPORT EncodedImage {
   
   
   bool is_steady_state_refresh_frame_ = false;
+
+  
+  
+  
+  std::optional<CorruptionDetectionFilterSettings>
+      corruption_detection_filter_settings_;
 };
 
 }  
