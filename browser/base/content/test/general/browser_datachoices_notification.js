@@ -165,6 +165,7 @@ function assertCoherentInitialState() {
 }
 
 add_task(async function test_single_window() {
+  TelemetryReportingPolicy.reset();
   clearAcceptedPolicy();
 
   
