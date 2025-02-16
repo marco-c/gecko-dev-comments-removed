@@ -1335,6 +1335,45 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
         }
         return false;
       }
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (request->GetScriptLoadContext()->IsAsyncScript() ||
+          parserMetadata == ParserMetadata::NotParserInserted) {
+        request->GetScriptLoadContext()->BlockOnload(mDocument);
+      }
     }
   }
 
