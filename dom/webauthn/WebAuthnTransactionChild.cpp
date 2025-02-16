@@ -8,15 +8,8 @@
 
 namespace mozilla::dom {
 
-WebAuthnTransactionChild::WebAuthnTransactionChild(
-    WebAuthnManagerBase* aManager)
-    : mManager(aManager) {
-  MOZ_ASSERT(aManager);
-
-  
-  
-  
-  NS_ADDREF_THIS();
+void WebAuthnTransactionChild::SetManager(WebAuthnManagerBase* aManager) {
+  mManager = aManager;
 }
 
 mozilla::ipc::IPCResult WebAuthnTransactionChild::RecvConfirmRegister(
@@ -74,14 +67,6 @@ void WebAuthnTransactionChild::ActorDestroy(ActorDestroyReason why) {
   }
 }
 
-void WebAuthnTransactionChild::Disconnect() {
-  mManager = nullptr;
-
-  
-  
-  
-
-  SendDestroyMe();
-}
+void WebAuthnTransactionChild::Disconnect() { mManager = nullptr; }
 
 }  
