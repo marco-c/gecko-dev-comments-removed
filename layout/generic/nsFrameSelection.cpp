@@ -1161,10 +1161,10 @@ void nsFrameSelection::MaintainedRange::AdjustContentOffsets(
     nsIFrame::ContentOffsets& aOffsets, StopAtScroller aStopAtScroller) const {
   
   if (mRange && mAmount != eSelectNoAmount) {
-    nsINode* rangenode = mRange->GetStartContainer();
-    int32_t rangeOffset = mRange->StartOffset();
     const Maybe<int32_t> relativePosition = nsContentUtils::ComparePoints(
-        rangenode, rangeOffset, aOffsets.content, aOffsets.offset);
+        mRange->StartRef(),
+        RawRangeBoundary(aOffsets.content, aOffsets.offset,
+                         RangeBoundaryIsMutationObserved::No));
     if (NS_WARN_IF(!relativePosition)) {
       
       

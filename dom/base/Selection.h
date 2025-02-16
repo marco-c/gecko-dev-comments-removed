@@ -990,10 +990,12 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
+    template <typename PT, typename RT>
     static size_t FindInsertionPoint(
-        const nsTArray<StyledRange>* aElementArray, const nsINode& aPointNode,
-        uint32_t aPointOffset,
-        int32_t (*aComparator)(const nsINode&, uint32_t, const AbstractRange&));
+        const nsTArray<StyledRange>* aElementArray,
+        const RangeBoundaryBase<PT, RT>& aBoundary,
+        int32_t (*aComparator)(const RangeBoundaryBase<PT, RT>&,
+                               const AbstractRange&));
 
     
 
