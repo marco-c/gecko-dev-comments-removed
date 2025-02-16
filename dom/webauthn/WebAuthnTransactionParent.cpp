@@ -17,9 +17,9 @@
 
 namespace mozilla::dom {
 
-nsresult AssembleClientData(const nsACString& aOrigin,
-                            const nsTArray<uint8_t>& aChallenge,
+nsresult AssembleClientData(WindowGlobalParent* aManager,
                             const nsACString& aType,
+                            const nsTArray<uint8_t>& aChallenge,
                              nsACString& aJsonOut) {
   nsAutoCString challengeBase64;
   nsresult rv =
@@ -28,6 +28,18 @@ nsresult AssembleClientData(const nsACString& aOrigin,
   if (NS_FAILED(rv)) {
     return NS_ERROR_FAILURE;
   }
+
+  nsIPrincipal* principal = aManager->DocumentPrincipal();
+  nsIPrincipal* topPrincipal =
+      aManager->TopWindowContext()->DocumentPrincipal();
+
+  nsCString origin;
+  rv = principal->GetWebExposedOriginSerialization(origin);
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  bool crossOrigin = !principal->Equals(topPrincipal);
 
   
   
@@ -41,8 +53,20 @@ nsresult AssembleClientData(const nsACString& aOrigin,
   
   w.StringProperty("challenge", challengeBase64);
   
-  w.StringProperty("origin", aOrigin);
+  w.StringProperty("origin", origin);
   
+  w.BoolProperty("crossOrigin", crossOrigin);
+  
+  
+  
+  if (crossOrigin) {
+    nsCString topOrigin;
+    rv = topPrincipal->GetWebExposedOriginSerialization(topOrigin);
+    if (NS_FAILED(rv)) {
+      return NS_ERROR_FAILURE;
+    }
+    w.StringProperty("topOrigin", topOrigin);
+  }
   w.End();
 
   return NS_OK;
@@ -104,8 +128,8 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestRegister(
   }
 
   nsCString clientDataJSON;
-  rv = AssembleClientData(origin, aTransactionInfo.Challenge(),
-                          "webauthn.create"_ns, clientDataJSON);
+  rv = AssembleClientData(manager, "webauthn.create"_ns,
+                          aTransactionInfo.Challenge(), clientDataJSON);
   if (NS_FAILED(rv)) {
     aResolver(NS_ERROR_FAILURE);
     return IPC_OK();
@@ -283,8 +307,8 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
   }
 
   nsCString clientDataJSON;
-  rv = AssembleClientData(origin, aTransactionInfo.Challenge(),
-                          "webauthn.get"_ns, clientDataJSON);
+  rv = AssembleClientData(manager, "webauthn.get"_ns,
+                          aTransactionInfo.Challenge(), clientDataJSON);
   if (NS_FAILED(rv)) {
     aResolver(NS_ERROR_FAILURE);
     return IPC_OK();
