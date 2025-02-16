@@ -22,6 +22,7 @@ struct CacheFileContextEvictorEntry {
   nsCOMPtr<nsILoadContextInfo> mInfo;
   bool mPinned = false;
   nsString mOrigin;       
+  nsString mBaseDomain;   
   PRTime mTimeStamp = 0;  
   RefPtr<CacheIndexIterator> mIterator;
 };
@@ -43,7 +44,7 @@ class CacheFileContextEvictor {
   uint32_t ContextsCount();
   
   nsresult AddContext(nsILoadContextInfo* aLoadContextInfo, bool aPinned,
-                      const nsAString& aOrigin);
+                      const nsAString& aOrigin, const nsAString& aBaseDomain);
   
   
   
