@@ -11,8 +11,16 @@ const {
   reloadPageAndLog,
   testSetup,
   testTeardown,
+  runTest,
   PAGES_BASE_URL,
 } = require("damp-test/tests/head");
+
+const {
+  createContext,
+  selectSource,
+  waitUntil,
+  waitForSources,
+} = require("../debugger/debugger-helpers");
 
 module.exports = async function () {
   await testSetup(PAGES_BASE_URL + "custom/panels-in-background/index.html");
@@ -20,6 +28,14 @@ module.exports = async function () {
   
   let toolbox = await openToolbox("webconsole");
   let monitor = await toolbox.selectTool("netmonitor");
+  const debuggerPanel = await toolbox.selectTool("jsdebugger");
+  const dbg = await createContext(debuggerPanel);
+  dump(" Select and pretty print a source");
+  await selectSource(dbg, "eval-script-0");
+  const prettyPrintButton = await waitUntil(() => {
+    return dbg.win.document.querySelector(".source-footer .prettyPrint.active");
+  });
+  prettyPrintButton.click();
 
   
   
@@ -28,9 +44,15 @@ module.exports = async function () {
 
   
   
+  let test = runTest("panelsInBackground.redux-updates.DAMP");
   let payloadReady = waitForPayload(601, monitor.panelWin);
   await reloadPageAndLog("panelsInBackground", toolbox);
   await payloadReady;
+
+  
+  
+  await waitForSources(dbg, 2001);
+  test.done();
 
   await closeToolbox();
   await testTeardown();
