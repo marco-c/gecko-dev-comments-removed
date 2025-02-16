@@ -16,7 +16,19 @@ function visibilityHandlerStore(store) {
 
 
 
-    subscribe(listener) {
+
+
+
+
+
+
+    subscribe(listener, { ignoreVisibility = false } = {}) {
+      
+      
+      if (ignoreVisibility) {
+        return store.subscribe(listener);
+      }
+
       function onVisibilityChange() {
         if (document.visibilityState == "visible") {
           
