@@ -1531,6 +1531,31 @@ pub enum FontSynthesis {
     None,
 }
 
+
+#[repr(u8)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+pub enum FontSynthesisStyle {
+    
+    Auto,
+    
+    None,
+    
+    ObliqueOnly,
+}
+
 #[derive(
     Clone,
     Debug,
