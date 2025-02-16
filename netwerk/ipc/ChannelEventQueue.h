@@ -17,6 +17,7 @@
 #include "mozilla/RecursiveMutex.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "mozilla/FlowMarkers.h"
 
 class nsISupports;
 
@@ -232,6 +233,8 @@ inline void ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
     
     
     if (enqueue) {
+      PROFILER_MARKER("ChannelEventQueue::Enqueue", NETWORK, {}, FlowMarker,
+                      Flow::FromPointer(event.get()));
       mEventQueue.AppendElement(std::move(event));
       return;
     }
@@ -255,6 +258,10 @@ inline void ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
       
       
       SuspendInternal();
+
+      PROFILER_MARKER("ChannelEventQueue::Enqueue", NETWORK, {}, FlowMarker,
+                      Flow::FromPointer(event.get()));
+
       mEventQueue.AppendElement(std::move(event));
       ResumeInternal();
       return;
@@ -262,6 +269,8 @@ inline void ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
   }
 
   MOZ_RELEASE_ASSERT(!aAssertionWhenNotQueued);
+  AUTO_PROFILER_TERMINATING_FLOW_MARKER("ChannelEvent", OTHER,
+                                        Flow::FromPointer(event.get()));
   
   
   event->Run();
