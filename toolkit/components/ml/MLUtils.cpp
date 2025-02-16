@@ -100,13 +100,28 @@ NS_IMETHODIMP MLUtils::HasEnoughMemoryToInfer(uint64_t aModelSizeInMemory,
   return NS_OK;
 }
 
-NS_IMETHODIMP MLUtils::GetNumPhysicalCores(uint8_t* _retval) {
+NS_IMETHODIMP MLUtils::GetOptimalCPUConcurrency(uint8_t* _retval) {
   ProcessInfo processInfo = {};
   if (!NS_SUCCEEDED(CollectProcessInfo(processInfo))) {
     return NS_ERROR_FAILURE;
   }
 
-  *_retval = static_cast<uint8_t>(processInfo.cpuCores);
+#if defined(ANDROID)
+  
+  uint8_t cpuCount = processInfo.cpuPCount + processInfo.cpuMCount;
+#else
+#  ifdef __aarch64__
+  
+  
+  uint8_t cpuCount = processInfo.cpuPCount;
+#  else
+  
+  uint8_t cpuCount = processInfo.cpuCores;
+#  endif
+#endif
+
+  *_retval = cpuCount;
+
   return NS_OK;
 }
 
