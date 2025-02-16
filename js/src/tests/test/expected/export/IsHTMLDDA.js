@@ -8,6 +8,4 @@
 
 
 
-
-
 var dda = createIsHTMLDDA();
