@@ -651,10 +651,6 @@ class PermissionManager final : public nsIPermissionManager,
 
   void CompleteMigrations();
 
-  
-  
-  void InitRemotePermissionService();
-
   bool mMemoryOnlyDB;
 
   nsTHashtable<PermissionHashKey> mPermissionTable;
