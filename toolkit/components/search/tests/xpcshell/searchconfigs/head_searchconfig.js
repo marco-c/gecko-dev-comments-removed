@@ -26,8 +26,6 @@ const TEST_DEBUG = Services.env.get("TEST_DEBUG");
 const URLTYPE_SUGGEST_JSON = "application/x-suggestions+json";
 const URLTYPE_SEARCH_HTML = "text/html";
 
-let engineSelector;
-
 
 
 
@@ -89,6 +87,11 @@ class SearchConfigTest {
   
 
 
+  #engineSelector;
+
+  
+
+
 
   constructor(config = {}) {
     this._config = config;
@@ -124,21 +127,7 @@ class SearchConfigTest {
       true
     );
 
-    await Services.search.init();
-
-    
-    
-    
-    engineSelector =
-      Services.search.wrappedJSObject._engineSelector ||
-      new SearchEngineSelector();
-
-    
-    
-    Assert.ok(
-      Services.search.isInitialized,
-      "Should have correctly initialized the search service"
-    );
+    this.#engineSelector = new SearchEngineSelector();
   }
 
   
@@ -163,7 +152,7 @@ class SearchConfigTest {
   }
 
   async _getEngines(region, locale) {
-    let configs = await engineSelector.fetchEngineConfiguration({
+    let configs = await this.#engineSelector.fetchEngineConfiguration({
       locale,
       region: region || "default",
       channel: SearchUtils.MODIFIED_APP_CHANNEL,
