@@ -237,6 +237,20 @@ struct ShapeZone {
 #ifdef JSGC_HASH_TABLE_CHECKS
   void checkTablesAfterMovingGC(JS::Zone* zone);
 #endif
+
+  
+  
+  
+  bool useDictionaryModeTeleportation();
+
+ private:
+  
+  
+  uint16_t reshapeCounter{};
+
+  
+  
+  static const uint16_t RESHAPE_MAX = 5000;
 };
 
 }  

@@ -933,6 +933,11 @@ class DictionaryPropMap final : public PropMap {
   
   uint32_t holeCount_ = 0;
 
+  
+  explicit DictionaryPropMap(std::nullptr_t) : linkedData_(nullptr) {
+    setHeaderFlagBits(IsDictionaryFlag | CanHaveTableFlag);
+  }
+
   DictionaryPropMap(JS::Handle<DictionaryPropMap*> prev, PropertyKey key,
                     PropertyInfo prop)
       : linkedData_(prev) {
@@ -1011,6 +1016,9 @@ class DictionaryPropMap final : public PropMap {
     MOZ_ASSERT(hasKey(index));
     return linkedData_.propInfos[index];
   }
+
+  
+  static DictionaryPropMap* createEmpty(JSContext* cx);
 
   
   

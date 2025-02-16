@@ -269,6 +269,9 @@ class JSObject
     return setFlag(cx, obj, js::ObjectFlag::InvalidatedTeleporting);
   }
 
+  [[nodiscard]] static bool reshapeForTeleporting(JSContext* cx,
+                                                  JS::HandleObject obj);
+
   
 
 
