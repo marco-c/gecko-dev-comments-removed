@@ -371,9 +371,6 @@ FetchDriver::~FetchDriver() {
   
   
   MOZ_ASSERT(mResponseAvailableCalled);
-  if (mObserver) {
-    mObserver = nullptr;
-  }
 }
 
 already_AddRefed<PreloaderBase> FetchDriver::FindPreload(nsIURI* aURI) {
@@ -1073,9 +1070,7 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) {
   }
 
   if (!mChannel) {
-    
-    
-    MOZ_ASSERT_IF(!mAborted, !mObserver);
+    MOZ_ASSERT(!mObserver);
     return NS_BINDING_ABORTED;
   }
 
@@ -1464,10 +1459,6 @@ FetchDriver::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInputStream,
   
   
   
-  
-  
-  
-  
 
   if (!mPipeOutputStream) {
     
@@ -1542,14 +1533,6 @@ FetchDriver::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
 
   MOZ_DIAGNOSTIC_ASSERT(!mOnStopRequestCalled);
   mOnStopRequestCalled = true;
-
-  if (mObserver && mAborted) {
-    
-    
-    
-    
-    mObserver = nullptr;
-  }
 
   
   RefPtr<AlternativeDataStreamListener> altDataListener =
@@ -1898,10 +1881,7 @@ void FetchDriver::FetchDriverAbortActions(AbortSignalImpl* aSignalImpl) {
       reason.set(aSignalImpl->RawReason());
     }
     mObserver->OnResponseEnd(FetchDriverObserver::eAborted, reason);
-    
-    
-    
-    
+    mObserver = nullptr;
   }
 
   if (mChannel) {
