@@ -1701,65 +1701,9 @@ void DCSurfaceVideo::PresentVideo() {
     return;
   }
 
-  const auto device = mDCLayerTree->GetDevice();
   HRESULT hr;
-  if (mFirstPresent) {
-    mFirstPresent = false;
-    UINT flags = DXGI_PRESENT_USE_DURATION;
-    
-    
-    
-    
-    
-    
-    for (size_t i = 0; i < mSwapChainBufferCount - 1; ++i) {
-      hr = mVideoSwapChain->Present(0, flags);
-      
-      
-      if (FAILED(hr) && hr != DXGI_STATUS_OCCLUDED) {
-        gfxCriticalNoteOnce << "video Present failed during first present: "
-                            << gfx::hexa(hr);
-        return;
-      }
-
-      RefPtr<ID3D11Texture2D> destTexture;
-      mVideoSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
-                                 (void**)getter_AddRefs(destTexture));
-      MOZ_ASSERT(destTexture);
-      RefPtr<ID3D11Texture2D> srcTexture;
-      hr = mVideoSwapChain->GetBuffer(1, __uuidof(ID3D11Texture2D),
-                                      (void**)getter_AddRefs(srcTexture));
-      MOZ_ASSERT(srcTexture);
-      RefPtr<ID3D11DeviceContext> context;
-      device->GetImmediateContext(getter_AddRefs(context));
-      MOZ_ASSERT(context);
-      context->CopyResource(destTexture, srcTexture);
-    }
-
-    
-    
-    
-
-    RefPtr<IDXGIDevice2> dxgiDevice2;
-    device->QueryInterface((IDXGIDevice2**)getter_AddRefs(dxgiDevice2));
-    MOZ_ASSERT(dxgiDevice2);
-
-    HANDLE event = ::CreateEvent(nullptr, false, false, nullptr);
-    hr = dxgiDevice2->EnqueueSetEvent(event);
-    if (SUCCEEDED(hr)) {
-      DebugOnly<DWORD> result = ::WaitForSingleObject(event, INFINITE);
-      MOZ_ASSERT(result == WAIT_OBJECT_0);
-    } else {
-      gfxCriticalNoteOnce << "EnqueueSetEvent failed: " << gfx::hexa(hr);
-    }
-    ::CloseHandle(event);
-  }
-
   UINT flags = DXGI_PRESENT_USE_DURATION;
   UINT interval = 1;
-  if (StaticPrefs::gfx_webrender_dcomp_video_swap_chain_present_interval_0()) {
-    interval = 0;
-  }
 
   auto start = TimeStamp::Now();
   hr = mVideoSwapChain->Present(interval, flags);
@@ -1834,8 +1778,6 @@ DXGI_FORMAT DCSurfaceVideo::GetSwapChainFormat(bool aUseVpAutoHDR) {
 
 bool DCSurfaceVideo::CreateVideoSwapChain(DXGI_FORMAT aSwapChainFormat) {
   MOZ_ASSERT(mRenderTextureHost);
-
-  mFirstPresent = true;
 
   const auto device = mDCLayerTree->GetDevice();
 
