@@ -4,7 +4,11 @@
 
 
 #include "nsOSHelperAppService.h"
+
+#include "mozilla/java/GeckoAppShellWrappers.h"
 #include "nsMIMEInfoAndroid.h"
+
+using namespace mozilla;
 
 nsOSHelperAppService::nsOSHelperAppService() : nsExternalHelperAppService() {}
 
@@ -16,16 +20,47 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
                                                  nsIMIMEInfo** aMIMEInfo) {
   RefPtr<nsMIMEInfoAndroid> mimeInfo;
   *aFound = false;
-  if (!aMIMEType.IsEmpty())
-    *aFound = nsMIMEInfoAndroid::GetMimeInfoForMimeType(
-        aMIMEType, getter_AddRefs(mimeInfo));
-  if (!*aFound)
-    *aFound = nsMIMEInfoAndroid::GetMimeInfoForFileExt(
-        aFileExt, getter_AddRefs(mimeInfo));
+
+  if (jni::IsAvailable()) {
+    if (!aMIMEType.IsEmpty()) {
+      nsCString fileExt;
+      auto fileExtJavaStr =
+          java::GeckoAppShell::GetExtensionFromMimeType(aMIMEType);
+      if (fileExtJavaStr) {
+        fileExt = fileExtJavaStr->ToCString();
+      }
+
+      if (!fileExt.IsEmpty()) {
+        mimeInfo = new nsMIMEInfoAndroid(aMIMEType);
+        mimeInfo->SetPrimaryExtension(fileExt);
+        *aFound = true;
+      }
+    }
+
+    if (!*aFound) {
+      nsCString mimeType;
+      auto javaString =
+          java::GeckoAppShell::GetMimeTypeFromExtensions(aFileExt);
+      if (javaString) {
+        mimeType = javaString->ToCString();
+      }
+
+      
+      if (!mimeType.IsEmpty() &&
+          !mimeType.Equals(nsDependentCString("*/*"),
+                           nsCaseInsensitiveCStringComparator)) {
+        mimeInfo = new nsMIMEInfoAndroid(mimeType);
+        mimeInfo->SetPrimaryExtension(aFileExt);
+        *aFound = true;
+      }
+    }
+  }
 
   
   
-  if (!*aFound) mimeInfo = new nsMIMEInfoAndroid(aMIMEType);
+  if (!*aFound) {
+    mimeInfo = new nsMIMEInfoAndroid(aMIMEType);
+  }
 
   mimeInfo.forget(aMIMEInfo);
   return NS_OK;

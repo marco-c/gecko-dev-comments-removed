@@ -2,7 +2,10 @@
 
 
 
+
 #include "nsMIMEInfoAndroid.h"
+
+#include "mozilla/java/GeckoAppShellWrappers.h"
 #include "nsArrayUtils.h"
 #include "nsISupportsUtils.h"
 
@@ -18,47 +21,6 @@ nsMIMEInfoAndroid::LaunchDefaultWithFile(nsIFile* aFile) {
 NS_IMETHODIMP
 nsMIMEInfoAndroid::LoadUriInternal(nsIURI* aURI) {
   return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-bool nsMIMEInfoAndroid::GetMimeInfoForMimeType(const nsACString& aMimeType,
-                                               nsMIMEInfoAndroid** aMimeInfo) {
-  RefPtr<nsMIMEInfoAndroid> info = new nsMIMEInfoAndroid(aMimeType);
-  info.forget(aMimeInfo);
-  return false;
-}
-
-bool nsMIMEInfoAndroid::GetMimeInfoForFileExt(const nsACString& aFileExt,
-                                              nsMIMEInfoAndroid** aMimeInfo) {
-  nsCString mimeType;
-  if (jni::IsAvailable()) {
-    auto javaString = java::GeckoAppShell::GetMimeTypeFromExtensions(aFileExt);
-    if (javaString) {
-      mimeType = javaString->ToCString();
-    }
-  }
-
-  
-  if (mimeType.Equals(nsDependentCString("*/*"),
-                      nsCaseInsensitiveCStringComparator)) {
-    return false;
-  }
-
-  bool found = GetMimeInfoForMimeType(mimeType, aMimeInfo);
-  (*aMimeInfo)->SetPrimaryExtension(aFileExt);
-  return found;
-}
-
-
-
-
-
-nsresult nsMIMEInfoAndroid::GetMimeInfoForURL(const nsACString& aURL,
-                                              bool* found,
-                                              nsIHandlerInfo** info) {
-  nsMIMEInfoAndroid* mimeinfo = new nsMIMEInfoAndroid(aURL);
-  NS_ADDREF(*info = mimeinfo);
-  *found = false;
-  return NS_OK;
 }
 
 NS_IMETHODIMP
