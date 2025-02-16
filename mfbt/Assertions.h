@@ -319,7 +319,7 @@ static inline void MOZ_CrashSequence(void* aAddress, intptr_t aLine) {
 
 
 
-#if !(defined(DEBUG) || defined(FUZZING))
+#if !(defined(DEBUG) || defined(MOZ_ASAN) || defined(FUZZING))
 #  define MOZ_CRASH(...)                                                      \
     do {                                                                      \
       MOZ_FUZZING_HANDLE_CRASH_EVENT4("MOZ_CRASH", __FILE__, __LINE__, NULL); \
@@ -364,7 +364,7 @@ static inline void MOZ_CrashSequence(void* aAddress, intptr_t aLine) {
 static MOZ_ALWAYS_INLINE_EVEN_DEBUG MOZ_COLD MOZ_NORETURN void MOZ_Crash(
     const char* aFilename, int aLine, const char* aReason) {
   MOZ_FUZZING_HANDLE_CRASH_EVENT4("MOZ_CRASH", aFilename, aLine, aReason);
-#if defined(DEBUG) || defined(FUZZING)
+#if defined(DEBUG) || defined(MOZ_ASAN) || defined(FUZZING)
   MOZ_ReportCrash(aReason, aFilename, aLine);
 #endif
   MOZ_CRASH_ANNOTATE(aReason);
