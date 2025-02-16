@@ -39,7 +39,7 @@ def generate_ping_ids(objs):
     return lambda ping_name: ping_id_mapping[ping_name]
 
 
-def generate_metric_ids(objs):
+def generate_metric_ids(objs, options):
     """
     Return a lookup function for metric IDs per metric object.
 
@@ -47,23 +47,33 @@ def generate_metric_ids(objs):
     """
 
     
-    metric_ids = {0}
-
-    
     metric_id_mapping = {}
-    for category_name, metrics in objs.items():
-        if category_name == "tags":
-            continue
-        for metric in metrics.values():
-            metric_id = (
-                int(sha1(str.encode(metric.identifier())).hexdigest(), 16) % 2**25
-            )
-            
-            while metric_id in metric_ids:
-                metric_id = (metric_id + 1) % 2**25
-            assert metric_id < 2**25
-            metric_ids.add(metric_id)
-            metric_id_mapping[(category_name, metric.name)] = metric_id
+
+    if options.get("is_local_build"):
+        
+        metric_ids = {0}
+
+        for category_name, metrics in objs.items():
+            if category_name == "tags":
+                continue
+            for metric in metrics.values():
+                metric_id = (
+                    int(sha1(str.encode(metric.identifier())).hexdigest(), 16) % 2**25
+                )
+                
+                while metric_id in metric_ids:
+                    metric_id = (metric_id + 1) % 2**25
+                assert metric_id < 2**25
+                metric_ids.add(metric_id)
+                metric_id_mapping[(category_name, metric.name)] = metric_id
+    else:
+        
+        metric_id = 1
+
+        for category_name, metrics in objs.items():
+            for metric in metrics.values():
+                metric_id_mapping[(category_name, metric.name)] = metric_id
+                metric_id += 1
 
     return lambda metric: metric_id_mapping[(metric.category, metric.name)]
 
