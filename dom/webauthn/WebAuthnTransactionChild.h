@@ -8,6 +8,7 @@
 #define mozilla_dom_WebAuthnTransactionChild_h
 
 #include "mozilla/dom/PWebAuthnTransactionChild.h"
+#include "mozilla/dom/WebAuthnManagerBase.h"
 
 
 
@@ -18,22 +19,40 @@
 
 namespace mozilla::dom {
 
-class WebAuthnHandler;
-
 class WebAuthnTransactionChild final : public PWebAuthnTransactionChild {
  public:
-  NS_INLINE_DECL_REFCOUNTING(WebAuthnTransactionChild, override);
+  NS_INLINE_DECL_REFCOUNTING(WebAuthnTransactionChild);
+  explicit WebAuthnTransactionChild(WebAuthnManagerBase* aManager);
 
-  WebAuthnTransactionChild() = default;
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  mozilla::ipc::IPCResult RecvConfirmRegister(
+      const uint64_t& aTransactionId,
+      const WebAuthnMakeCredentialResult& aResult);
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  mozilla::ipc::IPCResult RecvConfirmSign(
+      const uint64_t& aTransactionId,
+      const WebAuthnGetAssertionResult& aResult);
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  mozilla::ipc::IPCResult RecvAbort(const uint64_t& aTransactionId,
+                                    const nsresult& aError);
 
   void ActorDestroy(ActorDestroyReason why) override;
 
-  void SetHandler(WebAuthnHandler* aMananger);
+  void Disconnect();
 
  private:
   ~WebAuthnTransactionChild() = default;
 
-  WebAuthnHandler* mHandler;
+  
+  WebAuthnManagerBase* mManager;
 };
 
 }  

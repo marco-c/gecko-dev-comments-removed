@@ -4,17 +4,18 @@
 
 
 
-#ifndef mozilla_dom_WebAuthnHandler_h
-#define mozilla_dom_WebAuthnHandler_h
+#ifndef mozilla_dom_WebAuthnManager_h
+#define mozilla_dom_WebAuthnManager_h
 
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/dom/AbortSignal.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PWebAuthnTransaction.h"
-#include "mozilla/dom/PWebAuthnTransactionChild.h"
-#include "mozilla/dom/WebAuthnTransactionChild.h"
+#include "mozilla/dom/WebAuthnManagerBase.h"
+
+
+
 
 
 
@@ -46,9 +47,6 @@
 namespace mozilla::dom {
 
 class Credential;
-class PublicKeyCredential;
-struct PublicKeyCredentialCreationOptions;
-struct PublicKeyCredentialRequestOptions;
 
 enum class WebAuthnTransactionType { Create, Get };
 
@@ -56,33 +54,39 @@ class WebAuthnTransaction {
  public:
   explicit WebAuthnTransaction(const RefPtr<Promise>& aPromise,
                                WebAuthnTransactionType aType)
-      : mPromise(aPromise), mType(aType) {}
+      : mPromise(aPromise), mId(NextId()), mType(aType) {
+    MOZ_ASSERT(mId > 0);
+  }
 
   
   RefPtr<Promise> mPromise;
 
+  
+  uint64_t mId;
+
   WebAuthnTransactionType mType;
 
+ private:
   
   
   
-  
-  
-  MozPromiseRequestHolder<PWebAuthnTransactionChild::RequestRegisterPromise>
-      mRegisterHolder;
-  MozPromiseRequestHolder<PWebAuthnTransactionChild::RequestSignPromise>
-      mSignHolder;
+  static uint64_t NextId() {
+    static uint64_t counter = 0;
+    Maybe<uint64_t> rand = mozilla::RandomUint64();
+    uint64_t id =
+        rand.valueOr(++counter) & UINT64_C(0x1fffffffffffff);  
+    
+    return id ? id : 1;
+  }
 };
 
-class WebAuthnHandler final : public AbortFollower {
+class WebAuthnManager final : public WebAuthnManagerBase, public AbortFollower {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(WebAuthnHandler)
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(WebAuthnManager, WebAuthnManagerBase)
 
-  explicit WebAuthnHandler(nsPIDOMWindowInner* aWindow) : mWindow(aWindow) {
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(aWindow);
-  }
+  explicit WebAuthnManager(nsPIDOMWindowInner* aParent)
+      : WebAuthnManagerBase(aParent) {}
 
   already_AddRefed<Promise> MakeCredential(
       const PublicKeyCredentialCreationOptions& aOptions,
@@ -98,31 +102,30 @@ class WebAuthnHandler final : public AbortFollower {
 
   already_AddRefed<Promise> IsUVPAA(GlobalObject& aGlobal, ErrorResult& aError);
 
-  void ActorDestroyed();
+  
+
+  void FinishMakeCredential(
+      const uint64_t& aTransactionId,
+      const WebAuthnMakeCredentialResult& aResult) override;
+
+  void FinishGetAssertion(const uint64_t& aTransactionId,
+                          const WebAuthnGetAssertionResult& aResult) override;
+
+  void RequestAborted(const uint64_t& aTransactionId,
+                      const nsresult& aError) override;
 
   
+
   void RunAbortAlgorithm() override;
 
  private:
-  virtual ~WebAuthnHandler();
-
-  bool MaybeCreateActor();
-
-  void FinishMakeCredential(const WebAuthnMakeCredentialResult& aResult);
-
-  void FinishGetAssertion(const WebAuthnGetAssertionResult& aResult);
+  virtual ~WebAuthnManager();
 
   
   
   template <typename T>
   void CancelTransaction(const T& aReason) {
-    MOZ_ASSERT(mActor);
-    MOZ_ASSERT(mTransaction.isSome());
-
-    mTransaction.ref().mRegisterHolder.DisconnectIfExists();
-    mTransaction.ref().mSignHolder.DisconnectIfExists();
-
-    mActor->SendRequestCancel();
+    CancelParent();
     RejectTransaction(aReason);
   }
 
@@ -135,10 +138,10 @@ class WebAuthnHandler final : public AbortFollower {
   void RejectTransaction(const T& aReason);
 
   
-  nsCOMPtr<nsPIDOMWindowInner> mWindow;
+  void CancelParent();
 
   
-  RefPtr<WebAuthnTransactionChild> mActor;
+  void ClearTransaction();
 
   
   Maybe<WebAuthnTransaction> mTransaction;

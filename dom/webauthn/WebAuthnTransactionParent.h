@@ -9,7 +9,6 @@
 
 #include "mozilla/dom/PWebAuthnTransactionParent.h"
 #include "mozilla/dom/WebAuthnPromiseHolder.h"
-#include "mozilla/RandomNum.h"
 #include "nsIWebAuthnService.h"
 
 
@@ -22,20 +21,20 @@ class WebAuthnRegisterPromiseHolder;
 class WebAuthnSignPromiseHolder;
 
 class WebAuthnTransactionParent final : public PWebAuthnTransactionParent {
-  NS_INLINE_DECL_REFCOUNTING(WebAuthnTransactionParent, override);
-
  public:
+  NS_INLINE_DECL_REFCOUNTING(WebAuthnTransactionParent);
   WebAuthnTransactionParent() = default;
 
   mozilla::ipc::IPCResult RecvRequestRegister(
-      const WebAuthnMakeCredentialInfo& aTransactionInfo,
-      RequestRegisterResolver&& aResolver);
+      const uint64_t& aTransactionId,
+      const WebAuthnMakeCredentialInfo& aTransactionInfo);
 
   mozilla::ipc::IPCResult RecvRequestSign(
-      const WebAuthnGetAssertionInfo& aTransactionInfo,
-      RequestSignResolver&& aResolver);
+      const uint64_t& aTransactionId,
+      const WebAuthnGetAssertionInfo& aTransactionInfo);
 
-  mozilla::ipc::IPCResult RecvRequestCancel();
+  mozilla::ipc::IPCResult RecvRequestCancel(
+      const Tainted<uint64_t>& aTransactionId);
 
   mozilla::ipc::IPCResult RecvRequestIsUVPAA(
       RequestIsUVPAAResolver&& aResolver);
@@ -54,18 +53,6 @@ class WebAuthnTransactionParent final : public PWebAuthnTransactionParent {
   Maybe<uint64_t> mTransactionId;
   MozPromiseRequestHolder<WebAuthnRegisterPromise> mRegisterPromiseRequest;
   MozPromiseRequestHolder<WebAuthnSignPromise> mSignPromiseRequest;
-
-  
-  
-  
-  static uint64_t NextId() {
-    static uint64_t counter = 0;
-    Maybe<uint64_t> rand = mozilla::RandomUint64();
-    uint64_t id =
-        rand.valueOr(++counter) & UINT64_C(0x1fffffffffffff);  
-    
-    return id ? id : 1;
-  }
 };
 
 }  
