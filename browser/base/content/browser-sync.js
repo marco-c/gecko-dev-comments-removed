@@ -787,6 +787,12 @@ var gSync = {
     if (ctaCopyVariant) {
       NimbusFeatures.fxaAvatarMenuItem.recordExposureEvent();
     }
+
+    
+    
+    if (this.isSignedIn && !UIState.get().syncEnabled) {
+      NimbusFeatures.syncSetupFlow.recordExposureEvent();
+    }
   },
 
   onFxAPanelViewHiding(panelview) {
