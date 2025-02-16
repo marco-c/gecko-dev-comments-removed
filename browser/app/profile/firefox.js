@@ -566,10 +566,6 @@ pref("browser.urlbar.quicksuggest.nonSponsoredIndex", -1);
 
 
 
-pref("browser.urlbar.quicksuggest.allowPositionInSuggestions", true);
-
-
-
 pref("browser.urlbar.quicksuggest.impressionCaps.nonSponsoredEnabled", false);
 
 
