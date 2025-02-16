@@ -10,34 +10,12 @@
 #  include "GLImages.h"  
 #endif
 #include "MediaDecoderOwner.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/AbstractThread.h"
 
 using namespace mozilla::layers;
 
 namespace mozilla {
 #define NS_DispatchToMainThread(...) CompileError_UseAbstractMainThreadInstead
-
-namespace {
-template <Telemetry::HistogramID ID>
-class AutoTimer {
-  
-  
-  static const uint32_t sThresholdMS = 1000;
-
- public:
-  ~AutoTimer() {
-    auto end = TimeStamp::Now();
-    auto diff = uint32_t((end - mStart).ToMilliseconds());
-    if (diff > sThresholdMS) {
-      Telemetry::Accumulate(ID, diff);
-    }
-  }
-
- private:
-  const TimeStamp mStart = TimeStamp::Now();
-};
-}  
 
 VideoFrameContainer::VideoFrameContainer(
     MediaDecoderOwner* aOwner, already_AddRefed<ImageContainer> aContainer)
