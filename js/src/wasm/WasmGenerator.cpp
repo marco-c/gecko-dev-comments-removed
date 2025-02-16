@@ -434,6 +434,11 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
   }
 
   
+  if (!funcIonSpewers_.appendAll(std::move(code.funcIonSpewers))) {
+    return false;
+  }
+
+  
   
 
   if (!InRange(startOfUnpatchedCallsites_,
@@ -946,6 +951,11 @@ UniqueCodeBlock ModuleGenerator::finishCodeBlock(UniqueLinkData* linkData) {
   
   
   CheckCodeBlock(*codeBlock_);
+
+  
+  
+  codeBlock_->sendToProfiler(*codeMeta_, codeMetaForAsmJS_,
+                             FuncIonPerfSpewerSpan(funcIonSpewers_));
 
   
   masm_ = nullptr;
@@ -1465,6 +1475,7 @@ void ModuleGenerator::warnf(const char* msg, ...) {
 size_t CompiledCode::sizeOfExcludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
   return funcs.sizeOfExcludingThis(mallocSizeOf) +
+         funcIonSpewers.sizeOfExcludingThis(mallocSizeOf) +
          bytes.sizeOfExcludingThis(mallocSizeOf) +
          codeRanges.sizeOfExcludingThis(mallocSizeOf) +
          callSites.sizeOfExcludingThis(mallocSizeOf) +
