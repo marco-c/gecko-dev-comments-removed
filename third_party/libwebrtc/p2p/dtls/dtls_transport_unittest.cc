@@ -10,6 +10,7 @@
 
 #include "p2p/dtls/dtls_transport.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -507,34 +508,6 @@ TEST_F(DtlsTransportTest, KeyingMaterialExporter) {
   EXPECT_EQ(client1_out, client2_out);
 }
 
-class DtlsTransportVersionTest
-    : public DtlsTransportTestBase,
-      public ::testing::TestWithParam<
-          ::testing::tuple<rtc::SSLProtocolVersion, rtc::SSLProtocolVersion>> {
-};
-
-
-
-INSTANTIATE_TEST_SUITE_P(
-    DtlsTransportVersionTest,
-    DtlsTransportVersionTest,
-    ::testing::Combine(::testing::Values(rtc::SSL_PROTOCOL_DTLS_10,
-                                         rtc::SSL_PROTOCOL_DTLS_12,
-                                         rtc::SSL_PROTOCOL_DTLS_13),
-                       ::testing::Values(rtc::SSL_PROTOCOL_DTLS_10,
-                                         rtc::SSL_PROTOCOL_DTLS_12,
-                                         rtc::SSL_PROTOCOL_DTLS_13)));
-
-
-
-
-TEST_P(DtlsTransportVersionTest, TestCipherSuiteNegotiation) {
-  PrepareDtls(rtc::KT_DEFAULT);
-  SetMaxProtocolVersions(::testing::get<0>(GetParam()),
-                         ::testing::get<1>(GetParam()));
-  ASSERT_TRUE(Connect());
-}
-
 enum HandshakeTestEvent {
   EV_CLIENT_SEND = 0,
   EV_SERVER_SEND = 1,
@@ -542,6 +515,9 @@ enum HandshakeTestEvent {
   EV_SERVER_RECV = 3,
   EV_CLIENT_WRITABLE = 4,
   EV_SERVER_WRITABLE = 5,
+
+  EV_CLIENT_SEND_DROPPED = 6,
+  EV_SERVER_SEND_DROPPED = 7,
 };
 
 static const std::vector<HandshakeTestEvent> dtls_12_handshake_events{
@@ -583,106 +559,243 @@ static const struct {
     {rtc::kDtls13VersionBytes, dtls_13_handshake_events},
 };
 
-bool LogRecv(absl::string_view name,
-             const rtc::CopyOnWriteBuffer& packet,
-             uint64_t timestamp_ms) {
-  RTC_LOG(LS_INFO) << "time=" << timestamp_ms << " : " << name
-                   << ": ReceivePacket packet len=" << packet.size()
-                   << ", data[0]: " << static_cast<uint8_t>(packet.data()[0]);
-  return false;
-}
-
-bool LogSend(absl::string_view name,
-             uint64_t timestamp_ms,
-             bool drop,
-             const char* data,
-             size_t len) {
-  if (drop) {
-    RTC_LOG(LS_INFO) << "time=" << timestamp_ms << " : " << name
-                     << ": dropping packet len=" << len
-                     << ", data[0]: " << static_cast<uint8_t>(data[0]);
-  } else {
-    RTC_LOG(LS_INFO) << "time=" << timestamp_ms << " : " << name
-                     << ": SendPacket, len=" << len
-                     << ", data[0]: " << static_cast<uint8_t>(data[0]);
+class DtlsTransportVersionTest
+    : public DtlsTransportTestBase,
+      public ::testing::TestWithParam<
+          ::testing::tuple<rtc::SSLProtocolVersion, rtc::SSLProtocolVersion>> {
+ public:
+  void Prepare() {
+    PrepareDtls(rtc::KT_DEFAULT);
+    SetMaxProtocolVersions(::testing::get<0>(GetParam()),
+                           ::testing::get<1>(GetParam()));
   }
-  return drop;
-}
-
-TEST_P(DtlsTransportVersionTest, TestHandshakeFlights) {
-  
-  
-  MAYBE_SKIP_TEST(IsBoringSsl);
 
   
-  webrtc::test::ScopedFieldTrials trials("WebRTC-ForceDtls13/Off/");
-  PrepareDtls(rtc::KT_DEFAULT);
-  SetMaxProtocolVersions(::testing::get<0>(GetParam()),
-                         ::testing::get<1>(GetParam()));
+  
+  
+  std::pair< int, std::vector<HandshakeTestEvent>>
+  RunHandshake(std::set<unsigned> packets_to_drop) {
+    Negotiate( false);
 
-  Negotiate( false);
+    std::vector<HandshakeTestEvent> events;
+    auto start_time_ns = fake_clock_.TimeNanos();
+    client1_.fake_ice_transport()->set_rtt_estimate(50, true);
+    client2_.fake_ice_transport()->set_rtt_estimate(50, true);
 
-  std::vector<HandshakeTestEvent> events;
+    client1_.fake_ice_transport()->set_packet_recv_filter(
+        [&](auto packet, auto timestamp_us) {
+          events.push_back(EV_CLIENT_RECV);
+          return LogRecv("client", packet,
+                         (timestamp_us - start_time_ns / 1000) / 1000);
+        });
+    client2_.fake_ice_transport()->set_packet_recv_filter(
+        [&](auto packet, auto timestamp_us) {
+          events.push_back(EV_SERVER_RECV);
+          return LogRecv("server", packet,
+                         (timestamp_us - start_time_ns / 1000) / 1000);
+        });
+    client1_.set_writable_callback(
+        [&]() { events.push_back(EV_CLIENT_WRITABLE); });
+    client2_.set_writable_callback(
+        [&]() { events.push_back(EV_SERVER_WRITABLE); });
 
-  auto start_time_ns = fake_clock_.TimeNanos();
-  client1_.fake_ice_transport()->set_rtt_estimate(50, true);
-  client2_.fake_ice_transport()->set_rtt_estimate(50, true);
+    unsigned packet_num = 0;
+    client1_.fake_ice_transport()->set_packet_send_filter(
+        [&](auto data, auto len, auto options, auto flags) {
+          bool drop = packets_to_drop.find(packet_num) != packets_to_drop.end();
+          packet_num++;
+          if (!drop) {
+            events.push_back(EV_CLIENT_SEND);
+          } else {
+            events.push_back(EV_CLIENT_SEND_DROPPED);
+          }
+          auto diff_ms = (fake_clock_.TimeNanos() - start_time_ns) / 1000000;
+          return LogSend("client", diff_ms, drop, data, len);
+        });
+    client2_.fake_ice_transport()->set_packet_send_filter(
+        [&](auto data, auto len, auto options, auto flags) {
+          bool drop = packets_to_drop.find(packet_num) != packets_to_drop.end();
+          packet_num++;
+          if (!drop) {
+            events.push_back(EV_SERVER_SEND);
+          } else {
+            events.push_back(EV_SERVER_SEND_DROPPED);
+          }
+          auto diff_ms = (fake_clock_.TimeNanos() - start_time_ns) / 1000000;
+          return LogSend("server", diff_ms, drop, data, len);
+        });
 
-  client1_.fake_ice_transport()->set_packet_recv_filter(
-      [&](auto packet, auto timestamp_us) {
-        events.push_back(EV_CLIENT_RECV);
-        return LogRecv("client", packet,
-                       (timestamp_us - start_time_ns / 1000) / 1000);
-      });
-  client2_.fake_ice_transport()->set_packet_recv_filter(
-      [&](auto packet, auto timestamp_us) {
-        events.push_back(EV_SERVER_RECV);
-        return LogRecv("server", packet,
-                       (timestamp_us - start_time_ns / 1000) / 1000);
-      });
-  client1_.set_writable_callback(
-      [&]() { events.push_back(EV_CLIENT_WRITABLE); });
-  client2_.set_writable_callback(
-      [&]() { events.push_back(EV_SERVER_WRITABLE); });
+    EXPECT_TRUE(client1_.Connect(&client2_, false));
 
-  client1_.fake_ice_transport()->set_packet_send_filter(
-      [&](auto data, auto len, auto options, auto flags) {
-        events.push_back(EV_CLIENT_SEND);
-        bool drop = false;
-        auto diff_ms = (fake_clock_.TimeNanos() - start_time_ns) / 1000000;
-        return LogSend("client", diff_ms, drop, data, len);
-      });
-  client2_.fake_ice_transport()->set_packet_send_filter(
-      [&](auto data, auto len, auto options, auto flags) {
-        events.push_back(EV_SERVER_SEND);
-        bool drop = false;
-        auto diff_ms = (fake_clock_.TimeNanos() - start_time_ns) / 1000000;
-        return LogSend("server", diff_ms, drop, data, len);
-      });
+    EXPECT_TRUE_SIMULATED_WAIT(client1_.dtls_transport()->writable() &&
+                                   client2_.dtls_transport()->writable(),
+                               kTimeout, fake_clock_);
 
-  EXPECT_TRUE(client1_.Connect(&client2_, false));
+    client1_.fake_ice_transport()->set_packet_send_filter(nullptr);
+    client2_.fake_ice_transport()->set_packet_send_filter(nullptr);
+    client1_.fake_ice_transport()->set_packet_recv_filter(nullptr);
+    client2_.fake_ice_transport()->set_packet_recv_filter(nullptr);
 
-  EXPECT_TRUE_SIMULATED_WAIT(client1_.dtls_transport()->writable() &&
-                                 client2_.dtls_transport()->writable(),
-                             kTimeout, fake_clock_);
+    auto dtls_version_bytes = client1_.GetVersionBytes();
+    EXPECT_EQ(dtls_version_bytes, client2_.GetVersionBytes());
+    return std::make_pair(*dtls_version_bytes, std::move(events));
+  }
 
-  client1_.fake_ice_transport()->set_packet_send_filter(nullptr);
-  client2_.fake_ice_transport()->set_packet_send_filter(nullptr);
-  client1_.fake_ice_transport()->set_packet_recv_filter(nullptr);
-  client2_.fake_ice_transport()->set_packet_recv_filter(nullptr);
-
-  auto dtls_version_bytes = client1_.GetVersionBytes();
-  ASSERT_EQ(dtls_version_bytes, client2_.GetVersionBytes());
-
-  std::vector<HandshakeTestEvent> expect;
-  for (const auto e : kEventsPerVersion) {
-    if (e.version_bytes == dtls_version_bytes) {
-      expect = e.events;
-      break;
+  int GetExpectedDtlsVersionBytes() {
+    int version = std::min(static_cast<int>(::testing::get<0>(GetParam())),
+                           static_cast<int>(::testing::get<1>(GetParam())));
+    if (version == rtc::SSL_PROTOCOL_DTLS_13) {
+      return rtc::kDtls13VersionBytes;
+    } else {
+      return rtc::kDtls12VersionBytes;
     }
   }
+
+  std::vector<HandshakeTestEvent> GetExpectedEvents(int dtls_version_bytes) {
+    for (const auto e : kEventsPerVersion) {
+      if (e.version_bytes == dtls_version_bytes) {
+        return e.events;
+      }
+    }
+    return {};
+  }
+
+ private:
+  bool LogRecv(absl::string_view name,
+               const rtc::CopyOnWriteBuffer& packet,
+               uint64_t timestamp_ms) {
+    RTC_LOG(LS_INFO) << "time=" << timestamp_ms << " : " << name
+                     << ": ReceivePacket packet len=" << packet.size()
+                     << ", data[0]: " << static_cast<uint8_t>(packet.data()[0]);
+    return false;
+  }
+
+  bool LogSend(absl::string_view name,
+               uint64_t timestamp_ms,
+               bool drop,
+               const char* data,
+               size_t len) {
+    if (drop) {
+      RTC_LOG(LS_INFO) << "time=" << timestamp_ms << " : " << name
+                       << ": dropping packet len=" << len
+                       << ", data[0]: " << static_cast<uint8_t>(data[0]);
+    } else {
+      RTC_LOG(LS_INFO) << "time=" << timestamp_ms << " : " << name
+                       << ": SendPacket, len=" << len
+                       << ", data[0]: " << static_cast<uint8_t>(data[0]);
+    }
+    return drop;
+  }
+};
+
+
+
+INSTANTIATE_TEST_SUITE_P(
+    DtlsTransportVersionTest,
+    DtlsTransportVersionTest,
+    ::testing::Combine(::testing::Values(rtc::SSL_PROTOCOL_DTLS_10,
+                                         rtc::SSL_PROTOCOL_DTLS_12,
+                                         rtc::SSL_PROTOCOL_DTLS_13),
+                       ::testing::Values(rtc::SSL_PROTOCOL_DTLS_10,
+                                         rtc::SSL_PROTOCOL_DTLS_12,
+                                         rtc::SSL_PROTOCOL_DTLS_13)));
+
+
+
+
+TEST_P(DtlsTransportVersionTest, CipherSuiteNegotiation) {
+  Prepare();
+  ASSERT_TRUE(Connect());
+}
+
+TEST_P(DtlsTransportVersionTest, HandshakeFlights) {
+  Prepare();
+  auto [dtls_version_bytes, events] = RunHandshake({});
+
   RTC_LOG(LS_INFO) << "Verifying events with ssl version bytes= "
-                   << *dtls_version_bytes;
+                   << dtls_version_bytes;
+  auto expect = GetExpectedEvents(dtls_version_bytes);
+  EXPECT_EQ(events, expect);
+}
+
+TEST_P(DtlsTransportVersionTest, HandshakeLoseFirstClientPacket) {
+  MAYBE_SKIP_TEST(IsBoringSsl);
+
+  Prepare();
+  auto [dtls_version_bytes, events] = RunHandshake({ 0});
+
+  auto expect = GetExpectedEvents(dtls_version_bytes);
+
+  
+  
+  expect.insert(expect.begin(), EV_CLIENT_SEND_DROPPED);
+
+  EXPECT_EQ(events, expect);
+}
+
+TEST_P(DtlsTransportVersionTest, HandshakeLoseSecondClientPacket) {
+  MAYBE_SKIP_TEST(IsBoringSsl);
+
+  Prepare();
+  auto [dtls_version_bytes, events] = RunHandshake({ 2});
+
+  std::vector<HandshakeTestEvent> expect;
+
+  switch (dtls_version_bytes) {
+    case rtc::kDtls12VersionBytes:
+      expect = {
+          
+          EV_CLIENT_SEND,
+          EV_SERVER_RECV,
+          EV_SERVER_SEND,
+          EV_CLIENT_RECV,
+
+          
+          EV_CLIENT_SEND_DROPPED,
+
+          
+          EV_SERVER_SEND,
+          
+          EV_CLIENT_SEND,
+          
+          EV_CLIENT_RECV,
+          
+          EV_SERVER_RECV,
+          EV_SERVER_SEND,
+          EV_SERVER_WRITABLE,
+          EV_CLIENT_RECV,
+          EV_CLIENT_WRITABLE,
+      };
+      break;
+    case rtc::kDtls13VersionBytes:
+      expect = {
+          
+          EV_CLIENT_SEND,
+          EV_SERVER_RECV,
+          EV_SERVER_SEND,
+          EV_CLIENT_RECV,
+
+          
+          EV_CLIENT_SEND_DROPPED,
+          
+          EV_CLIENT_WRITABLE,
+
+          
+          EV_SERVER_SEND,
+          
+          EV_CLIENT_SEND,
+
+          
+          EV_CLIENT_RECV,
+          
+          EV_SERVER_RECV,
+          EV_SERVER_SEND,
+          EV_SERVER_WRITABLE,
+      };
+      break;
+    default:
+      RTC_CHECK(false) << "Unknown dtls version bytes: " << dtls_version_bytes;
+  }
   EXPECT_EQ(events, expect);
 }
 
