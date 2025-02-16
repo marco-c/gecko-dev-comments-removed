@@ -54,6 +54,10 @@ async function testDoorHanger(
       ],
       
       ["network.cookie.sameSite.laxByDefault", false],
+      [
+        "privacy.restrict3rdpartystorage.heuristic.exclude_third_party_trackers",
+        false,
+      ],
     ],
   });
 
