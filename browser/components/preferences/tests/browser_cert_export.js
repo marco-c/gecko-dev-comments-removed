@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { getPEMString } = ChromeUtils.importESModule(
-  "resource://gre/modules/psm/pippki.sys.mjs"
-);
-
 var MockFilePicker = SpecialPowers.MockFilePicker;
 
 function createTemporarySaveDirectory() {
@@ -118,12 +114,12 @@ async function checkCertExportWorks(
 add_task(setupTest);
 
 add_task(async function checkCertPEMExportWorks() {
-  let expectedContents = getPEMString(expectedCert);
+  let expectedContents = dialogWin.getPEMString(expectedCert);
   await checkCertExportWorks(0,  "utf-8", expectedContents);
 });
 
 add_task(async function checkCertPEMChainExportWorks() {
-  let expectedContents = getPEMString(expectedCert);
+  let expectedContents = dialogWin.getPEMString(expectedCert);
   await checkCertExportWorks(
     1, 
     "utf-8",

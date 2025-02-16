@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { getCertViewerUrl } = ChromeUtils.importESModule(
-  "resource://gre/modules/psm/pippki.sys.mjs"
-);
-
 
 
 
@@ -14,37 +10,37 @@ const { getCertViewerUrl } = ChromeUtils.importESModule(
 
 add_task(async function testCAandTitle() {
   let cert = await readCertificate("ca.pem", "CTu,CTu,CTu");
-  let url = await getCertViewerUrl(cert);
+  let url = getURL(cert);
   await openCertViewerAndCheckTabName(url, "ca");
 });
 
 add_task(async function testSSLEndEntity() {
   let cert = await readCertificate("ssl-ee.pem", ",,");
-  let url = await getCertViewerUrl(cert);
+  let url = getURL(cert);
   await openCertViewerAndCheckTabName(url, "ssl-ee");
 });
 
 add_task(async function testEmailEndEntity() {
   let cert = await readCertificate("email-ee.pem", ",,");
-  let url = await getCertViewerUrl(cert);
+  let url = getURL(cert);
   await openCertViewerAndCheckTabName(url, "email-ee");
 });
 
 add_task(async function testCodeSignEndEntity() {
   let cert = await readCertificate("code-ee.pem", ",,");
-  let url = await getCertViewerUrl(cert);
+  let url = getURL(cert);
   await openCertViewerAndCheckTabName(url, "code-ee");
 });
 
 add_task(async function testExpired() {
   let cert = await readCertificate("expired-ca.pem", ",,");
-  let url = await getCertViewerUrl(cert);
+  let url = getURL(cert);
   await openCertViewerAndCheckTabName(url, "expired-ca");
 });
 
 add_task(async function testUntrusted() {
   let cert = await readCertificate("untrusted-ca.pem", "p,p,p");
-  let url = await getCertViewerUrl(cert);
+  let url = getURL(cert);
   await openCertViewerAndCheckTabName(url, "untrusted-ca");
 });
 
@@ -54,7 +50,7 @@ add_task(async function testInvalid() {
   
   
   let cert = await readCertificate("invalid.pem", ",,");
-  let url = await getCertViewerUrl(cert);
+  let url = getURL(cert);
   await openCertViewerAndCheckTabName(url, "invalid");
 });
 
@@ -62,9 +58,24 @@ add_task(async function testLongOID() {
   
   
   let cert = await readCertificate("longOID.pem", ",,");
-  let url = await getCertViewerUrl(cert);
+  let url = getURL(cert);
   await openCertViewerAndCheckTabName(url, "Long OID");
 });
+
+
+
+
+
+
+
+
+function getURL(cert) {
+  
+  
+  
+  let derb64 = encodeURIComponent(cert.getBase64DERString());
+  return `about:certificate?cert=${derb64}`;
+}
 
 
 

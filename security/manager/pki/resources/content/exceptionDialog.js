@@ -4,10 +4,6 @@
 
 "use strict";
 
-const { setText, viewCertHelper } = ChromeUtils.importESModule(
-  "resource://gre/modules/psm/pippki.sys.mjs"
-);
-
 var gDialog;
 var gSecInfo;
 var gCert;
@@ -166,13 +162,13 @@ function resetDialog() {
   document.getElementById("viewCertButton").disabled = true;
   document.getElementById("permanent").disabled = true;
   gDialog.getButton("extra1").disabled = true;
-  setText(document, "headerDescription", "");
-  setText(document, "statusDescription", "");
-  setText(document, "statusLongDescription", "");
-  setText(document, "status2Description", "");
-  setText(document, "status2LongDescription", "");
-  setText(document, "status3Description", "");
-  setText(document, "status3LongDescription", "");
+  setText("headerDescription", "");
+  setText("statusDescription", "");
+  setText("statusLongDescription", "");
+  setText("status2Description", "");
+  setText("status2LongDescription", "");
+  setText("status3Description", "");
+  setText("status3LongDescription", "");
   window.sizeToContent();
 }
 
