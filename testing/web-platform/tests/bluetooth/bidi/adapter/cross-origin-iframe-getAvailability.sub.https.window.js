@@ -9,8 +9,8 @@ const cross_origin_src = 'https://{{domains[www]}}:{{ports[https][0]}}' +
     '/bluetooth/resources/health-thermometer-iframe.html'
 let iframe = document.createElement('iframe');
 
-bluetooth_test(async () => {
-  await navigator.bluetooth.test.simulateCentral({state: 'powered-on'});
+bluetooth_bidi_test(async () => {
+  await test_driver.bidi.bluetooth.simulate_adapter({state: "powered-on"});
   await new Promise(resolve => {
     iframe.src = cross_origin_src;
     document.body.appendChild(iframe);

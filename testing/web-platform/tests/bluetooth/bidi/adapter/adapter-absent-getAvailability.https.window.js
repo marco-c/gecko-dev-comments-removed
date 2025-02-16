@@ -6,8 +6,8 @@
 const test_desc = 'getAvailability() resolves with false if the system does ' +
     'not have an adapter.';
 
-bluetooth_test(async () => {
-  await navigator.bluetooth.test.simulateCentral({state: 'absent'});
+bluetooth_bidi_test(async () => {
+  await test_driver.bidi.bluetooth.simulate_adapter({state: "absent"});
   let availability = await navigator.bluetooth.getAvailability();
   assert_false(
       availability,

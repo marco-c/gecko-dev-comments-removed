@@ -98,6 +98,26 @@ function bluetooth_test(
 
 
 
+
+
+
+function bluetooth_bidi_test(
+  test_function, name, properties, validate_response_consumed = true) {
+return promise_test(async (t) => {
+  assert_implements(navigator.bluetooth, 'missing navigator.bluetooth');
+  await test_function(t);
+}, name, properties);
+}
+
+
+
+
+
+
+
+
+
+
 function waitForDocumentReady() {
   return new Promise(resolve => {
     if (document.readyState === 'complete') {
