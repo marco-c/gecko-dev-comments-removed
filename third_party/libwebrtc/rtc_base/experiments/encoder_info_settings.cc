@@ -145,6 +145,12 @@ EncoderInfoSettings::GetSinglecastBitrateLimitForResolutionWhenQpIsUntrusted(
   }
 
   
+  
+  if (interpolation_index == 0) {
+    return *bitrate_limits.begin();
+  }
+
+  
   int lower_pixel_count =
       bitrate_limits[interpolation_index - 1].frame_size_pixels;
   int upper_pixel_count = bitrate_limits[interpolation_index].frame_size_pixels;
