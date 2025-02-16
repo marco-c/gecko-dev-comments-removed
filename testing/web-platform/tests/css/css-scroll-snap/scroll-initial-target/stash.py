@@ -3,7 +3,7 @@
 
 """
 This file allows the different windows created by
-css/css-scroll-snap-2/scroll-initial-target-with-text-fragment-navigation.html
+css/css-scroll-snap/scroll-initial-target/scroll-initial-target-with-text-fragment-navigation.html
 to store and retrieve data.
 
 scroll-initial-target-with-text-fragment-navigation.html (test file) opens a window to
@@ -19,9 +19,9 @@ def main(request, response):
 
     if request.method == u"POST":
         
-        request.server.stash.put(key, request.body, u'/css/css-scroll-snap-2/scroll-initial-target/')
+        request.server.stash.put(key, request.body, u'/css/css-scroll-snap/scroll-initial-target/')
         return u"ok"
     else:
         
-        value = request.server.stash.take(key, u'/css/css-scroll-snap-2/scroll-initial-target/')
+        value = request.server.stash.take(key, u'/css/css-scroll-snap/scroll-initial-target/')
         return value
