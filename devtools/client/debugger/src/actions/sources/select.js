@@ -14,7 +14,7 @@ import { addTab, closeTab } from "../tabs";
 import { loadSourceText } from "./loadSourceText";
 import { setBreakableLines } from "./breakableLines";
 
-import { prefs, features } from "../../utils/prefs";
+import { prefs } from "../../utils/prefs";
 import { isMinified } from "../../utils/source";
 import { createLocation } from "../../utils/location";
 import {
@@ -39,7 +39,6 @@ import {
   getSourceByActorId,
   getSelectedFrame,
   getCurrentThread,
-  isMapScopesEnabled,
 } from "../../selectors/index";
 
 
@@ -233,7 +232,6 @@ export function selectLocation(
   location,
   { keepContext = true, highlight = true, scroll = true } = {}
 ) {
-  
   return async thunkArgs => {
     const { dispatch, getState, client } = thunkArgs;
 
@@ -345,17 +343,9 @@ export function selectLocation(
       if (getSelectedLocation(getState()) != location) {
         return;
       }
+
       
-      
-      
-      if (
-        !features.codemirrorNext ||
-        (selectedFrame.location.source.isOriginal &&
-          isMapScopesEnabled(getState()))
-      ) {
-        
-        dispatch(setInScopeLines());
-      }
+      dispatch(setInScopeLines());
     }
 
     
