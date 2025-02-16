@@ -544,16 +544,16 @@ var ctrlTab = {
 
     
     
+    
+    
     this._trackMouseOver = false;
-    setTimeout(
-      function (self) {
-        if (self.isOpen) {
-          self._trackMouseOver = true;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (this.isOpen) {
+          this._trackMouseOver = true;
         }
-      },
-      0,
-      this
-    );
+      });
+    });
   },
 
   suspendGUI: function ctrlTab_suspendGUI() {
