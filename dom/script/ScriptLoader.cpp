@@ -2961,6 +2961,12 @@ void ScriptLoader::InstantiateClassicScriptFromCachedStencil(
   }
 }
 
+enum class CacheBehavior : uint8_t {
+  DoNothing,
+  Insert,
+  Evict,
+};
+
 void ScriptLoader::InstantiateClassicScriptFromAny(
     JSContext* aCx, JS::CompileOptions& aCompileOptions,
     ScriptLoadRequest* aRequest, JS::MutableHandle<JSScript*> aScript,
@@ -2974,16 +2980,30 @@ void ScriptLoader::InstantiateClassicScriptFromAny(
     return;
   }
 
-  bool createCache = false;
+  CacheBehavior cacheBehavior = CacheBehavior::DoNothing;
   if (mCache) {
-    createCache = aRequest->IsCacheable();
-
-    ScriptHashKey key(this, aRequest);
-    auto cacheResult = mCache->Lookup(*this, key,
-                                       true);
-    if (cacheResult.mState == CachedSubResourceState::Complete) {
-      
-      createCache = false;
+    
+    
+    
+    
+    
+    
+    
+    if (aRequest->IsCacheable()) {
+      if (ShouldBypassCache()) {
+        
+        
+        cacheBehavior = CacheBehavior::Insert;
+      } else {
+        ScriptHashKey key(this, aRequest);
+        auto cacheResult = mCache->Lookup(*this, key,
+                                           true);
+        if (cacheResult.mState != CachedSubResourceState::Complete) {
+          cacheBehavior = CacheBehavior::Insert;
+        }
+      }
+    } else {
+      cacheBehavior = CacheBehavior::Evict;
     }
   }
 
@@ -2991,13 +3011,24 @@ void ScriptLoader::InstantiateClassicScriptFromAny(
   InstantiateClassicScriptFromMaybeEncodedSource(
       aCx, aCompileOptions, aRequest, aScript, stencil, aDebuggerPrivateValue,
       aDebuggerIntroductionScript, aRv);
-  if (!aRv.Failed()) {
-    if (createCache && JS::IsStencilCacheable(stencil)) {
-      MOZ_ASSERT(mCache);
-      MOZ_ASSERT(stencil);
-      aRequest->SetStencil(stencil.forget());
+  if (!aRv.Failed() && cacheBehavior != CacheBehavior::DoNothing) {
+    MOZ_ASSERT(mCache);
+    MOZ_ASSERT(stencil);
+
+    if (!JS::IsStencilCacheable(stencil)) {
+      
+      
+      cacheBehavior = CacheBehavior::Evict;
+    }
+
+    aRequest->SetStencil(stencil.forget());
+    if (cacheBehavior == CacheBehavior::Insert) {
       auto loadData = MakeRefPtr<ScriptLoadData>(this, aRequest);
       mCache->Insert(*loadData);
+    } else {
+      MOZ_ASSERT(cacheBehavior == CacheBehavior::Evict);
+      ScriptHashKey key(this, aRequest);
+      mCache->Evict(key);
     }
   }
 }

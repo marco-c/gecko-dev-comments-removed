@@ -218,6 +218,9 @@ class SharedSubResourceCache {
   void Insert(LoadingValue&);
 
   
+  void Evict(const Key&);
+
+  
   void DeferLoad(const Key&, LoadingValue&);
 
   template <typename Callback>
@@ -471,6 +474,11 @@ void SharedSubResourceCache<Traits, Derived>::Insert(LoadingValue& aValue) {
 #endif
 
   mComplete.InsertOrUpdate(key, CompleteSubResource(aValue));
+}
+
+template <typename Traits, typename Derived>
+void SharedSubResourceCache<Traits, Derived>::Evict(const Key& aKey) {
+  (void)mComplete.Remove(aKey);
 }
 
 template <typename Traits, typename Derived>
