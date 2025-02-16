@@ -761,6 +761,9 @@ void mozJSModuleLoader::SetModuleOptions(CompileOptions& aOptions) {
 
   
   aOptions.topLevelAwait = false;
+
+  
+  aOptions.deoptimizeModuleGlobalVars = true;
 }
 
 
