@@ -73,43 +73,9 @@ const CONFIG_CLONE = structuredClone(CONFIG);
 
 const engineSelector = new SearchEngineSelector();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function assertActualEnginesEqualsExpected(
-  config,
-  userEnv,
-  expectedEngines,
-  message
-) {
-  engineSelector._configuration = null;
-  SearchTestUtils.setRemoteSettingsConfig(config);
-
-  if (expectedEngines.length) {
-    let { engines } = await engineSelector.fetchEngineConfiguration(userEnv);
-
-    Assert.deepEqual(engines, expectedEngines, message);
-  } else {
-    await Assert.rejects(
-      engineSelector.fetchEngineConfiguration(userEnv),
-      /Could not find any engines in the filtered configuration/,
-      message
-    );
-  }
-}
-
 add_task(async function test_no_variants_match() {
-  await assertActualEnginesEqualsExpected(
+  await assertSelectorEnginesEqualsExpected(
+    engineSelector,
     CONFIG,
     {
       locale: "fi",
@@ -121,7 +87,8 @@ add_task(async function test_no_variants_match() {
 });
 
 add_task(async function test_match_and_apply_last_variants() {
-  await assertActualEnginesEqualsExpected(
+  await assertSelectorEnginesEqualsExpected(
+    engineSelector,
     CONFIG,
     {
       locale: "en-US",
@@ -146,7 +113,8 @@ add_task(async function test_match_and_apply_last_variants() {
 });
 
 add_task(async function test_match_middle_variant() {
-  await assertActualEnginesEqualsExpected(
+  await assertSelectorEnginesEqualsExpected(
+    engineSelector,
     CONFIG,
     {
       locale: "en-US",
@@ -171,7 +139,8 @@ add_task(async function test_match_middle_variant() {
 });
 
 add_task(async function test_match_first_and_last_variant() {
-  await assertActualEnginesEqualsExpected(
+  await assertSelectorEnginesEqualsExpected(
+    engineSelector,
     CONFIG,
     {
       locale: "en-GB",
@@ -196,7 +165,8 @@ add_task(async function test_match_first_and_last_variant() {
 });
 
 add_task(async function test_match_variant_with_empty_params() {
-  await assertActualEnginesEqualsExpected(
+  await assertSelectorEnginesEqualsExpected(
+    engineSelector,
     CONFIG,
     {
       locale: "it",

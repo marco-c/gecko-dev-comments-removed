@@ -318,10 +318,6 @@ var allowlist = [
   {
     file: "resource://gre/localization/en-US/netwerk/necko.ftl",
   },
-
-  
-  
-  { file: "resource://gre/modules/RustSearch.sys.mjs" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
