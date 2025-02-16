@@ -18,6 +18,7 @@
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "rtc_base/logging.h"
 #include "test/frame_utils.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -382,5 +383,28 @@ TEST(I420WeightedPSNRTest, SmokeTest) {
               (6.0 * psnr(1.0) + psnr(4.0) + psnr(4.0)) / 8.0,
               0.001);
 }
+
+#if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+
+
+TEST_F(TestLibYuv, I420DimensionsTooLarge) {
+  
+  constexpr int kWidth = 0xFFFF;
+  constexpr int kHeight = 0xAAB0;
+  
+  
+  static_assert(
+      (int64_t{kWidth} * int64_t{kHeight}) > std::numeric_limits<int>::max(),
+      "");
+
+  
+  
+  const int stride_uv = (kWidth + 1) / 2;
+  EXPECT_DEATH(I420Buffer::Create(kWidth, kHeight, kWidth,
+                                  stride_uv,
+                                  stride_uv),
+               "IsValueInRangeForNumericType");
+}
+#endif  
 
 }  
