@@ -8464,6 +8464,7 @@ void Document::EndLoad() {
   
   if (!mParserAborted) {
     nsContentSecurityUtils::AssertAboutPageHasCSP(this);
+    nsContentSecurityUtils::AssertChromePageHasCSP(this);
   }
 #endif
 
