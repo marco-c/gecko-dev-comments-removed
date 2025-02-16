@@ -2856,7 +2856,8 @@ void MacroAssembler::loadAtomOrSymbolAndHash(ValueOperand value, Register outId,
 
 void MacroAssembler::emitExtractValueFromMegamorphicCacheEntry(
     Register obj, Register entry, Register scratch1, Register scratch2,
-    ValueOperand output, Label* cacheHit, Label* cacheMiss) {
+    ValueOperand output, Label* cacheHit, Label* cacheMiss,
+    Label* cacheHitGetter) {
   Label isMissing, dynamicSlot, protoLoopHead, protoLoopTail;
 
   
@@ -2866,9 +2867,35 @@ void MacroAssembler::emitExtractValueFromMegamorphicCacheEntry(
   branch32(Assembler::Equal, scratch2,
            Imm32(MegamorphicCache::Entry::NumHopsForMissingProperty),
            &isMissing);
-  
-  branchTest32(Assembler::NonZero, scratch2,
-               Imm32(MegamorphicCache::Entry::NonDataPropertyFlag), cacheMiss);
+
+  if (cacheHitGetter) {
+    
+    
+    Label dataProperty;
+
+    
+    move32(Imm32(0), scratch1);
+    branchTest32(Assembler::Zero, scratch2,
+                 Imm32(MegamorphicCache::Entry::NonDataPropertyFlag),
+                 &dataProperty);
+
+    
+    
+    branch32(Assembler::GreaterThan, scratch2,
+             Imm32(MegamorphicCache::Entry::NonDataPropertyFlag |
+                   MegamorphicCache::Entry::MaxHopsForAccessorProperty),
+             cacheMiss);
+
+    and32(Imm32(~MegamorphicCache::Entry::NonDataPropertyFlag), scratch2);
+    move32(Imm32(1), scratch1);
+
+    bind(&dataProperty);
+  } else {
+    
+    branchTest32(Assembler::NonZero, scratch2,
+                 Imm32(MegamorphicCache::Entry::NonDataPropertyFlag),
+                 cacheMiss);
+  }
 
   
   
@@ -2887,23 +2914,29 @@ void MacroAssembler::emitExtractValueFromMegamorphicCacheEntry(
   bind(&protoLoopTail);
 
   
-  load32(Address(entry, MegamorphicCacheEntry::offsetOfSlotOffset()), scratch1);
+  load32(Address(entry, MegamorphicCacheEntry::offsetOfSlotOffset()), entry);
 
   
-  move32(scratch1, scratch2);
+  move32(entry, scratch2);
   rshift32(Imm32(TaggedSlotOffset::OffsetShift), scratch2);
 
   
-  branchTest32(Assembler::Zero, scratch1,
-               Imm32(TaggedSlotOffset::IsFixedSlotFlag), &dynamicSlot);
+  branchTest32(Assembler::Zero, entry, Imm32(TaggedSlotOffset::IsFixedSlotFlag),
+               &dynamicSlot);
   
   loadValue(BaseIndex(outputScratch, scratch2, TimesOne), output);
+  if (cacheHitGetter) {
+    branchTest32(Assembler::NonZero, scratch1, scratch1, cacheHitGetter);
+  }
   jump(cacheHit);
 
   bind(&dynamicSlot);
   
   loadPtr(Address(outputScratch, NativeObject::offsetOfSlots()), outputScratch);
   loadValue(BaseIndex(outputScratch, scratch2, TimesOne), output);
+  if (cacheHitGetter) {
+    branchTest32(Assembler::NonZero, scratch1, scratch1, cacheHitGetter);
+  }
   jump(cacheHit);
 
   bind(&isMissing);
@@ -2987,7 +3020,8 @@ void MacroAssembler::emitMegamorphicCacheLookupByValueCommon(
 
 void MacroAssembler::emitMegamorphicCacheLookup(
     PropertyKey id, Register obj, Register scratch1, Register scratch2,
-    Register outEntryPtr, ValueOperand output, Label* cacheHit) {
+    Register outEntryPtr, ValueOperand output, Label* cacheHit,
+    Label* cacheHitGetter) {
   Label cacheMiss, isMissing, dynamicSlot, protoLoopHead, protoLoopTail;
 
   
@@ -3045,8 +3079,9 @@ void MacroAssembler::emitMegamorphicCacheLookup(
   
   branch32(Assembler::NotEqual, scratch1, scratch2, &cacheMiss);
 
-  emitExtractValueFromMegamorphicCacheEntry(
-      obj, outEntryPtr, scratch1, scratch2, output, cacheHit, &cacheMiss);
+  emitExtractValueFromMegamorphicCacheEntry(obj, outEntryPtr, scratch1,
+                                            scratch2, output, cacheHit,
+                                            &cacheMiss, cacheHitGetter);
 
   bind(&cacheMiss);
 }
@@ -3054,14 +3089,15 @@ void MacroAssembler::emitMegamorphicCacheLookup(
 template <typename IdOperandType>
 void MacroAssembler::emitMegamorphicCacheLookupByValue(
     IdOperandType id, Register obj, Register scratch1, Register scratch2,
-    Register outEntryPtr, ValueOperand output, Label* cacheHit) {
+    Register outEntryPtr, ValueOperand output, Label* cacheHit,
+    Label* cacheHitGetter) {
   Label cacheMiss, cacheMissWithEntry;
   emitMegamorphicCacheLookupByValueCommon(id, obj, scratch1, scratch2,
                                           outEntryPtr, &cacheMiss,
                                           &cacheMissWithEntry);
-  emitExtractValueFromMegamorphicCacheEntry(obj, outEntryPtr, scratch1,
-                                            scratch2, output, cacheHit,
-                                            &cacheMissWithEntry);
+  emitExtractValueFromMegamorphicCacheEntry(
+      obj, outEntryPtr, scratch1, scratch2, output, cacheHit,
+      &cacheMissWithEntry, cacheHitGetter);
   bind(&cacheMiss);
   xorPtr(outEntryPtr, outEntryPtr);
   bind(&cacheMissWithEntry);
@@ -3069,11 +3105,13 @@ void MacroAssembler::emitMegamorphicCacheLookupByValue(
 
 template void MacroAssembler::emitMegamorphicCacheLookupByValue<ValueOperand>(
     ValueOperand id, Register obj, Register scratch1, Register scratch2,
-    Register outEntryPtr, ValueOperand output, Label* cacheHit);
+    Register outEntryPtr, ValueOperand output, Label* cacheHit,
+    Label* cacheHitGetter);
 
 template void MacroAssembler::emitMegamorphicCacheLookupByValue<Register>(
     Register id, Register obj, Register scratch1, Register scratch2,
-    Register outEntryPtr, ValueOperand output, Label* cacheHit);
+    Register outEntryPtr, ValueOperand output, Label* cacheHit,
+    Label* cacheHitGetter);
 
 void MacroAssembler::emitMegamorphicCacheLookupExists(
     ValueOperand id, Register obj, Register scratch1, Register scratch2,
