@@ -61,7 +61,6 @@
 #include "mozilla/KeySystemConfig.h"
 #include "mozilla/WheelHandlingHelper.h"
 #include "nsIRFPTargetSetIDL.h"
-#include "nsContentSecurityUtils.h"
 #include "nsString.h"
 #include "nsNativeTheme.h"
 #include "nsThreadUtils.h"
@@ -2369,19 +2368,6 @@ bool ChromeUtils::ShouldResistFingerprinting(
   
   return nsRFPService::IsRFPEnabledFor(isPBM, target,
                                        overriddenFingerprintingSettings);
-}
-
-
-void ChromeUtils::SanitizeTelemetryFileURL(
-    GlobalObject& aGlobal, const nsACString& aURL,
-    FileNameTypeDetails& aFileTypeDetails) {
-  FilenameTypeAndDetails result =
-      nsContentSecurityUtils::FilenameToFilenameType(aURL, true);
-
-  aFileTypeDetails.mFileNameType = result.first;
-  if (result.second.isSome()) {
-    aFileTypeDetails.mFileNameDetails.Construct(*result.second);
-  }
 }
 
 std::atomic<uint32_t> ChromeUtils::sDevToolsOpenedCount = 0;
