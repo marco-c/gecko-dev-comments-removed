@@ -25,6 +25,22 @@ template <typename T>
 HRESULT GetAttribute(TEXTATTRIBUTEID aAttributeId, T const& aRangeOrPoint,
                      VARIANT& aRetVal);
 
+static int CompareVariants(const VARIANT& aFirst, const VARIANT& aSecond) {
+  
+  
+  
+#if defined(__MINGW32__) || defined(__MINGW64__) || defined(__MINGW__)
+  PROPVARIANT firstPropVar;
+  PROPVARIANT secondPropVar;
+  VariantToPropVariant(&aFirst, &firstPropVar);
+  VariantToPropVariant(&aSecond, &secondPropVar);
+  return PropVariantCompareEx(firstPropVar, secondPropVar, PVCU_DEFAULT,
+                              PVCHF_DEFAULT);
+#else
+  return VariantCompare(aFirst, aSecond);
+#endif
+}
+
 
 
 
@@ -387,7 +403,7 @@ UiaTextRange::FindAttribute(TEXTATTRIBUTEID aAttributeId, VARIANT aVal,
       GetAttribute(aAttributeId, startPoint, value);
       
       
-      if (aVal.vt == value.vt && VariantCompare(aVal, value) == 0) {
+      if (aVal.vt == value.vt && CompareVariants(aVal, value) == 0) {
         if (!matchingRangeStart) {
           matchingRangeStart = Some(startPoint);
         }
@@ -417,7 +433,7 @@ UiaTextRange::FindAttribute(TEXTATTRIBUTEID aAttributeId, VARIANT aVal,
     startPoint = startPoint.FindTextAttrsStart(eDirPrevious);
     do {
       GetAttribute(aAttributeId, startPoint, value);
-      if (aVal.vt == value.vt && VariantCompare(aVal, value) == 0) {
+      if (aVal.vt == value.vt && CompareVariants(aVal, value) == 0) {
         if (!matchingRangeEnd) {
           matchingRangeEnd = Some(endPoint);
         }
