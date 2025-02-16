@@ -24,6 +24,7 @@ define(function (require, exports, module) {
 
 
 
+
   ObjectWithText.propTypes = {
     object: PropTypes.object.isRequired,
     shouldRenderTooltip: PropTypes.bool,
@@ -33,7 +34,7 @@ define(function (require, exports, module) {
     const grip = props.object;
     const config = getElementConfig(props);
 
-    return span(config, `${getType(grip)} `, getDescription(grip));
+    return span(config, getTitle(grip), getDescription(grip));
   }
 
   function getElementConfig(opts) {
@@ -49,13 +50,21 @@ define(function (require, exports, module) {
     };
   }
 
+  function getTitle(grip) {
+    return span({ className: "objectTitle" }, `${getType(grip)} `);
+  }
+
   function getType(grip) {
     return grip.class;
   }
 
   function getDescription(grip) {
+    const type = getType(grip);
+
     return String({
       object: grip.preview.text,
+      
+      useQuotes: !type || !type.startsWith("Temporal"),
     });
   }
 
