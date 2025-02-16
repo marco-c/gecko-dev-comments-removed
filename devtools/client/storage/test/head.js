@@ -13,34 +13,34 @@
 
 
 registerCleanupFunction(async () => {
-  const browser = gBrowser.selectedBrowser;
-  const contexts = browser.browsingContext.getAllBrowsingContextsInSubtree();
-  for (const context of contexts) {
-    await SpecialPowers.spawn(context, [], async () => {
-      const win = content.wrappedJSObject;
-
-      
-      try {
-        win.localStorage.clear();
-        win.sessionStorage.clear();
-      } catch (ex) {
-        
-      }
-
-      if (win.clear) {
-        
-        await Promise.race([
-          new Promise(r => win.setTimeout(r, 10000)),
-          win.clear(),
-        ]);
-      }
-    });
-  }
-
   Services.cookies.removeAll();
 
   
   while (gBrowser.tabs.length > 1) {
+    const browser = gBrowser.selectedBrowser;
+    const contexts = browser.browsingContext.getAllBrowsingContextsInSubtree();
+    for (const context of contexts) {
+      await SpecialPowers.spawn(context, [], async () => {
+        const win = content.wrappedJSObject;
+
+        
+        try {
+          win.localStorage.clear();
+          win.sessionStorage.clear();
+        } catch (ex) {
+          
+        }
+
+        if (win.clear) {
+          
+          await Promise.race([
+            new Promise(r => win.setTimeout(r, 10000)),
+            win.clear(),
+          ]);
+        }
+      });
+    }
+
     await closeTabAndToolbox(gBrowser.selectedTab);
   }
   forceCollections();
