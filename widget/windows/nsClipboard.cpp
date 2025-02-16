@@ -708,15 +708,15 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject* aDataObject,
     return result;
   }
 
-  UINT format = aFormat;
-  HRESULT hres = S_FALSE;
+  UINT const format = aFormat;
 
   
   
   
+
   FORMATETC fe;
   STGMEDIUM stm;
-  hres = FillSTGMedium(aDataObject, format, &fe, &stm, TYMED_HGLOBAL);
+  HRESULT hres = FillSTGMedium(aDataObject, format, &fe, &stm, TYMED_HGLOBAL);
 
   
   
@@ -731,206 +731,206 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject* aDataObject,
     }
   }
 
-  
-  
-  if (S_OK == hres) {
-    static CLIPFORMAT fileDescriptorFlavorA =
-        ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORA);
-    static CLIPFORMAT fileDescriptorFlavorW =
-        ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW);
-    static CLIPFORMAT fileFlavor =
-        ::RegisterClipboardFormat(CFSTR_FILECONTENTS);
-    static CLIPFORMAT preferredDropEffect =
-        ::RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
-
-    switch (stm.tymed) {
-      case TYMED_HGLOBAL: {
-        switch (fe.cfFormat) {
-          case CF_TEXT: {
-            
-            
-            
-            
-            
-            
-            
-            uint32_t allocLen = 0;
-            if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen))) {
-              *aLen = strlen(reinterpret_cast<char*>(*aData));
-              result = NS_OK;
-            }
-          } break;
-
-          case CF_UNICODETEXT: {
-            
-            
-            
-            
-            
-            
-            
-            uint32_t allocLen = 0;
-            if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen))) {
-              *aLen = NS_strlen(reinterpret_cast<char16_t*>(*aData)) * 2;
-              result = NS_OK;
-            }
-          } break;
-
-          case CF_DIBV5:
-            if (aMIMEImageFormat) {
-              uint32_t allocLen = 0;
-              const char* clipboardData;
-              if (NS_SUCCEEDED(GetGlobalData(
-                      stm.hGlobal, (void**)&clipboardData, &allocLen))) {
-                nsCOMPtr<imgIContainer> container;
-                nsCOMPtr<imgITools> imgTools =
-                    do_CreateInstance("@mozilla.org/image/tools;1");
-                result = imgTools->DecodeImageFromBuffer(
-                    clipboardData, allocLen,
-                    nsLiteralCString(IMAGE_BMP_MS_CLIPBOARD),
-                    getter_AddRefs(container));
-                if (NS_FAILED(result)) {
-                  break;
-                }
-
-                nsAutoCString mimeType;
-                if (strcmp(aMIMEImageFormat, kJPGImageMime) == 0) {
-                  mimeType.Assign(IMAGE_JPEG);
-                } else {
-                  mimeType.Assign(aMIMEImageFormat);
-                }
-
-                nsCOMPtr<nsIInputStream> inputStream;
-                result = imgTools->EncodeImage(container, mimeType, u""_ns,
-                                               getter_AddRefs(inputStream));
-                if (NS_FAILED(result)) {
-                  break;
-                }
-
-                if (!inputStream) {
-                  result = NS_ERROR_FAILURE;
-                  break;
-                }
-
-                *aData = inputStream.forget().take();
-                *aLen = sizeof(nsIInputStream*);
-              }
-            }
-            break;
-
-          case CF_HDROP: {
-            
-            
-            
-            
-            HDROP dropFiles = (HDROP)GlobalLock(stm.hGlobal);
-
-            UINT numFiles = ::DragQueryFileW(dropFiles, 0xFFFFFFFF, nullptr, 0);
-            NS_ASSERTION(numFiles > 0,
-                         "File drop flavor, but no files...hmmmm");
-            NS_ASSERTION(aIndex < numFiles,
-                         "Asked for a file index out of range of list");
-            if (numFiles > 0) {
-              UINT fileNameLen =
-                  ::DragQueryFileW(dropFiles, aIndex, nullptr, 0);
-              wchar_t* buffer = reinterpret_cast<wchar_t*>(
-                  moz_xmalloc((fileNameLen + 1) * sizeof(wchar_t)));
-              ::DragQueryFileW(dropFiles, aIndex, buffer, fileNameLen + 1);
-              *aData = buffer;
-              *aLen = fileNameLen * sizeof(char16_t);
-              result = NS_OK;
-            }
-            GlobalUnlock(stm.hGlobal);
-
-          } break;
-
-          default: {
-            if (fe.cfFormat == fileDescriptorFlavorA ||
-                fe.cfFormat == fileDescriptorFlavorW) {
-              nsAutoString tempPath;
-
-              LPFILEGROUPDESCRIPTOR fgdesc =
-                  static_cast<LPFILEGROUPDESCRIPTOR>(GlobalLock(stm.hGlobal));
-              if (fgdesc) {
-                result = GetTempFilePath(
-                    nsDependentString((fgdesc->fgd)[aIndex].cFileName),
-                    tempPath);
-                GlobalUnlock(stm.hGlobal);
-              }
-              if (NS_FAILED(result)) {
-                break;
-              }
-              result = SaveStorageOrStream(aDataObject, aIndex, tempPath);
-              if (NS_FAILED(result)) {
-                break;
-              }
-              wchar_t* buffer = reinterpret_cast<wchar_t*>(
-                  moz_xmalloc((tempPath.Length() + 1) * sizeof(wchar_t)));
-              wcscpy(buffer, tempPath.get());
-              *aData = buffer;
-              *aLen = tempPath.Length() * sizeof(wchar_t);
-              result = NS_OK;
-            } else if (fe.cfFormat == fileFlavor) {
-              NS_WARNING(
-                  "Mozilla doesn't yet understand how to read this type of "
-                  "file flavor");
-            } else {
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              uint32_t allocLen = 0;
-              if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen))) {
-                if (fe.cfFormat == GetHtmlClipboardFormat()) {
-                  
-                  
-                  
-                  
-                  
-                  *aLen = allocLen;
-                } else if (fe.cfFormat == GetCustomClipboardFormat()) {
-                  
-                  *aLen = allocLen;
-                } else if (fe.cfFormat == preferredDropEffect) {
-                  
-                  
-                  
-                  
-                  NS_ASSERTION(
-                      allocLen == sizeof(DWORD),
-                      "CFSTR_PREFERREDDROPEFFECT should return a DWORD");
-                  *aLen = allocLen;
-                } else {
-                  *aLen = NS_strlen(reinterpret_cast<char16_t*>(*aData)) *
-                          sizeof(char16_t);
-                }
-                result = NS_OK;
-              }
-            }
-          } break;
-        }  
-      } break;
-
-      case TYMED_GDI: {
-#ifdef DEBUG
-        MOZ_CLIPBOARD_LOG("*********************** TYMED_GDI");
-#endif
-      } break;
-
-      default:
-        break;
-    }  
-
-    ReleaseStgMedium(&stm);
+  if (FAILED(hres)) {
+    return NS_ERROR_FAILURE;
   }
+
+  
+  auto const _release_stm =
+      mozilla::MakeScopeExit([&stm] { ::ReleaseStgMedium(&stm); });
+
+  
+  
+
+  static CLIPFORMAT fileDescriptorFlavorA =
+      ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORA);
+  static CLIPFORMAT fileDescriptorFlavorW =
+      ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW);
+  static CLIPFORMAT fileFlavor = ::RegisterClipboardFormat(CFSTR_FILECONTENTS);
+  static CLIPFORMAT preferredDropEffect =
+      ::RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
+
+  switch (stm.tymed) {
+    case TYMED_HGLOBAL: {
+      switch (fe.cfFormat) {
+        case CF_TEXT: {
+          
+          
+          
+          
+          
+          
+          
+          uint32_t allocLen = 0;
+          if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen))) {
+            *aLen = strlen(reinterpret_cast<char*>(*aData));
+            result = NS_OK;
+          }
+        } break;
+
+        case CF_UNICODETEXT: {
+          
+          
+          
+          
+          
+          
+          
+          uint32_t allocLen = 0;
+          if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen))) {
+            *aLen = NS_strlen(reinterpret_cast<char16_t*>(*aData)) * 2;
+            result = NS_OK;
+          }
+        } break;
+
+        case CF_DIBV5:
+          if (aMIMEImageFormat) {
+            uint32_t allocLen = 0;
+            const char* clipboardData;
+            if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, (void**)&clipboardData,
+                                           &allocLen))) {
+              nsCOMPtr<imgIContainer> container;
+              nsCOMPtr<imgITools> imgTools =
+                  do_CreateInstance("@mozilla.org/image/tools;1");
+              result = imgTools->DecodeImageFromBuffer(
+                  clipboardData, allocLen,
+                  nsLiteralCString(IMAGE_BMP_MS_CLIPBOARD),
+                  getter_AddRefs(container));
+              if (NS_FAILED(result)) {
+                break;
+              }
+
+              nsAutoCString mimeType;
+              if (strcmp(aMIMEImageFormat, kJPGImageMime) == 0) {
+                mimeType.Assign(IMAGE_JPEG);
+              } else {
+                mimeType.Assign(aMIMEImageFormat);
+              }
+
+              nsCOMPtr<nsIInputStream> inputStream;
+              result = imgTools->EncodeImage(container, mimeType, u""_ns,
+                                             getter_AddRefs(inputStream));
+              if (NS_FAILED(result)) {
+                break;
+              }
+
+              if (!inputStream) {
+                result = NS_ERROR_FAILURE;
+                break;
+              }
+
+              *aData = inputStream.forget().take();
+              *aLen = sizeof(nsIInputStream*);
+            }
+          }
+          break;
+
+        case CF_HDROP: {
+          
+          
+          
+          
+          HDROP dropFiles = (HDROP)GlobalLock(stm.hGlobal);
+
+          UINT numFiles = ::DragQueryFileW(dropFiles, 0xFFFFFFFF, nullptr, 0);
+          NS_ASSERTION(numFiles > 0, "File drop flavor, but no files...hmmmm");
+          NS_ASSERTION(aIndex < numFiles,
+                       "Asked for a file index out of range of list");
+          if (numFiles > 0) {
+            UINT fileNameLen = ::DragQueryFileW(dropFiles, aIndex, nullptr, 0);
+            wchar_t* buffer = reinterpret_cast<wchar_t*>(
+                moz_xmalloc((fileNameLen + 1) * sizeof(wchar_t)));
+            ::DragQueryFileW(dropFiles, aIndex, buffer, fileNameLen + 1);
+            *aData = buffer;
+            *aLen = fileNameLen * sizeof(char16_t);
+            result = NS_OK;
+          }
+          GlobalUnlock(stm.hGlobal);
+
+        } break;
+
+        default: {
+          if (fe.cfFormat == fileDescriptorFlavorA ||
+              fe.cfFormat == fileDescriptorFlavorW) {
+            nsAutoString tempPath;
+
+            LPFILEGROUPDESCRIPTOR fgdesc =
+                static_cast<LPFILEGROUPDESCRIPTOR>(GlobalLock(stm.hGlobal));
+            if (fgdesc) {
+              result = GetTempFilePath(
+                  nsDependentString((fgdesc->fgd)[aIndex].cFileName), tempPath);
+              GlobalUnlock(stm.hGlobal);
+            }
+            if (NS_FAILED(result)) {
+              break;
+            }
+            result = SaveStorageOrStream(aDataObject, aIndex, tempPath);
+            if (NS_FAILED(result)) {
+              break;
+            }
+            wchar_t* buffer = reinterpret_cast<wchar_t*>(
+                moz_xmalloc((tempPath.Length() + 1) * sizeof(wchar_t)));
+            wcscpy(buffer, tempPath.get());
+            *aData = buffer;
+            *aLen = tempPath.Length() * sizeof(wchar_t);
+            result = NS_OK;
+          } else if (fe.cfFormat == fileFlavor) {
+            NS_WARNING(
+                "Mozilla doesn't yet understand how to read this type of "
+                "file flavor");
+          } else {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            uint32_t allocLen = 0;
+            if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen))) {
+              if (fe.cfFormat == GetHtmlClipboardFormat()) {
+                
+                
+                
+                
+                
+                *aLen = allocLen;
+              } else if (fe.cfFormat == GetCustomClipboardFormat()) {
+                
+                *aLen = allocLen;
+              } else if (fe.cfFormat == preferredDropEffect) {
+                
+                
+                
+                
+                NS_ASSERTION(allocLen == sizeof(DWORD),
+                             "CFSTR_PREFERREDDROPEFFECT should return a DWORD");
+                *aLen = allocLen;
+              } else {
+                *aLen = NS_strlen(reinterpret_cast<char16_t*>(*aData)) *
+                        sizeof(char16_t);
+              }
+              result = NS_OK;
+            }
+          }
+        } break;
+      }  
+    } break;
+
+    case TYMED_GDI: {
+#ifdef DEBUG
+      MOZ_CLIPBOARD_LOG("*********************** TYMED_GDI");
+#endif
+    } break;
+
+    default:
+      break;
+  }  
 
   return result;
 }
