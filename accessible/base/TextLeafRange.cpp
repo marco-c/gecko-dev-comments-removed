@@ -470,46 +470,19 @@ FindDOMTextOffsetAttributes(LocalAccessible* aAcc, int32_t aRenderedStart,
           {SelectionType::eSpellCheck, nsGkAtoms::spelling},
           {SelectionType::eTargetText, nsGkAtoms::mark},
       };
-  size_t highlightCount = frameSel->HighlightSelectionCount();
-  result.SetCapacity(std::size(kSelectionTypesToAttributes) + highlightCount);
-
-  auto appendRanges = [&](dom::Selection* aDomSel, nsStaticAtom* aAttr) {
-    nsTArray<dom::AbstractRange*> domRanges;
-    aDomSel->GetAbstractRangesForIntervalArray(
-        node, contentStart, node, contentEnd, aAllowAdjacent, &domRanges);
-    if (!domRanges.IsEmpty()) {
-      result.AppendElement(std::make_pair(std::move(domRanges), aAttr));
-    }
-  };
-
+  result.SetCapacity(std::size(kSelectionTypesToAttributes));
   for (auto [selType, attr] : kSelectionTypesToAttributes) {
     dom::Selection* domSel = frameSel->GetSelection(selType);
     if (!domSel) {
       continue;
     }
-    appendRanges(domSel, attr);
-  }
-
-  for (size_t h = 0; h < highlightCount; ++h) {
-    RefPtr<dom::Selection> domSel = frameSel->HighlightSelection(h);
-    MOZ_ASSERT(domSel);
-    nsStaticAtom* attr = nullptr;
-    MOZ_ASSERT(domSel->HighlightSelectionData().mHighlight);
-    switch (domSel->HighlightSelectionData().mHighlight->Type()) {
-      case dom::HighlightType::Highlight:
-        attr = nsGkAtoms::mark;
-        break;
-      case dom::HighlightType::Spelling_error:
-        attr = nsGkAtoms::spelling;
-        break;
-      case dom::HighlightType::Grammar_error:
-        attr = nsGkAtoms::grammar;
-        break;
+    nsTArray<dom::AbstractRange*> domRanges;
+    domSel->GetAbstractRangesForIntervalArray(
+        node, contentStart, node, contentEnd, aAllowAdjacent, &domRanges);
+    if (!domRanges.IsEmpty()) {
+      result.AppendElement(std::make_pair(std::move(domRanges), attr));
     }
-    MOZ_ASSERT(attr);
-    appendRanges(domSel, attr);
   }
-
   return result;
 }
 
@@ -1498,10 +1471,7 @@ TextLeafPoint TextLeafPoint::FindClusterSameAcc(nsDirection aDirection,
 
 void TextLeafPoint::AddTextOffsetAttributes(AccAttributes* aAttrs) const {
   auto expose = [aAttrs](nsAtom* aAttr) {
-    if (aAttr == nsGkAtoms::spelling || aAttr == nsGkAtoms::grammar) {
-      
-      
-      
+    if (aAttr == nsGkAtoms::spelling) {
       aAttrs->SetAttribute(nsGkAtoms::invalid, aAttr);
     } else if (aAttr == nsGkAtoms::mark) {
       aAttrs->SetAttribute(aAttr, true);
@@ -1531,21 +1501,22 @@ void TextLeafPoint::AddTextOffsetAttributes(AccAttributes* aAttrs) const {
   if (!offsetAttrs) {
     return;
   }
+  auto compare = [this](const TextOffsetAttribute& aItem) {
+    if (aItem.mStartOffset <= mOffset &&
+        (mOffset < aItem.mEndOffset || aItem.mEndOffset == -1)) {
+      return 0;
+    }
+    if (aItem.mStartOffset > mOffset) {
+      return -1;
+    }
+    return 1;
+  };
   
   
-  for (const TextOffsetAttribute& range : *offsetAttrs) {
-    if (range.mStartOffset > mOffset) {
-      
-      
-      break;
-    }
-    if (range.mEndOffset != TextOffsetAttribute::kOutsideLeaf &&
-        range.mEndOffset <= mOffset) {
-      
-      continue;
-    }
-    
-    expose(range.mAttribute);
+  auto [lower, upper] =
+      EqualRange(*offsetAttrs, 0, offsetAttrs->Length(), compare);
+  for (auto i = lower; i < upper; ++i) {
+    expose((*offsetAttrs)[i].mAttribute);
   }
 }
 
@@ -1555,6 +1526,15 @@ TextLeafPoint TextLeafPoint::FindTextOffsetAttributeSameAcc(
     return TextLeafPoint();
   }
   if (LocalAccessible* acc = mAcc->AsLocal()) {
+    
+    
+    auto ranges =
+        aDirection == eDirNext
+            ? FindDOMTextOffsetAttributes(
+                  acc, mOffset, nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT,
+                   true)
+            : FindDOMTextOffsetAttributes(acc, 0, mOffset,
+                                           true);
     nsINode* node = acc->GetNode();
     
     
@@ -1563,11 +1543,6 @@ TextLeafPoint TextLeafPoint::FindTextOffsetAttributeSameAcc(
     
     int32_t dest = -1;
     if (aDirection == eDirNext) {
-      
-      
-      auto ranges = FindDOMTextOffsetAttributes(
-          acc, mOffset, nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT,
-           true);
       for (auto& [domRanges, attr] : ranges) {
         for (dom::AbstractRange* domRange : domRanges) {
           if (domRange->GetStartContainer() == node) {
@@ -1576,14 +1551,8 @@ TextLeafPoint TextLeafPoint::FindTextOffsetAttributeSameAcc(
             if (aIncludeOrigin && matchOffset == mOffset) {
               return *this;
             }
-            if (matchOffset > mOffset) {
-              if (dest == -1 || matchOffset <= dest) {
-                dest = matchOffset;
-              }
-              
-              
-              
-              
+            if (matchOffset > mOffset && (dest == -1 || matchOffset <= dest)) {
+              dest = matchOffset;
               break;
             }
           }
@@ -1595,13 +1564,12 @@ TextLeafPoint TextLeafPoint::FindTextOffsetAttributeSameAcc(
             }
             if (matchOffset > mOffset && (dest == -1 || matchOffset <= dest)) {
               dest = matchOffset;
+              break;
             }
           }
         }
       }
     } else {
-      auto ranges = FindDOMTextOffsetAttributes(acc, 0, mOffset,
-                                                 true);
       for (auto& [domRanges, attr] : ranges) {
         for (dom::AbstractRange* domRange : Reversed(domRanges)) {
           if (domRange->GetEndContainer() == node) {
@@ -1612,6 +1580,7 @@ TextLeafPoint TextLeafPoint::FindTextOffsetAttributeSameAcc(
             }
             if (matchOffset < mOffset && (dest == -1 || matchOffset >= dest)) {
               dest = matchOffset;
+              break;
             }
           }
           if (domRange->GetStartContainer() == node) {
@@ -1622,6 +1591,7 @@ TextLeafPoint TextLeafPoint::FindTextOffsetAttributeSameAcc(
             }
             if (matchOffset < mOffset && (dest == -1 || matchOffset >= dest)) {
               dest = matchOffset;
+              break;
             }
           }
         }
@@ -1647,57 +1617,52 @@ TextLeafPoint TextLeafPoint::FindTextOffsetAttributeSameAcc(
   if (!offsetAttrs) {
     return TextLeafPoint();
   }
-  
-  
-  
-  
-  int32_t dest = -1;
-  for (const TextOffsetAttribute& range : *offsetAttrs) {
+  auto compare = [this](const TextOffsetAttribute& aItem) {
     
     
+    if (aItem.mStartOffset <= mOffset &&
+        (mOffset <= aItem.mEndOffset || aItem.mEndOffset == -1)) {
+      return 0;
+    }
+    if (aItem.mStartOffset > mOffset) {
+      return -1;
+    }
+    return 1;
+  };
+  size_t index;
+  if (BinarySearchIf(*offsetAttrs, 0, offsetAttrs->Length(), compare, &index)) {
     
-    if (aIncludeOrigin &&
-        (range.mStartOffset == mOffset || range.mEndOffset == mOffset)) {
+    if (aIncludeOrigin && ((*offsetAttrs)[index].mStartOffset == mOffset ||
+                           (*offsetAttrs)[index].mEndOffset == mOffset)) {
       return *this;
     }
+    
     if (aDirection == eDirNext) {
-      if (range.mStartOffset > mOffset) {
-        if (dest == -1 || range.mStartOffset < dest) {
-          
-          dest = range.mStartOffset;
-        }
-        
-        
-        break;
+      if ((*offsetAttrs)[index].mEndOffset > mOffset) {
+        MOZ_ASSERT((*offsetAttrs)[index].mEndOffset != -1);
+        return TextLeafPoint(mAcc, (*offsetAttrs)[index].mEndOffset);
       }
-      if (range.mEndOffset > mOffset &&
-          (dest == -1 || range.mEndOffset < dest)) {
-        
-        dest = range.mEndOffset;
-      }
-    } else {
-      if (range.mEndOffset != TextOffsetAttribute::kOutsideLeaf &&
-          range.mEndOffset < mOffset && range.mEndOffset > dest) {
-        
-        dest = range.mEndOffset;
-      }
-      if (range.mStartOffset >= mOffset) {
-        
-        
-        break;
-      }
-      if (range.mStartOffset != TextOffsetAttribute::kOutsideLeaf &&
-          range.mStartOffset > dest) {
-        
-        dest = range.mStartOffset;
-      }
+      
+      
+      ++index;
+    } else if ((*offsetAttrs)[index].mStartOffset < mOffset &&
+               (*offsetAttrs)[index].mStartOffset != -1) {
+      return TextLeafPoint(mAcc, (*offsetAttrs)[index].mStartOffset);
     }
   }
-  if (dest == -1) {
-    
-    return TextLeafPoint();
+  
+  if (aDirection == eDirNext) {
+    if (offsetAttrs->Length() == index) {
+      return TextLeafPoint();  
+    }
+    return TextLeafPoint(mAcc, (*offsetAttrs)[index].mStartOffset);
   }
-  return TextLeafPoint(mAcc, dest);
+  if (index == 0) {
+    return TextLeafPoint();  
+  }
+  
+  --index;
+  return TextLeafPoint(mAcc, (*offsetAttrs)[index].mEndOffset);
 }
 
 TextLeafPoint TextLeafPoint::NeighborLeafPoint(
@@ -1787,7 +1752,10 @@ nsTArray<TextOffsetAttribute> TextLeafPoint::GetTextOffsetAttributes(
         
         
         MOZ_ASSERT(domRange == *domRanges.begin());
-        data.mStartOffset = TextOffsetAttribute::kOutsideLeaf;
+        
+        
+        
+        data.mStartOffset = -1;
       }
       if (domRange->GetEndContainer() == node) {
         data.mEndOffset = static_cast<int32_t>(ContentToRenderedOffset(
@@ -1796,7 +1764,7 @@ nsTArray<TextOffsetAttribute> TextLeafPoint::GetTextOffsetAttributes(
         
         
         MOZ_ASSERT(domRange == *domRanges.rbegin());
-        data.mEndOffset = TextOffsetAttribute::kOutsideLeaf;
+        data.mEndOffset = -1;
       }
     }
   }

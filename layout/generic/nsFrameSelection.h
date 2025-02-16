@@ -469,20 +469,6 @@ class nsFrameSelection final {
   
 
 
-  size_t HighlightSelectionCount() const {
-    return mHighlightSelections.Length();
-  }
-
-  
-
-
-  RefPtr<mozilla::dom::Selection> HighlightSelection(size_t aIndex) const {
-    return mHighlightSelections[aIndex].second();
-  }
-
-  
-
-
   MOZ_CAN_RUN_SCRIPT void AddHighlightSelection(
       nsAtom* aHighlightName, mozilla::dom::Highlight& aHighlight);
   
