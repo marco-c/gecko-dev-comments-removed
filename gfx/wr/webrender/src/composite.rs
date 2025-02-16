@@ -1140,6 +1140,20 @@ pub struct NativeSurfaceInfo {
 }
 
 #[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WindowProperties {
+    pub is_opaque: bool,
+}
+
+impl Default for WindowProperties {
+    fn default() -> Self {
+        WindowProperties {
+            is_opaque: true,
+        }
+    }
+}
+
+#[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -1407,6 +1421,9 @@ pub trait LayerCompositor {
 
     
     fn end_frame(&mut self);
+
+    
+    fn get_window_properties(&self) -> WindowProperties;
 }
 
 

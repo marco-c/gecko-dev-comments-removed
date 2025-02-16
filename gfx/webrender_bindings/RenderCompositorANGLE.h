@@ -106,6 +106,7 @@ class RenderCompositorANGLE final : public RenderCompositor {
                   wr::ImageRendering aImageRendering) override;
   void EnableNativeCompositor(bool aEnable) override;
   void GetCompositorCapabilities(CompositorCapabilities* aCaps) override;
+  void GetWindowProperties(WindowProperties* aProperties) override;
 
   
   bool UsePartialPresent() override;
