@@ -4,11 +4,12 @@
 
 
 
+#include "mozilla/dom/WebAuthnManager.h"
 #include "mozilla/dom/WebAuthnTransactionChild.h"
 
 namespace mozilla::dom {
 
-void WebAuthnTransactionChild::SetManager(WebAuthnManagerBase* aManager) {
+void WebAuthnTransactionChild::SetManager(WebAuthnManager* aManager) {
   mManager = aManager;
 }
 
