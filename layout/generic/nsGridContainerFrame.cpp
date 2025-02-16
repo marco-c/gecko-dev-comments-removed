@@ -9102,13 +9102,15 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     
     const Maybe<nscoord> containBSize =
         aReflowInput.mFrame->ContainIntrinsicBSize();
-    const nscoord trackSizingBSize = [&] {
+
+    nscoord trackSizingBSize;
+    if (containBSize && computedBSize == NS_UNCONSTRAINEDSIZE) {
       
-      if (containBSize && computedBSize == NS_UNCONSTRAINEDSIZE) {
-        return aReflowInput.ApplyMinMaxBSize(*containBSize);
-      }
-      return computedBSize;
-    }();
+      trackSizingBSize = aReflowInput.ApplyMinMaxBSize(*containBSize);
+    } else {
+      trackSizingBSize = computedBSize;
+    }
+
     gridRI.CalculateTrackSizesForAxis(LogicalAxis::Inline, grid, computedISize,
                                       SizingConstraint::NoConstraint);
     gridRI.CalculateTrackSizesForAxis(LogicalAxis::Block, grid,
