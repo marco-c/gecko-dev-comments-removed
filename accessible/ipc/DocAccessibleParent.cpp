@@ -878,23 +878,17 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
   if (aChildDoc->IsTopLevelInContentProcess()) {
     
     
-    auto embeddedBrowser =
-        static_cast<dom::BrowserParent*>(aChildDoc->Manager());
-    dom::BrowserBridgeParent* bridge =
-        embeddedBrowser->GetBrowserBridgeParent();
-    if (bridge) {
 #if defined(XP_WIN)
-      if (nsWinUtils::IsWindowEmulationStarted()) {
-        aChildDoc->SetEmulatedWindowHandle(mEmulatedWindowHandle);
-      }
-#endif  
-      
-      
-      
-      
-      
-      FireEvent(outerDoc, nsIAccessibleEvent::EVENT_REORDER);
+    if (nsWinUtils::IsWindowEmulationStarted()) {
+      aChildDoc->SetEmulatedWindowHandle(mEmulatedWindowHandle);
     }
+#endif  
+    
+    
+    
+    
+    
+    FireEvent(outerDoc, nsIAccessibleEvent::EVENT_REORDER);
   }
 
   return IPC_OK();
