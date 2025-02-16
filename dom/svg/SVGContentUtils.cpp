@@ -393,9 +393,16 @@ bool SVGContentUtils::EstablishesViewport(const nsIContent* aContent) {
   
   
   
-  return aContent &&
-         aContent->IsAnyOfSVGElements(nsGkAtoms::svg, nsGkAtoms::foreignObject,
-                                      nsGkAtoms::symbol);
+  if (!aContent) {
+    return false;
+  }
+  
+  
+  if (aContent->IsSVGElement(nsGkAtoms::symbol) &&
+      aContent->IsInSVGUseShadowTree()) {
+    return true;
+  }
+  return aContent->IsAnyOfSVGElements(nsGkAtoms::svg, nsGkAtoms::foreignObject);
 }
 
 SVGViewportElement* SVGContentUtils::GetNearestViewportElement(
