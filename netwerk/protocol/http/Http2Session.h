@@ -36,6 +36,7 @@ class nsHttpTransaction;
 class nsHttpConnection;
 
 enum Http2StreamBaseType { Normal, WebSocket, Tunnel, ServerPush };
+enum class ExtendedCONNECTType : uint8_t { Proxy, WebSocket, WebTransport };
 
 
 #define NS_HTTP2SESSION_IID \
@@ -300,7 +301,7 @@ class Http2Session final : public ASpdySession,
 
   already_AddRefed<nsHttpConnection> CreateTunnelStream(
       nsAHttpTransaction* aHttpTransaction, nsIInterfaceRequestor* aCallbacks,
-      PRIntervalTime aRtt, bool aIsWebSocket = false) override;
+      PRIntervalTime aRtt, bool aIsExtendedCONNECT = false) override;
 
   void CleanupStream(Http2StreamBase*, nsresult, errorType);
 
@@ -310,7 +311,7 @@ class Http2Session final : public ASpdySession,
 
   static Http2StreamTunnel* CreateTunnelStreamFromConnInfo(
       Http2Session* session, uint64_t bcId, nsHttpConnectionInfo* connInfo,
-      bool isWebSocket);
+      ExtendedCONNECTType aType);
 
   
   

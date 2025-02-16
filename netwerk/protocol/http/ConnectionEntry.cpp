@@ -357,10 +357,10 @@ void ConnectionEntry::CloseIdleConnections(uint32_t maxToClose) {
   }
 }
 
-void ConnectionEntry::CloseH2WebsocketConnections() {
-  while (mH2WebsocketConns.Length()) {
-    RefPtr<HttpConnectionBase> conn(mH2WebsocketConns[0]);
-    mH2WebsocketConns.RemoveElementAt(0);
+void ConnectionEntry::CloseExtendedCONNECTConnections() {
+  while (mExtendedCONNECTConns.Length()) {
+    RefPtr<HttpConnectionBase> conn(mExtendedCONNECTConns[0]);
+    mExtendedCONNECTConns.RemoveElementAt(0);
 
     
     
@@ -568,17 +568,17 @@ void ConnectionEntry::InsertIntoActiveConns(HttpConnectionBase* conn) {
   gHttpHandler->ConnMgr()->IncrementActiveConnCount();
 }
 
-bool ConnectionEntry::IsInH2WebsocketConns(HttpConnectionBase* conn) {
-  return mH2WebsocketConns.Contains(conn);
+bool ConnectionEntry::IsInExtendedCONNECTConns(HttpConnectionBase* conn) {
+  return mExtendedCONNECTConns.Contains(conn);
 }
 
-void ConnectionEntry::InsertIntoH2WebsocketConns(HttpConnectionBase* conn) {
+void ConnectionEntry::InsertIntoExtendedCONNECTConns(HttpConnectionBase* conn) {
   
-  mH2WebsocketConns.AppendElement(conn);
+  mExtendedCONNECTConns.AppendElement(conn);
 }
 
-void ConnectionEntry::RemoveH2WebsocketConns(HttpConnectionBase* conn) {
-  mH2WebsocketConns.RemoveElement(conn);
+void ConnectionEntry::RemoveExtendedCONNECTConns(HttpConnectionBase* conn) {
+  mExtendedCONNECTConns.RemoveElement(conn);
 }
 
 void ConnectionEntry::MakeAllDontReuseExcept(HttpConnectionBase* conn) {
