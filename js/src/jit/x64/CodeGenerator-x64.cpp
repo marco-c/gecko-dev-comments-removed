@@ -1,17 +1,18 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/x64/CodeGenerator-x64.h"
 
+#include "mozilla/CheckedInt.h"
 #include "mozilla/FloatingPoint.h"
 
 #include "jit/CodeGenerator.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
-#include "js/ScalarType.h"  // js::Scalar::Type
+#include "js/ScalarType.h"  
 
 #include "jit/MacroAssembler-inl.h"
 #include "jit/shared/CodeGenerator-shared-inl.h"
@@ -82,12 +83,12 @@ void CodeGenerator::visitUnbox(LUnbox* unbox) {
     return;
   }
 
-  // Infallible unbox.
+  
 
   Operand input = ToOperand(unbox->getOperand(LUnbox::Input));
 
 #ifdef DEBUG
-  // Assert the types match.
+  
   JSValueTag tag = MIRTypeToTag(mir->type());
   Label ok;
   masm.splitTag(input, ScratchReg);
@@ -132,12 +133,12 @@ void CodeGenerator::visitDivOrModI64(LDivOrModI64* lir) {
 
   Label done;
 
-  // Put the lhs in rax.
+  
   if (lhs != rax) {
     masm.mov(lhs, rax);
   }
 
-  // Handle divide by zero.
+  
   if (lir->canBeDivideByZero()) {
     Label nonZero;
     masm.branchTestPtr(Assembler::NonZero, rhs, rhs, &nonZero);
@@ -145,7 +146,7 @@ void CodeGenerator::visitDivOrModI64(LDivOrModI64* lir) {
     masm.bind(&nonZero);
   }
 
-  // Handle an integer overflow exception from INT64_MIN / -1.
+  
   if (lir->canBeNegativeOverflow()) {
     Label notOverflow;
     masm.branchPtr(Assembler::NotEqual, lhs, ImmWord(INT64_MIN), &notOverflow);
@@ -159,7 +160,7 @@ void CodeGenerator::visitDivOrModI64(LDivOrModI64* lir) {
     masm.bind(&notOverflow);
   }
 
-  // Sign extend the lhs into rdx to make rdx:rax.
+  
   masm.cqo();
   masm.idivq(rhs);
 
@@ -176,14 +177,14 @@ void CodeGenerator::visitUDivOrModI64(LUDivOrModI64* lir) {
   MOZ_ASSERT_IF(output.value == rax, ToRegister(lir->remainder()) == rdx);
   MOZ_ASSERT_IF(output.value == rdx, ToRegister(lir->remainder()) == rax);
 
-  // Put the lhs in rax.
+  
   if (lhs != rax) {
     masm.mov(lhs, rax);
   }
 
   Label done;
 
-  // Prevent divide by zero.
+  
   if (lir->canBeDivideByZero()) {
     Label nonZero;
     masm.branchTestPtr(Assembler::NonZero, rhs, rhs, &nonZero);
@@ -191,7 +192,7 @@ void CodeGenerator::visitUDivOrModI64(LUDivOrModI64* lir) {
     masm.bind(&nonZero);
   }
 
-  // Zero extend the lhs into rdx to make (rdx:rax).
+  
   masm.xorl(rdx, rdx);
   masm.udivq(rhs);
 
@@ -200,7 +201,7 @@ void CodeGenerator::visitUDivOrModI64(LUDivOrModI64* lir) {
 
 void CodeGeneratorX64::emitBigIntPtrDiv(LBigIntPtrDiv* ins, Register dividend,
                                         Register divisor, Register output) {
-  // Callers handle division by zero and integer overflow.
+  
 
   MOZ_ASSERT(ToRegister(ins->temp0()) == rdx);
   MOZ_ASSERT(output == rax);
@@ -209,7 +210,7 @@ void CodeGeneratorX64::emitBigIntPtrDiv(LBigIntPtrDiv* ins, Register dividend,
     masm.movePtr(dividend, rax);
   }
 
-  // Sign extend the lhs into rdx to make rdx:rax.
+  
   masm.cqo();
 
   masm.idivq(divisor);
@@ -217,12 +218,12 @@ void CodeGeneratorX64::emitBigIntPtrDiv(LBigIntPtrDiv* ins, Register dividend,
 
 void CodeGeneratorX64::emitBigIntPtrMod(LBigIntPtrMod* ins, Register dividend,
                                         Register divisor, Register output) {
-  // Callers handle division by zero and integer overflow.
+  
 
   MOZ_ASSERT(dividend == rax);
   MOZ_ASSERT(output == rdx);
 
-  // Sign extend the lhs into rdx to make rdx:rax.
+  
   masm.cqo();
 
   masm.idivq(divisor);
@@ -236,8 +237,8 @@ void CodeGenerator::visitAtomicLoad64(LAtomicLoad64* lir) {
 
   Scalar::Type storageType = mir->storageType();
 
-  // NOTE: the generated code must match the assembly code in gen_load in
-  // GenerateAtomicOperations.py
+  
+  
   auto sync = Synchronization::Load();
 
   masm.memoryBarrierBefore(sync);
@@ -259,8 +260,8 @@ void CodeGenerator::visitAtomicStore64(LAtomicStore64* lir) {
 
   Scalar::Type writeType = lir->mir()->writeType();
 
-  // NOTE: the generated code must match the assembly code in gen_store in
-  // GenerateAtomicOperations.py
+  
+  
   auto sync = Synchronization::Store();
 
   masm.memoryBarrierBefore(sync);
@@ -326,8 +327,8 @@ void CodeGenerator::visitAtomicTypedArrayElementBinop64(
   Scalar::Type arrayType = lir->mir()->arrayType();
   AtomicOp atomicOp = lir->mir()->operation();
 
-  // Add and Sub don't need |temp| and can save a `mov` when the value and
-  // output register are equal to each other.
+  
+  
   if (atomicOp == AtomicOp::Add || atomicOp == AtomicOp::Sub) {
     MOZ_ASSERT(temp == Register64::Invalid());
     MOZ_ASSERT(value == out);
@@ -382,9 +383,9 @@ void CodeGenerator::visitWasmSelectI64(LWasmSelectI64* lir) {
   masm.cmovzq(falseExpr, out.reg);
 }
 
-// We expect to handle only the cases: compare is {U,}Int{32,64}, and select
-// is {U,}Int{32,64}, independently.  Some values may be stack allocated, and
-// the "true" input is reused for the output.
+
+
+
 void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
   bool cmpIs32bit = ins->compareType() == MCompare::Compare_Int32 ||
                     ins->compareType() == MCompare::Compare_UInt32;
@@ -393,7 +394,7 @@ void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
   bool selIs32bit = ins->mir()->type() == MIRType::Int32;
   bool selIs64bit = ins->mir()->type() == MIRType::Int64;
 
-  // Throw out unhandled cases
+  
   MOZ_RELEASE_ASSERT(
       cmpIs32bit != cmpIs64bit && selIs32bit != selIs64bit,
       "CodeGenerator::visitWasmCompareAndSelect: unexpected types");
@@ -402,11 +403,11 @@ void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
   using R = Register;
   using A = const Address&;
 
-  // Identify macroassembler methods to generate instructions, based on the
-  // type of the comparison and the select.  This avoids having to duplicate
-  // the code-generation tree below 4 times.  These assignments to
-  // `cmpMove_CRRRR` et al are unambiguous as a result of the combination of
-  // the template parameters and the 5 argument types ((C, R, R, R, R) etc).
+  
+  
+  
+  
+  
   void (MacroAssembler::*cmpMove_CRRRR)(C, R, R, R, R) = nullptr;
   void (MacroAssembler::*cmpMove_CRARR)(C, R, A, R, R) = nullptr;
   void (MacroAssembler::*cmpLoad_CRRAR)(C, R, R, A, R) = nullptr;
@@ -448,8 +449,8 @@ void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
   const LAllocation* falseExpr = ins->ifFalseExpr();
   Register lhs = ToRegister(ins->leftExpr());
 
-  // We generate one of four cmp+cmov pairings, depending on whether one of
-  // the cmp args and one of the cmov args is in memory or a register.
+  
+  
   if (rhs->isRegister()) {
     if (falseExpr->isRegister()) {
       (masm.*cmpMove_CRRRR)(cond, lhs, ToRegister(rhs), ToRegister(falseExpr),
@@ -508,6 +509,12 @@ void CodeGeneratorX64::wasmStore(const wasm::MemoryAccessDesc& access,
         masm.movl(cst, dstAddr);
         break;
       case Scalar::Int64:
+        MOZ_ASSERT_IF(mir->type() == MIRType::Int64,
+                      mozilla::CheckedInt32(mir->toInt64()).isValid());
+        masm.append(access, wasm::TrapMachineInsn::Store64,
+                    FaultingCodeOffset(masm.currentOffset()));
+        masm.movq(cst, dstAddr);
+        break;
       case Scalar::Simd128:
       case Scalar::Float16:
       case Scalar::Float32:
@@ -532,8 +539,8 @@ void CodeGeneratorX64::emitWasmLoad(T* ins) {
   mir->access().assertOffsetInGuardPages();
   uint32_t offset = mir->access().offset32();
 
-  // ptr is a GPR and is either a 32-bit value zero-extended to 64-bit, or a
-  // true 64-bit value.
+  
+  
   const LAllocation* ptr = ins->ptr();
   Register memoryBase = ToRegister(ins->memoryBase());
   Operand srcAddr =
@@ -702,8 +709,8 @@ void CodeGeneratorX64::visitOutOfLineTruncate(OutOfLineTruncate* ool) {
   Register output = ool->output();
   Register temp = ool->temp();
 
-  // Inline implementation of `JS::ToInt32(double)` for double values whose
-  // exponent is ≥63.
+  
+  
 
 #ifdef DEBUG
   Label ok;
@@ -724,16 +731,16 @@ void CodeGeneratorX64::visitOutOfLineTruncate(OutOfLineTruncate* ool) {
 
   constexpr size_t ResultWidth = CHAR_BIT * sizeof(int32_t);
 
-  // Extract the bit representation of |input|.
+  
   masm.moveDoubleToGPR64(input, Register64(output));
 
-  // Extract the exponent.
+  
   masm.rshiftPtr(Imm32(mozilla::FloatingPoint<double>::kExponentShift), output,
                  temp);
   masm.and32(Imm32(ShiftedExponentBits), temp);
 #ifdef DEBUG
-  // The biased exponent must be at least `1023 + 63`, because otherwise
-  // vcvttsd2sq wouldn't have failed.
+  
+  
   constexpr uint32_t MinBiasedExponent =
       mozilla::FloatingPoint<double>::kExponentBias + 63;
 
@@ -745,9 +752,9 @@ void CodeGeneratorX64::visitOutOfLineTruncate(OutOfLineTruncate* ool) {
 #endif
   masm.sub32(Imm32(ExponentBiasAndShift), temp);
 
-  // If the exponent is greater than or equal to |ResultWidth|, the number is
-  // either infinite, NaN, or too large to have lower-order bits. We have to
-  // return zero in this case.
+  
+  
+  
   {
     ScratchRegisterScope scratch(masm);
     masm.movePtr(ImmWord(0), scratch);
@@ -755,7 +762,7 @@ void CodeGeneratorX64::visitOutOfLineTruncate(OutOfLineTruncate* ool) {
                       scratch, output);
   }
 
-  // Negate if the sign bit is set.
+  
   {
     ScratchRegisterScope scratch(masm);
     masm.movePtr(output, scratch);
@@ -764,11 +771,11 @@ void CodeGeneratorX64::visitOutOfLineTruncate(OutOfLineTruncate* ool) {
     masm.cmovCCq(Assembler::Signed, scratch, output);
   }
 
-  // The significand contains the bits that will determine the final result.
-  // Shift those bits left by the exponent value in |temp|.
+  
+  
   masm.lshift32(temp, output);
 
-  // Return from OOL path.
+  
   masm.jump(ool->rejoin());
 }
 
@@ -841,16 +848,16 @@ void CodeGenerator::visitExtendInt32ToInt64(LExtendInt32ToInt64* lir) {
 }
 
 void CodeGenerator::visitWasmExtendU32Index(LWasmExtendU32Index* lir) {
-  // Generates no code on this platform because the input is assumed to have
-  // canonical form.
+  
+  
   Register output = ToRegister(lir->output());
   MOZ_ASSERT(ToRegister(lir->input()) == output);
   masm.debugAssertCanonicalInt32(output);
 }
 
 void CodeGenerator::visitWasmWrapU32Index(LWasmWrapU32Index* lir) {
-  // Generates no code on this platform because the input is assumed to have
-  // canonical form.
+  
+  
   Register output = ToRegister(lir->output());
   MOZ_ASSERT(ToRegister(lir->input()) == output);
   masm.debugAssertCanonicalInt32(output);
