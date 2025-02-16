@@ -15,6 +15,23 @@
 class nsIFile;
 class nsIURLParser;
 
+enum netCoalesceFlags {
+  NET_COALESCE_NORMAL = 0,
+
+  
+
+
+
+
+  NET_COALESCE_ALLOW_RELATIVE_ROOT = 1 << 0,
+
+  
+
+
+
+  NET_COALESCE_DOUBLE_SLASH_IS_ROOT = 1 << 1
+};
+
 
 
 
@@ -48,7 +65,7 @@ nsresult net_ParseFileURL(const nsACString& inURL, nsACString& outDirectory,
 
 
 mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
-    char* path);
+    netCoalesceFlags flags, char* path);
 
 
 

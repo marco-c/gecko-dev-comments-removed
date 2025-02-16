@@ -207,7 +207,7 @@ nsresult net_ParseFileURL(const nsACString& inURL, nsACString& outDirectory,
 
 
 mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
-    char* path) {
+    netCoalesceFlags flags, char* path) {
   
 
 
@@ -216,10 +216,25 @@ mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
 
   char* fwdPtr = path;
   char* urlPtr = path;
+  uint32_t traversal = 0;
+  uint32_t special_ftp_len = 0;
 
   MOZ_ASSERT(*path == '/', "We expect the path to begin with /");
   if (*path != '/') {
     return Nothing();
+  }
+
+  
+  if (flags & NET_COALESCE_DOUBLE_SLASH_IS_ROOT) {
+    
+
+
+
+    if (nsCRT::strncasecmp(path, "/%2F", 4) == 0) {
+      special_ftp_len = 4;
+    } else if (strncmp(path, "//", 2) == 0) {
+      special_ftp_len = 2;
+    }
   }
 
   
@@ -288,19 +303,54 @@ mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
       
       
       
-      if (urlPtr != path) urlPtr--;  
-      for (; *urlPtr != '/' && urlPtr != path; urlPtr--) {
-        ;  
-      }
-      
-      fwdPtr += 2;
-      
-      
-      if (*fwdPtr == '.' && (*(fwdPtr + 1) == '\0' || *(fwdPtr + 1) == '?' ||
-                             *(fwdPtr + 1) == '#')) {
-        ++urlPtr;
+      if (traversal > 0 || !(flags & NET_COALESCE_ALLOW_RELATIVE_ROOT)) {
+        if (urlPtr != path) urlPtr--;  
+        for (; *urlPtr != '/' && urlPtr != path; urlPtr--) {
+          ;  
+        }
+        --traversal;  
+        
+        fwdPtr += 2;
+        
+        
+        
+        
+        
+        if (urlPtr == path && special_ftp_len > 3) {
+          ++urlPtr;
+          ++urlPtr;
+          ++urlPtr;
+        }
+        
+        
+        if (*fwdPtr == '.' && (*(fwdPtr + 1) == '\0' || *(fwdPtr + 1) == '?' ||
+                               *(fwdPtr + 1) == '#'))
+          ++urlPtr;
+      } else {
+        
+        
+
+        
+        
+        
+        
+        if (special_ftp_len > 3 && urlPtr == path + special_ftp_len - 1) {
+          ++urlPtr;
+        } else {
+          *urlPtr++ = *fwdPtr;
+        }
+        ++fwdPtr;
+        *urlPtr++ = *fwdPtr;
+        ++fwdPtr;
+        *urlPtr++ = *fwdPtr;
       }
     } else {
+      
+      
+      if (*fwdPtr == '/' && *(fwdPtr + 1) != '.' &&
+          (special_ftp_len != 2 || *(fwdPtr + 1) != '/')) {
+        traversal++;
+      }
       
       *urlPtr++ = *fwdPtr;
     }
