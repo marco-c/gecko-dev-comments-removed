@@ -18,6 +18,18 @@ impl TargetInfo<'_> {
     }
 
     pub(crate) fn apple_version_flag(&self, min_version: &str) -> String {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         match (self.os, self.abi) {
             ("macos", "") => format!("-mmacosx-version-min={min_version}"),
             ("ios", "") => format!("-miphoneos-version-min={min_version}"),

@@ -16,7 +16,6 @@ pub(crate) struct RustcCodegenFlags<'a> {
     relocation_model: Option<&'a str>,
     embed_bitcode: Option<bool>,
     force_frame_pointers: Option<bool>,
-    link_dead_code: Option<bool>,
     no_redzone: Option<bool>,
     soft_float: Option<bool>,
 }
@@ -139,8 +138,6 @@ impl<'this> RustcCodegenFlags<'this> {
                 self.force_frame_pointers = value.map_or(Some(true), arg_to_bool)
             }
             
-            "-Clink-dead-code" => self.link_dead_code = value.map_or(Some(true), arg_to_bool),
-            
             "-Cno-redzone" => self.no_redzone = value.map_or(Some(true), arg_to_bool),
             
             
@@ -180,53 +177,40 @@ impl<'this> RustcCodegenFlags<'this> {
         
         if clang_or_gnu {
             
+            
+            
+            
             if let Some(value) = self.branch_protection {
                 push_if_supported(
                     format!("-mbranch-protection={}", value.replace(",", "+")).into(),
                 );
             }
             
+            
+            
             if let Some(value) = self.code_model {
                 push_if_supported(format!("-mcmodel={value}").into());
             }
+            
             
             if self.no_vectorize_loops {
                 push_if_supported("-fno-vectorize".into());
             }
             
+            
             if self.no_vectorize_slp {
                 push_if_supported("-fno-slp-vectorize".into());
             }
-            
-            if let Some(value) = self.control_flow_guard {
-                let cc_val = match value {
-                    "y" | "yes" | "on" | "true" | "checks" => Some("cf"),
-                    "nochecks" => Some("cf-nochecks"),
-                    "n" | "no" | "off" | "false" => Some("none"),
-                    _ => None,
-                };
-                if let Some(cc_val) = cc_val {
-                    push_if_supported(format!("-mguard={cc_val}").into());
-                }
-            }
-            
-            if let Some(value) = self.lto {
-                let cc_val = match value {
-                    "y" | "yes" | "on" | "true" | "fat" => Some("full"),
-                    "thin" => Some("thin"),
-                    _ => None,
-                };
-                if let Some(cc_val) = cc_val {
-                    push_if_supported(format!("-flto={cc_val}").into());
-                }
-            }
-            
-            
-            
             if let Some(value) = self.relocation_model {
                 let cc_flag = match value {
+                    
+                    
                     "pic" => Some("-fPIC"),
+                    
+                    
                     "pie" => Some("-fPIE"),
+                    
+                    
                     "dynamic-no-pic" => Some("-mdynamic-no-pic"),
                     _ => None,
                 };
@@ -235,10 +219,6 @@ impl<'this> RustcCodegenFlags<'this> {
                 }
             }
             
-            if let Some(value) = self.embed_bitcode {
-                let cc_val = if value { "all" } else { "off" };
-                push_if_supported(format!("-fembed-bitcode={cc_val}").into());
-            }
             
             
             if let Some(value) = self.force_frame_pointers {
@@ -250,9 +230,7 @@ impl<'this> RustcCodegenFlags<'this> {
                 push_if_supported(cc_flag.into());
             }
             
-            if let Some(false) = self.link_dead_code {
-                push_if_supported("-dead_strip".into());
-            }
+            
             
             
             if let Some(value) = self.no_redzone {
@@ -261,11 +239,14 @@ impl<'this> RustcCodegenFlags<'this> {
             }
             
             
+            
+            
             if let Some(value) = self.soft_float {
                 let cc_flag = if value {
                     "-msoft-float"
                 } else {
-                    "-mno-soft-float"
+                    
+                    "-mhard-float"
                 };
                 push_if_supported(cc_flag.into());
             }
@@ -284,6 +265,36 @@ impl<'this> RustcCodegenFlags<'this> {
                 
                 if let Some(value) = self.profile_use {
                     push_if_supported(format!("-fprofile-use={value}").into());
+                }
+
+                
+                if let Some(value) = self.embed_bitcode {
+                    let cc_val = if value { "all" } else { "off" };
+                    push_if_supported(format!("-fembed-bitcode={cc_val}").into());
+                }
+
+                
+                if let Some(value) = self.lto {
+                    let cc_val = match value {
+                        "y" | "yes" | "on" | "true" | "fat" => Some("full"),
+                        "thin" => Some("thin"),
+                        _ => None,
+                    };
+                    if let Some(cc_val) = cc_val {
+                        push_if_supported(format!("-flto={cc_val}").into());
+                    }
+                }
+                
+                if let Some(value) = self.control_flow_guard {
+                    let cc_val = match value {
+                        "y" | "yes" | "on" | "true" | "checks" => Some("cf"),
+                        "nochecks" => Some("cf-nochecks"),
+                        "n" | "no" | "off" | "false" => Some("none"),
+                        _ => None,
+                    };
+                    if let Some(cc_val) = cc_val {
+                        push_if_supported(format!("-mguard={cc_val}").into());
+                    }
                 }
             }
             ToolFamily::Gnu { .. } => {}
@@ -476,7 +487,6 @@ mod tests {
                 control_flow_guard: Some("yes"),
                 embed_bitcode: Some(false),
                 force_frame_pointers: Some(true),
-                link_dead_code: Some(true),
                 lto: Some("false"),
                 no_redzone: Some(true),
                 no_vectorize_loops: true,

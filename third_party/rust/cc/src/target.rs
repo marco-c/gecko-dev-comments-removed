@@ -44,7 +44,10 @@ pub(crate) struct TargetInfo<'a> {
     
     pub abi: &'a str,
     
-    unversioned_llvm_target: &'a str,
+    
+    
+    
+    pub llvm_target: &'a str,
 }
 
 impl FromStr for TargetInfo<'_> {
