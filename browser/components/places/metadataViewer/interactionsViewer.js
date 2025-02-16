@@ -18,6 +18,14 @@ const { PlacesDBUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/PlacesDBUtils.sys.mjs"
 );
 
+const lazy = {};
+
+ChromeUtils.defineLazyGetter(lazy, "PlacesFrecencyRecalculator", () => {
+  return Cc["@mozilla.org/places/frecency-recalculator;1"].getService(
+    Ci.nsIObserver
+  ).wrappedJSObject;
+});
+
 
 
 
@@ -376,6 +384,77 @@ const placesStatsHandler = new (class extends TableViewer {
   }
 })();
 
+
+
+
+const placesViewerHandler = new (class extends TableViewer {
+  title = "Places Viewer";
+  cssGridTemplateColumns = "fit-content(100%) repeat(5, max-content);";
+  #db = null;
+  #maxRows = 100;
+
+  
+
+
+  columnMap = new Map([
+    ["url", { header: "URL" }],
+    ["title", { header: "Title" }],
+    ["frecency", { header: "Frecency" }],
+    [
+      "recalc_frecency",
+      {
+        header: "Recalc Frecency",
+      },
+    ],
+    [
+      "alt_frecency",
+      {
+        header: "Alt Frecency",
+      },
+    ],
+    [
+      "recalc_alt_frecency",
+      {
+        header: "Recalc Alt Frecency",
+      },
+    ],
+  ]);
+
+  async #getRows(query, columns = [...this.columnMap.keys()]) {
+    if (!this.#db) {
+      this.#db = await PlacesUtils.promiseDBConnection();
+    }
+    let rows = await this.#db.executeCached(query);
+    return rows.map(r => {
+      let result = {};
+      for (let column of columns) {
+        result[column] = r.getResultByName(column);
+      }
+      return result;
+    });
+  }
+
+  
+
+
+  async updateDisplay() {
+    let rows = await this.#getRows(
+      `
+        SELECT
+          url,
+          title,
+          frecency,
+          recalc_frecency,
+          alt_frecency,
+          recalc_alt_frecency
+        FROM moz_places
+        ORDER BY last_visit_date DESC
+        LIMIT ${this.#maxRows}`
+    );
+    this.displayData(rows);
+  }
+})();
+
 function checkPrefs() {
   if (
     !Services.prefs.getBoolPref("browser.places.interactions.enabled", false)
@@ -402,14 +481,17 @@ function show(selectedButton) {
     case "places-stats":
       (gCurrentHandler = placesStatsHandler).start();
       break;
+    case "places-viewer":
+      (gCurrentHandler = placesViewerHandler).start();
+      break;
   }
 }
 
 function createObjectURL(data, type) {
-  
-  
-  
-  
+  // Downloading the Blob will throw errors in debug mode because the
+  // principal is system and nsUrlClassifierDBService::lookup does not expect
+  // a caller from this principal. Thus, we use the null principal. However, in
+  // non-debug mode we'd rather not run eval and use the Javascript API.
   if (AppConstants.DEBUG) {
     let escapedData = data.replaceAll("'", "\\'").replaceAll("\n", "\\n");
     let sb = new Cu.Sandbox(null, { wantGlobalProperties: ["Blob", "URL"] });
@@ -460,7 +542,7 @@ function setupListeners() {
     e.preventDefault();
     const data = await getData();
 
-    
+    // Convert Javascript to CSV string.
     let headers = Object.keys(data.at(0));
     let rows = [
       headers.join(","),
@@ -472,6 +554,15 @@ function setupListeners() {
 
     downloadFile(rows, "text/csv", "csv");
   });
+
+  
+  
+  document
+    .getElementById("recalc-alt-frecency")
+    .addEventListener("click", async e => {
+      e.preventDefault();
+      lazy.PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
+    });
 }
 
 checkPrefs();
