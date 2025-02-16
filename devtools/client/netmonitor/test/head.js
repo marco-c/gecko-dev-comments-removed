@@ -1320,6 +1320,21 @@ function getContextMenuItem(monitor, id) {
 
 
 
+
+
+
+async function hideContextMenu(popup) {
+  if (popup.state !== "open") {
+    return;
+  }
+  const onPopupHidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
+  popup.hidePopup();
+  await onPopupHidden;
+}
+
+
+
+
 async function selectContextMenuItem(monitor, id) {
   return selectNetmonitorContextMenuItem(monitor, id);
 }
