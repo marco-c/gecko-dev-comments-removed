@@ -2955,7 +2955,7 @@ void ScriptLoader::InstantiateClassicScriptFromAny(
       aCx, aCompileOptions, aRequest, aScript, stencil, aDebuggerPrivateValue,
       aDebuggerIntroductionScript, aRv);
   if (!aRv.Failed()) {
-    if (createCache) {
+    if (createCache && JS::IsStencilCacheable(stencil)) {
       MOZ_ASSERT(mCache);
       MOZ_ASSERT(stencil);
       aRequest->SetStencil(stencil.forget());
