@@ -202,6 +202,8 @@ ABORT_SIGNATURES = (
     "rust_begin_unwind",
     
     "MOZ_Crash(char const*, int, char const*)",
+    
+    "MOZ_CrashSequence(void*, long)",
     "<alloc::boxed::Box<F,A> as core::ops::function::Fn<Args>>::call",
 )
 
