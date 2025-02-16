@@ -54,6 +54,9 @@ inline gfx::IntSize ApplyPixelAspectRatio(double aPixelAspectRatio,
   if (MOZ_UNLIKELY(width > std::numeric_limits<int32_t>::max())) {
     return aImage;
   }
+  LOG("Adjust display size [%ux%u] -> [%ux%u] by applying PAR %f",
+      aImage.Width(), aImage.Height(), static_cast<uint32_t>(width),
+      aImage.Height(), aPixelAspectRatio);
   return gfx::IntSize(static_cast<int32_t>(width), aImage.Height());
 }
 
@@ -166,8 +169,18 @@ class H264ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       H264::EnsureSPSIsSane(spsdata);
       mCurrentConfig.mImage.width = spsdata.pic_width;
       mCurrentConfig.mImage.height = spsdata.pic_height;
-      mCurrentConfig.mDisplay.width = spsdata.display_width;
-      mCurrentConfig.mDisplay.height = spsdata.display_height;
+      
+      
+      
+      if (mCurrentConfig.mPixelAspectRatio &&
+          *mCurrentConfig.mPixelAspectRatio != 1) {
+        const auto pixelAspectRatio = *mCurrentConfig.mPixelAspectRatio;
+        mCurrentConfig.mDisplay =
+            ApplyPixelAspectRatio(pixelAspectRatio, mCurrentConfig.mImage);
+      } else {
+        mCurrentConfig.mDisplay.width = spsdata.display_width;
+        mCurrentConfig.mDisplay.height = spsdata.display_height;
+      }
       mCurrentConfig.mColorDepth = spsdata.ColorDepth();
       mCurrentConfig.mColorSpace = Some(spsdata.ColorSpace());
       
@@ -309,8 +322,17 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
         const auto sps = rv.unwrap();
         mCurrentConfig.mImage.width = sps.GetImageSize().Width();
         mCurrentConfig.mImage.height = sps.GetImageSize().Height();
-        if (const auto& vui = sps.vui_parameters;
-            vui && vui->HasValidAspectRatio()) {
+        
+        
+        
+        
+        if (mCurrentConfig.mPixelAspectRatio &&
+            *mCurrentConfig.mPixelAspectRatio != 1) {
+          const auto pixelAspectRatio = *mCurrentConfig.mPixelAspectRatio;
+          mCurrentConfig.mDisplay =
+              ApplyPixelAspectRatio(pixelAspectRatio, mCurrentConfig.mImage);
+        } else if (const auto& vui = sps.vui_parameters;
+                   vui && vui->HasValidAspectRatio()) {
           mCurrentConfig.mDisplay = ApplyPixelAspectRatio(
               vui->GetPixelAspectRatio(), mCurrentConfig.mImage);
         } else {
