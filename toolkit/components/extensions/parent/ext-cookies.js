@@ -20,9 +20,12 @@ const isIPv4 = host => {
   }
   return false;
 };
+
 const isIPv6 = host => host.includes(":");
+
 const addBracketIfIPv6 = host =>
   isIPv6(host) && !host.startsWith("[") ? `[${host}]` : host;
+
 const dropBracketIfIPv6 = host =>
   isIPv6(host) && host.startsWith("[") && host.endsWith("]")
     ? host.slice(1, -1)
@@ -399,10 +402,10 @@ const query = function* (detailsIn, props, context, allowPattern) {
   let host;
   let url;
   if ("url" in details) {
-    try {
-      url = new URL(details.url);
+    url = URL.parse(details.url);
+    if (url) {
       host = dropBracketIfIPv6(url.hostname);
-    } catch (ex) {
+    } else {
       
       return;
     }

@@ -13,7 +13,7 @@ function getSourcemapBaseURL(url, global) {
   } else if (global?.location?.href) {
     
     
-    sourceMapBaseURL = global?.location?.href;
+    sourceMapBaseURL = global.location.href;
   } else {
     
     
@@ -30,12 +30,11 @@ function getSourcemapBaseURL(url, global) {
   
   
   if (sourceMapBaseURL.startsWith("blob:")) {
-    try {
-      const parsedBaseURL = new URL(sourceMapBaseURL);
+    const parsedBaseURL = URL.parse(sourceMapBaseURL);
+    if (parsedBaseURL) {
       return parsedBaseURL.origin === "null" ? null : parsedBaseURL.origin;
-    } catch (err) {
-      return null;
     }
+    return null;
   }
 
   return sourceMapBaseURL;
