@@ -1,51 +1,51 @@
-/* -*- tab-width: 2; indent-tabs-mode: nil; js-indent-level: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* import-globals-from pippki.js */
+
+
+
+
+
+
 "use strict";
 
 const { parse, pemToDER } = ChromeUtils.importESModule(
   "chrome://global/content/certviewer/certDecoder.mjs"
 );
 
-/**
- * @file Implements the functionality of clientauthask.xhtml: a dialog that allows
- *       a user pick a client certificate for TLS client authentication.
- * @param {object} window.arguments.0
- *           An Object with the properties:
- *              {String} hostname
- *                 The hostname of the server requesting client authentication.
- *              {Array<nsIX509Cert>} certArray
- *                 Array of certificates the user can choose from
- *              {Object} retVal
- *                 Object to set the return values of calling the dialog on.
- *                 See ClientAuthAskReturnValues.
- */
 
-/**
- * @typedef ClientAuthAskReturnValues
- * @type {object}
- * @property {nsIX509Cert} cert
- *           The certificate, if chosen. null otherwise.
- * @property {boolean} rememberDecision
- *           Set to true if the user wanted their cert selection to be
- *           remembered, false otherwise.
- */
 
-/**
- * The array of certs the user can choose from.
- *
- * @type {Array<nsIX509Cert>}
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var certArray;
 
-/**
- * The checkbox storing whether the user wants to remember the selected cert.
- *
- * @type {HTMLInputElement} Element checkbox, has to have |checked| property.
- */
+
+
+
+
+
 var rememberBox, args;
 
 async function onLoad() {
@@ -77,7 +77,7 @@ async function onLoad() {
     let cert = certArray[i];
     let nickAndSerial = `${cert.displayName} [${cert.serialNumber}]`;
     menuItemNode.setAttribute("value", i);
-    menuItemNode.setAttribute("label", nickAndSerial); // This is displayed.
+    menuItemNode.setAttribute("label", nickAndSerial); 
     selectElement.menupopup.appendChild(menuItemNode);
     if (i == 0) {
       selectElement.selectedItem = menuItemNode;
@@ -94,9 +94,9 @@ async function onLoad() {
   );
 }
 
-/**
- * Populates the details section with information concerning the selected cert.
- */
+
+
+
 async function setDetails() {
   let index = parseInt(document.getElementById("nicknames").value);
   let cert = certArray[index];

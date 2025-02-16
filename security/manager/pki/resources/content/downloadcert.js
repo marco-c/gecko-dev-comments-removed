@@ -4,6 +4,10 @@
 
 "use strict";
 
+const { setText, viewCertHelper } = ChromeUtils.importESModule(
+  "resource://gre/modules/psm/pippki.sys.mjs"
+);
+
 
 
 
@@ -51,7 +55,11 @@ function onLoad() {
     caName = bundle.getString("unnamedCA");
   }
 
-  setText("trustHeader", bundle.getFormattedString("newCAMessage1", [caName]));
+  setText(
+    document,
+    "trustHeader",
+    bundle.getFormattedString("newCAMessage1", [caName])
+  );
 }
 
 

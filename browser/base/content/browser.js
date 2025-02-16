@@ -1662,20 +1662,6 @@ function getDefaultHomePage() {
   return url;
 }
 
-
-
-function getPEMString(cert) {
-  var derb64 = cert.getBase64DERString();
-  
-  
-  var wrapped = derb64.replace(/(\S{64}(?!$))/g, "$1\r\n");
-  return (
-    "-----BEGIN CERTIFICATE-----\r\n" +
-    wrapped +
-    "\r\n-----END CERTIFICATE-----\r\n"
-  );
-}
-
 var browserDragAndDrop = {
   canDropLink: aEvent => Services.droppedLinkHandler.canDropLink(aEvent, true),
 

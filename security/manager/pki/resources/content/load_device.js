@@ -4,6 +4,10 @@
 
 "use strict";
 
+const { alertPromptService } = ChromeUtils.importESModule(
+  "resource://gre/modules/psm/pippki.sys.mjs"
+);
+
 document.addEventListener("dialogaccept", onDialogAccept);
 
 
@@ -56,7 +60,7 @@ function onDialogAccept(event) {
 
 async function addModuleFailure(l10nID) {
   let [AddModuleFailure] = await document.l10n.formatValues([{ id: l10nID }]);
-  alertPromptService(null, AddModuleFailure);
+  alertPromptService(window, null, AddModuleFailure);
 }
 
 function validateModuleName() {
