@@ -709,6 +709,12 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+  [[nodiscard]] bool MaybeCachesComputedIndex() const;
+
+  
+
+
+
 
 
 
@@ -731,6 +737,12 @@ class nsINode : public mozilla::dom::EventTarget {
 
   mozilla::Maybe<uint32_t> ComputeIndexInParentNode() const;
   mozilla::Maybe<uint32_t> ComputeIndexInParentContent() const;
+
+  
+
+
+
+  [[nodiscard]] bool MaybeParentCachesComputedIndex() const;
 
   
 

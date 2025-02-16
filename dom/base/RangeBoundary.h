@@ -253,6 +253,11 @@ class RangeBoundaryBase {
     return ref;
   }
 
+  
+
+
+  [[nodiscard]] bool HasOffset() const { return mOffset.isSome(); }
+
   enum class OffsetFilter { kValidOffsets, kValidOrInvalidOffsets };
 
   
@@ -443,8 +448,18 @@ class RangeBoundaryBase {
     if (mRef != aOther.mRef) {
       mRef = aOther.mRef;
     }
-    mOffset = aOther.mOffset;
     mIsMutationObserved = bool(aIsMutationObserved);
+    if (!mIsMutationObserved && aOther.mOffset.isNothing()) {
+      
+      
+      
+      
+      mOffset = aOther.Offset(
+          RangeBoundaryBase<A, B>::OffsetFilter::kValidOrInvalidOffsets);
+      MOZ_DIAGNOSTIC_ASSERT(mOffset.isSome());
+    } else {
+      mOffset = aOther.mOffset;
+    }
     return *this;
   }
 

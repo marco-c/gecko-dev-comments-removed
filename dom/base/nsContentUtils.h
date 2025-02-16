@@ -699,10 +699,10 @@ class nsContentUtils {
   static mozilla::Maybe<int32_t> ComparePoints(
       const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
       uint32_t aOffset2, NodeIndexCache* aIndexCache = nullptr);
-  template <typename FPT, typename FRT, typename SPT, typename SRT>
+  template <typename PT1, typename RT1, typename PT2, typename RT2>
   static mozilla::Maybe<int32_t> ComparePoints(
-      const mozilla::RangeBoundaryBase<FPT, FRT>& aFirstBoundary,
-      const mozilla::RangeBoundaryBase<SPT, SRT>& aSecondBoundary);
+      const mozilla::RangeBoundaryBase<PT1, RT1>& aBoundary1,
+      const mozilla::RangeBoundaryBase<PT2, RT2>& aBoundary2);
 
   
 
@@ -723,10 +723,10 @@ class nsContentUtils {
       const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
       uint32_t aOffset2, bool* aDisconnected = nullptr,
       NodeIndexCache* aIndexCache = nullptr);
-  template <typename FPT, typename FRT, typename SPT, typename SRT>
+  template <typename PT1, typename RT1, typename PT2, typename RT2>
   static int32_t ComparePoints_Deprecated(
-      const mozilla::RangeBoundaryBase<FPT, FRT>& aFirstBoundary,
-      const mozilla::RangeBoundaryBase<SPT, SRT>& aSecondBoundary,
+      const mozilla::RangeBoundaryBase<PT1, RT1>& aBoundary1,
+      const mozilla::RangeBoundaryBase<PT2, RT2>& aBoundary2,
       bool* aDisconnected = nullptr);
 
   
@@ -3575,6 +3575,46 @@ class nsContentUtils {
   static nsINode* GetCommonAncestorHelper(nsINode* aNode1, nsINode* aNode2);
   static nsIContent* GetCommonFlattenedTreeAncestorHelper(
       nsIContent* aContent1, nsIContent* aContent2);
+
+  
+
+
+
+
+
+
+
+  static mozilla::Maybe<int32_t> CompareChildNodes(
+      const nsINode* aChild1, const nsINode* aChild2,
+      NodeIndexCache* aIndexCache = nullptr);
+
+  
+
+
+
+
+
+  static mozilla::Maybe<int32_t> CompareChildOffsetAndChildNode(
+      uint32_t aOffset1, const nsINode& aChild2,
+      NodeIndexCache* aIndexCache = nullptr);
+
+  
+
+
+
+
+
+  static mozilla::Maybe<int32_t> CompareChildNodeAndChildOffset(
+      const nsINode& aChild1, uint32_t aOffset2,
+      NodeIndexCache* aIndexCache = nullptr);
+
+  
+
+
+
+
+  static mozilla::Maybe<int32_t> CompareClosestCommonAncestorChildren(
+      const nsINode&, const nsINode*, const nsINode*, NodeIndexCache*);
 
   static nsIXPConnect* sXPConnect;
 
