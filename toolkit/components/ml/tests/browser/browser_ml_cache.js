@@ -557,7 +557,11 @@ async function initializeCache() {
 async function deleteCache(cache) {
   await cache.dispose();
   indexedDB.deleteDatabase(cache.dbName);
-  await removeFromOPFS(cache.dbName, { recursive: true });
+  try {
+    await removeFromOPFS(cache.dbName, { recursive: true });
+  } catch (e) {
+    
+  }
 }
 
 
@@ -1560,7 +1564,7 @@ add_task(async function test_DeleteFileByEngines() {
 
 add_task(async function test_update_allow_deny_after_model_cache() {
   const cache = await initializeCache();
-  const file = "random_file.txt";
+  const file = "config.json";
   const taskName = FAKE_MODEL_ARGS.taskName;
   const model = FAKE_MODEL_ARGS.model;
   const revision = "v0.1";
@@ -1630,4 +1634,87 @@ add_task(async function test_update_allow_deny_after_model_cache() {
     null,
     "The data for the deleted model should not exist."
   );
+});
+
+
+
+
+add_task(async function test_migrateStore_modelsDeleted() {
+  const randomSuffix = Math.floor(Math.random() * 10000);
+  const dbName = `modelFiles-${randomSuffix}`;
+
+  
+  let cache = await IndexedDBCache.init({ dbName, version: 4 });
+
+  
+  await Promise.all([
+    cache.put({
+      taskName: "task",
+      model: "random/model",
+      revision: "v1",
+      file: "random.txt",
+      data: createBlob(),
+      headers: null,
+    }),
+    cache.put({
+      taskName: "task",
+      model: "unknown/model",
+      revision: "v2",
+      file: "unknown.txt",
+      data: createBlob(),
+      headers: null,
+    }),
+  ]);
+
+  
+  cache.db.close();
+  cache = await IndexedDBCache.init({ dbName, version: 5 });
+
+  
+  let remainingFiles = await cache.listFiles({
+    model: "random/model",
+    revision: "v1",
+  });
+  Assert.deepEqual(
+    remainingFiles,
+    [],
+    "All unknown model files should be deleted."
+  );
+
+  remainingFiles = await cache.listFiles({
+    model: "unknown/model",
+    revision: "v2",
+  });
+  Assert.deepEqual(
+    remainingFiles,
+    [],
+    "All unknown model files should be deleted."
+  );
+
+  await deleteCache(cache);
+});
+
+
+
+
+add_task(async function test_migrateStore_emptyDatabase() {
+  const randomSuffix = Math.floor(Math.random() * 10000);
+  const dbName = `modelFiles-${randomSuffix}`;
+
+  
+  let cache = await IndexedDBCache.init({ dbName, version: 4 });
+  cache.db.close();
+
+  
+  cache = await IndexedDBCache.init({ dbName, version: 5 });
+
+  
+  const models = await cache.listModels();
+  Assert.deepEqual(
+    models,
+    [],
+    "The database should remain empty after migration."
+  );
+
+  await deleteCache(cache);
 });
