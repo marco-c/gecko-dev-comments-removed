@@ -9,6 +9,7 @@
 
 #include "media/base/codec_comparators.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -187,28 +188,28 @@ bool MatchesWithReferenceAttributesAndComparator(
           rtc::split(red_parameters_1->second, '/');
       std::vector<absl::string_view> redundant_payloads_2 =
           rtc::split(red_parameters_2->second, '/');
-      if (redundant_payloads_1.size() > 0 && redundant_payloads_2.size() > 0) {
-        
-        for (size_t i = 1; i < redundant_payloads_1.size(); i++) {
-          if (redundant_payloads_1[i] != redundant_payloads_1[0]) {
-            return false;
-          }
-        }
-        for (size_t i = 1; i < redundant_payloads_2.size(); i++) {
-          if (redundant_payloads_2[i] != redundant_payloads_2[0]) {
-            return false;
-          }
-        }
+      
+      size_t smallest_size =
+          std::min(redundant_payloads_1.size(), redundant_payloads_2.size());
+      
+      
+      for (size_t i = 0; i < smallest_size; i++) {
         int red_value_1;
         int red_value_2;
-        if (rtc::FromString(redundant_payloads_1[0], &red_value_1) &&
-            rtc::FromString(redundant_payloads_2[0], &red_value_2)) {
-          if (reference_comparator(red_value_1, red_value_2)) {
-            return true;
+        if (rtc::FromString(redundant_payloads_1[i], &red_value_1) &&
+            rtc::FromString(redundant_payloads_2[i], &red_value_2)) {
+          if (!reference_comparator(red_value_1, red_value_2)) {
+            return false;
           }
+        } else {
+          
+          
+          
+          
+          return red_parameters_1->second == red_parameters_2->second;
         }
-        return false;
       }
+      return true;
     }
     if (!has_parameters_1 && !has_parameters_2) {
       
