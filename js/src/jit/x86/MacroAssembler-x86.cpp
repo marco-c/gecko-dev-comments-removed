@@ -1677,14 +1677,14 @@ void MacroAssembler::atomicFetchOp64(Synchronization, AtomicOp op,
 
 
 
-bool MacroAssembler::convertUInt64ToDoubleNeedsTemp() { return HasSSE3(); }
+bool MacroAssembler::convertUInt64ToDoubleNeedsTemp() { return false; }
 
 void MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest,
                                            Register temp) {
+  MOZ_ASSERT(temp == Register::Invalid());
+
   
   if (!HasSSE3()) {
-    MOZ_ASSERT(temp == Register::Invalid());
-
     
     zeroDouble(dest);
 
