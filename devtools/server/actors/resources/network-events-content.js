@@ -112,14 +112,22 @@ class NetworkEventContentWatcher {
       return;
     }
 
-    
-    
-    const hasURI = Array.from(this.networkEvents.values()).some(
-      networkEvent => networkEvent.uri === channel.URI.spec
-    );
+    if (
+      channel.loadInfo?.externalContentPolicyType !==
+      Ci.nsIContentPolicy.TYPE_SCRIPT
+    ) {
+      
+      
+      
+      
+      
+      const hasURI = Array.from(this.networkEvents.values()).some(
+        networkEvent => networkEvent.uri === channel.URI.spec
+      );
 
-    if (hasURI) {
-      return;
+      if (hasURI) {
+        return;
+      }
     }
 
     this.onNetworkEventAvailable(channel, {
