@@ -119,6 +119,7 @@ class MockRtpTransportControllerSend
               ReceivedCongestionControlFeedbackCount,
               (),
               (const, override));
+  MOCK_METHOD(int, ReceivedTransportCcFeedbackCount, (), (const, override));
 };
 }  
 #endif  

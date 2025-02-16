@@ -163,6 +163,8 @@ class RtpTransportControllerSendInterface {
   virtual NetworkControllerInterface* GetNetworkController() = 0;
   
   virtual int ReceivedCongestionControlFeedbackCount() const = 0;
+  
+  virtual int ReceivedTransportCcFeedbackCount() const = 0;
 };
 
 }  
