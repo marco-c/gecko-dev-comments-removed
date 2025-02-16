@@ -1505,7 +1505,9 @@ void nsLineLayout::SetSpanForEmptyLine(PerSpanData* aPerSpanData,
     pfd->mBlockDirAlign = VALIGN_OTHER;
     pfd->mFrame->SetRect(aWM, pfd->mBounds, aContainerSize);
     if (pfd->mSpan) {
-      SetSpanForEmptyLine(pfd->mSpan, aWM, aContainerSize, aBStartEdge);
+      
+      
+      SetSpanForEmptyLine(pfd->mSpan, aWM, aContainerSize, 0);
     }
   }
 }
