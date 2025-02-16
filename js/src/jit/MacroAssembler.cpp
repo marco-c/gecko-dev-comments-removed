@@ -1984,8 +1984,7 @@ void MacroAssembler::loadInt32ToStringWithBase(
     if (mozilla::IsPowerOfTwo(uint32_t(base))) {
       uint32_t shift = mozilla::FloorLog2(base);
 
-      move32(input, scratch1);
-      rshift32(Imm32(shift), scratch1);
+      rshift32(Imm32(shift), input, scratch1);
 
       move32(input, scratch2);
       and32(Imm32((uint32_t(1) << shift) - 1), scratch2);
@@ -2890,8 +2889,7 @@ void MacroAssembler::emitExtractValueFromMegamorphicCacheEntry(
   load32(Address(entry, MegamorphicCacheEntry::offsetOfSlotOffset()), scratch1);
 
   
-  move32(scratch1, scratch2);
-  rshift32(Imm32(TaggedSlotOffset::OffsetShift), scratch2);
+  rshift32(Imm32(TaggedSlotOffset::OffsetShift), scratch1, scratch2);
 
   
   branchTest32(Assembler::Zero, scratch1,
@@ -3140,8 +3138,7 @@ void MacroAssembler::extractCurrentIndexAndKindFromIterator(Register iterator,
          outIndex);
 
   
-  move32(outIndex, outKind);
-  rshift32(Imm32(PropertyIndex::KindShift), outKind);
+  rshift32(Imm32(PropertyIndex::KindShift), outIndex, outKind);
 
   
   and32(Imm32(PropertyIndex::IndexMask), outIndex);
@@ -3223,8 +3220,7 @@ void MacroAssembler::emitMegamorphicCachedSetSlot(
       scratch2);
 
   
-  move32(scratch2, scratch1);
-  rshift32(Imm32(TaggedSlotOffset::OffsetShift), scratch1);
+  rshift32(Imm32(TaggedSlotOffset::OffsetShift), scratch2, scratch1);
 
   Address afterShapePtr(scratch3,
                         MegamorphicSetPropCache::Entry::offsetOfAfterShape());
@@ -5025,8 +5021,7 @@ void MacroAssembler::powPtr(Register base, Register power, Register dest,
 void MacroAssembler::signInt32(Register input, Register output) {
   MOZ_ASSERT(input != output);
 
-  move32(input, output);
-  rshift32Arithmetic(Imm32(31), output);
+  rshift32Arithmetic(Imm32(31), input, output);
   or32(Imm32(1), output);
   cmp32Move32(Assembler::Equal, input, Imm32(0), input, output);
 }
@@ -5423,8 +5418,7 @@ void MacroAssembler::loadFunctionLength(Register func,
                Imm32(FunctionFlags::BASESCRIPT), &isInterpreted);
   {
     
-    move32(funFlagsAndArgCount, output);
-    rshift32(Imm32(JSFunction::ArgCountShift), output);
+    rshift32(Imm32(JSFunction::ArgCountShift), funFlagsAndArgCount, output);
     jump(&lengthLoaded);
   }
   bind(&isInterpreted);
@@ -7068,10 +7062,10 @@ void MacroAssembler::truncate32ToWasmI31Ref(Register src, Register dest) {
   
   
   
-  move32(src, dest);
   
   
-  lshift32(Imm32(1), dest);
+  
+  lshift32(Imm32(1), src, dest);
   
   orPtr(Imm32(int32_t(wasm::AnyRefTag::I31)), dest);
 #ifdef JS_64BIT
@@ -7086,10 +7080,10 @@ void MacroAssembler::convertWasmI31RefTo32Signed(Register src, Register dest) {
   
   
   
-  move32(src, dest);
   
   
-  rshift32Arithmetic(Imm32(1), dest);
+  
+  rshift32Arithmetic(Imm32(1), src, dest);
 }
 
 void MacroAssembler::convertWasmI31RefTo32Unsigned(Register src,
@@ -7100,10 +7094,10 @@ void MacroAssembler::convertWasmI31RefTo32Unsigned(Register src,
   
   
   
-  move32(src, dest);
   
   
-  rshift32(Imm32(1), dest);
+  
+  rshift32(Imm32(1), src, dest);
 }
 
 void MacroAssembler::branchValueConvertsToWasmAnyRefInline(
@@ -9930,8 +9924,7 @@ void MacroAssembler::touchFrameValues(Register numStackValues,
 
   moveStackPtrTo(scratch2);
 
-  mov(numStackValues, scratch1);
-  lshiftPtr(Imm32(3), scratch1);
+  lshiftPtr(Imm32(3), numStackValues, scratch1);
   {
     
     
