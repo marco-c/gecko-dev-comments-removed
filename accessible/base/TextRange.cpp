@@ -79,7 +79,10 @@ bool TextPoint::operator<(const TextPoint& aPoint) const {
     
     Accessible* child = parents1.ElementAt(pos1 - 1);
     MOZ_ASSERT(child->Parent() == aPoint.mContainer);
-    return child->EndOffset() < static_cast<uint32_t>(aPoint.mOffset);
+    
+    
+    
+    return child->EndOffset() <= static_cast<uint32_t>(aPoint.mOffset);
   }
 
   if (pos2 != 0) {
@@ -89,7 +92,10 @@ bool TextPoint::operator<(const TextPoint& aPoint) const {
     
     Accessible* child = parents2.ElementAt(pos2 - 1);
     MOZ_ASSERT(child->Parent() == mContainer);
-    return static_cast<uint32_t>(mOffset) < child->StartOffset();
+    
+    
+    
+    return static_cast<uint32_t>(mOffset) <= child->StartOffset();
   }
 
   NS_ERROR("Broken tree?!");

@@ -752,16 +752,49 @@ already_AddRefed<AccAttributes> HyperTextAccessibleBase::TextAttributes(
 void HyperTextAccessibleBase::CroppedSelectionRanges(
     nsTArray<TextRange>& aRanges) const {
   SelectionRanges(&aRanges);
-  const Accessible* acc = Acc();
-  aRanges.RemoveElementsBy([acc](auto& range) {
+  Accessible* acc = const_cast<Accessible*>(Acc());
+
+  size_t startIndex = 0;
+  size_t endIndex = aRanges.Length();
+  
+  
+  if (!acc->IsDoc()) {
+    
+    
+    
+    TextPoint thisPoint = TextPoint(acc, 0);
+    startIndex =
+        UpperBound(aRanges, 0, aRanges.Length(), [&](const TextRange& range) {
+          return thisPoint.Compare(range.EndPoint());
+        });
+    
+    
+    
+    thisPoint = TextPoint(acc, CharacterCount());
+    endIndex = UpperBound(aRanges, startIndex, aRanges.Length(),
+                          [&](const TextRange& range) {
+                            return thisPoint.Compare(range.StartPoint());
+                          });
+  }
+
+  
+  size_t nextIndex = 0;
+  aRanges.RemoveElementsBy([&](TextRange& range) {
+    
+    
+    size_t index = nextIndex++;
     if (range.StartPoint() == range.EndPoint()) {
       return true;  
     }
     
     
-    if (!acc->IsDoc()) {
-      
-      return !range.Crop(const_cast<Accessible*>(acc));
+    if (index < startIndex || index >= endIndex) {
+      return true;
+    }
+    
+    if (index == startIndex || index == endIndex - 1) {
+      DebugOnly<bool> cropped = range.Crop(const_cast<Accessible*>(acc));
+      MOZ_ASSERT(cropped, "range should overlap and thus crop successfully");
     }
     return false;
   });
