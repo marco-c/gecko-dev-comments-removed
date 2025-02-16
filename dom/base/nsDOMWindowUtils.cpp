@@ -753,10 +753,22 @@ nsDOMWindowUtils::SendMouseEventCommon(
     bool aToWindow, bool* aPreventDefault, bool aIsDOMEventSynthesized,
     bool aIsWidgetEventSynthesized, int32_t aButtons) {
   RefPtr<PresShell> presShell = GetPresShell();
+  if (!presShell) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsPoint offset;
+  nsCOMPtr<nsIWidget> widget = GetWidget(&offset);
+  if (!widget) {
+    return NS_ERROR_FAILURE;
+  }
+  LayoutDeviceIntPoint refPoint = nsContentUtils::ToWidgetPoint(
+      CSSPoint(aX, aY), offset, presShell->GetPresContext());
   return nsContentUtils::SendMouseEvent(
-      presShell, aType, aX, aY, aButton, aButtons, aClickCount, aModifiers,
-      aIgnoreRootScrollFrame, aPressure, aInputSourceArg, aPointerId, aToWindow,
-      aPreventDefault, aIsDOMEventSynthesized, aIsWidgetEventSynthesized);
+      presShell, widget, aType, refPoint, aButton, aButtons, aClickCount,
+      aModifiers, aIgnoreRootScrollFrame, aPressure, aInputSourceArg,
+      aPointerId, aToWindow, aPreventDefault, aIsDOMEventSynthesized,
+      aIsWidgetEventSynthesized);
 }
 
 NS_IMETHODIMP
@@ -1382,9 +1394,10 @@ nsIWidget* nsDOMWindowUtils::GetWidget(nsPoint* aOffset) {
   return nullptr;
 }
 
-nsIWidget* nsDOMWindowUtils::GetWidgetForElement(Element* aElement) {
+nsIWidget* nsDOMWindowUtils::GetWidgetForElement(Element* aElement,
+                                                 nsPoint* aOffset) {
   if (!aElement) {
-    return GetWidget();
+    return GetWidget(aOffset);
   }
   if (Document* doc = aElement->GetUncomposedDoc()) {
     if (PresShell* presShell = doc->GetPresShell()) {
@@ -1393,7 +1406,12 @@ nsIWidget* nsDOMWindowUtils::GetWidgetForElement(Element* aElement) {
         frame = presShell->GetRootFrame();
       }
       if (frame) {
-        return frame->GetNearestWidget();
+        nsPoint offset;
+        nsIWidget* widget = frame->GetNearestWidget(offset);
+        if (aOffset) {
+          *aOffset = offset;
+        }
+        return widget;
       }
     }
   }
@@ -4961,12 +4979,19 @@ nsDOMWindowUtils::GetDragSession(nsIDragSession** aSession) {
 }
 
 NS_IMETHODIMP
-nsDOMWindowUtils::SendMozMouseHitTestEvent(float aX, float aY) {
-  return SendMouseEventCommon(
-      u"MozMouseHittest"_ns, aX, aY, 0 , 0 ,
+nsDOMWindowUtils::SendMozMouseHitTestEvent(float aX, float aY,
+                                           Element* aElement) {
+  RefPtr<PresShell> presShell = GetPresShell();
+  nsPoint offset;
+  RefPtr<nsIWidget> widget = GetWidgetForElement(aElement, &offset);
+  LayoutDeviceIntPoint refPoint = nsContentUtils::ToWidgetPoint(
+      CSSPoint(aX, aY), offset, presShell->GetPresContext());
+
+  return nsContentUtils::SendMouseEvent(
+      presShell, widget, u"MozMouseHittest"_ns, refPoint, 0 ,
+      MOUSE_BUTTONS_NOT_SPECIFIED , 0 ,
       0 , true , 0 ,
       0 , DEFAULT_MOUSE_POINTER_ID ,
       false , nullptr ,
-      true , true ,
-      MOUSE_BUTTONS_NOT_SPECIFIED );
+      true , true );
 }
