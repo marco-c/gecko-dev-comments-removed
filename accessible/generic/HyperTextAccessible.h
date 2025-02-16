@@ -146,8 +146,6 @@ class HyperTextAccessible : public AccessibleWrap,
   virtual int32_t CaretOffset() const override;
   virtual void SetCaretOffset(int32_t aOffset) override;
 
-  virtual int32_t CaretLineNumber() override;
-
   
 
 
