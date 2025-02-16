@@ -289,12 +289,13 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     
     
     const targetDomain = this.#currentTargetURL.hostname;
-    const registrationDomain = URL.parse(registration.url)?.hostname;
-    if (registrationDomain) {
+    try {
+      const registrationDomain = new URL(registration.url).hostname;
       return registrationDomain === targetDomain;
+    } catch (e) {
+      
+      return false;
     }
-    
-    return false;
   }
 }
 

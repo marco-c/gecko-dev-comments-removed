@@ -45,6 +45,7 @@ this.identity = class extends ExtensionAPI {
         },
         launchWebAuthFlow: function (details) {
           
+          let url, redirectURI;
           let baseRedirectURL = this.getRedirectURL();
 
           
@@ -53,21 +54,22 @@ this.identity = class extends ExtensionAPI {
           let loopbackURL = `http://127.0.0.1/mozoauth2/${computeHash(
             extension.id
           )}`;
-          let url = URL.parse(details.url);
-          if (!url) {
+          try {
+            url = new URL(details.url);
+          } catch (e) {
             return Promise.reject({ message: "details.url is invalid" });
           }
-          let redirectURI = URL.parse(
-            url.searchParams.get("redirect_uri") || baseRedirectURL
-          );
-          if (redirectURI) {
+          try {
+            redirectURI = new URL(
+              url.searchParams.get("redirect_uri") || baseRedirectURL
+            );
             if (
               !redirectURI.href.startsWith(baseRedirectURL) &&
               !redirectURI.href.startsWith(loopbackURL)
             ) {
               return Promise.reject({ message: "redirect_uri not allowed" });
             }
-          } else {
+          } catch (e) {
             return Promise.reject({ message: "redirect_uri is invalid" });
           }
 

@@ -205,16 +205,17 @@ class SourcesManager extends EventEmitter {
       return false;
     }
 
-    const url = URL.parse(uri);
-    if (url) {
+    try {
+      const url = new URL(uri);
       const pathname = url.pathname;
       return MINIFIED_SOURCE_REGEXP.test(
         pathname.slice(pathname.lastIndexOf("/") + 1)
       );
+    } catch (e) {
+      
+      
+      return MINIFIED_SOURCE_REGEXP.test(uri);
     }
-    
-    
-    return MINIFIED_SOURCE_REGEXP.test(uri);
   }
 
   
