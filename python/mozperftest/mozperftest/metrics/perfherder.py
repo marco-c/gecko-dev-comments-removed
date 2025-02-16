@@ -322,18 +322,31 @@ class Perfherder(Layer):
 
                 break
 
+            
+            
+            
+            
             subtest = {
                 "name": measurement,
                 "replicates": reps,
-                "lowerIsBetter": extra_info.get(
-                    "lowerIsBetter", subtest_lower_is_better
-                ),
-                "value": None,
-                "unit": extra_info.get("unit", subtest_unit),
-                "shouldAlert": extra_info.get(
-                    "shouldAlert", should_alert or measurement in subtest_should_alert
-                ),
+                "value": extra_info.get("value"),
+                "unit": extra_info.get("unit") or subtest_unit,
             }
+
+            
+            
+            
+            if extra_info.get("shouldAlert") is not None:
+                subtest["shouldAlert"] = extra_info["shouldAlert"]
+            else:
+                subtest["shouldAlert"] = (
+                    should_alert or measurement in subtest_should_alert
+                )
+
+            if extra_info.get("lowerIsBetter") is not None:
+                subtest["lowerIsBetter"] = extra_info["lowerIsBetter"]
+            else:
+                subtest["lowerIsBetter"] = subtest_lower_is_better
 
             if has_callable_method(transformer_obj, "subtest_summary"):
                 subtest["value"] = transformer_obj.subtest_summary(subtest)
@@ -363,5 +376,7 @@ class Perfherder(Layer):
             val = transformer_obj.summary(suite)
             if val is not None:
                 suite["value"] = val
+        elif summary:
+            suite["value"] = summary
 
         return perfherder
