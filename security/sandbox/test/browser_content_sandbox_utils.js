@@ -402,7 +402,6 @@ function GetBrowserType(type) {
       
       gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
         preferredRemoteType: type,
-        allowInheritPrincipal: true,
       });
       
       GetBrowserType[type] = gBrowser.getBrowserForTab(gBrowser.selectedTab);
