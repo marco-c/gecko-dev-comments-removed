@@ -86,14 +86,15 @@ void JitRuntime::generateBaselineInterpreterEntryTrampoline(
                        &notFunction);
 
     
-    masm.movePtr(callee, scratch);
-    masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), scratch);
+    masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), callee, scratch);
     masm.loadFunctionArgCount(scratch, scratch);
 
     
     Label noUnderflow;
     masm.branch32(Assembler::AboveOrEqual, nargs, scratch, &noUnderflow);
-    { masm.movePtr(scratch, nargs); }
+    {
+      masm.movePtr(scratch, nargs);
+    }
     masm.bind(&noUnderflow);
 
     
