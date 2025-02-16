@@ -615,43 +615,26 @@ void nsCaret::ResetBlinking() {
     return;
   }
 
-  auto blinkRate =
+  const auto blinkRate =
       LookAndFeel::GetInt(IntID::CaretBlinkTime, kDefaultBlinkRate);
 
-  if (blinkRate > 0) {
-    
-    
-    mBlinkCount =
-        LookAndFeel::GetInt(IntID::CaretBlinkCount, kDefaultBlinkCount);
-  }
-
-  if (mBlinkRate == blinkRate) {
-    
+  if (blinkRate <= 0) {
+    StopBlinking();
     return;
   }
 
-  mBlinkRate = blinkRate;
-
-  if (mBlinkTimer) {
-    mBlinkTimer->Cancel();
-  } else {
-    mBlinkTimer = NS_NewTimer(GetMainThreadSerialEventTarget());
-    if (!mBlinkTimer) {
-      return;
-    }
+  mBlinkCount = LookAndFeel::GetInt(IntID::CaretBlinkCount, kDefaultBlinkCount);
+  if (!mBlinkTimer) {
+    mBlinkTimer = NS_NewTimer();
   }
-
-  if (blinkRate > 0) {
-    mBlinkTimer->InitWithNamedFuncCallback(CaretBlinkCallback, this, blinkRate,
-                                           nsITimer::TYPE_REPEATING_SLACK,
-                                           "nsCaret::CaretBlinkCallback_timer");
-  }
+  mBlinkTimer->InitWithNamedFuncCallback(CaretBlinkCallback, this, blinkRate,
+                                         nsITimer::TYPE_REPEATING_SLACK,
+                                         "CaretBlinkCallback");
 }
 
 void nsCaret::StopBlinking() {
   if (mBlinkTimer) {
     mBlinkTimer->Cancel();
-    mBlinkRate = 0;
   }
 }
 
@@ -718,7 +701,7 @@ void nsCaret::ComputeCaretRects(nsIFrame* aFrame, int32_t aFrameOffset,
 
 
 void nsCaret::CaretBlinkCallback(nsITimer* aTimer, void* aClosure) {
-  nsCaret* theCaret = reinterpret_cast<nsCaret*>(aClosure);
+  nsCaret* theCaret = static_cast<nsCaret*>(aClosure);
   if (!theCaret) {
     return;
   }

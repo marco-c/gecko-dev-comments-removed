@@ -218,12 +218,6 @@ class nsCaret final : public nsISelectionListener {
 
 
 
-
-  int32_t mBlinkRate = 0;
-  
-
-
-
   uint32_t mHideCount = 0;
 
   
