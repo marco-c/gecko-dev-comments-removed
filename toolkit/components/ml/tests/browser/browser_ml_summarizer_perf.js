@@ -62,6 +62,18 @@ const perfMetadata = {
           unit: "MiB",
           shouldAlert: true,
         },
+        {
+          name: "tokenSpeed",
+          unit: "tokens/s",
+          shouldAlert: true,
+          lowerIsBetter: false,
+        },
+        {
+          name: "charactersSpeed",
+          unit: "chars/s",
+          shouldAlert: true,
+          lowerIsBetter: false,
+        },
       ],
       verbose: true,
       manifest: "perftest.toml",
@@ -138,6 +150,8 @@ async function run_summarizer_with_perf({
     options: requestOptions,
   };
 
+  info(`is request null | ${request === null || request === undefined}`);
+
   await perfTest({
     name: `sum-${perfName}`,
     options,
@@ -155,14 +169,15 @@ add_task(async function test_ml_distilbart_tiny_article() {
 });
 
 add_task(async function test_ml_distilbart_tiny_article_mem() {
-  testData[0].trackPeakMemory = true;
-  await run_summarizer_with_perf(testData[0]);
+  await run_summarizer_with_perf({ ...testData[0], trackPeakMemory: true });
 });
 
 add_task(async function test_ml_distilbart_tiny_article_mem_no_ion() {
-  testData[0].trackPeakMemory = true;
-  testData[0].browserPrefs = [["javascript.options.wasm_optimizingjit", false]];
-  await run_summarizer_with_perf(testData[0]);
+  await run_summarizer_with_perf({
+    ...testData[0],
+    trackPeakMemory: true,
+    browserPrefs: [["javascript.options.wasm_optimizingjit", false]],
+  });
 });
 
 
@@ -173,6 +188,5 @@ add_task(async function test_ml_qwen_big_article() {
 });
 
 add_task(async function test_ml_qwen_big_article_with_mem() {
-  testData[1].trackPeakMemory = true;
-  await run_summarizer_with_perf(testData[1]);
+  await run_summarizer_with_perf({ ...testData[1], trackPeakMemory: true });
 });
