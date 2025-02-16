@@ -421,8 +421,8 @@ nsresult nsStandardURL::NormalizeIDN(const nsACString& aHost,
   return NS_OK;
 }
 
-void nsStandardURL::CoalescePath(netCoalesceFlags coalesceFlag, char* path) {
-  auto resultCoalesceDirs = net_CoalesceDirs(coalesceFlag, path);
+void nsStandardURL::CoalescePath(char* path) {
+  auto resultCoalesceDirs = net_CoalesceDirs(path);
   int32_t newLen = strlen(path);
   if (newLen < mPath.mLen && resultCoalesceDirs) {
     
@@ -775,13 +775,7 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
   }
 
   if (mDirectory.mLen > 0) {
-    netCoalesceFlags coalesceFlag = NET_COALESCE_NORMAL;
-    if (SegmentIs(buf, mScheme, "ftp")) {
-      coalesceFlag =
-          (netCoalesceFlags)(coalesceFlag | NET_COALESCE_ALLOW_RELATIVE_ROOT |
-                             NET_COALESCE_DOUBLE_SLASH_IS_ROOT);
-    }
-    CoalescePath(coalesceFlag, buf + mDirectory.mPos);
+    CoalescePath(buf + mDirectory.mPos);
   }
   mSpec.Truncate(strlen(buf));
   NS_ASSERTION(mSpec.Length() <= approxLen,
@@ -2331,7 +2325,6 @@ nsStandardURL::Resolve(const nsACString& in, nsACString& out) {
   char* resultPath = nullptr;
   bool relative = false;
   uint32_t offset = 0;
-  netCoalesceFlags coalesceFlag = NET_COALESCE_NORMAL;
 
   nsAutoCString baseProtocol(Scheme());
   nsAutoCString protocol;
@@ -2399,13 +2392,6 @@ nsStandardURL::Resolve(const nsACString& in, nsACString& out) {
   if (scheme.mLen >= 0) {
     
     
-    if (SegmentIs(relpath, scheme, "ftp", true)) {
-      coalesceFlag =
-          (netCoalesceFlags)(coalesceFlag | NET_COALESCE_ALLOW_RELATIVE_ROOT |
-                             NET_COALESCE_DOUBLE_SLASH_IS_ROOT);
-    }
-    
-    
     if (SegmentIs(mScheme, relpath, scheme, true)) {
       
       
@@ -2426,13 +2412,6 @@ nsStandardURL::Resolve(const nsACString& in, nsACString& out) {
       result = NS_xstrdup(relpath);
     }
   } else {
-    
-    
-    if (SegmentIs(mScheme, "ftp")) {
-      coalesceFlag =
-          (netCoalesceFlags)(coalesceFlag | NET_COALESCE_ALLOW_RELATIVE_ROOT |
-                             NET_COALESCE_DOUBLE_SLASH_IS_ROOT);
-    }
     if (relpath[0] == '/' && relpath[1] == '/') {
       
       result = AppendToSubstring(mScheme.mPos, mScheme.mLen + 1, relpath);
@@ -2475,16 +2454,6 @@ nsStandardURL::Resolve(const nsACString& in, nsACString& out) {
           
           
           len = mAuthority.mPos + mAuthority.mLen + 1;
-        } else if (coalesceFlag & NET_COALESCE_DOUBLE_SLASH_IS_ROOT) {
-          if (Filename().Equals("%2F"_ns, nsCaseInsensitiveCStringComparator)) {
-            
-            
-            
-            len = mFilepath.mPos + mFilepath.mLen;
-          } else {
-            
-            len = mDirectory.mPos + mDirectory.mLen;
-          }
         } else {
           
           len = mDirectory.mPos + mDirectory.mLen;
@@ -2512,7 +2481,7 @@ nsStandardURL::Resolve(const nsACString& in, nsACString& out) {
 
     
     if (resultPath && resultPath[0] == '/') {
-      net_CoalesceDirs(coalesceFlag, resultPath);
+      net_CoalesceDirs(resultPath);
     }
   } else {
     
@@ -2528,7 +2497,7 @@ nsStandardURL::Resolve(const nsACString& in, nsACString& out) {
       }
       resultPath = strchr(resultPath, '/');
       if (resultPath) {
-        net_CoalesceDirs(coalesceFlag, resultPath);
+        net_CoalesceDirs(resultPath);
       }
     }
   }
