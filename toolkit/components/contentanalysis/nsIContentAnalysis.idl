@@ -362,10 +362,7 @@ interface nsIContentAnalysis : nsISupports
 
 
 
-
-
-
-  void setCachedResponse(in nsIURI aURI, in int32_t aSequenceNumber, in Array<ACString> aFlavors,
+  void setCachedResponse(in nsIURI aURI, in int32_t aSequenceNumber,
     in nsIContentAnalysisResponse_Action aAction);
 
   
@@ -380,9 +377,6 @@ interface nsIContentAnalysis : nsISupports
 
 
 
-
-
-
-  void getCachedResponse(in nsIURI aURI, in int32_t aSequenceNumber, in Array<ACString> aFlavors,
+  void getCachedResponse(in nsIURI aURI, in int32_t aSequenceNumber,
     out nsIContentAnalysisResponse_Action aAction, out boolean aIsValid);
 };
