@@ -2347,10 +2347,10 @@ FaultingCodeOffset MacroAssembler::storeUncanonicalizedFloat16(
   return doBaseIndex(ARMFPRegister(src, 16), dest, vixl::STR_h);
 }
 
-void MacroAssembler::memoryBarrier(MemoryBarrierBits barrier) {
+void MacroAssembler::memoryBarrier(MemoryBarrier barrier) {
   
   
-  if (barrier) {
+  if (!barrier.isNone()) {
     Dmb(vixl::InnerShareable, vixl::BarrierAll);
   }
 }

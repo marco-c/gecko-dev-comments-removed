@@ -1285,8 +1285,8 @@ FaultingCodeOffset MacroAssembler::storeUncanonicalizedFloat16(
   return fco;
 }
 
-void MacroAssembler::memoryBarrier(MemoryBarrierBits barrier) {
-  if (barrier & MembarStoreLoad) {
+void MacroAssembler::memoryBarrier(MemoryBarrier barrier) {
+  if (barrier.hasStoreLoad()) {
     
     masm.mfence();
   }

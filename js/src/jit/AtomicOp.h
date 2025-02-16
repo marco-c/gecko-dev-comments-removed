@@ -23,75 +23,96 @@ enum class AtomicOp {
 };
 
 
+class MemoryBarrier {
+  enum MemoryBarrierBits : uint8_t {
+    MembarLoadLoad = 1,
+    MembarLoadStore = 2,
+    MembarStoreStore = 4,
+    MembarStoreLoad = 8,
 
+    
+    
+    
+    MembarSynchronizing = 16,
 
+    
+    MembarNobits = 0,
+    MembarAllbits = 31,
+  };
 
+  MemoryBarrierBits bits_;
 
+  template <typename... MembarBits>
+  constexpr explicit MemoryBarrier(MembarBits... bits)
+      : bits_(static_cast<MemoryBarrierBits>((bits | ...))) {}
 
-enum MemoryBarrierBits : uint8_t {
-  MembarLoadLoad = 1,
-  MembarLoadStore = 2,
-  MembarStoreStore = 4,
-  MembarStoreLoad = 8,
+ public:
+  
 
-  MembarSynchronizing = 16,
+  constexpr bool isNone() const { return bits_ == MembarNobits; }
+
+  constexpr bool isStoreStore() const { return bits_ == MembarStoreStore; }
+
+  constexpr bool isSyncStoreStore() const {
+    return bits_ == static_cast<MemoryBarrierBits>(MembarStoreStore |
+                                                   MembarSynchronizing);
+  }
+
+  constexpr bool hasSync() const { return bits_ & MembarSynchronizing; }
+
+  constexpr bool hasStoreLoad() const { return bits_ & MembarStoreLoad; }
 
   
-  MembarNobits = 0,
-  MembarAllbits = 31,
+  static constexpr MemoryBarrier None() { return MemoryBarrier{MembarNobits}; }
+
+  
+  static constexpr MemoryBarrier Full() {
+    return MemoryBarrier{MembarLoadLoad, MembarLoadStore, MembarStoreLoad,
+                         MembarStoreStore};
+  }
+
+  
+  
+  static constexpr MemoryBarrier BeforeLoad() {
+    return MemoryBarrier{MembarNobits};
+  }
+  static constexpr MemoryBarrier AfterLoad() {
+    return MemoryBarrier{MembarLoadLoad, MembarLoadStore};
+  }
+  static constexpr MemoryBarrier BeforeStore() {
+    return MemoryBarrier{MembarStoreStore};
+  }
+  static constexpr MemoryBarrier AfterStore() {
+    return MemoryBarrier{MembarStoreLoad};
+  }
 };
 
-static inline constexpr MemoryBarrierBits operator|(MemoryBarrierBits a,
-                                                    MemoryBarrierBits b) {
-  return MemoryBarrierBits(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
-}
-
-static inline constexpr MemoryBarrierBits operator&(MemoryBarrierBits a,
-                                                    MemoryBarrierBits b) {
-  return MemoryBarrierBits(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
-}
-
-static inline constexpr MemoryBarrierBits operator~(MemoryBarrierBits a) {
-  return MemoryBarrierBits(~static_cast<uint8_t>(a));
-}
-
-
-static constexpr MemoryBarrierBits MembarFull =
-    MembarLoadLoad | MembarLoadStore | MembarStoreLoad | MembarStoreStore;
-
-
-
-static constexpr MemoryBarrierBits MembarBeforeLoad = MembarNobits;
-static constexpr MemoryBarrierBits MembarAfterLoad =
-    MembarLoadLoad | MembarLoadStore;
-static constexpr MemoryBarrierBits MembarBeforeStore = MembarStoreStore;
-static constexpr MemoryBarrierBits MembarAfterStore = MembarStoreLoad;
-
 struct Synchronization {
-  const MemoryBarrierBits barrierBefore;
-  const MemoryBarrierBits barrierAfter;
+  const MemoryBarrier barrierBefore;
+  const MemoryBarrier barrierAfter;
 
-  constexpr Synchronization(MemoryBarrierBits before, MemoryBarrierBits after)
+  constexpr Synchronization(MemoryBarrier before, MemoryBarrier after)
       : barrierBefore(before), barrierAfter(after) {}
 
-  static Synchronization None() {
-    return Synchronization(MemoryBarrierBits(MembarNobits),
-                           MemoryBarrierBits(MembarNobits));
+  static constexpr Synchronization None() {
+    return {MemoryBarrier::None(), MemoryBarrier::None()};
   }
 
-  static Synchronization Full() {
-    return Synchronization(MembarFull, MembarFull);
+  static constexpr Synchronization Full() {
+    return {MemoryBarrier::Full(), MemoryBarrier::Full()};
   }
 
-  static Synchronization Load() {
-    return Synchronization(MembarBeforeLoad, MembarAfterLoad);
+  static constexpr Synchronization Load() {
+    return {MemoryBarrier::BeforeLoad(), MemoryBarrier::AfterLoad()};
   }
 
-  static Synchronization Store() {
-    return Synchronization(MembarBeforeStore, MembarAfterStore);
+  static constexpr Synchronization Store() {
+    return {MemoryBarrier::BeforeStore(), MemoryBarrier::AfterStore()};
   }
 
-  bool isNone() const { return (barrierBefore | barrierAfter) == MembarNobits; }
+  constexpr bool isNone() const {
+    return barrierBefore.isNone() && barrierAfter.isNone();
+  }
 };
 
 }  
