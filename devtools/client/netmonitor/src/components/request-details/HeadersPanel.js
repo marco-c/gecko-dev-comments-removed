@@ -104,9 +104,6 @@ const EDIT_AND_RESEND = L10N.getStr("netmonitor.summary.editAndResend");
 const RAW_HEADERS = L10N.getStr("netmonitor.headers.raw");
 const HEADERS_EMPTY_TEXT = L10N.getStr("headersEmptyText");
 const HEADERS_FILTER_TEXT = L10N.getStr("headersFilterText");
-const REQUEST_HEADERS = L10N.getStr("requestHeaders");
-const REQUEST_HEADERS_FROM_UPLOAD = L10N.getStr("requestHeadersFromUpload");
-const RESPONSE_HEADERS = L10N.getStr("responseHeaders");
 const HEADERS_STATUS = L10N.getStr("netmonitor.headers.status");
 const HEADERS_EARLYHINT_STATUS = L10N.getStr(
   "netmonitor.headers.earlyHintsStatus"
@@ -126,6 +123,96 @@ const HEADERS_ETP = L10N.getStr(
 );
 const HEADERS_PRIORITY = L10N.getStr("netmonitor.headers.requestPriority");
 const HEADERS_DNS = L10N.getStr("netmonitor.headers.dns");
+
+
+const HEADERS_CONFIG = {
+  responseHeaders: {
+    
+    fetchKey: "responseHeaders",
+    title: L10N.getStr("responseHeaders"),
+    
+    rawHeaderValue: ({ status, statusText, httpVersion, headerData }) => {
+      const preHeaderText = `${httpVersion} ${status} ${statusText}`;
+      return writeHeaderText(headerData.headers, preHeaderText).trim();
+    },
+    
+    displayTitle: ({ status, statusText, httpVersion, headerData }) => {
+      const title = HEADERS_CONFIG.responseHeaders.title;
+      if (headerData.headersSize) {
+        return `${title} (${getFormattedSize(headerData.headersSize, 3)})`;
+      }
+      const rawHeaderValue = HEADERS_CONFIG.responseHeaders.rawHeaderValue({
+        httpVersion,
+        status,
+        statusText,
+        headerData,
+      });
+      return `${title} (${getFormattedSize(rawHeaderValue.length, 3)})`;
+    },
+  },
+  requestHeaders: {
+    
+    fetchKey: "requestHeaders",
+    title: L10N.getStr("requestHeaders"),
+    
+    rawHeaderValue: ({ method, httpVersion, headerData, urlDetails }) => {
+      return getRequestHeadersRawText(
+        method,
+        httpVersion,
+        headerData,
+        urlDetails
+      );
+    },
+    
+    displayTitle: ({ method, httpVersion, headerData, urlDetails }) => {
+      const title = HEADERS_CONFIG.requestHeaders.title;
+      if (headerData.headersSize) {
+        return `${title} (${getFormattedSize(headerData.headersSize, 3)})`;
+      }
+      const rawHeaderValue = HEADERS_CONFIG.requestHeaders.rawHeaderValue({
+        method,
+        httpVersion,
+        headerData,
+        urlDetails,
+      });
+      return `${title} (${getFormattedSize(rawHeaderValue.length, 3)})`;
+    },
+  },
+  requestHeadersFromUploadStream: {
+    
+    fetchKey: "requestPostData",
+    title: L10N.getStr("requestHeadersFromUpload"),
+    
+    rawHeaderValue: ({ headerData, preHeaderText = "" }) => {
+      return writeHeaderText(headerData.headers, preHeaderText).trim();
+    },
+    
+    displayTitle: ({ method, httpVersion, headerData, urlDetails }) => {
+      const title = HEADERS_CONFIG.requestHeadersFromUploadStream.title;
+      if (headerData.headersSize) {
+        return `${title} (${getFormattedSize(headerData.headersSize, 3)})`;
+      }
+      let preHeaderText = "";
+      const hostHeader = headerData.headers.find(ele => ele.name === "Host");
+      if (hostHeader) {
+        preHeaderText = `${method} ${
+          urlDetails.url.split(hostHeader.value)[1]
+        } ${httpVersion}`;
+      }
+
+      const rawHeaderValue =
+        HEADERS_CONFIG.requestHeadersFromUploadStream.rawHeaderValue({
+          headerData,
+          preHeaderText,
+        });
+      return `${title} (${getFormattedSize(rawHeaderValue.length, 3)})`;
+    },
+  },
+};
+
+const HEADERS_TO_FETCH = Object.values(HEADERS_CONFIG).map(
+  headers => headers.fetchKey
+);
 
 
 
@@ -157,18 +244,14 @@ class HeadersPanel extends Component {
     super(props);
 
     this.state = {
-      rawRequestHeadersOpened: false,
-      rawResponseHeadersOpened: false,
-      rawUploadHeadersOpened: false,
+      openedRawHeaders: new Set(),
       lastToggledRawHeader: "",
       filterText: null,
     };
 
     this.getProperties = this.getProperties.bind(this);
     this.getTargetHeaderPath = this.getTargetHeaderPath.bind(this);
-    this.toggleRawResponseHeaders = this.toggleRawResponseHeaders.bind(this);
-    this.toggleRawRequestHeaders = this.toggleRawRequestHeaders.bind(this);
-    this.toggleRawUploadHeaders = this.toggleRawUploadHeaders.bind(this);
+    this.toggleRawHeader = this.toggleRawHeader.bind(this);
     this.renderSummary = this.renderSummary.bind(this);
     this.renderRow = this.renderRow.bind(this);
     this.renderValue = this.renderValue.bind(this);
@@ -179,120 +262,52 @@ class HeadersPanel extends Component {
 
   componentDidMount() {
     const { request, connector } = this.props;
-    fetchNetworkUpdatePacket(connector.requestData, request, [
-      "requestHeaders",
-      "responseHeaders",
-      "requestPostData",
-    ]);
+    fetchNetworkUpdatePacket(connector.requestData, request, HEADERS_TO_FETCH);
   }
 
   
   UNSAFE_componentWillReceiveProps(nextProps) {
     const { request, connector } = nextProps;
-    fetchNetworkUpdatePacket(connector.requestData, request, [
-      "requestHeaders",
-      "responseHeaders",
-      "requestPostData",
-    ]);
-  }
-
-  getHeadersTitle(headers, title) {
-    let result = "";
-    let preHeaderText = "";
-    const {
-      responseHeaders,
-      requestHeaders,
-      httpVersion,
-      status,
-      statusText,
-      method,
-      urlDetails,
-    } = this.props.request;
-    if (headers?.headers.length) {
-      if (!headers.headersSize) {
-        if (title == RESPONSE_HEADERS) {
-          preHeaderText = `${httpVersion} ${status} ${statusText}`;
-          result = `${title} (${getFormattedSize(
-            writeHeaderText(responseHeaders.headers, preHeaderText).length,
-            3
-          )})`;
-        } else {
-          const hostHeader = requestHeaders.headers.find(
-            ele => ele.name === "Host"
-          );
-          if (hostHeader) {
-            preHeaderText = `${method} ${
-              urlDetails.url.split(hostHeader.value)[1]
-            } ${httpVersion}`;
-          }
-          result = `${title} (${getFormattedSize(
-            writeHeaderText(requestHeaders.headers, preHeaderText).length,
-            3
-          )})`;
-        }
-      } else {
-        result = `${title} (${getFormattedSize(headers.headersSize, 3)})`;
-      }
-    }
-
-    return result;
-  }
-
-  getProperties(headers, title) {
-    let propertiesResult;
-
-    if (headers?.headers.length) {
-      const headerKey = this.getHeadersTitle(headers, title);
-      propertiesResult = {
-        [headerKey]: new HeaderList(headers.headers),
-      };
-      if (
-        (title === RESPONSE_HEADERS && this.state.rawResponseHeadersOpened) ||
-        (title === REQUEST_HEADERS && this.state.rawRequestHeadersOpened) ||
-        (title === REQUEST_HEADERS_FROM_UPLOAD &&
-          this.state.rawUploadHeadersOpened)
-      ) {
-        propertiesResult = {
-          [headerKey]: { RAW_HEADERS_ID: headers.rawHeaders },
-        };
-      }
-    }
-    return propertiesResult;
-  }
-
-  toggleRawResponseHeaders() {
-    this.setState({
-      rawResponseHeadersOpened: !this.state.rawResponseHeadersOpened,
-      lastToggledRawHeader: "response",
-    });
-  }
-
-  toggleRawRequestHeaders() {
-    this.setState({
-      rawRequestHeadersOpened: !this.state.rawRequestHeadersOpened,
-      lastToggledRawHeader: "request",
-    });
-  }
-
-  toggleRawUploadHeaders() {
-    this.setState({
-      rawUploadHeadersOpened: !this.state.rawUploadHeadersOpened,
-      lastToggledRawHeader: "upload",
-    });
+    fetchNetworkUpdatePacket(connector.requestData, request, HEADERS_TO_FETCH);
   }
 
   
-
-
-
-  getRawHeaderType(path) {
-    if (path.includes(RESPONSE_HEADERS)) {
-      return "RESPONSE";
+  getHeadersDisplayTitle(headerKey) {
+    const headerData = this.props.request[headerKey];
+    if (!headerData?.headers.length) {
+      return "";
     }
-    if (path.includes(REQUEST_HEADERS_FROM_UPLOAD)) {
-      return "UPLOAD";
+
+    return HEADERS_CONFIG[headerKey].displayTitle({
+      ...this.props.request,
+      headerData,
+    });
+  }
+
+  getProperties(headerKey) {
+    let propertiesResult;
+    const headerData = this.props.request[headerKey];
+    if (headerData?.headers.length) {
+      propertiesResult = {
+        [headerKey]: this.state.openedRawHeaders.has(headerKey)
+          ? { RAW_HEADERS_ID: headerData.rawHeaders }
+          : new HeaderList(headerData.headers),
+      };
     }
-    return "REQUEST";
+    return propertiesResult;
+  }
+  
+  toggleRawHeader(headerKey) {
+    const newOpenedRawHeaders = new Set([...this.state.openedRawHeaders]);
+    if (newOpenedRawHeaders.has(headerKey)) {
+      newOpenedRawHeaders.delete(headerKey);
+    } else {
+      newOpenedRawHeaders.add(headerKey);
+    }
+    this.setState({
+      openedRawHeaders: newOpenedRawHeaders,
+      lastToggledRawHeader: headerKey,
+    });
   }
 
   
@@ -318,45 +333,20 @@ class HeadersPanel extends Component {
 
 
   getTargetHeaderPath(searchResult) {
-    if (!searchResult) {
+    if (!searchResult || !(searchResult.type in HEADERS_CONFIG)) {
       return null;
     }
-    if (
-      searchResult.type !== "requestHeaders" &&
-      searchResult.type !== "responseHeaders" &&
-      searchResult.type !== "requestHeadersFromUploadStream"
-    ) {
-      return null;
-    }
-    const {
-      request: {
-        requestHeaders,
-        requestHeadersFromUploadStream: uploadHeaders,
-        responseHeaders,
-      },
-    } = this.props;
     
     
-    const getPath = (headers, title) => {
-      return (
-        "/" +
-        this.getHeadersTitle(headers, title) +
-        "/" +
-        new HeaderList(headers.headers).headers.findIndex(
-          header => header.name == searchResult.label
-        )
-      );
-    };
-    
-    switch (searchResult.type) {
-      case "requestHeaders":
-        return getPath(requestHeaders, REQUEST_HEADERS);
-      case "responseHeaders":
-        return getPath(responseHeaders, RESPONSE_HEADERS);
-      case "requestHeadersFromUploadStream":
-        return getPath(uploadHeaders, REQUEST_HEADERS_FROM_UPLOAD);
-    }
-    return null;
+    const headerData = this.props.request[searchResult.type];
+    return (
+      "/" +
+      searchResult.type +
+      "/" +
+      new HeaderList(headerData.headers).headers.findIndex(
+        header => header.name == searchResult.label
+      )
+    );
   }
 
   
@@ -366,43 +356,13 @@ class HeadersPanel extends Component {
   renderRow(props) {
     const { level, path } = props.member;
 
-    const {
-      request: {
-        method,
-        httpVersion,
-        requestHeaders,
-        requestHeadersFromUploadStream: uploadHeaders,
-        responseHeaders,
-        status,
-        statusText,
-        urlDetails,
-      },
-    } = this.props;
-
-    let value;
-    let preHeaderText = "";
     if (path.includes("RAW_HEADERS_ID")) {
-      const rawHeaderType = this.getRawHeaderType(path);
-      switch (rawHeaderType) {
-        case "REQUEST":
-          value = getRequestHeadersRawText(
-            method,
-            httpVersion,
-            requestHeaders,
-            urlDetails
-          );
-          break;
-        case "RESPONSE":
-          preHeaderText = `${httpVersion} ${status} ${statusText}`;
-          value = writeHeaderText(
-            responseHeaders.headers,
-            preHeaderText
-          ).trim();
-          break;
-        case "UPLOAD":
-          value = writeHeaderText(uploadHeaders.headers, preHeaderText).trim();
-          break;
-      }
+      const headerKey = path.split("/")[1];
+
+      const value = HEADERS_CONFIG[headerKey].rawHeaderValue({
+        ...this.props.request,
+        headerData: this.props.request[headerKey],
+      });
 
       let rows;
       if (value) {
@@ -418,9 +378,7 @@ class HeadersPanel extends Component {
           key: path,
           role: "treeitem",
           className: "raw-headers-container",
-          onClick: event => {
-            event.stopPropagation();
-          },
+          onClick: event => event.stopPropagation(),
         },
         td(
           {
@@ -443,30 +401,24 @@ class HeadersPanel extends Component {
     return TreeRow(props);
   }
 
-  renderRawHeadersBtn(key, checked, onChange) {
+  renderRawHeadersBtn(headerKey) {
     return [
       label(
         {
-          key: `${key}RawHeadersBtn`,
+          key: `${headerKey}RawHeadersBtn`,
           className: "raw-headers-toggle",
-          htmlFor: `raw-${key}-checkbox`,
-          onClick: event => {
-            
-            event.stopPropagation();
-          },
-          onKeyDown: event => {
-            
-            event.stopPropagation();
-          },
+          htmlFor: `raw-${headerKey}-checkbox`,
+          onClick: event => event.stopPropagation(),
+          onKeyDown: event => event.stopPropagation(),
         },
         span({ className: "headers-summary-label" }, RAW_HEADERS),
         span(
           { className: "raw-headers-toggle-input" },
           input({
-            id: `raw-${key}-checkbox`,
-            checked,
+            id: `raw-${headerKey}-checkbox`,
+            checked: this.state.openedRawHeaders.has(headerKey),
             className: "devtools-checkbox-toggle",
-            onChange,
+            onChange: () => this.toggleRawHeader(headerKey),
             type: "checkbox",
           })
         )
@@ -499,14 +451,14 @@ class HeadersPanel extends Component {
     );
   }
 
-  getShouldOpen(rawHeader, filterText, targetSearchResult) {
+  getShouldOpen(headerKey, filterText, targetSearchResult) {
     return (item, opened) => {
       
       
       
       
       if (
-        (!opened && this.state.lastToggledRawHeader === rawHeader) ||
+        (!opened && this.state.lastToggledRawHeader === headerKey) ||
         (!opened && filterText) ||
         (!opened && targetSearchResult)
       ) {
@@ -561,9 +513,6 @@ class HeadersPanel extends Component {
         method,
         remoteAddress,
         remotePort,
-        requestHeaders,
-        requestHeadersFromUploadStream: uploadHeaders,
-        responseHeaders,
         status,
         statusText,
         urlDetails,
@@ -583,120 +532,45 @@ class HeadersPanel extends Component {
       shouldExpandPreview,
       setHeadersUrlPreviewExpanded,
     } = this.props;
-    const {
-      rawResponseHeadersOpened,
-      rawRequestHeadersOpened,
-      rawUploadHeadersOpened,
-      filterText,
-    } = this.state;
 
-    if (
-      (!requestHeaders || !requestHeaders.headers.length) &&
-      (!uploadHeaders || !uploadHeaders.headers.length) &&
-      (!responseHeaders || !responseHeaders.headers.length)
-    ) {
+    const headersDataExists = Object.keys(HEADERS_CONFIG).some(
+      headerKey => this.props.request[headerKey]?.headers.length
+    );
+
+    if (!headersDataExists) {
       return div({ className: "empty-notice" }, HEADERS_EMPTY_TEXT);
     }
 
     const items = [];
 
-    if (responseHeaders?.headers.length) {
-      items.push({
-        component: PropertiesView,
-        componentProps: {
-          object: this.getProperties(responseHeaders, RESPONSE_HEADERS),
-          filterText,
-          targetSearchResult,
-          renderRow: this.renderRow,
-          renderValue: this.renderValue,
-          provider: HeadersProvider,
-          selectPath: this.getTargetHeaderPath,
-          defaultSelectFirstNode: false,
-          enableInput: false,
-          useQuotes: false,
-        },
-        header: this.getHeadersTitle(responseHeaders, RESPONSE_HEADERS),
-        buttons: this.renderRawHeadersBtn(
-          "response",
-          rawResponseHeadersOpened,
-          this.toggleRawResponseHeaders
-        ),
-        id: "responseHeaders",
-        opened: true,
-        shouldOpen: this.getShouldOpen(
-          "response",
-          filterText,
-          targetSearchResult
-        ),
-      });
-    }
-
-    if (requestHeaders?.headers.length) {
-      items.push({
-        component: PropertiesView,
-        componentProps: {
-          object: this.getProperties(requestHeaders, REQUEST_HEADERS),
-          filterText,
-          targetSearchResult,
-          renderRow: this.renderRow,
-          renderValue: this.renderValue,
-          provider: HeadersProvider,
-          selectPath: this.getTargetHeaderPath,
-          defaultSelectFirstNode: false,
-          enableInput: false,
-          useQuotes: false,
-        },
-        header: this.getHeadersTitle(requestHeaders, REQUEST_HEADERS),
-        buttons: this.renderRawHeadersBtn(
-          "request",
-          rawRequestHeadersOpened,
-          this.toggleRawRequestHeaders
-        ),
-        id: "requestHeaders",
-        opened: true,
-        shouldOpen: this.getShouldOpen(
-          "request",
-          filterText,
-          targetSearchResult
-        ),
-      });
-    }
-
-    if (uploadHeaders?.headers.length) {
-      items.push({
-        component: PropertiesView,
-        componentProps: {
-          object: this.getProperties(
-            uploadHeaders,
-            REQUEST_HEADERS_FROM_UPLOAD
+    for (const headerKey in HEADERS_CONFIG) {
+      if (this.props.request[headerKey]?.headers.length) {
+        const { filterText } = this.state;
+        items.push({
+          component: PropertiesView,
+          componentProps: {
+            object: this.getProperties(headerKey),
+            filterText,
+            targetSearchResult,
+            renderRow: this.renderRow,
+            renderValue: this.renderValue,
+            provider: HeadersProvider,
+            selectPath: this.getTargetHeaderPath,
+            defaultSelectFirstNode: false,
+            enableInput: false,
+            useQuotes: false,
+          },
+          header: this.getHeadersDisplayTitle(headerKey),
+          buttons: this.renderRawHeadersBtn(headerKey),
+          id: headerKey,
+          opened: true,
+          shouldOpen: this.getShouldOpen(
+            headerKey,
+            filterText,
+            targetSearchResult
           ),
-          filterText,
-          targetSearchResult,
-          renderRow: this.renderRow,
-          renderValue: this.renderValue,
-          provider: HeadersProvider,
-          selectPath: this.getTargetHeaderPath,
-          defaultSelectFirstNode: false,
-          enableInput: false,
-          useQuotes: false,
-        },
-        header: this.getHeadersTitle(
-          uploadHeaders,
-          REQUEST_HEADERS_FROM_UPLOAD
-        ),
-        buttons: this.renderRawHeadersBtn(
-          "upload",
-          rawUploadHeadersOpened,
-          this.toggleRawUploadHeaders
-        ),
-        id: "uploadHeaders",
-        opened: true,
-        shouldOpen: this.getShouldOpen(
-          "upload",
-          filterText,
-          targetSearchResult
-        ),
-      });
+        });
+      }
     }
 
     const sizeText = L10N.getFormatStrWithNumbers(
