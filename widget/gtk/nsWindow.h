@@ -218,8 +218,7 @@ class nsWindow final : public nsBaseWidget {
   
   void RecomputeBounds();
   void ConstrainSize(int* aWidth, int* aHeight) override;
-  enum class MayChangeMargin : bool { No = false, Yes };
-  void SchedulePendingBounds(MayChangeMargin);
+  void SchedulePendingBounds();
   void MaybeRecomputeBounds();
 
   void SetCursor(const Cursor&) override;
@@ -260,9 +259,9 @@ class nsWindow final : public nsBaseWidget {
   
   gboolean OnExposeEvent(cairo_t* cr);
   gboolean OnConfigureEvent(GtkWidget* aWidget, GdkEventConfigure* aEvent);
-  void OnSizeAllocate(GtkWidget* aWidget, GtkAllocation* aAllocation);
   void OnMap();
   void OnUnmap();
+  void OnSizeAllocate(GtkAllocation* aAllocation);
   void OnDeleteEvent();
   void OnEnterNotifyEvent(GdkEventCrossing* aEvent);
   void OnLeaveNotifyEvent(GdkEventCrossing* aEvent);
@@ -684,13 +683,7 @@ class nsWindow final : public nsBaseWidget {
   bool mWindowShouldStartDragging : 1;
   bool mHasMappedToplevel : 1;
   bool mPanInProgress : 1;
-  bool mPendingBoundsChange : 1;
-  
-  
-  
-  
-  
-  bool mPendingBoundsChangeMayChangeMargin : 1;
+  bool mPendingBounds : 1;
   
   bool mTitlebarBackdropState : 1;
   
