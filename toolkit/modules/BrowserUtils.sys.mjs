@@ -38,18 +38,9 @@ ChromeUtils.defineLazyGetter(lazy, "CatManListenerManager", () => {
             if (!Object.hasOwn(this.cachedModules, module)) {
               this.cachedModules[module] = ChromeUtils.importESModule(module);
             }
-            let fn = async (...args) => {
-              try {
-                
-                
-                await this.cachedModules[module][objName][method](...args);
-              } catch (ex) {
-                console.error(
-                  `Error in processing ${categoryName} for ${objName}`
-                );
-                console.error(ex);
-              }
-            };
+            let fn = (...args) =>
+              this.cachedModules[module][objName][method](...args);
+            fn._descriptiveName = value;
             return fn;
           } catch (ex) {
             console.error(
@@ -476,12 +467,63 @@ export var BrowserUtils = {
 
 
 
-  callModulesFromCategory(categoryName, ...args) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  callModulesFromCategory(
+    { categoryName, profilerMarker = "", idleDispatch = false },
+    ...args
+  ) {
+    
+    
+    
+    let callSingleListener = async fn => {
+      let startTime = profilerMarker ? Cu.now() : 0;
+      try {
+        await fn(...args);
+      } catch (ex) {
+        console.error(
+          `Error in processing ${categoryName} for ${fn._descriptiveName}`
+        );
+        console.error(ex);
+      }
+      if (profilerMarker) {
+        ChromeUtils.addProfilerMarker(
+          profilerMarker,
+          startTime,
+          fn._descriptiveName
+        );
+      }
+    };
+
     for (let listener of lazy.CatManListenerManager.getListeners(
       categoryName
     )) {
-      
-      listener(...args);
+      if (idleDispatch) {
+        ChromeUtils.idleDispatch(() => callSingleListener(listener));
+      } else {
+        callSingleListener(listener);
+      }
     }
   },
 
