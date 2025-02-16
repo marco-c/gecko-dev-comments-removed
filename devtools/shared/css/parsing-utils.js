@@ -370,10 +370,21 @@ function parseDeclarationsInternal(
       !currentBlocks.length
     ) {
       
-      isInNested = true;
-      nestingLevel = 1;
 
-      continue;
+      if (inComment) {
+        
+        
+        
+        isInNested = true;
+        nestingLevel = 1;
+        continue;
+      }
+
+      
+      
+      
+      declarations.pop();
+      break;
     } else if (isInNested) {
       if (token.tokenType == "CurlyBracketBlock") {
         nestingLevel++;
