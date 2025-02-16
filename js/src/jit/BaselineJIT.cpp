@@ -19,6 +19,7 @@
 #include "jit/AutoWritableJitCode.h"
 #include "jit/BaselineCodeGen.h"
 #include "jit/BaselineCompileTask.h"
+#include "jit/BaselineDebugModeOSR.h"
 #include "jit/BaselineIC.h"
 #include "jit/CalleeToken.h"
 #include "jit/Ion.h"
@@ -942,6 +943,36 @@ uint8_t* BaselineScript::OSREntryForFrame(BaselineFrame* frame) {
   BaselineScript* baselineScript = script->baselineScript();
   jsbytecode* pc = frame->interpreterPC();
   size_t pcOffset = script->pcToOffset(pc);
+
+  if (MOZ_UNLIKELY(frame->isDebuggee() &&
+                   !baselineScript->hasDebugInstrumentation())) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    JSContext* cx = TlsContext.get();
+    if (!RecompileBaselineScriptForDebugMode(cx, script, DebugAPI::Observing)) {
+      cx->recoverFromOutOfMemory();
+      return nullptr;
+    }
+    baselineScript = script->baselineScript();
+  }
 
   if (JSOp(*pc) == JSOp::LoopHead) {
     MOZ_ASSERT(pc > script->code(),

@@ -1703,6 +1703,13 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
     masm.loadBaselineFramePtr(FramePointer, R0.scratchReg());
     masm.passABIArg(R0.scratchReg());
     masm.callWithABI<Fn, BaselineScript::OSREntryForFrame>();
+
+    
+    
+    
+    masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, &done);
+
+    
     masm.jump(ReturnReg);
 
     masm.bind(&notCompiled);
