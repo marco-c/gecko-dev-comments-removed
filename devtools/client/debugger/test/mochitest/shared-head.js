@@ -2917,6 +2917,41 @@ async function assertInlineExceptionPreview(
   await closePreviewForToken(dbg, tokenEl, "previewPopup");
 }
 
+
+
+
+
+
+async function waitForPreviewWithResult(dbg, result) {
+  await waitUntil(async () => {
+    const previewEl = await waitForElement(dbg, "previewPopup");
+    return previewEl.innerText.includes(result);
+  });
+}
+
+
+
+
+
+
+async function toggleExpanded(dbg, index) {
+  let initialNodesLength;
+  await waitFor(() => {
+    const nodes = findElement(dbg, "previewPopup").querySelectorAll(".node");
+    if (nodes.length > index) {
+      initialNodesLength = nodes.length;
+      nodes[index].querySelector(".theme-twisty").click();
+      return true;
+    }
+    return false;
+  });
+  await waitFor(
+    () =>
+      findElement(dbg, "previewPopup").querySelectorAll(".node").length !==
+      initialNodesLength
+  );
+}
+
 async function waitForBreakableLine(dbg, source, lineNumber) {
   await waitForState(
     dbg,
