@@ -3,6 +3,13 @@
 
 "use strict";
 
+add_setup(async () => {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.animation.enabled", false]],
+  });
+});
+
 add_task(async function test_sidebar_extension_context_menu() {
   const win = await BrowserTestUtils.openNewBrowserWindow();
   await waitForBrowserWindowActive(win);
