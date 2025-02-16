@@ -9,7 +9,17 @@ use minidump_writer::minidump_writer::MinidumpWriter;
 use std::ffi::{CStr, CString};
 use std::mem::{self, MaybeUninit};
 use std::os::raw::c_char;
-use std::ptr::{copy_nonoverlapping, null_mut};
+use std::ptr::copy_nonoverlapping;
+
+
+
+
+
+
+
+
+
+
 
 
 #[no_mangle]
@@ -37,6 +47,7 @@ pub unsafe extern "C" fn write_minidump_linux(
 
     let mut dump_file = match std::fs::OpenOptions::new()
         .create(true) 
+        .truncate(true) 
         .write(true) 
         .open(path)
     {
@@ -55,12 +66,10 @@ pub unsafe extern "C" fn write_minidump_linux(
     };
 
     match MinidumpWriter::new(child, child_blamed_thread).dump(&mut dump_file) {
-        Ok(_) => {
-            return true;
-        }
+        Ok(_) => true,
         Err(x) => {
             error_message_to_c(error_msg, format!("{:#}", anyhow::Error::new(x)));
-            return false;
+            false
         }
     }
 }
@@ -71,6 +80,17 @@ type fpregset_t = crash_context::fpregset_t;
 #[allow(non_camel_case_types)]
 #[cfg(target_arch = "arm")]
 pub struct fpregset_t {}
+
+
+
+
+
+
+
+
+
+
+
 
 
 #[no_mangle]
@@ -116,6 +136,7 @@ pub unsafe extern "C" fn write_minidump_linux_with_context(
 
     let mut dump_file = match std::fs::OpenOptions::new()
         .create(true) 
+        .truncate(true) 
         .write(true) 
         .open(path)
     {
@@ -137,22 +158,25 @@ pub unsafe extern "C" fn write_minidump_linux_with_context(
         .set_crash_context(crash_context)
         .dump(&mut dump_file)
     {
-        Ok(_) => {
-            return true;
-        }
+        Ok(_) => true,
         Err(x) => {
             error_message_to_c(error_msg, format!("{:#}", anyhow::Error::new(x)));
-            return false;
+            false
         }
     }
 }
 
 fn error_message_to_c(c_string_pointer: *mut *mut c_char, error_message: String) {
-    if c_string_pointer != null_mut() {
+    if !c_string_pointer.is_null() {
         let c_error_message = CString::new(error_message).unwrap_or_default();
         unsafe { *c_string_pointer = c_error_message.into_raw() };
     }
 }
+
+
+
+
+
 
 
 #[no_mangle]
