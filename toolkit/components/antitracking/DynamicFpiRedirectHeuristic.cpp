@@ -348,11 +348,6 @@ void DynamicFpiRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
           glean::contentblocking::StorageAccessGrantedCountLabel::eRedirect)
       .Add();
 
-  StorageAccessGrantTelemetryClassification::MaybeReportTracker(
-      static_cast<uint16_t>(
-          glean::contentblocking::StorageAccessGrantedCountLabel::eRedirectCt),
-      aOldURI);
-
   
   RefPtr<StorageAccessAPIHelper::ParentAccessGrantPromise> promise =
       StorageAccessAPIHelper::SaveAccessForOriginOnParentProcess(
