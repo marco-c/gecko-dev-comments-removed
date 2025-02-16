@@ -24,6 +24,7 @@
 #include "api/crypto/crypto_options.h"
 #include "api/jsep.h"
 #include "api/media_types.h"
+#include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
@@ -971,6 +972,12 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
         mid().c_str());
     return false;
   }
+  
+  
+  
+  media_receive_channel()->SetRtcpMode(content->rtcp_reduced_size()
+                                           ? webrtc::RtcpMode::kReducedSize
+                                           : webrtc::RtcpMode::kCompound);
   
   
   media_receive_channel()->SetReceiveNackEnabled(
