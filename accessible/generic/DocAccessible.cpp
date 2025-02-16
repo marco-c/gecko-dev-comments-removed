@@ -674,9 +674,7 @@ nsresult DocAccessible::RemoveEventListeners() {
     NS_RELEASE_THIS();  
   }
 
-  if (mPresShell) {
-    SelectionMgr()->RemoveDocSelectionListener(mPresShell);
-  }
+  SelectionMgr()->RemoveDocSelectionListener(mPresShell);
   return NS_OK;
 }
 
