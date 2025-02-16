@@ -83,35 +83,61 @@ class nsSimpleURI : public nsIURI, public nsISerializable, public nsISizeOf {
   
   bool EqualsInternal(nsSimpleURI* otherUri, RefHandlingEnum refHandlingMode);
 
-  
-  
-  void SetRefOnClone(nsSimpleURI* url, RefHandlingEnum refHandlingMode,
-                     const nsACString& newRef);
-
-  
-  
-  
-  virtual nsSimpleURI* StartClone(RefHandlingEnum refHandlingMode,
-                                  const nsACString& newRef);
-
-  
-  virtual nsresult CloneInternal(RefHandlingEnum refHandlingMode,
-                                 const nsACString& newRef, nsIURI** result);
+  virtual already_AddRefed<nsSimpleURI> StartClone();
 
   void TrimTrailingCharactersFromPath();
-  nsresult EscapeAndSetPathQueryRef(const nsACString& aPath);
-  nsresult SetPathQueryRefInternal(const nsACString& aPath);
+
+  
+  
+  nsresult SetPathQueryRefInternal();
 
   bool Deserialize(const mozilla::ipc::URIParams&);
 
-  nsCString mScheme;
-  nsCString mPath;  
-  nsCString mRef;   
-  nsCString
-      mQuery;  
-  bool mIsRefValid{false};  
   
-  bool mIsQueryValid{false};
+  size_t SchemeStart() const { return 0; }
+  size_t SchemeEnd() const { return mPathSep; }
+  size_t SchemeLen() const { return SchemeEnd() - SchemeStart(); }
+
+  size_t PathStart() const { return mPathSep + 1; }
+  inline size_t PathEnd() const;
+  size_t PathLen() const { return PathEnd() - PathStart(); }
+
+  bool IsQueryValid() const { return mQuerySep != kNotFound; }
+  inline size_t QueryStart() const;
+  inline size_t QueryEnd() const;
+  size_t QueryLen() const { return QueryEnd() - QueryStart(); }
+
+  bool IsRefValid() const { return mRefSep != kNotFound; }
+  inline size_t RefStart() const;
+  inline size_t RefEnd() const;
+  size_t RefLen() const { return RefEnd() - RefStart(); }
+
+  
+  nsDependentCSubstring Scheme() {
+    return Substring(mSpec, SchemeStart(), SchemeLen());
+  }
+  nsDependentCSubstring Path() {
+    return Substring(mSpec, PathStart(), PathLen());
+  }
+  nsDependentCSubstring Query() {
+    return Substring(mSpec, QueryStart(), QueryLen());
+  }
+  nsDependentCSubstring Ref() { return Substring(mSpec, RefStart(), RefLen()); }
+  nsDependentCSubstring SpecIgnoringRef() {
+    return Substring(mSpec, 0, IsRefValid() ? mRefSep : -1);
+  }
+
+  
+  nsCString mSpec;
+
+  
+  int32_t mPathSep = kNotFound;
+  
+  
+  int32_t mQuerySep = kNotFound;
+  
+  
+  int32_t mRefSep = kNotFound;
 
  public:
   class Mutator final : public nsIURIMutator,
@@ -157,6 +183,43 @@ class nsSimpleURI : public nsIURI, public nsISerializable, public nsISizeOf {
 
   friend BaseURIMutator<nsSimpleURI>;
 };
+
+
+
+
+
+inline size_t nsSimpleURI::PathEnd() const {
+  if (IsQueryValid()) {
+    return mQuerySep;
+  }
+  if (IsRefValid()) {
+    return mRefSep;
+  }
+  return mSpec.Length();
+}
+
+inline size_t nsSimpleURI::QueryStart() const {
+  MOZ_DIAGNOSTIC_ASSERT(IsQueryValid());
+  return mQuerySep + 1;
+}
+
+inline size_t nsSimpleURI::QueryEnd() const {
+  MOZ_DIAGNOSTIC_ASSERT(IsQueryValid());
+  if (IsRefValid()) {
+    return mRefSep;
+  }
+  return mSpec.Length();
+}
+
+inline size_t nsSimpleURI::RefStart() const {
+  MOZ_DIAGNOSTIC_ASSERT(IsRefValid());
+  return mRefSep + 1;
+}
+
+inline size_t nsSimpleURI::RefEnd() const {
+  MOZ_DIAGNOSTIC_ASSERT(IsRefValid());
+  return mSpec.Length();
+}
 
 }  
 }  

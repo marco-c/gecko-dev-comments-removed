@@ -1430,12 +1430,10 @@ bool nsJSURI::Deserialize(const mozilla::ipc::URIParams& aParams) {
 }
 
 
- mozilla::net::nsSimpleURI* nsJSURI::StartClone(
-    mozilla::net::nsSimpleURI::RefHandlingEnum refHandlingMode,
-    const nsACString& newRef) {
-  nsJSURI* url = new nsJSURI(mBaseURI);
-  SetRefOnClone(url, refHandlingMode, newRef);
-  return url;
+ already_AddRefed<mozilla::net::nsSimpleURI>
+nsJSURI::StartClone() {
+  RefPtr<nsJSURI> url = new nsJSURI(mBaseURI);
+  return url.forget();
 }
 
 
