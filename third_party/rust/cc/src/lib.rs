@@ -215,27 +215,36 @@
 
 
 
+
 #![doc(html_root_url = "https://docs.rs/cc/1.0")]
-#![cfg_attr(test, deny(warnings))]
-#![allow(deprecated)]
+#![deny(warnings)]
 #![deny(missing_docs)]
+#![deny(clippy::disallowed_methods)]
+#![warn(clippy::doc_markdown)]
 
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::env;
 use std::ffi::{OsStr, OsString};
-use std::fmt::{self, Display, Formatter};
+use std::fmt::{self, Display};
 use std::fs;
 use std::io::{self, Write};
 use std::path::{Component, Path, PathBuf};
 #[cfg(feature = "parallel")]
 use std::process::Child;
 use std::process::Command;
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicU8, Ordering::Relaxed},
+    Arc, RwLock,
+};
+
+use shlex::Shlex;
 
 #[cfg(feature = "parallel")]
 mod parallel;
+mod target;
 mod windows;
+use self::target::TargetInfo;
 
 
 pub use windows::find_tools as windows_registry;
@@ -247,6 +256,32 @@ mod tool;
 pub use tool::Tool;
 use tool::ToolFamily;
 
+mod tempfile;
+
+mod utilities;
+use utilities::*;
+
+mod flags;
+use flags::*;
+
+#[derive(Debug, Eq, PartialEq, Hash)]
+struct CompilerFlag {
+    compiler: Box<Path>,
+    flag: Box<OsStr>,
+}
+
+type Env = Option<Arc<OsStr>>;
+
+#[derive(Debug, Default)]
+struct BuildCache {
+    env_cache: RwLock<HashMap<Box<str>, Env>>,
+    apple_sdk_root_cache: RwLock<HashMap<Box<str>, Arc<OsStr>>>,
+    apple_versions_cache: RwLock<HashMap<Box<str>, Arc<str>>>,
+    cached_compiler_family: RwLock<HashMap<Box<Path>, ToolFamily>>,
+    known_flag_support_status_cache: RwLock<HashMap<CompilerFlag, bool>>,
+    target_info_parser: target::TargetInfoParser,
+}
+
 
 
 
@@ -257,11 +292,10 @@ pub struct Build {
     include_directories: Vec<Arc<Path>>,
     definitions: Vec<(Arc<str>, Option<Arc<str>>)>,
     objects: Vec<Arc<Path>>,
-    flags: Vec<Arc<str>>,
-    flags_supported: Vec<Arc<str>>,
-    known_flag_support_status: Arc<Mutex<HashMap<String, bool>>>,
-    ar_flags: Vec<Arc<str>>,
-    asm_flags: Vec<Arc<str>>,
+    flags: Vec<Arc<OsStr>>,
+    flags_supported: Vec<Arc<OsStr>>,
+    ar_flags: Vec<Arc<OsStr>>,
+    asm_flags: Vec<Arc<OsStr>>,
     no_default_flags: bool,
     files: Vec<Arc<Path>>,
     cpp: bool,
@@ -269,8 +303,12 @@ pub struct Build {
     cpp_set_stdlib: Option<Arc<str>>,
     cuda: bool,
     cudart: Option<Arc<str>>,
+    ccbin: bool,
     std: Option<Arc<str>>,
     target: Option<Arc<str>>,
+    
+    
+    
     host: Option<Arc<str>>,
     out_dir: Option<Arc<Path>>,
     opt_level: Option<Arc<str>>,
@@ -281,7 +319,7 @@ pub struct Build {
     archiver: Option<Arc<Path>>,
     ranlib: Option<Arc<Path>>,
     cargo_output: CargoOutput,
-    link_lib_modifiers: Vec<Arc<str>>,
+    link_lib_modifiers: Vec<Arc<OsStr>>,
     pic: Option<bool>,
     use_plt: Option<bool>,
     static_crt: Option<bool>,
@@ -290,11 +328,10 @@ pub struct Build {
     warnings_into_errors: bool,
     warnings: Option<bool>,
     extra_warnings: Option<bool>,
-    env_cache: Arc<Mutex<HashMap<String, Option<Arc<str>>>>>,
-    apple_sdk_root_cache: Arc<Mutex<HashMap<String, OsString>>>,
-    apple_versions_cache: Arc<Mutex<HashMap<String, String>>>,
     emit_rerun_if_env_changed: bool,
-    cached_compiler_family: Arc<Mutex<HashMap<Box<Path>, ToolFamily>>>,
+    shell_escaped_flags: Option<bool>,
+    build_cache: Arc<BuildCache>,
+    inherit_rustflags: bool,
 }
 
 
@@ -303,8 +340,6 @@ enum ErrorKind {
     
     IOError,
     
-    ArchitectureInvalid,
-    
     EnvVarNotFound,
     
     ToolExecError,
@@ -312,9 +347,19 @@ enum ErrorKind {
     ToolNotFound,
     
     InvalidArgument,
+    
+    ToolFamilyMacroNotFound,
+    
+    InvalidTarget,
+    
+    UnknownTarget,
+    
+    InvalidFlag,
     #[cfg(feature = "parallel")]
     
     JobserverHelpThreadError,
+    
+    Disabled,
 }
 
 
@@ -378,7 +423,6 @@ impl Build {
             objects: Vec::new(),
             flags: Vec::new(),
             flags_supported: Vec::new(),
-            known_flag_support_status: Arc::new(Mutex::new(HashMap::new())),
             ar_flags: Vec::new(),
             asm_flags: Vec::new(),
             no_default_flags: false,
@@ -390,6 +434,7 @@ impl Build {
             cpp_set_stdlib: None,
             cuda: false,
             cudart: None,
+            ccbin: true,
             std: None,
             target: None,
             host: None,
@@ -409,11 +454,10 @@ impl Build {
             warnings: None,
             extra_warnings: None,
             warnings_into_errors: false,
-            env_cache: Arc::new(Mutex::new(HashMap::new())),
-            apple_sdk_root_cache: Arc::new(Mutex::new(HashMap::new())),
-            apple_versions_cache: Arc::new(Mutex::new(HashMap::new())),
             emit_rerun_if_env_changed: true,
-            cached_compiler_family: Arc::default(),
+            shell_escaped_flags: None,
+            build_cache: Arc::default(),
+            inherit_rustflags: true,
         }
     }
 
@@ -490,6 +534,17 @@ impl Build {
     }
 
     
+    pub fn objects<P>(&mut self, objs: P) -> &mut Build
+    where
+        P: IntoIterator,
+        P::Item: AsRef<Path>,
+    {
+        for obj in objs {
+            self.object(obj);
+        }
+        self
+    }
+
     
     
     
@@ -499,8 +554,9 @@ impl Build {
     
     
     
-    pub fn flag(&mut self, flag: &str) -> &mut Build {
-        self.flags.push(flag.into());
+    
+    pub fn flag(&mut self, flag: impl AsRef<OsStr>) -> &mut Build {
+        self.flags.push(flag.as_ref().into());
         self
     }
 
@@ -516,7 +572,6 @@ impl Build {
     
     
     
-
     pub fn remove_flag(&mut self, flag: &str) -> &mut Build {
         self.flags.retain(|other_flag| &**other_flag != flag);
         self
@@ -533,8 +588,8 @@ impl Build {
     
     
     
-    pub fn ar_flag(&mut self, flag: &str) -> &mut Build {
-        self.ar_flags.push(flag.into());
+    pub fn ar_flag(&mut self, flag: impl AsRef<OsStr>) -> &mut Build {
+        self.ar_flags.push(flag.as_ref().into());
         self
     }
 
@@ -552,8 +607,8 @@ impl Build {
     
     
     
-    pub fn asm_flag(&mut self, flag: &str) -> &mut Build {
-        self.asm_flags.push(flag.into());
+    pub fn asm_flag(&mut self, flag: impl AsRef<OsStr>) -> &mut Build {
+        self.asm_flags.push(flag.as_ref().into());
         self
     }
 
@@ -587,66 +642,111 @@ impl Build {
     
     
     
-    pub fn is_flag_supported(&self, flag: &str) -> Result<bool, Error> {
-        let mut known_status = self.known_flag_support_status.lock().unwrap();
-        if let Some(is_supported) = known_status.get(flag).cloned() {
+    pub fn is_flag_supported(&self, flag: impl AsRef<OsStr>) -> Result<bool, Error> {
+        self.is_flag_supported_inner(
+            flag.as_ref(),
+            &self.get_base_compiler()?,
+            &self.get_target()?,
+        )
+    }
+
+    fn is_flag_supported_inner(
+        &self,
+        flag: &OsStr,
+        tool: &Tool,
+        target: &TargetInfo<'_>,
+    ) -> Result<bool, Error> {
+        let compiler_flag = CompilerFlag {
+            compiler: tool.path().into(),
+            flag: flag.into(),
+        };
+
+        if let Some(is_supported) = self
+            .build_cache
+            .known_flag_support_status_cache
+            .read()
+            .unwrap()
+            .get(&compiler_flag)
+            .cloned()
+        {
             return Ok(is_supported);
         }
 
         let out_dir = self.get_out_dir()?;
         let src = self.ensure_check_file()?;
         let obj = out_dir.join("flag_check");
-        let target = self.get_target()?;
-        let host = self.get_host()?;
-        let mut cfg = Build::new();
-        cfg.flag(flag)
-            .cargo_metadata(self.cargo_output.metadata)
-            .target(&target)
-            .opt_level(0)
-            .host(&host)
-            .debug(false)
-            .cpp(self.cpp)
-            .cuda(self.cuda);
-        if let Some(ref c) = self.compiler {
-            cfg.compiler(c.clone());
-        }
-        let mut compiler = cfg.try_get_compiler()?;
+
+        let mut compiler = {
+            let mut cfg = Build::new();
+            cfg.flag(flag)
+                .compiler(tool.path())
+                .cargo_metadata(self.cargo_output.metadata)
+                .opt_level(0)
+                .debug(false)
+                .cpp(self.cpp)
+                .cuda(self.cuda)
+                .inherit_rustflags(false)
+                .emit_rerun_if_env_changed(self.emit_rerun_if_env_changed);
+            if let Some(target) = &self.target {
+                cfg.target(target);
+            }
+            if let Some(host) = &self.host {
+                cfg.host(host);
+            }
+            cfg.try_get_compiler()?
+        };
 
         
         
         if compiler.family.verbose_stderr() {
             compiler.remove_arg("-v".into());
         }
-        if compiler.family == ToolFamily::Clang {
+        if compiler.is_like_clang() {
             
             
             compiler.push_cc_arg("-Wno-unused-command-line-argument".into());
         }
 
         let mut cmd = compiler.to_command();
-        let is_arm = target.contains("aarch64") || target.contains("arm");
-        let clang = compiler.family == ToolFamily::Clang;
+        let is_arm = matches!(target.arch, "aarch64" | "arm");
+        let clang = compiler.is_like_clang();
         let gnu = compiler.family == ToolFamily::Gnu;
         command_add_output_file(
             &mut cmd,
             &obj,
-            self.cuda,
-            target.contains("msvc"),
-            clang,
-            gnu,
-            false,
-            is_arm,
+            CmdAddOutputFileArgs {
+                cuda: self.cuda,
+                is_assembler_msvc: false,
+                msvc: compiler.is_like_msvc(),
+                clang,
+                gnu,
+                is_asm: false,
+                is_arm,
+            },
         );
 
-        
-        cmd.arg("-c");
+        if compiler.supports_path_delimiter() {
+            cmd.arg("--");
+        }
 
         cmd.arg(&src);
+
+        
+        
+        if compiler.is_like_msvc() {
+            
+            cmd.env("_LINK_", "-entry:main");
+        }
 
         let output = cmd.output()?;
         let is_supported = output.status.success() && output.stderr.is_empty();
 
-        known_status.insert(flag.to_owned(), is_supported);
+        self.build_cache
+            .known_flag_support_status_cache
+            .write()
+            .unwrap()
+            .insert(compiler_flag, is_supported);
+
         Ok(is_supported)
     }
 
@@ -661,8 +761,8 @@ impl Build {
     
     
     
-    pub fn flag_if_supported(&mut self, flag: &str) -> &mut Build {
-        self.flags_supported.push(flag.into());
+    pub fn flag_if_supported(&mut self, flag: impl AsRef<OsStr>) -> &mut Build {
+        self.flags_supported.push(flag.as_ref().into());
         self
     }
 
@@ -691,7 +791,11 @@ impl Build {
     
     pub fn try_flags_from_environment(&mut self, environ_key: &str) -> Result<&mut Build, Error> {
         let flags = self.envflags(environ_key)?;
-        self.flags.extend(flags.into_iter().map(Into::into));
+        self.flags.extend(
+            flags
+                .into_iter()
+                .map(|flag| Arc::from(OsString::from(flag).as_os_str())),
+        );
         Ok(self)
     }
 
@@ -810,6 +914,18 @@ impl Build {
         if self.cuda {
             self.cudart = Some(cudart.into());
         }
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn ccbin(&mut self, ccbin: bool) -> &mut Build {
+        self.ccbin = ccbin;
         self
     }
 
@@ -942,7 +1058,7 @@ impl Build {
         &mut self,
         cpp_link_stdlib: V,
     ) -> &mut Build {
-        self.cpp_link_stdlib = Some(cpp_link_stdlib.into().map(|s| s.into()));
+        self.cpp_link_stdlib = Some(cpp_link_stdlib.into().map(Arc::from));
         self
     }
 
@@ -983,12 +1099,18 @@ impl Build {
         &mut self,
         cpp_set_stdlib: V,
     ) -> &mut Build {
-        let cpp_set_stdlib = cpp_set_stdlib.into();
-        self.cpp_set_stdlib = cpp_set_stdlib.map(|s| s.into());
-        self.cpp_link_stdlib(cpp_set_stdlib);
+        let cpp_set_stdlib = cpp_set_stdlib.into().map(Arc::from);
+        self.cpp_set_stdlib.clone_from(&cpp_set_stdlib);
+        self.cpp_link_stdlib = Some(cpp_set_stdlib);
         self
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1145,8 +1267,23 @@ impl Build {
     
     
     
-    pub fn link_lib_modifier(&mut self, link_lib_modifier: &str) -> &mut Build {
-        self.link_lib_modifiers.push(link_lib_modifier.into());
+    pub fn cargo_output(&mut self, cargo_output: bool) -> &mut Build {
+        self.cargo_output.output = if cargo_output {
+            OutputKind::Forward
+        } else {
+            OutputKind::Discard
+        };
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn link_lib_modifier(&mut self, link_lib_modifier: impl AsRef<OsStr>) -> &mut Build {
+        self.link_lib_modifiers
+            .push(link_lib_modifier.as_ref().into());
         self
     }
 
@@ -1180,6 +1317,17 @@ impl Build {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn emit_rerun_if_env_changed(&mut self, emit_rerun_if_env_changed: bool) -> &mut Build {
         self.emit_rerun_if_env_changed = emit_rerun_if_env_changed;
         self
@@ -1193,6 +1341,24 @@ impl Build {
         self
     }
 
+    
+    
+    
+    
+    pub fn shell_escaped_flags(&mut self, shell_escaped_flags: bool) -> &mut Build {
+        self.shell_escaped_flags = Some(shell_escaped_flags);
+        self
+    }
+
+    
+    
+    
+    
+    pub fn inherit_rustflags(&mut self, inherit_rustflags: bool) -> &mut Build {
+        self.inherit_rustflags = inherit_rustflags;
+        self
+    }
+
     #[doc(hidden)]
     pub fn __set_env<A, B>(&mut self, a: A, b: B) -> &mut Build
     where
@@ -1203,6 +1369,7 @@ impl Build {
         self
     }
 
+    
     
     
     
@@ -1234,7 +1401,8 @@ impl Build {
         self.compile_objects(&objects)?;
         self.assemble(lib_name, &dst.join(gnu_lib_name), &objects)?;
 
-        if self.get_target()?.contains("msvc") {
+        let target = self.get_target()?;
+        if target.env == "msvc" {
             let compiler = self.get_base_compiler()?;
             let atlmfc_lib = compiler
                 .env()
@@ -1259,10 +1427,13 @@ impl Build {
             self.cargo_output
                 .print_metadata(&format_args!("cargo:rustc-link-lib=static={}", lib_name));
         } else {
-            let m = self.link_lib_modifiers.join(",");
             self.cargo_output.print_metadata(&format_args!(
                 "cargo:rustc-link-lib=static:{}={}",
-                m, lib_name
+                JoinOsStrs {
+                    slice: &self.link_lib_modifiers,
+                    delimiter: ','
+                },
+                lib_name
             ));
         }
         self.cargo_output.print_metadata(&format_args!(
@@ -1274,16 +1445,26 @@ impl Build {
         if self.cpp {
             if let Some(stdlib) = self.get_cpp_link_stdlib()? {
                 self.cargo_output
-                    .print_metadata(&format_args!("cargo:rustc-link-lib={}", stdlib));
+                    .print_metadata(&format_args!("cargo:rustc-link-lib={}", stdlib.display()));
+            }
+            
+            if target.os == "wasi" {
+                if let Ok(wasi_sysroot) = self.wasi_sysroot() {
+                    self.cargo_output.print_metadata(&format_args!(
+                        "cargo:rustc-flags=-L {}/lib/{} -lstatic=c++ -lstatic=c++abi",
+                        Path::new(&wasi_sysroot).display(),
+                        self.get_raw_target()?
+                    ));
+                }
             }
         }
 
         let cudart = match &self.cudart {
-            Some(opt) => &*opt, 
+            Some(opt) => opt, 
             None => "none",
         };
         if cudart != "none" {
-            if let Some(nvcc) = which(&self.get_compiler().path, None) {
+            if let Some(nvcc) = self.which(&self.get_compiler().path, None) {
                 
                 
                 
@@ -1291,15 +1472,14 @@ impl Build {
                 let mut libdir = nvcc;
                 libdir.pop(); 
                 libdir.push("..");
-                let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
                 if cfg!(target_os = "linux") {
                     libdir.push("targets");
-                    libdir.push(target_arch.to_owned() + "-linux");
+                    libdir.push(format!("{}-linux", target.arch));
                     libdir.push("lib");
                     libtst = true;
                 } else if cfg!(target_env = "msvc") {
                     libdir.push("lib");
-                    match target_arch.as_str() {
+                    match target.arch {
                         "x86_64" => {
                             libdir.push("x64");
                             libtst = true;
@@ -1406,6 +1586,8 @@ impl Build {
 
         use parallel::async_executor::{block_on, YieldOnce};
 
+        check_disabled()?;
+
         if objs.len() <= 1 {
             for obj in objs {
                 let (mut cmd, name) = self.create_compile_object_cmd(obj)?;
@@ -1416,7 +1598,7 @@ impl Build {
         }
 
         
-        let tokens = parallel::job_token::ActiveJobTokenServer::new()?;
+        let mut tokens = parallel::job_token::ActiveJobTokenServer::new();
 
         
         
@@ -1439,7 +1621,7 @@ impl Build {
 
         let pendings = Cell::new(Vec::<(
             Command,
-            String,
+            Cow<'static, Path>,
             KillOnDrop,
             parallel::job_token::JobToken,
         )>::new());
@@ -1463,38 +1645,35 @@ impl Build {
 
                 cell_update(&pendings, |mut pendings| {
                     
-                    parallel::retain_unordered_mut(
-                        &mut pendings,
-                        |(cmd, program, child, _token)| {
-                            match try_wait_on_child(
-                                cmd,
-                                program,
-                                &mut child.0,
-                                &mut stdout,
-                                &mut child.1,
-                            ) {
-                                Ok(Some(())) => {
-                                    
-                                    has_made_progress.set(true);
-                                    false
-                                }
-                                Ok(None) => true, 
-                                Err(err) => {
-                                    
-                                    
-                                    
-                                    has_made_progress.set(true);
-
-                                    if self.cargo_output.warnings {
-                                        let _ = writeln!(stdout, "cargo:warning={}", err);
-                                    }
-                                    error = Some(err);
-
-                                    false
-                                }
+                    pendings.retain_mut(|(cmd, program, child, _token)| {
+                        match try_wait_on_child(
+                            cmd,
+                            program,
+                            &mut child.0,
+                            &mut stdout,
+                            &mut child.1,
+                        ) {
+                            Ok(Some(())) => {
+                                
+                                has_made_progress.set(true);
+                                false
                             }
-                        },
-                    );
+                            Ok(None) => true, 
+                            Err(err) => {
+                                
+                                
+                                
+                                has_made_progress.set(true);
+
+                                if self.cargo_output.warnings {
+                                    let _ = writeln!(stdout, "cargo:warning={}", err);
+                                }
+                                error = Some(err);
+
+                                false
+                            }
+                        }
+                    });
                     pendings_is_empty = pendings.is_empty();
                     pendings
                 });
@@ -1555,6 +1734,8 @@ impl Build {
 
     #[cfg(not(feature = "parallel"))]
     fn compile_objects(&self, objs: &[Object]) -> Result<(), Error> {
+        check_disabled()?;
+
         for obj in objs {
             let (mut cmd, name) = self.create_compile_object_cmd(obj)?;
             run(&mut cmd, &name, &self.cargo_output)?;
@@ -1563,18 +1744,22 @@ impl Build {
         Ok(())
     }
 
-    fn create_compile_object_cmd(&self, obj: &Object) -> Result<(Command, String), Error> {
+    fn create_compile_object_cmd(
+        &self,
+        obj: &Object,
+    ) -> Result<(Command, Cow<'static, Path>), Error> {
         let asm_ext = AsmFileExt::from_path(&obj.src);
         let is_asm = asm_ext.is_some();
         let target = self.get_target()?;
-        let msvc = target.contains("msvc");
+        let msvc = target.env == "msvc";
         let compiler = self.try_get_compiler()?;
-        let clang = compiler.family == ToolFamily::Clang;
+        let clang = compiler.is_like_clang();
         let gnu = compiler.family == ToolFamily::Gnu;
 
         let is_assembler_msvc = msvc && asm_ext == Some(AsmFileExt::DotAsm);
         let (mut cmd, name) = if is_assembler_msvc {
-            self.msvc_macro_assembler()?
+            let (cmd, name) = self.msvc_macro_assembler()?;
+            (cmd, Cow::Borrowed(Path::new(name)))
         } else {
             let mut cmd = compiler.to_command();
             for (a, b) in self.env.iter() {
@@ -1585,14 +1770,24 @@ impl Build {
                 compiler
                     .path
                     .file_name()
-                    .ok_or_else(|| Error::new(ErrorKind::IOError, "Failed to get compiler path."))?
-                    .to_string_lossy()
-                    .into_owned(),
+                    .ok_or_else(|| Error::new(ErrorKind::IOError, "Failed to get compiler path."))
+                    .map(PathBuf::from)
+                    .map(Cow::Owned)?,
             )
         };
-        let is_arm = target.contains("aarch64") || target.contains("arm");
+        let is_arm = matches!(target.arch, "aarch64" | "arm");
         command_add_output_file(
-            &mut cmd, &obj.dst, self.cuda, msvc, clang, gnu, is_asm, is_arm,
+            &mut cmd,
+            &obj.dst,
+            CmdAddOutputFileArgs {
+                cuda: self.cuda,
+                is_assembler_msvc,
+                msvc: compiler.is_like_msvc(),
+                clang,
+                gnu,
+                is_asm,
+                is_arm,
+            },
         );
         
         if !is_assembler_msvc || !is_arm {
@@ -1604,7 +1799,8 @@ impl Build {
         if is_asm {
             cmd.args(self.asm_flags.iter().map(std::ops::Deref::deref));
         }
-        if compiler.family == (ToolFamily::Msvc { clang_cl: true }) && !is_assembler_msvc {
+
+        if compiler.supports_path_delimiter() && !is_assembler_msvc {
             
             
             
@@ -1612,6 +1808,7 @@ impl Build {
             cmd.arg("--");
         }
         cmd.arg(&obj.src);
+
         if cfg!(target_os = "macos") {
             self.fix_env_for_apple_os(&mut cmd)?;
         }
@@ -1619,6 +1816,7 @@ impl Build {
         Ok((cmd, name))
     }
 
+    
     
     pub fn try_expand(&self) -> Result<Vec<u8>, Error> {
         let compiler = self.try_get_compiler()?;
@@ -1653,11 +1851,9 @@ impl Build {
         let name = compiler
             .path
             .file_name()
-            .ok_or_else(|| Error::new(ErrorKind::IOError, "Failed to get compiler path."))?
-            .to_string_lossy()
-            .into_owned();
+            .ok_or_else(|| Error::new(ErrorKind::IOError, "Failed to get compiler path."))?;
 
-        Ok(run_output(&mut cmd, &name, &self.cargo_output)?)
+        run_output(&mut cmd, name, &self.cargo_output)
     }
 
     
@@ -1715,31 +1911,29 @@ impl Build {
         let mut cmd = self.get_base_compiler()?;
 
         
-        let no_defaults = self.no_default_flags || self.getenv("CRATE_CC_NO_DEFAULTS").is_some();
+        let no_defaults = self.no_default_flags || self.getenv_boolean("CRATE_CC_NO_DEFAULTS");
 
         if !no_defaults {
             self.add_default_flags(&mut cmd, &target, &opt_level)?;
-        } else {
-            println!("Info: default compiler flags are disabled");
         }
 
         if let Some(ref std) = self.std {
             let separator = match cmd.family {
                 ToolFamily::Msvc { .. } => ':',
-                ToolFamily::Gnu | ToolFamily::Clang => '=',
+                ToolFamily::Gnu | ToolFamily::Clang { .. } => '=',
             };
             cmd.push_cc_arg(format!("-std{}{}", separator, std).into());
+        }
+
+        for directory in self.include_directories.iter() {
+            cmd.args.push("-I".into());
+            cmd.args.push(directory.as_os_str().into());
         }
 
         if let Ok(flags) = self.envflags(if self.cpp { "CXXFLAGS" } else { "CFLAGS" }) {
             for arg in flags {
                 cmd.push_cc_arg(arg.into());
             }
-        }
-
-        for directory in self.include_directories.iter() {
-            cmd.args.push("-I".into());
-            cmd.args.push(directory.as_os_str().into());
         }
 
         
@@ -1762,8 +1956,16 @@ impl Build {
             cmd.args.push((**flag).into());
         }
 
+        
+        if self.inherit_rustflags {
+            self.add_inherited_rustflags(&mut cmd, &target)?;
+        }
+
         for flag in self.flags_supported.iter() {
-            if self.is_flag_supported(flag).unwrap_or(false) {
+            if self
+                .is_flag_supported_inner(flag, &cmd, &target)
+                .unwrap_or(false)
+            {
                 cmd.push_cc_arg((**flag).into());
             }
         }
@@ -1781,15 +1983,29 @@ impl Build {
             cmd.push_cc_arg(warnings_to_errors_flag);
         }
 
+        
+        
+        
+        
+        
+        
+        
+        if matches!(cmd.family, ToolFamily::Msvc { clang_cl: false }) {
+            cmd.env.push(("VSLANG".into(), "1033".into()));
+        } else {
+            cmd.env.push(("LC_ALL".into(), "C".into()));
+        }
+
         Ok(cmd)
     }
 
     fn add_default_flags(
         &self,
         cmd: &mut Tool,
-        target: &str,
+        target: &TargetInfo<'_>,
         opt_level: &str,
     ) -> Result<(), Error> {
+        let raw_target = self.get_raw_target()?;
         
         
         match cmd.family {
@@ -1802,7 +2018,7 @@ impl Build {
                     None => {
                         let features = self.getenv("CARGO_CFG_TARGET_FEATURE");
                         let features = features.as_deref().unwrap_or_default();
-                        if features.contains("crt-static") {
+                        if features.to_string_lossy().contains("crt-static") {
                             "-MT"
                         } else {
                             "-MD"
@@ -1811,7 +2027,7 @@ impl Build {
                 };
                 cmd.push_cc_arg(crt_flag.into());
 
-                match &opt_level[..] {
+                match opt_level {
                     
                     "z" | "s" | "1" => cmd.push_opt_unless_duplicate("-O1".into()),
                     
@@ -1819,23 +2035,16 @@ impl Build {
                     _ => {}
                 }
             }
-            ToolFamily::Gnu | ToolFamily::Clang => {
+            ToolFamily::Gnu | ToolFamily::Clang { .. } => {
                 
                 
-                if opt_level == "z" && cmd.family != ToolFamily::Clang {
+                if opt_level == "z" && !cmd.is_like_clang() {
                     cmd.push_opt_unless_duplicate("-Os".into());
                 } else {
                     cmd.push_opt_unless_duplicate(format!("-O{}", opt_level).into());
                 }
 
-                if cmd.family == ToolFamily::Clang && target.contains("windows") {
-                    
-                    
-                    
-                    cmd.push_cc_arg(format!("--target={}", target).into());
-                }
-
-                if cmd.family == ToolFamily::Clang && target.contains("android") {
+                if cmd.is_like_clang() && target.os == "android" {
                     
                     
                     
@@ -1844,25 +2053,76 @@ impl Build {
                     cmd.push_opt_unless_duplicate("-DANDROID".into());
                 }
 
-                if !target.contains("apple-ios")
-                    && !target.contains("apple-watchos")
-                    && !target.contains("apple-tvos")
+                if target.os != "ios"
+                    && target.os != "watchos"
+                    && target.os != "tvos"
+                    && target.os != "visionos"
                 {
                     cmd.push_cc_arg("-ffunction-sections".into());
                     cmd.push_cc_arg("-fdata-sections".into());
                 }
                 
+                
+                
+                
                 if self.pic.unwrap_or(
-                    !target.contains("windows")
-                        && !target.contains("-none-")
-                        && !target.contains("uefi"),
+                    target.os != "windows"
+                        && target.os != "none"
+                        && target.os != "uefi"
+                        && target.arch != "wasm32"
+                        && target.arch != "wasm64",
                 ) {
                     cmd.push_cc_arg("-fPIC".into());
                     
                     
-                    if target.contains("linux") && !self.use_plt.unwrap_or(true) {
+                    if (target.os == "linux" || target.os == "android")
+                        && !self.use_plt.unwrap_or(true)
+                    {
                         cmd.push_cc_arg("-fno-plt".into());
                     }
+                }
+                if target.arch == "wasm32" || target.arch == "wasm64" {
+                    
+                    
+                    
+                    
+                    
+                    
+                    cmd.push_cc_arg("-fno-exceptions".into());
+                }
+
+                if target.os == "wasi" {
+                    
+                    if let Ok(wasi_sysroot) = self.wasi_sysroot() {
+                        cmd.push_cc_arg(
+                            format!("--sysroot={}", Path::new(&wasi_sysroot).display()).into(),
+                        );
+                    }
+
+                    
+                    if raw_target.contains("threads") {
+                        cmd.push_cc_arg("-pthread".into());
+                    }
+                }
+
+                if target.os == "nto" {
+                    
+                    
+                    
+                    
+                    
+                    let arg = match target.arch {
+                        "i586" => "-Vgcc_ntox86_cxx",
+                        "aarch64" => "-Vgcc_ntoaarch64le_cxx",
+                        "x86_64" => "-Vgcc_ntox86_64_cxx",
+                        _ => {
+                            return Err(Error::new(
+                                ErrorKind::InvalidTarget,
+                                format!("Unknown architecture for Neutrino QNX: {}", target.arch),
+                            ))
+                        }
+                    };
+                    cmd.push_cc_arg(arg.into());
                 }
             }
         }
@@ -1882,65 +2142,29 @@ impl Build {
         }
 
         if !cmd.is_like_msvc() {
-            if target.contains("i686") || target.contains("i586") {
+            if target.arch == "x86" {
                 cmd.args.push("-m32".into());
-            } else if target == "x86_64-unknown-linux-gnux32" {
+            } else if target.abi == "x32" {
                 cmd.args.push("-mx32".into());
-            } else if target.contains("x86_64") || target.contains("powerpc64") {
+            } else if target.os == "aix" {
+                if cmd.family == ToolFamily::Gnu {
+                    cmd.args.push("-maix64".into());
+                } else {
+                    cmd.args.push("-m64".into());
+                }
+            } else if target.arch == "x86_64" || target.arch == "powerpc64" {
                 cmd.args.push("-m64".into());
             }
         }
 
         
-        if target.contains("-apple-") {
-            self.apple_flags(cmd, target)?;
-        } else {
-            self.target_flags(cmd, target);
-        }
-
-        if self.static_flag.unwrap_or(false) {
-            cmd.args.push("-static".into());
-        }
-        if self.shared_flag.unwrap_or(false) {
-            cmd.args.push("-shared".into());
-        }
-
-        if self.cpp {
-            match (self.cpp_set_stdlib.as_ref(), cmd.family) {
-                (None, _) => {}
-                (Some(stdlib), ToolFamily::Gnu) | (Some(stdlib), ToolFamily::Clang) => {
-                    cmd.push_cc_arg(format!("-stdlib=lib{}", stdlib).into());
-                }
-                _ => {
-                    self.cargo_output.print_warning(&format_args!("cpp_set_stdlib is specified, but the {:?} compiler does not support this option, ignored", cmd.family));
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    fn target_flags(&self, cmd: &mut Tool, target: &str) {
         match cmd.family {
-            ToolFamily::Clang => {
-                if !(target.contains("android") && cmd.has_internal_target_arg) {
-                    if target.starts_with("riscv64gc-") {
-                        cmd.args.push(
-                            format!("--target={}", target.replace("riscv64gc", "riscv64")).into(),
-                        );
-                    } else if target.starts_with("riscv32gc-") {
-                        cmd.args.push(
-                            format!("--target={}", target.replace("riscv32gc", "riscv32")).into(),
-                        );
-                    } else if target.contains("uefi") {
-                        if target.contains("x86_64") {
-                            cmd.args.push("--target=x86_64-unknown-windows-gnu".into());
-                        } else if target.contains("i686") {
-                            cmd.args.push("--target=i686-unknown-windows-gnu".into())
-                        } else if target.contains("aarch64") {
-                            cmd.args.push("--target=aarch64-unknown-windows-gnu".into())
-                        }
-                    } else if target.ends_with("-freebsd") {
+            ToolFamily::Clang { .. } => {
+                if !(cmd.has_internal_target_arg
+                    || (target.os == "android"
+                        && android_clang_compiler_uses_target_arg_internally(&cmd.path)))
+                {
+                    if target.os == "freebsd" {
                         
                         
                         
@@ -1962,11 +2186,19 @@ impl Build {
                         if self.cpp && self.cpp_set_stdlib.is_none() {
                             cmd.push_cc_arg("-stdlib=libc++".into());
                         }
-
-                        cmd.push_cc_arg(format!("--target={}", target).into());
-                    } else {
-                        cmd.push_cc_arg(format!("--target={}", target).into());
                     }
+
+                    
+                    let llvm_target = if target.vendor == "apple" {
+                        let deployment_target = self.apple_deployment_target(target);
+                        target.versioned_llvm_target(Some(&deployment_target))
+                    } else {
+                        target.versioned_llvm_target(None)
+                    };
+
+                    
+                    
+                    cmd.push_cc_arg(format!("--target={llvm_target}").into());
                 }
             }
             ToolFamily::Msvc { clang_cl } => {
@@ -1976,22 +2208,20 @@ impl Build {
                 cmd.push_cc_arg("-Brepro".into());
 
                 if clang_cl {
-                    if target.contains("x86_64") {
+                    if target.arch == "x86_64" {
                         cmd.push_cc_arg("-m64".into());
-                    } else if target.contains("86") {
+                    } else if target.arch == "x86" {
                         cmd.push_cc_arg("-m32".into());
                         cmd.push_cc_arg("-arch:IA32".into());
                     } else {
-                        cmd.push_cc_arg(format!("--target={}", target).into());
+                        let llvm_target = target.versioned_llvm_target(None);
+                        cmd.push_cc_arg(format!("--target={llvm_target}").into());
                     }
-                } else {
-                    if target.contains("i586") {
-                        cmd.push_cc_arg("-arch:IA32".into());
-                    } else if target.contains("arm64ec") {
-                        cmd.push_cc_arg("-arm64EC".into());
-                    }
+                } else if target.full_arch == "i586" {
+                    cmd.push_cc_arg("-arch:IA32".into());
+                } else if target.full_arch == "arm64ec" {
+                    cmd.push_cc_arg("-arm64EC".into());
                 }
-
                 
                 
                 
@@ -2001,41 +2231,49 @@ impl Build {
                 
                 
                 
-                if target.contains("arm") || target.contains("thumb") {
+                if target.arch == "arm" {
                     cmd.args
                         .push("-D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1".into());
                 }
             }
             ToolFamily::Gnu => {
-                if target.contains("-kmc-solid_") {
+                if target.vendor == "apple" {
+                    let arch = map_darwin_target_from_rust_to_compiler_architecture(target);
+                    cmd.args.push("-arch".into());
+                    cmd.args.push(arch.into());
+                }
+
+                if target.vendor == "kmc" {
                     cmd.args.push("-finput-charset=utf-8".into());
                 }
 
                 if self.static_flag.is_none() {
                     let features = self.getenv("CARGO_CFG_TARGET_FEATURE");
                     let features = features.as_deref().unwrap_or_default();
-                    if features.contains("crt-static") {
+                    if features.to_string_lossy().contains("crt-static") {
                         cmd.args.push("-static".into());
                     }
                 }
 
                 
-                if (target.starts_with("armv7") || target.starts_with("thumbv7"))
-                    && (target.contains("-linux-") || target.contains("-kmc-solid_"))
+                if (target.full_arch.starts_with("armv7")
+                    || target.full_arch.starts_with("thumbv7"))
+                    && (target.os == "linux" || target.vendor == "kmc")
                 {
                     cmd.args.push("-march=armv7-a".into());
 
-                    if target.ends_with("eabihf") {
+                    if target.abi == "eabihf" {
                         
                         cmd.args.push("-mfpu=vfpv3-d16".into());
+                        cmd.args.push("-mfloat-abi=hard".into());
                     }
                 }
 
                 
-                if target.contains("-androideabi") && target.contains("v7") {
-                    
+                if target.os == "android" && target.full_arch.contains("v7") {
+                    cmd.args.push("-march=armv7-a".into());
                     cmd.args.push("-mthumb".into());
-                    if !target.contains("neon") {
+                    if !target.full_arch.contains("neon") {
                         
                         
                         
@@ -2044,27 +2282,27 @@ impl Build {
                     cmd.args.push("-mfloat-abi=softfp".into());
                 }
 
-                if target.contains("neon") {
+                if target.full_arch.contains("neon") {
                     cmd.args.push("-mfpu=neon-vfpv4".into());
                 }
 
-                if target.starts_with("armv4t-unknown-linux-") {
+                if target.full_arch == "armv4t" && target.os == "linux" {
                     cmd.args.push("-march=armv4t".into());
                     cmd.args.push("-marm".into());
                     cmd.args.push("-mfloat-abi=soft".into());
                 }
 
-                if target.starts_with("armv5te-unknown-linux-") {
+                if target.full_arch == "armv5te" && target.os == "linux" {
                     cmd.args.push("-march=armv5te".into());
                     cmd.args.push("-marm".into());
                     cmd.args.push("-mfloat-abi=soft".into());
                 }
 
                 
-                if target.starts_with("arm-unknown-linux-") {
+                if target.full_arch == "arm" && target.os == "linux" {
                     cmd.args.push("-march=armv6".into());
                     cmd.args.push("-marm".into());
-                    if target.ends_with("hf") {
+                    if target.abi == "eabihf" {
                         cmd.args.push("-mfpu=vfp".into());
                     } else {
                         cmd.args.push("-mfloat-abi=soft".into());
@@ -2072,21 +2310,12 @@ impl Build {
                 }
 
                 
-                if target.starts_with("arm-frc-") {
-                    cmd.args.push("-march=armv7-a".into());
-                    cmd.args.push("-mcpu=cortex-a9".into());
-                    cmd.args.push("-mfpu=vfpv3".into());
-                    cmd.args.push("-mfloat-abi=softfp".into());
-                    cmd.args.push("-marm".into());
-                }
-
-                
-                if target.starts_with("i586-unknown-linux-") {
+                if target.full_arch == "i586" && target.os == "linux" {
                     cmd.args.push("-march=pentium".into());
                 }
 
                 
-                if target.starts_with("i686-unknown-linux-") {
+                if target.full_arch == "i686" && target.os == "linux" {
                     cmd.args.push("-march=i686".into());
                 }
 
@@ -2095,42 +2324,42 @@ impl Build {
                 
                 
                 
-                if target == "i686-unknown-linux-musl" || target == "i586-unknown-linux-musl" {
+                if target.arch == "x86" && target.env == "musl" {
                     cmd.args.push("-Wl,-melf_i386".into());
                 }
 
-                if target.starts_with("thumb") {
-                    cmd.args.push("-mthumb".into());
-
-                    if target.ends_with("eabihf") {
-                        cmd.args.push("-mfloat-abi=hard".into())
-                    }
+                if target.arch == "arm" && target.os == "none" && target.abi == "eabihf" {
+                    cmd.args.push("-mfloat-abi=hard".into())
                 }
-                if target.starts_with("thumbv6m") {
+                if target.full_arch.starts_with("thumb") {
+                    cmd.args.push("-mthumb".into());
+                }
+                if target.full_arch.starts_with("thumbv6m") {
                     cmd.args.push("-march=armv6s-m".into());
                 }
-                if target.starts_with("thumbv7em") {
+                if target.full_arch.starts_with("thumbv7em") {
                     cmd.args.push("-march=armv7e-m".into());
 
-                    if target.ends_with("eabihf") {
+                    if target.abi == "eabihf" {
                         cmd.args.push("-mfpu=fpv4-sp-d16".into())
                     }
                 }
-                if target.starts_with("thumbv7m") {
+                if target.full_arch.starts_with("thumbv7m") {
                     cmd.args.push("-march=armv7-m".into());
                 }
-                if target.starts_with("thumbv8m.base") {
+                if target.full_arch.starts_with("thumbv8m.base") {
                     cmd.args.push("-march=armv8-m.base".into());
                 }
-                if target.starts_with("thumbv8m.main") {
+                if target.full_arch.starts_with("thumbv8m.main") {
                     cmd.args.push("-march=armv8-m.main".into());
 
-                    if target.ends_with("eabihf") {
+                    if target.abi == "eabihf" {
                         cmd.args.push("-mfpu=fpv5-sp-d16".into())
                     }
                 }
-                if target.starts_with("armebv7r") | target.starts_with("armv7r") {
-                    if target.starts_with("armeb") {
+                if target.full_arch.starts_with("armebv7r") | target.full_arch.starts_with("armv7r")
+                {
+                    if target.full_arch.starts_with("armeb") {
                         cmd.args.push("-mbig-endian".into());
                     } else {
                         cmd.args.push("-mlittle-endian".into());
@@ -2142,87 +2371,114 @@ impl Build {
                     
                     cmd.args.push("-march=armv7-r".into());
 
-                    if target.ends_with("eabihf") {
-                        
-                        cmd.args.push("-mfloat-abi=hard".into());
-
+                    if target.abi == "eabihf" {
                         
                         
                         cmd.args.push("-mfpu=vfpv3-d16".into())
-                    } else {
-                        
-                        cmd.args.push("-mfloat-abi=soft".into());
                     }
                 }
-                if target.starts_with("armv7a") {
+                if target.full_arch.starts_with("armv7a") {
                     cmd.args.push("-march=armv7-a".into());
 
-                    if target.ends_with("eabihf") {
+                    if target.abi == "eabihf" {
                         
                         cmd.args.push("-mfpu=vfpv3-d16".into());
                     }
                 }
-                if target.starts_with("riscv32") || target.starts_with("riscv64") {
+                if target.arch == "riscv32" || target.arch == "riscv64" {
                     
-                    let mut parts = target.split('-');
-                    if let Some(arch) = parts.next() {
-                        let arch = &arch[5..];
-                        if arch.starts_with("64") {
-                            if target.contains("linux")
-                                | target.contains("freebsd")
-                                | target.contains("netbsd")
-                                | target.contains("linux")
-                            {
-                                cmd.args.push(("-march=rv64gc").into());
-                                cmd.args.push("-mabi=lp64d".into());
-                            } else {
-                                cmd.args.push(("-march=rv".to_owned() + arch).into());
-                                cmd.args.push("-mabi=lp64".into());
-                            }
-                        } else if arch.starts_with("32") {
-                            if target.contains("linux") {
-                                cmd.args.push(("-march=rv32gc").into());
-                                cmd.args.push("-mabi=ilp32d".into());
-                            } else {
-                                cmd.args.push(("-march=rv".to_owned() + arch).into());
-                                cmd.args.push("-mabi=ilp32".into());
-                            }
+                    let arch = &target.full_arch[5..];
+                    if arch.starts_with("64") {
+                        if matches!(target.os, "linux" | "freebsd" | "netbsd") {
+                            cmd.args.push(("-march=rv64gc").into());
+                            cmd.args.push("-mabi=lp64d".into());
                         } else {
-                            cmd.args.push("-mcmodel=medany".into());
+                            cmd.args.push(("-march=rv".to_owned() + arch).into());
+                            cmd.args.push("-mabi=lp64".into());
                         }
+                    } else if arch.starts_with("32") {
+                        if target.os == "linux" {
+                            cmd.args.push(("-march=rv32gc").into());
+                            cmd.args.push("-mabi=ilp32d".into());
+                        } else {
+                            cmd.args.push(("-march=rv".to_owned() + arch).into());
+                            cmd.args.push("-mabi=ilp32".into());
+                        }
+                    } else {
+                        cmd.args.push("-mcmodel=medany".into());
                     }
                 }
             }
         }
+
+        if target.vendor == "apple" {
+            self.apple_flags(cmd)?;
+        }
+
+        if self.static_flag.unwrap_or(false) {
+            cmd.args.push("-static".into());
+        }
+        if self.shared_flag.unwrap_or(false) {
+            cmd.args.push("-shared".into());
+        }
+
+        if self.cpp {
+            match (self.cpp_set_stdlib.as_ref(), cmd.family) {
+                (None, _) => {}
+                (Some(stdlib), ToolFamily::Gnu) | (Some(stdlib), ToolFamily::Clang { .. }) => {
+                    cmd.push_cc_arg(format!("-stdlib=lib{}", stdlib).into());
+                }
+                _ => {
+                    self.cargo_output.print_warning(&format_args!("cpp_set_stdlib is specified, but the {:?} compiler does not support this option, ignored", cmd.family));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn add_inherited_rustflags(
+        &self,
+        cmd: &mut Tool,
+        target: &TargetInfo<'_>,
+    ) -> Result<(), Error> {
+        let env_os = match self.getenv("CARGO_ENCODED_RUSTFLAGS") {
+            Some(env) => env,
+            
+            None => return Ok(()),
+        };
+
+        let env = env_os.to_string_lossy();
+        let codegen_flags = RustcCodegenFlags::parse(&env)?;
+        codegen_flags.cc_flags(self, cmd, target);
+        Ok(())
     }
 
     fn has_flags(&self) -> bool {
         let flags_env_var_name = if self.cpp { "CXXFLAGS" } else { "CFLAGS" };
         let flags_env_var_value = self.getenv_with_target_prefixes(flags_env_var_name);
-        if let Ok(_) = flags_env_var_value {
-            true
-        } else {
-            false
-        }
+        flags_env_var_value.is_ok()
     }
 
-    fn msvc_macro_assembler(&self) -> Result<(Command, String), Error> {
+    fn msvc_macro_assembler(&self) -> Result<(Command, &'static str), Error> {
         let target = self.get_target()?;
-        let tool = if target.contains("x86_64") {
+        let tool = if target.arch == "x86_64" {
             "ml64.exe"
-        } else if target.contains("arm") {
+        } else if target.arch == "arm" {
             "armasm.exe"
-        } else if target.contains("aarch64") {
+        } else if target.arch == "aarch64" {
             "armasm64.exe"
         } else {
             "ml.exe"
         };
-        let mut cmd = windows_registry::find(&target, tool).unwrap_or_else(|| self.cmd(tool));
+        let mut cmd = self
+            .windows_registry_find(&target, tool)
+            .unwrap_or_else(|| self.cmd(tool));
         cmd.arg("-nologo"); 
         for directory in self.include_directories.iter() {
             cmd.arg("-I").arg(&**directory);
         }
-        if target.contains("aarch64") || target.contains("arm") {
+        if target.arch == "aarch64" || target.arch == "arm" {
             if self.get_debug() {
                 cmd.arg("-g");
             }
@@ -2231,14 +2487,14 @@ impl Build {
                 cmd.arg("-PreDefine");
                 if let Some(ref value) = *value {
                     if let Ok(i) = value.parse::<i32>() {
-                        cmd.arg(&format!("{} SETA {}", key, i));
+                        cmd.arg(format!("{} SETA {}", key, i));
                     } else if value.starts_with('"') && value.ends_with('"') {
-                        cmd.arg(&format!("{} SETS {}", key, value));
+                        cmd.arg(format!("{} SETS {}", key, value));
                     } else {
-                        cmd.arg(&format!("{} SETS \"{}\"", key, value));
+                        cmd.arg(format!("{} SETS \"{}\"", key, value));
                     }
                 } else {
-                    cmd.arg(&format!("{} SETL {}", key, "{TRUE}"));
+                    cmd.arg(format!("{} SETL {}", key, "{TRUE}"));
                 }
             }
         } else {
@@ -2248,18 +2504,18 @@ impl Build {
 
             for (key, value) in self.definitions.iter() {
                 if let Some(ref value) = *value {
-                    cmd.arg(&format!("-D{}={}", key, value));
+                    cmd.arg(format!("-D{}={}", key, value));
                 } else {
-                    cmd.arg(&format!("-D{}", key));
+                    cmd.arg(format!("-D{}", key));
                 }
             }
         }
 
-        if target.contains("i686") || target.contains("i586") {
+        if target.arch == "x86" {
             cmd.arg("-safeseh");
         }
 
-        Ok((cmd, tool.to_string()))
+        Ok((cmd, tool))
     }
 
     fn assemble(&self, lib_name: &str, dst: &Path, objs: &[Object]) -> Result<(), Error> {
@@ -2292,7 +2548,7 @@ impl Build {
         }
 
         let target = self.get_target()?;
-        if target.contains("msvc") {
+        if target.env == "msvc" {
             
             
             
@@ -2329,8 +2585,8 @@ impl Build {
     fn assemble_progressive(&self, dst: &Path, objs: &[&Path]) -> Result<(), Error> {
         let target = self.get_target()?;
 
-        if target.contains("msvc") {
-            let (mut cmd, program, any_flags) = self.get_ar()?;
+        let (mut cmd, program, any_flags) = self.get_ar()?;
+        if target.env == "msvc" && !program.to_string_lossy().contains("llvm-ar") {
             
             
             
@@ -2349,258 +2605,106 @@ impl Build {
             cmd.args(objs);
             run(&mut cmd, &program, &self.cargo_output)?;
         } else {
-            let (mut ar, cmd, _any_flags) = self.get_ar()?;
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            cmd.env("ZERO_AR_DATE", "1");
 
             
             
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            ar.env("ZERO_AR_DATE", "1");
-
-            
-            
-            
-            run(ar.arg("cq").arg(dst).args(objs), &cmd, &self.cargo_output)?;
+            run(
+                cmd.arg("cq").arg(dst).args(objs),
+                &program,
+                &self.cargo_output,
+            )?;
         }
 
         Ok(())
     }
 
-    fn apple_flags(&self, cmd: &mut Tool, target: &str) -> Result<(), Error> {
-        let os = if target.contains("-darwin") {
-            AppleOs::MacOs
-        } else if target.contains("-watchos") {
-            AppleOs::WatchOs
-        } else if target.contains("-tvos") {
-            AppleOs::TvOs
-        } else {
-            AppleOs::Ios
-        };
-        let is_mac = match os {
-            AppleOs::MacOs => true,
-            _ => false,
-        };
-
-        let arch_str = target.split('-').nth(0).ok_or_else(|| {
-            Error::new(
-                ErrorKind::ArchitectureInvalid,
-                format!("Unknown architecture for {:?} target.", os),
-            )
-        })?;
-
-        let is_catalyst = match target.split('-').nth(3) {
-            Some(v) => v == "macabi",
-            None => false,
-        };
-
-        let is_arm_sim = match target.split('-').nth(3) {
-            Some(v) => v == "sim",
-            None => false,
-        };
-
-        let arch = if is_mac {
-            match arch_str {
-                "i686" => AppleArchSpec::Device("-m32"),
-                "x86_64" | "x86_64h" | "aarch64" => AppleArchSpec::Device("-m64"),
-                _ => {
-                    return Err(Error::new(
-                        ErrorKind::ArchitectureInvalid,
-                        "Unknown architecture for macOS target.",
-                    ));
-                }
-            }
-        } else if is_catalyst {
-            match arch_str {
-                "arm64e" => AppleArchSpec::Catalyst("arm64e"),
-                "arm64" | "aarch64" => AppleArchSpec::Catalyst("arm64"),
-                "x86_64" | "x86_64h" => AppleArchSpec::Catalyst("-m64"),
-                _ => {
-                    return Err(Error::new(
-                        ErrorKind::ArchitectureInvalid,
-                        "Unknown architecture for iOS target.",
-                    ));
-                }
-            }
-        } else if is_arm_sim {
-            match arch_str {
-                "arm64" | "aarch64" => AppleArchSpec::Simulator("arm64"),
-                "x86_64" | "x86_64h" => AppleArchSpec::Simulator("-m64"),
-                _ => {
-                    return Err(Error::new(
-                        ErrorKind::ArchitectureInvalid,
-                        "Unknown architecture for simulator target.",
-                    ));
-                }
-            }
-        } else {
-            match arch_str {
-                "arm" | "armv7" | "thumbv7" => AppleArchSpec::Device("armv7"),
-                "armv7k" => AppleArchSpec::Device("armv7k"),
-                "armv7s" | "thumbv7s" => AppleArchSpec::Device("armv7s"),
-                "arm64e" => AppleArchSpec::Device("arm64e"),
-                "arm64" | "aarch64" => AppleArchSpec::Device("arm64"),
-                "arm64_32" => AppleArchSpec::Device("arm64_32"),
-                "i386" | "i686" => AppleArchSpec::Simulator("-m32"),
-                "x86_64" | "x86_64h" => AppleArchSpec::Simulator("-m64"),
-                _ => {
-                    return Err(Error::new(
-                        ErrorKind::ArchitectureInvalid,
-                        format!("Unknown architecture for {:?} target.", os),
-                    ));
-                }
-            }
-        };
-
-        let sdk_details = apple_os_sdk_parts(os, &arch);
-        let min_version = self.apple_deployment_version(os, Some(arch_str), &sdk_details.sdk);
-
-        match arch {
-            AppleArchSpec::Device(_) if is_mac => {
-                cmd.args
-                    .push(format!("-mmacosx-version-min={}", min_version).into());
-            }
-            AppleArchSpec::Device(arch) => {
-                cmd.args.push("-arch".into());
-                cmd.args.push(arch.into());
-                cmd.args.push(
-                    format!("-m{}os-version-min={}", sdk_details.sdk_prefix, min_version).into(),
-                );
-            }
-            AppleArchSpec::Simulator(arch) => {
-                if arch.starts_with('-') {
-                    
-                    cmd.args.push(arch.into());
-                } else {
-                    cmd.args.push("-arch".into());
-                    cmd.args.push(arch.into());
-                }
-                cmd.args.push(
-                    format!(
-                        "-m{}simulator-version-min={}",
-                        sdk_details.sim_prefix, min_version
-                    )
-                    .into(),
-                );
-            }
-            AppleArchSpec::Catalyst(_) => {}
-        };
+    fn apple_flags(&self, cmd: &mut Tool) -> Result<(), Error> {
+        let target = self.get_target()?;
 
         
-        if cmd.is_xctoolchain_clang() || !target.ends_with("-darwin") {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if !cmd.is_like_clang() {
+            let min_version = self.apple_deployment_target(&target);
+            cmd.args
+                .push(target.apple_version_flag(&min_version).into());
+        }
+
+        
+        if cmd.is_xctoolchain_clang() || target.os != "macos" {
             self.cargo_output.print_metadata(&format_args!(
                 "Detecting {:?} SDK path for {}",
-                os, sdk_details.sdk
+                target.os,
+                target.apple_sdk_name(),
             ));
-            let sdk_path = self.apple_sdk_root(&sdk_details.sdk)?;
+            let sdk_path = self.apple_sdk_root(&target)?;
 
             cmd.args.push("-isysroot".into());
-            cmd.args.push(sdk_path);
-        }
+            cmd.args.push(OsStr::new(&sdk_path).to_owned());
 
-        match cmd.family {
-            ToolFamily::Gnu => {
-                if target.contains("darwin") {
-                    if let Some(arch) = map_darwin_target_from_rust_to_compiler_architecture(target)
+            if target.abi == "macabi" {
+                
+                
+                
+                let ios_support = Path::new(&sdk_path).join("System/iOSSupport");
+
+                cmd.args.extend([
+                    
+                    OsString::from("-isystem"),
+                    ios_support.join("usr/include").into(),
+                    
+                    OsString::from("-iframework"),
+                    ios_support.join("System/Library/Frameworks").into(),
+                    
                     {
-                        cmd.args.push("-arch".into());
-                        cmd.args.push(arch.into());
-                    }
-                }
+                        let mut s = OsString::from("-L");
+                        s.push(ios_support.join("usr/lib"));
+                        s
+                    },
+                    
+                    {
+                        
+                        
+                        
+                        let mut s = OsString::from("-F");
+                        s.push(ios_support.join("System/Library/Frameworks"));
+                        s
+                    },
+                ]);
             }
-            ToolFamily::Clang => {
-                if target.contains("darwin") {
-                    if let Some(arch) = map_darwin_target_from_rust_to_compiler_architecture(target)
-                    {
-                        cmd.args
-                            .push(format!("--target={}-apple-darwin", arch).into());
-                    }
-                } else if target.contains("macabi") {
-                    if let Some(arch) = map_darwin_target_from_rust_to_compiler_architecture(target)
-                    {
-                        cmd.args
-                            .push(format!("--target={}-apple-ios-macabi", arch).into());
-                    }
-                } else if target.contains("ios-sim") {
-                    if let Some(arch) = map_darwin_target_from_rust_to_compiler_architecture(target)
-                    {
-                        cmd.args.push(
-                            format!("--target={}-apple-ios{}-simulator", arch, min_version).into(),
-                        );
-                    }
-                } else if target.contains("watchos-sim") {
-                    if let Some(arch) = map_darwin_target_from_rust_to_compiler_architecture(target)
-                    {
-                        cmd.args.push(
-                            format!("--target={}-apple-watchos{}-simulator", arch, min_version)
-                                .into(),
-                        );
-                    }
-                } else if target.contains("tvos-sim") || target.contains("x86_64-apple-tvos") {
-                    if let Some(arch) = map_darwin_target_from_rust_to_compiler_architecture(target)
-                    {
-                        cmd.args.push(
-                            format!("--target={}-apple-tvos{}-simulator", arch, min_version).into(),
-                        );
-                    }
-                } else if target.contains("aarch64-apple-tvos") {
-                    if let Some(arch) = map_darwin_target_from_rust_to_compiler_architecture(target)
-                    {
-                        cmd.args
-                            .push(format!("--target={}-apple-tvos{}", arch, min_version).into());
-                    }
-                }
-            }
-            _ => unreachable!("unexpected compiler for apple architectures"),
-        }
-
-        if let AppleArchSpec::Catalyst(_) = arch {
-            
-            
-            
-            let sdk_path = self.apple_sdk_root(&sdk_details.sdk)?;
-            let ios_support = PathBuf::from(sdk_path).join("/System/iOSSupport");
-
-            cmd.args.extend([
-                
-                OsString::from("-isystem"),
-                ios_support.join("/usr/include").into(),
-                
-                OsString::from("-iframework"),
-                ios_support.join("/System/Library/Frameworks").into(),
-                
-                {
-                    let mut s = OsString::from("-L");
-                    s.push(&ios_support.join("/usr/lib"));
-                    s
-                },
-                
-                {
-                    
-                    
-                    
-                    let mut s = OsString::from("-F");
-                    s.push(&ios_support.join("/System/Library/Frameworks"));
-                    s
-                },
-            ]);
         }
 
         Ok(())
@@ -2615,16 +2719,19 @@ impl Build {
     }
 
     fn get_base_compiler(&self) -> Result<Tool, Error> {
+        let out_dir = self.get_out_dir().ok();
+        let out_dir = out_dir.as_deref();
+
         if let Some(c) = &self.compiler {
             return Ok(Tool::new(
                 (**c).to_owned(),
-                &self.cached_compiler_family,
+                &self.build_cache.cached_compiler_family,
                 &self.cargo_output,
+                out_dir,
             ));
         }
-        let host = self.get_host()?;
         let target = self.get_target()?;
-        let target = &*target;
+        let raw_target = self.get_raw_target()?;
         let (env, msvc, gnu, traditional, clang) = if self.cpp {
             ("CXX", "cl.exe", "g++", "c++", "clang++")
         } else {
@@ -2635,13 +2742,13 @@ impl Build {
         
         
         
-        let default = if host.contains("solaris") || host.contains("illumos") {
+        let default = if cfg!(target_os = "solaris") || cfg!(target_os = "illumos") {
             gnu
         } else {
             traditional
         };
 
-        let cl_exe = windows_registry::find_tool(target, "cl.exe");
+        let cl_exe = self.windows_registry_find_tool(&target, "cl.exe");
 
         let tool_opt: Option<Tool> = self
             .env_tool(env)
@@ -2659,11 +2766,12 @@ impl Build {
                 let mut t = Tool::with_clang_driver(
                     tool,
                     driver_mode,
-                    &self.cached_compiler_family,
+                    &self.build_cache.cached_compiler_family,
                     &self.cargo_output,
+                    out_dir,
                 );
                 if let Some(cc_wrapper) = wrapper {
-                    t.cc_wrapper_path = Some(PathBuf::from(cc_wrapper));
+                    t.cc_wrapper_path = Some(Path::new(&cc_wrapper).to_owned());
                 }
                 for arg in args {
                     t.cc_wrapper_args.push(arg.into());
@@ -2671,14 +2779,13 @@ impl Build {
                 t
             })
             .or_else(|| {
-                if target.contains("emscripten") {
+                if target.os == "emscripten" {
                     let tool = if self.cpp { "em++" } else { "emcc" };
                     
                     if cfg!(windows) {
-                        let mut t = Tool::new(
+                        let mut t = Tool::with_family(
                             PathBuf::from("cmd"),
-                            &self.cached_compiler_family,
-                            &self.cargo_output,
+                            ToolFamily::Clang { zig_cc: false },
                         );
                         t.args.push("/c".into());
                         t.args.push(format!("{}.bat", tool).into());
@@ -2686,8 +2793,9 @@ impl Build {
                     } else {
                         Some(Tool::new(
                             PathBuf::from(tool),
-                            &self.cached_compiler_family,
+                            &self.build_cache.cached_compiler_family,
                             &self.cargo_output,
+                            out_dir,
                         ))
                     }
                 } else {
@@ -2699,42 +2807,52 @@ impl Build {
         let tool = match tool_opt {
             Some(t) => t,
             None => {
-                let compiler = if host.contains("windows") && target.contains("windows") {
-                    if target.contains("msvc") {
+                let compiler = if cfg!(windows) && target.os == "windows" {
+                    if target.env == "msvc" {
                         msvc.to_string()
                     } else {
-                        let cc = if target.contains("llvm") { clang } else { gnu };
+                        let cc = if target.abi == "llvm" { clang } else { gnu };
                         format!("{}.exe", cc)
                     }
-                } else if target.contains("apple-ios")
-                    | target.contains("apple-watchos")
-                    | target.contains("apple-tvos")
+                } else if target.os == "ios"
+                    || target.os == "watchos"
+                    || target.os == "tvos"
+                    || target.os == "visionos"
                 {
                     clang.to_string()
-                } else if target.contains("android") {
-                    autodetect_android_compiler(target, &host, gnu, clang)
-                } else if target.contains("cloudabi") {
-                    format!("{}-{}", target, traditional)
-                } else if target == "wasm32-wasi"
-                    || target == "wasm32-unknown-wasi"
-                    || target == "wasm32-unknown-unknown"
-                {
-                    "clang".to_string()
-                } else if target.contains("vxworks") {
+                } else if target.os == "android" {
+                    autodetect_android_compiler(&raw_target, gnu, clang)
+                } else if target.os == "cloudabi" {
+                    format!(
+                        "{}-{}-{}-{}",
+                        target.full_arch, target.vendor, target.os, traditional
+                    )
+                } else if target.arch == "wasm32" || target.arch == "wasm64" {
+                    
+                    
+                    clang.to_string()
+                } else if target.os == "vxworks" {
                     if self.cpp {
                         "wr-c++".to_string()
                     } else {
                         "wr-cc".to_string()
                     }
-                } else if target.starts_with("armv7a-kmc-solid_") {
+                } else if target.arch == "arm" && target.vendor == "kmc" {
                     format!("arm-kmc-eabi-{}", gnu)
-                } else if target.starts_with("aarch64-kmc-solid_") {
+                } else if target.arch == "aarch64" && target.vendor == "kmc" {
                     format!("aarch64-kmc-elf-{}", gnu)
-                } else if &*self.get_host()? != target {
-                    let prefix = self.prefix_for_target(target);
+                } else if target.os == "nto" {
+                    
+                    if self.cpp {
+                        "q++".to_string()
+                    } else {
+                        "qcc".to_string()
+                    }
+                } else if self.get_is_cross_compile()? {
+                    let prefix = self.prefix_for_target(&raw_target);
                     match prefix {
                         Some(prefix) => {
-                            let cc = if target.contains("llvm") { clang } else { gnu };
+                            let cc = if target.abi == "llvm" { clang } else { gnu };
                             format!("{}-{}", prefix, cc)
                         }
                         None => default.to_string(),
@@ -2745,11 +2863,12 @@ impl Build {
 
                 let mut t = Tool::new(
                     PathBuf::from(compiler),
-                    &self.cached_compiler_family,
+                    &self.build_cache.cached_compiler_family,
                     &self.cargo_output,
+                    out_dir,
                 );
-                if let Some(cc_wrapper) = Self::rustc_wrapper_fallback() {
-                    t.cc_wrapper_path = Some(PathBuf::from(cc_wrapper));
+                if let Some(cc_wrapper) = self.rustc_wrapper_fallback() {
+                    t.cc_wrapper_path = Some(Path::new(&cc_wrapper).to_owned());
                 }
                 t
             }
@@ -2768,12 +2887,18 @@ impl Build {
                 nvcc,
                 None,
                 self.cuda,
-                &self.cached_compiler_family,
+                &self.build_cache.cached_compiler_family,
                 &self.cargo_output,
+                out_dir,
             );
-            nvcc_tool
-                .args
-                .push(format!("-ccbin={}", tool.path.display()).into());
+            if self.ccbin {
+                nvcc_tool
+                    .args
+                    .push(format!("-ccbin={}", tool.path.display()).into());
+            }
+            if let Some(cc_wrapper) = self.rustc_wrapper_fallback() {
+                nvcc_tool.cc_wrapper_path = Some(Path::new(&cc_wrapper).to_owned());
+            }
             nvcc_tool.family = tool.family;
             nvcc_tool
         } else {
@@ -2791,8 +2916,7 @@ impl Build {
         
         
         
-        if host.contains("windows") && android_clang_compiler_uses_target_arg_internally(&tool.path)
-        {
+        if cfg!(windows) && android_clang_compiler_uses_target_arg_internally(&tool.path) {
             if let Some(path) = tool.path.file_name() {
                 let file_name = path.to_str().unwrap().to_owned();
                 let (target, clang) = file_name.split_at(file_name.rfind('-').unwrap());
@@ -2827,8 +2951,8 @@ impl Build {
         
         if let Some(cl_exe) = cl_exe {
             if tool.family == (ToolFamily::Msvc { clang_cl: true })
-                && tool.env.len() == 0
-                && target.contains("msvc")
+                && tool.env.is_empty()
+                && target.env == "msvc"
             {
                 for (k, v) in cl_exe.env.iter() {
                     tool.env.push((k.to_owned(), v.to_owned()));
@@ -2836,7 +2960,7 @@ impl Build {
             }
         }
 
-        if target.contains("msvc") && tool.family == ToolFamily::Gnu {
+        if target.env == "msvc" && tool.family == ToolFamily::Gnu {
             self.cargo_output
                 .print_warning(&"GNU compiler is not supported for this target");
         }
@@ -2845,37 +2969,40 @@ impl Build {
     }
 
     
-    fn rustc_wrapper_fallback() -> Option<String> {
+    fn rustc_wrapper_fallback(&self) -> Option<Arc<OsStr>> {
         
         
         
-        const VALID_WRAPPERS: &[&'static str] = &["sccache", "cachepot"];
+        const VALID_WRAPPERS: &[&str] = &["sccache", "cachepot", "buildcache"];
 
-        let rustc_wrapper = std::env::var_os("RUSTC_WRAPPER")?;
+        let rustc_wrapper = self.getenv("RUSTC_WRAPPER")?;
         let wrapper_path = Path::new(&rustc_wrapper);
         let wrapper_stem = wrapper_path.file_stem()?;
 
         if VALID_WRAPPERS.contains(&wrapper_stem.to_str()?) {
-            Some(rustc_wrapper.to_str()?.to_owned())
+            Some(rustc_wrapper)
         } else {
             None
         }
     }
 
     
-    fn env_tool(&self, name: &str) -> Option<(PathBuf, Option<String>, Vec<String>)> {
-        let tool = match self.getenv_with_target_prefixes(name) {
-            Ok(tool) => tool,
-            Err(_) => return None,
-        };
+    fn env_tool(&self, name: &str) -> Option<(PathBuf, Option<Arc<OsStr>>, Vec<String>)> {
+        let tool = self.getenv_with_target_prefixes(name).ok()?;
+        let tool = tool.to_string_lossy();
+        let tool = tool.trim();
+
+        if tool.is_empty() {
+            return None;
+        }
 
         
         
         
-        if Path::new(&*tool).exists() {
+        if Path::new(tool).exists() {
             return Some((
-                PathBuf::from(&*tool),
-                Self::rustc_wrapper_fallback(),
+                PathBuf::from(tool),
+                self.rustc_wrapper_fallback(),
                 Vec::new(),
             ));
         }
@@ -2900,24 +3027,28 @@ impl Build {
         
         
         
-        let known_wrappers = ["ccache", "distcc", "sccache", "icecc", "cachepot"];
+        let mut known_wrappers = vec![
+            "ccache",
+            "distcc",
+            "sccache",
+            "icecc",
+            "cachepot",
+            "buildcache",
+        ];
+        let custom_wrapper = self.getenv("CC_KNOWN_WRAPPER_CUSTOM");
+        if custom_wrapper.is_some() {
+            known_wrappers.push(custom_wrapper.as_deref().unwrap().to_str().unwrap());
+        }
 
         let mut parts = tool.split_whitespace();
-        let maybe_wrapper = match parts.next() {
-            Some(s) => s,
-            None => return None,
-        };
+        let maybe_wrapper = parts.next()?;
 
-        let file_stem = Path::new(maybe_wrapper)
-            .file_stem()
-            .unwrap()
-            .to_str()
-            .unwrap();
+        let file_stem = Path::new(maybe_wrapper).file_stem()?.to_str()?;
         if known_wrappers.contains(&file_stem) {
             if let Some(compiler) = parts.next() {
                 return Some((
                     compiler.into(),
-                    Some(maybe_wrapper.to_string()),
+                    Some(Arc::<OsStr>::from(OsStr::new(&maybe_wrapper))),
                     parts.map(|s| s.to_string()).collect(),
                 ));
             }
@@ -2925,7 +3056,7 @@ impl Build {
 
         Some((
             maybe_wrapper.into(),
-            Self::rustc_wrapper_fallback(),
+            self.rustc_wrapper_fallback(),
             parts.map(|s| s.to_string()).collect(),
         ))
     }
@@ -2935,38 +3066,39 @@ impl Build {
     
     
     
-    fn get_cpp_link_stdlib(&self) -> Result<Option<String>, Error> {
+    fn get_cpp_link_stdlib(&self) -> Result<Option<Cow<'_, Path>>, Error> {
         match &self.cpp_link_stdlib {
-            Some(s) => Ok(s.as_ref().map(|s| (*s).to_string())),
+            Some(s) => Ok(s.as_deref().map(Path::new).map(Cow::Borrowed)),
             None => {
                 if let Ok(stdlib) = self.getenv_with_target_prefixes("CXXSTDLIB") {
                     if stdlib.is_empty() {
                         Ok(None)
                     } else {
-                        Ok(Some(stdlib.to_string()))
+                        Ok(Some(Cow::Owned(Path::new(&stdlib).to_owned())))
                     }
                 } else {
                     let target = self.get_target()?;
-                    if target.contains("msvc") {
+                    if target.env == "msvc" {
                         Ok(None)
-                    } else if target.contains("apple")
-                        | target.contains("freebsd")
-                        | target.contains("openbsd")
-                        | target.contains("aix")
-                        | target.contains("linux-ohos")
+                    } else if target.vendor == "apple"
+                        || target.os == "freebsd"
+                        || target.os == "openbsd"
+                        || target.os == "aix"
+                        || (target.os == "linux" && target.env == "ohos")
+                        || target.os == "wasi"
                     {
-                        Ok(Some("c++".to_string()))
-                    } else if target.contains("android") {
-                        Ok(Some("c++_shared".to_string()))
+                        Ok(Some(Cow::Borrowed(Path::new("c++"))))
+                    } else if target.os == "android" {
+                        Ok(Some(Cow::Borrowed(Path::new("c++_shared"))))
                     } else {
-                        Ok(Some("stdc++".to_string()))
+                        Ok(Some(Cow::Borrowed(Path::new("stdc++"))))
                     }
                 }
             }
         }
     }
 
-    fn get_ar(&self) -> Result<(Command, String, bool), Error> {
+    fn get_ar(&self) -> Result<(Command, PathBuf, bool), Error> {
         self.try_get_archiver_and_flags()
     }
 
@@ -2999,11 +3131,11 @@ impl Build {
         Ok(self.try_get_archiver_and_flags()?.0)
     }
 
-    fn try_get_archiver_and_flags(&self) -> Result<(Command, String, bool), Error> {
+    fn try_get_archiver_and_flags(&self) -> Result<(Command, PathBuf, bool), Error> {
         let (mut cmd, name) = self.get_base_archiver()?;
         let mut any_flags = false;
         if let Ok(flags) = self.envflags("ARFLAGS") {
-            any_flags = any_flags | !flags.is_empty();
+            any_flags |= !flags.is_empty();
             cmd.args(flags);
         }
         for flag in &self.ar_flags {
@@ -3013,9 +3145,10 @@ impl Build {
         Ok((cmd, name, any_flags))
     }
 
-    fn get_base_archiver(&self) -> Result<(Command, String), Error> {
+    fn get_base_archiver(&self) -> Result<(Command, PathBuf), Error> {
         if let Some(ref a) = self.archiver {
-            return Ok((self.cmd(&**a), a.to_string_lossy().into_owned()));
+            let archiver = &**a;
+            return Ok((self.cmd(archiver), archiver.into()));
         }
 
         self.get_base_archiver_variant("AR", "ar")
@@ -3062,39 +3195,48 @@ impl Build {
         Ok(self.get_base_archiver_variant("RANLIB", "ranlib")?.0)
     }
 
-    fn get_base_archiver_variant(&self, env: &str, tool: &str) -> Result<(Command, String), Error> {
+    fn get_base_archiver_variant(
+        &self,
+        env: &str,
+        tool: &str,
+    ) -> Result<(Command, PathBuf), Error> {
         let target = self.get_target()?;
-        let mut name = String::new();
+        let mut name = PathBuf::new();
         let tool_opt: Option<Command> = self
             .env_tool(env)
             .map(|(tool, _wrapper, args)| {
+                name.clone_from(&tool);
                 let mut cmd = self.cmd(tool);
                 cmd.args(args);
                 cmd
             })
             .or_else(|| {
-                if target.contains("emscripten") {
+                if target.os == "emscripten" {
                     
                     if cfg!(windows) {
                         let mut cmd = self.cmd("cmd");
-                        name = format!("em{}.bat", tool);
+                        name = format!("em{}.bat", tool).into();
                         cmd.arg("/c").arg(&name);
                         Some(cmd)
                     } else {
-                        name = format!("em{}", tool);
+                        name = format!("em{}", tool).into();
                         Some(self.cmd(&name))
                     }
-                } else if target.starts_with("wasm32") {
+                } else if target.arch == "wasm32" || target.arch == "wasm64" {
                     
                     
                     
                     
                     
                     let compiler = self.get_base_compiler().ok()?;
-                    if compiler.family == ToolFamily::Clang {
-                        name = format!("llvm-{}", tool);
-                        search_programs(&mut self.cmd(&compiler.path), &name, &self.cargo_output)
-                            .map(|name| self.cmd(name))
+                    if compiler.is_like_clang() {
+                        name = format!("llvm-{}", tool).into();
+                        self.search_programs(
+                            &mut self.cmd(&compiler.path),
+                            &name,
+                            &self.cargo_output,
+                        )
+                        .map(|name| self.cmd(name))
                     } else {
                         None
                     }
@@ -3107,14 +3249,18 @@ impl Build {
         let tool = match tool_opt {
             Some(t) => t,
             None => {
-                if target.contains("android") {
-                    name = format!("llvm-{}", tool);
+                if target.os == "android" {
+                    name = format!("llvm-{}", tool).into();
                     match Command::new(&name).arg("--version").status() {
                         Ok(status) if status.success() => (),
-                        _ => name = format!("{}-{}", target.replace("armv7", "arm"), tool),
+                        _ => {
+                            
+                            let raw_target = self.get_raw_target()?;
+                            name = format!("{}-{}", raw_target.replace("armv7", "arm"), tool).into()
+                        }
                     }
                     self.cmd(&name)
-                } else if target.contains("msvc") {
+                } else if target.env == "msvc" {
                     
                     
                     
@@ -3128,38 +3274,38 @@ impl Build {
                         
                         
                         
-                        if let Some(mut cmd) = which(&compiler.path, None) {
+                        if let Some(mut cmd) = self.which(&compiler.path, None) {
                             cmd.pop();
                             cmd.push("llvm-lib.exe");
-                            if let Some(llvm_lib) = which(&cmd, None) {
-                                lib = llvm_lib.to_str().unwrap().to_owned();
+                            if let Some(llvm_lib) = self.which(&cmd, None) {
+                                llvm_lib.to_str().unwrap().clone_into(&mut lib);
                             }
                         }
                     }
 
                     if lib.is_empty() {
-                        name = String::from("lib.exe");
-                        let mut cmd = match windows_registry::find(&target, "lib.exe") {
+                        name = PathBuf::from("lib.exe");
+                        let mut cmd = match self.windows_registry_find(&target, "lib.exe") {
                             Some(t) => t,
                             None => self.cmd("lib.exe"),
                         };
-                        if target.contains("arm64ec") {
+                        if target.full_arch == "arm64ec" {
                             cmd.arg("/machine:arm64ec");
                         }
                         cmd
                     } else {
-                        name = lib;
+                        name = lib.into();
                         self.cmd(&name)
                     }
-                } else if target.contains("illumos") {
+                } else if target.os == "illumos" {
                     
                     
                     
                     
-                    name = format!("g{}", tool);
+                    name = format!("g{}", tool).into();
                     self.cmd(&name)
-                } else if self.get_host()? != target {
-                    match self.prefix_for_target(&target) {
+                } else if self.get_is_cross_compile()? {
+                    match self.prefix_for_target(&self.get_raw_target()?) {
                         Some(p) => {
                             
                             
@@ -3176,16 +3322,16 @@ impl Build {
                                     break;
                                 }
                             }
-                            name = chosen;
+                            name = chosen.into();
                             self.cmd(&name)
                         }
                         None => {
-                            name = default;
+                            name = default.into();
                             self.cmd(&name)
                         }
                     }
                 } else {
-                    name = default;
+                    name = default.into();
                     self.cmd(&name)
                 }
             }
@@ -3194,135 +3340,145 @@ impl Build {
         Ok((tool, name))
     }
 
-    fn prefix_for_target(&self, target: &str) -> Option<String> {
+    
+    fn prefix_for_target(&self, target: &str) -> Option<Cow<'static, str>> {
         
-        let linker_prefix = self
-            .getenv("RUSTC_LINKER")
-            .and_then(|var| var.strip_suffix("-gcc").map(str::to_string));
-        
-        let cc_env = self.getenv("CROSS_COMPILE");
-        let cross_compile = cc_env.as_ref().map(|s| s.trim_end_matches('-').to_owned());
-        cross_compile.or(linker_prefix).or(match &target[..] {
-            
-            "aarch64-pc-windows-gnullvm" => Some("aarch64-w64-mingw32"),
-            "aarch64-uwp-windows-gnu" => Some("aarch64-w64-mingw32"),
-            "aarch64-unknown-linux-gnu" => Some("aarch64-linux-gnu"),
-            "aarch64-unknown-linux-musl" => Some("aarch64-linux-musl"),
-            "aarch64-unknown-netbsd" => Some("aarch64--netbsd"),
-            "arm-unknown-linux-gnueabi" => Some("arm-linux-gnueabi"),
-            "armv4t-unknown-linux-gnueabi" => Some("arm-linux-gnueabi"),
-            "armv5te-unknown-linux-gnueabi" => Some("arm-linux-gnueabi"),
-            "armv5te-unknown-linux-musleabi" => Some("arm-linux-gnueabi"),
-            "arm-frc-linux-gnueabi" => Some("arm-frc-linux-gnueabi"),
-            "arm-unknown-linux-gnueabihf" => Some("arm-linux-gnueabihf"),
-            "arm-unknown-linux-musleabi" => Some("arm-linux-musleabi"),
-            "arm-unknown-linux-musleabihf" => Some("arm-linux-musleabihf"),
-            "arm-unknown-netbsd-eabi" => Some("arm--netbsdelf-eabi"),
-            "armv6-unknown-netbsd-eabihf" => Some("armv6--netbsdelf-eabihf"),
-            "armv7-unknown-linux-gnueabi" => Some("arm-linux-gnueabi"),
-            "armv7-unknown-linux-gnueabihf" => Some("arm-linux-gnueabihf"),
-            "armv7-unknown-linux-musleabihf" => Some("arm-linux-musleabihf"),
-            "armv7neon-unknown-linux-gnueabihf" => Some("arm-linux-gnueabihf"),
-            "armv7neon-unknown-linux-musleabihf" => Some("arm-linux-musleabihf"),
-            "thumbv7-unknown-linux-gnueabihf" => Some("arm-linux-gnueabihf"),
-            "thumbv7-unknown-linux-musleabihf" => Some("arm-linux-musleabihf"),
-            "thumbv7neon-unknown-linux-gnueabihf" => Some("arm-linux-gnueabihf"),
-            "thumbv7neon-unknown-linux-musleabihf" => Some("arm-linux-musleabihf"),
-            "armv7-unknown-netbsd-eabihf" => Some("armv7--netbsdelf-eabihf"),
-            "hexagon-unknown-linux-musl" => Some("hexagon-linux-musl"),
-            "i586-unknown-linux-musl" => Some("musl"),
-            "i686-pc-windows-gnu" => Some("i686-w64-mingw32"),
-            "i686-uwp-windows-gnu" => Some("i686-w64-mingw32"),
-            "i686-unknown-linux-gnu" => self.find_working_gnu_prefix(&[
-                "i686-linux-gnu",
-                "x86_64-linux-gnu", 
-            ]), 
-            "i686-unknown-linux-musl" => Some("musl"),
-            "i686-unknown-netbsd" => Some("i486--netbsdelf"),
-            "loongarch64-unknown-linux-gnu" => Some("loongarch64-linux-gnu"),
-            "mips-unknown-linux-gnu" => Some("mips-linux-gnu"),
-            "mips-unknown-linux-musl" => Some("mips-linux-musl"),
-            "mipsel-unknown-linux-gnu" => Some("mipsel-linux-gnu"),
-            "mipsel-unknown-linux-musl" => Some("mipsel-linux-musl"),
-            "mips64-unknown-linux-gnuabi64" => Some("mips64-linux-gnuabi64"),
-            "mips64el-unknown-linux-gnuabi64" => Some("mips64el-linux-gnuabi64"),
-            "mipsisa32r6-unknown-linux-gnu" => Some("mipsisa32r6-linux-gnu"),
-            "mipsisa32r6el-unknown-linux-gnu" => Some("mipsisa32r6el-linux-gnu"),
-            "mipsisa64r6-unknown-linux-gnuabi64" => Some("mipsisa64r6-linux-gnuabi64"),
-            "mipsisa64r6el-unknown-linux-gnuabi64" => Some("mipsisa64r6el-linux-gnuabi64"),
-            "powerpc-unknown-linux-gnu" => Some("powerpc-linux-gnu"),
-            "powerpc-unknown-linux-gnuspe" => Some("powerpc-linux-gnuspe"),
-            "powerpc-unknown-netbsd" => Some("powerpc--netbsd"),
-            "powerpc64-unknown-linux-gnu" => Some("powerpc-linux-gnu"),
-            "powerpc64le-unknown-linux-gnu" => Some("powerpc64le-linux-gnu"),
-            "riscv32i-unknown-none-elf" => self.find_working_gnu_prefix(&[
-                "riscv32-unknown-elf",
-                "riscv64-unknown-elf",
-                "riscv-none-embed",
-            ]),
-            "riscv32imac-esp-espidf" => Some("riscv32-esp-elf"),
-            "riscv32imac-unknown-none-elf" => self.find_working_gnu_prefix(&[
-                "riscv32-unknown-elf",
-                "riscv64-unknown-elf",
-                "riscv-none-embed",
-            ]),
-            "riscv32imac-unknown-xous-elf" => self.find_working_gnu_prefix(&[
-                "riscv32-unknown-elf",
-                "riscv64-unknown-elf",
-                "riscv-none-embed",
-            ]),
-            "riscv32imc-esp-espidf" => Some("riscv32-esp-elf"),
-            "riscv32imc-unknown-none-elf" => self.find_working_gnu_prefix(&[
-                "riscv32-unknown-elf",
-                "riscv64-unknown-elf",
-                "riscv-none-embed",
-            ]),
-            "riscv64gc-unknown-none-elf" => self.find_working_gnu_prefix(&[
-                "riscv64-unknown-elf",
-                "riscv32-unknown-elf",
-                "riscv-none-embed",
-            ]),
-            "riscv64imac-unknown-none-elf" => self.find_working_gnu_prefix(&[
-                "riscv64-unknown-elf",
-                "riscv32-unknown-elf",
-                "riscv-none-embed",
-            ]),
-            "riscv64gc-unknown-linux-gnu" => Some("riscv64-linux-gnu"),
-            "riscv32gc-unknown-linux-gnu" => Some("riscv32-linux-gnu"),
-            "riscv64gc-unknown-linux-musl" => Some("riscv64-linux-musl"),
-            "riscv32gc-unknown-linux-musl" => Some("riscv32-linux-musl"),
-            "riscv64gc-unknown-netbsd" => Some("riscv64--netbsd"),
-            "s390x-unknown-linux-gnu" => Some("s390x-linux-gnu"),
-            "sparc-unknown-linux-gnu" => Some("sparc-linux-gnu"),
-            "sparc64-unknown-linux-gnu" => Some("sparc64-linux-gnu"),
-            "sparc64-unknown-netbsd" => Some("sparc64--netbsd"),
-            "sparcv9-sun-solaris" => Some("sparcv9-sun-solaris"),
-            "armv7a-none-eabi" => Some("arm-none-eabi"),
-            "armv7a-none-eabihf" => Some("arm-none-eabi"),
-            "armebv7r-none-eabi" => Some("arm-none-eabi"),
-            "armebv7r-none-eabihf" => Some("arm-none-eabi"),
-            "armv7r-none-eabi" => Some("arm-none-eabi"),
-            "armv7r-none-eabihf" => Some("arm-none-eabi"),
-            "armv8r-none-eabihf" => Some("arm-none-eabi"),
-            "thumbv6m-none-eabi" => Some("arm-none-eabi"),
-            "thumbv7em-none-eabi" => Some("arm-none-eabi"),
-            "thumbv7em-none-eabihf" => Some("arm-none-eabi"),
-            "thumbv7m-none-eabi" => Some("arm-none-eabi"),
-            "thumbv8m.base-none-eabi" => Some("arm-none-eabi"),
-            "thumbv8m.main-none-eabi" => Some("arm-none-eabi"),
-            "thumbv8m.main-none-eabihf" => Some("arm-none-eabi"),
-            "x86_64-pc-windows-gnu" => Some("x86_64-w64-mingw32"),
-            "x86_64-pc-windows-gnullvm" => Some("x86_64-w64-mingw32"),
-            "x86_64-uwp-windows-gnu" => Some("x86_64-w64-mingw32"),
-            "x86_64-rumprun-netbsd" => Some("x86_64-rumprun-netbsd"),
-            "x86_64-unknown-linux-gnu" => self.find_working_gnu_prefix(&[
-                "x86_64-linux-gnu", 
-            ]), 
-            "x86_64-unknown-linux-musl" => Some("musl"),
-            "x86_64-unknown-netbsd" => Some("x86_64--netbsd"),
-            _ => None,
-        }
-        .map(|x| x.to_owned()))
+        self.getenv("CROSS_COMPILE")
+            .as_deref()
+            .map(|s| s.to_string_lossy().trim_end_matches('-').to_owned())
+            .map(Cow::Owned)
+            .or_else(|| {
+                
+                self.getenv("RUSTC_LINKER").and_then(|var| {
+                    var.to_string_lossy()
+                        .strip_suffix("-gcc")
+                        .map(str::to_string)
+                        .map(Cow::Owned)
+                })
+            })
+            .or_else(|| {
+                match target {
+                    
+                    "aarch64-pc-windows-gnullvm" => Some("aarch64-w64-mingw32"),
+                    "aarch64-uwp-windows-gnu" => Some("aarch64-w64-mingw32"),
+                    "aarch64-unknown-linux-gnu" => Some("aarch64-linux-gnu"),
+                    "aarch64-unknown-linux-musl" => Some("aarch64-linux-musl"),
+                    "aarch64-unknown-netbsd" => Some("aarch64--netbsd"),
+                    "arm-unknown-linux-gnueabi" => Some("arm-linux-gnueabi"),
+                    "armv4t-unknown-linux-gnueabi" => Some("arm-linux-gnueabi"),
+                    "armv5te-unknown-linux-gnueabi" => Some("arm-linux-gnueabi"),
+                    "armv5te-unknown-linux-musleabi" => Some("arm-linux-gnueabi"),
+                    "arm-unknown-linux-gnueabihf" => Some("arm-linux-gnueabihf"),
+                    "arm-unknown-linux-musleabi" => Some("arm-linux-musleabi"),
+                    "arm-unknown-linux-musleabihf" => Some("arm-linux-musleabihf"),
+                    "arm-unknown-netbsd-eabi" => Some("arm--netbsdelf-eabi"),
+                    "armv6-unknown-netbsd-eabihf" => Some("armv6--netbsdelf-eabihf"),
+                    "armv7-unknown-linux-gnueabi" => Some("arm-linux-gnueabi"),
+                    "armv7-unknown-linux-gnueabihf" => Some("arm-linux-gnueabihf"),
+                    "armv7-unknown-linux-musleabihf" => Some("arm-linux-musleabihf"),
+                    "armv7neon-unknown-linux-gnueabihf" => Some("arm-linux-gnueabihf"),
+                    "armv7neon-unknown-linux-musleabihf" => Some("arm-linux-musleabihf"),
+                    "thumbv7-unknown-linux-gnueabihf" => Some("arm-linux-gnueabihf"),
+                    "thumbv7-unknown-linux-musleabihf" => Some("arm-linux-musleabihf"),
+                    "thumbv7neon-unknown-linux-gnueabihf" => Some("arm-linux-gnueabihf"),
+                    "thumbv7neon-unknown-linux-musleabihf" => Some("arm-linux-musleabihf"),
+                    "armv7-unknown-netbsd-eabihf" => Some("armv7--netbsdelf-eabihf"),
+                    "hexagon-unknown-linux-musl" => Some("hexagon-linux-musl"),
+                    "i586-unknown-linux-musl" => Some("musl"),
+                    "i686-pc-windows-gnu" => Some("i686-w64-mingw32"),
+                    "i686-pc-windows-gnullvm" => Some("i686-w64-mingw32"),
+                    "i686-uwp-windows-gnu" => Some("i686-w64-mingw32"),
+                    "i686-unknown-linux-gnu" => self.find_working_gnu_prefix(&[
+                        "i686-linux-gnu",
+                        "x86_64-linux-gnu", 
+                    ]), 
+                    "i686-unknown-linux-musl" => Some("musl"),
+                    "i686-unknown-netbsd" => Some("i486--netbsdelf"),
+                    "loongarch64-unknown-linux-gnu" => Some("loongarch64-linux-gnu"),
+                    "mips-unknown-linux-gnu" => Some("mips-linux-gnu"),
+                    "mips-unknown-linux-musl" => Some("mips-linux-musl"),
+                    "mipsel-unknown-linux-gnu" => Some("mipsel-linux-gnu"),
+                    "mipsel-unknown-linux-musl" => Some("mipsel-linux-musl"),
+                    "mips64-unknown-linux-gnuabi64" => Some("mips64-linux-gnuabi64"),
+                    "mips64el-unknown-linux-gnuabi64" => Some("mips64el-linux-gnuabi64"),
+                    "mipsisa32r6-unknown-linux-gnu" => Some("mipsisa32r6-linux-gnu"),
+                    "mipsisa32r6el-unknown-linux-gnu" => Some("mipsisa32r6el-linux-gnu"),
+                    "mipsisa64r6-unknown-linux-gnuabi64" => Some("mipsisa64r6-linux-gnuabi64"),
+                    "mipsisa64r6el-unknown-linux-gnuabi64" => Some("mipsisa64r6el-linux-gnuabi64"),
+                    "powerpc-unknown-linux-gnu" => Some("powerpc-linux-gnu"),
+                    "powerpc-unknown-linux-gnuspe" => Some("powerpc-linux-gnuspe"),
+                    "powerpc-unknown-netbsd" => Some("powerpc--netbsd"),
+                    "powerpc64-unknown-linux-gnu" => Some("powerpc-linux-gnu"),
+                    "powerpc64le-unknown-linux-gnu" => Some("powerpc64le-linux-gnu"),
+                    "riscv32i-unknown-none-elf" => self.find_working_gnu_prefix(&[
+                        "riscv32-unknown-elf",
+                        "riscv64-unknown-elf",
+                        "riscv-none-embed",
+                    ]),
+                    "riscv32imac-esp-espidf" => Some("riscv32-esp-elf"),
+                    "riscv32imac-unknown-none-elf" => self.find_working_gnu_prefix(&[
+                        "riscv32-unknown-elf",
+                        "riscv64-unknown-elf",
+                        "riscv-none-embed",
+                    ]),
+                    "riscv32imac-unknown-xous-elf" => self.find_working_gnu_prefix(&[
+                        "riscv32-unknown-elf",
+                        "riscv64-unknown-elf",
+                        "riscv-none-embed",
+                    ]),
+                    "riscv32imc-esp-espidf" => Some("riscv32-esp-elf"),
+                    "riscv32imc-unknown-none-elf" => self.find_working_gnu_prefix(&[
+                        "riscv32-unknown-elf",
+                        "riscv64-unknown-elf",
+                        "riscv-none-embed",
+                    ]),
+                    "riscv64gc-unknown-none-elf" => self.find_working_gnu_prefix(&[
+                        "riscv64-unknown-elf",
+                        "riscv32-unknown-elf",
+                        "riscv-none-embed",
+                    ]),
+                    "riscv64imac-unknown-none-elf" => self.find_working_gnu_prefix(&[
+                        "riscv64-unknown-elf",
+                        "riscv32-unknown-elf",
+                        "riscv-none-embed",
+                    ]),
+                    "riscv64gc-unknown-linux-gnu" => Some("riscv64-linux-gnu"),
+                    "riscv32gc-unknown-linux-gnu" => Some("riscv32-linux-gnu"),
+                    "riscv64gc-unknown-linux-musl" => Some("riscv64-linux-musl"),
+                    "riscv32gc-unknown-linux-musl" => Some("riscv32-linux-musl"),
+                    "riscv64gc-unknown-netbsd" => Some("riscv64--netbsd"),
+                    "s390x-unknown-linux-gnu" => Some("s390x-linux-gnu"),
+                    "sparc-unknown-linux-gnu" => Some("sparc-linux-gnu"),
+                    "sparc64-unknown-linux-gnu" => Some("sparc64-linux-gnu"),
+                    "sparc64-unknown-netbsd" => Some("sparc64--netbsd"),
+                    "sparcv9-sun-solaris" => Some("sparcv9-sun-solaris"),
+                    "armv7a-none-eabi" => Some("arm-none-eabi"),
+                    "armv7a-none-eabihf" => Some("arm-none-eabi"),
+                    "armebv7r-none-eabi" => Some("arm-none-eabi"),
+                    "armebv7r-none-eabihf" => Some("arm-none-eabi"),
+                    "armv7r-none-eabi" => Some("arm-none-eabi"),
+                    "armv7r-none-eabihf" => Some("arm-none-eabi"),
+                    "armv8r-none-eabihf" => Some("arm-none-eabi"),
+                    "thumbv6m-none-eabi" => Some("arm-none-eabi"),
+                    "thumbv7em-none-eabi" => Some("arm-none-eabi"),
+                    "thumbv7em-none-eabihf" => Some("arm-none-eabi"),
+                    "thumbv7m-none-eabi" => Some("arm-none-eabi"),
+                    "thumbv8m.base-none-eabi" => Some("arm-none-eabi"),
+                    "thumbv8m.main-none-eabi" => Some("arm-none-eabi"),
+                    "thumbv8m.main-none-eabihf" => Some("arm-none-eabi"),
+                    "x86_64-pc-windows-gnu" => Some("x86_64-w64-mingw32"),
+                    "x86_64-pc-windows-gnullvm" => Some("x86_64-w64-mingw32"),
+                    "x86_64-uwp-windows-gnu" => Some("x86_64-w64-mingw32"),
+                    "x86_64-rumprun-netbsd" => Some("x86_64-rumprun-netbsd"),
+                    "x86_64-unknown-linux-gnu" => self.find_working_gnu_prefix(&[
+                        "x86_64-linux-gnu", 
+                    ]), 
+                    "x86_64-unknown-linux-musl" => Some("musl"),
+                    "x86_64-unknown-netbsd" => Some("x86_64--netbsd"),
+                    _ => None,
+                }
+                .map(Cow::Borrowed)
+            })
     }
 
     
@@ -3335,7 +3491,7 @@ impl Build {
         
         
         
-        env::var_os("PATH")
+        self.getenv("PATH")
             .as_ref()
             .and_then(|path_entries| {
                 env::split_paths(path_entries).find_map(|path_entry| {
@@ -3348,56 +3504,70 @@ impl Build {
                     None
                 })
             })
-            .map(|prefix| *prefix)
-            .or_else(||
+            .copied()
             
             
             
             
-            prefixes.first().map(|prefix| *prefix))
+            .or_else(|| prefixes.first().copied())
     }
 
-    fn get_target(&self) -> Result<Arc<str>, Error> {
+    fn get_target(&self) -> Result<TargetInfo<'_>, Error> {
         match &self.target {
-            Some(t) => Ok(t.clone()),
-            None => self.getenv_unwrap("TARGET"),
+            Some(t) if Some(&**t) != self.getenv_unwrap_str("TARGET").ok().as_deref() => t.parse(),
+            
+            
+            
+            _ => self
+                .build_cache
+                .target_info_parser
+                .parse_from_cargo_environment_variables(),
         }
     }
 
-    fn get_host(&self) -> Result<Arc<str>, Error> {
-        match &self.host {
-            Some(h) => Ok(h.clone()),
-            None => self.getenv_unwrap("HOST"),
+    fn get_raw_target(&self) -> Result<Cow<'_, str>, Error> {
+        match &self.target {
+            Some(t) => Ok(Cow::Borrowed(t)),
+            None => self.getenv_unwrap_str("TARGET").map(Cow::Owned),
         }
     }
 
-    fn get_opt_level(&self) -> Result<Arc<str>, Error> {
+    fn get_is_cross_compile(&self) -> Result<bool, Error> {
+        let target = self.get_raw_target()?;
+        let host: Cow<'_, str> = match &self.host {
+            Some(h) => Cow::Borrowed(h),
+            None => Cow::Owned(self.getenv_unwrap_str("HOST")?),
+        };
+        Ok(host != target)
+    }
+
+    fn get_opt_level(&self) -> Result<Cow<'_, str>, Error> {
         match &self.opt_level {
-            Some(ol) => Ok(ol.clone()),
-            None => self.getenv_unwrap("OPT_LEVEL"),
+            Some(ol) => Ok(Cow::Borrowed(ol)),
+            None => self.getenv_unwrap_str("OPT_LEVEL").map(Cow::Owned),
         }
     }
 
     fn get_debug(&self) -> bool {
-        self.debug.unwrap_or_else(|| match self.getenv("DEBUG") {
-            Some(s) => &*s != "false",
-            None => false,
-        })
+        self.debug.unwrap_or_else(|| self.getenv_boolean("DEBUG"))
+    }
+
+    fn get_shell_escaped_flags(&self) -> bool {
+        self.shell_escaped_flags
+            .unwrap_or_else(|| self.getenv_boolean("CC_SHELL_ESCAPED_FLAGS"))
     }
 
     fn get_dwarf_version(&self) -> Option<u32> {
         
         let target = self.get_target().ok()?;
-        if target.contains("android")
-            || target.contains("apple")
-            || target.contains("dragonfly")
-            || target.contains("freebsd")
-            || target.contains("netbsd")
-            || target.contains("openbsd")
-            || target.contains("windows-gnu")
+        if matches!(
+            target.os,
+            "android" | "dragonfly" | "freebsd" | "netbsd" | "openbsd"
+        ) || target.vendor == "apple"
+            || (target.os == "windows" && target.env == "gnu")
         {
             Some(2)
-        } else if target.contains("linux") {
+        } else if target.os == "linux" {
             Some(4)
         } else {
             None
@@ -3411,7 +3581,9 @@ impl Build {
     fn get_out_dir(&self) -> Result<Cow<'_, Path>, Error> {
         match &self.out_dir {
             Some(p) => Ok(Cow::Borrowed(&**p)),
-            None => env::var_os("OUT_DIR")
+            None => self
+                .getenv("OUT_DIR")
+                .as_deref()
                 .map(PathBuf::from)
                 .map(Cow::Owned)
                 .ok_or_else(|| {
@@ -3423,7 +3595,8 @@ impl Build {
         }
     }
 
-    fn getenv(&self, v: &str) -> Option<Arc<str>> {
+    #[allow(clippy::disallowed_methods)]
+    fn getenv(&self, v: &str) -> Option<Arc<OsStr>> {
         
         
         
@@ -3438,22 +3611,38 @@ impl Build {
                 _ => false,
             }
         }
-        let mut cache = self.env_cache.lock().unwrap();
-        if let Some(val) = cache.get(v) {
-            return val.clone();
+        if let Some(val) = self.build_cache.env_cache.read().unwrap().get(v).cloned() {
+            return val;
         }
-        if self.emit_rerun_if_env_changed && !provided_by_cargo(v) {
+        
+        
+        if self.emit_rerun_if_env_changed && !provided_by_cargo(v) && v != "PATH" {
             self.cargo_output
                 .print_metadata(&format_args!("cargo:rerun-if-env-changed={}", v));
         }
-        let r = env::var(v).ok().map(Arc::from);
-        self.cargo_output
-            .print_metadata(&format_args!("{} = {:?}", v, r));
-        cache.insert(v.to_string(), r.clone());
+        let r = env::var_os(v).map(Arc::from);
+        self.cargo_output.print_metadata(&format_args!(
+            "{} = {}",
+            v,
+            OptionOsStrDisplay(r.as_deref())
+        ));
+        self.build_cache
+            .env_cache
+            .write()
+            .unwrap()
+            .insert(v.into(), r.clone());
         r
     }
 
-    fn getenv_unwrap(&self, v: &str) -> Result<Arc<str>, Error> {
+    
+    fn getenv_boolean(&self, v: &str) -> bool {
+        match self.getenv(v) {
+            Some(s) => &*s != "0" && &*s != "false" && !s.is_empty(),
+            None => false,
+        }
+    }
+
+    fn getenv_unwrap(&self, v: &str) -> Result<Arc<OsStr>, Error> {
         match self.getenv(v) {
             Some(s) => Ok(s),
             None => Err(Error::new(
@@ -3463,10 +3652,23 @@ impl Build {
         }
     }
 
-    fn getenv_with_target_prefixes(&self, var_base: &str) -> Result<Arc<str>, Error> {
-        let target = self.get_target()?;
-        let host = self.get_host()?;
-        let kind = if host == target { "HOST" } else { "TARGET" };
+    fn getenv_unwrap_str(&self, v: &str) -> Result<String, Error> {
+        let env = self.getenv_unwrap(v)?;
+        env.to_str().map(String::from).ok_or_else(|| {
+            Error::new(
+                ErrorKind::EnvVarNotFound,
+                format!("Environment variable {} is not valid utf-8.", v),
+            )
+        })
+    }
+
+    fn getenv_with_target_prefixes(&self, var_base: &str) -> Result<Arc<OsStr>, Error> {
+        let target = self.get_raw_target()?;
+        let kind = if self.get_is_cross_compile()? {
+            "TARGET"
+        } else {
+            "HOST"
+        };
         let target_u = target.replace('-', "_");
         let res = self
             .getenv(&format!("{}_{}", var_base, target))
@@ -3484,17 +3686,22 @@ impl Build {
     }
 
     fn envflags(&self, name: &str) -> Result<Vec<String>, Error> {
-        Ok(self
-            .getenv_with_target_prefixes(name)?
-            .split_ascii_whitespace()
-            .map(|slice| slice.to_string())
-            .collect())
+        let env_os = self.getenv_with_target_prefixes(name)?;
+        let env = env_os.to_string_lossy();
+
+        if self.get_shell_escaped_flags() {
+            Ok(Shlex::new(&env).collect())
+        } else {
+            Ok(env
+                .split_ascii_whitespace()
+                .map(ToString::to_string)
+                .collect())
+        }
     }
 
     fn fix_env_for_apple_os(&self, cmd: &mut Command) -> Result<(), Error> {
         let target = self.get_target()?;
-        let host = self.get_host()?;
-        if host.contains("apple-darwin") && target.contains("apple-darwin") {
+        if cfg!(target_os = "macos") && target.os == "macos" {
             
             
             
@@ -3503,17 +3710,37 @@ impl Build {
         Ok(())
     }
 
-    fn apple_sdk_root(&self, sdk: &str) -> Result<OsString, Error> {
-        if let Some(sdkroot) = env::var_os("SDKROOT") {
-            return Ok(sdkroot);
-        }
-
-        let mut cache = self
-            .apple_sdk_root_cache
-            .lock()
-            .expect("apple_sdk_root_cache lock failed");
-        if let Some(ret) = cache.get(sdk) {
-            return Ok(ret.clone());
+    fn apple_sdk_root_inner(&self, sdk: &str) -> Result<Arc<OsStr>, Error> {
+        
+        if let Some(sdkroot) = self.getenv("SDKROOT") {
+            let p = Path::new(&sdkroot);
+            let does_sdkroot_contain = |strings: &[&str]| {
+                let sdkroot_str = p.to_string_lossy();
+                strings.iter().any(|s| sdkroot_str.contains(s))
+            };
+            match sdk {
+                
+                "appletvos"
+                    if does_sdkroot_contain(&["TVSimulator.platform", "MacOSX.platform"]) => {}
+                "appletvsimulator"
+                    if does_sdkroot_contain(&["TVOS.platform", "MacOSX.platform"]) => {}
+                "iphoneos"
+                    if does_sdkroot_contain(&["iPhoneSimulator.platform", "MacOSX.platform"]) => {}
+                "iphonesimulator"
+                    if does_sdkroot_contain(&["iPhoneOS.platform", "MacOSX.platform"]) => {}
+                "macosx10.15"
+                    if does_sdkroot_contain(&["iPhoneOS.platform", "iPhoneSimulator.platform"]) => {
+                }
+                "watchos"
+                    if does_sdkroot_contain(&["WatchSimulator.platform", "MacOSX.platform"]) => {}
+                "watchsimulator"
+                    if does_sdkroot_contain(&["WatchOS.platform", "MacOSX.platform"]) => {}
+                "xros" if does_sdkroot_contain(&["XRSimulator.platform", "MacOSX.platform"]) => {}
+                "xrsimulator" if does_sdkroot_contain(&["XROS.platform", "MacOSX.platform"]) => {}
+                
+                _ if !p.is_absolute() || p == Path::new("/") || !p.exists() => {}
+                _ => return Ok(sdkroot),
+            }
         }
 
         let sdk_path = run_output(
@@ -3534,25 +3761,48 @@ impl Build {
                 ));
             }
         };
-        let ret: OsString = sdk_path.trim().into();
-        cache.insert(sdk.into(), ret.clone());
-        Ok(ret)
+        Ok(Arc::from(OsStr::new(sdk_path.trim())))
     }
 
-    fn apple_deployment_version(&self, os: AppleOs, arch_str: Option<&str>, sdk: &str) -> String {
-        let default_deployment_from_sdk = || {
-            let mut cache = self
-                .apple_versions_cache
-                .lock()
-                .expect("apple_versions_cache lock failed");
+    fn apple_sdk_root(&self, target: &TargetInfo<'_>) -> Result<Arc<OsStr>, Error> {
+        let sdk = target.apple_sdk_name();
 
-            if let Some(ret) = cache.get(sdk) {
-                return Some(ret.clone());
-            }
+        if let Some(ret) = self
+            .build_cache
+            .apple_sdk_root_cache
+            .read()
+            .expect("apple_sdk_root_cache lock failed")
+            .get(sdk)
+            .cloned()
+        {
+            return Ok(ret);
+        }
+        let sdk_path = self.apple_sdk_root_inner(sdk)?;
+        self.build_cache
+            .apple_sdk_root_cache
+            .write()
+            .expect("apple_sdk_root_cache lock failed")
+            .insert(sdk.into(), sdk_path.clone());
+        Ok(sdk_path)
+    }
 
+    fn apple_deployment_target(&self, target: &TargetInfo<'_>) -> Arc<str> {
+        let sdk = target.apple_sdk_name();
+        if let Some(ret) = self
+            .build_cache
+            .apple_versions_cache
+            .read()
+            .expect("apple_versions_cache lock failed")
+            .get(sdk)
+            .cloned()
+        {
+            return ret;
+        }
+
+        let default_deployment_from_sdk = || -> Option<Arc<str>> {
             let version = run_output(
                 self.cmd("xcrun")
-                    .arg("--show-sdk-platform-version")
+                    .arg("--show-sdk-version")
                     .arg("--sdk")
                     .arg(sdk),
                 "xcrun",
@@ -3560,27 +3810,27 @@ impl Build {
             )
             .ok()?;
 
-            let version = std::str::from_utf8(&version).ok()?.trim().to_owned();
-
-            cache.insert(sdk.into(), version.clone());
-            Some(version)
+            Some(Arc::from(std::str::from_utf8(&version).ok()?.trim()))
         };
 
-        let deployment_from_env = |name: &str| {
+        let deployment_from_env = |name: &str| -> Option<Arc<str>> {
             
             
-            if let Some((_, v)) = self.env.iter().find(|(k, _)| &**k == OsStr::new(name)) {
-                Some(v.to_str().unwrap().to_string())
-            } else {
-                env::var(name).ok()
-            }
+            self.env
+                .iter()
+                .find(|(k, _)| &**k == OsStr::new(name))
+                .map(|(_, v)| v)
+                .cloned()
+                .or_else(|| self.getenv(name))?
+                .to_str()
+                .map(Arc::from)
         };
 
         
         
         
         
-        let maybe_cpp_version_baseline = |deployment_target_ver: String| -> Option<String> {
+        let maybe_cpp_version_baseline = |deployment_target_ver: Arc<str>| -> Option<Arc<str>> {
             if !self.cpp {
                 return Some(deployment_target_ver);
             }
@@ -3589,8 +3839,8 @@ impl Build {
                 .split('.')
                 .map(|v| v.parse::<u32>().expect("integer version"));
 
-            match os {
-                AppleOs::MacOs => {
+            match target.os {
+                "macos" => {
                     let major = deployment_target.next().unwrap_or(0);
                     let minor = deployment_target.next().unwrap_or(0);
 
@@ -3603,7 +3853,7 @@ impl Build {
                         return None;
                     }
                 }
-                AppleOs::Ios => {
+                "ios" => {
                     let major = deployment_target.next().unwrap_or(0);
 
                     
@@ -3634,31 +3884,56 @@ impl Build {
         
         
         
-        match os {
-            AppleOs::MacOs => deployment_from_env("MACOSX_DEPLOYMENT_TARGET")
+        let version: Arc<str> = match target.os {
+            "macos" => deployment_from_env("MACOSX_DEPLOYMENT_TARGET")
                 .and_then(maybe_cpp_version_baseline)
                 .or_else(default_deployment_from_sdk)
                 .unwrap_or_else(|| {
-                    if arch_str == Some("aarch64") {
+                    if target.arch == "aarch64" {
                         "11.0".into()
                     } else {
-                        let default = "10.7";
-                        maybe_cpp_version_baseline(default.into()).unwrap_or_else(|| default.into())
+                        let default: Arc<str> = Arc::from("10.7");
+                        maybe_cpp_version_baseline(default.clone()).unwrap_or(default)
                     }
                 }),
 
-            AppleOs::Ios => deployment_from_env("IPHONEOS_DEPLOYMENT_TARGET")
+            "ios" => deployment_from_env("IPHONEOS_DEPLOYMENT_TARGET")
                 .and_then(maybe_cpp_version_baseline)
                 .or_else(default_deployment_from_sdk)
                 .unwrap_or_else(|| "7.0".into()),
 
-            AppleOs::WatchOs => deployment_from_env("WATCHOS_DEPLOYMENT_TARGET")
+            "watchos" => deployment_from_env("WATCHOS_DEPLOYMENT_TARGET")
                 .or_else(default_deployment_from_sdk)
                 .unwrap_or_else(|| "5.0".into()),
 
-            AppleOs::TvOs => deployment_from_env("TVOS_DEPLOYMENT_TARGET")
+            "tvos" => deployment_from_env("TVOS_DEPLOYMENT_TARGET")
                 .or_else(default_deployment_from_sdk)
                 .unwrap_or_else(|| "9.0".into()),
+
+            "visionos" => deployment_from_env("XROS_DEPLOYMENT_TARGET")
+                .or_else(default_deployment_from_sdk)
+                .unwrap_or_else(|| "1.0".into()),
+
+            os => unreachable!("unknown Apple OS: {}", os),
+        };
+
+        self.build_cache
+            .apple_versions_cache
+            .write()
+            .expect("apple_versions_cache lock failed")
+            .insert(sdk.into(), version.clone());
+
+        version
+    }
+
+    fn wasi_sysroot(&self) -> Result<Arc<OsStr>, Error> {
+        if let Some(wasi_sysroot_path) = self.getenv("WASI_SYSROOT") {
+            Ok(wasi_sysroot_path)
+        } else {
+            Err(Error::new(
+                ErrorKind::EnvVarNotFound,
+                "Environment variable WASI_SYSROOT not defined. Download sysroot from GitHub & setup environment variable WASI_SYSROOT targeting the folder.",
+            ))
         }
     }
 
@@ -3667,6 +3942,75 @@ impl Build {
             .iter()
             .filter(|file| file.extension() == Some(OsStr::new("cu")))
             .count()
+    }
+
+    fn which(&self, tool: &Path, path_entries: Option<&OsStr>) -> Option<PathBuf> {
+        fn check_exe(mut exe: PathBuf) -> Option<PathBuf> {
+            let exe_ext = std::env::consts::EXE_EXTENSION;
+            let check =
+                exe.exists() || (!exe_ext.is_empty() && exe.set_extension(exe_ext) && exe.exists());
+            check.then_some(exe)
+        }
+
+        
+        let find_exe_in_path = |path_entries: &OsStr| -> Option<PathBuf> {
+            env::split_paths(path_entries).find_map(|path_entry| check_exe(path_entry.join(tool)))
+        };
+
+        
+        if tool.components().count() > 1 {
+            check_exe(PathBuf::from(tool))
+        } else {
+            path_entries
+                .and_then(find_exe_in_path)
+                .or_else(|| find_exe_in_path(&self.getenv("PATH")?))
+        }
+    }
+
+    
+    fn search_programs(
+        &self,
+        cc: &mut Command,
+        prog: &Path,
+        cargo_output: &CargoOutput,
+    ) -> Option<PathBuf> {
+        let search_dirs = run_output(
+            cc.arg("-print-search-dirs"),
+            "cc",
+            
+            cargo_output,
+        )
+        .ok()?;
+        
+        
+        let search_dirs = std::str::from_utf8(&search_dirs).ok()?;
+        for dirs in search_dirs.split(['\r', '\n']) {
+            if let Some(path) = dirs.strip_prefix("programs: =") {
+                return self.which(prog, Some(OsStr::new(path)));
+            }
+        }
+        None
+    }
+
+    fn windows_registry_find(&self, target: &TargetInfo<'_>, tool: &str) -> Option<Command> {
+        self.windows_registry_find_tool(target, tool)
+            .map(|c| c.to_command())
+    }
+
+    fn windows_registry_find_tool(&self, target: &TargetInfo<'_>, tool: &str) -> Option<Tool> {
+        struct BuildEnvGetter<'s>(&'s Build);
+
+        impl windows_registry::EnvGetter for BuildEnvGetter<'_> {
+            fn get_env(&self, name: &str) -> Option<windows_registry::Env> {
+                self.0.getenv(name).map(windows_registry::Env::Arced)
+            }
+        }
+
+        if target.env != "msvc" {
+            return None;
+        }
+
+        windows_registry::find_tool_inner(target.full_arch, tool, &BuildEnvGetter(self))
     }
 }
 
@@ -3677,61 +4021,8 @@ impl Default for Build {
 }
 
 fn fail(s: &str) -> ! {
-    eprintln!("\n\nerror occurred: {}\n\n", s);
+    eprintln!("\n\nerror occurred in cc-rs: {}\n\n", s);
     std::process::exit(1);
-}
-
-#[derive(Clone, Copy, PartialEq)]
-enum AppleOs {
-    MacOs,
-    Ios,
-    WatchOs,
-    TvOs,
-}
-impl std::fmt::Debug for AppleOs {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            AppleOs::MacOs => f.write_str("macOS"),
-            AppleOs::Ios => f.write_str("iOS"),
-            AppleOs::WatchOs => f.write_str("WatchOS"),
-            AppleOs::TvOs => f.write_str("AppleTVOS"),
-        }
-    }
-}
-
-struct AppleSdkTargetParts {
-    sdk_prefix: &'static str,
-    sim_prefix: &'static str,
-    sdk: Cow<'static, str>,
-}
-
-fn apple_os_sdk_parts(os: AppleOs, arch: &AppleArchSpec) -> AppleSdkTargetParts {
-    let (sdk_prefix, sim_prefix) = match os {
-        AppleOs::MacOs => ("macosx", ""),
-        AppleOs::Ios => ("iphone", "ios-"),
-        AppleOs::WatchOs => ("watch", "watch"),
-        AppleOs::TvOs => ("appletv", "appletv"),
-    };
-    let sdk = match arch {
-        AppleArchSpec::Device(_) if os == AppleOs::MacOs => Cow::Borrowed("macosx"),
-        AppleArchSpec::Device(_) => format!("{}os", sdk_prefix).into(),
-        AppleArchSpec::Simulator(_) => format!("{}simulator", sdk_prefix).into(),
-        AppleArchSpec::Catalyst(_) => Cow::Borrowed("macosx"),
-    };
-
-    AppleSdkTargetParts {
-        sdk_prefix,
-        sim_prefix,
-        sdk,
-    }
-}
-
-#[allow(dead_code)]
-enum AppleArchSpec {
-    Device(&'static str),
-    Simulator(&'static str),
-    #[allow(dead_code)]
-    Catalyst(&'static str),
 }
 
 
@@ -3763,29 +4054,9 @@ fn android_clang_compiler_uses_target_arg_internally(clang_path: &Path) -> bool 
     false
 }
 
-#[test]
-fn test_android_clang_compiler_uses_target_arg_internally() {
-    for version in 16..21 {
-        assert!(android_clang_compiler_uses_target_arg_internally(
-            &PathBuf::from(format!("armv7a-linux-androideabi{}-clang", version))
-        ));
-        assert!(android_clang_compiler_uses_target_arg_internally(
-            &PathBuf::from(format!("armv7a-linux-androideabi{}-clang++", version))
-        ));
-    }
-    assert!(!android_clang_compiler_uses_target_arg_internally(
-        &PathBuf::from("clang-i686-linux-android")
-    ));
-    assert!(!android_clang_compiler_uses_target_arg_internally(
-        &PathBuf::from("clang")
-    ));
-    assert!(!android_clang_compiler_uses_target_arg_internally(
-        &PathBuf::from("clang++")
-    ));
-}
 
-fn autodetect_android_compiler(target: &str, host: &str, gnu: &str, clang: &str) -> String {
-    let new_clang_key = match target {
+fn autodetect_android_compiler(raw_target: &str, gnu: &str, clang: &str) -> String {
+    let new_clang_key = match raw_target {
         "aarch64-linux-android" => Some("aarch64"),
         "armv7-linux-androideabi" => Some("armv7a"),
         "i686-linux-android" => Some("i686"),
@@ -3807,7 +4078,7 @@ fn autodetect_android_compiler(target: &str, host: &str, gnu: &str, clang: &str)
         }
     }
 
-    let target = target
+    let target = raw_target
         .replace("armv7neon", "arm")
         .replace("armv7", "arm")
         .replace("thumbv7neon", "arm")
@@ -3824,7 +4095,7 @@ fn autodetect_android_compiler(target: &str, host: &str, gnu: &str, clang: &str)
     
     if Command::new(&gnu_compiler).output().is_ok() {
         gnu_compiler
-    } else if host.contains("windows") && Command::new(&clang_compiler_cmd).output().is_ok() {
+    } else if cfg!(windows) && Command::new(&clang_compiler_cmd).output().is_ok() {
         clang_compiler_cmd
     } else {
         clang_compiler
@@ -3832,68 +4103,21 @@ fn autodetect_android_compiler(target: &str, host: &str, gnu: &str, clang: &str)
 }
 
 
-fn map_darwin_target_from_rust_to_compiler_architecture(target: &str) -> Option<&'static str> {
-    if target.contains("x86_64h") {
-        Some("x86_64h")
-    } else if target.contains("x86_64") {
-        Some("x86_64")
-    } else if target.contains("arm64e") {
-        Some("arm64e")
-    } else if target.contains("aarch64") {
-        Some("arm64")
-    } else if target.contains("i686") {
-        Some("i386")
-    } else if target.contains("powerpc") {
-        Some("ppc")
-    } else if target.contains("powerpc64") {
-        Some("ppc64")
-    } else {
-        None
+fn map_darwin_target_from_rust_to_compiler_architecture<'a>(target: &TargetInfo<'a>) -> &'a str {
+    match target.full_arch {
+        "aarch64" => "arm64",
+        "arm64_32" => "arm64_32",
+        "arm64e" => "arm64e",
+        "armv7k" => "armv7k",
+        "armv7s" => "armv7s",
+        "i386" => "i386",
+        "i686" => "i386",
+        "powerpc" => "ppc",
+        "powerpc64" => "ppc64",
+        "x86_64" => "x86_64",
+        "x86_64h" => "x86_64h",
+        arch => arch,
     }
-}
-
-fn which(tool: &Path, path_entries: Option<OsString>) -> Option<PathBuf> {
-    fn check_exe(exe: &mut PathBuf) -> bool {
-        let exe_ext = std::env::consts::EXE_EXTENSION;
-        exe.exists() || (!exe_ext.is_empty() && exe.set_extension(exe_ext) && exe.exists())
-    }
-
-    
-    if tool.components().count() > 1 {
-        let mut exe = PathBuf::from(tool);
-        return if check_exe(&mut exe) { Some(exe) } else { None };
-    }
-
-    
-    let path_entries = path_entries.or(env::var_os("PATH"))?;
-    env::split_paths(&path_entries).find_map(|path_entry| {
-        let mut exe = path_entry.join(tool);
-        if check_exe(&mut exe) {
-            Some(exe)
-        } else {
-            None
-        }
-    })
-}
-
-
-fn search_programs(cc: &mut Command, prog: &str, cargo_output: &CargoOutput) -> Option<PathBuf> {
-    let search_dirs = run_output(
-        cc.arg("-print-search-dirs"),
-        "cc",
-        
-        cargo_output,
-    )
-    .ok()?;
-    
-    
-    let search_dirs = std::str::from_utf8(&search_dirs).ok()?;
-    for dirs in search_dirs.split(|c| c == '\r' || c == '\n') {
-        if let Some(path) = dirs.strip_prefix("programs: =") {
-            return which(Path::new(prog), Some(OsString::from(path)));
-        }
-    }
-    None
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -3918,5 +4142,75 @@ impl AsmFileExt {
             }
         }
         None
+    }
+}
+
+
+fn is_disabled() -> bool {
+    static CACHE: AtomicU8 = AtomicU8::new(0);
+
+    let val = CACHE.load(Relaxed);
+    
+    
+    #[allow(clippy::disallowed_methods)]
+    fn compute_is_disabled() -> bool {
+        match std::env::var_os("CC_FORCE_DISABLE") {
+            
+            None => false,
+            
+            
+            Some(v) => &*v != "0" && &*v != "false" && &*v != "no",
+        }
+    }
+    match val {
+        2 => true,
+        1 => false,
+        0 => {
+            let truth = compute_is_disabled();
+            let encoded_truth = if truth { 2u8 } else { 1 };
+            
+            
+            CACHE.store(encoded_truth, Relaxed);
+            truth
+        }
+        _ => unreachable!(),
+    }
+}
+
+
+
+fn check_disabled() -> Result<(), Error> {
+    if is_disabled() {
+        return Err(Error::new(
+            ErrorKind::Disabled,
+            "the `cc` crate's functionality has been disabled by the `CC_FORCE_DISABLE` environment variable."
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_android_clang_compiler_uses_target_arg_internally() {
+        for version in 16..21 {
+            assert!(android_clang_compiler_uses_target_arg_internally(
+                &PathBuf::from(format!("armv7a-linux-androideabi{}-clang", version))
+            ));
+            assert!(android_clang_compiler_uses_target_arg_internally(
+                &PathBuf::from(format!("armv7a-linux-androideabi{}-clang++", version))
+            ));
+        }
+        assert!(!android_clang_compiler_uses_target_arg_internally(
+            &PathBuf::from("clang-i686-linux-android")
+        ));
+        assert!(!android_clang_compiler_uses_target_arg_internally(
+            &PathBuf::from("clang")
+        ));
+        assert!(!android_clang_compiler_uses_target_arg_internally(
+            &PathBuf::from("clang++")
+        ));
     }
 }
