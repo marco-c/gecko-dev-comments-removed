@@ -437,7 +437,11 @@ void nsLineBreaker::FindHyphenationPoints(nsHyphenator* aHyphenator,
     uint8_t mState;
   };
   AutoTArray<BreakInfo, 16> oldBreaks;
-  for (uint32_t i = 0; i + 1 < string.Length(); ++i) {
+  
+  
+  uint32_t endLimit =
+      string.Length() - std::max<uint32_t>(1u, mHyphenateLimitEnd);
+  for (uint32_t i = 0; i < string.Length(); ++i) {
     
     
     uint32_t ch = string[i];
@@ -471,7 +475,12 @@ void nsLineBreaker::FindHyphenationPoints(nsHyphenator* aHyphenator,
     }
 
     
-    if (length >= mHyphenateLimitStart && hyphens[i]) {
+    
+    
+    
+    
+    
+    if (hyphens[i] && length >= mHyphenateLimitStart && i < endLimit) {
       
       oldBreaks.AppendElement(BreakInfo{i + 1, length, aBreakState[i + 1]});
       aBreakState[i + 1] = gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_HYPHEN;
@@ -482,7 +491,6 @@ void nsLineBreaker::FindHyphenationPoints(nsHyphenator* aHyphenator,
       ++i;
     }
   }
-  ++length;  
 
   if (length < mHyphenateLimitWord) {
     
