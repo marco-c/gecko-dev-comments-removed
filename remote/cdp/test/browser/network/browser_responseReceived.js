@@ -224,6 +224,11 @@ add_task(async function documentNavigationWithResource({ client }) {
 });
 
 function configureHistory(client, total) {
+  
+  
+  
+  ChromeUtils.clearScriptCache();
+
   const RESPONSE = "Network.responseReceived";
 
   const { Network } = client;

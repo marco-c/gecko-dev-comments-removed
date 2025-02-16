@@ -207,6 +207,11 @@ add_task(async function documentNavigationToURLWithEmptyHash({ client }) {
 });
 
 function configureHistory(client, total) {
+  
+  
+  
+  ChromeUtils.clearScriptCache();
+
   const REQUEST = "Network.requestWillBeSent";
 
   const { Network } = client;
