@@ -4959,3 +4959,14 @@ nsDOMWindowUtils::GetDragSession(nsIDragSession** aSession) {
   session.forget(aSession);
   return NS_OK;
 }
+
+NS_IMETHODIMP
+nsDOMWindowUtils::SendMozMouseHitTestEvent(float aX, float aY) {
+  return SendMouseEventCommon(
+      u"MozMouseHittest"_ns, aX, aY, 0 , 0 ,
+      0 , true , 0 ,
+      0 , DEFAULT_MOUSE_POINTER_ID ,
+      false , nullptr ,
+      true , true ,
+      MOUSE_BUTTONS_NOT_SPECIFIED );
+}
