@@ -73,10 +73,12 @@ class IdentityCredentialStorageService final
 
   
   
+  
+  
   nsresult GetMemoryDatabaseConnection();
   nsresult GetDiskDatabaseConnection();
   static nsresult GetDatabaseConnectionInternal(
-      mozIStorageConnection** aDatabase, nsIFile* aFile);
+      mozIStorageConnection** aDatabase, nsIFile* aFile, bool aRetry);
 
   
   
