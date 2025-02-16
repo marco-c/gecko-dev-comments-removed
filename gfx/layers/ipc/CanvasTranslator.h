@@ -291,6 +291,14 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
   void GetDataSurface(uint64_t aSurfaceRef);
 
+  
+
+
+
+
+
+  already_AddRefed<gfx::DataSourceSurface> WaitForSurface(uintptr_t aId);
+
   static void Shutdown();
 
  private:
@@ -464,6 +472,11 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
   RefPtr<ipc::SharedMemory> mHeaderShmem;
   Header* mHeader = nullptr;
+  
+  
+  
+  
+  int64_t mFlushCheckpoint = 0;
 
   struct CanvasShmem {
     RefPtr<ipc::SharedMemory> shmem;

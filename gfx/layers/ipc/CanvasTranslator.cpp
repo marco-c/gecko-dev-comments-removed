@@ -399,6 +399,32 @@ void CanvasTranslator::GetDataSurface(uint64_t aSurfaceRef) {
   }
 }
 
+already_AddRefed<gfx::DataSourceSurface> CanvasTranslator::WaitForSurface(
+    uintptr_t aId) {
+  
+  if (!gfx::gfxVars::UseAcceleratedCanvas2D() ||
+      !UsePendingCanvasTranslatorEvents() || !IsInTaskQueue()) {
+    return nullptr;
+  }
+  ReferencePtr idRef(aId);
+  if (!HasSourceSurface(idRef)) {
+    
+    
+    
+    
+    mFlushCheckpoint = mHeader->eventCount;
+    HandleCanvasTranslatorEvents();
+    mFlushCheckpoint = 0;
+    
+    
+    if (!HasSourceSurface(idRef)) {
+      return nullptr;
+    }
+  }
+  
+  return LookupSourceSurface(idRef)->GetDataSurface();
+}
+
 void CanvasTranslator::RecycleBuffer() {
   mCanvasShmems.emplace(std::move(mCurrentShmem));
   NextBuffer();
@@ -561,7 +587,12 @@ void CanvasTranslator::CheckAndSignalWriter() {
 }
 
 bool CanvasTranslator::HasPendingEvent() {
-  return mHeader->processedCount < mHeader->eventCount;
+  int64_t limit = mHeader->eventCount;
+  if (mFlushCheckpoint) {
+    
+    limit = std::min(limit, mFlushCheckpoint);
+  }
+  return mHeader->processedCount < limit;
 }
 
 bool CanvasTranslator::ReadPendingEvent(EventType& aEventType) {
@@ -574,6 +605,13 @@ bool CanvasTranslator::ReadNextEvent(EventType& aEventType) {
   if (mHeader->readerState == State::Paused) {
     Flush();
     return false;
+  }
+
+  if (mFlushCheckpoint) {
+    
+    
+    
+    return HasPendingEvent() && ReadPendingEvent(aEventType);
   }
 
   uint32_t spinCount = mMaxSpinCount;
@@ -673,15 +711,23 @@ bool CanvasTranslator::TranslateRecording() {
 
     mHeader->processedCount++;
 
-    const auto maxDurationMs = 100;
-    const auto now = TimeStamp::Now();
-    const auto waitDurationMs =
-        static_cast<uint32_t>((now - start).ToMilliseconds());
-
-    if (UsePendingCanvasTranslatorEvents() && waitDurationMs > maxDurationMs &&
-        mHeader->readerState != State::Paused) {
-      return true;
+    if (UsePendingCanvasTranslatorEvents() &&
+        mHeader->readerState != State::Paused && !mFlushCheckpoint) {
+      const auto maxDurationMs = 100;
+      const auto now = TimeStamp::Now();
+      const auto waitDurationMs =
+          static_cast<uint32_t>((now - start).ToMilliseconds());
+      if (waitDurationMs > maxDurationMs) {
+        return true;
+      }
     }
+  }
+
+  
+  
+  if (mFlushCheckpoint && mHeader->readerState != State::Paused &&
+      mHeader->processedCount >= mFlushCheckpoint) {
+    return true;
   }
 
   return false;
