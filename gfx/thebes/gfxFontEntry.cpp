@@ -1543,7 +1543,7 @@ static inline double WeightStyleStretchDistance(
   
   
   MOZ_ASSERT(stretchDist >= 0.0 && stretchDist <= 2000.0);
-  MOZ_ASSERT(styleDist >= 0.0 && styleDist <= 500.0);
+  MOZ_ASSERT(styleDist >= 0.0 && styleDist <= 900.0);
   MOZ_ASSERT(weightDist >= 0.0 && weightDist <= 1600.0);
 
   
