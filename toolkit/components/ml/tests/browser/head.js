@@ -3,7 +3,11 @@
 
 
 
-"use strict";
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/shared-head.js",
+  this
+);
 
 
 
