@@ -8,6 +8,7 @@
 #include "TextDirectiveUtil.h"
 #include "nsRange.h"
 #include "fragmentdirectives_ffi_generated.h"
+#include "mozilla/ResultVariant.h"
 
 namespace mozilla::dom {
 
@@ -84,6 +85,8 @@ nsTArray<RefPtr<nsRange>> TextDirectiveFinder::FindTextDirectivesInDocument() {
 
 RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
     const TextDirective& aTextDirective) {
+  
+  
   TEXT_FRAGMENT_LOG("Find range for text directive '{}'.",
                     ToString(aTextDirective).c_str());
   
@@ -132,6 +135,12 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
 
       
       
+      
+      
+      
+      
+      
+      
       RefPtr<nsRange> matchRange = nsRange::Create(
           prefixMatch->GetEndContainer(), prefixMatch->EndOffset(),
           searchRange->GetEndContainer(), searchRange->EndOffset(), rv);
@@ -150,6 +159,12 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       
       MOZ_ASSERT(matchRange->GetStartContainer()->IsText());
+      
+      auto nextBlockBoundary = TextDirectiveUtil::FindNextBlockBoundary(
+          matchRange->StartRef(), TextScanDirection::Right);
+      if (MOZ_LIKELY(nextBlockBoundary.isOk())) {
+        matchRange->SetEnd(nextBlockBoundary.unwrap().AsRaw(), IgnoreErrors());
+      }
 
       
       
@@ -161,15 +176,16 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       potentialMatch = TextDirectiveUtil::FindStringInRange(
           matchRange, aTextDirective.start, false, mustEndAtWordBoundary);
       
+      
+      
+      
       if (!potentialMatch) {
         TEXT_FRAGMENT_LOG(
-            "Did not find start '{}'. The text directive does not exist "
-            "in the document.",
+            "Did not find start '{}' in the sub range of the end of `prefix` "
+            "and the next block boundary. Restarting outer loop.",
             NS_ConvertUTF16toUTF8(aTextDirective.start));
-        return nullptr;
+        continue;
       }
-      TEXT_FRAGMENT_LOG("Did find start '{}'.",
-                        NS_ConvertUTF16toUTF8(aTextDirective.start));
       
       
       
@@ -178,9 +194,11 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       if (potentialMatch->StartRef() != matchRange->StartRef()) {
         TEXT_FRAGMENT_LOG(
             "The prefix is not directly followed by the start element. "
-            "Discarding this attempt.");
+            "Restarting outer loop.");
         continue;
       }
+      TEXT_FRAGMENT_LOG("Did find start '{}'.",
+                        NS_ConvertUTF16toUTF8(aTextDirective.start));
     }
     
     else {
@@ -261,6 +279,8 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       }
       
       
+      
+      
       RefPtr<nsRange> suffixRange = nsRange::Create(
           potentialMatch->GetEndContainer(), potentialMatch->EndOffset(),
           searchRange->GetEndContainer(), searchRange->EndOffset(), rv);
@@ -269,46 +289,67 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       }
       
       TextDirectiveUtil::AdvanceStartToNextNonWhitespacePosition(*suffixRange);
+      auto nextBlockBoundary = TextDirectiveUtil::FindNextBlockBoundary(
+          suffixRange->StartRef(), TextScanDirection::Right);
+      if (MOZ_LIKELY(nextBlockBoundary.isOk())) {
+        suffixRange->SetEnd(nextBlockBoundary.unwrap().AsRaw(), IgnoreErrors());
+      }
 
       
       
       
       RefPtr<nsRange> suffixMatch = TextDirectiveUtil::FindStringInRange(
           suffixRange, aTextDirective.suffix, false, true);
-
-      
-      
-      
-      if (!suffixMatch) {
-        TEXT_FRAGMENT_LOG(
-            "Did not find suffix '{}'. The text directive does not exist "
-            "in the document.",
-            NS_ConvertUTF16toUTF8(aTextDirective.suffix));
-        return nullptr;
-      }
-      
-      
-      if (suffixMatch->GetStartContainer() ==
-              suffixRange->GetStartContainer() &&
-          suffixMatch->StartOffset() == suffixRange->StartOffset()) {
-        TEXT_FRAGMENT_LOG("Did find a match.");
-        return potentialMatch;
-      }
       
       
       
       
       
       
-      if (aTextDirective.end.IsEmpty()) {
-        break;
-      }
+      
+      
+      
+      
+      
+      
+      
+      
+      
       
       
       
       
       rangeEndSearchRange->SetStart(potentialMatch->GetEndContainer(),
                                     potentialMatch->EndOffset());
+      if (!suffixMatch) {
+        if (aTextDirective.end.IsEmpty()) {
+          TEXT_FRAGMENT_LOG(
+              "Did not find suffix in the sub range of the end of `start` and "
+              "the next block boundary. Restarting outer loop.");
+          break;
+        }
+        TEXT_FRAGMENT_LOG(
+            "Did not find suffix in the sub range of the end of `end` and the "
+            "next block boundary. Discarding this `end` candidate and "
+            "continuing inner loop.");
+        continue;
+      }
+      if (suffixMatch->GetStartContainer() ==
+              suffixRange->GetStartContainer() &&
+          suffixMatch->StartOffset() == suffixRange->StartOffset()) {
+        TEXT_FRAGMENT_LOG("Did find a match.");
+        return potentialMatch;
+      }
+      if (aTextDirective.end.IsEmpty()) {
+        TEXT_FRAGMENT_LOG(
+            "Did find suffix in the sub range of end of `start` to the end of "
+            "the next block boundary, but not at the start. Restarting outer "
+            "loop.");
+        break;
+      }
+      TEXT_FRAGMENT_LOG(
+          "Did find `suffix` in the sub range of end of `end` to the end of "
+          "the current block, but not at the start. Restarting inner loop.");
     }
     
     if (rangeEndSearchRange->Collapsed()) {
