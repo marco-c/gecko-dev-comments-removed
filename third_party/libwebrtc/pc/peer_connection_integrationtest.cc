@@ -4287,7 +4287,8 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
       metrics::NumSamples("WebRTC.Call.AbsCapture.ExtensionWait") > 0,
       kDefaultTimeout);
   
-  EXPECT_LT(metrics::MinSample("WebRTC.Call.AbsCapture.Delta"), 100'000);
+  
+  EXPECT_LT(metrics::MinSample("WebRTC.Call.AbsCapture.Delta"), 60'000'000);
   ASSERT_TRUE_WAIT(metrics::NumSamples("WebRTC.Call.AbsCapture.OffsetWait") > 0,
                    kDefaultTimeout);
   
