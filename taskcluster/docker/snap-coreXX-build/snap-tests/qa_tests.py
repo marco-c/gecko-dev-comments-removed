@@ -304,21 +304,15 @@ class QATests(SnapTestsBase):
             )
         )
 
-        if not self.is_esr_115():
-            self._wait.until(
-                lambda d: d.execute_script(
-                    'return window.getComputedStyle(document.querySelector(".loadingInput.start"), "::after").getPropertyValue("visibility");'
-                )
-                != "visible"
+        self._wait.until(
+            lambda d: d.execute_script(
+                'return window.getComputedStyle(document.querySelector(".loadingInput.start"), "::after").getPropertyValue("visibility");'
             )
-            
-            
-            time.sleep(1)
-        else:
-            self._logger.info("Running against ESR, just wait too much.")
-            
-            
-            time.sleep(10)
+            != "visible"
+        )
+        
+        
+        time.sleep(1)
 
         
         if self.is_debug_build():
@@ -440,34 +434,7 @@ class QATests(SnapTestsBase):
             time.sleep(0.75)
 
             self._logger.info("assert {}".format(menu_id))
-            if self.is_esr_115() and menu_id == "documentProperties":
-                
-                title = self._wait.until(
-                    EC.visibility_of_element_located((By.ID, "titleField"))
-                )
-                author = self._wait.until(
-                    EC.visibility_of_element_located((By.ID, "authorField"))
-                )
-                subject = self._wait.until(
-                    EC.visibility_of_element_located((By.ID, "subjectField"))
-                )
-                version = self._wait.until(
-                    EC.visibility_of_element_located((By.ID, "versionField"))
-                )
-                assert title.text == "PDF", "Incorrect PDF title reported: {}".format(
-                    title
-                )
-                assert (
-                    author.text == "Software 995"
-                ), "Incorrect PDF author reported: {}".format(author)
-                assert (
-                    subject.text == "Create PDF with Pdf 995"
-                ), "Incorrect PDF subject reported: {}".format(subject)
-                assert (
-                    version.text == "1.3"
-                ), "Incorrect PDF version reported: {}".format(version)
-            else:
-                self.assert_rendering(exp[menu_id], self._driver)
+            self.assert_rendering(exp[menu_id], self._driver)
 
             if menu_id == "documentProperties":
                 close = self._wait.until(
