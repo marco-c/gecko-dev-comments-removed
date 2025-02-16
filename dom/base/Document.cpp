@@ -11003,8 +11003,14 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       
       
       if (maxWidth == nsViewportInfo::kAuto && !mValidScaleFloat) {
-        maxWidth = nsViewportInfo::Max(
-            displaySize.width, StaticPrefs::browser_viewport_desktopWidth());
+        maxWidth = StaticPrefs::browser_viewport_desktopWidth();
+        if (inRDM &&
+            bc->TouchEventsOverride() == TouchEventsOverride::Enabled) {
+          
+          
+          
+          maxWidth = nsViewportInfo::Max(displaySize.width, maxWidth);
+        }
         
         
         
