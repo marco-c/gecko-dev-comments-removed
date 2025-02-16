@@ -408,6 +408,10 @@ already_AddRefed<gfx::DataSourceSurface> CanvasTranslator::WaitForSurface(
   }
   ReferencePtr idRef(aId);
   if (!HasSourceSurface(idRef)) {
+    if (!HasPendingEvent()) {
+      return nullptr;
+    }
+
     
     
     
@@ -587,12 +591,7 @@ void CanvasTranslator::CheckAndSignalWriter() {
 }
 
 bool CanvasTranslator::HasPendingEvent() {
-  int64_t limit = mHeader->eventCount;
-  if (mFlushCheckpoint) {
-    
-    limit = std::min(limit, mFlushCheckpoint);
-  }
-  return mHeader->processedCount < limit;
+  return mHeader->processedCount < mHeader->eventCount;
 }
 
 bool CanvasTranslator::ReadPendingEvent(EventType& aEventType) {
@@ -607,17 +606,7 @@ bool CanvasTranslator::ReadPendingEvent(EventType& aEventType) {
 }
 
 bool CanvasTranslator::ReadNextEvent(EventType& aEventType) {
-  if (mHeader->readerState == State::Paused) {
-    Flush();
-    return false;
-  }
-
-  if (mFlushCheckpoint) {
-    
-    
-    
-    return HasPendingEvent() && ReadPendingEvent(aEventType);
-  }
+  MOZ_DIAGNOSTIC_ASSERT(mHeader->readerState == State::Processing);
 
   uint32_t spinCount = mMaxSpinCount;
   do {
@@ -664,6 +653,11 @@ bool CanvasTranslator::ReadNextEvent(EventType& aEventType) {
 
 bool CanvasTranslator::TranslateRecording() {
   MOZ_ASSERT(IsInTaskQueue());
+  MOZ_DIAGNOSTIC_ASSERT_IF(mFlushCheckpoint, HasPendingEvent());
+
+  if (mHeader->readerState == State::Failed) {
+    return false;
+  }
 
   if (mSharedContext && EnsureSharedContextWebgl()) {
     mSharedContext->EnterTlsScope();
@@ -720,23 +714,30 @@ bool CanvasTranslator::TranslateRecording() {
 
     mHeader->processedCount++;
 
-    if (UsePendingCanvasTranslatorEvents() &&
-        mHeader->readerState != State::Paused && !mFlushCheckpoint) {
-      const auto maxDurationMs = 100;
-      const auto now = TimeStamp::Now();
-      const auto waitDurationMs =
-          static_cast<uint32_t>((now - start).ToMilliseconds());
-      if (waitDurationMs > maxDurationMs) {
+    if (mHeader->readerState == State::Paused) {
+      
+      
+      Flush();
+      return false;
+    }
+
+    if (mFlushCheckpoint) {
+      
+      
+      if (mHeader->processedCount >= mFlushCheckpoint) {
         return true;
       }
+    } else {
+      if (UsePendingCanvasTranslatorEvents()) {
+        const auto maxDurationMs = 100;
+        const auto now = TimeStamp::Now();
+        const auto waitDurationMs =
+            static_cast<uint32_t>((now - start).ToMilliseconds());
+        if (waitDurationMs > maxDurationMs) {
+          return true;
+        }
+      }
     }
-  }
-
-  
-  
-  if (mFlushCheckpoint && mHeader->readerState != State::Paused &&
-      mHeader->processedCount >= mFlushCheckpoint) {
-    return true;
   }
 
   return false;
