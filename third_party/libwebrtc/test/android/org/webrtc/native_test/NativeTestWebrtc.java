@@ -195,6 +195,7 @@ public class NativeTestWebrtc {
     
     
     
+    @SuppressWarnings("UnusedMethod")
     private void nativeTestFailed() {
         Log.e(TAG, "[ RUNNER_FAILED ] could not load native library");
     }
