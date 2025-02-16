@@ -62,28 +62,5 @@ class TimeController {
             TimeDelta max_duration = TimeDelta::Seconds(5));
 };
 
-
-
-class ControlledAlarmClock {
- public:
-  virtual ~ControlledAlarmClock() = default;
-
-  
-  virtual Clock* GetClock() = 0;
-
-  
-  
-  
-  
-  
-  virtual bool ScheduleAlarmAt(Timestamp deadline) = 0;
-
-  
-  virtual void SetCallback(std::function<void()> callback) = 0;
-
-  
-  virtual void Sleep(TimeDelta duration) = 0;
-};
-
 }  
 #endif  
