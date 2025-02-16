@@ -201,8 +201,12 @@ Timestamp VCMTiming::RenderTimeInternal(uint32_t frame_timestamp,
   }
   
   
-  Timestamp estimated_complete_time =
-      ts_extrapolator_->ExtrapolateLocalTime(frame_timestamp).value_or(now);
+  std::optional<Timestamp> local_time =
+      ts_extrapolator_->ExtrapolateLocalTime(frame_timestamp);
+  if (!local_time.has_value()) {
+    return now;
+  }
+  Timestamp estimated_complete_time = *local_time;
 
   
   
