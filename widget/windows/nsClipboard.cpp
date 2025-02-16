@@ -875,49 +875,54 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject* aDataObject,
             *aData = buffer;
             *aLen = tempPath.Length() * sizeof(wchar_t);
             result = NS_OK;
-          } else if (fe.cfFormat == fileFlavor) {
+            break;
+          }
+
+          if (fe.cfFormat == fileFlavor) {
             NS_WARNING(
                 "Mozilla doesn't yet understand how to read this type of "
                 "file flavor");
-          } else {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            uint32_t allocLen = 0;
-            if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen))) {
-              if (fe.cfFormat == GetHtmlClipboardFormat()) {
-                
-                
-                
-                
-                
-                *aLen = allocLen;
-              } else if (fe.cfFormat == GetCustomClipboardFormat()) {
-                
-                *aLen = allocLen;
-              } else if (fe.cfFormat == preferredDropEffect) {
-                
-                
-                
-                
-                NS_ASSERTION(allocLen == sizeof(DWORD),
-                             "CFSTR_PREFERREDDROPEFFECT should return a DWORD");
-                *aLen = allocLen;
-              } else {
-                *aLen = NS_strlen(reinterpret_cast<char16_t*>(*aData)) *
-                        sizeof(char16_t);
-              }
-              result = NS_OK;
+            result = NS_ERROR_FAILURE;
+            break;
+          }
+
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          uint32_t allocLen = 0;
+          if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen))) {
+            if (fe.cfFormat == GetHtmlClipboardFormat()) {
+              
+              
+              
+              
+              
+              *aLen = allocLen;
+            } else if (fe.cfFormat == GetCustomClipboardFormat()) {
+              
+              *aLen = allocLen;
+            } else if (fe.cfFormat == preferredDropEffect) {
+              
+              
+              
+              
+              NS_ASSERTION(allocLen == sizeof(DWORD),
+                           "CFSTR_PREFERREDDROPEFFECT should return a DWORD");
+              *aLen = allocLen;
+            } else {
+              *aLen = NS_strlen(reinterpret_cast<char16_t*>(*aData)) *
+                      sizeof(char16_t);
             }
+            return NS_OK;
           }
         } break;
       }  
