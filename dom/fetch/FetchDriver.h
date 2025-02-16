@@ -18,6 +18,7 @@
 #include "mozilla/dom/SerializedStackHolder.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"
 
 #include "mozilla/DebugOnly.h"
@@ -159,6 +160,13 @@ class FetchDriver final : public nsIChannelEventSink,
   SafeRefPtr<InternalRequest> mRequest;
   SafeRefPtr<InternalResponse> mResponse;
   nsCOMPtr<nsIOutputStream> mPipeOutputStream;
+
+  
+  
+  Mutex mODAMutex;
+  
+  
+  
   RefPtr<FetchDriverObserver> mObserver;
   RefPtr<Document> mDocument;
   nsCOMPtr<nsICSPEventListener> mCSPEventListener;
