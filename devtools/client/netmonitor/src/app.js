@@ -14,9 +14,6 @@ const {
 const Provider = createFactory(
   require("resource://devtools/client/shared/vendor/react-redux.js").Provider
 );
-const {
-  visibilityHandlerStore,
-} = require("resource://devtools/client/shared/redux/visibilityHandlerStore.js");
 const App = createFactory(
   require("resource://devtools/client/netmonitor/src/components/App.js")
 );
@@ -76,11 +73,7 @@ NetMonitorApp.prototype = {
     });
 
     
-    
-    
-    
-    
-    render(Provider({ store: visibilityHandlerStore(store) }, app), this.mount);
+    render(Provider({ store }, app), this.mount);
   },
 
   

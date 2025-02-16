@@ -1057,9 +1057,12 @@ Toolbox.prototype = {
       this.webconsolePanel = this.doc.querySelector(
         "#toolbox-panel-webconsole"
       );
-      this.doc
-        .getElementById("toolbox-console-splitter")
-        .addEventListener("command", this._saveSplitConsoleHeight);
+      this.webconsolePanel.style.height =
+        Services.prefs.getIntPref(SPLITCONSOLE_HEIGHT_PREF) + "px";
+      this.webconsolePanel.addEventListener(
+        "resize",
+        this._saveSplitConsoleHeight
+      );
 
       this._buildButtons();
 
@@ -1856,24 +1859,18 @@ Toolbox.prototype = {
     const openedConsolePanel = this.currentToolId === "webconsole";
 
     if (openedConsolePanel) {
-      deck.setAttribute("hidden", "");
+      deck.collapsed = true;
       deck.removeAttribute("expanded");
       splitter.hidden = true;
-      webconsolePanel.removeAttribute("hidden");
+      webconsolePanel.collapsed = false;
       webconsolePanel.setAttribute("expanded", "");
     } else {
-      deck.removeAttribute("hidden");
+      deck.collapsed = false;
       deck.toggleAttribute("expanded", !this.splitConsole);
       splitter.hidden = !this.splitConsole;
       webconsolePanel.collapsed = !this.splitConsole;
       webconsolePanel.removeAttribute("expanded");
     }
-
-    
-    
-    this.webconsolePanel.style.height = openedConsolePanel
-      ? ""
-      : Services.prefs.getIntPref(SPLITCONSOLE_HEIGHT_PREF) + "px";
   },
 
   
@@ -2788,6 +2785,7 @@ Toolbox.prototype = {
       iframe.setAttribute("flex", 1);
       iframe.setAttribute("forceOwnRefreshDriver", "");
       iframe.tooltip = "aHTMLTooltip";
+      iframe.style.visibility = "hidden";
 
       gDevTools.emit(id + "-init", this, iframe);
       this.emit(id + "-init", iframe);
@@ -2796,9 +2794,13 @@ Toolbox.prototype = {
       if (!iframe.parentNode) {
         const vbox = this.doc.getElementById("toolbox-panel-" + id);
         vbox.appendChild(iframe);
+        vbox.visibility = "visible";
       }
 
       const onLoad = async () => {
+        
+        iframe.style.visibility = "visible";
+
         
         this.setIframeDocumentDir(iframe);
 
@@ -3009,6 +3011,7 @@ Toolbox.prototype = {
 
     
     const toolboxPanels = this.doc.querySelectorAll(".toolbox-panel");
+    this.selectSingleNode(toolboxPanels, "toolbox-panel-" + id);
 
     this.lastUsedToolId = this.currentToolId;
     this.currentToolId = id;
@@ -3018,10 +3021,6 @@ Toolbox.prototype = {
     }
 
     return this.loadTool(id, options).then(panel => {
-      
-      
-      this.selectSingleNode(toolboxPanels, "toolbox-panel-" + id);
-
       
       this.focusTool(id);
 
@@ -3225,8 +3224,6 @@ Toolbox.prototype = {
   closeSplitConsole() {
     this._splitConsole = false;
     Services.prefs.setBoolPref(SPLITCONSOLE_OPEN_PREF, false);
-    this._saveSplitConsoleHeight();
-
     this._refreshConsoleDisplay();
     this.component.setIsSplitConsoleActive(false);
 
