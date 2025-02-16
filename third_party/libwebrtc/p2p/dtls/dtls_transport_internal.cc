@@ -8,7 +8,7 @@
 
 
 
-#include "p2p/base/dtls_transport_internal.h"
+#include "p2p/dtls/dtls_transport_internal.h"
 
 namespace cricket {
 
