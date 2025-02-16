@@ -9,6 +9,7 @@
 #include "mozilla/Casting.h"
 
 #include "gc/GC.h"
+#include "jit/BaselineCompileQueue.h"
 #include "jit/BaselineCompileTask.h"
 #include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
@@ -1548,8 +1549,8 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
 
   
   
-  masm.branchTestPtr(Assembler::NonZero, scriptReg,
-                     Imm32(CompilingOrDisabledBit), &done);
+  masm.branchTestPtr(Assembler::NonZero, scriptReg, Imm32(SpecialScriptBit),
+                     &done);
 
   
   if (JSOp(*pc) == JSOp::LoopHead) {
@@ -1667,7 +1668,7 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
 
   masm.branchTestPtr(Assembler::NonZero,
                      Address(scriptReg, JitScript::offsetOfBaselineScript()),
-                     Imm32(CompilingOrDisabledBit), &done);
+                     Imm32(SpecialScriptBit), &done);
   {
     prepareVMCall();
 
@@ -5918,7 +5919,7 @@ bool BaselineCodeGen<Handler>::emitEnterGeneratorCode(Register script,
                                                       Register scratch) {
   
 
-  static_assert(CompilingScript == 0x3,
+  static_assert(CompilingScript == 0x5,
                 "Comparison below requires specific sentinel encoding");
 
   

@@ -58,13 +58,17 @@ class JitZone;
 
 
 static constexpr uintptr_t DisabledScript = 0x1;
-static constexpr uintptr_t CompilingScript = 0x3;
+static constexpr uintptr_t QueuedScript = 0x3;
+static constexpr uintptr_t CompilingScript = 0x5;
 
-static constexpr uint32_t CompilingOrDisabledBit = 0x1;
-static_assert((DisabledScript & CompilingOrDisabledBit) != 0);
-static_assert((CompilingScript & CompilingOrDisabledBit) != 0);
+static constexpr uint32_t SpecialScriptBit = 0x1;
+static_assert((DisabledScript & SpecialScriptBit) != 0);
+static_assert((QueuedScript & SpecialScriptBit) != 0);
+static_assert((CompilingScript & SpecialScriptBit) != 0);
 
 static BaselineScript* const BaselineDisabledScriptPtr =
+    reinterpret_cast<BaselineScript*>(DisabledScript);
+static BaselineScript* const BaselineQueuedScriptPtr =
     reinterpret_cast<BaselineScript*>(DisabledScript);
 static BaselineScript* const BaselineCompilingScriptPtr =
     reinterpret_cast<BaselineScript*>(CompilingScript);
@@ -324,6 +328,7 @@ class alignas(uintptr_t) JitScript final
 
   
   
+  
   GCStructPtr<BaselineScript*> baselineScript_;
 
   
@@ -477,6 +482,7 @@ class alignas(uintptr_t) JitScript final
   bool hasBaselineScript() const {
     bool res = baselineScript_ &&
                baselineScript_ != BaselineDisabledScriptPtr &&
+               baselineScript_ != BaselineQueuedScriptPtr &&
                baselineScript_ != BaselineCompilingScriptPtr;
     MOZ_ASSERT_IF(!res, !hasIonScript());
     return res;
@@ -495,6 +501,9 @@ class alignas(uintptr_t) JitScript final
     BaselineScript* baseline = baselineScript();
     setBaselineScriptImpl(gcx, script, nullptr);
     return baseline;
+  }
+  bool isBaselineQueued() const {
+    return baselineScript_ == BaselineQueuedScriptPtr;
   }
   bool isBaselineCompiling() const {
     return baselineScript_ == BaselineCompilingScriptPtr;
