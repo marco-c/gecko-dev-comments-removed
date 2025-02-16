@@ -339,6 +339,10 @@ void _vp_psy_init(vorbis_look_psy *p,vorbis_info_psy *vi,
     if(halfoc<0)halfoc=0;
     if(halfoc>=P_BANDS-1)halfoc=P_BANDS-1;
     inthalfoc=(int)halfoc;
+    
+
+
+    if(inthalfoc>=P_BANDS-2)inthalfoc=P_BANDS-2;
     del=halfoc-inthalfoc;
 
     for(j=0;j<P_NOISECURVES;j++)
