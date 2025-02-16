@@ -481,6 +481,27 @@ void HTMLLinkElement::
         return;
       }
 
+      
+      
+      
+      int16_t asValue = asAttr.GetEnumValue();
+      if (asValue != net::DESTINATION_FETCH &&
+          asValue != net::DESTINATION_FONT &&
+          asValue != net::DESTINATION_IMAGE &&
+          asValue != net::DESTINATION_SCRIPT &&
+          asValue != net::DESTINATION_STYLE &&
+          asValue != net::DESTINATION_TRACK) {
+        
+        
+        
+        
+        
+        RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
+            this, u"load"_ns, CanBubble::eNo, ChromeOnlyDispatch::eNo);
+        asyncDispatcher->PostDOMEvent();
+        return;
+      }
+
       StartPreload(policyType);
       return;
     }
