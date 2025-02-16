@@ -73,7 +73,10 @@ module.exports = {
 
     
     
-    "jest/no-standalone-expect": "off",
+    "jest/no-standalone-expect": [
+      "error",
+      { additionalTestBlockFunctions: ["cases"] },
+    ],
 
     
     "no-unsafe-finally": "error",
@@ -328,7 +331,7 @@ module.exports = {
   settings: {
     jest: {
       
-      version: 27,
+      version: 29,
     },
   },
 };
