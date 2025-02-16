@@ -175,6 +175,7 @@ add_task(async function test_expanded_state_for_always_show() {
 });
 
 add_task(async function test_states_for_hide_sidebar() {
+  
   await SpecialPowers.pushPrefEnv({
     set: [[SIDEBAR_TAB_DIRECTION_PREF, false]],
   });
@@ -227,15 +228,13 @@ add_task(async function test_states_for_hide_sidebar() {
     await flushTaskQueue(win);
   };
 
-  
-  info("Check the launcher is initially hidden");
-  await checkStates({ hidden: true });
-  info("Show sidebar using the toolbar button.");
-  EventUtils.synthesizeMouseAtCenter(toolbarButton, {}, win);
+  info("Check the launcher is initially visible");
   await checkStates({ hidden: false });
 
-  info("Check states on a new window.");
+  info("Hide sidebar using the toolbar button.");
   EventUtils.synthesizeMouseAtCenter(toolbarButton, {}, win);
+  await checkStates({ hidden: true });
+
   await checkStates({ hidden: true });
   const newWin = await BrowserTestUtils.openNewBrowserWindow();
   await checkStates(

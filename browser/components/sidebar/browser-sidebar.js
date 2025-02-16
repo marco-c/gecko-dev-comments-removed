@@ -2008,7 +2008,11 @@ XPCOMUtils.defineLazyPreferenceGetter(
       SidebarController.toggleExpandOnHover(newValue === "expand-on-hover");
       SidebarController.recordVisibilitySetting(newValue);
       if (SidebarController._state) {
-        const isVerticalTabs = SidebarController.sidebarVerticalTabsEnabled;
+        
+        
+        const isVerticalTabs = Services.prefs.getBoolPref(
+          "sidebar.verticalTabs"
+        );
         SidebarController._state.revampVisibility = newValue;
         if (
           SidebarController._animationEnabled &&
@@ -2017,11 +2021,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
         ) {
           SidebarController._animateSidebarMain();
         }
+        const forceExpand = isVerticalTabs && newValue === "always-show";
         SidebarController._state.updateVisibility(
           (newValue != "hide-sidebar" && isVerticalTabs) || !isVerticalTabs,
           false,
           false,
-          newValue !== "expand-on-hover"
+          forceExpand
         );
       }
       SidebarController.updateToolbarButton();
