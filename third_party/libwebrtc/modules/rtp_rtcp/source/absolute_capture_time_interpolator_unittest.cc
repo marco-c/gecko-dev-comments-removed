@@ -18,9 +18,14 @@
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
 #include "system_wrappers/include/ntp_time.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
+
+using testing::AllOf;
+using testing::Ge;
+using testing::Le;
 
 TEST(AbsoluteCaptureTimeInterpolatorTest, GetSourceWithoutCsrcs) {
   constexpr uint32_t kSsrc = 12;
@@ -378,6 +383,40 @@ TEST(AbsoluteCaptureTimeInterpolatorTest, MetricsAreUpdated) {
   EXPECT_METRIC_EQ(metrics::NumSamples("WebRTC.Call.AbsCapture.Delta"), 2);
   EXPECT_METRIC_EQ(metrics::NumSamples("WebRTC.Call.AbsCapture.DeltaDeviation"),
                    1);
+}
+
+TEST(AbsoluteCaptureTimeInterpolatorTest, DeltaRecordedCorrectly) {
+  constexpr uint32_t kRtpTimestamp0 = 102030000;
+  constexpr uint32_t kSource = 1234;
+  constexpr uint32_t kFrequency = 1000;
+  SimulatedClock clock(0);
+  AbsoluteCaptureTimeInterpolator interpolator(&clock);
+
+  metrics::Reset();
+  clock.AdvanceTimeMilliseconds(10);
+  
+  interpolator.OnReceivePacket(
+      kSource, kRtpTimestamp0 + 10, kFrequency,
+      AbsoluteCaptureTime{
+          uint64_t{clock.ConvertTimestampToNtpTime(Timestamp::Millis(5))},
+          std::nullopt});
+
+  EXPECT_METRIC_EQ(metrics::NumSamples("WebRTC.Call.AbsCapture.ExtensionWait"),
+                   1);
+  int sample = metrics::MinSample("WebRTC.Call.AbsCapture.Delta");
+  EXPECT_THAT(sample, AllOf(Ge(5000), Le(5000)));
+
+  metrics::Reset();
+  
+  interpolator.OnReceivePacket(
+      kSource, kRtpTimestamp0 + 15, kFrequency,
+      AbsoluteCaptureTime{
+          uint64_t{clock.ConvertTimestampToNtpTime(Timestamp::Millis(16))},
+          std::nullopt});
+
+  sample = metrics::MinSample("WebRTC.Call.AbsCapture.Delta");
+  
+  EXPECT_THAT(sample, AllOf(Ge(6000), Le(6000)));
 }
 
 }  

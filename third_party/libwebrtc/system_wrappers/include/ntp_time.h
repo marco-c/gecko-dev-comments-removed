@@ -126,5 +126,11 @@ inline int64_t UQ32x32ToInt64Us(uint64_t q32x32) {
       std::round(q32x32 * (1'000'000.0 / NtpTime::kFractionsPerSecond)));
 }
 
+
+inline int64_t Q32x32ToInt64Us(int64_t q32x32) {
+  return rtc::dchecked_cast<int64_t>(
+      std::round(q32x32 * (1'000'000.0 / NtpTime::kFractionsPerSecond)));
+}
+
 }  
 #endif  
