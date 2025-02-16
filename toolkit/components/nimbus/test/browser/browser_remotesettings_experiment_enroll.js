@@ -87,14 +87,29 @@ add_task(async function test_experimentEnrollment_startup() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["app.shield.optoutstudies.enabled", false]],
+    set: [
+      ["messaging-system.rsexperimentloader.enabled", false],
+      ["app.shield.optoutstudies.enabled", false],
+    ],
   });
 
-  Assert.ok(!RemoteSettingsExperimentLoader._enabled, "Should be disabled");
+  Assert.ok(!RemoteSettingsExperimentLoader.enabled, "Should be disabled");
 
   await SpecialPowers.pushPrefEnv({
     set: [["app.shield.optoutstudies.enabled", true]],
   });
 
-  Assert.ok(RemoteSettingsExperimentLoader._enabled, "Should be enabled");
+  Assert.ok(
+    !RemoteSettingsExperimentLoader.enabled,
+    "Should still be disabled (feature pref is off)"
+  );
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["messaging-system.rsexperimentloader.enabled", true]],
+  });
+
+  Assert.ok(
+    RemoteSettingsExperimentLoader.enabled,
+    "Should finally be enabled"
+  );
 });

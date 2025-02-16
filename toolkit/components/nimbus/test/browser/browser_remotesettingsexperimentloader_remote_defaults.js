@@ -147,7 +147,7 @@ add_task(async function test_remote_fetch_and_ready() {
 
   
   
-  RemoteSettingsExperimentLoader._enabled = true;
+  RemoteSettingsExperimentLoader._initialized = true;
   await RemoteSettingsExperimentLoader.updateRecipes(
     "browser_rsel_remote_defaults"
   );
@@ -276,13 +276,12 @@ add_task(async function test_remote_fetch_on_updateRecipes() {
   );
 
   
-  RemoteSettingsExperimentLoader._enabled = true;
-  RemoteSettingsExperimentLoader.disable();
+  RemoteSettingsExperimentLoader._initialized = true;
+  RemoteSettingsExperimentLoader.uninit();
   Services.prefs.clearUserPref(
     "app.update.lastUpdateTime.rs-experiment-loader-timer"
   );
 
-  RemoteSettingsExperimentLoader._enabled = true;
   RemoteSettingsExperimentLoader.setTimer();
 
   await BrowserTestUtils.waitForCondition(
@@ -294,7 +293,8 @@ add_task(async function test_remote_fetch_on_updateRecipes() {
   Assert.equal(updateRecipesStub.firstCall.args[0], "timer", "Called by timer");
   sandbox.restore();
   
-  RemoteSettingsExperimentLoader.disable();
+  RemoteSettingsExperimentLoader._initialized = true;
+  RemoteSettingsExperimentLoader.uninit();
   Services.prefs.clearUserPref(
     "app.update.lastUpdateTime.rs-experiment-loader-timer"
   );
@@ -391,7 +391,7 @@ add_task(async function test_finalizeRemoteConfigs_cleanup() {
   };
 
   const { cleanup } = await setup([remoteConfiguration]);
-  RemoteSettingsExperimentLoader._enabled = true;
+  RemoteSettingsExperimentLoader._initialized = true;
   await RemoteSettingsExperimentLoader.updateRecipes();
   await cleanupPromise;
 
@@ -501,7 +501,7 @@ add_task(async function remote_defaults_active_remote_defaults() {
   
   const { cleanup } = await setup([rollout2, rollout1]);
   let updatePromise = new Promise(resolve => barFeature.onUpdate(resolve));
-  RemoteSettingsExperimentLoader._enabled = true;
+  RemoteSettingsExperimentLoader._initialized = true;
   await RemoteSettingsExperimentLoader.updateRecipes("mochitest");
 
   await updatePromise;
