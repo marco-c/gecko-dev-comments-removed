@@ -69,12 +69,6 @@ struct MozGtkSize {
   }
 };
 
-struct ToggleGTKMetrics {
-  bool initialized;
-  MozGtkSize minSizeWithBorder;
-  GtkBorder borderAndPadding;
-};
-
 struct ToolbarButtonGTKMetrics {
   MozGtkSize minSizeWithBorder{};
   gint iconXPosition = 0;
@@ -123,15 +117,6 @@ enum WidgetNodeType : int {
   
   MOZ_GTK_BUTTON_ARROW,
 
-  
-  MOZ_GTK_CHECKBUTTON_CONTAINER,
-  
-  MOZ_GTK_CHECKBUTTON,
-
-  
-  MOZ_GTK_RADIOBUTTON_CONTAINER,
-  
-  MOZ_GTK_RADIOBUTTON,
   
   MOZ_GTK_SCROLLBAR_VERTICAL,
   MOZ_GTK_SCROLLBAR_CONTENTS_VERTICAL,
@@ -351,34 +336,6 @@ gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
 gint moz_gtk_get_tab_border(gint* left, gint* top, gint* right, gint* bottom,
                             GtkTextDirection direction, GtkTabFlags flags,
                             WidgetNodeType widget);
-
-
-
-
-
-
-
-
-
-gint moz_gtk_checkbox_get_metrics(gint* indicator_size,
-                                  gint* indicator_spacing);
-
-
-
-
-
-
-const ToggleGTKMetrics* GetToggleMetrics(WidgetNodeType aWidgetType);
-
-
-
-
-
-
-
-
-
-gint moz_gtk_radio_get_metrics(gint* indicator_size, gint* indicator_spacing);
 
 
 
