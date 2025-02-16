@@ -11614,15 +11614,17 @@ const NEWTAB_DARK_THEME = {
 
 
 
-function Logo() {
+function Logo({
+  isAprilFoolsLogo
+}) {
   return external_React_default().createElement("h1", {
     className: "logo-and-wordmark-wrapper"
   }, external_React_default().createElement("div", {
-    className: "logo-and-wordmark",
+    className: `logo-and-wordmark ${isAprilFoolsLogo ? "april-fools" : ""}`,
     role: "img",
     "data-l10n-id": "newtab-logo-and-wordmark"
   }, external_React_default().createElement("div", {
-    className: "logo"
+    className: `logo ${isAprilFoolsLogo ? "april-fools" : ""}`
   }), external_React_default().createElement("div", {
     className: "wordmark"
   })));
@@ -11750,7 +11752,9 @@ class _Search extends (external_React_default()).PureComponent {
     const wrapperClassName = ["search-wrapper", this.props.disable && "search-disabled", this.props.fakeFocus && "fake-focus"].filter(v => v).join(" ");
     return external_React_default().createElement("div", {
       className: wrapperClassName
-    }, this.props.showLogo && external_React_default().createElement(Logo, null), !this.props.handoffEnabled && external_React_default().createElement("div", {
+    }, this.props.showLogo && external_React_default().createElement(Logo, {
+      isAprilFoolsLogo: this.props.Prefs.values["newtabLogo.aprilfools"]
+    }), !this.props.handoffEnabled && external_React_default().createElement("div", {
       className: "search-inner-wrapper"
     }, external_React_default().createElement("input", {
       id: "newtab-search-text",
@@ -13201,7 +13205,9 @@ class BaseContent extends (external_React_default()).PureComponent {
     }, external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Search_Search, Base_extends({
       showLogo: noSectionsEnabled || prefs["logowordmark.alwaysVisible"],
       handoffEnabled: searchHandoffEnabled
-    }, props.Search)))), !prefs.showSearch && layoutsVariantAorB && !noSectionsEnabled && external_React_default().createElement(Logo, null), external_React_default().createElement("div", {
+    }, props.Search)))), !prefs.showSearch && layoutsVariantAorB && !noSectionsEnabled && external_React_default().createElement(Logo, {
+      isAprilFoolsLogo: this.props.Prefs.values["newtabLogo.aprilfools"]
+    }), external_React_default().createElement("div", {
       className: `body-wrapper${initialized ? " on" : ""}`
     }, isDiscoveryStream ? external_React_default().createElement(ErrorBoundary, {
       className: "borderless-error"
