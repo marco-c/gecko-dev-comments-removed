@@ -350,13 +350,29 @@ static already_AddRefed<Element> MakePseudo(Document& aDoc,
   return el.forget();
 }
 
-static void SetProp(StyleLockedDeclarationBlock* aDecls, Document* aDoc,
-                    const nsACString& aProp, const nsACString& aValue) {
-  Servo_DeclarationBlock_SetProperty(
-      aDecls, &aProp, &aValue,
+static bool SetProp(StyleLockedDeclarationBlock* aDecls, Document* aDoc,
+                    nsCSSPropertyID aProp, const nsACString& aValue) {
+  return Servo_DeclarationBlock_SetPropertyById(
+      aDecls, aProp, &aValue,
        false, aDoc->DefaultStyleAttrURLData(),
       StyleParsingMode::DEFAULT, eCompatibility_FullStandards,
       aDoc->CSSLoader(), StyleCssRuleType::Style, {});
+}
+
+static bool SetProp(StyleLockedDeclarationBlock* aDecls, Document*,
+                    nsCSSPropertyID aProp, float aLength, nsCSSUnit aUnit) {
+  return Servo_DeclarationBlock_SetLengthValue(aDecls, aProp, aLength, aUnit);
+}
+
+static bool SetProp(StyleLockedDeclarationBlock* aDecls, Document*,
+                    nsCSSPropertyID aProp, const CSSToCSSMatrix4x4Flagged& aM) {
+  MOZ_ASSERT(aProp == eCSSProperty_transform);
+  AutoTArray<StyleTransformOperation, 1> ops;
+  ops.AppendElement(
+      StyleTransformOperation::Matrix3D(StyleGenericMatrix3D<StyleNumber>{
+          aM._11, aM._12, aM._13, aM._14, aM._21, aM._22, aM._23, aM._24,
+          aM._31, aM._32, aM._33, aM._34, aM._41, aM._42, aM._43, aM._44}));
+  return Servo_DeclarationBlock_SetTransform(aDecls, aProp, &ops);
 }
 
 static StyleLockedDeclarationBlock* EnsureRule(
@@ -426,7 +442,7 @@ void ViewTransition::SetupTransitionPseudoElements() {
       MOZ_ASSERT(capturedElement.mNewElement);
       
       auto* rule = EnsureRule(capturedElement.mNewRule);
-      SetProp(rule, mDocument, "animation-name"_ns,
+      SetProp(rule, mDocument, eCSSProperty_animation_name,
               "-ua-view-transition-fade-in"_ns);
     }
     
@@ -444,9 +460,21 @@ void ViewTransition::SetupTransitionPseudoElements() {
       
       
       MOZ_ASSERT(capturedElement.mOldState.mTriedImage);
-      auto* rule = EnsureRule(capturedElement.mOldRule);
-      SetProp(rule, mDocument, "animation-name"_ns,
-              "-ua-view-transition-fade-out"_ns);
+      SetProp(EnsureRule(capturedElement.mOldRule), mDocument,
+              eCSSProperty_animation_name, "-ua-view-transition-fade-out"_ns);
+
+      
+      
+      auto* rule = EnsureRule(capturedElement.mGroupRule);
+      auto oldRect = CSSPixel::FromAppUnits(capturedElement.mOldState.mSize);
+      SetProp(rule, mDocument, eCSSProperty_width, oldRect.width,
+              eCSSUnit_Pixel);
+      SetProp(rule, mDocument, eCSSProperty_height, oldRect.height,
+              eCSSUnit_Pixel);
+      SetProp(rule, mDocument, eCSSProperty_transform,
+              capturedElement.mOldState.mTransform);
+      
+      
     }
     
     
@@ -458,18 +486,20 @@ void ViewTransition::SetupTransitionPseudoElements() {
       
       
       SetProp(EnsureRule(capturedElement.mGroupRule), mDocument,
-              "animation-name"_ns, dynamicAnimationName);
+              eCSSProperty_animation_name, dynamicAnimationName);
 
       
       SetProp(EnsureRule(capturedElement.mImagePairRule), mDocument,
-              "isolation"_ns, "isolate"_ns);
+              eCSSProperty_isolation, "isolate"_ns);
 
       
       SetProp(
-          EnsureRule(capturedElement.mOldRule), mDocument, "animation-name"_ns,
+          EnsureRule(capturedElement.mOldRule), mDocument,
+          eCSSProperty_animation_name,
           "-ua-view-transition-fade-out, -ua-mix-blend-mode-plus-lighter"_ns);
       SetProp(
-          EnsureRule(capturedElement.mNewRule), mDocument, "animation-name"_ns,
+          EnsureRule(capturedElement.mNewRule), mDocument,
+          eCSSProperty_animation_name,
           "-ua-view-transition-fade-in, -ua-mix-blend-mode-plus-lighter"_ns);
     }
   }
@@ -482,6 +512,60 @@ void ViewTransition::SetupTransitionPseudoElements() {
   if (PresShell* ps = mDocument->GetPresShell()) {
     ps->ContentAppended(mViewTransitionRoot);
   }
+}
+
+
+bool ViewTransition::UpdatePseudoElementStyles(bool aNeedsInvalidation) {
+  
+  
+  for (auto& entry : mNamedElements) {
+    nsAtom* transitionName = entry.GetKey();
+    CapturedElement& capturedElement = *entry.GetData();
+    
+    
+    if (!capturedElement.mNewElement) {
+      continue;
+    }
+    
+    
+    
+    
+    
+    
+    nsIFrame* frame = capturedElement.mNewElement->GetPrimaryFrame();
+    if (!frame || frame->IsHiddenByContentVisibilityOnAnyAncestor() ||
+        frame->GetPrevContinuation() || frame->GetNextContinuation()) {
+      return false;
+    }
+    auto* rule = EnsureRule(capturedElement.mGroupRule);
+    
+    
+    auto newRect = frame->Style()->IsRootElementStyle()
+                       ? SnapshotContainingBlockRect()
+                       : frame->GetRect();
+    auto size = CSSPixel::FromAppUnits(newRect);
+    
+    
+    bool changed = int(SetProp(rule, mDocument, eCSSProperty_width, size.width,
+                               eCSSUnit_Pixel)) |
+                   SetProp(rule, mDocument, eCSSProperty_height, size.height,
+                           eCSSUnit_Pixel) |
+                   SetProp(rule, mDocument, eCSSProperty_transform,
+                           EffectiveTransform(frame));
+    
+    
+    if (changed && aNeedsInvalidation) {
+      auto* pseudo = FindPseudo(PseudoStyleRequest(
+          PseudoStyleType::viewTransitionGroup, transitionName));
+      MOZ_ASSERT(pseudo);
+      
+      
+      nsLayoutUtils::PostRestyleEvent(pseudo, RestyleHint::RECASCADE_SELF,
+                                      nsChangeHint(0));
+    }
+    
+  }
+  return true;
 }
 
 
@@ -514,6 +598,14 @@ void ViewTransition::Activate() {
   SetupTransitionPseudoElements();
 
   
+  
+  
+  if (!UpdatePseudoElementStyles( false)) {
+    
+    
+    
+    return SkipTransition(SkipTransitionReason::PseudoUpdateFailure);
+  }
 
   
   mPhase = Phase::Animating;
@@ -549,6 +641,69 @@ nsRect ViewTransition::SnapshotContainingBlockRect() const {
   
   
   return pc ? pc->GetVisibleArea() : nsRect();
+}
+
+Element* ViewTransition::FindPseudo(const PseudoStyleRequest& aRequest) const {
+  Element* root = GetRoot();
+  if (!root) {
+    return nullptr;
+  }
+
+  if (aRequest.mType == PseudoStyleType::viewTransition) {
+    return root;
+  }
+
+  
+  
+  
+  Element* group = root->GetFirstElementChild();
+  for (; group; group = group->GetNextElementSibling()) {
+    MOZ_ASSERT(group->HasName(),
+               "The generated ::view-transition-group() should have a name");
+    nsAtom* name = group->GetParsedAttr(nsGkAtoms::name)->GetAtomValue();
+    if (name == aRequest.mIdentifier) {
+      break;
+    }
+  }
+
+  
+  if (!group) {
+    return nullptr;
+  }
+
+  if (aRequest.mType == PseudoStyleType::viewTransitionGroup) {
+    return group;
+  }
+
+  Element* imagePair = group->GetFirstElementChild();
+  MOZ_ASSERT(imagePair, "::view-transition-image-pair() should exist always");
+  if (aRequest.mType == PseudoStyleType::viewTransitionImagePair) {
+    return imagePair;
+  }
+
+  Element* child = imagePair->GetFirstElementChild();
+  
+  if (!child) {
+    return nullptr;
+  }
+
+  
+  const PseudoStyleType type = child->GetPseudoElementType();
+  if (type == aRequest.mType) {
+    return child;
+  }
+
+  
+  
+  if (aRequest.mType == PseudoStyleType::viewTransitionOld) {
+    return nullptr;
+  }
+
+  child = child->GetNextElementSibling();
+  MOZ_ASSERT(aRequest.mType == PseudoStyleType::viewTransitionNew);
+  MOZ_ASSERT(!child || !child->GetNextElementSibling(),
+             "No more psuedo elements in this subtree");
+  return child;
 }
 
 const StyleLockedDeclarationBlock* ViewTransition::GetDynamicRuleFor(
@@ -758,10 +913,19 @@ void ViewTransition::HandleFrame() {
     return;
   }
   
+
+  
+  if (!UpdatePseudoElementStyles( true)) {
+    
+    
+    
+    return SkipTransition(SkipTransitionReason::PseudoUpdateFailure);
+  }
+
+  
   
   
   mDocument->EnsureViewTransitionOperationsHappen();
-  
 }
 
 static bool CheckForActiveAnimationsForEachPseudo(
@@ -977,6 +1141,10 @@ void ViewTransition::SkipTransition(
       case SkipTransitionReason::Resize:
         readyPromise->MaybeRejectWithInvalidStateError(
             "Skipped view transition due to viewport resize");
+        break;
+      case SkipTransitionReason::PseudoUpdateFailure:
+        readyPromise->MaybeRejectWithInvalidStateError(
+            "Skipped view transition due to hidden new element");
         break;
       case SkipTransitionReason::UpdateCallbackRejected:
         readyPromise->MaybeReject(aUpdateCallbackRejectReason);
