@@ -3220,7 +3220,7 @@ TEST(DcSctpSocketTest, ResentInitAckHasDifferentParameters) {
   EXPECT_NE(init_ack_chunk_1.initial_tsn(), init_ack_chunk_2.initial_tsn());
 }
 
-TEST(DcSctpSocketResendInitTest, ConnectionCanContinueFromFirstInitAck) {
+TEST(DcSctpSocketTest, ConnectionCanContinueFromFirstInitAck) {
   
   
   
@@ -3261,7 +3261,7 @@ TEST(DcSctpSocketResendInitTest, ConnectionCanContinueFromFirstInitAck) {
   EXPECT_THAT(msg->payload(), SizeIs(kLargeMessageSize));
 }
 
-TEST(DcSctpSocketResendInitTest, ConnectionCanContinueFromSecondInitAck) {
+TEST(DcSctpSocketTest, ConnectionCanContinueFromSecondInitAck) {
   
   SocketUnderTest a("A");
   SocketUnderTest z("Z");
