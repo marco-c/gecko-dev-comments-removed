@@ -7998,10 +7998,6 @@ static bool GetSharedObject(JSContext* cx, unsigned argc, Value* vp) {
         break;
       }
       case MailboxTag::WasmModule: {
-        
-        MOZ_ASSERT(
-            cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled());
-
         if (!GlobalObject::ensureConstructor(cx, cx->global(),
                                              JSProto_WebAssembly)) {
           return false;
