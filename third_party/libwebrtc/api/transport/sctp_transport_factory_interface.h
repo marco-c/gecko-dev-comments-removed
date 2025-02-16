@@ -18,10 +18,7 @@
 
 namespace cricket {
 class SctpTransportInternal;
-}  
-
-namespace rtc {
-class PacketTransportInternal;
+class DtlsTransportInternal;
 }  
 
 namespace webrtc {
@@ -37,7 +34,7 @@ class SctpTransportFactoryInterface {
   
   virtual std::unique_ptr<cricket::SctpTransportInternal> CreateSctpTransport(
       const Environment& env,
-      rtc::PacketTransportInternal* channel) = 0;
+      cricket::DtlsTransportInternal* channel) = 0;
 };
 
 }  

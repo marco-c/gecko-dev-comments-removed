@@ -23,6 +23,7 @@
 #include "api/transport/data_channel_transport_interface.h"
 #include "media/base/media_channel.h"
 #include "p2p/base/packet_transport_internal.h"
+#include "p2p/dtls/dtls_transport_internal.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/thread.h"
 
@@ -83,7 +84,7 @@ class SctpTransportInternal {
 
   
   
-  virtual void SetDtlsTransport(rtc::PacketTransportInternal* transport) = 0;
+  virtual void SetDtlsTransport(cricket::DtlsTransportInternal* transport) = 0;
 
   
   
