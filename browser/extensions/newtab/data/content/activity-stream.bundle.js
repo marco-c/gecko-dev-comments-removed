@@ -11951,6 +11951,20 @@ class _Search extends (external_React_default()).PureComponent {
       this.doSearchHandoff(text);
     }
   }
+  componentDidMount() {
+    const caret = this.fakeCaret;
+    const {
+      caretBlinkCount,
+      caretBlinkTime
+    } = this.props.Prefs.values;
+    if (caret) {
+      
+      caret.style.setProperty("--caret-blink-count", caretBlinkCount > -1 ? caretBlinkCount : "infinite");
+
+      
+      caret.style.setProperty("--caret-blink-time", caretBlinkTime > 0 ? `${caretBlinkTime * 2}ms` : `${1134}ms`);
+    }
+  }
   componentWillUnmount() {
     delete window.gContentSearchController;
   }
@@ -12032,7 +12046,10 @@ class _Search extends (external_React_default()).PureComponent {
       onPaste: this.onSearchHandoffPaste,
       ref: this.onInputMountHandoff
     }), external_React_default().createElement("div", {
-      className: "fake-caret"
+      className: "fake-caret",
+      ref: el => {
+        this.fakeCaret = el;
+      }
     }))));
   }
 }
