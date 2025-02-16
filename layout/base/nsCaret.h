@@ -202,6 +202,11 @@ class nsCaret final : public nsISelectionListener {
   mozilla::WeakPtr<mozilla::dom::Selection> mDomSelectionWeak;
 
   nsCOMPtr<nsITimer> mBlinkTimer;
+  
+  
+  
+  
+  mozilla::TimeStamp mLastBlinkTimerReset;
 
   CaretPosition mCaretPosition;
 
@@ -214,6 +219,11 @@ class nsCaret final : public nsISelectionListener {
 
 
   int32_t mBlinkCount = -1;
+  
+
+
+
+  int32_t mBlinkTime = -1;
   
 
 
