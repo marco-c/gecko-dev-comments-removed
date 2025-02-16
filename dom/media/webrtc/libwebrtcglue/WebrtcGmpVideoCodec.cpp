@@ -542,6 +542,21 @@ void WebrtcGmpVideoEncoder::Encoded(
   }
   mInputImageMap.RemoveElementsAt(0, numToRemove);
 
+  webrtc::VideoFrameType frt;
+  GmpFrameTypeToWebrtcFrameType(aEncodedFrame->FrameType(), &frt);
+  MOZ_ASSERT_IF(mCodecParams.mTemporalLayerNum > 1 &&
+                    aEncodedFrame->FrameType() == kGMPKeyFrame,
+                aEncodedFrame->GetTemporalLayerId() == 0);
+  if (aEncodedFrame->FrameType() == kGMPKeyFrame &&
+      !data->frame_config.IsKeyframe()) {
+    GMP_LOG_WARNING("GMP Encoded non-requested keyframe at t=%" PRIu64,
+                    aEncodedFrame->TimeStamp());
+    
+    auto frameConfigs = mSvcController->NextFrameConfig(true);
+    MOZ_ASSERT(frameConfigs.size() == 1);
+    data->frame_config = frameConfigs[0];
+  }
+
   MOZ_ASSERT((aEncodedFrame->FrameType() == kGMPKeyFrame) ==
              data->frame_config.IsKeyframe());
   MOZ_ASSERT_IF(
