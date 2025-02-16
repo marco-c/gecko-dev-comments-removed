@@ -1,0 +1,133 @@
+
+
+
+
+
+
+'use strict';
+
+
+
+
+
+
+
+
+const buildStores = (database, databaseName, useUniqueKeys) => {
+  for (let storeName of ['x', 'y']) {
+    const store = database.createObjectStore(
+        storeName, {keyPath: 'pKey', autoIncrement: true});
+    for (let indexName of ['x', 'y']) {
+      store.createIndex(indexName, `${indexName}Key`, {unique: useUniqueKeys});
+    }
+
+    for (let xKeyRoot of ['x', 'y']) {
+      for (let yKeyRoot of ['x', 'y']) {
+        let xKey, yKey;
+        if (useUniqueKeys) {
+          xKey = `${xKeyRoot}${yKeyRoot}`;
+          yKey = `${yKeyRoot}${xKeyRoot}`;
+        } else {
+          xKey = xKeyRoot;
+          yKey = yKeyRoot;
+        }
+        const path = `${databaseName}-${storeName}-${xKeyRoot}-${yKeyRoot}`;
+        store.put({xKey: xKey, yKey: yKey, path: path});
+      }
+    }
+  }
+};
+
+
+const buildDatabases = (testCase, useUniqueKeys) => {
+  return createNamedDatabase(
+             testCase, 'x',
+             database => buildStores(database, 'x', useUniqueKeys))
+      .then(database => database.close())
+      .then(
+          () => createNamedDatabase(
+              testCase, 'y',
+              database => buildStores(database, 'y', useUniqueKeys)))
+      .then(database => database.close());
+};
+
+
+
+
+const readIndex =
+    (testCase, index) => {
+      return new Promise((resolve, reject) => {
+        const results = [];
+        const request = index.openCursor(IDBKeyRange.bound('a', 'z'), 'next');
+        request.onsuccess = testCase.step_func(() => {
+          const cursor = request.result;
+          if (cursor) {
+            results.push(cursor.value);
+            cursor.continue();
+          } else {
+            resolve(results);
+          }
+        });
+      });
+    }
+
+
+const checkDatabaseContent =
+    (testCase, database, databaseName, usedUniqueKeys) => {
+      const promises = [];
+      const transaction = database.transaction(['x', 'y'], 'readonly');
+      for (let storeName of ['x', 'y']) {
+        const store = transaction.objectStore(storeName);
+        for (let indexName of ['x', 'y']) {
+          const index = store.index(indexName);
+
+          const promise = readIndex(testCase, index).then((results) => {
+            assert_array_equals(
+                results.map(result => `${result.path}:${result.pKey}`).sort(),
+                [
+                  `${databaseName}-${storeName}-x-x:1`,
+                  `${databaseName}-${storeName}-x-y:2`,
+                  `${databaseName}-${storeName}-y-x:3`,
+                  `${databaseName}-${storeName}-y-y:4`
+                ],
+                'The results should include all records put into the store');
+
+            let expectedKeys = (usedUniqueKeys) ?
+                ['xx:xx', 'xy:yx', 'yx:xy', 'yy:yy'] :
+                ['x:x', 'x:y', 'y:x', 'y:y'];
+            assert_array_equals(
+                results.map(result => `${result.xKey}:${result.yKey}`).sort(),
+                expectedKeys,
+                'The results should include all the index keys put in the store');
+
+            assert_array_equals(
+                results.map(result => result[`${indexName}Key`]),
+                results.map(result => result[`${indexName}Key`]).sort(),
+                'The results should be sorted by the index key');
+          });
+          promises.push(promise);
+        }
+      }
+
+      return Promise.all(promises).then(() => database);
+    }
+
+promise_test(testCase => {
+  return buildDatabases(testCase, false)
+      .then(() => openNamedDatabase(testCase, 'x', 1))
+      .then(database => checkDatabaseContent(testCase, database, 'x', false))
+      .then(database => database.close())
+      .then(() => openNamedDatabase(testCase, 'y', 1))
+      .then(database => checkDatabaseContent(testCase, database, 'y', false))
+      .then(database => database.close());
+}, 'Non-unique index keys');
+
+promise_test(testCase => {
+  return buildDatabases(testCase, true)
+      .then(() => openNamedDatabase(testCase, 'x', 1))
+      .then(database => checkDatabaseContent(testCase, database, 'x', true))
+      .then(database => database.close())
+      .then(() => openNamedDatabase(testCase, 'y', 1))
+      .then(database => checkDatabaseContent(testCase, database, 'y', true))
+      .then(database => database.close());
+}, 'Unique index keys');
