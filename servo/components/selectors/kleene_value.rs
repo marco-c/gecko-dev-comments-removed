@@ -38,22 +38,18 @@ impl KleeneValue {
 
     
     
+    
     #[inline(always)]
-    pub fn any<T>(
-        iter: impl Iterator<Item = T>,
-        f: impl FnMut(T) -> Self,
-    ) -> Self {
-        Self::any_value(iter, Self::True, Self::False, f)
+    pub fn any<T>(iter: impl Iterator<Item = T>, f: impl FnMut(T) -> Self) -> Self {
+        Self::any_value(iter, Self::True, Self::False, |a, b| a | b, f)
     }
 
     
     
+    
     #[inline(always)]
-    pub fn any_false<T>(
-        iter: impl Iterator<Item = T>,
-        f: impl FnMut(T) -> Self,
-    ) -> Self {
-        Self::any_value(iter, Self::False, Self::True, f)
+    pub fn any_false<T>(iter: impl Iterator<Item = T>, f: impl FnMut(T) -> Self) -> Self {
+        Self::any_value(iter, Self::False, Self::True, |a, b| a & b, f)
     }
 
     #[inline(always)]
@@ -61,6 +57,7 @@ impl KleeneValue {
         iter: impl Iterator<Item = T>,
         value: Self,
         on_empty: Self,
+        op: impl Fn(Self, Self) -> Self,
         mut f: impl FnMut(T) -> Self,
     ) -> Self {
         let mut result = None;
@@ -70,7 +67,7 @@ impl KleeneValue {
                 return r;
             }
             if let Some(v) = result.as_mut() {
-                *v = *v & r;
+                *v = op(*v, r);
             } else {
                 result = Some(r);
             }
