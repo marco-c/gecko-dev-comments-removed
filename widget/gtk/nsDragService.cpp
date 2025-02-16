@@ -1452,7 +1452,6 @@ RefPtr<DragData> nsDragSession::GetDragData(GdkAtom aRequestedFlavor) {
     
     LOGDRAGSERVICE("  doing iteration, mWaitingForDragDataRequests %d ...",
                    mWaitingForDragDataRequests);
-    PR_Sleep(PR_MillisecondsToInterval(10)); 
     if (PR_Now() - entryTime > NS_DND_TIMEOUT) {
       LOGDRAGSERVICE("  failed to get D&D data in time!\n");
       break;
