@@ -99,9 +99,28 @@ void FileSystemManager::BeginRequest(
 
   MOZ_ASSERT(mGlobal);
 
-  
-  if (mGlobal->GetStorageAccess() <= StorageAccess::ePrivateBrowsing) {
+  nsICookieJarSettings* cookieJarSettings = mGlobal->GetCookieJarSettings();
+  nsIPrincipal* unpartitionedPrincipal = mGlobal->PrincipalOrNull();
+  if (NS_WARN_IF(!cookieJarSettings || !unpartitionedPrincipal ||
+                 unpartitionedPrincipal->GetIsInPrivateBrowsing())) {
+    
+    
+    
     aFailure(NS_ERROR_DOM_SECURITY_ERR);
+    return;
+  }
+
+  
+  StorageAccess access = mGlobal->GetStorageAccess();
+
+  
+  const bool allowed = access == StorageAccess::eAllow ||
+                       StoragePartitioningEnabled(access, cookieJarSettings);
+  if (NS_WARN_IF(!allowed)) {
+    const nsresult err = StorageAccess::ePrivateBrowsing == access
+                             ? NS_ERROR_DOM_NOT_SUPPORTED_ERR
+                             : NS_ERROR_DOM_SECURITY_ERR;
+    aFailure(err);
     return;
   }
 
@@ -110,12 +129,12 @@ void FileSystemManager::BeginRequest(
     return;
   }
 
-  QM_TRY_INSPECT(const auto& principalInfo, mGlobal->GetStorageKey(), QM_VOID,
-                 [&aFailure](nsresult rv) { aFailure(rv); });
-
   auto holder =
       MakeRefPtr<PromiseRequestHolder<FileSystemManagerChild::ActorPromise>>(
           this);
+
+  QM_TRY_INSPECT(const auto& principalInfo, mGlobal->GetStorageKey(), QM_VOID,
+                 [&aFailure](nsresult rv) { aFailure(rv); });
 
   mBackgroundRequestHandler->CreateFileSystemManagerChild(principalInfo)
       ->Then(
