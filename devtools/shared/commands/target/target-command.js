@@ -709,6 +709,14 @@ class TargetCommand extends EventEmitter {
   }
 
   getTargetType(target) {
+    const { targetType } = target.targetForm;
+    if (targetType) {
+      return targetType;
+    }
+
+    
+    
+    
     const { typeName } = target;
     if (typeName == "windowGlobalTarget") {
       return TargetCommand.TYPES.FRAME;
