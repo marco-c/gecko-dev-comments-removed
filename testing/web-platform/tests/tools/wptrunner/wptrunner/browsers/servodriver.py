@@ -99,7 +99,6 @@ class ServoWebDriverBrowser(WebDriverBrowser):
             
             "--ignore-certificate-errors",
             "--window-size", "800x600",
-            "-Z", "replace-surrogates",
             "data:,",
         ]
 
