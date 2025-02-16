@@ -5,3 +5,5 @@
 
 
 MOCHITEST_MANIFESTS += ["mochitest.toml"]
+
+TEST_DIRS += ["gtest"]

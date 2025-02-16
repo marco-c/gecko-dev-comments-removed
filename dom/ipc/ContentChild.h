@@ -473,7 +473,7 @@ class ContentChild final : public PContentChild,
 
   
   
-  void CreateGetFilesRequest(const nsAString& aDirectoryPath,
+  void CreateGetFilesRequest(nsTArray<nsString>&& aDirectoryPath,
                              bool aRecursiveFlag, nsID& aUUID,
                              GetFilesHelperChild* aChild);
 
