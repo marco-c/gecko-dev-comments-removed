@@ -287,6 +287,14 @@ nsCString OptimizeFileName(const nsAString& aFileName) {
   return optimizedName;
 }
 
+static nsCString StripQueryRef(const nsACString& aFileName) {
+  nsCString stripped(aFileName);
+  int32_t i = stripped.FindCharInSet("#?"_ns);
+  if (i != kNotFound) {
+    stripped.Truncate(i);
+  }
+  return stripped;
+}
 
 
 
@@ -339,18 +347,18 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
         StringBeginsWith(fileName, "chrome://tabmix"_ns) ||
         StringBeginsWith(fileName, "chrome://searchwp/"_ns)) {
       return FilenameTypeAndDetails(kSuspectedUserChromeJS,
-                                    Some(nsCString(fileName)));
+                                    Some(StripQueryRef(fileName)));
     }
-    return FilenameTypeAndDetails(kChromeURI, Some(nsCString(fileName)));
+    return FilenameTypeAndDetails(kChromeURI, Some(StripQueryRef(fileName)));
   }
   if (StringBeginsWith(fileName, "resource://"_ns)) {
     if (StringBeginsWith(fileName, "resource://usl-ucjs/"_ns) ||
         StringBeginsWith(fileName, "resource://sfm-ucjs/"_ns) ||
         StringBeginsWith(fileName, "resource://cpmanager-legacy/"_ns)) {
       return FilenameTypeAndDetails(kSuspectedUserChromeJS,
-                                    Some(nsCString(fileName)));
+                                    Some(StripQueryRef(fileName)));
     }
-    return FilenameTypeAndDetails(kResourceURI, Some(nsCString(fileName)));
+    return FilenameTypeAndDetails(kResourceURI, Some(StripQueryRef(fileName)));
   }
 
   
@@ -408,23 +416,7 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
 
   
   if (StringBeginsWith(fileName, "about:"_ns)) {
-    
-    long int desired_length = fileName.Length();
-    long int possible_new_length = 0;
-
-    possible_new_length = fileName.FindChar('?');
-    if (possible_new_length != -1 && possible_new_length < desired_length) {
-      desired_length = possible_new_length;
-    }
-
-    possible_new_length = fileName.FindChar('#');
-    if (possible_new_length != -1 && possible_new_length < desired_length) {
-      desired_length = possible_new_length;
-    }
-
-    auto subFileName = Substring(fileName, 0, desired_length);
-
-    return FilenameTypeAndDetails(kAboutUri, Some(nsCString(subFileName)));
+    return FilenameTypeAndDetails(kAboutUri, Some(StripQueryRef(fileName)));
   }
 
   
