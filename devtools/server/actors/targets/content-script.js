@@ -106,6 +106,7 @@ class WebExtensionContentScriptTargetActor extends BaseTargetActor {
 
     return {
       actor: this.actorID,
+      addonId: this.addonId,
 
       
       

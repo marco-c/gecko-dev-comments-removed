@@ -41,6 +41,8 @@ ChromeUtils.defineESModuleGetters(
     PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
     WEBEXTENSION_FALLBACK_DOC_URL:
       "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
+    getAddonIdForWindowGlobal:
+      "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
   },
   { global: "contextual" }
 );
@@ -691,6 +693,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
       
       isFallbackExtensionDocument: this.#isFallbackExtensionDocument,
+      addonId: lazy.getAddonIdForWindowGlobal(this.window.windowGlobalChild),
 
       traits: {
         
