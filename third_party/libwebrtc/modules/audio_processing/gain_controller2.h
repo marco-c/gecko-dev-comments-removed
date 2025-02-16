@@ -16,6 +16,7 @@
 #include <string>
 
 #include "api/audio/audio_processing.h"
+#include "api/environment/environment.h"
 #include "modules/audio_processing/agc2/adaptive_digital_gain_controller.h"
 #include "modules/audio_processing/agc2/cpu_features.h"
 #include "modules/audio_processing/agc2/gain_applier.h"
@@ -38,6 +39,7 @@ class GainController2 {
   
   
   GainController2(
+      const Environment& env,
       const AudioProcessing::Config::GainController2& config,
       const InputVolumeController::Config& input_volume_controller_config,
       int sample_rate_hz,
