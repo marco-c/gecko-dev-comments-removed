@@ -498,7 +498,7 @@ def cleanupMeta(meta: "dict[str, Any]") -> "dict[str, Any]":
                 del meta[tag]
             else:
                 
-                meta[tag] = sorted(set(meta[tag]))
+                meta[tag] = sorted(set(meta[tag]), reverse=tag == "includes")
                 if not len(meta[tag]):
                     del meta[tag]
 
