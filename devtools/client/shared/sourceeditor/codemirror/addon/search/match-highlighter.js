@@ -21,7 +21,7 @@
 
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") 
-    mod(require("resource://devtools/client/shared/sourceeditor/codemirror/lib/codemirror.js"), require("resource://devtools/client/shared/sourceeditor/codemirror/addon/search/matchesonscrollbar.js"));
+    mod(require("../../lib/codemirror"), require("./matchesonscrollbar"));
   else if (typeof define == "function" && define.amd) 
     define(["../../lib/codemirror", "./matchesonscrollbar"], mod);
   else 
@@ -90,7 +90,9 @@
     var state = cm.state.matchHighlighter;
     cm.addOverlay(state.overlay = makeOverlay(query, hasBoundary, style));
     if (state.options.annotateScrollbar && cm.showMatchesOnScrollbar) {
-      var searchFor = hasBoundary ? new RegExp("\\b" + query.replace(/[\\\[.+*?(){|^$]/g, "\\$&") + "\\b") : query;
+      var searchFor = hasBoundary ? new RegExp((/\w/.test(query.charAt(0)) ? "\\b" : "") +
+                                               query.replace(/[\\\[.+*?(){|^$]/g, "\\$&") +
+                                               (/\w/.test(query.charAt(query.length - 1)) ? "\\b" : "")) : query;
       state.matchesonscroll = cm.showMatchesOnScrollbar(searchFor, false,
         {className: "CodeMirror-selection-highlight-scrollbar"});
     }

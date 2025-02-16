@@ -1,19 +1,19 @@
-
-
+// CodeMirror, copyright (c) by Marijn Haverbeke and others
+// Distributed under an MIT license: https://codemirror.net/5/LICENSE
 
 (function(mod) {
-  if (typeof exports == "object" && typeof module == "object") 
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
     mod(require("resource://devtools/client/shared/sourceeditor/codemirror/lib/codemirror.js"));
-  else if (typeof define == "function" && define.amd) 
+  else if (typeof define == "function" && define.amd) // AMD
     define(["../../lib/codemirror"], mod);
-  else 
+  else // Plain browser env
     mod(CodeMirror);
 })(function(CodeMirror) {
   "use strict";
 
   var noOptions = {};
   var nonWS = /[^\s\u00a0]/;
-  var Pos = CodeMirror.Pos;
+  var Pos = CodeMirror.Pos, cmp = CodeMirror.cmpPos;
 
   function firstNonWS(str) {
     var found = str.search(nonWS);
@@ -44,7 +44,7 @@
     }
   });
 
-  
+  // Rough heuristic to try and detect lines that are part of multi-line string
   function probablyInsideString(cm, pos, line) {
     return /\bstring\b/.test(cm.getTokenTypeAt(Pos(pos.line, 0))) && !/^[\'\"\`]/.test(line)
   }
@@ -78,7 +78,7 @@
         var baseString = null;
         for (var i = from.line; i < end; ++i) {
           var line = self.getLine(i);
-          var whitespace = line.slice(0, firstNonWS(line));
+          var whitespace = line.search(nonWS) === -1 ? line : line.slice(0, firstNonWS(line));
           if (baseString == null || baseString.length > whitespace.length) {
             baseString = whitespace;
           }
@@ -126,7 +126,9 @@
           if (i != end || lastLineHasText)
             self.replaceRange(lead + pad, Pos(i, 0));
       } else {
+        var atCursor = cmp(self.getCursor("to"), to) == 0, empty = !self.somethingSelected()
         self.replaceRange(endString, to);
+        if (atCursor) self.setSelection(empty ? to : self.getCursor("from"), to)
         self.replaceRange(startString, from);
       }
     });
@@ -137,7 +139,7 @@
     var self = this, mode = getMode(self, from);
     var end = Math.min(to.ch != 0 || to.line == from.line ? to.line : to.line - 1, self.lastLine()), start = Math.min(from.line, end);
 
-    
+    // Try finding line comments
     var lineString = options.lineComment || mode.lineComment, lines = [];
     var pad = options.padding == null ? " " : options.padding, didSomething;
     lineComment: {
@@ -163,7 +165,7 @@
       if (didSomething) return true;
     }
 
-    
+    // Try block comments
     var startString = options.blockCommentStart || mode.blockCommentStart;
     var endString = options.blockCommentEnd || mode.blockCommentEnd;
     if (!startString || !endString) return false;
@@ -179,12 +181,12 @@
         self.getRange(insideStart, insideEnd, "\n").indexOf(endString) > -1)
       return false;
 
-    
-    
+    // Avoid killing block comments completely outside the selection.
+    // Positions of the last startString before the start of the selection, and the first endString after it.
     var lastStart = startLine.lastIndexOf(startString, from.ch);
     var firstEnd = lastStart == -1 ? -1 : startLine.slice(0, from.ch).indexOf(endString, lastStart + startString.length);
     if (lastStart != -1 && firstEnd != -1 && firstEnd + endString.length != from.ch) return false;
-    
+    // Positions of the first endString after the end of the selection, and the last startString before it.
     firstEnd = endLine.indexOf(endString, to.ch);
     var almostLastStart = endLine.slice(to.ch).lastIndexOf(startString, firstEnd - to.ch);
     lastStart = (firstEnd == -1 || almostLastStart == -1) ? -1 : to.ch + almostLastStart;
