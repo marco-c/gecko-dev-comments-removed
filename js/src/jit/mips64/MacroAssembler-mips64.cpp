@@ -2242,6 +2242,7 @@ void MacroAssembler::branchValueIsNurseryCellImpl(Condition cond,
 void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
                                      const Value& rhs, Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  MOZ_ASSERT(!rhs.isNaN());
   ScratchRegisterScope scratch(*this);
   MOZ_ASSERT(lhs.valueReg() != scratch);
   moveValue(rhs, ValueOperand(scratch));
@@ -2250,7 +2251,24 @@ void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
 
 void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
                                         Register temp, Label* label) {
-  MOZ_CRASH("Unimplemented");
+  MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  ScratchRegisterScope scratch(asMasm());
+  MOZ_ASSERT(val.valueReg() != scratch);
+
+  
+  if (hasR2()) {
+    
+    ma_dext(temp, val.valueReg(), Imm32(0), Imm32(63));
+  } else {
+    
+    ma_dsll(temp, val.valueReg(), Imm32(1));
+    ma_dsrl(temp, temp, Imm32(1));
+  }
+
+  
+  static_assert(JS::detail::CanonicalizedNaNSignBit == 0);
+  moveValue(DoubleValue(JS::GenericNaN()), ValueOperand(scratch));
+  ma_b(temp, scratch, label, cond);
 }
 
 
