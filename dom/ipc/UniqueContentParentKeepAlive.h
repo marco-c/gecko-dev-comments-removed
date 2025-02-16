@@ -9,7 +9,6 @@
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
-#include "nsIDOMProcessParent.h"
 
 namespace mozilla::dom {
 
@@ -36,12 +35,6 @@ using UniqueThreadsafeContentParentKeepAlive =
 UniqueContentParentKeepAlive UniqueContentParentKeepAliveFromThreadsafe(
     UniqueThreadsafeContentParentKeepAlive aKeepAlive);
 UniqueThreadsafeContentParentKeepAlive UniqueContentParentKeepAliveToThreadsafe(
-    UniqueContentParentKeepAlive aKeepAlive);
-
-
-
-
-already_AddRefed<nsIContentParentKeepAlive> WrapContentParentKeepAliveForJS(
     UniqueContentParentKeepAlive aKeepAlive);
 
 }  
