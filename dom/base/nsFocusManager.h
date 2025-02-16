@@ -98,6 +98,9 @@ class nsFocusManager final : public nsIFocusManager,
 
 
   nsPIDOMWindowOuter* GetFocusedWindow() const { return mFocusedWindow; }
+  static nsPIDOMWindowOuter* GetFocusedWindowStatic() {
+    return sInstance ? sInstance->GetFocusedWindow() : nullptr;
+  }
 
   
 

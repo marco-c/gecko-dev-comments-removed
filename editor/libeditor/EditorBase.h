@@ -428,6 +428,14 @@ class EditorBase : public nsIEditor,
 
 
 
+
+  MOZ_CAN_RUN_SCRIPT bool WillHandleMouseButtonEvent(
+      WidgetMouseEvent& aMouseEvent);
+
+  
+
+
+
   MOZ_CAN_RUN_SCRIPT nsresult HandleDropEvent(dom::DragEvent* aDropEvent);
 
   MOZ_CAN_RUN_SCRIPT virtual nsresult HandleKeyPressEvent(

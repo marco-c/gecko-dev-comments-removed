@@ -57,6 +57,7 @@
 #include "mozilla/dom/Touch.h"
 #include "mozilla/dom/TouchEvent.h"
 #include "mozilla/dom/UserActivation.h"
+#include "mozilla/EditorBase.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventForwards.h"
@@ -110,6 +111,7 @@
 #include "mozilla/SVGFragmentIdentifier.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/TextComposition.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TouchEvents.h"
@@ -7145,6 +7147,53 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
   
   if (!CanHandleUserInputEvents(aGUIEvent)) {
     return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  switch (aGUIEvent->mMessage) {
+    case eMouseDown:
+    case eMouseUp: {
+      nsPIDOMWindowOuter* const focusedWindow =
+          nsFocusManager::GetFocusedWindowStatic();
+      if (!focusedWindow) {
+        break;
+      }
+      Document* const focusedDocument = focusedWindow->GetExtantDoc();
+      if (!focusedDocument) {
+        break;
+      }
+      nsPresContext* const focusedPresContext =
+          focusedDocument->GetPresContext();
+      if (!focusedPresContext) {
+        break;
+      }
+      const RefPtr<TextComposition> textComposition =
+          IMEStateManager::GetTextCompositionFor(focusedPresContext);
+      if (!textComposition) {
+        break;
+      }
+      
+      
+      
+      if (RefPtr<EditorBase> editorBase = textComposition->GetEditorBase()) {
+        MOZ_ASSERT(aGUIEvent->AsMouseEvent());
+        editorBase->WillHandleMouseButtonEvent(*aGUIEvent->AsMouseEvent());
+      }
+      
+      else if (nsCOMPtr<nsIWidget> widget = textComposition->GetWidget()) {
+        textComposition->RequestToCommit(widget, false);
+      }
+      if (!CanHandleUserInputEvents(aGUIEvent)) {
+        return NS_OK;
+      }
+      break;
+    }
+    default:
+      break;
   }
 
   if (mPresContext) {

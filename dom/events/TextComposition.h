@@ -90,6 +90,10 @@ class TextComposition final {
     return do_AddRef(mPresContext->GetRootWidget());
   }
   
+
+
+  already_AddRefed<EditorBase> GetEditorBase() const;
+  
   BrowserParent* GetBrowserParent() const { return mBrowserParent; }
   
   
@@ -424,11 +428,6 @@ class TextComposition final {
   
   
   bool mWasCompositionStringEmpty;
-
-  
-
-
-  already_AddRefed<EditorBase> GetEditorBase() const;
 
   
 

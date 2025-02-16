@@ -387,15 +387,6 @@ NS_IMETHODIMP EditorEventListener::HandleEvent(Event* aEvent) {
     }
     
     case eMouseDown: {
-      
-      
-      
-      
-      
-      
-      
-      mMouseDownOrUpConsumedByIME =
-          NotifyIMEOfMouseButtonEvent(internalEvent->AsMouseEvent());
       if (mMouseDownOrUpConsumedByIME) {
         return NS_OK;
       }
@@ -410,19 +401,6 @@ NS_IMETHODIMP EditorEventListener::HandleEvent(Event* aEvent) {
     }
     
     case eMouseUp: {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (NotifyIMEOfMouseButtonEvent(internalEvent->AsMouseEvent())) {
-        mMouseDownOrUpConsumedByIME = true;
-      }
       if (mMouseDownOrUpConsumedByIME) {
         return NS_OK;
       }
@@ -769,10 +747,43 @@ nsresult EditorEventListener::PointerClick(
   return NS_OK;
 }
 
-bool EditorEventListener::NotifyIMEOfMouseButtonEvent(
-    WidgetMouseEvent* aMouseEvent) {
-  MOZ_ASSERT(aMouseEvent);
+bool EditorEventListener::WillHandleMouseButtonEvent(
+    WidgetMouseEvent& aMouseEvent) {
+  
+  
+  
+  
+  
+  
+  
+  if (aMouseEvent.mMessage == eMouseDown) {
+    mMouseDownOrUpConsumedByIME = NotifyIMEOfMouseButtonEvent(aMouseEvent);
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  else {
+    MOZ_ASSERT(aMouseEvent.mMessage == eMouseUp);
+    if (NotifyIMEOfMouseButtonEvent(aMouseEvent)) {
+      mMouseDownOrUpConsumedByIME = true;
+    }
+  }
+  if (!mMouseDownOrUpConsumedByIME) {
+    
+    
+    Unused << EnsureCommitComposition();
+  }
+  return mMouseDownOrUpConsumedByIME;
+}
 
+bool EditorEventListener::NotifyIMEOfMouseButtonEvent(
+    WidgetMouseEvent& aMouseEvent) {
   if (!EditorHasFocus()) {
     return false;
   }
@@ -783,18 +794,11 @@ bool EditorEventListener::NotifyIMEOfMouseButtonEvent(
   }
   RefPtr<Element> focusedElement = mEditorBase->GetFocusedElement();
   return IMEStateManager::OnMouseButtonEventInEditor(
-      *presContext, focusedElement, *aMouseEvent);
+      *presContext, focusedElement, aMouseEvent);
 }
 
 nsresult EditorEventListener::MouseDown(MouseEvent* aMouseEvent) {
-  
-  
-  
-  
-  if (DetachedFromEditor()) {
-    return NS_OK;
-  }
-  Unused << EnsureCommitComposition();
+  MOZ_ASSERT_IF(!DetachedFromEditor(), !mEditorBase->IsIMEComposing());
   return NS_OK;
 }
 
