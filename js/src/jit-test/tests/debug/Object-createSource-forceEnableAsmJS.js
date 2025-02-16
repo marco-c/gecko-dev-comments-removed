@@ -1,5 +1,7 @@
 
 
+gczeal(0);
+
 const text = `
 function normalFunction() {
 }

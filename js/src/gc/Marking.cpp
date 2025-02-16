@@ -16,6 +16,8 @@
 #include <algorithm>
 #include <type_traits>
 
+#include "jsmath.h"
+
 #include "gc/BufferAllocator.h"
 #include "gc/GCInternals.h"
 #include "gc/ParallelMarking.h"
@@ -1256,11 +1258,11 @@ static gcstats::PhaseKind GrayMarkingPhaseForCurrentPhase(
   }
 }
 
-void GCMarker::moveWork(GCMarker* dst, GCMarker* src) {
+void GCMarker::moveWork(GCMarker* dst, GCMarker* src, bool allowDistribute) {
   MOZ_ASSERT(dst->stack.isEmpty());
   MOZ_ASSERT(src->canDonateWork());
 
-  MarkStack::moveWork(dst->stack, src->stack);
+  MarkStack::moveWork(src, dst->stack, src->stack, allowDistribute);
 }
 
 bool GCMarker::initStack() {
@@ -1911,12 +1913,13 @@ MOZ_ALWAYS_INLINE bool MarkStack::indexIsEntryBase(size_t index) const {
   
   
 
-  MOZ_ASSERT(index < position());
-  return (at(index) & TagMask) != SlotsOrElementsRangeTag;
+  MOZ_ASSERT(index < capacity_);
+  return (stack_[index] & TagMask) != SlotsOrElementsRangeTag;
 }
 
 
-void MarkStack::moveWork(MarkStack& dst, MarkStack& src) {
+void MarkStack::moveWork(GCMarker* marker, MarkStack& dst, MarkStack& src,
+                         bool allowDistribute) {
   
   
   
@@ -1929,6 +1932,65 @@ void MarkStack::moveWork(MarkStack& dst, MarkStack& src) {
 
   size_t totalWords = src.position();
   size_t wordsToMove = std::min(totalWords / 2, MaxWordsToMove);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr size_t MaxWordsToDistribute = 30;
+  if (allowDistribute && totalWords <= MaxWordsToDistribute) {
+    if (!dst.ensureSpace(totalWords)) {
+      return;
+    }
+
+    src.topIndex_ = 0;
+
+    
+    static_assert(HowMany(MaxWordsToDistribute, 2) <= 64);
+    uint64_t randomBits = marker->random.ref().next();
+    DebugOnly<size_t> randomBitCount = 64;
+
+    size_t i = 0;    
+    size_t pos = 0;  
+    uintptr_t* data = src.stack_;
+    while (pos < totalWords) {
+      MOZ_ASSERT(src.indexIsEntryBase(pos));
+
+      
+      
+      MOZ_ASSERT(randomBitCount != 0);
+      bool whichStack = (randomBits & 1) ^ (i & 1);
+      randomBits <<= i & 1;
+      randomBitCount -= i & 1;
+
+      MarkStack& stack = whichStack ? dst : src;
+
+      bool isRange =
+          pos < totalWords - 1 && TagIsRangeTag(Tag(data[pos + 1] & TagMask));
+      if (isRange) {
+        stack.infalliblePush(
+            SlotsOrElementsRange::fromBits(data[pos], data[pos + 1]));
+        pos += ValueRangeWords;
+      } else {
+        stack.infalliblePush(TaggedPtr::fromBits(data[pos]));
+        pos++;
+      }
+
+      i++;
+    }
+
+    return;
+  }
 
   size_t targetPos = src.position() - wordsToMove;
 
@@ -2004,12 +2066,16 @@ inline void MarkStack::infalliblePush(const TaggedPtr& ptr) {
 
 inline void MarkStack::infalliblePush(JSObject* obj, SlotsOrElementsKind kind,
                                       size_t start) {
+  SlotsOrElementsRange range(kind, obj, start);
+  infalliblePush(range);
+}
+
+inline void MarkStack::infalliblePush(const SlotsOrElementsRange& range) {
   MOZ_ASSERT(position() + ValueRangeWords <= capacity());
 
-  SlotsOrElementsRange array(kind, obj, start);
-  array.assertValid();
-  end()[0] = array.asBits0();
-  end()[1] = array.asBits1();
+  range.assertValid();
+  end()[0] = range.asBits0();
+  end()[1] = range.asBits1();
   topIndex_ += ValueRangeWords;
   MOZ_ASSERT(TagIsRangeTag(peekTag()));
 }
@@ -2161,7 +2227,8 @@ GCMarker::GCMarker(JSRuntime* rt)
       markColor_(MarkColor::Black),
       state(NotActive),
       incrementalWeakMapMarkingEnabled(
-          TuningDefaults::IncrementalWeakMapMarkingEnabled)
+          TuningDefaults::IncrementalWeakMapMarkingEnabled),
+      random(js::GenerateRandomSeed(), js::GenerateRandomSeed())
 #ifdef DEBUG
       ,
       checkAtomMarking(true),
