@@ -85,6 +85,7 @@ pub(crate) trait HasTypeParamInArray {
     fn has_type_param_in_array(&self, ctx: &BindgenContext) -> bool;
 }
 
+#[allow(dead_code)]
 
 pub(crate) trait HasFloat {
     
