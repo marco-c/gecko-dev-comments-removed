@@ -717,7 +717,7 @@ nsIFrame* Event::GetPrimaryFrameOfEventTarget(const nsPresContext& aPresContext,
   
   
   nsIFrame* const frame = content->GetPrimaryFrame(FlushType::Layout);
-  if (MOZ_UNLIKELY(!frame)) {
+  if (MOZ_UNLIKELY(!frame || frame->PresContext() != &aPresContext)) {
     return nullptr;
   }
   
