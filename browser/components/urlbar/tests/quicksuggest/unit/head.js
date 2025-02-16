@@ -108,7 +108,6 @@ async function doMigrateTest({
   
   
   
-  UrlbarPrefs._updatingFirefoxSuggestScenario = true;
   UrlbarPrefs.clear("quicksuggest.migrationVersion");
   let initialDefaultBranch = {
     "suggest.quicksuggest.nonsponsored": false,
@@ -128,7 +127,6 @@ async function doMigrateTest({
       }
     }
   }
-  UrlbarPrefs._updatingFirefoxSuggestScenario = false;
 
   
   
@@ -140,7 +138,6 @@ async function doMigrateTest({
     await QuickSuggest.updateFirefoxSuggestScenario({
       ...testOverrides,
       scenario,
-      isStartup: true,
     });
 
     
@@ -215,7 +212,6 @@ async function doMigrateTest({
   }
 
   
-  UrlbarPrefs._updatingFirefoxSuggestScenario = true;
   UrlbarPrefs.clear("quicksuggest.migrationVersion");
   let userBranchNames = [
     ...Object.keys(initialUserBranch),
@@ -224,7 +220,6 @@ async function doMigrateTest({
   for (let name of userBranchNames) {
     userBranch.clearUserPref(name);
   }
-  UrlbarPrefs._updatingFirefoxSuggestScenario = false;
 }
 
 
