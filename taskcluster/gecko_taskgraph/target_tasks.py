@@ -763,6 +763,12 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                 
                 if "tp6m" in try_name and "a55" not in platform:
                     return False
+                
+                if (
+                    "ebay-kleinanzeigen" in try_name
+                    and "ebay-kleinanzeigen-search" not in try_name
+                ):
+                    return False
                 return True
         return False
 
