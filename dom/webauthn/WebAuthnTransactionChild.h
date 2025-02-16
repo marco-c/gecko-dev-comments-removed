@@ -18,7 +18,7 @@
 
 namespace mozilla::dom {
 
-class WebAuthnManager;
+class WebAuthnHandler;
 
 class WebAuthnTransactionChild final : public PWebAuthnTransactionChild {
  public:
@@ -28,13 +28,12 @@ class WebAuthnTransactionChild final : public PWebAuthnTransactionChild {
 
   void ActorDestroy(ActorDestroyReason why) override;
 
-  void SetManager(WebAuthnManager* aMananger);
+  void SetHandler(WebAuthnHandler* aMananger);
 
  private:
   ~WebAuthnTransactionChild() = default;
 
-  
-  WebAuthnManager* mManager;
+  WebAuthnHandler* mHandler;
 };
 
 }  
