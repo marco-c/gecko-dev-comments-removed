@@ -318,7 +318,7 @@ class MediaSessionDescriptionFactory {
   
   webrtc::AlwaysValidPointer<rtc::UniqueRandomIdGenerator> const
       ssrc_generator_;
-  bool enable_encrypted_rtp_header_extensions_ = false;
+  bool enable_encrypted_rtp_header_extensions_ = true;
   const TransportDescriptionFactory* transport_desc_factory_;
   
   webrtc::PayloadTypeSuggester* pt_suggester_;

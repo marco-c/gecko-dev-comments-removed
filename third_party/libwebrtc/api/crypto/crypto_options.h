@@ -55,7 +55,8 @@ struct RTC_EXPORT CryptoOptions {
 
     
     
-    bool enable_encrypted_rtp_header_extensions = false;
+    
+    bool enable_encrypted_rtp_header_extensions = true;
   } srtp;
 
   
