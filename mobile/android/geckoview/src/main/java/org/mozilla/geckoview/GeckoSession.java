@@ -3071,6 +3071,9 @@ public class GeckoSession {
 
 
 
+
+  @Deprecated
+  @DeprecationSchedule(id = "session-shopping", version = 139)
   @AnyThread
   public @NonNull GeckoResult<ReviewAnalysis> requestAnalysis(@NonNull final String url) {
     final GeckoBundle bundle = new GeckoBundle(1);
@@ -3086,6 +3089,9 @@ public class GeckoSession {
 
 
 
+
+  @Deprecated
+  @DeprecationSchedule(id = "session-shopping", version = 139)
   @AnyThread
   public @NonNull GeckoResult<String> requestCreateAnalysis(@NonNull final String url) {
     final GeckoBundle bundle = new GeckoBundle(1);
@@ -3099,6 +3105,9 @@ public class GeckoSession {
 
 
 
+
+  @Deprecated
+  @DeprecationSchedule(id = "session-shopping", version = 139)
   @AnyThread
   public @NonNull GeckoResult<AnalysisStatusResponse> requestAnalysisStatus(
       @NonNull final String url) {
@@ -3115,6 +3124,9 @@ public class GeckoSession {
 
 
 
+
+  @Deprecated
+  @DeprecationSchedule(id = "session-shopping", version = 139)
   @AnyThread
   public @NonNull GeckoResult<String> pollForAnalysisCompleted(@NonNull final String url) {
     final GeckoBundle bundle = new GeckoBundle(1);
@@ -3128,6 +3140,9 @@ public class GeckoSession {
 
 
 
+
+  @Deprecated
+  @DeprecationSchedule(id = "session-shopping", version = 139)
   @AnyThread
   public @NonNull GeckoResult<Boolean> sendClickAttributionEvent(@NonNull final String aid) {
     final GeckoBundle bundle = new GeckoBundle(1);
@@ -3141,6 +3156,9 @@ public class GeckoSession {
 
 
 
+
+  @Deprecated
+  @DeprecationSchedule(id = "session-shopping", version = 139)
   @AnyThread
   public @NonNull GeckoResult<Boolean> sendImpressionAttributionEvent(@NonNull final String aid) {
     final GeckoBundle bundle = new GeckoBundle(1);
@@ -3154,6 +3172,9 @@ public class GeckoSession {
 
 
 
+
+  @Deprecated
+  @DeprecationSchedule(id = "session-shopping", version = 139)
   @AnyThread
   public @NonNull GeckoResult<Boolean> sendPlacementAttributionEvent(@NonNull final String aid) {
     final GeckoBundle bundle = new GeckoBundle(1);
@@ -3167,6 +3188,9 @@ public class GeckoSession {
 
 
 
+
+  @Deprecated
+  @DeprecationSchedule(id = "session-shopping", version = 139)
   @AnyThread
   public @NonNull GeckoResult<List<Recommendation>> requestRecommendations(
       @NonNull final String url) {
@@ -3194,6 +3218,9 @@ public class GeckoSession {
 
 
 
+
+  @Deprecated
+  @DeprecationSchedule(id = "session-shopping", version = 139)
   @AnyThread
   public @NonNull GeckoResult<String> reportBackInStock(@NonNull final String url) {
     final GeckoBundle bundle = new GeckoBundle(1);
@@ -3773,7 +3800,12 @@ public class GeckoSession {
   }
 
   
+
+
+
   @AnyThread
+  @Deprecated
+  @DeprecationSchedule(id = "session-shopping", version = 139)
   public static class ReviewAnalysis {
     
     @Nullable public final String analysisURL;
@@ -4049,7 +4081,12 @@ public class GeckoSession {
   }
 
   
+
+
+
   @AnyThread
+  @Deprecated
+  @DeprecationSchedule(id = "session-shopping", version = 139)
   public static class Recommendation {
     
     @NonNull public final String analysisUrl;
@@ -4265,7 +4302,12 @@ public class GeckoSession {
   }
 
   
+
+
+
   @AnyThread
+  @Deprecated
+  @DeprecationSchedule(id = "session-shopping", version = 139)
   public static class AnalysisStatusResponse {
     
     @NonNull public final String status;
