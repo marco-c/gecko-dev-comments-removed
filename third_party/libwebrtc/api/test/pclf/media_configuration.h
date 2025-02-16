@@ -348,9 +348,6 @@ struct VideoConfig {
 
 
 struct AudioConfig {
-  AudioConfig() = default;
-  explicit AudioConfig(absl::string_view stream_label);
-
   
   
   std::optional<std::string> stream_label;
