@@ -39,6 +39,10 @@ add_task(async function test_about_translations_language_swap() {
     );
     
     const swapButton = document.querySelector(selectors.languageSwapButton);
+    
+    const translationResultsPlaceholder = document.querySelector(
+      selectors.translationResultsPlaceholder
+    );
 
     
     is(fromSelect.value, "detect");
@@ -111,22 +115,11 @@ add_task(async function test_about_translations_language_swap() {
     fromSelect.dispatchEvent(new Event("input"));
 
     await ContentTaskUtils.waitForCondition(
-      () => fromSelect.value === "fr",
-      "fr selected in fromSelect",
+      () => translationResultsPlaceholder.innerText === "Translating…",
+      "Showing translating text",
       100,
       200
     );
-
-    translationFrom.value = "";
-    translationFrom.dispatchEvent(new Event("input"));
-
-    await ContentTaskUtils.waitForCondition(
-      () => swapButton.disabled === false,
-      "The language swap button is enabled",
-      100,
-      200
-    );
-    is(swapButton.disabled, false, "The language swap button is enabled"); 
   });
 
   await resolveDownloads(1); 
@@ -147,9 +140,10 @@ add_task(async function test_about_translations_language_swap() {
     const translationTo = document.querySelector(selectors.translationResult);
     
     const swapButton = document.querySelector(selectors.languageSwapButton);
-
-    translationFrom.value = "Translation text number 1.";
-    translationFrom.dispatchEvent(new Event("input"));
+    
+    const translationResultsPlaceholder = document.querySelector(
+      selectors.translationResultsPlaceholder
+    );
 
     await ContentTaskUtils.waitForCondition(
       () => translationTo.innerText === "TRANSLATION TEXT NUMBER 1. [fr to en]",
@@ -168,12 +162,18 @@ add_task(async function test_about_translations_language_swap() {
     swapButton.dispatchEvent(new Event("click"));
 
     await ContentTaskUtils.waitForCondition(
-      () => swapButton.disabled === true,
-      "The language swap button is disabled",
+      () => translationFrom.value === "TRANSLATION TEXT NUMBER 1. [fr to en]",
+      "translation input textarea is filled",
       100,
       200
     );
-    is(swapButton.disabled, true, "The language swap button is disabled"); 
+
+    await ContentTaskUtils.waitForCondition(
+      () => translationResultsPlaceholder.innerText === "Translating…",
+      "Showing translating text",
+      100,
+      200
+    );
   });
 
   await resolveDownloads(1); 
@@ -194,6 +194,11 @@ add_task(async function test_about_translations_language_swap() {
     const translationTo = document.querySelector(selectors.translationResult);
     
     const swapButton = document.querySelector(selectors.languageSwapButton);
+    
+    const translationResultsPlaceholder = document.querySelector(
+      selectors.translationResultsPlaceholder
+    );
+
     await ContentTaskUtils.waitForCondition(
       () =>
         translationTo.innerText ===
@@ -217,13 +222,11 @@ add_task(async function test_about_translations_language_swap() {
     toSelect.dispatchEvent(new Event("input"));
 
     await ContentTaskUtils.waitForCondition(
-      () => toSelect.value === "it",
-      "it selected in toSelect",
+      () => translationResultsPlaceholder.innerText === "Translating…",
+      "Showing translating text",
       100,
       200
     );
-
-    is(swapButton.disabled, true, "The language swap button is disabled"); 
   });
 
   await resolveDownloads(1); 
