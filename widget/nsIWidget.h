@@ -778,6 +778,9 @@ class nsIWidget : public nsISupports {
   virtual void SuppressAnimation(bool aSuppress) {}
 
   
+  virtual void SetMicaBackdrop(bool) {}
+
+  
 
 
 
