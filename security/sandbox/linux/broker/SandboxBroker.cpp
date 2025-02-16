@@ -61,11 +61,6 @@ SandboxBroker::SandboxBroker(UniquePtr<const Policy> aPolicy, int aChildPid,
   mFileDesc = fds[0];
   aClientFd = fds[1];
 
-  
-  
-  
-  NS_ADDREF_THIS();
-
   if (!PlatformThread::Create(0, this, &mThread)) {
     SANDBOX_LOG_ERRNO("SandboxBroker: thread creation failed");
     close(mFileDesc);
@@ -75,12 +70,12 @@ SandboxBroker::SandboxBroker(UniquePtr<const Policy> aPolicy, int aChildPid,
   }
 }
 
-already_AddRefed<SandboxBroker> SandboxBroker::Create(
+UniquePtr<SandboxBroker> SandboxBroker::Create(
     UniquePtr<const Policy> aPolicy, int aChildPid,
     ipc::FileDescriptor& aClientFdOut) {
   int clientFd;
   
-  RefPtr<SandboxBroker> rv(
+  UniquePtr<SandboxBroker> rv(
       new SandboxBroker(std::move(aPolicy), aChildPid, clientFd));
   if (clientFd < 0) {
     rv = nullptr;
@@ -89,7 +84,7 @@ already_AddRefed<SandboxBroker> SandboxBroker::Create(
     
     aClientFdOut = ipc::FileDescriptor(UniqueFileHandle(clientFd));
   }
-  return rv.forget();
+  return rv;
 }
 
 SandboxBroker::~SandboxBroker() {
@@ -98,15 +93,9 @@ SandboxBroker::~SandboxBroker() {
     return;
   }
 
+  shutdown(mFileDesc, SHUT_RD);
   
-  
-  
-  if (mThread != pthread_self()) {
-    shutdown(mFileDesc, SHUT_RD);
-    
-    PlatformThread::Join(mThread);
-  }
-
+  PlatformThread::Join(mThread);
   
   close(mFileDesc);
   
@@ -612,25 +601,6 @@ void SandboxBroker::ThreadMain(void) {
   PlatformThread::SetName(threadName);
 
   AUTO_PROFILER_REGISTER_THREAD(threadName);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<SandboxBroker> deathGrip = dont_AddRef(this);
 
   
   

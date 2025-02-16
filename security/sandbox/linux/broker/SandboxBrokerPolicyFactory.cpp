@@ -35,10 +35,6 @@
 #include "nsNetCID.h"
 #include "prenv.h"
 
-#if defined(MOZ_PROFILE_GENERATE)
-#  include <string>
-#endif
-
 #ifdef ANDROID
 #  include "cutils/properties.h"
 #endif
@@ -421,25 +417,6 @@ static void AddGLDependencies(SandboxBroker::Policy* policy) {
   
 }
 
-
-
-
-
-
-
-
-
-
-
-#if defined(MOZ_PROFILE_GENERATE)
-static void AddLLVMProfilePathDirectory(SandboxBroker::Policy* aPolicy) {
-  std::string parentPath;
-  if (GetLlvmProfileDir(parentPath)) {
-    aPolicy->AddFutureDir(rdwrcr, parentPath.c_str());
-  }
-}
-#endif  
-
 void SandboxBrokerPolicyFactory::InitContentPolicy() {
   const bool headless =
       StaticPrefs::security_sandbox_content_headless_AtStartup();
@@ -796,10 +773,6 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
     policy->AddPath(rdonly, "/sys/module/amdgpu");
   }
 
-#if defined(MOZ_PROFILE_GENERATE)
-  AddLLVMProfilePathDirectory(policy);
-#endif
-
   mCommonContentPolicy.reset(policy);
 }
 
@@ -989,10 +962,6 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   policy->AddPath(rdwr, "/dev/nvhost-vic");
 #endif  
 
-#if defined(MOZ_PROFILE_GENERATE)
-  AddLLVMProfilePathDirectory(policy.get());
-#endif
-
   if (policy->IsEmpty()) {
     policy = nullptr;
   }
@@ -1047,10 +1016,6 @@ SandboxBrokerPolicyFactory::GetSocketProcessPolicy(int aPid) {
       policy->AddTree(rdonly, tmpPath.get());
     }
   }
-
-#if defined(MOZ_PROFILE_GENERATE)
-  AddLLVMProfilePathDirectory(policy.get());
-#endif
 
   if (policy->IsEmpty()) {
     policy = nullptr;
@@ -1109,10 +1074,6 @@ SandboxBrokerPolicyFactory::GetUtilityProcessPolicy(int aPid) {
       policy->AddTree(rdonly, tmpPath.get());
     }
   }
-
-#if defined(MOZ_PROFILE_GENERATE)
-  AddLLVMProfilePathDirectory(policy.get());
-#endif
 
   if (policy->IsEmpty()) {
     policy = nullptr;
