@@ -1625,50 +1625,6 @@ RegExpStringIteratorObject* js::NewRegExpStringIterator(JSContext* cx) {
   return NewObjectWithGivenProto<RegExpStringIteratorObject>(cx, proto);
 }
 
-#ifdef NIGHTLY_BUILD
-static const JSClass IteratorRangePrototypeClass = {
-    "Numeric Range Iterator",
-    0,
-};
-
-enum {
-  IteratorRangeSlotStart,
-  IteratorRangeSlotEnd,
-  IteratorRangeSlotStep,
-  IteratorRangeSlotInclusiveEnd,
-  IteratorRangeSlotZero,
-  IteratorRangeSlotOne,
-  IteratorRangeSlotCurrentCount,
-  IteratorRangeSlotCount
-};
-
-
-static_assert(IteratorRangeSlotStart == ITERATOR_RANGE_SLOT_START);
-static_assert(IteratorRangeSlotEnd == ITERATOR_RANGE_SLOT_END);
-static_assert(IteratorRangeSlotStep == ITERATOR_RANGE_SLOT_STEP);
-static_assert(IteratorRangeSlotInclusiveEnd ==
-              ITERATOR_RANGE_SLOT_INCLUSIVE_END);
-static_assert(IteratorRangeSlotZero == ITERATOR_RANGE_SLOT_ZERO);
-static_assert(IteratorRangeSlotOne == ITERATOR_RANGE_SLOT_ONE);
-static_assert(IteratorRangeSlotCurrentCount ==
-              ITERATOR_RANGE_SLOT_CURRENT_COUNT);
-
-static const JSFunctionSpec iterator_range_methods[] = {
-    JS_SELF_HOSTED_FN("next", "IteratorRangeNext", 0, 0),
-    JS_FS_END,
-};
-
-IteratorRangeObject* js::NewIteratorRange(JSContext* cx) {
-  RootedObject proto(
-      cx, GlobalObject::getOrCreateIteratorRangePrototype(cx, cx->global()));
-  if (!proto) {
-    return nullptr;
-  }
-
-  return NewObjectWithGivenProto<IteratorRangeObject>(cx, proto);
-}
-#endif
-
 
 PropertyIteratorObject* GlobalObject::getOrCreateEmptyIterator(JSContext* cx) {
   if (!cx->global()->data().emptyIterator) {
@@ -2188,19 +2144,6 @@ JSObject* GlobalObject::getOrCreateRegExpStringIteratorPrototype(
                               regexp_string_iterator_methods>);
 }
 
-#ifdef NIGHTLY_BUILD
-
-JSObject* GlobalObject::getOrCreateIteratorRangePrototype(
-    JSContext* cx, Handle<GlobalObject*> global) {
-  return getOrCreateBuiltinProto(
-      cx, global, ProtoKind::IteratorRangeProto,
-      cx->names().RegExp_String_Iterator_.toHandle(),
-      initObjectIteratorProto<ProtoKind::IteratorRangeProto,
-                              &IteratorRangePrototypeClass,
-                              iterator_range_methods>);
-}
-#endif
-
 
 
 
@@ -2318,13 +2261,6 @@ const JSClass IteratorHelperObject::class_ = {
     "Iterator Helper",
     JSCLASS_HAS_RESERVED_SLOTS(IteratorHelperObject::SlotCount),
 };
-
-#ifdef NIGHTLY_BUILD
-const JSClass IteratorRangeObject::class_ = {
-    "IteratorRange",
-    JSCLASS_HAS_RESERVED_SLOTS(IteratorRangeSlotCount),
-};
-#endif
 
 
 NativeObject* GlobalObject::getOrCreateIteratorHelperPrototype(

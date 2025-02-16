@@ -1062,29 +1062,10 @@ function IteratorZipKeyed(predicate) {
 
 
 
-
-function IteratorRangeNext() {
-  var obj = this;
-  
+function* IteratorRangeGenerator(start, end, step, inclusiveEnd, zero, one) {
   
 
-  if (!IsObject(obj) || (obj = GuardToIteratorRange(obj)) === null) {
-    return callFunction(
-      CallIteratorRangeMethodIfWrapped,
-      this,
-      "IteratorRangeNext"
-    );
-  }
-
   
-  var start = UnsafeGetReservedSlot(obj, ITERATOR_RANGE_SLOT_START);
-  var end = UnsafeGetReservedSlot(obj, ITERATOR_RANGE_SLOT_END);
-  var step = UnsafeGetReservedSlot(obj, ITERATOR_RANGE_SLOT_STEP);
-  var inclusiveEnd = UnsafeGetReservedSlot(obj, ITERATOR_RANGE_SLOT_INCLUSIVE_END);
-  var zero = UnsafeGetReservedSlot(obj, ITERATOR_RANGE_SLOT_ZERO);
-  var one = UnsafeGetReservedSlot(obj, ITERATOR_RANGE_SLOT_ONE);
-  var currentCount = UnsafeGetReservedSlot(obj, ITERATOR_RANGE_SLOT_CURRENT_COUNT);
-
   
   
   var ifIncrease = end > start;
@@ -1095,65 +1076,65 @@ function IteratorRangeNext() {
 
   
   if (ifIncrease !== ifStepIncrease) {
-    return { value: undefined, done: true };
+    return undefined;
   }
 
   
   var hitsEnd = false;
 
   
+  var currentCount = zero;
 
   
-  var currentYieldingValue = start + (step * currentCount);
-
-  
-  hitsEnd = currentYieldingValue === end && !inclusiveEnd;
-
-
-  
-  currentCount = currentCount + one;
-
-  
-  if (ifIncrease) {
+  while (hitsEnd === false) {
     
-    if (inclusiveEnd) {
-      
-      if (currentYieldingValue > end) {
-        return { value: undefined, done: true };
-      }
-    } else {
-      
-      if (currentYieldingValue >= end) {
-        return { value: undefined, done: true };
-      }
+    var currentYieldingValue = start + (step * currentCount);
+
+    
+    if (currentYieldingValue === end) {
+      hitsEnd = true;
     }
-  } else {
+
     
+    currentCount = currentCount + one;
+
     
-    if (inclusiveEnd) {
+    if (ifIncrease === true) {
       
-      if (end > currentYieldingValue) {
-        return { value: undefined, done: true };
-      }
-    } else {
-      
-      if (end >= currentYieldingValue) {
+      if (inclusiveEnd === true) {
         
-        return { value: undefined, done: true };
+        if (currentYieldingValue > end) {
+          return undefined;
+        }
+      } else {
+        
+        if (currentYieldingValue >= end) {
+          return undefined;
+        }
       }
     }
+    
+    else {
+      
+      if (inclusiveEnd === true) {
+        
+        if (end > currentYieldingValue) {
+          return undefined;
+        }
+      } else {
+        
+        if (end >= currentYieldingValue) {
+          return undefined;
+        }
+      }
+    }
+
+    
+    yield currentYieldingValue;
   }
 
   
-  UnsafeSetReservedSlot(obj, ITERATOR_RANGE_SLOT_CURRENT_COUNT, currentCount);
-
-  
-  if (hitsEnd) {
-    return { value: undefined, done: true };
-  }
-
-  
-  return { value: currentYieldingValue, done: false };
+  return undefined;
 }
 
 
@@ -1162,9 +1143,7 @@ function IteratorRangeNext() {
 
 
 
-
 function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
-
   
   if (isNumberRange && Number_isNaN(start)) {
     ThrowRangeError(JSMSG_ITERATOR_RANGE_INVALID_START_RANGEERR);
@@ -1223,6 +1202,7 @@ function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
     step = optionOrStep.step;
 
     
+    
     inclusiveEnd = ToBoolean(optionOrStep.inclusiveEnd);
   }
   
@@ -1273,17 +1253,7 @@ function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
     ThrowRangeError(JSMSG_ITERATOR_RANGE_STEP_ZERO);
   }
   
-
-  var obj = NewIteratorRange();
-  UnsafeSetReservedSlot(obj, ITERATOR_RANGE_SLOT_START, start);
-  UnsafeSetReservedSlot(obj, ITERATOR_RANGE_SLOT_END, end);
-  UnsafeSetReservedSlot(obj, ITERATOR_RANGE_SLOT_STEP, step);
-  UnsafeSetReservedSlot(obj, ITERATOR_RANGE_SLOT_INCLUSIVE_END, inclusiveEnd);
-  UnsafeSetReservedSlot(obj, ITERATOR_RANGE_SLOT_ZERO, zero);
-  UnsafeSetReservedSlot(obj, ITERATOR_RANGE_SLOT_ONE, one);
-  UnsafeSetReservedSlot(obj, ITERATOR_RANGE_SLOT_CURRENT_COUNT, zero);
-
-  return obj;
+  return IteratorRangeGenerator(start, end, step, inclusiveEnd, zero, one);
 }
 
 
