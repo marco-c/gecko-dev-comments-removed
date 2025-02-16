@@ -161,14 +161,6 @@ class CompositorWidget {
 
 
 
-
-  virtual bool NeedsToDeferEndRemoteDrawing() { return false; }
-
-  
-
-
-
-
   virtual LayoutDeviceIntRegion GetTransparentRegion();
 
   

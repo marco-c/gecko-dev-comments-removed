@@ -1551,15 +1551,8 @@ void nsWindow::Show(bool aState) {
 #endif  
   }
 
-  if (mWindowType == WindowType::Popup) {
-    MOZ_ASSERT(ChooseWindowClass(mWindowType) == kClassNameDropShadow);
-    
-    
-    LONG_PTR exStyle = ::GetWindowLongPtrW(mWnd, GWL_EXSTYLE);
-    if (exStyle & WS_EX_LAYERED) {
-      ::SetWindowLongPtrW(mWnd, GWL_EXSTYLE, exStyle & ~WS_EX_COMPOSITED);
-    }
-  }
+  MOZ_ASSERT_IF(mWindowType == WindowType::Popup,
+                ChooseWindowClass(mWindowType) == kClassNameDropShadow);
 
   bool syncInvalidate = false;
 
@@ -1708,13 +1701,6 @@ void nsWindow::Show(bool aState) {
         }
       }
     } else {
-      
-      
-      if (wasVisible && mTransparencyMode == TransparencyMode::Transparent) {
-        if (mCompositorWidgetDelegate) {
-          mCompositorWidgetDelegate->ClearTransparentWindow();
-        }
-      }
       if (mWindowType != WindowType::Dialog) {
         ::ShowWindow(mWnd, SW_HIDE);
       } else {
@@ -7195,17 +7181,6 @@ void nsWindow::SetWindowTranslucencyInner(TransparencyMode aMode) {
   }
 
   MOZ_ASSERT(WinUtils::GetTopLevelHWND(mWnd, true) == mWnd);
-  if (IsPopup()) {
-    
-    
-    LONG_PTR exStyle = ::GetWindowLongPtr(mWnd, GWL_EXSTYLE);
-    if (aMode == TransparencyMode::Transparent) {
-      exStyle |= WS_EX_LAYERED;
-    } else {
-      exStyle &= ~WS_EX_LAYERED;
-    }
-    ::SetWindowLongPtrW(mWnd, GWL_EXSTYLE, exStyle);
-  }
 
   mTransparencyMode = aMode;
 
