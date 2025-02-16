@@ -429,7 +429,14 @@ void ProfilerChild::GatherProfileThreadFunction(
                 parameters->resolver(IPCProfileAndAdditionalInformation{
                     shmem, Some(ProfileGenerationAdditionalInformation{
                                std::move(sharedLibraryInfo)})});
+                
+                
+                
+                parameters->profilerChild->JoinGatherProfileThread();
               }))))) {
+    
+    
+    
     
     
     
@@ -449,11 +456,11 @@ mozilla::ipc::IPCResult ProfilerChild::RecvGatherProfile(
   
   
   parameters.get()->AddRef();
-  PRThread* gatherProfileThread = PR_CreateThread(
+  mGatherProfileThread = PR_CreateThread(
       PR_SYSTEM_THREAD, GatherProfileThreadFunction, parameters.get(),
-      PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
+      PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
 
-  if (!gatherProfileThread) {
+  if (!mGatherProfileThread) {
     
     mozilla::ipc::Shmem shmem;
     if (AllocShmem(1, &shmem)) {
@@ -482,8 +489,21 @@ mozilla::ipc::IPCResult ProfilerChild::RecvGetGatherProfileProgress(
   return IPC_OK();
 }
 
+void ProfilerChild::JoinGatherProfileThread() {
+  if (!mGatherProfileThread) {
+    
+    return;
+  }
+
+  PR_JoinThread(mGatherProfileThread);
+  mGatherProfileThread = nullptr;
+}
+
 void ProfilerChild::ActorDestroy(ActorDestroyReason aActorDestroyReason) {
   mDestroyed = true;
+  
+  
+  JoinGatherProfileThread();
 }
 
 void ProfilerChild::Destroy() {
