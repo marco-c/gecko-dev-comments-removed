@@ -16,11 +16,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 add_setup(async () => {
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.animation.enabled", false]],
-  });
-
   SidebarController.init();
   await TestUtils.waitForTick();
 });
