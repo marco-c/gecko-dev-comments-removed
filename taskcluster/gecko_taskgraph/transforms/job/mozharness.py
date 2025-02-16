@@ -284,7 +284,12 @@ def mozharness_on_generic_worker(config, job, taskdesc):
     mh_command = []
     if job["worker"]["os"] == "windows":
         system_python_dir = "c:/mozilla-build/python3/"
-        gecko_path = "%GECKO_PATH%"
+        
+        
+        
+        
+        
+        gecko_path = "build/src"
     else:
         system_python_dir = ""
         gecko_path = "$GECKO_PATH"
