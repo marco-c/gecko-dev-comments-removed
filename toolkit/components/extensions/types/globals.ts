@@ -1,7 +1,7 @@
 
 
 export var
-  AddonWrapper, AppConstants, GeckoViewConnection, GeckoViewWebExtension,
+  AddonWrapper, GeckoViewConnection, GeckoViewWebExtension,
   IndexedDB, JSONFile, Log, UrlbarUtils, WebExtensionDescriptorActor;
 
 
