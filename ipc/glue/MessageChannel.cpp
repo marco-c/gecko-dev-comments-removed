@@ -2212,7 +2212,11 @@ void MessageChannel::AddProfilerMarker(const IPC::Message& aMessage,
                                        MessageDirection aDirection) {
   mMonitor->AssertCurrentThreadOwns();
 
-  if (profiler_feature_active(ProfilerFeature::Flows)) {
+  if (profiler_feature_active(ProfilerFeature::Flows) &&
+      
+      
+      
+      !profiler_is_locked_on_current_thread()) {
     if (aDirection == MessageDirection::eSending) {
       auto flow = Flow::Global(aMessage.seqno() ^
                                LossyNarrowChannelId(mMessageChannelId));
