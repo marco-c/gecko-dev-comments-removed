@@ -160,6 +160,10 @@ const TEST_EVENTS = {
   RECEIVED_REQUEST_HEADERS: "NetMonitor:NetworkEventUpdated:RequestHeaders",
 
   
+  RECEIVED_EARLY_HINTS_RESPONSE_HEADERS:
+    "NetMonitor:NetworkEventUpdated:EarlyHintsResponseHeaders",
+
+  
   RECEIVED_RESPONSE_HEADERS: "NetMonitor:NetworkEventUpdated:ResponseHeaders",
 
   
@@ -208,6 +212,8 @@ const UPDATE_PROPS = [
   "totalTime",
   "eventTimings",
   "eventTimingsAvailable",
+  "earlyHintsResponseHeaders",
+  "earlyHintsResponseHeadersAvailable",
   "headersSize",
   "customQueryValue",
   "requestHeaders",

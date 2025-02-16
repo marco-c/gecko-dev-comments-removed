@@ -96,6 +96,11 @@ class NetworkEventActor extends Actor {
       content: {},
     };
 
+    this._earlyHintsResponse = {
+      headers: [],
+      rawHeaders: "",
+    };
+
     if (isDataChannel(channel) || isFileChannel(channel)) {
       this._innerWindowId = null;
       this._isNavigationRequest = false;
@@ -344,6 +349,24 @@ class NetworkEventActor extends Actor {
 
 
 
+  getEarlyHintsResponseHeaders() {
+    const { rawHeaders, headers } = this._earlyHintsResponse;
+    return {
+      headers: headers.map(header => ({
+        name: header.name,
+        value: this._createLongStringActor(header.value),
+      })),
+      headersSize: rawHeaders.length,
+      rawHeaders: this._createLongStringActor(rawHeaders),
+    };
+  }
+
+  
+
+
+
+
+
   getResponseHeaders() {
     let rawHeaders;
     let headersSize = 0;
@@ -516,6 +539,15 @@ class NetworkEventActor extends Actor {
 
     
     this._response.headersSize = rawHeaders ? rawHeaders.length : 0;
+
+    
+    if (earlyHintsResponseRawHeaders) {
+      this._earlyHintsResponse.headers =
+        lazy.NetworkUtils.parseEarlyHintsResponseHeaders(
+          earlyHintsResponseRawHeaders
+        );
+      this._earlyHintsResponse.rawHeaders = earlyHintsResponseRawHeaders;
+    }
 
     
     if (lazy.NetworkUtils.isRedirectedChannel(channel)) {

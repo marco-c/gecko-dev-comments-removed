@@ -126,6 +126,26 @@ const HEADERS_DNS = L10N.getStr("netmonitor.headers.dns");
 
 
 const HEADERS_CONFIG = {
+  earlyHintsResponseHeaders: {
+    
+    fetchKey: "earlyHintsResponseHeaders",
+    title: L10N.getStr("earlyHintsResponseHeaders"),
+    
+    rawHeaderValue: ({ headerData }) => {
+      const preHeaderText = headerData.rawHeaders.split("\r\n")[0];
+      return writeHeaderText(headerData.headers, preHeaderText).trim();
+    },
+    
+    displayTitle: ({ headerData }) => {
+      const title = HEADERS_CONFIG.earlyHintsResponseHeaders.title;
+      if (headerData.headersSize) {
+        return `${title} (${getFormattedSize(headerData.headersSize, 3)})`;
+      }
+      const rawHeaderValue =
+        HEADERS_CONFIG.earlyHintsResponseHeaders.rawHeaderValue({ headerData });
+      return `${title} (${getFormattedSize(rawHeaderValue.length, 3)})`;
+    },
+  },
   responseHeaders: {
     
     fetchKey: "responseHeaders",
