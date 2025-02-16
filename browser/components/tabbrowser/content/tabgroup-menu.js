@@ -59,6 +59,31 @@
     </panel>
        `;
 
+    static State = {
+      
+      CREATE_STANDARD_INITIAL: 0,
+      
+      CREATE_AI_INITIAL: 1,
+      
+      CREATE_AI_INITIAL_SUGGESTIONS_DISABLED: 2,
+      
+      CREATE_AI_WITH_SUGGESTIONS: 3,
+      
+      CREATE_AI_WITH_NO_SUGGESTIONS: 4,
+      
+      EDIT_STANDARD_INITIAL: 5,
+      
+      EDIT_AI_INITIAL: 6,
+      
+      EDIT_AI_INITIAL_SUGGESTIONS_DISABLED: 7,
+      
+      EDIT_AI_WITH_SUGGESTIONS: 8,
+      
+      EDIT_AI_WITH_NO_SUGGESTIONS: 9,
+      LOADING: 10,
+      ERROR: 11,
+    };
+
     #activeGroup;
     #cancelButton;
     #createButton;
@@ -68,6 +93,7 @@
     #panel;
     #swatches;
     #swatchesContainer;
+    #suggestionState = MozTabbrowserTabGroupMenu.State.CREATE_STANDARD_INITIAL;
 
     constructor() {
       super();
@@ -248,6 +274,8 @@
     openCreateModal(group) {
       this.activeGroup = group;
       this.createMode = true;
+      this.suggestionState =
+        MozTabbrowserTabGroupMenu.State.CREATE_STANDARD_INITIAL;
       this.#panel.openPopup(group.firstChild, {
         position: this.#panelPosition,
       });
@@ -256,6 +284,8 @@
     openEditModal(group) {
       this.activeGroup = group;
       this.createMode = false;
+      this.suggestionState =
+        MozTabbrowserTabGroupMenu.State.EDIT_STANDARD_INITIAL;
       this.#panel.openPopup(group.firstChild, {
         position: this.#panelPosition,
       });
@@ -355,6 +385,93 @@
 
     #handleDelete() {
       gBrowser.removeTabGroup(this.activeGroup);
+    }
+
+    
+
+
+    set suggestionState(newState) {
+      if (this.#suggestionState === newState) {
+        return;
+      }
+      this.#suggestionState = newState;
+      this.#renderSuggestionState();
+    }
+
+    #resetCommonUI() {
+      
+    }
+
+    #renderSuggestionState() {
+      switch (this.#suggestionState) {
+        
+        case MozTabbrowserTabGroupMenu.State.CREATE_STANDARD_INITIAL:
+          this.#resetCommonUI();
+          
+          break;
+
+        
+        case MozTabbrowserTabGroupMenu.State.CREATE_AI_INITIAL:
+          this.#resetCommonUI();
+          
+          break;
+
+        
+        case MozTabbrowserTabGroupMenu.State
+          .CREATE_AI_INITIAL_SUGGESTIONS_DISABLED:
+          this.#resetCommonUI();
+          
+          break;
+
+        
+        case MozTabbrowserTabGroupMenu.State.CREATE_AI_WITH_SUGGESTIONS:
+          
+          break;
+
+        
+        case MozTabbrowserTabGroupMenu.State.CREATE_AI_WITH_NO_SUGGESTIONS:
+          
+          break;
+
+        
+        case MozTabbrowserTabGroupMenu.State.EDIT_STANDARD_INITIAL:
+          this.#resetCommonUI();
+          
+          break;
+
+        
+        case MozTabbrowserTabGroupMenu.State.EDIT_AI_INITIAL:
+          this.#resetCommonUI();
+          
+          break;
+
+        
+        case MozTabbrowserTabGroupMenu.State
+          .EDIT_AI_INITIAL_SUGGESTIONS_DISABLED:
+          this.#resetCommonUI();
+          
+          break;
+
+        
+        case MozTabbrowserTabGroupMenu.State.EDIT_AI_WITH_SUGGESTIONS:
+          
+          break;
+
+        
+        case MozTabbrowserTabGroupMenu.State.EDIT_AI_WITH_NO_SUGGESTIONS:
+          
+          break;
+
+        
+        case MozTabbrowserTabGroupMenu.State.LOADING:
+          
+          break;
+
+        
+        case MozTabbrowserTabGroupMenu.State.ERROR:
+          
+          break;
+      }
     }
   }
 
