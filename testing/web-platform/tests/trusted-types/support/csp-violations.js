@@ -10,6 +10,10 @@ const cspDirectives = [
 
 
 
+
+
+
+
 function trusted_type_violations_and_exception_for(fn) {
   return new Promise((resolve, reject) => {
     
@@ -17,15 +21,15 @@ function trusted_type_violations_and_exception_for(fn) {
     let handler = e => {
       if (cspDirectives.includes(e.effectiveDirective)) {
         result.violations.push(e);
-      } else if (e.effectiveDirective === "object-src") {
-        document.removeEventListener("securitypolicyviolation", handler);
+      } else if (e.effectiveDirective === "connect-src") {
+        self.removeEventListener("securitypolicyviolation", handler);
         e.stopPropagation();
         resolve(result);
       } else {
         reject(`Unexpected violation for directive ${e.effectiveDirective}`);
       }
     }
-    document.addEventListener("securitypolicyviolation", handler);
+    self.addEventListener("securitypolicyviolation", handler);
 
     
     try {
@@ -33,14 +37,15 @@ function trusted_type_violations_and_exception_for(fn) {
     } catch(e) {
       result.exception = e;
     }
-
     
     
-    
-    var o = document.createElement('object');
-    o.type = "video/mp4";
-    o.data = "dummy.webm";
-    document.body.appendChild(o);
+    try {
+      new EventSource("/common/blank.html");
+    } catch(e) {
+      if (!e instanceof DOMException || e.name !== "SecurityError") {
+        throw e;
+      }
+    }
   });
 }
 
