@@ -4,6 +4,9 @@
 
 
 
+with Files("**"):
+    BUG_COMPONENT = ("Firefox", "Bookmarks & History")
+
 XPCSHELL_TESTS_MANIFESTS += [
     "tests/unit/xpcshell.toml",
 ]
