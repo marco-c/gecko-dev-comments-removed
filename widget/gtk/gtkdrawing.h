@@ -447,8 +447,6 @@ size_t GetGtkHeaderBarButtonLayout(mozilla::Span<ButtonLayout>,
 
 
 
-
-
-GtkBorder GetCSDDecorationSize(bool aIsPopup);
+GtkBorder GetTopLevelCSDDecorationSize();
 
 #endif
