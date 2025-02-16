@@ -188,7 +188,8 @@ class VideoSendStreamTest : public test::CallTest {
   }
 
  protected:
-  void TestNackRetransmission(uint32_t retransmit_ssrc,
+  void TestNackRetransmission(uint32_t media_ssrc,
+                              uint32_t retransmit_ssrc,
                               uint8_t retransmit_payload_type);
   void TestPacketFragmentationSize(VideoFormat format, bool with_fec);
 
@@ -1002,15 +1003,17 @@ TEST_F(VideoSendStreamTest, SupportsFlexfecWithMultithreadedH264) {
 }
 
 void VideoSendStreamTest::TestNackRetransmission(
+    uint32_t media_ssrc,
     uint32_t retransmit_ssrc,
     uint8_t retransmit_payload_type) {
   class NackObserver : public test::SendTest {
    public:
-    explicit NackObserver(uint32_t retransmit_ssrc,
+    explicit NackObserver(uint32_t media_ssrc,
+                          uint32_t retransmit_ssrc,
                           uint8_t retransmit_payload_type)
         : SendTest(test::VideoTestConstants::kDefaultTimeout),
-          send_count_(0),
           retransmit_count_(0),
+          media_ssrc_(media_ssrc),
           retransmit_ssrc_(retransmit_ssrc),
           retransmit_payload_type_(retransmit_payload_type) {}
 
@@ -1019,19 +1022,60 @@ void VideoSendStreamTest::TestNackRetransmission(
       RtpPacket rtp_packet;
       EXPECT_TRUE(rtp_packet.Parse(packet));
 
-      
-      const int kNackedPacketsAtOnceCount = 3;
-      const int kRetransmitTarget = kNackedPacketsAtOnceCount * 2;
+      uint16_t sequence_number = rtp_packet.SequenceNumber();
+      if (rtp_packet.payload_size() >= 2 &&
+          rtp_packet.Ssrc() == retransmit_ssrc_ &&
+          retransmit_ssrc_ != media_ssrc_) {
+        
+        rtc::ArrayView<const uint8_t> payload = rtp_packet.payload();
+        sequence_number = (payload[0] << 8) + payload[1];
+      }
 
-      
-      if (rtp_packet.payload_size() == 0) {
+      if (auto it = pending_retransmission_.find(sequence_number) !=
+                    pending_retransmission_.end()) {
+        
+        
+        pending_retransmission_.erase(it);
+        ++retransmit_count_;
+        if (retransmit_count_ >= 3) {
+          
+          observation_complete_.Set();
+        }
         return SEND_PACKET;
       }
 
-      ++send_count_;
+      
+      if (rtp_packet.payload_size() == 0 ||
+          (rtp_packet.Ssrc() == retransmit_ssrc_ &&
+           retransmit_ssrc_ != media_ssrc_)) {
+        return SEND_PACKET;
+      }
 
       
-      if (send_count_ % 25 == 0) {
+      const Timestamp now = env_.clock().CurrentTime();
+      pending_retransmission_.emplace(sequence_number, now);
+
+      
+      
+      
+      
+      const TimeDelta kNackInterval = TimeDelta::Millis(50);
+      const size_t kMaxNackSize = 100;
+
+      std::vector<uint16_t> sequence_numbers;
+      for (auto& kv : pending_retransmission_) {
+        if (now - kv.second >= kNackInterval) {
+          sequence_numbers.push_back(kv.first);
+          kv.second = now;
+
+          if (sequence_numbers.size() >= kMaxNackSize) {
+            break;
+          }
+        }
+      }
+
+      if (!sequence_numbers.empty()) {
+        
         RTCPSender::Configuration config;
         config.outgoing_transport = transport_adapter_.get();
         config.rtcp_report_interval = TimeDelta::Millis(kRtcpIntervalMs);
@@ -1043,53 +1087,14 @@ void VideoSendStreamTest::TestNackRetransmission(
         rtcp_sender.SetRemoteSSRC(test::VideoTestConstants::kVideoSendSsrcs[0]);
 
         RTCPSender::FeedbackState feedback_state;
-        uint16_t nack_sequence_numbers[kNackedPacketsAtOnceCount];
-        int nack_count = 0;
-        for (uint16_t sequence_number :
-             sequence_numbers_pending_retransmission_) {
-          if (nack_count < kNackedPacketsAtOnceCount) {
-            nack_sequence_numbers[nack_count++] = sequence_number;
-          } else {
-            break;
-          }
-        }
-
-        EXPECT_EQ(0, rtcp_sender.SendRTCP(feedback_state, kRtcpNack, nack_count,
-                                          nack_sequence_numbers));
+        EXPECT_EQ(0, rtcp_sender.SendRTCP(feedback_state, kRtcpNack,
+                                          sequence_numbers.size(),
+                                          sequence_numbers.data()));
       }
 
-      uint16_t sequence_number = rtp_packet.SequenceNumber();
-      if (rtp_packet.Ssrc() == retransmit_ssrc_ &&
-          retransmit_ssrc_ != test::VideoTestConstants::kVideoSendSsrcs[0]) {
-        
-        
-        const uint8_t* rtx_header = rtp_packet.payload().data();
-        sequence_number = (rtx_header[0] << 8) + rtx_header[1];
-      }
-
-      auto it = sequence_numbers_pending_retransmission_.find(sequence_number);
-      if (it == sequence_numbers_pending_retransmission_.end()) {
-        
-        
-        if (rtp_packet.Ssrc() == test::VideoTestConstants::kVideoSendSsrcs[0] &&
-            rtp_packet.payload_size() > 0 &&
-            retransmit_count_ +
-                    sequence_numbers_pending_retransmission_.size() <
-                kRetransmitTarget) {
-          sequence_numbers_pending_retransmission_.insert(sequence_number);
-          return DROP_PACKET;
-        }
-      } else {
-        
-        sequence_numbers_pending_retransmission_.erase(it);
-        if (++retransmit_count_ == kRetransmitTarget) {
-          EXPECT_EQ(retransmit_ssrc_, rtp_packet.Ssrc());
-          EXPECT_EQ(retransmit_payload_type_, rtp_packet.PayloadType());
-          observation_complete_.Set();
-        }
-      }
-
-      return SEND_PACKET;
+      
+      
+      return DROP_PACKET;
     }
 
     void ModifyVideoConfigs(
@@ -1112,12 +1117,13 @@ void VideoSendStreamTest::TestNackRetransmission(
 
     const Environment env_ = CreateEnvironment();
     std::unique_ptr<internal::TransportAdapter> transport_adapter_;
-    int send_count_;
     int retransmit_count_;
+    const uint32_t media_ssrc_;
     const uint32_t retransmit_ssrc_;
     const uint8_t retransmit_payload_type_;
-    std::set<uint16_t> sequence_numbers_pending_retransmission_;
-  } test(retransmit_ssrc, retransmit_payload_type);
+    
+    std::map<uint16_t, Timestamp> pending_retransmission_;
+  } test(media_ssrc, retransmit_ssrc, retransmit_payload_type);
 
   RunBaseTest(&test);
 }
@@ -1125,12 +1131,14 @@ void VideoSendStreamTest::TestNackRetransmission(
 TEST_F(VideoSendStreamTest, RetransmitsNack) {
   
   TestNackRetransmission(test::VideoTestConstants::kVideoSendSsrcs[0],
+                         test::VideoTestConstants::kVideoSendSsrcs[0],
                          test::VideoTestConstants::kFakeVideoSendPayloadType);
 }
 
 TEST_F(VideoSendStreamTest, RetransmitsNackOverRtx) {
   
-  TestNackRetransmission(test::VideoTestConstants::kSendRtxSsrcs[0],
+  TestNackRetransmission(test::VideoTestConstants::kVideoSendSsrcs[0],
+                         test::VideoTestConstants::kSendRtxSsrcs[0],
                          test::VideoTestConstants::kSendRtxPayloadType);
 }
 
