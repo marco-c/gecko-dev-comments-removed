@@ -16,8 +16,10 @@
 
 
 
-    constructor(insertElementFn) {
+
+    constructor(insertElementFn, securityDelayMS = 0) {
       this._insertElementFn = insertElementFn;
+      this._securityDelayMS = securityDelayMS;
       this._animating = false;
       this.currentNotification = null;
     }
@@ -130,7 +132,15 @@
 
 
 
-    async appendNotification(aType, aNotification, aButtons) {
+
+
+
+    async appendNotification(
+      aType,
+      aNotification,
+      aButtons,
+      aDisableClickJackingDelay = false
+    ) {
       if (
         aNotification.priority < this.PRIORITY_SYSTEM ||
         aNotification.priority > this.PRIORITY_CRITICAL_HIGH
@@ -211,6 +221,13 @@
         newitem.setAttribute("type", "info");
       } else {
         newitem.setAttribute("type", "warning");
+      }
+
+      
+      
+      
+      if (!aDisableClickJackingDelay && this._securityDelayMS > 0) {
+        newitem._initClickJackingProtection(this._securityDelayMS);
       }
 
       
@@ -381,6 +398,13 @@
         this.timeout = 0;
         this.dismissable = true;
 
+        
+        this._clickjackingDelayActive = false;
+        this._securityDelayMS = 0;
+        this._delayTimer = null;
+        this._focusHandler = null;
+        this._buttons = [];
+
         this.addEventListener("click", this);
         this.addEventListener("command", this);
       }
@@ -403,6 +427,8 @@
         if (this.eventCallback) {
           this.eventCallback("disconnected");
         }
+        
+        this._uninitClickJackingProtection();
       }
 
       closeButtonTemplate() {
@@ -439,6 +465,24 @@
       }
 
       handleEvent(e) {
+        
+        
+        if (this._clickjackingDelayActive) {
+          
+          if (
+            e.type === "click" &&
+            (e.target.localName === "button" ||
+              e.target.classList.contains("text-link") ||
+              e.target.classList.contains("notification-link"))
+          ) {
+            
+            e.stopPropagation();
+            e.preventDefault();
+            this._startClickJackingDelay();
+            return;
+          }
+        }
+
         if (e.type == "click" && e.target.localName != "label") {
           return;
         }
@@ -487,7 +531,7 @@
       }
 
       setButtons(buttons) {
-        this._buttons = buttons;
+        this._buttons = [];
         for (let button of buttons) {
           let link = button.link || button.supportPage;
           let localeId = button["l10n-id"];
@@ -536,7 +580,9 @@
           } else {
             this.buttonContainer.appendChild(buttonElem);
           }
+
           buttonElem.buttonInfo = button;
+          this._buttons.push(buttonElem);
         }
       }
 
@@ -546,7 +592,75 @@
         }
         super.dismiss();
       }
+
+      
+
+
+
+
+
+
+
+
+      _initClickJackingProtection(securityDelayMS) {
+        if (this._clickjackingDelayActive) {
+          return; 
+        }
+
+        this._securityDelayMS = securityDelayMS;
+        
+        
+        this._focusHandler = () => {
+          
+          if (this.isConnected) {
+            this._startClickJackingDelay();
+          }
+        };
+
+        window.addEventListener("focus", this._focusHandler, true);
+        this._startClickJackingDelay();
+      }
+
+      
+
+
+      _uninitClickJackingProtection() {
+        window.removeEventListener("focus", this._focusHandler, true);
+        this._focusHandler = null;
+        if (this._delayTimer) {
+          clearTimeout(this._delayTimer);
+          this._delayTimer = null;
+        }
+        this._enableAllButtons();
+        this._clickjackingDelayActive = false;
+      }
+
+      _startClickJackingDelay() {
+        this._clickjackingDelayActive = true;
+        this._disableAllButtons();
+        if (this._delayTimer) {
+          clearTimeout(this._delayTimer);
+        }
+        this._delayTimer = setTimeout(() => {
+          this._clickjackingDelayActive = false;
+          this._enableAllButtons();
+          this._delayTimer = null;
+        }, this._securityDelayMS);
+      }
+
+      _disableAllButtons() {
+        for (let button of this._buttons) {
+          button.disabled = true;
+        }
+      }
+
+      _enableAllButtons() {
+        for (let button of this._buttons) {
+          button.disabled = false;
+        }
+      }
     }
+
     if (!customElements.get("notification-message")) {
       customElements.define("notification-message", NotificationMessage);
     }
