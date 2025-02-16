@@ -416,6 +416,9 @@ UiaTextRange::FindAttribute(TEXTATTRIBUTEID aAttributeId, VARIANT aVal,
         return S_OK;
       }
       startPoint = endPoint;
+      
+      
+      
     } while ((endPoint = endPoint.FindTextAttrsStart(eDirNext)) &&
              endPoint <= range.End() && startPoint != endPoint);
     if (matchingRangeStart) {
@@ -446,8 +449,11 @@ UiaTextRange::FindAttribute(TEXTATTRIBUTEID aAttributeId, VARIANT aVal,
         return S_OK;
       }
       endPoint = startPoint;
+      
+      
+      
     } while ((startPoint = startPoint.FindTextAttrsStart(eDirPrevious)) &&
-             range.Start() <= startPoint);
+             range.Start() <= startPoint && startPoint != endPoint);
     if (matchingRangeEnd) {
       
       
