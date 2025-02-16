@@ -7,7 +7,13 @@
 #ifndef mozilla_dom_NavigationTransition_h___
 #define mozilla_dom_NavigationTransition_h___
 
+#include "nsISupports.h"
+
+#include "nsCOMPtr.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
+
+#include "mozilla/RefPtr.h"
 
 class nsIGlobalObject;
 
@@ -15,22 +21,39 @@ namespace mozilla::dom {
 
 class NavigationHistoryEntry;
 enum class NavigationType : uint8_t;
+class Promise;
+
 
 class NavigationTransition final : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(NavigationTransition)
 
-  enum NavigationType NavigationType() const { return {}; }
-  already_AddRefed<NavigationHistoryEntry> From() const { return {}; }
-  already_AddRefed<Promise> Finished() const { return {}; }
+  NavigationTransition(nsIGlobalObject* aGlobalObject,
+                       NavigationType aNavigationType,
+                       NavigationHistoryEntry* aFrom, Promise* aFinished);
+
+  enum NavigationType NavigationType() const;
+  NavigationHistoryEntry* From() const;
+  Promise* Finished() const;
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
-  nsIGlobalObject* GetParentObject() const { return {}; }
+  nsIGlobalObject* GetParentObject() const;
 
  private:
   ~NavigationTransition() = default;
+
+  nsCOMPtr<nsIGlobalObject> mGlobalObject;
+
+  
+  enum NavigationType mNavigationType;
+
+  
+  RefPtr<NavigationHistoryEntry> mFrom;
+
+  
+  RefPtr<Promise> mFinished;
 };
 
 }  
