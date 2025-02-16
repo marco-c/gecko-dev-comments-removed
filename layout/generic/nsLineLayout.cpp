@@ -1507,6 +1507,7 @@ void nsLineLayout::SetSpanForEmptyLine(PerSpanData* aPerSpanData,
     if (pfd->mSpan) {
       
       
+      
       SetSpanForEmptyLine(pfd->mSpan, aWM, aContainerSize, 0);
     }
   }
