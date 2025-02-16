@@ -3015,17 +3015,10 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
       int show_idx = gf_start_show_idx + j;
       const FIRSTPASS_STATS *frame_stats =
           fps_get_frame_stats(first_pass_info, show_idx);
-      
-      
-      
-      
-      
       if (frame_stats == NULL) {
         if (cpi->ext_ratectrl.ready &&
             (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_GOP) != 0 &&
             cpi->ext_ratectrl.funcs.get_gop_decision != NULL) {
-          
-          
           
           
           
