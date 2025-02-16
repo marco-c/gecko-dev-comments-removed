@@ -311,9 +311,15 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
     ma_push(ScratchRegister);
   }
   void push(Register reg) { ma_push(reg); }
-  void push(FloatRegister reg) { ma_push(reg); }
+  void push(FloatRegister reg) {
+    MOZ_ASSERT(reg.isDouble(), "float32 and simd128 not supported");
+    ma_push(reg);
+  }
   void pop(Register reg) { ma_pop(reg); }
-  void pop(FloatRegister reg) { ma_pop(reg); }
+  void pop(FloatRegister reg) {
+    MOZ_ASSERT(reg.isDouble(), "float32 and simd128 not supported");
+    ma_pop(reg);
+  }
 
   
   
