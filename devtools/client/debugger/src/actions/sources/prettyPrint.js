@@ -290,7 +290,7 @@ function selectPrettyLocation(prettySource) {
 
 
 
-export async function prettyPrintSource(source, thunkArgs) {
+export async function doPrettyPrintSource(source, thunkArgs) {
   const { dispatch, getState } = thunkArgs;
   recordEvent("pretty_print");
 
@@ -335,7 +335,7 @@ export async function prettyPrintSource(source, thunkArgs) {
 
 
 
-const memoizedPrettyPrintSource = memoizeableAction("setSymbols", {
+export const prettyPrintSource = memoizeableAction("prettyPrintSource", {
   getValue: (source, { getState }) => {
     
     const url = getPrettyOriginalSourceURL(source);
@@ -348,12 +348,12 @@ const memoizedPrettyPrintSource = memoizeableAction("setSymbols", {
     return fulfilled(s);
   },
   createKey: source => source.id,
-  action: (source, thunkArgs) => prettyPrintSource(source, thunkArgs),
+  action: (source, thunkArgs) => doPrettyPrintSource(source, thunkArgs),
 });
 
 export function prettyPrintAndSelectSource(source) {
   return async ({ dispatch }) => {
-    const prettySource = await dispatch(memoizedPrettyPrintSource(source));
+    const prettySource = await dispatch(prettyPrintSource(source));
 
     
     

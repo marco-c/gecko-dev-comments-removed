@@ -9,7 +9,7 @@
 
 import { setSymbols } from "../sources/symbols";
 import { setInScopeLines } from "../ast/index";
-import { prettyPrintAndSelectSource } from "./prettyPrint";
+import { prettyPrintSource, prettyPrintAndSelectSource } from "./prettyPrint";
 import { addTab, closeTab } from "../tabs";
 import { loadSourceText } from "./loadSourceText";
 import { setBreakableLines } from "./breakableLines";
@@ -162,21 +162,26 @@ async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
   if (keepContext) {
     
     
+    const sourceHasPrettyTab = hasPrettyTab(getState(), location.source);
     if (
       !location.source.isOriginal &&
       shouldSelectOriginalLocation &&
-      hasPrettyTab(getState(), location.source)
+      sourceHasPrettyTab
     ) {
       
       
       
-      await dispatch(prettyPrintAndSelectSource(location.source));
+      await dispatch(prettyPrintSource(location.source));
     }
     if (shouldSelectOriginalLocation != location.source.isOriginal) {
       
+      
+      
+      
       if (
         location.source.isOriginal ||
-        isSourceActorWithSourceMap(getState(), location.sourceActor.id)
+        isSourceActorWithSourceMap(getState(), location.sourceActor.id) ||
+        sourceHasPrettyTab
       ) {
         
         
@@ -277,7 +282,6 @@ export function selectLocation(
     if (!tabExists(getState(), source.id)) {
       dispatch(addTab(source, sourceActor));
     }
-
     dispatch(
       setSelectedLocation(
         location,
