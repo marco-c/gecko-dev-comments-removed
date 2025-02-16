@@ -2051,6 +2051,9 @@ static bool ParseDate(JSContext* cx, DateTimeInfo::ForceUTC forceUTC,
 static bool ParseDate(JSContext* cx, DateTimeInfo::ForceUTC forceUTC,
                       const JSLinearString* s, ClippedTime* result) {
   AutoCheckCannotGC nogc;
+  
+  
+  cx->runtime()->setUseCounter(cx->global(), JSUseCounter::DATEPARSE);
   return s->hasLatin1Chars() ? ParseDate(cx, forceUTC, s->latin1Chars(nogc),
                                          s->length(), result)
                              : ParseDate(cx, forceUTC, s->twoByteChars(nogc),
@@ -2065,9 +2068,6 @@ static bool ParseDate(JSContext* cx, DateTimeInfo::ForceUTC forceUTC,
 static bool date_parse(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Date", "parse");
 
-  
-  
-  cx->runtime()->setUseCounter(cx->global(), JSUseCounter::DATEPARSE);
   CallArgs args = CallArgsFromVp(argc, vp);
   if (args.length() == 0) {
     args.rval().setNaN();
