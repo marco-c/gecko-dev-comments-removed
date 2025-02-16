@@ -585,6 +585,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+    public @NonNull Builder defaultRecursiveResolverUri(final @NonNull String uri) {
+      getSettings().setDefaultRecursiveResolverUri(uri);
+      return this;
+    }
+
+    
+
+
+
+
+
 
     public @NonNull Builder largeKeepaliveFactor(final int factor) {
       getSettings().setLargeKeepaliveFactor(factor);
@@ -646,6 +657,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new PrefWithoutDefault<>("network.trr.mode");
    final PrefWithoutDefault<String> mTrustedRecursiveResolverUri =
       new PrefWithoutDefault<>("network.trr.uri");
+   final PrefWithoutDefault<String> mDefaultRecursiveResolverUri =
+      new PrefWithoutDefault<>("network.trr.default_provider_uri");
    final PrefWithoutDefault<String> mTrustedRecursiveResolverExcludedDomains =
       new PrefWithoutDefault<>("network.trr.excluded-domains");
    final PrefWithoutDefault<Integer> mLargeKeepalivefactor =
@@ -1918,6 +1931,26 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public @NonNull GeckoRuntimeSettings setTrustedRecursiveResolverUri(final @NonNull String uri) {
     mTrustedRecursiveResolverUri.commit(uri);
+    return this;
+  }
+
+  
+
+
+
+
+  public @Nullable String getDefaultRecursiveResolverUri() {
+    return mDefaultRecursiveResolverUri.get();
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setDefaultRecursiveResolverUri(final @NonNull String uri) {
+    mDefaultRecursiveResolverUri.commit(uri);
     return this;
   }
 
