@@ -87,21 +87,7 @@ already_AddRefed<nsFontMetrics> nsFontCache::GetMetricsFor(
     }
   }
 
-  if (!mReportedProbableFingerprinting) {
-    
-    
-    
-    PRTime now = PR_Now();
-    if (now - mLastCacheMiss > kFingerprintingTimeout) {
-      mCacheMisses = 0;
-    }
-    mCacheMisses++;
-    mLastCacheMiss = now;
-    if (NS_IsMainThread() && mCacheMisses > kFingerprintingCacheMissThreshold) {
-      mContext->Document()->RecordFontFingerprinting();
-      mReportedProbableFingerprinting = true;
-    }
-  }
+  DetectFontFingerprinting(aFont);
 
   
   
@@ -124,6 +110,55 @@ already_AddRefed<nsFontMetrics> nsFontCache::GetMetricsFor(
   
   mFontMetrics.AppendElement(do_AddRef(fm).take());
   return fm.forget();
+}
+
+void nsFontCache::DetectFontFingerprinting(const nsFont& aFont) {
+  
+  
+  
+
+  if (mReportedProbableFingerprinting || aFont.family.families.list.IsEmpty()) {
+    return;
+  }
+
+  PRTime now = PR_Now();
+  nsAutoString key;
+  for (const auto& family : aFont.family.families.list.AsSpan()) {
+    if (family.IsGeneric()) {
+      continue;
+    }
+    key.Append(family.AsFamilyName().name.AsAtom()->GetUTF16String());
+  }
+  if (key.IsEmpty()) {
+    return;
+  }
+
+  auto missedFonts = mMissedFontFamilyNames.Lock();
+  missedFonts->InsertOrUpdate(key, now);
+  
+  
+  if (missedFonts->Count() <= kFingerprintingCacheMissThreshold) {
+    return;
+  }
+  uint16_t fontsMissedRecently = 0;
+
+  bool clearMissedFonts = false;
+  for (auto iter = missedFonts->Iter(); !iter.Done(); iter.Next()) {
+    if (now - kFingerprintingLastNSec <= iter.Data()) {
+      if (++fontsMissedRecently > kFingerprintingCacheMissThreshold) {
+        mContext->Document()->RecordFontFingerprinting();
+        mReportedProbableFingerprinting = true;
+        clearMissedFonts = true;
+        break;
+      }
+    } else {
+      
+      iter.Remove();
+    }
+  }
+  if (clearMissedFonts) {
+    missedFonts->Clear();
+  }
 }
 
 void nsFontCache::UpdateUserFonts(gfxUserFontSet* aUserFontSet) {
@@ -158,6 +193,8 @@ void nsFontCache::Compact() {
       NS_ADDREF(oldfm);
     }
   }
+  auto missedFonts = mMissedFontFamilyNames.Lock();
+  missedFonts->Clear();
 }
 
 
@@ -175,7 +212,4 @@ void nsFontCache::Flush(int32_t aFlushCount) {
     NS_RELEASE(fm);
   }
   mFontMetrics.RemoveElementsAt(0, n);
-
-  mLastCacheMiss = 0;
-  mCacheMisses = 0;
 }

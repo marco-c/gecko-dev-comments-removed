@@ -24,7 +24,8 @@ struct nsFont;
 
 class nsFontCache final : public nsIObserver {
  public:
-  nsFontCache() : mContext(nullptr) {}
+  nsFontCache()
+      : mContext(nullptr), mMissedFontFamilyNames("MissedFontFamilyNames") {}
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -53,11 +54,10 @@ class nsFontCache final : public nsIObserver {
 
   
   
+  static constexpr int32_t kFingerprintingCacheMissThreshold = 20;
   
-  static constexpr int32_t kFingerprintingCacheMissThreshold = 3 * 20;
   
-  
-  static constexpr PRTime kFingerprintingTimeout =
+  static constexpr PRTime kFingerprintingLastNSec =
       PRTime(PR_USEC_PER_SEC) * 3;  
 
   static_assert(kFingerprintingCacheMissThreshold < kMaxCacheEntries);
@@ -93,8 +93,10 @@ class nsFontCache final : public nsIObserver {
     RefPtr<nsFontCache> mCache;
   };
 
-  PRTime mLastCacheMiss = 0;
-  uint64_t mCacheMisses = 0;
+  void DetectFontFingerprinting(const nsFont& aFont);
+
+  mozilla::DataMutex<nsTHashMap<nsStringHashKey, PRTime>>
+      mMissedFontFamilyNames;
   bool mReportedProbableFingerprinting = false;
 };
 
