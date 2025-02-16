@@ -1836,23 +1836,8 @@ var newWindowButtonObserver = {
 };
 
 const BrowserSearch = {
-  _searchInitComplete: false,
-
   init() {
     Services.obs.addObserver(this, "browser-search-engine-modified");
-  },
-
-  delayedStartupInit() {
-    
-    
-    this._updateURLBarPlaceholderFromDefaultEngine(
-      PrivateBrowsingUtils.isWindowPrivate(window),
-      
-      
-      true
-    ).then(() => {
-      this._searchInitComplete = true;
-    });
   },
 
   uninit() {
@@ -1880,22 +1865,6 @@ const BrowserSearch = {
         
         
         this._removeMaybeOfferedEngine(engineName);
-        break;
-      case "engine-default":
-        if (
-          this._searchInitComplete &&
-          !PrivateBrowsingUtils.isWindowPrivate(window)
-        ) {
-          this._updateURLBarPlaceholder(engineName, false);
-        }
-        break;
-      case "engine-default-private":
-        if (
-          this._searchInitComplete &&
-          PrivateBrowsingUtils.isWindowPrivate(window)
-        ) {
-          this._updateURLBarPlaceholder(engineName, true);
-        }
         break;
     }
   },
@@ -1944,131 +1913,8 @@ const BrowserSearch = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  initPlaceHolder(force = false) {
-    const prefName =
-      "browser.urlbar.placeholderName" +
-      (PrivateBrowsingUtils.isWindowPrivate(window) ? ".private" : "");
-    let engineName = Services.prefs.getStringPref(prefName, "");
-    if (engineName || force) {
-      
-      this._setURLBarPlaceholder(engineName);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  async _updateURLBarPlaceholderFromDefaultEngine(
-    isPrivate,
-    delayUpdate = false
-  ) {
-    const getDefault = isPrivate
-      ? Services.search.getDefaultPrivate
-      : Services.search.getDefault;
-    let defaultEngine = await getDefault();
-    if (!this._searchInitComplete) {
-      
-      
-      SearchUIUtils.updatePlaceholderNamePreference(defaultEngine, isPrivate);
-    }
-    this._updateURLBarPlaceholder(defaultEngine.name, isPrivate, delayUpdate);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  _updateURLBarPlaceholder(engineName, isPrivate, delayUpdate = false) {
-    if (!engineName) {
-      throw new Error("Expected an engineName to be specified");
-    }
-
-    const engine = Services.search.getEngineByName(engineName);
-    if (!engine.isAppProvided) {
-      
-      
-      engineName = "";
-    }
-
-    
-    
-    if (delayUpdate && !gURLBar.value) {
-      
-      
-      
-      
-      
-      let placeholderUpdateListener = () => {
-        if (gURLBar.value && !gURLBar.searchMode) {
-          
-          
-          
-          
-          this._updateURLBarPlaceholderFromDefaultEngine(isPrivate, false);
-          gURLBar.removeEventListener("input", placeholderUpdateListener);
-          gBrowser.tabContainer.removeEventListener(
-            "TabSelect",
-            placeholderUpdateListener
-          );
-        }
-      };
-
-      gURLBar.addEventListener("input", placeholderUpdateListener);
-      gBrowser.tabContainer.addEventListener(
-        "TabSelect",
-        placeholderUpdateListener
-      );
-    } else if (!gURLBar.searchMode) {
-      this._setURLBarPlaceholder(engineName);
-    }
-  },
-
-  
-
-
-
-
-
-
-  _setURLBarPlaceholder(name) {
-    document.l10n.setAttributes(
-      gURLBar.inputField,
-      name ? "urlbar-placeholder-with-name" : "urlbar-placeholder",
-      name ? { name } : undefined
-    );
-  },
-
   addEngine(browser, engine) {
-    if (!this._searchInitComplete) {
+    if (!Services.search.hasSuccessfullyInitialized) {
       
       
       
@@ -2428,10 +2274,7 @@ const BrowserSearch = {
     );
 
     
-    this._updateURLBarPlaceholderFromDefaultEngine(
-      PrivateBrowsingUtils.isWindowPrivate(window),
-      false
-    ).catch(console.error);
+    gURLBar._updatePlaceholderFromDefaultEngine(false).catch(console.error);
   },
 };
 

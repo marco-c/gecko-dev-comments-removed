@@ -198,7 +198,7 @@ var gBrowserInit = {
         elem.removeAttribute("skipintoolbarset");
       }
     }
-    BrowserSearch.initPlaceHolder();
+    gURLBar.initPlaceHolder();
 
     
     
@@ -430,7 +430,7 @@ var gBrowserInit = {
     UpdateUrlbarSearchSplitterState();
 
     BookmarkingUI.init();
-    BrowserSearch.delayedStartupInit();
+    gURLBar.delayedStartupInit();
     gProtectionsHandler.init();
 
     let safeMode = document.getElementById("helpSafeMode");

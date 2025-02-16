@@ -130,7 +130,7 @@ add_task(async function test_delayed_update_placeholder() {
   
   
   
-  Services.obs.removeObserver(BrowserSearch, "browser-search-engine-modified");
+  Services.obs.removeObserver(gURLBar, "browser-search-engine-modified");
 
   
   
@@ -149,7 +149,7 @@ add_task(async function test_delayed_update_placeholder() {
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
   
-  BrowserSearch._updateURLBarPlaceholder(extraEngine.name, false, true);
+  gURLBar._updatePlaceholder(extraEngine.name, true);
 
   Assert.equal(
     gURLBar.placeholder,
@@ -172,7 +172,7 @@ add_task(async function test_delayed_update_placeholder() {
     appDefaultEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
-  BrowserSearch._updateURLBarPlaceholder(appDefaultEngine.name, false, true);
+  gURLBar._updatePlaceholder(appDefaultEngine.name, true);
 
   Assert.equal(
     gURLBar.placeholder,
@@ -193,7 +193,7 @@ add_task(async function test_delayed_update_placeholder() {
   );
 
   
-  BrowserSearch._updateURLBarPlaceholder(extraEngine.name, false);
+  gURLBar._updatePlaceholder(extraEngine.name);
 
   await TestUtils.waitForCondition(
     () => gURLBar.placeholder == noEngineString,
@@ -205,7 +205,7 @@ add_task(async function test_delayed_update_placeholder() {
     "Placeholder should be the default."
   );
 
-  Services.obs.addObserver(BrowserSearch, "browser-search-engine-modified");
+  Services.obs.addObserver(gURLBar, "browser-search-engine-modified", true);
 });
 
 add_task(async function test_private_window_no_separate_engine() {
@@ -370,7 +370,7 @@ add_task(async function test_change_default_engine_updates_placeholder() {
 
   
   
-  BrowserSearch._setURLBarPlaceholder("");
+  gURLBar._setPlaceholder("");
   await TestUtils.waitForCondition(
     () => gURLBar.placeholder == noEngineString,
     "The placeholder should have been reset."
