@@ -152,6 +152,17 @@ impl Child {
         self.ref_wait_with_output().unwrap()
     }
 
+    pub fn wait(&mut self) -> std::io::Result<ExitStatus> {
+        self.ref_wait_with_output().unwrap().map(|o| o.status)
+    }
+
+    
+    
+    
+    pub fn kill(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+
     fn ref_wait_with_output(&mut self) -> Option<std::io::Result<Output>> {
         drop(self.stdin.take());
         if let Some(stdin) = self.stdin_data.take() {

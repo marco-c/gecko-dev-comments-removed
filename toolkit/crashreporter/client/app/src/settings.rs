@@ -10,6 +10,10 @@ pub struct Settings {
     pub submit_report: bool,
     
     pub include_url: bool,
+    
+    
+    #[serde(default = "missing_test_hardware")]
+    pub test_hardware: bool,
 }
 
 impl Default for Settings {
@@ -17,6 +21,7 @@ impl Default for Settings {
         Settings {
             submit_report: true,
             include_url: true,
+            test_hardware: true,
         }
     }
 }
@@ -36,4 +41,8 @@ impl Settings {
     pub fn to_string(&self) -> String {
         serde_json::to_string_pretty(self).unwrap()
     }
+}
+
+fn missing_test_hardware() -> bool {
+    true
 }
