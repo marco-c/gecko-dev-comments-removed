@@ -87,6 +87,11 @@ void PacketRouter::RegisterNotifyBweCallback(
   notify_bwe_callback_ = std::move(callback);
 }
 
+void PacketRouter::EnableCongestionControlFeedbackAccordingToRfc8888() {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  use_cc_feedback_according_to_rfc8888_ = true;
+}
+
 void PacketRouter::AddSendRtpModuleToMap(RtpRtcpInterface* rtp_module,
                                          uint32_t ssrc) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
@@ -183,9 +188,19 @@ void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
     RTC_LOG(LS_WARNING) << "Failed to send packet, Not sending media";
     return;
   }
+
   
   
-  if (packet->HasExtension<TransportSequenceNumber>()) {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (use_cc_feedback_according_to_rfc8888_ ||
+      packet->HasExtension<TransportSequenceNumber>()) {
     packet->set_transport_sequence_number(transport_seq_++);
   }
   rtp_module->AssignSequenceNumber(*packet);
