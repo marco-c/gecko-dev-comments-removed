@@ -10,9 +10,6 @@ add_task(async function () {
   
   
   Services.prefs.clearUserPref("devtools.netmonitor.visibleColumns");
-  const visibleColumns = JSON.parse(
-    Services.prefs.getCharPref("devtools.netmonitor.visibleColumns")
-  );
   
   const { monitor } = await initNetMonitor(SIMPLE_URL, {
     requestCount: 1,
@@ -20,6 +17,8 @@ add_task(async function () {
   info("Starting test... ");
 
   const { document } = monitor.panelWin;
+
+  const visibleColumns = getCurrentVisibleColumns(monitor);
 
   
   const wait = waitForNetworkEvents(monitor, 1);

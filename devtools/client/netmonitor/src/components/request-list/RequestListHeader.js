@@ -669,20 +669,29 @@ class RequestListHeader extends Component {
         
         "data-active": active,
       },
-      button(
-        {
-          id: `requests-list-${name}-button`,
-          className: `requests-list-header-button`,
-          "data-sorted": sorted,
-          "data-name": name,
-          title: sortedTitle ? `${label} (${sortedTitle})` : label,
-          onClick: evt => this.onHeaderClick(evt, name),
-        },
-        name === "waterfall"
-          ? this.waterfallLabel(waterfallWidth, scale, label)
-          : div({ className: "button-text" }, label),
-        div({ className: "button-icon" })
-      ),
+      name === "override"
+        ? button(
+            {
+              id: `requests-list-${name}-button`,
+              className: `requests-list-header-button`,
+              title: label,
+            },
+            div({ className: "button-text" }, label)
+          )
+        : button(
+            {
+              id: `requests-list-${name}-button`,
+              className: `requests-list-header-button`,
+              "data-sorted": sorted,
+              "data-name": name,
+              title: sortedTitle ? `${label} (${sortedTitle})` : label,
+              onClick: evt => this.onHeaderClick(evt, name),
+            },
+            name === "waterfall"
+              ? this.waterfallLabel(waterfallWidth, scale, label)
+              : div({ className: "button-text" }, label),
+            div({ className: "button-icon" })
+          ),
       name !== lastVisibleColumn && draggable
     );
   }
