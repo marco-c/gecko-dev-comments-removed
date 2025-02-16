@@ -32,7 +32,10 @@ namespace test {
 
 class IvfVideoFrameGenerator : public FrameGeneratorInterface {
  public:
-  IvfVideoFrameGenerator(const Environment& env, absl::string_view file_name);
+  
+  IvfVideoFrameGenerator(const Environment& env,
+                         absl::string_view file_name,
+                         std::optional<int> fps_hint);
   ~IvfVideoFrameGenerator() override;
 
   VideoFrameData NextFrame() override;
@@ -40,7 +43,7 @@ class IvfVideoFrameGenerator : public FrameGeneratorInterface {
   void ChangeResolution(size_t width, size_t height) override;
   Resolution GetResolution() const override;
 
-  std::optional<int> fps() const override { return std::nullopt; }
+  std::optional<int> fps() const override { return fps_hint_; }
 
  private:
   class DecodedCallback : public DecodedImageCallback {
@@ -66,6 +69,7 @@ class IvfVideoFrameGenerator : public FrameGeneratorInterface {
 
   size_t width_;
   size_t height_;
+  std::optional<int> fps_hint_;
 
   
   
