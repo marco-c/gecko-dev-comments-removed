@@ -8,12 +8,13 @@
 
 
 
-#include "modules/rtp_rtcp/source/rtp_packetizer_av1_test_helper.h"
-
+#include <stddef.h>
 #include <stdint.h>
 
 #include <initializer_list>
 #include <vector>
+
+#include "modules/rtp_rtcp/source/rtp_packetizer_av1_test_helper.h"
 
 namespace webrtc {
 
