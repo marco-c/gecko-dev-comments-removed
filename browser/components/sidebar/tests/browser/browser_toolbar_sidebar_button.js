@@ -362,6 +362,16 @@ add_task(async function test_sidebar_button_runtime_pref_enabled() {
     "The sidebar button is in the nav-bar"
   );
 
+  Assert.ok(button.checked, "Sidebar button should be checked when showing.");
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.revamp", false]],
+  });
+  Assert.ok(
+    !button.checked,
+    "Sidebar button should not be checked when old sidebar is not showing."
+  );
+  await SpecialPowers.popPrefEnv();
+
   
   
   await SpecialPowers.pushPrefEnv({
