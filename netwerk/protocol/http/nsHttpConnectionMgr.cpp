@@ -1429,50 +1429,39 @@ nsresult nsHttpConnectionMgr::TryDispatchTransaction(
       (!nsHttpHandler::IsHttp3Enabled() || (caps & NS_HTTP_DISALLOW_HTTP3)));
   if (conn) {
     LOG(("TryingDispatchTransaction: an active h2 connection exists"));
-    ExtendedCONNECTSupport extendedConnect = conn->GetExtendedCONNECTSupport();
-    if (trans->IsWebsocketUpgrade() || trans->IsForWebTransport()) {
-      RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
-      if (connTCP) {
-        LOG(("TryingDispatchTransaction: extended CONNECT"));
-        if (extendedConnect == ExtendedCONNECTSupport::NO_SUPPORT) {
-          LOG((
-              "TryingDispatchTransaction: no support for extended CONNECT over "
-              "Http2"));
-          
-          
-          
-          trans->DisableSpdy();
-          caps &= NS_HTTP_DISALLOW_SPDY;
-          trans->MakeSticky();
-        } else if (extendedConnect == ExtendedCONNECTSupport::SUPPORTED) {
-          LOG(("TryingDispatchTransaction: extended CONNECT supported"));
+    WebSocketSupport wsSupp = conn->GetWebSocketSupport();
+    if (trans->IsWebsocketUpgrade()) {
+      LOG(("TryingDispatchTransaction: this is a websocket upgrade"));
+      if (wsSupp == WebSocketSupport::NO_SUPPORT) {
+        LOG((
+            "TryingDispatchTransaction: no support for websockets over Http2"));
+        
+        
+        
+        trans->DisableSpdy();
+        caps &= NS_HTTP_DISALLOW_SPDY;
+        trans->MakeSticky();
+      } else if (wsSupp == WebSocketSupport::SUPPORTED) {
+        RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
+        LOG(("TryingDispatchTransaction: websockets over Http2"));
 
-          
-          
-          RefPtr<nsHttpConnection> connToTunnel;
-          connTCP->CreateTunnelStream(trans, getter_AddRefs(connToTunnel),
-                                      true);
-          ent->InsertIntoExtendedCONNECTConns(connToTunnel);
-          trans->SetConnection(nullptr);
-          connToTunnel
-              ->SetInSpdyTunnel();  
-          if (trans->IsWebsocketUpgrade()) {
-            trans->SetIsHttp2Websocket(true);
-          }
-          nsresult rv = DispatchTransaction(ent, trans, connToTunnel);
-          
-          
-          trans->MakeSticky();
-          trans->SetResettingForTunnelConn(false);
-          return rv;
-        } else {
-          
-          
-          LOG(
-              ("TryingDispatchTransaction: unsure if extended CONNECT "
-               "supported"));
-          return NS_ERROR_NOT_AVAILABLE;
-        }
+        
+        RefPtr<nsHttpConnection> connToTunnel;
+        connTCP->CreateTunnelStream(trans, getter_AddRefs(connToTunnel), true);
+        ent->InsertIntoH2WebsocketConns(connToTunnel);
+        trans->SetConnection(nullptr);
+        connToTunnel->SetInSpdyTunnel();  
+        trans->SetIsHttp2Websocket(true);
+        nsresult rv = DispatchTransaction(ent, trans, connToTunnel);
+        
+        
+        trans->MakeSticky();
+        return rv;
+      } else {
+        
+        
+        LOG(("TryingDispatchTransaction: unsure if websockets over Http2"));
+        return NS_ERROR_NOT_AVAILABLE;
       }
     } else {
       if ((caps & NS_HTTP_ALLOW_KEEPALIVE) ||
@@ -1971,11 +1960,7 @@ void nsHttpConnectionMgr::DispatchSpdyPendingQ(
     PendingTransactionInfo* pendingTransInfo = pendingQ[index];
 
     
-    
-    
-    
-    if (!(pendingTransInfo->Transaction()->Caps() & NS_HTTP_ALLOW_KEEPALIVE) ||
-        pendingTransInfo->Transaction()->IsResettingForTunnelConn()) {
+    if (!(pendingTransInfo->Transaction()->Caps() & NS_HTTP_ALLOW_KEEPALIVE)) {
       leftovers.AppendElement(pendingTransInfo);
       continue;
     }
@@ -2124,7 +2109,7 @@ void nsHttpConnectionMgr::AbortAndCloseAllConnections(int32_t, ARefBase*) {
     ent->CloseIdleConnections();
 
     
-    ent->CloseExtendedCONNECTConnections();
+    ent->CloseH2WebsocketConnections();
 
     ent->ClosePendingConnections();
 
@@ -2590,8 +2575,8 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(HttpConnectionBase* conn) {
 
     ent->InsertIntoIdleConnections(connTCP);
   } else {
-    if (ent->IsInExtendedCONNECTConns(conn)) {
-      ent->RemoveExtendedCONNECTConns(conn);
+    if (ent->IsInH2WebsocketConns(conn)) {
+      ent->RemoveH2WebsocketConns(conn);
     }
     LOG(("  connection cannot be reused; closing connection\n"));
     conn->SetCloseReason(ConnectionCloseReason::CANT_REUSED);
