@@ -602,7 +602,11 @@ class Selection final : public nsSupportsWeakReference,
 
 
   void SetHighlightSelectionData(
-      HighlightSelectionData aHighlightSelectionData);
+      dom::HighlightSelectionData aHighlightSelectionData);
+
+  const dom::HighlightSelectionData& HighlightSelectionData() const {
+    return mHighlightData;
+  }
 
   
 
@@ -1123,7 +1127,7 @@ class Selection final : public nsSupportsWeakReference,
   CachedOffsetForFrame* mCachedOffsetForFrame;
   nsDirection mDirection;
   const SelectionType mSelectionType;
-  HighlightSelectionData mHighlightData;
+  dom::HighlightSelectionData mHighlightData;
   UniquePtr<SelectionCustomColors> mCustomColors;
 
   
