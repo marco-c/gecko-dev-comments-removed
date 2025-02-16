@@ -15,6 +15,7 @@
 #include "nsError.h"
 #include "nsTArray.h"
 #include "mozilla/DataMutex.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 class nsIEventTarget;
 
@@ -27,23 +28,25 @@ class nsSegmentedBuffer {
         mFirstSegmentIndex(0),
         mLastSegmentIndex(0) {}
 
-  ~nsSegmentedBuffer() { Empty(); }
+  ~nsSegmentedBuffer() { Clear(); }
 
   nsresult Init(uint32_t aSegmentSize);
 
-  char* AppendNewSegment();  
+  
+  
+  char* AppendNewSegment(mozilla::UniqueFreePtr<char> aSegment = nullptr);
 
   
-  bool DeleteFirstSegment();  
+  mozilla::UniqueFreePtr<char> PopFirstSegment();
 
   
-  bool DeleteLastSegment();  
+  mozilla::UniqueFreePtr<char> PopLastSegment();
 
   
   
   bool ReallocLastSegment(size_t aNewSize);
 
-  void Empty();  
+  void Clear();  
 
   inline uint32_t GetSegmentCount() {
     if (mFirstSegmentIndex <= mLastSegmentIndex) {
@@ -79,38 +82,6 @@ class nsSegmentedBuffer {
   uint32_t mSegmentArrayCount;
   int32_t mFirstSegmentIndex;
   int32_t mLastSegmentIndex;
-
- private:
-  class FreeOMTPointers {
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FreeOMTPointers)
-
-   public:
-    FreeOMTPointers() : mTasks("nsSegmentedBuffer::FreeOMTPointers") {}
-
-    void FreeAll();
-
-    
-    size_t AddTask(std::function<void()>&& aTask) {
-      auto tasks = mTasks.Lock();
-      tasks->AppendElement(std::move(aTask));
-      return tasks->Length();
-    }
-
-   private:
-    ~FreeOMTPointers() = default;
-
-    mozilla::DataMutex<nsTArray<std::function<void()>>> mTasks;
-  };
-
-  void FreeOMT(void* aPtr);
-  void FreeOMT(std::function<void()>&& aTask);
-
-  nsCOMPtr<nsIEventTarget> mIOThread;
-
-  
-  
-  
-  RefPtr<FreeOMTPointers> mFreeOMT;
 };
 
 

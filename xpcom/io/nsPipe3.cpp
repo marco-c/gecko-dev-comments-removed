@@ -131,6 +131,7 @@ class CallbackHolder {
 
 
 
+
 class nsPipeEvents {
  public:
   nsPipeEvents() = default;
@@ -140,8 +141,13 @@ class nsPipeEvents {
     mCallbacks.AppendElement(std::move(aCallback));
   }
 
+  inline void FreeSegment(mozilla::UniqueFreePtr<char> aSegment) {
+    mSegmentsToFree.AppendElement(std::move(aSegment));
+  }
+
  private:
-  nsTArray<CallbackHolder> mCallbacks;
+  AutoTArray<CallbackHolder, 4> mCallbacks;
+  AutoTArray<mozilla::UniqueFreePtr<char>, 4> mSegmentsToFree;
 };
 
 
@@ -353,6 +359,7 @@ class nsPipe final {
                    char*& aCursor, char*& aLimit)
       MOZ_REQUIRES(mReentrantMonitor);
   SegmentChangeResult AdvanceReadSegment(nsPipeReadState& aReadState,
+                                         nsPipeEvents& aEvents,
                                          const ReentrantMonitorAutoEnter& ev)
       MOZ_REQUIRES(mReentrantMonitor);
   bool ReadSegmentBeingWritten(nsPipeReadState& aReadState)
@@ -666,7 +673,8 @@ void nsPipe::AdvanceReadCursor(nsPipeReadState& aReadState,
       
       
       mOutput.Monitor().AssertCurrentThreadIn();
-      if (AdvanceReadSegment(aReadState, mon) == SegmentAdvanceBufferRead &&
+      if (AdvanceReadSegment(aReadState, events, mon) ==
+              SegmentAdvanceBufferRead &&
           mOutput.OnOutputWritable(events) == NotifyMonitor) {
         mon.NotifyAll();
       }
@@ -677,7 +685,8 @@ void nsPipe::AdvanceReadCursor(nsPipeReadState& aReadState,
 }
 
 SegmentChangeResult nsPipe::AdvanceReadSegment(
-    nsPipeReadState& aReadState, const ReentrantMonitorAutoEnter& ev) {
+    nsPipeReadState& aReadState, nsPipeEvents& aEvents,
+    const ReentrantMonitorAutoEnter& ev) {
   
   uint32_t startBufferSegments = GetBufferSegmentCount(aReadState, ev);
 
@@ -706,7 +715,7 @@ SegmentChangeResult nsPipe::AdvanceReadSegment(
     }
 
     
-    mBuffer.DeleteFirstSegment();
+    aEvents.FreeSegment(mBuffer.PopFirstSegment());
     LOG(("III deleting first segment\n"));
   }
 
@@ -770,7 +779,7 @@ void nsPipe::DrainInputStream(nsPipeReadState& aReadState,
     
     
     
-    AdvanceReadSegment(aReadState, mon);
+    AdvanceReadSegment(aReadState, aEvents, mon);
   }
 
   
@@ -1155,6 +1164,17 @@ nsPipeEvents::~nsPipeEvents() {
     callback.Notify();
   }
   mCallbacks.Clear();
+
+  
+  
+  if (mSegmentsToFree.Length() > 128) {
+    NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+        "nsPipe FreeSegments",
+        [segments = std::move(mSegmentsToFree)]() mutable {
+          segments.Clear();
+        }));
+  }
+  mSegmentsToFree.Clear();
 }
 
 
