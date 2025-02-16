@@ -27,8 +27,6 @@ mach_schema = Schema(
         Required("comm-checkout"): bool,
         
         Optional("workdir"): str,
-        
-        Optional("use-caches"): Any(bool, [str]),
     }
 )
 
