@@ -6,4 +6,6 @@
 
 MOCHITEST_MANIFESTS += ["mochitest.toml"]
 
-TEST_DIRS += ["gtest"]
+
+if CONFIG["OS_TARGET"] != "Android":
+    TEST_DIRS += ["gtest"]
