@@ -384,8 +384,7 @@ def webcompat_addon(command_context):
                     f.write("\n")
 
         shutil.copytree(src, src_copy, dirs_exist_ok=True)
-        process_includes("data/injections.js")
-        process_includes("data/ua_overrides.js")
+        process_includes("run.js")
 
         dst = os.path.join(
             command_context.virtualenv_manager.virtualenv_root, "webcompat.xpi"
