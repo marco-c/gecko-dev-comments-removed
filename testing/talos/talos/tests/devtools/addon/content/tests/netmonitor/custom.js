@@ -171,7 +171,7 @@ module.exports = async function () {
   
   
   let test = runTest("custom.netmonitor.manyrequests.togglepanel");
-  await toolbox.selectTool("webconsole");
+  await toolbox.selectTool("options");
   await toolbox.selectTool("netmonitor");
   test.done();
 
