@@ -2,9 +2,8 @@
 
 
 
-use std::collections::{hash_map::Entry, HashMap};
-
 use ash::vk;
+use hashbrown::{hash_map::Entry, HashMap};
 use ordered_float::OrderedFloat;
 
 

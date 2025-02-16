@@ -4,10 +4,10 @@
 
 
 pub type FastHashMap<K, V> =
-    std::collections::HashMap<K, V, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
+    hashbrown::HashMap<K, V, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 pub type FastHashSet<K> =
-    std::collections::HashSet<K, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
+    hashbrown::HashSet<K, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 
 pub type FastIndexMap<K, V> =

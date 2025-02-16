@@ -314,7 +314,9 @@ impl<E> WithSpan<E> {
 
 
 pub(crate) trait AddSpan: Sized {
+    
     type Output;
+
     
     fn with_span(self) -> Self::Output;
     
@@ -323,6 +325,30 @@ pub(crate) trait AddSpan: Sized {
     fn with_span_context(self, span_context: SpanContext) -> Self::Output;
     
     fn with_span_handle<T, A: SpanProvider<T>>(self, handle: Handle<T>, arena: &A) -> Self::Output;
+}
+
+impl<E> AddSpan for E {
+    type Output = WithSpan<Self>;
+
+    fn with_span(self) -> WithSpan<Self> {
+        WithSpan::new(self)
+    }
+
+    fn with_span_static(self, span: Span, description: &'static str) -> WithSpan<Self> {
+        WithSpan::new(self).with_span(span, description)
+    }
+
+    fn with_span_context(self, span_context: SpanContext) -> WithSpan<Self> {
+        WithSpan::new(self).with_context(span_context)
+    }
+
+    fn with_span_handle<T, A: SpanProvider<T>>(
+        self,
+        handle: Handle<T>,
+        arena: &A,
+    ) -> WithSpan<Self> {
+        WithSpan::new(self).with_handle(handle, arena)
+    }
 }
 
 
@@ -351,36 +377,12 @@ impl<T> SpanProvider<T> for UniqueArena<T> {
     }
 }
 
-impl<E> AddSpan for E
-where
-    E: Error,
-{
-    type Output = WithSpan<Self>;
-    fn with_span(self) -> WithSpan<Self> {
-        WithSpan::new(self)
-    }
-
-    fn with_span_static(self, span: Span, description: &'static str) -> WithSpan<Self> {
-        WithSpan::new(self).with_span(span, description)
-    }
-
-    fn with_span_context(self, span_context: SpanContext) -> WithSpan<Self> {
-        WithSpan::new(self).with_context(span_context)
-    }
-
-    fn with_span_handle<T, A: SpanProvider<T>>(
-        self,
-        handle: Handle<T>,
-        arena: &A,
-    ) -> WithSpan<Self> {
-        WithSpan::new(self).with_handle(handle, arena)
-    }
-}
 
 
-
-pub trait MapErrWithSpan<E, E2>: Sized {
+pub(crate) trait MapErrWithSpan<E, E2>: Sized {
+    
     type Output: Sized;
+
     fn map_err_inner<F, E3>(self, func: F) -> Self::Output
     where
         F: FnOnce(E) -> WithSpan<E3>,
@@ -389,6 +391,7 @@ pub trait MapErrWithSpan<E, E2>: Sized {
 
 impl<T, E, E2> MapErrWithSpan<E, E2> for Result<T, WithSpan<E>> {
     type Output = Result<T, WithSpan<E2>>;
+
     fn map_err_inner<F, E3>(self, func: F) -> Result<T, WithSpan<E2>>
     where
         F: FnOnce(E) -> WithSpan<E3>,

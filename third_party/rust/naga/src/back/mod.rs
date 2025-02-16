@@ -55,7 +55,7 @@ impl std::fmt::Display for Baked {
 
 
 
-pub type PipelineConstants = std::collections::HashMap<String, f64>;
+pub type PipelineConstants = hashbrown::HashMap<String, f64>;
 
 
 #[derive(Clone, Copy)]

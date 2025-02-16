@@ -154,6 +154,11 @@ impl super::Adapter {
         }
         .unwrap();
 
+        if options.ResourceBindingTier.0 < Direct3D12::D3D12_RESOURCE_BINDING_TIER_2.0 {
+            
+            return None;
+        }
+
         let _depth_bounds_test_supported = {
             let mut features2 = Direct3D12::D3D12_FEATURE_DATA_D3D12_OPTIONS2::default();
             unsafe {
@@ -193,6 +198,32 @@ impl super::Adapter {
                 )
             }
             .is_ok()
+        };
+
+        let mut max_sampler_descriptor_heap_size =
+            Direct3D12::D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE;
+        {
+            let mut features19 = Direct3D12::D3D12_FEATURE_DATA_D3D12_OPTIONS19::default();
+            let res = unsafe {
+                device.CheckFeatureSupport(
+                    Direct3D12::D3D12_FEATURE_D3D12_OPTIONS19,
+                    <*mut _>::cast(&mut features19),
+                    size_of_val(&features19) as u32,
+                )
+            };
+
+            
+            
+            
+            
+            
+            
+            let is_ok = res.is_ok();
+            let is_above_minimum = features19.MaxSamplerDescriptorHeapSize
+                > Direct3D12::D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE;
+            if is_ok && is_above_minimum {
+                max_sampler_descriptor_heap_size = features19.MaxSamplerDescriptorHeapSize;
+            }
         };
 
         let shader_model = if dxc_container.is_none() {
@@ -244,7 +275,6 @@ impl super::Adapter {
                 _ => unreachable!(),
             }
         };
-
         let private_caps = super::PrivateCapabilities {
             instance_flags,
             heterogeneous_resource_heaps: options.ResourceHeapTier
@@ -261,6 +291,7 @@ impl super::Adapter {
             
             suballocation_supported: !info.name.contains("Iris(R) Xe"),
             shader_model,
+            max_sampler_descriptor_heap_size,
         };
 
         
@@ -340,6 +371,7 @@ impl super::Adapter {
 
         features.set(
             wgt::Features::TEXTURE_BINDING_ARRAY
+                | wgt::Features::STORAGE_RESOURCE_BINDING_ARRAY
                 | wgt::Features::UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING
                 | wgt::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,
             shader_model >= naga::back::hlsl::ShaderModel::V5_1,
@@ -390,10 +422,38 @@ impl super::Adapter {
         );
 
         features.set(
+            wgt::Features::TEXTURE_INT64_ATOMIC,
+            shader_model >= naga::back::hlsl::ShaderModel::V6_6
+                && hr.is_ok()
+                && features1.Int64ShaderOps.as_bool(),
+        );
+
+        features.set(
             wgt::Features::SUBGROUP,
             shader_model >= naga::back::hlsl::ShaderModel::V6_0
                 && hr.is_ok()
                 && features1.WaveOps.as_bool(),
+        );
+        let mut features5 = Direct3D12::D3D12_FEATURE_DATA_D3D12_OPTIONS5::default();
+        let has_features5 = unsafe {
+            device.CheckFeatureSupport(
+                Direct3D12::D3D12_FEATURE_D3D12_OPTIONS5,
+                <*mut _>::cast(&mut features5),
+                size_of_val(&features5) as u32,
+            )
+        }
+        .is_ok();
+
+        
+        
+        
+        
+        features.set(
+            wgt::Features::EXPERIMENTAL_RAY_QUERY
+                | wgt::Features::EXPERIMENTAL_RAY_TRACING_ACCELERATION_STRUCTURE,
+            features5.RaytracingTier == Direct3D12::D3D12_RAYTRACING_TIER_1_1
+                && shader_model >= naga::back::hlsl::ShaderModel::V6_5
+                && has_features5,
         );
 
         let atomic_int64_on_typed_resource_supported = {
@@ -496,6 +556,8 @@ impl super::Adapter {
                     
                     
                     
+                    
+                    
                     max_push_constant_size: 128,
                     min_uniform_buffer_offset_alignment:
                         Direct3D12::D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT,
@@ -529,8 +591,9 @@ impl super::Adapter {
                     
                     
                     uniform_bounds_check_alignment: wgt::BufferSize::new(1).unwrap(),
-                    raw_tlas_instance_size: 0,
-                    ray_tracing_scratch_buffer_alignment: 0,
+                    raw_tlas_instance_size: size_of::<Direct3D12::D3D12_RAYTRACING_INSTANCE_DESC>(),
+                    ray_tracing_scratch_buffer_alignment:
+                        Direct3D12::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT,
                 },
                 downlevel,
             },
@@ -796,9 +859,9 @@ impl crate::Adapter for super::Adapter {
             
             maximum_frame_latency: 1..=16,
             current_extent,
-            usage: crate::TextureUses::COLOR_TARGET
-                | crate::TextureUses::COPY_SRC
-                | crate::TextureUses::COPY_DST,
+            usage: wgt::TextureUses::COLOR_TARGET
+                | wgt::TextureUses::COPY_SRC
+                | wgt::TextureUses::COPY_DST,
             present_modes,
             composite_alpha_modes: vec![wgt::CompositeAlphaMode::Opaque],
         })

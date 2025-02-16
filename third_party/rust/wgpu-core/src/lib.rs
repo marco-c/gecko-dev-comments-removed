@@ -56,6 +56,9 @@
 
 #![cfg_attr(not(send_sync), allow(clippy::arc_with_non_send_sync))]
 
+extern crate wgpu_hal as hal;
+extern crate wgpu_types as wgt;
+
 pub mod binding_model;
 pub mod command;
 mod conv;
@@ -89,6 +92,8 @@ mod weak_vec;
 
 mod scratch;
 pub mod validation;
+
+pub use validation::{map_storage_format_from_naga, map_storage_format_to_naga};
 
 pub use hal::{api, MAX_BIND_GROUPS, MAX_COLOR_ATTACHMENTS, MAX_VERTEX_BUFFERS};
 pub use naga;

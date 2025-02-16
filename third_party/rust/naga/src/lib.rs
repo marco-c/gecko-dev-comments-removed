@@ -283,9 +283,15 @@ pub const BOOL_WIDTH: Bytes = 1;
 pub const ABSTRACT_WIDTH: Bytes = 8;
 
 
-pub type FastHashMap<K, T> = rustc_hash::FxHashMap<K, T>;
 
-pub type FastHashSet<K> = rustc_hash::FxHashSet<K>;
+
+pub type FastHashMap<K, T> =
+    hashbrown::HashMap<K, T, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
+
+
+
+pub type FastHashSet<K> =
+    hashbrown::HashSet<K, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 
 
@@ -325,6 +331,7 @@ pub(crate) type NamedExpressions = FastIndexMap<Handle<Expression>, String>;
 pub struct EarlyDepthTest {
     pub conservative: Option<ConservativeDepth>,
 }
+
 
 
 
@@ -642,6 +649,7 @@ pub enum StorageFormat {
     Rg11b10Ufloat,
 
     
+    R64Uint,
     Rg32Uint,
     Rg32Sint,
     Rg32Float,
@@ -965,7 +973,7 @@ pub enum Binding {
 }
 
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -2187,6 +2195,17 @@ pub struct Function {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub expressions: Arena<Expression>,
     
     pub named_expressions: NamedExpressions,
@@ -2376,11 +2395,36 @@ pub enum RayQueryIntersection {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug, Default, Clone)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Module {
+    
+    
     
     pub types: UniqueArena<Type>,
     
@@ -2391,7 +2435,6 @@ pub struct Module {
     pub overrides: Arena<Override>,
     
     pub global_variables: Arena<GlobalVariable>,
-    
     
     
     

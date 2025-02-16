@@ -98,9 +98,19 @@
 
 
 
+
+
+
+
+
+
+
+
+
 mod conv;
 mod help;
 mod keywords;
+mod ray;
 mod storage;
 mod writer;
 
@@ -109,14 +119,34 @@ use thiserror::Error;
 
 use crate::{back, proc};
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct BindTarget {
     pub space: u8,
+    
+    
+    
     pub register: u32,
     
     pub binding_array_size: Option<u32>,
+    
+    pub dynamic_storage_buffer_offsets_index: Option<u32>,
+    
+    
+    
+    #[cfg_attr(any(feature = "serialize", feature = "deserialize"), serde(default))]
+    pub restrict_indexing: bool,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+
+pub struct OffsetsBindTarget {
+    pub space: u8,
+    pub register: u32,
+    pub size: u32,
 }
 
 
@@ -178,6 +208,47 @@ impl crate::ImageDimension {
     }
 }
 
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+pub struct SamplerIndexBufferKey {
+    pub group: u32,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(feature = "deserialize", serde(default))]
+pub struct SamplerHeapBindTargets {
+    pub standard_samplers: BindTarget,
+    pub comparison_samplers: BindTarget,
+}
+
+impl Default for SamplerHeapBindTargets {
+    fn default() -> Self {
+        Self {
+            standard_samplers: BindTarget {
+                space: 0,
+                register: 0,
+                binding_array_size: None,
+                dynamic_storage_buffer_offsets_index: None,
+                restrict_indexing: false,
+            },
+            comparison_samplers: BindTarget {
+                space: 1,
+                register: 0,
+                binding_array_size: None,
+                dynamic_storage_buffer_offsets_index: None,
+                restrict_indexing: false,
+            },
+        }
+    }
+}
+
+
+pub type SamplerIndexBufferBindingMap =
+    std::collections::BTreeMap<SamplerIndexBufferKey, BindTarget>;
+
 
 type BackendResult = Result<(), Error>;
 
@@ -207,9 +278,18 @@ pub struct Options {
     
     pub push_constants_target: Option<BindTarget>,
     
+    pub sampler_heap_target: SamplerHeapBindTargets,
+    
+    pub sampler_buffer_binding_map: SamplerIndexBufferBindingMap,
+    
+    pub dynamic_storage_buffer_offsets_targets: std::collections::BTreeMap<u32, OffsetsBindTarget>,
+    
     pub zero_initialize_workgroup_memory: bool,
     
     pub restrict_indexing: bool,
+    
+    
+    pub force_loop_bounding: bool,
 }
 
 impl Default for Options {
@@ -219,9 +299,13 @@ impl Default for Options {
             binding_map: BindingMap::default(),
             fake_missing_bindings: true,
             special_constants_binding: None,
+            sampler_heap_target: SamplerHeapBindTargets::default(),
+            sampler_buffer_binding_map: std::collections::BTreeMap::default(),
             push_constants_target: None,
+            dynamic_storage_buffer_offsets_targets: std::collections::BTreeMap::new(),
             zero_initialize_workgroup_memory: true,
             restrict_indexing: true,
+            force_loop_bounding: true,
         }
     }
 }
@@ -232,13 +316,15 @@ impl Options {
         res_binding: &crate::ResourceBinding,
     ) -> Result<BindTarget, EntryPointError> {
         match self.binding_map.get(res_binding) {
-            Some(target) => Ok(target.clone()),
+            Some(target) => Ok(*target),
             None if self.fake_missing_bindings => Ok(BindTarget {
                 space: res_binding.group as u8,
                 register: res_binding.binding,
                 binding_array_size: None,
+                dynamic_storage_buffer_offsets_index: None,
+                restrict_indexing: false,
             }),
-            None => Err(EntryPointError::MissingBinding(res_binding.clone())),
+            None => Err(EntryPointError::MissingBinding(*res_binding)),
         }
     }
 }
@@ -278,6 +364,10 @@ struct Wrapped {
     struct_matrix_access: crate::FastHashSet<help::WrappedStructMatrixAccess>,
     mat_cx2s: crate::FastHashSet<help::WrappedMatCx2>,
     math: crate::FastHashSet<help::WrappedMath>,
+    
+    sampler_heaps: bool,
+    
+    sampler_index_buffers: crate::FastHashMap<SamplerIndexBufferKey, String>,
 }
 
 impl Wrapped {
@@ -331,6 +421,8 @@ pub struct Writer<'a, W> {
     
     named_expressions: crate::NamedExpressions,
     wrapped: Wrapped,
+    written_committed_intersection: bool,
+    written_candidate_intersection: bool,
     continue_ctx: back::continue_forward::ContinueCtx,
 
     

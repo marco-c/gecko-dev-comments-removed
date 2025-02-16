@@ -33,12 +33,52 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 mod adapter;
 mod command;
 mod conv;
 mod descriptor;
 mod device;
 mod instance;
+mod sampler;
 mod shader_compilation;
 mod suballocation;
 mod types;
@@ -518,6 +558,7 @@ struct PrivateCapabilities {
     casting_fully_typed_format_supported: bool,
     suballocation_supported: bool,
     shader_model: naga::back::hlsl::ShaderModel,
+    max_sampler_descriptor_heap_size: u32,
 }
 
 #[derive(Default)]
@@ -575,7 +616,7 @@ struct DeviceShared {
     zero_buffer: Direct3D12::ID3D12Resource,
     cmd_signatures: CommandSignatures,
     heap_views: descriptor::GeneralHeap,
-    heap_samplers: descriptor::GeneralHeap,
+    sampler_heap: sampler::SamplerHeap,
 }
 
 unsafe impl Send for DeviceShared {}
@@ -591,7 +632,6 @@ pub struct Device {
     rtv_pool: Mutex<descriptor::CpuPool>,
     dsv_pool: Mutex<descriptor::CpuPool>,
     srv_uav_pool: Mutex<descriptor::CpuPool>,
-    sampler_pool: Mutex<descriptor::CpuPool>,
     
     library: Arc<D3D12Lib>,
     #[cfg(feature = "renderdoc")]
@@ -645,7 +685,7 @@ struct PassResolve {
     format: Dxgi::Common::DXGI_FORMAT,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum RootElement {
     Empty,
     Constant,
@@ -660,9 +700,18 @@ enum RootElement {
     
     Table(Direct3D12::D3D12_GPU_DESCRIPTOR_HANDLE),
     
-    DynamicOffsetBuffer {
-        kind: BufferViewKind,
+    DynamicUniformBuffer {
         address: Direct3D12::D3D12_GPU_DESCRIPTOR_HANDLE,
+    },
+    
+    SamplerHeap,
+    
+    
+    
+    
+    DynamicOffsetsBuffer {
+        start: usize,
+        end: usize,
     },
 }
 
@@ -679,6 +728,7 @@ struct PassState {
     layout: PipelineLayoutShared,
     root_elements: [RootElement; MAX_ROOT_ELEMENTS],
     constant_data: [u32; MAX_ROOT_ELEMENTS],
+    dynamic_storage_buffer_offsets: Vec<u32>,
     dirty_root_elements: u64,
     vertex_buffers: [Direct3D12::D3D12_VERTEX_BUFFER_VIEW; crate::MAX_VERTEX_BUFFERS],
     dirty_vertex_buffers: usize,
@@ -700,9 +750,11 @@ impl PassState {
                 total_root_elements: 0,
                 special_constants: None,
                 root_constant_info: None,
+                sampler_heap_root_index: None,
             },
             root_elements: [RootElement::Empty; MAX_ROOT_ELEMENTS],
             constant_data: [0; MAX_ROOT_ELEMENTS],
+            dynamic_storage_buffer_offsets: Vec::new(),
             dirty_root_elements: 0,
             vertex_buffers: [Default::default(); crate::MAX_VERTEX_BUFFERS],
             dirty_vertex_buffers: 0,
@@ -853,7 +905,8 @@ unsafe impl Sync for TextureView {}
 
 #[derive(Debug)]
 pub struct Sampler {
-    handle: descriptor::Handle,
+    index: sampler::SamplerIndex,
+    desc: Direct3D12::D3D12_SAMPLER_DESC,
 }
 
 impl crate::DynSampler for Sampler {}
@@ -893,24 +946,28 @@ pub struct BindGroupLayout {
     
     entries: Vec<wgt::BindGroupLayoutEntry>,
     cpu_heap_views: Option<descriptor::CpuHeap>,
-    cpu_heap_samplers: Option<descriptor::CpuHeap>,
     copy_counts: Vec<u32>, 
 }
 
 impl crate::DynBindGroupLayout for BindGroupLayout {}
 
 #[derive(Debug, Clone, Copy)]
-enum BufferViewKind {
-    Constant,
-    ShaderResource,
-    UnorderedAccess,
+enum DynamicBuffer {
+    Uniform(Direct3D12::D3D12_GPU_DESCRIPTOR_HANDLE),
+    Storage,
+}
+
+#[derive(Debug)]
+struct SamplerIndexBuffer {
+    buffer: Direct3D12::ID3D12Resource,
+    allocation: Option<suballocation::AllocationWrapper>,
 }
 
 #[derive(Debug)]
 pub struct BindGroup {
     handle_views: Option<descriptor::DualHandle>,
-    handle_samplers: Option<descriptor::DualHandle>,
-    dynamic_buffers: Vec<Direct3D12::D3D12_GPU_DESCRIPTOR_HANDLE>,
+    sampler_index_buffer: Option<SamplerIndexBuffer>,
+    dynamic_buffers: Vec<DynamicBuffer>,
 }
 
 impl crate::DynBindGroup for BindGroup {}
@@ -930,7 +987,7 @@ type RootIndex = u32;
 struct BindGroupInfo {
     base_root_index: RootIndex,
     tables: TableTypes,
-    dynamic_buffers: Vec<BufferViewKind>,
+    dynamic_storage_buffer_offsets: Option<DynamicStorageBufferOffsets>,
 }
 
 #[derive(Debug, Clone)]
@@ -940,11 +997,18 @@ struct RootConstantInfo {
 }
 
 #[derive(Debug, Clone)]
+struct DynamicStorageBufferOffsets {
+    root_index: RootIndex,
+    range: std::ops::Range<usize>,
+}
+
+#[derive(Debug, Clone)]
 struct PipelineLayoutShared {
     signature: Option<Direct3D12::ID3D12RootSignature>,
     total_root_elements: RootIndex,
     special_constants: Option<PipelineLayoutSpecialConstants>,
     root_constant_info: Option<RootConstantInfo>,
+    sampler_heap_root_index: Option<RootIndex>,
 }
 
 unsafe impl Send for PipelineLayoutShared {}
@@ -1031,7 +1095,10 @@ pub struct PipelineCache;
 impl crate::DynPipelineCache for PipelineCache {}
 
 #[derive(Debug)]
-pub struct AccelerationStructure {}
+pub struct AccelerationStructure {
+    resource: Direct3D12::ID3D12Resource,
+    allocation: Option<suballocation::AllocationWrapper>,
+}
 
 impl crate::DynAccelerationStructure for AccelerationStructure {}
 

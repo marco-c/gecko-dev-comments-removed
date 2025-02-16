@@ -814,11 +814,14 @@ pub const RESERVED: &[&str] = &[
     "TextureBuffer",
     "ConstantBuffer",
     "RayQuery",
+    "RayDesc",
     
     super::writer::MODF_FUNCTION,
     super::writer::FREXP_FUNCTION,
     super::writer::EXTRACT_BITS_FUNCTION,
     super::writer::INSERT_BITS_FUNCTION,
+    super::writer::SAMPLER_HEAP_VAR,
+    super::writer::COMPARISON_SAMPLER_HEAP_VAR,
 ];
 
 
@@ -904,3 +907,5 @@ pub const TYPES: &[&str] = &{
 
     res
 };
+
+pub const RESERVED_PREFIXES: &[&str] = &["__dynamic_buffer_offsets"];

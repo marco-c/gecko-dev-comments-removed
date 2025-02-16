@@ -383,11 +383,6 @@ pub struct Writer<W> {
     
     
     struct_member_pads: FastHashSet<(Handle<crate::Type>, u32)>,
-
-    
-    
-    
-    force_bounded_loop_macro_name: String,
 }
 
 impl crate::Scalar {
@@ -685,7 +680,6 @@ impl<W: Write> Writer<W> {
             #[cfg(test)]
             put_block_stack_pointers: Default::default(),
             struct_member_pads: FastHashSet::default(),
-            force_bounded_loop_macro_name: String::default(),
         }
     }
 
@@ -800,22 +794,27 @@ impl<W: Write> Writer<W> {
     
     
     
-    fn emit_force_bounded_loop_macro(&mut self) -> BackendResult {
-        if !self.force_bounded_loop_macro_name.is_empty() {
-            return Ok(());
+    
+    
+    fn gen_force_bounded_loop_statements(
+        &mut self,
+        level: back::Level,
+        context: &StatementContext,
+    ) -> Option<(String, String)> {
+        if !context.expression.force_loop_bounding {
+            return None;
         }
 
-        self.force_bounded_loop_macro_name = self.namer.call("LOOP_IS_BOUNDED");
-        let loop_bounded_volatile_name = self.namer.call("unpredictable_break_from_loop");
-        writeln!(
-            self.out,
-            "#define {} {{ volatile bool {} = false; if ({}) break; }}",
-            self.force_bounded_loop_macro_name,
-            loop_bounded_volatile_name,
-            loop_bounded_volatile_name,
-        )?;
+        let loop_bound_name = self.namer.call("loop_bound");
+        let decl = format!("{level}uint2 {loop_bound_name} = uint2(0u);");
+        let level = level.next();
+        let max = u32::MAX;
+        let break_and_inc = format!(
+            "{level}if ({NAMESPACE}::all({loop_bound_name} == uint2({max}u))) {{ break; }}
+{level}{loop_bound_name} += uint2({loop_bound_name}.y == {max}u, 1u);"
+        );
 
-        Ok(())
+        Some((decl, break_and_inc))
     }
 
     fn put_call_parameters(
@@ -1212,7 +1211,11 @@ impl<W: Write> Writer<W> {
     ) -> BackendResult {
         write!(self.out, "{level}")?;
         self.put_expression(image, &context.expression, false)?;
-        let op = fun.to_msl();
+        let op = if context.expression.resolve_type(value).scalar_width() == Some(8) {
+            fun.to_msl_64_bit()?
+        } else {
+            fun.to_msl()
+        };
         write!(self.out, ".atomic_{}(", op)?;
         
         self.put_cast_to_uint_scalar_or_vector(address.coordinate, &context.expression)?;
@@ -1361,18 +1364,23 @@ impl<W: Write> Writer<W> {
         context: &ExpressionContext,
     ) -> BackendResult {
         write!(self.out, "{NAMESPACE}::select({NAMESPACE}::select(")?;
+        let scalar = context
+            .resolve_type(arg)
+            .scalar()
+            .expect("put_isign should only be called for args which have an integer scalar type")
+            .to_msl_name();
         match context.resolve_type(arg) {
             &crate::TypeInner::Vector { size, .. } => {
                 let size = back::vector_size_str(size);
-                write!(self.out, "int{size}(-1), int{size}(1)")?;
+                write!(self.out, "{scalar}{size}(-1), {scalar}{size}(1)")?;
             }
             _ => {
-                write!(self.out, "-1, 1")?;
+                write!(self.out, "{scalar}(-1), {scalar}(1)")?;
             }
         }
         write!(self.out, ", (")?;
         self.put_expression(arg, context, true)?;
-        write!(self.out, " > 0)), 0, (")?;
+        write!(self.out, " > 0)), {scalar}(0), (")?;
         self.put_expression(arg, context, true)?;
         write!(self.out, " == 0))")?;
         Ok(())
@@ -1601,7 +1609,12 @@ impl<W: Write> Writer<W> {
                 vector,
                 pattern,
             } => {
-                self.put_wrapped_expression_for_packed_vec3_access(vector, context, false)?;
+                self.put_wrapped_expression_for_packed_vec3_access(
+                    vector,
+                    context,
+                    false,
+                    &Self::put_expression,
+                )?;
                 write!(self.out, ".")?;
                 for &sc in pattern[..size as usize].iter() {
                     write!(self.out, "{}", back::COMPONENTS[sc as usize])?;
@@ -1744,7 +1757,6 @@ impl<W: Write> Writer<W> {
                 write!(self.out, ")")?;
             }
             crate::Expression::Binary { op, left, right } => {
-                let op_str = back::binary_operation_str(op);
                 let kind = context
                     .resolve_type(left)
                     .scalar_kind()
@@ -1769,38 +1781,56 @@ impl<W: Write> Writer<W> {
                     write!(self.out, ", ")?;
                     self.put_expression(right, context, true)?;
                     write!(self.out, ")")?;
+                } else if (op == crate::BinaryOperator::Add
+                    || op == crate::BinaryOperator::Subtract
+                    || op == crate::BinaryOperator::Multiply)
+                    && kind == crate::ScalarKind::Sint
+                {
+                    let to_unsigned = |ty: &crate::TypeInner| match *ty {
+                        crate::TypeInner::Scalar(scalar) => {
+                            Ok(crate::TypeInner::Scalar(crate::Scalar {
+                                kind: crate::ScalarKind::Uint,
+                                ..scalar
+                            }))
+                        }
+                        crate::TypeInner::Vector { size, scalar } => Ok(crate::TypeInner::Vector {
+                            size,
+                            scalar: crate::Scalar {
+                                kind: crate::ScalarKind::Uint,
+                                ..scalar
+                            },
+                        }),
+                        _ => Err(Error::UnsupportedBitCast(ty.clone())),
+                    };
+
+                    
+                    
+                    
+                    
+                    self.put_bitcasted_expression(
+                        context.resolve_type(expr_handle),
+                        context,
+                        &|writer, context, is_scoped| {
+                            writer.put_binop(
+                                op,
+                                left,
+                                right,
+                                context,
+                                is_scoped,
+                                &|writer, expr, context, _is_scoped| {
+                                    writer.put_bitcasted_expression(
+                                        &to_unsigned(context.resolve_type(expr))?,
+                                        context,
+                                        &|writer, context, is_scoped| {
+                                            writer.put_expression(expr, context, is_scoped)
+                                        },
+                                    )
+                                },
+                            )
+                        },
+                    )?;
                 } else {
-                    if !is_scoped {
-                        write!(self.out, "(")?;
-                    }
-
-                    
-                    
-                    if op == crate::BinaryOperator::Multiply
-                        && matches!(
-                            context.resolve_type(right),
-                            &crate::TypeInner::Matrix { .. }
-                        )
-                    {
-                        self.put_wrapped_expression_for_packed_vec3_access(left, context, false)?;
-                    } else {
-                        self.put_expression(left, context, false)?;
-                    }
-
-                    write!(self.out, " {op_str} ")?;
-
-                    
-                    if op == crate::BinaryOperator::Multiply
-                        && matches!(context.resolve_type(left), &crate::TypeInner::Matrix { .. })
-                    {
-                        self.put_wrapped_expression_for_packed_vec3_access(right, context, false)?;
-                    } else {
-                        self.put_expression(right, context, false)?;
-                    }
-
-                    if !is_scoped {
-                        write!(self.out, ")")?;
-                    }
+                    self.put_binop(op, left, right, context, is_scoped, &Self::put_expression)?;
                 }
             }
             crate::Expression::Select {
@@ -2322,19 +2352,110 @@ impl<W: Write> Writer<W> {
     }
 
     
-    fn put_wrapped_expression_for_packed_vec3_access(
+    
+    fn put_binop<F>(
+        &mut self,
+        op: crate::BinaryOperator,
+        left: Handle<crate::Expression>,
+        right: Handle<crate::Expression>,
+        context: &ExpressionContext,
+        is_scoped: bool,
+        put_expression: &F,
+    ) -> BackendResult
+    where
+        F: Fn(&mut Self, Handle<crate::Expression>, &ExpressionContext, bool) -> BackendResult,
+    {
+        let op_str = back::binary_operation_str(op);
+
+        if !is_scoped {
+            write!(self.out, "(")?;
+        }
+
+        
+        
+        if op == crate::BinaryOperator::Multiply
+            && matches!(
+                context.resolve_type(right),
+                &crate::TypeInner::Matrix { .. }
+            )
+        {
+            self.put_wrapped_expression_for_packed_vec3_access(
+                left,
+                context,
+                false,
+                put_expression,
+            )?;
+        } else {
+            put_expression(self, left, context, false)?;
+        }
+
+        write!(self.out, " {op_str} ")?;
+
+        
+        if op == crate::BinaryOperator::Multiply
+            && matches!(context.resolve_type(left), &crate::TypeInner::Matrix { .. })
+        {
+            self.put_wrapped_expression_for_packed_vec3_access(
+                right,
+                context,
+                false,
+                put_expression,
+            )?;
+        } else {
+            put_expression(self, right, context, false)?;
+        }
+
+        if !is_scoped {
+            write!(self.out, ")")?;
+        }
+
+        Ok(())
+    }
+
+    
+    fn put_wrapped_expression_for_packed_vec3_access<F>(
         &mut self,
         expr_handle: Handle<crate::Expression>,
         context: &ExpressionContext,
         is_scoped: bool,
-    ) -> BackendResult {
+        put_expression: &F,
+    ) -> BackendResult
+    where
+        F: Fn(&mut Self, Handle<crate::Expression>, &ExpressionContext, bool) -> BackendResult,
+    {
         if let Some(scalar) = context.get_packed_vec_kind(expr_handle) {
             write!(self.out, "{}::{}3(", NAMESPACE, scalar.to_msl_name())?;
-            self.put_expression(expr_handle, context, is_scoped)?;
+            put_expression(self, expr_handle, context, is_scoped)?;
             write!(self.out, ")")?;
         } else {
-            self.put_expression(expr_handle, context, is_scoped)?;
+            put_expression(self, expr_handle, context, is_scoped)?;
         }
+        Ok(())
+    }
+
+    
+    
+    fn put_bitcasted_expression<F>(
+        &mut self,
+        cast_to: &crate::TypeInner,
+        context: &ExpressionContext,
+        put_expression: &F,
+    ) -> BackendResult
+    where
+        F: Fn(&mut Self, &ExpressionContext, bool) -> BackendResult,
+    {
+        write!(self.out, "as_type<")?;
+        match *cast_to {
+            crate::TypeInner::Scalar(scalar) => put_numeric_type(&mut self.out, scalar, &[])?,
+            crate::TypeInner::Vector { size, scalar } => {
+                put_numeric_type(&mut self.out, scalar, &[size])?
+            }
+            _ => return Err(Error::UnsupportedBitCast(cast_to.clone())),
+        };
+        write!(self.out, ">(")?;
+        put_expression(self, context, true)?;
+        write!(self.out, ")")?;
+
         Ok(())
     }
 
@@ -3079,10 +3200,23 @@ impl<W: Write> Writer<W> {
                     ref continuing,
                     break_if,
                 } => {
-                    if !continuing.is_empty() || break_if.is_some() {
-                        let gate_name = self.namer.call("loop_init");
+                    let force_loop_bound_statements =
+                        self.gen_force_bounded_loop_statements(level, context);
+                    let gate_name = (!continuing.is_empty() || break_if.is_some())
+                        .then(|| self.namer.call("loop_init"));
+
+                    if let Some((ref decl, _)) = force_loop_bound_statements {
+                        writeln!(self.out, "{decl}")?;
+                    }
+                    if let Some(ref gate_name) = gate_name {
                         writeln!(self.out, "{level}bool {gate_name} = true;")?;
-                        writeln!(self.out, "{level}while(true) {{",)?;
+                    }
+
+                    writeln!(self.out, "{level}while(true) {{",)?;
+                    if let Some((_, ref break_and_inc)) = force_loop_bound_statements {
+                        writeln!(self.out, "{break_and_inc}")?;
+                    }
+                    if let Some(ref gate_name) = gate_name {
                         let lif = level.next();
                         let lcontinuing = lif.next();
                         writeln!(self.out, "{lif}if (!{gate_name}) {{")?;
@@ -3096,19 +3230,9 @@ impl<W: Write> Writer<W> {
                         }
                         writeln!(self.out, "{lif}}}")?;
                         writeln!(self.out, "{lif}{gate_name} = false;")?;
-                    } else {
-                        writeln!(self.out, "{level}while(true) {{",)?;
                     }
                     self.put_block(level.next(), body, context)?;
-                    if context.expression.force_loop_bounding {
-                        self.emit_force_bounded_loop_macro()?;
-                        writeln!(
-                            self.out,
-                            "{}{}",
-                            level.next(),
-                            self.force_bounded_loop_macro_name
-                        )?;
-                    }
+
                     writeln!(self.out, "{level}}}")?;
                 }
                 crate::Statement::Break => {
@@ -3602,7 +3726,6 @@ impl<W: Write> Writer<W> {
             &[CLAMPED_LOD_LOAD_PREFIX],
             &mut self.names,
         );
-        self.force_bounded_loop_macro_name.clear();
         self.struct_member_pads.clear();
 
         writeln!(
@@ -5201,8 +5324,7 @@ template <typename A>
                                 None => false,
                             };
                             if !good {
-                                ep_error =
-                                    Some(super::EntryPointError::MissingBindTarget(br.clone()));
+                                ep_error = Some(super::EntryPointError::MissingBindTarget(*br));
                                 break;
                             }
                         }
