@@ -12,21 +12,6 @@
 
 extern "C" {
 
-#if defined(__ANDROID_API__) && (__ANDROID_API__ < 28)
-
-
-
-
-
-
-
-int syncfs(int fd) {
-  MOZ_CRASH("syncfs() is not available");
-  return EPERM;
-}
-
-#endif  
-
 #if defined(__ANDROID_API__) && (__ANDROID_API__ < 24)
 
 
