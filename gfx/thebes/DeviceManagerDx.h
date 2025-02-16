@@ -121,7 +121,6 @@ class DeviceManagerDx final {
   bool ExportDeviceInfo(D3D11DeviceStatus* aOut);
 
   void ResetDevices();
-  void InitializeDirectDraw();
 
   
   
@@ -215,9 +214,6 @@ class DeviceManagerDx final {
   RefPtr<Runnable> mUpdateMonitorInfoRunnable MOZ_GUARDED_BY(mDeviceLock);
   Maybe<bool> mSystemHdrEnabled MOZ_GUARDED_BY(mDeviceLock);
   std::set<HMONITOR> mHdrMonitors MOZ_GUARDED_BY(mDeviceLock);
-
-  nsModuleHandle mDirectDrawDLL;
-  RefPtr<IDirectDraw7> mDirectDraw;
 };
 
 }  
