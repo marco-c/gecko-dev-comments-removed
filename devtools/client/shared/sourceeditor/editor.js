@@ -58,6 +58,12 @@ loader.lazyRequireGetter(
   "resource://devtools/client/shared/sourceeditor/wasm.js"
 );
 
+loader.lazyRequireGetter(
+  this,
+  "scopeUtils",
+  "resource://devtools/client/shared/sourceeditor/scope-utils.js"
+);
+
 const { OS } = Services.appinfo;
 
 
@@ -155,6 +161,15 @@ class Editor extends EventEmitter {
     text: { name: "text" },
     vs: { name: "x-shader/x-vertex" },
     wasm: { name: "wasm" },
+  };
+
+  static #symbolTypes = {
+    functions: new Set([
+      "FunctionExpression",
+      "FunctionDeclaration",
+      "ArrowFunction",
+      "MethodDeclaration",
+    ]),
   };
 
   container = null;
@@ -2065,6 +2080,9 @@ class Editor extends EventEmitter {
   }
 
   getDoc() {
+    if (!this.config) {
+      return null;
+    }
     const cm = editors.get(this);
     if (this.config.cm6) {
       if (!this.#currentDocument) {
@@ -2222,6 +2240,84 @@ class Editor extends EventEmitter {
       }
       return 0;
     });
+  }
+
+  
+
+
+
+
+
+  async getInScopeLines(location) {
+    const cm = editors.get(this);
+    const {
+      codemirrorLanguage: { syntaxTree, forceParsing },
+    } = this.#CodeMirror6;
+
+    
+    function posToLine(view, pos) {
+      const line = view.state.doc.lineAt(pos);
+      return line.number;
+    }
+
+    const functionLocations = [];
+    
+    
+    
+    await forceParsing(cm, cm.viewport.to, 10000);
+    await syntaxTree(cm.state).iterate({
+      enter: node => {
+        if (Editor.#symbolTypes.functions.has(node.name)) {
+          functionLocations.push({
+            name: node.name,
+            startLine: posToLine(cm, node.from),
+            endLine: posToLine(cm, node.to),
+          });
+        }
+      },
+    });
+
+    
+    
+    const sortedLocations = scopeUtils.sortByStart(functionLocations);
+
+    
+    
+    const innerLocations = scopeUtils.getInnerLocations(
+      sortedLocations,
+      location
+    );
+
+    
+    
+    const outerLocations = sortedLocations.filter(loc => {
+      if (innerLocations.includes(loc)) {
+        return false;
+      }
+      return !scopeUtils.containsPosition(loc, location);
+    });
+
+    const outOfScopeLines = scopeUtils.getOutOfScopeLines(
+      scopeUtils.removeOverlapLocations(outerLocations)
+    );
+
+    
+    
+    
+    
+    
+    const sourceNumLines = cm.state.doc.lines;
+    const sourceLines = new Array(sourceNumLines);
+    for (let i = 0; i < sourceNumLines; i++) {
+      const line = i + 1;
+      if (outOfScopeLines.size == 0 || !outOfScopeLines.has(line)) {
+        sourceLines[i] = line;
+      }
+    }
+
+    
+    
+    return sourceLines.filter(i => i != undefined);
   }
 
   
@@ -3179,7 +3275,7 @@ class Editor extends EventEmitter {
 
   #posToLineColumn(pos) {
     const cm = editors.get(this);
-    if (!pos) {
+    if (pos == null) {
       return {
         line: null,
         column: null,
@@ -3251,9 +3347,9 @@ class Editor extends EventEmitter {
 
 
 
-  scrollTo(line, column) {
+  async scrollTo(line, column) {
     if (this.isDestroyed()) {
-      return;
+      return null;
     }
     const cm = editors.get(this);
     if (this.config.cm6) {
@@ -3264,9 +3360,9 @@ class Editor extends EventEmitter {
       if (!this.isPositionVisible(line, column)) {
         const offset = this.#positionToOffset(line, column);
         if (offset == null) {
-          return;
+          return null;
         }
-        cm.dispatch({
+        return cm.dispatch({
           effects: EditorView.scrollIntoView(offset, {
             x: "nearest",
             y: "center",
@@ -3278,7 +3374,7 @@ class Editor extends EventEmitter {
       
       if (!line && !column) {
         cm.scrollTo(0, 0);
-        return;
+        return null;
       }
 
       const { top, left } = cm.charCoords({ line, ch: column }, "local");
@@ -3288,9 +3384,10 @@ class Editor extends EventEmitter {
         const centeredX = Math.max(left - scroller.offsetWidth / 2, 0);
         const centeredY = Math.max(top - scroller.offsetHeight / 2, 0);
 
-        cm.scrollTo(centeredX, centeredY);
+        return cm.scrollTo(centeredX, centeredY);
       }
     }
+    return null;
   }
 
   
