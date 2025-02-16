@@ -66,7 +66,21 @@ UiaText::GetSelection(__RPC__deref_out_opt SAFEARRAY** aRetVal) {
 
 STDMETHODIMP
 UiaText::GetVisibleRanges(__RPC__deref_out_opt SAFEARRAY** aRetVal) {
-  return E_NOTIMPL;
+  if (!aRetVal) {
+    return E_INVALIDARG;
+  }
+  Accessible* acc = Acc();
+  if (!acc) {
+    return CO_E_OBJNOTCONNECTED;
+  }
+  TextLeafRange fullRange = TextLeafRange::FromAccessible(acc);
+  
+  
+  
+  
+  nsTArray<TextLeafRange> ranges = fullRange.VisibleLines(acc);
+  *aRetVal = TextLeafRangesToUiaRanges(ranges);
+  return S_OK;
 }
 
 STDMETHODIMP

@@ -329,6 +329,12 @@ class TextLeafRange final {
 
   MOZ_CAN_RUN_SCRIPT void ScrollIntoView(uint32_t aScrollType) const;
 
+  
+
+
+
+  nsTArray<TextLeafRange> VisibleLines(Accessible* aContainer) const;
+
  private:
   TextLeafPoint mStart;
   TextLeafPoint mEnd;

@@ -2240,6 +2240,26 @@ void TextLeafRange::ScrollIntoView(uint32_t aScrollType) const {
                                  aScrollType);
 }
 
+nsTArray<TextLeafRange> TextLeafRange::VisibleLines(
+    Accessible* aContainer) const {
+  MOZ_ASSERT(aContainer);
+  
+  LayoutDeviceIntRect containerBounds = aContainer->Bounds();
+  nsTArray<TextLeafRange> lines;
+  WalkLineRects([&lines, &containerBounds](TextLeafRange aLine,
+                                           LayoutDeviceIntRect aLineRect) {
+    
+    
+    
+    
+    
+    if (aLineRect.Intersects(containerBounds)) {
+      lines.AppendElement(aLine);
+    }
+  });
+  return lines;
+}
+
 bool TextLeafRange::WalkLineRects(LineRectCallback aCallback) const {
   if (mEnd <= mStart) {
     return false;
