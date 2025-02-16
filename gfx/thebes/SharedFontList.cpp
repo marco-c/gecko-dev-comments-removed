@@ -24,7 +24,9 @@ namespace fontlist {
 
 static double WSSDistance(const Face* aFace, const gfxFontStyle& aStyle) {
   double stretchDist = StretchDistance(aFace->mStretch, aStyle.stretch);
-  double styleDist = StyleDistance(aFace->mStyle, aStyle.style);
+  double styleDist = StyleDistance(
+      aFace->mStyle, aStyle.style,
+      aStyle.synthesisStyle != StyleFontSynthesisStyle::ObliqueOnly);
   double weightDist = WeightDistance(aFace->mWeight, aStyle.weight);
 
   

@@ -903,7 +903,7 @@ gfxFont* gfxFontconfigFontEntry::CreateFontInstance(
 
   
   if (IsUpright() && !aFontStyle->style.IsNormal() &&
-      aFontStyle->allowSyntheticStyle) {
+      aFontStyle->synthesisStyle != StyleFontSynthesisStyle::None) {
     
     FcPatternDel(renderPattern, FC_EMBEDDED_BITMAP);
     FcPatternAddBool(renderPattern, FC_EMBEDDED_BITMAP, FcFalse);

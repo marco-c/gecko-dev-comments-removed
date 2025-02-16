@@ -134,7 +134,7 @@ nsFontMetrics::nsFontMetrics(const nsFont& aFont, const Params& aParams,
                      mAllowForceGDIClassic,
 #endif
                      aFont.synthesisWeight == StyleFontSynthesis::Auto,
-                     aFont.synthesisStyle == StyleFontSynthesisStyle::Auto,
+                     aFont.synthesisStyle,
                      aFont.synthesisSmallCaps == StyleFontSynthesis::Auto,
                      aFont.synthesisPosition == StyleFontSynthesis::Auto,
                      aFont.languageOverride);

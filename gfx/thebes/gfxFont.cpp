@@ -922,7 +922,7 @@ float gfxFont::AngleForSyntheticOblique() const {
   if (mStyle.style == FontSlantStyle::NORMAL) {
     return 0.0f;  
   }
-  if (!mStyle.allowSyntheticStyle) {
+  if (mStyle.synthesisStyle == StyleFontSynthesisStyle::None) {
     return 0.0f;  
   }
   if (!mFontEntry->MayUseSyntheticSlant()) {
@@ -932,9 +932,10 @@ float gfxFont::AngleForSyntheticOblique() const {
   
   
   if (mStyle.style.IsItalic()) {
-    return mFontEntry->SupportsItalic()
-               ? 0.0f
-               : FontSlantStyle::DEFAULT_OBLIQUE_DEGREES;
+    return mFontEntry->SupportsItalic() ? 0.0f
+           : mStyle.synthesisStyle == StyleFontSynthesisStyle::Auto
+               ? FontSlantStyle::DEFAULT_OBLIQUE_DEGREES
+               : 0.0f;
   }
 
   
@@ -4765,7 +4766,7 @@ gfxFontStyle::gfxFontStyle()
 #endif
       useGrayscaleAntialiasing(false),
       allowSyntheticWeight(true),
-      allowSyntheticStyle(true),
+      synthesisStyle(StyleFontSynthesisStyle::Auto),
       allowSyntheticSmallCaps(true),
       useSyntheticPosition(true),
       noFallbackVariantFeatures(true) {
@@ -4779,7 +4780,7 @@ gfxFontStyle::gfxFontStyle(FontSlantStyle aStyle, FontWeight aWeight,
                            bool aAllowForceGDIClassic,
 #endif
                            bool aAllowWeightSynthesis,
-                           bool aAllowStyleSynthesis,
+                           StyleFontSynthesisStyle aStyleSynthesis,
                            bool aAllowSmallCapsSynthesis,
                            bool aUsePositionSynthesis,
                            StyleFontLanguageOverride aLanguageOverride)
@@ -4798,7 +4799,7 @@ gfxFontStyle::gfxFontStyle(FontSlantStyle aStyle, FontWeight aWeight,
 #endif
       useGrayscaleAntialiasing(false),
       allowSyntheticWeight(aAllowWeightSynthesis),
-      allowSyntheticStyle(aAllowStyleSynthesis),
+      synthesisStyle(aStyleSynthesis),
       allowSyntheticSmallCaps(aAllowSmallCapsSynthesis),
       useSyntheticPosition(aUsePositionSynthesis),
       noFallbackVariantFeatures(true) {
