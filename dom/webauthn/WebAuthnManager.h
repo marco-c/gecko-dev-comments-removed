@@ -12,7 +12,9 @@
 #include "mozilla/RandomNum.h"
 #include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/PWebAuthnTransaction.h"
+#include "mozilla/dom/PWebAuthnTransactionChild.h"
 #include "mozilla/dom/WebAuthnManagerBase.h"
+#include "mozilla/dom/WebAuthnTransactionChild.h"
 
 
 
@@ -54,30 +56,22 @@ class WebAuthnTransaction {
  public:
   explicit WebAuthnTransaction(const RefPtr<Promise>& aPromise,
                                WebAuthnTransactionType aType)
-      : mPromise(aPromise), mId(NextId()), mType(aType) {
-    MOZ_ASSERT(mId > 0);
-  }
+      : mPromise(aPromise), mType(aType) {}
 
   
   RefPtr<Promise> mPromise;
 
-  
-  uint64_t mId;
-
   WebAuthnTransactionType mType;
 
- private:
   
   
   
-  static uint64_t NextId() {
-    static uint64_t counter = 0;
-    Maybe<uint64_t> rand = mozilla::RandomUint64();
-    uint64_t id =
-        rand.valueOr(++counter) & UINT64_C(0x1fffffffffffff);  
-    
-    return id ? id : 1;
-  }
+  
+  
+  MozPromiseRequestHolder<PWebAuthnTransactionChild::RequestRegisterPromise>
+      mRegisterHolder;
+  MozPromiseRequestHolder<PWebAuthnTransactionChild::RequestSignPromise>
+      mSignHolder;
 };
 
 class WebAuthnManager final : public WebAuthnManagerBase, public AbortFollower {
@@ -85,8 +79,8 @@ class WebAuthnManager final : public WebAuthnManagerBase, public AbortFollower {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(WebAuthnManager, WebAuthnManagerBase)
 
-  explicit WebAuthnManager(nsPIDOMWindowInner* aParent)
-      : WebAuthnManagerBase(aParent) {}
+  explicit WebAuthnManager(nsPIDOMWindowInner* aWindow)
+      : WebAuthnManagerBase(aWindow) {}
 
   already_AddRefed<Promise> MakeCredential(
       const PublicKeyCredentialCreationOptions& aOptions,
@@ -103,29 +97,26 @@ class WebAuthnManager final : public WebAuthnManagerBase, public AbortFollower {
   already_AddRefed<Promise> IsUVPAA(GlobalObject& aGlobal, ErrorResult& aError);
 
   
-
-  void FinishMakeCredential(
-      const uint64_t& aTransactionId,
-      const WebAuthnMakeCredentialResult& aResult) override;
-
-  void FinishGetAssertion(const uint64_t& aTransactionId,
-                          const WebAuthnGetAssertionResult& aResult) override;
-
-  void RequestAborted(const uint64_t& aTransactionId,
-                      const nsresult& aError) override;
-
-  
-
   void RunAbortAlgorithm() override;
 
  private:
   virtual ~WebAuthnManager();
 
+  void FinishMakeCredential(const WebAuthnMakeCredentialResult& aResult);
+
+  void FinishGetAssertion(const WebAuthnGetAssertionResult& aResult);
+
   
   
   template <typename T>
   void CancelTransaction(const T& aReason) {
-    CancelParent();
+    MOZ_ASSERT(mActor);
+    MOZ_ASSERT(mTransaction.isSome());
+
+    mTransaction.ref().mRegisterHolder.DisconnectIfExists();
+    mTransaction.ref().mSignHolder.DisconnectIfExists();
+
+    mActor->SendRequestCancel();
     RejectTransaction(aReason);
   }
 
@@ -136,12 +127,6 @@ class WebAuthnManager final : public WebAuthnManagerBase, public AbortFollower {
   
   template <typename T>
   void RejectTransaction(const T& aReason);
-
-  
-  void CancelParent();
-
-  
-  void ClearTransaction();
 
   
   Maybe<WebAuthnTransaction> mTransaction;

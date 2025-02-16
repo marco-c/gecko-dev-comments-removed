@@ -12,52 +12,6 @@ void WebAuthnTransactionChild::SetManager(WebAuthnManagerBase* aManager) {
   mManager = aManager;
 }
 
-mozilla::ipc::IPCResult WebAuthnTransactionChild::RecvConfirmRegister(
-    const uint64_t& aTransactionId,
-    const WebAuthnMakeCredentialResult& aResult) {
-  if (NS_WARN_IF(!mManager)) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-
-  
-  
-  
-  
-  RefPtr<WebAuthnManagerBase> kungFuDeathGrip(mManager);
-  kungFuDeathGrip->FinishMakeCredential(aTransactionId, aResult);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult WebAuthnTransactionChild::RecvConfirmSign(
-    const uint64_t& aTransactionId, const WebAuthnGetAssertionResult& aResult) {
-  if (NS_WARN_IF(!mManager)) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-
-  
-  
-  
-  
-  RefPtr<WebAuthnManagerBase> kungFuDeathGrip(mManager);
-  kungFuDeathGrip->FinishGetAssertion(aTransactionId, aResult);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult WebAuthnTransactionChild::RecvAbort(
-    const uint64_t& aTransactionId, const nsresult& aError) {
-  if (NS_WARN_IF(!mManager)) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-
-  
-  
-  
-  
-  RefPtr<WebAuthnManagerBase> kungFuDeathGrip(mManager);
-  kungFuDeathGrip->RequestAborted(aTransactionId, aError);
-  return IPC_OK();
-}
-
 void WebAuthnTransactionChild::ActorDestroy(ActorDestroyReason why) {
   
   
@@ -66,7 +20,5 @@ void WebAuthnTransactionChild::ActorDestroy(ActorDestroyReason why) {
     mManager = nullptr;
   }
 }
-
-void WebAuthnTransactionChild::Disconnect() { mManager = nullptr; }
 
 }  
