@@ -886,9 +886,7 @@ nsresult ScriptLoader::PrepareHttpRequestAndInitiatorType(
 
   if (httpChannel) {
     
-    nsAutoCString acceptTypes("*/*");
-    rv = httpChannel->SetRequestHeader("Accept"_ns, acceptTypes, false);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    
 
     nsCOMPtr<nsIReferrerInfo> referrerInfo =
         new ReferrerInfo(aRequest->mReferrer, aRequest->ReferrerPolicy());

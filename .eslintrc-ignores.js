@@ -302,4 +302,8 @@ module.exports = [
   
   "dom/base/test/jsmodules/import_circular.mjs",
   "dom/base/test/jsmodules/import_circular_1.mjs",
+
+  
+  
+  "netwerk/test/mochitests/test_import_json_module.mjs",
 ];
