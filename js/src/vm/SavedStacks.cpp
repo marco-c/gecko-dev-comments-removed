@@ -1594,9 +1594,13 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
     
     
     
+    
+    
+    
+    
     if (iter.activation() != &activation && activation.asyncStack() &&
         (activation.asyncCallIsExplicit() || iter.done()) &&
-        !capture.is<JS::FirstSubsumedFrame>()) {
+        !capture.is<JS::FirstSubsumedFrame>() && seenStartAt) {
       
       
       const char* cause = activation.asyncCause();
