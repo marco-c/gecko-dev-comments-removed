@@ -26,16 +26,6 @@ with Files("android-components/**"):
 
 
 
-t = ("android_apks",)
-
-GENERATED_FILES += [t]
-GENERATED_FILES[t].force = True
-GENERATED_FILES[t].script = "/mobile/android/gradle.py:assemble_app"
-
-
-
-
-
 config_keys = (
     "MOZ_ANDROID_CONTENT_SERVICE_COUNT",
     "MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS",
