@@ -505,10 +505,12 @@ class ElementStyle {
       (earlierProp.priority !== "important" ||
         
         
+        
         (computedProp.textProp.rule?.isInLayer() &&
           computedProp.textProp.rule.isInDifferentLayer(
             earlierProp.textProp.rule
-          ))) &&
+          ) &&
+          earlierProp.textProp.rule.domRule.type !== ELEMENT_STYLE)) &&
       
       computedProp.textProp.rule.inherited ==
         earlierProp.textProp.rule.inherited
