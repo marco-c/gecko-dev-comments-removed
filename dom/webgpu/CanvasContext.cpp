@@ -333,8 +333,11 @@ NS_IMETHODIMP CanvasContext::GetInputStream(const char* aMimeType,
 
 already_AddRefed<gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
     gfxAlphaType* aOutAlphaType) {
+  
+  MOZ_ASSERT(GetIsOpaque());
+
   if (aOutAlphaType) {
-    *aOutAlphaType = gfxAlphaType::Premult;
+    *aOutAlphaType = gfxAlphaType::Opaque;
   }
 
   auto* const cm = gfx::CanvasManagerChild::Get();
@@ -348,13 +351,20 @@ already_AddRefed<gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
 
   MOZ_ASSERT(mRemoteTextureOwnerId.isSome());
 
+  gfx::SurfaceFormat snapshotFormat = mGfxFormat;
+  if (mGfxFormat == gfx::SurfaceFormat::B8G8R8A8 && GetIsOpaque()) {
+    snapshotFormat = gfx::SurfaceFormat::B8G8R8X8;
+  } else if (mGfxFormat == gfx::SurfaceFormat::R8G8B8A8 && GetIsOpaque()) {
+    snapshotFormat = gfx::SurfaceFormat::R8G8B8X8;
+  }
+
   
   
   RawId encoderId = ffi::wgpu_client_make_encoder_id(mBridge->GetClient());
-  RefPtr<gfx::SourceSurface> snapshot =
-      cm->GetSnapshot(cm->Id(), mBridge->Id(), mRemoteTextureOwnerId,
-                      Some(encoderId), mGfxFormat,  false,
-                       false);
+  RefPtr<gfx::SourceSurface> snapshot = cm->GetSnapshot(
+      cm->Id(), mBridge->Id(), mRemoteTextureOwnerId, Some(encoderId),
+      snapshotFormat,  !GetIsOpaque(),
+       false);
   ffi::wgpu_client_free_command_encoder_id(mBridge->GetClient(), encoderId);
   return snapshot.forget();
 }
