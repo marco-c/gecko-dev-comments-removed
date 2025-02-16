@@ -240,9 +240,10 @@ class WhiteSpaceVisibilityKeeper final {
   InsertText(HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
              const EditorDOMPointType& aPointToInsert,
              InsertTextTo aInsertTextTo) {
-    return WhiteSpaceVisibilityKeeper::ReplaceText(
-        aHTMLEditor, aStringToInsert, EditorDOMRange(aPointToInsert),
-        aInsertTextTo);
+    return WhiteSpaceVisibilityKeeper::
+        InsertTextOrInsertOrUpdateCompositionString(
+            aHTMLEditor, aStringToInsert, EditorDOMRange(aPointToInsert),
+            aInsertTextTo, TextIsCompositionString::No);
   }
 
   
@@ -256,10 +257,17 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
-  ReplaceText(HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
-              const EditorDOMRange& aRangeToBeReplaced,
-              InsertTextTo aInsertTextTo);
+  InsertOrUpdateCompositionString(
+      HTMLEditor& aHTMLEditor, const nsAString& aCompositionString,
+      const EditorDOMRange& aCompositionStringRange) {
+    return InsertTextOrInsertOrUpdateCompositionString(
+        aHTMLEditor, aCompositionString, aCompositionStringRange,
+        HTMLEditor::InsertTextTo::ExistingTextNodeIfAvailable,
+        TextIsCompositionString::Yes);
+  }
 
   
 
@@ -335,6 +343,30 @@ class WhiteSpaceVisibilityKeeper final {
   ReplaceTextAndRemoveEmptyTextNodes(
       HTMLEditor& aHTMLEditor, const EditorDOMRangeInTexts& aRangeToReplace,
       const nsAString& aReplaceString);
+
+  enum class TextIsCompositionString : bool { No, Yes };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
+  InsertTextOrInsertOrUpdateCompositionString(
+      HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
+      const EditorDOMRange& aRangeToBeReplaced, InsertTextTo aInsertTextTo,
+      TextIsCompositionString aTextIsCompositionString);
 };
 
 }  
