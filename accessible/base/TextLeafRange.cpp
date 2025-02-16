@@ -1848,11 +1848,16 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
     return AdjustEndOfLine().FindTextAttrsStart(aDirection, aIncludeOrigin);
   }
   const bool isRemote = mAcc->IsRemote();
-  RefPtr<const AccAttributes> lastAttrs =
-      isRemote ? mAcc->AsRemote()->GetCachedTextAttributes()
-               : GetTextAttributesLocalAcc();
+  RefPtr<const AccAttributes> lastAttrs;
+  if (mAcc->IsText()) {
+    lastAttrs = isRemote ? mAcc->AsRemote()->GetCachedTextAttributes()
+                         : GetTextAttributesLocalAcc();
+  }
   if (aIncludeOrigin && aDirection == eDirNext && mOffset == 0) {
-    
+    if (!mAcc->IsText()) {
+      
+      return *this;
+    }
     
     
     TextLeafPoint point;
@@ -1909,7 +1914,7 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
     RefPtr<const AccAttributes> attrs =
         isRemote ? point.mAcc->AsRemote()->GetCachedTextAttributes()
                  : point.GetTextAttributesLocalAcc();
-    if (attrs && lastAttrs && !attrs->Equal(lastAttrs)) {
+    if (!lastAttrs || (attrs && !attrs->Equal(lastAttrs))) {
       
       
       if (aDirection == eDirNext) {

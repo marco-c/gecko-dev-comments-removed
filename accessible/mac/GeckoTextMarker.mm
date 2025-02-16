@@ -464,47 +464,39 @@ NSAttributedString* GeckoTextMarkerRange::AttributedText() const {
           : mRange;
 
   nsAutoString text;
-  RefPtr<AccAttributes> currentRun = GetTextAttributes(range.Start());
-  Accessible* runAcc = range.Start().mAcc;
-  for (TextLeafRange segment : range) {
-    TextLeafPoint start = segment.Start();
-    TextLeafPoint attributesNext;
+  TextLeafPoint start = range.Start();
+  const TextLeafPoint stop = range.End();
+  RefPtr<AccAttributes> currentRun = GetTextAttributes(start);
+  Accessible* runAcc = start.mAcc;
+  do {
+    TextLeafPoint attributesNext = start.FindTextAttrsStart(eDirNext, false);
+    if (stop < attributesNext) {
+      attributesNext = stop;
+    }
     if (start.mAcc->IsMenuPopup() &&
         (start.mAcc->State() & states::COLLAPSED)) {
       
       
+      start = attributesNext;
       continue;
     }
-    do {
-      if (start.mAcc->IsText()) {
-        attributesNext = start.FindTextAttrsStart(eDirNext, false);
-      } else {
-        
-        
-        attributesNext = segment.End();
-      }
-      if (attributesNext == start) {
-        
-        break;
-      }
-      RefPtr<AccAttributes> attributes = GetTextAttributes(start);
-      if (!currentRun || !attributes || !attributes->Equal(currentRun)) {
-        
-        
-        
-        AppendTextToAttributedString(str, runAcc, text, currentRun);
-        text.Truncate();
-        currentRun = attributes;
-        runAcc = start.mAcc;
-      }
-      TextLeafPoint end =
-          attributesNext < segment.End() ? attributesNext : segment.End();
-      start.mAcc->AppendTextTo(text, start.mOffset,
-                               end.mOffset - start.mOffset);
-      start = attributesNext;
-
-    } while (attributesNext < segment.End());
-  }
+    RefPtr<AccAttributes> attributes = GetTextAttributes(start);
+    if (!currentRun || !attributes || !attributes->Equal(currentRun)) {
+      
+      
+      
+      AppendTextToAttributedString(str, runAcc, text, currentRun);
+      text.Truncate();
+      currentRun = attributes;
+      runAcc = start.mAcc;
+    }
+    for (TextLeafRange segment : TextLeafRange(start, attributesNext)) {
+      TextLeafPoint segStart = segment.Start();
+      segStart.mAcc->AppendTextTo(text, segStart.mOffset,
+                                  segment.End().mOffset - segStart.mOffset);
+    }
+    start = attributesNext;
+  } while (start != stop);
 
   if (!text.IsEmpty()) {
     AppendTextToAttributedString(str, runAcc, text, currentRun);
