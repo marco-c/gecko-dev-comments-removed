@@ -1836,49 +1836,7 @@ var newWindowButtonObserver = {
   },
 };
 
-const BrowserSearch = {
-  
-
-
-
-
-
-
-
-
-  async removalOfSearchEngineNotificationBox(oldEngine, newEngine) {
-    let buttons = [
-      {
-        "l10n-id": "remove-search-engine-button",
-        primary: true,
-        callback() {
-          const notificationBox = gNotificationBox.getNotificationWithValue(
-            "search-engine-removal"
-          );
-          gNotificationBox.removeNotification(notificationBox);
-        },
-      },
-      {
-        supportPage: "search-engine-removal",
-      },
-    ];
-
-    await gNotificationBox.appendNotification(
-      "search-engine-removal",
-      {
-        label: {
-          "l10n-id": "removed-search-engine-message2",
-          "l10n-args": { oldEngine, newEngine },
-        },
-        priority: gNotificationBox.PRIORITY_SYSTEM,
-      },
-      buttons
-    );
-
-    
-    gURLBar._updatePlaceholderFromDefaultEngine(false).catch(console.error);
-  },
-};
+const BrowserSearch = {};
 
 XPCOMUtils.defineConstant(this, "BrowserSearch", BrowserSearch);
 
