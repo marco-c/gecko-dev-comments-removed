@@ -20,10 +20,6 @@
 #include "vm/JSContext.h"   
 #include "vm/JSObject.h"    
 #include "vm/StringType.h"  
-#ifdef ENABLE_RECORD_TUPLE
-#  include "vm/RecordType.h"
-#  include "vm/TupleType.h"
-#endif
 
 #include "builtin/Boolean-inl.h"  
 #include "vm/JSContext-inl.h"     
@@ -45,38 +41,6 @@ static bool EqualGivenSameType(JSContext* cx, JS::Handle<JS::Value> lval,
     *equal = JS::BigInt::equal(lval.toBigInt(), rval.toBigInt());
     return true;
   }
-
-#ifdef ENABLE_RECORD_TUPLE
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (lval.isExtendedPrimitive()) {
-    JSObject* lobj = &lval.toExtendedPrimitive();
-    JSObject* robj = &rval.toExtendedPrimitive();
-
-    if (lobj->getClass() != robj->getClass()) {
-      *equal = false;
-      return true;
-    }
-
-    if (lobj->is<js::RecordType>()) {
-      return js::RecordType::sameValueZero(cx, &lobj->as<js::RecordType>(),
-                                           &robj->as<js::RecordType>(), equal);
-    }
-    if (lobj->is<js::TupleType>()) {
-      return js::TupleType::sameValueZero(cx, &lobj->as<js::TupleType>(),
-                                          &robj->as<js::TupleType>(), equal);
-    }
-    MOZ_CRASH("Unknown ExtendedPrimitive type");
-  }
-#endif
 
   
   
@@ -269,76 +233,8 @@ bool js::SameValue(JSContext* cx, JS::Handle<JS::Value> v1,
     return true;
   }
 
-#ifdef ENABLE_RECORD_TUPLE
-  if (v1.isExtendedPrimitive()) {
-    JSObject* lobj = &v1.toExtendedPrimitive();
-    JSObject* robj = &v2.toExtendedPrimitive();
-
-    if (lobj->getClass() != robj->getClass()) {
-      *same = false;
-      return true;
-    }
-
-    if (lobj->is<js::RecordType>()) {
-      return js::RecordType::sameValue(cx, &lobj->as<js::RecordType>(),
-                                       &robj->as<js::RecordType>(), same);
-    }
-    if (lobj->is<js::TupleType>()) {
-      return js::TupleType::sameValue(cx, &lobj->as<js::TupleType>(),
-                                      &robj->as<js::TupleType>(), same);
-    }
-    MOZ_CRASH("Unknown ExtendedPrimitive type");
-  }
-#endif
-
   return js::SameValueZero(cx, v1, v2, same);
 }
-
-#ifdef ENABLE_RECORD_TUPLE
-bool js::SameValueZeroLinear(const JS::Value& lval, const JS::Value& rval) {
-  if (lval.isNumber() && rval.isNumber()) {
-    return IsNaN(lval) ? IsNaN(rval) : lval.toNumber() == rval.toNumber();
-  }
-
-  if (lval.type() != rval.type()) {
-    return false;
-  }
-
-  switch (lval.type()) {
-    case ValueType::Double:
-      return IsNaN(lval) ? IsNaN(rval) : lval.toDouble() == rval.toDouble();
-
-    case ValueType::BigInt:
-      
-      
-      return BigInt::equal(lval.toBigInt(), rval.toBigInt());
-
-    case ValueType::String:
-      MOZ_ASSERT(lval.toString()->isLinear() && rval.toString()->isLinear());
-      return EqualStrings(&lval.toString()->asLinear(),
-                          &rval.toString()->asLinear());
-
-    case ValueType::ExtendedPrimitive: {
-      JSObject& lobj = lval.toExtendedPrimitive();
-      JSObject& robj = rval.toExtendedPrimitive();
-      if (lobj.getClass() != robj.getClass()) {
-        return false;
-      }
-      if (lobj.is<RecordType>()) {
-        return RecordType::sameValueZero(&lobj.as<RecordType>(),
-                                         &robj.as<RecordType>());
-      }
-      MOZ_ASSERT(lobj.is<TupleType>());
-      return TupleType::sameValueZero(&lobj.as<TupleType>(),
-                                      &robj.as<TupleType>());
-    }
-
-    default:
-      MOZ_ASSERT(CanUseBitwiseCompareForStrictlyEqual(lval));
-      return lval.asRawBits() == rval.asRawBits();
-  }
-}
-#endif
 
 JS_PUBLIC_API bool JS::SameValue(JSContext* cx, Handle<Value> value1,
                                  Handle<Value> value2, bool* same) {

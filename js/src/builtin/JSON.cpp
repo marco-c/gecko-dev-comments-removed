@@ -43,12 +43,6 @@
 #include "vm/NumberObject.h"  
 #include "vm/PlainObject.h"   
 #include "vm/StringObject.h"  
-#ifdef ENABLE_RECORD_TUPLE
-#  include "builtin/RecordObject.h"
-#  include "builtin/TupleObject.h"
-#  include "vm/RecordType.h"
-#endif
-
 #include "builtin/Array-inl.h"
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/JSAtomUtils-inl.h"  
@@ -384,9 +378,7 @@ static bool PreprocessValue(JSContext* cx, HandleObject holder, KeyType key,
         return false;
       }
       vp.setString(str);
-    } else if (cls == ESClass::Boolean || cls == ESClass::BigInt ||
-               IF_RECORD_TUPLE(
-                   obj->is<RecordObject>() || obj->is<TupleObject>(), false)) {
+    } else if (cls == ESClass::Boolean || cls == ESClass::BigInt) {
       if (!Unbox(cx, obj, vp)) {
         return false;
       }
@@ -452,10 +444,6 @@ static inline JSString* MaybeGetRawJSON(JSContext* cx, JSObject* obj) {
   return rawJSON;
 }
 
-#ifdef ENABLE_RECORD_TUPLE
-enum class JOType { Record, Object };
-template <JOType type = JOType::Object>
-#endif
 
 static bool SerializeJSONObject(JSContext* cx, HandleObject obj,
                                 StringifyContext* scx) {
@@ -469,16 +457,6 @@ static bool SerializeJSONObject(JSContext* cx, HandleObject obj,
 
 
 
-#ifdef ENABLE_RECORD_TUPLE
-  RecordType* rec;
-
-  if constexpr (type == JOType::Record) {
-    MOZ_ASSERT(obj->is<RecordType>());
-    rec = &obj->as<RecordType>();
-  } else {
-    MOZ_ASSERT(!IsExtendedPrimitive(*obj));
-  }
-#endif
   MOZ_ASSERT_IF(scx->maybeSafely, obj->is<PlainObject>());
 
   
@@ -542,17 +520,11 @@ static bool SerializeJSONObject(JSContext* cx, HandleObject obj,
     }
 #endif  
 
-#ifdef ENABLE_RECORD_TUPLE
-    if constexpr (type == JOType::Record) {
-      MOZ_ALWAYS_TRUE(rec->getOwnProperty(cx, id, &outputValue));
-    } else
-#endif
-    {
-      RootedValue objValue(cx, ObjectValue(*obj));
-      if (!GetProperty(cx, obj, objValue, id, &outputValue)) {
-        return false;
-      }
+    RootedValue objValue(cx, ObjectValue(*obj));
+    if (!GetProperty(cx, obj, objValue, id, &outputValue)) {
+      return false;
     }
+
     if (!PreprocessValue(cx, obj, HandleId(id), &outputValue, scx)) {
       return false;
     }
@@ -599,12 +571,6 @@ static MOZ_ALWAYS_INLINE bool GetLengthPropertyForArrayLike(JSContext* cx,
     *lengthp = obj->as<ArrayObject>().length();
     return true;
   }
-#ifdef ENABLE_RECORD_TUPLE
-  if (obj->is<TupleType>()) {
-    *lengthp = obj->as<TupleType>().length();
-    return true;
-  }
-#endif
 
   MOZ_ASSERT(obj->is<ProxyObject>());
 
@@ -796,8 +762,8 @@ static bool SerializeJSONProperty(JSContext* cx, const Value& v,
   }
 
   
-  MOZ_ASSERT(v.hasObjectPayload());
-  RootedObject obj(cx, &v.getObjectPayload());
+  MOZ_ASSERT(v.isObject());
+  RootedObject obj(cx, &v.toObject());
 
   
 
@@ -812,18 +778,6 @@ static bool SerializeJSONProperty(JSContext* cx, const Value& v,
 
   scx->depth++;
   auto dec = mozilla::MakeScopeExit([&] { scx->depth--; });
-
-#ifdef ENABLE_RECORD_TUPLE
-  if (v.isExtendedPrimitive()) {
-    if (obj->is<RecordType>()) {
-      return SerializeJSONObject<JOType::Record>(cx, obj, scx);
-    }
-    if (obj->is<TupleType>()) {
-      return SerializeJSONArray(cx, obj, scx);
-    }
-    MOZ_CRASH("Unexpected extended primitive - boxes cannot be stringified.");
-  }
-#endif
 
   bool isArray;
   if (!IsArray(cx, obj, &isArray)) {
@@ -857,12 +811,6 @@ static bool CanFastStringifyObject(NativeObject* obj) {
   
   
   MOZ_ASSERT(!obj->getOpsLookupProperty());
-
-#ifdef ENABLE_RECORD_TUPLE
-  if (ObjectValue(*obj).isExtendedPrimitive()) {
-    return false;
-  }
-#endif
 
   return true;
 }
@@ -1187,9 +1135,7 @@ static bool PreprocessFastValue(JSContext* cx, Value* vp, StringifyContext* scx,
   
   
   if (obj->is<NumberObject>() || obj->is<StringObject>() ||
-      obj->is<BooleanObject>() || obj->is<BigIntObject>() ||
-      IF_RECORD_TUPLE(obj->is<RecordObject>() || obj->is<TupleObject>(),
-                      false)) {
+      obj->is<BooleanObject>() || obj->is<BigIntObject>()) {
     
     
     *whySlow = BailReason::INELIGIBLE_OBJECT;
@@ -2029,163 +1975,6 @@ static bool json_parse(JSContext* cx, unsigned argc, Value* vp) {
                                     args.rval());
 }
 
-#ifdef ENABLE_RECORD_TUPLE
-bool BuildImmutableProperty(JSContext* cx, HandleValue value, HandleId name,
-                            HandleValue reviver,
-                            MutableHandleValue immutableRes) {
-  MOZ_ASSERT(!name.isSymbol());
-
-  
-  if (value.isObject()) {
-    RootedValue childValue(cx), newElement(cx);
-    RootedId childName(cx);
-
-    
-    if (value.toObject().is<ArrayObject>()) {
-      Rooted<ArrayObject*> arr(cx, &value.toObject().as<ArrayObject>());
-
-      
-      uint32_t len = arr->length();
-
-      TupleType* tup = TupleType::createUninitialized(cx, len);
-      if (!tup) {
-        return false;
-      }
-      immutableRes.setExtendedPrimitive(*tup);
-
-      
-      for (uint32_t i = 0; i < len; i++) {
-        
-        childName.set(PropertyKey::Int(i));
-
-        
-        if (!GetProperty(cx, arr, value, childName, &childValue)) {
-          return false;
-        }
-
-        
-        if (!BuildImmutableProperty(cx, childValue, childName, reviver,
-                                    &newElement)) {
-          return false;
-        }
-        MOZ_ASSERT(newElement.isPrimitive());
-
-        
-        if (!tup->initializeNextElement(cx, newElement)) {
-          return false;
-        }
-      }
-
-      
-      tup->finishInitialization(cx);
-    } else {
-      RootedObject obj(cx, &value.toObject());
-
-      
-      
-      
-      RootedIdVector props(cx);
-      if (!GetPropertyKeys(cx, obj, JSITER_OWNONLY, &props)) {
-        return false;
-      }
-
-      RecordType* rec = RecordType::createUninitialized(cx, props.length());
-      if (!rec) {
-        return false;
-      }
-      immutableRes.setExtendedPrimitive(*rec);
-
-      for (uint32_t i = 0; i < props.length(); i++) {
-        
-        childName.set(props[i]);
-
-        
-        if (!GetProperty(cx, obj, value, childName, &childValue)) {
-          return false;
-        }
-
-        
-        if (!BuildImmutableProperty(cx, childValue, childName, reviver,
-                                    &newElement)) {
-          return false;
-        }
-        MOZ_ASSERT(newElement.isPrimitive());
-
-        
-        if (!newElement.isUndefined()) {
-          
-          rec->initializeNextProperty(cx, childName, newElement);
-        }
-      }
-
-      
-      rec->finishInitialization(cx);
-    }
-  } else {
-    
-    immutableRes.set(value);
-  }
-
-  
-  if (IsCallable(reviver)) {
-    RootedValue keyVal(cx, StringValue(IdToString(cx, name)));
-
-    
-    if (!Call(cx, reviver, UndefinedHandleValue, keyVal, immutableRes,
-              immutableRes)) {
-      return false;
-    }
-
-    
-    if (!immutableRes.isPrimitive()) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_RECORD_TUPLE_NO_OBJECT);
-      return false;
-    }
-  }
-
-  return true;
-}
-
-static bool json_parseImmutable(JSContext* cx, unsigned argc, Value* vp) {
-  AutoJSMethodProfilerEntry pseudoFrame(cx, "JSON", "parseImmutable");
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-  JSString* str = (args.length() >= 1) ? ToString<CanGC>(cx, args[0])
-                                       : cx->names().undefined;
-  if (!str) {
-    return false;
-  }
-
-  JSLinearString* linear = str->ensureLinear(cx);
-  if (!linear) {
-    return false;
-  }
-
-  AutoStableStringChars linearChars(cx);
-  if (!linearChars.init(cx, linear)) {
-    return false;
-  }
-
-  HandleValue reviver = args.get(1);
-  RootedValue unfiltered(cx);
-
-  if (linearChars.isLatin1()) {
-    if (!ParseJSON(cx, linearChars.latin1Range(), &unfiltered)) {
-      return false;
-    }
-  } else {
-    if (!ParseJSON(cx, linearChars.twoByteRange(), &unfiltered)) {
-      return false;
-    }
-  }
-
-  RootedId id(cx, NameToId(cx->names().empty_));
-  return BuildImmutableProperty(cx, unfiltered, id, reviver, args.rval());
-}
-#endif
-
 
 static bool json_isRawJSON(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "JSON", "isRawJSON");
@@ -2324,9 +2113,6 @@ static const JSFunctionSpec json_static_methods[] = {
     JS_FN("toSource", json_toSource, 0, 0),
     JS_FN("parse", json_parse, 2, 0),
     JS_FN("stringify", json_stringify, 3, 0),
-#ifdef ENABLE_RECORD_TUPLE
-    JS_FN("parseImmutable", json_parseImmutable, 2, 0),
-#endif
     JS_FN("isRawJSON", json_isRawJSON, 1, 0),
     JS_FN("rawJSON", json_rawJSON, 1, 0),
     JS_FS_END,

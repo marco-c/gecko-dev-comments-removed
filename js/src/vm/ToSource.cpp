@@ -22,23 +22,18 @@
 #include "js/Printer.h"             
 #include "js/Symbol.h"              
 #include "js/TypeDecls.h"  
-#include "js/Utility.h"          
-#include "js/Value.h"            
-#include "util/StringBuilder.h"  
-#include "vm/ErrorObject.h"      
-#include "vm/Interpreter.h"      
-#include "vm/JSContext.h"        
-#include "vm/JSFunction.h"       
-#include "vm/SelfHosting.h"      
-#include "vm/Stack.h"            
-#include "vm/StaticStrings.h"    
-#include "vm/StringType.h"       
-#include "vm/SymbolType.h"       
-#ifdef ENABLE_RECORD_TUPLE
-#  include "vm/RecordType.h"
-#  include "vm/TupleType.h"
-#endif
-
+#include "js/Utility.h"               
+#include "js/Value.h"                 
+#include "util/StringBuilder.h"       
+#include "vm/ErrorObject.h"           
+#include "vm/Interpreter.h"           
+#include "vm/JSContext.h"             
+#include "vm/JSFunction.h"            
+#include "vm/SelfHosting.h"           
+#include "vm/Stack.h"                 
+#include "vm/StaticStrings.h"         
+#include "vm/StringType.h"            
+#include "vm/SymbolType.h"            
 #include "vm/JSContext-inl.h"         
 #include "vm/JSObject-inl.h"          
 #include "vm/ObjectOperations-inl.h"  
@@ -163,20 +158,6 @@ JSString* js::ValueToSource(JSContext* cx, HandleValue v) {
 
       return ConcatStrings<CanGC>(cx, str, n);
     }
-
-#ifdef ENABLE_RECORD_TUPLE
-    case ValueType::ExtendedPrimitive: {
-      RootedObject obj(cx, &v.toExtendedPrimitive());
-      if (obj->is<TupleType>()) {
-        Rooted<TupleType*> tup(cx, &obj->as<TupleType>());
-        return TupleToSource(cx, tup);
-      }
-      if (obj->is<RecordType>()) {
-        return RecordToSource(cx, obj.as<RecordType>());
-      }
-      MOZ_CRASH("Unsupported ExtendedPrimitive");
-    }
-#endif
 
     case JS::ValueType::Object: {
       RootedValue fval(cx);

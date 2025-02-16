@@ -813,11 +813,6 @@ enum class ESClass {
   BigInt,
   Function,  
 
-#ifdef ENABLE_RECORD_TUPLE
-  Record,
-  Tuple,
-#endif
-
   
   Other
 };

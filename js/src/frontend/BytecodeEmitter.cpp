@@ -1057,12 +1057,6 @@ restart:
       }
       return true;
 
-#ifdef ENABLE_RECORD_TUPLE
-    case ParseNodeKind::RecordExpr:
-    case ParseNodeKind::TupleExpr:
-      MOZ_CRASH("Record and Tuple are not supported yet");
-#endif
-
 #ifdef ENABLE_DECORATORS
     case ParseNodeKind::DecoratorList:
       MOZ_CRASH("Decorators are not supported yet");
@@ -11464,127 +11458,6 @@ bool BytecodeEmitter::emitSpreadIntoArray(UnaryNode* elem) {
   return true;
 }
 
-#ifdef ENABLE_RECORD_TUPLE
-bool BytecodeEmitter::emitRecordLiteral(ListNode* record) {
-  if (!emitUint32Operand(JSOp::InitRecord, record->count())) {
-    
-    return false;
-  }
-
-  for (ParseNode* propdef : record->contents()) {
-    if (propdef->isKind(ParseNodeKind::Spread)) {
-      if (!emitTree(propdef->as<UnaryNode>().kid())) {
-        
-        return false;
-      }
-      if (!emit1(JSOp::AddRecordSpread)) {
-        
-        return false;
-      }
-    } else {
-      BinaryNode* prop = &propdef->as<BinaryNode>();
-
-      ParseNode* key = prop->left();
-      ParseNode* value = prop->right();
-
-      switch (key->getKind()) {
-        case ParseNodeKind::ObjectPropertyName:
-          if (!emitStringOp(JSOp::String, key->as<NameNode>().atom())) {
-            return false;
-          }
-          break;
-        case ParseNodeKind::ComputedName:
-          if (!emitTree(key->as<UnaryNode>().kid())) {
-            return false;
-          }
-          break;
-        default:
-          MOZ_ASSERT(key->isKind(ParseNodeKind::StringExpr) ||
-                     key->isKind(ParseNodeKind::NumberExpr) ||
-                     key->isKind(ParseNodeKind::BigIntExpr));
-          if (!emitTree(key)) {
-            return false;
-          }
-          break;
-      }
-      
-
-      if (!emitTree(value)) {
-        
-        return false;
-      }
-
-      if (!emit1(JSOp::AddRecordProperty)) {
-        
-        return false;
-      }
-    }
-  }
-
-  if (!emit1(JSOp::FinishRecord)) {
-    
-    return false;
-  }
-
-  return true;
-}
-
-bool BytecodeEmitter::emitTupleLiteral(ListNode* tuple) {
-  if (!emitUint32Operand(JSOp::InitTuple, tuple->count())) {
-    
-    return false;
-  }
-
-  for (ParseNode* elt : tuple->contents()) {
-    if (elt->isKind(ParseNodeKind::Spread)) {
-      ParseNode* expr = elt->as<UnaryNode>().kid();
-      auto selfHostedIter = getSelfHostedIterFor(expr);
-
-      if (!emitIterable(expr, selfHostedIter)) {
-        
-        return false;
-      }
-      if (!emitIterator(selfHostedIter)) {
-        
-        return false;
-      }
-      if (!emit2(JSOp::Pick, 2)) {
-        
-        return false;
-      }
-      if (!emitSpread(selfHostedIter,  1,
-                      JSOp::AddTupleElement)) {
-        
-        return false;
-      }
-    } else {
-      
-      
-      if (!updateSourceCoordNotesIfNonLiteral(elt)) {
-        return false;
-      }
-
-      if (!emitTree(elt)) {
-        
-        return false;
-      }
-
-      if (!emit1(JSOp::AddTupleElement)) {
-        
-        return false;
-      }
-    }
-  }
-
-  if (!emit1(JSOp::FinishTuple)) {
-    
-    return false;
-  }
-
-  return true;
-}
-#endif
-
 static inline JSOp UnaryOpParseNodeKindToJSOp(ParseNodeKind pnk) {
   switch (pnk) {
     case ParseNodeKind::ThrowStmt:
@@ -11696,15 +11569,7 @@ bool BytecodeEmitter::tryEmitTypeofEq(ListNode* node, bool* emitted) {
     type = JSTYPE_SYMBOL;
   } else if (typeName == TaggedParserAtomIndex::WellKnown::bigint()) {
     type = JSTYPE_BIGINT;
-  }
-#ifdef ENABLE_RECORD_TUPLE
-  else if (typeName == TaggedParserAtomIndex::WellKnown::record()) {
-    type = JSTYPE_RECORD;
-  } else if (typeName == TaggedParserAtomIndex::WellKnown::tuple()) {
-    type = JSTYPE_TUPLE;
-  }
-#endif
-  else {
+  } else {
     *emitted = false;
     return true;
   }
@@ -13054,20 +12919,6 @@ bool BytecodeEmitter::emitTree(
         return false;
       }
       break;
-
-#ifdef ENABLE_RECORD_TUPLE
-    case ParseNodeKind::RecordExpr:
-      if (!emitRecordLiteral(&pn->as<ListNode>())) {
-        return false;
-      }
-      break;
-
-    case ParseNodeKind::TupleExpr:
-      if (!emitTupleLiteral(&pn->as<ListNode>())) {
-        return false;
-      }
-      break;
-#endif
 
     case ParseNodeKind::PropertyNameExpr:
     case ParseNodeKind::PosHolder:

@@ -70,10 +70,8 @@
   MACRO(TripleDot, "'...'") /* rest arguments and spread operator */   \
   MACRO(OptionalChain, "'?.'")                                         \
   MACRO(LeftBracket, "'['")                                            \
-  IF_RECORD_TUPLE(MACRO(HashBracket, "'#['"))                          \
   MACRO(RightBracket, "']'")                                           \
   MACRO(LeftCurly, "'{'")                                              \
-  IF_RECORD_TUPLE(MACRO(HashCurly, "'#{'"))                            \
   MACRO(RightCurly, "'}'")                                             \
   MACRO(LeftParen, "'('")                                              \
   MACRO(RightParen, "')'")                                             \

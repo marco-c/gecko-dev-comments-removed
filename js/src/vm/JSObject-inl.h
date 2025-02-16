@@ -19,23 +19,12 @@
 #include "vm/Probes.h"
 #include "vm/PropertyResult.h"
 #include "vm/TypedArrayObject.h"
-
-#ifdef ENABLE_RECORD_TUPLE
-#  include "vm/TupleType.h"
-#endif
-
 #include "gc/BufferAllocator-inl.h"
 #include "gc/GCContext-inl.h"
 #include "gc/ObjectKind-inl.h"
 #include "vm/ObjectOperations-inl.h"  
 
 namespace js {
-
-#ifdef ENABLE_RECORD_TUPLE
-
-
-extern bool IsExtendedPrimitiveWrapper(const JSObject& obj);
-#endif
 
 
 
@@ -135,7 +124,7 @@ inline bool JSObject::setQualifiedVarObj(
 }
 
 inline bool JSObject::canHaveFixedElements() const {
-  return (is<js::ArrayObject>() || IF_RECORD_TUPLE(is<js::TupleType>(), false));
+  return is<js::ArrayObject>();
 }
 
 namespace js {
@@ -214,11 +203,6 @@ inline js::GlobalObject& JSObject::nonCCWGlobal() const {
 inline bool JSObject::nonProxyIsExtensible() const {
   MOZ_ASSERT(!uninlinedIsProxyObject());
 
-#ifdef ENABLE_RECORD_TUPLE
-  if (js::IsExtendedPrimitiveWrapper(*this)) {
-    return false;
-  }
-#endif
   
   return !hasFlag(js::ObjectFlag::NotExtensible);
 }

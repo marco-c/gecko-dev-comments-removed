@@ -38,12 +38,6 @@ namespace gc {
 class TenuringTracer;
 }  
 
-#ifdef ENABLE_RECORD_TUPLE
-
-
-extern bool IsExtendedPrimitiveWrapper(const JSObject& obj);
-#endif
-
 
 
 
@@ -205,13 +199,6 @@ class ObjectElements {
     
     NONWRITABLE_ARRAY_LENGTH = 0x2,
 
-#ifdef ENABLE_RECORD_TUPLE
-    
-    
-    
-    TUPLE_IS_ATOMIZED = 0x4,
-#endif
-
     
     
     
@@ -260,9 +247,6 @@ class ObjectElements {
   friend class ArrayObject;
   friend class NativeObject;
   friend class gc::TenuringTracer;
-#ifdef ENABLE_RECORD_TUPLE
-  friend class TupleType;
-#endif
 
   friend bool js::SetIntegrityLevel(JSContext* cx, HandleObject obj,
                                     IntegrityLevel level);
@@ -296,12 +280,6 @@ class ObjectElements {
     MOZ_ASSERT(numShiftedElements() == 0);
     flags |= NONWRITABLE_ARRAY_LENGTH;
   }
-
-#ifdef ENABLE_RECORD_TUPLE
-  void setTupleIsAtomized() { flags |= TUPLE_IS_ATOMIZED; }
-
-  bool tupleIsAtomized() const { return flags & TUPLE_IS_ATOMIZED; }
-#endif
 
   void addShiftedElements(uint32_t count) {
     MOZ_ASSERT(count < capacity);
@@ -948,14 +926,7 @@ class NativeObject : public JSObject {
   
   bool nonProxyIsExtensible() const = delete;
 
-  bool isExtensible() const {
-#ifdef ENABLE_RECORD_TUPLE
-    if (IsExtendedPrimitiveWrapper(*this)) {
-      return false;
-    }
-#endif
-    return !hasFlag(ObjectFlag::NotExtensible);
-  }
+  bool isExtensible() const { return !hasFlag(ObjectFlag::NotExtensible); }
 
   
 

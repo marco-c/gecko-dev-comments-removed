@@ -32,12 +32,6 @@
 #include "vm/Realm-inl.h"
 #include "vm/Shape-inl.h"
 
-#ifdef ENABLE_RECORD_TUPLE
-
-
-extern bool js::IsExtendedPrimitive(const JSObject& obj);
-#endif
-
 namespace js {
 
 constexpr ObjectSlots::ObjectSlots(uint32_t capacity,
@@ -721,9 +715,6 @@ static MOZ_ALWAYS_INLINE bool NativeLookupOwnPropertyInline(
   
   MOZ_ASSERT_IF(obj->getOpsLookupProperty(),
                 obj->template is<ModuleEnvironmentObject>());
-#ifdef ENABLE_RECORD_TUPLE
-  MOZ_ASSERT(!js::IsExtendedPrimitive(*obj));
-#endif
 
   
   if (id.isInt()) {
