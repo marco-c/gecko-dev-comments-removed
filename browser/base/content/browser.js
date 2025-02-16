@@ -6644,6 +6644,13 @@ var gDialogBox = {
     window.focus();
 
     try {
+      
+      gURLBar.incrementBreakoutBlockerCount();
+    } catch (ex) {
+      console.error(ex);
+    }
+
+    try {
       await this._open(uri, args);
     } catch (ex) {
       console.error(ex);
@@ -6666,6 +6673,8 @@ var gDialogBox = {
       this._updateMenuAndCommandState(true );
       this._dialog = null;
       UpdatePopupNotificationsVisibility();
+      
+      gURLBar.decrementBreakoutBlockerCount();
     }
     if (this._queued.length) {
       setTimeout(() => this._openNextDialog(), 0);
