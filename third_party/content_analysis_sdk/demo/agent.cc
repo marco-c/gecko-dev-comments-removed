@@ -34,6 +34,7 @@ static std::string modeStr;
 
 
 constexpr const char* kArgDelaySpecific = "--delays=";
+constexpr const char* kArgDelayMsSpecific = "--delaysMs=";
 constexpr const char* kArgPath = "--path=";
 constexpr const char* kArgQueued = "--queued";
 constexpr const char* kArgThreads = "--threads=";
@@ -80,23 +81,22 @@ bool ParseCommandLine(int argc, char* argv[]) {
       }
       path = kPathUser;
       user_specific = true;
-    } else if (arg.find(kArgDelaySpecific) == 0) {
-      std::string delaysStr = arg.substr(strlen(kArgDelaySpecific));
+    } else if ((arg.find(kArgDelaySpecific) == 0) ||
+               (arg.find(kArgDelayMsSpecific) == 0)) {
+      bool isSecs = (arg.find(kArgDelaySpecific) == 0);
+      std::string delaysStr = arg.substr(strlen(isSecs ? kArgDelaySpecific : kArgDelayMsSpecific));
+      unsigned long scale = isSecs ? 1000 : 1;
       delays.clear();
       size_t posStart = 0, posEnd;
       unsigned long delay;
       while ((posEnd = delaysStr.find(',', posStart)) != std::string::npos) {
         delay = std::stoul(delaysStr.substr(posStart, posEnd - posStart));
-        if (delay > 30) {
-            delay = 30;
-        }
+        delay = std::min(delay*scale, 30*1000ul);
         delays.push_back(delay);
         posStart = posEnd + 1;
       }
       delay = std::stoul(delaysStr.substr(posStart));
-      if (delay > 30) {
-          delay = 30;
-      }
+      delay = std::min(delay*scale, 30*1000ul);
       delays.push_back(delay);
     } else if (arg.find(kArgPath) == 0) {
       path = arg.substr(strlen(kArgPath));
@@ -132,6 +132,7 @@ void PrintHelp() {
     << "Data containing the string 'block' blocks the request data from being used." << std::endl
     << std::endl << "Options:"  << std::endl
     << kArgDelaySpecific << "<delay1,delay2,...> : Add delays to request processing in seconds. Delays are limited to 30 seconds and are applied round-robin to requests. Default is 0." << std::endl
+    << kArgDelayMsSpecific << "<delay1,delay2,...> : Like --delays but takes durations in milliseconds." << std::endl
     << kArgPath << " <path> : Used the specified path instead of default. Must come after --user." << std::endl
     << kArgQueued << " : Queue requests for processing in a background thread" << std::endl
     << kArgThreads << " : When queued, number of threads in the request processing thread pool" << std::endl
