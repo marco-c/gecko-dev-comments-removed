@@ -57,7 +57,8 @@ bool ExtendBufferMapping(void* dataStart, size_t mappedSize,
 
 
 
-void UnmapBufferMemory(wasm::AddressType t, void* dataStart, size_t mappedSize);
+void UnmapBufferMemory(wasm::AddressType t, void* dataStart, size_t mappedSize,
+                       size_t committedSize);
 
 
 uint64_t WasmReservedBytes();

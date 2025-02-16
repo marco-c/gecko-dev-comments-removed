@@ -893,6 +893,16 @@ static MOZ_ALWAYS_INLINE bool EdgeNeedsSweepUnbarriered(JSObject** objp) {
   return EdgeNeedsSweepUnbarrieredSlow(objp);
 }
 
+
+
+
+
+struct ProfilerMemoryCounts {
+  size_t bytes = 0;
+  uint64_t operations = 0;
+};
+JS_PUBLIC_API ProfilerMemoryCounts GetProfilerMemoryCounts();
+
 }  
 }  
 
