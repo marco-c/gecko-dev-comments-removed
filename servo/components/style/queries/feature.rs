@@ -6,6 +6,7 @@
 
 use crate::parser::ParserContext;
 use crate::values::computed::{self, CSSPixelLength, Ratio, Resolution};
+use crate::values::AtomString;
 use crate::Atom;
 use cssparser::Parser;
 use selectors::kleene_value::KleeneValue;
@@ -44,6 +45,7 @@ pub enum Evaluator {
     OptionalNumberRatio(QueryFeatureGetter<Option<Ratio>>),
     
     Resolution(QueryFeatureGetter<Resolution>),
+    String(fn(&computed::Context, Option<&AtomString>) -> KleeneValue),
     
     Enumerated {
         
