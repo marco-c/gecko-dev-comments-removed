@@ -393,6 +393,96 @@ where
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn insert_before(&mut self, index: usize, value: T) -> (usize, bool) {
+        let (index, existing) = self.map.insert_before(index, value, ());
+        (index, existing.is_none())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn shift_insert(&mut self, index: usize, value: T) -> bool {
         self.map.shift_insert(index, value, ()).is_none()
     }
@@ -500,6 +590,36 @@ where
         I: IntoIterator<Item = T>,
     {
         Splice::new(self, range, replace_with.into_iter())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn append<S2>(&mut self, other: &mut IndexSet<T, S2>) {
+        self.map.append(&mut other.map);
     }
 }
 
@@ -678,6 +798,7 @@ impl<T, S> IndexSet<T, S> {
     
     
     
+    #[doc(alias = "pop_last")] 
     pub fn pop(&mut self) -> Option<T> {
         self.map.pop().map(|(x, ())| x)
     }

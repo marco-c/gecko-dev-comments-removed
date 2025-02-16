@@ -16,8 +16,9 @@ mod tests;
 pub use self::core::raw_entry_v1::{self, RawEntryApiV1};
 pub use self::core::{Entry, IndexedEntry, OccupiedEntry, VacantEntry};
 pub use self::iter::{
-    Drain, IntoIter, IntoKeys, IntoValues, Iter, IterMut, Keys, Splice, Values, ValuesMut,
+    Drain, IntoIter, IntoKeys, IntoValues, Iter, IterMut, IterMut2, Keys, Splice, Values, ValuesMut,
 };
+pub use self::mutable::MutableEntryKey;
 pub use self::mutable::MutableKeys;
 pub use self::slice::Slice;
 
@@ -440,7 +441,7 @@ where
     {
         match self.binary_search_keys(&key) {
             Ok(i) => (i, Some(mem::replace(&mut self[i], value))),
-            Err(i) => (i, self.shift_insert(i, key, value)),
+            Err(i) => self.insert_before(i, key, value),
         }
     }
 
@@ -459,14 +460,128 @@ where
     
     
     
-    pub fn shift_insert(&mut self, index: usize, key: K, value: V) -> Option<V> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn insert_before(&mut self, mut index: usize, key: K, value: V) -> (usize, Option<V>) {
+        assert!(index <= self.len(), "index out of bounds");
         match self.entry(key) {
             Entry::Occupied(mut entry) => {
+                if index > entry.index() {
+                    
+                    
+                    
+                    index -= 1;
+                }
+                let old = mem::replace(entry.get_mut(), value);
+                entry.move_index(index);
+                (index, Some(old))
+            }
+            Entry::Vacant(entry) => {
+                entry.shift_insert(index, value);
+                (index, None)
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn shift_insert(&mut self, index: usize, key: K, value: V) -> Option<V> {
+        let len = self.len();
+        match self.entry(key) {
+            Entry::Occupied(mut entry) => {
+                assert!(index < len, "index out of bounds");
                 let old = mem::replace(entry.get_mut(), value);
                 entry.move_index(index);
                 Some(old)
             }
             Entry::Vacant(entry) => {
+                assert!(index <= len, "index out of bounds");
                 entry.shift_insert(index, value);
                 None
             }
@@ -518,6 +633,35 @@ where
         I: IntoIterator<Item = (K, V)>,
     {
         Splice::new(self, range, replace_with.into_iter())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn append<S2>(&mut self, other: &mut IndexMap<K, V, S2>) {
+        self.extend(other.drain(..));
     }
 }
 
@@ -791,6 +935,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     
     
     
+    #[doc(alias = "pop_last")] 
     pub fn pop(&mut self) -> Option<(K, V)> {
         self.core.pop()
     }
@@ -1057,6 +1202,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     
     
     
+    #[doc(alias = "first_key_value")] 
     pub fn first(&self) -> Option<(&K, &V)> {
         self.as_entries().first().map(Bucket::refs)
     }
@@ -1071,6 +1217,14 @@ impl<K, V, S> IndexMap<K, V, S> {
     
     
     
+    pub fn first_entry(&mut self) -> Option<IndexedEntry<'_, K, V>> {
+        self.get_index_entry(0)
+    }
+
+    
+    
+    
+    #[doc(alias = "last_key_value")] 
     pub fn last(&self) -> Option<(&K, &V)> {
         self.as_entries().last().map(Bucket::refs)
     }
@@ -1080,6 +1234,13 @@ impl<K, V, S> IndexMap<K, V, S> {
     
     pub fn last_mut(&mut self) -> Option<(&K, &mut V)> {
         self.as_entries_mut().last_mut().map(Bucket::ref_mut)
+    }
+
+    
+    
+    
+    pub fn last_entry(&mut self) -> Option<IndexedEntry<'_, K, V>> {
+        self.get_index_entry(self.len().checked_sub(1)?)
     }
 
     

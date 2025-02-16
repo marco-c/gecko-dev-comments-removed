@@ -84,13 +84,16 @@ impl<K, V> IndexMapCore<K, V> {
         let eq = move |&i: &usize| is_match(&entries[i].key);
         match self.indices.find(hash.get(), eq) {
             
-            
-            Some(raw_bucket) => Ok(RawTableEntry {
-                map: self,
-                raw_bucket,
-            }),
+            Some(raw_bucket) => Ok(unsafe { RawTableEntry::new(self, raw_bucket) }),
             None => Err(self),
         }
+    }
+
+    pub(super) fn index_raw_entry(&mut self, index: usize) -> Option<RawTableEntry<'_, K, V>> {
+        let hash = self.entries.get(index)?.hash;
+        let raw_bucket = self.indices.find(hash.get(), move |&i| i == index)?;
+        
+        Some(unsafe { RawTableEntry::new(self, raw_bucket) })
     }
 
     pub(super) fn indices_mut(&mut self) -> impl Iterator<Item = &mut usize> {
@@ -113,6 +116,13 @@ pub(super) struct RawTableEntry<'a, K, V> {
 unsafe impl<K: Sync, V: Sync> Sync for RawTableEntry<'_, K, V> {}
 
 impl<'a, K, V> RawTableEntry<'a, K, V> {
+    
+    
+    #[inline]
+    unsafe fn new(map: &'a mut IndexMapCore<K, V>, raw_bucket: RawBucket) -> Self {
+        Self { map, raw_bucket }
+    }
+
     
     #[inline]
     pub(super) fn index(&self) -> usize {
@@ -146,6 +156,7 @@ impl<'a, K, V> RawTableEntry<'a, K, V> {
     }
 
     
+    #[inline]
     pub(super) fn into_inner(self) -> (&'a mut IndexMapCore<K, V>, usize) {
         let index = self.index();
         (self.map, index)

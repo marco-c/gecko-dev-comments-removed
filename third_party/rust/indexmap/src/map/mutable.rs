@@ -1,6 +1,9 @@
 use core::hash::{BuildHasher, Hash};
 
-use super::{Bucket, Entries, Equivalent, IndexMap};
+use super::{
+    Bucket, Entries, Entry, Equivalent, IndexMap, IndexedEntry, IterMut2, OccupiedEntry,
+    VacantEntry,
+};
 
 
 
@@ -33,6 +36,9 @@ pub trait MutableKeys: private::Sealed {
     
     
     fn get_index_mut2(&mut self, index: usize) -> Option<(&mut Self::Key, &mut Self::Value)>;
+
+    
+    fn iter_mut2(&mut self) -> IterMut2<'_, Self::Key, Self::Value>;
 
     
     
@@ -72,6 +78,10 @@ where
         self.as_entries_mut().get_mut(index).map(Bucket::muts)
     }
 
+    fn iter_mut2(&mut self) -> IterMut2<'_, Self::Key, Self::Value> {
+        IterMut2::new(self.as_entries_mut())
+    }
+
     fn retain2<F>(&mut self, keep: F)
     where
         F: FnMut(&mut K, &mut V) -> bool,
@@ -80,8 +90,77 @@ where
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait MutableEntryKey: private::Sealed {
+    type Key;
+
+    
+    
+    fn key_mut(&mut self) -> &mut Self::Key;
+}
+
+
+
+
+impl<K, V> MutableEntryKey for Entry<'_, K, V> {
+    type Key = K;
+    fn key_mut(&mut self) -> &mut Self::Key {
+        match self {
+            Entry::Occupied(e) => e.key_mut(),
+            Entry::Vacant(e) => e.key_mut(),
+        }
+    }
+}
+
+
+
+
+impl<K, V> MutableEntryKey for OccupiedEntry<'_, K, V> {
+    type Key = K;
+    fn key_mut(&mut self) -> &mut Self::Key {
+        self.key_mut()
+    }
+}
+
+
+
+
+impl<K, V> MutableEntryKey for VacantEntry<'_, K, V> {
+    type Key = K;
+    fn key_mut(&mut self) -> &mut Self::Key {
+        self.key_mut()
+    }
+}
+
+
+
+
+impl<K, V> MutableEntryKey for IndexedEntry<'_, K, V> {
+    type Key = K;
+    fn key_mut(&mut self) -> &mut Self::Key {
+        self.key_mut()
+    }
+}
+
 mod private {
     pub trait Sealed {}
 
     impl<K, V, S> Sealed for super::IndexMap<K, V, S> {}
+    impl<K, V> Sealed for super::Entry<'_, K, V> {}
+    impl<K, V> Sealed for super::OccupiedEntry<'_, K, V> {}
+    impl<K, V> Sealed for super::VacantEntry<'_, K, V> {}
+    impl<K, V> Sealed for super::IndexedEntry<'_, K, V> {}
 }
