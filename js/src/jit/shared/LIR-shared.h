@@ -338,13 +338,6 @@ class LCallDOMNative : public LJSCallInstructionHelper<BOX_PIECES, 0, 4> {
   const LDefinition* getArgArgs() { return getTemp(3); }
 };
 
-class LUnreachable : public LControlInstructionHelper<0, 0, 0> {
- public:
-  LIR_HEADER(Unreachable)
-
-  LUnreachable() : LControlInstructionHelper(classOpcode) {}
-};
-
 
 
 class LApplyArgsGeneric
