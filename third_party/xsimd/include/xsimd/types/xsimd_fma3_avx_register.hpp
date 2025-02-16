@@ -1,13 +1,13 @@
-/***************************************************************************
- * Copyright (c) Johan Mabille, Sylvain Corlay, Wolf Vollprecht and         *
- * Martin Renou                                                             *
- * Copyright (c) QuantStack                                                 *
- * Copyright (c) Serge Guelton                                              *
- *                                                                          *
- * Distributed under the terms of the BSD 3-Clause License.                 *
- *                                                                          *
- * The full license is in the file LICENSE, distributed with this software. *
- ****************************************************************************/
+
+
+
+
+
+
+
+
+
+
 
 #ifndef XSIMD_FMA3_AVX_REGISTER_HPP
 #define XSIMD_FMA3_AVX_REGISTER_HPP
@@ -19,11 +19,11 @@ namespace xsimd
     template <typename arch>
     struct fma3;
 
-    /**
-     * @ingroup architectures
-     *
-     * AVX + FMA instructions
-     */
+    
+
+
+
+
     template <>
     struct fma3<avx> : avx
     {
@@ -33,6 +33,11 @@ namespace xsimd
     };
 
 #if XSIMD_WITH_FMA3_AVX
+
+#if !XSIMD_WITH_AVX
+#error "architecture inconsistency: fma3+avx requires avx"
+#endif
+
     namespace types
     {
 
