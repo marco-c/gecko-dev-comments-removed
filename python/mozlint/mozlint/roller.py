@@ -271,6 +271,9 @@ class LintRoller(object):
         if "fix" in self.lintargs and self.lintargs["fix"]:
             return False
 
+        if self.lintargs.get("stdin_filename"):
+            return False
+
         
         return any(
             os.path.isfile(p) and mozpath.match(p, pattern)

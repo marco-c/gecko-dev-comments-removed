@@ -30,9 +30,20 @@ class BaseType(object):
                          the definition, but passed in by a consumer.
         :returns: A list of :class:`~result.Issue` objects.
         """
+        orig_paths = None
         log = lintargs["log"]
 
         if lintargs.get("use_filters", True):
+            
+            
+            
+            
+            
+            
+            if lintargs.get("stdin_filename"):
+                orig_paths = paths[:]
+                paths = [lintargs["stdin_filename"]]
+
             paths, exclude = filterpaths(
                 lintargs["root"],
                 paths,
@@ -47,6 +58,9 @@ class BaseType(object):
 
         if not paths:
             return {"results": [], "fixed": 0}
+
+        if orig_paths:
+            paths = orig_paths
 
         log.debug(
             "Passing the following paths:\n{paths}".format(
