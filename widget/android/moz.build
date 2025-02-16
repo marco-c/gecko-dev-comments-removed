@@ -12,7 +12,6 @@ with Files("*CompositorWidget*"):
     BUG_COMPONENT = ("Core", "Graphics")
 
 DIRS += [
-    "bindings",
     "jni",
 ]
 
@@ -160,20 +159,46 @@ include("/ipc/chromium/chromium-config.mozbuild")
 
 
 
+generated_bindings = [
+    "AccessibilityEvent",
+    "AndroidBuild",
+    "AndroidDragEvent",
+    "AndroidGraphics",
+    "AndroidInputType",
+    "AndroidProcess",
+    "AndroidRect",
+    "InetAddress",
+    "JavaBuiltins",
+    "JavaExceptions",
+    "KeyEvent",
+    "MediaCodec",
+    "MotionEvent",
+    "SurfaceTexture",
+    "ViewConfiguration",
+]
+
+SOURCES += ["!bindings/%s.cpp" % stem for stem in generated_bindings]
+
+EXPORTS += ["!bindings/%s.h" % stem for stem in generated_bindings]
+
+
+
 
 
 
 t = tuple(
-    ["generated_jni_wrappers"]
+    ["generated_geckoview_files"]
     + natives_from_WrapForJNI
     + sources_from_WrapForJNI
     + wrappers_from_WrapForJNI
+    + ["bindings/%s.cpp" % stem for stem in generated_bindings]
+    + ["bindings/%s.h" % stem for stem in generated_bindings]
 )
 
 GeneratedFile(
     *t,
     script="/mobile/android/gradle.py",
-    entry_point="generate_generated_jni_wrappers"
+    inputs=["bindings/%s-classes.txt" % stem for stem in generated_bindings]
 )
 
 FINAL_LIBRARY = "xul"

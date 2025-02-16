@@ -1,59 +1,59 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.gecko.annotationProcessors;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Generate C++ bindings for SDK classes using a config file.
+ *
+ * <p>java SDKProcessor <sdkjar> <max-sdk-version> <outdir> [<configfile> <fileprefix>]+
+ *
+ * <p><sdkjar>: jar file containing the SDK classes (e.g. android.jar) <max-sdk-version>: SDK
+ * version for generated class members (bindings will not be generated for members with SDK versions
+ * higher than max-sdk-version) <outdir>: output directory for generated binding files <configfile>:
+ * config file for generating bindings <fileprefix>: prefix used for generated binding files
+ *
+ * <p>Each config file is a text file following the .ini format:
+ *
+ * <p>; comment [section1] property = value
+ *
+ * <p># comment [section2] property = value
+ *
+ * <p>Each section specifies a qualified SDK class. Each property specifies a member of that class.
+ * The class and/or the property may specify options found in the WrapForJNI annotation. For
+ * example,
+ *
+ * <p># Generate bindings for Bundle using default options: [android.os.Bundle]
+ *
+ * <p># Generate bindings for Bundle using class options: [android.os.Bundle =
+ * exceptionMode:nsresult]
+ *
+ * <p># Generate bindings for Bundle using method options: [android.os.Bundle] putInt =
+ * stubName:PutInteger
+ *
+ * <p># Generate bindings for Bundle using class options with method override: # (note that all
+ * options are overriden at the same time.) [android.os.Bundle = exceptionMode:nsresult] # putInt
+ * will have stubName "PutInteger", and exceptionMode of "abort" putInt = stubName:PutInteger #
+ * putChar will have stubName "PutCharacter", and exceptionMode of "nsresult" putChar =
+ * stubName:PutCharacter, exceptionMode:nsresult
+ *
+ * <p># Overloded methods can be specified using its signature [android.os.Bundle] # Skip the copy
+ * constructor <init>(Landroid/os/Bundle;)V = skip:true
+ *
+ * <p># Generic member types can be specified [android.view.KeyEvent = skip:true] # Skip everything
+ * except fields <field> = skip:false
+ *
+ * <p># Skip everything except putInt and putChar [android.os.Bundle = skip:true] putInt =
+ * skip:false putChar =
+ *
+ * <p># Avoid conflicts in native bindings [android.os.Bundle] # Bundle(PersistableBundle) native
+ * binding can conflict with Bundle(ClassLoader) <init>(Landroid/os/PersistableBundle;)V =
+ * stubName:NewFromPersistableBundle
+ *
+ * <p># Generate a getter instead of a literal for certain runtime constants
+ * [android.os.Build$VERSION = skip:true] SDK_INT = noLiteral:true
+ */
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.checks.ApiLookup;
 import com.android.tools.lint.client.api.LintClient;
@@ -100,11 +100,11 @@ public class SDKProcessor {
   private static class ClassInfo {
     public final String name;
 
-    
+    // Map constructor/field/method signature to a set of annotation values.
     private final HashMap<String, String> mAnnotations = new HashMap<>();
-    
+    // Default set of annotation values to use.
     private final String mDefaultAnnotation;
-    
+    // List of nested classes to forward declare.
     private final ArrayList<Class<?>> mNestedClasses;
 
     public ClassInfo(final String text) {
@@ -142,18 +142,18 @@ public class SDKProcessor {
           mAnnotations.get(
               name + (member instanceof Field ? ":" : "") + Utils.getSignature(member));
       if (annotation == null) {
-        
+        // Match name without signature
         annotation = mAnnotations.get(name);
       }
       if (annotation == null) {
-        
+        // Match <constructor>, <field>, <method>
         annotation =
             mAnnotations.get(
                 "<" + member.getClass().getSimpleName().toLowerCase(Locale.ROOT) + '>');
         isGeneric = true;
       }
       if (annotation == null) {
-        
+        // Fallback on class options, if any.
         annotation = mDefaultAnnotation;
       }
       if (annotation == null || annotation.isEmpty()) {
@@ -171,13 +171,13 @@ public class SDKProcessor {
         switch (pairName) {
           case "skip":
             if (Boolean.valueOf(pairValue)) {
-              
+              // Return null to signal skipping current method.
               return null;
             }
             break;
           case "stubName":
             if (isGeneric) {
-              
+              // Prevent specifying stubName for class options.
               throw new ParseException("stubName doesn't make sense here: " + pairValue);
             }
             stubName = pairValue;
@@ -203,7 +203,7 @@ public class SDKProcessor {
   }
 
   public static void main(String[] args) throws Exception {
-    
+    // We expect a list of jars on the commandline. If missing, whinge about it.
     if (args.length < 3 || args.length % 2 != 1) {
       System.err.println(
           "Usage: java SDKProcessor sdkjar max-sdk-version outdir [configfile fileprefix]*");
@@ -224,12 +224,12 @@ public class SDKProcessor {
       final String generatedFilePrefix = args[argIndex + 1];
       System.out.println("Processing bindings from " + configFile);
 
-      
+      // Start the clock!
       long s = System.currentTimeMillis();
 
-      
-      
-      
+      // Get an iterator over the classes in the jar files given...
+      // Iterator<ClassWithOptions> jarClassIterator =
+      // IterableJarLoadingURLClassLoader.getIteratorOverJars(args);
 
       StringBuilder headerFile = new StringBuilder(GENERATED_COMMENT);
       headerFile.append(
@@ -259,7 +259,7 @@ public class SDKProcessor {
               + "namespace sdk {\n"
               + "\n");
 
-      
+      // Used to track the calls to the various class-specific initialisation functions.
       ClassLoader loader = null;
       try {
         loader =
@@ -336,12 +336,12 @@ public class SDKProcessor {
     ArrayList<Member> list = new ArrayList<>();
     for (final Member m : members) {
       if (m.getDeclaringClass() == Object.class) {
-        
+        // Skip methods from Object.
         continue;
       }
 
-      
-      
+      // Sometimes (e.g. Bundle) has methods that moved to/from a superclass in a later SDK
+      // version, so we check for both classes and see if we can find a minimum SDK version.
       int version = getAPIVersion(cls, m);
       final int version2 = getAPIVersion(m.getDeclaringClass(), m);
       if (version2 > 0 && version2 < version) {
@@ -360,13 +360,13 @@ public class SDKProcessor {
         continue;
       }
 
-      
-      
-      
+      // Sometimes (e.g. KeyEvent) a field can appear in both a class and a superclass. In
+      // that case we want to filter out the version that appears in the superclass, or
+      // we'll have bindings with duplicate names.
       try {
         if (m instanceof Field && !m.equals(cls.getField(m.getName()))) {
-          
-          
+          // m is a field in a superclass that has been hidden by
+          // a field with the same name in a subclass.
           System.out.println(
               "Skipping " + Utils.getMemberName(m) + " from " + m.getDeclaringClass().getName());
           continue;
@@ -387,10 +387,10 @@ public class SDKProcessor {
         continue;
       }
 
-      
+      // Default for SDK bindings.
       final AnnotationInfo info = clsInfo.getAnnotationInfo(m);
       if (info == null) {
-        
+        // Skip this member.
         continue;
       }
       final AnnotatableEntity entity = new AnnotatableEntity(m, info);
@@ -423,9 +423,9 @@ public class SDKProcessor {
     String generatedName = getGeneratedName(clazz);
 
     CodeGenerator generator =
-        new CodeGenerator(new ClassWithOptions(clazz, generatedName,  ""));
+        new CodeGenerator(new ClassWithOptions(clazz, generatedName, /* ifdef */ ""));
 
-    
+    // Forward declaration for nested classes
     ClassWithOptions[] nestedClasses =
         clsInfo.mNestedClasses.stream()
             .map(
@@ -457,10 +457,10 @@ public class SDKProcessor {
       switch (line.charAt(0)) {
         case ';':
         case '#':
-          
+          // Comment
           continue;
         case '[':
-          
+          // New section
           if (line.charAt(line.length() - 1) != ']') {
             throw new ParseException("Missing trailing ']': " + line);
           }
@@ -468,7 +468,7 @@ public class SDKProcessor {
           classes.add(currentClass);
           break;
         default:
-          
+          // New mapping
           if (currentClass == null) {
             throw new ParseException("Missing class: " + line);
           }
@@ -494,11 +494,11 @@ public class SDKProcessor {
     }
   }
 
-  
-
-
-
-
+  /**
+   * For each nested class we wish to generate bindings for, this ensures that the generated binding
+   * for its outer class (recursively, until we reach a top-level class) will contain a forward
+   * declaration of the nested class.
+   */
   private static ClassInfo[] addNestedClassForwardDeclarations(
       final ClassInfo[] classes, final ClassLoader loader) throws ClassNotFoundException {
     final HashMap<String, ClassInfo> classMap = new HashMap<>();
@@ -512,23 +512,23 @@ public class SDKProcessor {
         Class<?> outerClass = innerClass.getDeclaringClass();
         ClassInfo outerClassInfo = classMap.get(outerClass.getName());
         if (outerClassInfo == null) {
-          
-          
-          
-          
+          // If there isn't already a ClassInfo object for the outer class then we must insert one.
+          // This ensures that we actually generate a declaration for the outer class, in which we
+          // can forward-declare the inner class. "skip:true" ensures we do not generate bindings
+          // for the outer class' member's, as we simply want to forward declare the inner class.
           outerClassInfo = new ClassInfo(String.format("%s = skip:true", outerClass.getName()));
           classMap.put(outerClass.getName(), outerClassInfo);
         }
-        
-        
+        // Add the inner class to the outer class' mNestedClasses, ensuring the outer class'
+        // generated code will forward-declare the inner class.
         outerClassInfo.mNestedClasses.add(innerClass);
 
         innerClass = outerClass;
       }
     }
 
-    
-    
+    // Sort to ensure we generate the classes in a deterministic order, and that outer classes are
+    // declared before nested classes.
     return classMap.values().stream()
         .sorted((a, b) -> a.name.compareTo(b.name))
         .toArray(ClassInfo[]::new);
@@ -540,6 +540,8 @@ public class SDKProcessor {
       StringBuilder aHeaderFile,
       StringBuilder aImplementationFile) {
     FileOutputStream implStream = null;
+    File f = new File(aOutputDir);
+    f.mkdirs(); // Shouldn't throw.  If it fails, we'll error out just below.
     try {
       implStream = new FileOutputStream(new File(aOutputDir, aPrefix + ".cpp"));
       implStream.write(aImplementationFile.toString().getBytes());
