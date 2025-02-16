@@ -678,10 +678,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("privacy.globalprivacycontrol.pbmode.enabled", true);
    final Pref<Boolean> mGlobalPrivacyControlFunctionalityEnabled =
       new Pref<Boolean>("privacy.globalprivacycontrol.functionality.enabled", true);
-   final PrefWithoutDefault<Boolean> mFingerprintingProtection =
-      new PrefWithoutDefault<Boolean>("privacy.fingerprintingProtection");
-   final PrefWithoutDefault<Boolean> mFingerprintingProtectionPrivateMode =
-      new PrefWithoutDefault<Boolean>("privacy.fingerprintingProtection.pbmode");
+   final Pref<Boolean> mFingerprintingProtection =
+      new Pref<Boolean>("privacy.fingerprintingProtection", false);
+   final Pref<Boolean> mFingerprintingProtectionPrivateMode =
+      new Pref<Boolean>("privacy.fingerprintingProtection.pbmode", true);
    final PrefWithoutDefault<String> mFingerprintingProtectionOverrides =
       new PrefWithoutDefault<>("privacy.fingerprintingProtection.overrides");
    final Pref<Boolean> mFdlibmMathEnabled =
@@ -891,8 +891,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-  public @Nullable boolean getFingerprintingProtection() {
-
+  public boolean getFingerprintingProtection() {
     return mFingerprintingProtection.get();
   }
 
@@ -901,7 +900,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-  public @Nullable boolean getFingerprintingProtectionPrivateBrowsing() {
+  public boolean getFingerprintingProtectionPrivateBrowsing() {
     return mFingerprintingProtectionPrivateMode.get();
   }
 
