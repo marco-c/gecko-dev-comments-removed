@@ -64,9 +64,12 @@ let mockCA = {
     );
   },
 
-  analyzeContentRequest(aRequest, aAutoAcknowledge) {
+  analyzeContentRequests(aRequests, aAutoAcknowledge) {
     
-    return this.realCAService.analyzeContentRequest(aRequest, aAutoAcknowledge);
+    return this.realCAService.analyzeContentRequests(
+      aRequests,
+      aAutoAcknowledge
+    );
   },
 
   showBlockedRequestDialog(aRequest) {

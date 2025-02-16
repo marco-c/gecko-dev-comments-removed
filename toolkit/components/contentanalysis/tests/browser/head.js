@@ -166,33 +166,32 @@ function makeMockContentAnalysis() {
         autoAcknowledge
       );
     },
-    analyzeContentRequest(request, autoAcknowledge) {
-      return this.realCAService.analyzeContentRequest(request, autoAcknowledge);
-    },
     analyzeContentRequestsCallback(requests, autoAcknowledge, callback) {
-      this.realCAService.analyzeContentRequestsCallback(
-        requests,
-        autoAcknowledge,
-        callback
-      );
-    },
-    analyzeContentRequestCallback(request, autoAcknowledge, callback) {
       if (this.errorValue) {
+        if (requests.length != 1) {
+          
+          
+          is(
+            requests.length,
+            1,
+            "Test framework doesn't support throwing an exception from a multipart request"
+          );
+        }
         
         
         
         
         
         
-        request.userActionId = "user-action-for-error";
-        request.userActionRequestsCount = 1;
-        request.requestToken = "request-token-for-error";
-        this.calls.push(request);
+        requests[0].userActionId = "user-action-for-error";
+        requests[0].userActionRequestsCount = 1;
+        requests[0].requestToken = "request-token-for-error";
+        this.calls.push(requests[0]);
         callback.error(this.errorValue);
         throw this.errorValue;
       }
-      this.realCAService.analyzeContentRequestCallback(
-        request,
+      this.realCAService.analyzeContentRequestsCallback(
+        requests,
         autoAcknowledge,
         callback
       );

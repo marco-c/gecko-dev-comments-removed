@@ -9,9 +9,6 @@
 
 const kBaseUrl = "https://example.org/browser/dom/events/test/";
 
-
-let resolveDropPromise;
-
 let testName;
 
 let mockCA = {
@@ -64,17 +61,14 @@ let mockCA = {
         aRequest.requestToken
       )
     );
-
-    
-    
-    
-    
-    setTimeout(resolveDropPromise, 0);
   },
 
-  analyzeContentRequest(aRequest, aAutoAcknowledge) {
+  analyzeContentRequests(aRequests, aAutoAcknowledge) {
     
-    return this.realCAService.analyzeContentRequest(aRequest, aAutoAcknowledge);
+    return this.realCAService.analyzeContentRequests(
+      aRequests,
+      aAutoAcknowledge
+    );
   },
 
   showBlockedRequestDialog(aRequest) {
