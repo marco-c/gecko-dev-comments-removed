@@ -1404,16 +1404,10 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
   
   
   
-  if (MOZ_UNLIKELY(!aHTMLEditor.GetDocument())) {
-    NS_WARNING(
-        "WhiteSpaceVisibilityKeeper::ReplaceText() lost proper document");
-    return Err(NS_ERROR_UNEXPECTED);
-  }
   AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
                                          &pointToPutCaret);
-  OwningNonNull<Document> document = *aHTMLEditor.GetDocument();
   Result<InsertTextResult, nsresult> insertTextResult =
-      aHTMLEditor.InsertTextWithTransaction(document, theString, pointToInsert,
+      aHTMLEditor.InsertTextWithTransaction(theString, pointToInsert,
                                             aInsertTextTo);
   if (MOZ_UNLIKELY(insertTextResult.isErr())) {
     NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
