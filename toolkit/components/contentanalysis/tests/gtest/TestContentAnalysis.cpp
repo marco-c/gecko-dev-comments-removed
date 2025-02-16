@@ -212,10 +212,13 @@ void SendRequestAndExpectResponse(
   
   RefPtr timedOut = MakeRefPtr<media::Refcountable<BoolStruct>>();
   auto callback = MakeRefPtr<ContentAnalysisCallback>(
-      [&, timedOut](nsIContentAnalysisResponse* response) {
+      [&, timedOut](nsIContentAnalysisResult* result) {
         if (timedOut->mValue) {
           return;
         }
+        nsCOMPtr<nsIContentAnalysisResponse> response =
+            do_QueryInterface(result);
+        EXPECT_TRUE(response);
         if (expectedShouldAllow.isSome()) {
           bool shouldAllow = false;
           MOZ_ALWAYS_SUCCEEDS(response->GetShouldAllowContent(&shouldAllow));
@@ -241,9 +244,12 @@ void SendRequestAndExpectResponse(
         if (timedOut->mValue) {
           return;
         }
-        EXPECT_EQ(NS_OK, error);
-        gotResponse = true;
+        const char* errorName = mozilla::GetStaticErrorName(error);
+        errorName = errorName ? errorName : "";
+        printf("Got error response code %s(%x)\n", errorName, error);
         
+        EXPECT_NE(NS_OK, error);
+        gotResponse = true;
         FAIL() << "Got error response";
       });
 
