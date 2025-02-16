@@ -21,10 +21,6 @@ namespace mozilla::widget {
 class DMABufFormatTable;
 class DMABufFeedback;
 
-#ifndef DRM_FORMAT_MOD_INVALID
-#  define DRM_FORMAT_MOD_INVALID ((1ULL << 56) - 1)
-#endif
-
 
 
 class DRMFormat final {
@@ -48,11 +44,7 @@ class DRMFormat final {
     MOZ_ASSERT(!IsFormatModifierSupported(aModifier), "Added modifier twice?");
     mModifiers.AppendElement(aModifier);
   }
-  bool UseModifiers() const {
-    
-    return !(mModifiers.IsEmpty() || (mModifiers.Length() == 1 ||
-                                      mModifiers[0] == DRM_FORMAT_MOD_INVALID));
-  }
+  bool UseModifiers() const { return !mModifiers.IsEmpty(); }
   const uint64_t* GetModifiers(uint32_t& aModifiersNum) {
     aModifiersNum = mModifiers.Length();
     return mModifiers.Elements();
@@ -86,8 +78,6 @@ class DMABufFormats final {
 
   DRMFormat* GetFormat(uint32_t aFormat, bool aRequestScanoutFormat = false);
   DMABufFormats();
-
-  void EnsureBasicFormats();
 
  private:
   ~DMABufFormats();
