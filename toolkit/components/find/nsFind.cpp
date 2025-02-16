@@ -574,10 +574,7 @@ char32_t nsFind::PeekNextChar(State& aState, bool aAlreadyMatching) const {
 }
 
 #define NBSP_CHARCODE (CHAR_TO_UNICHAR(160))
-
-
-#define IsSpace(c) \
-  ((nsCRT::IsAsciiSpace(c) || (c) == NBSP_CHARCODE) && ((c) < 0x10000))
+#define IsSpace(c) (nsCRT::IsAsciiSpace(c) || (c) == NBSP_CHARCODE)
 #define OVERFLOW_PINDEX (mFindBackward ? pindex < 0 : pindex > patLen)
 #define DONE_WITH_PINDEX (mFindBackward ? pindex <= 0 : pindex >= patLen)
 
