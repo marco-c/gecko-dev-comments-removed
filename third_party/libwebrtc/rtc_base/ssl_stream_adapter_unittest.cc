@@ -665,7 +665,7 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
     
     EXPECT_EQ(rtc::SS_OPENING, client_ssl_->GetState());
     EXPECT_EQ(rtc::SS_OPENING, server_ssl_->GetState());
-    uint8_t packet[1];
+    uint8_t packet[1] = {0};
     size_t sent;
     int error;
     EXPECT_EQ(rtc::SR_BLOCK, client_ssl_->Write(packet, sent, error));
@@ -753,11 +753,10 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
     
     
     
-    if (damage_ && (*static_cast<const unsigned char*>(data) == 23)) {
+    uint8_t data0 = static_cast<const unsigned char*>(data)[0];
+    if (damage_ && (data0 == 23 || data0 == 47)) {
       std::vector<uint8_t> buf(data_len);
-
       RTC_LOG(LS_VERBOSE) << "Damaging packet";
-
       memcpy(&buf[0], data, data_len);
       buf[data_len - 1]++;
       return from->WriteData(rtc::MakeArrayView(&buf[0], data_len), written,
@@ -1121,6 +1120,7 @@ TEST_P(SSLStreamAdapterTestDTLSHandshake, TestDTLSConnect) {
 
 
 TEST_P(SSLStreamAdapterTestDTLSHandshake, TestGetSslCipherSuite) {
+  webrtc::test::ScopedFieldTrials trials("WebRTC-ForceDtls13/Off/");
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_12);
   TestHandshake();
 
@@ -1476,18 +1476,76 @@ TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings,
 }
 #pragma clang diagnostic pop
 
+struct SSLStreamAdapterTestDTLSHandshakeVersion
+    : public SSLStreamAdapterTestDTLS,
+      public WithParamInterface<std::tuple<
+           rtc::SSLProtocolVersion,
+           rtc::SSLProtocolVersion>> {
+  rtc::SSLProtocolVersion GetMin(
+      const std::vector<rtc::SSLProtocolVersion>& array) {
+    rtc::SSLProtocolVersion min = array[0];
+    for (const auto& e : array) {
+      if (static_cast<int>(e) < static_cast<int>(min)) {
+        min = e;
+      }
+    }
+    return min;
+  }
+  uint16_t AsDtlsVersionBytes(rtc::SSLProtocolVersion version) {
+    switch (version) {
+      case rtc::SSL_PROTOCOL_DTLS_10:
+        return rtc::kDtls10VersionBytes;
+      case rtc::SSL_PROTOCOL_DTLS_12:
+        return rtc::kDtls12VersionBytes;
+      case rtc::SSL_PROTOCOL_DTLS_13:
+        return rtc::kDtls13VersionBytes;
+      default:
+        break;
+    }
+    RTC_CHECK(false) << "Unknown version: " << static_cast<int>(version);
+  }
+};
 
-TEST_F(SSLStreamAdapterTestDTLS, TestGetSslVersionBytes) {
-  
-  const int kDtls1_2 = 0xFEFD;
-  SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_12);
+INSTANTIATE_TEST_SUITE_P(
+    SSLStreamAdapterTestDTLSHandshakeVersion,
+    SSLStreamAdapterTestDTLSHandshakeVersion,
+    Combine(Values(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_13),
+            Values(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_13)));
+
+TEST_P(SSLStreamAdapterTestDTLSHandshakeVersion, TestGetSslVersionBytes) {
+  webrtc::test::ScopedFieldTrials trials("WebRTC-ForceDtls13/Off/");
+  auto client = ::testing::get<0>(GetParam());
+  auto server = ::testing::get<1>(GetParam());
+  SetupProtocolVersions(client, server);
   TestHandshake();
 
   int client_version;
-  ASSERT_TRUE(GetSslVersionBytes(true, &client_version));
-  EXPECT_EQ(client_version, kDtls1_2);
-
   int server_version;
+  ASSERT_TRUE(GetSslVersionBytes(true, &client_version));
   ASSERT_TRUE(GetSslVersionBytes(false, &server_version));
-  EXPECT_EQ(server_version, kDtls1_2);
+
+  rtc::SSLProtocolVersion expect =
+      GetMin({client, server,
+              rtc::SSLStreamAdapter::GetMaxSupportedDTLSProtocolVersion()});
+
+  auto expect_bytes = AsDtlsVersionBytes(expect);
+  EXPECT_EQ(client_version, expect_bytes);
+  EXPECT_EQ(server_version, expect_bytes);
+}
+
+TEST_P(SSLStreamAdapterTestDTLSHandshakeVersion, TestGetSslCipherSuite) {
+  webrtc::test::ScopedFieldTrials trials("WebRTC-ForceDtls13/Off/");
+  auto client = ::testing::get<0>(GetParam());
+  auto server = ::testing::get<1>(GetParam());
+  SetupProtocolVersions(client, server);
+  TestHandshake();
+
+  int client_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
+  int server_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
+
+  ASSERT_EQ(client_cipher, server_cipher);
+  ASSERT_TRUE(rtc::SSLStreamAdapter::IsAcceptableCipher(server_cipher,
+                                                        rtc::KT_DEFAULT));
 }

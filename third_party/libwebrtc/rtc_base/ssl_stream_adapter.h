@@ -97,6 +97,12 @@ enum SSLProtocolVersion {
   SSL_PROTOCOL_DTLS_12 = SSL_PROTOCOL_TLS_12,
   SSL_PROTOCOL_DTLS_13 = SSL_PROTOCOL_TLS_13,
 };
+
+
+const uint16_t kDtls10VersionBytes = 0xfeff;
+const uint16_t kDtls12VersionBytes = 0xfefd;
+const uint16_t kDtls13VersionBytes = 0xfefc;
+
 enum class SSLPeerCertificateDigestError {
   NONE,
   UNKNOWN_ALGORITHM,
@@ -239,6 +245,9 @@ class SSLStreamAdapter : public StreamInterface {
   
   
   static void EnableTimeCallbackForTesting();
+
+  
+  static SSLProtocolVersion GetMaxSupportedDTLSProtocolVersion();
 
   
   

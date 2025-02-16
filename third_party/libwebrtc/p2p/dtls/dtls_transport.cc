@@ -803,22 +803,6 @@ void DtlsTransport::MaybeStartDtls() {
 bool DtlsTransport::HandleDtlsPacket(rtc::ArrayView<const uint8_t> payload) {
   
   
-  const uint8_t* tmp_data = payload.data();
-  size_t tmp_size = payload.size();
-  while (tmp_size > 0) {
-    if (tmp_size < kDtlsRecordHeaderLen)
-      return false;  
-
-    size_t record_len = (tmp_data[11] << 8) | (tmp_data[12]);
-    if ((record_len + kDtlsRecordHeaderLen) > tmp_size)
-      return false;  
-
-    tmp_data += record_len + kDtlsRecordHeaderLen;
-    tmp_size -= record_len + kDtlsRecordHeaderLen;
-  }
-
-  
-  
   return downward_->OnPacketReceived(
       reinterpret_cast<const char*>(payload.data()), payload.size());
 }

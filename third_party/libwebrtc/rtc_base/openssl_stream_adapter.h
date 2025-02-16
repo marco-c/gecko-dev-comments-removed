@@ -128,6 +128,9 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   
   static void EnableTimeCallbackForTesting();
 
+  
+  static SSLProtocolVersion GetMaxSupportedDTLSProtocolVersion();
+
  private:
   enum SSLState {
     
