@@ -237,6 +237,15 @@ void ScrollTimeline::UnregisterFromScrollSource() {
     return;
   }
 
+  
+  
+  
+  
+  if (scheduler->IsInScheduling()) {
+    mState = TimelineState::PendingRemove;
+    return;
+  }
+
   scheduler->RemoveTimeline(this);
   if (scheduler->IsEmpty()) {
     ProgressTimelineScheduler::Destroy(mSource.mElement,
@@ -304,6 +313,41 @@ void ProgressTimelineScheduler::Destroy(
   auto* data = aElement->GetAnimationData();
   MOZ_ASSERT(data);
   data->ClearProgressTimelineScheduler(aPseudoRequest);
+}
+
+
+void ProgressTimelineScheduler::ScheduleAnimations(
+    const Element* aElement, const PseudoStyleRequest& aRequest) {
+  auto* scheduler = Get(aElement, aRequest);
+  if (!scheduler) {
+    return;
+  }
+
+  
+  
+  nsTArray<ScrollTimeline*> timelinesToBeRemoved;
+
+  scheduler->mIsInScheduling = true;
+  for (auto iter = scheduler->mTimelines.iter(); !iter.done(); iter.next()) {
+    auto* timeline = iter.get();
+    const auto state = timeline->ScheduleAnimations();
+    if (state == ScrollTimeline::TimelineState::PendingRemove) {
+      timelinesToBeRemoved.AppendElement(timeline);
+    }
+  }
+  MOZ_ASSERT(Get(aElement, aRequest), "Make sure the scheduler still exists");
+  scheduler->mIsInScheduling = false;
+
+  
+  
+  for (auto* timeline : timelinesToBeRemoved) {
+    timeline->ResetState();
+    scheduler->RemoveTimeline(timeline);
+  }
+
+  if (scheduler->IsEmpty()) {
+    ProgressTimelineScheduler::Destroy(aElement, aRequest);
+  }
 }
 
 }  

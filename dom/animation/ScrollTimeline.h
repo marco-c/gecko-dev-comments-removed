@@ -163,13 +163,23 @@ class ScrollTimeline : public AnimationTimeline {
     return TimeDuration::FromMilliseconds(PROGRESS_TIMELINE_DURATION_MILLISEC);
   }
 
-  void ScheduleAnimations() {
+  enum class TimelineState : uint8_t {
+    
+    None,
+    
+    PendingRemove,
+  };
+  TimelineState ScheduleAnimations() {
+    MOZ_ASSERT(mState == TimelineState::None);
+
     
     
     
     TickState state;
     Tick(state);
     
+
+    return mState;
   }
 
   
@@ -201,6 +211,8 @@ class ScrollTimeline : public AnimationTimeline {
 
   void NotifyAnimationContentVisibilityChanged(Animation* aAnimation,
                                                bool aIsVisible) override;
+
+  void ResetState() { mState = TimelineState::None; }
 
  protected:
   virtual ~ScrollTimeline() { Teardown(); }
@@ -239,6 +251,11 @@ class ScrollTimeline : public AnimationTimeline {
   
   Scroller mSource;
   StyleScrollAxis mAxis;
+
+  
+  
+  
+  TimelineState mState = TimelineState::None;
 };
 
 
@@ -261,25 +278,29 @@ class ProgressTimelineScheduler {
                       const PseudoStyleRequest& aPseudoRequest);
 
   void AddTimeline(ScrollTimeline* aScrollTimeline) {
+    MOZ_ASSERT(!mIsInScheduling, "Do not mutate the hashset during scheduling");
     Unused << mTimelines.put(aScrollTimeline);
   }
   void RemoveTimeline(ScrollTimeline* aScrollTimeline) {
+    MOZ_ASSERT(!mIsInScheduling, "Do not mutate the hashset during scheduling");
     mTimelines.remove(aScrollTimeline);
   }
 
   bool IsEmpty() const { return mTimelines.empty(); }
+  bool IsInScheduling() const { return mIsInScheduling; }
 
-  void ScheduleAnimations() const {
-    for (auto iter = mTimelines.iter(); !iter.done(); iter.next()) {
-      iter.get()->ScheduleAnimations();
-    }
-  }
+  
+  
+  static void ScheduleAnimations(const Element* aElement,
+                                 const PseudoStyleRequest& aRequest);
 
  private:
   
   
   
   HashSet<ScrollTimeline*> mTimelines;
+  
+  bool mIsInScheduling = false;
 };
 
 }  
