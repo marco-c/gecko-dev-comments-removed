@@ -1570,15 +1570,13 @@ class RTC_EXPORT PeerConnectionFactoryInterface
 
   
   
-  
   virtual RtpCapabilities GetRtpSenderCapabilities(
-      cricket::MediaType kind) const;
+      cricket::MediaType kind) const = 0;
 
   
   
-  
   virtual RtpCapabilities GetRtpReceiverCapabilities(
-      cricket::MediaType kind) const;
+      cricket::MediaType kind) const = 0;
 
   virtual rtc::scoped_refptr<MediaStreamInterface> CreateLocalMediaStream(
       const std::string& stream_id) = 0;
