@@ -3014,14 +3014,6 @@ Toolbox.prototype = {
       Services.prefs.setCharPref(this._prefs.LAST_TOOL, id);
     }
 
-    
-    
-    
-    if (id.startsWith("webext-devtools-panel-")) {
-      const toolboxPanels = this.doc.querySelectorAll(".toolbox-panel");
-      this.selectSingleNode(toolboxPanels, "toolbox-panel-" + id);
-    }
-
     return this.loadTool(id, options).then(panel => {
       
       
