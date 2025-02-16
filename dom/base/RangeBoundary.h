@@ -515,6 +515,17 @@ class RangeBoundaryBase {
     } else {
       mOffset = aOther.mOffset;
     }
+    
+    
+    
+    if (mIsMutationObserved && !mRef && mParent && mOffset.isSome() &&
+        *mOffset) {
+      if (*mOffset == mParent->GetChildCount()) {
+        mRef = mParent->GetLastChild();
+      } else {
+        mRef = mParent->GetChildAt_Deprecated(*mOffset - 1);
+      }
+    }
     return *this;
   }
 
@@ -528,14 +539,19 @@ class RangeBoundaryBase {
   }
 
   template <typename A, typename B>
-  bool operator==(const RangeBoundaryBase<A, B>& aOther) const {
-    return mParent == aOther.mParent &&
-           (mIsMutationObserved && aOther.mIsMutationObserved && mRef
-                ? mRef == aOther.mRef
-                : Offset(OffsetFilter::kValidOrInvalidOffsets) ==
-                      aOther.Offset(
-                          RangeBoundaryBase<
-                              A, B>::OffsetFilter::kValidOrInvalidOffsets));
+  [[nodiscard]] bool operator==(const RangeBoundaryBase<A, B>& aOther) const {
+    if (!mParent && !aOther.mParent) {
+      return true;
+    }
+    if (mParent != aOther.mParent) {
+      return false;
+    }
+    if (RefIsFixed() && aOther.RefIsFixed()) {
+      return mRef == aOther.mRef;
+    }
+    return Offset(OffsetFilter::kValidOrInvalidOffsets) ==
+           aOther.Offset(
+               RangeBoundaryBase<A, B>::OffsetFilter::kValidOrInvalidOffsets);
   }
 
   template <typename A, typename B>
@@ -544,6 +560,17 @@ class RangeBoundaryBase {
   }
 
  private:
+  [[nodiscard]] bool RefIsFixed() const {
+    return mParent &&
+           (
+               
+               
+               (mIsMutationObserved && (mRef || mParent->IsContainerNode())) ||
+               
+               
+               mOffset.isNothing());
+  }
+
   ParentType mParent;
   mutable RefType mRef;
 

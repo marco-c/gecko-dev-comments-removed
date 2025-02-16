@@ -1147,7 +1147,9 @@ class EditorDOMPointBase final {
       
       
       
-      return RawRangeBoundary(mParent, mOffset.value());
+      return RawRangeBoundary(mParent, mOffset.value(),
+                              
+                              RangeBoundaryIsMutationObserved::No);
     }
     if (mIsChildInitialized && mOffset.isSome()) {
       
@@ -1160,12 +1162,16 @@ class EditorDOMPointBase final {
         MOZ_ASSERT(mParent->Length() == mOffset.value());
       }
 #endif  
-      return RawRangeBoundary(mParent, mOffset.value());
+      return RawRangeBoundary(mParent, mOffset.value(),
+                              
+                              RangeBoundaryIsMutationObserved::No);
     }
     
     
     if (mOffset.isSome()) {
-      return RawRangeBoundary(mParent, mOffset.value());
+      return RawRangeBoundary(mParent, mOffset.value(),
+                              
+                              RangeBoundaryIsMutationObserved::No);
     }
     if (mChild) {
       return RawRangeBoundary(mParent, mChild->GetPreviousSibling());
