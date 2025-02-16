@@ -82,11 +82,7 @@ class MouseScrollHandler::SynthesizingEvent {
                       WPARAM aWParam, LPARAM aLParam,
                       const BYTE (&aKeyStates)[256]);
 
-  void NativeMessageReceived(nsWindow* aWidget, UINT aMessage, WPARAM aWParam,
-                             LPARAM aLParam);
-
-  void NotifyNativeMessageHandlingFinished();
-  void NotifyInternalMessageHandlingFinished();
+  void NotifyMessageHandlingFinished();
 
   const POINTS& GetCursorPoint() const { return mCursorPoint; }
 
@@ -102,8 +98,6 @@ class MouseScrollHandler::SynthesizingEvent {
   enum Status {
     NOT_SYNTHESIZING,
     SENDING_MESSAGE,
-    NATIVE_MESSAGE_RECEIVED,
-    INTERNAL_MESSAGE_POSTED,
   };
   Status mStatus;
 
@@ -113,10 +107,6 @@ class MouseScrollHandler::SynthesizingEvent {
         return "NOT_SYNTHESIZING";
       case SENDING_MESSAGE:
         return "SENDING_MESSAGE";
-      case NATIVE_MESSAGE_RECEIVED:
-        return "NATIVE_MESSAGE_RECEIVED";
-      case INTERNAL_MESSAGE_POSTED:
-        return "INTERNAL_MESSAGE_POSTED";
       default:
         return "Unknown";
     }
@@ -277,9 +267,7 @@ bool MouseScrollHandler::ProcessMessageDirectly(UINT msg, WPARAM wParam,
 
   
   if (auto* synth = GetActiveSynthEvent()) {
-    
-    
-    synth->NotifyInternalMessageHandlingFinished();
+    synth->NotifyMessageHandlingFinished();
   }
 
   return true;
@@ -313,7 +301,7 @@ bool MouseScrollHandler::ProcessMessage(nsWindow* aWidget, UINT msg,
     case MOZ_WM_MOUSEHWHEEL:
       GetInstance()->HandleMouseWheelMessage(aWidget, msg, wParam, lParam);
       if (auto* synth = GetActiveSynthEvent()) {
-        synth->NotifyInternalMessageHandlingFinished();
+        synth->NotifyMessageHandlingFinished();
       }
       
       aResult.mConsumed = true;
@@ -324,7 +312,7 @@ bool MouseScrollHandler::ProcessMessage(nsWindow* aWidget, UINT msg,
       GetInstance()->HandleScrollMessageAsMouseWheelMessage(aWidget, msg,
                                                             wParam, lParam);
       if (auto* synth = GetActiveSynthEvent()) {
-        synth->NotifyInternalMessageHandlingFinished();
+        synth->NotifyMessageHandlingFinished();
       }
       
       aResult.mConsumed = true;
@@ -1660,46 +1648,7 @@ nsresult MouseScrollHandler::SynthesizingEvent::Synthesize(
   return NS_OK;
 }
 
-void MouseScrollHandler::SynthesizingEvent::NativeMessageReceived(
-    nsWindow* aWidget, UINT aMessage, WPARAM aWParam, LPARAM aLParam) {
-  if (mStatus == SENDING_MESSAGE && mMessage == aMessage &&
-      mWParam == aWParam && mLParam == aLParam) {
-    mStatus = NATIVE_MESSAGE_RECEIVED;
-    if (aWidget && aWidget->GetWindowHandle() == mWnd) {
-      return;
-    }
-    
-  }
-
-  MOZ_LOG(gMouseScrollLog, LogLevel::Info,
-          ("MouseScrollHandler::SynthesizingEvent::NativeMessageReceived(): "
-           "aWidget=%p, aWidget->GetWindowHandle()=0x%p, mWnd=0x%p, "
-           "aMessage=0x%04X, aWParam=0x%08zX, aLParam=0x%08" PRIXLPTR
-           ", mStatus=%s",
-           aWidget, aWidget ? aWidget->GetWindowHandle() : nullptr, mWnd,
-           aMessage, aWParam, aLParam, GetStatusName()));
-
-  
-  Finish();
-}
-
-void MouseScrollHandler::SynthesizingEvent::
-    NotifyNativeMessageHandlingFinished() {
-  MOZ_ASSERT(mStatus != NOT_SYNTHESIZING);
-
-  MOZ_LOG(gMouseScrollLog, LogLevel::Info,
-          ("MouseScrollHandler::SynthesizingEvent::"
-           "NotifyNativeMessageHandlingFinished(): this=%p",
-           this));
-
-  
-  
-  
-  Finish();
-}
-
-void MouseScrollHandler::SynthesizingEvent::
-    NotifyInternalMessageHandlingFinished() {
+void MouseScrollHandler::SynthesizingEvent::NotifyMessageHandlingFinished() {
   MOZ_ASSERT(mStatus != NOT_SYNTHESIZING);
 
   MOZ_LOG(gMouseScrollLog, LogLevel::Info,
