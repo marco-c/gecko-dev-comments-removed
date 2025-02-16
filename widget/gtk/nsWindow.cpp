@@ -3264,28 +3264,14 @@ void nsWindow::RecomputeBounds() {
     if (!IsTopLevelWidget() || mSizeMode == nsSizeMode_Fullscreen) {
       return LayoutDeviceIntMargin();
     }
-    auto systemMargin = mBounds - GetBounds(toplevel);
-    
-    
-    
-    
-    
-    
-    
-    
-    LayoutDeviceIntMargin csdMargin = [&] {
-      if (!ToplevelUsesCSD()) {
-        return LayoutDeviceIntMargin();
-      }
-      GtkBorder decorationRect{0};
-      if (mSizeMode == nsSizeMode_Normal) {
-        decorationRect = GetTopLevelCSDDecorationSize();
-      }
-      if (!mDrawInTitlebar) {
-        decorationRect.top += moz_gtk_get_titlebar_preferred_height();
-      }
-      return GtkBorderToDevicePixels(decorationRect);
-    }();
+    const auto toplevelBounds = GetBounds(toplevel);
+    const auto systemMargin = mBounds - toplevelBounds;
+    LayoutDeviceIntMargin csdMargin;
+    if (mGdkWindow) {
+      csdMargin =
+          LayoutDeviceIntRect(LayoutDeviceIntPoint(), toplevelBounds.Size()) -
+          GetBounds(mGdkWindow);
+    }
     return systemMargin + csdMargin;
   }();
   mClientMargin.EnsureAtLeast(LayoutDeviceIntMargin());
@@ -4078,14 +4064,19 @@ void nsWindow::OnSizeAllocate(GtkAllocation* aAllocation) {
     return;
   }
   
+  
+  
+  
+  
+  
+  
+  SchedulePendingBounds();
+
   auto oldClientBounds = GetClientBounds();
   
   
   
   LayoutDeviceIntRect newClientBounds = GdkRectToDevicePixels(*aAllocation);
-  if (oldClientBounds.Size() == newClientBounds.Size()) {
-    return;
-  }
   if (oldClientBounds.width < newClientBounds.width) {
     GdkRectangle rect = DevicePixelsToGdkRectRoundOut(LayoutDeviceIntRect(
         oldClientBounds.width, 0, newClientBounds.width - oldClientBounds.width,
@@ -4098,10 +4089,6 @@ void nsWindow::OnSizeAllocate(GtkAllocation* aAllocation) {
                             newClientBounds.height - oldClientBounds.height));
     gdk_window_invalidate_rect(mGdkWindow, &rect, FALSE);
   }
-  
-  
-  
-  SchedulePendingBounds();
 }
 
 void nsWindow::SchedulePendingBounds() {
