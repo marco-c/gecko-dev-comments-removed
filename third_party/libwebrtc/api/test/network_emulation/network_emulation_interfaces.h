@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "api/numerics/samples_stats_counter.h"
+#include "api/test/network_emulation/ecn_marking_counter.h"
 #include "api/transport/ecn_marking.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
@@ -83,6 +84,8 @@ struct EmulatedNetworkOutgoingStats {
   
   Timestamp last_packet_sent_time = Timestamp::MinusInfinity();
 
+  EcnMarkingCounter ecn_count;
+
   
   DataRate AverageSendRate() const;
 };
@@ -117,6 +120,8 @@ struct EmulatedNetworkIncomingStats {
   
   
   Timestamp last_packet_received_time = Timestamp::MinusInfinity();
+
+  EcnMarkingCounter ecn_count;
 
   DataRate AverageReceiveRate() const;
 };
