@@ -428,7 +428,15 @@ void nsLineBreaker::FindHyphenationPoints(nsHyphenator* aHyphenator,
   
   
   uint32_t length = 0;
-  AutoTArray<std::pair<uint32_t, uint32_t>, 16> positionAndLength;
+  
+  
+  
+  struct BreakInfo {
+    uint32_t mPosition;
+    uint32_t mLength;
+    uint8_t mState;
+  };
+  AutoTArray<BreakInfo, 16> oldBreaks;
   for (uint32_t i = 0; i + 1 < string.Length(); ++i) {
     
     
@@ -464,12 +472,9 @@ void nsLineBreaker::FindHyphenationPoints(nsHyphenator* aHyphenator,
 
     
     if (length >= mHyphenateLimitStart && hyphens[i]) {
-      MOZ_ASSERT(aBreakState[i + 1] ==
-                 gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NONE);
-      aBreakState[i + 1] = gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_HYPHEN;
       
-      positionAndLength.AppendElement(
-          std::pair<uint32_t, uint32_t>(i + 1, length));
+      oldBreaks.AppendElement(BreakInfo{i + 1, length, aBreakState[i + 1]});
+      aBreakState[i + 1] = gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_HYPHEN;
     }
 
     
@@ -483,19 +488,19 @@ void nsLineBreaker::FindHyphenationPoints(nsHyphenator* aHyphenator,
     
     
     
-    while (!positionAndLength.IsEmpty()) {
-      auto [lastPos, lastLen] = positionAndLength.PopLastElement();
-      aBreakState[lastPos] = gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NONE;
+    while (!oldBreaks.IsEmpty()) {
+      auto lastBreak = oldBreaks.PopLastElement();
+      aBreakState[lastBreak.mPosition] = lastBreak.mState;
     }
   } else {
     
     
-    while (!positionAndLength.IsEmpty()) {
-      auto [lastPos, lastLen] = positionAndLength.PopLastElement();
-      if (length - lastLen >= mHyphenateLimitEnd) {
+    while (!oldBreaks.IsEmpty()) {
+      auto lastBreak = oldBreaks.PopLastElement();
+      if (length - lastBreak.mLength >= mHyphenateLimitEnd) {
         break;
       }
-      aBreakState[lastPos] = gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NONE;
+      aBreakState[lastBreak.mPosition] = lastBreak.mState;
     }
   }
 }
