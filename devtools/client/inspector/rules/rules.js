@@ -716,6 +716,9 @@ CssRuleView.prototype = {
     const element = elementStyle.element;
     const pseudoClasses = element.pseudoClassLocks;
 
+    
+    this._onClearSearch();
+
     this._focusNextUserAddedRule = true;
     this.pageStyle.addNewRule(element, pseudoClasses);
   },
