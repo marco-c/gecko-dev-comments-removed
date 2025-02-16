@@ -149,14 +149,23 @@ class CanonicalBrowsingContext final : public BrowsingContext {
       const MaybeDiscardedBrowsingContext& aClonedStaticBrowsingContext);
   MOZ_CAN_RUN_SCRIPT void ReleaseClonedPrint(
       const MaybeDiscardedBrowsingContext& aClonedStaticBrowsingContext);
+
+  enum class TopDescendantKind {
+    
+    
+    All,
+    
+    
+    NonNested,
+    
+    
+    ChildrenOnly,
+  };
   
   
-  
-  
-  
-  void CallOnAllTopDescendants(
+  void CallOnTopDescendants(
       const FunctionRef<CallState(CanonicalBrowsingContext*)>& aCallback,
-      bool aIncludeNestedBrowsers);
+      TopDescendantKind aKind);
 
   void SessionHistoryCommit(uint64_t aLoadId, const nsID& aChangeID,
                             uint32_t aLoadType, bool aPersist,

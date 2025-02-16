@@ -934,14 +934,16 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::PrintWithNoContentAnalysis(
 #endif
 }
 
-void CanonicalBrowsingContext::CallOnAllTopDescendants(
+void CanonicalBrowsingContext::CallOnTopDescendants(
     const FunctionRef<CallState(CanonicalBrowsingContext*)>& aCallback,
-    bool aIncludeNestedBrowsers) {
-  MOZ_ASSERT(IsTop(), "Should only call on top BC");
-  MOZ_ASSERT(
-      !aIncludeNestedBrowsers ||
-          (IsChrome() && !GetParentCrossChromeBoundary()),
-      "If aIncludeNestedBrowsers is set, should only call on top chrome BC");
+    TopDescendantKind aKind) {
+  
+  
+  MOZ_ASSERT_IF(aKind == TopDescendantKind::All,
+                IsChrome() && !GetParentCrossChromeBoundary());
+  
+  
+  MOZ_ASSERT_IF(aKind != TopDescendantKind::ChildrenOnly, IsTop());
 
   if (!IsInProcess()) {
     
@@ -949,27 +951,39 @@ void CanonicalBrowsingContext::CallOnAllTopDescendants(
     return;
   }
 
+  const auto* ourTop = Top();
+
   AutoTArray<RefPtr<BrowsingContextGroup>, 32> groups;
   BrowsingContextGroup::GetAllGroups(groups);
   for (auto& browsingContextGroup : groups) {
-    for (auto& bc : browsingContextGroup->Toplevels()) {
-      if (bc == this) {
+    for (auto& topLevel : browsingContextGroup->Toplevels()) {
+      if (topLevel == ourTop) {
         
         continue;
       }
 
-      if (aIncludeNestedBrowsers) {
-        if (this != bc->Canonical()->TopCrossChromeBoundary()) {
-          continue;
+      
+      const bool topLevelIsRelevant = [&] {
+        auto* current = topLevel->Canonical();
+        while (auto* parent = current->GetParentCrossChromeBoundary()) {
+          if (parent == this) {
+            return true;
+          }
+          
+          if (aKind == TopDescendantKind::ChildrenOnly ||
+              (aKind == TopDescendantKind::NonNested && parent->IsTop())) {
+            return false;
+          }
+          current = parent;
         }
-      } else {
-        auto* parent = bc->Canonical()->GetParentCrossChromeBoundary();
-        if (!parent || this != parent->Top()) {
-          continue;
-        }
+        return false;
+      }();
+
+      if (!topLevelIsRelevant) {
+        continue;
       }
 
-      if (aCallback(bc->Canonical()) == CallState::Stop) {
+      if (aCallback(topLevel->Canonical()) == CallState::Stop) {
         return;
       }
     }
