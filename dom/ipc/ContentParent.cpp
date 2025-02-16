@@ -1649,6 +1649,13 @@ void ContentParent::AsyncSendShutDownMessage() {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
           ("AsyncSendShutDownMessage %p", this));
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(IsDead());
+  if (mShutdownPending || !CanSend()) {
+    
+    
+    
+    return;
+  }
 
   
   
