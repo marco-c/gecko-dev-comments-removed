@@ -8,10 +8,6 @@
 
 "use strict";
 
-ChromeUtils.defineESModuleGetters(this, {
-  ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
-});
-
 const REMOTE_SETTINGS_RECORDS = [
   {
     type: "exposure-suggestions",
@@ -37,13 +33,6 @@ const REMOTE_SETTINGS_RECORDS = [
 ];
 
 add_setup(async function () {
-  
-  
-  
-  info("Awaiting ExperimentManager.onStartup");
-  await ExperimentManager.onStartup();
-  info("Done awaiting ExperimentManager.onStartup");
-
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     remoteSettingsRecords: REMOTE_SETTINGS_RECORDS,
   });
@@ -171,7 +160,7 @@ async function doLocaleTest({
         
         
         info("Updating Suggest scenario");
-        await UrlbarPrefs.updateFirefoxSuggestScenario();
+        await QuickSuggest.updateFirefoxSuggestScenario();
         info("Done updating Suggest scenario");
 
         
@@ -219,7 +208,7 @@ async function doLocaleTest({
 
   
   
-  await UrlbarPrefs.updateFirefoxSuggestScenario();
+  await QuickSuggest.updateFirefoxSuggestScenario();
 }
 
 function assertSuggestPrefs(expectedEnabled) {

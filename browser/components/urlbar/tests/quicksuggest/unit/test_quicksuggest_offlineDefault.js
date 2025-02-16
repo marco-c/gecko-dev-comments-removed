@@ -90,7 +90,7 @@ async function doTest({ locale, home, expectedOfflineDefault }) {
     homeRegion: home,
     locales: [locale],
     callback: async () => {
-      await UrlbarPrefs.updateFirefoxSuggestScenario();
+      await QuickSuggest.updateFirefoxSuggestScenario();
       for (let {
         name,
         get,

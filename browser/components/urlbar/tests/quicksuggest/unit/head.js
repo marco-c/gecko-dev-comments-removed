@@ -19,7 +19,7 @@ add_setup(async function setUpQuickSuggestXpcshellTest() {
   
   
   
-  UrlbarPrefs._testSkipTelemetryEnvironmentInit = true;
+  QuickSuggest._testSkipTelemetryEnvironmentInit = true;
 });
 
 
@@ -137,7 +137,7 @@ async function doMigrateTest({
     info(`Calling updateFirefoxSuggestScenario, i=${i}`);
 
     
-    await UrlbarPrefs.updateFirefoxSuggestScenario({
+    await QuickSuggest.updateFirefoxSuggestScenario({
       ...testOverrides,
       scenario,
       isStartup: true,
@@ -205,7 +205,7 @@ async function doMigrateTest({
 
     let currentVersion =
       testOverrides?.migrationVersion === undefined
-        ? UrlbarPrefs.FIREFOX_SUGGEST_MIGRATION_VERSION
+        ? QuickSuggest.MIGRATION_VERSION
         : testOverrides.migrationVersion;
     Assert.equal(
       UrlbarPrefs.get("quicksuggest.migrationVersion"),
