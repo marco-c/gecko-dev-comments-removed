@@ -42,8 +42,8 @@ class RegExpMacroAssembler {
   RegExpMacroAssembler(Isolate* isolate, Zone* zone);
   virtual ~RegExpMacroAssembler() = default;
 
-  virtual Handle<HeapObject> GetCode(Handle<String> source,
-                                     RegExpFlags flags) = 0;
+  virtual DirectHandle<HeapObject> GetCode(DirectHandle<String> source,
+                                           RegExpFlags flags) = 0;
 
   
   

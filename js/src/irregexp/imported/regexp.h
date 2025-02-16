@@ -33,7 +33,7 @@ struct RegExpCompileData {
 
   
   
-  Handle<Object> code;
+  DirectHandle<Object> code;
 
   
   
@@ -85,8 +85,8 @@ class RegExp final : public AllStatic {
   
   
   
-  V8_WARN_UNUSED_RESULT static MaybeHandle<Object> Compile(
-      Isolate* isolate, Handle<JSRegExp> re, Handle<String> pattern,
+  V8_WARN_UNUSED_RESULT static MaybeDirectHandle<Object> Compile(
+      Isolate* isolate, DirectHandle<JSRegExp> re, DirectHandle<String> pattern,
       RegExpFlags flags, uint32_t backtrack_limit);
 
   
@@ -94,7 +94,7 @@ class RegExp final : public AllStatic {
   
   V8_WARN_UNUSED_RESULT static bool EnsureFullyCompiled(
       Isolate* isolate, DirectHandle<RegExpData> re_data,
-      Handle<String> subject);
+      DirectHandle<String> subject);
 
   enum CallOrigin : int {
     kFromRuntime = 0,
@@ -104,15 +104,15 @@ class RegExp final : public AllStatic {
   
   
   V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static std::optional<int> Exec(
-      Isolate* isolate, DirectHandle<JSRegExp> regexp, Handle<String> subject,
-      int index, int32_t* result_offsets_vector,
+      Isolate* isolate, DirectHandle<JSRegExp> regexp,
+      DirectHandle<String> subject, int index, int32_t* result_offsets_vector,
       uint32_t result_offsets_vector_length);
   
   
-  V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static MaybeHandle<Object>
+  V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static MaybeDirectHandle<Object>
   Exec_Single(Isolate* isolate, DirectHandle<JSRegExp> regexp,
-              Handle<String> subject, int index,
-              Handle<RegExpMatchInfo> last_match_info);
+              DirectHandle<String> subject, int index,
+              DirectHandle<RegExpMatchInfo> last_match_info);
 
   V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static std::optional<int>
   ExperimentalOneshotExec(Isolate* isolate, DirectHandle<JSRegExp> regexp,
@@ -144,13 +144,14 @@ class RegExp final : public AllStatic {
 
   
   
-  static Handle<RegExpMatchInfo> SetLastMatchInfo(
-      Isolate* isolate, Handle<RegExpMatchInfo> last_match_info,
+  static DirectHandle<RegExpMatchInfo> SetLastMatchInfo(
+      Isolate* isolate, DirectHandle<RegExpMatchInfo> last_match_info,
       DirectHandle<String> subject, int capture_count, int32_t* match);
 
   V8_EXPORT_PRIVATE static bool CompileForTesting(
       Isolate* isolate, Zone* zone, RegExpCompileData* input, RegExpFlags flags,
-      Handle<String> pattern, Handle<String> sample_subject, bool is_one_byte);
+      DirectHandle<String> pattern, DirectHandle<String> sample_subject,
+      bool is_one_byte);
 
   V8_EXPORT_PRIVATE static void DotPrintForTesting(const char* label,
                                                    RegExpNode* node);
@@ -158,10 +159,9 @@ class RegExp final : public AllStatic {
   static const int kRegExpTooLargeToOptimize = 20 * KB;
 
   V8_WARN_UNUSED_RESULT
-  static MaybeHandle<Object> ThrowRegExpException(Isolate* isolate,
-                                                  RegExpFlags flags,
-                                                  Handle<String> pattern,
-                                                  RegExpError error);
+  static MaybeDirectHandle<Object> ThrowRegExpException(
+      Isolate* isolate, RegExpFlags flags, DirectHandle<String> pattern,
+      RegExpError error);
   static void ThrowRegExpException(Isolate* isolate,
                                    DirectHandle<RegExpData> re_data,
                                    RegExpError error_text);
@@ -169,7 +169,7 @@ class RegExp final : public AllStatic {
   static bool IsUnmodifiedRegExp(Isolate* isolate,
                                  DirectHandle<JSRegExp> regexp);
 
-  static Handle<FixedArray> CreateCaptureNameMap(
+  static DirectHandle<FixedArray> CreateCaptureNameMap(
       Isolate* isolate, ZoneVector<RegExpCapture*>* named_captures);
 };
 
@@ -178,8 +178,8 @@ class RegExp final : public AllStatic {
 
 class RegExpGlobalExecRunner final {
  public:
-  RegExpGlobalExecRunner(Handle<RegExpData> regexp_data, Handle<String> subject,
-                         Isolate* isolate);
+  RegExpGlobalExecRunner(DirectHandle<RegExpData> regexp_data,
+                         DirectHandle<String> subject, Isolate* isolate);
 
   
   
@@ -206,8 +206,8 @@ class RegExpGlobalExecRunner final {
   
   int32_t* register_array_ = nullptr;
   int register_array_size_ = 0;
-  Handle<RegExpData> regexp_data_;
-  Handle<String> subject_;
+  DirectHandle<RegExpData> regexp_data_;
+  DirectHandle<String> subject_;
   Isolate* const isolate_;
 };
 
