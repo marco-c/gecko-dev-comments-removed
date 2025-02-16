@@ -46,7 +46,6 @@
 #include "nsIMIMEService.h"
 #include "imgIEncoder.h"
 #include "imgITools.h"
-#include "WinOLELock.h"
 #include "WinUtils.h"
 #include "nsLocalFile.h"
 
@@ -1073,18 +1072,17 @@ nsDataObj::GetDib(const nsACString& inFlavor, FORMATETC& aFormat,
     size -= BFH_LENGTH;
   }
 
-  ScopedOLEMemory<char[]> glob(size);
+  HGLOBAL glob = ::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, size);
   if (!glob) {
     return E_FAIL;
   }
 
-  {
-    auto lock = glob.lock();
-    ::CopyMemory(lock.begin(), src, size);
-  }
+  char* dst = (char*)::GlobalLock(glob);
+  ::CopyMemory(dst, src, size);
+  ::GlobalUnlock(glob);
 
+  aSTG.hGlobal = glob;
   aSTG.tymed = TYMED_HGLOBAL;
-  aSTG.hGlobal = glob.forget();
   return S_OK;
 }
 
@@ -1459,9 +1457,10 @@ HRESULT nsDataObj::GetPreferredDropEffect(FORMATETC& aFE, STGMEDIUM& aSTG) {
   HRESULT res = S_OK;
   aSTG.tymed = TYMED_HGLOBAL;
   aSTG.pUnkForRelease = nullptr;
-
-  ScopedOLEMemory<DWORD> hGlobalMemory;
+  HGLOBAL hGlobalMemory = nullptr;
+  hGlobalMemory = ::GlobalAlloc(GMEM_MOVEABLE, sizeof(DWORD));
   if (hGlobalMemory) {
+    DWORD* pdw = (DWORD*)GlobalLock(hGlobalMemory);
     
     
     
@@ -1469,37 +1468,23 @@ HRESULT nsDataObj::GetPreferredDropEffect(FORMATETC& aFE, STGMEDIUM& aSTG) {
     
     
     
-    *hGlobalMemory.lock() = (DWORD)DROPEFFECT_MOVE;
+    *pdw = (DWORD)DROPEFFECT_MOVE;
+    GlobalUnlock(hGlobalMemory);
   } else {
     res = E_OUTOFMEMORY;
   }
-  aSTG.hGlobal = hGlobalMemory.forget();
+  aSTG.hGlobal = hGlobalMemory;
   return res;
 }
 
 
 HRESULT nsDataObj::GetText(const nsACString& aDataFlavor, FORMATETC& aFE,
                            STGMEDIUM& aSTG) {
-  
-  
-  
-  auto const assignDataToStg = [&aSTG](void* data, size_t extent) -> HRESULT {
-    aSTG.tymed = TYMED_HGLOBAL;
-    aSTG.pUnkForRelease = nullptr;
-
-    ScopedOLEMemory<char[]> hGlobalMemory(extent);
-    if (hGlobalMemory) {
-      auto dest = hGlobalMemory.lock();
-      memcpy(dest.get(), data, extent);
-    }
-
-    aSTG.hGlobal = hGlobalMemory.forget();
-
-    return S_OK;
-  };
+  void* data = nullptr;
 
   const nsPromiseFlatCString& flavorStr = PromiseFlatCString(aDataFlavor);
 
+  
   nsCOMPtr<nsISupports> genericDataWrapper;
   nsresult rv = mTransferable->GetTransferData(
       flavorStr.get(), getter_AddRefs(genericDataWrapper));
@@ -1507,20 +1492,15 @@ HRESULT nsDataObj::GetText(const nsACString& aDataFlavor, FORMATETC& aFE,
     return E_FAIL;
   }
 
-  
-  
-  auto const [data, len] = [&]() {
-    void* data = nullptr;
-    uint32_t len;
-    nsPrimitiveHelpers::CreateDataFromPrimitive(
-        nsDependentCString(flavorStr.get()), genericDataWrapper, &data, &len);
-    return std::tuple{data, size_t(len)};
-  }();
+  uint32_t len;
+  nsPrimitiveHelpers::CreateDataFromPrimitive(
+      nsDependentCString(flavorStr.get()), genericDataWrapper, &data, &len);
   if (!data) return E_FAIL;
 
-  
-  auto const _release_data =
-      mozilla::MakeScopeExit([data = data]() { ::free(data); });
+  HGLOBAL hGlobalMemory = nullptr;
+
+  aSTG.tymed = TYMED_HGLOBAL;
+  aSTG.pUnkForRelease = nullptr;
 
   
   
@@ -1530,54 +1510,66 @@ HRESULT nsDataObj::GetText(const nsACString& aDataFlavor, FORMATETC& aFE,
   
   
   
-
+  DWORD allocLen = (DWORD)len;
   if (aFE.cfFormat == CF_TEXT) {
     
     
     size_t bufferSize = sizeof(char) * (len + 2);
     char* plainTextData = static_cast<char*>(moz_xmalloc(bufferSize));
-    auto const _release =
-        mozilla::MakeScopeExit([plainTextData]() { ::free(plainTextData); });
-
     char16_t* castedUnicode = reinterpret_cast<char16_t*>(data);
     int32_t plainTextLen =
         WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)castedUnicode, len / 2 + 1,
                             plainTextData, bufferSize, NULL, NULL);
-
+    
+    
+    free(data);
     if (plainTextLen) {
-      return assignDataToStg(plainTextData, plainTextLen);
+      data = plainTextData;
+      allocLen = plainTextLen;
+    } else {
+      free(plainTextData);
+      NS_WARNING("Oh no, couldn't convert unicode to plain text");
+      return S_OK;
     }
-
-    NS_WARNING("Oh no, couldn't convert unicode to plain text");
-    return S_OK;
-  }
-
-  if (aFE.cfFormat == nsClipboard::GetHtmlClipboardFormat()) {
+  } else if (aFE.cfFormat == nsClipboard::GetHtmlClipboardFormat()) {
     
     
     NS_ConvertUTF16toUTF8 converter(reinterpret_cast<char16_t*>(data));
     char* utf8HTML = nullptr;
     nsresult rv =
         BuildPlatformHTML(converter.get(), &utf8HTML);  
-    auto const _release =
-        mozilla::MakeScopeExit([utf8HTML]() { ::free(utf8HTML); });
 
+    free(data);
     if (NS_SUCCEEDED(rv) && utf8HTML) {
       
-      return assignDataToStg(utf8HTML, strlen(utf8HTML) + sizeof(char));
+      data = utf8HTML;
+      allocLen = strlen(utf8HTML) + sizeof(char);
+    } else {
+      NS_WARNING("Oh no, couldn't convert to HTML");
+      return S_OK;
     }
-
-    NS_WARNING("Oh no, couldn't convert to HTML");
-    return S_OK;
+  } else if (aFE.cfFormat != nsClipboard::GetCustomClipboardFormat()) {
+    
+    
+    allocLen += sizeof(char16_t);
   }
 
-  
-  
-  
-  bool const excludeNull =
-      aFE.cfFormat == nsClipboard::GetCustomClipboardFormat();
+  hGlobalMemory = (HGLOBAL)GlobalAlloc(GMEM_MOVEABLE, allocLen);
 
-  return assignDataToStg(data, len + (excludeNull ? 0 : sizeof(char16_t)));
+  
+  if (hGlobalMemory) {
+    char* dest = reinterpret_cast<char*>(GlobalLock(hGlobalMemory));
+    char* source = reinterpret_cast<char*>(data);
+    memcpy(dest, source, allocLen);  
+    GlobalUnlock(hGlobalMemory);
+  }
+  aSTG.hGlobal = hGlobalMemory;
+
+  
+  
+  free(data);
+
+  return S_OK;
 }
 
 
@@ -1599,69 +1591,6 @@ HRESULT nsDataObj::GetFile(FORMATETC& aFE, STGMEDIUM& aSTG) {
   return E_FAIL;
 }
 
-static HRESULT AssignDropfile(STGMEDIUM& aSTG, nsAString const& aPath) {
-  
-  
-  struct DFWithPaths {
-    DROPFILES dropfiles;
-    
-    
-    WCHAR paths[];
-  };
-
-  
-  
-  
-  size_t const allocSize =
-      
-      sizeof(DFWithPaths) +
-      
-      ((aPath.Length() + 1) * sizeof(WCHAR)) +
-      
-      sizeof(L"");
-
-  nsAutoGlobalMem hGlobalMemory(
-      nsHGLOBAL(::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, allocSize)));
-
-  if (!hGlobalMemory) {
-    return E_FAIL;
-  }
-
-  {
-    ScopedOLELock<DFWithPaths*> pDFWithPaths(hGlobalMemory.get());
-
-    
-    DROPFILES* pDropFile = &pDFWithPaths->dropfiles;
-    pDropFile->pFiles =
-        offsetof(DFWithPaths, paths) - offsetof(DFWithPaths, dropfiles);
-    pDropFile->fNC = 0;
-    pDropFile->pt.x = 0;
-    pDropFile->pt.y = 0;
-    pDropFile->fWide = TRUE;
-
-    
-    WCHAR* dest = pDFWithPaths->paths;
-    WCHAR* after_dest [[maybe_unused]] =
-        std::copy_n(aPath.BeginReading(), aPath.Length(), dest);
-
-    
-    
-    size_t const offset [[maybe_unused]] =
-        (char*)after_dest - (char*)pDFWithPaths.get();
-    MOZ_ASSERT(allocSize - offset == sizeof(WCHAR) * 2);
-    MOZ_ASSERT(after_dest[0] == L'\0');
-    MOZ_ASSERT(after_dest[1] == L'\0');
-  }
-
-  aSTG = {
-      .tymed = TYMED_HGLOBAL,
-      .hGlobal = hGlobalMemory.disown(),
-      .pUnkForRelease = nullptr,
-  };
-
-  return S_OK;
-}
-
 HRESULT nsDataObj::DropFile(FORMATETC& aFE, STGMEDIUM& aSTG) {
   nsresult rv;
   nsCOMPtr<nsISupports> genericDataWrapper;
@@ -1673,11 +1602,44 @@ HRESULT nsDataObj::DropFile(FORMATETC& aFE, STGMEDIUM& aSTG) {
   nsCOMPtr<nsIFile> file(do_QueryInterface(genericDataWrapper));
   if (!file) return E_FAIL;
 
+  aSTG.tymed = TYMED_HGLOBAL;
+  aSTG.pUnkForRelease = nullptr;
+
   nsAutoString path;
   rv = file->GetPath(path);
   if (NS_FAILED(rv)) return E_FAIL;
 
-  return AssignDropfile(aSTG, path);
+  uint32_t allocLen = path.Length() + 2;
+  HGLOBAL hGlobalMemory = nullptr;
+  char16_t* dest;
+
+  hGlobalMemory = GlobalAlloc(GMEM_MOVEABLE,
+                              sizeof(DROPFILES) + allocLen * sizeof(char16_t));
+  if (!hGlobalMemory) return E_FAIL;
+
+  DROPFILES* pDropFile = (DROPFILES*)GlobalLock(hGlobalMemory);
+
+  
+  pDropFile->pFiles = sizeof(DROPFILES);  
+  pDropFile->fNC = 0;
+  pDropFile->pt.x = 0;
+  pDropFile->pt.y = 0;
+  pDropFile->fWide = TRUE;
+
+  
+  dest = (char16_t*)(((char*)pDropFile) + pDropFile->pFiles);
+  memcpy(dest, path.get(), (allocLen - 1) * sizeof(char16_t));
+
+  
+  
+  
+  dest[allocLen - 1] = L'\0';
+
+  GlobalUnlock(hGlobalMemory);
+
+  aSTG.hGlobal = hGlobalMemory;
+
+  return S_OK;
 }
 
 HRESULT nsDataObj::DropImage(FORMATETC& , STGMEDIUM& aSTG) {
@@ -1780,7 +1742,44 @@ HRESULT nsDataObj::DropImage(FORMATETC& , STGMEDIUM& aSTG) {
   rv = mCachedTempFile->GetPath(path);
   if (NS_FAILED(rv)) return E_FAIL;
 
-  return AssignDropfile(aSTG, path);
+  
+  HGLOBAL hGlobalMemory = nullptr;
+
+  uint32_t allocLen = path.Length() + 2;
+
+  aSTG.tymed = TYMED_HGLOBAL;
+  aSTG.pUnkForRelease = nullptr;
+
+  hGlobalMemory = GlobalAlloc(GMEM_MOVEABLE,
+                              sizeof(DROPFILES) + allocLen * sizeof(char16_t));
+  if (!hGlobalMemory) return E_FAIL;
+
+  DROPFILES* pDropFile = (DROPFILES*)GlobalLock(hGlobalMemory);
+
+  
+  pDropFile->pFiles =
+      sizeof(DROPFILES);  
+  pDropFile->fNC = 0;
+  pDropFile->pt.x = 0;
+  pDropFile->pt.y = 0;
+  pDropFile->fWide = TRUE;
+
+  
+  char16_t* dest = (char16_t*)(((char*)pDropFile) + pDropFile->pFiles);
+  memcpy(dest, path.get(),
+         (allocLen - 1) *
+             sizeof(char16_t));  
+
+  
+  
+  
+  dest[allocLen - 1] = L'\0';
+
+  GlobalUnlock(hGlobalMemory);
+
+  aSTG.hGlobal = hGlobalMemory;
+
+  return S_OK;
 }
 
 HRESULT nsDataObj::DropTempFile(FORMATETC& aFE, STGMEDIUM& aSTG) {
@@ -1837,7 +1836,44 @@ HRESULT nsDataObj::DropTempFile(FORMATETC& aFE, STGMEDIUM& aSTG) {
   rv = mCachedTempFile->GetPath(path);
   if (NS_FAILED(rv)) return E_FAIL;
 
-  return AssignDropfile(aSTG, path);
+  uint32_t allocLen = path.Length() + 2;
+
+  
+  HGLOBAL hGlobalMemory = nullptr;
+
+  aSTG.tymed = TYMED_HGLOBAL;
+  aSTG.pUnkForRelease = nullptr;
+
+  hGlobalMemory = GlobalAlloc(GMEM_MOVEABLE,
+                              sizeof(DROPFILES) + allocLen * sizeof(char16_t));
+  if (!hGlobalMemory) return E_FAIL;
+
+  DROPFILES* pDropFile = (DROPFILES*)GlobalLock(hGlobalMemory);
+
+  
+  pDropFile->pFiles =
+      sizeof(DROPFILES);  
+  pDropFile->fNC = 0;
+  pDropFile->pt.x = 0;
+  pDropFile->pt.y = 0;
+  pDropFile->fWide = TRUE;
+
+  
+  char16_t* dest = (char16_t*)(((char*)pDropFile) + pDropFile->pFiles);
+  memcpy(dest, path.get(),
+         (allocLen - 1) *
+             sizeof(char16_t));  
+
+  
+  
+  
+  dest[allocLen - 1] = L'\0';
+
+  GlobalUnlock(hGlobalMemory);
+
+  aSTG.hGlobal = hGlobalMemory;
+
+  return S_OK;
 }
 
 
