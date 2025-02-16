@@ -186,6 +186,10 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
 
   ffi::WGPUGlobal* GetContext() const { return mContext.get(); }
 
+  bool IsDeviceActive(const RawId aDeviceId) {
+    return mActiveDeviceIds.Contains(aDeviceId);
+  }
+
  private:
   static void MapCallback(uint8_t* aUserData,
                           ffi::WGPUBufferMapAsyncStatus aStatus);
@@ -231,6 +235,9 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   
   
   nsTHashSet<RawId> mLostDeviceIds;
+
+  
+  nsTHashSet<RawId> mActiveDeviceIds;
 
   
   std::unordered_map<RawId, RefPtr<gfx::FileHandleWrapper>> mDeviceFenceHandles;
