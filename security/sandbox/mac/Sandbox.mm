@@ -26,10 +26,15 @@
 #include "SandboxPolicyRDD.h"
 #include "SandboxPolicySocket.h"
 #include "SandboxPolicyUtility.h"
+#if defined(MOZ_PROFILE_GENERATE)
+#  include "SandboxPolicyPGO.h"
+#endif  
+
 #include "mozilla/Assertions.h"
 
 #include "mozilla/GeckoArgs.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
+#include "mozilla/SandboxSettings.h"
 
 
 extern "C" int sandbox_init_with_parameters(const char* profile, uint64_t flags,
@@ -462,6 +467,17 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
     fprintf(stderr, "Out of memory in StartMacSandbox()!\n");
     return false;
   }
+
+#if defined(MOZ_PROFILE_GENERATE)
+  
+  
+  std::string parentPath;
+  if (GetLlvmProfileDir(parentPath)) {
+    params.push_back("PGO_DATA_DIR");
+    params.push_back(parentPath.c_str());
+    profile.append(SandboxPolicyPGO);
+  }
+#endif
 
 
 
