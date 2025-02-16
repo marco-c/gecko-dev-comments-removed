@@ -70,10 +70,6 @@ module.exports = [
   "!browser/components/storybook/.storybook/*.js",
 
   
-  "browser/components/newtab/data/",
-  "browser/components/newtab/logs/",
-
-  
   "browser/components/aboutwelcome/webpack.aboutwelcome.config.js",
 
   
@@ -84,6 +80,10 @@ module.exports = [
   
   "browser/extensions/webcompat/data/injections.js",
   "browser/extensions/webcompat/data/ua_overrides.js",
+
+  
+  "browser/extensions/newtab/data/",
+  "browser/extensions/newtab/logs/",
 
   
   "devtools/client/debugger/bin/",
