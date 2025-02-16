@@ -116,7 +116,7 @@ fn translate_shader(
     let mut build = cc::Build::new();
     build.no_default_flags(true);
     if let Ok(tool) = build.try_get_compiler() {
-        if is_like_msvc(&tool) {
+        if tool.is_like_msvc() {
             build.flag("/EP");
             if tool.path().to_str().is_some_and(|p| p.contains("clang")) {
                 build.flag("/clang:-undef");
@@ -185,7 +185,7 @@ fn main() {
     build.cpp(true);
 
     if let Ok(tool) = build.try_get_compiler() {
-        if is_like_msvc(&tool) {
+        if tool.is_like_msvc() {
             build
                 .flag("/std:c++17")
                 .flag("/EHs-")
@@ -212,7 +212,7 @@ fn main() {
         
         
         
-        if is_like_msvc(&tool) {
+        if tool.is_like_msvc() {
             build
                 .flag("/fp:fast")
                 .flag("-Xclang")
@@ -250,22 +250,5 @@ impl Drop for EnvVarGuard {
         } else {
             std::env::remove_var(key);
         }
-    }
-}
-
-fn is_like_msvc(tool: &cc::Tool) -> bool {
-    tool.is_like_msvc() || {
-        tool.is_like_clang()
-            && tool.to_command().get_args().any(|arg| {
-                
-                
-                
-                
-                
-                
-                
-                arg.to_str()
-                    .is_some_and(|a| a.starts_with("--driver-mode=cl"))
-            })
     }
 }
