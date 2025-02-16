@@ -3819,8 +3819,6 @@ nsCSSBorderImageRenderer::nsCSSBorderImageRenderer(
 
   
   
-  nsMargin slice;
-  nsMargin border;
   for (const auto s : mozilla::AllPhysicalSides()) {
     const auto& slice = aStyleBorder.mBorderImageSlice.offsets.Get(s);
     int32_t imgDimension =
