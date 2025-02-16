@@ -22,7 +22,10 @@ module.exports = (env = {}) => ({
     
     new ResourceUriPlugin({
       resourcePathRegExes: [
-        [new RegExp("^resource://newtab/"), path.join(__dirname, "./")],
+        [
+          new RegExp("^resource://activity-stream/"),
+          path.join(__dirname, "./"),
+        ],
         [
           new RegExp("^resource:///modules/topsites/"),
           path.join(__dirname, "../../components/topsites/"),
