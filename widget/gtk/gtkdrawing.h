@@ -184,8 +184,6 @@ enum WidgetNodeType : int {
   
   MOZ_GTK_TABPANELS,
   
-  MOZ_GTK_TAB_SCROLLARROW,
-  
   MOZ_GTK_TREEVIEW,
   
   MOZ_GTK_TREEVIEW_VIEW,
