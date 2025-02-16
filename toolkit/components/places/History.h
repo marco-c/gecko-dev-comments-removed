@@ -28,7 +28,6 @@
 namespace mozilla::places {
 
 struct VisitData;
-class ConcurrentStatementsHolder;
 class VisitedQuery;
 
 
@@ -161,8 +160,6 @@ class History final : public BaseHistory,
 
 
   RefPtr<mozilla::places::Database> mDB;
-
-  RefPtr<ConcurrentStatementsHolder> mConcurrentStatementsHolder;
 
   
 
