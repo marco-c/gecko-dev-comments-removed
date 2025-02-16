@@ -27,16 +27,19 @@
 #ifndef ABSL_LOG_INTERNAL_LOG_MESSAGE_H_
 #define ABSL_LOG_INTERNAL_LOG_MESSAGE_H_
 
+#include <cstddef>
 #include <ios>
 #include <memory>
 #include <ostream>
 #include <streambuf>
 #include <string>
+#include <type_traits>
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/internal/errno_saver.h"
 #include "absl/base/log_severity.h"
+#include "absl/base/nullability.h"
 #include "absl/log/internal/nullguard.h"
 #include "absl/log/log_entry.h"
 #include "absl/log/log_sink.h"
@@ -56,15 +59,15 @@ class LogMessage {
   struct ErrorTag {};
 
   
-  LogMessage(const char* file, int line,
+  LogMessage(absl::Nonnull<const char*> file, int line,
              absl::LogSeverity severity) ABSL_ATTRIBUTE_COLD;
   
   
-  LogMessage(const char* file, int line,
+  LogMessage(absl::Nonnull<const char*> file, int line,
              InfoTag) ABSL_ATTRIBUTE_COLD ABSL_ATTRIBUTE_NOINLINE;
-  LogMessage(const char* file, int line,
+  LogMessage(absl::Nonnull<const char*> file, int line,
              WarningTag) ABSL_ATTRIBUTE_COLD ABSL_ATTRIBUTE_NOINLINE;
-  LogMessage(const char* file, int line,
+  LogMessage(absl::Nonnull<const char*> file, int line,
              ErrorTag) ABSL_ATTRIBUTE_COLD ABSL_ATTRIBUTE_NOINLINE;
   LogMessage(const LogMessage&) = delete;
   LogMessage& operator=(const LogMessage&) = delete;
@@ -96,13 +99,14 @@ class LogMessage {
   LogMessage& WithPerror();
   
   
-  LogMessage& ToSinkAlso(absl::LogSink* sink);
+  LogMessage& ToSinkAlso(absl::Nonnull<absl::LogSink*> sink);
   
-  LogMessage& ToSinkOnly(absl::LogSink* sink);
+  LogMessage& ToSinkOnly(absl::Nonnull<absl::LogSink*> sink);
 
   
   LogMessage& InternalStream() { return *this; }
 
+  
   
   
   
@@ -112,33 +116,39 @@ class LogMessage {
   LogMessage& operator<<(unsigned char v) {
     return operator<< <unsigned char>(v);
   }
-  LogMessage& operator<<(signed short v) {  
-    return operator<< <signed short>(v);  
+  LogMessage& operator<<(signed short v) {
+    return operator<< <signed short>(v);
   }
   LogMessage& operator<<(signed int v) { return operator<< <signed int>(v); }
-  LogMessage& operator<<(signed long v) {  
-    return operator<< <signed long>(v);  
+  LogMessage& operator<<(signed long v) {
+    return operator<< <signed long>(v);
   }
-  LogMessage& operator<<(signed long long v) {  
-    return operator<< <signed long long>(v);  
+  LogMessage& operator<<(signed long long v) {
+    return operator<< <signed long long>(v);
   }
-  LogMessage& operator<<(unsigned short v) {  
-    return operator<< <unsigned short>(v);  
+  LogMessage& operator<<(unsigned short v) {
+    return operator<< <unsigned short>(v);
   }
   LogMessage& operator<<(unsigned int v) {
     return operator<< <unsigned int>(v);
   }
-  LogMessage& operator<<(unsigned long v) {  
-    return operator<< <unsigned long>(v);  
+  LogMessage& operator<<(unsigned long v) {
+    return operator<< <unsigned long>(v);
   }
-  LogMessage& operator<<(unsigned long long v) {  
-    return operator<< <unsigned long long>(v);  
+  LogMessage& operator<<(unsigned long long v) {
+    return operator<< <unsigned long long>(v);
   }
-  LogMessage& operator<<(void* v) { return operator<< <void*>(v); }
-  LogMessage& operator<<(const void* v) { return operator<< <const void*>(v); }
+  LogMessage& operator<<(absl::Nullable<void*> v) {
+    return operator<< <void*>(v);
+  }
+  LogMessage& operator<<(absl::Nullable<const void*> v) {
+    return operator<< <const void*>(v);
+  }
   LogMessage& operator<<(float v) { return operator<< <float>(v); }
   LogMessage& operator<<(double v) { return operator<< <double>(v); }
   LogMessage& operator<<(bool v) { return operator<< <bool>(v); }
+  
+  
   
 
   
@@ -146,8 +156,9 @@ class LogMessage {
   LogMessage& operator<<(absl::string_view v);
 
   
-  LogMessage& operator<<(std::ostream& (*m)(std::ostream& os));
-  LogMessage& operator<<(std::ios_base& (*m)(std::ios_base& os));
+  LogMessage& operator<<(absl::Nonnull<std::ostream& (*)(std::ostream & os)> m);
+  LogMessage& operator<<(
+      absl::Nonnull<std::ios_base& (*)(std::ios_base & os)> m);
 
   
   
@@ -255,7 +266,7 @@ class LogMessage {
 
   
   
-  std::unique_ptr<LogMessageData> data_;
+  absl::Nonnull<std::unique_ptr<LogMessageData>> data_;
 };
 
 
@@ -273,7 +284,8 @@ class StringifySink final {
   }
 
   
-  friend void AbslFormatFlush(StringifySink* sink, absl::string_view v) {
+  friend void AbslFormatFlush(absl::Nonnull<StringifySink*> sink,
+                              absl::string_view v) {
     sink->Append(v);
   }
 
@@ -315,27 +327,28 @@ LogMessage& LogMessage::operator<<(char (&buf)[SIZE]) {
 
 
 
+
+
 extern template LogMessage& LogMessage::operator<<(const char& v);
 extern template LogMessage& LogMessage::operator<<(const signed char& v);
 extern template LogMessage& LogMessage::operator<<(const unsigned char& v);
-extern template LogMessage& LogMessage::operator<<(const short& v);  
-extern template LogMessage& LogMessage::operator<<(
-    const unsigned short& v);  
+extern template LogMessage& LogMessage::operator<<(const short& v);
+extern template LogMessage& LogMessage::operator<<(const unsigned short& v);
 extern template LogMessage& LogMessage::operator<<(const int& v);
+extern template LogMessage& LogMessage::operator<<(const unsigned int& v);
+extern template LogMessage& LogMessage::operator<<(const long& v);
+extern template LogMessage& LogMessage::operator<<(const unsigned long& v);
+extern template LogMessage& LogMessage::operator<<(const long long& v);
+extern template LogMessage& LogMessage::operator<<(const unsigned long long& v);
 extern template LogMessage& LogMessage::operator<<(
-    const unsigned int& v);                                         
-extern template LogMessage& LogMessage::operator<<(const long& v);  
+    absl::Nullable<void*> const& v);
 extern template LogMessage& LogMessage::operator<<(
-    const unsigned long& v);  
-extern template LogMessage& LogMessage::operator<<(
-    const long long& v);  
-extern template LogMessage& LogMessage::operator<<(
-    const unsigned long long& v);  
-extern template LogMessage& LogMessage::operator<<(void* const& v);
-extern template LogMessage& LogMessage::operator<<(const void* const& v);
+    absl::Nullable<const void*> const& v);
 extern template LogMessage& LogMessage::operator<<(const float& v);
 extern template LogMessage& LogMessage::operator<<(const double& v);
 extern template LogMessage& LogMessage::operator<<(const bool& v);
+
+
 
 extern template void LogMessage::CopyToEncodedBuffer<
     LogMessage::StringType::kLiteral>(absl::string_view str);
@@ -351,8 +364,9 @@ extern template void LogMessage::CopyToEncodedBuffer<
 
 class LogMessageFatal final : public LogMessage {
  public:
-  LogMessageFatal(const char* file, int line) ABSL_ATTRIBUTE_COLD;
-  LogMessageFatal(const char* file, int line,
+  LogMessageFatal(absl::Nonnull<const char*> file,
+                  int line) ABSL_ATTRIBUTE_COLD;
+  LogMessageFatal(absl::Nonnull<const char*> file, int line,
                   absl::string_view failure_msg) ABSL_ATTRIBUTE_COLD;
   [[noreturn]] ~LogMessageFatal();
 };
@@ -362,7 +376,8 @@ class LogMessageFatal final : public LogMessage {
 
 class LogMessageDebugFatal final : public LogMessage {
  public:
-  LogMessageDebugFatal(const char* file, int line) ABSL_ATTRIBUTE_COLD;
+  LogMessageDebugFatal(absl::Nonnull<const char*> file,
+                       int line) ABSL_ATTRIBUTE_COLD;
   ~LogMessageDebugFatal();
 };
 
@@ -371,15 +386,17 @@ class LogMessageQuietlyDebugFatal final : public LogMessage {
   
   
   
-  LogMessageQuietlyDebugFatal(const char* file, int line) ABSL_ATTRIBUTE_COLD;
+  LogMessageQuietlyDebugFatal(absl::Nonnull<const char*> file,
+                              int line) ABSL_ATTRIBUTE_COLD;
   ~LogMessageQuietlyDebugFatal();
 };
 
 
 class LogMessageQuietlyFatal final : public LogMessage {
  public:
-  LogMessageQuietlyFatal(const char* file, int line) ABSL_ATTRIBUTE_COLD;
-  LogMessageQuietlyFatal(const char* file, int line,
+  LogMessageQuietlyFatal(absl::Nonnull<const char*> file,
+                         int line) ABSL_ATTRIBUTE_COLD;
+  LogMessageQuietlyFatal(absl::Nonnull<const char*> file, int line,
                          absl::string_view failure_msg) ABSL_ATTRIBUTE_COLD;
   [[noreturn]] ~LogMessageQuietlyFatal();
 };

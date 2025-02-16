@@ -22,6 +22,7 @@
 #include <ostream>
 #include <type_traits>
 
+#include "absl/base/config.h"
 #include "absl/random/internal/iostream_state_saver.h"
 #include "absl/random/internal/traits.h"
 #include "absl/random/uniform_real_distribution.h"
@@ -152,7 +153,7 @@ zipf_distribution<IntType>::param_type::param_type(
     : k_(k), q_(q), v_(v), one_minus_q_(1 - q) {
   assert(q > 1);
   assert(v > 0);
-  assert(k > 0);
+  assert(k >= 0);
   one_minus_q_inv_ = 1 / one_minus_q_;
 
   
@@ -221,7 +222,7 @@ zipf_distribution<IntType>::operator()(
     const double v = uniform_double(g);
     const double u = p.hxm_ + v * p.hx0_minus_hxm_;
     const double x = p.hinv(u);
-    k = rint(x);              
+    k = rint(x);                                   
     if (k > static_cast<double>(p.k())) continue;  
     if (k - x <= p.s_) break;
     const double h = p.h(k + 0.5);

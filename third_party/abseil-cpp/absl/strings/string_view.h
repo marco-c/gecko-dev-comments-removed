@@ -311,11 +311,10 @@ class ABSL_ATTRIBUTE_VIEW string_view {
   
   
   constexpr const_reference at(size_type i) const {
-    return ABSL_PREDICT_TRUE(i < size())
-               ? ptr_[i]
-               : ((void)base_internal::ThrowStdOutOfRange(
-                      "absl::string_view::at"),
-                  ptr_[i]);
+    if (ABSL_PREDICT_FALSE(i >= size())) {
+      base_internal::ThrowStdOutOfRange("absl::string_view::at");
+    }
+    return ptr_[i];
   }
 
   
@@ -403,11 +402,10 @@ class ABSL_ATTRIBUTE_VIEW string_view {
   
   
   constexpr string_view substr(size_type pos = 0, size_type n = npos) const {
-    return ABSL_PREDICT_FALSE(pos > length_)
-               ? (base_internal::ThrowStdOutOfRange(
-                      "absl::string_view::substr"),
-                  string_view())
-               : string_view(ptr_ + pos, Min(n, length_ - pos));
+    if (ABSL_PREDICT_FALSE(pos > length_)) {
+      base_internal::ThrowStdOutOfRange("absl::string_view::substr");
+    }
+    return string_view(ptr_ + pos, Min(n, length_ - pos));
   }
 
   

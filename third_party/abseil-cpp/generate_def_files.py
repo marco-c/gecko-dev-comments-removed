@@ -27,6 +27,9 @@ import sys
 import tempfile
 import time
 
+assert sys.platform != 'win32', \
+  "This doesn't work on Windows due to https://crbug.com/3790230222"
+
 
 
 
@@ -79,7 +82,7 @@ def _GenerateDefFile(cpu, is_debug, extra_gn_args=[], suffix=None):
     symbol_dumper = ['dumpbin', '/symbols']
     import shutil
     if not shutil.which('dumpbin'):
-      logging.error('dumpbin not found. Run tools\win\setenv.bat.')
+      logging.error('dumpbin not found. Run tools\\win\\setenv.bat.')
       exit(1)
   cwd = os.getcwd()
   with tempfile.TemporaryDirectory(dir=cwd) as out_dir:

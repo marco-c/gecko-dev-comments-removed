@@ -32,6 +32,7 @@
 
 #include <ostream>
 
+#include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/log/internal/structured.h"
 #include "absl/strings/string_view.h"
@@ -60,7 +61,11 @@ ABSL_NAMESPACE_BEGIN
 
 
 
-inline log_internal::AsLiteralImpl LogAsLiteral(absl::string_view s) {
+
+
+
+inline log_internal::AsLiteralImpl LogAsLiteral(
+    absl::string_view s ABSL_ATTRIBUTE_LIFETIME_BOUND) {
   return log_internal::AsLiteralImpl(s);
 }
 

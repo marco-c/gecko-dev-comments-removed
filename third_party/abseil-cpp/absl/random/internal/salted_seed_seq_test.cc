@@ -33,14 +33,18 @@ namespace {
 template <typename Sseq>
 void ConformsToInterface() {
   
-  { Sseq default_constructed_seq; }
+  {
+    Sseq default_constructed_seq;
+  }
   
   {
     uint32_t init_array[] = {1, 3, 5, 7, 9};
     Sseq iterator_constructed_seq(std::begin(init_array), std::end(init_array));
   }
   
-  { Sseq list_constructed_seq = {1, 3, 5, 7, 9, 11, 13}; }
+  {
+    Sseq list_constructed_seq = {1, 3, 5, 7, 9, 11, 13};
+  }
   
   {
     uint32_t init_array[] = {1, 2, 3, 4, 5};

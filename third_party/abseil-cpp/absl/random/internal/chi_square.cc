@@ -25,9 +25,7 @@ namespace {
 
 #if defined(__EMSCRIPTEN__)
 
-inline double fma(double x, double y, double z) {
-  return (x * y) + z;
-}
+inline double fma(double x, double y, double z) { return (x * y) + z; }
 #endif
 
 
@@ -105,9 +103,8 @@ double normal_survival(double z) {
 
 double ChiSquareValue(int dof, double p) {
   static constexpr double kChiEpsilon =
-      0.000001;  
-  static constexpr double kChiMax =
-      99999.0;  
+      0.000001;                               
+  static constexpr double kChiMax = 99999.0;  
 
   const double p_value = 1.0 - p;
   if (dof < 1 || p_value > 1.0) {

@@ -139,32 +139,42 @@ inline bool ascii_isxdigit(unsigned char c) {
 
 
 
-inline bool ascii_isdigit(unsigned char c) { return c >= '0' && c <= '9'; }
+inline constexpr bool ascii_isdigit(unsigned char c) {
+  return c >= '0' && c <= '9';
+}
 
 
 
 
-inline bool ascii_isprint(unsigned char c) { return c >= 32 && c < 127; }
+inline constexpr bool ascii_isprint(unsigned char c) {
+  return c >= 32 && c < 127;
+}
 
 
 
 
-inline bool ascii_isgraph(unsigned char c) { return c > 32 && c < 127; }
+inline constexpr bool ascii_isgraph(unsigned char c) {
+  return c > 32 && c < 127;
+}
 
 
 
 
-inline bool ascii_isupper(unsigned char c) { return c >= 'A' && c <= 'Z'; }
+inline constexpr bool ascii_isupper(unsigned char c) {
+  return c >= 'A' && c <= 'Z';
+}
 
 
 
 
-inline bool ascii_islower(unsigned char c) { return c >= 'a' && c <= 'z'; }
+inline constexpr bool ascii_islower(unsigned char c) {
+  return c >= 'a' && c <= 'z';
+}
 
 
 
 
-inline bool ascii_isascii(unsigned char c) { return c < 128; }
+inline constexpr bool ascii_isascii(unsigned char c) { return c < 128; }
 
 
 

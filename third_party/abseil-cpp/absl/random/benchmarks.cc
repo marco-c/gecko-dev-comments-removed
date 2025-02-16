@@ -359,7 +359,7 @@ void BM_Thread(benchmark::State& state) {
 
 
 BM_BASIC(absl::InsecureBitGen);  
-BM_BASIC(absl::BitGen);    
+BM_BASIC(absl::BitGen);          
 BM_THREAD(absl::BitGen);
 BM_EXTENDED(absl::BitGen);
 

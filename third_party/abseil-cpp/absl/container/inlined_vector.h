@@ -46,6 +46,7 @@
 #include <utility>
 
 #include "absl/algorithm/algorithm.h"
+#include "absl/base/attributes.h"
 #include "absl/base/internal/throw_delegate.h"
 #include "absl/base/macros.h"
 #include "absl/base/optimization.h"
@@ -67,7 +68,7 @@ ABSL_NAMESPACE_BEGIN
 
 
 template <typename T, size_t N, typename A = std::allocator<T>>
-class InlinedVector {
+class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   static_assert(N > 0, "`absl::InlinedVector` requires an inlined capacity.");
 
   using Storage = inlined_vector_internal::Storage<T, N, A>;

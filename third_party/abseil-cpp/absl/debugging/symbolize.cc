@@ -12,12 +12,13 @@
 
 
 
+
+
 #include "absl/debugging/symbolize.h"
 
 #ifdef _WIN32
 #include <winapifamily.h>
-#if !(WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)) || \
-    WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 
 #define ABSL_INTERNAL_HAVE_SYMBOLIZE_WIN32
 #endif

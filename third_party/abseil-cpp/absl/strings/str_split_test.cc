@@ -14,6 +14,7 @@
 
 #include "absl/strings/str_split.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
@@ -397,6 +398,12 @@ void TestPairConversionOperator(const Splitter& splitter) {
   EXPECT_EQ(p, (std::pair<FirstType, SecondType>("a", "b")));
 }
 
+template <typename StringType, typename Splitter>
+void TestArrayConversionOperator(const Splitter& splitter) {
+  std::array<StringType, 2> a = splitter;
+  EXPECT_THAT(a, ElementsAre("a", "b"));
+}
+
 TEST(Splitter, ConversionOperator) {
   auto splitter = absl::StrSplit("a,b,c,d", ',');
 
@@ -467,6 +474,10 @@ TEST(Splitter, ConversionOperator) {
   TestPairConversionOperator<absl::string_view, std::string>(splitter);
   TestPairConversionOperator<std::string, absl::string_view>(splitter);
   TestPairConversionOperator<std::string, std::string>(splitter);
+
+  
+  TestArrayConversionOperator<std::string>(splitter);
+  TestArrayConversionOperator<absl::string_view>(splitter);
 }
 
 
@@ -507,6 +518,41 @@ TEST(Splitter, ToPair) {
     std::pair<std::string, std::string> p = absl::StrSplit("a,b,c", ',');
     EXPECT_EQ("a", p.first);
     EXPECT_EQ("b", p.second);
+    
+  }
+}
+
+
+
+TEST(Splitter, ToArray) {
+  {
+    
+    std::array<std::string, 2> p = absl::StrSplit("", ',');
+    EXPECT_THAT(p, ElementsAre("", ""));
+  }
+
+  {
+    
+    std::array<std::string, 2> p = absl::StrSplit("a", ',');
+    EXPECT_THAT(p, ElementsAre("a", ""));
+  }
+
+  {
+    
+    std::array<std::string, 2> p = absl::StrSplit(",b", ',');
+    EXPECT_THAT(p, ElementsAre("", "b"));
+  }
+
+  {
+    
+    std::array<std::string, 2> p = absl::StrSplit("a,b", ',');
+    EXPECT_THAT(p, ElementsAre("a", "b"));
+  }
+
+  {
+    
+    std::array<std::string, 2> p = absl::StrSplit("a,b,c", ',');
+    EXPECT_THAT(p, ElementsAre("a", "b"));
     
   }
 }

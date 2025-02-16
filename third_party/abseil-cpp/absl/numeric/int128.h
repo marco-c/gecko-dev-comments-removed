@@ -216,7 +216,11 @@ class
   
   template <typename H>
   friend H AbslHashValue(H h, uint128 v) {
+#if defined(ABSL_HAVE_INTRINSIC_INT128)
+    return H::combine(std::move(h), static_cast<unsigned __int128>(v));
+#else
     return H::combine(std::move(h), Uint128High64(v), Uint128Low64(v));
+#endif
   }
 
   
@@ -458,7 +462,11 @@ class int128 {
   
   template <typename H>
   friend H AbslHashValue(H h, int128 v) {
+#if defined(ABSL_HAVE_INTRINSIC_INT128)
+    return H::combine(std::move(h), v.v_);
+#else
     return H::combine(std::move(h), Int128High64(v), Int128Low64(v));
+#endif
   }
 
   
@@ -781,16 +789,20 @@ constexpr uint128::operator unsigned __int128() const {
 
 
 inline uint128::operator float() const {
-  return static_cast<float>(lo_) + std::ldexp(static_cast<float>(hi_), 64);
+  
+  constexpr float pow_2_64 = 18446744073709551616.0f;
+  return static_cast<float>(lo_) + static_cast<float>(hi_) * pow_2_64;
 }
 
 inline uint128::operator double() const {
-  return static_cast<double>(lo_) + std::ldexp(static_cast<double>(hi_), 64);
+  constexpr double pow_2_64 = 18446744073709551616.0;
+  return static_cast<double>(lo_) + static_cast<double>(hi_) * pow_2_64;
 }
 
 inline uint128::operator long double() const {
+  constexpr long double pow_2_64 = 18446744073709551616.0L;
   return static_cast<long double>(lo_) +
-         std::ldexp(static_cast<long double>(hi_), 64);
+         static_cast<long double>(hi_) * pow_2_64;
 }
 
 

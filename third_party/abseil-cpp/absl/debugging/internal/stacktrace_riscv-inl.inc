@@ -36,12 +36,12 @@
 #include "absl/base/attributes.h"
 #include "absl/debugging/stacktrace.h"
 
-static const uintptr_t kUnknownFrameSize = 0;
+static constexpr ptrdiff_t kUnknownFrameSize = 0;
 
 
 
 template <typename T>
-static inline uintptr_t ComputeStackFrameSize(const T *low, const T *high) {
+static inline ptrdiff_t ComputeStackFrameSize(const T *low, const T *high) {
   const char *low_char_ptr = reinterpret_cast<const char *>(low);
   const char *high_char_ptr = reinterpret_cast<const char *>(high);
   return low < high ? high_char_ptr - low_char_ptr : kUnknownFrameSize;
@@ -93,8 +93,8 @@ static void ** NextStackFrame(void **old_frame_pointer, const void *uc,
 
   
   
-  const uintptr_t max_size = STRICT_UNWINDING ? 100000 : 1000000;
-  const uintptr_t frame_size =
+  const ptrdiff_t max_size = STRICT_UNWINDING ? 100000 : 1000000;
+  const ptrdiff_t frame_size =
       ComputeStackFrameSize(old_frame_pointer, new_frame_pointer);
   if (frame_size == kUnknownFrameSize) {
     if (STRICT_UNWINDING)
@@ -151,7 +151,9 @@ static int UnwindImpl(void **result, int *sizes, int max_depth, int skip_count,
     } else {
       result[n] = return_address;
       if (IS_STACK_FRAMES) {
-        sizes[n] = ComputeStackFrameSize(frame_pointer, next_frame_pointer);
+        
+        sizes[n] = static_cast<int>(ComputeStackFrameSize(frame_pointer,
+                                                          next_frame_pointer));
       }
       n++;
     }
