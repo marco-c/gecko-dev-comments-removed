@@ -54,7 +54,7 @@ class RtpSenderEgress {
     void EnqueuePackets(
         std::vector<std::unique_ptr<RtpPacketToSend>> packets) override;
     
-    void RemovePacketsForSsrc(uint32_t ssrc) override {}
+    void RemovePacketsForSsrc(uint32_t ) override {}
 
    private:
     void PrepareForSend(RtpPacketToSend* packet);

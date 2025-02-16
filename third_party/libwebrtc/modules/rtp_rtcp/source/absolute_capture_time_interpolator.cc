@@ -81,7 +81,7 @@ uint64_t AbsoluteCaptureTimeInterpolator::InterpolateAbsoluteCaptureTimestamp(
 bool AbsoluteCaptureTimeInterpolator::ShouldInterpolateExtension(
     Timestamp receive_time,
     uint32_t source,
-    uint32_t rtp_timestamp,
+    uint32_t ,
     int rtp_clock_frequency_hz) const {
   
   

@@ -98,7 +98,7 @@ UlpfecHeaderWriter::~UlpfecHeaderWriter() = default;
 
 
 
-size_t UlpfecHeaderWriter::MinPacketMaskSize(const uint8_t* packet_mask,
+size_t UlpfecHeaderWriter::MinPacketMaskSize(const uint8_t* ,
                                              size_t packet_mask_size) const {
   return packet_mask_size;
 }

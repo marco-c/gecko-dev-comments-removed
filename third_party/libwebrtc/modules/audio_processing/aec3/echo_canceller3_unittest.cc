@@ -164,9 +164,9 @@ class RenderTransportVerificationProcessor : public BlockProcessor {
 
   void GetMetrics(EchoControl::Metrics* ) const override {}
 
-  void SetAudioBufferDelay(int delay_ms) override {}
+  void SetAudioBufferDelay(int ) override {}
 
-  void SetCaptureOutputUsage(bool capture_output_used) {}
+  void SetCaptureOutputUsage(bool ) {}
 
  private:
   std::deque<Block> received_render_blocks_;

@@ -233,7 +233,7 @@ VCMNackMethod::~VCMNackMethod() {
 }
 
 bool VCMNackMethod::EffectivePacketLoss(
-    const VCMProtectionParameters* parameter) {
+    const VCMProtectionParameters* ) {
   
   _effectivePacketLoss = 0;
   return true;

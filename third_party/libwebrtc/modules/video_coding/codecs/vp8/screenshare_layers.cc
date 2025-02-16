@@ -410,18 +410,18 @@ void ScreenshareLayers::OnEncodeDone(size_t stream_index,
   }
 }
 
-void ScreenshareLayers::OnFrameDropped(size_t stream_index,
-                                       uint32_t rtp_timestamp) {
+void ScreenshareLayers::OnFrameDropped(size_t ,
+                                       uint32_t ) {
   layers_[active_layer_].state = TemporalLayer::State::kDropped;
   ++stats_.num_overshoots_;
 }
 
-void ScreenshareLayers::OnPacketLossRateUpdate(float packet_loss_rate) {}
+void ScreenshareLayers::OnPacketLossRateUpdate(float ) {}
 
-void ScreenshareLayers::OnRttUpdate(int64_t rtt_ms) {}
+void ScreenshareLayers::OnRttUpdate(int64_t ) {}
 
 void ScreenshareLayers::OnLossNotification(
-    const VideoEncoder::LossNotification& loss_notification) {}
+    const VideoEncoder::LossNotification& ) {}
 
 FrameDependencyStructure ScreenshareLayers::GetTemplateStructure(
     int num_layers) const {

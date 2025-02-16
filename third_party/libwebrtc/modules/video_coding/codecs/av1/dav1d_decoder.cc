@@ -72,7 +72,7 @@ class ScopedDav1dPicture
 constexpr char kDav1dName[] = "dav1d";
 
 
-void NullFreeCallback(const uint8_t* buffer, void* opaque) {}
+void NullFreeCallback(const uint8_t* , void* ) {}
 
 Dav1dDecoder::Dav1dDecoder() = default;
 

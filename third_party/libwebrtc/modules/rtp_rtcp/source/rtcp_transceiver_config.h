@@ -34,12 +34,13 @@ class MediaReceiverRtcpObserver {
  public:
   virtual ~MediaReceiverRtcpObserver() = default;
 
-  virtual void OnSenderReport(uint32_t sender_ssrc,
-                              NtpTime ntp_time,
-                              uint32_t rtp_time) {}
-  virtual void OnBye(uint32_t sender_ssrc) {}
-  virtual void OnBitrateAllocation(uint32_t sender_ssrc,
-                                   const VideoBitrateAllocation& allocation) {}
+  virtual void OnSenderReport(uint32_t ,
+                              NtpTime ,
+                              uint32_t ) {}
+  virtual void OnBye(uint32_t ) {}
+  virtual void OnBitrateAllocation(
+      uint32_t ,
+      const VideoBitrateAllocation& ) {}
 };
 
 
@@ -76,14 +77,14 @@ class RtpStreamRtcpHandler {
   };
   virtual RtpStats SentStats() = 0;
 
-  virtual void OnNack(uint32_t sender_ssrc,
-                      rtc::ArrayView<const uint16_t> sequence_numbers) {}
-  virtual void OnFir(uint32_t sender_ssrc) {}
-  virtual void OnPli(uint32_t sender_ssrc) {}
+  virtual void OnNack(uint32_t ,
+                      rtc::ArrayView<const uint16_t> ) {}
+  virtual void OnFir(uint32_t ) {}
+  virtual void OnPli(uint32_t ) {}
 
   
   
-  virtual void OnReport(const ReportBlockData& report_block) {}
+  virtual void OnReport(const ReportBlockData& ) {}
 };
 
 struct RtcpTransceiverConfig {

@@ -184,7 +184,7 @@ class FlexfecForwardErrorCorrection : public ForwardErrorCorrection {
 
   
   
-  static uint16_t GetFirstFecSeqNum(uint16_t next_media_seq_num) {
+  static uint16_t GetFirstFecSeqNum(uint16_t ) {
     Random random(0xbe110);
     return random.Rand<uint16_t>();
   }

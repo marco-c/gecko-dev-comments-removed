@@ -64,11 +64,11 @@ class VCMReceiveCallback {
   };
 
   
-  virtual int32_t FrameToRender(VideoFrame& videoFrame,  
-                                std::optional<uint8_t> qp,
-                                TimeDelta decode_time,
-                                VideoContentType content_type,
-                                VideoFrameType frame_type) {
+  virtual int32_t FrameToRender(VideoFrame& ,  
+                                std::optional<uint8_t> ,
+                                TimeDelta ,
+                                VideoContentType ,
+                                VideoFrameType ) {
     RTC_CHECK_NOTREACHED();
     return 0;
   }

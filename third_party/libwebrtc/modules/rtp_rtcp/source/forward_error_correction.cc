@@ -571,7 +571,7 @@ bool ForwardErrorCorrection::StartPacketRecovery(
 }
 
 bool ForwardErrorCorrection::FinishPacketRecovery(
-    const ReceivedFecPacket& fec_packet,
+    const ReceivedFecPacket& ,
     RecoveredPacket* recovered_packet) {
   uint8_t* data = recovered_packet->pkt->data.MutableData();
   

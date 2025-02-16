@@ -215,7 +215,7 @@ int32_t DeviceInfoImpl::GetBestMatchedCapability(
 }
 
 
-int32_t DeviceInfoImpl::GetOrientation(const char* deviceUniqueIdUTF8,
+int32_t DeviceInfoImpl::GetOrientation(const char* ,
                                        VideoRotation& orientation) {
   orientation = kVideoRotation_0;
   return -1;
