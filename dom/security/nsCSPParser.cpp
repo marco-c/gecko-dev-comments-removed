@@ -1324,19 +1324,17 @@ nsCSPPolicy* nsCSPParser::policy() {
     
     
     
-    
-    
-    bool isValid = true;
+    bool isAscii = true;
     for (const auto& token : mTokens[i]) {
-      if (CSP_IsInvalidDirectiveValue(token)) {
+      if (!IsAscii(token)) {
         AutoTArray<nsString, 1> params = {mTokens[i][0], token};
         logWarningErrorToConsole(nsIScriptError::warningFlag,
-                                 "ignoringInvalidToken", params);
-        isValid = false;
+                                 "ignoringNonAsciiToken", params);
+        isAscii = false;
         break;
       }
     }
-    if (!isValid) {
+    if (!isAscii) {
       continue;
     }
 
