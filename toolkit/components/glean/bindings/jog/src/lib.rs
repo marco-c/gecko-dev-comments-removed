@@ -210,8 +210,12 @@ fn create_and_register_ping(
 
 
 
+
+
 #[no_mangle]
-pub extern "C" fn jog_test_clear_registered_metrics_and_pings() {}
+pub extern "C" fn jog_test_clear_registered_metrics_and_pings() {
+    factory::id_and_map_reset();
+}
 
 #[derive(Default, Deserialize)]
 struct Jogfile {

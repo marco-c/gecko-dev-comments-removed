@@ -48,13 +48,6 @@ class JOG {
 
 
 
-  static void TestReset();
-
-  
-
-
-
-
 
 
 
