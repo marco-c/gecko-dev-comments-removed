@@ -134,7 +134,12 @@ typedef opus_val32 celt_ener;
 #define SIG_SHIFT 12
 
 
-#define SIG_SAT (300000000)
+
+
+
+
+
+#define SIG_SAT (536870911)
 
 #define NORM_SCALING 16384
 

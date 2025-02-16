@@ -189,7 +189,7 @@ void compute_pulse_cache(CELTMode *m, int LM)
                   
 
 
-                  offset = ((m->logN[j]+((LM0+k)<<BITRES))>>1)-QTHETA_OFFSET;
+                  offset = ((m->logN[j]+(opus_int32)((opus_uint32)(LM0+k)<<BITRES))>>1)-QTHETA_OFFSET;
                   
 
 
