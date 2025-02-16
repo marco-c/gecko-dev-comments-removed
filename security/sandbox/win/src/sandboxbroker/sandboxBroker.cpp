@@ -343,6 +343,19 @@ Result<Ok, mozilla::ipc::LaunchError> SandboxBroker::LaunchApp(
         "Setting the reduced set of flags should always succeed");
   }
 
+  
+  constexpr sandbox::MitigationFlags kDynamicCodeFlags =
+      sandbox::MITIGATION_DYNAMIC_CODE_DISABLE |
+      sandbox::MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT;
+  sandbox::MitigationFlags delayedMitigations =
+      mPolicy->GetDelayedProcessMitigations();
+  if ((delayedMitigations & kDynamicCodeFlags) &&
+      ::GetModuleHandleW(L"MpDetours.dll")) {
+    delayedMitigations &= ~kDynamicCodeFlags;
+    SANDBOX_SUCCEED_OR_CRASH(
+        mPolicy->SetDelayedProcessMitigations(delayedMitigations));
+  }
+
   EnsureAppLockerAccess(mPolicy);
 
   
