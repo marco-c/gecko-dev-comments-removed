@@ -555,11 +555,11 @@ async function testWindowSizeSetting(
 
 class RoundedWindowTest {
   
-  static run(testCases, testOuter, extraPrefs = []) {
+  static run(testCases, testOuter) {
     
     
     let test = new this(testCases);
-    add_task(async () => test.setup(extraPrefs));
+    add_task(async () => test.setup());
     add_task(async () => {
       if (testOuter == undefined) {
         
@@ -575,9 +575,9 @@ class RoundedWindowTest {
     this.testCases = testCases;
   }
 
-  async setup(extraPrefs) {
+  async setup() {
     await SpecialPowers.pushPrefEnv({
-      set: [["privacy.resistFingerprinting", true], ...extraPrefs],
+      set: [["privacy.resistFingerprinting", true]],
     });
 
     
@@ -668,15 +668,7 @@ async function runActualTest(uri, testFunction, expectedResults, extraData) {
     browserWin = openedWin.gBrowser;
   }
 
-  
-  
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["privacy.resistFingerprinting.principalCheckEnabled", false]],
-  });
   let tab = await BrowserTestUtils.openNewForegroundTab(browserWin, uri);
-  await SpecialPowers.popPrefEnv();
 
   if ("etp_reload" in extraData) {
     ContentBlockingAllowList.add(tab.linkedBrowser);
@@ -710,13 +702,11 @@ async function runActualTest(uri, testFunction, expectedResults, extraData) {
     tab.linkedBrowser,
     [IFRAME_DOMAIN, CROSS_ORIGIN_DOMAIN, filterExtraData(extraData)],
     async function (iframe_domain_, cross_origin_domain_, extraData_) {
-      return content.wrappedJSObject.eval(`
-        runTheTest(
-          ${JSON.stringify(iframe_domain_)},
-          ${JSON.stringify(cross_origin_domain_)},
-          ${JSON.stringify(extraData_)}
-        );
-      `);
+      return content.wrappedJSObject.runTheTest(
+        iframe_domain_,
+        cross_origin_domain_,
+        extraData_
+      );
     }
   );
 
@@ -731,7 +721,7 @@ async function runActualTest(uri, testFunction, expectedResults, extraData) {
       popup_tab.linkedBrowser,
       [],
       async function () {
-        let r = content.wrappedJSObject.eval("give_result()");
+        let r = content.wrappedJSObject.give_result();
         return r;
       }
     );
