@@ -143,7 +143,7 @@ template <typename NodeType, typename RangeBoundaryType>
 nsresult
 ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetStart(
     const RawRangeBoundary& aStart) {
-  nsINode* newRoot = RangeUtils::ComputeRootNode(aStart.Container());
+  nsINode* newRoot = RangeUtils::ComputeRootNode(aStart.GetContainer());
   if (!newRoot) {
     return NS_ERROR_DOM_INVALID_NODE_TYPE_ERR;
   }
@@ -169,7 +169,7 @@ template <typename NodeType, typename RangeBoundaryType>
 nsresult
 ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetEnd(
     const RawRangeBoundary& aEnd) {
-  nsINode* newRoot = RangeUtils::ComputeRootNode(aEnd.Container());
+  nsINode* newRoot = RangeUtils::ComputeRootNode(aEnd.GetContainer());
   if (!newRoot) {
     return NS_ERROR_DOM_INVALID_NODE_TYPE_ERR;
   }
@@ -210,7 +210,7 @@ template <typename NodeType, typename RangeBoundaryType>
 nsresult ContentEventHandler::SimpleRangeBase<
     NodeType, RangeBoundaryType>::SetStartAndEnd(const RawRangeBoundary& aStart,
                                                  const RawRangeBoundary& aEnd) {
-  nsINode* newStartRoot = RangeUtils::ComputeRootNode(aStart.Container());
+  nsINode* newStartRoot = RangeUtils::ComputeRootNode(aStart.GetContainer());
   if (!newStartRoot) {
     return NS_ERROR_DOM_INVALID_NODE_TYPE_ERR;
   }
@@ -218,7 +218,7 @@ nsresult ContentEventHandler::SimpleRangeBase<
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
 
-  if (aStart.Container() == aEnd.Container()) {
+  if (aStart.GetContainer() == aEnd.GetContainer()) {
     if (!aEnd.IsSetAndValid()) {
       return NS_ERROR_DOM_INDEX_SIZE_ERR;
     }
@@ -230,7 +230,7 @@ nsresult ContentEventHandler::SimpleRangeBase<
     return NS_OK;
   }
 
-  nsINode* newEndRoot = RangeUtils::ComputeRootNode(aEnd.Container());
+  nsINode* newEndRoot = RangeUtils::ComputeRootNode(aEnd.GetContainer());
   if (!newEndRoot) {
     return NS_ERROR_DOM_INVALID_NODE_TYPE_ERR;
   }
@@ -1601,7 +1601,7 @@ nsresult ContentEventHandler::OnQuerySelectedText(
   }
 
   Result<nsIFrame*, nsresult> frameForTextRectOrError = GetFrameForTextRect(
-      focusRef.Container(),
+      focusRef.GetContainer(),
       focusRef.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets).valueOr(0),
       true);
   if (NS_WARN_IF(frameForTextRectOrError.isErr()) ||
@@ -1731,7 +1731,7 @@ ContentEventHandler::GetFirstFrameInRangeForTextRect(
   }
 
   Result<nsIFrame*, nsresult> firstFrameOrError = GetFrameForTextRect(
-      nodePosition.Container(),
+      nodePosition.GetContainer(),
       *nodePosition.Offset(RawNodePosition::OffsetFilter::kValidOffsets), true);
   if (NS_WARN_IF(firstFrameOrError.isErr()) || !firstFrameOrError.inspect()) {
     return FrameAndNodeOffset();
@@ -1772,14 +1772,14 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(
   
   
   nsINode* nextNodeOfRangeEnd = nullptr;
-  if (endPoint.Container()->IsText()) {
+  if (endPoint.GetContainer()->IsText()) {
     
     
     
     
     if (endPoint.IsStartOfContainer() &&
-        aSimpleRange.GetStartContainer() != endPoint.Container()) {
-      nextNodeOfRangeEnd = endPoint.Container();
+        aSimpleRange.GetStartContainer() != endPoint.GetContainer()) {
+      nextNodeOfRangeEnd = endPoint.GetContainer();
     }
   } else if (endPoint.IsSetAndValid()) {
     nextNodeOfRangeEnd = endPoint.GetChildAtOffset();
@@ -1835,7 +1835,7 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(
   }
 
   Result<nsIFrame*, nsresult> lastFrameOrError = GetFrameForTextRect(
-      nodePosition.Container(),
+      nodePosition.GetContainer(),
       *nodePosition.Offset(RawNodePosition::OffsetFilter::kValidOffsets), true);
   if (NS_WARN_IF(lastFrameOrError.isErr()) || !lastFrameOrError.inspect()) {
     return FrameAndNodeOffset();
@@ -1862,9 +1862,9 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(
     const uint32_t newNodePositionOffset =
         *nodePosition.Offset(RawNodePosition::OffsetFilter::kValidOffsets);
     MOZ_ASSERT(newNodePositionOffset != 0);
-    nodePosition = {nodePosition.Container(), newNodePositionOffset - 1u};
+    nodePosition = {nodePosition.GetContainer(), newNodePositionOffset - 1u};
     lastFrameOrError = GetFrameForTextRect(
-        nodePosition.Container(),
+        nodePosition.GetContainer(),
         *nodePosition.Offset(RawNodePosition::OffsetFilter::kValidOffsets),
         true);
     if (NS_WARN_IF(lastFrameOrError.isErr()) || !lastFrameOrError.inspect()) {
@@ -3150,7 +3150,7 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
   
   
   if (aIsRemovingNode) {
-    MOZ_ASSERT(aStartPosition.Container() == endPosition.Container(),
+    MOZ_ASSERT(aStartPosition.GetContainer() == endPosition.GetContainer(),
                "At removing the node, start and end node should be same");
     MOZ_ASSERT(*aStartPosition.Offset(
                    RawNodePosition::OffsetFilter::kValidOrInvalidOffsets) == 0,
@@ -3158,9 +3158,9 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
     MOZ_ASSERT(
         static_cast<uint32_t>(*endPosition.Offset(
             RawNodePosition::OffsetFilter::kValidOrInvalidOffsets)) ==
-            endPosition.Container()->GetChildCount(),
+            endPosition.GetContainer()->GetChildCount(),
         "When the node is being removed, the end offset should be child count");
-    nsresult rv = preOrderIter.Init(aStartPosition.Container());
+    nsresult rv = preOrderIter.Init(aStartPosition.GetContainer());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -3173,27 +3173,29 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
 
     
     
-    if (endPosition.Container() != aRootElement &&
+    if (endPosition.GetContainer() != aRootElement &&
         endPosition.IsImmediatelyAfterOpenTag()) {
-      if (endPosition.Container()->HasChildren()) {
+      if (endPosition.GetContainer()->HasChildren()) {
         
         
-        nsIContent* const firstChild = endPosition.Container()->GetFirstChild();
+        nsIContent* const firstChild =
+            endPosition.GetContainer()->GetFirstChild();
         if (NS_WARN_IF(!firstChild)) {
           return NS_ERROR_FAILURE;
         }
         endPosition = RawNodePosition::Before(*firstChild);
       } else {
         
-        if (NS_WARN_IF(!endPosition.Container()->IsContent())) {
+        if (NS_WARN_IF(!endPosition.GetContainer()->IsContent())) {
           return NS_ERROR_FAILURE;
         }
-        nsIContent* const parentContent = endPosition.Container()->GetParent();
+        nsIContent* const parentContent =
+            endPosition.GetContainer()->GetParent();
         if (NS_WARN_IF(!parentContent)) {
           return NS_ERROR_FAILURE;
         }
         endPosition =
-            RawNodePosition::After(*endPosition.Container()->AsContent());
+            RawNodePosition::After(*endPosition.GetContainer()->AsContent());
       }
     }
 
@@ -3208,9 +3210,9 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-    } else if (endPosition.Container() != aRootElement) {
+    } else if (endPosition.GetContainer() != aRootElement) {
       
-      rv = prevSimpleRange.SetEndAfter(endPosition.Container());
+      rv = prevSimpleRange.SetEndAfter(endPosition.GetContainer());
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -3241,7 +3243,7 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
 
     if (const Text* textNode = Text::FromNode(content)) {
       
-      if (node == endPosition.Container()) {
+      if (node == endPosition.GetContainer()) {
         
         
         *aLength += GetTextLength(
@@ -3254,13 +3256,13 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
     } else if (ShouldBreakLineBefore(*content, aRootElement)) {
       
       
-      if (node == aStartPosition.Container() &&
+      if (node == aStartPosition.GetContainer() &&
           !aStartPosition.IsBeforeOpenTag()) {
         continue;
       }
       
       
-      if (node == endPosition.Container() && endPosition.IsBeforeOpenTag()) {
+      if (node == endPosition.GetContainer() && endPosition.IsBeforeOpenTag()) {
         continue;
       }
       *aLength += GetBRLength(aLineBreakType);
@@ -3314,7 +3316,7 @@ nsresult ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(
 
   
   
-  if (!startPoint.Container()->HasChildren()) {
+  if (!startPoint.GetContainer()->HasChildren()) {
     return NS_OK;
   }
 
@@ -3324,11 +3326,11 @@ nsresult ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(
   if (startPoint.IsStartOfContainer()) {
     
     
-    if (!startPoint.Container()->GetFirstChild()->IsText()) {
+    if (!startPoint.GetContainer()->GetFirstChild()->IsText()) {
       return NS_OK;
     }
     nsresult rv = aSimpleRange.CollapseTo(
-        RawRangeBoundary(startPoint.Container()->GetFirstChild(), 0u));
+        RawRangeBoundary(startPoint.GetContainer()->GetFirstChild(), 0u));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }

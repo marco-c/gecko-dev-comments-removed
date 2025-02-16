@@ -3556,8 +3556,8 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
   
   if (aBoundary1.HasOffset() && aBoundary2.HasOffset()) {
     return ComparePointsWithIndices(
-        aBoundary1.Container(), *aBoundary1.Offset(kValidOrInvalidOffsets1),
-        aBoundary2.Container(), *aBoundary2.Offset(kValidOrInvalidOffsets2),
+        aBoundary1.GetContainer(), *aBoundary1.Offset(kValidOrInvalidOffsets1),
+        aBoundary2.GetContainer(), *aBoundary2.Offset(kValidOrInvalidOffsets2),
         aIndexCache);
   }
 
@@ -3570,11 +3570,11 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
 
   
   
-  if (aBoundary1.Container() == aBoundary2.Container()) {
+  if (aBoundary1.GetContainer() == aBoundary2.GetContainer()) {
     const nsIContent* const child1 = aBoundary1.GetChildAtOffset();
     const nsIContent* const child2 = aBoundary2.GetChildAtOffset();
-    return CompareClosestCommonAncestorChildren(*aBoundary1.Container(), child1,
-                                                child2, aIndexCache);
+    return CompareClosestCommonAncestorChildren(*aBoundary1.GetContainer(),
+                                                child1, child2, aIndexCache);
   }
 
   
@@ -3582,8 +3582,8 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
   
   
   
-  const CommonAncestors commonAncestors(*aBoundary1.Container(),
-                                        *aBoundary2.Container(),
+  const CommonAncestors commonAncestors(*aBoundary1.GetContainer(),
+                                        *aBoundary2.GetContainer(),
                                         GetParentOrShadowHostNode);
 
   if (MOZ_UNLIKELY(!commonAncestors.GetClosestCommonAncestor())) {
@@ -3605,7 +3605,7 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
 
   if (closestCommonAncestorChild2) {
     MOZ_ASSERT(closestCommonAncestorChild2->GetParentOrShadowHostNode() ==
-               aBoundary1.Container());
+               aBoundary1.GetContainer());
     
     if (MOZ_UNLIKELY(
             closestCommonAncestorChild2->IsRootOfNativeAnonymousSubtree() ||
@@ -3643,7 +3643,7 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
 
   MOZ_ASSERT(closestCommonAncestorChild1);
   MOZ_ASSERT(closestCommonAncestorChild1->GetParentOrShadowHostNode() ==
-             aBoundary2.Container());
+             aBoundary2.GetContainer());
   
   if (MOZ_UNLIKELY(
           closestCommonAncestorChild1->IsRootOfNativeAnonymousSubtree() ||

@@ -194,11 +194,11 @@ class RangeBoundaryBase {
     
     
     
-    if (*mOffset > Container()->Length()) {
+    if (*mOffset > GetContainer()->Length()) {
       
       
       mRef = nullptr;
-    } else if (*mOffset == Container()->Length()) {
+    } else if (*mOffset == GetContainer()->Length()) {
       mRef = mParent->GetLastChild();
     } else if (*mOffset) {
       
@@ -216,7 +216,7 @@ class RangeBoundaryBase {
     return mRef;
   }
 
-  RawParentType* Container() const { return mParent; }
+  RawParentType* GetContainer() const { return mParent; }
 
   dom::Document* GetComposedDoc() const {
     return mParent ? mParent->GetComposedDoc() : nullptr;
@@ -319,7 +319,7 @@ class RangeBoundaryBase {
             DetermineOffsetFromReference();
           }
         }
-        return !mIsMutationObserved && *mOffset > Container()->Length()
+        return !mIsMutationObserved && *mOffset > GetContainer()->Length()
                    ? Nothing{}
                    : mOffset;
       }
@@ -349,10 +349,11 @@ class RangeBoundaryBase {
   friend std::ostream& operator<<(
       std::ostream& aStream,
       const RangeBoundaryBase<ParentType, RefType>& aRangeBoundary) {
-    aStream << "{ mParent=" << aRangeBoundary.Container();
-    if (aRangeBoundary.Container()) {
-      aStream << " (" << *aRangeBoundary.Container()
-              << ", Length()=" << aRangeBoundary.Container()->Length() << ")";
+    aStream << "{ mParent=" << aRangeBoundary.GetContainer();
+    if (aRangeBoundary.GetContainer()) {
+      aStream << " (" << *aRangeBoundary.GetContainer()
+              << ", Length()=" << aRangeBoundary.GetContainer()->Length()
+              << ")";
     }
     if (aRangeBoundary.mIsMutationObserved) {
       aStream << ", mRef=" << aRangeBoundary.mRef;
@@ -448,11 +449,12 @@ class RangeBoundaryBase {
       
       
       
-      return Ref()->GetParentNode() == Container() && !Ref()->IsBeingRemoved();
+      return Ref()->GetParentNode() == GetContainer() &&
+             !Ref()->IsBeingRemoved();
     }
 
     MOZ_ASSERT(mOffset.isSome());
-    return *mOffset <= Container()->Length();
+    return *mOffset <= GetContainer()->Length();
   }
 
   bool IsStartOfContainer() const {
@@ -470,7 +472,7 @@ class RangeBoundaryBase {
     
     return mIsMutationObserved && Ref()
                ? !Ref()->GetNextSibling()
-               : mOffset.value() == Container()->Length();
+               : mOffset.value() == GetContainer()->Length();
   }
 
   

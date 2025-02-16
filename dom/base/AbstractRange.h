@@ -94,17 +94,18 @@ class AbstractRange : public nsISupports,
   
   
 
-  nsINode* GetStartContainer() const { return mStart.Container(); }
+  nsINode* GetStartContainer() const { return mStart.GetContainer(); }
   nsINode* GetMayCrossShadowBoundaryStartContainer() const;
 
-  nsINode* GetEndContainer() const { return mEnd.Container(); }
+  nsINode* GetEndContainer() const { return mEnd.GetContainer(); }
   nsINode* GetMayCrossShadowBoundaryEndContainer() const;
 
   
 
 
   [[nodiscard]] bool IsPositionedAndSameContainer() const {
-    return MOZ_LIKELY(mIsPositioned) && mStart.Container() == mEnd.Container();
+    return MOZ_LIKELY(mIsPositioned) &&
+           mStart.GetContainer() == mEnd.GetContainer();
   }
   
 
@@ -120,7 +121,7 @@ class AbstractRange : public nsISupports,
   bool MayCrossShadowBoundary() const;
 
   Document* GetComposedDocOfContainers() const {
-    return mStart.Container() ? mStart.Container()->GetComposedDoc() : nullptr;
+    return mStart.GetComposedDoc();
   }
 
   
@@ -138,7 +139,7 @@ class AbstractRange : public nsISupports,
   uint32_t MayCrossShadowBoundaryEndOffset() const;
 
   bool Collapsed() const {
-    return !mIsPositioned || (mStart.Container() == mEnd.Container() &&
+    return !mIsPositioned || (mStart.GetContainer() == mEnd.GetContainer() &&
                               StartOffset() == EndOffset());
   }
 

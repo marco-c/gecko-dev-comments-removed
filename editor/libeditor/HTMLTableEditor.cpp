@@ -4445,7 +4445,7 @@ Result<RefPtr<Element>, nsresult> HTMLEditor::GetSelectedOrParentTableElement(
   }
 
   
-  if (anchorRef.Container()->HasChildNodes()) {
+  if (anchorRef.GetContainer()->HasChildNodes()) {
     nsIContent* selectedContent = anchorRef.GetChildAtOffset();
     if (selectedContent) {
       
@@ -4466,14 +4466,14 @@ Result<RefPtr<Element>, nsresult> HTMLEditor::GetSelectedOrParentTableElement(
     }
   }
 
-  if (NS_WARN_IF(!anchorRef.Container()->IsContent())) {
+  if (NS_WARN_IF(!anchorRef.GetContainer()->IsContent())) {
     return RefPtr<Element>();
   }
 
   
   
   cellElement = GetInclusiveAncestorByTagNameInternal(
-      *nsGkAtoms::td, *anchorRef.Container()->AsContent());
+      *nsGkAtoms::td, *anchorRef.GetContainer()->AsContent());
   if (!cellElement) {
     return RefPtr<Element>();  
   }
