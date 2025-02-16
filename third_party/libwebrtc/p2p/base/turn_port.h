@@ -190,13 +190,6 @@ class TurnPort : public Port {
   void set_credentials(const RelayCredentials& credentials) {
     credentials_ = credentials;
   }
-  
-  
-  
-  
-  
-  bool SetEntryChannelIdForTesting(const rtc::SocketAddress& address,
-                                   int channel_id);
 
   void HandleConnectionDestroyed(Connection* conn) override;
 
@@ -308,7 +301,7 @@ class TurnPort : public Port {
   void HandleDataIndication(const char* data,
                             size_t size,
                             int64_t packet_time_us);
-  void HandleChannelData(int channel_id,
+  void HandleChannelData(uint16_t channel_id,
                          const char* data,
                          size_t size,
                          int64_t packet_time_us);
@@ -327,7 +320,7 @@ class TurnPort : public Port {
 
   bool HasPermission(const rtc::IPAddress& ipaddr) const;
   TurnEntry* FindEntry(const rtc::SocketAddress& address) const;
-  TurnEntry* FindEntry(int channel_id) const;
+  TurnEntry* FindEntry(uint16_t channel_id) const;
 
   
   
