@@ -124,16 +124,5 @@ int32_t RootCABinNumber(Span<const uint8_t> cert) {
   return ROOT_CERTIFICATE_UNKNOWN;
 }
 
-
-
-void AccumulateTelemetryForRootCA(mozilla::Telemetry::HistogramID probe,
-                                  const Span<const uint8_t> cert) {
-  int32_t binId = RootCABinNumber(cert);
-
-  if (binId != ROOT_CERTIFICATE_HASH_FAILURE) {
-    Accumulate(probe, binId);
-  }
-}
-
 }  
 }  
