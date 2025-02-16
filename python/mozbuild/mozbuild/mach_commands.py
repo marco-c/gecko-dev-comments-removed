@@ -1643,7 +1643,7 @@ def _run_android(
         debugger=debug,
         install=InstallIntent.NO if no_install else InstallIntent.YES,
     )
-    device_serial = os.environ.get("DEVICE_SERIAL")
+    device_serial = os.environ.get("ANDROID_SERIAL")
     if not device_serial:
         print("No ADB devices connected.")
         return 1
