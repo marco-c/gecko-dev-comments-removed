@@ -42,6 +42,8 @@ void WebAuthnTransactionParent::DisconnectTransaction() {
 mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestRegister(
     const WebAuthnMakeCredentialInfo& aTransactionInfo,
     RequestRegisterResolver&& aResolver) {
+  MOZ_ASSERT(NS_IsMainThread());
+
   if (!mWebAuthnService) {
     mWebAuthnService = do_GetService("@mozilla.org/webauthn/service;1");
     if (!mWebAuthnService) {
@@ -202,6 +204,8 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestRegister(
 mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
     const WebAuthnGetAssertionInfo& aTransactionInfo,
     RequestSignResolver&& aResolver) {
+  MOZ_ASSERT(NS_IsMainThread());
+
   if (!mWebAuthnService) {
     mWebAuthnService = do_GetService("@mozilla.org/webauthn/service;1");
     if (!mWebAuthnService) {
@@ -344,6 +348,8 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
 }
 
 mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestCancel() {
+  MOZ_ASSERT(NS_IsMainThread());
+
   if (mTransactionId.isNothing()) {
     return IPC_OK();
   }
@@ -354,6 +360,8 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestCancel() {
 
 mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestIsUVPAA(
     RequestIsUVPAAResolver&& aResolver) {
+  MOZ_ASSERT(NS_IsMainThread());
+
 #ifdef MOZ_WIDGET_ANDROID
   
   
@@ -377,30 +385,21 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestIsUVPAA(
   
   
   
-  
-  
-  
-  
   nsCOMPtr<nsISerialEventTarget> target = GetCurrentSerialEventTarget();
-  nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
-      __func__, [target, resolver = std::move(aResolver)]() {
-        auto result = java::WebAuthnTokenManager::
-            WebAuthnIsUserVerifyingPlatformAuthenticatorAvailable();
-        auto geckoResult = java::GeckoResult::LocalRef(std::move(result));
-        MozPromise<bool, bool, false>::FromGeckoResult(geckoResult)
-            ->Then(
-                target, __func__,
-                [resolver](
-                    const MozPromise<bool, bool, false>::ResolveOrRejectValue&
-                        aValue) {
-                  if (aValue.IsResolve()) {
-                    resolver(aValue.ResolveValue());
-                  } else {
-                    resolver(false);
-                  }
-                });
-      }));
-  NS_DispatchToMainThread(runnable.forget());
+  auto result = java::WebAuthnTokenManager::
+      WebAuthnIsUserVerifyingPlatformAuthenticatorAvailable();
+  auto geckoResult = java::GeckoResult::LocalRef(std::move(result));
+  MozPromise<bool, bool, false>::FromGeckoResult(geckoResult)
+      ->Then(target, __func__,
+             [resolver = std::move(aResolver)](
+                 const MozPromise<bool, bool, false>::ResolveOrRejectValue&
+                     aValue) {
+               if (aValue.IsResolve()) {
+                 resolver(aValue.ResolveValue());
+               } else {
+                 resolver(false);
+               }
+             });
   return IPC_OK();
 
 #else
@@ -433,6 +432,7 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestIsUVPAA(
 void WebAuthnTransactionParent::ActorDestroy(ActorDestroyReason aWhy) {
   
   
+  MOZ_ASSERT(NS_IsMainThread());
 
   if (mTransactionId.isSome()) {
     DisconnectTransaction();
