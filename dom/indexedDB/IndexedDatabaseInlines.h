@@ -112,7 +112,22 @@ inline StructuredCloneReadInfo<
 
 template <typename StructuredCloneFile>
 inline size_t StructuredCloneReadInfo<StructuredCloneFile>::Size() const {
-  size_t size = Data().Size();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  size_t size =
+      Data().Size() > IPC::kMessageBufferShmemThreshold ? 16 : Data().Size();
 
   for (uint32_t i = 0, count = mFiles.Length(); i < count; ++i) {
     

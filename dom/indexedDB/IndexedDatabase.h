@@ -157,6 +157,9 @@ struct StructuredCloneReadInfo : StructuredCloneReadInfoBase {
       delete;
 
   
+  
+  
+  
   size_t Size() const;
 
   

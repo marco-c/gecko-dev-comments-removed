@@ -898,6 +898,28 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
   }
 
   
+  const size_t structuredCloneSize = cloneWriteInfo.mCloneBuffer.data().Size();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (structuredCloneSize > IndexedDatabaseManager::MaxStructuredCloneSize()) {
+    IDB_REPORT_INTERNAL_ERR();
+    aRv.ThrowUnknownError(nsPrintfCString(
+        "The structured clone is too large"
+        " (size=%zu bytes, max=%u bytes).",
+        structuredCloneSize, IndexedDatabaseManager::MaxStructuredCloneSize()));
+    return nullptr;
+  }
+
+  
   
   
   
@@ -907,6 +929,14 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
   MOZ_ASSERT(maximalSizeFromPref > kMaxIDBMsgOverhead);
   const size_t kMaxMessageSize = maximalSizeFromPref - kMaxIDBMsgOverhead;
 
+  
+  
+  
+  const size_t serializedStructuredCloneSize =
+      structuredCloneSize > IPC::kMessageBufferShmemThreshold
+          ? 16
+          : structuredCloneSize;
+
   const size_t indexUpdateInfoSize =
       std::accumulate(updateInfos.cbegin(), updateInfos.cend(), 0u,
                       [](size_t old, const IndexUpdateInfo& updateInfo) {
@@ -914,7 +944,12 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
                                updateInfo.localizedValue().GetBuffer().Length();
                       });
 
-  const size_t messageSize = cloneWriteInfo.mCloneBuffer.data().Size() +
+  
+  
+  
+  
+  
+  const size_t messageSize = serializedStructuredCloneSize +
                              key.GetBuffer().Length() + indexUpdateInfoSize;
 
   if (messageSize > kMaxMessageSize) {

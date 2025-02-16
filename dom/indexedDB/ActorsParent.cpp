@@ -9651,7 +9651,8 @@ Database::AllocPBackgroundIDBTransactionParent(
           aObjectStoreNames,
           [lastName = Maybe<const nsString&>{},
            &objectStores](const nsString& name) mutable
-          -> mozilla::Result<SafeRefPtr<FullObjectStoreMetadata>, nsresult> {
+              -> mozilla::Result<SafeRefPtr<FullObjectStoreMetadata>,
+                                 nsresult> {
             if (lastName) {
               
               
@@ -18597,6 +18598,13 @@ nsresult NormalTransactionOp::SendSuccessResult() {
     RequestResponse response;
     size_t responseSize = kMaxMessageSize;
     GetResponse(response, &responseSize);
+
+    
+    
+    
+    
+    
+    
 
     if (responseSize >= kMaxMessageSize) {
       nsPrintfCString warning(

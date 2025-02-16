@@ -118,9 +118,6 @@ pref("dom.indexedDB.logging.details", true);
 pref("dom.indexedDB.logging.profiler-marks", false);
 
 
-pref("dom.indexedDB.maxSerializedMsgSize", 1092616192);
-
-
 
 pref("dom.workers.maxPerDomain", 512);
 
