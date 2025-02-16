@@ -249,7 +249,6 @@ bool HasLntf(const Codec& codec);
 bool HasNack(const Codec& codec);
 bool HasRemb(const Codec& codec);
 bool HasRrtr(const Codec& codec);
-bool HasTransportCc(const Codec& codec);
 
 
 
