@@ -48,6 +48,12 @@ async function test_sidebar_hidden_on_popup() {
   );
 
   
+  popup.document.getElementById("toggleSidebarKb").doCommand();
+  
+  await new Promise(resolve => ChromeUtils.idleDispatch(resolve));
+  ok(popupSidebar.hidden, "Sidebar is still hidden on popup window");
+
+  
   await BrowserTestUtils.closeWindow(popup);
   const win2 = await BrowserTestUtils.openNewBrowserWindow();
   let win2VerticalTabsContainer = win2.document.getElementById("vertical-tabs");

@@ -141,3 +141,8 @@ async function toggleSidebarPanel(win, commandID) {
   win.SidebarController.toggle(commandID);
   await promiseFocused;
 }
+
+
+registerCleanupFunction(() => {
+  Services.fog.testResetFOG();
+});
