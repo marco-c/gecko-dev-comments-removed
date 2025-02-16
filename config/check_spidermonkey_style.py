@@ -146,11 +146,17 @@ oddly_ordered_inclnames = set(
         "psapi.h",  
         "machine/endian.h",  
         "process.h",  
-        "winbase.h",  
-        "windef.h",  
-        "windows.h",  
+        "util/WindowsWrapper.h",  
     ]
 )
+
+
+
+wrapper_system_inclnames = {
+    "windows.h": "util/WindowsWrapper.h",
+    "windef.h": "util/WindowsWrapper.h",
+    "winbase.h": "util/WindowsWrapper.h",
+}
 
 
 
@@ -713,6 +719,18 @@ def check_file(
                     'the #include "..." form',
                 )
 
+            
+            if (
+                include.inclname in wrapper_system_inclnames
+                and wrapper_system_inclnames[include.inclname] != inclname
+            ):
+                wrapper_inclname = wrapper_system_inclnames[include.inclname]
+                error(
+                    filename,
+                    include.linenum,
+                    f"{include.quote()} should not be included directly, "
+                    f'instead use "{wrapper_inclname}"',
+                )
         else:
             msg = deprecated_inclnames.get(include.inclname)
             if msg:
