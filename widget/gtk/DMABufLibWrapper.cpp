@@ -6,9 +6,9 @@
 
 
 #include "DMABufLibWrapper.h"
+#  include "DMABufFormats.h"
 #ifdef MOZ_WAYLAND
 #  include "nsWaylandDisplay.h"
-#  include "DMABufFormats.h"
 #endif
 #include "base/message_loop.h"    
 #include "mozilla/gfx/Logging.h"  
