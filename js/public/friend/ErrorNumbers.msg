@@ -423,10 +423,6 @@ MSG_DEF(JSMSG_CANT_CONVERT_WIDE_TO_UTF8, 0, JSEXN_ERR, "can't convert wide strin
 MSG_DEF(JSMSG_CANT_CONVERT_UTF8_TO_WIDE, 0, JSEXN_ERR, "can't convert UTF-8 to wide string")
 
 
-MSG_DEF(JSMSG_SMOOSH_COMPILE_ERROR,    1, JSEXN_SYNTAXERR, "{0}")
-MSG_DEF(JSMSG_SMOOSH_UNIMPLEMENTED,    1, JSEXN_INTERNALERR, "{0}")
-
-
 MSG_DEF(JSMSG_USE_ASM_TYPE_FAIL,       1, JSEXN_TYPEERR, "asm.js type error: {0}")
 MSG_DEF(JSMSG_USE_ASM_LINK_FAIL,       1, JSEXN_TYPEERR, "asm.js link error: {0}")
 MSG_DEF(JSMSG_USE_ASM_TYPE_OK,         1, JSEXN_WARN,    "Successfully compiled asm.js code (total compilation time {0}ms)")

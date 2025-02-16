@@ -61,7 +61,6 @@ included_inclnames_to_ignore = set(
         "double-conversion/double-conversion.h",  
         "javascript-trace.h",  
         "frontend/ReservedWordsGenerated.h",  
-        "frontend/smoosh_generated.h",  
         "gc/StatsPhasesGenerated.h",  
         "gc/StatsPhasesGenerated.inc",  
         "jit/ABIFunctionTypeGenerated.h",  
