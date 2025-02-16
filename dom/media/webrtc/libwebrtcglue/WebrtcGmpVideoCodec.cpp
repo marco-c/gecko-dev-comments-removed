@@ -38,6 +38,7 @@ WebrtcGmpVideoEncoder::WebrtcGmpVideoEncoder(
       mHost(nullptr),
       mMaxPayloadSize(0),
       mNeedKeyframe(true),
+      mSyncLayerCap(webrtc::kMaxTemporalStreams),
       mFormatParams(aFormat.parameters),
       mCallbackMutex("WebrtcGmpVideoEncoder encoded callback mutex"),
       mCallback(nullptr),
@@ -186,6 +187,7 @@ void WebrtcGmpVideoEncoder::InitEncode_g(const GMPVideoCodec& aCodecParams,
       new InitDoneCallback(this, aCodecParams));
   mInitting = true;
   mMaxPayloadSize = aMaxPayloadSize;
+  mSyncLayerCap = aCodecParams.mTemporalLayerNum;
   mSvcController = webrtc::CreateScalabilityStructure(
       GmpCodecParamsToScalabilityMode(aCodecParams));
   if (!mSvcController) {
@@ -623,6 +625,7 @@ void WebrtcGmpVideoEncoder::Encoded(
           ? webrtc::H264PacketizationMode::NonInterleaved
           : webrtc::H264PacketizationMode::SingleNalUnit;
   info.codecSpecific.H264.temporal_idx = webrtc::kNoTemporalIdx;
+  info.codecSpecific.H264.base_layer_sync = false;
   info.codecSpecific.H264.idr_frame =
       ft == webrtc::VideoFrameType::kVideoFrameKey;
   info.generic_frame_info = mSvcController->OnEncodeDone(data->frame_config);
@@ -636,6 +639,24 @@ void WebrtcGmpVideoEncoder::Encoded(
     unit.SetTemporalIndex(temporalIdx);
     info.codecSpecific.H264.temporal_idx = temporalIdx;
     info.scalability_mode = GmpCodecParamsToScalabilityMode(mCodecParams);
+
+    if (temporalIdx == 0) {
+      
+      mSyncLayerCap = mCodecParams.mTemporalLayerNum;
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      info.codecSpecific.H264.base_layer_sync = temporalIdx < mSyncLayerCap;
+      mSyncLayerCap = temporalIdx;
+    }
   }
 
   
