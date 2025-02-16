@@ -5,10 +5,8 @@
 "use strict";
 
 const {
-  getFormatStr,
   getStr,
 } = require("resource://devtools/client/inspector/changes/utils/l10n.js");
-
 
 
 
@@ -30,7 +28,7 @@ function getSourceForDisplay(source) {
       href = getStr("changes.elementStyleLabel");
       break;
     case "inline":
-      href = getFormatStr("changes.inlineStyleSheetLabel", `#${source.index}`);
+      href = getStr("changes.inlineStyleSheetLabel2");
       break;
     case "stylesheet":
       const url = new URL(source.href);

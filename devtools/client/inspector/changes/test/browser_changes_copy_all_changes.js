@@ -18,7 +18,7 @@ const TEST_URI = `
 
 
 const EXPECTED_CLIPBOARD = `
-/* Inline #0 | data:text/html;charset=utf-8,${TEST_URI} */
+/* Inline | data:text/html;charset=utf-8,${TEST_URI} */
 
 div {
   /* color: red; */

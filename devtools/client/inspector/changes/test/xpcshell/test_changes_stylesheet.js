@@ -14,7 +14,7 @@ const { CHANGES_STATE } = require("resource://test/mocks");
 
 
 const STYLESHEET_FOR_ANCESTOR = `
-/* Inline #0 | http://localhost:5000/at-rules-nested.html */
+/* Inline | http://localhost:5000/at-rules-nested.html */
 
 @media (min-width: 50em) {
   @supports (display: grid) {
@@ -28,7 +28,7 @@ const STYLESHEET_FOR_ANCESTOR = `
 
 
 const STYLESHEET_FOR_DESCENDANT = `
-/* Inline #0 | http://localhost:5000/at-rules-nested.html */
+/* Inline | http://localhost:5000/at-rules-nested.html */
 
 body {
   /* background-color: royalblue; */
