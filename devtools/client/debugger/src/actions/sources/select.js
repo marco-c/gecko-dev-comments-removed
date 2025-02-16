@@ -334,7 +334,13 @@ export function selectLocation(
     if (
       selectedFrame &&
       (selectedFrame.location.source.id == location.source.id ||
-        selectedFrame.generatedLocation.source.id == location.source.id)
+        selectedFrame.generatedLocation.source.id == location.source.id) &&
+      
+      
+      
+      (!features.codemirrorNext ||
+        (selectedFrame.location.source.isOriginal &&
+          isMapScopesEnabled(getState())))
     ) {
       
       
@@ -345,17 +351,9 @@ export function selectLocation(
       if (getSelectedLocation(getState()) != location) {
         return;
       }
+
       
-      
-      
-      if (
-        !features.codemirrorNext ||
-        (selectedFrame.location.source.isOriginal &&
-          isMapScopesEnabled(getState()))
-      ) {
-        
-        dispatch(setInScopeLines());
-      }
+      dispatch(setInScopeLines());
     }
 
     
