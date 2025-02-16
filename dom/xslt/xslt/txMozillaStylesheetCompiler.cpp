@@ -242,7 +242,14 @@ txStylesheetSink::OnStartRequest(nsIRequest* aRequest) {
   
   
   nsCOMPtr<nsIURI> uri;
-  channel->GetURI(getter_AddRefs(uri));
+  nsresult rv = NS_GetFinalChannelURI(channel, getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, rv);
+  nsAutoCString spec;
+  uri->GetSpec(spec);
+  NS_ConvertUTF8toUTF16 baseURI(spec);
+  mCompiler->setBaseURI(
+      baseURI);  
+                 
   if (uri->SchemeIs("file") &&
       contentType.EqualsLiteral(UNKNOWN_CONTENT_TYPE)) {
     nsresult rv;
@@ -479,7 +486,7 @@ static nsresult handleNode(nsINode* aNode, txStylesheetCompiler* aCompiler) {
     
     atts = nullptr;
 
-    for (nsIContent* child = element->GetFirstChild(); child;
+    for (nsCOMPtr<nsIContent> child = element->GetFirstChild(); child;
          child = child->GetNextSibling()) {
       rv = handleNode(child, aCompiler);
       NS_ENSURE_SUCCESS(rv, rv);
@@ -493,7 +500,7 @@ static nsresult handleNode(nsINode* aNode, txStylesheetCompiler* aCompiler) {
     rv = aCompiler->characters(chars);
     NS_ENSURE_SUCCESS(rv, rv);
   } else if (aNode->IsDocument()) {
-    for (nsIContent* child = aNode->GetFirstChild(); child;
+    for (nsCOMPtr<nsIContent> child = aNode->GetFirstChild(); child;
          child = child->GetNextSibling()) {
       rv = handleNode(child, aCompiler);
       NS_ENSURE_SUCCESS(rv, rv);
