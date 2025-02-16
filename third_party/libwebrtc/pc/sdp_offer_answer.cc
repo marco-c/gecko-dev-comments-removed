@@ -4892,6 +4892,8 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
     std::vector<
         std::pair<cricket::ChannelInterface*, const MediaContentDescription*>>
         channels;
+    bool use_ccfb = false;
+    bool seen_ccfb = false;
     for (const auto& transceiver : rtp_transceivers) {
       const ContentInfo* content_info =
           FindMediaSectionForTransceiver(transceiver, sdesc);
@@ -4903,6 +4905,17 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
           content_info->media_description();
       if (!content_desc) {
         continue;
+      }
+      
+      if (seen_ccfb) {
+        if (use_ccfb != content_desc->rtcp_fb_ack_ccfb()) {
+          RTC_LOG(LS_ERROR)
+              << "Warning: Inconsistent CCFB flag - CCFB turned off";
+          use_ccfb = false;
+        }
+      } else {
+        use_ccfb = content_desc->rtcp_fb_ack_ccfb();
+        seen_ccfb = true;
       }
 
       transceiver->OnNegotiationUpdate(type, content_desc);
@@ -4928,6 +4941,17 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
       });
       if (!success) {
         LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, error);
+      }
+    }
+    
+    
+    if (context_->env().field_trials().IsEnabled(
+            "WebRTC-RFC8888CongestionControlFeedback")) {
+      if (use_ccfb && local_description() && remote_description()) {
+        
+        context_->worker_thread()->PostTask([call = pc_->call_ptr()] {
+          call->EnableSendCongestionControlFeedbackAccordingToRfc8888();
+        });
       }
     }
   }

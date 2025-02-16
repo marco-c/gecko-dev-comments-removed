@@ -656,6 +656,7 @@ void RtpTransportControllerSend::OnCongestionControlFeedback(
     Timestamp receive_time,
     const rtcp::CongestionControlFeedback& feedback) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
+  ++feedback_count_;
   
   
   

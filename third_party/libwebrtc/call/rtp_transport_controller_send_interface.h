@@ -161,6 +161,8 @@ class RtpTransportControllerSendInterface {
 
   virtual void EnsureStarted() = 0;
   virtual NetworkControllerInterface* GetNetworkController() = 0;
+  
+  virtual int ReceivedCongestionControlFeedbackCount() const = 0;
 };
 
 }  
