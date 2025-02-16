@@ -1113,10 +1113,6 @@ class LInstructionFixedDefsTempsHelper : public LInstruction {
   }
 
   
-  const LAllocation* input() {
-    MOZ_ASSERT(numOperands() == 1);
-    return getOperand(0);
-  }
   const LDefinition* output() {
     MOZ_ASSERT(numDefs() == 1);
     return getDef(0);
