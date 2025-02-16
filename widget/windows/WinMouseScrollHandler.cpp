@@ -195,20 +195,9 @@ void MouseScrollHandler::MaybeLogKeyState() {
   }
 }
 
-bool MouseScrollHandler::ProcessMessageDirectly(UINT msg, WPARAM wParam,
-                                                LPARAM lParam,
-                                                MSGResult& aResult) {
-  
-  
-  
-  static bool isRecursing = false;
-  MOZ_ASSERT(!isRecursing, "recursive event handler detected");
-  if (isRecursing) {
-    return false;
-  }
-  AutoRestore<bool> _restore{isRecursing};
-  isRecursing = true;
-
+bool MouseScrollHandler::ProcessMouseMessage(UINT msg, WPARAM wParam,
+                                             LPARAM lParam,
+                                             MSGResult& aResult) {
   
   using HandlerT =
       bool (MouseScrollHandler::*)(nsWindow*, UINT, WPARAM, LPARAM);
@@ -224,7 +213,7 @@ bool MouseScrollHandler::ProcessMessageDirectly(UINT msg, WPARAM wParam,
         }
         return &MouseScrollHandler::HandleScrollMessageAsItself;
       default:
-        MOZ_ASSERT(false, "wrong message type in ProcessMessageDirectly");
+        MOZ_ASSERT(false, "wrong message type in ProcessMouseMessage");
         return nullptr;
     }
   }();
@@ -275,8 +264,7 @@ bool MouseScrollHandler::ProcessMessage(nsWindow* aWidget, UINT msg,
     case WM_MOUSEHWHEEL:
     case WM_HSCROLL:
     case WM_VSCROLL:
-      return GetInstance()->ProcessMessageDirectly(msg, wParam, lParam,
-                                                   aResult);
+      return GetInstance()->ProcessMouseMessage(msg, wParam, lParam, aResult);
 
     case WM_KEYDOWN:
     case WM_KEYUP:
