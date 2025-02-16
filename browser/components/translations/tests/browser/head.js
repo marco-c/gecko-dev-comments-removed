@@ -468,10 +468,15 @@ class TranslationsBencher {
 
 
 
+
     reportMetrics() {
-      const reportedMetrics = {};
+      const reportedMetrics = [];
       for (const [name, values] of Object.entries(this.#metrics)) {
-        reportedMetrics[name] = median(values);
+        reportedMetrics.push({
+          name,
+          values,
+          value: median(values),
+        });
       }
       info(`perfMetrics | ${JSON.stringify(reportedMetrics)}`);
     }
