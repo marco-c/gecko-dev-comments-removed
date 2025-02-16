@@ -4,7 +4,7 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  FaviconFeed: "resource://activity-stream/lib/FaviconFeed.sys.mjs",
+  FaviconProvider: "resource:///modules/topsites/TopSites.sys.mjs",
   HttpServer: "resource://testing-common/httpd.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
@@ -63,7 +63,12 @@ add_setup(async function setup() {
   info("Setup visit data in DB");
   await PlacesTestUtils.addVisits(TEST_PAGE_URL);
 
+  
+  let originalFaviconService = PlacesUtils.favicons;
+
   registerCleanupFunction(async () => {
+    
+    PlacesUtils.favicons = originalFaviconService;
     await new Promise(resolve => httpServer.stop(resolve));
     await PlacesUtils.history.clear();
   });
@@ -71,9 +76,9 @@ add_setup(async function setup() {
 
 
 add_task(async function test_getFaviconDataURLFromNetwork() {
-  const feed = new FaviconFeed();
+  const feed = new FaviconProvider();
 
-  info("Get favicon data via FaviconFeed");
+  info("Get favicon data via FaviconProvider");
   const result = await feed.getFaviconDataURLFromNetwork(TEST_FAVICON_URL);
   Assert.equal(
     result.spec,
@@ -86,9 +91,9 @@ add_task(async function test_getFaviconDataURLFromNetwork() {
 
 
 add_task(async function test_fetchIcon_with_valid_favicon() {
-  const feed = new FaviconFeed();
+  const feed = new FaviconProvider();
 
-  info("Setup stub to use dummy site data from FaviconFeed.getSite()");
+  info("Setup stub to use dummy site data from FaviconProvider.getSite()");
   const sandbox = sinon.createSandbox();
   sandbox
     .stub(feed, "getSite")
@@ -101,7 +106,7 @@ add_task(async function test_fetchIcon_with_valid_favicon() {
     TEST_SVG_DATA_URL
   );
 
-  info("Call FaviconFeed.fetchIcon()");
+  info("Call FaviconProvider.fetchIcon()");
   await feed.fetchIcon(TEST_PAGE_URL.spec);
 
   info("Check the database");
@@ -121,9 +126,9 @@ add_task(async function test_fetchIcon_with_invalid_favicon() {
     { iconUri: TEST_PAGE_URL, faviconSize: 0 },
   ]) {
     info(`Test for ${dummyFaviconInfo}`);
-    const feed = new FaviconFeed();
+    const feed = new FaviconProvider();
 
-    info("Setup stub to use dummy site data from FaviconFeed.getSite()");
+    info("Setup stub to use dummy site data from FaviconProvider.getSite()");
     const sandbox = sinon.createSandbox();
     sandbox
       .stub(feed, "getSite")
@@ -132,7 +137,7 @@ add_task(async function test_fetchIcon_with_invalid_favicon() {
     info("Setup stub to simulate invalid favicon");
     sandbox.stub(feed, "getFaviconInfo").resolves(dummyFaviconInfo);
 
-    info("Call FaviconFeed.fetchIcon()");
+    info("Call FaviconProvider.fetchIcon()");
     await feed.fetchIcon(TEST_PAGE_URL.spec);
 
     info("Check the database");
@@ -154,9 +159,9 @@ add_task(async function test_fetchIcon_with_invalid_favicon() {
 
 
 add_task(async function test_fetchIconFromRedirects_with_valid_favicon() {
-  const feed = new FaviconFeed();
+  const feed = new FaviconProvider();
 
-  info("Setup stub to use dummy site data from FaviconFeed.getSite()");
+  info("Setup stub to use dummy site data from FaviconProvider.getSite()");
   const sandbox = sinon.createSandbox();
   sandbox
     .stub(NewTabUtils.activityStreamProvider, "executePlacesQuery")
@@ -176,7 +181,7 @@ add_task(async function test_fetchIconFromRedirects_with_valid_favicon() {
   const destination = Services.io.newURI("http://destination.localhost/");
   await PlacesTestUtils.addVisits(destination);
 
-  info("Call FaviconFeed.fetchIconFromRedirects()");
+  info("Call FaviconProvider.fetchIconFromRedirects()");
   await feed.fetchIconFromRedirects(destination.spec);
 
   info("Check the database");
@@ -247,3 +252,136 @@ async function readFileDataAsDataURL(file, mimeType) {
   const data = readFileData(file);
   return fileDataToDataURL(data, mimeType);
 }
+
+const FAKE_SMALLPNG_DATA_URI =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==";
+
+
+add_task(async function test_fetchIcon_withNetworkFetch() {
+  const sandbox = sinon.createSandbox();
+  let feed = new FaviconProvider();
+  let url = "https://mozilla.org/";
+
+  
+  PlacesUtils.favicons = {
+    getFaviconDataForPage: sandbox
+      .stub()
+      .callsArgWith(1, null, 0, null, null, 0),
+    setFaviconForPage: sandbox.spy(),
+    copyFavicons: sandbox.spy(),
+  };
+  feed.getSite = sandbox
+    .stub()
+    .returns(
+      Promise.resolve({ domain: "mozilla.org", image_url: `${url}/icon.png` })
+    );
+
+  
+  sandbox
+    .stub(feed, "getFaviconDataURLFromNetwork")
+    .resolves({ spec: FAKE_SMALLPNG_DATA_URI });
+
+  await feed.fetchIcon(url);
+
+  
+  Assert.equal(PlacesUtils.favicons.setFaviconForPage.calledOnce, true);
+  Assert.equal(
+    PlacesUtils.favicons.setFaviconForPage.firstCall.args[2].spec,
+    FAKE_SMALLPNG_DATA_URI
+  );
+
+  sandbox.restore();
+});
+
+
+add_task(async function test_fetchIcon_withInvalidDataInDb() {
+  const sandbox = sinon.createSandbox();
+  
+  PlacesUtils.favicons = {
+    getFaviconDataForPage: sandbox
+      .stub()
+      .callsArgWith(1, { spec: FAKE_SMALLPNG_DATA_URI }, 0, null, null, 0),
+    setFaviconForPage: sandbox.spy(),
+    copyFavicons: sandbox.spy(),
+  };
+
+  let feed = new FaviconProvider();
+  let url = "https://mozilla.org/";
+  feed.getSite = sandbox
+    .stub()
+    .returns(
+      Promise.resolve({ domain: "mozilla.org", image_url: `${url}/icon.png` })
+    );
+
+  
+  sandbox
+    .stub(feed, "getFaviconDataURLFromNetwork")
+    .resolves({ spec: FAKE_SMALLPNG_DATA_URI });
+
+  await feed.fetchIcon(url);
+
+  
+  Assert.equal(PlacesUtils.favicons.setFaviconForPage.calledOnce, true);
+  Assert.equal(
+    PlacesUtils.favicons.setFaviconForPage.firstCall.args[2].spec,
+    FAKE_SMALLPNG_DATA_URI
+  );
+
+  sandbox.restore();
+});
+
+
+add_task(async function test_fetchIcon_withValidDataInDb() {
+  const sandbox = sinon.createSandbox();
+  
+  PlacesUtils.favicons = {
+    getFaviconDataForPage: sandbox
+      .stub()
+      .callsArgWith(
+        1,
+        { spec: FAKE_SMALLPNG_DATA_URI },
+        100,
+        ["dummy icon data"],
+        "image/png",
+        16
+      ),
+    setFaviconForPage: sandbox.spy(),
+    copyFavicons: sandbox.spy(),
+  };
+  let feed = new FaviconProvider();
+  let url = "https://mozilla.org/";
+  feed.getSite = sandbox
+    .stub()
+    .returns(
+      Promise.resolve({ domain: "mozilla.org", image_url: `${url}/icon.png` })
+    );
+
+  await feed.fetchIcon(url);
+
+  
+  Assert.equal(PlacesUtils.favicons.setFaviconForPage.called, false);
+
+  sandbox.restore();
+});
+
+
+add_task(async function test_fetchIcon_withNoTippyTopData() {
+  const sandbox = sinon.createSandbox();
+  let feed = new FaviconProvider();
+  
+  PlacesUtils.favicons = {
+    getFaviconDataForPage: sandbox
+      .stub()
+      .callsArgWith(1, null, 0, null, null, 0),
+    setFaviconForPage: sandbox.spy(),
+    copyFavicons: sandbox.spy(),
+  };
+  feed.getSite = sandbox.stub().returns(Promise.resolve(null));
+
+  await feed.fetchIcon("https://example.com");
+
+  
+  Assert.equal(PlacesUtils.favicons.setFaviconForPage.called, false);
+
+  sandbox.restore();
+});
