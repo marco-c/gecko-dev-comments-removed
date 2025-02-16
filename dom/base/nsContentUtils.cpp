@@ -11565,23 +11565,43 @@ int32_t nsContentUtils::CompareTreePosition(const nsINode* aNode1,
     return static_cast<int32_t>(static_cast<int64_t>(*index1) - *index2);
   }
 
+  bool gotAnonKids = false;
+  AutoTArray<nsIContent*, 8> anonKids;
+
   
   
-  auto PseudoIndex = [](const nsINode* aNode,
-                        const Maybe<uint32_t>& aNodeIndex) -> int32_t {
+  
+  auto PseudoIndex = [&](const nsINode* aNode,
+                         const Maybe<uint32_t>& aNodeIndex) -> int32_t {
     if (aNodeIndex.isSome()) {
-      return 1;  
+      return -1;  
     }
+    MOZ_ASSERT(aNode->IsRootOfNativeAnonymousSubtree(),
+               "What kind of node are we dealing with here?");
     if (aNode->IsGeneratedContentContainerForMarker()) {
-      return -2;
+      return -3;
     }
     if (aNode->IsGeneratedContentContainerForBefore()) {
-      return -1;
+      return -2;
+    }
+    if (!gotAnonKids) {
+      MOZ_ASSERT(parent->MayHaveAnonymousChildren());
+      MOZ_ASSERT(parent->IsContent());
+      nsContentUtils::AppendNativeAnonymousChildren(
+          parent->AsContent(), anonKids, nsIContent::eAllChildren);
+      gotAnonKids = true;
     }
     if (aNode->IsGeneratedContentContainerForAfter()) {
-      return 2;
+      return int32_t(anonKids.Length());
     }
-    return 0;
+    auto index = anonKids.IndexOf(aNode);
+    if (index == anonKids.NoIndex) {
+      MOZ_ASSERT_UNREACHABLE(
+          "Missing parent -> child link somehow?"
+          "Potentially unstable ordering");
+      return 0;
+    }
+    return int32_t(index);
   };
 
   return PseudoIndex(node1Ancestor, index1) -
