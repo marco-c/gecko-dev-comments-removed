@@ -167,6 +167,13 @@ class OwningElementRef final {
 
   bool IsSet() const { return !!mTarget.mElement; }
 
+  bool ShouldFireEvents() const {
+    
+    
+    
+    return IsSet() && !mTarget.mElement->IsInNativeAnonymousSubtree();
+  }
+
   void GetElement(dom::Element*& aElement,
                   PseudoStyleRequest& aPseudoRequest) const {
     aElement = mTarget.mElement;
