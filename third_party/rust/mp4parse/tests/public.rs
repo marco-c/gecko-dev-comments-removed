@@ -232,10 +232,6 @@ static AUDIO_AMRWB_3GP: &str = "tests/amr_wb_1f.3gp";
 static VIDEO_MP4V_MP4: &str = "tests/bbb_sunflower_QCIF_30fps_mp4v_noaudio_1f.mp4";
 
 
-
-static VIDEO_H264_PASP_MP4: &str = "tests/h264_white_frame_sar_16_9.mp4";
-
-
 #[test]
 fn public_api() {
     let mut fd = File::open(MINI_MP4).expect("Unknown file");
@@ -1469,35 +1465,6 @@ fn public_video_hevc() {
                 panic!("expected a HEVCConfig",);
             }
         };
-    }
-}
-
-#[test]
-fn public_parse_pasp_h264() {
-    let mut fd = File::open(VIDEO_H264_PASP_MP4).expect("Unknown file");
-    let mut buf = Vec::new();
-    fd.read_to_end(&mut buf).expect("File error");
-
-    let mut c = Cursor::new(&buf);
-    let context = mp4::read_mp4(&mut c).expect("read_mp4 failed");
-    for track in context.tracks {
-        let stsd = track.stsd.expect("expected an stsd");
-        let v = match stsd.descriptions.first().expect("expected a SampleEntry") {
-            mp4::SampleEntry::Video(ref v) => v,
-            _ => panic!("expected a VideoSampleEntry"),
-        };
-        assert_eq!(v.codec_type, mp4::CodecType::H264);
-        assert_eq!(v.width, 640);
-        assert_eq!(v.height, 480);
-        assert!(
-            v.pixel_aspect_ratio.is_some(),
-            "pixel_aspect_ratio should exist"
-        );
-        assert_eq!(
-            { v.pixel_aspect_ratio.unwrap() },
-            16.0 / 9.0,
-            "pixel_aspect_ratio should be 16/9"
-        );
     }
 }
 
