@@ -9,6 +9,7 @@
 
 #include <tuple>
 #include "RangeBoundary.h"
+#include "TextDirectiveUtil.h"
 #include "nsStringFwd.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
@@ -296,6 +297,15 @@ class TextDirectiveCreator final {
   RefPtr<nsRange> mInputRange;
   TextDirectiveCandidate mTextDirective;
   RangeContentCache mRangeContentCache;
+
+  
+
+
+
+
+
+
+  TimeoutWatchdog mWatchdog;
 };
 }  
 #endif
