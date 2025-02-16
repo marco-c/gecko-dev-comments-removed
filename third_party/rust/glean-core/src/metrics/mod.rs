@@ -232,6 +232,25 @@ pub trait MetricType {
     }
 }
 
+
+
+pub trait MetricIdentifier<'a> {
+    
+    fn get_identifiers(&'a self) -> (&'a str, &'a str, Option<&'a str>);
+}
+
+
+
+impl<'a, T> MetricIdentifier<'a> for T
+where
+    T: MetricType,
+{
+    fn get_identifiers(&'a self) -> (&'a str, &'a str, Option<&'a str>) {
+        let meta = &self.meta().inner;
+        (&meta.category, &meta.name, meta.dynamic_label.as_deref())
+    }
+}
+
 impl Metric {
     
     

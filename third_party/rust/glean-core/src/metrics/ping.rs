@@ -135,23 +135,28 @@ impl PingType {
         this
     }
 
-    pub(crate) fn name(&self) -> &str {
+    
+    pub fn name(&self) -> &str {
         &self.0.name
     }
 
-    pub(crate) fn include_client_id(&self) -> bool {
+    
+    pub fn include_client_id(&self) -> bool {
         self.0.include_client_id
     }
 
-    pub(crate) fn send_if_empty(&self) -> bool {
+    
+    pub fn send_if_empty(&self) -> bool {
         self.0.send_if_empty
     }
 
-    pub(crate) fn precise_timestamps(&self) -> bool {
+    
+    pub fn precise_timestamps(&self) -> bool {
         self.0.precise_timestamps
     }
 
-    pub(crate) fn include_info_sections(&self) -> bool {
+    
+    pub fn include_info_sections(&self) -> bool {
         self.0.include_info_sections
     }
 
@@ -194,12 +199,27 @@ impl PingType {
         self.0.enabled.load(Ordering::Relaxed)
     }
 
-    pub(crate) fn follows_collection_enabled(&self) -> bool {
+    
+    
+    
+    pub fn naively_enabled(&self) -> bool {
+        self.0.enabled.load(Ordering::Relaxed)
+    }
+
+    
+    
+    pub fn follows_collection_enabled(&self) -> bool {
         self.0.follows_collection_enabled.load(Ordering::Relaxed)
     }
 
-    pub(crate) fn schedules_pings(&self) -> &[String] {
+    
+    pub fn schedules_pings(&self) -> &[String] {
         &self.0.schedules_pings
+    }
+
+    
+    pub fn reason_codes(&self) -> &[String] {
+        &self.0.reason_codes
     }
 
     
@@ -288,15 +308,20 @@ impl PingType {
                     return false;
                 }
 
+                const BUILTIN_PINGS: [&str; 4] =
+                    ["baseline", "metrics", "events", "deletion-request"];
+
                 
                 
                 
                 
-                glean
-                    .additional_metrics
-                    .pings_submitted
-                    .get(ping.name)
-                    .add_sync(glean, 1);
+                if BUILTIN_PINGS.contains(&ping.name) {
+                    glean
+                        .additional_metrics
+                        .pings_submitted
+                        .get(ping.name)
+                        .add_sync(glean, 1);
+                }
 
                 if let Err(e) = ping_maker.store_ping(glean.get_data_path(), &ping) {
                     log::warn!(

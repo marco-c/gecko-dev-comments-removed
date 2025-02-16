@@ -163,6 +163,9 @@ fn test_pings_submitted_metric() {
     let metrics_ping = new_test_ping(&mut glean, "metrics");
     let baseline_ping = new_test_ping(&mut glean, "baseline");
 
+    let custom_ping = PingType::new("custom", true, true, true, true, true, vec![], vec![], true);
+    glean.register_ping_type(&custom_ping);
+
     
     let counter = CounterMetric::new(CommonMetricData {
         name: "counter".into(),
@@ -173,6 +176,8 @@ fn test_pings_submitted_metric() {
     counter.add_sync(&glean, 1);
 
     assert!(metrics_ping.submit_sync(&glean, None));
+    
+    assert!(custom_ping.submit_sync(&glean, None));
 
     
     assert_eq!(
@@ -182,6 +187,10 @@ fn test_pings_submitted_metric() {
     assert_eq!(
         None,
         pings_submitted.get("baseline").get_value(&glean, "metrics")
+    );
+    assert_eq!(
+        None,
+        pings_submitted.get("custom").get_value(&glean, "metrics")
     );
 
     
@@ -195,6 +204,10 @@ fn test_pings_submitted_metric() {
             .get("baseline")
             .get_value(&glean, "baseline")
     );
+    assert_eq!(
+        None,
+        pings_submitted.get("custom").get_value(&glean, "baseline")
+    );
 
     
     
@@ -202,6 +215,8 @@ fn test_pings_submitted_metric() {
     
     assert!(baseline_ping.submit_sync(&glean, None));
     assert!(baseline_ping.submit_sync(&glean, None));
+    
+    assert!(custom_ping.submit_sync(&glean, None));
 
     
     assert_eq!(
@@ -216,6 +231,12 @@ fn test_pings_submitted_metric() {
             .get("baseline")
             .get_value(&glean, Some("metrics"))
     );
+    assert_eq!(
+        None,
+        pings_submitted
+            .get("custom")
+            .get_value(&glean, Some("metrics"))
+    );
 
     
     assert_eq!(
@@ -228,6 +249,12 @@ fn test_pings_submitted_metric() {
         Some(1),
         pings_submitted
             .get("baseline")
+            .get_value(&glean, Some("baseline"))
+    );
+    assert_eq!(
+        None,
+        pings_submitted
+            .get("custom")
             .get_value(&glean, Some("baseline"))
     );
 }
