@@ -60,10 +60,11 @@ class HandleBase {
       : mHandle(std::move(aOther.mHandle)),
         mSize(std::exchange(aOther.mSize, 0)) {}
 
-  HandleBase& operator=(HandleBase&& aOther);
-
-  HandleBase(const HandleBase&) = delete;
-  HandleBase& operator=(const HandleBase&) = delete;
+  HandleBase& operator=(HandleBase&& aOther) {
+    mHandle = std::move(aOther.mHandle);
+    mSize = std::exchange(aOther.mSize, 0);
+    return *this;
+  }
 
   HandleBase Clone() const;
 
@@ -106,12 +107,6 @@ struct Handle : HandleBase {
 
 
   struct Mapping Map(void* aFixedAddress = nullptr) const;
-
-  
-
-
-  struct Mapping MapSubregion(uint64_t aOffset, size_t aSize,
-                              void* aFixedAddress = nullptr) const;
 };
 
 
@@ -133,12 +128,6 @@ struct ReadOnlyHandle : HandleBase {
 
 
   struct ReadOnlyMapping Map(void* aFixedAddress = nullptr) const;
-
-  
-
-
-  struct ReadOnlyMapping MapSubregion(uint64_t aOffset, size_t aSize,
-                                      void* aFixedAddress = nullptr) const;
 };
 
 
@@ -172,12 +161,6 @@ struct FreezableHandle : HandleBase {
 
 
   struct FreezableMapping Map(void* aFixedAddress = nullptr) &&;
-
-  
-
-
-  struct FreezableMapping MapSubregion(uint64_t aOffset, size_t aSize,
-                                       void* aFixedAddress = nullptr) &&;
 
   friend class Platform;
 #if !defined(XP_DARWIN) && !defined(XP_WIN) && !defined(ANDROID)
