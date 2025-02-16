@@ -531,10 +531,6 @@ pref("browser.urlbar.quicksuggest.contextualOptIn", false);
 
 
 
-pref("browser.urlbar.quicksuggest.contextualOptIn.sayHello", false);
-
-
-
 pref("browser.urlbar.quicksuggest.contextualOptIn.topPosition", true);
 
 
