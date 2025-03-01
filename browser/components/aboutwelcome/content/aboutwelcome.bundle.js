@@ -677,6 +677,8 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     
     
     
+    
+    
     let multiSelectActions = [];
     const processTile = tile => {
       if (tile?.type === "multiselect" && Array.isArray(tile.data)) {
