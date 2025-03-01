@@ -57,9 +57,14 @@ class BoxModelProperties extends PureComponent {
 
     if (
       propertyName === "position" &&
+      this.props.boxModel.offsetParent &&
       value !== "static" &&
-      value !== "fixed" &&
-      this.props.boxModel.offsetParent
+      
+      
+      
+      
+      
+      (value !== "fixed" || this.props.boxModel.offsetParent.tagName !== "BODY")
     ) {
       return {
         referenceElement: this.props.boxModel.offsetParent,
