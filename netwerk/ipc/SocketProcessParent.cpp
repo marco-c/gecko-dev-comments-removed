@@ -85,7 +85,7 @@ void SocketProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
 #endif  
 
   if (aWhy == AbnormalShutdown) {
-    GenerateCrashReport(OtherPid());
+    GenerateCrashReport();
     MaybeTerminateProcess();
   }
 

@@ -28,17 +28,17 @@ class CrashReporterHost {
   typedef CrashReporter::AnnotationTable AnnotationTable;
 
  public:
-  CrashReporterHost(GeckoProcessType aProcessType,
+  CrashReporterHost(GeckoProcessType aProcessType, base::ProcessId aPid,
                     CrashReporter::ThreadId aThreadId);
 
   
   
   
-  bool GenerateCrashReport(base::ProcessId aPid);
+  bool GenerateCrashReport();
 
   
   
-  RefPtr<nsIFile> TakeCrashedChildMinidump(base::ProcessId aPid);
+  RefPtr<nsIFile> TakeCrashedChildMinidump();
 
   
   
@@ -117,6 +117,7 @@ class CrashReporterHost {
 
  private:
   GeckoProcessType mProcessType;
+  base::ProcessId mPid;
   CrashReporter::ThreadId mThreadId;
   time_t mStartTime;
   AnnotationTable mExtraAnnotations;

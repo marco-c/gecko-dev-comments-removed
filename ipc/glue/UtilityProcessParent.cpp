@@ -154,7 +154,7 @@ void UtilityProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
 #endif
     }
 
-    GenerateCrashReport(OtherPid(), &dumpID);
+    GenerateCrashReport(&dumpID);
 
     
     

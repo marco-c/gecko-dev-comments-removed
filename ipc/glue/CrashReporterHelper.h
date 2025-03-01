@@ -31,22 +31,31 @@ namespace ipc {
 
 
 
-template <GeckoProcessType PT>
+
+
+
+
+
+
+
+
+template <class Derived>
 class CrashReporterHelper {
  public:
   CrashReporterHelper() : mCrashReporter(nullptr) {}
   IPCResult RecvInitCrashReporter(const CrashReporter::ThreadId& aThreadId) {
-    mCrashReporter = MakeUnique<ipc::CrashReporterHost>(PT, aThreadId);
+    base::ProcessId pid = static_cast<Derived*>(this)->OtherPid();
+    mCrashReporter = MakeUnique<ipc::CrashReporterHost>(Derived::PROCESS_TYPE,
+                                                        pid, aThreadId);
     return IPC_OK();
   }
 
  protected:
-  void GenerateCrashReport(base::ProcessId aPid,
-                           nsString* aMinidumpId = nullptr) {
+  void GenerateCrashReport(nsString* aMinidumpId = nullptr) {
     nsAutoString minidumpId;
     if (!mCrashReporter) {
-      HandleOrphanedMinidump(aPid, minidumpId);
-    } else if (mCrashReporter->GenerateCrashReport(aPid)) {
+      HandleOrphanedMinidump(minidumpId);
+    } else if (mCrashReporter->GenerateCrashReport()) {
       minidumpId = mCrashReporter->MinidumpID();
     }
 
@@ -72,14 +81,17 @@ class CrashReporterHelper {
   }
 
  private:
-  void HandleOrphanedMinidump(base::ProcessId aPid, nsString& aMinidumpId) {
-    if (CrashReporter::FinalizeOrphanedMinidump(aPid, PT, &aMinidumpId)) {
-      CrashReporterHost::RecordCrash(PT, nsICrashService::CRASH_TYPE_CRASH,
+  void HandleOrphanedMinidump(nsString& aMinidumpId) {
+    base::ProcessId pid = static_cast<Derived*>(this)->OtherPid();
+    if (CrashReporter::FinalizeOrphanedMinidump(pid, Derived::PROCESS_TYPE,
+                                                &aMinidumpId)) {
+      CrashReporterHost::RecordCrash(Derived::PROCESS_TYPE,
+                                     nsICrashService::CRASH_TYPE_CRASH,
                                      aMinidumpId);
     } else {
       NS_WARNING(nsPrintfCString("child process pid = %" PRIPID
                                  " crashed without leaving a minidump behind",
-                                 aPid)
+                                 pid)
                      .get());
     }
   }
