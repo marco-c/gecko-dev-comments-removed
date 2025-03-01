@@ -911,6 +911,30 @@ function makeVisitResult(
 
 
 
+function makeCalculatorResult(queryContext, { value }) {
+  const result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.DYNAMIC,
+    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    {
+      value,
+      input: queryContext.searchString,
+      dynamicType: "calculator",
+    }
+  );
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
