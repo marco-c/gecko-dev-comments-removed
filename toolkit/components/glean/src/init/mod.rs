@@ -358,10 +358,11 @@ fn fog_test_reset_internal(
     
     conf.uploader = Some(Box::new(ViaductUploader) as Box<dyn glean::net::PingUploader>);
 
+    glean::test_reset_glean(conf, client_info, true);
+
     
     pings::register_pings(None);
 
-    glean::test_reset_glean(conf, client_info, true);
     Ok(())
 }
 
