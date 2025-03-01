@@ -246,100 +246,69 @@ struct StackMap final {
 
 static_assert(sizeof(StackMap) == 12, "wasm::StackMap has unexpected size");
 
+
+using StackMapHashMap = HashMap<uint32_t, StackMap*, DefaultHasher<uint32_t>, SystemAllocPolicy>;
+
 class StackMaps {
- public:
-  
-  
-  
-  
-  
-  
-  struct Maplet {
-    const uint8_t* nextInsnAddr;
-    StackMap* map;
-    Maplet(const uint8_t* nextInsnAddr, StackMap* map)
-        : nextInsnAddr(nextInsnAddr), map(map) {}
-    void offsetBy(uintptr_t delta) { nextInsnAddr += delta; }
-    bool operator<(const Maplet& other) const {
-      return uintptr_t(nextInsnAddr) < uintptr_t(other.nextInsnAddr);
-    }
-  };
+private:
+ 
+ StackMapHashMap mapping_;
 
- private:
-  bool sorted_;
-  Vector<Maplet, 0, SystemAllocPolicy> mapping_;
+public:
+ StackMaps() {}
+ ~StackMaps() {
+   for (auto iter = mapping_.modIter(); !iter.done(); iter.next()) {
+     StackMap* stackmap = iter.getMutable().value();
+     stackmap->destroy();
+   }
+   mapping_.clear();
+  }
 
- public:
-  StackMaps() : sorted_(false) {}
-  ~StackMaps() {
-    for (auto& maplet : mapping_) {
-      maplet.map->destroy();
-      maplet.map = nullptr;
-    }
-  }
-  [[nodiscard]] bool add(const uint8_t* nextInsnAddr, StackMap* map) {
-    MOZ_ASSERT(!sorted_);
-    return mapping_.append(Maplet(nextInsnAddr, map));
-  }
-  [[nodiscard]] bool add(const Maplet& maplet) {
-    return add(maplet.nextInsnAddr, maplet.map);
+  [[nodiscard]] bool add(uint32_t codeOffset, StackMap* map) {
+    return mapping_.putNew(codeOffset, map);
   }
   void clear() {
-    for (auto& maplet : mapping_) {
-      maplet.nextInsnAddr = nullptr;
-      maplet.map = nullptr;
-    }
     mapping_.clear();
   }
   bool empty() const { return mapping_.empty(); }
-  size_t length() const { return mapping_.length(); }
-  Maplet* getRef(size_t i) { return &mapping_[i]; }
-  Maplet get(size_t i) const { return mapping_[i]; }
-  Maplet move(size_t i) {
-    Maplet m = mapping_[i];
-    mapping_[i].map = nullptr;
-    return m;
-  }
-  void offsetBy(uintptr_t delta) {
-    for (auto& maplet : mapping_) maplet.offsetBy(delta);
-  }
-  void finishAndSort() {
-    MOZ_ASSERT(!sorted_);
-    std::sort(mapping_.begin(), mapping_.end());
-    sorted_ = true;
-  }
-  void finishAlreadySorted() {
-    MOZ_ASSERT(!sorted_);
-    MOZ_ASSERT(std::is_sorted(mapping_.begin(), mapping_.end()));
-    sorted_ = true;
-  }
-  const StackMap* findMap(const uint8_t* nextInsnAddr) const {
-    struct Comparator {
-      int operator()(Maplet aVal) const {
-        if (uintptr_t(mTarget) < uintptr_t(aVal.nextInsnAddr)) {
-          return -1;
-        }
-        if (uintptr_t(mTarget) > uintptr_t(aVal.nextInsnAddr)) {
-          return 1;
-        }
-        return 0;
-      }
-      explicit Comparator(const uint8_t* aTarget) : mTarget(aTarget) {}
-      const uint8_t* mTarget;
-    };
+  
+  size_t length() const { return mapping_.count(); }
 
-    size_t result;
-    if (mozilla::BinarySearchIf(mapping_, 0, mapping_.length(),
-                                Comparator(nextInsnAddr), &result)) {
-      return mapping_[result].map;
+  
+  
+  [[nodiscard]] bool appendAll(StackMaps& other, uint32_t offsetInModule) {
+    
+    
+    if (!mapping_.reserve(mapping_.count() + other.mapping_.count())) {
+      return false;
     }
 
-    return nullptr;
+    for (auto iter = other.mapping_.modIter(); !iter.done(); iter.next()) {
+      uint32_t newOffset = iter.get().key() + offsetInModule;
+      StackMap* stackMap = iter.get().value();
+      mapping_.putNewInfallible(newOffset, stackMap);
+    }
+
+    other.mapping_.clear();
+    return true;
+  }
+
+  const StackMap* lookup(uint32_t codeOffset) const {
+    auto ptr = mapping_.lookup(codeOffset);
+    if (!ptr) {
+      return nullptr;
+    }
+
+    return ptr->value();
   }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-    return mapping_.sizeOfExcludingThis(mallocSizeOf);
+    return mapping_.shallowSizeOfExcludingThis(mallocSizeOf);
   }
+
+  void checkInvariants(const uint8_t* base) const;
+
+  WASM_DECLARE_FRIEND_SERIALIZE(StackMaps);
 };
 
 
