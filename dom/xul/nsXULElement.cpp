@@ -222,68 +222,42 @@ nsXULElement* nsXULElement::Construct(
 }
 
 
-already_AddRefed<nsXULElement> nsXULElement::CreateFromPrototype(
-    nsXULPrototypeElement* aPrototype, mozilla::dom::NodeInfo* aNodeInfo,
-    bool aIsScriptable, bool aIsRoot) {
-  RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
+already_AddRefed<Element> nsXULElement::CreateFromPrototype(
+    nsXULPrototypeElement* aPrototype, Document* aDocument, bool aIsRoot) {
+  mozilla::dom::NodeInfo* ni = aPrototype->mNodeInfo;
+  RefPtr<mozilla::dom::NodeInfo> nodeInfo =
+      aDocument->NodeInfoManager()->GetNodeInfo(
+          ni->NameAtom(), ni->GetPrefixAtom(), ni->NamespaceID(), ELEMENT_NODE);
+
   nsCOMPtr<Element> baseElement;
-  NS_NewXULElement(getter_AddRefs(baseElement), ni.forget(),
+  NS_NewXULElement(getter_AddRefs(baseElement), nodeInfo.forget(),
                    dom::FROM_PARSER_NETWORK, aPrototype->mIsAtom);
-
-  if (baseElement) {
-    nsXULElement* element = FromNode(baseElement);
-
-    if (aPrototype->mHasIdAttribute) {
-      element->SetHasID();
-    }
-    if (aPrototype->mHasClassAttribute) {
-      element->SetMayHaveClass();
-    }
-    if (aPrototype->mHasStyleAttribute) {
-      element->SetMayHaveStyle();
-    }
-
-    element->MakeHeavyweight(aPrototype);
-    if (aIsScriptable) {
-      
-      
-      
-      for (const auto& attribute : aPrototype->mAttributes) {
-        element->AddListenerForAttributeIfNeeded(attribute.mName);
-      }
-    }
-
-    return baseElement.forget().downcast<nsXULElement>();
+  if (!baseElement) {
+    return nullptr;
   }
 
-  return nullptr;
-}
+  nsXULElement* element = FromNode(baseElement);
 
-nsresult nsXULElement::CreateFromPrototype(nsXULPrototypeElement* aPrototype,
-                                           Document* aDocument,
-                                           bool aIsScriptable, bool aIsRoot,
-                                           Element** aResult) {
+  if (aPrototype->mHasIdAttribute) {
+    element->SetHasID();
+  }
+  if (aPrototype->mHasClassAttribute) {
+    element->SetMayHaveClass();
+  }
+  if (aPrototype->mHasStyleAttribute) {
+    element->SetMayHaveStyle();
+  }
+
+  element->MakeHeavyweight(aPrototype);
+
   
-  MOZ_ASSERT(aPrototype != nullptr, "null ptr");
-  if (!aPrototype) return NS_ERROR_NULL_POINTER;
-
-  MOZ_ASSERT(aResult != nullptr, "null ptr");
-  if (!aResult) return NS_ERROR_NULL_POINTER;
-
-  RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-  if (aDocument) {
-    mozilla::dom::NodeInfo* ni = aPrototype->mNodeInfo;
-    nodeInfo = aDocument->NodeInfoManager()->GetNodeInfo(
-        ni->NameAtom(), ni->GetPrefixAtom(), ni->NamespaceID(), ELEMENT_NODE);
-  } else {
-    nodeInfo = aPrototype->mNodeInfo;
+  
+  
+  for (const auto& attribute : aPrototype->mAttributes) {
+    element->AddListenerForAttributeIfNeeded(attribute.mName);
   }
 
-  RefPtr<nsXULElement> element =
-      CreateFromPrototype(aPrototype, nodeInfo, aIsScriptable, aIsRoot);
-  element.forget(aResult);
-
-  return NS_OK;
+  return baseElement.forget();
 }
 
 nsresult NS_NewXULElement(Element** aResult,

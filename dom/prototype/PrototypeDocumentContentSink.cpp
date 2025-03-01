@@ -1043,9 +1043,10 @@ nsresult PrototypeDocumentContentSink::CreateElementFromPrototype(
     const bool isRoot = !aParent;
     
     
-    rv = nsXULElement::CreateFromPrototype(aPrototype, doc, true, isRoot,
-                                           getter_AddRefs(result));
-    if (NS_FAILED(rv)) return rv;
+    result = nsXULElement::CreateFromPrototype(aPrototype, doc, isRoot);
+    if (!result) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
   } else {
     
     
