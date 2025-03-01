@@ -88,6 +88,12 @@ interface nsIContentAnalysisResponse : nsIContentAnalysisResult
   [infallible] readonly attribute boolean isCachedResponse;
 
   
+  
+  
+  
+  [infallible] readonly attribute boolean isAgentResponse;
+
+  
 
 
 

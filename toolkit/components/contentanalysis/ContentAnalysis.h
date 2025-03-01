@@ -506,6 +506,12 @@ class ContentAnalysisResponse final : public nsIContentAnalysisResponse {
   
   bool mIsCachedResponse = false;
 
+  
+  
+  
+  
+  bool mIsAgentResponse = false;
+
   friend class ContentAnalysis;
 };
 
