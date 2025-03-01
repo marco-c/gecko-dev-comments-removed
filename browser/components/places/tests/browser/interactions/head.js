@@ -2,7 +2,7 @@
 
 
 
-const { Interactions, TIMERS } = ChromeUtils.importESModule(
+const { Interactions } = ChromeUtils.importESModule(
   "resource:///modules/Interactions.sys.mjs"
 );
 
@@ -201,16 +201,6 @@ async function getDatabaseValue(url, property) {
       return rows?.[0]?.getResultByName(property);
     }
   );
-}
-
-const DEFAULT_TAB_SELECT_IDLE_TIME = TIMERS.tabSelectIdleTimeMs;
-registerCleanupFunction(() => {
-  TIMERS.tabSelectIdleTimeMs = DEFAULT_TAB_SELECT_IDLE_TIME;
-});
-
-
-function setTabSelectIdleTimer(timerMs) {
-  TIMERS.tabSelectIdleTimeMs = timerMs;
 }
 
 async function insertIntoMozPlacesMetadata(
