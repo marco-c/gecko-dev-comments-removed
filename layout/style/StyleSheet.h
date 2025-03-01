@@ -408,6 +408,12 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   
   
+  
+  
+  bool IsDirectlyAssociatedTo(dom::DocumentOrShadowRoot&) const;
+
+  
+  
   bool SelfOrAncestorIsConstructed() const {
     return OutermostSheet().IsConstructed();
   }

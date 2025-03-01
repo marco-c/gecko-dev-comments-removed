@@ -955,6 +955,29 @@ void StyleSheet::SubjectSubsumesInnerPrincipal(nsIPrincipal& aSubjectPrincipal,
   info.mPrincipal = &aSubjectPrincipal;
 }
 
+bool StyleSheet::IsDirectlyAssociatedTo(
+    dom::DocumentOrShadowRoot& aTree) const {
+  if (mParentSheet) {
+    
+    MOZ_ASSERT(aTree.StyleOrderIndexOfSheet(*this) ==
+               nsTArray<RefPtr<StyleSheet>>::NoIndex);
+    return false;
+  }
+  bool associated = false;
+  if (IsConstructed()) {
+    
+    
+    
+    associated = aTree.AdoptedStyleSheets().Contains(this);
+    MOZ_ASSERT(associated == mAdopters.Contains(&aTree));
+  } else {
+    associated = GetAssociatedDocumentOrShadowRoot() == &aTree;
+  }
+  MOZ_ASSERT(associated == (aTree.StyleOrderIndexOfSheet(*this) !=
+                            nsTArray<RefPtr<StyleSheet>>::NoIndex));
+  return associated;
+}
+
 bool StyleSheet::AreRulesAvailable(nsIPrincipal& aSubjectPrincipal,
                                    ErrorResult& aRv) {
   

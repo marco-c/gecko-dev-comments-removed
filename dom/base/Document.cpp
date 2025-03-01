@@ -3146,41 +3146,47 @@ already_AddRefed<nsIPrincipal> Document::MaybeDowngradePrincipal(
 }
 
 size_t Document::FindDocStyleSheetInsertionPoint(const StyleSheet& aSheet) {
-  nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
   ServoStyleSet& styleSet = EnsureStyleSet();
 
   
-  size_t newDocIndex = StyleOrderIndexOfSheet(aSheet);
+  const size_t newDocIndex = StyleOrderIndexOfSheet(aSheet);
+  MOZ_ASSERT(newDocIndex != mStyleSheets.NoIndex);
 
-  size_t count = styleSet.SheetCount(StyleOrigin::Author);
-  size_t index = 0;
-  for (; index < count; index++) {
+  size_t index = styleSet.SheetCount(StyleOrigin::Author);
+  while (index--) {
     auto* sheet = styleSet.SheetAt(StyleOrigin::Author, index);
     MOZ_ASSERT(sheet);
+    if (!sheet->GetAssociatedDocumentOrShadowRoot()) {
+      
+      
+      
+      MOZ_ASSERT(
+          nsStyleSheetService::GetInstance()->AuthorStyleSheets()->Contains(
+              sheet));
+      continue;
+    }
     size_t sheetDocIndex = StyleOrderIndexOfSheet(*sheet);
-    if (newDocIndex != mStyleSheets.NoIndex &&
-        sheetDocIndex != mStyleSheets.NoIndex && sheetDocIndex > newDocIndex) {
-      break;
-    }
-
-    
-    
-    
-    
     if (sheetDocIndex == mStyleSheets.NoIndex) {
-      if (sheetService) {
-        auto& authorSheets = *sheetService->AuthorStyleSheets();
-        if (authorSheets.IndexOf(sheet) != authorSheets.NoIndex) {
-          break;
-        }
-      }
-      if (sheet == GetFirstAdditionalAuthorSheet()) {
-        break;
-      }
+      MOZ_ASSERT(mAdditionalSheets[eAuthorSheet].Contains(sheet));
+      
+      
+      continue;
     }
+    MOZ_ASSERT(sheetDocIndex != newDocIndex);
+    if (sheetDocIndex < newDocIndex) {
+      
+      
+      return index + 1;
+    }
+    
+    
+    
+    
+    
+    
   }
-
-  return index;
+  
+  return 0;
 }
 
 void Document::ResetStylesheetsToURI(nsIURI* aURI) {
@@ -7678,14 +7684,13 @@ void Document::InsertSheetAt(size_t aIndex, StyleSheet& aSheet) {
 }
 
 void Document::StyleSheetApplicableStateChanged(StyleSheet& aSheet) {
-  const bool applicable = aSheet.IsApplicable();
-  
-  if (StyleOrderIndexOfSheet(aSheet) != mStyleSheets.NoIndex) {
-    if (applicable) {
-      AddStyleSheetToStyleSets(aSheet);
-    } else {
-      RemoveStyleSheetFromStyleSets(aSheet);
-    }
+  if (!aSheet.IsDirectlyAssociatedTo(*this)) {
+    return;
+  }
+  if (aSheet.IsApplicable()) {
+    AddStyleSheetToStyleSets(aSheet);
+  } else {
+    RemoveStyleSheetFromStyleSets(aSheet);
   }
 }
 
