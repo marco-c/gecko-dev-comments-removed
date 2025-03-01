@@ -526,6 +526,17 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
     return mMouseEnterLeaveHelper;
   }
 
+  nsIContent* GetTrackingDragGestureContent() const {
+    return mGestureDownContent;
+  }
+
+  
+  
+  
+  void NotifyDestroyingFrameForGesture(nsIFrame* aFrame);
+
+  bool IsTrackingDragGesture() const { return mGestureDownContent != nullptr; }
+
  protected:
   
 
@@ -1215,7 +1226,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
       dom::RemoteDragStartData* aDragStartData, nsIPrincipal* aPrincipal,
       nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings);
 
-  bool IsTrackingDragGesture() const { return mGestureDownContent != nullptr; }
   
 
 

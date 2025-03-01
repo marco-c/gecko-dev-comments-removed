@@ -4696,6 +4696,17 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
     return NS_OK;
   }
 
+  EventStateManager* const esm = aPresContext->EventStateManager();
+  if (nsIContent* dragGestureContent = esm->GetTrackingDragGestureContent()) {
+    if (dragGestureContent != this->GetContent()) {
+      
+      
+      
+      
+      return NS_OK;
+    }
+  }
+
   const nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(
       aMouseEvent, RelativeTo{this});
 
