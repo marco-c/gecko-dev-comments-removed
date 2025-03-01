@@ -4505,6 +4505,9 @@ class nsIFrame : public nsQueryFrame {
                                     const nsSize& aSize) const;
 
   
+  bool ForcesStackingContextForViewTransition() const;
+
+  
 
 
 

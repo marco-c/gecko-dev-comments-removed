@@ -645,12 +645,14 @@ void ViewTransition::Activate() {
   }
 
   
+  
   if (auto skipReason = CaptureNewState()) {
+    
+    
+    ClearNamedElements();
     
     return SkipTransition(*skipReason);
   }
-
-  
 
   
   SetupTransitionPseudoElements();
@@ -873,16 +875,20 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
           SkipTransitionReason::DuplicateTransitionNameCapturingOldState);
       return false;
     }
-    
-    
+    aFrame->AddStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION);
     captureElements.AppendElement(std::make_pair(aFrame, name));
     return true;
   });
 
   if (result) {
+    for (auto& [f, name] : captureElements) {
+      f->RemoveStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION);
+    }
     return result;
   }
 
+  
+  
   
   for (auto& [f, name] : captureElements) {
     MOZ_ASSERT(f);
@@ -890,10 +896,8 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
     auto capture =
         MakeUnique<CapturedElement>(f, mInitialSnapshotContainingBlockSize);
     mNamedElements.InsertOrUpdate(name, std::move(capture));
+    f->RemoveStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION);
   }
-
-  
-  
 
   return result;
 }
@@ -925,6 +929,7 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
     auto& capturedElement = mNamedElements.LookupOrInsertWith(
         name, [&] { return MakeUnique<CapturedElement>(); });
     capturedElement->mNewElement = aFrame->GetContent()->AsElement();
+    aFrame->AddStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION);
     return true;
   });
   return result;
@@ -1094,7 +1099,13 @@ bool ViewTransition::CheckForActiveAnimations() const {
 }
 
 void ViewTransition::ClearNamedElements() {
-  
+  for (auto& entry : mNamedElements) {
+    if (auto* element = entry.GetData()->mNewElement.get()) {
+      if (nsIFrame* f = element->GetPrimaryFrame()) {
+        f->RemoveStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION);
+      }
+    }
+  }
   mNamedElements.Clear();
 }
 
