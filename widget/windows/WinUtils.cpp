@@ -2011,6 +2011,12 @@ bool WinUtils::MicaEnabled() {
   return sEnabled;
 }
 
+bool WinUtils::MicaPopupsEnabled() {
+  static bool sEnabled = IsWin1122H2OrLater() &&
+                         StaticPrefs::widget_windows_mica_popups_AtStartup();
+  return sEnabled;
+}
+
 
 
 

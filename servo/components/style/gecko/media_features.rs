@@ -662,7 +662,7 @@ macro_rules! lnf_int_feature {
 
 
 
-pub static MEDIA_FEATURES: [QueryFeatureDescription; 60] = [
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 61] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -955,6 +955,7 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 60] = [
         WindowsAccentColorInTitlebar
     ),
     lnf_int_feature!(atom!("-moz-windows-mica"), WindowsMica),
+    lnf_int_feature!(atom!("-moz-windows-mica-popups"), WindowsMicaPopups),
     lnf_int_feature!(atom!("-moz-swipe-animation-enabled"), SwipeAnimationEnabled),
     lnf_int_feature!(atom!("-moz-gtk-csd-available"), GTKCSDAvailable),
     lnf_int_feature!(atom!("-moz-gtk-csd-transparency-available"), GTKCSDTransparencyAvailable),
