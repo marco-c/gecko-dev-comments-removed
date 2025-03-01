@@ -340,6 +340,8 @@ class nsWindow final : public nsBaseWidget {
   void SetSmallIconNoData();
   void SetBigIconNoData();
 
+  void UpdateMicaBackdrop(bool aForce = false);
+
   static void SetIsRestoringSession(const bool aIsRestoringSession) {
     sIsRestoringSession = aIsRestoringSession;
   }
@@ -878,6 +880,9 @@ class nsWindow final : public nsBaseWidget {
 
   
   bool mPIPWindow : 1;
+
+  
+  bool mMicaBackdrop : 1;
 
   int32_t mCachedHitTestResult = 0;
 
