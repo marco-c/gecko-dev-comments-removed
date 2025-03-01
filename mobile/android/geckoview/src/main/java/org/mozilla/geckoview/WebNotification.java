@@ -31,11 +31,6 @@ public class WebNotification implements Parcelable {
   public final @Nullable String title;
 
   
-
-
-
-
-
   public final @NonNull String tag;
 
   private final @Nullable String mCookie;
