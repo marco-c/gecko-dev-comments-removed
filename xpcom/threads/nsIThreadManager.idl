@@ -57,6 +57,17 @@ interface nsIThreadManager : nsISupports
   static constexpr uint32_t DEFAULT_STACK_SIZE = 256 * 1024;
 #endif
 
+  
+
+
+
+
+
+
+
+
+  static uint32_t LargeStackSize();
+
   static const uint32_t kThreadPoolStackSize = DEFAULT_STACK_SIZE;
 
   struct ThreadCreationOptions {

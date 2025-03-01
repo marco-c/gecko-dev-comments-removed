@@ -38,28 +38,6 @@ std::atomic<uint64_t> Task::sCurrentTaskSeqNo = 0;
 const int32_t kMinimumPoolThreadCount = 2;
 const int32_t kMaximumPoolThreadCount = 8;
 
-
-
-
-
-
-
-constexpr uint32_t kBaseStackSize = 2048 * 1024 - 2 * 4096;
-
-
-
-
-
-
-
-
-
-#if defined(MOZ_TSAN) || defined(MOZ_ASAN)
-constexpr uint32_t kStackSize = 2 * kBaseStackSize;
-#else
-constexpr uint32_t kStackSize = kBaseStackSize;
-#endif
-
 struct PoolThread {
   const size_t mIndex;
   PRThread* mThread = nullptr;
@@ -362,9 +340,10 @@ void TaskController::InitializeThreadPool() {
   int32_t poolSize = GetPoolThreadCount();
   for (int32_t i = 0; i < poolSize; i++) {
     auto thread = MakeUnique<PoolThread>(i, mGraphMutex);
-    thread->mThread = PR_CreateThread(
-        PR_USER_THREAD, ThreadFuncPoolThread, thread.get(), PR_PRIORITY_NORMAL,
-        PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, kStackSize);
+    thread->mThread =
+        PR_CreateThread(PR_USER_THREAD, ThreadFuncPoolThread, thread.get(),
+                        PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
+                        PR_JOINABLE_THREAD, nsIThreadManager::LargeStackSize());
     MOZ_RELEASE_ASSERT(thread->mThread,
                        "Failed to create TaskController pool thread");
     mPoolThreads.emplace_back(std::move(thread));
@@ -374,7 +353,9 @@ void TaskController::InitializeThreadPool() {
 }
 
 
-size_t TaskController::GetThreadStackSize() { return kStackSize; }
+size_t TaskController::GetThreadStackSize() {
+  return nsIThreadManager::LargeStackSize();
+}
 
 void TaskController::SetPerformanceCounterState(
     PerformanceCounterState* aPerformanceCounterState) {

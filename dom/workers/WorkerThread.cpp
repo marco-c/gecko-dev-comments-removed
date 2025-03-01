@@ -41,19 +41,6 @@ using namespace ipc;
 
 namespace dom {
 
-namespace {
-
-
-
-
-
-
-
-
-const uint32_t kWorkerStackSize = 256 * sizeof(size_t) * 1024 - 8192;
-
-}  
-
 WorkerThreadFriendKey::WorkerThreadFriendKey() {
   MOZ_COUNT_CTOR(WorkerThreadFriendKey);
 }
@@ -83,7 +70,8 @@ class WorkerThread::Observer final : public nsIThreadObserver {
 WorkerThread::WorkerThread(ConstructorKey)
     : nsThread(
           MakeNotNull<ThreadEventQueue*>(MakeUnique<mozilla::EventQueue>()),
-          nsThread::NOT_MAIN_THREAD, {.stackSize = kWorkerStackSize}),
+          nsThread::NOT_MAIN_THREAD,
+          {.stackSize = nsIThreadManager::LargeStackSize()}),
       mLock("WorkerThread::mLock"),
       mWorkerPrivateCondVar(mLock, "WorkerThread::mWorkerPrivateCondVar"),
       mWorkerPrivate(nullptr),

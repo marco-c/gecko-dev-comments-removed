@@ -29,6 +29,7 @@
 #include "mozilla/TaskQueue.h"
 #include "mozilla/ThreadEventQueue.h"
 #include "mozilla/ThreadLocal.h"
+#include "mozilla/ipc/SharedMemoryMapping.h"
 #include "TaskController.h"
 #include "ThreadEventTarget.h"
 #ifdef MOZ_CANARY
@@ -261,6 +262,18 @@ NS_IMPL_QUERY_INTERFACE_CI(nsThreadManager, nsIThreadManager)
 NS_IMPL_CI_INTERFACE_GETTER(nsThreadManager, nsIThreadManager)
 
 
+
+ uint32_t nsIThreadManager::LargeStackSize() {
+  
+  
+  
+  
+#if defined(MOZ_ASAN) || defined(MOZ_TSAN)
+  return 4096 * 1024 - 2 * mozilla::ipc::shared_memory::SystemPageSize();
+#else
+  return 2048 * 1024 - 2 * mozilla::ipc::shared_memory::SystemPageSize();
+#endif
+}
 
  nsThreadManager& nsThreadManager::get() {
   static NeverDestroyed<nsThreadManager> sInstance;
