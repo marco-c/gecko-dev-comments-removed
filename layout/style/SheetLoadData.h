@@ -134,6 +134,10 @@ class SheetLoadData final
   CacheExpirationTime mExpirationTime = CacheExpirationTime::Never();
 
   
+  
+  LoadTainting mTainting{LoadTainting::Basic};
+
+  
   uint32_t mPendingChildren;
 
   

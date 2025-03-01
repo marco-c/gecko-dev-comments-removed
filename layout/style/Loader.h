@@ -652,7 +652,7 @@ class Loader final {
 
   nsCompatibility mDocumentCompatMode;
 
-  nsCOMPtr<nsIConsoleReportCollector> mReporter;
+  const nsCOMPtr<nsIConsoleReportCollector> mReporter;
 
   
   

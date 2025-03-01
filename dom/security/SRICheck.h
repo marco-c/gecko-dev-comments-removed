@@ -11,6 +11,7 @@
 #include "nsStringFwd.h"
 #include "nsCOMPtr.h"
 #include "nsICryptoHash.h"
+#include "mozilla/LoadTainting.h"
 
 class nsIChannel;
 class nsIConsoleReportCollector;
@@ -54,7 +55,14 @@ class SRICheckDataVerifier final {
   
   
   nsresult Update(uint32_t aStringLen, const uint8_t* aString);
+  nsresult Update(Span<const uint8_t>);
 
+  
+  nsresult Verify(const SRIMetadata& aMetadata, nsIChannel* aChannel,
+                  LoadTainting aLoadTainting, const nsACString& aSourceFileURI,
+                  nsIConsoleReportCollector* aReporter);
+
+  
   
   nsresult Verify(const SRIMetadata& aMetadata, nsIChannel* aChannel,
                   const nsACString& aSourceFileURI,
