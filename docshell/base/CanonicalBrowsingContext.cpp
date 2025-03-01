@@ -3290,8 +3290,19 @@ bool CanonicalBrowsingContext::CanOpenModalPicker() {
   
   
   
+  
+  
   mozilla::dom::Element* topFrameElement = GetTopFrameElement();
-  return !topFrameElement || topFrameElement == chromeDoc->GetActiveElement();
+  while (topFrameElement) {
+    RefPtr<Document> doc = topFrameElement->OwnerDoc();
+    if (doc->GetActiveElement() != topFrameElement) {
+      return false;
+    }
+    topFrameElement = doc->GetBrowsingContext()->GetTopFrameElement();
+    
+    
+  }
+  return true;
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(CanonicalBrowsingContext)
