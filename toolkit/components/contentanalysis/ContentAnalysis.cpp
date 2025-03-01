@@ -1379,28 +1379,41 @@ NS_IMETHODIMP ContentAnalysis::GetCachedResponse(
 }
 
 void ContentAnalysis::CancelWithError(nsCString&& aUserActionId,
+                                      Maybe<nsCString>&& aRequestToken,
                                       nsresult aResult) {
   MOZ_ASSERT(!aUserActionId.IsEmpty());
   if (!NS_IsMainThread()) {
     NS_DispatchToMainThread(NS_NewCancelableRunnableFunction(
         "CancelWithError",
-        [aUserActionId = std::move(aUserActionId), aResult]() mutable {
+        [aUserActionId = std::move(aUserActionId),
+         aRequestToken = std::move(aRequestToken), aResult]() mutable {
           auto self = GetContentAnalysisFromService();
           if (!self) {
             
             return;
           }
-          self->CancelWithError(std::move(aUserActionId), aResult);
+          self->CancelWithError(std::move(aUserActionId),
+                                std::move(aRequestToken), aResult);
         }));
     return;
   }
   AssertIsOnMainThread();
 
-  
-  nsTHashSet<nsCString> tokens;
+  AutoTArray<nsCString, 1> tokens;
   RefPtr<nsIContentAnalysisCallback> callback;
   if (auto maybeUserActionData = mUserActionMap.Lookup(aUserActionId)) {
-    tokens = std::move(maybeUserActionData->mRequestTokens);
+    if (aRequestToken) {
+      
+      if (maybeUserActionData->mRequestTokens.EnsureRemoved(*aRequestToken)) {
+        tokens.AppendElement(*aRequestToken);
+      } else {
+        MOZ_ASSERT_UNREACHABLE("Request token not found");
+      }
+    } else {
+      
+      tokens = ToTArray<AutoTArray<nsCString, 1>>(
+          maybeUserActionData->mRequestTokens);
+    }
     callback = maybeUserActionData->mCallback;
   } else {
     LOGD(
@@ -1420,6 +1433,9 @@ void ContentAnalysis::CancelWithError(nsCString&& aUserActionId,
     
     
     
+    MOZ_ASSERT(
+        !aRequestToken && aResult == NS_ERROR_ABORT,
+        "Token list can only be empty when canceling all remaining requests");
     LOGD(
         "ContentAnalysis::CancelWithError user action not found -- either was "
         "after last response or before first request was submitted | "
@@ -1495,6 +1511,8 @@ void ContentAnalysis::CancelWithError(nsCString&& aUserActionId,
   for (const auto& token : tokens) {
     auto response = MakeRefPtr<ContentAnalysisResponse>(action, token);
     response->SetCancelError(cancelError);
+    
+    
     NotifyResponseObservers(response, nsCString(aUserActionId),
                             false );
     if (action != nsIContentAnalysisResponse::Action::eWarn) {
@@ -1513,14 +1531,18 @@ void ContentAnalysis::CancelWithError(nsCString&& aUserActionId,
     }
   }
 
-  mUserActionIdToToCanceledResponseMap.InsertOrUpdate(
-      aUserActionId, CanceledResponse{ConvertResult(action), tokens.Count()});
-
-  if (action == nsIContentAnalysisResponse::Action::eWarn) {
+  if (aRequestToken) {
+    
+    
     return;
   }
 
+  MOZ_ASSERT(action != nsIContentAnalysisResponse::Action::eWarn);
+
   RemoveFromUserActionMap(nsCString(aUserActionId));
+
+  mUserActionIdToCanceledResponseMap.InsertOrUpdate(
+      aUserActionId, CanceledResponse{ConvertResult(action), tokens.Length()});
 
   
   nsCOMPtr<nsIContentAnalysis> contentAnalysis =
@@ -1759,14 +1781,15 @@ nsresult ContentAnalysis::RunAnalyzeRequestTask(
             owner->NotifyObserversAndMaybeIssueResponse(
                 response, std::move(userActionId), aAutoAcknowledge);
           },
-          [userActionId](nsresult rv) mutable {
+          [userActionId, requestToken](nsresult rv) mutable {
             LOGD("RunAnalyzeRequestTask failed to get client a second time");
             RefPtr<ContentAnalysis> owner = GetContentAnalysisFromService();
             if (!owner) {
               
               return;
             }
-            owner->CancelWithError(std::move(userActionId), rv);
+            owner->CancelWithError(std::move(userActionId),
+                                   Some(std::move(requestToken)), rv);
           });
 
   return NS_OK;
@@ -1798,7 +1821,8 @@ ContentAnalysis::DoAnalyzeRequest(
     nsString filePath = NS_ConvertUTF8toUTF16(fileCPath);
     nsresult rv = ContentAnalysisRequest::GetFileDigest(filePath, digest);
     if (NS_FAILED(rv)) {
-      owner->CancelWithError(std::move(aUserActionId), rv);
+      owner->CancelWithError(std::move(aUserActionId),
+                             Some(nsCString(aRequest.request_token())), rv);
       
       return std::shared_ptr<content_analysis::sdk::ContentAnalysisResponse>(
           nullptr);
@@ -1874,7 +1898,7 @@ void ContentAnalysis::IssueResponse(ContentAnalysisResponse* aResponse,
       
       
       nsIContentAnalysisAcknowledgement::FinalAction action;
-      mUserActionIdToToCanceledResponseMap.WithEntryHandle(
+      mUserActionIdToCanceledResponseMap.WithEntryHandle(
           aUserActionId, [&](auto&& canceledResponseEntry) {
             if (canceledResponseEntry) {
               action = canceledResponseEntry->mAction;
@@ -2312,8 +2336,8 @@ void ContentAnalysis::MultipartRequestCallback::Initialize(
                   weakContentAnalysis->mUserActionMap.Lookup(userActionId)) {
             entry->mIsHandlingTimeout = true;
           }
-          weakContentAnalysis->CancelWithError(std::move(userActionId),
-                                               NS_ERROR_DOM_TIMEOUT_ERR);
+          weakContentAnalysis->CancelWithError(
+              std::move(userActionId), Nothing(), NS_ERROR_DOM_TIMEOUT_ERR);
         }
       });
   NS_DelayedDispatchToCurrentThread((RefPtr{timeoutRunnable}).forget(),
@@ -2333,7 +2357,6 @@ ContentAnalysis::MultipartRequestCallback::ContentResult(
   MOZ_ASSERT(NS_IsMainThread());
   if (mWeakContentAnalysis) {
     
-    
     if (auto maybeUserActionData =
             mWeakContentAnalysis->mUserActionMap.Lookup(mUserActionId)) {
       nsCOMPtr<nsIContentAnalysisResponse> response =
@@ -2341,7 +2364,12 @@ ContentAnalysis::MultipartRequestCallback::ContentResult(
       MOZ_ASSERT(response);
       nsAutoCString token;
       MOZ_ALWAYS_SUCCEEDS(response->GetRequestToken(token));
-      maybeUserActionData->mRequestTokens.Remove(token);
+      DebugOnly<bool> removed =
+          maybeUserActionData->mRequestTokens.EnsureRemoved(token);
+      
+      
+      MOZ_ASSERT(removed || maybeUserActionData->mRequestTokens.IsEmpty(),
+                 "Request token was not found");
     }
   }
 
@@ -2920,7 +2948,7 @@ ContentAnalysis::CancelRequestsByRequestToken(const nsACString& aRequestToken) {
 NS_IMETHODIMP
 ContentAnalysis::CancelRequestsByUserAction(const nsACString& aUserActionId) {
   MOZ_ASSERT(NS_IsMainThread());
-  CancelWithError(nsCString(aUserActionId), NS_ERROR_ABORT);
+  CancelWithError(nsCString(aUserActionId), Nothing(), NS_ERROR_ABORT);
   return NS_OK;
 }
 

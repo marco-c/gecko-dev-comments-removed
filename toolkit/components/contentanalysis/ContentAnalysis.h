@@ -231,7 +231,17 @@ class ContentAnalysis final : public nsIContentAnalysis,
       nsIClipboard::ClipboardType aClipboardType,
       ContentAnalysisCallback* aResolver, bool aForFullClipboard = false);
   static RefPtr<ContentAnalysis> GetContentAnalysisFromService();
-  void CancelWithError(nsCString&& aUserActionId, nsresult aResult);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void CancelWithError(nsCString&& aUserActionId,
+                       Maybe<nsCString>&& aRequestToken, nsresult aResult);
 
   
   
@@ -395,11 +405,11 @@ class ContentAnalysis final : public nsIContentAnalysis,
   
   struct CanceledResponse {
     nsIContentAnalysisAcknowledgement::FinalAction mAction;
-    uint32_t mNumExpectedResponses;
+    size_t mNumExpectedResponses;
   };
-  using UserActionIdToToCanceledResponseMap =
+  using UserActionIdToCanceledResponseMap =
       nsTHashMap<nsCString, CanceledResponse>;
-  UserActionIdToToCanceledResponseMap mUserActionIdToToCanceledResponseMap;
+  UserActionIdToCanceledResponseMap mUserActionIdToCanceledResponseMap;
 
   class CachedClipboardResponse {
    public:
