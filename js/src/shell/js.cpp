@@ -12928,10 +12928,6 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
 
   
   
-
-  if (op.getBoolOption("disable-array-grouping")) {
-    JS::Prefs::setAtStartup_array_grouping(false);
-  }
   if (op.getBoolOption("disable-arraybuffer-transfer")) {
     JS::Prefs::setAtStartup_arraybuffer_transfer(false);
   }

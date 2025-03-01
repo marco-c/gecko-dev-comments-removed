@@ -2230,10 +2230,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
   
   
   if (key == JSProto_Function) {
-    if (!JS::Prefs::array_grouping() && (id == NameToId(cx->names().groupBy))) {
-      return true;
-    }
-
     if (!JS::Prefs::experimental_uint8array_base64() &&
         (id == NameToId(cx->names().fromBase64) ||
          id == NameToId(cx->names().fromHex))) {
