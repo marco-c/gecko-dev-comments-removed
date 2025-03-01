@@ -1,162 +1,180 @@
 
 
 
-extern crate minidump_writer;
-
-use libc::pid_t;
-use minidump_writer::crash_context::CrashContext;
-use minidump_writer::minidump_writer::MinidumpWriter;
-use std::ffi::{CStr, CString};
-use std::mem::{self, MaybeUninit};
-use std::os::raw::c_char;
-use std::ptr::{copy_nonoverlapping, null_mut};
 
 
-#[no_mangle]
-pub unsafe extern "C" fn write_minidump_linux(
-    dump_path: *const c_char,
-    child: pid_t,
-    child_blamed_thread: pid_t,
-    error_msg: *mut *mut c_char,
-) -> bool {
-    assert!(!dump_path.is_null());
-    let c_path = CStr::from_ptr(dump_path);
-    let path = match c_path.to_str() {
-        Ok(s) => s,
-        Err(x) => {
-            error_message_to_c(
-                error_msg,
-                format!(
-                    "Wrapper error. Path not convertable: {:#}",
-                    anyhow::Error::new(x)
-                ),
-            );
-            return false;
-        }
-    };
 
-    let mut dump_file = match std::fs::OpenOptions::new()
-        .create(true) 
-        .write(true) 
-        .open(path)
-    {
-        Ok(f) => f,
-        Err(x) => {
-            error_message_to_c(
-                error_msg,
-                format!(
-                    "Wrapper error when opening minidump destination at {:?}: {:#}",
-                    path,
-                    anyhow::Error::new(x)
-                ),
-            );
-            return false;
-        }
-    };
-
-    match MinidumpWriter::new(child, child_blamed_thread).dump(&mut dump_file) {
-        Ok(_) => {
-            return true;
-        }
-        Err(x) => {
-            error_message_to_c(error_msg, format!("{:#}", anyhow::Error::new(x)));
-            return false;
-        }
-    }
-}
+use {
+    anyhow::Context,
+    libc::pid_t,
+    minidump_writer::{crash_context::CrashContext, minidump_writer::MinidumpWriter},
+    std::{
+        ffi::{c_char, CStr, CString},
+        fs::File,
+    },
+};
 
 #[allow(non_camel_case_types)]
 #[cfg(not(target_arch = "arm"))]
 type fpregset_t = crash_context::fpregset_t;
+
+
+
 #[allow(non_camel_case_types)]
 #[cfg(target_arch = "arm")]
-pub struct fpregset_t {}
+type fpregset_t = u8;
+
+
+
+
+pub struct MinidumpWriterContext {
+    dump_file: File,
+    writer: MinidumpWriter,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #[no_mangle]
-pub unsafe extern "C" fn write_minidump_linux_with_context(
+pub unsafe extern "C" fn minidump_writer_create(
     dump_path: *const c_char,
     child: pid_t,
-    ucontext: *const crash_context::ucontext_t,
-    #[allow(unused)] float_state: *const fpregset_t,
-    siginfo: *const libc::signalfd_siginfo,
-    child_thread: libc::pid_t,
+    child_blamed_thread: pid_t,
     error_msg: *mut *mut c_char,
-) -> bool {
-    let c_path = CStr::from_ptr(dump_path);
+) -> Option<Box<MinidumpWriterContext>> {
+    err_to_error_msg(error_msg, || {
+        let dump_path = CStr::from_ptr(dump_path)
+            .to_str()
+            .context("path not valid UTF-8")?;
 
-    let mut crash_context: MaybeUninit<crash_context::CrashContext> = mem::MaybeUninit::zeroed();
-    let cc = &mut *crash_context.as_mut_ptr();
+        let dump_file = std::fs::OpenOptions::new()
+            .create(true) 
+            .truncate(true) 
+            .write(true)
+            .open(dump_path)
+            .context("failed to open minidump file")?;
 
-    copy_nonoverlapping(ucontext, &mut cc.context, 1);
-    #[cfg(not(target_arch = "arm"))]
-    copy_nonoverlapping(float_state, &mut cc.float_state, 1);
-    copy_nonoverlapping(siginfo, &mut cc.siginfo, 1);
-    cc.pid = child;
-    cc.tid = child_thread;
+        let writer = MinidumpWriter::new(child, child_blamed_thread);
 
-    let crash_context = crash_context.assume_init();
-    let crash_context = CrashContext {
-        inner: crash_context,
-    };
-
-    let path = match c_path.to_str() {
-        Ok(s) => s,
-        Err(x) => {
-            error_message_to_c(
-                error_msg,
-                format!(
-                    "Wrapper error. Path not convertable: {:#}",
-                    anyhow::Error::new(x)
-                ),
-            );
-            return false;
-        }
-    };
-
-    let mut dump_file = match std::fs::OpenOptions::new()
-        .create(true) 
-        .write(true) 
-        .open(path)
-    {
-        Ok(f) => f,
-        Err(x) => {
-            error_message_to_c(
-                error_msg,
-                format!(
-                    "Wrapper error when opening minidump destination at {:?}: {:#}",
-                    path,
-                    anyhow::Error::new(x)
-                ),
-            );
-            return false;
-        }
-    };
-
-    match MinidumpWriter::new(child, child_thread)
-        .set_crash_context(crash_context)
-        .dump(&mut dump_file)
-    {
-        Ok(_) => {
-            return true;
-        }
-        Err(x) => {
-            error_message_to_c(error_msg, format!("{:#}", anyhow::Error::new(x)));
-            return false;
-        }
-    }
+        Ok(Box::new(MinidumpWriterContext { dump_file, writer }))
+    })
 }
 
-fn error_message_to_c(c_string_pointer: *mut *mut c_char, error_message: String) {
-    if c_string_pointer != null_mut() {
-        let c_error_message = CString::new(error_message).unwrap_or_default();
-        unsafe { *c_string_pointer = c_error_message.into_raw() };
-    }
-}
+
+
+
+
+
+
 
 
 #[no_mangle]
-pub unsafe extern "C" fn free_minidump_error_msg(c_string: *mut c_char) {
+pub extern "C" fn minidump_writer_set_crash_context(
+    context: &mut MinidumpWriterContext,
+    ucontext: &crash_context::ucontext_t,
+    float_state: Option<&fpregset_t>,
+    siginfo: Option<&libc::signalfd_siginfo>,
+) {
+    #[cfg(not(target_arch = "arm"))]
+    let float_state = float_state.unwrap().clone();
+
+    #[cfg(target_arch = "arm")]
+    assert!(float_state.is_none());
+
+    context.writer.set_crash_context(CrashContext {
+        inner: crash_context::CrashContext {
+            context: ucontext.clone(),
+            #[cfg(not(target_arch = "arm"))]
+            float_state,
+            siginfo: siginfo
+                .cloned()
+                .unwrap_or_else(|| unsafe { std::mem::zeroed() }),
+            pid: context.writer.process_id,
+            tid: context.writer.blamed_thread,
+        },
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn minidump_writer_dump(
+    mut context: Box<MinidumpWriterContext>,
+    error_msg: *mut *mut c_char,
+) -> bool {
+    err_to_error_msg(error_msg, || {
+        context
+            .writer
+            .dump(&mut context.dump_file)
+            .context("failed to write dump file")
+    })
+    .is_some()
+}
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn free_minidump_error_msg(error_msg: *mut c_char) {
     
-    let _c_string = unsafe { CString::from_raw(c_string) };
+    let _error_msg = CString::from_raw(error_msg);
+}
+
+
+
+
+
+unsafe fn err_to_error_msg<F, T>(error_msg: *mut *mut c_char, f: F) -> Option<T>
+where
+    F: FnOnce() -> anyhow::Result<T>,
+{
+    match f() {
+        Ok(t) => Some(t),
+        Err(e) => {
+            if !error_msg.is_null() {
+                *error_msg = CString::new(e.to_string()).unwrap().into_raw();
+            }
+            None
+        }
+    }
 }
