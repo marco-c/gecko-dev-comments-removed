@@ -537,10 +537,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   void EnableVRUpdates();
   void DisableVRUpdates();
-  
-  
-  
-  void ResetVRTelemetry(bool aUpdate);
 
   void StartVRActivity();
   void StopVRActivity();

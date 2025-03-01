@@ -6514,17 +6514,11 @@ void nsGlobalWindowOuter::SetIsBackground(bool aIsBackground) {
     if (inner && changed) {
       inner->StopGamepadHaptics();
       inner->StopVRActivity();
-      
-      
-      inner->ResetVRTelemetry(true);
     }
     return;
   }
 
   if (inner) {
-    
-    
-    inner->ResetVRTelemetry(false);
     inner->SyncGamepadState();
     inner->StartVRActivity();
   }

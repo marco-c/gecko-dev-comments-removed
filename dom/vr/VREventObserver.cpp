@@ -9,8 +9,6 @@
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
 
-#include "mozilla/Telemetry.h"
-
 namespace mozilla::dom {
 
 using namespace gfx;
@@ -22,13 +20,9 @@ using namespace gfx;
 
 
 VREventObserver::VREventObserver(nsGlobalWindowInner* aGlobalWindow)
-    : mWindow(aGlobalWindow),
-      mIs2DView(true),
-      mHasReset(false),
-      mStopActivity(false) {
+    : mWindow(aGlobalWindow), mIs2DView(true), mStopActivity(false) {
   MOZ_ASSERT(aGlobalWindow);
 
-  UpdateSpentTimeIn2DTelemetry(false);
   VRManagerChild* vmc = VRManagerChild::Get();
   if (vmc) {
     vmc->AddListener(this);
@@ -41,7 +35,6 @@ void VREventObserver::DisconnectFromOwner() {
   
   
   
-  UpdateSpentTimeIn2DTelemetry(true);
   mWindow = nullptr;
 
   
@@ -50,24 +43,6 @@ void VREventObserver::DisconnectFromOwner() {
     vmc->RemoveListener(this);
   }
   mStopActivity = true;
-}
-
-void VREventObserver::UpdateSpentTimeIn2DTelemetry(bool aUpdate) {
-  
-  
-  
-  
-  if (mWindow && mIs2DView && aUpdate && mHasReset) {
-    
-    
-    Telemetry::Accumulate(Telemetry::WEBVR_USERS_VIEW_IN, 0);
-    Telemetry::AccumulateTimeDelta(Telemetry::WEBVR_TIME_SPENT_VIEWING_IN_2D,
-                                   mSpendTimeIn2DView);
-    mHasReset = false;
-  } else if (!aUpdate) {
-    mSpendTimeIn2DView = TimeStamp::Now();
-    mHasReset = true;
-  }
 }
 
 void VREventObserver::StartActivity() {
