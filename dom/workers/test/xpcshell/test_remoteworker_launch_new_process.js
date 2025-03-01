@@ -87,6 +87,9 @@ add_task(async function launch_remoteworkers_in_new_processes() {
   
   
   
+  
+  
+  
   info("Wait for webcontent worker to become active");
   await TestUtils.waitForCondition(
     () => swRegInfoWeb.activeWorker,

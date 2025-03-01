@@ -50,12 +50,6 @@ class RemoteWorkerManager final {
   static Result<nsCString, nsresult> GetRemoteType(
       const nsCOMPtr<nsIPrincipal>& aPrincipal, WorkerKind aWorkerKind);
 
-  
-
-
-
-  static bool IsRemoteTypeAllowed(const RemoteWorkerData& aData);
-
   static bool HasExtensionPrincipal(const RemoteWorkerData& aData);
 
  private:
