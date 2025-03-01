@@ -400,9 +400,6 @@ pref("signon.firefoxRelay.feature", "not available");
 pref("signon.showAutoCompleteFooter", true);
 
 
-pref("toolkit.autocomplete.delegate", true);
-
-
 pref("toolkit.defaultChromeURI", "chrome://geckoview/content/geckoview.xhtml", locked);
 
 
