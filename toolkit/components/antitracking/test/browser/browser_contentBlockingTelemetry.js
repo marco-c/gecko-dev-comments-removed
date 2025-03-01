@@ -434,9 +434,9 @@ add_task(async function testTelemetryForRedirectHeuristic() {
   let expectedExpiredDaysRedirect = getExpectedExpiredDaysFromPref(
     "privacy.restrict3rdpartystorage.expiration_redirect"
   );
+  
+  
 
-  
-  
   await testTelemetry(
     true,
     1,

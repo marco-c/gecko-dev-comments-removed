@@ -220,16 +220,9 @@ class StorageAccessAPIHelper final {
 class StorageAccessGrantTelemetryClassification
     : public nsIUrlClassifierFeatureCallback {
   
-  static constexpr nsLiteralCString kUrlClassifierFeatures[] = {
-      "emailtracking-protection"_ns,
-      "fingerprinting-annotation"_ns,
-      "socialtracking-annotation"_ns,
-      "tracking-annotation"_ns,
-  };
-  MOZ_RUNINIT static UniquePtr<nsTArray<RefPtr<nsIUrlClassifierFeature>>>
-      sUrlClassifierFeatures;
-  static nsTArray<RefPtr<nsIUrlClassifierFeature>>*
-  GetClassifierFeaturesForTrackers();
+  MOZ_RUNINIT static nsTArray<nsCString> sUrlClassifierFeaturesForTelemetry;
+
+  static const nsTArray<nsCString>& GetClassifierFeatureNamesForTrackers();
 
   uint16_t mType;
   explicit StorageAccessGrantTelemetryClassification(uint16_t aType);

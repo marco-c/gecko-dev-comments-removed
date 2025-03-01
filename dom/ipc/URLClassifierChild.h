@@ -1,14 +1,15 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_URLClassifierChild_h
 #define mozilla_dom_URLClassifierChild_h
 
 #include "mozilla/dom/PURLClassifierChild.h"
 #include "mozilla/dom/PURLClassifierLocalChild.h"
+#include "mozilla/dom/PURLClassifierLocalByNameChild.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/net/UrlClassifierFeatureResult.h"
 #include "nsIURIClassifier.h"
@@ -85,6 +86,47 @@ class URLClassifierLocalChild : public PURLClassifierLocalChild {
   nsTArray<RefPtr<nsIUrlClassifierFeature>> mFeatures;
 };
 
-}  
+class URLClassifierLocalByNameChild : public PURLClassifierLocalByNameChild {
+ public:
+  void SetFeaturesAndCallback(const nsTArray<nsCString>& aFeatures,
+                              nsIUrlClassifierFeatureCallback* aCallback) {
+    mCallback = aCallback;
+    mFeatures = aFeatures.Clone();
+  }
 
-#endif  
+  mozilla::ipc::IPCResult Recv__delete__(
+      nsTArray<URLClassifierLocalResult>&& aResults) {
+    nsTArray<RefPtr<nsIUrlClassifierFeatureResult>> finalResults;
+
+    nsTArray<URLClassifierLocalResult> results = std::move(aResults);
+    for (URLClassifierLocalResult& result : results) {
+      for (nsCString feature : mFeatures) {
+        if (result.featureName() != feature) {
+          continue;
+        }
+
+        RefPtr<nsIURI> uri = result.uri();
+        if (NS_WARN_IF(!uri)) {
+          continue;
+        }
+
+        RefPtr<net::UrlClassifierFeatureResult> r =
+            new net::UrlClassifierFeatureResult(uri, nullptr,
+                                                result.matchingList());
+        finalResults.AppendElement(r);
+        break;
+      }
+    }
+
+    mCallback->OnClassifyComplete(finalResults);
+    return IPC_OK();
+  }
+
+ private:
+  nsCOMPtr<nsIUrlClassifierFeatureCallback> mCallback;
+  nsTArray<nsCString> mFeatures;
+};
+
+}  // namespace mozilla::dom
+
+#endif  // mozilla_dom_URLClassifierChild_h
