@@ -286,6 +286,10 @@ bool ModuleLoaderBase::HostPopulateImportMeta(
   return true;
 }
 
+static bool ModuleTypeAllowed(JS::ModuleType aModuleType) {
+  return aModuleType != JS::ModuleType::Unknown;
+}
+
 
 bool ModuleLoaderBase::HostImportModuleDynamically(
     JSContext* aCx, JS::Handle<JS::Value> aReferencingPrivate,
@@ -336,6 +340,12 @@ bool ModuleLoaderBase::HostImportModuleDynamically(
   
   
   JS::ModuleType moduleType = JS::GetModuleRequestType(aCx, aModuleRequest);
+  
+  if (!ModuleTypeAllowed(moduleType)) {
+    JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
+                              JSMSG_BAD_MODULE_TYPE);
+    return false;
+  }
 
   
   nsCOMPtr<nsIURI> uri = result.unwrap();
