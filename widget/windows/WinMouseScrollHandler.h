@@ -84,12 +84,10 @@ class MouseScrollHandler {
 
 
 
-  bool ProcessMessageDirectly(UINT msg, WPARAM wParam, LPARAM lParam,
-                              MSGResult& aResult);
+  bool ProcessMouseMessage(UINT msg, WPARAM wParam, LPARAM lParam,
+                           MSGResult& aResult);
 
   
-
-
 
 
 
@@ -112,7 +110,6 @@ class MouseScrollHandler {
 
 
 
-
   bool HandleScrollMessageAsMouseWheelMessage(nsWindow* aWidget, UINT aMessage,
                                               WPARAM aWParam, LPARAM aLParam);
 
@@ -122,12 +119,15 @@ class MouseScrollHandler {
 
 
 
+
+
+
+
+
   bool HandleScrollMessageAsItself(nsWindow* aWidget, UINT aMessage,
                                    WPARAM aWParam, LPARAM aLParam);
 
   
-
-
 
 
 
