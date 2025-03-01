@@ -397,16 +397,6 @@ void FinishAntiTrackingRedirectHeuristic(nsIChannel* aNewChannel,
       .Add();
 
   
-  glean::contentblocking::storage_access_granted_count
-      .EnumGet(glean::contentblocking::StorageAccessGrantedCountLabel::
-                   eStoragegrantedCt)
-      .Add();
-  glean::contentblocking::storage_access_granted_count
-      .EnumGet(glean::contentblocking::StorageAccessGrantedCountLabel::
-                   eRedirecttrackerCt)
-      .Add();
-
-  
   RefPtr<StorageAccessAPIHelper::ParentAccessGrantPromise> promise =
       StorageAccessAPIHelper::SaveAccessForOriginOnParentProcess(
           newPrincipal, oldPrincipal,

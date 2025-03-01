@@ -81,7 +81,6 @@ class UrlClassifierFeatureAntiTrackingBase : public UrlClassifierFeatureBase {
 };
 
 }  
-
 }  
 
 #endif  
