@@ -725,20 +725,6 @@ class MDefinition : public MNode {
   
   MIRType type() const { return resultType_; }
 
-  bool mightBeType(MIRType type) const {
-    MOZ_ASSERT(type != MIRType::Value);
-
-    if (type == this->type()) {
-      return true;
-    }
-
-    if (this->type() == MIRType::Value) {
-      return true;
-    }
-
-    return false;
-  }
-
   bool mightBeMagicType() const;
 
   
