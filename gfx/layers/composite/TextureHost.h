@@ -17,8 +17,7 @@
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/Point.h"  
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/gfx/Types.h"  
-#include "mozilla/ipc/FileDescriptor.h"
+#include "mozilla/gfx/Types.h"               
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersTypes.h"      
 #include "mozilla/layers/LayersMessages.h"
@@ -26,7 +25,8 @@
 #include "mozilla/layers/TextureSourceProvider.h"
 #include "mozilla/mozalloc.h"  
 #include "mozilla/Range.h"
-#include "mozilla/UniquePtr.h"  
+#include "mozilla/UniquePtr.h"            
+#include "mozilla/UniquePtrExtensions.h"  
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsCOMPtr.h"         
 #include "nsDebug.h"          
@@ -695,12 +695,12 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
   virtual bool NeedsYFlip() const;
 
-  virtual void SetAcquireFence(mozilla::ipc::FileDescriptor&& aFenceFd) {}
+  virtual void SetAcquireFence(UniqueFileHandle&& aFenceFd) {}
 
-  virtual void SetReleaseFence(mozilla::ipc::FileDescriptor&& aFenceFd) {}
+  virtual void SetReleaseFence(UniqueFileHandle&& aFenceFd) {}
 
-  virtual mozilla::ipc::FileDescriptor GetAndResetReleaseFence() {
-    return mozilla::ipc::FileDescriptor();
+  virtual UniqueFileHandle GetAndResetReleaseFence() {
+    return UniqueFileHandle();
   }
 
   virtual AndroidHardwareBuffer* GetAndroidHardwareBuffer() const {

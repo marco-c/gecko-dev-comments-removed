@@ -24,7 +24,6 @@
 #include "mozilla/gfx/CriticalSection.h"
 #include "mozilla/gfx/Point.h"  
 #include "mozilla/gfx/Types.h"  
-#include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/ipc/Shmem.h"  
 #include "mozilla/layers/AtomicRefCountedWithFinalize.h"
 #include "mozilla/layers/CompositorTypes.h"  
@@ -32,7 +31,8 @@
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/SyncObject.h"
-#include "mozilla/mozalloc.h"  
+#include "mozilla/mozalloc.h"             
+#include "mozilla/UniquePtrExtensions.h"  
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsCOMPtr.h"         
 #include "nsISupportsImpl.h"  
@@ -317,9 +317,7 @@ class TextureData {
   
   
   
-  virtual mozilla::ipc::FileDescriptor GetAcquireFence() {
-    return mozilla::ipc::FileDescriptor();
-  }
+  virtual UniqueFileHandle GetAcquireFence() { return UniqueFileHandle(); }
 
   virtual bool RequiresRefresh() const { return false; }
 

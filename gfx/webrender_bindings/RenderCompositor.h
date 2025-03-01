@@ -7,9 +7,9 @@
 #ifndef MOZILLA_GFX_RENDERCOMPOSITOR_H
 #define MOZILLA_GFX_RENDERCOMPOSITOR_H
 
-#include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "Units.h"
 
@@ -206,8 +206,8 @@ class RenderCompositor {
   
   
   
-  virtual ipc::FileDescriptor GetAndResetReleaseFence() {
-    return ipc::FileDescriptor();
+  virtual UniqueFileHandle GetAndResetReleaseFence() {
+    return UniqueFileHandle();
   }
 
   virtual bool IsPaused() { return false; }

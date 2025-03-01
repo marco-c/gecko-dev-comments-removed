@@ -18,6 +18,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 namespace mozilla {
 namespace layers {
@@ -99,15 +100,15 @@ class AndroidHardwareBuffer
 
   AHardwareBuffer* GetNativeBuffer() const { return mNativeBuffer; }
 
-  void SetAcquireFence(ipc::FileDescriptor&& aFenceFd);
+  void SetAcquireFence(UniqueFileHandle&& aFenceFd);
 
-  void SetReleaseFence(ipc::FileDescriptor&& aFenceFd);
+  void SetReleaseFence(UniqueFileHandle&& aFenceFd);
 
-  ipc::FileDescriptor GetAndResetReleaseFence();
+  UniqueFileHandle GetAndResetReleaseFence();
 
-  ipc::FileDescriptor GetAndResetAcquireFence();
+  UniqueFileHandle GetAndResetAcquireFence();
 
-  ipc::FileDescriptor GetAcquireFence();
+  UniqueFileHandle GetAcquireFence() const;
 
   const gfx::IntSize mSize;
   const uint32_t mStride;
@@ -119,7 +120,7 @@ class AndroidHardwareBuffer
                         uint32_t aStride, gfx::SurfaceFormat aFormat,
                         uint64_t aId);
 
-  void SetReleaseFence(ipc::FileDescriptor&& aFenceFd,
+  void SetReleaseFence(UniqueFileHandle&& aFenceFd,
                        const MonitorAutoLock& aAutoLock);
 
   AHardwareBuffer* mNativeBuffer;
@@ -133,12 +134,12 @@ class AndroidHardwareBuffer
   
   
   
-  ipc::FileDescriptor mReleaseFenceFd;
+  UniqueFileHandle mReleaseFenceFd;
 
   
   
   
-  ipc::FileDescriptor mAcquireFenceFd;
+  UniqueFileHandle mAcquireFenceFd;
 
   static uint64_t GetNextId();
 

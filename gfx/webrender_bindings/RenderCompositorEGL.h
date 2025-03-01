@@ -46,7 +46,7 @@ class RenderCompositorEGL : public RenderCompositor {
   void SetBufferDamageRegion(const wr::DeviceIntRect* aRects,
                              size_t aNumRects) override;
 
-  ipc::FileDescriptor GetAndResetReleaseFence() override;
+  UniqueFileHandle GetAndResetReleaseFence() override;
 
  protected:
   EGLSurface CreateEGLSurface();
@@ -66,7 +66,7 @@ class RenderCompositorEGL : public RenderCompositor {
   
   
   
-  ipc::FileDescriptor mReleaseFenceFd;
+  UniqueFileHandle mReleaseFenceFd;
 };
 
 }  
