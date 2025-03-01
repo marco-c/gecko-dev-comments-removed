@@ -185,12 +185,22 @@ class Event : public nsISupports, public nsWrapperCache {
 
 
 
+
+
+
+
+
   static CSSDoublePoint GetClientCoords(
       nsPresContext* aPresContext, WidgetEvent* aEvent,
-      const LayoutDeviceDoublePoint& aWidgetRelativePoint,
+      const LayoutDeviceDoublePoint& aWidgetOrScreenRelativePoint,
       const CSSDoublePoint& aDefaultClientPoint);
 
   
+
+
+
+
+
 
 
 
@@ -206,7 +216,7 @@ class Event : public nsISupports, public nsWrapperCache {
 
   static CSSDoublePoint GetPageCoords(
       nsPresContext* aPresContext, WidgetEvent* aEvent,
-      const LayoutDeviceDoublePoint& aWidgetRelativePoint,
+      const LayoutDeviceDoublePoint& aWidgetOrScreenRelativePoint,
       const CSSDoublePoint& aDefaultClientPoint);
 
   
@@ -223,11 +233,21 @@ class Event : public nsISupports, public nsWrapperCache {
 
 
 
+
+
+
+
+
   static Maybe<CSSDoublePoint> GetScreenCoords(
       nsPresContext* aPresContext, WidgetEvent* aEvent,
-      const LayoutDeviceDoublePoint& aWidgetRelativePoint);
+      const LayoutDeviceDoublePoint& aWidgetOrScreenRelativePoint);
 
   
+
+
+
+
+
 
 
 
@@ -245,7 +265,7 @@ class Event : public nsISupports, public nsWrapperCache {
   MOZ_CAN_RUN_SCRIPT
   static CSSDoublePoint GetOffsetCoords(
       nsPresContext* aPresContext, WidgetEvent* aEvent,
-      const LayoutDeviceDoublePoint& aWidgetRelativePoint,
+      const LayoutDeviceDoublePoint& aWidgetOrScreenRelativePoint,
       const CSSDoublePoint& aDefaultClientPoint);
 
   static already_AddRefed<Event> Constructor(EventTarget* aEventTarget,

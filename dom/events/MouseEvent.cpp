@@ -46,7 +46,7 @@ MouseEvent::MouseEvent(EventTarget* aOwner, nsPresContext* aPresContext,
   }
 
   mUseFractionalCoords = mouseEventBase->DOMEventShouldUseFractionalCoords();
-  mWidgetRelativePoint = mEvent->mRefPoint;
+  mWidgetOrScreenRelativePoint = mEvent->mRefPoint;
 
   if (const WidgetMouseEvent* mouseEvent = mouseEventBase->AsMouseEvent()) {
     MOZ_ASSERT(mouseEvent->mReason != WidgetMouseEvent::eSynthesized,
@@ -78,9 +78,10 @@ void MouseEvent::InitMouseEventInternal(
       mouseEventBase->InitBasicModifiers(aCtrlKey, aAltKey, aShiftKey,
                                          aMetaKey);
       mDefaultClientPoint = CSSDoublePoint(aClientX, aClientY);
-      mWidgetRelativePoint = LayoutDeviceDoublePoint(aScreenX, aScreenY);
+      mWidgetOrScreenRelativePoint =
+          LayoutDeviceDoublePoint(aScreenX, aScreenY);
       mouseEventBase->mRefPoint =
-          LayoutDeviceIntPoint::Floor(mWidgetRelativePoint);
+          LayoutDeviceIntPoint::Floor(mWidgetOrScreenRelativePoint);
 
       WidgetMouseEvent* mouseEvent = mEvent->AsMouseEvent();
       if (mouseEvent) {
@@ -97,8 +98,8 @@ void MouseEvent::InitMouseEventInternal(
         
         
         mDefaultClientPoint = CSSIntPoint::Floor(mDefaultClientPoint);
-        mWidgetRelativePoint =
-            LayoutDeviceIntPoint::Floor(mWidgetRelativePoint);
+        mWidgetOrScreenRelativePoint =
+            LayoutDeviceIntPoint::Floor(mWidgetOrScreenRelativePoint);
       }
       break;
     }
@@ -208,15 +209,20 @@ void MouseEvent::DuplicatePrivateData() {
     UIEvent::DuplicatePrivateData();
     mPresContext = presContext.get();
   }
+  
+  
+  
+  
   if (maybeScreenPoint.isSome()) {
-    CSSToLayoutDeviceScale scale = mPresContext
-                                       ? mPresContext->CSSToDevPixelScale()
-                                       : CSSToLayoutDeviceScale(1);
-    mWidgetRelativePoint = maybeScreenPoint.ref() * scale;
+    
+    
+    MOZ_ASSERT(!mEvent || !mEvent->AsGUIEvent()->mWidget);
+    mWidgetOrScreenRelativePoint =
+        maybeScreenPoint.ref() * CSSToLayoutDeviceScale(1);
   } else {
     
     
-    mWidgetRelativePoint = mEvent->mRefPoint;
+    mWidgetOrScreenRelativePoint = mEvent->mRefPoint;
   }
 }
 
@@ -290,19 +296,20 @@ CSSDoublePoint MouseEvent::ScreenPoint(CallerType aCallerType) const {
   
   
   MOZ_ASSERT_IF(!mUseFractionalCoords,
-                mWidgetRelativePoint ==
-                    LayoutDeviceIntPoint::Floor(mWidgetRelativePoint));
+                mWidgetOrScreenRelativePoint ==
+                    LayoutDeviceIntPoint::Floor(mWidgetOrScreenRelativePoint));
   if (nsContentUtils::ShouldResistFingerprinting(
           aCallerType, GetParentObject(), RFPTarget::MouseEventScreenPoint)) {
     
     
     const CSSDoublePoint clientPoint = Event::GetClientCoords(
-        mPresContext, mEvent, mWidgetRelativePoint, CSSDoublePoint{0, 0});
+        mPresContext, mEvent, mWidgetOrScreenRelativePoint,
+        CSSDoublePoint{0, 0});
     return mUseFractionalCoords ? clientPoint : RoundedToInt(clientPoint);
   }
 
   const CSSDoublePoint screenPoint =
-      Event::GetScreenCoords(mPresContext, mEvent, mWidgetRelativePoint)
+      Event::GetScreenCoords(mPresContext, mEvent, mWidgetOrScreenRelativePoint)
           .extract();
   return mUseFractionalCoords ? screenPoint : RoundedToInt(screenPoint);
 }
@@ -352,8 +359,8 @@ CSSDoublePoint MouseEvent::PagePoint() const {
   
   
   MOZ_ASSERT_IF(!mUseFractionalCoords,
-                mWidgetRelativePoint ==
-                    LayoutDeviceIntPoint::Floor(mWidgetRelativePoint));
+                mWidgetOrScreenRelativePoint ==
+                    LayoutDeviceIntPoint::Floor(mWidgetOrScreenRelativePoint));
   
   
   
@@ -361,7 +368,7 @@ CSSDoublePoint MouseEvent::PagePoint() const {
   MOZ_ASSERT_IF(!mUseFractionalCoords,
                 mDefaultClientPoint == CSSIntPoint::Floor(mDefaultClientPoint));
   const CSSDoublePoint pagePoint = Event::GetPageCoords(
-      mPresContext, mEvent, mWidgetRelativePoint, mDefaultClientPoint);
+      mPresContext, mEvent, mWidgetOrScreenRelativePoint, mDefaultClientPoint);
   return mUseFractionalCoords ? pagePoint : RoundedToInt(pagePoint);
 }
 
@@ -375,8 +382,8 @@ CSSDoublePoint MouseEvent::ClientPoint() const {
   
   
   MOZ_ASSERT_IF(!mUseFractionalCoords,
-                mWidgetRelativePoint ==
-                    LayoutDeviceIntPoint::Floor(mWidgetRelativePoint));
+                mWidgetOrScreenRelativePoint ==
+                    LayoutDeviceIntPoint::Floor(mWidgetOrScreenRelativePoint));
   
   
   
@@ -384,7 +391,7 @@ CSSDoublePoint MouseEvent::ClientPoint() const {
   MOZ_ASSERT_IF(!mUseFractionalCoords,
                 mDefaultClientPoint == CSSIntPoint::Floor(mDefaultClientPoint));
   const CSSDoublePoint clientPoint = Event::GetClientCoords(
-      mPresContext, mEvent, mWidgetRelativePoint, mDefaultClientPoint);
+      mPresContext, mEvent, mWidgetOrScreenRelativePoint, mDefaultClientPoint);
   return mUseFractionalCoords ? clientPoint : RoundedToInt(clientPoint);
 }
 
@@ -398,8 +405,8 @@ CSSDoublePoint MouseEvent::OffsetPoint() const {
   
   
   MOZ_ASSERT_IF(!mUseFractionalCoords,
-                mWidgetRelativePoint ==
-                    LayoutDeviceIntPoint::Floor(mWidgetRelativePoint));
+                mWidgetOrScreenRelativePoint ==
+                    LayoutDeviceIntPoint::Floor(mWidgetOrScreenRelativePoint));
   
   
   
@@ -408,7 +415,7 @@ CSSDoublePoint MouseEvent::OffsetPoint() const {
                 mDefaultClientPoint == CSSIntPoint::Floor(mDefaultClientPoint));
   RefPtr<nsPresContext> presContext(mPresContext);
   const CSSDoublePoint offsetPoint = Event::GetOffsetCoords(
-      presContext, mEvent, mWidgetRelativePoint, mDefaultClientPoint);
+      presContext, mEvent, mWidgetOrScreenRelativePoint, mDefaultClientPoint);
   return mUseFractionalCoords ? offsetPoint : RoundedToInt(offsetPoint);
 }
 

@@ -166,7 +166,12 @@ class MouseEvent : public UIEvent {
   
   
   
-  LayoutDeviceDoublePoint mWidgetRelativePoint;
+  
+  
+  
+  
+  
+  LayoutDeviceDoublePoint mWidgetOrScreenRelativePoint;
 
   
   
