@@ -1526,11 +1526,6 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
   FilePath exePath;
   BinPathType pathType = GetPathToBinary(exePath, mProcessType);
 
-#  if defined(MOZ_SANDBOX) || defined(_ARM64_)
-  const bool isGMP = mProcessType == GeckoProcessType_GMPlugin;
-  const bool isWidevine = isGMP && Contains(mChildArgs, "gmp-widevinecdm");
-#  endif  
-
   mCmdLine.emplace(exePath.ToWStringHack());
 
   if (pathType == BinPathType::Self) {
@@ -1574,14 +1569,15 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
       break;
     case GeckoProcessType_GMPlugin:
       if (!PR_GetEnv("MOZ_DISABLE_GMP_SANDBOX")) {
-        
-        
-        
-        
-        auto level =
-            isWidevine ? SandboxBroker::Restricted : SandboxBroker::LockDown;
-        if (NS_WARN_IF(
-                !mResults.mSandboxBroker->SetSecurityLevelForGMPlugin(level))) {
+        auto gmpSandboxKind = GMPSandboxKind::Default;
+        if (Contains(mChildArgs, "gmp-widevinecdm")) {
+          gmpSandboxKind = GMPSandboxKind::Widevine;
+        } else if (Contains(mChildArgs, "gmp-clearkey")) {
+          gmpSandboxKind = GMPSandboxKind::Clearkey;
+        }
+
+        if (NS_WARN_IF(!mResults.mSandboxBroker->SetSecurityLevelForGMPlugin(
+                gmpSandboxKind))) {
           return Err(LaunchError("SetSecurityLevelForGMPlugin"));
         }
         mUseSandbox = true;

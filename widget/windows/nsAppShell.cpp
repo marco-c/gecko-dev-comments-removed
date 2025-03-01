@@ -619,17 +619,23 @@ nsresult nsAppShell::Init() {
     if (nsresult rv = this->InitEventWindow(); NS_FAILED(rv)) {
       return rv;
     }
-  } else if (XRE_IsContentProcess() && !IsWin32kLockedDown()) {
+  } else {
     
     
-    
-    
-    
-    
-    nsCOMPtr<nsIThreadInternal> threadInt =
-        do_QueryInterface(NS_GetCurrentThread());
-    if (threadInt) {
-      threadInt->SetObserver(new SingleNativeEventPump());
+    ::LoadLibraryW(L"winmm.dll");
+
+    if (XRE_IsContentProcess() && !IsWin32kLockedDown()) {
+      
+      
+      
+      
+      
+      
+      nsCOMPtr<nsIThreadInternal> threadInt =
+          do_QueryInterface(NS_GetCurrentThread());
+      if (threadInt) {
+        threadInt->SetObserver(new SingleNativeEventPump());
+      }
     }
   }
 
