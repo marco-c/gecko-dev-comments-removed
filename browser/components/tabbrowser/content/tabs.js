@@ -2504,22 +2504,23 @@
         ? dropElement.elementIndex
         : oldDropElementIndex;
       let moveOverThreshold;
-      let firstMovingTabPos;
-      let dropElementScreen;
       let overlapPercent;
+      let shouldCreateGroupOnDrop;
+      let dropBefore;
       if (dropElement) {
         let dropElementForOverlap = isTabGroupLabel(dropElement)
           ? dropElement.parentElement
           : dropElement;
 
-        let dropElementTabShift = getTabShift(dropElement, oldDropElementIndex);
-        dropElementScreen = dropElementForOverlap[screenAxis];
+        let dropElementScreen = dropElementForOverlap[screenAxis];
+        let dropElementPos =
+          dropElementScreen + getTabShift(dropElement, oldDropElementIndex);
         let dropElementSize = bounds(dropElementForOverlap)[size];
-        firstMovingTabPos = firstMovingTabScreen + translate;
+        let firstMovingTabPos = firstMovingTabScreen + translate;
         overlapPercent = greatestOverlap(
           firstMovingTabPos,
           shiftSize,
-          dropElementScreen + dropElementTabShift,
+          dropElementPos,
           dropElementSize
         );
 
@@ -2538,16 +2539,20 @@
             
             
             
-            return;
+            newDropElementIndex = oldDropElementIndex;
           }
         }
-      }
 
-      let shouldCreateGroupOnDrop;
-      let dropBefore;
-      if (dropElement) {
-        let dropElementPos =
+        
+        
+        dropElementPos =
           dropElementScreen + getTabShift(dropElement, newDropElementIndex);
+        overlapPercent = greatestOverlap(
+          firstMovingTabPos,
+          shiftSize,
+          dropElementPos,
+          dropElementSize
+        );
         dropBefore = firstMovingTabPos < dropElementPos;
         if (this.#rtlMode) {
           dropBefore = !dropBefore;
@@ -2555,14 +2560,7 @@
       }
 
       if (gBrowser._tabGroupsEnabled && !isPinned) {
-        let dragOverGroupingThreshold =
-          Services.prefs.getIntPref(
-            "browser.tabs.groups.dragOverThresholdPercent"
-          ) / 100;
-        dragOverGroupingThreshold = Math.min(
-          moveOverThreshold,
-          Math.max(0, dragOverGroupingThreshold)
-        );
+        let dragOverGroupingThreshold = 1 - moveOverThreshold;
 
         
         
@@ -2574,17 +2572,15 @@
 
         if (shouldCreateGroupOnDrop) {
           this.#dragOverCreateGroupTimer = setTimeout(
-            () =>
-              this.#triggerDragOverCreateGroup(
-                dragData,
-                newDropElementIndex,
-                dropElement,
-                dropBefore
-              ),
+            () => this.#triggerDragOverCreateGroup(dragData, dropElement),
             Services.prefs.getIntPref("browser.tabs.groups.dragOverDelayMS")
           );
         } else {
           this.removeAttribute("movingtab-createGroup");
+          document
+            .querySelector("[dragover-createGroup]")
+            ?.removeAttribute("dragover-createGroup");
+          delete dragData.shouldCreateGroupOnDrop;
 
           
           let dropElementGroup = isTabGroupLabel(dropElement)
@@ -2624,16 +2620,6 @@
       }
 
       if (
-        !shouldCreateGroupOnDrop ||
-        newDropElementIndex != oldDropElementIndex
-      ) {
-        document
-          .querySelector("[dragover-createGroup]")
-          ?.removeAttribute("dragover-createGroup");
-        delete dragData.shouldCreateGroupOnDrop;
-      }
-
-      if (
         newDropElementIndex == oldDropElementIndex &&
         dropBefore == dragData.dropBefore &&
         dropElement == dragData.dropElement
@@ -2666,19 +2652,9 @@
 
 
 
-
-
-    #triggerDragOverCreateGroup(
-      dragData,
-      animDropElementIndex,
-      dropElement,
-      dropBefore
-    ) {
+    #triggerDragOverCreateGroup(dragData, dropElement) {
       this.#clearDragOverCreateGroupTimer();
 
-      dragData.dropElement = dropElement;
-      dragData.dropBefore = dropBefore;
-      dragData.animDropElementIndex = animDropElementIndex;
       dragData.shouldCreateGroupOnDrop = true;
 
       this.toggleAttribute("movingtab-createGroup", true);
