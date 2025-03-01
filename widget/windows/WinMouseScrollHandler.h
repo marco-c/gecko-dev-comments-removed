@@ -45,20 +45,9 @@ class MouseScrollHandler {
       uint32_t aNativeMessage, int32_t aDelta, uint32_t aModifierFlags,
       uint32_t aAdditionalFlags);
 
-  
-
-
-
-
-  static bool IsWaitingInternalMessage() {
-    return sInstance && sInstance->mIsWaitingInternalMessage;
-  }
-
  private:
   MouseScrollHandler();
   ~MouseScrollHandler();
-
-  bool mIsWaitingInternalMessage;
 
   static void MaybeLogKeyState();
 
@@ -96,40 +85,8 @@ class MouseScrollHandler {
 
 
 
-
-
-
-
-
-
-  void ProcessNativeMouseWheelMessage(nsWindow* aWidget, UINT aMessage,
-                                      WPARAM aWParam, LPARAM aLParam);
-
-  
-
-
-
-
-
-
-
   bool ProcessMessageDirectly(UINT msg, WPARAM wParam, LPARAM lParam,
                               MSGResult& aResult);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  bool ProcessNativeScrollMessage(nsWindow* aWidget, UINT aMessage,
-                                  WPARAM aWParam, LPARAM aLParam);
 
   
 
