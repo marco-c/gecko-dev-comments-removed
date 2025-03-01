@@ -1370,6 +1370,7 @@ void ScaleRowDown2_16_NEON(const uint16_t* src_ptr,
       "uzp2        v2.8h, v4.8h, v5.8h           \n"
       "uzp2        v3.8h, v6.8h, v7.8h           \n"
       "subs        %w[dst_width], %w[dst_width], #32 \n"  
+                                                          
       "stp         q0, q1, [%[dst_ptr]]          \n"
       "stp         q2, q3, [%[dst_ptr], #32]     \n"
       "add         %[dst_ptr], %[dst_ptr], #64   \n"

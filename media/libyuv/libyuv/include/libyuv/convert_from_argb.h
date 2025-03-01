@@ -231,6 +231,19 @@ int ARGBToJ422(const uint8_t* src_argb,
 
 
 LIBYUV_API
+int ARGBToJ444(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint8_t* dst_yj,
+               int dst_stride_yj,
+               uint8_t* dst_uj,
+               int dst_stride_uj,
+               uint8_t* dst_vj,
+               int dst_stride_vj,
+               int width,
+               int height);
+
+
+LIBYUV_API
 int ARGBToJ400(const uint8_t* src_argb,
                int src_stride_argb,
                uint8_t* dst_yj,
