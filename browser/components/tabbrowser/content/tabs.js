@@ -19,14 +19,14 @@
 
 
 
-  const isTab = element => element.tagName == "tab";
+  const isTab = element => !!(element?.tagName == "tab");
 
   
 
 
 
 
-  const isTabGroup = element => element.tagName == "tab-group";
+  const isTabGroup = element => !!(element?.tagName == "tab-group");
 
   
 
@@ -34,7 +34,7 @@
 
 
   const isTabGroupLabel = element =>
-    element.classList?.contains("tab-group-label") ?? false;
+    !!element?.classList?.contains("tab-group-label");
 
   class MozTabbrowserTabs extends MozElements.TabsBase {
     static observedAttributes = ["orient"];
@@ -1043,7 +1043,7 @@
         } else {
           let isPinned = draggedTab.pinned;
           let numPinned = gBrowser.pinnedTabCount;
-          let tabs = this.visibleTabs.slice(
+          let tabs = this.ariaFocusableItems.slice(
             isPinned ? 0 : numPinned,
             isPinned ? numPinned : undefined
           );
@@ -1134,7 +1134,7 @@
                   dropIndex++;
                 }
               }
-            } else if (dropElement) {
+            } else {
               gBrowser.dropTabs(movingTabs, dropElement, dropBefore);
             }
           });
@@ -2498,24 +2498,29 @@
       };
 
       let dropElement = getOverlappedElement();
+      if (!dropElement) {
+        dropElement = this.ariaFocusableItems[oldDropElementIndex];
+      }
       let newDropElementIndex = dropElement
         ? dropElement.elementIndex
         : oldDropElementIndex;
-      let dropBefore = !screenForward;
       let moveOverThreshold;
+      let firstMovingTabPos;
+      let dropElementScreen;
       let overlapPercent;
       if (dropElement) {
         let dropElementForOverlap = isTabGroupLabel(dropElement)
           ? dropElement.parentElement
           : dropElement;
 
-        let dropElementPosition = dropElementForOverlap[screenAxis];
         let dropElementTabShift = getTabShift(dropElement, oldDropElementIndex);
+        dropElementScreen = dropElementForOverlap[screenAxis];
         let dropElementSize = bounds(dropElementForOverlap)[size];
+        firstMovingTabPos = firstMovingTabScreen + translate;
         overlapPercent = greatestOverlap(
-          firstMovingTabScreen + translate,
+          firstMovingTabPos,
           shiftSize,
-          dropElementPosition + dropElementTabShift,
+          dropElementScreen + dropElementTabShift,
           dropElementSize
         );
 
@@ -2526,21 +2531,31 @@
           : 0.5;
         moveOverThreshold = Math.min(1, Math.max(0, moveOverThreshold));
         let shouldMoveOver = overlapPercent > moveOverThreshold;
-        if (logicalForward) {
-          if (shouldMoveOver) {
-            newDropElementIndex++;
+        if (logicalForward && shouldMoveOver) {
+          newDropElementIndex++;
+        } else if (!logicalForward && !shouldMoveOver) {
+          newDropElementIndex++;
+          if (newDropElementIndex > oldDropElementIndex) {
+            
+            
+            
+            return;
           }
-          dropBefore = !shouldMoveOver;
-        } else {
-          if (!shouldMoveOver) {
-            newDropElementIndex++;
-          }
-          dropBefore = shouldMoveOver;
         }
       }
 
       let shouldCreateGroupOnDrop;
-      if (dropElement && gBrowser._tabGroupsEnabled && !isPinned) {
+      let dropBefore;
+      if (dropElement) {
+        let dropElementPos =
+          dropElementScreen + getTabShift(dropElement, newDropElementIndex);
+        dropBefore = firstMovingTabPos < dropElementPos;
+        if (this.#rtlMode) {
+          dropBefore = !dropBefore;
+        }
+      }
+
+      if (gBrowser._tabGroupsEnabled && !isPinned) {
         let dragOverGroupingThreshold =
           Services.prefs.getIntPref(
             "browser.tabs.groups.dragOverThresholdPercent"
@@ -2555,7 +2570,7 @@
         shouldCreateGroupOnDrop =
           dropElement != draggedTab &&
           isTab(dropElement) &&
-          !dropElement.group &&
+          !dropElement?.group &&
           overlapPercent > dragOverGroupingThreshold;
 
         if (shouldCreateGroupOnDrop) {
@@ -2593,16 +2608,17 @@
             if (dropBefore) {
               
               dropElement = dropElementGroup;
+              colorCode = undefined;
             } else if (dropElementGroup.collapsed) {
               
               dropElement = dropElementGroup;
+              colorCode = undefined;
             } else {
               
               dropElement = dropElementGroup.tabs[0];
               dropBefore = true;
             }
           }
-
           this.#setDragOverGroupColor(colorCode);
           this.toggleAttribute("movingtab-ungroup", !colorCode);
         }
@@ -2619,9 +2635,9 @@
       }
 
       if (
-        newDropElementIndex == oldDropElementIndex ||
-        
-        (!logicalForward && newDropElementIndex > oldDropElementIndex)
+        newDropElementIndex == oldDropElementIndex &&
+        dropBefore == dragData.dropBefore &&
+        dropElement == dragData.dropElement
       ) {
         return;
       }
