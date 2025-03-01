@@ -44,7 +44,7 @@ NS_IMETHODIMP
 StreamLoader::OnStartRequest(nsIRequest* aRequest) {
   MOZ_ASSERT(aRequest);
   mRequest = aRequest;
-  mSheetLoadData->NotifyStart(aRequest);
+  mSheetLoadData->OnStartRequest(aRequest);
 
   
   
@@ -62,12 +62,6 @@ StreamLoader::OnStartRequest(nsIRequest* aRequest) {
         return (mStatus = NS_ERROR_OUT_OF_MEMORY);
       }
     }
-    NS_GetFinalChannelURI(channel, getter_AddRefs(mFinalChannelURI));
-    nsIScriptSecurityManager* secMan = nsContentUtils::GetSecurityManager();
-    
-    
-    Unused << secMan->GetChannelResultPrincipal(
-        channel, getter_AddRefs(mChannelResultPrincipal));
   }
   if (nsCOMPtr<nsIThreadRetargetableRequest> rr = do_QueryInterface(aRequest)) {
     nsCOMPtr<nsIEventTarget> sts =
@@ -76,17 +70,6 @@ StreamLoader::OnStartRequest(nsIRequest* aRequest) {
         TaskQueue::Create(sts.forget(), "css::StreamLoader Delivery Queue");
     rr->RetargetDeliveryTo(queue);
   }
-
-  mSheetLoadData->SetMinimumExpirationTime(
-      nsContentUtils::GetSubresourceCacheExpirationTime(aRequest,
-                                                        mSheetLoadData->mURI));
-
-  
-  
-  
-  
-  
-  mSheetLoadData->mSheet->BlockParsePromise();
 
   return NS_OK;
 }
@@ -143,10 +126,7 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
 
     if (NS_FAILED(mStatus)) {
-      mSheetLoadData->VerifySheetReadyToParse(mStatus, ""_ns, ""_ns, channel,
-                                              mFinalChannelURI,
-                                              mChannelResultPrincipal);
-
+      mSheetLoadData->VerifySheetReadyToParse(mStatus, ""_ns, ""_ns, channel);
       if (!NS_IsMainThread()) {
         
         
@@ -157,8 +137,7 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
     }
 
     rv = mSheetLoadData->VerifySheetReadyToParse(aStatus, mBOMBytes, mBytes,
-                                                 channel, mFinalChannelURI,
-                                                 mChannelResultPrincipal);
+                                                 channel);
     if (rv != NS_OK_PARSE_SHEET) {
       if (!NS_IsMainThread()) {
         mOnStopProcessingDone = false;

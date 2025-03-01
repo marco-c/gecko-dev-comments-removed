@@ -94,13 +94,12 @@ class SheetLoadData final
   NotNull<const Encoding*> DetermineNonBOMEncoding(const nsACString& aSegment,
                                                    nsIChannel*) const;
 
+  void OnStartRequest(nsIRequest*);
+
   
   
   nsresult VerifySheetReadyToParse(nsresult aStatus, const nsACString& aBytes1,
-                                   const nsACString& aBytes2,
-                                   nsIChannel* aChannel,
-                                   nsIURI* aFinalChannelURI,
-                                   nsIPrincipal* aPrincipal);
+                                   const nsACString& aBytes2, nsIChannel*);
 
   NS_DECL_ISUPPORTS
 

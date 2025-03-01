@@ -60,8 +60,6 @@ class StreamLoader : public nsIThreadRetargetableStreamListener,
   nsCString mBytes;
   nsAutoCStringN<3> mBOMBytes;
   nsCOMPtr<nsIRequest> mRequest;
-  nsCOMPtr<nsIURI> mFinalChannelURI;
-  nsCOMPtr<nsIPrincipal> mChannelResultPrincipal;
   
   bool mOnStopProcessingDone{false};
   RefPtr<SheetLoadDataHolder> mMainThreadSheetLoadData;
