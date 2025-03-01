@@ -298,10 +298,19 @@ function assert_phase(animation, phase) {
   if (phase === 'active') {
     
     
+    
     animation.effect.updateTiming({ fill: 'none' });
-    assert_not_equals(animation.effect.getComputedTiming().progress, null,
-                      'Animation effect is in active phase when current time ' +
-                      `is ${currentTime}.`);
+    if ('ScrollTimeline' in window && animation.timeline instanceof ScrollTimeline) {
+        const isActive = animation.currentTime?.toString() == "100%" ||
+                         animation.effect.getComputedTiming().progress != null;
+        assert_true(isActive,
+                    'Animation effect is in active phase when current time ' +
+                    `is ${currentTime}.`);
+    } else {
+      assert_not_equals(animation.effect.getComputedTiming().progress, null,
+                        'Animation effect is in active phase when current time ' +
+                        `is ${currentTime}.`);
+    }
   } else {
     
     
