@@ -15,9 +15,17 @@ const { TranslationsPanelShared } = ChromeUtils.importESModule(
 const { TranslationsUtils } = ChromeUtils.importESModule(
   "chrome://global/content/translations/TranslationsUtils.mjs"
 );
-const { getInferenceProcessInfo } = ChromeUtils.importESModule(
-  "chrome://global/content/ml/Utils.sys.mjs"
-);
+
+
+
+
+
+
+
+
+
+const { getInferenceProcessInfo: fetchInferenceProcessInfo } =
+  ChromeUtils.importESModule("chrome://global/content/ml/Utils.sys.mjs");
 
 
 const BLANK_PAGE =

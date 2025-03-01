@@ -408,7 +408,26 @@ class TranslationsBencher {
 
 
 
-  static METRIC_TOTAL_MEMORY_USAGE = "total-memory-usage";
+
+
+
+
+
+
+  static METRIC_PEAK_MEMORY_USAGE = "peak-memory-usage";
+
+  
+
+
+
+
+
+
+
+
+
+
+  static METRIC_STABILIZED_MEMORY_USAGE = "stabilized-memory-usage";
 
   
 
@@ -437,6 +456,12 @@ class TranslationsBencher {
 
 
   static Journal = class {
+    
+
+
+
+
+
     #metrics = {};
 
     
@@ -449,7 +474,8 @@ class TranslationsBencher {
       if (!this.#metrics[metricName]) {
         this.#metrics[metricName] = [];
       }
-      this.#metrics[metricName].push(value);
+
+      this.#metrics[metricName].push(Number(value.toFixed(3)));
     }
 
     
@@ -485,6 +511,105 @@ class TranslationsBencher {
   
 
 
+  static PeakMemorySampler = class {
+    
+
+
+
+
+    #peakMemoryMiB = 0;
+
+    
+
+
+
+
+    #intervalId = null;
+
+    
+
+
+
+
+    #interval;
+
+    
+
+
+
+
+    constructor(interval) {
+      this.#interval = interval;
+    }
+
+    
+
+
+
+
+
+    async #collectMemorySample() {
+      const currentMemoryMiB =
+        await TranslationsBencher.#getInferenceProcessTotalMemoryUsage();
+      if (currentMemoryMiB > this.#peakMemoryMiB) {
+        this.#peakMemoryMiB = currentMemoryMiB;
+      }
+    }
+
+    
+
+
+    start() {
+      if (this.#intervalId !== null) {
+        throw new Error(
+          "Attempt to start a PeakMemorySampler that was already running."
+        );
+      }
+
+      this.#peakMemoryMiB = 0;
+      this.#intervalId = setInterval(() => {
+        this.#collectMemorySample().catch(console.error);
+      }, this.#interval);
+    }
+
+    
+
+
+    stop() {
+      if (this.#intervalId === null) {
+        throw new Error(
+          "Attempt to stop a PeakMemorySampler that was not running."
+        );
+      }
+
+      clearInterval(this.#intervalId);
+      this.#intervalId = null;
+      this.#collectMemorySample();
+    }
+
+    
+
+
+
+
+    getPeakRecordedMemoryUsage() {
+      if (this.#intervalId) {
+        throw new Error(
+          "Attempt to retrieve peak recorded memory usage while the memory sampler is running."
+        );
+      }
+
+      return this.#peakMemoryMiB;
+    }
+  };
+
+  
+
+
+
+
+
+
 
 
 
@@ -495,9 +620,11 @@ class TranslationsBencher {
 
   static async benchmarkTranslation({
     page,
-    runCount,
     sourceLanguage,
     targetLanguage,
+    speedBenchCount,
+    memoryBenchCount,
+    memorySampleInterval = 10,
   }) {
     const { wordCount, tokenCount, pageLanguage } =
       TranslationsBencher.#PAGE_DATA[page] ?? {};
@@ -540,7 +667,135 @@ class TranslationsBencher {
 
     const journal = new TranslationsBencher.Journal();
 
-    for (let runNumber = 0; runNumber < runCount; ++runNumber) {
+    await TranslationsBencher.#benchmarkTranslationMemory({
+      page,
+      journal,
+      sourceLanguage,
+      targetLanguage,
+      memoryBenchCount,
+      memorySampleInterval,
+    });
+
+    await TranslationsBencher.#benchmarkTranslationSpeed({
+      page,
+      journal,
+      sourceLanguage,
+      targetLanguage,
+      wordCount,
+      tokenCount,
+      speedBenchCount,
+    });
+
+    journal.reportMetrics();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static async #benchmarkTranslationMemory({
+    page,
+    journal,
+    sourceLanguage,
+    targetLanguage,
+    memoryBenchCount,
+    memorySampleInterval,
+  }) {
+    for (let runNumber = 0; runNumber < memoryBenchCount; ++runNumber) {
+      const { cleanup, runInPage } = await loadTestPage({
+        page,
+        endToEndTest: true,
+        languagePairs: [
+          { fromLang: sourceLanguage, toLang: "en" },
+          { fromLang: "en", toLang: targetLanguage },
+        ],
+        prefs: [["browser.translations.logLevel", "Error"]],
+      });
+
+      
+      const peakMemorySampler = new TranslationsBencher.PeakMemorySampler(
+        memorySampleInterval
+      );
+
+      await TranslationsBencher.#injectTranslationCompleteObserver(runInPage);
+
+      await FullPageTranslationsTestUtils.assertTranslationsButton(
+        { button: true, circleArrows: false, locale: false, icon: true },
+        "The button is available."
+      );
+
+      await FullPageTranslationsTestUtils.openPanel({
+        onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewDefault,
+      });
+
+      await FullPageTranslationsTestUtils.changeSelectedFromLanguage({
+        langTag: sourceLanguage,
+      });
+      await FullPageTranslationsTestUtils.changeSelectedToLanguage({
+        langTag: targetLanguage,
+      });
+
+      const translationCompleteTimestampPromise =
+        TranslationsBencher.#getTranslationCompleteTimestampPromise(runInPage);
+
+      peakMemorySampler.start();
+
+      await FullPageTranslationsTestUtils.clickTranslateButton();
+      await translationCompleteTimestampPromise;
+
+      peakMemorySampler.stop();
+
+      const peakMemoryMiB = peakMemorySampler.getPeakRecordedMemoryUsage();
+      const stabilizedMemoryMiB =
+        await TranslationsBencher.#getInferenceProcessTotalMemoryUsage();
+
+      journal.pushMetrics([
+        [TranslationsBencher.METRIC_PEAK_MEMORY_USAGE, peakMemoryMiB],
+        [
+          TranslationsBencher.METRIC_STABILIZED_MEMORY_USAGE,
+          stabilizedMemoryMiB,
+        ],
+      ]);
+
+      await cleanup();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static async #benchmarkTranslationSpeed({
+    page,
+    journal,
+    sourceLanguage,
+    targetLanguage,
+    wordCount,
+    tokenCount,
+    speedBenchCount,
+  }) {
+    for (let runNumber = 0; runNumber < speedBenchCount; ++runNumber) {
       const { tab, cleanup, runInPage } = await loadTestPage({
         page,
         endToEndTest: true,
@@ -589,37 +844,18 @@ class TranslationsBencher {
       const wordsPerSecond = wordCount / translationTimeSeconds;
       const tokensPerSecond = tokenCount / translationTimeSeconds;
 
-      const totalMemoryMB =
-        await TranslationsBencher.#getInferenceProcessTotalMemoryUsage();
-
-      const decimalPrecision = 3;
       journal.pushMetrics([
-        [
-          TranslationsBencher.METRIC_ENGINE_INIT_TIME,
-          Number(initTimeMilliseconds.toFixed(decimalPrecision)),
-        ],
-        [
-          TranslationsBencher.METRIC_WORDS_PER_SECOND,
-          Number(wordsPerSecond.toFixed(decimalPrecision)),
-        ],
-        [
-          TranslationsBencher.METRIC_TOKENS_PER_SECOND,
-          Number(tokensPerSecond.toFixed(decimalPrecision)),
-        ],
-        [
-          TranslationsBencher.METRIC_TOTAL_MEMORY_USAGE,
-          Number(totalMemoryMB.toFixed(decimalPrecision)),
-        ],
+        [TranslationsBencher.METRIC_ENGINE_INIT_TIME, initTimeMilliseconds],
+        [TranslationsBencher.METRIC_WORDS_PER_SECOND, wordsPerSecond],
+        [TranslationsBencher.METRIC_TOKENS_PER_SECOND, tokensPerSecond],
         [
           TranslationsBencher.METRIC_TOTAL_TRANSLATION_TIME,
-          Number(translationTimeSeconds.toFixed(decimalPrecision)),
+          translationTimeSeconds,
         ],
       ]);
 
       await cleanup();
     }
-
-    journal.reportMetrics();
   }
 
   
@@ -707,7 +943,7 @@ class TranslationsBencher {
 
 
   static async #getInferenceProcessTotalMemoryUsage() {
-    const inferenceProcessInfo = await getInferenceProcessInfo();
+    const inferenceProcessInfo = await fetchInferenceProcessInfo();
     return bytesToMebibytes(inferenceProcessInfo.memory);
   }
 }
