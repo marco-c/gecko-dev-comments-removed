@@ -1909,6 +1909,7 @@ void SMILTimedElement::SampleFillValue() {
   if (mFillMode != FILL_FREEZE || !mClient) return;
 
   SMILTime activeTime;
+  SMILTimeValue repeatDuration = GetRepeatDuration();
 
   if (mElementState == STATE_WAITING || mElementState == STATE_POSTACTIVE) {
     const SMILInterval* prevInterval = GetPreviousInterval();
@@ -1926,7 +1927,6 @@ void SMILTimedElement::SampleFillValue() {
     
     
     
-    SMILTimeValue repeatDuration = GetRepeatDuration();
     if (repeatDuration.IsDefinite()) {
       activeTime = std::min(repeatDuration.GetMillis(), activeTime);
     }
@@ -1936,12 +1936,12 @@ void SMILTimedElement::SampleFillValue() {
         "Attempting to sample fill value when we're in an unexpected state "
         "(probably STATE_STARTUP)");
 
-    
-    
-    MOZ_ASSERT(GetRepeatDuration().IsDefinite(),
-               "Attempting to sample fill value of an active animation with "
-               "an indefinite repeat duration");
-    activeTime = GetRepeatDuration().GetMillis();
+    if (!repeatDuration.IsDefinite()) {
+      
+      
+      return;
+    }
+    activeTime = repeatDuration.GetMillis();
   }
 
   uint32_t repeatIteration;
