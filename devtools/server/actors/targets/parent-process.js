@@ -96,6 +96,31 @@ class ParentProcessTargetActor extends WindowGlobalTargetActor {
       window = Services.wm.getMostRecentWindow(null);
     }
 
+    
+    
+    
+    if (!window) {
+      const browser = Services.appShell.createWindowlessBrowser(false);
+
+      
+      this.headlessBrowser = browser;
+
+      
+      
+      const systemPrincipal =
+        Services.scriptSecurityManager.getSystemPrincipal();
+      browser.docShell.createAboutBlankDocumentViewer(
+        systemPrincipal,
+        systemPrincipal
+      );
+
+      window = browser.docShell.domWindow;
+
+      
+      window.document.documentElement.innerHTML =
+        "Fake DevTools document, as there is no tab opened yet";
+    }
+
     return window.docShell;
   }
 
@@ -143,6 +168,8 @@ class ParentProcessTargetActor extends WindowGlobalTargetActor {
       }
       this._progressListener.unwatch(docShell);
     }
+
+    this.headlessBrowser = null;
 
     return super._detach();
   }
