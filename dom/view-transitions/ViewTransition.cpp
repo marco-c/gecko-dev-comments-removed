@@ -835,7 +835,9 @@ static nsAtom* DocumentScopedTransitionNameFor(nsIFrame* aFrame) {
 
 
 Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
-  MOZ_ASSERT(mNamedElements.IsEmpty());
+  
+  
+
   
   
   nsTHashSet<nsAtom*> usedTransitionNames;
