@@ -113,10 +113,6 @@ exports.ACCESSIBLE_EVENTS = [
 ];
 
 
-exports.A11Y_SERVICE_DURATION =
-  "DEVTOOLS_ACCESSIBILITY_SERVICE_TIME_ACTIVE_SECONDS";
-
-
 exports.A11Y_LEARN_MORE_LINK =
   "https://firefox-source-docs.mozilla.org/devtools-user/accessibility_inspector/";
 exports.A11Y_CONTRAST_LEARN_MORE_LINK =
