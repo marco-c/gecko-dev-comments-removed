@@ -110,7 +110,9 @@ function parseAttributeValues(attr, doc) {
     parseAndGetNode("<svg " + attr + '"></svg>') ||
     parseAndGetNode("<svg " + attr + "'></svg>");
 
-  const div = doc.createElement("div");
+  
+  const htmlDoc = doc.implementation.createHTMLDocument();
+  const div = htmlDoc.createElement("div");
   const attributes = [];
   for (const { name, value } of el.attributes) {
     
