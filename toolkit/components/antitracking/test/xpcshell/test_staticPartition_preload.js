@@ -124,9 +124,9 @@ add_task(async () => {
 
     await contentPage.spawn([], () => {
       
-      content.windowUtils.clearSharedStyleSheetCache();
+      content.windowUtils.clearStyleSheetCache();
       
-      content.windowUtils.clearSharedScriptCache();
+      content.windowUtils.clearScriptCache();
     });
 
     await contentPage.close();
