@@ -2745,7 +2745,7 @@
 
 
     #moveTogetherSelectedTabs(tab) {
-      let draggedTabPos = tab._tPos;
+      let draggedTabIndex = tab.elementIndex;
       let selectedTabs = gBrowser.selectedTabs;
       let animate = !gReduceMotion;
 
@@ -2753,32 +2753,23 @@
         finished: !animate,
       };
 
-      let addAnimationData = (
-        movingTab,
-        movingTabNewIndex,
-        isBeforeSelectedTab = true
-      ) => {
-        let movingTabOldIndex = movingTab._tPos;
-
-        if (movingTabOldIndex == movingTabNewIndex) {
+      let addAnimationData = (movingTab, isBeforeSelectedTab) => {
+        if (
+          movingTab.elementIndex + (isBeforeSelectedTab ? 1 : -1) ==
+          tab.elementIndex
+        ) {
           
           
           return;
         }
 
-        let movingTabSize =
-          movingTab.getBoundingClientRect()[
-            this.verticalMode ? "height" : "width"
-          ];
-        let shift = (movingTabNewIndex - movingTabOldIndex) * movingTabSize;
-
-        movingTab._moveTogetherSelectedTabsData.animate = true;
+        movingTab._moveTogetherSelectedTabsData = {
+          translatePos: 0,
+          animate: true,
+        };
         movingTab.toggleAttribute("multiselected-move-together", true);
 
-        movingTab._moveTogetherSelectedTabsData.translatePos = shift;
-
         let postTransitionCleanup = () => {
-          movingTab._moveTogetherSelectedTabsData.newIndex = movingTabNewIndex;
           movingTab._moveTogetherSelectedTabsData.animate = false;
         };
         if (gReduceMotion) {
@@ -2803,90 +2794,84 @@
         
         
 
-        let lowerIndex = Math.min(movingTabOldIndex, draggedTabPos);
-        let higherIndex = Math.max(movingTabOldIndex, draggedTabPos);
+        let movingTabSize =
+          movingTab.getBoundingClientRect()[
+            this.verticalMode ? "height" : "width"
+          ];
+        let lowerIndex = Math.min(movingTab.elementIndex, draggedTabIndex);
+        let higherIndex = Math.max(movingTab.elementIndex, draggedTabIndex);
 
         for (let i = lowerIndex + 1; i < higherIndex; i++) {
-          let middleTab = gBrowser.tabs[i];
+          let middleItem = this.ariaFocusableItems[i];
 
-          if (middleTab.pinned != movingTab.pinned) {
+          if (isTab(middleItem)) {
+            if (middleItem.pinned != movingTab.pinned) {
+              
+              break;
+            }
+            if (middleItem.multiselected) {
+              
+              
+              continue;
+            }
+          }
+          if (isTabGroupLabel(middleItem)) {
             
-            break;
+            middleItem = middleItem.parentElement;
           }
+          let middleItemSize =
+            middleItem.getBoundingClientRect()[
+              this.verticalMode ? "height" : "width"
+            ];
 
-          if (middleTab.multiselected) {
-            
-            
-            continue;
+          if (!middleItem._moveTogetherSelectedTabsData?.translatePos) {
+            middleItem._moveTogetherSelectedTabsData = { translatePos: 0 };
           }
+          movingTab._moveTogetherSelectedTabsData.translatePos +=
+            isBeforeSelectedTab ? middleItemSize : -middleItemSize;
+          middleItem._moveTogetherSelectedTabsData.translatePos =
+            isBeforeSelectedTab ? -movingTabSize : movingTabSize;
 
-          if (!middleTab._moveTogetherSelectedTabsData?.translatePos) {
-            middleTab._moveTogetherSelectedTabsData = { translatePos: 0 };
-          }
-          if (isBeforeSelectedTab) {
-            middleTab._moveTogetherSelectedTabsData.translatePos -=
-              movingTabSize;
-          } else {
-            middleTab._moveTogetherSelectedTabsData.translatePos +=
-              movingTabSize;
-          }
-
-          middleTab.toggleAttribute("multiselected-move-together", true);
+          middleItem.toggleAttribute("multiselected-move-together", true);
         }
       };
 
-      
-      let insertAtPos = draggedTabPos - 1;
-      for (let i = selectedTabs.indexOf(tab) - 1; i > -1; i--) {
-        let movingTab = selectedTabs[i];
-        insertAtPos = newIndex(movingTab, insertAtPos);
+      let tabIndex = selectedTabs.indexOf(tab);
 
+      
+      for (let i = 0; i < tabIndex; i++) {
+        let movingTab = selectedTabs[i];
         if (animate) {
-          movingTab._moveTogetherSelectedTabsData = {};
-          addAnimationData(movingTab, insertAtPos, true);
+          addAnimationData(movingTab, true);
         } else {
-          gBrowser.moveTabTo(movingTab, insertAtPos);
+          gBrowser.dropTab(movingTab, tab, true);
         }
-        insertAtPos--;
       }
 
       
-      insertAtPos = draggedTabPos + 1;
-      for (
-        let i = selectedTabs.indexOf(tab) + 1;
-        i < selectedTabs.length;
-        i++
-      ) {
+      for (let i = selectedTabs.length - 1; i > tabIndex; i--) {
         let movingTab = selectedTabs[i];
-        insertAtPos = newIndex(movingTab, insertAtPos);
-
         if (animate) {
-          movingTab._moveTogetherSelectedTabsData = {};
-          addAnimationData(movingTab, insertAtPos, false);
+          addAnimationData(movingTab, false);
         } else {
-          gBrowser.moveTabTo(movingTab, insertAtPos);
+          gBrowser.dropTab(movingTab, tab, false);
         }
-        insertAtPos++;
       }
 
       
-      for (let t of this.visibleTabs) {
-        if (t._moveTogetherSelectedTabsData?.translatePos) {
+      for (let item of this.ariaFocusableItems) {
+        if (isTabGroupLabel(item)) {
+          
+          item = item.parentElement;
+        }
+        if (item._moveTogetherSelectedTabsData?.translatePos) {
           let translatePos =
             (this.#rtlMode ? -1 : 1) *
-            t._moveTogetherSelectedTabsData.translatePos;
-          t.style.transform = `translate${
+            item._moveTogetherSelectedTabsData.translatePos;
+          item.style.transform = `translate${
             this.verticalMode ? "Y" : "X"
           }(${translatePos}px)`;
         }
-      }
-
-      function newIndex(aTab, index) {
-        
-        if (aTab.pinned) {
-          return Math.min(index, gBrowser.pinnedTabCount - 1);
-        }
-        return Math.max(index, gBrowser.pinnedTabCount);
       }
     }
 
@@ -2904,31 +2889,23 @@
       let tabIndex = selectedTabs.indexOf(tab);
 
       
-      for (let i = tabIndex - 1; i > -1; i--) {
-        let movingTab = selectedTabs[i];
-        if (movingTab._moveTogetherSelectedTabsData.newIndex) {
-          gBrowser.moveTabTo(
-            movingTab,
-            movingTab._moveTogetherSelectedTabsData.newIndex
-          );
-        }
+      for (let i = 0; i < tabIndex; i++) {
+        gBrowser.dropTab(selectedTabs[i], tab, true);
       }
 
       
-      for (let i = tabIndex + 1; i < selectedTabs.length; i++) {
-        let movingTab = selectedTabs[i];
-        if (movingTab._moveTogetherSelectedTabsData.newIndex) {
-          gBrowser.moveTabTo(
-            movingTab,
-            movingTab._moveTogetherSelectedTabsData.newIndex
-          );
-        }
+      for (let i = selectedTabs.length - 1; i > tabIndex; i--) {
+        gBrowser.dropTab(selectedTabs[i], tab, false);
       }
 
-      for (let t of this.visibleTabs) {
-        t.style.transform = "";
-        t.removeAttribute("multiselected-move-together");
-        delete t._moveTogetherSelectedTabsData;
+      for (let item of this.ariaFocusableItems) {
+        if (isTabGroupLabel(item)) {
+          
+          item = item.parentElement;
+        }
+        item.style.transform = "";
+        item.removeAttribute("multiselected-move-together");
+        delete item._moveTogetherSelectedTabsData;
       }
     }
 
