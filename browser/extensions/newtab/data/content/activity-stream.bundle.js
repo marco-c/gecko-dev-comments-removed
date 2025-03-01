@@ -265,7 +265,6 @@ for (const type of [
   "WALLPAPERS_SET",
   "WALLPAPER_CATEGORY_CLICK",
   "WALLPAPER_CLICK",
-  "WALLPAPER_UPLOAD",
   "WEATHER_IMPRESSION",
   "WEATHER_LOAD_ERROR",
   "WEATHER_LOCATION_DATA_UPDATE",
@@ -11217,28 +11216,9 @@ const WallpapersSection = (0,external_ReactRedux_namespaceObject.connect)(state 
 
 
 
-const PREF_WALLPAPER_UPLOADED_PREVIOUSLY = "newtabWallpapers.customWallpaper.uploadedPreviously";
-
-
-
-function debounce(func, wait) {
-  let timer;
-  return (...args) => {
-    if (timer) {
-      return;
-    }
-    let wakeUp = () => {
-      timer = null;
-    };
-    timer = setTimeout(wakeUp, wait);
-    func.apply(this, args);
-  };
-}
 class _WallpaperCategories extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
-    this.handleColorInput = this.handleColorInput.bind(this);
-    this.debouncedHandleChange = debounce(this.handleChange.bind(this), 999);
     this.handleChange = this.handleChange.bind(this);
     this.handleReset = this.handleReset.bind(this);
     this.handleCategory = this.handleCategory.bind(this);
@@ -11260,41 +11240,18 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
   componentDidMount() {
     this.prefersDarkQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
   }
-  componentDidUpdate(prevProps) {
-    
-    if (this.props.exitEventFired && this.props.exitEventFired !== prevProps.exitEventFired) {
-      this.handleBack();
-    }
-  }
-  handleColorInput(event) {
-    let {
-      id
-    } = event.target;
-    
-    id = `solid-color-picker-${event.target.value}`;
-    const rgbColors = this.getRGBColors(event.target.value);
-
-    
-    event.target.style.backgroundColor = `rgb(${rgbColors.toString()})`;
-    this.setState({
-      customHexValue: event.target.style.backgroundColor
-    });
-
-    
-    this.props.setPref("newtabWallpapers.wallpaper", id);
-  }
-
-  
-  
-  
   handleChange(event) {
     let {
       id
     } = event.target;
-
-    
     if (id === "solid-color-picker") {
       id = `solid-color-picker-${event.target.value}`;
+      const rgbColors = this.getRGBColors(event.target.value);
+      event.target.style.backgroundColor = `rgb(${rgbColors.toString()})`;
+      event.target.checked = true;
+      this.setState({
+        customHexValue: event.target.style.backgroundColor
+      });
     }
     this.props.setPref("newtabWallpapers.wallpaper", id);
     this.handleUserEvent(actionTypes.WALLPAPER_CLICK, {
@@ -11398,16 +11355,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
   handleUpload() {
     
     
-
     
-    
-    
-    const uploadedPreviously = this.props.Prefs.values[PREF_WALLPAPER_UPLOADED_PREVIOUSLY];
-    this.handleUserEvent(actionTypes.WALLPAPER_UPLOAD, {
-      had_uploaded_previously: !!uploadedPreviously,
-      had_previous_wallpaper: !!this.props.activeWallpaper
-    });
-    this.props.setPref(PREF_WALLPAPER_UPLOADED_PREVIOUSLY, true);
   }
   handleBack() {
     this.setState({
@@ -11453,14 +11401,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     const {
       activeCategoryFluentID
     } = this.state;
-    let filteredWallpapers = wallpaperList.filter(wallpaper => wallpaper.category === activeCategory);
-    function reduceColorsToFitCustomColorInput(arr) {
-      
-      while (arr.length % 3 !== 2) {
-        arr.pop();
-      }
-      return arr;
-    }
+    const filteredWallpapers = wallpaperList.filter(wallpaper => wallpaper.category === activeCategory);
     let categorySectionClassname = "category wallpaper-list";
     if (prefs["newtabWallpapers.v2.enabled"]) {
       categorySectionClassname += " ignore-color-mode";
@@ -11478,19 +11419,13 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     }
 
     
-    this.setState({
-      showColorPicker: prefs["newtabWallpapers.customColor.enabled"]
-    });
-
-    
-    if (prefs["newtabWallpapers.customColor.enabled"] && activeCategory === "solid-colors") {
-      filteredWallpapers = reduceColorsToFitCustomColorInput(filteredWallpapers);
+    if (prefs["newtabWallpapers.customColor.enabled"]) {
+      this.setState({
+        showColorPicker: true
+      });
     }
-    let colorPickerInput = showColorPicker && activeCategory === "solid-colors" ? external_React_default().createElement("div", {
-      className: "theme-custom-color-picker"
-    }, external_React_default().createElement("input", {
-      onInput: this.handleColorInput,
-      onChange: this.debouncedHandleChange,
+    let colorPickerInput = showColorPicker && activeCategory === "solid-colors" ? external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("input", {
+      onChange: this.handleChange,
       onClick: () => this.setActiveId("solid-color-picker") 
       ,
       type: "color",
@@ -11502,12 +11437,14 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       
       ,
       value: wallpaperCustomSolidColorHex || "#00d230",
-      className: `wallpaper-input
+      className: `wallpaper-input theme-solid-color-picker
               ${this.state.activeId === "solid-color-picker" ? "active" : ""}`
     }), external_React_default().createElement("label", {
       htmlFor: "solid-color-picker",
-      "data-l10n-id": "newtab-wallpaper-custom-color"
-    })) : "";
+      className: "sr-only"
+      
+      
+    }, "Solid Color Picker")) : "";
     return external_React_default().createElement("div", null, external_React_default().createElement("div", {
       className: "category-header"
     }, external_React_default().createElement("h2", {
@@ -11750,8 +11687,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       className: "wallpapers-section"
     }, external_React_default().createElement(WallpaperCategories, {
       setPref: setPref,
-      activeWallpaper: activeWallpaper,
-      exitEventFired: exitEventFired
+      activeWallpaper: activeWallpaper
     })), external_React_default().createElement("span", {
       className: "divider",
       role: "separator"
@@ -13098,7 +13034,7 @@ const PrefsButton = ({
 
 
 
-function Base_debounce(func, wait) {
+function debounce(func, wait) {
   let timer;
   return (...args) => {
     if (timer) {
@@ -13162,7 +13098,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.openCustomizationMenu = this.openCustomizationMenu.bind(this);
     this.closeCustomizationMenu = this.closeCustomizationMenu.bind(this);
     this.handleOnKeyDown = this.handleOnKeyDown.bind(this);
-    this.onWindowScroll = Base_debounce(this.onWindowScroll.bind(this), 5);
+    this.onWindowScroll = debounce(this.onWindowScroll.bind(this), 5);
     this.setPref = this.setPref.bind(this);
     this.shouldShowWallpapersHighlight = this.shouldShowWallpapersHighlight.bind(this);
     this.updateWallpaper = this.updateWallpaper.bind(this);
