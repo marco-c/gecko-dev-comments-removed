@@ -2409,6 +2409,15 @@ LayoutDeviceIntRect nsWindow::GetBounds() {
   return rect;
 }
 
+LayoutDeviceIntSize nsWindow::GetSize() const {
+  if (!mWnd) {
+    return mBounds.Size();
+  }
+  RECT r;
+  VERIFY(::GetWindowRect(mWnd, &r));
+  return {r.right - r.left, r.bottom - r.top};
+}
+
 
 LayoutDeviceIntRect nsWindow::GetClientBounds() {
   if (!mWnd) {
@@ -2715,7 +2724,7 @@ void nsWindow::SetResizeMargin(mozilla::LayoutDeviceIntCoord aResizeMargin) {
   mCustomResizeMargin = aResizeMargin;
 }
 
-nsAutoRegion nsWindow::ComputeNonClientHRGN() {
+LayoutDeviceIntRegion nsWindow::ComputeNonClientRegion() {
   
   
   
@@ -2728,24 +2737,11 @@ nsAutoRegion nsWindow::ComputeNonClientHRGN() {
   
   
   
-  RECT rect;
-  GetWindowRect(mWnd, &rect);
-  MapWindowPoints(nullptr, mWnd, (LPPOINT)&rect, 2);
-  nsAutoRegion winRgn(::CreateRectRgnIndirect(&rect));
-
-  
-  
-  
-  ::GetWindowRect(mWnd, &rect);
-  rect.top += mCustomNonClientMetrics.mCaptionHeight +
-              mCustomNonClientMetrics.mVertResizeMargin;
-  rect.right -= mCustomNonClientMetrics.mHorResizeMargin;
-  rect.bottom -= mCustomNonClientMetrics.mVertResizeMargin;
-  rect.left += mCustomNonClientMetrics.mHorResizeMargin;
-  ::MapWindowPoints(nullptr, mWnd, (LPPOINT)&rect, 2);
-  nsAutoRegion clientRgn(::CreateRectRgnIndirect(&rect));
-  ::CombineRgn(winRgn, winRgn, clientRgn, RGN_DIFF);
-  return nsAutoRegion(winRgn.out());
+  auto winRect = LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetSize());
+  LayoutDeviceIntRegion region{winRect};
+  winRect.Deflate(mCustomNonClientMetrics.DefaultMargins());
+  region.SubOut(winRect);
+  return region;
 }
 
 
@@ -3860,10 +3856,10 @@ void nsWindow::SetIsEarlyBlankWindow(bool aIsEarlyBlankWindow) {
     return;
   }
   mIsEarlyBlankWindow = aIsEarlyBlankWindow;
-  if (!aIsEarlyBlankWindow && mNeedsNCAreaClear) {
+  if (!aIsEarlyBlankWindow) {
     
     
-    ::RedrawWindow(mWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_INTERNALPAINT);
+    MaybeInvalidateTranslucentRegion();
   }
 }
 
@@ -4999,17 +4995,9 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
     case WM_NCPAINT: {
       
-
-
-
+      
+      
       gfxDWriteFont::UpdateSystemTextVars();
-      if (mCustomNonClient &&
-          mTransparencyMode == TransparencyMode::Transparent) {
-        
-        
-        
-        mNeedsNCAreaClear = true;
-      }
     } break;
 
     case WM_POWERBROADCAST:
@@ -7168,6 +7156,34 @@ void nsWindow::UpdateOpaqueRegion(const LayoutDeviceIntRegion& aRegion) {
   UpdateOpaqueRegionInternal();
 }
 
+LayoutDeviceIntRegion nsWindow::GetTranslucentRegion() {
+  if (mTransparencyMode != TransparencyMode::Transparent) {
+    return {};
+  }
+  const auto winRect = LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetSize());
+  LayoutDeviceIntRegion translucentRegion{winRect};
+  translucentRegion.SubOut(mOpaqueRegion.MovedBy(GetClientOffset()));
+  return translucentRegion;
+}
+
+void nsWindow::MaybeInvalidateTranslucentRegion() {
+  if (mTransparencyMode != TransparencyMode::Transparent) {
+    return;
+  }
+  const auto translucent = GetTranslucentRegion();
+  if (translucent.IsEmpty() || mClearedRegion.Contains(translucent)) {
+    return;
+  }
+  
+  
+  
+  
+  
+  
+  
+  ::RedrawWindow(mWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_INTERNALPAINT);
+}
+
 void nsWindow::UpdateOpaqueRegionInternal() {
   MARGINS margins{0};
   if (mTransparencyMode == TransparencyMode::Transparent) {
@@ -7192,10 +7208,7 @@ void nsWindow::UpdateOpaqueRegionInternal() {
     }
   }
   DwmExtendFrameIntoClientArea(mWnd, &margins);
-  if (mTransparencyMode == TransparencyMode::Transparent) {
-    mNeedsNCAreaClear = true;
-    ::RedrawWindow(mWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_INTERNALPAINT);
-  }
+  MaybeInvalidateTranslucentRegion();
 }
 
 

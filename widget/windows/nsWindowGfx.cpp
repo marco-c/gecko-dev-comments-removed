@@ -175,12 +175,6 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
     listener->WillPaintWindow(this);
   }
 
-  const LayoutDeviceIntRect winRect = [&] {
-    RECT r;
-    ::GetWindowRect(mWnd, &r);
-    ::MapWindowPoints(nullptr, mWnd, (LPPOINT)&r, 2);
-    return WinUtils::ToIntRect(r);
-  }();
   
   
   
@@ -190,26 +184,29 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
   
   HDC hDC = ::BeginPaint(mWnd, &ps);
   LayoutDeviceIntRegion region = GetRegionToPaint(ps, hDC);
-  LayoutDeviceIntRegion translucentRegion;
+  LayoutDeviceIntRegion regionToClear;
+  
   if (mTransparencyMode == TransparencyMode::Transparent) {
-    translucentRegion = LayoutDeviceIntRegion{winRect};
-    translucentRegion.SubOut(mOpaqueRegion);
+    auto translucentRegion = GetTranslucentRegion();
     region.OrWith(translucentRegion);
-  }
-
-  if (mNeedsNCAreaClear ||
-      (didResize && mTransparencyMode == TransparencyMode::Transparent)) {
     
-    
-    auto black = reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
-    nsAutoRegion regionToClear(ComputeNonClientHRGN());
-    if (!translucentRegion.IsEmpty()) {
-      nsAutoRegion translucent(WinUtils::RegionToHRGN(translucentRegion));
-      ::CombineRgn(regionToClear, regionToClear, translucent, RGN_OR);
+    regionToClear = translucentRegion;
+    if (!didResize && !mClearedRegion.IsEmpty()) {
+      
+      
+      regionToClear.SubOut(mClearedRegion);
     }
-    ::FillRgn(hDC, regionToClear, black);
+    mClearedRegion = std::move(translucentRegion);
   }
-  mNeedsNCAreaClear = false;
+  if (mNeedsNCAreaClear) {
+    regionToClear.OrWith(ComputeNonClientRegion());
+    mNeedsNCAreaClear = false;
+  }
+  if (!regionToClear.IsEmpty()) {
+    auto black = reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
+    nsAutoRegion hRgnToClear(WinUtils::RegionToHRGN(regionToClear));
+    ::FillRgn(hDC, hRgnToClear, black);
+  }
 
   bool didPaint = false;
   auto endPaint = MakeScopeExit([&] {
