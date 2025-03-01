@@ -561,6 +561,20 @@ export var BrowserUtils = {
   
 
 
+
+
+
+  isChinaRepack() {
+    return (
+      Services.prefs
+        .getDefaultBranch("")
+        .getCharPref("distribution.id", "default") === "MozillaOnline"
+    );
+  },
+
+  
+
+
   PromoType: {
     DEFAULT: 0, 
     VPN: 1,
