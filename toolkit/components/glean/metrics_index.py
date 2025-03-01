@@ -234,14 +234,11 @@ test_pings = [
 
 
 
-pings_by_app_or_lib_id = {
+pings_by_app_id = {
     "firefox.desktop": gecko_pings + firefox_desktop_pings + test_pings,
     "firefox.desktop.background.update": gecko_pings
     + background_update_pings
     + test_pings,
-    
-    
-    "gecko": gecko_pings + test_pings,
 }
 
 
