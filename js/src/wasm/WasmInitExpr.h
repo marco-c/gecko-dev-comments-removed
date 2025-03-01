@@ -101,6 +101,9 @@ class InitExpr {
   ValType type() const { return type_; }
 
   
+  const Bytes& bytecode() const { return bytecode_; }
+
+  
   InitExpr(const InitExpr&) = delete;
   InitExpr& operator=(const InitExpr&) = delete;
   InitExpr(InitExpr&&) = default;
