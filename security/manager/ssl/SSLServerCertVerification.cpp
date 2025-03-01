@@ -1156,12 +1156,11 @@ SSLServerCertVerificationResult::Run() {
   } else {
     nsTArray<uint8_t> certBytes(mPeerCertChain.ElementAt(0).Clone());
     nsCOMPtr<nsIX509Cert> cert(new nsNSSCertificate(std::move(certBytes)));
-    
-    
+    mSocketControl->SetServerCert(cert, EVStatus::NotEV);
     mSocketControl->SetFailedCertChain(std::move(mPeerCertChain));
     if (mOverridableErrorCategory !=
         nsITransportSecurityInfo::OverridableErrorCategory::ERROR_UNSET) {
-      mSocketControl->SetStatusErrorBits(cert, mOverridableErrorCategory);
+      mSocketControl->SetStatusErrorBits(mOverridableErrorCategory);
     }
   }
 
