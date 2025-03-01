@@ -236,18 +236,22 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
             : nullptr;
     
     auto curConfig = HVCCConfig::Parse(mCurrentConfig.mExtraData);
+    LOG("current config: %s",
+        curConfig.isOk() ? curConfig.inspect().ToString().get() : "invalid");
     if ((!extraData || extraData->IsEmpty()) && curConfig.unwrap().HasSPS()) {
       return NS_OK;
     }
 
-    auto newConfig = HVCCConfig::Parse(extraData);
+    auto rv = HVCCConfig::Parse(extraData);
     
-    if (newConfig.isErr()) {
+    if (rv.isErr()) {
       LOG("Ignore corrupted extradata");
       return NS_OK;
     }
+    const HVCCConfig newConfig = rv.unwrap();
+    LOG("new config: %s", newConfig.ToString().get());
 
-    if (!newConfig.unwrap().HasSPS() && !curConfig.unwrap().HasSPS()) {
+    if (!newConfig.HasSPS() && !curConfig.unwrap().HasSPS()) {
       
       
       LOG("No sps found, waiting for initialization");
@@ -255,6 +259,7 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     }
 
     if (H265::CompareExtraData(extraData, mCurrentConfig.mExtraData)) {
+      LOG("No config changed");
       return NS_OK;
     }
     UpdateConfigFromExtraData(extraData);
