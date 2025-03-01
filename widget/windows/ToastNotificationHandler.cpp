@@ -300,7 +300,7 @@ void ToastNotificationHandler::UnregisterHandler() {
 
 nsresult ToastNotificationHandler::InitAlertAsync(
     nsIAlertNotification* aAlert) {
-  MOZ_TRY(InitWindowsTag());
+  MOZ_TRY(aAlert->GetId(mWindowsTag));
 
 #ifdef MOZ_BACKGROUNDTASKS
   nsAutoString imageUrl;
@@ -316,60 +316,6 @@ nsresult ToastNotificationHandler::InitAlertAsync(
 
   return aAlert->LoadImage( 0, this,  nullptr,
                            getter_AddRefs(mImageRequest));
-}
-
-
-
-
-
-
-
-
-
-nsresult ToastNotificationHandler::InitWindowsTag() {
-  mWindowsTag.Truncate();
-
-  nsAutoString tag;
-
-  
-  
-  
-  nsCOMPtr<nsIFile> profDir;
-  MOZ_TRY(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
-                                 getter_AddRefs(profDir)));
-  MOZ_TRY(profDir->GetPath(tag));
-
-  if (!mHostPort.IsEmpty()) {
-    
-    
-    
-    tag += mName;
-  } else {
-    
-    if (!mName.IsEmpty()) {
-      tag += u"chrome#tag:"_ns;
-      
-      tag += mName;
-    } else {
-      
-      nsIDToCString uuidString(nsID::GenerateUUID());
-      size_t len = strlen(uuidString.get());
-      MOZ_ASSERT(len == NSID_LENGTH - 1);
-      nsAutoString uuid;
-      CopyASCIItoUTF16(nsDependentCSubstring(uuidString.get(), len), uuid);
-
-      tag += u"chrome#notag:"_ns;
-      tag += uuid;
-    }
-  }
-
-  
-  
-  
-  HashNumber hash = HashString(tag);
-  mWindowsTag.AppendPrintf("%010u", hash);
-
-  return NS_OK;
 }
 
 nsString ToastNotificationHandler::ActionArgsJSONString(

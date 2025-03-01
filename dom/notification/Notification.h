@@ -189,6 +189,8 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   WeakPtr<notification::NotificationChild> mActor;
 
+  
+  
   const nsString mID;
   const nsString mTitle;
   const nsString mBody;

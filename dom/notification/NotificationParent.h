@@ -54,19 +54,14 @@ class NotificationParent final : public PNotificationParent,
 
   void Unregister(CloseMode aCloseMode);
 
-  void GetAlertName(nsAString& aRetval) {
-    if (mAlertName.IsEmpty()) {
-      MaybeInitAlertName();
-    }
-    aRetval = mAlertName;
-  }
-  void MaybeInitAlertName();
-
   Maybe<NotificationParent::ShowResolver> mResolver;
 
   NotNull<nsCOMPtr<nsIPrincipal>> mPrincipal;
   NotNull<nsCOMPtr<nsIPrincipal>> mEffectiveStoragePrincipal;
   bool mIsSecureContext;
+
+  
+  
   nsString mId;
   nsString mScope;
   IPCNotificationOptions mOptions;
