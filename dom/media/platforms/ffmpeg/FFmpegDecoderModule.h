@@ -11,6 +11,7 @@
 #include "FFmpegLibWrapper.h"
 #include "FFmpegUtils.h"
 #include "FFmpegVideoDecoder.h"
+#include "MP4Decoder.h"
 #include "PlatformDecoderModule.h"
 #include "VideoUtils.h"
 #include "VPXDecoder.h"
@@ -184,6 +185,10 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
         aParams.mOptions.contains(CreateDecoderParams::Option::LowLatency)) {
       
       
+      return media::DecodeSupportSet{};
+    }
+
+    if (MP4Decoder::IsHEVC(mimeType) && !StaticPrefs::media_hevc_enabled()) {
       return media::DecodeSupportSet{};
     }
 
