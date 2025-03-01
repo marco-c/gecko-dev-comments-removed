@@ -913,6 +913,14 @@ void ViewTransition::HandleFrame() {
     return;
   }
   
+  
+  
+  
+  if (SnapshotContainingBlockRect().Size() !=
+      mInitialSnapshotContainingBlockSize) {
+    SkipTransition(SkipTransitionReason::Resize);
+    return;
+  }
 
   
   if (!UpdatePseudoElementStyles( true)) {
@@ -1112,6 +1120,7 @@ void ViewTransition::SkipTransition(
   mPhase = Phase::Done;
 
   
+  Promise* ucd = GetUpdateCallbackDone(IgnoreErrors());
   if (Promise* readyPromise = GetReady(IgnoreErrors())) {
     switch (aReason) {
       case SkipTransitionReason::JS:
@@ -1148,6 +1157,23 @@ void ViewTransition::SkipTransition(
         break;
       case SkipTransitionReason::UpdateCallbackRejected:
         readyPromise->MaybeReject(aUpdateCallbackRejectReason);
+
+        
+        
+        
+        
+        
+        
+        if (ucd) {
+          MOZ_ASSERT(ucd->State() == Promise::PromiseState::Rejected);
+          if (Promise* finished = GetFinished(IgnoreErrors())) {
+            
+            
+            
+            
+            finished->MaybeReject(aUpdateCallbackRejectReason);
+          }
+        }
         break;
     }
   }
@@ -1156,6 +1182,20 @@ void ViewTransition::SkipTransition(
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  if (ucd && ucd->State() == Promise::PromiseState::Resolved) {
+    if (Promise* finished = GetFinished(IgnoreErrors())) {
+      
+      finished->MaybeResolveWithUndefined();
+    }
+  }
 }
 
 JSObject* ViewTransition::WrapObject(JSContext* aCx,
