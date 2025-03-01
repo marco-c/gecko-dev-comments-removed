@@ -570,14 +570,17 @@ var View = {
           processNameElement = document.createElement("span");
           nameCell.appendChild(processNameElement);
 
-          let profilerIcon = document.createElement("span");
-          profilerIcon.className = "profiler-icon";
+          let profilerButton = document.createElement("span");
+          profilerButton.className = "profiler-icon";
+          profilerButton.setAttribute("role", "button");
+          profilerButton.setAttribute("tabindex", "0");
+          profilerButton.setAttribute("aria-pressed", "false");
           document.l10n.setAttributes(
-            profilerIcon,
+            profilerButton,
             "about-processes-profile-process",
             { duration: PROFILE_DURATION }
           );
-          nameCell.appendChild(profilerIcon);
+          nameCell.appendChild(profilerButton);
         } else {
           processNameElement = nameCell.firstChild;
         }
@@ -659,7 +662,15 @@ var View = {
     this.displayCpu(data, cpuCell, maxSlopeCpu);
 
     
-    let killButton = cpuCell.nextSibling;
+    let actionCell = cpuCell.nextSibling;
+
+    if (!actionCell.firstChild) {
+      let span = document.createElement("span");
+      actionCell.appendChild(span);
+    }
+
+    let killButton = actionCell.firstChild;
+
     killButton.className = "action-icon";
 
     if (data.type != "browser") {
@@ -674,9 +685,12 @@ var View = {
         
         
         row.classList.add("killed");
+        row.setAttribute("aria-busy", "true");
       } else {
         
         killButton.classList.add("close-icon");
+        killButton.setAttribute("role", "button");
+        killButton.setAttribute("tabindex", "0");
         let killButtonLabelId = data.type.startsWith("web")
           ? "about-processes-shutdown-process"
           : "about-processes-kill-process";
@@ -757,32 +771,34 @@ var View = {
     if (!nameCell.firstChild) {
       nameCell.className = "name indent";
       
-      let imgBtn = document.createElement("span");
+      let imgButton = document.createElement("span");
       
-      imgBtn.className = "twisty";
-      imgBtn.setAttribute("role", "button");
-      imgBtn.setAttribute("tabindex", "0");
+      imgButton.className = "twisty";
+      imgButton.setAttribute("role", "button");
+      imgButton.setAttribute("tabindex", "0");
       
-      imgBtn.setAttribute("aria-labelledby", `${data.pid}-label ${rowId}`);
-      if (!imgBtn.hasAttribute("aria-expanded")) {
-        imgBtn.setAttribute("aria-expanded", "false");
+      imgButton.setAttribute("aria-labelledby", `${data.pid}-label ${rowId}`);
+      if (!imgButton.hasAttribute("aria-expanded")) {
+        imgButton.setAttribute("aria-expanded", "false");
       }
-      nameCell.appendChild(imgBtn);
+      nameCell.appendChild(imgButton);
 
       span = document.createElement("span");
       span.setAttribute("id", rowId);
       nameCell.appendChild(span);
     } else {
       
-      let imgBtn = nameCell.firstChild;
-      isOpen = imgBtn.classList.contains("open");
-      span = imgBtn.nextSibling;
+      let imgButton = nameCell.firstChild;
+      isOpen = imgButton.classList.contains("open");
+      span = imgButton.nextSibling;
     }
     document.l10n.setAttributes(span, fluentName, fluentArgs);
 
     
     let actionCell = nameCell.nextSibling;
     actionCell.className = "action-icon";
+    
+    
 
     return isOpen;
   },
@@ -831,7 +847,15 @@ var View = {
     }
 
     
-    let killButton = nameCell.nextSibling;
+    let actionCell = nameCell.nextSibling;
+
+    if (!actionCell.firstChild) {
+      let span = document.createElement("span");
+      actionCell.appendChild(span);
+    }
+
+    let killButton = actionCell.firstChild;
+
     killButton.className = "action-icon";
 
     if (data.tab && data.tab.tabbrowser) {
@@ -850,9 +874,12 @@ var View = {
         
         
         row.classList.add("killed");
+        row.setAttribute("aria-busy", "true");
       } else {
         
         killButton.classList.add("close-icon");
+        killButton.setAttribute("role", "button");
+        killButton.setAttribute("tabindex", "0");
         document.l10n.setAttributes(killButton, "about-processes-shutdown-tab");
       }
     }
@@ -1437,7 +1464,7 @@ var Control = {
 
   
   _handleTwisty(target) {
-    let row = target.parentNode.parentNode;
+    let row = target.closest("tr");
     if (target.classList.toggle("open")) {
       target.setAttribute("aria-expanded", "true");
       this._showThreads(row, this._maxSlopeCpu);
@@ -1450,7 +1477,7 @@ var Control = {
 
   
   _handleKill(target) {
-    let row = target.parentNode;
+    let row = target.closest("tr");
     if (row.process) {
       
       let pid = row.process.pid;
@@ -1461,6 +1488,7 @@ var Control = {
 
       
       row.classList.add("killing");
+      row.setAttribute("aria-busy", "true");
 
       
       target.removeAttribute("data-l10n-id");
@@ -1496,6 +1524,7 @@ var Control = {
       });
       View._killedRecently.push({ outerWindowId: row.win.outerWindowId });
       row.classList.add("killing");
+      row.setAttribute("aria-busy", "true");
       target.removeAttribute("data-l10n-id");
       target.removeAttribute("title");
 
@@ -1536,9 +1565,11 @@ var Control = {
       ["pid:" + target.parentNode.parentNode.process.pid]
     );
     target.classList.add("profiler-active");
+    target.setAttribute("aria-pressed", "true");
     setTimeout(() => {
       ProfilerPopupBackground.captureProfile("aboutprofiling");
       target.classList.remove("profiler-active");
+      target.setAttribute("aria-pressed", "false");
     }, PROFILE_DURATION * 1000);
   },
 
