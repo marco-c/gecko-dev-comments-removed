@@ -1,4 +1,4 @@
-pub use base::boolean_t;
+pub use crate::base::boolean_t;
 
 #[derive(Default)]
 pub struct ScreenCaptureAccess;
@@ -18,7 +18,7 @@ impl ScreenCaptureAccess {
     }
 }
 
-#[link(name = "CoreGraphics", kind = "framework")]
+#[cfg_attr(feature = "link", link(name = "CoreGraphics", kind = "framework"))]
 extern "C" {
     
     fn CGRequestScreenCaptureAccess() -> boolean_t;
