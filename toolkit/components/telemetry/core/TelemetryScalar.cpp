@@ -1382,12 +1382,10 @@ nsresult internal_ScalarSnapshotter(const StaticMutexAutoLock& aLock,
     
     for (const auto& childEntry : *scalarStorage) {
       ScalarBase* scalar = childEntry.GetWeak();
-
+      const ScalarKey key{childEntry.GetKey(),
+                          aIsBuiltinDynamic || isDynamicProcess};
       
-      const BaseScalarInfo& info = internal_GetScalarInfo(
-          aLock, ScalarKey{childEntry.GetKey(),
-                           aIsBuiltinDynamic ? true : isDynamicProcess});
-
+      const BaseScalarInfo& info = internal_GetScalarInfo(aLock, key);
       
       if (IsInDataset(info.dataset, aDataset)) {
         
@@ -1440,11 +1438,10 @@ nsresult internal_KeyedScalarSnapshotter(
 
     for (const auto& childEntry : *scalarStorage) {
       KeyedScalar* scalar = childEntry.GetWeak();
-
+      const ScalarKey key{childEntry.GetKey(),
+                          aIsBuiltinDynamic || isDynamicProcess};
       
-      const BaseScalarInfo& info = internal_GetScalarInfo(
-          aLock, ScalarKey{childEntry.GetKey(),
-                           aIsBuiltinDynamic ? true : isDynamicProcess});
+      const BaseScalarInfo& info = internal_GetScalarInfo(aLock, key);
 
       
       if (IsInDataset(info.dataset, aDataset)) {
@@ -2595,8 +2592,7 @@ void TelemetryScalar::RecordDiscardedData(
 
 #define REPORT_DISCARDED(id, member)                                         \
   if (aDiscardedData.member) {                                               \
-    ScalarKey uniqueId =                                                     \
-        ScalarKey{static_cast<uint32_t>(ScalarID::id), false};               \
+    ScalarKey uniqueId{static_cast<uint32_t>(ScalarID::id), false};          \
     rv = internal_GetScalarByEnum(locker, uniqueId, aProcessType, &scalar);  \
     MOZ_ASSERT(NS_SUCCEEDED(rv));                                            \
     internal_profilerMarker(locker, ScalarActionType::eAdd,                  \
