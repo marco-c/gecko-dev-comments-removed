@@ -369,11 +369,29 @@ export function newGeneratedSources(sourceResources) {
   };
 }
 
+
+
+
+
+
+
+
+
+
 function checkNewSources(sources) {
   return async ({ dispatch }) => {
-    for (const source of sources) {
-      dispatch(checkSelectedSource(source.id));
-    }
+    
+    
+    
+    
+    
+    
+    
+    await Promise.all(
+      sources.map(
+        async source => await dispatch(checkSelectedSource(source.id))
+      )
+    );
 
     await dispatch(restoreBlackBoxedSources(sources));
 
