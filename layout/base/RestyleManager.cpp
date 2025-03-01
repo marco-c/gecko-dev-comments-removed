@@ -3475,7 +3475,8 @@ void RestyleManager::ElementStateChanged(Element* aElement,
   
   IncrementUndisplayedRestyleGeneration();
 
-  if (!aElement->HasServoData() &&
+  const bool hasData = aElement->HasServoData();
+  if (!hasData &&
       !(aElement->GetSelectorFlags() &
         NodeSelectorFlags::RelativeSelectorSearchDirectionAncestorSibling)) {
     return;
@@ -3486,7 +3487,12 @@ void RestyleManager::ElementStateChanged(Element* aElement,
   snapshot.AddState(previousState);
 
   ServoStyleSet& styleSet = *StyleSet();
-  MaybeRestyleForNthOfState(styleSet, aElement, aChangedBits);
+  if (hasData) {
+    
+    
+    
+    MaybeRestyleForNthOfState(styleSet, aElement, aChangedBits);
+  }
   MaybeRestyleForRelativeSelectorState(styleSet, aElement, aChangedBits);
 }
 
