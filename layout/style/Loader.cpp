@@ -1039,61 +1039,21 @@ void Loader::InsertSheetInTree(StyleSheet& aSheet) {
   MOZ_ASSERT(mDocument, "Must have a document to insert into");
 
   nsINode* owningNode = aSheet.GetOwnerNode();
-  MOZ_ASSERT(!owningNode || owningNode->IsInUncomposedDoc() ||
-                 owningNode->IsInShadowTree(),
-             "Why would we insert it anywhere?");
-  ShadowRoot* shadow = owningNode ? owningNode->GetContainingShadow() : nullptr;
+  MOZ_ASSERT(owningNode);
+  DocumentOrShadowRoot* target =
+      owningNode->GetContainingDocumentOrShadowRoot();
+  MOZ_ASSERT(target, "Why would we insert it anywhere?");
 
-  auto& target = shadow ? static_cast<DocumentOrShadowRoot&>(*shadow)
-                        : static_cast<DocumentOrShadowRoot&>(*mDocument);
-
-  
-
-  int32_t sheetCount = target.SheetCount();
-
-  
-
-
-
-
-
-
-
-  int32_t insertionPoint = sheetCount - 1;
-  for (; insertionPoint >= 0; --insertionPoint) {
-    nsINode* sheetOwner = target.SheetAt(insertionPoint)->GetOwnerNode();
-    if (sheetOwner && !owningNode) {
-      
-      
-      continue;
-    }
-
-    if (!sheetOwner) {
-      
-      
-      break;
-    }
-
-    MOZ_ASSERT(owningNode != sheetOwner, "Why do we still have our old sheet?");
-
-    
-    if (nsContentUtils::PositionIsBefore(sheetOwner, owningNode)) {
-      
-      
-      break;
-    }
-  }
-
-  ++insertionPoint;
-
-  if (shadow) {
+  size_t insertionPoint = target->FindSheetInsertionPointInTree(aSheet);
+  if (auto* shadow = ShadowRoot::FromNode(target->AsNode())) {
     shadow->InsertSheetAt(insertionPoint, aSheet);
   } else {
+    MOZ_ASSERT(&target->AsNode() == mDocument);
     mDocument->InsertSheetAt(insertionPoint, aSheet);
   }
 
-  LOG(("  Inserting into target (doc: %d) at position %d",
-       target.AsNode().IsDocument(), insertionPoint));
+  LOG(("  Inserting into target (doc: %d) at position %zu",
+       target->AsNode().IsDocument(), insertionPoint));
 }
 
 
