@@ -382,6 +382,9 @@ const ignorableAllowlist = new Set([
   
 
   
+  "resource://app/blocklist.xml",
+
+  
   "resource://gre/gmp-clearkey/0.1/manifest.json",
 ]);
 for (let entry of ignorableAllowlist) {
@@ -494,15 +497,8 @@ function parseManifest(manifestUri) {
             Services.io.newURI(argv[0]).specIgnoringRef
           );
         }
-      } else if (type == "category") {
-        if (gInterestingCategories.has(argv[0])) {
-          gReferencesFromCode.set(argv[2], null);
-        } else if (argv[1].startsWith("resource://")) {
-          
-          
-          
-          gReferencesFromCode.set(argv[1], null);
-        }
+      } else if (type == "category" && gInterestingCategories.has(argv[0])) {
+        gReferencesFromCode.set(argv[2], null);
       } else if (type == "resource") {
         trackResourcePrefix(argv[0]);
       } else if (type == "component") {
