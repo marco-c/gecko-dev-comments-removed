@@ -6,6 +6,8 @@
 ChromeUtils.defineESModuleGetters(this, {
   FxAccountsWebChannelHelpers:
     "resource://gre/modules/FxAccountsWebChannel.sys.mjs",
+  SelectableProfileService:
+    "resource:///modules/profiles/SelectableProfileService.sys.mjs",
 });
 
 
@@ -40,6 +42,18 @@ add_setup(function setup() {
   do_get_profile();
   
   Services.fog.initializeFOG();
+
+  
+  Cc["@mozilla.org/xre/directory-provider;1"].getService(Ci.nsIXREDirProvider);
+
+  
+  
+  
+  Object.defineProperty(SelectableProfileService, "isEnabled", {
+    get() {
+      return Services.prefs.getBoolPref("browser.profiles.enabled");
+    },
+  });
 });
 
 const dialogVariants = [
