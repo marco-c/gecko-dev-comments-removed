@@ -35,6 +35,8 @@ add_task(async function () {
     findElementWithSelector,
     createLocation,
     isCm6Enabled,
+    getEditorContent,
+    getCMEditor,
   });
   
   
