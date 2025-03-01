@@ -188,7 +188,7 @@ pub fn mix(
 }
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 #[repr(u8)]
 enum ComponentMixOutcome {
     
@@ -544,8 +544,28 @@ fn interpolate_premultiplied(
                     }
                 };
             },
-            ComponentMixOutcome::UseLeft => result[i] = left[i],
-            ComponentMixOutcome::UseRight => result[i] = right[i],
+            ComponentMixOutcome::UseLeft | ComponentMixOutcome::UseRight => {
+                let used_component = if outcomes[i] == ComponentMixOutcome::UseLeft {
+                    left[i]
+                } else {
+                    right[i]
+                };
+                result[i] = if hue_interpolation == HueInterpolationMethod::Longer && hue_index == Some(i) {
+                    
+                    
+                    
+                    
+                    normalize_hue(interpolate_hue(
+                        used_component,
+                        left_weight,
+                        used_component,
+                        right_weight,
+                        hue_interpolation,
+                    ))
+                } else {
+                    used_component
+                };
+            },
             ComponentMixOutcome::None => {
                 result[i] = 0.0;
                 match i {
