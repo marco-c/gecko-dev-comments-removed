@@ -34,13 +34,32 @@ class SnapTestsBase:
         self._INSTANCE = os.environ.get("TEST_SNAP_INSTANCE", "firefox")
 
         self._PROFILE_PATH = "~/snap/{}/common/.mozilla/firefox/".format(self._INSTANCE)
-        self._EXE_PATH = r"/snap/{}/current/usr/lib/firefox/geckodriver".format(
-            self._INSTANCE
-        )
         self._LIB_PATH = r"/snap/{}/current/usr/lib/firefox/libxul.so".format(
             self._INSTANCE
         )
-        self._BIN_PATH = r"/snap/bin/{}".format(self._INSTANCE)
+        
+        
+        self._EXE_PATH = r"/snap/bin/{}.geckodriver".format(self._INSTANCE)
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        self._BIN_PATH = r"/snap/{}/current/usr/lib/firefox/firefox".format(
+            self._INSTANCE
+        )
 
         snap_profile_path = tempfile.mkdtemp(
             prefix="snap-tests",
