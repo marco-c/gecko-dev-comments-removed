@@ -526,7 +526,6 @@ pref("browser.urlbar.suggest.quicksuggest.sponsored", false, sticky);
 pref("browser.urlbar.quicksuggest.dataCollection.enabled", false, sticky);
 
 
-
 pref("browser.urlbar.quicksuggest.contextualOptIn", false);
 
 
@@ -551,12 +550,6 @@ pref("browser.urlbar.quicksuggest.rankingMode", "default");
 
 
 pref("browser.urlbar.quicksuggest.rustEnabled", true);
-
-
-pref("browser.urlbar.quicksuggest.shouldShowOnboardingDialog", false);
-
-
-pref("browser.urlbar.quicksuggest.showOnboardingDialogAfterNRestarts", 0);
 
 
 
