@@ -289,3 +289,9 @@ function TimePicker(context) {
     },
   };
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  
+  
+  new TimePicker(document.getElementById("time-picker"));
+});
