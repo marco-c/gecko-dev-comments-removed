@@ -240,8 +240,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
   
   
   
-  void CancelWithError(nsCString&& aUserActionId,
-                       Maybe<nsCString>&& aRequestToken, nsresult aResult);
+  void CancelWithError(nsCString&& aUserActionId, nsresult aResult);
 
   
   
