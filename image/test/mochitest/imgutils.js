@@ -10,8 +10,7 @@ function clearAllImageCaches() {
     SpecialPowers.Ci.imgITools
   );
   var imageCache = tools.getImgCacheForDocument(window.document);
-  imageCache.clearCache(true); 
-  imageCache.clearCache(false); 
+  imageCache.clearCache(); 
 }
 
 
