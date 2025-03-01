@@ -14,6 +14,7 @@
 const fs = require("fs");
 
 const TAGLIST = require.resolve("../../parser/htmlparser/nsHTMLTagList.h");
+const BINDINGS = require.resolve("../../dom/bindings/Bindings.conf");
 
 const HEADER = `/**
  * NOTE: Do not modify this file by hand.
@@ -24,29 +25,25 @@ const HEADER = `/**
 /// <reference no-default-lib="true" />
 /// <reference lib="es2023" />
 
-interface Principal extends nsIPrincipal {}
-interface URI extends nsIURI {}
-interface WindowProxy extends Window {}
-interface MozChannel extends nsIChannel {}
-
 type HTMLCollectionOf<T> = any;
 type IsInstance<T> = (obj: any) => obj is T;
 type NodeListOf<T> = any;
+interface WindowProxy extends Window {}
 `;
 
 
 function preprocess(webidl) {
   return webidl
     .replaceAll(/^#.+/gm, "")
+    .replaceAll(/\binterface \w+;/gm, "")
     .replaceAll(/\bUTF8String\b/gm, "DOMString")
     .replaceAll(/^\s*legacycaller /gm, "getter ")
     .replaceAll(/^callback constructor /gm, "callback ")
-    .replaceAll(/(interface \w+);/gm, "[LegacyNoInterfaceObject] $1 {};")
     .replaceAll(/(ElementCreationOptions) or (DOMString)/gm, "$2 or $1")
     .replaceAll(/(attribute boolean aecDebug;)/gm, "readonly $1");
 }
 
-function customize(all) {
+function customize(all, baseTypes) {
   
   const RE = /^HTML_(HTMLELEMENT_)?TAG\((\w+)(, \w+, (\w*))?\)/gm;
   for (let match of fs.readFileSync(TAGLIST, "utf8").matchAll(RE)) {
@@ -68,11 +65,31 @@ function customize(all) {
       };
     }
   }
+
+  
+  let conf = fs.readFileSync(BINDINGS, "utf8");
+  let aliases = [];
+
+  for (let [desc, id] of conf.matchAll(/^\s*'(\w+)'\s*:\s*\{[^}]*/gm)) {
+    let type = desc.match(/'nativeType'\s*:\s*'(nsI\w+)'/);
+    aliases.push([id, type ? type[1] : id]);
+  }
+  for (let [desc, id] of conf.matchAll(/addExternalIface\('(\w+)[^)]*/gm)) {
+    let type = desc.match(/nativeType\s*=\s*'(\w+)'/);
+    aliases.push([id, type ? type[1] : `nsIDOM${id}`]);
+  }
+  for (let [name, type] of aliases) {
+    if (name != type && !all.interfaces.interface[name]) {
+      all.typedefs.typedef.push({ name, type });
+      baseTypes.set(type, type);
+      baseTypes.delete(name);
+    }
+  }
 }
 
 
 async function emitDom(webidls, builtin = "builtin.webidl") {
-  const { merge } = await import(
+  const { merge, baseTypeConversionMap } = await import(
     "@typescript/dom-lib-generator/lib/build/helpers.js"
   );
   const { emitWebIdl } = await import(
@@ -96,10 +113,15 @@ async function emitDom(webidls, builtin = "builtin.webidl") {
   }
 
   webidls.push(require.resolve(`./config/${builtin}`));
-  let idls = webidls.map(f => preprocess(fs.readFileSync(f, "utf-8")));
+  let idls = webidls.map(f => fs.readFileSync(f, "utf-8"));
   let all = {};
 
-  for (let w of idls.map(idl => convert(idl, {}))) {
+  
+  for (let [, id] of idls.join().matchAll(/\binterface (\w+);/gm)) {
+    baseTypeConversionMap.set(id, id);
+  }
+
+  for (let w of idls.map(idl => convert(preprocess(idl), {}))) {
     merge(all, w.browser, true);
 
     mergePartial(w.partialDictionaries, all.dictionaries.dictionary);
@@ -114,7 +136,7 @@ async function emitDom(webidls, builtin = "builtin.webidl") {
     }
   }
 
-  customize(all);
+  customize(all, baseTypeConversionMap);
   let exposed = getExposedTypes(all, ["Window"], new Set());
   let dts = await Promise.all([
     emitWebIdl(exposed, "Window", "", {}),
