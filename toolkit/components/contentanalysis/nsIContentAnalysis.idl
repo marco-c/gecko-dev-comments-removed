@@ -458,4 +458,14 @@ interface nsIContentAnalysis : nsISupports
   nsIContentAnalysisResponse makeResponseForTest(
       in nsIContentAnalysisResponse_Action aAction,
       in ACString aToken);
+
+  
+
+
+
+
+
+
+  void sendCancelToAgent(in ACString aUserActionId);
+
 };
