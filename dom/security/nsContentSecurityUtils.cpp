@@ -1903,10 +1903,6 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
     
     return true;
   }
-  if (StringBeginsWith(filename, "moz-src://"_ns)) {
-    
-    return true;
-  }
   if (StringBeginsWith(filename, "file://"_ns)) {
     
     return true;

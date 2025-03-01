@@ -204,7 +204,7 @@ WebNavigationContent::OnStateChange(nsIWebProgress* aWebProgress,
     MOZ_TRY(channel->GetOriginalURI(getter_AddRefs(originalURI)));
     
     if (originalURI->SchemeIs("about") || originalURI->SchemeIs("chrome") ||
-        originalURI->SchemeIs("resource") || originalURI->SchemeIs("moz-src") ||
+        originalURI->SchemeIs("resource") ||
         originalURI->SchemeIs("moz-extension")) {
       uri = originalURI.forget();
     }
