@@ -24,7 +24,6 @@
 #include "jspubtd.h"
 #include "NamespaceImports.h"
 
-#include "builtin/intl/DurationFormat.h"
 #include "builtin/temporal/Calendar.h"
 #include "builtin/temporal/CalendarFields.h"
 #include "builtin/temporal/Instant.h"
@@ -4030,8 +4029,16 @@ static bool Duration_toJSON(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Duration_toLocaleString(JSContext* cx, const CallArgs& args) {
+  auto duration = ToDuration(&args.thisv().toObject().as<DurationObject>());
+
   
-  return TemporalDurationToLocaleString(cx, args);
+  JSString* str = TemporalDurationToString(cx, duration, Precision::Auto());
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
+  return true;
 }
 
 
