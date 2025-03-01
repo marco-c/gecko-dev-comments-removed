@@ -290,6 +290,7 @@
 
     on_TabGroupCollapse(event) {
       this._invalidateCachedVisibleTabs();
+      this._unlockTabSizing();
 
       
       
