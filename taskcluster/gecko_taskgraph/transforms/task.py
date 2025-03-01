@@ -630,7 +630,9 @@ def build_docker_worker_payload(config, task, task_def):
 @payload_builder(
     "generic-worker",
     schema={
-        Required("os"): Any("windows", "macosx", "linux", "linux-bitbar"),
+        Required("os"): Any(
+            "windows", "macosx", "linux", "linux-bitbar", "linux-lambda"
+        ),
         
         
         
@@ -727,7 +729,7 @@ def build_generic_worker_payload(config, task, task_def):
         task_def["payload"].setdefault("onExitStatus", {}).setdefault(
             "retry", []
         ).extend(worker["retry-exit-status"])
-    if worker["os"] == "linux-bitbar":
+    if worker["os"] in ["linux-bitbar", "linux-lambda"]:
         task_def["payload"].setdefault("onExitStatus", {}).setdefault("retry", [])
         
         if 4 not in task_def["payload"]["onExitStatus"]["retry"]:
