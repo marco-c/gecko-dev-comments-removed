@@ -37,7 +37,7 @@ enum ChaosFeature {
 };
 
 namespace detail {
-extern MFBT_DATA Atomic<uint32_t, SequentiallyConsistent> gChaosModeCounter;
+extern MFBT_DATA Atomic<uint32_t, Relaxed> gChaosModeCounter;
 extern MFBT_DATA ChaosFeature gChaosFeatures;
 }  
 
@@ -53,14 +53,10 @@ class ChaosMode {
   }
 
   static bool isActive(ChaosFeature aFeature) {
-    if (detail::gChaosModeCounter > 0) {
-      return true;
-    }
-    return detail::gChaosFeatures & aFeature;
+    return detail::gChaosModeCounter > 0 && (detail::gChaosFeatures & aFeature);
   }
 
   
-
 
 
 

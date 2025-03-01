@@ -3999,14 +3999,16 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   }
 #endif  
 
-  if (PR_GetEnv("MOZ_CHAOSMODE")) {
+  if (auto* featureStr = PR_GetEnv("MOZ_CHAOSMODE")) {
     ChaosFeature feature = ChaosFeature::Any;
-    long featureInt = strtol(PR_GetEnv("MOZ_CHAOSMODE"), nullptr, 16);
+    long featureInt = strtol(featureStr, nullptr, 16);
     if (featureInt) {
       
       feature = static_cast<ChaosFeature>(featureInt);
     }
     ChaosMode::SetChaosFeature(feature);
+    ChaosMode::enterChaosMode();
+    MOZ_ASSERT(ChaosMode::isActive(ChaosFeature::Any));
   }
 
   if (CheckArgExists("fxr")) {
