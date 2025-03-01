@@ -413,6 +413,10 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   gfx::CanvasRenderThread::Start();
   image::ImageMemoryReporter::InitForWebRender();
 
+  
+  
+  gfxPlatform::InitMemoryReportersForGPUProcess();
+
   VRManager::ManagerInit();
   
   GPUDeviceData data;
