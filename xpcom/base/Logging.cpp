@@ -597,7 +597,7 @@ class LogModuleManager {
 
     auto [out, size] = fmt::vformat_to_n(buff, kBuffSize - 1, aFmt, aArgs);
     *out = '\0';
-    charsWritten = size + 1;
+    charsWritten = size;
 
     
     if (charsWritten > kBuffSize) {
@@ -606,9 +606,9 @@ class LogModuleManager {
           fmt::vformat_to_n(allocatedBuff.get(), charsWritten, aFmt, aArgs);
       MOZ_ASSERT(size == charsWritten);
       *out = '\0';
-      charsWritten++;
       buffToWrite = allocatedBuff.get();
     }
+    ++charsWritten;  
     ActuallyLog(aName, aLevel, aStart, aPrepend, buffToWrite, charsWritten);
   }
 
