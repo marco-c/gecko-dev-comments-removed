@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+#ifndef AppleFileUtils_h_
+#define AppleFileUtils_h_
+
+#include "nsString.h"
+
+namespace DarwinFileUtils {
+
+void GetTemporaryDirectory(nsACString& aFilePath);
+
+}  
+
+#endif

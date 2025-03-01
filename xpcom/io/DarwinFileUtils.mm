@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#include "DarwinFileUtils.h"
+#include <Foundation/Foundation.h>
+
+namespace DarwinFileUtils {
+
+void GetTemporaryDirectory(nsACString& aTempDir) {
+  aTempDir.Assign([::NSTemporaryDirectory() UTF8String]);
+}
+
+}  
