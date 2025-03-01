@@ -55,7 +55,11 @@ static inline void AnnotateMozCrashReason(const char* reason) {
   gMozCrashReason = reason;
   
   
-  asm volatile("" ::: "memory");
+#  if defined(__clang__)
+  asm volatile("" : "+r,m"(gMozCrashReason) : : "memory");
+#  else
+  asm volatile("" : "+m,r"(gMozCrashReason) : : "memory");
+#  endif
 }
 #  define MOZ_CRASH_ANNOTATE(...) AnnotateMozCrashReason(__VA_ARGS__)
 #else
@@ -783,4 +787,4 @@ static inline T MakeCompilerAssumeUnreachableFakeValue() {
 }  
 #endif  
 
-#endif
+#endif 
