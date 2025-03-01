@@ -502,8 +502,16 @@ export var BrowserUtils = {
 
 
 
+
+
+
   callModulesFromCategory(
-    { categoryName, profilerMarker = "", idleDispatch = false },
+    {
+      categoryName,
+      profilerMarker = "",
+      idleDispatch = false,
+      failureHandler = null,
+    },
     ...args
   ) {
     
@@ -518,6 +526,17 @@ export var BrowserUtils = {
           `Error in processing ${categoryName} for ${fn._descriptiveName}`
         );
         console.error(ex);
+        try {
+          await failureHandler?.(ex);
+        } catch (nestedEx) {
+          console.error(`Error in handling failure: ${nestedEx}`);
+          
+          if (BrowserUtils._inAutomation) {
+            Cc["@mozilla.org/xpcom/debug;1"]
+              .getService(Ci.nsIDebug2)
+              .abort(nestedEx.filename, nestedEx.lineNumber);
+          }
+        }
       }
       if (profilerMarker) {
         ChromeUtils.addProfilerMarker(
