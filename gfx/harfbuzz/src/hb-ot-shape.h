@@ -48,6 +48,12 @@ hb_ot_shape_plan_collect_lookups (hb_shape_plan_t *shape_plan,
 				  hb_tag_t         table_tag,
 				  hb_set_t        *lookup_indexes );
 
+HB_EXTERN unsigned int
+hb_ot_shape_plan_get_feature_tags (hb_shape_plan_t *shape_plan,
+				   unsigned int     start_offset,
+				   unsigned int    *tag_count, 
+				   hb_tag_t        *tags );
+
 HB_END_DECLS
 
 #endif 

@@ -94,7 +94,7 @@ struct glyf
     }
 
     hb_vector_t<unsigned> padded_offsets;
-    if (unlikely (!padded_offsets.alloc (c->plan->new_to_old_gid_list.length, true)))
+    if (unlikely (!padded_offsets.alloc_exact (c->plan->new_to_old_gid_list.length)))
       return_trace (false);
 
     hb_vector_t<glyf_impl::SubsetGlyph> glyphs;
@@ -229,8 +229,61 @@ struct glyf_accelerator_t
 
     if (consumer.is_consuming_contour_points ())
     {
-      for (auto &point : all_points.as_array ().sub_array (0, count))
-	consumer.consume_point (point);
+      auto *points = all_points.arrayZ;
+
+      if (false)
+      {
+	
+
+
+	for (unsigned i = 0; i < count; i++)
+	{
+	  consumer.consume_point (points[i]);
+	  if (points[i].is_end_point)
+	    consumer.contour_end ();
+	}
+      }
+      else
+      {
+	for (unsigned i = 0; i < count; i++)
+	{
+	  
+	  if (points[i].flag & glyf_impl::SimpleGlyph::FLAG_ON_CURVE)
+	  {
+	    
+	    for (; i < count; i++)
+	    {
+	      consumer.consume_point (points[i]);
+	      if (points[i].is_end_point)
+	      {
+		consumer.contour_end ();
+		break;
+	      }
+	    }
+	  }
+	  else
+	  {
+	    unsigned start = i;
+
+	    
+	    for (; i < count; i++)
+	      if (points[i].is_end_point)
+		break;
+
+	    unsigned end = i;
+
+	    
+	    if (likely (end < count)) 
+	      consumer.consume_point (points[end]);
+
+	    for (i = start; i < end; i++)
+	      consumer.consume_point (points[i]);
+
+	    consumer.contour_end ();
+	  }
+	}
+      }
+
       consumer.points_end ();
     }
 
@@ -303,6 +356,7 @@ struct glyf_accelerator_t
 
     HB_ALWAYS_INLINE
     void consume_point (const contour_point_t &point) { bounds.add (point); }
+    void contour_end () {}
     void points_end () { bounds.get_extents (font, extents, scaled); }
 
     bool is_consuming_contour_points () { return extents; }
@@ -371,15 +425,6 @@ struct glyf_accelerator_t
     return glyph_for_gid (gid).get_extents_without_var_scaled (font, *this, extents);
   }
 
-  bool paint_glyph (hb_font_t *font, hb_codepoint_t gid, hb_paint_funcs_t *funcs, void *data, hb_color_t foreground) const
-  {
-    funcs->push_clip_glyph (data, gid, font);
-    funcs->color (data, true, foreground);
-    funcs->pop_clip (data);
-
-    return true;
-  }
-
   const glyf_impl::Glyph
   glyph_for_gid (hb_codepoint_t gid, bool needs_padding_removal = false) const
   {
@@ -439,7 +484,7 @@ glyf::_populate_subset_glyphs (const hb_subset_plan_t   *plan,
 			       hb_vector_t<glyf_impl::SubsetGlyph>& glyphs ) const
 {
   OT::glyf_accelerator_t glyf (plan->source);
-  if (!glyphs.alloc (plan->new_to_old_gid_list.length, true)) return false;
+  if (!glyphs.alloc_exact (plan->new_to_old_gid_list.length)) return false;
 
   for (const auto &pair : plan->new_to_old_gid_list)
   {

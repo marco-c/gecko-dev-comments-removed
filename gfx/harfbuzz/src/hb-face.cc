@@ -291,6 +291,7 @@ hb_face_create_or_fail (hb_blob_t    *blob,
   return face;
 }
 
+#ifndef HB_NO_OPEN
 
 
 
@@ -317,6 +318,7 @@ hb_face_create_from_file_or_fail (const char   *file_name,
 
   return face;
 }
+#endif
 
 
 
@@ -499,10 +501,41 @@ hb_face_reference_table (const hb_face_t *face,
 
 
 
+
 hb_blob_t *
 hb_face_reference_blob (hb_face_t *face)
 {
-  return face->reference_table (HB_TAG_NONE);
+  hb_blob_t *blob = face->reference_table (HB_TAG_NONE);
+
+  if (blob == hb_blob_get_empty ())
+  {
+    
+    
+    
+    unsigned total_count = hb_face_get_table_tags (face, 0, nullptr, nullptr);
+    if (total_count)
+    {
+      hb_tag_t tags[64];
+      unsigned count = ARRAY_LENGTH (tags);
+      hb_face_t* builder = hb_face_builder_create ();
+
+      for (unsigned offset = 0; offset < total_count; offset += count)
+      {
+        hb_face_get_table_tags (face, offset, &count, tags);
+        for (unsigned i = 0; i < count; i++)
+        {
+          hb_blob_t *table = hb_face_reference_table (face, tags[i]);
+          hb_face_builder_add_table (builder, tags[i], table);
+          hb_blob_destroy (table);
+        }
+      }
+
+      blob = hb_face_reference_blob (builder);
+      hb_face_destroy (builder);
+    }
+  }
+
+  return blob;
 }
 
 
@@ -644,6 +677,7 @@ hb_face_set_get_table_tags_func (hb_face_t *face,
   {
     if (destroy)
       destroy (user_data);
+    return;
   }
 
   if (face->get_table_tags_destroy)

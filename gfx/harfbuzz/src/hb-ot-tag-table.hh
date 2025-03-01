@@ -745,6 +745,7 @@ static const LangTag ot_languages3[] = {
 	
   {HB_TAG('h','n','e',' '),	HB_TAG('C','H','H',' ')},	
   {HB_TAG('h','n','j',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','n','m',' '),	HB_TAG('Z','H','S',' ')},	
   {HB_TAG('h','n','o',' '),	HB_TAG('H','N','D',' ')},	
   {HB_TAG('h','o','c',' '),	HB_TAG('H','O',' ',' ')},	
   {HB_TAG('h','o','i',' '),	HB_TAG('A','T','H',' ')},	
@@ -981,9 +982,11 @@ static const LangTag ot_languages3[] = {
   {HB_TAG('l','t','o',' '),	HB_TAG('L','U','H',' ')},	
   {HB_TAG('l','t','s',' '),	HB_TAG('L','U','H',' ')},	
 	
+  {HB_TAG('l','u','h',' '),	HB_TAG('Z','H','S',' ')},	
 	
   {HB_TAG('l','u','s',' '),	HB_TAG('M','I','Z',' ')},	
   {HB_TAG('l','u','s',' '),	HB_TAG('Q','I','N',' ')},	
+	
   {HB_TAG('l','u','y',' '),	HB_TAG('L','U','H',' ')},	
   {HB_TAG('l','u','z',' '),	HB_TAG('L','R','C',' ')},	
   {HB_TAG('l','v','i',' '),	HB_TAG_NONE	       },	
@@ -1404,6 +1407,7 @@ static const LangTag ot_languages3[] = {
   {HB_TAG('s','i','g',' '),	HB_TAG_NONE	       },	
   {HB_TAG('s','i','z',' '),	HB_TAG('B','B','R',' ')},	
 	
+  {HB_TAG('s','j','c',' '),	HB_TAG('Z','H','S',' ')},	
   {HB_TAG('s','j','d',' '),	HB_TAG('K','S','M',' ')},	
 	
   {HB_TAG('s','j','o',' '),	HB_TAG('S','I','B',' ')},	
@@ -2386,6 +2390,26 @@ out:
       *count = i;
       return true;
     }
+    if (lang_matches (&lang_str[1], limit, "nm-hant-hk", 10))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], limit, "nm-hant-mo", 10))
+    {
+      
+      unsigned int i;
+      hb_tag_t possible_tags[] = {
+	HB_TAG('Z','H','T','M'),  
+	HB_TAG('Z','H','H',' '),  
+      };
+      for (i = 0; i < 2 && i < *count; i++)
+	tags[i] = possible_tags[i];
+      *count = i;
+      return true;
+    }
     if (lang_matches (&lang_str[1], limit, "sn-hant-hk", 10))
     {
       
@@ -2414,6 +2438,20 @@ out:
       return true;
     }
     if (lang_matches (&lang_str[1], limit, "ak-hant", 7))
+    {
+      
+      tags[0] = HB_TAG('Z','H','T',' ');  
+      *count = 1;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], limit, "nm-hans", 7))
+    {
+      
+      tags[0] = HB_TAG('Z','H','S',' ');  
+      *count = 1;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], limit, "nm-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2457,6 +2495,36 @@ out:
       return true;
     }
     if (0 == strncmp (&lang_str[1], "ak-", 3)
+	&& subtag_matches (lang_str, limit, "-tw", 3))
+    {
+      
+      tags[0] = HB_TAG('Z','H','T',' ');  
+      *count = 1;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "nm-", 3)
+	&& subtag_matches (lang_str, limit, "-hk", 3))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "nm-", 3)
+	&& subtag_matches (lang_str, limit, "-mo", 3))
+    {
+      
+      unsigned int i;
+      hb_tag_t possible_tags[] = {
+	HB_TAG('Z','H','T','M'),  
+	HB_TAG('Z','H','H',' '),  
+      };
+      for (i = 0; i < 2 && i < *count; i++)
+	tags[i] = possible_tags[i];
+      *count = i;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "nm-", 3)
 	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
@@ -2525,10 +2593,74 @@ out:
     }
     break;
   case 'l':
+    if (lang_matches (&lang_str[1], limit, "uh-hant-hk", 10))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], limit, "uh-hant-mo", 10))
+    {
+      
+      unsigned int i;
+      hb_tag_t possible_tags[] = {
+	HB_TAG('Z','H','T','M'),  
+	HB_TAG('Z','H','H',' '),  
+      };
+      for (i = 0; i < 2 && i < *count; i++)
+	tags[i] = possible_tags[i];
+      *count = i;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], limit, "uh-hans", 7))
+    {
+      
+      tags[0] = HB_TAG('Z','H','S',' ');  
+      *count = 1;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], limit, "uh-hant", 7))
+    {
+      
+      tags[0] = HB_TAG('Z','H','T',' ');  
+      *count = 1;
+      return true;
+    }
     if (lang_matches (&lang_str[1], limit, "zh-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
+      *count = 1;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "uh-", 3)
+	&& subtag_matches (lang_str, limit, "-hk", 3))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "uh-", 3)
+	&& subtag_matches (lang_str, limit, "-mo", 3))
+    {
+      
+      unsigned int i;
+      hb_tag_t possible_tags[] = {
+	HB_TAG('Z','H','T','M'),  
+	HB_TAG('Z','H','H',' '),  
+      };
+      for (i = 0; i < 2 && i < *count; i++)
+	tags[i] = possible_tags[i];
+      *count = i;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "uh-", 3)
+	&& subtag_matches (lang_str, limit, "-tw", 3))
+    {
+      
+      tags[0] = HB_TAG('Z','H','T',' ');  
       *count = 1;
       return true;
     }
@@ -2700,6 +2832,72 @@ out:
       for (i = 0; i < 2 && i < *count; i++)
 	tags[i] = possible_tags[i];
       *count = i;
+      return true;
+    }
+    break;
+  case 's':
+    if (lang_matches (&lang_str[1], limit, "jc-hant-hk", 10))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], limit, "jc-hant-mo", 10))
+    {
+      
+      unsigned int i;
+      hb_tag_t possible_tags[] = {
+	HB_TAG('Z','H','T','M'),  
+	HB_TAG('Z','H','H',' '),  
+      };
+      for (i = 0; i < 2 && i < *count; i++)
+	tags[i] = possible_tags[i];
+      *count = i;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], limit, "jc-hans", 7))
+    {
+      
+      tags[0] = HB_TAG('Z','H','S',' ');  
+      *count = 1;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], limit, "jc-hant", 7))
+    {
+      
+      tags[0] = HB_TAG('Z','H','T',' ');  
+      *count = 1;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "jc-", 3)
+	&& subtag_matches (lang_str, limit, "-hk", 3))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "jc-", 3)
+	&& subtag_matches (lang_str, limit, "-mo", 3))
+    {
+      
+      unsigned int i;
+      hb_tag_t possible_tags[] = {
+	HB_TAG('Z','H','T','M'),  
+	HB_TAG('Z','H','H',' '),  
+      };
+      for (i = 0; i < 2 && i < *count; i++)
+	tags[i] = possible_tags[i];
+      *count = i;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "jc-", 3)
+	&& subtag_matches (lang_str, limit, "-tw", 3))
+    {
+      
+      tags[0] = HB_TAG('Z','H','T',' ');  
+      *count = 1;
       return true;
     }
     break;

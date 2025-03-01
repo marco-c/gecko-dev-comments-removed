@@ -37,7 +37,11 @@
 #include "hb-draw.hh"
 #include "hb-font.hh"
 #include "hb-machinery.hh"
+#ifndef HB_NO_AAT
+#include "hb-aat-layout-trak-table.hh"
+#endif
 #include "hb-ot-os2-table.hh"
+#include "hb-ot-stat-table.hh"
 #include "hb-ot-shaper-arabic-pua.hh"
 #include "hb-paint.hh"
 
@@ -502,6 +506,26 @@ hb_ft_get_glyph_h_advances (hb_font_t* font, void* font_data,
       first_advance = &StructAtOffsetUnaligned<hb_position_t> (first_advance, advance_stride);
     }
   }
+
+#ifndef HB_NO_AAT
+  
+#ifndef HB_NO_STYLE
+  bool apply_trak = font->face->table.STAT->has_data () && font->face->table.trak->has_data ();
+#else
+  bool apply_trak = false;
+#endif
+  if (apply_trak)
+  {
+    hb_position_t tracking = font->face->table.trak->get_h_tracking (font);
+    first_advance = orig_first_advance;
+    for (unsigned int i = 0; i < count; i++)
+    {
+      *first_advance += tracking;
+      first_glyph = &StructAtOffsetUnaligned<hb_codepoint_t> (first_glyph, glyph_stride);
+      first_advance = &StructAtOffsetUnaligned<hb_position_t> (first_advance, advance_stride);
+    }
+  }
+#endif
 }
 
 #ifndef HB_NO_VERTICAL
@@ -538,7 +562,20 @@ hb_ft_get_glyph_v_advance (hb_font_t *font,
 
 
   hb_position_t y_strength = font->y_scale >= 0 ? font->y_strength : -font->y_strength;
-  return ((-v + (1<<9)) >> 10) + (font->embolden_in_place ? 0 : y_strength);
+  v = ((-v + (1<<9)) >> 10) + (font->embolden_in_place ? 0 : y_strength);
+
+#ifndef HB_NO_AAT
+  
+#ifndef HB_NO_STYLE
+  bool apply_trak = font->face->table.STAT->has_data () && font->face->table.trak->has_data ();
+#else
+  bool apply_trak = false;
+#endif
+  if (apply_trak)
+    v += font->face->table.trak->get_v_tracking (font);
+#endif
+
+  return v;
 }
 #endif
 
@@ -1598,6 +1635,11 @@ _release_blob (void *arg)
 void
 hb_ft_font_set_funcs (hb_font_t *font)
 {
+  
+  hb_font_set_funcs (font,
+		     hb_font_funcs_get_empty (),
+		     nullptr, nullptr);
+
   hb_blob_t *blob = hb_face_reference_blob (font->face);
   unsigned int blob_length;
   const char *blob_data = hb_blob_get_data (blob, &blob_length);

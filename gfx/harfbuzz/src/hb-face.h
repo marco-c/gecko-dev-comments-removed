@@ -80,6 +80,11 @@ hb_face_create_from_file_or_fail (const char   *file_name,
 
 
 
+
+
+
+
+
 typedef hb_blob_t * (*hb_reference_table_func_t)  (hb_face_t *face, hb_tag_t tag, void *user_data);
 
 
