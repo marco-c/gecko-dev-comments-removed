@@ -26,11 +26,12 @@ function read_stream(stream, count) {
   return data.join("");
 }
 
+
 const CL_EXPECT_FAILURE = 0x1;
 const CL_EXPECT_GZIP = 0x2;
 const CL_EXPECT_3S_DELAY = 0x4;
 const CL_SUSPEND = 0x8;
-const CL_ALLOW_UNKNOWN_CL = 0x10;
+const CL_ALLOW_UNKNOWN_CL = 0x10; 
 const CL_EXPECT_LATE_FAILURE = 0x20;
 const CL_FROM_CACHE = 0x40; 
 const CL_NOT_FROM_CACHE = 0x80; 
