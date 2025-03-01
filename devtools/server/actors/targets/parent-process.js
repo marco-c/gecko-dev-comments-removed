@@ -117,7 +117,7 @@ class ParentProcessTargetActor extends WindowGlobalTargetActor {
       window = browser.docShell.domWindow;
 
       
-      window.document.documentElement.innerHTML =
+      window.document.body.textContent =
         "Fake DevTools document, as there is no tab opened yet";
     }
 
