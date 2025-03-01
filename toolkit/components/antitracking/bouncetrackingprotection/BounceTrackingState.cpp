@@ -607,12 +607,23 @@ nsresult BounceTrackingState::OnStartNavigation(
     }
   }
 
+
+  
+  
+  
+  
+  bool hasUserActivation = aHasValidUserGestureActivation ||
+                           aTriggeringPrincipal->IsSystemPrincipal();
+
   
   
   
   if (!mBounceTrackingRecord) {
     mBounceTrackingRecord = Some(BounceTrackingRecord());
     mBounceTrackingRecord->SetInitialHost(siteHost);
+    if (hasUserActivation) {
+      mBounceTrackingRecord->AddUserActivationHost(siteHost);
+    }
 
     MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
             ("%s: new BounceTrackingRecord(): %s", __FUNCTION__,
@@ -624,10 +635,6 @@ nsresult BounceTrackingState::OnStartNavigation(
 
   
   
-  
-  bool hasUserActivation = aHasValidUserGestureActivation ||
-                           aTriggeringPrincipal->IsSystemPrincipal();
-
   MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
           ("%s: site: %s, hasUserActivation? %d", __FUNCTION__, siteHost.get(),
            hasUserActivation));
@@ -638,6 +645,7 @@ nsresult BounceTrackingState::OnStartNavigation(
     MOZ_ASSERT(!mBounceTrackingRecord);
     mBounceTrackingRecord = Some(BounceTrackingRecord());
     mBounceTrackingRecord->SetInitialHost(siteHost);
+    mBounceTrackingRecord->AddUserActivationHost(siteHost);
 
     return NS_OK;
   }
