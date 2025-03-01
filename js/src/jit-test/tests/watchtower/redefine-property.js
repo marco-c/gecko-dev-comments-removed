@@ -30,12 +30,12 @@ function testDefineProperty() {
 
   
   Object.defineProperty(o, "a", {value: 1, enumerable: true});
-  assertEq(getLogString(o), "change-prop-value: a|change-prop-flags: a");
+  assertEq(getLogString(o), "change-prop-flags: a|change-prop-value: a");
 
   
   let getter = () => 1;
   Object.defineProperty(o, "a", {get: getter});
-  assertEq(getLogString(o), "change-prop-value: a|change-prop-flags: a");
+  assertEq(getLogString(o), "change-prop-flags: a|change-prop-value: a");
 
   
   Object.defineProperty(o, "a", {get: getter, enumerable: true});
@@ -52,11 +52,11 @@ function testDefineProperty() {
 
   
   Object.defineProperty(o, "a", {set: getter, enumerable: true});
-  assertEq(getLogString(o), "change-prop-value: a|change-prop-flags: a");
+  assertEq(getLogString(o), "change-prop-flags: a|change-prop-value: a");
 
   
   Object.defineProperty(o, "a", {value: 1});
-  assertEq(getLogString(o), "change-prop-value: a|change-prop-flags: a");
+  assertEq(getLogString(o), "change-prop-flags: a|change-prop-value: a");
 }
 
 for (var i = 0; i < 20; i++) {
