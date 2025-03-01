@@ -306,6 +306,20 @@ void nsWindow::TaskbarConcealer::OnFocusAcquired(nsWindow* aWin) {
   UpdateAllState();
 }
 
+void nsWindow::TaskbarConcealer::OnWindowMaximized(nsWindow* aWin) {
+  MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
+          ("==> OnWindowMaximized() for HWND %p on HMONITOR %p", aWin->mWnd,
+           ::MonitorFromWindow(aWin->mWnd, MONITOR_DEFAULTTONULL)));
+
+  
+  
+  
+  
+  
+  
+  (TaskbarConcealerImpl{}).MarkAsHidingTaskbar(aWin->mWnd, false);
+}
+
 void nsWindow::TaskbarConcealer::OnFullscreenChanged(nsWindow* aWin,
                                                      bool enteredFullscreen) {
   MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
