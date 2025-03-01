@@ -27,7 +27,7 @@
 use super::{Context, Length, Percentage, PositionProperty, ToComputedValue};
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::GeckoFontMetrics;
-use crate::logical_geometry::PhysicalAxis;
+use crate::logical_geometry::PhysicalSide;
 use crate::values::animated::{Animate, Context as AnimatedContext, Procedure, ToAnimatedValue, ToAnimatedZero};
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::calc::{CalcUnits, PositivePercentageBasis};
@@ -937,7 +937,7 @@ fn map_node(
     match node {
         CalcNode::Anchor(f) => {
             context.anchor_function_used = true;
-            match f.resolve(info.axis, info.position_property) {
+            match f.resolve(info.side, info.position_property) {
                 AnchorResolutionResult::Invalid => return Err(()),
                 AnchorResolutionResult::Fallback(fb) => {
                     let mut inner_context = ResolveContext::default();
@@ -997,7 +997,7 @@ pub struct CalcAnchorFunctionResolutionInfo {
     
     
     
-    pub axis: PhysicalAxis,
+    pub side: PhysicalSide,
     
     pub position_property: PositionProperty,
 }
@@ -1008,7 +1008,7 @@ impl CalcAnchorFunctionResolutionInfo {
             
             position_property: PositionProperty::Static,
             
-            axis: PhysicalAxis::Vertical,
+            side: PhysicalSide::Left,
         }
     }
 }
