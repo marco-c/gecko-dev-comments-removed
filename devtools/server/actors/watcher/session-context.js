@@ -153,7 +153,8 @@ function getWatcherSupportedTargets(type) {
 
     
     
-    [Targets.TYPES.CONTENT_SCRIPT]: type == SESSION_TYPES.BROWSER_ELEMENT,
+    [Targets.TYPES.CONTENT_SCRIPT]:
+      type == SESSION_TYPES.BROWSER_ELEMENT || type == SESSION_TYPES.ALL,
   };
 }
 

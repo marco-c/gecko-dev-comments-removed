@@ -123,6 +123,7 @@ class TargetCommand extends EventEmitter {
       this.rootFront.traits.workerConsoleApiMessagesDispatchedToMainThread ===
       false;
     this.listenForServiceWorkers = false;
+    this.listenForContentScripts = false;
 
     
     
@@ -612,7 +613,14 @@ class TargetCommand extends EventEmitter {
       );
       if (browserToolboxScope == BROWSERTOOLBOX_SCOPE_EVERYTHING) {
         
-        types = TargetCommand.ALL_TYPES.filter(t => t != TargetCommand.TYPES.CONTENT_SCRIPT);
+        
+        
+        
+        if (!this.listenForContentScripts) {
+          types = TargetCommand.ALL_TYPES.filter(t => t != TargetCommand.TYPES.CONTENT_SCRIPT);
+        } else {
+          types = TargetCommand.ALL_TYPES;
+        }
       }
     }
     if (this.listenForWorkers && !types.includes(TargetCommand.TYPES.WORKER)) {
