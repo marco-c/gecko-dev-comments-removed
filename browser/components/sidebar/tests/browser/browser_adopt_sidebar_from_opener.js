@@ -72,15 +72,15 @@ add_task(async function test_adopt_from_window() {
   const privateSidebar = privateWin.SidebarController;
   await privateSidebar.promiseInitialized;
 
-  Assert.notEqual(
+  Assert.equal(
     privateSidebar.currentID,
     win.SidebarController.currentID,
-    "Category was not adopted from opener window sidebar."
+    "Category was adopted from opener window sidebar."
   );
-  Assert.notEqual(
+  Assert.equal(
     privateSidebar._box.style.width,
     win.SidebarController._box.style.width,
-    "Width was not adopted from opener window sidebar."
+    "Width was adopted from opener window sidebar."
   );
 
   await BrowserTestUtils.closeWindow(newWin);

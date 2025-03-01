@@ -457,7 +457,11 @@ var SidebarController = {
       
       
       
-      if (!this.uiStateInitialized && !isPopup && windowPrivacyMatches) {
+      if (
+        !this.uiStateInitialized &&
+        !isPopup &&
+        (this.sidebarRevampEnabled || windowPrivacyMatches)
+      ) {
         const backupState = this.SidebarManager.getBackupState();
         this.initializeUIState(backupState);
       }
@@ -859,7 +863,8 @@ var SidebarController = {
       if (
         sourceWindow.closed ||
         sourceWindow.location.protocol != "chrome:" ||
-        !this.windowPrivacyMatches(sourceWindow, window)
+        (!this.sidebarRevampEnabled &&
+          !this.windowPrivacyMatches(sourceWindow, window))
       ) {
         return;
       }
