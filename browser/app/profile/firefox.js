@@ -545,9 +545,6 @@ pref("browser.urlbar.quicksuggest.contextualOptIn.thirdReshowAfterPeriodDays", 6
 pref("browser.urlbar.quicksuggest.enabled", false);
 
 
-pref("browser.urlbar.quicksuggest.hideSettingsUI", false);
-
-
 
 pref("browser.urlbar.quicksuggest.rankingMode", "default");
 
