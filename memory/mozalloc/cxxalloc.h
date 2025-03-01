@@ -42,9 +42,22 @@ MOZALLOC_EXPORT_NEW void* operator new[](size_t size) noexcept(false) {
   return moz_xmalloc(size);
 }
 
+
 MOZALLOC_EXPORT_NEW void* operator new[](size_t size,
                                          const std::nothrow_t&) noexcept(true) {
+#ifdef __GNUC__
+
+
+
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Walloc-size-larger-than="
+#endif
+
   return malloc_impl(size);
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
 }
 
 MOZALLOC_EXPORT_NEW void operator delete(void* ptr) noexcept(true) {
