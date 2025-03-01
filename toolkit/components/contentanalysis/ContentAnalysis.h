@@ -19,6 +19,7 @@
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
 
+#include <atomic>
 #include <regex>
 #include <string>
 
@@ -246,9 +247,24 @@ class ContentAnalysis final : public nsIContentAnalysis,
   
   ContentAnalysis(const ContentAnalysis&) = delete;
   ContentAnalysis& operator=(ContentAnalysis&) = delete;
+  
+  
   nsresult CreateContentAnalysisClient(nsCString&& aPipePathName,
                                        nsString&& aClientSignatureSetting,
                                        bool aIsPerUser);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename T, typename U>
+  RefPtr<MozPromise<T, nsresult, true>> CallClientWithRetry(
+      StaticString aMethodName, U&& aClientCallFunc);
 
   nsresult RunAnalyzeRequestTask(
       const RefPtr<nsIContentAnalysisRequest>& aRequest, bool aAutoAcknowledge,
@@ -256,7 +272,11 @@ class ContentAnalysis final : public nsIContentAnalysis,
   nsresult RunAcknowledgeTask(
       nsIContentAnalysisAcknowledgement* aAcknowledgement,
       const nsACString& aRequestToken);
-  static void DoAnalyzeRequest(
+  nsresult CreateClientIfNecessary(bool aForceCreate = false);
+
+  static Result<std::shared_ptr<content_analysis::sdk::ContentAnalysisResponse>,
+                nsresult>
+  DoAnalyzeRequest(
       nsCString&& aUserActionId, bool aAutoAcknowledge,
       content_analysis::sdk::ContentAnalysisRequest&& aRequest,
       const std::shared_ptr<content_analysis::sdk::Client>& aClient);
@@ -342,9 +362,19 @@ class ContentAnalysis final : public nsIContentAnalysis,
       MozPromise<std::shared_ptr<content_analysis::sdk::Client>, nsresult,
                  false>;
   int64_t mRequestCount = 0;
-  RefPtr<ClientPromise::Private> mCaClientPromise;
   
-  bool mClientCreationAttempted;
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<ClientPromise::Private> mCaClientPromise
+      MOZ_GUARDED_BY(sMainThreadCapability);
+  bool mCreatingClient MOZ_GUARDED_BY(sMainThreadCapability) = false;
+  bool mHaveResolvedClientPromise MOZ_GUARDED_BY(sMainThreadCapability) = false;
 
   bool mSetByEnterprise;
   nsresult mLastResult = NS_OK;
