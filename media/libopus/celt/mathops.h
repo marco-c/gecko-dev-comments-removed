@@ -91,6 +91,26 @@ static OPUS_INLINE opus_val32 celt_maxabs16(const opus_val16 *x, int len)
 }
 #endif
 
+#ifdef ENABLE_RES24
+static OPUS_INLINE opus_res celt_maxabs_res(const opus_res *x, int len)
+{
+   int i;
+   opus_res maxval = 0;
+   opus_res minval = 0;
+   for (i=0;i<len;i++)
+   {
+      maxval = MAX32(maxval, x[i]);
+      minval = MIN32(minval, x[i]);
+   }
+   
+   celt_sig_assert(minval != -2147483648);
+   return MAX32(maxval,-minval);
+}
+#else
+#define celt_maxabs_res celt_maxabs16
+#endif
+
+
 #ifndef OVERRIDE_CELT_MAXABS32
 #ifdef FIXED_POINT
 static OPUS_INLINE opus_val32 celt_maxabs32(const opus_val32 *x, int len)
@@ -120,6 +140,7 @@ static OPUS_INLINE opus_val32 celt_maxabs32(const opus_val32 *x, int len)
 #define celt_rcp(x) (1.f/(x))
 #define celt_div(a,b) ((a)/(b))
 #define frac_div32(a,b) ((float)(a)/(b))
+#define frac_div32_q29(a,b) frac_div32(a,b)
 
 #ifdef FLOAT_APPROX
 
@@ -127,10 +148,40 @@ static OPUS_INLINE opus_val32 celt_maxabs32(const opus_val32 *x, int len)
 
 
 
+
+
+
+
+
+
+
+
+
+
+static const float log2_x_norm_coeff[8] = {
+   1.000000000000000000000000000f, 8.88888895511627197265625e-01f,
+   8.00000000000000000000000e-01f, 7.27272748947143554687500e-01f,
+   6.66666686534881591796875e-01f, 6.15384638309478759765625e-01f,
+   5.71428596973419189453125e-01f, 5.33333361148834228515625e-01f};
+
+
+
+
+
+
+
+
+
+static const float log2_y_norm_coeff[8] = {
+   0.0000000000000000000000000000f, 1.699250042438507080078125e-01f,
+   3.219280838966369628906250e-01f, 4.594316184520721435546875e-01f,
+   5.849624872207641601562500e-01f, 7.004396915435791015625000e-01f,
+   8.073549270629882812500000e-01f, 9.068905711174011230468750e-01f};
+
 static OPUS_INLINE float celt_log2(float x)
 {
    int integer;
-   float frac;
+   opus_int32 range_idx;
    union {
       float f;
       opus_uint32 i;
@@ -138,11 +189,34 @@ static OPUS_INLINE float celt_log2(float x)
    in.f = x;
    integer = (in.i>>23)-127;
    in.i -= (opus_uint32)integer<<23;
-   frac = in.f - 1.5f;
-   frac = -0.41445418f + frac*(0.95909232f
-          + frac*(-0.33951290f + frac*0.16541097f));
-   return 1+integer+frac;
+
+   
+
+   range_idx = (in.i >> 20) & 0x7;
+   in.f = in.f * log2_x_norm_coeff[range_idx] - 1.0625f;
+
+   
+
+
+
+
+
+
+   #define LOG2_COEFF_A0 8.74628424644470214843750000e-02f
+   #define LOG2_COEFF_A1 1.357829570770263671875000000000f
+   #define LOG2_COEFF_A2 -6.3897705078125000000000000e-01f
+   #define LOG2_COEFF_A3 4.01971250772476196289062500e-01f
+   #define LOG2_COEFF_A4 -2.8415444493293762207031250e-01f
+   in.f = LOG2_COEFF_A0 + in.f * (LOG2_COEFF_A1
+               + in.f * (LOG2_COEFF_A2
+               + in.f * (LOG2_COEFF_A3
+               + in.f * (LOG2_COEFF_A4))));
+   return integer + in.f + log2_y_norm_coeff[range_idx];
 }
+
+
+
+
 
 
 static OPUS_INLINE float celt_exp2(float x)
@@ -157,9 +231,22 @@ static OPUS_INLINE float celt_exp2(float x)
    if (integer < -50)
       return 0;
    frac = x-integer;
+
    
-   res.f = 0.99992522f + frac * (0.69583354f
-           + frac * (0.22606716f + 0.078024523f*frac));
+
+
+
+   #define EXP2_COEFF_A0 9.999999403953552246093750000000e-01f
+   #define EXP2_COEFF_A1 6.931530833244323730468750000000e-01f
+   #define EXP2_COEFF_A2 2.401536107063293457031250000000e-01f
+   #define EXP2_COEFF_A3 5.582631751894950866699218750000e-02f
+   #define EXP2_COEFF_A4 8.989339694380760192871093750000e-03f
+   #define EXP2_COEFF_A5 1.877576694823801517486572265625e-03f
+   res.f = EXP2_COEFF_A0 + frac * (EXP2_COEFF_A1
+               + frac * (EXP2_COEFF_A2
+               + frac * (EXP2_COEFF_A3
+               + frac * (EXP2_COEFF_A4
+               + frac * (EXP2_COEFF_A5)))));
    res.i = (res.i + ((opus_uint32)integer<<23)) & 0x7fffffff;
    return res.f;
 }
@@ -168,6 +255,9 @@ static OPUS_INLINE float celt_exp2(float x)
 #define celt_log2(x) ((float)(1.442695040888963387*log(x)))
 #define celt_exp2(x) ((float)exp(0.6931471805599453094*(x)))
 #endif
+
+#define celt_exp2_db celt_exp2
+#define celt_log2_db celt_log2
 
 #endif
 
@@ -204,13 +294,13 @@ static OPUS_INLINE opus_val16 celt_log2(opus_val32 x)
    opus_val16 n, frac;
    
 
-   static const opus_val16 C[5] = {-6801+(1<<(13-DB_SHIFT)), 15746, -5217, 2545, -1401};
+   static const opus_val16 C[5] = {-6801+(1<<(13-10)), 15746, -5217, 2545, -1401};
    if (x==0)
       return -32767;
    i = celt_ilog2(x);
    n = VSHR32(x,i-15)-32768-16384;
    frac = ADD16(C[0], MULT16_16_Q15(n, ADD16(C[1], MULT16_16_Q15(n, ADD16(C[2], MULT16_16_Q15(n, ADD16(C[3], MULT16_16_Q15(n, C[4]))))))));
-   return SHL16(i-13,DB_SHIFT)+SHR16(frac,14-DB_SHIFT);
+   return SHL32(i-13,10)+SHR32(frac,14-10);
 }
 
 
@@ -250,10 +340,103 @@ static OPUS_INLINE opus_val32 celt_exp2(opus_val16 x)
    return VSHR32(EXTEND32(frac), -integer-2);
 }
 
+#ifdef ENABLE_QEXT
+
+
+
+static OPUS_INLINE opus_val32 celt_log2_db(opus_val32 x) {
+   
+   static const opus_val32 log2_x_norm_coeff[8] = {
+      1073741824, 954437184, 858993472, 780903168,
+      715827904,  660764224, 613566784, 572662336};
+   
+   static const opus_val32 log2_y_norm_coeff[8] = {
+      0,       2850868,  5401057,  7707983,
+      9814042, 11751428, 13545168, 15215099};
+   static const opus_val32 LOG2_COEFF_A0 = 1467383;     
+   static const opus_val32 LOG2_COEFF_A1 = 182244800;   
+   static const opus_val32 LOG2_COEFF_A2 = -21440512;   
+   static const opus_val32 LOG2_COEFF_A3 = 107903336;   
+   static const opus_val32 LOG2_COEFF_A4 = -610217024;  
+
+   opus_int32 integer, norm_coeff_idx, tmp;
+   opus_val32 mantissa;
+   if (x==0) {
+      return -536870912; 
+   }
+   integer =  SUB32(celt_ilog2(x), 14);  
+   mantissa = VSHR32(x, integer + 14 - 29);  
+   norm_coeff_idx = SHR32(mantissa, 29 - 3) & 0x7;
+   
+
+   mantissa = SUB32(MULT32_32_Q31(mantissa, log2_x_norm_coeff[norm_coeff_idx]),
+                    285212672);
+
+   
+
+
+
+
+   
+   tmp = MULT32_32_Q31(mantissa, LOG2_COEFF_A4);
+   tmp = MULT32_32_Q31(mantissa, ADD32(LOG2_COEFF_A3, tmp));
+   tmp = SHL32(MULT32_32_Q31(mantissa, ADD32(LOG2_COEFF_A2, tmp)), 5 );
+   tmp = MULT32_32_Q31(mantissa, ADD32(LOG2_COEFF_A1, tmp));
+   return ADD32(log2_y_norm_coeff[norm_coeff_idx],
+          ADD32(SHL32(integer, DB_SHIFT),
+          ADD32(LOG2_COEFF_A0, tmp)));
+}
+
+
+
+static OPUS_INLINE opus_val32 celt_exp2_db_frac(opus_val32 x)
+{
+   
+   static const opus_int32 EXP2_COEFF_A0 = 268435440;   
+   static const opus_int32 EXP2_COEFF_A1 = 744267456;   
+   static const opus_int32 EXP2_COEFF_A2 = 1031451904;  
+   static const opus_int32 EXP2_COEFF_A3 = 959088832;   
+   static const opus_int32 EXP2_COEFF_A4 = 617742720;   
+   static const opus_int32 EXP2_COEFF_A5 = 516104352;   
+   opus_int32 tmp;
+   
+   opus_val32 x_q29 = SHL32(x, 29 - 24);
+   
+   tmp = ADD32(EXP2_COEFF_A4, MULT32_32_Q31(x_q29, EXP2_COEFF_A5));
+   tmp = ADD32(EXP2_COEFF_A3, MULT32_32_Q31(x_q29, tmp));
+   tmp = ADD32(EXP2_COEFF_A2, MULT32_32_Q31(x_q29, tmp));
+   tmp = ADD32(EXP2_COEFF_A1, MULT32_32_Q31(x_q29, tmp));
+   return ADD32(EXP2_COEFF_A0, MULT32_32_Q31(x_q29, tmp));
+}
+
+
+
+static OPUS_INLINE opus_val32 celt_exp2_db(opus_val32 x)
+{
+   int integer;
+   opus_val32 frac;
+   integer = SHR32(x,DB_SHIFT);
+   if (integer>14)
+      return 0x7f000000;
+   else if (integer <= -17)
+      return 0;
+   frac = celt_exp2_db_frac(x-SHL32(integer, DB_SHIFT));  
+   return VSHR32(frac, -integer + 28 - 16);  
+}
+#else
+
+#define celt_log2_db(x) SHL32(EXTEND32(celt_log2(x)), DB_SHIFT-10)
+#define celt_exp2_db_frac(x) SHL32(celt_exp2_frac(PSHR32(x, DB_SHIFT-10)), 14)
+#define celt_exp2_db(x) celt_exp2(PSHR32(x, DB_SHIFT-10))
+
+#endif
+
+
 opus_val32 celt_rcp(opus_val32 x);
 
 #define celt_div(a,b) MULT32_32_Q31((opus_val32)(a),celt_rcp(b))
 
+opus_val32 frac_div32_q29(opus_val32 a, opus_val32 b);
 opus_val32 frac_div32(opus_val32 a, opus_val32 b);
 
 #define M1 32767

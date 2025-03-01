@@ -80,7 +80,7 @@ opus_int silk_InitEncoder(
 opus_int silk_Encode(                                   
     void                            *encState,          
     silk_EncControlStruct           *encControl,        
-    const opus_int16                *samplesIn,         
+    const opus_res                  *samplesIn,         
     opus_int                        nSamplesIn,         
     ec_enc                          *psRangeEnc,        
     opus_int32                      *nBytesOut,         
@@ -129,7 +129,7 @@ opus_int silk_Decode(
     opus_int                        lostFlag,           
     opus_int                        newPacketFlag,      
     ec_dec                          *psRangeDec,        
-    opus_int16                      *samplesOut,        
+    opus_res                        *samplesOut,        
     opus_int32                      *nSamplesOut,       
 #ifdef ENABLE_DEEP_PLC
     LPCNetPLCState                  *lpcnet,

@@ -72,10 +72,23 @@
 #endif
 
 
+#if OPUS_FAST_INT64
+#define MULT32_32_Q32(a,b) ((opus_val32)SHR((opus_int64)(a)*(opus_int64)(b),32))
+#else
+#define MULT32_32_Q32(a,b) ADD32(ADD32(MULT16_16(SHR((a),16),SHR((b),16)), SHR(MULT16_16SU(SHR((a),16),((b)&0x0000ffff)),16)), SHR(MULT16_16SU(SHR((b),16),((a)&0x0000ffff)),16))
+#endif
+
+
 #define QCONST16(x,bits) ((opus_val16)(.5+(x)*(((opus_val32)1)<<(bits))))
 
 
-#define QCONST32(x,bits) ((opus_val32)(.5+(x)*(((opus_val32)1)<<(bits))))
+#define QCONST32(x,bits) ((opus_val32)(.5+(x)*(((opus_int64)1)<<(bits))))
+
+
+#define GCONST2(x,bits) ((celt_glog)(.5+(x)*(((celt_glog)1)<<(bits))))
+
+
+#define GCONST(x) GCONST2((x),DB_SHIFT)
 
 
 #define NEG16(x) (-(x))

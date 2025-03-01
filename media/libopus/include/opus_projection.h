@@ -290,6 +290,44 @@ OPUS_EXPORT OPUS_WARN_UNUSED_RESULT int opus_projection_encode(
 
 
 
+OPUS_EXPORT OPUS_WARN_UNUSED_RESULT int opus_projection_encode24(
+    OpusProjectionEncoder *st,
+    const opus_int32 *pcm,
+    int frame_size,
+    unsigned char *data,
+    opus_int32 max_data_bytes
+) OPUS_ARG_NONNULL(1) OPUS_ARG_NONNULL(2) OPUS_ARG_NONNULL(4);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -493,6 +531,43 @@ OPUS_EXPORT OPUS_WARN_UNUSED_RESULT int opus_projection_decode(
     int decode_fec
 ) OPUS_ARG_NONNULL(1) OPUS_ARG_NONNULL(4);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+OPUS_EXPORT OPUS_WARN_UNUSED_RESULT int opus_projection_decode24(
+    OpusProjectionDecoder *st,
+    const unsigned char *data,
+    opus_int32 len,
+    opus_int32 *pcm,
+    int frame_size,
+    int decode_fec
+) OPUS_ARG_NONNULL(1) OPUS_ARG_NONNULL(4);
 
 
 

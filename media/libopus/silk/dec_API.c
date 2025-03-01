@@ -135,7 +135,7 @@ opus_int silk_Decode(
     opus_int                        lostFlag,           
     opus_int                        newPacketFlag,      
     ec_dec                          *psRangeDec,        
-    opus_int16                      *samplesOut,        
+    opus_res                        *samplesOut,        
     opus_int32                      *nSamplesOut,       
 #ifdef ENABLE_DEEP_PLC
     LPCNetPLCState                  *lpcnet,
@@ -147,7 +147,6 @@ opus_int silk_Decode(
     opus_int32 nSamplesOutDec, LBRR_symbol;
     opus_int16 *samplesOut1_tmp[ 2 ];
     VARDECL( opus_int16, samplesOut1_tmp_storage1 );
-    VARDECL( opus_int16, samplesOut1_tmp_storage2 );
     VARDECL( opus_int16, samplesOut2_tmp );
     opus_int32 MS_pred_Q13[ 2 ] = { 0 };
     opus_int16 *resample_out_ptr;
@@ -155,7 +154,6 @@ opus_int silk_Decode(
     silk_decoder_state *channel_state = psDec->channel_state;
     opus_int has_side;
     opus_int stereo_to_mono;
-    int delay_stack_alloc;
     SAVE_STACK;
 
     celt_assert( decControl->nChannelsInternal == 1 || decControl->nChannelsInternal == 2 );
@@ -312,19 +310,10 @@ opus_int silk_Decode(
     
 
 
-    delay_stack_alloc = decControl->internalSampleRate*decControl->nChannelsInternal
-          < decControl->API_sampleRate*decControl->nChannelsAPI;
-    ALLOC( samplesOut1_tmp_storage1, delay_stack_alloc ? ALLOC_NONE
-           : decControl->nChannelsInternal*(channel_state[ 0 ].frame_length + 2 ),
+    ALLOC( samplesOut1_tmp_storage1, decControl->nChannelsInternal*(channel_state[ 0 ].frame_length + 2 ),
            opus_int16 );
-    if ( delay_stack_alloc )
-    {
-       samplesOut1_tmp[ 0 ] = samplesOut;
-       samplesOut1_tmp[ 1 ] = samplesOut + channel_state[ 0 ].frame_length + 2;
-    } else {
-       samplesOut1_tmp[ 0 ] = samplesOut1_tmp_storage1;
-       samplesOut1_tmp[ 1 ] = samplesOut1_tmp_storage1 + channel_state[ 0 ].frame_length + 2;
-    }
+    samplesOut1_tmp[ 0 ] = samplesOut1_tmp_storage1;
+    samplesOut1_tmp[ 1 ] = samplesOut1_tmp_storage1 + channel_state[ 0 ].frame_length + 2;
 
     if( lostFlag == FLAG_DECODE_NORMAL ) {
         has_side = !decode_only_middle;
@@ -384,23 +373,9 @@ opus_int silk_Decode(
     *nSamplesOut = silk_DIV32( nSamplesOutDec * decControl->API_sampleRate, silk_SMULBB( channel_state[ 0 ].fs_kHz, 1000 ) );
 
     
-    ALLOC( samplesOut2_tmp,
-           decControl->nChannelsAPI == 2 ? *nSamplesOut : ALLOC_NONE, opus_int16 );
-    if( decControl->nChannelsAPI == 2 ) {
-        resample_out_ptr = samplesOut2_tmp;
-    } else {
-        resample_out_ptr = samplesOut;
-    }
+    ALLOC( samplesOut2_tmp, *nSamplesOut, opus_int16 );
+    resample_out_ptr = samplesOut2_tmp;
 
-    ALLOC( samplesOut1_tmp_storage2, delay_stack_alloc
-           ? decControl->nChannelsInternal*(channel_state[ 0 ].frame_length + 2 )
-           : ALLOC_NONE,
-           opus_int16 );
-    if ( delay_stack_alloc ) {
-       OPUS_COPY(samplesOut1_tmp_storage2, samplesOut, decControl->nChannelsInternal*(channel_state[ 0 ].frame_length + 2));
-       samplesOut1_tmp[ 0 ] = samplesOut1_tmp_storage2;
-       samplesOut1_tmp[ 1 ] = samplesOut1_tmp_storage2 + channel_state[ 0 ].frame_length + 2;
-    }
     for( n = 0; n < silk_min( decControl->nChannelsAPI, decControl->nChannelsInternal ); n++ ) {
 
         
@@ -409,7 +384,11 @@ opus_int silk_Decode(
         
         if( decControl->nChannelsAPI == 2 ) {
             for( i = 0; i < *nSamplesOut; i++ ) {
-                samplesOut[ n + 2 * i ] = resample_out_ptr[ i ];
+                samplesOut[ n + 2 * i ] = INT16TORES(resample_out_ptr[ i ]);
+            }
+        } else {
+            for( i = 0; i < *nSamplesOut; i++ ) {
+                samplesOut[ i ] = INT16TORES(resample_out_ptr[ i ]);
             }
         }
     }
@@ -422,7 +401,7 @@ opus_int silk_Decode(
             ret += silk_resampler( &channel_state[ 1 ].resampler_state, resample_out_ptr, &samplesOut1_tmp[ 0 ][ 1 ], nSamplesOutDec );
 
             for( i = 0; i < *nSamplesOut; i++ ) {
-                samplesOut[ 1 + 2 * i ] = resample_out_ptr[ i ];
+                samplesOut[ 1 + 2 * i ] = INT16TORES(resample_out_ptr[ i ]);
             }
         } else {
             for( i = 0; i < *nSamplesOut; i++ ) {

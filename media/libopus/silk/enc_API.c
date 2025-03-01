@@ -144,7 +144,7 @@ static opus_int silk_QueryEncoder(
 opus_int silk_Encode(                                   
     void                            *encState,          
     silk_EncControlStruct           *encControl,        
-    const opus_int16                *samplesIn,         
+    const opus_res                  *samplesIn,         
     opus_int                        nSamplesIn,         
     ec_enc                          *psRangeEnc,        
     opus_int32                      *nBytesOut,         
@@ -282,7 +282,7 @@ opus_int silk_Encode(
         if( encControl->nChannelsAPI == 2 && encControl->nChannelsInternal == 2 ) {
             opus_int id = psEnc->state_Fxx[ 0 ].sCmn.nFramesEncoded;
             for( n = 0; n < nSamplesFromInput; n++ ) {
-                buf[ n ] = samplesIn[ 2 * n ];
+                buf[ n ] = RES2INT16(samplesIn[ 2 * n ]);
             }
             
             if( psEnc->nPrevChannelsInternal == 1 && id==0 ) {
@@ -296,7 +296,7 @@ opus_int silk_Encode(
             nSamplesToBuffer  = psEnc->state_Fxx[ 1 ].sCmn.frame_length - psEnc->state_Fxx[ 1 ].sCmn.inputBufIx;
             nSamplesToBuffer  = silk_min( nSamplesToBuffer, 10 * nBlocksOf10ms * psEnc->state_Fxx[ 1 ].sCmn.fs_kHz );
             for( n = 0; n < nSamplesFromInput; n++ ) {
-                buf[ n ] = samplesIn[ 2 * n + 1 ];
+                buf[ n ] = RES2INT16(samplesIn[ 2 * n + 1 ]);
             }
             ret += silk_resampler( &psEnc->state_Fxx[ 1 ].sCmn.resampler_state,
                 &psEnc->state_Fxx[ 1 ].sCmn.inputBuf[ psEnc->state_Fxx[ 1 ].sCmn.inputBufIx + 2 ], buf, nSamplesFromInput );
@@ -305,7 +305,7 @@ opus_int silk_Encode(
         } else if( encControl->nChannelsAPI == 2 && encControl->nChannelsInternal == 1 ) {
             
             for( n = 0; n < nSamplesFromInput; n++ ) {
-                sum = samplesIn[ 2 * n ] + samplesIn[ 2 * n + 1 ];
+                sum = RES2INT16(samplesIn[ 2 * n ] + samplesIn[ 2 * n + 1 ]);
                 buf[ n ] = (opus_int16)silk_RSHIFT_ROUND( sum,  1 );
             }
             ret += silk_resampler( &psEnc->state_Fxx[ 0 ].sCmn.resampler_state,
@@ -323,7 +323,9 @@ opus_int silk_Encode(
             psEnc->state_Fxx[ 0 ].sCmn.inputBufIx += nSamplesToBuffer;
         } else {
             celt_assert( encControl->nChannelsAPI == 1 && encControl->nChannelsInternal == 1 );
-            silk_memcpy(buf, samplesIn, nSamplesFromInput*sizeof(opus_int16));
+            for( n = 0; n < nSamplesFromInput; n++ ) {
+                buf[n] = RES2INT16(samplesIn[n]);
+            }
             ret += silk_resampler( &psEnc->state_Fxx[ 0 ].sCmn.resampler_state,
                 &psEnc->state_Fxx[ 0 ].sCmn.inputBuf[ psEnc->state_Fxx[ 0 ].sCmn.inputBufIx + 2 ], buf, nSamplesFromInput );
             psEnc->state_Fxx[ 0 ].sCmn.inputBufIx += nSamplesToBuffer;

@@ -412,6 +412,44 @@ OPUS_EXPORT OPUS_WARN_UNUSED_RESULT int opus_multistream_encode(
 
 
 
+OPUS_EXPORT OPUS_WARN_UNUSED_RESULT int opus_multistream_encode24(
+    OpusMSEncoder *st,
+    const opus_int32 *pcm,
+    int frame_size,
+    unsigned char *data,
+    opus_int32 max_data_bytes
+) OPUS_ARG_NONNULL(1) OPUS_ARG_NONNULL(2) OPUS_ARG_NONNULL(4);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -587,6 +625,44 @@ OPUS_EXPORT OPUS_WARN_UNUSED_RESULT int opus_multistream_decode(
     const unsigned char *data,
     opus_int32 len,
     opus_int16 *pcm,
+    int frame_size,
+    int decode_fec
+) OPUS_ARG_NONNULL(1) OPUS_ARG_NONNULL(4);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+OPUS_EXPORT OPUS_WARN_UNUSED_RESULT int opus_multistream_decode24(
+    OpusMSDecoder *st,
+    const unsigned char *data,
+    opus_int32 len,
+    opus_int32 *pcm,
     int frame_size,
     int decode_fec
 ) OPUS_ARG_NONNULL(1) OPUS_ARG_NONNULL(4);

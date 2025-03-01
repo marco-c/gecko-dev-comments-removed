@@ -296,6 +296,42 @@ OPUS_EXPORT OPUS_WARN_UNUSED_RESULT opus_int32 opus_encode(
 
 
 
+OPUS_EXPORT OPUS_WARN_UNUSED_RESULT opus_int32 opus_encode24(
+    OpusEncoder *st,
+    const opus_int32 *pcm,
+    int frame_size,
+    unsigned char *data,
+    opus_int32 max_data_bytes
+) OPUS_ARG_NONNULL(1) OPUS_ARG_NONNULL(2) OPUS_ARG_NONNULL(4);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -499,6 +535,31 @@ OPUS_EXPORT OPUS_WARN_UNUSED_RESULT int opus_decode(
 
 
 
+OPUS_EXPORT OPUS_WARN_UNUSED_RESULT int opus_decode24(
+    OpusDecoder *st,
+    const unsigned char *data,
+    opus_int32 len,
+    opus_int32 *pcm,
+    int frame_size,
+    int decode_fec
+) OPUS_ARG_NONNULL(1) OPUS_ARG_NONNULL(4);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 OPUS_EXPORT OPUS_WARN_UNUSED_RESULT int opus_decode_float(
     OpusDecoder *st,
     const unsigned char *data,
@@ -607,6 +668,18 @@ OPUS_EXPORT int opus_dred_process(OpusDREDDecoder *dred_dec, const OpusDRED *src
 
 
 OPUS_EXPORT int opus_decoder_dred_decode(OpusDecoder *st, const OpusDRED *dred, opus_int32 dred_offset, opus_int16 *pcm, opus_int32 frame_size);
+
+
+
+
+
+
+
+
+
+
+
+OPUS_EXPORT int opus_decoder_dred_decode24(OpusDecoder *st, const OpusDRED *dred, opus_int32 dred_offset, opus_int32 *pcm, opus_int32 frame_size);
 
 
 

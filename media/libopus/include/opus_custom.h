@@ -236,6 +236,27 @@ OPUS_CUSTOM_EXPORT OPUS_WARN_UNUSED_RESULT int opus_custom_encode(
 
 
 
+
+
+
+
+
+
+
+OPUS_CUSTOM_EXPORT OPUS_WARN_UNUSED_RESULT int opus_custom_encode24(
+    OpusCustomEncoder *st,
+    const opus_int32 *pcm,
+    int frame_size,
+    unsigned char *compressed,
+    int maxCompressedBytes
+) OPUS_ARG_NONNULL(1) OPUS_ARG_NONNULL(2) OPUS_ARG_NONNULL(4);
+
+
+
+
+
+
+
 OPUS_CUSTOM_EXPORT int opus_custom_encoder_ctl(OpusCustomEncoder * OPUS_RESTRICT st, int request, ...) OPUS_ARG_NONNULL(1);
 
 
@@ -323,6 +344,23 @@ OPUS_CUSTOM_EXPORT OPUS_WARN_UNUSED_RESULT int opus_custom_decode(
     const unsigned char *data,
     int len,
     opus_int16 *pcm,
+    int frame_size
+) OPUS_ARG_NONNULL(1) OPUS_ARG_NONNULL(4);
+
+
+
+
+
+
+
+
+
+
+OPUS_CUSTOM_EXPORT OPUS_WARN_UNUSED_RESULT int opus_custom_decode24(
+    OpusCustomDecoder *st,
+    const unsigned char *data,
+    int len,
+    opus_int32 *pcm,
     int frame_size
 ) OPUS_ARG_NONNULL(1) OPUS_ARG_NONNULL(4);
 
