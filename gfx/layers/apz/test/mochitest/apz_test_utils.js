@@ -1282,3 +1282,25 @@ async function setupCrossOriginIFrame(aIFrame, aUrl, aIsOffScreen = false) {
     });
   }
 }
+
+
+
+
+
+async function ensureApzReadyForPopup(
+  aPopupElement,
+  aWindow = window,
+  aRetry = 10
+) {
+  let retry = 0;
+  while (
+    !SpecialPowers.getDOMWindowUtils(aWindow).flushApzRepaints(aPopupElement)
+  ) {
+    await promiseFrame();
+    retry++;
+    if (retry > aRetry) {
+      ok(false, "The popup didn't initialize APZ");
+      return;
+    }
+  }
+}

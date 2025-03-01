@@ -84,20 +84,7 @@ add_task(async () => {
   await popupshownPromise;
 
   
-  
-  
-  
-  let retry = 0;
-  while (
-    !SpecialPowers.getDOMWindowUtils(dialogWindow).flushApzRepaints(popup)
-  ) {
-    await promiseFrame();
-    retry++;
-    if (retry > 10) {
-      ok(false, "The popup didn't initialize APZ");
-      return;
-    }
-  }
+  await ensureApzReadyForPopup(popup, dialogWindow);
   await promiseApzFlushedRepaints(popup);
 
   
