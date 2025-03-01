@@ -8,10 +8,29 @@
 
 "use strict";
 
-add_task(async function test_preexisting_crlite_data() {
+add_task(async function () {
   Services.prefs.setIntPref(
     "security.pki.crlite_mode",
     CRLiteModeEnforcePrefValue
+  );
+
+  let securityStateDirectory = do_get_profile();
+  securityStateDirectory.append("security_state");
+
+  
+  do_get_file("test_crlite_filters/20201017-0-filter").copyTo(
+    securityStateDirectory,
+    "crlite.filter"
+  );
+
+  do_get_file("test_crlite_filters/20201017-1-filter.delta").copyTo(
+    securityStateDirectory,
+    "20201017-1-filter.delta"
+  );
+
+  do_get_file("test_crlite_filters/20201201-3-filter.delta").copyTo(
+    securityStateDirectory,
+    "20201201-3-filter.delta"
   );
 
   let certStorage = Cc["@mozilla.org/security/certstorage;1"].getService(
@@ -21,49 +40,20 @@ add_task(async function test_preexisting_crlite_data() {
   let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
   );
-  
+
   
   let issuerCert = constructCertFromFile("test_crlite_filters/issuer.pem");
   ok(issuerCert, "issuer certificate should decode successfully");
-  let noSCTCertIssuer = constructCertFromFile(
-    "test_crlite_filters/no-sct-issuer.pem"
-  );
-  ok(
-    noSCTCertIssuer,
-    "issuer certificate for certificate without SCTs should decode successfully"
-  );
-
-  let validCert = constructCertFromFile("test_crlite_filters/valid.pem");
-  let revokedCert = constructCertFromFile("test_crlite_filters/revoked.pem");
-
-  
-  
-  
-  
-  await checkCertErrorGenericAtTime(
-    certdb,
-    revokedCert,
-    PRErrorCodeSuccess,
-    Ci.nsIX509CertDB.verifyUsageTLSServer,
-    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-    false,
-    "us-datarecovery.com",
-    Ci.nsIX509CertDB.FLAG_LOCAL_ONLY
-  );
 
   
   await new Promise(resolve => {
-    certStorage.addCRLiteStash(new Uint8Array([]), (rv, _) => {
+    certStorage.testNoteCRLiteUpdateTime((rv, _) => {
       Assert.equal(rv, Cr.NS_OK, "marked filter as fresh");
       resolve();
     });
   });
 
-  
-  
-  
-  
-  
+  let validCert = constructCertFromFile("test_crlite_filters/valid.pem");
   await checkCertErrorGenericAtTime(
     certdb,
     validCert,
@@ -75,22 +65,7 @@ add_task(async function test_preexisting_crlite_data() {
     0
   );
 
-  
-  
-  
-  
-  
-  await checkCertErrorGenericAtTime(
-    certdb,
-    validCert,
-    PRErrorCodeSuccess,
-    Ci.nsIX509CertDB.verifyUsageTLSServer,
-    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-    false,
-    "vpn.worldofspeed.org",
-    0
-  );
-
+  let revokedCert = constructCertFromFile("test_crlite_filters/revoked.pem");
   await checkCertErrorGenericAtTime(
     certdb,
     revokedCert,
@@ -105,17 +80,6 @@ add_task(async function test_preexisting_crlite_data() {
   let revokedInStashCert = constructCertFromFile(
     "test_crlite_filters/revoked-in-stash.pem"
   );
-  
-  
-  await new Promise(resolve => {
-    certStorage.hasPriorData(
-      Ci.nsICertStorage.DATA_TYPE_CRLITE_FILTER_INCREMENTAL,
-      (rv, _) => {
-        Assert.equal(rv, Cr.NS_OK, "hasPriorData should succeed");
-        resolve();
-      }
-    );
-  });
   await checkCertErrorGenericAtTime(
     certdb,
     revokedInStashCert,
@@ -140,69 +104,4 @@ add_task(async function test_preexisting_crlite_data() {
     "icsreps.com",
     0
   );
-
-  
-  
-  
-  
-  
-  let noSCTCert = constructCertFromFile("test_crlite_filters/no-sct.pem");
-  
-  
-  
-  Services.prefs.setCharPref("network.dns.localDomains", "ocsp.digicert.com");
-  Services.prefs.setBoolPref("security.OCSP.require", true);
-  Services.prefs.setIntPref("security.OCSP.enabled", 1);
-  await checkCertErrorGenericAtTime(
-    certdb,
-    noSCTCert,
-    SEC_ERROR_OCSP_SERVER_ERROR,
-    Ci.nsIX509CertDB.verifyUsageTLSServer,
-    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
-    false,
-    "mail233.messagelabs.com",
-    0
-  );
-  Services.prefs.clearUserPref("network.dns.localDomains");
-  Services.prefs.clearUserPref("security.OCSP.require");
-  Services.prefs.clearUserPref("security.OCSP.enabled");
-
-  let notCoveredCert = constructCertFromFile(
-    "test_crlite_filters/notcovered.pem"
-  );
-  await checkCertErrorGenericAtTime(
-    certdb,
-    notCoveredCert,
-    PRErrorCodeSuccess,
-    Ci.nsIX509CertDB.verifyUsageTLSServer,
-    new Date("2022-01-07T00:00:00Z").getTime() / 1000,
-    false,
-    "peekaboophonics.com",
-    Ci.nsIX509CertDB.FLAG_LOCAL_ONLY
-  );
 });
-
-function run_test() {
-  let securityStateDirectory = do_get_profile();
-  securityStateDirectory.append("security_state");
-  
-  let crilteFile = do_get_file("test_crlite_filters/20201017-0-filter");
-  crilteFile.copyTo(securityStateDirectory, "crlite.filter");
-  
-  
-  
-  
-  
-  let stashFile = do_get_file("test_crlite_preexisting/crlite.stash");
-  stashFile.copyTo(securityStateDirectory, "crlite.stash");
-  let coverageFile = do_get_file("test_crlite_preexisting/crlite.coverage");
-  coverageFile.copyTo(securityStateDirectory, "crlite.coverage");
-  let enrollmentFile = do_get_file("test_crlite_preexisting/crlite.enrollment");
-  enrollmentFile.copyTo(securityStateDirectory, "crlite.enrollment");
-  let certStorageFile = do_get_file(
-    "test_crlite_preexisting/crlite.enrollment"
-  );
-  certStorageFile.copyTo(securityStateDirectory, "crlite.enrollment");
-
-  run_next_test();
-}

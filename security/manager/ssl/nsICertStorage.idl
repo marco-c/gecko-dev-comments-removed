@@ -57,23 +57,6 @@ interface nsISubjectAndPubKeyRevocationState : nsIRevocationState {
 
 
 
-
-
-
-
-[scriptable, uuid(416453f7-29bd-4820-a039-9c2e055d3715)]
-interface nsICRLiteCoverage : nsISupports {
-    readonly attribute ACString b64LogID;
-    readonly attribute unsigned long long minTimestamp;
-    readonly attribute unsigned long long maxTimestamp;
-};
-
-
-
-
-
-
-
 [uuid(9676cfc4-6e84-11ec-a30d-d3cd0af86e01)]
 interface nsICRLiteTimestamp: nsISupports {
     readonly attribute Array<octet> logID;
@@ -152,12 +135,8 @@ interface nsICertStorage : nsISupports {
 
 
 
-
-
   [must_use]
   void setFullCRLiteFilter(in Array<octet> filter,
-                           in Array<ACString> enrolledIssuers,
-                           in Array<nsICRLiteCoverage> coverage,
                            in nsICertStorageCallback callback);
 
   
@@ -174,28 +153,11 @@ interface nsICertStorage : nsISupports {
 
 
 
+
   [must_use, noscript]
-  short getCRLiteRevocationState(in Array<octet> issuer,
-                                 in Array<octet> issuerSPKI,
+  short getCRLiteRevocationState(in Array<octet> issuerSPKI,
                                  in Array<octet> serialNumber,
                                  in Array<nsICRLiteTimestamp> timestamps);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [must_use]
-  void addCRLiteStash(in Array<octet> stash, in nsICertStorageCallback callback);
 
   
 
@@ -210,11 +172,8 @@ interface nsICertStorage : nsISupports {
   
 
 
-
-
-
-  [must_use, noscript]
-  boolean isCertRevokedByStash(in Array<octet> issuerSPKI, in Array<octet> serialNumber);
+  [must_use]
+  void testNoteCRLiteUpdateTime(in nsICertStorageCallback callback);
 
   
 
