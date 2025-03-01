@@ -79,10 +79,7 @@ add_task(async function () {
   is(win.gBrowser.tabs.length, 3, "The restored window should have 3 tabs");
 
   
-  
-  
-  
-  await BrowserTestUtils.waitForCondition(() => updateCalled == 2);
+  await BrowserTestUtils.waitForCondition(() => updateCalled == 1);
 
   let searchModeSwitcherButton = win.document.getElementById(
     "searchmode-switcher-icon"
