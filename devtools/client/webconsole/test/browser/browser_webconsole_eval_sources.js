@@ -25,11 +25,14 @@ add_task(async function () {
     "expected source url"
   );
 
+  await toolbox.selectTool("webconsole");
   await testOpenInDebugger(hud, {
     text: "FOO",
     typeSelector: ".console-api",
     expectUrl: false,
   });
+
+  await toolbox.selectTool("webconsole");
   await testOpenInDebugger(hud, {
     text: "BAR",
     typeSelector: ".error",
@@ -38,6 +41,7 @@ add_task(async function () {
 
   
   
+  await toolbox.selectTool("webconsole");
   await testOpenInDebugger(hud, {
     text: "BAZ",
     typeSelector: ".console-api",
@@ -45,6 +49,7 @@ add_task(async function () {
   });
 
   
+  await toolbox.selectTool("webconsole");
   messageNode = await waitFor(() => findConsoleAPIMessage(hud, "TRACE"));
   await clickFirstStackElement(hud, messageNode, false);
 
