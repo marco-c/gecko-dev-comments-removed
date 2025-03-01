@@ -2003,6 +2003,9 @@ pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.locale-thu
 pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.searchTopsitesCompact", true);
 
 
+pref("browser.newtabpage.activity-stream.discoverystream.publisherFavicon.enabled", false);
+
+
 pref("browser.newtabpage.activity-stream.feeds.section.topstories", true);
 
 
