@@ -458,9 +458,11 @@ Result<mozilla::Ok, nsresult> AnnexB::ConvertSampleToHVCC(
     LOG("Failed to parse invalid hvcc extradata");
     return Err(NS_ERROR_DOM_MEDIA_METADATA_ERR);
   }
+
   
   
-  
+  aSample->mExtraData = H265::CreateFakeExtraData();
+
   return Ok();
 }
 
