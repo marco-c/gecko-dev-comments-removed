@@ -628,7 +628,9 @@ class AndroidMixin(object):
             return
 
         if self.is_emulator:
-            max_restarts = 5
+            
+            
+            max_restarts = 2
             emulator_ok = self._retry(
                 max_restarts,
                 10,
