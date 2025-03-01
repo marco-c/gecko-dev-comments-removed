@@ -1,0 +1,27 @@
+
+
+
+
+
+#include "pkcs11.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern "C" {
+
+CK_RV TRUST_ANCHORS_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList);
+
+CK_RV C_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList) {
+  return TRUST_ANCHORS_GetFunctionList(ppFunctionList);
+}
+}
