@@ -137,6 +137,12 @@ void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig) {
       !gfx::gfxVars::AllowSoftwareWebRenderD3D11()) {
     mUseExternalTextureInSwapChain = false;
   }
+#elif defined(MOZ_WIDGET_GTK)
+  
+  const auto& modifiers = gfx::gfxVars::DMABufModifiersARGB();
+  if (modifiers.IsEmpty()) {
+    mUseExternalTextureInSwapChain = false;
+  }
 #endif
   mTexture = aConfig.mDevice->InitSwapChain(
       mConfig.get(), mRemoteTextureOwnerId.ref(),
