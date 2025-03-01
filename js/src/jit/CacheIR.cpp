@@ -6105,92 +6105,6 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachStub() {
   return AttachDecision::NoAction;
 }
 
-static bool IsArrayInstanceOptimizable(JSContext* cx, Handle<ArrayObject*> arr,
-                                       MutableHandle<NativeObject*> arrProto) {
-  
-  auto* proto = cx->global()->maybeGetArrayPrototype();
-  if (!proto || arr->staticPrototype() != proto) {
-    return false;
-  }
-  arrProto.set(proto);
-
-  
-  PropertyKey iteratorKey =
-      PropertyKey::Symbol(cx->wellKnownSymbols().iterator);
-  return !arr->lookupPure(iteratorKey);
-}
-
-static bool IsArrayPrototypeOptimizable(JSContext* cx, Handle<ArrayObject*> arr,
-                                        Handle<NativeObject*> arrProto,
-                                        uint32_t* slot,
-                                        MutableHandle<JSFunction*> iterFun) {
-  PropertyKey iteratorKey =
-      PropertyKey::Symbol(cx->wellKnownSymbols().iterator);
-  
-  Maybe<PropertyInfo> prop = arrProto->lookupPure(iteratorKey);
-  if (prop.isNothing() || !prop->isDataProperty()) {
-    return false;
-  }
-
-  *slot = prop->slot();
-  MOZ_ASSERT(arrProto->numFixedSlots() == 0, "Stub code relies on this");
-
-  const Value& iterVal = arrProto->getSlot(*slot);
-  if (!iterVal.isObject() || !iterVal.toObject().is<JSFunction>()) {
-    return false;
-  }
-
-  iterFun.set(&iterVal.toObject().as<JSFunction>());
-  return IsSelfHostedFunctionWithName(iterFun, cx->names().dollar_ArrayValues_);
-}
-
-enum class AllowIteratorReturn : bool {
-  No,
-  Yes,
-};
-static bool IsArrayIteratorPrototypeOptimizable(
-    JSContext* cx, AllowIteratorReturn allowReturn,
-    MutableHandle<NativeObject*> arrIterProto, uint32_t* slot,
-    MutableHandle<JSFunction*> nextFun) {
-  NativeObject* proto = nullptr;
-  {
-    AutoEnterOOMUnsafeRegion oom;
-    proto = GlobalObject::getOrCreateArrayIteratorPrototype(cx, cx->global());
-    if (!proto) {
-      oom.crash("failed to allocate Array iterator prototype");
-    }
-  }
-  arrIterProto.set(proto);
-
-  
-  Maybe<PropertyInfo> prop = proto->lookupPure(cx->names().next);
-  if (prop.isNothing() || !prop->isDataProperty()) {
-    return false;
-  }
-
-  *slot = prop->slot();
-  MOZ_ASSERT(proto->numFixedSlots() == 0, "Stub code relies on this");
-
-  const Value& nextVal = proto->getSlot(*slot);
-  if (!nextVal.isObject() || !nextVal.toObject().is<JSFunction>()) {
-    return false;
-  }
-
-  nextFun.set(&nextVal.toObject().as<JSFunction>());
-  if (!IsSelfHostedFunctionWithName(nextFun, cx->names().ArrayIteratorNext)) {
-    return false;
-  }
-
-  if (allowReturn == AllowIteratorReturn::No) {
-    
-    if (!CheckHasNoSuchProperty(cx, proto, NameToId(cx->names().return_))) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArray() {
   if (!isFirstStub_) {
     return AttachDecision::NoAction;
@@ -6201,31 +6115,7 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArray() {
     return AttachDecision::NoAction;
   }
   Rooted<JSObject*> obj(cx_, &val_.toObject());
-  if (!IsPackedArray(obj)) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  
-  Rooted<NativeObject*> arrProto(cx_);
-  uint32_t arrProtoIterSlot;
-  Rooted<JSFunction*> iterFun(cx_);
-  if (!IsArrayInstanceOptimizable(cx_, obj.as<ArrayObject>(), &arrProto)) {
-    return AttachDecision::NoAction;
-  }
-
-  if (!IsArrayPrototypeOptimizable(cx_, obj.as<ArrayObject>(), arrProto,
-                                   &arrProtoIterSlot, &iterFun)) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  Rooted<NativeObject*> arrayIteratorProto(cx_);
-  uint32_t iterNextSlot;
-  Rooted<JSFunction*> nextFun(cx_);
-  if (!IsArrayIteratorPrototypeOptimizable(cx_, AllowIteratorReturn::Yes,
-                                           &arrayIteratorProto, &iterNextSlot,
-                                           &nextFun)) {
+  if (!IsArrayWithDefaultIterator<MustBePacked::Yes>(obj, cx_)) {
     return AttachDecision::NoAction;
   }
 
@@ -6238,16 +6128,8 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArray() {
   writer.guardArrayIsPacked(objId);
 
   
-  ObjOperandId arrProtoId = writer.loadObject(arrProto);
-  ObjOperandId iterId = writer.loadObject(iterFun);
-  writer.guardShape(arrProtoId, arrProto->shape());
-  writer.guardDynamicSlotIsSpecificObject(arrProtoId, iterId, arrProtoIterSlot);
-
   
-  ObjOperandId iterProtoId = writer.loadObject(arrayIteratorProto);
-  ObjOperandId nextId = writer.loadObject(nextFun);
-  writer.guardShape(iterProtoId, arrayIteratorProto->shape());
-  writer.guardDynamicSlotIsSpecificObject(iterProtoId, nextId, iterNextSlot);
+  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorFuse);
 
   writer.loadObjectResult(objId);
   writer.returnFromIC();
@@ -6281,18 +6163,13 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArguments() {
     return AttachDecision::NoAction;
   }
 
-  Rooted<Shape*> shape(cx_, GlobalObject::getArrayShapeWithDefaultProto(cx_));
-  if (!shape) {
-    cx_->clearPendingException();
+  if (!HasOptimizableArrayIteratorPrototype(cx_)) {
     return AttachDecision::NoAction;
   }
 
-  Rooted<NativeObject*> arrayIteratorProto(cx_);
-  uint32_t slot;
-  Rooted<JSFunction*> nextFun(cx_);
-  if (!IsArrayIteratorPrototypeOptimizable(cx_, AllowIteratorReturn::Yes,
-                                           &arrayIteratorProto, &slot,
-                                           &nextFun)) {
+  Rooted<Shape*> shape(cx_, GlobalObject::getArrayShapeWithDefaultProto(cx_));
+  if (!shape) {
+    cx_->clearPendingException();
     return AttachDecision::NoAction;
   }
 
@@ -6312,13 +6189,7 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArguments() {
   writer.guardArgumentsObjectFlags(objId, flags);
   writer.guardObjectHasSameRealm(objId);
 
-  ObjOperandId protoId = writer.loadObject(arrayIteratorProto);
-  ObjOperandId nextId = writer.loadObject(nextFun);
-
-  writer.guardShape(protoId, arrayIteratorProto->shape());
-
-  
-  writer.guardDynamicSlotIsSpecificObject(protoId, nextId, slot);
+  writer.guardFuse(RealmFuses::FuseIndex::OptimizeArrayIteratorPrototypeFuse);
 
   writer.arrayFromArgumentsObjectResult(objId, shape);
   writer.returnFromIC();
@@ -11411,12 +11282,7 @@ InlinableNativeIRGenerator::tryAttachArrayIteratorPrototypeOptimizable() {
     return AttachDecision::NoAction;
   }
 
-  Rooted<NativeObject*> arrayIteratorProto(cx_);
-  uint32_t slot;
-  Rooted<JSFunction*> nextFun(cx_);
-  if (!IsArrayIteratorPrototypeOptimizable(cx_, AllowIteratorReturn::Yes,
-                                           &arrayIteratorProto, &slot,
-                                           &nextFun)) {
+  if (!HasOptimizableArrayIteratorPrototype(cx_)) {
     return AttachDecision::NoAction;
   }
 
@@ -11425,13 +11291,7 @@ InlinableNativeIRGenerator::tryAttachArrayIteratorPrototypeOptimizable() {
 
   
 
-  ObjOperandId protoId = writer.loadObject(arrayIteratorProto);
-  ObjOperandId nextId = writer.loadObject(nextFun);
-
-  writer.guardShape(protoId, arrayIteratorProto->shape());
-
-  
-  writer.guardDynamicSlotIsSpecificObject(protoId, nextId, slot);
+  writer.guardFuse(RealmFuses::FuseIndex::OptimizeArrayIteratorPrototypeFuse);
   writer.loadBooleanResult(true);
   writer.returnFromIC();
 
@@ -16121,37 +15981,7 @@ AttachDecision OptimizeGetIteratorIRGenerator::tryAttachArray() {
     return AttachDecision::NoAction;
   }
   Rooted<JSObject*> obj(cx_, &val_.toObject());
-  if (!IsPackedArray(obj)) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  
-  Rooted<NativeObject*> arrProto(cx_);
-  uint32_t arrProtoIterSlot;
-  Rooted<JSFunction*> iterFun(cx_);
-  if (!IsArrayInstanceOptimizable(cx_, obj.as<ArrayObject>(), &arrProto)) {
-    return AttachDecision::NoAction;
-  }
-
-  if (!IsArrayPrototypeOptimizable(cx_, obj.as<ArrayObject>(), arrProto,
-                                   &arrProtoIterSlot, &iterFun)) {
-    
-    MOZ_ASSERT(
-        !obj->nonCCWRealm()->realmFuses.optimizeGetIteratorFuse.intact());
-    return AttachDecision::NoAction;
-  }
-
-  
-  
-  Rooted<NativeObject*> arrayIteratorProto(cx_);
-  uint32_t slot;
-  Rooted<JSFunction*> nextFun(cx_);
-  if (!IsArrayIteratorPrototypeOptimizable(
-          cx_, AllowIteratorReturn::No, &arrayIteratorProto, &slot, &nextFun)) {
-    
-    MOZ_ASSERT(
-        !obj->nonCCWRealm()->realmFuses.optimizeGetIteratorFuse.intact());
+  if (!IsArrayWithDefaultIterator<MustBePacked::Yes>(obj, cx_)) {
     return AttachDecision::NoAction;
   }
 
@@ -16162,50 +15992,16 @@ AttachDecision OptimizeGetIteratorIRGenerator::tryAttachArray() {
   MOZ_ASSERT(obj->is<ArrayObject>());
   writer.guardShape(objId, obj->shape());
   writer.guardArrayIsPacked(objId);
-  bool intact = obj->nonCCWRealm()->realmFuses.optimizeGetIteratorFuse.intact();
 
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  bool useDynamicCheck = !intact || !JS::Prefs::destructuring_fuse();
-  if (useDynamicCheck) {
-    
-    ObjOperandId arrProtoId = writer.loadObject(arrProto);
-    ObjOperandId iterId = writer.loadObject(iterFun);
-    writer.guardShape(arrProtoId, arrProto->shape());
-    writer.guardDynamicSlotIsSpecificObject(arrProtoId, iterId,
-                                            arrProtoIterSlot);
-
-    
-    ObjOperandId iterProtoId = writer.loadObject(arrayIteratorProto);
-    ObjOperandId nextId = writer.loadObject(nextFun);
-    writer.guardShape(iterProtoId, arrayIteratorProto->shape());
-    writer.guardDynamicSlotIsSpecificObject(iterProtoId, nextId, slot);
-
-    
-    ShapeGuardProtoChain(writer, arrayIteratorProto, iterProtoId);
-  } else {
-    
-    
-    
-    writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorFuse);
-  }
+  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorFuse);
 
   writer.loadBooleanResult(true);
   writer.returnFromIC();
 
-  if (useDynamicCheck) {
-    trackAttached("OptimizeGetIterator.Array.Dynamic");
-  } else {
-    trackAttached("OptimizeGetIterator.Array.Fuse");
-  }
+  trackAttached("OptimizeGetIterator.Array.Fuse");
   return AttachDecision::Attach;
 }
 
