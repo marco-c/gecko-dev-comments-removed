@@ -5178,7 +5178,7 @@ nsSize ScrollContainerFrame::GetPageScrollAmount() const {
 
 
 void ScrollContainerFrame::ScrollToRestoredPosition() {
-  if (mRestorePos.y == -1 || mLastPos.x == -1 || mLastPos.y == -1) {
+  if (!NeedRestorePosition()) {
     return;
   }
   
@@ -7638,8 +7638,13 @@ Maybe<SnapDestination> ScrollContainerFrame::GetSnapPointForDestination(
 Maybe<SnapDestination> ScrollContainerFrame::GetSnapPointForResnap() {
   nsIContent* focusedContent =
       GetContent()->GetComposedDoc()->GetUnretargetedFocusedContent();
+
+  
+  
+  nsPoint currentOrRestorePos =
+    NeedRestorePosition() ? mRestorePos : GetScrollPosition();
   return ScrollSnapUtils::GetSnapPointForResnap(
-      ComputeScrollSnapInfo(), GetLayoutScrollRange(), GetScrollPosition(),
+      ComputeScrollSnapInfo(), GetLayoutScrollRange(), currentOrRestorePos,
       mLastSnapTargetIds, focusedContent);
 }
 
