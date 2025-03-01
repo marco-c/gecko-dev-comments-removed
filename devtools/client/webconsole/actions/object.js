@@ -11,6 +11,27 @@ loader.lazyServiceGetter(
   "nsIClipboardHelper"
 );
 
+loader.lazyRequireGetter(
+  this,
+  "l10n",
+  "resource://devtools/client/webconsole/utils/messages.js",
+  true
+);
+
+loader.lazyRequireGetter(
+  this,
+  "actions",
+  "resource://devtools/client/webconsole/actions/index.js",
+  false
+);
+
+loader.lazyRequireGetter(
+  this,
+  "PriorityLevels",
+  "resource://devtools/client/shared/components/NotificationBox.js",
+  true
+);
+
 function storeAsGlobal(actor) {
   return async ({ commands, hud }) => {
     const evalString = `{ let i = 0;
@@ -46,7 +67,7 @@ function storeAsGlobal(actor) {
 }
 
 function copyMessageObject(actor, variableText) {
-  return async ({ commands }) => {
+  return async ({ commands, dispatch }) => {
     if (actor) {
       
       
@@ -57,8 +78,24 @@ function copyMessageObject(actor, variableText) {
         
         preferConsoleCommandsOverLocalSymbols: true,
       });
-
-      clipboardHelper.copyString(res.helperResult.value);
+      if (res.helperResult.type === "copyValueToClipboard") {
+        clipboardHelper.copyString(res.helperResult.value);
+      } else if (res.helperResult.type === "error") {
+        const nofificationName = "copy-value-to-clipboard-notification";
+        dispatch(
+          actions.appendNotification(
+            l10n.getFormatStr(
+              res.helperResult.message,
+              res.helperResult.messageArgs
+            ),
+            nofificationName,
+            null,
+            PriorityLevels.PRIORITY_CRITICAL_HIGH,
+            null,
+            () => dispatch(actions.removeNotification(nofificationName))
+          )
+        );
+      }
     } else {
       clipboardHelper.copyString(variableText);
     }
