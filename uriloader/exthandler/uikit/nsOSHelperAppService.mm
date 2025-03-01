@@ -53,6 +53,7 @@ NS_IMETHODIMP
 nsOSHelperAppService::GetProtocolHandlerInfoFromOS(const nsACString& aScheme,
                                                    bool* found,
                                                    nsIHandlerInfo** _retval) {
-  *found = false;
-  return NS_OK;
+  
+  
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
