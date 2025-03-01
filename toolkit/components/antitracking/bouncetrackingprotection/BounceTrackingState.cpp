@@ -607,7 +607,6 @@ nsresult BounceTrackingState::OnStartNavigation(
     }
   }
 
-
   
   
   

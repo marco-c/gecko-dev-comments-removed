@@ -17627,15 +17627,16 @@ void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
     }
   }
 
-
   
   
   if (XRE_IsParentProcess()) {
     Unused << StorageAccessAPIHelper::AllowAccessForOnParentProcess(
-        NodePrincipal(), openerBC, ContentBlockingNotifier::eOpenerAfterUserInteraction);
+        NodePrincipal(), openerBC,
+        ContentBlockingNotifier::eOpenerAfterUserInteraction);
   } else {
     Unused << StorageAccessAPIHelper::AllowAccessForOnChildProcess(
-        NodePrincipal(), openerBC, ContentBlockingNotifier::eOpenerAfterUserInteraction);
+        NodePrincipal(), openerBC,
+        ContentBlockingNotifier::eOpenerAfterUserInteraction);
   }
 }
 
