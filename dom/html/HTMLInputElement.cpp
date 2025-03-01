@@ -3152,32 +3152,18 @@ bool HTMLInputElement::IsDisabledForEvents(WidgetEvent* aEvent) {
 
 bool HTMLInputElement::CheckActivationBehaviorPreconditions(
     EventChainVisitor& aVisitor) const {
-  switch (mType) {
-    case FormControlType::InputColor:
-    case FormControlType::InputCheckbox:
-    case FormControlType::InputRadio:
-    case FormControlType::InputFile:
-    case FormControlType::InputSubmit:
-    case FormControlType::InputImage:
-    case FormControlType::InputReset:
-    case FormControlType::InputButton: {
-      
-      
-      
-      
-      WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
-      bool outerActivateEvent =
-          (mouseEvent && mouseEvent->IsLeftClickEvent()) ||
-          (aVisitor.mEvent->mMessage == eLegacyDOMActivate &&
-           !mInInternalActivate);
-      if (outerActivateEvent) {
-        aVisitor.mItemFlags |= NS_OUTER_ACTIVATE_EVENT;
-      }
-      return outerActivateEvent;
-    }
-    default:
-      return false;
+  
+  
+  
+  
+  WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
+  bool outerActivateEvent =
+      (mouseEvent && mouseEvent->IsLeftClickEvent()) ||
+      (aVisitor.mEvent->mMessage == eLegacyDOMActivate && !mInInternalActivate);
+  if (outerActivateEvent) {
+    aVisitor.mItemFlags |= NS_OUTER_ACTIVATE_EVENT;
   }
+  return outerActivateEvent;
 }
 
 void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
