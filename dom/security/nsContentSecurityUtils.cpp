@@ -606,7 +606,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
       "resource://testing-common/content-task.js"_ns,
 
       
-      "resource://gre/modules/translation/cld-worker.js"_ns,
+      "resource://gre/modules/translations/cld-worker.js"_ns,
 
       
       

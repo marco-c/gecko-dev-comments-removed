@@ -65,7 +65,7 @@ const intermittently_loaded_scripts = {
 
     
     "resource://gre/actors/TranslationsChild.sys.mjs",
-    "resource://gre/modules/translation/LanguageDetector.sys.mjs",
+    "resource://gre/modules/translations/LanguageDetector.sys.mjs",
     "resource://gre/modules/ConsoleAPIStorage.sys.mjs", 
 
     

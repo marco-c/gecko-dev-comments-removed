@@ -277,7 +277,7 @@ module.exports = [
   "toolkit/components/reader/Readerable.sys.mjs",
 
   
-  "toolkit/components/translation/cld2/",
+  "toolkit/components/translations/cld2/",
 
   
   "toolkit/mozapps/update/tests/data/xpcshellConstantsPP.js",
