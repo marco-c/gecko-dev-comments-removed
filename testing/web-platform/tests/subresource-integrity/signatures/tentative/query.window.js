@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let test_cases = [
+  "", "test", "test=a", "test=%2F",  "test=ü"
+];
+
+for (let query of test_cases) {
+  generate_query_test(query, {}, EXPECT_LOADED,
+                      `Query = "${query}": no integrity check: loads.`);
+  generate_query_test(query, {integrity:`ed25519-${kValidKeys['rfc']}`}, EXPECT_LOADED,
+                      `Query = "${query}": matching integrity check: loads.`);
+  generate_query_test(query, {integrity:`ed25519-${kInvalidKey}`}, EXPECT_BLOCKED,
+                      `Query = "${query}": mismatched integrity check: blocked.`);
+}
