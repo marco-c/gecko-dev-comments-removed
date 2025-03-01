@@ -3160,9 +3160,12 @@ size_t Document::FindDocStyleSheetInsertionPoint(const StyleSheet& aSheet) {
       
       
       
+      
+      
       MOZ_ASSERT(
           nsStyleSheetService::GetInstance()->AuthorStyleSheets()->Contains(
-              sheet));
+              sheet) ||
+          mAdditionalSheets[eAuthorSheet].Contains(sheet));
       continue;
     }
     size_t sheetDocIndex = StyleOrderIndexOfSheet(*sheet);
