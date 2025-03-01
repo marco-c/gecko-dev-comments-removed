@@ -16,6 +16,7 @@
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/ServiceWorkerGlobalScopeBinding.h"
@@ -57,7 +58,10 @@ bool ServiceWorkersEnabled(JSContext* aCx, JSObject* aGlobal) {
   if (const nsCOMPtr<nsIPrincipal> principal = global->PrincipalOrNull()) {
     
     
-    if (principal->GetIsInPrivateBrowsing()) {
+    
+    if (principal->GetIsInPrivateBrowsing() &&
+        !(StaticPrefs::dom_cache_privateBrowsing_enabled() &&
+          StaticPrefs::dom_serviceWorkers_privateBrowsing_enabled())) {
       return false;
     }
 
@@ -77,6 +81,58 @@ bool ServiceWorkersEnabled(JSContext* aCx, JSObject* aGlobal) {
 
   return StaticPrefs::dom_serviceWorkers_testing_enabled() ||
          IsServiceWorkersTestingEnabledInGlobal(jsGlobal);
+}
+
+bool ServiceWorkersStorageAllowedForGlobal(nsIGlobalObject* aGlobal) {
+  Maybe<ClientInfo> clientInfo = aGlobal->GetClientInfo();
+  nsICookieJarSettings* cookieJarSettings = aGlobal->GetCookieJarSettings();
+  nsIPrincipal* principal = aGlobal->PrincipalOrNull();
+
+  if (NS_WARN_IF(clientInfo.isNothing() || !cookieJarSettings || !principal)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  auto storageAllowed = aGlobal->GetStorageAccess();
+
+  
+  
+  
+  
+  
+  
+  
+  return (storageAllowed == StorageAccess::eAllow ||
+          (storageAllowed == StorageAccess::ePrivateBrowsing &&
+           StaticPrefs::dom_serviceWorkers_privateBrowsing_enabled()) ||
+          (ShouldPartitionStorage(storageAllowed) &&
+           StaticPrefs::privacy_partition_serviceWorkers() &&
+           StoragePartitioningEnabled(storageAllowed, cookieJarSettings) &&
+           (!principal->GetIsInPrivateBrowsing() ||
+            StaticPrefs::dom_serviceWorkers_privateBrowsing_enabled())));
+}
+
+bool ServiceWorkersStorageAllowedForClient(
+    const ClientInfoAndState& aInfoAndState) {
+  ClientInfo info(aInfoAndState.info());
+  ClientState state(ClientState::FromIPC(aInfoAndState.state()));
+
+  auto storageAllowed = state.GetStorageAccess();
+  
+  
+  
+  
+  return (storageAllowed == StorageAccess::eAllow ||
+          (storageAllowed == StorageAccess::ePrivateBrowsing &&
+           StaticPrefs::dom_serviceWorkers_privateBrowsing_enabled()) ||
+          (ShouldPartitionStorage(storageAllowed) &&
+           StaticPrefs::privacy_partition_serviceWorkers() &&
+           
+           (!info.IsPrivateBrowsing() ||
+            StaticPrefs::dom_serviceWorkers_privateBrowsing_enabled())));
 }
 
 bool ServiceWorkerRegistrationDataIsValid(

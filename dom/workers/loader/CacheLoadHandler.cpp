@@ -131,13 +131,6 @@ nsresult CacheCreator::CreateCacheStorage(nsIPrincipal* aPrincipal) {
   
   
   
-  if (NS_WARN_IF(mOriginAttributes.IsPrivateBrowsing())) {
-    return NS_ERROR_DOM_SECURITY_ERR;
-  }
-
-  
-  
-  
   ErrorResult error;
   mCacheStorage = CacheStorage::CreateOnMainThread(
       mozilla::dom::cache::CHROME_ONLY_NAMESPACE, mSandboxGlobalObject,
