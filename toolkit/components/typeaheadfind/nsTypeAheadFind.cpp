@@ -379,7 +379,7 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
       bool canSeeRange = IsRangeVisible(returnRange, aIsFirstVisiblePreferred,
                                         false, &usesIndependentSelection);
 
-      mStartPointRange = returnRange->CloneRange();
+      RefPtr newBoundaryRange = returnRange->CloneRange();
 
       
       
@@ -389,7 +389,13 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
           (mStartLinksOnlyPref && aIsLinksOnly && !isStartingLink)) {
         
         
-        mStartPointRange->Collapse(findPrev);
+        if (findPrev) {
+          mEndPointRange = newBoundaryRange;
+          mEndPointRange->Collapse(true);
+        } else {
+          mStartPointRange = newBoundaryRange;
+          mStartPointRange->Collapse(false);
+        }
         continue;
       }
 
@@ -574,24 +580,9 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
     }
 
     if (continueLoop) {
-      if (NS_FAILED(GetSearchContainers(
-              currentContainer, nullptr, aIsFirstVisiblePreferred, findPrev,
-              getter_AddRefs(presShell), getter_AddRefs(presContext)))) {
-        continue;
-      }
-
-      if (findPrev) {
-        
-        
-        RefPtr<nsRange> tempRange = mStartPointRange->CloneRange();
-        if (!mEndPointRange) {
-          mEndPointRange = nsRange::Create(presShell->GetDocument());
-        }
-
-        mStartPointRange = mEndPointRange;
-        mEndPointRange = tempRange;
-      }
-
+      Unused << GetSearchContainers(
+          currentContainer, nullptr, aIsFirstVisiblePreferred, findPrev,
+          getter_AddRefs(presShell), getter_AddRefs(presContext));
       continue;
     }
 
@@ -699,30 +690,21 @@ nsresult nsTypeAheadFind::GetSearchContainers(
   }
 
   if (!currentSelectionRange) {
+    
+    
+    
     mStartPointRange = mSearchRange->CloneRange();
-    
-    
-    
-    mStartPointRange->Collapse(!aFindPrev);
+    mStartPointRange->Collapse(true);
+    mEndPointRange = mSearchRange->CloneRange();
+    mEndPointRange->Collapse(false);
   } else {
-    uint32_t startOffset;
-    nsCOMPtr<nsINode> startNode;
     if (aFindPrev) {
-      startNode = currentSelectionRange->GetStartContainer();
-      startOffset = currentSelectionRange->StartOffset();
+      Unused << mEndPointRange->SetStartAndEnd(
+          currentSelectionRange->StartRef(), currentSelectionRange->StartRef());
     } else {
-      startNode = currentSelectionRange->GetEndContainer();
-      startOffset = currentSelectionRange->EndOffset();
+      Unused << mStartPointRange->SetStartAndEnd(
+          currentSelectionRange->EndRef(), currentSelectionRange->EndRef());
     }
-
-    if (!startNode) {
-      startNode = rootContent;
-    }
-
-    
-    mStartPointRange->SelectNode(*startNode, IgnoreErrors());
-    mStartPointRange->SetStart(*startNode, startOffset, IgnoreErrors());
-    mStartPointRange->Collapse(true);  
   }
 
   presShell.forget(aPresShell);
