@@ -597,10 +597,6 @@ pref("browser.urlbar.quicksuggest.exposureSuggestionTypes", "");
 pref("browser.urlbar.quicksuggest.mlEnabled", false);
 
 
-
-pref("browser.urlbar.quicksuggest.settingsUi", 0);
-
-
 #ifdef NIGHTLY_BUILD
 pref("browser.urlbar.unitConversion.enabled", true);
 #else
