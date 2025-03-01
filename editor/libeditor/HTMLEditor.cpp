@@ -7762,6 +7762,10 @@ nsresult HTMLEditor::OnModifyDocument(const DocumentModifiedEvent& aRunner) {
   if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
     
     
+    AutoHideSelectionChanges hideSelectionChangesCausedByTheHacks(
+        SelectionRef());
+    
+    
     
     
     
