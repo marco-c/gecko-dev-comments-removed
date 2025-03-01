@@ -88,11 +88,13 @@ interface XSLTProcessor {
 
 
 
+    [Throws]
     undefined clearParameters();
 
     
 
 
+    [Throws]
     undefined reset();
 
     
