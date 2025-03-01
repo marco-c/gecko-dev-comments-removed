@@ -1322,19 +1322,6 @@ template <typename T>
   return obj;
 }
 
-static MOZ_ALWAYS_INLINE bool IsOptimizableInit(JSContext* cx,
-                                                HandleObject iterable,
-                                                bool* optimized) {
-  MOZ_ASSERT(!*optimized);
-
-  if (!IsArrayWithDefaultIterator<MustBePacked::Yes>(iterable, cx)) {
-    return true;
-  }
-
-  *optimized = true;
-  return true;
-}
-
 
 
 
@@ -1350,13 +1337,8 @@ template <typename T>
 
   
 
-  bool optimized = false;
-  if (!IsOptimizableInit(cx, other, &optimized)) {
-    return nullptr;
-  }
-
   
-  if (optimized) {
+  if (IsArrayWithDefaultIterator<MustBePacked::Yes>(other, cx)) {
     
     
     Handle<ArrayObject*> array = other.as<ArrayObject>();
