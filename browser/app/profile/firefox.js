@@ -892,6 +892,12 @@ pref("browser.shopping.experience2023.integratedSidebar", false);
 pref("browser.shopping.experience2023.shoppingSidebar", true);
 
 
+
+
+
+pref("browser.shopping.experience2023.newPositionCard.hasSeen", false);
+
+
 pref("browser.spin_cursor_while_busy", false);
 
 
