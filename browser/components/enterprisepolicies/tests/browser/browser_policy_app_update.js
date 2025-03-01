@@ -20,6 +20,9 @@ add_task(async function test_updates_pre_policy() {
   let originalUpdateAutoValue = await UpdateUtils.getAppUpdateAutoEnabled();
   await UpdateUtils.setAppUpdateAutoEnabled(false);
   registerCleanupFunction(async () => {
+    
+    
+    await SpecialPowers.popPrefEnv();
     await UpdateUtils.setAppUpdateAutoEnabled(originalUpdateAutoValue);
   });
 
