@@ -134,6 +134,36 @@ void DMABUFTextureHostOGL::PushResourceUpdates(
                             false);
       break;
     }
+    case gfx::SurfaceFormat::P010: {
+      MOZ_ASSERT(aImageKeys.length() == 2);
+      MOZ_ASSERT(mSurface->GetTextureCount() == 2);
+      wr::ImageDescriptor descriptor0(
+          gfx::IntSize(mSurface->GetWidth(0), mSurface->GetHeight(0)),
+          gfx::SurfaceFormat::A16);
+      wr::ImageDescriptor descriptor1(
+          gfx::IntSize(mSurface->GetWidth(1), mSurface->GetHeight(1)),
+          gfx::SurfaceFormat::R16G16);
+      (aResources.*method)(aImageKeys[0], descriptor0, aExtID, imageType, 0,
+                            false);
+      (aResources.*method)(aImageKeys[1], descriptor1, aExtID, imageType, 1,
+                            false);
+      break;
+    }
+    case gfx::SurfaceFormat::NV16: {
+      MOZ_ASSERT(aImageKeys.length() == 2);
+      MOZ_ASSERT(mSurface->GetTextureCount() == 2);
+      wr::ImageDescriptor descriptor0(
+          gfx::IntSize(mSurface->GetWidth(0), mSurface->GetHeight(0)),
+          gfx::SurfaceFormat::A16);
+      wr::ImageDescriptor descriptor1(
+          gfx::IntSize(mSurface->GetWidth(1), mSurface->GetHeight(1)),
+          gfx::SurfaceFormat::R16G16);
+      (aResources.*method)(aImageKeys[0], descriptor0, aExtID, imageType, 0,
+                            false);
+      (aResources.*method)(aImageKeys[1], descriptor1, aExtID, imageType, 1,
+                            false);
+      break;
+    }
     default: {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     }
@@ -149,6 +179,7 @@ void DMABUFTextureHostOGL::PushDisplayItems(
   }
   bool preferCompositorSurface =
       aFlags.contains(PushDisplayItemFlag::PREFER_COMPOSITOR_SURFACE);
+
   switch (mSurface->GetFormat()) {
     case gfx::SurfaceFormat::R8G8B8X8:
     case gfx::SurfaceFormat::R8G8B8A8:
@@ -158,7 +189,8 @@ void DMABUFTextureHostOGL::PushDisplayItems(
       aBuilder.PushImage(aBounds, aClip, true, false, aFilter, aImageKeys[0],
                          !(mFlags & TextureFlags::NON_PREMULTIPLIED),
                          wr::ColorF{1.0f, 1.0f, 1.0f, 1.0f},
-                         preferCompositorSurface);
+                         preferCompositorSurface,
+                          true);
       break;
     }
     case gfx::SurfaceFormat::NV12: {
@@ -166,11 +198,11 @@ void DMABUFTextureHostOGL::PushDisplayItems(
       MOZ_ASSERT(mSurface->GetTextureCount() == 2);
       
       
-      aBuilder.PushNV12Image(aBounds, aClip, true, aImageKeys[0], aImageKeys[1],
-                             wr::ColorDepth::Color8,
-                             wr::ToWrYuvColorSpace(GetYUVColorSpace()),
-                             wr::ToWrColorRange(GetColorRange()), aFilter,
-                             preferCompositorSurface);
+      aBuilder.PushNV12Image(
+          aBounds, aClip, true, aImageKeys[0], aImageKeys[1],
+          wr::ColorDepth::Color8, wr::ToWrYuvColorSpace(GetYUVColorSpace()),
+          wr::ToWrColorRange(GetColorRange()), aFilter, preferCompositorSurface,
+           true);
       break;
     }
     case gfx::SurfaceFormat::YUV420: {
@@ -181,8 +213,28 @@ void DMABUFTextureHostOGL::PushDisplayItems(
       aBuilder.PushYCbCrPlanarImage(
           aBounds, aClip, true, aImageKeys[0], aImageKeys[1], aImageKeys[2],
           wr::ColorDepth::Color8, wr::ToWrYuvColorSpace(GetYUVColorSpace()),
-          wr::ToWrColorRange(GetColorRange()), aFilter,
-          preferCompositorSurface);
+          wr::ToWrColorRange(GetColorRange()), aFilter, preferCompositorSurface,
+           true);
+      break;
+    }
+    case gfx::SurfaceFormat::P010: {
+      MOZ_ASSERT(aImageKeys.length() == 2);
+      MOZ_ASSERT(mSurface->GetTextureCount() == 2);
+      aBuilder.PushP010Image(
+          aBounds, aClip, true, aImageKeys[0], aImageKeys[1],
+          wr::ColorDepth::Color10, wr::ToWrYuvColorSpace(GetYUVColorSpace()),
+          wr::ToWrColorRange(GetColorRange()), aFilter, preferCompositorSurface,
+           true);
+      break;
+    }
+    case gfx::SurfaceFormat::NV16: {
+      MOZ_ASSERT(aImageKeys.length() == 2);
+      MOZ_ASSERT(mSurface->GetTextureCount() == 2);
+      aBuilder.PushNV16Image(
+          aBounds, aClip, true, aImageKeys[0], aImageKeys[1],
+          wr::ColorDepth::Color10, wr::ToWrYuvColorSpace(GetYUVColorSpace()),
+          wr::ToWrColorRange(GetColorRange()), aFilter, preferCompositorSurface,
+           true);
       break;
     }
     default: {
