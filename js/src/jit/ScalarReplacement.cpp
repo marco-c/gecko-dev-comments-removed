@@ -3014,8 +3014,10 @@ void RestReplacer::visitConstructArray(MConstructArray* ins) {
 }
 
 
+
 static inline bool IsOptimizableWasmStructInstruction(MInstruction* ins) {
-  return ins->isWasmNewStructObject();
+  return ins->isWasmNewStructObject() &&
+         !ins->toWasmNewStructObject()->isOutline();
 }
 
 class WasmStructMemoryView : public MDefinitionVisitorDefaultNoop {
@@ -3053,9 +3055,9 @@ class WasmStructMemoryView : public MDefinitionVisitorDefaultNoop {
  public:
   void visitResumePoint(MResumePoint* rp);
   void visitPhi(MPhi* ins);
-  void visitWasmStoreFieldKA(MWasmStoreFieldKA* ins);
-  void visitWasmStoreFieldRefKA(MWasmStoreFieldRefKA* ins);
-  void visitWasmLoadFieldKA(MWasmLoadFieldKA* ins);
+  void visitWasmStoreField(MWasmStoreField* ins);
+  void visitWasmStoreFieldRef(MWasmStoreFieldRef* ins);
+  void visitWasmLoadField(MWasmLoadField* ins);
   void visitWasmPostWriteBarrierImmediate(MWasmPostWriteBarrierImmediate* ins);
 };
 
@@ -3120,10 +3122,10 @@ void WasmStructMemoryView::visitPhi(MPhi* ins) {
 
 void WasmStructMemoryView::visitResumePoint(MResumePoint* rp) {}
 
-void WasmStructMemoryView::visitWasmStoreFieldKA(MWasmStoreFieldKA* ins) {
+void WasmStructMemoryView::visitWasmStoreField(MWasmStoreField* ins) {
   
-  MDefinition* obj = ins->obj();
-  if (obj != struct_) {
+  MDefinition* base = ins->base();
+  if (base != struct_) {
     return;
   }
 
@@ -3135,16 +3137,16 @@ void WasmStructMemoryView::visitWasmStoreFieldKA(MWasmStoreFieldKA* ins) {
   }
 
   
-  state_->setField(ins->fieldIndex(), ins->value());
+  state_->setField(ins->structFieldIndex().value(), ins->value());
 
   
   ins->block()->discard(ins);
 }
 
-void WasmStructMemoryView::visitWasmStoreFieldRefKA(MWasmStoreFieldRefKA* ins) {
+void WasmStructMemoryView::visitWasmStoreFieldRef(MWasmStoreFieldRef* ins) {
   
-  MDefinition* obj = ins->obj();
-  if (obj != struct_) {
+  MDefinition* base = ins->base();
+  if (base != struct_) {
     return;
   }
 
@@ -3156,20 +3158,20 @@ void WasmStructMemoryView::visitWasmStoreFieldRefKA(MWasmStoreFieldRefKA* ins) {
   }
 
   
-  state_->setField(ins->fieldIndex(), ins->value());
+  state_->setField(ins->structFieldIndex().value(), ins->value());
 
   
   ins->block()->discard(ins);
 }
 
-void WasmStructMemoryView::visitWasmLoadFieldKA(MWasmLoadFieldKA* ins) {
+void WasmStructMemoryView::visitWasmLoadField(MWasmLoadField* ins) {
   
-  MDefinition* obj = ins->obj();
-  if (obj != struct_) {
+  MDefinition* base = ins->base();
+  if (base != struct_) {
     return;
   }
 
-  MDefinition* value = state_->getField(ins->fieldIndex());
+  MDefinition* value = state_->getField(ins->structFieldIndex().value());
 
   
   ins->replaceAllUsesWith(value);
@@ -3316,19 +3318,19 @@ static bool IsWasmStructEscaped(MDefinition* ins, MInstruction* newStruct) {
     switch (def->op()) {
       
       
-      case MDefinition::Opcode::WasmStoreFieldKA: {
+      case MDefinition::Opcode::WasmStoreField: {
         break;
       }
-      case MDefinition::Opcode::WasmStoreFieldRefKA: {
+      case MDefinition::Opcode::WasmStoreFieldRef: {
         
-        if (def->indexOf(*i) == 3) {
+        if (def->toWasmStoreFieldRef()->value() == newStruct) {
           JitSpewDef(JitSpew_Escape, "is escaped by\n", def);
           return true;
         }
         break;
       }
       
-      case MDefinition::Opcode::WasmLoadFieldKA: {
+      case MDefinition::Opcode::WasmLoadField: {
         break;
       }
       
