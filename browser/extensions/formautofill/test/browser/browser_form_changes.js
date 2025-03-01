@@ -135,15 +135,8 @@ async function checkFormChangeHappened(formId) {
       
       await checkFieldsAutofilled(browser, formId, MOCK_STORAGE[0]);
 
-      const filledOnFormChangePromise = TestUtils.topicObserved(
-        "formautofill-fill-after-form-change-complete"
-      );
-
       
       addInputField(browser, formId, "address-level2");
-
-      await filledOnFormChangePromise;
-
       await openPopupOn(browser, `#${formId} input[name=name]`);
 
       
@@ -156,15 +149,9 @@ async function checkFormChangeHappened(formId) {
         0
       );
 
-      const fieldDetectionCompletedPromiseResolver =
-        getFieldDetectionCompletedPromiseResolver();
-
       
       removeInputField(browser, `#${formId} input[name=address-level2]`);
       addInputField(browser, formId, "address-level2");
-
-      await fieldDetectionCompletedPromiseResolver;
-
       await openPopupOn(browser, `#${formId} input[name=address-level2]`);
 
       await checkMenuEntries(
