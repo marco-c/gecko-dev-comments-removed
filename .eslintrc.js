@@ -50,6 +50,10 @@ const httpTestingPaths = [
 module.exports = {
   settings: {
     "import/extensions": [".mjs"],
+    "import/resolver": {
+      [path.resolve(__dirname, "srcdir-resolver.js")]: {},
+      node: {},
+    },
   },
   ignorePatterns,
   
@@ -108,6 +112,8 @@ module.exports = {
         
         
         "*.config.?(m)js",
+        
+        "srcdir-resolver.js",
       ],
       env: {
         node: true,
