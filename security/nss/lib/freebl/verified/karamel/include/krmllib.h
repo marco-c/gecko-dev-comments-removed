@@ -16,12 +16,13 @@
 
 
 
-#include "krml/fstar_int.h"
-#include "krml/internal/builtin.h"
-#include "krml/internal/callconv.h"
-#include "krml/internal/debug.h"
 #include "krml/internal/target.h"
+#include "krml/internal/callconv.h"
+#include "krml/internal/builtin.h"
+#include "krml/internal/debug.h"
 #include "krml/internal/types.h"
+
 #include "krml/lowstar_endianness.h"
+#include "krml/fstar_int.h"
 
 #endif 

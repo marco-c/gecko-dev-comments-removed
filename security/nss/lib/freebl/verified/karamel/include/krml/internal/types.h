@@ -5,9 +5,9 @@
 #define KRML_TYPES_H
 
 #include <inttypes.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 
 
@@ -33,8 +33,7 @@ typedef FILE *FStar_IO_fd_read, *FStar_IO_fd_write;
 
 typedef void *FStar_Dyn_dyn;
 
-typedef const char *C_String_t, *C_String_t_, *C_Compat_String_t,
-    *C_Compat_String_t_;
+typedef const char *C_String_t, *C_String_t_, *C_Compat_String_t, *C_Compat_String_t_;
 
 typedef int exit_code;
 typedef FILE *channel;
@@ -55,12 +54,15 @@ typedef const char *Prims_string;
 
 
 
-#if (defined(__x86_64__) || defined(__x86_64) || defined(__aarch64__) || \
-     (defined(__powerpc64__) && defined(__LITTLE_ENDIAN__)) ||           \
-     defined(__s390x__) ||                                               \
-     (defined(_MSC_VER) && defined(_M_X64) && defined(__clang__)) ||     \
-     (defined(__mips__) && defined(__LP64__)) ||                         \
-     (defined(__riscv) && __riscv_xlen == 64) || defined(__SIZEOF_INT128__))
+#if (defined(__x86_64__) ||                                          \
+     defined(__x86_64) ||                                            \
+     defined(__aarch64__) ||                                         \
+     (defined(__powerpc64__) && defined(__LITTLE_ENDIAN__)) ||       \
+     defined(__s390x__) ||                                           \
+     (defined(_MSC_VER) && defined(_M_X64) && defined(__clang__)) || \
+     (defined(__mips__) && defined(__LP64__)) ||                     \
+     (defined(__riscv) && __riscv_xlen == 64) ||                     \
+     defined(__SIZEOF_INT128__))
 #define HAS_INT128 1
 #endif
 

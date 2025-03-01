@@ -1139,12 +1139,21 @@ SECKEY_PrivateKeyStrengthInBits(const SECKEYPrivateKey *privk)
         case rsaKey:
         case rsaPssKey:
         case rsaOaepKey:
-            
+            rv = PK11_ReadAttribute(privk->pkcs11Slot, privk->pkcs11ID,
+                                    CKA_MODULUS, NULL, &params);
+            if ((rv != SECSuccess) || (params.data == NULL)) {
+                
 
-            bitSize = PK11_SignatureLen((SECKEYPrivateKey *)privk) * PR_BITS_PER_BYTE;
-            if (bitSize == -1) {
-                bitSize = 0;
+
+
+                bitSize = PK11_SignatureLen((SECKEYPrivateKey *)privk) * PR_BITS_PER_BYTE;
+                if (bitSize == -1) {
+                    return 0;
+                }
+                return bitSize;
             }
+            bitSize = SECKEY_BigIntegerBitLength(&params);
+            PORT_Free(params.data);
             return bitSize;
         case dsaKey:
         case fortezzaKey:

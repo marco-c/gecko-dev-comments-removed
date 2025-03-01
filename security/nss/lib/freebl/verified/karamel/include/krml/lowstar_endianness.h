@@ -4,16 +4,15 @@
 #ifndef __LOWSTAR_ENDIANNESS_H
 #define __LOWSTAR_ENDIANNESS_H
 
-#include <inttypes.h>
 #include <string.h>
+#include <inttypes.h>
 
 
 
 
 
 
-#if defined(__linux__) || defined(__CYGWIN__) || \
-    defined(__USE_SYSTEM_ENDIAN_H__) || defined(__GLIBC__)
+#if defined(__linux__) || defined(__CYGWIN__) || defined(__USE_SYSTEM_ENDIAN_H__) || defined(__GLIBC__)
 #include <endian.h>
 
 
@@ -98,9 +97,7 @@
 
 
 
-
-#elif (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) || \
-    defined(_AIX)
+#elif (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) || defined(_AIX)
 
 
 

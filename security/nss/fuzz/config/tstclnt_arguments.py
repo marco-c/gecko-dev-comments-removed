@@ -16,7 +16,7 @@ def main():
 
     
     if random.randint(0, 1):
-        print(f"-z 0x{''.join(random.choices(string.hexdigits, k=25))}")
+        print(f"-z 0x{''.join(random.choices(string.hexdigits, k=16))}")
 
     
     if random.randint(0, 1):
