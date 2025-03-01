@@ -1416,7 +1416,7 @@ void ContentAnalysis::CancelWithError(nsCString&& aUserActionId,
   if (auto maybeUserActionData = mUserActionMap.Lookup(aUserActionId)) {
     if (aRequestToken) {
       
-      if (maybeUserActionData->mRequestTokens.EnsureRemoved(*aRequestToken)) {
+      if (maybeUserActionData->mRequestTokens.Contains(*aRequestToken)) {
         tokens.AppendElement(*aRequestToken);
       } else {
         MOZ_ASSERT_UNREACHABLE("Request token not found");
@@ -1529,6 +1529,17 @@ void ContentAnalysis::CancelWithError(nsCString&& aUserActionId,
     NotifyResponseObservers(response, nsCString(aUserActionId),
                             false );
     if (action != nsIContentAnalysisResponse::Action::eWarn) {
+      if (aRequestToken && *aRequestToken == token) {
+        
+        
+        
+        if (auto uaData = mUserActionMap.Lookup(aUserActionId)) {
+          DebugOnly<bool> found = uaData->mRequestTokens.EnsureRemoved(token);
+          MOZ_ASSERT(found);
+        } else {
+          MOZ_ASSERT_UNREACHABLE("UserAction map lost the user action ID?");
+        }
+      }
       if (callback) {
         if (isShutdown) {
           
@@ -1544,13 +1555,13 @@ void ContentAnalysis::CancelWithError(nsCString&& aUserActionId,
     }
   }
 
-  if (aRequestToken) {
+  MOZ_ASSERT(isTimeout || action != nsIContentAnalysisResponse::Action::eWarn);
+
+  if (aRequestToken || action == nsIContentAnalysisResponse::Action::eWarn) {
     
     
     return;
   }
-
-  MOZ_ASSERT(action != nsIContentAnalysisResponse::Action::eWarn);
 
   RemoveFromUserActionMap(nsCString(aUserActionId));
 
@@ -1792,6 +1803,17 @@ nsresult ContentAnalysis::RunAnalyzeRequestTask(
               LOGE("Content analysis got invalid response!");
               return;
             }
+
+            
+            
+            
+            
+            nsCString requestToken;
+            MOZ_ALWAYS_SUCCEEDS(response->GetRequestToken(requestToken));
+            if (owner->mWarnResponseDataMap.Contains(requestToken)) {
+              return;
+            }
+
             owner->NotifyObserversAndMaybeIssueResponse(
                 response, std::move(userActionId), aAutoAcknowledge);
           },
@@ -1867,16 +1889,6 @@ void ContentAnalysis::NotifyResponseObservers(
     
     nsCString requestToken;
     MOZ_ALWAYS_SUCCEEDS(aResponse->GetRequestToken(requestToken));
-
-    
-    
-    
-    if (auto entry = mUserActionMap.Lookup(aUserActionId)) {
-      if (entry->mTimeoutRunnable && !entry->mIsHandlingTimeout) {
-        entry->mTimeoutRunnable->Cancel();
-        entry->mTimeoutRunnable = nullptr;
-      }
-    }
 
     mWarnResponseDataMap.InsertOrUpdate(
         requestToken, WarnResponseData{aResponse, std::move(aUserActionId),
@@ -2344,11 +2356,31 @@ void ContentAnalysis::MultipartRequestCallback::Initialize(
       "ContentAnalysis timeout",
       [userActionId = mUserActionId,
        weakContentAnalysis = mWeakContentAnalysis]() mutable {
-        if (weakContentAnalysis) {
-          if (auto entry =
-                  weakContentAnalysis->mUserActionMap.Lookup(userActionId)) {
-            entry->mIsHandlingTimeout = true;
+        if (!weakContentAnalysis) {
+          return;
+        }
+        
+        
+        
+        
+        bool found = false;
+        if (auto remainingEntry =
+                weakContentAnalysis->mUserActionMap.Lookup(userActionId)) {
+          MOZ_ASSERT(!remainingEntry->mIsHandlingTimeout);
+          for (const auto& remainingToken : remainingEntry->mRequestTokens) {
+            if (!weakContentAnalysis->mWarnResponseDataMap.Contains(
+                    remainingToken)) {
+              
+              
+              found = true;
+              
+              
+              remainingEntry->mIsHandlingTimeout = true;
+              break;
+            }
           }
+        }
+        if (found) {
           weakContentAnalysis->CancelWithError(
               std::move(userActionId), Nothing(), NS_ERROR_DOM_TIMEOUT_ERR);
         }

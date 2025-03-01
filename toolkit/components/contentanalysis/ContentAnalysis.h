@@ -432,6 +432,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
     nsCString mUserActionId;
     bool mAutoAcknowledge;
   };
+  
   nsTHashMap<nsCString, WarnResponseData> mWarnResponseDataMap;
 
   std::vector<std::regex> mAllowUrlList;
