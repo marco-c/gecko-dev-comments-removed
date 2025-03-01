@@ -11260,6 +11260,12 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
   componentDidMount() {
     this.prefersDarkQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
   }
+  componentDidUpdate(prevProps) {
+    
+    if (this.props.exitEventFired && this.props.exitEventFired !== prevProps.exitEventFired) {
+      this.handleBack();
+    }
+  }
   handleColorInput(event) {
     let {
       id
@@ -11744,7 +11750,8 @@ class ContentSection extends (external_React_default()).PureComponent {
       className: "wallpapers-section"
     }, external_React_default().createElement(WallpaperCategories, {
       setPref: setPref,
-      activeWallpaper: activeWallpaper
+      activeWallpaper: activeWallpaper,
+      exitEventFired: exitEventFired
     })), external_React_default().createElement("span", {
       className: "divider",
       role: "separator"
