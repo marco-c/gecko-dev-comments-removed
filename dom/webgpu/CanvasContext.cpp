@@ -331,13 +331,29 @@ NS_IMETHODIMP CanvasContext::GetInputStream(const char* aMimeType,
                                   aMimeType, aEncoderOptions, aStream);
 }
 
+bool CanvasContext::GetIsOpaque() {
+  if (!mConfig) {
+    return false;
+  }
+  return mConfig->mAlphaMode == dom::GPUCanvasAlphaMode::Opaque;
+}
+
 already_AddRefed<gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
     gfxAlphaType* aOutAlphaType) {
-  
-  MOZ_ASSERT(GetIsOpaque());
-
-  if (aOutAlphaType) {
-    *aOutAlphaType = gfxAlphaType::Opaque;
+  gfx::SurfaceFormat snapshotFormat = mGfxFormat;
+  if (GetIsOpaque()) {
+    if (aOutAlphaType) {
+      *aOutAlphaType = gfxAlphaType::Opaque;
+    }
+    if (mGfxFormat == gfx::SurfaceFormat::B8G8R8A8) {
+      snapshotFormat = gfx::SurfaceFormat::B8G8R8X8;
+    } else if (mGfxFormat == gfx::SurfaceFormat::R8G8B8A8) {
+      snapshotFormat = gfx::SurfaceFormat::R8G8B8X8;
+    }
+  } else {
+    if (aOutAlphaType) {
+      *aOutAlphaType = gfxAlphaType::Premult;
+    }
   }
 
   auto* const cm = gfx::CanvasManagerChild::Get();
@@ -351,20 +367,13 @@ already_AddRefed<gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
 
   MOZ_ASSERT(mRemoteTextureOwnerId.isSome());
 
-  gfx::SurfaceFormat snapshotFormat = mGfxFormat;
-  if (mGfxFormat == gfx::SurfaceFormat::B8G8R8A8 && GetIsOpaque()) {
-    snapshotFormat = gfx::SurfaceFormat::B8G8R8X8;
-  } else if (mGfxFormat == gfx::SurfaceFormat::R8G8B8A8 && GetIsOpaque()) {
-    snapshotFormat = gfx::SurfaceFormat::R8G8B8X8;
-  }
-
   
   
   RawId encoderId = ffi::wgpu_client_make_encoder_id(mBridge->GetClient());
-  RefPtr<gfx::SourceSurface> snapshot = cm->GetSnapshot(
-      cm->Id(), mBridge->Id(), mRemoteTextureOwnerId, Some(encoderId),
-      snapshotFormat,  !GetIsOpaque(),
-       false);
+  RefPtr<gfx::SourceSurface> snapshot =
+      cm->GetSnapshot(cm->Id(), mBridge->Id(), mRemoteTextureOwnerId,
+                      Some(encoderId), snapshotFormat,  false,
+                       false);
   ffi::wgpu_client_free_command_encoder_id(mBridge->GetClient(), encoderId);
   return snapshot.forget();
 }
