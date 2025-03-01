@@ -5059,6 +5059,8 @@ static bool OptimizeArgumentsSpreadCall(JSContext* cx, HandleObject obj,
   
   
   
+  
+  
 
   if (!obj->is<ArgumentsObject>()) {
     return true;
@@ -5067,6 +5069,9 @@ static bool OptimizeArgumentsSpreadCall(JSContext* cx, HandleObject obj,
   Handle<ArgumentsObject*> args = obj.as<ArgumentsObject>();
   if (args->hasOverriddenElement() || args->hasOverriddenLength() ||
       args->hasOverriddenIterator()) {
+    return true;
+  }
+  if (cx->realm() != args->realm()) {
     return true;
   }
 
