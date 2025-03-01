@@ -141,6 +141,11 @@ void DocAccessibleChild::PushMutationEventData(MutationEventData aData,
                                                uint32_t aAccCount) {
   mMutationEventBatcher.PushMutationEventData(std::move(aData), aAccCount,
                                               *this);
+  
+  
+  
+  
+  mHasUnackedMutationEvents = true;
 }
 
 void DocAccessibleChild::SendQueuedMutationEvents() {
@@ -452,6 +457,11 @@ mozilla::ipc::IPCResult DocAccessibleChild::RecvScrollSubstringToPoint(
                                 aY);
   }
 
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult DocAccessibleChild::RecvAckMutationEvents() {
+  mHasUnackedMutationEvents = false;
   return IPC_OK();
 }
 

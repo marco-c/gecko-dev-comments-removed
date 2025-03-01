@@ -716,6 +716,26 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
     return;
   }
 
+  if (mDocument->IPCDoc() && mDocument->IPCDoc()->HasUnackedMutationEvents()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return;
+  }
+
   
   
   if (WaitingForParent()) {
@@ -1024,11 +1044,18 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
 
   ProcessEventQueue();
 
-  
-  
   if (mDocument && mDocument->IPCDoc()) {
+    
+    
     MOZ_ASSERT(mDocument->IPCDoc()->MutationEventQueueLength() == 0,
                "Mutation event queue is non-empty.");
+    if (mDocument->IPCDoc()->HasUnackedMutationEvents()) {
+      
+      
+      
+      
+      Unused << mDocument->IPCDoc()->SendRequestAckMutationEvents();
+    }
   }
 
   if (IPCAccessibilityActive()) {

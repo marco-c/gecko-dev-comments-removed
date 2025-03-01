@@ -64,6 +64,8 @@ class DocAccessibleChild : public PDocAccessibleChild {
   void SendQueuedMutationEvents();
   size_t MutationEventQueueLength() const;
 
+  bool HasUnackedMutationEvents() const { return mHasUnackedMutationEvents; }
+
   virtual void ActorDestroy(ActorDestroyReason) override {
     if (!mDoc) {
       return;
@@ -159,8 +161,17 @@ class DocAccessibleChild : public PDocAccessibleChild {
       const int32_t& aEndOffset, const uint32_t& aCoordinateType,
       const int32_t& aX, const int32_t& aY) override;
 
+  virtual mozilla::ipc::IPCResult RecvAckMutationEvents() override;
+
  private:
   LayoutDeviceIntRect GetCaretRectFor(const uint64_t& aID);
+
+  
+  
+  
+  
+  
+  bool mHasUnackedMutationEvents = false;
 
  protected:
   static void FlattenTree(LocalAccessible* aRoot,
