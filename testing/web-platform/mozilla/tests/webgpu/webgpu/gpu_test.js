@@ -3,7 +3,6 @@
 import { Fixture,
 
 
-  SkipTestCase,
   SubcaseBatchState } from
 
 
@@ -21,12 +20,7 @@ import {
   unreachable } from
 '../common/util/util.js';
 
-import {
-  getDefaultLimits,
-
-  kQueryTypeInfo } from
-
-'./capability_info.js';
+import { kQueryTypeInfo } from './capability_info.js';
 
 import {
   kTextureFormatInfo,
@@ -36,7 +30,8 @@ import {
 
   isCompressedTextureFormat,
 
-  isTextureFormatUsableAsStorageFormat } from
+  isTextureFormatUsableAsStorageFormat,
+  isMultisampledTextureFormat } from
 './format_info.js';
 import { checkElementsEqual, checkElementsBetween } from './util/check_contents.js';
 import { CommandBufferMaker } from './util/command_buffer_maker.js';
@@ -105,7 +100,24 @@ descriptor)
       requiredFeatures: descriptor.filter((f) => f !== undefined)
     };
   } else {
-    return descriptor;
+    return descriptor ?? {};
+  }
+}
+
+
+
+
+
+
+
+function mergeDeviceSelectionDescriptorIntoDeviceDescriptor(
+src,
+dst)
+{
+  const srcFixed = initUncanonicalizedDeviceDescriptor(src);
+  if (srcFixed) {
+    dst.requiredFeatures.push(...(srcFixed.requiredFeatures ?? []));
+    Object.assign(dst.requiredLimits, srcFixed.requiredLimits ?? {});
   }
 }
 
@@ -114,6 +126,12 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
 
   
 
+  
+  skipIfRequirements = {
+    requiredFeatures: [],
+    requiredLimits: {},
+    defaultQueue: {}
+  };
 
   async postInit() {
     
@@ -133,7 +151,7 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
   
   acquireProvider() {
     if (this.provider === undefined) {
-      this.selectDeviceOrSkipTestCase(undefined);
+      this.requestDeviceWithRequiredParametersOrSkip(this.skipIfRequirements);
     }
     assert(this.provider !== undefined);
     return this.provider;
@@ -143,10 +161,6 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
     return globalTestConfig.compatibility;
   }
 
-  getDefaultLimits() {
-    return getDefaultLimits(this.isCompatibility ? 'compatibility' : 'core');
-  }
-
   
 
 
@@ -154,7 +168,7 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
 
 
 
-  selectDeviceOrSkipTestCase(
+  requestDeviceWithRequiredParametersOrSkip(
   descriptor,
   descriptorModifier)
   {
@@ -166,6 +180,16 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
     );
     
     this.provider.catch(() => {});
+  }
+
+  
+
+
+
+
+
+  selectDeviceOrSkipTestCase(descriptor) {
+    mergeDeviceSelectionDescriptorIntoDeviceDescriptor(descriptor, this.skipIfRequirements);
   }
 
   
@@ -231,26 +255,23 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
   }
 
   
-  skip(msg) {
-    throw new SkipTestCase(msg);
-  }
-
-  
-  skipIf(cond, msg = '') {
-    if (cond) {
-      this.skip(typeof msg === 'function' ? msg() : msg);
-    }
-  }
-
-  
 
 
   skipIfTextureFormatNotSupported(...formats) {
     if (this.isCompatibility) {
       for (const format of formats) {
         if (format === 'bgra8unorm-srgb') {
-          this.skip(`texture format '${format} is not supported`);
+          this.skip(`texture format '${format} is not supported in compatibility mode`);
         }
+      }
+    }
+  }
+
+  skipIfMultisampleNotSupportedForFormat(...formats) {
+    for (const format of formats) {
+      if (format === undefined) continue;
+      if (!isMultisampledTextureFormat(format, this.isCompatibility)) {
+        this.skip(`texture format '${format}' is not supported to be multisampled`);
       }
     }
   }
@@ -259,7 +280,7 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
     if (this.isCompatibility) {
       for (const format of formats) {
         if (format && isCompressedTextureFormat(format)) {
-          this.skip(`copyTextureToTexture with ${format} is not supported`);
+          this.skip(`copyTextureToTexture with ${format} is not supported in compatibility mode`);
         }
       }
     }
@@ -378,14 +399,6 @@ export class GPUTestBase extends Fixture {
 
   get isCompatibility() {
     return globalTestConfig.compatibility;
-  }
-
-  getDefaultLimits() {
-    return getDefaultLimits(this.isCompatibility ? 'compatibility' : 'core');
-  }
-
-  getDefaultLimit(limit) {
-    return this.getDefaultLimits()[limit].default;
   }
 
   makeLimitVariant(limit, variant) {
@@ -1147,7 +1160,9 @@ export class GPUTestBase extends Fixture {
   encoderType,
   {
     attachmentInfo,
-    occlusionQuerySet
+    occlusionQuerySet,
+    targets
+
 
 
 
@@ -1172,7 +1187,7 @@ export class GPUTestBase extends Fixture {
       case 'render bundle':{
           const device = this.device;
           const rbEncoder = device.createRenderBundleEncoder(fullAttachmentInfo);
-          const pass = this.createEncoder('render pass', { attachmentInfo });
+          const pass = this.createEncoder('render pass', { attachmentInfo, targets });
 
           return new CommandBufferMaker(this, rbEncoder, () => {
             pass.encoder.executeBundles([rbEncoder.finish()]);
@@ -1222,10 +1237,10 @@ export class GPUTestBase extends Fixture {
             }
           }
           const passDesc = {
-            colorAttachments: Array.from(fullAttachmentInfo.colorFormats, (format) =>
+            colorAttachments: Array.from(fullAttachmentInfo.colorFormats, (format, i) =>
             format ?
             {
-              view: makeAttachmentView(format),
+              view: targets ? targets[i] : makeAttachmentView(format),
               clearValue: [0, 0, 0, 0],
               loadOp: 'clear',
               storeOp: 'store'
@@ -1315,39 +1330,127 @@ function getAdapterLimitsAsDeviceRequiredLimits(adapter) {
   return requiredLimits;
 }
 
-function setAllLimitsToAdapterLimits(
+
+
+
+
+
+
+
+
+
+
+function removeNonExistentLimits(adapter, limits) {
+  const filteredLimits = {};
+  const adapterLimits = adapter.limits;
+  for (const [limit, value] of Object.entries(limits)) {
+    if (adapterLimits[limit] !== undefined) {
+      filteredLimits[limit] = value;
+    }
+  }
+  return filteredLimits;
+}
+
+function applyLimitsToDescriptor(
 adapter,
-desc)
+desc,
+getRequiredLimits)
 {
   const descWithMaxLimits = {
     requiredFeatures: [],
     defaultQueue: {},
     ...desc,
-    requiredLimits: getAdapterLimitsAsDeviceRequiredLimits(adapter)
+    requiredLimits: removeNonExistentLimits(adapter, getRequiredLimits(adapter))
   };
   return descWithMaxLimits;
+}
+
+function getAdapterFeaturesAsDeviceRequiredFeatures(adapter) {
+  return adapter.features;
+}
+
+function applyFeaturesToDescriptor(
+adapter,
+desc,
+getRequiredFeatures)
+{
+  const existingRequiredFeatures = (desc && desc?.requiredFeatures) ?? [];
+  const descWithRequiredFeatures = {
+    requiredLimits: {},
+    defaultQueue: {},
+    ...desc,
+    requiredFeatures: [...existingRequiredFeatures, ...getRequiredFeatures(adapter)]
+  };
+  return descWithRequiredFeatures;
 }
 
 
 
 
-export class MaxLimitsGPUTestSubcaseBatchState extends GPUTestSubcaseBatchState {
-  selectDeviceOrSkipTestCase(
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export class RequiredLimitsGPUTestSubcaseBatchState extends GPUTestSubcaseBatchState {
+
+  constructor(
+  recorder,
+  params,
+  requiredLimitsHelper)
+  {
+    super(recorder, params);this.recorder = recorder;this.params = params;
+    this.requiredLimitsHelper = requiredLimitsHelper;
+  }
+  requestDeviceWithRequiredParametersOrSkip(
   descriptor,
   descriptorModifier)
   {
+    const requiredLimitsHelper = this.requiredLimitsHelper;
     const mod = {
       descriptorModifier(adapter, desc) {
         desc = descriptorModifier?.descriptorModifier ?
         descriptorModifier.descriptorModifier(adapter, desc) :
         desc;
-        return setAllLimitsToAdapterLimits(adapter, desc);
+        return applyLimitsToDescriptor(adapter, desc, requiredLimitsHelper.getRequiredLimits);
       },
       keyModifier(baseKey) {
-        return `${baseKey}:MaxLimits`;
+        return `${baseKey}:${requiredLimitsHelper.key()}`;
       }
     };
-    super.selectDeviceOrSkipTestCase(initUncanonicalizedDeviceDescriptor(descriptor), mod);
+    super.requestDeviceWithRequiredParametersOrSkip(
+      initUncanonicalizedDeviceDescriptor(descriptor),
+      mod
+    );
   }
 }
 
@@ -1355,10 +1458,14 @@ export class MaxLimitsGPUTestSubcaseBatchState extends GPUTestSubcaseBatchState 
 
 
 
-export function MaxLimitsTestMixin(
-Base)
+
+
+
+export function RequiredLimitsTestMixin(
+Base,
+requiredLimitsHelper)
 {
-  class MaxLimitsImpl extends
+  class RequiredLimitsImpl extends
   Base
 
   {
@@ -1367,11 +1474,82 @@ Base)
     recorder,
     params)
     {
-      return new MaxLimitsGPUTestSubcaseBatchState(recorder, params);
+      return new RequiredLimitsGPUTestSubcaseBatchState(recorder, params, requiredLimitsHelper);
     }
   }
 
-  return MaxLimitsImpl;
+  return RequiredLimitsImpl;
+}
+
+
+
+
+export function MaxLimitsTestMixin(Base) {
+  return RequiredLimitsTestMixin(Base, {
+    getRequiredLimits: getAdapterLimitsAsDeviceRequiredLimits,
+    key() {
+      return 'AllLimits';
+    }
+  });
+}
+
+
+
+
+export class AllFeaturesMaxLimitsGPUTestSubcaseBatchState extends GPUTestSubcaseBatchState {
+  constructor(
+  recorder,
+  params)
+  {
+    super(recorder, params);this.recorder = recorder;this.params = params;
+  }
+  requestDeviceWithRequiredParametersOrSkip(
+  descriptor,
+  descriptorModifier)
+  {
+    const mod = {
+      descriptorModifier(adapter, desc) {
+        desc = descriptorModifier?.descriptorModifier ?
+        descriptorModifier.descriptorModifier(adapter, desc) :
+        desc;
+        desc = applyLimitsToDescriptor(adapter, desc, getAdapterLimitsAsDeviceRequiredLimits);
+        desc = applyFeaturesToDescriptor(adapter, desc, getAdapterFeaturesAsDeviceRequiredFeatures);
+        return desc;
+      },
+      keyModifier(baseKey) {
+        return `${baseKey}:AllFeaturesMaxLimits`;
+      }
+    };
+    super.requestDeviceWithRequiredParametersOrSkip(
+      initUncanonicalizedDeviceDescriptor(descriptor),
+      mod
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export class AllFeaturesMaxLimitsGPUTest extends GPUTest {
+  static MakeSharedState(
+  recorder,
+  params)
+  {
+    return new AllFeaturesMaxLimitsGPUTestSubcaseBatchState(recorder, params);
+  }
 }
 
 

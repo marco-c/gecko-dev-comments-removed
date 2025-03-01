@@ -13,6 +13,9 @@ import { CanonicalDeviceDescriptor, DescriptorModifier } from '../../../util/dev
 
 
 
+
+
+
 function getAdapterLimitsAsDeviceRequiredLimits(adapter: GPUAdapter) {
   const requiredLimits: Record<string, GPUSize64> = {};
   const adapterLimits = adapter.limits as unknown as Record<string, GPUSize64>;
@@ -39,7 +42,7 @@ function setAllLimitsToAdapterLimitsAndAddAllFeatures(
 
 
 export class AllLimitsAndFeaturesGPUTestSubcaseBatchState extends GPUTestSubcaseBatchState {
-  override selectDeviceOrSkipTestCase(
+  override requestDeviceWithRequiredParametersOrSkip(
     descriptor: DeviceSelectionDescriptor,
     descriptorModifier?: DescriptorModifier
   ): void {
@@ -54,7 +57,10 @@ export class AllLimitsAndFeaturesGPUTestSubcaseBatchState extends GPUTestSubcase
         return `${baseKey}:AllLimitsAndFeaturesTest`;
       },
     };
-    super.selectDeviceOrSkipTestCase(initUncanonicalizedDeviceDescriptor(descriptor), mod);
+    super.requestDeviceWithRequiredParametersOrSkip(
+      initUncanonicalizedDeviceDescriptor(descriptor),
+      mod
+    );
   }
 }
 

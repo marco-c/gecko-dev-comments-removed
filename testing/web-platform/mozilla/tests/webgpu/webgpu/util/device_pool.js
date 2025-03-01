@@ -247,14 +247,6 @@ class DescriptorToHolderMap {
 
 
 
-
-
-
-
-
-
-
-
 function canonicalizeDescriptor(
 desc)
 {

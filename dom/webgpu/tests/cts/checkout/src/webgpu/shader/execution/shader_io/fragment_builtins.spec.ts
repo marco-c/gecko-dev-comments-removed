@@ -531,7 +531,6 @@ function computeSampleMask({ sampleMask }: FragData) {
 
 
 
-
 async function renderFragmentShaderInputsTo4TexturesAndReadbackValues(
   t: GPUTest,
   {

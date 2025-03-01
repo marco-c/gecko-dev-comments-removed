@@ -392,13 +392,13 @@ export const kPerStageBindingLimits =
 
 
 {
-  'uniformBuf': { class: 'uniformBuf', maxLimit: 'maxUniformBuffersPerShaderStage' },
-  'storageBuf': { class: 'storageBuf', maxLimit: 'maxStorageBuffersPerShaderStage' },
-  'sampler': { class: 'sampler', maxLimit: 'maxSamplersPerShaderStage' },
-  'sampledTex': { class: 'sampledTex', maxLimit: 'maxSampledTexturesPerShaderStage' },
-  'readonlyStorageTex': { class: 'readonlyStorageTex', maxLimit: 'maxStorageTexturesPerShaderStage' },
-  'writeonlyStorageTex': { class: 'writeonlyStorageTex', maxLimit: 'maxStorageTexturesPerShaderStage' },
-  'readwriteStorageTex': { class: 'readwriteStorageTex', maxLimit: 'maxStorageTexturesPerShaderStage' }
+  'uniformBuf': { class: 'uniformBuf', maxLimits: { COMPUTE: 'maxUniformBuffersPerShaderStage', FRAGMENT: 'maxUniformBuffersPerShaderStage', VERTEX: 'maxUniformBuffersPerShaderStage' } },
+  'storageBuf': { class: 'storageBuf', maxLimits: { COMPUTE: 'maxStorageBuffersPerShaderStage', FRAGMENT: 'maxStorageBuffersInFragmentStage', VERTEX: 'maxStorageBuffersInVertexStage' } },
+  'sampler': { class: 'sampler', maxLimits: { COMPUTE: 'maxSamplersPerShaderStage', FRAGMENT: 'maxSamplersPerShaderStage', VERTEX: 'maxSamplersPerShaderStage' } },
+  'sampledTex': { class: 'sampledTex', maxLimits: { COMPUTE: 'maxSampledTexturesPerShaderStage', FRAGMENT: 'maxSampledTexturesPerShaderStage', VERTEX: 'maxSampledTexturesPerShaderStage' } },
+  'readonlyStorageTex': { class: 'readonlyStorageTex', maxLimits: { COMPUTE: 'maxStorageTexturesPerShaderStage', FRAGMENT: 'maxStorageTexturesInFragmentStage', VERTEX: 'maxStorageTexturesInVertexStage' } },
+  'writeonlyStorageTex': { class: 'writeonlyStorageTex', maxLimits: { COMPUTE: 'maxStorageTexturesPerShaderStage', FRAGMENT: 'maxStorageTexturesInFragmentStage', VERTEX: 'maxStorageTexturesInVertexStage' } },
+  'readwriteStorageTex': { class: 'readwriteStorageTex', maxLimits: { COMPUTE: 'maxStorageTexturesPerShaderStage', FRAGMENT: 'maxStorageTexturesInFragmentStage', VERTEX: 'maxStorageTexturesInVertexStage' } }
 };
 
 
@@ -509,18 +509,21 @@ export function storageTextureBindingTypeInfo(d) {
     case undefined:
     case 'write-only':
       return {
+        wgslAccess: 'write',
         usage: GPUConst.TextureUsage.STORAGE_BINDING,
         ...kBindingKind.writeonlyStorageTex,
         ...kValidStagesStorageWrite
       };
     case 'read-only':
       return {
+        wgslAccess: 'read',
         usage: GPUConst.TextureUsage.STORAGE_BINDING,
         ...kBindingKind.readonlyStorageTex,
         ...kValidStagesAll
       };
     case 'read-write':
       return {
+        wgslAccess: 'read_write',
         usage: GPUConst.TextureUsage.STORAGE_BINDING,
         ...kBindingKind.readwriteStorageTex,
         ...kValidStagesStorageWrite
@@ -589,16 +592,22 @@ export function textureBindingEntries(includeUndefined) {
 
 
 
-export function storageTextureBindingEntries() {
+export function storageTextureBindingEntries(format) {
   return [
-  { storageTexture: { access: 'write-only', format: 'r32float' } },
-  { storageTexture: { access: 'read-only', format: 'r32float' } },
-  { storageTexture: { access: 'read-write', format: 'r32float' } }];
+  { storageTexture: { access: 'write-only', format } },
+  { storageTexture: { access: 'read-only', format } },
+  { storageTexture: { access: 'read-write', format } }];
 
 }
 
-export function sampledAndStorageBindingEntries(includeUndefined) {
-  return [...textureBindingEntries(includeUndefined), ...storageTextureBindingEntries()];
+export function sampledAndStorageBindingEntries(
+includeUndefined,
+format = 'r32float')
+{
+  return [
+  ...textureBindingEntries(includeUndefined),
+  ...storageTextureBindingEntries(format)];
+
 }
 
 
@@ -607,11 +616,14 @@ export function sampledAndStorageBindingEntries(includeUndefined) {
 
 
 
-export function allBindingEntries(includeUndefined) {
+export function allBindingEntries(
+includeUndefined,
+format = 'r32float')
+{
   return [
   ...bufferBindingEntries(includeUndefined),
   ...samplerBindingEntries(includeUndefined),
-  ...sampledAndStorageBindingEntries(includeUndefined)];
+  ...sampledAndStorageBindingEntries(includeUndefined, format)];
 
 }
 
@@ -727,7 +739,11 @@ const [kLimitInfoKeys, kLimitInfoDefaults, kLimitInfoData] =
   'maxDynamicStorageBuffersPerPipelineLayout': [, 4, 4],
   'maxSampledTexturesPerShaderStage': [, 16, 16],
   'maxSamplersPerShaderStage': [, 16, 16],
+  'maxStorageBuffersInFragmentStage': [, 8, 0],
+  'maxStorageBuffersInVertexStage': [, 8, 0],
   'maxStorageBuffersPerShaderStage': [, 8, 4],
+  'maxStorageTexturesInFragmentStage': [, 4, 0],
+  'maxStorageTexturesInVertexStage': [, 4, 0],
   'maxStorageTexturesPerShaderStage': [, 4, 4],
   'maxUniformBuffersPerShaderStage': [, 12, 12],
 
@@ -795,11 +811,52 @@ export function getDefaultLimits(featureLevel) {
 
 export function getDefaultLimitsForAdapter(adapter) {
   
-  return getDefaultLimits(
-    adapter.isCompatibilityMode ?
-    'compatibility' :
-    'core'
-  );
+  
+  const adapterExtensions = adapter;
+
+
+
+  const featureLevel =
+  adapterExtensions.featureLevel === 'compatibility' || adapterExtensions.isCompatibilityMode ?
+  'compatibility' :
+  'core';
+  return getDefaultLimits(featureLevel);
+}
+
+const kEachStage = [
+GPUConst.ShaderStage.COMPUTE,
+GPUConst.ShaderStage.FRAGMENT,
+GPUConst.ShaderStage.VERTEX];
+
+function shaderStageFlagToStageName(stage) {
+  switch (stage) {
+    case GPUConst.ShaderStage.COMPUTE:
+      return 'COMPUTE';
+    case GPUConst.ShaderStage.FRAGMENT:
+      return 'FRAGMENT';
+    case GPUConst.ShaderStage.VERTEX:
+      return 'VERTEX';
+    default:
+      unreachable();
+  }
+}
+
+
+
+
+
+
+export function getBindingLimitForBindingType(
+device,
+visibility,
+e)
+{
+  const info = bindingTypeInfo(e);
+  const maxLimits = info.perStageLimitClass.maxLimits;
+  const limits = kEachStage.
+  filter((stage) => stage & visibility).
+  map((stage) => device.limits[maxLimits[shaderStageFlagToStageName(stage)]]);
+  return limits.length > 0 ? Math.min(...limits) : 0;
 }
 
 

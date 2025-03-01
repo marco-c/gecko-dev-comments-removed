@@ -41,6 +41,18 @@ export class SubcaseBatchState {
 
 
   async finalize() {}
+
+  
+  skip(msg: string): never {
+    throw new SkipTestCase(msg);
+  }
+
+  
+  skipIf(cond: boolean, msg: string | (() => string) = '') {
+    if (cond) {
+      this.skip(typeof msg === 'function' ? msg() : msg);
+    }
+  }
 }
 
 

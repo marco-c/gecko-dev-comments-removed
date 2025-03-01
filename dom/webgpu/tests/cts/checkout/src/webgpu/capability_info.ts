@@ -387,18 +387,18 @@ export const kPerStageBindingLimits: {
     
     readonly class: k;
     
-    readonly maxLimit: (typeof kLimits)[number];
+    readonly maxLimits: { [key in ShaderStageKey]: (typeof kLimits)[number] };
     
   };
 } =
    {
-  'uniformBuf':          { class: 'uniformBuf', maxLimit: 'maxUniformBuffersPerShaderStage', },
-  'storageBuf':          { class: 'storageBuf', maxLimit: 'maxStorageBuffersPerShaderStage', },
-  'sampler':             { class: 'sampler',    maxLimit: 'maxSamplersPerShaderStage', },
-  'sampledTex':          { class: 'sampledTex', maxLimit: 'maxSampledTexturesPerShaderStage', },
-  'readonlyStorageTex':  { class: 'readonlyStorageTex', maxLimit: 'maxStorageTexturesPerShaderStage', },
-  'writeonlyStorageTex': { class: 'writeonlyStorageTex', maxLimit: 'maxStorageTexturesPerShaderStage', },
-  'readwriteStorageTex': { class: 'readwriteStorageTex', maxLimit: 'maxStorageTexturesPerShaderStage', },
+  'uniformBuf':          { class: 'uniformBuf', maxLimits: { COMPUTE: 'maxUniformBuffersPerShaderStage', FRAGMENT: 'maxUniformBuffersPerShaderStage', VERTEX: 'maxUniformBuffersPerShaderStage' } },
+  'storageBuf':          { class: 'storageBuf', maxLimits: { COMPUTE: 'maxStorageBuffersPerShaderStage', FRAGMENT: 'maxStorageBuffersInFragmentStage', VERTEX: 'maxStorageBuffersInVertexStage' } },
+  'sampler':             { class: 'sampler',    maxLimits: { COMPUTE: 'maxSamplersPerShaderStage', FRAGMENT: 'maxSamplersPerShaderStage', VERTEX: 'maxSamplersPerShaderStage' } },
+  'sampledTex':          { class: 'sampledTex', maxLimits: { COMPUTE: 'maxSampledTexturesPerShaderStage', FRAGMENT: 'maxSampledTexturesPerShaderStage', VERTEX: 'maxSampledTexturesPerShaderStage' } },
+  'readonlyStorageTex':  { class: 'readonlyStorageTex', maxLimits: { COMPUTE: 'maxStorageTexturesPerShaderStage', FRAGMENT: 'maxStorageTexturesInFragmentStage', VERTEX: 'maxStorageTexturesInVertexStage' } },
+  'writeonlyStorageTex': { class: 'writeonlyStorageTex', maxLimits: { COMPUTE: 'maxStorageTexturesPerShaderStage', FRAGMENT: 'maxStorageTexturesInFragmentStage', VERTEX: 'maxStorageTexturesInVertexStage' } },
+  'readwriteStorageTex': { class: 'readwriteStorageTex', maxLimits: { COMPUTE: 'maxStorageTexturesPerShaderStage', FRAGMENT: 'maxStorageTexturesInFragmentStage', VERTEX: 'maxStorageTexturesInVertexStage'} },
 };
 
 
@@ -504,23 +504,26 @@ export const kTextureSampleTypes = [
 assertTypeTrue<TypeEqual<GPUTextureSampleType, (typeof kTextureSampleTypes)[number]>>();
 
 
-export function storageTextureBindingTypeInfo(d: GPUStorageTextureBindingLayout) {
+export function storageTextureBindingTypeInfo(d: { access?: GPUStorageTextureAccess | undefined }) {
   switch (d.access) {
     case undefined:
     case 'write-only':
       return {
+        wgslAccess: 'write',
         usage: GPUConst.TextureUsage.STORAGE_BINDING,
         ...kBindingKind.writeonlyStorageTex,
         ...kValidStagesStorageWrite,
       };
     case 'read-only':
       return {
+        wgslAccess: 'read',
         usage: GPUConst.TextureUsage.STORAGE_BINDING,
         ...kBindingKind.readonlyStorageTex,
         ...kValidStagesAll,
       };
     case 'read-write':
       return {
+        wgslAccess: 'read_write',
         usage: GPUConst.TextureUsage.STORAGE_BINDING,
         ...kBindingKind.readwriteStorageTex,
         ...kValidStagesStorageWrite,
@@ -589,16 +592,22 @@ export function textureBindingEntries(includeUndefined: boolean): readonly BGLEn
 
 
 
-export function storageTextureBindingEntries(): readonly BGLEntry[] {
+export function storageTextureBindingEntries(format: GPUTextureFormat): readonly BGLEntry[] {
   return [
-    { storageTexture: { access: 'write-only', format: 'r32float' } },
-    { storageTexture: { access: 'read-only', format: 'r32float' } },
-    { storageTexture: { access: 'read-write', format: 'r32float' } },
+    { storageTexture: { access: 'write-only', format } },
+    { storageTexture: { access: 'read-only', format } },
+    { storageTexture: { access: 'read-write', format } },
   ] as const;
 }
 
-export function sampledAndStorageBindingEntries(includeUndefined: boolean): readonly BGLEntry[] {
-  return [...textureBindingEntries(includeUndefined), ...storageTextureBindingEntries()] as const;
+export function sampledAndStorageBindingEntries(
+  includeUndefined: boolean,
+  format: GPUTextureFormat = 'r32float'
+): readonly BGLEntry[] {
+  return [
+    ...textureBindingEntries(includeUndefined),
+    ...storageTextureBindingEntries(format),
+  ] as const;
 }
 
 
@@ -607,11 +616,14 @@ export function sampledAndStorageBindingEntries(includeUndefined: boolean): read
 
 
 
-export function allBindingEntries(includeUndefined: boolean): readonly BGLEntry[] {
+export function allBindingEntries(
+  includeUndefined: boolean,
+  format: GPUTextureFormat = 'r32float'
+): readonly BGLEntry[] {
   return [
     ...bufferBindingEntries(includeUndefined),
     ...samplerBindingEntries(includeUndefined),
-    ...sampledAndStorageBindingEntries(includeUndefined),
+    ...sampledAndStorageBindingEntries(includeUndefined, format),
   ] as const;
 }
 
@@ -727,7 +739,11 @@ const [kLimitInfoKeys, kLimitInfoDefaults, kLimitInfoData] =
   'maxDynamicStorageBuffersPerPipelineLayout': [           ,         4,               4,                          ],
   'maxSampledTexturesPerShaderStage':          [           ,        16,              16,                          ],
   'maxSamplersPerShaderStage':                 [           ,        16,              16,                          ],
+  'maxStorageBuffersInFragmentStage':          [           ,         8,               0,                          ],
+  'maxStorageBuffersInVertexStage':            [           ,         8,               0,                          ],
   'maxStorageBuffersPerShaderStage':           [           ,         8,               4,                          ],
+  'maxStorageTexturesInFragmentStage':         [           ,         4,               0,                          ],
+  'maxStorageTexturesInVertexStage':           [           ,         4,               0,                          ],
   'maxStorageTexturesPerShaderStage':          [           ,         4,               4,                          ],
   'maxUniformBuffersPerShaderStage':           [           ,        12,              12,                          ],
 
@@ -795,11 +811,52 @@ export function getDefaultLimits(featureLevel: FeatureLevel) {
 
 export function getDefaultLimitsForAdapter(adapter: GPUAdapter) {
   
-  return getDefaultLimits(
-    (adapter as unknown as { isCompatibilityMode: boolean }).isCompatibilityMode
+  
+  const adapterExtensions = adapter as unknown as {
+    isCompatibilityMode?: boolean;
+    featureLevel?: string;
+  };
+  const featureLevel =
+    adapterExtensions.featureLevel === 'compatibility' || adapterExtensions.isCompatibilityMode
       ? 'compatibility'
-      : 'core'
-  );
+      : 'core';
+  return getDefaultLimits(featureLevel);
+}
+
+const kEachStage = [
+  GPUConst.ShaderStage.COMPUTE,
+  GPUConst.ShaderStage.FRAGMENT,
+  GPUConst.ShaderStage.VERTEX,
+];
+function shaderStageFlagToStageName(stage: GPUShaderStageFlags) {
+  switch (stage) {
+    case GPUConst.ShaderStage.COMPUTE:
+      return 'COMPUTE';
+    case GPUConst.ShaderStage.FRAGMENT:
+      return 'FRAGMENT';
+    case GPUConst.ShaderStage.VERTEX:
+      return 'VERTEX';
+    default:
+      unreachable();
+  }
+}
+
+
+
+
+
+
+export function getBindingLimitForBindingType(
+  device: GPUDevice,
+  visibility: GPUShaderStageFlags,
+  e: BGLEntry
+) {
+  const info = bindingTypeInfo(e);
+  const maxLimits = info.perStageLimitClass.maxLimits;
+  const limits = kEachStage
+    .filter(stage => stage & visibility)
+    .map(stage => device.limits[maxLimits[shaderStageFlagToStageName(stage)]]!);
+  return limits.length > 0 ? Math.min(...limits) : 0;
 }
 
 

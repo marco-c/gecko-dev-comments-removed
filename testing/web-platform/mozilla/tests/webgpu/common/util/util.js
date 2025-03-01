@@ -258,6 +258,15 @@ export function mapLazy(xs, f) {
   };
 }
 
+
+export function count(xs, predicate) {
+  let count = 0;
+  for (const x of xs) {
+    if (predicate(x)) count++;
+  }
+  return count;
+}
+
 const ReorderOrders = {
   forward: true,
   backward: true,

@@ -233,14 +233,6 @@ class DescriptorToHolderMap {
 export type UncanonicalizedDeviceDescriptor = {
   requiredFeatures?: Iterable<GPUFeatureName>;
   requiredLimits?: Record<string, GPUSize32>;
-  
-  nonGuaranteedFeatures?: undefined;
-  
-  nonGuaranteedLimits?: undefined;
-  
-  extensions?: undefined;
-  
-  features?: undefined;
 };
 export type CanonicalDeviceDescriptor = Omit<
   Required<GPUDeviceDescriptor>,

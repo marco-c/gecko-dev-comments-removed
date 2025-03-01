@@ -283,11 +283,27 @@ fn(async (t) => {
       break;
   }
 
-  const device = await t.requestDeviceTracked(adapter, { requiredLimits: { [limit]: value } });
+  const requiredLimits = { [limit]: value };
+
+  if (
+  limit === 'maxStorageBuffersInFragmentStage' ||
+  limit === 'maxStorageBuffersInVertexStage')
+  {
+    requiredLimits['maxStorageBuffersPerShaderStage'] = value;
+  }
+
+  if (
+  limit === 'maxStorageTexturesInFragmentStage' ||
+  limit === 'maxStorageTexturesInVertexStage')
+  {
+    requiredLimits['maxStorageTexturesPerShaderStage'] = value;
+  }
+
+  const device = await t.requestDeviceTracked(adapter, { requiredLimits });
   assert(device !== null);
   t.expect(
     device.limits[limit] === result,
-    'Devices reported limit should match the required limit'
+    `Devices reported limit for ${limit}(${device.limits[limit]}) should match the required limit (${result})`
   );
 });
 
@@ -475,7 +491,7 @@ desc(
 
     Note: This is a regression test for a Chrome bug crbug.com/349062459
     Checking that a requestDevice always return a device is checked in other tests above
-    but those tests have 'compatibilityMode: true' set for them by the API that getGPU
+    but those tests have 'featureLevel: "compatibility"' set for them by the API that getGPU
     returns when the test suite is run in compatibility mode.
 
     This test tries to force both compat and core separately so both code paths are
@@ -487,18 +503,33 @@ fn(async (t) => {
   const { compatibilityMode } = t.params;
   const gpu = getGPU(t.rec);
   
-  const adapter = await gpu.requestAdapter({ compatibilityMode });
+  
+  const adapter = await gpu.requestAdapter({
+    compatibilityMode,
+    featureLevel: compatibilityMode ? 'compatibility' : 'core'
+  });
   if (adapter) {
+    const device = await t.requestDeviceTracked(adapter);
+    assert(device instanceof GPUDevice, 'requestDevice must return a device or throw');
+
     if (!compatibilityMode) {
       
+
       
+      const adapterExtensions = adapter;
+
+
+
       t.expect(
-        !adapter.isCompatibilityMode,
-        'must not be compatibility mode'
+        
+        !adapterExtensions.isCompatibilityMode &&
+        
+        adapterExtensions.featureLevel !== 'compatibility' &&
+        
+        
+        !device.features.has('webgpu-core'),
+        'must not get a Compatibility adapter if not requested'
       );
     }
-    const device = await t.requestDeviceTracked(adapter);
-    t.expect(device instanceof GPUDevice, 'requestDevice must return a device or throw');
-    device.destroy();
   }
 });

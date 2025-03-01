@@ -1,6 +1,6 @@
 
 
-import { g } from '../../../../api/operation/texture_view/read.spec.js';
+import { g } from '../../../../api/operation/limits/max_combined_limits.spec.js';
 import { wrapTestGroupForWorker } from '../../../../../common/runtime/helper/wrap_for_worker.js';
 
 wrapTestGroupForWorker(g);

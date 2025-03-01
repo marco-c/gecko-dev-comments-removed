@@ -101,6 +101,15 @@ export const kVideoExpectedColors = makeTable({
   }
 });
 
+export const kImageExpectedColors = {
+  srgb: {
+    red: { R: 1.0, G: 0.0, B: 0.0, A: 1.0 },
+    green: { R: 0.0, G: 1.0, B: 0.0, A: 1.0 },
+    blue: { R: 0.0, G: 0.0, B: 1.0, A: 1.0 },
+    yellow: { R: 1.0, G: 1.0, B: 0.0, A: 1.0 }
+  }
+};
+
 
 
 
@@ -359,6 +368,7 @@ export const kPredefinedColorSpace = ['display-p3', 'srgb'];
 
 
 
+
 export function startPlayingAndWaitForVideo(
 video,
 callback)
@@ -460,9 +470,7 @@ export async function getVideoFrameFromVideoElement(
 test,
 video)
 {
-  if (video.captureStream === undefined) {
-    test.skip('HTMLVideoElement.captureStream is not supported');
-  }
+  test.skipIf(video.captureStream === undefined, 'HTMLVideoElement.captureStream is not supported');
 
   return raceWithRejectOnTimeout(
     new Promise((resolve) => {
@@ -559,19 +567,17 @@ timeoutMessage)
 
 
 export async function captureCameraFrame(test) {
-  if (
-  typeof navigator.mediaDevices === 'undefined' ||
-  typeof navigator.mediaDevices.getUserMedia === 'undefined')
-  {
-    test.skip("Browser doesn't support capture frame from camera.");
-  }
+  test.skipIf(typeof navigator === 'undefined', 'navigator does not exist in this environment');
+  test.skipIf(
+    typeof navigator.mediaDevices === 'undefined' ||
+    typeof navigator.mediaDevices.getUserMedia === 'undefined',
+    "Browser doesn't support capture frame from camera."
+  );
 
   const stream = await navigator.mediaDevices.getUserMedia({ video: true });
   const track = stream.getVideoTracks()[0];
 
-  if (!track) {
-    test.skip("Doesn't have valid camera captured stream for testing.");
-  }
+  test.skipIf(!track, "Doesn't have valid camera captured stream for testing.");
 
   
   if (typeof MediaStreamTrackProcessor !== 'undefined') {
@@ -594,9 +600,10 @@ export async function captureCameraFrame(test) {
   }
 
   
-  if (typeof HTMLVideoElement === 'undefined') {
-    test.skip('Try to use HTMLVideoElement do capture but HTMLVideoElement not available.');
-  }
+  test.skipIf(
+    typeof HTMLVideoElement === 'undefined',
+    'Try to use HTMLVideoElement do capture but HTMLVideoElement not available.'
+  );
 
   const video = document.createElement('video');
   video.srcObject = stream;
@@ -605,4 +612,137 @@ export async function captureCameraFrame(test) {
   test.trackForCleanup(frame);
 
   return frame;
+}
+
+const kFourColorsInfo = {
+  display: {
+    topLeftColor: 'yellow',
+    topRightColor: 'red',
+    bottomLeftColor: 'blue',
+    bottomRightColor: 'green'
+  }
+};
+
+export const kEXIFImageInfo = makeTable({
+  table: {
+    'four-colors.jpg': kFourColorsInfo,
+    'four-colors-rotate-90-cw.jpg': kFourColorsInfo,
+    'four-colors-rotate-180-cw.jpg': kFourColorsInfo,
+    'four-colors-rotate-270-cw.jpg': kFourColorsInfo
+  }
+});
+
+export const kImageInfo = makeTable({
+  table: {
+    'four-colors.jpg': kFourColorsInfo,
+    'four-colors.png': kFourColorsInfo,
+    'four-colors.bmp': kFourColorsInfo,
+    'four-colors.webp': kFourColorsInfo,
+    'four-colors.gif': kFourColorsInfo,
+    'four-colors.avif': kFourColorsInfo,
+    'four-colors.ico': kFourColorsInfo,
+    'four-colors.svg': kFourColorsInfo
+  }
+});
+
+
+export const kImageNames = keysOf(kImageInfo);
+
+
+export const kEXIFImageNames = keysOf(kEXIFImageInfo);
+
+
+export const kObjectTypeFromFiles = [
+'ImageBitmap-from-Blob',
+'ImageBitmap-from-Image',
+'Image'];
+
+
+
+
+
+
+export async function getSourceFromEXIFImageFile(
+test,
+exifImageName,
+objectTypeFromFile)
+{
+  const imageUrl = getResourcePath(exifImageName);
+
+  switch (objectTypeFromFile) {
+    case 'ImageBitmap-from-Blob':{
+        
+        
+        
+        test.skipIf(
+          globalThis.constructor.name === 'ServiceWorkerGlobalScope',
+          'Try to load image resource from serivce worker but the path is not correct.'
+        );
+        test.skipIf(
+          typeof createImageBitmap === 'undefined',
+          'createImageBitmap does not exist in this environment'
+        );
+        
+        const response = await fetch(imageUrl);
+        return createImageBitmap(await response.blob());
+      }
+    case 'ImageBitmap-from-Image':
+    case 'Image':{
+        
+        test.skipIf(
+          typeof HTMLImageElement === 'undefined',
+          'Try to use HTMLImage do image file decoding but HTMLImageElement not available.'
+        );
+
+        
+        const image = new Image();
+        image.src = imageUrl;
+        await raceWithRejectOnTimeout(image.decode(), 5000, 'decode image timeout');
+        if (objectTypeFromFile === 'Image') {
+          return image;
+        }
+
+        return createImageBitmap(image);
+      }
+  }
+}
+
+
+
+
+
+
+
+
+
+export function loadImageFileAndRun(
+test,
+imageName,
+callback)
+{
+  return raceWithRejectOnTimeout(
+    new Promise((resolve, reject) => {
+      const callbackAndResolve = (image) =>
+      void (async () => {
+        try {
+          await callback(image);
+          resolve();
+        } catch (ex) {
+          reject(ex);
+        }
+      })();
+      
+      test.skipIf(
+        typeof HTMLImageElement === 'undefined',
+        'Try to use HTMLImage do image file decoding but HTMLImageElement not available.'
+      );
+      const image = new Image();
+      image.src = getResourcePath(imageName);
+      image.onload = () => {
+        callbackAndResolve(image);
+      };
+    }),
+    2000,
+    'Video never became ready'
+  );
 }

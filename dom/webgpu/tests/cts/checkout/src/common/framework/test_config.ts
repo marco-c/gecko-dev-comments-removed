@@ -47,6 +47,11 @@ export type TestConfig = {
   
 
 
+  enforceDefaultLimits: boolean;
+
+  
+
+
   logToWebSocket: boolean;
 };
 
@@ -59,5 +64,6 @@ export const globalTestConfig: TestConfig = {
   unrollConstEvalLoops: false,
   compatibility: false,
   forceFallbackAdapter: false,
+  enforceDefaultLimits: false,
   logToWebSocket: false,
 };

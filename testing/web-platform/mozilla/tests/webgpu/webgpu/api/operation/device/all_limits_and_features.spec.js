@@ -13,6 +13,9 @@ import {
 
 
 
+
+
+
 function getAdapterLimitsAsDeviceRequiredLimits(adapter) {
   const requiredLimits = {};
   const adapterLimits = adapter.limits;
@@ -39,7 +42,7 @@ desc)
 
 
 export class AllLimitsAndFeaturesGPUTestSubcaseBatchState extends GPUTestSubcaseBatchState {
-  selectDeviceOrSkipTestCase(
+  requestDeviceWithRequiredParametersOrSkip(
   descriptor,
   descriptorModifier)
   {
@@ -54,7 +57,10 @@ export class AllLimitsAndFeaturesGPUTestSubcaseBatchState extends GPUTestSubcase
         return `${baseKey}:AllLimitsAndFeaturesTest`;
       }
     };
-    super.selectDeviceOrSkipTestCase(initUncanonicalizedDeviceDescriptor(descriptor), mod);
+    super.requestDeviceWithRequiredParametersOrSkip(
+      initUncanonicalizedDeviceDescriptor(descriptor),
+      mod
+    );
   }
 }
 
