@@ -115,6 +115,9 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   already_AddRefed<layers::FwdTransactionTracker> UseCompositableForwarder(
       layers::CompositableForwarder* aForwarder) override;
 
+  mozilla::gfx::Matrix GetCurrentTransform() const;
+  bool HasAnyClips() const;
+
   void Save();
   void Restore();
 
@@ -706,8 +709,18 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   bool EnsureWritablePath();
 
   
+  bool EnsureBufferProvider();
+
+  
   void EnsureUserSpacePath(
       const CanvasWindingRule& aWinding = CanvasWindingRule::Nonzero);
+
+  
+  void EnsureTargetAndUserSpacePath(
+      const CanvasWindingRule& aWinding = CanvasWindingRule::Nonzero) {
+    EnsureTarget();
+    EnsureUserSpacePath(aWinding);
+  }
 
   
 
@@ -717,6 +730,13 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   
   void FillRuleChanged();
+
+  
+  bool HasErrorState(ErrorResult& aError);
+  bool HasErrorState() {
+    IgnoredErrorResult error;
+    return HasErrorState(error);
+  }
 
   
 
@@ -863,7 +883,10 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   RefPtr<mozilla::gfx::DrawTarget> mTarget;
 
   RefPtr<mozilla::layers::PersistentBufferProvider> mBufferProvider;
+  
   bool mBufferNeedsClear = false;
+  
+  bool mTargetNeedsClipsAndTransforms = false;
 
   
   bool mAllowAcceleration = true;
@@ -930,6 +953,7 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   RefPtr<mozilla::gfx::Path> mPath;
   RefPtr<mozilla::gfx::PathBuilder> mPathBuilder;
+  mozilla::gfx::BackendType mPathType = mozilla::gfx::BackendType::NONE;
   bool mPathPruned = false;
   mozilla::gfx::Matrix mPathTransform;
   bool mPathTransformDirty = false;
@@ -1123,6 +1147,10 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   inline const ContextState& CurrentState() const {
     return mStyleStack[mStyleStack.Length() - 1];
+  }
+
+  inline const ContextState& PreviousState() const {
+    return mStyleStack[mStyleStack.Length() - 2];
   }
 
   struct FontStyleCacheKey {

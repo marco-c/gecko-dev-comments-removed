@@ -1548,6 +1548,8 @@ void DrawTargetCairo::PushClip(const Path* aPath) {
     path->SetPathOnContext(mContext);
   }
   cairo_clip_preserve(mContext);
+
+  ++mClipDepth;
 }
 
 void DrawTargetCairo::PushClipRect(const Rect& aRect) {
@@ -1562,9 +1564,13 @@ void DrawTargetCairo::PushClipRect(const Rect& aRect) {
                     aRect.Height());
   }
   cairo_clip_preserve(mContext);
+
+  ++mClipDepth;
 }
 
 void DrawTargetCairo::PopClip() {
+  MOZ_ASSERT(mClipDepth > 0);
+
   
 
   
@@ -1575,6 +1581,15 @@ void DrawTargetCairo::PopClip() {
   cairo_restore(mContext);
 
   cairo_set_matrix(mContext, &mat);
+
+  --mClipDepth;
+}
+
+bool DrawTargetCairo::RemoveAllClips() {
+  while (mClipDepth > 0) {
+    PopClip();
+  }
+  return true;
 }
 
 void DrawTargetCairo::PushLayer(bool aOpaque, Float aOpacity,
