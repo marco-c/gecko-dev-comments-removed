@@ -49,6 +49,9 @@ var gExceptionPaths = [
 
   
   "resource://pdf.js/web/images/",
+  
+  
+  "resource://pdf.js/web/wasm/openjpeg_nowasm_fallback.js",
 
   
   
