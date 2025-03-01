@@ -361,6 +361,18 @@ interface nsIIOService : nsISupports
 
 
     [noscript] Array<ACString> getSimpleURIUnknownRemoteSchemes();
+
+    
+
+
+
+
+     void addEssentialDomainMapping(in ACString aFrom, in ACString aTo);
+
+    
+
+
+    void clearEssentialDomainMapping();
 };
 
 %{C++

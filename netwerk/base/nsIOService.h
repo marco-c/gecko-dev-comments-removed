@@ -149,6 +149,11 @@ class nsIOService final : public nsIIOService,
   static bool ShouldAddAdditionalSearchHeaders(nsIURI* aURI, bool* val);
 #endif
 
+  
+  
+  bool GetFallbackDomain(const nsACString& aDomain,
+                         nsACString& aFallbackDomain);
+
  private:
   
   
@@ -268,6 +273,11 @@ class nsIOService final : public nsIIOService,
   nsCOMPtr<nsIObserverService> mObserverService;
 
   SimpleURIUnknownSchemes mSimpleURIUnknownSchemes;
+
+  
+  
+  
+  nsTHashMap<nsCStringHashKey, nsCString> mEssentialDomainMapping;
 
  public:
   
