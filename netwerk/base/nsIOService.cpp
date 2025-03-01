@@ -903,7 +903,7 @@ nsresult nsIOService::AsyncOnChannelRedirect(
 
 bool nsIOService::UsesExternalProtocolHandler(const nsACString& aScheme) {
   if (aScheme == "file"_ns || aScheme == "chrome"_ns ||
-      aScheme == "resource"_ns) {
+      aScheme == "resource"_ns || aScheme == "moz-src"_ns) {
     
     
     
