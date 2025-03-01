@@ -17,7 +17,9 @@
 namespace content_analysis {
 namespace sdk {
 
-const DWORD kBufferSize = 4096;
+
+
+const DWORD kBufferSize = 65536;
 
 
 
