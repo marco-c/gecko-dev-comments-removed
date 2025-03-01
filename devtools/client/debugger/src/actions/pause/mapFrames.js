@@ -51,9 +51,9 @@ async function updateFrameLocationAndDisplayName(frame, thunkArgs) {
 
   
   
-  const originalDisplayName = await thunkArgs.dispatch(
-    getOriginalFunctionDisplayName(location)
-  );
+  const originalDisplayName = location.source.isPrettyPrinted
+    ? frame.displayName
+    : await thunkArgs.dispatch(getOriginalFunctionDisplayName(location));
 
   
   return {
