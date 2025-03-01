@@ -663,6 +663,17 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
     return;
   }
 
+  if (!GetInnerWindow()) {
+    
+    
+    
+    
+    if (mGlobalObject.HasScheduledNormalOrHighPriorityWebTasks()) {
+      MOZ_ALWAYS_SUCCEEDS(MaybeSchedule(aNow));
+      return;
+    }
+  }
+
   Timeouts& timeouts(aProcessIdle ? mIdleTimeouts : mTimeouts);
 
   
