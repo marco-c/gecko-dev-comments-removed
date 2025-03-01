@@ -1636,6 +1636,8 @@ pub struct TileCacheParams {
     
     pub spatial_node_index: SpatialNodeIndex,
     
+    pub visibility_node_index: SpatialNodeIndex,
+    
     
     pub background_color: Option<ColorF>,
     
@@ -1782,6 +1784,8 @@ pub struct TileCacheInstance {
     pub sub_slices: Vec<SubSlice>,
     
     pub spatial_node_index: SpatialNodeIndex,
+    
+    pub visibility_node_index: SpatialNodeIndex,
     
     
     opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
@@ -1930,6 +1934,7 @@ impl TileCacheInstance {
             slice: params.slice,
             slice_flags: params.slice_flags,
             spatial_node_index: params.spatial_node_index,
+            visibility_node_index: params.visibility_node_index,
             sub_slices,
             opacity_bindings: FastHashMap::default(),
             old_opacity_bindings: FastHashMap::default(),
