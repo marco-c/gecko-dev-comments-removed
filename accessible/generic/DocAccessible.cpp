@@ -1425,16 +1425,6 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
       return false;
     }
 
-    if (!frame && aRoot->IsElement() &&
-        aRoot->AsElement()->IsDisplayContents() && acc->mOldComputedStyle) {
-      
-      
-      
-      
-      
-      QueueCacheUpdate(acc, CacheDomain::Style | CacheDomain::Bounds);
-    }
-
     
     
     if (frame && frame->IsHiddenByContentVisibilityOnAnyAncestor(
