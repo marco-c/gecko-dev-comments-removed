@@ -725,8 +725,6 @@ class MDefinition : public MNode {
   
   MIRType type() const { return resultType_; }
 
-  bool mightBeMagicType() const;
-
   
   
   
