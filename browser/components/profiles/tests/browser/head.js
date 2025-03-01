@@ -125,13 +125,24 @@ async function initGroupDatabase() {
 
 
 
-const assertGlean = async (category, method, object, extra) => {
-  
-  let gleanFn = category + method[0].toUpperCase() + method.substr(1);
 
+
+
+
+
+
+
+
+
+
+const assertGlean = async (category, method, object, extra) => {
   
   const snakeToCamel = str =>
     str.replace(/_([a-z])/g, (_, nextChar) => nextChar.toUpperCase());
+
+  
+  let camelMethod = snakeToCamel(method);
+  let gleanFn = category + camelMethod[0].toUpperCase() + camelMethod.substr(1);
 
   await Services.fog.testFlushAllChildren();
   let testEvents = Glean[gleanFn][snakeToCamel(object)].testGetValue();
