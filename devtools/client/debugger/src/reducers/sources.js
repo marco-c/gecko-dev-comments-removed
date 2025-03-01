@@ -35,6 +35,8 @@ export function initialSourcesState() {
 
 
 
+
+
     mutableOriginalBreakableLines: new Map(),
 
     
@@ -203,7 +205,7 @@ function update(state = initialSourcesState(), action) {
     case "SET_ORIGINAL_BREAKABLE_LINES": {
       state.mutableOriginalBreakableLines.set(
         action.source.id,
-        action.breakableLines
+        action.promise || action.breakableLines
       );
 
       return {

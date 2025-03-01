@@ -5,6 +5,7 @@
 import {
   getBreakableLines,
   getSourceActorBreakableLines,
+  getSourceActorsForSource,
 } from "../../selectors/index";
 import { setBreakpointPositions } from "../breakpoints/breakpointPositions";
 
@@ -24,45 +25,91 @@ function calculateBreakableLines(positions) {
 
 
 
+
+
+
 export function setBreakableLines(location) {
   return async ({ getState, dispatch, client }) => {
-    let breakableLines;
     if (location.source.isOriginal) {
-      const positions = await dispatch(setBreakpointPositions(location));
-      breakableLines = calculateBreakableLines(positions);
-
-      const existingBreakableLines = getBreakableLines(
-        getState(),
-        location.source.id
-      );
-      if (existingBreakableLines) {
-        breakableLines = [
-          ...new Set([...existingBreakableLines, ...breakableLines]),
-        ];
+      
+      
+      
+      let promise = getBreakableLines(getState(), location.source.id);
+      if (promise) {
+        return promise;
       }
-
+      promise = (async () => {
+        const positions = await dispatch(setBreakpointPositions(location));
+        return calculateBreakableLines(positions);
+      })();
+      dispatch({
+        type: "SET_ORIGINAL_BREAKABLE_LINES",
+        source: location.source,
+        promise,
+      });
+      const breakableLines = await promise;
       dispatch({
         type: "SET_ORIGINAL_BREAKABLE_LINES",
         source: location.source,
         breakableLines,
       });
+    } else if (location.source.isHTML) {
+      
+      
+      
+      
+      
+      
+      const sourceActors = getSourceActorsForSource(
+        getState(),
+        location.source.id
+      );
+      if (!sourceActors) {
+        return null;
+      }
+      for (const sourceActor of sourceActors) {
+        let promise = getSourceActorBreakableLines(getState(), sourceActor.id);
+        if (promise) {
+          await promise;
+        } else {
+          promise = client.getSourceActorBreakableLines(sourceActor);
+          dispatch({
+            type: "SET_SOURCE_ACTOR_BREAKABLE_LINES",
+            sourceActor,
+            promise,
+          });
+          const breakableLines = await promise;
+          dispatch({
+            type: "SET_SOURCE_ACTOR_BREAKABLE_LINES",
+            sourceActor,
+            breakableLines,
+          });
+        }
+      }
     } else {
       
-      breakableLines = getSourceActorBreakableLines(
+      
+      
+      let promise = getSourceActorBreakableLines(
         getState(),
         location.sourceActor.id
       );
-      if (breakableLines) {
-        return;
+      if (promise) {
+        return promise;
       }
-      breakableLines = await client.getSourceActorBreakableLines(
-        location.sourceActor
-      );
+      promise = client.getSourceActorBreakableLines(location.sourceActor);
+      dispatch({
+        type: "SET_SOURCE_ACTOR_BREAKABLE_LINES",
+        sourceActor: location.sourceActor,
+        promise,
+      });
+      const breakableLines = await promise;
       dispatch({
         type: "SET_SOURCE_ACTOR_BREAKABLE_LINES",
         sourceActor: location.sourceActor,
         breakableLines,
       });
     }
+    return null;
   };
 }

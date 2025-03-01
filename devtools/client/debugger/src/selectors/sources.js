@@ -355,7 +355,15 @@ export function getBreakableLines(state, sourceId) {
 export const getSelectedBreakableLines = createSelector(
   state => {
     const sourceId = getSelectedSourceId(state);
-    return sourceId && getBreakableLines(state, sourceId);
+    if (!sourceId) {
+      return null;
+    }
+    const breakableLines = getBreakableLines(state, sourceId);
+    
+    if (!breakableLines || breakableLines instanceof Promise) {
+      return null;
+    }
+    return breakableLines;
   },
   breakableLines => new Set(breakableLines || [])
 );

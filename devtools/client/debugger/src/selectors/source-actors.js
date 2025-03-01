@@ -79,6 +79,8 @@ export function getSourceActorsForThread(state, threadActorIDs) {
 
 
 
+
+
 export function getSourceActorBreakableLines(state, sourceActorId) {
   return state.sourceActors.mutableBreakableLines.get(sourceActorId);
 }
@@ -104,15 +106,18 @@ export function getSourceActorBreakableLines(state, sourceActorId) {
 export function getBreakableLinesForSourceActors(state, sourceActors, isHTML) {
   const allBreakableLines = [];
   for (const sourceActor of sourceActors) {
-    const breakableLines = state.sourceActors.mutableBreakableLines.get(
-      sourceActor.id
-    );
-    if (breakableLines) {
-      if (isHTML) {
-        allBreakableLines.push(...breakableLines);
-      } else {
-        return breakableLines;
-      }
+    const breakableLines = getSourceActorBreakableLines(state, sourceActor.id);
+
+    
+    
+    if (!breakableLines || breakableLines instanceof Promise) {
+      continue;
+    }
+
+    if (isHTML) {
+      allBreakableLines.push(...breakableLines);
+    } else {
+      return breakableLines;
     }
   }
   return allBreakableLines;

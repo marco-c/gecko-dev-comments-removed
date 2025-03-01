@@ -17,6 +17,7 @@ function initialSourceActorsState() {
 
     
     
+    
     mutableBreakableLines: new Map(),
 
     
@@ -71,7 +72,7 @@ export default function update(state = initialSourceActorsState(), action) {
     case "SET_SOURCE_ACTOR_BREAKABLE_LINES":
       state.mutableBreakableLines.set(
         action.sourceActor.id,
-        action.breakableLines
+        action.promise || action.breakableLines
       );
 
       return {

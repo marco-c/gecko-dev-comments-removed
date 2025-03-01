@@ -30,6 +30,7 @@ import {
   getSourceByActorId,
   getPendingSelectedLocation,
   getPendingBreakpointsForSource,
+  getSelectedLocation,
 } from "../../selectors/index";
 
 import { prefs } from "../../utils/prefs";
@@ -346,19 +347,25 @@ export function newGeneratedSources(sourceResources) {
       
       
       
+      
+      const selectedLocation = getSelectedLocation(getState());
       for (const sourceActor of newSourceActors) {
-        
-        
-        
-        
-        
-        if (sourceActor.sourceObject.isHTML) {
+        if (
+          selectedLocation?.source == sourceActor.sourceObject &&
+          sourceActor.sourceObject.isHTML
+        ) {
           await dispatch(
             setBreakableLines(
               createLocation({ source: sourceActor.sourceObject, sourceActor })
             )
           );
         }
+      }
+
+      
+      
+      
+      for (const sourceActor of newSourceActors) {
         dispatch(
           checkPendingBreakpoints(sourceActor.sourceObject, sourceActor)
         );
