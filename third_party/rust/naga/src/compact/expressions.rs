@@ -3,6 +3,7 @@ use crate::arena::{Arena, Handle};
 
 pub struct ExpressionTracer<'tracer> {
     pub constants: &'tracer Arena<crate::Constant>,
+    pub overrides: &'tracer Arena<crate::Override>,
 
     
     pub expressions: &'tracer Arena<crate::Expression>,
@@ -12,6 +13,9 @@ pub struct ExpressionTracer<'tracer> {
 
     
     pub constants_used: &'tracer mut HandleSet<crate::Constant>,
+
+    
+    pub overrides_used: &'tracer mut HandleSet<crate::Override>,
 
     
     
@@ -78,25 +82,35 @@ impl ExpressionTracer<'_> {
             | Ex::SubgroupBallotResult
             | Ex::RayQueryProceedResult => {}
 
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             Ex::Constant(handle) => {
                 self.constants_used.insert(handle);
-                
-                
-                
-                
-                
-                
-                
-                let init = self.constants[handle].init;
+                let constant = &self.constants[handle];
+                self.types_used.insert(constant.ty);
                 match self.global_expressions_used {
-                    Some(ref mut used) => used.insert(init),
-                    None => self.expressions_used.insert(init),
+                    Some(ref mut used) => used.insert(constant.init),
+                    None => self.expressions_used.insert(constant.init),
                 };
             }
-            Ex::Override(_) => {
-                
-                
-                
+            Ex::Override(handle) => {
+                self.overrides_used.insert(handle);
+                let r#override = &self.overrides[handle];
+                self.types_used.insert(r#override.ty);
+                if let Some(init) = r#override.init {
+                    match self.global_expressions_used {
+                        Some(ref mut used) => used.insert(init),
+                        None => self.expressions_used.insert(init),
+                    };
+                }
             }
             Ex::ZeroValue(ty) => {
                 self.types_used.insert(ty);
@@ -257,10 +271,8 @@ impl ModuleMap {
             | Ex::RayQueryProceedResult => {}
 
             
-            Ex::Override(_) => {}
-
-            
             Ex::Constant(ref mut constant) => self.constants.adjust(constant),
+            Ex::Override(ref mut r#override) => self.overrides.adjust(r#override),
             Ex::ZeroValue(ref mut ty) => self.types.adjust(ty),
             Ex::Compose {
                 ref mut ty,

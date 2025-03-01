@@ -122,36 +122,9 @@ pub enum CreateShaderModuleError {
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ProgrammableStageDescriptor<'a> {
+pub struct ProgrammableStageDescriptor<'a, SM = ShaderModuleId> {
     
-    pub module: ShaderModuleId,
-    
-    
-    
-    
-    
-    
-    pub entry_point: Option<Cow<'a, str>>,
-    
-    
-    
-    
-    
-    
-    
-    pub constants: Cow<'a, naga::back::PipelineConstants>,
-    
-    
-    
-    
-    pub zero_initialize_workgroup_memory: bool,
-}
-
-
-#[derive(Clone, Debug)]
-pub struct ResolvedProgrammableStageDescriptor<'a> {
-    
-    pub module: Arc<ShaderModule>,
+    pub module: SM,
     
     
     
@@ -166,13 +139,17 @@ pub struct ResolvedProgrammableStageDescriptor<'a> {
     
     
     
-    pub constants: Cow<'a, naga::back::PipelineConstants>,
+    pub constants: naga::back::PipelineConstants,
     
     
     
     
     pub zero_initialize_workgroup_memory: bool,
 }
+
+/// cbindgen:ignore
+pub type ResolvedProgrammableStageDescriptor<'a> =
+    ProgrammableStageDescriptor<'a, Arc<ShaderModule>>;
 
 
 pub type ImplicitBindGroupCount = u8;
@@ -195,27 +172,24 @@ pub enum ImplicitLayoutError {
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ComputePipelineDescriptor<'a> {
+pub struct ComputePipelineDescriptor<
+    'a,
+    PLL = PipelineLayoutId,
+    SM = ShaderModuleId,
+    PLC = PipelineCacheId,
+> {
     pub label: Label<'a>,
     
-    pub layout: Option<PipelineLayoutId>,
+    pub layout: Option<PLL>,
     
-    pub stage: ProgrammableStageDescriptor<'a>,
+    pub stage: ProgrammableStageDescriptor<'a, SM>,
     
-    pub cache: Option<PipelineCacheId>,
+    pub cache: Option<PLC>,
 }
 
-
-#[derive(Clone, Debug)]
-pub struct ResolvedComputePipelineDescriptor<'a> {
-    pub label: Label<'a>,
-    
-    pub layout: Option<Arc<PipelineLayout>>,
-    
-    pub stage: ResolvedProgrammableStageDescriptor<'a>,
-    
-    pub cache: Option<Arc<PipelineCache>>,
-}
+/// cbindgen:ignore
+pub type ResolvedComputePipelineDescriptor<'a> =
+    ComputePipelineDescriptor<'a, Arc<PipelineLayout>, Arc<ShaderModule>, Arc<PipelineCache>>;
 
 #[derive(Clone, Debug, Error)]
 #[non_exhaustive]
@@ -328,50 +302,43 @@ pub struct VertexBufferLayout<'a> {
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct VertexState<'a> {
+pub struct VertexState<'a, SM = ShaderModuleId> {
     
-    pub stage: ProgrammableStageDescriptor<'a>,
-    
-    pub buffers: Cow<'a, [VertexBufferLayout<'a>]>,
-}
-
-
-#[derive(Clone, Debug)]
-pub struct ResolvedVertexState<'a> {
-    
-    pub stage: ResolvedProgrammableStageDescriptor<'a>,
+    pub stage: ProgrammableStageDescriptor<'a, SM>,
     
     pub buffers: Cow<'a, [VertexBufferLayout<'a>]>,
 }
 
-
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct FragmentState<'a> {
-    
-    pub stage: ProgrammableStageDescriptor<'a>,
-    
-    pub targets: Cow<'a, [Option<wgt::ColorTargetState>]>,
-}
-
-
-#[derive(Clone, Debug)]
-pub struct ResolvedFragmentState<'a> {
-    
-    pub stage: ResolvedProgrammableStageDescriptor<'a>,
-    
-    pub targets: Cow<'a, [Option<wgt::ColorTargetState>]>,
-}
+/// cbindgen:ignore
+pub type ResolvedVertexState<'a> = VertexState<'a, Arc<ShaderModule>>;
 
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct RenderPipelineDescriptor<'a> {
+pub struct FragmentState<'a, SM = ShaderModuleId> {
+    
+    pub stage: ProgrammableStageDescriptor<'a, SM>,
+    
+    pub targets: Cow<'a, [Option<wgt::ColorTargetState>]>,
+}
+
+/// cbindgen:ignore
+pub type ResolvedFragmentState<'a> = FragmentState<'a, Arc<ShaderModule>>;
+
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RenderPipelineDescriptor<
+    'a,
+    PLL = PipelineLayoutId,
+    SM = ShaderModuleId,
+    PLC = PipelineCacheId,
+> {
     pub label: Label<'a>,
     
-    pub layout: Option<PipelineLayoutId>,
+    pub layout: Option<PLL>,
     
-    pub vertex: VertexState<'a>,
+    pub vertex: VertexState<'a, SM>,
     
     #[cfg_attr(feature = "serde", serde(default))]
     pub primitive: wgt::PrimitiveState,
@@ -382,36 +349,17 @@ pub struct RenderPipelineDescriptor<'a> {
     #[cfg_attr(feature = "serde", serde(default))]
     pub multisample: wgt::MultisampleState,
     
-    pub fragment: Option<FragmentState<'a>>,
+    pub fragment: Option<FragmentState<'a, SM>>,
     
     
     pub multiview: Option<NonZeroU32>,
     
-    pub cache: Option<PipelineCacheId>,
+    pub cache: Option<PLC>,
 }
 
-
-#[derive(Clone, Debug)]
-pub struct ResolvedRenderPipelineDescriptor<'a> {
-    pub label: Label<'a>,
-    
-    pub layout: Option<Arc<PipelineLayout>>,
-    
-    pub vertex: ResolvedVertexState<'a>,
-    
-    pub primitive: wgt::PrimitiveState,
-    
-    pub depth_stencil: Option<wgt::DepthStencilState>,
-    
-    pub multisample: wgt::MultisampleState,
-    
-    pub fragment: Option<ResolvedFragmentState<'a>>,
-    
-    
-    pub multiview: Option<NonZeroU32>,
-    
-    pub cache: Option<Arc<PipelineCache>>,
-}
+/// cbindgen:ignore
+pub type ResolvedRenderPipelineDescriptor<'a> =
+    RenderPipelineDescriptor<'a, Arc<PipelineLayout>, Arc<ShaderModule>, Arc<PipelineCache>>;
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

@@ -5,21 +5,14 @@ use crate::id;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct PassTimestampWrites {
+pub struct PassTimestampWrites<QS = id::QuerySetId> {
     
-    pub query_set: id::QuerySetId,
+    pub query_set: QS,
     
     pub beginning_of_pass_write_index: Option<u32>,
     
     pub end_of_pass_write_index: Option<u32>,
 }
 
-
-pub struct ArcPassTimestampWrites {
-    
-    pub query_set: Arc<crate::resource::QuerySet>,
-    
-    pub beginning_of_pass_write_index: Option<u32>,
-    
-    pub end_of_pass_write_index: Option<u32>,
-}
+/// cbindgen:ignore
+pub type ArcPassTimestampWrites = PassTimestampWrites<Arc<crate::resource::QuerySet>>;

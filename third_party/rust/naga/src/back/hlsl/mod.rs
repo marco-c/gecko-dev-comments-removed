@@ -360,10 +360,13 @@ struct Wrapped {
     zero_values: crate::FastHashSet<help::WrappedZeroValue>,
     array_lengths: crate::FastHashSet<help::WrappedArrayLength>,
     image_queries: crate::FastHashSet<help::WrappedImageQuery>,
+    image_load_scalars: crate::FastHashSet<crate::Scalar>,
     constructors: crate::FastHashSet<help::WrappedConstructor>,
     struct_matrix_access: crate::FastHashSet<help::WrappedStructMatrixAccess>,
     mat_cx2s: crate::FastHashSet<help::WrappedMatCx2>,
     math: crate::FastHashSet<help::WrappedMath>,
+    unary_op: crate::FastHashSet<help::WrappedUnaryOp>,
+    binary_op: crate::FastHashSet<help::WrappedBinaryOp>,
     
     sampler_heaps: bool,
     
@@ -378,6 +381,8 @@ impl Wrapped {
         self.struct_matrix_access.clear();
         self.mat_cx2s.clear();
         self.math.clear();
+        self.unary_op.clear();
+        self.binary_op.clear();
     }
 }
 

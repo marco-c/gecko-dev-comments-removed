@@ -437,52 +437,78 @@ impl BindingTypeMaxCountValidator {
 }
 
 
+/// cbindgen:ignore
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct BindGroupEntry<'a> {
+pub struct BindGroupEntry<'a, B = BufferId, S = SamplerId, TV = TextureViewId, TLAS = TlasId>
+where
+    [BufferBinding<B>]: ToOwned,
+    [S]: ToOwned,
+    [TV]: ToOwned,
+    <[BufferBinding<B>] as ToOwned>::Owned: std::fmt::Debug,
+    <[S] as ToOwned>::Owned: std::fmt::Debug,
+    <[TV] as ToOwned>::Owned: std::fmt::Debug,
+{
     
     
     pub binding: u32,
+    #[cfg_attr(
+        feature = "serde",
+        serde(bound(deserialize = "BindingResource<'a, B, S, TV, TLAS>: Deserialize<'de>"))
+    )]
     
-    pub resource: BindingResource<'a>,
+    pub resource: BindingResource<'a, B, S, TV, TLAS>,
 }
 
-
-#[derive(Clone, Debug)]
-pub struct ResolvedBindGroupEntry<'a> {
-    
-    
-    pub binding: u32,
-    
-    pub resource: ResolvedBindingResource<'a>,
-}
+/// cbindgen:ignore
+pub type ResolvedBindGroupEntry<'a> =
+    BindGroupEntry<'a, Arc<Buffer>, Arc<Sampler>, Arc<TextureView>, Arc<Tlas>>;
 
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct BindGroupDescriptor<'a> {
+pub struct BindGroupDescriptor<
+    'a,
+    BGL = BindGroupLayoutId,
+    B = BufferId,
+    S = SamplerId,
+    TV = TextureViewId,
+    TLAS = TlasId,
+> where
+    [BufferBinding<B>]: ToOwned,
+    [S]: ToOwned,
+    [TV]: ToOwned,
+    <[BufferBinding<B>] as ToOwned>::Owned: std::fmt::Debug,
+    <[S] as ToOwned>::Owned: std::fmt::Debug,
+    <[TV] as ToOwned>::Owned: std::fmt::Debug,
+    [BindGroupEntry<'a, B, S, TV, TLAS>]: ToOwned,
+    <[BindGroupEntry<'a, B, S, TV, TLAS>] as ToOwned>::Owned: std::fmt::Debug,
+{
     
     
     
     pub label: Label<'a>,
     
-    pub layout: BindGroupLayoutId,
+    pub layout: BGL,
+    #[cfg_attr(
+        feature = "serde",
+        serde(bound(
+            deserialize = "<[BindGroupEntry<'a, B, S, TV, TLAS>] as ToOwned>::Owned: Deserialize<'de>"
+        ))
+    )]
     
-    pub entries: Cow<'a, [BindGroupEntry<'a>]>,
+    pub entries: Cow<'a, [BindGroupEntry<'a, B, S, TV, TLAS>]>,
 }
 
-
-#[derive(Clone, Debug)]
-pub struct ResolvedBindGroupDescriptor<'a> {
-    
-    
-    
-    pub label: Label<'a>,
-    
-    pub layout: Arc<BindGroupLayout>,
-    
-    pub entries: Cow<'a, [ResolvedBindGroupEntry<'a>]>,
-}
+/// cbindgen:ignore
+pub type ResolvedBindGroupDescriptor<'a> = BindGroupDescriptor<
+    'a,
+    Arc<BindGroupLayout>,
+    Arc<Buffer>,
+    Arc<Sampler>,
+    Arc<TextureView>,
+    Arc<Tlas>,
+>;
 
 
 #[derive(Clone, Debug)]
@@ -641,14 +667,23 @@ pub enum PushConstantUploadError {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct PipelineLayoutDescriptor<'a> {
+#[cfg_attr(feature = "serde", serde(bound = "BGL: Serialize"))]
+pub struct PipelineLayoutDescriptor<'a, BGL = BindGroupLayoutId>
+where
+    [BGL]: ToOwned,
+    <[BGL] as ToOwned>::Owned: std::fmt::Debug,
+{
     
     
     
     pub label: Label<'a>,
     
     
-    pub bind_group_layouts: Cow<'a, [BindGroupLayoutId]>,
+    #[cfg_attr(
+        feature = "serde",
+        serde(bound(deserialize = "<[BGL] as ToOwned>::Owned: Deserialize<'de>"))
+    )]
+    pub bind_group_layouts: Cow<'a, [BGL]>,
     
     
     
@@ -659,27 +694,8 @@ pub struct PipelineLayoutDescriptor<'a> {
     pub push_constant_ranges: Cow<'a, [wgt::PushConstantRange]>,
 }
 
-
-
-
-#[derive(Debug)]
-pub struct ResolvedPipelineLayoutDescriptor<'a> {
-    
-    
-    
-    pub label: Label<'a>,
-    
-    
-    pub bind_group_layouts: Cow<'a, [Arc<BindGroupLayout>]>,
-    
-    
-    
-    
-    
-    
-    
-    pub push_constant_ranges: Cow<'a, [wgt::PushConstantRange]>,
-}
+/// cbindgen:ignore
+pub type ResolvedPipelineLayoutDescriptor<'a> = PipelineLayoutDescriptor<'a, Arc<BindGroupLayout>>;
 
 #[derive(Debug)]
 pub struct PipelineLayout {
@@ -801,45 +817,50 @@ crate::impl_storage_item!(PipelineLayout);
 #[repr(C)]
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct BufferBinding {
-    pub buffer_id: BufferId,
+pub struct BufferBinding<B = BufferId> {
+    pub buffer: B,
     pub offset: wgt::BufferAddress,
     pub size: Option<wgt::BufferSize>,
 }
 
-#[derive(Clone, Debug)]
-pub struct ResolvedBufferBinding {
-    pub buffer: Arc<Buffer>,
-    pub offset: wgt::BufferAddress,
-    pub size: Option<wgt::BufferSize>,
-}
+pub type ResolvedBufferBinding = BufferBinding<Arc<Buffer>>;
 
 
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum BindingResource<'a> {
-    Buffer(BufferBinding),
-    BufferArray(Cow<'a, [BufferBinding]>),
-    Sampler(SamplerId),
-    SamplerArray(Cow<'a, [SamplerId]>),
-    TextureView(TextureViewId),
-    TextureViewArray(Cow<'a, [TextureViewId]>),
-    AccelerationStructure(TlasId),
+pub enum BindingResource<'a, B = BufferId, S = SamplerId, TV = TextureViewId, TLAS = TlasId>
+where
+    [BufferBinding<B>]: ToOwned,
+    [S]: ToOwned,
+    [TV]: ToOwned,
+    <[BufferBinding<B>] as ToOwned>::Owned: std::fmt::Debug,
+    <[S] as ToOwned>::Owned: std::fmt::Debug,
+    <[TV] as ToOwned>::Owned: std::fmt::Debug,
+{
+    Buffer(BufferBinding<B>),
+    #[cfg_attr(
+        feature = "serde",
+        serde(bound(deserialize = "<[BufferBinding<B>] as ToOwned>::Owned: Deserialize<'de>"))
+    )]
+    BufferArray(Cow<'a, [BufferBinding<B>]>),
+    Sampler(S),
+    #[cfg_attr(
+        feature = "serde",
+        serde(bound(deserialize = "<[S] as ToOwned>::Owned: Deserialize<'de>"))
+    )]
+    SamplerArray(Cow<'a, [S]>),
+    TextureView(TV),
+    #[cfg_attr(
+        feature = "serde",
+        serde(bound(deserialize = "<[TV] as ToOwned>::Owned: Deserialize<'de>"))
+    )]
+    TextureViewArray(Cow<'a, [TV]>),
+    AccelerationStructure(TLAS),
 }
 
-
-
-#[derive(Debug, Clone)]
-pub enum ResolvedBindingResource<'a> {
-    Buffer(ResolvedBufferBinding),
-    BufferArray(Cow<'a, [ResolvedBufferBinding]>),
-    Sampler(Arc<Sampler>),
-    SamplerArray(Cow<'a, [Arc<Sampler>]>),
-    TextureView(Arc<TextureView>),
-    TextureViewArray(Cow<'a, [Arc<TextureView>]>),
-    AccelerationStructure(Arc<Tlas>),
-}
+pub type ResolvedBindingResource<'a> =
+    BindingResource<'a, Arc<Buffer>, Arc<Sampler>, Arc<TextureView>, Arc<Tlas>>;
 
 #[derive(Clone, Debug, Error)]
 #[non_exhaustive]

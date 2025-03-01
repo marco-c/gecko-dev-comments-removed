@@ -1779,6 +1779,16 @@ pub enum RayQueryFunction {
         result: Handle<Expression>,
     },
 
+    
+    
+    GenerateIntersection {
+        hit_t: Handle<Expression>,
+    },
+
+    
+    
+    ConfirmIntersection,
+
     Terminate,
 }
 

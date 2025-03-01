@@ -2142,7 +2142,31 @@ impl crate::Device for super::Device {
                     let index_count = triangle.indices.as_ref().map_or(0, |indices| indices.count);
 
                     let triangle_desc = Direct3D12::D3D12_RAYTRACING_GEOMETRY_TRIANGLES_DESC {
-                        Transform3x4: 0,
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        Transform3x4: if desc
+                            .flags
+                            .contains(wgt::AccelerationStructureFlags::USE_TRANSFORM)
+                        {
+                            unsafe {
+                                triangle
+                                    .transform
+                                    .as_ref()
+                                    .unwrap()
+                                    .buffer
+                                    .resource
+                                    .GetGPUVirtualAddress()
+                            }
+                        } else {
+                            0
+                        },
                         IndexFormat: index_format,
                         VertexFormat: auxil::dxgi::conv::map_vertex_format(triangle.vertex_format),
                         IndexCount: index_count,

@@ -302,6 +302,26 @@ impl NumericType {
             _ => None,
         }
     }
+
+    const fn scalar(self) -> crate::Scalar {
+        match self {
+            NumericType::Scalar(scalar)
+            | NumericType::Vector { scalar, .. }
+            | NumericType::Matrix { scalar, .. } => scalar,
+        }
+    }
+
+    const fn with_scalar(self, scalar: crate::Scalar) -> Self {
+        match self {
+            NumericType::Scalar(_) => NumericType::Scalar(scalar),
+            NumericType::Vector { size, .. } => NumericType::Vector { size, scalar },
+            NumericType::Matrix { columns, rows, .. } => NumericType::Matrix {
+                columns,
+                rows,
+                scalar,
+            },
+        }
+    }
 }
 
 
@@ -473,6 +493,18 @@ enum Dimension {
     Scalar,
     Vector,
     Matrix,
+}
+
+
+
+
+#[derive(Debug, Eq, PartialEq, Hash)]
+enum WrappedFunction {
+    BinaryOp {
+        op: crate::BinaryOperator,
+        left_type_id: Word,
+        right_type_id: Word,
+    },
 }
 
 
@@ -752,6 +784,10 @@ pub struct Writer {
     lookup_type: crate::FastHashMap<LookupType, Word>,
     lookup_function: crate::FastHashMap<Handle<crate::Function>, Word>,
     lookup_function_type: crate::FastHashMap<LookupFunctionType, Word>,
+    
+    
+    
+    wrapped_functions: crate::FastHashMap<WrappedFunction, Word>,
     
     constant_ids: HandleVec<crate::Expression, Word>,
     cached_constants: crate::FastHashMap<CachedConstant, Word>,

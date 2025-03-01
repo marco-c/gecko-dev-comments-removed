@@ -203,12 +203,21 @@ impl Device {
 
         let command_allocator = command::CommandAllocator::new();
 
+        let rt_uses = if desc
+            .required_features
+            .contains(wgt::Features::EXPERIMENTAL_RAY_TRACING_ACCELERATION_STRUCTURE)
+        {
+            wgt::BufferUses::TOP_LEVEL_ACCELERATION_STRUCTURE_INPUT
+        } else {
+            wgt::BufferUses::empty()
+        };
+
         
         let zero_buffer = unsafe {
             raw_device.create_buffer(&hal::BufferDescriptor {
                 label: hal_label(Some("(wgpu internal) zero init buffer"), instance_flags),
                 size: ZERO_BUFFER_SIZE,
-                usage: wgt::BufferUses::COPY_SRC | wgt::BufferUses::COPY_DST,
+                usage: wgt::BufferUses::COPY_SRC | wgt::BufferUses::COPY_DST | rt_uses,
                 memory_flags: hal::MemoryFlags::empty(),
             })
         }
@@ -383,60 +392,120 @@ impl Device {
     
     
     
+    
+    
+    
+    
     pub(crate) fn maintain<'this>(
         &'this self,
         fence: crate::lock::RwLockReadGuard<ManuallyDrop<Box<dyn hal::DynFence>>>,
-        maintain: wgt::Maintain<crate::SubmissionIndex>,
+        poll_type: wgt::PollType<crate::SubmissionIndex>,
         snatch_guard: SnatchGuard,
-    ) -> Result<(UserClosures, bool), WaitIdleError> {
+    ) -> (UserClosures, Result<wgt::PollStatus, WaitIdleError>) {
         profiling::scope!("Device::maintain");
 
+        let mut user_closures = UserClosures::default();
+
         
-        let submission_index = match maintain {
-            wgt::Maintain::WaitForSubmissionIndex(submission_index) => {
+        let wait_submission_index = match poll_type {
+            wgt::PollType::WaitForSubmissionIndex(submission_index) => {
                 let last_successful_submission_index = self
                     .last_successful_submission_index
                     .load(Ordering::Acquire);
 
                 if submission_index > last_successful_submission_index {
-                    return Err(WaitIdleError::WrongSubmissionIndex(
+                    let result = Err(WaitIdleError::WrongSubmissionIndex(
                         submission_index,
                         last_successful_submission_index,
                     ));
+
+                    return (user_closures, result);
                 }
 
-                submission_index
+                Some(submission_index)
             }
-            wgt::Maintain::Wait => self
-                .last_successful_submission_index
-                .load(Ordering::Acquire),
-            wgt::Maintain::Poll => unsafe { self.raw().get_fence_value(fence.as_ref()) }
-                .map_err(|e| self.handle_hal_error(e))?,
+            wgt::PollType::Wait => Some(
+                self.last_successful_submission_index
+                    .load(Ordering::Acquire),
+            ),
+            wgt::PollType::Poll => None,
         };
 
         
-        if maintain.is_wait() {
-            log::trace!("Device::maintain: waiting for submission index {submission_index}");
-            unsafe {
-                self.raw()
-                    .wait(fence.as_ref(), submission_index, CLEANUP_WAIT_MS)
-            }
-            .map_err(|e| self.handle_hal_error(e))?;
-        }
+        if let Some(target_submission_index) = wait_submission_index {
+            log::trace!("Device::maintain: waiting for submission index {target_submission_index}");
 
-        let (submission_closures, mapping_closures, queue_empty) =
-            if let Some(queue) = self.get_queue() {
-                queue.maintain(submission_index, &snatch_guard)
-            } else {
-                (SmallVec::new(), Vec::new(), true)
+            let wait_result = unsafe {
+                self.raw()
+                    .wait(fence.as_ref(), target_submission_index, CLEANUP_WAIT_MS)
             };
 
+            
+            
+            if let Err(e) = wait_result {
+                let hal_error: WaitIdleError = self.handle_hal_error(e).into();
+                return (user_closures, Err(hal_error));
+            }
+        }
+
+        
+        
+        let fence_value_result = unsafe { self.raw().get_fence_value(fence.as_ref()) };
+        let current_finished_submission = match fence_value_result {
+            Ok(fence_value) => fence_value,
+            Err(e) => {
+                let hal_error: WaitIdleError = self.handle_hal_error(e).into();
+                return (user_closures, Err(hal_error));
+            }
+        };
+
+        
+        
+        
+        
+        let mut queue_empty = false;
+        if let Some(queue) = self.get_queue() {
+            let queue_result = queue.maintain(current_finished_submission, &snatch_guard);
+            (
+                user_closures.submissions,
+                user_closures.mappings,
+                queue_empty,
+            ) = queue_result
+        };
+
+        
+        let result = if queue_empty {
+            if let Some(wait_submission_index) = wait_submission_index {
+                
+                
+                assert!(
+                    current_finished_submission >= wait_submission_index,
+                    "If the queue is empty, the current submission index ({}) should be at least the wait submission index ({})",
+                    current_finished_submission,
+                    wait_submission_index
+                );
+            }
+
+            Ok(wgt::PollStatus::QueueEmpty)
+        } else if let Some(wait_submission_index) = wait_submission_index {
+            
+            
+            
+            if current_finished_submission >= wait_submission_index {
+                Ok(wgt::PollStatus::WaitSucceeded)
+            } else {
+                Err(WaitIdleError::Timeout)
+            }
+        } else {
+            Ok(wgt::PollStatus::Poll)
+        };
+
         
         
         
         
         
-        let mut device_lost_invocations = SmallVec::new();
+        
         let mut should_release_gpu_resource = false;
         if !self.is_valid() && queue_empty {
             
@@ -446,11 +515,13 @@ impl Device {
             
             
             if let Some(device_lost_closure) = self.device_lost_closure.lock().take() {
-                device_lost_invocations.push(DeviceLostInvocation {
-                    closure: device_lost_closure,
-                    reason: DeviceLostReason::Destroyed,
-                    message: String::new(),
-                });
+                user_closures
+                    .device_lost_invocations
+                    .push(DeviceLostInvocation {
+                        closure: device_lost_closure,
+                        reason: DeviceLostReason::Destroyed,
+                        message: String::new(),
+                    });
             }
         }
 
@@ -462,12 +533,7 @@ impl Device {
             self.release_gpu_resources();
         }
 
-        let closures = UserClosures {
-            mappings: mapping_closures,
-            submissions: submission_closures,
-            device_lost_invocations,
-        };
-        Ok((closures, queue_empty))
+        (user_closures, result)
     }
 
     pub(crate) fn create_buffer(
@@ -2819,7 +2885,7 @@ impl Device {
             stage: hal::ProgrammableStage {
                 module: shader_module.raw(),
                 entry_point: final_entry_point_name.as_ref(),
-                constants: desc.stage.constants.as_ref(),
+                constants: &desc.stage.constants,
                 zero_initialize_workgroup_memory: desc.stage.zero_initialize_workgroup_memory,
             },
             cache: cache.as_ref().map(|it| it.raw()),
@@ -3278,7 +3344,7 @@ impl Device {
             hal::ProgrammableStage {
                 module: vertex_shader_module.raw(),
                 entry_point: &vertex_entry_point_name,
-                constants: stage_desc.constants.as_ref(),
+                constants: &stage_desc.constants,
                 zero_initialize_workgroup_memory: stage_desc.zero_initialize_workgroup_memory,
             }
         };
@@ -3332,7 +3398,7 @@ impl Device {
                 Some(hal::ProgrammableStage {
                     module: shader_module.raw(),
                     entry_point: &fragment_entry_point_name,
-                    constants: fragment_state.stage.constants.as_ref(),
+                    constants: &fragment_state.stage.constants,
                     zero_initialize_workgroup_memory: fragment_state
                         .stage
                         .zero_initialize_workgroup_memory,

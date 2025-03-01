@@ -1301,17 +1301,22 @@ impl Queue {
             
             
             let fence_guard = RwLockWriteGuard::downgrade(fence);
-            let (closures, _) =
-                match self
-                    .device
-                    .maintain(fence_guard, wgt::Maintain::Poll, snatch_guard)
-                {
-                    Ok(closures) => closures,
-                    Err(WaitIdleError::Device(err)) => {
-                        break 'error Err(QueueSubmitError::Queue(err))
-                    }
-                    Err(WaitIdleError::WrongSubmissionIndex(..)) => unreachable!(),
-                };
+            let (closures, result) =
+                self.device
+                    .maintain(fence_guard, wgt::PollType::Poll, snatch_guard);
+            match result {
+                Ok(status) => {
+                    debug_assert!(matches!(
+                        status,
+                        wgt::PollStatus::QueueEmpty | wgt::PollStatus::Poll
+                    ));
+                }
+                Err(WaitIdleError::Device(err)) => break 'error Err(QueueSubmitError::Queue(err)),
+                Err(WaitIdleError::WrongSubmissionIndex(..)) => {
+                    unreachable!("Cannot get WrongSubmissionIndex from Poll")
+                }
+                Err(WaitIdleError::Timeout) => unreachable!("Cannot get Timeout from Poll"),
+            };
 
             Ok(closures)
         };

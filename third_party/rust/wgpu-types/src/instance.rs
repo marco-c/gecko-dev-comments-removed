@@ -4,6 +4,9 @@ use alloc::string::String;
 
 use crate::Backends;
 
+#[cfg(doc)]
+use crate::Backend;
+
 
 #[derive(Clone, Debug)]
 pub struct InstanceDescriptor {
@@ -181,12 +184,16 @@ impl InstanceFlags {
 }
 
 
+
+
 #[derive(Clone, Debug, Default)]
 pub struct BackendOptions {
     
     pub gl: GlBackendOptions,
     
     pub dx12: Dx12BackendOptions,
+    
+    pub noop: NoopBackendOptions,
 }
 
 impl BackendOptions {
@@ -195,9 +202,11 @@ impl BackendOptions {
     
     #[must_use]
     pub fn from_env_or_default() -> Self {
-        let gl = GlBackendOptions::from_env_or_default();
-        let dx12 = Dx12BackendOptions::from_env_or_default();
-        Self { gl, dx12 }
+        Self {
+            gl: GlBackendOptions::from_env_or_default(),
+            dx12: Dx12BackendOptions::from_env_or_default(),
+            noop: NoopBackendOptions::from_env_or_default(),
+        }
     }
 
     
@@ -205,11 +214,15 @@ impl BackendOptions {
     
     #[must_use]
     pub fn with_env(self) -> Self {
-        let gl = self.gl.with_env();
-        let dx12 = self.dx12.with_env();
-        Self { gl, dx12 }
+        Self {
+            gl: self.gl.with_env(),
+            dx12: self.dx12.with_env(),
+            noop: self.noop.with_env(),
+        }
     }
 }
+
+
 
 
 #[derive(Clone, Debug, Default)]
@@ -217,7 +230,7 @@ pub struct GlBackendOptions {
     
     pub gles_minor_version: Gles3MinorVersion,
     
-    pub short_circuit_fences: GlFenceBehavior,
+    pub fence_behavior: GlFenceBehavior,
 }
 
 impl GlBackendOptions {
@@ -229,7 +242,7 @@ impl GlBackendOptions {
         let gles_minor_version = Gles3MinorVersion::from_env().unwrap_or_default();
         Self {
             gles_minor_version,
-            short_circuit_fences: GlFenceBehavior::Normal,
+            fence_behavior: GlFenceBehavior::Normal,
         }
     }
 
@@ -239,13 +252,15 @@ impl GlBackendOptions {
     #[must_use]
     pub fn with_env(self) -> Self {
         let gles_minor_version = self.gles_minor_version.with_env();
-        let short_circuit_fences = self.short_circuit_fences.with_env();
+        let short_circuit_fences = self.fence_behavior.with_env();
         Self {
             gles_minor_version,
-            short_circuit_fences,
+            fence_behavior: short_circuit_fences,
         }
     }
 }
+
+
 
 
 #[derive(Clone, Debug, Default)]
@@ -273,6 +288,52 @@ impl Dx12BackendOptions {
     pub fn with_env(self) -> Self {
         let shader_compiler = self.shader_compiler.with_env();
         Self { shader_compiler }
+    }
+}
+
+
+
+
+#[derive(Clone, Debug, Default)]
+pub struct NoopBackendOptions {
+    
+    
+    
+    
+    
+    pub enable: bool,
+}
+
+impl NoopBackendOptions {
+    
+    
+    
+    
+    #[must_use]
+    pub fn from_env_or_default() -> Self {
+        Self {
+            enable: Self::enable_from_env().unwrap_or(false),
+        }
+    }
+
+    
+    
+    
+    
+    #[must_use]
+    pub fn with_env(self) -> Self {
+        Self {
+            enable: Self::enable_from_env().unwrap_or(self.enable),
+        }
+    }
+
+    fn enable_from_env() -> Option<bool> {
+        let value = crate::env::var("WGPU_NOOP_BACKEND")?;
+        match value.as_str() {
+            "1" => Some(true),
+            "0" => Some(false),
+            _ => None,
+        }
     }
 }
 

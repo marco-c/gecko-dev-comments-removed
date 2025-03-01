@@ -3,7 +3,7 @@ use crate::command::{
     validate_and_begin_occlusion_query, validate_and_begin_pipeline_statistics_query,
 };
 use crate::init_tracker::BufferInitTrackerAction;
-use crate::pipeline::RenderPipeline;
+use crate::pipeline::{RenderPipeline, VertexStep};
 use crate::resource::InvalidResourceError;
 use crate::snatch::SnatchGuard;
 use crate::{
@@ -24,7 +24,7 @@ use crate::{
     global::Global,
     hal_label, id,
     init_tracker::{MemoryInitKind, TextureInitRange, TextureInitTrackerAction},
-    pipeline::{self, PipelineFlags},
+    pipeline::PipelineFlags,
     resource::{
         DestroyedResourceError, Labeled, MissingBufferUsageError, MissingTextureUsageError,
         ParentDevice, QuerySet, Texture, TextureView, TextureViewNotRenderableReason,
@@ -45,7 +45,7 @@ use serde::Deserialize;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use std::{borrow::Cow, fmt, iter, mem::size_of, num::NonZeroU32, ops::Range, str, sync::Arc};
+use std::{borrow::Cow, fmt, mem::size_of, num::NonZeroU32, ops::Range, str, sync::Arc};
 
 use super::render_command::ArcRenderCommand;
 use super::{
@@ -158,11 +158,11 @@ impl<V: Copy + Default> ResolvedPassChannel<V> {
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct RenderPassColorAttachment {
+pub struct RenderPassColorAttachment<TV = id::TextureViewId> {
     
-    pub view: id::TextureViewId,
+    pub view: TV,
     
-    pub resolve_target: Option<id::TextureViewId>,
+    pub resolve_target: Option<TV>,
     
     
     
@@ -173,22 +173,8 @@ pub struct RenderPassColorAttachment {
     pub store_op: StoreOp,
 }
 
+pub type ArcRenderPassColorAttachment = RenderPassColorAttachment<Arc<TextureView>>;
 
-#[derive(Debug)]
-struct ArcRenderPassColorAttachment {
-    
-    pub view: Arc<TextureView>,
-    
-    pub resolve_target: Option<Arc<TextureView>>,
-    
-    
-    
-    
-    
-    pub load_op: LoadOp<Color>,
-    
-    pub store_op: StoreOp,
-}
 impl ArcRenderPassColorAttachment {
     fn hal_ops(&self) -> hal::AttachmentOps {
         load_hal_ops(self.load_op) | store_hal_ops(self.store_op)
@@ -382,57 +368,45 @@ impl IndexState {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
-struct VertexBufferState {
-    total_size: BufferAddress,
-    step: pipeline::VertexStep,
-    bound: bool,
-}
-
-impl VertexBufferState {
-    const EMPTY: Self = Self {
-        total_size: 0,
-        step: pipeline::VertexStep {
-            stride: 0,
-            last_stride: 0,
-            mode: VertexStepMode::Vertex,
-        },
-        bound: false,
-    };
-}
-
 #[derive(Debug, Default)]
-struct VertexState {
-    inputs: ArrayVec<VertexBufferState, { hal::MAX_VERTEX_BUFFERS }>,
+pub(crate) struct VertexLimits {
     
-    vertex_limit: u64,
+    pub(crate) vertex_limit: u64,
     
     vertex_limit_slot: u32,
     
-    instance_limit: u64,
+    pub(crate) instance_limit: u64,
     
     instance_limit_slot: u32,
 }
 
-impl VertexState {
-    fn update_limits(&mut self) {
+impl VertexLimits {
+    pub(crate) fn new(
+        buffer_sizes: impl Iterator<Item = Option<BufferAddress>>,
+        pipeline_steps: &[VertexStep],
+    ) -> Self {
         
         
         
         
         
-        self.vertex_limit = u32::MAX as u64;
-        self.instance_limit = u32::MAX as u64;
-        for (idx, vbs) in self.inputs.iter().enumerate() {
-            if !vbs.bound {
-                continue;
-            }
 
-            let limit = if vbs.total_size < vbs.step.last_stride {
+        let mut vertex_limit = u64::MAX;
+        let mut vertex_limit_slot = 0;
+        let mut instance_limit = u64::MAX;
+        let mut instance_limit_slot = 0;
+
+        for (idx, (buffer_size, step)) in buffer_sizes.zip(pipeline_steps).enumerate() {
+            let Some(buffer_size) = buffer_size else {
+                
+                return Self::default();
+            };
+
+            let limit = if buffer_size < step.last_stride {
                 
                 0
             } else {
-                if vbs.step.stride == 0 {
+                if step.stride == 0 {
                     
                     
                     
@@ -440,30 +414,79 @@ impl VertexState {
                 }
 
                 
-                (vbs.total_size - vbs.step.last_stride) / vbs.step.stride + 1
+                (buffer_size - step.last_stride) / step.stride + 1
             };
 
-            match vbs.step.mode {
+            match step.mode {
                 VertexStepMode::Vertex => {
-                    if limit < self.vertex_limit {
-                        self.vertex_limit = limit;
-                        self.vertex_limit_slot = idx as _;
+                    if limit < vertex_limit {
+                        vertex_limit = limit;
+                        vertex_limit_slot = idx as _;
                     }
                 }
                 VertexStepMode::Instance => {
-                    if limit < self.instance_limit {
-                        self.instance_limit = limit;
-                        self.instance_limit_slot = idx as _;
+                    if limit < instance_limit {
+                        instance_limit = limit;
+                        instance_limit_slot = idx as _;
                     }
                 }
             }
         }
+
+        Self {
+            vertex_limit,
+            vertex_limit_slot,
+            instance_limit,
+            instance_limit_slot,
+        }
     }
 
-    fn reset(&mut self) {
-        self.inputs.clear();
-        self.vertex_limit = 0;
-        self.instance_limit = 0;
+    pub(crate) fn validate_vertex_limit(
+        &self,
+        first_vertex: u32,
+        vertex_count: u32,
+    ) -> Result<(), DrawError> {
+        let last_vertex = first_vertex as u64 + vertex_count as u64;
+        let vertex_limit = self.vertex_limit;
+        if last_vertex > vertex_limit {
+            return Err(DrawError::VertexBeyondLimit {
+                last_vertex,
+                vertex_limit,
+                slot: self.vertex_limit_slot,
+            });
+        }
+
+        Ok(())
+    }
+
+    pub(crate) fn validate_instance_limit(
+        &self,
+        first_instance: u32,
+        instance_count: u32,
+    ) -> Result<(), DrawError> {
+        let last_instance = first_instance as u64 + instance_count as u64;
+        let instance_limit = self.instance_limit;
+        if last_instance > instance_limit {
+            return Err(DrawError::InstanceBeyondLimit {
+                last_instance,
+                instance_limit,
+                slot: self.instance_limit_slot,
+            });
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, Default)]
+struct VertexState {
+    buffer_sizes: [Option<BufferAddress>; hal::MAX_VERTEX_BUFFERS],
+    limits: VertexLimits,
+}
+
+impl VertexState {
+    fn update_limits(&mut self, pipeline_steps: &[VertexStep]) {
+        self.limits = VertexLimits::new(self.buffer_sizes.iter().copied(), pipeline_steps);
     }
 }
 
@@ -510,8 +533,12 @@ impl<'scope, 'snatch_guard, 'cmd_buf, 'raw_encoder>
             }
 
             
-            let vertex_buffer_count =
-                self.vertex.inputs.iter().take_while(|v| v.bound).count() as u32;
+            let vertex_buffer_count = self
+                .vertex
+                .buffer_sizes
+                .iter()
+                .take_while(|v| v.is_some())
+                .count() as u32;
             
             if vertex_buffer_count < pipeline.vertex_steps.len() as u32 {
                 return Err(DrawError::MissingVertexBuffer {
@@ -550,7 +577,7 @@ impl<'scope, 'snatch_guard, 'cmd_buf, 'raw_encoder>
         self.binder.reset();
         self.pipeline = None;
         self.index.reset();
-        self.vertex.reset();
+        self.vertex = Default::default();
     }
 }
 
@@ -2134,22 +2161,7 @@ fn set_pipeline(
     }
 
     
-    
-    
-    
-    
-    while state.vertex.inputs.len() < pipeline.vertex_steps.len() {
-        state.vertex.inputs.push(VertexBufferState::EMPTY);
-    }
-
-    
-    let mut steps = pipeline.vertex_steps.iter();
-    for input in state.vertex.inputs.iter_mut() {
-        input.step = steps.next().cloned().unwrap_or_default();
-    }
-
-    
-    state.vertex.update_limits();
+    state.vertex.update_limits(&pipeline.vertex_steps);
     Ok(())
 }
 
@@ -2232,24 +2244,18 @@ fn set_vertex_buffer(
     buffer.check_usage(BufferUsages::VERTEX)?;
     let buf_raw = buffer.try_raw(state.snatch_guard)?;
 
-    let empty_slots = (1 + slot as usize).saturating_sub(state.vertex.inputs.len());
-    state
-        .vertex
-        .inputs
-        .extend(iter::repeat(VertexBufferState::EMPTY).take(empty_slots));
-    let vertex_state = &mut state.vertex.inputs[slot as usize];
     
-    vertex_state.total_size = match size {
+    let buffer_size = match size {
         Some(s) => s.get(),
         None => buffer.size - offset,
     };
-    vertex_state.bound = true;
+    state.vertex.buffer_sizes[slot as usize] = Some(buffer_size);
 
     state
         .buffer_memory_init_actions
         .extend(buffer.initialization_status.read().create_action(
             &buffer,
-            offset..(offset + vertex_state.total_size),
+            offset..(offset + buffer_size),
             MemoryInitKind::NeedsInitializedMemory,
         ));
 
@@ -2261,7 +2267,9 @@ fn set_vertex_buffer(
     unsafe {
         hal::DynCommandEncoder::set_vertex_buffer(state.raw_encoder, slot, bb);
     }
-    state.vertex.update_limits();
+    if let Some(pipeline) = state.pipeline.as_ref() {
+        state.vertex.update_limits(&pipeline.vertex_steps);
+    }
     Ok(())
 }
 
@@ -2388,24 +2396,14 @@ fn draw(
 
     state.is_ready(false)?;
 
-    let last_vertex = first_vertex as u64 + vertex_count as u64;
-    let vertex_limit = state.vertex.vertex_limit;
-    if last_vertex > vertex_limit {
-        return Err(DrawError::VertexBeyondLimit {
-            last_vertex,
-            vertex_limit,
-            slot: state.vertex.vertex_limit_slot,
-        });
-    }
-    let last_instance = first_instance as u64 + instance_count as u64;
-    let instance_limit = state.vertex.instance_limit;
-    if last_instance > instance_limit {
-        return Err(DrawError::InstanceBeyondLimit {
-            last_instance,
-            instance_limit,
-            slot: state.vertex.instance_limit_slot,
-        });
-    }
+    state
+        .vertex
+        .limits
+        .validate_vertex_limit(first_vertex, vertex_count)?;
+    state
+        .vertex
+        .limits
+        .validate_instance_limit(first_instance, instance_count)?;
 
     unsafe {
         if instance_count > 0 && vertex_count > 0 {
@@ -2437,15 +2435,10 @@ fn draw_indexed(
             index_limit,
         });
     }
-    let last_instance = first_instance as u64 + instance_count as u64;
-    let instance_limit = state.vertex.instance_limit;
-    if last_instance > instance_limit {
-        return Err(DrawError::InstanceBeyondLimit {
-            last_instance,
-            instance_limit,
-            slot: state.vertex.instance_limit_slot,
-        });
-    }
+    state
+        .vertex
+        .limits
+        .validate_instance_limit(first_instance, instance_count)?;
 
     unsafe {
         if instance_count > 0 && index_count > 0 {

@@ -29,7 +29,69 @@ use handle_set_map::HandleMap;
 
 
 
+
+
+
+
+
+
+
+
 pub fn compact(module: &mut crate::Module) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     let mut module_tracer = ModuleTracer::new(module);
 
     
@@ -45,21 +107,30 @@ pub fn compact(module: &mut crate::Module) {
     }
 
     
+    log::trace!("tracing special types");
     module_tracer.trace_special_types(&module.special_types);
 
     
+    log::trace!("tracing named constants");
     for (handle, constant) in module.constants.iter() {
         if constant.name.is_some() {
+            log::trace!("tracing constant {:?}", constant.name.as_ref().unwrap());
             module_tracer.constants_used.insert(handle);
+            module_tracer.types_used.insert(constant.ty);
             module_tracer.global_expressions_used.insert(constant.init);
         }
     }
 
     
-    for (_, override_) in module.overrides.iter() {
-        module_tracer.types_used.insert(override_.ty);
-        if let Some(init) = override_.init {
-            module_tracer.global_expressions_used.insert(init);
+    log::trace!("tracing named overrides");
+    for (handle, r#override) in module.overrides.iter() {
+        if r#override.name.is_some() {
+            log::trace!("tracing override {:?}", r#override.name.as_ref().unwrap());
+            module_tracer.overrides_used.insert(handle);
+            module_tracer.types_used.insert(r#override.ty);
+            if let Some(init) = r#override.init {
+                module_tracer.global_expressions_used.insert(init);
+            }
         }
     }
 
@@ -100,15 +171,6 @@ pub fn compact(module: &mut crate::Module) {
             FunctionMap::from(used)
         })
         .collect();
-
-    
-    
-    
-    for (handle, constant) in module.constants.iter() {
-        if module_tracer.constants_used.contains(handle) {
-            module_tracer.types_used.insert(constant.ty);
-        }
-    }
 
     
     for (handle, ty) in module.types.iter() {
@@ -169,12 +231,17 @@ pub fn compact(module: &mut crate::Module) {
 
     
     log::trace!("adjusting overrides");
-    for (_, override_) in module.overrides.iter_mut() {
-        module_map.types.adjust(&mut override_.ty);
-        if let Some(init) = override_.init.as_mut() {
-            module_map.global_expressions.adjust(init);
+    module.overrides.retain_mut(|handle, r#override| {
+        if module_map.overrides.used(handle) {
+            module_map.types.adjust(&mut r#override.ty);
+            if let Some(ref mut init) = r#override.init {
+                module_map.global_expressions.adjust(init);
+            }
+            true
+        } else {
+            false
         }
-    }
+    });
 
     
     log::trace!("adjusting workgroup_size_overrides");
@@ -223,6 +290,7 @@ struct ModuleTracer<'module> {
     module: &'module crate::Module,
     types_used: HandleSet<crate::Type>,
     constants_used: HandleSet<crate::Constant>,
+    overrides_used: HandleSet<crate::Override>,
     global_expressions_used: HandleSet<crate::Expression>,
 }
 
@@ -232,6 +300,7 @@ impl<'module> ModuleTracer<'module> {
             module,
             types_used: HandleSet::for_arena(&module.types),
             constants_used: HandleSet::for_arena(&module.constants),
+            overrides_used: HandleSet::for_arena(&module.overrides),
             global_expressions_used: HandleSet::for_arena(&module.global_expressions),
         }
     }
@@ -275,15 +344,16 @@ impl<'module> ModuleTracer<'module> {
             previous = std::cmp::max(
                 previous,
                 match ty.inner {
-                    crate::TypeInner::Array {
-                        base: _,
-                        size: crate::ArraySize::Pending(crate::PendingArraySize::Expression(expr)),
-                        stride: _,
-                    }
-                    | crate::TypeInner::BindingArray {
-                        base: _,
-                        size: crate::ArraySize::Pending(crate::PendingArraySize::Expression(expr)),
-                    } => Some(expr),
+                    crate::TypeInner::Array { size, .. }
+                    | crate::TypeInner::BindingArray { size, .. } => match size {
+                        crate::ArraySize::Constant(_) | crate::ArraySize::Dynamic => None,
+                        crate::ArraySize::Pending(pending) => match pending {
+                            crate::PendingArraySize::Expression(handle) => Some(handle),
+                            crate::PendingArraySize::Override(handle) => {
+                                self.module.overrides[handle].init
+                            }
+                        },
+                    },
                     _ => None,
                 },
             );
@@ -303,8 +373,9 @@ impl<'module> ModuleTracer<'module> {
         
         
         let mut exprs = self.module.global_expressions.iter().rev().peekable();
-        for ((ty_handle, ty), dep) in self.module.types.iter().rev().zip(max_dep.iter().rev()) {
-            while let Some((expr_handle, expr)) = exprs.next_if(|&(h, _)| Some(h) > *dep) {
+
+        for ((ty_handle, ty), dep) in self.module.types.iter().zip(max_dep).rev() {
+            while let Some((expr_handle, expr)) = exprs.next_if(|&(h, _)| Some(h) > dep) {
                 if self.global_expressions_used.contains(expr_handle) {
                     self.as_const_expression().trace_expression(expr);
                 }
@@ -323,18 +394,22 @@ impl<'module> ModuleTracer<'module> {
 
     fn as_type(&mut self) -> types::TypeTracer {
         types::TypeTracer {
+            overrides: &self.module.overrides,
             types_used: &mut self.types_used,
             expressions_used: &mut self.global_expressions_used,
+            overrides_used: &mut self.overrides_used,
         }
     }
 
     fn as_const_expression(&mut self) -> expressions::ExpressionTracer {
         expressions::ExpressionTracer {
-            expressions: &self.module.global_expressions,
             constants: &self.module.constants,
+            overrides: &self.module.overrides,
+            expressions: &self.module.global_expressions,
             types_used: &mut self.types_used,
             constants_used: &mut self.constants_used,
             expressions_used: &mut self.global_expressions_used,
+            overrides_used: &mut self.overrides_used,
             global_expressions_used: None,
         }
     }
@@ -346,8 +421,10 @@ impl<'module> ModuleTracer<'module> {
         FunctionTracer {
             function,
             constants: &self.module.constants,
+            overrides: &self.module.overrides,
             types_used: &mut self.types_used,
             constants_used: &mut self.constants_used,
+            overrides_used: &mut self.overrides_used,
             global_expressions_used: &mut self.global_expressions_used,
             expressions_used: HandleSet::for_arena(&function.expressions),
         }
@@ -357,6 +434,7 @@ impl<'module> ModuleTracer<'module> {
 struct ModuleMap {
     types: HandleMap<crate::Type>,
     constants: HandleMap<crate::Constant>,
+    overrides: HandleMap<crate::Override>,
     global_expressions: HandleMap<crate::Expression>,
 }
 
@@ -365,6 +443,7 @@ impl From<ModuleTracer<'_>> for ModuleMap {
         ModuleMap {
             types: HandleMap::from_set(used.types_used),
             constants: HandleMap::from_set(used.constants_used),
+            overrides: HandleMap::from_set(used.overrides_used),
             global_expressions: HandleMap::from_set(used.global_expressions_used),
         }
     }
@@ -512,4 +591,482 @@ fn type_expression_interdependence() {
     assert!(!cmp_modules(&module, &untouched));
     compact(&mut module);
     assert!(cmp_modules(&module, &untouched));
+}
+
+#[test]
+fn array_length_override() {
+    let mut module: crate::Module = Default::default();
+    let ty_bool = module.types.insert(
+        crate::Type {
+            name: None,
+            inner: crate::TypeInner::Scalar(crate::Scalar::BOOL),
+        },
+        crate::Span::default(),
+    );
+    let ty_u32 = module.types.insert(
+        crate::Type {
+            name: None,
+            inner: crate::TypeInner::Scalar(crate::Scalar::U32),
+        },
+        crate::Span::default(),
+    );
+    let one = module.global_expressions.append(
+        crate::Expression::Literal(crate::Literal::U32(1)),
+        crate::Span::default(),
+    );
+    let _unused_override = module.overrides.append(
+        crate::Override {
+            name: None,
+            id: Some(40),
+            ty: ty_u32,
+            init: None,
+        },
+        crate::Span::default(),
+    );
+    let o = module.overrides.append(
+        crate::Override {
+            name: None,
+            id: Some(42),
+            ty: ty_u32,
+            init: Some(one),
+        },
+        crate::Span::default(),
+    );
+    let _ty_array = module.types.insert(
+        crate::Type {
+            name: Some("array<bool, o>".to_string()),
+            inner: crate::TypeInner::Array {
+                base: ty_bool,
+                size: crate::ArraySize::Pending(crate::PendingArraySize::Override(o)),
+                stride: 4,
+            },
+        },
+        crate::Span::default(),
+    );
+
+    let mut validator = super::valid::Validator::new(
+        super::valid::ValidationFlags::all(),
+        super::valid::Capabilities::all(),
+    );
+
+    assert!(validator.validate(&module).is_ok());
+    compact(&mut module);
+    assert!(validator.validate(&module).is_ok());
+}
+
+
+
+#[test]
+fn array_length_override_mutual() {
+    use crate::Expression as Ex;
+    use crate::Scalar as Sc;
+    use crate::TypeInner as Ti;
+
+    let nowhere = crate::Span::default();
+    let mut module = crate::Module::default();
+    let ty_u32 = module.types.insert(
+        crate::Type {
+            name: None,
+            inner: Ti::Scalar(Sc::U32),
+        },
+        nowhere,
+    );
+
+    
+    
+    
+    let ty_i32 = module.types.insert(
+        crate::Type {
+            name: None,
+            inner: Ti::Scalar(Sc::I32),
+        },
+        nowhere,
+    );
+
+    
+    let first_override = module.overrides.append(
+        crate::Override {
+            name: None, 
+            id: Some(41),
+            ty: ty_i32,
+            init: None,
+        },
+        nowhere,
+    );
+
+    
+    
+    
+    
+    
+    
+    
+    
+    let first_override_expr = module
+        .global_expressions
+        .append(Ex::Override(first_override), nowhere);
+    let zero = module
+        .global_expressions
+        .append(Ex::ZeroValue(ty_i32), nowhere);
+    let sum = module.global_expressions.append(
+        Ex::Binary {
+            op: crate::BinaryOperator::Add,
+            left: first_override_expr,
+            right: zero,
+        },
+        nowhere,
+    );
+    let init = module.global_expressions.append(
+        Ex::As {
+            expr: sum,
+            kind: crate::ScalarKind::Uint,
+            convert: None,
+        },
+        nowhere,
+    );
+
+    
+    let second_override = module.overrides.append(
+        crate::Override {
+            name: None, 
+            id: Some(42),
+            ty: ty_u32,
+            init: Some(init),
+        },
+        nowhere,
+    );
+
+    
+    
+    let _ty_array = module.types.insert(
+        crate::Type {
+            name: Some("delicious_array".to_string()),
+            inner: Ti::Array {
+                base: ty_u32,
+                size: crate::ArraySize::Pending(crate::PendingArraySize::Override(second_override)),
+                stride: 4,
+            },
+        },
+        nowhere,
+    );
+
+    let mut validator = super::valid::Validator::new(
+        super::valid::ValidationFlags::all(),
+        super::valid::Capabilities::all(),
+    );
+
+    assert!(validator.validate(&module).is_ok());
+    compact(&mut module);
+    assert!(validator.validate(&module).is_ok());
+}
+
+#[test]
+fn array_length_expression() {
+    let mut module: crate::Module = Default::default();
+    let ty_u32 = module.types.insert(
+        crate::Type {
+            name: None,
+            inner: crate::TypeInner::Scalar(crate::Scalar::U32),
+        },
+        crate::Span::default(),
+    );
+    let _unused_zero = module.global_expressions.append(
+        crate::Expression::Literal(crate::Literal::U32(0)),
+        crate::Span::default(),
+    );
+    let one = module.global_expressions.append(
+        crate::Expression::Literal(crate::Literal::U32(1)),
+        crate::Span::default(),
+    );
+    let _ty_array = module.types.insert(
+        crate::Type {
+            name: Some("array<u32, 1>".to_string()),
+            inner: crate::TypeInner::Array {
+                base: ty_u32,
+                size: crate::ArraySize::Pending(crate::PendingArraySize::Expression(one)),
+                stride: 4,
+            },
+        },
+        crate::Span::default(),
+    );
+
+    let mut validator = super::valid::Validator::new(
+        super::valid::ValidationFlags::all(),
+        super::valid::Capabilities::all(),
+    );
+
+    assert!(validator.validate(&module).is_ok());
+    compact(&mut module);
+    assert!(validator.validate(&module).is_ok());
+}
+
+#[test]
+fn global_expression_override() {
+    let mut module: crate::Module = Default::default();
+    let ty_u32 = module.types.insert(
+        crate::Type {
+            name: None,
+            inner: crate::TypeInner::Scalar(crate::Scalar::U32),
+        },
+        crate::Span::default(),
+    );
+
+    
+    
+    
+    let expr1 = module.global_expressions.append(
+        crate::Expression::Literal(crate::Literal::U32(1)),
+        crate::Span::default(),
+    );
+
+    
+    let o = module.overrides.append(
+        crate::Override {
+            name: None,
+            id: Some(42),
+            ty: ty_u32,
+            init: Some(expr1),
+        },
+        crate::Span::default(),
+    );
+
+    
+    let expr2 = module
+        .global_expressions
+        .append(crate::Expression::Override(o), crate::Span::default());
+
+    
+    let _p = module.overrides.append(
+        crate::Override {
+            name: Some("p".to_string()),
+            id: None,
+            ty: ty_u32,
+            init: Some(expr2),
+        },
+        crate::Span::default(),
+    );
+
+    let mut validator = super::valid::Validator::new(
+        super::valid::ValidationFlags::all(),
+        super::valid::Capabilities::all(),
+    );
+
+    assert!(validator.validate(&module).is_ok());
+    compact(&mut module);
+    assert!(validator.validate(&module).is_ok());
+}
+
+#[test]
+fn local_expression_override() {
+    let mut module: crate::Module = Default::default();
+    let ty_u32 = module.types.insert(
+        crate::Type {
+            name: None,
+            inner: crate::TypeInner::Scalar(crate::Scalar::U32),
+        },
+        crate::Span::default(),
+    );
+
+    
+    
+    let expr1 = module.global_expressions.append(
+        crate::Expression::Literal(crate::Literal::U32(1)),
+        crate::Span::default(),
+    );
+
+    
+    let _unused_override = module.overrides.append(
+        crate::Override {
+            name: None,
+            id: Some(41),
+            ty: ty_u32,
+            init: None,
+        },
+        crate::Span::default(),
+    );
+
+    
+    let o = module.overrides.append(
+        crate::Override {
+            name: None,
+            id: Some(42),
+            ty: ty_u32,
+            init: Some(expr1),
+        },
+        crate::Span::default(),
+    );
+
+    let mut fun = crate::Function {
+        result: Some(crate::FunctionResult {
+            ty: ty_u32,
+            binding: None,
+        }),
+        ..crate::Function::default()
+    };
+
+    
+    let o_expr = fun
+        .expressions
+        .append(crate::Expression::Override(o), crate::Span::default());
+    fun.body.push(
+        crate::Statement::Return {
+            value: Some(o_expr),
+        },
+        crate::Span::default(),
+    );
+
+    module.functions.append(fun, crate::Span::default());
+
+    let mut validator = super::valid::Validator::new(
+        super::valid::ValidationFlags::all(),
+        super::valid::Capabilities::all(),
+    );
+
+    assert!(validator.validate(&module).is_ok());
+    compact(&mut module);
+    assert!(validator.validate(&module).is_ok());
+}
+
+#[test]
+fn unnamed_constant_type() {
+    let mut module = crate::Module::default();
+    let nowhere = crate::Span::default();
+
+    
+    let ty_u32 = module.types.insert(
+        crate::Type {
+            name: None,
+            inner: crate::TypeInner::Scalar(crate::Scalar::U32),
+        },
+        nowhere,
+    );
+
+    
+    let ty_vec_u32 = module.types.insert(
+        crate::Type {
+            name: None,
+            inner: crate::TypeInner::Vector {
+                size: crate::VectorSize::Bi,
+                scalar: crate::Scalar::U32,
+            },
+        },
+        nowhere,
+    );
+
+    let unnamed_init = module
+        .global_expressions
+        .append(crate::Expression::Literal(crate::Literal::U32(0)), nowhere);
+
+    let unnamed_constant = module.constants.append(
+        crate::Constant {
+            name: None,
+            ty: ty_u32,
+            init: unnamed_init,
+        },
+        nowhere,
+    );
+
+    
+    
+    
+    let unnamed_constant_expr = module
+        .global_expressions
+        .append(crate::Expression::Constant(unnamed_constant), nowhere);
+    let named_init = module.global_expressions.append(
+        crate::Expression::Splat {
+            size: crate::VectorSize::Bi,
+            value: unnamed_constant_expr,
+        },
+        nowhere,
+    );
+
+    let _named_constant = module.constants.append(
+        crate::Constant {
+            name: Some("totally_named".to_string()),
+            ty: ty_vec_u32,
+            init: named_init,
+        },
+        nowhere,
+    );
+
+    let mut validator = super::valid::Validator::new(
+        super::valid::ValidationFlags::all(),
+        super::valid::Capabilities::all(),
+    );
+
+    assert!(validator.validate(&module).is_ok());
+    compact(&mut module);
+    assert!(validator.validate(&module).is_ok());
+}
+
+#[test]
+fn unnamed_override_type() {
+    let mut module = crate::Module::default();
+    let nowhere = crate::Span::default();
+
+    
+    let ty_u32 = module.types.insert(
+        crate::Type {
+            name: None,
+            inner: crate::TypeInner::Scalar(crate::Scalar::U32),
+        },
+        nowhere,
+    );
+
+    
+    let ty_i32 = module.types.insert(
+        crate::Type {
+            name: None,
+            inner: crate::TypeInner::Scalar(crate::Scalar::I32),
+        },
+        nowhere,
+    );
+
+    let unnamed_init = module
+        .global_expressions
+        .append(crate::Expression::Literal(crate::Literal::U32(0)), nowhere);
+
+    let unnamed_override = module.overrides.append(
+        crate::Override {
+            name: None,
+            id: Some(42),
+            ty: ty_u32,
+            init: Some(unnamed_init),
+        },
+        nowhere,
+    );
+
+    
+    
+    
+    let unnamed_override_expr = module
+        .global_expressions
+        .append(crate::Expression::Override(unnamed_override), nowhere);
+    let named_init = module.global_expressions.append(
+        crate::Expression::As {
+            expr: unnamed_override_expr,
+            kind: crate::ScalarKind::Sint,
+            convert: None,
+        },
+        nowhere,
+    );
+
+    let _named_override = module.overrides.append(
+        crate::Override {
+            name: Some("totally_named".to_string()),
+            id: None,
+            ty: ty_i32,
+            init: Some(named_init),
+        },
+        nowhere,
+    );
+
+    let mut validator = super::valid::Validator::new(
+        super::valid::ValidationFlags::all(),
+        super::valid::Capabilities::all(),
+    );
+
+    assert!(validator.validate(&module).is_ok());
+    compact(&mut module);
+    assert!(validator.validate(&module).is_ok());
 }

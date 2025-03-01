@@ -222,7 +222,7 @@ impl ContinueCtx {
             
             
             None => None,
-            Some(&Nesting::Loop { .. }) => {
+            Some(&Nesting::Loop) => {
                 let variable = Rc::new(namer.call("should_continue"));
                 self.stack.push(Nesting::Switch {
                     variable: Rc::clone(&variable),
@@ -253,7 +253,7 @@ impl ContinueCtx {
             
             
             None => ExitControlFlow::None,
-            Some(Nesting::Loop { .. }) => {
+            Some(Nesting::Loop) => {
                 unreachable!("Unexpected loop state when exiting switch");
             }
             Some(Nesting::Switch {
