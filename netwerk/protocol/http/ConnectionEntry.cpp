@@ -957,28 +957,6 @@ bool ConnectionEntry::RemoveTransFromPendingQ(nsHttpTransaction* aTrans) {
   return true;
 }
 
-void ConnectionEntry::MaybeUpdateEchConfig(nsHttpConnectionInfo* aConnInfo) {
-  if (!mConnInfo->HashKey().Equals(aConnInfo->HashKey())) {
-    return;
-  }
-
-  const nsCString& echConfig = aConnInfo->GetEchConfig();
-  if (mConnInfo->GetEchConfig().Equals(echConfig)) {
-    return;
-  }
-
-  LOG(("ConnectionEntry::MaybeUpdateEchConfig [ci=%s]\n",
-       mConnInfo->HashKey().get()));
-
-  mConnInfo->SetEchConfig(echConfig);
-
-  
-  
-  
-  CloseAllDnsAndConnectSockets();
-  CloseIdleConnections();
-}
-
 bool ConnectionEntry::MaybeProcessCoalescingKeys(nsIDNSAddrRecord* dnsRecord,
                                                  bool aIsHttp3) {
   if (!mConnInfo || !mConnInfo->EndToEndSSL() || (!aIsHttp3 && !AllowHttp2()) ||
