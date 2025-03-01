@@ -89,12 +89,12 @@ SVGElement* SVGAnimationElement::GetTargetElement() {
   return SVGElement::FromNodeOrNull(GetTargetElementContent());
 }
 
-float SVGAnimationElement::GetStartTime(ErrorResult& rv) {
+float SVGAnimationElement::GetStartTime(ErrorResult& aRv) {
   FlushAnimations();
 
   SMILTimeValue startTime = mTimedElement.GetStartTime();
   if (!startTime.IsDefinite()) {
-    rv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    aRv.ThrowInvalidStateError("Indefinite start time");
     return 0.f;
   }
 
@@ -112,12 +112,12 @@ float SVGAnimationElement::GetCurrentTimeAsFloat() {
   return 0.0f;
 }
 
-float SVGAnimationElement::GetSimpleDuration(ErrorResult& rv) {
+float SVGAnimationElement::GetSimpleDuration(ErrorResult& aRv) {
   
 
   SMILTimeValue simpleDur = mTimedElement.GetSimpleDuration();
   if (!simpleDur.IsDefinite()) {
-    rv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    aRv.ThrowNotSupportedError("Duration is indefinite");
     return 0.f;
   }
 
@@ -347,14 +347,14 @@ SMILTimeContainer* SVGAnimationElement::GetTimeContainer() {
   return nullptr;
 }
 
-void SVGAnimationElement::BeginElementAt(float offset, ErrorResult& rv) {
+void SVGAnimationElement::BeginElementAt(float offset, ErrorResult& aRv) {
   
   FlushAnimations();
 
   
   
-  rv = mTimedElement.BeginElementAt(offset);
-  if (rv.Failed()) return;
+  aRv = mTimedElement.BeginElementAt(offset);
+  if (aRv.Failed()) return;
 
   AnimationNeedsResample();
   
@@ -362,12 +362,12 @@ void SVGAnimationElement::BeginElementAt(float offset, ErrorResult& rv) {
   FlushAnimations();
 }
 
-void SVGAnimationElement::EndElementAt(float offset, ErrorResult& rv) {
+void SVGAnimationElement::EndElementAt(float offset, ErrorResult& aRv) {
   
   FlushAnimations();
 
-  rv = mTimedElement.EndElementAt(offset);
-  if (rv.Failed()) return;
+  aRv = mTimedElement.EndElementAt(offset);
+  if (aRv.Failed()) return;
 
   AnimationNeedsResample();
   
