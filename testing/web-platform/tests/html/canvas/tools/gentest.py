@@ -76,6 +76,340 @@ class InvalidTestDefinitionError(Error):
     """Raised on invalid test definition."""
 
 
+class _CanvasType(str, enum.Enum):
+    HTML_CANVAS = 'HtmlCanvas'
+    OFFSCREEN_CANVAS = 'OffscreenCanvas'
+    WORKER = 'Worker'
+
+
+class _TemplateType(str, enum.Enum):
+    REFERENCE = 'reference'
+    HTML_REFERENCE = 'html_reference'
+    CAIRO_REFERENCE = 'cairo_reference'
+    IMG_REFERENCE = 'img_reference'
+    TESTHARNESS = 'testharness'
+
+
+_REFERENCE_TEMPLATES = (_TemplateType.REFERENCE,
+                        _TemplateType.HTML_REFERENCE,
+                        _TemplateType.CAIRO_REFERENCE,
+                        _TemplateType.IMG_REFERENCE)
+
+
+_TestParams = Mapping[str, Any]
+_MutableTestParams = MutableMapping[str, Any]
+
+
+
+
+_TEST_DEFINITION_PARAMS = {
+    
+
+    
+    
+    
+    'name': None,
+    
+    
+    
+    
+    
+    'code': None,
+    
+    
+    
+    
+    'enabled': 'true',
+    
+    
+    
+    
+    'desc': '',
+    
+    
+    'notes': '',
+    
+    'size': (100, 50),
+
+    
+
+    
+    
+    
+    
+    
+    
+    'fuzzy': None,
+    
+    
+    'timeout': None,
+
+    
+
+    
+    
+    
+    
+    
+    'canvas_types': list(_CanvasType),
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    'test_type': None,
+    
+    
+    
+    
+    
+    
+    
+    'reference': None,
+    
+    
+    
+    
+    'html_reference': None,
+    
+    
+    
+    
+    
+    'cairo_reference': None,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    'img_reference': None,
+
+    
+
+    
+    
+    'canvas': None,
+    
+    
+    
+    
+    
+    'attributes': None,
+    
+    
+    'images': [],
+    
+    
+    'svgimages': [],
+    
+    
+    
+    
+    'fonts': [],
+    
+    
+    
+    
+    
+    'font_unused_in_dom': False,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    'expected': None,
+    
+    
+    
+    
+    
+    'expected_img': None,
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    'variants': None,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    'variants_layout': None,
+    
+    
+    
+    'grid_width': None,
+    
+    
+    
+    
+    'append_variants_to_name': True,
+}
+
+
+
+
+_GENERATED_PARAMS = {
+    
+    
+    
+    
+    'canvas_type': None,
+    
+    
+    'file_variant_names': [],
+    
+    
+    'grid_variant_names': [],
+    
+    
+    'variant_names': [],
+    
+    
+    'file_variant_name': '',
+    
+    
+    'grid_variant_name': '',
+    
+    
+    'variant_name': '',
+    
+    'reference_file_link': None,
+    
+    
+    
+    
+    
+    
+    'id': 0,
+    
+    'file_name': None,
+    
+    
+    'template_type': None,
+}
+
+
 def _double_quote_escape(string: str) -> str:
     return string.replace('\\', '\\\\').replace('"', '\\"')
 
@@ -210,29 +544,6 @@ def _expand_test_code(code: str) -> str:
 
     return code
 
-
-_TestParams = Mapping[str, Any]
-_MutableTestParams = MutableMapping[str, Any]
-
-
-class _CanvasType(str, enum.Enum):
-    HTML_CANVAS = 'HtmlCanvas'
-    OFFSCREEN_CANVAS = 'OffscreenCanvas'
-    WORKER = 'Worker'
-
-
-class _TemplateType(str, enum.Enum):
-    REFERENCE = 'reference'
-    HTML_REFERENCE = 'html_reference'
-    CAIRO_REFERENCE = 'cairo_reference'
-    IMG_REFERENCE = 'img_reference'
-    TESTHARNESS = 'testharness'
-
-
-_REFERENCE_TEMPLATES = (_TemplateType.REFERENCE,
-                        _TemplateType.HTML_REFERENCE,
-                        _TemplateType.CAIRO_REFERENCE,
-                        _TemplateType.IMG_REFERENCE)
 
 class MutableDictLoader(jinja2.BaseLoader):
     """Loads Jinja templates from a `dict` that can be updated.
@@ -511,37 +822,15 @@ class _Variant():
         """Create a _Variant from the specified params.
 
         Default values are added for certain parameters, if missing."""
-        params = {
-            'enabled': 'true',
-            'desc': '',
-            'size': (100, 50),
-            
-            
-            
-            'name': '',
-            
-            'file_variant_names': [],
-            
-            
-            'grid_variant_names': [],
-            
-            
-            'variant_names': [],
-            
-            
-            'file_variant_name': '',
-            
-            
-            'grid_variant_name': '',
-            
-            
-            
-            'variant_name': '',
-            'images': [],
-            'svgimages': [],
-            'fonts': [],
-        }
+        
+        
+        
+        params = {k: v
+                  for defaults in (_TEST_DEFINITION_PARAMS, _GENERATED_PARAMS)
+                  for k, v in defaults.items()
+                  if v is not None}
         params.update(test)
+
         if 'variants' in params:
             del params['variants']
         return _Variant(params)
