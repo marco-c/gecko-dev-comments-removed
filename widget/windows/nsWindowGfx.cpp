@@ -188,14 +188,19 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
   
   if (mTransparencyMode == TransparencyMode::Transparent) {
     auto translucentRegion = GetTranslucentRegion();
-    region.OrWith(translucentRegion);
+    
+    
+    
+    
+    
+    
     
     regionToClear = translucentRegion;
-    if (!didResize && !mClearedRegion.IsEmpty()) {
-      
-      
+    if (!mClearedRegion.IsEmpty()) {
+      mClearedRegion.SubOut(region);
       regionToClear.SubOut(mClearedRegion);
     }
+    region.OrWith(translucentRegion);
     mClearedRegion = std::move(translucentRegion);
   }
   if (mNeedsNCAreaClear) {
