@@ -350,6 +350,7 @@ class ResponsePanel extends Component {
         {
           key: `${key}RawResponsePayloadBtn`,
           className: "raw-data-toggle",
+          htmlFor: `raw-${key}-checkbox`,
           onClick: event => {
             
             event.stopPropagation();

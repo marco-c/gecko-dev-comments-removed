@@ -162,6 +162,7 @@ class RequestPanel extends Component {
         {
           key: `${key}RawRequestPayloadBtn`,
           className: "raw-data-toggle",
+          htmlFor: `raw-${key}-checkbox`,
           onClick: event => {
             
             event.stopPropagation();
