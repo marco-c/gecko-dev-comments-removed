@@ -525,7 +525,15 @@ var SidebarController = {
   },
 
   getUIState() {
-    return this.inPopup ? null : this._state.getProperties();
+    if (this.inPopup) {
+      return null;
+    }
+    let snapshot = this._state.getProperties();
+    
+    if (!this._state.panelOpen) {
+      delete snapshot.command;
+    }
+    return snapshot;
   },
 
   
@@ -538,15 +546,19 @@ var SidebarController = {
     if (!state) {
       return;
     }
+    const isValidSidebar = !state.command || this.sidebars.has(state.command);
+    if (!isValidSidebar) {
+      state.command = "";
+    }
+
     const hasOpenPanel =
+      state.panelOpen &&
       state.command &&
       this.sidebars.has(state.command) &&
       this.currentID !== state.command;
     if (hasOpenPanel) {
       
       delete state.hidden;
-    } else {
-      delete state.command;
     }
     await this.promiseInitialized;
     await this.waitUntilStable(); 
@@ -827,13 +839,10 @@ var SidebarController = {
 
     
     
-    let commandID = sourceController._box.getAttribute("sidebarcommand");
-    if (commandID) {
-      this._box.setAttribute("sidebarcommand", commandID);
-    }
-
     
-    const sourceState = sourceController.getUIState();
+    const sourceState = sourceController.inPopup
+      ? null
+      : sourceController._state?.getProperties();
     await this.initializeUIState(sourceState);
 
     return true;
@@ -881,7 +890,7 @@ var SidebarController = {
       return;
     }
 
-    let commandID = this._box.getAttribute("sidebarcommand");
+    let commandID = this._state.command;
     if (commandID && this.sidebars.has(commandID)) {
       this.showInitially(commandID);
     } else {
@@ -889,9 +898,7 @@ var SidebarController = {
       
       
       
-      
-      
-      this._box.setAttribute("sidebarcommand", "");
+      this._state.command = "";
       
       
       
@@ -942,7 +949,7 @@ var SidebarController = {
 
 
   get currentID() {
-    return this.isOpen ? this._box.getAttribute("sidebarcommand") : "";
+    return this.isOpen ? this._state.command : "";
   },
 
   
@@ -986,7 +993,7 @@ var SidebarController = {
     
     
     if (!commandID) {
-      commandID = this._box.getAttribute("sidebarcommand");
+      commandID = this._state.command;
     }
     if (!commandID || !this.sidebars.has(commandID)) {
       if (this.sidebarRevampEnabled && this.sidebars.size) {
@@ -1168,6 +1175,9 @@ var SidebarController = {
     }
   },
 
+  
+
+
   async handleToolbarButtonClick() {
     let initialExpandedValue = this._state.launcherExpanded;
     if (this.inPopup || this.uninitializing) {
@@ -1176,8 +1186,12 @@ var SidebarController = {
     if (this._animationEnabled && !window.gReduceMotion) {
       this._animateSidebarMain();
     }
+    const showLauncher = !this._state.launcherVisible;
 
-    this._state.updateVisibility(!this._state.launcherVisible, true);
+    this._state.updateVisibility(showLauncher, true);
+    if (showLauncher && this._state.command) {
+      this._show(this._state.command);
+    }
     if (this.sidebarRevampVisibility === "expand-on-hover") {
       this.toggleExpandOnHover(initialExpandedValue);
     }
@@ -1635,7 +1649,7 @@ var SidebarController = {
       this._box.hidden = this._splitter.hidden = false;
 
       this._box.setAttribute("checked", "true");
-      this._box.setAttribute("sidebarcommand", commandID);
+      this._state.command = commandID;
 
       let { icon, url, title, sourceL10nEl, contextMenuId } =
         this.sidebars.get(commandID);
@@ -1746,6 +1760,17 @@ var SidebarController = {
     if (triggerNode) {
       updateToggleControlLabel(triggerNode);
     }
+    let showLauncher = false;
+    if (
+      this.sidebarRevampEnabled &&
+      this.sidebarRevampVisibility !== "hide-sidebar"
+    ) {
+      showLauncher = true;
+    }
+    this._state.updateVisibility(
+      showLauncher,
+      false 
+    );
     this.updateToolbarButton();
   },
 
@@ -1757,6 +1782,9 @@ var SidebarController = {
 
   _recordPanelToggle(commandID, opened) {
     const sidebar = this.sidebars.get(commandID);
+    if (!sidebar) {
+      return;
+    }
     const isExtension = sidebar && Object.hasOwn(sidebar, "extensionId");
     const version = this.sidebarRevampEnabled ? "new" : "old";
     if (isExtension) {
@@ -2071,8 +2099,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
         
         
+        let showLauncher = true;
+        if (newValue == "hide-sidebar" && isVerticalTabs) {
+          showLauncher = false;
+        }
         SidebarController._state.updateVisibility(
-          (newValue != "hide-sidebar" && isVerticalTabs) || !isVerticalTabs,
+          showLauncher,
           false,
           false,
           forceExpand
