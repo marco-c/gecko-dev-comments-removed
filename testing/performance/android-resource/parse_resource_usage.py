@@ -4,8 +4,7 @@
 import pathlib
 import re
 import sys
-from datetime import timedelta
-from time import strptime
+from datetime import datetime
 
 MEM_MATCHER = re.compile("([\\d,]*)K:\\s([\\S]*)\\s\\(")
 
@@ -51,7 +50,7 @@ def make_differential_metrics(
         [
             {
                 "name": f"cpuTime-{category}-{differential_name}",
-                "unit": "s",
+                "unit": "ms",
                 "values": [cpu_time - base_measures["cpu"][category]],
             }
             for category, cpu_time in cpu_measures.items()
@@ -60,7 +59,7 @@ def make_differential_metrics(
     metrics.append(
         {
             "name": f"cpuTime-total-{differential_name}",
-            "unit": "s",
+            "unit": "ms",
             "values": [
                 round(
                     sum(cpu_measures.values()) - sum(base_measures["cpu"].values()), 2
@@ -183,17 +182,17 @@ def parse_cpu_usage(cpu_file, binary):
     
     cpu_times = {"tab": 0, "gpu": 0, "main": 0}
     for name, time in final_times.items():
-        dt = strptime(time, "%H:%M:%S")
-        seconds = timedelta(
-            hours=dt.tm_hour, minutes=dt.tm_min, seconds=dt.tm_sec
-        ).total_seconds()
+        
+        
+        dt = datetime.strptime(time, "%M:%S.%f")
+        milliseconds = (((dt.minute * 60) + dt.second) * 1000) + (dt.microsecond / 1000)
 
         final_name = get_category_for_process(name, binary)
         if final_name == "zygote" and cpu_times.get("zygote", None) is None:
             
             cpu_times["zygote"] = 0
 
-        cpu_times[final_name] += seconds
+        cpu_times[final_name] += milliseconds
 
     return cpu_times
 
@@ -221,7 +220,7 @@ def main():
             [
                 {
                     "name": f"cpuTime-{category}-{measurement_time}",
-                    "unit": "s",
+                    "unit": "ms",
                     "values": [cpu_time],
                 }
                 for category, cpu_time in cpu_measures.items()
@@ -230,7 +229,7 @@ def main():
         perf_metrics.append(
             {
                 "name": f"cpuTime-total-{measurement_time}",
-                "unit": "s",
+                "unit": "ms",
                 "values": [round(sum(cpu_measures.values()), 2)],
             }
         )
