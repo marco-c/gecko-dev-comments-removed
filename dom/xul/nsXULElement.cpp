@@ -584,6 +584,29 @@ nsresult nsXULElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   }
 #endif
 
+  
+  
+  
+  
+  
+  if (doc.GetRootElement() == this) {
+    nsAutoString cspPolicyStr;
+    GetAttr(nsGkAtoms::csp, cspPolicyStr);
+
+#ifdef DEBUG
+    {
+      nsCOMPtr<nsIContentSecurityPolicy> docCSP = doc.GetCsp();
+      uint32_t policyCount = 0;
+      if (docCSP) {
+        docCSP->GetPolicyCount(&policyCount);
+      }
+      MOZ_ASSERT(policyCount == 0, "how come we already have a policy?");
+    }
+#endif
+
+    CSP_ApplyMetaCSPToDoc(doc, cspPolicyStr);
+  }
+
   if (NodeInfo()->Equals(nsGkAtoms::keyset, kNameSpaceID_XUL)) {
     
     XULKeySetGlobalKeyListener::AttachKeyHandler(this);
