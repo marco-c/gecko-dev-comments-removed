@@ -4,6 +4,8 @@
 
 
 
+#define MOZ_PRETEND_NO_JSRUST 1
+
 #include "mozilla/Maybe.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Types.h"

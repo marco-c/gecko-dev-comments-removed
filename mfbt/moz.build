@@ -203,3 +203,5 @@ DEFINES["MOZ_SUPPORT_LEAKCHECKING"] = True
 
 
 DIRS += ["../build/pure_virtual"]
+
+FINAL_LIBRARY = "mozglue"
