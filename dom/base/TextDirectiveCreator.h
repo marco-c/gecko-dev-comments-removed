@@ -23,7 +23,16 @@ class ErrorResult;
 namespace mozilla::dom {
 class Document;
 
-class RangeContentCache {
+
+
+
+
+
+
+
+
+
+class RangeContentCache final {
  public:
   
 
@@ -34,15 +43,10 @@ class RangeContentCache {
 
 
 
-
-
-
-
-  Result<std::tuple<const nsString&, const nsString&>, ErrorResult> Get(
-      nsRange* aRange1, nsRange* aRange2);
+  Result<const nsString*, ErrorResult> GetOrCreate(nsRange* aRange);
 
  private:
-  nsTHashMap<nsRange*, nsString> mCache;
+  nsTHashMap<nsRange*, UniquePtr<nsString>> mCache;
 };
 
 
@@ -65,9 +69,12 @@ class TextDirectiveCandidate {
  public:
   TextDirectiveCandidate(TextDirectiveCandidate&&) = default;
   TextDirectiveCandidate& operator=(TextDirectiveCandidate&&) = default;
-  TextDirectiveCandidate(const TextDirectiveCandidate&) = delete;
-  TextDirectiveCandidate& operator=(const TextDirectiveCandidate&) = delete;
 
+ private:
+  TextDirectiveCandidate(const TextDirectiveCandidate&) = default;
+  TextDirectiveCandidate& operator=(const TextDirectiveCandidate&) = default;
+
+ public:
   
 
 
@@ -80,11 +87,14 @@ class TextDirectiveCandidate {
 
 
 
+
+
   static Result<TextDirectiveCandidate, ErrorResult> CreateFromInputRange(
-      const nsRange* aInputRange);
+      const nsRange* aInputRange, RangeContentCache& aRangeContentCache);
 
   static Result<TextDirectiveCandidate, ErrorResult> CreateFromStartAndEndRange(
-      const nsRange* aStartRange, const nsRange* aEndRange);
+      const nsRange* aStartRange, const nsRange* aEndRange,
+      RangeContentCache& aRangeContentCache);
 
   
 
@@ -125,17 +135,7 @@ class TextDirectiveCandidate {
 
   Result<TextDirectiveCandidate, ErrorResult> CloneWith(
       RefPtr<nsRange>&& aNewPrefixRange, RefPtr<nsRange>&& aNewStartRange,
-      RefPtr<nsRange>&& aNewEndRange, RefPtr<nsRange>&& aNewSuffixRange) const;
-
-  
-
-
-
-
-
-
-  Result<bool, ErrorResult> ThisCandidateMatchesOther(
-      const TextDirectiveCandidate& aOther,
+      RefPtr<nsRange>&& aNewEndRange, RefPtr<nsRange>&& aNewSuffixRange,
       RangeContentCache& aRangeContentCache) const;
 
   
@@ -145,9 +145,17 @@ class TextDirectiveCandidate {
 
 
 
+  bool ThisCandidateMatchesOther(const TextDirectiveCandidate& aOther) const;
+
+  
+
+
+
+
+
+
   nsTArray<const TextDirectiveCandidate*> FilterNonMatchingCandidates(
-      const nsTArray<const TextDirectiveCandidate*>& aMatches,
-      RangeContentCache& aRangeContentCache);
+      const nsTArray<const TextDirectiveCandidate*>& aMatches);
 
   
   bool UseExactMatch() const { return !mEndRange; }
@@ -229,6 +237,12 @@ class TextDirectiveCandidate {
 
   Result<Ok, ErrorResult> CreateTextDirectiveString();
 
+  
+
+
+  Result<Ok, ErrorResult> CreateFoldCaseContents(
+      RangeContentCache& aRangeContentCache);
+
   RefPtr<nsRange> mStartRange;
   RefPtr<nsRange> mFullStartRange;
   RefPtr<nsRange> mEndRange;
@@ -240,6 +254,15 @@ class TextDirectiveCandidate {
   RefPtr<nsRange> mFullSuffixRange;
 
   nsCString mTextDirectiveString;
+
+  const nsString* mStartContentFoldCase = nullptr;
+  const nsString* mFullStartContentFoldCase = nullptr;
+  const nsString* mEndContentFoldCase = nullptr;
+  const nsString* mFullEndContentFoldCase = nullptr;
+  const nsString* mPrefixContentFoldCase = nullptr;
+  const nsString* mFullPrefixContentFoldCase = nullptr;
+  const nsString* mSuffixContentFoldCase = nullptr;
+  const nsString* mFullSuffixContentFoldCase = nullptr;
 };
 
 
@@ -267,7 +290,8 @@ class TextDirectiveCreator final {
 
  private:
   TextDirectiveCreator(Document& aDocument, nsRange* aInputRange,
-                       TextDirectiveCandidate&& aTextDirective);
+                       TextDirectiveCandidate&& aTextDirective,
+                       RangeContentCache&& aRangeContentCache);
   
 
 
