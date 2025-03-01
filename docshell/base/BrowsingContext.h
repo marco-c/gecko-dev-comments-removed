@@ -338,7 +338,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   
-  static already_AddRefed<BrowsingContext> CreateIndependent(Type aType);
+  static already_AddRefed<BrowsingContext> CreateIndependent(Type aType,
+                                                             bool aWindowless);
 
   
   struct CreateDetachedOptions {
@@ -346,6 +347,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     bool createdDynamically = false;
     bool topLevelCreatedByWebContent = false;
     bool isForPrinting = false;
+    bool windowless = false;
   };
 
   

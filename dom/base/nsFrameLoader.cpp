@@ -344,6 +344,7 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
       options.topLevelCreatedByWebContent =
           aOpenWindowInfo->GetIsTopLevelCreatedByWebContent();
     }
+    options.windowless = parentBC->Windowless();
 
     
     return BrowsingContext::CreateDetached(
@@ -358,7 +359,8 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
              "Can't force BrowsingContextGroup for non-toplevel context");
   return BrowsingContext::CreateDetached(
       parentInner, nullptr, nullptr, frameName, parentBC->GetType(),
-      {.createdDynamically = !aNetworkCreated});
+      {.createdDynamically = !aNetworkCreated,
+       .windowless = parentBC->Windowless()});
 }
 
 static bool InitialLoadIsRemote(Element* aOwner) {
