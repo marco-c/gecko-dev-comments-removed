@@ -77,6 +77,10 @@ add_setup(async function () {
 
   await rps.isInitialized;
 
+  
+  
+  Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
+
   registerCleanupFunction(async () => {
     info("Cleaning up");
     rps.testAllowedPermissionValues = originalPermissionValues;
