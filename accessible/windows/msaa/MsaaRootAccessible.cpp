@@ -29,6 +29,12 @@ MsaaRootAccessible::InternalQueryInterface(REFIID aIid, void** aOutInterface) {
     return E_INVALIDARG;
   }
 
+  if (NS_WARN_IF(!NS_IsMainThread())) {
+    
+    
+    return RPC_E_WRONG_THREAD;
+  }
+
   
   
   if (aIid == IID_IUnknown) {

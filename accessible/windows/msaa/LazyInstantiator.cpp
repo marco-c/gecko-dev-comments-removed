@@ -351,17 +351,6 @@ void LazyInstantiator::TransplantRefCnt() {
 
 HRESULT
 LazyInstantiator::MaybeResolveRoot() {
-  if (!NS_IsMainThread()) {
-    MOZ_ASSERT_UNREACHABLE("Called on a background thread!");
-    
-    
-    
-    
-    
-    
-    return RPC_E_WRONG_THREAD;
-  }
-
   if (mWeakAccessible) {
     return S_OK;
   }
@@ -419,6 +408,11 @@ LazyInstantiator::MaybeResolveRoot() {
   }
 
 IMPL_IUNKNOWN_QUERY_HEAD(LazyInstantiator)
+if (NS_WARN_IF(!NS_IsMainThread())) {
+  
+  
+  return RPC_E_WRONG_THREAD;
+}
 IMPL_IUNKNOWN_QUERY_IFACE_AMBIGIOUS(IUnknown, IAccessible)
 IMPL_IUNKNOWN_QUERY_IFACE(IAccessible)
 IMPL_IUNKNOWN_QUERY_IFACE(IDispatch)
