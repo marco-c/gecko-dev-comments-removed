@@ -287,6 +287,16 @@ void HTMLFormElement::MaybeSubmit(Element* aSubmitter) {
     return;
   }
 
+  
+  
+  
+  bool cancelSubmit = false;
+  nsresult rv = DispatchBeforeSubmitChromeOnlyEvent(&cancelSubmit);
+  if (NS_SUCCEEDED(rv)) {
+    mNotifiedObservers = true;
+    mNotifiedObserversResult = cancelSubmit;
+  }
+
   RefPtr<PresShell> presShell = doc->GetPresShell();
   if (!presShell) {
     
@@ -1466,25 +1476,7 @@ already_AddRefed<nsISupports> HTMLFormElement::DoResolveName(
   return result.forget();
 }
 
-void HTMLFormElement::OnSubmitClickBegin() {
-  mDeferSubmission = true;
-
-  
-  
-  
-  
-  
-  
-  
-  if (mInvalidElementsCount == 0) {
-    bool cancelSubmit = false;
-    nsresult rv = DispatchBeforeSubmitChromeOnlyEvent(&cancelSubmit);
-    if (NS_SUCCEEDED(rv)) {
-      mNotifiedObservers = true;
-      mNotifiedObserversResult = cancelSubmit;
-    }
-  }
-}
+void HTMLFormElement::OnSubmitClickBegin() { mDeferSubmission = true; }
 
 void HTMLFormElement::OnSubmitClickEnd() { mDeferSubmission = false; }
 
