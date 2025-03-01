@@ -1722,6 +1722,33 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   OnInputText(const nsAString& aStringToInsert);
 
+  enum class InsertTextFor {
+    NormalText,
+    CompositionStart,
+    CompositionUpdate,
+    CompositionEnd,
+    CompositionStartAndEnd,
+  };
+  [[nodiscard]] static bool InsertingTextForComposition(
+      InsertTextFor aPurpose) {
+    return aPurpose != InsertTextFor::NormalText;
+  }
+  [[nodiscard]] static bool InsertingTextForExtantComposition(
+      InsertTextFor aPurpose) {
+    return aPurpose == InsertTextFor::CompositionUpdate ||
+           aPurpose == InsertTextFor::CompositionEnd;
+  }
+  [[nodiscard]] static bool InsertingTextForStartingComposition(
+      InsertTextFor aPurpose) {
+    return aPurpose == InsertTextFor::CompositionStart ||
+           aPurpose == InsertTextFor::CompositionStartAndEnd;
+  }
+  [[nodiscard]] static bool NothingToDoIfInsertingEmptyText(
+      InsertTextFor aPurpose) {
+    return aPurpose == InsertTextFor::NormalText ||
+           aPurpose == InsertTextFor::CompositionStartAndEnd;
+  }
+
   
 
 
@@ -1729,10 +1756,8 @@ class EditorBase : public nsIEditor,
 
 
 
-
-  enum class SelectionHandling { Ignore, Delete };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertTextAsSubAction(
-      const nsAString& aStringToInsert, SelectionHandling aSelectionHandling);
+      const nsAString& aStringToInsert, InsertTextFor aPurpose);
 
   
 
@@ -2158,13 +2183,9 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual Result<EditActionResult, nsresult>
-  HandleInsertText(EditSubAction aEditSubAction,
-                   const nsAString& aInsertionString,
-                   SelectionHandling aSelectionHandling) = 0;
+  HandleInsertText(const nsAString& aInsertionString,
+                   InsertTextFor aPurpose) = 0;
 
   
 

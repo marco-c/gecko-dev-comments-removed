@@ -343,13 +343,8 @@ void TextEditor::HandleNewLinesInStringForSingleLineEditor(
 }
 
 Result<EditActionResult, nsresult> TextEditor::HandleInsertText(
-    EditSubAction aEditSubAction, const nsAString& aInsertionString,
-    SelectionHandling aSelectionHandling) {
+    const nsAString& aInsertionString, InsertTextFor aPurpose) {
   MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(aEditSubAction == EditSubAction::eInsertText ||
-             aEditSubAction == EditSubAction::eInsertTextComingFromIME);
-  MOZ_ASSERT_IF(aSelectionHandling == SelectionHandling::Ignore,
-                aEditSubAction == EditSubAction::eInsertTextComingFromIME);
 
   UndefineCaretBidiLevel();
 
@@ -367,7 +362,7 @@ Result<EditActionResult, nsresult> TextEditor::HandleInsertText(
     
     
     if (result.inspect().Handled() && insertionString.IsEmpty() &&
-        aEditSubAction != EditSubAction::eInsertTextComingFromIME) {
+        NothingToDoIfInsertingEmptyText(aPurpose)) {
       return EditActionResult::CanceledResult();
     }
   }
@@ -385,7 +380,7 @@ Result<EditActionResult, nsresult> TextEditor::HandleInsertText(
 
   
   if (!SelectionRef().IsCollapsed() &&
-      aSelectionHandling == SelectionHandling::Delete) {
+      !InsertingTextForExtantComposition(aPurpose)) {
     nsresult rv =
         DeleteSelectionAsSubAction(nsIEditor::eNone, nsIEditor::eNoStrip);
     if (NS_FAILED(rv)) {
@@ -395,8 +390,7 @@ Result<EditActionResult, nsresult> TextEditor::HandleInsertText(
     }
   }
 
-  if (aInsertionString.IsEmpty() &&
-      aEditSubAction != EditSubAction::eInsertTextComingFromIME) {
+  if (aInsertionString.IsEmpty() && NothingToDoIfInsertingEmptyText(aPurpose)) {
     
     
     
@@ -440,7 +434,7 @@ Result<EditActionResult, nsresult> TextEditor::HandleInsertText(
   }
   MOZ_ASSERT(!atStartOfSelection.IsContainerHTMLElement(nsGkAtoms::br));
 
-  if (aEditSubAction == EditSubAction::eInsertTextComingFromIME) {
+  if (InsertingTextForComposition(aPurpose)) {
     EditorDOMPoint compositionStartPoint =
         GetFirstIMESelectionStartPoint<EditorDOMPoint>();
     if (!compositionStartPoint.IsSet()) {
@@ -468,7 +462,7 @@ Result<EditActionResult, nsresult> TextEditor::HandleInsertText(
         rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
         "CaretPoint::SuggestCaretPointTo() failed, but ignored");
   } else {
-    MOZ_ASSERT(aEditSubAction == EditSubAction::eInsertText);
+    MOZ_ASSERT(!InsertingTextForComposition(aPurpose));
 
     Result<InsertTextResult, nsresult> insertTextResult =
         InsertTextWithTransaction(insertionString, atStartOfSelection,
