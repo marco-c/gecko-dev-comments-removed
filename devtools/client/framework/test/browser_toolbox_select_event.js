@@ -41,7 +41,8 @@ add_task(async function () {
   await testSelectEvent("styleeditor");
   await toolbox.destroy();
 
-  await testSelectToolRace();
+  await testSelectToolSamePanelRace();
+  await testSelectToolDistinctPanelRace();
 
   
 
@@ -69,7 +70,7 @@ add_task(async function () {
   
 
 
-  async function testSelectToolRace() {
+  async function testSelectToolSamePanelRace() {
     const toolbox = await openToolboxForTab(tab, "webconsole");
     let selected = false;
     const onSelect = () => {
@@ -79,7 +80,7 @@ add_task(async function () {
         selected = true;
       }
     };
-    toolbox.once("select", onSelect);
+    toolbox.on("select", onSelect);
     const p1 = toolbox.selectTool("inspector");
     const p2 = toolbox.selectTool("inspector");
     
@@ -92,6 +93,55 @@ add_task(async function () {
     p2.then(checkSelectToolResolution);
     await p1;
     await p2;
+    const selectedPanels = toolbox.doc.querySelectorAll(
+      `.toolbox-panel[aria-selected="true"]`
+    );
+    is(selectedPanels.length, 1);
+    is(
+      selectedPanels[0].id,
+      "toolbox-panel-inspector",
+      "Ensure that the inspector is actually selected"
+    );
+    toolbox.off("select", onSelect);
+
+    await toolbox.destroy();
+  }
+
+  
+
+
+  async function testSelectToolDistinctPanelRace() {
+    const toolbox = await openToolboxForTab(tab, "inspector");
+    let selected = false;
+    const onSelect = () => {
+      if (selected) {
+        ok(false, "Got more than one 'select' event");
+      } else {
+        selected = true;
+      }
+    };
+    toolbox.on("select", onSelect);
+    
+    const p1 = toolbox.selectTool("jsdebugger");
+    const p2 = toolbox.selectTool("inspector");
+    
+    const checkSelectToolResolution = () => {
+      ok(selected, "selectTool resolves only after 'select' event is fired");
+    };
+    p1.then(checkSelectToolResolution);
+    p2.then(checkSelectToolResolution);
+    await p1;
+    await p2;
+    const selectedPanels = toolbox.doc.querySelectorAll(
+      `.toolbox-panel[aria-selected="true"]`
+    );
+    is(selectedPanels.length, 1);
+    is(
+      selectedPanels[0].id,
+      "toolbox-panel-inspector",
+      "Ensure that the inspector is actually selected"
+    );
+    toolbox.off("select", onSelect);
 
     await toolbox.destroy();
   }

@@ -3023,6 +3023,11 @@ Toolbox.prototype = {
     return this.loadTool(id, options).then(panel => {
       
       
+      if (this.currentToolId != id) {
+        return panel;
+      }
+      
+      
       const toolboxPanels = this.doc.querySelectorAll(".toolbox-panel");
       this.selectSingleNode(toolboxPanels, "toolbox-panel-" + id);
 
