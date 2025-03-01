@@ -205,7 +205,8 @@ static GdkCursor* get_gtk_cursor(nsCursor aCursor);
 
 
 static gboolean expose_event_cb(GtkWidget* widget, cairo_t* cr);
-static gboolean configure_event_cb(GtkWidget* widget, GdkEventConfigure* event);
+static gboolean shell_configure_event_cb(GtkWidget* widget,
+                                         GdkEventConfigure* event);
 static void size_allocate_cb(GtkWidget* widget, GtkAllocation* allocation);
 static void toplevel_window_size_allocate_cb(GtkWidget* widget,
                                              GtkAllocation* allocation);
@@ -4057,8 +4058,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   return TRUE;
 }
 
-gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
-                                    GdkEventConfigure* aEvent) {
+gboolean nsWindow::OnShellConfigureEvent(GdkEventConfigure* aEvent) {
   
   
   
@@ -4078,10 +4078,10 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
 
 #ifdef MOZ_LOGGING
   int scale = mGdkWindow ? gdk_window_get_scale_factor(mGdkWindow) : -1;
-  LOG("configure event [%d] %d,%d -> %d x %d direct mGdkWindow scale %d "
+  LOG("configure event %d,%d -> %d x %d direct mGdkWindow scale %d "
       "(scaled size %d x %d)\n",
-      aEvent->window == mGdkWindow, aEvent->x, aEvent->y, aEvent->width,
-      aEvent->height, scale, aEvent->width * scale, aEvent->height * scale);
+      aEvent->x, aEvent->y, aEvent->width, aEvent->height, scale,
+      aEvent->width * scale, aEvent->height * scale);
 #endif
 
   if (mPendingConfigures > 0) {
@@ -4099,32 +4099,37 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
 
   
   
-  RecomputeBounds(MayChangeCsdMargin(aEvent->window == mGdkWindow));
+  RecomputeBounds(MayChangeCsdMargin::No);
   return FALSE;
 }
 
-void nsWindow::OnSizeAllocate(GtkWidget* aWidget, GtkAllocation* aAllocation) {
-  LOG("nsWindow::OnSizeAllocate [%d] %d,%d -> %d x %d\n",
-      aWidget == GTK_WIDGET(mContainer), aAllocation->x, aAllocation->y,
-      aAllocation->width, aAllocation->height);
+void nsWindow::OnContainerSizeAllocate(GtkAllocation* aAllocation) {
+  LOG("nsWindow::OnContainerSizeAllocate %d,%d -> %d x %d\n", aAllocation->x,
+      aAllocation->y, aAllocation->width, aAllocation->height);
   mHasReceivedSizeAllocate = true;
   if (!mGdkWindow) {
     return;
   }
-  
-  
-  
-  
-  
-  
-  
-  SchedulePendingBounds(MayChangeCsdMargin(aWidget == GTK_WIDGET(mContainer)));
 
   auto oldClientBounds = GetClientBounds();
+
+  
+  
+  
+  
+  
+  
+  
+  SchedulePendingBounds(MayChangeCsdMargin::Yes);
+
   
   
   
   LayoutDeviceIntRect newClientBounds = GdkRectToDevicePixels(*aAllocation);
+  if (oldClientBounds.Size() == newClientBounds.Size()) {
+    return;
+  }
+
   if (oldClientBounds.width < newClientBounds.width) {
     GdkRectangle rect = DevicePixelsToGdkRectRoundOut(LayoutDeviceIntRect(
         oldClientBounds.width, 0, newClientBounds.width - oldClientBounds.width,
@@ -6247,8 +6252,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   g_object_set_data(G_OBJECT(mShell), "nsWindow", this);
 
   
-  g_signal_connect(mShell, "configure_event", G_CALLBACK(configure_event_cb),
-                   nullptr);
+  g_signal_connect(mShell, "configure_event",
+                   G_CALLBACK(shell_configure_event_cb), nullptr);
   g_signal_connect(mShell, "delete_event", G_CALLBACK(delete_event_cb),
                    nullptr);
   g_signal_connect(mShell, "window_state_event",
@@ -7870,14 +7875,14 @@ gboolean expose_event_cb(GtkWidget* widget, cairo_t* cr) {
   return FALSE;
 }
 
-static gboolean configure_event_cb(GtkWidget* widget,
-                                   GdkEventConfigure* event) {
+static gboolean shell_configure_event_cb(GtkWidget* widget,
+                                         GdkEventConfigure* event) {
   RefPtr<nsWindow> window = get_window_for_gtk_widget(widget);
   if (!window) {
     return FALSE;
   }
 
-  return window->OnConfigureEvent(widget, event);
+  return window->OnShellConfigureEvent(event);
 }
 
 static void size_allocate_cb(GtkWidget* widget, GtkAllocation* allocation) {
@@ -7885,8 +7890,7 @@ static void size_allocate_cb(GtkWidget* widget, GtkAllocation* allocation) {
   if (!window) {
     return;
   }
-
-  window->OnSizeAllocate(widget, allocation);
+  window->OnContainerSizeAllocate(allocation);
 }
 
 static void toplevel_window_size_allocate_cb(GtkWidget* widget,
