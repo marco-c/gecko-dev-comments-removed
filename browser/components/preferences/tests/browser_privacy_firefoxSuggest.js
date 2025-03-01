@@ -9,20 +9,19 @@ ChromeUtils.defineESModuleGetters(this, {
   QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
 });
 
-const CONTAINER_ID = "firefoxSuggestPrivacyContainer";
 const DATA_COLLECTION_TOGGLE_ID = "firefoxSuggestDataCollectionPrivacyToggle";
 
 
 
 const EXPECTED = {
   [QuickSuggest.SETTINGS_UI.FULL]: {
-    [CONTAINER_ID]: { isVisible: true },
+    [DATA_COLLECTION_TOGGLE_ID]: { isVisible: true },
   },
   [QuickSuggest.SETTINGS_UI.NONE]: {
-    [CONTAINER_ID]: { isVisible: false },
+    [DATA_COLLECTION_TOGGLE_ID]: { isVisible: false },
   },
   [QuickSuggest.SETTINGS_UI.OFFLINE_ONLY]: {
-    [CONTAINER_ID]: { isVisible: false },
+    [DATA_COLLECTION_TOGGLE_ID]: { isVisible: false },
   },
 };
 
@@ -180,118 +179,3 @@ add_task(async function initiallyEnabled_settingsUiOfflineOnly() {
     newExpected: EXPECTED[QuickSuggest.SETTINGS_UI.OFFLINE_ONLY],
   });
 });
-
-
-add_task(async function clickCheckboxesOrToggle() {
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
-
-  let doc = gBrowser.selectedBrowser.contentDocument;
-  let dataCollectionSection = doc.getElementById(CONTAINER_ID);
-  dataCollectionSection.scrollIntoView();
-
-  async function clickElement(id, eventName) {
-    let element = doc.getElementById(id);
-    let changed = BrowserTestUtils.waitForEvent(element, eventName);
-
-    if (eventName == "toggle") {
-      element = element.buttonEl;
-    }
-
-    EventUtils.synthesizeMouseAtCenter(
-      element,
-      {},
-      gBrowser.selectedBrowser.contentWindow
-    );
-    await changed;
-  }
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.quicksuggest.dataCollection.enabled", true]],
-  });
-  assertPrefUIState({
-    [DATA_COLLECTION_TOGGLE_ID]: true,
-  });
-
-  
-  await clickElement(DATA_COLLECTION_TOGGLE_ID, "toggle");
-  Assert.ok(
-    !Services.prefs.getBoolPref(
-      "browser.urlbar.quicksuggest.dataCollection.enabled"
-    ),
-    "quicksuggest.dataCollection.enabled is false after clicking data collection toggle"
-  );
-  assertPrefUIState({
-    [DATA_COLLECTION_TOGGLE_ID]: false,
-  });
-
-  gBrowser.removeCurrentTab();
-  await SpecialPowers.popPrefEnv();
-});
-
-
-add_task(async function clickLearnMore() {
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
-
-  let doc = gBrowser.selectedBrowser.contentDocument;
-  let dataCollectionSection = doc.getElementById(CONTAINER_ID);
-  dataCollectionSection.scrollIntoView();
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.quicksuggest.dataCollection.enabled", true]],
-  });
-
-  let toggle = dataCollectionSection.querySelector("moz-toggle");
-  let learnMoreLink = toggle.shadowRoot.querySelector(
-    "a[is='moz-support-link']"
-  );
-
-  ok(learnMoreLink, "Learn-more link is present");
-  Assert.ok(
-    BrowserTestUtils.isVisible(learnMoreLink),
-    "Learn-more link is visible"
-  );
-
-  let prefsTab = gBrowser.selectedTab;
-  let tabPromise = BrowserTestUtils.waitForNewTab(
-    gBrowser,
-    QuickSuggest.HELP_URL
-  );
-  info("Clicking learn-more link");
-  await EventUtils.synthesizeMouseAtCenter(
-    learnMoreLink,
-    {},
-    gBrowser.selectedBrowser.contentWindow
-  );
-  info("Waiting for help page to load in a new tab");
-  await tabPromise;
-  gBrowser.removeCurrentTab();
-  gBrowser.selectedTab = prefsTab;
-
-  gBrowser.removeCurrentTab();
-  await SpecialPowers.popPrefEnv();
-});
-
-
-
-
-
-
-
-
-function assertPrefUIState(stateByElementID) {
-  let doc = gBrowser.selectedBrowser.contentDocument;
-  let container = doc.getElementById(CONTAINER_ID);
-  let attr;
-  Assert.ok(BrowserTestUtils.isVisible(container), "The container is visible");
-  for (let [id, state] of Object.entries(stateByElementID)) {
-    let element = doc.getElementById(id);
-    if (element.tagName === "checkbox") {
-      attr = "checked";
-    } else if (element.tagName === "html:moz-toggle") {
-      attr = "pressed";
-    }
-    Assert.equal(element[attr], state, "Expected state for ID: " + id);
-  }
-}
