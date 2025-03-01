@@ -189,14 +189,19 @@ void AltSvcMapping::ProcessHeader(
   }
 
   auto doUpdateAltSvcMapping = [&](AltSvcMapping* aMapping) {
-    if (aTransConnInfo &&
-        StaticPrefs::network_http_skip_alt_svc_validation_on_https_rr()) {
-      RefPtr<nsHttpConnectionInfo> ci;
-      aMapping->GetConnectionInfo(getter_AddRefs(ci), proxyInfo,
-                                  originAttributes);
-      if (ci->HashKey().Equals(aTransConnInfo->HashKey())) {
-        LOG(("The transaction's conninfo is the same, no need to validate"));
-        aDontValidate = true;
+    if (aTransConnInfo) {
+      if (aTransConnInfo->HasEchConfig()) {
+        LOG(("Server has ECH, use HTTPS RR to connect instead"));
+        return;
+      }
+      if (StaticPrefs::network_http_skip_alt_svc_validation_on_https_rr()) {
+        RefPtr<nsHttpConnectionInfo> ci;
+        aMapping->GetConnectionInfo(getter_AddRefs(ci), proxyInfo,
+                                    originAttributes);
+        if (ci->HashKey().Equals(aTransConnInfo->HashKey())) {
+          LOG(("The transaction's conninfo is the same, no need to validate"));
+          aDontValidate = true;
+        }
       }
     }
     if (!aDontValidate) {
@@ -1007,6 +1012,8 @@ already_AddRefed<AltSvcMapping> AltSvcCache::LookupMapping(
   LOG(("AltSvcCache::LookupMapping %p HIT %p\n", this, mapping.get()));
   return mapping.forget();
 }
+
+
 
 
 void AltSvcCache::UpdateAltServiceMappingWithoutValidation(
