@@ -586,11 +586,145 @@ void StringEscape::convertInto(GenericPrinter& out, char16_t c) {
   }
 }
 
-void IndentedPrinter::putIndent() {
+void StructuredPrinter::pushScope() {
+  if (hadOutOfMemory()) {
+    return;
+  }
+
+  bool ok = scopes_.append((ScopeInfo){
+      .startPos = uint32_t(buffer_.length()),
+      .indent = scopeDepth() + 1,
+  });
+  if (!ok) {
+    setPendingOutOfMemory();
+  }
+}
+
+void StructuredPrinter::popScope() {
+  
+  
+  if (hadOutOfMemory()) {
+    return;
+  }
+
+  
+  if (!isExpanded()) {
+    const ScopeInfo& scope = scopes_.back();
+    for (Break& brk : breaks_) {
+      if (scope.startPos <= brk.bufferPos) {
+        brk.isCollapsed = true;
+      }
+    }
+  }
+
+  scopes_.popBack();
+  if (scopeDepth() < expandedDepth_) {
+    expandedDepth_ = scopeDepth();
+  }
+
+  
+  
+  if (isExpanded()) {
+    flush();
+  }
+}
+
+void StructuredPrinter::flush() {
+  uint32_t cursor = 0;
+
+  
+  while (!breaks_.empty() && breaks_[0].bufferPos == 0) {
+    putBreak(breaks_[0]);
+    breaks_.erase(&breaks_[0]);
+  }
+
+  
+  while (cursor < buffer_.length()) {
+    int indent = 0;
+    mozilla::Maybe<const ScopeInfo&> nextScope;
+    for (const ScopeInfo& scope : scopes_) {
+      if (cursor < scope.startPos) {
+        nextScope.emplace(scope);
+        break;
+      }
+      indent = scope.indent;
+    }
+
+    
+    size_t len = buffer_.length() - cursor;
+    mozilla::Maybe<size_t> nextBreaksIndex;
+    size_t numBreaks = 0;
+    for (size_t i = 0; i < breaks_.length(); i++) {
+      const Break& brk = breaks_[i];
+      if (nextScope.isSome() && nextScope->startPos < brk.bufferPos) {
+        len = nextScope->startPos - cursor;
+        break;
+      }
+      if (cursor < brk.bufferPos) {
+        len = brk.bufferPos - cursor;
+        nextBreaksIndex.emplace(i);
+        
+        
+        for (size_t j = i; j < breaks_.length(); j++) {
+          if (breaks_[i].bufferPos == breaks_[j].bufferPos) {
+            numBreaks += 1;
+          }
+        }
+        break;
+      }
+    }
+
+    putWithMaybeIndent(&buffer_[cursor], len, indent);
+    cursor += len;
+
+    if (nextBreaksIndex.isSome()) {
+      for (size_t i = 0; i < numBreaks; i++) {
+        putBreak(breaks_[nextBreaksIndex.value() + i]);
+      }
+    }
+  }
+
+  
+  buffer_.clear();
+  breaks_.clear();
+  for (ScopeInfo& scope : scopes_) {
+    scope.startPos = 0;
+  }
+}
+
+void StructuredPrinter::brk(const char* whenCollapsed,
+                            const char* whenExpanded) {
+  Break b = (Break){
+      .bufferPos = uint32_t(buffer_.length()),
+      .collapsed = whenCollapsed,
+      .expanded = whenExpanded,
+  };
+  if (isExpanded()) {
+    putBreak(b);
+  } else {
+    bool ok = breaks_.append(b);
+    if (!ok) {
+      setPendingOutOfMemory();
+    }
+  }
+}
+
+void StructuredPrinter::expand() {
+  expandedDepth_ = scopeDepth();
+  flush();
+}
+
+bool StructuredPrinter::isExpanded() { return expandedDepth_ == scopeDepth(); }
+
+void StructuredPrinter::putIndent(int level) {
   
   
   static const char spaceBuffer[17] = "                ";
-  size_t remainingSpaces = indentLevel_ * indentAmount_;
+
+  if (level < 0) {
+    level = scopeDepth();
+  }
+  size_t remainingSpaces = level * indentAmount_;
   while (remainingSpaces > 16) {
     out_.put(spaceBuffer, 16);
     remainingSpaces -= 16;
@@ -600,21 +734,38 @@ void IndentedPrinter::putIndent() {
   }
 }
 
-void IndentedPrinter::putWithMaybeIndent(const char* s, size_t len) {
+void StructuredPrinter::putBreak(const Break& brk) {
+  const char* s = brk.isCollapsed ? brk.collapsed : brk.expanded;
+  size_t len = strlen(s);
+  if (len > 0) {
+    out_.put(s, len);
+    pendingIndent_ = s[len - 1] == '\n';
+  }
+}
+
+void StructuredPrinter::putWithMaybeIndent(const char* s, size_t len,
+                                           int level) {
   if (len == 0) {
     return;
   }
   if (pendingIndent_) {
-    putIndent();
+    putIndent(level);
     pendingIndent_ = false;
   }
   out_.put(s, len);
 }
 
-void IndentedPrinter::put(const char* s, size_t len) {
+void StructuredPrinter::put(const char* s, size_t len) {
   const char* current = s;
+
   
   while (const char* nextLineEnd = (const char*)memchr(current, '\n', len)) {
+    
+    expand();
+
+    
+    
+
     
     size_t lineWithNewLineSize = nextLineEnd - current + 1;
     putWithMaybeIndent(current, lineWithNewLineSize);
@@ -628,7 +779,14 @@ void IndentedPrinter::put(const char* s, size_t len) {
   }
 
   
-  putWithMaybeIndent(current, len);
+  
+  if (isExpanded()) {
+    putWithMaybeIndent(current, len);
+  } else {
+    if (!buffer_.append(current, len)) {
+      setPendingOutOfMemory();
+    }
+  }
 }
 
 }  

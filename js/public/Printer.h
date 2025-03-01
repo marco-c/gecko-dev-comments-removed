@@ -10,6 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/glue/Debug.h"
 #include "mozilla/Range.h"
+#include "mozilla/Vector.h"
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -151,6 +152,7 @@ class JS_PUBLIC_API GenericPrinter {
   
   virtual void put(const char* s, size_t len) = 0;
   inline void put(const char* s) { put(s, strlen(s)); }
+  inline void put(mozilla::Span<const char> s) { put(s.data(), s.size()); };
 
   
   
@@ -491,42 +493,111 @@ class JS_PUBLIC_API StringEscape {
 };
 
 
-class JS_PUBLIC_API IndentedPrinter final : public GenericPrinter {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class JS_PUBLIC_API StructuredPrinter final : public GenericPrinter {
   GenericPrinter& out_;
+
   
-  uint32_t indentLevel_;
-  
-  uint32_t indentAmount_;
-  
-  
+  int indentAmount_;
   bool pendingIndent_;
 
   
-  void putIndent();
-  
-  void putWithMaybeIndent(const char* s, size_t len);
+  int expandedDepth_ = -1;
 
- public:
-  explicit IndentedPrinter(GenericPrinter& out, uint32_t indentLevel = 0,
-                           uint32_t indentAmount = 2)
-      : out_(out),
-        indentLevel_(indentLevel),
-        indentAmount_(indentAmount),
-        pendingIndent_(false) {}
-
-  
-  class AutoIndent {
-    IndentedPrinter& printer_;
-
-   public:
-    explicit AutoIndent(IndentedPrinter& printer) : printer_(printer) {
-      printer_.setIndentLevel(printer_.indentLevel() + 1);
-    }
-    ~AutoIndent() { printer_.setIndentLevel(printer_.indentLevel() - 1); }
+  struct Break {
+    uint32_t bufferPos;
+    bool isCollapsed;
+    const char* collapsed;
+    const char* expanded;
   };
 
-  uint32_t indentLevel() const { return indentLevel_; }
-  void setIndentLevel(uint32_t indentLevel) { indentLevel_ = indentLevel; }
+  struct ScopeInfo {
+    uint32_t startPos;
+    int indent;
+  };
+
+  
+  mozilla::Vector<char, 80> buffer_;
+  
+  
+  mozilla::Vector<Break, 8> breaks_;
+  
+  mozilla::Vector<ScopeInfo, 16> scopes_;
+
+  int scopeDepth() { return int(scopes_.length()) - 1; }
+
+  void putIndent(int level = -1);
+  void putBreak(const Break& brk);
+  void putWithMaybeIndent(const char* s, size_t len, int level = -1);
+
+ public:
+  explicit StructuredPrinter(GenericPrinter& out, int indentAmount = 2)
+      : out_(out), indentAmount_(indentAmount) {
+    pushScope();
+  }
+  ~StructuredPrinter() {
+    popScope();
+    flush();
+  }
+
+  void pushScope();
+  void popScope();
+
+  void brk(const char* collapsed, const char* expanded);
+  void expand();
+  bool isExpanded();
+
+  void flush() override;
+
+  class Scope {
+    StructuredPrinter& printer_;
+
+   public:
+    explicit Scope(StructuredPrinter& printer) : printer_(printer) {
+      printer_.pushScope();
+    }
+    ~Scope() { printer_.popScope(); }
+  };
 
   virtual void put(const char* s, size_t len) override;
   using GenericPrinter::put;  
