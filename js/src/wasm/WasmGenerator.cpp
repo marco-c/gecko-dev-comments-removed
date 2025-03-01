@@ -927,12 +927,6 @@ UniqueCodeBlock ModuleGenerator::finishCodeBlock(UniqueLinkData* linkData) {
     }
     codeBlock_->codeBase = codeStart;
     codeBlock_->codeLength = codeLength;
-
-    
-    
-    
-    uint32_t codeBlockOffset = codeStart - codeBlock_->segment->base();
-    codeBlock_->offsetMetadataBy(codeBlockOffset);
   } else {
     
     codeBlock_->segment = CodeSegment::createFromMasm(
