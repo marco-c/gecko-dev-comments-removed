@@ -873,6 +873,9 @@ pref("browser.shopping.experience2023.autoOpen.enabled", false);
 pref("browser.shopping.experience2023.autoOpen.userEnabled", true);
 
 
+pref("browser.shopping.experience2023.autoClose.userEnabled", true);
+
+
 pref("browser.shopping.experience2023.sidebarClosedCount", 0);
 
 
