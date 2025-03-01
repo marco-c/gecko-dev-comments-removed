@@ -17,7 +17,7 @@ promise_setup(async () => {
   
   await trySettingPermission("granted");
   
-  registration = await getActiveServiceWorker("noop-sw.js");
+  registration = await prepareActiveServiceWorker("noop-sw.js");
 });
 
 promise_test(async (t) => {
