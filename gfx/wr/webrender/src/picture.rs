@@ -1491,7 +1491,7 @@ pub struct DirtyRegion {
 
     
     
-    visibility_spatial_node: SpatialNodeIndex,
+    pub visibility_spatial_node: SpatialNodeIndex,
     
     local_spatial_node: SpatialNodeIndex,
 }
@@ -6623,13 +6623,19 @@ impl PicturePrimitive {
         splitter: &mut PlaneSplitter,
         spatial_tree: &SpatialTree,
         prim_spatial_node_index: SpatialNodeIndex,
+        
+        
+        visibility_spatial_node_index: SpatialNodeIndex,
         original_local_rect: LayoutRect,
         combined_local_clip_rect: &LayoutRect,
-        world_rect: WorldRect,
+        dirty_rect: VisRect,
         plane_split_anchor: PlaneSplitAnchor,
     ) -> bool {
-        let transform = spatial_tree
-            .get_world_transform(prim_spatial_node_index);
+        let transform = spatial_tree.get_relative_transform(
+            prim_spatial_node_index,
+            visibility_spatial_node_index
+        );
+
         let matrix = transform.clone().into_transform().cast().to_untyped();
 
         
@@ -6644,7 +6650,7 @@ impl PicturePrimitive {
             Some(rect) => rect.cast(),
             None => return false,
         };
-        let world_rect = world_rect.cast();
+        let dirty_rect = dirty_rect.cast();
 
         match transform {
             CoordinateSpaceMapping::Local => {
@@ -6673,7 +6679,7 @@ impl PicturePrimitive {
                         plane_split_anchor,
                     ),
                     &matrix,
-                    Some(world_rect.to_rect().to_untyped()),
+                    Some(dirty_rect.to_rect().to_untyped()),
                 );
                 if let Ok(results) = results {
                     for poly in results {
