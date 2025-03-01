@@ -7636,9 +7636,6 @@ Maybe<SnapDestination> ScrollContainerFrame::GetSnapPointForDestination(
 }
 
 Maybe<SnapDestination> ScrollContainerFrame::GetSnapPointForResnap() {
-  
-  
-  mSnapTargets.Clear();
   nsIContent* focusedContent =
       GetContent()->GetComposedDoc()->GetUnretargetedFocusedContent();
   return ScrollSnapUtils::GetSnapPointForResnap(
@@ -7647,12 +7644,7 @@ Maybe<SnapDestination> ScrollContainerFrame::GetSnapPointForResnap() {
 }
 
 bool ScrollContainerFrame::NeedsResnap() {
-  nsIContent* focusedContent =
-      GetContent()->GetComposedDoc()->GetUnretargetedFocusedContent();
-  return ScrollSnapUtils::GetSnapPointForResnap(
-             ComputeScrollSnapInfo(), GetLayoutScrollRange(),
-             GetScrollPosition(), mLastSnapTargetIds, focusedContent)
-      .isSome();
+  return GetSnapPointForResnap().isSome();
 }
 
 void ScrollContainerFrame::SetLastSnapTargetIds(
@@ -7703,6 +7695,9 @@ void ScrollContainerFrame::TryResnap() {
     return;
   }
 
+  
+  
+  mSnapTargets.Clear();
   if (auto snapDestination = GetSnapPointForResnap()) {
     
     mAnchor.UserScrolled();
