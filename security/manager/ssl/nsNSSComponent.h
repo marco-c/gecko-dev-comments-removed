@@ -52,6 +52,26 @@ void SetValidationOptionsCommon();
 void PrepareForShutdownInSocketProcess();
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+class AutoSearchingForClientAuthCertificates {
+ public:
+  AutoSearchingForClientAuthCertificates();
+  ~AutoSearchingForClientAuthCertificates();
+};
+
+
 class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
  public:
   
