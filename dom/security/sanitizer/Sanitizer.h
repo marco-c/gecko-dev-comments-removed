@@ -43,24 +43,30 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
                        JS::Handle<JSObject*> aGivenProto) override;
 
   static already_AddRefed<Sanitizer> New(nsIGlobalObject* aGlobal,
-                                         const SanitizerConfig& aOptions,
+                                         const SanitizerConfig& aConfig,
+                                         ErrorResult& aRv);
+
+  static already_AddRefed<Sanitizer> New(nsIGlobalObject* aGlobal,
+                                         const SanitizerPresets aConfig,
                                          ErrorResult& aRv);
 
   
-
-
-
   static already_AddRefed<Sanitizer> Constructor(
-      const GlobalObject& aGlobal, const SanitizerConfig& aOptions,
-      ErrorResult& aRv);
+      const GlobalObject& aGlobal,
+      const SanitizerConfigOrSanitizerPresets& aConfig, ErrorResult& aRv);
 
-  
+  void Get(SanitizerConfig& aConfig);
 
-
-
-
-  already_AddRefed<DocumentFragment> Sanitize(
-      const mozilla::dom::DocumentFragmentOrDocument& aInput, ErrorResult& aRv);
+  void AllowElement(
+      const StringOrSanitizerElementNamespaceWithAttributes& aElement);
+  void RemoveElement(const StringOrSanitizerElementNamespace& aElement);
+  void ReplaceElementWithChildren(
+      const StringOrSanitizerElementNamespace& aElement);
+  void AllowAttribute(const StringOrSanitizerAttributeNamespace& aAttribute);
+  void RemoveAttribute(const StringOrSanitizerAttributeNamespace& aAttribute);
+  void SetComments(bool aAllow);
+  void SetDataAttributes(bool aAllow);
+  void RemoveUnsafe();
 
   
 
@@ -84,8 +90,7 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
 
  private:
   ~Sanitizer() = default;
-  already_AddRefed<DocumentFragment> InputToNewFragment(
-      const mozilla::dom::DocumentFragmentOrDocument& aInput, ErrorResult& aRv);
+
   
 
 
