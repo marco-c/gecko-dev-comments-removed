@@ -17570,11 +17570,6 @@ void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
     return;
   }
 
-  
-  if (!nsContentUtils::IsFirstPartyTrackingResourceWindow(inner)) {
-    return;
-  }
-
   auto* outer = nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
   if (NS_WARN_IF(!outer)) {
     return;
