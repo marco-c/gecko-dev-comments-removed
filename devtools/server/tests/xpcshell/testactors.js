@@ -234,6 +234,7 @@ class TestTargetActor extends BaseTargetActor {
       actor: this.actorID,
       title: this.title,
       threadActor: this.threadActor.actorID,
+      targetType: this.targetType,
     };
 
     
