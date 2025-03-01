@@ -4,4 +4,8 @@ self.onmessage = function(e) {
 
   offscreen_ctx.font = "25px serif";
   offscreen_ctx.fillText("ABC!", 60, 50);
+
+  
+  offscreen_ctx.fillStyle = '#0f0';
+  offscreen_ctx.fillRect(0, 0, 1, 1);
 }
