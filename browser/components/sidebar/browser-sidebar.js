@@ -545,10 +545,9 @@ var SidebarController = {
       delete state.command;
     }
     await this.promiseInitialized;
+    await this.waitUntilStable(); 
     this._state.loadInitialState(state);
-    if (this.revampComponentsLoaded) {
-      await this.sidebarMain.updateComplete;
-    }
+    await this.waitUntilStable(); 
     this.updateToolbarButton();
     this.uiStateInitialized = true;
   },
@@ -1015,6 +1014,23 @@ var SidebarController = {
     });
   },
 
+  
+
+
+
+
+  async waitUntilStable() {
+    if (!this.sidebarRevampEnabled) {
+      
+      return null;
+    }
+    const tasks = [
+      this.sidebarMain.updateComplete,
+      ...this._ongoingAnimations.map(animation => animation.finished),
+    ];
+    return Promise.allSettled(tasks);
+  },
+
   async _animateSidebarMain() {
     let tabbox = document.getElementById("tabbrowser-tabbox");
     let animatingElements = [this.sidebarContainer, this._box, this._splitter];
@@ -1188,7 +1204,10 @@ var SidebarController = {
       let sidebarToggleKey = document.getElementById("toggleSidebarKb");
       const shortcut = ShortcutUtils.prettifyShortcut(sidebarToggleKey);
       toolbarButton.dataset.l10nArgs = JSON.stringify({ shortcut });
-      if (this.sidebarVerticalTabsEnabled) {
+      
+      
+      const isVerticalTabs = Services.prefs.getBoolPref("sidebar.verticalTabs");
+      if (isVerticalTabs) {
         toolbarButton.toggleAttribute("expanded", this.sidebarMain.expanded);
       } else {
         toolbarButton.toggleAttribute("expanded", false);
