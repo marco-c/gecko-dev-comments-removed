@@ -841,6 +841,7 @@ class nsWindow final : public nsBaseWidget {
   
   LayoutDeviceIntRegion mDraggableRegion;
   
+  
   LayoutDeviceIntRegion mOpaqueRegion;
 
   
