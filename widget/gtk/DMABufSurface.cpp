@@ -1795,12 +1795,9 @@ bool DMABufSurfaceYUV::VerifyTextureCreation() {
 gfx::SurfaceFormat DMABufSurfaceYUV::GetFormat() {
   switch (mFOURCCFormat) {
     case VA_FOURCC_P010:
-    
-    
-    
-    
-    
-    
+      return gfx::SurfaceFormat::P010;
+    case VA_FOURCC_P016:
+      return gfx::SurfaceFormat::P016;
     case VA_FOURCC_NV12:
       return gfx::SurfaceFormat::NV12;
     case VA_FOURCC_YV12:
