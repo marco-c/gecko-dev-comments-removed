@@ -7,13 +7,10 @@
 
 
 
-interface Principal extends nsIPrincipal {}
-interface URI extends nsIURI {}
-interface WindowProxy extends Window {}
-
 type HTMLCollectionOf<T> = any;
 type IsInstance<T> = (obj: any) => obj is T;
 type NodeListOf<T> = any;
+interface WindowProxy extends Window {}
 
 
 
