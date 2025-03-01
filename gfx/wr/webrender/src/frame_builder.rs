@@ -538,6 +538,7 @@ impl FrameBuilder {
             
             let mut default_dirty_region = DirtyRegion::new(
                 root_spatial_node_index,
+                root_spatial_node_index,
             );
             default_dirty_region.add_dirty_region(
                 PictureRect::max_rect(),
@@ -580,6 +581,7 @@ impl FrameBuilder {
         
         
         let mut default_dirty_region = DirtyRegion::new(
+            root_spatial_node_index,
             root_spatial_node_index,
         );
         default_dirty_region.add_dirty_region(
