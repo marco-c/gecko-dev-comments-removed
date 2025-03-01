@@ -29,6 +29,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 from typing import Any, Callable, Container, DefaultDict, FrozenSet
 from typing import List, Mapping, MutableMapping, Set, Tuple, Union
 
@@ -1090,7 +1100,7 @@ def generate_test_files(name_to_dir_file: str) -> None:
 
     jinja_env = jinja2.Environment(
         loader=jinja2.ChoiceLoader([
-            jinja2.PackageLoader('gentestutilsunion'),
+            jinja2.PackageLoader('gentest'),
             params_template_loader,
         ]),
         keep_trailing_newline=True,
@@ -1153,3 +1163,7 @@ def generate_test_files(name_to_dir_file: str) -> None:
             grid.generate_test(jinja_env, output_dirs.sub_path(sub_dir))
 
     print()
+
+
+if __name__ == '__main__':
+    generate_test_files('name2dir.yaml')
