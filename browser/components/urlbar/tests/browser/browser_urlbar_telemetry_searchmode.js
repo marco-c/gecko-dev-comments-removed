@@ -10,7 +10,6 @@
 "use strict";
 
 const ENTRY_SCALAR_PREFIX = "urlbar.searchmode.";
-const PICKED_SCALAR_PREFIX = "urlbar.picked.searchmode.";
 const ENGINE_ALIAS = "alias";
 const TEST_QUERY = "test";
 let engineName;
@@ -39,11 +38,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 
-
-
-
-
-function assertSearchModeScalars(entry, engineOrSource, resultIndex = -1) {
+function assertSearchModeScalars(entry, engineOrSource) {
   
   const scalars = TelemetryTestUtils.getProcessScalars("parent", true, false);
   TelemetryTestUtils.assertKeyedScalar(
@@ -66,15 +61,6 @@ function assertSearchModeScalars(entry, engineOrSource, resultIndex = -1) {
         `No other urlbar.searchmode scalars should be recorded. Checking ${e}`
       );
     }
-  }
-
-  if (resultIndex >= 0) {
-    TelemetryTestUtils.assertKeyedScalar(
-      scalars,
-      PICKED_SCALAR_PREFIX + entry,
-      resultIndex,
-      1
-    );
   }
 
   Services.telemetry.clearScalars();

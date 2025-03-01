@@ -29,17 +29,6 @@ function snapshotHistograms() {
   };
 }
 
-function assertTelemetryResults(histograms, type, index, method) {
-  TelemetryTestUtils.assertHistogram(histograms.resultMethodHist, method, 1);
-
-  TelemetryTestUtils.assertKeyedScalar(
-    TelemetryTestUtils.getProcessScalars("parent", true, true),
-    `urlbar.picked.${type}`,
-    index,
-    1
-  );
-}
-
 
 
 
@@ -145,11 +134,10 @@ add_task(async function test() {
       entry: "tabtosearch",
     });
 
-    assertTelemetryResults(
-      histograms,
-      "tabtosearch",
-      1,
-      UrlbarTestUtils.SELECTED_RESULT_METHODS.arrowEnterSelection
+    TelemetryTestUtils.assertHistogram(
+      histograms.resultMethodHist,
+      UrlbarTestUtils.SELECTED_RESULT_METHODS.arrowEnterSelection,
+      1
     );
 
     await UrlbarTestUtils.exitSearchMode(window);
