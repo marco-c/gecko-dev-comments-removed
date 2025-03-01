@@ -1289,7 +1289,7 @@ nsRect AccessibleCaretManager::GetAllChildFrameRectsUnion(nsIFrame* aFrame) {
   
   for (nsIFrame* frame = aFrame->GetContentInsertionFrame(); frame;
        frame = frame->GetNextContinuation()) {
-    nsRect frameRect;
+    Maybe<nsRect> childrenRect;
 
     for (const auto& childList : frame->ChildLists()) {
       
@@ -1297,24 +1297,24 @@ nsRect AccessibleCaretManager::GetAllChildFrameRectsUnion(nsIFrame* aFrame) {
         nsRect childRect = child->ScrollableOverflowRectRelativeToSelf();
         nsLayoutUtils::TransformRect(child, frame, childRect);
 
-        
-        
-        
-        if (childRect.IsEmpty()) {
-          frameRect = frameRect.UnionEdges(childRect);
+        if (childrenRect) {
+          
+          
+          
+          
+          *childrenRect = childrenRect->UnionEdges(childRect);
         } else {
-          frameRect = frameRect.Union(childRect);
+          childrenRect.emplace(childRect);
         }
       }
     }
 
-    MOZ_ASSERT(!frameRect.IsEmpty(),
-               "Editable frames should have at least one BRFrame child to make "
-               "frameRect non-empty!");
-    if (frame != aFrame) {
-      nsLayoutUtils::TransformRect(frame, aFrame, frameRect);
+    if (childrenRect) {
+      if (frame != aFrame) {
+        nsLayoutUtils::TransformRect(frame, aFrame, *childrenRect);
+      }
+      unionRect = unionRect.Union(*childrenRect);
     }
-    unionRect = unionRect.Union(frameRect);
   }
 
   return unionRect;
