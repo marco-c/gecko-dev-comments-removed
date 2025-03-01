@@ -72,7 +72,14 @@ bool Compressor::init() {
   
   
   
-  int ret = deflateInit2(&zs, Z_BEST_SPEED, Z_DEFLATED, WindowBits, 8,
+  
+  
+#ifdef USE_LIBZ_RS
+#  define COMPRESSION_LEVEL 2
+#else
+#  define COMPRESSION_LEVEL Z_BEST_SPEED
+#endif
+  int ret = deflateInit2(&zs, COMPRESSION_LEVEL, Z_DEFLATED, WindowBits, 8,
                          Z_DEFAULT_STRATEGY);
   if (ret != Z_OK) {
     MOZ_ASSERT(ret == Z_MEM_ERROR);
