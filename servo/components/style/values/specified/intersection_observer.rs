@@ -4,6 +4,8 @@
 
 
 
+
+
 use crate::parser::{Parse, ParserContext};
 use crate::values::computed::{self, Length, LengthPercentage};
 use crate::values::generics::rect::Rect;
@@ -42,9 +44,9 @@ fn parse_pixel_or_percent<'i, 't>(
 
 
 #[repr(transparent)]
-pub struct IntersectionObserverRootMargin(pub Rect<LengthPercentage>);
+pub struct IntersectionObserverMargin(pub Rect<LengthPercentage>);
 
-impl Parse for IntersectionObserverRootMargin {
+impl Parse for IntersectionObserverMargin {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -52,12 +54,12 @@ impl Parse for IntersectionObserverRootMargin {
         use crate::Zero;
         if input.is_exhausted() {
             
-            return Ok(IntersectionObserverRootMargin(Rect::all(
+            return Ok(IntersectionObserverMargin(Rect::all(
                 LengthPercentage::zero(),
             )));
         }
         let rect = Rect::parse_with(context, input, parse_pixel_or_percent)?;
-        Ok(IntersectionObserverRootMargin(rect))
+        Ok(IntersectionObserverMargin(rect))
     }
 }
 
@@ -65,7 +67,7 @@ impl Parse for IntersectionObserverRootMargin {
 
 
 
-impl ToCss for IntersectionObserverRootMargin {
+impl ToCss for IntersectionObserverMargin {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: fmt::Write,
