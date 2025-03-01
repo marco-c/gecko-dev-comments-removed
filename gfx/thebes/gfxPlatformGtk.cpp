@@ -320,18 +320,13 @@ void gfxPlatformGtk::InitWebRenderConfig() {
   }
 
   FeatureState& feature = gfxConfig::GetFeature(Feature::WEBRENDER_COMPOSITOR);
-#ifdef RELEASE_OR_BETA
-  feature.ForceDisable(FeatureStatus::Blocked,
-                       "Cannot be enabled in release or beta",
-                       "FEATURE_FAILURE_DISABLE_RELEASE_OR_BETA"_ns);
-#else
   if (feature.IsEnabled()) {
     if (!IsWaylandDisplay()) {
       feature.ForceDisable(FeatureStatus::Unavailable,
                            "Wayland support missing",
                            "FEATURE_FAILURE_NO_WAYLAND"_ns);
     }
-#  ifdef MOZ_WAYLAND
+#ifdef MOZ_WAYLAND
     else if (gfxConfig::IsEnabled(Feature::WEBRENDER) &&
              !gfxConfig::IsEnabled(Feature::DMABUF)) {
       
@@ -345,9 +340,8 @@ void gfxPlatformGtk::InitWebRenderConfig() {
                            "Requires wp_viewporter protocol support",
                            "FEATURE_FAILURE_REQUIRES_WPVIEWPORTER"_ns);
     }
-#  endif  
+#endif  
   }
-#endif    
 
   gfxVars::SetUseWebRenderCompositor(feature.IsEnabled());
 }
