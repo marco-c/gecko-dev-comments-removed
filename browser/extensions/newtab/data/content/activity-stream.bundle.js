@@ -265,6 +265,7 @@ for (const type of [
   "WALLPAPERS_SET",
   "WALLPAPER_CATEGORY_CLICK",
   "WALLPAPER_CLICK",
+  "WALLPAPER_UPLOAD",
   "WEATHER_IMPRESSION",
   "WEATHER_LOAD_ERROR",
   "WEATHER_LOCATION_DATA_UPDATE",
@@ -11234,9 +11235,28 @@ const WallpapersSection = (0,external_ReactRedux_namespaceObject.connect)(state 
 
 
 
+const PREF_WALLPAPER_UPLOADED_PREVIOUSLY = "newtabWallpapers.customWallpaper.uploadedPreviously";
+
+
+
+function debounce(func, wait) {
+  let timer;
+  return (...args) => {
+    if (timer) {
+      return;
+    }
+    let wakeUp = () => {
+      timer = null;
+    };
+    timer = setTimeout(wakeUp, wait);
+    func.apply(this, args);
+  };
+}
 class _WallpaperCategories extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
+    this.handleColorInput = this.handleColorInput.bind(this);
+    this.debouncedHandleChange = debounce(this.handleChange.bind(this), 999);
     this.handleChange = this.handleChange.bind(this);
     this.handleReset = this.handleReset.bind(this);
     this.handleCategory = this.handleCategory.bind(this);
@@ -11258,18 +11278,35 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
   componentDidMount() {
     this.prefersDarkQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
   }
+  handleColorInput(event) {
+    let {
+      id
+    } = event.target;
+    
+    id = `solid-color-picker-${event.target.value}`;
+    const rgbColors = this.getRGBColors(event.target.value);
+
+    
+    event.target.style.backgroundColor = `rgb(${rgbColors.toString()})`;
+    this.setState({
+      customHexValue: event.target.style.backgroundColor
+    });
+
+    
+    this.props.setPref("newtabWallpapers.wallpaper", id);
+  }
+
+  
+  
+  
   handleChange(event) {
     let {
       id
     } = event.target;
+
+    
     if (id === "solid-color-picker") {
       id = `solid-color-picker-${event.target.value}`;
-      const rgbColors = this.getRGBColors(event.target.value);
-      event.target.style.backgroundColor = `rgb(${rgbColors.toString()})`;
-      event.target.checked = true;
-      this.setState({
-        customHexValue: event.target.style.backgroundColor
-      });
     }
     this.props.setPref("newtabWallpapers.wallpaper", id);
     this.handleUserEvent(actionTypes.WALLPAPER_CLICK, {
@@ -11373,7 +11410,16 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
   handleUpload() {
     
     
+
     
+    
+    
+    const uploadedPreviously = this.props.Prefs.values[PREF_WALLPAPER_UPLOADED_PREVIOUSLY];
+    this.handleUserEvent(actionTypes.WALLPAPER_UPLOAD, {
+      had_uploaded_previously: !!uploadedPreviously,
+      had_previous_wallpaper: !!this.props.activeWallpaper
+    });
+    this.props.setPref(PREF_WALLPAPER_UPLOADED_PREVIOUSLY, true);
   }
   handleBack() {
     this.setState({
@@ -11455,7 +11501,8 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     let colorPickerInput = showColorPicker && activeCategory === "solid-colors" ? external_React_default().createElement("div", {
       className: "theme-custom-color-picker"
     }, external_React_default().createElement("input", {
-      onChange: this.handleChange,
+      onInput: this.handleColorInput,
+      onChange: this.debouncedHandleChange,
       onClick: () => this.setActiveId("solid-color-picker") 
       ,
       type: "color",
@@ -13062,7 +13109,7 @@ const PrefsButton = ({
 
 
 
-function debounce(func, wait) {
+function Base_debounce(func, wait) {
   let timer;
   return (...args) => {
     if (timer) {
@@ -13126,7 +13173,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.openCustomizationMenu = this.openCustomizationMenu.bind(this);
     this.closeCustomizationMenu = this.closeCustomizationMenu.bind(this);
     this.handleOnKeyDown = this.handleOnKeyDown.bind(this);
-    this.onWindowScroll = debounce(this.onWindowScroll.bind(this), 5);
+    this.onWindowScroll = Base_debounce(this.onWindowScroll.bind(this), 5);
     this.setPref = this.setPref.bind(this);
     this.shouldShowWallpapersHighlight = this.shouldShowWallpapersHighlight.bind(this);
     this.updateWallpaper = this.updateWallpaper.bind(this);
