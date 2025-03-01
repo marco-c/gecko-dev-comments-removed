@@ -423,7 +423,7 @@ bool StackMapGenerator::createStackMap(
   }
 
   
-  if (!stackMaps_->add(assemblerOffset, stackMap)) {
+  if (!stackMaps_->add((uint8_t*)(uintptr_t)assemblerOffset, stackMap)) {
     stackMap->destroy();
     return false;
   }

@@ -1516,8 +1516,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   
   const CodeBlock& codeBlock = inst.code().funcCodeBlock(fe.funcIndex());
   const CodeRange& codeRange = codeBlock.codeRange(fe);
-  void* callee = const_cast<uint8_t*>(codeBlock.base()) +
-                 codeRange.funcUncheckedCallEntry();
+  void* callee = codeBlock.segment->base() + codeRange.funcUncheckedCallEntry();
 
   masm.assertStackAlignment(WasmStackAlignment);
   MoveSPForJitABI(masm);
@@ -1892,7 +1891,8 @@ static bool AddStackCheckForImportFunctionEntry(jit::MacroAssembler& masm,
   
   
   MOZ_ASSERT(stackMap);
-  if (stackMap && !stackMaps->add(trapInsnOffset.offset(), stackMap)) {
+  if (stackMap &&
+      !stackMaps->add((uint8_t*)(uintptr_t)trapInsnOffset.offset(), stackMap)) {
     stackMap->destroy();
     return false;
   }

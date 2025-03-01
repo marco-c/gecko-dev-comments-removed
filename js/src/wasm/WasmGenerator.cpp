@@ -525,9 +525,15 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
     }
   }
 
-  
-  if (!codeBlock_->stackMaps.appendAll(code.stackMaps, offsetInModule)) {
-    return false;
+  for (size_t i = 0; i < code.stackMaps.length(); i++) {
+    StackMaps::Maplet maplet = code.stackMaps.move(i);
+    maplet.offsetBy(offsetInModule);
+    if (!codeBlock_->stackMaps.add(maplet)) {
+      
+      
+      maplet.map->destroy();
+      return false;
+    }
   }
 
   auto unwindInfoOp = [=](uint32_t, CodeRangeUnwindInfo* i) {
@@ -802,7 +808,8 @@ static void CheckCodeBlock(const CodeBlock& codeBlock) {
   }
 
   codeBlock.callSites.checkInvariants();
-  codeBlock.trapSites.checkInvariants(codeBlock.base());
+  codeBlock.trapSites.checkInvariants(
+      (const uint8_t*)(codeBlock.segment->base()));
 
   last = 0;
   for (const CodeRangeUnwindInfo& info : codeBlock.codeRangeUnwindInfos) {
@@ -819,8 +826,18 @@ static void CheckCodeBlock(const CodeBlock& codeBlock) {
     last = tryNote.tryBodyBegin();
   }
 
-  codeBlock.stackMaps.checkInvariants(codeBlock.base());
+  
+  
+  const uint8_t* previousNextInsnAddr = nullptr;
+  for (size_t i = 0; i < codeBlock.stackMaps.length(); i++) {
+    const StackMaps::Maplet& maplet = codeBlock.stackMaps.get(i);
+    MOZ_ASSERT_IF(i > 0, uintptr_t(maplet.nextInsnAddr) >
+                             uintptr_t(previousNextInsnAddr));
+    previousNextInsnAddr = maplet.nextInsnAddr;
 
+    MOZ_ASSERT(IsPlausibleStackMapKey(maplet.nextInsnAddr),
+               "wasm stackmap does not reference a valid insn");
+  }
 #endif
 }
 
@@ -872,6 +889,10 @@ UniqueCodeBlock ModuleGenerator::finishCodeBlock(UniqueLinkData* linkData) {
   }
 
   
+  
+  codeBlock_->stackMaps.finishAndSort();
+
+  
   std::sort(codeBlock_->tryNotes.begin(), codeBlock_->tryNotes.end());
 
   
@@ -906,6 +927,12 @@ UniqueCodeBlock ModuleGenerator::finishCodeBlock(UniqueLinkData* linkData) {
     }
     codeBlock_->codeBase = codeStart;
     codeBlock_->codeLength = codeLength;
+
+    
+    
+    
+    uint32_t codeBlockOffset = codeStart - codeBlock_->segment->base();
+    codeBlock_->offsetMetadataBy(codeBlockOffset);
   } else {
     
     codeBlock_->segment = CodeSegment::createFromMasm(
@@ -917,6 +944,10 @@ UniqueCodeBlock ModuleGenerator::finishCodeBlock(UniqueLinkData* linkData) {
     codeBlock_->codeBase = codeBlock_->segment->base();
     codeBlock_->codeLength = codeBlock_->segment->lengthBytes();
   }
+
+  
+  
+  codeBlock_->stackMaps.offsetBy(uintptr_t(codeBlock_->segment->base()));
 
   
   
