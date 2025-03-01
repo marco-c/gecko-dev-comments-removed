@@ -13,6 +13,7 @@
 #define jit_MIR_h
 
 #include "mozilla/Array.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/HashFunctions.h"
 #ifdef JS_JITSPEW
 #  include "mozilla/Attributes.h"  
@@ -741,7 +742,14 @@ class MDefinition : public MNode {
   bool mightBeMagicType() const;
 
   
-  bool definitelyType(std::initializer_list<MIRType> types) const;
+  
+  
+  using MIRTypeEnumSet = mozilla::EnumSet<MIRType, uint32_t>;
+  static_assert(static_cast<size_t>(MIRType::Last) <
+                sizeof(MIRTypeEnumSet::serializedType) * CHAR_BIT);
+
+  
+  bool definitelyType(MIRTypeEnumSet types) const;
 
   
   
