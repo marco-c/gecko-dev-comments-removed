@@ -16179,52 +16179,28 @@ bool Document::SetOrientationPendingPromise(Promise* aPromise) {
   return true;
 }
 
-void Document::MaybeSkipTransitionAfterVisibilityChange() {
-  if (Hidden() && mActiveViewTransition) {
-    mActiveViewTransition->SkipTransition(SkipTransitionReason::DocumentHidden);
-  }
-}
-
-
 void Document::UpdateVisibilityState(DispatchVisibilityChange aDispatchEvent) {
-  const dom::VisibilityState visibilityState = ComputeVisibilityState();
-  if (mVisibilityState == visibilityState) {
-    
-    return;
-  }
-  
-  mVisibilityState = visibilityState;
-  if (aDispatchEvent == DispatchVisibilityChange::Yes) {
-    
-    
-    nsContentUtils::DispatchTrustedEvent(this, this, u"visibilitychange"_ns,
-                                         CanBubble::eYes, Cancelable::eNo);
-  }
-  
+  dom::VisibilityState oldState = mVisibilityState;
+  mVisibilityState = ComputeVisibilityState();
+  if (oldState != mVisibilityState) {
+    if (aDispatchEvent == DispatchVisibilityChange::Yes) {
+      nsContentUtils::DispatchTrustedEvent(this, this, u"visibilitychange"_ns,
+                                           CanBubble::eYes, Cancelable::eNo);
+    }
+    NotifyActivityChanged();
+    if (mVisibilityState == dom::VisibilityState::Visible) {
+      MaybeActiveMediaComponents();
+    }
 
-  
-  
-  const bool visible = !Hidden();
-  if (mActiveViewTransition && !visible) {
+    bool visible = !Hidden();
+    for (auto* listener : mWorkerListeners) {
+      listener->OnVisible(visible);
+    }
+
     
-    
-    Dispatch(
-        NewRunnableMethod("MaybeSkipTransitionAfterVisibilityChange", this,
-                          &Document::MaybeSkipTransitionAfterVisibilityChange));
-  }
-
-  NotifyActivityChanged();
-  if (visible) {
-    MaybeActiveMediaComponents();
-  }
-
-  for (auto* listener : mWorkerListeners) {
-    listener->OnVisible(visible);
-  }
-
-  
-  if (!visible) {
-    UnlockAllWakeLocks(WakeLockType::Screen);
+    if (!visible) {
+      UnlockAllWakeLocks(WakeLockType::Screen);
+    }
   }
 }
 

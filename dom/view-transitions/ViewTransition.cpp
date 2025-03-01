@@ -126,7 +126,6 @@ struct ViewTransition::CapturedElement {
       : mOldState(aFrame, aSnapshotContainingBlockSize) {}
 
   
-  nsTArray<Keyframe> mGroupKeyframes;
   
   RefPtr<StyleLockedDeclarationBlock> mGroupRule;
   
@@ -385,61 +384,6 @@ static StyleLockedDeclarationBlock* EnsureRule(
 }
 
 
-static nsTArray<Keyframe> BuildGroupKeyframes(
-    Document* aDoc, const CSSToCSSMatrix4x4Flagged& aTransform,
-    const nsSize& aSize) {
-  nsTArray<Keyframe> result;
-  auto& firstKeyframe = *result.AppendElement();
-  firstKeyframe.mOffset = Some(0.0);
-  PropertyValuePair transform{
-      AnimatedPropertyID(eCSSProperty_transform),
-      Servo_DeclarationBlock_CreateEmpty().Consume(),
-  };
-  SetProp(transform.mServoDeclarationBlock, aDoc, eCSSProperty_transform,
-          aTransform);
-  PropertyValuePair width{
-      AnimatedPropertyID(eCSSProperty_width),
-      Servo_DeclarationBlock_CreateEmpty().Consume(),
-  };
-  CSSSize cssSize = CSSSize::FromAppUnits(aSize);
-  SetProp(width.mServoDeclarationBlock, aDoc, eCSSProperty_width, cssSize.width,
-          eCSSUnit_Pixel);
-  PropertyValuePair height{
-      AnimatedPropertyID(eCSSProperty_height),
-      Servo_DeclarationBlock_CreateEmpty().Consume(),
-  };
-  SetProp(width.mServoDeclarationBlock, aDoc, eCSSProperty_height,
-          cssSize.height, eCSSUnit_Pixel);
-  firstKeyframe.mPropertyValues.AppendElement(std::move(transform));
-  firstKeyframe.mPropertyValues.AppendElement(std::move(width));
-  firstKeyframe.mPropertyValues.AppendElement(std::move(height));
-
-  auto& lastKeyframe = *result.AppendElement();
-  lastKeyframe.mOffset = Some(1.0);
-  lastKeyframe.mPropertyValues.AppendElement(
-      PropertyValuePair{AnimatedPropertyID(eCSSProperty_transform)});
-  lastKeyframe.mPropertyValues.AppendElement(
-      PropertyValuePair{AnimatedPropertyID(eCSSProperty_width)});
-  lastKeyframe.mPropertyValues.AppendElement(
-      PropertyValuePair{AnimatedPropertyID(eCSSProperty_height)});
-  return result;
-}
-
-bool ViewTransition::GetGroupKeyframes(nsAtom* aAnimationName,
-                                       nsTArray<Keyframe>& aResult) const {
-  MOZ_ASSERT(StringBeginsWith(nsDependentAtomString(aAnimationName),
-                              kGroupAnimPrefix));
-  RefPtr<nsAtom> transitionName = NS_Atomize(Substring(
-      nsDependentAtomString(aAnimationName), kGroupAnimPrefix.Length()));
-  auto* el = mNamedElements.Get(transitionName);
-  if (NS_WARN_IF(!el) || NS_WARN_IF(el->mGroupKeyframes.IsEmpty())) {
-    return false;
-  }
-  aResult = el->mGroupKeyframes.Clone();
-  return true;
-}
-
-
 void ViewTransition::SetupTransitionPseudoElements() {
   MOZ_ASSERT(!mViewTransitionRoot);
 
@@ -535,13 +479,11 @@ void ViewTransition::SetupTransitionPseudoElements() {
     
     
     if (capturedElement.mOldState.mTriedImage && capturedElement.mNewElement) {
-      NS_ConvertUTF16toUTF8 dynamicAnimationName(
-          kGroupAnimPrefix + nsDependentAtomString(transitionName));
+      nsAutoCString dynamicAnimationName;
+      transitionName->ToUTF8String(dynamicAnimationName);
+      dynamicAnimationName.InsertLiteral("-ua-view-transition-group-anim-", 0);
 
-      capturedElement.mGroupKeyframes =
-          BuildGroupKeyframes(mDocument, capturedElement.mOldState.mTransform,
-                              capturedElement.mOldState.mSize);
-
+      
       
       SetProp(EnsureRule(capturedElement.mGroupRule), mDocument,
               eCSSProperty_animation_name, dynamicAnimationName);
@@ -645,14 +587,12 @@ void ViewTransition::Activate() {
   }
 
   
-  
   if (auto skipReason = CaptureNewState()) {
-    
-    
-    ClearNamedElements();
     
     return SkipTransition(*skipReason);
   }
+
+  
 
   
   SetupTransitionPseudoElements();
@@ -875,20 +815,16 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
           SkipTransitionReason::DuplicateTransitionNameCapturingOldState);
       return false;
     }
-    aFrame->AddStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION);
+    
+    
     captureElements.AppendElement(std::make_pair(aFrame, name));
     return true;
   });
 
   if (result) {
-    for (auto& [f, name] : captureElements) {
-      f->RemoveStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION);
-    }
     return result;
   }
 
-  
-  
   
   for (auto& [f, name] : captureElements) {
     MOZ_ASSERT(f);
@@ -896,8 +832,10 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
     auto capture =
         MakeUnique<CapturedElement>(f, mInitialSnapshotContainingBlockSize);
     mNamedElements.InsertOrUpdate(name, std::move(capture));
-    f->RemoveStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION);
   }
+
+  
+  
 
   return result;
 }
@@ -929,7 +867,6 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
     auto& capturedElement = mNamedElements.LookupOrInsertWith(
         name, [&] { return MakeUnique<CapturedElement>(); });
     capturedElement->mNewElement = aFrame->GetContent()->AsElement();
-    aFrame->AddStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION);
     return true;
   });
   return result;
@@ -961,7 +898,7 @@ void ViewTransition::Setup() {
 
 void ViewTransition::HandleFrame() {
   
-  const bool hasActiveAnimations = CheckForActiveAnimations();
+  bool hasActiveAnimations = CheckForActiveAnimations();
 
   
   if (!hasActiveAnimations) {
@@ -1053,10 +990,6 @@ static bool CheckForActiveAnimationsForEachPseudo(
 bool ViewTransition::CheckForActiveAnimations() const {
   MOZ_ASSERT(mDocument);
 
-  if (StaticPrefs::dom_viewTransitions_remain_active()) {
-    return true;
-  }
-
   const Element* root = mDocument->GetRootElement();
   if (!root) {
     
@@ -1099,13 +1032,7 @@ bool ViewTransition::CheckForActiveAnimations() const {
 }
 
 void ViewTransition::ClearNamedElements() {
-  for (auto& entry : mNamedElements) {
-    if (auto* element = entry.GetData()->mNewElement.get()) {
-      if (nsIFrame* f = element->GetPrimaryFrame()) {
-        f->RemoveStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION);
-      }
-    }
-  }
+  
   mNamedElements.Clear();
 }
 
@@ -1205,7 +1132,7 @@ void ViewTransition::SkipTransition(
             "Skipped ViewTransition due to another transition starting");
         break;
       case SkipTransitionReason::DocumentHidden:
-        readyPromise->MaybeRejectWithInvalidStateError(
+        readyPromise->MaybeRejectWithAbortError(
             "Skipped ViewTransition due to document being hidden");
         break;
       case SkipTransitionReason::Timeout:

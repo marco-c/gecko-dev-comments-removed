@@ -3868,7 +3868,6 @@ class Document : public nsINode,
   void ClearActiveViewTransition();
   void PerformPendingViewTransitionOperations();
   void EnsureViewTransitionOperationsHappen();
-  void MaybeSkipTransitionAfterVisibilityChange();
 
   
   PermissionDelegateHandler* GetPermissionDelegateHandler();
