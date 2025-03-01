@@ -1507,7 +1507,7 @@ function PartitionDurationFormatPattern(
 
 
 
-function Intl_DurationFormat_format(duration) {
+function Intl_DurationFormat_format(durationLike) {
   
   var df = this;
 
@@ -1516,21 +1516,27 @@ function Intl_DurationFormat_format(duration) {
     return callFunction(
       intl_CallDurationFormatMethodIfWrapped,
       this,
-      duration,
+      durationLike,
       "Intl_DurationFormat_format"
     );
   }
 
   
-  var record = ToDurationRecord(duration);
+#ifdef JS_HAS_TEMPORAL_API
+  var duration = ToTemporalDuration(durationLike);
 
   
-  getDurationFormatInternals(df);
+  if (duration === null) {
+    duration = ToDurationRecord(durationLike);
+  }
+#else
+  var duration = ToDurationRecord(durationLike);
+#endif
 
   
   return PartitionDurationFormatPattern(
     df,
-    record,
+    duration,
      false
   );
 }
@@ -1538,7 +1544,7 @@ function Intl_DurationFormat_format(duration) {
 
 
 
-function Intl_DurationFormat_formatToParts(duration) {
+function Intl_DurationFormat_formatToParts(durationLike) {
   
   var df = this;
 
@@ -1547,19 +1553,25 @@ function Intl_DurationFormat_formatToParts(duration) {
     return callFunction(
       intl_CallDurationFormatMethodIfWrapped,
       this,
-      duration,
+      durationLike,
       "Intl_DurationFormat_formatToParts"
     );
   }
 
   
-  var record = ToDurationRecord(duration);
+#ifdef JS_HAS_TEMPORAL_API
+  var duration = ToTemporalDuration(durationLike);
 
   
-  getDurationFormatInternals(df);
+  if (duration === null) {
+    duration = ToDurationRecord(durationLike);
+  }
+#else
+  var duration = ToDurationRecord(durationLike);
+#endif
 
   
-  return PartitionDurationFormatPattern(df, record,  true);
+  return PartitionDurationFormatPattern(df, duration,  true);
 }
 
 
