@@ -27,7 +27,7 @@ function testBasic() {
     assertEq(log,
         `modify-prop: a
 modify-prop: a
-change-prop: a`);
+modify-prop: a`);
 }
 
 for (var i = 0; i < 20; i++) {

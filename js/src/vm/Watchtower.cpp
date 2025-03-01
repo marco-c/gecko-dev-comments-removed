@@ -346,12 +346,14 @@ bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
 }
 
 
-bool Watchtower::watchPropertyChangeSlow(JSContext* cx,
-                                         Handle<NativeObject*> obj, HandleId id,
-                                         PropertyInfo propInfo,
-                                         PropertyFlags newFlags) {
-  MOZ_ASSERT(watchesPropertyChange(obj));
+bool Watchtower::watchPropertyFlagsChangeSlow(JSContext* cx,
+                                              Handle<NativeObject*> obj,
+                                              HandleId id,
+                                              PropertyInfo propInfo,
+                                              PropertyFlags newFlags) {
+  MOZ_ASSERT(watchesPropertyFlagsChange(obj));
   MOZ_ASSERT(obj->lookupPure(id).ref() == propInfo);
+  MOZ_ASSERT(propInfo.flags() != newFlags);
 
   if (obj->isUsedAsPrototype() && !id.isInt()) {
     InvalidateMegamorphicCache(cx, obj);
@@ -366,12 +368,6 @@ bool Watchtower::watchPropertyChangeSlow(JSContext* cx,
     if (wasAccessor != isAccessor) {
       obj->as<GlobalObject>().bumpGenerationCount();
     }
-  }
-
-  
-  
-  if (MOZ_UNLIKELY(obj->hasFuseProperty())) {
-    MaybePopFuses(cx, obj, id);
   }
 
   if (MOZ_UNLIKELY(obj->useWatchtowerTestingLog())) {
@@ -392,9 +388,12 @@ bool Watchtower::watchPropertyModificationSlow(
     typename MaybeRooted<Value, allowGC>::HandleType value,
     PropertyInfo propInfo) {
   MOZ_ASSERT(watchesPropertyModification(obj));
-  MOZ_ASSERT(propInfo.isDataDescriptor());
 
-  if (propInfo.isDataProperty() && obj->getSlot(propInfo.slot()) == value) {
+  
+  
+  
+
+  if (propInfo.hasSlot() && obj->getSlot(propInfo.slot()) == value) {
     
     return true;
   }
