@@ -40,8 +40,8 @@ class RValueAllocation {
     CST_UNDEFINED = 0x01,
     CST_NULL = 0x02,
     DOUBLE_REG = 0x03,
-    ANY_FLOAT_REG = 0x04,
-    ANY_FLOAT_STACK = 0x05,
+    FLOAT32_REG = 0x04,
+    FLOAT32_STACK = 0x05,
 #if defined(JS_NUNBOX32)
     UNTYPED_REG_REG = 0x06,
     UNTYPED_REG_STACK = 0x07,
@@ -212,11 +212,11 @@ class RValueAllocation {
   }
 
   
-  static RValueAllocation AnyFloat(FloatRegister reg) {
-    return RValueAllocation(ANY_FLOAT_REG, payloadOfFloatRegister(reg));
+  static RValueAllocation Float32(FloatRegister reg) {
+    return RValueAllocation(FLOAT32_REG, payloadOfFloatRegister(reg));
   }
-  static RValueAllocation AnyFloat(int32_t offset) {
-    return RValueAllocation(ANY_FLOAT_STACK, payloadOfStackOffset(offset));
+  static RValueAllocation Float32(int32_t offset) {
+    return RValueAllocation(FLOAT32_STACK, payloadOfStackOffset(offset));
   }
 
   

@@ -180,14 +180,14 @@ const RValueAllocation::Layout& RValueAllocation::layoutFromMode(Mode mode) {
                                                       "double"};
       return layout;
     }
-    case ANY_FLOAT_REG: {
+    case FLOAT32_REG: {
       static const RValueAllocation::Layout layout = {PAYLOAD_FPU, PAYLOAD_NONE,
-                                                      "float register content"};
+                                                      "float32"};
       return layout;
     }
-    case ANY_FLOAT_STACK: {
-      static const RValueAllocation::Layout layout = {
-          PAYLOAD_STACK_OFFSET, PAYLOAD_NONE, "float register content"};
+    case FLOAT32_STACK: {
+      static const RValueAllocation::Layout layout = {PAYLOAD_STACK_OFFSET,
+                                                      PAYLOAD_NONE, "float32"};
       return layout;
     }
 #if defined(JS_NUNBOX32)
