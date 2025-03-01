@@ -208,10 +208,37 @@ class nsTextFragment final {
 
 
 
-  char16_t CharAt(uint32_t aIndex) const {
+  [[nodiscard]] char16_t CharAt(uint32_t aIndex) const {
     MOZ_ASSERT(aIndex < mState.mLength, "bad index");
     return mState.mIs2b ? Get2b()[aIndex]
                         : static_cast<unsigned char>(m1b[aIndex]);
+  }
+  [[nodiscard]] char16_t SafeCharAt(uint32_t aIndex) const {
+    return MOZ_LIKELY(mState.mLength < aIndex) ? CharAt(aIndex)
+                                               : static_cast<char16_t>(0);
+  }
+
+  
+
+
+
+  [[nodiscard]] char16_t FirstChar() const {
+    MOZ_ASSERT(mState.mLength);
+    return CharAt(0u);
+  }
+  [[nodiscard]] char16_t SafeFirstChar() const {
+    return MOZ_LIKELY(mState.mLength) ? FirstChar() : static_cast<char16_t>(0);
+  }
+  
+
+
+
+  [[nodiscard]] char16_t LastChar() const {
+    MOZ_ASSERT(mState.mLength);
+    return CharAt(mState.mLength - 1);
+  }
+  [[nodiscard]] char16_t SafeLastChar() const {
+    return MOZ_LIKELY(mState.mLength) ? LastChar() : static_cast<char16_t>(0);
   }
 
   
@@ -286,6 +313,8 @@ class nsTextFragment final {
 
   [[nodiscard]] bool TextEquals(const nsTextFragment& aOther) const;
 
+  
+  
   constexpr static uint32_t kNotFound = UINT32_MAX;
 
   [[nodiscard]] uint32_t FindChar(char aChar, uint32_t aOffset = 0) const {
@@ -335,6 +364,45 @@ class nsTextFragment final {
     return kNotFound;
   }
 
+  
+
+
+
+
+
+
+
+  [[nodiscard]] uint32_t FindFirstDifferentCharOffset(
+      const nsAString& aStr, uint32_t aOffsetInFragment = 0u) const {
+    return FindFirstDifferentCharOffsetInternal(aStr, aOffsetInFragment);
+  }
+  [[nodiscard]] uint32_t FindFirstDifferentCharOffset(
+      const nsACString& aStr, uint32_t aOffsetInFragment = 0u) const {
+    return FindFirstDifferentCharOffsetInternal(aStr, aOffsetInFragment);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] uint32_t RFindFirstDifferentCharOffset(
+      const nsAString& aStr, uint32_t aOffsetInFragment = UINT32_MAX) const {
+    return RFindFirstDifferentCharOffsetInternal(aStr, aOffsetInFragment);
+  }
+  [[nodiscard]] uint32_t RFindFirstDifferentCharOffset(
+      const nsACString& aStr, uint32_t aOffsetInFragment = UINT32_MAX) const {
+    return RFindFirstDifferentCharOffsetInternal(aStr, aOffsetInFragment);
+  }
+
  private:
   void ReleaseText();
 
@@ -353,6 +421,97 @@ class nsTextFragment final {
     uint32_t mAllBits;
     FragmentBits mState;
   };
+
+  
+
+
+
+
+
+
+  template <typename nsAXString>
+  [[nodiscard]] uint32_t FindFirstDifferentCharOffsetInternal(
+      const nsAXString& aStr, uint32_t aOffsetInFragment) const {
+    static_assert(std::is_same_v<nsAXString, nsAString> ||
+                  std::is_same_v<nsAXString, nsACString>);
+    MOZ_ASSERT(!aStr.IsEmpty());
+    const uint32_t length = GetLength();
+    MOZ_ASSERT(aOffsetInFragment <= length);
+    if (NS_WARN_IF(aStr.IsEmpty()) || NS_WARN_IF(length <= aOffsetInFragment) ||
+        NS_WARN_IF(length - aOffsetInFragment < aStr.Length())) {
+      return kNotFound;
+    }
+    if (Is2b()) {
+      const auto* ch = aStr.BeginReading();
+      
+      const char16_t* ourCh = Get2b() + aOffsetInFragment;
+      const auto* const end = aStr.EndReading();
+      const char16_t* const ourEnd = Get2b() + length;
+      for (; ch != end && ourCh != ourEnd; ch++, ourCh++) {
+        if (*ch != *ourCh) {
+          return ourCh - Get2b();
+        }
+      }
+      return kNotFound;
+    }
+    const auto* ch = aStr.BeginReading();
+    
+    const char* ourCh = Get1b() + aOffsetInFragment;
+    const auto* const end = aStr.EndReading();
+    const char* ourEnd = Get1b() + length;
+    for (; ch != end && ourCh != ourEnd; ch++, ourCh++) {
+      if (*ch != *ourCh) {
+        return ourCh - Get1b();
+      }
+    }
+    return kNotFound;
+  }
+
+  
+
+
+
+
+
+
+  template <typename nsAXString>
+  [[nodiscard]] uint32_t RFindFirstDifferentCharOffsetInternal(
+      const nsAXString& aStr, uint32_t aOffsetInFragment) const {
+    static_assert(std::is_same_v<nsAXString, nsAString> ||
+                  std::is_same_v<nsAXString, nsACString>);
+    MOZ_ASSERT(!aStr.IsEmpty());
+    const uint32_t length = GetLength();
+    MOZ_ASSERT(aOffsetInFragment <= length);
+    aOffsetInFragment = std::min(length, aOffsetInFragment);
+    if (NS_WARN_IF(aStr.IsEmpty()) || NS_WARN_IF(!aOffsetInFragment) ||
+        NS_WARN_IF(aOffsetInFragment < aStr.Length())) {
+      return kNotFound;
+    }
+    if (Is2b()) {
+      const auto* ch = aStr.EndReading() - 1;
+      
+      const char16_t* ourCh = Get2b() + aOffsetInFragment - 1;
+      const auto* const end = aStr.BeginReading() - 1;
+      const char16_t* const ourEnd = Get2b() - 1;
+      for (; ch != end && ourCh != ourEnd; ch--, ourCh--) {
+        if (*ch != *ourCh) {
+          return ourCh - Get2b();
+        }
+      }
+      return kNotFound;
+    }
+    const auto* ch = aStr.EndReading() - 1;
+    
+    const char* ourCh = Get1b() + aOffsetInFragment - 1;
+    const auto* const end = aStr.BeginReading() - 1;
+    const char* const ourEnd = Get1b() - 1;
+    for (; ch != end && ourCh != ourEnd; ch--, ourCh--) {
+      if (*ch != *ourCh) {
+        return ourCh - Get1b();
+      }
+    }
+    return kNotFound;
+  }
 };
 
 #endif 
