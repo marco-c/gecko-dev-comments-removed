@@ -108,6 +108,21 @@ pub type WorldVector2D = Vector2D<f32, WorldPixel>;
 pub type WorldVector3D = Vector3D<f32, WorldPixel>;
 
 
+
+
+
+#[derive(Hash, Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, Ord, PartialOrd, Deserialize, Serialize, PeekPoke)]
+pub struct VisPixel;
+
+pub type VisRect = Box2D<f32, VisPixel>;
+
+
+pub fn vis_rect_as_world(r: VisRect) -> WorldRect {
+    r.cast_unit()
+}
+
+
+
 #[derive(Hash, Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Tiles;
 pub type TileOffset = Point2D<i32, Tiles>;
