@@ -166,11 +166,10 @@ class nsUrlClassifierDBService::FeatureHolder final {
     
     
     nsTArray<nsCString> fragments;
-    nsresult rv = LookupCache::GetLookupFragments(aSpec, &fragments);
-    NS_ENSURE_SUCCESS(rv, rv);
+    LookupCache::GetLookupFragments(aSpec, &fragments);
 
     for (TableData* tableData : mTableData) {
-      rv = aWorker->DoSingleLocalLookupWithURIFragments(
+      nsresult rv = aWorker->DoSingleLocalLookupWithURIFragments(
           fragments, tableData->mTable, tableData->mResults);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
