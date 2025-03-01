@@ -6,19 +6,49 @@
 
 
 
+
+
 'use strict';
 
+async function createTranslator(options) {
+  return await test_driver.bless('Create translator', async () => {
+    return await ai.translator.create(options);
+  });
+}
+
 promise_test(async t => {
-  const translatorFactory = ai.translator;
-  assert_not_equals(translatorFactory, null);
-  const translator = await translatorFactory.create(
-      {sourceLanguage: 'en', targetLanguage: 'ja'});
+  const languagePair = {sourceLanguage: 'en', targetLanguage: 'ja'};
+
+  
+  
+  const createPromise = ai.translator.create(languagePair);
+  await promise_rejects_dom(t, 'NotAllowedError', createPromise);
+
+  
+  await createTranslator(languagePair);
+
+  
+  
+  
+  const capabilities = await ai.translator.capabilities();
+  const {sourceLanguage, targetLanguage} = languagePair;
+  assert_equals(
+      capabilities.languagePairAvailable(sourceLanguage, targetLanguage),
+      'readily');
+
+  
+  await ai.translator.create(languagePair);
+}, 'AITranslator.create() requires user activation when availability is "after-download".');
+
+promise_test(async t => {
+  const translator =
+      await createTranslator({sourceLanguage: 'en', targetLanguage: 'ja'});
   assert_equals(await translator.translate('hello'), 'こんにちは');
 }, 'Simple AITranslator.translate() call');
 
 promise_test(async () => {
   const translator =
-      await ai.translator.create({sourceLanguage: 'en', targetLanguage: 'ja'});
+      await createTranslator({sourceLanguage: 'en', targetLanguage: 'ja'});
   const streamingResponse = translator.translateStreaming('hello');
   assert_equals(
       Object.prototype.toString.call(streamingResponse),
@@ -32,14 +62,14 @@ promise_test(async () => {
 
 promise_test(async t => {
   const translator =
-      await ai.translator.create({sourceLanguage: 'en', targetLanguage: 'ja'});
+      await createTranslator({sourceLanguage: 'en', targetLanguage: 'ja'});
   assert_equals(translator.sourceLanguage, 'en');
   assert_equals(translator.targetLanguage, 'ja');
 }, 'AITranslator: sourceLanguage and targetLanguage are equal to their respective option passed in to AITranslatorFactory.create.')
 
 promise_test(async (t) => {
   const translator =
-      await ai.translator.create({sourceLanguage: 'en', targetLanguage: 'ja'});
+      await createTranslator({sourceLanguage: 'en', targetLanguage: 'ja'});
   translator.destroy();
   await promise_rejects_dom(
       t, 'InvalidStateError', translator.translate('hello'));
@@ -49,7 +79,7 @@ promise_test(async t => {
   const controller = new AbortController();
   controller.abort();
 
-  const createPromise = ai.translator.create(
+  const createPromise = createTranslator(
       {signal: controller.signal, sourceLanguage: 'en', targetLanguage: 'ja'});
 
   await promise_rejects_dom(t, 'AbortError', createPromise);
@@ -57,7 +87,7 @@ promise_test(async t => {
 
 promise_test(async t => {
   await testAbortPromise(t, signal => {
-    return ai.translator.create(
+    return createTranslator(
         {signal, sourceLanguage: 'en', targetLanguage: 'ja'});
   });
 }, 'Aborting AITranslatorFactory.create().');
@@ -67,7 +97,7 @@ promise_test(async t => {
   controller.abort();
 
   const translator =
-      await ai.translator.create({sourceLanguage: 'en', targetLanguage: 'ja'});
+      await createTranslator({sourceLanguage: 'en', targetLanguage: 'ja'});
   const translatePromise =
       translator.translate('hello', {signal: controller.signal});
 
@@ -76,7 +106,7 @@ promise_test(async t => {
 
 promise_test(async t => {
   const translator =
-      await ai.translator.create({sourceLanguage: 'en', targetLanguage: 'ja'});
+      await createTranslator({sourceLanguage: 'en', targetLanguage: 'ja'});
   await testAbortPromise(t, signal => {
     return translator.translate('hello', {signal});
   });
@@ -93,8 +123,7 @@ promise_test(async t => {
     });
   }
 
-  await ai.translator.create(
-      {sourceLanguage: 'en', targetLanguage: 'ja', monitor});
+  await createTranslator({sourceLanguage: 'en', targetLanguage: 'ja', monitor});
 
   
   assert_true(monitorCalled);
