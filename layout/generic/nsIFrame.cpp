@@ -59,6 +59,7 @@
 #include "nsFlexContainerFrame.h"
 #include "nsFocusManager.h"
 #include "nsFrameList.h"
+#include "nsFrameState.h"
 #include "nsTextControlFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsIBaseWindow.h"
@@ -1757,6 +1758,7 @@ bool nsIFrame::Extend3DContext(const nsStyleDisplay* aStyleDisplay,
          !GetClipPropClipRect(disp, effects, GetSize()) &&
          !SVGIntegrationUtils::UsingEffectsForFrame(this) &&
          !effects->HasMixBlendMode() &&
+         !ForcesStackingContextForViewTransition() &&
          disp->mIsolation != StyleIsolation::Isolate;
 }
 
@@ -2736,6 +2738,19 @@ Maybe<nsRect> nsIFrame::GetClipPropClipRect(const nsStyleDisplay* aDisp,
     rect.height = aSize.height - rect.y;
   }
   return Some(rect);
+}
+
+
+
+
+
+bool nsIFrame::ForcesStackingContextForViewTransition() const {
+  auto* style = Style();
+  return (style->StyleUIReset()->HasViewTransitionName() ||
+          HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) ||
+          style->StyleDisplay()->mWillChange.bits &
+              mozilla::StyleWillChangeBits::VIEW_TRANSITION_NAME) &&
+         !style->IsRootElementStyle();
 }
 
 
@@ -11566,6 +11581,11 @@ bool nsIFrame::IsStackingContext(const nsStyleDisplay* aStyleDisplay,
       return true;
     }
   }
+
+  if (ForcesStackingContextForViewTransition()) {
+    return true;
+  }
+
   
   
   if (aStyleDisplay->HasPerspectiveStyle() ||
@@ -11580,6 +11600,9 @@ bool nsIFrame::IsStackingContext(const nsStyleDisplay* aStyleDisplay,
       return true;
     }
   }
+  
+  
+  
   return aStyleEffects->mMixBlendMode != StyleBlend::Normal ||
          SVGIntegrationUtils::UsingEffectsForFrame(this) ||
          aStyleDisplay->IsPositionForcingStackingContext() ||
