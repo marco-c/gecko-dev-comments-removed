@@ -56,7 +56,8 @@ add_task(async function () {
     let imageCache = Cc["@mozilla.org/image/tools;1"]
       .getService(Ci.imgITools)
       .getImgCacheForDocument(null);
-    imageCache.clearCache(); 
+    imageCache.clearCache(true); 
+    imageCache.clearCache(false); 
     Services.cache2.clear();
 
     info("Reset the hits count");

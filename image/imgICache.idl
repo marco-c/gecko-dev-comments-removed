@@ -37,11 +37,7 @@ interface imgICache : nsISupports
 
 
 
-
-
-
-
-  void clearCache([optional] in jsval chrome);
+  void clearCache(in boolean chrome);
 
   
 
