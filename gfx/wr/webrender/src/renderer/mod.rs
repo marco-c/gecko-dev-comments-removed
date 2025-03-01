@@ -3646,7 +3646,7 @@ impl Renderer {
         
         
         
-        if input_layers.is_empty() {
+        if window_is_opaque && input_layers.is_empty() {
             input_layers.push(CompositorInputLayer {
                 usage: CompositorSurfaceUsage::Content,
                 is_opaque: true,
