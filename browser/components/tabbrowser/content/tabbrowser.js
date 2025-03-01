@@ -5789,10 +5789,42 @@
 
 
 
+    moveTabBefore(tab, targetElement) {
+      this.#moveTabNextTo(tab, targetElement, true);
+    }
 
-    dropTab(tab, targetElement, dropBefore) {
+    
+
+
+
+    moveTabsBefore(tabs, targetElement) {
+      this.#moveTabsNextTo(tabs, targetElement, true);
+    }
+
+    
+
+
+
+    moveTabAfter(tab, targetElement) {
+      this.#moveTabNextTo(tab, targetElement, false);
+    }
+
+    
+
+
+
+    moveTabsAfter(tabs, targetElement) {
+      this.#moveTabsNextTo(tabs, targetElement, false);
+    }
+
+    
+
+
+
+
+    #moveTabNextTo(tab, targetElement, moveBefore = false) {
       this._handleTabMove(tab, () => {
-        if (dropBefore) {
+        if (moveBefore) {
           this.tabContainer.insertBefore(tab, targetElement);
         } else if (targetElement) {
           targetElement.after(tab);
@@ -5807,10 +5839,10 @@
 
 
 
-    dropTabs(tabs, targetElement, dropBefore) {
-      this.dropTab(tabs[0], targetElement, dropBefore);
+    #moveTabsNextTo(tabs, targetElement, moveBefore = false) {
+      this.#moveTabNextTo(tabs[0], targetElement, moveBefore);
       for (let i = 1; i < tabs.length; i++) {
-        this.dropTab(tabs[i], tabs[i - 1]);
+        this.#moveTabNextTo(tabs[i], tabs[i - 1]);
       }
     }
 
