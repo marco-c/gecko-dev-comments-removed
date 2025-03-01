@@ -487,7 +487,10 @@ ToastNotification::ShowAlert(nsIAlertNotification* aAlert,
     }
   }
 
-  RefPtr<ToastNotificationHandler> oldHandler = mActiveHandlers.Get(name);
+  
+  if (RefPtr<ToastNotificationHandler> oldHandler = mActiveHandlers.Get(name)) {
+    oldHandler->UnregisterHandler();
+  }
 
   NS_ENSURE_TRUE(mAumid.isSome(), NS_ERROR_UNEXPECTED);
   RefPtr<ToastNotificationHandler> handler = new ToastNotificationHandler(
@@ -510,11 +513,6 @@ ToastNotification::ShowAlert(nsIAlertNotification* aAlert,
     mActiveHandlers.Remove(name);
     handler->UnregisterHandler();
     return rv;
-  }
-
-  
-  if (oldHandler) {
-    oldHandler->UnregisterHandler();
   }
 
   return NS_OK;
