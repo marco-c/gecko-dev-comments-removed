@@ -1,0 +1,89 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+generate_fetch_test({},
+                    {integrity: `ed25519-!!!`},
+                    EXPECT_LOADED,
+                    "No signature, malformed integrity check: loads.");
+
+generate_fetch_test({},
+                    {integrity: `ed25519-${kValidKeys['rfc']}`},
+                    EXPECT_BLOCKED,
+                    "No signature, valid integrity check: blocked.");
+
+
+const kRequestWithValidSignature = {
+  body: `{"hello": "world"}`,
+  digest: `sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:`,
+  signature: `signature=:gHim9e5Pk2H7c9BStOmxSmkyc8+ioZgoxynu3d4INAT4dwfj5LhvaV9DFnEQ9p7C0hzW4o4Qpkm5aApd6WLLCw==:`,
+  signatureInput: `signature=("unencoded-digest";sf);keyid="${kValidKeys['rfc']}";tag="sri"`
+};
+generate_fetch_test(kRequestWithValidSignature,
+                    {integrity:"ed25519-???"},
+                    EXPECT_LOADED,
+                    "Valid signature, malformed integrity check: loads.");
+
+generate_fetch_test(kRequestWithValidSignature,
+                    {integrity:`ed25519-${kValidKeys['rfc']}`},
+                    EXPECT_LOADED,
+                    "Valid signature, matching integrity check: loads.");
+
+generate_fetch_test(kRequestWithValidSignature,
+                    {integrity:`ed25519-${kInvalidKey}`},
+                    EXPECT_BLOCKED,
+                    "Valid signature, mismatched integrity check: blocked.");
+
+generate_fetch_test(kRequestWithValidSignature,
+                    {integrity:`ed25519-${kValidKeys['rfc']} ed25519-${kInvalidKey}`},
+                    EXPECT_LOADED,
+                    "Valid signature, one valid integrity check: loads.");
+
+
+const kRequestWithInvalidSignature = {
+  body: `{"hello": "world"}`,
+  digest: `sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:`,
+  signature: `signature=:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==:`,
+  signatureInput: `signature=("unencoded-digest";sf);keyid="${kValidKeys['rfc']}";tag="sri"`
+};
+generate_fetch_test(kRequestWithInvalidSignature,
+                    {integrity:"ed25519-???"},
+                    EXPECT_BLOCKED,
+                    "Invalid signature, malformed integrity check: blocked.");
+
+generate_fetch_test(kRequestWithInvalidSignature,
+                    {integrity:`ed25519-${kValidKeys['rfc']}`},
+                    EXPECT_BLOCKED,
+                    "Invalid signature, matching integrity check: blocked.");
+
+generate_fetch_test(kRequestWithInvalidSignature,
+                    {integrity:`ed25519-${kInvalidKey}`},
+                    EXPECT_BLOCKED,
+                    "Invalid signature, mismatched integrity check: blocked.");
+
+generate_fetch_test(kRequestWithInvalidSignature,
+                    {integrity:`ed25519-${kValidKeys['rfc']} ed25519-${kInvalidKey}`},
+                    EXPECT_BLOCKED,
+                    "Invalid signature, one valid integrity check: blocked.");
