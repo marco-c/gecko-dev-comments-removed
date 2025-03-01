@@ -100,7 +100,10 @@ fn parse_shader(file: String) -> (hir::State, hir::TranslationUnit, bool) {
 
     
     let mut ast_glsl = String::new();
-    let r = r.unwrap();
+    let r = match r {
+        Ok(ok) => ok,
+        Err(e) => panic!("failed to parse {:?}: {:?}", file, e),
+    };
     glsl::transpiler::glsl::show_translation_unit(&mut ast_glsl, &r);
     
     
