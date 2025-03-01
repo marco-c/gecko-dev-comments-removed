@@ -53,6 +53,7 @@
 #include "mozilla/dom/ProcessingInstruction.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/txMozillaXSLTProcessor.h"
+#include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/UseCounter.h"
@@ -516,7 +517,9 @@ nsresult nsXMLContentSink::CreateElement(
     
     
     FlushTags();
-    { nsAutoMicroTask mt; }
+    {
+      nsAutoMicroTask mt;
+    }
 
     Maybe<AutoCEReaction> autoCEReaction;
     if (auto* docGroup = mDocument->GetDocGroup()) {
@@ -1229,6 +1232,13 @@ nsXMLContentSink::HandleProcessingInstruction(const char16_t* aTarget,
   nsresult rv = AddContentAsLeaf(node);
   NS_ENSURE_SUCCESS(rv, rv);
   DidAddContent();
+
+  
+  
+  if (mState == eXMLContentSinkState_InProlog && target.EqualsLiteral("csp") &&
+      mDocument->NodePrincipal()->IsSystemPrincipal()) {
+    CSP_ApplyMetaCSPToDoc(*mDocument, data);
+  }
 
   if (linkStyle) {
     
