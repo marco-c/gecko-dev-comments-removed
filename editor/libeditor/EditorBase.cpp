@@ -1615,6 +1615,13 @@ EditorBase::DispatchClipboardEventAndUpdateClipboard(
     DataTransfer* aDataTransfer ) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
+  
+  
+  
+  if (IsHTMLEditor()) {
+    AsHTMLEditor()->mLastCollapsibleWhiteSpaceAppendedTextNode = nullptr;
+  }
+
   const bool isPasting =
       aEventMessage == ePaste || aEventMessage == ePasteNoFormatting;
   if (isPasting) {
