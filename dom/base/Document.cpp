@@ -17575,11 +17575,6 @@ void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
     return;
   }
 
-  
-  if (!nsContentUtils::IsFirstPartyTrackingResourceWindow(inner)) {
-    return;
-  }
-
   auto* outer = nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
   if (NS_WARN_IF(!outer)) {
     return;
@@ -17632,10 +17627,16 @@ void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
     }
   }
 
+
   
-  Unused << StorageAccessAPIHelper::AllowAccessForOnChildProcess(
-      NodePrincipal(), openerBC,
-      ContentBlockingNotifier::eOpenerAfterUserInteraction);
+  
+  if (XRE_IsParentProcess()) {
+    Unused << StorageAccessAPIHelper::AllowAccessForOnParentProcess(
+        NodePrincipal(), openerBC, ContentBlockingNotifier::eOpenerAfterUserInteraction);
+  } else {
+    Unused << StorageAccessAPIHelper::AllowAccessForOnChildProcess(
+        NodePrincipal(), openerBC, ContentBlockingNotifier::eOpenerAfterUserInteraction);
+  }
 }
 
 namespace {
