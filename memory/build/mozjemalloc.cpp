@@ -3456,6 +3456,12 @@ bool arena_t::Purge(bool aForce) {
       
       
       
+      
+      
+      
+      
+      
+      mIsDeferredPurgePending = false;
       return false;
     }
     MOZ_ASSERT(chunk->ndirty > 0);
