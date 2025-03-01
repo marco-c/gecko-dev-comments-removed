@@ -1,10 +1,10 @@
 extern "C" {
     
     fn emscripten_webgl_enable_extension(
-        context: std::ffi::c_int,
-        extension: *const std::ffi::c_char,
-    ) -> std::ffi::c_int;
-    fn emscripten_webgl_get_current_context() -> std::ffi::c_int;
+        context: core::ffi::c_int,
+        extension: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+    fn emscripten_webgl_get_current_context() -> core::ffi::c_int;
 }
 
 

@@ -2,6 +2,8 @@
 
 
 
+use std::vec::Vec;
+
 use hashbrown::{hash_map::Entry, HashMap};
 
 use ordered_float::OrderedFloat;

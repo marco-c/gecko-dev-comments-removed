@@ -111,14 +111,17 @@ pub fn compact(module: &mut crate::Module) {
     module_tracer.trace_special_types(&module.special_types);
 
     
+    
     log::trace!("tracing named constants");
     for (handle, constant) in module.constants.iter() {
-        if constant.name.is_some() {
-            log::trace!("tracing constant {:?}", constant.name.as_ref().unwrap());
-            module_tracer.constants_used.insert(handle);
-            module_tracer.types_used.insert(constant.ty);
-            module_tracer.global_expressions_used.insert(constant.init);
+        if constant.name.is_none() || module.types[constant.ty].inner.is_abstract(&module.types) {
+            continue;
         }
+
+        log::trace!("tracing constant {:?}", constant.name.as_ref().unwrap());
+        module_tracer.constants_used.insert(handle);
+        module_tracer.types_used.insert(constant.ty);
+        module_tracer.global_expressions_used.insert(constant.init);
     }
 
     

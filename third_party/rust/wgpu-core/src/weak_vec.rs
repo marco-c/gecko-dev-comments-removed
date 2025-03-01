@@ -1,6 +1,6 @@
 
 
-use std::sync::Weak;
+use alloc::{sync::Weak, vec::Vec};
 
 
 
@@ -45,7 +45,7 @@ impl<T> WeakVec<T> {
 }
 
 pub(crate) struct WeakVecIter<T> {
-    inner: std::vec::IntoIter<Weak<T>>,
+    inner: alloc::vec::IntoIter<Weak<T>>,
 }
 
 impl<T> Iterator for WeakVecIter<T> {

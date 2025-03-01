@@ -385,6 +385,15 @@ pub struct Limits {
     
     pub max_uniform_buffers_per_shader_stage: u32,
     
+    
+    
+    
+    pub max_binding_array_elements_per_shader_stage: u32,
+    
+    
+    
+    pub max_binding_array_sampler_elements_per_shader_stage: u32,
+    
     pub max_uniform_buffer_binding_size: u32,
     
     pub max_storage_buffer_binding_size: u32,
@@ -488,6 +497,8 @@ impl Limits {
             max_storage_buffers_per_shader_stage: 8,
             max_storage_textures_per_shader_stage: 4,
             max_uniform_buffers_per_shader_stage: 12,
+            max_binding_array_elements_per_shader_stage: 0,
+            max_binding_array_sampler_elements_per_shader_stage: 0,
             max_uniform_buffer_binding_size: 64 << 10, 
             max_storage_buffer_binding_size: 128 << 20, 
             max_vertex_buffers: 8,
@@ -554,6 +565,8 @@ impl Limits {
     
     
     
+    
+    
     #[must_use]
     pub const fn downlevel_defaults() -> Self {
         Self {
@@ -569,6 +582,8 @@ impl Limits {
         }
     }
 
+    
+    
     
     
     
@@ -720,6 +735,7 @@ impl Limits {
         compare!(max_storage_buffers_per_shader_stage, Less);
         compare!(max_storage_textures_per_shader_stage, Less);
         compare!(max_uniform_buffers_per_shader_stage, Less);
+        compare!(max_binding_array_elements_per_shader_stage, Less);
         compare!(max_uniform_buffer_binding_size, Less);
         compare!(max_storage_buffer_binding_size, Less);
         compare!(max_vertex_buffers, Less);
@@ -4885,6 +4901,16 @@ impl<T> Default for CommandEncoderDescriptor<Option<T>> {
 }
 
 
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -4892,11 +4918,23 @@ pub enum PresentMode {
     
     
     
+    
+    
+    
     AutoVsync = 0,
+
+    
+    
+    
+    
     
     
     
     AutoNoVsync = 1,
+
+    
+    
+    
     
     
     
@@ -4913,6 +4951,8 @@ pub enum PresentMode {
     
     #[default]
     Fifo = 2,
+
+    
     
     
     
@@ -4929,8 +4969,7 @@ pub enum PresentMode {
     
     
     FifoRelaxed = 3,
-    
-    
+
     
     
     
@@ -4939,8 +4978,7 @@ pub enum PresentMode {
     
     
     Immediate = 4,
-    
-    
+
     
     
     

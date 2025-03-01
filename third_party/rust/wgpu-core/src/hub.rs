@@ -100,6 +100,9 @@
 
 
 
+use alloc::sync::Arc;
+use core::fmt::Debug;
+
 use crate::{
     binding_model::{BindGroup, BindGroupLayout, PipelineLayout},
     command::{CommandBuffer, RenderBundle},
@@ -111,7 +114,6 @@ use crate::{
         Blas, Buffer, Fallible, QuerySet, Sampler, StagingBuffer, Texture, TextureView, Tlas,
     },
 };
-use std::{fmt::Debug, sync::Arc};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct HubReport {

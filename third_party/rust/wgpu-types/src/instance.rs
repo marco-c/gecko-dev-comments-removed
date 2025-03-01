@@ -338,6 +338,20 @@ impl NoopBackendOptions {
 }
 
 
+#[derive(Clone, Debug)]
+#[allow(missing_docs)]
+pub enum DxcShaderModel {
+    V6_0,
+    V6_1,
+    V6_2,
+    V6_3,
+    V6_4,
+    V6_5,
+    V6_6,
+    V6_7,
+}
+
+
 
 
 
@@ -361,6 +375,8 @@ pub enum Dx12Compiler {
         dxc_path: String,
         
         dxil_path: String,
+        
+        max_shader_model: DxcShaderModel,
     },
     
     
@@ -371,10 +387,13 @@ pub enum Dx12Compiler {
 
 impl Dx12Compiler {
     
+    
+    
     pub fn default_dynamic_dxc() -> Self {
         Self::DynamicDxc {
             dxc_path: String::from("dxcompiler.dll"),
             dxil_path: String::from("dxil.dll"),
+            max_shader_model: DxcShaderModel::V6_5,
         }
     }
 

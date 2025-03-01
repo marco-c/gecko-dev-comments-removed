@@ -149,6 +149,28 @@ pub struct OffsetsBindTarget {
     pub size: u32,
 }
 
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+struct BindingMapSerialization {
+    resource_binding: crate::ResourceBinding,
+    bind_target: BindTarget,
+}
+
+#[cfg(feature = "deserialize")]
+fn deserialize_binding_map<'de, D>(deserializer: D) -> Result<BindingMap, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+
+    let vec = Vec::<BindingMapSerialization>::deserialize(deserializer)?;
+    let mut map = BindingMap::default();
+    for item in vec {
+        map.insert(item.resource_binding, item.bind_target);
+    }
+    Ok(map)
+}
+
 
 pub type BindingMap = std::collections::BTreeMap<crate::ResourceBinding, BindTarget>;
 
@@ -245,9 +267,62 @@ impl Default for SamplerHeapBindTargets {
     }
 }
 
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+struct SamplerIndexBufferBindingSerialization {
+    group: u32,
+    bind_target: BindTarget,
+}
+
+#[cfg(feature = "deserialize")]
+fn deserialize_sampler_index_buffer_bindings<'de, D>(
+    deserializer: D,
+) -> Result<SamplerIndexBufferBindingMap, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+
+    let vec = Vec::<SamplerIndexBufferBindingSerialization>::deserialize(deserializer)?;
+    let mut map = SamplerIndexBufferBindingMap::default();
+    for item in vec {
+        map.insert(
+            SamplerIndexBufferKey { group: item.group },
+            item.bind_target,
+        );
+    }
+    Ok(map)
+}
+
 
 pub type SamplerIndexBufferBindingMap =
     std::collections::BTreeMap<SamplerIndexBufferKey, BindTarget>;
+
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+struct DynamicStorageBufferOffsetTargetSerialization {
+    index: u32,
+    bind_target: OffsetsBindTarget,
+}
+
+#[cfg(feature = "deserialize")]
+fn deserialize_storage_buffer_offsets<'de, D>(
+    deserializer: D,
+) -> Result<DynamicStorageBufferOffsetsTargets, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+
+    let vec = Vec::<DynamicStorageBufferOffsetTargetSerialization>::deserialize(deserializer)?;
+    let mut map = DynamicStorageBufferOffsetsTargets::default();
+    for item in vec {
+        map.insert(item.index, item.bind_target);
+    }
+    Ok(map)
+}
+
+pub type DynamicStorageBufferOffsetsTargets = std::collections::BTreeMap<u32, OffsetsBindTarget>;
 
 
 type BackendResult = Result<(), Error>;
@@ -269,6 +344,10 @@ pub struct Options {
     
     pub shader_model: ShaderModel,
     
+    #[cfg_attr(
+        feature = "deserialize",
+        serde(deserialize_with = "deserialize_binding_map")
+    )]
     pub binding_map: BindingMap,
     
     pub fake_missing_bindings: bool,
@@ -280,9 +359,17 @@ pub struct Options {
     
     pub sampler_heap_target: SamplerHeapBindTargets,
     
+    #[cfg_attr(
+        feature = "deserialize",
+        serde(deserialize_with = "deserialize_sampler_index_buffer_bindings")
+    )]
     pub sampler_buffer_binding_map: SamplerIndexBufferBindingMap,
     
-    pub dynamic_storage_buffer_offsets_targets: std::collections::BTreeMap<u32, OffsetsBindTarget>,
+    #[cfg_attr(
+        feature = "deserialize",
+        serde(deserialize_with = "deserialize_storage_buffer_offsets")
+    )]
+    pub dynamic_storage_buffer_offsets_targets: DynamicStorageBufferOffsetsTargets,
     
     pub zero_initialize_workgroup_memory: bool,
     

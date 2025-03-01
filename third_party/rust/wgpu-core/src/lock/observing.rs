@@ -28,15 +28,19 @@
 
 
 
-use crate::FastHashSet;
+#![allow(clippy::std_instead_of_alloc, clippy::std_instead_of_core)]
 
-use super::rank::{LockRank, LockRankSet};
 use std::{
     cell::RefCell,
+    format,
     fs::File,
     panic::Location,
     path::{Path, PathBuf},
+    vec::Vec,
 };
+
+use super::rank::{LockRank, LockRankSet};
+use crate::FastHashSet;
 
 
 
@@ -290,7 +294,7 @@ fn release(saved: Option<HeldLock>) {
     });
 }
 
-thread_local! {
+std::thread_local! {
     static LOCK_STATE: RefCell<ThreadState> = const { RefCell::new(ThreadState::Initial) };
 }
 

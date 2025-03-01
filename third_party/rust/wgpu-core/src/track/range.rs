@@ -2,7 +2,7 @@
 
 use smallvec::SmallVec;
 
-use std::{fmt::Debug, iter, ops::Range};
+use core::{fmt::Debug, iter, ops::Range};
 
 
 
@@ -148,7 +148,7 @@ impl<I: Copy + Ord, T: Copy + PartialEq> RangedStates<I, T> {
 
     
     #[cfg(test)]
-    pub fn sanely_isolated(&self, index: Range<I>, default: T) -> Vec<(Range<I>, T)> {
+    pub fn sanely_isolated(&self, index: Range<I>, default: T) -> alloc::vec::Vec<(Range<I>, T)> {
         let mut clone = self.clone();
         let result = clone.isolate(&index, default).to_vec();
         clone.check_sanity();

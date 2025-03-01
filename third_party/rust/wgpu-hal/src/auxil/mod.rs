@@ -53,7 +53,7 @@ pub mod db {
 
 
 
-pub const MAX_I32_BINDING_SIZE: u32 = 1 << 31;
+pub const MAX_I32_BINDING_SIZE: u32 = (1 << 31) - 1;
 
 pub fn map_naga_stage(stage: naga::ShaderStage) -> wgt::ShaderStages {
     match stage {

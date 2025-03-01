@@ -191,12 +191,12 @@ const fn is_blankspace(c: char) -> bool {
 
 
 fn is_word_start(c: char) -> bool {
-    c == '_' || unicode_xid::UnicodeXID::is_xid_start(c)
+    c == '_' || unicode_ident::is_xid_start(c)
 }
 
 
 fn is_word_part(c: char) -> bool {
-    unicode_xid::UnicodeXID::is_xid_continue(c)
+    unicode_ident::is_xid_continue(c)
 }
 
 #[derive(Clone)]
@@ -350,6 +350,10 @@ impl<'a> Lexer<'a> {
                 ExpectedToken::Token(Token::Paren(expected)),
             ))
         }
+    }
+
+    pub(in crate::front::wgsl) fn end_of_generic_arguments(&mut self) -> bool {
+        self.skip(Token::Separator(',')) && self.peek().0 != Token::Paren('>')
     }
 
     

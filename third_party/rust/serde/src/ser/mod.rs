@@ -173,8 +173,8 @@ macro_rules! declare_error_trait {
             /// }
             /// ```
             ///
-            /// [`Path`]: https://doc.rust-lang.org/std/path/struct.Path.html
-            /// [`Serialize`]: ../trait.Serialize.html
+            /// [`Path`]: std::path::Path
+            /// [`Serialize`]: crate::Serialize
             fn custom<T>(msg: T) -> Self
             where
                 T: Display;
@@ -1327,7 +1327,6 @@ pub trait Serializer: Sized {
         serializer.end()
     }
 
-    
     
     
     

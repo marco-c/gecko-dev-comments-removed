@@ -1,8 +1,8 @@
 #![allow(clippy::let_unit_value)] 
 
+use std::borrow::ToOwned as _;
 use std::mem::ManuallyDrop;
 use std::ptr::NonNull;
-use std::sync::Once;
 use std::thread;
 
 use core_graphics_types::{
@@ -11,55 +11,17 @@ use core_graphics_types::{
 };
 use metal::foreign_types::ForeignType;
 use objc::{
-    class,
-    declare::ClassDecl,
-    msg_send,
+    class, msg_send,
     rc::{autoreleasepool, StrongPtr},
-    runtime::{Class, Object, Sel, BOOL, NO, YES},
+    runtime::{Object, BOOL, NO, YES},
     sel, sel_impl,
 };
 use parking_lot::{Mutex, RwLock};
 
+use crate::metal::layer_observer::new_observer_layer;
+
 #[link(name = "QuartzCore", kind = "framework")]
-extern "C" {
-    #[allow(non_upper_case_globals)]
-    static kCAGravityResize: *mut Object;
-}
-
-extern "C" fn layer_should_inherit_contents_scale_from_window(
-    _: &Class,
-    _: Sel,
-    _layer: *mut Object,
-    _new_scale: CGFloat,
-    _from_window: *mut Object,
-) -> BOOL {
-    YES
-}
-
-static CAML_DELEGATE_REGISTER: Once = Once::new();
-
-#[derive(Debug)]
-pub struct HalManagedMetalLayerDelegate(&'static Class);
-
-impl HalManagedMetalLayerDelegate {
-    pub fn new() -> Self {
-        let class_name = format!("HalManagedMetalLayerDelegate@{:p}", &CAML_DELEGATE_REGISTER);
-
-        CAML_DELEGATE_REGISTER.call_once(|| {
-            type Fun = extern "C" fn(&Class, Sel, *mut Object, CGFloat, *mut Object) -> BOOL;
-            let mut decl = ClassDecl::new(&class_name, class!(NSObject)).unwrap();
-            unsafe {
-                
-                decl.add_class_method::<Fun>(
-                    sel!(layer:shouldInheritContentsScale:fromWindow:),
-                    layer_should_inherit_contents_scale_from_window,
-                );
-            }
-            decl.register();
-        });
-        Self(Class::get(&class_name).unwrap())
-    }
-}
+extern "C" {}
 
 impl super::Surface {
     fn new(layer: metal::MetalLayer) -> Self {
@@ -143,117 +105,7 @@ impl super::Surface {
             
             
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-
-            
-            let new_layer: *mut Object = msg_send![class!(CAMetalLayer), new];
-            let () = msg_send![root_layer, addSublayer: new_layer];
-
-            #[cfg(target_os = "macos")]
-            {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                let width_sizable = 1 << 1; 
-                let height_sizable = 1 << 4; 
-                let mask: std::ffi::c_uint = width_sizable | height_sizable;
-                let () = msg_send![new_layer, setAutoresizingMask: mask];
-            }
-
-            
-            
-            let frame: CGRect = msg_send![root_layer, bounds];
-            let () = msg_send![new_layer, setFrame: frame];
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let _: () = msg_send![new_layer, setContentsGravity: unsafe { kCAGravityResize }];
-
-            
-            
-            let scale_factor: CGFloat = msg_send![root_layer, contentsScale];
-            let () = msg_send![new_layer, setContentsScale: scale_factor];
-
-            let delegate = HalManagedMetalLayerDelegate::new();
-            let () = msg_send![new_layer, setDelegate: delegate.0];
-
-            unsafe { StrongPtr::new(new_layer) }
+            unsafe { new_observer_layer(root_layer) }
         }
     }
 
@@ -301,29 +153,6 @@ impl crate::Surface for super::Surface {
             wgt::CompositeAlphaMode::Opaque => render_layer.set_opaque(true),
             wgt::CompositeAlphaMode::PostMultiplied => render_layer.set_opaque(false),
             _ => (),
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        #[cfg(not(target_os = "macos"))]
-        {
-            let superlayer: *mut Object = msg_send![render_layer.as_ptr(), superlayer];
-            if !superlayer.is_null() {
-                let scale_factor: CGFloat = msg_send![superlayer, contentsScale];
-                let () = msg_send![render_layer.as_ptr(), setContentsScale: scale_factor];
-            }
         }
 
         let device_raw = device.shared.device.lock();

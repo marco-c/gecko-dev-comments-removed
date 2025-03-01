@@ -1,6 +1,8 @@
 
+#![cfg_attr(not(any(feature = "gles", feature = "vulkan")), allow(dead_code))]
 
-use std::{ffi, os, ptr};
+use alloc::string::String;
+use core::{ffi, ptr};
 
 
 #[repr(C)]
@@ -109,7 +111,7 @@ impl Default for RenderDoc {
     }
 }
 
-pub type Handle = *mut os::raw::c_void;
+pub type Handle = *mut ffi::c_void;
 
 impl RenderDoc {
     

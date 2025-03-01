@@ -31,8 +31,9 @@
 
 
 
+use core::{fmt, iter, ops::Range};
+
 use smallvec::SmallVec;
-use std::{fmt, iter, ops::Range};
 
 mod buffer;
 mod texture;
@@ -280,7 +281,8 @@ impl InitTracker<u32> {
 
 #[cfg(test)]
 mod test {
-    use std::ops::Range;
+    use alloc::{vec, vec::Vec};
+    use core::ops::Range;
 
     type Tracker = super::InitTracker<u32>;
 
