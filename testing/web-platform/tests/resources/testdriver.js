@@ -103,8 +103,154 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+                handle_request_device_prompt: function(params) {
+                    return window.test_driver_internal.bidi.bluetooth
+                        .handle_request_device_prompt(params);
+                },
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 simulate_adapter: function (params) {
                     return window.test_driver_internal.bidi.bluetooth.simulate_adapter(params);
+                },
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                simulate_preconnected_peripheral: function(params) {
+                    return window.test_driver_internal.bidi.bluetooth
+                        .simulate_preconnected_peripheral(params);
+                },
+                
+
+
+
+                request_device_prompt_updated: {
+                    
+
+
+
+
+
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    subscribe: async function(params = {}) {
+                        assertBidiIsEnabled();
+                        return window.test_driver_internal.bidi.bluetooth
+                            .request_device_prompt_updated.subscribe(params);
+                    },
+                    
+
+
+
+
+
+
+
+
+                    on: function(callback) {
+                        assertBidiIsEnabled();
+                        return window.test_driver_internal.bidi.bluetooth
+                            .request_device_prompt_updated.on(callback);
+                    },
+                    
+
+
+
+
+
+
+                    once: function() {
+                        assertBidiIsEnabled();
+                        return new Promise(resolve => {
+                            const remove_handler =
+                                window.test_driver_internal.bidi.bluetooth
+                                    .request_device_prompt_updated.on(event => {
+                                    resolve(event);
+                                    remove_handler();
+                                });
+                        });
+                    },
                 }
             },
             
@@ -1340,9 +1486,27 @@
 
         bidi: {
             bluetooth: {
+                handle_request_device_prompt: function() {
+                    throw new Error(
+                        'bidi.bluetooth.handle_request_device_prompt is not implemented by testdriver-vendor.js');
+                },
                 simulate_adapter: function () {
                     throw new Error(
                         "bidi.bluetooth.simulate_adapter is not implemented by testdriver-vendor.js");
+                },
+                simulate_preconnected_peripheral: function() {
+                    throw new Error(
+                        'bidi.bluetooth.simulate_preconnected_peripheral is not implemented by testdriver-vendor.js');
+                },
+                request_device_prompt_updated: {
+                    async subscribe() {
+                        throw new Error(
+                            'bidi.bluetooth.request_device_prompt_updated.subscribe is not implemented by testdriver-vendor.js');
+                    },
+                    on() {
+                        throw new Error(
+                            'bidi.bluetooth.request_device_prompt_updated.on is not implemented by testdriver-vendor.js');
+                    }
                 }
             },
             log: {
