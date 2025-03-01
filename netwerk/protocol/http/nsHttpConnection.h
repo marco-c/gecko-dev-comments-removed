@@ -38,12 +38,8 @@ class nsHttpHandler;
 class ASpdySession;
 
 
-#define NS_HTTPCONNECTION_IID                        \
-  {                                                  \
-    0x1dcc863e, 0xdb90, 0x4652, {                    \
-      0xa1, 0xfe, 0x13, 0xfe, 0xa0, 0xb5, 0x4e, 0x46 \
-    }                                                \
-  }
+#define NS_HTTPCONNECTION_IID \
+  {0x1dcc863e, 0xdb90, 0x4652, {0xa1, 0xfe, 0x13, 0xfe, 0xa0, 0xb5, 0x4e, 0x46}}
 
 
 
@@ -174,7 +170,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   
   bool NoClientCertAuth() const override;
 
-  WebSocketSupport GetWebSocketSupport() override;
+  ExtendedCONNECTSupport GetExtendedCONNECTSupport() override;
 
   int64_t BytesWritten() override { return mTotalBytesWritten; }
 
