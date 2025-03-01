@@ -191,7 +191,9 @@ add_task(async function test_toggle_vertical_tabs() {
   );
 
   info("Pin a tab using the context menu.");
-  await SidebarController.waitUntilStable();
+  
+  
+  await new Promise(r => setTimeout(r, 100));
   await openAndWaitForContextMenu(contextMenu, gBrowser.selectedTab, () => {
     document.getElementById("context_pinTab").click();
   });

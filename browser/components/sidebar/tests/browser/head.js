@@ -150,14 +150,11 @@ registerCleanupFunction(() => {
 
 
 
-
-
-
-async function waitForRepaint() {
-  await SidebarController.waitUntilStable();
-  return new Promise(resolve =>
+async function flushTaskQueue({ requestAnimationFrame, setTimeout } = window) {
+  await new Promise(resolve => {
     requestAnimationFrame(() => {
-      Services.tm.dispatchToMainThread(resolve);
-    })
-  );
+      requestAnimationFrame(resolve);
+    });
+  });
+  await new Promise(r => setTimeout(r, 0));
 }
