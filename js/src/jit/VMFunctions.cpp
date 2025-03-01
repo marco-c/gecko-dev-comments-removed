@@ -2235,15 +2235,25 @@ static bool TryAddOrSetPlainObjectProperty(JSContext* cx,
     if (!prop.isDataProperty() || !prop.writable()) {
       return true;
     }
-    obj->setSlot(prop.slot(), value);
-    if (!Watchtower::watchPropertyModification<AllowGC::NoGC>(cx, obj, key)) {
-      return false;
+    bool watchesModification = Watchtower::watchesPropertyModification(obj);
+    if (MOZ_UNLIKELY(watchesModification)) {
+      if (!Watchtower::watchPropertyModification<AllowGC::NoGC>(cx, obj, key,
+                                                                value, prop)) {
+        return false;
+      }
     }
+    obj->setSlot(prop.slot(), value);
     *optimized = true;
 
     if constexpr (UseCache) {
-      TaggedSlotOffset offset = obj->getTaggedSlotOffset(prop.slot());
-      cache.set(receiverShape, nullptr, key, offset, 0);
+      
+      
+      
+      
+      if (!watchesModification) {
+        TaggedSlotOffset offset = obj->getTaggedSlotOffset(prop.slot());
+        cache.set(receiverShape, nullptr, key, offset, 0);
+      }
     }
     return true;
   }
