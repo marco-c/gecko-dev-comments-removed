@@ -51,6 +51,7 @@ class PropertiesViewContextMenu {
         id: "properties-view-context-menu-copyall",
         label: L10N.getStr("netmonitor.context.copyAll"),
         accesskey: L10N.getStr("netmonitor.context.copyAll.accesskey"),
+        visible: !!object,
         click: () => this.copyAll(object, selection),
       },
     ];
