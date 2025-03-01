@@ -3764,6 +3764,33 @@ void PresShell::DoScrollContentIntoView() {
                       data->mContentScrollHAxis, data->mContentToScrollToFlags);
 }
 
+static bool NeedToVisuallyScroll(const nsSize& aLayoutViewportSize,
+                                 const nsRect& aPositionFixedRect) {
+  
+  
+  
+  
+  const nsRect layoutViewport = nsRect(nsPoint(), aLayoutViewportSize);
+
+  
+  
+  
+  if (aPositionFixedRect.IsEmpty()) {
+    if (aPositionFixedRect.x > layoutViewport.XMost() ||
+        aPositionFixedRect.XMost() < layoutViewport.x ||
+        aPositionFixedRect.y > layoutViewport.YMost() ||
+        aPositionFixedRect.YMost() < layoutViewport.y) {
+      return false;
+    }
+    return true;
+  }
+
+  if (!layoutViewport.Intersects(aPositionFixedRect)) {
+    return false;
+  }
+  return true;
+}
+
 void PresShell::ScrollFrameIntoVisualViewport(Maybe<nsPoint>& aDestination,
                                               const nsRect& aPositionFixedRect,
                                               ScrollFlags aScrollFlags) {
@@ -3796,6 +3823,13 @@ void PresShell::ScrollFrameIntoVisualViewport(Maybe<nsPoint>& aDestination,
         aPositionFixedRect.YMost() <= visualViewportSize.height &&
         aPositionFixedRect.x >= 0 &&
         aPositionFixedRect.XMost() <= visualViewportSize.width) {
+      return;
+    }
+
+    
+    
+    const nsSize layoutViewportSize = root->GetLayoutViewportSize();
+    if (!NeedToVisuallyScroll(layoutViewportSize, aPositionFixedRect)) {
       return;
     }
 
