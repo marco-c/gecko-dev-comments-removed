@@ -38,6 +38,13 @@ class WebTaskSchedulerWorker final : public WebTaskScheduler {
 
   void Disconnect() override;
 
+  void IncreaseNumNormalOrHighPriorityQueuesHaveTaskScheduled() override;
+  void DecreaseNumNormalOrHighPriorityQueuesHaveTaskScheduled() override;
+
+  bool HasScheduledNormalOrHighPriorityWebTasks() const {
+    return mNumHighPriorityQueuesHaveTaskScheduled;
+  }
+
  private:
   ~WebTaskSchedulerWorker() = default;
 
@@ -47,6 +54,12 @@ class WebTaskSchedulerWorker final : public WebTaskScheduler {
 
   RefPtr<StrongWorkerRef> mWorkerRef;
   bool mWorkerIsShuttingDown{false};
+
+  
+  
+  
+  
+  uint32_t mNumHighPriorityQueuesHaveTaskScheduled = 0;
 };
 }  
 #endif

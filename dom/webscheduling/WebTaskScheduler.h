@@ -22,6 +22,12 @@
 
 namespace mozilla::dom {
 
+
+
+MOZ_CONSTINIT extern uint32_t
+    gNumNormalOrHighPriorityQueuesHaveTaskScheduledMainThread;
+
+
 class WebTaskSchedulingState {
  public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(WebTaskSchedulingState)
@@ -103,6 +109,16 @@ class WebTaskQueueHashKey : public PLDHashEntryHdr {
     }
   }
 
+  TaskPriority Priority() const {
+    return mKey.match(
+        [&](const StaticPriorityTaskQueueKey& aStaticKey) {
+          return static_cast<TaskPriority>(aStaticKey);
+        },
+        [&](const DynamicPriorityTaskQueueKey& aDynamicKey) {
+          return aDynamicKey->Priority();
+        });
+  }
+
   static KeyTypePointer KeyToPointer(KeyType& aKey) { return &aKey; }
 
   static PLDHashNumber HashKey(KeyTypePointer aKey) {
@@ -120,16 +136,6 @@ class WebTaskQueueHashKey : public PLDHashEntryHdr {
   const WebTaskQueueTypeKey& GetTypeKey() const { return mKey; }
 
  private:
-  TaskPriority Priority() const {
-    return mKey.match(
-        [&](const StaticPriorityTaskQueueKey& aStaticKey) {
-          return static_cast<TaskPriority>(aStaticKey);
-        },
-        [&](const DynamicPriorityTaskQueueKey& aDynamicKey) {
-          return aDynamicKey->Priority();
-        });
-  }
-
   WebTaskQueueTypeKey mKey;
   const bool mIsContinuation;
 };
@@ -159,8 +165,17 @@ class WebTask : public LinkedListElement<RefPtr<WebTask>>,
 
   void ClearWebTaskScheduler() { mScheduler = nullptr; }
 
+  const WebTaskQueueHashKey& TaskQueueHashKey() const {
+    return mWebTaskQueueHashKey;
+  }
+
+  TaskPriority Priority() const { return mWebTaskQueueHashKey.Priority(); }
+
  private:
-  void SetHasScheduled(bool aHasScheduled) { mHasScheduled = aHasScheduled; }
+  void SetHasScheduled() {
+    MOZ_ASSERT(!mHasScheduled);
+    mHasScheduled = true;
+  }
 
   uint32_t mEnqueueOrder;
 
@@ -193,12 +208,7 @@ class WebTaskQueue {
 
   WebTaskQueue(WebTaskQueue&& aWebTaskQueue) = default;
 
-  ~WebTaskQueue() {
-    for (const auto& task : mTasks) {
-      task->ClearWebTaskScheduler();
-    }
-    mTasks.clear();
-  }
+  ~WebTaskQueue();
 
   TaskPriority Priority() const { return mPriority; }
   void SetPriority(TaskPriority aNewPriority) { mPriority = aNewPriority; }
@@ -284,7 +294,9 @@ class WebTaskScheduler : public nsWrapperCache,
     MOZ_ASSERT(result);
   }
 
-  void RemoveEntryFromTaskQueueMapIfNeeded(const WebTaskQueueHashKey&);
+  void NotifyTaskWillBeRunOrAborted(const WebTask* aWebTask);
+  virtual void IncreaseNumNormalOrHighPriorityQueuesHaveTaskScheduled() = 0;
+  virtual void DecreaseNumNormalOrHighPriorityQueuesHaveTaskScheduled() = 0;
 
  protected:
   virtual ~WebTaskScheduler() = default;
@@ -302,7 +314,7 @@ class WebTaskScheduler : public nsWrapperCache,
       const Maybe<SchedulerPostTaskCallback&>& aCallback,
       WebTaskSchedulingState* aSchedulingState, Promise* aPromise);
 
-  bool QueueTask(WebTask* aTask, EventQueuePriority aPriority);
+  bool DispatchTask(WebTask* aTask, EventQueuePriority aPriority);
 
   SelectedTaskQueueData SelectTaskQueue(
       const Optional<OwningNonNull<AbortSignal>>& aSignal,
@@ -312,7 +324,8 @@ class WebTaskScheduler : public nsWrapperCache,
                                             EventQueuePriority aPriority) = 0;
   virtual bool DispatchEventLoopRunnable(EventQueuePriority aPriority) = 0;
 
-  EventQueuePriority GetEventQueuePriority(const TaskPriority& aPriority) const;
+  EventQueuePriority GetEventQueuePriority(const TaskPriority& aPriority,
+                                           bool aIsContinuation) const;
 
   nsTHashMap<WebTaskQueueHashKey, WebTaskQueue>& GetWebTaskQueues() {
     return mWebTaskQueues;
@@ -333,7 +346,7 @@ class DelayedWebTaskHandler final : public TimeoutHandler {
   MOZ_CAN_RUN_SCRIPT bool Call(const char* ) override {
     if (mScheduler && mWebTask) {
       MOZ_ASSERT(!mWebTask->HasScheduled());
-      if (!mScheduler->QueueTask(mWebTask, mPriority)) {
+      if (!mScheduler->DispatchTask(mWebTask, mPriority)) {
         return false;
       }
     }

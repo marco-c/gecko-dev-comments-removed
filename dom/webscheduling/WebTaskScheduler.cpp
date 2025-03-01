@@ -21,6 +21,14 @@ MOZ_RUNINIT static LinkedList<WebTaskScheduler> gWebTaskSchedulersMainThread;
 
 static Atomic<uint64_t> gWebTaskEnqueueOrder(0);
 
+
+
+
+static bool IsNormalOrHighPriority(TaskPriority aPriority) {
+  return aPriority == TaskPriority::User_blocking ||
+         aPriority == TaskPriority::User_visible;
+}
+
 inline void ImplCycleCollectionTraverse(
     nsCycleCollectionTraversalCallback& aCallback, WebTaskQueue& aQueue,
     const char* aName, uint32_t aFlags = 0) {
@@ -113,6 +121,10 @@ void WebTask::RunAbortAlgorithm() {
     
     if (isInList()) {
       remove();
+      MOZ_ASSERT(mScheduler);
+      if (HasScheduled()) {
+        mScheduler->NotifyTaskWillBeRunOrAborted(this);
+      }
     }
 
     AutoJSAPI jsapi;
@@ -134,7 +146,7 @@ bool WebTask::Run() {
   MOZ_ASSERT(mScheduler);
   remove();
 
-  mScheduler->RemoveEntryFromTaskQueueMapIfNeeded(mWebTaskQueueHashKey);
+  mScheduler->NotifyTaskWillBeRunOrAborted(this);
   ClearWebTaskScheduler();
 
   if (!mCallback) {
@@ -341,7 +353,9 @@ already_AddRefed<Promise> WebTaskScheduler::PostTask(
 
   if (delay > 0) {
     nsresult rv = SetTimeoutForDelayedTask(
-        task, delay, GetEventQueuePriority(finalPrioritySource->Priority()));
+        task, delay,
+        GetEventQueuePriority(finalPrioritySource->Priority(),
+                              false ));
     if (NS_FAILED(rv)) {
       promise->MaybeRejectWithUnknownError(
           "Failed to setup timeout for delayed task");
@@ -349,8 +363,8 @@ already_AddRefed<Promise> WebTaskScheduler::PostTask(
     return promise.forget();
   }
 
-  if (!QueueTask(task,
-                 GetEventQueuePriority(finalPrioritySource->Priority()))) {
+  if (!DispatchTask(task, GetEventQueuePriority(finalPrioritySource->Priority(),
+                                                false ))) {
     MOZ_ASSERT(task->isInList());
     task->remove();
 
@@ -422,9 +436,9 @@ already_AddRefed<Promise> WebTaskScheduler::YieldImpl() {
       CreateTask(optionalSignal, {}, true , Nothing(),
                  nullptr, promise);
 
-  EventQueuePriority eventQueuePriority =
-      GetEventQueuePriority(prioritySource->Priority());
-  if (!QueueTask(task, eventQueuePriority)) {
+  EventQueuePriority eventQueuePriority = GetEventQueuePriority(
+      prioritySource->Priority(), true );
+  if (!DispatchTask(task, eventQueuePriority)) {
     MOZ_ASSERT(task->isInList());
     
     
@@ -460,12 +474,23 @@ already_AddRefed<WebTask> WebTaskScheduler::CreateTask(
   return task.forget();
 }
 
-bool WebTaskScheduler::QueueTask(WebTask* aTask, EventQueuePriority aPriority) {
+bool WebTaskScheduler::DispatchTask(WebTask* aTask,
+                                    EventQueuePriority aPriority) {
   if (!DispatchEventLoopRunnable(aPriority)) {
     return false;
   }
   MOZ_ASSERT(!aTask->HasScheduled());
-  aTask->SetHasScheduled(true);
+
+  auto taskQueue = mWebTaskQueues.Lookup(aTask->TaskQueueHashKey());
+  MOZ_ASSERT(taskQueue);
+
+  if (IsNormalOrHighPriority(aTask->Priority()) &&
+      !taskQueue->HasScheduledTasks()) {
+    
+    IncreaseNumNormalOrHighPriorityQueuesHaveTaskScheduled();
+  }
+
+  aTask->SetHasScheduled();
   return true;
 }
 
@@ -540,7 +565,24 @@ void WebTaskScheduler::Disconnect() {
 }
 
 void WebTaskScheduler::RunTaskSignalPriorityChange(TaskSignal* aTaskSignal) {
-  if (auto entry = mWebTaskQueues.Lookup({aTaskSignal, false})) {
+  
+  
+  WebTaskQueueHashKey key(aTaskSignal, false );
+  if (auto entry = mWebTaskQueues.Lookup(key)) {
+    if (IsNormalOrHighPriority(entry.Data().Priority()) !=
+        IsNormalOrHighPriority(key.Priority())) {
+      
+      
+      if (entry.Data().HasScheduledTasks()) {
+        if (IsNormalOrHighPriority(key.Priority())) {
+          
+          IncreaseNumNormalOrHighPriorityQueuesHaveTaskScheduled();
+        } else {
+          
+          DecreaseNumNormalOrHighPriorityQueuesHaveTaskScheduled();
+        }
+      }
+    }
     entry.Data().SetPriority(aTaskSignal->Priority());
   }
 }
@@ -575,28 +617,55 @@ WebTaskScheduler::SelectedTaskQueueData WebTaskScheduler::SelectTaskQueue(
 }
 
 EventQueuePriority WebTaskScheduler::GetEventQueuePriority(
-    const TaskPriority& aPriority) const {
+    const TaskPriority& aPriority, bool aIsContinuation) const {
   switch (aPriority) {
     case TaskPriority::User_blocking:
+      return EventQueuePriority::MediumHigh;
     case TaskPriority::User_visible:
+      return aIsContinuation ? EventQueuePriority::MediumHigh
+                             : EventQueuePriority::Normal;
     case TaskPriority::Background:
-      
-      
-      return EventQueuePriority::Normal;
+      return EventQueuePriority::Low;
     default:
       MOZ_ASSERT_UNREACHABLE("Invalid TaskPriority");
       return EventQueuePriority::Normal;
   }
 }
 
-void WebTaskScheduler::RemoveEntryFromTaskQueueMapIfNeeded(
-    const WebTaskQueueHashKey& aHashKey) {
-  MOZ_ASSERT(mWebTaskQueues.Contains(aHashKey));
-  if (auto entry = mWebTaskQueues.Lookup(aHashKey)) {
-    WebTaskQueue& taskQueue = *entry;
-    if (taskQueue.IsEmpty()) {
-      DeleteEntryFromWebTaskQueueMap(aHashKey);
+void WebTaskScheduler::NotifyTaskWillBeRunOrAborted(const WebTask* aWebTask) {
+  const WebTaskQueueHashKey& hashKey = aWebTask->TaskQueueHashKey();
+  MOZ_ASSERT(mWebTaskQueues.Contains(hashKey));
+  if (auto entry = mWebTaskQueues.Lookup(hashKey)) {
+    const WebTaskQueue& taskQueue = *entry;
+    if (IsNormalOrHighPriority(taskQueue.Priority())) {
+      
+      
+      
+      
+      if (!taskQueue.HasScheduledTasks()) {
+        DecreaseNumNormalOrHighPriorityQueuesHaveTaskScheduled();
+      }
     }
+    if (taskQueue.IsEmpty()) {
+      DeleteEntryFromWebTaskQueueMap(hashKey);
+    }
+  }
+}
+
+WebTaskQueue::~WebTaskQueue() {
+  MOZ_ASSERT(mScheduler);
+
+  bool hasScheduledTask = false;
+  for (const auto& task : mTasks) {
+    if (!hasScheduledTask && task->HasScheduled()) {
+      hasScheduledTask = true;
+    }
+    task->ClearWebTaskScheduler();
+  }
+  mTasks.clear();
+
+  if (hasScheduledTask && IsNormalOrHighPriority(Priority())) {
+    mScheduler->DecreaseNumNormalOrHighPriorityQueuesHaveTaskScheduled();
   }
 }
 }  
