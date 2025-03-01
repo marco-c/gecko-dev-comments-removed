@@ -4183,15 +4183,12 @@ MDefinition* MIntPtrToBigInt::foldsTo(TempAllocator& alloc) {
 }
 
 MDefinition* MTruncateBigIntToInt64::foldsTo(TempAllocator& alloc) {
-  MDefinition* input = getOperand(0);
-
-  if (input->isBox()) {
-    input = input->getOperand(0);
-  }
+  MDefinition* input = this->input();
+  MOZ_ASSERT(input->type() == MIRType::BigInt);
 
   
   if (input->isInt64ToBigInt()) {
-    return input->getOperand(0);
+    return input->toInt64ToBigInt()->input();
   }
 
   
