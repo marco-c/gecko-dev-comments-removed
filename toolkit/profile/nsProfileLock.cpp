@@ -457,7 +457,7 @@ nsresult nsProfileLock::Lock(nsIFile* aProfileDir,
   rv = lockFile->Clone(getter_AddRefs(mLockFile));
   if (NS_FAILED(rv)) return rv;
 
-#if defined(XP_MACOSX)
+#if defined(XP_DARWIN)
   
   
 
