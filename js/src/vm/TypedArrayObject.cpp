@@ -1328,16 +1328,12 @@ static MOZ_ALWAYS_INLINE bool IsOptimizableInit(JSContext* cx,
                                                 bool* optimized) {
   MOZ_ASSERT(!*optimized);
 
-  if (!IsPackedArray(iterable)) {
+  if (!IsArrayWithDefaultIterator<MustBePacked::Yes>(iterable, cx)) {
     return true;
   }
 
-  ForOfPIC::Chain* stubChain = ForOfPIC::getOrCreate(cx);
-  if (!stubChain) {
-    return false;
-  }
-
-  return stubChain->tryOptimizeArray(cx, iterable.as<ArrayObject>(), optimized);
+  *optimized = true;
+  return true;
 }
 
 

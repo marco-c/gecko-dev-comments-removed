@@ -7,6 +7,7 @@
 #include "js/ForOfIterator.h"
 #include "js/friend/ErrorMessages.h"  
 #include "vm/Interpreter.h"
+#include "vm/Iteration.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/PIC.h"
@@ -27,26 +28,12 @@ bool ForOfIterator::init(HandleValue iterable,
 
   MOZ_ASSERT(index == NOT_ARRAY);
 
-  
-  if (iterableObj->is<ArrayObject>()) {
-    ForOfPIC::Chain* stubChain = ForOfPIC::getOrCreate(cx);
-    if (!stubChain) {
-      return false;
-    }
-
-    bool optimized;
-    if (!stubChain->tryOptimizeArray(cx, iterableObj.as<ArrayObject>(),
-                                     &optimized)) {
-      return false;
-    }
-
-    if (optimized) {
-      
-      index = 0;
-      iterator = iterableObj;
-      nextMethod.setUndefined();
-      return true;
-    }
+  if (IsArrayWithDefaultIterator<MustBePacked::No>(iterableObj, cx)) {
+    
+    index = 0;
+    iterator = iterableObj;
+    nextMethod.setUndefined();
+    return true;
   }
 
   MOZ_ASSERT(index == NOT_ARRAY);
