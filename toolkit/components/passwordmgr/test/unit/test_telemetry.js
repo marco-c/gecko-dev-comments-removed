@@ -9,10 +9,6 @@
 
 
 
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
-
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 
@@ -77,46 +73,12 @@ const StatisticsTestData = [
 
 
 
-async function triggerStatisticsCollection() {
-  Services.obs.notifyObservers(null, "gather-telemetry", "" + gReferenceTimeMs);
-  await TestUtils.topicObserved("passwordmgr-gather-telemetry-complete");
-}
-
-
-
-
-
-function testHistogram(histogramId, expectedNonZeroRanges) {
-  let snapshot = Services.telemetry.getHistogramById(histogramId).snapshot();
-
-  
-  let actualNonZeroRanges = {};
-  for (let [range, value] of Object.entries(snapshot.values)) {
-    if (value > 0) {
-      actualNonZeroRanges[range] = value;
-    }
-  }
-
-  
-  info("Testing histogram: " + histogramId);
-  Assert.equal(
-    JSON.stringify(actualNonZeroRanges),
-    JSON.stringify(expectedNonZeroRanges)
-  );
-}
-
-
-
-
-
-
 
 add_setup(async () => {
-  let oldCanRecord = Services.telemetry.canRecordExtended;
-  Services.telemetry.canRecordExtended = true;
-  registerCleanupFunction(function () {
-    Services.telemetry.canRecordExtended = oldCanRecord;
-  });
+  
+  do_get_profile();
+  
+  Services.fog.initializeFOG();
 
   let uniqueNumber = 1;
   let logins = [];
@@ -134,68 +96,30 @@ add_setup(async () => {
 
 
 
-add_task(async function test_logins_statistics() {
-  
-  for (let pass of [1, 2]) {
-    info(`pass ${pass}`);
-    await triggerStatisticsCollection();
-
-    
-    testHistogram("PWMGR_NUM_SAVED_PASSWORDS", { 10: 1 });
-
-    
-    testHistogram("PWMGR_NUM_HTTPAUTH_PASSWORDS", { 1: 1 });
-
-    
-    
-    testHistogram("PWMGR_LOGIN_LAST_USED_DAYS", {
-      0: 1,
-      1: 1,
-      7: 2,
-      29: 2,
-      356: 2,
-      750: 1,
-    });
-
-    
-    
-    testHistogram("PWMGR_USERNAME_PRESENT", { 0: 4, 1: 6 });
-  }
+add_task(function test_logins_count() {
+  Assert.equal(
+    Glean.pwmgr.numSavedPasswords.testGetValue(),
+    StatisticsTestData.length,
+    "We've appropriately counted all the logins"
+  );
 });
 
 
 
 
-
-add_task(async function test_disabledHosts_statistics() {
-  
-  
-  Services.logins.setLoginSavingEnabled("http://www.example.com", false);
-  await triggerStatisticsCollection();
-  testHistogram("PWMGR_BLOCKLIST_NUM_SITES", { 1: 1 });
-
-  Services.logins.setLoginSavingEnabled("http://www.example.com", true);
-  await triggerStatisticsCollection();
-  testHistogram("PWMGR_BLOCKLIST_NUM_SITES", { 0: 1 });
-});
-
-
-
-
-add_task(async function test_settings_statistics() {
+add_task(function test_settings_statistics() {
   let oldRememberSignons = Services.prefs.getBoolPref("signon.rememberSignons");
   registerCleanupFunction(function () {
     Services.prefs.setBoolPref("signon.rememberSignons", oldRememberSignons);
   });
 
-  
-  for (let remember of [false, true, false, true]) {
+  for (let remember of [false, true]) {
     
     Services.prefs.setBoolPref("signon.rememberSignons", remember);
-
-    await triggerStatisticsCollection();
-
-    
-    testHistogram("PWMGR_SAVING_ENABLED", remember ? { 1: 1 } : { 0: 1 });
+    Assert.equal(
+      Glean.pwmgr.savingEnabled.testGetValue(),
+      remember,
+      "The pref is correctly recorded."
+    );
   }
 });
