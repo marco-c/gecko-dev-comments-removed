@@ -900,6 +900,15 @@ class EditorDOMPointBase final {
     return IsInContentNode() && IsSetAndValidInComposedDoc();
   }
 
+  [[nodiscard]] bool IsInNativeAnonymousSubtreeInTextControl() const {
+    if (!mParent || !mParent->IsInNativeAnonymousSubtree()) {
+      return false;
+    }
+    nsIContent* maybeTextControl =
+        mParent->GetClosestNativeAnonymousSubtreeRootParentOrHost();
+    return !!maybeTextControl;
+  }
+
   bool IsStartOfContainer() const {
     
     

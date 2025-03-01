@@ -81,6 +81,15 @@ class HTMLEditUtils final {
 
 
 
+  static bool NodeIsEditableOrNotInComposedDoc(const nsINode& aNode) {
+    return MOZ_UNLIKELY(!aNode.IsInComposedDoc()) || aNode.IsEditable();
+  }
+
+  
+
+
+
+
 
   [[nodiscard]] static bool ElementIsEditableRoot(const Element& aElement);
 
@@ -2067,11 +2076,13 @@ class HTMLEditUtils final {
 
 
 
+
   template <typename EditorLineBreakType>
   static Maybe<EditorLineBreakType> GetUnnecessaryLineBreak(
       const Element& aBlockElement, ScanLineBreak aScanLineBreak);
 
   
+
 
 
 

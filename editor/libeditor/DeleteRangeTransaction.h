@@ -62,10 +62,7 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
   
 
 
-  EditorDOMPoint SuggestPointToPutCaret() const {
-    return mPointToPutCaret.IsSetAndValid() ? mPointToPutCaret
-                                            : EditorDOMPoint();
-  }
+  EditorDOMPoint SuggestPointToPutCaret() const;
 
  protected:
   
