@@ -89,7 +89,6 @@ add_task(async function chromeUITest() {
     "profiles",
     "profiling",
     "protections",
-    "rights",
     "sessionrestore",
     "studies",
     "support",
@@ -118,6 +117,7 @@ add_task(async function chromeUITest() {
     "about:url-classifier",
     "about:webrtc",
     "about:welcome",
+    "about:rights",
     
     "http://example.com/" + DUMMY,
   ];

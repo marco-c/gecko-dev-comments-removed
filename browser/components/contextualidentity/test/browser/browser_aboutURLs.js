@@ -17,6 +17,7 @@ add_task(async function () {
     
     "credits",
     "logins",
+    "rights",
     
     
     "telemetry",

@@ -149,9 +149,6 @@ var allowlist = [
   },
 
   
-  { file: "chrome://global/skin/aboutRights.css", skipUnofficial: true },
-
-  
   {
     file: "chrome://devtools/content/inspector/markup/markup.xhtml",
     isFromDevTools: true,

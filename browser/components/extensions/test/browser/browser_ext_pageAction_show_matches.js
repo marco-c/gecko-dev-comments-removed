@@ -56,7 +56,7 @@ let tests = [
 
 
 
-let urls = ["http://example.com/", "http://mochi.test:8888/", "about:rights"];
+let urls = ["http://example.com/", "http://mochi.test:8888/"];
 
 function getId(tab) {
   const {
