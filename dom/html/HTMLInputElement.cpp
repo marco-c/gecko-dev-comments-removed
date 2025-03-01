@@ -3346,7 +3346,7 @@ void HTMLInputElement::LegacyPreActivationBehavior(
     
     
     
-    mForm->OnSubmitClickBegin(this);
+    mForm->OnSubmitClickBegin();
 
     if (aVisitor.mDOMEvent) {
       if (auto* mouseEvent = aVisitor.mDOMEvent->AsMouseEvent()) {

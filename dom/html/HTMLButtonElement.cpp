@@ -183,7 +183,7 @@ void HTMLButtonElement::LegacyPreActivationBehavior(
     
     
     
-    mForm->OnSubmitClickBegin(this);
+    mForm->OnSubmitClickBegin();
   }
 }
 

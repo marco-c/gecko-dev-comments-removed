@@ -190,7 +190,7 @@ class HTMLFormElement final : public nsGenericHTMLElement {
 
 
 
-  void OnSubmitClickBegin(Element* aOriginatingElement);
+  void OnSubmitClickBegin();
   void OnSubmitClickEnd();
 
   
@@ -415,9 +415,7 @@ class HTMLFormElement final : public nsGenericHTMLElement {
 
 
 
-
-  nsresult NotifySubmitObservers(nsIURI* aActionURL, bool* aCancelSubmit,
-                                 bool aEarlyNotify);
+  nsresult DispatchBeforeSubmitChromeOnlyEvent(bool* aCancelSubmit);
 
   
 
