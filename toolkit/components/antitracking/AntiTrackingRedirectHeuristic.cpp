@@ -396,12 +396,15 @@ void FinishAntiTrackingRedirectHeuristic(nsIChannel* aNewChannel,
                    eRedirecttracker)
       .Add();
 
-  RefPtr<nsIURI> oldURI = oldPrincipal->GetURI();
-  StorageAccessGrantTelemetryClassification::MaybeReportTracker(
-      static_cast<uint16_t>(
-          glean::contentblocking::StorageAccessGrantedCountLabel::
-              eRedirecttrackerCt),
-      oldURI);
+  
+  glean::contentblocking::storage_access_granted_count
+      .EnumGet(glean::contentblocking::StorageAccessGrantedCountLabel::
+                   eStoragegrantedCt)
+      .Add();
+  glean::contentblocking::storage_access_granted_count
+      .EnumGet(glean::contentblocking::StorageAccessGrantedCountLabel::
+                   eRedirecttrackerCt)
+      .Add();
 
   
   RefPtr<StorageAccessAPIHelper::ParentAccessGrantPromise> promise =
