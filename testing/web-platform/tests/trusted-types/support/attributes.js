@@ -52,13 +52,6 @@ const trustedTypeDataForAttribute = [
     sink: "Element onmousedown"
   },
   {
-    element: _ => document.createElementNS(NSURI_FOO, "foo"),
-    attrNS: null,
-    attrName: "onmouseup",
-    type: "TrustedScript",
-    sink: "Element onmouseup"
-  },
-  {
     element: _ => document.createElement("iframe"),
     attrNS: null,
     attrName: "srcdoc",
@@ -87,6 +80,13 @@ const trustedTypeDataForAttribute = [
     sink: "SVGScriptElement href",
   },
   
+  
+  {
+    element: _ => document.createElementNS(NSURI_FOO, "foo"),
+    attrNS: null,
+    attrName: "onmouseup",
+    type: null,
+  },
   {
     
     element: _ => document.createElement("div"),

@@ -596,6 +596,12 @@ bool GetTrustedTypeDataForAttribute(const nsAtom* aElementName,
                                     int32_t aAttributeNamespaceID,
                                     TrustedType& aTrustedType,
                                     nsAString& aSink) {
+  if (aElementNamespaceID != kNameSpaceID_XHTML &&
+      aElementNamespaceID != kNameSpaceID_SVG &&
+      aElementNamespaceID != kNameSpaceID_MathML) {
+    return false;
+  }
+
   
   
   

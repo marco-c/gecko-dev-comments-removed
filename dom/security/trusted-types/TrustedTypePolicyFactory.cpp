@@ -59,8 +59,8 @@ static CSPViolationData CreateCSPViolationData(JSContext* aJSContext,
 TrustedTypePolicyFactory::~TrustedTypePolicyFactory() = default;
 
 auto TrustedTypePolicyFactory::ShouldTrustedTypePolicyCreationBeBlockedByCSP(
-    JSContext* aJSContext,
-    const nsAString& aPolicyName) const -> PolicyCreation {
+    JSContext* aJSContext, const nsAString& aPolicyName) const
+    -> PolicyCreation {
   
   
   
@@ -228,6 +228,11 @@ void TrustedTypePolicyFactory::GetAttributeType(const nsAString& aTagName,
     elementNamespaceID = kNameSpaceID_XHTML;
   } else if (nsGkAtoms::nsuri_svg->Equals(aElementNs)) {
     elementNamespaceID = kNameSpaceID_SVG;
+  } else if (nsGkAtoms::nsuri_mathml->Equals(aElementNs)) {
+    elementNamespaceID = kNameSpaceID_MathML;
+  } else {
+    aResult.SetNull();
+    return;
   }
 
   nsAutoString attribute;
