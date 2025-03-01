@@ -14,11 +14,6 @@
 #include <propvarutil.h>
 #include <unordered_set>
 
-
-#if defined(__MINGW32__) || defined(__MINGW64__) || defined(__MINGW__)
-#  include "supplementalMinGWDefinitions.h"
-#endif
-
 namespace mozilla::a11y {
 
 template <typename T>

@@ -14,17 +14,6 @@
 
 
 
-enum AgileReferenceOptions {
-  AGILEREFERENCE_DEFAULT = 0,
-  AGILEREFERENCE_DELAYEDMARSHAL = 1,
-};
-
-HRESULT WINAPI RoGetAgileReference(AgileReferenceOptions options, REFIID riid,
-                                   IUnknown* pUnk,
-                                   IAgileReference** ppAgileReference);
-
-
-
 
 
 #  include "mozilla/DynamicallyLinkedFunctionPtr.h"
