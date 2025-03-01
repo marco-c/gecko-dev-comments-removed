@@ -17,7 +17,9 @@
 
 
 
-use firefox_on_glean::{ipc, metrics, pings};
+use firefox_on_glean::{ipc, metrics};
+#[cfg(target_os = "android")]
+use firefox_on_glean::pings;
 use nserror::{nsresult, NS_ERROR_FAILURE, NS_OK};
 use nsstring::{nsACString, nsCString};
 use std::cell::UnsafeCell;
@@ -40,7 +42,11 @@ pub extern "C" fn fog_shutdown() {
 
 #[no_mangle]
 pub extern "C" fn fog_register_pings() {
-    pings::register_pings(None);
+    #[cfg(not(target_os = "android"))]
+    log::warn!("fog_register_pings on not-Android has no effect.");
+
+    #[cfg(target_os = "android")]
+    pings::register_pings(Some("gecko"));
 }
 
 
