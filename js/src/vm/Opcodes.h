@@ -858,7 +858,7 @@
 
 
  \
-    MACRO(NewInit, new_init, NULL, 1, 0, 1, JOF_BYTE|JOF_IC) \
+    MACRO(NewInit, new_init, NULL, 2, 0, 1, JOF_UINT8|JOF_IC) \
     
 
 

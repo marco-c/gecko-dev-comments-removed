@@ -3856,7 +3856,7 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
         return false;
       }
 
-      if (!emit1(JSOp::NewInit)) {
+      if (!emit2(JSOp::NewInit, 0)) {
         
         return false;
       }
@@ -4029,7 +4029,7 @@ bool BytecodeEmitter::emitDestructuringObjRestExclusionSet(ListNode* pattern) {
     }
   } else {
     
-    if (!emit1(JSOp::NewInit)) {
+    if (!emit2(JSOp::NewInit, 0)) {
       
       return false;
     }

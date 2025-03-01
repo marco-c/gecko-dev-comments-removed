@@ -412,7 +412,8 @@ bool ObjectEmitter::emitObject(size_t propertyCount) {
   
   
   
-  if (!bce_->emit1(JSOp::NewInit)) {
+  uint8_t propCount = (propertyCount > 255) ? 255 : uint8_t(propertyCount);
+  if (!bce_->emit2(JSOp::NewInit, propCount)) {
     
     return false;
   }
@@ -520,7 +521,7 @@ bool ClassEmitter::emitClass(TaggedParserAtomIndex name,
   hasNameOnStack_ = hasNameOnStack;
   isDerived_ = false;
 
-  if (!bce_->emit1(JSOp::NewInit)) {
+  if (!bce_->emit2(JSOp::NewInit, 0)) {
     
     return false;
   }
