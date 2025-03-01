@@ -3252,9 +3252,12 @@ var browserTests = [
     {}],
 
 
+
+
+
 ["<p><b>abc[]</b></p>",
     [["inserttext"," "],["bold",""],["inserttext","d"]],
-    "<p><b>abc </b>d</p>",
+    ["<p><b>abc </b>d</p>", "<p><b>abc&nbsp;</b>d</p>"],
     [true,true,true],
     {}],
 ]
