@@ -9,6 +9,7 @@
 #include "mozilla/Encoding.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/dom/CacheExpirationTime.h"
 #include "nsContentUtils.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
@@ -81,6 +82,9 @@ NS_IMETHODIMP
 StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   MOZ_ASSERT_IF(!StaticPrefs::network_send_OnDataFinished_cssLoader(),
                 !mOnStopProcessingDone);
+  mRequest = nullptr;
+
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
 
   
   
@@ -96,10 +100,7 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   
   
   if (NS_IsMainThread()) {
-    {
-      nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
-      channel->SetNotificationCallbacks(nullptr);
-    }
+    channel->SetNotificationCallbacks(nullptr);
 
     mSheetLoadData->mNetworkMetadata =
         new SubResourceNetworkMetadataHolder(aRequest);
@@ -112,37 +113,58 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
           .AccumulateRawDuration(delta);
     }
     mSheetLoadData->mSheet->UnblockParsePromise();
+  } else {
+    if (mSheetLoadData->mRecordErrors) {
+      
+      return NS_OK;
+    }
   }
+
+  auto HandleErrorInMainThread = [&] {
+    MOZ_ASSERT(mStatus != NS_OK_PARSE_SHEET);
+    MOZ_ASSERT(NS_IsMainThread());
+    if (net::UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
+            mStatus)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      for (SheetLoadData* data = mSheetLoadData; data; data = data->mNext) {
+        if (nsINode* node = data->mSheet->GetOwnerNode()) {
+          node->OwnerDoc()->AddBlockedNodeByClassifier(node);
+        }
+      }
+    }
+    mSheetLoadData->mLoader->SheetComplete(*mSheetLoadData, mStatus);
+  };
 
   if (mOnStopProcessingDone) {
+    MOZ_ASSERT(NS_IsMainThread());
+    if (mStatus != NS_OK_PARSE_SHEET) {
+      HandleErrorInMainThread();
+    }
     return NS_OK;
   }
+
   mOnStopProcessingDone = true;
 
-  nsresult rv = mStatus;
   
   nsCString utf8String;
   {
-    nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
-
-    if (NS_FAILED(mStatus)) {
-      mSheetLoadData->VerifySheetReadyToParse(mStatus, ""_ns, ""_ns, channel);
-      if (!NS_IsMainThread()) {
-        
-        
-        
-        mOnStopProcessingDone = false;
+    nsresult status = NS_FAILED(mStatus) ? mStatus : aStatus;
+    mStatus = mSheetLoadData->VerifySheetReadyToParse(status, mBOMBytes, mBytes,
+                                                      channel);
+    if (mStatus != NS_OK_PARSE_SHEET) {
+      if (NS_IsMainThread()) {
+        HandleErrorInMainThread();
       }
       return mStatus;
-    }
-
-    rv = mSheetLoadData->VerifySheetReadyToParse(aStatus, mBOMBytes, mBytes,
-                                                 channel);
-    if (rv != NS_OK_PARSE_SHEET) {
-      if (!NS_IsMainThread()) {
-        mOnStopProcessingDone = false;
-      }
-      return rv;
     }
 
     
@@ -177,8 +199,8 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
       
       utf8String = std::move(bytes);
     } else {
-      rv = encoding->DecodeWithoutBOMHandling(bytes, utf8String, validated);
-      NS_ENSURE_SUCCESS(rv, rv);
+      
+      MOZ_TRY(encoding->DecodeWithoutBOMHandling(bytes, utf8String, validated));
     }
   }  
 
@@ -187,8 +209,6 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   
   mSheetLoadData->mLoader->ParseSheet(utf8String, mMainThreadSheetLoadData,
                                       Loader::AllowAsyncParse::Yes);
-
-  mRequest = nullptr;
 
   return NS_OK;
 }
@@ -220,11 +240,12 @@ void StreamLoader::HandleBOM() {
 
 NS_IMETHODIMP
 StreamLoader::OnDataFinished(nsresult aResult) {
+  nsCOMPtr<nsIRequest> request = mRequest.forget();
   if (StaticPrefs::network_send_OnDataFinished_cssLoader()) {
     MOZ_ASSERT(mOnDataFinishedTime.IsNull(),
                "OnDataFinished should only be called once");
     mOnDataFinishedTime = TimeStamp::Now();
-    return OnStopRequest(mRequest, aResult);
+    return OnStopRequest(request, aResult);
   }
 
   return NS_OK;
