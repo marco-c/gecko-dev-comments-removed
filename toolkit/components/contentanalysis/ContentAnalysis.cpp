@@ -1341,6 +1341,20 @@ void ContentAnalysis::CachedClipboardResponse::SetCachedResponse(
         "CachedClipboardResponse caching new URI for existing cached clipboard "
         "seqno");
   }
+
+  
+  
+  for (auto& entry : mData) {
+    bool uriEquals = false;
+    
+    if ((!aURI && !entry.first) ||
+        (aURI && NS_SUCCEEDED(aURI->Equals(entry.first, &uriEquals)) &&
+         uriEquals)) {
+      entry.second = aAction;
+      return;
+    }
+  }
+
   mData.AppendElement(std::make_pair(aURI, aAction));
 }
 
