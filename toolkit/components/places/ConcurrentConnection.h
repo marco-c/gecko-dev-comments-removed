@@ -59,20 +59,17 @@ class ConcurrentConnection final : public nsIObserver,
   NS_DECL_MOZISTORAGECOMPLETIONCALLBACK
   NS_DECL_MOZISTORAGESTATEMENTCALLBACK
 
+  
+
+
+
+
   ConcurrentConnection();
 
   
 
 
-  nsresult Init();
-
-  
-
-
-
-
-
-  static already_AddRefed<ConcurrentConnection> GetSingleton();
+  static Maybe<ConcurrentConnection*> GetInstance();
 
   
 
