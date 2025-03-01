@@ -551,10 +551,8 @@ class PreprocessedFile(BaseFile):
         
         
         
-        
-        if hasattr(os, "symlink") and platform.system() != "Windows":
-            if os.path.islink(dest.path):
-                os.remove(dest.path)
+        if hasattr(os, "symlink") and os.path.islink(dest.path):
+            os.remove(dest.path)
 
         pp_deps = set(self.extra_depends)
 
