@@ -15,6 +15,12 @@
 
 namespace mozilla::dom {
 
+
+
+MOZ_RUNINIT static LinkedList<WebTaskScheduler> gWebTaskSchedulersMainThread;
+
+static Atomic<uint64_t> gWebTaskEnqueueOrder(0);
+
 inline void ImplCycleCollectionTraverse(
     nsCycleCollectionTraversalCallback& aCallback, WebTaskQueue& aQueue,
     const char* aName, uint32_t aFlags = 0) {
@@ -217,6 +223,7 @@ already_AddRefed<WebTaskSchedulerMainThread>
 WebTaskScheduler::CreateForMainThread(nsGlobalWindowInner* aWindow) {
   RefPtr<WebTaskSchedulerMainThread> scheduler =
       new WebTaskSchedulerMainThread(aWindow->AsGlobal());
+  gWebTaskSchedulersMainThread.insertBack(scheduler);
   return scheduler.forget();
 }
 
@@ -229,7 +236,7 @@ already_AddRefed<WebTaskSchedulerWorker> WebTaskScheduler::CreateForWorker(
 }
 
 WebTaskScheduler::WebTaskScheduler(nsIGlobalObject* aParent)
-    : mParent(aParent), mNextEnqueueOrder(1) {
+    : mParent(aParent) {
   MOZ_ASSERT(aParent);
 }
 
@@ -438,12 +445,10 @@ already_AddRefed<WebTask> WebTaskScheduler::CreateTask(
   WebTaskScheduler::SelectedTaskQueueData selectedTaskQueueData =
       SelectTaskQueue(aSignal, aPriority, aIsContinuation);
 
-  uint32_t nextEnqueueOrder = mNextEnqueueOrder;
-  ++mNextEnqueueOrder;
-
+  gWebTaskEnqueueOrder += 1;
   RefPtr<WebTask> task =
-      new WebTask(nextEnqueueOrder, aCallback, aSchedulingState, aPromise, this,
-                  selectedTaskQueueData.mSelectedQueueHashKey);
+      new WebTask(gWebTaskEnqueueOrder, aCallback, aSchedulingState, aPromise,
+                  this, selectedTaskQueueData.mSelectedQueueHashKey);
 
   selectedTaskQueueData.mSelectedTaskQueue.AddTask(task);
 
@@ -464,25 +469,36 @@ bool WebTaskScheduler::QueueTask(WebTask* aTask, EventQueuePriority aPriority) {
   return true;
 }
 
-WebTask* WebTaskScheduler::GetNextTask() {
 
+WebTask* WebTaskScheduler::GetNextTask(bool aIsMainThread) {
   
   AutoTArray<nsTArray<WebTaskQueue*>, WebTaskQueue::EffectivePriorityCount>
       allQueues;
   allQueues.SetLength(WebTaskQueue::EffectivePriorityCount);
 
-  
-  
-  
-  
-  for (auto iter = mWebTaskQueues.Iter(); !iter.Done(); iter.Next()) {
-    auto& queue = iter.Data();
-    if (queue.HasScheduledTasks()) {
-      const WebTaskQueueHashKey& key = iter.Key();
-      nsTArray<WebTaskQueue*>& queuesForThisPriority =
-          allQueues[key.EffectivePriority()];
-      queuesForThisPriority.AppendElement(&queue);
+  auto processScheduler = [&](WebTaskScheduler& aScheduler) {
+    for (auto iter = aScheduler.GetWebTaskQueues().Iter(); !iter.Done();
+         iter.Next()) {
+      auto& queue = iter.Data();
+      if (queue.HasScheduledTasks()) {
+        const WebTaskQueueHashKey& key = iter.Key();
+        nsTArray<WebTaskQueue*>& queuesForThisPriority =
+            allQueues[key.EffectivePriority()];
+        queuesForThisPriority.AppendElement(&queue);
+      }
     }
+  };
+  
+  
+  if (aIsMainThread) {
+    
+    
+    for (const auto& scheduler : gWebTaskSchedulersMainThread) {
+      processScheduler(*scheduler);
+    }
+  } else {
+    
+    processScheduler(*this);
   }
 
   if (allQueues.IsEmpty()) {
@@ -516,7 +532,12 @@ WebTask* WebTaskScheduler::GetNextTask() {
   return nullptr;
 }
 
-void WebTaskScheduler::Disconnect() { mWebTaskQueues.Clear(); }
+void WebTaskScheduler::Disconnect() {
+  if (isInList()) {
+    remove();
+  }
+  mWebTaskQueues.Clear();
+}
 
 void WebTaskScheduler::RunTaskSignalPriorityChange(TaskSignal* aTaskSignal) {
   if (auto entry = mWebTaskQueues.Lookup({aTaskSignal, false})) {
