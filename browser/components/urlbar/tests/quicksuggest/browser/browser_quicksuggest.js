@@ -53,6 +53,10 @@ add_setup(async function () {
 
   
   UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.suggest.engines", false]],
+  });
 });
 
 
