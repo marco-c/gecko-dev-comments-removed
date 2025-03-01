@@ -3851,38 +3851,6 @@ bool PresShell::ScrollFrameIntoView(
     ScrollAxis aVertical, ScrollAxis aHorizontal, ScrollFlags aScrollFlags) {
   
   
-  
-  
-  
-  if (aScrollFlags & ScrollFlags::AxesAreLogical) {
-    
-    
-    
-    WritingMode wm = aTargetFrame->GetWritingMode();
-    if (wm.IsVerticalRL()) {
-      
-      if (aVertical.mWhereToScroll.mPercentage) {
-        aVertical.mWhereToScroll.mPercentage =
-            Some(100 - aVertical.mWhereToScroll.mPercentage.value());
-      }
-    }
-    if (wm.IsInlineReversed()) {
-      
-      if (aHorizontal.mWhereToScroll.mPercentage) {
-        aHorizontal.mWhereToScroll.mPercentage =
-            Some(100 - aHorizontal.mWhereToScroll.mPercentage.value());
-      }
-    }
-    if (wm.IsVertical()) {
-      std::swap(aVertical, aHorizontal);
-    }
-    
-    
-    aScrollFlags &= ~ScrollFlags::AxesAreLogical;
-  }
-
-  
-  
   const nsMargin scrollMargin =
       aKnownRectRelativeToTarget ? nsMargin() : GetScrollMargin(aTargetFrame);
 
