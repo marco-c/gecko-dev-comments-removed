@@ -10,28 +10,7 @@ const { BrowserTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/BrowserTestUtils.sys.mjs"
 );
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class LitTestHelpers {
+class InputTestHelpers {
   
 
 
@@ -39,7 +18,11 @@ class LitTestHelpers {
 
   async setupLit() {
     let lit = await import("chrome://global/content/vendor/lit.all.mjs");
-    ({ html: this.html, render: this.render } = lit);
+    ({
+      html: this.html,
+      staticHtml: this.staticHtml,
+      render: this.render,
+    } = lit);
     this.SpreadDirective = class extends lit.Directive {
       render() {
         return lit.nothing;
@@ -65,7 +48,7 @@ class LitTestHelpers {
 
 
 
-  setupTests({ templateFn }) {
+  async setupInputTests({ templateFn }) {
     this.templateFn = (args = {}, children) =>
       templateFn(this.spread(args), children);
     this.renderTarget = document.createElement("div");
@@ -78,20 +61,13 @@ class LitTestHelpers {
 
 
 
-  async renderTemplate(template = this.templateFn()) {
-    
+  async renderInputElements(template = this.templateFn()) {
     this.render(this.html``, this.renderTarget);
     this.render(template, this.renderTarget);
     await this.renderTarget.firstElementChild.updateComplete;
     return this.renderTarget;
   }
-}
 
-
-
-
-
-class InputTestHelpers extends LitTestHelpers {
   
 
 
@@ -181,7 +157,7 @@ class InputTestHelpers extends LitTestHelpers {
       value: "label",
       label: INITIAL_LABEL,
     });
-    let renderTarget = await this.renderTemplate(labelTemplate);
+    let renderTarget = await this.renderInputElements(labelTemplate);
     let firstInput = renderTarget.querySelector(selector);
 
     is(
@@ -208,7 +184,7 @@ class InputTestHelpers extends LitTestHelpers {
     const INITIAL_NAME = "name";
     const NEW_NAME = "new-name";
 
-    let renderTarget = await this.renderTemplate();
+    let renderTarget = await this.renderInputElements();
     let firstInput = renderTarget.querySelector(selector);
 
     firstInput.name = INITIAL_NAME;
@@ -233,7 +209,7 @@ class InputTestHelpers extends LitTestHelpers {
       label: "Testing value",
       value: INITIAL_VALUE,
     });
-    let renderTarget = await this.renderTemplate(valueTemplate);
+    let renderTarget = await this.renderInputElements(valueTemplate);
     let firstInput = renderTarget.querySelector(selector);
 
     is(firstInput.inputEl.value, INITIAL_VALUE, "Input value is set.");
@@ -256,7 +232,7 @@ class InputTestHelpers extends LitTestHelpers {
       iconsrc: ICON_SRC,
     });
 
-    let renderTarget = await this.renderTemplate(iconTemplate);
+    let renderTarget = await this.renderInputElements(iconTemplate);
     let firstInput = renderTarget.querySelector(selector);
 
     ok(firstInput.icon, "Input displays an icon.");
@@ -277,7 +253,7 @@ class InputTestHelpers extends LitTestHelpers {
 
 
   async verifyDisabled(selector) {
-    let renderTarget = await this.renderTemplate();
+    let renderTarget = await this.renderInputElements();
     let firstInput = renderTarget.querySelector(selector);
 
     ok(!firstInput.disabled, "Input is enabled on initial render.");
@@ -312,7 +288,7 @@ class InputTestHelpers extends LitTestHelpers {
       ],
     ];
 
-    let renderTarget = await this.renderTemplate(
+    let renderTarget = await this.renderInputElements(
       templatesArgs.map(args => this.templateFn(...args))
     );
     let [firstInput, secondInput, thirdInput] =
@@ -372,7 +348,7 @@ class InputTestHelpers extends LitTestHelpers {
       ],
     ];
 
-    let renderTarget = await this.renderTemplate(
+    let renderTarget = await this.renderInputElements(
       templatesArgs.map(args => this.templateFn(...args))
     );
     let [firstInput, secondInput] = renderTarget.querySelectorAll(selector);
@@ -479,7 +455,7 @@ class InputTestHelpers extends LitTestHelpers {
     ];
     let accesskeyTemplate = this.html`${attrs.map(a => this.templateFn(a))}`;
 
-    let renderTarget = await this.renderTemplate(accesskeyTemplate);
+    let renderTarget = await this.renderInputElements(accesskeyTemplate);
     let [firstInput, secondInput, thirdInput] =
       renderTarget.querySelectorAll(selector);
 
@@ -565,7 +541,7 @@ class InputTestHelpers extends LitTestHelpers {
 
 
   async verifyActivated(selector) {
-    let renderTarget = await this.renderTemplate();
+    let renderTarget = await this.renderInputElements();
     let firstInput = renderTarget.querySelector(selector);
     let { activatedProperty } = this;
 
@@ -615,7 +591,7 @@ class InputTestHelpers extends LitTestHelpers {
       "support-page": "test",
       "icon-src": "chrome://global/skin/icons/edit-copy.svg",
     });
-    let renderTarget = await this.renderTemplate(whitespaceTemplate);
+    let renderTarget = await this.renderInputElements(whitespaceTemplate);
     let firstInput = renderTarget.querySelector(selector);
 
     if (firstInput.constructor.inputLayout == "block") {
@@ -665,7 +641,7 @@ class InputTestHelpers extends LitTestHelpers {
 
   async testTextBasedInputEvents(selector) {
     let { trackEvent, verifyEvents } = this.getInputEventHelpers();
-    let target = await this.renderTemplate();
+    let target = await this.renderInputElements();
     let input = target.querySelector(selector);
 
     input.addEventListener("click", trackEvent);
@@ -697,7 +673,7 @@ class InputTestHelpers extends LitTestHelpers {
       value: "default",
       "aria-label": ARIA_LABEL,
     });
-    let renderTarget = await this.renderTemplate(ariaLabelTemplate);
+    let renderTarget = await this.renderInputElements(ariaLabelTemplate);
     let input = renderTarget.querySelector(selector);
 
     let labelText = input.shadowRoot.querySelector(".text");
