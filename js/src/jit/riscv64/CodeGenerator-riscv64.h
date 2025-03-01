@@ -15,7 +15,6 @@ namespace js {
 namespace jit {
 
 class CodeGeneratorRiscv64;
-class OutOfLineBailout;
 class OutOfLineTableSwitch;
 
 using OutOfLineWasmTruncateCheck =
@@ -139,7 +138,6 @@ class CodeGeneratorRiscv64 : public CodeGeneratorShared {
 
  public:
   
-  void visitOutOfLineBailout(OutOfLineBailout* ool);
   void visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool);
   void visitOutOfLineWasmTruncateCheck(OutOfLineWasmTruncateCheck* ool);
 
@@ -151,19 +149,6 @@ class CodeGeneratorRiscv64 : public CodeGeneratorShared {
 };
 
 typedef CodeGeneratorRiscv64 CodeGeneratorSpecific;
-
-
-class OutOfLineBailout : public OutOfLineCodeBase<CodeGeneratorRiscv64> {
- protected:
-  LSnapshot* snapshot_;
-
- public:
-  OutOfLineBailout(LSnapshot* snapshot) : snapshot_(snapshot) {}
-
-  void accept(CodeGeneratorRiscv64* codegen) override;
-
-  LSnapshot* snapshot() const { return snapshot_; }
-};
 
 }  
 }  
