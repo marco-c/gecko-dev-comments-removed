@@ -280,6 +280,7 @@ class LIRGeneratorShared {
 #ifdef JS_NUNBOX32
   
   inline LUse useLowWord(MDefinition* mir, LUse policy);
+  inline LUse useLowWordRegister(MDefinition* mir);
   inline LUse useLowWordRegisterAtStart(MDefinition* mir);
   inline LUse useLowWordFixed(MDefinition* mir, Register reg);
 #endif

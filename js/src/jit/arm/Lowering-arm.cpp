@@ -294,11 +294,11 @@ void LIRGeneratorARM::lowerForShiftInt64(LInstr* ins, MDefinition* mir,
                                          MDefinition* lhs, MDefinition* rhs) {
   LAllocation rhsAlloc;
   if (rhs->isConstant()) {
-    rhsAlloc = useOrConstantAtStart(rhs);
+    rhsAlloc = useOrConstant(rhs);
   } else {
     
     
-    rhsAlloc = useLowWordRegisterAtStart(rhs);
+    rhsAlloc = useLowWordRegister(rhs);
   }
 
   if constexpr (std::is_same_v<LInstr, LShiftI64>) {
