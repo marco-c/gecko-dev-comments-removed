@@ -2725,10 +2725,12 @@
       };
 
       let addAnimationData = (movingTab, isBeforeSelectedTab) => {
-        if (
-          movingTab.elementIndex + (isBeforeSelectedTab ? 1 : -1) ==
-          tab.elementIndex
-        ) {
+        let lowerIndex = Math.min(movingTab.elementIndex, draggedTabIndex) + 1;
+        let higherIndex = Math.max(movingTab.elementIndex, draggedTabIndex);
+        let middleItems = this.ariaFocusableItems
+          .slice(lowerIndex, higherIndex)
+          .filter(item => !item.multiselected);
+        if (!middleItems.length) {
           
           
           return;
@@ -2763,18 +2765,13 @@
         
         
         
-        
 
         let movingTabSize =
           movingTab.getBoundingClientRect()[
             this.verticalMode ? "height" : "width"
           ];
-        let lowerIndex = Math.min(movingTab.elementIndex, draggedTabIndex);
-        let higherIndex = Math.max(movingTab.elementIndex, draggedTabIndex);
 
-        for (let i = lowerIndex + 1; i < higherIndex; i++) {
-          let middleItem = this.ariaFocusableItems[i];
-
+        for (let middleItem of middleItems) {
           if (isTab(middleItem)) {
             if (middleItem.pinned != movingTab.pinned) {
               
