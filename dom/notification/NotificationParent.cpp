@@ -44,15 +44,16 @@ NotificationParent::Observe(nsISupports* aSubject, const char* aTopic,
       return NS_ERROR_FAILURE;
 #endif
     }
+
+    
+    nsresult rv = PersistNotification(mPrincipal, mId, mOptions, mScope);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Could not persist Notification");
+    }
     mResolver.take().value()(CopyableErrorResult());
     return NS_OK;
   }
   if (!strcmp("alertfinished", aTopic)) {
-    
-    (void)NS_WARN_IF(NS_FAILED(
-        AdjustPushQuota(mPrincipal, NotificationStatusChange::Closed)));
-    (void)NS_WARN_IF(NS_FAILED(UnpersistNotification(mPrincipal, mId)));
-
     if (mResolver) {
       
       
@@ -61,6 +62,10 @@ NotificationParent::Observe(nsISupports* aSubject, const char* aTopic,
       
       mResolver.take().value()(CopyableErrorResult(NS_ERROR_FAILURE));
     } else {
+      
+      (void)NS_WARN_IF(NS_FAILED(
+          AdjustPushQuota(mPrincipal, NotificationStatusChange::Closed)));
+      (void)NS_WARN_IF(NS_FAILED(UnpersistNotification(mPrincipal, mId)));
       (void)NS_WARN_IF(NS_FAILED(FireCloseEvent()));
     }
 
@@ -161,13 +166,8 @@ nsresult NotificationParent::Show() {
   
   
 
-  
   nsAutoString alertName;
   GetAlertName(alertName);
-  nsresult rv = PersistNotification(mPrincipal, mId, mOptions, mScope);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("Could not persist Notification");
-  }
 
   
   
@@ -201,8 +201,7 @@ nsresult NotificationParent::Show() {
   
   
   
-  
-  mResolver.take().value()(CopyableErrorResult());
+  Observe(nullptr, "alertshow", nullptr);
 #endif
 
   return NS_OK;
