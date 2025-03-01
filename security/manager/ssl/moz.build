@@ -4,8 +4,6 @@
 
 
 
-DIRS += ["builtins"]
-
 TEST_DIRS += ["tests"]
 
 XPIDL_SOURCES += [

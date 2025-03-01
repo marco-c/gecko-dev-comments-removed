@@ -457,13 +457,10 @@ nsNSSComponent::AddEnterpriseIntermediate(
 class LoadLoadableCertsTask final : public Runnable {
  public:
   LoadLoadableCertsTask(nsNSSComponent* nssComponent,
-                        bool importEnterpriseRoots,
-                        Vector<nsCString>&& possibleLoadableRootsLocations)
+                        bool importEnterpriseRoots)
       : Runnable("LoadLoadableCertsTask"),
         mNSSComponent(nssComponent),
-        mImportEnterpriseRoots(importEnterpriseRoots),
-        mPossibleLoadableRootsLocations(
-            std::move(possibleLoadableRootsLocations)) {
+        mImportEnterpriseRoots(importEnterpriseRoots) {
     MOZ_ASSERT(nssComponent);
   }
 
@@ -476,7 +473,6 @@ class LoadLoadableCertsTask final : public Runnable {
   nsresult LoadLoadableRoots();
   RefPtr<nsNSSComponent> mNSSComponent;
   bool mImportEnterpriseRoots;
-  Vector<nsCString> mPossibleLoadableRootsLocations;  
 };
 
 nsresult LoadLoadableCertsTask::Dispatch() {
@@ -538,29 +534,6 @@ LoadLoadableCertsTask::Run() {
     mNSSComponent->mLoadableCertsLoadedMonitor.NotifyAll();
   }
   return NS_OK;
-}
-
-
-
-
-static nsresult GetDirectoryPath(const char* directoryKey, nsCString& result) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsCOMPtr<nsIProperties> directoryService(
-      do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID));
-  if (!directoryService) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("could not get directory service"));
-    return NS_ERROR_FAILURE;
-  }
-  nsCOMPtr<nsIFile> directory;
-  nsresult rv = directoryService->Get(directoryKey, NS_GET_IID(nsIFile),
-                                      getter_AddRefs(directory));
-  if (NS_FAILED(rv)) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("could not get '%s' from directory service", directoryKey));
-    return rv;
-  }
-  return FileToCString(directory, result);
 }
 
 class BackgroundLoadOSClientCertsModuleTask final : public CryptoTask {
@@ -661,6 +634,7 @@ nsresult nsNSSComponent::CheckForSmartCardChanges() {
   return NS_OK;
 }
 
+#ifdef MOZ_SYSTEM_NSS
 
 
 
@@ -690,25 +664,28 @@ static nsresult GetNSS3Directory(nsCString& result) {
   }
   return FileToCString(nss3Directory, result);
 }
+#endif  
 
+nsresult LoadLoadableCertsTask::LoadLoadableRoots() {
+#ifdef MOZ_SYSTEM_NSS
 
-
-
-
-static nsresult ListPossibleLoadableRootsLocations(
-    Vector<nsCString>& possibleLoadableRootsLocations) {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (!NS_IsMainThread()) {
-    return NS_ERROR_NOT_SAME_THREAD;
+  
+  nsAutoCString emptyString;
+  if (mozilla::psm::LoadLoadableRoots(emptyString)) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("loaded CKBI from from OS default library path"));
+    return NS_OK;
   }
 
   
-  
   nsAutoCString nss3Dir;
   nsresult rv = GetNSS3Directory(nss3Dir);
+
   if (NS_SUCCEEDED(rv)) {
-    if (!possibleLoadableRootsLocations.append(std::move(nss3Dir))) {
-      return NS_ERROR_OUT_OF_MEMORY;
+    if (mozilla::psm::LoadLoadableRoots(nss3Dir)) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+              ("loaded CKBI from %s", nss3Dir.get()));
+      return NS_OK;
     }
   } else {
     
@@ -716,43 +693,17 @@ static nsresult ListPossibleLoadableRootsLocations(
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("could not determine where nss was loaded from"));
   }
-  nsAutoCString currentProcessDir;
-  rv = GetDirectoryPath(NS_XPCOM_CURRENT_PROCESS_DIR, currentProcessDir);
-  if (NS_SUCCEEDED(rv)) {
-    if (!possibleLoadableRootsLocations.append(std::move(currentProcessDir))) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-  } else {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("could not get current process directory"));
-  }
-  nsAutoCString greDir;
-  rv = GetDirectoryPath(NS_GRE_DIR, greDir);
-  if (NS_SUCCEEDED(rv)) {
-    if (!possibleLoadableRootsLocations.append(std::move(greDir))) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-  } else {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("could not get gre directory"));
-  }
+
+#endif  
+
   
   
-  nsAutoCString emptyString;
-  if (!possibleLoadableRootsLocations.append(std::move(emptyString))) {
-    return NS_ERROR_OUT_OF_MEMORY;
+  
+  if (LoadLoadableRootsFromXul()) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("loaded CKBI from xul"));
+    return NS_OK;
   }
 
-  return NS_OK;
-}
-
-nsresult LoadLoadableCertsTask::LoadLoadableRoots() {
-  for (const auto& possibleLocation : mPossibleLoadableRootsLocations) {
-    if (mozilla::psm::LoadLoadableRoots(possibleLocation)) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-              ("loaded CKBI from %s", possibleLocation.get()));
-      return NS_OK;
-    }
-  }
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("could not load loadable roots"));
   return NS_ERROR_FAILURE;
 }
@@ -1606,16 +1557,9 @@ nsresult nsNSSComponent::InitializeNSS() {
 
     bool importEnterpriseRoots =
         StaticPrefs::security_enterprise_roots_enabled();
-    Vector<nsCString> possibleLoadableRootsLocations;
-    rv = ListPossibleLoadableRootsLocations(possibleLoadableRootsLocations);
-    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
 
     RefPtr<LoadLoadableCertsTask> loadLoadableCertsTask(
-        new LoadLoadableCertsTask(this, importEnterpriseRoots,
-                                  std::move(possibleLoadableRootsLocations)));
+        new LoadLoadableCertsTask(this, importEnterpriseRoots));
     rv = loadLoadableCertsTask->Dispatch();
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
     if (NS_FAILED(rv)) {
