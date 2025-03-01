@@ -11,6 +11,7 @@
 
 #include "AccessibleText_i.c"
 
+#include "mozilla/a11y/Compatibility.h"
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "mozilla/ClearOnShutdown.h"
 
@@ -124,6 +125,19 @@ ia2AccessibleText::get_nSelections(long* aNSelections) {
   }
 
   *aNSelections = textAcc->SelectionCount();
+  if (*aNSelections == 0 &&
+      (Compatibility::A11ySuppressionReasons() &
+       SuppressionReasons::Clipboard) &&
+      static_cast<ia2AccessibleHypertext*>(this)->Acc()->IsDoc()) {
+    
+    
+    
+    
+    
+    
+    
+    *aNSelections = 1;
+  }
 
   return S_OK;
 }

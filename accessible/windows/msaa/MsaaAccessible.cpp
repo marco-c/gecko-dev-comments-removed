@@ -618,7 +618,7 @@ MsaaAccessible::get_accChildCount(long __RPC_FAR* pcountChildren) {
 
   if ((Compatibility::A11ySuppressionReasons() &
        SuppressionReasons::Clipboard) &&
-      mAcc->IsRoot()) {
+      mAcc->IsDoc()) {
     
     
     
