@@ -1892,8 +1892,7 @@ static bool AddStackCheckForImportFunctionEntry(jit::MacroAssembler& masm,
   
   
   MOZ_ASSERT(stackMap);
-  if (stackMap &&
-      !stackMaps->add(trapInsnOffset.offset(), stackMap)) {
+  if (stackMap && !stackMaps->add(trapInsnOffset.offset(), stackMap)) {
     stackMap->destroy();
     return false;
   }

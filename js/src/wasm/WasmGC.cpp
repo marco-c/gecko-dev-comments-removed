@@ -318,11 +318,11 @@ bool wasm::IsPlausibleStackMapKey(const uint8_t* nextPC) {
 
 void StackMaps::checkInvariants(const uint8_t* base) const {
 #ifdef DEBUG
-    
-    
-    for (auto iter = mapping_.iter(); !iter.done(); iter.next()) {
-      MOZ_ASSERT(IsPlausibleStackMapKey(base + iter.get().key()),
-                "wasm stackmap does not reference a valid insn");
-    }
-#endif
+  
+  
+  for (auto iter = mapping_.iter(); !iter.done(); iter.next()) {
+    MOZ_ASSERT(IsPlausibleStackMapKey(base + iter.get().key()),
+               "wasm stackmap does not reference a valid insn");
   }
+#endif
+}
