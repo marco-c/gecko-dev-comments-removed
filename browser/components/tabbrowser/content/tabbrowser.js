@@ -5017,15 +5017,9 @@
         if (newTab) {
           this.selectedTab = newTab;
         } else {
-          allTabsUnloaded = true;
           
-          if (FirefoxViewHandler.tab || FirefoxViewHandler.button) {
-            FirefoxViewHandler.openTab("opentabs");
-          } else {
-            this.selectedTab = this.addTrustedTab(BROWSER_NEW_TAB_URL, {
-              skipAnimation: true,
-            });
-          }
+          FirefoxViewHandler.openTab("opentabs");
+          allTabsUnloaded = true;
         }
       }
       let memoryUsageBeforeUnload = await getTotalMemoryUsage();
