@@ -13,6 +13,12 @@
 
 
 
+
+
+
+
+
+
 declare module "resource://gre/modules/AppConstants.sys.mjs" {
   const AppConstants: typeof import("./substitutions/AppConstants.sys.d.mts").AppConstants;
 }
