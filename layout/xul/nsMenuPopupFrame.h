@@ -550,6 +550,12 @@ class nsMenuPopupFrame final : public nsBlockFrame {
 
   void WidgetPositionOrSizeDidChange();
 
+  uint64_t GetAPZFocusSequenceNumber() const { return mAPZFocusSequenceNumber; }
+
+  void UpdateAPZFocusSequenceNumber(uint64_t aNewNumber) {
+    mAPZFocusSequenceNumber = aNewNumber;
+  }
+
  protected:
   nsString mIncrementalString;  
 
@@ -595,6 +601,9 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   
   
   mozilla::LayoutDeviceIntPoint mLastClientOffset;
+
+  
+  uint64_t mAPZFocusSequenceNumber = 0;
 
   PopupType mPopupType = PopupType::Panel;  
   nsPopupState mPopupState = ePopupClosed;  
