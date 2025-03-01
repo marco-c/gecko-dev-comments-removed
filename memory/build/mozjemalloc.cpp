@@ -1574,7 +1574,7 @@ class ArenaCollection {
 
   void DisposeArena(arena_t* aArena) MOZ_EXCLUDES(mLock) {
     
-    RemoveObsoletePurgeFromList(aArena);
+    RemoveFromOutstandingPurges(aArena);
     {
       MutexAutoLock lock(mLock);
       Tree& tree =
@@ -1711,7 +1711,7 @@ class ArenaCollection {
   void AddToOutstandingPurges(arena_t* aArena) MOZ_EXCLUDES(mPurgeListLock);
 
   
-  void RemoveObsoletePurgeFromList(arena_t* aArena)
+  void RemoveFromOutstandingPurges(arena_t* aArena)
       MOZ_EXCLUDES(mPurgeListLock);
 
   
@@ -1764,6 +1764,12 @@ class ArenaCollection {
   
   uint64_t mNumOperationsDisposedArenas = 0;
 
+  
+  
+  
+  
+  
+  
   
   DoublyLinkedList<arena_t> mOutstandingPurges MOZ_GUARDED_BY(mPurgeListLock);
   
@@ -4677,6 +4683,11 @@ inline purge_action_t arena_t::ShouldStartPurge() {
 inline void arena_t::MayDoOrQueuePurge(purge_action_t aAction) {
   switch (aAction) {
     case purge_action_t::Queue:
+      
+      
+      
+      
+      
       gArenas.AddToOutstandingPurges(this);
       break;
     case purge_action_t::PurgeNow:
@@ -5954,7 +5965,7 @@ inline void ArenaCollection::AddToOutstandingPurges(arena_t* aArena) {
   }
 }
 
-inline void ArenaCollection::RemoveObsoletePurgeFromList(arena_t* aArena) {
+inline void ArenaCollection::RemoveFromOutstandingPurges(arena_t* aArena) {
   MOZ_ASSERT(aArena);
 
   
@@ -5992,11 +6003,22 @@ purge_result_t ArenaCollection::MayPurgeStep(bool aPeekOnly,
       return purge_result_t::NeedsMore;
     }
   }
-  if (!found->Purge(false)) {
+
+  
+  
+  
+  
+  RemoveFromOutstandingPurges(found);
+  if (found->Purge(false)) {
+    
+    
+    
     
     MutexAutoLock lock(mPurgeListLock);
-    if (mOutstandingPurges.ElementProbablyInList(found)) {
-      mOutstandingPurges.remove(found);
+    if (!mOutstandingPurges.ElementProbablyInList(found)) {
+      
+      
+      mOutstandingPurges.pushFront(found);
     }
   }
 
@@ -6013,8 +6035,8 @@ void ArenaCollection::MayPurgeAll(bool aForce) {
     
     
     if (!arena->IsMainThreadOnly() || IsOnMainThreadWeak()) {
+      RemoveFromOutstandingPurges(arena);
       while (arena->Purge(aForce));
-      RemoveObsoletePurgeFromList(arena);
     }
   }
 }
