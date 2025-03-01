@@ -118,7 +118,6 @@ inline bool JS_IsInitialized(void) {
 namespace JS {
 
 
-
 using SelfHostedCache = mozilla::Span<const uint8_t>;
 
 

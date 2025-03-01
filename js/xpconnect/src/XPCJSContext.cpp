@@ -36,6 +36,7 @@
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/glean/JsXpconnectMetrics.h"
+#include "mozilla/scache/StartupCache.h"
 
 #include "nsContentUtils.h"
 #include "nsCCUncollectableMarker.h"
@@ -1144,8 +1145,22 @@ static void DispatchOffThreadTask(JS::HelperThreadTask* aTask) {
   TaskController::Get()->AddTask(MakeAndAddRef<HelperThreadTaskHandler>(aTask));
 }
 
+
+
+static constexpr char kSelfHostCacheKey[] = "js.self-hosted";
+
 static bool CreateSelfHostedSharedMemory(JSContext* aCx,
                                          JS::SelfHostedCache aBuf) {
+  
+  
+  if (auto* sc = scache::StartupCache::GetSingleton()) {
+    UniqueFreePtr<char[]> copy(static_cast<char*>(malloc(aBuf.LengthBytes())));
+    if (copy) {
+      memcpy(copy.get(), aBuf.Elements(), aBuf.LengthBytes());
+      sc->PutBuffer(kSelfHostCacheKey, std::move(copy), aBuf.LengthBytes());
+    }
+  }
+
   auto& shm = xpc::SelfHostedShmem::GetSingleton();
   MOZ_RELEASE_ASSERT(shm.Content().IsEmpty());
   
@@ -1355,15 +1370,26 @@ nsresult XPCJSContext::Initialize() {
   
   
   auto& shm = xpc::SelfHostedShmem::GetSingleton();
-  JS::SelfHostedCache selfHostedContent = shm.Content();
   JS::SelfHostedWriter writer = nullptr;
   if (XRE_IsParentProcess() && sSelfHostedUseSharedMemory) {
     
+    if (auto* sc = scache::StartupCache::GetSingleton()) {
+      const char* buf = nullptr;
+      uint32_t len = 0;
+      if (NS_SUCCEEDED(sc->GetBuffer(kSelfHostCacheKey, &buf, &len))) {
+        shm.InitFromParent(AsBytes(mozilla::Span(buf, len)));
+      }
+    }
+
     
-    writer = CreateSelfHostedSharedMemory;
+    
+    
+    if (shm.Content().IsEmpty()) {
+      writer = CreateSelfHostedSharedMemory;
+    }
   }
 
-  if (!JS::InitSelfHostedCode(cx, selfHostedContent, writer)) {
+  if (!JS::InitSelfHostedCode(cx, shm.Content(), writer)) {
     
     if (!JS_IsExceptionPending(cx) || JS_IsThrowingOutOfMemory(cx)) {
       NS_ABORT_OOM(0);  
