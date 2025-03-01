@@ -110,8 +110,7 @@ def support_vcs_checkout(config, task, taskdesc, repo_configs, sparse=False):
             "REPOSITORIES": json.dumps(
                 {repo.prefix: repo.name for repo in repo_configs.values()}
             ),
-            
-            "VCS_PATH": path.join("{task_workdir}", vcsdir),
+            "VCS_PATH": vcsdir,
         }
     )
     for repo_config in repo_configs.values():
@@ -199,5 +198,5 @@ def support_caches(
             
             
             
-            env[cache_cfg["env"]] = path.join("{task_workdir}", cache_dir)
+            env[cache_cfg["env"]] = cache_dir
         add_cache(task, taskdesc, cache_name, cache_dir)
