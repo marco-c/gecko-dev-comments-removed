@@ -36,10 +36,6 @@ namespace mozilla::dom {
 
 
 
-namespace {
-static mozilla::LazyLogModule gWebAuthnHandlerLog("webauthnhandler");
-}
-
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WebAuthnHandler)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
@@ -76,91 +72,6 @@ static uint8_t SerializeTransports(
     }
   }
   return transports;
-}
-
-nsresult GetOrigin(nsPIDOMWindowInner* aParent,
-                    nsAString& aOrigin,  nsACString& aHost) {
-  MOZ_ASSERT(aParent);
-  nsCOMPtr<Document> doc = aParent->GetDoc();
-  MOZ_ASSERT(doc);
-
-  nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
-  nsresult rv =
-      nsContentUtils::GetWebExposedOriginSerialization(principal, aOrigin);
-  if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(aOrigin.IsEmpty())) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (principal->GetIsIpAddress()) {
-    return NS_ERROR_DOM_SECURITY_ERR;
-  }
-
-  if (aOrigin.EqualsLiteral("null")) {
-    
-    
-    
-    MOZ_LOG(gWebAuthnHandlerLog, LogLevel::Debug,
-            ("Rejecting due to opaque origin"));
-    return NS_ERROR_DOM_NOT_ALLOWED_ERR;
-  }
-
-  nsCOMPtr<nsIURI> originUri;
-  auto* basePrin = BasePrincipal::Cast(principal);
-  if (NS_FAILED(basePrin->GetURI(getter_AddRefs(originUri)))) {
-    return NS_ERROR_FAILURE;
-  }
-  if (NS_FAILED(originUri->GetAsciiHost(aHost))) {
-    return NS_ERROR_FAILURE;
-  }
-
-  return NS_OK;
-}
-
-nsresult RelaxSameOrigin(nsPIDOMWindowInner* aParent,
-                         const nsAString& aInputRpId,
-                          nsACString& aRelaxedRpId) {
-  MOZ_ASSERT(aParent);
-  nsCOMPtr<Document> doc = aParent->GetDoc();
-  MOZ_ASSERT(doc);
-
-  nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
-  auto* basePrin = BasePrincipal::Cast(principal);
-  nsCOMPtr<nsIURI> uri;
-
-  if (NS_FAILED(basePrin->GetURI(getter_AddRefs(uri)))) {
-    return NS_ERROR_FAILURE;
-  }
-  nsAutoCString originHost;
-  if (NS_FAILED(uri->GetAsciiHost(originHost))) {
-    return NS_ERROR_FAILURE;
-  }
-  nsCOMPtr<Document> document = aParent->GetDoc();
-  if (!document || !document->IsHTMLOrXHTML()) {
-    return NS_ERROR_FAILURE;
-  }
-  nsHTMLDocument* html = document->AsHTMLDocument();
-  
-  
-  
-  
-  nsCOMPtr<nsIURI> inputRpIdURI;
-  nsresult rv = NS_MutateURI(uri)
-                    .SetHost(NS_ConvertUTF16toUTF8(aInputRpId))
-                    .Finalize(inputRpIdURI);
-  if (NS_FAILED(rv)) {
-    return NS_ERROR_DOM_SECURITY_ERR;
-  }
-  nsAutoCString inputRpId;
-  if (NS_FAILED(inputRpIdURI->GetAsciiHost(inputRpId))) {
-    return NS_ERROR_FAILURE;
-  }
-  if (!html->IsRegistrableDomainSuffixOfOrEqualTo(
-          NS_ConvertUTF8toUTF16(inputRpId), originHost)) {
-    return NS_ERROR_DOM_SECURITY_ERR;
-  }
-
-  aRelaxedRpId.Assign(inputRpId);
-  return NS_OK;
 }
 
 
@@ -220,18 +131,41 @@ already_AddRefed<Promise> WebAuthnHandler::MakeCredential(
     CancelTransaction(NS_ERROR_DOM_ABORT_ERR);
   }
 
-  nsString origin;
+  if (!MaybeCreateActor()) {
+    promise->MaybeReject(NS_ERROR_DOM_OPERATION_ERR);
+    return promise.forget();
+  }
+
+  nsCOMPtr<Document> doc = mWindow->GetDoc();
+  if (!IsWebAuthnAllowedInDocument(doc)) {
+    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
+    return promise.forget();
+  }
+
+  nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
+  if (!IsWebAuthnAllowedForPrincipal(principal)) {
+    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
+    return promise.forget();
+  }
+
   nsCString rpId;
-  nsresult rv = GetOrigin(mWindow, origin, rpId);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    promise->MaybeReject(rv);
+  if (aOptions.mRp.mId.WasPassed()) {
+    rpId = NS_ConvertUTF16toUTF8(aOptions.mRp.mId.Value());
+  } else {
+    nsresult rv = DefaultRpId(principal, rpId);
+    if (NS_FAILED(rv)) {
+      promise->MaybeReject(NS_ERROR_FAILURE);
+      return promise.forget();
+    }
+  }
+  if (!IsValidRpId(principal, rpId)) {
+    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
   }
 
   
   
   
-
   CryptoBuffer userId;
   userId.Assign(aOptions.mUser.mId);
   if (userId.Length() > 64) {
@@ -248,21 +182,6 @@ already_AddRefed<Promise> WebAuthnHandler::MakeCredential(
     adjustedTimeout = aOptions.mTimeout.Value();
     adjustedTimeout = std::max(15000u, adjustedTimeout);
     adjustedTimeout = std::min(120000u, adjustedTimeout);
-  }
-
-  if (aOptions.mRp.mId.WasPassed()) {
-    
-    
-    
-    
-    
-    
-    
-
-    if (NS_FAILED(RelaxSameOrigin(mWindow, aOptions.mRp.mId.Value(), rpId))) {
-      promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-      return promise.forget();
-    }
   }
 
   
@@ -325,11 +244,6 @@ already_AddRefed<Promise> WebAuthnHandler::MakeCredential(
       c.transports() = SerializeTransports(s.mTransports.Value());
     }
     excludeList.AppendElement(c);
-  }
-
-  if (!MaybeCreateActor()) {
-    promise->MaybeReject(NS_ERROR_DOM_OPERATION_ERR);
-    return promise.forget();
   }
 
   
@@ -447,9 +361,9 @@ already_AddRefed<Promise> WebAuthnHandler::MakeCredential(
     return promise.forget();
   }
 
-  WebAuthnMakeCredentialInfo info(
-      NS_ConvertUTF8toUTF16(rpId), challenge, adjustedTimeout, excludeList,
-      rpInfo, userInfo, coseAlgos, extensions, authSelection, attestation);
+  WebAuthnMakeCredentialInfo info(rpId, challenge, adjustedTimeout, excludeList,
+                                  rpInfo, userInfo, coseAlgos, extensions,
+                                  authSelection, attestation);
 
   
   
@@ -507,11 +421,43 @@ already_AddRefed<Promise> WebAuthnHandler::GetAssertion(
     CancelTransaction(NS_ERROR_DOM_ABORT_ERR);
   }
 
-  nsString origin;
+  if (!MaybeCreateActor()) {
+    promise->MaybeReject(NS_ERROR_DOM_OPERATION_ERR);
+    return promise.forget();
+  }
+
+  nsCOMPtr<Document> doc = mWindow->GetDoc();
+  if (!IsWebAuthnAllowedInDocument(doc)) {
+    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
+    return promise.forget();
+  }
+
+  nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
+  if (!IsWebAuthnAllowedForPrincipal(principal)) {
+    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
+    return promise.forget();
+  }
+
   nsCString rpId;
-  nsresult rv = GetOrigin(mWindow, origin, rpId);
+  if (aOptions.mRpId.WasPassed()) {
+    rpId = NS_ConvertUTF16toUTF8(aOptions.mRpId.Value());
+  } else {
+    nsresult rv = DefaultRpId(principal, rpId);
+    if (NS_FAILED(rv)) {
+      promise->MaybeReject(NS_ERROR_FAILURE);
+      return promise.forget();
+    }
+  }
+  if (!IsValidRpId(principal, rpId)) {
+    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
+    return promise.forget();
+  }
+
+  nsCString origin;
+  auto* basePrin = BasePrincipal::Cast(principal);
+  nsresult rv = basePrin->GetWebExposedOriginSerialization(origin);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    promise->MaybeReject(rv);
+    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
   }
 
@@ -524,21 +470,6 @@ already_AddRefed<Promise> WebAuthnHandler::GetAssertion(
     adjustedTimeout = aOptions.mTimeout.Value();
     adjustedTimeout = std::max(15000u, adjustedTimeout);
     adjustedTimeout = std::min(120000u, adjustedTimeout);
-  }
-
-  if (aOptions.mRpId.WasPassed()) {
-    
-    
-    
-    
-    
-    
-    
-
-    if (NS_FAILED(RelaxSameOrigin(mWindow, aOptions.mRpId.Value(), rpId))) {
-      promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-      return promise.forget();
-    }
   }
 
   
@@ -569,11 +500,6 @@ already_AddRefed<Promise> WebAuthnHandler::GetAssertion(
   }
   if (allowList.Length() == 0 && aOptions.mAllowCredentials.Length() != 0) {
     promise->MaybeReject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
-    return promise.forget();
-  }
-
-  if (!MaybeCreateActor()) {
-    promise->MaybeReject(NS_ERROR_DOM_OPERATION_ERR);
     return promise.forget();
   }
 
@@ -688,9 +614,9 @@ already_AddRefed<Promise> WebAuthnHandler::GetAssertion(
     return promise.forget();
   }
 
-  WebAuthnGetAssertionInfo info(
-      NS_ConvertUTF8toUTF16(rpId), challenge, adjustedTimeout, allowList,
-      extensions, aOptions.mUserVerification, aConditionallyMediated);
+  WebAuthnGetAssertionInfo info(rpId, challenge, adjustedTimeout, allowList,
+                                extensions, aOptions.mUserVerification,
+                                aConditionallyMediated);
 
   
   

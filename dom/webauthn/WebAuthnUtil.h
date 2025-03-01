@@ -12,8 +12,18 @@
 
 namespace mozilla::dom {
 
-bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
+bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsCString& aOrigin,
                     nsString& aAppId);
+
+bool IsWebAuthnAllowedInDocument(const nsCOMPtr<Document>& aDoc);
+
+bool IsWebAuthnAllowedForPrincipal(const nsCOMPtr<nsIPrincipal>& aPrincipal);
+
+nsresult DefaultRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
+                      nsACString& aRpId);
+
+bool IsValidRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
+                 const nsACString& aRpId);
 
 nsresult HashCString(const nsACString& aIn,  nsTArray<uint8_t>& aOut);
 

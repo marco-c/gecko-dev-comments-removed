@@ -4,14 +4,16 @@
 
 
 
+#include "hasht.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/WebAuthnUtil.h"
+#include "mozpkix/pkixutil.h"
 #include "nsComponentManagerUtils.h"
+#include "nsHTMLDocument.h"
 #include "nsICryptoHash.h"
 #include "nsIEffectiveTLDService.h"
+#include "nsIURIMutator.h"
 #include "nsNetUtil.h"
-#include "mozpkix/pkixutil.h"
-#include "nsHTMLDocument.h"
-#include "hasht.h"
 
 namespace mozilla::dom {
 
@@ -21,12 +23,11 @@ constexpr auto kGoogleAccountsAppId1 =
 constexpr auto kGoogleAccountsAppId2 =
     u"https://www.gstatic.com/securitykey/a/google.com/origins.json"_ns;
 
-bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
+bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsCString& aOrigin,
                     nsString& aAppId) {
   
-  nsAutoCString facetString = NS_ConvertUTF16toUTF8(aOrigin);
   nsCOMPtr<nsIURI> facetUri;
-  if (NS_FAILED(NS_NewURI(getter_AddRefs(facetUri), facetString))) {
+  if (NS_FAILED(NS_NewURI(getter_AddRefs(facetUri), aOrigin))) {
     return false;
   }
 
@@ -37,7 +38,7 @@ bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
 
   
   if (aAppId.IsEmpty() || aAppId.EqualsLiteral("null")) {
-    aAppId.Assign(aOrigin);
+    aAppId.Assign(NS_ConvertUTF8toUTF16(aOrigin));
     return true;
   }
 
@@ -105,6 +106,84 @@ bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
   }
 
   return false;
+}
+
+nsresult DefaultRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
+                      nsACString& aRpId) {
+  
+  
+  
+  auto* basePrin = BasePrincipal::Cast(aPrincipal);
+  nsCOMPtr<nsIURI> uri;
+  if (NS_FAILED(basePrin->GetURI(getter_AddRefs(uri)))) {
+    return NS_ERROR_FAILURE;
+  }
+  return uri->GetAsciiHost(aRpId);
+}
+
+bool IsWebAuthnAllowedInDocument(const nsCOMPtr<Document>& aDoc) {
+  MOZ_ASSERT(aDoc);
+  return aDoc->IsHTMLOrXHTML();
+}
+
+bool IsWebAuthnAllowedForPrincipal(const nsCOMPtr<nsIPrincipal>& aPrincipal) {
+  MOZ_ASSERT(aPrincipal);
+  if (aPrincipal->GetIsNullPrincipal()) {
+    return false;
+  }
+  if (aPrincipal->GetIsIpAddress()) {
+    return false;
+  }
+  
+  
+  if (!aPrincipal->GetIsOriginPotentiallyTrustworthy()) {
+    return false;
+  }
+  return true;
+}
+
+bool IsValidRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
+                 const nsACString& aRpId) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  nsCString normalizedRpId;
+  nsresult rv = NS_DomainToASCII(aRpId, normalizedRpId);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+  if (normalizedRpId != aRpId) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  auto* basePrin = BasePrincipal::Cast(aPrincipal);
+  nsCOMPtr<nsIURI> currentURI;
+  if (NS_FAILED(basePrin->GetURI(getter_AddRefs(currentURI)))) {
+    return false;
+  }
+  nsCOMPtr<nsIURI> targetURI;
+  rv = NS_MutateURI(currentURI).SetHost(aRpId).Finalize(targetURI);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+  return Document::IsValidDomain(currentURI, targetURI);
 }
 
 static nsresult HashCString(nsICryptoHash* aHashService, const nsACString& aIn,
