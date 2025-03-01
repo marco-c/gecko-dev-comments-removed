@@ -2,9 +2,9 @@
 
 
 
-import json
 import os
 import shutil
+import sys
 
 import mozpack.path as mozpath
 from mach.decorators import Command, CommandArgument, SubCommand
@@ -133,22 +133,15 @@ def node(ctx, script, *args):
 
 
 def maybe_setup(ctx):
+    sys.path.append(mozpath.join(ctx.topsrcdir, "tools", "lint", "eslint"))
+    import setup_helper
+
+    if not setup_helper.check_node_executables_valid():
+        return 1
+
     """Check if npm modules are installed, and run setup if needed."""
     dir = mozpath.dirname(__file__)
-    package_json = json.load(open(mozpath.join(dir, "package.json")))
-    needs_setup = False
-
-    
-    for module in package_json.get("devDependencies", {}):
-        path = mozpath.join(dir, "node_modules", module, "package.json")
-        if not os.path.isfile(path):
-            print(f"Missing node module {path}.")
-            needs_setup = True
-            break
-
-    if needs_setup:
-        print("Running npm install.")
-        setup(ctx)
+    setup_helper.eslint_maybe_setup(dir, "TypeScript")
 
 
 def build_required(lib, item):
