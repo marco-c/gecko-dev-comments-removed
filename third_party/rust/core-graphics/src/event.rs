@@ -1,11 +1,13 @@
 #![allow(non_upper_case_globals)]
+use crate::event_source::CGEventSource;
+use crate::geometry::CGPoint;
+
+use bitflags::bitflags;
 use core_foundation::{
     base::{CFRelease, CFRetain, CFTypeID, TCFType},
     mach_port::{CFMachPort, CFMachPortRef},
 };
-use event_source::CGEventSource;
-use foreign_types::ForeignType;
-use geometry::CGPoint;
+use foreign_types::{foreign_type, ForeignType};
 use libc::c_void;
 use std::mem::ManuallyDrop;
 
@@ -18,6 +20,7 @@ bitflags! {
     ///
     /// [Ref](http://opensource.apple.com/source/IOHIDFamily/IOHIDFamily-700/IOHIDSystem/IOKit/hidsystem/IOLLEvent.h)
     #[repr(C)]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub struct CGEventFlags: u64 {
         const CGEventFlagNull = 0;
 
@@ -419,16 +422,16 @@ pub type CGEventTapCallBackFn<'tap_life> =
 type CGEventTapCallBackInternal = unsafe extern "C" fn(
     proxy: CGEventTapProxy,
     etype: CGEventType,
-    event: ::sys::CGEventRef,
+    event: crate::sys::CGEventRef,
     user_info: *const c_void,
-) -> ::sys::CGEventRef;
+) -> crate::sys::CGEventRef;
 
 unsafe extern "C" fn cg_event_tap_callback_internal(
     _proxy: CGEventTapProxy,
     _etype: CGEventType,
-    _event: ::sys::CGEventRef,
+    _event: crate::sys::CGEventRef,
     _user_info: *const c_void,
-) -> ::sys::CGEventRef {
+) -> crate::sys::CGEventRef {
     let callback = _user_info as *mut CGEventTapCallBackFn;
     let event = CGEvent::from_ptr(_event);
     let new_event = (*callback)(_proxy, _etype, &event);
@@ -438,8 +441,6 @@ unsafe extern "C" fn cg_event_tap_callback_internal(
     };
     ManuallyDrop::new(event).as_ptr()
 }
-
-
 
 
 
@@ -518,7 +519,7 @@ impl<'tap_life> CGEventTap<'tap_life> {
 foreign_type! {
     #[doc(hidden)]
     pub unsafe type CGEvent {
-        type CType = ::sys::CGEvent;
+        type CType = crate::sys::CGEvent;
         fn drop = |p| CFRelease(p as *mut _);
         fn clone = |p| CFRetain(p as *const _) as *mut _;
     }
@@ -526,9 +527,7 @@ foreign_type! {
 
 impl CGEvent {
     pub fn type_id() -> CFTypeID {
-        unsafe {
-            CGEventGetTypeID()
-        }
+        unsafe { CGEventGetTypeID() }
     }
 
     pub fn new(source: CGEventSource) -> Result<CGEvent, ()> {
@@ -545,7 +544,7 @@ impl CGEvent {
     pub fn new_keyboard_event(
         source: CGEventSource,
         keycode: CGKeyCode,
-        keydown: bool
+        keydown: bool,
     ) -> Result<CGEvent, ()> {
         unsafe {
             let event_ref = CGEventCreateKeyboardEvent(source.as_ptr(), keycode, keydown);
@@ -561,11 +560,15 @@ impl CGEvent {
         source: CGEventSource,
         mouse_type: CGEventType,
         mouse_cursor_position: CGPoint,
-        mouse_button: CGMouseButton
+        mouse_button: CGMouseButton,
     ) -> Result<CGEvent, ()> {
         unsafe {
-            let event_ref = CGEventCreateMouseEvent(source.as_ptr(), mouse_type,
-                mouse_cursor_position, mouse_button);
+            let event_ref = CGEventCreateMouseEvent(
+                source.as_ptr(),
+                mouse_type,
+                mouse_cursor_position,
+                mouse_button,
+            );
             if !event_ref.is_null() {
                 Ok(Self::from_ptr(event_ref))
             } else {
@@ -630,9 +633,7 @@ impl CGEvent {
     }
 
     pub fn get_flags(&self) -> CGEventFlags {
-        unsafe {
-            CGEventGetFlags(self.as_ptr())
-        }
+        unsafe { CGEventGetFlags(self.as_ptr()) }
     }
 
     pub fn set_type(&self, event_type: CGEventType) {
@@ -642,9 +643,7 @@ impl CGEvent {
     }
 
     pub fn get_type(&self) -> CGEventType {
-        unsafe {
-            CGEventGetType(self.as_ptr())
-        }
+        unsafe { CGEventGetType(self.as_ptr()) }
     }
 
     pub fn set_string_from_utf16_unchecked(&self, buf: &[u16]) {
@@ -676,14 +675,14 @@ impl CGEvent {
     }
 }
 
-#[link(name = "CoreGraphics", kind = "framework")]
-extern {
+#[cfg_attr(feature = "link", link(name = "CoreGraphics", kind = "framework"))]
+extern "C" {
     
     fn CGEventGetTypeID() -> CFTypeID;
 
     
     
-    fn CGEventCreate(source: ::sys::CGEventSourceRef) -> ::sys::CGEventRef;
+    fn CGEventCreate(source: crate::sys::CGEventSourceRef) -> crate::sys::CGEventRef;
 
     
     
@@ -695,8 +694,11 @@ extern {
     
     
     
-    fn CGEventCreateKeyboardEvent(source: ::sys::CGEventSourceRef, keycode: CGKeyCode,
-        keydown: bool) -> ::sys::CGEventRef;
+    fn CGEventCreateKeyboardEvent(
+        source: crate::sys::CGEventSourceRef,
+        keycode: CGKeyCode,
+        keydown: bool,
+    ) -> crate::sys::CGEventRef;
 
     
     
@@ -711,8 +713,12 @@ extern {
     
     
     
-    fn CGEventCreateMouseEvent(source: ::sys::CGEventSourceRef, mouseType: CGEventType,
-        mouseCursorPosition: CGPoint, mouseButton: CGMouseButton) -> ::sys::CGEventRef;
+    fn CGEventCreateMouseEvent(
+        source: crate::sys::CGEventSourceRef,
+        mouseType: CGEventType,
+        mouseCursorPosition: CGPoint,
+        mouseButton: CGMouseButton,
+    ) -> crate::sys::CGEventRef;
 
     
     
@@ -722,57 +728,42 @@ extern {
     
     #[cfg(feature = "highsierra")]
     fn CGEventCreateScrollWheelEvent2(
-        source: ::sys::CGEventSourceRef,
+        source: crate::sys::CGEventSourceRef,
         units: CGScrollEventUnit,
         wheelCount: u32,
         wheel1: i32,
         wheel2: i32,
         wheel3: i32,
-    ) -> ::sys::CGEventRef;
+    ) -> crate::sys::CGEventRef;
 
     
     
     
     
     
-    fn CGEventPost(tapLocation: CGEventTapLocation, event: ::sys::CGEventRef);
+    fn CGEventPost(tapLocation: CGEventTapLocation, event: crate::sys::CGEventRef);
 
-    fn CGEventTapPostEvent(tapProxy: CGEventTapProxy, event: ::sys::CGEventRef);
+    fn CGEventTapPostEvent(tapProxy: CGEventTapProxy, event: crate::sys::CGEventRef);
 
     #[cfg(feature = "elcapitan")]
     
-    fn CGEventPostToPid(pid: libc::pid_t, event: ::sys::CGEventRef);
+    fn CGEventPostToPid(pid: libc::pid_t, event: crate::sys::CGEventRef);
 
     
-    fn CGEventSetFlags(event: ::sys::CGEventRef, flags: CGEventFlags);
+    fn CGEventSetFlags(event: crate::sys::CGEventRef, flags: CGEventFlags);
 
     
-    fn CGEventGetFlags(event: ::sys::CGEventRef) -> CGEventFlags;
-
-    
-    
-    fn CGEventGetLocation(event: ::sys::CGEventRef) -> CGPoint;
-
-    
-    fn CGEventSetType(event: ::sys::CGEventRef, eventType: CGEventType);
-
-    
-    fn CGEventGetType(event: ::sys::CGEventRef) -> CGEventType;
+    fn CGEventGetFlags(event: crate::sys::CGEventRef) -> CGEventFlags;
 
     
     
-    
-    
-    
-    
-    
-    
-    fn CGEventKeyboardSetUnicodeString(event: ::sys::CGEventRef,
-                                       length: libc::c_ulong,
-                                       string: *const u16);
+    fn CGEventGetLocation(event: crate::sys::CGEventRef) -> CGPoint;
 
     
-    fn CGEventGetIntegerValueField(event: ::sys::CGEventRef, field: CGEventField) -> i64;
+    fn CGEventSetType(event: crate::sys::CGEventRef, eventType: CGEventType);
+
+    
+    fn CGEventGetType(event: crate::sys::CGEventRef) -> CGEventType;
 
     
     
@@ -782,16 +773,14 @@ extern {
     
     
     
-    
-    
-    fn CGEventSetIntegerValueField(event: ::sys::CGEventRef, field: CGEventField, value: i64);
+    fn CGEventKeyboardSetUnicodeString(
+        event: crate::sys::CGEventRef,
+        length: libc::c_ulong,
+        string: *const u16,
+    );
 
     
-    
-    
-    
-    
-    fn CGEventGetDoubleValueField(event: ::sys::CGEventRef, field: CGEventField) -> f64;
+    fn CGEventGetIntegerValueField(event: crate::sys::CGEventRef, field: CGEventField) -> i64;
 
     
     
@@ -802,7 +791,26 @@ extern {
     
     
     
-    fn CGEventSetDoubleValueField(event: ::sys::CGEventRef, field: CGEventField, value: f64);
+    
+    fn CGEventSetIntegerValueField(event: crate::sys::CGEventRef, field: CGEventField, value: i64);
+
+    
+    
+    
+    
+    
+    fn CGEventGetDoubleValueField(event: crate::sys::CGEventRef, field: CGEventField) -> f64;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn CGEventSetDoubleValueField(event: crate::sys::CGEventRef, field: CGEventField, value: f64);
 
     
     fn CGEventTapCreate(
