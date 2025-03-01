@@ -146,6 +146,15 @@ void BRFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       } else {
         aMetrics.SetBlockStartAscent(aMetrics.BSize(wm) = 0);
       }
+
+      
+      
+      
+      
+      
+      
+      
+      finalSize.ISize(wm) = 1;
     }
 
     
@@ -172,6 +181,8 @@ void BRFrame::AddInlineMinISize(const IntrinsicSizeInput& aInput,
 void BRFrame::AddInlinePrefISize(const IntrinsicSizeInput& aInput,
                                  InlinePrefISizeData* aData) {
   if (!GetParent()->Style()->ShouldSuppressLineBreak()) {
+    
+    aData->mCurrentLine += 1;
     aData->ForceBreak();
   }
 }
