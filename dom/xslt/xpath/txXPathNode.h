@@ -13,35 +13,70 @@
 
 using txXPathNodeType = nsINode;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class txXPathNode {
  public:
+  explicit txXPathNode(const txXPathNode& aNode)
+      : mNode(aNode.mNode), mIndex(aNode.mIndex) {
+    MOZ_COUNT_CTOR(txXPathNode);
+  }
+  txXPathNode(txXPathNode&& aNode)
+      : mNode(std::move(aNode.mNode)), mIndex(aNode.mIndex) {
+    MOZ_COUNT_CTOR(txXPathNode);
+  }
+
+  explicit txXPathNode(mozilla::dom::Document* aDocument)
+      : mNode(aDocument), mIndex(eDocument) {
+    MOZ_COUNT_CTOR(txXPathNode);
+  }
+  explicit txXPathNode(nsIContent* aContent)
+      : mNode(aContent), mIndex(eContent) {
+    MOZ_COUNT_CTOR(txXPathNode);
+  }
+
+  txXPathNode& operator=(txXPathNode&& aOther) = default;
   bool operator==(const txXPathNode& aNode) const;
   bool operator!=(const txXPathNode& aNode) const { return !(*this == aNode); }
-  ~txXPathNode();
+  ~txXPathNode() { MOZ_COUNT_DTOR(txXPathNode); }
 
  private:
-  friend class txNodeSet;
   friend class txXPathNativeNode;
   friend class txXPathNodeUtils;
   friend class txXPathTreeWalker;
 
-  txXPathNode(const txXPathNode& aNode);
-
-  explicit txXPathNode(mozilla::dom::Document* aDocument)
-      : mNode(aDocument), mRefCountRoot(0), mIndex(eDocument) {
+  txXPathNode(nsINode* aNode, uint32_t aIndex) : mNode(aNode), mIndex(aIndex) {
     MOZ_COUNT_CTOR(txXPathNode);
-  }
-  txXPathNode(nsINode* aNode, uint32_t aIndex, nsINode* aRoot)
-      : mNode(aNode), mRefCountRoot(aRoot ? 1 : 0), mIndex(aIndex) {
-    MOZ_COUNT_CTOR(txXPathNode);
-    if (aRoot) {
-      NS_ADDREF(aRoot);
-    }
   }
 
   static nsINode* RootOf(nsINode* aNode) { return aNode->SubtreeRoot(); }
   nsINode* Root() const { return RootOf(mNode); }
-  nsINode* GetRootToAddRef() const { return mRefCountRoot ? Root() : nullptr; }
 
   bool isDocument() const { return mIndex == eDocument; }
   bool isContent() const { return mIndex == eContent; }
@@ -49,18 +84,20 @@ class txXPathNode {
 
   nsIContent* Content() const {
     NS_ASSERTION(isContent() || isAttribute(), "wrong type");
-    return static_cast<nsIContent*>(mNode);
+    return static_cast<nsIContent*>(mNode.get());
   }
   mozilla::dom::Document* Document() const {
     NS_ASSERTION(isDocument(), "wrong type");
-    return static_cast<mozilla::dom::Document*>(mNode);
+    return static_cast<mozilla::dom::Document*>(mNode.get());
   }
 
-  enum PositionType { eDocument = (1 << 30), eContent = eDocument - 1 };
+  enum PositionType : uint32_t {
+    eDocument = UINT32_MAX,
+    eContent = eDocument - 1
+  };
 
-  nsINode* mNode;
-  uint32_t mRefCountRoot : 1;
-  uint32_t mIndex : 31;
+  nsCOMPtr<nsINode> mNode;
+  uint32_t mIndex;
 };
 
 class txNamespaceManager {

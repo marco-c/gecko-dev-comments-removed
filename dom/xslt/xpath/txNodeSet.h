@@ -44,7 +44,8 @@ class txNodeSet : public txAExprResult {
 
 
 
-  nsresult add(const txXPathNode& aNode);
+  nsresult add(const txXPathNode& aNode) { return add(txXPathNode(aNode)); }
+  nsresult add(txXPathNode&& aNode);
 
   
 
@@ -72,7 +73,10 @@ class txNodeSet : public txAExprResult {
 
 
 
-  nsresult append(const txXPathNode& aNode);
+  nsresult append(const txXPathNode& aNode) {
+    return append(txXPathNode(aNode));
+  }
+  nsresult append(txXPathNode&& aNode);
 
   
 
