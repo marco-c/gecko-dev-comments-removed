@@ -179,8 +179,8 @@ class LookupCache {
   
   
   
-  static nsresult GetLookupFragments(const nsACString& aSpec,
-                                     nsTArray<nsCString>* aFragments);
+  static void GetLookupFragments(const nsACString& aSpec,
+                                 nsTArray<nsCString>* aFragments);
 
   static nsresult GetLookupEntitylistFragments(const nsACString& aSpec,
                                                nsTArray<nsCString>* aFragments);
