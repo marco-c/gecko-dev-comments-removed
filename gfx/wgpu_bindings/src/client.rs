@@ -10,6 +10,7 @@ use crate::{
 
 use crate::SwapChainId;
 
+use wgc::naga::front::wgsl::ImplementedLanguageExtension;
 use wgc::{command::RenderBundleEncoder, id, identity::IdentityManager};
 use wgt::{BufferAddress, BufferSize, DynamicOffset, IndexFormat, TextureFormat};
 
@@ -19,6 +20,7 @@ use parking_lot::Mutex;
 
 use nsstring::{nsACString, nsString};
 
+use std::fmt::Write;
 use std::{borrow::Cow, ptr};
 
 use self::render_pass::RenderPassDepthStencilAttachment;
@@ -417,6 +419,33 @@ pub unsafe extern "C" fn wgpu_client_make_adapter_id(client: &Client) -> id::Ada
 #[no_mangle]
 pub extern "C" fn wgpu_client_fill_default_limits(limits: &mut wgt::Limits) {
     *limits = wgt::Limits::default();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub extern "C" fn wgpu_client_instance_get_wgsl_language_feature(
+    buffer: &mut nsstring::nsCString,
+    index: usize,
+) {
+    match ImplementedLanguageExtension::all().get(index) {
+        Some(some) => buffer.write_str(some.to_ident()).unwrap(),
+        None => (),
+    }
 }
 
 #[no_mangle]
