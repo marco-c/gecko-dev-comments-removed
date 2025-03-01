@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+var isInChrome = window.location.protocol == "chrome:";
+if (isInChrome) {
+  
+  var exports = {};
+  var { require, loader } = ChromeUtils.importESModule(
+    "resource://devtools/shared/loader/Loader.sys.mjs"
+  );
+  var { BrowserLoader } = ChromeUtils.importESModule(
+    "resource://devtools/shared/loader/browser-loader.sys.mjs"
+  );
+}
