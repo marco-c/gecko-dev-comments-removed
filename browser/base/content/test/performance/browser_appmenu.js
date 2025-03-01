@@ -28,6 +28,10 @@ add_task(async function () {
   await ensureAnimationsFinished();
   await disableFxaBadge();
 
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+  BrowserTestUtils.removeTab(tab);
+
   let textBoxRect = gURLBar
     .querySelector("moz-input-box")
     .getBoundingClientRect();
