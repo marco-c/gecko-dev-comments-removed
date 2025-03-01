@@ -788,11 +788,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "InputEvent", insecureContext: true },
   
-  {
-    name: "InstallTrigger",
-    insecureContext: true,
-    disabled: isEarlyBetaOrEarlier,
-  },
+  { name: "InstallTrigger", insecureContext: true },
   
   { name: "IntersectionObserver", insecureContext: true },
   
