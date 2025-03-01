@@ -101,7 +101,6 @@ this.addonsSearchDetection = class extends ExtensionAPI {
 
         
         
-        
         async getPublicSuffix(url) {
           try {
             return Services.eTLD.getBaseDomain(Services.io.newURI(url));
