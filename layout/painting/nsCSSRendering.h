@@ -610,6 +610,8 @@ struct nsCSSRendering {
     
     
     Float baselineOffset = 0.0f;
+    
+    bool allowInkSkipping = true;
   };
 
   

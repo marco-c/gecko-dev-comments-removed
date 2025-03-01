@@ -860,11 +860,11 @@ class nsTextFrame : public nsIFrame {
                     const PaintShadowParams& aParams);
 
   struct LineDecoration {
-    nsIFrame* mFrame;
+    nsIFrame* const mFrame;
 
     
     
-    nscoord mBaselineOffset;
+    const nscoord mBaselineOffset;
 
     
     const mozilla::LengthPercentageOrAuto mTextUnderlineOffset;
@@ -872,26 +872,30 @@ class nsTextFrame : public nsIFrame {
     
     
     const mozilla::StyleTextDecorationLength mTextDecorationThickness;
-    nscolor mColor;
-    mozilla::StyleTextDecorationStyle mStyle;
+    const nscolor mColor;
+    const mozilla::StyleTextDecorationStyle mStyle;
 
     
     
     const mozilla::StyleTextUnderlinePosition mTextUnderlinePosition;
 
+    const bool mAllowInkSkipping;
+
     LineDecoration(nsIFrame* const aFrame, const nscoord aOff,
-                   mozilla::StyleTextUnderlinePosition aUnderlinePosition,
+                   const mozilla::StyleTextUnderlinePosition aUnderlinePosition,
                    const mozilla::LengthPercentageOrAuto& aUnderlineOffset,
                    const mozilla::StyleTextDecorationLength& aDecThickness,
                    const nscolor aColor,
-                   const mozilla::StyleTextDecorationStyle aStyle)
+                   const mozilla::StyleTextDecorationStyle aStyle,
+                   const bool aAllowInkSkipping)
         : mFrame(aFrame),
           mBaselineOffset(aOff),
           mTextUnderlineOffset(aUnderlineOffset),
           mTextDecorationThickness(aDecThickness),
           mColor(aColor),
           mStyle(aStyle),
-          mTextUnderlinePosition(aUnderlinePosition) {}
+          mTextUnderlinePosition(aUnderlinePosition),
+          mAllowInkSkipping(aAllowInkSkipping) {}
 
     LineDecoration(const LineDecoration& aOther) = default;
 
@@ -901,7 +905,8 @@ class nsTextFrame : public nsIFrame {
              mBaselineOffset == aOther.mBaselineOffset &&
              mTextUnderlinePosition == aOther.mTextUnderlinePosition &&
              mTextUnderlineOffset == aOther.mTextUnderlineOffset &&
-             mTextDecorationThickness == aOther.mTextDecorationThickness;
+             mTextDecorationThickness == aOther.mTextDecorationThickness &&
+             mAllowInkSkipping == aOther.mAllowInkSkipping;
     }
 
     bool operator!=(const LineDecoration& aOther) const {

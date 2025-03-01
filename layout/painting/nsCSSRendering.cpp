@@ -1153,9 +1153,10 @@ static nsIFrame* GetPageSequenceForCanvas(const nsIFrame* aCanvasFrame) {
   return ps;
 }
 
-auto nsCSSRendering::FindEffectiveBackgroundColor(
-    nsIFrame* aFrame, bool aStopAtThemed,
-    bool aPreferBodyToCanvas) -> EffectiveBackgroundColor {
+auto nsCSSRendering::FindEffectiveBackgroundColor(nsIFrame* aFrame,
+                                                  bool aStopAtThemed,
+                                                  bool aPreferBodyToCanvas)
+    -> EffectiveBackgroundColor {
   MOZ_ASSERT(aFrame);
   nsPresContext* pc = aFrame->PresContext();
   auto BgColorIfNotTransparent = [&](nsIFrame* aFrame) -> Maybe<nscolor> {
@@ -4095,7 +4096,8 @@ void nsCSSRendering::PaintDecorationLine(
       aFrame->StyleText()->mTextDecorationSkipInk;
   bool skipInkEnabled =
       skipInk != mozilla::StyleTextDecorationSkipInk::None &&
-      aParams.decoration != StyleTextDecorationLine::LINE_THROUGH;
+      aParams.decoration != StyleTextDecorationLine::LINE_THROUGH &&
+      aParams.allowInkSkipping && aFrame->IsTextFrame();
 
   if (!skipInkEnabled || aParams.glyphRange.Length() == 0) {
     PaintDecorationLineInternal(aFrame, aDrawTarget, aParams, rect);
@@ -4103,13 +4105,7 @@ void nsCSSRendering::PaintDecorationLine(
   }
 
   
-  nsTextFrame* textFrame = nullptr;
-  if (aFrame->IsTextFrame()) {
-    textFrame = static_cast<nsTextFrame*>(aFrame);
-  } else {
-    PaintDecorationLineInternal(aFrame, aDrawTarget, aParams, rect);
-    return;
-  }
+  nsTextFrame* textFrame = static_cast<nsTextFrame*>(aFrame);
 
   
   gfxTextRun* textRun =
