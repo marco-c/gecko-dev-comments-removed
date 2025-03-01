@@ -826,7 +826,7 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
   }
 
   
-  if (Watchtower::watchesPropertyModification(obj)) {
+  if (Watchtower::watchesPropertyValueChange(obj)) {
     return false;
   }
 

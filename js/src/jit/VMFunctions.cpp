@@ -2235,10 +2235,10 @@ static bool TryAddOrSetPlainObjectProperty(JSContext* cx,
     if (!prop.isDataProperty() || !prop.writable()) {
       return true;
     }
-    bool watchesModification = Watchtower::watchesPropertyModification(obj);
-    if (MOZ_UNLIKELY(watchesModification)) {
-      if (!Watchtower::watchPropertyModification<AllowGC::NoGC>(cx, obj, key,
-                                                                value, prop)) {
+    bool watchesPropValue = Watchtower::watchesPropertyValueChange(obj);
+    if (MOZ_UNLIKELY(watchesPropValue)) {
+      if (!Watchtower::watchPropertyValueChange<AllowGC::NoGC>(cx, obj, key,
+                                                               value, prop)) {
         return false;
       }
     }
@@ -2250,7 +2250,7 @@ static bool TryAddOrSetPlainObjectProperty(JSContext* cx,
       
       
       
-      if (!watchesModification) {
+      if (!watchesPropValue) {
         TaggedSlotOffset offset = obj->getTaggedSlotOffset(prop.slot());
         cache.set(receiverShape, nullptr, key, offset, 0);
       }

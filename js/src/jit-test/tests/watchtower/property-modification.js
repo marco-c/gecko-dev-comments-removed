@@ -25,9 +25,9 @@ function testBasic() {
     let log = getLogString(o);
 
     assertEq(log,
-        `modify-prop: a
-modify-prop: a
-modify-prop: a`);
+        `change-prop-value: a
+change-prop-value: a
+change-prop-value: a`);
 }
 
 for (var i = 0; i < 20; i++) {
