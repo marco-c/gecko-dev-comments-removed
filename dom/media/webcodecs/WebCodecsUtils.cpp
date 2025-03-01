@@ -11,6 +11,8 @@
 #include "VideoUtils.h"
 #include "js/experimental/TypedData.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/VideoColorSpaceBinding.h"
 #include "mozilla/dom/VideoFrameBinding.h"
@@ -628,7 +630,8 @@ bool IsSupportedVideoCodec(const nsAString& aCodec) {
       !IsAV1CodecString(aCodec) && !aCodec.EqualsLiteral("vp8")) {
     if (IsH265CodecString(aCodec)) {
       
-      return IsOnMacOS();
+      return StaticPrefs::dom_media_webcodecs_h265_enabled() &&
+             StaticPrefs::media_hevc_enabled() && IsOnMacOS();
     }
     return false;
   }
