@@ -16,6 +16,13 @@
 
 
 
+extern crate foreign_types;
+extern crate libc;
+
+#[macro_use]
+extern crate core_foundation;
+extern crate core_graphics;
+
 pub mod font;
 pub mod font_collection;
 pub mod font_descriptor;

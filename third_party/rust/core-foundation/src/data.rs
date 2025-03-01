@@ -81,14 +81,7 @@ impl CFData {
     
     #[inline]
     pub fn bytes(&self) -> &[u8] {
-        unsafe {
-            let ptr = CFDataGetBytePtr(self.0);
-            
-            if ptr.is_null() {
-                return &[];
-            }
-            slice::from_raw_parts(ptr, self.len() as usize)
-        }
+        unsafe { slice::from_raw_parts(CFDataGetBytePtr(self.0), self.len() as usize) }
     }
 
     

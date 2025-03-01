@@ -15,6 +15,12 @@
 
 
 
+extern crate core_foundation_sys;
+extern crate libc;
+
+#[cfg(feature = "with-chrono")]
+extern crate chrono;
+
 use crate::base::TCFType;
 
 pub unsafe trait ConcreteCFType: TCFType {}
