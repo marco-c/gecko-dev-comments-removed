@@ -17,70 +17,51 @@
 
 namespace mozilla::dom {
 
-
-constexpr auto kGoogleAccountsAppId1 =
-    u"https://www.gstatic.com/securitykey/origins.json"_ns;
-constexpr auto kGoogleAccountsAppId2 =
-    u"https://www.gstatic.com/securitykey/a/google.com/origins.json"_ns;
-
-bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsCString& aOrigin,
-                    nsString& aAppId) {
+bool IsValidAppId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
+                  const nsCString& aAppId) {
   
-  nsCOMPtr<nsIURI> facetUri;
-  if (NS_FAILED(NS_NewURI(getter_AddRefs(facetUri), aOrigin))) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  auto* principal = BasePrincipal::Cast(aPrincipal);
+  nsCOMPtr<nsIURI> callerUri;
+  nsresult rv = principal->GetURI(getter_AddRefs(callerUri));
+  if (NS_FAILED(rv)) {
     return false;
   }
 
-  
-  if (!facetUri->SchemeIs("https")) {
-    return false;
-  }
-
-  
-  if (aAppId.IsEmpty() || aAppId.EqualsLiteral("null")) {
-    aAppId.Assign(NS_ConvertUTF8toUTF16(aOrigin));
-    return true;
-  }
-
-  
-  nsAutoCString appIdString = NS_ConvertUTF16toUTF8(aAppId);
   nsCOMPtr<nsIURI> appIdUri;
-  if (NS_FAILED(NS_NewURI(getter_AddRefs(appIdUri), appIdString))) {
+  rv = NS_NewURI(getter_AddRefs(appIdUri), aAppId);
+  if (NS_FAILED(rv)) {
     return false;
   }
 
+  
+  
+  
+  
+  
   
   if (!appIdUri->SchemeIs("https")) {
-    return false;
+    nsCString facetId;
+    rv = principal->GetWebExposedOriginSerialization(facetId);
+    return NS_SUCCEEDED(rv) && facetId == aAppId;
   }
 
-  nsAutoCString appIdHost;
-  if (NS_FAILED(appIdUri->GetAsciiHost(appIdHost))) {
-    return false;
-  }
-
-  
-  if (appIdHost.EqualsLiteral("localhost")) {
-    nsAutoCString facetHost;
-    if (NS_FAILED(facetUri->GetAsciiHost(facetHost))) {
-      return false;
-    }
-
-    if (facetHost.EqualsLiteral("localhost")) {
-      return true;
-    }
-  }
-
-  
-  
-  
-  nsCOMPtr<Document> document = aParent->GetDoc();
-  if (!document || !document->IsHTMLOrXHTML()) {
-    return false;
-  }
-
-  nsHTMLDocument* html = document->AsHTMLDocument();
-  
   
   nsCOMPtr<nsIEffectiveTLDService> tldService =
       do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
@@ -88,20 +69,29 @@ bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsCString& aOrigin,
     return false;
   }
 
-  nsAutoCString lowestFacetHost;
-  if (NS_FAILED(tldService->GetBaseDomain(facetUri, 0, lowestFacetHost))) {
+  nsAutoCString baseDomainCaller;
+  rv = tldService->GetBaseDomain(callerUri, 0, baseDomainCaller);
+  if (NS_FAILED(rv)) {
     return false;
   }
 
-  if (html->IsRegistrableDomainSuffixOfOrEqualTo(
-          NS_ConvertUTF8toUTF16(lowestFacetHost), appIdHost)) {
+  nsAutoCString baseDomainAppId;
+  rv = tldService->GetBaseDomain(appIdUri, 0, baseDomainAppId);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+
+  if (baseDomainCaller == baseDomainAppId) {
     return true;
   }
 
   
-  if (lowestFacetHost.EqualsLiteral("google.com") &&
-      (aAppId.Equals(kGoogleAccountsAppId1) ||
-       aAppId.Equals(kGoogleAccountsAppId2))) {
+  
+  
+  if (baseDomainCaller.EqualsLiteral("google.com") &&
+      (aAppId.Equals("https://www.gstatic.com/securitykey/origins.json"_ns) ||
+       aAppId.Equals(
+           "https://www.gstatic.com/securitykey/a/google.com/origins.json"_ns))) {
     return true;
   }
 

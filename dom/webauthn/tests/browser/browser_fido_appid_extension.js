@@ -11,6 +11,7 @@ let expectNotAllowedError = expectError("NotAllowed");
 let expectSecurityError = expectError("Security");
 
 let gAppId = "https://example.com/appId";
+let gSameSiteAppId = "https://subdomain.example.com/appId";
 let gCrossOriginAppId = "https://example.org/appId";
 let gAuthenticatorId = add_virtual_authenticator();
 
@@ -69,6 +70,46 @@ add_task(async function test_appid() {
 
   removeCredential(gAuthenticatorId, credIdB64);
   removeCredential(gAuthenticatorId, crossOriginCredIdB64);
+
+  
+  BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function test_same_site_appid() {
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+
+  
+  let credIdB64 = await addCredential(gAuthenticatorId, gSameSiteAppId);
+  let credId = base64ToBytesUrlSafe(credIdB64);
+
+  
+  await promiseWebAuthnGetAssertion(tab, credId)
+    .then(arrivingHereIsBad)
+    .catch(expectNotAllowedError);
+
+  
+  await promiseWebAuthnGetAssertion(tab, credId, {
+    appid: gCrossOriginAppId,
+  })
+    .then(arrivingHereIsBad)
+    .catch(expectSecurityError);
+
+  
+  let rpIdHash = await promiseWebAuthnGetAssertion(tab, credId, {
+    appid: gSameSiteAppId,
+  })
+    .then(({ authenticatorData, extensions }) => {
+      is(extensions.appid, true, "appid extension was acted upon");
+      return authenticatorData.slice(0, 32);
+    })
+    .then(rpIdHash => {
+      
+      checkRpIdHash(rpIdHash, gSameSiteAppId);
+    })
+    .catch(arrivingHereIsBad);
+
+  removeCredential(gAuthenticatorId, credIdB64);
 
   
   BrowserTestUtils.removeTab(tab);

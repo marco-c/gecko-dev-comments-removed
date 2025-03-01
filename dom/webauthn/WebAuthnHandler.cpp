@@ -453,14 +453,6 @@ already_AddRefed<Promise> WebAuthnHandler::GetAssertion(
     return promise.forget();
   }
 
-  nsCString origin;
-  auto* basePrin = BasePrincipal::Cast(principal);
-  nsresult rv = basePrin->GetWebExposedOriginSerialization(origin);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return promise.forget();
-  }
-
   
   
   
@@ -523,17 +515,22 @@ already_AddRefed<Promise> WebAuthnHandler::GetAssertion(
   }
 
   
+  Maybe<nsCString> maybeAppId;
   if (aOptions.mExtensions.mAppid.WasPassed()) {
-    nsString appId(aOptions.mExtensions.mAppid.Value());
+    nsCString appId(NS_ConvertUTF16toUTF8(aOptions.mExtensions.mAppid.Value()));
 
     
-    if (!EvaluateAppID(mWindow, origin, appId)) {
-      promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-      return promise.forget();
+    
+    if (appId.IsEmpty() || appId.EqualsLiteral("null")) {
+      auto* basePrin = BasePrincipal::Cast(principal);
+      nsresult rv = basePrin->GetWebExposedOriginSerialization(appId);
+      if (NS_FAILED(rv)) {
+        promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
+        return promise.forget();
+      }
     }
 
-    
-    extensions.AppendElement(WebAuthnExtensionAppId(appId));
+    maybeAppId.emplace(std::move(appId));
   }
 
   
@@ -614,9 +611,9 @@ already_AddRefed<Promise> WebAuthnHandler::GetAssertion(
     return promise.forget();
   }
 
-  WebAuthnGetAssertionInfo info(rpId, challenge, adjustedTimeout, allowList,
-                                extensions, aOptions.mUserVerification,
-                                aConditionallyMediated);
+  WebAuthnGetAssertionInfo info(
+      rpId, maybeAppId, challenge, adjustedTimeout, allowList, extensions,
+      aOptions.mUserVerification, aConditionallyMediated);
 
   
   
