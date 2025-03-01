@@ -35,6 +35,7 @@
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/UserActivation.h"
+#include "mozilla/dom/WebTaskScheduler.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionNoteRootCallback.h"
 #include "nsCycleCollectionParticipant.h"
@@ -176,9 +177,11 @@ class PromiseJobRunnable final : public MicroTaskRunnable {
   PromiseJobRunnable(JS::HandleObject aPromise, JS::HandleObject aCallback,
                      JS::HandleObject aCallbackGlobal,
                      JS::HandleObject aAllocationSite,
-                     nsIGlobalObject* aIncumbentGlobal)
+                     nsIGlobalObject* aIncumbentGlobal,
+                     WebTaskSchedulingState* aSchedulingState)
       : mCallback(new PromiseJobCallback(aCallback, aCallbackGlobal,
                                          aAllocationSite, aIncumbentGlobal)),
+        mSchedulingState(aSchedulingState),
         mPropagateUserInputEventHandling(false) {
     MOZ_ASSERT(js::IsFunctionObject(aCallback));
 
@@ -197,10 +200,11 @@ class PromiseJobRunnable final : public MicroTaskRunnable {
   MOZ_CAN_RUN_SCRIPT
   virtual void Run(AutoSlowOperation& aAso) override {
     JSObject* callback = mCallback->CallbackPreserveColor();
-    nsIGlobalObject* global = callback ? xpc::NativeGlobal(callback) : nullptr;
+    nsCOMPtr<nsIGlobalObject> global =
+        callback ? xpc::NativeGlobal(callback) : nullptr;
     if (global && !global->IsDying()) {
       
-      nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(global);
+      nsPIDOMWindowInner* win = global->GetAsInnerWindow();
       RefPtr<Document> doc;
       if (win) {
         doc = win->GetExtantDoc();
@@ -208,7 +212,17 @@ class PromiseJobRunnable final : public MicroTaskRunnable {
       AutoHandlingUserInputStatePusher userInpStatePusher(
           mPropagateUserInputEventHandling);
 
+      
+      
+      
+      global->SetWebTaskSchedulingState(mSchedulingState);
+
       mCallback->Call("promise callback");
+
+      
+      
+      global->SetWebTaskSchedulingState(nullptr);
+
       aAso.CheckForInterrupt();
     }
     
@@ -227,15 +241,24 @@ class PromiseJobRunnable final : public MicroTaskRunnable {
 
  private:
   const RefPtr<PromiseJobCallback> mCallback;
+  const RefPtr<WebTaskSchedulingState> mSchedulingState;
   bool mPropagateUserInputEventHandling;
 };
 
+enum { INCUMBENT_SETTING_SLOT, SCHEDULING_STATE_SLOT, HOSTDEFINED_DATA_SLOTS };
 
 
+void FinalizeHostDefinedData(JS::GCContext* gcx, JSObject* objSelf) {
+  JS::Value slotEvent = JS::GetReservedSlot(objSelf, SCHEDULING_STATE_SLOT);
+  if (slotEvent.isUndefined()) {
+    return;
+  }
 
-
-
-void FinalizeHostDefinedData(JS::GCContext* gcx, JSObject* objSelf) {}
+  WebTaskSchedulingState* schedulingState =
+      static_cast<WebTaskSchedulingState*>(slotEvent.toPrivate());
+  schedulingState->Release();
+  JS_SetReservedSlot(objSelf, SCHEDULING_STATE_SLOT, JS::UndefinedValue());
+}
 
 static const JSClassOps sHostDefinedData = {
     nullptr , nullptr ,
@@ -244,13 +267,11 @@ static const JSClassOps sHostDefinedData = {
     FinalizeHostDefinedData 
 };
 
-enum { INCUMBENT_SETTING_SLOT, HOSTDEFINED_DATA_SLOTS };
-
 
 static const JSClass sHostDefinedDataClass = {
     "HostDefinedData",
     JSCLASS_HAS_RESERVED_SLOTS(HOSTDEFINED_DATA_SLOTS) |
-        JSCLASS_BACKGROUND_FINALIZE,
+        JSCLASS_FOREGROUND_FINALIZE,
     &sHostDefinedData};
 
 bool CycleCollectedJSContext::getHostDefinedData(
@@ -279,6 +300,14 @@ bool CycleCollectedJSContext::getHostDefinedData(
 
   JS_SetReservedSlot(objResult, INCUMBENT_SETTING_SLOT,
                      JS::ObjectValue(*incumbentGlobal));
+
+  if (mozilla::dom::WebTaskSchedulingState* schedulingState =
+          mozilla::dom::GetWebTaskSchedulingState()) {
+    schedulingState->AddRef();
+    JS_SetReservedSlot(objResult, SCHEDULING_STATE_SLOT,
+                       JS::PrivateValue(schedulingState));
+  }
+
   aData.set(objResult);
 
   return true;
@@ -291,6 +320,7 @@ bool CycleCollectedJSContext::enqueuePromiseJob(
   MOZ_ASSERT(Get() == this);
 
   nsIGlobalObject* global = nullptr;
+  WebTaskSchedulingState* schedulingState = nullptr;
 
   if (hostDefinedData) {
     MOZ_RELEASE_ASSERT(JS::GetClass(hostDefinedData.get()) ==
@@ -300,11 +330,17 @@ bool CycleCollectedJSContext::enqueuePromiseJob(
     
     MOZ_ASSERT(incumbentGlobal.isObject());
     global = xpc::NativeGlobal(&incumbentGlobal.toObject());
+
+    JS::Value state =
+        JS::GetReservedSlot(hostDefinedData.get(), SCHEDULING_STATE_SLOT);
+    if (!state.isUndefined()) {
+      schedulingState = static_cast<WebTaskSchedulingState*>(state.toPrivate());
+    }
   }
 
   JS::RootedObject jobGlobal(aCx, JS::CurrentGlobalOrNull(aCx));
   RefPtr<PromiseJobRunnable> runnable = new PromiseJobRunnable(
-      aPromise, aJob, jobGlobal, aAllocationSite, global);
+      aPromise, aJob, jobGlobal, aAllocationSite, global, schedulingState);
   DispatchToMicroTask(runnable.forget());
   return true;
 }
