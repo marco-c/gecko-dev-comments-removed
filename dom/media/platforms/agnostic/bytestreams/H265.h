@@ -399,8 +399,7 @@ class H265 final {
   
   
   static already_AddRefed<mozilla::MediaByteBuffer> CreateNewExtraData(
-      const HVCCConfig& aConfig, const Maybe<H265NALU>& aSPS,
-      const Maybe<H265NALU>& aPPS, const Maybe<H265NALU>& aVPS);
+      const HVCCConfig& aConfig, const nsTArray<H265NALU>& aNALUs);
 
  private:
   
