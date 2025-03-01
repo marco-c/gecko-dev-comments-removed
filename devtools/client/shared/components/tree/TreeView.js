@@ -53,6 +53,7 @@ define(function (require, exports, module) {
     defaultSelectFirstNode: true,
     active: null,
     expandableStrings: true,
+    maxStringLength: 50,
     columns: [],
   };
 
@@ -150,6 +151,8 @@ define(function (require, exports, module) {
         header: PropTypes.bool,
         
         expandableStrings: PropTypes.bool,
+        
+        maxStringLength: PropTypes.number,
         
         columns: PropTypes.arrayOf(
           PropTypes.shape({
@@ -593,7 +596,7 @@ define(function (require, exports, module) {
         return [];
       }
 
-      const { expandableStrings, provider } = this.props;
+      const { expandableStrings, provider, maxStringLength } = this.props;
       let children = provider.getChildren(parent) || [];
 
       
@@ -615,7 +618,7 @@ define(function (require, exports, module) {
         
         const value = provider.getValue(child);
 
-        if (expandableStrings && isLongString(value)) {
+        if (expandableStrings && isLongString(value, maxStringLength)) {
           hasChildren = true;
         }
 
@@ -794,8 +797,8 @@ define(function (require, exports, module) {
     return [{ id: "default" }, ...columns];
   }
 
-  function isLongString(value) {
-    return typeof value == "string" && value.length > 50;
+  function isLongString(value, maxStringLength) {
+    return typeof value == "string" && value.length > maxStringLength;
   }
 
   
