@@ -206,11 +206,13 @@ function assert_subtree_equals(node1, node2) {
     current1 = tree1.nextNode();
     current2 = tree2.nextNode();
 
+    if (!current1) break;
+
     
     
     
     
-    if (current1 && !current1.isEqualNode(current2)) {
+    if (!current1.isEqualNode(current2)) {
       let breadcrumbs = "";
       let current = current1;
       while (current) {
@@ -222,7 +224,13 @@ function assert_subtree_equals(node1, node2) {
       assert_true(current1.isEqualNode(current2),
           `${current1}.isEqual(${current2}) fails. Path: ${breadcrumbs}.`);
     }
-   } while (current1);
+
+    
+    
+    if (is_html_template(current1) && is_html_template(current2)) {
+      assert_subtree_equals(current1.content, current2.content);
+    }
+  } while (current1);
 
   
   assert_false(!!current2, "Additional nodes at the of node2.");
