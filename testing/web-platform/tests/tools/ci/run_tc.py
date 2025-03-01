@@ -272,7 +272,7 @@ def setup_environment(args):
         install_chrome(args.channel)
 
     
-    if any(b in args.browser for b in ["chrome", "webkitgtk_minibrowser"]):
+    if any(b in args.browser for b in ["chrome", "webkitgtk_minibrowser", "wpewebkit_minibrowser"]):
         start_dbus()
 
     if args.xvfb:

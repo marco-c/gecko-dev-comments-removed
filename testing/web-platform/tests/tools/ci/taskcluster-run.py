@@ -24,7 +24,7 @@ def get_browser_args(product, channel, artifact_path):
     if product == "chrome" or product == "chromium":
         
         return ["--enable-swiftshader", "--install-browser", "--install-webdriver"]
-    if product == "webkitgtk_minibrowser":
+    if product in ["webkitgtk_minibrowser", "wpewebkit_minibrowser"]:
         
         
         return ["--install-browser", "--processes=4"]
@@ -80,9 +80,11 @@ def main(product, channel, commit_range, artifact_path, wpt_args):
         "--no-pause",
         "--no-restart-on-unexpected",
         "--install-fonts",
-        "--no-headless",
         "--verify-log-full"
     ]
+    
+    wpt_args.append("--headless" if product == "wpewebkit_minibrowser" else "--no-headless")
+
     wpt_args += get_browser_args(product, channel, artifact_path)
 
     
