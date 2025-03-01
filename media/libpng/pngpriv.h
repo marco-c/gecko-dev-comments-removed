@@ -675,7 +675,7 @@
 #define PNG_FLAG_CRC_ANCILLARY_NOWARN     0x0200U
 #define PNG_FLAG_CRC_CRITICAL_USE         0x0400U
 #define PNG_FLAG_CRC_CRITICAL_IGNORE      0x0800U
-#define PNG_FLAG_ASSUME_sRGB              0x1000U /* Added to libpng-1.5.4 */
+
 #define PNG_FLAG_OPTIMIZE_ALPHA           0x2000U /* Added to libpng-1.5.4 */
 #define PNG_FLAG_DETECT_UNINITIALIZED     0x4000U /* Added to libpng-1.5.4 */
 
@@ -807,9 +807,29 @@
 
 
 
-#define PNG_32b(b,s) ((png_uint_32)(b) << (s))
+
+
+
+
+#define PNG_32b(b,s) (((0xFFFFFFFFU)&(b)) << (s))
 #define PNG_U32(b1,b2,b3,b4) \
    (PNG_32b(b1,24) | PNG_32b(b2,16) | PNG_32b(b3,8) | PNG_32b(b4,0))
+
+
+
+
+
+
+
+
+#define PNG_32to8(cn,s) (((cn) >> (s)) & 0xffU)
+#define PNG_CN_VALID_UPPER(b) ((b) >= 65 && (b) <= 90) /* upper-case ASCII */
+#define PNG_CN_VALID_ASCII(b) PNG_CN_VALID_UPPER((b) & ~32U)
+#define PNG_CHUNK_NAME_VALID(cn) (\
+   PNG_CN_VALID_ASCII(PNG_32to8(cn,24)) && /* critical, !ancillary */\
+   PNG_CN_VALID_ASCII(PNG_32to8(cn,16)) && /* public, !privately defined */\
+   PNG_CN_VALID_UPPER(PNG_32to8(cn, 8)) && /* VALID, !reserved */\
+   PNG_CN_VALID_ASCII(PNG_32to8(cn, 0))   /* data-dependent, !copy ok */)
 
 
 
@@ -838,11 +858,14 @@
 #define png_IEND PNG_U32( 73,  69,  78,  68)
 #define png_IHDR PNG_U32( 73,  72,  68,  82)
 #define png_PLTE PNG_U32( 80,  76,  84,  69)
+#define png_acTL PNG_U32( 97,  99,  84,  76) /* PNGv3: APNG */
 #define png_bKGD PNG_U32( 98,  75,  71,  68)
 #define png_cHRM PNG_U32( 99,  72,  82,  77)
 #define png_cICP PNG_U32( 99,  73,  67,  80) /* PNGv3 */
 #define png_cLLI PNG_U32( 99,  76,  76,  73) /* PNGv3 */
 #define png_eXIf PNG_U32(101,  88,  73, 102) /* registered July 2017 */
+#define png_fcTL PNG_U32(102,  99,  84,  76) /* PNGv3: APNG */
+#define png_fdAT PNG_U32(102, 100,  65,  84) /* PNGv3: APNG */
 #define png_fRAc PNG_U32(102,  82,  65,  99) /* registered, not defined */
 #define png_gAMA PNG_U32(103,  65,  77,  65)
 #define png_gIFg PNG_U32(103,  73,  70, 103)
@@ -903,9 +926,72 @@
 #define PNG_CHUNK_SAFE_TO_COPY(c) (1 & ((c) >>  5))
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define PNG_KNOWN_CHUNKS\
+   PNG_CHUNK(IHDR,  0)\
+   PNG_CHUNK(PLTE,  1)\
+   PNG_CHUNK(IDAT,  2)\
+   PNG_CHUNK(IEND,  3)\
+   PNG_CHUNK(acTL,  4)\
+   PNG_CHUNK(bKGD,  5)\
+   PNG_CHUNK(cHRM,  6)\
+   PNG_CHUNK(cICP,  7)\
+   PNG_CHUNK(cLLI,  8)\
+   PNG_CHUNK(eXIf,  9)\
+   PNG_CHUNK(fcTL, 10)\
+   PNG_CHUNK(fdAT, 11)\
+   PNG_CHUNK(gAMA, 12)\
+   PNG_CHUNK(hIST, 13)\
+   PNG_CHUNK(iCCP, 14)\
+   PNG_CHUNK(iTXt, 15)\
+   PNG_CHUNK(mDCV, 16)\
+   PNG_CHUNK(oFFs, 17)\
+   PNG_CHUNK(pCAL, 18)\
+   PNG_CHUNK(pHYs, 19)\
+   PNG_CHUNK(sBIT, 20)\
+   PNG_CHUNK(sCAL, 21)\
+   PNG_CHUNK(sPLT, 22)\
+   PNG_CHUNK(sRGB, 23)\
+   PNG_CHUNK(tEXt, 24)\
+   PNG_CHUNK(tIME, 25)\
+   PNG_CHUNK(tRNS, 26)\
+   PNG_CHUNK(zTXt, 27)
+
+
 #define PNG_GAMMA_MAC_OLD 151724  /* Assume '1.8' is really 2.2/1.45! */
 #define PNG_GAMMA_MAC_INVERSE 65909
 #define PNG_GAMMA_sRGB_INVERSE 45455
+
+
+
+
+
+
+
+
+
+
+
+#define PNG_LIB_GAMMA_MIN 1000
+#define PNG_LIB_GAMMA_MAX 10000000
 
 
 
@@ -971,7 +1057,6 @@ extern "C" {
 
 
 
-
 #define PNG_UNEXPECTED_ZLIB_RETURN (-7)
 PNG_INTERNAL_FUNCTION(void, png_zstream_error,(png_structrp png_ptr, int ret),
    PNG_EMPTY);
@@ -1009,6 +1094,25 @@ PNG_INTERNAL_FUNCTION(png_uint_32,png_fixed_ITU,(png_const_structrp png_ptr,
 
 PNG_INTERNAL_FUNCTION(int,png_user_version_check,(png_structrp png_ptr,
    png_const_charp user_png_ver),PNG_EMPTY);
+
+#ifdef PNG_READ_SUPPORTED 
+
+
+
+
+#ifdef PNG_SET_USER_LIMITS_SUPPORTED 
+#  define png_chunk_max(png_ptr) ((png_ptr)->user_chunk_malloc_max)
+
+#elif PNG_USER_CHUNK_MALLOC_MAX > 0 
+#  define png_chunk_max(png_ptr) ((void)png_ptr, PNG_USER_CHUNK_MALLOC_MAX)
+
+#elif (defined PNG_MAX_MALLOC_64K)  
+#  define png_chunk_max(png_ptr) ((void)png_ptr, 65536U)
+
+#else                               
+#  define png_chunk_max(png_ptr) ((void)png_ptr, PNG_SIZE_MAX)
+#endif
+#endif 
 
 
 
@@ -1110,9 +1214,6 @@ PNG_INTERNAL_FUNCTION(int,png_crc_finish,(png_structrp png_ptr,
    png_uint_32 skip),PNG_EMPTY);
 
 
-PNG_INTERNAL_FUNCTION(int,png_crc_error,(png_structrp png_ptr),PNG_EMPTY);
-
-
 
 
 
@@ -1189,9 +1290,9 @@ PNG_INTERNAL_FUNCTION(void,png_write_eXIf,(png_structrp png_ptr,
 
 #ifdef PNG_WRITE_iCCP_SUPPORTED
 PNG_INTERNAL_FUNCTION(void,png_write_iCCP,(png_structrp png_ptr,
-   png_const_charp name, png_const_bytep profile), PNG_EMPTY);
+   png_const_charp name, png_const_bytep profile, png_uint_32 proflen),
+   PNG_EMPTY);
    
-
 
 
 #endif
@@ -1501,131 +1602,33 @@ PNG_INTERNAL_FUNCTION(void,png_do_bgr,(png_row_infop row_info,
 
 
 
-
-
-PNG_INTERNAL_FUNCTION(void,png_handle_IHDR,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_handle_PLTE,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_handle_IEND,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-
-#ifdef PNG_READ_bKGD_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_bKGD,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_cHRM_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_cHRM,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_cICP_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_cICP,(png_structrp png_ptr,
-        png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_cLLI_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_cLLI,(png_structrp png_ptr,
-        png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_eXIf_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_eXIf,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_gAMA_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_gAMA,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_hIST_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_hIST,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_iCCP_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_iCCP,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif 
-
-#ifdef PNG_READ_iTXt_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_iTXt,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_mDCV_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_mDCV,(png_structrp png_ptr,
-        png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_oFFs_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_oFFs,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_pCAL_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_pCAL,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_pHYs_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_pHYs,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_sBIT_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_sBIT,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_sCAL_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_sCAL,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_sPLT_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_sPLT,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif 
-
-#ifdef PNG_READ_sRGB_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_sRGB,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_tEXt_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_tEXt,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_tIME_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_tIME,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_tRNS_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_tRNS,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-#ifdef PNG_READ_zTXt_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_zTXt,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-#endif
-
-PNG_INTERNAL_FUNCTION(void,png_check_chunk_name,(png_const_structrp png_ptr,
-    png_uint_32 chunk_name),PNG_EMPTY);
-
-PNG_INTERNAL_FUNCTION(void,png_check_chunk_length,(png_const_structrp png_ptr,
-    png_uint_32 chunk_length),PNG_EMPTY);
-
-PNG_INTERNAL_FUNCTION(void,png_handle_unknown,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length, int keep),PNG_EMPTY);
+typedef enum
+{
    
 
 
+
+
+
+
+   handled_error = 0,  
+   handled_discarded,  
+   handled_saved,      
+   handled_ok          
+} png_handle_result_code;
+
+PNG_INTERNAL_FUNCTION(png_handle_result_code,png_handle_unknown,
+    (png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length, int keep),
+    PNG_EMPTY);
+   
+
+
+
+
+
+PNG_INTERNAL_FUNCTION(png_handle_result_code,png_handle_chunk,
+    (png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
+   
 
 
 
@@ -1668,8 +1671,6 @@ PNG_INTERNAL_FUNCTION(void,png_process_IDAT_data,(png_structrp png_ptr,
     png_bytep buffer, size_t buffer_length),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_push_process_row,(png_structrp png_ptr),
     PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_handle_unknown,(png_structrp png_ptr,
-   png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_push_have_info,(png_structrp png_ptr,
    png_inforp info_ptr),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_push_have_end,(png_structrp png_ptr,
@@ -1682,25 +1683,6 @@ PNG_INTERNAL_FUNCTION(void,png_process_some_data,(png_structrp png_ptr,
     png_inforp info_ptr),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_read_push_finish_row,(png_structrp png_ptr),
     PNG_EMPTY);
-#  ifdef PNG_READ_tEXt_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_push_handle_tEXt,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_read_tEXt,(png_structrp png_ptr,
-    png_inforp info_ptr),PNG_EMPTY);
-#  endif
-#  ifdef PNG_READ_zTXt_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_push_handle_zTXt,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_read_zTXt,(png_structrp png_ptr,
-    png_inforp info_ptr),PNG_EMPTY);
-#  endif
-#  ifdef PNG_READ_iTXt_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_push_handle_iTXt,(png_structrp png_ptr,
-    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_read_iTXt,(png_structrp png_ptr,
-    png_inforp info_ptr),PNG_EMPTY);
-#  endif
-
 #endif 
 
 #ifdef PNG_APNG_SUPPORTED
@@ -1746,87 +1728,25 @@ PNG_INTERNAL_FUNCTION(void,png_write_reinit,(png_structp png_ptr,
 #endif 
 #endif 
 
-
-#ifdef PNG_GAMMA_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_colorspace_set_gamma,(png_const_structrp png_ptr,
-    png_colorspacerp colorspace, png_fixed_point gAMA), PNG_EMPTY);
-   
-
-
-
-
-PNG_INTERNAL_FUNCTION(void,png_colorspace_sync_info,(png_const_structrp png_ptr,
-    png_inforp info_ptr), PNG_EMPTY);
-   
-
-PNG_INTERNAL_FUNCTION(void,png_colorspace_sync,(png_const_structrp png_ptr,
-    png_inforp info_ptr), PNG_EMPTY);
-   
-
-
-#endif
-
-
-#ifdef PNG_COLORSPACE_SUPPORTED
-
-
-
-PNG_INTERNAL_FUNCTION(int,png_colorspace_set_chromaticities,
-   (png_const_structrp png_ptr, png_colorspacerp colorspace, const png_xy *xy,
-    int preferred), PNG_EMPTY);
-
-PNG_INTERNAL_FUNCTION(int,png_colorspace_set_endpoints,
-   (png_const_structrp png_ptr, png_colorspacerp colorspace, const png_XYZ *XYZ,
-    int preferred), PNG_EMPTY);
-
-#ifdef PNG_sRGB_SUPPORTED
-PNG_INTERNAL_FUNCTION(int,png_colorspace_set_sRGB,(png_const_structrp png_ptr,
-   png_colorspacerp colorspace, int intent), PNG_EMPTY);
-   
-
-
-
-
-#endif 
-
 #ifdef PNG_iCCP_SUPPORTED
-PNG_INTERNAL_FUNCTION(int,png_colorspace_set_ICC,(png_const_structrp png_ptr,
-   png_colorspacerp colorspace, png_const_charp name,
-   png_uint_32 profile_length, png_const_bytep profile, int color_type),
-   PNG_EMPTY);
-   
-
 
 #ifdef PNG_READ_iCCP_SUPPORTED
 PNG_INTERNAL_FUNCTION(int,png_icc_check_length,(png_const_structrp png_ptr,
-   png_colorspacerp colorspace, png_const_charp name,
-   png_uint_32 profile_length), PNG_EMPTY);
+   png_const_charp name, png_uint_32 profile_length), PNG_EMPTY);
 #endif 
 PNG_INTERNAL_FUNCTION(int,png_icc_check_header,(png_const_structrp png_ptr,
-   png_colorspacerp colorspace, png_const_charp name,
-   png_uint_32 profile_length,
+   png_const_charp name, png_uint_32 profile_length,
    png_const_bytep profile , int color_type),
    PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(int,png_icc_check_tag_table,(png_const_structrp png_ptr,
-   png_colorspacerp colorspace, png_const_charp name,
-   png_uint_32 profile_length,
+   png_const_charp name, png_uint_32 profile_length,
    png_const_bytep profile ), PNG_EMPTY);
-#ifdef PNG_sRGB_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_icc_set_sRGB,(
-   png_const_structrp png_ptr, png_colorspacerp colorspace,
-   png_const_bytep profile, uLong adler), PNG_EMPTY);
-   
-
-
-
-#endif
 #endif 
 
 #ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_colorspace_set_rgb_coefficients,
-   (png_structrp png_ptr), PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void,png_set_rgb_coefficients, (png_structrp png_ptr),
+   PNG_EMPTY);
    
-#endif 
 #endif 
 
 
@@ -2089,8 +2009,10 @@ PNG_INTERNAL_FUNCTION(int,png_check_fp_string,(png_const_charp string,
    size_t size),PNG_EMPTY);
 #endif 
 
-#if defined(PNG_GAMMA_SUPPORTED) ||\
-    defined(PNG_INCH_CONVERSIONS_SUPPORTED) || defined(PNG_READ_pHYs_SUPPORTED)
+#if defined(PNG_READ_GAMMA_SUPPORTED) ||\
+    defined(PNG_COLORSPACE_SUPPORTED) ||\
+    defined(PNG_INCH_CONVERSIONS_SUPPORTED) ||\
+    defined(PNG_READ_pHYs_SUPPORTED)
 
 
 
@@ -2099,22 +2021,14 @@ PNG_INTERNAL_FUNCTION(int,png_check_fp_string,(png_const_charp string,
 
 PNG_INTERNAL_FUNCTION(int,png_muldiv,(png_fixed_point_p res, png_fixed_point a,
    png_int_32 multiplied_by, png_int_32 divided_by),PNG_EMPTY);
-#endif
 
-#if defined(PNG_READ_GAMMA_SUPPORTED) || defined(PNG_INCH_CONVERSIONS_SUPPORTED)
-
-PNG_INTERNAL_FUNCTION(png_fixed_point,png_muldiv_warn,
-   (png_const_structrp png_ptr, png_fixed_point a, png_int_32 multiplied_by,
-   png_int_32 divided_by),PNG_EMPTY);
-#endif
-
-#ifdef PNG_GAMMA_SUPPORTED
 
 
 
 
 PNG_INTERNAL_FUNCTION(png_fixed_point,png_reciprocal,(png_fixed_point a),
    PNG_EMPTY);
+#endif
 
 #ifdef PNG_READ_GAMMA_SUPPORTED
 
@@ -2123,14 +2037,22 @@ PNG_INTERNAL_FUNCTION(png_fixed_point,png_reciprocal,(png_fixed_point a),
 
 PNG_INTERNAL_FUNCTION(png_fixed_point,png_reciprocal2,(png_fixed_point a,
    png_fixed_point b),PNG_EMPTY);
-#endif
 
 
 PNG_INTERNAL_FUNCTION(int,png_gamma_significant,(png_fixed_point gamma_value),
    PNG_EMPTY);
-#endif
 
-#ifdef PNG_READ_GAMMA_SUPPORTED
+
+
+
+
+
+
+
+
+PNG_INTERNAL_FUNCTION(png_fixed_point,png_resolve_file_gamma,
+   (png_const_structrp png_ptr),PNG_EMPTY);
+
 
 
 
@@ -2148,6 +2070,22 @@ PNG_INTERNAL_FUNCTION(void,png_destroy_gamma_table,(png_structrp png_ptr),
    PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_build_gamma_table,(png_structrp png_ptr,
    int bit_depth),PNG_EMPTY);
+#endif 
+
+#ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED
+
+PNG_INTERNAL_FUNCTION(void,png_set_rgb_coefficients,(png_structrp png_ptr),
+   PNG_EMPTY);
+#endif
+
+#if defined(PNG_cHRM_SUPPORTED) || defined(PNG_READ_RGB_TO_GRAY_SUPPORTED)
+PNG_INTERNAL_FUNCTION(int,png_XYZ_from_xy,(png_XYZ *XYZ, const png_xy *xy),
+   PNG_EMPTY);
+#endif 
+
+#ifdef PNG_COLORSPACE_SUPPORTED
+PNG_INTERNAL_FUNCTION(int,png_xy_from_XYZ,(png_xy *xy, const png_XYZ *XYZ),
+   PNG_EMPTY);
 #endif
 
 

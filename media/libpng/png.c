@@ -13,7 +13,34 @@
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_46 Your_png_h_is_not_version_1_6_46;
+typedef png_libpng_version_1_6_47 Your_png_h_is_not_version_1_6_47;
+
+
+
+
+
+
+
+
+#define PNG_CHUNK(cHNK, index) != (index) || ((index)+1)
+
+#if 0 PNG_KNOWN_CHUNKS < 0
+#  error PNG_KNOWN_CHUNKS chunk definitions are not in order
+#endif
+
+#undef PNG_CHUNK
+
+
+
+
+
+#define PNG_CHUNK(cHNK, index) !PNG_CHUNK_NAME_VALID(png_ ## cHNK) ||
+
+#if PNG_KNOWN_CHUNKS 0
+#  error png_cHNK not defined for some known cHNK
+#endif
+
+#undef PNG_CHUNK
 
 
 
@@ -241,21 +268,23 @@ png_create_png_struct,(png_const_charp user_png_ver, png_voidp error_ptr,
 
    memset(&create_struct, 0, (sizeof create_struct));
 
-   
 #  ifdef PNG_USER_LIMITS_SUPPORTED
       create_struct.user_width_max = PNG_USER_WIDTH_MAX;
       create_struct.user_height_max = PNG_USER_HEIGHT_MAX;
 
 #     ifdef PNG_USER_CHUNK_CACHE_MAX
-      
       create_struct.user_chunk_cache_max = PNG_USER_CHUNK_CACHE_MAX;
 #     endif
 
-#     ifdef PNG_USER_CHUNK_MALLOC_MAX
-      
-
-
+#     if PNG_USER_CHUNK_MALLOC_MAX > 0 
       create_struct.user_chunk_malloc_max = PNG_USER_CHUNK_MALLOC_MAX;
+
+      
+#     elif defined PNG_MAX_MALLOC_64K 
+      create_struct.user_chunk_malloc_max = 65536U;
+
+#     else 
+      create_struct.user_chunk_malloc_max = PNG_SIZE_MAX;
 #     endif
 #  endif
 
@@ -597,13 +626,6 @@ png_free_data(png_const_structrp png_ptr, png_inforp info_ptr, png_uint_32 mask,
    
    if (((mask & PNG_FREE_EXIF) & info_ptr->free_me) != 0)
    {
-# ifdef PNG_READ_eXIf_SUPPORTED
-      if (info_ptr->eXIf_buf)
-      {
-         png_free(png_ptr, info_ptr->eXIf_buf);
-         info_ptr->eXIf_buf = NULL;
-      }
-# endif
       if (info_ptr->exif)
       {
          png_free(png_ptr, info_ptr->exif);
@@ -793,7 +815,7 @@ png_get_copyright(png_const_structrp png_ptr)
    return PNG_STRING_COPYRIGHT
 #else
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.46" PNG_STRING_NEWLINE \
+      "libpng version 1.6.47" PNG_STRING_NEWLINE \
       "Copyright (c) 2018-2025 Cosmin Truta" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \
@@ -1038,169 +1060,6 @@ png_zstream_error(png_structrp png_ptr, int ret)
    }
 }
 
-
-
-
-
-
-#ifdef PNG_GAMMA_SUPPORTED 
-static int
-png_colorspace_check_gamma(png_const_structrp png_ptr,
-    png_colorspacerp colorspace, png_fixed_point gAMA, int from)
-   
-
-
-
-
-
-
-
-
-{
-   png_fixed_point gtest;
-
-   if ((colorspace->flags & PNG_COLORSPACE_HAVE_GAMMA) != 0 &&
-       (png_muldiv(&gtest, colorspace->gamma, PNG_FP_1, gAMA) == 0  ||
-      png_gamma_significant(gtest) != 0))
-   {
-      
-
-
-
-
-
-      if ((colorspace->flags & PNG_COLORSPACE_FROM_sRGB) != 0 || from == 2)
-      {
-         png_chunk_report(png_ptr, "gamma value does not match sRGB",
-             PNG_CHUNK_ERROR);
-         
-         return from == 2;
-      }
-
-      else 
-      {
-         png_chunk_report(png_ptr, "gamma value does not match libpng estimate",
-             PNG_CHUNK_WARNING);
-         return from == 1;
-      }
-   }
-
-   return 1;
-}
-
-void 
-png_colorspace_set_gamma(png_const_structrp png_ptr,
-    png_colorspacerp colorspace, png_fixed_point gAMA)
-{
-   
-
-
-
-
-
-
-
-
-
-
-   png_const_charp errmsg;
-
-   if (gAMA < 16 || gAMA > 625000000)
-      errmsg = "gamma value out of range";
-
-#  ifdef PNG_READ_gAMA_SUPPORTED
-   
-   else if ((png_ptr->mode & PNG_IS_READ_STRUCT) != 0 &&
-      (colorspace->flags & PNG_COLORSPACE_FROM_gAMA) != 0)
-      errmsg = "duplicate";
-#  endif
-
-   
-   else if ((colorspace->flags & PNG_COLORSPACE_INVALID) != 0)
-      return;
-
-   else
-   {
-      if (png_colorspace_check_gamma(png_ptr, colorspace, gAMA,
-          1) != 0)
-      {
-         
-         colorspace->gamma = gAMA;
-         colorspace->flags |=
-            (PNG_COLORSPACE_HAVE_GAMMA | PNG_COLORSPACE_FROM_gAMA);
-      }
-
-      
-
-
-
-
-      return;
-   }
-
-   
-   colorspace->flags |= PNG_COLORSPACE_INVALID;
-   png_chunk_report(png_ptr, errmsg, PNG_CHUNK_WRITE_ERROR);
-}
-
-void 
-png_colorspace_sync_info(png_const_structrp png_ptr, png_inforp info_ptr)
-{
-   if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) != 0)
-   {
-      
-      info_ptr->valid &= ~(PNG_INFO_gAMA|PNG_INFO_cHRM|PNG_INFO_sRGB|
-         PNG_INFO_iCCP);
-
-#     ifdef PNG_COLORSPACE_SUPPORTED
-      
-      png_free_data(png_ptr, info_ptr, PNG_FREE_ICCP, -1);
-#     else
-      PNG_UNUSED(png_ptr)
-#     endif
-   }
-
-   else
-   {
-#     ifdef PNG_COLORSPACE_SUPPORTED
-      
-
-
-
-      if ((info_ptr->colorspace.flags & PNG_COLORSPACE_MATCHES_sRGB) != 0)
-         info_ptr->valid |= PNG_INFO_sRGB;
-
-      else
-         info_ptr->valid &= ~PNG_INFO_sRGB;
-
-      if ((info_ptr->colorspace.flags & PNG_COLORSPACE_HAVE_ENDPOINTS) != 0)
-         info_ptr->valid |= PNG_INFO_cHRM;
-
-      else
-         info_ptr->valid &= ~PNG_INFO_cHRM;
-#     endif
-
-      if ((info_ptr->colorspace.flags & PNG_COLORSPACE_HAVE_GAMMA) != 0)
-         info_ptr->valid |= PNG_INFO_gAMA;
-
-      else
-         info_ptr->valid &= ~PNG_INFO_gAMA;
-   }
-}
-
-#ifdef PNG_READ_SUPPORTED
-void 
-png_colorspace_sync(png_const_structrp png_ptr, png_inforp info_ptr)
-{
-   if (info_ptr == NULL) 
-      return;
-
-   info_ptr->colorspace = png_ptr->colorspace;
-   png_colorspace_sync_info(png_ptr, info_ptr);
-}
-#endif
-#endif 
-
 #ifdef PNG_COLORSPACE_SUPPORTED
 static png_int_32
 png_fp_add(png_int_32 addend0, png_int_32 addend1, int *error)
@@ -1269,9 +1128,10 @@ png_safe_add(png_int_32 *addend0_and_result, png_int_32 addend1,
 
 
 
-static int
+int 
 png_xy_from_XYZ(png_xy *xy, const png_XYZ *XYZ)
 {
+   
    png_int_32 d, dred, dgreen, dblue, dwhite, whiteX, whiteY;
 
    
@@ -1334,9 +1194,10 @@ png_xy_from_XYZ(png_xy *xy, const png_XYZ *XYZ)
    return 0;
 }
 
-static int
+int 
 png_XYZ_from_xy(png_XYZ *XYZ, const png_xy *xy)
 {
+   
    png_fixed_point red_inverse, green_inverse, blue_scale;
    png_fixed_point left, right, denominator;
 
@@ -1628,239 +1489,9 @@ png_XYZ_from_xy(png_XYZ *XYZ, const png_xy *xy)
 
    return 0; 
 }
+#endif 
 
-static int
-png_XYZ_normalize(png_XYZ *XYZ)
-{
-   png_int_32 Y, Ytemp;
-
-   
-   Ytemp = XYZ->red_Y;
-   if (png_safe_add(&Ytemp, XYZ->green_Y, XYZ->blue_Y))
-      return 1;
-
-   Y = Ytemp;
-
-   if (Y != PNG_FP_1)
-   {
-      if (png_muldiv(&XYZ->red_X, XYZ->red_X, PNG_FP_1, Y) == 0)
-         return 1;
-      if (png_muldiv(&XYZ->red_Y, XYZ->red_Y, PNG_FP_1, Y) == 0)
-         return 1;
-      if (png_muldiv(&XYZ->red_Z, XYZ->red_Z, PNG_FP_1, Y) == 0)
-         return 1;
-
-      if (png_muldiv(&XYZ->green_X, XYZ->green_X, PNG_FP_1, Y) == 0)
-         return 1;
-      if (png_muldiv(&XYZ->green_Y, XYZ->green_Y, PNG_FP_1, Y) == 0)
-         return 1;
-      if (png_muldiv(&XYZ->green_Z, XYZ->green_Z, PNG_FP_1, Y) == 0)
-         return 1;
-
-      if (png_muldiv(&XYZ->blue_X, XYZ->blue_X, PNG_FP_1, Y) == 0)
-         return 1;
-      if (png_muldiv(&XYZ->blue_Y, XYZ->blue_Y, PNG_FP_1, Y) == 0)
-         return 1;
-      if (png_muldiv(&XYZ->blue_Z, XYZ->blue_Z, PNG_FP_1, Y) == 0)
-         return 1;
-   }
-
-   return 0;
-}
-
-static int
-png_colorspace_endpoints_match(const png_xy *xy1, const png_xy *xy2, int delta)
-{
-   
-   if (PNG_OUT_OF_RANGE(xy1->whitex, xy2->whitex,delta) ||
-       PNG_OUT_OF_RANGE(xy1->whitey, xy2->whitey,delta) ||
-       PNG_OUT_OF_RANGE(xy1->redx,   xy2->redx,  delta) ||
-       PNG_OUT_OF_RANGE(xy1->redy,   xy2->redy,  delta) ||
-       PNG_OUT_OF_RANGE(xy1->greenx, xy2->greenx,delta) ||
-       PNG_OUT_OF_RANGE(xy1->greeny, xy2->greeny,delta) ||
-       PNG_OUT_OF_RANGE(xy1->bluex,  xy2->bluex, delta) ||
-       PNG_OUT_OF_RANGE(xy1->bluey,  xy2->bluey, delta))
-      return 0;
-   return 1;
-}
-
-
-
-
-
-
-
-
-
-
-
-static int
-png_colorspace_check_xy(png_XYZ *XYZ, const png_xy *xy)
-{
-   int result;
-   png_xy xy_test;
-
-   
-   result = png_XYZ_from_xy(XYZ, xy);
-   if (result != 0)
-      return result;
-
-   result = png_xy_from_XYZ(&xy_test, XYZ);
-   if (result != 0)
-      return result;
-
-   if (png_colorspace_endpoints_match(xy, &xy_test,
-       5) != 0)
-      return 0;
-
-   
-   return 1;
-}
-
-
-
-
-static int
-png_colorspace_check_XYZ(png_xy *xy, png_XYZ *XYZ)
-{
-   int result;
-   png_XYZ XYZtemp;
-
-   result = png_XYZ_normalize(XYZ);
-   if (result != 0)
-      return result;
-
-   result = png_xy_from_XYZ(xy, XYZ);
-   if (result != 0)
-      return result;
-
-   XYZtemp = *XYZ;
-   return png_colorspace_check_xy(&XYZtemp, xy);
-}
-
-
-static const png_xy sRGB_xy = 
-{
-   
-    64000, 33000,
-    30000, 60000,
-    15000,  6000,
-    31270, 32900
-};
-
-static int
-png_colorspace_set_xy_and_XYZ(png_const_structrp png_ptr,
-    png_colorspacerp colorspace, const png_xy *xy, const png_XYZ *XYZ,
-    int preferred)
-{
-   if ((colorspace->flags & PNG_COLORSPACE_INVALID) != 0)
-      return 0;
-
-   
-
-
-
-   if (preferred < 2 &&
-       (colorspace->flags & PNG_COLORSPACE_HAVE_ENDPOINTS) != 0)
-   {
-      
-
-
-      if (png_colorspace_endpoints_match(xy, &colorspace->end_points_xy,
-          100) == 0)
-      {
-         colorspace->flags |= PNG_COLORSPACE_INVALID;
-         png_benign_error(png_ptr, "inconsistent chromaticities");
-         return 0; 
-      }
-
-      
-      if (preferred == 0)
-         return 1; 
-   }
-
-   colorspace->end_points_xy = *xy;
-   colorspace->end_points_XYZ = *XYZ;
-   colorspace->flags |= PNG_COLORSPACE_HAVE_ENDPOINTS;
-
-   
-
-
-   if (png_colorspace_endpoints_match(xy, &sRGB_xy, 1000) != 0)
-      colorspace->flags |= PNG_COLORSPACE_ENDPOINTS_MATCH_sRGB;
-
-   else
-      colorspace->flags &= PNG_COLORSPACE_CANCEL(
-         PNG_COLORSPACE_ENDPOINTS_MATCH_sRGB);
-
-   return 2; 
-}
-
-int 
-png_colorspace_set_chromaticities(png_const_structrp png_ptr,
-    png_colorspacerp colorspace, const png_xy *xy, int preferred)
-{
-   
-
-
-
-
-
-   png_XYZ XYZ;
-
-   switch (png_colorspace_check_xy(&XYZ, xy))
-   {
-      case 0: 
-         return png_colorspace_set_xy_and_XYZ(png_ptr, colorspace, xy, &XYZ,
-             preferred);
-
-      case 1:
-         
-
-
-         colorspace->flags |= PNG_COLORSPACE_INVALID;
-         png_benign_error(png_ptr, "invalid chromaticities");
-         break;
-
-      default:
-         
-
-
-         colorspace->flags |= PNG_COLORSPACE_INVALID;
-         png_error(png_ptr, "internal error checking chromaticities");
-   }
-
-   return 0; 
-}
-
-int 
-png_colorspace_set_endpoints(png_const_structrp png_ptr,
-    png_colorspacerp colorspace, const png_XYZ *XYZ_in, int preferred)
-{
-   png_XYZ XYZ = *XYZ_in;
-   png_xy xy;
-
-   switch (png_colorspace_check_XYZ(&xy, &XYZ))
-   {
-      case 0:
-         return png_colorspace_set_xy_and_XYZ(png_ptr, colorspace, &xy, &XYZ,
-             preferred);
-
-      case 1:
-         
-         colorspace->flags |= PNG_COLORSPACE_INVALID;
-         png_benign_error(png_ptr, "invalid end points");
-         break;
-
-      default:
-         colorspace->flags |= PNG_COLORSPACE_INVALID;
-         png_error(png_ptr, "internal error checking chromaticities");
-   }
-
-   return 0; 
-}
-
-#if defined(PNG_sRGB_SUPPORTED) || defined(PNG_iCCP_SUPPORTED)
+#ifdef PNG_iCCP_SUPPORTED
 
 static char
 png_icc_tag_char(png_uint_32 byte)
@@ -1900,14 +1531,11 @@ is_ICC_signature(png_alloc_size_t it)
 }
 
 static int
-png_icc_profile_error(png_const_structrp png_ptr, png_colorspacerp colorspace,
-    png_const_charp name, png_alloc_size_t value, png_const_charp reason)
+png_icc_profile_error(png_const_structrp png_ptr, png_const_charp name,
+   png_alloc_size_t value, png_const_charp reason)
 {
    size_t pos;
    char message[196]; 
-
-   if (colorspace != NULL)
-      colorspace->flags |= PNG_COLORSPACE_INVALID;
 
    pos = png_safecat(message, (sizeof message), 0, "profile '"); 
    pos = png_safecat(message, pos+79, pos, name); 
@@ -1935,109 +1563,13 @@ png_icc_profile_error(png_const_structrp png_ptr, png_colorspacerp colorspace,
    pos = png_safecat(message, (sizeof message), pos, reason);
    PNG_UNUSED(pos)
 
-   
-
-
-
-
-   png_chunk_report(png_ptr, message,
-       (colorspace != NULL) ? PNG_CHUNK_ERROR : PNG_CHUNK_WRITE_ERROR);
+   png_chunk_benign_error(png_ptr, message);
 
    return 0;
 }
 #endif 
 
-#ifdef PNG_sRGB_SUPPORTED
-int 
-png_colorspace_set_sRGB(png_const_structrp png_ptr, png_colorspacerp colorspace,
-    int intent)
-{
-   
-   
-
-
-
-
-
-
-
-
-
-
-   static const png_XYZ sRGB_XYZ = 
-   {
-      
-       41239, 21264,  1933,
-       35758, 71517, 11919,
-       18048,  7219, 95053
-   };
-
-   
-   if ((colorspace->flags & PNG_COLORSPACE_INVALID) != 0)
-      return 0;
-
-   
-
-
-
-
-
-
-
-
-   if (intent < 0 || intent >= PNG_sRGB_INTENT_LAST)
-      return png_icc_profile_error(png_ptr, colorspace, "sRGB",
-          (png_alloc_size_t)intent, "invalid sRGB rendering intent");
-
-   if ((colorspace->flags & PNG_COLORSPACE_HAVE_INTENT) != 0 &&
-       colorspace->rendering_intent != intent)
-      return png_icc_profile_error(png_ptr, colorspace, "sRGB",
-         (png_alloc_size_t)intent, "inconsistent rendering intents");
-
-   if ((colorspace->flags & PNG_COLORSPACE_FROM_sRGB) != 0)
-   {
-      png_benign_error(png_ptr, "duplicate sRGB information ignored");
-      return 0;
-   }
-
-   
-
-
-   if ((colorspace->flags & PNG_COLORSPACE_HAVE_ENDPOINTS) != 0 &&
-       !png_colorspace_endpoints_match(&sRGB_xy, &colorspace->end_points_xy,
-       100))
-      png_chunk_report(png_ptr, "cHRM chunk does not match sRGB",
-         PNG_CHUNK_ERROR);
-
-   
-
-
-   (void)png_colorspace_check_gamma(png_ptr, colorspace, PNG_GAMMA_sRGB_INVERSE,
-       2);
-
-   
-   colorspace->rendering_intent = (png_uint_16)intent;
-   colorspace->flags |= PNG_COLORSPACE_HAVE_INTENT;
-
-   
-   colorspace->end_points_xy = sRGB_xy;
-   colorspace->end_points_XYZ = sRGB_XYZ;
-   colorspace->flags |=
-      (PNG_COLORSPACE_HAVE_ENDPOINTS|PNG_COLORSPACE_ENDPOINTS_MATCH_sRGB);
-
-   
-   colorspace->gamma = PNG_GAMMA_sRGB_INVERSE;
-   colorspace->flags |= PNG_COLORSPACE_HAVE_GAMMA;
-
-   
-   colorspace->flags |=
-      (PNG_COLORSPACE_MATCHES_sRGB|PNG_COLORSPACE_FROM_sRGB);
-
-   return 1; 
-}
-#endif 
-
-#ifdef PNG_iCCP_SUPPORTED
+#ifdef PNG_READ_iCCP_SUPPORTED
 
 
 
@@ -2047,21 +1579,19 @@ static const png_byte D50_nCIEXYZ[12] =
    { 0x00, 0x00, 0xf6, 0xd6, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0xd3, 0x2d };
 
 static int 
-icc_check_length(png_const_structrp png_ptr, png_colorspacerp colorspace,
-    png_const_charp name, png_uint_32 profile_length)
+icc_check_length(png_const_structrp png_ptr, png_const_charp name,
+   png_uint_32 profile_length)
 {
    if (profile_length < 132)
-      return png_icc_profile_error(png_ptr, colorspace, name, profile_length,
-          "too short");
+      return png_icc_profile_error(png_ptr, name, profile_length, "too short");
    return 1;
 }
 
-#ifdef PNG_READ_iCCP_SUPPORTED
 int 
-png_icc_check_length(png_const_structrp png_ptr, png_colorspacerp colorspace,
-    png_const_charp name, png_uint_32 profile_length)
+png_icc_check_length(png_const_structrp png_ptr, png_const_charp name,
+   png_uint_32 profile_length)
 {
-   if (!icc_check_length(png_ptr, colorspace, name, profile_length))
+   if (!icc_check_length(png_ptr, name, profile_length))
       return 0;
 
    
@@ -2070,30 +1600,17 @@ png_icc_check_length(png_const_structrp png_ptr, png_colorspacerp colorspace,
 
 
 
-#  ifdef PNG_SET_USER_LIMITS_SUPPORTED
-      else if (png_ptr->user_chunk_malloc_max > 0 &&
-               png_ptr->user_chunk_malloc_max < profile_length)
-         return png_icc_profile_error(png_ptr, colorspace, name, profile_length,
-             "exceeds application limits");
-#  elif PNG_USER_CHUNK_MALLOC_MAX > 0
-      else if (PNG_USER_CHUNK_MALLOC_MAX < profile_length)
-         return png_icc_profile_error(png_ptr, colorspace, name, profile_length,
-             "exceeds libpng limits");
-#  else 
-      
-      else if (PNG_SIZE_MAX < profile_length)
-         return png_icc_profile_error(png_ptr, colorspace, name, profile_length,
-             "exceeds system limits");
-#  endif 
+   if (profile_length > png_chunk_max(png_ptr))
+      return png_icc_profile_error(png_ptr, name, profile_length,
+            "profile too long");
 
    return 1;
 }
-#endif 
 
 int 
-png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
-    png_const_charp name, png_uint_32 profile_length,
-    png_const_bytep profile, int color_type)
+png_icc_check_header(png_const_structrp png_ptr, png_const_charp name,
+   png_uint_32 profile_length,
+   png_const_bytep profile, int color_type)
 {
    png_uint_32 temp;
 
@@ -2104,18 +1621,18 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
 
    temp = png_get_uint_32(profile);
    if (temp != profile_length)
-      return png_icc_profile_error(png_ptr, colorspace, name, temp,
+      return png_icc_profile_error(png_ptr, name, temp,
           "length does not match profile");
 
    temp = (png_uint_32) (*(profile+8));
    if (temp > 3 && (profile_length & 3))
-      return png_icc_profile_error(png_ptr, colorspace, name, profile_length,
+      return png_icc_profile_error(png_ptr, name, profile_length,
           "invalid length");
 
    temp = png_get_uint_32(profile+128); 
    if (temp > 357913930 || 
       profile_length < 132+12*temp) 
-      return png_icc_profile_error(png_ptr, colorspace, name, temp,
+      return png_icc_profile_error(png_ptr, name, temp,
           "tag count too large");
 
    
@@ -2123,14 +1640,14 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
 
    temp = png_get_uint_32(profile+64);
    if (temp >= 0xffff) 
-      return png_icc_profile_error(png_ptr, colorspace, name, temp,
+      return png_icc_profile_error(png_ptr, name, temp,
           "invalid rendering intent");
 
    
 
 
    if (temp >= PNG_sRGB_INTENT_LAST)
-      (void)png_icc_profile_error(png_ptr, NULL, name, temp,
+      (void)png_icc_profile_error(png_ptr, name, temp,
           "intent outside defined range");
 
    
@@ -2147,7 +1664,7 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
 
    temp = png_get_uint_32(profile+36); 
    if (temp != 0x61637370)
-      return png_icc_profile_error(png_ptr, colorspace, name, temp,
+      return png_icc_profile_error(png_ptr, name, temp,
           "invalid signature");
 
    
@@ -2158,7 +1675,7 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
 
 
    if (memcmp(profile+68, D50_nCIEXYZ, 12) != 0)
-      (void)png_icc_profile_error(png_ptr, NULL, name, 0,
+      (void)png_icc_profile_error(png_ptr, name, 0,
           "PCS illuminant is not D50");
 
    
@@ -2186,18 +1703,18 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
    {
       case 0x52474220: 
          if ((color_type & PNG_COLOR_MASK_COLOR) == 0)
-            return png_icc_profile_error(png_ptr, colorspace, name, temp,
+            return png_icc_profile_error(png_ptr, name, temp,
                 "RGB color space not permitted on grayscale PNG");
          break;
 
       case 0x47524159: 
          if ((color_type & PNG_COLOR_MASK_COLOR) != 0)
-            return png_icc_profile_error(png_ptr, colorspace, name, temp,
+            return png_icc_profile_error(png_ptr, name, temp,
                 "Gray color space not permitted on RGB PNG");
          break;
 
       default:
-         return png_icc_profile_error(png_ptr, colorspace, name, temp,
+         return png_icc_profile_error(png_ptr, name, temp,
              "invalid ICC profile color space");
    }
 
@@ -2222,7 +1739,7 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
 
       case 0x61627374: 
          
-         return png_icc_profile_error(png_ptr, colorspace, name, temp,
+         return png_icc_profile_error(png_ptr, name, temp,
              "invalid embedded Abstract ICC profile");
 
       case 0x6c696e6b: 
@@ -2232,7 +1749,7 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
 
 
 
-         return png_icc_profile_error(png_ptr, colorspace, name, temp,
+         return png_icc_profile_error(png_ptr, name, temp,
              "unexpected DeviceLink ICC profile class");
 
       case 0x6e6d636c: 
@@ -2240,7 +1757,7 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
 
 
 
-         (void)png_icc_profile_error(png_ptr, NULL, name, temp,
+         (void)png_icc_profile_error(png_ptr, name, temp,
              "unexpected NamedColor ICC profile class");
          break;
 
@@ -2250,7 +1767,7 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
 
 
 
-         (void)png_icc_profile_error(png_ptr, NULL, name, temp,
+         (void)png_icc_profile_error(png_ptr, name, temp,
              "unrecognized ICC profile class");
          break;
    }
@@ -2266,7 +1783,7 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
          break;
 
       default:
-         return png_icc_profile_error(png_ptr, colorspace, name, temp,
+         return png_icc_profile_error(png_ptr, name, temp,
              "unexpected ICC PCS encoding");
    }
 
@@ -2274,9 +1791,9 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
 }
 
 int 
-png_icc_check_tag_table(png_const_structrp png_ptr, png_colorspacerp colorspace,
-    png_const_charp name, png_uint_32 profile_length,
-    png_const_bytep profile )
+png_icc_check_tag_table(png_const_structrp png_ptr, png_const_charp name,
+   png_uint_32 profile_length,
+   png_const_bytep profile )
 {
    png_uint_32 tag_count = png_get_uint_32(profile+128);
    png_uint_32 itag;
@@ -2302,7 +1819,7 @@ png_icc_check_tag_table(png_const_structrp png_ptr, png_colorspacerp colorspace,
 
 
       if (tag_start > profile_length || tag_length > profile_length - tag_start)
-         return png_icc_profile_error(png_ptr, colorspace, name, tag_id,
+         return png_icc_profile_error(png_ptr, name, tag_id,
              "ICC profile tag outside profile");
 
       if ((tag_start & 3) != 0)
@@ -2311,305 +1828,130 @@ png_icc_check_tag_table(png_const_structrp png_ptr, png_colorspacerp colorspace,
 
 
 
-         (void)png_icc_profile_error(png_ptr, NULL, name, tag_id,
+         (void)png_icc_profile_error(png_ptr, name, tag_id,
              "ICC profile tag start not a multiple of 4");
       }
    }
 
    return 1; 
 }
-
-#ifdef PNG_sRGB_SUPPORTED
-#if PNG_sRGB_PROFILE_CHECKS >= 0
-
-static const struct
-{
-   png_uint_32 adler, crc, length;
-   png_uint_32 md5[4];
-   png_byte    have_md5;
-   png_byte    is_broken;
-   png_uint_16 intent;
-
-#  define PNG_MD5(a,b,c,d) { a, b, c, d }, (a!=0)||(b!=0)||(c!=0)||(d!=0)
-#  define PNG_ICC_CHECKSUM(adler, crc, md5, intent, broke, date, length, fname)\
-      { adler, crc, length, md5, broke, intent },
-
-} png_sRGB_checks[] =
-{
-   
-
-
-   
-   PNG_ICC_CHECKSUM(0x0a3fd9f6, 0x3b8772b9,
-       PNG_MD5(0x29f83dde, 0xaff255ae, 0x7842fae4, 0xca83390d), 0, 0,
-       "2009/03/27 21:36:31", 3048, "sRGB_IEC61966-2-1_black_scaled.icc")
-
-   
-   PNG_ICC_CHECKSUM(0x4909e5e1, 0x427ebb21,
-       PNG_MD5(0xc95bd637, 0xe95d8a3b, 0x0df38f99, 0xc1320389), 1, 0,
-       "2009/03/27 21:37:45", 3052, "sRGB_IEC61966-2-1_no_black_scaling.icc")
-
-   PNG_ICC_CHECKSUM(0xfd2144a1, 0x306fd8ae,
-       PNG_MD5(0xfc663378, 0x37e2886b, 0xfd72e983, 0x8228f1b8), 0, 0,
-       "2009/08/10 17:28:01", 60988, "sRGB_v4_ICC_preference_displayclass.icc")
-
-   
-   PNG_ICC_CHECKSUM(0x209c35d2, 0xbbef7812,
-       PNG_MD5(0x34562abf, 0x994ccd06, 0x6d2c5721, 0xd0d68c5d), 0, 0,
-       "2007/07/25 00:05:37", 60960, "sRGB_v4_ICC_preference.icc")
-
-   
-
-
-
-
-   PNG_ICC_CHECKSUM(0xa054d762, 0x5d5129ce,
-       PNG_MD5(0x00000000, 0x00000000, 0x00000000, 0x00000000), 1, 0,
-       "2004/07/21 18:57:42", 3024, "sRGB_IEC61966-2-1_noBPC.icc")
-
-   
-
-
-
-
-
-
-   PNG_ICC_CHECKSUM(0xf784f3fb, 0x182ea552,
-       PNG_MD5(0x00000000, 0x00000000, 0x00000000, 0x00000000), 0, 1,
-       "1998/02/09 06:49:00", 3144, "HP-Microsoft sRGB v2 perceptual")
-
-   PNG_ICC_CHECKSUM(0x0398f3fc, 0xf29e526d,
-       PNG_MD5(0x00000000, 0x00000000, 0x00000000, 0x00000000), 1, 1,
-       "1998/02/09 06:49:00", 3144, "HP-Microsoft sRGB v2 media-relative")
-};
-
-static int
-png_compare_ICC_profile_with_sRGB(png_const_structrp png_ptr,
-    png_const_bytep profile, uLong adler)
-{
-   
-
-
-
-
-
-
-
-   png_uint_32 length = 0;
-   png_uint_32 intent = 0x10000; 
-#if PNG_sRGB_PROFILE_CHECKS > 1
-   uLong crc = 0; 
-#endif
-   unsigned int i;
-
-#ifdef PNG_SET_OPTION_SUPPORTED
-   
-   if (((png_ptr->options >> PNG_SKIP_sRGB_CHECK_PROFILE) & 3) ==
-               PNG_OPTION_ON)
-      return 0;
-#endif
-
-   for (i=0; i < (sizeof png_sRGB_checks) / (sizeof png_sRGB_checks[0]); ++i)
-   {
-      if (png_get_uint_32(profile+84) == png_sRGB_checks[i].md5[0] &&
-         png_get_uint_32(profile+88) == png_sRGB_checks[i].md5[1] &&
-         png_get_uint_32(profile+92) == png_sRGB_checks[i].md5[2] &&
-         png_get_uint_32(profile+96) == png_sRGB_checks[i].md5[3])
-      {
-         
-
-
-
-#        if PNG_sRGB_PROFILE_CHECKS == 0
-            if (png_sRGB_checks[i].have_md5 != 0)
-               return 1+png_sRGB_checks[i].is_broken;
-#        endif
-
-         
-         if (length == 0)
-         {
-            length = png_get_uint_32(profile);
-            intent = png_get_uint_32(profile+64);
-         }
-
-         
-         if (length == (png_uint_32) png_sRGB_checks[i].length &&
-            intent == (png_uint_32) png_sRGB_checks[i].intent)
-         {
-            
-            if (adler == 0)
-            {
-               adler = adler32(0, NULL, 0);
-               adler = adler32(adler, profile, length);
-            }
-
-            if (adler == png_sRGB_checks[i].adler)
-            {
-               
-
-
-
-#              if PNG_sRGB_PROFILE_CHECKS > 1
-                  if (crc == 0)
-                  {
-                     crc = crc32(0, NULL, 0);
-                     crc = crc32(crc, profile, length);
-                  }
-
-                  
-
-                  if (crc == png_sRGB_checks[i].crc)
-#              endif
-               {
-                  if (png_sRGB_checks[i].is_broken != 0)
-                  {
-                     
-
-
-
-
-                     png_chunk_report(png_ptr, "known incorrect sRGB profile",
-                         PNG_CHUNK_ERROR);
-                  }
-
-                  
-
-
-
-                  else if (png_sRGB_checks[i].have_md5 == 0)
-                  {
-                     png_chunk_report(png_ptr,
-                         "out-of-date sRGB profile with no signature",
-                         PNG_CHUNK_WARNING);
-                  }
-
-                  return 1+png_sRGB_checks[i].is_broken;
-               }
-            }
-
-# if PNG_sRGB_PROFILE_CHECKS > 0
-         
-
-
-
-         png_chunk_report(png_ptr,
-             "Not recognizing known sRGB profile that has been edited",
-             PNG_CHUNK_WARNING);
-         break;
-# endif
-         }
-      }
-   }
-
-   return 0; 
-}
-
-void 
-png_icc_set_sRGB(png_const_structrp png_ptr,
-    png_colorspacerp colorspace, png_const_bytep profile, uLong adler)
-{
-   
-
-
-   if (png_compare_ICC_profile_with_sRGB(png_ptr, profile, adler) != 0)
-      (void)png_colorspace_set_sRGB(png_ptr, colorspace,
-         (int)png_get_uint_32(profile+64));
-}
-#endif 
-#endif 
-
-int 
-png_colorspace_set_ICC(png_const_structrp png_ptr, png_colorspacerp colorspace,
-    png_const_charp name, png_uint_32 profile_length, png_const_bytep profile,
-    int color_type)
-{
-   if ((colorspace->flags & PNG_COLORSPACE_INVALID) != 0)
-      return 0;
-
-   if (icc_check_length(png_ptr, colorspace, name, profile_length) != 0 &&
-       png_icc_check_header(png_ptr, colorspace, name, profile_length, profile,
-           color_type) != 0 &&
-       png_icc_check_tag_table(png_ptr, colorspace, name, profile_length,
-           profile) != 0)
-   {
-#     if defined(PNG_sRGB_SUPPORTED) && PNG_sRGB_PROFILE_CHECKS >= 0
-         
-         png_icc_set_sRGB(png_ptr, colorspace, profile, 0);
-#     endif
-      return 1;
-   }
-
-   
-   return 0;
-}
 #endif 
 
 #ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED
-void 
-png_colorspace_set_rgb_coefficients(png_structrp png_ptr)
+#if (defined PNG_READ_mDCV_SUPPORTED) || (defined PNG_READ_cHRM_SUPPORTED)
+static int
+have_chromaticities(png_const_structrp png_ptr)
 {
    
-   if (png_ptr->rgb_to_gray_coefficients_set == 0 &&
-      (png_ptr->colorspace.flags & PNG_COLORSPACE_HAVE_ENDPOINTS) != 0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#  ifdef PNG_READ_mDCV_SUPPORTED
+      if (png_has_chunk(png_ptr, mDCV))
+         return 1;
+#     define check_chromaticities 1
+#  endif 
+
+#  ifdef PNG_READ_sRGB_SUPPORTED
+      if (png_has_chunk(png_ptr, sRGB))
+         return 0;
+#  endif 
+
+#  ifdef PNG_READ_cHRM_SUPPORTED
+      if (png_has_chunk(png_ptr, cHRM))
+         return 1;
+#     define check_chromaticities 1
+#  endif 
+
+   return 0; 
+}
+#endif 
+
+void 
+png_set_rgb_coefficients(png_structrp png_ptr)
+{
+   
+
+
+
+   if (png_ptr->rgb_to_gray_coefficients_set == 0)
    {
-      
+#  if check_chromaticities
+      png_XYZ xyz;
 
-
-      png_fixed_point r = png_ptr->colorspace.end_points_XYZ.red_Y;
-      png_fixed_point g = png_ptr->colorspace.end_points_XYZ.green_Y;
-      png_fixed_point b = png_ptr->colorspace.end_points_XYZ.blue_Y;
-      png_fixed_point total = r+g+b;
-
-      if (total > 0 &&
-         r >= 0 && png_muldiv(&r, r, 32768, total) && r >= 0 && r <= 32768 &&
-         g >= 0 && png_muldiv(&g, g, 32768, total) && g >= 0 && g <= 32768 &&
-         b >= 0 && png_muldiv(&b, b, 32768, total) && b >= 0 && b <= 32768 &&
-         r+g+b <= 32769)
+      if (have_chromaticities(png_ptr) &&
+          png_XYZ_from_xy(&xyz, &png_ptr->chromaticities) == 0)
       {
          
 
 
+         png_fixed_point r = xyz.red_Y;
+         png_fixed_point g = xyz.green_Y;
+         png_fixed_point b = xyz.blue_Y;
+         png_fixed_point total = r+g+b;
 
-
-         int add = 0;
-
-         if (r+g+b > 32768)
-            add = -1;
-         else if (r+g+b < 32768)
-            add = 1;
-
-         if (add != 0)
+         if (total > 0 &&
+            r >= 0 && png_muldiv(&r, r, 32768, total) && r >= 0 && r <= 32768 &&
+            g >= 0 && png_muldiv(&g, g, 32768, total) && g >= 0 && g <= 32768 &&
+            b >= 0 && png_muldiv(&b, b, 32768, total) && b >= 0 && b <= 32768 &&
+            r+g+b <= 32769)
          {
-            if (g >= r && g >= b)
-               g += add;
-            else if (r >= g && r >= b)
-               r += add;
+            
+
+
+
+
+            int add = 0;
+
+            if (r+g+b > 32768)
+               add = -1;
+            else if (r+g+b < 32768)
+               add = 1;
+
+            if (add != 0)
+            {
+               if (g >= r && g >= b)
+                  g += add;
+               else if (r >= g && r >= b)
+                  r += add;
+               else
+                  b += add;
+            }
+
+            
+            if (r+g+b != 32768)
+               png_error(png_ptr,
+                   "internal error handling cHRM coefficients");
+
             else
-               b += add;
-         }
-
-         
-         if (r+g+b != 32768)
-            png_error(png_ptr,
-                "internal error handling cHRM coefficients");
-
-         else
-         {
-            png_ptr->rgb_to_gray_red_coeff   = (png_uint_16)r;
-            png_ptr->rgb_to_gray_green_coeff = (png_uint_16)g;
+            {
+               png_ptr->rgb_to_gray_red_coeff   = (png_uint_16)r;
+               png_ptr->rgb_to_gray_green_coeff = (png_uint_16)g;
+            }
          }
       }
-
-      
-
-
-
       else
-         png_error(png_ptr, "internal error handling cHRM->XYZ");
+#  endif 
+      {
+         
+         png_ptr->rgb_to_gray_red_coeff   = 6968;
+         png_ptr->rgb_to_gray_green_coeff = 23434;
+         
+      }
    }
 }
-#endif 
-
 #endif 
 
 void 
@@ -3413,7 +2755,7 @@ png_fixed_ITU(png_const_structrp png_ptr, double fp, png_const_charp text)
 #endif
 
 
-#if defined(PNG_GAMMA_SUPPORTED) || defined(PNG_COLORSPACE_SUPPORTED) ||\
+#if defined(PNG_READ_GAMMA_SUPPORTED) || defined(PNG_COLORSPACE_SUPPORTED) ||\
     defined(PNG_INCH_CONVERSIONS_SUPPORTED) || defined(PNG_READ_pHYs_SUPPORTED)
 
 
@@ -3421,7 +2763,7 @@ png_fixed_ITU(png_const_structrp png_ptr, double fp, png_const_charp text)
 
 
 
-int
+int 
 png_muldiv(png_fixed_point_p res, png_fixed_point a, png_int_32 times,
     png_int_32 divisor)
 {
@@ -3535,27 +2877,7 @@ png_muldiv(png_fixed_point_p res, png_fixed_point a, png_int_32 times,
 
    return 0;
 }
-#endif 
 
-#if defined(PNG_READ_GAMMA_SUPPORTED) || defined(PNG_INCH_CONVERSIONS_SUPPORTED)
-
-
-
-png_fixed_point
-png_muldiv_warn(png_const_structrp png_ptr, png_fixed_point a, png_int_32 times,
-    png_int_32 divisor)
-{
-   png_fixed_point result;
-
-   if (png_muldiv(&result, a, times, divisor) != 0)
-      return result;
-
-   png_warning(png_ptr, "fixed point overflow ignored");
-   return 0;
-}
-#endif
-
-#ifdef PNG_GAMMA_SUPPORTED 
 
 png_fixed_point
 png_reciprocal(png_fixed_point a)
@@ -3574,26 +2896,38 @@ png_reciprocal(png_fixed_point a)
 
    return 0; 
 }
+#endif 
 
+#ifdef PNG_READ_GAMMA_SUPPORTED
 
 
 
 int 
 png_gamma_significant(png_fixed_point gamma_val)
 {
+   
+
+
+
+
+
+
+
+
+
+
+
    return gamma_val < PNG_FP_1 - PNG_GAMMA_THRESHOLD_FIXED ||
        gamma_val > PNG_FP_1 + PNG_GAMMA_THRESHOLD_FIXED;
 }
-#endif
 
-#ifdef PNG_READ_GAMMA_SUPPORTED
-#ifdef PNG_16BIT_SUPPORTED
+#ifndef PNG_FLOATING_ARITHMETIC_SUPPORTED
 
 static png_fixed_point
 png_product2(png_fixed_point a, png_fixed_point b)
 {
    
-#ifdef PNG_FLOATING_ARITHMETIC_SUPPORTED
+#ifdef PNG_FLOATING_ARITHMETIC_SUPPORTED 
    double r = a * 1E-5;
    r *= b;
    r = floor(r+.5);
@@ -3610,7 +2944,6 @@ png_product2(png_fixed_point a, png_fixed_point b)
    return 0; 
 }
 #endif 
-
 
 png_fixed_point
 png_reciprocal2(png_fixed_point a, png_fixed_point b)
@@ -4265,9 +3598,26 @@ png_destroy_gamma_table(png_structrp png_ptr)
 
 
 
+
+
+
+#if defined(PNG_READ_BACKGROUND_SUPPORTED) || \
+   defined(PNG_READ_ALPHA_MODE_SUPPORTED) || \
+   defined(PNG_READ_RGB_TO_GRAY_SUPPORTED)
+#  define GAMMA_TRANSFORMS 1 /* #ifdef CSE */
+#else
+#  define GAMMA_TRANSFORMS 0
+#endif
+
 void 
 png_build_gamma_table(png_structrp png_ptr, int bit_depth)
 {
+   png_fixed_point file_gamma, screen_gamma;
+   png_fixed_point correction;
+#  if GAMMA_TRANSFORMS
+      png_fixed_point file_to_linear, linear_to_screen;
+#  endif
+
    png_debug(1, "in png_build_gamma_table");
 
    
@@ -4282,25 +3632,42 @@ png_build_gamma_table(png_structrp png_ptr, int bit_depth)
       png_destroy_gamma_table(png_ptr);
    }
 
+   
+
+
+
+   file_gamma = png_ptr->file_gamma;
+   screen_gamma = png_ptr->screen_gamma;
+#  if GAMMA_TRANSFORMS
+      file_to_linear = png_reciprocal(file_gamma);
+#  endif
+
+   if (screen_gamma > 0)
+   {
+#     if GAMMA_TRANSFORMS
+         linear_to_screen = png_reciprocal(screen_gamma);
+#     endif
+      correction = png_reciprocal2(screen_gamma, file_gamma);
+   }
+   else 
+   {
+#     if GAMMA_TRANSFORMS
+         linear_to_screen = file_gamma;
+#     endif
+      correction = PNG_FP_1;
+   }
+
    if (bit_depth <= 8)
    {
-      png_build_8bit_table(png_ptr, &png_ptr->gamma_table,
-          png_ptr->screen_gamma > 0 ?
-          png_reciprocal2(png_ptr->colorspace.gamma,
-          png_ptr->screen_gamma) : PNG_FP_1);
+      png_build_8bit_table(png_ptr, &png_ptr->gamma_table, correction);
 
-#if defined(PNG_READ_BACKGROUND_SUPPORTED) || \
-   defined(PNG_READ_ALPHA_MODE_SUPPORTED) || \
-   defined(PNG_READ_RGB_TO_GRAY_SUPPORTED)
+#if GAMMA_TRANSFORMS
       if ((png_ptr->transformations & (PNG_COMPOSE | PNG_RGB_TO_GRAY)) != 0)
       {
-         png_build_8bit_table(png_ptr, &png_ptr->gamma_to_1,
-             png_reciprocal(png_ptr->colorspace.gamma));
+         png_build_8bit_table(png_ptr, &png_ptr->gamma_to_1, file_to_linear);
 
          png_build_8bit_table(png_ptr, &png_ptr->gamma_from_1,
-             png_ptr->screen_gamma > 0 ?
-             png_reciprocal(png_ptr->screen_gamma) :
-             png_ptr->colorspace.gamma);
+            linear_to_screen);
       }
 #endif 
    }
@@ -4368,30 +3735,24 @@ png_build_gamma_table(png_structrp png_ptr, int bit_depth)
 
 
       if ((png_ptr->transformations & (PNG_16_TO_8 | PNG_SCALE_16_TO_8)) != 0)
-          png_build_16to8_table(png_ptr, &png_ptr->gamma_16_table, shift,
-          png_ptr->screen_gamma > 0 ? png_product2(png_ptr->colorspace.gamma,
-          png_ptr->screen_gamma) : PNG_FP_1);
-
+         png_build_16to8_table(png_ptr, &png_ptr->gamma_16_table, shift,
+            png_reciprocal(correction));
       else
-          png_build_16bit_table(png_ptr, &png_ptr->gamma_16_table, shift,
-          png_ptr->screen_gamma > 0 ? png_reciprocal2(png_ptr->colorspace.gamma,
-          png_ptr->screen_gamma) : PNG_FP_1);
+         png_build_16bit_table(png_ptr, &png_ptr->gamma_16_table, shift,
+            correction);
 
-#if defined(PNG_READ_BACKGROUND_SUPPORTED) || \
-   defined(PNG_READ_ALPHA_MODE_SUPPORTED) || \
-   defined(PNG_READ_RGB_TO_GRAY_SUPPORTED)
+#  if GAMMA_TRANSFORMS
       if ((png_ptr->transformations & (PNG_COMPOSE | PNG_RGB_TO_GRAY)) != 0)
       {
          png_build_16bit_table(png_ptr, &png_ptr->gamma_16_to_1, shift,
-             png_reciprocal(png_ptr->colorspace.gamma));
+            file_to_linear);
 
          
 
 
 
          png_build_16bit_table(png_ptr, &png_ptr->gamma_16_from_1, shift,
-             png_ptr->screen_gamma > 0 ? png_reciprocal(png_ptr->screen_gamma) :
-             png_ptr->colorspace.gamma);
+            linear_to_screen);
       }
 #endif 
    }

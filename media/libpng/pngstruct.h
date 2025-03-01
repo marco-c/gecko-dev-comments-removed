@@ -73,12 +73,6 @@ typedef struct png_compression_buffer
 
 
 
-
-
-#ifdef PNG_COLORSPACE_SUPPORTED
-
-
-
 typedef struct png_xy
 {
    png_fixed_point redx, redy;
@@ -96,48 +90,36 @@ typedef struct png_XYZ
    png_fixed_point green_X, green_Y, green_Z;
    png_fixed_point blue_X, blue_Y, blue_Z;
 } png_XYZ;
-#endif 
-
-#if defined(PNG_COLORSPACE_SUPPORTED) || defined(PNG_GAMMA_SUPPORTED)
 
 
 
 
-
-
-
-
-
-typedef struct png_colorspace
+#define PNG_CHUNK(cHNK, i) PNG_INDEX_ ## cHNK = (i),
+typedef enum
 {
-#ifdef PNG_GAMMA_SUPPORTED
-   png_fixed_point gamma;        
-#endif
+   PNG_KNOWN_CHUNKS
+   PNG_INDEX_unknown
+} png_index;
+#undef PNG_CHUNK
 
-#ifdef PNG_COLORSPACE_SUPPORTED
-   png_xy      end_points_xy;    
-   png_XYZ     end_points_XYZ;   
-   png_uint_16 rendering_intent; 
-#endif
 
+
+
+
+
+#define png_chunk_flag_from_index(i) (0x80000000U >> (31 - (i)))
    
-   png_uint_16 flags;            
-} png_colorspace, * PNG_RESTRICT png_colorspacerp;
-
-typedef const png_colorspace * PNG_RESTRICT png_const_colorspacerp;
 
 
-#define PNG_COLORSPACE_HAVE_GAMMA           0x0001
-#define PNG_COLORSPACE_HAVE_ENDPOINTS       0x0002
-#define PNG_COLORSPACE_HAVE_INTENT          0x0004
-#define PNG_COLORSPACE_FROM_gAMA            0x0008
-#define PNG_COLORSPACE_FROM_cHRM            0x0010
-#define PNG_COLORSPACE_FROM_sRGB            0x0020
-#define PNG_COLORSPACE_ENDPOINTS_MATCH_sRGB 0x0040
-#define PNG_COLORSPACE_MATCHES_sRGB         0x0080 /* exact match on profile */
-#define PNG_COLORSPACE_INVALID              0x8000
-#define PNG_COLORSPACE_CANCEL(flags)        (0xffff ^ (flags))
-#endif 
+
+
+#define png_file_has_chunk(png_ptr, i)\
+   (((png_ptr)->chunks & png_chunk_flag_from_index(i)) != 0)
+   
+
+#define png_file_add_chunk(pnt_ptr, i)\
+   ((void)((png_ptr)->chunks |= png_chunk_flag_from_index(i)))
+   
 
 struct png_struct_def
 {
@@ -208,6 +190,11 @@ struct png_struct_def
    int zlib_set_mem_level;
    int zlib_set_strategy;
 #endif
+
+   png_uint_32 chunks; 
+#  define png_has_chunk(png_ptr, cHNK)\
+      png_file_has_chunk(png_ptr, PNG_INDEX_ ## cHNK)
+      
 
    png_uint_32 width;         
    png_uint_32 height;        
@@ -285,9 +272,16 @@ struct png_struct_def
    png_uint_32 flush_rows;    
 #endif
 
+#ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED
+   png_xy          chromaticities; 
+#endif
+
 #ifdef PNG_READ_GAMMA_SUPPORTED
    int gamma_shift;      
    png_fixed_point screen_gamma; 
+   png_fixed_point file_gamma;   
+   png_fixed_point chunk_gamma;  
+   png_fixed_point default_gamma;
 
    png_bytep gamma_table;     
    png_uint_16pp gamma_16_table; 
@@ -299,7 +293,7 @@ struct png_struct_def
    png_uint_16pp gamma_16_from_1; 
    png_uint_16pp gamma_16_to_1; 
 #endif 
-#endif
+#endif 
 
 #if defined(PNG_READ_GAMMA_SUPPORTED) || defined(PNG_sBIT_SUPPORTED)
    png_color_8 sig_bit;       
@@ -349,8 +343,8 @@ struct png_struct_def
 
 #ifdef PNG_TIME_RFC1123_SUPPORTED
    char time_buffer[29]; 
-#endif
-#endif
+#endif 
+#endif 
 
 
 
@@ -360,8 +354,8 @@ struct png_struct_def
    png_voidp user_chunk_ptr;
 #ifdef PNG_READ_USER_CHUNKS_SUPPORTED
    png_user_chunk_ptr read_user_chunk_fn; 
-#endif
-#endif
+#endif 
+#endif 
 
 #ifdef PNG_SET_UNKNOWN_CHUNKS_SUPPORTED
    int          unknown_default; 
@@ -489,11 +483,5 @@ struct png_struct_def
 
    void (*read_filter[PNG_FILTER_VALUE_LAST-1])(png_row_infop row_info,
       png_bytep row, png_const_bytep prev_row);
-
-#ifdef PNG_READ_SUPPORTED
-#if defined(PNG_COLORSPACE_SUPPORTED) || defined(PNG_GAMMA_SUPPORTED)
-   png_colorspace   colorspace;
-#endif
-#endif
 };
 #endif 

@@ -86,20 +86,6 @@ struct png_info_def
 
 
 
-#if defined(PNG_COLORSPACE_SUPPORTED) || defined(PNG_GAMMA_SUPPORTED)
-   
-
-
-
-
-
-
-
-
-
-   png_colorspace colorspace;
-#endif
-
 #ifdef PNG_cICP_SUPPORTED
    
    png_byte cicp_colour_primaries;
@@ -211,11 +197,8 @@ defined(PNG_READ_BACKGROUND_SUPPORTED)
 #endif
 
 #ifdef PNG_eXIf_SUPPORTED
-   int num_exif;  
+   png_uint_32 num_exif;  
    png_bytep exif;
-# ifdef PNG_READ_eXIf_SUPPORTED
-   png_bytep eXIf_buf;  
-# endif
 #endif
 
 #ifdef PNG_hIST_SUPPORTED
@@ -288,6 +271,17 @@ defined(PNG_READ_BACKGROUND_SUPPORTED)
    png_bytepp row_pointers;        
 #endif
 
+#ifdef PNG_cHRM_SUPPORTED
+   png_xy cHRM;
+#endif
+
+#ifdef PNG_gAMA_SUPPORTED
+   png_fixed_point gamma;
+#endif
+
+#ifdef PNG_sRGB_SUPPORTED
+   int rendering_intent;
+#endif
 #ifdef PNG_APNG_SUPPORTED
    png_uint_32 num_frames; 
    png_uint_32 num_plays;

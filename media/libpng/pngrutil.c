@@ -17,6 +17,11 @@
 
 #ifdef PNG_READ_SUPPORTED
 
+
+
+
+#define LZ77Min  (2U+5U+4U)
+
 #ifdef PNG_READ_INTERLACING_SUPPORTED
 
 
@@ -42,30 +47,6 @@ png_get_uint_31(png_const_structrp png_ptr, png_const_bytep buf)
 
    return uval;
 }
-
-#if defined(PNG_READ_gAMA_SUPPORTED) || defined(PNG_READ_cHRM_SUPPORTED)
-
-
-
-
-
-#define PNG_FIXED_ERROR (-1)
-
-static png_fixed_point 
-png_get_fixed_point(png_structrp png_ptr, png_const_bytep buf)
-{
-   png_uint_32 uval = png_get_uint_32(buf);
-
-   if (uval <= PNG_UINT_31_MAX)
-      return (png_fixed_point)uval; 
-
-   
-   if (png_ptr != NULL)
-      png_warning(png_ptr, "PNG fixed point integer out of range");
-
-   return PNG_FIXED_ERROR;
-}
-#endif
 
 #ifdef PNG_READ_INT_FUNCTIONS_SUPPORTED
 
@@ -166,11 +147,43 @@ png_read_sig(png_structrp png_ptr, png_inforp info_ptr)
 
 
 
+
+
+static int
+check_chunk_name(png_uint_32 name)
+{
+   png_uint_32 t;
+
+   
+
+
+
+   name &= ~PNG_U32(32,32,0,32);
+   t = (name & ~0x1f1f1f1fU) ^ 0x40404040U;
+
+   
+
+
+   name -= PNG_U32(65,65,65,65);
+   t |= name;
+
+   
+
+
+   name -= PNG_U32(25,25,25,26);
+   t |= ~name;
+
+   return (t & 0xe0e0e0e0U) == 0U;
+}
+
+
+
+
 png_uint_32 
 png_read_chunk_header(png_structrp png_ptr)
 {
    png_byte buf[8];
-   png_uint_32 length;
+   png_uint_32 chunk_name, length;
 
 #ifdef PNG_IO_STATE_SUPPORTED
    png_ptr->io_state = PNG_IO_READING | PNG_IO_CHUNK_HDR;
@@ -179,24 +192,27 @@ png_read_chunk_header(png_structrp png_ptr)
    
 
 
+
    png_read_data(png_ptr, buf, 8);
    length = png_get_uint_31(png_ptr, buf);
-
-   
-   png_ptr->chunk_name = PNG_CHUNK_FROM_STRING(buf+4);
-
-   png_debug2(0, "Reading chunk typeid = 0x%lx, length = %lu",
-       (unsigned long)png_ptr->chunk_name, (unsigned long)length);
+   png_ptr->chunk_name = chunk_name = PNG_CHUNK_FROM_STRING(buf+4);
 
    
    png_reset_crc(png_ptr);
    png_calculate_crc(png_ptr, buf + 4, 4);
 
-   
-   png_check_chunk_name(png_ptr, png_ptr->chunk_name);
+   png_debug2(0, "Reading chunk typeid = 0x%lx, length = %lu",
+       (unsigned long)png_ptr->chunk_name, (unsigned long)length);
 
    
-   png_check_chunk_length(png_ptr, length);
+
+
+   if (buf[0] >= 0x80U)
+      png_chunk_error(png_ptr, "bad header (invalid length)");
+
+   
+   if (!check_chunk_name(chunk_name))
+      png_chunk_error(png_ptr, "bad header (invalid type)");
 
 #ifdef PNG_IO_STATE_SUPPORTED
    png_ptr->io_state = PNG_IO_READING | PNG_IO_CHUNK_DATA;
@@ -219,56 +235,40 @@ png_crc_read(png_structrp png_ptr, png_bytep buf, png_uint_32 length)
 
 
 
-
-
-int 
-png_crc_finish(png_structrp png_ptr, png_uint_32 skip)
-{
-   
-
-
-   while (skip > 0)
-   {
-      png_uint_32 len;
-      png_byte tmpbuf[PNG_INFLATE_BUF_SIZE];
-
-      len = (sizeof tmpbuf);
-      if (len > skip)
-         len = skip;
-      skip -= len;
-
-      png_crc_read(png_ptr, tmpbuf, len);
-   }
-
-   if (png_crc_error(png_ptr) != 0)
-   {
-      if (PNG_CHUNK_ANCILLARY(png_ptr->chunk_name) != 0 ?
-          (png_ptr->flags & PNG_FLAG_CRC_ANCILLARY_NOWARN) == 0 :
-          (png_ptr->flags & PNG_FLAG_CRC_CRITICAL_USE) != 0)
-      {
-         png_chunk_warning(png_ptr, "CRC error");
-      }
-
-      else
-         png_chunk_error(png_ptr, "CRC error");
-
-      return 1;
-   }
-
-   return 0;
-}
-
-
-
-
-int 
-png_crc_error(png_structrp png_ptr)
+static int
+png_crc_error(png_structrp png_ptr, int handle_as_ancillary)
 {
    png_byte crc_bytes[4];
    png_uint_32 crc;
    int need_crc = 1;
 
-   if (PNG_CHUNK_ANCILLARY(png_ptr->chunk_name) != 0)
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if (handle_as_ancillary || PNG_CHUNK_ANCILLARY(png_ptr->chunk_name) != 0)
    {
       if ((png_ptr->flags & PNG_FLAG_CRC_ANCILLARY_MASK) ==
           (PNG_FLAG_CRC_ANCILLARY_USE | PNG_FLAG_CRC_ANCILLARY_NOWARN))
@@ -298,20 +298,86 @@ png_crc_error(png_structrp png_ptr)
       return 0;
 }
 
+
+
+
+
+
+
+
+
+
+
+static int
+png_crc_finish_critical(png_structrp png_ptr, png_uint_32 skip,
+      int handle_as_ancillary)
+{
+   
+
+
+   while (skip > 0)
+   {
+      png_uint_32 len;
+      png_byte tmpbuf[PNG_INFLATE_BUF_SIZE];
+
+      len = (sizeof tmpbuf);
+      if (len > skip)
+         len = skip;
+      skip -= len;
+
+      png_crc_read(png_ptr, tmpbuf, len);
+   }
+
+   
+
+
+
+
+   if (handle_as_ancillary &&
+       (png_ptr->flags & PNG_FLAG_CRC_CRITICAL_IGNORE) != 0)
+      handle_as_ancillary = 0;
+
+   
+
+   if (png_crc_error(png_ptr, handle_as_ancillary) != 0)
+   {
+      
+      if (handle_as_ancillary || PNG_CHUNK_ANCILLARY(png_ptr->chunk_name) != 0 ?
+          (png_ptr->flags & PNG_FLAG_CRC_ANCILLARY_NOWARN) == 0 :
+          (png_ptr->flags & PNG_FLAG_CRC_CRITICAL_USE) != 0)
+         png_chunk_warning(png_ptr, "CRC error");
+
+      else
+         png_chunk_error(png_ptr, "CRC error");
+
+      return 1;
+   }
+
+   return 0;
+}
+
+int 
+png_crc_finish(png_structrp png_ptr, png_uint_32 skip)
+{
+   return png_crc_finish_critical(png_ptr, skip, 0);
+}
+
 #if defined(PNG_READ_iCCP_SUPPORTED) || defined(PNG_READ_iTXt_SUPPORTED) ||\
     defined(PNG_READ_pCAL_SUPPORTED) || defined(PNG_READ_sCAL_SUPPORTED) ||\
     defined(PNG_READ_sPLT_SUPPORTED) || defined(PNG_READ_tEXt_SUPPORTED) ||\
-    defined(PNG_READ_zTXt_SUPPORTED) || defined(PNG_SEQUENTIAL_READ_SUPPORTED)
-
+    defined(PNG_READ_zTXt_SUPPORTED) || defined(PNG_READ_eXIf_SUPPORTED) ||\
+    defined(PNG_SEQUENTIAL_READ_SUPPORTED)
 
 
 
 
 
 static png_bytep
-png_read_buffer(png_structrp png_ptr, png_alloc_size_t new_size, int warn)
+png_read_buffer(png_structrp png_ptr, png_alloc_size_t new_size)
 {
    png_bytep buffer = png_ptr->read_buffer;
+
+   if (new_size > png_chunk_max(png_ptr)) return NULL;
 
    if (buffer != NULL && new_size > png_ptr->read_buffer_size)
    {
@@ -327,18 +393,11 @@ png_read_buffer(png_structrp png_ptr, png_alloc_size_t new_size, int warn)
 
       if (buffer != NULL)
       {
-         memset(buffer, 0, new_size); 
+#        ifndef PNG_NO_MEMZERO 
+            memset(buffer, 0, new_size); 
+#        endif
          png_ptr->read_buffer = buffer;
          png_ptr->read_buffer_size = new_size;
-      }
-
-      else if (warn < 2) 
-      {
-         if (warn != 0)
-             png_chunk_warning(png_ptr, "insufficient memory to read chunk");
-
-         else
-             png_chunk_error(png_ptr, "insufficient memory to read chunk");
       }
    }
 
@@ -631,16 +690,7 @@ png_decompress_chunk(png_structrp png_ptr,
 
 
 
-   png_alloc_size_t limit = PNG_SIZE_MAX;
-
-# ifdef PNG_SET_USER_LIMITS_SUPPORTED
-   if (png_ptr->user_chunk_malloc_max > 0 &&
-       png_ptr->user_chunk_malloc_max < limit)
-      limit = png_ptr->user_chunk_malloc_max;
-# elif PNG_USER_CHUNK_MALLOC_MAX > 0
-   if (PNG_USER_CHUNK_MALLOC_MAX < limit)
-      limit = PNG_USER_CHUNK_MALLOC_MAX;
-# endif
+   png_alloc_size_t limit = png_chunk_max(png_ptr);
 
    if (limit >= prefix_size + (terminate != 0))
    {
@@ -847,7 +897,7 @@ png_inflate_read(png_structrp png_ptr, png_bytep read_buffer, uInt read_size,
 
 
 
-void 
+static png_handle_result_code
 png_handle_IHDR(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_byte buf[13];
@@ -857,12 +907,7 @@ png_handle_IHDR(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    png_debug(1, "in png_handle_IHDR");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) != 0)
-      png_chunk_error(png_ptr, "out of place");
-
    
-   if (length != 13)
-      png_chunk_error(png_ptr, "invalid");
 
    png_ptr->mode |= PNG_HAVE_IHDR;
 
@@ -921,257 +966,196 @@ png_handle_IHDR(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    png_debug1(3, "bit_depth = %d", png_ptr->bit_depth);
    png_debug1(3, "channels = %d", png_ptr->channels);
    png_debug1(3, "rowbytes = %lu", (unsigned long)png_ptr->rowbytes);
+
+   
+
+
    png_set_IHDR(png_ptr, info_ptr, width, height, bit_depth,
        color_type, interlace_type, compression_type, filter_type);
+
+   return handled_ok;
+   PNG_UNUSED(length)
 }
 
 
-void 
+
+
+
+
+static png_handle_result_code
 png_handle_PLTE(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
-   png_color palette[PNG_MAX_PALETTE_LENGTH];
-   int max_palette_length, num, i;
-#ifdef PNG_POINTER_INDEXING_SUPPORTED
-   png_colorp pal_ptr;
-#endif
+   png_const_charp errmsg = NULL;
 
    png_debug(1, "in png_handle_PLTE");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
    
 
 
 
 
-   else if ((png_ptr->mode & PNG_HAVE_PLTE) != 0)
-      png_chunk_error(png_ptr, "duplicate");
+   if ((png_ptr->mode & PNG_HAVE_PLTE) != 0)
+      errmsg = "duplicate";
 
    else if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
-   {
-      
+      errmsg = "out of place";
 
+   else if ((png_ptr->color_type & PNG_COLOR_MASK_COLOR) == 0)
+      errmsg = "ignored in grayscale PNG";
 
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   png_ptr->mode |= PNG_HAVE_PLTE;
-
-   if ((png_ptr->color_type & PNG_COLOR_MASK_COLOR) == 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "ignored in grayscale PNG");
-      return;
-   }
-
-#ifndef PNG_READ_OPT_PLTE_SUPPORTED
-   if (png_ptr->color_type != PNG_COLOR_TYPE_PALETTE)
-   {
-      png_crc_finish(png_ptr, length);
-      return;
-   }
-#endif
-
-   if (length > 3*PNG_MAX_PALETTE_LENGTH || length % 3)
-   {
-      png_crc_finish(png_ptr, length);
-
-      if (png_ptr->color_type != PNG_COLOR_TYPE_PALETTE)
-         png_chunk_benign_error(png_ptr, "invalid");
-
-      else
-         png_chunk_error(png_ptr, "invalid");
-
-      return;
-   }
-
-   
-   num = (int)length / 3;
+   else if (length > 3*PNG_MAX_PALETTE_LENGTH || (length % 3) != 0)
+      errmsg = "invalid";
 
    
 
 
 
 
-   if (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE)
-      max_palette_length = (1 << png_ptr->bit_depth);
+
+
+
+
+
+
+   else if (png_ptr->color_type != PNG_COLOR_TYPE_PALETTE &&
+            (png_has_chunk(png_ptr, tRNS) || png_has_chunk(png_ptr, bKGD)))
+      errmsg = "out of place";
+
    else
-      max_palette_length = PNG_MAX_PALETTE_LENGTH;
-
-   if (num > max_palette_length)
-      num = max_palette_length;
-
-#ifdef PNG_POINTER_INDEXING_SUPPORTED
-   for (i = 0, pal_ptr = palette; i < num; i++, pal_ptr++)
-   {
-      png_byte buf[3];
-
-      png_crc_read(png_ptr, buf, 3);
-      pal_ptr->red = buf[0];
-      pal_ptr->green = buf[1];
-      pal_ptr->blue = buf[2];
-   }
-#else
-   for (i = 0; i < num; i++)
-   {
-      png_byte buf[3];
-
-      png_crc_read(png_ptr, buf, 3);
-      
-      palette[i].red = buf[0];
-      palette[i].green = buf[1];
-      palette[i].blue = buf[2];
-   }
-#endif
-
-   
-
-
-
-
-#ifndef PNG_READ_OPT_PLTE_SUPPORTED
-   if (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE)
-#endif
-   {
-      png_crc_finish(png_ptr, (png_uint_32) (length - (unsigned int)num * 3));
-   }
-
-#ifndef PNG_READ_OPT_PLTE_SUPPORTED
-   else if (png_crc_error(png_ptr) != 0)  
    {
       
 
 
 
 
+      const unsigned max_palette_length =
+         (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE) ?
+            1U << png_ptr->bit_depth : PNG_MAX_PALETTE_LENGTH;
+
+      
 
 
+      const unsigned num = (length > 3U*max_palette_length) ?
+         max_palette_length : (unsigned)length / 3U;
 
+      unsigned i, j;
+      png_byte buf[3*PNG_MAX_PALETTE_LENGTH];
+      png_color palette[PNG_MAX_PALETTE_LENGTH];
 
-      if ((png_ptr->flags & PNG_FLAG_CRC_ANCILLARY_USE) == 0)
+      
+      png_crc_read(png_ptr, buf, num*3U);
+      png_crc_finish_critical(png_ptr, length - 3U*num,
+            
+            png_ptr->color_type != PNG_COLOR_TYPE_PALETTE);
+
+      for (i = 0U, j = 0U; i < num; i++)
       {
-         if ((png_ptr->flags & PNG_FLAG_CRC_ANCILLARY_NOWARN) != 0)
-            return;
-
-         else
-            png_chunk_error(png_ptr, "CRC error");
+         palette[i].red = buf[j++];
+         palette[i].green = buf[j++];
+         palette[i].blue = buf[j++];
       }
 
       
-      else if ((png_ptr->flags & PNG_FLAG_CRC_ANCILLARY_NOWARN) == 0)
-         png_chunk_warning(png_ptr, "CRC error");
-   }
-#endif
+      png_ptr->mode |= PNG_HAVE_PLTE;
 
-   
-
-
-
-
-
-
-
-   png_set_PLTE(png_ptr, info_ptr, palette, num);
-
-   
-
-
-
-
-
-
-
-
-#ifdef PNG_READ_tRNS_SUPPORTED
-   if (png_ptr->num_trans > 0 ||
-       (info_ptr != NULL && (info_ptr->valid & PNG_INFO_tRNS) != 0))
-   {
       
 
 
 
-      png_ptr->num_trans = 0;
 
-      if (info_ptr != NULL)
-         info_ptr->num_trans = 0;
 
-      png_chunk_benign_error(png_ptr, "tRNS must be after");
+
+
+
+
+
+
+
+      png_set_PLTE(png_ptr, info_ptr, palette, num);
+      return handled_ok;
    }
-#endif
 
-#ifdef PNG_READ_hIST_SUPPORTED
-   if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_hIST) != 0)
-      png_chunk_benign_error(png_ptr, "hIST must be after");
-#endif
+   
+   if (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE)
+   {
+      png_crc_finish(png_ptr, length);
+      png_chunk_error(png_ptr, errmsg);
+   }
 
-#ifdef PNG_READ_bKGD_SUPPORTED
-   if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_bKGD) != 0)
-      png_chunk_benign_error(png_ptr, "bKGD must be after");
-#endif
+   else 
+   {
+      png_crc_finish_critical(png_ptr, length, 1);
+      png_chunk_benign_error(png_ptr, errmsg);
+   }
+
+   
+
+
+   return errmsg != NULL ? handled_error : handled_error;
 }
 
-void 
+
+
+
+#define png_handle_IDAT NULL
+
+static png_handle_result_code
 png_handle_IEND(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_debug(1, "in png_handle_IEND");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0 ||
-       (png_ptr->mode & PNG_HAVE_IDAT) == 0)
-      png_chunk_error(png_ptr, "out of place");
-
    png_ptr->mode |= (PNG_AFTER_IDAT | PNG_HAVE_IEND);
-
-   png_crc_finish(png_ptr, length);
 
    if (length != 0)
       png_chunk_benign_error(png_ptr, "invalid");
 
+   png_crc_finish_critical(png_ptr, length, 1);
+
+   return handled_ok;
    PNG_UNUSED(info_ptr)
 }
 
 #ifdef PNG_READ_gAMA_SUPPORTED
-void 
+static png_handle_result_code
 png_handle_gAMA(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
-   png_fixed_point igamma;
+   png_uint_32 ugamma;
    png_byte buf[4];
 
    png_debug(1, "in png_handle_gAMA");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & (PNG_HAVE_IDAT|PNG_HAVE_PLTE)) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   if (length != 4)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "invalid");
-      return;
-   }
-
    png_crc_read(png_ptr, buf, 4);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
-   igamma = png_get_fixed_point(NULL, buf);
+   ugamma = png_get_uint_32(buf);
 
-   png_colorspace_set_gamma(png_ptr, &png_ptr->colorspace, igamma);
-   png_colorspace_sync(png_ptr, info_ptr);
+   if (ugamma > PNG_UINT_31_MAX)
+   {
+      png_chunk_benign_error(png_ptr, "invalid");
+      return handled_error;
+   }
+
+   png_set_gAMA_fixed(png_ptr, info_ptr, (png_fixed_point)ugamma);
+
+#ifdef PNG_READ_GAMMA_SUPPORTED
+      
+
+
+      if (png_ptr->chunk_gamma == 0)
+         png_ptr->chunk_gamma = (png_fixed_point)ugamma;
+#endif 
+
+   return handled_ok;
+   PNG_UNUSED(length)
 }
+#else
+#  define png_handle_gAMA NULL
 #endif
 
 #ifdef PNG_READ_sBIT_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_sBIT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    unsigned int truelen, i;
@@ -1179,23 +1163,6 @@ png_handle_sBIT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    png_byte buf[4];
 
    png_debug(1, "in png_handle_sBIT");
-
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & (PNG_HAVE_IDAT|PNG_HAVE_PLTE)) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_sBIT) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
 
    if (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE)
    {
@@ -1209,25 +1176,25 @@ png_handle_sBIT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       sample_depth = png_ptr->bit_depth;
    }
 
-   if (length != truelen || length > 4)
+   if (length != truelen)
    {
-      png_chunk_benign_error(png_ptr, "invalid");
       png_crc_finish(png_ptr, length);
-      return;
+      png_chunk_benign_error(png_ptr, "bad length");
+      return handled_error;
    }
 
    buf[0] = buf[1] = buf[2] = buf[3] = sample_depth;
    png_crc_read(png_ptr, buf, truelen);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
    for (i=0; i<truelen; ++i)
    {
       if (buf[i] == 0 || buf[i] > sample_depth)
       {
          png_chunk_benign_error(png_ptr, "invalid");
-         return;
+         return handled_error;
       }
    }
 
@@ -1239,7 +1206,7 @@ png_handle_sBIT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       png_ptr->sig_bit.alpha = buf[3];
    }
 
-   else
+   else 
    {
       png_ptr->sig_bit.gray = buf[0];
       png_ptr->sig_bit.red = buf[0];
@@ -1249,133 +1216,132 @@ png_handle_sBIT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    }
 
    png_set_sBIT(png_ptr, info_ptr, &(png_ptr->sig_bit));
+   return handled_ok;
 }
+#else
+#  define png_handle_sBIT NULL
 #endif
 
 #ifdef PNG_READ_cHRM_SUPPORTED
-void 
+static png_int_32
+png_get_int_32_checked(png_const_bytep buf, int *error)
+{
+   png_uint_32 uval = png_get_uint_32(buf);
+   if ((uval & 0x80000000) == 0) 
+      return (png_int_32)uval;
+
+   uval = (uval ^ 0xffffffff) + 1;  
+   if ((uval & 0x80000000) == 0) 
+      return -(png_int_32)uval;
+
+   
+
+
+   *error = 1;
+   return 0; 
+}
+
+static png_handle_result_code 
 png_handle_cHRM(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
-   png_byte buf[32];
+   int error = 0;
    png_xy xy;
+   png_byte buf[32];
 
    png_debug(1, "in png_handle_cHRM");
-
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & (PNG_HAVE_IDAT|PNG_HAVE_PLTE)) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   if (length != 32)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "invalid");
-      return;
-   }
 
    png_crc_read(png_ptr, buf, 32);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
-   xy.whitex = png_get_fixed_point(NULL, buf);
-   xy.whitey = png_get_fixed_point(NULL, buf + 4);
-   xy.redx   = png_get_fixed_point(NULL, buf + 8);
-   xy.redy   = png_get_fixed_point(NULL, buf + 12);
-   xy.greenx = png_get_fixed_point(NULL, buf + 16);
-   xy.greeny = png_get_fixed_point(NULL, buf + 20);
-   xy.bluex  = png_get_fixed_point(NULL, buf + 24);
-   xy.bluey  = png_get_fixed_point(NULL, buf + 28);
+   xy.whitex = png_get_int_32_checked(buf +  0, &error);
+   xy.whitey = png_get_int_32_checked(buf +  4, &error);
+   xy.redx   = png_get_int_32_checked(buf +  8, &error);
+   xy.redy   = png_get_int_32_checked(buf + 12, &error);
+   xy.greenx = png_get_int_32_checked(buf + 16, &error);
+   xy.greeny = png_get_int_32_checked(buf + 20, &error);
+   xy.bluex  = png_get_int_32_checked(buf + 24, &error);
+   xy.bluey  = png_get_int_32_checked(buf + 28, &error);
 
-   if (xy.whitex == PNG_FIXED_ERROR ||
-       xy.whitey == PNG_FIXED_ERROR ||
-       xy.redx   == PNG_FIXED_ERROR ||
-       xy.redy   == PNG_FIXED_ERROR ||
-       xy.greenx == PNG_FIXED_ERROR ||
-       xy.greeny == PNG_FIXED_ERROR ||
-       xy.bluex  == PNG_FIXED_ERROR ||
-       xy.bluey  == PNG_FIXED_ERROR)
+   if (error)
    {
-      png_chunk_benign_error(png_ptr, "invalid values");
-      return;
+      png_chunk_benign_error(png_ptr, "invalid");
+      return handled_error;
    }
 
    
-   if ((png_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) != 0)
-      return;
 
-   if ((png_ptr->colorspace.flags & PNG_COLORSPACE_FROM_cHRM) != 0)
-   {
-      png_ptr->colorspace.flags |= PNG_COLORSPACE_INVALID;
-      png_colorspace_sync(png_ptr, info_ptr);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
 
-   png_ptr->colorspace.flags |= PNG_COLORSPACE_FROM_cHRM;
-   (void)png_colorspace_set_chromaticities(png_ptr, &png_ptr->colorspace, &xy,
-       1);
-   png_colorspace_sync(png_ptr, info_ptr);
+
+   png_set_cHRM_fixed(png_ptr, info_ptr, xy.whitex, xy.whitey, xy.redx, xy.redy,
+         xy.greenx, xy.greeny, xy.bluex, xy.bluey);
+
+   
+#  ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED
+      
+
+
+      if (!png_has_chunk(png_ptr, mDCV))
+      {
+         png_ptr->chromaticities = xy;
+      }
+#  endif 
+
+   return handled_ok;
+   PNG_UNUSED(length)
 }
+#else
+#  define png_handle_cHRM NULL
 #endif
 
 #ifdef PNG_READ_sRGB_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_sRGB(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_byte intent;
 
    png_debug(1, "in png_handle_sRGB");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & (PNG_HAVE_IDAT|PNG_HAVE_PLTE)) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   if (length != 1)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "invalid");
-      return;
-   }
-
    png_crc_read(png_ptr, &intent, 1);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
-
-   
-   if ((png_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) != 0)
-      return;
+      return handled_error;
 
    
 
 
-   if ((png_ptr->colorspace.flags & PNG_COLORSPACE_HAVE_INTENT) != 0)
+
+
+   if (intent > 3)
    {
-      png_ptr->colorspace.flags |= PNG_COLORSPACE_INVALID;
-      png_colorspace_sync(png_ptr, info_ptr);
-      png_chunk_benign_error(png_ptr, "too many profiles");
-      return;
+      png_chunk_benign_error(png_ptr, "invalid");
+      return handled_error;
    }
 
-   (void)png_colorspace_set_sRGB(png_ptr, &png_ptr->colorspace, intent);
-   png_colorspace_sync(png_ptr, info_ptr);
+   png_set_sRGB(png_ptr, info_ptr, intent);
+   
+
+
+
+#ifdef PNG_READ_GAMMA_SUPPORTED
+      
+
+
+
+      if (!png_has_chunk(png_ptr, cICP) || png_ptr->chunk_gamma == 0)
+         png_ptr->chunk_gamma = PNG_GAMMA_sRGB_INVERSE;
+#endif 
+
+   return handled_ok;
+   PNG_UNUSED(length)
 }
+#else
+#  define png_handle_sRGB NULL
 #endif 
 
 #ifdef PNG_READ_iCCP_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
 {
@@ -1384,44 +1350,10 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    png_debug(1, "in png_handle_iCCP");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & (PNG_HAVE_IDAT|PNG_HAVE_PLTE)) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
    
 
 
 
-
-
-   
-
-
-
-   if (length < 14)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "too short");
-      return;
-   }
-
-   
-   if ((png_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      return;
-   }
-
-   
-
-
-   if ((png_ptr->colorspace.flags & PNG_COLORSPACE_HAVE_INTENT) == 0)
    {
       uInt read_length, keyword_length;
       char keyword[81];
@@ -1436,14 +1368,11 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       png_crc_read(png_ptr, (png_bytep)keyword, read_length);
       length -= read_length;
 
-      
-
-
-      if (length < 11)
+      if (length < LZ77Min)
       {
          png_crc_finish(png_ptr, length);
          png_chunk_benign_error(png_ptr, "too short");
-         return;
+         return handled_error;
       }
 
       keyword_length = 0;
@@ -1480,15 +1409,14 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
                   png_uint_32 profile_length = png_get_uint_32(profile_header);
 
-                  if (png_icc_check_length(png_ptr, &png_ptr->colorspace,
-                      keyword, profile_length) != 0)
+                  if (png_icc_check_length(png_ptr, keyword, profile_length) !=
+                      0)
                   {
                      
 
 
-                     if (png_icc_check_header(png_ptr, &png_ptr->colorspace,
-                         keyword, profile_length, profile_header,
-                         png_ptr->color_type) != 0)
+                     if (png_icc_check_header(png_ptr, keyword, profile_length,
+                              profile_header, png_ptr->color_type) != 0)
                      {
                         
 
@@ -1498,7 +1426,7 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
                         png_uint_32 tag_count =
                            png_get_uint_32(profile_header + 128);
                         png_bytep profile = png_read_buffer(png_ptr,
-                            profile_length, 2);
+                              profile_length);
 
                         if (profile != NULL)
                         {
@@ -1517,8 +1445,7 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
                            if (size == 0)
                            {
                               if (png_icc_check_tag_table(png_ptr,
-                                  &png_ptr->colorspace, keyword, profile_length,
-                                  profile) != 0)
+                                       keyword, profile_length, profile) != 0)
                               {
                                  
 
@@ -1550,13 +1477,6 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
                                     png_crc_finish(png_ptr, length);
                                     finished = 1;
 
-# if defined(PNG_sRGB_SUPPORTED) && PNG_sRGB_PROFILE_CHECKS >= 0
-                                    
-                                    png_icc_set_sRGB(png_ptr,
-                                        &png_ptr->colorspace, profile,
-                                        png_ptr->zstream.adler);
-# endif
-
                                     
                                     if (info_ptr != NULL)
                                     {
@@ -1579,11 +1499,7 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
                                        }
 
                                        else
-                                       {
-                                          png_ptr->colorspace.flags |=
-                                             PNG_COLORSPACE_INVALID;
                                           errmsg = "out of memory";
-                                       }
                                     }
 
                                     
@@ -1591,13 +1507,10 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
 
 
-                                    if (info_ptr != NULL)
-                                       png_colorspace_sync(png_ptr, info_ptr);
-
                                     if (errmsg == NULL)
                                     {
                                        png_ptr->zowner = 0;
-                                       return;
+                                       return handled_ok;
                                     }
                                  }
                                  if (errmsg == NULL)
@@ -1638,22 +1551,21 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
          errmsg = "bad keyword";
    }
 
-   else
-      errmsg = "too many profiles";
-
    
    if (finished == 0)
       png_crc_finish(png_ptr, length);
 
-   png_ptr->colorspace.flags |= PNG_COLORSPACE_INVALID;
-   png_colorspace_sync(png_ptr, info_ptr);
    if (errmsg != NULL) 
       png_chunk_benign_error(png_ptr, errmsg);
+
+   return handled_error;
 }
+#else
+#  define png_handle_iCCP NULL
 #endif 
 
 #ifdef PNG_READ_sPLT_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
 {
@@ -1674,43 +1586,24 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       if (png_ptr->user_chunk_cache_max == 1)
       {
          png_crc_finish(png_ptr, length);
-         return;
+         return handled_error;
       }
 
       if (--png_ptr->user_chunk_cache_max == 1)
       {
          png_warning(png_ptr, "No space in chunk cache for sPLT");
          png_crc_finish(png_ptr, length);
-         return;
+         return handled_error;
       }
    }
 #endif
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-#ifdef PNG_MAX_MALLOC_64K
-   if (length > 65535U)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "too large to fit in memory");
-      return;
-   }
-#endif
-
-   buffer = png_read_buffer(png_ptr, length+1, 2);
+   buffer = png_read_buffer(png_ptr, length+1);
    if (buffer == NULL)
    {
       png_crc_finish(png_ptr, length);
       png_chunk_benign_error(png_ptr, "out of memory");
-      return;
+      return handled_error;
    }
 
 
@@ -1721,7 +1614,7 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    png_crc_read(png_ptr, buffer, length);
 
    if (png_crc_finish(png_ptr, skip) != 0)
-      return;
+      return handled_error;
 
    buffer[length] = 0;
 
@@ -1734,7 +1627,7 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    if (length < 2U || entry_start > buffer + (length - 2U))
    {
       png_warning(png_ptr, "malformed sPLT chunk");
-      return;
+      return handled_error;
    }
 
    new_palette.depth = *entry_start++;
@@ -1748,7 +1641,7 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    if ((data_length % (unsigned int)entry_size) != 0)
    {
       png_warning(png_ptr, "sPLT chunk has bad length");
-      return;
+      return handled_error;
    }
 
    dl = (png_uint_32)(data_length / (unsigned int)entry_size);
@@ -1757,7 +1650,7 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    if (dl > max_dl)
    {
       png_warning(png_ptr, "sPLT chunk too long");
-      return;
+      return handled_error;
    }
 
    new_palette.nentries = (png_int_32)(data_length / (unsigned int)entry_size);
@@ -1768,10 +1661,9 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    if (new_palette.entries == NULL)
    {
       png_warning(png_ptr, "sPLT chunk requires too much memory");
-      return;
+      return handled_error;
    }
 
-#ifdef PNG_POINTER_INDEXING_SUPPORTED
    for (i = 0; i < new_palette.nentries; i++)
    {
       pp = new_palette.entries + i;
@@ -1794,31 +1686,6 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
       pp->frequency = png_get_uint_16(entry_start); entry_start += 2;
    }
-#else
-   pp = new_palette.entries;
-
-   for (i = 0; i < new_palette.nentries; i++)
-   {
-
-      if (new_palette.depth == 8)
-      {
-         pp[i].red   = *entry_start++;
-         pp[i].green = *entry_start++;
-         pp[i].blue  = *entry_start++;
-         pp[i].alpha = *entry_start++;
-      }
-
-      else
-      {
-         pp[i].red   = png_get_uint_16(entry_start); entry_start += 2;
-         pp[i].green = png_get_uint_16(entry_start); entry_start += 2;
-         pp[i].blue  = png_get_uint_16(entry_start); entry_start += 2;
-         pp[i].alpha = png_get_uint_16(entry_start); entry_start += 2;
-      }
-
-      pp[i].frequency = png_get_uint_16(entry_start); entry_start += 2;
-   }
-#endif
 
    
    new_palette.name = (png_charp)buffer;
@@ -1826,33 +1693,19 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    png_set_sPLT(png_ptr, info_ptr, &new_palette, 1);
 
    png_free(png_ptr, new_palette.entries);
+   return handled_ok;
 }
+#else
+#  define png_handle_sPLT NULL
 #endif 
 
 #ifdef PNG_READ_tRNS_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_tRNS(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_byte readbuf[PNG_MAX_PALETTE_LENGTH];
 
    png_debug(1, "in png_handle_tRNS");
-
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   else if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_tRNS) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
 
    if (png_ptr->color_type == PNG_COLOR_TYPE_GRAY)
    {
@@ -1862,7 +1715,7 @@ png_handle_tRNS(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       {
          png_crc_finish(png_ptr, length);
          png_chunk_benign_error(png_ptr, "invalid");
-         return;
+         return handled_error;
       }
 
       png_crc_read(png_ptr, buf, 2);
@@ -1878,7 +1731,7 @@ png_handle_tRNS(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       {
          png_crc_finish(png_ptr, length);
          png_chunk_benign_error(png_ptr, "invalid");
-         return;
+         return handled_error;
       }
 
       png_crc_read(png_ptr, buf, length);
@@ -1892,10 +1745,9 @@ png_handle_tRNS(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    {
       if ((png_ptr->mode & PNG_HAVE_PLTE) == 0)
       {
-         
          png_crc_finish(png_ptr, length);
          png_chunk_benign_error(png_ptr, "out of place");
-         return;
+         return handled_error;
       }
 
       if (length > (unsigned int) png_ptr->num_palette ||
@@ -1904,7 +1756,7 @@ png_handle_tRNS(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       {
          png_crc_finish(png_ptr, length);
          png_chunk_benign_error(png_ptr, "invalid");
-         return;
+         return handled_error;
       }
 
       png_crc_read(png_ptr, readbuf, length);
@@ -1915,13 +1767,13 @@ png_handle_tRNS(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    {
       png_crc_finish(png_ptr, length);
       png_chunk_benign_error(png_ptr, "invalid with alpha channel");
-      return;
+      return handled_error;
    }
 
    if (png_crc_finish(png_ptr, 0) != 0)
    {
       png_ptr->num_trans = 0;
-      return;
+      return handled_error;
    }
 
    
@@ -1930,11 +1782,14 @@ png_handle_tRNS(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    png_set_tRNS(png_ptr, info_ptr, readbuf, png_ptr->num_trans,
        &(png_ptr->trans_color));
+   return handled_ok;
 }
+#else
+#  define png_handle_tRNS NULL
 #endif
 
 #ifdef PNG_READ_bKGD_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_bKGD(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    unsigned int truelen;
@@ -1943,27 +1798,17 @@ png_handle_bKGD(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    png_debug(1, "in png_handle_bKGD");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & PNG_HAVE_IDAT) != 0 ||
-       (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE &&
-       (png_ptr->mode & PNG_HAVE_PLTE) == 0))
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   else if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_bKGD) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
-
    if (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE)
+   {
+      if ((png_ptr->mode & PNG_HAVE_PLTE) == 0)
+      {
+         png_crc_finish(png_ptr, length);
+         png_chunk_benign_error(png_ptr, "out of place");
+         return handled_error;
+      }
+
       truelen = 1;
+   }
 
    else if ((png_ptr->color_type & PNG_COLOR_MASK_COLOR) != 0)
       truelen = 6;
@@ -1975,13 +1820,13 @@ png_handle_bKGD(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    {
       png_crc_finish(png_ptr, length);
       png_chunk_benign_error(png_ptr, "invalid");
-      return;
+      return handled_error;
    }
 
    png_crc_read(png_ptr, buf, truelen);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
    
 
@@ -1997,7 +1842,7 @@ png_handle_bKGD(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
          if (buf[0] >= info_ptr->num_palette)
          {
             png_chunk_benign_error(png_ptr, "invalid index");
-            return;
+            return handled_error;
          }
 
          background.red = (png_uint_16)png_ptr->palette[buf[0]].red;
@@ -2018,7 +1863,7 @@ png_handle_bKGD(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
          if (buf[0] != 0 || buf[1] >= (unsigned int)(1 << png_ptr->bit_depth))
          {
             png_chunk_benign_error(png_ptr, "invalid gray level");
-            return;
+            return handled_error;
          }
       }
 
@@ -2036,7 +1881,7 @@ png_handle_bKGD(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
          if (buf[0] != 0 || buf[2] != 0 || buf[4] != 0)
          {
             png_chunk_benign_error(png_ptr, "invalid color");
-            return;
+            return handled_error;
          }
       }
 
@@ -2048,129 +1893,87 @@ png_handle_bKGD(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    }
 
    png_set_bKGD(png_ptr, info_ptr, &background);
+   return handled_ok;
 }
+#else
+#  define png_handle_bKGD NULL
 #endif
 
 #ifdef PNG_READ_cICP_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_cICP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_byte buf[4];
 
    png_debug(1, "in png_handle_cICP");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & (PNG_HAVE_IDAT|PNG_HAVE_PLTE)) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   else if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_cICP) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
-
-   else if (length != 4)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "invalid");
-      return;
-   }
-
    png_crc_read(png_ptr, buf, 4);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
    png_set_cICP(png_ptr, info_ptr, buf[0], buf[1],  buf[2], buf[3]);
+
+   
+#  ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED
+      if (!png_has_chunk(png_ptr, mDCV))
+      {
+         
+      }
+#  endif 
+
+#ifdef PNG_READ_GAMMA_SUPPORTED
+      
+
+
+
+
+      
+#endif 
+
+   return handled_ok;
+   PNG_UNUSED(length)
 }
+#else
+#  define png_handle_cICP NULL
 #endif
 
 #ifdef PNG_READ_cLLI_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_cLLI(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_byte buf[8];
 
    png_debug(1, "in png_handle_cLLI");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & (PNG_HAVE_IDAT|PNG_HAVE_PLTE)) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   else if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_cLLI) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
-
-   else if (length != 8)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "invalid");
-      return;
-   }
-
    png_crc_read(png_ptr, buf, 8);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
    
    png_set_cLLI_fixed(png_ptr, info_ptr, png_get_uint_32(buf),
          png_get_uint_32(buf+4));
+   return handled_ok;
+   PNG_UNUSED(length)
 }
+#else
+#  define png_handle_cLLI NULL
 #endif
 
 #ifdef PNG_READ_mDCV_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_mDCV(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
+   png_xy chromaticities;
    png_byte buf[24];
 
    png_debug(1, "in png_handle_mDCV");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & (PNG_HAVE_IDAT|PNG_HAVE_PLTE)) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   else if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_mDCV) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
-
-   else if (length != 24)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "invalid");
-      return;
-   }
-
    png_crc_read(png_ptr, buf, 24);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
    
 
@@ -2183,86 +1986,81 @@ png_handle_mDCV(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
 
 
+   chromaticities.redx   = png_get_uint_16(buf+ 0U) << 1; 
+   chromaticities.redy   = png_get_uint_16(buf+ 2U) << 1; 
+   chromaticities.greenx = png_get_uint_16(buf+ 4U) << 1; 
+   chromaticities.greeny = png_get_uint_16(buf+ 6U) << 1; 
+   chromaticities.bluex  = png_get_uint_16(buf+ 8U) << 1; 
+   chromaticities.bluey  = png_get_uint_16(buf+10U) << 1; 
+   chromaticities.whitex = png_get_uint_16(buf+12U) << 1; 
+   chromaticities.whitey = png_get_uint_16(buf+14U) << 1; 
+
    png_set_mDCV_fixed(png_ptr, info_ptr,
-         png_get_uint_16(buf+12U) << 1U, 
-         png_get_uint_16(buf+14U) << 1U, 
-         png_get_uint_16(buf+ 0U) << 1U, 
-         png_get_uint_16(buf+ 2U) << 1U, 
-         png_get_uint_16(buf+ 4U) << 1U, 
-         png_get_uint_16(buf+ 6U) << 1U, 
-         png_get_uint_16(buf+ 8U) << 1U, 
-         png_get_uint_16(buf+10U) << 1U, 
+         chromaticities.whitex, chromaticities.whitey,
+         chromaticities.redx, chromaticities.redy,
+         chromaticities.greenx, chromaticities.greeny,
+         chromaticities.bluex, chromaticities.bluey,
          png_get_uint_32(buf+16U), 
          png_get_uint_32(buf+20U));
+
+   
+#  ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED
+      png_ptr->chromaticities = chromaticities;
+#  endif 
+
+   return handled_ok;
+   PNG_UNUSED(length)
 }
+#else
+#  define png_handle_mDCV NULL
 #endif
 
 #ifdef PNG_READ_eXIf_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_eXIf(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
-   unsigned int i;
+   png_bytep buffer = NULL;
 
    png_debug(1, "in png_handle_eXIf");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
+   buffer = png_read_buffer(png_ptr, length);
 
-   if (length < 2)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "too short");
-      return;
-   }
-
-   else if (info_ptr == NULL || (info_ptr->valid & PNG_INFO_eXIf) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
-
-   info_ptr->free_me |= PNG_FREE_EXIF;
-
-   info_ptr->eXIf_buf = png_voidcast(png_bytep,
-             png_malloc_warn(png_ptr, length));
-
-   if (info_ptr->eXIf_buf == NULL)
+   if (buffer == NULL)
    {
       png_crc_finish(png_ptr, length);
       png_chunk_benign_error(png_ptr, "out of memory");
-      return;
+      return handled_error;
    }
 
-   for (i = 0; i < length; i++)
+   png_crc_read(png_ptr, buffer, length);
+
+   if (png_crc_finish(png_ptr, 0) != 0)
+      return handled_error;
+
+   
+
+
+
    {
-      png_byte buf[1];
-      png_crc_read(png_ptr, buf, 1);
-      info_ptr->eXIf_buf[i] = buf[0];
-      if (i == 1)
+      png_uint_32 header = png_get_uint_32(buffer);
+
+      
+      if (header != 0x49492A00 && header != 0x4D4D002A)
       {
-         if ((buf[0] != 'M' && buf[0] != 'I') ||
-             (info_ptr->eXIf_buf[0] != buf[0]))
-         {
-            png_crc_finish(png_ptr, length - 2);
-            png_chunk_benign_error(png_ptr, "incorrect byte-order specifier");
-            png_free(png_ptr, info_ptr->eXIf_buf);
-            info_ptr->eXIf_buf = NULL;
-            return;
-         }
+         png_chunk_benign_error(png_ptr, "invalid");
+         return handled_error;
       }
    }
 
-   if (png_crc_finish(png_ptr, 0) == 0)
-      png_set_eXIf_1(png_ptr, info_ptr, length, info_ptr->eXIf_buf);
-
-   png_free(png_ptr, info_ptr->eXIf_buf);
-   info_ptr->eXIf_buf = NULL;
+   png_set_eXIf_1(png_ptr, info_ptr, length, buffer);
+   return handled_ok;
 }
+#else
+#  define png_handle_eXIf NULL
 #endif
 
 #ifdef PNG_READ_hIST_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_hIST(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    unsigned int num, i;
@@ -2270,25 +2068,13 @@ png_handle_hIST(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    png_debug(1, "in png_handle_hIST");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
+   
 
-   else if ((png_ptr->mode & PNG_HAVE_IDAT) != 0 ||
-       (png_ptr->mode & PNG_HAVE_PLTE) == 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
 
-   else if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_hIST) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
 
-   num = length / 2 ;
+
+
+   num = (unsigned int)length / 2 ;
 
    if (length != num * 2 ||
        num != (unsigned int)png_ptr->num_palette ||
@@ -2296,7 +2082,7 @@ png_handle_hIST(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    {
       png_crc_finish(png_ptr, length);
       png_chunk_benign_error(png_ptr, "invalid");
-      return;
+      return handled_error;
    }
 
    for (i = 0; i < num; i++)
@@ -2308,14 +2094,17 @@ png_handle_hIST(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    }
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
    png_set_hIST(png_ptr, info_ptr, readbuf);
+   return handled_ok;
 }
+#else
+#  define png_handle_hIST NULL
 #endif
 
 #ifdef PNG_READ_pHYs_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_pHYs(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_byte buf[9];
@@ -2324,44 +2113,24 @@ png_handle_pHYs(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    png_debug(1, "in png_handle_pHYs");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   else if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_pHYs) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
-
-   if (length != 9)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "invalid");
-      return;
-   }
-
    png_crc_read(png_ptr, buf, 9);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
    res_x = png_get_uint_32(buf);
    res_y = png_get_uint_32(buf + 4);
    unit_type = buf[8];
    png_set_pHYs(png_ptr, info_ptr, res_x, res_y, unit_type);
+   return handled_ok;
+   PNG_UNUSED(length)
 }
+#else
+#  define png_handle_pHYs NULL
 #endif
 
 #ifdef PNG_READ_oFFs_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_oFFs(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_byte buf[9];
@@ -2370,45 +2139,25 @@ png_handle_oFFs(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    png_debug(1, "in png_handle_oFFs");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   else if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_oFFs) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
-
-   if (length != 9)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "invalid");
-      return;
-   }
-
    png_crc_read(png_ptr, buf, 9);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
    offset_x = png_get_int_32(buf);
    offset_y = png_get_int_32(buf + 4);
    unit_type = buf[8];
    png_set_oFFs(png_ptr, info_ptr, offset_x, offset_y, unit_type);
+   return handled_ok;
+   PNG_UNUSED(length)
 }
+#else
+#  define png_handle_oFFs NULL
 #endif
 
 #ifdef PNG_READ_pCAL_SUPPORTED
 
-void 
+static png_handle_result_code 
 png_handle_pCAL(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_int_32 X0, X1;
@@ -2418,40 +2167,22 @@ png_handle_pCAL(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    int i;
 
    png_debug(1, "in png_handle_pCAL");
-
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   else if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_pCAL) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
-
    png_debug1(2, "Allocating and reading pCAL chunk data (%u bytes)",
        length + 1);
 
-   buffer = png_read_buffer(png_ptr, length+1, 2);
+   buffer = png_read_buffer(png_ptr, length+1);
 
    if (buffer == NULL)
    {
       png_crc_finish(png_ptr, length);
       png_chunk_benign_error(png_ptr, "out of memory");
-      return;
+      return handled_error;
    }
 
    png_crc_read(png_ptr, buffer, length);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
    buffer[length] = 0; 
 
@@ -2467,7 +2198,7 @@ png_handle_pCAL(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    if (endptr - buf <= 12)
    {
       png_chunk_benign_error(png_ptr, "invalid");
-      return;
+      return handled_error;
    }
 
    png_debug(3, "Reading pCAL X0, X1, type, nparams, and units");
@@ -2487,7 +2218,7 @@ png_handle_pCAL(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
        (type == PNG_EQUATION_HYPERBOLIC && nparams != 4))
    {
       png_chunk_benign_error(png_ptr, "invalid parameter count");
-      return;
+      return handled_error;
    }
 
    else if (type >= PNG_EQUATION_LAST)
@@ -2506,7 +2237,7 @@ png_handle_pCAL(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    if (params == NULL)
    {
       png_chunk_benign_error(png_ptr, "out of memory");
-      return;
+      return handled_error;
    }
 
    
@@ -2524,20 +2255,29 @@ png_handle_pCAL(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       {
          png_free(png_ptr, params);
          png_chunk_benign_error(png_ptr, "invalid data");
-         return;
+         return handled_error;
       }
    }
 
    png_set_pCAL(png_ptr, info_ptr, (png_charp)buffer, X0, X1, type, nparams,
        (png_charp)units, params);
 
+   
+
+
+
+
+
    png_free(png_ptr, params);
+   return handled_ok;
 }
+#else
+#  define png_handle_pCAL NULL
 #endif
 
 #ifdef PNG_READ_sCAL_SUPPORTED
 
-void 
+static png_handle_result_code 
 png_handle_sCAL(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_bytep buffer;
@@ -2545,55 +2285,29 @@ png_handle_sCAL(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    int state;
 
    png_debug(1, "in png_handle_sCAL");
-
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
-   else if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "out of place");
-      return;
-   }
-
-   else if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_sCAL) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
-
-   
-   else if (length < 4)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "invalid");
-      return;
-   }
-
    png_debug1(2, "Allocating and reading sCAL chunk data (%u bytes)",
        length + 1);
 
-   buffer = png_read_buffer(png_ptr, length+1, 2);
+   buffer = png_read_buffer(png_ptr, length+1);
 
    if (buffer == NULL)
    {
-      png_chunk_benign_error(png_ptr, "out of memory");
       png_crc_finish(png_ptr, length);
-      return;
+      png_chunk_benign_error(png_ptr, "out of memory");
+      return handled_error;
    }
 
    png_crc_read(png_ptr, buffer, length);
    buffer[length] = 0; 
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
    
    if (buffer[0] != 1 && buffer[0] != 2)
    {
       png_chunk_benign_error(png_ptr, "invalid unit");
-      return;
+      return handled_error;
    }
 
    
@@ -2622,15 +2336,22 @@ png_handle_sCAL(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
          png_chunk_benign_error(png_ptr, "non-positive height");
 
       else
+      {
          
          png_set_sCAL_s(png_ptr, info_ptr, buffer[0],
              (png_charp)buffer+1, (png_charp)buffer+heighti);
+         return handled_ok;
+      }
    }
+
+   return handled_error;
 }
+#else
+#  define png_handle_sCAL NULL
 #endif
 
 #ifdef PNG_READ_tIME_SUPPORTED
-void 
+static png_handle_result_code 
 png_handle_tIME(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_byte buf[7];
@@ -2638,30 +2359,17 @@ png_handle_tIME(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    png_debug(1, "in png_handle_tIME");
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
+   
 
-   else if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_tIME) != 0)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "duplicate");
-      return;
-   }
+
 
    if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
       png_ptr->mode |= PNG_AFTER_IDAT;
 
-   if (length != 7)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "invalid");
-      return;
-   }
-
    png_crc_read(png_ptr, buf, 7);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
    mod_time.second = buf[6];
    mod_time.minute = buf[5];
@@ -2671,12 +2379,16 @@ png_handle_tIME(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    mod_time.year = png_get_uint_16(buf);
 
    png_set_tIME(png_ptr, info_ptr, &mod_time);
+   return handled_ok;
+   PNG_UNUSED(length)
 }
+#else
+#  define png_handle_tIME NULL
 #endif
 
 #ifdef PNG_READ_tEXt_SUPPORTED
 
-void 
+static png_handle_result_code 
 png_handle_tEXt(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_text  text_info;
@@ -2693,45 +2405,35 @@ png_handle_tEXt(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       if (png_ptr->user_chunk_cache_max == 1)
       {
          png_crc_finish(png_ptr, length);
-         return;
+         return handled_error;
       }
 
       if (--png_ptr->user_chunk_cache_max == 1)
       {
          png_crc_finish(png_ptr, length);
          png_chunk_benign_error(png_ptr, "no space in chunk cache");
-         return;
+         return handled_error;
       }
    }
 #endif
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
+   
    if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
       png_ptr->mode |= PNG_AFTER_IDAT;
 
-#ifdef PNG_MAX_MALLOC_64K
-   if (length > 65535U)
-   {
-      png_crc_finish(png_ptr, length);
-      png_chunk_benign_error(png_ptr, "too large to fit in memory");
-      return;
-   }
-#endif
-
-   buffer = png_read_buffer(png_ptr, length+1, 1);
+   buffer = png_read_buffer(png_ptr, length+1);
 
    if (buffer == NULL)
    {
+      png_crc_finish(png_ptr, length);
       png_chunk_benign_error(png_ptr, "out of memory");
-      return;
+      return handled_error;
    }
 
    png_crc_read(png_ptr, buffer, length);
 
    if (png_crc_finish(png_ptr, skip) != 0)
-      return;
+      return handled_error;
 
    key = (png_charp)buffer;
    key[length] = 0;
@@ -2750,14 +2452,19 @@ png_handle_tEXt(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    text_info.text = text;
    text_info.text_length = strlen(text);
 
-   if (png_set_text_2(png_ptr, info_ptr, &text_info, 1) != 0)
-      png_warning(png_ptr, "Insufficient memory to process text chunk");
+   if (png_set_text_2(png_ptr, info_ptr, &text_info, 1) == 0)
+      return handled_ok;
+
+   png_chunk_benign_error(png_ptr, "out of memory");
+   return handled_error;
 }
+#else
+#  define png_handle_tEXt NULL
 #endif
 
 #ifdef PNG_READ_zTXt_SUPPORTED
 
-void 
+static png_handle_result_code 
 png_handle_zTXt(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_const_charp errmsg = NULL;
@@ -2772,40 +2479,39 @@ png_handle_zTXt(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       if (png_ptr->user_chunk_cache_max == 1)
       {
          png_crc_finish(png_ptr, length);
-         return;
+         return handled_error;
       }
 
       if (--png_ptr->user_chunk_cache_max == 1)
       {
          png_crc_finish(png_ptr, length);
          png_chunk_benign_error(png_ptr, "no space in chunk cache");
-         return;
+         return handled_error;
       }
    }
 #endif
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
+   
    if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
       png_ptr->mode |= PNG_AFTER_IDAT;
 
    
 
 
-   buffer = png_read_buffer(png_ptr, length, 2);
+
+   buffer = png_read_buffer(png_ptr, length);
 
    if (buffer == NULL)
    {
       png_crc_finish(png_ptr, length);
       png_chunk_benign_error(png_ptr, "out of memory");
-      return;
+      return handled_error;
    }
 
    png_crc_read(png_ptr, buffer, length);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
    
    for (keyword_length = 0;
@@ -2858,8 +2564,10 @@ png_handle_zTXt(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
             text.lang = NULL;
             text.lang_key = NULL;
 
-            if (png_set_text_2(png_ptr, info_ptr, &text, 1) != 0)
-               errmsg = "insufficient memory";
+            if (png_set_text_2(png_ptr, info_ptr, &text, 1) == 0)
+               return handled_ok;
+
+            errmsg = "out of memory";
          }
       }
 
@@ -2867,14 +2575,16 @@ png_handle_zTXt(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
          errmsg = png_ptr->zstream.msg;
    }
 
-   if (errmsg != NULL)
-      png_chunk_benign_error(png_ptr, errmsg);
+   png_chunk_benign_error(png_ptr, errmsg);
+   return handled_error;
 }
+#else
+#  define png_handle_zTXt NULL
 #endif
 
 #ifdef PNG_READ_iTXt_SUPPORTED
 
-void 
+static png_handle_result_code 
 png_handle_iTXt(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_const_charp errmsg = NULL;
@@ -2889,37 +2599,35 @@ png_handle_iTXt(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       if (png_ptr->user_chunk_cache_max == 1)
       {
          png_crc_finish(png_ptr, length);
-         return;
+         return handled_error;
       }
 
       if (--png_ptr->user_chunk_cache_max == 1)
       {
          png_crc_finish(png_ptr, length);
          png_chunk_benign_error(png_ptr, "no space in chunk cache");
-         return;
+         return handled_error;
       }
    }
 #endif
 
-   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
-      png_chunk_error(png_ptr, "missing IHDR");
-
+   
    if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
       png_ptr->mode |= PNG_AFTER_IDAT;
 
-   buffer = png_read_buffer(png_ptr, length+1, 1);
+   buffer = png_read_buffer(png_ptr, length+1);
 
    if (buffer == NULL)
    {
       png_crc_finish(png_ptr, length);
       png_chunk_benign_error(png_ptr, "out of memory");
-      return;
+      return handled_error;
    }
 
    png_crc_read(png_ptr, buffer, length);
 
    if (png_crc_finish(png_ptr, 0) != 0)
-      return;
+      return handled_error;
 
    
    for (prefix_length=0;
@@ -3009,8 +2717,10 @@ png_handle_iTXt(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
          text.text_length = 0;
          text.itxt_length = uncompressed_length;
 
-         if (png_set_text_2(png_ptr, info_ptr, &text, 1) != 0)
-            errmsg = "insufficient memory";
+         if (png_set_text_2(png_ptr, info_ptr, &text, 1) == 0)
+            return handled_ok;
+
+         errmsg = "out of memory";
       }
    }
 
@@ -3019,7 +2729,10 @@ png_handle_iTXt(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    if (errmsg != NULL)
       png_chunk_benign_error(png_ptr, errmsg);
+   return handled_error;
 }
+#else
+#  define png_handle_iTXt NULL
 #endif
 
 #ifdef PNG_READ_APNG_SUPPORTED
@@ -3201,23 +2914,13 @@ png_ensure_sequence_number(png_structp png_ptr, png_uint_32 length)
 static int
 png_cache_unknown_chunk(png_structrp png_ptr, png_uint_32 length)
 {
-   png_alloc_size_t limit = PNG_SIZE_MAX;
+   const png_alloc_size_t limit = png_chunk_max(png_ptr);
 
    if (png_ptr->unknown_chunk.data != NULL)
    {
       png_free(png_ptr, png_ptr->unknown_chunk.data);
       png_ptr->unknown_chunk.data = NULL;
    }
-
-#  ifdef PNG_SET_USER_LIMITS_SUPPORTED
-   if (png_ptr->user_chunk_malloc_max > 0 &&
-       png_ptr->user_chunk_malloc_max < limit)
-      limit = png_ptr->user_chunk_malloc_max;
-
-#  elif PNG_USER_CHUNK_MALLOC_MAX > 0
-   if (PNG_USER_CHUNK_MALLOC_MAX < limit)
-      limit = PNG_USER_CHUNK_MALLOC_MAX;
-#  endif
 
    if (length <= limit)
    {
@@ -3257,11 +2960,11 @@ png_cache_unknown_chunk(png_structrp png_ptr, png_uint_32 length)
 #endif 
 
 
-void 
+png_handle_result_code 
 png_handle_unknown(png_structrp png_ptr, png_inforp info_ptr,
     png_uint_32 length, int keep)
 {
-   int handled = 0; 
+   png_handle_result_code handled = handled_discarded; 
 
    png_debug(1, "in png_handle_unknown");
 
@@ -3308,7 +3011,7 @@ png_handle_unknown(png_structrp png_ptr, png_inforp info_ptr,
 
 
 
-         if (ret < 0)
+         if (ret < 0) 
             png_chunk_error(png_ptr, "error in user chunk");
 
          else if (ret == 0)
@@ -3342,7 +3045,7 @@ png_handle_unknown(png_structrp png_ptr, png_inforp info_ptr,
 
          else 
          {
-            handled = 1;
+            handled = handled_ok;
             
             keep = PNG_HANDLE_CHUNK_NEVER;
          }
@@ -3427,7 +3130,7 @@ png_handle_unknown(png_structrp png_ptr, png_inforp info_ptr,
 
             png_set_unknown_chunks(png_ptr, info_ptr,
                 &png_ptr->unknown_chunk, 1);
-            handled = 1;
+            handled = handled_saved;
 #  ifdef PNG_USER_LIMITS_SUPPORTED
             break;
       }
@@ -3453,8 +3156,10 @@ png_handle_unknown(png_structrp png_ptr, png_inforp info_ptr,
 #endif 
 
    
-   if (handled == 0 && PNG_CHUNK_CRITICAL(png_ptr->chunk_name))
+   if (handled < handled_saved && PNG_CHUNK_CRITICAL(png_ptr->chunk_name))
       png_chunk_error(png_ptr, "unhandled critical chunk");
+
+   return handled;
 }
 
 
@@ -3466,70 +3171,252 @@ png_handle_unknown(png_structrp png_ptr, png_inforp info_ptr,
 
 
 
+#define png_handle_acTL NULL
+#define png_handle_fcTL NULL
+#define png_handle_fdAT NULL
 
 
 
-void 
-png_check_chunk_name(png_const_structrp png_ptr, png_uint_32 chunk_name)
+
+
+
+
+
+
+
+
+
+static const struct
 {
-   int i;
-   png_uint_32 cn=chunk_name;
+   png_handle_result_code (*handler)(
+         png_structrp, png_inforp, png_uint_32 length);
+      
 
-   png_debug(1, "in png_check_chunk_name");
 
-   for (i=1; i<=4; ++i)
+
+   
+
+
+
+
+   png_uint_32 max_length :12; 
+   png_uint_32 min_length :8;
+      
+
+
+
+   png_uint_32 pos_before :4; 
+   png_uint_32 pos_after  :4; 
+      
+
+
+   png_uint_32 multiple   :1; 
+      
+}
+read_chunks[PNG_INDEX_unknown] =
+{
+   
+
+
+
+
+
+
+#  define NoCheck 0x801U      
+#  define Limit   0x802U      
+#  define LKMin   3U+LZ77Min  
+
+#define hIHDR PNG_HAVE_IHDR
+#define hPLTE PNG_HAVE_PLTE
+#define hIDAT PNG_HAVE_IDAT
+   
+
+
+
+
+
+#define hCOL  (PNG_HAVE_PLTE|PNG_HAVE_IDAT)
+   
+#define aIDAT PNG_AFTER_IDAT
+
+   
+   
+#  define CDIHDR      13U,   13U,  hIHDR,     0,        0
+#  define CDPLTE  NoCheck,    0U,      0, hIHDR,        1
+      
+
+
+#  define CDIDAT  NoCheck,    0U,  aIDAT, hIHDR,        1
+#  define CDIEND  NoCheck,    0U,      0, aIDAT,        0
+      
+#  define CDtRNS     256U,    0U,  hIDAT, hIHDR,        0
+#  define CDcHRM      32U,   32U,   hCOL, hIHDR,        0
+#  define CDgAMA       4U,    4U,   hCOL, hIHDR,        0
+#  define CDiCCP  NoCheck, LKMin,   hCOL, hIHDR,        0
+#  define CDsBIT       4U,    1U,   hCOL, hIHDR,        0
+#  define CDsRGB       1U,    1U,   hCOL, hIHDR,        0
+#  define CDcICP       4U,    4U,   hCOL, hIHDR,        0
+#  define CDmDCV      24U,   24U,   hCOL, hIHDR,        0
+#  define CDeXIf    Limit,    4U,      0, hIHDR,        0
+#  define CDcLLI       8U,    8U,   hCOL, hIHDR,        0
+#  define CDtEXt  NoCheck,    2U,      0, hIHDR,        1
+      
+#  define CDzTXt    Limit, LKMin,      0, hIHDR,        1
+#  define CDiTXt  NoCheck,    6U,      0, hIHDR,        1
+      
+#  define CDbKGD       6U,    1U,  hIDAT, hIHDR,        0
+#  define CDhIST    1024U,    0U,  hPLTE, hIHDR,        0
+#  define CDpHYs       9U,    9U,  hIDAT, hIHDR,        0
+#  define CDsPLT  NoCheck,    3U,  hIDAT, hIHDR,        1
+      
+#  define CDtIME       7U,    7U,      0, hIHDR,        0
+#  define CDacTL       8U,    8U,  hIDAT, hIHDR,        0
+#  define CDfcTL      25U,   26U,      0, hIHDR,        1
+#  define CDfdAT    Limit,    4U,  hIDAT, hIHDR,        1
+   
+#  define CDoFFs       9U,    9U,  hIDAT, hIHDR,        0
+#  define CDpCAL  NoCheck,   14U,  hIDAT, hIHDR,        0
+      
+#  define CDsCAL    Limit,    4U,  hIDAT, hIHDR,        0
+      
+
+#  define PNG_CHUNK(cHNK, index) { png_handle_ ## cHNK, CD ## cHNK },
+   PNG_KNOWN_CHUNKS
+#  undef PNG_CHUNK
+};
+
+
+static png_index
+png_chunk_index_from_name(png_uint_32 chunk_name)
+{
+   
+
+
+
+   switch (chunk_name)
    {
-      int c = cn & 0xff;
+#     define PNG_CHUNK(cHNK, index)\
+         case png_ ## cHNK: return PNG_INDEX_ ## cHNK; /* == index */
 
-      if (c < 65 || c > 122 || (c > 90 && c < 97))
-         png_chunk_error(png_ptr, "invalid chunk type");
+      PNG_KNOWN_CHUNKS
 
-      cn >>= 8;
+#     undef PNG_CHUNK
+
+      default: return PNG_INDEX_unknown;
    }
 }
 
-void 
-png_check_chunk_length(png_const_structrp png_ptr, png_uint_32 length)
+png_handle_result_code 
+png_handle_chunk(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
-   png_alloc_size_t limit = PNG_UINT_31_MAX;
+   
 
-# ifdef PNG_SET_USER_LIMITS_SUPPORTED
-   if (png_ptr->user_chunk_malloc_max > 0 &&
-       png_ptr->user_chunk_malloc_max < limit)
-      limit = png_ptr->user_chunk_malloc_max;
-# elif PNG_USER_CHUNK_MALLOC_MAX > 0
-   if (PNG_USER_CHUNK_MALLOC_MAX < limit)
-      limit = PNG_USER_CHUNK_MALLOC_MAX;
-# endif
-#ifdef PNG_READ_APNG_SUPPORTED
-   if (png_ptr->chunk_name == png_IDAT || png_ptr->chunk_name == png_fdAT)
-#else
-   if (png_ptr->chunk_name == png_IDAT)
-#endif
+
+   const png_uint_32 chunk_name = png_ptr->chunk_name;
+   const png_index chunk_index = png_chunk_index_from_name(chunk_name);
+
+   png_handle_result_code handled = handled_error;
+   png_const_charp errmsg = NULL;
+
+   
+
+
+
+
+   if (chunk_index == PNG_INDEX_unknown ||
+       read_chunks[chunk_index].handler == NULL)
    {
-      png_alloc_size_t idat_limit = PNG_UINT_31_MAX;
-      size_t row_factor =
-         (size_t)png_ptr->width
-         * (size_t)png_ptr->channels
-         * (png_ptr->bit_depth > 8? 2: 1)
-         + 1
-         + (png_ptr->interlaced? 6: 0);
-      if (png_ptr->height > PNG_UINT_32_MAX/row_factor)
-         idat_limit = PNG_UINT_31_MAX;
-      else
-         idat_limit = png_ptr->height * row_factor;
-      row_factor = row_factor > 32566? 32566 : row_factor;
-      idat_limit += 6 + 5*(idat_limit/row_factor+1); 
-      idat_limit=idat_limit < PNG_UINT_31_MAX? idat_limit : PNG_UINT_31_MAX;
-      limit = limit < idat_limit? idat_limit : limit;
+      handled = png_handle_unknown(
+            png_ptr, info_ptr, length, PNG_HANDLE_CHUNK_AS_DEFAULT);
    }
 
-   if (length > limit)
+   
+
+
+   else if (chunk_index != PNG_INDEX_IHDR &&
+            (png_ptr->mode & PNG_HAVE_IHDR) == 0)
+      png_chunk_error(png_ptr, "missing IHDR"); 
+
+   
+   else if (((png_ptr->mode & read_chunks[chunk_index].pos_before) != 0) ||
+            ((png_ptr->mode & read_chunks[chunk_index].pos_after) !=
+             read_chunks[chunk_index].pos_after))
    {
-      png_debug2(0," length = %lu, limit = %lu",
-         (unsigned long)length,(unsigned long)limit);
-      png_benign_error(png_ptr, "chunk data is too large");
+      errmsg = "out of place";
    }
+
+   
+
+
+   else if (read_chunks[chunk_index].multiple == 0 &&
+            png_file_has_chunk(png_ptr, chunk_index))
+   {
+      errmsg = "duplicate";
+   }
+
+   else if (length < read_chunks[chunk_index].min_length)
+      errmsg = "too short";
+   else
+   {
+      
+
+
+
+
+
+
+      unsigned max_length = read_chunks[chunk_index].max_length;
+
+      switch (max_length)
+      {
+         case Limit:
+            
+
+
+
+            if (length <= png_chunk_max(png_ptr))
+               goto MeetsLimit;
+
+            errmsg = "length exceeds libpng limit";
+            break;
+
+         default:
+            if (length <= max_length)
+               goto MeetsLimit;
+
+            errmsg = "too long";
+            break;
+
+         case NoCheck:
+         MeetsLimit:
+            handled = read_chunks[chunk_index].handler(
+                  png_ptr, info_ptr, length);
+            break;
+      }
+   }
+
+   
+
+
+   if (errmsg != NULL)
+   {
+      if (PNG_CHUNK_CRITICAL(chunk_name)) 
+         png_chunk_error(png_ptr, errmsg);
+      else 
+      {
+         
+         png_crc_finish(png_ptr, length);
+         png_chunk_benign_error(png_ptr, errmsg);
+      }
+   }
+
+   else if (handled >= handled_saved)
+   {
+      if (chunk_index != PNG_INDEX_unknown)
+         png_file_add_chunk(png_ptr, chunk_index);
+   }
+
+   return handled;
 }
 
 
@@ -4552,6 +4439,9 @@ png_read_IDAT_data(png_structrp png_ptr, png_bytep output,
 
          avail_in = png_ptr->IDAT_read_size;
 
+         if (avail_in > png_chunk_max(png_ptr))
+            avail_in = (uInt)png_chunk_max(png_ptr);
+
          if (avail_in > png_ptr->idat_size)
             avail_in = (uInt)png_ptr->idat_size;
 
@@ -4560,7 +4450,12 @@ png_read_IDAT_data(png_structrp png_ptr, png_bytep output,
 
 
 
-         buffer = png_read_buffer(png_ptr, avail_in, 0);
+
+
+         buffer = png_read_buffer(png_ptr, avail_in);
+
+         if (buffer == NULL)
+            png_chunk_error(png_ptr, "out of memory");
 
          png_crc_read(png_ptr, buffer, avail_in);
          png_ptr->idat_size -= avail_in;

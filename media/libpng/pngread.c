@@ -131,14 +131,11 @@ png_read_info(png_structrp png_ptr, png_inforp info_ptr)
          png_ptr->mode |= PNG_AFTER_IDAT;
       }
 
-      
-
-
       if (chunk_name == png_IHDR)
-         png_handle_IHDR(png_ptr, info_ptr, length);
+         png_handle_chunk(png_ptr, info_ptr, length);
 
       else if (chunk_name == png_IEND)
-         png_handle_IEND(png_ptr, info_ptr, length);
+         png_handle_chunk(png_ptr, info_ptr, length);
 
 #ifdef PNG_HANDLE_AS_UNKNOWN_SUPPORTED
       else if ((keep = png_chunk_unknown_handling(png_ptr, chunk_name)) != 0)
@@ -155,8 +152,6 @@ png_read_info(png_structrp png_ptr, png_inforp info_ptr)
          }
       }
 #endif
-      else if (chunk_name == png_PLTE)
-         png_handle_PLTE(png_ptr, info_ptr, length);
 
       else if (chunk_name == png_IDAT)
       {
@@ -166,111 +161,6 @@ png_read_info(png_structrp png_ptr, png_inforp info_ptr)
          png_ptr->idat_size = length;
          break;
       }
-
-#ifdef PNG_READ_bKGD_SUPPORTED
-      else if (chunk_name == png_bKGD)
-         png_handle_bKGD(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_cHRM_SUPPORTED
-      else if (chunk_name == png_cHRM)
-         png_handle_cHRM(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_cICP_SUPPORTED
-      else if (chunk_name == png_cICP)
-         png_handle_cICP(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_cLLI_SUPPORTED
-      else if (chunk_name == png_cLLI)
-         png_handle_cLLI(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_eXIf_SUPPORTED
-      else if (chunk_name == png_eXIf)
-         png_handle_eXIf(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_gAMA_SUPPORTED
-      else if (chunk_name == png_gAMA)
-         png_handle_gAMA(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_hIST_SUPPORTED
-      else if (chunk_name == png_hIST)
-         png_handle_hIST(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_mDCV_SUPPORTED
-      else if (chunk_name == png_mDCV)
-         png_handle_mDCV(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_oFFs_SUPPORTED
-      else if (chunk_name == png_oFFs)
-         png_handle_oFFs(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_pCAL_SUPPORTED
-      else if (chunk_name == png_pCAL)
-         png_handle_pCAL(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_sCAL_SUPPORTED
-      else if (chunk_name == png_sCAL)
-         png_handle_sCAL(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_pHYs_SUPPORTED
-      else if (chunk_name == png_pHYs)
-         png_handle_pHYs(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_sBIT_SUPPORTED
-      else if (chunk_name == png_sBIT)
-         png_handle_sBIT(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_sRGB_SUPPORTED
-      else if (chunk_name == png_sRGB)
-         png_handle_sRGB(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_iCCP_SUPPORTED
-      else if (chunk_name == png_iCCP)
-         png_handle_iCCP(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_sPLT_SUPPORTED
-      else if (chunk_name == png_sPLT)
-         png_handle_sPLT(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_tEXt_SUPPORTED
-      else if (chunk_name == png_tEXt)
-         png_handle_tEXt(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_tIME_SUPPORTED
-      else if (chunk_name == png_tIME)
-         png_handle_tIME(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_tRNS_SUPPORTED
-      else if (chunk_name == png_tRNS)
-         png_handle_tRNS(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_zTXt_SUPPORTED
-      else if (chunk_name == png_zTXt)
-         png_handle_zTXt(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_iTXt_SUPPORTED
-      else if (chunk_name == png_iTXt)
-         png_handle_iTXt(png_ptr, info_ptr, length);
-#endif
 
 #ifdef PNG_READ_APNG_SUPPORTED
       else if (chunk_name == png_acTL)
@@ -284,8 +174,7 @@ png_read_info(png_structrp png_ptr, png_inforp info_ptr)
 #endif
 
       else
-         png_handle_unknown(png_ptr, info_ptr, length,
-             PNG_HANDLE_CHUNK_AS_DEFAULT);
+         png_handle_chunk(png_ptr, info_ptr, length);
    }
 }
 #endif 
@@ -896,10 +785,10 @@ png_read_end(png_structrp png_ptr, png_inforp info_ptr)
          png_ptr->mode |= PNG_HAVE_CHUNK_AFTER_IDAT;
 
       if (chunk_name == png_IEND)
-         png_handle_IEND(png_ptr, info_ptr, length);
+         png_handle_chunk(png_ptr, info_ptr, length);
 
       else if (chunk_name == png_IHDR)
-         png_handle_IHDR(png_ptr, info_ptr, length);
+         png_handle_chunk(png_ptr, info_ptr, length);
 
       else if (info_ptr == NULL)
          png_crc_finish(png_ptr, length);
@@ -933,117 +822,9 @@ png_read_end(png_structrp png_ptr, png_inforp info_ptr)
 
          png_crc_finish(png_ptr, length);
       }
-      else if (chunk_name == png_PLTE)
-         png_handle_PLTE(png_ptr, info_ptr, length);
-
-#ifdef PNG_READ_bKGD_SUPPORTED
-      else if (chunk_name == png_bKGD)
-         png_handle_bKGD(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_cHRM_SUPPORTED
-      else if (chunk_name == png_cHRM)
-         png_handle_cHRM(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_cICP_SUPPORTED
-      else if (chunk_name == png_cICP)
-         png_handle_cICP(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_cLLI_SUPPORTED
-      else if (chunk_name == png_cLLI)
-         png_handle_cLLI(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_eXIf_SUPPORTED
-      else if (chunk_name == png_eXIf)
-         png_handle_eXIf(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_gAMA_SUPPORTED
-      else if (chunk_name == png_gAMA)
-         png_handle_gAMA(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_hIST_SUPPORTED
-      else if (chunk_name == png_hIST)
-         png_handle_hIST(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_mDCV_SUPPORTED
-      else if (chunk_name == png_mDCV)
-         png_handle_mDCV(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_oFFs_SUPPORTED
-      else if (chunk_name == png_oFFs)
-         png_handle_oFFs(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_pCAL_SUPPORTED
-      else if (chunk_name == png_pCAL)
-         png_handle_pCAL(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_sCAL_SUPPORTED
-      else if (chunk_name == png_sCAL)
-         png_handle_sCAL(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_pHYs_SUPPORTED
-      else if (chunk_name == png_pHYs)
-         png_handle_pHYs(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_sBIT_SUPPORTED
-      else if (chunk_name == png_sBIT)
-         png_handle_sBIT(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_sRGB_SUPPORTED
-      else if (chunk_name == png_sRGB)
-         png_handle_sRGB(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_iCCP_SUPPORTED
-      else if (chunk_name == png_iCCP)
-         png_handle_iCCP(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_sPLT_SUPPORTED
-      else if (chunk_name == png_sPLT)
-         png_handle_sPLT(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_tEXt_SUPPORTED
-      else if (chunk_name == png_tEXt)
-         png_handle_tEXt(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_tIME_SUPPORTED
-      else if (chunk_name == png_tIME)
-         png_handle_tIME(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_tRNS_SUPPORTED
-      else if (chunk_name == png_tRNS)
-         png_handle_tRNS(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_zTXt_SUPPORTED
-      else if (chunk_name == png_zTXt)
-         png_handle_zTXt(png_ptr, info_ptr, length);
-#endif
-
-#ifdef PNG_READ_iTXt_SUPPORTED
-      else if (chunk_name == png_iTXt)
-         png_handle_iTXt(png_ptr, info_ptr, length);
-#endif
 
       else
-         png_handle_unknown(png_ptr, info_ptr, length,
-             PNG_HANDLE_CHUNK_AS_DEFAULT);
+         png_handle_chunk(png_ptr, info_ptr, length);
    } while ((png_ptr->mode & PNG_HAVE_IEND) == 0);
 }
 #endif 
@@ -1494,6 +1275,31 @@ png_image_format(png_structrp png_ptr)
    return format;
 }
 
+static int
+chromaticities_match_sRGB(const png_xy *xy)
+{
+#  define sRGB_TOLERANCE 1000
+   static const png_xy sRGB_xy = 
+   {
+      
+       64000, 33000,
+       30000, 60000,
+       15000,  6000,
+       31270, 32900
+   };
+
+   if (PNG_OUT_OF_RANGE(xy->whitex, sRGB_xy.whitex,sRGB_TOLERANCE) ||
+       PNG_OUT_OF_RANGE(xy->whitey, sRGB_xy.whitey,sRGB_TOLERANCE) ||
+       PNG_OUT_OF_RANGE(xy->redx,   sRGB_xy.redx,  sRGB_TOLERANCE) ||
+       PNG_OUT_OF_RANGE(xy->redy,   sRGB_xy.redy,  sRGB_TOLERANCE) ||
+       PNG_OUT_OF_RANGE(xy->greenx, sRGB_xy.greenx,sRGB_TOLERANCE) ||
+       PNG_OUT_OF_RANGE(xy->greeny, sRGB_xy.greeny,sRGB_TOLERANCE) ||
+       PNG_OUT_OF_RANGE(xy->bluex,  sRGB_xy.bluex, sRGB_TOLERANCE) ||
+       PNG_OUT_OF_RANGE(xy->bluey,  sRGB_xy.bluey, sRGB_TOLERANCE))
+      return 0;
+   return 1;
+}
+
 
 
 
@@ -1502,21 +1308,43 @@ png_image_format(png_structrp png_ptr)
 static int
 png_gamma_not_sRGB(png_fixed_point g)
 {
-   if (g < PNG_FP_1)
-   {
-      
-      if (g == 0)
-         return 0;
+   
+   if (g < PNG_LIB_GAMMA_MIN || g > PNG_LIB_GAMMA_MAX)
+      return 0; 
 
-      return png_gamma_significant((g * 11 + 2)/5 );
-   }
-
-   return 1;
+   return png_gamma_significant((g * 11 + 2)/5 );
 }
 
 
 
 
+
+static int
+png_image_is_not_sRGB(png_const_structrp png_ptr)
+{
+   
+
+
+
+
+
+
+
+   
+   if (png_has_chunk(png_ptr, cICP) || png_has_chunk(png_ptr, mDCV))
+      return !chromaticities_match_sRGB(&png_ptr->chromaticities);
+
+   
+   if (png_has_chunk(png_ptr, sRGB))
+      return 0;
+
+   
+   if (png_has_chunk(png_ptr, cHRM))
+      return !chromaticities_match_sRGB(&png_ptr->chromaticities);
+
+   
+   return 0;
+}
 
 static int
 png_image_read_header(png_voidp argument)
@@ -1539,17 +1367,13 @@ png_image_read_header(png_voidp argument)
 
       image->format = format;
 
-#ifdef PNG_COLORSPACE_SUPPORTED
       
 
 
 
-
-      if ((format & PNG_FORMAT_FLAG_COLOR) != 0 && ((png_ptr->colorspace.flags
-         & (PNG_COLORSPACE_HAVE_ENDPOINTS|PNG_COLORSPACE_ENDPOINTS_MATCH_sRGB|
-            PNG_COLORSPACE_INVALID)) == PNG_COLORSPACE_HAVE_ENDPOINTS))
+      if ((format & PNG_FORMAT_FLAG_COLOR) != 0 &&
+          png_image_is_not_sRGB(png_ptr))
          image->flags |= PNG_IMAGE_FLAG_COLORSPACE_NOT_sRGB;
-#endif
    }
 
    
@@ -1739,19 +1563,16 @@ png_image_skip_unused_chunks(png_structrp png_ptr)
 
 
 
-
-
    {
          static const png_byte chunks_to_process[] = {
             98,  75,  71,  68, '\0',  
             99,  72,  82,  77, '\0',  
+            99,  73,  67,  80, '\0',  
            103,  65,  77,  65, '\0',  
-#        ifdef PNG_READ_iCCP_SUPPORTED
-           105,  67,  67,  80, '\0',  
-#        endif
+           109,  68,  67,  86, '\0',  
            115,  66,  73,  84, '\0',  
            115,  82,  71,  66, '\0',  
-           };
+         };
 
        
 
@@ -1780,7 +1601,15 @@ png_image_skip_unused_chunks(png_structrp png_ptr)
 static void
 set_file_encoding(png_image_read_control *display)
 {
-   png_fixed_point g = display->image->opaque->png_ptr->colorspace.gamma;
+   png_structrp png_ptr = display->image->opaque->png_ptr;
+   png_fixed_point g = png_resolve_file_gamma(png_ptr);
+
+   
+
+
+   if (g == 0)
+      png_error(png_ptr, "internal: default gamma not set");
+
    if (png_gamma_significant(g) != 0)
    {
       if (png_gamma_not_sRGB(g) != 0)
@@ -2270,22 +2099,16 @@ png_image_read_colormap(png_voidp argument)
 
 
 
-   if ((png_ptr->colorspace.flags & PNG_COLORSPACE_HAVE_GAMMA) == 0)
-   {
-      
 
 
 
 
-      if (png_ptr->bit_depth == 16 &&
-         (image->flags & PNG_IMAGE_FLAG_16BIT_sRGB) == 0)
-         png_ptr->colorspace.gamma = PNG_GAMMA_LINEAR;
+   if (png_ptr->bit_depth == 16 &&
+      (image->flags & PNG_IMAGE_FLAG_16BIT_sRGB) == 0)
+      png_ptr->default_gamma = PNG_GAMMA_LINEAR;
 
-      else
-         png_ptr->colorspace.gamma = PNG_GAMMA_sRGB_INVERSE;
-
-      png_ptr->colorspace.flags |= PNG_COLORSPACE_HAVE_GAMMA;
-   }
+   else
+      png_ptr->default_gamma = PNG_GAMMA_sRGB_INVERSE;
 
    
 
@@ -2663,6 +2486,8 @@ png_image_read_colormap(png_voidp argument)
 
             else
             {
+               const png_fixed_point gamma = png_resolve_file_gamma(png_ptr);
+
                
 
 
@@ -2678,9 +2503,12 @@ png_image_read_colormap(png_voidp argument)
 
 
 
+
+
+
                if ((png_ptr->color_type == PNG_COLOR_TYPE_RGB_ALPHA ||
                   png_ptr->num_trans > 0) &&
-                  png_gamma_not_sRGB(png_ptr->colorspace.gamma) != 0)
+                  png_gamma_not_sRGB(gamma) != 0)
                {
                   cmap_entries = (unsigned int)make_gray_file_colormap(display);
                   data_encoding = P_FILE;
@@ -2712,8 +2540,8 @@ png_image_read_colormap(png_voidp argument)
                      if (output_encoding == P_sRGB)
                         gray = png_sRGB_table[gray]; 
 
-                     gray = PNG_DIV257(png_gamma_16bit_correct(gray,
-                         png_ptr->colorspace.gamma)); 
+                     gray = PNG_DIV257(png_gamma_16bit_correct(gray, gamma));
+                        
 
                      
 
@@ -3844,6 +3672,12 @@ png_image_read_direct(png_voidp argument)
       
 
       {
+         
+
+
+
+
+
          png_fixed_point input_gamma_default;
 
          if ((base_format & PNG_FORMAT_FLAG_LINEAR) != 0 &&
@@ -3899,8 +3733,9 @@ png_image_read_direct(png_voidp argument)
 
 
 
-         if (png_muldiv(&gtest, output_gamma, png_ptr->colorspace.gamma,
-             PNG_FP_1) != 0 && png_gamma_significant(gtest) == 0)
+         if (png_muldiv(&gtest, output_gamma,
+                  png_resolve_file_gamma(png_ptr), PNG_FP_1) != 0 &&
+             png_gamma_significant(gtest) == 0)
             do_local_background = 0;
 
          else if (mode == PNG_ALPHA_STANDARD)

@@ -185,7 +185,6 @@ png_write_info_before_PLTE(png_structrp png_ptr, png_const_inforp info_ptr)
    }
 #endif
 
-#ifdef PNG_COLORSPACE_SUPPORTED
 #  ifdef PNG_WRITE_cICP_SUPPORTED 
    if ((info_ptr->valid & PNG_INFO_cICP) != 0)
       {
@@ -197,50 +196,28 @@ png_write_info_before_PLTE(png_structrp png_ptr, png_const_inforp info_ptr)
       }
 #  endif
 
-      
-
-
-
-
-
-
-
 #  ifdef PNG_WRITE_iCCP_SUPPORTED 
-         if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
-             (info_ptr->valid & PNG_INFO_iCCP) != 0)
+         if ((info_ptr->valid & PNG_INFO_iCCP) != 0)
          {
             png_write_iCCP(png_ptr, info_ptr->iccp_name,
-                info_ptr->iccp_profile);
+                info_ptr->iccp_profile, info_ptr->iccp_proflen);
          }
-#     ifdef PNG_WRITE_sRGB_SUPPORTED
-         else
-#     endif
 #  endif
 
 #  ifdef PNG_WRITE_sRGB_SUPPORTED 
-         if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
-             (info_ptr->valid & PNG_INFO_sRGB) != 0)
-            png_write_sRGB(png_ptr, info_ptr->colorspace.rendering_intent);
+         if ((info_ptr->valid & PNG_INFO_sRGB) != 0)
+            png_write_sRGB(png_ptr, info_ptr->rendering_intent);
 #  endif 
-#endif 
 
-#ifdef PNG_GAMMA_SUPPORTED
 #  ifdef PNG_WRITE_gAMA_SUPPORTED 
-      if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
-          (info_ptr->colorspace.flags & PNG_COLORSPACE_FROM_gAMA) != 0 &&
-          (info_ptr->valid & PNG_INFO_gAMA) != 0)
-         png_write_gAMA_fixed(png_ptr, info_ptr->colorspace.gamma);
+      if ((info_ptr->valid & PNG_INFO_gAMA) != 0)
+         png_write_gAMA_fixed(png_ptr, info_ptr->gamma);
 #  endif
-#endif
 
-#ifdef PNG_COLORSPACE_SUPPORTED
 #  ifdef PNG_WRITE_cHRM_SUPPORTED 
-         if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
-             (info_ptr->colorspace.flags & PNG_COLORSPACE_FROM_cHRM) != 0 &&
-             (info_ptr->valid & PNG_INFO_cHRM) != 0)
-            png_write_cHRM_fixed(png_ptr, &info_ptr->colorspace.end_points_xy);
+         if ((info_ptr->valid & PNG_INFO_cHRM) != 0)
+            png_write_cHRM_fixed(png_ptr, &info_ptr->cHRM);
 #  endif
-#endif
 
       png_ptr->mode |= PNG_WROTE_INFO_BEFORE_PLTE;
    }

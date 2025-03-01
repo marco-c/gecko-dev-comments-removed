@@ -72,30 +72,29 @@ png_malloc_base,(png_const_structrp png_ptr, png_alloc_size_t size),
 
 
 
-#ifndef PNG_USER_MEM_SUPPORTED
-   PNG_UNUSED(png_ptr)
-#endif
+#  ifdef PNG_MAX_MALLOC_64K
+      
+
+
+
+
+
+      if (size > 65536U) return NULL;
+#  endif
 
    
 
+   if (size > PNG_SIZE_MAX) return NULL;
 
-   if (size > 0 && size <= PNG_SIZE_MAX
-#     ifdef PNG_MAX_MALLOC_64K
-         && size <= 65536U
-#     endif
-      )
-   {
-#ifdef PNG_USER_MEM_SUPPORTED
+#  ifdef PNG_USER_MEM_SUPPORTED
       if (png_ptr != NULL && png_ptr->malloc_fn != NULL)
          return png_ptr->malloc_fn(png_constcast(png_structrp,png_ptr), size);
+#  else
+      PNG_UNUSED(png_ptr)
+#  endif
 
-      else
-#endif
-         return malloc((size_t)size); 
-   }
-
-   else
-      return NULL;
+   
+   return malloc((size_t)size); 
 }
 
 #if defined(PNG_TEXT_SUPPORTED) || defined(PNG_sPLT_SUPPORTED) ||\

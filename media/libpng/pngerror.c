@@ -935,23 +935,37 @@ png_safe_warning(png_structp png_nonconst_ptr, png_const_charp warning_message)
 int 
 png_safe_execute(png_imagep image, int (*function)(png_voidp), png_voidp arg)
 {
-   png_voidp saved_error_buf = image->opaque->error_buf;
+   const png_voidp saved_error_buf = image->opaque->error_buf;
    jmp_buf safe_jmpbuf;
-   int result;
 
    
    if (setjmp(safe_jmpbuf) == 0)
    {
+      int result;
+
       image->opaque->error_buf = safe_jmpbuf;
       result = function(arg);
       image->opaque->error_buf = saved_error_buf;
-      return result;
+
+      if (result)
+         return 1; 
    }
 
    
+
+
+
+
    image->opaque->error_buf = saved_error_buf;
-   png_image_free(image);
-   return 0;
+
+   
+
+
+
+   if (saved_error_buf == NULL)
+      png_image_free(image);
+
+   return 0; 
 }
 #endif 
 #endif 

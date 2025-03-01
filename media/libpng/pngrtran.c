@@ -218,9 +218,59 @@ png_set_strip_alpha(png_structrp png_ptr)
 #endif
 
 #if defined(PNG_READ_ALPHA_MODE_SUPPORTED) || defined(PNG_READ_GAMMA_SUPPORTED)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static png_fixed_point
-translate_gamma_flags(png_structrp png_ptr, png_fixed_point output_gamma,
-    int is_screen)
+translate_gamma_flags(png_fixed_point output_gamma, int is_screen)
 {
    
 
@@ -230,14 +280,6 @@ translate_gamma_flags(png_structrp png_ptr, png_fixed_point output_gamma,
    if (output_gamma == PNG_DEFAULT_sRGB ||
       output_gamma == PNG_FP_1 / PNG_DEFAULT_sRGB)
    {
-      
-
-
-#     ifdef PNG_READ_sRGB_SUPPORTED
-         png_ptr->flags |= PNG_FLAG_ASSUME_sRGB;
-#     else
-         PNG_UNUSED(png_ptr)
-#     endif
       if (is_screen != 0)
          output_gamma = PNG_GAMMA_sRGB;
       else
@@ -279,6 +321,33 @@ convert_gamma_value(png_structrp png_ptr, double output_gamma)
    return (png_fixed_point)output_gamma;
 }
 #  endif
+
+static int
+unsupported_gamma(png_structrp png_ptr, png_fixed_point gamma, int warn)
+{
+   
+
+
+
+
+
+
+
+
+
+   if (gamma < PNG_LIB_GAMMA_MIN || gamma > PNG_LIB_GAMMA_MAX)
+   {
+#     define msg "gamma out of supported range"
+      if (warn)
+         png_app_warning(png_ptr, msg);
+      else
+         png_app_error(png_ptr, msg);
+      return 1;
+#     undef msg
+   }
+
+   return 0;
+}
 #endif 
 
 #ifdef PNG_READ_ALPHA_MODE_SUPPORTED
@@ -286,31 +355,29 @@ void PNGFAPI
 png_set_alpha_mode_fixed(png_structrp png_ptr, int mode,
     png_fixed_point output_gamma)
 {
-   int compose = 0;
    png_fixed_point file_gamma;
+   int compose = 0;
 
    png_debug(1, "in png_set_alpha_mode_fixed");
 
    if (png_rtran_ok(png_ptr, 0) == 0)
       return;
 
-   output_gamma = translate_gamma_flags(png_ptr, output_gamma, 1);
+   output_gamma = translate_gamma_flags(output_gamma, 1);
+   if (unsupported_gamma(png_ptr, output_gamma, 0))
+      return;
 
    
 
 
 
 
-
-
-
-   if (output_gamma < 1000 || output_gamma > 10000000)
-      png_error(png_ptr, "output gamma out of expected range");
-
-   
-
-
-   file_gamma = png_reciprocal(output_gamma);
+   file_gamma = png_ptr->default_gamma;
+   if (file_gamma == 0)
+   {
+      file_gamma = png_reciprocal(output_gamma);
+      png_ptr->default_gamma = file_gamma;
+   }
 
    
 
@@ -362,16 +429,6 @@ png_set_alpha_mode_fixed(png_structrp png_ptr, int mode,
    }
 
    
-
-
-
-   if (png_ptr->colorspace.gamma == 0)
-   {
-      png_ptr->colorspace.gamma = file_gamma;
-      png_ptr->colorspace.flags |= PNG_COLORSPACE_HAVE_GAMMA;
-   }
-
-   
    png_ptr->screen_gamma = output_gamma;
 
    
@@ -381,7 +438,7 @@ png_set_alpha_mode_fixed(png_structrp png_ptr, int mode,
    {
       
       memset(&png_ptr->background, 0, (sizeof png_ptr->background));
-      png_ptr->background_gamma = png_ptr->colorspace.gamma; 
+      png_ptr->background_gamma = file_gamma; 
       png_ptr->background_gamma_type = PNG_BACKGROUND_GAMMA_FILE;
       png_ptr->transformations &= ~PNG_BACKGROUND_EXPAND;
 
@@ -819,8 +876,8 @@ png_set_gamma_fixed(png_structrp png_ptr, png_fixed_point scrn_gamma,
       return;
 
    
-   scrn_gamma = translate_gamma_flags(png_ptr, scrn_gamma, 1);
-   file_gamma = translate_gamma_flags(png_ptr, file_gamma, 0);
+   scrn_gamma = translate_gamma_flags(scrn_gamma, 1);
+   file_gamma = translate_gamma_flags(file_gamma, 0);
 
    
 
@@ -834,17 +891,19 @@ png_set_gamma_fixed(png_structrp png_ptr, png_fixed_point scrn_gamma,
 
 
    if (file_gamma <= 0)
-      png_error(png_ptr, "invalid file gamma in png_set_gamma");
-
+      png_app_error(png_ptr, "invalid file gamma in png_set_gamma");
    if (scrn_gamma <= 0)
-      png_error(png_ptr, "invalid screen gamma in png_set_gamma");
+      png_app_error(png_ptr, "invalid screen gamma in png_set_gamma");
+
+   if (unsupported_gamma(png_ptr, file_gamma, 1) ||
+       unsupported_gamma(png_ptr, scrn_gamma, 1))
+      return;
 
    
 
 
 
-   png_ptr->colorspace.gamma = file_gamma;
-   png_ptr->colorspace.flags |= PNG_COLORSPACE_HAVE_GAMMA;
+   png_ptr->file_gamma = file_gamma;
    png_ptr->screen_gamma = scrn_gamma;
 }
 
@@ -1022,26 +1081,9 @@ png_set_rgb_to_gray_fixed(png_structrp png_ptr, int error_action,
          png_ptr->rgb_to_gray_coefficients_set = 1;
       }
 
-      else
-      {
-         if (red >= 0 && green >= 0)
-            png_app_warning(png_ptr,
-                "ignoring out of range rgb_to_gray coefficients");
-
-         
-
-
-
-
-
-         if (png_ptr->rgb_to_gray_red_coeff == 0 &&
-             png_ptr->rgb_to_gray_green_coeff == 0)
-         {
-            png_ptr->rgb_to_gray_red_coeff   = 6968;
-            png_ptr->rgb_to_gray_green_coeff = 23434;
-            
-         }
-      }
+      else if (red >= 0 && green >= 0)
+         png_app_warning(png_ptr,
+               "ignoring out of range rgb_to_gray coefficients");
    }
 }
 
@@ -1282,6 +1324,80 @@ png_init_rgb_transformations(png_structrp png_ptr)
 #endif 
 }
 
+#ifdef PNG_READ_GAMMA_SUPPORTED
+png_fixed_point 
+png_resolve_file_gamma(png_const_structrp png_ptr)
+{
+   png_fixed_point file_gamma;
+
+   
+
+
+
+
+
+
+
+
+   file_gamma = png_ptr->file_gamma;
+   if (file_gamma != 0)
+      return file_gamma;
+
+   file_gamma = png_ptr->chunk_gamma;
+   if (file_gamma != 0)
+      return file_gamma;
+
+   file_gamma = png_ptr->default_gamma;
+   if (file_gamma != 0)
+      return file_gamma;
+
+   
+
+
+
+   if (png_ptr->screen_gamma != 0)
+      file_gamma = png_reciprocal(png_ptr->screen_gamma);
+
+   return file_gamma;
+}
+
+static int
+png_init_gamma_values(png_structrp png_ptr)
+{
+   
+
+
+   int gamma_correction = 0;
+   png_fixed_point file_gamma, screen_gamma;
+
+   
+
+
+   file_gamma = png_resolve_file_gamma(png_ptr);
+   screen_gamma = png_ptr->screen_gamma;
+
+   if (file_gamma > 0) 
+   {
+      if (screen_gamma > 0) 
+         gamma_correction = png_gamma_threshold(file_gamma, screen_gamma);
+
+      else
+         
+
+
+         screen_gamma = png_reciprocal(file_gamma);
+   }
+
+   else 
+      file_gamma = screen_gamma = PNG_FP_1;
+
+   png_ptr->file_gamma = file_gamma;
+   png_ptr->screen_gamma = screen_gamma;
+   return gamma_correction;
+
+}
+#endif 
+
 void 
 png_init_read_transformations(png_structrp png_ptr)
 {
@@ -1302,45 +1418,6 @@ png_init_read_transformations(png_structrp png_ptr)
 
 
 
-   {
-      
-
-
-      int gamma_correction = 0;
-
-      if (png_ptr->colorspace.gamma != 0) 
-      {
-         if (png_ptr->screen_gamma != 0) 
-            gamma_correction = png_gamma_threshold(png_ptr->colorspace.gamma,
-                png_ptr->screen_gamma);
-
-         else
-            
-
-
-            png_ptr->screen_gamma = png_reciprocal(png_ptr->colorspace.gamma);
-      }
-
-      else if (png_ptr->screen_gamma != 0)
-         
-
-
-
-
-         png_ptr->colorspace.gamma = png_reciprocal(png_ptr->screen_gamma);
-
-      else 
-         
-
-
-
-
-         png_ptr->screen_gamma = png_ptr->colorspace.gamma = PNG_FP_1;
-
-      
-      png_ptr->colorspace.flags |= PNG_COLORSPACE_HAVE_GAMMA;
-
-      
 
 
 
@@ -1348,12 +1425,14 @@ png_init_read_transformations(png_structrp png_ptr)
 
 
 
-      if (gamma_correction != 0)
-         png_ptr->transformations |= PNG_GAMMA;
 
-      else
-         png_ptr->transformations &= ~PNG_GAMMA;
-   }
+
+
+   if (png_init_gamma_values(png_ptr) != 0)
+      png_ptr->transformations |= PNG_GAMMA;
+
+   else
+      png_ptr->transformations &= ~PNG_GAMMA;
 #endif
 
    
@@ -1425,7 +1504,7 @@ png_init_read_transformations(png_structrp png_ptr)
 
 
    if ((png_ptr->transformations & PNG_RGB_TO_GRAY) != 0)
-      png_colorspace_set_rgb_coefficients(png_ptr);
+      png_set_rgb_coefficients(png_ptr);
 #endif
 
 #ifdef PNG_READ_GRAY_TO_RGB_SUPPORTED
@@ -1568,10 +1647,10 @@ png_init_read_transformations(png_structrp png_ptr)
 
    if ((png_ptr->transformations & PNG_GAMMA) != 0 ||
        ((png_ptr->transformations & PNG_RGB_TO_GRAY) != 0 &&
-        (png_gamma_significant(png_ptr->colorspace.gamma) != 0 ||
+        (png_gamma_significant(png_ptr->file_gamma) != 0 ||
          png_gamma_significant(png_ptr->screen_gamma) != 0)) ||
         ((png_ptr->transformations & PNG_COMPOSE) != 0 &&
-         (png_gamma_significant(png_ptr->colorspace.gamma) != 0 ||
+         (png_gamma_significant(png_ptr->file_gamma) != 0 ||
           png_gamma_significant(png_ptr->screen_gamma) != 0
 #  ifdef PNG_READ_BACKGROUND_SUPPORTED
          || (png_ptr->background_gamma_type == PNG_BACKGROUND_GAMMA_UNIQUE &&
@@ -1627,8 +1706,8 @@ png_init_read_transformations(png_structrp png_ptr)
                      break;
 
                   case PNG_BACKGROUND_GAMMA_FILE:
-                     g = png_reciprocal(png_ptr->colorspace.gamma);
-                     gs = png_reciprocal2(png_ptr->colorspace.gamma,
+                     g = png_reciprocal(png_ptr->file_gamma);
+                     gs = png_reciprocal2(png_ptr->file_gamma,
                          png_ptr->screen_gamma);
                      break;
 
@@ -1736,8 +1815,8 @@ png_init_read_transformations(png_structrp png_ptr)
                   break;
 
                case PNG_BACKGROUND_GAMMA_FILE:
-                  g = png_reciprocal(png_ptr->colorspace.gamma);
-                  gs = png_reciprocal2(png_ptr->colorspace.gamma,
+                  g = png_reciprocal(png_ptr->file_gamma);
+                  gs = png_reciprocal2(png_ptr->file_gamma,
                       png_ptr->screen_gamma);
                   break;
 
@@ -1991,7 +2070,7 @@ png_read_transform_info(png_structrp png_ptr, png_inforp info_ptr)
 
 
 
-   info_ptr->colorspace.gamma = png_ptr->colorspace.gamma;
+   info_ptr->gamma = png_ptr->file_gamma;
 #endif
 
    if (info_ptr->bit_depth == 16)
