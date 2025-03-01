@@ -297,6 +297,13 @@ class Editor extends EventEmitter {
     
     this.config.extraKeys[Editor.accel("U")] = false;
 
+    if (!config.disableSearchAddon) {
+      
+      
+      this.config.extraKeys[Editor.accel("F")] = () =>
+        editors.get(this).execCommand("findPersistent");
+    }
+
     
     
     
@@ -3009,7 +3016,7 @@ class Editor extends EventEmitter {
 
     
     
-    cm.execCommand("find");
+    cm.execCommand("findPersistent");
   }
 
   

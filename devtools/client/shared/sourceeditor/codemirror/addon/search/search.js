@@ -100,8 +100,6 @@
     return query;
   }
 
-  var queryDialog;
-
   function startSearch(cm, state, query) {
     state.queryText = query;
     state.query = parseQuery(query);
@@ -115,21 +113,23 @@
   }
 
   function doSearch(cm, rev, persistent, immediate) {
-    if (!queryDialog) {
-      let doc = cm.getWrapperElement().ownerDocument;
-      let inp = doc.createElement("input");
+    
+    
+    
+    
+    
+    
+    const doc = cm.getWrapperElement().ownerDocument;
+    const inp = doc.createElement("input");
 
-      inp.type = "search";
-      inp.placeholder = cm.l10n("findCmd.promptMessage");
-      inp.style.marginInlineStart = "1em";
-      inp.style.marginInlineEnd = "1em";
-      inp.style.flexGrow = "1";
-      inp.addEventListener("focus", () => inp.select());
+    inp.type = "search";
+    inp.classList.add("cm5-search-input");
+    inp.placeholder = cm.l10n("findCmd.promptMessage");
+    inp.addEventListener("focus", () => inp.select());
 
-      queryDialog = doc.createElement("div");
-      queryDialog.appendChild(inp);
-      queryDialog.style.display = "flex";
-    }
+    const queryDialog = doc.createElement("div");
+    queryDialog.classList.add("cm5-search-container");
+    queryDialog.appendChild(inp);
 
     var state = getSearchState(cm);
     if (state.query) return findNext(cm, rev);
