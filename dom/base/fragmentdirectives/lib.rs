@@ -3,6 +3,7 @@
 
 
 use nsstring::{nsCString, nsString};
+use rayon::prelude::*;
 use thin_vec::ThinVec;
 pub mod fragment_directive_impl;
 mod test;
@@ -170,4 +171,66 @@ pub struct TextDirectiveCandidateContents<'a> {
     end_content: &'a nsString,
     suffix_content: &'a nsString,
     use_exact_matching: bool,
+}
+
+impl<'a> TextDirectiveCandidateContents<'a> {
+    
+    
+    
+    fn matches_candidate(&self, candidate: &Self) -> bool {
+        if !self
+            .full_prefix_content
+            .ends_with(&candidate.prefix_content)
+        {
+            return false;
+        }
+        if !self
+            .full_suffix_content
+            .starts_with(&candidate.suffix_content)
+        {
+            return false;
+        }
+        assert!(self.use_exact_matching == candidate.use_exact_matching);
+        if !candidate.use_exact_matching {
+            if !self
+                .full_start_content
+                .starts_with(&candidate.start_content)
+            {
+                return false;
+            }
+            if !self.full_end_content.ends_with(&candidate.end_content) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+
+
+
+#[no_mangle]
+pub extern "C" fn fragment_directive_filter_non_matching_candidates(
+    candidates: &ThinVec<&TextDirectiveCandidateContents>,
+    matches: &ThinVec<&TextDirectiveCandidateContents>,
+    result: &mut ThinVec<ThinVec<usize>>,
+) {
+    
+    
+    
+    
+    result.extend(
+        candidates
+            .par_iter()
+            .map(|candidate| {
+                matches
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, m)| m.matches_candidate(candidate))
+                    .map(|(index, _)| index)
+                    .collect::<ThinVec<_>>()
+            })
+            .collect::<Vec<_>>()
+            .into_iter(),
+    );
 }

@@ -926,6 +926,39 @@ TextDirectiveCreator::FindAllMatchingRanges(const nsString& aSearchQuery) {
   return matchingRanges;
 }
 
+nsTArray<
+    std::pair<TextDirectiveCandidate, nsTArray<const TextDirectiveCandidate*>>>
+TextDirectiveCreator::FindMatchesForCandidates(
+    nsTArray<TextDirectiveCandidate>&& aCandidates,
+    const nsTArray<const TextDirectiveCandidate*>& aMatches) {
+  AutoTArray<const TextDirectiveCandidateContents*, 32> candidateContents;
+  candidateContents.SetCapacity(aCandidates.Length());
+  for (const auto& c : aCandidates) {
+    candidateContents.AppendElement(&c.RangeContents());
+  }
+  AutoTArray<const TextDirectiveCandidateContents*, 32> matchContents;
+  matchContents.SetCapacity(aMatches.Length());
+  for (const auto* m : aMatches) {
+    matchContents.AppendElement(&m->RangeContents());
+  }
+  nsTArray<nsTArray<size_t>> matchIndices;
+  fragment_directive_filter_non_matching_candidates(
+      &candidateContents, &matchContents, &matchIndices);
+
+  nsTArray<std::pair<TextDirectiveCandidate,
+                     nsTArray<const TextDirectiveCandidate*>>>
+      candidatesAndMatches(aCandidates.Length());
+  for (size_t index = 0; index < aCandidates.Length(); ++index) {
+    AutoTArray<const TextDirectiveCandidate*, 8> stillMatching;
+    for (auto i : matchIndices[index]) {
+      stillMatching.AppendElement(aMatches[i]);
+    }
+    candidatesAndMatches.AppendElement(
+        std::pair(std::move(aCandidates[index]), std::move(stillMatching)));
+  }
+  return candidatesAndMatches;
+}
+
 Result<nsCString, ErrorResult>
 TextDirectiveCreator::CreateTextDirectiveFromMatches(
     const nsTArray<TextDirectiveCandidate>& aTextDirectiveMatches) {
@@ -1005,19 +1038,15 @@ TextDirectiveCreator::CreateTextDirectiveFromMatches(
     
     
     
+    
+    
+    
+    
+    
     nsTArray<std::pair<TextDirectiveCandidate,
                        nsTArray<const TextDirectiveCandidate*>>>
-        candidatesAndMatchesForNextIteration(newCandidates.Length());
-    
-    for (auto& newCandidate : newCandidates) {
-      
-      
-      
-      
-      candidatesAndMatchesForNextIteration.AppendElement(
-          std::pair{std::move(newCandidate),
-                    newCandidate.FilterNonMatchingCandidates(matches)});
-    }
+        candidatesAndMatchesForNextIteration =
+            FindMatchesForCandidates(std::move(newCandidates), matches);
 
     
     

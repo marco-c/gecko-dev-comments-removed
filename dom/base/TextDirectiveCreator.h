@@ -180,6 +180,10 @@ class TextDirectiveCandidate {
 
   void LogCurrentState(const char* aCallerFunc) const;
 
+  const TextDirectiveCandidateContents& RangeContents() const {
+    return mFoldCaseContents;
+  };
+
  private:
   TextDirectiveCandidate(nsRange* aStartRange, nsRange* aFullStartRange,
                          nsRange* aEndRange, nsRange* aFullEndRange,
@@ -307,6 +311,18 @@ class TextDirectiveCreator final {
 
   Result<nsTArray<RefPtr<nsRange>>, ErrorResult> FindAllMatchingRanges(
       const nsString& aSearchQuery);
+
+  
+
+
+
+
+
+  nsTArray<std::pair<TextDirectiveCandidate,
+                     nsTArray<const TextDirectiveCandidate*>>>
+  FindMatchesForCandidates(
+      nsTArray<TextDirectiveCandidate>&& aCandidates,
+      const nsTArray<const TextDirectiveCandidate*>& aMatches);
 
   Result<nsCString, ErrorResult> CreateTextDirectiveFromMatches(
       const nsTArray<TextDirectiveCandidate>& aTextDirectiveMatches);
