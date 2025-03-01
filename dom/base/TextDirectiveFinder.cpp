@@ -97,6 +97,7 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
   if (rv.Failed()) {
     return nullptr;
   }
+  nsContentUtils::NodeIndexCache nodeIndexCache;
   
   while (!searchRange->Collapsed()) {
     
@@ -108,7 +109,7 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       RefPtr<nsRange> prefixMatch = TextDirectiveUtil::FindStringInRange(
           searchRange->StartRef(), searchRange->EndRef(), aTextDirective.prefix,
-          true, false);
+          true, false, &nodeIndexCache);
       
       if (!prefixMatch) {
         TEXT_FRAGMENT_LOG(
@@ -213,7 +214,7 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       potentialMatch = TextDirectiveUtil::FindStringInRange(
           searchRange->StartRef(), searchRange->EndRef(), aTextDirective.start,
-          true, mustEndAtWordBoundary);
+          true, mustEndAtWordBoundary, &nodeIndexCache);
       
       if (!potentialMatch) {
         TEXT_FRAGMENT_LOG(
@@ -258,7 +259,7 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
         
         RefPtr<nsRange> endMatch = TextDirectiveUtil::FindStringInRange(
             rangeEndSearchRange->StartRef(), rangeEndSearchRange->EndRef(),
-            aTextDirective.end, true, mustEndAtWordBoundary);
+            aTextDirective.end, true, mustEndAtWordBoundary, &nodeIndexCache);
         
         if (!endMatch) {
           TEXT_FRAGMENT_LOG(
