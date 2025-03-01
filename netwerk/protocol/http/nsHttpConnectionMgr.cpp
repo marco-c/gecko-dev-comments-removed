@@ -1430,7 +1430,7 @@ nsresult nsHttpConnectionMgr::TryDispatchTransaction(
   if (conn) {
     LOG(("TryingDispatchTransaction: an active h2 connection exists"));
     ExtendedCONNECTSupport extendedConnect = conn->GetExtendedCONNECTSupport();
-    if (trans->IsWebsocketUpgrade()) {
+    if (trans->IsWebsocketUpgrade() || trans->IsForWebTransport()) {
       RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
       if (connTCP) {
         LOG(("TryingDispatchTransaction: extended CONNECT"));
@@ -1452,15 +1452,18 @@ nsresult nsHttpConnectionMgr::TryDispatchTransaction(
           RefPtr<nsHttpConnection> connToTunnel;
           connTCP->CreateTunnelStream(trans, getter_AddRefs(connToTunnel),
                                       true);
-          ent->InsertIntoH2WebsocketConns(connToTunnel);
+          ent->InsertIntoExtendedCONNECTConns(connToTunnel);
           trans->SetConnection(nullptr);
           connToTunnel
               ->SetInSpdyTunnel();  
-          trans->SetIsHttp2Websocket(true);
+          if (trans->IsWebsocketUpgrade()) {
+            trans->SetIsHttp2Websocket(true);
+          }
           nsresult rv = DispatchTransaction(ent, trans, connToTunnel);
           
           
           trans->MakeSticky();
+          trans->SetResettingForTunnelConn(false);
           return rv;
         } else {
           
@@ -1968,7 +1971,11 @@ void nsHttpConnectionMgr::DispatchSpdyPendingQ(
     PendingTransactionInfo* pendingTransInfo = pendingQ[index];
 
     
-    if (!(pendingTransInfo->Transaction()->Caps() & NS_HTTP_ALLOW_KEEPALIVE)) {
+    
+    
+    
+    if (!(pendingTransInfo->Transaction()->Caps() & NS_HTTP_ALLOW_KEEPALIVE) ||
+        pendingTransInfo->Transaction()->IsResettingForTunnelConn()) {
       leftovers.AppendElement(pendingTransInfo);
       continue;
     }
@@ -2117,7 +2124,7 @@ void nsHttpConnectionMgr::AbortAndCloseAllConnections(int32_t, ARefBase*) {
     ent->CloseIdleConnections();
 
     
-    ent->CloseH2WebsocketConnections();
+    ent->CloseExtendedCONNECTConnections();
 
     ent->ClosePendingConnections();
 
@@ -2583,8 +2590,8 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(HttpConnectionBase* conn) {
 
     ent->InsertIntoIdleConnections(connTCP);
   } else {
-    if (ent->IsInH2WebsocketConns(conn)) {
-      ent->RemoveH2WebsocketConns(conn);
+    if (ent->IsInExtendedCONNECTConns(conn)) {
+      ent->RemoveExtendedCONNECTConns(conn);
     }
     LOG(("  connection cannot be reused; closing connection\n"));
     conn->SetCloseReason(ConnectionCloseReason::CANT_REUSED);
