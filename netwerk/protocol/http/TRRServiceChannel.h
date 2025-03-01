@@ -24,12 +24,8 @@ class HttpTransactionShell;
 class nsHttpHandler;
 
 
-#define NS_TRRSERVICECHANNEL_IID                     \
-  {                                                  \
-    0x361c4bb1, 0xd6b2, 0x493b, {                    \
-      0x86, 0xbc, 0x88, 0xd3, 0x5d, 0x16, 0x38, 0xfa \
-    }                                                \
-  }
+#define NS_TRRSERVICECHANNEL_IID \
+  {0x361c4bb1, 0xd6b2, 0x493b, {0x86, 0xbc, 0x88, 0xd3, 0x5d, 0x16, 0x38, 0xfa}}
 
 
 
@@ -143,7 +139,7 @@ class TRRServiceChannel : public HttpBaseChannel,
   virtual void DoNotifyListenerCleanup() override;
   virtual void DoAsyncAbort(nsresult aStatus) override;
   bool IsIsolated() { return false; };
-  void ProcessAltService();
+  void ProcessAltService(nsHttpConnectionInfo* aTransConnInfo);
   nsresult CallOnStartRequest();
 
   void MaybeStartDNSPrefetch();

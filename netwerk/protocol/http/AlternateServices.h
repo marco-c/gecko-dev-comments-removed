@@ -67,6 +67,7 @@ class AltSvcMapping {
       const nsACString& username, bool privateBrowsing,
       nsIInterfaceRequestor* callbacks, nsProxyInfo* proxyInfo, uint32_t caps,
       const OriginAttributes& originAttributes,
+      nsHttpConnectionInfo* aTransConnInfo,
       bool aDontValidate = false);  
 
   
