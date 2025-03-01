@@ -708,6 +708,8 @@ struct DebugOverlayState {
     
     
     current_size: Option<DeviceIntSize>,
+
+    layer_index: usize,
 }
 
 impl DebugOverlayState {
@@ -715,6 +717,7 @@ impl DebugOverlayState {
         DebugOverlayState {
             is_enabled: false,
             current_size: None,
+            layer_index: 0,
         }
     }
 }
@@ -1369,45 +1372,60 @@ impl Renderer {
     fn bind_debug_overlay(&mut self, device_size: DeviceIntSize) -> Option<DrawTarget> {
         
         if self.debug_overlay_state.is_enabled {
-            if let CompositorKind::Native { .. } = self.current_compositor_kind {
-                let compositor = self.compositor_config.compositor().unwrap();
-                let surface_size = self.debug_overlay_state.current_size.unwrap();
+            match self.current_compositor_kind {
+                CompositorKind::Native { .. } => {
+                    let compositor = self.compositor_config.compositor().unwrap();
+                    let surface_size = self.debug_overlay_state.current_size.unwrap();
 
-                
-                compositor.invalidate_tile(
-                    &mut self.device,
-                    NativeTileId::DEBUG_OVERLAY,
-                    DeviceIntRect::from_size(surface_size),
-                );
-                
-                let surface_info = compositor.bind(
-                    &mut self.device,
-                    NativeTileId::DEBUG_OVERLAY,
-                    DeviceIntRect::from_size(surface_size),
-                    DeviceIntRect::from_size(surface_size),
-                );
+                    
+                    compositor.invalidate_tile(
+                        &mut self.device,
+                        NativeTileId::DEBUG_OVERLAY,
+                        DeviceIntRect::from_size(surface_size),
+                    );
+                    
+                    let surface_info = compositor.bind(
+                        &mut self.device,
+                        NativeTileId::DEBUG_OVERLAY,
+                        DeviceIntRect::from_size(surface_size),
+                        DeviceIntRect::from_size(surface_size),
+                    );
 
-                
-                let draw_target = DrawTarget::NativeSurface {
-                    offset: surface_info.origin,
-                    external_fbo_id: surface_info.fbo_id,
-                    dimensions: surface_size,
-                };
-                self.device.bind_draw_target(draw_target);
+                    
+                    let draw_target = DrawTarget::NativeSurface {
+                        offset: surface_info.origin,
+                        external_fbo_id: surface_info.fbo_id,
+                        dimensions: surface_size,
+                    };
+                    self.device.bind_draw_target(draw_target);
 
-                
-                self.device.clear_target(
-                    Some([0.0, 0.0, 0.0, 0.0]),
-                    None, 
-                    None,
-                );
+                    
+                    self.device.clear_target(
+                        Some([0.0, 0.0, 0.0, 0.0]),
+                        None, 
+                        None,
+                    );
 
-                Some(draw_target)
-            } else {
-                
-                
-                
-                Some(DrawTarget::new_default(device_size, self.device.surface_origin_is_top_left()))
+                    Some(draw_target)
+                }
+                CompositorKind::Layer { .. } => {
+                    let compositor = self.compositor_config.layer_compositor().unwrap();
+                    compositor.bind_layer(self.debug_overlay_state.layer_index);
+
+                    self.device.clear_target(
+                        Some([0.0, 0.0, 0.0, 0.0]),
+                        None, 
+                        None,
+                    );
+
+                    Some(DrawTarget::new_default(device_size, self.device.surface_origin_is_top_left()))
+                }
+                CompositorKind::Draw { .. } => {
+                    
+                    
+                    
+                    Some(DrawTarget::new_default(device_size, self.device.surface_origin_is_top_left()))
+                }
             }
         } else {
             None
@@ -1418,20 +1436,27 @@ impl Renderer {
     fn unbind_debug_overlay(&mut self) {
         
         if self.debug_overlay_state.is_enabled {
-            if let CompositorKind::Native { .. } = self.current_compositor_kind {
-                let compositor = self.compositor_config.compositor().unwrap();
-                
-                compositor.unbind(&mut self.device);
+            match self.current_compositor_kind {
+                CompositorKind::Native { .. } => {
+                    let compositor = self.compositor_config.compositor().unwrap();
+                    
+                    compositor.unbind(&mut self.device);
 
-                compositor.add_surface(
-                    &mut self.device,
-                    NativeSurfaceId::DEBUG_OVERLAY,
-                    CompositorSurfaceTransform::identity(),
-                    DeviceIntRect::from_size(
-                        self.debug_overlay_state.current_size.unwrap(),
-                    ),
-                    ImageRendering::Auto,
-                );
+                    compositor.add_surface(
+                        &mut self.device,
+                        NativeSurfaceId::DEBUG_OVERLAY,
+                        CompositorSurfaceTransform::identity(),
+                        DeviceIntRect::from_size(
+                            self.debug_overlay_state.current_size.unwrap(),
+                        ),
+                        ImageRendering::Auto,
+                    );
+                }
+                CompositorKind::Draw { .. } => {}
+                CompositorKind::Layer { .. } => {
+                    let compositor = self.compositor_config.layer_compositor().unwrap();
+                    compositor.present_layer(self.debug_overlay_state.layer_index);
+                }
             }
         }
     }
@@ -1739,10 +1764,17 @@ impl Renderer {
             
             
             
-            if let CompositorKind::Native { .. } = self.current_compositor_kind {
-                profile_scope!("compositor.end_frame");
-                let compositor = self.compositor_config.compositor().unwrap();
-                compositor.end_frame(&mut self.device);
+            match self.current_compositor_kind {
+                CompositorKind::Layer { .. } => {
+                    let compositor = self.compositor_config.layer_compositor().unwrap();
+                    compositor.end_frame();
+                }
+                CompositorKind::Native { .. } => {
+                    profile_scope!("compositor.end_frame");
+                    let compositor = self.compositor_config.compositor().unwrap();
+                    compositor.end_frame(&mut self.device);
+                }
+                CompositorKind::Draw { .. } => {}
             }
         }
 
@@ -3587,6 +3619,11 @@ impl Renderer {
                                 }
                             }
                         }
+
+                        
+                        (CompositorSurfaceUsage::DebugOverlay, _) | (_, CompositorSurfaceUsage::DebugOverlay) => {
+                            unreachable!();
+                        }
                     }
                 }
                 None => {
@@ -3614,6 +3651,7 @@ impl Renderer {
 
                         (rect.min.to_i32(), clip_rect, is_opaque)
                     }
+                    CompositorSurfaceUsage::DebugOverlay => unreachable!(),
                 };
 
                 input_layers.push(CompositorInputLayer {
@@ -3662,6 +3700,24 @@ impl Renderer {
         }
 
         
+        if self.debug_overlay_state.is_enabled {
+            self.debug_overlay_state.layer_index = input_layers.len();
+
+            input_layers.push(CompositorInputLayer {
+                usage: CompositorSurfaceUsage::DebugOverlay,
+                is_opaque: false,
+                offset: DeviceIntPoint::zero(),
+                clip_rect: device_size.into(),
+            });
+
+            swapchain_layers.push(SwapChainLayer {
+                opaque_items: Vec::new(),
+                alpha_items: Vec::new(),
+                clear_tiles: Vec::new(),
+            })
+        }
+
+        
         if let Some(ref mut compositor) = self.compositor_config.layer_compositor() {
             let input = CompositorInputConfig {
                 layers: &input_layers,
@@ -3675,7 +3731,7 @@ impl Renderer {
             
             match layer.usage {
                 CompositorSurfaceUsage::Content => {}
-                CompositorSurfaceUsage::External { .. } => {
+                CompositorSurfaceUsage::External { .. } | CompositorSurfaceUsage::DebugOverlay => {
                     continue;
                 }
             }
@@ -3729,6 +3785,7 @@ impl Renderer {
                 let transform = match layer.usage {
                     CompositorSurfaceUsage::Content => CompositorSurfaceTransform::identity(),
                     CompositorSurfaceUsage::External { transform_index, .. } => composite_state.get_compositor_transform(transform_index),
+                    CompositorSurfaceUsage::DebugOverlay => CompositorSurfaceTransform::identity(),
                 };
 
                 compositor.add_surface(
@@ -3738,8 +3795,6 @@ impl Renderer {
                     ImageRendering::Auto,
                 );
             }
-
-            compositor.end_frame();
         }
     }
 
