@@ -1,9 +1,12 @@
-#![warn(unsafe_op_in_unsafe_fn)]
 use crate::deflate::{State, HASH_SIZE, STD_MIN_MATCH};
 
 #[derive(Debug, Clone, Copy)]
 pub enum HashCalcVariant {
     Standard,
+    
+    
+    
+    
     Crc32,
     Roll,
 }
@@ -50,10 +53,10 @@ impl StandardHashCalc {
 
         let hm = Self::update_hash(0, val) as usize;
 
-        let head = state.head[hm];
+        let head = state.head.as_slice()[hm];
         if head != string as u16 {
-            state.prev[string & state.w_mask] = head;
-            state.head[hm] = string as u16;
+            state.prev.as_mut_slice()[string & state.w_mask] = head;
+            state.head.as_mut_slice()[hm] = string as u16;
         }
 
         head
@@ -63,17 +66,20 @@ impl StandardHashCalc {
         let slice = &state.window.filled()[string + Self::HASH_CALC_OFFSET..];
 
         
-        for (i, w) in slice[..count + 3].windows(4).enumerate() {
+        
+        let slice = &slice[..Ord::min(slice.len(), count + 3)];
+
+        for (i, w) in slice.windows(4).enumerate() {
             let idx = string as u16 + i as u16;
 
             let val = u32::from_le_bytes(w.try_into().unwrap());
 
             let hm = Self::update_hash(0, val) as usize;
 
-            let head = state.head[hm];
+            let head = state.head.as_slice()[hm];
             if head != idx {
-                state.prev[idx as usize & state.w_mask] = head;
-                state.head[hm] = idx;
+                state.prev.as_mut_slice()[idx as usize & state.w_mask] = head;
+                state.head.as_mut_slice()[hm] = idx;
             }
         }
     }
@@ -103,10 +109,10 @@ impl RollHashCalc {
 
         let hm = state.ins_h;
 
-        let head = state.head[hm];
+        let head = state.head.as_slice()[hm];
         if head != string as u16 {
-            state.prev[string & state.w_mask] = head;
-            state.head[hm] = string as u16;
+            state.prev.as_mut_slice()[string & state.w_mask] = head;
+            state.head.as_mut_slice()[hm] = string as u16;
         }
 
         head
@@ -122,14 +128,19 @@ impl RollHashCalc {
             state.ins_h &= Self::HASH_CALC_MASK as usize;
             let hm = state.ins_h;
 
-            let head = state.head[hm];
+            let head = state.head.as_slice()[hm];
             if head != idx {
-                state.prev[idx as usize & state.w_mask] = head;
-                state.head[hm] = idx;
+                state.prev.as_mut_slice()[idx as usize & state.w_mask] = head;
+                state.head.as_mut_slice()[hm] = idx;
             }
         }
     }
 }
+
+
+
+
+
 
 pub struct Crc32HashCalc;
 
@@ -190,10 +201,10 @@ impl Crc32HashCalc {
 
         let hm = unsafe { Self::update_hash(0, val) } as usize;
 
-        let head = state.head[hm];
+        let head = state.head.as_slice()[hm];
         if head != string as u16 {
-            state.prev[string & state.w_mask] = head;
-            state.head[hm] = string as u16;
+            state.prev.as_mut_slice()[string & state.w_mask] = head;
+            state.head.as_mut_slice()[hm] = string as u16;
         }
 
         head
@@ -206,17 +217,20 @@ impl Crc32HashCalc {
         let slice = &state.window.filled()[string + Self::HASH_CALC_OFFSET..];
 
         
-        for (i, w) in slice[..count + 3].windows(4).enumerate() {
+        
+        let slice = &slice[..Ord::min(slice.len(), count + 3)];
+
+        for (i, w) in slice.windows(4).enumerate() {
             let idx = string as u16 + i as u16;
 
             let val = u32::from_le_bytes(w.try_into().unwrap());
 
             let hm = unsafe { Self::update_hash(0, val) } as usize;
 
-            let head = state.head[hm];
+            let head = state.head.as_slice()[hm];
             if head != idx {
-                state.prev[idx as usize & state.w_mask] = head;
-                state.head[hm] = idx;
+                state.prev.as_mut_slice()[idx as usize & state.w_mask] = head;
+                state.head.as_mut_slice()[hm] = idx;
             }
         }
     }

@@ -314,6 +314,12 @@ pub unsafe extern "C-unwind" fn uncompress(
 
 
 
+
+
+
+
+
+
 #[export_name = prefix!(inflate)]
 pub unsafe extern "C-unwind" fn inflate(strm: *mut z_stream, flush: i32) -> i32 {
     if let Some(stream) = InflateStream::from_stream_mut(strm) {
@@ -887,6 +893,12 @@ pub unsafe extern "C-unwind" fn inflateCodesUsed(_strm: *mut z_stream) -> c_ulon
 
 
 
+
+
+
+
+
+
 #[export_name = prefix!(deflate)]
 pub unsafe extern "C-unwind" fn deflate(strm: *mut z_stream, flush: i32) -> c_int {
     if let Some(stream) = DeflateStream::from_stream_mut(strm) {
@@ -898,6 +910,9 @@ pub unsafe extern "C-unwind" fn deflate(strm: *mut z_stream, flush: i32) -> c_in
         ReturnCode::StreamError as _
     }
 }
+
+
+
 
 
 
@@ -1390,7 +1405,6 @@ pub unsafe extern "C-unwind" fn deflateCopy(dest: z_streamp, source: z_streamp) 
 
 
 
-
 #[export_name = prefix!(deflateInit_)]
 pub unsafe extern "C-unwind" fn deflateInit_(
     strm: z_streamp,
@@ -1413,10 +1427,6 @@ pub unsafe extern "C-unwind" fn deflateInit_(
         )
     }
 }
-
-
-
-
 
 
 

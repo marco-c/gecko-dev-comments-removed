@@ -1,3 +1,4 @@
+#![warn(unsafe_op_in_unsafe_fn)]
 use core::{ffi::CStr, marker::PhantomData, mem::MaybeUninit, ops::ControlFlow};
 
 use crate::{
@@ -6,8 +7,9 @@ use crate::{
     c_api::{gz_header, internal_state, z_checksum, z_stream},
     crc32::{crc32, Crc32Fold},
     read_buf::ReadBuf,
-    trace, DeflateFlush, ReturnCode, ADLER32_INITIAL_VALUE, CRC32_INITIAL_VALUE, MAX_WBITS,
-    MIN_WBITS,
+    trace,
+    weak_slice::{WeakArrayMut, WeakSliceMut},
+    DeflateFlush, ReturnCode, ADLER32_INITIAL_VALUE, CRC32_INITIAL_VALUE, MAX_WBITS, MIN_WBITS,
 };
 
 use self::{
@@ -27,6 +29,8 @@ mod slide_hash;
 mod trees_tbl;
 mod window;
 
+
+
 #[repr(C)]
 pub struct DeflateStream<'a> {
     pub(crate) next_in: *mut crate::c_api::Bytef,
@@ -44,6 +48,8 @@ pub struct DeflateStream<'a> {
 }
 
 impl<'a> DeflateStream<'a> {
+    
+    
     const _S: () = assert!(core::mem::size_of::<z_stream>() == core::mem::size_of::<Self>());
     const _A: () = assert!(core::mem::align_of::<z_stream>() == core::mem::align_of::<Self>());
 
@@ -175,17 +181,6 @@ impl Default for DeflateConfig {
     }
 }
 
-
-unsafe fn slice_assume_init_mut<T>(slice: &mut [MaybeUninit<T>]) -> &mut [T] {
-    &mut *(slice as *mut [MaybeUninit<T>] as *mut [T])
-}
-
-
-fn slice_to_uninit<T>(slice: &[T]) -> &[MaybeUninit<T>] {
-    
-    unsafe { &*(slice as *const [T] as *const [MaybeUninit<T>]) }
-}
-
 pub fn init(stream: &mut z_stream, config: DeflateConfig) -> ReturnCode {
     let DeflateConfig {
         mut level,
@@ -256,15 +251,15 @@ pub fn init(stream: &mut z_stream, config: DeflateConfig) -> ReturnCode {
     };
 
     
-    let Some(state_allocation) = alloc.allocate::<State>() else {
+    let Some(state_allocation) = alloc.allocate_raw::<State>() else {
         return ReturnCode::MemError;
     };
 
     let w_size = 1 << window_bits;
     let window = Window::new_in(&alloc, window_bits);
 
-    let prev = alloc.allocate_slice::<u16>(w_size);
-    let head = alloc.allocate::<[u16; HASH_SIZE]>();
+    let prev = alloc.allocate_slice_raw::<u16>(w_size);
+    let head = alloc.allocate_raw::<[u16; HASH_SIZE]>();
 
     let lit_bufsize = 1 << (mem_level + 6); 
     let pending = Pending::new_in(&alloc, 4 * lit_bufsize);
@@ -278,35 +273,38 @@ pub fn init(stream: &mut z_stream, config: DeflateConfig) -> ReturnCode {
             (window, prev, head, pending, sym_buf)
         }
         (window, prev, head, pending, sym_buf) => {
+            
             unsafe {
                 if let Some(mut sym_buf) = sym_buf {
                     alloc.deallocate(sym_buf.as_mut_ptr(), sym_buf.capacity())
                 }
-                if let Some(pending) = pending {
+                if let Some(mut pending) = pending {
                     pending.drop_in(&alloc);
                 }
                 if let Some(head) = head {
-                    alloc.deallocate(head.as_mut_ptr(), 1)
+                    alloc.deallocate(head, 1)
                 }
                 if let Some(prev) = prev {
-                    alloc.deallocate(prev.as_mut_ptr(), prev.len())
+                    alloc.deallocate(prev, w_size)
                 }
                 if let Some(mut window) = window {
                     window.drop_in(&alloc);
                 }
 
-                alloc.deallocate(state_allocation.as_mut_ptr(), 1);
+                alloc.deallocate(state_allocation, 1);
             }
 
             return ReturnCode::MemError;
         }
     };
 
-    prev.fill(MaybeUninit::zeroed());
-    let prev = unsafe { slice_assume_init_mut(prev) };
+    
+    unsafe { prev.write_bytes(0, w_size) };
+    let prev = unsafe { WeakSliceMut::from_raw_parts_mut(prev, w_size) };
 
-    *head = MaybeUninit::zeroed();
-    let head = unsafe { head.assume_init_mut() };
+    
+    unsafe { head.write_bytes(0, 1) };
+    let head = unsafe { WeakArrayMut::<u16, HASH_SIZE>::from_ptr(head) };
 
     let state = State {
         status: Status::Init,
@@ -376,8 +374,8 @@ pub fn init(stream: &mut z_stream, config: DeflateConfig) -> ReturnCode {
         hash_calc_variant: HashCalcVariant::Standard,
     };
 
-    let state = state_allocation.write(state);
-    stream.state = state as *mut _ as *mut internal_state;
+    unsafe { state_allocation.write(state) };
+    stream.state = state_allocation as *mut internal_state;
 
     let Some(stream) = (unsafe { DeflateStream::from_stream_mut(stream) }) else {
         if cfg!(debug_assertions) {
@@ -431,7 +429,7 @@ pub fn params(stream: &mut DeflateStream, level: i32, strategy: Strategy) -> Ret
             if state.matches == 1 {
                 self::slide_hash::slide_hash(state);
             } else {
-                state.head.fill(0);
+                state.head.as_mut_slice().fill(0);
             }
             state.matches = 0;
         }
@@ -465,7 +463,7 @@ pub fn set_dictionary(stream: &mut DeflateStream, mut dictionary: &[u8]) -> Retu
     if dictionary.len() >= state.window.capacity() {
         if wrap == 0 {
             
-            state.head.fill(0);
+            state.head.as_mut_slice().fill(0);
 
             state.strstart = 0;
             state.block_start = 0;
@@ -565,7 +563,7 @@ pub fn copy<'a>(
     let alloc = &source.alloc;
 
     
-    let Some(state_allocation) = alloc.allocate::<State>() else {
+    let Some(state_allocation) = alloc.allocate_raw::<State>() else {
         return ReturnCode::MemError;
     };
 
@@ -573,8 +571,8 @@ pub fn copy<'a>(
 
     let window = source_state.window.clone_in(alloc);
 
-    let prev = alloc.allocate_slice::<u16>(source_state.w_size);
-    let head = alloc.allocate::<[u16; HASH_SIZE]>();
+    let prev = alloc.allocate_slice_raw::<u16>(source_state.w_size);
+    let head = alloc.allocate_raw::<[u16; HASH_SIZE]>();
 
     let pending = source_state.bit_writer.pending.clone_in(alloc);
     let sym_buf = source_state.sym_buf.clone_in(alloc);
@@ -594,29 +592,36 @@ pub fn copy<'a>(
                 if let Some(mut sym_buf) = sym_buf {
                     alloc.deallocate(sym_buf.as_mut_ptr(), sym_buf.capacity())
                 }
-                if let Some(pending) = pending {
+                if let Some(mut pending) = pending {
                     pending.drop_in(alloc);
                 }
                 if let Some(head) = head {
-                    alloc.deallocate(head.as_mut_ptr(), HASH_SIZE)
+                    alloc.deallocate(head, HASH_SIZE)
                 }
                 if let Some(prev) = prev {
-                    alloc.deallocate(prev.as_mut_ptr(), prev.len())
+                    alloc.deallocate(prev, source_state.w_size)
                 }
                 if let Some(mut window) = window {
                     window.drop_in(alloc);
                 }
 
-                alloc.deallocate(state_allocation.as_mut_ptr(), 1);
+                alloc.deallocate(state_allocation, 1);
             }
 
             return ReturnCode::MemError;
         }
     };
 
-    prev.copy_from_slice(slice_to_uninit(source_state.prev));
-    let prev = unsafe { core::slice::from_raw_parts_mut(prev.as_mut_ptr().cast(), prev.len()) };
-    let head = head.write(*source_state.head);
+    let prev = unsafe {
+        prev.copy_from_nonoverlapping(source_state.prev.as_ptr(), source_state.prev.len());
+        WeakSliceMut::from_raw_parts_mut(prev, source_state.prev.len())
+    };
+
+    let head = unsafe {
+        head.write_bytes(0, 1);
+        head.cast::<u16>().write(source_state.head.as_slice()[0]);
+        WeakArrayMut::from_ptr(head)
+    };
 
     let mut bit_writer = BitWriter::from_pending(pending);
     bit_writer.bits_used = source_state.bit_writer.bits_used;
@@ -668,11 +673,11 @@ pub fn copy<'a>(
     };
 
     
-    let state_ptr = state_allocation.write(dest_state);
+    unsafe { state_allocation.write(dest_state) };
 
     
     let field_ptr = unsafe { core::ptr::addr_of_mut!((*dest.as_mut_ptr()).state) };
-    unsafe { core::ptr::write(field_ptr as *mut *mut State, state_ptr) };
+    unsafe { core::ptr::write(field_ptr as *mut *mut State, state_allocation) };
 
     
     let field_ptr = unsafe { core::ptr::addr_of_mut!((*dest.as_mut_ptr()).state.gzhead) };
@@ -695,20 +700,19 @@ pub fn end<'a>(stream: &'a mut DeflateStream) -> Result<&'a mut z_stream, &'a mu
         
         stream.state.sym_buf.drop_in(&alloc);
         stream.state.bit_writer.pending.drop_in(&alloc);
-        alloc.deallocate(stream.state.head, 1);
+        alloc.deallocate(stream.state.head.as_mut_ptr(), 1);
         if !stream.state.prev.is_empty() {
             alloc.deallocate(stream.state.prev.as_mut_ptr(), stream.state.prev.len());
         }
         stream.state.window.drop_in(&alloc);
     }
 
-    let state = stream.state as *mut State;
     let stream = stream.as_z_stream_mut();
-    stream.state = core::ptr::null_mut();
+    let state = core::mem::replace(&mut stream.state, core::ptr::null_mut());
 
     
     unsafe {
-        alloc.deallocate(state, 1);
+        alloc.deallocate(state as *mut State, 1);
     }
 
     match status {
@@ -764,7 +768,7 @@ fn lm_init(state: &mut State) {
     state.window_size = 2 * state.w_size;
 
     
-    state.head.fill(0);
+    state.head.as_mut_slice().fill(0);
 
     
     lm_set_level(state, state.level);
@@ -961,6 +965,7 @@ impl<'a> BitWriter<'a> {
         }
     }
 
+    #[inline(always)]
     fn send_bits(&mut self, val: u64, len: u8) {
         debug_assert!(len <= 64);
         debug_assert!(self.bits_used <= 64);
@@ -973,11 +978,16 @@ impl<'a> BitWriter<'a> {
         if total_bits < Self::BIT_BUF_SIZE {
             self.bit_buffer |= val << self.bits_used;
             self.bits_used = total_bits;
-        } else if self.bits_used == Self::BIT_BUF_SIZE {
-            
+        } else {
+            self.send_bits_overflow(val, total_bits);
+        }
+    }
+
+    fn send_bits_overflow(&mut self, val: u64, total_bits: u8) {
+        if self.bits_used == Self::BIT_BUF_SIZE {
             self.pending.extend(&self.bit_buffer.to_le_bytes());
             self.bit_buffer = val;
-            self.bits_used = len;
+            self.bits_used = total_bits - Self::BIT_BUF_SIZE;
         } else {
             self.bit_buffer |= val << self.bits_used;
             self.pending.extend(&self.bit_buffer.to_le_bytes());
@@ -1168,14 +1178,18 @@ impl<'a> BitWriter<'a> {
 pub(crate) struct State<'a> {
     status: Status,
 
-    last_flush: i32, 
-
-    bit_writer: BitWriter<'a>,
+    last_flush: i8, 
 
     pub(crate) wrap: i8, 
 
     pub(crate) strategy: Strategy,
     pub(crate) level: i8,
+
+    
+    
+    pub(crate) block_open: u8,
+
+    bit_writer: BitWriter<'a>,
 
     
     pub(crate) good_match: usize,
@@ -1222,10 +1236,6 @@ pub(crate) struct State<'a> {
     
     pub(crate) block_start: isize,
 
-    
-    
-    pub(crate) block_open: u8,
-
     pub(crate) window: Window<'a>,
 
     pub(crate) sym_buf: ReadBuf<'a>,
@@ -1268,8 +1278,8 @@ pub(crate) struct State<'a> {
     pub(crate) w_mask: usize,    
     pub(crate) lookahead: usize, 
 
-    pub(crate) prev: &'a mut [u16],
-    pub(crate) head: &'a mut [u16; HASH_SIZE],
+    pub(crate) prev: WeakSliceMut<'a, u16>,
+    pub(crate) head: WeakArrayMut<'a, u16, HASH_SIZE>,
 
     
     pub(crate) ins_h: usize,
@@ -1335,36 +1345,53 @@ impl<'a> State<'a> {
         self.lit_bufsize * 4
     }
 
+    #[inline(always)]
     pub(crate) fn update_hash(&self, h: u32, val: u32) -> u32 {
         match self.hash_calc_variant {
             HashCalcVariant::Standard => StandardHashCalc::update_hash(h, val),
+            
+            
             HashCalcVariant::Crc32 => unsafe { Crc32HashCalc::update_hash(h, val) },
             HashCalcVariant::Roll => RollHashCalc::update_hash(h, val),
         }
     }
 
+    #[inline(always)]
     pub(crate) fn quick_insert_string(&mut self, string: usize) -> u16 {
         match self.hash_calc_variant {
             HashCalcVariant::Standard => StandardHashCalc::quick_insert_string(self, string),
+            
+            
             HashCalcVariant::Crc32 => unsafe { Crc32HashCalc::quick_insert_string(self, string) },
             HashCalcVariant::Roll => RollHashCalc::quick_insert_string(self, string),
         }
     }
 
+    #[inline(always)]
     pub(crate) fn insert_string(&mut self, string: usize, count: usize) {
         match self.hash_calc_variant {
             HashCalcVariant::Standard => StandardHashCalc::insert_string(self, string, count),
+            
+            
             HashCalcVariant::Crc32 => unsafe { Crc32HashCalc::insert_string(self, string, count) },
             HashCalcVariant::Roll => RollHashCalc::insert_string(self, string, count),
         }
     }
 
+    #[inline(always)]
     pub(crate) fn tally_lit(&mut self, unmatched: u8) -> bool {
-        self.sym_buf.push(0);
-        self.sym_buf.push(0);
-        self.sym_buf.push(unmatched);
+        Self::tally_lit_help(&mut self.sym_buf, &mut self.l_desc, unmatched)
+    }
 
-        *self.l_desc.dyn_tree[unmatched as usize].freq_mut() += 1;
+    #[inline(always)]
+    pub(crate) fn tally_lit_help(
+        sym_buf: &mut ReadBuf<'a>,
+        l_desc: &mut TreeDesc<HEAP_SIZE>,
+        unmatched: u8,
+    ) -> bool {
+        sym_buf.push_lit(unmatched);
+
+        *l_desc.dyn_tree[unmatched as usize].freq_mut() += 1;
 
         assert!(
             unmatched as usize <= STD_MAX_MATCH - STD_MIN_MATCH,
@@ -1372,7 +1399,7 @@ impl<'a> State<'a> {
         );
 
         
-        self.sym_buf.len() == self.sym_buf.capacity() - 3
+        sym_buf.len() == sym_buf.capacity() - 3
     }
 
     const fn d_code(dist: usize) -> u8 {
@@ -1380,9 +1407,9 @@ impl<'a> State<'a> {
         self::trees_tbl::DIST_CODE[index]
     }
 
+    #[inline(always)]
     pub(crate) fn tally_dist(&mut self, mut dist: usize, len: usize) -> bool {
-        let symbols = [dist as u8, (dist >> 8) as u8, len as u8];
-        self.sym_buf.extend(&symbols);
+        self.sym_buf.push_dist(dist as u16, len as u8);
 
         self.matches += 1;
         dist -= 1;
@@ -1539,7 +1566,7 @@ enum Status {
     Finish = 3,
 }
 
-const fn rank_flush(f: i32) -> i32 {
+const fn rank_flush(f: i8) -> i8 {
     
     ((f) * 2) - (if (f) > 4 { 9 } else { 0 })
 }
@@ -1573,6 +1600,7 @@ pub(crate) fn read_buf_window(stream: &mut DeflateStream, offset: usize, size: u
         
         let window = &mut stream.state.window;
         window.initialize_at_least(offset + len);
+        
         unsafe { window.copy_and_initialize(offset..offset + len, stream.next_in) };
 
         let data = &stream.state.window.filled()[offset..][..len];
@@ -1582,6 +1610,7 @@ pub(crate) fn read_buf_window(stream: &mut DeflateStream, offset: usize, size: u
         
         let window = &mut stream.state.window;
         window.initialize_at_least(offset + len);
+        
         unsafe { window.copy_and_initialize(offset..offset + len, stream.next_in) };
 
         let data = &stream.state.window.filled()[offset..][..len];
@@ -1589,6 +1618,7 @@ pub(crate) fn read_buf_window(stream: &mut DeflateStream, offset: usize, size: u
     } else {
         let window = &mut stream.state.window;
         window.initialize_at_least(offset + len);
+        
         unsafe { window.copy_and_initialize(offset..offset + len, stream.next_in) };
     }
 
@@ -1809,7 +1839,7 @@ impl StaticTreeDesc {
 }
 
 #[derive(Clone)]
-struct TreeDesc<const N: usize> {
+pub(crate) struct TreeDesc<const N: usize> {
     dyn_tree: [Value; N],
     max_code: usize,
     stat_desc: &'static StaticTreeDesc,
@@ -2380,7 +2410,7 @@ pub fn deflate(stream: &mut DeflateStream, flush: DeflateFlush) -> ReturnCode {
     }
 
     let old_flush = stream.state.last_flush;
-    stream.state.last_flush = flush as i32;
+    stream.state.last_flush = flush as i8;
 
     
     if !stream.state.bit_writer.pending.pending().is_empty() {
@@ -2401,7 +2431,7 @@ pub fn deflate(stream: &mut DeflateStream, flush: DeflateFlush) -> ReturnCode {
 
 
     } else if stream.avail_in == 0
-        && rank_flush(flush as i32) <= rank_flush(old_flush)
+        && rank_flush(flush as i8) <= rank_flush(old_flush)
         && flush != DeflateFlush::Finish
     {
         let err = ReturnCode::BufError;
@@ -2510,6 +2540,8 @@ pub fn deflate(stream: &mut DeflateStream, flush: DeflateFlush) -> ReturnCode {
 
                 let extra = unsafe {
                     core::slice::from_raw_parts(
+                        
+                        
                         gzhead_extra.add(stream.state.gzindex),
                         (gzhead.extra_len & 0xffff) as usize - stream.state.gzindex,
                     )
@@ -2526,6 +2558,7 @@ pub fn deflate(stream: &mut DeflateStream, flush: DeflateFlush) -> ReturnCode {
     if stream.state.status == Status::Name {
         if let Some(gzhead) = stream.state.gzhead.as_ref() {
             if !gzhead.name.is_null() {
+                
                 let gzhead_name = unsafe { CStr::from_ptr(gzhead.name.cast()) };
                 let bytes = gzhead_name.to_bytes_with_nul();
                 if let ControlFlow::Break(err) = flush_bytes(stream, bytes) {
@@ -2539,6 +2572,7 @@ pub fn deflate(stream: &mut DeflateStream, flush: DeflateFlush) -> ReturnCode {
     if stream.state.status == Status::Comment {
         if let Some(gzhead) = stream.state.gzhead.as_ref() {
             if !gzhead.comment.is_null() {
+                
                 let gzhead_comment = unsafe { CStr::from_ptr(gzhead.comment.cast()) };
                 let bytes = gzhead_comment.to_bytes_with_nul();
                 if let ControlFlow::Break(err) = flush_bytes(stream, bytes) {
@@ -2615,7 +2649,7 @@ pub fn deflate(stream: &mut DeflateStream, flush: DeflateFlush) -> ReturnCode {
                         
                         zng_tr_stored_block(state, 0..0, false);
 
-                        state.head.fill(0); 
+                        state.head.as_mut_slice().fill(0); 
 
                         if state.lookahead == 0 {
                             state.strstart = 0;
@@ -2688,6 +2722,7 @@ pub(crate) fn flush_pending(stream: &mut DeflateStream) {
     }
 
     trace!("\n[FLUSH {len} bytes]");
+    
     unsafe { core::ptr::copy_nonoverlapping(pending.as_ptr(), stream.next_out, len) };
 
     stream.next_out = stream.next_out.wrapping_add(len);
@@ -2702,6 +2737,7 @@ pub fn compress_slice<'a>(
     input: &[u8],
     config: DeflateConfig,
 ) -> (&'a mut [u8], ReturnCode) {
+    
     let output_uninit = unsafe {
         core::slice::from_raw_parts_mut(output.as_mut_ptr() as *mut MaybeUninit<u8>, output.len())
     };
@@ -2723,6 +2759,7 @@ pub fn compress_slice_with_flush<'a>(
     config: DeflateConfig,
     flush: DeflateFlush,
 ) -> (&'a mut [u8], ReturnCode) {
+    
     let output_uninit = unsafe {
         core::slice::from_raw_parts_mut(output.as_mut_ptr() as *mut MaybeUninit<u8>, output.len())
     };
@@ -2968,7 +3005,15 @@ impl Heap {
     }
 }
 
-pub fn set_header<'a>(
+
+
+
+
+
+
+
+
+pub unsafe fn set_header<'a>(
     stream: &mut DeflateStream<'a>,
     head: Option<&'a mut gz_header>,
 ) -> ReturnCode {
@@ -3058,6 +3103,7 @@ pub fn bound(stream: Option<&mut DeflateStream>, source_len: usize) -> usize {
                 if !c_string.is_null() {
                     loop {
                         gz_wrap_len += 1;
+                        
                         unsafe {
                             if *c_string == 0 {
                                 break;
@@ -3071,6 +3117,7 @@ pub fn bound(stream: Option<&mut DeflateStream>, source_len: usize) -> usize {
                 if !c_string.is_null() {
                     loop {
                         gz_wrap_len += 1;
+                        
                         unsafe {
                             if *c_string == 0 {
                                 break;
@@ -3174,7 +3221,7 @@ mod test {
             
             
             
-            (crate::allocate::Allocator::C.zalloc)(opaque, items, size)
+            unsafe { (crate::allocate::Allocator::C.zalloc)(opaque, items, size) }
         } else {
             core::ptr::null_mut()
         }
@@ -3675,7 +3722,7 @@ mod test {
             unreachable!()
         };
 
-        set_header(stream, Some(&mut header));
+        unsafe { set_header(stream, Some(&mut header)) };
 
         let input = b"Hello World\n";
         stream.next_in = input.as_ptr() as *mut _;
@@ -3743,7 +3790,7 @@ mod test {
             unreachable!()
         };
 
-        set_header(stream, Some(&mut header));
+        unsafe { set_header(stream, Some(&mut header)) };
 
         let input = b"Hello World\n";
         stream.next_in = input.as_ptr() as *mut _;
@@ -3804,7 +3851,7 @@ mod test {
             };
 
             assert_eq!(
-                crate::inflate::get_header(stream, Some(&mut header)),
+                unsafe { crate::inflate::get_header(stream, Some(&mut header)) },
                 ReturnCode::Ok
             );
 
@@ -3842,7 +3889,6 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn insufficient_compress_space() {
         const DATA: &[u8] = include_bytes!("deflate/test-data/inflate_buf_error.dat");
 

@@ -84,9 +84,11 @@ pub fn deflate_stored(stream: &mut DeflateStream, flush: DeflateFlush) -> BlockS
         stream.state.bit_writer.sent_bits_add(len << 3);
 
         if left > 0 {
+            
+            
+            
             let left = Ord::min(left, len);
             let src = &stream.state.window.filled()[stream.state.block_start as usize..];
-
             unsafe { core::ptr::copy_nonoverlapping(src.as_ptr(), stream.next_out, left) };
 
             stream.next_out = stream.next_out.wrapping_add(left);
@@ -120,8 +122,9 @@ pub fn deflate_stored(stream: &mut DeflateStream, flush: DeflateFlush) -> BlockS
             
             state.matches = 2; 
 
+            
+            
             let src = stream.next_in.wrapping_sub(state.w_size);
-
             unsafe { state.window.copy_and_initialize(0..state.w_size, src) };
 
             state.strstart = state.w_size;
@@ -131,10 +134,14 @@ pub fn deflate_stored(stream: &mut DeflateStream, flush: DeflateFlush) -> BlockS
                 
                 state.strstart -= state.w_size;
 
+                
+                
+                let copy = Ord::min(state.strstart, state.window.filled().len() - state.w_size);
+
                 state
                     .window
                     .filled_mut()
-                    .copy_within(state.w_size..state.w_size + state.strstart, 0);
+                    .copy_within(state.w_size..state.w_size + copy, 0);
 
                 if state.matches < 2 {
                     state.matches += 1; 
@@ -142,6 +149,8 @@ pub fn deflate_stored(stream: &mut DeflateStream, flush: DeflateFlush) -> BlockS
                 state.insert = Ord::min(state.insert, state.strstart);
             }
 
+            
+            
             let src = stream.next_in.wrapping_sub(used as usize);
             let dst = state.strstart..state.strstart + used as usize;
             unsafe { state.window.copy_and_initialize(dst, src) };
@@ -172,10 +181,15 @@ pub fn deflate_stored(stream: &mut DeflateStream, flush: DeflateFlush) -> BlockS
         let state = &mut stream.state;
         state.block_start -= state.w_size as isize;
         state.strstart -= state.w_size;
+
+        
+        
+        let copy = Ord::min(state.strstart, state.window.filled().len() - state.w_size);
+
         state
             .window
             .filled_mut()
-            .copy_within(state.w_size..state.w_size + state.strstart, 0);
+            .copy_within(state.w_size..state.w_size + copy, 0);
 
         if state.matches < 2 {
             
@@ -243,6 +257,8 @@ fn read_buf_direct_copy(stream: &mut DeflateStream, size: usize) -> usize {
 
     stream.avail_in -= len as u32;
 
+    
+    
     if stream.state.wrap == 2 {
         
         
