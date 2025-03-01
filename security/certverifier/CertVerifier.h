@@ -70,6 +70,16 @@ enum class CRLiteMode {
   ConfirmRevocations = 3,
 };
 
+enum class VerifyUsage {
+  TLSServer = 1,
+  TLSServerCA = 2,
+  TLSClient = 3,
+  TLSClientCA = 4,
+  EmailSigner = 5,
+  EmailRecipient = 6,
+  EmailCA = 7,
+};
+
 enum class NetscapeStepUpPolicy : uint32_t;
 
 
@@ -186,7 +196,7 @@ class CertVerifier {
   
   
   mozilla::pkix::Result VerifyCert(
-      const nsTArray<uint8_t>& certBytes, SECCertificateUsage usage,
+      const nsTArray<uint8_t>& certBytes, VerifyUsage usage,
       mozilla::pkix::Time time, void* pinArg, const char* hostname,
        nsTArray<nsTArray<uint8_t>>& builtChain, Flags flags = 0,
       
