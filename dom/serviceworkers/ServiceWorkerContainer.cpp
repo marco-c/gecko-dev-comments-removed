@@ -43,7 +43,6 @@
 #include "mozilla/ipc/PBackgroundChild.h"
 
 
-
 #ifdef DispatchMessage
 #  undef DispatchMessage
 #endif
