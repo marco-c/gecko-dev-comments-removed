@@ -39,6 +39,12 @@ class DurationFormatObject : public NativeObject {
 [[nodiscard]] extern bool intl_GetTimeSeparator(JSContext* cx, unsigned argc,
                                                 Value* vp);
 
+
+
+
+[[nodiscard]] extern bool TemporalDurationToLocaleString(
+    JSContext* cx, const JS::CallArgs& args);
+
 }  
 
 #endif 
