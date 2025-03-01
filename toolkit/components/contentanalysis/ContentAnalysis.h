@@ -463,15 +463,18 @@ class ContentAnalysisResponse final : public nsIContentAnalysisResponse {
   ContentAnalysisResponse(const ContentAnalysisResponse&) = delete;
   ContentAnalysisResponse& operator=(ContentAnalysisResponse&) = delete;
   explicit ContentAnalysisResponse(
-      content_analysis::sdk::ContentAnalysisResponse&& aResponse);
-  ContentAnalysisResponse(Action aAction, const nsACString& aRequestToken);
+      content_analysis::sdk::ContentAnalysisResponse&& aResponse,
+      const nsCString& aUserActionId);
+  ContentAnalysisResponse(Action aAction, const nsACString& aRequestToken,
+                          const nsACString& aUserActionId);
 
   
   template <typename T, typename... Args>
   friend RefPtr<T> mozilla::MakeRefPtr(Args&&...);
 
   static already_AddRefed<ContentAnalysisResponse> FromProtobuf(
-      content_analysis::sdk::ContentAnalysisResponse&& aResponse);
+      content_analysis::sdk::ContentAnalysisResponse&& aResponse,
+      const nsCString& aUserActionId);
 
   void ResolveWarnAction(bool aAllowContent);
 
@@ -480,6 +483,7 @@ class ContentAnalysisResponse final : public nsIContentAnalysisResponse {
 
   
   nsCString mRequestToken;
+  nsCString mUserActionId;
 
   
   
