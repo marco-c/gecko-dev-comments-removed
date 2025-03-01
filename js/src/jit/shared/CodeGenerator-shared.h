@@ -423,6 +423,19 @@ class OutOfLineCode : public TempObject,
 };
 
 
+
+template <typename Func>
+class LambdaOutOfLineCode : public OutOfLineCode {
+  Func generateFunc_;
+
+ public:
+  explicit LambdaOutOfLineCode(Func generateFunc)
+      : generateFunc_(std::move(generateFunc)) {}
+
+  void generate(CodeGeneratorShared*) override { generateFunc_(*this); }
+};
+
+
 template <typename T>
 class OutOfLineCodeBase : public OutOfLineCode {
  public:
