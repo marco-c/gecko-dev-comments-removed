@@ -110,6 +110,7 @@ EditingSession.prototype = {
       
       
       const modifications = this._rules[0].startModifyingProperties(
+        this._inspector.panelWin,
         this._inspector.cssProperties
       );
 
@@ -148,6 +149,7 @@ EditingSession.prototype = {
     
     for (const [property, value] of this._modifications) {
       const modifications = this._rules[0].startModifyingProperties(
+        this._inspector.panelWin,
         this._inspector.cssProperties
       );
 

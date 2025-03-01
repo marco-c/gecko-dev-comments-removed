@@ -52,9 +52,16 @@ class StyleRuleFront extends FrontClassWithSpec(styleRuleSpec) {
 
 
 
-  startModifyingProperties(cssProperties) {
+
+
+  startModifyingProperties(win, cssProperties) {
     if (this.canSetRuleText) {
-      return new RuleRewriter(cssProperties.isKnown, this, this.authoredText);
+      return new RuleRewriter(
+        win,
+        cssProperties.isKnown,
+        this,
+        this.authoredText
+      );
     }
     return new RuleModificationList(this);
   }

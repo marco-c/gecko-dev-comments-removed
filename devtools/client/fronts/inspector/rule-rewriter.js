@@ -80,7 +80,9 @@ class RuleRewriter {
 
 
 
-  constructor(isCssPropertyKnown, rule, inputString) {
+
+  constructor(win, isCssPropertyKnown, rule, inputString) {
+    this.win = win;
     this.rule = rule;
     this.isCssPropertyKnown = isCssPropertyKnown;
     
@@ -578,11 +580,45 @@ class RuleRewriter {
         " */";
     }
 
-    this.result += newIndentation + newText;
-    if (this.hasNewLine) {
-      this.result += "\n";
+    newText = `${newIndentation}${newText}${this.hasNewLine ? "\n" : ""}${savedWhitespace}`;
+
+    
+    
+    
+    
+    let nestedDeclarationIndex = -1;
+    
+    if (this.result.includes("{")) {
+      
+      const dummySheet = new this.win.CSSStyleSheet();
+      dummySheet.replaceSync(":root {\n" + this.result + "}");
+      const dummyRule = dummySheet.cssRules[0];
+      if (dummyRule.cssRules.length) {
+        const nestedRule = dummyRule.cssRules[0];
+        const nestedRuleLine = InspectorUtils.getRelativeRuleLine(nestedRule);
+        const nestedRuleColumn = InspectorUtils.getRuleColumn(nestedRule);
+        
+        
+        const actualLine = nestedRuleLine - 2;
+        const actualColumn = nestedRuleColumn - 1;
+
+        let lineOffset = 0;
+        for (let i = 0; i < actualLine; i++) {
+          lineOffset = this.result.indexOf("\n", lineOffset);
+        }
+
+        nestedDeclarationIndex = lineOffset + actualColumn;
+      }
     }
-    this.result += savedWhitespace;
+
+    if (nestedDeclarationIndex == -1) {
+      this.result += newText;
+    } else {
+      this.result =
+        this.result.substring(0, nestedDeclarationIndex) +
+        newText +
+        this.result.substring(nestedDeclarationIndex);
+    }
 
     if (this.decl) {
       
