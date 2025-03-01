@@ -1816,6 +1816,17 @@ void ContentAnalysis::NotifyResponseObservers(
     
     nsCString requestToken;
     MOZ_ALWAYS_SUCCEEDS(aResponse->GetRequestToken(requestToken));
+
+    
+    
+    
+    if (auto entry = mUserActionMap.Lookup(aUserActionId)) {
+      if (entry->mTimeoutRunnable && !entry->mIsHandlingTimeout) {
+        entry->mTimeoutRunnable->Cancel();
+        entry->mTimeoutRunnable = nullptr;
+      }
+    }
+
     mWarnResponseDataMap.InsertOrUpdate(
         requestToken, WarnResponseData{aResponse, std::move(aUserActionId),
                                        aAutoAcknowledge});
