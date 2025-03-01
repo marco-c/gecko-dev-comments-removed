@@ -340,7 +340,7 @@ class RacyFeatures {
   
   
   
-  static Atomic<uint32_t, MemoryOrdering::Relaxed> sActiveAndFeatures;
+  MFBT_DATA static Atomic<uint32_t, MemoryOrdering::Relaxed> sActiveAndFeatures;
 };
 
 MFBT_API bool IsThreadBeingProfiled();
