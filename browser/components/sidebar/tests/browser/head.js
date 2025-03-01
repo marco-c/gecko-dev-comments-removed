@@ -142,6 +142,26 @@ async function toggleSidebarPanel(win, commandID) {
   await promiseFocused;
 }
 
+async function waitForTabstripOrientation(
+  toOrientation = "vertical",
+  win = window
+) {
+  await win.SidebarController.promiseInitialized;
+  
+  
+  info(
+    `waitForTabstripOrientation: waiting for orient attribute to be "${toOrientation}"`
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    win.gBrowser.tabContainer,
+    { attributes: true, attributeFilter: ["orient"] },
+    () => win.gBrowser.tabContainer.getAttribute("orient") == toOrientation
+  );
+  
+  
+  await win.SidebarController.sidebarMain?.updateComplete;
+}
+
 
 registerCleanupFunction(() => {
   Services.fog.testResetFOG();
