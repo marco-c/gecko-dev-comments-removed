@@ -41,6 +41,15 @@ void js::PopsOptimizedGetIteratorFuse::popFuse(JSContext* cx,
   realmFuses.optimizeGetIteratorFuse.popFuse(cx, realmFuses);
 }
 
+void js::PopsOptimizedArrayIteratorPrototypeFuse::popFuse(
+    JSContext* cx, RealmFuses& realmFuses) {
+  
+  RealmFuse::popFuse(cx);
+
+  
+  realmFuses.optimizeArrayIteratorPrototypeFuse.popFuse(cx, realmFuses);
+}
+
 int32_t js::RealmFuses::fuseOffsets[uint8_t(
     RealmFuses::FuseIndex::LastFuseIndex)] = {
 #define FUSE(Name, LowerName) offsetof(RealmFuses, LowerName),
@@ -76,6 +85,15 @@ const char* js::RealmFuses::getFuseName(RealmFuses::FuseIndex index) {
   return fuseNames[rawIndex];
 }
 
+bool js::OptimizeGetIteratorFuse::checkInvariant(JSContext* cx) {
+  
+  
+  
+  auto& realmFuses = cx->realm()->realmFuses;
+  return realmFuses.arrayPrototypeIteratorFuse.intact() &&
+         realmFuses.optimizeArrayIteratorPrototypeFuse.intact();
+}
+
 void js::OptimizeGetIteratorFuse::popFuse(JSContext* cx,
                                           RealmFuses& realmFuses) {
   InvalidatingRealmFuse::popFuse(cx, realmFuses);
@@ -84,13 +102,12 @@ void js::OptimizeGetIteratorFuse::popFuse(JSContext* cx,
                                JSUseCounter::OPTIMIZE_GET_ITERATOR_FUSE);
 }
 
-bool js::OptimizeGetIteratorFuse::checkInvariant(JSContext* cx) {
+bool js::OptimizeArrayIteratorPrototypeFuse::checkInvariant(JSContext* cx) {
   
   
   
   auto& realmFuses = cx->realm()->realmFuses;
-  return realmFuses.arrayPrototypeIteratorFuse.intact() &&
-         realmFuses.arrayPrototypeIteratorNextFuse.intact() &&
+  return realmFuses.arrayPrototypeIteratorNextFuse.intact() &&
          realmFuses.arrayIteratorPrototypeHasNoReturnProperty.intact() &&
          realmFuses.iteratorPrototypeHasNoReturnProperty.intact() &&
          realmFuses.arrayIteratorPrototypeHasIteratorProto.intact() &&
