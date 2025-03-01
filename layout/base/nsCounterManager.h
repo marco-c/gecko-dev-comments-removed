@@ -219,6 +219,10 @@ class nsCounterList : public nsGenConList {
     MOZ_ASSERT(aScope);
   }
 
+#if defined(DEBUG) || defined(MOZ_LAYOUT_DEBUGGER)
+  void Dump();
+#endif
+
   
   nsCounterNode* GetFirstNodeFor(nsIFrame* aFrame) const {
     return static_cast<nsCounterNode*>(nsGenConList::GetFirstNodeFor(aFrame));
