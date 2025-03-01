@@ -3,13 +3,27 @@
 
 
 
+#include "nsISupports.h"
+#include "mozilla/Components.h"
+#include "mozilla/ModuleUtils.h"
+#include "mozilla/WidgetUtils.h"
+
+#include "nsWidgetsCID.h"
+
 #include "nsAppShell.h"
 #include "nsAppShellSingleton.h"
 #include "nsLookAndFeel.h"
-#include "nsWidgetFactory.h"
-#include "mozilla/WidgetUtils.h"
 
+#include "HeadlessClipboard.h"
+
+using namespace mozilla;
 using namespace mozilla::widget;
+
+NS_IMPL_COMPONENT_FACTORY(nsIClipboard) {
+  nsCOMPtr<nsIClipboard> inst = new HeadlessClipboard();
+
+  return inst.forget();
+}
 
 void nsWidgetUIKitModuleCtor() { nsAppShellInit(); }
 
