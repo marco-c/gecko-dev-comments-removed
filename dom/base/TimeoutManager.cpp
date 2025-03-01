@@ -25,7 +25,6 @@
 #include "mozilla/net/WebSocketEventService.h"
 #include "mozilla/MediaManager.h"
 #include "mozilla/dom/WorkerScope.h"
-#include "mozilla/dom/WebTaskScheduler.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -663,17 +662,6 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
     return;
   }
 
-  if (!GetInnerWindow()) {
-    
-    
-    
-    
-    if (mGlobalObject.HasScheduledNormalOrHighPriorityWebTasks()) {
-      MOZ_ALWAYS_SUCCEEDS(MaybeSchedule(aNow));
-      return;
-    }
-  }
-
   Timeouts& timeouts(aProcessIdle ? mIdleTimeouts : mTimeouts);
 
   
@@ -975,12 +963,8 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
       }
       
       
-      
-      
-      
       TimeDuration elapsed = now - start;
-      if (elapsed >= totalTimeLimit ||
-          mGlobalObject.HasScheduledNormalOrHighPriorityWebTasks()) {
+      if (elapsed >= totalTimeLimit) {
         
         
         

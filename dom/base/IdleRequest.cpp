@@ -13,7 +13,6 @@
 #include "mozilla/dom/WindowBinding.h"
 #include "nsComponentManagerUtils.h"
 #include "nsPIDOMWindow.h"
-#include "mozilla/dom/WebTaskScheduler.h"
 
 namespace mozilla::dom {
 
@@ -55,20 +54,7 @@ void IdleRequest::IdleRun(nsPIDOMWindowInner* aWindow,
       new IdleDeadline(aWindow, aDidTimeout, aDeadline);
   RefPtr<IdleRequestCallback> callback(std::move(mCallback));
   MOZ_ASSERT(!mCallback);
-
-  RefPtr<nsGlobalWindowInner> innerWindow = nsGlobalWindowInner::Cast(aWindow);
-  
-  
-  RefPtr<WebTaskSchedulingState> newState = new WebTaskSchedulingState();
-  
-  
-  newState->SetPrioritySource(
-      new TaskSignal(aWindow->AsGlobal(), TaskPriority::Background));
-  
-  innerWindow->SetWebTaskSchedulingState(newState);
   callback->Call(*deadline, "requestIdleCallback handler");
-  
-  innerWindow->SetWebTaskSchedulingState(nullptr);
 }
 
 }  
