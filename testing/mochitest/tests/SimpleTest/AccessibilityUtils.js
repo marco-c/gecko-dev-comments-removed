@@ -124,6 +124,10 @@ this.AccessibilityUtils = (function () {
   };
 
   
+  
+  let SimpleTest = null;
+
+  
 
 
 
@@ -753,7 +757,7 @@ this.AccessibilityUtils = (function () {
 
 
   function a11yFail(message, { DOMNode }) {
-    SpecialPowers.SimpleTest.ok(false, buildMessage(message, DOMNode));
+    SimpleTest.ok(false, buildMessage(message, DOMNode));
   }
 
   
@@ -766,7 +770,7 @@ this.AccessibilityUtils = (function () {
 
 
   function a11yWarn(message, { DOMNode }) {
-    SpecialPowers.SimpleTest.todo(false, buildMessage(message, DOMNode));
+    SimpleTest.todo(false, buildMessage(message, DOMNode));
   }
 
   
@@ -1208,7 +1212,7 @@ this.AccessibilityUtils = (function () {
       this.resetEnv();
     },
 
-    init() {
+    init(simpleTest) {
       this._shouldHandleClicks = true;
       
       
@@ -1216,11 +1220,13 @@ this.AccessibilityUtils = (function () {
       this._handler ??=
         window.docShell.chromeEventHandler ?? window.docShell.domWindow;
       this._handler.addEventListener("click", this, true, true);
+      SimpleTest = simpleTest;
     },
 
     uninit() {
       this._handler?.removeEventListener("click", this, true);
       this._handler = null;
+      SimpleTest = null;
     },
 
     

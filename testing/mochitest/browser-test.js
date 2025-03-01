@@ -181,17 +181,6 @@ function Tester(aTests, structuredLogger, aCallback) {
     this.EventUtils
   );
 
-  this._scriptLoader.loadSubScript(
-    "chrome://mochikit/content/tests/SimpleTest/AccessibilityUtils.js",
-    
-    
-    
-    this.EventUtils
-  );
-  this.AccessibilityUtils = this.EventUtils.AccessibilityUtils;
-
-  this.AccessibilityUtils.init();
-
   
   
   
@@ -214,6 +203,17 @@ function Tester(aTests, structuredLogger, aCallback) {
 
   window.SpecialPowers.SimpleTest = this.SimpleTest;
   window.SpecialPowers.setAsDefaultAssertHandler();
+
+  this._scriptLoader.loadSubScript(
+    "chrome://mochikit/content/tests/SimpleTest/AccessibilityUtils.js",
+    
+    
+    
+    this.EventUtils
+  );
+  this.AccessibilityUtils = this.EventUtils.AccessibilityUtils;
+
+  this.AccessibilityUtils.init(this.SimpleTest);
 
   var extensionUtilsScope = {
     registerCleanupFunction: fn => {
