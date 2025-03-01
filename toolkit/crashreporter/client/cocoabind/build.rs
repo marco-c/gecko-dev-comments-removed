@@ -2,7 +2,7 @@
 
 
 
-use mozbuild::config::CC_BASE_FLAGS as CFLAGS;
+use mozbuild::config::BINDGEN_SYSTEM_FLAGS as CFLAGS;
 
 const TYPES: &[&str] = &[
     "ActionCell",
