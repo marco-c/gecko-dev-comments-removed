@@ -802,6 +802,11 @@ WebConsoleCommandsManager.register({
       } else if (typeof value == "string") {
         payload = value;
       } else {
+        
+        
+        if (value && Cu) {
+          value = Cu.waiveXrays(value);
+        }
         payload = JSON.stringify(value, null, "  ");
       }
     } catch (ex) {
