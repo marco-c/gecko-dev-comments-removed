@@ -90,14 +90,8 @@ add_task(async function () {
 
   
   const rect = gridRuleProperty.getBoundingClientRect();
-  const previousProperty = await getRuleViewProperty(
-    view,
-    "#testid",
-    "display"
-  ).nameSpan.getBoundingClientRect();
-
   const x = rect.width / 2;
-  const y = rect.y - previousProperty.y + 1;
+  const y = rect.height / 2;
 
   info("Focusing the css property editable value");
   await focusEditableField(view, gridRuleProperty, x, y);
