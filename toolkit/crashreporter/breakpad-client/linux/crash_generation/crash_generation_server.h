@@ -85,6 +85,9 @@ public:
   void Stop();
 
   
+  void SetPath(const char* dump_path);
+
+  
   
   
   
@@ -123,6 +126,7 @@ private:
 
   bool generate_dumps_;
 
+  pthread_mutex_t dump_dir_mutex_;
   string dump_dir_;
 
   bool started_;

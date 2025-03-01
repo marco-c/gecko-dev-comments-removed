@@ -165,9 +165,6 @@ nsresult UnregisterAppMemory(void* ptr);
 
 void SetIncludeContextHeap(bool aValue);
 
-void GetAnnotation(ProcessId childPid, Annotation annotation,
-                   nsACString& outStr);
-
 
 typedef mozilla::EnumeratedArray<Annotation, nsCString,
                                  size_t(Annotation::Count)>
@@ -200,25 +197,7 @@ nsresult AppendObjCExceptionInfoToAppNotes(void* inException);
 nsresult GetSubmitReports(bool* aSubmitReport);
 nsresult SetSubmitReports(bool aSubmitReport);
 
-#ifdef XP_WIN
 
-
-
-struct WindowsErrorReportingData {
-  
-  DWORD mChildPid;
-  
-  char mMinidumpFile[40];
-};
-#endif  
-
-
-
-
-
-
-
-void OOPInit();
 
 
 
@@ -272,7 +251,7 @@ bool CreateMinidumpsAndPair(ProcessHandle aTargetPid,
                             AnnotationTable& aTargetAnnotations,
                             nsIFile** aTargetDumpOut);
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_IOS)
 using CrashPipeType = const char*;
 #else
 using CrashPipeType = mozilla::UniqueFileHandle;
@@ -281,8 +260,18 @@ using CrashPipeType = mozilla::UniqueFileHandle;
 
 CrashPipeType GetChildNotificationPipe();
 
+#if defined(XP_LINUX)
 
-bool SetRemoteExceptionHandler(CrashPipeType aCrashPipe);
+
+
+
+MOZ_EXPORT ProcessId GetCrashHelperPid();
+
+#endif  
+
+
+MOZ_EXPORT bool SetRemoteExceptionHandler(CrashPipeType aCrashPipe,
+                                          ProcessId aCrashHelperPid = 0);
 bool UnsetRemoteExceptionHandler(bool wasSet = true);
 
 }  
