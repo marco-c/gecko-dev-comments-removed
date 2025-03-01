@@ -2664,14 +2664,16 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     
     metrics.mOffset.top = metrics.mCaptionHeight;
 
-    if (mozilla::Maybe<UINT> maybeEdge = GetHiddenTaskbarEdge()) {
-      auto edge = maybeEdge.value();
-      if (ABE_LEFT == edge) {
-        metrics.mOffset.left -= kHiddenTaskbarSize;
-      } else if (ABE_RIGHT == edge) {
-        metrics.mOffset.right -= kHiddenTaskbarSize;
-      } else if (ABE_BOTTOM == edge || ABE_TOP == edge) {
-        metrics.mOffset.bottom -= kHiddenTaskbarSize;
+    if (StaticPrefs::widget_windows_hidden_taskbar_hack_size()) {
+      if (mozilla::Maybe<UINT> maybeEdge = GetHiddenTaskbarEdge()) {
+        auto edge = maybeEdge.value();
+        if (ABE_LEFT == edge) {
+          metrics.mOffset.left -= kHiddenTaskbarSize;
+        } else if (ABE_RIGHT == edge) {
+          metrics.mOffset.right -= kHiddenTaskbarSize;
+        } else if (ABE_BOTTOM == edge || ABE_TOP == edge) {
+          metrics.mOffset.bottom -= kHiddenTaskbarSize;
+        }
       }
     }
   } else if (mPIPWindow &&
@@ -2682,9 +2684,11 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   }
 
   UpdateOpaqueRegionInternal();
-  
-  
-  mNeedsNCAreaClear = true;
+  if (StaticPrefs::widget_windows_hidden_taskbar_hack_paint()) {
+    
+    
+    mNeedsNCAreaClear = true;
+  }
 
   if (aReflowWindow) {
     
