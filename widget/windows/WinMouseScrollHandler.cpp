@@ -82,6 +82,9 @@ class MouseScrollHandler::SynthesizingEvent {
                       WPARAM aWParam, LPARAM aLParam,
                       const BYTE (&aKeyStates)[256]);
 
+  void NotifyMessageReceived(nsWindow* aExpectedWindow, UINT msg, WPARAM wParam,
+                             LPARAM lParam);
+
   void NotifyMessageHandlingFinished();
 
   const POINTS& GetCursorPoint() const { return mCursorPoint; }
@@ -224,6 +227,13 @@ bool MouseScrollHandler::ProcessMouseMessage(UINT msg, WPARAM wParam,
   
   
   nsWindow* const destWindow = FindTargetWindow(msg, wParam, lParam);
+
+  
+  
+  if (auto* synth = GetActiveSynthEvent()) {
+    synth->NotifyMessageReceived(destWindow, msg, wParam, lParam);
+  }
+
   if (!destWindow) {
     
     aResult.mConsumed = false;
@@ -1565,12 +1575,49 @@ nsresult MouseScrollHandler::SynthesizingEvent::Synthesize(
   ::SetKeyboardState(mKeyState);
 
   mStatus = SENDING_MESSAGE;
+  mWnd = aWnd;
+  mMessage = aMessage;
+  mWParam = aWParam;
+  mLParam = aLParam;
 
   
   
   ::SendMessage(aWnd, aMessage, aWParam, aLParam);
 
   return NS_OK;
+}
+
+void MouseScrollHandler::SynthesizingEvent::NotifyMessageReceived(
+    nsWindow* aWindow, UINT msg, WPARAM wParam, LPARAM lParam) {
+  MOZ_ASSERT(mStatus != NOT_SYNTHESIZING);
+
+  
+  HWND handle = aWindow ? aWindow->GetWindowHandle() : nullptr;
+  nsWindow* widget [[maybe_unused]] = WinUtils::GetNSWindowPtr(mWnd);
+
+  if (mStatus == SENDING_MESSAGE && aWindow == widget && mWnd == handle &&
+      mMessage == msg && mWParam == wParam && mLParam == lParam) {
+    
+    MOZ_LOG(
+        gMouseScrollLog, LogLevel::Debug,
+        ("MouseScrollHandler::SynthesizingEvent::NotifyMessageReceived(): OK"));
+    return;
+  }
+
+  
+  MOZ_LOG(gMouseScrollLog, LogLevel::Info,
+          ("MouseScrollHandler::SynthesizingEvent::NotifyMessageReceived(): "
+           "handle=[0x%p vs. 0x%p], widget=[%p vs. %p], "
+           "msg=[0x%04X vs. 0x%04X], wParam=[0x%08zX vs. 0x%08zX], "
+           "lParam=[0x%08" PRIXLPTR "vs. 0x%08" PRIXLPTR "], mStatus=%s",
+           handle, mWnd, aWindow, widget, msg, mMessage, wParam, mWParam,
+           lParam, mLParam, GetStatusName()));
+
+  
+  
+  
+  
+  Finish();
 }
 
 void MouseScrollHandler::SynthesizingEvent::NotifyMessageHandlingFinished() {
@@ -1593,6 +1640,10 @@ void MouseScrollHandler::SynthesizingEvent::Finish() {
   ::SetKeyboardState(mOriginalKeyState);
 
   mStatus = NOT_SYNTHESIZING;
+  mWnd = nullptr;
+  mMessage = 0;
+  mWParam = 0;
+  mLParam = 0;
 }
 
 }  
