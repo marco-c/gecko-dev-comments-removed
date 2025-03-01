@@ -193,6 +193,7 @@ add_setup(async function () {
       ["security.mixed_content.block_active_content", false],
       
       ["dom.security.https_first", false],
+      ["browser.safebrowsing.only_top_level", false],
     ],
   });
 });

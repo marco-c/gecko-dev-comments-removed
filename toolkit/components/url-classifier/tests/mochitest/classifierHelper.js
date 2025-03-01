@@ -51,9 +51,6 @@ classifierHelper.allowCompletion = async function (lists, url) {
   }
 
   
-  gOriginalGetHashURL = SpecialPowers.getCharPref(PREFS.PROVIDER_GETHASHURL);
-
-  
   await SpecialPowers.setCharPref(PREFS.PROVIDER_GETHASHURL, url);
 };
 
@@ -181,6 +178,9 @@ classifierHelper._setup = function () {
   gScript.addMessageListener("updateSuccess", classifierHelper._updateSuccess);
   gScript.addMessageListener("updateError", classifierHelper._updateError);
   gScript.addMessageListener("safeBrowsingInited", classifierHelper._inited);
+
+  
+  gOriginalGetHashURL = SpecialPowers.getCharPref(PREFS.PROVIDER_GETHASHURL);
 
   
   SimpleTest.registerCleanupFunction(classifierHelper._cleanup);

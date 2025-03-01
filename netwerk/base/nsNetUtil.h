@@ -1033,9 +1033,15 @@ nsresult NS_GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI);
 nsresult NS_CompareLoadInfoAndLoadContext(nsIChannel* aChannel);
 
 
+enum class ClassifyType : uint8_t {
+  SafeBrowsing,  
+  ETP,           
+};
 
 
-bool NS_ShouldClassifyChannel(nsIChannel* aChannel);
+
+
+bool NS_ShouldClassifyChannel(nsIChannel* aChannel, ClassifyType aType);
 
 
 

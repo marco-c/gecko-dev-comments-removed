@@ -3288,7 +3288,12 @@ bool NS_IsOffline() {
 
 
 
-bool NS_ShouldClassifyChannel(nsIChannel* aChannel) {
+
+
+
+
+
+bool NS_ShouldClassifyChannel(nsIChannel* aChannel, ClassifyType aType) {
   nsLoadFlags loadFlags;
   Unused << aChannel->GetLoadFlags(&loadFlags);
   
@@ -3313,6 +3318,14 @@ bool NS_ShouldClassifyChannel(nsIChannel* aChannel) {
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   ExtContentPolicyType type = loadInfo->GetExternalContentPolicyType();
+
+  
+  if (aType == ClassifyType::SafeBrowsing &&
+      (StaticPrefs::browser_safebrowsing_only_top_level() &&
+       ExtContentPolicy::TYPE_DOCUMENT != type)) {
+    return false;
+  }
+
   
   
   return !(loadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
