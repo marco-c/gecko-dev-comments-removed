@@ -392,20 +392,20 @@ async function doSuggestVisibilityTest({
 
   
   await openPreferencesViaOpenPreferencesAPI(pane, { leaveOpen: true });
-  assertSuggestVisibility(initialExpected);
+  await assertSuggestVisibility(initialExpected);
 
   
   await QuickSuggestTestUtils.withExperiment({
     valueOverrides: nimbusVariables,
     callback: async () => {
       
-      assertSuggestVisibility(newExpected);
+      await assertSuggestVisibility(newExpected);
 
       
       
       gBrowser.removeCurrentTab();
       await openPreferencesViaOpenPreferencesAPI(pane, { leaveOpen: true });
-      assertSuggestVisibility(newExpected);
+      await assertSuggestVisibility(newExpected);
     },
   });
 
@@ -425,22 +425,27 @@ async function doSuggestVisibilityTest({
 
 
 
-function assertSuggestVisibility(expectedByElementId) {
+async function assertSuggestVisibility(expectedByElementId) {
   let doc = gBrowser.selectedBrowser.contentDocument;
   for (let [elementId, { isVisible, l10nId }] of Object.entries(
     expectedByElementId
   )) {
     let element = doc.getElementById(elementId);
+    await TestUtils.waitForCondition(
+      () => BrowserTestUtils.isVisible(element) == isVisible,
+      "Waiting for element visbility: " +
+        JSON.stringify({ elementId, isVisible })
+    );
     Assert.strictEqual(
       BrowserTestUtils.isVisible(element),
       isVisible,
-      "The element should be visible as expected"
+      "Element should have expected visibility: " + elementId
     );
     if (l10nId) {
       Assert.equal(
         element.dataset.l10nId,
         l10nId,
-        "The l10n ID should be correct for element " + elementId
+        "The l10n ID should be correct for element: " + elementId
       );
     }
   }
