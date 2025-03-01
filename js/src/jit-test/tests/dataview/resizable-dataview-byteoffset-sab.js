@@ -1,5 +1,3 @@
-
-
 function testResizableArrayBufferAutoLength() {
   for (let i = 0; i < 4; ++i) {
     let sab = new SharedArrayBuffer(i, {maxByteLength: i + 100});

@@ -16,7 +16,6 @@
 
 
 
-
 function CreateSourceProxy(length, rab, resizeTo) {
   return new Proxy({}, {
     get(target, prop, receiver) {

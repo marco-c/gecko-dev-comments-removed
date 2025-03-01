@@ -1,7 +1,5 @@
 
 
-
-
 function testSharedArrayBuffer() {
     function test() {
         var N = 200;

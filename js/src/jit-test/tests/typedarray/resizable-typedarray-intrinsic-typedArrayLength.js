@@ -1,5 +1,3 @@
-
-
 load(libdir + "asserts.js");
 
 const TypedArrayLength = getSelfHostedValue("TypedArrayLength");

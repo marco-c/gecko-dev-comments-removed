@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   typeof TypedArray.prototype.values,
   'function',

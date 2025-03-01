@@ -22,7 +22,6 @@
 
 
 
-
 verifyProperty(ArrayBuffer.prototype.resize, 'length', {
   value: 1,
   enumerable: false,

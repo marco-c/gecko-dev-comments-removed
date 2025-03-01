@@ -10,7 +10,6 @@
 
 
 
-
 const oldNumberPrototypeToLocaleString = Number.prototype.toLocaleString;
 const oldBigIntPrototypeToLocaleString = BigInt.prototype.toLocaleString;
 

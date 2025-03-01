@@ -1,5 +1,3 @@
-
-
 var gsab = new SharedArrayBuffer(4, {maxByteLength: 16});
 
 

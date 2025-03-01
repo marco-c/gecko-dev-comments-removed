@@ -23,7 +23,6 @@
 
 
 
-
 let newTarget = Object.defineProperty(function(){}.bind(null), "prototype", {
   get() {
     throw new Test262Error();

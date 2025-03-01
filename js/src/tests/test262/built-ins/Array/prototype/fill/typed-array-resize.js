@@ -10,11 +10,20 @@
 
 
 
-function TypedArrayFillHelper(ta, n, start, end) {
+function ReadDataFromBuffer(ab, ctor) {
+  let result = [];
+  const ta = new ctor(ab, 0, ab.byteLength / ctor.BYTES_PER_ELEMENT);
+  for (let item of ta) {
+    result.push(Number(item));
+  }
+  return result;
+}
+
+function ArrayFillHelper(ta, n, start, end) {
   if (ta instanceof BigInt64Array || ta instanceof BigUint64Array) {
-    ta.fill(BigInt(n), start, end);
+    Array.prototype.fill.call(ta, BigInt(n), start, end);
   } else {
-    ta.fill(n, start, end);
+    Array.prototype.fill.call(ta, n, start, end);
   }
 }
 
@@ -27,9 +36,11 @@ for (let ctor of ctors) {
       return 3;
     }
   };
-  assert.throws(TypeError, () => {
-    TypedArrayFillHelper(fixedLength, evil, 1, 2);
-  });
+  ArrayFillHelper(fixedLength, evil, 1, 2);
+  assert.compareArray(ReadDataFromBuffer(rab, ctor), [
+    0,
+    0
+  ]);
 }
 for (let ctor of ctors) {
   const rab = CreateResizableArrayBuffer(4 * ctor.BYTES_PER_ELEMENT, 8 * ctor.BYTES_PER_ELEMENT);
@@ -40,9 +51,11 @@ for (let ctor of ctors) {
       return 1;
     }
   };
-  assert.throws(TypeError, () => {
-    TypedArrayFillHelper(fixedLength, 3, evil, 2);
-  });
+  ArrayFillHelper(fixedLength, 3, evil, 2);
+  assert.compareArray(ReadDataFromBuffer(rab, ctor), [
+    0,
+    0
+  ]);
 }
 for (let ctor of ctors) {
   const rab = CreateResizableArrayBuffer(4 * ctor.BYTES_PER_ELEMENT, 8 * ctor.BYTES_PER_ELEMENT);
@@ -53,9 +66,11 @@ for (let ctor of ctors) {
       return 2;
     }
   };
-  assert.throws(TypeError, () => {
-    TypedArrayFillHelper(fixedLength, 3, 1, evil);
-  });
+  ArrayFillHelper(fixedLength, 3, 1, evil);
+  assert.compareArray(ReadDataFromBuffer(rab, ctor), [
+    0,
+    0
+  ]);
 }
 
 reportCompare(0, 0);

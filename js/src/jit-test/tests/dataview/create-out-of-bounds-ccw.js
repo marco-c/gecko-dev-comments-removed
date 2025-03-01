@@ -1,7 +1,5 @@
 
 
-
-
 let g = newGlobal();
 
 let rab = new g.ArrayBuffer(10, {maxByteLength: 10});

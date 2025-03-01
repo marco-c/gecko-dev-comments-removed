@@ -10,7 +10,6 @@
 
 
 
-
 const rab = CreateResizableArrayBuffer(16, 40);
 const i8a = new Int8Array(rab, 0, 4);
 i8a.__proto__ = { 2: 'wrong value' };

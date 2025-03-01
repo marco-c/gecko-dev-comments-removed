@@ -10,7 +10,6 @@
 
 
 
-
 function ResizeAndCompare(rab, resizeTo) {
   return (a, b) => {
     rab.resize(resizeTo);

@@ -12,7 +12,6 @@
 
 
 
-
 function CreateSourceProxy(length, rab, resizeAt, resizeTo) {
   let requestedIndices = [];
   return new Proxy({}, {

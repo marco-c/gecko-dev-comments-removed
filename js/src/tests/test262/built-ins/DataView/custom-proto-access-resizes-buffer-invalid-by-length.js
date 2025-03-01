@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(typeof ArrayBuffer.prototype.resize, 'function');
 
 var buffer = new ArrayBuffer(3, {maxByteLength: 3});

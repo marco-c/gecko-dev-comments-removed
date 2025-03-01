@@ -1,5 +1,3 @@
-
-
 const scopes = [
   "SameProcess",
 ];

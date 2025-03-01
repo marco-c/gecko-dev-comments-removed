@@ -9,7 +9,6 @@
 
 
 
-
 function TypedArrayAtHelper(ta, index) {
   const result = ta.at(index);
   return Convert(result);

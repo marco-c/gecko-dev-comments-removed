@@ -15,7 +15,6 @@
 
 
 
-
 verifyProperty(ArrayBuffer.prototype, 'resize', {
   enumerable: false,
   writable: true,

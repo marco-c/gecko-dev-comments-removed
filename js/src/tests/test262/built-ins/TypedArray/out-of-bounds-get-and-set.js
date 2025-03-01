@@ -10,7 +10,6 @@
 
 
 
-
 for (let ctor of ctors) {
   const rab = CreateResizableArrayBuffer(4 * ctor.BYTES_PER_ELEMENT, 40 * ctor.BYTES_PER_ELEMENT);
   const array = new ctor(rab, 0, 4);

@@ -30,7 +30,6 @@
 
 
 
-
 var ab = new ArrayBuffer(0, {maxByteLength: 0});
 var caught = false;
 var result;

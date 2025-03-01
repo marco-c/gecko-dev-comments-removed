@@ -9,7 +9,6 @@
 
 
 
-
 function SetNumOrBigInt(target, source, offset) {
   if (target instanceof BigInt64Array || target instanceof BigUint64Array) {
     const bigIntSource = [];

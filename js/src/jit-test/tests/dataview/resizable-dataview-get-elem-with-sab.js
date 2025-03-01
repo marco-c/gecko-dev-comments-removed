@@ -1,5 +1,3 @@
-
-
 load(libdir + "dataview.js");
 
 const TypedArrays = [

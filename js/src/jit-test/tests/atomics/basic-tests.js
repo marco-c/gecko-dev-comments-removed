@@ -5,8 +5,6 @@
 
 
 
-
-
 load(libdir + "asserts.js");
 
 var DEBUG = false;		

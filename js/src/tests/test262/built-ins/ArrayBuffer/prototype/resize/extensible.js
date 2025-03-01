@@ -12,7 +12,6 @@
 
 
 
-
 assert(Object.isExtensible(ArrayBuffer.prototype.resize));
 
 reportCompare(0, 0);

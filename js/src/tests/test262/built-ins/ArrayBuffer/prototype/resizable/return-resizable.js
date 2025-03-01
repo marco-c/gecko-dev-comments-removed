@@ -20,7 +20,6 @@
 
 
 
-
 var ab1 = new ArrayBuffer(1);
 
 assert.sameValue(ab1.resizable, false);

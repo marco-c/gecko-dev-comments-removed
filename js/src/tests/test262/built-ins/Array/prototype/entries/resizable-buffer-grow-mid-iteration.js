@@ -10,7 +10,6 @@
 
 
 
-
 function ArrayEntriesHelper(ta) {
   return Array.prototype.entries.call(ta);
 }

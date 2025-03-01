@@ -10,7 +10,6 @@
 
 
 
-
 function ArrayAtHelper(ta, index) {
   return Array.prototype.at.call(ta, index);
 }

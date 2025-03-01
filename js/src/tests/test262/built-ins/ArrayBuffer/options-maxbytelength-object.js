@@ -22,7 +22,6 @@
 
 
 
-
 var log = [];
 var options = {
   maxByteLength: {

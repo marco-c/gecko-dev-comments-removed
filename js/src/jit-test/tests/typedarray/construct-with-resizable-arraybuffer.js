@@ -1,7 +1,5 @@
 
 
-
-
 function testArrayBuffer() {
     function test() {
         var ab = new ArrayBuffer(4 * Int32Array.BYTES_PER_ELEMENT, {maxByteLength: 5 * Int32Array.BYTES_PER_ELEMENT});

@@ -10,7 +10,6 @@
 
 
 
-
 function IteratorToNumbers(iterator) {
   let result = [];
   for (let value of iterator) {

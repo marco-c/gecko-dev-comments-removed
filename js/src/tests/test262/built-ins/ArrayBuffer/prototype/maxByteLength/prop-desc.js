@@ -14,7 +14,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'maxByteLength');
 
 assert.sameValue(desc.set, undefined);

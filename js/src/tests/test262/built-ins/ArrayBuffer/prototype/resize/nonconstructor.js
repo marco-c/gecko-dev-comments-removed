@@ -15,7 +15,6 @@
 
 
 
-
 assert(!isConstructor(ArrayBuffer.prototype.resize), "ArrayBuffer.prototype.resize is not a constructor");
 
 var arrayBuffer = new ArrayBuffer(8);

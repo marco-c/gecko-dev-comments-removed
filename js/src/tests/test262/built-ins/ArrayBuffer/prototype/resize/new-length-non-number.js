@@ -15,7 +15,6 @@
 
 
 
-
 var log = [];
 var newLength = {
   toString: function() {

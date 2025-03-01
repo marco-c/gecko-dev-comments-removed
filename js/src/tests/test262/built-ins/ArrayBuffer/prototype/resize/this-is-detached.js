@@ -16,7 +16,6 @@
 
 
 
-
 assert.sameValue(typeof ArrayBuffer.prototype.resize, 'function');
 
 var ab = new ArrayBuffer(1);

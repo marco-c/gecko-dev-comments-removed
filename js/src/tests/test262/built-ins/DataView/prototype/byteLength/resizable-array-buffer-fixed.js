@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(typeof ArrayBuffer.prototype.resize, "function");
 
 var ab = new ArrayBuffer(4, {maxByteLength: 5});

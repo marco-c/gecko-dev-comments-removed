@@ -9,7 +9,6 @@
 
 
 
-
 function IsBigIntTypedArray(ta) {
   return ta instanceof BigInt64Array || ta instanceof BigUint64Array;
 }

@@ -10,7 +10,6 @@
 
 
 
-
 function DefinePropertyMayNeedBigInt(ta, index, value) {
   Object.defineProperty(ta, index, { value: MayNeedBigInt(ta, value) });
 }

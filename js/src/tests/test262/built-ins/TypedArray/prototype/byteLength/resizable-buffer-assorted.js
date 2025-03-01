@@ -10,7 +10,6 @@
 
 
 
-
 const rab = CreateResizableArrayBuffer(40, 80);
 for (let ctor of ctors) {
   const ta = new ctor(rab, 0, 3);

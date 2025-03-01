@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(new ArrayBuffer(0, {}).resizable, false);
 assert.sameValue(new ArrayBuffer(0, {maxByteLength: undefined}).resizable, false);
 

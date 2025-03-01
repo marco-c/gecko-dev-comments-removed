@@ -1,5 +1,3 @@
-
-
 const TypedArrayByteOffset = getSelfHostedValue("TypedArrayByteOffset");
 
 function testTypedArrayByteOffset() {

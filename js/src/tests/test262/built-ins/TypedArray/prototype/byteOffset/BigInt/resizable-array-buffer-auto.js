@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(typeof ArrayBuffer.prototype.resize, "function");
 
 testWithBigIntTypedArrayConstructors(function(TA) {

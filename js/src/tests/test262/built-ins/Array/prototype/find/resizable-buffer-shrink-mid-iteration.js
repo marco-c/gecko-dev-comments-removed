@@ -10,7 +10,6 @@
 
 
 
-
 function ArrayFindHelper(ta, p) {
   return Array.prototype.find.call(ta, p);
 }

@@ -18,7 +18,6 @@
 
 
 
-
 var ab = new ArrayBuffer(4, {maxByteLength: 4});
 
 assert.throws(RangeError, function() {

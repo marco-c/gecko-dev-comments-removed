@@ -9,7 +9,6 @@
 
 
 
-
 function ArrayAtHelper(ta, index) {
   const result = Array.prototype.at.call(ta, index);
   return Convert(result);

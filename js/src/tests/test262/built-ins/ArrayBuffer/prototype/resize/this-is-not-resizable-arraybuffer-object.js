@@ -13,7 +13,6 @@
 
 
 
-
 var ab;
 
 assert.sameValue(typeof ArrayBuffer.prototype.resize, 'function');

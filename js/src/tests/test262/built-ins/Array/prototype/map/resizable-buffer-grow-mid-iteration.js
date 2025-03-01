@@ -9,7 +9,6 @@
 
 
 
-
 let values;
 let rab;
 let resizeAfter;

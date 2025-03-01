@@ -18,7 +18,6 @@
 
 
 
-
 var options = {
   get maxByteLength() {
     throw new Test262Error();

@@ -22,7 +22,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'maxByteLength');
 
 verifyProperty(desc.get, 'length', {

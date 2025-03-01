@@ -18,7 +18,6 @@
 
 
 
-
 assert.sameValue(new ArrayBuffer(0, null).resizable, false, 'null');
 assert.sameValue(new ArrayBuffer(0, true).resizable, false, 'boolean');
 assert.sameValue(new ArrayBuffer(0, Symbol(3)).resizable, false, 'symbol');

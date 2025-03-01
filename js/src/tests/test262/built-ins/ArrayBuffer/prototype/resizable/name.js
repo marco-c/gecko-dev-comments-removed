@@ -14,7 +14,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'resizable');
 
 verifyProperty(desc.get, 'name', {

@@ -14,7 +14,6 @@
 
 
 
-
 var ab1 = new ArrayBuffer(0, { maxByteLength: 0 });
 assert.sameValue(ab1.detached, false, 'Resizable ArrayBuffer with maxByteLength of 0 is not detached');
 

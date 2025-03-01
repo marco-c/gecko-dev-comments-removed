@@ -19,7 +19,6 @@
 
 
 
-
 verifyProperty(ArrayBuffer.prototype.resize, 'name', {
   value: 'resize',
   enumerable: false,

@@ -27,7 +27,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   const rab1 = new ArrayBuffer(8, {maxByteLength: 100});
   const ta = new TA(rab1);

@@ -1,5 +1,3 @@
-
-
 function testResizableArrayBufferAutoLength() {
   for (let i = 0; i < 4; ++i) {
     let ab = new ArrayBuffer(i, {maxByteLength: i + 1});

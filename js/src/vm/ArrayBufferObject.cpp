@@ -764,30 +764,27 @@ bool ArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
 
   
   mozilla::Maybe<uint64_t> maxByteLength;
-  if (JS::Prefs::experimental_arraybuffer_resizable()) {
-    
-    if (args.get(1).isObject()) {
-      Rooted<JSObject*> options(cx, &args[1].toObject());
+  
+  if (args.get(1).isObject()) {
+    Rooted<JSObject*> options(cx, &args[1].toObject());
 
-      Rooted<Value> val(cx);
-      if (!GetProperty(cx, options, options, cx->names().maxByteLength, &val)) {
+    Rooted<Value> val(cx);
+    if (!GetProperty(cx, options, options, cx->names().maxByteLength, &val)) {
+      return false;
+    }
+    if (!val.isUndefined()) {
+      uint64_t maxByteLengthInt;
+      if (!ToIndex(cx, val, &maxByteLengthInt)) {
         return false;
       }
-      if (!val.isUndefined()) {
-        uint64_t maxByteLengthInt;
-        if (!ToIndex(cx, val, &maxByteLengthInt)) {
-          return false;
-        }
 
-        
-        if (byteLength > maxByteLengthInt) {
-          JS_ReportErrorNumberASCII(
-              cx, GetErrorMessage, nullptr,
-              JSMSG_ARRAYBUFFER_LENGTH_LARGER_THAN_MAXIMUM);
-          return false;
-        }
-        maxByteLength = mozilla::Some(maxByteLengthInt);
+      
+      if (byteLength > maxByteLengthInt) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_ARRAYBUFFER_LENGTH_LARGER_THAN_MAXIMUM);
+        return false;
       }
+      maxByteLength = mozilla::Some(maxByteLengthInt);
     }
   }
 

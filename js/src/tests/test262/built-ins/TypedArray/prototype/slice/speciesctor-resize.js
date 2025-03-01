@@ -13,7 +13,6 @@
 
 
 
-
 for (let ctor of ctors) {
   const rab = CreateResizableArrayBuffer(4 * ctor.BYTES_PER_ELEMENT, 8 * ctor.BYTES_PER_ELEMENT);
   let resizeWhenConstructorCalled = false;

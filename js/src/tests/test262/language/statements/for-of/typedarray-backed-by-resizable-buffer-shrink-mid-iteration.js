@@ -10,7 +10,6 @@
 
 
 
-
 function CreateRab(buffer_byte_length, ctor) {
   const rab = CreateResizableArrayBuffer(buffer_byte_length, 2 * buffer_byte_length);
   let ta_write = new ctor(rab);

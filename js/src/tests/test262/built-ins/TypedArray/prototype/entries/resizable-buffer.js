@@ -10,7 +10,6 @@
 
 
 
-
 function ValuesFromTypedArrayEntries(ta) {
   let result = [];
   let expectedKey = 0;

@@ -17,7 +17,6 @@
 
 
 
-
 assert.throws(RangeError, function() {
   new ArrayBuffer(1, {maxByteLength: 0});
 });

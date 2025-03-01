@@ -9,7 +9,6 @@
 
 
 
-
 function IteratorToNumbers(iterator) {
   const result = [];
   for (let value of iterator) {

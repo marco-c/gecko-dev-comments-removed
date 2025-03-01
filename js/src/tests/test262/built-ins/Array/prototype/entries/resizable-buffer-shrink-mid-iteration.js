@@ -10,6 +10,11 @@
 
 
 
+function ArrayEntriesHelper(ta) {
+  return Array.prototype.entries.call(ta);
+}
+
+
 
 
 
@@ -21,33 +26,48 @@ for (let ctor of ctors) {
 
   
   assert.throws(TypeError, () => {
-    TestIterationAndResize(fixedLength.values(), null, rab, 2, 3 * ctor.BYTES_PER_ELEMENT);
+    TestIterationAndResize(ArrayEntriesHelper(fixedLength), null, rab, 2, 3 * ctor.BYTES_PER_ELEMENT);
   });
 }
 for (let ctor of ctors) {
   const rab = CreateRabForTest(ctor);
   const fixedLengthWithOffset = new ctor(rab, 2 * ctor.BYTES_PER_ELEMENT, 2);
+
+  
   assert.throws(TypeError, () => {
-    TestIterationAndResize(fixedLengthWithOffset.values(), null, rab, 2, 3 * ctor.BYTES_PER_ELEMENT);
+    TestIterationAndResize(ArrayEntriesHelper(fixedLengthWithOffset), null, rab, 1, 3 * ctor.BYTES_PER_ELEMENT);
   });
 }
 for (let ctor of ctors) {
   const rab = CreateRabForTest(ctor);
   const lengthTracking = new ctor(rab, 0);
-  TestIterationAndResize(lengthTracking.values(), [
-    0,
-    2,
-    4
+  TestIterationAndResize(ArrayEntriesHelper(lengthTracking), [
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      4
+    ]
   ], rab, 2, 3 * ctor.BYTES_PER_ELEMENT);
 }
 for (let ctor of ctors) {
   const rab = CreateRabForTest(ctor);
   const lengthTrackingWithOffset = new ctor(rab, 2 * ctor.BYTES_PER_ELEMENT);
-
-  
-  TestIterationAndResize(lengthTrackingWithOffset.values(), [
-    4,
-    6
+  TestIterationAndResize(ArrayEntriesHelper(lengthTrackingWithOffset), [
+    [
+      0,
+      4
+    ],
+    [
+      1,
+      6
+    ]
   ], rab, 2, 3 * ctor.BYTES_PER_ELEMENT);
 }
 

@@ -1,5 +1,3 @@
-
-
 let ab = new ArrayBuffer(8, {maxByteLength: 10});
 
 pinArrayBufferOrViewLength(ab);

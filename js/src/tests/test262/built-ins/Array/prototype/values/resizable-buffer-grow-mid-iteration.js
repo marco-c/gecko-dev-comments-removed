@@ -16,7 +16,6 @@
 
 
 
-
 for (let ctor of ctors) {
   const rab = CreateRabForTest(ctor);
   const fixedLength = new ctor(rab, 0, 4);

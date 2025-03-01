@@ -9,7 +9,6 @@
 
 
 
-
 function CollectValues(ta) {
   let values = [];
   for (const value of ta) {
