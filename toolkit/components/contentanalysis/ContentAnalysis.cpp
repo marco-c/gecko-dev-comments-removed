@@ -1428,6 +1428,9 @@ void ContentAnalysis::CancelWithError(nsCString&& aUserActionId,
     case NS_ERROR_ILLEGAL_DURING_SHUTDOWN:
       cancelError = nsIContentAnalysisResponse::CancelError::eShutdown;
       break;
+    case NS_ERROR_DOM_TIMEOUT_ERR:
+      cancelError = nsIContentAnalysisResponse::CancelError::eTimeout;
+      break;
     default:
       cancelError = nsIContentAnalysisResponse::CancelError::eErrorOther;
       break;
@@ -2147,8 +2150,31 @@ void ContentAnalysis::MultipartRequestCallback::Initialize(
   MOZ_ASSERT(!mUserActionId.IsEmpty());
   MOZ_ASSERT(!requestTokens.IsEmpty());
 
+  auto checkedTimeoutMs =
+      CheckedInt32(StaticPrefs::browser_contentanalysis_agent_timeout()) * 1000 * mNumCARequestsRemaining;
+  auto timeoutMs = checkedTimeoutMs.isValid() ? checkedTimeoutMs.value() : std::numeric_limits<int32_t>::max();
   
-  auto uaData = UserActionData{this, std::move(requestTokens)};
+  
+  timeoutMs = std::max(timeoutMs, 25);
+  RefPtr timeoutRunnable = NS_NewCancelableRunnableFunction(
+      "ContentAnalysis timeout",
+      [userActionId = mUserActionId,
+       weakContentAnalysis = mWeakContentAnalysis]() mutable {
+        if (weakContentAnalysis) {
+          if (auto entry =
+                  weakContentAnalysis->mUserActionMap.Lookup(userActionId)) {
+            entry->mIsHandlingTimeout = true;
+          }
+          weakContentAnalysis->CancelWithError(std::move(userActionId),
+                                               NS_ERROR_DOM_TIMEOUT_ERR);
+        }
+      });
+  NS_DelayedDispatchToCurrentThread((RefPtr{timeoutRunnable}).forget(),
+                                    timeoutMs);
+
+  
+  
+  auto uaData = UserActionData{this, std::move(requestTokens), timeoutRunnable};
   MOZ_ASSERT(mWeakContentAnalysis->mUserActionMap.Lookup(mUserActionId));
   mWeakContentAnalysis->mUserActionMap.InsertOrUpdate(mUserActionId,
                                                       std::move(uaData));
@@ -2244,6 +2270,13 @@ void ContentAnalysis::MultipartRequestCallback::RemoveFromUserActionMap() {
 
 void ContentAnalysis::RemoveFromUserActionMap(nsCString&& aUserActionId) {
   if (auto entry = mUserActionMap.Lookup(aUserActionId)) {
+    
+    
+    
+    if (entry->mTimeoutRunnable && !entry->mIsHandlingTimeout) {
+      
+      entry->mTimeoutRunnable->Cancel();
+    }
     entry.Remove();
   }
 }
@@ -2590,7 +2623,8 @@ ContentAnalysis::AnalyzeContentRequestsCallback(
       }
     }
   }
-  mUserActionMap.InsertOrUpdate(userActionId, UserActionData{aCallback, {}});
+  mUserActionMap.InsertOrUpdate(userActionId,
+                                UserActionData{aCallback, {}, nullptr});
 
   Result<RefPtr<RequestsPromise::AllPromiseType>,
          RefPtr<nsIContentAnalysisResult>>
@@ -3245,11 +3279,11 @@ nsresult ContentAnalysis::RunAcknowledgeTask(
                   }
 
                   int err = client->Acknowledge(pbAck);
-                  MOZ_ASSERT(err == 0);
                   LOGD(
                       "RunAcknowledgeTask sent transaction acknowledgement, "
                       "err=%d",
                       err);
+                  NS_ENSURE_TRUE_VOID(!err);
                 }),
             NS_DISPATCH_EVENT_MAY_BLOCK);
       },
