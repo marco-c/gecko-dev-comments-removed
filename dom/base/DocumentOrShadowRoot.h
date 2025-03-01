@@ -85,7 +85,7 @@ class DocumentOrShadowRoot {
 
 
 
-  int32_t StyleOrderIndexOfSheet(const StyleSheet& aSheet) const;
+  size_t StyleOrderIndexOfSheet(const StyleSheet& aSheet) const;
 
   StyleSheetList* StyleSheets();
 

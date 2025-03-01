@@ -623,13 +623,13 @@ void DocumentOrShadowRoot::GetAnimations(
   aAnimations.Sort(AnimationPtrComparator<RefPtr<Animation>>());
 }
 
-int32_t DocumentOrShadowRoot::StyleOrderIndexOfSheet(
+size_t DocumentOrShadowRoot::StyleOrderIndexOfSheet(
     const StyleSheet& aSheet) const {
   if (aSheet.IsConstructed()) {
     
     
-    int32_t index = mAdoptedStyleSheets.LastIndexOf(&aSheet);
-    return (index < 0) ? index : index + SheetCount();
+    size_t index = mAdoptedStyleSheets.LastIndexOf(&aSheet);
+    return index == mAdoptedStyleSheets.NoIndex ? index : index + SheetCount();
   }
   return mStyleSheets.IndexOf(&aSheet);
 }
