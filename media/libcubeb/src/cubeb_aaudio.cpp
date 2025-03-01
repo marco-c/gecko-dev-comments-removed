@@ -1334,7 +1334,7 @@ aaudio_stream_init_impl(cubeb_stream * stm, lock_guard<mutex> & lock)
     if (stm->latency_frames > POWERSAVE_LATENCY_FRAMES_THRESHOLD) {
       
       
-      output_buffer_size_frames = output_burst_frames;
+      output_buffer_size_frames = 2 * output_burst_frames;
     }
     
     
