@@ -13,7 +13,6 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/net/DNS.h"
 #include "nsContentUtils.h"
-#include "nsDNSPrefetch.h"
 #include "nsHTTPSOnlyUtils.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIHttpChannel.h"
@@ -1147,27 +1146,7 @@ TestHTTPAnswerRunnable::GetInterface(const nsIID& aIID, void** aResult) {
 
 NS_IMETHODIMP
 TestHTTPAnswerRunnable::Run() {
-  {
-    
-    
-    nsCOMPtr<nsIChannel> origChannel = mDocumentLoadListener->GetChannel();
-    mozilla::OriginAttributes originAttributes;
-    mozilla::StoragePrincipalHelper::GetOriginAttributesForHTTPSRR(
-        origChannel, originAttributes);
-    RefPtr<nsDNSPrefetch> resolver =
-        new nsDNSPrefetch(mURI, originAttributes, origChannel->GetTRRMode());
-    nsCOMPtr<nsIHttpChannelInternal> internalChannel =
-        do_QueryInterface(origChannel);
-    uint32_t caps;
-    if (NS_SUCCEEDED(internalChannel->GetCaps(&caps))) {
-      mozilla::Unused << resolver->FetchHTTPSSVC(
-          caps & NS_HTTP_REFRESH_DNS, false,
-          [self = RefPtr{this}](nsIDNSHTTPSSVCRecord* aRecord) {
-            self->mHasHTTPSRR = (aRecord != nullptr);
-          });
-    }
-  }
-
+  
   
   
   
@@ -1195,15 +1174,16 @@ TestHTTPAnswerRunnable::Notify(nsITimer* aTimer) {
       origHttpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_TOP_LEVEL_LOAD_IN_PROGRESS;
   uint32_t downloadInProgress =
       origHttpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_DOWNLOAD_IN_PROGRESS;
-
+  
+  
+  
   
   
   bool isClientRequestedUpgrade =
       origHttpsOnlyStatus &
-          (nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_NOT_REGISTERED |
-           nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_REGISTERED |
-           nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST) &&
-      !mHasHTTPSRR;
+      (nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_NOT_REGISTERED |
+       nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_REGISTERED |
+       nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST);
 
   if (topLevelLoadInProgress || downloadInProgress ||
       !isClientRequestedUpgrade) {
