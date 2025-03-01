@@ -10024,7 +10024,16 @@ bool FunctionCompiler::emitBodyExprs() {
           case uint32_t(SimdOp::F32x4RelaxedMin):
           case uint32_t(SimdOp::F32x4RelaxedMax):
           case uint32_t(SimdOp::F64x2RelaxedMin):
-          case uint32_t(SimdOp::F64x2RelaxedMax):
+          case uint32_t(SimdOp::F64x2RelaxedMax): {
+            if (!codeMeta().v128RelaxedEnabled()) {
+              return iter().unrecognizedOpcode(&op);
+            }
+            
+            
+            
+            
+            CHECK(emitBinarySimd128( false, SimdOp(op.b1)));
+          }
           case uint32_t(SimdOp::I16x8RelaxedQ15MulrS): {
             if (!codeMeta().v128RelaxedEnabled()) {
               return iter().unrecognizedOpcode(&op);
