@@ -1,13 +1,17 @@
 import pytest
 
 URL = "https://www.aliexpress.com/"
+HERO_MSG = "load succ"
 SHIP_TO_CSS = "[class*=ship-to--menuItem--]"
 CURRENT_FLAG_CSS = "[class*=ship-to--menuItem--] [class*=country-flag-]"
 
 
 async def is_flag_correct_height(client):
-    await client.navigate(URL)
+    
+    
+    await client.navigate(URL, await_console_message=HERO_MSG)
     client.await_css(SHIP_TO_CSS, is_displayed=True).click()
+
     flag = client.await_css(CURRENT_FLAG_CSS, is_displayed=True)
     return client.execute_script(
         """

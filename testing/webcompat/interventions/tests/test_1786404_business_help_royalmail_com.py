@@ -22,7 +22,7 @@ async def getResult(client):
     client.scroll_into_view(code)
     time.sleep(1)
     client.mouse.click(element=code).perform()
-    code.send_keys("W1A 1AV")
+    code.send_keys("W")
 
     
     
