@@ -710,57 +710,35 @@ var SidebarController = {
   setPosition() {
     
     let contentArea = document.getElementById("tabbrowser-tabbox");
-    if (this.sidebarRevampVisibility !== "expand-on-hover") {
-      let flattenedSidebarEls = [...this.sidebarWrapper.children, contentArea];
-      flattenedSidebarEls.forEach((node, i) => {
-        if (node.id !== "sidebar-wrapper") {
-          node.style.order = i + 1;
-        }
-      });
-    } else {
-      let browser = document.getElementById("browser");
-      [...browser.children].forEach((node, i) => {
-        node.style.order = i + 1;
-      });
-      [...this.sidebarWrapper.children].forEach((node, i) => {
-        node.style.order = i + 1;
-      });
-    }
+    let browser = document.getElementById("browser");
+    [...browser.children].forEach((node, i) => {
+      node.style.order = i + 1;
+    });
+    [...this.sidebarWrapper.children].forEach((node, i) => {
+      node.style.order = i + 1;
+    });
     let sidebarContainer = document.getElementById("sidebar-main");
     let sidebarMain = document.querySelector("sidebar-main");
     if (!this._positionStart) {
       
+      let wrapperOrdinal = this.sidebarWrapper.style.order;
+      this.sidebarWrapper.style.order = contentArea.style.order;
+      contentArea.style.order = wrapperOrdinal;
+
       
-      if (this.sidebarRevampVisibility === "expand-on-hover") {
-        
-        let wrapperOrdinal = this.sidebarWrapper.style.order;
-        this.sidebarWrapper.style.order = contentArea.style.order;
-        contentArea.style.order = wrapperOrdinal;
+      
+      
+      let afterSplitter = document.getElementById("after-splitter");
+      let boxOrdinal = this._box.style.order;
+      this._box.style.order = afterSplitter.style.order;
+      afterSplitter.style.order = boxOrdinal;
 
-        
-        let afterSplitter = document.getElementById("after-splitter");
-        let mainOrdinal = parseInt(this.sidebarContainer.style.order);
-        this.sidebarContainer.style.order = parseInt(afterSplitter.style.order);
-        afterSplitter.style.order = mainOrdinal;
+      
+      const launcherSplitterOrdinal = parseInt(this._box.style.order) + 1;
+      this._launcherSplitter.style.order = launcherSplitterOrdinal;
 
-        
-        const launcherSplitterOrdinal = parseInt(
-          this._launcherSplitter.style.order
-        );
-        this._launcherSplitter.style.order = parseInt(
-          this._splitter.style.order
-        );
-        this._splitter.style.order = launcherSplitterOrdinal;
-      } else {
-        
-        let mainOrdinal = this.sidebarContainer.style.order;
-        this.sidebarContainer.style.order = contentArea.style.order;
-        contentArea.style.order = mainOrdinal;
-        
-        let splitterOrdinal = this._splitter.style.order;
-        this._splitter.style.order = this._launcherSplitter.style.order;
-        this._launcherSplitter.style.order = splitterOrdinal;
-      }
+      
+      sidebarContainer.style.order = parseInt(launcherSplitterOrdinal) + 1;
 
       
       this._box.toggleAttribute("positionend", true);
@@ -1949,9 +1927,9 @@ var SidebarController = {
   },
 
   async toggleExpandOnHover(isEnabled) {
-    this.setPosition();
     if (isEnabled) {
       this.sidebarWrapper.classList.add("expandOnHover");
+
       if (!this._state) {
         this._state = new this.SidebarState(this);
       }
