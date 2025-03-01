@@ -746,6 +746,20 @@ bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
   do {
     MSG msg;
 
+    
+    
+    
+    
+    
+    
+    
+    if (mozilla::widget::MouseScrollHandler::IsWaitingInternalMessage()) {
+      gotMessage = WinUtils::PeekMessage(&msg, nullptr, MOZ_WM_MOUSEWHEEL_FIRST,
+                                         MOZ_WM_MOUSEWHEEL_LAST, PM_REMOVE);
+      NS_ASSERTION(gotMessage,
+                   "waiting internal wheel message, but it has not come");
+    }
+
     if (!gotMessage) {
       gotMessage = WinUtils::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE);
     }
