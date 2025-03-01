@@ -608,6 +608,9 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
+
+
+
   MOZ_CAN_RUN_SCRIPT
   bool ScrollFrameIntoView(nsIFrame* aTargetFrame,
                            const Maybe<nsRect>& aKnownRectRelativeToTarget,
@@ -1617,6 +1620,10 @@ class PresShell final : public nsStubDocumentObserver,
   }
 
   
+
+
+
+
 
 
 
