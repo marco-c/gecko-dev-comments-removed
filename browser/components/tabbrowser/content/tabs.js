@@ -2279,11 +2279,12 @@
       dragData.animLastScreenPos ??= this.verticalMode
         ? dragData.screenY
         : dragData.screenX;
-
       let screen = this.verticalMode ? event.screenY : event.screenX;
       if (screen == dragData.animLastScreenPos) {
         return;
       }
+      let screenForward = screen > dragData.animLastScreenPos;
+      dragData.animLastScreenPos = screen;
 
       this.#clearDragOverCreateGroupTimer();
 
@@ -2300,16 +2301,13 @@
         movingTabs = [...movingTabs].reverse();
       }
 
-      let directionForward =
-        screen > dragData.animLastScreenPos != this.#rtlMode;
-      dragData.animLastScreenPos = screen;
-
+      let bounds = ele => window.windowUtils.getBoundsWithoutFlushing(ele);
+      let logicalForward = screenForward != this.#rtlMode;
       let screenAxis = this.verticalMode ? "screenY" : "screenX";
       let size = this.verticalMode ? "height" : "width";
       let translateAxis = this.verticalMode ? "translateY" : "translateX";
       let scrollDirection = this.verticalMode ? "scrollTop" : "scrollLeft";
-      let { width: tabWidth, height: tabHeight } =
-        window.windowUtils.getBoundsWithoutFlushing(draggedTab);
+      let { width: tabWidth, height: tabHeight } = bounds(draggedTab);
       let translateX = event.screenX - dragData.screenX;
       let translateY = event.screenY - dragData.screenY;
 
@@ -2323,10 +2321,10 @@
       let lastTab = tabs.at(-1);
       let lastMovingTab = movingTabs.at(-1);
       let firstMovingTab = movingTabs[0];
-      let lastMovingTabScreen = lastMovingTab[screenAxis];
+      let endEdge = ele => ele[screenAxis] + bounds(ele)[size];
+      let lastMovingTabScreen = endEdge(lastMovingTab);
       let firstMovingTabScreen = firstMovingTab[screenAxis];
-      let tabSize = this.verticalMode ? tabHeight : tabWidth;
-      let shiftSize = lastMovingTabScreen + tabSize - firstMovingTabScreen;
+      let shiftSize = lastMovingTabScreen - firstMovingTabScreen;
       let translate = screen - dragData[screenAxis];
       if (!isPinned) {
         translate +=
@@ -2339,10 +2337,7 @@
       
       
       let firstBound = firstTab[screenAxis] - firstMovingTabScreen;
-      let lastBound =
-        lastTab[screenAxis] +
-        window.windowUtils.getBoundsWithoutFlushing(lastTab)[size] -
-        (lastMovingTabScreen + tabSize);
+      let lastBound = endEdge(lastTab) - lastMovingTabScreen;
       translate = Math.min(Math.max(translate, firstBound), lastBound);
 
       for (let tab of movingTabs) {
@@ -2461,18 +2456,6 @@
 
 
 
-      let leastMovingTabPos =
-        firstMovingTabScreen + translate + (this.#rtlMode ? tabSize : 0);
-      
-
-
-
-
-
-      let mostMovingTabPos =
-        lastMovingTabScreen + translate + (this.#rtlMode ? 0 : tabSize);
-
-      
 
 
 
@@ -2483,16 +2466,10 @@
 
 
 
-
-
-
-
-
-
-
-      let getOverlappedElementIndex = () => {
-        let point = directionForward ? mostMovingTabPos : leastMovingTabPos;
-        let index = -1;
+      let getOverlappedElement = () => {
+        let point =
+          (screenForward ? lastMovingTabScreen : firstMovingTabScreen) +
+          translate;
         let low = 0;
         let high = tabs.length - 1;
         while (low <= high) {
@@ -2510,26 +2487,20 @@
 
           if (screen > point) {
             high = mid - 1;
-          } else if (
-            screen + elementForSize.getBoundingClientRect()[size] <
-            point
-          ) {
+          } else if (screen + bounds(elementForSize)[size] < point) {
             low = mid + 1;
           } else {
-            index = element.elementIndex;
-            break;
+            return element;
           }
         }
-        return index;
+        return null;
       };
 
-      let newDropElementIndex = getOverlappedElementIndex();
-      if (newDropElementIndex < 0) {
-        newDropElementIndex = oldDropElementIndex;
-      }
-
-      let dropElement = this.ariaFocusableItems[newDropElementIndex];
-      let dropBefore = !directionForward;
+      let dropElement = getOverlappedElement();
+      let newDropElementIndex = dropElement
+        ? dropElement.elementIndex
+        : oldDropElementIndex;
+      let dropBefore = !screenForward;
       let moveOverThreshold;
       let overlapPercent;
       if (dropElement) {
@@ -2539,13 +2510,10 @@
 
         let dropElementPosition = dropElementForOverlap[screenAxis];
         let dropElementTabShift = getTabShift(dropElement, oldDropElementIndex);
-        let dropElementSize =
-          dropElementForOverlap.getBoundingClientRect()[size];
+        let dropElementSize = bounds(dropElementForOverlap)[size];
         overlapPercent = greatestOverlap(
-          directionForward
-            ? lastMovingTabScreen + translate
-            : firstMovingTabScreen + translate,
-          tabSize,
+          firstMovingTabScreen + translate,
+          shiftSize,
           dropElementPosition + dropElementTabShift,
           dropElementSize
         );
@@ -2557,11 +2525,15 @@
           : 0.5;
         moveOverThreshold = Math.min(1, Math.max(0, moveOverThreshold));
         let shouldMoveOver = overlapPercent > moveOverThreshold;
-        if (directionForward) {
-          newDropElementIndex += shouldMoveOver ? 1 : 0;
+        if (logicalForward) {
+          if (shouldMoveOver) {
+            newDropElementIndex++;
+          }
           dropBefore = !shouldMoveOver;
         } else {
-          newDropElementIndex += shouldMoveOver ? 0 : 1;
+          if (!shouldMoveOver) {
+            newDropElementIndex++;
+          }
           dropBefore = shouldMoveOver;
         }
       }
@@ -2600,7 +2572,9 @@
           this.removeAttribute("movingtab-createGroup");
 
           
-          let dropElementGroup = dropElement?.group;
+          let dropElementGroup = isTabGroupLabel(dropElement)
+            ? dropElement.closest("tab-group")
+            : dropElement?.group;
           let colorCode = dropElementGroup?.color;
 
           if (
@@ -2615,16 +2589,15 @@
             dropElement = dropElementGroup;
             colorCode = undefined;
           } else if (isTabGroupLabel(dropElement)) {
-            let labeledTabGroup = dropElement.closest("tab-group");
             if (dropBefore) {
               
-              dropElement = labeledTabGroup;
-            } else if (labeledTabGroup.collapsed) {
+              dropElement = dropElementGroup;
+            } else if (dropElementGroup.collapsed) {
               
-              dropElement = labeledTabGroup;
+              dropElement = dropElementGroup;
             } else {
               
-              dropElement = labeledTabGroup.tabs[0];
+              dropElement = dropElementGroup.tabs[0];
               dropBefore = true;
             }
           }
@@ -2647,7 +2620,7 @@
       if (
         newDropElementIndex == oldDropElementIndex ||
         
-        (!directionForward && newDropElementIndex > oldDropElementIndex)
+        (!logicalForward && newDropElementIndex > oldDropElementIndex)
       ) {
         return;
       }
