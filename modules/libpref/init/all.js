@@ -549,6 +549,9 @@ pref("toolkit.shopping.ohttpRelayURL", "https://mozilla-ohttp.fastly-edge.com/")
 pref("toolkit.shopping.environment", "prod");
 
 
+pref("toolkit.shopping.experience2023.defr", false);
+
+
 pref("toolkit.sqlitejsm.loglevel", "Error");
 
 pref("toolkit.tabbox.switchByScrolling", false);
