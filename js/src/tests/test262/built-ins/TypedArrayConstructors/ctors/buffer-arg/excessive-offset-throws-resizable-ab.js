@@ -8,7 +8,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var BPE = TA.BYTES_PER_ELEMENT;
   var buffer = new ArrayBuffer(BPE, {maxByteLength: BPE});

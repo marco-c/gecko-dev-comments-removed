@@ -9,7 +9,6 @@
 
 
 
-
 verifyProperty(Math.f16round, 'length', {
   value: 1,
   enumerable: false,

@@ -14,7 +14,6 @@
 
 
 
-
 assert(typeof TypedArray === "function");
 assert.sameValue(TypedArray, Object.getPrototypeOf(Uint8Array));
 

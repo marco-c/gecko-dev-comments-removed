@@ -9,7 +9,6 @@
 
 
 
-
 testWithTypedArrayConstructors(TA => {
   var ta = new TA([0, 1, 2]);
   ta.toReversed();

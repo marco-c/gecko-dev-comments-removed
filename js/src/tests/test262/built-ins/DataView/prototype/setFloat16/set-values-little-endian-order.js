@@ -8,7 +8,6 @@
 
 
 
-
 var buffer = new ArrayBuffer(2);
 var sample = new DataView(buffer, 0);
 

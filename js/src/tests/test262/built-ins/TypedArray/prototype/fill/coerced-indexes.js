@@ -31,7 +31,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   assert(
     compareArray(new TA([0, 0]).fill(1, undefined), [1, 1]),

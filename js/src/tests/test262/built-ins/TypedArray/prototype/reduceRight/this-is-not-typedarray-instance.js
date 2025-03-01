@@ -21,7 +21,6 @@
 
 
 
-
 var reduceRight = TypedArray.prototype.reduceRight;
 var callbackfn = function() {};
 

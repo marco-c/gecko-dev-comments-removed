@@ -35,7 +35,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA([40]);
   var other = new Int8Array([1, 0, 1]);

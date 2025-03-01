@@ -15,7 +15,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA();
   var called = false;

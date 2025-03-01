@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(TypedArray.of, "name", {
   value: "of",
   writable: false,

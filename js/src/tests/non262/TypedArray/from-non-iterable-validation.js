@@ -1,9 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+// Summary: Ensure typed array validation is called for TypedArray.from.
 
 const otherGlobal = typeof newGlobal === "function" ? newGlobal() : undefined;
 const typedArrayArgs = [{length: 0}, {length: 1, 0: 123}, {length: 1024, 0: 123}];
@@ -30,7 +29,7 @@ function createTestCases(TAConstructor, constructor, constructorCrossRealm) {
     return testCases;
 }
 
-
+// Throws TypeError when the returned value is not a typed array.
 for (const TAConstructor of anyTypedArrayConstructors) {
     let callCount = 0, expectedCallCount = 0;
     function NoTypedArrayConstructor(...args) {
@@ -53,7 +52,7 @@ for (const TAConstructor of anyTypedArrayConstructors) {
     }
 }
 
-
+// Throws TypeError exception when returned array is too small.
 for (const TAConstructor of anyTypedArrayConstructors) {
     let callCount = 0, expectedCallCount = 0;
     function TooSmallConstructor(length) {
@@ -70,7 +69,7 @@ for (const TAConstructor of anyTypedArrayConstructors) {
 
     for (let {species, method, error} of testCases) {
         for (let args of typedArrayArgs) {
-            
+            // Passes when the length is zero.
             if (args.length === 0) {
                 let result = method.call(species, args);
                 assertEq(result.length, 0);
@@ -82,7 +81,7 @@ for (const TAConstructor of anyTypedArrayConstructors) {
     }
 }
 
-
+// No exception when array is larger than requested.
 for (const TAConstructor of anyTypedArrayConstructors) {
     const extraLength = 1;
 
@@ -110,7 +109,7 @@ for (const TAConstructor of anyTypedArrayConstructors) {
     }
 }
 
-
+// Throws TypeError exception when returned array is detached.
 if (typeof detachArrayBuffer === "function") {
     for (const TAConstructor of typedArrayConstructors) {
         let callCount = 0, expectedCallCount = 0;

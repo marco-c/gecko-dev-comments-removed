@@ -4,7 +4,6 @@
 
 
 
-
 const otherGlobal = typeof newGlobal === "function" ? newGlobal() : undefined;
 const typedArrayArgs = [[], [123], [123, ...Array(1023).fill(0)]];
 

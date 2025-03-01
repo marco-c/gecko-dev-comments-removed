@@ -22,7 +22,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var src = [42, 43];
   var srcObj = {

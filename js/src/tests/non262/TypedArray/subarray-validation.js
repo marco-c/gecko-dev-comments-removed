@@ -4,7 +4,6 @@
 
 
 
-
 const otherGlobal = newGlobal({newCompartment: true});
 const typedArrayLengths = [0, 1, 1024];
 

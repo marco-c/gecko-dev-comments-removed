@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(TypedArray.prototype.subarray, "name", {
   value: "subarray",
   writable: false,

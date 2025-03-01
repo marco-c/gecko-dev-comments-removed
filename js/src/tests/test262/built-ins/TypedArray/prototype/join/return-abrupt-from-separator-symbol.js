@@ -21,7 +21,6 @@
 
 
 
-
 var s = Symbol("");
 
 testWithTypedArrayConstructors(function(TA) {

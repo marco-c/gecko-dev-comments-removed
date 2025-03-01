@@ -23,7 +23,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(TypedArray, Symbol.species);
 
 verifyProperty(desc.get, "length", {

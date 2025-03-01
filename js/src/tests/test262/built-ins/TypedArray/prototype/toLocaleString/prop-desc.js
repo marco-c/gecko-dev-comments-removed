@@ -12,7 +12,6 @@
 
 
 
-
 var TypedArrayPrototype = TypedArray.prototype;
 
 verifyProperty(TypedArrayPrototype, 'toLocaleString', {

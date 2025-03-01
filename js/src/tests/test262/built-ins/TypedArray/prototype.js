@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(TypedArray, 'prototype', {
   writable: false,
   enumerable: false,

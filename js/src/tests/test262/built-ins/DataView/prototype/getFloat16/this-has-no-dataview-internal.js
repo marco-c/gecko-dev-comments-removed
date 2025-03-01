@@ -8,7 +8,6 @@
 
 
 
-
 var getFloat16 = DataView.prototype.getFloat16;
 
 assert.throws(TypeError, function() {

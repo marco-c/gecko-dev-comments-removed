@@ -24,7 +24,6 @@
 
 
 
-
 let ArrayIteratorPrototype = Object.getPrototypeOf([].values());
 let values;
 

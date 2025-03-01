@@ -13,7 +13,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(TypedArray, Symbol.species);
 
 assert.sameValue(desc.set, undefined);

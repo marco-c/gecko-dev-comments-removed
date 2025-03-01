@@ -16,7 +16,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, function() {
     TA();

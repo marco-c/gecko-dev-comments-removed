@@ -20,7 +20,6 @@
 
 
 
-
 var find = TypedArray.prototype.find;
 
 assert.sameValue(typeof find, 'function');

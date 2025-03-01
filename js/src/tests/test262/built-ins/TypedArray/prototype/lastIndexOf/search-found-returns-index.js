@@ -30,7 +30,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA([42, 43, 42, 41]);
   assert.sameValue(sample.lastIndexOf(42), 2, "lastIndexOf(42)");

@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(
   typeof ArrayBuffer.prototype.resize,
   'function',

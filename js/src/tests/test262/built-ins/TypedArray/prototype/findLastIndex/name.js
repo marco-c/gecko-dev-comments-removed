@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(TypedArray.prototype.findLastIndex.name, "findLastIndex");
 
 verifyProperty(TypedArray.prototype.findLastIndex, "name", {

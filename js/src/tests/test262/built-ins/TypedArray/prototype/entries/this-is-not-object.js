@@ -20,7 +20,6 @@
 
 
 
-
 var entries = TypedArray.prototype.entries;
 
 assert.throws(TypeError, function() {

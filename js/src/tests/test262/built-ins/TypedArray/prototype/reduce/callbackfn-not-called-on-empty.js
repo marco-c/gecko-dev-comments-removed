@@ -28,7 +28,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var called = 0;
 

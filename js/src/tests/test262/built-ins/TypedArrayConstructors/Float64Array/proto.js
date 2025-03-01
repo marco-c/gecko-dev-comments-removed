@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(Object.getPrototypeOf(Float64Array), TypedArray);
 
 reportCompare(0, 0);

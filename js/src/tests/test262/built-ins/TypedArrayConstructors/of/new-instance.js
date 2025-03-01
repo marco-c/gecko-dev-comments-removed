@@ -34,7 +34,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var result = TA.of(42, 43, null);
   assert.sameValue(result.length, 3);

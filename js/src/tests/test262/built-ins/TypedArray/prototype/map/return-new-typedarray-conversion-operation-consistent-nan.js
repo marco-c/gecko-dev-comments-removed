@@ -53,7 +53,6 @@
 
 
 
-
 function body(FloatArray) {
   var sample = new FloatArray(NaNs);
   var sampleBytes, resultBytes;

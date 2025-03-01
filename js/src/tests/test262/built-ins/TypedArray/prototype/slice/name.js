@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(TypedArray.prototype.slice, "name", {
   value: "slice",
   writable: false,

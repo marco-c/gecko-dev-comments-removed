@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(TypedArray.prototype.map, "name", {
   value: "map",
   writable: false,

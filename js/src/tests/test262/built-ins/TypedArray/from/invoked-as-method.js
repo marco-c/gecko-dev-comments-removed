@@ -19,7 +19,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   TypedArray.from([]);
 });

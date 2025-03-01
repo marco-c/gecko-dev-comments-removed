@@ -20,7 +20,6 @@
 
 
 
-
 var findIndex = TypedArray.prototype.findIndex;
 
 assert.sameValue(typeof findIndex, 'function');

@@ -12,7 +12,6 @@
 
 
 
-
 verifyProperty(TypedArray, 'from', {
   writable: true,
   enumerable: false,

@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(TypedArray.prototype[Symbol.iterator], TypedArray.prototype.values);
 
 verifyProperty(TypedArray.prototype, Symbol.iterator, {

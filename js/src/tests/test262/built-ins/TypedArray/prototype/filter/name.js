@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(TypedArray.prototype.filter, "name", {
   value: "filter",
   writable: false,

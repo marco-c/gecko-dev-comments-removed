@@ -9,7 +9,6 @@
 
 
 
-
 verifyProperty(DataView.prototype.getFloat16, "name", {
   value: "getFloat16",
   writable: false,

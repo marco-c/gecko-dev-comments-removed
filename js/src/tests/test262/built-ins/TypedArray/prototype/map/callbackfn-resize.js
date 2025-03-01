@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(typeof ArrayBuffer.prototype.resize, 'function');
 
 testWithTypedArrayConstructors(function(TA) {

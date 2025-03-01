@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(TypedArray.prototype.constructor, TypedArray);
 
 verifyProperty(TypedArray.prototype, "constructor", {

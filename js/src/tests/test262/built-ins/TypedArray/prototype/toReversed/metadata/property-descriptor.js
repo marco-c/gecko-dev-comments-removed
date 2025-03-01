@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(typeof TypedArray.prototype.toReversed, "function", "typeof");
 
 verifyProperty(TypedArray.prototype, "toReversed", {

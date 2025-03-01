@@ -20,7 +20,6 @@
 
 
 
-
 var join = TypedArray.prototype.join;
 
 assert.sameValue(typeof join, 'function');

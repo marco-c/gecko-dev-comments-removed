@@ -12,7 +12,6 @@
 
 
 
-
 var sample = [0, 42, 64];
 
 testWithTypedArrayConstructors(function(TA) {

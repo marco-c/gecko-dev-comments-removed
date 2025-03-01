@@ -18,7 +18,6 @@
 
 
 
-
 testWithTypedArrayConstructors(TA => {
   var calls = 0;
   var ta = new TA([3, 1, 2]);

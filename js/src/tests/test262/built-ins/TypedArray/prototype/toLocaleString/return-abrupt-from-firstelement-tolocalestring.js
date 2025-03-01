@@ -24,7 +24,6 @@
 
 
 
-
 var calls;
 
 Number.prototype.toLocaleString = function() {

@@ -19,7 +19,6 @@
 
 
 
-
 var valueOfCalls = 0;
 var value = {
   valueOf: function() {

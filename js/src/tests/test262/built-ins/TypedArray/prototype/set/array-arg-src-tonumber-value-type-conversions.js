@@ -22,7 +22,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var obj1 = {
       valueOf: function() {

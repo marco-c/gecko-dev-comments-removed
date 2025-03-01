@@ -18,7 +18,6 @@
 
 
 
-
 var TypedArrayPrototype = TypedArray.prototype;
 
 assert.sameValue(TypedArrayPrototype.toString, Array.prototype.toString);

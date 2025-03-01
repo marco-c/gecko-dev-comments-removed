@@ -15,7 +15,6 @@
 
 
 
-
 var subarray = TypedArray.prototype.subarray;
 
 assert.throws(TypeError, function() {

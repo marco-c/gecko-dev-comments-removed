@@ -9,7 +9,6 @@
 
 
 
-
 var values = byteConversionValues.values;
 var expectedValues = byteConversionValues.expected.Float16;
 

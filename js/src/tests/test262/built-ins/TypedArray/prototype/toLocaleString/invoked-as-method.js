@@ -22,7 +22,6 @@
 
 
 
-
 var TypedArrayPrototype = TypedArray.prototype;
 
 assert.sameValue(typeof TypedArrayPrototype.toLocaleString, 'function');

@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(TypedArray.prototype.toReversed, "name", {
   value: "toReversed",
   writable: false,

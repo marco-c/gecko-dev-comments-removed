@@ -14,7 +14,6 @@
 
 
 
-
 var ArrayIteratorProto = Object.getPrototypeOf([][Symbol.iterator]());
 
 testWithTypedArrayConstructors(function(TA) {

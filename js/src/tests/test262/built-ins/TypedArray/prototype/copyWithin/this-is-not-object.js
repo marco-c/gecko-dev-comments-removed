@@ -18,7 +18,6 @@
 
 
 
-
 var copyWithin = TypedArray.prototype.copyWithin;
 
 assert.throws(TypeError, function() {

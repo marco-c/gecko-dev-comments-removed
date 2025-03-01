@@ -20,7 +20,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(TypedArray.prototype, "length");
 
 verifyProperty(desc.get, "name", {

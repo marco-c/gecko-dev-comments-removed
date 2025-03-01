@@ -21,7 +21,6 @@
 
 
 
-
 var every = TypedArray.prototype.every;
 var callbackfn = function() {};
 

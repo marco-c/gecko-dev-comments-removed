@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(
   isConstructor(DataView.prototype.getFloat16),
   false,
