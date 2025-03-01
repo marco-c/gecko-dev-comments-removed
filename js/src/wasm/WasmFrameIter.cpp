@@ -22,6 +22,7 @@
 #include "jit/shared/IonAssemblerBuffer.h"  
 #include "js/ColumnNumber.h"  
 #include "vm/JitActivation.h"  
+#include "vm/JSAtomState.h"
 #include "vm/JSContext.h"
 #include "wasm/WasmBuiltinModuleGenerated.h"
 #include "wasm/WasmDebugFrame.h"

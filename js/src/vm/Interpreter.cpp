@@ -54,7 +54,6 @@
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
 #include "vm/Opcodes.h"
-#include "vm/PIC.h"
 #include "vm/PlainObject.h"  
 #include "vm/Scope.h"
 #include "vm/Shape.h"

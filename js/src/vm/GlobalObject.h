@@ -167,9 +167,6 @@ class GlobalObjectData {
   GCPtr<NativeObject*> computedIntrinsicsHolder;
 
   
-  GCPtr<NativeObject*> forOfPICChain;
-
-  
   GCPtr<ArrayObject*> sourceURLsHolder;
 
   
@@ -1028,10 +1025,6 @@ class GlobalObject : public NativeObject {
     return realm()->getDebuggers(nogc);
   }
   bool hasDebuggers() const { return realm()->hasDebuggers(); }
-
-  inline NativeObject* getForOfPICObject() { return data().forOfPICChain; }
-  static NativeObject* getOrCreateForOfPICObject(JSContext* cx,
-                                                 Handle<GlobalObject*> global);
 
   JSObject* maybeWindowProxy() const { return data().windowProxy; }
 
