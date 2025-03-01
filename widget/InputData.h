@@ -229,10 +229,7 @@ class MultiTouchInput : public InputData {
 
   void Translate(const ScreenPoint& aTranslation);
 
-  WidgetTouchEvent ToWidgetEvent(
-      nsIWidget* aWidget,
-      uint16_t aInputSource =
-           5) const;
+  WidgetTouchEvent ToWidgetEvent(nsIWidget* aWidget) const;
 
   
   
@@ -252,6 +249,7 @@ class MultiTouchInput : public InputData {
   
   int16_t mButton = eNotPressed;
   int16_t mButtons = 0;
+  uint16_t mInputSource =  5;
 };
 
 class MouseInput : public InputData {
