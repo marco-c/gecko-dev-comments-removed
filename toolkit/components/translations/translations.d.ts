@@ -103,7 +103,7 @@ export namespace Bergamot {
   export class Vector<T> {
     size(): number;
     get(index: number): T;
-    push_back(item: T);
+    push_back(item: T): void;
   }
 
   export class VectorResponse extends Vector<Response> {}
@@ -119,7 +119,7 @@ export namespace Bergamot {
 
 
     translate(
-      translationModel,
+      translationModel: TranslationModel,
       vectorSourceText: VectorString,
       vectorResponseOptions: VectorResponseOptions
     ): VectorResponse;
@@ -214,7 +214,7 @@ interface TranslationModelPayload {
   targetLanguage: string,
   variant?: string,
   languageModelFiles: LanguageTranslationModelFiles,
-};
+}
 
 
 
@@ -234,13 +234,13 @@ interface LanguageTranslationModelFiles {
   
   srcvocab?: LanguageTranslationModelFile,
   trgvocab?: LanguageTranslationModelFile,
-};
+}
 
 
 
 
 type LanguageTranslationModelFilesAligned = {
-  [K in keyof LanguageTranslationModelFiles]: AlignedMemory
+  [K in keyof LanguageTranslationModelFiles]: Bergamot.AlignedMemory
 };
 
 
@@ -277,7 +277,7 @@ export interface LanguagePair {
   targetLanguage: string,
   sourceVariant?: string,
   targetVariant?: string
-};
+}
 
 
 
@@ -336,3 +336,10 @@ export type SelectTranslationsPanelState =
   | { phase: "unsupported"; detectedLanguage: string; targetLanguage: string, sourceText: string }
 
 export type RequestTranslationsPort = (languagePair: LanguagePair) => Promise<MessagePort>
+
+export type TranslationsPortMessages = {
+  type: "TranslationsPort:TranslationRequest",
+  translationId: string,
+  sourceText: string,
+  isHTML: boolean,
+}
