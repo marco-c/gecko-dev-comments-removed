@@ -1,0 +1,19 @@
+'use strict';
+
+
+
+
+
+
+
+
+class NoProcessDef extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.port.postMessage({
+      state: 'created',
+    });
+  }
+}
+
+registerProcessor('audioworkletprocessor-no-process', NoProcessDef);
