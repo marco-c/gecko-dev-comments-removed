@@ -3688,6 +3688,7 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
 
     case State::Prepare:
       unmarkTask.cancelAndWait();
+      cancelRequestedGCAfterBackgroundTask();
       [[fallthrough]];
 
     case State::MarkRoots:
@@ -3779,7 +3780,11 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
 
   stats().reset(reason);
 
-  return IncrementalResult::ResetIncremental;
+  if (reason == GCAbortReason::AbortRequested) {
+    return IncrementalResult::Abort;
+  }
+
+  return IncrementalResult::Reset;
 }
 
 AutoDisableBarriers::AutoDisableBarriers(GCRuntime* gc) : gc(gc) {
@@ -4424,7 +4429,7 @@ void GCRuntime::maybeCallGCCallback(JSGCStatus status, JS::GCReason reason) {
 
   
   
-  fullGCRequested = (status == JSGC_END) ? false : savedFullGCRequested;
+  fullGCRequested = savedFullGCRequested;
 
   if (gcCallbackDepth == 0) {
     
@@ -4465,6 +4470,13 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
   AutoCallGCCallbacks callCallbacks(*this, reason);
 
   
+  auto resetFullFlag = MakeScopeExit([&] {
+    if (!isIncrementalGCInProgress()) {
+      fullGCRequested = false;
+    }
+  });
+
+  
   TimeStamp now = TimeStamp::Now();
   if (firstSlice) {
     schedulingState.updateHighFrequencyModeOnGCStart(
@@ -4492,12 +4504,14 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
 
   IncrementalResult result =
       budgetIncrementalGC(nonincrementalByAPI, reason, budget);
-  if (result == IncrementalResult::ResetIncremental) {
-    if (incrementalState == State::NotActive) {
-      
-      return result;
-    }
+  if (result != IncrementalResult::Ok && incrementalState == State::NotActive) {
+    
+    return result;
+  }
 
+  if (result == IncrementalResult::Reset) {
+    
+    
     
     reason = JS::GCReason::RESET;
   }
@@ -4512,7 +4526,7 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
   incrementalSlice(budget, reason, budgetWasIncreased);
   gcprobes::MajorGCEnd();
 
-  MOZ_ASSERT_IF(result == IncrementalResult::ResetIncremental,
+  MOZ_ASSERT_IF(result == IncrementalResult::Reset,
                 !isIncrementalGCInProgress());
   return result;
 }
@@ -4700,7 +4714,8 @@ void GCRuntime::collect(bool nonincrementalByAPI, const SliceBudget& budget,
     IncrementalResult cycleResult =
         gcCycle(nonincrementalByAPI, budget, reason);
 
-    if (reason == JS::GCReason::ABORT_GC) {
+    if (cycleResult == IncrementalResult::Abort) {
+      MOZ_ASSERT(reason == JS::GCReason::ABORT_GC);
       MOZ_ASSERT(!isIncrementalGCInProgress());
       stats().log("GC aborted by request");
       break;
@@ -4716,7 +4731,7 @@ void GCRuntime::collect(bool nonincrementalByAPI, const SliceBudget& budget,
 
     repeat = false;
     if (!isIncrementalGCInProgress()) {
-      if (cycleResult == ResetIncremental) {
+      if (cycleResult == IncrementalResult::Reset) {
         repeat = true;
       } else if (rootsRemoved && isShutdownGC()) {
         
