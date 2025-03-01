@@ -1518,7 +1518,7 @@ mozilla::Monitor& nsAccessibilityService::GetAndroidMonitor() {
 
 
 bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
-  AUTO_PROFILER_MARKER_TEXT("nsAccessibilityService::Init", A11Y, {}, ""_ns);
+  AUTO_PROFILER_MARKER_UNTYPED("nsAccessibilityService::Init", A11Y, {});
   
 
   

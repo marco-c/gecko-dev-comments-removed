@@ -684,8 +684,7 @@ void NotificationController::ProcessMutationEvents() {
 
 
 void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
-  AUTO_PROFILER_MARKER_TEXT("NotificationController::WillRefresh", A11Y, {},
-                            ""_ns);
+  AUTO_PROFILER_MARKER_UNTYPED("NotificationController::WillRefresh", A11Y, {});
   auto timer = glean::a11y::tree_update_timing.Measure();
   
 
