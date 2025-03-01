@@ -1858,35 +1858,15 @@ bool LoadOSClientCertsModule() {
 #endif
 }
 
-#ifdef MOZ_SYSTEM_NSS
 bool LoadLoadableRoots(const nsCString& dir) {
+  
+  
+  
+  
+  
   int unusedModType;
   Unused << SECMOD_DeleteModule("Root Certs", &unusedModType);
   return LoadUserModuleAt(kRootModuleName.get(), "nssckbi", dir, nullptr);
-}
-#endif  
-
-extern "C" {
-
-
-
-CK_RV TRUST_ANCHORS_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList);
-}  
-
-bool LoadLoadableRootsFromXul() {
-  
-  
-  
-  
-  
-  int unusedModType;
-  Unused << SECMOD_DeleteModule("Root Certs", &unusedModType);
-
-  if (!LoadUserModuleFromXul(kRootModuleName.get(),
-                             TRUST_ANCHORS_GetFunctionList)) {
-    return false;
-  }
-  return true;
 }
 
 nsresult DefaultServerNicknameForCert(const CERTCertificate* cert,

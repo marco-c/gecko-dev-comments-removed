@@ -4,12 +4,9 @@
 
 
 
-FINAL_TARGET = "_tests/xpcshell/security/manager/ssl/tests/unit/test_trust_anchors"
+FINAL_TARGET = "_tests/xpcshell/security/manager/ssl/tests/unit/test_builtins"
 
-USE_LIBS += ["test-trust-anchors-static"]
-
-
-
+USE_LIBS += ["test-builtins-static"]
 
 
 
@@ -43,7 +40,7 @@ if CONFIG["OS_ARCH"] == "WINNT":
             "synchronization",
         ]
 
-SharedLibrary("test_trust_anchors")
+SharedLibrary("test_builtins")
 
 NoVisibilityFlags()
-SYMBOLS_FILE = "trust-anchors.symbols"
+SYMBOLS_FILE = "builtins.symbols"
