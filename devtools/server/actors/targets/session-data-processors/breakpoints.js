@@ -19,14 +19,15 @@ module.exports = {
     
     
     
-    
     if (
       targetActor.sessionContext.type == "all" &&
+      !targetActor.sessionContext.enableWindowGlobalThreadActors &&
       targetActor.targetType === Targets.TYPES.FRAME &&
       targetActor.typeName != "parentProcessTarget"
     ) {
       return;
     }
+
     const { threadActor } = targetActor;
     if (updateType == "set") {
       threadActor.removeAllBreakpoints();

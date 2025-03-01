@@ -29,8 +29,10 @@ class SourceWatcher {
   async watch(targetActor, { onAvailable }) {
     
     
+    
     if (
       targetActor.sessionContext.type == "all" &&
+      !targetActor.sessionContext.enableWindowGlobalThreadActors &&
       targetActor.targetType === Targets.TYPES.FRAME &&
       targetActor.typeName != "parentProcessTarget"
     ) {

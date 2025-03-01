@@ -74,13 +74,20 @@ exports.CommandsFactory = {
 
 
 
-  async forMainProcess({ client } = {}) {
+
+  async forMainProcess({
+    client,
+    enableWindowGlobalThreadActors = false,
+  } = {}) {
     if (!client) {
       client = await createLocalClient();
     }
 
     const descriptor = await client.mainRoot.getMainProcess();
-    const commands = await createCommandsDictionary(descriptor);
+    const commands = await createCommandsDictionary(
+      descriptor,
+      enableWindowGlobalThreadActors
+    );
     return commands;
   },
 

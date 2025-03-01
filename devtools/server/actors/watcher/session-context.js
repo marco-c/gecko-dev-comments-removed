@@ -28,6 +28,12 @@
 
 
 
+
+
+
+
+
+
 const Targets = require("resource://devtools/server/actors/targets/index.js");
 const Resources = require("resource://devtools/server/actors/resources/index.js");
 
@@ -48,7 +54,13 @@ const SESSION_TYPES = {
 
 
 
-function createBrowserSessionContext() {
+
+
+
+
+function createBrowserSessionContext({
+  enableWindowGlobalThreadActors = false,
+} = {}) {
   const type = SESSION_TYPES.ALL;
 
   return {
@@ -58,6 +70,8 @@ function createBrowserSessionContext() {
     isServerTargetSwitchingEnabled: false,
     supportedTargets: getWatcherSupportedTargets(type),
     supportedResources: getWatcherSupportedResources(type),
+
+    enableWindowGlobalThreadActors,
   };
 }
 

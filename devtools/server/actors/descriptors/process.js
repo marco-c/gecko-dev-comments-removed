@@ -185,9 +185,14 @@ class ProcessDescriptorActor extends Actor {
 
 
 
-  getWatcher() {
+  getWatcher({ enableWindowGlobalThreadActors = false } = {}) {
     if (!this.watcher) {
-      this.watcher = new WatcherActor(this.conn, createBrowserSessionContext());
+      this.watcher = new WatcherActor(
+        this.conn,
+        createBrowserSessionContext({
+          enableWindowGlobalThreadActors,
+        })
+      );
       this.manage(this.watcher);
     }
     return this.watcher;

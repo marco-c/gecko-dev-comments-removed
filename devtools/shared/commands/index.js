@@ -32,12 +32,20 @@ const Commands = {
 
 
 
-async function createCommandsDictionary(descriptorFront) {
+
+
+
+async function createCommandsDictionary(
+  descriptorFront,
+  enableWindowGlobalThreadActors
+) {
   
   let watcherFront;
   const supportsWatcher = descriptorFront.traits?.watcher;
   if (supportsWatcher) {
-    watcherFront = await descriptorFront.getWatcher();
+    watcherFront = await descriptorFront.getWatcher({
+      enableWindowGlobalThreadActors,
+    });
   }
   const { client } = descriptorFront;
 
