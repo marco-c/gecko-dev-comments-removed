@@ -191,6 +191,12 @@ impl PseudoElement {
     }
 
     
+    
+    pub fn is_part_like(&self) -> bool {
+        self.is_named_view_transition()
+    }
+
+    
     pub fn specificity_count(&self) -> u32 {
         match *self {
             Self::ViewTransitionGroup(ref name) |
