@@ -157,6 +157,8 @@ MALLOC_DECL(moz_set_max_dirty_page_modifier, void, int32_t)
 
 
 
+
+
 MALLOC_DECL(moz_enable_deferred_purge, bool, bool)
 
 
@@ -166,7 +168,14 @@ MALLOC_DECL(moz_enable_deferred_purge, bool, bool)
 
 
 
-MALLOC_DECL(moz_may_purge_one_now, bool, bool)
+
+
+
+
+
+
+
+MALLOC_DECL(moz_may_purge_one_now, purge_result_t, bool, uint32_t)
 
 #  endif
 

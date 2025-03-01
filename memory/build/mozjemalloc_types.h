@@ -214,6 +214,22 @@ static inline bool jemalloc_ptr_is_freed_page(jemalloc_ptr_info_t* info) {
   return info->tag == TagFreedPage;
 }
 
+
+enum purge_result_t {
+  
+  Done,
+
+  
+  
+  NeedsMore,
+
+  
+  
+  
+  
+  WantsLater,
+};
+
 #ifdef __cplusplus
 }  
 #endif
