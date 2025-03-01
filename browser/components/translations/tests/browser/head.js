@@ -309,7 +309,7 @@ async function navigate(
   
   await closeAllOpenPanelsAndMenus();
 
-  info(message);
+  info(message + " - " + url);
 
   
   
