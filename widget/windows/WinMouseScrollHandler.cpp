@@ -207,11 +207,6 @@ void MouseScrollHandler::MaybeLogKeyState() {
 }
 
 
-bool MouseScrollHandler::SkipScrollWheelHack() {
-  return !StaticPrefs::widget_windows_old_scrollwheel_message_hack();
-}
-
-
 bool MouseScrollHandler::NeedsMessage(UINT aMsg) {
   switch (aMsg) {
     case WM_SETTINGCHANGE:
@@ -311,38 +306,10 @@ bool MouseScrollHandler::ProcessMessage(nsWindow* aWidget, UINT msg,
 
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
-      if (SkipScrollWheelHack()) {
-        return GetInstance()->ProcessMessageDirectly(msg, wParam, lParam,
-                                                     aResult);
-      }
-
-      GetInstance()->ProcessNativeMouseWheelMessage(aWidget, msg, wParam,
-                                                    lParam);
-      if (auto* synth = GetActiveSynthEvent()) {
-        synth->NotifyNativeMessageHandlingFinished();
-      }
-      
-      
-      
-      
-      aResult.mConsumed = true;
-      aResult.mResult = 0;
-      return true;
-
     case WM_HSCROLL:
     case WM_VSCROLL:
-      if (SkipScrollWheelHack()) {
-        return GetInstance()->ProcessMessageDirectly(msg, wParam, lParam,
-                                                     aResult);
-      }
-
-      aResult.mConsumed = GetInstance()->ProcessNativeScrollMessage(
-          aWidget, msg, wParam, lParam);
-      if (auto* synth = GetActiveSynthEvent()) {
-        synth->NotifyNativeMessageHandlingFinished();
-      }
-      aResult.mResult = 0;
-      return true;
+      return GetInstance()->ProcessMessageDirectly(msg, wParam, lParam,
+                                                   aResult);
 
     case MOZ_WM_MOUSEVWHEEL:
     case MOZ_WM_MOUSEHWHEEL:
@@ -715,16 +682,12 @@ bool MouseScrollHandler::HandleMouseWheelMessage(nsWindow* aWidget,
   }();
 
   
-  
-  if (SkipScrollWheelHack()) {
-    if (aMessage == WM_MOUSEWHEEL) {
-      aMessage = MOZ_WM_MOUSEVWHEEL;
-    } else if (aMessage == WM_MOUSEHWHEEL) {
-      aMessage = MOZ_WM_MOUSEHWHEEL;
-    }
+  if (aMessage == WM_MOUSEWHEEL) {
+    aMessage = MOZ_WM_MOUSEVWHEEL;
+  } else if (aMessage == WM_MOUSEHWHEEL) {
+    aMessage = MOZ_WM_MOUSEHWHEEL;
   }
 
-  
   MOZ_ASSERT((aMessage == MOZ_WM_MOUSEVWHEEL || aMessage == MOZ_WM_MOUSEHWHEEL),
              "HandleMouseWheelMessage must be called with "
              "MOZ_WM_MOUSEVWHEEL or MOZ_WM_MOUSEHWHEEL");
@@ -802,16 +765,12 @@ bool MouseScrollHandler::HandleScrollMessageAsMouseWheelMessage(
   }();
 
   
-  
-  if (SkipScrollWheelHack()) {
-    if (aMessage == WM_VSCROLL) {
-      aMessage = MOZ_WM_VSCROLL;
-    } else if (aMessage == WM_HSCROLL) {
-      aMessage = MOZ_WM_HSCROLL;
-    }
+  if (aMessage == WM_VSCROLL) {
+    aMessage = MOZ_WM_VSCROLL;
+  } else if (aMessage == WM_HSCROLL) {
+    aMessage = MOZ_WM_HSCROLL;
   }
 
-  
   MOZ_ASSERT((aMessage == MOZ_WM_VSCROLL || aMessage == MOZ_WM_HSCROLL),
              "HandleScrollMessageAsMouseWheelMessage must be called with "
              "MOZ_WM_VSCROLL or MOZ_WM_HSCROLL");
@@ -1745,13 +1704,6 @@ nsresult MouseScrollHandler::SynthesizingEvent::Synthesize(
   
   
   mCursorPoint = aCursorPoint;
-
-  if (!MouseScrollHandler::SkipScrollWheelHack()) {
-    mWnd = aWnd;
-    mMessage = aMessage;
-    mWParam = aWParam;
-    mLParam = aLParam;
-  }
 
   memcpy(mKeyState, aKeyStates, sizeof(mKeyState));
   ::SetKeyboardState(mKeyState);
