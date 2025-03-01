@@ -13,31 +13,25 @@ use core::{
     fmt::{self, Debug},
 };
 
-#[cfg(feature = "std")]
-use std::collections::HashMap;
-
-#[cfg(not(feature = "std"))]
-use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 use mls_rs_core::key_package::{KeyPackageData, KeyPackageStorage};
 
 #[cfg(feature = "std")]
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 
 #[cfg(mls_build_async)]
 use alloc::boxed::Box;
 #[cfg(not(feature = "std"))]
-use spin::Mutex;
+use spin::{Mutex, MutexGuard};
+
+use crate::map::LargeMap;
 
 #[derive(Clone, Default)]
 
 
 
 pub struct InMemoryKeyPackageStorage {
-    #[cfg(feature = "std")]
-    inner: Arc<Mutex<HashMap<Vec<u8>, KeyPackageData>>>,
-    #[cfg(not(feature = "std"))]
-    inner: Arc<Mutex<BTreeMap<Vec<u8>, KeyPackageData>>>,
+    inner: Arc<Mutex<LargeMap<Vec<u8>, KeyPackageData>>>,
 }
 
 impl Debug for InMemoryKeyPackageStorage {
@@ -88,14 +82,12 @@ impl InMemoryKeyPackageStorage {
             .collect()
     }
 
-    #[cfg(feature = "std")]
-    fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<Vec<u8>, KeyPackageData>> {
-        self.inner.lock().unwrap()
-    }
+    fn lock(&self) -> MutexGuard<'_, LargeMap<Vec<u8>, KeyPackageData>> {
+        #[cfg(feature = "std")]
+        return self.inner.lock().unwrap();
 
-    #[cfg(not(feature = "std"))]
-    fn lock(&self) -> spin::mutex::MutexGuard<'_, BTreeMap<Vec<u8>, KeyPackageData>> {
-        self.inner.lock()
+        #[cfg(not(feature = "std"))]
+        return self.inner.lock();
     }
 }
 

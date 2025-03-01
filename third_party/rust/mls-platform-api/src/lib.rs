@@ -5,7 +5,7 @@ mod state;
 
 use mls_rs::error::{AnyError, IntoAnyError};
 use mls_rs::group::proposal::{CustomProposal, ProposalType};
-use mls_rs::group::{Capabilities, ExportedTree, ReceivedMessage};
+use mls_rs::group::{Capabilities, CommitEffect, ExportedTree, ReceivedMessage};
 use mls_rs::identity::SigningIdentity;
 use mls_rs::mls_rs_codec::{MlsDecode, MlsEncode};
 use mls_rs::{CipherSuiteProvider, CryptoProvider, Extension, ExtensionList};
@@ -171,7 +171,7 @@ pub fn mls_generate_credential_basic(content: &[u8]) -> Result<MlsCredential, Pl
 
 
 
-pub fn mls_generate_signature_keypair(
+pub fn mls_generate_identity(
     state: &PlatformState,
     cs: CipherSuite,
     
@@ -218,7 +218,11 @@ pub fn mls_generate_key_package(
     let client = state.client(myself, Some(decoded_cred), ProtocolVersion::MLS_10, config)?;
 
     
-    let key_package = client.generate_key_package_message()?;
+    let key_package_extensions = config.key_package_extensions.clone().unwrap_or_default();
+    let leaf_node_extensions = config.leaf_node_extensions.clone().unwrap_or_default();
+
+    let key_package =
+        client.generate_key_package_message(key_package_extensions, leaf_node_extensions)?;
 
     
     Ok(key_package)
@@ -236,7 +240,7 @@ pub struct ClientIdentifiers {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct GroupMembers {
+pub struct GroupDetails {
     pub group_id: MlsGroupId,
     pub group_epoch: u64,
     pub group_members: Vec<ClientIdentifiers>,
@@ -244,11 +248,11 @@ pub struct GroupMembers {
 
 
 
-pub fn mls_group_members(
+pub fn mls_group_details(
     state: &PlatformState,
     gid: MlsGroupIdArg,
     myself: IdentityArg,
-) -> Result<GroupMembers, PlatformError> {
+) -> Result<GroupDetails, PlatformError> {
     let crypto_provider = DefaultCryptoProvider::default();
 
     let group = state.client_default(myself)?.load_group(gid)?;
@@ -272,13 +276,13 @@ pub fn mls_group_members(
         })
         .collect::<Result<Vec<_>, PlatformError>>()?;
 
-    let members = GroupMembers {
+    let group_details = GroupDetails {
         group_id: gid.to_vec(),
         group_epoch: epoch,
         group_members: members,
     };
 
-    Ok(members)
+    Ok(group_details)
 }
 
 
@@ -305,8 +309,12 @@ pub fn mls_group_create(
         Some(gid) => client.create_group_with_id(
             gid.to_vec(),
             group_context_extensions.unwrap_or_default().clone(),
+            config.leaf_node_extensions.clone().unwrap_or_default(),
         )?,
-        None => client.create_group(group_context_extensions.unwrap_or_default().clone())?,
+        None => client.create_group(
+            group_context_extensions.unwrap_or_default().clone(),
+            config.leaf_node_extensions.clone().unwrap_or_default(),
+        )?,
     };
 
     
@@ -637,6 +645,10 @@ pub fn mls_group_update(
         commit_builder = commit_builder.set_group_context_ext(group_context_extensions)?;
     }
 
+    if let Some(leaf_node_extensions) = config.leaf_node_extensions.clone() {
+        commit_builder = commit_builder.set_leaf_node_extensions(leaf_node_extensions);
+    }
+
     let identity = if let Some((key, cred)) = signature_key.zip(credential) {
         let signature_secret_key = key.to_vec().into();
         let signature_public_key = cipher_suite_provider
@@ -805,29 +817,32 @@ pub fn mls_receive(
         }
         ReceivedMessage::Commit(commit) => {
             
-            if !commit.state_update.is_active() {
-                
-                pstate.delete_group(gid, myself)?;
+            match commit.effect {
+                CommitEffect::Removed { .. } => {
+                    
+                    pstate.delete_group(gid, myself)?;
 
-                
-                let group_epoch = GroupIdEpoch {
-                    group_id: group.group_id().to_vec(),
-                    group_epoch: 0xFFFFFFFFFFFFFFFF,
-                };
+                    
+                    let group_epoch = GroupIdEpoch {
+                        group_id: group.group_id().to_vec(),
+                        group_epoch: 0xFFFFFFFFFFFFFFFF,
+                    };
 
-                Ok((gid.to_vec(), Received::GroupIdEpoch(group_epoch)))
-            } else {
-                
-                
-                
+                    Ok((gid.to_vec(), Received::GroupIdEpoch(group_epoch)))
+                }
+                _ => {
+                    
+                    
+                    
 
-                
-                let group_epoch = GroupIdEpoch {
-                    group_id: group.group_id().to_vec(),
-                    group_epoch: group.current_epoch(),
-                };
+                    
+                    let group_epoch = GroupIdEpoch {
+                        group_id: group.group_id().to_vec(),
+                        group_epoch: group.current_epoch(),
+                    };
 
-                Ok((gid.to_vec(), Received::GroupIdEpoch(group_epoch)))
+                    Ok((gid.to_vec(), Received::GroupIdEpoch(group_epoch)))
+                }
             }
         }
         
@@ -839,6 +854,27 @@ pub fn mls_receive(
     group.write_to_storage()?;
 
     Ok(result)
+}
+
+pub fn mls_has_pending_proposals(
+    pstate: &PlatformState,
+    gid: MlsGroupIdArg,
+    myself: IdentityArg,
+) -> Result<bool, PlatformError> {
+    let group = pstate.client_default(myself)?.load_group(gid)?;
+    let result = group.commit_required();
+    Ok(result)
+}
+
+pub fn mls_clear_pending_proposals(
+    pstate: &PlatformState,
+    gid: MlsGroupIdArg,
+    myself: IdentityArg,
+) -> Result<bool, PlatformError> {
+    let mut group = pstate.client_default(myself)?.load_group(gid)?;
+    group.clear_proposal_cache();
+    group.write_to_storage()?;
+    Ok(true)
 }
 
 pub fn mls_has_pending_commit(
@@ -875,29 +911,32 @@ pub fn mls_apply_pending_commit(
     let result = match received_message? {
         ReceivedMessage::Commit(commit) => {
             
-            if !commit.state_update.is_active() {
-                
-                pstate.delete_group(gid, myself)?;
+            match commit.effect {
+                CommitEffect::Removed { .. } => {
+                    
+                    pstate.delete_group(gid, myself)?;
 
-                
-                let group_epoch = GroupIdEpoch {
-                    group_id: group.group_id().to_vec(),
-                    group_epoch: 0xFFFFFFFFFFFFFFFF,
-                };
+                    
+                    let group_epoch = GroupIdEpoch {
+                        group_id: group.group_id().to_vec(),
+                        group_epoch: 0xFFFFFFFFFFFFFFFF,
+                    };
 
-                Ok(Received::GroupIdEpoch(group_epoch))
-            } else {
-                
-                
-                
+                    Ok(Received::GroupIdEpoch(group_epoch))
+                }
+                _ => {
+                    
+                    
+                    
 
-                
-                let group_epoch = GroupIdEpoch {
-                    group_id: group.group_id().to_vec(),
-                    group_epoch: group.current_epoch(),
-                };
+                    
+                    let group_epoch = GroupIdEpoch {
+                        group_id: group.group_id().to_vec(),
+                        group_epoch: group.current_epoch(),
+                    };
 
-                Ok(Received::GroupIdEpoch(group_epoch))
+                    Ok(Received::GroupIdEpoch(group_epoch))
+                }
             }
         }
         _ => Err(PlatformError::UnsupportedMessage),
@@ -1141,53 +1180,14 @@ pub fn mls_get_group_id(message_or_ack: &MessageOrAck) -> Result<Vec<u8>, Platfo
     Ok(gid.to_vec())
 }
 
-use serde_json::{Error, Value};
+pub fn mls_get_group_epoch(message_or_ack: &MessageOrAck) -> Result<u64, PlatformError> {
+    let group_epoch: Option<u64> = match &message_or_ack {
+        MessageOrAck::MlsMessage(message) => message.epoch(),
+        _ => None,
+    };
 
-
-fn convert_bytes_fields_to_hex(input_str: &str) -> Result<String, Error> {
-    
-    let mut value: Value = serde_json::from_str(input_str)?;
-
-    
-    fn process_element(element: &mut Value) {
-        match element {
-            Value::Array(ref mut vec) => {
-                if vec
-                    .iter()
-                    .all(|x| matches!(x, Value::Number(n) if n.is_u64()))
-                {
-                    
-                    let bytes: Vec<u8> = vec
-                        .iter()
-                        .filter_map(|x| x.as_u64().map(|n| n as u8))
-                        .collect();
-                    
-                    if bytes.len() == vec.len() {
-                        *element = Value::String(hex::encode(bytes));
-                    } else {
-                        vec.iter_mut().for_each(process_element);
-                    }
-                } else {
-                    vec.iter_mut().for_each(process_element);
-                }
-            }
-            Value::Object(ref mut map) => {
-                map.values_mut().for_each(process_element);
-            }
-            _ => {}
-        }
-    }
-    
-    process_element(&mut value);
-    serde_json::to_string(&value)
+    Ok(group_epoch.expect("Group epoch not found"))
 }
 
 
-pub fn utils_json_bytes_to_string_custom(input_bytes: &[u8]) -> Result<String, PlatformError> {
-    
-    let input_str =
-        std::str::from_utf8(input_bytes).map_err(|_| PlatformError::JsonConversionError)?;
 
-    
-    convert_bytes_fields_to_hex(input_str).map_err(|_| PlatformError::JsonConversionError)
-}

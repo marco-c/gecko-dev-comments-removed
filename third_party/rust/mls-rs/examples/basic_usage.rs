@@ -44,10 +44,11 @@ fn main() -> Result<(), MlsError> {
     let bob = make_client(crypto_provider.clone(), "bob")?;
 
     
-    let mut alice_group = alice.create_group(ExtensionList::default())?;
+    let mut alice_group = alice.create_group(ExtensionList::default(), Default::default())?;
 
     
-    let bob_key_package = bob.generate_key_package_message()?;
+    let bob_key_package =
+        bob.generate_key_package_message(Default::default(), Default::default())?;
 
     
     let alice_commit = alice_group

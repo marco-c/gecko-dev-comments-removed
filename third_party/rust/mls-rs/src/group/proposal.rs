@@ -35,6 +35,12 @@ pub struct AddProposal {
 impl AddProposal {
     
     
+    pub fn key_package(&self) -> &KeyPackage {
+        &self.key_package
+    }
+
+    
+    
     pub fn signing_identity(&self) -> &SigningIdentity {
         self.key_package.signing_identity()
     }
