@@ -110,6 +110,24 @@ class CrashGenerationClient {
 
  private:
   
+  enum RegistrationState {
+    
+    UNREGISTERED,
+
+    
+    REGISTERING,
+
+    
+    REGISTERED,
+
+    
+    FAILED,
+  };
+
+  
+  static DWORD NTAPI AsyncRegister(LPVOID param);
+
+  
   
   
   HANDLE ConnectToServer();
@@ -124,7 +142,11 @@ class CrashGenerationClient {
   bool ValidateResponse(const ProtocolMessage& msg) const;
 
   
-  bool IsRegistered() const;
+  
+  bool WaitForRegistration();
+
+  
+  void SetRegistrationState(RegistrationState state);
 
   
   
@@ -135,6 +157,12 @@ class CrashGenerationClient {
 
   
   bool SignalCrashEventAndWait();
+
+  
+  CRITICAL_SECTION sync_;
+
+  
+  RegistrationState state_;
 
   
   std::wstring pipe_name_;
