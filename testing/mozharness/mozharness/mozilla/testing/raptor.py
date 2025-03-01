@@ -1367,6 +1367,9 @@ class Raptor(
         
         env["SCRIPTSPATH"] = scripts_path
         env["EXTERNALTOOLSPATH"] = external_tools_path
+
+        
+        
         env["XPCSHELL_PATH"] = os.path.join(
             self.query_abs_dirs()["abs_test_install_dir"], "bin", "xpcshell.exe"
         )
@@ -1379,6 +1382,10 @@ class Raptor(
             )
             copyfile(env["XPCSHELL_PATH"], dest)
             env["XPCSHELL_PATH"] = dest
+        if self.run_local and self.obj_path:
+            env["XPCSHELL_PATH"] = os.path.join(
+                self.obj_path, "dist", "bin", "xpcshell.exe"
+            )
 
         
         if self.is_release_build:
