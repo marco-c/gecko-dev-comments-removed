@@ -70,6 +70,12 @@ class FetchEventOpProxyChild final : public PFetchEventOpProxyChild {
   RefPtr<FetchEventPreloadResponseEndPromise::Private>
       mPreloadResponseEndPromise;
 
+  
+  
+  
+  bool mPreloadResponseAvailablePromiseResolved = false;
+  bool mPreloadResponseEndPromiseResolved = false;
+
   Maybe<ServiceWorkerOpResult> mCachedOpResult;
 };
 

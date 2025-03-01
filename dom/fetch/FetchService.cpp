@@ -68,6 +68,7 @@ FetchServicePromises::GetResponseEndPromise() {
 void FetchServicePromises::ResolveResponseAvailablePromise(
     FetchServiceResponse&& aResponse, StaticString aMethodName) {
   if (mAvailablePromise) {
+    mAvailablePromiseResolved = true;
     mAvailablePromise->Resolve(std::move(aResponse), aMethodName);
   }
 }
@@ -82,6 +83,7 @@ void FetchServicePromises::RejectResponseAvailablePromise(
 void FetchServicePromises::ResolveResponseTimingPromise(
     ResponseTiming&& aTiming, StaticString aMethodName) {
   if (mTimingPromise) {
+    mTimingPromiseResolved = true;
     mTimingPromise->Resolve(std::move(aTiming), aMethodName);
   }
 }
@@ -96,6 +98,7 @@ void FetchServicePromises::RejectResponseTimingPromise(
 void FetchServicePromises::ResolveResponseEndPromise(ResponseEndArgs&& aArgs,
                                                      StaticString aMethodName) {
   if (mEndPromise) {
+    mEndPromiseResolved = true;
     mEndPromise->Resolve(std::move(aArgs), aMethodName);
   }
 }
@@ -345,15 +348,11 @@ void FetchService::FetchInstance::Cancel(bool aForceAbort) {
 
           mArgs.as<WorkerFetchArgs>().mResponseEndPromiseHolder.Disconnect();
 
-          MOZ_ASSERT(
-              !mArgs.as<WorkerFetchArgs>().mFetchParentPromise->IsResolved());
-          if (!mArgs.as<WorkerFetchArgs>().mFetchParentPromise->IsResolved()) {
-            
-            
-            mActorDying = true;
-            mArgs.as<WorkerFetchArgs>().mFetchParentPromise->Resolve(true,
-                                                                     __func__);
-          }
+          
+          
+          mActorDying = true;
+          mArgs.as<WorkerFetchArgs>().mFetchParentPromise->Resolve(true,
+                                                                   __func__);
         }
       }
       return;
@@ -413,23 +412,20 @@ void FetchService::FetchInstance::OnResponseEnd(
   if (aReason == eAborted) {
     
     
-    if (!mPromises->GetResponseAvailablePromise()->IsResolved()) {
-      mPromises->ResolveResponseAvailablePromise(
-          InternalResponse::NetworkError(NS_ERROR_DOM_ABORT_ERR), __func__);
-    }
+    
+    mPromises->ResolveResponseAvailablePromise(
+        InternalResponse::NetworkError(NS_ERROR_DOM_ABORT_ERR), __func__);
 
     
     
-    if (!mPromises->GetResponseTimingPromise()->IsResolved()) {
-      mPromises->ResolveResponseTimingPromise(ResponseTiming(), __func__);
-    }
+    mPromises->ResolveResponseTimingPromise(ResponseTiming(), __func__);
     
     mPromises->ResolveResponseEndPromise(ResponseEndArgs(aReason), __func__);
     return;
   }
 
-  MOZ_ASSERT(mPromises->GetResponseAvailablePromise()->IsResolved() &&
-             mPromises->GetResponseTimingPromise()->IsResolved());
+  MOZ_ASSERT(mPromises->IsResponseAvailablePromiseResolved() &&
+             mPromises->IsResponseTimingPromiseResolved());
 
   
   mPromises->ResolveResponseEndPromise(ResponseEndArgs(aReason), __func__);
@@ -542,7 +538,7 @@ void FetchService::FetchInstance::OnReportPerformanceTiming() {
   MOZ_ASSERT(mFetchDriver);
   MOZ_ASSERT(mPromises);
 
-  if (mPromises->GetResponseTimingPromise()->IsResolved()) {
+  if (mPromises->IsResponseTimingPromiseResolved()) {
     return;
   }
 
@@ -872,7 +868,7 @@ RefPtr<FetchServicePromises> FetchService::Fetch(FetchArgs&& aArgs) {
   RefPtr<FetchServicePromises> promises = fetch->Fetch();
   MOZ_ASSERT(promises);
 
-  if (!promises->GetResponseAvailablePromise()->IsResolved()) {
+  if (!promises->IsResponseAvailablePromiseResolved()) {
     
     if (!mFetchInstanceTable.WithEntryHandle(promises, [&](auto&& entry) {
           if (entry.HasEntry()) {
