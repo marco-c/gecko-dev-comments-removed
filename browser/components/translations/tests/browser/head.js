@@ -707,38 +707,8 @@ class TranslationsBencher {
 
 
   static async #getInferenceProcessTotalMemoryUsage() {
-    let memoryReporterManager = Cc[
-      "@mozilla.org/memory-reporter-manager;1"
-    ].getService(Ci.nsIMemoryReporterManager);
-
-    let totalBytes = 0;
-
-    const handleReport = (
-      aProcess,
-      aPath,
-      _aKind,
-      _aUnits,
-      aAmount,
-      _aDescription
-    ) => {
-      if (aProcess.startsWith("inference")) {
-        if (aPath.startsWith("explicit")) {
-          totalBytes += aAmount;
-        }
-      }
-    };
-
-    await new Promise(resolve =>
-      memoryReporterManager.getReports(
-        handleReport,
-        null, 
-        resolve, 
-        null, 
-        false 
-      )
-    );
-
-    return bytesToMebibytes(totalBytes);
+    const inferenceProcessInfo = await getInferenceProcessInfo();
+    return bytesToMebibytes(inferenceProcessInfo.memory);
   }
 }
 
