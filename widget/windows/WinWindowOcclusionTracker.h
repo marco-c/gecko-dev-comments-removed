@@ -152,7 +152,9 @@ class WinWindowOcclusionTracker final {
 
     
     
-    void RegisterGlobalEventHook(DWORD aEventMin, DWORD aEventMax);
+    
+    void RegisterGlobalEventHook(DWORD aEventMin, DWORD aEventMax,
+                                 DWORD aSkipFlags = 0);
 
     
     

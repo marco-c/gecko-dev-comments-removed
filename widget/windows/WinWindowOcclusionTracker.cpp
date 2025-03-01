@@ -850,7 +850,6 @@ void WinWindowOcclusionTracker::WindowOcclusionCalculator::Initialize() {
   MOZ_ASSERT(!mVirtualDesktopManager);
   CALC_LOG(LogLevel::Info, "Initialize()");
 
-#ifndef __MINGW32__
   RefPtr<IVirtualDesktopManager> desktopManager;
   HRESULT hr = ::CoCreateInstance(
       CLSID_VirtualDesktopManager, NULL, CLSCTX_INPROC_SERVER,
@@ -859,7 +858,6 @@ void WinWindowOcclusionTracker::WindowOcclusionCalculator::Initialize() {
     return;
   }
   mVirtualDesktopManager = desktopManager;
-#endif
 }
 
 void WinWindowOcclusionTracker::WindowOcclusionCalculator::Shutdown() {
@@ -1108,10 +1106,12 @@ void WinWindowOcclusionTracker::WindowOcclusionCalculator::
 }
 
 void WinWindowOcclusionTracker::WindowOcclusionCalculator::
-    RegisterGlobalEventHook(DWORD aEventMin, DWORD aEventMax) {
+    RegisterGlobalEventHook(DWORD aEventMin, DWORD aEventMax,
+                            DWORD aSkipFlags) {
+  MOZ_ASSERT(!aSkipFlags || aSkipFlags == WINEVENT_SKIPOWNPROCESS);
   HWINEVENTHOOK eventHook =
       ::SetWinEventHook(aEventMin, aEventMax, nullptr, &EventHookCallback, 0, 0,
-                        WINEVENT_OUTOFCONTEXT);
+                        WINEVENT_OUTOFCONTEXT | aSkipFlags);
   mGlobalEventHooks.push_back(eventHook);
 }
 
@@ -1143,7 +1143,12 @@ void WinWindowOcclusionTracker::WindowOcclusionCalculator::
 
   
   
-  RegisterGlobalEventHook(EVENT_OBJECT_SHOW, EVENT_OBJECT_HIDE);
+  
+  
+  
+  
+  RegisterGlobalEventHook(EVENT_OBJECT_SHOW, EVENT_OBJECT_HIDE,
+                          WINEVENT_SKIPOWNPROCESS);
 
   
   
