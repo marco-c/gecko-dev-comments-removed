@@ -25,6 +25,12 @@ const gCSSProperties1 = {
       { type: 'discrete', options: [ [ 'flex-start', 'flex-end' ] ] }
     ]
   },
+  'anchor-scope': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'none', 'all' ] ] }
+    ]
+  },
   'appearance': {
     
     types: [
@@ -569,6 +575,10 @@ const gCSSProperties1 = {
     types: [
       { type: 'discrete', options: [ [ 'italic', 'oblique' ] ] }
     ]
+  },
+  'font-width': {
+    
+    types: [ 'percentage' ]
   },
   'float': {
     
