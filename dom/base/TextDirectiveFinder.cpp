@@ -107,7 +107,8 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       
       RefPtr<nsRange> prefixMatch = TextDirectiveUtil::FindStringInRange(
-          searchRange, aTextDirective.prefix, true, false);
+          searchRange->StartRef(), searchRange->EndRef(), aTextDirective.prefix,
+          true, false);
       
       if (!prefixMatch) {
         TEXT_FRAGMENT_LOG(
@@ -174,7 +175,8 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       
       potentialMatch = TextDirectiveUtil::FindStringInRange(
-          matchRange, aTextDirective.start, false, mustEndAtWordBoundary);
+          matchRange->StartRef(), matchRange->EndRef(), aTextDirective.start,
+          false, mustEndAtWordBoundary);
       
       
       
@@ -210,7 +212,8 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       
       potentialMatch = TextDirectiveUtil::FindStringInRange(
-          searchRange, aTextDirective.start, true, mustEndAtWordBoundary);
+          searchRange->StartRef(), searchRange->EndRef(), aTextDirective.start,
+          true, mustEndAtWordBoundary);
       
       if (!potentialMatch) {
         TEXT_FRAGMENT_LOG(
@@ -254,8 +257,8 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
         
         
         RefPtr<nsRange> endMatch = TextDirectiveUtil::FindStringInRange(
-            rangeEndSearchRange, aTextDirective.end, true,
-            mustEndAtWordBoundary);
+            rangeEndSearchRange->StartRef(), rangeEndSearchRange->EndRef(),
+            aTextDirective.end, true, mustEndAtWordBoundary);
         
         if (!endMatch) {
           TEXT_FRAGMENT_LOG(
@@ -299,7 +302,8 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       
       RefPtr<nsRange> suffixMatch = TextDirectiveUtil::FindStringInRange(
-          suffixRange, aTextDirective.suffix, false, true);
+          suffixRange->StartRef(), suffixRange->EndRef(), aTextDirective.suffix,
+          false, true);
       
       
       
