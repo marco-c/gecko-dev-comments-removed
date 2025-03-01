@@ -18,13 +18,6 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsIContentAnalysis
 );
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "_contentAnalysisClipboardEnabled",
-  "browser.contentanalysis.interception_point.clipboard.enabled",
-  true
-);
-
 
 
 
@@ -162,61 +155,69 @@ function commonDialogOnLoad() {
   
   ui.infoIcon.addEventListener("load", () => window.sizeToContent());
   if (lazy.gContentAnalysis.isActive && args.owningBrowsingContext?.isContent) {
-    ui.loginTextbox?.addEventListener("paste", async event => {
-      let data = event.clipboardData.getData("text/plain");
-      if (data?.length > 0 && lazy._contentAnalysisClipboardEnabled) {
-        
-        event.preventDefault();
-        
-        const startIndex = Math.min(
-          ui.loginTextbox.selectionStart,
-          ui.loginTextbox.selectionEnd
-        );
-        const endIndex = Math.max(
-          ui.loginTextbox.selectionStart,
-          ui.loginTextbox.selectionEnd
-        );
-        const selectionDirection =
-          endIndex < startIndex ? "backward" : "forward";
-        try {
-          const response = await lazy.gContentAnalysis.analyzeContentRequests(
-            [
-              {
-                analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
-                reason: Ci.nsIContentAnalysisRequest.eClipboardPaste,
-                resources: [],
-                operationTypeForDisplay:
-                  Ci.nsIContentAnalysisRequest.eClipboard,
-                url: lazy.gContentAnalysis.getURIForBrowsingContext(
-                  args.owningBrowsingContext
-                ),
-                textContent: data,
-                windowGlobalParent:
-                  args.owningBrowsingContext.currentWindowContext,
-              },
-            ],
-            true
-          );
-          if (response.shouldAllowContent) {
-            ui.loginTextbox.value =
-              ui.loginTextbox.value.slice(0, startIndex) +
-              data +
-              ui.loginTextbox.value.slice(endIndex);
-            ui.loginTextbox.focus();
-            if (startIndex !== endIndex) {
-              
-              ui.loginTextbox.setSelectionRange(
-                startIndex,
-                startIndex + data.length,
-                selectionDirection
-              );
-            }
-          }
-        } catch (error) {
-          console.error("Content analysis request returned error: ", error);
-        }
+    let caEventChecker = async event => {
+      let isPaste = event.type == "paste";
+      let dataTransfer = isPaste ? event.clipboardData : event.dataTransfer;
+      let data = dataTransfer.getData("text/plain");
+      if (!data || !data.length) {
+        return;
       }
-    });
+
+      
+      event.preventDefault();
+      
+      const startIndex = Math.min(
+        ui.loginTextbox.selectionStart,
+        ui.loginTextbox.selectionEnd
+      );
+      const endIndex = Math.max(
+        ui.loginTextbox.selectionStart,
+        ui.loginTextbox.selectionEnd
+      );
+      const selectionDirection = endIndex < startIndex ? "backward" : "forward";
+      try {
+        const response = await lazy.gContentAnalysis.analyzeContentRequests(
+          [
+            {
+              analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
+              reason: isPaste
+                ? Ci.nsIContentAnalysisRequest.eClipboardPaste
+                : Ci.nsIContentAnalysisRequest.eDragAndDrop,
+              resources: [],
+              operationTypeForDisplay: isPaste
+                ? Ci.nsIContentAnalysisRequest.eClipboard
+                : Ci.nsIContentAnalysisRequest.eDroppedText,
+              url: lazy.gContentAnalysis.getURIForBrowsingContext(
+                args.owningBrowsingContext
+              ),
+              textContent: data,
+              windowGlobalParent:
+                args.owningBrowsingContext.currentWindowContext,
+            },
+          ],
+          true
+        );
+        if (response.shouldAllowContent) {
+          ui.loginTextbox.value =
+            ui.loginTextbox.value.slice(0, startIndex) +
+            data +
+            ui.loginTextbox.value.slice(endIndex);
+          ui.loginTextbox.focus();
+          if (startIndex !== endIndex) {
+            
+            ui.loginTextbox.setSelectionRange(
+              startIndex,
+              startIndex + data.length,
+              selectionDirection
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Content analysis request returned error: ", error);
+      }
+    };
+    ui.loginTextbox?.addEventListener("paste", caEventChecker);
+    ui.loginTextbox?.addEventListener("drop", caEventChecker);
   }
 
   window.getAttention();
