@@ -65,45 +65,46 @@ const BLANK_LINE_RX = /^[ \t]*(?:\r\n|\n|\r|\f|$)/;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-function RuleRewriter(isCssPropertyKnown, rule, inputString) {
-  this.rule = rule;
-  this.isCssPropertyKnown = isCssPropertyKnown;
+class RuleRewriter {
   
-  
-  
-  this.modifications = [];
 
-  
-  
-  this.changedDeclarations = {};
 
-  
-  
-  this.editPromise = null;
 
-  
-  
-  
-  
-  this.defaultIndentation = null;
 
-  this.startInitialization(inputString);
-}
 
-RuleRewriter.prototype = {
+
+
+
+
+
+
+
+
+  constructor(isCssPropertyKnown, rule, inputString) {
+    this.rule = rule;
+    this.isCssPropertyKnown = isCssPropertyKnown;
+    
+    
+    
+    this.modifications = [];
+
+    
+    
+    this.changedDeclarations = {};
+
+    
+    
+    this.editPromise = null;
+
+    
+    
+    
+    
+    this.defaultIndentation = null;
+
+    this.startInitialization(inputString);
+  }
+
   
 
 
@@ -122,7 +123,7 @@ RuleRewriter.prototype = {
     );
     this.decl = null;
     this.result = null;
-  },
+  }
 
   
 
@@ -144,7 +145,7 @@ RuleRewriter.prototype = {
       this.decl = null;
       this.result = this.inputString;
     }
-  },
+  }
 
   
 
@@ -172,7 +173,7 @@ RuleRewriter.prototype = {
     }
     
     return "";
-  },
+  }
 
   
 
@@ -300,7 +301,7 @@ RuleRewriter.prototype = {
       result += eofFixup;
     }
     return [anySanitized, result];
-  },
+  }
 
   
 
@@ -320,7 +321,7 @@ RuleRewriter.prototype = {
       
     }
     return index;
-  },
+  }
 
   
 
@@ -369,7 +370,7 @@ RuleRewriter.prototype = {
     if (this.hasNewLine && !NEWLINE_RX.test(trailingText)) {
       this.result += "\n";
     }
-  },
+  }
 
   
 
@@ -386,7 +387,7 @@ RuleRewriter.prototype = {
       this.changedDeclarations[index] = sanitizedText;
     }
     return sanitizedText;
-  },
+  }
 
   
 
@@ -402,7 +403,7 @@ RuleRewriter.prototype = {
     
     this.completeCopying(this.decl.colonOffsets[0]);
     this.modifications.push({ type: "set", index, name, newName });
-  },
+  }
 
   
 
@@ -478,7 +479,7 @@ RuleRewriter.prototype = {
     } else {
       this.modifications.push({ type: "disable", index, name });
     }
-  },
+  }
 
   
 
@@ -512,7 +513,7 @@ RuleRewriter.prototype = {
     );
     const { indentUnit, indentWithTabs } = getIndentationFromString(source);
     return indentWithTabs ? "\t" : " ".repeat(indentUnit);
-  },
+  }
 
   
 
@@ -588,7 +589,7 @@ RuleRewriter.prototype = {
       
       this.completeCopying(this.decl.offsets[0]);
     }
-  },
+  }
 
   
 
@@ -613,7 +614,7 @@ RuleRewriter.prototype = {
     if (enabled) {
       this.modifications.push({ type: "set", index, name, value, priority });
     }
-  },
+  }
 
   
 
@@ -651,7 +652,7 @@ RuleRewriter.prototype = {
     this.result += ";";
     this.completeCopying(this.decl.offsets[1]);
     this.modifications.push({ type: "set", index, name, value, priority });
-  },
+  }
 
   
 
@@ -703,7 +704,7 @@ RuleRewriter.prototype = {
     }
     this.completeCopying(copyOffset);
     this.modifications.push({ type: "remove", index, name });
-  },
+  }
 
   
 
@@ -715,7 +716,7 @@ RuleRewriter.prototype = {
   completeCopying(copyOffset) {
     
     this.result += this.inputString.substring(copyOffset);
-  },
+  }
 
   
 
@@ -727,7 +728,7 @@ RuleRewriter.prototype = {
     return Promise.resolve(this.editPromise).then(() => {
       return this.rule.setRuleText(this.result, this.modifications);
     });
-  },
+  }
 
   
 
@@ -741,8 +742,8 @@ RuleRewriter.prototype = {
 
   getResult() {
     return { changed: this.changedDeclarations, text: this.result };
-  },
-};
+  }
+}
 
 
 
