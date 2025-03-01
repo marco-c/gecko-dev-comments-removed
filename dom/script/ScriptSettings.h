@@ -35,7 +35,6 @@ namespace mozilla {
 namespace dom {
 
 class Document;
-class WebTaskSchedulingState;
 
 
 
@@ -95,8 +94,6 @@ nsIGlobalObject* GetIncumbentGlobal();
 
 
 nsIGlobalObject* GetCurrentGlobal();
-
-WebTaskSchedulingState* GetWebTaskSchedulingState();
 
 
 
