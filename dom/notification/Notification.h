@@ -84,10 +84,17 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
 
 
 
-  static Result<already_AddRefed<Notification>, QMResult> ConstructFromFields(
-      nsIGlobalObject* aGlobal, const nsAString& aID, const nsAString& aTitle,
-      const nsAString& aDir, const nsAString& aLang, const nsAString& aBody,
-      const nsAString& aTag, const nsAString& aIcon, const nsAString& aData,
+   static Result<already_AddRefed<Notification>, QMResult> ConstructFromFields(
+    nsIGlobalObject* aGlobal, const nsAString& aID, const nsAString& aTitle,
+    const nsAString& aDir, const nsAString& aLang, const nsAString& aBody,
+    const nsAString& aTag, const nsAString& aIcon, const nsAString& aData,
+    const nsAString& aServiceWorkerRegistrationScope);
+
+  
+
+
+  static Result<already_AddRefed<Notification>, QMResult> ConstructFromIPC(
+      nsIGlobalObject* aGlobal, const IPCNotification& aIPCNotification,
       const nsAString& aServiceWorkerRegistrationScope);
 
   void GetID(nsAString& aRetval) { aRetval = mID; }
