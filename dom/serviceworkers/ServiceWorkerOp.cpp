@@ -935,8 +935,8 @@ class NotificationEventOp : public ExtendableEventOp,
 
     
     
-    uint32_t delay = mArgs.get_ServiceWorkerNotificationEventOpArgs()
-                         .disableOpenClickDelay();
+    uint32_t delay =
+        StaticPrefs::dom_webnotifications_disable_open_click_delay();
     rv = mTimer->InitWithCallback(this, delay, nsITimer::TYPE_ONE_SHOT);
 
     if (NS_WARN_IF(NS_FAILED(rv))) {

@@ -117,14 +117,6 @@ uint32_t ServiceWorkerPrivate::sRunningServiceWorkersFetchMax = 0;
 
 
 
-
-
-
-Atomic<uint32_t> gDOMDisableOpenClickDelay(0);
-
-
-
-
 KeepAliveToken::KeepAliveToken(ServiceWorkerPrivate* aPrivate)
     : mPrivate(aPrivate) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -998,10 +990,8 @@ nsresult ServiceWorkerPrivate::SendNotificationEvent(
     const nsAString& aScope) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (aEventName.EqualsLiteral(NOTIFICATION_CLICK_EVENT_NAME)) {
-    gDOMDisableOpenClickDelay =
-        Preferences::GetInt("dom.serviceWorkers.disable_open_click_delay");
-  } else if (!aEventName.EqualsLiteral(NOTIFICATION_CLOSE_EVENT_NAME)) {
+  if (!aEventName.EqualsLiteral(NOTIFICATION_CLICK_EVENT_NAME) &&
+      !aEventName.EqualsLiteral(NOTIFICATION_CLOSE_EVENT_NAME)) {
     MOZ_ASSERT_UNREACHABLE("Invalid notification event name");
     return NS_ERROR_FAILURE;
   }
@@ -1017,7 +1007,6 @@ nsresult ServiceWorkerPrivate::SendNotificationEvent(
   args.icon() = nsString(aIcon);
   args.data() = nsString(aData);
   args.scope() = nsString(aScope);
-  args.disableOpenClickDelay() = gDOMDisableOpenClickDelay;
 
   return ExecServiceWorkerOp(
       std::move(args), ServiceWorkerLifetimeExtension(FullLifetimeExtension{}),

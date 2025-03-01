@@ -202,10 +202,6 @@ pref("dom.meta-viewport.enabled", true);
 pref("dom.push.maxRecentMessageIDsPerSubscription", 0);
 
 
-
-pref("dom.serviceWorkers.disable_open_click_delay", 5000);
-
-
 pref("dom.webshare.enabled", true);
 
 
