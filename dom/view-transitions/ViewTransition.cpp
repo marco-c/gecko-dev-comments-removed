@@ -898,7 +898,7 @@ void ViewTransition::Setup() {
 
 void ViewTransition::HandleFrame() {
   
-  bool hasActiveAnimations = CheckForActiveAnimations();
+  const bool hasActiveAnimations = CheckForActiveAnimations();
 
   
   if (!hasActiveAnimations) {
@@ -989,6 +989,10 @@ static bool CheckForActiveAnimationsForEachPseudo(
 
 bool ViewTransition::CheckForActiveAnimations() const {
   MOZ_ASSERT(mDocument);
+
+  if (StaticPrefs::dom_viewTransitions_remain_active()) {
+    return true;
+  }
 
   const Element* root = mDocument->GetRootElement();
   if (!root) {
