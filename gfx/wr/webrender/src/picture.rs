@@ -4037,10 +4037,10 @@ pub struct SurfaceInfo {
     
     pub clipped_local_rect: PictureRect,
     
-    pub is_opaque: bool,
-    
     
     pub clipping_rect: PictureRect,
+    
+    pub culling_rect: VisRect,
     
     
     pub map_local_to_picture: SpaceMapper<LayoutPixel, PicturePixel>,
@@ -4049,11 +4049,16 @@ pub struct SurfaceInfo {
     
     pub raster_spatial_node_index: SpatialNodeIndex,
     
+    
+    pub visibility_spatial_node_index: SpatialNodeIndex,
+    
     pub device_pixel_scale: DevicePixelScale,
     
     pub world_scale_factors: (f32, f32),
     
     pub local_scale: (f32, f32),
+    
+    pub is_opaque: bool,
     
     pub allow_snapping: bool,
     
@@ -4088,6 +4093,9 @@ impl SurfaceInfo {
             pic_bounds,
         );
 
+        
+        let visibility_spatial_node_index = spatial_tree.root_reference_frame_index();
+
         SurfaceInfo {
             unclipped_local_rect: PictureRect::zero(),
             clipped_local_rect: PictureRect::zero(),
@@ -4096,11 +4104,15 @@ impl SurfaceInfo {
             map_local_to_picture,
             raster_spatial_node_index,
             surface_spatial_node_index,
+            visibility_spatial_node_index,
             device_pixel_scale,
             world_scale_factors,
             local_scale,
             allow_snapping,
             force_scissor_rect,
+            
+            
+            culling_rect: world_rect.cast_unit(),
         }
     }
 
@@ -8273,9 +8285,11 @@ fn test_large_surface_scale_1() {
             clipped_local_rect: PictureRect::max_rect(),
             is_opaque: true,
             clipping_rect: PictureRect::max_rect(),
+            culling_rect: VisRect::max_rect(),
             map_local_to_picture: map_local_to_picture.clone(),
             raster_spatial_node_index: root_reference_frame_index,
             surface_spatial_node_index: root_reference_frame_index,
+            visibility_spatial_node_index: root_reference_frame_index,
             device_pixel_scale: DevicePixelScale::new(1.0),
             world_scale_factors: (1.0, 1.0),
             local_scale: (1.0, 1.0),
@@ -8290,9 +8304,11 @@ fn test_large_surface_scale_1() {
             clipped_local_rect: PictureRect::max_rect(),
             is_opaque: true,
             clipping_rect: PictureRect::max_rect(),
+            culling_rect: VisRect::max_rect(),
             map_local_to_picture,
             raster_spatial_node_index: root_reference_frame_index,
             surface_spatial_node_index: root_reference_frame_index,
+            visibility_spatial_node_index: root_reference_frame_index,
             device_pixel_scale: DevicePixelScale::new(43.82798767089844),
             world_scale_factors: (1.0, 1.0),
             local_scale: (1.0, 1.0),
@@ -8345,11 +8361,13 @@ fn test_drop_filter_dirty_region_outside_prim() {
             map_local_to_picture: map_local_to_picture.clone(),
             raster_spatial_node_index: root_reference_frame_index,
             surface_spatial_node_index: root_reference_frame_index,
+            visibility_spatial_node_index: root_reference_frame_index,
             device_pixel_scale: DevicePixelScale::new(1.0),
             world_scale_factors: (1.0, 1.0),
             local_scale: (1.0, 1.0),
             allow_snapping: true,
             force_scissor_rect: false,
+            culling_rect: VisRect::max_rect(),
         },
         SurfaceInfo {
             unclipped_local_rect: PictureRect::new(
@@ -8365,11 +8383,13 @@ fn test_drop_filter_dirty_region_outside_prim() {
             map_local_to_picture,
             raster_spatial_node_index: root_reference_frame_index,
             surface_spatial_node_index: root_reference_frame_index,
+            visibility_spatial_node_index: root_reference_frame_index,
             device_pixel_scale: DevicePixelScale::new(1.0),
             world_scale_factors: (1.0, 1.0),
             local_scale: (1.0, 1.0),
             allow_snapping: true,
             force_scissor_rect: false,
+            culling_rect: VisRect::max_rect(),
         },
     ];
 
