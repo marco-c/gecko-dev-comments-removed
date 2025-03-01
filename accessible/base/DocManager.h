@@ -57,14 +57,10 @@ class DocManager : public nsIWebProgressListener,
   
 
 
-
-
   void NotifyOfDocumentShutdown(DocAccessible* aDocument,
-                                dom::Document* aDOMDocument,
-                                bool aAllowServiceShutdown = true);
+                                dom::Document* aDOMDocument);
 
-  void RemoveFromXPCDocumentCache(DocAccessible* aDocument,
-                                  bool aAllowServiceShutdown = true);
+  void RemoveFromXPCDocumentCache(DocAccessible* aDocument);
 
   
 

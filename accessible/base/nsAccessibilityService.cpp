@@ -1960,7 +1960,7 @@ nsAccessibilityService* GetOrCreateAccService(uint32_t aNewConsumer,
   return nsAccessibilityService::gAccessibilityService;
 }
 
-void MaybeShutdownAccService(uint32_t aFormerConsumer) {
+void MaybeShutdownAccService(uint32_t aFormerConsumer, bool aAsync) {
   nsAccessibilityService* accService =
       nsAccessibilityService::gAccessibilityService;
 
@@ -1985,11 +1985,32 @@ void MaybeShutdownAccService(uint32_t aFormerConsumer) {
   }
 
   if (nsAccessibilityService::gConsumers & ~aFormerConsumer) {
+    
+    
     accService->UnsetConsumers(aFormerConsumer);
-  } else {
+    return;
+  }
+
+  if (!aAsync) {
     accService
         ->Shutdown();  
+    return;
   }
+
+  static bool sIsPending = false;
+  if (sIsPending) {
+    
+    return;
+  }
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "a11y::MaybeShutdownAccService", [aFormerConsumer]() {
+        
+        
+        
+        MaybeShutdownAccService(aFormerConsumer, false);
+        sIsPending = false;
+      }));
+  sIsPending = true;
 }
 
 

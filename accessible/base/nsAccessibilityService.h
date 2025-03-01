@@ -442,7 +442,7 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
   friend nsAccessibilityService* GetAccService();
   friend nsAccessibilityService* GetOrCreateAccService(uint32_t, uint64_t);
-  friend void MaybeShutdownAccService(uint32_t);
+  friend void MaybeShutdownAccService(uint32_t, bool);
   friend void mozilla::a11y::PrefChanged(const char*, void*);
   friend mozilla::a11y::FocusManager* mozilla::a11y::FocusMgr();
   friend mozilla::a11y::SelectionManager* mozilla::a11y::SelectionMgr();
@@ -469,7 +469,12 @@ nsAccessibilityService* GetOrCreateAccService(
 
 
 
-void MaybeShutdownAccService(uint32_t aFormerConsumer);
+
+
+
+
+
+void MaybeShutdownAccService(uint32_t aFormerConsumer, bool aAsync = false);
 
 
 
