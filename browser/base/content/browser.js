@@ -1526,36 +1526,6 @@ function PageProxyClickHandler(aEvent) {
   }
 }
 
-
-
-
-
-
-
-
-function getMeOutOfHere(browsingContext) {
-  browsingContext.top.fixupAndLoadURIString(getDefaultHomePage(), {
-    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(), 
-  });
-}
-
-
-
-
-
-function getDefaultHomePage() {
-  let url = BROWSER_NEW_TAB_URL;
-  if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-    return url;
-  }
-  url = HomePage.getDefault();
-  
-  if (url.includes("|")) {
-    url = url.split("|")[0];
-  }
-  return url;
-}
-
 var browserDragAndDrop = {
   canDropLink: aEvent => Services.droppedLinkHandler.canDropLink(aEvent, true),
 
