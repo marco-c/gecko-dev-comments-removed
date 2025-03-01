@@ -1081,7 +1081,16 @@ function wait(ms) {
 
 
 
-async function waitFor(condition, message = "", interval = 10, maxTries = 500) {
+
+
+
+async function waitFor(
+  condition,
+  message = "",
+  interval = 10,
+  maxTries = 500,
+  expectTimeout = false
+) {
   
   interval =
     typeof waitFor.overrideIntervalForTestFile !== "undefined"
@@ -1099,11 +1108,44 @@ async function waitFor(condition, message = "", interval = 10, maxTries = 500) {
       interval,
       maxTries
     );
+    if (expectTimeout) {
+      
+      const errorMessage = `Expected timeout in waitFor(): ${message} \nUnexpected condition: ${condition} \n`;
+      ok(false, errorMessage);
+    }
     return value;
   } catch (e) {
+    if (expectTimeout) {
+      
+      
+      return null;
+    }
+
+    
     const errorMessage = `Failed waitFor(): ${message} \nFailed condition: ${condition} \nException Message: ${e}`;
+    
+    
+    
+    ok(false, errorMessage);
     throw new Error(errorMessage);
   }
+}
+
+
+
+
+
+
+
+
+
+async function waitForTimeout(
+  condition,
+  message = "",
+  interval = 100,
+  maxTries = 10
+) {
+  return waitFor(condition, message, interval, maxTries, true);
 }
 
 
