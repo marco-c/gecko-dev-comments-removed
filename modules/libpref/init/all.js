@@ -4038,6 +4038,9 @@ pref("extensions.formautofill.heuristics.captureOnPageNavigation", true);
 
 #ifdef NIGHTLY_BUILD
 pref("extensions.formautofill.heuristics.detectDynamicFormChanges", true);
+pref("extensions.formautofill.heuristics.fillOnDynamicFormChanges", true);
+
+pref("extensions.formautofill.heuristics.fillOnDynamicFormChanges.timeout", 1000);
 #endif
 
 pref("extensions.formautofill.heuristics.autofillSameOriginWithTop", true);
