@@ -343,11 +343,6 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       mVPS.Clear();
       mVPS.AppendElements(nalu->mNALU);
     }
-    if (auto nalu =
-            hvcc.GetFirstAvaiableNALU(H265NALU::NAL_TYPES::PREFIX_SEI_NUT)) {
-      mSEI.Clear();
-      mSEI.AppendElements(nalu->mNALU);
-    }
 
     
     
@@ -357,23 +352,17 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     
     
     MOZ_ASSERT(!mSPS.IsEmpty());  
-    nsTArray<H265NALU> nalus;
-    
-    
-    if (!mVPS.IsEmpty()) {
-      nalus.AppendElement(H265NALU(mVPS.Elements(), mVPS.Length()));
-    }
-    nalus.AppendElement(H265NALU(mSPS.Elements(), mSPS.Length()));
-    if (!mPPS.IsEmpty()) {
-      nalus.AppendElement(H265NALU(mPPS.Elements(), mPPS.Length()));
-    }
-    if (!mSEI.IsEmpty()) {
-      nalus.AppendElement(H265NALU(mSEI.Elements(), mSEI.Length()));
-    }
-    mCurrentConfig.mExtraData = H265::CreateNewExtraData(hvcc, nalus);
+    Maybe<H265NALU> sps = Some(H265NALU(mSPS.Elements(), mSPS.Length()));
+    Maybe<H265NALU> pps = !mPPS.IsEmpty()
+                              ? Some(H265NALU(mPPS.Elements(), mPPS.Length()))
+                              : Nothing();
+    Maybe<H265NALU> vps = !mVPS.IsEmpty()
+                              ? Some(H265NALU(mVPS.Elements(), mVPS.Length()))
+                              : Nothing();
+    mCurrentConfig.mExtraData = H265::CreateNewExtraData(hvcc, sps, pps, vps);
     mTrackInfo = new TrackInfoSharedPtr(mCurrentConfig, mStreamID++);
-    LOG("Updated extradata, hasSPS=%d, hasPPS=%d, hasVPS=%d, hasSEI=%d",
-        !mSPS.IsEmpty(), !mPPS.IsEmpty(), !mVPS.IsEmpty(), !mSEI.IsEmpty());
+    LOG("Updated extradata, hasSPS=%d, hasPPS=%d, hasVPS=%d", !!sps, !!pps,
+        !!vps);
   }
 
   VideoInfo mCurrentConfig;
@@ -382,7 +371,6 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
   nsTArray<uint8_t> mSPS;
   nsTArray<uint8_t> mPPS;
   nsTArray<uint8_t> mVPS;
-  nsTArray<uint8_t> mSEI;
 
   uint32_t mStreamID = 0;
   RefPtr<TrackInfoSharedPtr> mTrackInfo;

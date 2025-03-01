@@ -23,12 +23,8 @@ template <int V>
 class FFmpegDecoderModule : public PlatformDecoderModule {
  public:
   static void Init(FFmpegLibWrapper* aLib) {
-#if defined(MOZ_USE_HWDECODE)
-#  if defined(XP_WIN) && !defined(MOZ_FFVPX_AUDIOONLY)
+#if defined(XP_WIN) && !defined(MOZ_FFVPX_AUDIOONLY)
     if (!XRE_IsGPUProcess()) {
-      return;
-    }
-    if (!StaticPrefs::media_ffvpx_hw_enabled()) {
       return;
     }
     static nsTArray<AVCodecID> kCodecIDs({
@@ -55,45 +51,7 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
         }
       }
     }
-#  elif MOZ_WIDGET_GTK
-    
-    if (!XRE_IsRDDProcess()) {
-      return;
-    }
-
-
-#    define ADD_HW_CODEC(codec)                                \
-      if (gfx::gfxVars::Use##codec##HwDecode()) {              \
-        sSupportedHWCodecs.AppendElement(AV_CODEC_ID_##codec); \
-      }
-
-
-
-#    ifndef FFVPX_VERSION
-    ADD_HW_CODEC(H264);
-#      if LIBAVCODEC_VERSION_MAJOR >= 55
-    ADD_HW_CODEC(HEVC);
-#      endif
-#    endif  
-
-
-#    if LIBAVCODEC_VERSION_MAJOR >= 54
-    ADD_HW_CODEC(VP8);
-#    endif
-#    if LIBAVCODEC_VERSION_MAJOR >= 55
-    ADD_HW_CODEC(VP9);
-#    endif
-#    if LIBAVCODEC_VERSION_MAJOR >= 59
-    ADD_HW_CODEC(AV1);
-#    endif
-
-    for (const auto& codec : sSupportedHWCodecs) {
-      MOZ_LOG(sPDMLog, LogLevel::Debug,
-              ("Support %s for hw decoding", AVCodecToString(codec)));
-    }
-#    undef ADD_HW_CODEC
-#  endif  
-#endif    
+#endif
   }
 
   static already_AddRefed<PlatformDecoderModule> Create(
@@ -190,10 +148,6 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
       return media::DecodeSupportSet{};
     }
 
-    if (MP4Decoder::IsHEVC(mimeType) && !StaticPrefs::media_hevc_enabled()) {
-      return media::DecodeSupportSet{};
-    }
-
     AVCodecID videoCodec = FFmpegVideoDecoder<V>::GetCodecId(mimeType);
     AVCodecID audioCodec = FFmpegAudioDecoder<V>::GetCodecId(
         mimeType,
@@ -223,11 +177,11 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
               ("FFmpeg decoder rejects as openh264 disabled by pref"));
       return media::DecodeSupportSet{};
     }
-    media::DecodeSupportSet support = media::DecodeSupport::SoftwareDecode;
-    if (IsHWDecodingSupported(mimeType)) {
-      support += media::DecodeSupport::HardwareDecode;
-    }
-    return support;
+    
+    
+    
+    return XRE_IsGPUProcess() ? media::DecodeSupport::HardwareDecode
+                              : media::DecodeSupport::SoftwareDecode;
   }
 
  protected:
@@ -242,7 +196,8 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
 
   bool IsHWDecodingSupported(const nsACString& aMimeType) const {
     if (!gfx::gfxVars::IsInitialized() ||
-        !gfx::gfxVars::CanUseHardwareVideoDecoding()) {
+        !gfx::gfxVars::CanUseHardwareVideoDecoding() ||
+        !StaticPrefs::media_ffvpx_hw_enabled()) {
       return false;
     }
     AVCodecID videoCodec = FFmpegVideoDecoder<V>::GetCodecId(aMimeType);

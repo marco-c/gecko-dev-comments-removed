@@ -1476,7 +1476,20 @@ already_AddRefed<mozilla::MediaByteBuffer> H265::CreateFakeExtraData() {
 
 
 already_AddRefed<mozilla::MediaByteBuffer> H265::CreateNewExtraData(
-    const HVCCConfig& aConfig, const nsTArray<H265NALU>& aNALUs) {
+    const HVCCConfig& aConfig, const Maybe<H265NALU>& aSPS,
+    const Maybe<H265NALU>& aPPS, const Maybe<H265NALU>& aVPS) {
+  
+  nsTArray<H265NALU> nalus;
+  if (aSPS) {
+    nalus.AppendElement(*aSPS);
+  }
+  if (aPPS) {
+    nalus.AppendElement(*aPPS);
+  }
+  if (aVPS) {
+    nalus.AppendElement(*aVPS);
+  }
+
   
   auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
   BitWriter writer(extradata);
@@ -1502,8 +1515,8 @@ already_AddRefed<mozilla::MediaByteBuffer> H265::CreateNewExtraData(
   writer.WriteBits(aConfig.numTemporalLayers, 3);
   writer.WriteBits(aConfig.temporalIdNested, 1);
   writer.WriteBits(aConfig.lengthSizeMinusOne, 2);
-  writer.WriteU8(aNALUs.Length());  
-  for (auto& nalu : aNALUs) {
+  writer.WriteU8(nalus.Length());  
+  for (auto& nalu : nalus) {
     writer.WriteBits(0, 2);                     
     writer.WriteBits(nalu.mNalUnitType, 6);     
     writer.WriteBits(1, 16);                    
