@@ -6464,6 +6464,14 @@ RefPtr<BoolPromise> QuotaManager::InitializeAllTemporaryOrigins() {
     return BoolPromise::CreateAndResolve(true, __func__);
   }
 
+  
+  
+  
+  
+  
+  RefPtr<BoolPromise> promise =
+      mInitializeAllTemporaryOriginsPromiseHolder.Ensure(__func__);
+
   if (!mInitializingAllTemporaryOrigins) {
     
 
@@ -6502,7 +6510,7 @@ RefPtr<BoolPromise> QuotaManager::InitializeAllTemporaryOrigins() {
     processNextGroup( processNextGroup);
   }
 
-  return mInitializeAllTemporaryOriginsPromiseHolder.Ensure(__func__);
+  return promise;
 }
 
 RefPtr<OriginUsageMetadataArrayPromise> QuotaManager::GetUsage(
