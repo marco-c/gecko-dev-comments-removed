@@ -66,6 +66,8 @@ SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
 
 void DisableMD5();
 
+#ifdef MOZ_SYSTEM_NSS
+
 
 
 
@@ -76,6 +78,14 @@ void DisableMD5();
 
 
 bool LoadLoadableRoots(const nsCString& dir);
+#endif  
+
+
+
+
+
+
+bool LoadLoadableRootsFromXul();
 
 
 
