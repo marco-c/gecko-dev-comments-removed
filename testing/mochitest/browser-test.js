@@ -16,6 +16,29 @@ ChromeUtils.defineESModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
 });
 
+
+
+
+
+
+
+
+
+
+ChromeUtils.defineLazyGetter(this, "saveScopeVariablesAsJSON", () => {
+  const isDevToolsTestScopesEnabled =
+    Services.prefs.getBoolPref("devtools.testing.testScopes", false) ||
+    Services.env.get("MOZ_DEVTOOLS_TEST_SCOPES") === "1";
+  return () => {
+    if (isDevToolsTestScopesEnabled) {
+      ChromeUtils.importESModule(
+        "resource://devtools/shared/test-helpers/dump-scope.sys.mjs",
+        { global: "devtools" }
+      ).dumpScope();
+    }
+  };
+});
+
 const SIMPLETEST_OVERRIDES = [
   "ok",
   "record",
@@ -1576,6 +1599,10 @@ function testResult({ name, pass, todo, ex, stack, allowFailure }) {
     
     debugger;
   }
+
+  
+  
+  saveScopeVariablesAsJSON();
 }
 
 function testMessage(msg) {
