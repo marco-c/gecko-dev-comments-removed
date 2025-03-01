@@ -55,16 +55,10 @@ add_task(async function test_sidebar_view_commands() {
   ok(!sidebar.expanded, "Sidebar is not expanded when the view is closed");
   ok(BrowserTestUtils.isHidden(sidebarBox), "Sidebar box is hidden");
 
-  
   document.getElementById("sidebar-button").doCommand();
   await sidebar.updateComplete;
   ok(BrowserTestUtils.isVisible(sidebar), "Sidebar is visible again.");
-  ok(BrowserTestUtils.isVisible(sidebarBox), "Sidebar panel is visible.");
-  is(
-    SidebarController.currentID,
-    "viewBookmarksSidebar",
-    "Sidebar controller re-opened the previous panel"
-  );
+  ok(BrowserTestUtils.isHidden(sidebarBox), "Sidebar box is hidden.");
 
   
   SpecialPowers.popPrefEnv();

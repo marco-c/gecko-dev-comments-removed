@@ -85,18 +85,6 @@ const extData = {
   },
 };
 
-
-const initialSidebarState = SidebarController.getUIState();
-async function resetSidebarToInitialState() {
-  info(
-    `Restoring sidebar state from: ${JSON.stringify(SidebarController.getUIState())}, back to: ${JSON.stringify(initialSidebarState)}`
-  );
-  await SidebarController.initializeUIState(initialSidebarState);
-}
-registerCleanupFunction(async () => {
-  await resetSidebarToInitialState();
-});
-
 function waitForBrowserWindowActive(win) {
   
   return new Promise(resolve => {
