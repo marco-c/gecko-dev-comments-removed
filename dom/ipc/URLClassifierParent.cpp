@@ -155,7 +155,7 @@ mozilla::ipc::IPCResult URLClassifierLocalParent::StartClassify(
   
   
   rv = uriClassifier->AsyncClassifyLocalWithFeatures(
-      aURI, features, nsIUrlClassifierFeature::blocklist, this);
+      aURI, features, nsIUrlClassifierFeature::blocklist, this, false);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     OnClassifyComplete(nsTArray<RefPtr<nsIUrlClassifierFeatureResult>>());
     return IPC_OK();
