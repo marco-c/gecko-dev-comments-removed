@@ -34,6 +34,7 @@ add_task(async function () {
     getSelector,
     findElementWithSelector,
     createLocation,
+    isCm6Enabled,
   });
   
   

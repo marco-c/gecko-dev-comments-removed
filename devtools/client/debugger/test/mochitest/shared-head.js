@@ -253,12 +253,23 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
         }
       }
 
+      const selectedFrame = getSelectedFrame(getCurrentThread());
       
+      const isPausedInSource =
+        selectedFrame?.location.source.id == location.source.id;
+      
+      
+      
+      const hasSymbols =
+        !isCm6Enabled || selectedFrame?.location.source.isOriginal
+          ? getSymbols(location)
+          : true;
       
       if (
-        getSelectedFrame(getCurrentThread())?.location.source.id ==
-          location.source.id &&
-        !getSymbols(location) &&
+        
+        selectedFrame?.location.source.id == location.source.id &&
+        !hasSymbols &&
+        
         !isWasmBinarySource(location.source)
       ) {
         return false;
@@ -597,6 +608,7 @@ async function waitForPaused(
     await waitForLoadedScopes(dbg);
   }
 
+  
   
   await waitForSelectedSource(dbg, url);
 }
