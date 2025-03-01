@@ -182,11 +182,14 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
     return servCertHashes && !servCertHashes->IsEmpty();
   };
 
+  auto config = mConnInfo->GetEchConfig();
+
   
   
   
   
-  if (StaticPrefs::network_http_http3_enable_0rtt() && !hasServCertHashes() &&
+  if (StaticPrefs::network_http_http3_enable_0rtt() && config.IsEmpty() &&
+      !hasServCertHashes() &&
       NS_SUCCEEDED(SSLTokensCache::Get(peerId, token, info))) {
     LOG(("Found a resumption token in the cache."));
     mHttp3Connection->SetResumptionToken(token);
@@ -218,7 +221,6 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
   }
 #endif
 
-  auto config = mConnInfo->GetEchConfig();
   if (config.IsEmpty()) {
     if (StaticPrefs::security_tls_ech_grease_http3() && config.IsEmpty()) {
       if ((RandomUint64().valueOr(0) % 100) >=
