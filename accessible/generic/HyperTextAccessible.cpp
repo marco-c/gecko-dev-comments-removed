@@ -171,6 +171,18 @@ uint32_t HyperTextAccessible::DOMPointToOffset(nsINode* aNode,
     }
   }
 
+  if (descendant && descendant->IsTextLeaf()) {
+    uint32_t length = nsAccUtils::TextLength(descendant);
+    if (offset > length) {
+      
+      
+      
+      
+      NS_WARNING("Offset too large for text leaf");
+      offset = length;
+    }
+  }
+
   return TransformOffset(descendant, offset, aIsEndOffset);
 }
 
