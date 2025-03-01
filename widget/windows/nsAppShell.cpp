@@ -465,6 +465,9 @@ WindowsDiagnosticsError CollectUser32SingleStepData(
  [[clang::optnone]] MOZ_NEVER_INLINE HWND
 nsAppShell::StaticCreateEventWindow() {
   
+  MOZ_RELEASE_ASSERT(!IsWin32kLockedDown());
+
+  
   auto _initialErr [[maybe_unused]] = WinErrorState::Get();
   
   WinErrorState::Clear();
