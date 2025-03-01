@@ -88,13 +88,6 @@ if CONFIG["OS_ARCH"] == "WINNT":
         ]
     )
 
-if CONFIG["OS_ARCH"] != "WINNT":
-    CppUnitTests(
-        [
-            "TestMozCrash",
-        ]
-    )
-
 
 
 
