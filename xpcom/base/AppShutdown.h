@@ -89,6 +89,19 @@ class AppShutdown {
 
 
 
+  static bool IsShutdownImpending();
+
+  
+
+
+
+
+  static void SetImpendingShutdown();
+
+  
+
+
+
   static void AdvanceShutdownPhase(
       ShutdownPhase aPhase, const char16_t* aNotificationData = nullptr,
       const nsCOMPtr<nsISupports>& aNotificationSubject =

@@ -10,6 +10,7 @@
 #include "jsapi.h"
 #include "xpcprivate.h"
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/BasePrincipal.h"
@@ -388,7 +389,7 @@ bool HangMonitorChild::InterruptCallback() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (StaticPrefs::dom_abort_script_on_child_shutdown() &&
-      mozilla::ipc::ProcessChild::ExpectingShutdown()) {
+      mozilla::AppShutdown::IsShutdownImpending()) {
     
     if (!nsContentUtils::IsCallerChrome()) {
       NS_WARNING(
@@ -567,7 +568,7 @@ mozilla::ipc::IPCResult HangMonitorChild::RecvRequestContentJSInterrupt() {
 
   
   
-  if (mozilla::ipc::ProcessChild::ExpectingShutdown()) {
+  if (AppShutdown::IsShutdownImpending()) {
     ProcessChild::AppendToIPCShutdownStateAnnotation(
         "HangMonitorChild::RecvRequestContentJSInterrupt (expected)"_ns);
   } else {

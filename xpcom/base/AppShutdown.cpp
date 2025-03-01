@@ -88,6 +88,7 @@ static AppShutdownMode sShutdownMode = AppShutdownMode::Normal;
 static Atomic<ShutdownPhase> sCurrentShutdownPhase(
     ShutdownPhase::NotInShutdown);
 static int sExitCode = 0;
+static Atomic<bool> sShutdownImpending(false);
 
 
 
@@ -99,6 +100,10 @@ static wchar_t* sSavedProfLDEnvVar = nullptr;
 static char* sSavedProfDEnvVar = nullptr;
 static char* sSavedProfLDEnvVar = nullptr;
 #endif
+
+bool AppShutdown::IsShutdownImpending() { return sShutdownImpending; }
+
+void AppShutdown::SetImpendingShutdown() { sShutdownImpending = true; }
 
 ShutdownPhase GetShutdownPhaseFromPrefValue(int32_t aPrefValue) {
   switch (aPrefValue) {
@@ -200,6 +205,7 @@ void AppShutdown::Init(AppShutdownMode aMode, int aExitCode,
     sShutdownMode = aMode;
   }
   AppShutdown::AnnotateShutdownReason(aReason);
+  AppShutdown::SetImpendingShutdown();
 
   sExitCode = aExitCode;
 

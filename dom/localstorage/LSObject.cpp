@@ -14,6 +14,7 @@
 
 #include <utility>
 #include "MainThreadUtils.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/MacroForEach.h"
@@ -36,7 +37,6 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
-#include "mozilla/ipc/ProcessChild.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsDebug.h"
@@ -1065,7 +1065,7 @@ nsresult RequestHelper::StartAndReturnResponse(LSRequestResponse& aResponse) {
     
     
     
-    if (mozilla::ipc::ProcessChild::ExpectingShutdown() || now >= deadline) {
+    if (AppShutdown::IsShutdownImpending() || now >= deadline) {
       switch (mState) {
         case State::Initial:
           
