@@ -18,10 +18,10 @@ from string import Template
 
 
 
-FREEDESKTOP_VERSION = "23.08"
+FREEDESKTOP_VERSION = "24.08"
 
 FIREFOX_BASEAPP = "org.mozilla.firefox.BaseApp"
-FIREFOX_BASEAPP_CHANNEL = "23.08"
+FIREFOX_BASEAPP_CHANNEL = FREEDESKTOP_VERSION
 
 
 def run_command(log, *args, **kwargs):
