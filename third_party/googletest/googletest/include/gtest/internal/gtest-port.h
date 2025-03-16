@@ -262,12 +262,6 @@
 
 
 
-
-
-
-
-
-
 #if defined(_MSVC_LANG)
 #define GTEST_INTERNAL_CPLUSPLUS_LANG _MSVC_LANG
 #elif defined(__cplusplus)
@@ -275,8 +269,8 @@
 #endif
 
 #if !defined(GTEST_INTERNAL_CPLUSPLUS_LANG) || \
-    GTEST_INTERNAL_CPLUSPLUS_LANG < 201402L
-#error C++ versions less than C++14 are not supported.
+    GTEST_INTERNAL_CPLUSPLUS_LANG < 201703L
+#error C++ versions less than C++17 are not supported.
 #endif
 
 
@@ -773,25 +767,6 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 #endif
 
 
-
-
-
-
-
-
-
-#if GTEST_INTERNAL_HAVE_CPP_ATTRIBUTE(maybe_unused)
-#define GTEST_INTERNAL_ATTRIBUTE_MAYBE_UNUSED [[maybe_unused]]
-#elif GTEST_HAVE_ATTRIBUTE_(unused)
-
-
-
-#define GTEST_INTERNAL_ATTRIBUTE_MAYBE_UNUSED __attribute__((__unused__))
-#else
-#define GTEST_INTERNAL_ATTRIBUTE_MAYBE_UNUSED
-#endif
-
-
 #if GTEST_HAVE_ATTRIBUTE_(format) && defined(__MINGW_PRINTF_FORMAT)
 
 
@@ -803,17 +778,6 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
   __attribute__((format(printf, string_index, first_to_check)))
 #else
 #define GTEST_ATTRIBUTE_PRINTF_(string_index, first_to_check)
-#endif
-
-
-
-
-
-
-#if GTEST_HAVE_ATTRIBUTE_(warn_unused_result)
-#define GTEST_MUST_USE_RESULT_ __attribute__((warn_unused_result))
-#else
-#define GTEST_MUST_USE_RESULT_
 #endif
 
 
@@ -2367,26 +2331,6 @@ const char* StringFromGTestEnv(const char* flag, const char* default_val);
 }  
 }  
 
-#if !defined(GTEST_INTERNAL_DEPRECATED)
-
-
-
-
-
-
-
-
-
-#if defined(_MSC_VER)
-#define GTEST_INTERNAL_DEPRECATED(message) __declspec(deprecated(message))
-#elif defined(__GNUC__)
-#define GTEST_INTERNAL_DEPRECATED(message) __attribute__((deprecated(message)))
-#else
-#define GTEST_INTERNAL_DEPRECATED(message)
-#endif
-
-#endif  
-
 #ifdef GTEST_HAS_ABSL
 
 
@@ -2525,12 +2469,6 @@ using Variant = ::std::variant<T...>;
 
 #ifndef GTEST_INTERNAL_HAS_VARIANT
 #define GTEST_INTERNAL_HAS_VARIANT 0
-#endif
-
-#if (defined(__cpp_constexpr) && !defined(__cpp_inline_variables)) || \
-    (defined(GTEST_INTERNAL_CPLUSPLUS_LANG) &&                        \
-     GTEST_INTERNAL_CPLUSPLUS_LANG < 201703L)
-#define GTEST_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL 1
 #endif
 
 #if (defined(__cpp_lib_three_way_comparison) || \

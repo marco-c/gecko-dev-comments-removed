@@ -193,11 +193,16 @@ static const char kDefaultOutputFormat[] = "xml";
 static const char kDefaultOutputFile[] = "test_detail";
 
 
+
+
+
 static const char kTestShardIndex[] = "GTEST_SHARD_INDEX";
 
 static const char kTestTotalShards[] = "GTEST_TOTAL_SHARDS";
 
 static const char kTestShardStatusFile[] = "GTEST_SHARD_STATUS_FILE";
+
+static const char kTestWarningsOutputFile[] = "TEST_WARNINGS_OUTPUT_FILE";
 
 namespace internal {
 
@@ -257,6 +262,12 @@ GTEST_DEFINE_bool_(
     testing::internal::BoolFromGTestEnv("fail_fast",
                                         testing::GetDefaultFailFast()),
     "True if and only if a test failure should stop further test execution.");
+
+GTEST_DEFINE_bool_(
+    fail_if_no_test_linked,
+    testing::internal::BoolFromGTestEnv("fail_if_no_test_linked", false),
+    "True if and only if the test should fail if no test case (including "
+    "disabled test cases) is linked.");
 
 GTEST_DEFINE_bool_(
     also_run_disabled_tests,
@@ -5871,6 +5882,23 @@ static void TearDownEnvironment(Environment* env) { env->TearDown(); }
 
 
 
+#if GTEST_HAS_FILE_SYSTEM
+static void AppendToTestWarningsOutputFile(const std::string& str) {
+  const char* const filename = posix::GetEnv(kTestWarningsOutputFile);
+  if (filename == nullptr) {
+    return;
+  }
+  auto* const file = posix::FOpen(filename, "a");
+  if (file == nullptr) {
+    return;
+  }
+  GTEST_CHECK_(fwrite(str.data(), 1, str.size(), file) == str.size());
+  GTEST_CHECK_(posix::FClose(file) == 0);
+}
+#endif  
+
+
+
 
 
 
@@ -5889,6 +5917,28 @@ bool UnitTestImpl::RunAllTests() {
   
   
   PostFlagParsingInit();
+
+  
+  
+  if (total_test_count() == 0) {
+    constexpr char kNoTestLinkedMessage[] =
+        "This test program does NOT link in any test case.";
+    constexpr char kNoTestLinkedFatal[] =
+        "This is INVALID. Please make sure to link in at least one test case.";
+    constexpr char kNoTestLinkedWarning[] =
+        "Please make sure this is intended.";
+    const bool fail_if_no_test_linked = GTEST_FLAG_GET(fail_if_no_test_linked);
+    ColoredPrintf(
+        GTestColor::kRed, "%s %s\n", kNoTestLinkedMessage,
+        fail_if_no_test_linked ? kNoTestLinkedFatal : kNoTestLinkedWarning);
+    if (fail_if_no_test_linked) {
+      return false;
+    }
+#if GTEST_HAS_FILE_SYSTEM
+    AppendToTestWarningsOutputFile(std::string(kNoTestLinkedMessage) + ' ' +
+                                   kNoTestLinkedWarning + '\n');
+#endif  
+  }
 
 #if GTEST_HAS_FILE_SYSTEM
   
@@ -6063,6 +6113,17 @@ bool UnitTestImpl::RunAllTests() {
     environments_.clear();
   }
 
+  
+  if (ShouldWarnIfNoTestsMatchFilter()) {
+    const std::string filter_warning =
+        std::string("filter \"") + GTEST_FLAG_GET(filter) +
+        "\" did not match any test; no tests were run\n";
+    ColoredPrintf(GTestColor::kRed, "WARNING: %s", filter_warning.c_str());
+#if GTEST_HAS_FILE_SYSTEM
+    AppendToTestWarningsOutputFile(filter_warning);
+#endif  
+  }
+
   if (!gtest_is_initialized_before_run_all_tests) {
     ColoredPrintf(
         GTestColor::kRed,
@@ -6229,6 +6290,30 @@ int UnitTestImpl::FilterTests(ReactionToSharding shard_tests) {
     }
   }
   return num_selected_tests;
+}
+
+
+
+
+
+bool UnitTestImpl::ShouldWarnIfNoTestsMatchFilter() const {
+  if (total_test_count() == 0) {
+    
+    
+    return false;
+  }
+  const PositiveAndNegativeUnitTestFilter gtest_flag_filter(
+      GTEST_FLAG_GET(filter));
+  for (auto* test_suite : test_suites_) {
+    const std::string& test_suite_name = test_suite->name_;
+    for (TestInfo* test_info : test_suite->test_info_list()) {
+      const std::string& test_name = test_info->name_;
+      if (gtest_flag_filter.MatchesTest(test_suite_name, test_name)) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 
@@ -6677,6 +6762,7 @@ static bool ParseGoogleTestFlag(const char* const arg) {
   GTEST_INTERNAL_PARSE_FLAG(death_test_style);
   GTEST_INTERNAL_PARSE_FLAG(death_test_use_fork);
   GTEST_INTERNAL_PARSE_FLAG(fail_fast);
+  GTEST_INTERNAL_PARSE_FLAG(fail_if_no_test_linked);
   GTEST_INTERNAL_PARSE_FLAG(filter);
   GTEST_INTERNAL_PARSE_FLAG(internal_run_death_test);
   GTEST_INTERNAL_PARSE_FLAG(list_tests);

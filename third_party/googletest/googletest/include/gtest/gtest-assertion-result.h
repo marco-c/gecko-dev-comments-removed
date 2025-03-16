@@ -130,6 +130,13 @@ namespace testing {
 
 
 
+
+
+
+#if !defined(SWIG)
+class [[nodiscard]] AssertionResult;
+#endif  
+
 class GTEST_API_ AssertionResult {
  public:
   

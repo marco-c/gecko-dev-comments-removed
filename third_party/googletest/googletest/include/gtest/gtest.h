@@ -73,8 +73,6 @@
 #include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-string.h"
 
-#include "mozilla/Attributes.h"
-
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 )
 
@@ -327,7 +325,7 @@ class GTEST_API_ Test {
   
   
   
-  MOZ_CAN_RUN_SCRIPT virtual void TestBody() = 0;
+  virtual void TestBody() = 0;
 
   
   void Run();
@@ -1125,7 +1123,7 @@ class GTEST_API_ UnitTest {
   
   
   
-  int Run() GTEST_MUST_USE_RESULT_;
+  [[nodiscard]] int Run();
 
   
   
@@ -2331,7 +2329,7 @@ TestInfo* RegisterTest(const char* test_suite_name, const char* test_name,
 
 
 
-int RUN_ALL_TESTS() GTEST_MUST_USE_RESULT_;
+[[nodiscard]] int RUN_ALL_TESTS();
 
 inline int RUN_ALL_TESTS() { return ::testing::UnitTest::GetInstance()->Run(); }
 
