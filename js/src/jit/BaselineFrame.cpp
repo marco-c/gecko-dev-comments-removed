@@ -167,6 +167,10 @@ bool BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues) {
     *valueSlot(i) = fp->slots()[i];
   }
 
+  
+  
+  std::fill_n(fp->slots(), numStackValues, UndefinedValue());
+
   if (fp->isDebuggee()) {
     
     
