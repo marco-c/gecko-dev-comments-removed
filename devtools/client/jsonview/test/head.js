@@ -215,6 +215,21 @@ function getElementAttr(selector, attr) {
   );
 }
 
+
+
+
+
+
+async function getRowText(rowIndex) {
+  const key = await getElementText(
+    `.jsonPanelBox .treeTable .treeRow:nth-of-type(${rowIndex + 1}) .treeLabelCell`
+  );
+  const value = await getElementText(
+    `.jsonPanelBox .treeTable .treeRow:nth-of-type(${rowIndex + 1}) .treeValueCell`
+  );
+  return `${key}: ${value}`;
+}
+
 function focusElement(selector) {
   info("Focus element: '" + selector + "'");
 
