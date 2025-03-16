@@ -11,6 +11,8 @@ from moztest.selftest import fixtures
 MOZ_AUTOMATION = bool(os.getenv("MOZ_AUTOMATION", "0") == "1")
 
 
+
+@pytest.mark.skip_mozinfo("tsan")
 def test_grizzly_smoke():
     ffbin = fixtures.binary()
 
