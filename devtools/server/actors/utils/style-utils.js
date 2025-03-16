@@ -46,10 +46,20 @@ function getFontPreviewData(font, doc, options) {
   
   
   
-  if (FONT_NEED_WRAPPING_QUOTES_REGEX.test(font.trim())) {
-    font = `"${font}"`;
+  
+  
+  const fontParts = [];
+  
+  
+  
+  
+  for (let f of font.split(",")) {
+    if (FONT_NEED_WRAPPING_QUOTES_REGEX.test(f.trim())) {
+      f = `"${f}"`;
+    }
+    fontParts.push(f);
   }
-  const fontValue = `${fontStyle} ${previewFontSize}px ${font}, serif`;
+  const fontValue = `${fontStyle} ${previewFontSize}px ${fontParts.join(", ")}, serif`;
 
   
   ctx.font = fontValue;
