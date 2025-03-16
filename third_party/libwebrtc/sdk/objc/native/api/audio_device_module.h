@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "api/audio/audio_device.h"
+#include "sdk/objc/native/api/audio_device_module_error_handler.h"
 
 namespace webrtc {
 
@@ -29,6 +30,15 @@ rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
 
 rtc::scoped_refptr<AudioDeviceModule> CreateMutedDetectAudioDeviceModule(
     AudioDeviceModule::MutedSpeechEventHandler muted_speech_event_handler,
+    bool bypass_voice_processing = false);
+
+
+
+
+
+rtc::scoped_refptr<AudioDeviceModule> CreateMutedDetectAudioDeviceModule(
+    AudioDeviceModule::MutedSpeechEventHandler muted_speech_event_handler,
+    ADMErrorHandler error_handler,
     bool bypass_voice_processing = false);
 
 }  
