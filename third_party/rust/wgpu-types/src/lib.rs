@@ -17,6 +17,7 @@ extern crate alloc;
 use alloc::{string::String, vec, vec::Vec};
 use core::{
     hash::{Hash, Hasher},
+    mem::size_of,
     num::NonZeroU32,
     ops::Range,
 };
@@ -6500,19 +6501,7 @@ pub enum BindingType {
     
     
     
-    
-    
-    
-    
-    
-    
-    AccelerationStructure {
-        
-        
-        
-        
-        vertex_return: bool,
-    },
+    AccelerationStructure,
 }
 
 impl BindingType {
@@ -7295,8 +7284,6 @@ bitflags::bitflags!(
         /// Use `BlasTriangleGeometry::transform_buffer` when building a BLAS (only allowed in
         /// BLAS creation)
         const USE_TRANSFORM = 1 << 5;
-        /// Allow retrieval of the vertices of the triangle hit by a ray.
-        const ALLOW_RAY_HIT_VERTEX_RETURN = 1 << 6;
     }
 );
 

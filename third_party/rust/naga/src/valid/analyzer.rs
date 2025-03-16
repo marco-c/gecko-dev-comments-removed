@@ -5,9 +5,6 @@
 
 
 
-use alloc::{boxed::Box, vec};
-use core::ops;
-
 use super::{ExpressionError, FunctionError, ModuleInfo, ShaderStages, ValidationFlags};
 use crate::diagnostic_filter::{DiagnosticFilterNode, StandardFilterableTriggeringRule};
 use crate::span::{AddSpan as _, WithSpan};
@@ -15,6 +12,7 @@ use crate::{
     arena::{Arena, Handle},
     proc::{ResolveContext, TypeResolution},
 };
+use std::ops;
 
 pub type NonUniformResult = Option<Handle<crate::Expression>>;
 
@@ -807,13 +805,6 @@ impl FunctionInfo {
             },
             E::SubgroupOperationResult { .. } => Uniformity {
                 non_uniform_result: Some(handle),
-                requirements: UniformityRequirements::empty(),
-            },
-            E::RayQueryVertexPositions {
-                query,
-                committed: _,
-            } => Uniformity {
-                non_uniform_result: self.add_ref(query),
                 requirements: UniformityRequirements::empty(),
             },
         };

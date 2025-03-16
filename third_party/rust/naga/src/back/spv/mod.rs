@@ -18,14 +18,12 @@ mod writer;
 
 pub use spirv::{Capability, SourceLanguage};
 
-use alloc::{string::String, vec::Vec};
-use core::ops;
-
-use spirv::Word;
-use thiserror::Error;
-
 use crate::arena::{Handle, HandleVec};
 use crate::proc::{BoundsCheckPolicies, TypeResolution};
+
+use spirv::Word;
+use std::ops;
+use thiserror::Error;
 
 #[derive(Clone)]
 struct PhysicalLayout {
@@ -149,11 +147,6 @@ struct Function {
     
     force_loop_bounding_vars: Vec<LocalVariable>,
 
-    
-    
-    
-    
-    
     
     
     
@@ -488,8 +481,8 @@ impl LocalType {
                 class,
             } => LocalType::Image(LocalImageType::from_inner(dim, arrayed, class)),
             crate::TypeInner::Sampler { comparison: _ } => LocalType::Sampler,
-            crate::TypeInner::AccelerationStructure { .. } => LocalType::AccelerationStructure,
-            crate::TypeInner::RayQuery { .. } => LocalType::RayQuery,
+            crate::TypeInner::AccelerationStructure => LocalType::AccelerationStructure,
+            crate::TypeInner::RayQuery => LocalType::RayQuery,
             crate::TypeInner::Array { .. }
             | crate::TypeInner::Struct { .. }
             | crate::TypeInner::BindingArray { .. } => return None,
@@ -859,7 +852,7 @@ pub struct BindingInfo {
 }
 
 
-pub type BindingMap = alloc::collections::BTreeMap<crate::ResourceBinding, BindingInfo>;
+pub type BindingMap = std::collections::BTreeMap<crate::ResourceBinding, BindingInfo>;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ZeroInitializeWorkgroupMemoryMode {

@@ -20,8 +20,8 @@ impl TypeTracer<'_> {
             | Ti::ValuePointer { .. }
             | Ti::Image { .. }
             | Ti::Sampler { .. }
-            | Ti::AccelerationStructure { .. }
-            | Ti::RayQuery { .. } => {}
+            | Ti::AccelerationStructure
+            | Ti::RayQuery => {}
 
             
             Ti::Array {
@@ -75,8 +75,8 @@ impl ModuleMap {
             | Ti::ValuePointer { .. }
             | Ti::Image { .. }
             | Ti::Sampler { .. }
-            | Ti::AccelerationStructure { .. }
-            | Ti::RayQuery { .. } => {}
+            | Ti::AccelerationStructure
+            | Ti::RayQuery => {}
 
             
             Ti::Pointer {

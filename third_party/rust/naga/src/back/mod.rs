@@ -3,8 +3,6 @@
 
 #![allow(dead_code)] 
 
-use alloc::string::String;
-
 use crate::proc::ExpressionKindTracker;
 
 #[cfg(dot_out)]
@@ -44,8 +42,8 @@ pub type NeedBakeExpressions = crate::FastHashSet<crate::Handle<crate::Expressio
 
 struct Baked(crate::Handle<crate::Expression>);
 
-impl core::fmt::Display for Baked {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl std::fmt::Display for Baked {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.write_prefixed(f, "_e")
     }
 }
@@ -69,8 +67,8 @@ impl Level {
     }
 }
 
-impl core::fmt::Display for Level {
-    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
+impl std::fmt::Display for Level {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         (0..self.0).try_for_each(|_| formatter.write_str(INDENT))
     }
 }
@@ -250,13 +248,22 @@ pub const fn binary_operation_str(op: crate::BinaryOperator) -> &'static str {
     }
 }
 
+
+const fn vector_size_str(size: crate::VectorSize) -> &'static str {
+    match size {
+        crate::VectorSize::Bi => "2",
+        crate::VectorSize::Tri => "3",
+        crate::VectorSize::Quad => "4",
+    }
+}
+
 impl crate::TypeInner {
     
     pub const fn is_handle(&self) -> bool {
         match *self {
             crate::TypeInner::Image { .. }
             | crate::TypeInner::Sampler { .. }
-            | crate::TypeInner::AccelerationStructure { .. } => true,
+            | crate::TypeInner::AccelerationStructure => true,
             _ => false,
         }
     }

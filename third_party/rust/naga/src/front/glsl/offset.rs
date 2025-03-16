@@ -11,8 +11,6 @@
 
 
 
-use alloc::vec::Vec;
-
 use super::{
     ast::StructLayout,
     error::{Error, ErrorKind},
