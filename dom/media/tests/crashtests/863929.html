@@ -1,8 +1,8 @@
 ﻿<!DOCTYPE html>
 <html class="reftest-wait">
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=863929
+-->
 <head>
   <meta charset="utf-8">
   <title>Bug 863929</title>
@@ -51,9 +51,9 @@
     function start() {
       pc1 = new RTCPeerConnection();
       pc2 = new RTCPeerConnection();
-      navigator.mozGetUserMedia({audio:true, video:true, fake:true}, function(s) {
+      navigator.mediaDevices.getUserMedia({audio:true, video:true, fake:true}).then(function(s) {
         pc1.addStream(s);
-          navigator.mozGetUserMedia({audio:true, video:true, fake:true}, function(s) {
+          navigator.mediaDevices.getUserMedia({audio:true, video:true, fake:true}).then(function(s) {
             pc2.addStream(s);
             pc1.createOffer(step1, onFailure);
         }, onFailure);

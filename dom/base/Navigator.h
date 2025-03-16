@@ -228,6 +228,8 @@ class Navigator final : public nsISupports, public nsWrapperCache {
   
   static bool HasUserMediaSupport(JSContext* ,
                                   JSObject* );
+  static bool MozGetUserMediaSupport(JSContext* ,
+                                     JSObject* );
   static bool HasShareSupport(JSContext* , JSObject* );
 
   static bool HasMidiSupport(JSContext* , JSObject* );

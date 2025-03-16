@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html class="reftest-wait">
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=801227
+-->
 <head>
   <meta charset="utf-8">
   <title>Abort due to page reload</title>
@@ -22,7 +22,7 @@
       document.documentElement.removeAttribute("class");
     }
 
-    navigator.mozGetUserMedia({ audio: true, fake: true }, function (aStream) {
+    navigator.mediaDevices.getUserMedia({ audio: true, fake: true }).then(function (aStream) {
       pc.addStream(aStream);
       finish();
     }, finish);
