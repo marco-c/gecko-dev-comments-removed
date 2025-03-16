@@ -4,15 +4,16 @@
 
 
 
-#include "BindingDeclarations.h"
+#include "Sanitizer.h"
+#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/SanitizerBinding.h"
 #include "nsContentUtils.h"
 #include "nsGenericHTMLElement.h"
+#include "nsIContentInlines.h"
 #include "nsNameSpaceManager.h"
-#include "Sanitizer.h"
 
 namespace mozilla::dom {
 
@@ -452,8 +453,9 @@ void Sanitizer::SetComments(bool aAllow) { mComments = aAllow; }
 void Sanitizer::SetDataAttributes(bool aAllow) { mDataAttributes = aAllow; }
 void Sanitizer::RemoveUnsafe() {}
 
+
 RefPtr<DocumentFragment> Sanitizer::SanitizeFragment(
-    RefPtr<DocumentFragment> aFragment, ErrorResult& aRv) {
+    RefPtr<DocumentFragment> aFragment, bool aSafe, ErrorResult& aRv) {
   nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(mGlobal);
   if (!window || !window->GetDoc()) {
     aRv.Throw(NS_ERROR_FAILURE);
@@ -464,7 +466,221 @@ RefPtr<DocumentFragment> Sanitizer::SanitizeFragment(
 
   
 
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  SanitizeChildren(aFragment, aSafe);
+
   return aFragment.forget();
+}
+
+static RefPtr<nsAtom> ToNamespace(int32_t aNamespaceID) {
+  if (aNamespaceID == kNameSpaceID_None) {
+    return nullptr;
+  }
+
+  RefPtr<nsAtom> atom =
+      nsNameSpaceManager::GetInstance()->NameSpaceURIAtom(aNamespaceID);
+  return atom;
+}
+
+
+void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
+  
+
+  
+  nsCOMPtr<nsIContent> next = nullptr;
+  for (nsCOMPtr<nsIContent> child = aNode->GetFirstChild(); child;
+       child = next) {
+    next = child->GetNextSibling();
+
+    
+    
+
+    
+    if (child->IsText()) {
+      continue;
+    }
+
+    
+    if (child->IsComment()) {
+      
+      if (!mComments) {
+        child->RemoveFromParent();
+      }
+      continue;
+    }
+
+    
+    MOZ_ASSERT(child->IsElement());
+
+    
+    
+    nsAtom* nameAtom = child->NodeInfo()->NameAtom();
+    int32_t namespaceID = child->NodeInfo()->NamespaceID();
+    CanonicalName elementName(nameAtom, ToNamespace(namespaceID));
+
+    
+    
+    if (aSafe) {
+      if ((namespaceID == kNameSpaceID_XHTML &&
+           (nameAtom == nsGkAtoms::script || nameAtom == nsGkAtoms::frame ||
+            nameAtom == nsGkAtoms::iframe || nameAtom == nsGkAtoms::object ||
+            nameAtom == nsGkAtoms::embed)) ||
+          (namespaceID == kNameSpaceID_SVG &&
+           (nameAtom == nsGkAtoms::script || nameAtom == nsGkAtoms::use))) {
+        
+        child->RemoveFromParent();
+        continue;
+      }
+    }
+
+    
+    
+    
+    if (mRemoveElements.Contains(elementName) ||
+        (!mElements.IsEmpty() && !mElements.Contains(elementName))) {
+      
+      child->RemoveFromParent();
+      continue;
+    }
+
+    
+    
+    if (mReplaceWithChildrenElements.Contains(elementName)) {
+      
+      
+      
+      nsCOMPtr<nsIContent> parent = child->GetParent();
+      nsCOMPtr<nsIContent> firstChild = child->GetFirstChild();
+      nsCOMPtr<nsIContent> newChild = firstChild;
+      for (; newChild; newChild = child->GetFirstChild()) {
+        ErrorResult rv;
+        parent->InsertBefore(*newChild, child, rv);
+        if (rv.Failed()) {
+          break;
+        }
+      }
+
+      child->RemoveFromParent();
+      if (firstChild) {
+        next = firstChild;
+      }
+      continue;
+    }
+
+    
+    
+    if (auto* templateEl = HTMLTemplateElement::FromNode(child)) {
+      
+      
+
+      
+      
+      RefPtr<DocumentFragment> frag = templateEl->Content();
+      SanitizeChildren(frag, aSafe);
+    }
+
+    
+    
+    if (RefPtr<ShadowRoot> shadow = child->GetShadowRoot()) {
+      SanitizeChildren(shadow, aSafe);
+    }
+
+    
+    SanitizeAttributes(child->AsElement(), elementName, aSafe);
+
+    
+    
+    SanitizeChildren(child, aSafe);
+  }
+}
+
+void Sanitizer::SanitizeAttributes(Element* aChild,
+                                   const CanonicalName& aElementName,
+                                   bool aSafe) {
+  
+  const CanonicalElementWithAttributes* elementWithAttributes = nullptr;
+  if (auto index = mElements.Values().IndexOf(aElementName);
+      index != mElements.Values().NoIndex) {
+    elementWithAttributes = &mElements.Values()[index];
+  }
+
+  
+  
+  
+  int32_t count = int32_t(aChild->GetAttrCount());
+  for (int32_t i = count - 1; i >= 0; --i) {
+    
+    
+    const nsAttrName* attr = aChild->GetAttrNameAt(i);
+    RefPtr<nsAtom> attrLocalName = attr->LocalName();
+    int32_t attrNs = attr->NamespaceID();
+    CanonicalName attrName(attrLocalName, ToNamespace(attrNs));
+
+    bool remove = false;
+    
+    
+    if (aSafe && attrNs == kNameSpaceID_None &&
+        nsContentUtils::IsEventAttributeName(
+            attrLocalName, EventNameType_All & ~EventNameType_XUL)) {
+      remove = true;
+    }
+
+    
+    
+    else if (mRemoveAttributes.Contains(attrName)) {
+      remove = true;
+    }
+
+    
+    
+    
+    
+    else if (elementWithAttributes &&
+             elementWithAttributes->mRemoveAttributes &&
+             elementWithAttributes->mRemoveAttributes->Contains(attrName)) {
+      remove = true;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    else if ((!mAttributes.IsEmpty() && !mAttributes.Contains(attrName)) &&
+             !(elementWithAttributes && elementWithAttributes->mAttributes &&
+               elementWithAttributes->mAttributes->Contains(attrName)) &&
+             !(StringBeginsWith(nsDependentAtomString(attrLocalName),
+                                u"data-"_ns) &&
+               attrNs == kNameSpaceID_None && mDataAttributes)) {
+      remove = true;
+    }
+
+    
+    else if (aSafe) {
+      
+    }
+
+    if (remove) {
+      aChild->UnsetAttr(attr->NamespaceID(), attr->LocalName(), false);
+
+      
+      
+      
+      --count;
+      i = count;  
+    }
+  }
 }
 
 
