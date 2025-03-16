@@ -3504,8 +3504,6 @@ impl Renderer {
         let mut swapchain_layers = Vec::new();
         let cap = composite_state.tiles.len();
 
-        
-        
         for (idx, tile) in composite_state.tiles.iter().enumerate() {
             let device_tile_box = composite_state.get_device_rect(
                 &tile.local_rect,
@@ -3610,7 +3608,7 @@ impl Renderer {
                         (
                             DeviceIntPoint::zero(),
                             device_size.into(),
-                            false,      
+                            input_layers.is_empty() && window_is_opaque,
                         )
                     }
                     CompositorSurfaceUsage::External { .. } => {
@@ -3664,40 +3662,23 @@ impl Renderer {
             }
         }
 
-        
         assert_eq!(swapchain_layers.len(), input_layers.len());
-        input_layers.reverse();
-        swapchain_layers.reverse();
 
-        if window_is_opaque {
-            match input_layers.first_mut() {
-                Some(layer) => {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                }
-                None => {
-                    
-                    
-                    
-                    input_layers.push(CompositorInputLayer {
-                        usage: CompositorSurfaceUsage::Content,
-                        is_opaque: true,
-                        offset: DeviceIntPoint::zero(),
-                        clip_rect: device_size.into(),
-                    });
+        
+        
+        
+        if window_is_opaque && input_layers.is_empty() {
+            input_layers.push(CompositorInputLayer {
+                usage: CompositorSurfaceUsage::Content,
+                is_opaque: true,
+                offset: DeviceIntPoint::zero(),
+                clip_rect: device_size.into(),
+            });
 
-                    swapchain_layers.push(SwapChainLayer {
-                        clear_tiles: Vec::new(),
-                        occlusion: occlusion::FrontToBackBuilder::with_capacity(cap, cap),
-                    });
-                }
-            }
+            swapchain_layers.push(SwapChainLayer {
+                clear_tiles: Vec::new(),
+                occlusion: occlusion::FrontToBackBuilder::with_capacity(cap, cap),
+            })
         }
 
         
@@ -3714,7 +3695,7 @@ impl Renderer {
             swapchain_layers.push(SwapChainLayer {
                 clear_tiles: Vec::new(),
                 occlusion: occlusion::FrontToBackBuilder::with_capacity(cap, cap),
-            });
+            })
         }
 
         
