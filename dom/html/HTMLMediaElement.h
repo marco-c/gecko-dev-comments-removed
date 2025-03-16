@@ -1937,6 +1937,12 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool ShouldQueueTimeupdateAsyncTask(TimeupdateType aType) const;
 
+  
+  
+  
+  
+  void MaybeMarkSHEntryAsUserInteracted();
+
 #ifdef MOZ_WMF_CDM
   
   bool mIsUsingWMFCDM = false;
