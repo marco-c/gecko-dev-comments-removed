@@ -291,25 +291,33 @@ pub struct InvalidationMap {
 
 
 
+
+
+
 #[derive(Clone, Copy, Debug, MallocSizeOf)]
 pub struct TSStateForInvalidation(u8);
 
 bitflags! {
     impl TSStateForInvalidation : u8 {
-        /// :empty
+        /// :empty. This only needs to be considered for DOM mutation, and for
+        /// elements that do not have any children.
         const EMPTY = 1 << 0;
         /// :nth and related selectors, without of.
         const NTH = 1 << 1;
-        /// "Simple" edge child selectors, like :first-child, :last-child, etc.
-        /// Excludes :*-of-type as well as :only-child.
-        const NTH_EDGE = 1 << 2;
+        /// :first-child. This only needs to be considered for DOM mutation, and
+        /// for elements that have no previous sibling.
+        const NTH_EDGE_FIRST = 1 << 2;
+        /// :last-child. This only needs to be considered for DOM mutation,
+        /// and for elements have no next sibling.
+        const NTH_EDGE_LAST = 1 << 3;
     }
 }
 
 impl TSStateForInvalidation {
     
-    pub fn avoid_blanket_invalidation_on_dom_mutation(&self) -> bool {
-        (Self::EMPTY | Self::NTH_EDGE).contains(*self)
+    
+    pub fn may_be_optimized(&self) -> bool {
+        (Self::EMPTY | Self::NTH_EDGE_FIRST | Self::NTH_EDGE_LAST).contains(*self)
     }
 }
 
@@ -507,7 +515,7 @@ trait Collector {
     fn class_map(&mut self) -> &mut IdOrClassDependencyMap;
     fn state_map(&mut self) -> &mut StateDependencyMap;
     fn attribute_map(&mut self) -> &mut LocalNameDependencyMap;
-    fn custom_state_map(&mut self) -> &mut LocalNameDependencyMap;
+    fn custom_state_map(&mut self) -> &mut CustomStateDependencyMap;
     fn update_states(&mut self, element_state: ElementState, document_state: DocumentState);
 
     
@@ -1166,7 +1174,11 @@ fn on_simple_selector<C: Collector>(
         Component::Empty => Ok(ComponentVisitResult::Handled(TSStateForInvalidation::EMPTY)),
         Component::Nth(data) => {
             let kind = if data.is_simple_edge() {
-                TSStateForInvalidation::NTH_EDGE
+                if data.ty.is_from_end() {
+                    TSStateForInvalidation::NTH_EDGE_LAST
+                } else {
+                    TSStateForInvalidation::NTH_EDGE_FIRST
+                }
             } else {
                 TSStateForInvalidation::NTH
             };
