@@ -63,6 +63,8 @@ add_task(async function test_ping_payload_and_environment() {
     await extension.startup();
   }
 
+  
+  
   const { payload, environment } = TelemetryController.getCurrentPingData();
 
   
