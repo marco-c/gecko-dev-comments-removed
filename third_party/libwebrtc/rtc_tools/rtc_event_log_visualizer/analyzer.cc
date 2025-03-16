@@ -1972,7 +1972,7 @@ void EventLogAnalyzer::CreateReceiveSideBweSimulationGraph(Plot* plot) const {
   RembInterceptor remb_interceptor;
   ReceiveSideCongestionController rscc(
       CreateEnvironment(&clock), [](auto...) {},
-      absl::bind_front(&RembInterceptor::SendRemb, &remb_interceptor), nullptr);
+      absl::bind_front(&RembInterceptor::SendRemb, &remb_interceptor));
   
   
   
