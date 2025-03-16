@@ -137,6 +137,7 @@ const int kDefaultVideoMaxFramerate = 60;
 
 
 const int kDefaultVideoMaxQpVpx = 56;
+const int kDefaultVideoMaxQpAv1 = 52;
 
 const int kDefaultVideoMaxQpH26x = 51;
 
