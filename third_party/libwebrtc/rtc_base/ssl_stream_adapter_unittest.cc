@@ -563,7 +563,6 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
   }
 
   void TestHandshake(bool expect_success = true) {
-
     if (!dtls_) {
       
       
