@@ -26,8 +26,7 @@ JVM* g_jvm;
 struct {
   const char* name;
   jclass clazz;
-} loaded_classes[] = {
-};
+} loaded_classes[] = {};
 
 
 

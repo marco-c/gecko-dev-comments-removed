@@ -10,9 +10,9 @@
 
 #include "modules/desktop_capture/mac/desktop_configuration.h"
 
+#include <Cocoa/Cocoa.h>
 #include <math.h>
 #include <algorithm>
-#include <Cocoa/Cocoa.h>
 
 #include "rtc_base/checks.h"
 
@@ -30,12 +30,12 @@ DesktopRect NSRectToDesktopRect(const NSRect& ns_rect) {
 
 
 
-void InvertRectYOrigin(const DesktopRect& bounds,
-                       DesktopRect* rect) {
+void InvertRectYOrigin(const DesktopRect& bounds, DesktopRect* rect) {
   RTC_DCHECK_EQ(bounds.top(), 0);
-  *rect = DesktopRect::MakeXYWH(
-      rect->left(), bounds.bottom() - rect->bottom(),
-      rect->width(), rect->height());
+  *rect = DesktopRect::MakeXYWH(rect->left(),
+                                bounds.bottom() - rect->bottom(),
+                                rect->width(),
+                                rect->height());
 }
 
 MacDisplayConfiguration GetConfigurationForScreen(NSScreen* screen) {
@@ -97,7 +97,7 @@ MacDesktopConfiguration MacDesktopConfiguration::GetCurrent(Origin origin) {
   
   for (NSUInteger i = 0; i < [screens count]; ++i) {
     MacDisplayConfiguration display_config =
-        GetConfigurationForScreen([screens objectAtIndex: i]);
+        GetConfigurationForScreen([screens objectAtIndex:i]);
 
     if (i == 0)
       desktop_config.dip_to_pixel_scale = display_config.dip_to_pixel_scale;
@@ -139,8 +139,7 @@ MacDesktopConfiguration MacDesktopConfiguration::GetCurrent(Origin origin) {
 
 bool operator==(const MacDisplayConfiguration& left,
                 const MacDisplayConfiguration& right) {
-  return left.id == right.id &&
-      left.bounds.equals(right.bounds) &&
+  return left.id == right.id && left.bounds.equals(right.bounds) &&
       left.pixel_bounds.equals(right.pixel_bounds) &&
       left.dip_to_pixel_scale == right.dip_to_pixel_scale;
 }
@@ -153,18 +152,20 @@ bool MacDesktopConfiguration::Equals(const MacDesktopConfiguration& other) {
 }
 
 const MacDisplayConfiguration*
-MacDesktopConfiguration::FindDisplayConfigurationById(
-    CGDirectDisplayID id) {
+    MacDesktopConfiguration::FindDisplayConfigurationById(
+        CGDirectDisplayID id) {
   bool is_builtin = CGDisplayIsBuiltin(id);
   for (MacDisplayConfigurations::const_iterator it = displays.begin();
-      it != displays.end(); ++it) {
+       it != displays.end();
+       ++it) {
     
     
     
     
     
     
-    if ((is_builtin && it->is_builtin) || (!is_builtin && it->id == id)) return &(*it);
+    if ((is_builtin && it->is_builtin) || (!is_builtin && it->id == id))
+      return &(*it);
   }
   return NULL;
 }

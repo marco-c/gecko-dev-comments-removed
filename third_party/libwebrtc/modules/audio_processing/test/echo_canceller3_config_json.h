@@ -23,13 +23,12 @@ namespace webrtc {
 
 
 void Aec3ConfigFromJsonString(absl::string_view json_string,
-                                         EchoCanceller3Config* config,
-                                         bool* parsing_successful);
+                              EchoCanceller3Config* config,
+                              bool* parsing_successful);
 
 
 
-std::string Aec3ConfigToJsonString(
-    const EchoCanceller3Config& config);
+std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config);
 
 }  
 

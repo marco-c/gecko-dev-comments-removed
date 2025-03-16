@@ -85,8 +85,8 @@ bool Dav1dDecoder::Configure(const Settings& settings) {
   dav1d_default_settings(&s);
 
   s.n_threads = std::clamp(settings.number_of_cores(), 1, DAV1D_MAX_THREADS);
-  s.max_frame_delay = 1;   
-  s.all_layers = 0;        
+  s.max_frame_delay = 1;  
+  s.all_layers = 0;       
   
   s.frame_size_limit = 16384 * 16384;
   s.operating_point = 31;  

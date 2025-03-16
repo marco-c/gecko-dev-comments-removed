@@ -196,7 +196,6 @@ TEST(PacketBuffer, OverfillBuffer) {
   EXPECT_CALL(decoder_database, Die());  
 }
 
-
 TEST(PacketBuffer, ExtractOrderRedundancy) {
   TickTimer tick_timer;
   StrictMock<MockStatisticsCalculator> mock_stats(&tick_timer);
