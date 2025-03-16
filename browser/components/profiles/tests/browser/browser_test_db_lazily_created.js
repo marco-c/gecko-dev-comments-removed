@@ -10,9 +10,7 @@ add_task(async function test_dbLazilyCreated() {
   );
 
   
-  SelectableProfileService.getExecutableProcess = () => {
-    return { runw: () => {} };
-  };
+  SelectableProfileService.execProcess = () => {};
 
   await SelectableProfileService.maybeSetupDataStore();
   ok(
