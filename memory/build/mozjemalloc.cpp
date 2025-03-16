@@ -6018,19 +6018,20 @@ purge_result_t ArenaCollection::MayPurgeStep(bool aPeekOnly,
         break;
       }
     }
+
     if (!found) {
       return purge_result_t::WantsLater;
     }
     if (aPeekOnly) {
       return purge_result_t::NeedsMore;
     }
+
+    
+    
+    
+    mOutstandingPurges.remove(found);
   }
 
-  
-  
-  
-  
-  RemoveFromOutstandingPurges(found);
   if (found->Purge(false)) {
     
     
