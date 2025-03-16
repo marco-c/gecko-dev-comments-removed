@@ -553,8 +553,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         }
 
         
-        
-        if self.style.pseudo.is_some() {
+        if self.style.pseudo.is_some_and(|p| !p.is_part_like()) {
             self.style.mutate_box().set_display(Display::Inline);
             return;
         }
