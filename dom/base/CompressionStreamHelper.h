@@ -4,15 +4,35 @@
 
 
 
-#ifndef DOM_ZLIBHELPER_H_
-#define DOM_ZLIBHELPER_H_
+#ifndef DOM_COMPRESSION_STREAM_HELPER_H_
+#define DOM_COMPRESSION_STREAM_HELPER_H_
 
 #include "js/TypeDecls.h"
 #include "zlib.h"
 
 #include "mozilla/dom/CompressionStreamBinding.h"
 
-namespace mozilla::dom {
+namespace mozilla::dom::compression {
+
+
+
+
+enum class Flush : bool { No, Yes };
+
+inline uint8_t intoZLibFlush(Flush aFlush) {
+  switch (aFlush) {
+    case Flush::No: {
+      return Z_NO_FLUSH;
+    }
+    case Flush::Yes: {
+      return Z_FINISH;
+    }
+    default: {
+      MOZ_ASSERT_UNREACHABLE("Unknown flush mode");
+      return Z_NO_FLUSH;
+    }
+  }
+}
 
 
 
@@ -38,8 +58,6 @@ inline int8_t ZLibWindowBits(CompressionFormat format) {
       return 0;
   }
 }
-
-enum ZLibFlush : uint8_t { No = Z_NO_FLUSH, Yes = Z_FINISH };
 
 }  
 
