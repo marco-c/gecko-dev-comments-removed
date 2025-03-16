@@ -69,9 +69,6 @@ class GlobalKeyListener : public nsIDOMEventListener {
     bool mReservedHandlerForChromeFound = false;
     
     bool mDisabledHandlerFound = false;
-    
-    
-    bool mRelevantHandlerFound = false;
   };
 
   
