@@ -1749,7 +1749,7 @@ struct BaseCompiler final {
   RegPtr loadAllocSiteInstanceData(uint32_t allocSiteIndex);
 
   
-  uint32_t readAllocSiteIndex();
+  [[nodiscard]] bool readAllocSiteIndex(uint32_t* index);
 
   
   RegPtr loadSuperTypeVector(uint32_t typeIndex);
