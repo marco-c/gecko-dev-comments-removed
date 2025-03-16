@@ -26,10 +26,11 @@ namespace {
 
 
 DesktopRect ScaleAndRoundCGRect(const CGRect& rect, float scale) {
-  return DesktopRect::MakeLTRB(static_cast<int>(floor(rect.origin.x * scale)),
-                               static_cast<int>(floor(rect.origin.y * scale)),
-                               static_cast<int>(ceil((rect.origin.x + rect.size.width) * scale)),
-                               static_cast<int>(ceil((rect.origin.y + rect.size.height) * scale)));
+  return DesktopRect::MakeLTRB(
+      static_cast<int>(floor(rect.origin.x * scale)),
+      static_cast<int>(floor(rect.origin.y * scale)),
+      static_cast<int>(ceil((rect.origin.x + rect.size.width) * scale)),
+      static_cast<int>(ceil((rect.origin.y + rect.size.height) * scale)));
 }
 
 
@@ -63,8 +64,8 @@ void CopyRect(const uint8_t* src_plane,
 CFArrayRef CreateWindowListWithExclusion(CGWindowID window_to_exclude) {
   if (!window_to_exclude) return nullptr;
 
-  CFArrayRef all_windows =
-      CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+  CFArrayRef all_windows = CGWindowListCopyWindowInfo(
+      kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
   if (!all_windows) return nullptr;
 
   CFMutableArrayRef returned_array =
@@ -72,8 +73,8 @@ CFArrayRef CreateWindowListWithExclusion(CGWindowID window_to_exclude) {
 
   bool found = false;
   for (CFIndex i = 0; i < CFArrayGetCount(all_windows); ++i) {
-    CFDictionaryRef window =
-        reinterpret_cast<CFDictionaryRef>(CFArrayGetValueAtIndex(all_windows, i));
+    CFDictionaryRef window = reinterpret_cast<CFDictionaryRef>(
+        CFArrayGetValueAtIndex(all_windows, i));
 
     CGWindowID id = GetWindowId(window);
     if (id == window_to_exclude) {
@@ -93,7 +94,8 @@ CFArrayRef CreateWindowListWithExclusion(CGWindowID window_to_exclude) {
 
 
 
-DesktopRect GetExcludedWindowPixelBounds(CGWindowID window, float dip_to_pixel_scale) {
+DesktopRect GetExcludedWindowPixelBounds(CGWindowID window,
+                                         float dip_to_pixel_scale) {
   
   
   static const int kBorderEffectSize = 20;
@@ -103,13 +105,14 @@ DesktopRect GetExcludedWindowPixelBounds(CGWindowID window, float dip_to_pixel_s
 
   CFArrayRef window_id_array =
       CFArrayCreate(nullptr, reinterpret_cast<const void**>(&ids), 1, nullptr);
-  CFArrayRef window_array = CGWindowListCreateDescriptionFromArray(window_id_array);
+  CFArrayRef window_array =
+      CGWindowListCreateDescriptionFromArray(window_id_array);
 
   if (CFArrayGetCount(window_array) > 0) {
-    CFDictionaryRef win =
-        reinterpret_cast<CFDictionaryRef>(CFArrayGetValueAtIndex(window_array, 0));
-    CFDictionaryRef bounds_ref =
-        reinterpret_cast<CFDictionaryRef>(CFDictionaryGetValue(win, kCGWindowBounds));
+    CFDictionaryRef win = reinterpret_cast<CFDictionaryRef>(
+        CFArrayGetValueAtIndex(window_array, 0));
+    CFDictionaryRef bounds_ref = reinterpret_cast<CFDictionaryRef>(
+        CFDictionaryGetValue(win, kCGWindowBounds));
     CGRectMakeWithDictionaryRepresentation(bounds_ref, &rect);
   }
 
@@ -127,9 +130,10 @@ DesktopRect GetExcludedWindowPixelBounds(CGWindowID window, float dip_to_pixel_s
 
 
 
-rtc::ScopedCFTypeRef<CGImageRef> CreateExcludedWindowRegionImage(const DesktopRect& pixel_bounds,
-                                                                 float dip_to_pixel_scale,
-                                                                 CFArrayRef window_list) {
+rtc::ScopedCFTypeRef<CGImageRef> CreateExcludedWindowRegionImage(
+    const DesktopRect& pixel_bounds,
+    float dip_to_pixel_scale,
+    CFArrayRef window_list) {
   CGRect window_bounds;
   
   
@@ -138,8 +142,8 @@ rtc::ScopedCFTypeRef<CGImageRef> CreateExcludedWindowRegionImage(const DesktopRe
   window_bounds.size.width = pixel_bounds.width();
   window_bounds.size.height = pixel_bounds.height();
 
-  return rtc::ScopedCFTypeRef<CGImageRef>(
-      CGWindowListCreateImageFromArray(window_bounds, window_list, kCGWindowImageDefault));
+  return rtc::ScopedCFTypeRef<CGImageRef>(CGWindowListCreateImageFromArray(
+      window_bounds, window_list, kCGWindowImageDefault));
 }
 
 }  
@@ -205,7 +209,8 @@ void ScreenCapturerMac::CaptureFrame() {
     RTC_DLOG(LS_WARNING) << "Overwriting frame that is still shared.";
   }
 
-  MacDesktopConfiguration new_config = desktop_config_monitor_->desktop_configuration();
+  MacDesktopConfiguration new_config =
+      desktop_config_monitor_->desktop_configuration();
   if (update_screen_configuration_ || !desktop_config_.Equals(new_config)) {
     update_screen_configuration_ = false;
     desktop_config_ = new_config;
@@ -238,7 +243,8 @@ void ScreenCapturerMac::CaptureFrame() {
   
   
   
-  if (!queue_.current_frame()) queue_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(CreateFrame()));
+  if (!queue_.current_frame())
+    queue_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(CreateFrame()));
 
   DesktopFrame* current_frame = queue_.current_frame();
 
@@ -250,15 +256,16 @@ void ScreenCapturerMac::CaptureFrame() {
   if (detect_updated_region_) {
     *new_frame->mutable_updated_region() = region;
   } else {
-    new_frame->mutable_updated_region()->AddRect(DesktopRect::MakeSize(new_frame->size()));
+    new_frame->mutable_updated_region()->AddRect(
+        DesktopRect::MakeSize(new_frame->size()));
   }
 
   if (current_display_) {
     const MacDisplayConfiguration* config =
         desktop_config_.FindDisplayConfigurationById(current_display_);
     if (config) {
-      new_frame->set_top_left(
-          config->bounds.top_left().subtract(desktop_config_.bounds.top_left()));
+      new_frame->set_top_left(config->bounds.top_left().subtract(
+          desktop_config_.bounds.top_left()));
     }
   }
 
@@ -290,7 +297,8 @@ bool ScreenCapturerMac::SelectSource(SourceId id) {
     current_display_ = 0;
   } else {
     const MacDisplayConfiguration* config =
-        desktop_config_.FindDisplayConfigurationById(static_cast<CGDirectDisplayID>(id));
+        desktop_config_.FindDisplayConfigurationById(
+            static_cast<CGDirectDisplayID>(id));
     if (!config) return false;
     current_display_ = config->id;
   }
@@ -299,11 +307,15 @@ bool ScreenCapturerMac::SelectSource(SourceId id) {
   return true;
 }
 
-bool ScreenCapturerMac::CgBlit(const DesktopFrame& frame, const DesktopRegion& region) {
+bool ScreenCapturerMac::CgBlit(const DesktopFrame& frame,
+                               const DesktopRegion& region) {
   
   
-  if (queue_.previous_frame() && !region.Equals(DesktopRegion(screen_pixel_bounds_))) {
-    memcpy(frame.data(), queue_.previous_frame()->data(), frame.stride() * frame.size().height());
+  if (queue_.previous_frame() &&
+      !region.Equals(DesktopRegion(screen_pixel_bounds_))) {
+    memcpy(frame.data(),
+           queue_.previous_frame()->data(),
+           frame.stride() * frame.size().height());
   }
 
   MacDisplayConfigurations displays_to_capture;
@@ -332,12 +344,15 @@ bool ScreenCapturerMac::CgBlit(const DesktopFrame& frame, const DesktopRegion& r
     
     
     
-    if (i > 0 && display_config.dip_to_pixel_scale != displays_to_capture[0].dip_to_pixel_scale) {
+    if (i > 0 &&
+        display_config.dip_to_pixel_scale !=
+            displays_to_capture[0].dip_to_pixel_scale) {
       continue;
     }
     
     DesktopRect display_bounds = display_config.pixel_bounds;
-    display_bounds.Translate(-screen_pixel_bounds_.left(), -screen_pixel_bounds_.top());
+    display_bounds.Translate(-screen_pixel_bounds_.left(),
+                             -screen_pixel_bounds_.top());
 
     
     DesktopRegion copy_region = region;
@@ -351,15 +366,17 @@ bool ScreenCapturerMac::CgBlit(const DesktopFrame& frame, const DesktopRegion& r
     rtc::ScopedCFTypeRef<CGImageRef> excluded_image;
     if (excluded_window_ && window_list) {
       
-      excluded_window_bounds =
-          GetExcludedWindowPixelBounds(excluded_window_, display_config.dip_to_pixel_scale);
+      excluded_window_bounds = GetExcludedWindowPixelBounds(
+          excluded_window_, display_config.dip_to_pixel_scale);
       excluded_window_bounds.IntersectWith(display_config.pixel_bounds);
 
       
       
       if (!excluded_window_bounds.is_empty()) {
-        excluded_image = CreateExcludedWindowRegionImage(
-            excluded_window_bounds, display_config.dip_to_pixel_scale, window_list);
+        excluded_image =
+            CreateExcludedWindowRegionImage(excluded_window_bounds,
+                                            display_config.dip_to_pixel_scale,
+                                            window_list);
       }
     }
 
@@ -390,7 +407,8 @@ bool ScreenCapturerMac::CgBlit(const DesktopFrame& frame, const DesktopRegion& r
 
     if (excluded_image) {
       CGDataProviderRef provider = CGImageGetDataProvider(excluded_image.get());
-      rtc::ScopedCFTypeRef<CFDataRef> excluded_image_data(CGDataProviderCopyData(provider));
+      rtc::ScopedCFTypeRef<CFDataRef> excluded_image_data(
+          CGDataProviderCopyData(provider));
       RTC_DCHECK(excluded_image_data);
       display_base_address = CFDataGetBytePtr(excluded_image_data.get());
       src_bytes_per_row = CGImageGetBytesPerRow(excluded_image.get());
@@ -401,14 +419,18 @@ bool ScreenCapturerMac::CgBlit(const DesktopFrame& frame, const DesktopRegion& r
       window_bounds_relative_to_desktop.Translate(-screen_pixel_bounds_.left(),
                                                   -screen_pixel_bounds_.top());
 
-      DesktopRect rect_to_copy = DesktopRect::MakeSize(excluded_window_bounds.size());
-      rect_to_copy.IntersectWith(DesktopRect::MakeWH(CGImageGetWidth(excluded_image.get()),
-                                                     CGImageGetHeight(excluded_image.get())));
+      DesktopRect rect_to_copy =
+          DesktopRect::MakeSize(excluded_window_bounds.size());
+      rect_to_copy.IntersectWith(
+          DesktopRect::MakeWH(CGImageGetWidth(excluded_image.get()),
+                              CGImageGetHeight(excluded_image.get())));
 
-      if (CGImageGetBitsPerPixel(excluded_image.get()) / 8 == DesktopFrame::kBytesPerPixel) {
+      if (CGImageGetBitsPerPixel(excluded_image.get()) / 8 ==
+          DesktopFrame::kBytesPerPixel) {
         CopyRect(display_base_address,
                  src_bytes_per_row,
-                 frame.GetFrameDataAtPos(window_bounds_relative_to_desktop.top_left()),
+                 frame.GetFrameDataAtPos(
+                     window_bounds_relative_to_desktop.top_left()),
                  frame.stride(),
                  DesktopFrame::kBytesPerPixel,
                  rect_to_copy);
@@ -457,10 +479,11 @@ bool ScreenCapturerMac::RegisterRefreshAndMoveHandlers() {
     CGDirectDisplayID display_id = config.id;
     DesktopVector display_origin = config.pixel_bounds.top_left();
 
-    CGDisplayStreamFrameAvailableHandler handler = ^(CGDisplayStreamFrameStatus status,
-                                                     uint64_t ,
-                                                     IOSurfaceRef frame_surface,
-                                                     CGDisplayStreamUpdateRef updateRef) {
+    CGDisplayStreamFrameAvailableHandler handler = ^(
+        CGDisplayStreamFrameStatus status,
+        uint64_t ,
+        IOSurfaceRef frame_surface,
+        CGDisplayStreamUpdateRef updateRef) {
       RTC_DCHECK(thread_checker_.IsCurrent());
       if (status == kCGDisplayStreamFrameStatusStopped) return;
 
@@ -468,8 +491,8 @@ bool ScreenCapturerMac::RegisterRefreshAndMoveHandlers() {
       if (status != kCGDisplayStreamFrameStatusFrameComplete) return;
 
       size_t count = 0;
-      const CGRect* rects =
-          CGDisplayStreamUpdateGetRects(updateRef, kCGDisplayStreamUpdateDirtyRects, &count);
+      const CGRect* rects = CGDisplayStreamUpdateGetRects(
+          updateRef, kCGDisplayStreamUpdateDirtyRects, &count);
       if (count != 0) {
         
         
@@ -485,14 +508,20 @@ bool ScreenCapturerMac::RegisterRefreshAndMoveHandlers() {
                            &kCFTypeDictionaryKeyCallBacks,
                            &kCFTypeDictionaryValueCallBacks));
 
-    CGDisplayStreamRef display_stream = CGDisplayStreamCreate(
-        display_id, pixel_width, pixel_height, 'BGRA', properties_dict.get(), handler);
+    CGDisplayStreamRef display_stream =
+        CGDisplayStreamCreate(display_id,
+                              pixel_width,
+                              pixel_height,
+                              'BGRA',
+                              properties_dict.get(),
+                              handler);
 
     if (display_stream) {
       CGError error = CGDisplayStreamStart(display_stream);
       if (error != kCGErrorSuccess) return false;
 
-      CFRunLoopSourceRef source = CGDisplayStreamGetRunLoopSource(display_stream);
+      CFRunLoopSourceRef source =
+          CGDisplayStreamGetRunLoopSource(display_stream);
       CFRunLoopAddSource(CFRunLoopGetCurrent(), source, kCFRunLoopCommonModes);
       display_streams_.push_back(display_stream);
     }
@@ -545,14 +574,17 @@ void ScreenCapturerMac::ScreenRefresh(CGDirectDisplayID display_id,
   
   
   desktop_frame_provider_.InvalidateIOSurface(
-      display_id, rtc::ScopedCFTypeRef<IOSurfaceRef>(io_surface, rtc::RetainPolicy::RETAIN));
+      display_id,
+      rtc::ScopedCFTypeRef<IOSurfaceRef>(io_surface,
+                                         rtc::RetainPolicy::RETAIN));
   helper_.InvalidateRegion(region);
 }
 
 std::unique_ptr<DesktopFrame> ScreenCapturerMac::CreateFrame() {
-  std::unique_ptr<DesktopFrame> frame(new BasicDesktopFrame(screen_pixel_bounds_.size()));
-  frame->set_dpi(
-      DesktopVector(kStandardDPI * dip_to_pixel_scale_, kStandardDPI * dip_to_pixel_scale_));
+  std::unique_ptr<DesktopFrame> frame(
+      new BasicDesktopFrame(screen_pixel_bounds_.size()));
+  frame->set_dpi(DesktopVector(kStandardDPI * dip_to_pixel_scale_,
+                               kStandardDPI * dip_to_pixel_scale_));
   return frame;
 }
 
