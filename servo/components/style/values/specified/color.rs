@@ -328,18 +328,6 @@ pub enum SystemColor {
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozAutofillBackground,
 
-    
-    
-    
-    
-    
-    #[css(skip)]
-    MozNativehyperlinktext,
-
-    
-    #[css(skip)]
-    MozNativevisitedhyperlinktext,
-
     #[parse(aliases = "-moz-hyperlinktext")]
     Linktext,
     #[parse(aliases = "-moz-activehyperlinktext")]

@@ -194,16 +194,13 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
       
       aResult = NS_TRANSPARENT;
       break;
-    case ColorID::MozNativehyperlinktext:
-      
-      
-      aResult = NS_RGB(0x14, 0x4F, 0xAE);
-      break;
-    case ColorID::MozNativevisitedhyperlinktext:
+    case ColorID::Visitedtext:
       
       
       aResult = GetColorFromUIColor([UIColor systemPurpleColor]);
       break;
+    case ColorID::Linktext:
+    case ColorID::Activetext:
     case ColorID::TargetTextBackground:
     case ColorID::TargetTextForeground:
       aResult = GetStandinForNativeColor(aID, aColorScheme);

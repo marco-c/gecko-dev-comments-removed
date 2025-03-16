@@ -287,8 +287,6 @@ static const char sColorPrefs[][41] = {
     "ui.accentcolor",
     "ui.accentcolortext",
     "ui.-moz-autofill-background",
-    "ui.-moz-nativehyperlinktext",
-    "ui.-moz-nativevisitedhyperlinktext",
     "ui.-moz-hyperlinktext",
     "ui.-moz-activehyperlinktext",
     "ui.-moz-visitedhyperlinktext",
@@ -682,8 +680,9 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
       COLOR(MozMacFocusring, 0x60, 0x9D, 0xD7)
       COLOR(MozMacDisabledtoolbartext, 0x3F, 0x3F, 0x3F)
       
-      COLOR(MozNativehyperlinktext, 0x00, 0x66, 0xCC)
-      COLOR(MozNativevisitedhyperlinktext, 0x55, 0x1A, 0x8B)
+      COLOR(Linktext, 0x00, 0x66, 0xCC)
+      COLOR(Activetext, 0xee, 0x00, 0x00)
+      COLOR(Visitedtext, 0x55, 0x1A, 0x8B)
       COLOR(MozAutofillBackground, 0xff, 0xfc, 0xc8)
       COLOR(TargetTextBackground, 0xff, 0xeb, 0xcd)
       COLOR(TargetTextForeground, 0x00, 0x00, 0x00)
@@ -805,21 +804,22 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
     case ColorID::Highlighttext:
       color = NS_SAME_AS_FOREGROUND_COLOR;
       break;
-    case ColorID::MozNativehyperlinktext:
+    case ColorID::Linktext:
       
       
       color = NS_RGB(0x8c, 0x8c, 0xff);
       break;
-    case ColorID::MozNativevisitedhyperlinktext:
-      
-      
-      color = NS_RGB(0xff, 0xad, 0xff);
-      break;
+    case ColorID::Activetext:
     case ColorID::SpellCheckerUnderline:
       
       
       
       color = NS_RGB(0xff, 0x66, 0x66);
+      break;
+    case ColorID::Visitedtext:
+      
+      
+      color = NS_RGB(0xff, 0xad, 0xff);
       break;
     case ColorID::Activeborder:
     case ColorID::Inactiveborder:

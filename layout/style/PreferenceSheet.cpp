@@ -100,11 +100,8 @@ void PreferenceSheet::Prefs::LoadColors(bool aIsLight) {
 
     GetStandinColor(ColorID::Windowtext, colors.mDefault);
     GetStandinColor(ColorID::Window, colors.mDefaultBackground);
-    GetStandinColor(ColorID::MozNativehyperlinktext, colors.mLink);
-    GetStandinColor(ColorID::MozNativevisitedhyperlinktext,
-                    colors.mVisitedLink);
-    
-    
+    GetStandinColor(ColorID::Linktext, colors.mLink);
+    GetStandinColor(ColorID::Visitedtext, colors.mVisitedLink);
     GetStandinColor(ColorID::Activetext, colors.mActiveLink);
   } else if (!mIsChrome && mUsePrefColors) {
     
@@ -123,18 +120,9 @@ void PreferenceSheet::Prefs::LoadColors(bool aIsLight) {
 
     GetSystemColor(ColorID::Windowtext, colors.mDefault);
     GetSystemColor(ColorID::Window, colors.mDefaultBackground);
-    GetSystemColor(ColorID::MozNativehyperlinktext, colors.mLink);
-    
-    
-    
-    
-    colors.mVisitedLink = NS_RGB(
-        AVG2(NS_GET_R(colors.mDefault), NS_GET_R(colors.mDefaultBackground)),
-        NS_GET_G(colors.mDefault),
-        AVG2(NS_GET_B(colors.mDefault), NS_GET_B(colors.mDefaultBackground)));
-    GetSystemColor(ColorID::MozNativevisitedhyperlinktext, colors.mVisitedLink);
-
-    colors.mActiveLink = colors.mLink;
+    GetSystemColor(ColorID::Linktext, colors.mLink);
+    GetSystemColor(ColorID::Visitedtext, colors.mVisitedLink);
+    GetSystemColor(ColorID::Activetext, colors.mActiveLink);
   }
 
   
