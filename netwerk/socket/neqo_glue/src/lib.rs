@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
 
 use firefox_on_glean::metrics::networking;
 use firefox_on_glean::private::{LocalCustomDistribution, LocalMemoryDistribution};
@@ -51,14 +51,14 @@ pub struct NeqoHttp3Conn {
     local_addr: SocketAddr,
     refcnt: AtomicRefcnt,
     last_output_time: Instant,
-    max_accumlated_time: Duration,
-    /// Socket to use for IO.
-    ///
-    /// When [`None`], NSPR is used for IO.
-    //
-    // Use a `BorrowedSocket` instead of e.g. `std::net::UdpSocket`. The latter
-    // would close the file descriptor on `Drop`. The lifetime of the underlying
-    // OS socket is managed not by `neqo_glue` but `NSPR`.
+    max_accumulated_time: Duration,
+    
+    
+    
+    
+    
+    
+    
     socket: Option<neqo_udp::Socket<BorrowedSocket>>,
 
     datagram_segment_size_sent: LocalMemoryDistribution<'static>,
@@ -73,7 +73,7 @@ impl Drop for NeqoHttp3Conn {
     }
 }
 
-// Opaque interface to mozilla::net::NetAddr defined in DNS.h
+
 #[repr(C)]
 pub union NetAddr {
     private: [u8; 0],
@@ -133,12 +133,12 @@ type BorrowedSocket = std::os::fd::BorrowedFd<'static>;
 type BorrowedSocket = std::os::windows::io::BorrowedSocket<'static>;
 
 impl NeqoHttp3Conn {
-    /// Create a new [`NeqoHttp3Conn`].
-    ///
-    /// Note that [`NeqoHttp3Conn`] works under the assumption that the UDP
-    /// socket of the connection, i.e. the one provided to
-    /// [`NeqoHttp3Conn::new`], does not change throughout the lifetime of
-    /// [`NeqoHttp3Conn`].
+    
+    
+    
+    
+    
+    
     fn new(
         origin: &nsACString,
         alpn: &nsACString,
@@ -152,12 +152,12 @@ impl NeqoHttp3Conn {
         webtransport: bool,
         qlog_dir: &nsACString,
         webtransport_datagram_size: u32,
-        max_accumlated_time_ms: u32,
+        max_accumulated_time_ms: u32,
         provider_flags: u32,
         idle_timeout: u32,
         socket: Option<i64>,
     ) -> Result<RefPtr<NeqoHttp3Conn>, nsresult> {
-        // Nss init.
+        
         init().map_err(|_| NS_ERROR_UNEXPECTED)?;
 
         let socket = socket
@@ -218,7 +218,7 @@ impl NeqoHttp3Conn {
             0 => CongestionControlAlgorithm::NewReno,
             1 => CongestionControlAlgorithm::Cubic,
             _ => {
-                // Unknown preferences; default to Cubic
+                
                 CongestionControlAlgorithm::Cubic
             }
         };
@@ -233,7 +233,7 @@ impl NeqoHttp3Conn {
             .sni_slicing(static_prefs::pref!("network.http.http3.sni-slicing"))
             .idle_timeout(Duration::from_secs(idle_timeout.into()));
 
-        // Set a short timeout when fuzzing.
+        
         #[cfg(feature = "fuzzing")]
         if static_prefs::pref!("fuzzing.necko.http3") {
             params = params.idle_timeout(Duration::from_millis(10));
@@ -275,7 +275,7 @@ impl NeqoHttp3Conn {
             && (provider_flags & nsISocketProvider::IS_RETRY) == 0
             && (provider_flags & nsISocketProvider::BE_CONSERVATIVE) == 0
         {
-            // These operations are infallible when conn.state == State::Init.
+            
             let _ = conn.set_groups(&[
                 neqo_crypto::TLS_GRP_KEM_MLKEM768X25519,
                 neqo_crypto::TLS_GRP_EC_X25519,
@@ -285,9 +285,9 @@ impl NeqoHttp3Conn {
             ]);
             additional_shares += 1;
         }
-        // If additional_shares == 2, send mlkem768x25519, x25519, and p256.
-        // If additional_shares == 1, send {mlkem768x25519, x25519} or {x25519, p256}.
-        // If additional_shares == 0, send x25519.
+        
+        
+        
         let _ = conn.send_additional_key_shares(additional_shares);
 
         let mut conn = Http3Client::new_with_conn(conn, http3_settings);
@@ -305,8 +305,8 @@ impl NeqoHttp3Conn {
             ) {
                 Ok(qlog) => conn.set_qlog(qlog),
                 Err(e) => {
-                    // Emit warnings but to not return an error if qlog initialization
-                    // fails.
+                    
+                    
                     qwarn!(
                         "failed to create NeqoQlog at {}: {}",
                         qlog_path.display(),
@@ -321,7 +321,7 @@ impl NeqoHttp3Conn {
             local_addr: local,
             refcnt: unsafe { AtomicRefcnt::new() },
             last_output_time: Instant::now(),
-            max_accumlated_time: Duration::from_millis(max_accumlated_time_ms.into()),
+            max_accumulated_time: Duration::from_millis(max_accumulated_time_ms.into()),
             socket,
             datagram_segment_size_sent: networking::http_3_udp_datagram_segment_size_sent
                 .start_buffer(),
@@ -340,10 +340,10 @@ impl NeqoHttp3Conn {
         use neqo_common::IpTosEcn;
         use neqo_transport::ecn;
 
-        // Metric values must be recorded as integers. Glean does not support
-        // floating point distributions. In order to represent values <1, they
-        // are multiplied by `PRECISION_FACTOR`. A `PRECISION_FACTOR` of
-        // `10_000` allows one to represent fractions down to 0.0001.
+        
+        
+        
+        
         const PRECISION_FACTOR: u64 = 10_000;
 
         let stats = self.conn.transport_stats();
@@ -423,16 +423,16 @@ impl NeqoHttp3Conn {
             }
         }
 
-        // Ignore connections into the void.
+        
         if stats.packets_rx != 0 {
             let loss = (stats.lost * PRECISION_FACTOR as usize) / stats.packets_tx;
             glean::http_3_loss_ratio.accumulate_single_sample_signed(loss as i64);
         }
     }
 
-    // Noop on Android for now, due to performance regressions.
-    // - <https://bugzilla.mozilla.org/show_bug.cgi?id=1898810>
-    // - <https://bugzilla.mozilla.org/show_bug.cgi?id=1906664>
+    
+    
+    
     #[cfg(target_os = "android")]
     fn record_stats_in_glean(&self) {}
 }
@@ -450,7 +450,7 @@ pub unsafe extern "C" fn neqo_http3conn_release(conn: &NeqoHttp3Conn) {
     }
 }
 
-// xpcom::RefPtr support
+
 unsafe impl RefCounted for NeqoHttp3Conn {
     unsafe fn addref(&self) {
         neqo_http3conn_addref(self);
@@ -460,7 +460,7 @@ unsafe impl RefCounted for NeqoHttp3Conn {
     }
 }
 
-// Allocate a new NeqoHttp3Conn object.
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_new(
     origin: &nsACString,
@@ -475,7 +475,7 @@ pub extern "C" fn neqo_http3conn_new(
     webtransport: bool,
     qlog_dir: &nsACString,
     webtransport_datagram_size: u32,
-    max_accumlated_time_ms: u32,
+    max_accumulated_time_ms: u32,
     provider_flags: u32,
     idle_timeout: u32,
     socket: i64,
@@ -496,7 +496,7 @@ pub extern "C" fn neqo_http3conn_new(
         webtransport,
         qlog_dir,
         webtransport_datagram_size,
-        max_accumlated_time_ms,
+        max_accumulated_time_ms,
         provider_flags,
         idle_timeout,
         Some(socket),
@@ -509,7 +509,7 @@ pub extern "C" fn neqo_http3conn_new(
     }
 }
 
-// Allocate a new NeqoHttp3Conn object using NSPR for IO.
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_new_use_nspr_for_io(
     origin: &nsACString,
@@ -524,7 +524,7 @@ pub extern "C" fn neqo_http3conn_new_use_nspr_for_io(
     webtransport: bool,
     qlog_dir: &nsACString,
     webtransport_datagram_size: u32,
-    max_accumlated_time_ms: u32,
+    max_accumulated_time_ms: u32,
     provider_flags: u32,
     idle_timeout: u32,
     result: &mut *const NeqoHttp3Conn,
@@ -544,7 +544,7 @@ pub extern "C" fn neqo_http3conn_new_use_nspr_for_io(
         webtransport,
         qlog_dir,
         webtransport_datagram_size,
-        max_accumlated_time_ms,
+        max_accumulated_time_ms,
         provider_flags,
         idle_timeout,
         None,
@@ -557,9 +557,9 @@ pub extern "C" fn neqo_http3conn_new_use_nspr_for_io(
     }
 }
 
-/* Process a packet.
- * packet holds packet data.
- */
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn neqo_http3conn_process_input_use_nspr_for_io(
     conn: &mut NeqoHttp3Conn,
@@ -589,8 +589,8 @@ pub struct ProcessInputResult {
     pub bytes_read: u32,
 }
 
-/// Process input, reading incoming datagrams from the socket and passing them
-/// to the Neqo state machine.
+
+
 #[no_mangle]
 pub unsafe extern "C" fn neqo_http3conn_process_input(
     conn: &mut NeqoHttp3Conn,
@@ -618,7 +618,7 @@ pub unsafe extern "C" fn neqo_http3conn_process_input(
                 }
             };
 
-            // Attach metric instrumentation to `dgrams` iterator.
+            
             let mut sum = 0;
             let mut segment_count = 0;
             let datagram_segment_size_received = &mut conn.datagram_segment_size_received;
@@ -629,7 +629,7 @@ pub unsafe extern "C" fn neqo_http3conn_process_input(
                 d
             });
 
-            // Override `dgrams` ECN marks according to prefs.
+            
             let ecn_enabled = static_prefs::pref!("network.http.http3.ecn");
             let dgrams = dgrams.map(|mut d| {
                 if !ecn_enabled {
@@ -663,11 +663,11 @@ pub extern "C" fn neqo_http3conn_process_output_and_send_use_nspr_for_io(
 
     let now = Instant::now();
     if conn.last_output_time > now {
-        // The timer fired too early, so reschedule it.
-        // The 1ms of extra delay is not ideal, but this is a fail
+        
+        
         set_timer_func(
             context,
-            u64::try_from((conn.last_output_time - now + conn.max_accumlated_time).as_millis())
+            u64::try_from((conn.last_output_time - now + conn.max_accumulated_time).as_millis())
                 .unwrap(),
         );
         return NS_OK;
@@ -712,7 +712,7 @@ pub extern "C" fn neqo_http3conn_process_output_and_send_use_nspr_for_io(
 
                 let timeout = min(to, Duration::from_nanos(u64::MAX - 1));
                 accumulated_time += timeout;
-                if accumulated_time >= conn.max_accumlated_time {
+                if accumulated_time >= conn.max_accumulated_time {
                     let mut timeout = accumulated_time.as_millis() as u64;
                     if timeout == 0 {
                         timeout = 1;
@@ -736,8 +736,8 @@ pub struct ProcessOutputAndSendResult {
     pub bytes_written: u32,
 }
 
-/// Process output, retrieving outgoing datagrams from the Neqo state machine
-/// and writing them to the socket.
+
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_process_output_and_send(
     conn: &mut NeqoHttp3Conn,
@@ -746,11 +746,11 @@ pub extern "C" fn neqo_http3conn_process_output_and_send(
 ) -> ProcessOutputAndSendResult {
     let now = Instant::now();
     if conn.last_output_time > now {
-        // The timer fired too early, so reschedule it.
-        // The 1ms of extra delay is not ideal, but this is a fail
+        
+        
         set_timer_func(
             context,
-            u64::try_from((conn.last_output_time - now + conn.max_accumlated_time).as_millis())
+            u64::try_from((conn.last_output_time - now + conn.max_accumulated_time).as_millis())
                 .unwrap(),
         );
         return ProcessOutputAndSendResult {
@@ -808,7 +808,7 @@ pub extern "C" fn neqo_http3conn_process_output_and_send(
 
                 let timeout = min(to, Duration::from_nanos(u64::MAX - 1));
                 accumulated_time += timeout;
-                if accumulated_time >= conn.max_accumlated_time {
+                if accumulated_time >= conn.max_accumulated_time {
                     let mut timeout = accumulated_time.as_millis() as u64;
                     if timeout == 0 {
                         timeout = 1;
@@ -857,9 +857,9 @@ fn is_excluded_header(name: &str) -> bool {
 
 fn parse_headers(headers: &nsACString) -> Result<Vec<Header>, nsresult> {
     let mut hdrs = Vec::new();
-    // this is only used for headers built by Firefox.
-    // Firefox supplies all headers already prepared for sending over http1.
-    // They need to be split into (String, String) pairs.
+    
+    
+    
     match str::from_utf8(headers) {
         Err(_) => {
             return Err(NS_ERROR_INVALID_ARG);
@@ -867,9 +867,9 @@ fn parse_headers(headers: &nsACString) -> Result<Vec<Header>, nsresult> {
         Ok(h) => {
             for elem in h.split("\r\n").skip(1) {
                 if elem.starts_with(':') {
-                    // colon headers are for http/2 and 3 and this is http/1
-                    // input, so that is probably a smuggling attack of some
-                    // kind.
+                    
+                    
+                    
                     continue;
                 }
                 if elem.len() == 0 {
@@ -1020,9 +1020,9 @@ fn crypto_error_code(err: neqo_crypto::Error) -> u64 {
     }
 }
 
-// This is only used for telemetry. Therefore we only return error code
-// numbers and do not label them. Recording telemetry is easier with a
-// number.
+
+
+
 #[repr(C)]
 pub enum CloseError {
     TransportInternalError,
@@ -1094,7 +1094,7 @@ impl From<TransportError> for CloseError {
     }
 }
 
-// Keep in sync with `netwerk/metrics.yaml` `http_3_connection_close_reason` metric labels.
+
 #[cfg(not(target_os = "android"))]
 fn transport_error_to_glean_label(error: &TransportError) -> &'static str {
     match error {
@@ -1160,7 +1160,7 @@ impl From<neqo_transport::CloseReason> for CloseError {
     }
 }
 
-// Reset a stream with streamId.
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_cancel_fetch(
     conn: &mut NeqoHttp3Conn,
@@ -1173,7 +1173,7 @@ pub extern "C" fn neqo_http3conn_cancel_fetch(
     }
 }
 
-// Reset a stream with streamId.
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_reset_stream(
     conn: &mut NeqoHttp3Conn,
@@ -1204,7 +1204,7 @@ pub extern "C" fn neqo_http3conn_stream_stop_sending(
     }
 }
 
-// Close sending side of a stream with stream_id
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_close_stream(
     conn: &mut NeqoHttp3Conn,
@@ -1216,8 +1216,8 @@ pub extern "C" fn neqo_http3conn_close_stream(
     }
 }
 
-// WebTransport streams can be unidirectional and bidirectional.
-// It is mapped to and from neqo's StreamType enum.
+
+
 #[repr(C)]
 pub enum WebTransportStreamType {
     BiDi,
@@ -1333,11 +1333,11 @@ impl WebTransportEventExternal {
 
 #[repr(C)]
 pub enum Http3Event {
-    /// A request stream has space for more data to be sent.
+    
     DataWritable {
         stream_id: u64,
     },
-    /// A server has send STOP_SENDING frame.
+    
     StopSending {
         stream_id: u64,
         error: u64,
@@ -1347,31 +1347,31 @@ pub enum Http3Event {
         fin: bool,
         interim: bool,
     },
-    /// New bytes available for reading.
+    
     DataReadable {
         stream_id: u64,
     },
-    /// Peer reset the stream.
+    
     Reset {
         stream_id: u64,
         error: u64,
         local: bool,
     },
-    /// A PushPromise
+    
     PushPromise {
         push_id: u64,
         request_stream_id: u64,
     },
-    /// A push response headers are ready.
+    
     PushHeaderReady {
         push_id: u64,
         fin: bool,
     },
-    /// New bytes are available on a push stream for reading.
+    
     PushDataReadable {
         push_id: u64,
     },
-    /// A push has been canceled.
+    
     PushCanceled {
         push_id: u64,
     },
@@ -1391,7 +1391,7 @@ pub enum Http3Event {
         error: CloseError,
     },
     ResumptionToken {
-        expire_in: u64, // microseconds
+        expire_in: u64, 
     },
     EchFallbackAuthenticationNeeded,
     WebTransport(WebTransportEventExternal),
@@ -1522,9 +1522,9 @@ pub extern "C" fn neqo_http3conn_event(
             Http3ClientEvent::AuthenticationNeeded => Http3Event::AuthenticationNeeded,
             Http3ClientEvent::ZeroRttRejected => Http3Event::ZeroRttRejected,
             Http3ClientEvent::ResumptionToken(token) => {
-                // expiration_time time is Instant, transform it into microseconds it will
-                // be valid for. Necko code will add the value to PR_Now() to get the expiration
-                // time in PRTime.
+                
+                
+                
                 if token.expiration_time() > Instant::now() {
                     let e = (token.expiration_time() - Instant::now()).as_micros();
                     if let Ok(expire_in) = u64::try_from(e) {
@@ -1605,7 +1605,7 @@ pub extern "C" fn neqo_http3conn_event(
     NS_OK
 }
 
-// Read response data into buf.
+
 #[no_mangle]
 pub unsafe extern "C" fn neqo_http3conn_read_response_data(
     conn: &mut NeqoHttp3Conn,
@@ -1757,25 +1757,25 @@ pub extern "C" fn neqo_http3conn_is_zero_rtt(conn: &mut NeqoHttp3Conn) -> bool {
 #[repr(C)]
 #[derive(Default)]
 pub struct Http3Stats {
-    /// Total packets received, including all the bad ones.
+    
     pub packets_rx: usize,
-    /// Duplicate packets received.
+    
     pub dups_rx: usize,
-    /// Dropped packets or dropped garbage.
+    
     pub dropped_rx: usize,
-    /// The number of packet that were saved for later processing.
+    
     pub saved_datagrams: usize,
-    /// Total packets sent.
+    
     pub packets_tx: usize,
-    /// Total number of packets that are declared lost.
+    
     pub lost: usize,
-    /// Late acknowledgments, for packets that were declared lost already.
+    
     pub late_ack: usize,
-    /// Acknowledgments for packets that contained data that was marked
-    /// for retransmission when the PTO timer popped.
+    
+    
     pub pto_ack: usize,
-    /// Count PTOs. Single PTOs, 2 PTOs in a row, 3 PTOs in row, etc. are counted
-    /// separately.
+    
+    
     pub pto_counts: [usize; 16],
 }
 
@@ -1933,34 +1933,34 @@ pub extern "C" fn neqo_http3conn_webtransport_set_sendorder(
     }
 }
 
-/// Convert a [`std::io::Error`] into a [`nsresult`].
-///
-/// Note that this conversion is specific to `neqo_glue`, i.e. does not aim to
-/// implement a general-purpose conversion.
-///
-/// Modeled after
-/// [`ErrorAccordingToNSPR`](https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/netwerk/base/nsSocketTransport2.cpp#164-168).
-//
-// TODO: Use `non_exhaustive_omitted_patterns_lint` [once stablized](https://github.com/rust-lang/rust/issues/89554).
+
+
+
+
+
+
+
+
+
 fn into_nsresult(e: io::Error) -> nsresult {
     match e.kind() {
         io::ErrorKind::ConnectionRefused => NS_ERROR_CONNECTION_REFUSED,
         io::ErrorKind::ConnectionReset => NS_ERROR_NET_RESET,
 
-        // > We lump the following NSPR codes in with PR_CONNECT_REFUSED_ERROR. We
-        // > could get better diagnostics by adding distinct XPCOM error codes for
-        // > each of these, but there are a lot of places in Gecko that check
-        // > specifically for NS_ERROR_CONNECTION_REFUSED, all of which would need to
-        // > be checked.
-        //
-        // <https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/netwerk/base/nsSocketTransport2.cpp#164-168>
-        //
-        // TODO: `HostUnreachable` and `NetworkUnreachable` available since Rust
-        // v1.83.0 only <https://doc.rust-lang.org/std/io/enum.ErrorKind.html>.
-        // io::ErrorKind::HostUnreachable | io::ErrorKind::NetworkUnreachable |
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         io::ErrorKind::AddrNotAvailable => NS_ERROR_CONNECTION_REFUSED,
 
-        // <https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/netwerk/base/nsSocketTransport2.cpp#156>
+        
         io::ErrorKind::ConnectionAborted => NS_ERROR_NET_RESET,
 
         io::ErrorKind::NotConnected => NS_ERROR_NOT_CONNECTED,
@@ -1968,47 +1968,47 @@ fn into_nsresult(e: io::Error) -> nsresult {
         io::ErrorKind::AlreadyExists => NS_ERROR_FILE_ALREADY_EXISTS,
         io::ErrorKind::WouldBlock => NS_BASE_STREAM_WOULD_BLOCK,
 
-        // TODO: available since Rust v1.83.0 only
-        // <https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.NotADirectory>
-        // io::ErrorKind::NotADirectory => NS_ERROR_FILE_NOT_DIRECTORY,
+        
+        
+        
 
-        // TODO: available since Rust v1.83.0 only
-        // <https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.IsADirectory>
-        // io::ErrorKind::IsADirectory => NS_ERROR_FILE_IS_DIRECTORY,
+        
+        
+        
 
-        // TODO: available since Rust v1.83.0 only
-        // <https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.DirectoryNotEmpty>
-        // io::ErrorKind::DirectoryNotEmpty => NS_ERROR_FILE_DIR_NOT_EMPTY,
+        
+        
+        
 
-        // TODO: available since Rust v1.83.0 only
-        // <https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.ReadOnlyFilesystem>
-        // io::ErrorKind::ReadOnlyFilesystem => NS_ERROR_FILE_READ_ONLY,
+        
+        
+        
 
-        // TODO: nightly-only for now <https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.FilesystemLoop>.
-        // io::ErrorKind::FilesystemLoop => NS_ERROR_FILE_UNRESOLVABLE_SYMLINK,
+        
+        
 
-        // > NSPR's socket code can return these, but they're not worth breaking out
-        // > into their own error codes, distinct from NS_ERROR_FAILURE:
-        // >
-        // > PR_BAD_DESCRIPTOR_ERROR
-        // > PR_INVALID_ARGUMENT_ERROR
-        //
-        // <https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/netwerk/base/nsSocketTransport2.cpp#231>
+        
+        
+        
+        
+        
+        
+        
         io::ErrorKind::InvalidInput => NS_ERROR_FAILURE,
 
         io::ErrorKind::TimedOut => NS_ERROR_NET_TIMEOUT,
         io::ErrorKind::Interrupted => NS_ERROR_NET_INTERRUPT,
 
-        // <https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/netwerk/base/nsSocketTransport2.cpp#160-161>
+        
         io::ErrorKind::UnexpectedEof => NS_ERROR_NET_INTERRUPT,
 
         io::ErrorKind::OutOfMemory => NS_ERROR_OUT_OF_MEMORY,
 
-        // TODO: nightly-only for now <https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.InProgress>.
-        // io::ErrorKind::InProgress => NS_ERROR_IN_PROGRESS,
+        
+        
 
-        // The errors below are either not relevant for `neqo_glue`, or not
-        // defined as `nsresult`.
+        
+        
         io::ErrorKind::NotFound
         | io::ErrorKind::PermissionDenied
         | io::ErrorKind::BrokenPipe
@@ -2017,22 +2017,22 @@ fn into_nsresult(e: io::Error) -> nsresult {
         | io::ErrorKind::Unsupported
         | io::ErrorKind::Other => NS_ERROR_FAILURE,
 
-        // TODO: available since Rust v1.83.0 only
-        // <https://doc.rust-lang.org/std/io/enum.ErrorKind.html>.
-        // io::ErrorKind::NotSeekable
-        // | io::ErrorKind::FilesystemQuotaExceeded
-        // | io::ErrorKind::FileTooLarge
-        // | io::ErrorKind::ResourceBusy
-        // | io::ErrorKind::ExecutableFileBusy
-        // | io::ErrorKind::Deadlock
-        // | io::ErrorKind::TooManyLinks
-        // | io::ErrorKind::ArgumentListTooLong
-        // | io::ErrorKind::NetworkDown
-        // | io::ErrorKind::StaleNetworkFileHandle
-        // | io::ErrorKind::StorageFull => NS_ERROR_FAILURE,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
-        // TODO: nightly-only for now <https://doc.rust-lang.org/std/io/enum.ErrorKind.html>.
-        // io::ErrorKind::CrossesDevices | io::ErrorKind::InvalidFilename => NS_ERROR_FAILURE,
+        
+        
 
         _ => NS_ERROR_FAILURE,
     }
