@@ -2,13 +2,44 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef XmlRole_INCLUDED
 #define XmlRole_INCLUDED 1
 
 #ifdef __VMS
 
 
-#define XmlPrologStateInitExternalEntity    XmlPrologStateInitExternalEnt
+#  define XmlPrologStateInitExternalEntity XmlPrologStateInitExternalEnt
 #endif
 
 #include "xmltok.h"
@@ -85,11 +116,8 @@ enum {
 };
 
 typedef struct prolog_state {
-  int (PTRCALL *handler) (struct prolog_state *state,
-                          int tok,
-                          const char *ptr,
-                          const char *end,
-                          const ENCODING *enc);
+  int(PTRCALL *handler)(struct prolog_state *state, int tok, const char *ptr,
+                        const char *end, const ENCODING *enc);
   unsigned level;
   int role_none;
 #ifdef XML_DTD
@@ -99,13 +127,13 @@ typedef struct prolog_state {
 #endif 
 } PROLOG_STATE;
 
-void XmlPrologStateInit(PROLOG_STATE *);
+void XmlPrologStateInit(PROLOG_STATE *state);
 #ifdef XML_DTD
-void XmlPrologStateInitExternalEntity(PROLOG_STATE *);
+void XmlPrologStateInitExternalEntity(PROLOG_STATE *state);
 #endif 
 
-#define XmlTokenRole(state, tok, ptr, end, enc) \
- (((state)->handler)(state, tok, ptr, end, enc))
+#define XmlTokenRole(state, tok, ptr, end, enc)                                \
+  (((state)->handler)(state, tok, ptr, end, enc))
 
 #ifdef __cplusplus
 }
