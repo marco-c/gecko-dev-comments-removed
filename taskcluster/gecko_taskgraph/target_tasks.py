@@ -1684,26 +1684,32 @@ def target_tasks_os_integration(full_task_graph, parameters, graph_config):
 
     labels = []
     for label, task in full_task_graph.tasks.items():
-        if task.kind not in ("test", "source-test"):
+        if task.kind not in ("test", "source-test", "perftest"):
             continue
 
+        
         if not any(attrmatch(task.attributes, **c) for c in candidate_attrs):
             continue
 
-        
-        
-        
-        if not is_try(parameters) and (
-            task.attributes.get("build_platform") == "macosx64" or "android-hw" in label
-        ):
-            continue
+        if not is_try(parameters):
+            
+            
+            
+            if (
+                task.attributes.get("build_platform") == "macosx64"
+                or "android-hw" in label
+            ):
+                continue
 
-        if not (
-            filter_for_project(task, parameters)
-            and filter_for_hg_branch(task, parameters)
-            and filter_tests_without_manifests(task, parameters)
-        ):
-            continue
+            
+            
+            
+            if not (
+                filter_for_project(task, parameters)
+                and filter_for_hg_branch(task, parameters)
+                and filter_tests_without_manifests(task, parameters)
+            ):
+                continue
 
         labels.append(label)
     return labels
