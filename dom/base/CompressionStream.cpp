@@ -17,13 +17,12 @@
 #include "mozilla/dom/TransformerCallbackHelpers.h"
 #include "mozilla/dom/UnionTypes.h"
 
-#include "CompressionStreamHelper.h"
+#include "ZLibHelper.h"
 
 
 
 
 namespace mozilla::dom {
-using namespace compression;
 
 class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
  public:
@@ -72,7 +71,7 @@ class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
     ProcessTypedArraysFixed(
         bufferSource,
         [&](const Span<uint8_t>& aData) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-          CompressAndEnqueue(cx, aData, Flush::No, aController, aRv);
+          CompressAndEnqueue(cx, aData, ZLibFlush::No, aController, aRv);
         });
   }
 
@@ -95,7 +94,8 @@ class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
     
     
     
-    CompressAndEnqueue(cx, Span<const uint8_t>(), Flush::Yes, aController, aRv);
+    CompressAndEnqueue(cx, Span<const uint8_t>(), ZLibFlush::Yes, aController,
+                       aRv);
   }
 
  private:
@@ -103,9 +103,9 @@ class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
   
   
   MOZ_CAN_RUN_SCRIPT void CompressAndEnqueue(
-      JSContext* aCx, Span<const uint8_t> aInput, Flush aFlush,
+      JSContext* aCx, Span<const uint8_t> aInput, ZLibFlush aFlush,
       TransformStreamDefaultController& aController, ErrorResult& aRv) {
-    MOZ_ASSERT_IF(aFlush == Flush::Yes, !aInput.Length());
+    MOZ_ASSERT_IF(aFlush == ZLibFlush::Yes, !aInput.Length());
 
     mZStream.avail_in = aInput.Length();
     mZStream.next_in = const_cast<uint8_t*>(aInput.Elements());
@@ -124,7 +124,7 @@ class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
       mZStream.avail_out = kBufferSize;
       mZStream.next_out = buffer.get();
 
-      int8_t err = deflate(&mZStream, intoZLibFlush(aFlush));
+      int8_t err = deflate(&mZStream, aFlush);
 
       
       switch (err) {
@@ -153,7 +153,7 @@ class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
       
       
       
-      MOZ_ASSERT_IF(err == Z_STREAM_END, aFlush == Flush::Yes);
+      MOZ_ASSERT_IF(err == Z_STREAM_END, aFlush == ZLibFlush::Yes);
 
       
       MOZ_ASSERT(!mZStream.avail_in || !mZStream.avail_out);
@@ -228,13 +228,6 @@ JSObject* CompressionStream::WrapObject(JSContext* aCx,
 
 already_AddRefed<CompressionStream> CompressionStream::Constructor(
     const GlobalObject& aGlobal, CompressionFormat aFormat, ErrorResult& aRv) {
-  if (aFormat == CompressionFormat::Zstd) {
-    aRv.ThrowTypeError(
-        "'zstd' (value of argument 1) is not a valid value for enumeration "
-        "CompressionFormat.");
-    return nullptr;
-  }
-
   
   
   

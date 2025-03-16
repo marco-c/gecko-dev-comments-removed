@@ -15,19 +15,27 @@
 #include "mozilla/dom/TransformStream.h"
 #include "mozilla/dom/TransformerCallbackHelpers.h"
 #include "mozilla/dom/UnionTypes.h"
-#include "mozilla/StaticPrefs_dom.h"
 
-#include "CompressionStreamHelper.h"
-#include "zstd/zstd.h"
+#include "ZLibHelper.h"
+
+
+
 
 namespace mozilla::dom {
-using namespace compression;
 
 class DecompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DecompressionStreamAlgorithms,
                                            TransformerAlgorithmsBase)
+
+  explicit DecompressionStreamAlgorithms(CompressionFormat format) {
+    int8_t err = inflateInit2(&mZStream, ZLibWindowBits(format));
+    if (err == Z_MEM_ERROR) {
+      MOZ_CRASH("Out of memory");
+    }
+    MOZ_ASSERT(err == Z_OK);
+  }
 
   
   
@@ -60,7 +68,7 @@ class DecompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
     ProcessTypedArraysFixed(
         bufferSource,
         [&](const Span<uint8_t>& aData) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-          DecompressAndEnqueue(cx, aData, Flush::No, aController, aRv);
+          DecompressAndEnqueue(cx, aData, ZLibFlush::No, aController, aRv);
         });
   }
 
@@ -83,44 +91,8 @@ class DecompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
     
     
     
-    DecompressAndEnqueue(cx, Span<const uint8_t>(), Flush::Yes, aController,
+    DecompressAndEnqueue(cx, Span<const uint8_t>(), ZLibFlush::Yes, aController,
                          aRv);
-  }
-
- protected:
-  static const uint16_t kBufferSize = 16384;
-
-  ~DecompressionStreamAlgorithms() = default;
-
-  MOZ_CAN_RUN_SCRIPT
-  virtual void DecompressAndEnqueue(
-      JSContext* aCx, Span<const uint8_t> aInput, Flush,
-      TransformStreamDefaultController& aController, ErrorResult& aRv) = 0;
-};
-
-NS_IMPL_CYCLE_COLLECTION_INHERITED(DecompressionStreamAlgorithms,
-                                   TransformerAlgorithmsBase)
-NS_IMPL_ADDREF_INHERITED(DecompressionStreamAlgorithms,
-                         TransformerAlgorithmsBase)
-NS_IMPL_RELEASE_INHERITED(DecompressionStreamAlgorithms,
-                          TransformerAlgorithmsBase)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DecompressionStreamAlgorithms)
-NS_INTERFACE_MAP_END_INHERITING(TransformerAlgorithmsBase)
-
-
-
-class ZLibDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ZLibDecompressionStreamAlgorithms,
-                                           DecompressionStreamAlgorithms)
-
-  explicit ZLibDecompressionStreamAlgorithms(CompressionFormat format) {
-    int8_t err = inflateInit2(&mZStream, ZLibWindowBits(format));
-    if (err == Z_MEM_ERROR) {
-      MOZ_CRASH("Out of memory");
-    }
-    MOZ_ASSERT(err == Z_OK);
   }
 
  private:
@@ -130,9 +102,8 @@ class ZLibDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
   
   
   MOZ_CAN_RUN_SCRIPT void DecompressAndEnqueue(
-      JSContext* aCx, Span<const uint8_t> aInput, Flush aFlush,
-      TransformStreamDefaultController& aController,
-      ErrorResult& aRv) override {
+      JSContext* aCx, Span<const uint8_t> aInput, ZLibFlush aFlush,
+      TransformStreamDefaultController& aController, ErrorResult& aRv) {
     MOZ_ASSERT_IF(aFlush == ZLibFlush::Yes, !aInput.Length());
 
     mZStream.avail_in = aInput.Length();
@@ -141,6 +112,7 @@ class ZLibDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
     JS::RootedVector<JSObject*> array(aCx);
 
     do {
+      static uint16_t kBufferSize = 16384;
       UniquePtr<uint8_t[], JS::FreePolicy> buffer(
           static_cast<uint8_t*>(JS_malloc(aCx, kBufferSize)));
       if (!buffer) {
@@ -151,7 +123,7 @@ class ZLibDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
       mZStream.avail_out = kBufferSize;
       mZStream.next_out = buffer.get();
 
-      int8_t err = inflate(&mZStream, intoZLibFlush(aFlush));
+      int8_t err = inflate(&mZStream, aFlush);
 
       
       switch (err) {
@@ -242,7 +214,7 @@ class ZLibDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
     
     
 
-    if (aFlush == Flush::Yes && !mObservedStreamEnd) {
+    if (aFlush == ZLibFlush::Yes && !mObservedStreamEnd) {
       
       
       
@@ -261,166 +233,20 @@ class ZLibDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
     }
   }
 
-  ~ZLibDecompressionStreamAlgorithms() override { inflateEnd(&mZStream); }
+  ~DecompressionStreamAlgorithms() override { inflateEnd(&mZStream); };
 
   z_stream mZStream = {};
   bool mObservedStreamEnd = false;
 };
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(ZLibDecompressionStreamAlgorithms,
-                                   DecompressionStreamAlgorithms)
-NS_IMPL_ADDREF_INHERITED(ZLibDecompressionStreamAlgorithms,
-                         DecompressionStreamAlgorithms)
-NS_IMPL_RELEASE_INHERITED(ZLibDecompressionStreamAlgorithms,
-                          DecompressionStreamAlgorithms)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ZLibDecompressionStreamAlgorithms)
-NS_INTERFACE_MAP_END_INHERITING(DecompressionStreamAlgorithms)
-
-
-
-class ZstdDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ZstdDecompressionStreamAlgorithms,
-                                           DecompressionStreamAlgorithms)
-
-  ZstdDecompressionStreamAlgorithms() {
-    mDStream = ZSTD_createDStream();
-    if (!mDStream) {
-      NS_ABORT_OOM(0);
-    }
-
-    
-    
-    static const uint8_t WINDOW_LOG_MAX = 23;
-    ZSTD_DCtx_setParameter(mDStream, ZSTD_d_windowLogMax, WINDOW_LOG_MAX);
-  }
-
- private:
-  
-  
-  
-  
-  
-  MOZ_CAN_RUN_SCRIPT void DecompressAndEnqueue(
-      JSContext* aCx, Span<const uint8_t> aInput, Flush aFlush,
-      TransformStreamDefaultController& aController,
-      ErrorResult& aRv) override {
-    MOZ_ASSERT_IF(aFlush == Flush::Yes, !aInput.Length());
-
-    if (mObservedStreamEnd && aInput.Length() > 0) {
-      aRv.ThrowTypeError("Unexpected input after the end of stream");
-      return;
-    }
-
-    ZSTD_inBuffer inBuffer = {
-         const_cast<uint8_t*>(aInput.Elements()),
-         aInput.Length(),
-         0};
-
-    JS::RootedVector<JSObject*> array(aCx);
-
-    while (inBuffer.pos < inBuffer.size) {
-      UniquePtr<uint8_t[], JS::FreePolicy> buffer(
-          static_cast<uint8_t*>(JS_malloc(aCx, kBufferSize)));
-      if (!buffer) {
-        aRv.ThrowTypeError("Out of memory");
-        return;
-      }
-
-      ZSTD_outBuffer outBuffer = { buffer.get(),
-                                   kBufferSize,
-                                   0};
-
-      size_t rv = ZSTD_decompressStream(mDStream, &outBuffer, &inBuffer);
-      if (ZSTD_isError(rv)) {
-        aRv.ThrowTypeError("zstd decompression error: "_ns +
-                           nsDependentCString(ZSTD_getErrorName(rv)));
-        return;
-      }
-
-      if (rv == 0) {
-        mObservedStreamEnd = true;
-        if (inBuffer.pos < inBuffer.size) {
-          aRv.ThrowTypeError("Unexpected input after the end of stream");
-          return;
-        }
-      }
-
-      
-      
-
-      
-      
-      
-
-      size_t written = outBuffer.pos;
-      if (written > 0) {
-        JS::Rooted<JSObject*> view(aCx, nsJSUtils::MoveBufferAsUint8Array(
-                                            aCx, written, std::move(buffer)));
-        if (!view || !array.append(view)) {
-          JS_ClearPendingException(aCx);
-          aRv.ThrowTypeError("Out of memory");
-          return;
-        }
-      }
-    }
-
-    if (aFlush == Flush::Yes && !mObservedStreamEnd) {
-      
-      
-      
-      
-      aRv.ThrowTypeError("The input is ended without reaching the stream end");
-      return;
-    }
-
-    
-    for (const auto& view : array) {
-      JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*view));
-      aController.Enqueue(aCx, value, aRv);
-      if (aRv.Failed()) {
-        return;
-      }
-    }
-  }
-
-  ~ZstdDecompressionStreamAlgorithms() override {
-    if (mDStream) {
-      ZSTD_freeDStream(mDStream);
-      mDStream = nullptr;
-    }
-  }
-
-  ZSTD_DStream* mDStream = nullptr;
-  bool mObservedStreamEnd = false;
-};
-
-NS_IMPL_CYCLE_COLLECTION_INHERITED(ZstdDecompressionStreamAlgorithms,
-                                   DecompressionStreamAlgorithms)
-NS_IMPL_ADDREF_INHERITED(ZstdDecompressionStreamAlgorithms,
-                         DecompressionStreamAlgorithms)
-NS_IMPL_RELEASE_INHERITED(ZstdDecompressionStreamAlgorithms,
-                          DecompressionStreamAlgorithms)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ZstdDecompressionStreamAlgorithms)
-NS_INTERFACE_MAP_END_INHERITING(DecompressionStreamAlgorithms)
-
-
-
-
-
-static already_AddRefed<DecompressionStreamAlgorithms>
-CreateDecompressionStreamAlgorithms(CompressionFormat aFormat) {
-  if (aFormat == CompressionFormat::Zstd) {
-    RefPtr<DecompressionStreamAlgorithms> zstdAlgos =
-        new ZstdDecompressionStreamAlgorithms();
-    return zstdAlgos.forget();
-  }
-
-  RefPtr<DecompressionStreamAlgorithms> zlibAlgos =
-      new ZLibDecompressionStreamAlgorithms(aFormat);
-  return zlibAlgos.forget();
-}
+NS_IMPL_CYCLE_COLLECTION_INHERITED(DecompressionStreamAlgorithms,
+                                   TransformerAlgorithmsBase)
+NS_IMPL_ADDREF_INHERITED(DecompressionStreamAlgorithms,
+                         TransformerAlgorithmsBase)
+NS_IMPL_RELEASE_INHERITED(DecompressionStreamAlgorithms,
+                          TransformerAlgorithmsBase)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DecompressionStreamAlgorithms)
+NS_INTERFACE_MAP_END_INHERITING(TransformerAlgorithmsBase)
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(DecompressionStream, mGlobal, mStream)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(DecompressionStream)
@@ -444,15 +270,6 @@ JSObject* DecompressionStream::WrapObject(JSContext* aCx,
 
 already_AddRefed<DecompressionStream> DecompressionStream::Constructor(
     const GlobalObject& aGlobal, CompressionFormat aFormat, ErrorResult& aRv) {
-  if (aFormat == CompressionFormat::Zstd &&
-      aGlobal.CallerType() != CallerType::System &&
-      !StaticPrefs::dom_compression_streams_zstd_enabled()) {
-    aRv.ThrowTypeError(
-        "'zstd' (value of argument 1) is not a valid value for enumeration "
-        "CompressionFormat.");
-    return nullptr;
-  }
-
   
   
   
@@ -463,8 +280,7 @@ already_AddRefed<DecompressionStream> DecompressionStream::Constructor(
 
   
   
-  RefPtr<DecompressionStreamAlgorithms> algorithms =
-      CreateDecompressionStreamAlgorithms(aFormat);
+  auto algorithms = MakeRefPtr<DecompressionStreamAlgorithms>(aFormat);
 
   RefPtr<TransformStream> stream =
       TransformStream::CreateGeneric(aGlobal, *algorithms, aRv);
