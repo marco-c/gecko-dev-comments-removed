@@ -351,10 +351,16 @@ nsresult ContentAnalysis::CreateContentAnalysisClient(
     bool aIsPerUser) {
   MOZ_ASSERT(!NS_IsMainThread());
 
-  std::shared_ptr<content_analysis::sdk::Client> client(
-      content_analysis::sdk::Client::Create({aPipePathName.Data(), aIsPerUser})
-          .release());
-  LOGD("Content analysis is %s", client ? "connected" : "not available");
+  std::shared_ptr<content_analysis::sdk::Client> client;
+  if (!IsShuttingDown()) {
+    client.reset(content_analysis::sdk::Client::Create(
+                     {aPipePathName.Data(), aIsPerUser})
+                     .release());
+    LOGD("Content analysis is %s", client ? "connected" : "not available");
+  } else {
+    LOGD("ContentAnalysis::IsShuttingDown is true");
+  }
+
 #ifdef XP_WIN
   if (client && !aClientSignatureSetting.IsEmpty()) {
     std::string agentPath = client->GetAgentInfo().binary_path;
@@ -1238,6 +1244,13 @@ ContentAnalysis::ContentAnalysis()
 
 ContentAnalysis::~ContentAnalysis() {
   AssertIsOnMainThread();
+
+  {
+    
+    auto lock = mIsShuttingDown.Lock();
+    *lock = true;
+  }
+
   
   
   
@@ -1245,13 +1258,27 @@ ContentAnalysis::~ContentAnalysis() {
 
   
   
-  mIsShuttingDown = true;
+  mCaClientPromise =
+      new ClientPromise::Private("ContentAnalysis:ShutdownReject");
+  mCaClientPromise->Reject(NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
+
+  
   mUserActionMap.Clear();
+}
+
+bool ContentAnalysis::IsShuttingDown() {
+  auto lock = mIsShuttingDown.ConstLock();
+  return *lock;
 }
 
 nsresult ContentAnalysis::CreateClientIfNecessary(
     bool aForceCreate ) {
   AssertIsOnMainThread();
+
+  if (IsShuttingDown()) {
+    return NS_OK;
+  }
+
   nsCString pipePathName;
   nsresult rv = Preferences::GetCString(kPipePathNamePref, pipePathName);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2517,10 +2544,12 @@ ContentAnalysis::MultipartRequestCallback::Error(nsresult aRv) {
 
 ContentAnalysis::MultipartRequestCallback::~MultipartRequestCallback() {
   MOZ_ASSERT(NS_IsMainThread());
+
   
   
-  MOZ_ASSERT(!mWeakContentAnalysis || mWeakContentAnalysis->mIsShuttingDown ||
-             !mWeakContentAnalysis->mUserActionMap.Contains(mUserActionId));
+  MOZ_ASSERT(!mWeakContentAnalysis ||
+             !mWeakContentAnalysis->mUserActionMap.Contains(mUserActionId) ||
+             mWeakContentAnalysis->IsShuttingDown());
 }
 
 void ContentAnalysis::MultipartRequestCallback::CancelRequests() {
