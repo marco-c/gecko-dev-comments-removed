@@ -385,6 +385,9 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   void ReportFirstConnectUsageMetrics() RTC_RUN_ON(signaling_thread());
+  
+  
+  void ReportCloseUsageMetrics() RTC_RUN_ON(signaling_thread());
 
   
   
