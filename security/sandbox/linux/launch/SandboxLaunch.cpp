@@ -306,7 +306,8 @@ bool SandboxLaunch::Configure(GeckoProcessType aType, SandboxingKind aKind,
   
   
   PreloadSandboxLib(&aOptions->env_map);
-  if (!AttachSandboxReporter(aExtraOpts)) {
+  if (aType != GeckoProcessType_ForkServer &&
+      !AttachSandboxReporter(aExtraOpts)) {
     return false;
   }
 
