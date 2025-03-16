@@ -296,4 +296,10 @@ class nsDependentAtomString : public nsDependentString {
 
 void ToLowerCaseASCII(RefPtr<nsAtom>& aAtom);
 
+
+inline std::ostream& operator<<(std::ostream& aStream, const nsAtom& aAtom) {
+  return aStream << (aAtom.IsDynamic() ? "nsDynamicAtom" : "nsStaticAtom")
+                 << " { " << nsAtomCString(&aAtom) << " }";
+}
+
 #endif  
