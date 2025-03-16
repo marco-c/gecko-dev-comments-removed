@@ -69,6 +69,14 @@ class H264ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       : mCurrentConfig(aInfo), mFullParsing(aFullParsing) {
     if (CanBeInstantiated()) {
       UpdateConfigFromExtraData(aInfo.mExtraData);
+      auto avcc = AVCCConfig::Parse(mCurrentConfig.mExtraData);
+      if (avcc.isOk() && avcc.unwrap().NALUSize() != 4) {
+        
+        
+        
+        
+        mCurrentConfig.mExtraData->ReplaceElementAt(4, 0xfc | 3);
+      }
     }
   }
 
