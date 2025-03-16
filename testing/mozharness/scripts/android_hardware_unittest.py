@@ -235,13 +235,31 @@ class AndroidHardwareTest(
             dirs["abs_blob_upload_dir"], self.test_suite
         )
 
+        
+        
+        
+        
+        DEFAULT_PORTS = {"http": 8854, "https": 4454, "ws": 9988, "wss": 4454}
+        ports = [p.split("/")[-1] for p in os.environ.get("UserPorts", "").split(",")]
+        if len(ports) > 3:
+            DEFAULT_PORTS = {
+                "http": ports[0],
+                "https": ports[1],
+                "ws": ports[2],
+                "wss": ports[3],
+            }
+
         str_format_values = {
             "device_serial": self.device_serial,
             "remote_webserver": c["remote_webserver"],
             "xre_path": self.xre_path,
             "utility_path": self.xre_path,
-            "http_port": "8854",  
-            "ssl_port": "4454",  
+            "http_port": DEFAULT_PORTS[
+                "http"
+            ],  
+            "ssl_port": DEFAULT_PORTS[
+                "https"
+            ],  
             "certs_path": os.path.join(dirs["abs_work_dir"], "tests/certs"),
             
             

@@ -978,7 +978,8 @@ class MochitestArguments(ArgumentContainer):
         "webServer": "127.0.0.1",
         "httpPort": DEFAULT_PORTS["http"],
         "sslPort": DEFAULT_PORTS["https"],
-        "webSocketPort": "9988",
+        "webSocketPort": DEFAULT_PORTS["ws"],
+        "webSocketSSLPort": DEFAULT_PORTS["wss"],
         
         
         

@@ -26,7 +26,7 @@ __all__ = [
 ]
 
 
-DEFAULT_PORTS = {"http": "8888", "https": "4443", "ws": "4443", "wss": "4443"}
+DEFAULT_PORTS = {"http": "8888", "https": "4443", "ws": "9988", "wss": "4443"}
 
 
 class LocationError(Exception):
