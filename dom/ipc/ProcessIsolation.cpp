@@ -816,6 +816,17 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     options.mReplaceBrowsingContext = true;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   nsAutoCString siteOriginNoSuffix;
   MOZ_TRY(resultOrPrecursor->GetSiteOriginNoSuffix(siteOriginNoSuffix));
 

@@ -3690,9 +3690,15 @@ mozilla::ipc::IPCResult ContentChild::RecvDiscardBrowsingContext(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvRegisterBrowsingContextGroup(
-    uint64_t aGroupId, nsTArray<SyncedContextInitializer>&& aInits) {
+    uint64_t aGroupId, nsTArray<SyncedContextInitializer>&& aInits,
+    nsTArray<OriginAgentClusterInitializer>&& aUseOriginAgentCluster) {
   RefPtr<BrowsingContextGroup> group =
       BrowsingContextGroup::GetOrCreate(aGroupId);
+
+  for (auto& entry : aUseOriginAgentCluster) {
+    group->SetUseOriginAgentClusterFromIPC(entry.principal(),
+                                           entry.useOriginAgentCluster());
+  }
 
   
   
@@ -3739,6 +3745,14 @@ mozilla::ipc::IPCResult ContentChild::RecvDestroyBrowsingContextGroup(
           BrowsingContextGroup::GetExisting(aGroupId)) {
     group->ChildDestroy();
   }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentChild::RecvSetUseOriginAgentCluster(
+    uint64_t aGroupId, nsIPrincipal* aPrincipal, bool aUseOriginAgentCluster) {
+  RefPtr<BrowsingContextGroup> group =
+      BrowsingContextGroup::GetOrCreate(aGroupId);
+  group->SetUseOriginAgentClusterFromIPC(aPrincipal, aUseOriginAgentCluster);
   return IPC_OK();
 }
 

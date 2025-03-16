@@ -353,6 +353,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   void TriggerRedirectToRealChannel(
+      dom::CanonicalBrowsingContext* aDestinationBrowsingContext,
       const Maybe<dom::ContentParent*>& aDestinationProcess,
       nsTArray<StreamFilterRequest> aStreamFilterRequests);
 
@@ -369,9 +370,15 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  nsresult DoOnStartRequest(nsIRequest*);
+
   
   
   
+  
+  
+  MOZ_CAN_RUN_SCRIPT
   bool MaybeTriggerProcessSwitch(bool* aWillSwitchToRemote);
 
   
@@ -384,6 +391,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
+  MOZ_CAN_RUN_SCRIPT
   void TriggerProcessSwitch(dom::CanonicalBrowsingContext* aContext,
                             const dom::NavigationIsolationOptions& aOptions,
                             bool aIsNewTab = false);

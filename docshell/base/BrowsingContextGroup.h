@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_BrowsingContextGroup_h
 #define mozilla_dom_BrowsingContextGroup_h
 
+#include "mozilla/PrincipalHashKey.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/FunctionRef.h"
 #include "nsRefPtrHashtable.h"
@@ -218,6 +219,22 @@ class BrowsingContextGroup final : public nsWrapperCache {
   void IncInputEventSuspensionLevel();
   void DecInputEventSuspensionLevel();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void SetUseOriginAgentClusterFromNetwork(nsIPrincipal* aPrincipal,
+                                           bool aUseOriginAgentCluster);
+  void SetUseOriginAgentClusterFromIPC(nsIPrincipal* aPrincipal,
+                                       bool aUseOriginAgentCluster);
   Maybe<bool> UsesOriginAgentCluster(nsIPrincipal* aPrincipal);
 
   void ChildDestroy();
@@ -274,6 +291,12 @@ class BrowsingContextGroup final : public nsWrapperCache {
   
   
   nsRefPtrHashtable<nsCStringHashKey, ContentParent> mHosts;
+
+  
+  
+  
+  
+  nsTHashMap<PrincipalHashKey, bool> mUseOriginAgentCluster;
 
   nsTHashSet<nsRefPtrHashKey<ContentParent>> mSubscribers;
 

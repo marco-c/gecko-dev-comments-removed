@@ -217,8 +217,19 @@ void BrowsingContextGroup::Subscribe(ContentParent* aProcess) {
   nsTArray<SyncedContextInitializer> inits(mContexts.Count());
   CollectContextInitializers(mToplevels, inits);
 
+  nsTArray<OriginAgentClusterInitializer> useOriginAgentCluster;
+  for (auto& entry : mUseOriginAgentCluster) {
+    if (!aProcess->ValidatePrincipal(entry.GetKey())) {
+      continue;
+    }
+
+    useOriginAgentCluster.AppendElement(OriginAgentClusterInitializer(
+        WrapNotNull(RefPtr{entry.GetKey()}), entry.GetData()));
+  }
+
   
-  Unused << aProcess->SendRegisterBrowsingContextGroup(Id(), inits);
+  Unused << aProcess->SendRegisterBrowsingContextGroup(Id(), inits,
+                                                       useOriginAgentCluster);
 }
 
 void BrowsingContextGroup::Unsubscribe(ContentParent* aProcess) {
@@ -470,6 +481,7 @@ already_AddRefed<DocGroup> BrowsingContextGroup::AddDocument(
 
   
   
+  
   DocGroupKey key;
   if (auto originKeyed = UsesOriginAgentCluster(principal)) {
     key.mOriginKeyed = *originKeyed;
@@ -594,12 +606,58 @@ static bool AlwaysUseOriginAgentCluster(nsIPrincipal* aPrincipal) {
          (!aPrincipal->SchemeIs("http") && !aPrincipal->SchemeIs("https"));
 }
 
+void BrowsingContextGroup::SetUseOriginAgentClusterFromNetwork(
+    nsIPrincipal* aPrincipal, bool aUseOriginAgentCluster) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  
+  
+  
+  if (AlwaysUseOriginAgentCluster(aPrincipal) ||
+      IsPotentiallyCrossOriginIsolated()) {
+    return;
+  }
+
+  MOZ_ASSERT(!mUseOriginAgentCluster.Contains(aPrincipal));
+  mUseOriginAgentCluster.InsertOrUpdate(aPrincipal, aUseOriginAgentCluster);
+
+  
+  
+  EachParent([&](ContentParent* aContentParent) {
+    
+    
+    if (!aContentParent->ValidatePrincipal(aPrincipal)) {
+      return;
+    }
+
+    Unused << aContentParent->SendSetUseOriginAgentCluster(
+        Id(), WrapNotNull(aPrincipal), aUseOriginAgentCluster);
+  });
+}
+
+void BrowsingContextGroup::SetUseOriginAgentClusterFromIPC(
+    nsIPrincipal* aPrincipal, bool aUseOriginAgentCluster) {
+  MOZ_ASSERT(!AlwaysUseOriginAgentCluster(aPrincipal));
+  MOZ_ASSERT(!IsPotentiallyCrossOriginIsolated());
+  MOZ_ASSERT(!mUseOriginAgentCluster.Contains(aPrincipal));
+  mUseOriginAgentCluster.InsertOrUpdate(aPrincipal, aUseOriginAgentCluster);
+}
+
 Maybe<bool> BrowsingContextGroup::UsesOriginAgentCluster(
     nsIPrincipal* aPrincipal) {
   
   
-  return Some(AlwaysUseOriginAgentCluster(aPrincipal) ||
-              IsPotentiallyCrossOriginIsolated());
+  if (AlwaysUseOriginAgentCluster(aPrincipal) ||
+      IsPotentiallyCrossOriginIsolated()) {
+    return Some(true);
+  }
+
+  
+  
+
+  if (auto entry = mUseOriginAgentCluster.Lookup(aPrincipal)) {
+    return Some(entry.Data());
+  }
+  return Nothing();
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(BrowsingContextGroup, mContexts,

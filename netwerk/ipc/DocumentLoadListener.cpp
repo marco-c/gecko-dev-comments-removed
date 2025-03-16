@@ -58,6 +58,7 @@
 #include "nsQueryObject.h"
 #include "nsRedirectHistoryEntry.h"
 #include "nsSandboxFlags.h"
+#include "nsScriptSecurityManager.h"
 #include "nsSHistory.h"
 #include "nsStringStream.h"
 #include "nsURILoader.h"
@@ -2145,11 +2146,15 @@ void DocumentLoadListener::TriggerProcessSwitch(
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [self = RefPtr{this}, requests = std::move(streamFilterRequests)](
-              BrowserParent* aBrowserParent) mutable {
+              const std::pair<RefPtr<BrowserParent>,
+                              RefPtr<CanonicalBrowsingContext>>&
+                  aResult) mutable {
             MOZ_ASSERT(self->mChannel,
                        "Something went wrong, channel got cancelled");
+            const auto& [browserParent, browsingContext] = aResult;
             self->TriggerRedirectToRealChannel(
-                Some(aBrowserParent ? aBrowserParent->Manager() : nullptr),
+                browsingContext,
+                Some(browserParent ? browserParent->Manager() : nullptr),
                 std::move(requests));
           },
           [self = RefPtr{this}](nsresult aStatusCode) {
@@ -2298,12 +2303,17 @@ DocumentLoadListener::RedirectToRealChannel(
 }
 
 void DocumentLoadListener::TriggerRedirectToRealChannel(
+    CanonicalBrowsingContext* aDestinationBrowsingContext,
     const Maybe<ContentParent*>& aDestinationProcess,
     nsTArray<StreamFilterRequest> aStreamFilterRequests) {
-  LOG((
-      "DocumentLoadListener::TriggerRedirectToRealChannel [this=%p] "
-      "aDestinationProcess=%" PRId64,
-      this, aDestinationProcess ? int64_t(*aDestinationProcess) : int64_t(-1)));
+  LOG(
+      ("DocumentLoadListener::TriggerRedirectToRealChannel [this=%p] "
+       "aDestinationBrowsingContext=%" PRIx64 " aDestinationProcess=%" PRId64,
+       this, aDestinationBrowsingContext->Id(),
+       aDestinationProcess ? int64_t((*aDestinationProcess)->ChildID())
+                           : int64_t(-1)));
+  MOZ_ASSERT(aDestinationBrowsingContext);
+
   
   
   
@@ -2315,10 +2325,13 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
   
   
 
+  RefPtr<ContentParent> contentParent =
+      aDestinationProcess.valueOr(mContentParent);
+
   nsTArray<ParentEndpoint> parentEndpoints(aStreamFilterRequests.Length());
   if (!aStreamFilterRequests.IsEmpty()) {
-    ContentParent* cp = aDestinationProcess.valueOr(mContentParent);
-    base::ProcessId pid = cp ? cp->OtherPid() : base::ProcessId{0};
+    base::ProcessId pid =
+        contentParent ? contentParent->OtherPid() : base::ProcessId{0};
 
     for (StreamFilterRequest& request : aStreamFilterRequests) {
       if (!pid) {
@@ -2337,6 +2350,49 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
         parentEndpoints.AppendElement(std::move(parent));
       }
     }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> unsandboxedPrincipal;
+  nsresult rv = nsScriptSecurityManager::GetScriptSecurityManager()
+                    ->GetChannelResultPrincipalIfNotSandboxed(
+                        mChannel, getter_AddRefs(unsandboxedPrincipal));
+  if (NS_SUCCEEDED(rv) && aDestinationBrowsingContext->Group()
+                              ->UsesOriginAgentCluster(unsandboxedPrincipal)
+                              .isNothing()) {
+    
+    
+    
+    
+    
+    
+    bool isSecureContext =
+        unsandboxedPrincipal->GetIsOriginPotentiallyTrustworthy();
+    bool hasOriginAgentCluster =
+        StaticPrefs::dom_origin_agent_cluster_default() && isSecureContext;
+    if (nsCOMPtr<nsIHttpChannelInternal> httpChannel =
+            do_QueryInterface(mChannel);
+        httpChannel && isSecureContext &&
+        StaticPrefs::dom_origin_agent_cluster_enabled()) {
+      bool headerValue = false;
+      if (NS_SUCCEEDED(
+              httpChannel->GetOriginAgentClusterHeader(&headerValue))) {
+        hasOriginAgentCluster = headerValue;
+      }
+    }
+    aDestinationBrowsingContext->Group()->SetUseOriginAgentClusterFromNetwork(
+        unsandboxedPrincipal, hasOriginAgentCluster);
   }
 
   
@@ -2730,10 +2786,11 @@ nsresult DocumentLoadListener::DoOnStartRequest(nsIRequest* aRequest) {
 
       
       
-      TriggerRedirectToRealChannel(Some(mContentParent),
+      TriggerRedirectToRealChannel(loadingContext, Some(mContentParent),
                                    std::move(streamFilterRequests));
     } else {
-      TriggerRedirectToRealChannel(Nothing(), std::move(streamFilterRequests));
+      TriggerRedirectToRealChannel(loadingContext, Nothing(),
+                                   std::move(streamFilterRequests));
     }
 
     
