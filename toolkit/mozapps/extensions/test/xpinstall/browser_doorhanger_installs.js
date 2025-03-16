@@ -1574,6 +1574,8 @@ add_setup(async function () {
       ["extensions.InstallTriggerImpl.enabled", true],
       
       ["xpinstall.userActivation.required", false],
+      
+      ["network.xhr.block_sync_system_requests", false],
     ],
   });
 

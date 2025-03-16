@@ -33,6 +33,8 @@ function test() {
         ["security.data_uri.block_toplevel_data_uri_navigations", false],
         
         ["xpinstall.userActivation.required", false],
+        
+        ["network.xhr.block_sync_system_requests", false],
       ],
     },
     runTest
