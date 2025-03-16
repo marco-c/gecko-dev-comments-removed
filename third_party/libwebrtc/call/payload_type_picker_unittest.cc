@@ -10,6 +10,7 @@
 
 #include "call/payload_type_picker.h"
 
+#include "api/video_codecs/sdp_video_format.h"
 #include "call/payload_type.h"
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
@@ -208,6 +209,11 @@ TEST(PayloadTypePicker, VideoGetsTreatedSpecially) {
   
   EXPECT_THAT(picker.SuggestMapping(h264_yuv444, nullptr).value(), Lt(63));
   EXPECT_THAT(picker.SuggestMapping(vp9_profile_3, nullptr).value(), Lt(63));
+
+  
+  cricket::Codec lower_range_rtx =
+      cricket::CreateVideoRtxCodec(cricket::Codec::kIdNotSet, 63);
+  EXPECT_THAT(picker.SuggestMapping(lower_range_rtx, nullptr).value(), Lt(63));
 }
 
 TEST(PayloadTypePicker, ChoosingH264Profiles) {
