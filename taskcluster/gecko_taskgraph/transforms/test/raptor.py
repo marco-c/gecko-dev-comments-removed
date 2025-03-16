@@ -141,7 +141,9 @@ def split_raptor_subtests(config, tests):
         
         subtests = test["raptor"].pop("subtests", None)
         if not subtests:
-            if "macosx1400" not in test["test-platform"]:
+            if all(
+                p not in test["test-platform"] for p in ("macosx1400", "macosx1500")
+            ):
                 yield test
             continue
 
