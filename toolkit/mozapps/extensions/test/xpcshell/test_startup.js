@@ -7,6 +7,15 @@
 
 Services.prefs.setIntPref("extensions.autoDisableScopes", 0);
 
+if (AppConstants.platform == "android") {
+  
+  
+  
+  
+  const defaultPrefs = Services.prefs.getDefaultBranch("");
+  defaultPrefs.setIntPref("extensions.enabledScopes", AddonManager.SCOPE_ALL);
+}
+
 const ID1 = getID(1);
 const ID2 = getID(2);
 const ID3 = getID(3);
