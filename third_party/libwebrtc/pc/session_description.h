@@ -400,8 +400,15 @@ class RTC_EXPORT ContentInfo {
  public:
   explicit ContentInfo(MediaProtocolType type) : type(type) {}
   ContentInfo(MediaProtocolType type,
-              std::unique_ptr<MediaContentDescription> description)
-      : type(type), description_(std::move(description)) {}
+              absl::string_view mid,
+              std::unique_ptr<MediaContentDescription> description,
+              bool rejected = false,
+              bool bundle_only = false)
+      : type(type),
+        rejected(rejected),
+        bundle_only(bundle_only),
+        mid_(mid),
+        description_(std::move(description)) {}
   ~ContentInfo();
 
   
@@ -413,21 +420,19 @@ class RTC_EXPORT ContentInfo {
   ContentInfo& operator=(ContentInfo&& o) = default;
 
   
-  
-  const std::string& mid() const { return name; }
-  void set_mid(absl::string_view mid) { name = std::string(mid); }
+  const std::string& mid() const { return mid_; }
+  void set_mid(absl::string_view mid) { mid_ = std::string(mid); }
 
   
   MediaContentDescription* media_description();
   const MediaContentDescription* media_description() const;
 
-  
-  std::string name;
   MediaProtocolType type;
   bool rejected = false;
   bool bundle_only = false;
 
  private:
+  std::string mid_;
   friend class SessionDescription;
   std::unique_ptr<MediaContentDescription> description_;
 };
