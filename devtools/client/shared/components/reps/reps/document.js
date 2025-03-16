@@ -2,80 +2,72 @@
 
 
 
-"use strict";
 
 
-define(function (require, exports, module) {
-  
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const {
-    span,
-  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
+import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import { span } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
-  
-  const {
-    getGripType,
-    getURLDisplayString,
-    wrapRender,
-  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
-
-  
+import {
+  getGripType,
+  getURLDisplayString,
+  wrapRender,
+} from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
 
 
 
-  Document.propTypes = {
-    object: PropTypes.object.isRequired,
-    shouldRenderTooltip: PropTypes.bool,
+
+
+Document.propTypes = {
+  object: PropTypes.object.isRequired,
+  shouldRenderTooltip: PropTypes.bool,
+};
+
+function Document(props) {
+  const grip = props.object;
+  const shouldRenderTooltip = props.shouldRenderTooltip;
+  const location = getLocation(grip);
+  const config = getElementConfig({ grip, location, shouldRenderTooltip });
+  return span(
+    config,
+    getTitle(grip),
+    location ? span({ className: "location" }, ` ${location}`) : null
+  );
+}
+
+function getElementConfig(opts) {
+  const { grip, location, shouldRenderTooltip } = opts;
+  const config = {
+    "data-link-actor-id": grip.actor,
+    className: "objectBox objectBox-document",
   };
 
-  function Document(props) {
-    const grip = props.object;
-    const shouldRenderTooltip = props.shouldRenderTooltip;
-    const location = getLocation(grip);
-    const config = getElementConfig({ grip, location, shouldRenderTooltip });
-    return span(
-      config,
-      getTitle(grip),
-      location ? span({ className: "location" }, ` ${location}`) : null
-    );
-  }
-
-  function getElementConfig(opts) {
-    const { grip, location, shouldRenderTooltip } = opts;
-    const config = {
-      "data-link-actor-id": grip.actor,
-      className: "objectBox objectBox-document",
-    };
-
-    if (!shouldRenderTooltip || !location) {
-      return config;
-    }
-    config.title = `${grip.class} ${location}`;
+  if (!shouldRenderTooltip || !location) {
     return config;
   }
+  config.title = `${grip.class} ${location}`;
+  return config;
+}
 
-  function getLocation(grip) {
-    const location = grip.preview.location;
-    return location ? getURLDisplayString(location) : null;
-  }
+function getLocation(grip) {
+  const location = grip.preview.location;
+  return location ? getURLDisplayString(location) : null;
+}
 
-  function getTitle(grip) {
-    return span(
-      {
-        className: "objectTitle",
-      },
-      grip.class
-    );
-  }
+function getTitle(grip) {
+  return span(
+    {
+      className: "objectTitle",
+    },
+    grip.class
+  );
+}
 
-  
-  function supportsObject(object, noGrip = false) {
-    return object?.preview && getGripType(object, noGrip) === "HTMLDocument";
-  }
 
-  
-  module.exports = {
-    rep: wrapRender(Document),
-    supportsObject,
-  };
-});
+function supportsObject(object, noGrip = false) {
+  return object?.preview && getGripType(object, noGrip) === "HTMLDocument";
+}
+
+const rep = wrapRender(Document);
+
+
+export { rep, supportsObject };

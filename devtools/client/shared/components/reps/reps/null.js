@@ -2,60 +2,48 @@
 
 
 
-"use strict";
+import { span } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
+import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
 
-
-define(function (require, exports, module) {
-  
-  const {
-    span,
-  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-
-  const {
-    wrapRender,
-  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
-
-  
+import { wrapRender } from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
 
 
 
-  Null.PropTypes = {
-    shouldRenderTooltip: PropTypes.bool,
+
+
+Null.PropTypes = {
+  shouldRenderTooltip: PropTypes.bool,
+};
+
+function Null(props) {
+  const shouldRenderTooltip = props.shouldRenderTooltip;
+
+  const config = getElementConfig(shouldRenderTooltip);
+
+  return span(config, "null");
+}
+
+function getElementConfig(shouldRenderTooltip) {
+  return {
+    className: "objectBox objectBox-null",
+    title: shouldRenderTooltip ? "null" : null,
   };
+}
 
-  function Null(props) {
-    const shouldRenderTooltip = props.shouldRenderTooltip;
-
-    const config = getElementConfig(shouldRenderTooltip);
-
-    return span(config, "null");
+function supportsObject(object, noGrip = false) {
+  if (noGrip === true) {
+    return object === null;
   }
 
-  function getElementConfig(shouldRenderTooltip) {
-    return {
-      className: "objectBox objectBox-null",
-      title: shouldRenderTooltip ? "null" : null,
-    };
+  if (object && object.type && object.type == "null") {
+    return true;
   }
 
-  function supportsObject(object, noGrip = false) {
-    if (noGrip === true) {
-      return object === null;
-    }
+  return object == null;
+}
 
-    if (object && object.type && object.type == "null") {
-      return true;
-    }
+const rep = wrapRender(Null);
 
-    return object == null;
-  }
 
-  
 
-  module.exports = {
-    rep: wrapRender(Null),
-    supportsObject,
-  };
-});
+export { rep, supportsObject };

@@ -589,10 +589,16 @@ class WebConsoleUI {
 
     
     
-    const WebConsoleWrapper = BrowserLoader({
+    const browserLoader = BrowserLoader({
       baseURI: "resource://devtools/client/webconsole/",
       window: this.window,
-    }).require("resource://devtools/client/webconsole/webconsole-wrapper.js");
+    });
+    
+    
+    this.window.browserLoaderRequire = browserLoader.require;
+    const WebConsoleWrapper = browserLoader.require(
+      "resource://devtools/client/webconsole/webconsole-wrapper.js"
+    );
 
     this.wrapper = new WebConsoleWrapper(
       this.outputNode,

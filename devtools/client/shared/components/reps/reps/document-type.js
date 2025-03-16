@@ -2,61 +2,53 @@
 
 
 
-"use strict";
 
 
-define(function (require, exports, module) {
-  
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const {
-    span,
-  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
+import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import { span } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
-  
-  const {
-    getGripType,
-    wrapRender,
-  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
-
-  
+import {
+  getGripType,
+  wrapRender,
+} from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
 
 
 
-  DocumentType.propTypes = {
-    object: PropTypes.object.isRequired,
-    shouldRenderTooltip: PropTypes.bool,
+
+
+DocumentType.propTypes = {
+  object: PropTypes.object.isRequired,
+  shouldRenderTooltip: PropTypes.bool,
+};
+
+function DocumentType(props) {
+  const { object, shouldRenderTooltip } = props;
+  const name =
+    object && object.preview && object.preview.nodeName
+      ? ` ${object.preview.nodeName}`
+      : "";
+
+  const config = getElementConfig({ object, shouldRenderTooltip, name });
+
+  return span(config, `<!DOCTYPE${name}>`);
+}
+
+function getElementConfig(opts) {
+  const { object, shouldRenderTooltip, name } = opts;
+
+  return {
+    "data-link-actor-id": object.actor,
+    className: "objectBox objectBox-document",
+    title: shouldRenderTooltip ? `<!DOCTYPE${name}>` : null,
   };
+}
 
-  function DocumentType(props) {
-    const { object, shouldRenderTooltip } = props;
-    const name =
-      object && object.preview && object.preview.nodeName
-        ? ` ${object.preview.nodeName}`
-        : "";
 
-    const config = getElementConfig({ object, shouldRenderTooltip, name });
+function supportsObject(object, noGrip = false) {
+  return object?.preview && getGripType(object, noGrip) === "DocumentType";
+}
 
-    return span(config, `<!DOCTYPE${name}>`);
-  }
+const rep = wrapRender(DocumentType);
 
-  function getElementConfig(opts) {
-    const { object, shouldRenderTooltip, name } = opts;
 
-    return {
-      "data-link-actor-id": object.actor,
-      className: "objectBox objectBox-document",
-      title: shouldRenderTooltip ? `<!DOCTYPE${name}>` : null,
-    };
-  }
-
-  
-  function supportsObject(object, noGrip = false) {
-    return object?.preview && getGripType(object, noGrip) === "DocumentType";
-  }
-
-  
-  module.exports = {
-    rep: wrapRender(DocumentType),
-    supportsObject,
-  };
-});
+export { rep, supportsObject };

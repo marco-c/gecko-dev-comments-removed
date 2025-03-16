@@ -47,7 +47,7 @@ const {
 } = Utils.node;
 const {
   MODE,
-} = require("resource://devtools/client/shared/components/reps/reps/constants.js");
+} = ChromeUtils.importESModule("resource://devtools/client/shared/components/reps/reps/constants.mjs", {global: "current"});
 
 
 

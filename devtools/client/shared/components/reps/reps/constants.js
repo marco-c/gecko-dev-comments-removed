@@ -2,18 +2,13 @@
 
 
 
-"use strict";
+const MODE = {
+  TINY: Symbol("TINY"),
+  SHORT: Symbol("SHORT"),
+  LONG: Symbol("LONG"),
+  
+  HEADER: Symbol("HEADER"),
+};
 
-
-define(function (require, exports, module) {
-  module.exports = {
-    MODE: {
-      TINY: Symbol("TINY"),
-      SHORT: Symbol("SHORT"),
-      LONG: Symbol("LONG"),
-      
-      HEADER: Symbol("HEADER"),
-    },
-    JSON_NUMBER: Symbol("JSON_NUMBER"),
-  };
-});
+const JSON_NUMBER = Symbol("JSON_NUMBER");
+export { MODE, JSON_NUMBER };

@@ -2,49 +2,42 @@
 
 
 
-"use strict";
 
 
-define(function (require, exports, module) {
+import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import { span } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
+
+import {
+  appendRTLClassNameIfNeeded,
+  maybeEscapePropertyName,
+  wrapRender,
+} from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
+import { MODE } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
+import * as Grip from "resource://devtools/client/shared/components/reps/reps/grip.mjs";
+import { Rep } from "resource://devtools/client/shared/components/reps/reps/rep.mjs";
+
+
+
+
+
+
+PropRep.propTypes = {
   
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const {
-    span,
-  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-
-  const {
-    appendRTLClassNameIfNeeded,
-    maybeEscapePropertyName,
-    wrapRender,
-  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
-  const {
-    MODE,
-  } = require("resource://devtools/client/shared/components/reps/reps/constants.js");
-
+  keyClassName: PropTypes.string,
   
-
-
-
-
-  PropRep.propTypes = {
-    
-    keyClassName: PropTypes.string,
-    
-    name: PropTypes.oneOfType([PropTypes.string, PropTypes.object]).isRequired,
-    
-    equal: PropTypes.string,
-    mode: PropTypes.oneOf(Object.values(MODE)),
-    onDOMNodeMouseOver: PropTypes.func,
-    onDOMNodeMouseOut: PropTypes.func,
-    onInspectIconClick: PropTypes.func,
-    
-    
-    
-    suppressQuotes: PropTypes.bool,
-    shouldRenderTooltip: PropTypes.bool,
-  };
-
+  name: PropTypes.oneOfType([PropTypes.string, PropTypes.object]).isRequired,
   
+  equal: PropTypes.string,
+  mode: PropTypes.oneOf(Object.values(MODE)),
+  onDOMNodeMouseOver: PropTypes.func,
+  onDOMNodeMouseOut: PropTypes.func,
+  onInspectIconClick: PropTypes.func,
+  
+  
+  
+  suppressQuotes: PropTypes.bool,
+  shouldRenderTooltip: PropTypes.bool,
+};
 
 
 
@@ -52,59 +45,51 @@ define(function (require, exports, module) {
 
 
 
-  function PropRep(props) {
-    const Grip = require("resource://devtools/client/shared/components/reps/reps/grip.js");
-    const {
-      Rep,
-    } = require("resource://devtools/client/shared/components/reps/reps/rep.js");
 
-    let {
-      equal,
-      keyClassName,
-      mode,
-      name,
-      shouldRenderTooltip,
-      suppressQuotes,
-    } = props;
 
-    const className = `nodeName${keyClassName ? " " + keyClassName : ""}`;
+function PropRep(props) {
+  let { equal, keyClassName, mode, name, shouldRenderTooltip, suppressQuotes } =
+    props;
 
-    let key;
-    
-    
-    if (typeof name === "string") {
-      if (!suppressQuotes) {
-        name = maybeEscapePropertyName(name);
-      }
-      key = span(
-        {
-          className: appendRTLClassNameIfNeeded(className, name),
-          title: shouldRenderTooltip ? name : null,
-        },
-        name
-      );
-    } else {
-      key = Rep({
-        ...props,
-        className,
-        object: name,
-        mode: mode || MODE.TINY,
-        defaultRep: Grip,
-      });
+  const className = `nodeName${keyClassName ? " " + keyClassName : ""}`;
+
+  let key;
+  
+  
+  if (typeof name === "string") {
+    if (!suppressQuotes) {
+      name = maybeEscapePropertyName(name);
     }
-
-    return [
-      key,
-      span(
-        {
-          className: "objectEqual",
-        },
-        equal
-      ),
-      Rep({ ...props }),
-    ];
+    key = span(
+      {
+        className: appendRTLClassNameIfNeeded(className, name),
+        title: shouldRenderTooltip ? name : null,
+      },
+      name
+    );
+  } else {
+    key = Rep({
+      ...props,
+      className,
+      object: name,
+      mode: mode || MODE.TINY,
+      defaultRep: Grip,
+    });
   }
 
-  
-  module.exports = wrapRender(PropRep);
-});
+  return [
+    key,
+    span(
+      {
+        className: "objectEqual",
+      },
+      equal
+    ),
+    Rep({ ...props }),
+  ];
+}
+
+const rep = wrapRender(PropRep);
+
+
+export default rep;

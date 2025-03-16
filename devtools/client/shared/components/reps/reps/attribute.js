@@ -2,81 +2,69 @@
 
 
 
-"use strict";
+import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import { span } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
-
-define(function (require, exports, module) {
-  
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const {
-    span,
-  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-
-  
-  const {
-    appendRTLClassNameIfNeeded,
-    getGripType,
-    wrapRender,
-  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
-  const {
-    rep: StringRep,
-  } = require("resource://devtools/client/shared/components/reps/reps/string.js");
-
-  
+import {
+  appendRTLClassNameIfNeeded,
+  getGripType,
+  wrapRender,
+} from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
+import { rep as StringRep } from "resource://devtools/client/shared/components/reps/reps/string.mjs";
 
 
 
-  Attribute.propTypes = {
-    object: PropTypes.object.isRequired,
-    shouldRenderTooltip: PropTypes.bool,
+
+
+Attribute.propTypes = {
+  object: PropTypes.object.isRequired,
+  shouldRenderTooltip: PropTypes.bool,
+};
+
+function Attribute(props) {
+  const { object, shouldRenderTooltip } = props;
+  const value = object.preview.value;
+  const attrName = getTitle(object);
+
+  const config = getElementConfig({
+    attrName,
+    shouldRenderTooltip,
+    value,
+    object,
+  });
+
+  return span(
+    config,
+    span(
+      {
+        className: appendRTLClassNameIfNeeded("attrName", attrName),
+      },
+      attrName
+    ),
+    span({ className: "attrEqual" }, "="),
+    StringRep({ className: "attrValue", object: value })
+  );
+}
+
+function getTitle(grip) {
+  return grip.preview.nodeName;
+}
+
+function getElementConfig(opts) {
+  const { attrName, shouldRenderTooltip, value, object } = opts;
+
+  return {
+    "data-link-actor-id": object.actor,
+    className: "objectBox-Attr",
+    title: shouldRenderTooltip ? `${attrName}="${value}"` : null,
   };
+}
 
-  function Attribute(props) {
-    const { object, shouldRenderTooltip } = props;
-    const value = object.preview.value;
-    const attrName = getTitle(object);
 
-    const config = getElementConfig({
-      attrName,
-      shouldRenderTooltip,
-      value,
-      object,
-    });
+function supportsObject(grip, noGrip = false) {
+  return getGripType(grip, noGrip) == "Attr" && grip?.preview;
+}
 
-    return span(
-      config,
-      span(
-        {
-          className: appendRTLClassNameIfNeeded("attrName", attrName),
-        },
-        attrName
-      ),
-      span({ className: "attrEqual" }, "="),
-      StringRep({ className: "attrValue", object: value })
-    );
-  }
+const rep = wrapRender(Attribute);
 
-  function getTitle(grip) {
-    return grip.preview.nodeName;
-  }
-
-  function getElementConfig(opts) {
-    const { attrName, shouldRenderTooltip, value, object } = opts;
-
-    return {
-      "data-link-actor-id": object.actor,
-      className: "objectBox-Attr",
-      title: shouldRenderTooltip ? `${attrName}="${value}"` : null,
-    };
-  }
-
-  
-  function supportsObject(grip, noGrip = false) {
-    return getGripType(grip, noGrip) == "Attr" && grip?.preview;
-  }
-
-  module.exports = {
-    rep: wrapRender(Attribute),
-    supportsObject,
-  };
-});
+export { rep, supportsObject };

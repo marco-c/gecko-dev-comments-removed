@@ -2,166 +2,87 @@
 
 
 
-"use strict";
-
-
-define(function (require, exports, module) {
-  
-  const Undefined = require("resource://devtools/client/shared/components/reps/reps/undefined.js");
-  const Null = require("resource://devtools/client/shared/components/reps/reps/null.js");
-  const StringRep = require("resource://devtools/client/shared/components/reps/reps/string.js");
-  const Number = require("resource://devtools/client/shared/components/reps/reps/number.js");
-  const JsonNumber = require("resource://devtools/client/shared/components/reps/reps/json-number.js");
-  const ArrayRep = require("resource://devtools/client/shared/components/reps/reps/array.js");
-  const Obj = require("resource://devtools/client/shared/components/reps/reps/object.js");
-  const SymbolRep = require("resource://devtools/client/shared/components/reps/reps/symbol.js");
-  const InfinityRep = require("resource://devtools/client/shared/components/reps/reps/infinity.js");
-  const NaNRep = require("resource://devtools/client/shared/components/reps/reps/nan.js");
-  const Accessor = require("resource://devtools/client/shared/components/reps/reps/accessor.js");
-
-  
-  const Accessible = require("resource://devtools/client/shared/components/reps/reps/accessible.js");
-  const Attribute = require("resource://devtools/client/shared/components/reps/reps/attribute.js");
-  const BigInt = require("resource://devtools/client/shared/components/reps/reps/big-int.js");
-  const DateTime = require("resource://devtools/client/shared/components/reps/reps/date-time.js");
-  const Document = require("resource://devtools/client/shared/components/reps/reps/document.js");
-  const DocumentType = require("resource://devtools/client/shared/components/reps/reps/document-type.js");
-  const Event = require("resource://devtools/client/shared/components/reps/reps/event.js");
-  const Func = require("resource://devtools/client/shared/components/reps/reps/function.js");
-  const PromiseRep = require("resource://devtools/client/shared/components/reps/reps/promise.js");
-  const RegExp = require("resource://devtools/client/shared/components/reps/reps/regexp.js");
-  const StyleSheet = require("resource://devtools/client/shared/components/reps/reps/stylesheet.js");
-  const CommentNode = require("resource://devtools/client/shared/components/reps/reps/comment-node.js");
-  const ElementNode = require("resource://devtools/client/shared/components/reps/reps/element-node.js");
-  const TextNode = require("resource://devtools/client/shared/components/reps/reps/text-node.js");
-  const ErrorRep = require("resource://devtools/client/shared/components/reps/reps/error.js");
-  const Window = require("resource://devtools/client/shared/components/reps/reps/window.js");
-  const ObjectWithText = require("resource://devtools/client/shared/components/reps/reps/object-with-text.js");
-  const ObjectWithURL = require("resource://devtools/client/shared/components/reps/reps/object-with-url.js");
-  const GripArray = require("resource://devtools/client/shared/components/reps/reps/grip-array.js");
-  const GripEntry = require("resource://devtools/client/shared/components/reps/reps/grip-entry.js");
-  const GripMap = require("resource://devtools/client/shared/components/reps/reps/grip-map.js");
-  const Grip = require("resource://devtools/client/shared/components/reps/reps/grip.js");
-
-  
-  
-  
-  const reps = [
-    RegExp,
-    StyleSheet,
-    Event,
-    DateTime,
-    CommentNode,
-    Accessible,
-    ElementNode,
-    TextNode,
-    Attribute,
-    Func,
-    PromiseRep,
-    Document,
-    DocumentType,
-    Window,
-    ObjectWithText,
-    ObjectWithURL,
-    ErrorRep,
-    GripArray,
-    GripMap,
-    GripEntry,
-    Grip,
-    Undefined,
-    Null,
-    StringRep,
-    Number,
-    BigInt,
-    SymbolRep,
-    InfinityRep,
-    NaNRep,
-    Accessor,
-  ];
-
-  
-  const noGripReps = [
-    StringRep,
-    JsonNumber,
-    Number,
-    ArrayRep,
-    Undefined,
-    Null,
-    Obj,
-  ];
-
-  
+import * as Undefined from "resource://devtools/client/shared/components/reps/reps/undefined.mjs";
+import * as Null from "resource://devtools/client/shared/components/reps/reps/null.mjs";
+import * as StringRep from "resource://devtools/client/shared/components/reps/reps/string.mjs";
+import * as Number from "resource://devtools/client/shared/components/reps/reps/number.mjs";
+import * as JsonNumber from "resource://devtools/client/shared/components/reps/reps/json-number.mjs";
+import * as ArrayRep from "resource://devtools/client/shared/components/reps/reps/array.mjs";
+import * as Obj from "resource://devtools/client/shared/components/reps/reps/object.mjs";
+import * as SymbolRep from "resource://devtools/client/shared/components/reps/reps/symbol.mjs";
+import * as InfinityRep from "resource://devtools/client/shared/components/reps/reps/infinity.mjs";
+import * as NaNRep from "resource://devtools/client/shared/components/reps/reps/nan.mjs";
+import * as Accessor from "resource://devtools/client/shared/components/reps/reps/accessor.mjs";
+import * as Accessible from "resource://devtools/client/shared/components/reps/reps/accessible.mjs";
+import * as Attribute from "resource://devtools/client/shared/components/reps/reps/attribute.mjs";
+import * as BigInt from "resource://devtools/client/shared/components/reps/reps/big-int.mjs";
+import * as DateTime from "resource://devtools/client/shared/components/reps/reps/date-time.mjs";
+import * as Document from "resource://devtools/client/shared/components/reps/reps/document.mjs";
+import * as DocumentType from "resource://devtools/client/shared/components/reps/reps/document-type.mjs";
+import * as Event from "resource://devtools/client/shared/components/reps/reps/event.mjs";
+import * as Func from "resource://devtools/client/shared/components/reps/reps/function.mjs";
+import * as PromiseRep from "resource://devtools/client/shared/components/reps/reps/promise.mjs";
+import * as RegExp from "resource://devtools/client/shared/components/reps/reps/regexp.mjs";
+import * as StyleSheet from "resource://devtools/client/shared/components/reps/reps/stylesheet.mjs";
+import * as CommentNode from "resource://devtools/client/shared/components/reps/reps/comment-node.mjs";
+import * as ElementNode from "resource://devtools/client/shared/components/reps/reps/element-node.mjs";
+import * as TextNode from "resource://devtools/client/shared/components/reps/reps/text-node.mjs";
+import * as ErrorRep from "resource://devtools/client/shared/components/reps/reps/error.mjs";
+import * as Window from "resource://devtools/client/shared/components/reps/reps/window.mjs";
+import * as ObjectWithText from "resource://devtools/client/shared/components/reps/reps/object-with-text.mjs";
+import * as ObjectWithURL from "resource://devtools/client/shared/components/reps/reps/object-with-url.mjs";
+import * as GripArray from "resource://devtools/client/shared/components/reps/reps/grip-array.mjs";
+import * as GripEntry from "resource://devtools/client/shared/components/reps/reps/grip-entry.mjs";
+import * as GripMap from "resource://devtools/client/shared/components/reps/reps/grip-map.mjs";
+import * as Grip from "resource://devtools/client/shared/components/reps/reps/grip.mjs";
+import * as CustomFormatter from "resource://devtools/client/shared/components/reps/reps/custom-formatter.mjs";
 
 
 
 
+const reps = [
+  RegExp,
+  StyleSheet,
+  Event,
+  DateTime,
+  CommentNode,
+  Accessible,
+  ElementNode,
+  TextNode,
+  Attribute,
+  Func,
+  PromiseRep,
+  Document,
+  DocumentType,
+  Window,
+  ObjectWithText,
+  ObjectWithURL,
+  ErrorRep,
+  GripArray,
+  GripMap,
+  GripEntry,
+  Grip,
+  Undefined,
+  Null,
+  StringRep,
+  Number,
+  BigInt,
+  SymbolRep,
+  InfinityRep,
+  NaNRep,
+  Accessor,
+];
 
-  const Rep = function (props) {
-    const { object, defaultRep } = props;
-    const rep = getRep(
-      object,
-      defaultRep,
-      props.noGrip,
-      props.mayUseCustomFormatter
-    );
-    return rep(props);
-  };
 
-  const exportedReps = {
-    Accessible,
-    Accessor,
-    ArrayRep,
-    Attribute,
-    BigInt,
-    CommentNode,
-    DateTime,
-    Document,
-    DocumentType,
-    ElementNode,
-    ErrorRep,
-    Event,
-    Func,
-    Grip,
-    GripArray,
-    GripMap,
-    GripEntry,
-    InfinityRep,
-    NaNRep,
-    Null,
-    Number,
-    Obj,
-    ObjectWithText,
-    ObjectWithURL,
-    PromiseRep,
-    RegExp,
-    Rep,
-    StringRep,
-    StyleSheet,
-    SymbolRep,
-    TextNode,
-    Undefined,
-    Window,
-  };
-
-  
-  
-  
-  if (typeof Services == "object" && Services?.prefs) {
-    const useCustomFormatters = Services.prefs.getBoolPref(
-      "devtools.custom-formatters.enabled",
-      false
-    );
-
-    if (useCustomFormatters) {
-      const CustomFormatter = require("resource://devtools/client/shared/components/reps/reps/custom-formatter.js");
-      reps.unshift(CustomFormatter);
-      exportedReps.CustomFormatter = CustomFormatter;
-    }
-  }
-
-  
-
-  
+const noGripReps = [
+  StringRep,
+  JsonNumber,
+  Number,
+  ArrayRep,
+  Undefined,
+  Null,
+  Obj,
+];
 
 
 
@@ -169,46 +90,112 @@ define(function (require, exports, module) {
 
 
 
-
-
-
-
-
-
-
-
-
-  function getRep(
+const Rep = function (props) {
+  const { object, defaultRep } = props;
+  const rep = getRep(
     object,
-    defaultRep = Grip,
-    noGrip = false,
-    mayUseCustomFormatter = false
-  ) {
-    const repsList = noGrip ? noGripReps : reps;
-    for (const rep of repsList) {
-      if (rep === exportedReps.CustomFormatter && !mayUseCustomFormatter) {
-        continue;
-      }
+    defaultRep,
+    props.noGrip,
+    props.mayUseCustomFormatter
+  );
+  return rep(props);
+};
 
-      try {
-        
-        
-        
-        if (rep.supportsObject(object, noGrip)) {
-          return rep.rep;
-        }
-      } catch (err) {
-        console.error(err);
-      }
+const exportedReps = {
+  Accessible,
+  Accessor,
+  ArrayRep,
+  Attribute,
+  BigInt,
+  CommentNode,
+  DateTime,
+  Document,
+  DocumentType,
+  ElementNode,
+  ErrorRep,
+  Event,
+  Func,
+  Grip,
+  GripArray,
+  GripMap,
+  GripEntry,
+  InfinityRep,
+  NaNRep,
+  Null,
+  Number,
+  Obj,
+  ObjectWithText,
+  ObjectWithURL,
+  PromiseRep,
+  RegExp,
+  Rep,
+  StringRep,
+  StyleSheet: StyleSheetRep,
+  SymbolRep,
+  TextNode,
+  Undefined,
+  Window,
+};
+
+
+
+
+if (typeof Services == "object" && Services?.prefs) {
+  const useCustomFormatters = Services.prefs.getBoolPref(
+    "devtools.custom-formatters.enabled",
+    false
+  );
+
+  if (useCustomFormatters) {
+    reps.unshift(CustomFormatter);
+    exportedReps.CustomFormatter = CustomFormatter;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getRep(
+  object,
+  defaultRep = Grip,
+  noGrip = false,
+  mayUseCustomFormatter = false
+) {
+  const repsList = noGrip ? noGripReps : reps;
+  for (const rep of repsList) {
+    if (rep === exportedReps.CustomFormatter && !mayUseCustomFormatter) {
+      continue;
     }
 
-    return defaultRep.rep;
+    try {
+      
+      
+      
+      if (rep.supportsObject(object, noGrip)) {
+        return rep.rep;
+      }
+    } catch (err) {
+      console.error(err);
+    }
   }
 
-  module.exports = {
-    Rep,
-    REPS: exportedReps,
-    
-    getRep,
-  };
-});
+  return defaultRep.rep;
+}
+
+export { Rep, exportedReps as REPS, getRep };

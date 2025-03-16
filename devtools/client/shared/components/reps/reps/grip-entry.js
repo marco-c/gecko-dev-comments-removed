@@ -2,79 +2,66 @@
 
 
 
-"use strict";
+import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import { span } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
+
+import { wrapRender } from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
+import PropRep from "resource://devtools/client/shared/components/reps/reps/prop-rep.mjs";
+import { MODE } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
 
 
-define(function (require, exports, module) {
-  
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const {
-    span,
-  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-  
-  const {
-    wrapRender,
-  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
-  const PropRep = require("resource://devtools/client/shared/components/reps/reps/prop-rep.js");
-  const {
-    MODE,
-  } = require("resource://devtools/client/shared/components/reps/reps/constants.js");
-
-  
 
 
-  GripEntry.propTypes = {
-    object: PropTypes.object,
-    mode: PropTypes.oneOf(Object.values(MODE)),
-    onDOMNodeMouseOver: PropTypes.func,
-    onDOMNodeMouseOut: PropTypes.func,
-    onInspectIconClick: PropTypes.func,
-  };
+GripEntry.propTypes = {
+  object: PropTypes.object,
+  mode: PropTypes.oneOf(Object.values(MODE)),
+  onDOMNodeMouseOver: PropTypes.func,
+  onDOMNodeMouseOut: PropTypes.func,
+  onInspectIconClick: PropTypes.func,
+};
 
-  function GripEntry(props) {
-    const { object } = props;
+function GripEntry(props) {
+  const { object } = props;
 
-    let { key, value } = object.preview;
-    if (key && key.getGrip) {
-      key = key.getGrip();
-    }
-    if (value && value.getGrip) {
-      value = value.getGrip();
-    }
-
-    return span(
-      {
-        className: "objectBox objectBox-map-entry",
-      },
-      PropRep({
-        ...props,
-        name: key,
-        object: value,
-        equal: " \u2192 ",
-        title: null,
-        suppressQuotes: false,
-      })
-    );
+  let { key, value } = object.preview;
+  if (key && key.getGrip) {
+    key = key.getGrip();
+  }
+  if (value && value.getGrip) {
+    value = value.getGrip();
   }
 
-  function supportsObject(grip, noGrip = false) {
-    if (noGrip === true) {
-      return false;
-    }
-    return (
-      grip &&
-      (grip.type === "formDataEntry" ||
-        grip.type === "highlightRegistryEntry" ||
-        grip.type === "mapEntry" ||
-        grip.type === "storageEntry" ||
-        grip.type === "urlSearchParamsEntry") &&
-      grip.preview
-    );
-  }
+  return span(
+    {
+      className: "objectBox objectBox-map-entry",
+    },
+    PropRep({
+      ...props,
+      name: key,
+      object: value,
+      equal: " \u2192 ",
+      title: null,
+      suppressQuotes: false,
+    })
+  );
+}
 
-  
-  module.exports = {
-    rep: wrapRender(GripEntry),
-    supportsObject,
-  };
-});
+function supportsObject(grip, noGrip = false) {
+  if (noGrip === true) {
+    return false;
+  }
+  return (
+    grip &&
+    (grip.type === "formDataEntry" ||
+      grip.type === "highlightRegistryEntry" ||
+      grip.type === "mapEntry" ||
+      grip.type === "storageEntry" ||
+      grip.type === "urlSearchParamsEntry") &&
+    grip.preview
+  );
+}
+
+const rep = wrapRender(GripEntry);
+
+
+export { rep, supportsObject };

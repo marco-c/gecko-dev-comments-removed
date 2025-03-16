@@ -2,80 +2,67 @@
 
 
 
-"use strict";
+import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import { span } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
+import { wrapRender } from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
 
-define(function (require, exports, module) {
-  
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const {
-    span,
-  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-
-  
-  const {
-    wrapRender,
-  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
-
-  const String =
-    require("resource://devtools/client/shared/components/reps/reps/string.js").rep;
-
-  
+import { rep as StringRep } from "resource://devtools/client/shared/components/reps/reps/string.mjs";
 
 
 
 
-  ObjectWithText.propTypes = {
-    object: PropTypes.object.isRequired,
-    shouldRenderTooltip: PropTypes.bool,
+
+
+ObjectWithText.propTypes = {
+  object: PropTypes.object.isRequired,
+  shouldRenderTooltip: PropTypes.bool,
+};
+
+function ObjectWithText(props) {
+  const grip = props.object;
+  const config = getElementConfig(props);
+
+  return span(config, getTitle(grip), getDescription(grip));
+}
+
+function getElementConfig(opts) {
+  const shouldRenderTooltip = opts.shouldRenderTooltip;
+  const grip = opts.object;
+
+  return {
+    "data-link-actor-id": grip.actor,
+    className: `objectTitle objectBox objectBox-${getType(grip)}`,
+    title: shouldRenderTooltip
+      ? `${getType(grip)} "${grip.preview.text}"`
+      : null,
   };
+}
 
-  function ObjectWithText(props) {
-    const grip = props.object;
-    const config = getElementConfig(props);
+function getTitle(grip) {
+  return span({ className: "objectTitle" }, `${getType(grip)} `);
+}
 
-    return span(config, getTitle(grip), getDescription(grip));
-  }
+function getType(grip) {
+  return grip.class;
+}
 
-  function getElementConfig(opts) {
-    const shouldRenderTooltip = opts.shouldRenderTooltip;
-    const grip = opts.object;
+function getDescription(grip) {
+  const type = getType(grip);
 
-    return {
-      "data-link-actor-id": grip.actor,
-      className: `objectTitle objectBox objectBox-${getType(grip)}`,
-      title: shouldRenderTooltip
-        ? `${getType(grip)} "${grip.preview.text}"`
-        : null,
-    };
-  }
+  return StringRep({
+    object: grip.preview.text,
+    
+    useQuotes: !type || !type.startsWith("Temporal"),
+  });
+}
 
-  function getTitle(grip) {
-    return span({ className: "objectTitle" }, `${getType(grip)} `);
-  }
 
-  function getType(grip) {
-    return grip.class;
-  }
+function supportsObject(grip) {
+  return grip?.preview?.kind == "ObjectWithText";
+}
 
-  function getDescription(grip) {
-    const type = getType(grip);
+const rep = wrapRender(ObjectWithText);
 
-    return String({
-      object: grip.preview.text,
-      
-      useQuotes: !type || !type.startsWith("Temporal"),
-    });
-  }
 
-  
-  function supportsObject(grip) {
-    return grip?.preview?.kind == "ObjectWithText";
-  }
-
-  
-  module.exports = {
-    rep: wrapRender(ObjectWithText),
-    supportsObject,
-  };
-});
+export { rep, supportsObject };

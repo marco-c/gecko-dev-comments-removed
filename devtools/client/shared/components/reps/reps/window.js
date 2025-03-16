@@ -2,103 +2,92 @@
 
 
 
-"use strict";
 
 
-define(function (require, exports, module) {
-  
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const {
-    span,
-  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
+import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import { span } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
-  
-  const {
-    getGripType,
-    getURLDisplayString,
-    wrapRender,
-  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
-
-  const {
-    MODE,
-  } = require("resource://devtools/client/shared/components/reps/reps/constants.js");
-
-  
+import {
+  getGripType,
+  getURLDisplayString,
+  wrapRender,
+} from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
+import { MODE } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
 
 
 
-  WindowRep.propTypes = {
-    mode: PropTypes.oneOf(Object.values(MODE)),
-    object: PropTypes.object.isRequired,
-    shouldRenderTooltip: PropTypes.bool,
-  };
 
-  function WindowRep(props) {
-    const { mode, object } = props;
 
-    if (mode === MODE.TINY) {
-      const tinyTitle = getTitle(object);
-      const title = getTitle(object, true);
-      const location = getLocation(object);
-      const config = getElementConfig({ ...props, title, location });
+WindowRep.propTypes = {
+  mode: PropTypes.oneOf(Object.values(MODE)),
+  object: PropTypes.object.isRequired,
+  shouldRenderTooltip: PropTypes.bool,
+};
 
-      return span(
-        config,
-        span({ className: tinyTitle.className }, tinyTitle.content)
-      );
-    }
+function WindowRep(props) {
+  const { mode, object } = props;
 
+  if (mode === MODE.TINY) {
+    const tinyTitle = getTitle(object);
     const title = getTitle(object, true);
     const location = getLocation(object);
     const config = getElementConfig({ ...props, title, location });
 
     return span(
       config,
-      span({ className: title.className }, title.content),
-      span({ className: "location" }, location)
+      span({ className: tinyTitle.className }, tinyTitle.content)
     );
   }
 
-  function getElementConfig(opts) {
-    const { object, shouldRenderTooltip, title, location } = opts;
-    let tooltip;
+  const title = getTitle(object, true);
+  const location = getLocation(object);
+  const config = getElementConfig({ ...props, title, location });
 
-    if (location) {
-      tooltip = `${title.content}${location}`;
-    } else {
-      tooltip = `${title.content}`;
-    }
+  return span(
+    config,
+    span({ className: title.className }, title.content),
+    span({ className: "location" }, location)
+  );
+}
 
-    return {
-      "data-link-actor-id": object.actor,
-      className: "objectBox objectBox-Window",
-      title: shouldRenderTooltip ? tooltip : null,
-    };
+function getElementConfig(opts) {
+  const { object, shouldRenderTooltip, title, location } = opts;
+  let tooltip;
+
+  if (location) {
+    tooltip = `${title.content}${location}`;
+  } else {
+    tooltip = `${title.content}`;
   }
 
-  function getTitle(object, trailingSpace) {
-    let title = object.displayClass || object.class || "Window";
-    if (trailingSpace === true) {
-      title = `${title} `;
-    }
-    return {
-      className: "objectTitle",
-      content: title,
-    };
-  }
-
-  function getLocation(object) {
-    return getURLDisplayString(object.preview.url);
-  }
-
-  
-  function supportsObject(object, noGrip = false) {
-    return object?.preview && getGripType(object, noGrip) == "Window";
-  }
-
-  
-  module.exports = {
-    rep: wrapRender(WindowRep),
-    supportsObject,
+  return {
+    "data-link-actor-id": object.actor,
+    className: "objectBox objectBox-Window",
+    title: shouldRenderTooltip ? tooltip : null,
   };
-});
+}
+
+function getTitle(object, trailingSpace) {
+  let title = object.displayClass || object.class || "Window";
+  if (trailingSpace === true) {
+    title = `${title} `;
+  }
+  return {
+    className: "objectTitle",
+    content: title,
+  };
+}
+
+function getLocation(object) {
+  return getURLDisplayString(object.preview.url);
+}
+
+
+function supportsObject(object, noGrip = false) {
+  return object?.preview && getGripType(object, noGrip) == "Window";
+}
+
+const rep = wrapRender(WindowRep);
+
+
+export { rep, supportsObject };

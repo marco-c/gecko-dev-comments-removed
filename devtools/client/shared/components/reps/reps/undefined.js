@@ -2,60 +2,50 @@
 
 
 
-"use strict";
+import { span } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
+import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
 
-
-define(function (require, exports, module) {
-  
-  const {
-    span,
-  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-
-  const {
-    getGripType,
-    wrapRender,
-  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
-
-  
+import {
+  getGripType,
+  wrapRender,
+} from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
 
 
 
-  Undefined.propTypes = {
-    shouldRenderTooltip: PropTypes.bool,
+
+
+Undefined.propTypes = {
+  shouldRenderTooltip: PropTypes.bool,
+};
+
+function Undefined(props) {
+  const shouldRenderTooltip = props.shouldRenderTooltip;
+
+  const config = getElementConfig(shouldRenderTooltip);
+
+  return span(config, "undefined");
+}
+
+function getElementConfig(shouldRenderTooltip) {
+  return {
+    className: "objectBox objectBox-undefined",
+    title: shouldRenderTooltip ? "undefined" : null,
   };
+}
 
-  function Undefined(props) {
-    const shouldRenderTooltip = props.shouldRenderTooltip;
-
-    const config = getElementConfig(shouldRenderTooltip);
-
-    return span(config, "undefined");
+function supportsObject(object, noGrip = false) {
+  if (noGrip === true) {
+    return object === undefined;
   }
 
-  function getElementConfig(shouldRenderTooltip) {
-    return {
-      className: "objectBox objectBox-undefined",
-      title: shouldRenderTooltip ? "undefined" : null,
-    };
-  }
+  return (
+    (object && object.type && object.type == "undefined") ||
+    getGripType(object, noGrip) == "undefined"
+  );
+}
 
-  function supportsObject(object, noGrip = false) {
-    if (noGrip === true) {
-      return object === undefined;
-    }
+const rep = wrapRender(Undefined);
 
-    return (
-      (object && object.type && object.type == "undefined") ||
-      getGripType(object, noGrip) == "undefined"
-    );
-  }
 
-  
 
-  module.exports = {
-    rep: wrapRender(Undefined),
-    supportsObject,
-  };
-});
+export { rep, supportsObject };

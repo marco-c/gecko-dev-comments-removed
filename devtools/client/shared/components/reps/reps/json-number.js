@@ -2,73 +2,59 @@
 
 
 
-"use strict";
 
+import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import { span } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
-define(function (require, exports, module) {
-  
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const {
-    span,
-  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
+import { JSON_NUMBER } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
 
-  const {
-    JSON_NUMBER,
-  } = require("resource://devtools/client/shared/components/reps/reps/constants.js");
-
-  const {
-    wrapRender,
-  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
-
-  
+import { wrapRender } from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
 
 
 
 
 
 
-  JsonNumber.propTypes = {
-    object: PropTypes.oneOfType([
-      PropTypes.object,
-      PropTypes.number,
-      PropTypes.bool,
-    ]).isRequired,
-    shouldRenderTooltip: PropTypes.bool,
+
+
+JsonNumber.propTypes = {
+  object: PropTypes.oneOfType([
+    PropTypes.object,
+    PropTypes.number,
+    PropTypes.bool,
+  ]).isRequired,
+  shouldRenderTooltip: PropTypes.bool,
+};
+
+function JsonNumber(props) {
+  const value = props.object.source;
+  const config = getElementConfig(props.shouldRenderTooltip, value);
+
+  return span(
+    config,
+    span({ className: "source-value" }, value),
+    span(
+      {
+        className: "parsed-value",
+        title: "Javacript parsed value",
+      },
+      span({ className: "parsed-value-prefix" }, "JS:"),
+      props.object.parsedValue
+    )
+  );
+}
+
+function getElementConfig(shouldRenderTooltip, value) {
+  return {
+    className: "objectBox objectBox-number objectBox-json-number",
+    title: shouldRenderTooltip ? value : null,
   };
+}
 
-  function JsonNumber(props) {
-    const value = props.object.source;
-    const config = getElementConfig(props.shouldRenderTooltip, value);
+function supportsObject(object) {
+  return object?.type === JSON_NUMBER;
+}
 
-    return span(
-      config,
-      span({ className: "source-value" }, value),
-      span(
-        {
-          className: "parsed-value",
-          title: "Javacript parsed value",
-        },
-        span({ className: "parsed-value-prefix" }, "JS:"),
-        props.object.parsedValue
-      )
-    );
-  }
+const rep = wrapRender(JsonNumber);
 
-  function getElementConfig(shouldRenderTooltip, value) {
-    return {
-      className: "objectBox objectBox-number objectBox-json-number",
-      title: shouldRenderTooltip ? value : null,
-    };
-  }
-
-  function supportsObject(object) {
-    return object?.type === JSON_NUMBER;
-  }
-
-  
-
-  module.exports = {
-    rep: wrapRender(JsonNumber),
-    supportsObject,
-  };
-});
+export { rep, supportsObject };

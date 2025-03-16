@@ -2,53 +2,44 @@
 
 
 
-"use strict";
+import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import { span } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
-
-define(function (require, exports, module) {
-  
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const {
-    span,
-  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-
-  const {
-    getGripType,
-    wrapRender,
-  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
-
-  
+import {
+  getGripType,
+  wrapRender,
+} from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
 
 
 
-  InfinityRep.propTypes = {
-    object: PropTypes.object.isRequired,
-    shouldRenderTooltip: PropTypes.bool,
+
+
+InfinityRep.propTypes = {
+  object: PropTypes.object.isRequired,
+  shouldRenderTooltip: PropTypes.bool,
+};
+
+function InfinityRep(props) {
+  const { object, shouldRenderTooltip } = props;
+
+  const config = getElementConfig(shouldRenderTooltip, object);
+
+  return span(config, object.type);
+}
+
+function getElementConfig(shouldRenderTooltip, object) {
+  return {
+    className: "objectBox objectBox-number",
+    title: shouldRenderTooltip ? object.type : null,
   };
+}
 
-  function InfinityRep(props) {
-    const { object, shouldRenderTooltip } = props;
+function supportsObject(object, noGrip = false) {
+  const type = getGripType(object, noGrip);
+  return type == "Infinity" || type == "-Infinity";
+}
 
-    const config = getElementConfig(shouldRenderTooltip, object);
+const rep = wrapRender(InfinityRep);
 
-    return span(config, object.type);
-  }
 
-  function getElementConfig(shouldRenderTooltip, object) {
-    return {
-      className: "objectBox objectBox-number",
-      title: shouldRenderTooltip ? object.type : null,
-    };
-  }
-
-  function supportsObject(object, noGrip = false) {
-    const type = getGripType(object, noGrip);
-    return type == "Infinity" || type == "-Infinity";
-  }
-
-  
-  module.exports = {
-    rep: wrapRender(InfinityRep),
-    supportsObject,
-  };
-});
+export { rep, supportsObject };

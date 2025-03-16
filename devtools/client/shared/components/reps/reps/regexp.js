@@ -2,67 +2,57 @@
 
 
 
-"use strict";
+import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import { span } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
-
-define(function (require, exports, module) {
-  
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const {
-    span,
-  } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-
-  
-  const {
-    getGripType,
-    wrapRender,
-    ELLIPSIS,
-  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
-
-  
+import {
+  getGripType,
+  wrapRender,
+  ELLIPSIS,
+} from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
 
 
 
-  RegExp.propTypes = {
-    object: PropTypes.object.isRequired,
-    shouldRenderTooltip: PropTypes.bool,
+
+
+RegExp.propTypes = {
+  object: PropTypes.object.isRequired,
+  shouldRenderTooltip: PropTypes.bool,
+};
+
+function RegExp(props) {
+  const { object } = props;
+  const config = getElementConfig(props);
+
+  return span(config, getSource(object));
+}
+
+function getElementConfig(opts) {
+  const { object, shouldRenderTooltip } = opts;
+  const text = getSource(object);
+
+  return {
+    "data-link-actor-id": object.actor,
+    className: "objectBox objectBox-regexp regexpSource",
+    title: shouldRenderTooltip ? text : null,
   };
+}
 
-  function RegExp(props) {
-    const { object } = props;
-    const config = getElementConfig(props);
-
-    return span(config, getSource(object));
+function getSource(grip) {
+  const { displayString } = grip;
+  if (displayString?.type === "longString") {
+    return `${displayString.initial}${ELLIPSIS}`;
   }
 
-  function getElementConfig(opts) {
-    const { object, shouldRenderTooltip } = opts;
-    const text = getSource(object);
+  return displayString;
+}
 
-    return {
-      "data-link-actor-id": object.actor,
-      className: "objectBox objectBox-regexp regexpSource",
-      title: shouldRenderTooltip ? text : null,
-    };
-  }
 
-  function getSource(grip) {
-    const { displayString } = grip;
-    if (displayString?.type === "longString") {
-      return `${displayString.initial}${ELLIPSIS}`;
-    }
+function supportsObject(object, noGrip = false) {
+  return getGripType(object, noGrip) == "RegExp";
+}
 
-    return displayString;
-  }
+const rep = wrapRender(RegExp);
 
-  
-  function supportsObject(object, noGrip = false) {
-    return getGripType(object, noGrip) == "RegExp";
-  }
 
-  
-  module.exports = {
-    rep: wrapRender(RegExp),
-    supportsObject,
-  };
-});
+export { rep, supportsObject };
