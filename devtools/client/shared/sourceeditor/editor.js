@@ -64,6 +64,12 @@ loader.lazyRequireGetter(
   "resource://devtools/client/shared/sourceeditor/scope-utils.js"
 );
 
+loader.lazyRequireGetter(
+  this,
+  "lezerUtils",
+  "resource://devtools/client/shared/sourceeditor/lezer-utils.js"
+);
+
 const { OS } = Services.appinfo;
 
 
@@ -161,15 +167,6 @@ class Editor extends EventEmitter {
     text: { name: "text" },
     vs: { name: "x-shader/x-vertex" },
     wasm: { name: "wasm" },
-  };
-
-  static #symbolTypes = {
-    functions: new Set([
-      "FunctionExpression",
-      "FunctionDeclaration",
-      "ArrowFunction",
-      "MethodDeclaration",
-    ]),
   };
 
   container = null;
@@ -2180,28 +2177,17 @@ class Editor extends EventEmitter {
 
   async findBestMatchExpressions(tokenLocation) {
     const cm = editors.get(this);
-    const {
-      codemirrorLanguage: { syntaxTree },
-    } = this.#CodeMirror6;
+    const { codemirrorLanguage } = this.#CodeMirror6;
 
-    function matchPosition(node, position) {
-      return node.from <= position && node.to >= position;
-    }
     const expressions = [];
-    const symbolTypes = new Set([
-      "MemberExpression",
-      "VariableDefinition",
-      "VariableName",
-      "this",
-      "PropertyName",
-    ]);
 
     const line = cm.state.doc.line(tokenLocation.line);
     const tokPos = line.from + tokenLocation.column;
 
-    await syntaxTree(cm.state).iterate({
-      enter: node => {
-        if (symbolTypes.has(node.name) && matchPosition(node, tokPos)) {
+    await lezerUtils.walkTree(cm, codemirrorLanguage, {
+      filterSet: lezerUtils.nodeTypeSets.expressions,
+      enterVisitor: node => {
+        if (node.from <= tokPos && node.to >= tokPos) {
           expressions.push({
             type: node.name,
             
@@ -2216,8 +2202,8 @@ class Editor extends EventEmitter {
           });
         }
       },
-      from: line.from,
-      to: line.to,
+      walkFrom: line.from,
+      walkTo: line.to,
     });
 
     
@@ -2257,9 +2243,7 @@ class Editor extends EventEmitter {
 
   async getInScopeLines(location) {
     const cm = editors.get(this);
-    const {
-      codemirrorLanguage: { syntaxTree, forceParsing },
-    } = this.#CodeMirror6;
+    const { codemirrorLanguage } = this.#CodeMirror6;
 
     
     function posToLine(view, pos) {
@@ -2268,20 +2252,17 @@ class Editor extends EventEmitter {
     }
 
     const functionLocations = [];
-    
-    
-    
-    await forceParsing(cm, cm.viewport.to, 10000);
-    await syntaxTree(cm.state).iterate({
-      enter: node => {
-        if (Editor.#symbolTypes.functions.has(node.name)) {
-          functionLocations.push({
-            name: node.name,
-            startLine: posToLine(cm, node.from),
-            endLine: posToLine(cm, node.to),
-          });
-        }
+
+    await lezerUtils.walkTree(cm, codemirrorLanguage, {
+      filterSet: lezerUtils.nodeTypeSets.functions,
+      enterVisitor: node => {
+        functionLocations.push({
+          name: node.name,
+          startLine: posToLine(cm, node.from),
+          endLine: posToLine(cm, node.to),
+        });
       },
+      forceParseTo: cm.viewport.to,
     });
 
     
