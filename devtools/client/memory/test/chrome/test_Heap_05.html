@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+Test that we show a message when the census results are empty.
+-->
 <head>
     <meta charset="utf-8">
     <title>Tree component test</title>
@@ -75,7 +75,7 @@
                parentMap: Object.create(null),
                display: censusDisplays.allocationStack,
                filter: null,
-               expanded: new Immutable.Set(),
+               expanded: new Set(),
                focused: null,
                state: censusState.SAVED,
              };
