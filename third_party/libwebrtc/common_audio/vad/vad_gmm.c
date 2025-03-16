@@ -36,8 +36,8 @@ int32_t WebRtcVad_GaussianProbability(int16_t input,
   
   
   
-  tmp32 = (int32_t) 131072 + (int32_t) (std >> 1);
-  inv_std = (int16_t) WebRtcSpl_DivW32W16(tmp32, std);
+  tmp32 = (int32_t)131072 + (int32_t)(std >> 1);
+  inv_std = (int16_t)WebRtcSpl_DivW32W16(tmp32, std);
 
   
   tmp16 = (inv_std >> 2);  

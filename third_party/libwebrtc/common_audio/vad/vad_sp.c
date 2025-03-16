@@ -10,15 +10,15 @@
 
 #include "common_audio/vad/vad_sp.h"
 
-#include "rtc_base/checks.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "common_audio/vad/vad_core.h"
+#include "rtc_base/checks.h"
 
 
 
-static const int16_t kAllPassCoefsQ13[2] = { 5243, 1392 };  
-static const int16_t kSmoothingDown = 6553;  
-static const int16_t kSmoothingUp = 32439;  
+static const int16_t kAllPassCoefsQ13[2] = {5243, 1392};  
+static const int16_t kSmoothingDown = 6553;               
+static const int16_t kSmoothingUp = 32439;                
 
 
 
@@ -36,14 +36,14 @@ void WebRtcVad_Downsampling(const int16_t* signal_in,
   
   for (n = 0; n < half_length; n++) {
     
-    tmp16_1 = (int16_t) ((tmp32_1 >> 1) +
-        ((kAllPassCoefsQ13[0] * *signal_in) >> 14));
+    tmp16_1 =
+        (int16_t)((tmp32_1 >> 1) + ((kAllPassCoefsQ13[0] * *signal_in) >> 14));
     *signal_out = tmp16_1;
     tmp32_1 = (int32_t)(*signal_in++) - ((kAllPassCoefsQ13[0] * tmp16_1) >> 12);
 
     
-    tmp16_2 = (int16_t) ((tmp32_2 >> 1) +
-        ((kAllPassCoefsQ13[1] * *signal_in) >> 14));
+    tmp16_2 =
+        (int16_t)((tmp32_2 >> 1) + ((kAllPassCoefsQ13[1] * *signal_in) >> 14));
     *signal_out++ += tmp16_2;
     tmp32_2 = (int32_t)(*signal_in++) - ((kAllPassCoefsQ13[1] * tmp16_2) >> 12);
   }
@@ -170,7 +170,7 @@ int16_t WebRtcVad_FindMinimum(VadInstT* self,
   tmp32 = (alpha + 1) * self->mean_value[channel];
   tmp32 += (WEBRTC_SPL_WORD16_MAX - alpha) * current_median;
   tmp32 += 16384;
-  self->mean_value[channel] = (int16_t) (tmp32 >> 15);
+  self->mean_value[channel] = (int16_t)(tmp32 >> 15);
 
   return self->mean_value[channel];
 }

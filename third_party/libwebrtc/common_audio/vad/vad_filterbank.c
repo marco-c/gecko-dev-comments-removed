@@ -10,39 +10,40 @@
 
 #include "common_audio/vad/vad_filterbank.h"
 
-#include "rtc_base/checks.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "rtc_base/checks.h"
 
 
-static const int16_t kLogConst = 24660;  
+static const int16_t kLogConst = 24660;          
 static const int16_t kLogEnergyIntPart = 14336;  
 
 
-static const int16_t kHpZeroCoefs[3] = { 6631, -13262, 6631 };
-static const int16_t kHpPoleCoefs[3] = { 16384, -7756, 5620 };
+static const int16_t kHpZeroCoefs[3] = {6631, -13262, 6631};
+static const int16_t kHpPoleCoefs[3] = {16384, -7756, 5620};
 
 
 
-static const int16_t kAllPassCoefsQ15[2] = { 20972, 5571 };
+static const int16_t kAllPassCoefsQ15[2] = {20972, 5571};
 
 
-static const int16_t kOffsetVector[6] = { 368, 368, 272, 176, 176, 176 };
-
-
-
-
+static const int16_t kOffsetVector[6] = {368, 368, 272, 176, 176, 176};
 
 
 
 
 
-static void HighPassFilter(const int16_t* data_in, size_t data_length,
-                           int16_t* filter_state, int16_t* data_out) {
+
+
+
+
+static void HighPassFilter(const int16_t* data_in,
+                           size_t data_length,
+                           int16_t* filter_state,
+                           int16_t* data_out) {
   size_t i;
   const int16_t* in_ptr = data_in;
   int16_t* out_ptr = data_out;
   int32_t tmp32 = 0;
-
 
   
   
@@ -64,7 +65,7 @@ static void HighPassFilter(const int16_t* data_in, size_t data_length,
     tmp32 -= kHpPoleCoefs[1] * filter_state[2];
     tmp32 -= kHpPoleCoefs[2] * filter_state[3];
     filter_state[3] = filter_state[2];
-    filter_state[2] = (int16_t) (tmp32 >> 14);
+    filter_state[2] = (int16_t)(tmp32 >> 14);
     *out_ptr++ = filter_state[2];
   }
 }
@@ -78,8 +79,10 @@ static void HighPassFilter(const int16_t* data_in, size_t data_length,
 
 
 
-static void AllPassFilter(const int16_t* data_in, size_t data_length,
-                          int16_t filter_coefficient, int16_t* filter_state,
+static void AllPassFilter(const int16_t* data_in,
+                          size_t data_length,
+                          int16_t filter_coefficient,
+                          int16_t* filter_state,
                           int16_t* data_out) {
   
   
@@ -90,18 +93,18 @@ static void AllPassFilter(const int16_t* data_in, size_t data_length,
   size_t i;
   int16_t tmp16 = 0;
   int32_t tmp32 = 0;
-  int32_t state32 = ((int32_t) (*filter_state) * (1 << 16));  
+  int32_t state32 = ((int32_t)(*filter_state) * (1 << 16));  
 
   for (i = 0; i < data_length; i++) {
     tmp32 = state32 + filter_coefficient * *data_in;
-    tmp16 = (int16_t) (tmp32 >> 16);  
+    tmp16 = (int16_t)(tmp32 >> 16);  
     *data_out++ = tmp16;
     state32 = (*data_in * (1 << 14)) - filter_coefficient * tmp16;  
-    state32 *= 2;  
+    state32 *= 2;                                                   
     data_in += 2;
   }
 
-  *filter_state = (int16_t) (state32 >> 16);  
+  *filter_state = (int16_t)(state32 >> 16);  
 }
 
 
@@ -115,9 +118,12 @@ static void AllPassFilter(const int16_t* data_in, size_t data_length,
 
 
 
-static void SplitFilter(const int16_t* data_in, size_t data_length,
-                        int16_t* upper_state, int16_t* lower_state,
-                        int16_t* hp_data_out, int16_t* lp_data_out) {
+static void SplitFilter(const int16_t* data_in,
+                        size_t data_length,
+                        int16_t* upper_state,
+                        int16_t* lower_state,
+                        int16_t* hp_data_out,
+                        int16_t* lp_data_out) {
   size_t i;
   size_t half_length = data_length >> 1;  
   int16_t tmp_out;
@@ -149,8 +155,10 @@ static void SplitFilter(const int16_t* data_in, size_t data_length,
 
 
 
-static void LogOfEnergy(const int16_t* data_in, size_t data_length,
-                        int16_t offset, int16_t* total_energy,
+static void LogOfEnergy(const int16_t* data_in,
+                        size_t data_length,
+                        int16_t offset,
+                        int16_t* total_energy,
                         int16_t* log_energy) {
   
   int tot_rshifts = 0;
@@ -161,8 +169,8 @@ static void LogOfEnergy(const int16_t* data_in, size_t data_length,
   RTC_DCHECK(data_in);
   RTC_DCHECK_GT(data_length, 0);
 
-  energy = (uint32_t) WebRtcSpl_Energy((int16_t*) data_in, data_length,
-                                       &tot_rshifts);
+  energy =
+      (uint32_t)WebRtcSpl_Energy((int16_t*)data_in, data_length, &tot_rshifts);
 
   if (energy != 0) {
     
@@ -205,12 +213,12 @@ static void LogOfEnergy(const int16_t* data_in, size_t data_length,
     
 
     
-    log2_energy += (int16_t) ((energy & 0x00003FFF) >> 4);
+    log2_energy += (int16_t)((energy & 0x00003FFF) >> 4);
 
     
     
     *log_energy = (int16_t)(((kLogConst * log2_energy) >> 19) +
-        ((tot_rshifts * kLogConst) >> 9));
+                            ((tot_rshifts * kLogConst) >> 9));
 
     if (*log_energy < 0) {
       *log_energy = 0;
@@ -235,13 +243,15 @@ static void LogOfEnergy(const int16_t* data_in, size_t data_length,
       
       
       
-      *total_energy += (int16_t) (energy >> -tot_rshifts);  
+      *total_energy += (int16_t)(energy >> -tot_rshifts);  
     }
   }
 }
 
-int16_t WebRtcVad_CalculateFeatures(VadInstT* self, const int16_t* data_in,
-                                    size_t data_length, int16_t* features) {
+int16_t WebRtcVad_CalculateFeatures(VadInstT* self,
+                                    const int16_t* data_in,
+                                    size_t data_length,
+                                    int16_t* features) {
   int16_t total_energy = 0;
   
   
@@ -256,8 +266,8 @@ int16_t WebRtcVad_CalculateFeatures(VadInstT* self, const int16_t* data_in,
   
   int frequency_band = 0;
   const int16_t* in_ptr = data_in;  
-  int16_t* hp_out_ptr = hp_120;  
-  int16_t* lp_out_ptr = lp_120;  
+  int16_t* hp_out_ptr = hp_120;     
+  int16_t* lp_out_ptr = lp_120;     
 
   RTC_DCHECK_LE(data_length, 240);
   RTC_DCHECK_LT(4, kNumChannels - 1);  
@@ -268,7 +278,7 @@ int16_t WebRtcVad_CalculateFeatures(VadInstT* self, const int16_t* data_in,
 
   
   frequency_band = 1;
-  in_ptr = hp_120;  
+  in_ptr = hp_120;     
   hp_out_ptr = hp_60;  
   lp_out_ptr = lp_60;  
   SplitFilter(in_ptr, length, &self->upper_state[frequency_band],
@@ -284,9 +294,9 @@ int16_t WebRtcVad_CalculateFeatures(VadInstT* self, const int16_t* data_in,
 
   
   frequency_band = 2;
-  in_ptr = lp_120;  
-  hp_out_ptr = hp_60;  
-  lp_out_ptr = lp_60;  
+  in_ptr = lp_120;            
+  hp_out_ptr = hp_60;         
+  lp_out_ptr = lp_60;         
   length = half_data_length;  
   SplitFilter(in_ptr, length, &self->upper_state[frequency_band],
               &self->lower_state[frequency_band], hp_out_ptr, lp_out_ptr);
@@ -297,7 +307,7 @@ int16_t WebRtcVad_CalculateFeatures(VadInstT* self, const int16_t* data_in,
 
   
   frequency_band = 3;
-  in_ptr = lp_60;  
+  in_ptr = lp_60;       
   hp_out_ptr = hp_120;  
   lp_out_ptr = lp_120;  
   SplitFilter(in_ptr, length, &self->upper_state[frequency_band],
@@ -309,7 +319,7 @@ int16_t WebRtcVad_CalculateFeatures(VadInstT* self, const int16_t* data_in,
 
   
   frequency_band = 4;
-  in_ptr = lp_120;  
+  in_ptr = lp_120;     
   hp_out_ptr = hp_60;  
   lp_out_ptr = lp_60;  
   SplitFilter(in_ptr, length, &self->upper_state[frequency_band],
