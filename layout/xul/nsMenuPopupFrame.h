@@ -49,18 +49,18 @@ enum ConsumeOutsideClicksResult {
 
 
 
-enum FlipStyle {
-  FlipStyle_None = 0,
-  FlipStyle_Outside = 1,
-  FlipStyle_Inside = 2
+enum class FlipStyle {
+  None = 0,
+  Outside = 1,
+  Inside = 2,
 };
 
 
-enum FlipType {
-  FlipType_Default = 0,
-  FlipType_None = 1,  
-  FlipType_Both = 2,  
-  FlipType_Slide = 3  
+enum class FlipType {
+  Default = 0,
+  None = 1,   
+  Both = 2,   
+  Slide = 3,  
 };
 
 enum class MenuPopupAnchorType : uint8_t {
@@ -618,7 +618,7 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   int8_t mPopupAnchor = POPUPALIGNMENT_NONE;
   int8_t mPosition = POPUPPOSITION_UNKNOWN;
 
-  FlipType mFlip = FlipType_Default;  
+  FlipType mFlip = FlipType::Default;  
 
   
   
