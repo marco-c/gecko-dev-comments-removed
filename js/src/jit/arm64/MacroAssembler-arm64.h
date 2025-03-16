@@ -620,9 +620,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
       Cbnz(dest32, &nonzero);
       
       Fmov(dest32, fsrc);
-      Cmp(dest32, xzr);
+      Cmp(dest32, wzr);
       B(fail, Assembler::Signed);
-      Mov(dest32, xzr);
+      Mov(dest32, wzr);
       bind(&nonzero);
     }
     Uxtw(dest64, dest64);
