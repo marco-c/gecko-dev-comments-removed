@@ -4410,12 +4410,20 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertLineBreak(
            EditorUtils::IsNewLinePreformatted(aContent);
   };
 
+  
+  
+  
+  
+  
+  const bool canNormalizeWhiteSpaces = mInitSucceeded;
+
   if (!aPointToInsert.IsInTextNode()) {
     if (NS_WARN_IF(
             !CanInsertLineBreak(*aPointToInsert.ContainerAs<nsIContent>()))) {
       return Err(NS_ERROR_FAILURE);
     }
-    if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
+    if (!canNormalizeWhiteSpaces ||
+        !StaticPrefs::editor_white_space_normalization_blink_compatible()) {
       return aPointToInsert;
     }
     Result<EditorDOMPoint, nsresult> pointToInsertOrError =
@@ -4439,7 +4447,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertLineBreak(
   }
 
   Result<EditorDOMPoint, nsresult> pointToInsertOrError =
-      StaticPrefs::editor_white_space_normalization_blink_compatible()
+      canNormalizeWhiteSpaces &&
+              StaticPrefs::editor_white_space_normalization_blink_compatible()
           ? WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
                 *this, aPointToInsert,
                 {WhiteSpaceVisibilityKeeper::NormalizeOption::
