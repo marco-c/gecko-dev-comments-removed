@@ -44,18 +44,6 @@ __wptrunner__ = {"product": "chrome",
 from ..wpttest import Test
 
 
-def debug_args(debug_info):
-    if debug_info.interactive:
-        
-        
-        return [
-            "--no-sandbox",
-            "--disable-hang-monitor",
-            "--wait-for-debugger-on-navigation",
-        ]
-    return []
-
-
 def check_args(**kwargs):
     require_arg(kwargs, "webdriver_binary")
 
@@ -92,6 +80,11 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data, subsuite
     chrome_options = capabilities["goog:chromeOptions"]
     if kwargs["binary"] is not None:
         chrome_options["binary"] = kwargs["binary"]
+    if kwargs["debug_test"]:
+        
+        
+        
+        chrome_options["quitGracefully"] = True
 
     
     
@@ -182,13 +175,12 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data, subsuite
         chrome_options["args"].extend(["--enable-experimental-web-platform-features"])
 
     
-    for arg in kwargs.get("binary_args", []):
+    
+    binary_args = kwargs.get("binary_args", []) + subsuite.config.get("binary_args", [])
+    for arg in binary_args:
         if arg not in chrome_options["args"]:
             chrome_options["args"].append(arg)
 
-    for arg in subsuite.config.get("binary_args", []):
-        if arg not in chrome_options["args"]:
-            chrome_options["args"].append(arg)
 
     
     

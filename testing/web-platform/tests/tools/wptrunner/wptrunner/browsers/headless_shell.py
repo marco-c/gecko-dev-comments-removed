@@ -2,7 +2,7 @@
 
 from .base import require_arg
 from .base import get_timeout_multiplier   
-from .chrome import ChromeBrowser, debug_args  
+from .chrome import ChromeBrowser  
 from .chrome import executor_kwargs as chrome_executor_kwargs
 from ..executors.base import WdspecExecutor  
 from ..executors.executorchrome import (  
