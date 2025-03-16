@@ -23,9 +23,9 @@ RTC_OBJC_EXPORT
 (RTCVideoViewShading)<NSObject>
 
     
-    - (void)applyShadingForFrameWithWidth : (int)width height : (int)height rotation
-    : (RTCVideoRotation)rotation yPlane : (GLuint)yPlane uPlane : (GLuint)uPlane vPlane
-    : (GLuint)vPlane;
+    - (void)applyShadingForFrameWithWidth : (int)width height
+    : (int)height rotation : (RTCVideoRotation)rotation yPlane
+    : (GLuint)yPlane uPlane : (GLuint)uPlane vPlane : (GLuint)vPlane;
 
 
 - (void)applyShadingForFrameWithWidth:(int)width

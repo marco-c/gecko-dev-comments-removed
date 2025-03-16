@@ -39,7 +39,8 @@ RTC_OBJC_EXPORT
 
 + (instancetype)webRTCConfiguration;
 
-+ (void)setWebRTCConfiguration:(RTC_OBJC_TYPE(RTCAudioSessionConfiguration) *)configuration;
++ (void)setWebRTCConfiguration:
+    (RTC_OBJC_TYPE(RTCAudioSessionConfiguration) *)configuration;
 
 @end
 

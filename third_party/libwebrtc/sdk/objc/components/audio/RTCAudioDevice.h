@@ -37,7 +37,8 @@ typedef OSStatus (^RTC_OBJC_TYPE(RTCAudioDeviceDeliverRecordedDataBlock))(
     UInt32 frameCount,
     const AudioBufferList *_Nullable inputData,
     void *_Nullable renderContext,
-    NS_NOESCAPE RTC_OBJC_TYPE(RTCAudioDeviceRenderRecordedDataBlock) _Nullable renderBlock);
+    NS_NOESCAPE RTC_OBJC_TYPE(
+        RTCAudioDeviceRenderRecordedDataBlock) _Nullable renderBlock);
 
 
 
@@ -57,8 +58,11 @@ RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE
 
 
 
+
+
     @property(readonly, nonnull)
-        RTC_OBJC_TYPE(RTCAudioDeviceDeliverRecordedDataBlock) deliverRecordedData;
+        RTC_OBJC_TYPE(RTCAudioDeviceDeliverRecordedDataBlock)
+            deliverRecordedData;
 
 
 
@@ -88,7 +92,12 @@ RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE
 
 
 
-@property(readonly, nonnull) RTC_OBJC_TYPE(RTCAudioDeviceGetPlayoutDataBlock) getPlayoutData;
+
+
+@property(readonly, nonnull) RTC_OBJC_TYPE(RTCAudioDeviceGetPlayoutDataBlock)
+    getPlayoutData;
+
+
 
 
 
@@ -106,6 +115,8 @@ RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE
 
 
 
+
+
 - (void)notifyAudioOutputParametersChange;
 
 
@@ -114,7 +125,9 @@ RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE
 
 
 
+
 - (void)notifyAudioInputInterrupted;
+
 
 
 
@@ -150,9 +163,13 @@ RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE
 
 
 
+
 - (void)dispatchSync:(dispatch_block_t)block;
 
 @end
+
+
+
 
 
 
@@ -177,7 +194,9 @@ RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE
 
 
 
+
 @property(readonly) NSTimeInterval inputIOBufferDuration;
+
 
 
 
@@ -194,13 +213,16 @@ RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE
 
 
 
+
 @property(readonly) double deviceOutputSampleRate;
 
 
 
 
 
+
 @property(readonly) NSTimeInterval outputIOBufferDuration;
+
 
 
 
@@ -218,19 +240,23 @@ RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE
 
 
 
+
 @property(readonly) BOOL isInitialized;
 
 
 
 
 
-- (BOOL)initializeWithDelegate:(id<RTC_OBJC_TYPE(RTCAudioDeviceDelegate)>)delegate;
+
+- (BOOL)initializeWithDelegate:
+    (id<RTC_OBJC_TYPE(RTCAudioDeviceDelegate)>)delegate;
 
 
 
 
 
 - (BOOL)terminateDevice;
+
 
 
 
@@ -266,6 +292,7 @@ RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE
 
 
 - (BOOL)stopPlayout;
+
 
 
 

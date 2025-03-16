@@ -15,8 +15,9 @@
 
 
 typedef NS_ENUM(NSUInteger, RTCH264PacketizationMode) {
-  RTCH264PacketizationModeNonInterleaved = 0,  
-  RTCH264PacketizationModeSingleNalUnit        
+  RTCH264PacketizationModeNonInterleaved =
+      0,                                 
+  RTCH264PacketizationModeSingleNalUnit  
 };
 
 RTC_OBJC_EXPORT

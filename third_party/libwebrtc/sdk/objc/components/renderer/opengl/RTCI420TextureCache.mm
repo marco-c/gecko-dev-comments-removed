@@ -30,6 +30,7 @@ static const GLsizei kNumTextures = kNumTexturesPerSet * kNumTextureSets;
   
   GLuint _textures[kNumTextures];
   
+  
   std::vector<uint8_t> _planeBuffer;
 }
 
@@ -81,7 +82,7 @@ static const GLsizei kNumTextures = kNumTexturesPerSet * kNumTextureSets;
 
   const uint8_t *uploadPlane = plane;
   if ((size_t)stride != width) {
-   if (_hasUnpackRowLength) {
+    if (_hasUnpackRowLength) {
       
       glPixelStorei(GL_UNPACK_ROW_LENGTH, stride);
       glTexImage2D(GL_TEXTURE_2D,

@@ -50,33 +50,82 @@ static inline void getCubeVertexData(int cropX,
 
   
   
+  
   switch (rotation) {
     case RTCVideoRotation_0: {
-      float values[16] = {-1.0, -1.0, cropLeft, cropBottom,
-                           1.0, -1.0, cropRight, cropBottom,
-                          -1.0,  1.0, cropLeft, cropTop,
-                           1.0,  1.0, cropRight, cropTop};
+      float values[16] = {-1.0,
+                          -1.0,
+                          cropLeft,
+                          cropBottom,
+                          1.0,
+                          -1.0,
+                          cropRight,
+                          cropBottom,
+                          -1.0,
+                          1.0,
+                          cropLeft,
+                          cropTop,
+                          1.0,
+                          1.0,
+                          cropRight,
+                          cropTop};
       memcpy(buffer, &values, sizeof(values));
     } break;
     case RTCVideoRotation_90: {
-      float values[16] = {-1.0, -1.0, cropRight, cropBottom,
-                           1.0, -1.0, cropRight, cropTop,
-                          -1.0,  1.0, cropLeft, cropBottom,
-                           1.0,  1.0, cropLeft, cropTop};
+      float values[16] = {-1.0,
+                          -1.0,
+                          cropRight,
+                          cropBottom,
+                          1.0,
+                          -1.0,
+                          cropRight,
+                          cropTop,
+                          -1.0,
+                          1.0,
+                          cropLeft,
+                          cropBottom,
+                          1.0,
+                          1.0,
+                          cropLeft,
+                          cropTop};
       memcpy(buffer, &values, sizeof(values));
     } break;
     case RTCVideoRotation_180: {
-      float values[16] = {-1.0, -1.0, cropRight, cropTop,
-                           1.0, -1.0, cropLeft, cropTop,
-                          -1.0,  1.0, cropRight, cropBottom,
-                           1.0,  1.0, cropLeft, cropBottom};
+      float values[16] = {-1.0,
+                          -1.0,
+                          cropRight,
+                          cropTop,
+                          1.0,
+                          -1.0,
+                          cropLeft,
+                          cropTop,
+                          -1.0,
+                          1.0,
+                          cropRight,
+                          cropBottom,
+                          1.0,
+                          1.0,
+                          cropLeft,
+                          cropBottom};
       memcpy(buffer, &values, sizeof(values));
     } break;
     case RTCVideoRotation_270: {
-      float values[16] = {-1.0, -1.0, cropLeft, cropTop,
-                           1.0, -1.0, cropLeft, cropBottom,
-                          -1.0, 1.0, cropRight, cropTop,
-                           1.0, 1.0, cropRight, cropBottom};
+      float values[16] = {-1.0,
+                          -1.0,
+                          cropLeft,
+                          cropTop,
+                          1.0,
+                          -1.0,
+                          cropLeft,
+                          cropBottom,
+                          -1.0,
+                          1.0,
+                          cropRight,
+                          cropTop,
+                          1.0,
+                          1.0,
+                          cropRight,
+                          cropBottom};
       memcpy(buffer, &values, sizeof(values));
     } break;
   }
@@ -102,6 +151,7 @@ static const NSInteger kMaxInflightBuffers = 1;
   
   id<MTLBuffer> _vertexBuffer;
 
+  
   
   int _oldFrameWidth;
   int _oldFrameHeight;
@@ -140,9 +190,10 @@ static const NSInteger kMaxInflightBuffers = 1;
     [self loadAssets];
 
     float vertexBufferArray[16] = {0};
-    _vertexBuffer = [_device newBufferWithBytes:vertexBufferArray
-                                         length:sizeof(vertexBufferArray)
-                                        options:MTLResourceCPUCacheModeWriteCombined];
+    _vertexBuffer =
+        [_device newBufferWithBytes:vertexBufferArray
+                             length:sizeof(vertexBufferArray)
+                            options:MTLResourceCPUCacheModeWriteCombined];
     success = YES;
   }
   return success;
@@ -158,7 +209,8 @@ static const NSInteger kMaxInflightBuffers = 1;
   return nil;
 }
 
-- (void)uploadTexturesToRenderEncoder:(id<MTLRenderCommandEncoder>)renderEncoder {
+- (void)uploadTexturesToRenderEncoder:
+    (id<MTLRenderCommandEncoder>)renderEncoder {
   RTC_DCHECK_NOTREACHED() << "Virtual method not implemented in subclass.";
 }
 
@@ -201,8 +253,8 @@ static const NSInteger kMaxInflightBuffers = 1;
 
   
   if (cropX != _oldCropX || cropY != _oldCropY || cropWidth != _oldCropWidth ||
-      cropHeight != _oldCropHeight || rotation != _oldRotation || frameWidth != _oldFrameWidth ||
-      frameHeight != _oldFrameHeight) {
+      cropHeight != _oldCropHeight || rotation != _oldRotation ||
+      frameWidth != _oldFrameWidth || frameHeight != _oldFrameHeight) {
     getCubeVertexData(cropX,
                       cropY,
                       cropWidth,
@@ -239,8 +291,9 @@ static const NSInteger kMaxInflightBuffers = 1;
   NSError *libraryError = nil;
   NSString *shaderSource = [self shaderSource];
 
-  id<MTLLibrary> sourceLibrary =
-      [_device newLibraryWithSource:shaderSource options:NULL error:&libraryError];
+  id<MTLLibrary> sourceLibrary = [_device newLibraryWithSource:shaderSource
+                                                       options:NULL
+                                                         error:&libraryError];
 
   if (libraryError) {
     RTCLogError(@"Metal: Library with source failed\n%@", libraryError);
@@ -257,17 +310,22 @@ static const NSInteger kMaxInflightBuffers = 1;
 }
 
 - (void)loadAssets {
-  id<MTLFunction> vertexFunction = [_defaultLibrary newFunctionWithName:vertexFunctionName];
-  id<MTLFunction> fragmentFunction = [_defaultLibrary newFunctionWithName:fragmentFunctionName];
+  id<MTLFunction> vertexFunction =
+      [_defaultLibrary newFunctionWithName:vertexFunctionName];
+  id<MTLFunction> fragmentFunction =
+      [_defaultLibrary newFunctionWithName:fragmentFunctionName];
 
-  MTLRenderPipelineDescriptor *pipelineDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
+  MTLRenderPipelineDescriptor *pipelineDescriptor =
+      [[MTLRenderPipelineDescriptor alloc] init];
   pipelineDescriptor.label = pipelineDescriptorLabel;
   pipelineDescriptor.vertexFunction = vertexFunction;
   pipelineDescriptor.fragmentFunction = fragmentFunction;
   pipelineDescriptor.colorAttachments[0].pixelFormat = _view.colorPixelFormat;
   pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatInvalid;
   NSError *error = nil;
-  _pipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineDescriptor error:&error];
+  _pipelineState =
+      [_device newRenderPipelineStateWithDescriptor:pipelineDescriptor
+                                              error:&error];
 
   if (!_pipelineState) {
     RTCLogError(@"Metal: Failed to create pipeline state. %@", error);
@@ -284,7 +342,8 @@ static const NSInteger kMaxInflightBuffers = 1;
     dispatch_semaphore_signal(block_semaphore);
   }];
 
-  MTLRenderPassDescriptor *renderPassDescriptor = _view.currentRenderPassDescriptor;
+  MTLRenderPassDescriptor *renderPassDescriptor =
+      _view.currentRenderPassDescriptor;
   if (renderPassDescriptor) {  
     id<MTLRenderCommandEncoder> renderEncoder =
         [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];

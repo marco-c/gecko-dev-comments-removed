@@ -54,6 +54,7 @@ constexpr SupportedH264Profile kH264MaxSupportedProfiles[] = {
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
 
     {"iPhone12,8", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPhone12,5", 
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
@@ -112,51 +113,73 @@ constexpr SupportedH264Profile kH264MaxSupportedProfiles[] = {
 
     
     {"iPod9,1", 
+
      {H264Profile::kProfileMain, H264Level::kLevel4_1}},
     {"iPod7,1", 
+
      {H264Profile::kProfileMain, H264Level::kLevel4_1}},
 
     
     {"iPad14,6", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad14,5", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad14,4", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad14,3", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad14,2", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad14,1", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
 
     {"iPad13,19", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad13,18", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad13,17", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad13,16", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad13,11", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad13,10", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad13,9", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad13,8", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad13,7", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad13,6", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad13,5", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad13,4", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad13,2", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad13,1", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
 
     {"iPad12,2", 
@@ -169,37 +192,53 @@ constexpr SupportedH264Profile kH264MaxSupportedProfiles[] = {
     {"iPad11,6", 
      {H264Profile::kProfileHigh, H264Level::kLevel4_1}},
     {"iPad11,4", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel4_1}},
     {"iPad11,3", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel4_1}},
     {"iPad11,2", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel4_1}},
     {"iPad11,1", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel4_1}},
 
     {"iPad8,12", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad8,11", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad8,10", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad8,9", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad8,8", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad8,7", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad8,6", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad8,5", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad8,4", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad8,3", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad8,2", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
     {"iPad8,1", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},
 
     {"iPad7,12", 
@@ -215,8 +254,10 @@ constexpr SupportedH264Profile kH264MaxSupportedProfiles[] = {
     {"iPad7,3", 
      {H264Profile::kProfileHigh, H264Level::kLevel5_1}},
     {"iPad7,2", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_1}},
     {"iPad7,1", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel5_1}},
 
     {"iPad6,12", 
@@ -248,10 +289,13 @@ constexpr SupportedH264Profile kH264MaxSupportedProfiles[] = {
     {"iPad4,7", 
      {H264Profile::kProfileHigh, H264Level::kLevel4_1}},
     {"iPad4,6", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel4_1}},
     {"iPad4,5", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel4_1}},
     {"iPad4,4", 
+
      {H264Profile::kProfileHigh, H264Level::kLevel4_1}},
     {"iPad4,3", 
      {H264Profile::kProfileHigh, H264Level::kLevel4_1}},
@@ -261,22 +305,25 @@ constexpr SupportedH264Profile kH264MaxSupportedProfiles[] = {
      {H264Profile::kProfileHigh, H264Level::kLevel4_1}},
 };
 
-std::optional<H264ProfileLevelId> FindMaxSupportedProfileForDevice(NSString* machineName) {
-  const auto* result =
-      std::find_if(std::begin(kH264MaxSupportedProfiles),
-                   std::end(kH264MaxSupportedProfiles),
-                   [machineName](const SupportedH264Profile& supportedProfile) {
-                     return [machineName isEqualToString:@(supportedProfile.machineName)];
-                   });
+std::optional<H264ProfileLevelId> FindMaxSupportedProfileForDevice(
+    NSString* machineName) {
+  const auto* result = std::find_if(
+      std::begin(kH264MaxSupportedProfiles),
+      std::end(kH264MaxSupportedProfiles),
+      [machineName](const SupportedH264Profile& supportedProfile) {
+        return [machineName isEqualToString:@(supportedProfile.machineName)];
+      });
   if (result != std::end(kH264MaxSupportedProfiles)) {
     return result->profile;
   }
   if ([machineName hasPrefix:@"iPhone"] || [machineName hasPrefix:@"iPad"]) {
-    H264ProfileLevelId fallbackProfile{H264Profile::kProfileHigh, H264Level::kLevel4_1};
+    H264ProfileLevelId fallbackProfile{H264Profile::kProfileHigh,
+                                       H264Level::kLevel4_1};
     return fallbackProfile;
   }
   if ([machineName hasPrefix:@"iPod"]) {
-    H264ProfileLevelId fallbackProfile{H264Profile::kProfileMain, H264Level::kLevel4_1};
+    H264ProfileLevelId fallbackProfile{H264Profile::kProfileMain,
+                                       H264Level::kLevel4_1};
     return fallbackProfile;
   }
   return std::nullopt;

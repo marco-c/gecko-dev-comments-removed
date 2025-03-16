@@ -19,14 +19,16 @@ class AudioSessionObserver;
 
 
 
-@interface RTCNativeAudioSessionDelegateAdapter : NSObject <RTC_OBJC_TYPE (RTCAudioSessionDelegate)>
+@interface RTCNativeAudioSessionDelegateAdapter
+    : NSObject <RTC_OBJC_TYPE (RTCAudioSessionDelegate)>
 
 - (instancetype)init NS_UNAVAILABLE;
 
 
 
 
-- (instancetype)initWithObserver:(webrtc::AudioSessionObserver *)observer NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithObserver:(webrtc::AudioSessionObserver *)observer
+    NS_DESIGNATED_INITIALIZER;
 
 @end
 

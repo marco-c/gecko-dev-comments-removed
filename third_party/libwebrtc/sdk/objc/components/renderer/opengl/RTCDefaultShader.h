@@ -16,6 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
+
 @interface RTCDefaultShader : NSObject <RTC_OBJC_TYPE (RTCVideoViewShading)>
 
 @end

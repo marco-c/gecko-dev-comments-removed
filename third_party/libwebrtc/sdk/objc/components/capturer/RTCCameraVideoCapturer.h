@@ -31,7 +31,8 @@ RTC_OBJC_EXPORT
 
 + (NSArray<AVCaptureDeviceType> *)defaultCaptureDeviceTypes;
 
-+ (NSArray<AVCaptureDeviceFormat *> *)supportedFormatsForDevice:(AVCaptureDevice *)device;
++ (NSArray<AVCaptureDeviceFormat *> *)supportedFormatsForDevice:
+    (AVCaptureDevice *)device;
 
 
 - (FourCharCode)preferredOutputPixelFormat;
@@ -40,12 +41,15 @@ RTC_OBJC_EXPORT
 
 
 
+
 - (void)startCaptureWithDevice:(AVCaptureDevice *)device
                         format:(AVCaptureDeviceFormat *)format
                            fps:(NSInteger)fps
-             completionHandler:(nullable void (^)(NSError *_Nullable))completionHandler;
+             completionHandler:
+                 (nullable void (^)(NSError *_Nullable))completionHandler;
 
-- (void)stopCaptureWithCompletionHandler:(nullable void (^)(void))completionHandler;
+- (void)stopCaptureWithCompletionHandler:
+    (nullable void (^)(void))completionHandler;
 
 
 - (void)startCaptureWithDevice:(AVCaptureDevice *)device
