@@ -21,6 +21,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/TimeoutHandler.h"
 #include "TimeoutExecutor.h"
+#include "TimeoutBudgetManager.h"
 #include "mozilla/net/WebSocketEventService.h"
 #include "mozilla/MediaManager.h"
 #include "mozilla/dom/WorkerScope.h"
@@ -30,14 +31,12 @@ using namespace mozilla::dom;
 
 LazyLogModule gTimeoutLog("Timeout");
 
-TimeoutBudgetManager TimeoutManager::sBudgetManager{};
+static int32_t gRunningTimeoutDepth = 0;
 
 
 const uint32_t TimeoutManager::InvalidFiringId = 0;
 
 namespace {
-static int32_t gRunningTimeoutDepth = 0;
-
 double GetRegenerationFactor(bool aIsBackground) {
   
   
@@ -334,9 +333,8 @@ TimeDuration TimeoutManager::CalculateDelay(Timeout* aTimeout) const {
 
 void TimeoutManager::RecordExecution(Timeout* aRunningTimeout,
                                      Timeout* aTimeout) {
+  TimeoutBudgetManager& budgetManager = TimeoutBudgetManager::Get();
   TimeStamp now = TimeStamp::Now();
-  TimeoutBudgetManager& budgetManager{GetInnerWindow() ? sBudgetManager
-                                                       : mBudgetManager};
 
   if (aRunningTimeout) {
     
@@ -490,12 +488,6 @@ nsresult TimeoutManager::SetTimeout(TimeoutHandler* aHandler, int32_t interval,
     }
   }
 
-  auto scopeExit = MakeScopeExit([&] {
-    if (!mGlobalObject.GetAsInnerWindow() && !HasTimeouts()) {
-      mGlobalObject.TriggerUpdateCCFlag();
-    }
-  });
-
   
   interval = std::max(0, interval);
 
@@ -517,20 +509,13 @@ nsresult TimeoutManager::SetTimeout(TimeoutHandler* aHandler, int32_t interval,
   timeout->mScriptHandler = aHandler;
   timeout->mReason = aReason;
 
-  if (GetInnerWindow()) {
-    
-    timeout->mPopupState = PopupBlocker::openAbused;
-  }
+  
+  timeout->mPopupState = PopupBlocker::openAbused;
 
   
   if (aReason == Timeout::Reason::eTimeoutOrInterval ||
       aReason == Timeout::Reason::eIdleCallbackTimeout) {
-    uint32_t nestingLevel{};
-    if (GetInnerWindow()) {
-      nestingLevel = GetNestingLevelForWindow();
-    } else {
-      nestingLevel = GetNestingLevelForWorker();
-    }
+    const uint32_t nestingLevel{GetNestingLevel()};
     timeout->mNestingLevel =
         nestingLevel < StaticPrefs::dom_clamp_timeout_nesting_level_AtStartup()
             ? nestingLevel + 1
@@ -550,20 +535,18 @@ nsresult TimeoutManager::SetTimeout(TimeoutHandler* aHandler, int32_t interval,
     }
   }
 
-  if (GetInnerWindow()) {
-    if (gRunningTimeoutDepth == 0 &&
-        PopupBlocker::GetPopupControlState() < PopupBlocker::openBlocked) {
-      
-      
-      
-      
+  if (gRunningTimeoutDepth == 0 &&
+      PopupBlocker::GetPopupControlState() < PopupBlocker::openBlocked) {
+    
+    
+    
+    
 
-      
-      
-      
-      if (interval <= StaticPrefs::dom_disable_open_click_delay()) {
-        timeout->mPopupState = PopupBlocker::GetPopupControlState();
-      }
+    
+    
+    
+    if (interval <= StaticPrefs::dom_disable_open_click_delay()) {
+      timeout->mPopupState = PopupBlocker::GetPopupControlState();
     }
   }
 
@@ -1127,18 +1110,14 @@ void TimeoutManager::Timeouts::Insert(Timeout* aTimeout, SortBy aSortBy) {
 Timeout* TimeoutManager::BeginRunningTimeout(Timeout* aTimeout) {
   Timeout* currentTimeout = mRunningTimeout;
   mRunningTimeout = aTimeout;
-  if (GetInnerWindow()) {
-    ++gRunningTimeoutDepth;
-  }
+  ++gRunningTimeoutDepth;
 
   RecordExecution(currentTimeout, aTimeout);
   return currentTimeout;
 }
 
 void TimeoutManager::EndRunningTimeout(Timeout* aTimeout) {
-  if (GetInnerWindow()) {
-    --gRunningTimeoutDepth;
-  }
+  --gRunningTimeoutDepth;
 
   RecordExecution(mRunningTimeout, aTimeout);
   mRunningTimeout = aTimeout;

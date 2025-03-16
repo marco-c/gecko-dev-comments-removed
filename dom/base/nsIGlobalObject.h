@@ -250,8 +250,6 @@ class nsIGlobalObject : public nsISupports {
   
   nsPIDOMWindowInner* GetAsInnerWindow();
 
-  virtual void TriggerUpdateCCFlag() {}
-
   void QueueMicrotask(mozilla::dom::VoidFunction& aCallback);
 
   void RegisterReportingObserver(mozilla::dom::ReportingObserver* aObserver,
