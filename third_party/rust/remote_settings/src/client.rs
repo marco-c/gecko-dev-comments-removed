@@ -74,20 +74,24 @@ struct CollectionData {
 pub struct RemoteSettingsClient<C = ViaductApiClient> {
     
     collection_name: String,
-    #[cfg(feature = "jexl")]
-    jexl_filter: JexlFilter,
     inner: Mutex<RemoteSettingsClientInner<C>>,
 }
 
 struct RemoteSettingsClientInner<C> {
     storage: Storage,
     api_client: C,
+    #[cfg(feature = "jexl")]
+    jexl_filter: JexlFilter,
 }
+
+
+
 
 
 impl<C: ApiClient> RemoteSettingsClient<C> {
     
     packaged_collections! {
+        ("main", "search-config-v2"),
         ("main", "search-telemetry-v2"),
         ("main", "regions"),
     }
@@ -119,11 +123,11 @@ impl<C: ApiClient> RemoteSettingsClient<C> {
     ) -> Self {
         Self {
             collection_name,
-            #[cfg(feature = "jexl")]
-            jexl_filter,
             inner: Mutex::new(RemoteSettingsClientInner {
                 storage,
                 api_client,
+                #[cfg(feature = "jexl")]
+                jexl_filter,
             }),
         }
     }
@@ -145,12 +149,16 @@ impl<C: ApiClient> RemoteSettingsClient<C> {
 
     
     #[cfg(feature = "jexl")]
-    fn filter_records(&self, records: Vec<RemoteSettingsRecord>) -> Vec<RemoteSettingsRecord> {
+    fn filter_records(
+        &self,
+        records: Vec<RemoteSettingsRecord>,
+        inner: &RemoteSettingsClientInner<C>,
+    ) -> Vec<RemoteSettingsRecord> {
         records
             .into_iter()
             .filter(|record| match record.fields.get("filter_expression") {
                 Some(serde_json::Value::String(filter_expr)) => {
-                    self.jexl_filter.evaluate(filter_expr).unwrap_or(false)
+                    inner.jexl_filter.evaluate(filter_expr).unwrap_or(false)
                 }
                 _ => true, 
             })
@@ -158,7 +166,11 @@ impl<C: ApiClient> RemoteSettingsClient<C> {
     }
 
     #[cfg(not(feature = "jexl"))]
-    fn filter_records(&self, records: Vec<RemoteSettingsRecord>) -> Vec<RemoteSettingsRecord> {
+    fn filter_records(
+        &self,
+        records: Vec<RemoteSettingsRecord>,
+        _inner: &RemoteSettingsClientInner<C>,
+    ) -> Vec<RemoteSettingsRecord> {
         records
     }
 
@@ -195,7 +207,7 @@ impl<C: ApiClient> RemoteSettingsClient<C> {
                     packaged_data.timestamp,
                     CollectionMetadata::default(),
                 )?;
-                return Ok(Some(self.filter_records(packaged_data.data)));
+                return Ok(Some(self.filter_records(packaged_data.data, &inner)));
             }
         }
 
@@ -206,7 +218,7 @@ impl<C: ApiClient> RemoteSettingsClient<C> {
             
             
             
-            (Some(cached_records), _) => Some(self.filter_records(cached_records)),
+            (Some(cached_records), _) => Some(self.filter_records(cached_records, &inner)),
             
             (None, true) => {
                 let changeset = inner.api_client.fetch_changeset(None)?;
@@ -216,7 +228,7 @@ impl<C: ApiClient> RemoteSettingsClient<C> {
                     changeset.timestamp,
                     changeset.metadata,
                 )?;
-                Some(self.filter_records(changeset.changes))
+                Some(self.filter_records(changeset.changes, &inner))
             }
             
             (None, false) => None,
@@ -360,9 +372,10 @@ impl<C: ApiClient> RemoteSettingsClient<C> {
 
     
     
-    pub fn get_attachment(&self, record: RemoteSettingsRecord) -> Result<Vec<u8>> {
+    pub fn get_attachment(&self, record: &RemoteSettingsRecord) -> Result<Vec<u8>> {
         let metadata = record
             .attachment
+            .as_ref()
             .ok_or_else(|| Error::RecordAttachmentMismatchError("No attachment metadata".into()))?;
 
         let mut inner = self.inner.lock();
@@ -2415,7 +2428,7 @@ mod test_packaged_metadata {
             fields: serde_json::json!({}).as_object().unwrap().clone(),
         };
 
-        let attachment_data = rs_client.get_attachment(record)?;
+        let attachment_data = rs_client.get_attachment(&record)?;
 
         
         let expected_data = std::fs::read(file_path)?;
@@ -2471,7 +2484,7 @@ mod test_packaged_metadata {
             fields: serde_json::json!({}).as_object().unwrap().clone(),
         };
 
-        let attachment_data = rs_client.get_attachment(record)?;
+        let attachment_data = rs_client.get_attachment(&record)?;
 
         
         assert_eq!(attachment_data, vec![1, 2, 3, 4, 5]);

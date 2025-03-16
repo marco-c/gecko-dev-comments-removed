@@ -340,11 +340,11 @@ impl TabsStorage {
             .into_iter()
             .map(|mut crt| {
                 crt.remote_tabs.retain(|tab| {
+                    
+                    
                     !pending_closures
                         .get(&crt.client_id)
-                        
-                        
-                        .map_or(false, |urls| urls.contains(&tab.url_history[0]))
+                        .is_some_and(|urls| urls.contains(&tab.url_history[0]))
                 });
                 crt
             })

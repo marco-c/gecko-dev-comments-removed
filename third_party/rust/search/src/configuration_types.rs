@@ -59,13 +59,16 @@ pub(crate) struct JSONEngineUrl {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct JSONEngineUrls {
     
-    pub search: JSONEngineUrl,
+    pub search: Option<JSONEngineUrl>,
 
     
     pub suggestions: Option<JSONEngineUrl>,
 
     
     pub trending: Option<JSONEngineUrl>,
+
+    
+    pub search_form: Option<JSONEngineUrl>,
 }
 
 
@@ -81,6 +84,7 @@ pub(crate) struct JSONEngineBase {
     
     
     
+    #[serde(default)]
     pub classification: SearchEngineClassification,
 
     
@@ -182,6 +186,15 @@ pub(crate) struct JSONEngineVariant {
 
     
     pub urls: Option<JSONEngineUrls>,
+
+    
+    
+    
+    
+    
+    
+    #[serde(default)]
+    pub sub_variants: Vec<JSONEngineVariant>,
 }
 
 
@@ -240,11 +253,28 @@ pub(crate) struct JSONDefaultEnginesRecord {
     pub specific_defaults: Vec<JSONSpecificDefaultRecord>,
 }
 
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct JSONEngineOrder {
+    
+    pub environment: JSONVariantEnvironment,
+
+    
+    
+    
+    
+    #[serde(default)]
+    pub order: Vec<String>,
+}
+
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct JSONEngineOrdersRecord {
     
+    
+    
+    pub orders: Vec<JSONEngineOrder>,
 }
 
 

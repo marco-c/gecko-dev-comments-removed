@@ -8,6 +8,8 @@
 
 use error_support::{ErrorHandling, GetErrorHandling};
 
+use remote_settings::RemoteSettingsError;
+
 
 
 
@@ -15,8 +17,12 @@ use error_support::{ErrorHandling, GetErrorHandling};
 pub enum Error {
     #[error("Search configuration not specified")]
     SearchConfigNotSpecified,
+    #[error("No records received from remote settings")]
+    SearchConfigNoRecords,
     #[error("JSON error: {0}")]
     Json(#[from] serde_json::Error),
+    #[error("Remote Settings error: {0}")]
+    RemoteSettings(#[from] RemoteSettingsError),
 }
 
 

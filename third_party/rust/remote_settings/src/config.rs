@@ -10,7 +10,7 @@
 
 use url::Url;
 
-use crate::{ApiResult, Error, Result};
+use crate::{ApiResult, Error, RemoteSettingsContext, Result};
 
 
 
@@ -25,6 +25,9 @@ pub struct RemoteSettingsConfig2 {
     
     #[uniffi(default = None)]
     pub bucket_name: Option<String>,
+    
+    #[uniffi(default = None)]
+    pub app_context: Option<RemoteSettingsContext>,
 }
 
 

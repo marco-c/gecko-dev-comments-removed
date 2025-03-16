@@ -38,6 +38,33 @@ pub fn escape_string_for_pragma(s: &str) -> String {
     s.replace('\'', "''")
 }
 
+
+
+
+pub fn setup_sqlite_defaults(conn: &rusqlite::Connection) -> rusqlite::Result<()> {
+    conn.execute_batch(
+        "
+        PRAGMA temp_store = 2;
+        PRAGMA journal_mode = WAL;
+        ",
+    )?;
+    let page_size: usize = conn.query_row("PRAGMA page_size", (), |row| row.get(0))?;
+    
+    let target_checkpoint_size = 2usize.pow(19);
+    
+    let journal_size_limit = target_checkpoint_size * 3;
+    conn.execute_batch(&format!(
+        "
+        PRAGMA wal_autocheckpoint = {};
+        PRAGMA journal_size_limit = {};
+        ",
+        target_checkpoint_size / page_size,
+        journal_size_limit,
+    ))?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -46,5 +73,22 @@ mod test {
         assert_eq!(escape_string_for_pragma("foobar"), "foobar");
         assert_eq!(escape_string_for_pragma("'foo'bar'"), "''foo''bar''");
         assert_eq!(escape_string_for_pragma("''"), "''''");
+    }
+
+    #[test]
+    fn test_sqlite_defaults() {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        
+        
+        
+        conn.execute("PRAGMA page_size = 8192", ()).unwrap();
+        setup_sqlite_defaults(&conn).unwrap();
+        let autocheckpoint: usize = conn
+            .query_row("PRAGMA wal_autocheckpoint", (), |row| row.get(0))
+            .unwrap();
+        
+        assert_eq!(autocheckpoint, 64);
+        
+        
     }
 }

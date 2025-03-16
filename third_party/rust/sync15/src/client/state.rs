@@ -609,7 +609,7 @@ impl SetupState {
 
 
 fn is_same_timestamp(local: ServerTimestamp, collections: &InfoCollections, key: &str) -> bool {
-    collections.get(key).map_or(false, |ts| local == *ts)
+    collections.get(key).is_some_and(|ts| local == *ts)
 }
 
 #[cfg(test)]

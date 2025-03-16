@@ -92,10 +92,15 @@ pub struct SearchUserEnvironment {
 pub struct SearchUrlParam {
     
     pub name: String,
+
     
     
     
     pub value: Option<String>,
+
+    
+    pub enterprise_value: Option<String>,
+
     
     
     
@@ -134,6 +139,9 @@ pub struct SearchEngineUrls {
 
     
     pub trending: Option<SearchEngineUrl>,
+
+    
+    pub search_form: Option<SearchEngineUrl>,
 }
 
 
@@ -189,7 +197,8 @@ pub struct SearchEngineDefinition {
 
     
     
-    pub telemetry_suffix: Option<String>,
+    
+    pub telemetry_suffix: String,
 
     
     pub urls: SearchEngineUrls,
@@ -199,7 +208,7 @@ pub struct SearchEngineDefinition {
     
     
     
-    pub order_hint: Option<u8>,
+    pub order_hint: Option<u32>,
 }
 
 
