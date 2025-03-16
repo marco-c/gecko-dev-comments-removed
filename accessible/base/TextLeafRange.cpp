@@ -2095,6 +2095,10 @@ bool TextLeafRange::Crop(Accessible* aContainer) {
 
 LayoutDeviceIntRect TextLeafRange::Bounds() const {
   
+  
+  
+  
+  
   LayoutDeviceIntRect result = TextLeafPoint{mStart}.CharBounds();
   const bool succeeded = WalkLineRects(
       [&result](TextLeafRange aLine, LayoutDeviceIntRect aLineRect) {
@@ -2371,19 +2375,31 @@ bool TextLeafRange::WalkLineRects(LineRectCallback aCallback) const {
 
   
   while (!locatedFinalLine) {
-    
-    
-    
-    
     TextLeafPoint nextLineStartPoint = currPoint.FindBoundary(
         nsIAccessibleText::BOUNDARY_LINE_START, eDirNext);
+    
+    
+    
+    MOZ_ASSERT(nextLineStartPoint != currPoint || nextLineStartPoint == mEnd);
+    if (mEnd <= nextLineStartPoint) {
+      
+      
+      nextLineStartPoint = mEnd;
+      locatedFinalLine = true;
+    }
+    
+    
     TextLeafPoint lastPointInLine = nextLineStartPoint.FindBoundary(
         nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
-    
-    
-    if (nextLineStartPoint == currPoint || mEnd <= lastPointInLine) {
-      lastPointInLine = mEnd;
-      locatedFinalLine = true;
+    MOZ_ASSERT(currPoint <= lastPointInLine);
+
+    if (lastPointInLine != currPoint && lastPointInLine.IsLineFeedChar()) {
+      
+      
+      
+      
+      lastPointInLine = lastPointInLine.FindBoundary(
+          nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
     }
 
     LayoutDeviceIntRect currLineRect = currPoint.CharBounds();

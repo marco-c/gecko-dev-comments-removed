@@ -353,6 +353,10 @@ class TextLeafRange final {
 
 
 
+
+
+
+
   using LineRectCallback =
       FunctionRef<void(TextLeafRange, LayoutDeviceIntRect)>;
   bool WalkLineRects(LineRectCallback aCallback) const;

@@ -248,11 +248,6 @@ LayoutDeviceIntRect HyperTextAccessibleBase::TextBounds(int32_t aStartOffset,
     return LayoutDeviceIntRect();
   }
 
-  
-  
-  
-  
-
   TextLeafPoint startPoint =
       ToTextLeafPoint(static_cast<int32_t>(startOffset), false);
   TextLeafPoint endPoint =
@@ -260,14 +255,6 @@ LayoutDeviceIntRect HyperTextAccessibleBase::TextBounds(int32_t aStartOffset,
   if (!endPoint) {
     
     return LayoutDeviceIntRect();
-  }
-
-  
-  
-  endPoint =
-      endPoint.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
-  if (endPoint < startPoint) {
-    return result;
   }
 
   if (endPoint == startPoint) {
