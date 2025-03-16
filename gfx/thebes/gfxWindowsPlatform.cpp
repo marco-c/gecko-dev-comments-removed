@@ -1862,8 +1862,10 @@ class D3DVsyncSource final : public VsyncSource {
             }
           }
         }
-      }
-      if (!SUCCEEDED(hr)) {
+      } else {
+        
+        
+        
         hr = DwmFlush();
       }
       if (!SUCCEEDED(hr)) {
