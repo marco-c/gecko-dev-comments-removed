@@ -49,18 +49,61 @@ function checkWindowChrome(win) {
     !document.hasAttribute("fxatoolbarmenu"),
     "Firefox accounts menu should not be displayed"
   );
+
+  ok(
+    document.hasAttribute("fxadisabled"),
+    "fxadisabled attribute should exist"
+  );
 }
 
 
 
 
-function checkHamburgerMenu(win) {
-  let document = win.document.documentElement;
+async function checkHamburgerMenu(win) {
+  win.document.getElementById("PanelUI-menu-button").click();
+
+  
+  
+  
+  await new Promise(resolve => {
+    const observer = new MutationObserver(() => {
+      const newTabButton = win.document.querySelector(
+        "#appMenu-new-tab-button2"
+      );
+      if (
+        newTabButton &&
+        win.getComputedStyle(newTabButton).display == "none"
+      ) {
+        observer.disconnect();
+        resolve();
+      }
+    });
+
+    observer.observe(win.document, { childList: true, subtree: true });
+  });
 
   is(
-    document.getAttribute("fxadisabled"),
-    "true",
-    "fxadisabled attribute should be true"
+    win.getComputedStyle(
+      win.document.querySelector("#appMenu-new-window-button2")
+    ).display,
+    "none",
+    "New window button in hamburger menu should not be visible"
+  );
+
+  is(
+    win.getComputedStyle(
+      win.document.querySelector("#appMenu-new-private-window-button2")
+    ).display,
+    "none",
+    "New private window button in hamburger menu should not be visible"
+  );
+
+  is(
+    win.getComputedStyle(
+      win.document.querySelector("#appMenu-bookmarks-button")
+    ).display,
+    "none",
+    "Bookmarks button in hamburger menu should not be visible"
   );
 }
 
@@ -68,7 +111,7 @@ add_task(async function testWindowChrome() {
   let win = await openTaskbarTabWindow();
 
   checkWindowChrome(win);
-  checkHamburgerMenu(win);
+  await checkHamburgerMenu(win);
 
   await BrowserTestUtils.closeWindow(win);
 });
