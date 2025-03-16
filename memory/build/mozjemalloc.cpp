@@ -1162,6 +1162,8 @@ uint64_t GetTimestampNS() {
       .count();
 }
 
+enum PurgeCondition { PurgeIfThreshold, PurgeUnconditional };
+
 struct arena_t {
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
   uint32_t mMagic;
@@ -1442,7 +1444,7 @@ struct arena_t {
   
   
   
-  bool Purge(bool aForce = false) MOZ_EXCLUDES(mLock);
+  bool Purge(PurgeCondition aCond) MOZ_EXCLUDES(mLock);
 
   class PurgeInfo {
    private:
@@ -1512,8 +1514,8 @@ struct arena_t {
 
   
   
-  bool ShouldContinuePurge(bool aForce = false) MOZ_REQUIRES(mLock) {
-    return (mNumDirty > ((aForce) ? 0 : mMaxDirty >> 1));
+  bool ShouldContinuePurge(PurgeCondition aCond) MOZ_REQUIRES(mLock) {
+    return (mNumDirty > ((aCond == PurgeUnconditional) ? 0 : mMaxDirty >> 1));
   }
 
   
@@ -1709,7 +1711,7 @@ class ArenaCollection {
       }
     }
     if (ret != aEnable) {
-      MayPurgeAll(false);
+      MayPurgeAll(PurgeIfThreshold);
     }
     return ret;
   }
@@ -1724,7 +1726,7 @@ class ArenaCollection {
       MOZ_EXCLUDES(mPurgeListLock);
 
   
-  void MayPurgeAll(bool aForce);
+  void MayPurgeAll(PurgeCondition aCond);
 
   
   
@@ -3438,7 +3440,7 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
 }
 #endif
 
-bool arena_t::Purge(bool aForce) {
+bool arena_t::Purge(PurgeCondition aCond) {
   arena_chunk_t* chunk;
 
   
@@ -3455,7 +3457,7 @@ bool arena_t::Purge(bool aForce) {
     MOZ_ASSERT(ndirty <= mNumDirty);
 #endif
 
-    if (!ShouldContinuePurge(aForce)) {
+    if (!ShouldContinuePurge(aCond)) {
       mIsDeferredPurgePending = false;
       return false;
     }
@@ -3512,7 +3514,7 @@ bool arena_t::Purge(bool aForce) {
       MOZ_ASSERT(chunk->mIsPurging);
 
       continue_purge_chunk = purge_info.FindDirtyPages(purged_once);
-      continue_purge_arena = purge_info.mArena.ShouldContinuePurge(aForce);
+      continue_purge_arena = purge_info.mArena.ShouldContinuePurge(aCond);
 
       
       
@@ -3552,7 +3554,7 @@ bool arena_t::Purge(bool aForce) {
       auto [cpc, ctr] = purge_info.UpdatePagesAndCounts();
       continue_purge_chunk = cpc;
       chunk_to_release = ctr;
-      continue_purge_arena = purge_info.mArena.ShouldContinuePurge(aForce);
+      continue_purge_arena = purge_info.mArena.ShouldContinuePurge(aCond);
 
       if (!continue_purge_chunk || !continue_purge_arena) {
         
@@ -4717,7 +4719,7 @@ inline void arena_t::MayDoOrQueuePurge(purge_action_t aAction) {
       gArenas.AddToOutstandingPurges(this);
       break;
     case purge_action_t::PurgeNow:
-      while (Purge()) {
+      while (Purge(PurgeIfThreshold)) {
       }
       break;
     case purge_action_t::None:
@@ -5871,13 +5873,13 @@ inline void MozJemalloc::jemalloc_purge_freed_pages() {
 
 inline void MozJemalloc::jemalloc_free_dirty_pages(void) {
   if (malloc_initialized) {
-    gArenas.MayPurgeAll(true);
+    gArenas.MayPurgeAll(PurgeUnconditional);
   }
 }
 
 inline void MozJemalloc::jemalloc_free_excess_dirty_pages(void) {
   if (malloc_initialized) {
-    gArenas.MayPurgeAll(false);
+    gArenas.MayPurgeAll(PurgeIfThreshold);
   }
 }
 
@@ -6047,7 +6049,7 @@ purge_result_t ArenaCollection::MayPurgeSteps(
 
   bool more_pages;
   do {
-    more_pages = found->Purge(false);
+    more_pages = found->Purge(PurgeIfThreshold);
   } while (more_pages && aKeepGoing && (*aKeepGoing)());
 
   if (more_pages) {
@@ -6071,14 +6073,14 @@ purge_result_t ArenaCollection::MayPurgeSteps(
   return purge_result_t::NeedsMore;
 }
 
-void ArenaCollection::MayPurgeAll(bool aForce) {
+void ArenaCollection::MayPurgeAll(PurgeCondition aCond) {
   MutexAutoLock lock(mLock);
   for (auto* arena : iter()) {
     
     
     if (!arena->IsMainThreadOnly() || IsOnMainThreadWeak()) {
       RemoveFromOutstandingPurges(arena);
-      while (arena->Purge(aForce));
+      while (arena->Purge(aCond));
     }
   }
 }
