@@ -1375,7 +1375,7 @@ impl RenderBackend {
         mut frame_ops: Vec<FrameMsg>,
         mut notifications: Vec<NotificationRequest>,
         mut render_frame: bool,
-        present: bool,
+        mut present: bool,
         render_reasons: RenderReasons,
         generated_frame_id: Option<u64>,
         invalidate_rendered_frame: bool,
@@ -1454,6 +1454,14 @@ impl RenderBackend {
         }
 
         if build_frame {
+            if !requested_frame {
+                
+                
+                
+                
+                present = true;
+            }
+
             if start_time.is_some() {
               Telemetry::record_time_to_frame_build(Duration::from_nanos(precise_time_ns() - start_time.unwrap()));
             }
