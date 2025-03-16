@@ -200,8 +200,7 @@ nsresult RemoveProfileFiles(nsIFile* aRootDir, nsIFile* aLocalDir,
   
   if (undeletedFiles.Length() > 0) {
     uint32_t retries = 1;
-    
-    while (undeletedFiles.Length() > 0 && retries <= 1) {
+    while (undeletedFiles.Length() > 0 && retries <= 10) {
       Unused << PR_Sleep(PR_MillisecondsToInterval(10 * retries));
       for (auto&& file :
            std::exchange(undeletedFiles, nsTArray<nsCOMPtr<nsIFile>>{})) {
@@ -213,8 +212,6 @@ nsresult RemoveProfileFiles(nsIFile* aRootDir, nsIFile* aLocalDir,
     }
   }
 
-#ifdef DEBUG
-  
   if (undeletedFiles.Length() > 0) {
     NS_WARNING("Unable to remove all files from the profile directory:");
     
@@ -225,9 +222,7 @@ nsresult RemoveProfileFiles(nsIFile* aRootDir, nsIFile* aLocalDir,
       }
     }
   }
-#endif
-  
-  
+  MOZ_ASSERT(undeletedFiles.Length() == 0);
 
   
   lock->Unlock();
