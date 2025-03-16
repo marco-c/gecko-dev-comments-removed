@@ -516,6 +516,8 @@ void nsHtml5TreeOpExecutor::RunFlushLoop() {
 
   if (mRunFlushLoopOnStack) {
     
+    
+    
     return;
   }
 
@@ -544,18 +546,26 @@ void nsHtml5TreeOpExecutor::RunFlushLoop() {
 
     if (!parserKungFuDeathGrip->IsParserEnabled()) {
       
+      
+      
       return;
     }
 
     if (mFlushState != eNotFlushing) {
       
+      
+      
+      
+      
+      
+      nsHtml5TreeOpExecutor::ContinueInterruptedParsingAsync();
       return;
     }
 
     
     
-    
     if (IsScriptExecuting()) {
+      ContinueParsingDocumentAfterCurrentScript();
       return;
     }
 

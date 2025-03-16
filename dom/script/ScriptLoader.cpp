@@ -207,6 +207,7 @@ ScriptLoader::ScriptLoader(Document* aDocument)
       mBlockingDOMContentLoaded(false),
       mLoadEventFired(false),
       mGiveUpEncoding(false),
+      mContinueParsingDocumentAfterCurrentScript(false),
       mReporter(new ConsoleReportCollector()) {
   LOG(("ScriptLoader::ScriptLoader %p", this));
 
@@ -2722,6 +2723,7 @@ nsresult ScriptLoader::EvaluateScriptElement(ScriptLoadRequest* aRequest) {
       aRequest->GetScriptLoadContext()->GetScriptOwnerDocument();
   if (ownerDoc != mDocument) {
     
+    
     return NS_ERROR_FAILURE;
   }
 
@@ -2748,6 +2750,23 @@ nsresult ScriptLoader::EvaluateScriptElement(ScriptLoadRequest* aRequest) {
 
     globalObject = scriptGlobal;
   }
+
+  
+  
+  
+  
+  
+  auto maybeContinueParser = MakeScopeExit([&] {
+    if (mContinueParsingDocumentAfterCurrentScript) {
+      mContinueParsingDocumentAfterCurrentScript = false;
+      if (mDocument) {
+        nsCOMPtr<nsIParser> parser = mDocument->CreatorParserOrNull();
+        if (parser) {
+          parser->ContinueInterruptedParsingAsync();
+        }
+      }
+    }
+  });
 
   
   
