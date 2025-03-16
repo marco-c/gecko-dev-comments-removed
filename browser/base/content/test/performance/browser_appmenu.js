@@ -29,8 +29,13 @@ add_task(async function () {
   await disableFxaBadge();
 
   
+  
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.waitForCondition(
+    () =>
+      document.getElementById("searchmode-switcher-icon").style.listStyleImage
+  );
 
   let textBoxRect = gURLBar
     .querySelector("moz-input-box")
