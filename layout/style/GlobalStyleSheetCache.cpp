@@ -393,7 +393,7 @@ void GlobalStyleSheetCache::InitSharedSheetsInParent() {
 
   
   
-  auto readOnlyHandle = std::move(mapping).Freeze();
+  auto [_, readOnlyHandle] = std::move(mapping).Freeze();
   if (NS_WARN_IF(!readOnlyHandle)) {
     return;
   }
