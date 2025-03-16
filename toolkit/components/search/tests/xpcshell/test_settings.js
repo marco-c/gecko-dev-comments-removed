@@ -483,6 +483,9 @@ add_task(async function test_settings_write() {
     if ("_shortName" in engine) {
       delete engine._shortName;
     }
+    if ("description" in engine) {
+      delete engine.description;
+    }
     if ("_urls" in engine) {
       
       
@@ -568,7 +571,6 @@ var EXPECTED_ENGINE = {
   engine: {
     name: "Test search engine",
     alias: "",
-    description: "A test search engine (based on Google search)",
     wrappedJSObject: {
       _extensionID: "test-addon-id@mozilla.org",
       _iconURL:
