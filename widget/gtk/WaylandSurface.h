@@ -243,10 +243,6 @@ class WaylandSurface final {
       const WaylandSurfaceLock& aProofOfLock,
       const std::function<void(void)>& aGdkCommitCB);
   void ClearGdkCommitCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
-  void RequestFrameCallbackForceCommitLocked(
-      const WaylandSurfaceLock& aProofOfLock) {
-    mFrameCallbackForceCommit = true;
-  }
 
   RefPtr<DMABufFormats> GetDMABufFormats() const { return mFormats; }
 
@@ -375,10 +371,6 @@ class WaylandSurface final {
 
   
   wl_callback* mFrameCallback = nullptr;
-
-  
-  
-  bool mFrameCallbackForceCommit = false;
 
   struct FrameCallback {
     std::function<void(wl_callback*, uint32_t)> mCb;

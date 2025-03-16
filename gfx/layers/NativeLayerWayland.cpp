@@ -103,23 +103,6 @@ void NativeLayerRootWayland::Init() {
   mDRMFormat = new DRMFormat(GBM_FORMAT_ARGB8888);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-
-  
   WaylandSurfaceLock lock(mSurface);
   mSurface->SetUnmapCallbackLocked(lock, [this, self = RefPtr{this}]() -> void {
     MutexAutoLock lock(mMutex);

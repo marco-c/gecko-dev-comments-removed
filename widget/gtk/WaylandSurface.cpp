@@ -253,10 +253,10 @@ void WaylandSurface::FrameCallbackHandler(struct wl_callback* aCallback,
 
     LOGVERBOSE(
         "WaylandSurface::FrameCallbackHandler() one-time %zd "
-        "persistent %zd emulated %d routed %d force commit %d",
+        "persistent %zd emulated %d routed %d",
         mOneTimeFrameCallbackHandlers.size(),
         mPersistentFrameCallbackHandlers.size(), emulatedCallback,
-        aRoutedFromChildSurface, mFrameCallbackForceCommit);
+        aRoutedFromChildSurface);
 
     
     
@@ -301,13 +301,11 @@ void WaylandSurface::FrameCallbackHandler(struct wl_callback* aCallback,
   
   if (!mPersistentFrameCallbackHandlers.empty() ||
       !mOneTimeFrameCallbackHandlers.empty()) {
-    WaylandSurfaceLock lock(this, mFrameCallbackForceCommit);
+    WaylandSurfaceLock lock(this);
     bool enableCallbackEmulation = emulatedCallback || aRoutedFromChildSurface;
     RequestFrameCallbackLocked(
         lock,
         enableCallbackEmulation && IsEmulatedFrameCallbackPendingLocked(lock));
-  } else if (mFrameCallbackForceCommit) {
-    WaylandSurfaceLock lock(this,  true);
   }
 }
 
