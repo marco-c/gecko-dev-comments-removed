@@ -310,29 +310,28 @@ class WidgetKeyboardEvent final : public WidgetInputEvent {
   }
 
   bool CanUserGestureActivateTarget() const {
-    if (IsModifierKeyEvent()) {
-      return false;
-    }
-
-    if (mFlags.mIsShortcutKey) {
-      
-      return mKeyCode == NS_VK_SPACE ||
-             
-             
-             
-             
-             
-             ((mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_C ||
-               mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_V ||
-               mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_X) &&
-              IsAccel());
-    }
-
     
     
     
     
-    return mKeyNameIndex != KEY_NAME_INDEX_Escape;
+    
+    
+    const bool isCombiningWithOperationKeys = (IsControl() && !IsAltGraph()) ||
+                                              (IsAlt() && !IsAltGraph()) ||
+                                              IsMeta();
+    const bool isEnterOrSpaceKey =
+        mKeyNameIndex == KEY_NAME_INDEX_Enter || mKeyCode == NS_VK_SPACE;
+    return (PseudoCharCode() || isEnterOrSpaceKey) &&
+           (!isCombiningWithOperationKeys ||
+            
+            
+            
+            
+            
+            ((mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_C ||
+              mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_V ||
+              mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_X) &&
+             IsAccel()));
   }
 
   

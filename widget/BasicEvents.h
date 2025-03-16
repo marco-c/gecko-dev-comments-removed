@@ -162,9 +162,6 @@ struct BaseEventFlags {
   
   
   bool mIsPositionless : 1;
-  
-  
-  bool mIsShortcutKey : 1;
 
   
   
