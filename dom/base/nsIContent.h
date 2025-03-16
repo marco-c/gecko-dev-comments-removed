@@ -357,6 +357,22 @@ class nsIContent : public nsINode {
 
   inline nsIContent* GetFlattenedTreeParent() const;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool CanStartSelectionAsWebCompatHack() const;
+
  protected:
   
   
