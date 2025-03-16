@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/FOG.h"
 
@@ -22,7 +22,10 @@
 #include "mozilla/ShutdownPhase.h"
 #include "mozilla/Unused.h"
 #include "nsContentUtils.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
 #include "nsIFOG.h"
+#include "nsIFile.h"
 #include "nsIUserIdleService.h"
 #include "nsServiceManagerUtils.h"
 #include "xpcpublic.h"
@@ -35,16 +38,16 @@ static mozilla::LazyLogModule sLog("fog");
 using glean::LogToBrowserConsole;
 
 #ifdef MOZ_GLEAN_ANDROID
-// Defined by `glean-core`. We reexport it here for later use.
+
 extern "C" NS_EXPORT void glean_enable_logging(void);
 
-// Workaround to force a re-export of the `no_mangle` symbols from `glean-core`
-//
-// Due to how linking works and hides symbols the symbols from `glean-core`
-// might not be re-exported and thus not usable. By forcing use of _at least
-// one_ symbol in an exported function the functions will also be rexported.
-//
-// See also https://github.com/rust-lang/rust/issues/50007
+
+
+
+
+
+
+
 extern "C" NS_EXPORT void _fog_force_reexport_donotcall(void) {
   glean_enable_logging();
 }
@@ -53,12 +56,12 @@ extern "C" NS_EXPORT void _fog_force_reexport_donotcall(void) {
 static StaticRefPtr<FOG> gFOG;
 static mozilla::Atomic<bool> gInitializeCalled(false);
 
-// We wait for 5s of idle before dumping IPC and flushing ping data to disk.
-// This number hasn't been tuned, so if you have a reason to change it,
-// please by all means do.
+
+
+
 const uint32_t kIdleSecs = 5;
 
-// static
+
 already_AddRefed<FOG> FOG::GetSingleton() {
   if (gFOG) {
     return do_AddRef(gFOG);
@@ -92,13 +95,13 @@ already_AddRefed<FOG> FOG::GetSingleton() {
               Preferences::GetBool("telemetry.fog.init_on_shutdown", true);
           if (initOnShutdown && !gInitializeCalled) {
             gInitializeCalled = true;
-            // Assuming default data path and application id.
-            // Consumers using non defaults _must_ initialize FOG explicitly.
+            
+            
             MOZ_LOG(sLog, LogLevel::Debug,
                     ("Init not called. Init-ing in shutdown"));
             glean::fog::inits_during_shutdown.Add(1);
-            // It's enough to call init before shutting down.
-            // We don't need to (and can't) wait for it to complete.
+            
+            
             glean::impl::fog_init(&VoidCString(), &VoidCString(), false);
           }
           gFOG->Shutdown();
@@ -116,19 +119,19 @@ void FOG::Shutdown() {
   glean::impl::fog_shutdown();
 }
 
-// This allows us to know it's too late to submit a ping in Rust.
+
 extern "C" bool FOG_TooLateToSend(void) {
   MOZ_ASSERT(XRE_IsParentProcess());
   return AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownNetTeardown);
 }
 
-// This allows us to pass the configurable maximum ping limit (in pings per
-// minute) to Rust. Default value is 15.
+
+
 extern "C" uint32_t FOG_MaxPingLimit(void) {
   return Preferences::GetInt("telemetry.glean.internal.maxPingsPerMinute", 15);
 }
 
-// Called when knowing if we're in automation is necessary.
+
 extern "C" bool FOG_IPCIsInAutomation(void) { return xpc::IsInAutomation(); }
 
 NS_IMETHODIMP
@@ -146,11 +149,52 @@ FOG::InitializeFOG(const nsACString& aDataPathOverride,
       },
       ShutdownPhase::AppShutdownConfirmed);
 
-  return glean::impl::fog_init(&aDataPathOverride, &aAppIdOverride,
-                               aDisableInternalPings);
+  nsresult rv = glean::impl::fog_init(&aDataPathOverride, &aAppIdOverride,
+                                      aDisableInternalPings);
+  NS_ENSURE_SUCCESS(rv, rv);
+#ifndef MOZ_BUILD_APP_IS_BROWSER
+  if (xpc::IsInAutomation()) {
+    ApplyInterestingServerKnobs();
+  }
+#endif
+  return rv;
 }
 
-// Expose MOZ_APP_VERSION_DISPLAY to Rust
+
+
+
+
+
+
+bool FOG::ApplyInterestingServerKnobs() {
+  
+  
+  
+  
+  nsCOMPtr<nsIFile> knobsFile;
+  if (NS_WARN_IF(NS_FAILED(
+          NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(knobsFile))))) {
+    return false;
+  }
+  if (NS_WARN_IF(
+          NS_FAILED(knobsFile->Append(u"interesting_serverknobs.json"_ns)))) {
+    return false;
+  }
+
+  
+  
+  nsAutoString knobsfileString;
+  if (NS_WARN_IF(NS_FAILED(knobsFile->GetPath(knobsfileString)))) {
+    return false;
+  }
+  if (!glean::impl::fog_apply_serverknobs(&knobsfileString)) {
+    return false;
+  }
+
+  return true;
+}
+
+
 extern "C" const char* FOG_MozAppVersionDisplay(void) {
   return MOZ_STRINGIFY(MOZ_APP_VERSION_DISPLAY);
 }
@@ -278,9 +322,9 @@ FOG::TestGetExperimentData(const nsACString& aExperimentId, JSContext* aCx,
     return NS_OK;
   }
 
-  // We could struct-up the branch and extras and do what
-  // EventMetric::TestGetValue does... but keeping allocation on this side feels
-  // cleaner to me at the moment.
+  
+  
+  
   nsCString branch;
   nsTArray<nsCString> extraKeys;
   nsTArray<nsCString> extraValues;
@@ -365,8 +409,8 @@ FOG::Observe(nsISupports* aSubject, const char* aTopic, const char16_t* aData) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
 
-  // On idle, opportunistically flush child process data to the parent,
-  // then persist ping-lifetime data to the db.
+  
+  
   if (!strcmp(aTopic, OBSERVER_TOPIC_IDLE)) {
     glean::FlushAndUseFOGData();
 #ifndef MOZ_GLEAN_ANDROID
@@ -381,7 +425,15 @@ NS_IMETHODIMP
 FOG::TestResetFOG(const nsACString& aDataPathOverride,
                   const nsACString& aAppIdOverride) {
   MOZ_ASSERT(XRE_IsParentProcess());
-  return glean::impl::fog_test_reset(&aDataPathOverride, &aAppIdOverride);
+  nsresult rv =
+      glean::impl::fog_test_reset(&aDataPathOverride, &aAppIdOverride);
+  NS_ENSURE_SUCCESS(rv, rv);
+#ifndef MOZ_BUILD_APP_IS_BROWSER
+  if (xpc::IsInAutomation()) {
+    ApplyInterestingServerKnobs();
+  }
+#endif
+  return rv;
 }
 
 NS_IMETHODIMP
@@ -453,4 +505,4 @@ FOG::CollectReports(nsIHandleReportCallback* aHandleReport, nsISupports* aData,
 
 NS_IMPL_ISUPPORTS(FOG, nsIFOG, nsIObserver, nsIMemoryReporter)
 
-}  //  namespace mozilla
+}  
