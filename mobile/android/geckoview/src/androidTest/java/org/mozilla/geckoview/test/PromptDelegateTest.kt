@@ -9,7 +9,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import org.hamcrest.Matchers.* 
 import org.junit.Assert
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.AllowOrDeny
@@ -111,18 +110,23 @@ class PromptDelegateTest : BaseSessionTest(
         mainSession.waitForRoundTrip()
     }
 
-    @Ignore 
     @Test
     fun alertTest() {
-        mainSession.evaluateJS("alert('Alert!');")
+        mainSession.loadTestPath(HELLO_HTML_PATH)
+        sessionRule.waitForPageStop()
 
-        sessionRule.waitUntilCalled(object : PromptDelegate {
+        val result = GeckoResult<Void>()
+        sessionRule.delegateDuringNextWait(object : PromptDelegate {
             @AssertCalled(count = 1)
             override fun onAlertPrompt(session: GeckoSession, prompt: PromptDelegate.AlertPrompt): GeckoResult<PromptDelegate.PromptResponse> {
                 assertThat("Message should match", "Alert!", equalTo(prompt.message))
+                result.complete(null)
                 return GeckoResult.fromValue(prompt.dismiss())
             }
         })
+
+        mainSession.evaluateJS("alert('Alert!');")
+        sessionRule.waitForResult(result)
     }
 
     
