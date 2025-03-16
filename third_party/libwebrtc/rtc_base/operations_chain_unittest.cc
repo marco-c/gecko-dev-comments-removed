@@ -11,16 +11,21 @@
 #include "rtc_base/operations_chain.h"
 
 #include <atomic>
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "api/scoped_refptr.h"
+#include "api/test/rtc_error_matchers.h"
+#include "api/units/time_delta.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/event.h"
-#include "rtc_base/gunit.h"
 #include "rtc_base/thread.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/wait_until.h"
 
 namespace rtc {
 
@@ -28,7 +33,7 @@ using ::testing::ElementsAre;
 
 namespace {
 
-constexpr int kDefaultTimeout = 3000;
+constexpr webrtc::TimeDelta kDefaultTimeout = webrtc::TimeDelta::Millis(3000);
 
 }  
 
@@ -411,7 +416,10 @@ TEST(OperationsChainTest, OnChainEmptyCallback) {
   
   unblock_async_operation_event0.Set();
   async_operation_completed_event0->Wait(Event::kForever);
-  EXPECT_TRUE_WAIT(1u == on_empty_callback_counter, kDefaultTimeout);
+  EXPECT_THAT(
+      webrtc::WaitUntil([&] { return on_empty_callback_counter == 1u; },
+                        ::testing::IsTrue(), {.timeout = kDefaultTimeout}),
+      webrtc::IsRtcOk());
 
   
   Event unblock_async_operation_event1;
@@ -423,16 +431,25 @@ TEST(OperationsChainTest, OnChainEmptyCallback) {
       operation_tracker_proxy.PostAsynchronousOperation(
           &unblock_async_operation_event2);
   
-  EXPECT_TRUE_WAIT(1u == on_empty_callback_counter, kDefaultTimeout);
+  EXPECT_THAT(
+      webrtc::WaitUntil([&] { return on_empty_callback_counter == 1u; },
+                        ::testing::IsTrue(), {.timeout = kDefaultTimeout}),
+      webrtc::IsRtcOk());
   
   
   unblock_async_operation_event1.Set();
   async_operation_completed_event1->Wait(Event::kForever);
-  EXPECT_TRUE_WAIT(1u == on_empty_callback_counter, kDefaultTimeout);
+  EXPECT_THAT(
+      webrtc::WaitUntil([&] { return on_empty_callback_counter == 1u; },
+                        ::testing::IsTrue(), {.timeout = kDefaultTimeout}),
+      webrtc::IsRtcOk());
   
   unblock_async_operation_event2.Set();
   async_operation_completed_event2->Wait(Event::kForever);
-  EXPECT_TRUE_WAIT(2u == on_empty_callback_counter, kDefaultTimeout);
+  EXPECT_THAT(
+      webrtc::WaitUntil([&] { return on_empty_callback_counter == 2u; },
+                        ::testing::IsTrue(), {.timeout = kDefaultTimeout}),
+      webrtc::IsRtcOk());
 }
 
 TEST(OperationsChainTest,
