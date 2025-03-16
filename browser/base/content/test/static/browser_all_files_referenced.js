@@ -77,9 +77,6 @@ var gExceptionPaths = [
   "chrome://browser/content/pagedata/schemas/",
 
   
-  "resource://nimbus/FirefoxLabs.sys.mjs",
-
-  
   "resource://nimbus/schemas/",
 
   
