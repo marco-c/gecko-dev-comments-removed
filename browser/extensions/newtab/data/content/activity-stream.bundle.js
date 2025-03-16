@@ -13423,9 +13423,6 @@ class BaseContent extends (external_React_default()).PureComponent {
         
         lightWallpaper = wallpaper;
         darkWallpaper = wallpaper;
-      } else {
-        lightWallpaper = wallpaperList.find(wp => wp.theme === "light") || "";
-        darkWallpaper = wallpaperList.find(wp => wp.theme === "dark") || "";
       }
 
       
