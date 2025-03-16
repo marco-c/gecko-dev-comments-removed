@@ -7,12 +7,16 @@
 #include "BindingDeclarations.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DocumentFragment.h"
+#include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/SanitizerBinding.h"
 #include "nsContentUtils.h"
 #include "nsGenericHTMLElement.h"
+#include "nsNameSpaceManager.h"
 #include "Sanitizer.h"
 
 namespace mozilla::dom {
+
+using namespace sanitizer;
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Sanitizer, mGlobal)
 
@@ -30,10 +34,20 @@ JSObject* Sanitizer::WrapObject(JSContext* aCx,
 }
 
 
+
 already_AddRefed<Sanitizer> Sanitizer::New(nsIGlobalObject* aGlobal,
                                            const SanitizerConfig& aConfig,
                                            ErrorResult& aRv) {
   RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
+
+  
+  sanitizer->SetConfig(aConfig, aRv);
+
+  
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
   return sanitizer.forget();
 }
 
@@ -42,6 +56,7 @@ already_AddRefed<Sanitizer> Sanitizer::New(nsIGlobalObject* aGlobal,
                                            const SanitizerPresets aConfig,
                                            ErrorResult& aRv) {
   RefPtr<Sanitizer> sanitizer = new Sanitizer(aGlobal);
+  
   return sanitizer.forget();
 }
 
@@ -56,20 +71,385 @@ already_AddRefed<Sanitizer> Sanitizer::Constructor(
   return New(global, aConfig.GetAsSanitizerPresets(), aRv);
 }
 
-void Sanitizer::Get(SanitizerConfig& aConfig) {}
 
-void Sanitizer::AllowElement(
-    const StringOrSanitizerElementNamespaceWithAttributes& aElement) {}
-void Sanitizer::RemoveElement(
-    const StringOrSanitizerElementNamespace& aElement) {}
-void Sanitizer::ReplaceElementWithChildren(
-    const StringOrSanitizerElementNamespace& aElement) {}
-void Sanitizer::AllowAttribute(
-    const StringOrSanitizerAttributeNamespace& aAttribute) {}
-void Sanitizer::RemoveAttribute(
-    const StringOrSanitizerAttributeNamespace& aAttribute) {}
-void Sanitizer::SetComments(bool aAllow) {}
-void Sanitizer::SetDataAttributes(bool aAllow) {}
+void Sanitizer::SetConfig(const SanitizerConfig& aConfig, ErrorResult& aRv) {
+  
+  if (aConfig.mElements.WasPassed()) {
+    for (const auto& element : aConfig.mElements.Value()) {
+      
+      AllowElement(element);
+    }
+  }
+
+  
+  if (aConfig.mRemoveElements.WasPassed()) {
+    for (const auto& element : aConfig.mRemoveElements.Value()) {
+      
+      RemoveElement(element);
+    }
+  }
+
+  
+  
+  if (aConfig.mReplaceWithChildrenElements.WasPassed()) {
+    for (const auto& element : aConfig.mReplaceWithChildrenElements.Value()) {
+      
+      
+      ReplaceElementWithChildren(element);
+    }
+  }
+
+  
+  if (aConfig.mAttributes.WasPassed()) {
+    for (const auto& attribute : aConfig.mAttributes.Value()) {
+      
+      AllowAttribute(attribute);
+    }
+  }
+
+  
+  if (aConfig.mRemoveAttributes.WasPassed()) {
+    for (const auto& attribute : aConfig.mRemoveAttributes.Value()) {
+      
+      RemoveAttribute(attribute);
+    }
+  }
+
+  
+
+  
+  if (aConfig.mComments.WasPassed()) {
+    SetComments(aConfig.mComments.Value());
+  }
+
+  
+  
+  if (aConfig.mDataAttributes.WasPassed()) {
+    SetDataAttributes(aConfig.mDataAttributes.Value());
+  }
+
+  
+
+  auto isSameSize = [](const auto& aInputConfig, const auto& aProcessedConfig) {
+    size_t sizeInput =
+        aInputConfig.WasPassed() ? aInputConfig.Value().Length() : 0;
+    size_t sizeProcessed = aProcessedConfig.Values().Length();
+    return sizeInput == sizeProcessed;
+  };
+
+  
+
+  
+  
+  if (!isSameSize(aConfig.mElements, mElements)) {
+    aRv.ThrowTypeError("'elements' changed");
+    return;
+  }
+
+  
+  
+  if (!isSameSize(aConfig.mRemoveElements, mRemoveElements)) {
+    aRv.ThrowTypeError("'removeElements' changed");
+    return;
+  }
+
+  
+  
+  if (!isSameSize(aConfig.mReplaceWithChildrenElements,
+                  mReplaceWithChildrenElements)) {
+    aRv.ThrowTypeError("'replaceWithChildrenElements' changed");
+    return;
+  }
+
+  
+  
+  if (!isSameSize(aConfig.mAttributes, mAttributes)) {
+    aRv.ThrowTypeError("'attributes' changed");
+    return;
+  }
+
+  
+  
+  if (!isSameSize(aConfig.mRemoveAttributes, mRemoveAttributes)) {
+    aRv.ThrowTypeError("'removeAttributes' changed");
+    return;
+  }
+
+  
+  
+  if (aConfig.mElements.WasPassed() && aConfig.mRemoveElements.WasPassed()) {
+    aRv.ThrowTypeError(
+        "'elements' and 'removeElements' are not allowed at the same time");
+    return;
+  }
+
+  
+  
+  if (aConfig.mAttributes.WasPassed() &&
+      aConfig.mRemoveAttributes.WasPassed()) {
+    aRv.ThrowTypeError(
+        "'attributes' and 'removeAttributes' are not allowed at the same time");
+    return;
+  }
+}
+
+void Sanitizer::Get(SanitizerConfig& aConfig) {
+  nsTArray<OwningStringOrSanitizerElementNamespaceWithAttributes> elements;
+  for (const CanonicalElementWithAttributes& canonical : mElements.Values()) {
+    elements.AppendElement()->SetAsSanitizerElementNamespaceWithAttributes() =
+        canonical.ToSanitizerElementNamespaceWithAttributes();
+  }
+  aConfig.mElements.Construct(std::move(elements));
+
+  nsTArray<OwningStringOrSanitizerElementNamespace> removeElements;
+  for (const CanonicalName& canonical : mRemoveElements.Values()) {
+    removeElements.AppendElement()->SetAsSanitizerElementNamespace() =
+        canonical.ToSanitizerElementNamespace();
+  }
+  aConfig.mRemoveElements.Construct(std::move(removeElements));
+
+  nsTArray<OwningStringOrSanitizerElementNamespace> replaceWithChildrenElements;
+  for (const CanonicalName& canonical : mReplaceWithChildrenElements.Values()) {
+    replaceWithChildrenElements.AppendElement()
+        ->SetAsSanitizerElementNamespace() =
+        canonical.ToSanitizerElementNamespace();
+  }
+  aConfig.mReplaceWithChildrenElements.Construct(
+      std::move(replaceWithChildrenElements));
+
+  aConfig.mAttributes.Construct(ToSanitizerAttributes(mAttributes));
+  aConfig.mRemoveAttributes.Construct(ToSanitizerAttributes(mRemoveAttributes));
+
+  aConfig.mComments.Construct(mComments);
+  aConfig.mDataAttributes.Construct(mDataAttributes);
+}
+
+auto& GetAsSanitizerElementNamespace(
+    const StringOrSanitizerElementNamespace& aElement) {
+  return aElement.GetAsSanitizerElementNamespace();
+}
+auto& GetAsSanitizerElementNamespace(
+    const OwningStringOrSanitizerElementNamespace& aElement) {
+  return aElement.GetAsSanitizerElementNamespace();
+}
+auto& GetAsSanitizerElementNamespace(
+    const StringOrSanitizerElementNamespaceWithAttributes& aElement) {
+  return aElement.GetAsSanitizerElementNamespaceWithAttributes();
+}
+auto& GetAsSanitizerElementNamespace(
+    const OwningStringOrSanitizerElementNamespaceWithAttributes& aElement) {
+  return aElement.GetAsSanitizerElementNamespaceWithAttributes();
+}
+
+
+template <typename SanitizerElement>
+static CanonicalName CanonicalizeElement(const SanitizerElement& aElement) {
+  
+  
+
+  
+  
+
+  
+  
+  if (aElement.IsString()) {
+    RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(aElement.GetAsString());
+    return CanonicalName(nameAtom, nsGkAtoms::nsuri_xhtml);
+  }
+
+  
+  const auto& elem = GetAsSanitizerElementNamespace(aElement);
+  MOZ_ASSERT(!elem.mName.IsVoid());
+
+  
+  
+  
+  
+  
+  RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(elem.mName);
+  RefPtr<nsAtom> namespaceAtom;
+  if (!elem.mNamespace.IsVoid()) {
+    namespaceAtom = NS_AtomizeMainThread(elem.mNamespace);
+  } else {
+    namespaceAtom = nsGkAtoms::nsuri_xhtml;
+  }
+  return CanonicalName(nameAtom, namespaceAtom);
+}
+
+
+template <typename SanitizerAttribute>
+static CanonicalName CanonicalizeAttribute(
+    const SanitizerAttribute& aAttribute) {
+  
+  
+
+  
+  
+
+  
+  
+  if (aAttribute.IsString()) {
+    RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(aAttribute.GetAsString());
+    return CanonicalName(nameAtom, nullptr);
+  }
+
+  
+  const auto& attr = aAttribute.GetAsSanitizerAttributeNamespace();
+  MOZ_ASSERT(!attr.mName.IsVoid());
+
+  
+  
+  
+  
+  
+  RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(attr.mName);
+  RefPtr<nsAtom> namespaceAtom = nullptr;
+  if (!attr.mNamespace.IsVoid()) {
+    namespaceAtom = NS_AtomizeMainThread(attr.mNamespace);
+  }
+  return CanonicalName(nameAtom, namespaceAtom);
+}
+
+
+template <typename SanitizerElementWithAttributes>
+static CanonicalElementWithAttributes CanonicalizeElementWithAttributes(
+    const SanitizerElementWithAttributes& aElement) {
+  
+  
+  CanonicalElementWithAttributes result =
+      CanonicalElementWithAttributes(CanonicalizeElement(aElement));
+
+  
+  if (aElement.IsSanitizerElementNamespaceWithAttributes()) {
+    auto& elem = aElement.GetAsSanitizerElementNamespaceWithAttributes();
+
+    
+    if (elem.mAttributes.WasPassed()) {
+      ListSet<CanonicalName> attributes;
+      for (const auto& attribute : elem.mAttributes.Value()) {
+        
+        
+        attributes.Insert(CanonicalizeAttribute(attribute));
+      }
+      result.mAttributes = Some(std::move(attributes));
+    }
+
+    
+    if (elem.mRemoveAttributes.WasPassed()) {
+      ListSet<CanonicalName> attributes;
+      for (const auto& attribute : elem.mRemoveAttributes.Value()) {
+        
+        
+        attributes.Insert(CanonicalizeAttribute(attribute));
+      }
+      result.mRemoveAttributes = Some(std::move(attributes));
+    }
+  }
+
+  
+  return result;
+}
+
+
+template <typename SanitizerElementWithAttributes>
+void Sanitizer::AllowElement(const SanitizerElementWithAttributes& aElement) {
+  
+  
+  CanonicalElementWithAttributes element =
+      CanonicalizeElementWithAttributes(aElement);
+
+  
+  mElements.Remove(element);
+
+  
+  mRemoveElements.Remove(element);
+
+  
+  mReplaceWithChildrenElements.Remove(element);
+
+  
+  mElements.Insert(std::move(element));
+}
+
+template void Sanitizer::AllowElement(
+    const StringOrSanitizerElementNamespaceWithAttributes&);
+
+
+template <typename SanitizerElement>
+void Sanitizer::RemoveElement(const SanitizerElement& aElement) {
+  
+  
+  CanonicalName element = CanonicalizeElement(aElement);
+
+  
+  mElements.Remove(element);
+
+  
+  mReplaceWithChildrenElements.Remove(element);
+
+  
+  mRemoveElements.Insert(std::move(element));
+}
+
+template void Sanitizer::RemoveElement(
+    const StringOrSanitizerElementNamespace&);
+
+
+template <typename SanitizerElement>
+void Sanitizer::ReplaceElementWithChildren(const SanitizerElement& aElement) {
+  
+  
+  CanonicalName element = CanonicalizeElement(aElement);
+
+  
+  mRemoveElements.Remove(element);
+
+  
+  mElements.Remove(element);
+
+  
+  mReplaceWithChildrenElements.Insert(std::move(element));
+}
+
+template void Sanitizer::ReplaceElementWithChildren(
+    const StringOrSanitizerElementNamespace&);
+
+
+template <typename SanitizerAttribute>
+void Sanitizer::AllowAttribute(const SanitizerAttribute& aAttribute) {
+  
+  
+  CanonicalName attribute = CanonicalizeAttribute(aAttribute);
+
+  
+  mRemoveAttributes.Remove(attribute);
+
+  
+  mAttributes.Insert(std::move(attribute));
+}
+
+template void Sanitizer::AllowAttribute(
+    const StringOrSanitizerAttributeNamespace&);
+
+
+template <typename SanitizerAttribute>
+void Sanitizer::RemoveAttribute(const SanitizerAttribute& aAttribute) {
+  
+  
+  CanonicalName attribute = CanonicalizeAttribute(aAttribute);
+
+  
+  mAttributes.Remove(attribute);
+
+  
+  mRemoveAttributes.Insert(std::move(attribute));
+}
+
+template void Sanitizer::RemoveAttribute(
+    const StringOrSanitizerAttributeNamespace&);
+
+void Sanitizer::SetComments(bool aAllow) { mComments = aAllow; }
+void Sanitizer::SetDataAttributes(bool aAllow) { mDataAttributes = aAllow; }
 void Sanitizer::RemoveUnsafe() {}
 
 RefPtr<DocumentFragment> Sanitizer::SanitizeFragment(
@@ -81,7 +461,9 @@ RefPtr<DocumentFragment> Sanitizer::SanitizeFragment(
   }
   
   
+
   
+
   return aFragment.forget();
 }
 
