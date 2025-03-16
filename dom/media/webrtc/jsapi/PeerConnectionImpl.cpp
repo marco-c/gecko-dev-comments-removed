@@ -457,9 +457,9 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
 
   
   
-  mTransportHandler = MediaTransportHandler::Create(mSTSThread);
+  RefPtr transportHandler = MediaTransportHandler::Create(mSTSThread);
   if (mPrivateWindow) {
-    mTransportHandler->EnterPrivateMode();
+    transportHandler->EnterPrivateMode();
   }
 
   
@@ -500,6 +500,10 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
   res = PeerConnectionCtx::InitializeGlobal();
   NS_ENSURE_SUCCESS(res, res);
 
+  
+  
+  
+  mTransportHandler = std::move(transportHandler);
   mTransportHandler->CreateIceCtx("PC:" + GetName());
 
   mJsepSession =
