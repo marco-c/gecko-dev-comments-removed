@@ -8461,14 +8461,13 @@ var TabContextMenu = {
 
       
       
-      let groupToFilter;
       if (selectedGroupCount == 1) {
-        groupToFilter = groupableTabs[0].group;
-      }
-      if (groupToFilter) {
-        availableGroupsToMoveTo = availableGroupsToMoveTo.filter(
-          group => group !== groupToFilter
-        );
+        let groupToFilter = groupableTabs[0].group;
+        if (groupToFilter && groupableTabs.every(t => t.group)) {
+          availableGroupsToMoveTo = availableGroupsToMoveTo.filter(
+            group => group !== groupToFilter
+          );
+        }
       }
 
       contextMoveTabToGroup.disabled = !groupableTabs.length;
