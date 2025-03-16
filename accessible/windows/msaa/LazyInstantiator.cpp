@@ -192,10 +192,11 @@ DWORD LazyInstantiator::GetRemoteMsaaClientPid() {
 
 
 static const char* gBlockedRemoteClients[] = {
-    "tbnotifier.exe",  
-    "flow.exe",        
-    "rtop_bg.exe",     
-    "osk.exe",         
+    "tbnotifier.exe",   
+    "flow.exe",         
+    "rtop_bg.exe",      
+    "osk.exe",          
+    "corplink-uc.exe",  
 };
 
 
