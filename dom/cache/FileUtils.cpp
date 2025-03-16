@@ -146,10 +146,14 @@ Result<nsCOMPtr<nsISupports>, nsresult> BodyStartWriteStream(
   MOZ_DIAGNOSTIC_ASSERT(aClosure);
   MOZ_DIAGNOSTIC_ASSERT(aCallback);
 
-  QM_TRY_INSPECT(const auto& finalFile,
-                 BodyIdToFile(aBaseDir, aBodyId, BODY_FILE_FINAL));
-
+  
   {
+    QM_TRY_INSPECT(const auto& finalFile,
+                   
+                   
+                   BodyIdToFile(aBaseDir, aBodyId, BODY_FILE_FINAL,
+                                 false));
+
     QM_TRY_INSPECT(const bool& exists,
                    MOZ_TO_RESULT_INVOKE_MEMBER(*finalFile, Exists));
 
@@ -157,7 +161,10 @@ Result<nsCOMPtr<nsISupports>, nsresult> BodyStartWriteStream(
   }
 
   QM_TRY_INSPECT(const auto& tmpFile,
-                 BodyIdToFile(aBaseDir, aBodyId, BODY_FILE_TMP));
+                 
+                 
+                 BodyIdToFile(aBaseDir, aBodyId, BODY_FILE_TMP,
+                               true));
 
   QM_TRY_UNWRAP(nsCOMPtr<nsIOutputStream> fileStream,
                 CreateFileOutputStream(aDirectoryMetadata.mPersistenceType,
