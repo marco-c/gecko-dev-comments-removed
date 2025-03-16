@@ -203,7 +203,9 @@ impl super::Adapter {
             
             
             #[cfg(Emscripten)]
-            if unsafe { super::emscripten::enable_extension("WEBGL_debug_renderer_info\0") } {
+            if unsafe {
+                super::emscripten::enable_extension(c"WEBGL_debug_renderer_info".to_str().unwrap())
+            } {
                 (GL_UNMASKED_VENDOR_WEBGL, GL_UNMASKED_RENDERER_WEBGL)
             } else {
                 (glow::VENDOR, glow::RENDERER)

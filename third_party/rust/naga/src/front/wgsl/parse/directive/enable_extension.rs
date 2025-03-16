@@ -1,6 +1,7 @@
 
 
 
+
 use crate::{front::wgsl::error::Error, Span};
 
 
@@ -40,6 +41,12 @@ pub enum EnableExtension {
     #[allow(unused)]
     Implemented(ImplementedEnableExtension),
     Unimplemented(UnimplementedEnableExtension),
+}
+
+impl From<ImplementedEnableExtension> for EnableExtension {
+    fn from(value: ImplementedEnableExtension) -> Self {
+        Self::Implemented(value)
+    }
 }
 
 impl EnableExtension {

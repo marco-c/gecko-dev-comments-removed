@@ -1,9 +1,10 @@
 
 
 use super::handle::Handle;
+use alloc::{vec, vec::Vec};
 
-use std::marker::PhantomData;
-use std::ops;
+use core::marker::PhantomData;
+use core::ops;
 
 
 

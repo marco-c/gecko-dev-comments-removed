@@ -59,8 +59,9 @@
 
 
 
+use alloc::{rc::Rc, string::String, vec::Vec};
+
 use crate::proc::Namer;
-use std::rc::Rc;
 
 
 enum Nesting {
