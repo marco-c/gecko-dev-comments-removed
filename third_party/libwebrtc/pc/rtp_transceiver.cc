@@ -334,7 +334,7 @@ void RtpTransceiver::SetChannel(
               SafeTask(std::move(flag), [this]() { OnFirstPacketSent(); }));
         });
   });
-  PushNewMediaChannelAndDeleteChannel(nullptr);
+  PushNewMediaChannel();
 
   RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(2);
 }
@@ -358,35 +358,46 @@ void RtpTransceiver::ClearChannel() {
   });
 
   RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(1);
-  PushNewMediaChannelAndDeleteChannel(std::move(channel_));
+  DeleteChannel();
 
   RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(2);
 }
 
-void RtpTransceiver::PushNewMediaChannelAndDeleteChannel(
-    std::unique_ptr<cricket::ChannelInterface> channel_to_delete) {
-  
-  
-  if (!channel_to_delete && senders_.empty() && receivers_.empty()) {
+void RtpTransceiver::PushNewMediaChannel() {
+  RTC_DCHECK(channel_);
+  if (senders_.empty() && receivers_.empty()) {
     return;
   }
   context()->worker_thread()->BlockingCall([&]() {
     
-    auto* media_send_channel =
-        channel_ ? channel_->media_send_channel() : nullptr;
+    auto* media_send_channel = channel_->media_send_channel();
     for (const auto& sender : senders_) {
       sender->internal()->SetMediaChannel(media_send_channel);
     }
 
-    auto* media_receive_channel =
-        channel_ ? channel_->media_receive_channel() : nullptr;
+    auto* media_receive_channel = channel_->media_receive_channel();
     for (const auto& receiver : receivers_) {
       receiver->internal()->SetMediaChannel(media_receive_channel);
     }
+  });
+}
 
+void RtpTransceiver::DeleteChannel() {
+  RTC_DCHECK(channel_);
+  
+  
+  context()->worker_thread()->BlockingCall([&]() {
+    auto channel_to_delete = std::move(channel_);
+    
+    for (const auto& sender : senders_) {
+      sender->internal()->SetMediaChannel(nullptr);
+    }
+    for (const auto& receiver : receivers_) {
+      receiver->internal()->SetMediaChannel(nullptr);
+    }
     
     
-    channel_to_delete = nullptr;
+    channel_to_delete.reset();
   });
 }
 

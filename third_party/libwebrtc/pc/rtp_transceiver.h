@@ -306,8 +306,10 @@ class RtpTransceiver : public RtpTransceiverInterface {
   void StopSendingAndReceiving();
   
   
-  void PushNewMediaChannelAndDeleteChannel(
-      std::unique_ptr<cricket::ChannelInterface> channel_to_delete);
+  void PushNewMediaChannel();
+  
+  
+  void DeleteChannel();
 
   
   TaskQueueBase* const thread_;
