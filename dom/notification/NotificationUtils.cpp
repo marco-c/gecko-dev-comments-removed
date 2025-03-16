@@ -206,11 +206,14 @@ nsresult UnpersistNotification(nsIPrincipal* aPrincipal, const nsString& aId) {
   return NS_ERROR_FAILURE;
 }
 
-void UnregisterNotification(nsIPrincipal* aPrincipal, const nsString& aId) {
+void UnregisterNotification(nsIPrincipal* aPrincipal, const nsString& aId,
+                            CloseMode aCloseMode) {
   
   UnpersistNotification(aPrincipal, aId);
   if (nsCOMPtr<nsIAlertsService> alertService = components::Alerts::Service()) {
-    alertService->CloseAlert(aId,  false);
+    alertService->CloseAlert(
+        aId,
+         aCloseMode == CloseMode::InactiveGlobal);
   }
 }
 

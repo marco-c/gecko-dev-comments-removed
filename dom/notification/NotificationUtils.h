@@ -80,7 +80,8 @@ enum class CloseMode {
   
   InactiveGlobal,
 };
-void UnregisterNotification(nsIPrincipal* aPrincipal, const nsString& aId);
+void UnregisterNotification(nsIPrincipal* aPrincipal, const nsString& aId,
+                            CloseMode aCloseMode);
 
 nsresult RemovePermission(nsIPrincipal* aPrincipal);
 nsresult OpenSettings(nsIPrincipal* aPrincipal);
