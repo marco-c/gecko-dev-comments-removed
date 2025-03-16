@@ -67,7 +67,7 @@ use selectors::matching::{
 };
 use selectors::matching::{MatchingForInvalidation, VisitedHandlingMode};
 use selectors::parser::{
-    AncestorHashes, Combinator, Component, FeaturelessHostMatches, Selector, SelectorIter,
+    AncestorHashes, Combinator, Component, MatchesFeaturelessHost, Selector, SelectorIter,
     SelectorList,
 };
 use selectors::visitor::{SelectorListKind, SelectorVisitor};
@@ -2741,6 +2741,14 @@ fn parent_selector_for_scope(parent: Option<&SelectorList<SelectorImpl>>) -> &Se
     }
 }
 
+fn scope_start_matches_shadow_host(start: &SelectorList<SelectorImpl>) -> bool {
+    
+    
+    start.slice().iter().any(|s| {
+        s.matches_featureless_host(true).may_match()
+    })
+}
+
 impl CascadeData {
     
     pub fn new() -> Self {
@@ -3034,10 +3042,7 @@ impl CascadeData {
             }
             (
                 ScopeTarget::Selector(&start.selectors),
-                start.selectors.slice().iter().any(|s| {
-                    !s.matches_featureless_host_selector_or_pseudo_element()
-                        .is_empty()
-                }),
+                scope_start_matches_shadow_host(&start.selectors),
             )
         } else {
             let implicit_root = condition_ref.implicit_scope_root;
@@ -3362,28 +3367,27 @@ impl CascadeData {
                 vec.try_reserve(1)?;
                 vec.push(rule);
             } else {
-                
-                
-                
-                
-                
-                
-                let potentially_matches_featureless_host = rule
-                    .selector
-                    .matches_featureless_host_selector_or_pseudo_element();
-                let matches_featureless_host = if potentially_matches_featureless_host
-                    .intersects(FeaturelessHostMatches::FOR_HOST)
-                {
-                    true
-                } else if potentially_matches_featureless_host
-                    .intersects(FeaturelessHostMatches::FOR_SCOPE)
-                {
-                    containing_rule_state.scope_matches_shadow_host ==
-                        ScopeMatchesShadowHost::Yes
-                } else {
-                    false
+                let scope_matches_shadow_host = containing_rule_state.scope_matches_shadow_host == ScopeMatchesShadowHost::Yes;
+                let matches_featureless_host_only = match rule.selector.matches_featureless_host(scope_matches_shadow_host) {
+                    MatchesFeaturelessHost::Only => true,
+                    MatchesFeaturelessHost::Yes => {
+                        
+                        self.featureless_host_rules
+                            .get_or_insert_with(|| Box::new(Default::default()))
+                            .for_insertion(pseudo_element)
+                            .insert(rule.clone(), quirks_mode)?;
+                        false
+                    },
+                    MatchesFeaturelessHost::Never => false,
                 };
-                let rules = if matches_featureless_host {
+
+                
+                
+                
+                
+                
+                
+                let rules = if matches_featureless_host_only {
                     self.featureless_host_rules
                         .get_or_insert_with(|| Box::new(Default::default()))
                 } else if rule.selector.is_slotted() {
@@ -3685,10 +3689,7 @@ impl CascadeData {
                     let id = ScopeConditionId(self.scope_conditions.len() as u16);
                     let mut matches_shadow_host = false;
                     let implicit_scope_root = if let Some(start) = rule.bounds.start.as_ref() {
-                        matches_shadow_host = start.slice().iter().any(|s| {
-                            !s.matches_featureless_host_selector_or_pseudo_element()
-                                .is_empty()
-                        });
+                        matches_shadow_host = scope_start_matches_shadow_host(start);
                         
                         StylistImplicitScopeRoot::default()
                     } else {

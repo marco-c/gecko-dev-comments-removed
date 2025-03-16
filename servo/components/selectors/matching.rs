@@ -9,7 +9,7 @@ use crate::attr::{
 use crate::bloom::{BloomFilter, BLOOM_HASH_MASK};
 use crate::kleene_value::KleeneValue;
 use crate::parser::{
-    AncestorHashes, Combinator, Component, FeaturelessHostMatches, LocalName, NthSelectorData,
+    AncestorHashes, Combinator, Component, MatchesFeaturelessHost, LocalName, NthSelectorData,
     RelativeSelectorMatchHint,
 };
 use crate::parser::{
@@ -374,6 +374,11 @@ where
         selector.iter_raw_match_order().as_slice(),
         from_offset,
         start_offset
+    );
+
+    debug_assert!(
+        !local_context.shared.featureless(),
+        "Invalidating featureless element somehow?"
     );
 
     for component in iter {
@@ -758,66 +763,47 @@ where
     Some(current_slot)
 }
 
+struct NextElement<E> {
+    next_element: Option<E>,
+    featureless: bool,
+}
+
+impl<E> NextElement<E> {
+    #[inline(always)]
+    fn new(next_element: Option<E>, featureless: bool) -> Self {
+        Self { next_element, featureless }
+    }
+}
+
 #[inline(always)]
 fn next_element_for_combinator<E>(
     element: &E,
     combinator: Combinator,
-    selector: &SelectorIter<E::Impl>,
     context: &MatchingContext<E::Impl>,
-) -> Option<E>
+) -> NextElement<E>
 where
     E: Element,
 {
     match combinator {
-        Combinator::NextSibling | Combinator::LaterSibling => element.prev_sibling_element(),
+        Combinator::NextSibling | Combinator::LaterSibling => NextElement::new(
+            element.prev_sibling_element(),
+            false,
+        ),
         Combinator::Child | Combinator::Descendant => {
-            match element.parent_element() {
-                Some(e) => return Some(e),
-                None => {},
+            if let Some(parent) = element.parent_element() {
+                return NextElement::new(Some(parent), false);
             }
 
-            if !element.parent_node_is_shadow_root() {
-                return None;
-            }
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let matches_featureless_host = selector.clone().is_featureless_host_selector();
-            if matches_featureless_host.intersects(FeaturelessHostMatches::FOR_HOST) {
-                
-                return element.containing_shadow_host()
-            } else if matches_featureless_host.intersects(FeaturelessHostMatches::FOR_SCOPE) {
-                let host = element.containing_shadow_host();
-                
-                
-                
-                if context.scope_element.is_some() &&
-                    context.scope_element.clone() == host.clone().map(|e| e.opaque())
-                {
-                    return host;
-                }
-                return None;
+            let element = if element.parent_node_is_shadow_root() {
+                element.containing_shadow_host()
             } else {
-                return None;
-            }
+                None
+            };
+            NextElement::new(element, true)
         },
-        Combinator::Part => host_for_part(element, context),
-        Combinator::SlotAssignment => assigned_slot(element, context),
-        Combinator::PseudoElement => element.pseudo_element_originating_element(),
+        Combinator::Part => NextElement::new(host_for_part(element, context), false),
+        Combinator::SlotAssignment => NextElement::new(assigned_slot(element, context), false),
+        Combinator::PseudoElement => NextElement::new(element.pseudo_element_originating_element(), false),
     }
 }
 
@@ -856,8 +842,13 @@ where
     };
 
     let combinator = selector_iter.next_sequence();
-    if combinator.map_or(false, |c| c.is_sibling()) {
-        if context.needs_selector_flags() {
+    if let Some(c) = combinator {
+        if context.featureless() && !c.is_pseudo_element() {
+            
+            
+            return SelectorMatchingResult::NotMatchedGlobally;
+        }
+        if c.is_sibling() && context.needs_selector_flags() {
             element.apply_selector_flags(ElementSelectorFlags::HAS_SLOW_SELECTOR_LATER_SIBLINGS);
         }
     }
@@ -914,25 +905,27 @@ where
             visited_handling = VisitedHandlingMode::AllLinksUnvisited;
         }
 
-        element = match next_element_for_combinator(&element, combinator, &selector_iter, &context)
-        {
+        let NextElement { next_element, featureless } = next_element_for_combinator(&element, combinator, &context);
+        element = match next_element {
             None => return candidate_not_found,
-            Some(next_element) => next_element,
+            Some(e) => e,
         };
 
         let result = context.with_visited_handling_mode(visited_handling, |context| {
-            matches_complex_selector_internal(
-                selector_iter.clone(),
-                &element,
-                context,
-                rightmost,
-                first_subject_compound,
-            )
+            context.with_featureless(featureless, |context| {
+                matches_complex_selector_internal(
+                    selector_iter.clone(),
+                    &element,
+                    context,
+                    rightmost,
+                    first_subject_compound,
+                )
+            })
         });
 
-        match (result, combinator) {
-            
-            (SelectorMatchingResult::Matched | SelectorMatchingResult::Unknown, _) => {
+        match result {
+            SelectorMatchingResult::Matched | SelectorMatchingResult::Unknown => {
+                
                 debug_assert!(
                     matches_compound_selector.to_bool(true),
                     "Compound didn't match?"
@@ -945,35 +938,42 @@ where
                 }
                 
                 return SelectorMatchingResult::Unknown;
-            },
-            (SelectorMatchingResult::NotMatchedGlobally, _) | (_, Combinator::NextSibling) => {
-                return result;
-            },
-
-            
-            
-            (_, Combinator::PseudoElement) | (_, Combinator::Child) => {
-                return SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant;
-            },
-
-            
-            
-            
-            
-            (
-                SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant,
-                Combinator::LaterSibling,
-            ) => {
-                return result;
-            },
-
-            
-            
-            
-            
-            
-            
+            }
+            SelectorMatchingResult::NotMatchedGlobally => return result,
             _ => {},
+        }
+
+        if featureless {
+            
+            
+            return SelectorMatchingResult::NotMatchedGlobally;
+        }
+
+        match combinator {
+            Combinator::NextSibling => return result,
+            Combinator::PseudoElement | Combinator::Child => {
+                
+                return SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant;
+            }
+            Combinator::LaterSibling => {
+                
+                
+                
+                if matches!(result, SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant) {
+                    return result;
+                }
+            }
+            _ => {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+            }
         }
     }
 }
@@ -1049,10 +1049,10 @@ where
     if host != element.opaque() {
         return KleeneValue::False;
     }
-    selector.map_or(KleeneValue::True, |selector| {
-        context
-            .nest(|context| matches_complex_selector(selector.iter(), element, context, rightmost))
-    })
+    let Some(selector) = selector else { return KleeneValue::True };
+    context.nest(|context| context.with_featureless(false, |context| {
+        matches_complex_selector(selector.iter(), element, context, rightmost)
+    }))
 }
 
 fn matches_slotted<E>(
@@ -1105,6 +1105,62 @@ where
 }
 
 
+
+
+pub(crate) fn compound_matches_featureless_host<Impl: SelectorImpl>(iter: &mut SelectorIter<Impl>, scope_matches_featureless_host: bool) -> MatchesFeaturelessHost {
+    let mut matches = MatchesFeaturelessHost::Only;
+    for component in iter {
+        match component {
+            Component::Scope | Component::ImplicitScope if scope_matches_featureless_host => {},
+            
+            Component::Host(..) => {},
+            
+            Component::PseudoElement(..) => {},
+            
+            
+            Component::Is(ref l) | Component::Where(ref l) => {
+                let mut any_yes = false;
+                let mut any_no = false;
+                for selector in l.slice() {
+                    match selector.matches_featureless_host(scope_matches_featureless_host) {
+                        MatchesFeaturelessHost::Never => {
+                            any_no = true;
+                        }
+                        MatchesFeaturelessHost::Yes => {
+                            any_yes = true;
+                            any_no = true;
+                        }
+                        MatchesFeaturelessHost::Only => {
+                            any_yes = true;
+                        }
+                    }
+                }
+                if !any_yes {
+                    return MatchesFeaturelessHost::Never;
+                }
+                if any_no {
+                    
+                    matches = MatchesFeaturelessHost::Yes;
+                }
+            },
+            Component::Negation(ref l) => {
+                
+                
+                
+                for selector in l.slice() {
+                    if selector.matches_featureless_host(scope_matches_featureless_host) != MatchesFeaturelessHost::Only {
+                        return MatchesFeaturelessHost::Never;
+                    }
+                }
+            },
+            
+            _ => return MatchesFeaturelessHost::Never,
+        }
+    }
+    matches
+}
+
+
 #[inline]
 fn matches_compound_selector<E>(
     selector_iter: &mut SelectorIter<E::Impl>,
@@ -1115,6 +1171,9 @@ fn matches_compound_selector<E>(
 where
     E: Element,
 {
+    if context.featureless() && compound_matches_featureless_host(&mut selector_iter.clone(),  true) == MatchesFeaturelessHost::Never {
+        return KleeneValue::False;
+    }
     let quirks_data = if context.quirks_mode() == QuirksMode::Quirks {
         Some(selector_iter.clone())
     } else {

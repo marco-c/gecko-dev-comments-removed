@@ -177,6 +177,9 @@ where
     pub has_starting_style: bool,
 
     
+    pub featureless: bool,
+
+    
     nesting_level: usize,
 
     
@@ -253,6 +256,7 @@ where
             matching_for_invalidation,
             scope_element: None,
             current_host: None,
+            featureless: false,
             nesting_level: 0,
             in_negation: false,
             pseudo_element_matching_fn: None,
@@ -371,6 +375,31 @@ where
     #[inline]
     pub fn visited_handling(&self) -> VisitedHandlingMode {
         self.visited_handling
+    }
+
+    
+    #[inline]
+    pub fn with_featureless<F, R>(
+        &mut self,
+        featureless: bool,
+        f: F,
+    ) -> R
+    where
+        F: FnOnce(&mut Self) -> R,
+    {
+        let orig = self.featureless;
+        self.featureless = featureless;
+        let result = f(self);
+        self.featureless = orig;
+        result
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn featureless(&self) -> bool {
+        self.featureless
     }
 
     
