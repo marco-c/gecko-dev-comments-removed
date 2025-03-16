@@ -47,10 +47,6 @@ class AudioWorkletGlobalScope final : public WorkletGlobalScope {
 
   float SampleRate() const;
 
-  MessagePort* Port() const { return mPort; };
-
-  void SetPort(MessagePort* aPort) { mPort = aPort; }
-
   
   
   MOZ_CAN_RUN_SCRIPT
@@ -80,8 +76,6 @@ class AudioWorkletGlobalScope final : public WorkletGlobalScope {
   
   
   RefPtr<MessagePort> mPortForProcessor;
-
-  RefPtr<MessagePort> mPort;
 };
 
 }  
