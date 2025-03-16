@@ -30,7 +30,6 @@
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/PlainObject.h"    
-#include "vm/PromiseLookup.h"  
 #include "vm/PromiseObject.h"  
 #include "vm/SelfHosting.h"
 #include "vm/Warnings.h"  
@@ -387,6 +386,32 @@ namespace {
 
 mozilla::Atomic<uint64_t> gIDGenerator(0);
 }  
+
+
+
+
+static bool HasDefaultPromiseProperties(JSContext* cx) {
+  return cx->realm()->realmFuses.optimizePromiseLookupFuse.intact();
+}
+
+static bool IsPromiseWithDefaultProperties(PromiseObject* promise,
+                                           JSContext* cx) {
+  if (!HasDefaultPromiseProperties(cx)) {
+    return false;
+  }
+
+  
+  JSObject* proto = cx->global()->maybeGetPrototype(JSProto_Promise);
+  if (!proto || promise->staticPrototype() != proto) {
+    return false;
+  }
+
+  
+  
+  
+  
+  return promise->empty();
+}
 
 class PromiseDebugInfo : public NativeObject {
  private:
@@ -3090,8 +3115,7 @@ enum class CombinatorKind { All, AllSettled, Any, Race };
       return false;
     }
 
-    PromiseLookup& promiseLookup = cx->realm()->promiseLookup;
-    if (C != promiseCtor || !promiseLookup.isDefaultPromiseState(cx)) {
+    if (C != promiseCtor || !HasDefaultPromiseProperties(cx)) {
       
 
       
@@ -3586,13 +3610,11 @@ template <typename T>
   
   bool iterationMayHaveSideEffects = !iterator.isOptimizedDenseArrayIteration();
 
-  PromiseLookup& promiseLookup = cx->realm()->promiseLookup;
-
   
   
   
   bool isDefaultPromiseState =
-      C == promiseCtor && promiseLookup.isDefaultPromiseState(cx);
+      C == promiseCtor && HasDefaultPromiseProperties(cx);
   bool validatePromiseState = iterationMayHaveSideEffects;
 
   RootedValue CVal(cx, ObjectValue(*C));
@@ -3637,7 +3659,7 @@ template <typename T>
     bool getThen = true;
 
     if (isDefaultPromiseState && validatePromiseState) {
-      isDefaultPromiseState = promiseLookup.isDefaultPromiseState(cx);
+      isDefaultPromiseState = HasDefaultPromiseProperties(cx);
     }
 
     RootedValue& nextPromise = nextValueOrNextPromise;
@@ -3648,8 +3670,7 @@ template <typename T>
       }
 
       if (nextValuePromise &&
-          promiseLookup.isDefaultInstanceWhenPromiseStateIsSane(
-              cx, nextValuePromise)) {
+          IsPromiseWithDefaultProperties(nextValuePromise, cx)) {
         
         
         
@@ -5458,8 +5479,8 @@ static bool PromiseThenNewPromiseCapability(
 static bool CanCallOriginalPromiseThenBuiltin(JSContext* cx,
                                               HandleValue promise) {
   return promise.isObject() && promise.toObject().is<PromiseObject>() &&
-         cx->realm()->promiseLookup.isDefaultInstance(
-             cx, &promise.toObject().as<PromiseObject>());
+         IsPromiseWithDefaultProperties(&promise.toObject().as<PromiseObject>(),
+                                        cx);
 }
 
 static MOZ_ALWAYS_INLINE bool IsPromiseThenOrCatchRetValImplicitlyUsed(
@@ -7084,8 +7105,7 @@ void PromiseObject::dumpOwnStringContent(js::GenericPrinter& out) const {}
     return true;
   }
 
-  PromiseLookup& promiseLookup = cx->realm()->promiseLookup;
-  if (!promiseLookup.isDefaultInstance(cx, promise)) {
+  if (!IsPromiseWithDefaultProperties(promise, cx)) {
     *canSkip = false;
     return true;
   }
