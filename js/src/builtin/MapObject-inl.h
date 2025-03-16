@@ -17,31 +17,23 @@
 
 namespace js {
 
-template <JSProtoKey ProtoKey>
-[[nodiscard]] static bool IsOptimizableInitForMapOrSet(
-    JSNative addOrSetNative, NativeObject* mapOrSetObject,
-    const Value& iterable, JSContext* cx) {
-  constexpr bool isMap = ProtoKey == JSProto_Map || ProtoKey == JSProto_WeakMap;
-  constexpr bool isSet = ProtoKey == JSProto_Set || ProtoKey == JSProto_WeakSet;
-  static_assert(isMap != isSet, "must be either a Map or a Set");
+enum class MapOrSet { Map, Set };
 
-  if (!iterable.isObject()) {
+template <MapOrSet IsMapOrSet>
+[[nodiscard]] static bool IsOptimizableArrayForMapOrSetCtor(JSObject* iterable,
+                                                            JSContext* cx) {
+  if (!IsArrayWithDefaultIterator<MustBePacked::Yes>(iterable, cx)) {
     return false;
   }
 
-  if (!IsArrayWithDefaultIterator<MustBePacked::Yes>(&iterable.toObject(),
-                                                     cx)) {
-    return false;
-  }
-  ArrayObject* array = &iterable.toObject().as<ArrayObject>();
-
   
   
   
   
   
   
-  if constexpr (isMap) {
+  if constexpr (IsMapOrSet == MapOrSet::Map) {
+    ArrayObject* array = &iterable->as<ArrayObject>();
     size_t len = array->length();
     static constexpr size_t MaxLength = 100;
     if (len > MaxLength) {
@@ -58,6 +50,16 @@ template <JSProtoKey ProtoKey>
       }
     }
   }
+
+  return true;
+}
+
+template <JSProtoKey ProtoKey>
+[[nodiscard]] static bool CanOptimizeMapOrSetCtorWithIterable(
+    JSNative addOrSetNative, NativeObject* mapOrSetObject, JSContext* cx) {
+  constexpr bool isMap = ProtoKey == JSProto_Map || ProtoKey == JSProto_WeakMap;
+  constexpr bool isSet = ProtoKey == JSProto_Set || ProtoKey == JSProto_WeakSet;
+  static_assert(isMap != isSet, "must be either a Map or a Set");
 
   
   JSObject* proto = mapOrSetObject->staticPrototype();
