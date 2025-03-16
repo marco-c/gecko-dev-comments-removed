@@ -2997,6 +2997,13 @@
         options.skipPermitUnload = true;
       }
 
+      if (group.tabs.length == this.tabs.length) {
+        
+        
+        
+        group.saveOnWindowClose = false;
+      }
+
       
       
       group.dispatchEvent(
