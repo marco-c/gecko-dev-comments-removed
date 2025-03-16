@@ -1,0 +1,10 @@
+
+
+
+
+
+
+interface GleanPingsImpl {
+  searchWith: nsIGleanPingNoReason;
+  serpCategorization: nsIGleanPingWithReason<"startup"|"inactivity"|"threshold_reached">;
+}

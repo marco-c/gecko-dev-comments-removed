@@ -43,12 +43,14 @@ const TYPES = {
   object: "GleanObject",
 };
 
+const SCHEMA = "moz://mozilla.org/schemas/glean";
+
 function style(str, capital) {
   return capital ? str.charAt(0).toUpperCase() + str.slice(1) : str;
 }
 
 function camelCase(id) {
-  return id.split(/_|\./).map(style).join("");
+  return id.split(/[_.-]/).map(style).join("");
 }
 
 
@@ -74,6 +76,27 @@ function emitGlean(yamlDoc) {
 }
 
 
+function emitGleanPings(yamlDoc) {
+  let lines = [HEADER];
+  lines.push("interface GleanPingsImpl {");
+
+  for (let [name, ping] of Object.entries(yamlDoc)) {
+    if (!name.startsWith("$")) {
+      if (!ping.reasons) {
+        lines.push(`  ${camelCase(name)}: nsIGleanPingNoReason;`);
+      } else {
+        let rtype = Object.keys(ping.reasons)
+          .map(r => `"${r}"`)
+          .join("|");
+        lines.push(`  ${camelCase(name)}: nsIGleanPingWithReason<${rtype}>;`);
+      }
+    }
+  }
+  lines.push("}\n");
+  return lines.join("\n");
+}
+
+
 async function main(src_dir, path, types_dir) {
   if (!path.endsWith(".yaml")) {
     path += "/metrics.yaml";
@@ -81,12 +104,22 @@ async function main(src_dir, path, types_dir) {
 
   let glean = `${src_dir}/${types_dir}/glean/`;
   let lib = `${src_dir}/${types_dir}/lib.gecko.glean.d.ts`;
-  let dir = path.replaceAll("/", "_").replace(/_*(metrics.yaml)?$/, "");
+  let dir = path.replaceAll("/", "_").replace(/_*([a-z]+.yaml)?$/, "");
+
+  let yaml = fs.readFileSync(`${src_dir}/${path}`, "utf8");
+  let parsed = YAML.parse(yaml, { merge: true, schema: "failsafe" });
+  let dts;
+
+  if (parsed.$schema === `${SCHEMA}/metrics/2-0-0`) {
+    dts = emitGlean(parsed);
+  } else if (parsed.$schema === `${SCHEMA}/pings/2-0-0`) {
+    dir += "_pings";
+    dts = emitGleanPings(parsed);
+  } else {
+    throw new Error(`Unknown Glean schema: ${parsed.$schema}`);
+  }
 
   let target = `${glean}/${dir}.d.ts`;
-  let yaml = fs.readFileSync(`${src_dir}/${path}`, "utf8");
-  let dts = emitGlean(YAML.parse(yaml, { merge: true, schema: "failsafe" }));
-
   console.log(`[INFO] ${target} (${dts.length.toLocaleString()} bytes)`);
   fs.writeFileSync(target, dts);
 
