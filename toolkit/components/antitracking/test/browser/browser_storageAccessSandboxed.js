@@ -221,7 +221,13 @@ AntiTracking.runTest(
       );
     });
   },
-  [["dom.storage_access.enabled", true]], 
+  [
+    ["dom.storage_access.enabled", true],
+    [
+      "privacy.restrict3rdpartystorage.heuristic.exclude_third_party_trackers",
+      false,
+    ],
+  ], 
   false, 
   false, 
   Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 

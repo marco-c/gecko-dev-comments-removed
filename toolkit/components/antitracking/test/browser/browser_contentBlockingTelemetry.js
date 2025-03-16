@@ -143,6 +143,11 @@ add_setup(async function () {
       
       ["privacy.restrict3rdpartystorage.expiration", 2591999],
       ["privacy.restrict3rdpartystorage.expiration_redirect", 2591999],
+      
+      [
+        "privacy.restrict3rdpartystorage.heuristic.exclude_third_party_trackers",
+        false,
+      ],
     ],
   });
 

@@ -16,6 +16,11 @@ add_task(async function () {
       ["privacy.trackingprotection.enabled", false],
       ["privacy.trackingprotection.pbmode.enabled", false],
       ["privacy.trackingprotection.annotate_channels", true],
+      
+      [
+        "privacy.restrict3rdpartystorage.heuristic.exclude_third_party_trackers",
+        false,
+      ],
     ],
   });
 

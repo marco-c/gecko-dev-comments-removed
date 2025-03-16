@@ -988,6 +988,15 @@ this.AntiTracking = {
         await TestUtils.topicObserved("browser-delayed-startup-finished");
       }
 
+      
+      extraPrefs = [
+        ...(extraPrefs || []),
+        [
+          "privacy.restrict3rdpartystorage.heuristic.exclude_third_party_trackers",
+          false,
+        ],
+      ];
+
       await AntiTracking._setupTest(
         win,
         cookieBehavior,
@@ -1113,6 +1122,15 @@ this.AntiTracking = {
         win = OpenBrowserWindow({ private: true });
         await TestUtils.topicObserved("browser-delayed-startup-finished");
       }
+
+      
+      extraPrefs = [
+        ...(extraPrefs || []),
+        [
+          "privacy.restrict3rdpartystorage.heuristic.exclude_third_party_trackers",
+          false,
+        ],
+      ];
 
       await AntiTracking._setupTest(
         win,

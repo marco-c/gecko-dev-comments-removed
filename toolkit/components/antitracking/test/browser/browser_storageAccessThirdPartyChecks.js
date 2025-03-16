@@ -47,6 +47,13 @@ AntiTracking._createTask({
     "https://tracking.example.org",
     "https://tracking.example.org",
   ],
+  extraPrefs: [
+    
+    [
+      "privacy.restrict3rdpartystorage.heuristic.exclude_third_party_trackers",
+      false,
+    ],
+  ],
 });
 
 add_task(async _ => {
