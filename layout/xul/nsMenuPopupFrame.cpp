@@ -1045,10 +1045,7 @@ void nsMenuPopupFrame::HidePopup(bool aDeselectMenu, nsPopupState aNewState,
   mConstrainedByLayout = false;
 
   if (auto* widget = GetWidget()) {
-    
-    
-    
-    widget->ClearWebrenderAnimationResources();
+    widget->ClearCachedWebrenderResources();
   }
 
   nsView* view = GetView();
