@@ -1777,7 +1777,7 @@ class ArenaCollection {
   DoublyLinkedList<arena_t> mOutstandingPurges MOZ_GUARDED_BY(mPurgeListLock);
   
   
-  Atomic<bool, Relaxed> mIsDeferredPurgeEnabled;
+  Atomic<bool> mIsDeferredPurgeEnabled;
 };
 
 MOZ_RUNINIT static ArenaCollection gArenas;
