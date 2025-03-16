@@ -14,6 +14,7 @@ import sys
 import tempfile
 import time
 import traceback
+from shutil import copy2 as shutil_copy2
 from shutil import copytree
 from threading import Thread
 
@@ -3009,7 +3010,28 @@ class ADBDevice(ADBCommand):
             temp_parent = tempfile.mkdtemp()
             remote_name = os.path.basename(remote)
             new_local = os.path.join(temp_parent, remote_name)
-            copytree(local, new_local)
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            def copy_ignore_broken_link(src, dst):
+                try:
+                    return shutil_copy2(src, dst)
+                except OSError as e:
+                    if e.errno == 2 and os.path.islink(src):
+                        self._logger.debug("Ignoring broken symlink: %s" % src)
+                    else:
+                        raise e
+
+            copytree(local, new_local, copy_function=copy_ignore_broken_link)
+
             local = new_local
             
             
