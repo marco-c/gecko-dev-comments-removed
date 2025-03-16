@@ -653,10 +653,12 @@ void Theme::PaintRadioControl(PaintBackendData& aPaintData,
 
   if (aState.HasState(ElementState::CHECKED)) {
     
+    
+    const CSSCoord kOuterBorderWidth = 1.0f;
     const CSSCoord kInnerBorderWidth = 2.0f;
     LayoutDeviceRect rect(aRect);
     auto width = LayoutDeviceCoord(
-        ThemeDrawing::SnapBorderWidth(kInnerBorderWidth, aDpiRatio));
+        ThemeDrawing::SnapBorderWidth(kOuterBorderWidth, aDpiRatio));
     rect.Deflate(width);
     PaintStrokedCircle(aPaintData, rect, backgroundColor, checkColor,
                        kInnerBorderWidth, aDpiRatio);
