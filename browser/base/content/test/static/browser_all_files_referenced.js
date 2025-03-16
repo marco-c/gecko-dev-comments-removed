@@ -105,6 +105,9 @@ var gExceptionPaths = [
 
   
   "chrome://browser/content/profiles/assets/",
+
+  
+  "resource://builtin-addons/pictureinpicture/",
 ];
 
 
