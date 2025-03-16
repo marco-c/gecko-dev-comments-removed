@@ -17,6 +17,11 @@ pub use crate::pid::Pid;
 
 
 
+
+
+
+
+
 #[cfg(not(any(windows, target_os = "espidf", target_os = "wasi")))]
 #[inline]
 #[doc(alias = "TCGETS")]
@@ -79,6 +84,10 @@ pub fn tcgetpgrp<Fd: AsFd>(fd: Fd) -> io::Result<Pid> {
 pub fn tcsetpgrp<Fd: AsFd>(fd: Fd, pid: Pid) -> io::Result<()> {
     backend::termios::syscalls::tcsetpgrp(fd.as_fd(), pid)
 }
+
+
+
+
 
 
 

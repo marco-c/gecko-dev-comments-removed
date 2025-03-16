@@ -41,7 +41,6 @@ use linux_raw_sys::errno;
 
 
 
-
 #[repr(transparent)]
 #[doc(alias = "errno")]
 #[derive(Eq, PartialEq, Hash, Copy, Clone)]

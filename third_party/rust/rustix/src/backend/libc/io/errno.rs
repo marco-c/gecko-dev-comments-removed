@@ -31,7 +31,6 @@ use libc_errno::errno;
 
 
 
-
 #[repr(transparent)]
 #[doc(alias = "errno")]
 #[derive(Eq, PartialEq, Hash, Copy, Clone)]

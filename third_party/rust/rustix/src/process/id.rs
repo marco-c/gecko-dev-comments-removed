@@ -13,17 +13,8 @@ use alloc::vec::Vec;
 #[cfg(linux_kernel)]
 use backend::process::types::RawCpuid;
 
-
-pub use crate::ugid::RawUid;
-
-
-pub use crate::ugid::RawGid;
-
-
-pub use crate::pid::RawPid;
-
-pub use crate::pid::Pid;
-pub use crate::ugid::{Gid, Uid};
+pub use crate::pid::{Pid, RawPid};
+pub use crate::ugid::{Gid, RawGid, RawUid, Uid};
 
 
 #[cfg(linux_kernel)]

@@ -313,7 +313,7 @@ pub(crate) fn getrlimit(limit: Resource) -> Rlimit {
 #[inline]
 pub(crate) fn setrlimit(limit: Resource, new: Rlimit) -> io::Result<()> {
     unsafe {
-        let lim = rlimit_to_linux(new.clone());
+        let lim = rlimit_to_linux(new);
         match ret(syscall_readonly!(
             __NR_prlimit64,
             c_uint(0),
@@ -348,12 +348,12 @@ pub(crate) fn prlimit(pid: Option<Pid>, limit: Resource, new: Rlimit) -> io::Res
 
 #[inline]
 fn rlimit_from_linux(lim: rlimit64) -> Rlimit {
-    let current = if lim.rlim_cur == RLIM64_INFINITY as _ {
+    let current = if lim.rlim_cur == RLIM64_INFINITY as u64 {
         None
     } else {
         Some(lim.rlim_cur)
     };
-    let maximum = if lim.rlim_max == RLIM64_INFINITY as _ {
+    let maximum = if lim.rlim_max == RLIM64_INFINITY as u64 {
         None
     } else {
         Some(lim.rlim_max)
@@ -599,6 +599,12 @@ pub(crate) fn pidfd_send_signal(fd: BorrowedFd<'_>, sig: Signal) -> io::Result<(
             pass_usize(0)
         ))
     }
+}
+
+#[cfg(feature = "fs")]
+#[inline]
+pub(crate) fn pivot_root(new_root: &CStr, put_old: &CStr) -> io::Result<()> {
+    unsafe { ret(syscall_readonly!(__NR_pivot_root, new_root, put_old)) }
 }
 
 #[cfg(feature = "alloc")]

@@ -1,10 +1,10 @@
 bitflags::bitflags! {
-    /// `FUTEX_*` flags for use with [`futex`].
+    /// `FUTEX_*` flags for use with the functions in [`futex`].
     ///
-    /// [`futex`]: crate::thread::futex
+    /// [`futex`]: mod@crate::thread::futex
     #[repr(transparent)]
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
-    pub struct FutexFlags: u32 {
+    pub struct Flags: u32 {
         /// `FUTEX_PRIVATE_FLAG`
         const PRIVATE = linux_raw_sys::general::FUTEX_PRIVATE_FLAG;
         /// `FUTEX_CLOCK_REALTIME`
@@ -15,6 +15,50 @@ bitflags::bitflags! {
         // value that also includes a `SocketType`.
     }
 }
+
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub(crate) enum Operation {
+    
+    Wait = linux_raw_sys::general::FUTEX_WAIT,
+    
+    Wake = linux_raw_sys::general::FUTEX_WAKE,
+    
+    Fd = linux_raw_sys::general::FUTEX_FD,
+    
+    Requeue = linux_raw_sys::general::FUTEX_REQUEUE,
+    
+    CmpRequeue = linux_raw_sys::general::FUTEX_CMP_REQUEUE,
+    
+    WakeOp = linux_raw_sys::general::FUTEX_WAKE_OP,
+    
+    LockPi = linux_raw_sys::general::FUTEX_LOCK_PI,
+    
+    UnlockPi = linux_raw_sys::general::FUTEX_UNLOCK_PI,
+    
+    TrylockPi = linux_raw_sys::general::FUTEX_TRYLOCK_PI,
+    
+    WaitBitset = linux_raw_sys::general::FUTEX_WAIT_BITSET,
+    
+    WakeBitset = linux_raw_sys::general::FUTEX_WAKE_BITSET,
+    
+    WaitRequeuePi = linux_raw_sys::general::FUTEX_WAIT_REQUEUE_PI,
+    
+    CmpRequeuePi = linux_raw_sys::general::FUTEX_CMP_REQUEUE_PI,
+    
+    LockPi2 = linux_raw_sys::general::FUTEX_LOCK_PI2,
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -43,3 +87,9 @@ pub enum FutexOperation {
     
     WaitBitset = linux_raw_sys::general::FUTEX_WAIT_BITSET,
 }
+
+
+pub const WAITERS: u32 = linux_raw_sys::general::FUTEX_WAITERS;
+
+
+pub const OWNER_DIED: u32 = linux_raw_sys::general::FUTEX_OWNER_DIED;

@@ -77,27 +77,27 @@ impl Default for CpuSet {
 }
 
 impl fmt::Debug for CpuSet {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(fmt, "CpuSet {{")?;
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "CpuSet {{")?;
         let mut first = true;
-        for i in 0..CpuSet::MAX_CPU {
+        for i in 0..Self::MAX_CPU {
             if self.is_set(i) {
                 if first {
-                    write!(fmt, " ")?;
+                    write!(f, " ")?;
                     first = false;
                 } else {
-                    write!(fmt, ", ")?;
+                    write!(f, ", ")?;
                 }
-                write!(fmt, "cpu{}", i)?;
+                write!(f, "cpu{}", i)?;
             }
         }
-        write!(fmt, " }}")
+        write!(f, " }}")
     }
 }
 
 impl hash::Hash for CpuSet {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        for i in 0..CpuSet::MAX_CPU {
+        for i in 0..Self::MAX_CPU {
             self.is_set(i).hash(state);
         }
     }

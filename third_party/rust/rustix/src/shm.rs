@@ -1,10 +1,73 @@
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![allow(unused_qualifications)]
+
 use crate::fd::OwnedFd;
 use crate::{backend, io, path};
 
+use super::shm;
 pub use crate::backend::fs::types::Mode;
+pub use crate::backend::shm::types::ShmOFlags as OFlags;
+#[deprecated(note = "Use `shm::OFlags`.")]
+#[doc(hidden)]
 pub use crate::backend::shm::types::ShmOFlags;
+#[deprecated(note = "Use `shm::open`.")]
+#[doc(hidden)]
+pub use open as shm_open;
+#[deprecated(note = "Use `shm::unlink`.")]
+#[doc(hidden)]
+pub use unlink as shm_unlink;
 
 
 
@@ -21,8 +84,9 @@ pub use crate::backend::shm::types::ShmOFlags;
 
 
 
+#[doc(alias = "shm_open")]
 #[inline]
-pub fn shm_open<P: path::Arg>(name: P, flags: ShmOFlags, mode: Mode) -> io::Result<OwnedFd> {
+pub fn open<P: path::Arg>(name: P, flags: shm::OFlags, mode: Mode) -> io::Result<OwnedFd> {
     name.into_with_c_str(|name| backend::shm::syscalls::shm_open(name, flags, mode))
 }
 
@@ -34,7 +98,8 @@ pub fn shm_open<P: path::Arg>(name: P, flags: ShmOFlags, mode: Mode) -> io::Resu
 
 
 
+#[doc(alias = "shm_unlink")]
 #[inline]
-pub fn shm_unlink<P: path::Arg>(name: P) -> io::Result<()> {
+pub fn unlink<P: path::Arg>(name: P) -> io::Result<()> {
     name.into_with_c_str(backend::shm::syscalls::shm_unlink)
 }

@@ -95,7 +95,9 @@ unsafe impl ioctl::Ioctl for Ficlone<'_> {
 
 #[cfg(linux_kernel)]
 bitflags! {
-    /// `FS_*` constants for use with [`ioctl_getflags`][crate::io::ioctl::ioctl_getflags].
+    /// `FS_*` constants for use with [`ioctl_getflags`].
+    ///
+    /// [`ioctl_getflags`]: crate::fs::ioctl::ioctl_getflags
     pub struct IFlags: c::c_uint {
         /// `FS_APPEND_FL`
         const APPEND = linux_raw_sys::general::FS_APPEND_FL;

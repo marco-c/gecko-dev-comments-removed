@@ -36,6 +36,9 @@ pub use backend::io::types::ReadWriteFlags;
 
 
 
+
+
+
 #[inline]
 pub fn read<Fd: AsFd>(fd: Fd, buf: &mut [u8]) -> io::Result<usize> {
     unsafe { backend::io::syscalls::read(fd.as_fd(), buf.as_mut_ptr(), buf.len()) }
@@ -52,8 +55,9 @@ pub fn read_uninit<Fd: AsFd>(
     buf: &mut [MaybeUninit<u8>],
 ) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>])> {
     
-    let length =
-        unsafe { backend::io::syscalls::read(fd.as_fd(), buf.as_mut_ptr() as *mut u8, buf.len()) };
+    let length = unsafe {
+        backend::io::syscalls::read(fd.as_fd(), buf.as_mut_ptr().cast::<u8>(), buf.len())
+    };
 
     
     Ok(unsafe { split_init(buf, length?) })
@@ -106,6 +110,11 @@ pub fn write<Fd: AsFd>(fd: Fd, buf: &[u8]) -> io::Result<usize> {
 
 
 
+
+
+
+
+
 #[inline]
 pub fn pread<Fd: AsFd>(fd: Fd, buf: &mut [u8], offset: u64) -> io::Result<usize> {
     unsafe { backend::io::syscalls::pread(fd.as_fd(), buf.as_mut_ptr(), buf.len(), offset) }
@@ -123,10 +132,12 @@ pub fn pread_uninit<Fd: AsFd>(
     offset: u64,
 ) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>])> {
     let length = unsafe {
-        backend::io::syscalls::pread(fd.as_fd(), buf.as_mut_ptr() as *mut u8, buf.len(), offset)
+        backend::io::syscalls::pread(fd.as_fd(), buf.as_mut_ptr().cast::<u8>(), buf.len(), offset)
     };
     Ok(unsafe { split_init(buf, length?) })
 }
+
+
 
 
 
@@ -177,6 +188,8 @@ pub fn pwrite<Fd: AsFd>(fd: Fd, buf: &[u8], offset: u64) -> io::Result<usize> {
 
 
 
+
+
 #[cfg(not(any(target_os = "espidf", target_os = "horizon")))]
 #[inline]
 pub fn readv<Fd: AsFd>(fd: Fd, bufs: &mut [IoSliceMut<'_>]) -> io::Result<usize> {
@@ -203,11 +216,15 @@ pub fn readv<Fd: AsFd>(fd: Fd, bufs: &mut [IoSliceMut<'_>]) -> io::Result<usize>
 
 
 
+
+
 #[cfg(not(any(target_os = "espidf", target_os = "horizon")))]
 #[inline]
 pub fn writev<Fd: AsFd>(fd: Fd, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
     backend::io::syscalls::writev(fd.as_fd(), bufs)
 }
+
+
 
 
 
@@ -261,6 +278,8 @@ pub fn preadv<Fd: AsFd>(fd: Fd, bufs: &mut [IoSliceMut<'_>], offset: u64) -> io:
 
 
 
+
+
 #[cfg(not(any(
     target_os = "espidf",
     target_os = "haiku",
@@ -283,6 +302,8 @@ pub fn pwritev<Fd: AsFd>(fd: Fd, bufs: &[IoSlice<'_>], offset: u64) -> io::Resul
 
 
 
+
+
 #[cfg(linux_kernel)]
 #[inline]
 pub fn preadv2<Fd: AsFd>(
@@ -293,6 +314,8 @@ pub fn preadv2<Fd: AsFd>(
 ) -> io::Result<usize> {
     backend::io::syscalls::preadv2(fd.as_fd(), bufs, offset, flags)
 }
+
+
 
 
 

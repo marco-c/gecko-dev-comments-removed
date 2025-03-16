@@ -1,18 +1,62 @@
 use crate::backend::c;
 
 bitflags::bitflags! {
-    /// `FUTEX_*` flags for use with [`futex`].
+    /// `FUTEX_*` flags for use with the functions in [`futex`].
     ///
-    /// [`futex`]: crate::thread::futex
+    /// [`futex`]: mod@crate::thread::futex
     #[repr(transparent)]
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
-    pub struct FutexFlags: u32 {
+    pub struct Flags: u32 {
         /// `FUTEX_PRIVATE_FLAG`
         const PRIVATE = bitcast!(c::FUTEX_PRIVATE_FLAG);
         /// `FUTEX_CLOCK_REALTIME`
         const CLOCK_REALTIME = bitcast!(c::FUTEX_CLOCK_REALTIME);
     }
 }
+
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub(crate) enum Operation {
+    
+    Wait = bitcast!(c::FUTEX_WAIT),
+    
+    Wake = bitcast!(c::FUTEX_WAKE),
+    
+    Fd = bitcast!(c::FUTEX_FD),
+    
+    Requeue = bitcast!(c::FUTEX_REQUEUE),
+    
+    CmpRequeue = bitcast!(c::FUTEX_CMP_REQUEUE),
+    
+    WakeOp = bitcast!(c::FUTEX_WAKE_OP),
+    
+    LockPi = bitcast!(c::FUTEX_LOCK_PI),
+    
+    UnlockPi = bitcast!(c::FUTEX_UNLOCK_PI),
+    
+    TrylockPi = bitcast!(c::FUTEX_TRYLOCK_PI),
+    
+    WaitBitset = bitcast!(c::FUTEX_WAIT_BITSET),
+    
+    WakeBitset = bitcast!(c::FUTEX_WAKE_BITSET),
+    
+    WaitRequeuePi = bitcast!(c::FUTEX_WAIT_REQUEUE_PI),
+    
+    CmpRequeuePi = bitcast!(c::FUTEX_CMP_REQUEUE_PI),
+    
+    LockPi2 = bitcast!(c::FUTEX_LOCK_PI2),
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -41,3 +85,9 @@ pub enum FutexOperation {
     
     WaitBitset = bitcast!(c::FUTEX_WAIT_BITSET),
 }
+
+
+pub const WAITERS: u32 = linux_raw_sys::general::FUTEX_WAITERS;
+
+
+pub const OWNER_DIED: u32 = linux_raw_sys::general::FUTEX_OWNER_DIED;

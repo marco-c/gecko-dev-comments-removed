@@ -53,3 +53,13 @@ use backend::fd::RawFd;
 pub unsafe fn close(raw_fd: RawFd) {
     backend::io::syscalls::close(raw_fd)
 }
+
+
+
+
+
+
+#[cfg(feature = "try_close")]
+pub unsafe fn try_close(raw_fd: RawFd) -> crate::io::Result<()> {
+    backend::io::syscalls::try_close(raw_fd)
+}

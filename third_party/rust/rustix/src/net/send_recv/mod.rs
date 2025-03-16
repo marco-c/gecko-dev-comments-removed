@@ -10,6 +10,7 @@ use crate::net::SocketAddrUnix;
 use crate::net::{SocketAddr, SocketAddrAny, SocketAddrV4, SocketAddrV6};
 use crate::{backend, io};
 use backend::fd::{AsFd, BorrowedFd};
+use core::cmp::min;
 use core::mem::MaybeUninit;
 
 pub use backend::net::send_recv::{RecvFlags, SendFlags};
@@ -58,10 +59,18 @@ pub use msg::*;
 
 
 
+
+
+
 #[inline]
 pub fn recv<Fd: AsFd>(fd: Fd, buf: &mut [u8], flags: RecvFlags) -> io::Result<usize> {
     unsafe { backend::net::syscalls::recv(fd.as_fd(), buf.as_mut_ptr(), buf.len(), flags) }
 }
+
+
+
+
+
 
 
 
@@ -75,10 +84,12 @@ pub fn recv_uninit<Fd: AsFd>(
     flags: RecvFlags,
 ) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>])> {
     let length = unsafe {
-        backend::net::syscalls::recv(fd.as_fd(), buf.as_mut_ptr() as *mut u8, buf.len(), flags)
+        backend::net::syscalls::recv(fd.as_fd(), buf.as_mut_ptr().cast::<u8>(), buf.len(), flags)?
     };
 
-    Ok(unsafe { split_init(buf, length?) })
+    
+    
+    Ok(unsafe { split_init(buf, min(length, buf.len())) })
 }
 
 
@@ -139,6 +150,9 @@ pub fn send<Fd: AsFd>(fd: Fd, buf: &[u8], flags: SendFlags) -> io::Result<usize>
 
 
 
+
+
+
 #[inline]
 pub fn recvfrom<Fd: AsFd>(
     fd: Fd,
@@ -154,6 +168,11 @@ pub fn recvfrom<Fd: AsFd>(
 
 
 
+
+
+
+
+
 #[allow(clippy::type_complexity)]
 #[inline]
 pub fn recvfrom_uninit<Fd: AsFd>(
@@ -162,9 +181,17 @@ pub fn recvfrom_uninit<Fd: AsFd>(
     flags: RecvFlags,
 ) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>], Option<SocketAddrAny>)> {
     let (length, addr) = unsafe {
-        backend::net::syscalls::recvfrom(fd.as_fd(), buf.as_mut_ptr() as *mut u8, buf.len(), flags)?
+        backend::net::syscalls::recvfrom(
+            fd.as_fd(),
+            buf.as_mut_ptr().cast::<u8>(),
+            buf.len(),
+            flags,
+        )?
     };
-    let (init, uninit) = unsafe { split_init(buf, length) };
+
+    
+    
+    let (init, uninit) = unsafe { split_init(buf, min(length, buf.len())) };
     Ok((init, uninit, addr))
 }
 

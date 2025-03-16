@@ -5,6 +5,7 @@
 
 
 
+
 use crate::ffi::CStr;
 use crate::io;
 #[cfg(feature = "itoa")]
@@ -90,9 +91,9 @@ pub trait Arg {
 }
 
 
-pub fn option_into_with_c_str<T, F, A: Arg>(arg: Option<A>, f: F) -> io::Result<T>
+pub fn option_into_with_c_str<T, F, A>(arg: Option<A>, f: F) -> io::Result<T>
 where
-    A: Sized,
+    A: Arg + Sized,
     F: FnOnce(Option<&CStr>) -> io::Result<T>,
 {
     if let Some(arg) = arg {
@@ -1076,11 +1077,11 @@ where
 
     #[cfg(not(feature = "alloc"))]
     {
-        #[cfg(all(libc, not(target_os = "wasi")))]
+        #[cfg(all(libc, not(any(target_os = "hurd", target_os = "wasi"))))]
         const LARGE_PATH_BUFFER_SIZE: usize = libc::PATH_MAX as usize;
         #[cfg(linux_raw)]
         const LARGE_PATH_BUFFER_SIZE: usize = linux_raw_sys::general::PATH_MAX as usize;
-        #[cfg(target_os = "wasi")]
+        #[cfg(any(target_os = "hurd", target_os = "wasi"))]
         const LARGE_PATH_BUFFER_SIZE: usize = 4096 as usize; 
 
         

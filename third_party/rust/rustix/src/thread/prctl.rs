@@ -6,7 +6,6 @@
 
 
 
-
 #![allow(unsafe_code)]
 
 use core::mem::MaybeUninit;
@@ -427,6 +426,8 @@ bitflags! {
         /// with an effective or real UID of 0 calls `execve`.
         const NO_ROOT = 1_u32 << 0;
         /// Set [`NO_ROOT`] irreversibly.
+        ///
+        /// [`NO_ROOT`]: Self::NO_ROOT
         const NO_ROOT_LOCKED = 1_u32 << 1;
         /// Setting this flag stops the kernel from adjusting the process'
         /// permitted, effective, and ambient capability sets when the thread's
@@ -434,17 +435,23 @@ bitflags! {
         /// values.
         const NO_SETUID_FIXUP = 1_u32 << 2;
         /// Set [`NO_SETUID_FIXUP`] irreversibly.
+        ///
+        /// [`NO_SETUID_FIXUP`]: Self::NO_SETUID_FIXUP
         const NO_SETUID_FIXUP_LOCKED = 1_u32 << 3;
         /// Setting this flag allows a thread that has one or more 0 UIDs to
         /// retain capabilities in its permitted set when it switches all of
         /// its UIDs to nonzero values.
         const KEEP_CAPS = 1_u32 << 4;
         /// Set [`KEEP_CAPS`] irreversibly.
+        ///
+        /// [`KEEP_CAPS`]: Self::KEEP_CAPS
         const KEEP_CAPS_LOCKED = 1_u32 << 5;
         /// Setting this flag disallows raising ambient capabilities via the
         /// `prctl`'s `PR_CAP_AMBIENT_RAISE` operation.
         const NO_CAP_AMBIENT_RAISE = 1_u32 << 6;
         /// Set [`NO_CAP_AMBIENT_RAISE`] irreversibly.
+        ///
+        /// [`NO_CAP_AMBIENT_RAISE`]: Self::NO_CAP_AMBIENT_RAISE
         const NO_CAP_AMBIENT_RAISE_LOCKED = 1_u32 << 7;
 
         /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>

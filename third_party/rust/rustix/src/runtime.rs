@@ -24,6 +24,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 #![allow(unsafe_code)]
 
 use crate::backend;
@@ -320,7 +329,12 @@ pub unsafe fn fork() -> io::Result<Fork> {
 
 
 pub enum Fork {
+    
+    
     Child(Pid),
+
+    
+    
     Parent(Pid),
 }
 
@@ -338,7 +352,7 @@ pub enum Fork {
 
 #[inline]
 #[cfg(feature = "fs")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "fs")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
 pub unsafe fn execveat<Fd: AsFd>(
     dirfd: Fd,
     path: &CStr,
@@ -436,6 +450,7 @@ pub unsafe fn tkill(tid: Pid, sig: Signal) -> io::Result<()> {
 
 #[inline]
 #[doc(alias = "pthread_sigmask")]
+#[doc(alias = "rt_sigprocmask")]
 pub unsafe fn sigprocmask(how: How, set: Option<&Sigset>) -> io::Result<Sigset> {
     backend::runtime::syscalls::sigprocmask(how, set)
 }
@@ -568,13 +583,23 @@ pub const SIGRTMIN: u32 = linux_raw_sys::general::SIGRTMIN;
 #[cfg(linux_raw)]
 pub const SIGRTMAX: u32 = {
     
-    #[cfg(not(any(target_arch = "arm", target_arch = "x86", target_arch = "x86_64")))]
+    #[cfg(not(any(
+        target_arch = "arm",
+        target_arch = "s390x",
+        target_arch = "x86",
+        target_arch = "x86_64",
+    )))]
     {
         linux_raw_sys::general::SIGRTMAX
     }
 
     
-    #[cfg(any(target_arch = "arm", target_arch = "x86", target_arch = "x86_64"))]
+    #[cfg(any(
+        target_arch = "arm",
+        target_arch = "s390x",
+        target_arch = "x86",
+        target_arch = "x86_64",
+    ))]
     {
         linux_raw_sys::general::_NSIG - 1
     }

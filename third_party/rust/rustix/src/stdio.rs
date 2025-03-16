@@ -14,7 +14,11 @@ use backend::c;
 use backend::fd::{BorrowedFd, FromRawFd, RawFd};
 
 #[cfg(not(any(windows, target_os = "wasi")))]
-use {crate::io, backend::fd::AsFd, core::mem::forget};
+use {
+    crate::io,
+    backend::fd::{AsFd, AsRawFd},
+    core::mem::ManuallyDrop,
+};
 
 
 
@@ -473,39 +477,42 @@ pub const fn raw_stderr() -> RawFd {
 
 
 #[cfg(not(any(windows, target_os = "wasi")))]
-#[allow(clippy::mem_forget)]
 #[inline]
 pub fn dup2_stdin<Fd: AsFd>(fd: Fd) -> io::Result<()> {
-    
-    
-    let mut target = unsafe { take_stdin() };
-    backend::io::syscalls::dup2(fd.as_fd(), &mut target)?;
-    forget(target);
+    let fd = fd.as_fd();
+    if fd.as_raw_fd() != c::STDIN_FILENO {
+        
+        
+        let mut target = ManuallyDrop::new(unsafe { take_stdin() });
+        backend::io::syscalls::dup2(fd, &mut target)?;
+    }
     Ok(())
 }
 
 
 #[cfg(not(any(windows, target_os = "wasi")))]
-#[allow(clippy::mem_forget)]
 #[inline]
 pub fn dup2_stdout<Fd: AsFd>(fd: Fd) -> io::Result<()> {
-    
-    
-    let mut target = unsafe { take_stdout() };
-    backend::io::syscalls::dup2(fd.as_fd(), &mut target)?;
-    forget(target);
+    let fd = fd.as_fd();
+    if fd.as_raw_fd() != c::STDOUT_FILENO {
+        
+        
+        let mut target = ManuallyDrop::new(unsafe { take_stdout() });
+        backend::io::syscalls::dup2(fd, &mut target)?;
+    }
     Ok(())
 }
 
 
 #[cfg(not(any(windows, target_os = "wasi")))]
-#[allow(clippy::mem_forget)]
 #[inline]
 pub fn dup2_stderr<Fd: AsFd>(fd: Fd) -> io::Result<()> {
-    
-    
-    let mut target = unsafe { take_stderr() };
-    backend::io::syscalls::dup2(fd.as_fd(), &mut target)?;
-    forget(target);
+    let fd = fd.as_fd();
+    if fd.as_raw_fd() != c::STDERR_FILENO {
+        
+        
+        let mut target = ManuallyDrop::new(unsafe { take_stderr() });
+        backend::io::syscalls::dup2(fd, &mut target)?;
+    }
     Ok(())
 }

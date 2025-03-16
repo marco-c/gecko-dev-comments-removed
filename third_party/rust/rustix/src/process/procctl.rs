@@ -147,6 +147,8 @@ pub enum DumpableBehavior {
 
 
 
+
+
 #[inline]
 pub fn set_dumpable_behavior(process: ProcSelector, config: DumpableBehavior) -> io::Result<()> {
     unsafe { procctl(PROC_TRACE_CTL, process, config as usize as *mut _) }
@@ -284,6 +286,7 @@ pub fn get_reaper_status(process: ProcSelector) -> io::Result<ReaperStatus> {
     })
 }
 
+#[cfg(feature = "alloc")]
 const PROC_REAP_GETPIDS: c_int = 5;
 
 bitflags! {
@@ -450,6 +453,7 @@ pub enum TrapCapBehavior {
     
     Enable = PROC_TRAPCAP_CTL_ENABLE,
 }
+
 
 
 

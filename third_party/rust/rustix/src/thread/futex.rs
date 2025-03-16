@@ -4,14 +4,39 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![allow(unsafe_code)]
 
-use crate::thread::Timespec;
+use core::num::NonZeroU32;
+use core::ptr;
+use core::sync::atomic::AtomicU32;
+
+use crate::backend::thread::futex::Operation;
+use crate::backend::thread::syscalls::{futex_timeout, futex_val2};
+use crate::fd::{FromRawFd, OwnedFd, RawFd};
+use crate::utils::option_as_ptr;
 use crate::{backend, io};
 
-pub use backend::thread::futex::{FutexFlags, FutexOperation};
+pub use crate::timespec::{Nsecs, Secs, Timespec};
 
-
+pub use backend::thread::futex::{Flags, OWNER_DIED, WAITERS};
 
 
 
@@ -25,14 +50,437 @@ pub use backend::thread::futex::{FutexFlags, FutexOperation};
 
 
 #[inline]
-pub unsafe fn futex(
-    uaddr: *mut u32,
-    op: FutexOperation,
-    flags: FutexFlags,
+pub fn wait(
+    uaddr: &AtomicU32,
+    flags: Flags,
     val: u32,
-    utime: *const Timespec,
-    uaddr2: *mut u32,
+    timeout: Option<Timespec>,
+) -> io::Result<()> {
+    
+    unsafe {
+        futex_timeout(
+            uaddr,
+            Operation::Wait,
+            flags,
+            val,
+            option_as_ptr(timeout.as_ref()),
+            ptr::null(),
+            0,
+        )
+        .map(|val| {
+            debug_assert_eq!(
+                val, 0,
+                "The return value should always equal zero, if the call is successful"
+            );
+        })
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn wake(uaddr: &AtomicU32, flags: Flags, val: u32) -> io::Result<usize> {
+    
+    unsafe { futex_val2(uaddr, Operation::Wake, flags, val, 0, ptr::null(), 0) }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn fd(uaddr: &AtomicU32, flags: Flags, val: u32) -> io::Result<OwnedFd> {
+    
+    unsafe {
+        futex_val2(uaddr, Operation::Fd, flags, val, 0, ptr::null(), 0).map(|val| {
+            let fd = val as RawFd;
+            debug_assert_eq!(fd as usize, val, "return value should be a valid fd");
+            OwnedFd::from_raw_fd(fd)
+        })
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn requeue(
+    uaddr: &AtomicU32,
+    flags: Flags,
+    val: u32,
+    val2: u32,
+    uaddr2: &AtomicU32,
+) -> io::Result<usize> {
+    
+    unsafe { futex_val2(uaddr, Operation::Requeue, flags, val, val2, uaddr2, 0) }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn cmp_requeue(
+    uaddr: &AtomicU32,
+    flags: Flags,
+    val: u32,
+    val2: u32,
+    uaddr2: &AtomicU32,
     val3: u32,
 ) -> io::Result<usize> {
-    backend::thread::syscalls::futex(uaddr, op, flags, val, utime, uaddr2, val3)
+    
+    unsafe { futex_val2(uaddr, Operation::CmpRequeue, flags, val, val2, uaddr2, val3) }
+}
+
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+#[allow(clippy::identity_op)]
+pub enum WakeOp {
+    
+    Set = 0,
+    
+    Add = 1,
+    
+    Or = 2,
+    
+    AndN = 3,
+    
+    XOr = 4,
+    
+    SetShift = 0 | 8,
+    
+    AddShift = 1 | 8,
+    
+    OrShift = 2 | 8,
+    
+    AndNShift = 3 | 8,
+    
+    XOrShift = 4 | 8,
+}
+
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum WakeOpCmp {
+    
+    Eq = 0,
+    
+    Ne = 1,
+    
+    Lt = 2,
+    
+    Le = 3,
+    
+    Gt = 4,
+    
+    Ge = 5,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+#[allow(clippy::too_many_arguments)]
+pub fn wake_op(
+    uaddr: &AtomicU32,
+    flags: Flags,
+    val: u32,
+    val2: u32,
+    uaddr2: &AtomicU32,
+    op: WakeOp,
+    cmp: WakeOpCmp,
+    oparg: u16,
+    cmparg: u16,
+) -> io::Result<usize> {
+    if oparg >= 1 << 12 || cmparg >= 1 << 12 {
+        return Err(io::Errno::INVAL);
+    }
+
+    let val3 =
+        ((op as u32) << 28) | ((cmp as u32) << 24) | ((oparg as u32) << 12) | (cmparg as u32);
+
+    
+    unsafe { futex_val2(uaddr, Operation::WakeOp, flags, val, val2, uaddr2, val3) }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn lock_pi(uaddr: &AtomicU32, flags: Flags, timeout: Option<Timespec>) -> io::Result<()> {
+    
+    unsafe {
+        futex_timeout(
+            uaddr,
+            Operation::LockPi,
+            flags,
+            0,
+            option_as_ptr(timeout.as_ref()),
+            ptr::null(),
+            0,
+        )
+        .map(|val| {
+            debug_assert_eq!(
+                val, 0,
+                "The return value should always equal zero, if the call is successful"
+            );
+        })
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn unlock_pi(uaddr: &AtomicU32, flags: Flags) -> io::Result<()> {
+    
+    unsafe {
+        futex_val2(uaddr, Operation::UnlockPi, flags, 0, 0, ptr::null(), 0).map(|val| {
+            debug_assert_eq!(
+                val, 0,
+                "The return value should always equal zero, if the call is successful"
+            );
+        })
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn trylock_pi(uaddr: &AtomicU32, flags: Flags) -> io::Result<bool> {
+    
+    unsafe {
+        futex_val2(uaddr, Operation::TrylockPi, flags, 0, 0, ptr::null(), 0).map(|ret| ret == 0)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn wait_bitset(
+    uaddr: &AtomicU32,
+    flags: Flags,
+    val: u32,
+    timeout: Option<Timespec>,
+    val3: NonZeroU32,
+) -> io::Result<()> {
+    
+    unsafe {
+        futex_timeout(
+            uaddr,
+            Operation::WaitBitset,
+            flags,
+            val,
+            option_as_ptr(timeout.as_ref()),
+            ptr::null(),
+            val3.get(),
+        )
+        .map(|val| {
+            debug_assert_eq!(
+                val, 0,
+                "The return value should always equal zero, if the call is successful"
+            );
+        })
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn wake_bitset(
+    uaddr: &AtomicU32,
+    flags: Flags,
+    val: u32,
+    val3: NonZeroU32,
+) -> io::Result<usize> {
+    
+    unsafe {
+        futex_val2(
+            uaddr,
+            Operation::WakeBitset,
+            flags,
+            val,
+            0,
+            ptr::null(),
+            val3.get(),
+        )
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn wait_requeue_pi(
+    uaddr: &AtomicU32,
+    flags: Flags,
+    val: u32,
+    timeout: Option<Timespec>,
+    uaddr2: &AtomicU32,
+) -> io::Result<()> {
+    
+    unsafe {
+        futex_timeout(
+            uaddr,
+            Operation::WaitRequeuePi,
+            flags,
+            val,
+            option_as_ptr(timeout.as_ref()),
+            uaddr2,
+            0,
+        )
+        .map(|val| {
+            debug_assert_eq!(
+                val, 0,
+                "The return value should always equal zero, if the call is successful"
+            );
+        })
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn cmp_requeue_pi(
+    uaddr: &AtomicU32,
+    flags: Flags,
+    val2: u32,
+    uaddr2: &AtomicU32,
+    val3: u32,
+) -> io::Result<usize> {
+    
+    unsafe { futex_val2(uaddr, Operation::CmpRequeuePi, flags, 1, val2, uaddr2, val3) }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn lock_pi2(uaddr: &AtomicU32, flags: Flags, timeout: Option<Timespec>) -> io::Result<()> {
+    
+    unsafe {
+        futex_timeout(
+            uaddr,
+            Operation::LockPi2,
+            flags,
+            0,
+            option_as_ptr(timeout.as_ref()),
+            ptr::null(),
+            0,
+        )
+        .map(|val| {
+            debug_assert_eq!(
+                val, 0,
+                "The return value should always equal zero, if the call is successful"
+            );
+        })
+    }
 }

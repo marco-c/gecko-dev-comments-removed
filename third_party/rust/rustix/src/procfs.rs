@@ -228,7 +228,8 @@ fn is_mountpoint(file: BorrowedFd<'_>) -> bool {
 fn proc_opendirat<P: crate::path::Arg, Fd: AsFd>(dirfd: Fd, path: P) -> io::Result<OwnedFd> {
     
     
-    let oflags = OFlags::NOFOLLOW | OFlags::DIRECTORY | OFlags::CLOEXEC | OFlags::NOCTTY;
+    let oflags =
+        OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::DIRECTORY | OFlags::CLOEXEC | OFlags::NOCTTY;
     openat(dirfd, path, oflags, Mode::empty()).map_err(|_err| io::Errno::NOTSUP)
 }
 
@@ -308,7 +309,7 @@ fn proc_self() -> io::Result<(BorrowedFd<'static>, &'static Stat)> {
 
 
 
-#[cfg_attr(doc_cfg, doc(cfg(feature = "procfs")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "procfs")))]
 pub fn proc_self_fd() -> io::Result<BorrowedFd<'static>> {
     static PROC_SELF_FD: StaticFd = StaticFd::new();
 
@@ -377,7 +378,7 @@ fn proc_self_fdinfo() -> io::Result<(BorrowedFd<'static>, &'static Stat)> {
 
 
 #[inline]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "procfs")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "procfs")))]
 pub fn proc_self_fdinfo_fd<Fd: AsFd>(fd: Fd) -> io::Result<OwnedFd> {
     _proc_self_fdinfo(fd.as_fd())
 }
@@ -405,7 +406,7 @@ fn _proc_self_fdinfo(fd: BorrowedFd<'_>) -> io::Result<OwnedFd> {
 
 
 #[inline]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "procfs")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "procfs")))]
 pub fn proc_self_pagemap() -> io::Result<OwnedFd> {
     proc_self_file(cstr!("pagemap"))
 }
@@ -420,7 +421,7 @@ pub fn proc_self_pagemap() -> io::Result<OwnedFd> {
 
 
 #[inline]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "procfs")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "procfs")))]
 pub fn proc_self_maps() -> io::Result<OwnedFd> {
     proc_self_file(cstr!("maps"))
 }
@@ -435,7 +436,7 @@ pub fn proc_self_maps() -> io::Result<OwnedFd> {
 
 
 #[inline]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "procfs")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "procfs")))]
 pub fn proc_self_status() -> io::Result<OwnedFd> {
     proc_self_file(cstr!("status"))
 }
@@ -489,7 +490,17 @@ fn open_and_check_file(
     let mut found_dot = false;
 
     
-    seek(dir, SeekFrom::Start(0))?;
+    
+    let oflags =
+        OFlags::RDONLY | OFlags::CLOEXEC | OFlags::NOFOLLOW | OFlags::NOCTTY | OFlags::DIRECTORY;
+    let dir = openat(dir, cstr!("."), oflags, Mode::empty()).map_err(|_err| io::Errno::NOTSUP)?;
+    let check_dir_stat = fstat(&dir)?;
+    if check_dir_stat.st_dev != dir_stat.st_dev || check_dir_stat.st_ino != dir_stat.st_ino {
+        return Err(io::Errno::NOTSUP);
+    }
+
+    
+    seek(&dir, SeekFrom::Start(0))?;
 
     let mut buf = [MaybeUninit::uninit(); 2048];
     let mut iter = RawDir::new(dir, &mut buf);

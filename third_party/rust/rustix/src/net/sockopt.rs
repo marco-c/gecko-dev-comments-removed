@@ -401,6 +401,18 @@ pub fn set_socket_recv_buffer_size<Fd: AsFd>(fd: Fd, value: usize) -> io::Result
 
 
 
+#[cfg(any(linux_kernel, target_os = "fuchsia", target_os = "redox"))]
+#[inline]
+#[doc(alias = "SO_RCVBUFFORCE")]
+pub fn set_socket_recv_buffer_size_force<Fd: AsFd>(fd: Fd, value: usize) -> io::Result<()> {
+    backend::net::sockopt::set_socket_recv_buffer_size_force(fd.as_fd(), value)
+}
+
+
+
+
+
+
 #[inline]
 #[doc(alias = "SO_RCVBUF")]
 pub fn get_socket_recv_buffer_size<Fd: AsFd>(fd: Fd) -> io::Result<usize> {
@@ -442,6 +454,7 @@ pub fn get_socket_send_buffer_size<Fd: AsFd>(fd: Fd) -> io::Result<usize> {
     target_os = "emscripten",
     target_os = "espidf",
     target_os = "haiku",
+    target_os = "hurd",
     target_os = "netbsd",
     target_os = "nto",
     target_os = "vita",
@@ -1368,6 +1381,7 @@ pub fn get_tcp_cork<Fd: AsFd>(fd: Fd) -> io::Result<bool> {
 
 
 
+
 #[cfg(linux_kernel)]
 #[doc(alias = "SO_PEERCRED")]
 pub fn get_socket_peercred<Fd: AsFd>(fd: Fd) -> io::Result<super::UCred> {
@@ -1472,11 +1486,16 @@ pub fn get_xdp_options<Fd: AsFd>(fd: Fd) -> io::Result<XdpOptionsFlags> {
     backend::net::sockopt::get_xdp_options(fd.as_fd())
 }
 
-#[test]
-fn test_sizes() {
-    use c::c_int;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    
-    
-    assert_eq_size!(Timeout, c_int);
+    #[test]
+    fn test_sizes() {
+        use c::c_int;
+
+        
+        
+        assert_eq_size!(Timeout, c_int);
+    }
 }

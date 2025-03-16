@@ -31,28 +31,31 @@ use {
 #[cfg(not(any(target_os = "espidf", target_os = "wasi")))]
 pub(crate) fn tcgetattr(fd: BorrowedFd<'_>) -> io::Result<Termios> {
     
-    
     #[cfg(linux_kernel)]
     {
         use crate::termios::{ControlModes, InputModes, LocalModes, OutputModes, SpecialCodes};
-        use crate::utils::default_array;
 
+        let mut termios2 = MaybeUninit::<c::termios2>::uninit();
+        let ptr = termios2.as_mut_ptr();
+
+        
+        
         let termios2 = unsafe {
-            let mut termios2 = MaybeUninit::<c::termios2>::uninit();
+            match ret(c::ioctl(borrowed_fd(fd), c::TCGETS2 as _, ptr)) {
+                Ok(()) => {}
 
-            
-            
-            #[cfg(any(target_arch = "powerpc", target_arch = "powerpc64"))]
-            {
-                termios2.write(core::mem::zeroed());
+                
+                
+                
+                #[cfg(not(any(target_arch = "powerpc", target_arch = "powerpc64")))]
+                Err(io::Errno::NOTTY) | Err(io::Errno::ACCESS) => {
+                    tcgetattr_fallback(fd, &mut termios2)?
+                }
+
+                Err(err) => return Err(err),
             }
 
-            ret(c::ioctl(
-                borrowed_fd(fd),
-                c::TCGETS2 as _,
-                termios2.as_mut_ptr(),
-            ))?;
-
+            
             termios2.assume_init()
         };
 
@@ -63,38 +66,36 @@ pub(crate) fn tcgetattr(fd: BorrowedFd<'_>) -> io::Result<Termios> {
             control_modes: ControlModes::from_bits_retain(termios2.c_cflag),
             local_modes: LocalModes::from_bits_retain(termios2.c_lflag),
             line_discipline: termios2.c_line,
-            special_codes: SpecialCodes(default_array()),
+            special_codes: SpecialCodes(Default::default()),
+
+            
+            
+            #[cfg(not(all(
+                target_env = "musl",
+                any(target_arch = "powerpc", target_arch = "powerpc64")
+            )))]
             input_speed: termios2.c_ispeed,
+            #[cfg(not(all(
+                target_env = "musl",
+                any(target_arch = "powerpc", target_arch = "powerpc64")
+            )))]
             output_speed: termios2.c_ospeed,
+            #[cfg(all(
+                target_env = "musl",
+                any(target_arch = "powerpc", target_arch = "powerpc64")
+            ))]
+            input_speed: termios2.__c_ispeed,
+            #[cfg(all(
+                target_env = "musl",
+                any(target_arch = "powerpc", target_arch = "powerpc64")
+            ))]
+            output_speed: termios2.__c_ospeed,
         };
 
         
         
-        #[cfg(any(target_arch = "powerpc", target_arch = "powerpc64"))]
-        {
-            use crate::termios::speed;
-
-            if result.output_speed == 0 && (termios2.c_cflag & c::CBAUD) != c::BOTHER {
-                if let Some(output_speed) = speed::decode(termios2.c_cflag & c::CBAUD) {
-                    result.output_speed = output_speed;
-                }
-            }
-            if result.input_speed == 0
-                && ((termios2.c_cflag & c::CIBAUD) >> c::IBSHIFT) != c::BOTHER
-            {
-                
-                
-                if ((termios2.c_cflag & c::CIBAUD) >> c::IBSHIFT) == c::B0 {
-                    result.input_speed = result.output_speed;
-                } else if let Some(input_speed) =
-                    speed::decode((termios2.c_cflag & c::CIBAUD) >> c::IBSHIFT)
-                {
-                    result.input_speed = input_speed;
-                }
-            }
-        }
-
-        result.special_codes.0[..termios2.c_cc.len()].copy_from_slice(&termios2.c_cc);
+        let nccs = termios2.c_cc.len();
+        result.special_codes.0[..nccs].copy_from_slice(&termios2.c_cc);
 
         Ok(result)
     }
@@ -109,6 +110,59 @@ pub(crate) fn tcgetattr(fd: BorrowedFd<'_>) -> io::Result<Termios> {
 
         Ok(result.assume_init())
     }
+}
+
+
+#[cfg(all(
+    linux_kernel,
+    not(any(target_arch = "powerpc", target_arch = "powerpc64"))
+))]
+#[cold]
+fn tcgetattr_fallback(
+    fd: BorrowedFd<'_>,
+    termios: &mut MaybeUninit<c::termios2>,
+) -> io::Result<()> {
+    use crate::termios::speed;
+    use core::ptr::{addr_of, addr_of_mut};
+
+    
+    
+    
+    
+    unsafe {
+        let ptr = termios.as_mut_ptr();
+
+        
+        
+        ret(c::ioctl(borrowed_fd(fd), c::TCGETS as _, ptr))?;
+
+        
+        
+        let control_modes = addr_of!((*ptr).c_cflag).read();
+
+        
+        let encoded_out = control_modes & c::CBAUD;
+        let output_speed = match speed::decode(encoded_out) {
+            Some(output_speed) => output_speed,
+            None => return Err(io::Errno::RANGE),
+        };
+        addr_of_mut!((*ptr).c_ospeed).write(output_speed);
+
+        
+        
+        let encoded_in = (control_modes & c::CIBAUD) >> c::IBSHIFT;
+        let input_speed = if encoded_in == c::B0 {
+            output_speed
+        } else {
+            match speed::decode(encoded_in) {
+                Some(input_speed) => input_speed,
+                None => return Err(io::Errno::RANGE),
+            }
+        };
+        addr_of_mut!((*ptr).c_ispeed).write(input_speed);
+    }
+
+    Ok(())
 }
 
 #[cfg(not(target_os = "wasi"))]
@@ -140,61 +194,89 @@ pub(crate) fn tcsetattr(
     termios: &Termios,
 ) -> io::Result<()> {
     
-    
     #[cfg(linux_kernel)]
     {
         use crate::termios::speed;
-        use crate::utils::default_array;
-        use linux_raw_sys::general::{termios2, BOTHER, CBAUD, IBSHIFT};
 
-        #[cfg(not(any(target_arch = "sparc", target_arch = "sparc64")))]
-        use linux_raw_sys::ioctl::{TCSETS, TCSETS2};
+        let output_speed = termios.output_speed();
+        let input_speed = termios.input_speed();
+
+        let mut termios2 = c::termios2 {
+            c_iflag: termios.input_modes.bits(),
+            c_oflag: termios.output_modes.bits(),
+            c_cflag: termios.control_modes.bits(),
+            c_lflag: termios.local_modes.bits(),
+            c_line: termios.line_discipline,
+            c_cc: Default::default(),
+
+            
+            
+            #[cfg(not(all(
+                target_env = "musl",
+                any(target_arch = "powerpc", target_arch = "powerpc64")
+            )))]
+            c_ispeed: input_speed,
+            #[cfg(not(all(
+                target_env = "musl",
+                any(target_arch = "powerpc", target_arch = "powerpc64")
+            )))]
+            c_ospeed: output_speed,
+            #[cfg(all(
+                target_env = "musl",
+                any(target_arch = "powerpc", target_arch = "powerpc64")
+            ))]
+            __c_ispeed: input_speed,
+            #[cfg(all(
+                target_env = "musl",
+                any(target_arch = "powerpc", target_arch = "powerpc64")
+            ))]
+            __c_ospeed: output_speed,
+        };
 
         
         
-        #[cfg(any(target_arch = "sparc", target_arch = "sparc64"))]
-        const TCSETS: u32 = 0x8024_5409;
-        #[cfg(any(target_arch = "sparc", target_arch = "sparc64"))]
-        const TCSETS2: u32 = 0x802c_540d;
+        termios2.c_cflag &= !c::CBAUD;
+        termios2.c_cflag |= speed::encode(output_speed).unwrap_or(c::BOTHER);
+        termios2.c_cflag &= !c::CIBAUD;
+        termios2.c_cflag |= speed::encode(input_speed).unwrap_or(c::BOTHER) << c::IBSHIFT;
 
         
         
-        let request = TCSETS2
+        let nccs = termios2.c_cc.len();
+        termios2
+            .c_cc
+            .copy_from_slice(&termios.special_codes.0[..nccs]);
+
+        
+        
+        let request = c::TCSETS2 as c::c_ulong
             + if cfg!(any(
                 target_arch = "mips",
                 target_arch = "mips32r6",
                 target_arch = "mips64",
                 target_arch = "mips64r6"
             )) {
-                optional_actions as u32 - TCSETS
+                optional_actions as c::c_ulong - c::TCSETS as c::c_ulong
             } else {
-                optional_actions as u32
+                optional_actions as c::c_ulong
             };
 
-        let input_speed = termios.input_speed();
-        let output_speed = termios.output_speed();
-        let mut termios2 = termios2 {
-            c_iflag: termios.input_modes.bits(),
-            c_oflag: termios.output_modes.bits(),
-            c_cflag: termios.control_modes.bits(),
-            c_lflag: termios.local_modes.bits(),
-            c_line: termios.line_discipline,
-            c_cc: default_array(),
-            c_ispeed: input_speed,
-            c_ospeed: output_speed,
-        };
         
-        
-        termios2.c_cflag &= !CBAUD;
-        termios2.c_cflag |= speed::encode(output_speed).unwrap_or(BOTHER);
-        termios2.c_cflag &= !(CBAUD << IBSHIFT);
-        termios2.c_cflag |= speed::encode(input_speed).unwrap_or(BOTHER) << IBSHIFT;
-        let nccs = termios2.c_cc.len();
-        termios2
-            .c_cc
-            .copy_from_slice(&termios.special_codes.0[..nccs]);
+        unsafe {
+            match ret(c::ioctl(borrowed_fd(fd), request as _, &termios2)) {
+                Ok(()) => Ok(()),
 
-        unsafe { ret(c::ioctl(borrowed_fd(fd), request as _, &termios2)) }
+                
+                
+                
+                #[cfg(not(any(target_arch = "powerpc", target_arch = "powerpc64")))]
+                Err(io::Errno::NOTTY) | Err(io::Errno::ACCESS) => {
+                    tcsetattr_fallback(fd, optional_actions, &termios2)
+                }
+
+                Err(err) => Err(err),
+            }
+        }
     }
 
     #[cfg(not(linux_kernel))]
@@ -205,6 +287,42 @@ pub(crate) fn tcsetattr(
             crate::utils::as_ptr(termios).cast(),
         ))
     }
+}
+
+
+#[cfg(all(
+    linux_kernel,
+    not(any(target_arch = "powerpc", target_arch = "powerpc64"))
+))]
+#[cold]
+fn tcsetattr_fallback(
+    fd: BorrowedFd<'_>,
+    optional_actions: OptionalActions,
+    termios2: &c::termios2,
+) -> io::Result<()> {
+    
+    
+    let encoded_out = termios2.c_cflag & c::CBAUD;
+    let encoded_in = (termios2.c_cflag & c::CIBAUD) >> c::IBSHIFT;
+    if encoded_out == c::BOTHER || encoded_in == c::BOTHER {
+        return Err(io::Errno::RANGE);
+    }
+
+    
+    
+    let request = if cfg!(any(
+        target_arch = "mips",
+        target_arch = "mips32r6",
+        target_arch = "mips64",
+        target_arch = "mips64r6"
+    )) {
+        optional_actions as c::c_ulong
+    } else {
+        optional_actions as c::c_ulong + c::TCSETS as c::c_ulong
+    };
+
+    
+    unsafe { ret(c::ioctl(borrowed_fd(fd), request as _, termios2)) }
 }
 
 #[cfg(not(target_os = "wasi"))]

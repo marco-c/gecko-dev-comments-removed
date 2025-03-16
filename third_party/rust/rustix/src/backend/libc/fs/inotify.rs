@@ -1,15 +1,12 @@
 
 
 use crate::backend::c;
-use crate::backend::conv::{borrowed_fd, c_str, ret, ret_c_int, ret_owned_fd};
-use crate::fd::{BorrowedFd, OwnedFd};
-use crate::io;
 use bitflags::bitflags;
 
 bitflags! {
-    /// `IN_*` for use with [`inotify_init`].
+    /// `IN_*` for use with [`inotify::init`].
     ///
-    /// [`inotify_init`]: crate::fs::inotify::inotify_init
+    /// [`inotify::init`]: crate::fs::inotify::init
     #[repr(transparent)]
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
     pub struct CreateFlags: u32 {
@@ -24,9 +21,9 @@ bitflags! {
 }
 
 bitflags! {
-    /// `IN*` for use with [`inotify_add_watch`].
+    /// `IN*` for use with [`inotify::add_watch`].
     ///
-    /// [`inotify_add_watch`]: crate::fs::inotify::inotify_add_watch
+    /// [`inotify::add_watch`]: crate::fs::inotify::add_watch
     #[repr(transparent)]
     #[derive(Default, Copy, Clone, Eq, PartialEq, Hash, Debug)]
     pub struct WatchFlags: u32 {
@@ -80,52 +77,48 @@ bitflags! {
     }
 }
 
+bitflags! {
+    /// `IN*` for use with [`inotify::Reader`].
+    ///
+    /// [`inotify::Reader`]: crate::fs::inotify::Reader
+    #[repr(transparent)]
+    #[derive(Default, Copy, Clone, Eq, PartialEq, Hash, Debug)]
+    pub struct ReadFlags: u32 {
+        /// `IN_ACCESS`
+        const ACCESS = c::IN_ACCESS;
+        /// `IN_ATTRIB`
+        const ATTRIB = c::IN_ATTRIB;
+        /// `IN_CLOSE_NOWRITE`
+        const CLOSE_NOWRITE = c::IN_CLOSE_NOWRITE;
+        /// `IN_CLOSE_WRITE`
+        const CLOSE_WRITE = c::IN_CLOSE_WRITE;
+        /// `IN_CREATE`
+        const CREATE = c::IN_CREATE;
+        /// `IN_DELETE`
+        const DELETE = c::IN_DELETE;
+        /// `IN_DELETE_SELF`
+        const DELETE_SELF = c::IN_DELETE_SELF;
+        /// `IN_MODIFY`
+        const MODIFY = c::IN_MODIFY;
+        /// `IN_MOVE_SELF`
+        const MOVE_SELF = c::IN_MOVE_SELF;
+        /// `IN_MOVED_FROM`
+        const MOVED_FROM = c::IN_MOVED_FROM;
+        /// `IN_MOVED_TO`
+        const MOVED_TO = c::IN_MOVED_TO;
+        /// `IN_OPEN`
+        const OPEN = c::IN_OPEN;
 
+        /// `IN_IGNORED`
+        const IGNORED = c::IN_IGNORED;
+        /// `IN_ISDIR`
+        const ISDIR = c::IN_ISDIR;
+        /// `IN_Q_OVERFLOW`
+        const QUEUE_OVERFLOW = c::IN_Q_OVERFLOW;
+        /// `IN_UNMOUNT`
+        const UNMOUNT = c::IN_UNMOUNT;
 
-
-
-#[doc(alias = "inotify_init1")]
-pub fn inotify_init(flags: CreateFlags) -> io::Result<OwnedFd> {
-    
-    unsafe { ret_owned_fd(c::inotify_init1(bitflags_bits!(flags))) }
-}
-
-
-
-
-
-
-
-
-
-pub fn inotify_add_watch<P: crate::path::Arg>(
-    inot: BorrowedFd<'_>,
-    path: P,
-    flags: WatchFlags,
-) -> io::Result<i32> {
-    path.into_with_c_str(|path| {
-        
-        
-        unsafe {
-            ret_c_int(c::inotify_add_watch(
-                borrowed_fd(inot),
-                c_str(path),
-                flags.bits(),
-            ))
-        }
-    })
-}
-
-
-
-
-
-#[doc(alias = "inotify_rm_watch")]
-pub fn inotify_remove_watch(inot: BorrowedFd<'_>, wd: i32) -> io::Result<()> {
-    
-    
-    #[cfg(target_os = "android")]
-    let wd = wd as u32;
-    
-    unsafe { ret(c::inotify_rm_watch(borrowed_fd(inot), wd)) }
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
+        const _ = !0;
+    }
 }

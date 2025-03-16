@@ -8,6 +8,7 @@
 
 
 #![allow(unsafe_code)]
+#![allow(clippy::missing_transmute_annotations)]
 
 #[cfg(target_arch = "x86")]
 use super::reg::{ArgReg, RetReg, SyscallNumber, A0, A1, A2, A3, A4, A5, R0};
@@ -317,7 +318,7 @@ fn init_syscall() -> SyscallType {
 
 struct Function;
 #[cfg(feature = "time")]
-static mut CLOCK_GETTIME: AtomicPtr<Function> = AtomicPtr::new(null_mut());
+static CLOCK_GETTIME: AtomicPtr<Function> = AtomicPtr::new(null_mut());
 #[cfg(feature = "process")]
 #[cfg(any(
     target_arch = "x86_64",
@@ -325,9 +326,9 @@ static mut CLOCK_GETTIME: AtomicPtr<Function> = AtomicPtr::new(null_mut());
     target_arch = "riscv64",
     target_arch = "powerpc64"
 ))]
-static mut GETCPU: AtomicPtr<Function> = AtomicPtr::new(null_mut());
+static GETCPU: AtomicPtr<Function> = AtomicPtr::new(null_mut());
 #[cfg(target_arch = "x86")]
-static mut SYSCALL: AtomicPtr<Function> = AtomicPtr::new(null_mut());
+static SYSCALL: AtomicPtr<Function> = AtomicPtr::new(null_mut());
 
 #[cfg(feature = "time")]
 unsafe extern "C" fn rustix_clock_gettime_via_syscall(
@@ -438,48 +439,46 @@ fn minimal_init() {
     
     
     
-    unsafe {
-        #[cfg(feature = "time")]
-        {
-            CLOCK_GETTIME
-                .compare_exchange(
-                    null_mut(),
-                    rustix_clock_gettime_via_syscall as *mut Function,
-                    Relaxed,
-                    Relaxed,
-                )
-                .ok();
-        }
+    #[cfg(feature = "time")]
+    {
+        CLOCK_GETTIME
+            .compare_exchange(
+                null_mut(),
+                rustix_clock_gettime_via_syscall as *mut Function,
+                Relaxed,
+                Relaxed,
+            )
+            .ok();
+    }
 
-        #[cfg(feature = "process")]
-        #[cfg(any(
-            target_arch = "x86_64",
-            target_arch = "x86",
-            target_arch = "riscv64",
-            target_arch = "powerpc64"
-        ))]
-        {
-            GETCPU
-                .compare_exchange(
-                    null_mut(),
-                    rustix_getcpu_via_syscall as *mut Function,
-                    Relaxed,
-                    Relaxed,
-                )
-                .ok();
-        }
+    #[cfg(feature = "process")]
+    #[cfg(any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "riscv64",
+        target_arch = "powerpc64"
+    ))]
+    {
+        GETCPU
+            .compare_exchange(
+                null_mut(),
+                rustix_getcpu_via_syscall as *mut Function,
+                Relaxed,
+                Relaxed,
+            )
+            .ok();
+    }
 
-        #[cfg(target_arch = "x86")]
-        {
-            SYSCALL
-                .compare_exchange(
-                    null_mut(),
-                    rustix_int_0x80 as *mut Function,
-                    Relaxed,
-                    Relaxed,
-                )
-                .ok();
-        }
+    #[cfg(target_arch = "x86")]
+    {
+        SYSCALL
+            .compare_exchange(
+                null_mut(),
+                rustix_int_0x80 as *mut Function,
+                Relaxed,
+                Relaxed,
+            )
+            .ok();
     }
 }
 
@@ -506,6 +505,8 @@ fn init() {
             let ptr = vdso.sym(cstr!("LINUX_4.15"), cstr!("__vdso_clock_gettime"));
             #[cfg(target_arch = "powerpc64")]
             let ptr = vdso.sym(cstr!("LINUX_2.6.15"), cstr!("__kernel_clock_gettime"));
+            #[cfg(target_arch = "s390x")]
+            let ptr = vdso.sym(cstr!("LINUX_2.6.29"), cstr!("__kernel_clock_gettime"));
             #[cfg(any(target_arch = "mips", target_arch = "mips32r6"))]
             let ptr = vdso.sym(cstr!("LINUX_2.6"), cstr!("__vdso_clock_gettime64"));
             #[cfg(any(target_arch = "mips64", target_arch = "mips64r6"))]
@@ -532,9 +533,7 @@ fn init() {
                 
                 
                 
-                unsafe {
-                    CLOCK_GETTIME.store(ptr.cast(), Relaxed);
-                }
+                CLOCK_GETTIME.store(ptr.cast(), Relaxed);
             }
         }
 
@@ -576,7 +575,8 @@ fn init() {
                 target_arch = "mips",
                 target_arch = "mips32r6",
                 target_arch = "mips64",
-                target_arch = "mips64r6"
+                target_arch = "mips64r6",
+                target_arch = "s390x",
             ))]
             let ok = false;
 
@@ -586,9 +586,7 @@ fn init() {
                 
                 
                 
-                unsafe {
-                    GETCPU.store(ptr.cast(), Relaxed);
-                }
+                GETCPU.store(ptr.cast(), Relaxed);
             }
         }
 
@@ -600,9 +598,7 @@ fn init() {
 
             
             
-            unsafe {
-                SYSCALL.store(ptr.cast(), Relaxed);
-            }
+            SYSCALL.store(ptr.cast(), Relaxed);
         }
     }
 }

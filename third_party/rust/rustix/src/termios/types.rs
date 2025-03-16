@@ -813,12 +813,14 @@ pub mod speed {
     
     
     
+    
+    
+    
+    
+    
     #[cfg(not(any(
         bsd,
-        all(
-            linux_kernel,
-            not(any(target_arch = "powerpc", target_arch = "powerpc64"))
-        )
+        all(linux_kernel, any(target_arch = "powerpc", target_arch = "powerpc64"))
     )))]
     pub(crate) const fn decode(encoded_speed: c::speed_t) -> Option<u32> {
         match encoded_speed {
@@ -1113,6 +1115,7 @@ impl core::ops::IndexMut<SpecialCodeIndex> for SpecialCodes {
 }
 
 
+#[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct SpecialCodeIndex(usize);
 
 #[rustfmt::skip]
@@ -1179,6 +1182,104 @@ impl SpecialCodeIndex {
 
     
     pub const VEOL2: Self = Self(c::VEOL2 as usize);
+
+    
+    #[cfg(any(solarish, target_os = "haiku", target_os = "nto"))]
+    pub const VSWTCH: Self = Self(c::VSWTCH as usize);
+
+    
+    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "hurd", target_os = "nto"))]
+    pub const VDSUSP: Self = Self(c::VDSUSP as usize);
+
+    
+    #[cfg(any(bsd, solarish, target_os = "hurd"))]
+    pub const VSTATUS: Self = Self(c::VSTATUS as usize);
+
+    
+    #[cfg(any(freebsdlike, solarish))]
+    pub const VERASE2: Self = Self(c::VERASE2 as usize);
+}
+
+impl core::fmt::Debug for SpecialCodeIndex {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match *self {
+            Self::VINTR => write!(f, "VINTR"),
+            Self::VQUIT => write!(f, "VQUIT"),
+            Self::VERASE => write!(f, "VERASE"),
+            Self::VKILL => write!(f, "VKILL"),
+            #[cfg(not(any(
+                solarish,
+                all(linux_kernel, any(target_arch = "sparc", target_arch = "sparc64"))
+            )))]
+            Self::VEOF => write!(f, "VEOF"),
+            #[cfg(not(any(
+                solarish,
+                all(linux_kernel, any(target_arch = "sparc", target_arch = "sparc64"))
+            )))]
+            Self::VTIME => write!(f, "VTIME"),
+            #[cfg(not(any(
+                solarish,
+                all(linux_kernel, any(target_arch = "sparc", target_arch = "sparc64"))
+            )))]
+            Self::VMIN => write!(f, "VMIN"),
+
+            
+            
+            #[cfg(any(
+                solarish,
+                all(linux_kernel, any(target_arch = "sparc", target_arch = "sparc64"))
+            ))]
+            Self::VMIN => write!(f, "VMIN/VEOF"),
+            #[cfg(any(
+                solarish,
+                all(linux_kernel, any(target_arch = "sparc", target_arch = "sparc64"))
+            ))]
+            Self::VTIME => write!(f, "VTIME/VEOL"),
+
+            #[cfg(not(any(
+                bsd,
+                solarish,
+                target_os = "aix",
+                target_os = "haiku",
+                target_os = "hurd",
+                target_os = "nto",
+            )))]
+            Self::VSWTC => write!(f, "VSWTC"),
+            Self::VSTART => write!(f, "VSTART"),
+            Self::VSTOP => write!(f, "VSTOP"),
+            Self::VSUSP => write!(f, "VSUSP"),
+            #[cfg(not(any(
+                solarish,
+                all(linux_kernel, any(target_arch = "sparc", target_arch = "sparc64"))
+            )))]
+            Self::VEOL => write!(f, "VEOL"),
+            #[cfg(not(target_os = "haiku"))]
+            Self::VREPRINT => write!(f, "VREPRINT"),
+            #[cfg(not(any(target_os = "aix", target_os = "haiku")))]
+            Self::VDISCARD => write!(f, "VDISCARD"),
+            #[cfg(not(any(target_os = "aix", target_os = "haiku")))]
+            Self::VWERASE => write!(f, "VWERASE"),
+            #[cfg(not(target_os = "haiku"))]
+            Self::VLNEXT => write!(f, "VLNEXT"),
+            Self::VEOL2 => write!(f, "VEOL2"),
+            #[cfg(any(solarish, target_os = "haiku", target_os = "nto"))]
+            Self::VSWTCH => write!(f, "VSWTCH"),
+            #[cfg(any(
+                bsd,
+                solarish,
+                target_os = "aix",
+                target_os = "hurd",
+                target_os = "nto"
+            ))]
+            Self::VDSUSP => write!(f, "VDSUSP"),
+            #[cfg(any(bsd, solarish, target_os = "hurd"))]
+            Self::VSTATUS => write!(f, "VSTATUS"),
+            #[cfg(any(freebsdlike, solarish))]
+            Self::VERASE2 => write!(f, "VERASE2"),
+
+            _ => write!(f, "unknown"),
+        }
+    }
 }
 
 

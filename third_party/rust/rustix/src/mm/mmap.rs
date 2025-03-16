@@ -74,6 +74,15 @@ impl MapFlags {
 
 
 
+
+
+
+
+
+
+
+
+
 #[inline]
 pub unsafe fn mmap<Fd: AsFd>(
     ptr: *mut c_void,
@@ -85,6 +94,9 @@ pub unsafe fn mmap<Fd: AsFd>(
 ) -> io::Result<*mut c_void> {
     backend::mm::syscalls::mmap(ptr, len, prot, flags, fd.as_fd(), offset)
 }
+
+
+
 
 
 
@@ -152,10 +164,21 @@ pub unsafe fn mmap_anonymous(
 
 
 
+
+
+
 #[inline]
 pub unsafe fn munmap(ptr: *mut c_void, len: usize) -> io::Result<()> {
     backend::mm::syscalls::munmap(ptr, len)
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -196,6 +219,15 @@ pub unsafe fn mremap(
 
 
 
+
+
+
+
+
+
+
+
+
 #[cfg(any(target_os = "emscripten", target_os = "linux"))]
 #[inline]
 #[doc(alias = "mremap")]
@@ -208,6 +240,8 @@ pub unsafe fn mremap_fixed(
 ) -> io::Result<*mut c_void> {
     backend::mm::syscalls::mremap_fixed(old_address, old_size, new_size, flags, new_address)
 }
+
+
 
 
 
@@ -272,12 +306,10 @@ pub unsafe fn mprotect(ptr: *mut c_void, len: usize, flags: MprotectFlags) -> io
 
 
 
-
 #[inline]
 pub unsafe fn mlock(ptr: *mut c_void, len: usize) -> io::Result<()> {
     backend::mm::syscalls::mlock(ptr, len)
 }
-
 
 
 

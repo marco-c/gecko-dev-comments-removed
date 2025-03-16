@@ -6,7 +6,7 @@ pub use backend::process::types::Resource;
 
 
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Rlimit {
     
     pub current: Option<u64>,

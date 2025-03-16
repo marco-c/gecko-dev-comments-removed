@@ -51,12 +51,6 @@ pub(crate) fn check_raw_pointer<T>(value: *mut c_void) -> Option<NonNull<T>> {
 }
 
 
-#[inline]
-pub(crate) fn default_array<T: Default + Copy, const N: usize>() -> [T; N] {
-    [T::default(); N]
-}
-
-
 
 
 

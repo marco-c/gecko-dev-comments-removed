@@ -97,6 +97,7 @@ macro_rules! cmsg_aligned_space {
     }};
 }
 
+
 #[doc(hidden)]
 pub const fn __cmsg_space(len: usize) -> usize {
     
@@ -105,6 +106,7 @@ pub const fn __cmsg_space(len: usize) -> usize {
 
     __cmsg_aligned_space(len)
 }
+
 
 #[doc(hidden)]
 pub const fn __cmsg_aligned_space(len: usize) -> usize {
@@ -609,6 +611,11 @@ impl FusedIterator for AncillaryDrain<'_> {}
 
 
 
+
+
+
+
+
 #[inline]
 pub fn sendmsg(
     socket: impl AsFd,
@@ -942,7 +949,7 @@ mod messages {
             let msghdr = {
                 let mut h = msghdr::zero_msghdr();
                 h.msg_control = buf.as_mut_ptr().cast();
-                h.msg_controllen = buf.len().try_into().expect("buffer too large for msghdr");
+                h.msg_controllen = buf.len().try_into().unwrap();
                 h
             };
 

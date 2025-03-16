@@ -12,23 +12,6 @@ use backend::c;
 use backend::fd::{BorrowedFd, RawFd};
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-#[doc(alias = "AT_FDCWD")]
-pub const CWD: BorrowedFd<'static> =
-    unsafe { BorrowedFd::<'static>::borrow_raw(c::AT_FDCWD as RawFd) };
-
-
 #[deprecated(note = "Use `CWD` in place of `cwd()`.")]
 pub const fn cwd() -> BorrowedFd<'static> {
     let at_fdcwd = c::AT_FDCWD as RawFd;

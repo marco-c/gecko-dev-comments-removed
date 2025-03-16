@@ -32,6 +32,10 @@ use linux_raw_sys::general::{
 #[cfg(feature = "alloc")]
 use {alloc::borrow::Cow, alloc::vec};
 
+
+#[cfg(target_arch = "s390x")]
+const EM_CURRENT: u16 = 22; 
+
 #[cfg(feature = "param")]
 #[inline]
 pub(crate) fn page_size() -> usize {
@@ -270,9 +274,7 @@ fn init_auxv() {
 
 #[cold]
 fn maybe_init_auxv() {
-    if let Ok(()) = init_auxv_impl() {
-        return;
-    }
+    let _ = init_auxv_impl();
 }
 
 
