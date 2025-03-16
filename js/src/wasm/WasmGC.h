@@ -247,29 +247,28 @@ struct StackMap final {
 static_assert(sizeof(StackMap) == 12, "wasm::StackMap has unexpected size");
 
 
-using StackMapHashMap = HashMap<uint32_t, StackMap*, DefaultHasher<uint32_t>, SystemAllocPolicy>;
+using StackMapHashMap =
+    HashMap<uint32_t, StackMap*, DefaultHasher<uint32_t>, SystemAllocPolicy>;
 
 class StackMaps {
-private:
- 
- StackMapHashMap mapping_;
+ private:
+  
+  StackMapHashMap mapping_;
 
-public:
- StackMaps() {}
- ~StackMaps() {
-   for (auto iter = mapping_.modIter(); !iter.done(); iter.next()) {
-     StackMap* stackmap = iter.getMutable().value();
-     stackmap->destroy();
-   }
-   mapping_.clear();
+ public:
+  StackMaps() {}
+  ~StackMaps() {
+    for (auto iter = mapping_.modIter(); !iter.done(); iter.next()) {
+      StackMap* stackmap = iter.getMutable().value();
+      stackmap->destroy();
+    }
+    mapping_.clear();
   }
 
   [[nodiscard]] bool add(uint32_t codeOffset, StackMap* map) {
     return mapping_.put(codeOffset, map);
   }
-  void clear() {
-    mapping_.clear();
-  }
+  void clear() { mapping_.clear(); }
   bool empty() const { return mapping_.empty(); }
   
   size_t length() const { return mapping_.count(); }
