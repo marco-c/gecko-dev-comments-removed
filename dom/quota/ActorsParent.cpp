@@ -4006,6 +4006,8 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
     return NS_OK;
   }
 
+  NotifyOriginInitializationStarted(*this);
+
   
   
 

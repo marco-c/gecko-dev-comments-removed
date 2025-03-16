@@ -19,6 +19,8 @@ void NotifyMaintenanceStarted(QuotaManager& aQuotaManager);
 
 void NotifyClientDirectoryOpeningStarted(QuotaManager& aQuotaManager);
 
+void NotifyOriginInitializationStarted(QuotaManager& aQuotaManager);
+
 }  
 
 #endif  
