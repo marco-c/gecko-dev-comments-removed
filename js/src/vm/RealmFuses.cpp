@@ -5,11 +5,14 @@
 
 #include "vm/RealmFuses.h"
 
+#include "builtin/MapObject.h"
 #include "vm/GlobalObject.h"
 #include "vm/NativeObject.h"
 #include "vm/ObjectOperations.h"
 #include "vm/Realm.h"
 #include "vm/SelfHosting.h"
+
+#include "vm/JSObject-inl.h"
 
 using namespace js;
 
@@ -293,4 +296,66 @@ bool js::OptimizeArraySpeciesFuse::checkInvariant(JSContext* cx) {
     return false;
   }
   return IsSelfHostedFunctionWithName(getter, cx->names().dollar_ArraySpecies_);
+}
+
+bool js::OptimizeMapObjectIteratorFuse::checkInvariant(JSContext* cx) {
+  
+  auto* proto = cx->global()->maybeGetPrototype(JSProto_Map);
+  if (!proto) {
+    
+    return true;
+  }
+  PropertyKey iteratorKey =
+      PropertyKey::Symbol(cx->wellKnownSymbols().iterator);
+  Value v;
+  if (!ObjectHasDataProperty(&proto->as<NativeObject>(), iteratorKey, &v)) {
+    return false;
+  }
+  if (!IsNativeFunction(v, MapObject::entries)) {
+    return false;
+  }
+
+  
+  auto* iterProto = cx->global()->maybeBuiltinProto(
+      GlobalObject::ProtoKind::MapIteratorProto);
+  if (!iterProto) {
+    
+    return true;
+  }
+  if (!ObjectHasDataProperty(&iterProto->as<NativeObject>(),
+                             NameToId(cx->names().next), &v)) {
+    return false;
+  }
+  return IsSelfHostedFunctionWithName(v, cx->names().MapIteratorNext);
+}
+
+bool js::OptimizeSetObjectIteratorFuse::checkInvariant(JSContext* cx) {
+  
+  auto* proto = cx->global()->maybeGetPrototype(JSProto_Set);
+  if (!proto) {
+    
+    return true;
+  }
+  PropertyKey iteratorKey =
+      PropertyKey::Symbol(cx->wellKnownSymbols().iterator);
+  Value v;
+  if (!ObjectHasDataProperty(&proto->as<NativeObject>(), iteratorKey, &v)) {
+    return false;
+  }
+  if (!IsNativeFunction(v, SetObject::values)) {
+    return false;
+  }
+
+  
+  auto* iterProto = cx->global()->maybeBuiltinProto(
+      GlobalObject::ProtoKind::SetIteratorProto);
+  if (!iterProto) {
+    
+    return true;
+  }
+  if (!ObjectHasDataProperty(&iterProto->as<NativeObject>(),
+                             NameToId(cx->names().next), &v)) {
+    return false;
+  }
+  return IsSelfHostedFunctionWithName(v, cx->names().SetIteratorNext);
 }

@@ -150,6 +150,42 @@ struct OptimizeArraySpeciesFuse final : public InvalidatingRealmFuse {
   virtual void popFuse(JSContext* cx, RealmFuses& realmFuses) override;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+struct OptimizeMapObjectIteratorFuse final : public RealmFuse {
+  virtual const char* name() override {
+    return "OptimizeMapObjectIteratorFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+struct OptimizeSetObjectIteratorFuse final : public RealmFuse {
+  virtual const char* name() override {
+    return "OptimizeSetObjectIteratorFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
 #define FOR_EACH_REALM_FUSE(FUSE)                                              \
   FUSE(OptimizeGetIteratorFuse, optimizeGetIteratorFuse)                       \
   FUSE(OptimizeArrayIteratorPrototypeFuse, optimizeArrayIteratorPrototypeFuse) \
@@ -163,7 +199,9 @@ struct OptimizeArraySpeciesFuse final : public InvalidatingRealmFuse {
        arrayIteratorPrototypeHasIteratorProto)                                 \
   FUSE(IteratorPrototypeHasObjectProto, iteratorPrototypeHasObjectProto)       \
   FUSE(ObjectPrototypeHasNoReturnProperty, objectPrototypeHasNoReturnProperty) \
-  FUSE(OptimizeArraySpeciesFuse, optimizeArraySpeciesFuse)
+  FUSE(OptimizeArraySpeciesFuse, optimizeArraySpeciesFuse)                     \
+  FUSE(OptimizeMapObjectIteratorFuse, optimizeMapObjectIteratorFuse)           \
+  FUSE(OptimizeSetObjectIteratorFuse, optimizeSetObjectIteratorFuse)
 
 struct RealmFuses {
   RealmFuses() = default;
