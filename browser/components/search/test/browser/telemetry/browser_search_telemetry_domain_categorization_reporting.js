@@ -8,9 +8,8 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
-  CATEGORIZATION_SETTINGS: "resource:///modules/SearchSERPTelemetry.sys.mjs",
-  SearchSERPDomainToCategoriesMap:
-    "resource:///modules/SearchSERPTelemetry.sys.mjs",
+  CATEGORIZATION_SETTINGS: "resource:///modules/SERPCategorization.sys.mjs",
+  SERPDomainToCategoriesMap: "resource:///modules/SERPCategorization.sys.mjs",
 });
 
 const TEST_PROVIDER_INFO = [
@@ -180,8 +179,8 @@ add_task(async function test_no_reporting_if_download_failure() {
   
   
   
-  await SearchSERPDomainToCategoriesMap.uninit();
-  await SearchSERPDomainToCategoriesMap.init();
+  await SERPDomainToCategoriesMap.uninit();
+  await SERPDomainToCategoriesMap.init();
 });
 
 add_task(async function test_no_reporting_if_no_records() {

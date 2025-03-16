@@ -46,7 +46,7 @@ class TestPingSubmitted(MarionetteTestCase):
         
         self.marionette.execute_script(
             """
-            const { SERPCategorizationRecorder } = ChromeUtils.importESModule("resource:///modules/SearchSERPTelemetry.sys.mjs");
+            const { SERPCategorizationRecorder } = ChromeUtils.importESModule("resource:///modules/SERPCategorization.sys.mjs");
             SERPCategorizationRecorder.recordCategorizationTelemetry({
                 organic_category: "3",
                 organic_num_domains: "1",

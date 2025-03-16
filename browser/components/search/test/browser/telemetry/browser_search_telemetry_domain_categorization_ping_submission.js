@@ -9,14 +9,17 @@
 
 
 
+
+requestLongerTimeout(2);
+
 ChromeUtils.defineESModuleGetters(this, {
-  CATEGORIZATION_SETTINGS: "resource:///modules/SearchSERPTelemetry.sys.mjs",
-  DomainToCategoriesStore: "resource:///modules/SearchSERPTelemetry.sys.mjs",
+  CATEGORIZATION_SETTINGS: "resource:///modules/SERPCategorization.sys.mjs",
+  DomainToCategoriesStore: "resource:///modules/SERPCategorization.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SearchSERPTelemetry: "resource:///modules/SearchSERPTelemetry.sys.mjs",
-  SERPCategorizationRecorder: "resource:///modules/SearchSERPTelemetry.sys.mjs",
+  SERPCategorizationRecorder: "resource:///modules/SERPCategorization.sys.mjs",
   TELEMETRY_CATEGORIZATION_KEY:
-    "resource:///modules/SearchSERPTelemetry.sys.mjs",
+    "resource:///modules/SERPCategorization.sys.mjs",
 });
 
 const TEST_PROVIDER_INFO = [
@@ -306,7 +309,7 @@ add_task(async function test_count_incremented_if_store_is_not_created() {
   resetTelemetry();
 
   
-  await SearchSERPDomainToCategoriesMap.uninit({ deleteMap: true });
+  await SERPDomainToCategoriesMap.uninit({ deleteMap: true });
 
   let sandbox = sinon.createSandbox();
   sandbox
@@ -314,7 +317,7 @@ add_task(async function test_count_incremented_if_store_is_not_created() {
     .throws(new Error());
   
   let promise = waitForDomainToCategoriesUninit();
-  await SearchSERPDomainToCategoriesMap.init();
+  await SERPDomainToCategoriesMap.init();
   await promise;
   info("Store for the domain-to-categories map not created successfully.");
 
@@ -331,6 +334,6 @@ add_task(async function test_count_incremented_if_store_is_not_created() {
   );
 
   sandbox.restore();
-  await SearchSERPDomainToCategoriesMap.init();
+  await SERPDomainToCategoriesMap.init();
   await BrowserTestUtils.removeTab(tab);
 });
