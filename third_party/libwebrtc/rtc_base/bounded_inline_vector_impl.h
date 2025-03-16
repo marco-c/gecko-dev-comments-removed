@@ -46,13 +46,9 @@ void InitializeElements(T* data, U&& element, Us&&... elements) {
 }
 
 
-
 template <typename T>
 void DefaultInitializeElements(T* data, int size) {
-  for (int i = 0; i < size; ++i) {
-    
-    ::new (&data[i]) T;
-  }
+  std::uninitialized_default_construct_n(data, size);
 }
 
 
@@ -74,12 +70,7 @@ void MoveElements(T* src_data, int src_size, T* dst_data, int* dst_size) {
   if  (std::is_trivially_move_constructible<T>::value) {
     std::memcpy(dst_data, src_data, src_size * sizeof(T));
   } else {
-    
-    for (int i = 0; i < src_size; ++i) {
-      
-      
-      ::new (&dst_data[i]) T(std::move(src_data[i]));
-    }
+    std::uninitialized_move_n(src_data, src_size, dst_data);
   }
   *dst_size = src_size;
 }
