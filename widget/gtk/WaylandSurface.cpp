@@ -1131,63 +1131,43 @@ void WaylandSurface::ReleaseAllWaylandBuffersLocked(
   }
 }
 
-ssize_t WaylandSurface::FindBufferLocked(const WaylandSurfaceLock& aProofOfLock,
-                                         wl_buffer* aWlBuffer) {
-  for (size_t i = 0; i < mAttachedBuffers.Length(); i++) {
-    if (mAttachedBuffers[i]->Matches(aWlBuffer)) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-ssize_t WaylandSurface::FindBufferLocked(const WaylandSurfaceLock& aProofOfLock,
-                                         WaylandBuffer* aWaylandBuffer) {
-  for (size_t i = 0; i < mAttachedBuffers.Length(); i++) {
-    if (mAttachedBuffers[i] == aWaylandBuffer) {
-      return i;
-    }
-  }
-  return -1;
-}
 
 
 
-
-void WaylandSurface::BufferFreeCallbackHandler(WaylandBuffer* aWaylandBuffer,
-                                               wl_buffer* aWlBuffer) {
-  LOGWAYLAND(
-      "WaylandSurface::BufferFreeCallbackHandler() WaylandBuffer [%p] "
-      "wl_buffer [%p]",
-      aWaylandBuffer, aWlBuffer);
+void WaylandSurface::BufferFreeCallbackHandler(uintptr_t aWlBufferID,
+                                               bool aWlBufferDelete) {
+  LOGWAYLAND("WaylandSurface::BufferFreeCallbackHandler() wl_buffer [%" PRIxPTR
+             "] buffer %s",
+             aWlBufferID, aWlBufferDelete ? "delete" : "detach");
   WaylandSurfaceLock lock(this);
 
   
   
   AssertIsOnMainThread();
 
-  auto bufferIndex = aWaylandBuffer ? FindBufferLocked(lock, aWaylandBuffer)
-                                    : FindBufferLocked(lock, aWlBuffer);
-  
-  
-  
-  
-  if (bufferIndex < 0) {
-    MOZ_DIAGNOSTIC_ASSERT(
-        aWaylandBuffer && !aWlBuffer,
-        "Wayland compositor detach call after wl_buffer delete?");
-    return;
+  for (size_t i = 0; i < mAttachedBuffers.Length(); i++) {
+    if (mAttachedBuffers[i]->Matches(aWlBufferID)) {
+      mAttachedBuffers[i]->ReturnBufferDetached(lock);
+      mAttachedBuffers.RemoveElementAt(i);
+      return;
+    }
   }
 
-  mAttachedBuffers[bufferIndex]->ReturnBufferDetached(lock);
-  mAttachedBuffers.RemoveElementAt(bufferIndex);
+  
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(
+      aWlBufferDelete,
+      "Wayland compositor detach call after wl_buffer delete?");
 }
 
 static void BufferDetachedCallbackHandler(void* aData, wl_buffer* aBuffer) {
   LOGS("BufferDetachedCallbackHandler() [%p] received wl_buffer [%p]", aData,
        aBuffer);
   RefPtr surface = static_cast<WaylandSurface*>(aData);
-  surface->BufferFreeCallbackHandler( nullptr, aBuffer);
+  surface->BufferFreeCallbackHandler(reinterpret_cast<uintptr_t>(aBuffer),
+                                      false);
 }
 
 static const struct wl_buffer_listener sBufferDetachListener = {

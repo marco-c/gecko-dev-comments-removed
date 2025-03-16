@@ -137,12 +137,7 @@ class WaylandSurface final {
 
   
   
-  
-  
-  
-  
-  void BufferFreeCallbackHandler(WaylandBuffer* aWaylandBuffer,
-                                 wl_buffer* aWlBuffer);
+  void BufferFreeCallbackHandler(uintptr_t aWlBufferID, bool aWlBufferDelete);
 
   
   
@@ -305,11 +300,6 @@ class WaylandSurface final {
   void ClearReadyToDrawCallbacksLocked(const WaylandSurfaceLock& aProofOfLock);
 
   void ClearScaleLocked(const WaylandSurfaceLock& aProofOfLock);
-
-  ssize_t FindBufferLocked(const WaylandSurfaceLock& aProofOfLock,
-                           wl_buffer* aWlBuffer);
-  ssize_t FindBufferLocked(const WaylandSurfaceLock& aProofOfLock,
-                           WaylandBuffer* aWaylandBuffer);
 
   
   
