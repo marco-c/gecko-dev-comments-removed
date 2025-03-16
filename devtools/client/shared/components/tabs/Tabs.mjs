@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React from "resource://devtools/client/shared/vendor/react.mjs";
 import * as dom from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
@@ -8,26 +8,26 @@ import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-
 
 const { Component, createRef } = React;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Renders simple 'tab' widget.
+ *
+ * Based on ReactSimpleTabs component
+ * https://github.com/pedronauck/react-simpletabs
+ *
+ * Component markup (+CSS) example:
+ *
+ * <div class='tabs'>
+ *  <nav class='tabs-navigation'>
+ *    <ul class='tabs-menu'>
+ *      <li class='tabs-menu-item is-active'>Tab #1</li>
+ *      <li class='tabs-menu-item'>Tab #2</li>
+ *    </ul>
+ *  </nav>
+ *  <div class='panels'>
+ *    The content of active panel here
+ *  </div>
+ * <div>
+ */
 class Tabs extends Component {
   static get propTypes() {
     return {
@@ -47,12 +47,12 @@ class Tabs extends Component {
       onAllTabsMenuClick: PropTypes.func,
       tall: PropTypes.bool,
 
-      
-      
+      // To render a sidebar toggle button before the tab menu provide a function that
+      // returns a React component for the button.
       renderSidebarToggle: PropTypes.func,
-      
-      
-      
+      // Set true will only render selected panel on DOM. It's complete
+      // opposite of the created array, and it's useful if panels content
+      // is unpredictable and update frequently.
       renderOnlySelected: PropTypes.bool,
     };
   }
@@ -71,18 +71,18 @@ class Tabs extends Component {
     this.state = {
       activeTab: props.activeTab,
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // This array is used to store an object containing information on whether a tab
+      // at a specified index has already been created (e.g. selected at least once) and
+      // the tab id. An example of the object structure is the following:
+      // [{ isCreated: true, tabId: "ruleview" }, { isCreated: false, tabId: "foo" }].
+      // If the tab at the specified index has already been created, it's rendered even
+      // if not currently selected. This is because in some cases we don't want
+      // to re-create tab content when it's being unselected/selected.
+      // E.g. in case of an iframe being used as a tab-content we want the iframe to
+      // stay in the DOM.
       created: [],
 
-      
+      // True if tabs can't fit into available horizontal space.
       overflow: false,
     };
 
@@ -101,10 +101,10 @@ class Tabs extends Component {
     const node = this.tabsEl.current;
     node.addEventListener("keydown", this.onKeyDown);
 
-    
-    
-    
-    
+    // Register overflow listeners to manage visibility
+    // of all-tabs-menu. This menu is displayed when there
+    // is not enough h-space to render all tabs.
+    // It allows the user to select a tab even if it's hidden.
     if (this.props.showAllTabsMenu) {
       node.addEventListener("overflow", this.onOverflow);
       node.addEventListener("underflow", this.onUnderflow);
@@ -116,18 +116,18 @@ class Tabs extends Component {
     }
   }
 
-  
+  // FIXME: https://bugzilla.mozilla.org/show_bug.cgi?id=1774507
   UNSAFE_componentWillReceiveProps(nextProps) {
     let { children, activeTab } = nextProps;
     const panels = children.filter(panel => panel);
     let created = [...this.state.created];
 
-    
-    
-    
+    // If the children props has changed due to an addition or removal of a tab,
+    // update the state's created array with the latest tab ids and whether or not
+    // the tab is already created.
     if (this.state.created.length != panels.length) {
       created = panels.map(panel => {
-        
+        // Get whether or not the tab has already been created from the previous state.
         const createdEntry = this.state.created.find(entry => {
           return entry && entry.tabId === panel.props.id;
         });
@@ -141,9 +141,9 @@ class Tabs extends Component {
       });
     }
 
-    
+    // Check type of 'activeTab' props to see if it's valid (it's 0-based index).
     if (typeof activeTab === "number") {
-      
+      // Reset to index 0 if index overflows the range of panel array
       activeTab = activeTab < panels.length && activeTab >= 0 ? activeTab : 0;
 
       created[activeTab] = Object.assign({}, created[activeTab], {
@@ -170,7 +170,7 @@ class Tabs extends Component {
     }
   }
 
-  
+  // DOM Events
 
   onOverflow(event) {
     if (event.target.classList.contains("tabs-menu")) {
@@ -189,7 +189,7 @@ class Tabs extends Component {
   }
 
   onKeyDown(event) {
-    
+    // Bail out if the focus isn't on a tab.
     if (!event.target.closest(".tabs-menu-item")) {
       return;
     }
@@ -232,23 +232,23 @@ class Tabs extends Component {
   }
 
   onMouseDown(event) {
-    
+    // Prevents click-dragging the tab headers
     if (event) {
       event.preventDefault();
     }
   }
 
-  
+  // API
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Set the active tab from its index
+   *
+   * @param {Integer} index
+   *        Index of the tab that we want to set as the active one
+   * @param {Object} options
+   * @param {Boolean} options.fromMouseEvent
+   *        Set to true if this is called from a click on the tab
+   */
   setActive(index, options = {}) {
     const onAfterChange = this.props.onAfterChange;
     const onBeforeChange = this.props.onBeforeChange;
@@ -271,13 +271,13 @@ class Tabs extends Component {
     });
 
     this.setState(newState, () => {
-      
+      // Properly set focus on selected tab.
       const selectedTab = this.tabsEl.current.querySelector(
         `a[data-tab-index="${index}"]`
       );
       selectedTab.focus({
-        
-        
+        // When focus is coming from a mouse event,
+        // prevent :focus-visible to be applied to the element
         focusVisible: !options.fromMouseEvent,
       });
 
@@ -287,7 +287,7 @@ class Tabs extends Component {
     });
   }
 
-  
+  // Rendering
 
   renderMenuItems() {
     if (!this.props.children) {
@@ -320,11 +320,11 @@ class Tabs extends Component {
           isTabSelected ? "is-active" : "",
         ].join(" ");
 
-        
-        
-        
-        
-        
+        // Set tabindex to -1 (except the selected tab) so, it's focusable,
+        // but not reachable via sequential tab-key navigation.
+        // Changing selected tab (and so, moving focus) is done through
+        // left and right arrow keys.
+        // See also `onKeyDown()` event handler.
         return dom.li(
           {
             className,
@@ -353,8 +353,8 @@ class Tabs extends Component {
         );
       });
 
-    
-    
+    // Display the menu only if there is not enough horizontal
+    // space for all tabs (and overflow happened).
     const allTabsMenu = this.state.overflow
       ? dom.button({
           className: "all-tabs-menu",
@@ -363,7 +363,7 @@ class Tabs extends Component {
         })
       : null;
 
-    
+    // Get the sidebar toggle button if a renderSidebarToggle function is provided.
     const sidebarToggle = this.props.renderSidebarToggle
       ? this.props.renderSidebarToggle()
       : null;
@@ -402,16 +402,16 @@ class Tabs extends Component {
         const isCreated =
           this.state.created[index] && this.state.created[index].isCreated;
 
-        
-        
-        
+        // Use 'visibility:hidden' + 'height:0' for hiding content of non-selected
+        // tab. It's faster than 'display:none' because it avoids triggering frame
+        // destruction and reconstruction. 'width' is not changed to avoid relayout.
         const style = {
           visibility: selected ? "visible" : "hidden",
           height: selected ? "100%" : "0",
         };
 
-        
-        
+        // Allows lazy loading panels by creating them only if they are selected,
+        // then store a copy of the lazy created panel in `tab.panel`.
         if (typeof tab.panel == "function" && selected) {
           tab.panel = tab.panel(tab);
         }
@@ -449,9 +449,9 @@ class Tabs extends Component {
   }
 }
 
-
-
-
+/**
+ * Renders simple tab 'panel'.
+ */
 class TabPanel extends Component {
   static get propTypes() {
     return {
@@ -472,5 +472,5 @@ class TabPanel extends Component {
   }
 }
 
-
+// Exports from this module
 export { TabPanel, Tabs };
