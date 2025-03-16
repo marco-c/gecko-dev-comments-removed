@@ -84,8 +84,8 @@ TEST_F(AudioSendStreamCallTest, NoExtensionsByDefault) {
    private:
     Action OnSendRtp(rtc::ArrayView<const uint8_t> packet) override {
       RtpPacket rtp_packet;
-      EXPECT_TRUE(rtp_packet.Parse(packet));          
-      EXPECT_EQ(packet[0] & 0b0001'0000, 0);          
+      EXPECT_TRUE(rtp_packet.Parse(packet));  
+      EXPECT_EQ(packet[0] & 0b0001'0000, 0);  
 
       observation_complete_.Set();
       return SEND_PACKET;
