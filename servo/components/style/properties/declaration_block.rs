@@ -31,7 +31,7 @@ use crate::stylist::Stylist;
 use crate::values::computed::Context;
 use cssparser::{
     parse_important, AtRuleParser, CowRcStr, DeclarationParser, Delimiter, ParseErrorKind, Parser,
-    ParserInput, QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser,
+    ParserInput, ParserState, QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser, SourceLocation,
 };
 use itertools::Itertools;
 use selectors::SelectorList;
@@ -1421,10 +1421,17 @@ pub struct DeclarationParserState<'i> {
     
     errors: SmallParseErrorVec<'i>,
     
+    first_declaration_start: SourceLocation,
+    
     last_parsed_property_id: Option<PropertyId>,
 }
 
 impl<'i> DeclarationParserState<'i> {
+    
+    pub fn first_declaration_start(&self) -> SourceLocation {
+        self.first_declaration_start
+    }
+
     
     pub fn has_parsed_declarations(&self) -> bool {
         !self.output_block.is_empty()
@@ -1441,6 +1448,7 @@ impl<'i> DeclarationParserState<'i> {
         context: &ParserContext,
         name: CowRcStr<'i>,
         input: &mut Parser<'i, 't>,
+        declaration_start: &ParserState,
     ) -> Result<(), ParseError<'i>> {
         let id = match PropertyId::parse(&name, context) {
             Ok(id) => id,
@@ -1465,12 +1473,18 @@ impl<'i> DeclarationParserState<'i> {
         };
         
         input.expect_exhausted()?;
+        let has_parsed_declarations = self.has_parsed_declarations();
         self.output_block
             .extend(self.declarations.drain(), self.importance);
         
         
         
         self.last_parsed_property_id = None;
+
+        if !has_parsed_declarations {
+            self.first_declaration_start = declaration_start.source_location();
+        }
+
         Ok(())
     }
 
@@ -1544,8 +1558,9 @@ impl<'a, 'b, 'i> DeclarationParser<'i> for PropertyDeclarationParser<'a, 'b, 'i>
         &mut self,
         name: CowRcStr<'i>,
         input: &mut Parser<'i, 't>,
+        declaration_start: &ParserState,
     ) -> Result<(), ParseError<'i>> {
-        self.state.parse_value(self.context, name, input)
+        self.state.parse_value(self.context, name, input, declaration_start)
     }
 }
 
