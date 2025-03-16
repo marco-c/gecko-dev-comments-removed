@@ -1660,7 +1660,14 @@ addUiaTask(
 
 
 addUiaTask(
-  `<div id="editable" contenteditable role="textbox">ab <mark id="cdef"><span>cd</span> <a id="ef" href="/">ef</a></mark> <img id="g" src="https://example.com/a11y/accessible/tests/mochitest/moz.png" alt="g"></div>`,
+  `
+<div id="editable" contenteditable role="textbox">
+  ab
+  <mark id="cdef"><span>cd</span> <a id="ef" href="/">ef</a></mark>
+  <a href="/"><img id="g" src="https://example.com/a11y/accessible/tests/mochitest/moz.png" alt="g"></a>
+  <p><button id="h">h</button></p>
+</div>
+  `,
   async function testTextRangeGetEnclosingElement() {
     info("Getting editable DocumentRange");
     await runPython(`
@@ -1724,22 +1731,33 @@ addUiaTask(
       `range.MoveEndpointByUnit(TextPatternRangeEndpoint_End, TextUnit_Character, -1)`
     );
     
+    
     is(
-      await runPython(`range.GetEnclosingElement().CurrentName`),
+      await runPython(`range.GetEnclosingElement().CurrentAutomationId`),
       "ef",
-      "EnclosingElement is ef text leaf"
+      "EnclosingElement is ef"
+    );
+    
+    if (!gIsUiaEnabled) {
+      return;
+    }
+    info("Moving 1 word");
+    await runPython(`range.Move(TextUnit_Word, 1)`);
+    
+    is(
+      await runPython(`range.GetEnclosingElement().CurrentAutomationId`),
+      "g",
+      "EnclosingElement is g"
     );
     info("Moving 1 word");
     await runPython(`range.Move(TextUnit_Word, 1)`);
     
     
-    if (gIsUiaEnabled) {
-      is(
-        await runPython(`range.GetEnclosingElement().CurrentAutomationId`),
-        "g",
-        "EnclosingElement is g"
-      );
-    }
+    is(
+      await runPython(`range.GetEnclosingElement().CurrentAutomationId`),
+      "h",
+      "EnclosingElement is h"
+    );
   }
 );
 

@@ -746,12 +746,25 @@ UiaTextRange::GetEnclosingElement(
     return CO_E_OBJNOTCONNECTED;
   }
   RemoveExcludedAccessiblesFromRange(range);
-  if (Accessible* enclosing =
-          range.Start().mAcc->GetClosestCommonInclusiveAncestor(
-              range.End().mAcc)) {
-    RefPtr<IRawElementProviderSimple> uia = MsaaAccessible::GetFrom(enclosing);
-    uia.forget(aRetVal);
+  Accessible* enclosing =
+      range.Start().mAcc->GetClosestCommonInclusiveAncestor(range.End().mAcc);
+  if (!enclosing) {
+    return S_OK;
   }
+  for (Accessible* acc = enclosing; acc && !acc->IsDoc(); acc = acc->Parent()) {
+    if (nsAccUtils::MustPrune(acc) ||
+        
+        
+        
+        
+        (acc->Role() == roles::LINK && acc->ChildCount() == 1 &&
+         acc->FirstChild()->IsText())) {
+      enclosing = acc;
+      break;
+    }
+  }
+  RefPtr<IRawElementProviderSimple> uia = MsaaAccessible::GetFrom(enclosing);
+  uia.forget(aRetVal);
   return S_OK;
 }
 
