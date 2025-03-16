@@ -4212,6 +4212,13 @@ Result<CaretPoint, nsresult> HTMLEditor::DeleteTextWithTransaction(
 }
 
 Result<InsertTextResult, nsresult> HTMLEditor::ReplaceTextWithTransaction(
+    dom::Text& aTextNode, const ReplaceWhiteSpacesData& aData) {
+  return ReplaceTextWithTransaction(aTextNode, aData.mReplaceStartOffset,
+                                    aData.ReplaceLength(),
+                                    aData.mNormalizedString);
+}
+
+Result<InsertTextResult, nsresult> HTMLEditor::ReplaceTextWithTransaction(
     Text& aTextNode, uint32_t aOffset, uint32_t aLength,
     const nsAString& aStringToInsert) {
   MOZ_ASSERT(IsEditActionDataAvailable());
@@ -4402,7 +4409,16 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertLineBreak(
             !CanInsertLineBreak(*aPointToInsert.ContainerAs<nsIContent>()))) {
       return Err(NS_ERROR_FAILURE);
     }
-    return aPointToInsert;
+    if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
+      return aPointToInsert;
+    }
+    Result<EditorDOMPoint, nsresult> pointToInsertOrError =
+        WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
+            *this, aPointToInsert);
+    if (NS_WARN_IF(pointToInsertOrError.isErr())) {
+      return pointToInsertOrError.propagateErr();
+    }
+    return pointToInsertOrError.unwrap();
   }
 
   
@@ -4414,21 +4430,34 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertLineBreak(
     return Err(NS_ERROR_FAILURE);
   }
 
-  if (aPointToInsert.IsStartOfContainer()) {
-    
-    return aPointToInsert.ParentPoint();
+  Result<EditorDOMPoint, nsresult> pointToInsertOrError =
+      StaticPrefs::editor_white_space_normalization_blink_compatible()
+          ? WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
+                *this, aPointToInsert)
+          : aPointToInsert;
+  if (NS_WARN_IF(pointToInsertOrError.isErr())) {
+    return pointToInsertOrError.propagateErr();
+  }
+  const EditorDOMPoint pointToInsert = pointToInsertOrError.unwrap();
+  if (!pointToInsert.IsInTextNode()) {
+    return pointToInsert.ParentPoint();
   }
 
-  if (aPointToInsert.IsEndOfContainer()) {
+  if (pointToInsert.IsStartOfContainer()) {
     
-    return EditorDOMPoint::After(*aPointToInsert.ContainerAs<Text>());
+    return pointToInsert.ParentPoint();
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(aPointToInsert.IsSetAndValid());
+  if (pointToInsert.IsEndOfContainer()) {
+    
+    return EditorDOMPoint::After(*pointToInsert.ContainerAs<Text>());
+  }
+
+  MOZ_DIAGNOSTIC_ASSERT(pointToInsert.IsSetAndValid());
 
   
   Result<SplitNodeResult, nsresult> splitTextNodeResult =
-      SplitNodeWithTransaction(aPointToInsert);
+      SplitNodeWithTransaction(pointToInsert);
   if (MOZ_UNLIKELY(splitTextNodeResult.isErr())) {
     NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
     return splitTextNodeResult.propagateErr();
