@@ -77,22 +77,6 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
   
 
 
-
-
-
-
-
-
-
-  static Result<already_AddRefed<Notification>, QMResult> ConstructFromFields(
-      nsIGlobalObject* aGlobal, const nsAString& aID, const nsAString& aTitle,
-      const nsAString& aDir, const nsAString& aLang, const nsAString& aBody,
-      const nsAString& aTag, const nsAString& aIcon, const nsAString& aData,
-      const nsAString& aServiceWorkerRegistrationScope);
-
-  
-
-
   static Result<already_AddRefed<Notification>, QMResult> ConstructFromIPC(
       nsIGlobalObject* aGlobal, const IPCNotification& aIPCNotification,
       const nsAString& aServiceWorkerRegistrationScope);
@@ -123,15 +107,6 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   static NotificationPermission GetPermission(const GlobalObject& aGlobal,
                                               ErrorResult& aRv);
-
-  static already_AddRefed<Promise> Get(nsPIDOMWindowInner* aWindow,
-                                       const GetNotificationOptions& aFilter,
-                                       const nsAString& aScope,
-                                       ErrorResult& aRv);
-
-  static already_AddRefed<Promise> WorkerGet(
-      WorkerPrivate* aWorkerPrivate, const GetNotificationOptions& aFilter,
-      const nsAString& aScope, ErrorResult& aRv);
 
   
   

@@ -415,28 +415,85 @@ already_AddRefed<Promise> ServiceWorkerRegistration::ShowNotification(
   return p.forget();
 }
 
+
 already_AddRefed<Promise> ServiceWorkerRegistration::GetNotifications(
     const GetNotificationOptions& aOptions, ErrorResult& aRv) {
-  nsIGlobalObject* global = GetParentObject();
+  
+  
+  nsCOMPtr<nsIGlobalObject> global = GetParentObject();
   if (!global) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
 
-  NS_ConvertUTF8toUTF16 scope(mDescriptor.Scope());
+  
+  
 
-  if (NS_IsMainThread()) {
-    nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(global);
-    if (NS_WARN_IF(!window)) {
-      aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-      return nullptr;
-    }
-    return Notification::Get(window, aOptions, scope, aRv);
+  
+  RefPtr<Promise> promise = Promise::CreateInfallible(global);
+
+  
+  
+  
+  
+  
+  
+
+  if (!mActor) {
+    
+    
+    
+    
+    promise->MaybeResolve(nsTArray<RefPtr<Notification>>());
+    return promise.forget();
   }
 
-  WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
-  worker->AssertIsOnWorkerThread();
-  return Notification::WorkerGet(worker, aOptions, scope, aRv);
+  
+  
+  mActor->SendGetNotifications(aOptions.mTag)
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [promise, scope = NS_ConvertUTF8toUTF16(mDescriptor.Scope())](
+                 const PServiceWorkerRegistrationChild::
+                     GetNotificationsPromise::ResolveOrRejectValue&& aValue) {
+               if (aValue.IsReject()) {
+                 
+                 promise->MaybeResolve(nsTArray<RefPtr<Notification>>());
+                 return;
+               }
+
+               if (aValue.ResolveValue().type() ==
+                   IPCNotificationsOrError::Tnsresult) {
+                 
+                 promise->MaybeRejectWithInvalidStateError(
+                     "Could not retrieve notifications"_ns);
+                 return;
+               }
+
+               const nsTArray<IPCNotification>& notifications =
+                   aValue.ResolveValue().get_ArrayOfIPCNotification();
+
+               
+               nsTArray<RefPtr<Notification>> objects(notifications.Length());
+
+               
+               
+               
+               for (const IPCNotification& ipcNotification : notifications) {
+                 auto result = Notification::ConstructFromIPC(
+                     promise->GetParentObject(), ipcNotification, scope);
+                 if (result.isErr()) {
+                   continue;
+                 }
+                 RefPtr<Notification> n = result.unwrap();
+                 objects.AppendElement(n.forget());
+               }
+
+               
+               promise->MaybeResolve(std::move(objects));
+             });
+
+  
+  return promise.forget();
 }
 
 void ServiceWorkerRegistration::SetNavigationPreloadEnabled(
