@@ -703,6 +703,9 @@ class SourceSurface : public SupportsThreadSafeWeakPtr<SourceSurface> {
   }
 
   
+  virtual SurfaceType GetUnderlyingType() const { return GetType(); }
+
+  
 
 
   virtual void* GetNativeSurface(NativeSurfaceType aType) { return nullptr; }
