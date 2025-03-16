@@ -354,15 +354,6 @@ SafeRefPtr<Request> Request::Constructor(
     request->SetTriggeringPrincipal(aInit.mTriggeringPrincipal.Value());
   }
 
-  if (aInit.mNeverTaint) {
-    if (!XRE_IsParentProcess()) {
-      aRv.ThrowNotAllowedError(
-          "Taint has to happen outside of the parent process.");
-      return nullptr;
-    }
-    request->SetNeverTaint(aInit.mNeverTaint);
-  }
-
   
   if (aInit.mMethod.WasPassed()) {
     nsAutoCString method(aInit.mMethod.Value());
