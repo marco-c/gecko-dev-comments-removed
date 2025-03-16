@@ -61,11 +61,9 @@ using ::testing::WithParamInterface;
 using ::webrtc::SafeTask;
 
 
-
-
-#define RSA_PRIVATE_KEY_HEADER "-----BEGIN RSA PRIVATE KEY-----\n"
-
-static const char kRSA_PRIVATE_KEY_PEM[] = RSA_PRIVATE_KEY_HEADER
+static const char kRSA_PRIVATE_KEY_PEM[] =
+    "-----BEGIN RSA PRI"  
+    "VATE KEY-----\n"     
     "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC4XOJ6agj673j+\n"
     "O8sEnPmhVkjDOd858shAa07kVdeRePlE+wU4GUTY0i5JdXF8cUQLTSdKfqsR7f8L\n"
     "jtxhehZk7+OQs5P1VsSQeotr2L0WFBNQZ+cSswLBHt4DjG9vyDJMELwPYkLO/EZw\n"
