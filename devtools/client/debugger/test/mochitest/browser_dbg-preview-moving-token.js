@@ -17,7 +17,13 @@ add_task(async function () {
   invokeInTab("classPreview");
   await waitForPaused(dbg);
 
-  await scrollEditorIntoView(dbg, 50, 0);
+  
+  
+  
+  
+  
+  await scrollEditorIntoView(dbg, 49, 0, "start");
+
   
   
   await waitForDocumentLoadComplete(dbg);
@@ -116,6 +122,41 @@ add_task(async function () {
     Math.round(originalPopupPosition),
     `Popup position was updated`
   );
+
+  
+  
+  for (let i = 0; i < 10; i++) {
+    info(
+      `Move out by passing over the gap, before going on the right of the token to hide the preview (try #${i + 1})`
+    );
+    EventUtils.synthesizeMouseAtCenter(
+      privateStaticPopupEl.querySelector(".gap"),
+      { type: "mousemove" },
+      privateStaticPopupEl.ownerGlobal
+    );
+    EventUtils.synthesizeMouseAtPoint(
+      privateStaticTokenQuad.p2.x + 100,
+      privateStaticYCenter,
+      {
+        type: "mousemove",
+      },
+      fooTokenEl.ownerGlobal
+    );
+    info("Wait for popup to be hidden when going right");
+    await waitUntil(() => findElement(dbg, "popup") == null);
+
+    info("Move back in the center of the token to show the preview again");
+    EventUtils.synthesizeMouseAtPoint(
+      privateStaticXCenter,
+      privateStaticYCenter,
+      {
+        type: "mousemove",
+      },
+      fooTokenEl.ownerGlobal
+    );
+    info("Wait for popup to be shown on private field again");
+    await waitUntil(() => !!findElement(dbg, "popup"));
+  }
 
   await closePreviewForToken(dbg, privateStaticTokenEl, "popup");
   await resume(dbg);

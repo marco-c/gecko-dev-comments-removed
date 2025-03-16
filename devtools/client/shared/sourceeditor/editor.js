@@ -3407,7 +3407,8 @@ class Editor extends EventEmitter {
 
 
 
-  async scrollTo(line, column) {
+
+  async scrollTo(line, column, yAlign) {
     if (this.isDestroyed()) {
       return null;
     }
@@ -3425,7 +3426,7 @@ class Editor extends EventEmitter {
         return cm.dispatch({
           effects: EditorView.scrollIntoView(offset, {
             x: "nearest",
-            y: "center",
+            y: yAlign || "center",
           }),
         });
       }

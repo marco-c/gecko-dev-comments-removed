@@ -6,7 +6,6 @@ import React, { Component } from "devtools/client/shared/vendor/react";
 import { div } from "devtools/client/shared/vendor/react-dom-factories";
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 import BracketArrow from "./BracketArrow";
-import SmartGap from "./SmartGap";
 
 const classnames = require("resource://devtools/client/shared/classnames.js");
 
@@ -83,21 +82,18 @@ class Popover extends Component {
     const isHoveredOnTooltip = this.$tooltip && this.$tooltip.matches(":hover");
     const isHoveredOnTarget = this.props.target.matches(":hover");
 
-    if (isHoveredOnGap) {
-      if (!this.wasOnGap) {
-        this.wasOnGap = true;
-        this.timerId = setTimeout(this.onTimeout, 200);
-        return;
-      }
-      this.props.mouseout();
+    
+    
+    
+    if (isHoveredOnPopover || isHoveredOnTooltip || isHoveredOnTarget) {
+      this.timerId = setTimeout(this.onTimeout, 0);
       return;
     }
 
     
     
-    if (isHoveredOnPopover || isHoveredOnTooltip || isHoveredOnTarget) {
-      this.wasOnGap = false;
-      this.timerId = setTimeout(this.onTimeout, 0);
+    if (isHoveredOnGap) {
+      this.timerId = setTimeout(this.onTimeout, 200);
       return;
     }
 
@@ -238,28 +234,11 @@ class Popover extends Component {
   }
 
   getGap() {
-    if (this.firstRender) {
-      return div({
-        className: "gap",
-        key: "gap",
-        ref: a => (this.$gap = a),
-      });
-    }
-
-    return div(
-      {
-        className: "gap",
-        key: "gap",
-        ref: a => (this.$gap = a),
-      },
-      React.createElement(SmartGap, {
-        token: this.props.target,
-        preview: this.$tooltip || this.$popover,
-        gapHeight: this.gapHeight,
-        coords: this.state.coords,
-        offset: this.$gap.getBoundingClientRect().left,
-      })
-    );
+    return div({
+      className: "gap",
+      key: "gap",
+      ref: a => (this.$gap = a),
+    });
   }
 
   getPopoverArrow(orientation, left, top) {

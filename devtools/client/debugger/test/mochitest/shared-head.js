@@ -2399,10 +2399,11 @@ function setEditorCursorAt(dbg, line, column) {
 
 
 
-async function scrollEditorIntoView(dbg, line, column) {
+
+async function scrollEditorIntoView(dbg, line, column, yAlign) {
   const onScrolled = waitForScrolling(dbg);
   line = isCm6Enabled ? line + 1 : line;
-  getCMEditor(dbg).scrollTo(line, column);
+  getCMEditor(dbg).scrollTo(line, column, yAlign);
   
   
   

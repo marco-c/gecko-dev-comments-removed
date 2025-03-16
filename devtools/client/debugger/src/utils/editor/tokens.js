@@ -108,8 +108,14 @@ export function onMouseOver(editor) {
   let prevTokenPos = null;
 
   function onMouseLeave(event) {
+    
+    
+    
+    
+    
+    
     if (_invalidLeaveTarget(event.relatedTarget)) {
-      addMouseLeave(event.target);
+      addMouseLeave(event.relatedTarget);
       return;
     }
 
