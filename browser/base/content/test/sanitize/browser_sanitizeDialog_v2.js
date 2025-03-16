@@ -954,11 +954,15 @@ add_task(async function testClearHistoryCheckboxStatesAfterMigration3() {
       ["privacy.cpd.cookies", true],
       ["privacy.cpd.offlineApps", false],
       ["privacy.cpd.sessions", false],
-      ["privacy.cpd.siteSettings", false],
+      ["privacy.cpd.siteSettings", true],
       ["privacy.cpd.cache", true],
       
       ["privacy.clearHistory.cookiesAndStorage", false],
-      ["privacy.clearHistory.historyFormDataAndDownloads", false],
+      ["privacy.clearHistory.siteSettings", false],
+      ["privacy.clearHistory.cache", false],
+      
+      ["privacy.clearHistory.historyFormDataAndDownloads", true],
+      
       ["privacy.sanitize.cpd.hasMigratedToNewPrefs2", true],
       ["privacy.sanitize.cpd.hasMigratedToNewPrefs3", false],
     ],
@@ -966,16 +970,18 @@ add_task(async function testClearHistoryCheckboxStatesAfterMigration3() {
 
   let dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
   dh.onload = function () {
-    this.validateCheckbox("cookiesAndStorage", true);
-    this.validateCheckbox("browsingHistoryAndDownloads", false);
     
-    
-    this.validateCheckbox("formdata", false);
-    this.validateCheckbox("cache", true);
+    this.validateCheckbox("cookiesAndStorage", false);
     this.validateCheckbox("siteSettings", false);
+    this.validateCheckbox("cache", false);
 
+    
+    this.validateCheckbox("browsingHistoryAndDownloads", true);
+    this.validateCheckbox("formdata", true);
+
+    
     this.checkPrefCheckbox("siteSettings", true);
-    this.checkPrefCheckbox("cookiesAndStorage", false);
+    this.checkPrefCheckbox("browsingHistoryAndDownloads", false);
     this.acceptDialog();
   };
   dh.open();
@@ -991,7 +997,7 @@ add_task(async function testClearHistoryCheckboxStatesAfterMigration3() {
   dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
   dh.onload = function () {
     this.validateCheckbox("siteSettings", true);
-    this.validateCheckbox("cookiesAndStorage", false);
+    this.validateCheckbox("browsingHistoryAndDownloads", false);
     this.cancelDialog();
   };
   dh.open();
