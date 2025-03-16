@@ -458,14 +458,14 @@ bool NativeLayerRootWayland::CommitToScreenLocked(
 
 
 void NativeLayerRootWayland::FrameCallbackHandler(uint32_t aTime) {
-  if (aTime <= aLastFrameCallbackTime) {
+  if (aTime <= mLastFrameCallbackTime) {
     LOGVERBOSE(
         "NativeLayerRootWayland::FrameCallbackHandler() ignoring redundant "
         "callback %d",
         aTime);
     return;
   }
-  aLastFrameCallbackTime = aTime;
+  mLastFrameCallbackTime = aTime;
 
   LOGVERBOSE("NativeLayerRootWayland::FrameCallbackHandler() time %d", aTime);
   mSurface->FrameCallbackHandler(nullptr, aTime,
