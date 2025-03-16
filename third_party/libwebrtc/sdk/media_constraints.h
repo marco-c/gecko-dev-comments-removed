@@ -89,8 +89,8 @@ class MediaConstraints {
   static const char kEnableIPv6[];  
   
   static const char kEnableVideoSuspendBelowMinBitrate[];
-  static const char kScreencastMinBitrate[];   
-  static const char kCpuOveruseDetection[];    
+  static const char kScreencastMinBitrate[];  
+  static const char kCpuOveruseDetection[];   
 
   
   
