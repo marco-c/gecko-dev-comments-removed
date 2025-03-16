@@ -519,6 +519,18 @@ impl FontSizeKeyword {
     pub fn html_size(self) -> u8 {
         self as u8
     }
+
+    
+    #[cfg(feature = "gecko")]
+    pub fn is_math(self) -> bool {
+        matches!(self, Self::Math)
+    }
+
+    
+    #[cfg(feature = "servo")]
+    pub fn is_math(self) -> bool {
+        false
+    }
 }
 
 impl Default for FontSizeKeyword {
@@ -924,10 +936,12 @@ impl FontSize {
                 calc.resolve(base_size.resolve(context).computed_size())
             },
             FontSize::Keyword(i) => {
-                if i.kw == FontSizeKeyword::Math {
+                if i.kw.is_math() {
                     
                     info = compose_keyword(1.);
-                    info.kw = FontSizeKeyword::Math;
+                    
+                    
+                    info.kw = i.kw;
                     FontRelativeLength::Em(1.).to_computed_value(
                         context,
                         base_size,
