@@ -23,13 +23,13 @@
 
 namespace mozilla::dom {
 
-class DecompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
+class ZLibDecompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
  public:
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DecompressionStreamAlgorithms,
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ZLibDecompressionStreamAlgorithms,
                                            TransformerAlgorithmsBase)
 
-  explicit DecompressionStreamAlgorithms(CompressionFormat format) {
+  explicit ZLibDecompressionStreamAlgorithms(CompressionFormat format) {
     int8_t err = inflateInit2(&mZStream, ZLibWindowBits(format));
     if (err == Z_MEM_ERROR) {
       MOZ_CRASH("Out of memory");
@@ -233,19 +233,19 @@ class DecompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
     }
   }
 
-  ~DecompressionStreamAlgorithms() override { inflateEnd(&mZStream); };
+  ~ZLibDecompressionStreamAlgorithms() override { inflateEnd(&mZStream); };
 
   z_stream mZStream = {};
   bool mObservedStreamEnd = false;
 };
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(DecompressionStreamAlgorithms,
+NS_IMPL_CYCLE_COLLECTION_INHERITED(ZLibDecompressionStreamAlgorithms,
                                    TransformerAlgorithmsBase)
-NS_IMPL_ADDREF_INHERITED(DecompressionStreamAlgorithms,
+NS_IMPL_ADDREF_INHERITED(ZLibDecompressionStreamAlgorithms,
                          TransformerAlgorithmsBase)
-NS_IMPL_RELEASE_INHERITED(DecompressionStreamAlgorithms,
+NS_IMPL_RELEASE_INHERITED(ZLibDecompressionStreamAlgorithms,
                           TransformerAlgorithmsBase)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DecompressionStreamAlgorithms)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ZLibDecompressionStreamAlgorithms)
 NS_INTERFACE_MAP_END_INHERITING(TransformerAlgorithmsBase)
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(DecompressionStream, mGlobal, mStream)
@@ -280,7 +280,7 @@ already_AddRefed<DecompressionStream> DecompressionStream::Constructor(
 
   
   
-  auto algorithms = MakeRefPtr<DecompressionStreamAlgorithms>(aFormat);
+  auto algorithms = MakeRefPtr<ZLibDecompressionStreamAlgorithms>(aFormat);
 
   RefPtr<TransformStream> stream =
       TransformStream::CreateGeneric(aGlobal, *algorithms, aRv);
