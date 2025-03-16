@@ -9300,6 +9300,57 @@ void MacroAssembler::registerIterator(Register enumeratorsList, Register iter,
   storePtr(iter, Address(enumeratorsList, NativeIterator::offsetOfPrev()));
 }
 
+void MacroAssembler::prepareOOBStoreElement(Register object, Register index,
+                                            Register elements,
+                                            Register spectreTemp,
+                                            Label* failure,
+                                            LiveRegisterSet volatileLiveRegs) {
+  Address length(elements, ObjectElements::offsetOfLength());
+  Address initLength(elements, ObjectElements::offsetOfInitializedLength());
+  Address capacity(elements, ObjectElements::offsetOfCapacity());
+
+  
+  branch32(Assembler::NotEqual, initLength, index, failure);
+
+  
+  
+  Label allocElement, addNewElement;
+  spectreBoundsCheck32(index, capacity, spectreTemp, &allocElement);
+  jump(&addNewElement);
+
+  bind(&allocElement);
+
+  volatileLiveRegs.takeUnchecked(elements);
+  volatileLiveRegs.takeUnchecked(spectreTemp);
+  PushRegsInMask(volatileLiveRegs);
+
+  
+  using Fn = bool (*)(JSContext* cx, NativeObject* obj);
+  setupUnalignedABICall(elements);
+  loadJSContext(elements);
+  passABIArg(elements);
+  passABIArg(object);
+  callWithABI<Fn, NativeObject::addDenseElementPure>();
+  storeCallPointerResult(elements);
+
+  PopRegsInMask(volatileLiveRegs);
+  branchIfFalseBool(elements, failure);
+
+  
+  loadPtr(Address(object, NativeObject::offsetOfElements()), elements);
+
+  bind(&addNewElement);
+
+  
+  add32(Imm32(1), initLength);
+
+  
+  Label skipIncrementLength;
+  branch32(Assembler::Above, length, index, &skipIncrementLength);
+  add32(Imm32(1), length);
+  bind(&skipIncrementLength);
+}
+
 void MacroAssembler::toHashableNonGCThing(ValueOperand value,
                                           ValueOperand result,
                                           FloatRegister tempFloat) {

@@ -6984,48 +6984,9 @@ bool CacheIRCompiler::emitStoreDenseElementHole(ObjOperandId objId,
     masm.spectreBoundsCheck32(index, initLength, spectreTemp, &outOfBounds);
     masm.jump(&inBounds);
 
-    
     masm.bind(&outOfBounds);
-    masm.branch32(Assembler::NotEqual, initLength, index, failure->label());
-
-    
-    
-    Label allocElement, addNewElement;
-    Address capacity(scratch, ObjectElements::offsetOfCapacity());
-    masm.spectreBoundsCheck32(index, capacity, spectreTemp, &allocElement);
-    masm.jump(&addNewElement);
-
-    masm.bind(&allocElement);
-
-    LiveRegisterSet save = liveVolatileRegs();
-    save.takeUnchecked(scratch);
-    masm.PushRegsInMask(save);
-
-    using Fn = bool (*)(JSContext* cx, NativeObject* obj);
-    masm.setupUnalignedABICall(scratch);
-    masm.loadJSContext(scratch);
-    masm.passABIArg(scratch);
-    masm.passABIArg(obj);
-    masm.callWithABI<Fn, NativeObject::addDenseElementPure>();
-    masm.storeCallPointerResult(scratch);
-
-    masm.PopRegsInMask(save);
-    masm.branchIfFalseBool(scratch, failure->label());
-
-    
-    masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
-
-    masm.bind(&addNewElement);
-
-    
-    masm.add32(Imm32(1), initLength);
-
-    
-    Label skipIncrementLength;
-    Address length(scratch, ObjectElements::offsetOfLength());
-    masm.branch32(Assembler::Above, length, index, &skipIncrementLength);
-    masm.add32(Imm32(1), length);
-    masm.bind(&skipIncrementLength);
+    masm.prepareOOBStoreElement(obj, index, scratch, spectreTemp,
+                                failure->label(), liveVolatileRegs());
 
     
     masm.jump(&storeSkipPreBarrier);
