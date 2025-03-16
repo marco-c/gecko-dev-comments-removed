@@ -1630,8 +1630,9 @@ static nsresult PinShortcutToTaskbarImpl(bool aCheckOnly,
   
   
   
-  if (!aCheckOnly && !PollAppsFolderForShortcut(
-                         aAppUserModelId, TimeDuration::FromSeconds(15))) {
+  if (!widget::WinUtils::HasPackageIdentity() && !aCheckOnly &&
+      !PollAppsFolderForShortcut(aAppUserModelId,
+                                 TimeDuration::FromSeconds(15))) {
     return NS_ERROR_FILE_NOT_FOUND;
   }
 
