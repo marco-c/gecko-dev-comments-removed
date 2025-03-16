@@ -45,14 +45,14 @@ Atomic<size_t> MappingReporter::mapped;
 
 NS_IMPL_ISUPPORTS(MappingReporter, nsIMemoryReporter)
 
-static void RegisterMemoryReporter() {
+static void RegisterMappingMemoryReporter() {
   static Atomic<bool> registered;
   if (registered.compareExchange(false, true)) {
     RegisterStrongMemoryReporter(new MappingReporter());
   }
 }
 
-MappingBase::MappingBase() { RegisterMemoryReporter(); }
+MappingBase::MappingBase() = default;
 
 MappingBase& MappingBase::operator=(MappingBase&& aOther) {
   
@@ -62,7 +62,7 @@ MappingBase& MappingBase::operator=(MappingBase&& aOther) {
   return *this;
 }
 
-void* MappingBase::Data() const {
+void* MappingBase::Address() const {
 #ifdef FUZZING
   return SharedMemoryFuzzer::MutateSharedMemory(mMemory, mSize);
 #else
@@ -70,7 +70,7 @@ void* MappingBase::Data() const {
 #endif
 }
 
-LeakedMapping MappingBase::release() && {
+LeakedMapping MappingBase::ReleaseMapping() && {
   
   
   return LeakedMapping{static_cast<uint8_t*>(std::exchange(mMemory, nullptr)),
@@ -79,6 +79,10 @@ LeakedMapping MappingBase::release() && {
 
 bool MappingBase::Map(const HandleBase& aHandle, void* aFixedAddress,
                       bool aReadOnly) {
+  
+  if (!aHandle) {
+    return false;
+  }
   
   
   
@@ -103,6 +107,8 @@ bool MappingBase::MapSubregion(const HandleBase& aHandle, uint64_t aOffset,
                 "cannot map region exceeding aHandle.Size()");
     return false;
   }
+
+  RegisterMappingMemoryReporter();
 
   if (auto mem =
           Platform::Map(aHandle, aOffset, aSize, aFixedAddress, aReadOnly)) {
@@ -146,11 +152,13 @@ ReadOnlyMapping::ReadOnlyMapping(const ReadOnlyHandle& aHandle,
   MapSubregion(aHandle, aOffset, aSize, aFixedAddress, true);
 }
 
+
+
+
 FreezableMapping::FreezableMapping(FreezableHandle&& aHandle,
-                                   void* aFixedAddress) {
-  if (Map(aHandle, aFixedAddress, false)) {
-    mHandle = std::move(aHandle);
-  }
+                                   void* aFixedAddress)
+    : mHandle(std::move(aHandle)) {
+  Map(mHandle, aFixedAddress, false);
 }
 
 FreezableMapping::FreezableMapping(FreezableHandle&& aHandle, uint64_t aOffset,
@@ -172,6 +180,10 @@ FreezableHandle FreezableMapping::Unmap() && {
   return handle;
 }
 
+bool LocalProtect(char* aAddr, size_t aSize, Access aAccess) {
+  return Platform::Protect(aAddr, aSize, aAccess);
+}
+
 void* FindFreeAddressSpace(size_t aSize) {
   return Platform::FindFreeAddressSpace(aSize);
 }
@@ -186,10 +198,6 @@ size_t PageAlignedSize(size_t aMinimum) {
   const size_t pageSize = Platform::PageSize();
   size_t nPagesNeeded = size_t(ceil(double(aMinimum) / double(pageSize)));
   return pageSize * nPagesNeeded;
-}
-
-bool Protect(char* aAddr, size_t aSize, Access aAccess) {
-  return Platform::Protect(aAddr, aSize, aAccess);
 }
 
 }  

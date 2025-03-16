@@ -9,8 +9,19 @@
 
 #include <utility>
 
-#include "chrome/common/ipc_message_utils.h"
 #include "mozilla/UniquePtrExtensions.h"
+
+namespace IPC {
+template <class P>
+struct ParamTraits;
+class MessageWriter;
+class MessageReader;
+}  
+
+namespace mozilla::geckoargs {
+template <typename T>
+struct CommandLineArg;
+}
 
 namespace mozilla::ipc {
 
@@ -47,9 +58,19 @@ class HandleBase {
 
   explicit operator bool() const { return (bool)mHandle; }
 
+  
+
+
+
+
+
+  PlatformHandle TakePlatformHandle() && { return std::move(mHandle); }
+
   friend class Platform;
   friend struct IPC::ParamTraits<mozilla::ipc::shared_memory::Handle>;
   friend struct IPC::ParamTraits<mozilla::ipc::shared_memory::ReadOnlyHandle>;
+  friend struct mozilla::geckoargs::CommandLineArg<
+      mozilla::ipc::shared_memory::ReadOnlyHandle>;
 
  protected:
   HandleBase();
@@ -83,6 +104,14 @@ class HandleBase {
   bool FromMessageReader(IPC::MessageReader* aReader);
 
  private:
+  
+
+
+
+
+
+  void SetSize(uint64_t aSize);
+
   PlatformHandle mHandle = nullptr;
   uint64_t mSize = 0;
 };
@@ -101,6 +130,22 @@ struct Handle : HandleBase {
 
 
   Handle Clone() const { return CloneAs<Handle>(); }
+
+  
+
+
+
+
+
+  ReadOnlyHandle ToReadOnly() &&;
+
+  
+
+
+
+
+
+  const ReadOnlyHandle& AsReadOnly() const;
 
   
 
@@ -202,6 +247,17 @@ Handle Create(uint64_t aSize);
 
 
 FreezableHandle CreateFreezable(uint64_t aSize);
+
+#if defined(XP_LINUX)
+
+
+
+
+bool AppendPosixShmPrefix(std::string* str, pid_t pid);
+
+
+bool UsingPosixShm();
+#endif
 
 }  
 
