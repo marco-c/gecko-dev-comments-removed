@@ -490,7 +490,7 @@ bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
                                wl_surface* aParentWLSurface,
                                WaylandSurfaceLock* aParentWaylandSurfaceLock,
                                gfx::IntPoint aSubsurfacePosition,
-                               bool aSubsurfaceDesync,
+                               bool aCommitToParent, bool aSubsurfaceDesync,
                                bool aUseReadyToDrawCallback) {
   LOGWAYLAND("WaylandSurface::MapLocked()");
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
@@ -508,7 +508,19 @@ bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
     mParentSurface = mParent->mSurface;
   }
 
+  mCommitToParentSurface = aCommitToParent;
   mSubsurfacePosition = aSubsurfacePosition;
+
+  if (mCommitToParentSurface) {
+    LOGWAYLAND("    commit to parent");
+    mIsMapped = true;
+    mSurface = mParentSurface;
+    NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+        "InitialFrameCallbackHandler", [self = RefPtr{this}]() {
+          self->InitialFrameCallbackHandler(nullptr);
+        }));
+    return true;
+  }
 
   
   mBufferAttached = false;
@@ -564,8 +576,10 @@ bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
 
 bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
                                wl_surface* aParentWLSurface,
-                               gfx::IntPoint aSubsurfacePosition) {
+                               gfx::IntPoint aSubsurfacePosition,
+                               bool aCommitToParent) {
   return MapLocked(aProofOfLock, aParentWLSurface, nullptr, aSubsurfacePosition,
+                   aCommitToParent,
                     true);
 }
 
@@ -574,6 +588,7 @@ bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
                                gfx::IntPoint aSubsurfacePosition) {
   return MapLocked(aProofOfLock, nullptr, aParentWaylandSurfaceLock,
                    aSubsurfacePosition,
+                    false,
                     true,
                     false);
 }
@@ -621,6 +636,15 @@ void WaylandSurface::UnmapLocked(WaylandSurfaceLock& aSurfaceLock) {
   mIsMapped = false;
 
   LOGWAYLAND("WaylandSurface::UnmapLocked()");
+
+  
+  
+  
+  
+  
+  if (mCommitToParentSurface) {
+    mSurface = nullptr;
+  }
 
   ClearReadyToDrawCallbacksLocked(aSurfaceLock);
   ClearFrameCallbackLocked(aSurfaceLock);
@@ -680,7 +704,7 @@ void WaylandSurface::MoveLocked(const WaylandSurfaceLock& aProofOfLock,
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
   MOZ_DIAGNOSTIC_ASSERT(mIsMapped);
 
-  if (mSubsurfacePosition == aPosition) {
+  if (mSubsurfacePosition == aPosition || mCommitToParentSurface) {
     return;
   }
 
@@ -1075,11 +1099,17 @@ void WaylandSurface::InvalidateRegionLocked(
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
   MOZ_DIAGNOSTIC_ASSERT(mSurface);
 
-  for (auto iter = aInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
-    gfx::IntRect r = iter.Get();
-    wl_surface_damage_buffer(mSurface, r.x, r.y, r.width, r.height);
+  if (mCommitToParentSurface) {
+    
+    
+    
+    wl_surface_damage(mSurface, 0, 0, INT32_MAX, INT32_MAX);
+  } else {
+    for (auto iter = aInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
+      gfx::IntRect r = iter.Get();
+      wl_surface_damage_buffer(mSurface, r.x, r.y, r.width, r.height);
+    }
   }
-
   mSurfaceNeedsCommit = true;
 }
 
@@ -1181,6 +1211,9 @@ bool WaylandSurface::AttachLocked(WaylandSurfaceLock& aSurfaceLock,
     mAttachedBuffers.AppendElement(aWaylandBuffer);
   }
 
+  if (mCommitToParentSurface) {
+    wl_surface_set_buffer_scale(mSurface, 1);
+  }
   wl_surface_attach(mSurface, buffer, 0, 0);
   aWaylandBuffer->SetAttachedLocked(aSurfaceLock);
   mBufferAttached = true;

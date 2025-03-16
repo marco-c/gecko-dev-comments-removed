@@ -16,7 +16,6 @@
 
 #ifdef MOZ_WAYLAND
 #  include "mozilla/StaticPrefs_widget.h"
-#  include "WindowSurfaceCairo.h"
 #  include "WindowSurfaceWaylandMultiBuffer.h"
 #endif
 #ifdef MOZ_X11
@@ -115,9 +114,6 @@ RefPtr<WindowSurface> WindowSurfaceProvider::CreateWindowSurface() {
     if (!mWidget) {
       return nullptr;
     }
-    if (mWidget->IsDragPopup()) {
-      return MakeRefPtr<WindowSurfaceCairo>(mWidget);
-    }
     return MakeRefPtr<WindowSurfaceWaylandMB>(mWidget, mCompositorWidget);
   }
 #endif
@@ -215,6 +211,24 @@ void WindowSurfaceProvider::EndRemoteDrawingInRegion(
     
     
     if (!mWidget || !mWidget->IsMapped()) {
+      return;
+    }
+    if (moz_container_wayland_is_commiting_to_parent(
+            mWidget->GetMozContainer())) {
+      
+      
+      NS_DispatchToMainThread(NS_NewRunnableFunction(
+          "WindowSurfaceProvider::EndRemoteDrawingInRegion",
+          [widget = RefPtr{mWidget}, this, aInvalidRegion]() {
+            if (!widget->IsMapped()) {
+              return;
+            }
+            MutexAutoLock lock(mMutex);
+            
+            if (mWindowSurface && mWindowSurfaceValid) {
+              mWindowSurface->Commit(aInvalidRegion);
+            }
+          }));
       return;
     }
   }
