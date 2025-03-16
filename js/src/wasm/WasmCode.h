@@ -561,12 +561,11 @@ class CodeBlock {
 
   
   SharedCodeSegment segment;
-  
-  const uint8_t* codeBase;
-  size_t codeLength;
 
   
-  
+  uint8_t* codeBase;
+  size_t codeLength;
+
   
   
   
@@ -637,10 +636,7 @@ class CodeBlock {
            kind == CodeBlockKind::OptimizedTier;
   }
 
-  
-  void offsetMetadataBy(uint32_t delta);
-
-  const uint8_t* base() const { return codeBase; }
+  uint8_t* base() const { return codeBase; }
   uint32_t length() const { return codeLength; }
   bool containsCodePC(const void* pc) const {
     return pc >= base() && pc < (base() + length());
@@ -1170,7 +1166,7 @@ class Code : public ShareableBase<Code> {
                      uint8_t** codeBase) const {
     const CodeBlock& codeBlock = funcCodeBlock(funcIndex);
     *range = &codeBlock.codeRanges[codeBlock.funcToCodeRange[funcIndex]];
-    *codeBase = codeBlock.segment->base();
+    *codeBase = codeBlock.base();
   }
 
   const LinkData* codeBlockLinkData(const CodeBlock& block) const;
