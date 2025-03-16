@@ -20,8 +20,14 @@
 
 namespace {
 
-const uint8_t kDtlsHandshakeRecord = 22;
 const uint8_t kDtlsChangeCipherSpecRecord = 20;
+const uint8_t kDtlsHandshakeRecord = 22;
+
+
+const uint8_t kFixedBitmask = 0b00100000;
+const uint8_t kConnectionBitmask = 0b00010000;
+const uint8_t kSequenceNumberBitmask = 0b00001000;
+const uint8_t kLengthPresentBitmask = 0b00000100;
 }  
 
 namespace cricket {
@@ -62,9 +68,37 @@ std::optional<std::vector<uint16_t>> GetDtlsHandshakeAcks(
     uint64_t epoch_and_seq;
     uint16_t len;
     
+    if (!record_buf.ReadUInt8(&content_type)) {
+      return std::nullopt;
+    }
+
     
-    if (!(record_buf.ReadUInt8(&content_type) && record_buf.Consume(2) &&
-          record_buf.ReadUInt64(&epoch_and_seq) &&
+    
+    if ((content_type & kFixedBitmask) == kFixedBitmask) {
+      
+      
+      
+      if ((content_type & kConnectionBitmask) != 0) {
+        return std::nullopt;
+      }
+      
+      if (!record_buf.Consume((content_type & kSequenceNumberBitmask) ==
+                                      kSequenceNumberBitmask
+                                  ? 2
+                                  : 1)) {
+        return std::nullopt;
+      }
+      
+      if ((content_type & kLengthPresentBitmask) == kLengthPresentBitmask) {
+        if (!(record_buf.ReadUInt16(&len) && record_buf.Consume(len))) {
+          return std::nullopt;
+        }
+      }
+      
+      continue;
+    }
+    
+    if (!(record_buf.Consume(2) && record_buf.ReadUInt64(&epoch_and_seq) &&
           record_buf.ReadUInt16(&len) && record_buf.Length() >= len)) {
       return std::nullopt;
     }
