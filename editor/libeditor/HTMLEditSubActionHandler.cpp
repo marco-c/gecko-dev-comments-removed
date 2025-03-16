@@ -180,6 +180,9 @@ nsresult HTMLEditor::InitEditorContentAndSelection() {
     return NS_OK;
   }
 
+  
+  
+  
   rv = InsertBRElementToEmptyListItemsAndTableCellsInRange(
       RawRangeBoundary(bodyOrDocumentElement, 0u),
       RawRangeBoundary(bodyOrDocumentElement,
