@@ -69,10 +69,6 @@ bool FFmpegRuntimeLinker::Init() {
     return sLinkStatus == LinkStatus_SUCCEEDED;
   }
 
-#ifdef MOZ_WIDGET_GTK
-  sLibAV.LinkVAAPILibs();
-#endif
-
   
   
   sLinkStatus = LinkStatus_NOT_FOUND;

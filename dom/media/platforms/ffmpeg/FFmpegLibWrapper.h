@@ -55,7 +55,6 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper {
 #ifdef MOZ_WIDGET_GTK
   
   bool IsVAAPIAvailable();
-  void LinkVAAPILibs();
 #endif
 
   
@@ -179,12 +178,6 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper {
                                         AVBufferRef* src_ctx, int flags);
   const char* (*avcodec_get_name)(int id);
   char* (*av_get_pix_fmt_string)(char* buf, int buf_size, int pix_fmt);
-
-  int (*vaExportSurfaceHandle)(void*, unsigned int, uint32_t, uint32_t, void*);
-  int (*vaSyncSurface)(void*, unsigned int);
-  int (*vaInitialize)(void* dpy, int* major_version, int* minor_version);
-  int (*vaTerminate)(void* dpy);
-  void* (*vaGetDisplayDRM)(int fd);
 #endif
 
   
@@ -193,10 +186,6 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper {
 
   PRLibrary* mAVCodecLib;
   PRLibrary* mAVUtilLib;
-#ifdef MOZ_WIDGET_GTK
-  PRLibrary* mVALib;
-  PRLibrary* mVALibDrm;
-#endif
 };
 
 }  
