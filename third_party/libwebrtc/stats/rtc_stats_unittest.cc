@@ -484,6 +484,12 @@ TEST(RTCStatsTest, AttributeToString) {
             stats.GetAttribute(stats.m_map_string_double).ToString());
 }
 
+TEST(RTCStatsTest, SetTimestamp) {
+  RTCTestStats test_stats("testId", Timestamp::Micros(123));
+  test_stats.set_timestamp(Timestamp::Micros(321));
+  EXPECT_EQ(test_stats.timestamp(), Timestamp::Micros(321));
+}
+
 
 
 

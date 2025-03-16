@@ -63,6 +63,7 @@ class RTC_EXPORT RTCStats {
   const std::string& id() const { return id_; }
   
   Timestamp timestamp() const { return timestamp_; }
+  void set_timestamp(Timestamp timestamp) { timestamp_ = timestamp; }
 
   
   virtual const char* type() const = 0;
