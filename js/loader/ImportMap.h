@@ -57,13 +57,20 @@ using ScopeMap = std::map<nsCString, mozilla::UniquePtr<SpecifierMap>,
 
 
 
+using IntegrityMap = std::map<nsCString, nsString, std::greater<nsCString>>;
+
+
+
 
 
 class ImportMap {
  public:
   ImportMap(mozilla::UniquePtr<SpecifierMap> aImports,
-            mozilla::UniquePtr<ScopeMap> aScopes)
-      : mImports(std::move(aImports)), mScopes(std::move(aScopes)) {}
+            mozilla::UniquePtr<ScopeMap> aScopes,
+            mozilla::UniquePtr<IntegrityMap> aIntegrity)
+      : mImports(std::move(aImports)),
+        mScopes(std::move(aScopes)),
+        mIntegrity(std::move(aIntegrity)) {}
 
   
 
@@ -98,6 +105,9 @@ class ImportMap {
                                               LoadedScript* aScript,
                                               const nsAString& aSpecifier);
 
+  static mozilla::Maybe<nsString> LookupIntegrity(ImportMap* aImportMap,
+                                                  nsIURI* aURL);
+
   
   static mozilla::LazyLogModule gImportMapLog;
 
@@ -111,6 +121,7 @@ class ImportMap {
 
   mozilla::UniquePtr<SpecifierMap> mImports;
   mozilla::UniquePtr<ScopeMap> mScopes;
+  mozilla::UniquePtr<IntegrityMap> mIntegrity;
 };
 
 }  

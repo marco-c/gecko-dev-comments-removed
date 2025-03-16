@@ -310,6 +310,68 @@ static UniquePtr<ScopeMap> SortAndNormalizeScopes(
 }
 
 
+static UniquePtr<IntegrityMap> NormalizeIntegrity(
+    JSContext* aCx, JS::HandleObject aOriginalMap, nsIURI* aBaseURL,
+    const ReportWarningHelper& aWarning) {
+  
+  UniquePtr<IntegrityMap> normalized = MakeUnique<IntegrityMap>();
+
+  JS::Rooted<JS::IdVector> keys(aCx, JS::IdVector(aCx));
+  if (!JS_Enumerate(aCx, aOriginalMap, &keys)) {
+    return nullptr;
+  }
+
+  
+  for (size_t i = 0; i < keys.length(); i++) {
+    const JS::RootedId keyId(aCx, keys[i]);
+    nsAutoJSString key;
+    NS_ENSURE_TRUE(key.init(aCx, keyId), nullptr);
+
+    
+    
+    auto parseResult = ResolveURLLikeModuleSpecifier(key, aBaseURL);
+
+    
+    if (parseResult.isErr()) {
+      
+      
+      AutoTArray<nsString, 1> params;
+      params.AppendElement(key);
+      aWarning.Report("ImportMapInvalidAddress", params);
+
+      
+      continue;
+    }
+
+    nsCOMPtr<nsIURI> resolvedURL = parseResult.unwrap();
+
+    JS::RootedValue idVal(aCx);
+    NS_ENSURE_TRUE(JS_GetPropertyById(aCx, aOriginalMap, keyId, &idVal),
+                   nullptr);
+
+    
+    if (!idVal.isString()) {
+      
+      
+      aWarning.Report("ImportMapIntegrityValuesNotStrings");
+      
+      continue;
+    }
+
+    nsAutoJSString value;
+    NS_ENSURE_TRUE(value.init(aCx, idVal), nullptr);
+
+    
+    normalized->insert_or_assign(resolvedURL->GetSpecOrDefault(), value);
+  }
+
+  
+  
+  
+  return normalized;
+}
+
+
 
 UniquePtr<ImportMap> ImportMap::ParseString(
     JSContext* aCx, SourceText<char16_t>& aInput, nsIURI* aBaseURL,
@@ -426,6 +488,42 @@ UniquePtr<ImportMap> ImportMap::ParseString(
     }
   }
 
+  JS::RootedValue integrityVal(aCx);
+  if (!JS_GetProperty(aCx, parsedObj, "integrity", &integrityVal)) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  UniquePtr<IntegrityMap> normalizedIntegrity = nullptr;
+
+  
+  if (!integrityVal.isUndefined()) {
+    
+    
+    
+    bool isMap;
+    if (!IsMapObject(aCx, integrityVal, &isMap)) {
+      return nullptr;
+    }
+    if (!isMap) {
+      JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
+                                JSMSG_IMPORT_MAPS_INTEGRITY_NOT_A_MAP);
+      return nullptr;
+    }
+
+    
+    
+    JS::RootedObject integrityObj(aCx, &integrityVal.toObject());
+    normalizedIntegrity =
+        NormalizeIntegrity(aCx, integrityObj, aBaseURL, aWarning);
+    if (!normalizedIntegrity) {
+      return nullptr;
+    }
+  }
+
   
   
   
@@ -438,7 +536,8 @@ UniquePtr<ImportMap> ImportMap::ParseString(
     const JS::RootedId key(aCx, keys[i]);
     nsAutoJSString val;
     NS_ENSURE_TRUE(val.init(aCx, key), nullptr);
-    if (val.EqualsLiteral("imports") || val.EqualsLiteral("scopes")) {
+    if (val.EqualsLiteral("imports") || val.EqualsLiteral("scopes") ||
+        val.EqualsLiteral("integrity")) {
       continue;
     }
 
@@ -449,18 +548,24 @@ UniquePtr<ImportMap> ImportMap::ParseString(
 
   
   
+  
   if (!sortedAndNormalizedImports) {
     sortedAndNormalizedImports = MakeUnique<SpecifierMap>();
   }
   if (!sortedAndNormalizedScopes) {
     sortedAndNormalizedScopes = MakeUnique<ScopeMap>();
   }
+  if (!normalizedIntegrity) {
+    normalizedIntegrity = MakeUnique<IntegrityMap>();
+  }
 
   
   
   
+  
   return MakeUnique<ImportMap>(std::move(sortedAndNormalizedImports),
-                               std::move(sortedAndNormalizedScopes));
+                               std::move(sortedAndNormalizedScopes),
+                               std::move(normalizedIntegrity));
 }
 
 
@@ -690,6 +795,16 @@ ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
   }
 
   return Err(ResolveError::InvalidBareSpecifier);
+}
+
+mozilla::Maybe<nsString> ImportMap::LookupIntegrity(ImportMap* aImportMap,
+                                                    nsIURI* aURL) {
+  auto it = aImportMap->mIntegrity->find(aURL->GetSpecOrDefault());
+  if (it == aImportMap->mIntegrity->end()) {
+    return mozilla::Nothing();
+  }
+
+  return mozilla::Some(it->second);
 }
 
 #undef LOG
