@@ -185,7 +185,16 @@ mozilla::ipc::IPCResult DocAccessibleParent::ProcessShowEvent(
     return IPC_OK();
   }
 
-  PlatformShowHideEvent(root, rootParent, true, aFromUser);
+  {
+    
+    AUTO_PROFILER_MARKER_TEXT("a11y::PlatformShowHideEvent", A11Y, {}, ""_ns);
+    PerfStats::AutoMetricRecording<
+        PerfStats::Metric::A11Y_PlatformShowHideEvent>
+        autoRecording;
+    
+    
+    PlatformShowHideEvent(root, rootParent, true, aFromUser);
+  }
 
   if (nsCOMPtr<nsIObserverService> obsService =
           services::GetObserverService()) {
@@ -327,7 +336,16 @@ mozilla::ipc::IPCResult DocAccessibleParent::ProcessHideEvent(
   }
 
   RemoteAccessible* parent = root->RemoteParent();
-  PlatformShowHideEvent(root, parent, false, aFromUser);
+  {
+    
+    AUTO_PROFILER_MARKER_TEXT("a11y::PlatformShowHideEvent", A11Y, {}, ""_ns);
+    PerfStats::AutoMetricRecording<
+        PerfStats::Metric::A11Y_PlatformShowHideEvent>
+        autoRecording;
+    
+    
+    PlatformShowHideEvent(root, parent, false, aFromUser);
+  }
 
   RefPtr<xpcAccHideEvent> event = nullptr;
   if (nsCoreUtils::AccEventObserversExist()) {
