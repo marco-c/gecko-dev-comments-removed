@@ -3683,6 +3683,8 @@ pref("browser.ml.queueWaitTimeout", 60);
 
 pref("browser.ml.queueWaitInterval", 1);
 
+pref("browser.ml.overridePipelineOptions", "{}");
+
 
 
 
