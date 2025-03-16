@@ -277,7 +277,7 @@ void
 _hb_directwrite_shaper_font_data_destroy (hb_directwrite_font_data_t *data)
 {
   if (data != HB_SHAPER_DATA_SUCCEEDED)
-    ((IDWriteFont *) data)->Release();
+    ((IDWriteFont *) (const void *) data)->Release();
 }
 
 
@@ -878,10 +878,31 @@ hb_directwrite_face_create (IDWriteFontFace *dw_face)
 
 
 IDWriteFontFace *
-hb_directwrite_face_get_font_face (hb_face_t *face)
+hb_directwrite_face_get_dw_font_face (hb_face_t *face)
 {
   return face->data.directwrite->fontFace;
 }
+
+#ifndef HB_DISABLE_DEPRECATED
+
+
+
+
+
+
+
+
+
+
+
+
+IDWriteFontFace *
+hb_directwrite_face_get_font_face (hb_face_t *face)
+{
+  return hb_directwrite_face_get_dw_font_face (face);
+}
+
+#endif
 
 
 

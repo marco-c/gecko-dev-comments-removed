@@ -293,7 +293,7 @@ hb_ft_font_get_load_flags (hb_font_t *font)
 
 
 FT_Face
-hb_ft_font_get_face (hb_font_t *font)
+hb_ft_font_get_ft_face (hb_font_t *font)
 {
   if (unlikely (font->destroy != (hb_destroy_func_t) _hb_ft_font_destroy))
     return nullptr;
@@ -302,6 +302,31 @@ hb_ft_font_get_face (hb_font_t *font)
 
   return ft_font->ft_face;
 }
+
+#ifndef HB_DISABLE_DEPRECATED
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+FT_Face
+hb_ft_font_get_face (hb_font_t *font)
+{
+  return hb_ft_font_get_ft_face (font);
+}
+
+#endif
 
 
 

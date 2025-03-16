@@ -143,7 +143,7 @@ struct CompositeGlyphRecord
     float matrix[4];
     contour_point_t trans;
     get_transformation (matrix, trans);
-    if (unlikely (!points.alloc (points.length + 4))) return false; 
+    if (unlikely (!points.alloc (points.length + 1 + 4))) return false; 
     points.push (trans);
     return true;
   }
