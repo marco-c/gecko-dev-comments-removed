@@ -23,7 +23,7 @@ use sql_support::{
 
 
 
-pub const VERSION: u32 = 33;
+pub const VERSION: u32 = 34;
 
 
 pub const SQL: &str = "
@@ -614,6 +614,14 @@ impl ConnectionInitializer for SuggestConnectionInitializer<'_> {
             32 => {
                 
                 tx.execute_batch("DROP TABLE rs_cache;")?;
+                Ok(())
+            }
+            33 => {
+                
+                
+                
+                
+                clear_database(tx)?;
                 Ok(())
             }
             _ => Err(open_database::Error::IncompatibleVersion(version)),
