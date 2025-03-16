@@ -179,7 +179,7 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
         
         aBuilder.PushIFrame(bounds, !BackfaceIsHidden(),
                             data->GetPipelineId().ref(),
-                             false);
+                             true);
 
         LayoutDeviceRect scBounds(LayoutDevicePoint(0, 0), bounds.Size());
         auto filter = wr::ToImageRendering(mFrame->UsedImageRendering());
