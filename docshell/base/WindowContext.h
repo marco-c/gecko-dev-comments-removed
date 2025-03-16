@@ -166,6 +166,9 @@ class WindowContext : public nsISupports, public nsWrapperCache {
     return mNonSyntheticChildren;
   }
 
+  BrowsingContext* NonSyntheticLightDOMChildAt(uint32_t aIndex);
+  uint32_t NonSyntheticLightDOMChildrenCount();
+
   
   WindowGlobalParent* Canonical();
 
@@ -366,6 +369,10 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   
   void RecomputeCanExecuteScripts(bool aApplyChanges = true);
 
+  void ClearLightDOMChildren();
+
+  void EnsureLightDOMChildren();
+
   const uint64_t mInnerWindowId;
   const uint64_t mOuterWindowId;
   RefPtr<BrowsingContext> mBrowsingContext;
@@ -385,6 +392,12 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   
   
   nsTArray<RefPtr<BrowsingContext>> mNonSyntheticChildren;
+
+  
+  
+  
+  
+  Maybe<nsTArray<RefPtr<BrowsingContext>>> mNonSyntheticLightDOMChildren;
 
   bool mIsDiscarded = false;
   bool mIsInProcess = false;
