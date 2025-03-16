@@ -604,6 +604,14 @@ impl<T: ToMatrix> Transform<T> {
     }
 
     
+    pub fn to_transform_3d_matrix_f64(
+        &self,
+        reference_box: Option<&Rect<ComputedLength>>
+    ) -> Result<(Transform3D<f64>, bool), ()> {
+        Self::components_to_transform_3d_matrix_f64(&self.0, reference_box)
+    }
+
+    
     fn components_to_transform_3d_matrix_f64(
         ops: &[T],
         reference_box: Option<&Rect<ComputedLength>>,
