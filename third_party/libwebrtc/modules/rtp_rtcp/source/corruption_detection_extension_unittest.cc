@@ -23,6 +23,7 @@ namespace {
 
 using ::testing::DoubleEq;
 using ::testing::ElementsAre;
+using ::testing::ElementsAreArray;
 
 TEST(CorruptionDetectionExtensionTest, ValueSizeIs1UnlessSamplesAreSpecified) {
   const std::optional<CorruptionDetectionMessage> kMessage =
@@ -204,10 +205,7 @@ TEST(CorruptionDetectionExtensionTest,
               DoubleEq(34.509803921568626));  
   EXPECT_EQ(message.luma_error_threshold(), 0b1110);
   EXPECT_EQ(message.chroma_error_threshold(), 0b1111);
-  EXPECT_EQ(message.sample_values().size(), sizeof(kSampleValues));
-  for (size_t i = 0; i < sizeof(kSampleValues); ++i) {
-    EXPECT_EQ(message.sample_values()[i], kSampleValues[i]);
-  }
+  EXPECT_THAT(message.sample_values(), ElementsAreArray(kSampleValues));
 }
 
 TEST(CorruptionDetectionExtensionTest,
@@ -230,10 +228,7 @@ TEST(CorruptionDetectionExtensionTest,
               DoubleEq(34.509803921568626));  
   EXPECT_EQ(message.luma_error_threshold(), 0b1110);
   EXPECT_EQ(message.chroma_error_threshold(), 0b1111);
-  EXPECT_EQ(message.sample_values().size(), sizeof(kSampleValues));
-  for (size_t i = 0; i < sizeof(kSampleValues); ++i) {
-    EXPECT_EQ(message.sample_values()[i], kSampleValues[i]);
-  }
+  EXPECT_THAT(message.sample_values(), ElementsAreArray(kSampleValues));
 }
 
 TEST(CorruptionDetectionExtensionTest, FailsToParseWhenGivenNullptrAsOutput) {
