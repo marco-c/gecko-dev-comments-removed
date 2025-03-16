@@ -60,34 +60,37 @@ void TaskQueueTimeoutFactory::TaskQueueTimeout::Start(DurationMs duration_ms,
   posted_task_expiration_ = timeout_expiration_;
   parent_.task_queue_.PostDelayedTaskWithPrecision(
       precision_,
-      webrtc::SafeTask(
-          pending_task_safety_flag_,
-          [timeout_id, this]() {
-            RTC_DLOG(LS_VERBOSE) << "Timout expired: " << timeout_id.value();
-            RTC_DCHECK_RUN_ON(&parent_.thread_checker_);
-            RTC_DCHECK(!posted_task_expiration_.IsPlusInfinity());
-            posted_task_expiration_ = Timestamp::PlusInfinity();
+      webrtc::SafeTask(pending_task_safety_flag_,
+                       [timeout_id, this]() {
+                         RTC_DLOG(LS_VERBOSE)
+                             << "Timout expired: " << timeout_id.value();
+                         RTC_DCHECK_RUN_ON(&parent_.thread_checker_);
+                         RTC_DCHECK(!posted_task_expiration_.IsPlusInfinity());
+                         posted_task_expiration_ = Timestamp::PlusInfinity();
 
-            if (timeout_expiration_.IsPlusInfinity()) {
-              
-            } else {
-              
-              
-              
-              
-              
-              TimeDelta remaining = timeout_expiration_ - parent_.Now();
-              timeout_expiration_ = Timestamp::PlusInfinity();
-              if (remaining > TimeDelta::Zero()) {
-                Start(DurationMs(remaining.ms()), timeout_id_);
-              } else {
-                
-                RTC_DLOG(LS_VERBOSE)
-                    << "Timout triggered: " << timeout_id.value();
-                parent_.on_expired_(timeout_id_);
-              }
-            }
-          }),
+                         if (timeout_expiration_.IsPlusInfinity()) {
+                           
+                           
+                         } else {
+                           
+                           
+                           
+                           
+                           
+                           
+                           TimeDelta remaining =
+                               timeout_expiration_ - parent_.Now();
+                           timeout_expiration_ = Timestamp::PlusInfinity();
+                           if (remaining > TimeDelta::Zero()) {
+                             Start(DurationMs(remaining.ms()), timeout_id_);
+                           } else {
+                             
+                             RTC_DLOG(LS_VERBOSE)
+                                 << "Timout triggered: " << timeout_id.value();
+                             parent_.on_expired_(timeout_id_);
+                           }
+                         }
+                       }),
       webrtc::TimeDelta::Millis(duration_ms.value()));
 }
 
