@@ -34,7 +34,8 @@ NS_IMPL_RELEASE_INHERITED(Navigation, DOMEventTargetHelper)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Navigation)
 NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 
-Navigation::Navigation(nsPIDOMWindowInner* aWindow) : mWindow(aWindow) {
+Navigation::Navigation(nsPIDOMWindowInner* aWindow)
+    : DOMEventTargetHelper(aWindow) {
   MOZ_ASSERT(aWindow);
 }
 
@@ -105,8 +106,8 @@ void Navigation::UpdateCurrentEntry(
 
 
 bool Navigation::HasEntriesAndEventsDisabled() const {
-  Document* doc = mWindow->GetDoc();
-  return !doc->IsCurrentActiveDocument() ||
+  Document* doc = GetDocumentIfCurrent();
+  return !doc || !doc->IsCurrentActiveDocument() ||
          (NS_IsAboutBlankAllowQueryAndFragment(doc->GetDocumentURI()) &&
           doc->IsInitialDocument()) ||
          doc->GetPrincipal()->GetIsNullPrincipal();
@@ -123,8 +124,8 @@ void Navigation::InitializeHistoryEntries(
   }
 
   for (auto i = 0ul; i < aNewSHInfos.Length(); i++) {
-    mEntries.AppendElement(
-        MakeRefPtr<NavigationHistoryEntry>(mWindow, &aNewSHInfos[i], i));
+    mEntries.AppendElement(MakeRefPtr<NavigationHistoryEntry>(
+        GetOwnerGlobal(), &aNewSHInfos[i], i));
     if (aNewSHInfos[i].NavigationKey() == aInitialSHInfo->NavigationKey()) {
       mCurrentEntryIndex = Some(i);
     }
@@ -174,7 +175,7 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
         disposedEntries.AppendElement(mEntries.PopLastElement());
       }
       mEntries.AppendElement(MakeRefPtr<NavigationHistoryEntry>(
-          mWindow, aDestinationSHE, *mCurrentEntryIndex));
+          GetOwnerGlobal(), aDestinationSHE, *mCurrentEntryIndex));
       break;
 
     case NavigationType::Replace:
@@ -182,7 +183,7 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
       disposedEntries.AppendElement(oldCurrentEntry);
       aDestinationSHE->NavigationKey() = oldCurrentEntry->Key();
       mEntries[*mCurrentEntryIndex] = MakeRefPtr<NavigationHistoryEntry>(
-          mWindow, aDestinationSHE, *mCurrentEntryIndex);
+          GetOwnerGlobal(), aDestinationSHE, *mCurrentEntryIndex);
       break;
 
     case NavigationType::Reload:
@@ -194,7 +195,7 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
   
   {
     nsAutoMicroTask mt;
-    AutoEntryScript aes(mWindow->AsGlobal(),
+    AutoEntryScript aes(GetOwnerGlobal(),
                         "UpdateEntriesForSameDocumentNavigation");
 
     ScheduleEventsFromNavigation(aNavigationType, oldCurrentEntry,

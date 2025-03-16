@@ -102,7 +102,6 @@ class Navigation final : public DOMEventTargetHelper {
 
   void LogHistory() const;
 
-  nsCOMPtr<nsPIDOMWindowInner> mWindow;
   
   nsTArray<RefPtr<NavigationHistoryEntry>> mEntries;
   
