@@ -3567,8 +3567,22 @@ class HTMLEditor final : public EditorBase,
   MOZ_CAN_RUN_SCRIPT nsresult ReplaceHeadContentsWithSourceWithTransaction(
       const nsAString& aSourceToInsert);
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult GetCSSBackgroundColorState(
-      bool* aMixed, nsAString& aOutColor, bool aBlockLevel);
+  enum class RetrievingBackgroundColorOption {
+    
+    
+    OnlyBlockBackgroundColor,
+    
+    StopAtInclusiveAncestorBlock,
+    
+    
+    DefaultColorIfNoSpecificBackgroundColor,
+  };
+  using RetrievingBackgroundColorOptions =
+      EnumSet<RetrievingBackgroundColorOption>;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  GetCSSBackgroundColorState(bool* aMixed, nsAString& aOutColor,
+                             RetrievingBackgroundColorOptions aOptions);
+
   nsresult GetHTMLBackgroundColorState(bool* aMixed, nsAString& outColor);
 
   

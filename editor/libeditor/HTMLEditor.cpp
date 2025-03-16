@@ -2690,7 +2690,11 @@ nsresult HTMLEditor::GetBackgroundColorState(bool* aMixed,
   if (IsCSSEnabled()) {
     
     
-    nsresult rv = GetCSSBackgroundColorState(aMixed, aOutColor, true);
+    nsresult rv = GetCSSBackgroundColorState(
+        aMixed, aOutColor,
+        {RetrievingBackgroundColorOption::OnlyBlockBackgroundColor,
+         RetrievingBackgroundColorOption::
+             DefaultColorIfNoSpecificBackgroundColor});
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::GetCSSBackgroundColorState() failed");
     return EditorBase::ToGenericNSResult(rv);
@@ -2710,7 +2714,7 @@ NS_IMETHODIMP HTMLEditor::GetHighlightColorState(bool* aMixed,
 
   *aMixed = false;
   aOutColor.AssignLiteral("transparent");
-  if (!IsCSSEnabled()) {
+  if (!IsCSSEnabled() && IsMailEditor()) {
     return NS_OK;
   }
 
@@ -2722,15 +2726,19 @@ NS_IMETHODIMP HTMLEditor::GetHighlightColorState(bool* aMixed,
   
   
   
-  nsresult rv = GetCSSBackgroundColorState(aMixed, aOutColor, false);
+  RetrievingBackgroundColorOptions options;
+  if (IsMailEditor()) {
+    options += RetrievingBackgroundColorOption::StopAtInclusiveAncestorBlock;
+  }
+  nsresult rv = GetCSSBackgroundColorState(aMixed, aOutColor, options);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::GetCSSBackgroundColorState() failed");
   return rv;
 }
 
-nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
-                                                nsAString& aOutColor,
-                                                bool aBlockLevel) {
+nsresult HTMLEditor::GetCSSBackgroundColorState(
+    bool* aMixed, nsAString& aOutColor,
+    RetrievingBackgroundColorOptions aOptions) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (NS_WARN_IF(!aMixed)) {
@@ -2770,7 +2778,8 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
     return NS_ERROR_FAILURE;
   }
 
-  if (aBlockLevel) {
+  if (aOptions.contains(
+          RetrievingBackgroundColorOption::OnlyBlockBackgroundColor)) {
     
     
     
@@ -2804,61 +2813,72 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
                            "backgroundColor) failed, but ignored");
       
       
-      if (!aOutColor.EqualsLiteral("transparent") &&
-          !aOutColor.EqualsLiteral("rgba(0, 0, 0, 0)")) {
-        break;
+      if (!HTMLEditUtils::IsTransparentCSSColor(aOutColor)) {
+        return NS_OK;
+      }
+      if (aOptions.contains(
+              RetrievingBackgroundColorOption::StopAtInclusiveAncestorBlock)) {
+        aOutColor.AssignLiteral("transparent");
+        return NS_OK;
       }
       blockElement = std::move(nextBlockElement);
     }
 
-    if (aOutColor.EqualsLiteral("transparent") ||
-        aOutColor.EqualsLiteral("rgba(0, 0, 0, 0)")) {
-      
-      
-      
+    if (aOptions.contains(RetrievingBackgroundColorOption::
+                              DefaultColorIfNoSpecificBackgroundColor) &&
+        HTMLEditUtils::IsTransparentCSSColor(aOutColor)) {
       CSSEditUtils::GetDefaultBackgroundColor(aOutColor);
     }
-  } else {
+    return NS_OK;
+  }
+
+  
+  if (contentToExamine->IsText()) {
     
-    if (contentToExamine->IsText()) {
+    contentToExamine = contentToExamine->GetParent();
+  }
+  
+  if (!contentToExamine) {
+    return NS_OK;
+  }
+
+  for (RefPtr<Element> element :
+       contentToExamine->InclusiveAncestorsOfType<Element>()) {
+    
+    if (aOptions.contains(
+            RetrievingBackgroundColorOption::StopAtInclusiveAncestorBlock) &&
+        HTMLEditUtils::IsBlockElement(
+            *element, BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
       
-      contentToExamine = contentToExamine->GetParent();
+      
+      aOutColor.AssignLiteral("transparent");
+      break;
     }
+
     
-    if (!contentToExamine) {
+    
+    nsCOMPtr<nsINode> parentNode = element->GetParentNode();
+    DebugOnly<nsresult> rvIgnored = CSSEditUtils::GetComputedProperty(
+        *element, *nsGkAtoms::backgroundColor, aOutColor);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    if (NS_WARN_IF(parentNode != element->GetParentNode())) {
+      return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+    }
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "CSSEditUtils::GetComputedProperty(nsGkAtoms::"
+                         "backgroundColor) failed, but ignored");
+    if (!HTMLEditUtils::IsTransparentCSSColor(aOutColor)) {
+      HTMLEditUtils::GetNormalizedCSSColorValue(
+          aOutColor, HTMLEditUtils::ZeroAlphaColor::RGBAValue, aOutColor);
       return NS_OK;
     }
-
-    for (RefPtr<Element> element =
-             contentToExamine->GetAsElementOrParentElement();
-         element; element = element->GetParentElement()) {
-      
-      if (HTMLEditUtils::IsBlockElement(
-              *element, BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
-        
-        
-        aOutColor.AssignLiteral("transparent");
-        break;
-      }
-
-      
-      
-      nsCOMPtr<nsINode> parentNode = element->GetParentNode();
-      DebugOnly<nsresult> rvIgnored = CSSEditUtils::GetComputedProperty(
-          *element, *nsGkAtoms::backgroundColor, aOutColor);
-      if (NS_WARN_IF(Destroyed())) {
-        return NS_ERROR_EDITOR_DESTROYED;
-      }
-      if (NS_WARN_IF(parentNode != element->GetParentNode())) {
-        return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
-      }
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                           "CSSEditUtils::GetComputedProperty(nsGkAtoms::"
-                           "backgroundColor) failed, but ignored");
-      if (!aOutColor.EqualsLiteral("transparent")) {
-        break;
-      }
-    }
+  }
+  if (aOptions.contains(RetrievingBackgroundColorOption::
+                            DefaultColorIfNoSpecificBackgroundColor) &&
+      HTMLEditUtils::IsTransparentCSSColor(aOutColor)) {
+    CSSEditUtils::GetDefaultBackgroundColor(aOutColor);
   }
   return NS_OK;
 }
