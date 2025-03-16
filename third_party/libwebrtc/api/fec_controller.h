@@ -37,6 +37,7 @@ class VCMProtectionCallback {
   
   
   virtual void SetRetransmissionMode(int retransmission_mode) = 0;
+
  protected:
   virtual ~VCMProtectionCallback() {}
 };
