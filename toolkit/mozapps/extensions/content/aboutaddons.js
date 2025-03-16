@@ -3457,8 +3457,7 @@ class AddonList extends HTMLElement {
 
   updateSectionIfEmpty(section) {
     
-    
-    if (section.children.length == 1) {
+    if (!section.querySelectorAll("addon-card").length) {
       section.textContent = "";
     }
   }
@@ -3667,7 +3666,8 @@ class AddonList extends HTMLElement {
     }
 
     
-    if (addons.length) {
+    
+    if (this.type != "mlmodel" && addons.length) {
       section.appendChild(this.createSectionHeading(index));
     }
 
