@@ -1165,6 +1165,9 @@ SSLServerCertVerificationResult::Run() {
   }
 
   mSocketControl->SetCertVerificationResult(mFinalError);
+  
+  
+  mSocketControl = nullptr;
   return NS_OK;
 }
 
