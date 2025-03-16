@@ -132,6 +132,51 @@ static bool ObjectHasDataProperty(NativeObject* obj, PropertyKey key,
   return true;
 }
 
+
+
+static bool ObjectHasDataPropertyValue(NativeObject* obj, PropertyKey key,
+                                       const Value& expectedValue) {
+  Value v;
+  if (!ObjectHasDataProperty(obj, key, &v)) {
+    return false;
+  }
+  return v == expectedValue;
+}
+
+
+
+static bool ObjectHasDataPropertyFunction(NativeObject* obj, PropertyKey key,
+                                          JSNative expectedFunction) {
+  Value v;
+  if (!ObjectHasDataProperty(obj, key, &v)) {
+    return false;
+  }
+  if (!IsNativeFunction(v, expectedFunction)) {
+    return false;
+  }
+  if (obj->realm() != v.toObject().as<JSFunction>().realm()) {
+    return false;
+  }
+  return true;
+}
+
+
+
+static bool ObjectHasDataPropertyFunction(NativeObject* obj, PropertyKey key,
+                                          PropertyName* selfHostedName) {
+  Value v;
+  if (!ObjectHasDataProperty(obj, key, &v)) {
+    return false;
+  }
+  if (!IsSelfHostedFunctionWithName(v, selfHostedName)) {
+    return false;
+  }
+  if (obj->realm() != v.toObject().as<JSFunction>().realm()) {
+    return false;
+  }
+  return true;
+}
+
 static bool ObjectHasGetterProperty(NativeObject* obj, PropertyKey key,
                                     JSFunction** getter) {
   mozilla::Maybe<PropertyInfo> prop = obj->lookupPure(key);
@@ -142,8 +187,33 @@ static bool ObjectHasGetterProperty(NativeObject* obj, PropertyKey key,
   if (!getterObject || !getterObject->is<JSFunction>()) {
     return false;
   }
+  if (obj->realm() != getterObject->as<JSFunction>().realm()) {
+    return false;
+  }
   *getter = &getterObject->as<JSFunction>();
   return true;
+}
+
+
+
+static bool ObjectHasGetterFunction(NativeObject* obj, PropertyKey key,
+                                    JSNative expectedGetter) {
+  JSFunction* getter;
+  if (!ObjectHasGetterProperty(obj, key, &getter)) {
+    return false;
+  }
+  return IsNativeFunction(getter, expectedGetter);
+}
+
+
+
+static bool ObjectHasGetterFunction(NativeObject* obj, PropertyKey key,
+                                    PropertyName* selfHostedName) {
+  JSFunction* getter;
+  if (!ObjectHasGetterProperty(obj, key, &getter)) {
+    return false;
+  }
+  return IsSelfHostedFunctionWithName(getter, selfHostedName);
 }
 
 bool js::ArrayPrototypeIteratorFuse::checkInvariant(JSContext* cx) {
@@ -158,11 +228,8 @@ bool js::ArrayPrototypeIteratorFuse::checkInvariant(JSContext* cx) {
       PropertyKey::Symbol(cx->wellKnownSymbols().iterator);
 
   
-  Value v;
-  if (!ObjectHasDataProperty(proto, iteratorKey, &v)) {
-    return false;
-  }
-  return IsSelfHostedFunctionWithName(v, cx->names().dollar_ArrayValues_);
+  return ObjectHasDataPropertyFunction(proto, iteratorKey,
+                                       cx->names().dollar_ArrayValues_);
 }
 
 
@@ -175,11 +242,8 @@ bool js::ArrayPrototypeIteratorNextFuse::checkInvariant(JSContext* cx) {
   }
 
   
-  Value v;
-  if (!ObjectHasDataProperty(proto, NameToId(cx->names().next), &v)) {
-    return false;
-  }
-  return IsSelfHostedFunctionWithName(v, cx->names().ArrayIteratorNext);
+  return ObjectHasDataPropertyFunction(proto, NameToId(cx->names().next),
+                                       cx->names().ArrayIteratorNext);
 }
 
 static bool HasNoReturnName(JSContext* cx, JS::HandleObject proto) {
@@ -282,22 +346,15 @@ bool js::OptimizeArraySpeciesFuse::checkInvariant(JSContext* cx) {
   MOZ_ASSERT(ctor);
 
   
-  Value v;
-  if (!ObjectHasDataProperty(proto, NameToId(cx->names().constructor), &v)) {
-    return false;
-  }
-  if (v != ObjectValue(*ctor)) {
+  if (!ObjectHasDataPropertyValue(proto, NameToId(cx->names().constructor),
+                                  ObjectValue(*ctor))) {
     return false;
   }
 
   
   PropertyKey speciesKey = PropertyKey::Symbol(cx->wellKnownSymbols().species);
-  JSFunction* getter = nullptr;
-  if (!ObjectHasGetterProperty(&ctor->as<NativeObject>(), speciesKey,
-                               &getter)) {
-    return false;
-  }
-  return IsSelfHostedFunctionWithName(getter, cx->names().dollar_ArraySpecies_);
+  return ObjectHasGetterFunction(&ctor->as<NativeObject>(), speciesKey,
+                                 cx->names().dollar_ArraySpecies_);
 }
 
 bool js::OptimizeMapObjectIteratorFuse::checkInvariant(JSContext* cx) {
@@ -309,11 +366,8 @@ bool js::OptimizeMapObjectIteratorFuse::checkInvariant(JSContext* cx) {
   }
   PropertyKey iteratorKey =
       PropertyKey::Symbol(cx->wellKnownSymbols().iterator);
-  Value v;
-  if (!ObjectHasDataProperty(&proto->as<NativeObject>(), iteratorKey, &v)) {
-    return false;
-  }
-  if (!IsNativeFunction(v, MapObject::entries)) {
+  if (!ObjectHasDataPropertyFunction(&proto->as<NativeObject>(), iteratorKey,
+                                     MapObject::entries)) {
     return false;
   }
 
@@ -324,11 +378,9 @@ bool js::OptimizeMapObjectIteratorFuse::checkInvariant(JSContext* cx) {
     
     return true;
   }
-  if (!ObjectHasDataProperty(&iterProto->as<NativeObject>(),
-                             NameToId(cx->names().next), &v)) {
-    return false;
-  }
-  return IsSelfHostedFunctionWithName(v, cx->names().MapIteratorNext);
+  return ObjectHasDataPropertyFunction(&iterProto->as<NativeObject>(),
+                                       NameToId(cx->names().next),
+                                       cx->names().MapIteratorNext);
 }
 
 bool js::OptimizeSetObjectIteratorFuse::checkInvariant(JSContext* cx) {
@@ -340,11 +392,8 @@ bool js::OptimizeSetObjectIteratorFuse::checkInvariant(JSContext* cx) {
   }
   PropertyKey iteratorKey =
       PropertyKey::Symbol(cx->wellKnownSymbols().iterator);
-  Value v;
-  if (!ObjectHasDataProperty(&proto->as<NativeObject>(), iteratorKey, &v)) {
-    return false;
-  }
-  if (!IsNativeFunction(v, SetObject::values)) {
+  if (!ObjectHasDataPropertyFunction(&proto->as<NativeObject>(), iteratorKey,
+                                     SetObject::values)) {
     return false;
   }
 
@@ -355,11 +404,9 @@ bool js::OptimizeSetObjectIteratorFuse::checkInvariant(JSContext* cx) {
     
     return true;
   }
-  if (!ObjectHasDataProperty(&iterProto->as<NativeObject>(),
-                             NameToId(cx->names().next), &v)) {
-    return false;
-  }
-  return IsSelfHostedFunctionWithName(v, cx->names().SetIteratorNext);
+  return ObjectHasDataPropertyFunction(&iterProto->as<NativeObject>(),
+                                       NameToId(cx->names().next),
+                                       cx->names().SetIteratorNext);
 }
 
 bool js::OptimizeMapPrototypeSetFuse::checkInvariant(JSContext* cx) {
@@ -368,12 +415,8 @@ bool js::OptimizeMapPrototypeSetFuse::checkInvariant(JSContext* cx) {
     
     return true;
   }
-  Value v;
-  if (!ObjectHasDataProperty(&proto->as<NativeObject>(),
-                             NameToId(cx->names().set), &v)) {
-    return false;
-  }
-  return IsNativeFunction(v, MapObject::set);
+  return ObjectHasDataPropertyFunction(
+      &proto->as<NativeObject>(), NameToId(cx->names().set), MapObject::set);
 }
 
 bool js::OptimizeSetPrototypeAddFuse::checkInvariant(JSContext* cx) {
@@ -382,12 +425,8 @@ bool js::OptimizeSetPrototypeAddFuse::checkInvariant(JSContext* cx) {
     
     return true;
   }
-  Value v;
-  if (!ObjectHasDataProperty(&proto->as<NativeObject>(),
-                             NameToId(cx->names().add), &v)) {
-    return false;
-  }
-  return IsNativeFunction(v, SetObject::add);
+  return ObjectHasDataPropertyFunction(
+      &proto->as<NativeObject>(), NameToId(cx->names().add), SetObject::add);
 }
 
 bool js::OptimizeWeakMapPrototypeSetFuse::checkInvariant(JSContext* cx) {
@@ -396,12 +435,9 @@ bool js::OptimizeWeakMapPrototypeSetFuse::checkInvariant(JSContext* cx) {
     
     return true;
   }
-  Value v;
-  if (!ObjectHasDataProperty(&proto->as<NativeObject>(),
-                             NameToId(cx->names().set), &v)) {
-    return false;
-  }
-  return IsNativeFunction(v, WeakMapObject::set);
+  return ObjectHasDataPropertyFunction(&proto->as<NativeObject>(),
+                                       NameToId(cx->names().set),
+                                       WeakMapObject::set);
 }
 
 bool js::OptimizeWeakSetPrototypeAddFuse::checkInvariant(JSContext* cx) {
@@ -410,10 +446,7 @@ bool js::OptimizeWeakSetPrototypeAddFuse::checkInvariant(JSContext* cx) {
     
     return true;
   }
-  Value v;
-  if (!ObjectHasDataProperty(&proto->as<NativeObject>(),
-                             NameToId(cx->names().add), &v)) {
-    return false;
-  }
-  return IsNativeFunction(v, WeakSetObject::add);
+  return ObjectHasDataPropertyFunction(&proto->as<NativeObject>(),
+                                       NameToId(cx->names().add),
+                                       WeakSetObject::add);
 }
