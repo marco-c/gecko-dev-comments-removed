@@ -2753,10 +2753,19 @@ class Document : public nsINode,
   }
 
   void MaybeScheduleFrameRequestCallbacks();
+  
+  
   bool ShouldFireFrameRequestCallbacks() const {
-    
-    
-    return mPresShell && IsEventHandlingEnabled();
+    if (!mPresShell) {
+      return false;
+    }
+    if (!IsEventHandlingEnabled()) {
+      return false;
+    }
+    if (mRenderingSuppressedForViewTransitions) {
+      return false;
+    }
+    return true;
   }
 
   void DecreaseEventSuppression() {
