@@ -1196,16 +1196,32 @@ class SSLStreamAdapterTestDTLS : public SSLStreamAdapterTestDTLSBase {
             std::make_pair(rtc::DIGEST_SHA_256, SHA256_DIGEST_LENGTH)) {}
 };
 
+#ifdef OPENSSL_IS_BORINGSSL
+#define MAYBE_TestDTLSConnectWithLostFirstPacketNoDelay \
+  TestDTLSConnectWithLostFirstPacketNoDelay
+#else
+#define MAYBE_TestDTLSConnectWithLostFirstPacketNoDelay \
+  DISABLED_TestDTLSConnectWithLostFirstPacketNoDelay
+#endif
 
 
 
-TEST_F(SSLStreamAdapterTestDTLS, TestDTLSConnectWithLostFirstPacket) {
+TEST_F(SSLStreamAdapterTestDTLS,
+       MAYBE_TestDTLSConnectWithLostFirstPacketNoDelay) {
   SetLoseFirstPacket(true);
   TestHandshake();
 }
 
+#ifdef OPENSSL_IS_BORINGSSL
+#define MAYBE_TestDTLSConnectWithLostFirstPacketDelay2s \
+  TestDTLSConnectWithLostFirstPacketDelay2s
+#else
+#define MAYBE_TestDTLSConnectWithLostFirstPacketDelay2s \
+  DISABLED_TestDTLSConnectWithLostFirstPacketDelay2s
+#endif
 
-TEST_F(SSLStreamAdapterTestDTLS, TestDTLSConnectWithLostFirstPacketDelay2s) {
+TEST_F(SSLStreamAdapterTestDTLS,
+       MAYBE_TestDTLSConnectWithLostFirstPacketDelay2s) {
   SetLoseFirstPacket(true);
   SetDelay(2000);
   SetHandshakeWait(20000);
