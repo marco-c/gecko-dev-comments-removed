@@ -1,8 +1,10 @@
 
 
 
-const TEST_URL =
-  "data:text/html,<script>window.someInlineSource = () => {}</script>";
+
+
+const TEST_URL = `data:text/html,<script>window.someInlineSource${Date.now()} = () => {}</script>`;
+
 add_task(async function () {
   
   await pushPref("devtools.browsertoolbox.scope", "everything");
