@@ -199,7 +199,9 @@ class RTC_EXPORT DxgiDuplicatorController {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
-  int64_t GetNumFramesCaptured() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  
+  int64_t GetNumFramesCaptured(int monitor_id) const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   DesktopSize desktop_size() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
@@ -224,7 +226,9 @@ class RTC_EXPORT DxgiDuplicatorController {
   
   
   
-  bool EnsureFrameCaptured(Context* context, SharedDesktopFrame* target)
+  bool EnsureFrameCaptured(Context* context,
+                           int monitor_id,
+                           SharedDesktopFrame* target)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   

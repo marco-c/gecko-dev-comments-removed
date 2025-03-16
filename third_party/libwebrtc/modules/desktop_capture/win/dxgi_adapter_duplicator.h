@@ -73,7 +73,7 @@ class DxgiAdapterDuplicator {
   void Unregister(const Context* const context);
 
   
-  int64_t GetNumFramesCaptured() const;
+  int64_t GetNumFramesCaptured(int monitor_id) const;
 
   
   
