@@ -1842,6 +1842,10 @@ pref("browser.newtabpage.activity-stream.newtabWallpapers.customColor.enabled", 
 pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.enabled", false);
 
 
+pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.uuid", "");
+pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.fileSize", 0);
+
+
 pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper", "");
 
 
