@@ -213,24 +213,6 @@ void WindowSurfaceProvider::EndRemoteDrawingInRegion(
     if (!mWidget || !mWidget->IsMapped()) {
       return;
     }
-    if (moz_container_wayland_is_commiting_to_parent(
-            mWidget->GetMozContainer())) {
-      
-      
-      NS_DispatchToMainThread(NS_NewRunnableFunction(
-          "WindowSurfaceProvider::EndRemoteDrawingInRegion",
-          [widget = RefPtr{mWidget}, this, aInvalidRegion]() {
-            if (!widget->IsMapped()) {
-              return;
-            }
-            MutexAutoLock lock(mMutex);
-            
-            if (mWindowSurface && mWindowSurfaceValid) {
-              mWindowSurface->Commit(aInvalidRegion);
-            }
-          }));
-      return;
-    }
   }
 #endif
   mWindowSurface->Commit(aInvalidRegion);

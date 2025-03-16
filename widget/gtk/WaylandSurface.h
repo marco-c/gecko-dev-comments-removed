@@ -75,8 +75,6 @@ class WaylandSurface final {
   bool SetEGLWindowSize(nsIntSize aScaledSize);
   bool HasEGLWindow() const { return !!mEGLWindow; }
 
-  bool DoesCommitToParentSurface() const { return mCommitToParentSurface; }
-
   
   
   bool IsReadyToDraw() const { return mIsReadyToDraw; }
@@ -95,7 +93,7 @@ class WaylandSurface final {
   
   bool MapLocked(const WaylandSurfaceLock& aProofOfLock,
                  wl_surface* aParentWLSurface,
-                 gfx::IntPoint aSubsurfacePosition, bool aCommitToParent);
+                 gfx::IntPoint aSubsurfacePosition);
   
   bool MapLocked(const WaylandSurfaceLock& aProofOfLock,
                  WaylandSurfaceLock* aParentWaylandSurfaceLock,
@@ -274,8 +272,8 @@ class WaylandSurface final {
   bool MapLocked(const WaylandSurfaceLock& aProofOfLock,
                  wl_surface* aParentWLSurface,
                  WaylandSurfaceLock* aParentWaylandSurfaceLock,
-                 gfx::IntPoint aSubsurfacePosition, bool aCommitToParent,
-                 bool aSubsurfaceDesync, bool aUseReadyToDrawCallback = true);
+                 gfx::IntPoint aSubsurfacePosition, bool aSubsurfaceDesync,
+                 bool aUseReadyToDrawCallback = true);
 
   void SetSizeLocked(const WaylandSurfaceLock& aProofOfLock,
                      gfx::IntSize aSizeScaled, gfx::IntSize aUnscaledSize);
@@ -358,15 +356,6 @@ class WaylandSurface final {
   
   
   mozilla::Atomic<bool, mozilla::Relaxed> mBufferAttached{false};
-
-  
-  
-  
-  
-  
-  
-  
-  bool mCommitToParentSurface = false;
 
   mozilla::Atomic<wl_egl_window*, mozilla::Relaxed> mEGLWindow{nullptr};
 
