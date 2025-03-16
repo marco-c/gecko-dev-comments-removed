@@ -509,7 +509,6 @@ pub enum TextAlign {
     
     
     
-    #[cfg(feature = "gecko")]
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozCenterOrInherit,
 }
@@ -545,7 +544,6 @@ impl ToComputedValue for TextAlign {
                     _ => parent,
                 }
             },
-            #[cfg(feature = "gecko")]
             TextAlign::MozCenterOrInherit => {
                 let parent = _context
                     .builder
