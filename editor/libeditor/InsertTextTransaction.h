@@ -11,6 +11,7 @@
 #include "EditorDOMPoint.h"
 #include "EditorForwards.h"
 
+#include "mozilla/dom/Text.h"
 #include "nsCycleCollectionParticipant.h"  
 #include "nsID.h"                          
 #include "nsISupportsImpl.h"               
@@ -18,14 +19,11 @@
 #include "nscore.h"                        
 
 namespace mozilla {
-namespace dom {
-class Text;
-}  
 
 
 
 
-class InsertTextTransaction final : public EditTransactionBase {
+class InsertTextTransaction : public EditTransactionBase {
  protected:
   InsertTextTransaction(EditorBase& aEditorBase,
                         const nsAString& aStringToInsert,
@@ -58,34 +56,63 @@ class InsertTextTransaction final : public EditTransactionBase {
 
   const nsString& GetData() const { return mStringToInsert; }
 
+  
+
+
+  dom::Text* GetTextNode() const;
+
   template <typename EditorDOMPointType>
   EditorDOMPointType SuggestPointToPutCaret() const {
-    if (NS_WARN_IF(!mTextNode)) {
+    dom::Text* const textNode = GetTextNode();
+    if (NS_WARN_IF(!textNode)) {
       return EditorDOMPointType();
     }
-    return EditorDOMPointType(mTextNode, mOffset + mStringToInsert.Length());
+    return EditorDOMPointType(textNode, mOffset + mStringToInsert.Length());
   }
 
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const InsertTextTransaction& aTransaction);
 
- private:
+ protected:
   virtual ~InsertTextTransaction() = default;
 
   
   bool IsSequentialInsert(InsertTextTransaction& aOtherTransaction) const;
 
   
-  RefPtr<dom::Text> mTextNode;
-
-  
-  uint32_t mOffset;
-
+  RefPtr<EditorBase> mEditorBase;
   
   nsString mStringToInsert;
-
   
-  RefPtr<EditorBase> mEditorBase;
+  uint32_t mOffset;
+};
+
+
+
+
+
+class InsertTextIntoTextNodeTransaction final : public InsertTextTransaction {
+ public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InsertTextIntoTextNodeTransaction,
+                                           InsertTextTransaction)
+
+  friend std::ostream& operator<<(
+      std::ostream& aStream,
+      const InsertTextIntoTextNodeTransaction& aTransaction);
+
+ private:
+  NS_DECL_EDITTRANSACTIONBASE_GETASMETHODS_OVERRIDE(
+      InsertTextIntoTextNodeTransaction)
+
+  InsertTextIntoTextNodeTransaction(EditorBase& aEditorBase,
+                                    const nsAString& aStringToInsert,
+                                    const EditorDOMPointInText& aPointToInsert);
+  virtual ~InsertTextIntoTextNodeTransaction() = default;
+
+  RefPtr<dom::Text> mTextNode;
+
+  friend class InsertTextTransaction;
 };
 
 }  

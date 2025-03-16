@@ -23,7 +23,7 @@ namespace mozilla {
 
 
 
-class DeleteTextTransaction final : public DeleteContentTransactionBase {
+class DeleteTextTransaction : public DeleteContentTransactionBase {
  protected:
   DeleteTextTransaction(EditorBase& aEditorBase, dom::Text& aTextNode,
                         uint32_t aOffset, uint32_t aLengthToDelete);
@@ -56,12 +56,6 @@ class DeleteTextTransaction final : public DeleteContentTransactionBase {
   static already_AddRefed<DeleteTextTransaction> MaybeCreateForNextCharacter(
       EditorBase& aEditorBase, dom::Text& aTextNode, uint32_t aOffset);
 
-  
-
-
-
-  bool CanDoIt() const;
-
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DeleteTextTransaction,
                                            DeleteContentTransactionBase)
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
@@ -73,7 +67,7 @@ class DeleteTextTransaction final : public DeleteContentTransactionBase {
 
   EditorDOMPoint SuggestPointToPutCaret() const final;
 
-  dom::Text* GetText() const { return mTextNode; }
+  dom::Text* GetTextNode() const;
   uint32_t Offset() const { return mOffset; }
   uint32_t LengthToDelete() const { return mLengthToDelete; }
 
@@ -82,9 +76,6 @@ class DeleteTextTransaction final : public DeleteContentTransactionBase {
 
  protected:
   
-  RefPtr<dom::Text> mTextNode;
-
-  
   uint32_t mOffset;
 
   
@@ -92,6 +83,35 @@ class DeleteTextTransaction final : public DeleteContentTransactionBase {
 
   
   nsString mDeletedText;
+};
+
+
+
+
+
+class DeleteTextFromTextNodeTransaction final : public DeleteTextTransaction {
+ public:
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DeleteTextFromTextNodeTransaction,
+                                           DeleteTextTransaction)
+  NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
+
+  friend std::ostream& operator<<(
+      std::ostream& aStream,
+      const DeleteTextFromTextNodeTransaction& aTransaction);
+
+ private:
+  DeleteTextFromTextNodeTransaction(EditorBase& aEditorBase,
+                                    dom::Text& aTextNode, uint32_t aOffset,
+                                    uint32_t aLengthToDelete);
+  virtual ~DeleteTextFromTextNodeTransaction() = default;
+
+  NS_DECL_EDITTRANSACTIONBASE_GETASMETHODS_OVERRIDE(
+      DeleteTextFromTextNodeTransaction)
+
+  
+  RefPtr<dom::Text> mTextNode;
+
+  friend class DeleteTextTransaction;
 };
 
 }  

@@ -11,6 +11,7 @@
 #include "EditorForwards.h"
 
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/Text.h"
 #include "nsCycleCollectionParticipant.h"  
 #include "nsString.h"                      
 
@@ -18,18 +19,14 @@ namespace mozilla {
 class TextComposition;
 class TextRangeArray;
 
-namespace dom {
-class Text;
-}  
 
 
 
 
 
 
-
-class CompositionTransaction final : public EditTransactionBase,
-                                     public SupportsWeakPtr {
+class CompositionTransaction : public EditTransactionBase,
+                               public SupportsWeakPtr {
  protected:
   CompositionTransaction(EditorBase& aEditorBase,
                          const nsAString& aStringToInsert,
@@ -63,6 +60,8 @@ class CompositionTransaction final : public EditTransactionBase,
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD RedoTransaction() override;
   NS_IMETHOD Merge(nsITransaction* aOtherTransaction, bool* aDidMerge) override;
 
+  dom::Text* GetTextNode() const;
+
   void MarkFixed();
 
   MOZ_CAN_RUN_SCRIPT static nsresult SetIMESelection(
@@ -72,17 +71,13 @@ class CompositionTransaction final : public EditTransactionBase,
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const CompositionTransaction& aTransaction);
 
- private:
+ protected:
   virtual ~CompositionTransaction() = default;
 
   MOZ_CAN_RUN_SCRIPT nsresult SetSelectionForRanges();
 
   
-  RefPtr<dom::Text> mTextNode;
-
-  
   uint32_t mOffset;
-
   uint32_t mReplaceLength;
 
   
@@ -95,6 +90,35 @@ class CompositionTransaction final : public EditTransactionBase,
   RefPtr<EditorBase> mEditorBase;
 
   bool mFixed;
+};
+
+
+
+
+
+class CompositionInTextNodeTransaction final : CompositionTransaction {
+ public:
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CompositionInTextNodeTransaction,
+                                           CompositionTransaction)
+  NS_DECL_ISUPPORTS_INHERITED
+
+  friend std::ostream& operator<<(
+      std::ostream& aStream,
+      const CompositionInTextNodeTransaction& aTransaction);
+
+ private:
+  NS_DECL_EDITTRANSACTIONBASE_GETASMETHODS_OVERRIDE(
+      CompositionInTextNodeTransaction)
+
+  CompositionInTextNodeTransaction(EditorBase& aEditorBase,
+                                   const nsAString& aStringToInsert,
+                                   const EditorDOMPointInText& aPointToInsert);
+  virtual ~CompositionInTextNodeTransaction() = default;
+
+  
+  RefPtr<dom::Text> mTextNode;
+
+  friend class CompositionTransaction;
 };
 
 }  
