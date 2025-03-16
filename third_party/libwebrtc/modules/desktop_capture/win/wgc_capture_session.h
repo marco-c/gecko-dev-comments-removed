@@ -12,6 +12,7 @@
 #define MODULES_DESKTOP_CAPTURE_WIN_WGC_CAPTURE_SESSION_H_
 
 #include <d3d11.h>
+#include <shellscalingapi.h>
 #include <windows.graphics.capture.h>
 #include <windows.graphics.h>
 #include <wrl/client.h>
@@ -29,7 +30,9 @@ namespace webrtc {
 
 class WgcCaptureSession final {
  public:
+  
   WgcCaptureSession(
+      intptr_t source_id,
       Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device,
       Microsoft::WRL::ComPtr<
           ABI::Windows::Graphics::Capture::IGraphicsCaptureItem> item,
@@ -145,6 +148,12 @@ class WgcCaptureSession final {
   
   
   DesktopRegion damage_region_;
+
+  
+  
+  
+  
+  DEVICE_SCALE_FACTOR device_scale_factor_ = DEVICE_SCALE_FACTOR_INVALID;
 
   SequenceChecker sequence_checker_;
 };

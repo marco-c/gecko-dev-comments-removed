@@ -14,6 +14,7 @@
 #include <comdef.h>
 #include <dxgi.h>
 #include <dxgi1_2.h>
+#include <shellscalingapi.h>
 #include <wrl/client.h>
 
 #include <memory>
@@ -84,6 +85,10 @@ class DxgiOutputDuplicator {
   int64_t num_frames_captured() const;
 
   
+  
+  std::optional<DEVICE_SCALE_FACTOR> device_scale_factor() const;
+
+  
   void TranslateRect(const DesktopVector& position);
 
  private:
@@ -133,6 +138,7 @@ class DxgiOutputDuplicator {
   std::unique_ptr<DxgiTexture> texture_;
   Rotation rotation_;
   DesktopSize unrotated_size_;
+  DEVICE_SCALE_FACTOR device_scale_factor_ = DEVICE_SCALE_FACTOR_INVALID;
 
   
   

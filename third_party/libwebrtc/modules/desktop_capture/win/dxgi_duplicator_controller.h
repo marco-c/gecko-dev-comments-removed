@@ -209,6 +209,13 @@ class RTC_EXPORT DxgiDuplicatorController {
   
   
   
+  
+  std::optional<int32_t> GetDeviceScaleFactor(int monitor_id) const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+
+  
+  
+  
   DesktopRect ScreenRect(int id) const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   int ScreenCountUnlocked() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);

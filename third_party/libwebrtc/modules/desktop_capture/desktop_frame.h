@@ -74,6 +74,12 @@ class RTC_EXPORT DesktopFrame {
   const DesktopVector& dpi() const { return dpi_; }
   void set_dpi(const DesktopVector& dpi) { dpi_ = dpi; }
 
+  std::optional<int32_t> device_scale_factor() const {
+    return device_scale_factor_;
+  }
+  void set_device_scale_factor(std::optional<int32_t> device_scale_factor) {
+    device_scale_factor_ = device_scale_factor;
+  }
   
   
   
@@ -172,6 +178,10 @@ class RTC_EXPORT DesktopFrame {
   int64_t capture_time_ms_;
   uint32_t capturer_id_;
   std::vector<uint8_t> icc_profile_;
+  
+  
+  
+  std::optional<int32_t> device_scale_factor_;
 };
 
 
