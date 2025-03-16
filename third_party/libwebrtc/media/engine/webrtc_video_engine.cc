@@ -1445,7 +1445,8 @@ webrtc::RTCError WebRtcVideoSendChannel::SetRtpSendParameters(
     
     
     if (parameters.encodings[0].codec && send_codec_ &&
-        !IsSameRtpCodec(send_codec_->codec, *parameters.encodings[0].codec)) {
+        !IsSameRtpCodecIgnoringLevel(send_codec_->codec,
+                                     *parameters.encodings[0].codec)) {
       RTC_LOG(LS_VERBOSE) << "Trying to change codec to "
                           << parameters.encodings[0].codec->name;
       
