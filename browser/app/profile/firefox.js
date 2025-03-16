@@ -541,6 +541,15 @@ pref("browser.urlbar.quicksuggest.contextualOptIn.secondReshowAfterPeriodDays", 
 pref("browser.urlbar.quicksuggest.contextualOptIn.thirdReshowAfterPeriodDays", 60);
 
 
+pref("browser.urlbar.quicksuggest.contextualOptIn.impressionCount", 0);
+
+
+pref("browser.urlbar.quicksuggest.contextualOptIn.impressionLimit", 20);
+
+
+pref("browser.urlbar.quicksuggest.contextualOptIn.impressionDaysLimit", 5);
+
+
 pref("browser.urlbar.quicksuggest.enabled", false);
 
 
@@ -2113,6 +2122,9 @@ pref("browser.ml.chat.shortcuts", true);
 pref("browser.ml.chat.shortcuts.custom", true);
 pref("browser.ml.chat.shortcuts.longPress", 60000);
 pref("browser.ml.chat.sidebar", true);
+
+
+pref("browser.ml.linkPreview.enabled", false);
 
 
 pref("security.mixed_content.block_active_content", true);
