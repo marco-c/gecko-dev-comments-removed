@@ -183,7 +183,9 @@ add_task(async function () {
   }
 
   
-  await new Promise(r => setTimeout(r));
+  await TestUtils.waitForCondition(
+    () => !document.documentElement.hasAttribute("window-modal-open")
+  );
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
