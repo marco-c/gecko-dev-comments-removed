@@ -17,7 +17,6 @@
 #include "mozilla/TimeStamp.h"      
 #include "mozilla/gfx/Point.h"      
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/ipc/SharedMemory.h"
 #include "mozilla/layers/CompositorController.h"
 #include "mozilla/layers/CompositorVsyncSchedulerOwner.h"
 #include "mozilla/layers/FocusTarget.h"

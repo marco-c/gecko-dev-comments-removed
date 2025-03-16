@@ -11,7 +11,8 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Result.h"
 #include "mozilla/dom/ipc/StringTable.h"
-#include "mozilla/ipc/SharedMemory.h"
+#include "mozilla/ipc/SharedMemoryHandle.h"
+#include "mozilla/ipc/SharedMemoryMapping.h"
 #include "nsTHashMap.h"
 
 namespace mozilla {
@@ -419,7 +420,7 @@ class SharedPrefMap {
 
   
   
-  SharedPrefMap(const mozilla::ipc::SharedMemoryHandle&, size_t);
+  explicit SharedPrefMap(const mozilla::ipc::ReadOnlySharedMemoryHandle&);
   explicit SharedPrefMap(SharedPrefMapBuilder&&);
 
   
@@ -502,7 +503,7 @@ class SharedPrefMap {
   
   
   
-  mozilla::ipc::SharedMemoryHandle CloneHandle() const;
+  mozilla::ipc::ReadOnlySharedMemoryHandle CloneHandle() const;
 
   
   
@@ -528,8 +529,8 @@ class SharedPrefMap {
 
   template <typename T>
   RangedPtr<const T> GetBlock(const DataBlock& aBlock) const {
-    return RangedPtr<uint8_t>(&mMappedMemory.data()[aBlock.mOffset],
-                              aBlock.mSize)
+    return RangedPtr<const uint8_t>(&mMappedMemory.data()[aBlock.mOffset],
+                                    aBlock.mSize)
         .ReinterpretCast<const T>();
   }
 
@@ -549,19 +550,19 @@ class SharedPrefMap {
 
   StringTable<nsCString> KeyTable() const {
     auto& block = GetHeader().mKeyStrings;
-    return {{&mMappedMemory.data()[block.mOffset], block.mSize}};
+    return {{(uint8_t*)&mMappedMemory.data()[block.mOffset], block.mSize}};
   }
 
   StringTable<nsCString> ValueTable() const {
     auto& block = GetHeader().mValueStrings;
-    return {{&mMappedMemory.data()[block.mOffset], block.mSize}};
+    return {{(uint8_t*)&mMappedMemory.data()[block.mOffset], block.mSize}};
   }
 
-  mozilla::ipc::SharedMemoryHandle mHandle;
+  mozilla::ipc::ReadOnlySharedMemoryHandle mHandle;
   
   
   
-  Span<uint8_t> mMappedMemory;
+  mozilla::ipc::shared_memory::LeakedReadOnlyMapping mMappedMemory;
 };
 
 
@@ -597,7 +598,7 @@ class MOZ_RAII SharedPrefMapBuilder {
   
   
   
-  Result<Ok, nsresult> Finalize(RefPtr<mozilla::ipc::SharedMemory>& aMap);
+  Result<mozilla::ipc::ReadOnlySharedMemoryHandle, nsresult> Finalize();
 
  private:
   using StringTableEntry = mozilla::dom::ipc::StringTableEntry;
