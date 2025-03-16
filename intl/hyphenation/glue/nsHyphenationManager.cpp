@@ -331,11 +331,10 @@ void nsHyphenationManager::LoadAliases() {
 
 void nsHyphenationManager::ShareHyphDictToProcess(
     nsIURI* aURI, base::ProcessId aPid,
-    mozilla::ipc::SharedMemory::Handle* aOutHandle, uint32_t* aOutSize) {
+    mozilla::ipc::ReadOnlySharedMemoryHandle* aOutHandle) {
   MOZ_ASSERT(XRE_IsParentProcess());
   
-  *aOutHandle = mozilla::ipc::SharedMemory::NULLHandle();
-  *aOutSize = 0;
+  *aOutHandle = nullptr;
 
   
   
@@ -358,7 +357,7 @@ void nsHyphenationManager::ShareHyphDictToProcess(
     return;
   }
 
-  hyph->CloneHandle(aOutHandle, aOutSize);
+  *aOutHandle = hyph->CloneHandle();
 }
 
 size_t nsHyphenationManager::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {

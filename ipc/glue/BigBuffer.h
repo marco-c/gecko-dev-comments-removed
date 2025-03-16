@@ -9,9 +9,11 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
+#include "nsDebug.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
 #include "mozilla/Variant.h"
-#include "mozilla/ipc/SharedMemory.h"
+#include "mozilla/ipc/SharedMemoryMapping.h"
 
 namespace mozilla::ipc {
 
@@ -63,7 +65,7 @@ class BigBuffer {
   
   
   
-  BigBuffer(Adopt, SharedMemory* aSharedMemory, size_t aSize);
+  BigBuffer(Adopt, SharedMemoryMappingWithHandle&& aSharedMemory, size_t aSize);
 
   
   
@@ -87,14 +89,16 @@ class BigBuffer {
 
   
   
-  SharedMemory* GetSharedMemory() const {
-    return mData.is<1>() ? mData.as<1>().get() : nullptr;
+  
+  const SharedMemoryMappingWithHandle* GetSharedMemory() const {
+    return mData.is<1>() ? &mData.as<1>() : nullptr;
   }
 
  private:
   friend struct IPC::ParamTraits<mozilla::ipc::BigBuffer>;
 
-  using Storage = Variant<UniqueFreePtr<uint8_t[]>, RefPtr<SharedMemory>>;
+  using Storage =
+      Variant<UniqueFreePtr<uint8_t[]>, SharedMemoryMappingWithHandle>;
 
   
   static Storage NoData() { return AsVariant(UniqueFreePtr<uint8_t[]>{}); }

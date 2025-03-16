@@ -41,7 +41,6 @@
 #include "nsTArray.h"
 #include "nsString.h"
 #include "mozilla/dom/WebGLRenderingContextBinding.h"
-#include "mozilla/ipc/SharedMemory.h"
 
 
 

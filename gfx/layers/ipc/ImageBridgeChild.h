@@ -13,8 +13,7 @@
 
 #include "mozilla/Attributes.h"  
 #include "mozilla/Atomics.h"
-#include "mozilla/RefPtr.h"            
-#include "mozilla/ipc/SharedMemory.h"  
+#include "mozilla/RefPtr.h"  
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/PImageBridgeChild.h"

@@ -27,7 +27,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RangedArray.h"
 #include "mozilla/RecursiveMutex.h"
-#include "mozilla/ipc/SharedMemory.h"
+#include "mozilla/ipc/SharedMemoryHandle.h"
 #include "nsLanguageAtomService.h"
 
 namespace mozilla {
@@ -353,20 +353,20 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   
   
-  void ShareFontListShmBlockToProcess(uint32_t aGeneration, uint32_t aIndex,
-                                      base::ProcessId aPid,
-                                      mozilla::ipc::SharedMemory::Handle* aOut);
+  void ShareFontListShmBlockToProcess(
+      uint32_t aGeneration, uint32_t aIndex, base::ProcessId aPid,
+      mozilla::ipc::ReadOnlySharedMemoryHandle* aOut);
 
   
   
   void ShareFontListToProcess(
-      nsTArray<mozilla::ipc::SharedMemory::Handle>* aBlocks,
+      nsTArray<mozilla::ipc::ReadOnlySharedMemoryHandle>* aBlocks,
       base::ProcessId aPid);
 
   void ShmBlockAdded(uint32_t aGeneration, uint32_t aIndex,
-                     mozilla::ipc::SharedMemory::Handle aHandle);
+                     mozilla::ipc::ReadOnlySharedMemoryHandle aHandle);
 
-  mozilla::ipc::SharedMemory::Handle ShareShmBlockToProcess(
+  mozilla::ipc::ReadOnlySharedMemoryHandle ShareShmBlockToProcess(
       uint32_t aIndex, base::ProcessId aPid);
 
   void SetCharacterMap(uint32_t aGeneration, uint32_t aFamilyIndex, bool aAlias,
