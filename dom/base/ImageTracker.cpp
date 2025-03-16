@@ -11,6 +11,7 @@
 
 #include "imgIContainer.h"
 #include "imgIRequest.h"
+#include "nsTHashSet.h"
 #include "mozilla/Preferences.h"
 #include "nsXULAppAPI.h"
 
@@ -140,18 +141,15 @@ void ImageTracker::MediaFeatureValuesChangedAllDocuments(
   
   
   
-  
-  
-  
-  
-  nsTArray<nsCOMPtr<imgIContainer>> images;
+  nsTHashSet<nsRefPtrHashKey<imgIContainer>> images;
   for (imgIRequest* req : mImages.Keys()) {
     nsCOMPtr<imgIContainer> image;
     req->GetImage(getter_AddRefs(image));
     if (!image) {
       continue;
     }
-    images.AppendElement(image->Unwrap());
+    image = image->Unwrap();
+    images.Insert(image);
   }
   for (imgIContainer* image : images) {
     image->MediaFeatureValuesChangedAllDocuments(aChange);
