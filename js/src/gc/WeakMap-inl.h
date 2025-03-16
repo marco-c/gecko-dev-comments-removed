@@ -47,14 +47,6 @@ static CellColor GetEffectiveColor(GCMarker* marker, const T& item) {
 
 
 
-
-
-
-
-
-
-
-
 static MOZ_MAYBE_UNUSED JSObject* GetDelegateInternal(gc::Cell* key) {
   return nullptr;
 }
@@ -99,7 +91,7 @@ inline bool IsSymbol(const HeapPtr<JS::Value>& key) {
 
 
 template <class K, class V>
-void WeakMap<K, V>::assertMapIsSameZoneWithValue(const BarrieredValue& v) {
+void WeakMap<K, V>::assertMapIsSameZoneWithValue(const V& v) {
 #ifdef DEBUG
   gc::Cell* cell = gc::ToMarkable(v);
   if (cell) {
@@ -115,16 +107,15 @@ WeakMap<K, V>::WeakMap(JSContext* cx, JSObject* memOf)
 
 template <class K, class V>
 WeakMap<K, V>::WeakMap(JS::Zone* zone, JSObject* memOf)
-    : WeakMapBase(memOf, zone), map_(zone) {
-  static_assert(std::is_same_v<typename RemoveBarrier<K>::Type, K>);
-  static_assert(std::is_same_v<typename RemoveBarrier<V>::Type, V>);
+    : Base(zone), WeakMapBase(memOf, zone) {
+  using ElemType = typename K::ElementType;
 
   
   
   
   
-  if constexpr (std::is_pointer_v<K>) {
-    using NonPtrType = std::remove_pointer_t<K>;
+  if constexpr (std::is_pointer_v<ElemType>) {
+    using NonPtrType = std::remove_pointer_t<ElemType>;
     static_assert(JS::IsCCTraceKind(NonPtrType::TraceKind),
                   "Object's TraceKind should be added to CC graph.");
   }
@@ -135,32 +126,6 @@ WeakMap<K, V>::WeakMap(JS::Zone* zone, JSObject* memOf)
   }
 }
 
-template <class K, class V>
-WeakMap<K, V>::~WeakMap() {
-#ifdef DEBUG
-  
-  
-
-  
-  
-  MOZ_ASSERT_IF(!empty(),
-                CurrentThreadIsGCSweeping() || CurrentThreadIsGCFinalizing());
-
-  
-  
-  
-  
-  size_t i = 0;
-  for (auto r = all(); !r.empty() && i < 1000; r.popFront(), i++) {
-    K key = r.front().key();
-    MOZ_ASSERT_IF(gc::ToMarkable(key), !IsInsideNursery(gc::ToMarkable(key)));
-    V value = r.front().value();
-    MOZ_ASSERT_IF(gc::ToMarkable(value),
-                  !IsInsideNursery(gc::ToMarkable(value)));
-  }
-#endif
-}
-
 
 
 
@@ -169,9 +134,8 @@ WeakMap<K, V>::~WeakMap() {
 
 
 template <class K, class V>
-bool WeakMap<K, V>::markEntry(GCMarker* marker, gc::CellColor mapColor,
-                              BarrieredKey& key, BarrieredValue& value,
-                              bool populateWeakKeysTable) {
+bool WeakMap<K, V>::markEntry(GCMarker* marker, gc::CellColor mapColor, K& key,
+                              V& value, bool populateWeakKeysTable) {
 #ifdef DEBUG
   MOZ_ASSERT(IsMarked(mapColor));
   if (marker->isParallelMarking()) {
@@ -275,7 +239,7 @@ void WeakMap<K, V>::trace(JSTracer* trc) {
   }
 
   
-  for (Range r = all(); !r.empty(); r.popFront()) {
+  for (Range r = Base::all(); !r.empty(); r.popFront()) {
     TraceEdge(trc, &r.front().value(), "WeakMap entry value");
   }
 }
@@ -318,13 +282,8 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
 template <class K, class V>
 void WeakMap<K, V>::traceWeakEdges(JSTracer* trc) {
   
-  
-  mayHaveSymbolKeys = false;
-  mayHaveKeyDelegates = false;
   for (Enum e(*this); !e.empty(); e.popFront()) {
-    if (TraceWeakEdge(trc, &e.front().mutableKey(), "WeakMap key")) {
-      keyWriteBarrier(e.front().key());
-    } else {
+    if (!TraceWeakEdge(trc, &e.front().mutableKey(), "WeakMap key")) {
       e.removeFront();
     }
   }
@@ -339,7 +298,7 @@ void WeakMap<K, V>::traceWeakEdges(JSTracer* trc) {
 
 template <class K, class V>
 void WeakMap<K, V>::traceMappings(WeakMapTracer* tracer) {
-  for (Range r = all(); !r.empty(); r.popFront()) {
+  for (Range r = Base::all(); !r.empty(); r.popFront()) {
     gc::Cell* key = gc::ToMarkable(r.front().key());
     gc::Cell* value = gc::ToMarkable(r.front().value());
     if (key && value) {
@@ -350,53 +309,50 @@ void WeakMap<K, V>::traceMappings(WeakMapTracer* tracer) {
 }
 
 template <class K, class V>
-bool WeakMap<K, V>::findSweepGroupEdges(Zone* atomsZone) {
+bool WeakMap<K, V>::findSweepGroupEdges() {
   
   
+  JS::AutoSuppressGCAnalysis nogc;
+  for (Range r = all(); !r.empty(); r.popFront()) {
+    const K& key = r.front().key();
 
-#ifdef DEBUG
-  if (!mayHaveSymbolKeys || !mayHaveKeyDelegates) {
-    for (Range r = all(); !r.empty(); r.popFront()) {
-      const K& key = r.front().key();
-      MOZ_ASSERT_IF(!mayHaveKeyDelegates, !gc::detail::GetDelegate(key));
-      MOZ_ASSERT_IF(!mayHaveSymbolKeys, !gc::detail::IsSymbol(key));
-    }
-  }
-#endif
-
-#ifdef NIGHTLY_BUILD
-  if (mayHaveSymbolKeys) {
-    MOZ_ASSERT(JS::Prefs::experimental_symbols_as_weakmap_keys());
-    if (atomsZone->isGCMarking()) {
-      if (!atomsZone->addSweepGroupEdgeTo(zone())) {
-        return false;
-      }
-    }
-  }
-#endif
-
-  if (mayHaveKeyDelegates) {
-    for (Range r = all(); !r.empty(); r.popFront()) {
-      const K& key = r.front().key();
-
-      JSObject* delegate = gc::detail::GetDelegate(key);
-      if (delegate) {
-        
-        
-        Zone* delegateZone = delegate->zone();
-        gc::Cell* keyCell = gc::ToMarkable(key);
-        MOZ_ASSERT(keyCell);
-        Zone* keyZone = keyCell->zone();
-        if (delegateZone != keyZone && delegateZone->isGCMarking() &&
-            keyZone->isGCMarking()) {
-          if (!delegateZone->addSweepGroupEdgeTo(keyZone)) {
-            return false;
-          }
+    JSObject* delegate = gc::detail::GetDelegate(key);
+    if (delegate) {
+      
+      
+      Zone* delegateZone = delegate->zone();
+      gc::Cell* keyCell = gc::ToMarkable(key);
+      MOZ_ASSERT(keyCell);
+      Zone* keyZone = keyCell->zone();
+      if (delegateZone != keyZone && delegateZone->isGCMarking() &&
+          keyZone->isGCMarking()) {
+        if (!delegateZone->addSweepGroupEdgeTo(keyZone)) {
+          return false;
         }
       }
     }
-  }
 
+#ifdef NIGHTLY_BUILD
+    bool symbolsAsWeakMapKeysEnabled =
+        JS::Prefs::experimental_symbols_as_weakmap_keys();
+    if (!symbolsAsWeakMapKeysEnabled) {
+      continue;
+    }
+
+    bool isSym = gc::detail::IsSymbol(key);
+    if (isSym) {
+      gc::Cell* keyCell = gc::ToMarkable(key);
+      Zone* keyZone = keyCell->zone();
+      MOZ_ASSERT(keyZone->isAtomsZone());
+
+      if (zone()->isGCMarking() && keyZone->isGCMarking()) {
+        if (!keyZone->addSweepGroupEdgeTo(zone())) {
+          return false;
+        }
+      }
+    }
+#endif
+  }
   return true;
 }
 
@@ -408,8 +364,8 @@ size_t WeakMap<K, V>::sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
 #if DEBUG
 template <class K, class V>
 void WeakMap<K, V>::assertEntriesNotAboutToBeFinalized() {
-  for (Range r = all(); !r.empty(); r.popFront()) {
-    K k = r.front().key();
+  for (Range r = Base::all(); !r.empty(); r.popFront()) {
+    UnbarrieredKey k = r.front().key();
     MOZ_ASSERT(!gc::IsAboutToBeFinalizedUnbarriered(k));
     JSObject* delegate = gc::detail::GetDelegate(k);
     if (delegate) {
@@ -425,7 +381,7 @@ void WeakMap<K, V>::assertEntriesNotAboutToBeFinalized() {
 template <class K, class V>
 bool WeakMap<K, V>::checkMarking() const {
   bool ok = true;
-  for (Range r = all(); !r.empty(); r.popFront()) {
+  for (Range r = Base::all(); !r.empty(); r.popFront()) {
     gc::Cell* key = gc::ToMarkable(r.front().key());
     gc::Cell* value = gc::ToMarkable(r.front().value());
     if (key && value) {
