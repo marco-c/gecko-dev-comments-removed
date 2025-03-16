@@ -63,6 +63,12 @@ def test_os_version():
     assert platform_info.os_version == "14.70"
 
     
+    test_settings["platform"]["os"]["name"] = "macosx"
+    test_settings["platform"]["os"]["version"] = "1100"
+    platform_info = PlatformInfo(test_settings)
+    assert platform_info.os_version == "11.20"
+
+    
     test_settings["platform"]["os"]["name"] = "android"
     test_settings["platform"]["os"]["version"] = "14.0"
     platform_info = PlatformInfo(test_settings)
