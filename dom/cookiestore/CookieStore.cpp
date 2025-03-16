@@ -143,16 +143,31 @@ bool ValidateCookiePath(const nsAString& aPath, nsAString& retPath,
   return true;
 }
 
+bool HasSecurePrefix(const nsAString& aString) {
+  return StringBeginsWith(aString, u"__Secure-"_ns,
+                          nsCaseInsensitiveStringComparator);
+}
+
+bool HasHostPrefix(const nsAString& aString) {
+  return StringBeginsWith(aString, u"__Host-"_ns,
+                          nsCaseInsensitiveStringComparator);
+}
 
 
 
-bool ValidateCookieNamePrefix(const nsAString& aName,
+
+bool ValidateCookieNamePrefix(const nsAString& aName, const nsAString& aValue,
                               const nsAString& aOptionDomain,
                               const nsAString& aPath, Promise* aPromise) {
   MOZ_ASSERT(aPromise);
 
-  if (!StringBeginsWith(aName, u"__Host-"_ns,
-                        nsCaseInsensitiveStringComparator)) {
+  if (aName.IsEmpty() && (HasHostPrefix(aValue) || HasSecurePrefix(aValue))) {
+    aPromise->MaybeRejectWithTypeError(
+        "Nameless cookies should not begin with special prefixes");
+    return false;
+  }
+
+  if (!HasHostPrefix(aName)) {
     return true;
   }
 
@@ -373,8 +388,8 @@ already_AddRefed<Promise> CookieStore::Set(const CookieInit& aOptions,
           return;
         }
 
-        if (!ValidateCookieNamePrefix(aOptions.mName, aOptions.mDomain, path,
-                                      promise)) {
+        if (!ValidateCookieNamePrefix(aOptions.mName, aOptions.mValue,
+                                      aOptions.mDomain, path, promise)) {
           return;
         }
 
@@ -498,8 +513,8 @@ already_AddRefed<Promise> CookieStore::Delete(
           return;
         }
 
-        if (!ValidateCookieNamePrefix(aOptions.mName, aOptions.mDomain, path,
-                                      promise)) {
+        if (!ValidateCookieNamePrefix(aOptions.mName, u""_ns, aOptions.mDomain,
+                                      path, promise)) {
           return;
         }
 
