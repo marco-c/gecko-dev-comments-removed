@@ -35,6 +35,32 @@ namespace xsimd
         
         namespace detail
         {
+            template <class T, class A>
+            struct broadcaster
+            {
+                using return_type = batch<T, A>;
+
+                static XSIMD_INLINE return_type run(T v) noexcept
+                {
+                    return return_type::broadcast(v);
+                }
+            };
+
+            template <class A>
+            struct broadcaster<bool, A>
+            {
+                using return_type = batch_bool<xsimd::as_unsigned_integer_t<bool>, A>;
+
+                static XSIMD_INLINE return_type run(bool b) noexcept
+                {
+                    return return_type(b);
+                }
+            };
+        }
+
+        
+        namespace detail
+        {
             template <class IT, class A, class I, size_t... Is>
             XSIMD_INLINE batch<IT, A> create_compress_swizzle_mask(I bitmask, ::xsimd::detail::index_sequence<Is...>)
             {
@@ -514,7 +540,7 @@ namespace xsimd
         }
 
         
-        template <class T, class A>
+        template <class A, class T>
         XSIMD_INLINE void store(batch_bool<T, A> const& self, bool* mem, requires_arch<generic>) noexcept
         {
             using batch_type = batch<T, A>;
