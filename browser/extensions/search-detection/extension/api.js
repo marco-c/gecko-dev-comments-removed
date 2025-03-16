@@ -12,6 +12,9 @@ const { AddonManager } = ChromeUtils.importESModule(
 const { WebRequest } = ChromeUtils.importESModule(
   "resource://gre/modules/WebRequest.sys.mjs"
 );
+var { ExtensionParent } = ChromeUtils.importESModule(
+  "resource://gre/modules/ExtensionParent.sys.mjs"
+);
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -47,6 +50,20 @@ this.addonsSearchDetection = class extends ExtensionAPI {
           const patterns = {};
 
           try {
+            
+            
+            
+            if (
+              !Cu.isESModuleLoaded(
+                "resource://gre/modules/SearchService.sys.mjs"
+              )
+            ) {
+              await ExtensionParent.browserPaintedPromise;
+            }
+            
+            if (extension.hasShutdown || Services.startup.shuttingDown) {
+              return patterns;
+            }
             await Services.search.promiseInitialized;
             const engines = await Services.search.getEngines();
 
