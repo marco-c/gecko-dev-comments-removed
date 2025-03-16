@@ -57,9 +57,9 @@ use crate::AllocErr;
 use crate::{Atom, LocalName, Namespace, ShrinkIfNeeded, WeakAtom};
 use dom::{DocumentState, ElementState};
 use fxhash::FxHashMap;
-use malloc_size_of::MallocSizeOf;
+use malloc_size_of::{MallocSizeOf, MallocShallowSizeOf, MallocSizeOfOps};
 #[cfg(feature = "gecko")]
-use malloc_size_of::{MallocShallowSizeOf, MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
+use malloc_size_of::MallocUnconditionalShallowSizeOf;
 use selectors::attr::{CaseSensitivity, NamespaceConstraint};
 use selectors::bloom::BloomFilter;
 use selectors::matching::{
@@ -542,6 +542,7 @@ pub struct Stylist {
     stylesheets: StylistStylesheetSet,
 
     
+    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "XXX: how to handle this?")]
     author_data_cache: CascadeDataCache<CascadeData>,
 
     
@@ -564,6 +565,7 @@ pub struct Stylist {
     script_custom_properties: CustomPropertyScriptRegistry,
 
     
+    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
     initial_values_for_custom_properties: ComputedCustomProperties,
 
     
