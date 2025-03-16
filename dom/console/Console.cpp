@@ -2791,6 +2791,18 @@ nsString Console::GetDumpMessage(JSContext* aCx, MethodName aMethodName,
       message.AppendLiteral(" ");
     }
 
+    if (string.EqualsLiteral("({})")) {
+      
+      
+      
+      
+      JS::Rooted<JSString*> jsString2(aCx, JS::ToString(aCx, v));
+      nsAutoJSString string2;
+      if (jsString2 && string2.init(aCx, jsString2)) {
+        message.Append(string2);
+        continue;
+      }
+    }
     message.Append(string);
   }
 
