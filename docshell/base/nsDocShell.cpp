@@ -6441,6 +6441,13 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
   
   nsCOMPtr<nsIDocShell> kungFuDeathGrip(this);
 
+  
+  
+  if (aPrincipal) {
+    mBrowsingContext->Group()->EnsureUsesOriginAgentClusterInitialized(
+        aPrincipal);
+  }
+
   AutoRestore<bool> creatingDocument(mCreatingDocument);
   mCreatingDocument = true;
 

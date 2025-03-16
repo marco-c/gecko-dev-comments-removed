@@ -660,6 +660,21 @@ Maybe<bool> BrowsingContextGroup::UsesOriginAgentCluster(
   return Nothing();
 }
 
+void BrowsingContextGroup::EnsureUsesOriginAgentClusterInitialized(
+    nsIPrincipal* aPrincipal) {
+  if (UsesOriginAgentCluster(aPrincipal).isSome()) {
+    return;
+  }
+
+  MOZ_RELEASE_ASSERT(!XRE_IsContentProcess(),
+                     "Cannot determine origin-keying in content process!");
+
+  
+  
+  SetUseOriginAgentClusterFromNetwork(
+      aPrincipal, StaticPrefs::dom_origin_agent_cluster_default());
+}
+
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(BrowsingContextGroup, mContexts,
                                       mToplevels, mHosts, mSubscribers,
                                       mTimerEventQueue, mWorkerEventQueue,

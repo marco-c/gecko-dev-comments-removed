@@ -225,17 +225,19 @@ class BrowsingContextGroup final : public nsWrapperCache {
   
   
   
-  
-  
-  
-  
-  
-  
   void SetUseOriginAgentClusterFromNetwork(nsIPrincipal* aPrincipal,
                                            bool aUseOriginAgentCluster);
   void SetUseOriginAgentClusterFromIPC(nsIPrincipal* aPrincipal,
                                        bool aUseOriginAgentCluster);
   Maybe<bool> UsesOriginAgentCluster(nsIPrincipal* aPrincipal);
+
+  
+  
+  
+  
+  
+  
+  void EnsureUsesOriginAgentClusterInitialized(nsIPrincipal* aPrincipal);
 
   void ChildDestroy();
 
