@@ -28,6 +28,8 @@ module.exports = {
     
     `${projectRoot}/browser/components/backup/content/**/*.stories.mjs`,
     
+    `${projectRoot}/browser/components/preferences/widgets/**/*.stories.mjs`,
+    
     `${projectRoot}/toolkit/components/reader/**/*.stories.mjs`,
     
     `${projectRoot}/toolkit/components/satchel/megalist/content/**/*.stories.mjs`,
