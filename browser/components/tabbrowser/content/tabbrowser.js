@@ -2495,6 +2495,10 @@
       };
 
       SessionStore.resetBrowserToLazyState(aTab);
+      
+      
+      
+      aTab.toggleAttribute("discarded", true);
 
       
       let filter = this._tabFilters.get(aTab);

@@ -2546,6 +2546,10 @@ pref("browser.tabs.fadeOutUnloadedTabs", false);
 
 
 
+pref("browser.tabs.fadeOutExplicitlyUnloadedTabs", false);
+
+
+
 pref("extensions.experiments.enabled", false);
 
 #if defined(XP_WIN)
