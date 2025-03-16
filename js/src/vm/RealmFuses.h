@@ -137,6 +137,18 @@ struct ObjectPrototypeHasNoReturnProperty final
   virtual bool checkInvariant(JSContext* cx) override;
 };
 
+
+
+
+
+
+
+
+struct OptimizeArraySpeciesFuse final : public RealmFuse {
+  virtual const char* name() override { return "OptimizeArraySpeciesFuse"; }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
 #define FOR_EACH_REALM_FUSE(FUSE)                                              \
   FUSE(OptimizeGetIteratorFuse, optimizeGetIteratorFuse)                       \
   FUSE(OptimizeArrayIteratorPrototypeFuse, optimizeArrayIteratorPrototypeFuse) \
@@ -149,7 +161,8 @@ struct ObjectPrototypeHasNoReturnProperty final
   FUSE(ArrayIteratorPrototypeHasIteratorProto,                                 \
        arrayIteratorPrototypeHasIteratorProto)                                 \
   FUSE(IteratorPrototypeHasObjectProto, iteratorPrototypeHasObjectProto)       \
-  FUSE(ObjectPrototypeHasNoReturnProperty, objectPrototypeHasNoReturnProperty)
+  FUSE(ObjectPrototypeHasNoReturnProperty, objectPrototypeHasNoReturnProperty) \
+  FUSE(OptimizeArraySpeciesFuse, optimizeArraySpeciesFuse)
 
 struct RealmFuses {
   RealmFuses() = default;
