@@ -7,6 +7,7 @@
 DIRS += [
     "formautofill",
     "webcompat",
+    "report-site-issue",
     "pictureinpicture",
     "search-detection",
     "newtab",
