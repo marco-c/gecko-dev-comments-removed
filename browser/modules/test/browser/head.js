@@ -319,10 +319,6 @@ async function initPageActionsTest() {
   await disableNonReleaseActions();
 
   
-  const addon = await AddonManager.getAddonByID("screenshots@mozilla.org");
-  await addon.disable({ allowSystemAddons: true });
-
-  
   
   BrowserPageActions.mainButtonNode.style.visibility = "visible";
   registerCleanupFunction(() => {
