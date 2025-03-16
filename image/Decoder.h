@@ -580,8 +580,6 @@ class Decoder {
       RawAccessFrameRef&& aPreviousFrame);
 
  protected:
-  static uint8_t ChooseTransferCharacteristics(uint8_t aTC);
-
   
   qcms_profile* mInProfile;
 
