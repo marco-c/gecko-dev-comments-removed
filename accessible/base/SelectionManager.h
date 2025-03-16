@@ -95,14 +95,6 @@ class SelectionManager : public nsISelectionListener {
     return mAccWithCaret;
   }
 
-  
-
-
-  inline void UpdateCaretOffset(HyperTextAccessible* aItem, int32_t aOffset) {
-    mAccWithCaret = aItem;
-    mCaretOffset = aOffset;
-  }
-
   inline void ResetCaretOffset() {
     mCaretOffset = -1;
     mAccWithCaret = nullptr;

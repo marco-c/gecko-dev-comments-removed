@@ -18,13 +18,6 @@
 
 namespace mozilla::a11y {
 
-inline void HyperTextAccessible::SetCaretOffset(int32_t aOffset) {
-  SetSelectionRange(aOffset, aOffset);
-  
-  
-  SelectionMgr()->UpdateCaretOffset(this, aOffset);
-}
-
 inline already_AddRefed<nsFrameSelection> HyperTextAccessible::FrameSelection()
     const {
   nsIFrame* frame = GetFrame();
