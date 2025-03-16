@@ -8,6 +8,8 @@
 #define MOZILLA_LAYERS_COMPOSITABLEFORWARDER
 
 #include <stdint.h>  
+
+#include "ImageContainer.h"
 #include "mozilla/Assertions.h"  
 #include "mozilla/Atomics.h"
 #include "mozilla/RefPtr.h"             
@@ -22,7 +24,6 @@ namespace mozilla {
 namespace layers {
 class CompositableClient;
 class CompositableHandle;
-class ImageContainer;
 class PTextureChild;
 class SurfaceDescriptorTiles;
 class TextureClient;
@@ -136,6 +137,13 @@ class CompositableForwarder : public KnowsCompositor {
 
   virtual void RemoveTextureFromCompositable(CompositableClient* aCompositable,
                                              TextureClient* aTexture) = 0;
+
+  
+
+
+
+  virtual void ClearImagesFromCompositable(CompositableClient* aCompositable,
+                                           ClearImagesType aType) {}
 
   struct TimedTextureClient {
     TimedTextureClient()

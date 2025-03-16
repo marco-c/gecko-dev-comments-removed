@@ -57,7 +57,7 @@ class ImageClient : public CompositableClient {
 
 
 
-  virtual void FlushAllImages() {}
+  virtual void ClearImagesInHost(ClearImagesType aType) {}
 
   virtual void RemoveTexture(TextureClient* aTexture) override;
 
@@ -98,7 +98,7 @@ class ImageClientSingle : public ImageClient {
 
   TextureInfo GetTextureInfo() const override;
 
-  void FlushAllImages() override;
+  void ClearImagesInHost(ClearImagesType aType) override;
 
   ImageClientSingle* AsImageClientSingle() override { return this; }
 

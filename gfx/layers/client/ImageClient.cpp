@@ -75,14 +75,8 @@ TextureInfo ImageClientSingle::GetTextureInfo() const {
                      TextureFlags::DEFAULT);
 }
 
-void ImageClientSingle::FlushAllImages() {
-  for (auto& b : mBuffers) {
-    
-    
-    
-    
-    RemoveTexture(b.mTextureClient);
-  }
+void ImageClientSingle::ClearImagesInHost(ClearImagesType aType) {
+  GetForwarder()->ClearImagesFromCompositable(this, aType);
   mBuffers.Clear();
 }
 

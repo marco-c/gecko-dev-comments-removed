@@ -72,6 +72,9 @@ class VideoFrameContainer {
   void ClearCachedResources();
 
   
+  void ClearImagesInHost(layers::ClearImagesType aType);
+
+  
   
   
   ImageContainer::FrameID NewFrameID() { return ++mFrameID; }

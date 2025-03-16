@@ -371,7 +371,12 @@ void ImageContainer::SetCurrentImages(const nsTArray<NonOwningImage>& aImages) {
   SetCurrentImageInternal(aImages);
 }
 
-void ImageContainer::ClearAllImages() {
+void ImageContainer::ClearImagesInHost(ClearImagesType aType) {
+  MOZ_ASSERT(mIsAsync);
+  if (!mIsAsync) {
+    return;
+  }
+
   mRecursiveMutex.Lock();
   if (mImageClient) {
     RefPtr<ImageClient> imageClient = mImageClient;
@@ -381,7 +386,7 @@ void ImageContainer::ClearAllImages() {
     
     if (RefPtr<ImageBridgeChild> imageBridge =
             ImageBridgeChild::GetSingleton()) {
-      imageBridge->FlushAllImages(imageClient, this);
+      imageBridge->ClearImagesInHost(imageClient, this, aType);
     }
     return;
   }

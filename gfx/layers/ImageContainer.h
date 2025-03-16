@@ -293,6 +293,8 @@ class ImageContainerListener final {
   ImageContainer* mImageContainer MOZ_GUARDED_BY(mLock);
 };
 
+enum class ClearImagesType { All, CacheOnly };
+
 
 
 
@@ -401,7 +403,7 @@ class ImageContainer final : public SupportsThreadSafeWeakPtr<ImageContainer> {
 
 
 
-  void ClearAllImages() MOZ_EXCLUDES(mRecursiveMutex);
+  void ClearImagesInHost(ClearImagesType aType) MOZ_EXCLUDES(mRecursiveMutex);
 
   
 
