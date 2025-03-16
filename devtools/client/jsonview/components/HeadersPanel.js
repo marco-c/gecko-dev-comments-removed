@@ -2,59 +2,51 @@
 
 
 
-"use strict";
 
-define(function (require, exports) {
-  const {
-    Component,
-  } = require("resource://devtools/client/shared/vendor/react.js");
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 
-  const {
-    createFactories,
-  } = require("resource://devtools/client/shared/react-utils.js");
+import { Component } from "resource://devtools/client/shared/vendor/react.mjs";
+import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import * as dom from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
+import { createFactories } from "resource://devtools/client/shared/react-utils.mjs";
 
-  const { Headers } = createFactories(
-    require("resource://devtools/client/jsonview/components/Headers.js")
-  );
-  const { HeadersToolbar } = createFactories(
-    require("resource://devtools/client/jsonview/components/HeadersToolbar.js")
-  );
+import HeadersClass from "resource://devtools/client/jsonview/components/Headers.mjs";
 
-  const { div } = dom;
+const { Headers } = createFactories(HeadersClass);
+import HeadersToolbarClass from "resource://devtools/client/jsonview/components/HeadersToolbar.mjs";
 
-  
+const { HeadersToolbar } = createFactories(HeadersToolbarClass);
+
+const { div } = dom;
 
 
 
-  class HeadersPanel extends Component {
-    static get propTypes() {
-      return {
-        actions: PropTypes.object,
-        data: PropTypes.object,
-      };
-    }
 
-    constructor(props) {
-      super(props);
 
-      this.state = {
-        data: {},
-      };
-    }
-
-    render() {
-      const data = this.props.data;
-
-      return div(
-        { className: "headersPanelBox tab-panel-inner" },
-        HeadersToolbar({ actions: this.props.actions }),
-        div({ className: "panelContent" }, Headers({ data }))
-      );
-    }
+class HeadersPanel extends Component {
+  static get propTypes() {
+    return {
+      actions: PropTypes.object,
+      data: PropTypes.object,
+    };
   }
 
-  
-  exports.HeadersPanel = HeadersPanel;
-});
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      data: {},
+    };
+  }
+
+  render() {
+    const data = this.props.data;
+
+    return div(
+      { className: "headersPanelBox tab-panel-inner" },
+      HeadersToolbar({ actions: this.props.actions }),
+      div({ className: "panelContent" }, Headers({ data }))
+    );
+  }
+}
+
+export default { HeadersPanel };

@@ -2,49 +2,41 @@
 
 
 
-"use strict";
-
-define(function (require, exports) {
-  const {
-    Component,
-  } = require("resource://devtools/client/shared/vendor/react.js");
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-
-  
+import { Component } from "resource://devtools/client/shared/vendor/react.mjs";
+import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import * as dom from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
 
-  class Toolbar extends Component {
-    static get propTypes() {
-      return {
-        children: PropTypes.oneOfType([PropTypes.array, PropTypes.element]),
-      };
-    }
 
-    render() {
-      return dom.div({ className: "toolbar" }, this.props.children);
-    }
+
+class Toolbar extends Component {
+  static get propTypes() {
+    return {
+      children: PropTypes.oneOfType([PropTypes.array, PropTypes.element]),
+    };
   }
 
-  
+  render() {
+    return dom.div({ className: "toolbar" }, this.props.children);
+  }
+}
 
 
-  class ToolbarButton extends Component {
-    static get propTypes() {
-      return {
-        active: PropTypes.bool,
-        disabled: PropTypes.bool,
-        children: PropTypes.string,
-      };
-    }
 
-    render() {
-      const props = Object.assign({ className: "btn" }, this.props);
-      return dom.button(props, this.props.children);
-    }
+
+class ToolbarButton extends Component {
+  static get propTypes() {
+    return {
+      active: PropTypes.bool,
+      disabled: PropTypes.bool,
+      children: PropTypes.string,
+    };
   }
 
-  
-  exports.Toolbar = Toolbar;
-  exports.ToolbarButton = ToolbarButton;
-});
+  render() {
+    const props = Object.assign({ className: "btn" }, this.props);
+    return dom.button(props, this.props.children);
+  }
+}
+
+export default { Toolbar, ToolbarButton };

@@ -2,59 +2,51 @@
 
 
 
-"use strict";
+import { Component } from "resource://devtools/client/shared/vendor/react.mjs";
+import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import * as dom from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
+import { createFactories } from "resource://devtools/client/shared/react-utils.mjs";
 
-define(function (require, exports) {
-  const {
-    Component,
-  } = require("resource://devtools/client/shared/vendor/react.js");
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-  const {
-    createFactories,
-  } = require("resource://devtools/client/shared/react-utils.js");
-  const { TextToolbar } = createFactories(
-    require("resource://devtools/client/jsonview/components/TextToolbar.js")
-  );
-  const { LiveText } = createFactories(
-    require("resource://devtools/client/jsonview/components/LiveText.js")
-  );
-  const { div } = dom;
+import TextToolbarClass from "resource://devtools/client/jsonview/components/TextToolbar.mjs";
 
-  
+const { TextToolbar } = createFactories(TextToolbarClass);
+import LiveTextClass from "resource://devtools/client/jsonview/components/LiveText.mjs";
+
+const { LiveText } = createFactories(LiveTextClass);
+const { div } = dom;
 
 
 
-  class TextPanel extends Component {
-    static get propTypes() {
-      return {
-        isValidJson: PropTypes.bool,
-        actions: PropTypes.object,
-        errorMessage: PropTypes.string,
-        data: PropTypes.instanceOf(Text),
-      };
-    }
 
-    constructor(props) {
-      super(props);
-      this.state = {};
-    }
 
-    render() {
-      return div(
-        { className: "textPanelBox tab-panel-inner" },
-        TextToolbar({
-          actions: this.props.actions,
-          isValidJson: this.props.isValidJson,
-        }),
-        this.props.errorMessage
-          ? div({ className: "jsonParseError" }, this.props.errorMessage)
-          : null,
-        div({ className: "panelContent" }, LiveText({ data: this.props.data }))
-      );
-    }
+class TextPanel extends Component {
+  static get propTypes() {
+    return {
+      isValidJson: PropTypes.bool,
+      actions: PropTypes.object,
+      errorMessage: PropTypes.string,
+      data: PropTypes.instanceOf(Text),
+    };
   }
 
-  
-  exports.TextPanel = TextPanel;
-});
+  constructor(props) {
+    super(props);
+    this.state = {};
+  }
+
+  render() {
+    return div(
+      { className: "textPanelBox tab-panel-inner" },
+      TextToolbar({
+        actions: this.props.actions,
+        isValidJson: this.props.isValidJson,
+      }),
+      this.props.errorMessage
+        ? div({ className: "jsonParseError" }, this.props.errorMessage)
+        : null,
+      div({ className: "panelContent" }, LiveText({ data: this.props.data }))
+    );
+  }
+}
+
+export default { TextPanel };

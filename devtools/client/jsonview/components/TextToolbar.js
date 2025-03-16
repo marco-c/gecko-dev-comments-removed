@@ -2,83 +2,75 @@
 
 
 
-"use strict";
+import { Component } from "resource://devtools/client/shared/vendor/react.mjs";
+import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import { createFactories } from "resource://devtools/client/shared/react-utils.mjs";
 
-define(function (require, exports) {
-  const {
-    Component,
-  } = require("resource://devtools/client/shared/vendor/react.js");
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const {
-    createFactories,
-  } = require("resource://devtools/client/shared/react-utils.js");
-  const { Toolbar, ToolbarButton } = createFactories(
-    require("resource://devtools/client/jsonview/components/reps/Toolbar.js")
-  );
+import ToolbarClass from "resource://devtools/client/jsonview/components/reps/Toolbar.mjs";
 
-  
+const { Toolbar, ToolbarButton } = createFactories(ToolbarClass);
 
 
 
-  class TextToolbar extends Component {
-    static get propTypes() {
-      return {
-        actions: PropTypes.object,
-        isValidJson: PropTypes.bool,
-      };
-    }
 
-    constructor(props) {
-      super(props);
-      this.onPrettify = this.onPrettify.bind(this);
-      this.onSave = this.onSave.bind(this);
-      this.onCopy = this.onCopy.bind(this);
-    }
 
-    
+class TextToolbar extends Component {
+  static get propTypes() {
+    return {
+      actions: PropTypes.object,
+      isValidJson: PropTypes.bool,
+    };
+  }
 
-    onPrettify() {
-      this.props.actions.onPrettify();
-    }
-
-    onSave() {
-      this.props.actions.onSaveJson();
-    }
-
-    onCopy() {
-      this.props.actions.onCopyJson();
-    }
-
-    render() {
-      return Toolbar(
-        {},
-        ToolbarButton(
-          {
-            className: "btn save",
-            onClick: this.onSave,
-          },
-          JSONView.Locale["jsonViewer.Save"]
-        ),
-        ToolbarButton(
-          {
-            className: "btn copy",
-            onClick: this.onCopy,
-          },
-          JSONView.Locale["jsonViewer.Copy"]
-        ),
-        this.props.isValidJson
-          ? ToolbarButton(
-              {
-                className: "btn prettyprint",
-                onClick: this.onPrettify,
-              },
-              JSONView.Locale["jsonViewer.PrettyPrint"]
-            )
-          : null
-      );
-    }
+  constructor(props) {
+    super(props);
+    this.onPrettify = this.onPrettify.bind(this);
+    this.onSave = this.onSave.bind(this);
+    this.onCopy = this.onCopy.bind(this);
   }
 
   
-  exports.TextToolbar = TextToolbar;
-});
+
+  onPrettify() {
+    this.props.actions.onPrettify();
+  }
+
+  onSave() {
+    this.props.actions.onSaveJson();
+  }
+
+  onCopy() {
+    this.props.actions.onCopyJson();
+  }
+
+  render() {
+    return Toolbar(
+      {},
+      ToolbarButton(
+        {
+          className: "btn save",
+          onClick: this.onSave,
+        },
+        JSONView.Locale["jsonViewer.Save"]
+      ),
+      ToolbarButton(
+        {
+          className: "btn copy",
+          onClick: this.onCopy,
+        },
+        JSONView.Locale["jsonViewer.Copy"]
+      ),
+      this.props.isValidJson
+        ? ToolbarButton(
+            {
+              className: "btn prettyprint",
+              onClick: this.onPrettify,
+            },
+            JSONView.Locale["jsonViewer.PrettyPrint"]
+          )
+        : null
+    );
+  }
+}
+
+export default { TextToolbar };

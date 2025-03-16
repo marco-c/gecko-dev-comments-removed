@@ -2,169 +2,156 @@
 
 
 
-"use strict";
+import {
+  createFactory,
+  Component,
+} from "resource://devtools/client/shared/vendor/react.mjs";
+import * as dom from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
+import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import { createFactories } from "resource://devtools/client/shared/react-utils.mjs";
 
-define(function (require, exports) {
-  const {
-    createFactory,
-    Component,
-  } = require("resource://devtools/client/shared/vendor/react.js");
-  const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const {
-    createFactories,
-  } = require("resource://devtools/client/shared/react-utils.js");
+import TreeViewClass from "resource://devtools/client/shared/components/tree/TreeView.mjs";
+import JsonToolbarClass from "resource://devtools/client/jsonview/components/JsonToolbar.mjs";
 
-  const TreeView = createFactory(
-    require("resource://devtools/client/shared/components/tree/TreeView.js")
-  );
-  const { JsonToolbar } = createFactories(
-    require("resource://devtools/client/jsonview/components/JsonToolbar.js")
-  );
+import { MODE } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
+import { Rep } from "resource://devtools/client/shared/components/reps/reps/rep.mjs";
 
-  const { MODE } = ChromeUtils.importESModule(
-    "resource://devtools/client/shared/components/reps/reps/constants.mjs"
-  );
-  const { Rep } = ChromeUtils.importESModule(
-    "resource://devtools/client/shared/components/reps/reps/rep.mjs"
-  );
+const TreeView = createFactory(TreeViewClass);
+const { JsonToolbar } = createFactories(JsonToolbarClass);
+const { div } = dom;
 
-  const { div } = dom;
+const MAX_STRING_LENGTH = 250;
 
-  const MAX_STRING_LENGTH = 250;
+function isObject(value) {
+  return Object(value) === value;
+}
 
-  function isObject(value) {
-    return Object(value) === value;
+
+
+
+
+
+class JsonPanel extends Component {
+  static get propTypes() {
+    return {
+      data: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.array,
+        PropTypes.object,
+        PropTypes.bool,
+        PropTypes.number,
+      ]),
+      dataSize: PropTypes.number,
+      expandedNodes: PropTypes.instanceOf(Set),
+      searchFilter: PropTypes.string,
+      actions: PropTypes.object,
+    };
   }
 
-  
+  constructor(props) {
+    super(props);
+    this.state = {};
+    this.onKeyPress = this.onKeyPress.bind(this);
+    this.onFilter = this.onFilter.bind(this);
+    this.renderValue = this.renderValue.bind(this);
+    this.renderTree = this.renderTree.bind(this);
+  }
 
+  componentDidMount() {
+    document.addEventListener("keypress", this.onKeyPress, true);
+    document.getElementById("json-scrolling-panel").focus();
+  }
 
+  componentWillUnmount() {
+    document.removeEventListener("keypress", this.onKeyPress, true);
+  }
 
+  onKeyPress() {
+    
+  }
 
-  class JsonPanel extends Component {
-    static get propTypes() {
-      return {
-        data: PropTypes.oneOfType([
-          PropTypes.string,
-          PropTypes.array,
-          PropTypes.object,
-          PropTypes.bool,
-          PropTypes.number,
-        ]),
-        dataSize: PropTypes.number,
-        expandedNodes: PropTypes.instanceOf(Set),
-        searchFilter: PropTypes.string,
-        actions: PropTypes.object,
-      };
+  onFilter(object) {
+    if (!this.props.searchFilter) {
+      return true;
     }
 
-    constructor(props) {
-      super(props);
-      this.state = {};
-      this.onKeyPress = this.onKeyPress.bind(this);
-      this.onFilter = this.onFilter.bind(this);
-      this.renderValue = this.renderValue.bind(this);
-      this.renderTree = this.renderTree.bind(this);
+    const json = object.name + JSON.stringify(object.value);
+    return json.toLowerCase().includes(this.props.searchFilter.toLowerCase());
+  }
+
+  renderValue(props) {
+    const member = props.member;
+
+    
+    if (isObject(member.value) && member.hasChildren && member.open) {
+      return null;
     }
 
-    componentDidMount() {
-      document.addEventListener("keypress", this.onKeyPress, true);
-      document.getElementById("json-scrolling-panel").focus();
-    }
+    
+    return Rep(
+      Object.assign({}, props, {
+        cropLimit: MAX_STRING_LENGTH,
+        noGrip: true,
+        isInContentPage: true,
+      })
+    );
+  }
 
-    componentWillUnmount() {
-      document.removeEventListener("keypress", this.onKeyPress, true);
-    }
+  renderTree() {
+    
+    
+    const columns = [
+      {
+        id: "value",
+        width: "100%",
+      },
+    ];
 
-    onKeyPress() {
-      
-    }
+    
+    return TreeView({
+      object: this.props.data,
+      mode: MODE.LONG,
+      onFilter: this.onFilter,
+      columns,
+      renderValue: this.renderValue,
+      expandedNodes: this.props.expandedNodes,
+      maxStringLength: MAX_STRING_LENGTH,
+    });
+  }
 
-    onFilter(object) {
-      if (!this.props.searchFilter) {
-        return true;
-      }
+  render() {
+    let content;
+    const data = this.props.data;
 
-      const json = object.name + JSON.stringify(object.value);
-      return json.toLowerCase().includes(this.props.searchFilter.toLowerCase());
-    }
-
-    renderValue(props) {
-      const member = props.member;
-
-      
-      if (isObject(member.value) && member.hasChildren && member.open) {
-        return null;
-      }
-
-      
-      return Rep(
-        Object.assign({}, props, {
-          cropLimit: MAX_STRING_LENGTH,
-          noGrip: true,
-          isInContentPage: true,
+    if (!isObject(data)) {
+      content = div(
+        { className: "jsonPrimitiveValue" },
+        Rep({
+          object: data,
         })
       );
+    } else if (data instanceof Error) {
+      content = div({ className: "jsonParseError" }, data + "");
+    } else {
+      content = this.renderTree();
     }
 
-    renderTree() {
-      
-      
-      const columns = [
+    return div(
+      { className: "jsonPanelBox tab-panel-inner" },
+      JsonToolbar({
+        actions: this.props.actions,
+        dataSize: this.props.dataSize,
+      }),
+      div(
         {
-          id: "value",
-          width: "100%",
+          className: "panelContent",
+          id: "json-scrolling-panel",
+          tabIndex: 0,
         },
-      ];
-
-      
-      return TreeView({
-        object: this.props.data,
-        mode: MODE.LONG,
-        onFilter: this.onFilter,
-        columns,
-        renderValue: this.renderValue,
-        expandedNodes: this.props.expandedNodes,
-        maxStringLength: MAX_STRING_LENGTH,
-      });
-    }
-
-    render() {
-      let content;
-      const data = this.props.data;
-
-      if (!isObject(data)) {
-        content = div(
-          { className: "jsonPrimitiveValue" },
-          Rep({
-            object: data,
-          })
-        );
-      } else if (data instanceof Error) {
-        content = div({ className: "jsonParseError" }, data + "");
-      } else {
-        content = this.renderTree();
-      }
-
-      return div(
-        { className: "jsonPanelBox tab-panel-inner" },
-        JsonToolbar({
-          actions: this.props.actions,
-          dataSize: this.props.dataSize,
-        }),
-        div(
-          {
-            className: "panelContent",
-            id: "json-scrolling-panel",
-            tabIndex: 0,
-          },
-          content
-        )
-      );
-    }
+        content
+      )
+    );
   }
+}
 
-  
-  exports.JsonPanel = JsonPanel;
-});
+export default { JsonPanel };

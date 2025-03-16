@@ -2,236 +2,230 @@
 
 
 
-"use strict";
 
-define(function (require) {
-  const {
-    render,
-  } = require("resource://devtools/client/shared/vendor/react-dom.js");
-  const {
-    createFactories,
-  } = require("resource://devtools/client/shared/react-utils.js");
-  const { MainTabbedArea } = createFactories(
-    require("resource://devtools/client/jsonview/components/MainTabbedArea.js")
-  );
-  const TreeViewClass = require("resource://devtools/client/shared/components/tree/TreeView.js");
-  const {
-    JSON_NUMBER,
-  } = require("resource://devtools/client/shared/components/reps/reps/constants.js");
-  const {
-    parseJsonLossless,
-  } = require("resource://devtools/client/shared/components/reps/reps/rep-utils.js");
 
-  const AUTO_EXPAND_MAX_SIZE = 100 * 1024;
-  const AUTO_EXPAND_MAX_LEVEL = 7;
-  const TABS = {
-    JSON: 0,
-    RAW_DATA: 1,
-    HEADERS: 2,
-  };
+import ReactDOM from "resource://devtools/client/shared/vendor/react-dom.mjs";
+import { createFactories } from "resource://devtools/client/shared/react-utils.mjs";
 
-  let prettyURL;
-  let theApp;
+import MainTabbedAreaClass from "resource://devtools/client/jsonview/components/MainTabbedArea.mjs";
+import TreeViewClass from "resource://devtools/client/shared/components/tree/TreeView.mjs";
+import { JSON_NUMBER } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
+import { parseJsonLossless } from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
 
-  
-  const input = {
-    jsonText: JSONView.json,
-    jsonPretty: null,
-    headers: JSONView.headers,
-    activeTab: 0,
-    prettified: false,
-    expandedNodes: new Set(),
-  };
+const { MainTabbedArea } = createFactories(MainTabbedAreaClass);
 
-  
+
+JSONView.readyState = "loading";
+window.dispatchEvent(new CustomEvent("AppReadyStateChange"));
+
+const AUTO_EXPAND_MAX_SIZE = 100 * 1024;
+const AUTO_EXPAND_MAX_LEVEL = 7;
+const TABS = {
+  JSON: 0,
+  RAW_DATA: 1,
+  HEADERS: 2,
+};
+
+let prettyURL;
+let theApp;
+
+
+const input = {
+  jsonText: JSONView.json,
+  jsonPretty: null,
+  headers: JSONView.headers,
+  activeTab: 0,
+  prettified: false,
+  expandedNodes: new Set(),
+};
 
 
 
-  input.actions = {
-    onCopyJson() {
-      const text = input.prettified ? input.jsonPretty : input.jsonText;
-      copyString(text.textContent);
-    },
 
-    onSaveJson() {
-      if (input.prettified && !prettyURL) {
-        prettyURL = URL.createObjectURL(
-          new window.Blob([input.jsonPretty.textContent])
+
+input.actions = {
+  onCopyJson() {
+    const text = input.prettified ? input.jsonPretty : input.jsonText;
+    copyString(text.textContent);
+  },
+
+  onSaveJson() {
+    if (input.prettified && !prettyURL) {
+      prettyURL = URL.createObjectURL(
+        new window.Blob([input.jsonPretty.textContent])
+      );
+    }
+    dispatchEvent("save", input.prettified ? prettyURL : null);
+  },
+
+  onCopyHeaders() {
+    let value = "";
+    const isWinNT = document.documentElement.getAttribute("platform") === "win";
+    const eol = isWinNT ? "\r\n" : "\n";
+
+    const responseHeaders = input.headers.response;
+    for (let i = 0; i < responseHeaders.length; i++) {
+      const header = responseHeaders[i];
+      value += header.name + ": " + header.value + eol;
+    }
+
+    value += eol;
+
+    const requestHeaders = input.headers.request;
+    for (let i = 0; i < requestHeaders.length; i++) {
+      const header = requestHeaders[i];
+      value += header.name + ": " + header.value + eol;
+    }
+
+    copyString(value);
+  },
+
+  onSearch(value) {
+    theApp.setState({ searchFilter: value });
+  },
+
+  onPrettify() {
+    if (input.json instanceof Error) {
+      
+      return;
+    }
+    if (input.prettified) {
+      theApp.setState({ jsonText: input.jsonText });
+    } else {
+      if (!input.jsonPretty) {
+        input.jsonPretty = new Text(
+          JSON.stringify(
+            input.json,
+            (key, value) => {
+              if (value?.type === JSON_NUMBER) {
+                return JSON.rawJSON(value.source);
+              }
+
+              
+              if (Object.is(value, -0)) {
+                return JSON.rawJSON("-0");
+              }
+
+              return value;
+            },
+            "  "
+          )
         );
       }
-      dispatchEvent("save", input.prettified ? prettyURL : null);
+      theApp.setState({ jsonText: input.jsonPretty });
+    }
+
+    input.prettified = !input.prettified;
+  },
+
+  onCollapse() {
+    input.expandedNodes.clear();
+    theApp.forceUpdate();
+  },
+
+  onExpand() {
+    input.expandedNodes = TreeViewClass.getExpandedNodes(input.json);
+    theApp.setState({ expandedNodes: input.expandedNodes });
+  },
+};
+
+
+
+
+
+
+function copyString(string) {
+  document.addEventListener(
+    "copy",
+    event => {
+      event.clipboardData.setData("text/plain", string);
+      event.preventDefault();
     },
+    { once: true }
+  );
 
-    onCopyHeaders() {
-      let value = "";
-      const isWinNT =
-        document.documentElement.getAttribute("platform") === "win";
-      const eol = isWinNT ? "\r\n" : "\n";
+  document.execCommand("copy", false, null);
+}
 
-      const responseHeaders = input.headers.response;
-      for (let i = 0; i < responseHeaders.length; i++) {
-        const header = responseHeaders[i];
-        value += header.name + ": " + header.value + eol;
-      }
 
-      value += eol;
 
-      const requestHeaders = input.headers.request;
-      for (let i = 0; i < requestHeaders.length; i++) {
-        const header = requestHeaders[i];
-        value += header.name + ": " + header.value + eol;
-      }
 
-      copyString(value);
-    },
 
-    onSearch(value) {
-      theApp.setState({ searchFilter: value });
-    },
 
-    onPrettify() {
-      if (input.json instanceof Error) {
-        
-        return;
-      }
-      if (input.prettified) {
-        theApp.setState({ jsonText: input.jsonText });
-      } else {
-        if (!input.jsonPretty) {
-          input.jsonPretty = new Text(
-            JSON.stringify(
-              input.json,
-              (key, value) => {
-                if (value?.type === JSON_NUMBER) {
-                  return JSON.rawJSON(value.source);
-                }
 
-                
-                if (Object.is(value, -0)) {
-                  return JSON.rawJSON("-0");
-                }
-
-                return value;
-              },
-              "  "
-            )
-          );
-        }
-        theApp.setState({ jsonText: input.jsonPretty });
-      }
-
-      input.prettified = !input.prettified;
-    },
-
-    onCollapse() {
-      input.expandedNodes.clear();
-      theApp.forceUpdate();
-    },
-
-    onExpand() {
-      input.expandedNodes = TreeViewClass.getExpandedNodes(input.json);
-      theApp.setState({ expandedNodes: input.expandedNodes });
+function dispatchEvent(type, value) {
+  const data = {
+    detail: {
+      type,
+      value,
     },
   };
 
-  
-
-
-
-
-  function copyString(string) {
-    document.addEventListener(
-      "copy",
-      event => {
-        event.clipboardData.setData("text/plain", string);
-        event.preventDefault();
-      },
-      { once: true }
-    );
-
-    document.execCommand("copy", false, null);
-  }
-
-  
+  const contentMessageEvent = new CustomEvent("contentMessage", data);
+  window.dispatchEvent(contentMessageEvent);
+}
 
 
 
 
 
-  function dispatchEvent(type, value) {
-    const data = {
-      detail: {
-        type,
-        value,
-      },
-    };
-
-    const contentMessageEvent = new CustomEvent("contentMessage", data);
-    window.dispatchEvent(contentMessageEvent);
-  }
-
-  
-
-
-
-  const content = document.getElementById("content");
-  const promise = (async function parseJSON() {
-    if (document.readyState == "loading") {
-      
-      input.json = {};
-      input.activeTab = TABS.RAW_DATA;
-      return new Promise(resolve => {
-        document.addEventListener("DOMContentLoaded", resolve, { once: true });
-      })
-        .then(parseJSON)
-        .then(async () => {
-          
-          await appIsReady;
-          theApp.setState({
-            activeTab: TABS.JSON,
-            json: input.json,
-            expandedNodes: input.expandedNodes,
-          });
-        });
-    }
-
+const content = document.getElementById("content");
+const promise = (async function parseJSON() {
+  if (document.readyState == "loading") {
     
-    const jsonString = input.jsonText.textContent;
-    try {
-      input.json = parseJsonLossless(jsonString);
-    } catch (err) {
-      input.json = err;
-      
-      input.activeTab = TABS.RAW_DATA;
-    }
-
-    
-    if (
-      !(input.json instanceof Error) &&
-      jsonString.length <= AUTO_EXPAND_MAX_SIZE
-    ) {
-      input.expandedNodes = TreeViewClass.getExpandedNodes(input.json, {
-        maxLevel: AUTO_EXPAND_MAX_LEVEL,
-      });
-    }
-    return undefined;
-  })();
-
-  const appIsReady = new Promise(resolve => {
-    render(MainTabbedArea(input), content, function () {
-      theApp = this;
-      resolve();
-
-      
-      
-      JSONView.readyState = "interactive";
-      window.dispatchEvent(new CustomEvent("AppReadyStateChange"));
-
-      promise.then(() => {
+    input.json = {};
+    input.activeTab = TABS.RAW_DATA;
+    return new Promise(resolve => {
+      document.addEventListener("DOMContentLoaded", resolve, { once: true });
+    })
+      .then(parseJSON)
+      .then(async () => {
         
-        JSONView.readyState = "complete";
-        window.dispatchEvent(new CustomEvent("AppReadyStateChange"));
+        await appIsReady;
+        theApp.setState({
+          activeTab: TABS.JSON,
+          json: input.json,
+          expandedNodes: input.expandedNodes,
+        });
       });
+  }
+
+  
+  const jsonString = input.jsonText.textContent;
+  try {
+    input.json = parseJsonLossless(jsonString);
+  } catch (err) {
+    input.json = err;
+    
+    input.activeTab = TABS.RAW_DATA;
+  }
+
+  
+  if (
+    !(input.json instanceof Error) &&
+    jsonString.length <= AUTO_EXPAND_MAX_SIZE
+  ) {
+    input.expandedNodes = TreeViewClass.getExpandedNodes(input.json, {
+      maxLevel: AUTO_EXPAND_MAX_LEVEL,
+    });
+  }
+  return undefined;
+})();
+
+const appIsReady = new Promise(resolve => {
+  ReactDOM.render(MainTabbedArea(input), content, function () {
+    theApp = this;
+    resolve();
+
+    
+    
+    JSONView.readyState = "interactive";
+    window.dispatchEvent(new CustomEvent("AppReadyStateChange"));
+
+    promise.then(() => {
+      
+      JSONView.readyState = "complete";
+      window.dispatchEvent(new CustomEvent("AppReadyStateChange"));
     });
   });
 });

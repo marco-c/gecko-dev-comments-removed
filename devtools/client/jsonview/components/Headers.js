@@ -2,117 +2,114 @@
 
 
 
-"use strict";
 
-define(function (require, exports) {
-  const {
-    createFactory,
-    Component,
-  } = require("resource://devtools/client/shared/vendor/react.js");
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 
-  const { div, span, table, tbody, tr, td } = dom;
+import {
+  createFactory,
+  Component,
+} from "resource://devtools/client/shared/vendor/react.mjs";
+import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import * as dom from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
-  
+const { div, span, table, tbody, tr, td } = dom;
 
 
 
 
-  class Headers extends Component {
-    static get propTypes() {
-      return {
-        data: PropTypes.object,
-      };
-    }
 
-    constructor(props) {
-      super(props);
-      this.state = {};
-    }
 
-    render() {
-      const data = this.props.data;
+class Headers extends Component {
+  static get propTypes() {
+    return {
+      data: PropTypes.object,
+    };
+  }
 
-      return div(
-        { className: "netInfoHeadersTable" },
+  constructor(props) {
+    super(props);
+    this.state = {};
+  }
+
+  render() {
+    const data = this.props.data;
+
+    return div(
+      { className: "netInfoHeadersTable" },
+      div(
+        { className: "netHeadersGroup" },
         div(
-          { className: "netHeadersGroup" },
-          div(
-            { className: "netInfoHeadersGroup" },
-            JSONView.Locale["jsonViewer.responseHeaders"]
-          ),
-          table(
-            { cellPadding: 0, cellSpacing: 0 },
-            HeaderListFactory({ headers: data.response })
-          )
+          { className: "netInfoHeadersGroup" },
+          JSONView.Locale["jsonViewer.responseHeaders"]
         ),
+        table(
+          { cellPadding: 0, cellSpacing: 0 },
+          HeaderListFactory({ headers: data.response })
+        )
+      ),
+      div(
+        { className: "netHeadersGroup" },
         div(
-          { className: "netHeadersGroup" },
-          div(
-            { className: "netInfoHeadersGroup" },
-            JSONView.Locale["jsonViewer.requestHeaders"]
+          { className: "netInfoHeadersGroup" },
+          JSONView.Locale["jsonViewer.requestHeaders"]
+        ),
+        table(
+          { cellPadding: 0, cellSpacing: 0 },
+          HeaderListFactory({ headers: data.request })
+        )
+      )
+    );
+  }
+}
+
+
+
+
+
+class HeaderList extends Component {
+  static get propTypes() {
+    return {
+      headers: PropTypes.arrayOf(
+        PropTypes.shape({
+          name: PropTypes.string,
+          value: PropTypes.string,
+        })
+      ),
+    };
+  }
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      headers: [],
+    };
+  }
+
+  render() {
+    const headers = this.props.headers;
+
+    headers.sort(function (a, b) {
+      return a.name > b.name ? 1 : -1;
+    });
+
+    const rows = [];
+    headers.forEach(header => {
+      rows.push(
+        tr(
+          { key: header.name },
+          td(
+            { className: "netInfoParamName" },
+            span({ title: header.name }, header.name)
           ),
-          table(
-            { cellPadding: 0, cellSpacing: 0 },
-            HeaderListFactory({ headers: data.request })
-          )
+          td({ className: "netInfoParamValue" }, header.value)
         )
       );
-    }
+    });
+
+    return tbody({}, rows);
   }
+}
 
-  
+const HeaderListFactory = createFactory(HeaderList);
 
-
-
-  class HeaderList extends Component {
-    static get propTypes() {
-      return {
-        headers: PropTypes.arrayOf(
-          PropTypes.shape({
-            name: PropTypes.string,
-            value: PropTypes.string,
-          })
-        ),
-      };
-    }
-
-    constructor(props) {
-      super(props);
-
-      this.state = {
-        headers: [],
-      };
-    }
-
-    render() {
-      const headers = this.props.headers;
-
-      headers.sort(function (a, b) {
-        return a.name > b.name ? 1 : -1;
-      });
-
-      const rows = [];
-      headers.forEach(header => {
-        rows.push(
-          tr(
-            { key: header.name },
-            td(
-              { className: "netInfoParamName" },
-              span({ title: header.name }, header.name)
-            ),
-            td({ className: "netInfoParamValue" }, header.value)
-          )
-        );
-      });
-
-      return tbody({}, rows);
-    }
-  }
-
-  const HeaderListFactory = createFactory(HeaderList);
-
-  
-  exports.Headers = Headers;
-});
+export default { Headers };
