@@ -13,6 +13,7 @@ interface nsIFile;
 interface nsIPrincipal;
 interface nsILoadInfo;
 interface nsIWebTransport;
+interface nsISuspendableChannelWrapper;
 
 webidl Node;
 
@@ -161,6 +162,14 @@ interface nsIIOService : nsISupports
                           in nsIPrincipal aTriggeringPrincipal,
                           in unsigned long aSecurityFlags,
                           in nsContentPolicyType aContentPolicyType);
+
+    
+
+
+
+
+
+    nsISuspendableChannelWrapper newSuspendableChannelWrapper(in nsIChannel innerChannel);
 
     
 
