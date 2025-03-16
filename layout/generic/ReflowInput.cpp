@@ -154,6 +154,19 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext, nsIFrame* aFrame,
   mFlags.mCanHaveClassABreakpoints = false;
 }
 
+static nsSize GetICBSize(const nsPresContext* aPresContext,
+                         const nsIFrame* aFrame) {
+  if (!aPresContext->IsPaginated()) {
+    return aPresContext->GetVisibleArea().Size();
+  }
+  for (const nsIFrame* f = aFrame->GetParent(); f; f = f->GetParent()) {
+    if (f->IsPageContentFrame()) {
+      return f->GetSize();
+    }
+  }
+  return aPresContext->GetPageSize();
+}
+
 
 
 
@@ -186,14 +199,53 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
   MOZ_ASSERT(!mFlags.mSpecialBSizeReflow || !aFrame->IsSubtreeDirty(),
              "frame should be clean when getting special bsize reflow");
 
-  if (mWritingMode.IsOrthogonalTo(aParentReflowInput.GetWritingMode())) {
+  if (mWritingMode.IsOrthogonalTo(mParentReflowInput->GetWritingMode())) {
+    
+    
+
+    auto GetISizeConstraint = [this](const nsIFrame* aFrame) -> nscoord {
+      nscoord limit = NS_UNCONSTRAINEDSIZE;
+      const auto* pos = aFrame->StylePosition();
+      if (auto size =
+              nsLayoutUtils::GetAbsoluteSize(pos->ISize(mWritingMode))) {
+        limit = size.value();
+      } else if (auto maxSize = nsLayoutUtils::GetAbsoluteSize(
+                     pos->MaxISize(mWritingMode))) {
+        limit = maxSize.value();
+      }
+      if (limit != NS_UNCONSTRAINEDSIZE) {
+        if (auto minSize =
+                nsLayoutUtils::GetAbsoluteSize(pos->MinISize(mWritingMode))) {
+          limit = std::max(limit, minSize.value());
+        }
+      }
+      return limit;
+    };
+
+    
+    const nsIFrame* cb = mFrame->GetContainingBlock();
+    nscoord cbLimit = GetISizeConstraint(cb);
+
+    nscoord scLimit = NS_UNCONSTRAINEDSIZE;
     
     
     
-    if (AvailableISize() == NS_UNCONSTRAINEDSIZE &&
-        aParentReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
-      SetAvailableISize(aParentReflowInput.ComputedBSize());
+    
+    if (!cb->IsScrollContainerFrame()) {
+      for (const nsIFrame* p = mFrame->GetParent(); p; p = p->GetParent()) {
+        if (p->IsScrollContainerFrame()) {
+          scLimit = GetISizeConstraint(p);
+          
+          
+          break;
+        }
+      }
     }
+
+    LogicalSize icbSize(mWritingMode, GetICBSize(aPresContext, mFrame));
+    nscoord icbLimit = icbSize.ISize(mWritingMode);
+
+    SetAvailableISize(std::min(icbLimit, std::min(scLimit, cbLimit)));
   }
 
   
@@ -376,19 +428,6 @@ void ReflowInput::Init(nsPresContext* aPresContext,
                        const Maybe<LogicalSize>& aContainingBlockSize,
                        const Maybe<LogicalMargin>& aBorder,
                        const Maybe<LogicalMargin>& aPadding) {
-  if (AvailableISize() == NS_UNCONSTRAINEDSIZE) {
-    
-    
-    for (const ReflowInput* parent = mParentReflowInput; parent != nullptr;
-         parent = parent->mParentReflowInput) {
-      if (parent->GetWritingMode().IsOrthogonalTo(mWritingMode) &&
-          parent->mOrthogonalLimit != NS_UNCONSTRAINEDSIZE) {
-        SetAvailableISize(parent->mOrthogonalLimit);
-        break;
-      }
-    }
-  }
-
   LAYOUT_WARN_IF_FALSE(AvailableISize() != NS_UNCONSTRAINEDSIZE,
                        "have unconstrained inline-size; this should only "
                        "result from very large sizes, not attempts at "

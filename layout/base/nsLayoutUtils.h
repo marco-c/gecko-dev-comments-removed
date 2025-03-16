@@ -1466,6 +1466,19 @@ class nsLayoutUtils {
 
 
 
+  template <typename LengthPercentageLike>
+  static mozilla::Maybe<nscoord> GetAbsoluteSize(
+      const LengthPercentageLike& aSize) {
+    if (!aSize.ConvertsToLength()) {
+      return mozilla::Nothing();
+    }
+    return mozilla::Some(std::max(0, aSize.ToLength()));
+  }
+
+  
+
+
+
 
 
 

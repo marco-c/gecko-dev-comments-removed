@@ -235,15 +235,6 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  
-  
-  
-  nscoord mOrthogonalLimit = NS_UNCONSTRAINEDSIZE;
-
-  
-  
-  
-  
   nscoord AvailableWidth() const { return mAvailableSize.Width(mWritingMode); }
   nscoord AvailableHeight() const {
     return mAvailableSize.Height(mWritingMode);

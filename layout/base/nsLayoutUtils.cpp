@@ -4090,18 +4090,6 @@ bool nsLayoutUtils::IsViewportScrollbarFrame(nsIFrame* aFrame) {
            IsProperAncestorFrame(rootScrolledFrame, aFrame));
 }
 
-
-
-
-
-template <typename LengthPercentageLike>
-static Maybe<nscoord> GetAbsoluteSize(const LengthPercentageLike& aSize) {
-  if (!aSize.ConvertsToLength()) {
-    return Nothing();
-  }
-  return Some(std::max(0, aSize.ToLength()));
-}
-
 static nscoord GetBSizePercentBasisAdjustment(StyleBoxSizing aBoxSizing,
                                               nsIFrame* aFrame,
                                               bool aHorizontalAxis,
@@ -4147,7 +4135,7 @@ static Maybe<nscoord> GetPercentBSize(const LengthPercentage& aSize,
   
   
   auto GetBSize = [&](const auto& aSize) {
-    return GetAbsoluteSize(aSize).orElse(
+    return nsLayoutUtils::GetAbsoluteSize(aSize).orElse(
         [&]() { return GetPercentBSize(aSize, f, aHorizontalAxis); });
   };
 
@@ -4268,7 +4256,7 @@ static nscoord GetBSizePercentBasisAdjustment(StyleBoxSizing aBoxSizing,
     
     
     auto GetPadding = [&](const LengthPercentage& aPadding) {
-      return GetAbsoluteSize(aPadding).orElse(
+      return nsLayoutUtils::GetAbsoluteSize(aPadding).orElse(
           [&]() { return GetPercentBSize(aPadding, aFrame, aHorizontalAxis); });
     };
     if (Maybe<nscoord> pad = GetPadding(paddingStart)) {
@@ -4429,7 +4417,8 @@ static nscoord GetFitContentSizeForMaxOrPreferredSize(
     
     
     size = 0;
-  } else if (Maybe<nscoord> length = GetAbsoluteSize(aStyleSize)) {
+  } else if (Maybe<nscoord> length =
+                 nsLayoutUtils::GetAbsoluteSize(aStyleSize)) {
     size = *length;
   } else {
     
@@ -4514,11 +4503,13 @@ static nscoord AddIntrinsicSizeOffset(
       aFrame->IsPercentageResolvedAgainstZero(aStyleSize, aStyleMaxSize)) {
     
     result = 0;
-  } else if (Maybe<nscoord> size = GetAbsoluteSize(aStyleSize).orElse([&]() {
-               return GetIntrinsicSize(
-                   aStyleSize, aRenderingContext, aFrame, aISizeFromAspectRatio,
-                   nsIFrame::SizeProperty::Size, contentBoxToBoxSizingDiff);
-             })) {
+  } else if (Maybe<nscoord> size =
+                 nsLayoutUtils::GetAbsoluteSize(aStyleSize).orElse([&]() {
+                   return GetIntrinsicSize(aStyleSize, aRenderingContext,
+                                           aFrame, aISizeFromAspectRatio,
+                                           nsIFrame::SizeProperty::Size,
+                                           contentBoxToBoxSizingDiff);
+                 })) {
     result = *size + boxSizingToMarginDiff;
   } else if (aStyleSize.IsFitContentFunction()) {
     
@@ -4569,7 +4560,8 @@ static nscoord AddIntrinsicSizeOffset(
       result = *minSize;
     }
   } else if (aStyleMinSize.IsFitContentFunction()) {
-    minSize = GetAbsoluteSize(aStyleMinSize.AsFitContentFunction());
+    minSize =
+        nsLayoutUtils::GetAbsoluteSize(aStyleMinSize.AsFitContentFunction());
     if (!minSize) {
       
       
