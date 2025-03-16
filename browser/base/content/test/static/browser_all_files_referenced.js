@@ -325,18 +325,16 @@ var allowlist = [
   {
     file: "resource://gre/localization/en-US/netwerk/necko.ftl",
   },
+
+  
+  { file: "chrome://browser/content/places/interactionsViewer.html" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
   allowlist.push(
-    ...[
-      
-      { file: "chrome://browser/content/places/interactionsViewer.html" },
-
-      
-      
-      { file: "chrome://browser/content/backup/debug.html" },
-    ]
+    
+    
+    { file: "chrome://browser/content/backup/debug.html" }
   );
 }
 
