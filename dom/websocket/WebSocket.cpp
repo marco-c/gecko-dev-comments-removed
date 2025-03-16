@@ -1732,7 +1732,11 @@ nsresult WebSocketImpl::Init(nsIGlobalObject* aWindowGlobal, JSContext* aCx,
 
     if (NS_CP_REJECTED(shouldLoad)) {
       
-      return NS_ERROR_CONTENT_BLOCKED;
+      mDisconnectingOrDisconnected = true;
+      mWebSocket->SetReadyState(WebSocket::CLOSED);
+      mCloseEventCode = nsIWebSocketChannel::CLOSE_POLICY_VIOLATION;
+      mCloseEventReason = u""_ns;
+      return NS_OK;
     }
 
     
