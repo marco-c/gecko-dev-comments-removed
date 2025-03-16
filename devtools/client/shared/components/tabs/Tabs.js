@@ -2,17 +2,11 @@
 
 
 
-"use strict";
+import React from "resource://devtools/client/shared/vendor/react.mjs";
+import * as dom from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
+import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
 
-define(function (require, exports) {
-  const {
-    Component,
-    createRef,
-  } = require("resource://devtools/client/shared/vendor/react.js");
-  const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-
-  
+const { Component, createRef } = React;
 
 
 
@@ -32,451 +26,451 @@ define(function (require, exports) {
 
 
 
-  class Tabs extends Component {
-    static get propTypes() {
-      return {
-        className: PropTypes.oneOfType([
-          PropTypes.array,
-          PropTypes.string,
-          PropTypes.object,
-        ]),
-        activeTab: PropTypes.number,
-        onMount: PropTypes.func,
-        onBeforeChange: PropTypes.func,
-        onAfterChange: PropTypes.func,
-        children: PropTypes.oneOfType([PropTypes.array, PropTypes.element])
-          .isRequired,
-        showAllTabsMenu: PropTypes.bool,
-        allTabsMenuButtonTooltip: PropTypes.string,
-        onAllTabsMenuClick: PropTypes.func,
-        tall: PropTypes.bool,
 
-        
-        
-        renderSidebarToggle: PropTypes.func,
-        
-        
-        
-        renderOnlySelected: PropTypes.bool,
-      };
-    }
 
-    static get defaultProps() {
-      return {
-        activeTab: 0,
-        showAllTabsMenu: false,
-        renderOnlySelected: false,
-      };
-    }
+class Tabs extends Component {
+  static get propTypes() {
+    return {
+      className: PropTypes.oneOfType([
+        PropTypes.array,
+        PropTypes.string,
+        PropTypes.object,
+      ]),
+      activeTab: PropTypes.number,
+      onMount: PropTypes.func,
+      onBeforeChange: PropTypes.func,
+      onAfterChange: PropTypes.func,
+      children: PropTypes.oneOfType([PropTypes.array, PropTypes.element])
+        .isRequired,
+      showAllTabsMenu: PropTypes.bool,
+      allTabsMenuButtonTooltip: PropTypes.string,
+      onAllTabsMenuClick: PropTypes.func,
+      tall: PropTypes.bool,
 
-    constructor(props) {
-      super(props);
+      
+      
+      renderSidebarToggle: PropTypes.func,
+      
+      
+      
+      renderOnlySelected: PropTypes.bool,
+    };
+  }
 
-      this.state = {
-        activeTab: props.activeTab,
+  static get defaultProps() {
+    return {
+      activeTab: 0,
+      showAllTabsMenu: false,
+      renderOnlySelected: false,
+    };
+  }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        created: [],
+  constructor(props) {
+    super(props);
 
-        
-        overflow: false,
-      };
-
-      this.tabsEl = createRef();
-
-      this.onOverflow = this.onOverflow.bind(this);
-      this.onUnderflow = this.onUnderflow.bind(this);
-      this.onKeyDown = this.onKeyDown.bind(this);
-      this.onClickTab = this.onClickTab.bind(this);
-      this.setActive = this.setActive.bind(this);
-      this.renderMenuItems = this.renderMenuItems.bind(this);
-      this.renderPanels = this.renderPanels.bind(this);
-    }
-
-    componentDidMount() {
-      const node = this.tabsEl.current;
-      node.addEventListener("keydown", this.onKeyDown);
+    this.state = {
+      activeTab: props.activeTab,
 
       
       
       
       
-      if (this.props.showAllTabsMenu) {
-        node.addEventListener("overflow", this.onOverflow);
-        node.addEventListener("underflow", this.onUnderflow);
-      }
+      
+      
+      
+      
+      
+      created: [],
 
-      const index = this.state.activeTab;
-      if (this.props.onMount) {
-        this.props.onMount(index);
-      }
-    }
+      
+      overflow: false,
+    };
+
+    this.tabsEl = createRef();
+
+    this.onOverflow = this.onOverflow.bind(this);
+    this.onUnderflow = this.onUnderflow.bind(this);
+    this.onKeyDown = this.onKeyDown.bind(this);
+    this.onClickTab = this.onClickTab.bind(this);
+    this.setActive = this.setActive.bind(this);
+    this.renderMenuItems = this.renderMenuItems.bind(this);
+    this.renderPanels = this.renderPanels.bind(this);
+  }
+
+  componentDidMount() {
+    const node = this.tabsEl.current;
+    node.addEventListener("keydown", this.onKeyDown);
 
     
-    UNSAFE_componentWillReceiveProps(nextProps) {
-      let { children, activeTab } = nextProps;
-      const panels = children.filter(panel => panel);
-      let created = [...this.state.created];
+    
+    
+    
+    if (this.props.showAllTabsMenu) {
+      node.addEventListener("overflow", this.onOverflow);
+      node.addEventListener("underflow", this.onUnderflow);
+    }
 
-      
-      
-      
-      if (this.state.created.length != panels.length) {
-        created = panels.map(panel => {
-          
-          const createdEntry = this.state.created.find(entry => {
-            return entry && entry.tabId === panel.props.id;
-          });
-          const isCreated = !!createdEntry && createdEntry.isCreated;
-          const tabId = panel.props.id;
+    const index = this.state.activeTab;
+    if (this.props.onMount) {
+      this.props.onMount(index);
+    }
+  }
 
-          return {
-            isCreated,
-            tabId,
-          };
-        });
-      }
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
+    let { children, activeTab } = nextProps;
+    const panels = children.filter(panel => panel);
+    let created = [...this.state.created];
 
-      
-      if (typeof activeTab === "number") {
+    
+    
+    
+    if (this.state.created.length != panels.length) {
+      created = panels.map(panel => {
         
-        activeTab = activeTab < panels.length && activeTab >= 0 ? activeTab : 0;
-
-        created[activeTab] = Object.assign({}, created[activeTab], {
-          isCreated: true,
+        const createdEntry = this.state.created.find(entry => {
+          return entry && entry.tabId === panel.props.id;
         });
+        const isCreated = !!createdEntry && createdEntry.isCreated;
+        const tabId = panel.props.id;
 
-        this.setState({
-          activeTab,
-        });
-      }
-
-      this.setState({
-        created,
+        return {
+          isCreated,
+          tabId,
+        };
       });
     }
 
-    componentWillUnmount() {
-      const node = this.tabsEl.current;
-      node.removeEventListener("keydown", this.onKeyDown);
-
-      if (this.props.showAllTabsMenu) {
-        node.removeEventListener("overflow", this.onOverflow);
-        node.removeEventListener("underflow", this.onUnderflow);
-      }
-    }
-
     
-
-    onOverflow(event) {
-      if (event.target.classList.contains("tabs-menu")) {
-        this.setState({
-          overflow: true,
-        });
-      }
-    }
-
-    onUnderflow(event) {
-      if (event.target.classList.contains("tabs-menu")) {
-        this.setState({
-          overflow: false,
-        });
-      }
-    }
-
-    onKeyDown(event) {
+    if (typeof activeTab === "number") {
       
-      if (!event.target.closest(".tabs-menu-item")) {
-        return;
-      }
+      activeTab = activeTab < panels.length && activeTab >= 0 ? activeTab : 0;
 
-      let activeTab = this.state.activeTab;
-      const tabCount = this.props.children.length;
-
-      const ltr = event.target.ownerDocument.dir == "ltr";
-      const nextOrLastTab = Math.min(tabCount - 1, activeTab + 1);
-      const previousOrFirstTab = Math.max(0, activeTab - 1);
-
-      switch (event.code) {
-        case "ArrowRight":
-          if (ltr) {
-            activeTab = nextOrLastTab;
-          } else {
-            activeTab = previousOrFirstTab;
-          }
-          break;
-        case "ArrowLeft":
-          if (ltr) {
-            activeTab = previousOrFirstTab;
-          } else {
-            activeTab = nextOrLastTab;
-          }
-          break;
-      }
-
-      if (this.state.activeTab != activeTab) {
-        this.setActive(activeTab);
-      }
-    }
-
-    onClickTab(index, event) {
-      this.setActive(index, { fromMouseEvent: true });
-
-      if (event) {
-        event.preventDefault();
-      }
-    }
-
-    onMouseDown(event) {
-      
-      if (event) {
-        event.preventDefault();
-      }
-    }
-
-    
-
-    
-
-
-
-
-
-
-
-
-    setActive(index, options = {}) {
-      const onAfterChange = this.props.onAfterChange;
-      const onBeforeChange = this.props.onBeforeChange;
-
-      if (onBeforeChange) {
-        const cancel = onBeforeChange(index);
-        if (cancel) {
-          return;
-        }
-      }
-
-      const created = [...this.state.created];
-      created[index] = Object.assign({}, created[index], {
+      created[activeTab] = Object.assign({}, created[activeTab], {
         isCreated: true,
       });
 
-      const newState = Object.assign({}, this.state, {
-        created,
-        activeTab: index,
-      });
-
-      this.setState(newState, () => {
-        
-        const selectedTab = this.tabsEl.current.querySelector(
-          `a[data-tab-index="${index}"]`
-        );
-        selectedTab.focus({
-          
-          
-          focusVisible: !options.fromMouseEvent,
-        });
-
-        if (onAfterChange) {
-          onAfterChange(index);
-        }
+      this.setState({
+        activeTab,
       });
     }
+
+    this.setState({
+      created,
+    });
+  }
+
+  componentWillUnmount() {
+    const node = this.tabsEl.current;
+    node.removeEventListener("keydown", this.onKeyDown);
+
+    if (this.props.showAllTabsMenu) {
+      node.removeEventListener("overflow", this.onOverflow);
+      node.removeEventListener("underflow", this.onUnderflow);
+    }
+  }
+
+  
+
+  onOverflow(event) {
+    if (event.target.classList.contains("tabs-menu")) {
+      this.setState({
+        overflow: true,
+      });
+    }
+  }
+
+  onUnderflow(event) {
+    if (event.target.classList.contains("tabs-menu")) {
+      this.setState({
+        overflow: false,
+      });
+    }
+  }
+
+  onKeyDown(event) {
+    
+    if (!event.target.closest(".tabs-menu-item")) {
+      return;
+    }
+
+    let activeTab = this.state.activeTab;
+    const tabCount = this.props.children.length;
+
+    const ltr = event.target.ownerDocument.dir == "ltr";
+    const nextOrLastTab = Math.min(tabCount - 1, activeTab + 1);
+    const previousOrFirstTab = Math.max(0, activeTab - 1);
+
+    switch (event.code) {
+      case "ArrowRight":
+        if (ltr) {
+          activeTab = nextOrLastTab;
+        } else {
+          activeTab = previousOrFirstTab;
+        }
+        break;
+      case "ArrowLeft":
+        if (ltr) {
+          activeTab = previousOrFirstTab;
+        } else {
+          activeTab = nextOrLastTab;
+        }
+        break;
+    }
+
+    if (this.state.activeTab != activeTab) {
+      this.setActive(activeTab);
+    }
+  }
+
+  onClickTab(index, event) {
+    this.setActive(index, { fromMouseEvent: true });
+
+    if (event) {
+      event.preventDefault();
+    }
+  }
+
+  onMouseDown(event) {
+    
+    if (event) {
+      event.preventDefault();
+    }
+  }
+
+  
+
+  
+
+
+
+
+
+
+
+
+  setActive(index, options = {}) {
+    const onAfterChange = this.props.onAfterChange;
+    const onBeforeChange = this.props.onBeforeChange;
+
+    if (onBeforeChange) {
+      const cancel = onBeforeChange(index);
+      if (cancel) {
+        return;
+      }
+    }
+
+    const created = [...this.state.created];
+    created[index] = Object.assign({}, created[index], {
+      isCreated: true,
+    });
+
+    const newState = Object.assign({}, this.state, {
+      created,
+      activeTab: index,
+    });
+
+    this.setState(newState, () => {
+      
+      const selectedTab = this.tabsEl.current.querySelector(
+        `a[data-tab-index="${index}"]`
+      );
+      selectedTab.focus({
+        
+        
+        focusVisible: !options.fromMouseEvent,
+      });
+
+      if (onAfterChange) {
+        onAfterChange(index);
+      }
+    });
+  }
+
+  
+
+  renderMenuItems() {
+    if (!this.props.children) {
+      throw new Error("There must be at least one Tab");
+    }
+
+    if (!Array.isArray(this.props.children)) {
+      this.props.children = [this.props.children];
+    }
+
+    const tabs = this.props.children
+      .map(tab => (typeof tab === "function" ? tab() : tab))
+      .filter(tab => tab)
+      .map((tab, index) => {
+        const {
+          id,
+          className: tabClassName,
+          title,
+          tooltip,
+          badge,
+          showBadge,
+        } = tab.props;
+
+        const ref = "tab-menu-" + index;
+        const isTabSelected = this.state.activeTab === index;
+
+        const className = [
+          "tabs-menu-item",
+          tabClassName,
+          isTabSelected ? "is-active" : "",
+        ].join(" ");
+
+        
+        
+        
+        
+        
+        return dom.li(
+          {
+            className,
+            key: index,
+            ref,
+            role: "presentation",
+          },
+          dom.span({ className: "devtools-tab-line" }),
+          dom.a(
+            {
+              id: id ? id + "-tab" : "tab-" + index,
+              tabIndex: isTabSelected ? 0 : -1,
+              title: tooltip || title,
+              "aria-controls": id ? id + "-panel" : "panel-" + index,
+              "aria-selected": isTabSelected,
+              role: "tab",
+              onClick: this.onClickTab.bind(this, index),
+              onMouseDown: this.onMouseDown.bind(this),
+              "data-tab-index": index,
+            },
+            title,
+            badge && !isTabSelected && showBadge()
+              ? dom.span({ className: "tab-badge" }, badge)
+              : null
+          )
+        );
+      });
 
     
+    
+    const allTabsMenu = this.state.overflow
+      ? dom.button({
+          className: "all-tabs-menu",
+          title: this.props.allTabsMenuButtonTooltip,
+          onClick: this.props.onAllTabsMenuClick,
+        })
+      : null;
 
-    renderMenuItems() {
-      if (!this.props.children) {
-        throw new Error("There must be at least one Tab");
-      }
+    
+    const sidebarToggle = this.props.renderSidebarToggle
+      ? this.props.renderSidebarToggle()
+      : null;
 
-      if (!Array.isArray(this.props.children)) {
-        this.props.children = [this.props.children];
-      }
-
-      const tabs = this.props.children
-        .map(tab => (typeof tab === "function" ? tab() : tab))
-        .filter(tab => tab)
-        .map((tab, index) => {
-          const {
-            id,
-            className: tabClassName,
-            title,
-            tooltip,
-            badge,
-            showBadge,
-          } = tab.props;
-
-          const ref = "tab-menu-" + index;
-          const isTabSelected = this.state.activeTab === index;
-
-          const className = [
-            "tabs-menu-item",
-            tabClassName,
-            isTabSelected ? "is-active" : "",
-          ].join(" ");
-
-          
-          
-          
-          
-          
-          return dom.li(
-            {
-              className,
-              key: index,
-              ref,
-              role: "presentation",
-            },
-            dom.span({ className: "devtools-tab-line" }),
-            dom.a(
-              {
-                id: id ? id + "-tab" : "tab-" + index,
-                tabIndex: isTabSelected ? 0 : -1,
-                title: tooltip || title,
-                "aria-controls": id ? id + "-panel" : "panel-" + index,
-                "aria-selected": isTabSelected,
-                role: "tab",
-                onClick: this.onClickTab.bind(this, index),
-                onMouseDown: this.onMouseDown.bind(this),
-                "data-tab-index": index,
-              },
-              title,
-              badge && !isTabSelected && showBadge()
-                ? dom.span({ className: "tab-badge" }, badge)
-                : null
-            )
-          );
-        });
-
-      
-      
-      const allTabsMenu = this.state.overflow
-        ? dom.button({
-            className: "all-tabs-menu",
-            title: this.props.allTabsMenuButtonTooltip,
-            onClick: this.props.onAllTabsMenuClick,
-          })
-        : null;
-
-      
-      const sidebarToggle = this.props.renderSidebarToggle
-        ? this.props.renderSidebarToggle()
-        : null;
-
-      return dom.nav(
-        { className: "tabs-navigation" },
-        sidebarToggle,
-        dom.ul({ className: "tabs-menu", role: "tablist" }, tabs),
-        allTabsMenu
-      );
-    }
-
-    renderPanels() {
-      let { children, renderOnlySelected } = this.props;
-
-      if (!children) {
-        throw new Error("There must be at least one Tab");
-      }
-
-      if (!Array.isArray(children)) {
-        children = [children];
-      }
-
-      const selectedIndex = this.state.activeTab;
-
-      const panels = children
-        .map(tab => (typeof tab === "function" ? tab() : tab))
-        .filter(tab => tab)
-        .map((tab, index) => {
-          const selected = selectedIndex === index;
-          if (renderOnlySelected && !selected) {
-            return null;
-          }
-
-          const id = tab.props.id;
-          const isCreated =
-            this.state.created[index] && this.state.created[index].isCreated;
-
-          
-          
-          
-          const style = {
-            visibility: selected ? "visible" : "hidden",
-            height: selected ? "100%" : "0",
-          };
-
-          
-          
-          if (typeof tab.panel == "function" && selected) {
-            tab.panel = tab.panel(tab);
-          }
-          const panel = tab.panel || tab;
-
-          return dom.div(
-            {
-              id: id ? id + "-panel" : "panel-" + index,
-              key: id,
-              style,
-              className: selected ? "tab-panel-box" : "tab-panel-box hidden",
-              role: "tabpanel",
-              "aria-labelledby": id ? id + "-tab" : "tab-" + index,
-            },
-            selected || isCreated ? panel : null
-          );
-        });
-
-      return dom.div({ className: "panels" }, panels);
-    }
-
-    render() {
-      return dom.div(
-        {
-          className: [
-            "tabs",
-            ...(this.props.tall ? ["tabs-tall"] : []),
-            this.props.className,
-          ].join(" "),
-          ref: this.tabsEl,
-        },
-        this.renderMenuItems(),
-        this.renderPanels()
-      );
-    }
+    return dom.nav(
+      { className: "tabs-navigation" },
+      sidebarToggle,
+      dom.ul({ className: "tabs-menu", role: "tablist" }, tabs),
+      allTabsMenu
+    );
   }
 
-  
+  renderPanels() {
+    let { children, renderOnlySelected } = this.props;
 
-
-  class Panel extends Component {
-    static get propTypes() {
-      return {
-        id: PropTypes.string.isRequired,
-        className: PropTypes.string,
-        title: PropTypes.string.isRequired,
-        children: PropTypes.oneOfType([PropTypes.array, PropTypes.element])
-          .isRequired,
-      };
+    if (!children) {
+      throw new Error("There must be at least one Tab");
     }
 
-    render() {
-      const { className } = this.props;
-      return dom.div(
-        { className: `tab-panel ${className || ""}` },
-        this.props.children
-      );
+    if (!Array.isArray(children)) {
+      children = [children];
     }
+
+    const selectedIndex = this.state.activeTab;
+
+    const panels = children
+      .map(tab => (typeof tab === "function" ? tab() : tab))
+      .filter(tab => tab)
+      .map((tab, index) => {
+        const selected = selectedIndex === index;
+        if (renderOnlySelected && !selected) {
+          return null;
+        }
+
+        const id = tab.props.id;
+        const isCreated =
+          this.state.created[index] && this.state.created[index].isCreated;
+
+        
+        
+        
+        const style = {
+          visibility: selected ? "visible" : "hidden",
+          height: selected ? "100%" : "0",
+        };
+
+        
+        
+        if (typeof tab.panel == "function" && selected) {
+          tab.panel = tab.panel(tab);
+        }
+        const panel = tab.panel || tab;
+
+        return dom.div(
+          {
+            id: id ? id + "-panel" : "panel-" + index,
+            key: id,
+            style,
+            className: selected ? "tab-panel-box" : "tab-panel-box hidden",
+            role: "tabpanel",
+            "aria-labelledby": id ? id + "-tab" : "tab-" + index,
+          },
+          selected || isCreated ? panel : null
+        );
+      });
+
+    return dom.div({ className: "panels" }, panels);
   }
 
-  
-  exports.TabPanel = Panel;
-  exports.Tabs = Tabs;
-});
+  render() {
+    return dom.div(
+      {
+        className: [
+          "tabs",
+          ...(this.props.tall ? ["tabs-tall"] : []),
+          this.props.className,
+        ].join(" "),
+        ref: this.tabsEl,
+      },
+      this.renderMenuItems(),
+      this.renderPanels()
+    );
+  }
+}
+
+
+
+
+class TabPanel extends Component {
+  static get propTypes() {
+    return {
+      id: PropTypes.string.isRequired,
+      className: PropTypes.string,
+      title: PropTypes.string.isRequired,
+      children: PropTypes.oneOfType([PropTypes.array, PropTypes.element])
+        .isRequired,
+    };
+  }
+
+  render() {
+    const { className } = this.props;
+    return dom.div(
+      { className: `tab-panel ${className || ""}` },
+      this.props.children
+    );
+  }
+}
+
+
+export { TabPanel, Tabs };
