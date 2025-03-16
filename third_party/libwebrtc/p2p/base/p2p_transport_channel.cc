@@ -2230,21 +2230,21 @@ void P2PTransportChannel::OnReadPacket(Connection* connection,
     return;
   }
 
-    
-    packets_received_++;
-    bytes_received_ += packet.payload().size();
-    RTC_DCHECK(connection->last_data_received() >= last_data_received_ms_);
-    last_data_received_ms_ =
-        std::max(last_data_received_ms_, connection->last_data_received());
+  
+  packets_received_++;
+  bytes_received_ += packet.payload().size();
+  RTC_DCHECK(connection->last_data_received() >= last_data_received_ms_);
+  last_data_received_ms_ =
+      std::max(last_data_received_ms_, connection->last_data_received());
 
-    NotifyPacketReceived(packet);
+  NotifyPacketReceived(packet);
 
-    
-    
-    if (ice_role_ == ICEROLE_CONTROLLED && connection != selected_connection_) {
-      ice_controller_->OnImmediateSwitchRequest(IceSwitchReason::DATA_RECEIVED,
-                                                connection);
-    }
+  
+  
+  if (ice_role_ == ICEROLE_CONTROLLED && connection != selected_connection_) {
+    ice_controller_->OnImmediateSwitchRequest(IceSwitchReason::DATA_RECEIVED,
+                                              connection);
+  }
 }
 
 void P2PTransportChannel::OnSentPacket(const rtc::SentPacket& sent_packet) {
