@@ -102,9 +102,10 @@ pub fn deflate_quick(stream: &mut DeflateStream, flush: DeflateFlush) -> BlockSt
 
                 macro_rules! first_two_bytes {
                     ($slice:expr, $offset:expr) => {
-                        u16::from_le_bytes($slice[$offset..$offset+2].try_into().unwrap())
-                    }
+                        u16::from_le_bytes($slice[$offset..$offset + 2].try_into().unwrap())
+                    };
                 }
+
                 if first_two_bytes!(str_start, 0) == first_two_bytes!(match_start, 0) {
                     let mut match_len = crate::deflate::compare256::compare256_slice(
                         &str_start[2..],
@@ -118,12 +119,13 @@ pub fn deflate_quick(stream: &mut DeflateStream, flush: DeflateFlush) -> BlockSt
                         
                         
 
-                        state.bit_writer.emit_dist(
-                            StaticTreeDesc::L.static_tree,
-                            StaticTreeDesc::D.static_tree,
-                            (match_len - STD_MIN_MATCH) as u8,
-                            dist as usize,
-                        );
+                        
+                        
+                        let dist = u16::try_from(dist).unwrap();
+
+                        state
+                            .bit_writer
+                            .emit_dist_static((match_len - STD_MIN_MATCH) as u8, dist);
                         state.lookahead -= match_len;
                         state.strstart += match_len;
                         continue;
