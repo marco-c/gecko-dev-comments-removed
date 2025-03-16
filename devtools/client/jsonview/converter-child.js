@@ -364,6 +364,9 @@ function initialHTML(doc) {
           element("script", {
             src: baseURI + "json-viewer.mjs",
             type: "module",
+            
+            
+            async: "true",
           }),
         ]),
       ]
