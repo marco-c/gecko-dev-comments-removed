@@ -429,11 +429,6 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
 
   void MaybeSendUnregister(nsIPrincipal* aPrincipal, const nsACString& aScope);
 
-  nsresult SendNotificationEvent(const nsAString& aEventName,
-                                 const nsACString& aOriginSuffix,
-                                 const nsAString& aScope,
-                                 const IPCNotification& aNotification);
-
   
   
   void ForceUnregister(RegistrationDataPerPrincipal* aRegistrationData,
