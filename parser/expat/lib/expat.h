@@ -820,13 +820,7 @@ XML_ParseBuffer(XML_Parser parser, int len, int isFinal);
 
 
 XMLPARSEAPI(enum XML_Status)
-
-#if 0
 XML_StopParser(XML_Parser parser, XML_Bool resumable);
-#else
-XML_StopParser(XML_Parser parser, int resumable);
-#endif
-
 
 
 
@@ -1057,16 +1051,6 @@ XML_GetFeatureList(void);
 #define XML_MAJOR_VERSION 2
 #define XML_MINOR_VERSION 2
 #define XML_MICRO_VERSION 1
-
-
-XMLPARSEAPI(const XML_Char*)
-MOZ_XML_GetMismatchedTag(XML_Parser parser);
-
-
-
-XMLPARSEAPI(XML_Bool)
-MOZ_XML_ProcessingEntityValue(XML_Parser parser);
-
 
 #ifdef __cplusplus
 }

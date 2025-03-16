@@ -5,7 +5,7 @@
 
 
 expat_sources = [
-    'xmlparse.c',
+    'moz_xmlparse.c',
     'xmlrole.c',
     'xmltok.c',
 ]
