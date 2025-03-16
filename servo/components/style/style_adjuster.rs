@@ -554,7 +554,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
 
         
         
-        
         if self.style.pseudo.is_some() {
             self.style.mutate_box().set_display(Display::Inline);
             return;

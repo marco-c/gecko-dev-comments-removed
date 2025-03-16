@@ -120,8 +120,3 @@ CSS_PSEUDO_ELEMENT(sliderThumb, ":slider-thumb",
 CSS_PSEUDO_ELEMENT(sliderFill, ":slider-fill",
                    CSS_PSEUDO_ELEMENT_SUPPORTS_USER_ACTION_STATE |
                    CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME)
-
-
-CSS_PSEUDO_ELEMENT(detailsContent, ":details-content",
-                   CSS_PSEUDO_ELEMENT_SUPPORTS_USER_ACTION_STATE |
-                   CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME)

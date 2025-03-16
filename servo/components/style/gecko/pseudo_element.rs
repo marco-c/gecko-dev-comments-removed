@@ -39,8 +39,7 @@ impl ::selectors::parser::PseudoElement for PseudoElement {
                 Self::After |
                 Self::Marker |
                 Self::Placeholder |
-                Self::FileSelectorButton |
-                Self::DetailsContent
+                Self::FileSelectorButton
         )
     }
 
@@ -194,7 +193,7 @@ impl PseudoElement {
     
     
     pub fn is_part_like(&self) -> bool {
-        self.is_named_view_transition() || *self == PseudoElement::DetailsContent
+        self.is_named_view_transition()
     }
 
     
@@ -226,9 +225,6 @@ impl PseudoElement {
             Self::TargetText => pref!("dom.text_fragments.enabled"),
             Self::SliderFill | Self::SliderTrack | Self::SliderThumb => {
                 pref!("layout.css.modern-range-pseudos.enabled")
-            },
-            Self::DetailsContent => {
-                pref!("layout.css.details-content.enabled")
             },
             Self::ViewTransition |
             Self::ViewTransitionGroup(..) |

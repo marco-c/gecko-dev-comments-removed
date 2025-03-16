@@ -296,7 +296,6 @@ where
 
         let mut pseudo_styles = EagerPseudoStyles::default();
 
-        
         if !self.element.is_pseudo_element() {
             let layout_parent_style_for_pseudo =
                 layout_parent_style_for_pseudo(&primary_style, layout_parent_style);
