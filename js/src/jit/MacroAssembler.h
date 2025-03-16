@@ -4760,6 +4760,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   inline void loadObjClassUnsafe(Register obj, Register dest);
+  inline void loadObjShapeUnsafe(Register obj, Register dest);
 
   template <typename EmitPreBarrier>
   inline void storeObjShape(Register shape, Register obj,

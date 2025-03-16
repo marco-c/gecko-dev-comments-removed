@@ -7428,6 +7428,38 @@ InlinableNativeIRGenerator::tryAttachIsCrossRealmArrayConstructor() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachCanOptimizeArraySpecies() {
+  
+  MOZ_ASSERT(args_.length() == 1);
+  MOZ_ASSERT(args_[0].isObject());
+
+  SharedShape* shape = GlobalObject::getArrayShapeWithDefaultProto(cx_);
+  if (!shape) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+
+  if (cx_->realm()->realmFuses.optimizeArraySpeciesFuse.intact()) {
+    ValOperandId argId = loadArgumentIntrinsic(ArgumentKind::Arg0);
+    ObjOperandId objId = writer.guardToObject(argId);
+    writer.guardFuse(RealmFuses::FuseIndex::OptimizeArraySpeciesFuse);
+    writer.hasShapeResult(objId, shape);
+    writer.returnFromIC();
+    trackAttached("CanOptimizeArraySpecies.Optimized");
+  } else {
+    writer.loadBooleanResult(false);
+    writer.returnFromIC();
+    trackAttached("CanOptimizeArraySpecies.Deoptimized");
+  }
+
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachGuardToClass(
     InlinableNative native) {
   
@@ -12291,6 +12323,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachIsConstructor();
     case InlinableNative::IntrinsicIsCrossRealmArrayConstructor:
       return tryAttachIsCrossRealmArrayConstructor();
+    case InlinableNative::IntrinsicCanOptimizeArraySpecies:
+      return tryAttachCanOptimizeArraySpecies();
     case InlinableNative::IntrinsicGuardToArrayIterator:
     case InlinableNative::IntrinsicGuardToMapIterator:
     case InlinableNative::IntrinsicGuardToSetIterator:
