@@ -12,7 +12,6 @@
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/RefPtr.h"
 #include "PLDHashTable.h"
 #include "nsIDocShell.h"
 
@@ -50,13 +49,10 @@ class ImageCacheKey final {
   
   nsIURI* URI() const { return mURI; }
 
+  nsIPrincipal* PartitionPrincipal() const { return mPartitionPrincipal; }
+  nsIPrincipal* LoaderPrincipal() const { return mLoaderPrincipal; }
+
   CORSMode GetCORSMode() const { return mCORSMode; }
-
-  const OriginAttributes& OriginAttributesRef() const {
-    return mOriginAttributes;
-  }
-
-  const nsCString& IsolationKeyRef() const { return mIsolationKey; }
 
   
   
@@ -69,19 +65,14 @@ class ImageCacheKey final {
 
   
   
-  
-  static nsCString GetIsolationKey(dom::Document* aDocument, nsIURI* aURI);
-
-  
-  
   static nsIDocShell::AppType GetAppType(dom::Document* aDocument);
 
   void EnsureHash() const;
 
   nsCOMPtr<nsIURI> mURI;
-  const OriginAttributes mOriginAttributes;
   void* mControlledDocument;
-  nsCString mIsolationKey;
+  nsCOMPtr<nsIPrincipal> mLoaderPrincipal;
+  nsCOMPtr<nsIPrincipal> mPartitionPrincipal;
   mutable Maybe<PLDHashNumber> mHash;
   const CORSMode mCORSMode;
   const nsIDocShell::AppType mAppType;

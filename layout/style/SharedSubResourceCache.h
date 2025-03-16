@@ -295,7 +295,10 @@ void SharedSubResourceCache<Traits, Derived>::ClearInProcess(
         }
       }
 
-      if (aPrincipal && iter.Key().Principal()->Equals(aPrincipal.ref())) {
+      if (aPrincipal &&
+          iter.Key().TriggeringPrincipal()->Equals(aPrincipal.ref())) {
+        
+        
         return true;
       }
       if (!aSchemelessSite) {
