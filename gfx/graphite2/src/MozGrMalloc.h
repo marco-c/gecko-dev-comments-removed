@@ -12,15 +12,6 @@
 
 #include "mozilla/mozalloc.h"
 
-#if defined(XP_LINUX) && !defined(ANDROID)
-
-#define malloc moz_xmalloc
-#define calloc moz_xcalloc
-#define realloc moz_xrealloc
-
-#else
-
-
 
 
 
@@ -38,7 +29,5 @@ extern "C" inline void* realloc(void *ptr, size_t size)
 {
     return moz_xrealloc(ptr, size);
 }
-
-#endif 
 
 #endif 
