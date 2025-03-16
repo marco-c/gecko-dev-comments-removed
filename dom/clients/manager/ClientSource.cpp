@@ -26,7 +26,6 @@
 #include "mozilla/dom/ServiceWorker.h"
 #include "mozilla/dom/ServiceWorkerContainer.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
-#include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StorageAccess.h"
@@ -223,20 +222,19 @@ void ClientSource::WorkerExecutionReady(WorkerPrivate* aWorkerPrivate) {
   
   
   
+  if (mController.isSome()) {
+    MOZ_DIAGNOSTIC_ASSERT(
+        aWorkerPrivate->StorageAccess() > StorageAccess::ePrivateBrowsing ||
+        (ShouldPartitionStorage(aWorkerPrivate->StorageAccess()) &&
+         StoragePartitioningEnabled(aWorkerPrivate->StorageAccess(),
+                                    aWorkerPrivate->CookieJarSettings())) ||
+        StringBeginsWith(aWorkerPrivate->ScriptURL(), u"blob:"_ns));
+  }
+
   
   
   MOZ_DIAGNOSTIC_ASSERT(mOwner.is<Nothing>());
   mOwner = AsVariant(aWorkerPrivate);
-
-  
-  
-  
-  
-  if (mController.isSome()) {
-    MOZ_DIAGNOSTIC_ASSERT(
-        ServiceWorkersStorageAllowedForGlobal(aWorkerPrivate->GlobalScope()) ||
-        StringBeginsWith(aWorkerPrivate->ScriptURL(), u"blob:"_ns));
-  }
 
   ClientSourceExecutionReadyArgs args(aWorkerPrivate->GetLocationInfo().mHref,
                                       FrameType::None);
@@ -278,11 +276,15 @@ nsresult ClientSource::WindowExecutionReady(nsPIDOMWindowInner* aInnerWindow) {
   
 #ifdef DEBUG
   if (mController.isSome()) {
+    auto storageAccess = StorageAllowedForWindow(aInnerWindow);
     bool isAboutBlankURL = spec.LowerCaseEqualsLiteral("about:blank");
     bool isBlobURL = StringBeginsWith(spec, "blob:"_ns);
-    bool isStorageAllowed =
-        ServiceWorkersStorageAllowedForGlobal(aInnerWindow->AsGlobal());
-    MOZ_ASSERT(isAboutBlankURL || isBlobURL || isStorageAllowed);
+    bool isStorageAllowed = storageAccess == StorageAccess::eAllow;
+    bool isPartitionEnabled =
+        StoragePartitioningEnabled(storageAccess, doc->CookieJarSettings());
+    MOZ_ASSERT(isAboutBlankURL || isBlobURL || isStorageAllowed ||
+               (StaticPrefs::privacy_partition_serviceWorkers() &&
+                isPartitionEnabled));
   }
 #endif
 
@@ -403,19 +405,33 @@ void ClientSource::SetController(
   
   
   
+  MOZ_DIAGNOSTIC_ASSERT(!mClientInfo.IsPrivateBrowsing());
+
+  
+  
+  
   
   
   
   
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   if (GetInnerWindow()) {
+    auto storageAccess = StorageAllowedForWindow(GetInnerWindow());
     bool IsAboutBlankURL = Info().URL().LowerCaseEqualsLiteral("about:blank");
     bool IsBlobURL = StringBeginsWith(Info().URL(), "blob:"_ns);
-    bool IsStorageAllowed = ServiceWorkersStorageAllowedForGlobal(GetGlobal());
-    MOZ_DIAGNOSTIC_ASSERT(IsAboutBlankURL || IsBlobURL || IsStorageAllowed);
+    bool IsStorageAllowed = storageAccess == StorageAccess::eAllow;
+    bool IsPartitionEnabled =
+        GetInnerWindow()->GetExtantDoc()
+            ? StoragePartitioningEnabled(
+                  storageAccess,
+                  GetInnerWindow()->GetExtantDoc()->CookieJarSettings())
+            : false;
+    MOZ_DIAGNOSTIC_ASSERT(IsAboutBlankURL || IsBlobURL || IsStorageAllowed ||
+                          (StaticPrefs::privacy_partition_serviceWorkers() &&
+                           IsPartitionEnabled));
   } else if (GetWorkerPrivate()) {
     MOZ_DIAGNOSTIC_ASSERT(
-        ServiceWorkersStorageAllowedForGlobal(GetGlobal()) ||
+        GetWorkerPrivate()->StorageAccess() > StorageAccess::ePrivateBrowsing ||
         StringBeginsWith(GetWorkerPrivate()->ScriptURL(), u"blob:"_ns));
   }
 #endif
@@ -463,14 +479,23 @@ RefPtr<ClientOpPromise> ClientSource::Control(
   bool controlAllowed = true;
   if (GetInnerWindow()) {
     
+    auto storageAccess = StorageAllowedForWindow(GetInnerWindow());
     bool isAboutBlankURL = Info().URL().LowerCaseEqualsLiteral("about:blank");
     bool isBlobURL = StringBeginsWith(Info().URL(), "blob:"_ns);
-    bool isStorageAllowed = ServiceWorkersStorageAllowedForGlobal(GetGlobal());
-    controlAllowed = isAboutBlankURL || isBlobURL || isStorageAllowed;
+    bool isStorageAllowed = storageAccess == StorageAccess::eAllow;
+    bool isPartitionEnabled =
+        GetInnerWindow()->GetExtantDoc()
+            ? StoragePartitioningEnabled(
+                  storageAccess,
+                  GetInnerWindow()->GetExtantDoc()->CookieJarSettings())
+            : false;
+    controlAllowed =
+        isAboutBlankURL || isBlobURL || isStorageAllowed ||
+        (StaticPrefs::privacy_partition_serviceWorkers() && isPartitionEnabled);
   } else if (GetWorkerPrivate()) {
     
     controlAllowed =
-        ServiceWorkersStorageAllowedForGlobal(GetGlobal()) ||
+        GetWorkerPrivate()->StorageAccess() > StorageAccess::ePrivateBrowsing ||
         StringBeginsWith(GetWorkerPrivate()->ScriptURL(), u"blob:"_ns);
   }
 

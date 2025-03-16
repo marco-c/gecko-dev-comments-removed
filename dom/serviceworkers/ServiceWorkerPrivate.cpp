@@ -640,6 +640,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
     }
   }
 
+  
   bool isPBM = principal->GetIsInPrivateBrowsing();
   if (ContentBlockingAllowList::Check(principal, isPBM)) {
     net::CookieJarSettings::Cast(cookieJarSettings)

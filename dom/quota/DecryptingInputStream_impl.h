@@ -393,19 +393,6 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
 
   int64_t baseCurrent;
   nsresult rv = (*mBaseSeekableStream)->Tell(&baseCurrent);
-  if (rv == NS_BASE_STREAM_CLOSED) {
-    
-    
-    
-    
-    
-    
-    rv = (*mBaseSeekableStream)->Seek(NS_SEEK_CUR, 0);
-    
-    if (NS_SUCCEEDED(rv)) {
-      rv = (*mBaseSeekableStream)->Tell(&baseCurrent);
-    }
-  }
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return Err(rv);
   }

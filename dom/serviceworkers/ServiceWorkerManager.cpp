@@ -238,10 +238,6 @@ class TeardownRunnable final : public Runnable {
 };
 
 constexpr char kFinishShutdownTopic[] = "profile-before-change-qm";
-constexpr char kPrivateBrowsingExited[] = "last-pb-context-exited";
-
-constexpr auto kPrivateBrowsingOriginPattern =
-    u"{ \"privateBrowsingId\": 1 }"_ns;
 
 already_AddRefed<nsIAsyncShutdownClient> GetAsyncShutdownBarrier() {
   AssertIsOnMainThread();
@@ -467,16 +463,6 @@ void ServiceWorkerManager::Init(ServiceWorkerRegistrar* aRegistrar) {
     MOZ_ASSERT(mShutdownBlocker);
   }
 
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (obs) {
-    obs->AddObserver(this, kPrivateBrowsingExited, false);
-  }
-
   MOZ_DIAGNOSTIC_ASSERT(aRegistrar);
 
   PBackgroundChild* actorChild = BackgroundChild::GetOrCreateForCurrentThread();
@@ -698,7 +684,6 @@ void ServiceWorkerManager::MaybeFinishShutdown() {
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (obs) {
     obs->RemoveObserver(this, kFinishShutdownTopic);
-    obs->RemoveObserver(this, kPrivateBrowsingExited);
   }
 
   if (!mActor) {
@@ -1688,14 +1673,6 @@ void ServiceWorkerManager::StoreRegistration(
 
   
   
-  if (aPrincipal->GetIsInPrivateBrowsing()) {
-    
-    MOZ_ASSERT(StaticPrefs::dom_serviceWorkers_privateBrowsing_enabled());
-    return;
-  }
-
-  
-  
   
   
   
@@ -2384,7 +2361,7 @@ bool ServiceWorkerManager::IsAvailable(nsIPrincipal* aPrincipal, nsIURI* aURI,
     auto storageAccess = StorageAllowedForChannel(aChannel);
     nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
-    if (storageAccess <= StorageAccess::eDeny) {
+    if (storageAccess != StorageAccess::eAllow) {
       if (!StaticPrefs::privacy_partition_serviceWorkers()) {
         return false;
       }
@@ -3256,11 +3233,6 @@ ServiceWorkerManager::Observe(nsISupports* aSubject, const char* aTopic,
                               const char16_t* aData) {
   if (strcmp(aTopic, kFinishShutdownTopic) == 0) {
     MaybeFinishShutdown();
-    return NS_OK;
-  }
-
-  if (strcmp(aTopic, kPrivateBrowsingExited) == 0) {
-    RemoveRegistrationsByOriginAttributes(kPrivateBrowsingOriginPattern);
     return NS_OK;
   }
 

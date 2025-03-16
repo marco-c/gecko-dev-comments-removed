@@ -133,18 +133,20 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
   
   
   auto storageAccess = StorageAllowedForChannel(aChannel);
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-  loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
+  if (storageAccess != StorageAccess::eAllow) {
+    if (!StaticPrefs::privacy_partition_serviceWorkers()) {
+      return NS_OK;
+    }
 
-  *aShouldIntercept =
-      storageAccess == StorageAccess::eAllow ||
-      (storageAccess == StorageAccess::ePrivateBrowsing &&
-       StaticPrefs::dom_serviceWorkers_privateBrowsing_enabled()) ||
-      (ShouldPartitionStorage(storageAccess) &&
-       StaticPrefs::privacy_partition_serviceWorkers() &&
-       StoragePartitioningEnabled(storageAccess, cookieJarSettings) &&
-       (!principal->GetIsInPrivateBrowsing() ||
-        StaticPrefs::dom_serviceWorkers_privateBrowsing_enabled()));
+    nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+    loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
+
+    if (!StoragePartitioningEnabled(storageAccess, cookieJarSettings)) {
+      return NS_OK;
+    }
+  }
+
+  *aShouldIntercept = true;
   return NS_OK;
 }
 
