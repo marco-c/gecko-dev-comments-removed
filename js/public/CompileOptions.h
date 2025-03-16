@@ -332,6 +332,16 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   
   bool usePinnedBytecode = false;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  bool deoptimizeModuleGlobalVars = false;
+
   PrefableCompileOptions prefableOptions_;
 
   
@@ -444,6 +454,7 @@ class JS_PUBLIC_API TransitiveCompileOptions {
     PrintFields_(topLevelAwait);
     PrintFields_(borrowBuffer);
     PrintFields_(usePinnedBytecode);
+    PrintFields_(deoptimizeModuleGlobalVars);
     PrintFields_(introductionType);
     PrintFields_(introductionLineno);
     PrintFields_(introductionOffset);
