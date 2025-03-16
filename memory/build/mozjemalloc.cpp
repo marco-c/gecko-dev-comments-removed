@@ -1286,10 +1286,17 @@ struct arena_t {
   
   
   
-  bool mIsDeferredPurgePending MOZ_GUARDED_BY(mLock);
+  
+  
+  bool mIsPurgePending MOZ_GUARDED_BY(mLock);
+
   
   
   bool mIsDeferredPurgeEnabled MOZ_GUARDED_BY(mLock);
+
+  
+  
+  bool mMustDeleteAfterPurge MOZ_GUARDED_BY(mLock) = false;
 
  private:
   
@@ -1437,6 +1444,9 @@ struct arena_t {
 
     
     Busy,
+
+    
+    Dying,
   };
 
   
@@ -1596,7 +1606,10 @@ class ArenaCollection {
 
   void DisposeArena(arena_t* aArena) MOZ_EXCLUDES(mLock) {
     
-    RemoveFromOutstandingPurges(aArena);
+    
+    
+    bool delete_now = RemoveFromOutstandingPurges(aArena);
+
     {
       MutexAutoLock lock(mLock);
       Tree& tree =
@@ -1605,7 +1618,29 @@ class ArenaCollection {
       MOZ_RELEASE_ASSERT(tree.Search(aArena), "Arena not in tree");
       tree.Remove(aArena);
       mNumOperationsDisposedArenas += aArena->Operations();
+    }
+    {
+      MutexAutoLock lock(aArena->mLock);
+      if (!aArena->mIsPurgePending) {
+        
+        
+        delete_now = true;
+      } else if (!delete_now) {
+        
+        
+        
+        
+        aArena->mMustDeleteAfterPurge = true;
 
+        
+        
+        
+        
+        
+      }
+    }
+
+    if (delete_now) {
       delete aArena;
     }
   }
@@ -1733,7 +1768,8 @@ class ArenaCollection {
   void AddToOutstandingPurges(arena_t* aArena) MOZ_EXCLUDES(mPurgeListLock);
 
   
-  void RemoveFromOutstandingPurges(arena_t* aArena)
+  
+  bool RemoveFromOutstandingPurges(arena_t* aArena)
       MOZ_EXCLUDES(mPurgeListLock);
 
   
@@ -1795,7 +1831,6 @@ class ArenaCollection {
   
   uint64_t mNumOperationsDisposedArenas = 0;
 
-  
   
   
   
@@ -3459,6 +3494,11 @@ arena_t::PurgeResult arena_t::Purge(PurgeCondition aCond) {
   {
     MaybeMutexAutoLock lock(mLock);
 
+    if (mMustDeleteAfterPurge) {
+      mIsPurgePending = false;
+      return Dying;
+    }
+
 #ifdef MOZ_DEBUG
     size_t ndirty = 0;
     for (auto* chunk : mChunksDirty.iter()) {
@@ -3469,7 +3509,7 @@ arena_t::PurgeResult arena_t::Purge(PurgeCondition aCond) {
 #endif
 
     if (!ShouldContinuePurge(aCond)) {
-      mIsDeferredPurgePending = false;
+      mIsPurgePending = false;
       return Done;
     }
 
@@ -3492,7 +3532,7 @@ arena_t::PurgeResult arena_t::Purge(PurgeCondition aCond) {
       
       
       
-      mIsDeferredPurgePending = false;
+      mIsPurgePending = false;
       return Busy;
     }
     MOZ_ASSERT(chunk->ndirty > 0);
@@ -3524,13 +3564,19 @@ arena_t::PurgeResult arena_t::Purge(PurgeCondition aCond) {
       MaybeMutexAutoLock lock(purge_info.mArena.mLock);
       MOZ_ASSERT(chunk->mIsPurging);
 
+      if (purge_info.mArena.mMustDeleteAfterPurge) {
+        chunk->mIsPurging = false;
+        purge_info.mArena.mIsPurgePending = false;
+        return Dying;
+      }
+
       continue_purge_chunk = purge_info.FindDirtyPages(purged_once);
       continue_purge_arena = purge_info.mArena.ShouldContinuePurge(aCond);
 
       
       
       if (!continue_purge_chunk && !continue_purge_arena) {
-        purge_info.mArena.mIsDeferredPurgePending = false;
+        purge_info.mArena.mIsPurgePending = false;
       }
     }
     if (!continue_purge_chunk) {
@@ -3555,12 +3601,17 @@ arena_t::PurgeResult arena_t::Purge(PurgeCondition aCond) {
 #endif
 
     arena_chunk_t* chunk_to_release = nullptr;
-
+    bool is_dying;
     {
       
       
       MaybeMutexAutoLock lock(purge_info.mArena.mLock);
       MOZ_ASSERT(chunk->mIsPurging);
+
+      
+      
+      
+      is_dying = purge_info.mArena.mMustDeleteAfterPurge;
 
       auto [cpc, ctr] = purge_info.UpdatePagesAndCounts();
       continue_purge_chunk = cpc;
@@ -3570,7 +3621,7 @@ arena_t::PurgeResult arena_t::Purge(PurgeCondition aCond) {
       if (!continue_purge_chunk || !continue_purge_arena) {
         
         purge_info.FinishPurgingInChunk(true);
-        purge_info.mArena.mIsDeferredPurgePending = false;
+        purge_info.mArena.mIsPurgePending = false;
       }
     }  
 
@@ -3578,6 +3629,9 @@ arena_t::PurgeResult arena_t::Purge(PurgeCondition aCond) {
     
     if (chunk_to_release) {
       chunk_dealloc((void*)chunk_to_release, kChunkSize, ARENA_CHUNK);
+    }
+    if (is_dying) {
+      return Dying;
     }
     purged_once = true;
   }
@@ -4710,10 +4764,10 @@ inline purge_action_t arena_t::ShouldStartPurge() {
     if (!mIsDeferredPurgeEnabled) {
       return purge_action_t::PurgeNow;
     }
-    if (mIsDeferredPurgePending) {
+    if (mIsPurgePending) {
       return purge_action_t::None;
     }
-    mIsDeferredPurgePending = true;
+    mIsPurgePending = true;
     return purge_action_t::Queue;
   }
   return purge_action_t::None;
@@ -4730,8 +4784,14 @@ inline void arena_t::MayDoOrQueuePurge(purge_action_t aAction) {
       gArenas.AddToOutstandingPurges(this);
       break;
     case purge_action_t::PurgeNow:
-      while (Purge(PurgeIfThreshold) == arena_t::PurgeResult::Continue) {
-      }
+      PurgeResult pr;
+      do {
+        pr = Purge(PurgeIfThreshold);
+      } while (pr == arena_t::PurgeResult::Continue);
+      
+      
+      
+      MOZ_RELEASE_ASSERT(pr != arena_t::PurgeResult::Dying);
       break;
     case purge_action_t::None:
       
@@ -4935,7 +4995,7 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
   }
 
   mLastSignificantReuseNS = GetTimestampNS();
-  mIsDeferredPurgePending = false;
+  mIsPurgePending = false;
   mIsDeferredPurgeEnabled = gArenas.IsDeferredPurgeEnabled();
 
   MOZ_RELEASE_ASSERT(mLock.Init(doLock));
@@ -6012,7 +6072,7 @@ inline void ArenaCollection::AddToOutstandingPurges(arena_t* aArena) {
   }
 }
 
-inline void ArenaCollection::RemoveFromOutstandingPurges(arena_t* aArena) {
+inline bool ArenaCollection::RemoveFromOutstandingPurges(arena_t* aArena) {
   MOZ_ASSERT(aArena);
 
   
@@ -6020,7 +6080,9 @@ inline void ArenaCollection::RemoveFromOutstandingPurges(arena_t* aArena) {
   MutexAutoLock lock(mPurgeListLock);
   if (mOutstandingPurges.ElementProbablyInList(aArena)) {
     mOutstandingPurges.remove(aArena);
+    return true;
   }
+  return false;
 }
 
 purge_result_t ArenaCollection::MayPurgeSteps(
@@ -6081,6 +6143,8 @@ purge_result_t ArenaCollection::MayPurgeSteps(
       
       mOutstandingPurges.pushFront(found);
     }
+  } else if (pr == arena_t::PurgeResult::Dying) {
+    delete found;
   }
 
   
@@ -6097,7 +6161,15 @@ void ArenaCollection::MayPurgeAll(PurgeCondition aCond) {
     
     if (!arena->IsMainThreadOnly() || IsOnMainThreadWeak()) {
       RemoveFromOutstandingPurges(arena);
-      while (arena->Purge(aCond) == arena_t::PurgeResult::Continue);
+      arena_t::PurgeResult pr;
+      do {
+        pr = arena->Purge(aCond);
+      } while (pr == arena_t::PurgeResult::Continue);
+
+      
+      
+      
+      MOZ_RELEASE_ASSERT(pr != arena_t::PurgeResult::Dying);
     }
   }
 }
