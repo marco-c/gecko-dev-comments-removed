@@ -185,6 +185,12 @@ var DownloadsPanel = {
 
   showPanel(openedManually = false, isKeyPress = false) {
     Glean.downloads.panelShown.add(1);
+    
+    
+    
+    
+    Glean.glamExperiment.panelShown.add(1);
+
     DownloadsCommon.log("Opening the downloads panel.");
 
     this._openedManually = openedManually;
