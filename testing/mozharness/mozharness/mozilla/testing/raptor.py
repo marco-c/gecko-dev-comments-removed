@@ -1237,6 +1237,7 @@ class Raptor(
         modules = ["pip>=1.5"]
 
         
+        
         py3_minor = sys.version_info.minor
         if py3_minor <= 7:
             modules.extend(
@@ -1248,7 +1249,7 @@ class Raptor(
                     "opencv-python==4.5.4.60",
                 ]
             )
-        else:  
+        elif py3_minor <= 11:
             modules.extend(
                 [
                     "numpy==1.23.5",
@@ -1256,6 +1257,16 @@ class Raptor(
                     "scipy==1.9.3",
                     "pyssim==0.4",
                     "opencv-python==4.6.0.66",
+                ]
+            )
+        else:  
+            modules.extend(
+                [
+                    "numpy==2.2.3",
+                    "Pillow==11.1.0",
+                    "scipy==1.15.2",
+                    "pyssim==0.7",
+                    "opencv-python==4.11.0.86",
                 ]
             )
 
