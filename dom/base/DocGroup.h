@@ -35,6 +35,12 @@ class JSExecutionManager;
 
 
 
+
+
+
+
+
+
 class DocGroup final {
  public:
   typedef nsTArray<Document*>::iterator Iterator;

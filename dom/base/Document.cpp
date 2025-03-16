@@ -4397,15 +4397,16 @@ void Document::SetPrincipals(nsIPrincipal* aNewPrincipal,
   
   
   
-  
   if (aNewPrincipal) {
-    GetDocGroup();
+    AssertDocGroupMatchesKey();
   }
 #endif
 }
 
 #ifdef DEBUG
 void Document::AssertDocGroupMatchesKey() const {
+  
+  
   
   
 
@@ -7914,56 +7915,35 @@ void Document::SetScopeObject(nsIGlobalObject* aGlobal) {
 
     
     
-    if (mLoadedAsData && window->GetExtantDoc() &&
-        window->GetExtantDoc() != this &&
-        window->GetExtantDoc()->NodePrincipal() == NodePrincipal()) {
-      DocGroup* docGroup = window->GetExtantDoc()->GetDocGroup();
-
-      if (docGroup) {
-        if (!mDocGroup) {
-          mDocGroup = docGroup;
-          mDocGroup->AddDocument(this);
-        } else {
-          MOZ_ASSERT(mDocGroup == docGroup,
-                     "Data document has a mismatched doc group?");
-        }
-#ifdef DEBUG
-        AssertDocGroupMatchesKey();
-#endif
-
-        
-        
-        if (mMutationEventsEnabled.isNothing()) {
-          mMutationEventsEnabled.emplace(
-              window->GetExtantDoc()->MutationEventsEnabled());
-        }
-
-        return;
-      }
-
-      MOZ_ASSERT_UNREACHABLE(
-          "Scope window doesn't have DocGroup when creating data document?");
+    DocGroup* docGroup = GetDocGroupOrCreate();
+    if (!docGroup) {
       
+      
+      
+      
+      
+      MOZ_ASSERT(!mDocumentContainer,
+                 "Must have DocGroup if loaded in a DocShell");
+      mDocGroup = window->GetDocGroup();
+      mDocGroup->AddDocument(this);
     }
 
-    BrowsingContextGroup* browsingContextGroup =
-        window->GetBrowsingContextGroup();
-
-    
-    
-    if (mDocGroup) {
-      MOZ_RELEASE_ASSERT(mDocGroup->GetBrowsingContextGroup() ==
-                         browsingContextGroup);
-      mDocGroup->AssertMatches(this);
-    } else {
-      mDocGroup = browsingContextGroup->AddDocument(this);
-
-      MOZ_ASSERT(mDocGroup);
-    }
-
+#ifdef DEBUG
+    AssertDocGroupMatchesKey();
+#endif
     MOZ_ASSERT_IF(
         mNodeInfoManager->GetArenaAllocator(),
         mNodeInfoManager->GetArenaAllocator() == mDocGroup->ArenaAllocator());
+
+    
+    
+    if (mLoadedAsData && window->GetExtantDoc() &&
+        window->GetExtantDoc() != this &&
+        window->GetExtantDoc()->NodePrincipal() == NodePrincipal() &&
+        mMutationEventsEnabled.isNothing()) {
+      mMutationEventsEnabled.emplace(
+          window->GetExtantDoc()->MutationEventsEnabled());
+    }
   }
 }
 
