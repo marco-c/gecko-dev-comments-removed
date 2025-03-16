@@ -7,7 +7,6 @@
 
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "nsThreadUtils.h"
 
 NS_IMETHODIMP
 nsBaseColorPicker::Init(mozilla::dom::BrowsingContext* aBrowsingContext,
@@ -49,9 +48,7 @@ bool nsBaseColorPicker::MaybeBlockColorPicker(
     if (aCallback) {
       
       
-      NS_DispatchToCurrentThread(mozilla::NewRunnableMethod<const nsAString&>(
-          "nsBaseColorPicker::CallbackWithEmptyString", aCallback,
-          &nsIColorPickerShownCallback::Done, EmptyString()));
+      aCallback->Done(EmptyString());
     }
     return true;
   }
