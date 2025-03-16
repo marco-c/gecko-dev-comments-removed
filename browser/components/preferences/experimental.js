@@ -53,10 +53,6 @@ const gExperimentalPane = {
     this._setCategoryVisibility(shouldHide);
 
     if (shouldHide) {
-      
-      
-      
-      Services.obs.notifyObservers(window, "experimental-pane-loaded");
       return;
     }
 
