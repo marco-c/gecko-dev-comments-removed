@@ -268,14 +268,7 @@ bool CompileBuiltinModule(JSContext* cx,
   }
 
   
-  SharedBytes bytecode = js_new<ShareableBytes>();
-  if (!bytecode) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  
-  SharedModule module = mg.finishModule(*bytecode, moduleMeta,
+  SharedModule module = mg.finishModule(BytecodeBufferOrSource(), moduleMeta,
                                         nullptr);
   if (!module) {
     ReportOutOfMemory(cx);

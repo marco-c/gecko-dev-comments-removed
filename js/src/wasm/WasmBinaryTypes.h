@@ -14,6 +14,7 @@
 #include "js/AllocPolicy.h"
 
 #include "wasm/WasmSerialize.h"
+#include "wasm/WasmShareable.h"
 
 namespace js {
 namespace wasm {
@@ -68,8 +69,13 @@ struct BytecodeRange {
   }
 
   
-  template <typename T>
-  BytecodeSpan toSpan(const T& bytecode) const {
+  BytecodeSpan toSpan(BytecodeSpan bytecode) const {
+    MOZ_RELEASE_ASSERT(end() <= bytecode.size());
+    return BytecodeSpan(bytecode.begin() + start, bytecode.begin() + end());
+  }
+
+  
+  BytecodeSpan toSpan(const ShareableBytes& bytecode) const {
     MOZ_RELEASE_ASSERT(end() <= bytecode.length());
     return BytecodeSpan(bytecode.begin() + start, bytecode.begin() + end());
   }
