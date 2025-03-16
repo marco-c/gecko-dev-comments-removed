@@ -351,7 +351,7 @@ impl BlockContext<'_> {
         
         
         if let (GuardedIndex::Known(index), MaybeKnown::Known(max_index)) = (index, max_index) {
-            let restricted = core::cmp::min(index, max_index);
+            let restricted = std::cmp::min(index, max_index);
             return Ok(BoundsCheckResult::KnownInBounds(restricted));
         }
 
