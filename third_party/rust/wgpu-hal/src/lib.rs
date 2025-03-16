@@ -241,7 +241,7 @@
 extern crate alloc;
 extern crate wgpu_types as wgt;
 
-
+#[cfg(any(dx12, gles_with_std, metal, vulkan))]
 #[macro_use]
 extern crate std;
 
@@ -290,12 +290,12 @@ use alloc::boxed::Box;
 use alloc::{borrow::Cow, string::String, sync::Arc, vec::Vec};
 use core::{
     borrow::Borrow,
+    error::Error,
     fmt,
     num::NonZeroU32,
     ops::{Range, RangeInclusive},
     ptr::NonNull,
 };
-use std::error::Error; 
 
 use bitflags::bitflags;
 use parking_lot::Mutex;
@@ -304,7 +304,8 @@ use wgt::WasmNotSendSync;
 
 
 
-pub const MAX_CONCURRENT_SHADER_STAGES: usize = 2;
+
+pub const MAX_CONCURRENT_SHADER_STAGES: usize = 3;
 pub const MAX_ANISOTROPY: u8 = 16;
 pub const MAX_BIND_GROUPS: usize = 8;
 pub const MAX_VERTEX_BUFFERS: usize = 16;
@@ -900,6 +901,15 @@ pub trait Device: WasmNotSendSync {
             <Self::A as Api>::PipelineCache,
         >,
     ) -> Result<<Self::A as Api>::RenderPipeline, PipelineError>;
+    #[allow(clippy::type_complexity)]
+    unsafe fn create_mesh_pipeline(
+        &self,
+        desc: &MeshPipelineDescriptor<
+            <Self::A as Api>::PipelineLayout,
+            <Self::A as Api>::ShaderModule,
+            <Self::A as Api>::PipelineCache,
+        >,
+    ) -> Result<<Self::A as Api>::RenderPipeline, PipelineError>;
     unsafe fn destroy_render_pipeline(&self, pipeline: <Self::A as Api>::RenderPipeline);
 
     #[allow(clippy::type_complexity)]
@@ -1450,6 +1460,26 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
         max_count: u32,
     );
     unsafe fn draw_indexed_indirect_count(
+        &mut self,
+        buffer: &<Self::A as Api>::Buffer,
+        offset: wgt::BufferAddress,
+        count_buffer: &<Self::A as Api>::Buffer,
+        count_offset: wgt::BufferAddress,
+        max_count: u32,
+    );
+    unsafe fn draw_mesh_tasks(
+        &mut self,
+        group_count_x: u32,
+        group_count_y: u32,
+        group_count_z: u32,
+    );
+    unsafe fn draw_mesh_tasks_indirect(
+        &mut self,
+        buffer: &<Self::A as Api>::Buffer,
+        offset: wgt::BufferAddress,
+        draw_count: u32,
+    );
+    unsafe fn draw_mesh_tasks_indirect_count(
         &mut self,
         buffer: &<Self::A as Api>::Buffer,
         offset: wgt::BufferAddress,
@@ -2141,6 +2171,33 @@ pub struct RenderPipelineDescriptor<
     pub vertex_buffers: &'a [VertexBufferLayout<'a>],
     
     pub vertex_stage: ProgrammableStage<'a, M>,
+    
+    pub primitive: wgt::PrimitiveState,
+    
+    pub depth_stencil: Option<wgt::DepthStencilState>,
+    
+    pub multisample: wgt::MultisampleState,
+    
+    pub fragment_stage: Option<ProgrammableStage<'a, M>>,
+    
+    pub color_targets: &'a [Option<wgt::ColorTargetState>],
+    
+    
+    pub multiview: Option<NonZeroU32>,
+    
+    pub cache: Option<&'a Pc>,
+}
+pub struct MeshPipelineDescriptor<
+    'a,
+    Pl: DynPipelineLayout + ?Sized,
+    M: DynShaderModule + ?Sized,
+    Pc: DynPipelineCache + ?Sized,
+> {
+    pub label: Label<'a>,
+    
+    pub layout: &'a Pl,
+    pub task_stage: Option<ProgrammableStage<'a, M>>,
+    pub mesh_stage: ProgrammableStage<'a, M>,
     
     pub primitive: wgt::PrimitiveState,
     

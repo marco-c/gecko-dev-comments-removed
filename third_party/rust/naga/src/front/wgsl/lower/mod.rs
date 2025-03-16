@@ -1,4 +1,9 @@
-use std::num::NonZeroU32;
+use alloc::{
+    borrow::ToOwned,
+    string::{String, ToString},
+    vec::Vec,
+};
+use core::num::NonZeroU32;
 
 use crate::front::wgsl::error::{Error, ExpectedToken, InvalidAssignmentType};
 use crate::front::wgsl::index::Index;
@@ -782,7 +787,7 @@ impl<'source, 'temp, 'out> ExpressionContext<'source, 'temp, 'out> {
 }
 
 struct ArgumentContext<'ctx, 'source> {
-    args: std::slice::Iter<'ctx, Handle<ast::Expression<'source>>>,
+    args: core::slice::Iter<'ctx, Handle<ast::Expression<'source>>>,
     min_args: u32,
     args_used: u32,
     total_args: u32,
@@ -2035,10 +2040,18 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                     }
                 }
 
-                lowered_base.map(|base| match ctx.const_eval_expr_to_u32(index).ok() {
-                    Some(index) => crate::Expression::AccessIndex { base, index },
-                    None => crate::Expression::Access { base, index },
-                })
+                lowered_base.try_map(|base| match ctx.const_eval_expr_to_u32(index).ok() {
+                    Some(index) => Ok::<_, Error>(crate::Expression::AccessIndex { base, index }),
+                    None => {
+                        
+                        
+                        
+                        
+                        
+                        let base = ctx.concretize(base)?;
+                        Ok(crate::Expression::Access { base, index })
+                    }
+                })?
             }
             ast::Expression::Member { base, ref field } => {
                 let mut lowered_base = self.expression_for_reference(base, ctx)?;
@@ -2157,13 +2170,37 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
 
         
         match op {
-            
-            
-            
-            
             crate::BinaryOperator::ShiftLeft | crate::BinaryOperator::ShiftRight => {
+                
+                
+                
+                
                 right =
                     ctx.try_automatic_conversion_for_leaf_scalar(right, crate::Scalar::U32, span)?;
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let expr_kind_tracker = match ctx.expr_type {
+                    ExpressionContextType::Runtime(ref ctx)
+                    | ExpressionContextType::Constant(Some(ref ctx)) => {
+                        &ctx.local_expression_kind_tracker
+                    }
+                    ExpressionContextType::Constant(None) | ExpressionContextType::Override => {
+                        &ctx.global_expression_kind_tracker
+                    }
+                };
+                if !expr_kind_tracker.is_const(right) {
+                    left = ctx.concretize(left)?;
+                }
             }
 
             
@@ -2534,6 +2571,14 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                                 .push(crate::Statement::Barrier(crate::Barrier::SUB_GROUP), span);
                             return Ok(None);
                         }
+                        "textureBarrier" => {
+                            ctx.prepare_args(arguments, 0, span).finish()?;
+
+                            let rctx = ctx.runtime_expression_ctx(span)?;
+                            rctx.block
+                                .push(crate::Statement::Barrier(crate::Barrier::TEXTURE), span);
+                            return Ok(None);
+                        }
                         "workgroupUniformLoad" => {
                             let mut args = ctx.prepare_args(arguments, 1, span);
                             let expr = args.next()?;
@@ -2702,6 +2747,30 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                             rctx.block
                                 .push(crate::Statement::RayQuery { query, fun }, span);
                             return Ok(None);
+                        }
+                        "getCommittedHitVertexPositions" => {
+                            let mut args = ctx.prepare_args(arguments, 1, span);
+                            let query = self.ray_query_pointer(args.next()?, ctx)?;
+                            args.finish()?;
+
+                            let _ = ctx.module.generate_vertex_return_type();
+
+                            crate::Expression::RayQueryVertexPositions {
+                                query,
+                                committed: true,
+                            }
+                        }
+                        "getCandidateHitVertexPositions" => {
+                            let mut args = ctx.prepare_args(arguments, 1, span);
+                            let query = self.ray_query_pointer(args.next()?, ctx)?;
+                            args.finish()?;
+
+                            let _ = ctx.module.generate_vertex_return_type();
+
+                            crate::Expression::RayQueryVertexPositions {
+                                query,
+                                committed: false,
+                            }
                         }
                         "rayQueryProceed" => {
                             let mut args = ctx.prepare_args(arguments, 1, span);
@@ -3315,8 +3384,10 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                 class,
             },
             ast::Type::Sampler { comparison } => crate::TypeInner::Sampler { comparison },
-            ast::Type::AccelerationStructure => crate::TypeInner::AccelerationStructure,
-            ast::Type::RayQuery => crate::TypeInner::RayQuery,
+            ast::Type::AccelerationStructure { vertex_return } => {
+                crate::TypeInner::AccelerationStructure { vertex_return }
+            }
+            ast::Type::RayQuery { vertex_return } => crate::TypeInner::RayQuery { vertex_return },
             ast::Type::BindingArray { base, size } => {
                 let base = self.resolve_ast_type(base, ctx)?;
                 let size = self.array_size(size, ctx)?;
@@ -3386,7 +3457,7 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
 
         match *resolve_inner!(ctx, pointer) {
             crate::TypeInner::Pointer { base, .. } => match ctx.module.types[base].inner {
-                crate::TypeInner::RayQuery => Ok(pointer),
+                crate::TypeInner::RayQuery { .. } => Ok(pointer),
                 ref other => {
                     log::error!("Pointer type to {:?} passed to ray query op", other);
                     Err(Error::InvalidRayQueryPointer(span))

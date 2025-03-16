@@ -249,6 +249,12 @@
         clippy::todo
     )
 )]
+#![no_std]
+
+#[cfg(any(test, spv_out, feature = "spv-in", feature = "wgsl-in"))]
+extern crate std;
+
+extern crate alloc;
 
 mod arena;
 pub mod back;
@@ -265,12 +271,14 @@ pub mod proc;
 mod span;
 pub mod valid;
 
-pub use crate::arena::{Arena, Handle, Range, UniqueArena};
+use alloc::{string::String, vec::Vec};
 
+pub use crate::arena::{Arena, Handle, Range, UniqueArena};
 pub use crate::span::{SourceLocation, Span, SpanContext, WithSpan};
+use diagnostic_filter::DiagnosticFilterNode;
+
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
-use diagnostic_filter::DiagnosticFilterNode;
 #[cfg(feature = "deserialize")]
 use serde::Deserialize;
 #[cfg(feature = "serialize")]
@@ -286,22 +294,22 @@ pub const ABSTRACT_WIDTH: Bytes = 8;
 
 
 pub type FastHashMap<K, T> =
-    hashbrown::HashMap<K, T, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
+    hashbrown::HashMap<K, T, core::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 
 
 pub type FastHashSet<K> =
-    hashbrown::HashSet<K, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
+    hashbrown::HashSet<K, core::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 
 
 pub type FastIndexSet<K> =
-    indexmap::IndexSet<K, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
+    indexmap::IndexSet<K, core::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 
 
 pub type FastIndexMap<K, V> =
-    indexmap::IndexMap<K, V, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
+    indexmap::IndexMap<K, V, core::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 
 pub(crate) type NamedExpressions = FastIndexMap<Handle<Expression>, String>;
@@ -511,7 +519,7 @@ pub enum PendingArraySize {
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub enum ArraySize {
     
-    Constant(std::num::NonZeroU32),
+    Constant(core::num::NonZeroU32),
     
     Pending(PendingArraySize),
     
@@ -839,10 +847,10 @@ pub enum TypeInner {
     Sampler { comparison: bool },
 
     
-    AccelerationStructure,
+    AccelerationStructure { vertex_return: bool },
 
     
-    RayQuery,
+    RayQuery { vertex_return: bool },
 
     
     
@@ -1371,6 +1379,8 @@ bitflags::bitflags! {
         const WORK_GROUP = 1 << 1;
         /// Barrier synchronizes execution across all invocations within a subgroup that execute this instruction.
         const SUB_GROUP = 1 << 2;
+        /// Barrier synchronizes texture memory accesses in a workgroup.
+        const TEXTURE = 1 << 3;
     }
 }
 
@@ -1686,6 +1696,14 @@ pub enum Expression {
     
     
     ArrayLength(Handle<Expression>),
+
+    
+    
+    
+    RayQueryVertexPositions {
+        query: Handle<Expression>,
+        committed: bool,
+    },
 
     
     
@@ -2330,6 +2348,11 @@ pub struct SpecialTypes {
     
     
     pub ray_intersection: Option<Handle<Type>>,
+
+    
+    
+    
+    pub ray_vertex_return: Option<Handle<Type>>,
 
     
     

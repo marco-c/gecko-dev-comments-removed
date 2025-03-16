@@ -55,13 +55,14 @@
 
 
 
+use alloc::format;
+use core::{fmt, mem};
+
 use super::{super::FunctionCtx, BackendResult, Error};
 use crate::{
     proc::{Alignment, NameKey, TypeResolution},
     Handle,
 };
-
-use std::{fmt, mem};
 
 const STORE_TEMP_NAME: &str = "_value";
 

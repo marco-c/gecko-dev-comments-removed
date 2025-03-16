@@ -16,7 +16,7 @@
 
 #![allow(dead_code)]
 
-use std::num::NonZeroU32;
+use core::num::NonZeroU32;
 
 
 
@@ -97,14 +97,14 @@ impl NonMaxU32 {
     }
 }
 
-impl std::fmt::Debug for NonMaxU32 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for NonMaxU32 {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         self.get().fmt(f)
     }
 }
 
-impl std::fmt::Display for NonMaxU32 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for NonMaxU32 {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         self.get().fmt(f)
     }
 }
@@ -140,6 +140,5 @@ impl<'de> serde::Deserialize<'de> for NonMaxU32 {
 
 #[test]
 fn size() {
-    use core::mem::size_of;
     assert_eq!(size_of::<Option<NonMaxU32>>(), size_of::<u32>());
 }

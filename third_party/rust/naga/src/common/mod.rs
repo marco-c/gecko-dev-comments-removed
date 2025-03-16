@@ -1,3 +1,12 @@
 
 
 pub mod wgsl;
+
+
+pub const fn vector_size_str(size: crate::VectorSize) -> &'static str {
+    match size {
+        crate::VectorSize::Bi => "2",
+        crate::VectorSize::Tri => "3",
+        crate::VectorSize::Quad => "4",
+    }
+}

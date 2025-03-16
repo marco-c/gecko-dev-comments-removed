@@ -5,12 +5,12 @@
 
 
 
+use core::{fmt, marker::PhantomData, ops};
+
 use super::{
     handle::{Handle, Index},
     Arena,
 };
-
-use std::{fmt, marker::PhantomData, ops};
 
 
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
@@ -51,7 +51,7 @@ pub struct BadRangeError {
 impl BadRangeError {
     pub fn new<T>(range: Range<T>) -> Self {
         Self {
-            kind: std::any::type_name::<T>(),
+            kind: core::any::type_name::<T>(),
             range: range.erase_type(),
         }
     }
