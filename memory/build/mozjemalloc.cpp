@@ -1437,6 +1437,11 @@ struct arena_t {
   
   
   
+  
+  
+  
+  
+  
   bool Purge(bool aForce = false) MOZ_EXCLUDES(mLock);
 
   class PurgeInfo {
