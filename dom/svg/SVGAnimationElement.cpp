@@ -259,14 +259,13 @@ void SVGAnimationElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
           UpdateHrefTarget(xlinkHref->GetStringValue());
         }
       }
-    } else if (!HasAttr(kNameSpaceID_None, nsGkAtoms::href) &&
-               SupportsXLinkHref()) {
+    } else if (!HasAttr(nsGkAtoms::href) && SupportsXLinkHref()) {
       mHrefTarget.Unlink();
       AnimationTargetChanged();
     }  
        
-  } else if (!(aNamespaceID == kNameSpaceID_XLink &&
-               HasAttr(nsGkAtoms::href))) {
+  } else if (aNamespaceID == kNameSpaceID_None ||
+             (!HasAttr(nsGkAtoms::href) && SupportsXLinkHref())) {
     
     
     MOZ_ASSERT(aValue->Type() == nsAttrValue::eString,
