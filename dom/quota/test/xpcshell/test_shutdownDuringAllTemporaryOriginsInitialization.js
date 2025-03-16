@@ -176,7 +176,7 @@ async function testShutdownDuringAllTemporaryOriginsInitialization() {
   
   
   
-  todo(
+  Assert.ok(
     metadata1.exists() != metadata2.exists(),
     "Metadata for the second origin is not restored"
   );

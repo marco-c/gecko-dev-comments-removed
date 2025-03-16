@@ -5862,6 +5862,10 @@ Result<Ok, nsresult> QuotaManager::EnsureTemporaryGroupIsInitializedInternal(
     
     
     for (const auto& originMetadata : *array) {
+      if (NS_WARN_IF(IsShuttingDown())) {
+        return Err(NS_ERROR_ABORT);
+      }
+
       if (IsTemporaryOriginInitializedInternal(originMetadata)) {
         continue;
       }
