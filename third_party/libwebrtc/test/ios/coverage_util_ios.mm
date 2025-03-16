@@ -23,14 +23,16 @@ void ConfigureCoverageReportPath() {
   dispatch_once(&once_token, ^{
     
     
-    NSArray* paths =
-        NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSArray* paths = NSSearchPathForDirectoriesInDomains(
+        NSDocumentDirectory, NSUserDomainMask, YES);
     NSString* documents_directory = [paths firstObject];
-    NSString* file_name = [documents_directory stringByAppendingPathComponent:@"coverage.profraw"];
+    NSString* file_name = [documents_directory
+        stringByAppendingPathComponent:@"coverage.profraw"];
 
     
     
-    __llvm_profile_set_filename([file_name cStringUsingEncoding:NSUTF8StringEncoding]);
+    __llvm_profile_set_filename(
+        [file_name cStringUsingEncoding:NSUTF8StringEncoding]);
 
     
     NSLog(@"Coverage data at %@.", file_name);

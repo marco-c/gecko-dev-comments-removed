@@ -24,7 +24,8 @@ namespace test {
 
 
 
-std::string IOSResourcePath(absl::string_view name, absl::string_view extension) {
+std::string IOSResourcePath(absl::string_view name,
+                            absl::string_view extension) {
   @autoreleasepool {
     NSString* path = [NSString stringForAbslStringView:name];
     NSString* fileName = path.lastPathComponent;
@@ -46,11 +47,10 @@ std::string IOSRootPath() {
 
 
 
-std::string IOSOutputPath()  {
+std::string IOSOutputPath() {
   @autoreleasepool {
     NSString* tempDir = NSTemporaryDirectory();
-    if (tempDir == nil)
-        tempDir = @"/tmp";
+    if (tempDir == nil) tempDir = @"/tmp";
     return [NSString stdStringForString:tempDir];
   }
 }
