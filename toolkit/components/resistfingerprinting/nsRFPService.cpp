@@ -241,8 +241,7 @@ bool nsRFPService::IsRFPPrefEnabled(bool aIsPrivateMode) {
 
 bool nsRFPService::IsRFPEnabledFor(
     bool aIsPrivateMode, RFPTarget aTarget,
-    const Maybe<RFPTargetSet>& aOverriddenFingerprintingSettings,
-    bool aSkipChromePrincipalCheck ) {
+    const Maybe<RFPTargetSet>& aOverriddenFingerprintingSettings) {
   MOZ_ASSERT(aTarget != RFPTarget::AllTargets);
 
 #if SPOOFED_MAX_TOUCH_POINTS > 0
