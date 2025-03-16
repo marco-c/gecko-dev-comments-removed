@@ -693,19 +693,53 @@ struct MOZ_STACK_CLASS HTMLEditor::NormalizedStringToInsertText final {
 
 struct MOZ_STACK_CLASS HTMLEditor::ReplaceWhiteSpacesData final {
   ReplaceWhiteSpacesData() = default;
+
+  
+
+
+
+
+
+
+
+
+
+
   ReplaceWhiteSpacesData(const nsAString& aWhiteSpaces, uint32_t aStartOffset,
-                         uint32_t aReplaceLength)
+                         uint32_t aReplaceLength,
+                         uint32_t aOffsetAfterReplacing = UINT32_MAX)
       : mNormalizedString(aWhiteSpaces),
         mReplaceStartOffset(aStartOffset),
-        mReplaceEndOffset(aStartOffset + aReplaceLength) {
+        mReplaceEndOffset(aStartOffset + aReplaceLength),
+        mNewOffsetAfterReplace(aOffsetAfterReplacing) {
     MOZ_ASSERT(ReplaceLength() >= mNormalizedString.Length());
+    MOZ_ASSERT_IF(mNewOffsetAfterReplace != UINT32_MAX,
+                  mNewOffsetAfterReplace <=
+                      mReplaceStartOffset + mNormalizedString.Length());
   }
+
+  
+
+
+
+
+
+
+
+
+
+
   ReplaceWhiteSpacesData(nsAutoString&& aWhiteSpaces, uint32_t aStartOffset,
-                         uint32_t aReplaceLength)
+                         uint32_t aReplaceLength,
+                         uint32_t aOffsetAfterReplacing = UINT32_MAX)
       : mNormalizedString(std::forward<nsAutoString>(aWhiteSpaces)),
         mReplaceStartOffset(aStartOffset),
-        mReplaceEndOffset(aStartOffset + aReplaceLength) {
+        mReplaceEndOffset(aStartOffset + aReplaceLength),
+        mNewOffsetAfterReplace(aOffsetAfterReplacing) {
     MOZ_ASSERT(ReplaceLength() >= mNormalizedString.Length());
+    MOZ_ASSERT_IF(mNewOffsetAfterReplace != UINT32_MAX,
+                  mNewOffsetAfterReplace <=
+                      mReplaceStartOffset + mNormalizedString.Length());
   }
 
   ReplaceWhiteSpacesData GetMinimizedData(const Text& aText) const {
@@ -764,7 +798,63 @@ struct MOZ_STACK_CLASS HTMLEditor::ReplaceWhiteSpacesData final {
         Substring(mNormalizedString, precedingUnnecessaryLength,
                   mNormalizedString.Length() - (precedingUnnecessaryLength +
                                                 followingUnnecessaryLength)),
-        minimizedReplaceStart, minimizedReplaceEnd - minimizedReplaceStart);
+        minimizedReplaceStart, minimizedReplaceEnd - minimizedReplaceStart,
+        mNewOffsetAfterReplace);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] ReplaceWhiteSpacesData PreviousDataOfNewOffset(
+      uint32_t aReplaceEndOffset) const {
+    MOZ_ASSERT(mNewOffsetAfterReplace != UINT32_MAX);
+    MOZ_ASSERT(mReplaceStartOffset <= mNewOffsetAfterReplace);
+    MOZ_ASSERT(mReplaceEndOffset >= mNewOffsetAfterReplace);
+    MOZ_ASSERT(mReplaceStartOffset <= aReplaceEndOffset);
+    MOZ_ASSERT(mReplaceEndOffset >= aReplaceEndOffset);
+    if (!ReplaceLength() || aReplaceEndOffset == mReplaceStartOffset) {
+      return ReplaceWhiteSpacesData();
+    }
+    return ReplaceWhiteSpacesData(
+        Substring(mNormalizedString, 0u,
+                  mNewOffsetAfterReplace - mReplaceStartOffset),
+        mReplaceStartOffset, aReplaceEndOffset - mReplaceStartOffset);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] ReplaceWhiteSpacesData NextDataOfNewOffset(
+      uint32_t aReplaceStartOffset) const {
+    MOZ_ASSERT(mNewOffsetAfterReplace != UINT32_MAX);
+    MOZ_ASSERT(mReplaceStartOffset <= mNewOffsetAfterReplace);
+    MOZ_ASSERT(mReplaceEndOffset >= mNewOffsetAfterReplace);
+    MOZ_ASSERT(mReplaceStartOffset <= aReplaceStartOffset);
+    MOZ_ASSERT(mReplaceEndOffset >= aReplaceStartOffset);
+    if (!ReplaceLength() || aReplaceStartOffset == mReplaceEndOffset) {
+      return ReplaceWhiteSpacesData();
+    }
+    return ReplaceWhiteSpacesData(
+        Substring(mNormalizedString,
+                  mNewOffsetAfterReplace - mReplaceStartOffset),
+        aReplaceStartOffset, mReplaceEndOffset - aReplaceStartOffset);
   }
 
   [[nodiscard]] uint32_t ReplaceLength() const {
@@ -783,14 +873,25 @@ struct MOZ_STACK_CLASS HTMLEditor::ReplaceWhiteSpacesData final {
       return *this;
     }
     MOZ_ASSERT(mReplaceEndOffset == aOther.mReplaceStartOffset);
+    MOZ_ASSERT_IF(
+        aOther.mNewOffsetAfterReplace != UINT32_MAX,
+        aOther.mNewOffsetAfterReplace >= DeletingInvisibleWhiteSpaces());
     return ReplaceWhiteSpacesData(
         nsAutoString(mNormalizedString + aOther.mNormalizedString),
-        mReplaceStartOffset, aOther.mReplaceEndOffset);
+        mReplaceStartOffset, aOther.mReplaceEndOffset,
+        aOther.mNewOffsetAfterReplace != UINT32_MAX
+            ? aOther.mNewOffsetAfterReplace - DeletingInvisibleWhiteSpaces()
+            : mNewOffsetAfterReplace);
   }
 
   nsAutoString mNormalizedString;
   const uint32_t mReplaceStartOffset = 0u;
   const uint32_t mReplaceEndOffset = 0u;
+  
+  
+  
+  
+  const uint32_t mNewOffsetAfterReplace = UINT32_MAX;
 };
 
 }  
