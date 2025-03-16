@@ -36,15 +36,15 @@ namespace webrtc {
 
 class FieldTrials : public FieldTrialsRegistry {
  public:
-  explicit FieldTrials(const std::string& s);
+  explicit FieldTrials(absl::string_view s);
   ~FieldTrials();
 
   
   
-  static std::unique_ptr<FieldTrials> CreateNoGlobal(const std::string& s);
+  static std::unique_ptr<FieldTrials> CreateNoGlobal(absl::string_view s);
 
  private:
-  explicit FieldTrials(const std::string& s, bool);
+  explicit FieldTrials(absl::string_view s, bool);
 
   std::string GetValue(absl::string_view key) const override;
 
