@@ -24,6 +24,7 @@
 #include "mozilla/TextEditor.h"
 #include "nsAccUtils.h"
 #include "nsBlockFrame.h"
+#include "nsFocusManager.h"
 #include "nsFrameSelection.h"
 #include "nsIAccessiblePivot.h"
 #include "nsILineIterator.h"
@@ -2174,7 +2175,6 @@ bool TextLeafRange::SetSelection(int32_t aSelectionNum) const {
       !reversed ? mStart.ToDOMPoint(false) : mEnd.ToDOMPoint(false);
   auto [endContent, endContentOffset] =
       !reversed ? mEnd.ToDOMPoint(false) : mStart.ToDOMPoint(false);
-
   if (!startContent || !endContent) {
     return false;
   }
@@ -2182,6 +2182,42 @@ bool TextLeafRange::SetSelection(int32_t aSelectionNum) const {
   RefPtr<dom::Selection> domSel = GetDOMSelection(startContent, endContent);
   if (!domSel) {
     return false;
+  }
+
+  HyperTextAccessible* hyp = nullptr;
+  if (mStart.mAcc->IsHyperText()) {
+    hyp = mStart.mAcc->AsLocal()->AsHyperText();
+  } else {
+    Accessible* parent = mStart.mAcc->Parent();
+    if (parent) {
+      hyp = parent->AsLocal()->AsHyperText();
+      
+      
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  RefPtr<EditorBase> editor;
+  if (hyp) {
+    editor = hyp->GetEditor();
+  }
+
+  
+  
+  
+  
+  const bool isFocusable = hyp && hyp->InteractiveState() & states::FOCUSABLE;
+  
+  
+  
+  
+  if (isFocusable) {
+    hyp->TakeFocus();
   }
 
   uint32_t rangeCount = 0;
@@ -2214,14 +2250,35 @@ bool TextLeafRange::SetSelection(int32_t aSelectionNum) const {
 
   IgnoredErrorResult err;
   domSel->AddRangeAndSelectFramesAndNotifyListeners(*domRange, err);
-  if (!err.Failed()) {
-    
-    
-    domSel->SetDirection(reversed ? eDirPrevious : eDirNext);
-    return true;
+  if (err.Failed()) {
+    return false;
   }
 
-  return false;
+  
+  
+  domSel->SetDirection(reversed ? eDirPrevious : eDirNext);
+
+  
+  domSel->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION,
+                         ScrollAxis(), ScrollAxis(),
+                         ScrollFlags::ScrollOverflowHidden);
+
+  if (mStart == mEnd && !isFocusable) {
+    
+    
+    if (nsFocusManager* DOMFocusManager = nsFocusManager::GetFocusManager()) {
+      MOZ_ASSERT(mStart.mAcc->AsLocal()->Document());
+      dom::Document* domDoc =
+          mStart.mAcc->AsLocal()->Document()->DocumentNode();
+      MOZ_ASSERT(domDoc);
+      nsCOMPtr<nsPIDOMWindowOuter> window = domDoc->GetWindow();
+      RefPtr<dom::Element> result;
+      DOMFocusManager->MoveFocus(
+          window, nullptr, nsIFocusManager::MOVEFOCUS_CARET,
+          nsIFocusManager::FLAG_BYMOVEFOCUS, getter_AddRefs(result));
+    }
+  }
+  return true;
 }
 
 
