@@ -35,7 +35,11 @@ add_task(async function () {
 
   
   
-  await waitFor(() => targetCommand.getAllTargets([TYPES.SHARED_WORKER]).some(target => target.url == CHROME_WORKER_URL + "#shared-worker"));
+  await waitFor(() =>
+    targetCommand
+      .getAllTargets([TYPES.SHARED_WORKER])
+      .some(target => target.url == CHROME_WORKER_URL + "#shared-worker")
+  );
 
   
   info("Check that getAllTargets returned the expected targets");
