@@ -2983,20 +2983,43 @@
 
 
 
-    removeTabGroup(group, options = {}) {
+    async removeTabGroup(group, options = {}) {
       if (this.tabGroupMenu.panel.state != "closed") {
         this.tabGroupMenu.panel.hidePopup(options.animate);
+      }
+
+      if (!options.skipPermitUnload) {
+        
+        let cancel = await this.runBeforeUnloadForTabs(group.tabs);
+        if (cancel) {
+          if (SessionStore.getSavedTabGroup(group.id)) {
+            
+            
+            
+            SessionStore.forgetSavedTabGroup(group.id);
+          }
+          return;
+        }
+        options.skipPermitUnload = true;
       }
 
       
       
       group.dispatchEvent(
-        new CustomEvent("TabGroupRemoveRequested", { bubbles: true })
+        new CustomEvent("TabGroupRemoveRequested", {
+          bubbles: true,
+          detail: {
+            skipSessionStore: options.skipSessionStore,
+          },
+        })
       );
 
       
       
       options.skipSessionStore = true;
+
+      
+      options.skipGroupCheck = true;
 
       this.removeTabs(group.tabs, options);
     }
@@ -4207,27 +4230,10 @@
       let beforeUnloadPromises = [];
       
       let lastToClose;
-      
-
-
-
-
-
-
-
-      let tabGroupsSurvivingTabs = new Map();
 
       for (let tab of tabs) {
         if (!skipRemoves) {
           tab._closedInMultiselection = true;
-        }
-        if (!skipRemoves && !skipSessionStore) {
-          if (tab.group) {
-            if (!tabGroupsSurvivingTabs.has(tab.group)) {
-              tabGroupsSurvivingTabs.set(tab.group, new Set(tab.group.tabs));
-            }
-            tabGroupsSurvivingTabs.get(tab.group).delete(tab);
-          }
         }
         if (!skipRemoves && tab.selected) {
           lastToClose = tab;
@@ -4282,22 +4288,6 @@
           );
         } else {
           tabsWithoutBeforeUnload.push(tab);
-        }
-      }
-
-      if (!skipRemoves && !skipSessionStore) {
-        for (let [
-          tabGroup,
-          survivingTabs,
-        ] of tabGroupsSurvivingTabs.entries()) {
-          
-          
-          
-          
-          if (!survivingTabs.size) {
-            tabGroup.save();
-            this.removeTabGroup(tabGroup);
-          }
         }
       }
 
@@ -4376,6 +4366,47 @@
 
 
 
+    #separateWholeGroups(tabs) {
+      
+
+
+
+
+
+
+
+      let tabGroupSurvivingTabs = new Map();
+      let wholeGroups = [];
+      for (let tab of tabs) {
+        if (tab.group) {
+          if (!tabGroupSurvivingTabs.has(tab.group)) {
+            tabGroupSurvivingTabs.set(tab.group, new Set(tab.group.tabs));
+          }
+          tabGroupSurvivingTabs.get(tab.group).delete(tab);
+        }
+      }
+
+      for (let [tabGroup, survivingTabs] of tabGroupSurvivingTabs.entries()) {
+        if (!survivingTabs.size) {
+          wholeGroups.push(tabGroup);
+          tabs = tabs.filter(t => !tabGroup.tabs.includes(t));
+        }
+      }
+
+      return [wholeGroups, tabs];
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4391,6 +4422,7 @@
         suppressWarnAboutClosingWindow = false,
         skipPermitUnload = false,
         skipSessionStore = false,
+        skipGroupCheck = false,
       } = {}
     ) {
       
@@ -4414,6 +4446,22 @@
 
       
       try {
+        
+        if (!skipGroupCheck) {
+          let [groups, leftoverTabs] = this.#separateWholeGroups(tabs);
+          groups.forEach(group => {
+            if (!skipSessionStore) {
+              group.save();
+            }
+            gBrowser.removeTabGroup(group, {
+              animate,
+              skipSessionStore,
+              skipPermitUnload,
+            });
+          });
+          tabs = leftoverTabs;
+        }
+
         let { beforeUnloadComplete, tabsWithBeforeUnloadPrompt, lastToClose } =
           this._startRemoveTabs(tabs, {
             animate,
