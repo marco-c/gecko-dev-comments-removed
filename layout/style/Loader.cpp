@@ -431,8 +431,14 @@ void SheetLoadData::SetLoadCompleted() {
   mIsLoading = false;
   
   if (MOZ_LIKELY(!mLoadStart.IsNull())) {
+    TimeDuration rawDuration = TimeStamp::Now() - mLoadStart;
     glean::performance_pageload::async_sheet_load.AccumulateRawDuration(
-        TimeStamp::Now() - mLoadStart);
+        rawDuration);
+    
+    
+    
+    
+    glean::glam_experiment::async_sheet_load.AccumulateRawDuration(rawDuration);
   }
 }
 
