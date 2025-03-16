@@ -4,12 +4,8 @@
 
 
 
-#ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0603
-#endif 
-#ifndef NOMINMAX
 #define NOMINMAX
-#endif 
 
 #include <algorithm>
 #include <atomic>

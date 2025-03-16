@@ -56,7 +56,6 @@ struct cubeb_resampler {
   virtual long fill(void * input_buffer, long * input_frames_count,
                     void * output_buffer, long frames_needed) = 0;
   virtual long latency() = 0;
-  virtual cubeb_resampler_stats stats() = 0;
   virtual ~cubeb_resampler() {}
 };
 
@@ -86,16 +85,6 @@ public:
                     void * output_buffer, long output_frames);
 
   virtual long latency() { return 0; }
-
-  virtual cubeb_resampler_stats stats()
-  {
-    cubeb_resampler_stats stats;
-    stats.input_input_buffer_size = internal_input_buffer.length();
-    stats.input_output_buffer_size = 0;
-    stats.output_input_buffer_size = 0;
-    stats.output_output_buffer_size = 0;
-    return stats;
-  }
 
   void drop_audio_if_needed()
   {
@@ -132,20 +121,6 @@ public:
 
   virtual long fill(void * input_buffer, long * input_frames_count,
                     void * output_buffer, long output_frames_needed);
-
-  virtual cubeb_resampler_stats stats()
-  {
-    cubeb_resampler_stats stats = {};
-    if (input_processor) {
-      stats.input_input_buffer_size = input_processor->input_buffer_size();
-      stats.input_output_buffer_size = input_processor->output_buffer_size();
-    }
-    if (output_processor) {
-      stats.output_input_buffer_size = output_processor->input_buffer_size();
-      stats.output_output_buffer_size = output_processor->output_buffer_size();
-    }
-    return stats;
-  }
 
   virtual long latency()
   {
@@ -306,21 +281,22 @@ public:
 
   
 
+
+
   uint32_t input_needed_for_output(int32_t output_frame_count) const
   {
     assert(output_frame_count >= 0); 
     int32_t unresampled_frames_left =
         samples_to_frames(resampling_in_buffer.length());
-    float input_frames_needed_frac =
-        static_cast<float>(output_frame_count) * resampling_ratio;
-    
-    
-    
-    
-    auto input_frame_needed =
-        1 + static_cast<int32_t>(ceilf(input_frames_needed_frac));
-    input_frame_needed -= std::min(unresampled_frames_left, input_frame_needed);
-    return input_frame_needed;
+    int32_t resampled_frames_left =
+        samples_to_frames(resampling_out_buffer.length());
+    float input_frames_needed =
+        (output_frame_count - unresampled_frames_left) * resampling_ratio -
+        resampled_frames_left;
+    if (input_frames_needed < 0) {
+      return 0;
+    }
+    return (uint32_t)ceilf(input_frames_needed);
   }
 
   
@@ -355,9 +331,6 @@ public:
     }
   }
 
-  size_t input_buffer_size() const { return resampling_in_buffer.length(); }
-  size_t output_buffer_size() const { return resampling_out_buffer.length(); }
-
 private:
   
 
@@ -386,7 +359,6 @@ private:
             output_frame_count);
     assert(rv == RESAMPLER_ERR_SUCCESS);
   }
-
   
   SpeexResamplerState * speex_resampler;
   
@@ -501,13 +473,9 @@ public:
     uint32_t to_keep = min_buffered_audio_frame(sample_rate);
     if (available > to_keep) {
       ALOGV("Dropping %u frames", available - to_keep);
-
       delay_input_buffer.pop(nullptr, frames_to_samples(available - to_keep));
     }
   }
-
-  size_t input_buffer_size() const { return delay_input_buffer.length(); }
-  size_t output_buffer_size() const { return delay_output_buffer.length(); }
 
 private:
   
