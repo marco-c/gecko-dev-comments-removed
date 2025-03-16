@@ -920,7 +920,7 @@ export class ContextMenuChild extends JSWindowActorChild {
     context.onVideo = false;
     context.inPDFEditor = false;
     context.hasTextFragments =
-      !!this.contentWindow?.document?.fragmentDirective.getTextDirectiveRanges()
+      !!this.contentWindow?.document?.fragmentDirective?.getTextDirectiveRanges()
         .length;
 
     
