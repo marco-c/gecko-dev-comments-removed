@@ -1182,12 +1182,6 @@ var gSync = {
       document,
       "PanelUI-fxa-menu-connect-device-button"
     );
-    const syncSetupEl = PanelMultiView.getViewNode(
-      document,
-      isNewSyncSetupFlowEnabled
-        ? "PanelUI-fxa-menu-setup-sync-container"
-        : "PanelUI-fxa-menu-setup-sync-button"
-    );
     const syncNowButtonEl = PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-syncnow-button"
@@ -1220,7 +1214,6 @@ var gSync = {
     signedInContainer.hidden = true;
     fxaMenuAccountButtonEl.classList.remove("subviewbutton-nav");
     fxaMenuAccountButtonEl.removeAttribute("closemenu");
-    syncSetupEl.removeAttribute("hidden");
     menuHeaderDescriptionEl.hidden = false;
 
     
@@ -1289,12 +1282,32 @@ var gSync = {
         signedInContainer.hidden = false;
         cadButtonEl.removeAttribute("disabled");
 
+        
+        
+        
+        
+        const oldSyncSetupEl = PanelMultiView.getViewNode(
+          document,
+          "PanelUI-fxa-menu-setup-sync-button"
+        );
+        const newSyncSetupEl = PanelMultiView.getViewNode(
+          document,
+          "PanelUI-fxa-menu-setup-sync-container"
+        );
+
         if (state.syncEnabled) {
           syncNowButtonEl.removeAttribute("hidden");
-          syncSetupEl.hidden = true;
-        } else if (this._shouldShowSyncOffIndicator()) {
-          let fxaButton = document.getElementById("fxa-toolbar-menu-button");
-          fxaButton?.setAttribute("badge-status", "sync-disabled");
+          oldSyncSetupEl.setAttribute("hidden", "true");
+          newSyncSetupEl.setAttribute("hidden", "true");
+        } else {
+          if (this._shouldShowSyncOffIndicator()) {
+            let fxaButton = document.getElementById("fxa-toolbar-menu-button");
+            fxaButton?.setAttribute("badge-status", "sync-disabled");
+          }
+          
+          isNewSyncSetupFlowEnabled
+            ? newSyncSetupEl.removeAttribute("hidden")
+            : oldSyncSetupEl.removeAttribute("hidden");
         }
 
         
