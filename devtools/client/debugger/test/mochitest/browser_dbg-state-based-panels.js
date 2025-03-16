@@ -132,7 +132,7 @@ add_task(async function testBreakpointsPanePersistOnPauseToggle() {
 });
 
 
-add_task(async function testBreakpointsPanePersistOnPauseToggle() {
+add_task(async function testBreakpointsPaneRemainsClosedWhenLogToggled() {
   const dbg = await initDebugger("doc-scripts.html", "simple3.js");
 
   await selectSource(dbg, "simple3.js");
