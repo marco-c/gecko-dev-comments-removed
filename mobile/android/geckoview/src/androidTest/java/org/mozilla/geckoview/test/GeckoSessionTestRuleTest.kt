@@ -1893,6 +1893,9 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.waitForPageStop()
 
         
+        assumeThat(sessionRule.env.isX86, equalTo(false))
+
+        
         mainSession.loadTestPath(HELLO2_HTML_PATH)
         mainSession.waitForPageStop()
 
