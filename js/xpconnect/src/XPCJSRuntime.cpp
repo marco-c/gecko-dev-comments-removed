@@ -2615,6 +2615,12 @@ static void AccumulateTelemetryCallback(JSMetric id, uint32_t sample) {
     case JSMetric::DESERIALIZE_US:
       glean::performance_clone_deserialize::time.AccumulateRawDuration(
           TimeDuration::FromMicroseconds(sample));
+      
+      
+      
+      
+      glean::glam_experiment::time.AccumulateRawDuration(
+          TimeDuration::FromMicroseconds(sample));
       break;
 #endif  
     case JSMetric::GC_MS:
