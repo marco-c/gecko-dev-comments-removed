@@ -855,8 +855,7 @@ void ViewTransition::Activate() {
     return;
   }
 
-  
-  
+  mDocument->SetRenderingSuppressedForViewTransitions(false);
 
   
   
@@ -1057,8 +1056,7 @@ static nsAtom* DocumentScopedTransitionNameFor(nsIFrame* aFrame) {
 
 
 Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
-  
-  
+  MOZ_ASSERT(mNamedElements.IsEmpty());
 
   
   
@@ -1173,8 +1171,7 @@ void ViewTransition::Setup() {
     return SkipTransition(*skipReason);
   }
 
-  
-  
+  mDocument->SetRenderingSuppressedForViewTransitions(true);
 
   
   
@@ -1410,7 +1407,7 @@ void ViewTransition::SkipTransition(
   }
 
   
-  
+  mDocument->SetRenderingSuppressedForViewTransitions(false);
 
   
   
