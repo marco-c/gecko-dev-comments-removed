@@ -88,6 +88,8 @@ add_task(async function test_plainQuery() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
+
   let resultMethodHist = TelemetryTestUtils.getAndClearHistogram(
     "FX_SEARCHBAR_SELECTED_RESULT_METHOD"
   );
@@ -125,6 +127,21 @@ add_task(async function test_plainQuery() {
     "other-MozSearch.searchbar",
     1
   );
+  let sapEvent = Glean.sap.counts.testGetValue();
+  Assert.equal(
+    sapEvent.length,
+    1,
+    "Should have recorded an event for the SAP search"
+  );
+  Assert.deepEqual(
+    sapEvent[0].extra,
+    {
+      provider_id: "other",
+      provider_name: "MozSearch",
+      source: "searchbar",
+    },
+    "Should have the expected event telemetry data"
+  );
 
   
   let resultMethods = resultMethodHist.snapshot();
@@ -143,6 +160,8 @@ add_task(async function test_oneOff_enter() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
+
   let resultMethodHist = TelemetryTestUtils.getAndClearHistogram(
     "FX_SEARCHBAR_SELECTED_RESULT_METHOD"
   );
@@ -182,6 +201,21 @@ add_task(async function test_oneOff_enter() {
     search_hist,
     "other-MozSearch2.searchbar",
     1
+  );
+  let sapEvent = Glean.sap.counts.testGetValue();
+  Assert.equal(
+    sapEvent.length,
+    1,
+    "Should have recorded an event for the SAP search"
+  );
+  Assert.deepEqual(
+    sapEvent[0].extra,
+    {
+      provider_id: "other",
+      provider_name: "MozSearch2",
+      source: "searchbar",
+    },
+    "Should have the expected event telemetry data"
   );
 
   
@@ -278,6 +312,8 @@ async function checkSuggestionClick(clickOptions, waitForActionFn) {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
+
   let resultMethodHist = TelemetryTestUtils.getAndClearHistogram(
     "FX_SEARCHBAR_SELECTED_RESULT_METHOD"
   );
@@ -322,6 +358,21 @@ async function checkSuggestionClick(clickOptions, waitForActionFn) {
     search_hist,
     searchEngineId + ".searchbar",
     1
+  );
+  let sapEvent = Glean.sap.counts.testGetValue();
+  Assert.equal(
+    sapEvent.length,
+    1,
+    "Should have recorded an event for the SAP search"
+  );
+  Assert.deepEqual(
+    sapEvent[0].extra,
+    {
+      provider_id: "other",
+      provider_name: suggestionEngine.name,
+      source: "searchbar",
+    },
+    "Should have the expected event telemetry data"
   );
 
   

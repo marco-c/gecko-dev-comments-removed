@@ -32,6 +32,15 @@ function assertSearchTelemetryEmpty(search_hist) {
     "other-MozSearch.alias",
     undefined
   );
+  
+  
+  Assert.deepEqual(
+    Object.keys(search_hist.snapshot()),
+    [],
+    "SEARCH_COUNTS is empty"
+  );
+  let sapEvent = Glean.sap.counts.testGetValue();
+  Assert.equal(sapEvent, null, "Should not have recorded any SAP events");
 
   
   let events = Services.telemetry.snapshotEvents(
@@ -51,6 +60,7 @@ function assertSearchTelemetryEmpty(search_hist) {
 function snapshotHistograms() {
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
   return {
     search_hist: TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS"),
   };

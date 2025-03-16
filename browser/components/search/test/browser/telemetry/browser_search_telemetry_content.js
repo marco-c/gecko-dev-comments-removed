@@ -38,6 +38,7 @@ add_task(async function test_context_menu() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
   let search_hist =
     TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
@@ -95,6 +96,21 @@ add_task(async function test_context_menu() {
     search_hist,
     "other-MozSearch.contextmenu",
     1
+  );
+  let sapEvent = Glean.sap.counts.testGetValue();
+  Assert.equal(
+    sapEvent.length,
+    1,
+    "Should have recorded an event for the SAP search"
+  );
+  Assert.deepEqual(
+    sapEvent[0].extra,
+    {
+      provider_id: "other",
+      provider_name: "MozSearch",
+      source: "contextmenu",
+    },
+    "Should have the expected event telemetry data"
   );
 
   contextMenu.hidePopup();
@@ -156,6 +172,21 @@ add_task(async function test_about_newtab() {
     search_hist,
     "other-MozSearch.newtab",
     1
+  );
+  let sapEvent = Glean.sap.counts.testGetValue();
+  Assert.equal(
+    sapEvent.length,
+    1,
+    "Should have recorded an event for the SAP search"
+  );
+  Assert.deepEqual(
+    sapEvent[0].extra,
+    {
+      provider_id: "other",
+      provider_name: "MozSearch",
+      source: "newtab",
+    },
+    "Should have the expected event telemetry data"
   );
 
   
