@@ -40,6 +40,13 @@ enum class StackCaptureOptions {
 #include <utility>
 #include <vector>
 
+
+
+
+#ifdef None
+#  undef None
+#endif
+
 namespace mozilla {
 
 
