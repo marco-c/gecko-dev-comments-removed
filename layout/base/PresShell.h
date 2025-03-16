@@ -574,11 +574,16 @@ class PresShell final : public nsStubDocumentObserver,
 
   void ClearFrameRefs(nsIFrame* aFrame);
 
+  enum class CanMoveLastSelectionForToString { No, Yes };
   
-  void FrameSelectionWillTakeFocus(nsFrameSelection&);
+  void FrameSelectionWillTakeFocus(nsFrameSelection&,
+                                   CanMoveLastSelectionForToString);
 
   
   void FrameSelectionWillLoseFocus(nsFrameSelection&);
+
+  
+  void UpdateLastSelectionForToString(const nsFrameSelection*);
 
   
 
@@ -651,6 +656,10 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   nsFrameSelection* GetLastFocusedFrameSelection();
+
+  const nsFrameSelection* GetLastSelectionForToString() const {
+    return mLastSelectionForToString;
+  }
 
   
 
@@ -2999,6 +3008,11 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   RefPtr<nsFrameSelection> mFocusedFrameSelection;
+
+  
+  
+  RefPtr<const nsFrameSelection> mLastSelectionForToString;
+
   RefPtr<nsCaret> mCaret;
   RefPtr<nsCaret> mOriginalCaret;
   RefPtr<AccessibleCaretEventHub> mAccessibleCaretEventHub;
