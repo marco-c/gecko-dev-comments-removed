@@ -11,7 +11,6 @@
 #include <arm_neon.h>
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
-
 #include "rtc_base/checks.h"
 
 
@@ -34,8 +33,8 @@ int WebRtcSpl_DownsampleFastNeon(const int16_t* data_in,
   int endpos1 = endpos - factor * res;
 
   
-  if (data_out_length == 0 || coefficients_length == 0
-                           || (int)data_in_length < endpos) {
+  if (data_out_length == 0 || coefficients_length == 0 ||
+      (int)data_in_length < endpos) {
     return -1;
   }
 

@@ -8,10 +8,10 @@
 
 
 
-#include "stddef.h"
+#include <stddef.h>
 
-#include "rtc_base/checks.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "rtc_base/checks.h"
 
 
 
@@ -34,7 +34,7 @@ void WebRtcSpl_FilterARFastQ12(const int16_t* data_in,
       
       
       
-      sum += coefficients[j] * data_out[(ptrdiff_t) i - (ptrdiff_t) j];
+      sum += coefficients[j] * data_out[(ptrdiff_t)i - (ptrdiff_t)j];
     }
 
     output = coefficients[0] * data_in[i];

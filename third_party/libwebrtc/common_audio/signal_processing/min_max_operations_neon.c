@@ -11,8 +11,8 @@
 #include <arm_neon.h>
 #include <stdlib.h>
 
-#include "rtc_base/checks.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "rtc_base/checks.h"
 
 
 int16_t WebRtcSpl_MaxAbsValueW16Neon(const int16_t* vector, size_t length) {
@@ -282,8 +282,10 @@ int32_t WebRtcSpl_MinValueW32Neon(const int32_t* vector, size_t length) {
 }
 
 
-void WebRtcSpl_MinMaxW16Neon(const int16_t* vector, size_t length,
-                             int16_t* min_val, int16_t* max_val) {
+void WebRtcSpl_MinMaxW16Neon(const int16_t* vector,
+                             size_t length,
+                             int16_t* min_val,
+                             int16_t* max_val) {
   int16_t minimum = WEBRTC_SPL_WORD16_MAX;
   int16_t maximum = WEBRTC_SPL_WORD16_MIN;
   size_t i = 0;

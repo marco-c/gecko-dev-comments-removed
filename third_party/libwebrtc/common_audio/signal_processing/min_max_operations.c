@@ -24,11 +24,11 @@
 
 
 
-#include <stdlib.h>
 #include <limits.h>
+#include <stdlib.h>
 
-#include "rtc_base/checks.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "rtc_base/checks.h"
 
 
 
@@ -235,8 +235,10 @@ size_t WebRtcSpl_MinIndexW32(const int32_t* vector, size_t length) {
 }
 
 
-void WebRtcSpl_MinMaxW16(const int16_t* vector, size_t length,
-                         int16_t* min_val, int16_t* max_val) {
+void WebRtcSpl_MinMaxW16(const int16_t* vector,
+                         size_t length,
+                         int16_t* min_val,
+                         int16_t* max_val) {
 #if defined(WEBRTC_HAS_NEON)
   return WebRtcSpl_MinMaxW16Neon(vector, length, min_val, max_val);
 #else
