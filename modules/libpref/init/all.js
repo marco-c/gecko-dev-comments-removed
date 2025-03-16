@@ -3175,9 +3175,6 @@ pref("network.buffer.cache.size",  32768);
 pref("dom.webnotifications.requireinteraction.count", 3);
 
 
-pref("alerts.showFavicons", false);
-
-
 #ifdef XP_MACOSX
   
   pref("full-screen-api.macos-native-full-screen", true);
