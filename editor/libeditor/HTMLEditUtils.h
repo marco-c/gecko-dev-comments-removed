@@ -2190,12 +2190,16 @@ class HTMLEditUtils final {
 
 
 
+  template <typename PT, typename CT>
   static Maybe<uint32_t> GetInclusiveNextNonCollapsibleCharOffset(
-      const EditorDOMPointInText& aPoint,
+      const EditorDOMPointBase<PT, CT>& aPoint,
       const WalkTextOptions& aWalkTextOptions = {}) {
+    static_assert(std::is_same<PT, RefPtr<Text>>::value ||
+                  std::is_same<PT, Text*>::value);
     MOZ_ASSERT(aPoint.IsSetAndValid());
     return GetInclusiveNextNonCollapsibleCharOffset(
-        *aPoint.ContainerAs<Text>(), aPoint.Offset(), aWalkTextOptions);
+        *aPoint.template ContainerAs<Text>(), aPoint.Offset(),
+        aWalkTextOptions);
   }
   static Maybe<uint32_t> GetInclusiveNextNonCollapsibleCharOffset(
       const Text& aTextNode, uint32_t aOffset,
@@ -2245,9 +2249,12 @@ class HTMLEditUtils final {
 
 
 
+  template <typename PT, typename CT>
   static uint32_t GetFirstWhiteSpaceOffsetCollapsedWith(
-      const EditorDOMPointInText& aPoint,
+      const EditorDOMPointBase<PT, CT>& aPoint,
       const WalkTextOptions& aWalkTextOptions = {}) {
+    static_assert(std::is_same<PT, RefPtr<Text>>::value ||
+                  std::is_same<PT, Text*>::value);
     MOZ_ASSERT(aPoint.IsSetAndValid());
     MOZ_ASSERT(!aPoint.IsEndOfContainer());
     MOZ_ASSERT_IF(
@@ -2257,7 +2264,8 @@ class HTMLEditUtils final {
         !aWalkTextOptions.contains(WalkTextOption::TreatNBSPsCollapsible),
         aPoint.IsCharCollapsibleASCIISpace());
     return GetFirstWhiteSpaceOffsetCollapsedWith(
-        *aPoint.ContainerAs<Text>(), aPoint.Offset(), aWalkTextOptions);
+        *aPoint.template ContainerAs<Text>(), aPoint.Offset(),
+        aWalkTextOptions);
   }
   static uint32_t GetFirstWhiteSpaceOffsetCollapsedWith(
       const Text& aTextNode, uint32_t aOffset,
@@ -2330,6 +2338,41 @@ class HTMLEditUtils final {
     }
     return EditorDOMPointType();
   }
+
+  
+
+
+
+
+
+
+
+  [[nodiscard]] static uint32_t GetFirstVisibleCharOffset(const Text& aText);
+
+  
+
+
+
+
+
+
+
+  [[nodiscard]] static uint32_t GetOffsetAfterLastVisibleChar(
+      const Text& aText);
+
+  
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static uint32_t GetInvisibleWhiteSpaceCount(
+      const Text& aText, uint32_t aOffset = 0u, uint32_t aLength = UINT32_MAX);
 
   
 

@@ -225,6 +225,8 @@ class WhiteSpaceVisibilityKeeper final {
   InsertLineBreak(LineBreakType aLineBreakType, HTMLEditor& aHTMLEditor,
                   const EditorDOMPoint& aPointToInsert);
 
+  using InsertTextFor = EditorBase::InsertTextFor;
+
   
 
 
@@ -243,7 +245,7 @@ class WhiteSpaceVisibilityKeeper final {
     return WhiteSpaceVisibilityKeeper::
         InsertTextOrInsertOrUpdateCompositionString(
             aHTMLEditor, aStringToInsert, EditorDOMRange(aPointToInsert),
-            aInsertTextTo, TextIsCompositionString::No);
+            aInsertTextTo, InsertTextFor::NormalText);
   }
 
   
@@ -260,13 +262,14 @@ class WhiteSpaceVisibilityKeeper final {
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
-  InsertOrUpdateCompositionString(
-      HTMLEditor& aHTMLEditor, const nsAString& aCompositionString,
-      const EditorDOMRange& aCompositionStringRange) {
+  InsertOrUpdateCompositionString(HTMLEditor& aHTMLEditor,
+                                  const nsAString& aCompositionString,
+                                  const EditorDOMRange& aCompositionStringRange,
+                                  InsertTextFor aPurpose) {
+    MOZ_ASSERT(EditorBase::InsertingTextForComposition(aPurpose));
     return InsertTextOrInsertOrUpdateCompositionString(
         aHTMLEditor, aCompositionString, aCompositionStringRange,
-        HTMLEditor::InsertTextTo::ExistingTextNodeIfAvailable,
-        TextIsCompositionString::Yes);
+        HTMLEditor::InsertTextTo::ExistingTextNodeIfAvailable, aPurpose);
   }
 
   
@@ -344,9 +347,24 @@ class WhiteSpaceVisibilityKeeper final {
       HTMLEditor& aHTMLEditor, const EditorDOMRangeInTexts& aRangeToReplace,
       const nsAString& aReplaceString);
 
-  enum class TextIsCompositionString : bool { No, Yes };
+  
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMPoint, nsresult>
+  EnsureNoInvisibleWhiteSpaces(HTMLEditor& aHTMLEditor,
+                               const EditorDOMPoint& aPoint);
 
   
+
+
 
 
 
@@ -366,7 +384,7 @@ class WhiteSpaceVisibilityKeeper final {
   InsertTextOrInsertOrUpdateCompositionString(
       HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
       const EditorDOMRange& aRangeToBeReplaced, InsertTextTo aInsertTextTo,
-      TextIsCompositionString aTextIsCompositionString);
+      InsertTextFor aPurpose);
 };
 
 }  
