@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+export var RemoteSettingsClient;
+export var FfiConverterTypeRemoteSettingsService;
+export var RemoteSettingsService;
+
+declare global {
+  
+  
+  type Extension = any;
+
+  
+  
+  
+  interface WebExtensionPolicy {
+    extension: Extension;
+    debugName: string;
+    instanceId: string;
+    optionalPermissions: string[];
+  }
+}
