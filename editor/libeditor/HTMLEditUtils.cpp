@@ -406,10 +406,13 @@ bool HTMLEditUtils::IsVisibleElementEvenIfLeafNode(const nsIContent& aContent) {
           aContent, BlockInlineCheck::UseComputedDisplayStyle)) {
     return true;
   }
-  if (aContent.IsAnyOfHTMLElements(nsGkAtoms::applet, nsGkAtoms::iframe,
-                                   nsGkAtoms::img, nsGkAtoms::meter,
-                                   nsGkAtoms::progress, nsGkAtoms::select,
-                                   nsGkAtoms::textarea)) {
+  
+  
+  
+  if (aContent.IsAnyOfHTMLElements(nsGkAtoms::applet, nsGkAtoms::br,
+                                   nsGkAtoms::iframe, nsGkAtoms::img,
+                                   nsGkAtoms::meter, nsGkAtoms::progress,
+                                   nsGkAtoms::select, nsGkAtoms::textarea)) {
     return true;
   }
   if (const HTMLInputElement* inputElement =
@@ -920,12 +923,6 @@ Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(
         return nextContent->AsElement();
       }
 
-      
-      
-      if (HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*nextContent)) {
-        return nullptr;
-      }
-
       if (nextContent->IsHTMLElement(nsGkAtoms::br)) {
         
         
@@ -943,6 +940,12 @@ Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(
         
         
         return nextContent->AsElement();
+      }
+
+      
+      
+      if (HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*nextContent)) {
+        return nullptr;
       }
 
       continue;
