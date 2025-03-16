@@ -588,6 +588,38 @@
       return "bottomleft topleft";
     }
 
+    #initMlGroupLabel() {
+      if (!this.smartTabGroupsEnabled) {
+        return;
+      }
+      gBrowser.getGroupTitleForTabs(this.activeGroup.tabs).then(newLabel => {
+        this.#setMlGroupLabel(newLabel);
+      });
+    }
+
+    
+
+
+
+    #shouldUpdateLabelWithMlLabel() {
+      return !this.#nameField.value && this.panel.state !== "closed";
+    }
+
+    
+
+
+
+
+
+    #setMlGroupLabel(newLabel) {
+      if (!this.#shouldUpdateLabelWithMlLabel()) {
+        return;
+      }
+      this.#activeGroup.label = newLabel;
+      this.#nameField.value = newLabel;
+      this.#suggestedMlLabel = newLabel;
+    }
+
     openCreateModal(group) {
       this.activeGroup = group;
       this.createMode = true;
@@ -598,6 +630,7 @@
       this.#panel.openPopup(group.firstChild, {
         position: this.#panelPosition,
       });
+      this.#initMlGroupLabel();
     }
 
     
