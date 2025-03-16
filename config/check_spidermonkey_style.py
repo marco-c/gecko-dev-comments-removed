@@ -114,6 +114,7 @@ included_inclnames_to_ignore = set(
         "wasm/WasmBuiltinModuleGenerated.h",  
         "zydis/ZydisAPI.h",  
         "xsum/xsum.h",  
+        "fmt/format.h",  
     ]
 )
 
