@@ -205,26 +205,6 @@ bool nsView::IsEffectivelyVisible() {
   return true;
 }
 
-
-
-
-static LayoutDeviceIntRect MaybeRoundToDisplayPixels(
-    const LayoutDeviceIntRect& aRect, TransparencyMode aTransparency,
-    int32_t aRound) {
-  if (aRound == 1) {
-    return aRect;
-  }
-
-  
-  
-  auto size = aTransparency == TransparencyMode::Opaque
-                  ? aRect.Size().TruncatedToMultiple(aRound)
-                  : aRect.Size().CeiledToMultiple(aRound);
-  Unused << NS_WARN_IF(aTransparency == TransparencyMode::Opaque &&
-                       size != aRect.Size());
-  return {aRect.TopLeft().RoundedToMultiple(aRound), size};
-}
-
 LayoutDeviceIntRect nsView::CalcWidgetBounds(WindowType aType,
                                              TransparencyMode aTransparency) {
   int32_t p2a = mViewManager->AppUnitsPerDevPixel();
@@ -268,7 +248,8 @@ LayoutDeviceIntRect nsView::CalcWidgetBounds(WindowType aType,
       return idealBounds;
     }
     const int32_t round = widget->RoundsWidgetCoordinatesTo();
-    return MaybeRoundToDisplayPixels(idealBounds, aTransparency, round);
+    return nsIWidget::MaybeRoundToDisplayPixels(idealBounds, aTransparency,
+                                                round);
   }();
 
   

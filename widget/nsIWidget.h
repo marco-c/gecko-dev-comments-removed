@@ -984,6 +984,21 @@ class nsIWidget : public nsISupports {
   virtual TransparencyMode GetTransparencyMode() = 0;
 
   
+  
+  
+  
+  virtual int32_t RoundsWidgetCoordinatesTo() { return 1; }
+  static LayoutDeviceIntRect MaybeRoundToDisplayPixels(
+      const LayoutDeviceIntRect& aRect, TransparencyMode aTransparency,
+      int32_t aRound);
+
+  LayoutDeviceIntRect MaybeRoundToDisplayPixels(
+      const LayoutDeviceIntRect& aRect) {
+    return MaybeRoundToDisplayPixels(aRect, GetTransparencyMode(),
+                                     RoundsWidgetCoordinatesTo());
+  }
+
+  
 
 
 
@@ -1952,13 +1967,6 @@ class nsIWidget : public nsISupports {
 
 
   virtual bool SynchronouslyRepaintOnResize() { return true; }
-
-  
-
-
-
-
-  virtual int32_t RoundsWidgetCoordinatesTo() { return 1; }
 
   virtual void UpdateZoomConstraints(
       const uint32_t& aPresShellId, const ScrollableLayerGuid::ViewID& aViewId,

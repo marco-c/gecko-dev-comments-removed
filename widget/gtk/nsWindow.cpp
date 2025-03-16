@@ -2044,13 +2044,9 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
     GdkPoint parent = WaylandGetParentPosition();
     finalRect.x += parent.x;
     finalRect.y += parent.y;
-    auto roundTo = RoundsWidgetCoordinatesTo();
     auto rect = GdkRectToDevicePixels(finalRect);
     
-    
-    auto size = !mIsTransparent ? rect.Size().TruncatedToMultiple(roundTo)
-                                : rect.Size().CeiledToMultiple(roundTo);
-    return LayoutDeviceIntRect(rect.TopLeft().RoundedToMultiple(roundTo), size);
+    return MaybeRoundToDisplayPixels(rect);
   }();
 
   LOG("  new mBounds [%d, %d] -> [%d x %d]", newBounds.x, newBounds.y,

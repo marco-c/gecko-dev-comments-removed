@@ -444,6 +444,23 @@ void nsIWidget::RemoveAllChildren() {
   }
 }
 
+LayoutDeviceIntRect nsIWidget::MaybeRoundToDisplayPixels(
+    const LayoutDeviceIntRect& aRect, TransparencyMode aTransparency,
+    int32_t aRound) {
+  if (aRound == 1) {
+    return aRect;
+  }
+
+  
+  
+  auto size = aTransparency == TransparencyMode::Opaque
+                  ? aRect.Size().TruncatedToMultiple(aRound)
+                  : aRect.Size().CeiledToMultiple(aRound);
+  Unused << NS_WARN_IF(aTransparency == TransparencyMode::Opaque &&
+                       size != aRect.Size());
+  return {aRect.TopLeft().RoundedToMultiple(aRound), size};
+}
+
 
 
 
