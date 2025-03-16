@@ -142,7 +142,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   
-  SharedBytes debugBytecode;
+  BytecodeBuffer debugBytecode;
 
   
   

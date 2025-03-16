@@ -18,8 +18,6 @@
 
 #include "wasm/WasmGenerator.h"
 
-#include "mozilla/SHA1.h"
-
 #include <algorithm>
 
 #include "jit/Assembler.h"
@@ -1158,7 +1156,7 @@ UniqueCodeBlock ModuleGenerator::finishTier(UniqueLinkData* linkData) {
 
 
 SharedModule ModuleGenerator::finishModule(
-    const ShareableBytes& bytecode, MutableModuleMetadata moduleMeta,
+    const BytecodeBufferOrSource& bytecode, MutableModuleMetadata moduleMeta,
     JS::OptimizedEncodingListener* maybeCompleteTier2Listener) {
   MOZ_ASSERT(compilingTier1());
 
@@ -1178,6 +1176,7 @@ SharedModule ModuleGenerator::finishModule(
   
   
 
+  const BytecodeSource& bytecodeSource = bytecode.source();
   MOZ_ASSERT(moduleMeta->dataSegments.empty());
   if (!moduleMeta->dataSegments.reserve(
           moduleMeta->dataSegmentRanges.length())) {
@@ -1188,7 +1187,7 @@ SharedModule ModuleGenerator::finishModule(
     if (!dstSeg) {
       return nullptr;
     }
-    if (!dstSeg->init(bytecode, srcRange)) {
+    if (!dstSeg->init(bytecodeSource, srcRange)) {
       return nullptr;
     }
     moduleMeta->dataSegments.infallibleAppend(std::move(dstSeg));
@@ -1200,17 +1199,17 @@ SharedModule ModuleGenerator::finishModule(
     return nullptr;
   }
   for (const CustomSectionRange& srcRange : codeMeta_->customSectionRanges) {
+    BytecodeSpan nameSpan = bytecodeSource.getSpan(srcRange.name);
     CustomSection sec;
-    if (!sec.name.append(bytecode.begin() + srcRange.nameOffset,
-                         srcRange.nameLength)) {
+    if (!sec.name.append(nameSpan.data(), nameSpan.size())) {
       return nullptr;
     }
     MutableBytes payload = js_new<ShareableBytes>();
     if (!payload) {
       return nullptr;
     }
-    if (!payload->append(bytecode.begin() + srcRange.payloadOffset,
-                         srcRange.payloadLength)) {
+    BytecodeSpan payloadSpan = bytecodeSource.getSpan(srcRange.payload);
+    if (!payload->append(payloadSpan.data(), payloadSpan.size())) {
       return nullptr;
     }
     sec.payload = std::move(payload);
@@ -1229,7 +1228,42 @@ SharedModule ModuleGenerator::finishModule(
   MOZ_ASSERT_IF(mode() != CompileMode::LazyTiering, numCallRefMetrics_ == 0);
   codeMeta->numCallRefMetrics = numCallRefMetrics_;
 
+  
+  if (debugEnabled()) {
+    
+    MOZ_ASSERT(mode() == CompileMode::Once);
+
+    
+    codeMeta->debugEnabled = true;
+
+    
+    if (!bytecode.getOrCreateBuffer(&codeMeta->debugBytecode)) {
+      return nullptr;
+    }
+    codeMeta->codeSectionBytecode = codeMeta->debugBytecode.codeSection();
+
+    
+    static_assert(sizeof(ModuleHash) <= sizeof(mozilla::SHA1Sum::Hash),
+                  "The ModuleHash size shall not exceed the SHA1 hash size.");
+    mozilla::SHA1Sum::Hash hash;
+    bytecodeSource.computeHash(&hash);
+    memcpy(codeMeta->debugHash, hash, sizeof(ModuleHash));
+  }
+
+  
   if (mode() == CompileMode::LazyTiering) {
+    
+    MOZ_ASSERT(!debugEnabled());
+
+    
+    if (bytecodeSource.hasCodeSection()) {
+      codeMeta->codeSectionBytecode = bytecode.getOrCreateCodeSection();
+      if (!codeMeta->codeSectionBytecode) {
+        return nullptr;
+      }
+    }
+
+    
     codeMeta->callRefHints = MutableCallRefHints(
         js_pod_calloc<MutableCallRefHint>(numCallRefMetrics_));
     if (!codeMeta->callRefHints) {
@@ -1238,45 +1272,9 @@ SharedModule ModuleGenerator::finishModule(
   }
 
   
-  
-  if (debugEnabled()) {
-    MOZ_ASSERT(mode() != CompileMode::LazyTiering);
-    codeMeta->debugBytecode = &bytecode;
-  } else if (mode() == CompileMode::LazyTiering) {
-    MutableBytes codeSectionBytecode = js_new<ShareableBytes>();
-    if (!codeSectionBytecode) {
-      return nullptr;
-    }
-
-    if (codeMeta->codeSectionRange) {
-      const uint8_t* codeSectionStart =
-          bytecode.begin() + codeMeta->codeSectionRange->start;
-      if (!codeSectionBytecode->append(codeSectionStart,
-                                       codeMeta->codeSectionRange->size)) {
-        return nullptr;
-      }
-    }
-
-    codeMeta->codeSectionBytecode = codeSectionBytecode;
-  }
-
-  
   if (codeMeta_->nameCustomSectionIndex) {
     codeMeta->namePayload =
         moduleMeta->customSections[*codeMeta_->nameCustomSectionIndex].payload;
-  }
-
-  
-  if (debugEnabled()) {
-    codeMeta->debugEnabled = true;
-
-    static_assert(sizeof(ModuleHash) <= sizeof(mozilla::SHA1Sum::Hash),
-                  "The ModuleHash size shall not exceed the SHA1 hash size.");
-    mozilla::SHA1Sum::Hash hash;
-    mozilla::SHA1Sum sha1Sum;
-    sha1Sum.update(bytecode.begin(), bytecode.length());
-    sha1Sum.finish(hash);
-    memcpy(codeMeta->debugHash, hash, sizeof(ModuleHash));
   }
 
   
@@ -1355,7 +1353,17 @@ SharedModule ModuleGenerator::finishModule(
   }
 
   if (compileState_ == CompileState::EagerTier1) {
-    module->startTier2(bytecode, maybeCompleteTier2Listener);
+    
+    SharedBytes codeSection;
+    if (bytecodeSource.hasCodeSection()) {
+      codeSection = bytecode.getOrCreateCodeSection();
+      if (!codeSection) {
+        return nullptr;
+      }
+    }
+
+    
+    module->startTier2(codeSection, maybeCompleteTier2Listener);
   } else if (tier() == Tier::Serialized && maybeCompleteTier2Listener &&
              module->canSerialize()) {
     Bytes bytes;
