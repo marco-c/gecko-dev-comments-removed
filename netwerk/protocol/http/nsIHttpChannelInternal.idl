@@ -468,6 +468,12 @@ interface nsIHttpChannelInternal : nsISupports
     [noscript]
     nsILoadInfo_CrossOriginEmbedderPolicy getResponseEmbedderPolicy(in boolean aIsOriginTrialCoepCredentiallessEnabled);
 
+    
+
+
+
+    [noscript] boolean getOriginAgentClusterHeader();
+
     [noscript, notxpcom, nostdcall]
     void DoDiagnosticAssertWhenOnStopNotCalledOnDestroy();
 
