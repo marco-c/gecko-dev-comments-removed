@@ -110,6 +110,9 @@ var gExceptionPaths = [
   "resource://builtin-addons/pictureinpicture/",
 
   
+  "resource://builtin-addons/formautofill/",
+
+  
   "resource://newtab/",
   "chrome://newtab/",
 ];
