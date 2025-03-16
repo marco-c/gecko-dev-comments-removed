@@ -1,4 +1,3 @@
-use std::env;
 use std::error;
 use std::ffi::OsStr;
 use std::fmt;
@@ -14,6 +13,7 @@ use std::os::wasi::io::{AsFd, AsRawFd, BorrowedFd, RawFd};
 use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, RawHandle};
 use std::path::{Path, PathBuf};
 
+use crate::env;
 use crate::error::IoResultExt;
 use crate::Builder;
 
@@ -48,27 +48,9 @@ mod imp;
 
 
 
-
-
-
-
-
-
-
-
-
 pub fn tempfile() -> io::Result<File> {
     tempfile_in(env::temp_dir())
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -143,19 +125,13 @@ impl error::Error for PathPersistError {
 
 
 
+
 pub struct TempPath {
     path: Box<Path>,
+    keep: bool,
 }
 
 impl TempPath {
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -188,13 +164,6 @@ impl TempPath {
         result
     }
 
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -283,13 +252,6 @@ impl TempPath {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     pub fn persist_noclobber<P: AsRef<Path>>(
         mut self,
         new_path: P,
@@ -310,14 +272,6 @@ impl TempPath {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -367,6 +321,14 @@ impl TempPath {
     pub fn from_path(path: impl Into<PathBuf>) -> Self {
         Self {
             path: path.into().into_boxed_path(),
+            keep: false,
+        }
+    }
+
+    pub(crate) fn new(path: PathBuf, keep: bool) -> Self {
+        Self {
+            path: path.into_boxed_path(),
+            keep,
         }
     }
 }
@@ -379,7 +341,9 @@ impl fmt::Debug for TempPath {
 
 impl Drop for TempPath {
     fn drop(&mut self) {
-        let _ = fs::remove_file(&self.path);
+        if !self.keep {
+            let _ = fs::remove_file(&self.path);
+        }
     }
 }
 
@@ -402,7 +366,6 @@ impl AsRef<OsStr> for TempPath {
         self.path.as_os_str()
     }
 }
-
 
 
 
@@ -595,13 +558,6 @@ impl NamedTempFile<File> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     pub fn new() -> io::Result<NamedTempFile> {
         Builder::new().tempfile()
     }
@@ -619,6 +575,33 @@ impl NamedTempFile<File> {
     
     pub fn new_in<P: AsRef<Path>>(dir: P) -> io::Result<NamedTempFile> {
         Builder::new().tempfile_in(dir)
+    }
+
+    
+    
+    
+    
+    
+    pub fn with_suffix<S: AsRef<OsStr>>(suffix: S) -> io::Result<NamedTempFile> {
+        Builder::new().suffix(&suffix).tempfile()
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn with_suffix_in<S: AsRef<OsStr>, P: AsRef<Path>>(
+        suffix: S,
+        dir: P,
+    ) -> io::Result<NamedTempFile> {
+        Builder::new().suffix(&suffix).tempfile_in(dir)
     }
 
     
@@ -668,14 +651,6 @@ impl<F> NamedTempFile<F> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
     #[inline]
     pub fn path(&self) -> &Path {
         &self.path
@@ -704,26 +679,11 @@ impl<F> NamedTempFile<F> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn close(self) -> io::Result<()> {
         let NamedTempFile { path, .. } = self;
         path.close()
     }
 
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -805,13 +765,6 @@ impl<F> NamedTempFile<F> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     pub fn persist_noclobber<P: AsRef<Path>>(self, new_path: P) -> Result<F, PersistError<F>> {
         let NamedTempFile { path, file } = self;
         match path.persist_noclobber(new_path) {
@@ -826,13 +779,6 @@ impl<F> NamedTempFile<F> {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -910,14 +856,6 @@ impl<F> NamedTempFile<F> {
 }
 
 impl NamedTempFile<File> {
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1108,17 +1046,19 @@ pub(crate) fn create_named(
     mut path: PathBuf,
     open_options: &mut OpenOptions,
     permissions: Option<&std::fs::Permissions>,
+    keep: bool,
 ) -> io::Result<NamedTempFile> {
     
     
     if !path.is_absolute() {
-        path = env::current_dir()?.join(path)
+        path = std::env::current_dir()?.join(path)
     }
     imp::create_named(&path, open_options, permissions)
         .with_err_path(|| path.clone())
         .map(|file| NamedTempFile {
             path: TempPath {
                 path: path.into_boxed_path(),
+                keep,
             },
             file,
         })

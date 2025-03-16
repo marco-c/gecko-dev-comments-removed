@@ -29,19 +29,265 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![no_std]
 
-mod lib_generated;
-pub use lib_generated::*;
+#[cfg(feature = "std")]
+extern crate std;
 
 
-pub const DIRCOOKIE_START: Dircookie = 0;
+mod bindings;
+#[allow(unused_imports)]
+mod command;
+#[allow(unused_imports)]
+mod proxy;
 
 
-pub const FD_STDIN: Fd = 0;
 
 
-pub const FD_STDOUT: Fd = 1;
+pub use bindings::wasi::*;
 
 
-pub const FD_STDERR: Fd = 2;
+
+
+pub mod cli {
+    pub use super::bindings::wasi::cli::*;
+
+    pub mod command {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[doc(inline)]
+        pub use crate::command::_export_command as export;
+    }
+}
+
+pub mod http {
+    pub use super::bindings::wasi::http::*;
+
+    pub mod proxy {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[doc(inline)]
+        pub use crate::proxy::_export_proxy as export;
+    }
+}
+
+pub mod exports {
+    
+    
+    
+    
+    #[doc(hidden)]
+    pub mod wasi {
+        pub use crate::command::exports::wasi::*;
+        pub use crate::proxy::exports::wasi::*;
+    }
+
+    
+    pub use crate::command::exports::wasi::cli;
+    pub use crate::proxy::exports::wasi::http;
+}
+
+
+
+#[doc(hidden)]
+pub use crate::command::_export_command;
+#[doc(hidden)]
+pub use crate::proxy::_export_proxy;

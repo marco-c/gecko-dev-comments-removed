@@ -1,4 +1,17 @@
+#[cfg(feature = "std")]
+extern crate std;
+
 use core::{fmt, num::NonZeroU32};
+
+
+
+cfg_if::cfg_if!(
+    if #[cfg(target_os = "uefi")] {
+        type RawOsError = usize;
+    } else {
+        type RawOsError = i32;
+    }
+);
 
 
 
@@ -17,42 +30,13 @@ use core::{fmt, num::NonZeroU32};
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Error(NonZeroU32);
 
-const fn internal_error(n: u16) -> Error {
-    
-    let code = Error::INTERNAL_START + (n as u32);
-    Error(unsafe { NonZeroU32::new_unchecked(code) })
-}
-
 impl Error {
     
-    pub const UNSUPPORTED: Error = internal_error(0);
+    pub const UNSUPPORTED: Error = Self::new_internal(0);
     
-    pub const ERRNO_NOT_POSITIVE: Error = internal_error(1);
+    pub const ERRNO_NOT_POSITIVE: Error = Self::new_internal(1);
     
-    pub const UNEXPECTED: Error = internal_error(2);
-    
-    
-    
-    pub const IOS_SEC_RANDOM: Error = internal_error(3);
-    
-    pub const WINDOWS_RTL_GEN_RANDOM: Error = internal_error(4);
-    
-    pub const FAILED_RDRAND: Error = internal_error(5);
-    
-    pub const NO_RDRAND: Error = internal_error(6);
-    
-    pub const WEB_CRYPTO: Error = internal_error(7);
-    
-    pub const WEB_GET_RANDOM_VALUES: Error = internal_error(8);
-    
-    pub const VXWORKS_RAND_SECURE: Error = internal_error(11);
-    
-    pub const NODE_CRYPTO: Error = internal_error(12);
-    
-    pub const NODE_RANDOM_FILL_SYNC: Error = internal_error(13);
-    
-    
-    pub const NODE_ES_MODULE: Error = internal_error(14);
+    pub const UNEXPECTED: Error = Self::new_internal(2);
 
     
     
@@ -70,19 +54,13 @@ impl Error {
     
     
     
-    #[inline]
-    pub fn raw_os_error(self) -> Option<i32> {
-        if self.0.get() < Self::INTERNAL_START {
-            match () {
-                #[cfg(target_os = "solid_asp3")]
-                
-                
-                () => Some(-(self.0.get() as i32)),
-                #[cfg(not(target_os = "solid_asp3"))]
-                () => Some(self.0.get() as i32),
-            }
-        } else {
-            None
+    
+    
+    #[allow(dead_code)]
+    pub(super) fn from_os_error(code: u32) -> Self {
+        match NonZeroU32::new(code) {
+            Some(code) if code.get() < Self::INTERNAL_START => Self(code),
+            _ => Self::UNEXPECTED,
         }
     }
 
@@ -90,29 +68,77 @@ impl Error {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    pub const fn code(self) -> NonZeroU32 {
-        self.0
+    pub fn raw_os_error(self) -> Option<RawOsError> {
+        let code = self.0.get();
+        if code >= Self::INTERNAL_START {
+            return None;
+        }
+        let errno = RawOsError::try_from(code).ok()?;
+        #[cfg(target_os = "solid_asp3")]
+        let errno = -errno;
+        Some(errno)
     }
-}
 
-cfg_if! {
-    if #[cfg(unix)] {
-        fn os_err(errno: i32, buf: &mut [u8]) -> Option<&str> {
-            let buf_ptr = buf.as_mut_ptr() as *mut libc::c_char;
-            if unsafe { libc::strerror_r(errno, buf_ptr, buf.len()) } != 0 {
-                return None;
-            }
+    
+    pub const fn new_custom(n: u16) -> Error {
+        
+        let code = Error::CUSTOM_START + (n as u32);
+        Error(unsafe { NonZeroU32::new_unchecked(code) })
+    }
 
-            // Take up to trailing null byte
-            let n = buf.len();
-            let idx = buf.iter().position(|&b| b == 0).unwrap_or(n);
-            core::str::from_utf8(&buf[..idx]).ok()
-        }
-    } else {
-        fn os_err(_errno: i32, _buf: &mut [u8]) -> Option<&str> {
-            None
-        }
+    
+    pub(crate) const fn new_internal(n: u16) -> Error {
+        
+        let code = Error::INTERNAL_START + (n as u32);
+        Error(unsafe { NonZeroU32::new_unchecked(code) })
+    }
+
+    fn internal_desc(&self) -> Option<&'static str> {
+        let desc = match *self {
+            Error::UNSUPPORTED => "getrandom: this target is not supported",
+            Error::ERRNO_NOT_POSITIVE => "errno: did not return a positive value",
+            Error::UNEXPECTED => "unexpected situation",
+            #[cfg(any(
+                target_os = "ios",
+                target_os = "visionos",
+                target_os = "watchos",
+                target_os = "tvos",
+            ))]
+            Error::IOS_RANDOM_GEN => "SecRandomCopyBytes: iOS Security framework failure",
+            #[cfg(all(windows, target_vendor = "win7"))]
+            Error::WINDOWS_RTL_GEN_RANDOM => "RtlGenRandom: Windows system function failure",
+            #[cfg(all(feature = "wasm_js", getrandom_backend = "wasm_js"))]
+            Error::WEB_CRYPTO => "Web Crypto API is unavailable",
+            #[cfg(target_os = "vxworks")]
+            Error::VXWORKS_RAND_SECURE => "randSecure: VxWorks RNG module is not initialized",
+
+            #[cfg(any(
+                getrandom_backend = "rdrand",
+                all(target_arch = "x86_64", target_env = "sgx")
+            ))]
+            Error::FAILED_RDRAND => "RDRAND: failed multiple times: CPU issue likely",
+            #[cfg(any(
+                getrandom_backend = "rdrand",
+                all(target_arch = "x86_64", target_env = "sgx")
+            ))]
+            Error::NO_RDRAND => "RDRAND: instruction not supported",
+
+            #[cfg(getrandom_backend = "rndr")]
+            Error::RNDR_FAILURE => "RNDR: Could not generate a random number",
+            #[cfg(getrandom_backend = "rndr")]
+            Error::RNDR_NOT_AVAILABLE => "RNDR: Register not supported",
+            _ => return None,
+        };
+        Some(desc)
     }
 }
 
@@ -121,11 +147,9 @@ impl fmt::Debug for Error {
         let mut dbg = f.debug_struct("Error");
         if let Some(errno) = self.raw_os_error() {
             dbg.field("os_error", &errno);
-            let mut buf = [0u8; 128];
-            if let Some(err) = os_err(errno, &mut buf) {
-                dbg.field("description", &err);
-            }
-        } else if let Some(desc) = internal_desc(*self) {
+            #[cfg(feature = "std")]
+            dbg.field("description", &std::io::Error::from_raw_os_error(errno));
+        } else if let Some(desc) = self.internal_desc() {
             dbg.field("internal_code", &self.0.get());
             dbg.field("description", &desc);
         } else {
@@ -138,41 +162,18 @@ impl fmt::Debug for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(errno) = self.raw_os_error() {
-            let mut buf = [0u8; 128];
-            match os_err(errno, &mut buf) {
-                Some(err) => err.fmt(f),
-                None => write!(f, "OS Error: {}", errno),
+            cfg_if! {
+                if #[cfg(feature = "std")] {
+                    std::io::Error::from_raw_os_error(errno).fmt(f)
+                } else {
+                    write!(f, "OS Error: {}", errno)
+                }
             }
-        } else if let Some(desc) = internal_desc(*self) {
+        } else if let Some(desc) = self.internal_desc() {
             f.write_str(desc)
         } else {
             write!(f, "Unknown Error: {}", self.0.get())
         }
-    }
-}
-
-impl From<NonZeroU32> for Error {
-    fn from(code: NonZeroU32) -> Self {
-        Self(code)
-    }
-}
-
-fn internal_desc(error: Error) -> Option<&'static str> {
-    match error {
-        Error::UNSUPPORTED => Some("getrandom: this target is not supported"),
-        Error::ERRNO_NOT_POSITIVE => Some("errno: did not return a positive value"),
-        Error::UNEXPECTED => Some("unexpected situation"),
-        Error::IOS_SEC_RANDOM => Some("SecRandomCopyBytes: iOS Security framework failure"),
-        Error::WINDOWS_RTL_GEN_RANDOM => Some("RtlGenRandom: Windows system function failure"),
-        Error::FAILED_RDRAND => Some("RDRAND: failed multiple times: CPU issue likely"),
-        Error::NO_RDRAND => Some("RDRAND: instruction not supported"),
-        Error::WEB_CRYPTO => Some("Web Crypto API is unavailable"),
-        Error::WEB_GET_RANDOM_VALUES => Some("Calling Web API crypto.getRandomValues failed"),
-        Error::VXWORKS_RAND_SECURE => Some("randSecure: VxWorks RNG module is not initialized"),
-        Error::NODE_CRYPTO => Some("Node.js crypto CommonJS module is unavailable"),
-        Error::NODE_RANDOM_FILL_SYNC => Some("Calling Node.js API crypto.randomFillSync failed"),
-        Error::NODE_ES_MODULE => Some("Node.js ES modules are not directly supported, see https://docs.rs/getrandom#nodejs-es-module-support"),
-        _ => None,
     }
 }
 

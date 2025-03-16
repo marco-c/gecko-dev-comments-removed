@@ -17,7 +17,8 @@ use std::{fmt, io};
 use crate::error::IoResultExt;
 use crate::Builder;
 
-
+#[cfg(doc)]
+use crate::env;
 
 
 
@@ -65,13 +66,6 @@ use crate::Builder;
 pub fn tempdir() -> io::Result<TempDir> {
     TempDir::new()
 }
-
-
-
-
-
-
-
 
 
 
@@ -186,21 +180,12 @@ pub fn tempdir_in<P: AsRef<Path>>(dir: P) -> io::Result<TempDir> {
 
 
 
-
-
-
-
-
-
-
 pub struct TempDir {
     path: Box<Path>,
+    keep: bool,
 }
 
 impl TempDir {
-    
-    
-    
     
     
     
@@ -258,16 +243,10 @@ impl TempDir {
     
     
     
-    
-    
-    
     pub fn new_in<P: AsRef<Path>>(dir: P) -> io::Result<TempDir> {
         Builder::new().tempdir_in(dir)
     }
 
-    
-    
-    
     
     
     
@@ -296,6 +275,55 @@ impl TempDir {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn with_suffix<S: AsRef<OsStr>>(suffix: S) -> io::Result<TempDir> {
+        Builder::new().suffix(&suffix).tempdir()
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn with_suffix_in<S: AsRef<OsStr>, P: AsRef<Path>>(
+        suffix: S,
+        dir: P,
+    ) -> io::Result<TempDir> {
+        Builder::new().suffix(&suffix).tempdir_in(dir)
+    }
+
     
     
     
@@ -349,17 +377,11 @@ impl TempDir {
     
     
     
-    
-    
-    
     #[must_use]
     pub fn path(&self) -> &path::Path {
         self.path.as_ref()
     }
 
-    
-    
-    
     
     
     
@@ -431,9 +453,6 @@ impl TempDir {
     
     
     
-    
-    
-    
     pub fn close(mut self) -> io::Result<()> {
         let result = remove_dir_all(self.path()).with_err_path(|| self.path());
 
@@ -464,15 +483,18 @@ impl fmt::Debug for TempDir {
 
 impl Drop for TempDir {
     fn drop(&mut self) {
-        let _ = remove_dir_all(self.path());
+        if !self.keep {
+            let _ = remove_dir_all(self.path());
+        }
     }
 }
 
 pub(crate) fn create(
     path: PathBuf,
     permissions: Option<&std::fs::Permissions>,
+    keep: bool,
 ) -> io::Result<TempDir> {
-    imp::create(path, permissions)
+    imp::create(path, permissions, keep)
 }
 
 mod imp;

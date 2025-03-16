@@ -1,17 +1,10 @@
-#![allow(dead_code)]
 use crate::Error;
-use core::{
-    mem::MaybeUninit,
-    num::NonZeroU32,
-    ptr::NonNull,
-    sync::atomic::{fence, AtomicPtr, Ordering},
-};
-use libc::c_void;
+use core::mem::MaybeUninit;
 
 cfg_if! {
     if #[cfg(any(target_os = "netbsd", target_os = "openbsd", target_os = "android"))] {
         use libc::__errno as errno_location;
-    } else if #[cfg(any(target_os = "linux", target_os = "emscripten", target_os = "hurd", target_os = "redox"))] {
+    } else if #[cfg(any(target_os = "linux", target_os = "emscripten", target_os = "hurd", target_os = "redox", target_os = "dragonfly"))] {
         use libc::__errno_location as errno_location;
     } else if #[cfg(any(target_os = "solaris", target_os = "illumos"))] {
         use libc::___errno as errno_location;
@@ -35,35 +28,40 @@ cfg_if! {
 cfg_if! {
     if #[cfg(target_os = "vxworks")] {
         use libc::errnoGet as get_errno;
-    } else if #[cfg(target_os = "dragonfly")] {
-        // Until rust-lang/rust#29594 is stable, we cannot get the errno value
-        // on DragonFlyBSD. So we just return an out-of-range errno.
-        unsafe fn get_errno() -> libc::c_int { -1 }
     } else {
         unsafe fn get_errno() -> libc::c_int { *errno_location() }
     }
 }
 
-pub fn last_os_error() -> Error {
-    let errno = unsafe { get_errno() };
-    if errno > 0 {
-        Error::from(NonZeroU32::new(errno as u32).unwrap())
-    } else {
-        Error::ERRNO_NOT_POSITIVE
+pub(crate) fn last_os_error() -> Error {
+    let errno: libc::c_int = unsafe { get_errno() };
+
+    
+    const _: () = assert!(core::mem::size_of::<libc::c_int>() == core::mem::size_of::<u32>());
+
+    match u32::try_from(errno) {
+        Ok(code) if code != 0 => Error::from_os_error(code),
+        _ => Error::ERRNO_NOT_POSITIVE,
     }
 }
 
 
 
 
-pub fn sys_fill_exact(
+
+
+#[allow(dead_code)]
+pub(crate) fn sys_fill_exact(
     mut buf: &mut [MaybeUninit<u8>],
     sys_fill: impl Fn(&mut [MaybeUninit<u8>]) -> libc::ssize_t,
 ) -> Result<(), Error> {
     while !buf.is_empty() {
         let res = sys_fill(buf);
         match res {
-            res if res > 0 => buf = buf.get_mut(res as usize..).ok_or(Error::UNEXPECTED)?,
+            res if res > 0 => {
+                let len = usize::try_from(res).map_err(|_| Error::UNEXPECTED)?;
+                buf = buf.get_mut(len..).ok_or(Error::UNEXPECTED)?;
+            }
             -1 => {
                 let err = last_os_error();
                 
@@ -78,89 +76,4 @@ pub fn sys_fill_exact(
         }
     }
     Ok(())
-}
-
-
-
-
-
-
-pub struct Weak {
-    name: &'static str,
-    addr: AtomicPtr<c_void>,
-}
-
-impl Weak {
-    
-    
-    
-    
-    
-    
-    const UNINIT: *mut c_void = 1 as *mut c_void;
-
-    
-    
-    pub const unsafe fn new(name: &'static str) -> Self {
-        Self {
-            name,
-            addr: AtomicPtr::new(Self::UNINIT),
-        }
-    }
-
-    
-    
-    
-    
-    pub fn ptr(&self) -> Option<NonNull<c_void>> {
-        
-        
-        
-        
-        
-        
-        match self.addr.load(Ordering::Relaxed) {
-            Self::UNINIT => {
-                let symbol = self.name.as_ptr() as *const _;
-                let addr = unsafe { libc::dlsym(libc::RTLD_DEFAULT, symbol) };
-                
-                self.addr.store(addr, Ordering::Release);
-                NonNull::new(addr)
-            }
-            addr => {
-                let func = NonNull::new(addr)?;
-                fence(Ordering::Acquire);
-                Some(func)
-            }
-        }
-    }
-}
-
-
-pub unsafe fn open_readonly(path: &str) -> Result<libc::c_int, Error> {
-    debug_assert_eq!(path.as_bytes().last(), Some(&0));
-    loop {
-        let fd = libc::open(path.as_ptr() as *const _, libc::O_RDONLY | libc::O_CLOEXEC);
-        if fd >= 0 {
-            return Ok(fd);
-        }
-        let err = last_os_error();
-        
-        if err.raw_os_error() != Some(libc::EINTR) {
-            return Err(err);
-        }
-    }
-}
-
-
-#[cfg(any(target_os = "android", target_os = "linux"))]
-pub fn getrandom_syscall(buf: &mut [MaybeUninit<u8>]) -> libc::ssize_t {
-    unsafe {
-        libc::syscall(
-            libc::SYS_getrandom,
-            buf.as_mut_ptr() as *mut libc::c_void,
-            buf.len(),
-            0,
-        ) as libc::ssize_t
-    }
 }

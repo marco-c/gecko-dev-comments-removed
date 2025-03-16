@@ -1,4 +1,5 @@
-use core::sync::atomic::{AtomicUsize, Ordering::Relaxed};
+
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 
 
@@ -18,27 +19,34 @@ use core::sync::atomic::{AtomicUsize, Ordering::Relaxed};
 
 
 
-pub(crate) struct LazyUsize(AtomicUsize);
+struct LazyUsize(AtomicUsize);
 
 impl LazyUsize {
-    pub const fn new() -> Self {
+    
+    const UNINIT: usize = usize::MAX;
+
+    const fn new() -> Self {
         Self(AtomicUsize::new(Self::UNINIT))
     }
 
     
-    pub const UNINIT: usize = usize::max_value();
-
     
     
-    
-    pub fn unsync_init(&self, init: impl FnOnce() -> usize) -> usize {
-        
-        let mut val = self.0.load(Relaxed);
-        if val == Self::UNINIT {
-            val = init();
-            self.0.store(val, Relaxed);
+    fn unsync_init(&self, init: impl FnOnce() -> usize) -> usize {
+        #[cold]
+        fn do_init(this: &LazyUsize, init: impl FnOnce() -> usize) -> usize {
+            let val = init();
+            this.0.store(val, Ordering::Relaxed);
+            val
         }
-        val
+
+        
+        let val = self.0.load(Ordering::Relaxed);
+        if val != Self::UNINIT {
+            val
+        } else {
+            do_init(self, init)
+        }
     }
 }
 
@@ -51,6 +59,6 @@ impl LazyBool {
     }
 
     pub fn unsync_init(&self, init: impl FnOnce() -> bool) -> bool {
-        self.0.unsync_init(|| init() as usize) != 0
+        self.0.unsync_init(|| usize::from(init())) != 0
     }
 }

@@ -157,26 +157,51 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://docs.rs/tempfile/3.1.0"
+    html_root_url = "https://docs.rs/tempfile/latest"
 )]
 #![cfg_attr(test, deny(warnings))]
 #![deny(rust_2018_idioms)]
 #![allow(clippy::redundant_field_names)]
+
+
+#![cfg_attr(
+    all(feature = "nightly", target_os = "wasi", target_env = "p2"),
+    feature(wasip2)
+)]
 #![cfg_attr(all(feature = "nightly", target_os = "wasi"), feature(wasi_ext))]
 
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
 
-const NUM_RETRIES: u32 = 1 << 31;
+const NUM_RETRIES: u32 = 65536;
 const NUM_RAND_CHARS: usize = 6;
 
 use std::ffi::OsStr;
 use std::fs::OpenOptions;
+use std::io;
 use std::path::Path;
-use std::{env, io};
 
 mod dir;
 mod error;
@@ -184,11 +209,13 @@ mod file;
 mod spooled;
 mod util;
 
+pub mod env;
+
 pub use crate::dir::{tempdir, tempdir_in, TempDir};
 pub use crate::file::{
     tempfile, tempfile_in, NamedTempFile, PathPersistError, PersistError, TempPath,
 };
-pub use crate::spooled::{spooled_tempfile, SpooledTempFile};
+pub use crate::spooled::{spooled_tempfile, SpooledData, SpooledTempFile};
 
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -198,9 +225,10 @@ pub struct Builder<'a, 'b> {
     suffix: &'b OsStr,
     append: bool,
     permissions: Option<std::fs::Permissions>,
+    keep: bool,
 }
 
-impl<'a, 'b> Default for Builder<'a, 'b> {
+impl Default for Builder<'_, '_> {
     fn default() -> Self {
         Builder {
             random_len: crate::NUM_RAND_CHARS,
@@ -208,23 +236,12 @@ impl<'a, 'b> Default for Builder<'a, 'b> {
             suffix: OsStr::new(""),
             append: false,
             permissions: None,
+            keep: false,
         }
     }
 }
 
 impl<'a, 'b> Builder<'a, 'b> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -310,25 +327,11 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     pub fn prefix<S: AsRef<OsStr> + ?Sized>(&mut self, prefix: &'a S) -> &mut Self {
         self.prefix = prefix.as_ref();
         self
     }
 
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -363,13 +366,6 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     pub fn rand_bytes(&mut self, rand: usize) -> &mut Self {
         self.random_len = rand;
         self
@@ -389,29 +385,11 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     pub fn append(&mut self, append: bool) -> &mut Self {
         self.append = append;
         self
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -500,6 +478,20 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
+    pub fn keep(&mut self, keep: bool) -> &mut Self {
+        self.keep = keep;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -545,31 +537,23 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     pub fn tempfile_in<P: AsRef<Path>>(&self, dir: P) -> io::Result<NamedTempFile> {
         util::create_helper(
             dir.as_ref(),
             self.prefix,
             self.suffix,
             self.random_len,
-            self.permissions.as_ref(),
-            |path, permissions| {
-                file::create_named(path, OpenOptions::new().append(self.append), permissions)
+            |path| {
+                file::create_named(
+                    path,
+                    OpenOptions::new().append(self.append),
+                    self.permissions.as_ref(),
+                    self.keep,
+                )
             },
         )
     }
 
-    
-    
-    
-    
-    
     
     
     
@@ -619,48 +603,20 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
-    
-    
-    
-    
-    
     pub fn tempdir_in<P: AsRef<Path>>(&self, dir: P) -> io::Result<TempDir> {
         let storage;
         let mut dir = dir.as_ref();
         if !dir.is_absolute() {
-            let cur_dir = env::current_dir()?;
+            let cur_dir = std::env::current_dir()?;
             storage = cur_dir.join(dir);
             dir = &storage;
         }
 
-        util::create_helper(
-            dir,
-            self.prefix,
-            self.suffix,
-            self.random_len,
-            self.permissions.as_ref(),
-            dir::create,
-        )
+        util::create_helper(dir, self.prefix, self.suffix, self.random_len, |path| {
+            dir::create(path, self.permissions.as_ref(), self.keep)
+        })
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -769,12 +725,6 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
-    
-    
-    
-    
-    
-    
     pub fn make_in<F, R, P>(&self, dir: P, mut f: F) -> io::Result<NamedTempFile<R>>
     where
         F: FnMut(&Path) -> io::Result<R>,
@@ -785,11 +735,10 @@ impl<'a, 'b> Builder<'a, 'b> {
             self.prefix,
             self.suffix,
             self.random_len,
-            None,
-            move |path, _permissions| {
+            move |path| {
                 Ok(NamedTempFile::from_parts(
                     f(&path)?,
-                    TempPath::from_path(path),
+                    TempPath::new(path, self.keep),
                 ))
             },
         )

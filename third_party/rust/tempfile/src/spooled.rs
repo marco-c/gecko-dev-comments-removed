@@ -50,14 +50,6 @@ pub struct SpooledTempFile {
 
 
 
-
-
-
-
-
-
-
-
 #[inline]
 pub fn spooled_tempfile(max_size: usize) -> SpooledTempFile {
     SpooledTempFile::new(max_size)
