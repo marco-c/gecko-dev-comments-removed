@@ -1531,8 +1531,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
       case mozilla::StyleAppearance::MenulistButton:
         
         
-        
-        
+        if (mDefaultAppearance == mozilla::StyleAppearance::Menulist) {
+          return mAppearance;
+        }
         return mDefaultAppearance;
       default:
         return mAppearance;

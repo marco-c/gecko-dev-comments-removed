@@ -94,11 +94,15 @@ a11y::AccType nsComboboxControlFrame::AccessibleType() {
 
 bool nsComboboxControlFrame::HasDropDownButton() const {
   const nsStyleDisplay* disp = StyleDisplay();
-  
-  
-  return disp->EffectiveAppearance() == StyleAppearance::Menulist &&
-         (!IsThemed(disp) ||
-          PresContext()->Theme()->ThemeNeedsComboboxDropmarker());
+  switch (disp->EffectiveAppearance()) {
+    case StyleAppearance::MenulistButton:
+      return true;
+    case StyleAppearance::Menulist:
+      return !IsThemed(disp) ||
+             PresContext()->Theme()->ThemeNeedsComboboxDropmarker();
+    default:
+      return false;
+  }
 }
 
 nscoord nsComboboxControlFrame::DropDownButtonISize() {
