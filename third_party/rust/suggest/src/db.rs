@@ -7,11 +7,10 @@ use std::{cell::OnceCell, path::Path, sync::Arc};
 
 use interrupt_support::{SqlInterruptHandle, SqlInterruptScope};
 use parking_lot::{Mutex, MutexGuard};
-use remote_settings::RemoteSettingsResponse;
 use rusqlite::{
     named_params,
     types::{FromSql, ToSql},
-    Connection, OptionalExtension,
+    Connection,
 };
 use sql_support::{open_database, repeat_sql_vars, ConnExt};
 
@@ -24,12 +23,12 @@ use crate::{
     provider::{AmpMatchingStrategy, SuggestionProvider},
     query::{full_keywords_to_fts_content, FtsQuery},
     rs::{
-        DownloadedAmoSuggestion, DownloadedAmpSuggestion, DownloadedAmpWikipediaSuggestion,
-        DownloadedExposureSuggestion, DownloadedFakespotSuggestion, DownloadedMdnSuggestion,
-        DownloadedPocketSuggestion, DownloadedWikipediaSuggestion, Record, SuggestRecordId,
+        DownloadedAmoSuggestion, DownloadedAmpSuggestion, DownloadedExposureSuggestion,
+        DownloadedFakespotSuggestion, DownloadedMdnSuggestion, DownloadedPocketSuggestion,
+        DownloadedWikipediaSuggestion, Record, SuggestRecordId,
     },
     schema::{clear_database, SuggestConnectionInitializer},
-    suggestion::{cook_raw_suggestion_url, AmpSuggestionType, FtsMatchInfo, Suggestion},
+    suggestion::{cook_raw_suggestion_url, FtsMatchInfo, Suggestion},
     util::full_keyword,
     weather::WeatherCache,
     Result, SuggestionQuery,
@@ -202,52 +201,6 @@ impl<'a> SuggestDao<'a> {
     
     
 
-    pub fn read_cached_rs_data(&self, collection: &str) -> Option<RemoteSettingsResponse> {
-        match self.try_read_cached_rs_data(collection) {
-            Ok(result) => result,
-            Err(e) => {
-                
-                
-                
-                
-                error_support::report_error!("suggest-rs-cache-read", "{e}");
-                None
-            }
-        }
-    }
-
-    pub fn write_cached_rs_data(&mut self, collection: &str, data: &RemoteSettingsResponse) {
-        if let Err(e) = self.try_write_cached_rs_data(collection, data) {
-            
-            error_support::report_error!("suggest-rs-cache-write", "{e}");
-        }
-    }
-
-    fn try_read_cached_rs_data(&self, collection: &str) -> Result<Option<RemoteSettingsResponse>> {
-        let mut stmt = self
-            .conn
-            .prepare_cached("SELECT data FROM rs_cache WHERE collection = ?")?;
-        let data = stmt
-            .query_row((collection,), |row| row.get::<_, Vec<u8>>(0))
-            .optional()?;
-        match data {
-            Some(data) => Ok(Some(rmp_serde::decode::from_slice(data.as_slice())?)),
-            None => Ok(None),
-        }
-    }
-
-    fn try_write_cached_rs_data(
-        &mut self,
-        collection: &str,
-        data: &RemoteSettingsResponse,
-    ) -> Result<()> {
-        let mut stmt = self
-            .conn
-            .prepare_cached("INSERT OR REPLACE INTO rs_cache(collection, data) VALUES(?, ?)")?;
-        stmt.execute((collection, rmp_serde::encode::to_vec(data)?))?;
-        Ok(())
-    }
-
     pub fn get_ingested_records(&self) -> Result<Vec<IngestedRecord>> {
         let mut stmt = self
             .conn
@@ -302,25 +255,21 @@ impl<'a> SuggestDao<'a> {
     }
 
     
-    pub fn fetch_amp_suggestions(
-        &self,
-        query: &SuggestionQuery,
-        suggestion_type: AmpSuggestionType,
-    ) -> Result<Vec<Suggestion>> {
+    pub fn fetch_amp_suggestions(&self, query: &SuggestionQuery) -> Result<Vec<Suggestion>> {
         let strategy = query
             .provider_constraints
             .as_ref()
             .and_then(|c| c.amp_alternative_matching.as_ref());
         match strategy {
-            None => self.fetch_amp_suggestions_using_keywords(query, suggestion_type, true),
+            None => self.fetch_amp_suggestions_using_keywords(query, true),
             Some(AmpMatchingStrategy::NoKeywordExpansion) => {
-                self.fetch_amp_suggestions_using_keywords(query, suggestion_type, false)
+                self.fetch_amp_suggestions_using_keywords(query, false)
             }
             Some(AmpMatchingStrategy::FtsAgainstFullKeywords) => {
-                self.fetch_amp_suggestions_using_fts(query, suggestion_type, "full_keywords")
+                self.fetch_amp_suggestions_using_fts(query, "full_keywords")
             }
             Some(AmpMatchingStrategy::FtsAgainstTitle) => {
-                self.fetch_amp_suggestions_using_fts(query, suggestion_type, "title")
+                self.fetch_amp_suggestions_using_fts(query, "title")
             }
         }
     }
@@ -328,14 +277,9 @@ impl<'a> SuggestDao<'a> {
     pub fn fetch_amp_suggestions_using_keywords(
         &self,
         query: &SuggestionQuery,
-        suggestion_type: AmpSuggestionType,
         allow_keyword_expansion: bool,
     ) -> Result<Vec<Suggestion>> {
         let keyword_lowercased = &query.keyword.to_lowercase();
-        let provider = match suggestion_type {
-            AmpSuggestionType::Mobile => SuggestionProvider::AmpMobile,
-            AmpSuggestionType::Desktop => SuggestionProvider::Amp,
-        };
         let where_extra = if allow_keyword_expansion {
             ""
         } else {
@@ -369,7 +313,7 @@ impl<'a> SuggestDao<'a> {
             ),
             named_params! {
                 ":keyword": keyword_lowercased,
-                ":provider": provider
+                ":provider": SuggestionProvider::Amp,
             },
             |row| -> Result<Suggestion> {
                 let suggestion_id: i64 = row.get("id")?;
@@ -448,15 +392,10 @@ impl<'a> SuggestDao<'a> {
     pub fn fetch_amp_suggestions_using_fts(
         &self,
         query: &SuggestionQuery,
-        suggestion_type: AmpSuggestionType,
         fts_column: &str,
     ) -> Result<Vec<Suggestion>> {
         let fts_query = query.fts_query();
         let match_arg = &fts_query.match_arg;
-        let provider = match suggestion_type {
-            AmpSuggestionType::Mobile => SuggestionProvider::AmpMobile,
-            AmpSuggestionType::Desktop => SuggestionProvider::Amp,
-        };
         let suggestions = self.conn.query_rows_and_then_cached(
             &format!(
                 r#"
@@ -480,7 +419,7 @@ impl<'a> SuggestDao<'a> {
                 "#
             ),
             named_params! {
-                ":provider": provider
+                ":provider": SuggestionProvider::Amp,
             },
             |row| -> Result<Suggestion> {
                 let suggestion_id: i64 = row.get("id")?;
@@ -1115,58 +1054,42 @@ impl<'a> SuggestDao<'a> {
     }
 
     
-    
-    pub fn insert_amp_wikipedia_suggestions(
+    pub fn insert_amp_suggestions(
         &mut self,
         record_id: &SuggestRecordId,
-        suggestions: &[DownloadedAmpWikipediaSuggestion],
+        suggestions: &[DownloadedAmpSuggestion],
         enable_fts: bool,
     ) -> Result<()> {
         
         
         let mut suggestion_insert = SuggestionInsertStatement::new(self.conn)?;
         let mut amp_insert = AmpInsertStatement::new(self.conn)?;
-        let mut wiki_insert = WikipediaInsertStatement::new(self.conn)?;
         let mut keyword_insert = KeywordInsertStatement::new(self.conn)?;
         let mut fts_insert = AmpFtsInsertStatement::new(self.conn)?;
         for suggestion in suggestions {
             self.scope.err_if_interrupted()?;
-            let common_details = suggestion.common_details();
-            let provider = suggestion.provider();
-
             let suggestion_id = suggestion_insert.execute(
                 record_id,
-                &common_details.title,
-                &common_details.url,
-                common_details.score.unwrap_or(DEFAULT_SUGGESTION_SCORE),
-                provider,
+                &suggestion.title,
+                &suggestion.url,
+                suggestion.score.unwrap_or(DEFAULT_SUGGESTION_SCORE),
+                SuggestionProvider::Amp,
             )?;
-            match suggestion {
-                DownloadedAmpWikipediaSuggestion::Amp(amp) => {
-                    amp_insert.execute(suggestion_id, amp)?;
-                }
-                DownloadedAmpWikipediaSuggestion::Wikipedia(wikipedia) => {
-                    wiki_insert.execute(suggestion_id, wikipedia)?;
-                }
-            }
+            amp_insert.execute(suggestion_id, suggestion)?;
             if enable_fts {
                 fts_insert.execute(
                     suggestion_id,
-                    &common_details.full_keywords_fts_column(),
-                    &common_details.title,
+                    &suggestion.full_keywords_fts_column(),
+                    &suggestion.title,
                 )?;
             }
             let mut full_keyword_inserter = FullKeywordInserter::new(self.conn, suggestion_id);
-            for keyword in common_details.keywords() {
-                let full_keyword_id = match (suggestion, keyword.full_keyword) {
-                    
-                    
-                    (DownloadedAmpWikipediaSuggestion::Amp(_), Some(full_keyword)) => {
-                        Some(full_keyword_inserter.maybe_insert(full_keyword)?)
-                    }
-                    _ => None,
+            for keyword in suggestion.keywords() {
+                let full_keyword_id = if let Some(full_keyword) = keyword.full_keyword {
+                    Some(full_keyword_inserter.maybe_insert(full_keyword)?)
+                } else {
+                    None
                 };
-
                 keyword_insert.execute(
                     suggestion_id,
                     keyword.keyword,
@@ -1179,39 +1102,29 @@ impl<'a> SuggestDao<'a> {
     }
 
     
-    
-    pub fn insert_amp_mobile_suggestions(
+    pub fn insert_wikipedia_suggestions(
         &mut self,
         record_id: &SuggestRecordId,
-        suggestions: &[DownloadedAmpSuggestion],
+        suggestions: &[DownloadedWikipediaSuggestion],
     ) -> Result<()> {
+        
+        
         let mut suggestion_insert = SuggestionInsertStatement::new(self.conn)?;
-        let mut amp_insert = AmpInsertStatement::new(self.conn)?;
+        let mut wiki_insert = WikipediaInsertStatement::new(self.conn)?;
         let mut keyword_insert = KeywordInsertStatement::new(self.conn)?;
         for suggestion in suggestions {
             self.scope.err_if_interrupted()?;
-            let common_details = &suggestion.common_details;
             let suggestion_id = suggestion_insert.execute(
                 record_id,
-                &common_details.title,
-                &common_details.url,
-                common_details.score.unwrap_or(DEFAULT_SUGGESTION_SCORE),
-                SuggestionProvider::AmpMobile,
+                &suggestion.title,
+                &suggestion.url,
+                suggestion.score.unwrap_or(DEFAULT_SUGGESTION_SCORE),
+                SuggestionProvider::Wikipedia,
             )?;
-            amp_insert.execute(suggestion_id, suggestion)?;
-
-            let mut full_keyword_inserter = FullKeywordInserter::new(self.conn, suggestion_id);
-            for keyword in common_details.keywords() {
-                let full_keyword_id = keyword
-                    .full_keyword
-                    .map(|full_keyword| full_keyword_inserter.maybe_insert(full_keyword))
-                    .transpose()?;
-                keyword_insert.execute(
-                    suggestion_id,
-                    keyword.keyword,
-                    full_keyword_id,
-                    keyword.rank,
-                )?;
+            wiki_insert.execute(suggestion_id, suggestion)?;
+            for keyword in suggestion.keywords() {
+                
+                keyword_insert.execute(suggestion_id, keyword.keyword, None, keyword.rank)?;
             }
         }
         Ok(())

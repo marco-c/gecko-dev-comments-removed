@@ -33,7 +33,10 @@ add_setup(async function test_setup() {
         ],
       },
       {
-        type: "data",
+        
+        collection: lazy.QuickSuggestTestUtils.RS_COLLECTION.AMP,
+        
+        type: lazy.QuickSuggestTestUtils.RS_TYPE.AMP,
         
         attachment: [lazy.QuickSuggestTestUtils.ampRemoteSettings()],
       },

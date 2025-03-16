@@ -17,11 +17,6 @@ const TIMESTAMP_TEMPLATE: &str = "%YYYYMMDDHH%";
 const TIMESTAMP_LENGTH: usize = 10;
 
 
-pub(crate) enum AmpSuggestionType {
-    Mobile,
-    Desktop,
-}
-
 #[derive(Clone, Debug, PartialEq, uniffi::Enum)]
 pub enum Suggestion {
     Amp {

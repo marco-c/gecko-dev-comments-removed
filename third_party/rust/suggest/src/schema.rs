@@ -23,18 +23,13 @@ use sql_support::{
 
 
 
-pub const VERSION: u32 = 32;
+pub const VERSION: u32 = 33;
 
 
 pub const SQL: &str = "
 CREATE TABLE meta(
     key TEXT PRIMARY KEY,
     value NOT NULL
-) WITHOUT ROWID;
-
-CREATE TABLE rs_cache(
-    collection TEXT PRIMARY KEY,
-    data TEXT NOT NULL
 ) WITHOUT ROWID;
 
 CREATE TABLE ingested_records(
@@ -616,6 +611,11 @@ impl ConnectionInitializer for SuggestConnectionInitializer<'_> {
                 )?;
                 Ok(())
             }
+            32 => {
+                
+                tx.execute_batch("DROP TABLE rs_cache;")?;
+                Ok(())
+            }
             _ => Err(open_database::Error::IncompatibleVersion(version)),
         }
     }
@@ -643,7 +643,6 @@ pub fn clear_database(db: &Connection) -> rusqlite::Result<()> {
         "geonames_metrics",
         "ingested_records",
         "keywords_metrics",
-        "rs_cache",
     ];
     for t in conditional_tables {
         let table_exists = db.exists("SELECT 1 FROM sqlite_master WHERE name = ?", [t])?;
@@ -793,7 +792,6 @@ PRAGMA user_version=16;
             MigratedDatabaseFile::new(SuggestConnectionInitializer::default(), V16_SCHEMA);
 
         
-        
         db_file.upgrade_to(25);
 
         
@@ -801,10 +799,6 @@ PRAGMA user_version=16;
         conn.execute(
             "INSERT INTO ingested_records(id, collection, type, last_modified) VALUES(?, ?, ?, ?)",
             ("record-id", "quicksuggest", "record-type", 1),
-        )?;
-        conn.execute(
-            "INSERT INTO rs_cache(collection, data) VALUES(?, ?)",
-            ("quicksuggest", "some data"),
         )?;
         conn.close().expect("Connection should be closed");
 
@@ -818,11 +812,6 @@ PRAGMA user_version=16;
             conn.query_one::<i32>("SELECT count(*) FROM ingested_records")?,
             0,
             "ingested_records should be empty"
-        );
-        assert_eq!(
-            conn.query_one::<i32>("SELECT count(*) FROM rs_cache")?,
-            0,
-            "rs_cache should be empty"
         );
         conn.close().expect("Connection should be closed");
 
