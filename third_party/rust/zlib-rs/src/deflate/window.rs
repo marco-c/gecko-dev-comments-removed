@@ -1,22 +1,33 @@
 use crate::{allocate::Allocator, weak_slice::WeakSliceMut};
+use core::mem::MaybeUninit;
 
 #[derive(Debug)]
 pub struct Window<'a> {
     
     
-    buf: WeakSliceMut<'a, u8>,
+    buf: WeakSliceMut<'a, MaybeUninit<u8>>,
+
+    
+    filled: usize,
 
     window_bits: usize,
+
+    high_water: usize,
 }
 
 impl<'a> Window<'a> {
     pub fn new_in(alloc: &Allocator<'a>, window_bits: usize) -> Option<Self> {
         let len = 2 * ((1 << window_bits) + Self::padding());
-        let ptr = alloc.allocate_zeroed(len)?;
+        let ptr = alloc.allocate_slice_raw::<MaybeUninit<u8>>(len)?;
         
-        let buf = unsafe { WeakSliceMut::from_raw_parts_mut(ptr.as_ptr(), len) };
+        let buf = unsafe { WeakSliceMut::from_raw_parts_mut(ptr, len) };
 
-        Some(Self { buf, window_bits })
+        Some(Self {
+            buf,
+            filled: 0,
+            window_bits,
+            high_water: 0,
+        })
     }
 
     pub fn clone_in(&self, alloc: &Allocator<'a>) -> Option<Self> {
@@ -26,6 +37,8 @@ impl<'a> Window<'a> {
             .buf
             .as_mut_slice()
             .copy_from_slice(self.buf.as_slice());
+        clone.filled = self.filled;
+        clone.high_water = self.high_water;
 
         Some(clone)
     }
@@ -48,14 +61,14 @@ impl<'a> Window<'a> {
     #[inline]
     pub fn filled(&self) -> &[u8] {
         
-        unsafe { core::slice::from_raw_parts(self.buf.as_ptr().cast(), self.buf.len()) }
+        unsafe { core::slice::from_raw_parts(self.buf.as_ptr().cast(), self.filled) }
     }
 
     
     #[inline]
     pub fn filled_mut(&mut self) -> &mut [u8] {
         
-        unsafe { core::slice::from_raw_parts_mut(self.buf.as_mut_ptr().cast(), self.buf.len()) }
+        unsafe { core::slice::from_raw_parts_mut(self.buf.as_mut_ptr().cast(), self.filled) }
     }
 
     
@@ -64,8 +77,66 @@ impl<'a> Window<'a> {
     pub unsafe fn copy_and_initialize(&mut self, range: core::ops::Range<usize>, src: *const u8) {
         let (start, end) = (range.start, range.end);
 
-        let dst = self.buf.as_mut_slice()[range].as_mut_ptr();
+        let dst = self.buf.as_mut_slice()[range].as_mut_ptr() as *mut u8;
         unsafe { core::ptr::copy_nonoverlapping(src, dst, end - start) };
+
+        if start >= self.filled {
+            self.filled = Ord::max(self.filled, end);
+        }
+
+        self.high_water = Ord::max(self.high_water, self.filled);
+    }
+
+    
+    
+    
+    
+    
+    pub fn initialize_out_of_bounds(&mut self) {
+        const WIN_INIT: usize = crate::deflate::STD_MAX_MATCH;
+
+        
+        
+        
+        
+        
+        
+        if self.high_water < self.capacity() {
+            let curr = self.filled().len();
+
+            if self.high_water < curr {
+                
+                
+                let init = Ord::min(self.capacity() - curr, WIN_INIT);
+
+                self.buf.as_mut_slice()[curr..][..init].fill(MaybeUninit::new(0));
+
+                self.high_water = curr + init;
+
+                self.filled += init;
+            } else if self.high_water < curr + WIN_INIT {
+                
+                
+                
+                let init = Ord::min(
+                    curr + WIN_INIT - self.high_water,
+                    self.capacity() - self.high_water,
+                );
+
+                self.buf.as_mut_slice()[self.high_water..][..init].fill(MaybeUninit::new(0));
+
+                self.high_water += init;
+                self.filled += init;
+            }
+        }
+    }
+
+    pub fn initialize_at_least(&mut self, at_least: usize) {
+        let end = at_least.clamp(self.high_water, self.buf.len());
+        self.buf.as_mut_slice()[self.high_water..end].fill(MaybeUninit::new(0));
+
+        self.high_water = end;
+        self.filled = end;
     }
 
     
