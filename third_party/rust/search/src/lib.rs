@@ -2,6 +2,7 @@
 
 
 
+mod configuration_overrides_types;
 mod configuration_types;
 mod environment_matching;
 mod error;
@@ -17,4 +18,4 @@ pub use crate::types::*;
 pub use selector::SearchEngineSelector;
 pub type SearchApiResult<T> = std::result::Result<T, error::SearchApiError>;
 
-uniffi::setup_scaffolding!();
+uniffi::setup_scaffolding!("search");

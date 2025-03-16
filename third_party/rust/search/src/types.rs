@@ -209,6 +209,9 @@ pub struct SearchEngineDefinition {
     
     
     pub order_hint: Option<u32>,
+
+    
+    pub click_url: Option<String>,
 }
 
 
