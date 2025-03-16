@@ -2,8 +2,6 @@
 
 
 
-
-
 let gAddEngineDialog = {
   _form: null,
   _name: null,
@@ -56,7 +54,7 @@ let gAddEngineDialog = {
     if (this._alias.value) {
       let engine = await Services.search.getEngineByAlias(this._alias.value);
       if (engine) {
-        engine = document.getElementById("engineAliasExists").textContent;
+        validity = document.getElementById("engineAliasExists").textContent;
       }
     }
     this._alias.setCustomValidity(validity);
