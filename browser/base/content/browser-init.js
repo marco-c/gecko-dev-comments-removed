@@ -269,25 +269,24 @@ var gBrowserInit = {
       
       gURLBar.removeAttribute("focused");
 
-      
-      
-      addEventListener(
-        "MozAfterPaint",
-        () => {
-          if (gBrowser.isTabGroupLabel(tabToAdopt)) {
-            gBrowser.adoptTabGroup(tabToAdopt.group, 0);
-            gBrowser.removeTab(gBrowser.selectedTab);
-          } else {
-            gBrowser.swapBrowsersAndCloseOther(
-              gBrowser.selectedTab,
-              tabToAdopt
-            );
-          }
+      let swapBrowsers = () => {
+        try {
+          gBrowser.swapBrowsersAndCloseOther(gBrowser.selectedTab, tabToAdopt);
+        } catch (e) {
+          console.error(e);
+        }
 
-          this._clearTabToAdopt();
-        },
-        { once: true }
-      );
+        
+        this._clearTabToAdopt();
+      };
+      if (tabToAdopt.linkedBrowser.isRemoteBrowser) {
+        
+        
+        
+        addEventListener("MozAfterPaint", swapBrowsers, { once: true });
+      } else {
+        swapBrowsers();
+      }
     }
 
     
