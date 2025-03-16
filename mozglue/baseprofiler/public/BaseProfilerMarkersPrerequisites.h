@@ -1030,6 +1030,14 @@ inline void StreamPayload<ProfilerString8View>(
     const ProfilerString8View& aPayload) {
   aWriter.StringProperty(aKey, aPayload);
 }
+
+template <>
+inline void StreamPayload<Flow>(baseprofiler::SpliceableJSONWriter& aWriter,
+                                const Span<const char> aKey,
+                                const Flow& aPayload) {
+  aWriter.FlowProperty(aKey, aPayload);
+}
+
 }  
 
 
