@@ -167,6 +167,10 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   
   RefPtr<mozilla::dom::WindowGlobalParent> mSourceWindowGlobal;
 
+  
+  
+  uint32_t mTimeoutMultiplier = 1;
+
   friend class ::ContentAnalysisTest;
 };
 
@@ -230,6 +234,14 @@ class ContentAnalysis final : public nsIContentAnalysis,
       nsITransferable* aTransferable,
       nsIClipboard::ClipboardType aClipboardType,
       ContentAnalysisCallback* aResolver, bool aForFullClipboard = false);
+  using FilesAllowedPromise = MozPromise<nsCOMArray<nsIFile>, nsresult, true>;
+  
+  
+  
+  
+  static RefPtr<FilesAllowedPromise> CheckFilesInBatchMode(
+      nsCOMArray<nsIFile>&& aFiles, mozilla::dom::WindowGlobalParent* aWindow,
+      nsIContentAnalysisRequest::Reason aReason, nsIURI* aURI = nullptr);
   static RefPtr<ContentAnalysis> GetContentAnalysisFromService();
 
   

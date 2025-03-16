@@ -245,6 +245,10 @@ interface nsIContentAnalysisRequest : nsISupports
   
   
   readonly attribute WindowGlobalParent sourceWindowGlobal;
+
+  
+  
+  attribute uint32_t timeoutMultiplier;
 };
 
 [scriptable, builtinclass, uuid(cb09fc88-118c-411b-aa89-2e1bc5e3eba6)]
