@@ -8297,62 +8297,63 @@ var TabBarVisibility = {
   _initialUpdateDone: false,
 
   update(force = false) {
-    let toolbar = document.getElementById("TabsToolbar");
-    let navbar = document.getElementById("nav-bar");
-    let hideTabstrip = false;
     let isPopup = !window.toolbar.visible;
-    let isVerticalTabs = Services.prefs.getBoolPref(
-      "sidebar.verticalTabs",
-      false
-    );
-    let nonPopupWithVerticalTabs = !isPopup && isVerticalTabs;
-    if (
-      !gBrowser  ||
-      gBrowser.visibleTabs.length == 1
-    ) {
-      hideTabstrip = isPopup;
-    }
 
-    if (nonPopupWithVerticalTabs) {
-      
-      
-      
-      hideTabstrip = true;
-      CustomTitlebar.allowedBy("tabs-visible", true);
-    } else {
-      CustomTitlebar.allowedBy("tabs-visible", !hideTabstrip);
-    }
+    let hasVerticalTabs =
+      !isPopup && Services.prefs.getBoolPref("sidebar.verticalTabs", false);
 
-    gNavToolbox.toggleAttribute("tabs-hidden", hideTabstrip);
+    
+    
+    let hasSingleTab = !gBrowser || gBrowser.visibleTabs.length == 1;
+
+    
+    
+    let hideTabsToolbar = (isPopup && hasSingleTab) || hasVerticalTabs;
+
+    
+    
+    
+    CustomTitlebar.allowedBy("non-popup", !(isPopup && hasSingleTab));
+
+    
+
+    let tabsToolbar = document.getElementById("TabsToolbar");
+    let navbar = document.getElementById("nav-bar");
+
+    gNavToolbox.toggleAttribute("tabs-hidden", hideTabsToolbar);
     
     navbar.classList.toggle(
       "browser-titlebar",
-      CustomTitlebar.enabled && hideTabstrip
+      CustomTitlebar.enabled && hideTabsToolbar
     );
 
     document
       .getElementById("browser")
       .classList.toggle(
         "browser-toolbox-background",
-        CustomTitlebar.enabled && nonPopupWithVerticalTabs
+        CustomTitlebar.enabled && hasVerticalTabs
       );
 
     if (
-      hideTabstrip == toolbar.collapsed &&
+      hideTabsToolbar == tabsToolbar.collapsed &&
       !force &&
       this._initialUpdateDone
     ) {
+      
       
       return;
     }
     this._initialUpdateDone = true;
 
-    toolbar.collapsed = hideTabstrip;
+    tabsToolbar.collapsed = hideTabsToolbar;
 
-    document.getElementById("menu_closeWindow").hidden = hideTabstrip;
+    
+    
+    
+    document.getElementById("menu_closeWindow").hidden = hideTabsToolbar;
     document.l10n.setAttributes(
       document.getElementById("menu_close"),
-      hideTabstrip
+      hideTabsToolbar
         ? "tabbrowser-menuitem-close"
         : "tabbrowser-menuitem-close-tab"
     );
