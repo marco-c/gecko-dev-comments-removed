@@ -4,7 +4,7 @@
 
 
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "BrowserSearchTelemetry.sys.mjs",
     "OpenSearchManager.sys.mjs",
     "SearchOneOffs.sys.mjs",
