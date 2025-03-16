@@ -36,6 +36,7 @@ add_task(function test_setup() {
   
   GleanPings.usageReporting.setEnabled(true);
   GleanPings.usageDeletionRequest.setEnabled(true);
+  GleanPings.onboardingOptOut.setEnabled(true);
 });
 
 add_task(async function test_client_id() {
