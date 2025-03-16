@@ -746,7 +746,18 @@ function startLogging() {
 
     
     
-    ProfilerMenuButton.ensureButtonInNavbar();
+    if (!ProfilerMenuButton.isInNavbar()) {
+      
+      Services.prefs.setBoolPref(
+        "devtools.performance.popup.feature-flag",
+        true
+      );
+      
+      ProfilerMenuButton.addToNavbar();
+      
+      
+      CustomizableUI.dispatchToolboxEvent("customizationchange");
+    }
 
     gProfilerPromise = Services.profiler.StartProfiler(
       entries,
