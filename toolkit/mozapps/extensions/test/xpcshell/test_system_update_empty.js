@@ -2,6 +2,10 @@
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "2");
 
+
+let scopes = AddonManager.SCOPE_PROFILE | AddonManager.SCOPE_APPLICATION;
+Services.prefs.setIntPref("extensions.enabledScopes", scopes);
+
 let distroDir = FileUtils.getDir("ProfD", ["sysfeatures", "empty"]);
 distroDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
 registerDirectory("XREAppFeat", distroDir);
@@ -137,6 +141,35 @@ add_task(async function () {
       let test = TESTS[testName];
 
       await execSystemAddonTest(setupName, setup, test, distroDir);
+
+      
+      
+      
+      info("Running test " + setupName + " " + testName + " (asBuiltIn)");
+      const setupAsBuiltIn = {
+        setup: setup.setup,
+        initialState: setup.initialState.map(stateEntry => {
+          return stateEntry.version
+            ? { ...stateEntry, asBuiltin: true }
+            : stateEntry;
+        }),
+      };
+      const testAsBuiltIn = {
+        updateList: test.updateList,
+        finalState: {
+          [setupName]: test.finalState[setupName].map(stateEntry => {
+            return stateEntry.isUpgrade
+              ? stateEntry
+              : { ...stateEntry, asBuiltin: true };
+          }),
+        },
+      };
+      await execSystemAddonTest(
+        setupName,
+        setupAsBuiltIn,
+        testAsBuiltIn,
+        distroDir
+      );
     }
   }
 });
