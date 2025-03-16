@@ -341,7 +341,13 @@ initializeEncoding(XML_Parser parser);
 static enum XML_Error
 doProlog(XML_Parser parser, const ENCODING *enc, const char *s,
          const char *end, int tok, const char *next, const char **nextPtr,
+
+#if 0
+         XML_Bool haveMore);
+#else
          XML_Bool haveMore, XML_Bool allowClosingDoctype);
+#endif
+
 static enum XML_Error
 processInternalEntity(XML_Parser parser, ENTITY *entity,
                       XML_Bool betweenDecl);
@@ -349,10 +355,12 @@ static enum XML_Error
 doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
           const char *start, const char *end, const char **endPtr,
           XML_Bool haveMore);
+
 static enum XML_Error
 doContentInternal(XML_Parser parser, int startTagLevel, const ENCODING *enc,
                   const char *start, const char *end, const char **endPtr,
                   XML_Bool haveMore);
+
 static enum XML_Error
 doCdataSection(XML_Parser parser, const ENCODING *, const char **startPtr,
                const char *end, const char **nextPtr, XML_Bool haveMore);
@@ -405,8 +413,10 @@ static void FASTCALL normalizePublicId(XML_Char *s);
 
 static DTD * dtdCreate(const XML_Memory_Handling_Suite *ms);
 
+#if 0
 
-
+static void dtdReset(DTD *p, const XML_Memory_Handling_Suite *ms);
+#endif
 
 static void
 dtdDestroy(DTD *p, XML_Bool isDocEntity, const XML_Memory_Handling_Suite *ms);
@@ -421,7 +431,9 @@ lookup(XML_Parser parser, HASH_TABLE *table, KEY name, size_t createSize);
 static void FASTCALL
 hashTableInit(HASH_TABLE *, const XML_Memory_Handling_Suite *ms);
 
-
+#if 0
+static void FASTCALL hashTableClear(HASH_TABLE *);
+#endif
 
 static void FASTCALL hashTableDestroy(HASH_TABLE *);
 static void FASTCALL
@@ -807,11 +819,15 @@ gather_time_entropy(void)
 
   gettimeofday_res = gettimeofday(&tv, NULL);
 
+
 #if defined(NDEBUG)
   (void)gettimeofday_res;
 #else
+
   assert (gettimeofday_res == 0);
+
 #endif 
+
 
   
   return tv.tv_usec;
@@ -1009,6 +1025,7 @@ parserCreate(const XML_Char *encodingName,
   parserInit(parser, encodingName);
 
   if (encodingName && !protocolEncodingName) {
+
     if (dtd) {
       
       
@@ -1017,6 +1034,7 @@ parserCreate(const XML_Char *encodingName,
       
       parser->m_dtd = NULL;
     }
+
     XML_ParserFree(parser);
     return NULL;
   }
@@ -2127,7 +2145,13 @@ XML_GetBuffer(XML_Parser parser, int len)
 }
 
 enum XML_Status XMLCALL
+
+#if 0
+XML_StopParser(XML_Parser parser, XML_Bool resumable)
+#else
 XML_StopParser(XML_Parser parser, int resumable)
+#endif
+
 {
   if (parser == NULL)
     return XML_STATUS_ERROR;
@@ -2537,8 +2561,17 @@ contentProcessor(XML_Parser parser,
                  const char *end,
                  const char **endPtr)
 {
-  return doContent(parser, 0, encoding, start, end,
-                   endPtr, (XML_Bool)!ps_finalBuffer);
+  enum XML_Error result = doContent(parser, 0, encoding, start, end,
+                                    endPtr, (XML_Bool)!ps_finalBuffer);
+
+#if 0
+  if (result == XML_ERROR_NONE) {
+    if (!storeRawNames(parser))
+      return XML_ERROR_NO_MEMORY;
+  }
+#endif
+
+  return result;
 }
 
 static enum XML_Error PTRCALL
@@ -2648,8 +2681,17 @@ externalEntityContentProcessor(XML_Parser parser,
                                const char *end,
                                const char **endPtr)
 {
-  return doContent(parser, 1, encoding, start, end,
-                   endPtr, (XML_Bool)!ps_finalBuffer);
+  enum XML_Error result = doContent(parser, 1, encoding, start, end,
+                                    endPtr, (XML_Bool)!ps_finalBuffer);
+
+#if 0
+  if (result == XML_ERROR_NONE) {
+    if (!storeRawNames(parser))
+      return XML_ERROR_NO_MEMORY;
+  }
+#endif
+
+  return result;
 }
 
 static enum XML_Error
@@ -2661,6 +2703,7 @@ doContent(XML_Parser parser,
           const char **nextPtr,
           XML_Bool haveMore)
 {
+
   enum XML_Error result = doContentInternal(parser, startTagLevel, enc,
                                             s, end, nextPtr, haveMore);
   if (result == XML_ERROR_NONE) {
@@ -2679,6 +2722,7 @@ doContentInternal(XML_Parser parser,
                   const char **nextPtr,
                   XML_Bool haveMore)
 {
+
   
   DTD * const dtd = _dtd;
 
@@ -2949,7 +2993,7 @@ doContentInternal(XML_Parser parser,
         if (len != tag->rawNameLength
             || memcmp(tag->rawName, rawName, len) != 0) {
 
-	  
+          
           const XML_Char *localPart;
           const XML_Char *prefix;
           XML_Char *uri;
@@ -3222,10 +3266,12 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
   
   n = XmlGetAttributes(enc, attStr, attsSize, atts);
 
+
   
   if (n > INT_MAX - nDefaultAtts) {
     return XML_ERROR_NO_MEMORY;
   }
+
 
   if (n + nDefaultAtts > attsSize) {
     int oldAttsSize = attsSize;
@@ -3234,13 +3280,16 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
     XML_AttrInfo *temp2;
 #endif
 
+
     
     if ((nDefaultAtts > INT_MAX - INIT_ATTS_SIZE)
         || (n > INT_MAX - (nDefaultAtts + INIT_ATTS_SIZE))) {
       return XML_ERROR_NO_MEMORY;
     }
 
+
     attsSize = n + nDefaultAtts + INIT_ATTS_SIZE;
+
 
     
 
@@ -3253,11 +3302,13 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
     }
 #endif
 
+
     temp = (ATTRIBUTE *)REALLOC((void *)atts, attsSize * sizeof(ATTRIBUTE));
     if (temp == NULL)
       return XML_ERROR_NO_MEMORY;
     atts = temp;
 #ifdef XML_ATTR_INFO
+
     
 
 
@@ -3268,6 +3319,7 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
       return XML_ERROR_NO_MEMORY;
     }
 #  endif
+
 
     temp2 = (XML_AttrInfo *)REALLOC((void *)attInfo, attsSize * sizeof(XML_AttrInfo));
     if (temp2 == NULL)
@@ -3428,16 +3480,24 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
     int j;  
     unsigned long version = nsAttsVersion;
 
+
+#if 0
+    int nsAttsSize = (int)1 << nsAttsPower;
+#else
     
     if (parser->m_nsAttsPower >= sizeof(unsigned int) * 8 ) {
       return XML_ERROR_NO_MEMORY;
     }
 
     unsigned int nsAttsSize = 1u << nsAttsPower;
+#endif
+
 
     if (nPrefixes) {
 
+
     unsigned char oldNsAttsPower = parser->m_nsAttsPower;
+
     
     if ((nPrefixes << 1) >> nsAttsPower) {  
       NS_ATT *temp;
@@ -3446,6 +3506,10 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
       if (nsAttsPower < 3)
         nsAttsPower = 3;
 
+
+#if 0
+      nsAttsSize = (int)1 << nsAttsPower;
+#else
       
       if (parser->m_nsAttsPower >= sizeof(nsAttsSize) * 8 ) {
         
@@ -3466,6 +3530,8 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
         return XML_ERROR_NO_MEMORY;
       }
 #endif
+#endif
+
 
       temp = (NS_ATT *)REALLOC(nsAtts, nsAttsSize * sizeof(NS_ATT));
       if (!temp)
@@ -3665,15 +3731,18 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
   for (i = 0; localPart[i++];)
     ;  
 
+
   
   if (binding->uriLen > INT_MAX - prefixLen
       || i > INT_MAX - (binding->uriLen + prefixLen)) {
     return XML_ERROR_NO_MEMORY;
   }
 
+
   n = i + binding->uriLen + prefixLen;
   if (n > binding->uriAlloc) {
     TAG *p;
+
 
     
     if (n > INT_MAX - EXPAND_SPARE) {
@@ -3688,6 +3757,7 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
       return XML_ERROR_NO_MEMORY;
     }
 #endif
+
 
     uri = (XML_Char *)MALLOC((n + EXPAND_SPARE) * sizeof(XML_Char));
     if (!uri)
@@ -3789,6 +3859,7 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
   if (freeBindingList) {
     b = freeBindingList;
     if (len > b->uriAlloc) {
+
       
       if (len > INT_MAX - EXPAND_SPARE) {
         return XML_ERROR_NO_MEMORY;
@@ -3804,6 +3875,7 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
       }
 #endif
 
+
       XML_Char *temp = (XML_Char *)REALLOC(b->uri,
                           sizeof(XML_Char) * (len + EXPAND_SPARE));
       if (temp == NULL)
@@ -3818,6 +3890,7 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
     if (!b)
       return XML_ERROR_NO_MEMORY;
 
+
     
     if (len > INT_MAX - EXPAND_SPARE) {
       return XML_ERROR_NO_MEMORY;
@@ -3831,6 +3904,7 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
       return XML_ERROR_NO_MEMORY;
     }
 #endif
+
 
     b->uri = (XML_Char *)MALLOC(sizeof(XML_Char) * (len + EXPAND_SPARE));
     if (!b->uri) {
@@ -4395,7 +4469,13 @@ externalParEntProcessor(XML_Parser parser,
 
   processor = prologProcessor;
   return doProlog(parser, encoding, s, end, tok, next,
+
+#if 0
+                  nextPtr, (XML_Bool)!ps_finalBuffer);
+#else
                   nextPtr, (XML_Bool)!ps_finalBuffer, XML_TRUE);
+#endif
+
 }
 
 static enum XML_Error PTRCALL
@@ -4445,7 +4525,13 @@ prologProcessor(XML_Parser parser,
   const char *next = s;
   int tok = XmlPrologTok(encoding, s, end, &next);
   return doProlog(parser, encoding, s, end, tok, next,
+
+#if 0
+                  nextPtr, (XML_Bool)!ps_finalBuffer);
+#else
                   nextPtr, (XML_Bool)!ps_finalBuffer, XML_TRUE);
+#endif
+
 }
 
 static enum XML_Error
@@ -4456,8 +4542,14 @@ doProlog(XML_Parser parser,
          int tok,
          const char *next,
          const char **nextPtr,
+
+#if 0
+         XML_Bool haveMore)
+#else
          XML_Bool haveMore,
          XML_Bool allowClosingDoctype)
+#endif
+
 {
 #ifdef XML_DTD
   static const XML_Char externalSubsetName[] = { ASCII_HASH , '\0' };
@@ -4633,10 +4725,12 @@ doProlog(XML_Parser parser,
       }
       break;
     case XML_ROLE_DOCTYPE_CLOSE:
+
       if (allowClosingDoctype != XML_TRUE) {
         
         return XML_ERROR_INVALID_TOKEN;
       }
+
 
       if (doctypeName) {
         startDoctypeDeclHandler(handlerArg, doctypeName,
@@ -5136,16 +5230,19 @@ doProlog(XML_Parser parser,
     case XML_ROLE_GROUP_OPEN:
       if (prologState.level >= groupSize) {
         if (groupSize) {
+
           
           if (parser->m_groupSize > (unsigned int)(-1) / 2u) {
             return XML_ERROR_NO_MEMORY;
           }
+
 
           char *temp = (char *)REALLOC(groupConnector, groupSize *= 2);
           if (temp == NULL)
             return XML_ERROR_NO_MEMORY;
           groupConnector = temp;
           if (dtd->scaffIndex) {
+
             
 
 
@@ -5155,6 +5252,7 @@ doProlog(XML_Parser parser,
               return XML_ERROR_NO_MEMORY;
             }
 #endif
+
 
             int *temp = (int *)REALLOC(dtd->scaffIndex,
                           groupSize * sizeof(int));
@@ -5562,7 +5660,13 @@ processInternalEntity(XML_Parser parser, ENTITY *entity,
   if (entity->is_param) {
     int tok = XmlPrologTok(internalEncoding, textStart, textEnd, &next);
     result = doProlog(parser, internalEncoding, textStart, textEnd, tok,
+
+#if 0
+                      next, &next, XML_FALSE);
+#else
                       next, &next, XML_FALSE, XML_FALSE);
+#endif
+
   }
   else
 #endif 
@@ -5631,7 +5735,13 @@ internalEntityProcessor(XML_Parser parser,
   if (entity->is_param) {
     int tok = XmlPrologTok(internalEncoding, textStart, textEnd, &next);
     result = doProlog(parser, internalEncoding, textStart, textEnd, tok,
+
+#if 0
+                      next, &next, XML_FALSE);
+#else
                       next, &next, XML_FALSE, XML_TRUE);
+#endif
+
   }
   else
 #endif 
@@ -5658,13 +5768,24 @@ internalEntityProcessor(XML_Parser parser,
     processor = prologProcessor;
     tok = XmlPrologTok(encoding, s, end, &next);
     return doProlog(parser, encoding, s, end, tok, next, nextPtr,
+
+#if 0
+                    (XML_Bool)!ps_finalBuffer);
+#else
                     (XML_Bool)!ps_finalBuffer, XML_TRUE);
+#endif
+
   }
   else
 #endif 
   {
     processor = contentProcessor;
     
+
+#if 0
+    return doContent(parser, parentParser ? 1 : 0, encoding, s, end,
+                     nextPtr, (XML_Bool)!ps_finalBuffer);
+#else
     result = doContent(parser, parser->m_parentParser ? 1 : 0,
                        parser->m_encoding, s, end, nextPtr,
                        (XML_Bool)! parser->m_parsingStatus.finalBuffer);
@@ -5673,6 +5794,8 @@ internalEntityProcessor(XML_Parser parser,
         return XML_ERROR_NO_MEMORY;
     }
     return result;
+#endif
+
   }
 }
 
@@ -6152,12 +6275,15 @@ defineAttribute(ELEMENT_TYPE *type, ATTRIBUTE_ID *attId, XML_Bool isCdata,
     else {
       DEFAULT_ATTRIBUTE *temp;
 
+
       
       if (type->allocDefaultAtts > INT_MAX / 2) {
         return 0;
       }
 
+
       int count = type->allocDefaultAtts * 2;
+
 
       
 
@@ -6168,6 +6294,7 @@ defineAttribute(ELEMENT_TYPE *type, ATTRIBUTE_ID *attId, XML_Bool isCdata,
         return 0;
       }
 #endif
+
 
       temp = (DEFAULT_ATTRIBUTE *)
         REALLOC(type->defaultAtts, (count * sizeof(DEFAULT_ATTRIBUTE)));
@@ -6820,18 +6947,22 @@ lookup(XML_Parser parser, HASH_TABLE *table, KEY name, size_t createSize)
     if (table->used >> (table->power - 1)) {
       unsigned char newPower = table->power + 1;
 
+
       
       if (newPower >= sizeof(unsigned long) * 8 ) {
         return NULL;
       }
 
+
       size_t newSize = (size_t)1 << newPower;
       unsigned long newMask = (unsigned long)newSize - 1;
+
 
       
       if (newSize > (size_t)(-1) / sizeof(NAMED *)) {
         return NULL;
       }
+
 
       size_t tsize = newSize * sizeof(NAMED *);
       NAMED **newV = (NAMED **)table->mem->malloc_fcn(tsize);
@@ -7169,6 +7300,7 @@ nextScaffoldPart(XML_Parser parser)
   if (dtd->scaffCount >= dtd->scaffSize) {
     CONTENT_SCAFFOLD *temp;
     if (dtd->scaffold) {
+
       
       if (dtd->scaffSize > UINT_MAX / 2u) {
         return -1;
@@ -7182,6 +7314,7 @@ nextScaffoldPart(XML_Parser parser)
         return -1;
       }
 #endif
+
 
       temp = (CONTENT_SCAFFOLD *)
         REALLOC(dtd->scaffold, dtd->scaffSize * 2 * sizeof(CONTENT_SCAFFOLD));
@@ -7260,6 +7393,11 @@ build_model (XML_Parser parser)
   XML_Content *cpos;
   XML_Char * str;
 
+
+#if 0
+  int allocsize = (dtd->scaffCount * sizeof(XML_Content)
+                   + (dtd->contentStringLen * sizeof(XML_Char)));
+#else
   
 
 
@@ -7279,6 +7417,8 @@ build_model (XML_Parser parser)
 
   const size_t allocsize = (dtd->scaffCount * sizeof(XML_Content)
                             + (dtd->contentStringLen * sizeof(XML_Char)));
+#endif
+
 
   ret = (XML_Content *)MALLOC(allocsize);
   if (!ret)
