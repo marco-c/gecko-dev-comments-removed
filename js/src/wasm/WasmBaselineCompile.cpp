@@ -10271,9 +10271,6 @@ bool BaseCompiler::emitBody() {
 #ifdef JS_ION_PERF
   bool spewerEnabled = perfSpewer_.needsToRecordInstruction();
 #endif
-  bool debugEnabled = compilerEnv_.debugEnabled();
-  
-  bool hasPerInstrCheck = spewerEnabled || debugEnabled;
 
   for (;;) {
     Nothing unused_a, unused_b, unused_c;
@@ -10414,29 +10411,28 @@ bool BaseCompiler::emitBody() {
     OpBytes op{};
     CHECK(iter_.readOp(&op));
 
-    if (MOZ_UNLIKELY(hasPerInstrCheck)) {
-      
-      if (debugEnabled && op.shouldHaveBreakpoint() && !deadCode_) {
-        if (previousBreakablePoint_ != masm.currentOffset()) {
-          
-          
-          
-          sync();
+    
+    if (compilerEnv_.debugEnabled() && op.shouldHaveBreakpoint() &&
+        !deadCode_) {
+      if (previousBreakablePoint_ != masm.currentOffset()) {
+        
+        
+        
+        sync();
 
-          insertBreakablePoint(CallSiteKind::Breakpoint);
-          if (!createStackMap("debug: per-insn breakpoint")) {
-            return false;
-          }
-          previousBreakablePoint_ = masm.currentOffset();
+        insertBreakablePoint(CallSiteKind::Breakpoint);
+        if (!createStackMap("debug: per-insn breakpoint")) {
+          return false;
         }
+        previousBreakablePoint_ = masm.currentOffset();
       }
+    }
 
 #ifdef JS_ION_PERF
-      if (spewerEnabled) {
-        perfSpewer_.recordInstruction(masm, op);
-      }
-#endif
+    if (MOZ_UNLIKELY(spewerEnabled)) {
+      perfSpewer_.recordInstruction(masm, op);
     }
+#endif
 
     
     
