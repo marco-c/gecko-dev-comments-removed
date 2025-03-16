@@ -1882,8 +1882,22 @@ static void MaybeCurrentCaller(nsACString& aFilename, uint32_t& aLineNum,
 }
 
  void nsRFPService::MaybeReportFontFingerprinter(
-    nsIChannel* aChannel, nsACString& aOriginNoSuffix) {
+    nsIChannel* aChannel, const nsACString& aOriginNoSuffix) {
   if (!aChannel) {
+    return;
+  }
+
+  
+  
+  
+  if (!NS_IsMainThread()) {
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "nsRFPService::MaybeReportFontFingerprinter",
+        [channel = nsCOMPtr{aChannel},
+         originNoSuffix = nsCString(aOriginNoSuffix)]() {
+          nsRFPService::MaybeReportFontFingerprinter(channel, originNoSuffix);
+        }));
+
     return;
   }
 
