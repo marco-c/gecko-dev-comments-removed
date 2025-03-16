@@ -6642,6 +6642,32 @@ public class GeckoSession {
     }
 
     
+    class CertificateRequest extends BasePrompt {
+      
+      public final @NonNull String host;
+
+      protected CertificateRequest(
+          final @NonNull String id, final Observer observer, final String host) {
+        super(id, null, observer);
+        this.host = host;
+      }
+
+      
+
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(final @Nullable String alias) {
+        ensureResult().putString("alias", alias);
+        return super.confirm();
+      }
+    }
+
+    
     class AutocompleteRequest<T extends Autocomplete.Option<?>> extends BasePrompt {
       
 
@@ -6909,6 +6935,20 @@ public class GeckoSession {
     default @Nullable GeckoResult<PromptResponse> onAddressSave(
         @NonNull final GeckoSession session,
         @NonNull final AutocompleteRequest<Autocomplete.AddressSaveOption> request) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onRequestCertificate(
+        @NonNull final GeckoSession session, @NonNull final CertificateRequest request) {
       return null;
     }
 

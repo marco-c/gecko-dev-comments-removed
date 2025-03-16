@@ -373,4 +373,12 @@ interface nsIX509CertDB : nsISupports {
   void asyncHasThirdPartyRoots(in nsIAsyncBoolCallback callback);
 
   unsigned long countTrustObjects();
+
+  
+
+
+
+
+  [must_use]
+  nsIX509Cert getAndroidCertificateFromAlias(in AString alias);
 };

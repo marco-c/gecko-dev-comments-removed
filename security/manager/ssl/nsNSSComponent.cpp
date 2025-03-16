@@ -1936,8 +1936,6 @@ static inline void CopyCertificatesTo(UniqueCERTCertList& from,
 
 
 
-
-
 UniqueCERTCertList FindClientCertificatesWithPrivateKeys() {
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
           ("FindClientCertificatesWithPrivateKeys"));
@@ -2048,10 +2046,6 @@ UniqueCERTCertList FindClientCertificatesWithPrivateKeys() {
          !CERT_LIST_END(n, certsWithPrivateKeys); n = CERT_LIST_NEXT(n)) {
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("    %s", n->cert->subjectName));
     }
-  }
-
-  if (CERT_LIST_EMPTY(certsWithPrivateKeys)) {
-    return nullptr;
   }
 
   return certsWithPrivateKeys;

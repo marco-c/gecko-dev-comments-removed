@@ -1811,7 +1811,9 @@ bool LoadOSClientCertsModule() {
 
 
 
-#if defined(__APPLE__) || (defined WIN32 && !defined(__aarch64__))
+
+#if defined(__APPLE__) || (defined WIN32 && !defined(__aarch64__)) || \
+    defined(MOZ_WIDGET_ANDROID)
   return LoadUserModuleFromXul(kOSClientCertsModuleName.get(),
                                OSClientCerts_C_GetFunctionList);
 #else
