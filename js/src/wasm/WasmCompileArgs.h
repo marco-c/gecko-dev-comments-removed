@@ -366,8 +366,8 @@ class BytecodeSource {
   
   
   BytecodeSource(const BytecodeSpan& envSpan, const BytecodeSpan& codeSpan,
-                  const BytecodeSpan& tailSpan)
-  : env_(envSpan), code_(codeSpan), tail_(tailSpan) {}
+                 const BytecodeSpan& tailSpan)
+      : env_(envSpan), code_(codeSpan), tail_(tailSpan) {}
 
   
   

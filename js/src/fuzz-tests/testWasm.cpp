@@ -281,7 +281,8 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
     UniqueChars error;
     UniqueCharsVector warnings;
     SharedModule module =
-        CompileBuffer(*compileArgs, BytecodeBufferOrSource(bytecodeSource), &error, &warnings);
+        CompileBuffer(*compileArgs, BytecodeBufferOrSource(bytecodeSource),
+                      &error, &warnings);
     if (!module) {
       
       
