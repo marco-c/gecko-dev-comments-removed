@@ -227,7 +227,7 @@ where
 
 
 #[cfg(feature = "servo")]
-pub type AtomIdent = GenericAtomIdent<servo_atoms::AtomStaticSet>;
+pub type AtomIdent = GenericAtomIdent<stylo_atoms::AtomStaticSet>;
 
 #[cfg(feature = "servo")]
 impl<Set: string_cache::StaticAtomSet> style_traits::SpecifiedValueInfo for GenericAtomIdent<Set> {}
