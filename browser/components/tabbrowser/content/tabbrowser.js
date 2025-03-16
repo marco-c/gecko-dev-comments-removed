@@ -8298,9 +8298,12 @@ var TabBarVisibility = {
 
   update(force = false) {
     let isPopup = !window.toolbar.visible;
+    let isTaskbarTab = document.documentElement.hasAttribute("taskbartab");
+    let isSingleTabWindow = isPopup || isTaskbarTab;
 
     let hasVerticalTabs =
-      !isPopup && Services.prefs.getBoolPref("sidebar.verticalTabs", false);
+      !isSingleTabWindow &&
+      Services.prefs.getBoolPref("sidebar.verticalTabs", false);
 
     
     
@@ -8308,7 +8311,8 @@ var TabBarVisibility = {
 
     
     
-    let hideTabsToolbar = (isPopup && hasSingleTab) || hasVerticalTabs;
+    let hideTabsToolbar =
+      (isSingleTabWindow && hasSingleTab) || hasVerticalTabs;
 
     
     
