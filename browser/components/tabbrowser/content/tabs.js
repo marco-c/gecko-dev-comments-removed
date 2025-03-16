@@ -286,7 +286,10 @@
       
       
       const group = event.target;
-      if (gBrowser.selectedTab.group === group) {
+      if (
+        gBrowser.selectedTab.group === group &&
+        !this.hasAttribute("movingtab")
+      ) {
         gBrowser.selectedTab =
           gBrowser._findTabToBlurTo(
             gBrowser.selectedTab,
@@ -742,14 +745,13 @@
       
       dt.addElement(tab);
 
+      this.toggleAttribute("movingtab", true);
+      gNavToolbox.toggleAttribute("movingtab", true);
+
       let expandGroupOnDrop;
       if (tab.multiselected) {
         this.#moveTogetherSelectedTabs(tab);
-      } else if (
-        isTabGroupLabel(tab) &&
-        !tab.group.collapsed &&
-        gBrowser.visibleTabs.length > tab.group.tabs.length
-      ) {
+      } else if (isTabGroupLabel(tab) && !tab.group.collapsed) {
         this._lockTabSizing();
         this.#keepTabSizeLocked = true;
         tab.group.collapsed = true;
@@ -2115,14 +2117,6 @@
       let dragData = draggedTab._dragData;
       let movingTabs = dragData.movingTabs;
 
-      if (!this.hasAttribute("movingtab")) {
-        this.toggleAttribute("movingtab", true);
-        gNavToolbox.toggleAttribute("movingtab", true);
-        if (!draggedTab.multiselected) {
-          this.selectedItem = draggedTab;
-        }
-      }
-
       dragData.animLastScreenX ??= dragData.screenX;
       dragData.animLastScreenY ??= dragData.screenY;
 
@@ -2306,14 +2300,6 @@
       let draggedTab = event.dataTransfer.mozGetDataAt(TAB_DROP_TYPE, 0);
       let dragData = draggedTab._dragData;
       let movingTabs = dragData.movingTabs;
-
-      if (!this.hasAttribute("movingtab")) {
-        this.toggleAttribute("movingtab", true);
-        gNavToolbox.toggleAttribute("movingtab", true);
-        if (!draggedTab.multiselected) {
-          this.selectedItem = draggedTab;
-        }
-      }
 
       dragData.animLastScreenPos ??= this.verticalMode
         ? dragData.screenY
