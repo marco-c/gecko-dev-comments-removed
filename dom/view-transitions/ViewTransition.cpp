@@ -769,6 +769,9 @@ void ViewTransition::SetupTransitionPseudoElements() {
     mViewTransitionRoot = nullptr;
     return;
   }
+  if (mDocument->DevToolsAnonymousAndShadowEventsEnabled()) {
+    mViewTransitionRoot->QueueDevtoolsAnonymousEvent( false);
+  }
   if (PresShell* ps = mDocument->GetPresShell()) {
     ps->ContentAppended(mViewTransitionRoot);
   }
@@ -1360,6 +1363,9 @@ void ViewTransition::ClearActiveTransition(bool aIsDocumentHidden) {
   
   if (mViewTransitionRoot) {
     nsAutoScriptBlocker scriptBlocker;
+    if (mDocument->DevToolsAnonymousAndShadowEventsEnabled()) {
+      mViewTransitionRoot->QueueDevtoolsAnonymousEvent( true);
+    }
     if (PresShell* ps = mDocument->GetPresShell()) {
       ps->ContentWillBeRemoved(mViewTransitionRoot, nullptr);
     }
