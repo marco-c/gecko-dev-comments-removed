@@ -389,10 +389,22 @@ nsParser::ContinueInterruptedParsing() {
     return mInternalState;
   }
 
+  if (mBlocked) {
+    
+    
+    return NS_OK;
+  }
+
   
   
-  
-  if (!IsOkToProcessNetworkData()) {
+  if (IsScriptExecuting()) {
+    ContinueParsingDocumentAfterCurrentScript();
+    return NS_OK;
+  }
+
+  if (mProcessingNetworkData) {
+    
+    
     return NS_OK;
   }
 
@@ -404,12 +416,6 @@ nsParser::ContinueInterruptedParsing() {
   nsCOMPtr<nsIParser> kungFuDeathGrip(this);
   nsCOMPtr<nsIContentSink> sinkDeathGrip(mSink);
 
-#ifdef DEBUG
-  if (mBlocked) {
-    NS_WARNING("Don't call ContinueInterruptedParsing on a blocked parser.");
-  }
-#endif
-
   bool isFinalChunk =
       mParserContext && mParserContext->mStreamListenerState == eOnStop;
 
@@ -418,6 +424,22 @@ nsParser::ContinueInterruptedParsing() {
     sinkDeathGrip->WillParse();
   }
   result = ResumeParse(true, isFinalChunk);  
+
+  
+  
+  
+  
+  
+  if ((result == NS_OK) && mOnStopPending) {
+    mOnStopPending = false;
+    mParserContext->mStreamListenerState = eOnStop;
+    mParserContext->mScanner.SetIncremental(false);
+
+    if (sinkDeathGrip) {
+      sinkDeathGrip->WillParse();
+    }
+    result = ResumeParse(true, true);
+  }
   mProcessingNetworkData = false;
 
   if (result != NS_OK) {
@@ -479,8 +501,6 @@ void nsParser::HandleParserContinueEvent(nsParserContinueEvent* ev) {
   mFlags &= ~NS_PARSER_FLAG_PENDING_CONTINUE_EVENT;
   mContinueEvent = nullptr;
 
-  NS_ASSERTION(IsOkToProcessNetworkData(),
-               "Interrupted in the middle of a script?");
   ContinueInterruptedParsing();
 }
 
@@ -1018,7 +1038,14 @@ nsresult nsParser::OnDataAvailable(nsIRequest* request,
       return rv;
     }
 
-    if (IsOkToProcessNetworkData()) {
+    
+    
+    if (IsScriptExecuting()) {
+      ContinueParsingDocumentAfterCurrentScript();
+      return rv;
+    }
+
+    if (!mProcessingNetworkData) {
       nsCOMPtr<nsIParser> kungFuDeathGrip(this);
       nsCOMPtr<nsIContentSink> sinkDeathGrip(mSink);
       mProcessingNetworkData = true;
@@ -1063,12 +1090,20 @@ nsresult nsParser::OnStopRequest(nsIRequest* request, nsresult status) {
 
   mStreamStatus = status;
 
-  if (IsOkToProcessNetworkData()) {
+  
+  
+  if (IsScriptExecuting()) {
+    
+    mOnStopPending = true;
+    ContinueParsingDocumentAfterCurrentScript();
+    return rv;
+  }
+
+  if (!mProcessingNetworkData && NS_SUCCEEDED(rv)) {
     if (mParserContext->mRequest == request) {
       mParserContext->mStreamListenerState = eOnStop;
       mParserContext->mScanner.SetIncremental(false);
     }
-
     mProcessingNetworkData = true;
     if (mSink) {
       mSink->WillParse();

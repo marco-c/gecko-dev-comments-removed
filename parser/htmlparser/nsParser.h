@@ -248,8 +248,10 @@ class nsParser final : public nsIParser,
 
   bool IsScriptExecuting() { return mSink && mSink->IsScriptExecuting(); }
 
-  bool IsOkToProcessNetworkData() {
-    return !IsScriptExecuting() && !mProcessingNetworkData;
+  void ContinueParsingDocumentAfterCurrentScript() {
+    if (mSink) {
+      mSink->ContinueParsingDocumentAfterCurrentScript();
+    }
   }
 
   
