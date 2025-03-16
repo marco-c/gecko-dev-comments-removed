@@ -23,17 +23,6 @@ const PARENT_INSTANCE = new AboutNewTabRedirectorParent();
 const CHILD_INSTANCE = new AboutNewTabRedirectorChild();
 
 
-const DUMMY_CHANNEL = NetUtil.newChannel({
-  uri: "http://localhost",
-  loadUsingSystemPrincipal: true,
-});
-
-const DEFAULT_URL_CHANNEL = Services.io.newChannelFromURIWithLoadInfo(
-  Services.io.newURI(PARENT_INSTANCE.defaultURL),
-  DUMMY_CHANNEL.loadInfo
-);
-
-
 
 
 
@@ -60,6 +49,17 @@ add_task(async function test_chromeURI() {
 
 add_task(async function test_parent_newChannel() {
   Services.prefs.setBoolPref(BUILTIN_NEWTAB_ENABLED_PREF, true);
+
+  
+  const DUMMY_CHANNEL = NetUtil.newChannel({
+    uri: "http://localhost",
+    loadUsingSystemPrincipal: true,
+  });
+
+  const DEFAULT_URL_CHANNEL = Services.io.newChannelFromURIWithLoadInfo(
+    Services.io.newURI(PARENT_INSTANCE.defaultURL),
+    DUMMY_CHANNEL.loadInfo
+  );
 
   
   
