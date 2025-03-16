@@ -1,3 +1,4 @@
+%  
 function parsed = parseLog(filename)
 %
 % parsed = parseLog(filename)
