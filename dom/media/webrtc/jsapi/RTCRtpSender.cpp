@@ -122,7 +122,9 @@ RTCRtpSender::RTCRtpSender(nsPIDOMWindowInner* aWindow, PeerConnectionImpl* aPc,
       INIT_CANONICAL(mVideoCodecMode, webrtc::VideoCodecMode::kRealtimeVideo),
       INIT_CANONICAL(mCname, std::string()),
       INIT_CANONICAL(mTransmitting, false),
-      INIT_CANONICAL(mFrameTransformerProxy, nullptr) {
+      INIT_CANONICAL(mFrameTransformerProxy, nullptr),
+      INIT_CANONICAL(mVideoDegradationPreference,
+                     webrtc::DegradationPreference::DISABLED) {
   mPipeline = MediaPipelineTransmit::Create(
       mPc->GetHandle(), aTransportHandler, aCallThread, aStsThread,
       aConduit->type() == MediaSessionConduit::VIDEO, aConduit);
@@ -840,6 +842,28 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
 
   
   
+  
+  
+  if (paramsCopy.mDegradationPreference.WasPassed()) {
+    const auto degradationPreference = [&] {
+      switch (paramsCopy.mDegradationPreference.Value()) {
+        case mozilla::dom::RTCDegradationPreference::Balanced:
+          return webrtc::DegradationPreference::BALANCED;
+        case mozilla::dom::RTCDegradationPreference::Maintain_framerate:
+          return webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
+        case mozilla::dom::RTCDegradationPreference::Maintain_resolution:
+          return webrtc::DegradationPreference::MAINTAIN_RESOLUTION;
+      }
+      MOZ_CRASH("Unexpected RTCDegradationPreference");
+    };
+    mVideoDegradationPreference = degradationPreference();
+  } else {
+    
+    mVideoDegradationPreference = webrtc::DegradationPreference::DISABLED;
+  }
+
+  
+  
   GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
       __func__,
       [this, self = RefPtr<RTCRtpSender>(this), p, paramsCopy, serialNumber] {
@@ -848,6 +872,13 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
         
         mParameters.mEncodings = paramsCopy.mEncodings;
         UpdateRestorableEncodings(mParameters.mEncodings);
+        
+        
+        mParameters.mDegradationPreference.Reset();
+        if (paramsCopy.mDegradationPreference.WasPassed()) {
+          mParameters.mDegradationPreference.Construct(
+              paramsCopy.mDegradationPreference.Value());
+        }
         
         
         
@@ -984,6 +1015,10 @@ void RTCRtpSender::GetParameters(RTCRtpSendParameters& aParameters) {
   aParameters.mRtcp.Construct();
   aParameters.mRtcp.Value().mCname.Construct();
   aParameters.mRtcp.Value().mReducedSize.Construct(false);
+  if (mParameters.mDegradationPreference.WasPassed()) {
+    aParameters.mDegradationPreference.Construct(
+        mParameters.mDegradationPreference.Value());
+  }
   aParameters.mHeaderExtensions.Construct();
   if (mParameters.mCodecs.WasPassed()) {
     aParameters.mCodecs.Construct(mParameters.mCodecs.Value());

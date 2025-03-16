@@ -302,6 +302,7 @@ class WebrtcVideoConduit : public VideoSessionConduit,
     Mirror<webrtc::VideoCodecMode> mCodecMode;
     Mirror<RefPtr<FrameTransformerProxy>> mFrameTransformerProxySend;
     Mirror<RefPtr<FrameTransformerProxy>> mFrameTransformerProxyRecv;
+    Mirror<webrtc::DegradationPreference> mVideoDegradationPreference;
 
     
     
@@ -313,6 +314,8 @@ class WebrtcVideoConduit : public VideoSessionConduit,
     
     std::vector<VideoCodecConfig> mConfiguredRecvCodecs;
     Maybe<RtpRtcpConfig> mConfiguredRecvRtpRtcpConfig;
+    
+    webrtc::DegradationPreference mConfiguredDegradationPreference;
 
     
     RefPtr<FrameTransformerProxy> mConfiguredFrameTransformerProxySend;
