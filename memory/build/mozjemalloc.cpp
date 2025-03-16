@@ -1428,6 +1428,17 @@ struct arena_t {
       MOZ_REQUIRES(mLock);
 #endif
 
+  enum PurgeResult {
+    
+    Done,
+
+    
+    Continue,
+
+    
+    Busy,
+  };
+
   
   
   
@@ -1444,7 +1455,7 @@ struct arena_t {
   
   
   
-  bool Purge(PurgeCondition aCond) MOZ_EXCLUDES(mLock);
+  PurgeResult Purge(PurgeCondition aCond) MOZ_EXCLUDES(mLock);
 
   class PurgeInfo {
    private:
@@ -3440,7 +3451,7 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
 }
 #endif
 
-bool arena_t::Purge(PurgeCondition aCond) {
+arena_t::PurgeResult arena_t::Purge(PurgeCondition aCond) {
   arena_chunk_t* chunk;
 
   
@@ -3459,7 +3470,7 @@ bool arena_t::Purge(PurgeCondition aCond) {
 
     if (!ShouldContinuePurge(aCond)) {
       mIsDeferredPurgePending = false;
-      return false;
+      return Done;
     }
 
     
@@ -3482,7 +3493,7 @@ bool arena_t::Purge(PurgeCondition aCond) {
       
       
       mIsDeferredPurgePending = false;
-      return false;
+      return Busy;
     }
     MOZ_ASSERT(chunk->ndirty > 0);
 
@@ -3530,7 +3541,7 @@ bool arena_t::Purge(PurgeCondition aCond) {
       }
       
       
-      return continue_purge_arena;
+      return continue_purge_arena ? Continue : Done;
     }
 
 #ifdef MALLOC_DECOMMIT
@@ -3571,7 +3582,7 @@ bool arena_t::Purge(PurgeCondition aCond) {
     purged_once = true;
   }
 
-  return continue_purge_arena;
+  return continue_purge_arena ? Continue : Done;
 }
 
 bool arena_t::PurgeInfo::FindDirtyPages(bool aPurgedOnce) {
@@ -4719,7 +4730,7 @@ inline void arena_t::MayDoOrQueuePurge(purge_action_t aAction) {
       gArenas.AddToOutstandingPurges(this);
       break;
     case purge_action_t::PurgeNow:
-      while (Purge(PurgeIfThreshold)) {
+      while (Purge(PurgeIfThreshold) == arena_t::PurgeResult::Continue) {
       }
       break;
     case purge_action_t::None:
@@ -6047,17 +6058,23 @@ purge_result_t ArenaCollection::MayPurgeSteps(
     mOutstandingPurges.remove(found);
   }
 
-  bool more_pages;
+  arena_t::PurgeResult pr;
   do {
-    more_pages = found->Purge(PurgeIfThreshold);
-  } while (more_pages && aKeepGoing && (*aKeepGoing)());
+    pr = found->Purge(PurgeIfThreshold);
+  } while (pr == arena_t::PurgeResult::Continue && aKeepGoing &&
+           (*aKeepGoing)());
 
-  if (more_pages) {
-    
+  if (pr == arena_t::PurgeResult::Continue) {
     
     
     
 
+    
+    
+    
+    
+    
+    
     MutexAutoLock lock(mPurgeListLock);
     if (!mOutstandingPurges.ElementProbablyInList(found)) {
       
@@ -6080,7 +6097,7 @@ void ArenaCollection::MayPurgeAll(PurgeCondition aCond) {
     
     if (!arena->IsMainThreadOnly() || IsOnMainThreadWeak()) {
       RemoveFromOutstandingPurges(arena);
-      while (arena->Purge(aCond));
+      while (arena->Purge(aCond) == arena_t::PurgeResult::Continue);
     }
   }
 }
