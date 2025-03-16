@@ -13,10 +13,11 @@
 #include "base/process.h"
 #include "chrome/common/ipc_message_utils.h"
 
+#include "nsISupports.h"
 #include "nscore.h"
 #include "nsDebug.h"
 
-#include "mozilla/ipc/SharedMemory.h"
+#include "mozilla/ipc/SharedMemoryMapping.h"
 #include "mozilla/Range.h"
 #include "mozilla/UniquePtr.h"
 
@@ -62,24 +63,44 @@ template <typename P>
 struct IPDLParamTraits;
 
 class Shmem final {
-  friend struct IPDLParamTraits<mozilla::ipc::Shmem>;
-  friend class mozilla::ipc::IProtocol;
-  friend class mozilla::ipc::IToplevelProtocol;
+  friend struct IPDLParamTraits<Shmem>;
+  friend class IProtocol;
+  friend class IToplevelProtocol;
 
  public:
-  typedef int32_t id_t;
+  using id_t = int32_t;
   
-  typedef mozilla::ipc::SharedMemory SharedMemory;
+  class Segment final : public SharedMemoryMapping {
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Segment);
+
+    explicit Segment(SharedMemoryMapping&& aMapping)
+        : SharedMemoryMapping(std::move(aMapping)) {}
+
+   private:
+    ~Segment() = default;
+  };
+
+  class Builder {
+   public:
+    explicit Builder(size_t aSize);
+
+    explicit operator bool() const { return mSegment && mSegment->IsValid(); }
+
+    
+    
+    
+    std::tuple<UniquePtr<IPC::Message>, Shmem> Build(id_t aId, bool aUnsafe,
+                                                     int32_t aRoutingId);
+
+   private:
+    size_t mSize;
+    MutableSharedMemoryHandle mHandle;
+    RefPtr<Segment> mSegment;
+  };
 
   Shmem() : mSegment(nullptr), mData(nullptr), mSize(0), mId(0) {}
-
   Shmem(const Shmem& aOther) = default;
-
-  ~Shmem() {
-    
-    
-    forget();
-  }
+  ~Shmem() { forget(); }
 
   Shmem& operator=(const Shmem& aRhs) = default;
 
@@ -122,11 +143,11 @@ class Shmem final {
  private:
   
 
-  Shmem(SharedMemory* aSegment, id_t aId, size_t aSize, bool aUnsafe);
+  Shmem(RefPtr<Segment>&& aSegment, id_t aId, size_t aSize, bool aUnsafe);
 
   id_t Id() const { return mId; }
 
-  SharedMemory* Segment() const { return mSegment; }
+  Segment* GetSegment() const { return mSegment; }
 
 #ifndef DEBUG
   void RevokeRights() {}
@@ -144,14 +165,6 @@ class Shmem final {
 #endif
   }
 
-  static already_AddRefed<Shmem::SharedMemory> Alloc(size_t aNBytes);
-
-  
-  
-  
-  
-  UniquePtr<IPC::Message> MkCreatedMessage(int32_t routingId);
-
   
   
   
@@ -162,8 +175,9 @@ class Shmem final {
   
   
   
-  static already_AddRefed<SharedMemory> OpenExisting(
-      const IPC::Message& aDescriptor, id_t* aId, bool aProtect = false);
+  static already_AddRefed<Segment> OpenExisting(const IPC::Message& aDescriptor,
+                                                id_t* aId,
+                                                bool aProtect = false);
 
   template <typename T>
   void AssertAligned() const {
@@ -176,7 +190,7 @@ class Shmem final {
   void AssertInvariants() const;
 #endif
 
-  RefPtr<SharedMemory> mSegment;
+  RefPtr<Segment> mSegment;
   void* mData;
   size_t mSize;
   id_t mId;
