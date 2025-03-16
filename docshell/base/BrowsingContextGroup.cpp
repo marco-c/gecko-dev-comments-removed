@@ -588,11 +588,18 @@ void BrowsingContextGroup::NotifyFocusedOrActiveBrowsingContextToProcess(
   }
 }
 
+
+static bool AlwaysUseOriginAgentCluster(nsIPrincipal* aPrincipal) {
+  return !aPrincipal->GetIsContentPrincipal() ||
+         (!aPrincipal->SchemeIs("http") && !aPrincipal->SchemeIs("https"));
+}
+
 Maybe<bool> BrowsingContextGroup::UsesOriginAgentCluster(
     nsIPrincipal* aPrincipal) {
   
   
-  return Some(IsPotentiallyCrossOriginIsolated());
+  return Some(AlwaysUseOriginAgentCluster(aPrincipal) ||
+              IsPotentiallyCrossOriginIsolated());
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(BrowsingContextGroup, mContexts,
