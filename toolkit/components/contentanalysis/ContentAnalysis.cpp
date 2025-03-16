@@ -2361,7 +2361,7 @@ void ContentAnalysis::MultipartRequestCallback::Initialize(
             RefPtr result = MakeRefPtr<ContentAnalysisActionResult>(
                 nsIContentAnalysisResponse::Action::eCanceled);
             mCallback->ContentResult(result);
-
+            mResponded = true;
             return;
           }
         }
@@ -2949,6 +2949,11 @@ ContentAnalysis::AnalyzeContentRequestsCallback(
         }
         RefPtr<MultipartRequestCallback> mpcb =
             MultipartRequestCallback::Create(weakThis, aRequests, safeCallback);
+        if (mpcb->HasResponded()) {
+          
+          
+          return;
+        }
 
         for (const auto& requests : aRequests) {
           for (const auto& request : requests) {
