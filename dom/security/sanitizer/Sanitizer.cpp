@@ -826,9 +826,6 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
     if (auto* templateEl = HTMLTemplateElement::FromNode(child)) {
       
       
-
-      
-      
       RefPtr<DocumentFragment> frag = templateEl->Content();
       SanitizeChildren<IsDefaultConfig>(frag, aSafe);
     }
