@@ -93,6 +93,12 @@ class ScriptLoaderInterface : public nsISupports {
 
   
   
+  virtual nsIConsoleReportCollector* GetConsoleReportCollector() const {
+    return nullptr;
+  }
+
+  
+  
   virtual nsresult FillCompileOptionsForRequest(
       JSContext* cx, ScriptLoadRequest* aRequest, JS::CompileOptions* aOptions,
       JS::MutableHandle<JSScript*> aIntroductionScript) = 0;
@@ -298,7 +304,8 @@ class ModuleLoaderBase : public nsISupports {
  private:
   
   virtual already_AddRefed<ModuleLoadRequest> CreateStaticImport(
-      nsIURI* aURI, JS::ModuleType aModuleType, ModuleLoadRequest* aParent) = 0;
+      nsIURI* aURI, JS::ModuleType aModuleType, ModuleLoadRequest* aParent,
+      const mozilla::dom::SRIMetadata& aSriMetadata) = 0;
 
   
   virtual already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
@@ -394,6 +401,12 @@ class ModuleLoaderBase : public nsISupports {
   bool IsImportMapAllowed() const { return mImportMapsAllowed; }
   
   void DisallowImportMaps() { mImportMapsAllowed = false; }
+
+  
+  
+  bool GetImportMapSRI(nsIURI* aURI, nsIURI* aSourceURI,
+                       nsIConsoleReportCollector* aReporter,
+                       mozilla::dom::SRIMetadata* aMetadataOut);
 
   
   bool IsModuleFetched(const ModuleMapKey& key) const;
