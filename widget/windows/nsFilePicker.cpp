@@ -699,61 +699,48 @@ nsFilePicker::CheckContentAnalysisService() {
   if (!contentAnalysisIsActive ||
       !mozilla::StaticPrefs::
           browser_contentanalysis_interception_point_file_upload_enabled()) {
-    return nsFilePicker::ContentAnalysisResponse::CreateAndResolve(true,
-                                                                   __func__);
+    nsCOMArray<nsIFile> files;
+    if (mMode == modeGetFolder || !mUnicodeFile.IsEmpty()) {
+      RefPtr<nsIFile> folderOrFile;
+      nsresult rv = GetFile(getter_AddRefs(folderOrFile));
+      if (NS_WARN_IF(NS_FAILED(rv) || !folderOrFile)) {
+        return nsFilePicker::ContentAnalysisResponse::CreateAndReject(rv,
+                                                                      __func__);
+      }
+      files.AppendElement(folderOrFile);
+    } else {
+      
+      files.AppendElements(mFiles);
+    }
+    return nsFilePicker::ContentAnalysisResponse::CreateAndResolve(
+        std::move(files), __func__);
   }
 
   
   
-  nsTArray<mozilla::PathString> filePaths;
+  nsCOMArray<nsIFile> files;
   if (mMode == modeGetFolder || !mUnicodeFile.IsEmpty()) {
-    RefPtr<nsIFile> folderOrFile;
+    nsCOMPtr<nsIFile> folderOrFile;
     nsresult rv = GetFile(getter_AddRefs(folderOrFile));
     if (NS_WARN_IF(NS_FAILED(rv) || !folderOrFile)) {
       return nsFilePicker::ContentAnalysisResponse::CreateAndReject(rv,
                                                                     __func__);
     }
-    filePaths.AppendElement(folderOrFile->NativePath());
+    files.AppendElement(folderOrFile);
   } else {
     
-    std::transform(mFiles.begin(), mFiles.end(), MakeBackInserter(filePaths),
-                   [](auto* entry) { return entry->NativePath(); });
+    files.AppendElements(mFiles);
   }
-  MOZ_ASSERT(!filePaths.IsEmpty());
-
-  auto promise =
-      mozilla::MakeRefPtr<nsFilePicker::ContentAnalysisResponse::Private>(
-          __func__);
-  auto contentAnalysisCallback =
-      mozilla::MakeRefPtr<mozilla::contentanalysis::ContentAnalysisCallback>(
-          [promise](nsIContentAnalysisResult* aResult) {
-            promise->Resolve(aResult->GetShouldAllowContent(), __func__);
-          });
-
+  MOZ_ASSERT(!files.IsEmpty());
   auto* windowGlobal = mBrowsingContext->Canonical()->GetCurrentWindowGlobal();
   NS_ENSURE_TRUE(
       windowGlobal,
       nsFilePicker::ContentAnalysisResponse::CreateAndReject(rv, __func__));
-
-  nsTArray<RefPtr<nsIContentAnalysisRequest>> requests(filePaths.Length());
-  for (auto& path : filePaths) {
-#ifdef XP_WIN
-    nsString pathString(std::move(path));
-#else
-    nsString pathString = NS_ConvertUTF8toUTF16(path);
-#endif
-
-    requests.AppendElement(new mozilla::contentanalysis::ContentAnalysisRequest(
-        nsIContentAnalysisRequest::AnalysisType::eFileAttached,
-        nsIContentAnalysisRequest::Reason::eFilePickerDialog, pathString,
-        true , EmptyCString(), nullptr,
-        nsIContentAnalysisRequest::OperationType::eCustomDisplayString,
-        windowGlobal));
-  }
-
-  contentAnalysis->AnalyzeContentRequestsCallback(
-      requests, true , contentAnalysisCallback);
-  return promise;
+  
+  
+  return mozilla::contentanalysis::ContentAnalysis::CheckFilesInBatchMode(
+      std::move(files), windowGlobal,
+      nsIContentAnalysisRequest::Reason::eFilePickerDialog);
 };
 
 
@@ -818,13 +805,23 @@ nsresult nsFilePicker::Open(nsIFilePickerShownCallback* aCallback) {
             self->mMode != modeSave && retValue != ResultCode::returnCancel) {
           self->CheckContentAnalysisService()->Then(
               mozilla::GetMainThreadSerialEventTarget(), __func__,
-              [retValue, callback, self = RefPtr{self}](bool aAllowContent) {
-                if (aAllowContent) {
-                  callback->Done(retValue);
-                } else {
+              [retValue, callback,
+               self = RefPtr{self}](nsCOMArray<nsIFile> aAllowedFiles) {
+                if (aAllowedFiles.IsEmpty()) {
                   self->ClearFiles();
                   callback->Done(ResultCode::returnCancel);
                 }
+                if (self->mMode == modeGetFolder ||
+                    !self->mUnicodeFile.IsEmpty()) {
+                  
+                  callback->Done(retValue);
+                  return;
+                }
+                
+                
+                self->ClearFiles();
+                aAllowedFiles.SwapElements(self->mFiles);
+                callback->Done(retValue);
               },
               [callback, self = RefPtr{self}](nsresult aError) {
                 self->ClearFiles();
