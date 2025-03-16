@@ -31,6 +31,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BasicEvents.h"
+#include "mozilla/FunctionRef.h"
 #include "mozilla/SourceLocation.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/CallState.h"
@@ -1747,6 +1748,17 @@ class nsContentUtils {
 
 
   static EventMessage GetEventMessage(nsAtom* aName);
+
+  
+
+
+
+
+
+
+
+  static void ForEachEventAttributeName(
+      int32_t aType, const mozilla::FunctionRef<void(nsAtom*)> aFunc);
 
   
 

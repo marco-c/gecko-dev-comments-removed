@@ -515,14 +515,18 @@ void Sanitizer::RemoveElement(const SanitizerElement& aElement) {
   
   CanonicalName element = CanonicalizeElement(aElement);
 
+  RemoveElementCanonical(std::move(element));
+}
+
+void Sanitizer::RemoveElementCanonical(CanonicalName&& aElement) {
   
-  mElements.Remove(element);
+  mElements.Remove(aElement);
 
   
-  mReplaceWithChildrenElements.Remove(element);
+  mReplaceWithChildrenElements.Remove(aElement);
 
   
-  mRemoveElements.Insert(std::move(element));
+  mRemoveElements.Insert(std::move(aElement));
 }
 
 template void Sanitizer::RemoveElement(
@@ -578,11 +582,15 @@ void Sanitizer::RemoveAttribute(const SanitizerAttribute& aAttribute) {
   
   CanonicalName attribute = CanonicalizeAttribute(aAttribute);
 
+  RemoveAttributeCanonical(std::move(attribute));
+}
+
+void Sanitizer::RemoveAttributeCanonical(CanonicalName&& aAttribute) {
   
-  mAttributes.Remove(attribute);
+  mAttributes.Remove(aAttribute);
 
   
-  mRemoveAttributes.Insert(std::move(attribute));
+  mRemoveAttributes.Insert(std::move(aAttribute));
 }
 
 template void Sanitizer::RemoveAttribute(
@@ -599,7 +607,45 @@ void Sanitizer::SetDataAttributes(bool aAllow) {
   mDataAttributes = aAllow;
 }
 
-void Sanitizer::RemoveUnsafe() {}
+
+void Sanitizer::RemoveUnsafe() {
+  MaybeMaterializeDefaultConfig();
+
+  
+  
+  
+
+  
+  
+  
+  
+  RemoveElementCanonical(
+      CanonicalName(nsGkAtoms::script, nsGkAtoms::nsuri_xhtml));
+  RemoveElementCanonical(
+      CanonicalName(nsGkAtoms::frame, nsGkAtoms::nsuri_xhtml));
+  RemoveElementCanonical(
+      CanonicalName(nsGkAtoms::iframe, nsGkAtoms::nsuri_xhtml));
+  RemoveElementCanonical(
+      CanonicalName(nsGkAtoms::object, nsGkAtoms::nsuri_xhtml));
+  RemoveElementCanonical(
+      CanonicalName(nsGkAtoms::embed, nsGkAtoms::nsuri_xhtml));
+  RemoveElementCanonical(
+      CanonicalName(nsGkAtoms::script, nsGkAtoms::nsuri_svg));
+  RemoveElementCanonical(CanonicalName(nsGkAtoms::use, nsGkAtoms::nsuri_svg));
+
+  
+  
+
+  
+  
+  nsContentUtils::ForEachEventAttributeName(
+      EventNameType_All & ~EventNameType_XUL,
+      [self = MOZ_KnownLive(this)](nsAtom* aName) {
+        self->RemoveAttributeCanonical(CanonicalName(aName, nullptr));
+      });
+
+  
+}
 
 
 RefPtr<DocumentFragment> Sanitizer::SanitizeFragment(
@@ -643,6 +689,7 @@ static RefPtr<nsAtom> ToNamespace(int32_t aNamespaceID) {
       nsNameSpaceManager::GetInstance()->NameSpaceURIAtom(aNamespaceID);
   return atom;
 }
+
 
 
 
