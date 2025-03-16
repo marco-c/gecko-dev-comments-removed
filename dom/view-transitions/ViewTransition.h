@@ -134,6 +134,8 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   
   using NamedElements = nsClassHashtable<nsAtomHashKey, CapturedElement>;
   NamedElements mNamedElements;
+  
+  AutoTArray<RefPtr<nsAtom>, 8> mNames;
 
   
   nsSize mInitialSnapshotContainingBlockSize;
