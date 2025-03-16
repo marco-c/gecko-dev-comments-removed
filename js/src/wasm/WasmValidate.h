@@ -169,7 +169,7 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 
 
-[[nodiscard]] bool Validate(JSContext* cx, const BytecodeSource& bytecode,
+[[nodiscard]] bool Validate(JSContext* cx, const ShareableBytes& bytecode,
                             const FeatureOptions& options, UniqueChars* error);
 
 

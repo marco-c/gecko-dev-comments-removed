@@ -388,10 +388,9 @@ bool DebugState::debugGetLocalTypes(uint32_t funcIndex, ValTypeVector* locals,
   }
 
   
-  const BytecodeRange& funcRange = codeMeta().funcDefRange(funcIndex);
-  BytecodeSpan funcBytecode = codeMeta().funcDefBody(funcIndex);
-  Decoder d(funcBytecode.data(), funcBytecode.data() + funcBytecode.size(),
-            funcRange.start,
+  uint32_t bytecodeOffset = codeMeta().funcBytecodeOffset(funcIndex);
+  Decoder d(bytecode().begin() + bytecodeOffset, bytecode().end(),
+            bytecodeOffset,
              nullptr);
   return DecodeValidatedLocalEntries(types, d, locals);
 }

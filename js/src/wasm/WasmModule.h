@@ -158,8 +158,8 @@ class Module : public JS::WasmModule {
   const CodeMetadataForAsmJS* codeMetaForAsmJS() const {
     return code_->codeMetaForAsmJS();
   }
-  const BytecodeSource& debugBytecode() const {
-    return codeMeta().debugBytecode.source();
+  const Bytes& debugBytecode() const {
+    return codeMeta().debugBytecode->vector;
   }
   uint32_t tier1CodeMemoryUsed() const { return code_->tier1CodeMemoryUsed(); }
 
@@ -174,7 +174,7 @@ class Module : public JS::WasmModule {
   
   
 
-  void startTier2(const ShareableBytes* codeSection,
+  void startTier2(const ShareableBytes& bytecode,
                   JS::OptimizedEncodingListener* listener);
   bool finishTier2(UniqueCodeBlock tier2CodeBlock,
                    UniqueLinkData tier2LinkData) const;

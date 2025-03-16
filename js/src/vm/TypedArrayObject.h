@@ -239,17 +239,7 @@ JSNative TypedArrayConstructorNative(Scalar::Type type);
 
 
 
-
-
-
-
-
-
-
-
-
-bool IsBufferSource(JSContext* cx, JSObject* object, bool allowShared,
-                    bool allowResizable, SharedMem<uint8_t*>* dataPointer,
+bool IsBufferSource(JSObject* object, SharedMem<uint8_t*>* dataPointer,
                     size_t* byteLength);
 
 inline Scalar::Type TypedArrayObject::type() const {
