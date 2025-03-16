@@ -16,7 +16,7 @@ AddonTestUtils.createAppInfo(
   "42"
 );
 
-add_task(async function setup() {
+add_setup(async () => {
   
   
   const overridePreReleasePref = "toolkit.telemetry.testing.overridePreRelease";
