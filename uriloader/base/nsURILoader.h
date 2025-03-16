@@ -82,6 +82,11 @@ class nsDocumentOpenInfo : public nsIThreadRetargetableStreamListener {
 
   
   
+  
+  nsresult CheckContentLengthDiscrepancy(nsIRequest* request);
+
+  
+  
   nsresult DispatchContent(nsIRequest* request);
 
   
