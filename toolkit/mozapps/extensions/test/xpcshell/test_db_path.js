@@ -10,6 +10,10 @@ let global = this;
 
 
 add_task(async function test_non_ascii_path() {
+  
+  
+  
+  
   const PROFILE_VAR = "XPCSHELL_TEST_PROFILE_DIR";
   let profileDir = PathUtils.join(
     Services.env.get(PROFILE_VAR),
