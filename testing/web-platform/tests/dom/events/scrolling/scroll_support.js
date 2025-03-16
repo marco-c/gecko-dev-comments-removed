@@ -46,12 +46,41 @@ function waitForDelayWithoutScrollEvent(eventTarget) {
 
 
 
-function waitForScrollEndFallbackToDelayWithoutScrollEvent(eventTarget) {
-  if (window.onscrollend !== undefined) {
-    return waitForScrollendEventNoTimeout(eventTarget);
-  }
-  return waitForScrollEvent(eventTarget).then(() => {
-    return waitForDelayWithoutScrollEvent(eventTarget);
+function waitForScrollEndFallbackToDelayWithoutScrollEvent(eventTargets) {
+  return new Promise(resolve => {
+    if (!Array.isArray(eventTargets)) {
+      eventTargets = [eventTargets];
+    }
+    let listeners = [];
+    const cleanup = () => {
+      for (const [eventTarget, eventName, listener] of listeners) {
+        eventTarget.removeEventListener(eventName, listener);
+      }
+      listeners = [];
+    }
+    const addListener = (eventTarget, eventName, listener) => {
+      listeners.push([eventTarget, eventName, listener]);
+      eventTarget.addEventListener(eventName, listener);
+    }
+    if (window.onscrollend !== undefined) {
+      
+      for (const eventTarget of eventTargets) {
+        addListener(eventTarget, 'scrollend', () => {
+          cleanup();
+          resolve(eventTarget);
+        });
+      }
+    } else {
+      
+      
+      for (const eventTarget of eventTargets) {
+        addListener(eventTarget, 'scroll', async () => {
+          cleanup();
+          await waitForDelayWithoutScrollEvent(eventTarget);
+          resolve(eventTarget);
+        });
+      }
+    }
   });
 }
 
