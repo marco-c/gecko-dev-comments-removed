@@ -17,8 +17,8 @@ class MInstruction;
 class MDefinition;
 class TempAllocator;
 
-extern MDefinition* AlwaysBoxAt(TempAllocator& alloc, MInstruction* at,
-                                MDefinition* operand);
+extern MDefinition* BoxAt(TempAllocator& alloc, MInstruction* at,
+                          MDefinition* operand);
 
 
 
