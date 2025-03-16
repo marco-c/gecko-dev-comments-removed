@@ -2537,7 +2537,9 @@ void TextControlState::GetValue(nsAString& aValue, bool aIgnoreWrap,
     
     
     
-    { 
+    
+    
+    if (mEditorInitialized) {
       AutoNoJSAPI nojsapi;
 
       DebugOnly<nsresult> rv = mTextEditor->ComputeTextValue(flags, aValue);

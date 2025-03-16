@@ -480,6 +480,17 @@ already_AddRefed<Element> TextEditor::GetInputEventTargetElement() const {
 }
 
 bool TextEditor::IsEmpty() const {
+  
+  
+  
+  
+  MOZ_ASSERT_IF(mInitSucceeded, GetRoot());
+  if (NS_WARN_IF(!GetRoot())) {
+    NS_ASSERTION(false,
+                 "Make the root caller stop doing that before initializing or "
+                 "after destroying the TextEditor");
+    return true;
+  }
   const Text* const textNode = GetTextNode();
   MOZ_DIAGNOSTIC_ASSERT_IF(textNode,
                            !Text::FromNodeOrNull(textNode->GetNextSibling()));
