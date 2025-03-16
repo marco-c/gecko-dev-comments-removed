@@ -223,10 +223,15 @@ struct Mapping<Type::Freezable> : MappingData<false> {
   
 
 
+  ReadOnlyHandle Freeze() &&;
+
+  
 
 
 
-  std::tuple<MutableMapping, ReadOnlyHandle> Freeze() &&;
+
+
+  std::tuple<ReadOnlyHandle, MutableMapping> FreezeWithMutableMapping() &&;
 
   
 
