@@ -62,9 +62,6 @@ MFBT_API ReplaceMallocBridge* get_bridge();
 #endif
 
 
-#include "malloc_decls.h"
-
-
 
 
 #define MALLOC_DECL(name, return_type, ...) \

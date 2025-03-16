@@ -27,15 +27,6 @@
 #  define MALLOC_FUNCS_ALL \
     (MALLOC_FUNCS_MALLOC | MALLOC_FUNCS_JEMALLOC | MALLOC_FUNCS_ARENA)
 
-
-
-
-
-#  if !defined(MALLOC_DECL) && defined(__cplusplus)
-#    include <functional>
-#    include "mozilla/Maybe.h"
-#  endif
-
 #endif  
 
 #ifndef MALLOC_FUNCS
@@ -127,6 +118,37 @@ MALLOC_DECL(jemalloc_free_dirty_pages, void)
 
 
 
+
+
+MALLOC_DECL(jemalloc_free_excess_dirty_pages, void)
+
+
+
+MALLOC_DECL(jemalloc_reset_small_alloc_randomization, void, bool)
+
+
+
+MALLOC_DECL(jemalloc_thread_local_arena, void, bool)
+
+
+MALLOC_DECL(jemalloc_ptr_info, void, const void*, jemalloc_ptr_info_t*)
+#  endif
+
+#  if MALLOC_FUNCS & MALLOC_FUNCS_ARENA_BASE
+
+
+
+
+MALLOC_DECL(moz_create_arena_with_params, arena_id_t, arena_params_t*)
+
+
+
+
+MALLOC_DECL(moz_dispose_arena, void, arena_id_t)
+
+
+
+
 MALLOC_DECL(moz_set_max_dirty_page_modifier, void, int32_t)
 
 
@@ -153,49 +175,8 @@ MALLOC_DECL(moz_enable_deferred_purge, bool, bool)
 
 
 
+MALLOC_DECL(moz_may_purge_one_now, purge_result_t, bool, uint32_t)
 
-
-
-
-
-
-
-
-
-#    ifdef __cplusplus
-MALLOC_DECL(moz_may_purge_now, purge_result_t, bool, uint32_t,
-            const mozilla::Maybe<std::function<bool()>>&)
-#    endif
-
-
-
-
-
-
-MALLOC_DECL(jemalloc_free_excess_dirty_pages, void)
-
-
-
-MALLOC_DECL(jemalloc_reset_small_alloc_randomization, void, bool)
-
-
-
-MALLOC_DECL(jemalloc_thread_local_arena, void, bool)
-
-
-MALLOC_DECL(jemalloc_ptr_info, void, const void*, jemalloc_ptr_info_t*)
-#  endif
-
-#  if MALLOC_FUNCS & MALLOC_FUNCS_ARENA_BASE
-
-
-
-MALLOC_DECL(moz_create_arena_with_params, arena_id_t, arena_params_t*)
-
-
-
-
-MALLOC_DECL(moz_dispose_arena, void, arena_id_t)
 #  endif
 
 #  if MALLOC_FUNCS & MALLOC_FUNCS_ARENA_ALLOC
