@@ -285,8 +285,6 @@ TEST_F(SrtpSessionTest, RemoveSsrc) {
   EXPECT_TRUE(s2_.RemoveSsrcFromSession(1));
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 TEST_F(SrtpSessionTest, ProtectUnprotectWrapAroundRocMismatch) {
   
   
@@ -308,6 +306,8 @@ TEST_F(SrtpSessionTest, ProtectUnprotectWrapAroundRocMismatch) {
       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
       
   };
+  rtc::CopyOnWriteBuffer packet1(kFrame1, sizeof(kFrame1) - 10,
+                                 sizeof(kFrame1));
   unsigned char kFrame2[] = {
       
       
@@ -317,34 +317,77 @@ TEST_F(SrtpSessionTest, ProtectUnprotectWrapAroundRocMismatch) {
       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
       
   };
+  rtc::CopyOnWriteBuffer packet2(kFrame2, sizeof(kFrame2) - 10,
+                                 sizeof(kFrame1));
   const unsigned char kPayload[] = {0xBE, 0xEF};
 
-  int out_len;
   
   
   
   
-  EXPECT_TRUE(
-      s1_.ProtectRtp(kFrame1, sizeof(kFrame1) - 10, sizeof(kFrame1), &out_len));
-  EXPECT_EQ(out_len, 24);
-  EXPECT_TRUE(
-      s1_.ProtectRtp(kFrame2, sizeof(kFrame2) - 10, sizeof(kFrame2), &out_len));
-  EXPECT_EQ(out_len, 24);
+  EXPECT_TRUE(s1_.ProtectRtp(packet1));
+  EXPECT_EQ(packet1.size(), 24u);
+  EXPECT_TRUE(s1_.ProtectRtp(packet2));
+  EXPECT_EQ(packet2.size(), 24u);
 
   
   
   
   
   
-  EXPECT_FALSE(s2_.UnprotectRtp(kFrame2, sizeof(kFrame2), &out_len));
+  EXPECT_FALSE(s2_.UnprotectRtp(packet2));
   
-  EXPECT_TRUE(s2_.UnprotectRtp(kFrame1, sizeof(kFrame1), &out_len));
-  EXPECT_EQ(0, std::memcmp(kFrame1 + 12, kPayload, sizeof(kPayload)));
+  EXPECT_TRUE(s2_.UnprotectRtp(packet1));
+  ASSERT_EQ(packet1.size(), 14u);
+  EXPECT_EQ(0, std::memcmp(packet1.data() + 12, kPayload, sizeof(kPayload)));
   
   
-  EXPECT_TRUE(s2_.UnprotectRtp(kFrame2, sizeof(kFrame2), &out_len));
-  EXPECT_EQ(0, std::memcmp(kFrame2 + 12, kPayload, sizeof(kPayload)));
+  EXPECT_TRUE(s2_.UnprotectRtp(packet2));
+  ASSERT_EQ(packet2.size(), 14u);
+  EXPECT_EQ(0, std::memcmp(packet2.data() + 12, kPayload, sizeof(kPayload)));
 }
-#pragma clang diagnostic pop
+
+TEST_F(SrtpSessionTest, ProtectGetPacketIndex) {
+  EXPECT_TRUE(s1_.SetSend(kSrtpAes128CmSha1_80, kTestKey1,
+                          kEncryptedHeaderExtensionIds));
+  EXPECT_TRUE(s2_.SetReceive(kSrtpAes128CmSha1_80, kTestKey1,
+                             kEncryptedHeaderExtensionIds));
+  
+  
+  unsigned char kFrame1[] = {
+      
+      
+      0x80, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+      0xBE, 0xEF,  
+      
+      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+      
+  };
+  rtc::CopyOnWriteBuffer packet1(kFrame1, sizeof(kFrame1) - 10,
+                                 sizeof(kFrame1));
+  unsigned char kFrame2[] = {
+      
+      
+      0x80, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+      0xBE, 0xEF,  
+      
+      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+      
+  };
+  rtc::CopyOnWriteBuffer packet2(kFrame2, sizeof(kFrame2) - 10,
+                                 sizeof(kFrame1));
+
+  
+  
+  
+  
+  int64_t index;
+  EXPECT_TRUE(s1_.ProtectRtp(packet1, &index));
+  EXPECT_EQ(packet1.size(), 24u);
+  EXPECT_EQ(index, 0xffff00000000);  
+  EXPECT_TRUE(s1_.ProtectRtp(packet2, &index));
+  EXPECT_EQ(packet2.size(), 24u);
+  EXPECT_EQ(index, 0x10001000000);  
+}
 
 }  
