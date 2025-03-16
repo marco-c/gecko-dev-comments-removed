@@ -171,12 +171,6 @@ class FileSystemDatabaseManager {
   
 
 
-  virtual Result<bool, QMResult> DoesFileExist(
-      const EntryId& aEntryId) const = 0;
-
-  
-
-
   virtual Result<EntryId, QMResult> GetEntryId(
       const FileSystemChildMetadata& aHandle) const = 0;
 

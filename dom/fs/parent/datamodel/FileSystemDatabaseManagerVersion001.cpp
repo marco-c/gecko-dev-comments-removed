@@ -43,22 +43,10 @@ constexpr const nsLiteralCString gDescendantsQuery =
     "UNION "
     "SELECT Entries.handle, Entries.parent FROM traceChildren, Entries "
     "WHERE traceChildren.handle=Entries.parent ) "
-    "SELECT handle, Usages.usage "
-    "FROM traceChildren INNER JOIN Files USING (handle) "
-    "INNER JOIN Usages USING (handle) "
+    "SELECT handle "
+    "FROM traceChildren INNER JOIN Files "
+    "USING(handle) "
     ";"_ns;
-
-Result<bool, QMResult> DoesFileExist(const FileSystemConnection& aConnection,
-                                     const EntryId& aEntryId) {
-  MOZ_ASSERT(!aEntryId.IsEmpty());
-
-  const nsCString existsQuery =
-      "SELECT EXISTS "
-      "(SELECT 1 FROM Files WHERE handle = :handle ) "
-      ";"_ns;
-
-  QM_TRY_RETURN(ApplyEntryExistsQuery(aConnection, existsQuery, aEntryId));
-}
 
 Result<bool, QMResult> IsDirectoryEmpty(const FileSystemConnection& mConnection,
                                         const EntryId& aEntryId) {
@@ -459,20 +447,8 @@ void LogWithFilename(const FileSystemFileManager& aFileManager,
 Result<bool, QMResult> IsAnyDescendantLocked(
     const FileSystemConnection& aConnection,
     const FileSystemDataManager& aDataManager, const EntryId& aEntryId) {
-  constexpr const nsLiteralCString descendantsQuery =
-      "WITH RECURSIVE traceChildren(handle, parent) AS ( "
-      "SELECT handle, parent "
-      "FROM Entries "
-      "WHERE handle=:handle "
-      "UNION "
-      "SELECT Entries.handle, Entries.parent FROM traceChildren, Entries "
-      "WHERE traceChildren.handle=Entries.parent ) "
-      "SELECT handle, Files.name "
-      "FROM traceChildren INNER JOIN Files USING (handle) "
-      ";"_ns;
-
   QM_TRY_UNWRAP(ResultStatement stmt,
-                ResultStatement::Create(aConnection, descendantsQuery));
+                ResultStatement::Create(aConnection, gDescendantsQuery));
   QM_TRY(QM_TO_RESULT(stmt.BindEntryIdByName("handle"_ns, aEntryId)));
   QM_TRY_UNWRAP(bool moreResults, stmt.ExecuteStep());
 
@@ -586,7 +562,7 @@ FileSystemDatabaseManagerVersion001::GetOrCreateDirectory(
   MOZ_ASSERT(!(name.IsVoid() || name.IsEmpty()));
 
   bool exists = true;
-  QM_TRY_UNWRAP(exists, data::DoesFileExist(mConnection, aHandle));
+  QM_TRY_UNWRAP(exists, DoesFileExist(mConnection, aHandle));
 
   
   
@@ -667,7 +643,7 @@ Result<EntryId, QMResult> FileSystemDatabaseManagerVersion001::GetOrCreateFile(
   
   QM_TRY(OkIf(!exists), Err(QMResult(NS_ERROR_DOM_TYPE_MISMATCH_ERR)));
 
-  QM_TRY_UNWRAP(exists, data::DoesFileExist(mConnection, aHandle));
+  QM_TRY_UNWRAP(exists, DoesFileExist(mConnection, aHandle));
 
   if (exists) {
     QM_TRY_RETURN(FindEntryId(mConnection, aHandle,  true));
@@ -792,22 +768,49 @@ FileSystemDatabaseManagerVersion001::GetDirectoryEntries(
   return entries;
 }
 
-Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveDirectoryImpl(
-    const EntryId& entryId) {
-  using FileIdArrayAndUsage = std::pair<nsTArray<FileId>, Usage>;
+Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveDirectory(
+    const FileSystemChildMetadata& aHandle, bool aRecursive) {
+  MOZ_ASSERT(!aHandle.parentId().IsEmpty());
+
+  if (aHandle.childName().IsEmpty()) {
+    return false;
+  }
+
+  DebugOnly<Name> name = aHandle.childName();
+  MOZ_ASSERT(!name.inspect().IsVoid());
+
+  QM_TRY_UNWRAP(bool exists, DoesDirectoryExist(mConnection, aHandle));
+
+  if (!exists) {
+    return false;
+  }
 
   
-  QM_TRY_INSPECT(const FileIdArrayAndUsage& unlockedFileInfo,
-                 FindFilesWithoutDeprecatedLocksUnderEntry(entryId));
+  QM_TRY_UNWRAP(EntryId entryId, FindEntryId(mConnection, aHandle, false));
+  MOZ_ASSERT(!entryId.IsEmpty());
 
-  const nsTArray<FileId>& descendants = unlockedFileInfo.first;
-  
-  
+  QM_TRY_UNWRAP(bool isEmpty, IsDirectoryEmpty(mConnection, entryId));
+
+  MOZ_ASSERT(mDataManager);
+  QM_TRY_UNWRAP(const bool isLocked,
+                IsAnyDescendantLocked(mConnection, *mDataManager, entryId));
+
+  QM_TRY(OkIf(!isLocked),
+         Err(QMResult(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR)));
+
+  if (!aRecursive && !isEmpty) {
+    return Err(QMResult(NS_ERROR_DOM_INVALID_MODIFICATION_ERR));
+  }
+
+  QM_TRY_UNWRAP(Usage usage, GetUsagesOfDescendants(entryId));
+
+  QM_TRY_INSPECT(const nsTArray<FileId>& descendants,
+                 FindFilesUnderEntry(entryId));
+
   nsTArray<FileId> failedRemovals;
   QM_TRY_UNWRAP(DebugOnly<Usage> removedUsage,
                 mFileManager->RemoveFiles(descendants, failedRemovals));
 
-  const Usage usage = unlockedFileInfo.second;
   
   MOZ_ASSERT_IF(failedRemovals.IsEmpty() && (0 == mFilesOfUnknownUsage),
                 usage <= removedUsage);
@@ -837,46 +840,6 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveDirectoryImpl(
   return true;
 }
 
-Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveDirectory(
-    const FileSystemChildMetadata& aHandle, bool aRecursive) {
-  MOZ_ASSERT(!aHandle.parentId().IsEmpty());
-
-  if (aHandle.childName().IsEmpty()) {
-    return false;
-  }
-
-  DebugOnly<Name> name = aHandle.childName();
-  MOZ_ASSERT(!name.inspect().IsVoid());
-
-  QM_TRY_UNWRAP(bool exists, DoesDirectoryExist(mConnection, aHandle));
-
-  if (!exists) {
-    return false;
-  }
-
-  
-  QM_TRY_UNWRAP(EntryId entryId, FindEntryId(mConnection, aHandle, false));
-  MOZ_ASSERT(!entryId.IsEmpty());
-
-  QM_TRY_UNWRAP(bool isEmpty, IsDirectoryEmpty(mConnection, entryId));
-
-  MOZ_ASSERT(mDataManager);
-  QM_TRY_UNWRAP(const bool isLocked,
-                IsAnyDescendantLocked(mConnection, *mDataManager, entryId));
-
-  
-  
-  
-  QM_TRY(OkIf(!isLocked),
-         Err(QMResult(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR)));
-
-  if (!aRecursive && !isEmpty) {
-    return Err(QMResult(NS_ERROR_DOM_INVALID_MODIFICATION_ERR));
-  }
-
-  QM_TRY_RETURN(RemoveDirectoryImpl(entryId));
-}
-
 Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveFile(
     const FileSystemChildMetadata& aHandle) {
   MOZ_ASSERT(!aHandle.parentId().IsEmpty());
@@ -889,7 +852,7 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveFile(
   MOZ_ASSERT(!name.inspect().IsVoid());
 
   
-  QM_TRY_UNWRAP(bool exists, data::DoesFileExist(mConnection, aHandle));
+  QM_TRY_UNWRAP(bool exists, DoesFileExist(mConnection, aHandle));
 
   if (!exists) {
     return false;
@@ -909,16 +872,15 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveFile(
     return Err(QMResult(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR));
   }
 
-  using FileIdArrayAndUsage = std::pair<nsTArray<FileId>, Usage>;
-  QM_TRY_INSPECT(const FileIdArrayAndUsage& unlockedFileInfo,
-                 FindFilesWithoutDeprecatedLocksUnderEntry(entryId));
+  QM_TRY_INSPECT(const nsTArray<FileId>& diskItems,
+                 FindFilesUnderEntry(entryId));
 
-  const nsTArray<FileId>& diskItems = unlockedFileInfo.first;
+  QM_TRY_UNWRAP(Usage usage, GetUsagesOfDescendants(entryId));
+
   nsTArray<FileId> failedRemovals;
   QM_TRY_UNWRAP(DebugOnly<Usage> removedUsage,
                 mFileManager->RemoveFiles(diskItems, failedRemovals));
 
-  const Usage usage = unlockedFileInfo.second;
   
   
   MOZ_ASSERT_IF(failedRemovals.IsEmpty() && (0 == mFilesOfUnknownUsage),
@@ -1061,13 +1023,6 @@ Result<Path, QMResult> FileSystemDatabaseManagerVersion001::Resolve(
   return path;
 }
 
-Result<bool, QMResult> FileSystemDatabaseManagerVersion001::DoesFileExist(
-    const EntryId& aEntryId) const {
-  MOZ_ASSERT(!aEntryId.IsEmpty());
-
-  QM_TRY_RETURN(data::DoesFileExist(mConnection, aEntryId));
-}
-
 Result<EntryId, QMResult> FileSystemDatabaseManagerVersion001::GetEntryId(
     const FileSystemChildMetadata& aHandle) const {
   return GetUniqueEntryId(mConnection, aHandle);
@@ -1130,7 +1085,7 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::DoesFileIdExist(
     const FileId& aFileId) const {
   MOZ_ASSERT(!aFileId.IsEmpty());
 
-  QM_TRY_RETURN(DoesFileExist(aFileId.Value()));
+  QM_TRY_RETURN(DoesFileExist(mConnection, aFileId.Value()));
 }
 
 nsresult FileSystemDatabaseManagerVersion001::RemoveFileId(
@@ -1147,50 +1102,55 @@ nsresult FileSystemDatabaseManagerVersion001::RemoveFileId(
 
 
 
-Result<std::pair<nsTArray<FileId>, Usage>, QMResult>
-FileSystemDatabaseManagerVersion001::FindFilesWithoutDeprecatedLocksUnderEntry(
+Result<Usage, QMResult>
+FileSystemDatabaseManagerVersion001::GetUsagesOfDescendants(
+    const EntryId& aEntryId) const {
+  const nsLiteralCString descendantUsagesQuery =
+      "WITH RECURSIVE traceChildren(handle, parent) AS ( "
+      "SELECT handle, parent "
+      "FROM Entries "
+      "WHERE handle=:handle "
+      "UNION "
+      "SELECT Entries.handle, Entries.parent FROM traceChildren, Entries "
+      "WHERE traceChildren.handle=Entries.parent ) "
+      "SELECT sum(Usages.usage) "
+      "FROM traceChildren INNER JOIN Usages "
+      "USING(handle) "
+      ";"_ns;
+
+  QM_TRY_UNWRAP(ResultStatement stmt,
+                ResultStatement::Create(mConnection, descendantUsagesQuery));
+  QM_TRY(QM_TO_RESULT(stmt.BindEntryIdByName("handle"_ns, aEntryId)));
+  QM_TRY_UNWRAP(const bool moreResults, stmt.ExecuteStep());
+  if (!moreResults) {
+    return 0;
+  }
+
+  QM_TRY_RETURN(stmt.GetUsageByColumn( 0u));
+}
+
+Result<nsTArray<FileId>, QMResult>
+FileSystemDatabaseManagerVersion001::FindFilesUnderEntry(
     const EntryId& aEntryId) const {
   nsTArray<FileId> descendants;
-  Usage usage{0};
   {
     QM_TRY_UNWRAP(ResultStatement stmt,
                   ResultStatement::Create(mConnection, gDescendantsQuery));
     QM_TRY(QM_TO_RESULT(stmt.BindEntryIdByName("handle"_ns, aEntryId)));
     QM_TRY_UNWRAP(bool moreResults, stmt.ExecuteStep());
 
-    while (true) {
-      if (!moreResults) {
-        break;
-      }
-
+    while (moreResults) {
       
       QM_TRY_INSPECT(const FileId& fileId,
                      stmt.GetFileIdByColumn( 0u));
 
-      
-      if (!mDataManager->IsLockedWithDeprecatedSharedLock(fileId.Value(),
-                                                          fileId)) {
-        QM_TRY_INSPECT(const DebugOnly<bool>& isLocked,
-                       mDataManager->IsLocked(fileId.Value()));
-        MOZ_ASSERT(!isLocked);
-        descendants.AppendElement(fileId);
-
-        QM_TRY_INSPECT(const Usage& fileUsage,
-                       stmt.GetUsageByColumn( 1u));
-        usage += fileUsage;
-      }
+      descendants.AppendElement(fileId);
 
       QM_TRY_UNWRAP(moreResults, stmt.ExecuteStep());
     }
   }
 
-  return std::make_pair(std::move(descendants), usage);
-}
-
-Result<nsTArray<std::pair<EntryId, FileId>>, QMResult>
-FileSystemDatabaseManagerVersion001::FindFileEntriesUnderDirectory(
-    const EntryId& aEntryId) const {
-  return Err(QMResult(NS_ERROR_NOT_IMPLEMENTED));
+  return descendants;
 }
 
 nsresult FileSystemDatabaseManagerVersion001::SetUsageTracking(
@@ -1303,7 +1263,7 @@ nsresult FileSystemDatabaseManagerVersion001::ClearDestinationIfNotLocked(
     const FileSystemChildMetadata& aNewDesignation) {
   
   
-  QM_TRY_UNWRAP(bool exists, data::DoesFileExist(aConnection, aNewDesignation));
+  QM_TRY_UNWRAP(bool exists, DoesFileExist(aConnection, aNewDesignation));
   if (exists) {
     QM_TRY_INSPECT(const EntryId& destId,
                    FindEntryId(aConnection, aNewDesignation, true));
@@ -1318,22 +1278,10 @@ nsresult FileSystemDatabaseManagerVersion001::ClearDestinationIfNotLocked(
   } else {
     QM_TRY_UNWRAP(exists, DoesDirectoryExist(aConnection, aNewDesignation));
     if (exists) {
-      QM_TRY_INSPECT(const EntryId& destId,
-                     FindEntryId(aConnection, aNewDesignation, false));
-
-      MOZ_ASSERT(aDataManager);
-      QM_TRY_UNWRAP(const bool isLocked,
-                    IsAnyDescendantLocked(mConnection, *aDataManager, destId));
-
       
-      
-      
-      QM_TRY(OkIf(!isLocked),
-             Err(QMResult(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR)));
-
       QM_TRY_UNWRAP(DebugOnly<bool> isRemoved,
-                    MOZ_TO_RESULT(RemoveDirectoryImpl(destId)));
-
+                    MOZ_TO_RESULT(RemoveDirectory(aNewDesignation,
+                                                   true)));
       MOZ_ASSERT(isRemoved);
     }
   }
@@ -1424,6 +1372,18 @@ Result<bool, QMResult> ApplyEntryExistsQuery(
   QM_TRY(QM_TO_RESULT(stmt.BindEntryIdByName("handle"_ns, aEntry)));
 
   return stmt.YesOrNoQuery();
+}
+
+Result<bool, QMResult> DoesFileExist(const FileSystemConnection& aConnection,
+                                     const EntryId& aEntryId) {
+  MOZ_ASSERT(!aEntryId.IsEmpty());
+
+  const nsCString existsQuery =
+      "SELECT EXISTS "
+      "(SELECT 1 FROM Files WHERE handle = :handle ) "
+      ";"_ns;
+
+  QM_TRY_RETURN(ApplyEntryExistsQuery(aConnection, existsQuery, aEntryId));
 }
 
 Result<bool, QMResult> IsFile(const FileSystemConnection& aConnection,
