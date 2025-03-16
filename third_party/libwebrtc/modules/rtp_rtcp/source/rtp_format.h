@@ -42,7 +42,7 @@ class RtpPacketizer {
       
       const RTPVideoHeader& rtp_video_header,
       
-      bool enable_av1_even_split = false);
+      bool enable_av1_even_split = true);
 
   virtual ~RtpPacketizer() = default;
 
