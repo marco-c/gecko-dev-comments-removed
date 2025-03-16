@@ -80,7 +80,7 @@ JS_PUBLIC_API bool JS_StartProfiling(const char* profileName, pid_t pid) {
   ok = StartOSXProfiling(profileName, pid);
 #endif
 #ifdef __linux__
-  if (!js_StartPerf()) {
+  if (!js_StartPerf(profileName)) {
     ok = false;
   }
 #endif
@@ -454,7 +454,6 @@ JS_PUBLIC_API bool js_DumpCallgrind(const char* outfile) {
 
 
 
-
 #  include <signal.h>
 #  include <sys/wait.h>
 #  include <unistd.h>
@@ -462,8 +461,9 @@ JS_PUBLIC_API bool js_DumpCallgrind(const char* outfile) {
 static bool perfInitialized = false;
 static pid_t perfPid = 0;
 
-bool js_StartPerf() {
-  const char* outfile = "mozperf.data";
+bool js_StartPerf(const char* profileName) {
+  const char* outfile =
+      (profileName && profileName[0]) ? profileName : "mozperf.data";
 
   if (perfPid != 0) {
     UnsafeError("js_StartPerf: called while perf was already running!\n");
@@ -506,7 +506,7 @@ bool js_StartPerf() {
 
     const char* flags = getenv("MOZ_PROFILE_PERF_FLAGS");
     if (!flags) {
-      flags = "--call-graph";
+      flags = "-g";
     }
 
     UniqueChars flags2 = DuplicateString(flags);
