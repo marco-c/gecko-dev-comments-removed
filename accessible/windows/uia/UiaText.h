@@ -10,13 +10,24 @@
 #include "objbase.h"
 #include "uiautomation.h"
 
+#include "IUnknownImpl.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/RefPtr.h"
+
 namespace mozilla::a11y {
 class Accessible;
+class MsaaAccessible;
 
 
 
 
 class UiaText : public ITextProvider {
+ public:
+  explicit UiaText(MsaaAccessible* aMsaa);
+
+  
+  DECL_IUNKNOWN
+
   
   virtual HRESULT STDMETHODCALLTYPE GetSelection(
        __RPC__deref_out_opt SAFEARRAY** aRetVal);
@@ -39,7 +50,10 @@ class UiaText : public ITextProvider {
        __RPC__out enum SupportedTextSelection* aRetVal);
 
  private:
+  virtual ~UiaText() = default;
   Accessible* Acc() const;
+
+  RefPtr<MsaaAccessible> mMsaa;
 };
 
 }  

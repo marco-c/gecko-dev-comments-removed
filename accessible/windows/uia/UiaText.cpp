@@ -6,7 +6,7 @@
 
 #include "UiaText.h"
 
-#include "ia2AccessibleHypertext.h"
+#include "MsaaAccessible.h"
 #include "mozilla/a11y/States.h"
 #include "TextLeafRange.h"
 #include "UiaTextRange.h"
@@ -35,11 +35,13 @@ static SAFEARRAY* TextLeafRangesToUiaRanges(
 }
 
 
+IMPL_IUNKNOWN1(UiaText, ITextProvider)
 
-Accessible* UiaText::Acc() const {
-  auto* hyp = static_cast<const ia2AccessibleHypertext*>(this);
-  return hyp->Acc();
-}
+
+
+UiaText::UiaText(MsaaAccessible* aMsaa) : mMsaa(aMsaa) {}
+
+Accessible* UiaText::Acc() const { return mMsaa->Acc(); }
 
 
 

@@ -29,6 +29,7 @@
 #include "Relation.h"
 #include "RootAccessible.h"
 #include "TextLeafRange.h"
+#include "UiaText.h"
 #include "UiaTextRange.h"
 
 using namespace mozilla;
@@ -102,8 +103,15 @@ static void MaybeRaiseUiaLiveRegionEvent(Accessible* aAcc,
 static bool HasTextPattern(Accessible* aAcc) {
   
   
+  
+  
+  
+  
+  
+  
+  
   constexpr uint64_t editableRootStates = states::EDITABLE | states::FOCUSABLE;
-  return aAcc->IsDoc() ||
+  return aAcc->IsText() || (aAcc->IsDoc() && !aAcc->IsRoot()) ||
          (aAcc->IsHyperText() &&
           (aAcc->State() & editableRootStates) == editableRootStates);
 }
@@ -463,8 +471,8 @@ uiaRawElmProvider::GetPatternProvider(
       return S_OK;
     case UIA_TextPatternId:
       if (HasTextPattern(acc)) {
-        auto text =
-            GetPatternFromDerived<ia2AccessibleHypertext, ITextProvider>();
+        RefPtr<ITextProvider> text =
+            new UiaText(static_cast<MsaaAccessible*>(this));
         text.forget(aPatternProvider);
       }
       return S_OK;
