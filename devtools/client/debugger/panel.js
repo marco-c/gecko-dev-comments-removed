@@ -28,6 +28,8 @@ loader.lazyRequireGetter(
 const DBG_STRINGS_URI = [
   "devtools/client/locales/debugger.properties",
   
+  "devtools/client/locales/sourceeditor.properties",
+  
   "devtools/client/locales/startup.properties",
   "devtools/client/locales/components.properties",
   
