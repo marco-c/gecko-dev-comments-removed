@@ -327,13 +327,24 @@ window.onload = function () {
         
         
         if (!aElem.skipClick) {
+          
+          
+          
+          if (!this.ownerDocument.hasFocus()) {
+            let input = this;
+            this.ownerDocument.addEventListener("focus", (e) => {
+              input.click();
+            }, { once: true });
+            return;
+          }
           this.click();
         }
-      } else {
-        let filename1 = this.filename1;
-        delete this.filename1;
-        updateAboutMemoryFromTwoFiles(filename1, file.mozFullPath);
+        return;
       }
+
+      let filename1 = this.filename1;
+      delete this.filename1;
+      updateAboutMemoryFromTwoFiles(filename1, file.mozFullPath);
     }
   );
 
