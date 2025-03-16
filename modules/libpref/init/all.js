@@ -3440,6 +3440,9 @@ pref("browser.search.separatePrivateDefault.ui.enabled", false);
 pref("browser.search.removeEngineInfobar.enabled", true);
 
 
+pref("browser.search.rustSelector.featureGate", false);
+
+
 
 
 
