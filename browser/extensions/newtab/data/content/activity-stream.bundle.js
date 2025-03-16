@@ -2191,12 +2191,15 @@ class _LinkMenu extends (external_React_default()).PureComponent {
       isPrivateBrowsingEnabled,
       siteInfo,
       platform,
+      dispatch,
+      options,
+      shouldSendImpressionStats,
       userEvent = actionCreators.UserEvent
     } = props;
 
     
-    const propOptions = site.isDefault && !site.searchTopSite && !site.sponsored_position ? DEFAULT_SITE_MENU_OPTIONS : props.options;
-    const options = propOptions.map(o => LinkMenuOptions[o](site, index, source, isPrivateBrowsingEnabled, siteInfo, platform)).map(option => {
+    const propOptions = site.isDefault && !site.searchTopSite && !site.sponsored_position ? DEFAULT_SITE_MENU_OPTIONS : options;
+    const linkMenuOptions = propOptions.map(o => LinkMenuOptions[o](site, index, source, isPrivateBrowsingEnabled, siteInfo, platform)).map(option => {
       const {
         action,
         impression,
@@ -2223,7 +2226,7 @@ class _LinkMenu extends (external_React_default()).PureComponent {
               }
             }, action.data);
           }
-          props.dispatch(action);
+          dispatch(action);
           if (eventName) {
             const userEventData = Object.assign({
               event: eventName,
@@ -2233,10 +2236,10 @@ class _LinkMenu extends (external_React_default()).PureComponent {
                 card_type: site.flight_id ? "spoc" : "organic"
               }
             }, siteInfo);
-            props.dispatch(userEvent(userEventData));
+            dispatch(userEvent(userEventData));
           }
-          if (impression && props.shouldSendImpressionStats) {
-            props.dispatch(impression);
+          if (impression && shouldSendImpressionStats) {
+            dispatch(impression);
           }
         };
       }
@@ -2246,9 +2249,9 @@ class _LinkMenu extends (external_React_default()).PureComponent {
     
     
     
-    options[0].first = true;
-    options[options.length - 1].last = true;
-    return options;
+    linkMenuOptions[0].first = true;
+    linkMenuOptions[linkMenuOptions.length - 1].last = true;
+    return linkMenuOptions;
   }
   render() {
     return external_React_default().createElement(ContextMenu, {
@@ -12463,8 +12466,33 @@ function LocationSearch({
 
 
 
+
 const Weather_VISIBLE = "visible";
 const Weather_VISIBILITY_CHANGE_EVENT = "visibilitychange";
+function WeatherPlaceholder() {
+  const [isSeen, setIsSeen] = (0,external_React_namespaceObject.useState)(false);
+
+  
+  
+  
+  
+  const ref = useIntersectionObserver(() => setIsSeen(true), 1);
+  const isSeenClassName = isSeen ? `placeholder-seen` : ``;
+  return external_React_default().createElement("div", {
+    className: `weather weather-placeholder ${isSeenClassName}`,
+    ref: el => {
+      ref.current = [el];
+    }
+  }, external_React_default().createElement("div", {
+    className: "placeholder-image placeholder-fill"
+  }), external_React_default().createElement("div", {
+    className: "placeholder-context"
+  }, external_React_default().createElement("div", {
+    className: "placeholder-header placeholder-fill"
+  }), external_React_default().createElement("div", {
+    className: "placeholder-description placeholder-fill"
+  })));
+}
 class _Weather extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -12608,8 +12636,11 @@ class _Weather extends (external_React_default()).PureComponent {
   render() {
     
     const isWeatherEnabled = this.props.Prefs.values["system.showWeather"];
-    if (!isWeatherEnabled || !this.props.Weather.initialized) {
+    if (!isWeatherEnabled) {
       return false;
+    }
+    if (!this.props.Weather.initialized) {
+      return external_React_default().createElement(WeatherPlaceholder, null);
     }
     const {
       showContextMenu
@@ -12618,22 +12649,17 @@ class _Weather extends (external_React_default()).PureComponent {
       props
     } = this;
     const {
-      className,
-      index,
       dispatch,
-      eventSource,
-      shouldSendImpressionStats,
       Prefs,
       Weather
     } = props;
     const WEATHER_SUGGESTION = Weather.suggestions?.[0];
-    const isContextMenuOpen = this.state.activeCard === index;
-    const outerClassName = ["weather", className, isContextMenuOpen && !Weather.searchActive && "active", props.placeholder && "placeholder", Weather.searchActive && "search"].filter(v => v).join(" ");
+    const outerClassName = ["weather", Weather.searchActive && "search"].filter(v => v).join(" ");
     const showDetailedView = Prefs.values["weather.display"] === "detailed";
 
     
-    const WEATHER_SOURCE_CONTEXT_MENU_OPTIONS = [...(this.props.Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), ...(this.props.Prefs.values["weather.temperatureUnits"] === "f" ? ["ChangeTempUnitCelsius"] : ["ChangeTempUnitFahrenheit"]), ...(this.props.Prefs.values["weather.display"] === "simple" ? ["ChangeWeatherDisplayDetailed"] : ["ChangeWeatherDisplaySimple"]), "HideWeather", "OpenLearnMoreURL"];
-    const WEATHER_SOURCE_ERROR_CONTEXT_MENU_OPTIONS = [...(this.props.Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), "HideWeather", "OpenLearnMoreURL"];
+    const WEATHER_SOURCE_CONTEXT_MENU_OPTIONS = [...(Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), ...(Prefs.values["weather.temperatureUnits"] === "f" ? ["ChangeTempUnitCelsius"] : ["ChangeTempUnitFahrenheit"]), ...(Prefs.values["weather.display"] === "simple" ? ["ChangeWeatherDisplayDetailed"] : ["ChangeWeatherDisplaySimple"]), "HideWeather", "OpenLearnMoreURL"];
+    const WEATHER_SOURCE_ERROR_CONTEXT_MENU_OPTIONS = [...(Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), "HideWeather", "OpenLearnMoreURL"];
     const contextMenu = contextOpts => external_React_default().createElement("div", {
       className: "weatherButtonContextMenuWrapper"
     }, external_React_default().createElement("button", {
@@ -12644,15 +12670,15 @@ class _Weather extends (external_React_default()).PureComponent {
       className: "weatherButtonContextMenu"
     }, showContextMenu ? external_React_default().createElement(LinkMenu, {
       dispatch: dispatch,
-      index: index,
-      source: eventSource,
+      index: 0,
+      source: "WEATHER",
       onUpdate: this.onUpdate,
       options: contextOpts,
       site: {
         url: "https://support.mozilla.org/kb/customize-items-on-firefox-new-tab-page"
       },
       link: "https://support.mozilla.org/kb/customize-items-on-firefox-new-tab-page",
-      shouldSendImpressionStats: shouldSendImpressionStats
+      shouldSendImpressionStats: false
     }) : null));
     if (Weather.searchActive) {
       return external_React_default().createElement(LocationSearch, {
@@ -12680,7 +12706,7 @@ class _Weather extends (external_React_default()).PureComponent {
         className: "weatherForecastRow"
       }, external_React_default().createElement("span", {
         className: "weatherTemperature"
-      }, WEATHER_SUGGESTION.current_conditions.temperature[this.props.Prefs.values["weather.temperatureUnits"]], "\xB0", this.props.Prefs.values["weather.temperatureUnits"])), external_React_default().createElement("div", {
+      }, WEATHER_SUGGESTION.current_conditions.temperature[Prefs.values["weather.temperatureUnits"]], "\xB0", Prefs.values["weather.temperatureUnits"])), external_React_default().createElement("div", {
         className: "weatherCityRow"
       }, external_React_default().createElement("span", {
         className: "weatherCity"
@@ -12688,7 +12714,7 @@ class _Weather extends (external_React_default()).PureComponent {
         className: "weatherDetailedSummaryRow"
       }, external_React_default().createElement("div", {
         className: "weatherHighLowTemps"
-      }, external_React_default().createElement("span", null, WEATHER_SUGGESTION.forecast.high[this.props.Prefs.values["weather.temperatureUnits"]], "\xB0", this.props.Prefs.values["weather.temperatureUnits"]), external_React_default().createElement("span", null, "\u2022"), external_React_default().createElement("span", null, WEATHER_SUGGESTION.forecast.low[this.props.Prefs.values["weather.temperatureUnits"]], "\xB0", this.props.Prefs.values["weather.temperatureUnits"])), external_React_default().createElement("span", {
+      }, external_React_default().createElement("span", null, WEATHER_SUGGESTION.forecast.high[Prefs.values["weather.temperatureUnits"]], "\xB0", Prefs.values["weather.temperatureUnits"]), external_React_default().createElement("span", null, "\u2022"), external_React_default().createElement("span", null, WEATHER_SUGGESTION.forecast.low[Prefs.values["weather.temperatureUnits"]], "\xB0", Prefs.values["weather.temperatureUnits"])), external_React_default().createElement("span", {
         className: "weatherTextSummary"
       }, WEATHER_SUGGESTION.current_conditions.summary)) : null)), contextMenu(WEATHER_SOURCE_CONTEXT_MENU_OPTIONS)), external_React_default().createElement("span", {
         className: "weatherSponsorText"
