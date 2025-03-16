@@ -425,10 +425,8 @@ nsresult BodyDeleteOrphanedFiles(
             
             QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
                 
-                MOZ_TO_RESULT(BodyTraverseFiles(dirMetaData, *subdir,
-                                                removeOrphanedFiles,
-                                                 true,
-                                                 true)),
+                MOZ_TO_RESULT(BodyTraverseFilesForCleanup(dirMetaData, *subdir,
+                                                          removeOrphanedFiles)),
                 
                 IsSpecificError<NS_ERROR_FILE_FS_CORRUPTED>,
                 

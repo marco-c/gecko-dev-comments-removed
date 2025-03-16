@@ -65,23 +65,10 @@ nsresult BodyDeleteOrphanedFiles(
 
 
 
-
-
-
 template <typename Func>
-nsresult BodyTraverseFiles(
+nsresult BodyTraverseFilesForCleanup(
     const Maybe<CacheDirectoryMetadata>& aDirectoryMetadata, nsIFile& aBodyDir,
-    const Func& aHandleFileFunc, bool aCanRemoveFiles, bool aTrackQuota = true);
-
-
-
-template <typename Func>
-nsresult BodyTraverseFiles(const CacheDirectoryMetadata& aDirectoryMetadata,
-                           nsIFile& aBodyDir, const Func& aHandleFileFunc,
-                           bool aCanRemoveFiles, bool aTrackQuota = true) {
-  return BodyTraverseFiles(Some(aDirectoryMetadata), aBodyDir, aHandleFileFunc,
-                           aCanRemoveFiles, aTrackQuota);
-}
+    const Func& aHandleFileFunc);
 
 nsresult CreateMarkerFile(const CacheDirectoryMetadata& aDirectoryMetadata);
 
