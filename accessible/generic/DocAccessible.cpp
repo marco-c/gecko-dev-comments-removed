@@ -240,18 +240,6 @@ uint64_t DocAccessible::NativeState() const {
   RefPtr<EditorBase> editorBase = GetEditor();
   state |= editorBase ? states::EDITABLE : states::READONLY;
 
-  
-  
-  
-  
-  nsIFrame* bodyFrame = mContent ? mContent->GetPrimaryFrame() : nullptr;
-  if ((state & states::EDITABLE) ||
-      (bodyFrame && bodyFrame->IsSelectable(nullptr))) {
-    
-    
-    state |= states::SELECTABLE_TEXT;
-  }
-
   return state;
 }
 
