@@ -100,6 +100,7 @@ pub trait ToCss {
     
     
     #[inline]
+    #[cfg(feature = "gecko")]
     fn to_css_nscstring(&self) -> nsCString {
         let mut s = nsCString::new();
         self.to_css(&mut CssWriter::new(&mut s)).unwrap();
