@@ -64,7 +64,10 @@ module.exports = {
   
   devtool: shouldUseSourceMap ? 'source-map' : false,
   
-  entry: [require.resolve('./polyfills'), paths.appIndexJs],
+  entry: {
+    main: [require.resolve('./polyfills'), paths.appIndexJs],
+    "big-bundle": paths.appBigBundleJs
+  },
   output: {
     
     path: paths.appBuild,
