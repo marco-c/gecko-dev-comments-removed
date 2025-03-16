@@ -21,6 +21,7 @@ using mozilla::gfx::IntPoint;
 using mozilla::gfx::IntRect;
 using mozilla::gfx::IntSize;
 using mozilla::gfx::SurfaceFormat;
+using namespace mozilla::gfx::CICP;
 
 namespace mozilla {
 namespace image {
@@ -586,6 +587,39 @@ void Decoder::PostError() {
     --mFrameCount;
     mHasFrameToTake = false;
   }
+}
+
+
+uint8_t Decoder::ChooseTransferCharacteristics(uint8_t aTC) {
+  
+  
+  
+  
+  
+  const bool rec709GammaAsSrgb =
+      StaticPrefs::gfx_color_management_rec709_gamma_as_srgb();
+  const bool rec2020GammaAsRec709 =
+      StaticPrefs::gfx_color_management_rec2020_gamma_as_rec709();
+  switch (aTC) {
+    case TransferCharacteristics::TC_BT709:
+    case TransferCharacteristics::TC_BT601:
+      if (rec709GammaAsSrgb) {
+        return TransferCharacteristics::TC_SRGB;
+      }
+      break;
+    case TransferCharacteristics::TC_BT2020_10BIT:
+    case TransferCharacteristics::TC_BT2020_12BIT:
+      if (rec2020GammaAsRec709) {
+        if (rec709GammaAsSrgb) {
+          return TransferCharacteristics::TC_SRGB;
+        }
+        return TransferCharacteristics::TC_BT709;
+      }
+      break;
+    default:
+      break;
+  }
+  return aTC;
 }
 
 }  
