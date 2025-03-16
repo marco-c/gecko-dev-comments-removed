@@ -586,6 +586,11 @@ pub const REG_UESP: ::c_int = 17;
 pub const REG_SS: ::c_int = 18;
 
 
+pub const AT_SYSINFO: ::c_ulong = 32;
+pub const AT_SYSINFO_EHDR: ::c_ulong = 33;
+pub const AT_VECTOR_SIZE_ARCH: ::c_ulong = 3;
+
+
 const SYS_ACCEPT4: ::c_int = 18;
 
 f! {
