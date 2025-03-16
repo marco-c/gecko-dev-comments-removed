@@ -453,12 +453,34 @@ already_AddRefed<Notification> Notification::ValidateAndCreate(
   nsString iconUrl = aOptions.mIcon;
   ResolveIconURL(aGlobal, iconUrl);
 
+  
+  nsTArray<IPCNotificationAction> actions;
+  if (StaticPrefs::dom_webnotifications_actions_enabled()) {
+    
+    
+    for (const auto& entry : aOptions.mActions) {
+      
+      IPCNotificationAction action;
+      
+      action.name() = entry.mAction;
+      
+      action.title() = entry.mTitle;
+      
+      
+      
+      actions.AppendElement(std::move(action));
+      if (actions.Length() == kMaxActions) {
+        break;
+      }
+    }
+  }
+
   IPCNotification ipcNotification(
       nsString(), IPCNotificationOptions(
                       nsString(aTitle), aOptions.mDir, nsString(aOptions.mLang),
                       nsString(aOptions.mBody), nsString(aOptions.mTag),
                       iconUrl, aOptions.mRequireInteraction, silent, vibrate,
-                      nsString(dataResult.unwrap())));
+                      nsString(dataResult.unwrap()), std::move(actions)));
 
   RefPtr<Notification> notification =
       new Notification(aGlobal, ipcNotification, aScope);
@@ -590,6 +612,10 @@ NotificationPermission Notification::GetPermissionInternal(
 
   return GetNotificationPermission(principal, effectiveStoragePrincipal,
                                    aWindow->IsSecureContext(), aPurpose);
+}
+
+uint32_t Notification::MaxActions(const GlobalObject& aGlobal) {
+  return kMaxActions;
 }
 
 nsresult Notification::ResolveIconURL(nsIGlobalObject* aGlobal,
@@ -736,6 +762,17 @@ void Notification::GetData(JSContext* aCx,
   }
 
   aRetval.set(mData);
+}
+
+void Notification::GetActions(nsTArray<NotificationAction>& aRetVal) {
+  aRetVal.Clear();
+  for (const IPCNotificationAction& entry :
+       mIPCNotification.options().actions()) {
+    RootedDictionary<NotificationAction> action(RootingCx());
+    action.mAction = entry.name();
+    action.mTitle = entry.title();
+    aRetVal.AppendElement(action);
+  }
 }
 
 

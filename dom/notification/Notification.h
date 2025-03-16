@@ -118,6 +118,8 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
   static NotificationPermission GetPermission(const GlobalObject& aGlobal,
                                               ErrorResult& aRv);
 
+  static uint32_t MaxActions(const GlobalObject& aGlobal);
+
   
   
   
@@ -142,6 +144,8 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
   void GetVibrate(nsTArray<uint32_t>& aRetval) const;
 
   void GetData(JSContext* aCx, JS::MutableHandle<JS::Value> aRetval);
+
+  void GetActions(nsTArray<NotificationAction>& aRetVal);
 
   static NotificationPermission GetPermission(
       nsIGlobalObject* aGlobal, notification::PermissionCheckPurpose aPurpose,

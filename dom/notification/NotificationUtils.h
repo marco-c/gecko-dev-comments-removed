@@ -26,6 +26,11 @@ namespace mozilla::dom::notification {
 
 
 
+static constexpr uint8_t kMaxActions = 2;
+
+
+
+
 NotificationPermission GetRawNotificationPermission(nsIPrincipal* aPrincipal);
 
 enum class PermissionCheckPurpose : uint8_t {
@@ -84,6 +89,24 @@ nsresult OpenSettings(nsIPrincipal* aPrincipal);
 enum class NotificationStatusChange { Shown, Closed };
 nsresult AdjustPushQuota(nsIPrincipal* aPrincipal,
                          NotificationStatusChange aChange);
+
+class NotificationActionStorageEntry
+    : public nsINotificationActionStorageEntry {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSINOTIFICATIONACTIONSTORAGEENTRY
+  explicit NotificationActionStorageEntry(
+      const IPCNotificationAction& aIPCAction)
+      : mIPCAction(aIPCAction) {}
+
+  static Result<IPCNotificationAction, nsresult> ToIPC(
+      nsINotificationActionStorageEntry& aEntry);
+
+ private:
+  virtual ~NotificationActionStorageEntry() = default;
+
+  IPCNotificationAction mIPCAction;
+};
 
 class NotificationStorageEntry : public nsINotificationStorageEntry {
  public:
