@@ -2922,6 +2922,12 @@
 
 
 
+
+
+
+
+
+
     addTabGroup(
       tabs,
       {
@@ -2929,7 +2935,8 @@
         color = null,
         label = "",
         insertBefore = null,
-        showCreateUI = false,
+        isUserCreated = false,
+        telemetryUserCreateSource = "unknown",
       } = {}
     ) {
       if (!tabs?.length) {
@@ -2975,9 +2982,18 @@
       group.dispatchEvent(
         new CustomEvent("TabGroupCreate", {
           bubbles: true,
-          detail: { showCreateUI },
+          detail: { isUserCreated },
         })
       );
+
+      if (isUserCreated) {
+        Glean.browserEngagement.tabGroupCreate.record({
+          id,
+          layout: this.tabContainer.verticalMode ? "vertical" : "horizontal",
+          source: telemetryUserCreateSource,
+          tabs: group.tabs.length,
+        });
+      }
 
       return group;
     }
@@ -6704,7 +6720,7 @@
           break;
         }
         case "TabGroupCreate":
-          if (aEvent.detail.showCreateUI) {
+          if (aEvent.detail.isUserCreated) {
             this.tabGroupMenu.openCreateModal(aEvent.target);
           }
           break;
@@ -8844,7 +8860,8 @@ var TabContextMenu = {
   moveTabsToNewGroup() {
     gBrowser.addTabGroup(this.contextTabs, {
       insertBefore: this.contextTab,
-      showCreateUI: true,
+      isUserCreated: true,
+      telemetryUserCreateSource: "tab_menu",
     });
 
     
