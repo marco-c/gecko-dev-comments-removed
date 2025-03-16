@@ -82,7 +82,8 @@ PacketBuffer::InsertResult PacketBuffer::InsertPacket(
       return result;
     }
 
-    if (ForwardDiff<uint16_t>(first_seq_num_, seq_num) >= max_size_) {
+    if (ForwardDiff<uint16_t>(first_seq_num_, seq_num) >= max_size_ &&
+        ForwardDiff<uint16_t>(seq_num, first_seq_num_) >= max_size_ / 2) {
       
       
       Clear();
