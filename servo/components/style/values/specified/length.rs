@@ -1750,6 +1750,23 @@ impl LengthPercentage {
     
     
     #[inline]
+    fn parse_quirky_with_anchor_size_function<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+        allow_quirks: AllowQuirks,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse_internal(
+            context,
+            input,
+            AllowedNumericType::All,
+            allow_quirks,
+            AllowAnchorPositioningFunctions::AllowAnchorSize,
+        )
+    }
+
+    
+    
+    #[inline]
     pub fn parse_quirky_with_anchor_functions<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -2140,8 +2157,9 @@ impl Margin {
         input: &mut Parser<'i, 't>,
         allow_quirks: AllowQuirks,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(l) = input.try_parse(|i| LengthPercentage::parse_quirky(context, i, allow_quirks))
-        {
+        if let Ok(l) = input.try_parse(|i| {
+            LengthPercentage::parse_quirky_with_anchor_size_function(context, i, allow_quirks)
+        }) {
             return Ok(Self::LengthPercentage(l));
         }
         if input.try_parse(|i| i.expect_ident_matching("auto")).is_ok() {
