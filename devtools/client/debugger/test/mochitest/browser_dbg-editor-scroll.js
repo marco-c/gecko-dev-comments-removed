@@ -30,8 +30,17 @@ add_task(async function testScrollingOnPauseAndSourceSwitching() {
   info("Open long file, scroll down to line below the fold");
   await selectSource(dbg, "long.js");
 
+  
+  
+  
+  
+  const ensureScroll = waitForScrolling(dbg, { useTimeoutFallback: false });
+
   await scrollEditorIntoView(dbg, 25, 0);
   ok(isScrolledPositionVisible(dbg, 25), "Scroll position is visible");
+
+  info("Wait for the codemirror scroll event");
+  await ensureScroll;
 
   info("Ensure vertical scroll is the same after switching documents");
   let onScrolled = waitForScrolling(dbg);
