@@ -563,6 +563,9 @@ void CycleCollectedJSContext::AfterProcessTask(uint32_t aRecursionDepth) {
   
   
   MaybePokeGC();
+
+  mRuntime->FinalizeDeferredThings(CycleCollectedJSRuntime::FinalizeNow);
+  nsCycleCollector_maybeDoDeferredDeletion();
 }
 
 void CycleCollectedJSContext::AfterProcessMicrotasks() {
