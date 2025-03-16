@@ -856,9 +856,24 @@ function waitForLoadedSource(dbg, url) {
 
 
 
+async function selectSourceFromSourceTree(dbg, fileName) {
+  info(`Selecting '${fileName}' source from source tree`);
+  
+  const elt = await waitForSourceInSourceTree(dbg, fileName);
+  elt.scrollIntoView();
+  clickDOMElement(dbg, elt);
+  await waitForSelectedSource(dbg, fileName);
+  await waitFor(
+    () => getEditorContent(dbg) !== `Loading…`,
+    "Wait for source to completely load"
+  );
+}
 
 
-async function selectSourceFromSourceTree(
+
+
+
+async function selectSourceFromSourceTreeWithIndex(
   dbg,
   fileName,
   sourcePosition,
@@ -3039,18 +3054,46 @@ async function waitForSourceTreeThreadsCount(dbg, i) {
   });
 }
 
+function getDisplayedSourceElements(dbg) {
+  return [...findAllElements(dbg, "sourceTreeFiles")];
+}
+
+function getDisplayedSources(dbg) {
+  return getDisplayedSourceElements(dbg).map(e => {
+    
+    return e.textContent.trim().replace(/^[\s\u200b]*/g, "");
+  });
+}
+
+
+
+
+async function waitForSourceInSourceTree(dbg, fileName) {
+  return waitFor(
+    async () => {
+      await expandSourceTree(dbg);
+
+      return getDisplayedSourceElements(dbg).find(e => {
+        
+        return e.textContent.trim().replace(/^[\s\u200b]*/g, "") == fileName;
+      });
+    },
+    null,
+    100,
+    50
+  );
+}
+
+
+
+
+
 async function waitForSourcesInSourceTree(
   dbg,
   sources,
   { noExpand = false } = {}
 ) {
   info(`waiting for ${sources.length} files in the source tree`);
-  function getDisplayedSources() {
-    
-    return [...findAllElements(dbg, "sourceTreeFiles")].map(e => {
-      return e.textContent.trim().replace(/^[\s\u200b]*/g, "");
-    });
-  }
   try {
     
     
@@ -3059,7 +3102,7 @@ async function waitForSourcesInSourceTree(
         if (!noExpand) {
           await expandSourceTree(dbg);
         }
-        const displayedSources = getDisplayedSources();
+        const displayedSources = getDisplayedSources(dbg);
         return (
           displayedSources.length == sources.length &&
           sources.every(source => displayedSources.includes(source))
