@@ -34,6 +34,11 @@ var o = wasmEval(toU8(moduleHeaderThen()));
 assertEq(Object.getOwnPropertyNames(o).length, 0);
 
 
+if (globalThis.SharedArrayBuffer) {
+  assertErrorMessage(() => wasmEval(toSharedU8(moduleHeaderThen())), TypeError, /first argument must be an ArrayBuffer/);
+}
+
+
 assertErrorMessage(() => wasmEval(toU8(moduleHeaderThen(typeId))), CompileError, sectionError("type"));
 assertErrorMessage(() => wasmEval(toU8(moduleHeaderThen(importId))), CompileError, sectionError("import"));
 assertErrorMessage(() => wasmEval(toU8(moduleHeaderThen(functionId))), CompileError, sectionError("function"));
