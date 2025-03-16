@@ -33,7 +33,8 @@ namespace webrtc {
 
 class ErleEstimator {
  public:
-  ErleEstimator(size_t startup_phase_length_blocks,
+  ErleEstimator(const Environment& env,
+                size_t startup_phase_length_blocks,
                 const EchoCanceller3Config& config,
                 size_t num_capture_channels);
   ~ErleEstimator();
