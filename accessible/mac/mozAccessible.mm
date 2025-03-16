@@ -387,7 +387,7 @@ using namespace mozilla::a11y;
   
   roleAtom = [self ARIARole];
 
-  if (roleAtom == nsGkAtoms::log_) {
+  if (roleAtom == nsGkAtoms::log) {
     return @"AXApplicationLog";
   }
 

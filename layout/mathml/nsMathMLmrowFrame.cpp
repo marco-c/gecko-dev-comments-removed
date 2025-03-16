@@ -40,7 +40,7 @@ nsresult nsMathMLmrowFrame::AttributeChanged(int32_t aNameSpaceID,
   
   
   
-  if (mContent->IsMathMLElement(nsGkAtoms::mtable_)) {
+  if (mContent->IsMathMLElement(nsGkAtoms::mtable)) {
     nsIFrame* frame = mFrames.FirstChild();
     for (; frame; frame = frame->PrincipalChildList().FirstChild()) {
       

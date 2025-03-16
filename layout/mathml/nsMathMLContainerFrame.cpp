@@ -1194,7 +1194,7 @@ class nsMathMLContainerFrame::RowChildFrameIterator {
     GetItalicCorrection(mReflowOutput.mBoundingMetrics, leftCorrection,
                         rightCorrection);
     if (!mChildFrame->GetPrevSibling() &&
-        mParentFrame->GetContent()->IsMathMLElement(nsGkAtoms::msqrt_)) {
+        mParentFrame->GetContent()->IsMathMLElement(nsGkAtoms::msqrt)) {
       
       
       if (!mRTL) {
@@ -1335,7 +1335,7 @@ static nscoord AddInterFrameSpacingToSize(ReflowOutput& aDesiredSize,
   if (MOZ_UNLIKELY(!parentContent)) {
     return 0;
   }
-  if (parentContent->IsAnyOfMathMLElements(nsGkAtoms::math, nsGkAtoms::mtd_)) {
+  if (parentContent->IsAnyOfMathMLElements(nsGkAtoms::math, nsGkAtoms::mtd)) {
     gap = GetInterFrameSpacingFor(aFrame->StyleFont()->mMathDepth, parent,
                                   aFrame);
     

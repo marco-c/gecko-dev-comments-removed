@@ -121,7 +121,7 @@ class CacheKey {
   
   
   
-  static constexpr nsStaticAtom* VisualViewportOffset = nsGkAtoms::voffset_;
+  static constexpr nsStaticAtom* VisualViewportOffset = nsGkAtoms::voffset;
   
   
   

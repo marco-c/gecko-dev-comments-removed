@@ -40,8 +40,8 @@ nsresult nsMathMLmunderoverFrame::AttributeChanged(int32_t aNameSpaceID,
                                                    nsAtom* aAttribute,
                                                    int32_t aModType) {
   if (aNameSpaceID == kNameSpaceID_None &&
-      (nsGkAtoms::accent_ == aAttribute ||
-       nsGkAtoms::accentunder_ == aAttribute)) {
+      (nsGkAtoms::accent == aAttribute ||
+       nsGkAtoms::accentunder == aAttribute)) {
     
     
     return ReLayoutChildren(GetParent());
@@ -90,7 +90,7 @@ uint8_t nsMathMLmunderoverFrame::ScriptIncrement(nsIFrame* aFrame) {
   }
   child = child->GetNextSibling();
   if (aFrame == child) {
-    if (mContent->IsMathMLElement(nsGkAtoms::mover_)) {
+    if (mContent->IsMathMLElement(nsGkAtoms::mover)) {
       return mIncrementOver ? 1 : 0;
     }
     return mIncrementUnder ? 1 : 0;
@@ -188,16 +188,16 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
   nsIFrame* baseFrame = mFrames.FirstChild();
 
   if (baseFrame) {
-    if (mContent->IsAnyOfMathMLElements(nsGkAtoms::munder_,
-                                        nsGkAtoms::munderover_)) {
+    if (mContent->IsAnyOfMathMLElements(nsGkAtoms::munder,
+                                        nsGkAtoms::munderover)) {
       underscriptFrame = baseFrame->GetNextSibling();
     } else {
-      NS_ASSERTION(mContent->IsMathMLElement(nsGkAtoms::mover_),
+      NS_ASSERTION(mContent->IsMathMLElement(nsGkAtoms::mover),
                    "mContent->NodeInfo()->NameAtom() not recognized");
       overscriptFrame = baseFrame->GetNextSibling();
     }
   }
-  if (underscriptFrame && mContent->IsMathMLElement(nsGkAtoms::munderover_)) {
+  if (underscriptFrame && mContent->IsMathMLElement(nsGkAtoms::munderover)) {
     overscriptFrame = underscriptFrame->GetNextSibling();
   }
 
@@ -212,8 +212,8 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
   
   nsEmbellishData embellishData;
   nsAutoString value;
-  if (mContent->IsAnyOfMathMLElements(nsGkAtoms::munder_,
-                                      nsGkAtoms::munderover_)) {
+  if (mContent->IsAnyOfMathMLElements(nsGkAtoms::munder,
+                                      nsGkAtoms::munderover)) {
     GetEmbellishDataFrom(underscriptFrame, embellishData);
     if (NS_MATHML_EMBELLISH_IS_ACCENT(embellishData.flags)) {
       mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTUNDER;
@@ -223,7 +223,7 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
 
     
     
-    if (mContent->AsElement()->GetAttr(nsGkAtoms::accentunder_, value)) {
+    if (mContent->AsElement()->GetAttr(nsGkAtoms::accentunder, value)) {
       if (value.LowerCaseEqualsLiteral("true")) {
         mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTUNDER;
       } else if (value.LowerCaseEqualsLiteral("false")) {
@@ -234,8 +234,8 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
 
   
   
-  if (mContent->IsAnyOfMathMLElements(nsGkAtoms::mover_,
-                                      nsGkAtoms::munderover_)) {
+  if (mContent->IsAnyOfMathMLElements(nsGkAtoms::mover,
+                                      nsGkAtoms::munderover)) {
     GetEmbellishDataFrom(overscriptFrame, embellishData);
     if (NS_MATHML_EMBELLISH_IS_ACCENT(embellishData.flags)) {
       mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTOVER;
@@ -244,7 +244,7 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
     }
 
     
-    if (mContent->AsElement()->GetAttr(nsGkAtoms::accent_, value)) {
+    if (mContent->AsElement()->GetAttr(nsGkAtoms::accent, value)) {
       if (value.LowerCaseEqualsLiteral("true")) {
         mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTOVER;
       } else if (value.LowerCaseEqualsLiteral("false")) {
@@ -282,15 +282,15 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
 
 
 
-  if (mContent->IsAnyOfMathMLElements(nsGkAtoms::mover_,
-                                      nsGkAtoms::munderover_)) {
+  if (mContent->IsAnyOfMathMLElements(nsGkAtoms::mover,
+                                      nsGkAtoms::munderover)) {
     uint32_t compress = NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)
                             ? NS_MATHML_COMPRESSED
                             : 0;
     mIncrementOver = !NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags) ||
                      subsupDisplay;
-    SetIncrementScriptLevel(
-        mContent->IsMathMLElement(nsGkAtoms::mover_) ? 1 : 2, mIncrementOver);
+    SetIncrementScriptLevel(mContent->IsMathMLElement(nsGkAtoms::mover) ? 1 : 2,
+                            mIncrementOver);
     if (mIncrementOver) {
       PropagateFrameFlagFor(overscriptFrame, NS_FRAME_MATHML_SCRIPT_DESCENDANT);
     }
@@ -300,8 +300,8 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
 
 
 
-  if (mContent->IsAnyOfMathMLElements(nsGkAtoms::munder_,
-                                      nsGkAtoms::munderover_)) {
+  if (mContent->IsAnyOfMathMLElements(nsGkAtoms::munder,
+                                      nsGkAtoms::munderover)) {
     mIncrementUnder =
         !NS_MATHML_EMBELLISH_IS_ACCENTUNDER(mEmbellishData.flags) ||
         subsupDisplay;
@@ -365,16 +365,16 @@ nsresult nsMathMLmunderoverFrame::Place(DrawTarget* aDrawTarget,
   if (NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags) &&
       StyleFont()->mMathStyle == StyleMathStyle::Compact) {
     
-    if (mContent->IsMathMLElement(nsGkAtoms::munderover_)) {
+    if (mContent->IsMathMLElement(nsGkAtoms::munderover)) {
       return nsMathMLmmultiscriptsFrame::PlaceMultiScript(
           PresContext(), aDrawTarget, aFlags, aDesiredSize, this, 0, 0,
           fontSizeInflation);
-    } else if (mContent->IsMathMLElement(nsGkAtoms::munder_)) {
+    } else if (mContent->IsMathMLElement(nsGkAtoms::munder)) {
       return nsMathMLmmultiscriptsFrame::PlaceMultiScript(
           PresContext(), aDrawTarget, aFlags, aDesiredSize, this, 0, 0,
           fontSizeInflation);
     } else {
-      NS_ASSERTION(mContent->IsMathMLElement(nsGkAtoms::mover_),
+      NS_ASSERTION(mContent->IsMathMLElement(nsGkAtoms::mover),
                    "mContent->NodeInfo()->NameAtom() not recognized");
       return nsMathMLmmultiscriptsFrame::PlaceMultiScript(
           PresContext(), aDrawTarget, aFlags, aDesiredSize, this, 0, 0,
@@ -396,30 +396,30 @@ nsresult nsMathMLmunderoverFrame::Place(DrawTarget* aDrawTarget,
   overSize.SetBlockStartAscent(0);
   bool haveError = false;
   if (baseFrame) {
-    if (mContent->IsAnyOfMathMLElements(nsGkAtoms::munder_,
-                                        nsGkAtoms::munderover_)) {
+    if (mContent->IsAnyOfMathMLElements(nsGkAtoms::munder,
+                                        nsGkAtoms::munderover)) {
       underFrame = baseFrame->GetNextSibling();
-    } else if (mContent->IsMathMLElement(nsGkAtoms::mover_)) {
+    } else if (mContent->IsMathMLElement(nsGkAtoms::mover)) {
       overFrame = baseFrame->GetNextSibling();
     }
   }
-  if (underFrame && mContent->IsMathMLElement(nsGkAtoms::munderover_)) {
+  if (underFrame && mContent->IsMathMLElement(nsGkAtoms::munderover)) {
     overFrame = underFrame->GetNextSibling();
   }
 
-  if (mContent->IsMathMLElement(nsGkAtoms::munder_)) {
+  if (mContent->IsMathMLElement(nsGkAtoms::munder)) {
     if (!baseFrame || !underFrame || underFrame->GetNextSibling()) {
       
       haveError = true;
     }
   }
-  if (mContent->IsMathMLElement(nsGkAtoms::mover_)) {
+  if (mContent->IsMathMLElement(nsGkAtoms::mover)) {
     if (!baseFrame || !overFrame || overFrame->GetNextSibling()) {
       
       haveError = true;
     }
   }
-  if (mContent->IsMathMLElement(nsGkAtoms::munderover_)) {
+  if (mContent->IsMathMLElement(nsGkAtoms::munderover)) {
     if (!baseFrame || !underFrame || !overFrame ||
         overFrame->GetNextSibling()) {
       

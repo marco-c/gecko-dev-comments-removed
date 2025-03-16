@@ -847,7 +847,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     states::LINKED
   },
   { 
-    nsGkAtoms::list_,
+    nsGkAtoms::list,
     roles::LIST,
     kUseMapRole,
     eNoValue,
@@ -881,7 +881,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     states::READONLY
   },
   { 
-    nsGkAtoms::log_,
+    nsGkAtoms::log,
     roles::NOTHING,
     kUseNativeRole,
     eNoValue,
@@ -1017,7 +1017,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     kNoReqStates
   },
   { 
-    nsGkAtoms::note_,
+    nsGkAtoms::note,
     roles::NOTE,
     kUseMapRole,
     eNoValue,
@@ -1170,7 +1170,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eARIAReadonlyOrEditable
   },
   { 
-    nsGkAtoms::separator_,
+    nsGkAtoms::separator,
     roles::SEPARATOR,
     kUseMapRole,
     eHasValueMinMaxIfFocusable,
