@@ -11,6 +11,8 @@
 #include "vm/Realm.h"
 #include "vm/SelfHosting.h"
 
+using namespace js;
+
 void js::InvalidatingRealmFuse::popFuse(JSContext* cx, RealmFuses& realmFuses) {
   InvalidatingFuse::popFuse(cx);
 
@@ -115,6 +117,16 @@ bool js::OptimizeArrayIteratorPrototypeFuse::checkInvariant(JSContext* cx) {
          realmFuses.objectPrototypeHasNoReturnProperty.intact();
 }
 
+static bool ObjectHasDataProperty(NativeObject* obj, PropertyKey key,
+                                  Value* val) {
+  mozilla::Maybe<PropertyInfo> prop = obj->lookupPure(key);
+  if (prop.isNothing() || !prop->isDataProperty()) {
+    return false;
+  }
+  *val = obj->getSlot(prop->slot());
+  return true;
+}
+
 bool js::ArrayPrototypeIteratorFuse::checkInvariant(JSContext* cx) {
   
   auto* proto = cx->global()->maybeGetArrayPrototype();
@@ -127,19 +139,11 @@ bool js::ArrayPrototypeIteratorFuse::checkInvariant(JSContext* cx) {
       PropertyKey::Symbol(cx->wellKnownSymbols().iterator);
 
   
-  mozilla::Maybe<PropertyInfo> prop = proto->lookupPure(iteratorKey);
-  if (prop.isNothing() || !prop->isDataProperty()) {
+  Value v;
+  if (!ObjectHasDataProperty(proto, iteratorKey, &v)) {
     return false;
   }
-
-  auto slot = prop->slot();
-  const Value& iterVal = proto->getSlot(slot);
-  if (!iterVal.isObject() || !iterVal.toObject().is<JSFunction>()) {
-    return false;
-  }
-
-  auto* iterFun = &iterVal.toObject().as<JSFunction>();
-  return IsSelfHostedFunctionWithName(iterFun, cx->names().dollar_ArrayValues_);
+  return IsSelfHostedFunctionWithName(v, cx->names().dollar_ArrayValues_);
 }
 
 
@@ -152,22 +156,11 @@ bool js::ArrayPrototypeIteratorNextFuse::checkInvariant(JSContext* cx) {
   }
 
   
-  mozilla::Maybe<PropertyInfo> prop = proto->lookupPure(cx->names().next);
-  if (prop.isNothing() || !prop->isDataProperty()) {
-    
+  Value v;
+  if (!ObjectHasDataProperty(proto, NameToId(cx->names().next), &v)) {
     return false;
   }
-
-  auto slot = prop->slot();
-
-  const Value& nextVal = proto->getSlot(slot);
-  if (!nextVal.isObject() || !nextVal.toObject().is<JSFunction>()) {
-    
-    return false;
-  }
-
-  auto* nextFun = &nextVal.toObject().as<JSFunction>();
-  return IsSelfHostedFunctionWithName(nextFun, cx->names().ArrayIteratorNext);
+  return IsSelfHostedFunctionWithName(v, cx->names().ArrayIteratorNext);
 }
 
 static bool HasNoReturnName(JSContext* cx, JS::HandleObject proto) {
