@@ -139,6 +139,8 @@ void WaylandSurface::InitialFrameCallbackHandler(struct wl_callback* callback) {
     }
     mIsReadyToDraw = true;
     cbs = std::move(mReadToDrawCallbacks);
+
+    RequestFrameCallbackLocked(lock);
   }
 
   
@@ -148,15 +150,6 @@ void WaylandSurface::InitialFrameCallbackHandler(struct wl_callback* callback) {
   for (auto const& cb : cbs) {
     LOGWAYLAND("  initial callback fire  [%d]", callbackNum++);
     cb();
-  }
-
-  
-  
-  if (!mPersistentFrameCallbackHandlers.empty() ||
-      !mOneTimeFrameCallbackHandlers.empty()) {
-    LOGWAYLAND("  initial callback: Register regular frame callback");
-    WaylandSurfaceLock lock(this);
-    RequestFrameCallbackLocked(lock);
   }
 }
 
@@ -279,6 +272,9 @@ void WaylandSurface::FrameCallbackHandler(struct wl_callback* aCallback,
     }
     std::copy(mPersistentFrameCallbackHandlers.begin(),
               mPersistentFrameCallbackHandlers.end(), back_inserter(cbs));
+
+    
+    RequestFrameCallbackLocked(lock);
   }
 
   
@@ -292,13 +288,6 @@ void WaylandSurface::FrameCallbackHandler(struct wl_callback* aCallback,
       continue;
     }
     callback(aCallback, aTime);
-  }
-
-  
-  if (!mPersistentFrameCallbackHandlers.empty() ||
-      !mOneTimeFrameCallbackHandlers.empty()) {
-    WaylandSurfaceLock lock(this);
-    RequestFrameCallbackLocked(lock);
   }
 }
 
@@ -328,6 +317,11 @@ void WaylandSurface::RequestFrameCallbackLocked(
   }
 
   if (!mFrameCallbackEnabled) {
+    return;
+  }
+
+  if (mPersistentFrameCallbackHandlers.empty() &&
+      mOneTimeFrameCallbackHandlers.empty()) {
     return;
   }
 
@@ -421,10 +415,7 @@ void WaylandSurface::SetFrameCallbackState(bool aEnabled) {
 
   
   if (mFrameCallbackEnabled) {
-    if (!mPersistentFrameCallbackHandlers.empty() ||
-        !mOneTimeFrameCallbackHandlers.empty()) {
-      RequestFrameCallbackLocked(lock);
-    }
+    RequestFrameCallbackLocked(lock);
   } else {
     ClearFrameCallbackLocked(lock);
   }
@@ -533,12 +524,8 @@ bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
                wl_proxy_get_id((struct wl_proxy*)mReadyToDrawFrameCallback));
   }
 
-  
-  if (!mPersistentFrameCallbackHandlers.empty() ||
-      !mOneTimeFrameCallbackHandlers.empty()) {
-    LOGWAYLAND("  register frame callback");
-    RequestFrameCallbackLocked(aProofOfLock);
-  }
+  LOGWAYLAND("  register frame callback");
+  RequestFrameCallbackLocked(aProofOfLock);
 
   CommitLocked(aProofOfLock,  true,
                 true);
