@@ -699,7 +699,7 @@ async function getActiveButtonFromText(document, text) {
   
   let button = await getElementFromDocumentByText(document, text);
 
-  while (button.tagName !== "button") {
+  while (button.tagName.toLowerCase() !== "button") {
     
     button = button.parentElement;
     if (!button) {
