@@ -138,6 +138,7 @@ class FrameInFlight {
   void MarkSuperfluous(size_t peer) {
     receiver_stats_[peer].superfluous = true;
   }
+  bool IsSuperfluous(size_t peer) const;
 
   void SetPrevFrameRenderedTime(size_t peer, webrtc::Timestamp time) {
     receiver_stats_[peer].prev_frame_rendered_time = time;
@@ -150,8 +151,6 @@ class FrameInFlight {
   FrameStats GetStatsForPeer(size_t peer) const;
 
  private:
-  bool IsSuperfluous(size_t peer) const;
-
   const size_t stream_;
   
   

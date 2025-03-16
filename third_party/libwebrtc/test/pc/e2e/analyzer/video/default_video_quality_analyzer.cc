@@ -503,7 +503,8 @@ void DefaultVideoQualityAnalyzer::OnFrameRendered(
   auto frame_it = captured_frames_in_flight_.find(frame.id());
   if (frame_it == captured_frames_in_flight_.end() ||
       frame_it->second.HasRenderedTime(peer_index) ||
-      frame_it->second.IsDropped(peer_index)) {
+      frame_it->second.IsDropped(peer_index) ||
+      frame_it->second.IsSuperfluous(peer_index)) {
     
     
     
@@ -514,7 +515,8 @@ void DefaultVideoQualityAnalyzer::OnFrameRendered(
     if (frame_it != captured_frames_in_flight_.end()) {
       if (frame_it->second.HasRenderedTime(peer_index)) {
         reason = kSkipRenderedFrameReasonRendered;
-      } else if (frame_it->second.IsDropped(peer_index)) {
+      } else if (frame_it->second.IsDropped(peer_index) ||
+                 frame_it->second.IsSuperfluous(peer_index)) {
         reason = kSkipRenderedFrameReasonDropped;
       }
     }
