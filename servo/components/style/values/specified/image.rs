@@ -43,7 +43,10 @@ fn gradient_color_interpolation_method_enabled() -> bool {
 pub type Image = generic::Image<Gradient, SpecifiedUrl, Color, Percentage, Resolution>;
 
 
+#[cfg(feature = "gecko")]
 size_of_test!(Image, 16);
+#[cfg(feature = "servo")]
+size_of_test!(Image, 40);
 
 
 

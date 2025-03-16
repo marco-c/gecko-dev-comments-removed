@@ -29,7 +29,10 @@ pub use specified::ImageRendering;
 pub type Image = generic::GenericImage<Gradient, ComputedUrl, Color, Percentage, Resolution>;
 
 
+#[cfg(feature = "gecko")]
 size_of_test!(Image, 16);
+#[cfg(feature = "servo")]
+size_of_test!(Image, 40);
 
 
 
