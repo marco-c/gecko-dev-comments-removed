@@ -732,7 +732,12 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   void FillRuleChanged();
 
   
-  bool HasErrorState(ErrorResult& aError);
+
+
+
+
+
+  bool HasErrorState(ErrorResult& aError, bool aInitProvider = true);
   bool HasErrorState() {
     IgnoredErrorResult error;
     return HasErrorState(error);

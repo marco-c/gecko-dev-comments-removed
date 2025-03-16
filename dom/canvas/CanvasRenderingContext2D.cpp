@@ -1549,7 +1549,25 @@ bool CanvasRenderingContext2D::HasAnyClips() const {
   return false;
 }
 
-bool CanvasRenderingContext2D::HasErrorState(ErrorResult& aError) {
+bool CanvasRenderingContext2D::HasErrorState(ErrorResult& aError,
+                                             bool aInitProvider) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aInitProvider && !mBufferProvider && !EnsureTarget(aError)) {
+    return true;
+  }
+
   if (AlreadyShutDown()) {
     gfxCriticalNoteOnce << "Attempt to render into a Canvas2d after shutdown.";
     SetErrorState();
@@ -1581,7 +1599,7 @@ bool CanvasRenderingContext2D::EnsureTarget(ErrorResult& aError,
                                             const gfx::Rect* aCoveredRect,
                                             bool aWillClear,
                                             bool aSkipTransform) {
-  if (HasErrorState(aError)) {
+  if (HasErrorState(aError, false)) {
     return false;
   }
 
@@ -2239,7 +2257,7 @@ void CanvasRenderingContext2D::Save() {
 }
 
 void CanvasRenderingContext2D::Restore() {
-  if (MOZ_UNLIKELY(HasErrorState() || mStyleStack.Length() < 2)) {
+  if (MOZ_UNLIKELY(mStyleStack.Length() < 2 || HasErrorState())) {
     return;
   }
 
