@@ -128,6 +128,19 @@ interface nsIQuotaManagerService : nsISupports
 
 
 
+  [must_use] nsIQuotaRequest
+  initializeAllTemporaryOrigins();
+
+  
+
+
+
+
+
+
+
+
+
 
   [must_use] nsIQuotaRequest
   initializeTemporaryGroup(in nsIPrincipal aPrincipal);
