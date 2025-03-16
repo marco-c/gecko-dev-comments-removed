@@ -821,8 +821,7 @@ TEST_P(LowLatencyVideoStreamBufferControllerTest,
        FramesDecodedInstantlyWithLowLatencyRendering) {
   
   StartNextDecodeForceKeyframe();
-  timing_.set_min_playout_delay(TimeDelta::Zero());
-  timing_.set_max_playout_delay(TimeDelta::Millis(10));
+  timing_.set_playout_delay({TimeDelta::Zero(), TimeDelta::Millis(10)});
   
   auto frame = test::FakeFrameBuilder()
                    .Id(0)
@@ -852,8 +851,7 @@ TEST_P(LowLatencyVideoStreamBufferControllerTest,
 TEST_P(LowLatencyVideoStreamBufferControllerTest, ZeroPlayoutDelayFullQueue) {
   
   StartNextDecodeForceKeyframe();
-  timing_.set_min_playout_delay(TimeDelta::Zero());
-  timing_.set_max_playout_delay(TimeDelta::Millis(10));
+  timing_.set_playout_delay({TimeDelta::Zero(), TimeDelta::Millis(10)});
   auto frame = test::FakeFrameBuilder()
                    .Id(0)
                    .Time(0)
@@ -885,8 +883,7 @@ TEST_P(LowLatencyVideoStreamBufferControllerTest,
        MinMaxDelayZeroLowLatencyMode) {
   
   StartNextDecodeForceKeyframe();
-  timing_.set_min_playout_delay(TimeDelta::Zero());
-  timing_.set_max_playout_delay(TimeDelta::Zero());
+  timing_.set_playout_delay({TimeDelta::Zero(), TimeDelta::Zero()});
   
   auto frame = test::FakeFrameBuilder()
                    .Id(0)

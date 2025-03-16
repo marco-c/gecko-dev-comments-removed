@@ -74,7 +74,7 @@ class VCMTiming {
   void set_min_playout_delay(TimeDelta min_playout_delay);
 
   
-  void set_max_playout_delay(TimeDelta max_playout_delay);
+  void set_playout_delay(const VideoPlayoutDelay& playout_delay);
 
   
   
