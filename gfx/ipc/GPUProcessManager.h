@@ -257,8 +257,6 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   void DestroyRemoteCompositorSessions();
   void DestroyInProcessCompositorSessions();
 
-  void OnBlockingProcessUnexpectedShutdown();
-
   
   
   bool OnDeviceReset(bool aTrackThreshold);
