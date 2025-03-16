@@ -487,6 +487,24 @@ class XPCShellTestThread(Thread):
         
         return self.rootPrefsFile
 
+    def updateTestEnvironment(self):
+        
+        extraEnv = {}
+        if "environment" in self.test_object:
+            extraEnv = self.test_object["environment"].strip().split()
+            self.log.info(
+                "The following extra environment variables will be set:\n  {}".format(
+                    "\n  ".join(extraEnv)
+                )
+            )
+            self.env.update(
+                dict(
+                    parse_key_value(
+                        extraEnv, context="environment variables in manifest"
+                    )
+                )
+            )
+
     @property
     def conditioned_profile_copy(self):
         """Returns a copy of the original conditioned profile that was created."""
@@ -809,6 +827,9 @@ class XPCShellTestThread(Thread):
         self.prefsFile = self.updateTestPrefsFile()
 
         
+        self.updateTestEnvironment()
+
+        
         
         self.command = self.buildXpcsCmd()
 
@@ -834,10 +855,6 @@ class XPCShellTestThread(Thread):
         if self.test_object.get("dmd") == "true":
             self.env["PYTHON"] = sys.executable
             self.env["BREAKPAD_SYMBOLS_PATH"] = self.symbolsPath
-
-        if self.test_object.get("snap") == "true":
-            self.env["SNAP_NAME"] = "firefox"
-            self.env["SNAP_INSTANCE_NAME"] = "firefox"
 
         if self.test_object.get("subprocess") == "true":
             self.env["PYTHON"] = sys.executable
