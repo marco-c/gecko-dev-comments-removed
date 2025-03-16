@@ -593,21 +593,34 @@ void nsAccessibilityService::FireAccessibleEvent(uint32_t aEvent,
 
 void nsAccessibilityService::NotifyOfPossibleBoundsChange(
     mozilla::PresShell* aPresShell, nsIContent* aContent) {
+  if (!aContent || (!IPCAccessibilityActive() && !aContent->IsText())) {
+    return;
+  }
+  DocAccessible* document = aPresShell->GetDocAccessible();
+  if (!document) {
+    return;
+  }
+  LocalAccessible* accessible = document->GetAccessible(aContent);
+  if (!accessible && aContent == document->GetContent()) {
+    
+    
+    
+    accessible = document;
+  }
+  if (!accessible) {
+    return;
+  }
   if (IPCAccessibilityActive()) {
-    DocAccessible* document = aPresShell->GetDocAccessible();
-    if (document) {
-      LocalAccessible* accessible = document->GetAccessible(aContent);
-      if (!accessible && aContent == document->GetContent()) {
-        
-        
-        
-        accessible = document;
-      }
-
-      if (accessible) {
-        document->QueueCacheUpdate(accessible, CacheDomain::Bounds);
-      }
-    }
+    document->QueueCacheUpdate(accessible, CacheDomain::Bounds);
+  }
+  if (accessible->IsTextLeaf() &&
+      accessible->AsTextLeaf()->Text().EqualsLiteral(" ")) {
+    
+    
+    
+    
+    MOZ_ASSERT(aContent->IsText());
+    document->UpdateText(aContent);
   }
 }
 
@@ -1293,6 +1306,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     
     
     if (text.mString.IsEmpty() ||
+        (text.mString.EqualsLiteral(" ") && frame->GetRect().IsEmpty()) ||
         (aContext->IsTableRow() &&
          nsCoreUtils::IsWhitespaceString(text.mString))) {
       if (aIsSubtreeHidden) *aIsSubtreeHidden = true;

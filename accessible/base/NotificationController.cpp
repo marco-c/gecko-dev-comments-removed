@@ -816,9 +816,14 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
         0, UINT32_MAX, nsIFrame::TextOffsetType::OffsetsInContentText,
         nsIFrame::TrailingWhitespace::DontTrim);
 
-    
     if (textAcc) {
-      if (text.mString.IsEmpty()) {
+      
+      
+      
+      
+      
+      if (text.mString.IsEmpty() ||
+          (text.mString.EqualsLiteral(" ") && textFrame->GetRect().IsEmpty())) {
 #ifdef A11Y_LOG
         if (logging::IsEnabled(logging::eTree | logging::eText)) {
           logging::MsgBegin("TREE", "text node lost its content; doc: %p",
