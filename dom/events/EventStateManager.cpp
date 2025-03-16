@@ -363,15 +363,6 @@ void OverOutElementsWrapper::ContentRemoved(nsIContent& aContent) {
                                    ? sMouseBoundaryLog
                                    : sPointerBoundaryLog;
 
-  if (!StaticPrefs::
-          dom_events_mouse_pointer_boundary_keep_enter_targets_after_over_target_removed()) {
-    MOZ_LOG(logModule, LogLevel::Info,
-            ("The last \"over\" event target (%p) is removed",
-             mDeepestEnterEventTarget.get()));
-    StoreOverEventTargetAndDeepestEnterEventTarget(nullptr);
-    return;
-  }
-
   if (mDispatchingOverEventTarget &&
       (mDeepestEnterEventTarget == mDispatchingOverEventTarget ||
        nsContentUtils::ContentIsFlattenedTreeDescendantOf(
@@ -522,12 +513,9 @@ void OverOutElementsWrapper::DidDispatchOverAndEnterEvent(
   
   
   
-  if ((!StaticPrefs::
-           dom_events_mouse_pointer_boundary_keep_enter_targets_after_over_target_removed() &&
-       !mDeepestEnterEventTarget) ||
-      (!LastOverEventTargetIsOutEventTarget() && mDeepestEnterEventTarget &&
-       nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-           aOriginalOverTargetInComposedDoc, mDeepestEnterEventTarget))) {
+  if (!LastOverEventTargetIsOutEventTarget() && mDeepestEnterEventTarget &&
+      nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+          aOriginalOverTargetInComposedDoc, mDeepestEnterEventTarget)) {
     StoreOverEventTargetAndDeepestEnterEventTarget(
         aOriginalOverTargetInComposedDoc);
     LogModule* const logModule = mType == BoundaryEventType::Mouse
@@ -5590,43 +5578,6 @@ void EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent) {
       break;
     }
     case ePointerUp: {
-      if (!StaticPrefs::
-              dom_events_mouse_pointer_boundary_keep_enter_targets_after_over_target_removed()) {
-        
-        
-        
-        
-        
-        
-        if (!aMouseEvent->mFlags.mDispatchedAtLeastOnce) {
-          break;
-        }
-        MOZ_ASSERT(!aMouseEvent->InputSourceSupportsHover());
-        
-        
-        nsCOMPtr<nsIContent> targetElement = GetEventTargetContent(aMouseEvent);
-        if (!targetElement) {
-          
-          
-          
-          targetElement = mDocument->GetRootElement();
-        }
-        if (targetElement) {
-          
-          
-          
-          
-          
-          RefPtr<OverOutElementsWrapper> helper =
-              GetWrapperByEventID(aMouseEvent);
-          if (helper) {
-            helper->OverrideOverEventTarget(targetElement);
-          }
-          NotifyMouseOut(aMouseEvent, nullptr);
-        }
-        break;
-      }
-
       if (aMouseEvent->mFlags.mDispatchedAtLeastOnce) {
         
         
