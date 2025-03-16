@@ -79,7 +79,7 @@ function trapReport(context) {
         let node = obj.node.parent;
         
         
-        let sourceCode = context.getSourceCode();
+        let sourceCode = context.sourceCode;
         let rangeToRemove = node.range;
         let tokenAfter = sourceCode.getTokenAfter(node);
         let tokenBefore = sourceCode.getTokenBefore(node);
