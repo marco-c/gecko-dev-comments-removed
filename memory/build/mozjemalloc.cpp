@@ -635,7 +635,7 @@ END_GLOBALS
 static const size_t gRecycleLimit = 128_MiB;
 
 
-static Atomic<size_t, ReleaseAcquire> gRecycledSize;
+static Atomic<size_t> gRecycledSize;
 
 
 #define DIRTY_MAX_DEFAULT (1U << 8)
