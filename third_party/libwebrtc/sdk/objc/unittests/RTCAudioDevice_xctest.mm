@@ -48,6 +48,7 @@
   _audioDeviceModule = webrtc::CreateAudioDeviceModule();
   _audio_device.reset(new webrtc::ios_adm::AudioDeviceIOS(
       false,
+      nullptr,
       nullptr));
   self.audioSession = [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
 
@@ -149,7 +150,8 @@
 
   _audio_device.reset(new webrtc::ios_adm::AudioDeviceIOS(
       false,
-      muted_speech_event_handler));
+      muted_speech_event_handler,
+      nullptr));
 
   _audio_device->OnReceivedMutedSpeechActivity(
       kAUVoiceIOSpeechActivityHasStarted);
@@ -168,7 +170,8 @@
 
   _audio_device.reset(new webrtc::ios_adm::AudioDeviceIOS(
       false,
-      muted_speech_event_handler));
+      muted_speech_event_handler,
+      nullptr));
   _audio_device->OnReceivedMutedSpeechActivity(
       kAUVoiceIOSpeechActivityHasEnded);
   [self waitForExpectations:@[ handlerExpectation ] timeout:10.0];

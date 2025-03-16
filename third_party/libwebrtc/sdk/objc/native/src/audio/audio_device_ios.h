@@ -36,6 +36,11 @@ namespace ios_adm {
 
 
 
+typedef void (^AudioDeviceIOSRenderErrorHandler)(OSStatus error);
+
+
+
+
 
 
 
@@ -52,7 +57,8 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
  public:
   explicit AudioDeviceIOS(
       bool bypass_voice_processing,
-      AudioDeviceModule::MutedSpeechEventHandler muted_speech_event_handler);
+      AudioDeviceModule::MutedSpeechEventHandler muted_speech_event_handler,
+      AudioDeviceIOSRenderErrorHandler render_error_handler);
   ~AudioDeviceIOS() override;
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
@@ -219,6 +225,13 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   
   AudioDeviceModule::MutedSpeechEventHandler muted_speech_event_handler_;
+
+  
+  AudioDeviceIOSRenderErrorHandler render_error_handler_;
+
+  
+  
+  bool disregard_next_render_error_;
 
   
   SequenceChecker io_thread_checker_;

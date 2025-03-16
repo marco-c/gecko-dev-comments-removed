@@ -243,6 +243,7 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
   if (audio_layer == kPlatformDefaultAudio) {
     audio_device_.reset(new ios_adm::AudioDeviceIOS(
         false,
+        nullptr,
         nullptr));
     RTC_LOG(LS_INFO) << "iPhone Audio APIs will be utilized.";
   }
