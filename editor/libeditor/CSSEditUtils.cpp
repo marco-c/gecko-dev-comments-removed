@@ -15,6 +15,7 @@
 #include "mozilla/mozalloc.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ServoCSSParser.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_editor.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
@@ -614,27 +615,26 @@ CSSEditUtils::RemoveCSSInlineStyleWithTransaction(
 
 
 void CSSEditUtils::GetDefaultBackgroundColor(nsAString& aColor) {
+  aColor.AssignLiteral("#ffffff");  
+
   if (MOZ_UNLIKELY(StaticPrefs::editor_use_custom_colors())) {
-    nsresult rv = Preferences::GetString("editor.background_color", aColor);
+    DebugOnly<nsresult> rv =
+        Preferences::GetString("editor.background_color", aColor);
     
-    if (NS_FAILED(rv)) {
-      NS_WARNING("failed to get editor.background_color");
-      aColor.AssignLiteral("#ffffff");  
-    }
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "failed to get editor.background_color");
     return;
   }
 
-  if (Preferences::GetBool("browser.display.use_system_colors", false)) {
+  if (StaticPrefs::browser_display_document_color_use() != 2) {
     return;
   }
 
-  nsresult rv =
+  DebugOnly<nsresult> rv =
       Preferences::GetString("browser.display.background_color", aColor);
   
-  if (NS_FAILED(rv)) {
-    NS_WARNING("failed to get browser.display.background_color");
-    aColor.AssignLiteral("#ffffff");  
-  }
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "failed to get browser.display.background_color");
 }
 
 
