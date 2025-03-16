@@ -131,7 +131,7 @@ function ArrayMap(callbackfn ) {
   var T = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
-  var A = ArraySpeciesCreate(O, len);
+  var A = CanOptimizeArraySpecies(O) ? std_Array(len) : ArraySpeciesCreate(O, len);
 
   
   
@@ -170,7 +170,7 @@ function ArrayFilter(callbackfn ) {
   var T = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
-  var A = ArraySpeciesCreate(O, 0);
+  var A = CanOptimizeArraySpecies(O) ? [] : ArraySpeciesCreate(O, 0);
 
   
   
@@ -1051,7 +1051,7 @@ function ArrayFlatMap(mapperFunction ) {
   var T = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
-  var A = ArraySpeciesCreate(O, 0);
+  var A = CanOptimizeArraySpecies(O) ? [] : ArraySpeciesCreate(O, 0);
 
   
   FlattenIntoArray(A, O, sourceLen, 0, 1, mapperFunction, T);
@@ -1078,7 +1078,7 @@ function ArrayFlat() {
   }
 
   
-  var A = ArraySpeciesCreate(O, 0);
+  var A = CanOptimizeArraySpecies(O) ? [] : ArraySpeciesCreate(O, 0);
 
   
   FlattenIntoArray(A, O, sourceLen, 0, depthNum);
