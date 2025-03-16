@@ -4821,6 +4821,14 @@ var MailIntegration = {
   },
 };
 
+function AddKeywordForSearchField() {
+  if (!gContextMenu) {
+    throw new Error("Context menu doesn't seem to be open.");
+  }
+
+  gContextMenu.addKeywordForSearchField();
+}
+
 
 
 

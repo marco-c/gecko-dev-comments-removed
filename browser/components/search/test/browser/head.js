@@ -131,25 +131,3 @@ function clearSearchbarHistory() {
 registerCleanupFunction(async () => {
   await PlacesUtils.history.clear();
 });
-
-
-
-
-
-
-
-
-
-
-
-function fillTextField(id, text, win) {
-  let elt = win.document.getElementById(id);
-  elt.focus();
-  elt.select();
-  EventUtils.synthesizeKey("a", { metaKey: true }, win);
-  EventUtils.synthesizeKey("KEY_Backspace", {}, win);
-
-  for (let c of text.split("")) {
-    EventUtils.synthesizeKey(c, {}, win);
-  }
-}
