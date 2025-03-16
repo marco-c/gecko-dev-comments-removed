@@ -419,8 +419,7 @@ def run_remaining_transforms(config, tasks):
         ("worker", None),
         ("confirm_failure", None),
         ("pernosco", lambda t: t["build-platform"].startswith("linux64")),
-        
-        
+        ("os_integration", None),
         
         
         ("chunk", None),
