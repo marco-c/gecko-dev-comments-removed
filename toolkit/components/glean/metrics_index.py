@@ -242,6 +242,7 @@ pings_by_app_or_lib_id = {
     "firefox.desktop.background.update": gecko_pings
     + background_update_pings
     + test_pings,
+    "firefox.desktop.background.tasks": gecko_pings + background_tasks_pings,
     
     
     "gecko": gecko_pings + test_pings,
