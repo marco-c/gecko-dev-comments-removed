@@ -856,6 +856,15 @@ class HTMLEditor final : public EditorBase,
   InsertOrReplaceTextWithTransaction(const EditorDOMPoint& aPointToInsert,
                                      const NormalizedStringToInsertText& aData);
 
+  struct ReplaceWhiteSpacesData;
+
+  
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<InsertTextResult, nsresult>
+  ReplaceTextWithTransaction(dom::Text& aTextNode,
+                             const ReplaceWhiteSpacesData& aData);
+
   
 
 
@@ -2230,6 +2239,20 @@ class HTMLEditor final : public EditorBase,
   NormalizedStringToInsertText NormalizeWhiteSpacesToInsertText(
       const EditorDOMPoint& aPointToInsert, const nsAString& aStringToInsert,
       NormalizeSurroundingWhiteSpaces aNormalizeSurroundingWhiteSpaces) const;
+
+  
+
+
+
+  ReplaceWhiteSpacesData GetFollowingNormalizedStringToSplitAt(
+      const EditorDOMPointInText& aPointToSplit) const;
+
+  
+
+
+
+  ReplaceWhiteSpacesData GetPrecedingNormalizedStringToSplitAt(
+      const EditorDOMPointInText& aPointToSplit) const;
 
   
 

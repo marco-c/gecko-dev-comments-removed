@@ -135,6 +135,15 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMPoint, nsresult>
+  NormalizeWhiteSpacesToSplitAt(HTMLEditor& aHTMLEditor,
+                                const EditorDOMPoint& aPointToSplit);
+
+  
+
+
+
+
 
 
 
@@ -346,6 +355,17 @@ class WhiteSpaceVisibilityKeeper final {
   ReplaceTextAndRemoveEmptyTextNodes(
       HTMLEditor& aHTMLEditor, const EditorDOMRangeInTexts& aRangeToReplace,
       const nsAString& aReplaceString);
+
+  
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMPoint, nsresult>
+  NormalizeWhiteSpacesToSplitTextNodeAt(
+      HTMLEditor& aHTMLEditor, const EditorDOMPointInText& aPointToSplit);
 
   
 
