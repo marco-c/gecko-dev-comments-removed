@@ -6281,8 +6281,8 @@ bool nsGlobalWindowInner::RunTimeoutHandler(Timeout* aTimeout) {
   
   timeout->mPopupState = PopupBlocker::openAbused;
 
-  uint32_t nestingLevel = mTimeoutManager->GetNestingLevel();
-  mTimeoutManager->SetNestingLevel(timeout->mNestingLevel);
+  uint32_t nestingLevel = mTimeoutManager->GetNestingLevelForWindow();
+  mTimeoutManager->SetNestingLevelForWindow(timeout->mNestingLevel);
 
   const char* reason = GetTimeoutReasonString(timeout);
 
@@ -6333,7 +6333,7 @@ bool nsGlobalWindowInner::RunTimeoutHandler(Timeout* aTimeout) {
   
   
 
-  mTimeoutManager->SetNestingLevel(nestingLevel);
+  mTimeoutManager->SetNestingLevelForWindow(nestingLevel);
 
   mTimeoutManager->EndRunningTimeout(last_running_timeout);
   timeout->mRunning = false;
