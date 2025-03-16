@@ -14,8 +14,8 @@
 #include <stdint.h>
 
 #include <memory>
-#include <optional>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -25,6 +25,7 @@
 #include "api/peer_connection_interface.h"
 #include "api/rtp_receiver_interface.h"
 #include "api/scoped_refptr.h"
+#include "api/test/rtc_error_matchers.h"
 #include "api/units/time_delta.h"
 #include "p2p/base/port_allocator.h"
 #include "p2p/base/port_interface.h"
@@ -38,10 +39,10 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/socket_address.h"
-#include "rtc_base/ssl_certificate.h"
 #include "rtc_base/test_certificate_verifier.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/wait_until.h"
 
 namespace webrtc {
 
@@ -104,23 +105,35 @@ TEST_P(PeerConnectionIntegrationTest,
   callee()->AddAudioVideoTracks();
   
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_THAT(
+      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
+      IsRtcOk());
   
   EXPECT_EQ(2U, caller()->rtp_receiver_observers().size());
   EXPECT_EQ(2U, callee()->rtp_receiver_observers().size());
   
-  EXPECT_TRUE_WAIT(
-      absl::c_all_of(caller()->rtp_receiver_observers(),
-                     [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
-                       return o->first_packet_received();
-                     }),
-      kMaxWaitForFramesMs);
-  EXPECT_TRUE_WAIT(
-      absl::c_all_of(callee()->rtp_receiver_observers(),
-                     [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
-                       return o->first_packet_received();
-                     }),
-      kMaxWaitForFramesMs);
+  EXPECT_THAT(WaitUntil(
+                  [&] {
+                    return absl::c_all_of(
+                        caller()->rtp_receiver_observers(),
+                        [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
+                          return o->first_packet_received();
+                        });
+                  },
+                  ::testing::IsTrue(),
+                  {.timeout = webrtc::TimeDelta::Millis(kMaxWaitForFramesMs)}),
+              IsRtcOk());
+  EXPECT_THAT(WaitUntil(
+                  [&] {
+                    return absl::c_all_of(
+                        callee()->rtp_receiver_observers(),
+                        [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
+                          return o->first_packet_received();
+                        });
+                  },
+                  ::testing::IsTrue(),
+                  {.timeout = webrtc::TimeDelta::Millis(kMaxWaitForFramesMs)}),
+              IsRtcOk());
   
   
   caller()->ResetRtpReceiverObservers();
@@ -234,7 +247,9 @@ TEST_P(PeerConnectionIntegrationTest, GetCaptureStartNtpTimeWithOldStatsApi) {
 
   
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_THAT(
+      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
+      IsRtcOk());
 
   
   
@@ -244,9 +259,16 @@ TEST_P(PeerConnectionIntegrationTest, GetCaptureStartNtpTimeWithOldStatsApi) {
 
   
   
-  EXPECT_TRUE_WAIT(callee()->OldGetStatsForTrack(remote_audio_track.get())
-                           ->CaptureStartNtpTime() > 0,
-                   2 * kMaxWaitForFramesMs);
+  EXPECT_THAT(
+      WaitUntil(
+          [&] {
+            return callee()
+                ->OldGetStatsForTrack(remote_audio_track.get())
+                ->CaptureStartNtpTime();
+          },
+          ::testing::Gt(0),
+          {.timeout = webrtc::TimeDelta::Millis(2 * kMaxWaitForFramesMs)}),
+      IsRtcOk());
 }
 
 
@@ -357,12 +379,16 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock, VerifyIceStates) {
   
   caller()->CreateAndSetAndSignalOffer();
 
-  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
-                           caller()->ice_connection_state(), kDefaultTimeout,
-                           FakeClock());
-  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
-                           caller()->standardized_ice_connection_state(),
-                           kDefaultTimeout, FakeClock());
+  ASSERT_THAT(
+      WaitUntil([&] { return caller()->ice_connection_state(); },
+                ::testing::Eq(PeerConnectionInterface::kIceConnectionCompleted),
+                {.clock = &FakeClock()}),
+      IsRtcOk());
+  ASSERT_THAT(
+      WaitUntil([&] { return caller()->standardized_ice_connection_state(); },
+                ::testing::Eq(PeerConnectionInterface::kIceConnectionCompleted),
+                {.clock = &FakeClock()}),
+      IsRtcOk());
 
   
   EXPECT_THAT(caller()->ice_connection_state_history(),
@@ -387,22 +413,33 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock, VerifyIceStates) {
     firewall()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, caller_address);
   }
   RTC_LOG(LS_INFO) << "Firewall rules applied";
-  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
-                           caller()->ice_connection_state(), kDefaultTimeout,
-                           FakeClock());
-  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
-                           caller()->standardized_ice_connection_state(),
-                           kDefaultTimeout, FakeClock());
+  ScopedFakeClock& fake_clock = FakeClock();
+  ASSERT_THAT(
+      WaitUntil(
+          [&] { return caller()->ice_connection_state(); },
+          ::testing::Eq(PeerConnectionInterface::kIceConnectionDisconnected),
+          {.timeout = TimeDelta::Seconds(10), .clock = &fake_clock}),
+      IsRtcOk());
+  ASSERT_THAT(
+      WaitUntil(
+          [&] { return caller()->standardized_ice_connection_state(); },
+          ::testing::Eq(PeerConnectionInterface::kIceConnectionDisconnected),
+          {.timeout = TimeDelta::Seconds(10), .clock = &fake_clock}),
+      IsRtcOk());
 
   
   firewall()->ClearRules();
   RTC_LOG(LS_INFO) << "Firewall rules cleared";
-  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
-                           caller()->ice_connection_state(), kDefaultTimeout,
-                           FakeClock());
-  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
-                           caller()->standardized_ice_connection_state(),
-                           kDefaultTimeout, FakeClock());
+  ASSERT_THAT(
+      WaitUntil([&] { return caller()->ice_connection_state(); },
+                ::testing::Eq(PeerConnectionInterface::kIceConnectionCompleted),
+                {.clock = &fake_clock}),
+      IsRtcOk());
+  ASSERT_THAT(
+      WaitUntil([&] { return caller()->standardized_ice_connection_state(); },
+                ::testing::Eq(PeerConnectionInterface::kIceConnectionCompleted),
+                {.clock = &fake_clock}),
+      IsRtcOk());
 
   
   
@@ -412,12 +449,18 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock, VerifyIceStates) {
     firewall()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, caller_address);
   }
   RTC_LOG(LS_INFO) << "Firewall rules applied again";
-  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionFailed,
-                           caller()->ice_connection_state(), kConsentTimeout,
-                           FakeClock());
-  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionFailed,
-                           caller()->standardized_ice_connection_state(),
-                           kConsentTimeout, FakeClock());
+  ASSERT_THAT(
+      WaitUntil([&] { return caller()->ice_connection_state(); },
+                ::testing::Eq(PeerConnectionInterface::kIceConnectionFailed),
+                {.timeout = webrtc::TimeDelta::Millis(kConsentTimeout),
+                 .clock = &fake_clock}),
+      IsRtcOk());
+  ASSERT_THAT(
+      WaitUntil([&] { return caller()->standardized_ice_connection_state(); },
+                ::testing::Eq(PeerConnectionInterface::kIceConnectionFailed),
+                {.timeout = webrtc::TimeDelta::Millis(kConsentTimeout),
+                 .clock = &fake_clock}),
+      IsRtcOk());
 }
 #endif
 
@@ -429,7 +472,9 @@ TEST_P(PeerConnectionIntegrationTest, CallTransferredForCallee) {
   caller()->AddAudioVideoTracks();
   callee()->AddAudioVideoTracks();
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_THAT(
+      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
+      IsRtcOk());
 
   
   
@@ -443,7 +488,9 @@ TEST_P(PeerConnectionIntegrationTest, CallTransferredForCallee) {
   ConnectFakeSignaling();
   caller()->AddAudioVideoTracks();
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_THAT(
+      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
+      IsRtcOk());
   
   MediaExpectations media_expectations;
   media_expectations.ExpectBidirectionalAudioAndVideo();
@@ -458,7 +505,9 @@ TEST_P(PeerConnectionIntegrationTest, CallTransferredForCaller) {
   caller()->AddAudioVideoTracks();
   callee()->AddAudioVideoTracks();
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_THAT(
+      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
+      IsRtcOk());
 
   
   
@@ -473,7 +522,9 @@ TEST_P(PeerConnectionIntegrationTest, CallTransferredForCaller) {
   callee()->AddAudioVideoTracks();
   caller()->SetOfferAnswerOptions(IceRestartOfferAnswerOptions());
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_THAT(
+      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
+      IsRtcOk());
   
   MediaExpectations media_expectations;
   media_expectations.ExpectBidirectionalAudioAndVideo();
