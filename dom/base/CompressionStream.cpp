@@ -17,12 +17,13 @@
 #include "mozilla/dom/TransformerCallbackHelpers.h"
 #include "mozilla/dom/UnionTypes.h"
 
-#include "ZLibHelper.h"
+#include "CompressionStreamHelper.h"
 
 
 
 
 namespace mozilla::dom {
+using namespace compression;
 
 class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
  public:
@@ -71,7 +72,7 @@ class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
     ProcessTypedArraysFixed(
         bufferSource,
         [&](const Span<uint8_t>& aData) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-          CompressAndEnqueue(cx, aData, ZLibFlush::No, aController, aRv);
+          CompressAndEnqueue(cx, aData, Flush::No, aController, aRv);
         });
   }
 
@@ -94,8 +95,7 @@ class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
     
     
     
-    CompressAndEnqueue(cx, Span<const uint8_t>(), ZLibFlush::Yes, aController,
-                       aRv);
+    CompressAndEnqueue(cx, Span<const uint8_t>(), Flush::Yes, aController, aRv);
   }
 
  private:
@@ -103,9 +103,9 @@ class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
   
   
   MOZ_CAN_RUN_SCRIPT void CompressAndEnqueue(
-      JSContext* aCx, Span<const uint8_t> aInput, ZLibFlush aFlush,
+      JSContext* aCx, Span<const uint8_t> aInput, Flush aFlush,
       TransformStreamDefaultController& aController, ErrorResult& aRv) {
-    MOZ_ASSERT_IF(aFlush == ZLibFlush::Yes, !aInput.Length());
+    MOZ_ASSERT_IF(aFlush == Flush::Yes, !aInput.Length());
 
     mZStream.avail_in = aInput.Length();
     mZStream.next_in = const_cast<uint8_t*>(aInput.Elements());
@@ -124,7 +124,7 @@ class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
       mZStream.avail_out = kBufferSize;
       mZStream.next_out = buffer.get();
 
-      int8_t err = deflate(&mZStream, aFlush);
+      int8_t err = deflate(&mZStream, intoZLibFlush(aFlush));
 
       
       switch (err) {
@@ -153,7 +153,7 @@ class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
       
       
       
-      MOZ_ASSERT_IF(err == Z_STREAM_END, aFlush == ZLibFlush::Yes);
+      MOZ_ASSERT_IF(err == Z_STREAM_END, aFlush == Flush::Yes);
 
       
       MOZ_ASSERT(!mZStream.avail_in || !mZStream.avail_out);
