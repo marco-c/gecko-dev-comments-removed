@@ -197,7 +197,8 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
     
     ListStyleImage,
     
-    ViewTransitionOld,
+    
+    ViewTransition,
   };
 
   
@@ -216,8 +217,8 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
                                                             ComputedStyle*);
   friend nsIFrame* NS_NewImageFrameForListStyleImage(mozilla::PresShell*,
                                                      ComputedStyle*);
-  friend nsIFrame* NS_NewImageFrameForViewTransitionOld(mozilla::PresShell*,
-                                                        ComputedStyle*);
+  friend nsIFrame* NS_NewImageFrameForViewTransition(mozilla::PresShell*,
+                                                     ComputedStyle*);
 
   nsImageFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, Kind aKind)
       : nsImageFrame(aStyle, aPresContext, kClassID, aKind) {}
@@ -306,7 +307,11 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   
   bool ShouldUseMappedAspectRatio() const;
 
-  mozilla::gfx::DataSourceSurface* GetViewTransitionSurface() const;
+  nsAtom* GetViewTransitionName() const;
+  Maybe<nsSize> GetViewTransitionSnapshotSize() const;
+  mozilla::wr::ImageKey GetViewTransitionImageKey(
+      mozilla::layers::RenderRootStateManager*,
+      mozilla::wr::IpcResourceUpdateQueue&) const;
 
   
 
@@ -397,15 +402,6 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
   nsCOMPtr<imgIContainer> mImage;
   nsCOMPtr<imgIContainer> mPrevImage;
-
-  struct ViewTransitionData {
-    
-    mozilla::wr::ImageKey mImageKey{{0}, 0};
-    
-    RefPtr<mozilla::layers::RenderRootStateManager> mManager;
-
-    bool HasKey() const { return mImageKey != mozilla::wr::ImageKey{{0}, 0}; }
-  } mViewTransitionData;
 
   
   
