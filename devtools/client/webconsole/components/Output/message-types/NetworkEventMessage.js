@@ -193,6 +193,39 @@ function NetworkEventMessage({
 
   
   
+  
+  const createTabboxElement = function () {
+    const toolboxStore = serviceContainer.getToolboxStore();
+    const tabboxPanelProps = {
+      connector,
+      activeTabId: networkMessageActiveTabId,
+      request: networkMessageUpdate,
+      sourceMapURLService: serviceContainer.sourceMapURLService,
+      openLink: serviceContainer.openLink,
+      selectTab: tabId => {
+        dispatch(actions.selectNetworkMessageTab(tabId));
+      },
+      openNetworkDetails: enabled => {
+        if (!enabled) {
+          dispatch(actions.messageClose(id));
+        }
+      },
+      hideToggleButton: true,
+      showMessagesView: false,
+      targetSearchResult: null,
+    };
+
+    return toolboxStore
+      ? createElement(
+          ToolboxProvider,
+          { store: serviceContainer.getToolboxStore() },
+          createElement(TabboxPanel.ConnectedTabboxPanel, tabboxPanelProps)
+        )
+      : createElement(TabboxPanel.TabboxPanel, tabboxPanelProps);
+  };
+
+  
+  
   const attachment =
     open &&
     !disabled &&
@@ -200,28 +233,7 @@ function NetworkEventMessage({
       {
         className: "network-info network-monitor",
       },
-      createElement(
-        ToolboxProvider,
-        { store: serviceContainer.getToolboxStore() },
-        createElement(TabboxPanel, {
-          connector,
-          activeTabId: networkMessageActiveTabId,
-          request: networkMessageUpdate,
-          sourceMapURLService: serviceContainer.sourceMapURLService,
-          openLink: serviceContainer.openLink,
-          selectTab: tabId => {
-            dispatch(actions.selectNetworkMessageTab(tabId));
-          },
-          openNetworkDetails: enabled => {
-            if (!enabled) {
-              dispatch(actions.messageClose(id));
-            }
-          },
-          hideToggleButton: true,
-          showMessagesView: false,
-          targetSearchResult: null,
-        })
-      )
+      createTabboxElement()
     );
 
   const request = { url, method };
