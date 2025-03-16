@@ -1040,6 +1040,11 @@ var gBrowserInit = {
       ToolbarKeyboardNavigator.uninit();
     }
 
+    
+    ChromeUtils.importESModule(
+      "moz-src:///browser/components/genai/LinkPreview.sys.mjs"
+    ).LinkPreview.teardown(window);
+
     FirefoxViewHandler.uninit();
 
     
