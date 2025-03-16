@@ -28,9 +28,29 @@ using namespace mozilla;
 struct TaskbarConcealerImpl {
   void MarkAsHidingTaskbar(HWND aWnd, bool aMark);
 
+  
+  
+  enum class MarkingMethod : uint32_t {
+    NonRudeHwnd = 1,
+    PrepareFullScreen = 2,
+  };
+  static MarkingMethod GetMarkingMethod() {
+    uint32_t const val =
+        StaticPrefs::widget_windows_fullscreen_marking_method();
+    if (val >= 1 && val <= 3) return MarkingMethod(val);
+
+    
+    return MarkingMethod::NonRudeHwnd;
+  }
+
  private:
   nsCOMPtr<nsIWinTaskbar> mTaskbarInfo;
+
+  
+  MarkingMethod const mMarkingMethod = GetMarkingMethod();
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(TaskbarConcealerImpl::MarkingMethod);
 
 
 
@@ -253,30 +273,102 @@ void nsWindow::TaskbarConcealer::UpdateAllState(
 
 
 void TaskbarConcealerImpl::MarkAsHidingTaskbar(HWND aWnd, bool aMark) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   const char* const sMark = aMark ? "true" : "false";
 
-  if (!mTaskbarInfo) {
-    mTaskbarInfo = do_GetService(NS_TASKBAR_CONTRACTID);
+  bool const useNonRudeHWND = !!(mMarkingMethod & MarkingMethod::NonRudeHwnd);
+  bool const usePrepareFullScreen =
+      !!(mMarkingMethod & MarkingMethod::PrepareFullScreen);
 
+  
+  MOZ_ASSERT(useNonRudeHWND || usePrepareFullScreen);
+
+  if (useNonRudeHWND) {
+    MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
+            ("Setting %p[L\"NonRudeHWND\"] to %s", aWnd, sMark));
+
+    
+    
+    ::SetPropW(aWnd, L"NonRudeHWND", (HANDLE)uintptr_t(aMark ? FALSE : TRUE));
+  } else {
+    ::RemovePropW(aWnd, L"NonRudeHWND");
+  }
+
+  if (usePrepareFullScreen) {
     if (!mTaskbarInfo) {
-      MOZ_LOG(
-          sTaskbarConcealerLog, LogLevel::Warning,
-          ("could not acquire IWinTaskbar (aWnd %p, aMark %s)", aWnd, sMark));
-      return;
+      mTaskbarInfo = do_GetService(NS_TASKBAR_CONTRACTID);
+
+      if (!mTaskbarInfo) {
+        MOZ_LOG(
+            sTaskbarConcealerLog, LogLevel::Warning,
+            ("could not acquire IWinTaskbar (aWnd %p, aMark %s)", aWnd, sMark));
+        return;
+      }
+    }
+
+    MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
+            ("Calling PrepareFullScreen(%p, %s)", aWnd, sMark));
+
+    const nsresult hr = mTaskbarInfo->PrepareFullScreen(aWnd, aMark);
+
+    if (FAILED(hr)) {
+      MOZ_LOG(sTaskbarConcealerLog, LogLevel::Error,
+              ("Call to PrepareFullScreen(%p, %s) failed with nsresult %x",
+               aWnd, sMark, uint32_t(hr)));
     }
   }
-
-  MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
-          ("Calling PrepareFullScreen(%p, %s)", aWnd, sMark));
-
-  const nsresult hr = mTaskbarInfo->PrepareFullScreen(aWnd, aMark);
-
-  if (FAILED(hr)) {
-    MOZ_LOG(sTaskbarConcealerLog, LogLevel::Error,
-            ("Call to PrepareFullScreen(%p, %s) failed with nsresult %x", aWnd,
-             sMark, uint32_t(hr)));
-  }
-};
+}
 
 
 
@@ -311,6 +403,20 @@ void nsWindow::TaskbarConcealer::OnWindowMaximized(nsWindow* aWin) {
           ("==> OnWindowMaximized() for HWND %p on HMONITOR %p", aWin->mWnd,
            ::MonitorFromWindow(aWin->mWnd, MONITOR_DEFAULTTONULL)));
 
+  
+  
+  if (MOZ_LIKELY(TaskbarConcealerImpl::GetMarkingMethod() !=
+                 TaskbarConcealerImpl::MarkingMethod::PrepareFullScreen)) {
+    return;
+  }
+
+  
+  
+  if (!aWin->mCustomNonClient) {
+    return;
+  }
+
+  
   
   
   
@@ -353,7 +459,6 @@ void nsWindow::TaskbarConcealer::OnAsyncStateUpdateRequest(HWND hwnd) {
   MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
           ("==> OnAsyncStateUpdateRequest()"));
 
-  
   
   
   
