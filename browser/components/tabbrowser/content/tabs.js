@@ -14,12 +14,8 @@
   const DIRECTION_BACKWARD = -1;
   const DIRECTION_FORWARD = 1;
 
-  
-
-
-
-
-  const isTab = element => !!(element?.tagName == "tab");
+  const isTab = element => gBrowser.isTab(element);
+  const isTabGroupLabel = element => gBrowser.isTabGroupLabel(element);
 
   
 
@@ -27,14 +23,6 @@
 
 
   const isTabGroup = element => !!(element?.tagName == "tab-group");
-
-  
-
-
-
-
-  const isTabGroupLabel = element =>
-    !!element?.classList?.contains("tab-group-label");
 
   class MozTabbrowserTabs extends MozElements.TabsBase {
     static observedAttributes = ["orient"];
@@ -757,7 +745,10 @@
       let expandedTabGroups;
       if (tab.multiselected) {
         this.#moveTogetherSelectedTabs(tab);
-      } else if (isTabGroupLabel(tab)) {
+      } else if (
+        isTabGroupLabel(tab) &&
+        gBrowser.visibleTabs.length > tab.group.tabs.length
+      ) {
         expandedTabGroups = gBrowser.tabGroups.filter(
           group => !group.collapsed
         );
@@ -1010,6 +1001,16 @@
         : "translateX(" + Math.round(newMargin) + "px)";
     }
 
+    #expandGroupsAfterDragDrop(dragData) {
+      if (dragData?.expandedTabGroups?.length) {
+        for (let group of dragData.expandedTabGroups) {
+          group.collapsed = false;
+        }
+        this.#keepTabSizeLocked = false;
+        this._unlockTabSizing();
+      }
+    }
+
     
     on_drop(event) {
       var dt = event.dataTransfer;
@@ -1191,6 +1192,8 @@
             moveTabs();
           }
         }
+      } else if (isTabGroupLabel(draggedTab)) {
+        gBrowser.adoptTabGroup(draggedTab.group, this._getDropIndex(event));
       } else if (draggedTab) {
         
         
@@ -1282,13 +1285,7 @@
       }
 
       if (draggedTab) {
-        if (draggedTab._dragData.expandedTabGroups?.length) {
-          for (let group of draggedTab._dragData.expandedTabGroups) {
-            group.collapsed = false;
-          }
-          this.#keepTabSizeLocked = false;
-          this._unlockTabSizing();
-        }
+        this.#expandGroupsAfterDragDrop(draggedTab._dragData);
         delete draggedTab._dragData;
       }
     }
@@ -1306,6 +1303,7 @@
 
       this._finishMoveTogetherSelectedTabs(draggedTab);
       this._finishAnimateTabMove();
+      this.#expandGroupsAfterDragDrop(draggedTab._dragData);
 
       if (
         dt.mozUserCancelled ||

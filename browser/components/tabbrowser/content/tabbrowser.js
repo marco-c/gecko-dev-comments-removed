@@ -36,21 +36,6 @@
   
 
 
-
-
-  const isTab = element => !!(element?.tagName == "tab");
-
-  
-
-
-
-
-  const isTabGroupLabel = element =>
-    !!element?.classList?.contains("tab-group-label");
-
-  
-
-
   function updateUserContextUIIndicator() {
     function replaceContainerClass(classType, element, value) {
       let prefix = "identity-" + classType + "-";
@@ -5690,6 +5675,10 @@
 
 
     replaceTabsWithWindow(contextTab, aOptions = {}) {
+      if (this.isTabGroupLabel(contextTab)) {
+        return this.replaceTabWithWindow(contextTab, aOptions);
+      }
+
       let tabs;
       if (contextTab.multiselected) {
         tabs = this.selectedTabs;
@@ -5796,6 +5785,24 @@
       return newWindow;
     }
 
+    
+
+
+
+
+    isTab(element) {
+      return !!(element?.tagName == "tab");
+    }
+
+    
+
+
+
+
+    isTabGroupLabel(element) {
+      return !!element?.classList?.contains("tab-group-label");
+    }
+
     _updateTabsAfterInsert() {
       for (let i = 0; i < this.tabs.length; i++) {
         this.tabs[i]._tPos = i;
@@ -5833,7 +5840,7 @@
 
 
     moveTabTo(aTab, aIndex, { forceUngrouped = false } = {}) {
-      if (isTab(aTab)) {
+      if (this.isTab(aTab)) {
         
         if (aTab.pinned) {
           aIndex = Math.min(aIndex, this.pinnedTabCount - 1);
@@ -5845,7 +5852,7 @@
         }
       } else {
         forceUngrouped = true;
-        if (isTabGroupLabel(aTab)) {
+        if (this.isTabGroupLabel(aTab)) {
           aTab = aTab.group;
         }
       }
@@ -5903,7 +5910,7 @@
 
 
     #moveTabNextTo(tab, targetElement, moveBefore = false) {
-      if (isTabGroupLabel(tab)) {
+      if (this.isTabGroupLabel(tab)) {
         tab = tab.group;
         if (targetElement?.group) {
           targetElement = targetElement.group;
@@ -5961,7 +5968,7 @@
 
     #handleTabMove(aTab, moveActionCallback) {
       let wasFocused = document.activeElement == this.selectedTab;
-      let oldPosition = isTab(aTab) && aTab.elementIndex;
+      let oldPosition = this.isTab(aTab) && aTab.elementIndex;
 
       moveActionCallback();
 
@@ -5986,7 +5993,7 @@
       }
       
       
-      if (isTab(aTab) && oldPosition != aTab.elementIndex) {
+      if (this.isTab(aTab) && oldPosition != aTab.elementIndex) {
         let evt = document.createEvent("UIEvents");
         evt.initUIEvent("TabMove", true, false, window, oldPosition);
         aTab.dispatchEvent(evt);
