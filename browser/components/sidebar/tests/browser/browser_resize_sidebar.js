@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+   https://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
@@ -25,7 +25,7 @@ registerCleanupFunction(async () => {
 async function dragLauncher(deltaX, shouldExpand) {
   AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
 
-  
+  // Let the launcher splitter stabilize before attempting a drag-and-drop.
   await waitForRepaint();
 
   info(`Drag the launcher by ${deltaX} px.`);
@@ -33,23 +33,35 @@ async function dragLauncher(deltaX, shouldExpand) {
   EventUtils.synthesizeMouseAtCenter(splitter, { type: "mousedown" });
   await mouseMoveInChunks(splitter, deltaX, 10);
   EventUtils.synthesizeMouse(splitter, 0, 0, { type: "mouseup" });
-  await TestUtils.waitForCondition(
-    () => sidebarMain.expanded == shouldExpand,
-    `The sidebar is ${shouldExpand ? "expanded" : "collapsed"}.`
+
+  info(`The sidebar should be ${shouldExpand ? "expanded" : "collapsed"}.`);
+  await BrowserTestUtils.waitForMutationCondition(
+    sidebarMain,
+    { attributeFilter: ["expanded"] },
+    () => sidebarMain.hasAttribute("expanded") == shouldExpand
   );
 
   AccessibilityUtils.resetEnv();
 }
 
 async function mouseMoveInChunks(el, deltaX, numberOfChunks) {
-  for (let i = 0; i < numberOfChunks; i++) {
-    await new Promise(resolve => {
-      requestAnimationFrame(resolve);
-    });
-    EventUtils.synthesizeMouse(el, deltaX / numberOfChunks, 0, {
-      type: "mousemove",
-    });
+  let chunkIndex = 0;
+  const chunkSize = deltaX / numberOfChunks;
+  const finished = Promise.withResolvers();
+
+  function synthesizeMouseMove() {
+    // mousemove by a single chunk. Queue up the next chunk if necessary.
+    EventUtils.synthesizeMouse(el, chunkSize, 0, { type: "mousemove" });
+    if (++chunkIndex === numberOfChunks) {
+      finished.resolve();
+    } else {
+      requestAnimationFrame(synthesizeMouseMove);
+    }
   }
+
+  await waitForRepaint();
+  requestAnimationFrame(synthesizeMouseMove);
+  await finished.promise;
 }
 
 function getLauncherWidth({ SidebarController } = window) {
