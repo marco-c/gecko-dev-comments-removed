@@ -36,21 +36,6 @@
   
 
 
-
-
-  const isTab = element => !!(element?.tagName == "tab");
-
-  
-
-
-
-
-  const isTabGroupLabel = element =>
-    !!element?.classList?.contains("tab-group-label");
-
-  
-
-
   function updateUserContextUIIndicator() {
     function replaceContainerClass(classType, element, value) {
       let prefix = "identity-" + classType + "-";
@@ -834,7 +819,7 @@
           this.verticalPinnedTabsContainer.appendChild(aTab)
         );
       } else {
-        this.moveTabTo(aTab, this.pinnedTabCount, { forceUngrouped: true });
+        this.moveTabTo(aTab, this.pinnedTabCount, { forceStandaloneTab: true });
       }
       aTab.setAttribute("pinned", "true");
       this._updateTabBarForPinnedTabs();
@@ -856,7 +841,7 @@
         });
       } else {
         this.moveTabTo(aTab, this.pinnedTabCount - 1, {
-          forceUngrouped: true,
+          forceStandaloneTab: true,
         });
         aTab.removeAttribute("pinned");
       }
@@ -5825,28 +5810,20 @@
 
 
 
-
-    moveTabTo(aTab, aIndex, { forceUngrouped = false } = {}) {
-      if (isTab(aTab)) {
-        
-        if (aTab.pinned) {
-          aIndex = Math.min(aIndex, this.pinnedTabCount - 1);
-        } else {
-          aIndex = Math.max(aIndex, this.pinnedTabCount);
-        }
-        if (aTab._tPos == aIndex && !(aTab.group && forceUngrouped)) {
-          return;
-        }
+    moveTabTo(aTab, aIndex, { forceStandaloneTab = false } = {}) {
+      
+      if (aTab.pinned) {
+        aIndex = Math.min(aIndex, this.pinnedTabCount - 1);
       } else {
-        forceUngrouped = true;
-        if (isTabGroupLabel(aTab)) {
-          aTab = aTab.group;
-        }
+        aIndex = Math.max(aIndex, this.pinnedTabCount);
+      }
+      if (aTab._tPos == aIndex && !(aTab.group && forceStandaloneTab)) {
+        return;
       }
 
       this.#handleTabMove(aTab, () => {
         let neighbor = this.tabs[aIndex];
-        if (forceUngrouped && neighbor.group) {
+        if (forceStandaloneTab && neighbor.group) {
           neighbor = neighbor.group;
         }
         if (neighbor && aIndex > aTab._tPos) {
@@ -5894,23 +5871,13 @@
 
 
 
-
-
     #moveTabNextTo(tab, targetElement, moveBefore = false) {
-      if (isTabGroupLabel(tab)) {
-        tab = tab.group;
-        if (targetElement?.group) {
-          targetElement = targetElement.group;
-        }
-      }
-
       let getContainer = () => {
         if (tab.pinned && this.tabContainer.verticalMode) {
           return this.tabContainer.verticalPinnedTabsContainer;
         }
         return this.tabContainer;
       };
-
       this.#handleTabMove(tab, () => {
         if (moveBefore) {
           getContainer().insertBefore(tab, targetElement);
@@ -5955,7 +5922,7 @@
 
     #handleTabMove(aTab, moveActionCallback) {
       let wasFocused = document.activeElement == this.selectedTab;
-      let oldPosition = isTab(aTab) && aTab.elementIndex;
+      let oldPosition = aTab._tPos;
 
       moveActionCallback();
 
@@ -5978,11 +5945,12 @@
       }
       
       
-      if (isTab(aTab) && oldPosition != aTab.elementIndex) {
-        let evt = document.createEvent("UIEvents");
-        evt.initUIEvent("TabMove", true, false, window, oldPosition);
-        aTab.dispatchEvent(evt);
+      if (oldPosition == aTab._tPos) {
+        return;
       }
+      var evt = document.createEvent("UIEvents");
+      evt.initUIEvent("TabMove", true, false, window, oldPosition);
+      aTab.dispatchEvent(evt);
     }
 
     
@@ -6107,11 +6075,11 @@
     }
 
     moveTabToStart(aTab = this.selectedTab) {
-      this.moveTabTo(aTab, 0, { forceUngrouped: true });
+      this.moveTabTo(aTab, 0, { forceStandaloneTab: true });
     }
 
     moveTabToEnd(aTab = this.selectedTab) {
-      this.moveTabTo(aTab, this.tabs.length - 1, { forceUngrouped: true });
+      this.moveTabTo(aTab, this.tabs.length - 1, { forceStandaloneTab: true });
     }
 
     
