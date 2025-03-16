@@ -308,9 +308,8 @@ class TextDirectiveCreator final {
 
 
 
-
   Result<nsTArray<RefPtr<nsRange>>, ErrorResult> FindAllMatchingRanges(
-      const nsString& aSearchQuery);
+      const nsString& aSearchQuery, const RangeBoundary& aSearchEnd);
 
   
 
