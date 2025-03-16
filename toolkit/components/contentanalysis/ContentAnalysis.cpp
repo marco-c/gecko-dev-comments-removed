@@ -1538,7 +1538,11 @@ void ContentAnalysis::CancelWithError(nsCString&& aUserActionId,
     }
   }
 
-  MOZ_ASSERT(action != nsIContentAnalysisResponse::Action::eWarn);
+  if (action == nsIContentAnalysisResponse::Action::eWarn) {
+    
+    
+    return;
+  }
 
   RemoveFromUserActionMap(nsCString(aUserActionId));
 
