@@ -547,9 +547,15 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT void Modify(const nsAString& aAlter,
                                  const nsAString& aDirection,
-                                 const nsAString& aGranularity);
+                                 const nsAString& aGranularity,
+                                 mozilla::ErrorResult& aRv);
 
   MOZ_CAN_RUN_SCRIPT
   void SetBaseAndExtentJS(nsINode& aAnchorNode, uint32_t aAnchorOffset,
