@@ -594,6 +594,27 @@ pub enum GenericMargin<LP> {
     ),
 }
 
+#[cfg(feature = "servo")]
+impl<LP> GenericMargin<LP> {
+    
+    #[inline]
+    pub fn is_auto(&self) -> bool {
+        matches!(self, Self::Auto)
+    }
+}
+
+#[cfg(feature = "servo")]
+impl GenericMargin<crate::values::computed::LengthPercentage> {
+    
+    #[inline]
+    pub fn is_definitely_zero(&self) -> bool {
+        match self {
+            Self::LengthPercentage(lp) => lp.is_definitely_zero(),
+            _ => false,
+        }
+    }
+}
+
 impl<LP> SpecifiedValueInfo for GenericMargin<LP>
 where
     LP: SpecifiedValueInfo,
