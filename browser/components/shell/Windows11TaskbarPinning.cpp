@@ -17,7 +17,6 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "mozilla/widget/WinTaskbar.h"
-#include "WinUtils.h"
 
 #include "mozilla/Logging.h"
 
@@ -214,27 +213,21 @@ Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
                                     primaryAumid = nsString(primaryAumid)](
                                        Win11PinToTaskBarResultStatus status) {
           
-          if (!widget::WinUtils::HasPackageIdentity()) {
-            HRESULT hr =
-                SetCurrentProcessExplicitAppUserModelID(primaryAumid.get());
-            if (FAILED(hr)) {
-              TASKBAR_PINNING_LOG(LogLevel::Debug,
-                                  "Taskbar: reverting AUMID after pinning "
-                                  "operation failed. HRESULT = 0x%lx",
-                                  hr);
-            }
+          HRESULT hr =
+              SetCurrentProcessExplicitAppUserModelID(primaryAumid.get());
+          if (FAILED(hr)) {
+            TASKBAR_PINNING_LOG(LogLevel::Debug,
+                                "Taskbar: reverting AUMID after pinning "
+                                "operation failed. HRESULT = 0x%lx",
+                                hr);
           }
           resultStatus = status;
           event.Set();
         };
 
-        
-        
-        if (!widget::WinUtils::HasPackageIdentity()) {
-          hr = SetCurrentProcessExplicitAppUserModelID(aumid.get());
-          if (FAILED(hr)) {
-            return CompletedOperations(Win11PinToTaskBarResultStatus::Failed);
-          }
+        hr = SetCurrentProcessExplicitAppUserModelID(aumid.get());
+        if (FAILED(hr)) {
+          return CompletedOperations(Win11PinToTaskBarResultStatus::Failed);
         }
 
         ComPtr<ITaskbarManager> taskbar;
@@ -271,15 +264,13 @@ Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
               [&event, &resultStatus,
                primaryAumid](Win11PinToTaskBarResultStatus status) -> HRESULT {
             
-            if (!widget::WinUtils::HasPackageIdentity()) {
-              HRESULT hr =
-                  SetCurrentProcessExplicitAppUserModelID(primaryAumid.get());
-              if (FAILED(hr)) {
-                TASKBAR_PINNING_LOG(LogLevel::Debug,
-                                    "Taskbar: reverting AUMID after pinning "
-                                    "operation failed. HRESULT = 0x%lx",
-                                    hr);
-              }
+            HRESULT hr =
+                SetCurrentProcessExplicitAppUserModelID(primaryAumid.get());
+            if (FAILED(hr)) {
+              TASKBAR_PINNING_LOG(LogLevel::Debug,
+                                  "Taskbar: reverting AUMID after pinning "
+                                  "operation failed. HRESULT = 0x%lx",
+                                  hr);
             }
             resultStatus = status;
             event.Set();
