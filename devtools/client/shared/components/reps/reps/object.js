@@ -28,6 +28,14 @@ define(function (require, exports, module) {
 
 
 
+
+
+
+
+
+
+
+
   ObjectRep.propTypes = {
     object: PropTypes.object.isRequired,
     mode: PropTypes.oneOf(Object.values(MODE)),
@@ -72,24 +80,27 @@ define(function (require, exports, module) {
 
     const propsArray = safePropIterator(props, object);
 
+    const showTitle = getTitle(props) !== DEFAULT_TITLE;
+    const isEmptyObject = !propsArray.length;
+
     return span(
       {
         className: "objectBox objectBox-object",
         title: shouldRenderTooltip ? getTitle(props) : null,
       },
-      getTitleElement(props),
+      showTitle ? getTitleElement(props) : null,
       span(
         {
           className: "objectLeftBrace",
         },
-        " { "
+        (showTitle ? " " : "") + "{" + (isEmptyObject ? "" : " ")
       ),
       ...propsArray,
       span(
         {
           className: "objectRightBrace",
         },
-        " }"
+        (isEmptyObject ? "" : " ") + "}"
       )
     );
   }
