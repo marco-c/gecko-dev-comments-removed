@@ -24,6 +24,11 @@ add_task(async function () {
       fontPreviewData?.dataURL,
       "Returned a font preview with a valid dataURL"
     );
+    is(
+      fontPreviewData.ctx.font,
+      `40px ${Services.appinfo.OS === "WINNT" ? "Arial" : `"Liberation Sans"`}, serif`,
+      "Expected font style was used in the canvas"
+    );
 
     
     
@@ -132,6 +137,27 @@ add_task(async function () {
       heightImage4,
       heightImage1,
       "Preview height is greater than with default parameters"
+    );
+
+    
+    is(
+      getFontPreviewData("monospace", content.document).ctx.font,
+      `40px monospace, serif`,
+      "Expected font style was used in the canvas"
+    );
+
+    
+    is(
+      getFontPreviewData(`"Zilla Bold"`, content.document).ctx.font,
+      `40px "Zilla Bold", serif`,
+      "Expected font style was used in the canvas"
+    );
+
+    
+    is(
+      getFontPreviewData(`'Font Awesome 5 Brands'`, content.document).ctx.font,
+      `40px "Font Awesome 5 Brands", serif`,
+      "Expected font style was used in the canvas"
     );
   });
 });

@@ -12,6 +12,9 @@ const FONT_PREVIEW_FILLSTYLE = "black";
 const FONT_PREVIEW_OFFSET = 4;
 
 const FONT_PREVIEW_OVERSAMPLING_FACTOR = 2;
+const FONT_NEED_WRAPPING_QUOTES_REGEX = /^[^'"].* /;
+
+
 
 
 
@@ -36,7 +39,17 @@ function getFontPreviewData(font, doc, options) {
 
   const canvas = doc.createElementNS(XHTML_NS, "canvas");
   const ctx = canvas.getContext("2d");
-  const fontValue = `${fontStyle} ${previewFontSize}px "${font}", serif`;
+
+  
+  
+  
+  
+  
+  
+  if (FONT_NEED_WRAPPING_QUOTES_REGEX.test(font.trim())) {
+    font = `"${font}"`;
+  }
+  const fontValue = `${fontStyle} ${previewFontSize}px ${font}, serif`;
 
   
   ctx.font = fontValue;
@@ -87,6 +100,7 @@ function getFontPreviewData(font, doc, options) {
   return {
     dataURL,
     size: textWidth + FONT_PREVIEW_OFFSET * 2,
+    ctx,
   };
 }
 
