@@ -9,6 +9,8 @@ const helper = new LocalizationHelper(
   "devtools/client/locales/webconsole.properties"
 );
 
+let dateFormatter;
+
 const l10n = {
   
 
@@ -27,6 +29,23 @@ const l10n = {
     milliseconds = d.getMilliseconds();
     const parameters = [hours, minutes, seconds, milliseconds];
     return l10n.getFormatStr("timestampFormat", parameters);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  dateString(milliseconds) {
+    if (!dateFormatter) {
+      dateFormatter = new Intl.DateTimeFormat();
+    }
+    return dateFormatter.format(milliseconds || Date.now());
   },
 
   
