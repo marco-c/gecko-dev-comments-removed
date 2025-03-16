@@ -15,15 +15,12 @@ async function promiseAppMenuOpened() {
 add_task(async function test_appmenu_updates_on_edit() {
   
   
-  SelectableProfileService._getExecutableProcess =
-    SelectableProfileService.getExecutableProcess;
+  SelectableProfileService._execProcess = SelectableProfileService.execProcess;
   registerCleanupFunction(() => {
-    SelectableProfileService.getExecutableProcess =
-      SelectableProfileService._getExecutableProcess;
+    SelectableProfileService.execProcess =
+      SelectableProfileService._execProcess;
   });
-  SelectableProfileService.getExecutableProcess = () => {
-    return { runw: () => {} };
-  };
+  SelectableProfileService.execProcess = () => {};
 
   
   
