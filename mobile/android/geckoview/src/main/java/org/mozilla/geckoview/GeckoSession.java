@@ -11,9 +11,7 @@ import static org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_NO_PR
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.content.ContentResolver;
 import android.content.Context;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -27,6 +25,7 @@ import android.os.IInterface;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
+import android.provider.DocumentsContract;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
@@ -5505,6 +5504,42 @@ public class GeckoSession {
     
 
 
+    class FolderUploadPrompt extends BasePrompt {
+      
+      public final @Nullable String directoryName;
+
+      
+
+
+
+
+
+
+      protected FolderUploadPrompt(
+          @NonNull final String id,
+          @Nullable final String directoryName,
+          @NonNull final Observer observer) {
+        super(id, null, observer);
+        this.directoryName = directoryName;
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(final @Nullable AllowOrDeny allowOrDeny) {
+        ensureResult().putBoolean("allow", allowOrDeny != AllowOrDeny.DENY);
+        return super.confirm();
+      }
+    }
+
+    
+
+
 
     class RepostConfirmPrompt extends BasePrompt {
       protected RepostConfirmPrompt(@NonNull final String id, @NonNull final Observer observer) {
@@ -6372,7 +6407,7 @@ public class GeckoSession {
 
     class FilePrompt extends BasePrompt {
       @Retention(RetentionPolicy.SOURCE)
-      @IntDef({Type.SINGLE, Type.MULTIPLE})
+      @IntDef({Type.SINGLE, Type.MULTIPLE, Type.FOLDER})
       public @interface FileType {}
 
       
@@ -6382,6 +6417,9 @@ public class GeckoSession {
 
         
         public static final int MULTIPLE = 2;
+
+        
+        public static final int FOLDER = 3;
 
         protected Type() {}
       }
@@ -6458,7 +6496,7 @@ public class GeckoSession {
       @UiThread
       public @NonNull PromptResponse confirm(
           @NonNull final Context context, @NonNull final Uri[] uris) {
-        if (Type.SINGLE == type && (uris == null || uris.length != 1)) {
+        if ((Type.SINGLE == type || Type.FOLDER == type) && (uris == null || uris.length != 1)) {
           throw new IllegalArgumentException();
         }
 
@@ -6483,33 +6521,14 @@ public class GeckoSession {
         if ("file".equals(uri.getScheme())) {
           return uri.getPath();
         }
-        final ContentResolver cr = context.getContentResolver();
-        final Cursor cur =
-            cr.query(
-                uri,
-                new String[] {"_data"}, 
-                null,
-                 null, 
-                null);
-        if (cur == null) {
-          return null;
-        }
-        try {
-          final int idx = cur.getColumnIndex("_data");
-          if (idx < 0 || !cur.moveToFirst()) {
-            return null;
+        if ("content".equals(uri.getScheme())) {
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && DocumentsContract.isTreeUri(uri)) {
+            return IntentUtils.resolveTreeUri(context, uri);
           }
-          do {
-            try {
-              final String path = cur.getString(idx);
-              if (path != null && !path.isEmpty()) {
-                return path;
-              }
-            } catch (final Exception e) {
-            }
-          } while (cur.moveToNext());
-        } finally {
-          cur.close();
+          if (DocumentsContract.isDocumentUri(context, uri)) {
+            return IntentUtils.resolveDocumentUri(context, uri);
+          }
+          return IntentUtils.resolveContentUri(context, uri);
         }
         return null;
       }
@@ -6706,6 +6725,20 @@ public class GeckoSession {
     @UiThread
     default @Nullable GeckoResult<PromptResponse> onButtonPrompt(
         @NonNull final GeckoSession session, @NonNull final ButtonPrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onFolderUploadPrompt(
+        @NonNull final GeckoSession session, @NonNull final FolderUploadPrompt prompt) {
       return null;
     }
 
