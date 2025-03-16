@@ -403,6 +403,11 @@ class HTMLEditor final : public EditorBase,
   
 
 
+  [[nodiscard]] bool IsStyleEditable() const;
+
+  
+
+
 
   MOZ_CAN_RUN_SCRIPT void EnableObjectResizer(bool aEnable) {
     if (mIsObjectResizingEnabled == aEnable) {
@@ -418,7 +423,9 @@ class HTMLEditor final : public EditorBase,
     mIsObjectResizingEnabled = aEnable;
     RefreshEditingUI();
   }
-  bool IsObjectResizerEnabled() const { return mIsObjectResizingEnabled; }
+  bool IsObjectResizerEnabled() const {
+    return mIsObjectResizingEnabled && IsStyleEditable();
+  }
 
   Element* GetResizerTarget() const { return mResizedObject; }
 
@@ -441,7 +448,7 @@ class HTMLEditor final : public EditorBase,
     RefreshEditingUI();
   }
   bool IsInlineTableEditorEnabled() const {
-    return mIsInlineTableEditingEnabled;
+    return mIsInlineTableEditingEnabled && IsStyleEditable();
   }
 
   
@@ -464,7 +471,7 @@ class HTMLEditor final : public EditorBase,
     RefreshEditingUI();
   }
   bool IsAbsolutePositionEditorEnabled() const {
-    return mIsAbsolutelyPositioningEnabled;
+    return mIsAbsolutelyPositioningEnabled && IsStyleEditable();
   }
 
   
