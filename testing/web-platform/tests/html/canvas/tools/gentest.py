@@ -1,43 +1,14 @@
-"""Generates Canvas tests from YAML file definitions."""
+"""Generates Canvas tests from YAML file definitions.
 
+See README.md for instructions on how to run this test generator and for how to
+add or modify tests.
 
+This code generatror was originally written by Philip Taylor for use at
+http://philip.html5.org/tests/canvas/suite/tests/
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+It has been adapted for use with the Web Platform Test Suite suite at
+https://github.com/web-platform-tests/wpt/
+"""
 
 from typing import Any, Callable, Container, DefaultDict, FrozenSet
 from typing import List, Mapping, MutableMapping, Set, Tuple, Union
@@ -152,6 +123,7 @@ _TEST_DEFINITION_PARAMS = {
     
     
     'canvas_types': list(_CanvasType),
+    
     
     
     
