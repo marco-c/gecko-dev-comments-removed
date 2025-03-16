@@ -99,12 +99,6 @@ rtc::StreamResult StreamInterfaceChannel::Write(
     int& ) {
   RTC_DCHECK_RUN_ON(&callback_sequence_);
 
-  if (IsDtlsHandshakePacket(data) &&
-      ice_transport_->IsDtlsPiggybackSupportedByPeer()) {
-    ice_transport_->SetDtlsDataToPiggyback(data);
-    
-  }
-
   
   
   
@@ -545,12 +539,12 @@ void DtlsTransport::ConnectToIceTransport() {
       [this](rtc::PacketTransportInternal* transport,
              const rtc::ReceivedPacket& packet) {
         RTC_DCHECK(dtls_active_);
-        RTC_DCHECK(IsDtlsHandshakePacket(packet.payload()));
+        RTC_DCHECK(IsDtlsPacket(packet.payload()));
         if (!dtls_active_) {
           
           return;
         }
-        if (!IsDtlsHandshakePacket(packet.payload())) {
+        if (!IsDtlsPacket(packet.payload())) {
           return;
         }
         OnReadPacket(transport, packet);
@@ -748,15 +742,22 @@ void DtlsTransport::OnReadyToSend(
 
 void DtlsTransport::OnDtlsEvent(int sig, int err) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK(dtls_);
+
   if (sig & rtc::SE_OPEN) {
     
     RTC_LOG(LS_INFO) << ToString() << ": DTLS handshake complete.";
+    
+    
     if (dtls_->GetState() == rtc::SS_OPEN) {
-      
-      
+      int ssl_version_bytes;
+      bool ret = dtls_->GetSslVersionBytes(&ssl_version_bytes);
+      RTC_DCHECK(ret);
+      ice_transport_->SetDtlsHandshakeComplete(
+          dtls_role_ == rtc::SSL_CLIENT,
+          ssl_version_bytes == rtc::kDtls13VersionBytes);
       set_dtls_state(webrtc::DtlsTransportState::kConnected);
       set_writable(true);
-      ice_transport_->SetDtlsHandshakeComplete(dtls_role_ == rtc::SSL_CLIENT);
     }
   }
   if (sig & rtc::SE_READ) {

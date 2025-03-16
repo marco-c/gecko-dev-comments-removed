@@ -60,10 +60,12 @@ class DtlsStunPiggybackController {
   }
 
   
-  void SetDtlsHandshakeComplete(bool is_dtls_client);
+  void SetDtlsHandshakeComplete(bool is_dtls_client, bool is_dtls13);
 
   
-  void SetDataToPiggyback(rtc::ArrayView<const uint8_t> data);
+  
+  bool MaybeConsumePacket(rtc::ArrayView<const uint8_t> data);
+  void ClearCachedPacketForTesting();
 
   
   

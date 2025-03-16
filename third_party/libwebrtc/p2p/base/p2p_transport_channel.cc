@@ -55,7 +55,6 @@
 #include "p2p/base/regathering_controller.h"
 #include "p2p/base/transport_description.h"
 #include "p2p/base/wrapping_active_ice_controller.h"
-#include "p2p/dtls/dtls_utils.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/dscp.h"
@@ -1634,21 +1633,21 @@ int P2PTransportChannel::SendPacket(const char* data,
     error_ = EINVAL;
     return -1;
   }
+
+  
+  
+  rtc::ArrayView<const uint8_t> data_view =
+      rtc::MakeArrayView(reinterpret_cast<const uint8_t*>(data), len);
+  if (config_.dtls_handshake_in_stun &&
+      dtls_stun_piggyback_controller_.MaybeConsumePacket(data_view)) {
+    return len;
+  }
+
   
   
   if (!ReadyToSend(selected_connection_)) {
     error_ = ENOTCONN;
     return -1;
-  }
-  
-
-
-
-  if (config_.dtls_handshake_in_stun && IsDtlsPiggybackSupportedByPeer() &&
-      IsDtlsHandshakePacket(
-          rtc::MakeArrayView(reinterpret_cast<const uint8_t*>(data), len))) {
-    RTC_LOG(LS_INFO) << "Dropping DTLS handshake while attemping DTLS-in-STUN";
-    return len;
   }
 
   packets_sent_++;
