@@ -105,6 +105,16 @@ enum class RTCErrorDetailType {
 RTC_EXPORT absl::string_view ToString(RTCErrorType error);
 RTC_EXPORT absl::string_view ToString(RTCErrorDetailType error);
 
+template <typename Sink>
+void AbslStringify(Sink& sink, RTCErrorType error) {
+  sink.Append(ToString(error));
+}
+
+template <typename Sink>
+void AbslStringify(Sink& sink, RTCErrorDetailType error_detail) {
+  sink.Append(ToString(error_detail));
+}
+
 
 
 
