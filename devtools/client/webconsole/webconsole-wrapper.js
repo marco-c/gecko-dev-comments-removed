@@ -125,13 +125,21 @@ class WebConsoleWrapper {
         },
       });
 
+      const serviceContainer = this.getServiceContainer();
+
       const app = AppErrorBoundary(
         {
           componentName: "Console",
           panel: L10N.getStr("ToolboxTabWebconsole.label"),
+          
+          
+          
+          openLink: webConsoleUI.isBrowserConsole
+            ? serviceContainer.openLink
+            : null,
         },
         App({
-          serviceContainer: this.getServiceContainer(),
+          serviceContainer,
           webConsoleUI,
           onFirstMeaningfulPaint: resolve,
           closeSplitConsole: this.closeSplitConsole.bind(this),
