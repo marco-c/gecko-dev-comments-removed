@@ -27,6 +27,15 @@
 #  define MALLOC_FUNCS_ALL \
     (MALLOC_FUNCS_MALLOC | MALLOC_FUNCS_JEMALLOC | MALLOC_FUNCS_ARENA)
 
+
+
+
+
+#  if !defined(MALLOC_DECL) && defined(__cplusplus)
+#    include <functional>
+#    include "mozilla/Maybe.h"
+#  endif
+
 #endif  
 
 #ifndef MALLOC_FUNCS
@@ -146,7 +155,17 @@ MALLOC_DECL(moz_enable_deferred_purge, bool, bool)
 
 
 
-MALLOC_DECL(moz_may_purge_one_now, purge_result_t, bool, uint32_t)
+
+
+
+
+
+
+
+#    ifdef __cplusplus
+MALLOC_DECL(moz_may_purge_now, purge_result_t, bool, uint32_t,
+            const mozilla::Maybe<std::function<bool()>>&)
+#    endif
 
 
 

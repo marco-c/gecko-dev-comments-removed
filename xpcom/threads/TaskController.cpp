@@ -952,7 +952,8 @@ void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
 
   MOZ_ASSERT(!sIdleMemoryCleanupRunner ||
              !sIdleMemoryCleanupWantsLaterScheduled);
-  auto result = moz_may_purge_one_now( true, reuseGracePeriod);
+  auto result =
+      moz_may_purge_now( true, reuseGracePeriod, Nothing());
   switch (result) {
     case purge_result_t::Done:
       
@@ -1016,7 +1017,10 @@ bool RunIdleMemoryCleanup(TimeStamp aDeadline, uint32_t aWantsLaterDelay) {
 
   purge_result_t result;
   do {
-    result = moz_may_purge_one_now( false, reuseGracePeriod);
+    result = moz_may_purge_now(
+         false, reuseGracePeriod, Some([aDeadline] {
+          return aDeadline.IsNull() || TimeStamp::Now() <= aDeadline;
+        }));
   } while ((result == purge_result_t::NeedsMore) &&
            (aDeadline.IsNull() || TimeStamp::Now() <= aDeadline));
 

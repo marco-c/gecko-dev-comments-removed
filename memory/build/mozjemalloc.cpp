@@ -1736,7 +1736,13 @@ class ArenaCollection {
   
   
   
-  purge_result_t MayPurgeStep(bool aPeekOnly, uint32_t aReuseGraceMS);
+  
+  
+  
+  
+  
+  purge_result_t MayPurgeSteps(bool aPeekOnly, uint32_t aReuseGraceMS,
+                               const Maybe<std::function<bool()>>& aKeepGoing);
 
  private:
   const static arena_id_t MAIN_THREAD_ARENA_BIT = 0x1;
@@ -5971,9 +5977,10 @@ inline bool MozJemalloc::moz_enable_deferred_purge(bool aEnabled) {
   return gArenas.SetDeferredPurge(aEnabled);
 }
 
-inline purge_result_t MozJemalloc::moz_may_purge_one_now(
-    bool aPeekOnly, uint32_t aReuseGraceMS) {
-  return gArenas.MayPurgeStep(aPeekOnly, aReuseGraceMS);
+inline purge_result_t MozJemalloc::moz_may_purge_now(
+    bool aPeekOnly, uint32_t aReuseGraceMS,
+    const Maybe<std::function<bool()>>& aKeepGoing) {
+  return gArenas.MayPurgeSteps(aPeekOnly, aReuseGraceMS, aKeepGoing);
 }
 
 inline void ArenaCollection::AddToOutstandingPurges(arena_t* aArena) {
@@ -5998,8 +6005,9 @@ inline void ArenaCollection::RemoveFromOutstandingPurges(arena_t* aArena) {
   }
 }
 
-purge_result_t ArenaCollection::MayPurgeStep(bool aPeekOnly,
-                                             uint32_t aReuseGraceMS) {
+purge_result_t ArenaCollection::MayPurgeSteps(
+    bool aPeekOnly, uint32_t aReuseGraceMS,
+    const Maybe<std::function<bool()>>& aKeepGoing) {
   
   
   MOZ_ASSERT(IsOnMainThreadWeak());
@@ -6032,11 +6040,17 @@ purge_result_t ArenaCollection::MayPurgeStep(bool aPeekOnly,
     mOutstandingPurges.remove(found);
   }
 
-  if (found->Purge(false)) {
+  bool more_pages;
+  do {
+    more_pages = found->Purge(false);
+  } while (more_pages && aKeepGoing && (*aKeepGoing)());
+
+  if (more_pages) {
     
     
     
     
+
     MutexAutoLock lock(mPurgeListLock);
     if (!mOutstandingPurges.ElementProbablyInList(found)) {
       

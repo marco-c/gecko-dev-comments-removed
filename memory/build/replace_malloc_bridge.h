@@ -54,6 +54,9 @@ typedef void* platform_handle_t;
 typedef int platform_handle_t;
 #endif
 
+
+#include "malloc_decls.h"
+
 MOZ_BEGIN_EXTERN_C
 
 #ifndef REPLACE_MALLOC_IMPL
