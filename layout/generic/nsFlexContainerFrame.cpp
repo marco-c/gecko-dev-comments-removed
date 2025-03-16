@@ -3498,7 +3498,11 @@ MainAxisPositionTracker::MainAxisPositionTracker(
   
   if (mPackingSpaceRemaining < 0 || aLine->NumItems() == 1) {
     if (mJustifyContent.primary == StyleAlignFlags::SPACE_BETWEEN) {
-      justifyContentFlags = StyleAlignFlags::SAFE;
+      
+      
+      
+      
+      
       mJustifyContent.primary = StyleAlignFlags::FLEX_START;
     } else if (mJustifyContent.primary == StyleAlignFlags::SPACE_AROUND ||
                mJustifyContent.primary == StyleAlignFlags::SPACE_EVENLY) {
