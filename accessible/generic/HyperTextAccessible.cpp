@@ -172,7 +172,18 @@ uint32_t HyperTextAccessible::DOMPointToOffset(nsINode* aNode,
     }
   }
 
-  if (descendant && descendant->IsTextLeaf()) {
+  if (!descendant) {
+    
+    
+    return CharacterCount();
+  }
+
+  if (aNode->IsText() && descendant->GetContent() != aNode) {
+    
+    
+    NS_WARNING("No Accessible for DOM text node");
+    offset = 0;
+  } else if (descendant->IsTextLeaf()) {
     uint32_t length = nsAccUtils::TextLength(descendant);
     if (offset > length) {
       
