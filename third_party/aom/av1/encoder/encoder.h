@@ -1042,6 +1042,9 @@ typedef struct AV1EncoderConfig {
   int speed;
 
   
+  unsigned int enable_low_complexity_decode;
+
+  
   AV1_LEVEL target_seq_level_idx[MAX_NUM_OPERATING_POINTS];
 
   
