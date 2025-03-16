@@ -2063,7 +2063,9 @@ const ContentTiles = props => {
   const renderContentTile = (tile, index = 0) => {
     const isExpanded = expandedTileIndex === index;
     const {
-      header
+      header,
+      title,
+      subtitle
     } = tile;
     return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       key: index,
@@ -2087,7 +2089,19 @@ const ContentTiles = props => {
       className: "header-subtitle"
     }))), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "arrow-icon"
-    })), isExpanded || !header ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    })), (title || subtitle) && react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "tile-title-container",
+      id: `tile-title-container-${index}`
+    }, title && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: title
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", {
+      className: "tile-title",
+      id: `content-tile-title-${index}`
+    })), subtitle && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: subtitle
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("p", {
+      className: "tile-subtitle"
+    }))), isExpanded || !header ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "tile-content",
       id: `tile-content-${index}`
     }, tile.type === "addons-picker" && tile.data && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_AddonsPicker__WEBPACK_IMPORTED_MODULE_2__.AddonsPicker, {
