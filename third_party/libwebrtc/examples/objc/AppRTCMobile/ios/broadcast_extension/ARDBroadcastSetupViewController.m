@@ -18,7 +18,8 @@
   UIView *view = [[UIView alloc] initWithFrame:CGRectZero];
   view.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.7];
 
-  UIImageView *imageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Icon-180"]];
+  UIImageView *imageView =
+      [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Icon-180"]];
   imageView.translatesAutoresizingMaskIntoConstraints = NO;
   [view addSubview:imageView];
 
@@ -52,22 +53,34 @@
   UILayoutGuide *margin = view.layoutMarginsGuide;
   [imageView.widthAnchor constraintEqualToConstant:60.0].active = YES;
   [imageView.heightAnchor constraintEqualToConstant:60.0].active = YES;
-  [imageView.topAnchor constraintEqualToAnchor:margin.topAnchor constant:20].active = YES;
-  [imageView.centerXAnchor constraintEqualToAnchor:view.centerXAnchor].active = YES;
-
-  [_roomNameField.leadingAnchor constraintEqualToAnchor:margin.leadingAnchor].active = YES;
-  [_roomNameField.topAnchor constraintEqualToAnchor:imageView.bottomAnchor constant:20].active =
+  [imageView.topAnchor constraintEqualToAnchor:margin.topAnchor constant:20]
+      .active = YES;
+  [imageView.centerXAnchor constraintEqualToAnchor:view.centerXAnchor].active =
       YES;
-  [_roomNameField.trailingAnchor constraintEqualToAnchor:margin.trailingAnchor].active = YES;
 
-  [doneButton.leadingAnchor constraintEqualToAnchor:margin.leadingAnchor].active = YES;
-  [doneButton.bottomAnchor constraintEqualToAnchor:margin.bottomAnchor constant:-20].active = YES;
+  [_roomNameField.leadingAnchor constraintEqualToAnchor:margin.leadingAnchor]
+      .active = YES;
+  [_roomNameField.topAnchor constraintEqualToAnchor:imageView.bottomAnchor
+                                           constant:20]
+      .active = YES;
+  [_roomNameField.trailingAnchor constraintEqualToAnchor:margin.trailingAnchor]
+      .active = YES;
 
-  [cancelButton.trailingAnchor constraintEqualToAnchor:margin.trailingAnchor].active = YES;
-  [cancelButton.bottomAnchor constraintEqualToAnchor:margin.bottomAnchor constant:-20].active = YES;
+  [doneButton.leadingAnchor constraintEqualToAnchor:margin.leadingAnchor]
+      .active = YES;
+  [doneButton.bottomAnchor constraintEqualToAnchor:margin.bottomAnchor
+                                          constant:-20]
+      .active = YES;
+
+  [cancelButton.trailingAnchor constraintEqualToAnchor:margin.trailingAnchor]
+      .active = YES;
+  [cancelButton.bottomAnchor constraintEqualToAnchor:margin.bottomAnchor
+                                            constant:-20]
+      .active = YES;
 
   UITapGestureRecognizer *tgr =
-      [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(didTap:)];
+      [[UITapGestureRecognizer alloc] initWithTarget:self
+                                              action:@selector(didTap:)];
   [view addGestureRecognizer:tgr];
 
   self.view = view;
@@ -79,22 +92,27 @@
 
 - (void)userDidFinishSetup {
   
-  NSURL *broadcastURL = [NSURL
-      URLWithString:[NSString stringWithFormat:@"https://appr.tc/r/%@", _roomNameField.text]];
+  
+  NSURL *broadcastURL =
+      [NSURL URLWithString:[NSString stringWithFormat:@"https://appr.tc/r/%@",
+                                                      _roomNameField.text]];
 
   
   
   NSDictionary *setupInfo = @{@"roomName" : _roomNameField.text};
 
   
-  [self.extensionContext completeRequestWithBroadcastURL:broadcastURL setupInfo:setupInfo];
+  
+  [self.extensionContext completeRequestWithBroadcastURL:broadcastURL
+                                               setupInfo:setupInfo];
 }
 
 - (void)userDidCancelSetup {
   
-  [self.extensionContext cancelRequestWithError:[NSError errorWithDomain:@"com.google.AppRTCMobile"
-                                                                    code:-1
-                                                                userInfo:nil]];
+  [self.extensionContext
+      cancelRequestWithError:[NSError errorWithDomain:@"com.google.AppRTCMobile"
+                                                 code:-1
+                                             userInfo:nil]];
 }
 
 #pragma mark - UITextFieldDelegate

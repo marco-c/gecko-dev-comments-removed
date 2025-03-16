@@ -36,9 +36,11 @@
   
   
   
+  
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application {
+  
   
   
   
@@ -51,6 +53,7 @@
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
+  
   
   
 }
