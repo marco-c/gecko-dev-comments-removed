@@ -3695,6 +3695,10 @@ class AddonList extends HTMLElement {
     }
     frag.appendChild(this.pendingUninstallStack);
 
+    if (this.type == "mlmodel") {
+      frag.appendChild(document.createElement("mlmodel-list-intro"));
+    }
+
     
     for (let i = 0; i < sectionedAddons.length; i++) {
       this.sections[i].node = this.renderSection(sectionedAddons[i], i);
@@ -3703,10 +3707,14 @@ class AddonList extends HTMLElement {
 
     
     
-    
-    
-    let message = this.createEmptyListMessage();
-    frag.appendChild(message);
+    if (this.type != "mlmodel") {
+      
+      
+      
+      
+      let message = this.createEmptyListMessage();
+      frag.appendChild(message);
+    }
 
     
     
