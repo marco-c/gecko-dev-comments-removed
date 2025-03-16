@@ -289,7 +289,7 @@ void Sanitizer::MaybeMaterializeDefaultConfig() {
       ListSet<CanonicalName> attributes;
       while (kHTMLElementWithAttributes[++i]) {
         attributes.InsertNew(
-          CanonicalName(kHTMLElementWithAttributes[i], nullptr));
+            CanonicalName(kHTMLElementWithAttributes[i], nullptr));
       }
       i++;
       element.mAttributes = Some(std::move(attributes));
@@ -307,7 +307,7 @@ void Sanitizer::MaybeMaterializeDefaultConfig() {
       ListSet<CanonicalName> attributes;
       while (kMathMLElementWithAttributes[++i]) {
         attributes.InsertNew(
-          CanonicalName(kMathMLElementWithAttributes[i], nullptr));
+            CanonicalName(kMathMLElementWithAttributes[i], nullptr));
       }
       i++;
       element.mAttributes = Some(std::move(attributes));
@@ -742,7 +742,7 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
     
     Maybe<CanonicalName> elementName;
     if constexpr (!IsDefaultConfig) {
-     elementName.emplace(nameAtom, ToNamespace(namespaceID));
+      elementName.emplace(nameAtom, ToNamespace(namespaceID));
     }
 
     
@@ -781,6 +781,7 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
         if (elements) {
           if (auto lookup = elements->Lookup(nameAtom->AsStatic())) {
             found = true;
+            
             
             elementAttributes = lookup->get();
           }
@@ -1036,6 +1037,7 @@ void Sanitizer::SanitizeDefaultConfigAttributes(
     
     
     bool remove = false;
+    
     
     if (attrNs != kNameSpaceID_None ||
         (!sDefaultAttributes->Contains(attrLocalName) &&

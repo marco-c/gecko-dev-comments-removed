@@ -14,7 +14,7 @@ class StaticAtomSet : public nsTHashSet<const nsStaticAtom*> {
  public:
   StaticAtomSet() = default;
   explicit StaticAtomSet(uint32_t aLength)
-    : nsTHashSet<const nsStaticAtom*>(aLength) {}
+      : nsTHashSet<const nsStaticAtom*>(aLength) {}
 
   bool Contains(nsAtom* aAtom) {
     
@@ -23,6 +23,6 @@ class StaticAtomSet : public nsTHashSet<const nsStaticAtom*> {
   }
 };
 
-} 
+}  
 
-#endif 
+#endif  
