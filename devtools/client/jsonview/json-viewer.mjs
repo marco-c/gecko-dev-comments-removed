@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* eslint no-shadow: ["error", { "allow": ["dispatchEvent"] }] */
 
 import ReactDOM from "resource://devtools/client/shared/vendor/react-dom.mjs";
 import { createFactories } from "resource://devtools/client/shared/react-utils.mjs";
@@ -14,7 +14,7 @@ import { parseJsonLossless } from "resource://devtools/client/shared/components/
 
 const { MainTabbedArea } = createFactories(MainTabbedAreaClass);
 
-
+// Send readyState change notification event to the window. It's useful for tests.
 JSONView.readyState = "loading";
 window.dispatchEvent(new CustomEvent("AppReadyStateChange"));
 
@@ -29,7 +29,7 @@ const TABS = {
 let prettyURL;
 let theApp;
 
-
+// Application state object.
 const input = {
   jsonText: JSONView.json,
   jsonPretty: null,
@@ -39,10 +39,10 @@ const input = {
   expandedNodes: new Set(),
 };
 
-
-
-
-
+/**
+ * Application actions/commands. This list implements all commands
+ * available for the JSON viewer.
+ */
 input.actions = {
   onCopyJson() {
     const text = input.prettified ? input.jsonPretty : input.jsonText;
@@ -86,7 +86,7 @@ input.actions = {
 
   onPrettify() {
     if (input.json instanceof Error) {
-      
+      // Cannot prettify invalid JSON
       return;
     }
     if (input.prettified) {
@@ -101,7 +101,7 @@ input.actions = {
                 return JSON.rawJSON(value.source);
               }
 
-              
+              // By default, -0 will be stringified as `0`, so we need to handle it
               if (Object.is(value, -0)) {
                 return JSON.rawJSON("-0");
               }
@@ -129,11 +129,11 @@ input.actions = {
   },
 };
 
-
-
-
-
-
+/**
+ * Helper for copying a string to the clipboard.
+ *
+ * @param {String} string The text to be copied.
+ */
 function copyString(string) {
   document.addEventListener(
     "copy",
@@ -147,12 +147,12 @@ function copyString(string) {
   document.execCommand("copy", false, null);
 }
 
-
-
-
-
-
-
+/**
+ * Helper for dispatching an event. It's handled in chrome scope.
+ *
+ * @param {String} type Event detail type
+ * @param {Object} value Event detail value
+ */
 function dispatchEvent(type, value) {
   const data = {
     detail: {
@@ -165,14 +165,14 @@ function dispatchEvent(type, value) {
   window.dispatchEvent(contentMessageEvent);
 }
 
-
-
-
-
+/**
+ * Render the main application component. It's the main tab bar displayed
+ * at the top of the window. This component also represents ReacJS root.
+ */
 const content = document.getElementById("content");
 const promise = (async function parseJSON() {
   if (document.readyState == "loading") {
-    
+    // If the JSON has not been loaded yet, render the Raw Data tab first.
     input.json = {};
     input.activeTab = TABS.RAW_DATA;
     return new Promise(resolve => {
@@ -180,7 +180,7 @@ const promise = (async function parseJSON() {
     })
       .then(parseJSON)
       .then(async () => {
-        
+        // Now update the state and switch to the JSON tab.
         await appIsReady;
         theApp.setState({
           activeTab: TABS.JSON,
@@ -190,17 +190,17 @@ const promise = (async function parseJSON() {
       });
   }
 
-  
+  // If the JSON has been loaded, parse it immediately before loading the app.
   const jsonString = input.jsonText.textContent;
   try {
     input.json = parseJsonLossless(jsonString);
   } catch (err) {
     input.json = err;
-    
+    // Display the raw data tab for invalid json
     input.activeTab = TABS.RAW_DATA;
   }
 
-  
+  // Expand the document by default if its size isn't bigger than 100KB.
   if (
     !(input.json instanceof Error) &&
     jsonString.length <= AUTO_EXPAND_MAX_SIZE
@@ -217,13 +217,13 @@ const appIsReady = new Promise(resolve => {
     theApp = this;
     resolve();
 
-    
-    
+    // Send readyState change notification event to the window. Can be useful for
+    // tests as well as extensions.
     JSONView.readyState = "interactive";
     window.dispatchEvent(new CustomEvent("AppReadyStateChange"));
 
     promise.then(() => {
-      
+      // Another readyState change notification event.
       JSONView.readyState = "complete";
       window.dispatchEvent(new CustomEvent("AppReadyStateChange"));
     });

@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { Component } from "resource://devtools/client/shared/vendor/react.mjs";
 import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
@@ -15,10 +15,10 @@ import LiveTextClass from "resource://devtools/client/jsonview/components/LiveTe
 const { LiveText } = createFactories(LiveTextClass);
 const { div } = dom;
 
-
-
-
-
+/**
+ * This template represents the 'Raw Data' panel displaying
+ * JSON as a text received from the server.
+ */
 class TextPanel extends Component {
   static get propTypes() {
     return {

@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* eslint no-shadow: ["error", { "allow": ["Headers"] }] */
 
 import {
   createFactory,
@@ -13,11 +13,11 @@ import * as dom from "resource://devtools/client/shared/vendor/react-dom-factori
 
 const { div, span, table, tbody, tr, td } = dom;
 
-
-
-
-
-
+/**
+ * This template is responsible for rendering basic layout
+ * of the 'Headers' panel. It displays HTTP headers groups such as
+ * received or response headers.
+ */
 class Headers extends Component {
   static get propTypes() {
     return {
@@ -61,10 +61,10 @@ class Headers extends Component {
   }
 }
 
-
-
-
-
+/**
+ * This template renders headers list,
+ * name + value pairs.
+ */
 class HeaderList extends Component {
   static get propTypes() {
     return {

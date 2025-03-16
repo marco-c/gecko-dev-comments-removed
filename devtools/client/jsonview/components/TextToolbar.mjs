@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { Component } from "resource://devtools/client/shared/vendor/react.mjs";
 import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
@@ -10,10 +10,10 @@ import ToolbarClass from "resource://devtools/client/jsonview/components/reps/To
 
 const { Toolbar, ToolbarButton } = createFactories(ToolbarClass);
 
-
-
-
-
+/**
+ * This object represents a toolbar displayed within the
+ * 'Raw Data' panel.
+ */
 class TextToolbar extends Component {
   static get propTypes() {
     return {
@@ -29,7 +29,7 @@ class TextToolbar extends Component {
     this.onCopy = this.onCopy.bind(this);
   }
 
-  
+  // Commands
 
   onPrettify() {
     this.props.actions.onPrettify();

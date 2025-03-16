@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import {
   createFactory,
@@ -26,11 +26,11 @@ function isObject(value) {
   return Object(value) === value;
 }
 
-
-
-
-
-
+/**
+ * This template represents the 'JSON' panel. The panel is
+ * responsible for rendering an expandable tree that allows simple
+ * inspection of JSON structure.
+ */
 class JsonPanel extends Component {
   static get propTypes() {
     return {
@@ -67,7 +67,7 @@ class JsonPanel extends Component {
   }
 
   onKeyPress() {
-    
+    // XXX shortcut for focusing the Filter field (see Bug 1178771).
   }
 
   onFilter(object) {
@@ -82,12 +82,12 @@ class JsonPanel extends Component {
   renderValue(props) {
     const member = props.member;
 
-    
+    // Hide object summary when non-empty object is expanded (bug 1244912).
     if (isObject(member.value) && member.hasChildren && member.open) {
       return null;
     }
 
-    
+    // Render the value (summary) using Reps library.
     return Rep(
       Object.assign({}, props, {
         cropLimit: MAX_STRING_LENGTH,
@@ -98,8 +98,8 @@ class JsonPanel extends Component {
   }
 
   renderTree() {
-    
-    
+    // Append custom column for displaying values. This column
+    // Take all available horizontal space.
     const columns = [
       {
         id: "value",
@@ -107,7 +107,7 @@ class JsonPanel extends Component {
       },
     ];
 
-    
+    // Render tree component.
     return TreeView({
       object: this.props.data,
       mode: MODE.LONG,

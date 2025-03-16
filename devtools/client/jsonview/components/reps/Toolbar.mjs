@@ -1,14 +1,14 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { Component } from "resource://devtools/client/shared/vendor/react.mjs";
 import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
 import * as dom from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
-
-
-
+/**
+ * Renders a simple toolbar.
+ */
 class Toolbar extends Component {
   static get propTypes() {
     return {
@@ -21,9 +21,9 @@ class Toolbar extends Component {
   }
 }
 
-
-
-
+/**
+ * Renders a simple toolbar button.
+ */
 class ToolbarButton extends Component {
   static get propTypes() {
     return {

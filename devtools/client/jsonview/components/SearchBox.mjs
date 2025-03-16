@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { Component } from "resource://devtools/client/shared/vendor/react.mjs";
 import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
@@ -8,13 +8,13 @@ import * as dom from "resource://devtools/client/shared/vendor/react-dom-factori
 
 const { input, div, button } = dom;
 
-
+// For smooth incremental searching (in case the user is typing quickly).
 const searchDelay = 250;
 
-
-
-
-
+/**
+ * This object represents a search box located at the
+ * top right corner of the application.
+ */
 class SearchBox extends Component {
   static get propTypes() {
     return {
