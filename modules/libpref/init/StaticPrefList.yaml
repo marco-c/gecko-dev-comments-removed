@@ -5225,6 +5225,12 @@
   value: @IS_NIGHTLY_BUILD@
   mirror: always
 
+# Mimic Chrome's window.getSelection().toString() behaviour
+- name: dom.selection.mimic_chrome_tostring.enabled
+  type: bool
+  value: true
+  mirror: always
+
 # When this pref is enabled:
 #  - Shadow DOM is not pierced by default anymore
 #  - The method accepts optional CaretPositionFromPointOptions to allow piercing
@@ -15953,13 +15959,6 @@
 # Whether the migration ran to import user activation flags into the BTP user
 # activation store. Set to false to trigger a new migration.
 - name: privacy.bounceTrackingProtection.hasMigratedUserActivationData
-  type: bool
-  value: false
-  mirror: always
-
-# To be used in automated test environments to enable event telemetry
-# collection.
-- name: privacy.imageInputTelemetry.enableTestMode
   type: bool
   value: false
   mirror: always

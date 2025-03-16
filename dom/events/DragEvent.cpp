@@ -7,7 +7,6 @@
 #include "DragEvent.h"
 
 #include "mozilla/dom/MouseEventBinding.h"
-#include "mozilla/ImageInputTelemetry.h"
 #include "mozilla/MouseEvents.h"
 #include "nsContentUtils.h"
 
@@ -61,17 +60,6 @@ DataTransfer* DragEvent::GetDataTransfer() {
   if (!mEventIsInternal) {
     nsresult rv = nsContentUtils::SetDataTransferInEvent(dragEvent);
     NS_ENSURE_SUCCESS(rv, nullptr);
-  }
-
-  
-  
-  
-  if ((!mEventIsInternal ||
-       StaticPrefs::privacy_imageInputTelemetry_enableTestMode()) &&
-      !mImageInputTelemetryCollected) {
-    ImageInputTelemetry::MaybeRecordDropImageInputTelemetry(
-        dragEvent, GetParentObject()->PrincipalOrNull());
-    mImageInputTelemetryCollected = true;
   }
 
   return dragEvent->mDataTransfer;
