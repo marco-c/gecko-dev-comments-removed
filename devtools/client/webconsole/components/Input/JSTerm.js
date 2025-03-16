@@ -7,6 +7,11 @@
 const { debounce } = require("resource://devtools/shared/debounce.js");
 const isMacOS = Services.appinfo.OS === "Darwin";
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  getFocusableElements: "resource://devtools/client/shared/focus.mjs",
+});
+
 loader.lazyRequireGetter(this, "Debugger", "Debugger");
 loader.lazyRequireGetter(
   this,
@@ -34,12 +39,6 @@ loader.lazyRequireGetter(
   this,
   "Editor",
   "resource://devtools/client/shared/sourceeditor/editor.js"
-);
-loader.lazyRequireGetter(
-  this,
-  "getFocusableElements",
-  "resource://devtools/client/shared/focus.js",
-  true
 );
 loader.lazyRequireGetter(
   this,
@@ -687,9 +686,9 @@ class JSTerm extends Component {
       
       
       
-      const items = getFocusableElements(el).filter(
-        ({ offsetParent }) => offsetParent !== null
-      );
+      const items = lazy
+        .getFocusableElements(el)
+        .filter(({ offsetParent }) => offsetParent !== null);
       const inputIndex = items.indexOf(inputField);
 
       if (items.length === 0 || (inputIndex > -1 && items.length === 1)) {

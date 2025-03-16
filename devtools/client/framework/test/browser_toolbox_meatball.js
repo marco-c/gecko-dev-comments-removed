@@ -8,9 +8,11 @@
 
 
 
-const {
-  focusableSelector,
-} = require("resource://devtools/client/shared/focus.js");
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  focusableSelector: "resource://devtools/client/shared/focus.mjs",
+});
+
 const { Toolbox } = require("resource://devtools/client/framework/toolbox.js");
 
 add_task(async function () {
@@ -106,7 +108,7 @@ async function waitForMeatballMenuToClose(toolbox) {
 function checkKeyHandling(toolbox) {
   const selectable = toolbox.doc
     .getElementById("toolbox-meatball-menu")
-    .querySelectorAll(focusableSelector);
+    .querySelectorAll(lazy.focusableSelector);
 
   EventUtils.synthesizeKey("VK_DOWN", {}, toolbox.win);
   is(
