@@ -2166,6 +2166,19 @@ const LinkMenuOptions = {
       },
     }),
   }),
+  ManageSponsoredContent: () => ({
+    id: "newtab-menu-manage-sponsored-content",
+    action: actionCreators.OnlyToMain({ type: actionTypes.SETTINGS_OPEN }),
+  }),
+  OurSponsorsAndYourPrivacy: () => ({
+    id: "newtab-menu-our-sponsors-and-your-privacy",
+    action: actionCreators.OnlyToMain({
+      type: actionTypes.OPEN_LINK,
+      data: {
+        url: "https://support.mozilla.org/kb/pocket-sponsored-stories-new-tabs",
+      },
+    }),
+  }),
 };
 
 ;
@@ -2353,15 +2366,16 @@ class DSLinkMenu extends (external_React_default()).PureComponent {
       index,
       dispatch
     } = this.props;
-    let pocketMenuOptions = [];
-    let TOP_STORIES_CONTEXT_MENU_OPTIONS = ["OpenInNewWindow", "OpenInPrivateWindow"];
-    if (!this.props.isRecentSave) {
+    let TOP_STORIES_CONTEXT_MENU_OPTIONS;
+
+    
+    if (this.props.card_type === "spoc") {
+      TOP_STORIES_CONTEXT_MENU_OPTIONS = ["BlockUrl", "ManageSponsoredContent", "OurSponsorsAndYourPrivacy"];
       
+    } else {
       
-      if (this.props.pocket_button_enabled && (this.props.saveToPocketCard || this.props.isSectionsCard) && this.props.card_type !== "spoc") {
-        pocketMenuOptions = ["CheckSavedToPocket"];
-      }
-      TOP_STORIES_CONTEXT_MENU_OPTIONS = ["CheckBookmark", "CheckArchiveFromPocket", ...pocketMenuOptions, "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", ...(this.props.showPrivacyInfo ? ["ShowPrivacyInfo"] : [])];
+      const saveToPocketOptions = this.props.pocket_button_enabled ? ["CheckArchiveFromPocket", "CheckSavedToPocket"] : [];
+      TOP_STORIES_CONTEXT_MENU_OPTIONS = ["CheckBookmark", ...saveToPocketOptions, "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"];
     }
     const type = this.props.type || "DISCOVERY_STREAM";
     const title = this.props.title || this.props.source;
