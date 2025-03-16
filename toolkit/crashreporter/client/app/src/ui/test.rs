@@ -101,12 +101,53 @@ pub struct Interact {
     state: Arc<State>,
 }
 
+
+pub struct SpawnedInteract {
+    interact: Interact,
+    handle: ::std::mem::ManuallyDrop<::std::thread::JoinHandle<()>>,
+}
+
+impl Drop for SpawnedInteract {
+    fn drop(&mut self) {
+        self.interact.cancel();
+        if unsafe { ::std::mem::ManuallyDrop::take(&mut self.handle) }
+            .join()
+            .is_err()
+        {
+            if !std::thread::panicking() {
+                
+                panic!("interact thread panicked");
+            }
+        }
+    }
+}
+
 impl Interact {
     
     
     
     
-    pub fn hook() -> Self {
+    
+    
+    
+    pub fn spawn<F: FnOnce(&Self) + Send + 'static>(f: F) -> SpawnedInteract {
+        let interact = Self::hook();
+        let handle = ::std::thread::spawn(cc! { (interact) move || {
+            interact.wait_for_ready();
+            f(&interact);
+
+        }});
+        SpawnedInteract {
+            interact,
+            handle: ::std::mem::ManuallyDrop::new(handle),
+        }
+    }
+
+    
+    
+    
+    
+    fn hook() -> Interact {
         let v = Interact {
             state: Default::default(),
         };
@@ -118,7 +159,7 @@ impl Interact {
     }
 
     
-    pub fn wait_for_ready(&self) {
+    fn wait_for_ready(&self) {
         let mut guard = self.state.interface.lock().unwrap();
         while guard.is_none() && !self.state.cancel.load(Relaxed) {
             guard = self.state.waiting_for_interface.wait(guard).unwrap();
@@ -126,7 +167,7 @@ impl Interact {
     }
 
     
-    pub fn cancel(&self) {
+    fn cancel(&self) {
         let _guard = self.state.interface.lock().unwrap();
         self.state.cancel.store(true, Relaxed);
         self.state.waiting_for_interface.notify_all();

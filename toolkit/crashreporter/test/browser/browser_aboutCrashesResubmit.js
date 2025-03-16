@@ -89,6 +89,7 @@ function check_submit_pending(tab, crashes) {
     }).then(({ id, url, result }) => {
       
       delete SubmittedCrash.extra.ServerURL;
+      delete SubmittedCrash.extra.DefinitelyNotAnAnnotationKey;
 
       CrashID = id;
       CrashURL = url;
@@ -183,7 +184,8 @@ function test() {
       ServerURL:
         "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs",
       ProductName: "Test App",
-      Foo: "ABC=XYZ", 
+      TestKey: "ABC=XYZ", 
+      DefinitelyNotAnAnnotationKey: "foobar", 
     })
   );
   crashes.sort((a, b) => b.date - a.date);

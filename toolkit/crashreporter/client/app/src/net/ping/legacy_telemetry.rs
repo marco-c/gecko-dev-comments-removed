@@ -5,6 +5,7 @@
 
 
 
+use crate::logic::annotations;
 use crate::std;
 use anyhow::Context;
 use serde::Serialize;
@@ -14,10 +15,6 @@ use uuid::Uuid;
 
 const TELEMETRY_VERSION: u64 = 4;
 const PAYLOAD_VERSION: u64 = 1;
-
-
-
-include!(concat!(env!("OUT_DIR"), "/ping_annotations.rs"));
 
 
 
@@ -106,8 +103,7 @@ impl<'a> Ping<'a> {
             .map(|map| {
                 map.iter()
                     .filter_map(|(k, v)| {
-                        PING_ANNOTATIONS
-                            .contains(k)
+                        annotations::send_in_ping(k)
                             .then(|| k.as_str())
                             .zip(v.as_str())
                     })
