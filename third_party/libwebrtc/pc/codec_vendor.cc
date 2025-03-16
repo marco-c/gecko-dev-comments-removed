@@ -455,6 +455,14 @@ webrtc::RTCErrorOr<std::vector<Codec>> CodecVendor::GetNegotiatedCodecsForOffer(
       }
     }
     
+    UsedPayloadTypes
+        used_pltypes;  
+    for (auto& codec : filtered_codecs) {
+      
+      
+      used_pltypes.FindAndSetIdUsed(&codec);
+    }
+    
     for (const Codec& codec : supported_codecs) {
       std::optional<Codec> found_codec =
           FindMatchingCodec(supported_codecs, codecs, codec);
@@ -462,9 +470,9 @@ webrtc::RTCErrorOr<std::vector<Codec>> CodecVendor::GetNegotiatedCodecsForOffer(
           !FindMatchingCodec(supported_codecs, filtered_codecs, codec)) {
         
         
-        
         if (media_description_options.type == MEDIA_TYPE_VIDEO &&
             found_codec->GetResiliencyType() == Codec::ResiliencyType::kRtx) {
+          
           
           
           auto referenced_codec =
@@ -479,6 +487,8 @@ webrtc::RTCErrorOr<std::vector<Codec>> CodecVendor::GetNegotiatedCodecsForOffer(
                                   changed_referenced_codec->id);
           }
         }
+        
+        used_pltypes.FindAndSetIdUsed(&(*found_codec));
         filtered_codecs.push_back(*found_codec);
       }
     }

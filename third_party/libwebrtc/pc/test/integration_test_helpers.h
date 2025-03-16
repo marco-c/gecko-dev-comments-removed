@@ -748,6 +748,30 @@ class PeerConnectionIntegrationWrapper : public PeerConnectionObserver,
     });
   }
 
+  
+  
+  
+  
+  
+  bool SetLocalDescriptionAndSendSdpMessage(
+      std::unique_ptr<SessionDescriptionInterface> desc) {
+    auto observer = rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
+    RTC_LOG(LS_INFO) << debug_name_ << ": SetLocalDescriptionAndSendSdpMessage";
+    SdpType type = desc->GetType();
+    std::string sdp;
+    EXPECT_TRUE(desc->ToString(&sdp));
+    RTC_LOG(LS_INFO) << debug_name_ << ": local SDP contents=\n" << sdp;
+    pc()->SetLocalDescription(observer.get(), desc.release());
+    RemoveUnusedVideoRenderers();
+    
+    
+    SendSdpMessage(type, sdp);
+    EXPECT_THAT(
+        WaitUntil([&] { return observer->called(); }, ::testing::IsTrue()),
+        IsRtcOk());
+    return true;
+  }
+
  private:
   
   explicit PeerConnectionIntegrationWrapper(const std::string& debug_name)
@@ -870,29 +894,6 @@ class PeerConnectionIntegrationWrapper : public PeerConnectionObserver,
     return description;
   }
 
-  
-  
-  
-  
-  
-  bool SetLocalDescriptionAndSendSdpMessage(
-      std::unique_ptr<SessionDescriptionInterface> desc) {
-    auto observer = rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
-    RTC_LOG(LS_INFO) << debug_name_ << ": SetLocalDescriptionAndSendSdpMessage";
-    SdpType type = desc->GetType();
-    std::string sdp;
-    EXPECT_TRUE(desc->ToString(&sdp));
-    RTC_LOG(LS_INFO) << debug_name_ << ": local SDP contents=\n" << sdp;
-    pc()->SetLocalDescription(observer.get(), desc.release());
-    RemoveUnusedVideoRenderers();
-    
-    
-    SendSdpMessage(type, sdp);
-    EXPECT_THAT(
-        WaitUntil([&] { return observer->called(); }, ::testing::IsTrue()),
-        IsRtcOk());
-    return true;
-  }
 
   
   
