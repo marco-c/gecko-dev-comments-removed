@@ -13,8 +13,8 @@
 
 importScripts(
   "resource://gre/modules/workers/require.js",
-  "resource://gre/modules/reader/JSDOMParser.js",
-  "resource://gre/modules/reader/Readability.js"
+  "moz-src:///toolkit/components/reader/readability/JSDOMParser.js",
+  "moz-src:///toolkit/components/reader/readability/Readability.js"
 );
 
 var PromiseWorker = require("resource://gre/modules/workers/PromiseWorker.js");
