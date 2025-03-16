@@ -99,7 +99,6 @@ module.exports = [
   
   "devtools/client/webconsole/test/node/fixtures/stubs/*.js",
   "!devtools/client/webconsole/test/node/fixtures/stubs/index.js",
-  "devtools/client/shared/components/test/node/stubs/reps/*.js",
   "devtools/client/shared/source-map-loader/test/browser/fixtures/*.js",
 
   
