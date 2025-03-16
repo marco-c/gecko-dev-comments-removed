@@ -364,8 +364,8 @@ pub enum IndexSectionId {
 
 impl IndexSectionId {
     
-    pub fn dwo_name(self) -> &'static str {
-        let section_id = match self {
+    pub fn section_id(self) -> SectionId {
+        match self {
             IndexSectionId::DebugAbbrev => SectionId::DebugAbbrev,
             IndexSectionId::DebugInfo => SectionId::DebugInfo,
             IndexSectionId::DebugLine => SectionId::DebugLine,
@@ -376,8 +376,12 @@ impl IndexSectionId {
             IndexSectionId::DebugRngLists => SectionId::DebugRngLists,
             IndexSectionId::DebugStrOffsets => SectionId::DebugStrOffsets,
             IndexSectionId::DebugTypes => SectionId::DebugTypes,
-        };
-        section_id.dwo_name().unwrap()
+        }
+    }
+
+    
+    pub fn dwo_name(self) -> &'static str {
+        self.section_id().dwo_name().unwrap()
     }
 }
 

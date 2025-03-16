@@ -39,7 +39,7 @@ pub trait Module {
 
 
 
-impl<'a> Module for (&'a str, DebugId) {
+impl Module for (&str, DebugId) {
     fn base_address(&self) -> u64 {
         0
     }

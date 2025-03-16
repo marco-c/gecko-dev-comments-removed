@@ -26,6 +26,7 @@ pub mod relocation;
 pub mod section_table;
 pub mod subsystem;
 pub mod symbol;
+pub mod tls;
 pub mod utils;
 
 use crate::container;
@@ -72,6 +73,8 @@ pub struct PE<'a> {
     
     pub debug_data: Option<debug::DebugData<'a>>,
     
+    pub tls_data: Option<tls::TlsData<'a>>,
+    
     pub exception_data: Option<exception::ExceptionData<'a>>,
     
     pub certificates: certificate_table::CertificateDirectoryTable<'a>,
@@ -106,6 +109,7 @@ impl<'a> PE<'a> {
         let mut import_data = None;
         let mut libraries = vec![];
         let mut debug_data = None;
+        let mut tls_data = None;
         let mut exception_data = None;
         let mut certificates = Default::default();
         let mut is_64 = false;
@@ -216,6 +220,29 @@ impl<'a> PE<'a> {
                 )?);
             }
 
+            if let Some(tls_table) = optional_header.data_directories.get_tls_table() {
+                tls_data = if is_64 {
+                    tls::TlsData::parse_with_opts::<u64>(
+                        bytes,
+                        image_base,
+                        tls_table,
+                        &sections,
+                        file_alignment,
+                        opts,
+                    )?
+                } else {
+                    tls::TlsData::parse_with_opts::<u32>(
+                        bytes,
+                        image_base,
+                        &tls_table,
+                        &sections,
+                        file_alignment,
+                        opts,
+                    )?
+                };
+                debug!("tls data: {:#?}", tls_data);
+            }
+
             if header.coff_header.machine == header::COFF_MACHINE_X86_64 {
                 
                 debug!("exception data: {:#?}", exception_data);
@@ -275,6 +302,7 @@ impl<'a> PE<'a> {
             imports,
             libraries,
             debug_data,
+            tls_data,
             exception_data,
             certificates,
         })
@@ -464,6 +492,98 @@ impl<'a> ctx::TryIntoCtx<scroll::Endian> for PE<'a> {
         
 
         Ok(max_offset)
+    }
+}
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "te")]
+#[derive(Debug)]
+pub struct TE<'a> {
+    
+    pub header: header::TeHeader,
+    
+    pub sections: Vec<section_table::SectionTable>,
+    
+    pub debug_data: debug::DebugData<'a>,
+    
+    
+    pub rva_offset: usize,
+}
+
+#[cfg(feature = "te")]
+impl<'a> TE<'a> {
+    
+    pub fn parse(bytes: &'a [u8]) -> error::Result<Self> {
+        let opts = &options::ParseOptions {
+            resolve_rva: false,
+            parse_attribute_certificates: false,
+        };
+
+        let mut offset = 0;
+
+        
+        let header = header::TeHeader::parse(bytes, &mut offset)?;
+        let rva_offset = header.stripped_size as usize - core::mem::size_of::<header::TeHeader>();
+
+        
+        let sections = header.sections(bytes, &mut offset)?;
+
+        
+        let mut debug_data = debug::DebugData::default();
+        debug_data.image_debug_directory = debug::ImageDebugDirectory::parse_with_opts(
+            bytes,
+            header.debug_dir,
+            &sections,
+            0,
+            opts,
+        )?;
+        TE::fixup_debug_data(&mut debug_data, rva_offset as u32);
+        debug_data.codeview_pdb70_debug_info = debug::CodeviewPDB70DebugInfo::parse_with_opts(
+            bytes,
+            &debug_data.image_debug_directory,
+            opts,
+        )?;
+
+        Ok(TE {
+            header,
+            sections,
+            debug_data,
+            rva_offset,
+        })
+    }
+
+    
+    fn fixup_debug_data(dd: &mut debug::DebugData, rva_offset: u32) {
+        debug!(
+            "ImageDebugDirectory address of raw data fixed up from: 0x{:X} to 0x{:X}",
+            dd.image_debug_directory.address_of_raw_data,
+            dd.image_debug_directory
+                .address_of_raw_data
+                .wrapping_sub(rva_offset),
+        );
+        dd.image_debug_directory.address_of_raw_data = dd
+            .image_debug_directory
+            .address_of_raw_data
+            .wrapping_sub(rva_offset);
+
+        debug!(
+            "ImageDebugDirectory pointer to raw data fixed up from: 0x{:X} to 0x{:X}",
+            dd.image_debug_directory.pointer_to_raw_data,
+            dd.image_debug_directory
+                .pointer_to_raw_data
+                .wrapping_sub(rva_offset),
+        );
+        dd.image_debug_directory.pointer_to_raw_data = dd
+            .image_debug_directory
+            .pointer_to_raw_data
+            .wrapping_sub(rva_offset);
     }
 }
 

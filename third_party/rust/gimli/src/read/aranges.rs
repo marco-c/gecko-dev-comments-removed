@@ -1,6 +1,8 @@
 use crate::common::{DebugArangesOffset, DebugInfoOffset, Encoding, SectionId};
 use crate::endianity::Endianity;
-use crate::read::{EndianSlice, Error, Range, Reader, ReaderOffset, Result, Section};
+use crate::read::{
+    EndianSlice, Error, Range, Reader, ReaderAddress, ReaderOffset, Result, Section,
+};
 
 
 
@@ -135,7 +137,6 @@ where
     encoding: Encoding,
     length: Offset,
     debug_info_offset: DebugInfoOffset<Offset>,
-    segment_size: u8,
     entries: R,
 }
 
@@ -158,21 +159,22 @@ where
         }
 
         let debug_info_offset = rest.read_offset(format).map(DebugInfoOffset)?;
-        let address_size = rest.read_u8()?;
+        let address_size = rest.read_address_size()?;
         let segment_size = rest.read_u8()?;
+        if segment_size != 0 {
+            return Err(Error::UnsupportedSegmentSize);
+        }
 
         
         let header_length = format.initial_length_size() + 2 + format.word_size() + 1 + 1;
 
         
         
-        
         let tuple_length = address_size
             .checked_mul(2)
-            .and_then(|x| x.checked_add(segment_size))
-            .ok_or(Error::InvalidAddressRange)?;
+            .ok_or(Error::UnsupportedAddressSize(address_size))?;
         if tuple_length == 0 {
-            return Err(Error::InvalidAddressRange);
+            return Err(Error::UnsupportedAddressSize(address_size));
         }
         let padding = if header_length % tuple_length == 0 {
             0
@@ -185,14 +187,12 @@ where
             format,
             version,
             address_size,
-            
         };
         Ok(ArangeHeader {
             offset,
             encoding,
             length,
             debug_info_offset,
-            segment_size,
             entries: rest,
         })
     }
@@ -217,12 +217,6 @@ where
 
     
     #[inline]
-    pub fn segment_size(&self) -> u8 {
-        self.segment_size
-    }
-
-    
-    #[inline]
     pub fn debug_info_offset(&self) -> DebugInfoOffset<Offset> {
         self.debug_info_offset
     }
@@ -233,7 +227,6 @@ where
         ArangeEntryIter {
             input: self.entries.clone(),
             encoding: self.encoding,
-            segment_size: self.segment_size,
         }
     }
 }
@@ -246,7 +239,6 @@ where
 pub struct ArangeEntryIter<R: Reader> {
     input: R,
     encoding: Encoding,
-    segment_size: u8,
 }
 
 impl<R: Reader> ArangeEntryIter<R> {
@@ -261,7 +253,7 @@ impl<R: Reader> ArangeEntryIter<R> {
             return Ok(None);
         }
 
-        match ArangeEntry::parse(&mut self.input, self.encoding, self.segment_size) {
+        match ArangeEntry::parse(&mut self.input, self.encoding) {
             Ok(Some(entry)) => Ok(Some(entry)),
             Ok(None) => {
                 self.input.empty();
@@ -288,61 +280,40 @@ impl<R: Reader> fallible_iterator::FallibleIterator for ArangeEntryIter<R> {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ArangeEntry {
-    segment: Option<u64>,
-    address: u64,
+    range: Range,
     length: u64,
 }
 
 impl ArangeEntry {
     
-    fn parse<R: Reader>(
-        input: &mut R,
-        encoding: Encoding,
-        segment_size: u8,
-    ) -> Result<Option<Self>> {
+    fn parse<R: Reader>(input: &mut R, encoding: Encoding) -> Result<Option<Self>> {
         let address_size = encoding.address_size;
 
-        let tuple_length = R::Offset::from_u8(2 * address_size + segment_size);
+        let tuple_length = R::Offset::from_u8(2 * address_size);
         if tuple_length > input.len() {
             input.empty();
             return Ok(None);
         }
 
-        let segment = if segment_size != 0 {
-            input.read_address(segment_size)?
-        } else {
-            0
-        };
-        let address = input.read_address(address_size)?;
+        let begin = input.read_address(address_size)?;
         let length = input.read_address(address_size)?;
+        
+        let end = begin.add_sized(length, address_size)?;
+        let range = Range { begin, end };
 
-        match (segment, address, length) {
+        match (begin, length) {
             
             
             
-            (0, 0, 0) => Self::parse(input, encoding, segment_size),
-            _ => Ok(Some(ArangeEntry {
-                segment: if segment_size != 0 {
-                    Some(segment)
-                } else {
-                    None
-                },
-                address,
-                length,
-            })),
+            (0, 0) => Self::parse(input, encoding),
+            _ => Ok(Some(ArangeEntry { range, length })),
         }
     }
 
     
     #[inline]
-    pub fn segment(&self) -> Option<u64> {
-        self.segment
-    }
-
-    
-    #[inline]
     pub fn address(&self) -> u64 {
-        self.address
+        self.range.begin
     }
 
     
@@ -354,10 +325,7 @@ impl ArangeEntry {
     
     #[inline]
     pub fn range(&self) -> Range {
-        Range {
-            begin: self.address,
-            end: self.address.wrapping_add(self.length),
-        }
+        self.range
     }
 }
 
@@ -427,7 +395,7 @@ mod tests {
         #[rustfmt::skip]
         let buf = [
             
-            0x20, 0x00, 0x00, 0x00,
+            0x1c, 0x00, 0x00, 0x00,
             
             0x02, 0x00,
             
@@ -435,11 +403,10 @@ mod tests {
             
             0x08,
             
-            0x04,
+            0x00,
             
             
             0x10, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
 
             
             0x20, 0x00, 0x00, 0x00,
@@ -472,9 +439,8 @@ mod tests {
                     version: 2,
                     address_size: 8,
                 },
-                length: 0x20,
+                length: 0x1c,
                 debug_info_offset: DebugInfoOffset(0x0403_0201),
-                segment_size: 4,
                 entries: EndianSlice::new(&buf[buf.len() - 32..buf.len() - 16], LittleEndian),
             }
         );
@@ -493,7 +459,7 @@ mod tests {
             
             0xff,
             
-            0xff,
+            0x00,
             
             
             0x10, 0x00, 0x00, 0x00,
@@ -516,7 +482,7 @@ mod tests {
 
         let error = ArangeHeader::parse(rest, DebugArangesOffset(0x10))
             .expect_err("should fail to parse header");
-        assert_eq!(error, Error::InvalidAddressRange);
+        assert_eq!(error, Error::UnsupportedAddressSize(0xff));
     }
 
     #[test]
@@ -556,7 +522,7 @@ mod tests {
 
         let error = ArangeHeader::parse(rest, DebugArangesOffset(0x10))
             .expect_err("should fail to parse header");
-        assert_eq!(error, Error::InvalidAddressRange);
+        assert_eq!(error, Error::UnsupportedAddressSize(0));
     }
 
     #[test]
@@ -566,50 +532,17 @@ mod tests {
             version: 2,
             address_size: 4,
         };
-        let segment_size = 0;
         let buf = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09];
         let rest = &mut EndianSlice::new(&buf, LittleEndian);
-        let entry =
-            ArangeEntry::parse(rest, encoding, segment_size).expect("should parse entry ok");
+        let entry = ArangeEntry::parse(rest, encoding).expect("should parse entry ok");
         assert_eq!(*rest, EndianSlice::new(&buf[buf.len() - 1..], LittleEndian));
         assert_eq!(
             entry,
             Some(ArangeEntry {
-                segment: None,
-                address: 0x0403_0201,
-                length: 0x0807_0605,
-            })
-        );
-    }
-
-    #[test]
-    fn test_parse_entry_segment() {
-        let encoding = Encoding {
-            format: Format::Dwarf32,
-            version: 2,
-            address_size: 4,
-        };
-        let segment_size = 8;
-        #[rustfmt::skip]
-        let buf = [
-            
-            0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
-            
-            0x01, 0x02, 0x03, 0x04,
-            
-            0x05, 0x06, 0x07, 0x08,
-            
-            0x09
-        ];
-        let rest = &mut EndianSlice::new(&buf, LittleEndian);
-        let entry =
-            ArangeEntry::parse(rest, encoding, segment_size).expect("should parse entry ok");
-        assert_eq!(*rest, EndianSlice::new(&buf[buf.len() - 1..], LittleEndian));
-        assert_eq!(
-            entry,
-            Some(ArangeEntry {
-                segment: Some(0x1817_1615_1413_1211),
-                address: 0x0403_0201,
+                range: Range {
+                    begin: 0x0403_0201,
+                    end: 0x0403_0201 + 0x0807_0605,
+                },
                 length: 0x0807_0605,
             })
         );
@@ -622,7 +555,6 @@ mod tests {
             version: 2,
             address_size: 4,
         };
-        let segment_size = 0;
         #[rustfmt::skip]
         let buf = [
             
@@ -635,16 +567,61 @@ mod tests {
             0x09
         ];
         let rest = &mut EndianSlice::new(&buf, LittleEndian);
-        let entry =
-            ArangeEntry::parse(rest, encoding, segment_size).expect("should parse entry ok");
+        let entry = ArangeEntry::parse(rest, encoding).expect("should parse entry ok");
         assert_eq!(*rest, EndianSlice::new(&buf[buf.len() - 1..], LittleEndian));
         assert_eq!(
             entry,
             Some(ArangeEntry {
-                segment: None,
-                address: 0x0403_0201,
+                range: Range {
+                    begin: 0x0403_0201,
+                    end: 0x0403_0201 + 0x0807_0605,
+                },
                 length: 0x0807_0605,
             })
         );
+    }
+
+    #[test]
+    fn test_parse_entry_overflow_32() {
+        let encoding = Encoding {
+            format: Format::Dwarf32,
+            version: 2,
+            address_size: 4,
+        };
+        #[rustfmt::skip]
+        let buf = [
+            
+            0x01, 0x02, 0x03, 0x84,
+            
+            0x05, 0x06, 0x07, 0x88,
+            
+            0x09
+        ];
+        let rest = &mut EndianSlice::new(&buf, LittleEndian);
+        let entry = ArangeEntry::parse(rest, encoding);
+        assert_eq!(*rest, EndianSlice::new(&buf[buf.len() - 1..], LittleEndian));
+        assert_eq!(entry, Err(Error::AddressOverflow));
+    }
+
+    #[test]
+    fn test_parse_entry_overflow_64() {
+        let encoding = Encoding {
+            format: Format::Dwarf32,
+            version: 2,
+            address_size: 8,
+        };
+        #[rustfmt::skip]
+        let buf = [
+            
+            0x01, 0x02, 0x03, 0x04, 0x00, 0x00, 0x00, 0x80,
+            
+            0x05, 0x06, 0x07, 0x08, 0x00, 0x00, 0x00, 0x80,
+            
+            0x09
+        ];
+        let rest = &mut EndianSlice::new(&buf, LittleEndian);
+        let entry = ArangeEntry::parse(rest, encoding);
+        assert_eq!(*rest, EndianSlice::new(&buf[buf.len() - 1..], LittleEndian));
+        assert_eq!(entry, Err(Error::AddressOverflow));
     }
 }

@@ -275,6 +275,7 @@ pub type EndianBuf<'input, Endian> = EndianSlice<'input, Endian>;
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Error {
     
     Io,
@@ -386,6 +387,11 @@ pub enum Error {
     UnknownCallFrameInstruction(constants::DwCfa),
     
     InvalidAddressRange,
+    
+    
+    
+    
+    AddressOverflow,
     
     
     CfiInstructionInInvalidContext,
@@ -543,6 +549,7 @@ impl Error {
             Error::InvalidAddressRange => {
                 "The end of an address range must not be before the beginning."
             }
+            Error::AddressOverflow => "An address calculation overflowed.",
             Error::CfiInstructionInInvalidContext => {
                 "Encountered a call frame instruction in a context in which it is not valid."
             }

@@ -111,6 +111,10 @@ impl CpuInfo {
     
     
     
+    
+    
+    
+    
     pub fn get_field(&self, cpu_num: usize, field_name: &str) -> Option<&str> {
         self.cpus.get(cpu_num).and_then(|cpu_fields| {
             cpu_fields

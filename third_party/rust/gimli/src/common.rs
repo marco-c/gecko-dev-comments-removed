@@ -49,8 +49,6 @@ pub struct Encoding {
     pub address_size: u8,
 
     
-    
-    
     pub format: Format,
 
     

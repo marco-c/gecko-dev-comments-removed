@@ -715,7 +715,6 @@ impl<T, E> CachedAsyncResult<T, E> {
 
 
 
-
 pub struct Symbolizer {
     
     supplier: Box<dyn SymbolSupplier + Send + Sync + 'static>,
