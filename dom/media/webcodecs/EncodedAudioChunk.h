@@ -46,6 +46,8 @@ class EncodedAudioChunkData {
   UniquePtr<EncodedAudioChunkData> Clone() const;
   already_AddRefed<MediaRawData> TakeData();
 
+  nsCString ToString() const;
+
  protected:
   
   RefPtr<MediaAlignedByteBuffer> mBuffer;
