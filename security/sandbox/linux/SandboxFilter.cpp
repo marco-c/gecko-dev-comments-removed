@@ -107,6 +107,15 @@ static_assert(F_GET_SEALS == (F_LINUX_SPECIFIC_BASE + 10));
 #endif
 
 
+#ifndef MADV_GUARD_INSTALL
+#  define MADV_GUARD_INSTALL 102
+#  define MADV_GUARD_REMOVE 103
+#else
+static_assert(MADV_GUARD_INSTALL == 102);
+static_assert(MADV_GUARD_REMOVE == 103);
+#endif
+
+
 #ifndef ANDROID
 #  define DESKTOP
 #endif
@@ -1066,6 +1075,10 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         
         return If(advice == MADV_DONTNEED, Allow())
             .ElseIf(advice == MADV_FREE, Allow())
+            
+            .ElseIf(advice == MADV_GUARD_INSTALL, Allow())
+            .ElseIf(advice == MADV_GUARD_REMOVE, Allow())
+            
             .ElseIf(advice == MADV_HUGEPAGE, Allow())
             .ElseIf(advice == MADV_NOHUGEPAGE, Allow())
 #ifdef MOZ_ASAN
