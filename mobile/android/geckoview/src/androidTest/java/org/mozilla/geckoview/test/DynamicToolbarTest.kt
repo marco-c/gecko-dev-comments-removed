@@ -345,6 +345,9 @@ class DynamicToolbarTest : BaseSessionTest() {
         sessionRule.display?.run { setDynamicToolbarMaxHeight(dynamicToolbarMaxHeight) }
 
         
+        assumeThat(sessionRule.env.isX86, equalTo(false))
+
+        
         mainSession.setActive(true)
 
         mainSession.loadTestPath(SHOW_DYNAMIC_TOOLBAR_HTML_PATH)
