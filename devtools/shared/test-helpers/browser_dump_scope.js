@@ -219,6 +219,30 @@ add_task(async function testBlockNesting() {
   is(block2.outerBlock, "outerBlock", "outerBlock value is correct");
 });
 
+function uninitialized() {
+  
+  const scopes = dumpScope({ saveAsFile: false });
+  const afterCallToDumpScope = "afterCallToDumpScope";
+  return scopes;
+  
+}
+
+add_task(async function testUninitialized() {
+  const scopes = await uninitialized();
+  is(scopes.length, 2, "dumpScope returned 2 frames");
+
+  
+  const testScope1 = scopes[0];
+  assertScopeInformation(testScope1);
+
+  const block1 = testScope1.blocks[0];
+  is(
+    block1.afterCallToDumpScope,
+    "(uninitialized)",
+    "variable initialized after the call to dumpScope is marked as (uninitialized)"
+  );
+});
+
 
 
 
