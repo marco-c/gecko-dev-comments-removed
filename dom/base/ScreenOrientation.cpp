@@ -775,9 +775,29 @@ void ScreenOrientation::MaybeChanged() {
     rv = bc->SetCurrentOrientation(mType, mAngle);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetCurrentOrientation failed");
 
-    nsCOMPtr<nsIRunnable> runnable = DispatchChangeEventAndResolvePromise();
-    rv = NS_DispatchToMainThread(runnable);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "NS_DispatchToMainThread failed");
+    
+    
+    
+    
+    
+    BrowsingContext* rootBc = bc;
+    bool dispatchChangeEvent = true;
+    while (rootBc->GetParent()) {
+      rootBc = rootBc->GetParent();
+      if (Document* doc = rootBc->GetExtantDocument()) {
+        if (auto* win = nsGlobalWindowInner::Cast(doc->GetInnerWindow())) {
+          if (win->HasScreen()) {
+            
+            
+            dispatchChangeEvent = false;
+            break;
+          }
+        }
+      }
+    }
+    if (dispatchChangeEvent) {
+      DispatchChangeEventToChildren(rootBc);
+    }
   }
 }
 
@@ -794,6 +814,28 @@ void ScreenOrientation::UpdateActiveOrientationLock(
                                    "hal::LockScreenOrientation failed");
             });
   }
+}
+
+
+void ScreenOrientation::DispatchChangeEventToChildren(
+    BrowsingContext* aBrowsingContext) {
+  
+  
+  
+  aBrowsingContext->PreOrderWalk([](BrowsingContext* aContext) {
+    if (Document* doc = aContext->GetExtantDocument()) {
+      if (auto* win = nsGlobalWindowInner::Cast(doc->GetInnerWindow())) {
+        if (win->HasScreen()) {
+          ScreenOrientation* orientation = win->Screen()->Orientation();
+          nsCOMPtr<nsIRunnable> runnable =
+              orientation->DispatchChangeEventAndResolvePromise();
+          DebugOnly<nsresult> rv = NS_DispatchToMainThread(runnable);
+          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                               "NS_DispatchToMainThread failed");
+        }
+      }
+    }
+  });
 }
 
 nsCOMPtr<nsIRunnable>

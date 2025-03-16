@@ -56,6 +56,10 @@ class ScreenOrientation final : public DOMEventTargetHelper {
   static void AbortInProcessOrientationPromises(
       BrowsingContext* aBrowsingContext);
 
+  
+  
+  static void DispatchChangeEventToChildren(BrowsingContext* aBrowsingContext);
+
  private:
   virtual ~ScreenOrientation();
 
