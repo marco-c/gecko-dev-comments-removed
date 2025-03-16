@@ -135,8 +135,13 @@ async function checkFormChangeHappened(formId) {
       
       await checkFieldsAutofilled(browser, formId, MOCK_STORAGE[0]);
 
-      
+      const fieldsDetectedAfterFieldAdded =
+        getFieldDetectionCompletedPromiseResolver();
+
       addInputField(browser, formId, "address-level2");
+
+      await fieldsDetectedAfterFieldAdded;
+
       await openPopupOn(browser, `#${formId} input[name=name]`);
 
       
@@ -149,9 +154,15 @@ async function checkFormChangeHappened(formId) {
         0
       );
 
+      const fieldDetectedAfterFieldMutations =
+        getFieldDetectionCompletedPromiseResolver();
+
       
       removeInputField(browser, `#${formId} input[name=address-level2]`);
       addInputField(browser, formId, "address-level2");
+
+      await fieldDetectedAfterFieldMutations;
+
       await openPopupOn(browser, `#${formId} input[name=address-level2]`);
 
       await checkMenuEntries(
@@ -178,6 +189,11 @@ async function checkFormChangeHappened(formId) {
 add_setup(async function () {
   await setStorage(MOCK_STORAGE[0]);
   await setStorage(MOCK_STORAGE[1]);
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["extensions.formautofill.heuristics.detectDynamicFormChanges", true],
+    ],
+  });
 });
 
 add_task(async function check_change_happened_in_form() {
