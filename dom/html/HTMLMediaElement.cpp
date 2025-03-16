@@ -2807,9 +2807,20 @@ void HTMLMediaElement::SelectResource() {
     
     
     
-    GetMainThreadSerialEventTarget()->Dispatch(NewRunnableMethod<nsCString>(
-        "HTMLMediaElement::NoSupportedMediaSourceError", this,
-        &HTMLMediaElement::NoSupportedMediaSourceError, rv.Description()));
+    
+    
+    GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
+        "HTMLMediaElement::NoSupportedMediaSourceError",
+        [this, self = RefPtr{this}, loadId = GetCurrentLoadID(),
+         description = rv.Description()]() {
+          
+          
+          
+          if (GetCurrentLoadID() == loadId) {
+            
+            NoSupportedMediaSourceError(description);
+          }
+        }));
   } else {
     
     mIsLoadingFromSourceChildren = true;
