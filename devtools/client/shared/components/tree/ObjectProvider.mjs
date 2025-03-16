@@ -1,16 +1,16 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* eslint no-shadow: ["error", { "allow": ["name"] }] */
 
 import { JSON_NUMBER } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
 
-
-
-
-
-
+/**
+ * Implementation of the default data provider. A provider is state less
+ * object responsible for transformation data (usually a state) to
+ * a structure that can be directly consumed by the tree-view component.
+ */
 const ObjectProvider = {
   getChildren(object) {
     const children = [];
@@ -89,5 +89,5 @@ function ObjectProperty(name, value) {
   this.value = value;
 }
 
-
+// Exports from this module
 export { ObjectProperty, ObjectProvider };

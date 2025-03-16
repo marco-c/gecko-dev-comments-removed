@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { Component } from "resource://devtools/client/shared/vendor/react.mjs";
 import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
@@ -8,19 +8,19 @@ import * as dom from "resource://devtools/client/shared/vendor/react-dom-factori
 
 const { thead, tr, td, div } = dom;
 
-
-
-
-
+/**
+ * This component is responsible for rendering tree header.
+ * It's based on <thead> element.
+ */
 class TreeHeader extends Component {
-  
+  // See also TreeView component for detailed info about properties.
   static get propTypes() {
     return {
-      
+      // Custom tree decorator
       decorator: PropTypes.object,
-      
+      // True if the header should be visible
       header: PropTypes.bool,
-      
+      // Array with column definition
       columns: PropTypes.array,
     };
   }
@@ -46,7 +46,7 @@ class TreeHeader extends Component {
       return [];
     }
 
-    
+    // Decorator can return a simple string or array of strings.
     let classNames = decorator.getHeaderClass(colId);
     if (!classNames) {
       return [];
@@ -63,7 +63,7 @@ class TreeHeader extends Component {
     const cells = [];
     const visible = this.props.header;
 
-    
+    // Render the rest of the columns (if any)
     this.props.columns.forEach(col => {
       const cellStyle = {
         width: col.width ? col.width : "",
@@ -113,5 +113,5 @@ class TreeHeader extends Component {
   }
 }
 
-
+// Exports from this module
 export default TreeHeader;

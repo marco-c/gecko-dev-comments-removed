@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* eslint no-shadow: ["error", { "allow": ["open", "parent"] }] */
 
 import React from "resource://devtools/client/shared/vendor/react.mjs";
 import ReactDOM from "resource://devtools/client/shared/vendor/react-dom.mjs";
@@ -46,51 +46,51 @@ const defaultProps = {
   columns: [],
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This component represents a tree view with expandable/collapsible nodes.
+ * The tree is rendered using <table> element where every node is represented
+ * by <tr> element. The tree is one big table where nodes (rows) are properly
+ * indented from the left to mimic hierarchical structure of the data.
+ *
+ * The tree can have arbitrary number of columns and so, might be use
+ * as an expandable tree-table UI widget as well. By default, there is
+ * one column for node label and one for node value.
+ *
+ * The tree is maintaining its (presentation) state, which consists
+ * from list of expanded nodes and list of columns.
+ *
+ * Complete data provider interface:
+ * var TreeProvider = {
+ *   getChildren: function(object);
+ *   hasChildren: function(object);
+ *   getLabel: function(object, colId);
+ *   getLevel: function(object); // optional
+ *   getValue: function(object, colId);
+ *   getKey: function(object);
+ *   getType: function(object);
+ * }
+ *
+ * Complete tree decorator interface:
+ * var TreeDecorator = {
+ *   getRowClass: function(object);
+ *   getCellClass: function(object, colId);
+ *   getHeaderClass: function(colId);
+ *   renderValue: function(object, colId);
+ *   renderRow: function(object);
+ *   renderCell: function(object, colId);
+ *   renderLabelCell: function(object);
+ * }
+ */
 class TreeView extends Component {
-  
-  
+  // The only required property (not set by default) is the input data
+  // object that is used to populate the tree.
   static get propTypes() {
     return {
-      
+      // The input data object.
       object: PropTypes.any,
       className: PropTypes.string,
       label: PropTypes.string,
-      
+      // Data provider (see also the interface above)
       provider: PropTypes.shape({
         getChildren: PropTypes.func,
         hasChildren: PropTypes.func,
@@ -100,7 +100,7 @@ class TreeView extends Component {
         getLevel: PropTypes.func,
         getType: PropTypes.func,
       }).isRequired,
-      
+      // Tree decorator (see also the interface above)
       decorator: PropTypes.shape({
         getRowClass: PropTypes.func,
         getCellClass: PropTypes.func,
@@ -110,39 +110,39 @@ class TreeView extends Component {
         renderCell: PropTypes.func,
         renderLabelCell: PropTypes.func,
       }),
-      
+      // Custom tree row (node) renderer
       renderRow: PropTypes.func,
-      
+      // Custom cell renderer
       renderCell: PropTypes.func,
-      
+      // Custom value renderer
       renderValue: PropTypes.func,
-      
+      // Custom tree label (including a toggle button) renderer
       renderLabelCell: PropTypes.func,
-      
+      // Set of expanded nodes
       expandedNodes: PropTypes.object,
-      
+      // Selected node
       selected: PropTypes.string,
-      
+      // Select first node by default
       defaultSelectFirstNode: PropTypes.bool,
-      
+      // The currently active (keyboard) item, if any such item exists.
       active: PropTypes.string,
-      
+      // Custom filtering callback
       onFilter: PropTypes.func,
-      
+      // Custom sorting callback
       onSort: PropTypes.func,
-      
+      // Custom row click callback
       onClickRow: PropTypes.func,
-      
+      // Row context menu event handler
       onContextMenuRow: PropTypes.func,
-      
+      // Tree context menu event handler
       onContextMenuTree: PropTypes.func,
-      
+      // A header is displayed if set to true
       header: PropTypes.bool,
-      
+      // Long string is expandable by a toggle button
       expandableStrings: PropTypes.bool,
-      
+      // Length at which a string is considered long
       maxStringLength: PropTypes.number,
-      
+      // Array of columns
       columns: PropTypes.arrayOf(
         PropTypes.shape({
           id: PropTypes.string.isRequired,
@@ -161,17 +161,17 @@ class TreeView extends Component {
     return path + "/" + String(subKey).replace(/[\\/]/g, "\\$&");
   }
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Creates a set with the paths of the nodes that should be expanded by default
+   * according to the passed options.
+   * @param {Object} The root node of the tree.
+   * @param {Object} [optional] An object with the following optional parameters:
+   *   - maxLevel: nodes nested deeper than this level won't be expanded.
+   *   - maxNodes: maximum number of nodes that can be expanded. The traversal is
+         breadth-first, so expanding nodes nearer to the root will be preferred.
+         Sibling nodes will either be all expanded or none expanded.
+   * }
+   */
   static getExpandedNodes(
     rootObj,
     { maxLevel = Infinity, maxNodes = Infinity } = {}
@@ -191,7 +191,7 @@ class TreeView extends Component {
       }
       const keys = Object.keys(object);
       if (expandedNodes.size + keys.length > maxNodes) {
-        
+        // Avoid having children half expanded.
         break;
       }
       for (const key of keys) {
@@ -238,7 +238,7 @@ class TreeView extends Component {
     this.renderRows = this.renderRows.bind(this);
   }
 
-  
+  // FIXME: https://bugzilla.mozilla.org/show_bug.cgi?id=1774507
   UNSAFE_componentWillReceiveProps(nextProps) {
     const { expandedNodes, selected } = nextProps;
     const state = {
@@ -284,8 +284,8 @@ class TreeView extends Component {
       return;
     }
 
-    
-    
+    // Only select a row if there is a previous lastSelected Index
+    // This mostly happens when the treeview is loaded the first time
     if (this.state.lastSelectedIndex !== null) {
       this.selectRow(
         rows[Math.min(this.state.lastSelectedIndex, rows.length - 1)],
@@ -294,11 +294,11 @@ class TreeView extends Component {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Get rows that are currently visible. Some rows can be filtered and made
+   * invisible, in which case, when navigating around the tree we need to
+   * ignore the ones that are not reachable by the user.
+   */
   get visibleRows() {
     return this.rows.filter(row => {
       const rowEl = findDOMNode(row);
@@ -306,7 +306,7 @@ class TreeView extends Component {
     });
   }
 
-  
+  // Node expand/collapse
 
   toggle(nodePath) {
     const nodes = this.state.expandedNodes;
@@ -316,7 +316,7 @@ class TreeView extends Component {
       nodes.add(nodePath);
     }
 
-    
+    // Compute new state and update the tree.
     this.setState(
       Object.assign({}, this.state, {
         expandedNodes: nodes,
@@ -328,18 +328,18 @@ class TreeView extends Component {
     return this.state.expandedNodes.has(nodePath);
   }
 
-  
+  // Event Handlers
 
   onFocus(_event) {
     if (this.state.mouseDown) {
       return;
     }
-    
-    
+    // Set focus to the first element, if none is selected or activated
+    // This is needed because keyboard navigation won't work without an element being selected
     this.componentDidUpdate();
   }
 
-  
+  // eslint-disable-next-line complexity
   onKeyDown(event) {
     const keyEligibleForFirstLetterNavigation = event.key.length === 1;
     if (
@@ -417,8 +417,8 @@ class TreeView extends Component {
         break;
       case "Enter":
       case " ":
-        
-        
+        // On space or enter make selected row active. This means keyboard
+        // focus handling is passed on to the tree row itself.
         if (this.treeRef.current === document.activeElement) {
           event.stopPropagation();
           event.preventDefault();
@@ -446,7 +446,7 @@ class TreeView extends Component {
       }
     }
 
-    
+    // Focus should always remain on the tree container itself.
     this.treeRef.current.focus();
     event.preventDefault();
   }
@@ -455,7 +455,7 @@ class TreeView extends Component {
     const onClickRow = this.props.onClickRow;
     const row = this.visibleRows.find(r => r.props.member.path === nodePath);
 
-    
+    // Call custom click handler and bail out if it returns true.
     if (
       onClickRow &&
       onClickRow.call(this, nodePath, event, row.props.member)
@@ -555,12 +555,12 @@ class TreeView extends Component {
     return nodePath === this.state.active;
   }
 
-  
+  // Filtering & Sorting
 
-  
-
-
-
+  /**
+   * Filter out nodes that don't correspond to the current filter.
+   * @return {Boolean} true if the node should be visible otherwise false.
+   */
   onFilter(object) {
     const onFilter = this.props.onFilter;
     return onFilter ? onFilter(object) : true;
@@ -571,16 +571,16 @@ class TreeView extends Component {
     return onSort ? onSort(parent, children) : children;
   }
 
-  
+  // Members
 
-  
-
-
-
+  /**
+   * Return children node objects (so called 'members') for given
+   * parent object.
+   */
   getMembers(parent, level, path) {
-    
-    
-    
+    // Strings don't have children. Note that 'long' strings are using
+    // the expander icon (+/-) to display the entire original value,
+    // but there are no child items.
     if (typeof parent == "string") {
       return [];
     }
@@ -588,8 +588,8 @@ class TreeView extends Component {
     const { expandableStrings, provider, maxStringLength } = this.props;
     let children = provider.getChildren(parent) || [];
 
-    
-    
+    // If the return value is non-array, the children
+    // are being loaded asynchronously.
     if (!Array.isArray(children)) {
       return children;
     }
@@ -602,58 +602,58 @@ class TreeView extends Component {
       const type = provider.getType(child);
       let hasChildren = provider.hasChildren(child);
 
-      
-      
-      
+      // Value with no column specified is used for optimization.
+      // The row is re-rendered only if this value changes.
+      // Value for actual column is get when a cell is rendered.
       const value = provider.getValue(child);
 
       if (expandableStrings && isLongString(value, maxStringLength)) {
         hasChildren = true;
       }
 
-      
-      
+      // Return value is a 'member' object containing meta-data about
+      // tree node. It describes node label, value, type, etc.
       return {
-        
+        // An object associated with this node.
         object: child,
-        
+        // A label for the child node
         name: provider.getLabel(child),
-        
+        // Data type of the child node (used for CSS customization)
         type,
-        
+        // Class attribute computed from the type.
         rowClass: "treeRow-" + type,
-        
+        // Level of the child within the hierarchy (top == 0)
         level: provider.getLevel ? provider.getLevel(child, level) : level,
-        
+        // True if this node has children.
         hasChildren,
-        
+        // Value associated with this node (as provided by the data provider)
         value,
-        
+        // True if the node is expanded.
         open: this.isExpanded(nodePath),
-        
+        // Node path
         path: nodePath,
-        
+        // True if the node is hidden (used for filtering)
         hidden: !this.onFilter(child),
-        
+        // True if the node is selected with keyboard
         selected: this.isSelected(nodePath),
-        
+        // True if the node is activated with keyboard
         active: this.isActive(nodePath),
       };
     });
   }
 
-  
-
-
+  /**
+   * Render tree rows/nodes.
+   */
   renderRows(parent, level = 0, path = "") {
     let rows = [];
     const decorator = this.props.decorator;
     let renderRow = this.props.renderRow || TreeRow;
 
-    
-    
-    
-    
+    // Get children for given parent node, iterate over them and render
+    // a row for every one. Use row template (a component) from properties.
+    // If the return value is non-array, the children are being loaded
+    // asynchronously.
     const members = this.getMembers(parent, level, path);
     if (!Array.isArray(members)) {
       return members;
@@ -674,10 +674,10 @@ class TreeView extends Component {
         onContextMenu: this.onContextMenu.bind(this, member),
       });
 
-      
+      // Render single row.
       rows.push(renderRow(props));
 
-      
+      // If a child node is expanded render its rows too.
       if (member.hasChildren && member.open) {
         const childRows = this.renderRows(
           member.object,
@@ -685,9 +685,9 @@ class TreeView extends Component {
           member.path
         );
 
-        
-        
-        
+        // If children needs to be asynchronously fetched first,
+        // set 'loading' property to the parent row. Otherwise
+        // just append children rows to the array of all rows.
         if (!Array.isArray(childRows)) {
           const lastIndex = rows.length - 1;
           props.member.loading = true;
@@ -707,17 +707,17 @@ class TreeView extends Component {
     this.rows = [];
 
     const { className, onContextMenuTree } = this.props;
-    
+    // Use custom class name from props.
     if (className) {
       classNames.push(...className.split(" "));
     }
 
-    
+    // Alright, let's render all tree rows. The tree is one big <table>.
     let rows = this.renderRows(root, 0, "");
 
-    
-    
-    
+    // This happens when the view needs to do initial asynchronous
+    // fetch for the root object. The tree might provide a hook API
+    // for rendering animated spinner (just like for tree nodes).
     if (!Array.isArray(rows)) {
       rows = [];
     }
@@ -738,7 +738,7 @@ class TreeView extends Component {
         onMouseDown: () => this.setState({ mouseDown: true }),
         onMouseUp: () => this.setState({ mouseDown: false }),
         onClick: () => {
-          
+          // Focus should always remain on the tree container itself.
           this.treeRef.current.focus();
         },
         onBlur: event => {
@@ -766,12 +766,12 @@ class TreeView extends Component {
   }
 }
 
+// Helpers
 
-
-
-
-
-
+/**
+ * There should always be at least one column (the one with toggle buttons)
+ * and this function ensures that it's true.
+ */
 function ensureDefaultColumn(columns) {
   if (!columns) {
     columns = [];
@@ -782,7 +782,7 @@ function ensureDefaultColumn(columns) {
     return columns;
   }
 
-  
+  // The default column is usually the first one.
   return [{ id: "default" }, ...columns];
 }
 
@@ -790,5 +790,5 @@ function isLongString(value, maxStringLength) {
   return typeof value == "string" && value.length > maxStringLength;
 }
 
-
+// Exports from this module
 export default TreeView;

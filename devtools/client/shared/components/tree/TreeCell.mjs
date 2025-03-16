@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { Component } from "resource://devtools/client/shared/vendor/react.mjs";
 import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
@@ -8,12 +8,12 @@ import * as dom from "resource://devtools/client/shared/vendor/react-dom-factori
 
 const { input, span, td } = dom;
 
-
-
-
-
+/**
+ * This template represents a cell in TreeView row. It's rendered
+ * using <td> element (the row is <tr> and the entire tree is <table>).
+ */
 class TreeCell extends Component {
-  
+  // See TreeView component for detailed property explanation.
   static get propTypes() {
     return {
       value: PropTypes.any,
@@ -36,10 +36,10 @@ class TreeCell extends Component {
     this.updateInputEnabled = this.updateInputEnabled.bind(this);
   }
 
-  
-
-
-
+  /**
+   * Optimize cell rendering. Rerender cell content only if
+   * the value or expanded state changes.
+   */
   shouldComponentUpdate(nextProps, nextState) {
     return (
       this.props.value !== nextProps.value ||
@@ -54,7 +54,7 @@ class TreeCell extends Component {
       return [];
     }
 
-    
+    // Decorator can return a simple string or array of strings.
     let classNames = decorator.getCellClass(object, id);
     if (!classNames) {
       return [];
@@ -79,13 +79,13 @@ class TreeCell extends Component {
     let { member, id, value, decorator, renderValue, enableInput } = this.props;
     const type = member.type || "";
 
-    
+    // Compute class name list for the <td> element.
     const classNames = this.getCellClass(member.object, id) || [];
     classNames.push("treeValueCell");
     classNames.push(type + "Cell");
 
-    
-    
+    // Render value using a default render function or custom
+    // provided function from props or a decorator.
     renderValue = renderValue || defaultRenderValue;
     if (decorator?.renderValue) {
       renderValue = decorator.renderValue(member.object, id) || renderValue;
@@ -114,7 +114,7 @@ class TreeCell extends Component {
       );
     }
 
-    
+    // Render me!
     return td(
       {
         className: classNames.join(" "),
@@ -125,10 +125,10 @@ class TreeCell extends Component {
   }
 }
 
-
+// Default value rendering.
 const defaultRenderValue = props => {
   return props.object + "";
 };
 
-
+// Exports from this module
 export default TreeCell;
