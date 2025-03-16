@@ -15,7 +15,4 @@
 static_assert(sizeof(int) == sizeof(int32_t), "Expected int and int32_t to be of same size.");
 #endif
 
-
-#define getpid() 0
-
 #endif 
