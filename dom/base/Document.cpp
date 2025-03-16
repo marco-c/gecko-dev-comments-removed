@@ -2398,6 +2398,13 @@ void Document::AccumulateJSTelemetry(
   if (!timers.protectTime.IsZero()) {
     glean::javascript_pageload::protect_time.AccumulateRawDuration(
         timers.protectTime);
+    
+    
+    
+    
+    glean::glam_experiment::protect_time.AccumulateRawDuration(
+        timers.protectTime);
+    
   }
 }
 
@@ -16698,6 +16705,12 @@ void Document::ReportLCP() {
 
   mozilla::glean::perf::largest_contentful_paint.AccumulateRawDuration(
       lcpTime - timing->GetNavigationStartTimeStamp());
+  
+  
+  
+  
+  mozilla::glean::glam_experiment::largest_contentful_paint
+      .AccumulateRawDuration(lcpTime - timing->GetNavigationStartTimeStamp());
 
   if (!GetChannel()) {
     return;
