@@ -27,7 +27,7 @@ interface nsIApplicationChooser : nsISupports
 
 
 
-  void init(in mozIDOMWindowProxy parent, in ACString title);
+  void init(in mozIDOMWindowProxy parent, in AUTF8String title);
 
   
 
