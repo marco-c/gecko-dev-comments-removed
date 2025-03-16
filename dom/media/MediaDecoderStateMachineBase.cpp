@@ -171,6 +171,9 @@ void MediaDecoderStateMachineBase::DecodeError(const MediaResult& aError) {
                        aError.Description());
   
   mOnPlaybackErrorEvent.Notify(aError);
+#ifdef DEBUG
+  mHasNotifiedPlaybackError = true;
+#endif
 }
 
 RefPtr<SetCDMPromise> MediaDecoderStateMachineBase::SetCDMProxy(
