@@ -3341,6 +3341,10 @@ AccGroupInfo* LocalAccessible::GetOrCreateGroupInfo() {
 void LocalAccessible::SendCache(uint64_t aCacheDomain,
                                 CacheUpdateType aUpdateType,
                                 bool aAppendEventData) {
+  PerfStats::AutoMetricRecording<PerfStats::Metric::A11Y_SendCache>
+      autoRecording;
+  
+
   if (!IPCAccessibilityActive() || !Document()) {
     return;
   }

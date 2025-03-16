@@ -1520,6 +1520,10 @@ mozilla::Monitor& nsAccessibilityService::GetAndroidMonitor() {
 bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
   AUTO_PROFILER_MARKER_UNTYPED("nsAccessibilityService::Init", A11Y, {});
   
+  PerfStats::AutoMetricRecording<
+      PerfStats::Metric::A11Y_AccessibilityServiceInit>
+      autoRecording;
+  
 
   
   if (!DocManager::Init()) return false;
