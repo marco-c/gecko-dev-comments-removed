@@ -12258,9 +12258,11 @@ int main(int argc, char** argv) {
   SetOutputFile("JS_STDOUT", &rcStdout, &gOutFile);
   SetOutputFile("JS_STDERR", &rcStderr, &gErrFile);
 
+#ifdef MOZ_MEMORY
   
   
   moz_set_max_dirty_page_modifier(4);
+#endif
 
   OptionParser op("Usage: {progname} [options] [[script] scriptArgs*]");
   if (!InitOptionParser(op)) {
