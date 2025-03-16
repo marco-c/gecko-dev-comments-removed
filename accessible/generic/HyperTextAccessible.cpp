@@ -15,6 +15,7 @@
 #include "mozilla/a11y/Role.h"
 #include "States.h"
 #include "TextAttrs.h"
+#include "TextLeafRange.h"
 #include "TextRange.h"
 #include "TreeWalker.h"
 
@@ -544,56 +545,6 @@ already_AddRefed<EditorBase> HyperTextAccessible::GetEditor() const {
 
 
 
-nsresult HyperTextAccessible::SetSelectionRange(int32_t aStartPos,
-                                                int32_t aEndPos) {
-  
-  
-  
-  
-  
-  
-  RefPtr<EditorBase> editorBase = GetEditor();
-
-  bool isFocusable = InteractiveState() & states::FOCUSABLE;
-
-  
-  
-  
-  
-  if (isFocusable) TakeFocus();
-
-  RefPtr<dom::Selection> domSel = DOMSelection();
-  NS_ENSURE_STATE(domSel);
-
-  
-  domSel->RemoveAllRanges(IgnoreErrors());
-  SetSelectionBoundsAt(0, aStartPos, aEndPos);
-
-  
-  domSel->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION,
-                         ScrollAxis(), ScrollAxis(),
-                         ScrollFlags::ScrollOverflowHidden);
-
-  
-  
-  
-  if (isFocusable) return NS_OK;
-
-  nsFocusManager* DOMFocusManager = nsFocusManager::GetFocusManager();
-  if (DOMFocusManager) {
-    NS_ENSURE_TRUE(mDoc, NS_ERROR_FAILURE);
-    dom::Document* docNode = mDoc->DocumentNode();
-    NS_ENSURE_TRUE(docNode, NS_ERROR_FAILURE);
-    nsCOMPtr<nsPIDOMWindowOuter> window = docNode->GetWindow();
-    RefPtr<dom::Element> result;
-    DOMFocusManager->MoveFocus(
-        window, nullptr, nsIFocusManager::MOVEFOCUS_CARET,
-        nsIFocusManager::FLAG_BYMOVEFOCUS, getter_AddRefs(result));
-  }
-
-  return NS_OK;
-}
-
 int32_t HyperTextAccessible::CaretOffset() const {
   
   
@@ -892,7 +843,8 @@ void HyperTextAccessible::ReplaceText(const nsAString& aText) {
     return;
   }
 
-  SetSelectionRange(0, CharacterCount());
+  SetSelectionBoundsAt(TextLeafRange::kRemoveAllExistingSelectedRanges, 0,
+                       CharacterCount());
 
   RefPtr<EditorBase> editorBase = GetEditor();
   if (!editorBase) {
@@ -907,7 +859,8 @@ void HyperTextAccessible::InsertText(const nsAString& aText,
                                      int32_t aPosition) {
   RefPtr<EditorBase> editorBase = GetEditor();
   if (editorBase) {
-    SetSelectionRange(aPosition, aPosition);
+    SetSelectionBoundsAt(TextLeafRange::kRemoveAllExistingSelectedRanges,
+                         aPosition, aPosition);
     DebugOnly<nsresult> rv = editorBase->InsertTextAsAction(aText);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert the text");
   }
@@ -916,7 +869,8 @@ void HyperTextAccessible::InsertText(const nsAString& aText,
 void HyperTextAccessible::CopyText(int32_t aStartPos, int32_t aEndPos) {
   RefPtr<EditorBase> editorBase = GetEditor();
   if (editorBase) {
-    SetSelectionRange(aStartPos, aEndPos);
+    SetSelectionBoundsAt(TextLeafRange::kRemoveAllExistingSelectedRanges,
+                         aStartPos, aEndPos);
     editorBase->Copy();
   }
 }
@@ -924,7 +878,8 @@ void HyperTextAccessible::CopyText(int32_t aStartPos, int32_t aEndPos) {
 void HyperTextAccessible::CutText(int32_t aStartPos, int32_t aEndPos) {
   RefPtr<EditorBase> editorBase = GetEditor();
   if (editorBase) {
-    SetSelectionRange(aStartPos, aEndPos);
+    SetSelectionBoundsAt(TextLeafRange::kRemoveAllExistingSelectedRanges,
+                         aStartPos, aEndPos);
     editorBase->Cut();
   }
 }
@@ -934,7 +889,8 @@ void HyperTextAccessible::DeleteText(int32_t aStartPos, int32_t aEndPos) {
   if (!editorBase) {
     return;
   }
-  SetSelectionRange(aStartPos, aEndPos);
+  SetSelectionBoundsAt(TextLeafRange::kRemoveAllExistingSelectedRanges,
+                       aStartPos, aEndPos);
   DebugOnly<nsresult> rv =
       editorBase->DeleteSelectionAsAction(nsIEditor::eNone, nsIEditor::eStrip);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to delete text");
@@ -948,7 +904,8 @@ void HyperTextAccessible::PasteText(int32_t aPosition) {
     
     
     if (aPosition != nsIAccessibleText::TEXT_OFFSET_CARET) {
-      SetSelectionRange(aPosition, aPosition);
+      SetSelectionBoundsAt(TextLeafRange::kRemoveAllExistingSelectedRanges,
+                           aPosition, aPosition);
     }
     editorBase->PasteAsAction(nsIClipboard::kGlobalClipboard,
                               EditorBase::DispatchPasteEvent::Yes);
