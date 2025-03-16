@@ -16,7 +16,7 @@
 
 use crate::applicable_declarations::ApplicableDeclarationBlock;
 use crate::bloom::each_relevant_element_hash;
-use crate::context::{PostAnimationTasks, QuirksMode, SharedStyleContext, UpdateAnimationsTasks};
+use crate::context::{QuirksMode, SharedStyleContext, UpdateAnimationsTasks};
 use crate::data::ElementData;
 use crate::dom::{LayoutIterator, NodeInfo, OpaqueNode, TDocument, TElement, TNode, TShadowRoot};
 use crate::gecko::selector_parser::{NonTSPseudoClass, PseudoElement, SelectorImpl};
@@ -1513,30 +1513,6 @@ impl<'le> TElement for GeckoElement<'le> {
         }
         self.as_node()
             .get_bool_flag(nsINode_BooleanFlag::ElementHasAnimations)
-    }
-
-    
-    fn process_post_animation(&self, tasks: PostAnimationTasks) {
-        debug_assert!(!tasks.is_empty(), "Should be involved a task");
-
-        
-        
-        
-        
-        if tasks.intersects(PostAnimationTasks::DISPLAY_CHANGED_FROM_NONE_FOR_SMIL) {
-            debug_assert!(
-                self.implemented_pseudo_element()
-                    .map_or(true, |p| !p.is_before_or_after()),
-                "display property animation shouldn't run on pseudo elements \
-                 since it's only for SMIL"
-            );
-            unsafe {
-                self.note_explicit_hints(
-                    RestyleHint::restyle_subtree(),
-                    nsChangeHint::nsChangeHint_Empty,
-                );
-            }
-        }
     }
 
     

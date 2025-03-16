@@ -422,18 +422,6 @@ bitflags! {
     }
 }
 
-#[cfg(feature = "gecko")]
-bitflags! {
-    /// Represents which tasks are performed in a SequentialTask as a result of
-    /// animation-only restyle.
-    pub struct PostAnimationTasks: u8 {
-        /// Display property was changed from none in animation-only restyle so
-        /// that we need to resolve styles for descendants in a subsequent
-        /// normal restyle.
-        const DISPLAY_CHANGED_FROM_NONE_FOR_SMIL = 0x01;
-    }
-}
-
 
 
 
@@ -456,19 +444,6 @@ pub enum SequentialTask<E: TElement> {
         
         tasks: UpdateAnimationsTasks,
     },
-
-    
-    
-    
-    
-    
-    #[cfg(feature = "gecko")]
-    PostAnimation {
-        
-        el: SendElement<E>,
-        
-        tasks: PostAnimationTasks,
-    },
 }
 
 impl<E: TElement> SequentialTask<E> {
@@ -486,10 +461,6 @@ impl<E: TElement> SequentialTask<E> {
             } => {
                 el.update_animations(before_change_style, tasks);
             },
-            #[cfg(feature = "gecko")]
-            PostAnimation { el, tasks } => {
-                el.process_post_animation(tasks);
-            },
         }
     }
 
@@ -505,17 +476,6 @@ impl<E: TElement> SequentialTask<E> {
         UpdateAnimations {
             el: unsafe { SendElement::new(el) },
             before_change_style,
-            tasks,
-        }
-    }
-
-    
-    
-    #[cfg(feature = "gecko")]
-    pub fn process_post_animation(el: E, tasks: PostAnimationTasks) -> Self {
-        use self::SequentialTask::*;
-        PostAnimation {
-            el: unsafe { SendElement::new(el) },
             tasks,
         }
     }

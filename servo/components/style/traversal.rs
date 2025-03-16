@@ -218,17 +218,6 @@ pub trait DomTraversal<E: TElement>: Sync {
         );
 
         
-        
-        if traversal_flags.for_animation_only() {
-            return data.map_or(false, |d| d.has_styles()) &&
-                (el.has_animation_only_dirty_descendants() ||
-                    data.as_ref()
-                        .unwrap()
-                        .hint
-                        .has_animation_hint_or_recascade());
-        }
-
-        
         if is_servo_nonincremental_layout() {
             return true;
         }
@@ -238,6 +227,13 @@ pub trait DomTraversal<E: TElement>: Sync {
             Some(d) if d.has_styles() => d,
             _ => return true,
         };
+
+        if traversal_flags.for_animation_only() {
+            
+            
+            return el.has_animation_only_dirty_descendants() ||
+                   data.hint.has_animation_hint_or_recascade();
+        }
 
         
         
@@ -577,9 +573,8 @@ where
     let new_styles = match kind {
         MatchAndCascade => {
             debug_assert!(
-                !context.shared.traversal_flags.for_animation_only(),
-                "MatchAndCascade shouldn't be processed during \
-                 animation-only traversal"
+                !context.shared.traversal_flags.for_animation_only() || !data.has_styles(),
+                "MatchAndCascade shouldn't normally be processed during animation-only traversal"
             );
             
             context

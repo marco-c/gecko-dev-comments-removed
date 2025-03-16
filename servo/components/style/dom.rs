@@ -10,7 +10,7 @@
 use crate::applicable_declarations::ApplicableDeclarationBlock;
 use crate::context::SharedStyleContext;
 #[cfg(feature = "gecko")]
-use crate::context::{PostAnimationTasks, UpdateAnimationsTasks};
+use crate::context::UpdateAnimationsTasks;
 use crate::data::ElementData;
 use crate::media_queries::Device;
 use crate::properties::{AnimationDeclarations, ComputedValues, PropertyDeclarationBlock};
@@ -720,10 +720,6 @@ pub trait TElement:
         before_change_style: Option<Arc<ComputedValues>>,
         tasks: UpdateAnimationsTasks,
     );
-
-    
-    #[cfg(feature = "gecko")]
-    fn process_post_animation(&self, tasks: PostAnimationTasks);
 
     
     

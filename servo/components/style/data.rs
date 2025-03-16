@@ -375,14 +375,14 @@ impl ElementData {
     
     
     pub fn restyle_kind(&self, shared_context: &SharedStyleContext) -> Option<RestyleKind> {
-        if shared_context.traversal_flags.for_animation_only() {
-            return self.restyle_kind_for_animation(shared_context);
-        }
-
         let style = match self.styles.primary {
             Some(ref s) => s,
             None => return Some(RestyleKind::MatchAndCascade),
         };
+
+        if shared_context.traversal_flags.for_animation_only() {
+            return self.restyle_kind_for_animation(shared_context);
+        }
 
         let hint = self.hint;
         if hint.is_empty() {
@@ -423,10 +423,7 @@ impl ElementData {
         shared_context: &SharedStyleContext,
     ) -> Option<RestyleKind> {
         debug_assert!(shared_context.traversal_flags.for_animation_only());
-        debug_assert!(
-            self.has_styles(),
-            "animation traversal doesn't care about unstyled elements"
-        );
+        debug_assert!(self.has_styles());
 
         
         
@@ -442,7 +439,6 @@ impl ElementData {
         }
 
         let style = self.styles.primary();
-        
         
         
         if hint.has_animation_hint() {
