@@ -219,7 +219,7 @@ class Editor extends PureComponent {
   };
 
   setupEditor() {
-    const editor = getEditor(features.codemirrorNext);
+    const editor = getEditor();
 
     
     editor._initShortcuts = () => {};

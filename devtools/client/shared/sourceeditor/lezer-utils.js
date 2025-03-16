@@ -6,6 +6,7 @@
 
 
 const nodeTypes = {
+  AssignmentExpression: "AssignmentExpression",
   FunctionExpression: "FunctionExpression",
   FunctionDeclaration: "FunctionDeclaration",
   ArrowFunction: "ArrowFunction",
@@ -13,7 +14,9 @@ const nodeTypes = {
   Property: "Property",
   PropertyDeclaration: "PropertyDeclaration",
   PropertyDefinition: "PropertyDefinition",
+  PrivatePropertyDefinition: "PrivatePropertyDefinition",
   MemberExpression: "MemberExpression",
+  VariableDeclaration: "VariableDeclaration",
   VariableDefinition: "VariableDefinition",
   VariableName: "VariableName",
   this: "this",
@@ -21,15 +24,18 @@ const nodeTypes = {
   Equals: "Equals",
   ParamList: "ParamList",
   Spread: "Spread",
+  Number: "Number",
 };
 
+const functionsSet = new Set([
+  nodeTypes.FunctionExpression,
+  nodeTypes.FunctionDeclaration,
+  nodeTypes.ArrowFunction,
+  nodeTypes.MethodDeclaration,
+]);
+
 const nodeTypeSets = {
-  functions: new Set([
-    nodeTypes.FunctionExpression,
-    nodeTypes.FunctionDeclaration,
-    nodeTypes.ArrowFunction,
-    nodeTypes.MethodDeclaration,
-  ]),
+  functions: functionsSet,
   expressions: new Set([
     nodeTypes.MemberExpression,
     nodeTypes.VariableDefinition,
@@ -37,7 +43,245 @@ const nodeTypeSets = {
     nodeTypes.this,
     nodeTypes.PropertyName,
   ]),
+  functionExpressions: new Set([
+    nodeTypes.ArrowFunction,
+    nodeTypes.FunctionExpression,
+    nodeTypes.ParamList,
+  ]),
+  declarations: new Set([
+    nodeTypes.MethodDeclaration,
+    nodeTypes.PropertyDeclaration,
+  ]),
+  functionsDeclAndExpr: new Set([
+    ...functionsSet,
+    nodeTypes.Property,
+    nodeTypes.PropertyDeclaration,
+    nodeTypes.VariableDeclaration,
+    nodeTypes.AssignmentExpression,
+  ]),
+  paramList: new Set([nodeTypes.ParamList]),
+  variableDefinition: new Set([nodeTypes.VariableDefinition]),
+  numberAndProperty: new Set([nodeTypes.PropertyDefinition, nodeTypes.Number]),
+  memberExpression: new Set([nodeTypes.MemberExpression]),
 };
+
+
+
+
+
+
+
+
+function hasChildNodeOfType(node, types) {
+  let childNode = node.firstChild;
+  while (childNode !== null) {
+    if (types.has(childNode.name)) {
+      return true;
+    }
+    childNode = childNode.nextSibling;
+  }
+  return false;
+}
+
+
+
+
+
+
+
+
+function findChildNodeOfType(node, types) {
+  let childNode = node.firstChild;
+  while (childNode !== null) {
+    if (types.has(childNode.name)) {
+      return childNode;
+    }
+    childNode = childNode.nextSibling;
+  }
+  return null;
+}
+
+
+
+
+
+
+
+
+
+function getFunctionName(doc, node) {
+  
+
+
+
+
+
+
+  if (
+    node.name == nodeTypes.MethodDeclaration ||
+    (node.name == nodeTypes.PropertyDeclaration &&
+      hasChildNodeOfType(node, nodeTypeSets.functionExpressions))
+  ) {
+    const propDefNode = findChildNodeOfType(
+      node,
+      new Set([
+        nodeTypes.PropertyDefinition,
+        nodeTypes.PrivatePropertyDefinition,
+      ])
+    );
+
+    if (!propDefNode) {
+      return null;
+    }
+    return doc.sliceString(propDefNode.from, propDefNode.to);
+  } else if (
+    
+
+
+
+
+    node.name == nodeTypes.VariableDeclaration &&
+    hasChildNodeOfType(node, nodeTypeSets.functionExpressions)
+  ) {
+    const varDefNode = findChildNodeOfType(
+      node,
+      nodeTypeSets.variableDefinition
+    );
+
+    if (!varDefNode) {
+      return null;
+    }
+    return doc.sliceString(varDefNode.from, varDefNode.to);
+  } else if (
+    
+
+
+
+
+    node.name == nodeTypes.FunctionDeclaration ||
+    node.name == nodeTypes.FunctionExpression
+  ) {
+    const varDefNode = findChildNodeOfType(
+      node,
+      nodeTypeSets.variableDefinition
+    );
+
+    if (!varDefNode) {
+      return null;
+    }
+    return doc.sliceString(varDefNode.from, varDefNode.to);
+  } else if (
+    
+
+
+
+
+
+
+    node.name == nodeTypes.Property &&
+    hasChildNodeOfType(node, nodeTypeSets.functionExpressions)
+  ) {
+    const propDefNode = findChildNodeOfType(
+      node,
+      nodeTypeSets.numberAndProperty
+    );
+
+    if (!propDefNode) {
+      return null;
+    }
+    return doc.sliceString(propDefNode.from, propDefNode.to);
+  } else if (
+    
+
+
+
+
+    node.name == nodeTypes.AssignmentExpression &&
+    hasChildNodeOfType(node, nodeTypeSets.functionExpressions)
+  ) {
+    const memExprDefNode = findChildNodeOfType(
+      node,
+      nodeTypeSets.memberExpression
+    );
+
+    if (!memExprDefNode) {
+      return null;
+    }
+    
+    const exprParts = doc
+      .sliceString(memExprDefNode.from, memExprDefNode.to)
+      .split(".");
+    return exprParts.at(-1);
+  }
+
+  return null;
+}
+
+
+
+
+
+
+
+
+function getFunctionParameterNames(doc, node) {
+  
+
+  let exprNode = node;
+
+  if (
+    
+    node.name == nodeTypes.AssignmentExpression ||
+    
+    node.name == nodeTypes.VariableDeclaration ||
+    
+    node.name == nodeTypes.PropertyDeclaration ||
+    
+    (node.name == nodeTypes.Property &&
+      !hasChildNodeOfType(node, nodeTypeSets.paramList))
+  ) {
+    exprNode = findChildNodeOfType(node, nodeTypeSets.functionExpressions);
+  }
+
+  
+
+
+
+
+  const paramListNode = findChildNodeOfType(exprNode, nodeTypeSets.paramList);
+  if (paramListNode == null) {
+    return [];
+  }
+
+  const names = [];
+  let currNode = paramListNode.firstChild; 
+  
+  while (currNode !== null && currNode.name !== ")") {
+    if (currNode.name == nodeTypes.VariableDefinition) {
+      
+      if (currNode.prevSibling?.name !== nodeTypes.Spread) {
+        names.push(doc.sliceString(currNode.from, currNode.to));
+      }
+    }
+    currNode = currNode.nextSibling;
+  }
+  return names;
+}
+
+function getFunctionClass(doc, node) {
+  
+
+
+
+
+  if (!nodeTypeSets.declarations.has(node.name)) {
+    return null;
+  }
+  return doc.sliceString(
+    node.parent.prevSibling.from,
+    node.parent.prevSibling.to
+  );
+}
 
 
 
@@ -71,6 +315,9 @@ async function walkTree(view, language, options) {
 }
 
 module.exports = {
+  getFunctionName,
+  getFunctionParameterNames,
+  getFunctionClass,
   nodeTypes,
   nodeTypeSets,
   walkTree,

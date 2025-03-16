@@ -39,7 +39,7 @@ add_task(async function () {
     
     55,
     
-    62,
+    78,
   ];
 
   await waitForCursorPosition(dbg, linesWithResults[0]);

@@ -18,7 +18,7 @@ add_task(async function () {
   
   
   
-  await addBreakpointViaGutter(dbg, 61);
+  await addBreakpointViaGutter(dbg, 64);
   await addBreakpointViaGutter(dbg, 56);
 
   await selectSource(dbg, "long.js");
@@ -35,7 +35,7 @@ add_task(async function () {
 
   const source = findSource(dbg, "simple1.js");
 
-  await assertPausedAtSourceAndLine(dbg, source.id, 61);
+  await assertPausedAtSourceAndLine(dbg, source.id, 64);
 
   info("The breakpoint for long.js does not exist yet");
   await waitForState(dbg, () => dbg.selectors.getBreakpointCount() == 2);
@@ -44,7 +44,7 @@ add_task(async function () {
   
   
   await assertBreakpoint(dbg, 56);
-  await assertBreakpoint(dbg, 61);
+  await assertBreakpoint(dbg, 64);
 
   await resume(dbg);
   await waitForPaused(dbg);
@@ -66,7 +66,7 @@ add_task(async function () {
   
   
   await removeBreakpoint(dbg, source.id, 56);
-  await removeBreakpoint(dbg, source.id, 61);
+  await removeBreakpoint(dbg, source.id, 64);
   await removeBreakpoint(dbg, source2.id, 1);
 
   await dbg.toolbox.closeToolbox();
