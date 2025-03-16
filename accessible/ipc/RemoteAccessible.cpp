@@ -1209,20 +1209,36 @@ Relation RemoteAccessible::RelationByType(RelationType aType) const {
   
   
   
-  if (aType == RelationType::LABELLED_BY && TagName() == nsGkAtoms::figure) {
+  auto AddChildWithTag = [this, &rel](nsAtom* aTarget) {
     uint32_t count = ChildCount();
     for (uint32_t c = 0; c < count; ++c) {
       RemoteAccessible* child = RemoteChildAt(c);
       MOZ_ASSERT(child);
-      if (child->TagName() == nsGkAtoms::figcaption) {
+      if (child->TagName() == aTarget) {
         rel.AppendTarget(child);
       }
     }
-  } else if (aType == RelationType::LABEL_FOR &&
-             TagName() == nsGkAtoms::figcaption) {
-    if (RemoteAccessible* parent = RemoteParent()) {
-      if (parent->TagName() == nsGkAtoms::figure) {
-        rel.AppendTarget(parent);
+  };
+  if (aType == RelationType::LABELLED_BY) {
+    auto tag = TagName();
+    if (tag == nsGkAtoms::figure) {
+      AddChildWithTag(nsGkAtoms::figcaption);
+    } else if (tag == nsGkAtoms::fieldset) {
+      AddChildWithTag(nsGkAtoms::legend);
+    }
+  } else if (aType == RelationType::LABEL_FOR) {
+    auto tag = TagName();
+    if (tag == nsGkAtoms::figcaption) {
+      if (RemoteAccessible* parent = RemoteParent()) {
+        if (parent->TagName() == nsGkAtoms::figure) {
+          rel.AppendTarget(parent);
+        }
+      }
+    } else if (tag == nsGkAtoms::legend) {
+      if (RemoteAccessible* parent = RemoteParent()) {
+        if (parent->TagName() == nsGkAtoms::fieldset) {
+          rel.AppendTarget(parent);
+        }
       }
     }
   }
