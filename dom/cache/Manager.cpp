@@ -150,10 +150,12 @@ class SetupAction final : public SyncDBAction {
               }));
 
       
-      QM_TRY_INSPECT(const auto& knownBodyIdList, db::GetKnownBodyIds(*aConn));
+      QM_TRY_UNWRAP(auto knownBodyIds, db::GetKnownBodyIds(*aConn));
 
-      QM_TRY(MOZ_TO_RESULT(BodyDeleteOrphanedFiles(aDirectoryMetadata, *aDBDir,
-                                                   knownBodyIdList)));
+      
+      
+      QM_TRY(MOZ_TO_RESULT(
+          BodyDeleteOrphanedFiles(aDirectoryMetadata, *aDBDir, knownBodyIds)));
 
       
       

@@ -376,7 +376,7 @@ nsresult DirectoryPaddingWrite(nsIFile& aBaseDir,
 
 nsresult BodyDeleteOrphanedFiles(
     const CacheDirectoryMetadata& aDirectoryMetadata, nsIFile& aBaseDir,
-    const nsTArray<nsID>& aKnownBodyIdList) {
+    nsTHashSet<nsID>& aKnownBodyIds) {
   
   
   
@@ -388,14 +388,14 @@ nsresult BodyDeleteOrphanedFiles(
   
   QM_TRY(quota::CollectEachFile(
       *dir,
-      [&aDirectoryMetadata, &aKnownBodyIdList](
+      [&aDirectoryMetadata, &aKnownBodyIds](
           const nsCOMPtr<nsIFile>& subdir) -> Result<Ok, nsresult> {
         QM_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*subdir));
 
         switch (dirEntryKind) {
           case nsIFileKind::ExistsAsDirectory: {
             const auto removeOrphanedFiles =
-                [&aDirectoryMetadata, &aKnownBodyIdList](
+                [&aDirectoryMetadata, &aKnownBodyIds](
                     nsIFile& bodyFile,
                     const nsACString& leafName) -> Result<bool, nsresult> {
               
@@ -409,7 +409,7 @@ nsresult BodyDeleteOrphanedFiles(
               nsID id;
               QM_TRY(OkIf(id.Parse(leafName.BeginReading())), true);
 
-              if (!aKnownBodyIdList.Contains(id)) {
+              if (!aKnownBodyIds.Contains(id)) {
                 return true;
               }
 
