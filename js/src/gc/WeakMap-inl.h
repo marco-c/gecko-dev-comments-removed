@@ -134,6 +134,13 @@ WeakMap<K, V>::WeakMap(JS::Zone* zone, JSObject* memOf)
   }
 }
 
+template <class K, class V>
+WeakMap<K, V>::~WeakMap() {
+  
+  MOZ_ASSERT_IF(!empty(),
+                CurrentThreadIsGCSweeping() || CurrentThreadIsGCFinalizing());
+}
+
 
 
 
