@@ -377,14 +377,7 @@ async function testCopyPaste(isXHTML) {
     await copySelectionToClipboard(true);
     testPasteHTML(
       "contentEditable3",
-      
-      
-      
-      SpecialPowers.getBoolPref(
-        "editor.white_space_normalization.blink_compatible"
-      )
-        ? '<ul id="ul3"><li><br></li></ul>Copy3then Paste'
-        : '<ul id="ul3"><li>\n<br></li></ul>Copy3then Paste'
+      '<ul id="ul3"><li>\n<br></li></ul>Copy3then Paste' 
     );
 
     

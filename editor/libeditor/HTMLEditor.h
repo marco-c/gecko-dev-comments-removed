@@ -844,27 +844,6 @@ class HTMLEditor final : public EditorBase,
                              uint32_t aLength,
                              const nsAString& aStringToInsert);
 
-  struct NormalizedStringToInsertText;
-
-  
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<InsertTextResult, nsresult>
-  InsertOrReplaceTextWithTransaction(const EditorDOMPoint& aPointToInsert,
-                                     const NormalizedStringToInsertText& aData);
-
-  struct ReplaceWhiteSpacesData;
-
-  
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<InsertTextResult, nsresult>
-  ReplaceTextWithTransaction(dom::Text& aTextNode,
-                             const ReplaceWhiteSpacesData& aData);
-
   
 
 
@@ -2225,50 +2204,6 @@ class HTMLEditor final : public EditorBase,
       TreatEmptyTextNodes aTreatEmptyTextNodes,
       DeleteDirection aDeleteDirection, const Element& aEditingHost);
 
-  enum class NormalizeSurroundingWhiteSpaces : bool { No, Yes };
-  friend constexpr bool operator!(NormalizeSurroundingWhiteSpaces aValue) {
-    return !static_cast<bool>(aValue);
-  }
-
-  
-
-
-
-
-
-  NormalizedStringToInsertText NormalizeWhiteSpacesToInsertText(
-      const EditorDOMPoint& aPointToInsert, const nsAString& aStringToInsert,
-      NormalizeSurroundingWhiteSpaces aNormalizeSurroundingWhiteSpaces) const;
-
-  
-
-
-
-
-  ReplaceWhiteSpacesData GetNormalizedStringAt(
-      const EditorDOMPointInText& aPoint) const;
-
-  
-
-
-
-  ReplaceWhiteSpacesData GetFollowingNormalizedStringToSplitAt(
-      const EditorDOMPointInText& aPointToSplit) const;
-
-  
-
-
-
-  ReplaceWhiteSpacesData GetPrecedingNormalizedStringToSplitAt(
-      const EditorDOMPointInText& aPointToSplit) const;
-
-  
-
-
-
-  ReplaceWhiteSpacesData GetSurroundingNormalizedStringToDelete(
-      const Text& aTextNode, uint32_t aOffset, uint32_t aLength) const;
-
   
 
 
@@ -2292,8 +2227,8 @@ class HTMLEditor final : public EditorBase,
 
   void ExtendRangeToDeleteWithNormalizingWhiteSpaces(
       EditorDOMPointInText& aStartToDelete, EditorDOMPointInText& aEndToDelete,
-      nsString& aNormalizedWhiteSpacesInStartNode,
-      nsString& aNormalizedWhiteSpacesInEndNode) const;
+      nsAString& aNormalizedWhiteSpacesInStartNode,
+      nsAString& aNormalizedWhiteSpacesInEndNode) const;
 
   
 
@@ -2330,16 +2265,20 @@ class HTMLEditor final : public EditorBase,
 
   class MOZ_STACK_CLASS CharPointData final {
    public:
-    CharPointData() = delete;
-
     static CharPointData InDifferentTextNode(CharPointType aCharPointType) {
-      return {aCharPointType, true};
+      CharPointData result;
+      result.mIsInDifferentTextNode = true;
+      result.mType = aCharPointType;
+      return result;
     }
     static CharPointData InSameTextNode(CharPointType aCharPointType) {
+      CharPointData result;
       
       
       
-      return {aCharPointType, aCharPointType == CharPointType::TextEnd};
+      result.mIsInDifferentTextNode = aCharPointType == CharPointType::TextEnd;
+      result.mType = aCharPointType;
+      return result;
     }
 
     bool AcrossTextNodeBoundary() const { return mIsInDifferentTextNode; }
@@ -2350,8 +2289,7 @@ class HTMLEditor final : public EditorBase,
     CharPointType Type() const { return mType; }
 
    private:
-    CharPointData(CharPointType aType, bool aIsInDifferentTextNode)
-        : mType(aType), mIsInDifferentTextNode(aIsInDifferentTextNode) {}
+    CharPointData() = default;
 
     CharPointType mType;
     bool mIsInDifferentTextNode;
@@ -2367,18 +2305,6 @@ class HTMLEditor final : public EditorBase,
       const EditorDOMPointInText& aPoint) const;
   CharPointData GetInclusiveNextCharPointDataForNormalizingWhiteSpaces(
       const EditorDOMPointInText& aPoint) const;
-
-  enum class Linefeed : bool { Collapsible, Preformatted };
-
-  
-
-
-
-
-
-  static void NormalizeAllWhiteSpaceSequences(
-      nsString& aResult, const CharPointData& aPreviousCharPointData,
-      const CharPointData& aNextCharPointData, Linefeed aLinefeed);
 
   
 
@@ -2401,16 +2327,7 @@ class HTMLEditor final : public EditorBase,
 
 
   static void GenerateWhiteSpaceSequence(
-      nsString& aResult, uint32_t aLength,
-      const CharPointData& aPreviousCharPointData,
-      const CharPointData& aNextCharPointData);
-
-  
-
-
-
-  static void ReplaceStringWithNormalizedWhiteSpaceSequence(
-      nsString& aResult, uint32_t aOffset, uint32_t aLength,
+      nsAString& aResult, uint32_t aLength,
       const CharPointData& aPreviousCharPointData,
       const CharPointData& aNextCharPointData);
 
@@ -3636,13 +3553,6 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   MaybeCollapseSelectionAtFirstEditableNode(
       bool aIgnoreIfSelectionInEditingHost) const;
-
-  
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<JoinNodesResult, nsresult>
-  JoinTextNodesWithNormalizeWhiteSpaces(Text& aLeftText, Text& aRightText);
 
   class BlobReader final {
     using AutoEditActionDataSetter = EditorBase::AutoEditActionDataSetter;

@@ -1775,7 +1775,6 @@ class EditorBase : public nsIEditor,
 
 
   enum class InsertTextTo {
-    SpecifiedPoint,
     ExistingTextNodeIfAvailable,
     ExistingTextNodeIfAvailableAndNotStart,
     AlwaysCreateNewTextNode
@@ -1784,12 +1783,6 @@ class EditorBase : public nsIEditor,
   InsertTextWithTransaction(const nsAString& aStringToInsert,
                             const EditorDOMPoint& aPointToInsert,
                             InsertTextTo aInsertTextTo);
-
-  
-
-
-  [[nodiscard]] EditorDOMPoint ComputePointToInsertText(
-      const EditorDOMPoint& aPoint, InsertTextTo aInsertTextTo) const;
 
   
 
@@ -3062,10 +3055,8 @@ class EditorBase : public nsIEditor,
                                         
                                         
   friend class SplitNodeTransaction;    
-  friend class
-      WhiteSpaceVisibilityKeeper;  
-                                   
-  friend class nsIEditor;          
+  friend class WhiteSpaceVisibilityKeeper;  
+  friend class nsIEditor;                   
 };
 
 }  

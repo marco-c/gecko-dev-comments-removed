@@ -35,7 +35,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/StaticPrefs_editor.h"
 #include "mozilla/TextComposition.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
@@ -180,9 +179,6 @@ nsresult HTMLEditor::InitEditorContentAndSelection() {
     return NS_OK;
   }
 
-  
-  
-  
   rv = InsertBRElementToEmptyListItemsAndTableCellsInRange(
       RawRangeBoundary(bodyOrDocumentElement, 0u),
       RawRangeBoundary(bodyOrDocumentElement,
@@ -556,49 +552,45 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
 
     
     
-    const bool needToNormalizeWhiteSpaces = [&]() {
-      switch (GetTopLevelEditSubAction()) {
-        case EditSubAction::eDeleteSelectedContent:
-          if (TopLevelEditSubActionDataRef().mDidNormalizeWhitespaces) {
-            return false;
-          }
-          [[fallthrough]];
-        case EditSubAction::eInsertText:
-        case EditSubAction::eInsertTextComingFromIME:
-        case EditSubAction::eInsertLineBreak:
-        case EditSubAction::eInsertParagraphSeparator:
-        case EditSubAction::ePasteHTMLContent:
-        case EditSubAction::eInsertHTMLSource:
-          return !StaticPrefs::
-              editor_white_space_normalization_blink_compatible();
-        default:
-          return false;
-      }
-    }();
-    if (needToNormalizeWhiteSpaces) {
-      
-      
-      
-      
-      
-      AutoSelectionRestorer restoreSelection(this);
-      
-      
-      
-      
-      
-      
-      
-      auto pointToAdjust = GetLastIMESelectionEndPoint<EditorDOMPoint>();
-      if (!pointToAdjust.IsInContentNode()) {
-        
-        pointToAdjust = GetFirstSelectionStartPoint<EditorDOMPoint>();
-        if (NS_WARN_IF(!pointToAdjust.IsInContentNode())) {
-          return NS_ERROR_FAILURE;
+    switch (GetTopLevelEditSubAction()) {
+      case EditSubAction::eDeleteSelectedContent:
+        if (TopLevelEditSubActionDataRef().mDidNormalizeWhitespaces) {
+          break;
         }
-      }
-      if (const RefPtr<Element> editingHost =
-              ComputeEditingHost(LimitInBodyElement::No)) {
+        [[fallthrough]];
+      case EditSubAction::eInsertText:
+      case EditSubAction::eInsertTextComingFromIME:
+      case EditSubAction::eInsertLineBreak:
+      case EditSubAction::eInsertParagraphSeparator:
+      case EditSubAction::ePasteHTMLContent:
+      case EditSubAction::eInsertHTMLSource: {
+        
+        
+        
+        
+        
+        
+        AutoSelectionRestorer restoreSelection(this);
+        
+        
+        
+        
+        
+        
+        
+        auto pointToAdjust = GetLastIMESelectionEndPoint<EditorDOMPoint>();
+        if (!pointToAdjust.IsInContentNode()) {
+          
+          pointToAdjust = GetFirstSelectionStartPoint<EditorDOMPoint>();
+          if (NS_WARN_IF(!pointToAdjust.IsInContentNode())) {
+            return NS_ERROR_FAILURE;
+          }
+        }
+        const RefPtr<Element> editingHost =
+            ComputeEditingHost(LimitInBodyElement::No);
+        if (MOZ_UNLIKELY(!editingHost)) {
+          break;
+        }
         if (EditorUtils::IsEditableContent(
                 *pointToAdjust.ContainerAs<nsIContent>(), EditorType::HTML)) {
           AutoTrackDOMPoint trackPointToAdjust(RangeUpdaterRef(),
@@ -662,7 +654,10 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
               "WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt() "
               "failed, but ignored");
         }
+        break;
       }
+      default:
+        break;
     }
 
     
@@ -1197,7 +1192,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
         NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
         return insertEmptyTextResultOrError.propagateErr();
       }
-      InsertTextResult insertEmptyTextResult =
+      const InsertTextResult insertEmptyTextResult =
           insertEmptyTextResultOrError.unwrap();
       nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
           insertEmptyTextResult.EndOfInsertedTextRef());
@@ -1205,26 +1200,6 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
         NS_WARNING(
             "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
         return Err(rv);
-      }
-      const EditorDOMPoint& endOfInsertedText =
-          insertEmptyTextResult.EndOfInsertedTextRef();
-      if (StaticPrefs::editor_white_space_normalization_blink_compatible() &&
-          endOfInsertedText.IsInTextNode() &&
-          !endOfInsertedText.IsStartOfContainer()) {
-        nsresult rv = WhiteSpaceVisibilityKeeper::
-            NormalizeVisibleWhiteSpacesWithoutDeletingInvisibleWhiteSpaces(
-                *this, endOfInsertedText.AsInText().PreviousPoint());
-        if (NS_FAILED(rv)) {
-          NS_WARNING(
-              "WhiteSpaceVisibilityKeeper::"
-              "NormalizeVisibleWhiteSpacesWithoutDeletingInvisibleWhiteSpaces()"
-              " failed");
-          return Err(rv);
-        }
-        if (NS_WARN_IF(
-                !endOfInsertedText.IsInContentNodeAndValidInComposedDoc())) {
-          return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-        }
       }
       
       
@@ -1261,8 +1236,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
             *this, aInsertionString,
             compositionEndPoint.IsSet()
                 ? EditorDOMRange(pointToInsert, compositionEndPoint)
-                : EditorDOMRange(pointToInsert),
-            aPurpose);
+                : EditorDOMRange(pointToInsert));
     if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
       NS_WARNING("WhiteSpaceVisibilityKeeper::ReplaceText() failed");
       return replaceTextResult.propagateErr();
@@ -2330,7 +2304,7 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
 
 Result<CreateElementResult, nsresult> HTMLEditor::HandleInsertBRElement(
     const EditorDOMPoint& aPointToBreak, const Element& aEditingHost) {
-  MOZ_ASSERT(aPointToBreak.IsInContentNode());
+  MOZ_ASSERT(aPointToBreak.IsSet());
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   const bool editingHostIsEmpty = HTMLEditUtils::IsEmptyNode(
@@ -2390,8 +2364,6 @@ Result<CreateElementResult, nsresult> HTMLEditor::HandleInsertBRElement(
     RefPtr<Element> linkNode =
         HTMLEditor::GetLinkElement(pointToBreak.GetContainer());
     if (linkNode) {
-      
-      
       Result<SplitNodeResult, nsresult> splitLinkNodeResult =
           SplitNodeDeepWithTransaction(
               *linkNode, pointToBreak,
@@ -2743,26 +2715,6 @@ Result<CaretPoint, nsresult> HTMLEditor::HandleInsertParagraphInMailCiteElement(
       return Err(NS_ERROR_FAILURE);
     }
 
-    if (StaticPrefs::editor_white_space_normalization_blink_compatible()) {
-      Result<EditorDOMPoint, nsresult> pointToSplitOrError =
-          WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
-              *this, pointToSplit,
-              {WhiteSpaceVisibilityKeeper::NormalizeOption::
-                   StopIfPrecedingWhiteSpacesEndsWithNBP,
-               WhiteSpaceVisibilityKeeper::NormalizeOption::
-                   StopIfFollowingWhiteSpacesStartsWithNBSP});
-      if (MOZ_UNLIKELY(pointToSplitOrError.isErr())) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt() "
-            "failed");
-        return pointToSplitOrError.propagateErr();
-      }
-      pointToSplit = pointToSplitOrError.unwrap();
-      if (NS_WARN_IF(!pointToSplit.IsInContentNode())) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-    }
-
     Result<SplitNodeResult, nsresult> splitResult =
         SplitNodeDeepWithTransaction(aMailCiteElement, pointToSplit,
                                      SplitAtEdges::eDoNotCreateEmptyContainer);
@@ -2997,85 +2949,12 @@ HTMLEditor::GetInclusiveNextCharPointDataForNormalizingWhiteSpaces(
 }
 
 
-void HTMLEditor::NormalizeAllWhiteSpaceSequences(
-    nsString& aResult, const CharPointData& aPreviousCharPointData,
-    const CharPointData& aNextCharPointData, Linefeed aLinefeed) {
-  MOZ_ASSERT(!aResult.IsEmpty());
-
-  const auto IsCollapsibleChar = [&](char16_t aChar) {
-    if (aChar == HTMLEditUtils::kNewLine) {
-      return aLinefeed == Linefeed::Preformatted;
-    }
-    return nsCRT::IsAsciiSpace(aChar);
-  };
-  const auto IsCollapsibleCharOrNBSP = [&](char16_t aChar) {
-    return aChar == HTMLEditUtils::kNBSP || IsCollapsibleChar(aChar);
-  };
-
-  const uint32_t length = aResult.Length();
-  for (uint32_t offset = 0; offset < length; offset++) {
-    const char16_t ch = aResult[offset];
-    if (!IsCollapsibleCharOrNBSP(ch)) {
-      continue;
-    }
-    const CharPointData previousCharData = [&]() {
-      if (offset) {
-        const char16_t prevChar = aResult[offset - 1u];
-        return CharPointData::InSameTextNode(
-            prevChar == HTMLEditUtils::kNewLine
-                ? CharPointType::PreformattedLineBreak
-                : CharPointType::VisibleChar);
-      }
-      return aPreviousCharPointData;
-    }();
-    const uint32_t endOffset = [&]() {
-      for (const uint32_t i : IntegerRange(offset, length)) {
-        if (IsCollapsibleCharOrNBSP(aResult[i])) {
-          continue;
-        }
-        return i;
-      }
-      return length;
-    }();
-    const CharPointData nextCharData = [&]() {
-      if (endOffset < length) {
-        const char16_t nextChar = aResult[endOffset];
-        return CharPointData::InSameTextNode(
-            nextChar == HTMLEditUtils::kNewLine
-                ? CharPointType::PreformattedLineBreak
-                : CharPointType::VisibleChar);
-      }
-      return aNextCharPointData;
-    }();
-    HTMLEditor::ReplaceStringWithNormalizedWhiteSpaceSequence(
-        aResult, offset, endOffset - offset, previousCharData, nextCharData);
-    offset = endOffset;
-  }
-}
-
-
 void HTMLEditor::GenerateWhiteSpaceSequence(
-    nsString& aResult, uint32_t aLength,
+    nsAString& aResult, uint32_t aLength,
     const CharPointData& aPreviousCharPointData,
     const CharPointData& aNextCharPointData) {
   MOZ_ASSERT(aResult.IsEmpty());
   MOZ_ASSERT(aLength);
-
-  aResult.SetLength(aLength);
-  HTMLEditor::ReplaceStringWithNormalizedWhiteSpaceSequence(
-      aResult, 0u, aLength, aPreviousCharPointData, aNextCharPointData);
-}
-
-
-void HTMLEditor::ReplaceStringWithNormalizedWhiteSpaceSequence(
-    nsString& aResult, uint32_t aOffset, uint32_t aLength,
-    const CharPointData& aPreviousCharPointData,
-    const CharPointData& aNextCharPointData) {
-  MOZ_ASSERT(!aResult.IsEmpty());
-  MOZ_ASSERT(aLength);
-  MOZ_ASSERT(aOffset < aResult.Length());
-  MOZ_ASSERT(aOffset + aLength <= aResult.Length());
-
   
   
   MOZ_ASSERT(aPreviousCharPointData.AcrossTextNodeBoundary() ||
@@ -3092,39 +2971,38 @@ void HTMLEditor::ReplaceStringWithNormalizedWhiteSpaceSequence(
     
     if (aPreviousCharPointData.Type() == CharPointType::VisibleChar &&
         aNextCharPointData.Type() == CharPointType::VisibleChar) {
-      aResult.SetCharAt(HTMLEditUtils::kSpace, aOffset);
+      aResult.Assign(HTMLEditUtils::kSpace);
       return;
     }
     
     if (aPreviousCharPointData.Type() == CharPointType::TextEnd ||
         aNextCharPointData.Type() == CharPointType::TextEnd) {
-      aResult.SetCharAt(HTMLEditUtils::kNBSP, aOffset);
+      aResult.Assign(HTMLEditUtils::kNBSP);
       return;
     }
     
     
     if (aPreviousCharPointData.Type() == CharPointType::PreformattedLineBreak ||
         aNextCharPointData.Type() == CharPointType::PreformattedLineBreak) {
-      aResult.SetCharAt(HTMLEditUtils::kNBSP, aOffset);
+      aResult.Assign(HTMLEditUtils::kNBSP);
       return;
     }
     
     
     
-    aResult.SetCharAt(
+    aResult.Assign(
         aPreviousCharPointData.Type() == CharPointType::ASCIIWhiteSpace ||
                 aNextCharPointData.Type() == CharPointType::ASCIIWhiteSpace
             ? HTMLEditUtils::kNBSP
-            : HTMLEditUtils::kSpace,
-        aOffset);
+            : HTMLEditUtils::kSpace);
     return;
   }
 
   
+  aResult.SetLength(aLength);
   bool appendNBSP = true;  
-  char16_t* const lastChar = aResult.BeginWriting() + aOffset + aLength - 1;
-  for (char16_t* iter = aResult.BeginWriting() + aOffset; iter != lastChar;
-       iter++) {
+  char16_t* lastChar = aResult.EndWriting() - 1;
+  for (char16_t* iter = aResult.BeginWriting(); iter != lastChar; iter++) {
     *iter = appendNBSP ? HTMLEditUtils::kNBSP : HTMLEditUtils::kSpace;
     appendNBSP = !appendNBSP;
   }
@@ -3145,550 +3023,10 @@ void HTMLEditor::ReplaceStringWithNormalizedWhiteSpaceSequence(
           : HTMLEditUtils::kSpace;
 }
 
-HTMLEditor::NormalizedStringToInsertText
-HTMLEditor::NormalizeWhiteSpacesToInsertText(
-    const EditorDOMPoint& aPointToInsert, const nsAString& aStringToInsert,
-    NormalizeSurroundingWhiteSpaces aNormalizeSurroundingWhiteSpaces) const {
-  MOZ_ASSERT(aPointToInsert.IsSet());
-
-  
-  if (EditorUtils::IsWhiteSpacePreformatted(
-          *aPointToInsert.ContainerAs<nsIContent>())) {
-    return NormalizedStringToInsertText(aStringToInsert, aPointToInsert);
-  }
-
-  Text* const textNode = aPointToInsert.GetContainerAs<Text>();
-  const nsTextFragment* const textFragment =
-      textNode ? &textNode->TextFragment() : nullptr;
-  const bool isNewLineCollapsible = !EditorUtils::IsNewLinePreformatted(
-      *aPointToInsert.ContainerAs<nsIContent>());
-
-  
-  
-  
-
-  
-  
-  const uint32_t precedingWhiteSpaceLength = [&]() {
-    if (!textNode || !aNormalizeSurroundingWhiteSpaces ||
-        aPointToInsert.IsStartOfContainer()) {
-      return 0u;
-    }
-    const auto nonWhiteSpaceOffset =
-        HTMLEditUtils::GetPreviousNonCollapsibleCharOffset(
-            *textNode, aPointToInsert.Offset(),
-            {HTMLEditUtils::WalkTextOption::TreatNBSPsCollapsible});
-    const uint32_t firstWhiteSpaceOffset =
-        nonWhiteSpaceOffset ? *nonWhiteSpaceOffset + 1u : 0u;
-    return aPointToInsert.Offset() - firstWhiteSpaceOffset;
-  }();
-  const uint32_t followingWhiteSpaceLength = [&]() {
-    if (!textNode || !aNormalizeSurroundingWhiteSpaces ||
-        aPointToInsert.IsEndOfContainer()) {
-      return 0u;
-    }
-    MOZ_ASSERT(textFragment);
-    const auto nonWhiteSpaceOffset =
-        HTMLEditUtils::GetInclusiveNextNonCollapsibleCharOffset(
-            *textNode, aPointToInsert.Offset(),
-            {HTMLEditUtils::WalkTextOption::TreatNBSPsCollapsible});
-    MOZ_ASSERT(nonWhiteSpaceOffset.valueOr(textFragment->GetLength()) >=
-               aPointToInsert.Offset());
-    return nonWhiteSpaceOffset.valueOr(textFragment->GetLength()) -
-           aPointToInsert.Offset();
-  }();
-
-  
-  
-  const uint32_t precedingInvisibleWhiteSpaceCount =
-      textNode
-          ? HTMLEditUtils::GetInvisibleWhiteSpaceCount(
-                *textNode, aPointToInsert.Offset() - precedingWhiteSpaceLength,
-                precedingWhiteSpaceLength)
-          : 0u;
-  MOZ_ASSERT(precedingWhiteSpaceLength >= precedingInvisibleWhiteSpaceCount);
-  const uint32_t newPrecedingWhiteSpaceLength =
-      precedingWhiteSpaceLength - precedingInvisibleWhiteSpaceCount;
-  const uint32_t followingInvisibleSpaceCount =
-      textNode
-          ? HTMLEditUtils::GetInvisibleWhiteSpaceCount(
-                *textNode, aPointToInsert.Offset(), followingWhiteSpaceLength)
-          : 0u;
-  MOZ_ASSERT(followingWhiteSpaceLength >= followingInvisibleSpaceCount);
-  const uint32_t newFollowingWhiteSpaceLength =
-      followingWhiteSpaceLength - followingInvisibleSpaceCount;
-
-  const nsAutoString stringToInsertWithSurroundingSpaces =
-      [&]() -> nsAutoString {
-    if (!newPrecedingWhiteSpaceLength && !newFollowingWhiteSpaceLength) {
-      return nsAutoString(aStringToInsert);
-    }
-    nsAutoString str;
-    str.SetCapacity(aStringToInsert.Length() + newPrecedingWhiteSpaceLength +
-                    newFollowingWhiteSpaceLength);
-    for ([[maybe_unused]] auto unused :
-         IntegerRange(newPrecedingWhiteSpaceLength)) {
-      str.Append(' ');
-    }
-    str.Append(aStringToInsert);
-    for ([[maybe_unused]] auto unused :
-         IntegerRange(newFollowingWhiteSpaceLength)) {
-      str.Append(' ');
-    }
-    return str;
-  }();
-
-  const uint32_t insertionOffsetInTextNode =
-      aPointToInsert.IsInTextNode() ? aPointToInsert.Offset() : 0u;
-  NormalizedStringToInsertText result(
-      stringToInsertWithSurroundingSpaces, insertionOffsetInTextNode,
-      insertionOffsetInTextNode - precedingWhiteSpaceLength,  
-      precedingWhiteSpaceLength + followingWhiteSpaceLength,  
-      newPrecedingWhiteSpaceLength, newFollowingWhiteSpaceLength);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  HTMLEditor::NormalizeAllWhiteSpaceSequences(
-      result.mNormalizedString,
-      CharPointData::InSameTextNode(
-          !textFragment || !result.mReplaceStartOffset ||
-                  !aNormalizeSurroundingWhiteSpaces
-              ? CharPointType::TextEnd
-              : (textFragment->CharAt(result.mReplaceStartOffset - 1u) ==
-                         HTMLEditUtils::kNewLine
-                     ? CharPointType::PreformattedLineBreak
-                     : CharPointType::VisibleChar)),
-      CharPointData::InSameTextNode(
-          !textFragment ||
-                  result.mReplaceEndOffset >= textFragment->GetLength() ||
-                  !aNormalizeSurroundingWhiteSpaces
-              ? CharPointType::TextEnd
-              : (textFragment->CharAt(result.mReplaceEndOffset) ==
-                         HTMLEditUtils::kNewLine
-                     ? CharPointType::PreformattedLineBreak
-                     : CharPointType::VisibleChar)),
-      isNewLineCollapsible ? Linefeed::Collapsible : Linefeed::Preformatted);
-  return result;
-}
-
-HTMLEditor::ReplaceWhiteSpacesData HTMLEditor::GetNormalizedStringAt(
-    const EditorDOMPointInText& aPoint) const {
-  MOZ_ASSERT(aPoint.IsSet());
-
-  
-  if (EditorUtils::IsWhiteSpacePreformatted(*aPoint.ContainerAs<Text>())) {
-    return ReplaceWhiteSpacesData();
-  }
-
-  const Text& textNode = *aPoint.ContainerAs<Text>();
-  const nsTextFragment& textFragment = textNode.TextFragment();
-
-  
-  
-  
-
-  
-  
-  const uint32_t precedingWhiteSpaceLength = [&]() {
-    if (aPoint.IsStartOfContainer()) {
-      return 0u;
-    }
-    const auto nonWhiteSpaceOffset =
-        HTMLEditUtils::GetPreviousNonCollapsibleCharOffset(
-            textNode, aPoint.Offset(),
-            {HTMLEditUtils::WalkTextOption::TreatNBSPsCollapsible});
-    const uint32_t firstWhiteSpaceOffset =
-        nonWhiteSpaceOffset ? *nonWhiteSpaceOffset + 1u : 0u;
-    return aPoint.Offset() - firstWhiteSpaceOffset;
-  }();
-  const uint32_t followingWhiteSpaceLength = [&]() {
-    if (aPoint.IsEndOfContainer()) {
-      return 0u;
-    }
-    const auto nonWhiteSpaceOffset =
-        HTMLEditUtils::GetInclusiveNextNonCollapsibleCharOffset(
-            textNode, aPoint.Offset(),
-            {HTMLEditUtils::WalkTextOption::TreatNBSPsCollapsible});
-    MOZ_ASSERT(nonWhiteSpaceOffset.valueOr(textFragment.GetLength()) >=
-               aPoint.Offset());
-    return nonWhiteSpaceOffset.valueOr(textFragment.GetLength()) -
-           aPoint.Offset();
-  }();
-  if (!precedingWhiteSpaceLength && !followingWhiteSpaceLength) {
-    return ReplaceWhiteSpacesData();
-  }
-
-  
-  
-  const uint32_t precedingInvisibleWhiteSpaceCount =
-      HTMLEditUtils::GetInvisibleWhiteSpaceCount(
-          textNode, aPoint.Offset() - precedingWhiteSpaceLength,
-          precedingWhiteSpaceLength);
-  MOZ_ASSERT(precedingWhiteSpaceLength >= precedingInvisibleWhiteSpaceCount);
-  const uint32_t newPrecedingWhiteSpaceLength =
-      precedingWhiteSpaceLength - precedingInvisibleWhiteSpaceCount;
-  const uint32_t followingInvisibleSpaceCount =
-      HTMLEditUtils::GetInvisibleWhiteSpaceCount(textNode, aPoint.Offset(),
-                                                 followingWhiteSpaceLength);
-  MOZ_ASSERT(followingWhiteSpaceLength >= followingInvisibleSpaceCount);
-  const uint32_t newFollowingWhiteSpaceLength =
-      followingWhiteSpaceLength - followingInvisibleSpaceCount;
-
-  nsAutoString stringToInsertWithSurroundingSpaces;
-  if (newPrecedingWhiteSpaceLength || newFollowingWhiteSpaceLength) {
-    stringToInsertWithSurroundingSpaces.SetLength(newPrecedingWhiteSpaceLength +
-                                                  newFollowingWhiteSpaceLength);
-    for (auto index : IntegerRange(newPrecedingWhiteSpaceLength +
-                                   newFollowingWhiteSpaceLength)) {
-      stringToInsertWithSurroundingSpaces.SetCharAt(' ', index);
-    }
-  }
-
-  ReplaceWhiteSpacesData result(
-      std::move(stringToInsertWithSurroundingSpaces),
-      aPoint.Offset() - precedingWhiteSpaceLength,            
-      precedingWhiteSpaceLength + followingWhiteSpaceLength,  
-      
-      aPoint.Offset() - precedingWhiteSpaceLength +
-          newPrecedingWhiteSpaceLength);
-  if (!result.mNormalizedString.IsEmpty()) {
-    HTMLEditor::NormalizeAllWhiteSpaceSequences(
-        result.mNormalizedString,
-        CharPointData::InSameTextNode(
-            !result.mReplaceStartOffset
-                ? CharPointType::TextEnd
-                : (textFragment.CharAt(result.mReplaceStartOffset - 1u) ==
-                           HTMLEditUtils::kNewLine
-                       ? CharPointType::PreformattedLineBreak
-                       : CharPointType::VisibleChar)),
-        CharPointData::InSameTextNode(
-            result.mReplaceEndOffset >= textFragment.GetLength()
-                ? CharPointType::TextEnd
-                : (textFragment.CharAt(result.mReplaceEndOffset) ==
-                           HTMLEditUtils::kNewLine
-                       ? CharPointType::PreformattedLineBreak
-                       : CharPointType::VisibleChar)),
-        EditorUtils::IsNewLinePreformatted(textNode) ? Linefeed::Collapsible
-                                                     : Linefeed::Preformatted);
-  }
-  return result;
-}
-
-HTMLEditor::ReplaceWhiteSpacesData
-HTMLEditor::GetFollowingNormalizedStringToSplitAt(
-    const EditorDOMPointInText& aPointToSplit) const {
-  MOZ_ASSERT(aPointToSplit.IsSet());
-
-  if (EditorUtils::IsWhiteSpacePreformatted(
-          *aPointToSplit.ContainerAs<Text>()) ||
-      aPointToSplit.IsEndOfContainer()) {
-    return ReplaceWhiteSpacesData();
-  }
-  const bool isNewLineCollapsible =
-      !EditorUtils::IsNewLinePreformatted(*aPointToSplit.ContainerAs<Text>());
-  const auto IsPreformattedLineBreak = [&](char16_t aChar) {
-    return !isNewLineCollapsible && aChar == HTMLEditUtils::kNewLine;
-  };
-  const auto IsCollapsibleChar = [&](char16_t aChar) {
-    return !IsPreformattedLineBreak(aChar) && nsCRT::IsAsciiSpace(aChar);
-  };
-  const auto IsCollapsibleCharOrNBSP = [&](char16_t aChar) {
-    return aChar == HTMLEditUtils::kNBSP || IsCollapsibleChar(aChar);
-  };
-  const char16_t followingChar = aPointToSplit.Char();
-  if (!IsCollapsibleCharOrNBSP(followingChar)) {
-    return ReplaceWhiteSpacesData();
-  }
-  const uint32_t followingWhiteSpaceLength = [&]() {
-    const auto nonWhiteSpaceOffset =
-        HTMLEditUtils::GetInclusiveNextNonCollapsibleCharOffset(
-            *aPointToSplit.ContainerAs<Text>(), aPointToSplit.Offset(),
-            {HTMLEditUtils::WalkTextOption::TreatNBSPsCollapsible});
-    MOZ_ASSERT(nonWhiteSpaceOffset.valueOr(
-                   aPointToSplit.ContainerAs<Text>()->TextDataLength()) >=
-               aPointToSplit.Offset());
-    return nonWhiteSpaceOffset.valueOr(
-               aPointToSplit.ContainerAs<Text>()->TextDataLength()) -
-           aPointToSplit.Offset();
-  }();
-  MOZ_ASSERT(followingWhiteSpaceLength);
-  if (NS_WARN_IF(!followingWhiteSpaceLength) ||
-      (followingWhiteSpaceLength == 1u &&
-       followingChar == HTMLEditUtils::kNBSP)) {
-    return ReplaceWhiteSpacesData();
-  }
-
-  const uint32_t followingInvisibleSpaceCount =
-      HTMLEditUtils::GetInvisibleWhiteSpaceCount(
-          *aPointToSplit.ContainerAs<Text>(), aPointToSplit.Offset(),
-          followingWhiteSpaceLength);
-  MOZ_ASSERT(followingWhiteSpaceLength >= followingInvisibleSpaceCount);
-  const uint32_t newFollowingWhiteSpaceLength =
-      followingWhiteSpaceLength - followingInvisibleSpaceCount;
-  nsAutoString followingWhiteSpaces;
-  if (newFollowingWhiteSpaceLength) {
-    followingWhiteSpaces.SetLength(newFollowingWhiteSpaceLength);
-    for (const auto offset : IntegerRange(newFollowingWhiteSpaceLength)) {
-      followingWhiteSpaces.SetCharAt(' ', offset);
-    }
-  }
-  ReplaceWhiteSpacesData result(std::move(followingWhiteSpaces),
-                                aPointToSplit.Offset(),
-                                followingWhiteSpaceLength);
-  if (!result.mNormalizedString.IsEmpty()) {
-    const nsTextFragment& textFragment =
-        aPointToSplit.ContainerAs<Text>()->TextFragment();
-    HTMLEditor::NormalizeAllWhiteSpaceSequences(
-        result.mNormalizedString,
-        CharPointData::InSameTextNode(CharPointType::TextEnd),
-        CharPointData::InSameTextNode(
-            result.mReplaceEndOffset >= textFragment.GetLength()
-                ? CharPointType::TextEnd
-                : (textFragment.CharAt(result.mReplaceEndOffset) ==
-                           HTMLEditUtils::kNewLine
-                       ? CharPointType::PreformattedLineBreak
-                       : CharPointType::VisibleChar)),
-        isNewLineCollapsible ? Linefeed::Collapsible : Linefeed::Preformatted);
-  }
-  return result;
-}
-
-HTMLEditor::ReplaceWhiteSpacesData
-HTMLEditor::GetPrecedingNormalizedStringToSplitAt(
-    const EditorDOMPointInText& aPointToSplit) const {
-  MOZ_ASSERT(aPointToSplit.IsSet());
-
-  if (EditorUtils::IsWhiteSpacePreformatted(
-          *aPointToSplit.ContainerAs<Text>()) ||
-      aPointToSplit.IsStartOfContainer()) {
-    return ReplaceWhiteSpacesData();
-  }
-  const bool isNewLineCollapsible =
-      !EditorUtils::IsNewLinePreformatted(*aPointToSplit.ContainerAs<Text>());
-  const auto IsPreformattedLineBreak = [&](char16_t aChar) {
-    return !isNewLineCollapsible && aChar == HTMLEditUtils::kNewLine;
-  };
-  const auto IsCollapsibleChar = [&](char16_t aChar) {
-    return !IsPreformattedLineBreak(aChar) && nsCRT::IsAsciiSpace(aChar);
-  };
-  const auto IsCollapsibleCharOrNBSP = [&](char16_t aChar) {
-    return aChar == HTMLEditUtils::kNBSP || IsCollapsibleChar(aChar);
-  };
-  const char16_t precedingChar = aPointToSplit.PreviousChar();
-  if (!IsCollapsibleCharOrNBSP(precedingChar)) {
-    return ReplaceWhiteSpacesData();
-  }
-  const uint32_t precedingWhiteSpaceLength = [&]() {
-    const auto nonWhiteSpaceOffset =
-        HTMLEditUtils::GetPreviousNonCollapsibleCharOffset(
-            *aPointToSplit.ContainerAs<Text>(), aPointToSplit.Offset(),
-            {HTMLEditUtils::WalkTextOption::TreatNBSPsCollapsible});
-    const uint32_t firstWhiteSpaceOffset =
-        nonWhiteSpaceOffset ? *nonWhiteSpaceOffset + 1u : 0u;
-    return aPointToSplit.Offset() - firstWhiteSpaceOffset;
-  }();
-  MOZ_ASSERT(precedingWhiteSpaceLength);
-  if (NS_WARN_IF(!precedingWhiteSpaceLength) ||
-      (precedingWhiteSpaceLength == 1u &&
-       precedingChar == HTMLEditUtils::kNBSP)) {
-    return ReplaceWhiteSpacesData();
-  }
-
-  const uint32_t precedingInvisibleWhiteSpaceCount =
-      HTMLEditUtils::GetInvisibleWhiteSpaceCount(
-          *aPointToSplit.ContainerAs<Text>(),
-          aPointToSplit.Offset() - precedingWhiteSpaceLength,
-          precedingWhiteSpaceLength);
-  MOZ_ASSERT(precedingWhiteSpaceLength >= precedingInvisibleWhiteSpaceCount);
-  const uint32_t newPrecedingWhiteSpaceLength =
-      precedingWhiteSpaceLength - precedingInvisibleWhiteSpaceCount;
-  nsAutoString precedingWhiteSpaces;
-  if (newPrecedingWhiteSpaceLength) {
-    precedingWhiteSpaces.SetLength(newPrecedingWhiteSpaceLength);
-    for (const auto offset : IntegerRange(newPrecedingWhiteSpaceLength)) {
-      precedingWhiteSpaces.SetCharAt(' ', offset);
-    }
-  }
-  ReplaceWhiteSpacesData result(
-      std::move(precedingWhiteSpaces),
-      aPointToSplit.Offset() - precedingWhiteSpaceLength,
-      precedingWhiteSpaceLength);
-  if (!result.mNormalizedString.IsEmpty()) {
-    const nsTextFragment& textFragment =
-        aPointToSplit.ContainerAs<Text>()->TextFragment();
-    HTMLEditor::NormalizeAllWhiteSpaceSequences(
-        result.mNormalizedString,
-        CharPointData::InSameTextNode(
-            !result.mReplaceStartOffset
-                ? CharPointType::TextEnd
-                : (textFragment.CharAt(result.mReplaceStartOffset - 1u) ==
-                           HTMLEditUtils::kNewLine
-                       ? CharPointType::PreformattedLineBreak
-                       : CharPointType::VisibleChar)),
-        CharPointData::InSameTextNode(CharPointType::TextEnd),
-        isNewLineCollapsible ? Linefeed::Collapsible : Linefeed::Preformatted);
-  }
-  return result;
-}
-
-HTMLEditor::ReplaceWhiteSpacesData
-HTMLEditor::GetSurroundingNormalizedStringToDelete(const Text& aTextNode,
-                                                   uint32_t aOffset,
-                                                   uint32_t aLength) const {
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
-  MOZ_ASSERT(aOffset <= aTextNode.TextDataLength());
-  MOZ_ASSERT(aOffset + aLength <= aTextNode.TextDataLength());
-
-  if (EditorUtils::IsWhiteSpacePreformatted(aTextNode) || !aLength ||
-      (!aOffset && aLength >= aTextNode.TextDataLength())) {
-    return ReplaceWhiteSpacesData();
-  }
-  const bool isNewLineCollapsible =
-      !EditorUtils::IsNewLinePreformatted(aTextNode);
-  const auto IsPreformattedLineBreak = [&](char16_t aChar) {
-    return !isNewLineCollapsible && aChar == HTMLEditUtils::kNewLine;
-  };
-  const auto IsCollapsibleChar = [&](char16_t aChar) {
-    return !IsPreformattedLineBreak(aChar) && nsCRT::IsAsciiSpace(aChar);
-  };
-  const auto IsCollapsibleCharOrNBSP = [&](char16_t aChar) {
-    return aChar == HTMLEditUtils::kNBSP || IsCollapsibleChar(aChar);
-  };
-  const nsTextFragment& textFragment = aTextNode.TextFragment();
-  const char16_t precedingChar =
-      aOffset ? textFragment.CharAt(aOffset - 1u) : static_cast<char16_t>(0);
-  const char16_t followingChar = aOffset + aLength < textFragment.GetLength()
-                                     ? textFragment.CharAt(aOffset + aLength)
-                                     : static_cast<char16_t>(0);
-  
-  if (!IsCollapsibleCharOrNBSP(precedingChar) &&
-      !IsCollapsibleCharOrNBSP(followingChar)) {
-    return ReplaceWhiteSpacesData();
-  }
-  const uint32_t precedingWhiteSpaceLength = [&]() {
-    if (!IsCollapsibleCharOrNBSP(precedingChar)) {
-      return 0u;
-    }
-    const auto nonWhiteSpaceOffset =
-        HTMLEditUtils::GetPreviousNonCollapsibleCharOffset(
-            aTextNode, aOffset,
-            {HTMLEditUtils::WalkTextOption::TreatNBSPsCollapsible});
-    const uint32_t firstWhiteSpaceOffset =
-        nonWhiteSpaceOffset ? *nonWhiteSpaceOffset + 1u : 0u;
-    return aOffset - firstWhiteSpaceOffset;
-  }();
-  const uint32_t followingWhiteSpaceLength = [&]() {
-    if (!IsCollapsibleCharOrNBSP(followingChar)) {
-      return 0u;
-    }
-    const auto nonWhiteSpaceOffset =
-        HTMLEditUtils::GetInclusiveNextNonCollapsibleCharOffset(
-            aTextNode, aOffset + aLength,
-            {HTMLEditUtils::WalkTextOption::TreatNBSPsCollapsible});
-    MOZ_ASSERT(nonWhiteSpaceOffset.valueOr(textFragment.GetLength()) >=
-               aOffset + aLength);
-    return nonWhiteSpaceOffset.valueOr(textFragment.GetLength()) -
-           (aOffset + aLength);
-  }();
-  if (NS_WARN_IF(!precedingWhiteSpaceLength && !followingWhiteSpaceLength)) {
-    return ReplaceWhiteSpacesData();
-  }
-  const uint32_t precedingInvisibleWhiteSpaceCount =
-      HTMLEditUtils::GetInvisibleWhiteSpaceCount(
-          aTextNode, aOffset - precedingWhiteSpaceLength,
-          precedingWhiteSpaceLength);
-  MOZ_ASSERT(precedingWhiteSpaceLength >= precedingInvisibleWhiteSpaceCount);
-  const uint32_t followingInvisibleSpaceCount =
-      HTMLEditUtils::GetInvisibleWhiteSpaceCount(aTextNode, aOffset + aLength,
-                                                 followingWhiteSpaceLength);
-  MOZ_ASSERT(followingWhiteSpaceLength >= followingInvisibleSpaceCount);
-
-  
-  
-  if (precedingWhiteSpaceLength == 1u && !precedingInvisibleWhiteSpaceCount &&
-      !followingWhiteSpaceLength) {
-    
-    
-    
-    if (precedingChar == HTMLEditUtils::kSpace && followingChar &&
-        !IsPreformattedLineBreak(followingChar)) {
-      return ReplaceWhiteSpacesData();
-    }
-    
-    
-    
-    if (precedingChar == HTMLEditUtils::kNBSP &&
-        (!followingChar || IsPreformattedLineBreak(followingChar))) {
-      return ReplaceWhiteSpacesData();
-    }
-  }
-  if (followingWhiteSpaceLength == 1u && !followingInvisibleSpaceCount &&
-      !precedingWhiteSpaceLength) {
-    
-    
-    
-    if (followingChar == HTMLEditUtils::kSpace && precedingChar &&
-        !IsPreformattedLineBreak(precedingChar)) {
-      return ReplaceWhiteSpacesData();
-    }
-    
-    
-    
-    if (followingChar == HTMLEditUtils::kNBSP &&
-        (!precedingChar || IsPreformattedLineBreak(precedingChar))) {
-      return ReplaceWhiteSpacesData();
-    }
-  }
-
-  const uint32_t newPrecedingWhiteSpaceLength =
-      precedingWhiteSpaceLength - precedingInvisibleWhiteSpaceCount;
-  const uint32_t newFollowingWhiteSpaceLength =
-      followingWhiteSpaceLength - followingInvisibleSpaceCount;
-  nsAutoString surroundingWhiteSpaces;
-  if (newPrecedingWhiteSpaceLength || newFollowingWhiteSpaceLength) {
-    surroundingWhiteSpaces.SetLength(newPrecedingWhiteSpaceLength +
-                                     newFollowingWhiteSpaceLength);
-    for (const auto offset : IntegerRange(newPrecedingWhiteSpaceLength +
-                                          newFollowingWhiteSpaceLength)) {
-      surroundingWhiteSpaces.SetCharAt(' ', offset);
-    }
-  }
-  ReplaceWhiteSpacesData result(
-      std::move(surroundingWhiteSpaces), aOffset - precedingWhiteSpaceLength,
-      precedingWhiteSpaceLength + aLength + followingWhiteSpaceLength,
-      aOffset - precedingInvisibleWhiteSpaceCount);
-  if (!result.mNormalizedString.IsEmpty()) {
-    HTMLEditor::NormalizeAllWhiteSpaceSequences(
-        result.mNormalizedString,
-        CharPointData::InSameTextNode(
-            !result.mReplaceStartOffset
-                ? CharPointType::TextEnd
-                : (textFragment.CharAt(result.mReplaceStartOffset - 1u) ==
-                           HTMLEditUtils::kNewLine
-                       ? CharPointType::PreformattedLineBreak
-                       : CharPointType::VisibleChar)),
-        CharPointData::InSameTextNode(
-            result.mReplaceEndOffset >= textFragment.GetLength()
-                ? CharPointType::TextEnd
-                : (textFragment.CharAt(result.mReplaceEndOffset) ==
-                           HTMLEditUtils::kNewLine
-                       ? CharPointType::PreformattedLineBreak
-                       : CharPointType::VisibleChar)),
-        isNewLineCollapsible ? Linefeed::Collapsible : Linefeed::Preformatted);
-  }
-  return result;
-}
-
 void HTMLEditor::ExtendRangeToDeleteWithNormalizingWhiteSpaces(
     EditorDOMPointInText& aStartToDelete, EditorDOMPointInText& aEndToDelete,
-    nsString& aNormalizedWhiteSpacesInStartNode,
-    nsString& aNormalizedWhiteSpacesInEndNode) const {
+    nsAString& aNormalizedWhiteSpacesInStartNode,
+    nsAString& aNormalizedWhiteSpacesInEndNode) const {
   MOZ_ASSERT(aStartToDelete.IsSetAndValid());
   MOZ_ASSERT(aEndToDelete.IsSetAndValid());
   MOZ_ASSERT(aStartToDelete.EqualsOrIsBefore(aEndToDelete));
@@ -4034,9 +3372,7 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
                        {LeafNodeType::LeafNodeOrNonEditableNode},
                        BlockInlineCheck::UseComputedDisplayStyle,
                        editableBlockElementOrInlineEditingHost)) {
-        if (HTMLEditUtils::IsSimplyEditableNode(*nextContent) &&
-            !HTMLEditUtils::IsBlockElement(
-                *nextContent, BlockInlineCheck::UseComputedDisplayStyle)) {
+        if (HTMLEditUtils::IsSimplyEditableNode(*nextContent)) {
           newCaretPosition =
               nextContent->IsText() ||
                       HTMLEditUtils::IsContainerNode(*nextContent)
@@ -4094,113 +3430,12 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
     } else {
       insertPaddingBRElementOrError.unwrap().IgnoreCaretPointSuggestion();
     }
-    if (!newCaretPosition.IsSetAndValid()) {
-      NS_WARNING("Inserting <br> element caused unexpected DOM tree");
-      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-    }
   }
-  return CaretPoint(std::move(newCaretPosition));
-}
-
-Result<JoinNodesResult, nsresult>
-HTMLEditor::JoinTextNodesWithNormalizeWhiteSpaces(Text& aLeftText,
-                                                  Text& aRightText) {
-  MOZ_ASSERT(StaticPrefs::editor_white_space_normalization_blink_compatible());
-
-  if (EditorUtils::IsWhiteSpacePreformatted(aLeftText)) {
-    Result<JoinNodesResult, nsresult> joinResultOrError =
-        JoinNodesWithTransaction(aLeftText, aRightText);
-    NS_WARNING_ASSERTION(joinResultOrError.isOk(),
-                         "HTMLEditor::JoinNodesWithTransaction() failed");
-    return joinResultOrError;
-  }
-  const bool isNewLinePreformatted =
-      EditorUtils::IsNewLinePreformatted(aLeftText);
-  const auto IsCollapsibleChar = [&](char16_t aChar) {
-    return (aChar == HTMLEditUtils::kNewLine && !isNewLinePreformatted) ||
-           nsCRT::IsAsciiSpace(aChar);
-  };
-  const auto IsCollapsibleCharOrNBSP = [&](char16_t aChar) {
-    return aChar == HTMLEditUtils::kNBSP || IsCollapsibleChar(aChar);
-  };
-  const char16_t lastLeftChar = aLeftText.TextFragment().SafeLastChar();
-  char16_t firstRightChar = aRightText.TextFragment().SafeFirstChar();
-  const char16_t secondRightChar = aRightText.TextFragment().GetLength() >= 2
-                                       ? aRightText.TextFragment().CharAt(1u)
-                                       : static_cast<char16_t>(0);
-  if (IsCollapsibleCharOrNBSP(firstRightChar)) {
-    
-    
-    if (secondRightChar && !IsCollapsibleCharOrNBSP(secondRightChar) &&
-        lastLeftChar && !IsCollapsibleChar(lastLeftChar)) {
-      if (firstRightChar != HTMLEditUtils::kSpace) {
-        Result<InsertTextResult, nsresult> replaceWhiteSpaceResultOrError =
-            ReplaceTextWithTransaction(aRightText, 0u, 1u, u" "_ns);
-        if (MOZ_UNLIKELY(replaceWhiteSpaceResultOrError.isErr())) {
-          NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
-          return replaceWhiteSpaceResultOrError.propagateErr();
-        }
-        replaceWhiteSpaceResultOrError.unwrap().IgnoreCaretPointSuggestion();
-        if (NS_WARN_IF(aLeftText.GetNextSibling() != &aRightText)) {
-          return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-        }
-        firstRightChar = HTMLEditUtils::kSpace;
-      }
-    }
-    
-    
-    else {
-      Result<EditorDOMPoint, nsresult> atFirstVisibleThingOrError =
-          WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter(
-              *this, EditorDOMPoint(&aRightText, 0u), {});
-      if (MOZ_UNLIKELY(atFirstVisibleThingOrError.isErr())) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesAfter() failed");
-        return atFirstVisibleThingOrError.propagateErr();
-      }
-      if (!aRightText.GetParentNode()) {
-        return JoinNodesResult(EditorDOMPoint::AtEndOf(aLeftText), aRightText);
-      }
-    }
-  } else if (IsCollapsibleCharOrNBSP(lastLeftChar) &&
-             lastLeftChar != HTMLEditUtils::kSpace &&
-             aLeftText.TextFragment().GetLength() >= 2u) {
-    
-    
-    const char16_t secondLastChar = aLeftText.TextFragment().CharAt(
-        aLeftText.TextFragment().GetLength() - 2u);
-    if (!IsCollapsibleCharOrNBSP(secondLastChar) &&
-        !IsCollapsibleCharOrNBSP(firstRightChar)) {
-      Result<InsertTextResult, nsresult> replaceWhiteSpaceResultOrError =
-          ReplaceTextWithTransaction(aLeftText,
-                                     aLeftText.TextFragment().GetLength() - 1u,
-                                     1u, u" "_ns);
-      if (MOZ_UNLIKELY(replaceWhiteSpaceResultOrError.isErr())) {
-        NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
-        return replaceWhiteSpaceResultOrError.propagateErr();
-      }
-      replaceWhiteSpaceResultOrError.unwrap().IgnoreCaretPointSuggestion();
-      if (NS_WARN_IF(aLeftText.GetNextSibling() != &aRightText)) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-    }
-  }
-  Result<JoinNodesResult, nsresult> joinResultOrError =
-      JoinNodesWithTransaction(aLeftText, aRightText);
-  if (MOZ_UNLIKELY(joinResultOrError.isErr())) {
-    NS_WARNING("HTMLEditor::JoinNodesWithTransaction() failed");
-    return joinResultOrError;
-  }
-  JoinNodesResult joinResult = joinResultOrError.unwrap();
-  const EditorDOMPointInText startOfRightTextData =
-      joinResult.AtJoinedPoint<EditorRawDOMPoint>().GetAsInText();
-  if (NS_WARN_IF(!startOfRightTextData.IsSet()) ||
-      (firstRightChar &&
-       (NS_WARN_IF(startOfRightTextData.IsEndOfContainer()) ||
-        NS_WARN_IF(firstRightChar != startOfRightTextData.Char())))) {
+  if (!newCaretPosition.IsSetAndValid()) {
+    NS_WARNING("Inserting <br> element caused unexpected DOM tree");
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
-  return std::move(joinResult);
+  return CaretPoint(std::move(newCaretPosition));
 }
 
 
@@ -9406,7 +8641,6 @@ Result<SplitNodeResult, nsresult> HTMLEditor::HandleInsertParagraphInParagraph(
       if (pointToInsertBR.IsInContentNode() &&
           HTMLEditUtils::CanNodeContain(
               *pointToInsertBR.ContainerAs<nsIContent>(), *nsGkAtoms::br)) {
-        AutoTrackDOMPoint trackPointToSplit(RangeUpdaterRef(), &pointToSplit);
         Result<CreateLineBreakResult, nsresult> insertBRElementResultOrError =
             InsertLineBreak(WithTransaction::Yes, LineBreakType::BRElement,
                             pointToInsertBR);
@@ -9422,10 +8656,6 @@ Result<SplitNodeResult, nsresult> HTMLEditor::HandleInsertParagraphInParagraph(
         
         insertBRElementResult.IgnoreCaretPointSuggestion();
         brElement = &insertBRElementResult->BRElementRef();
-        trackPointToSplit.FlushAndStopTracking();
-        if (NS_WARN_IF(!pointToSplit.IsInContentNodeAndValidInComposedDoc())) {
-          return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-        }
       }
     }
   } else {

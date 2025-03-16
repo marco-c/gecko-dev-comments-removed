@@ -19,7 +19,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
-#include "mozilla/StaticPrefs_editor.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Text.h"
@@ -75,8 +74,6 @@ class WhiteSpaceVisibilityKeeper final {
                                      EditorDOMPoint* aStartPoint,
                                      EditorDOMPoint* aEndPoint,
                                      const Element& aEditingHost) {
-    MOZ_ASSERT(
-        !StaticPrefs::editor_white_space_normalization_blink_compatible());
     MOZ_ASSERT(aStartPoint->IsSetAndValid());
     MOZ_ASSERT(aEndPoint->IsSetAndValid());
     AutoTrackDOMPoint trackerStart(aHTMLEditor.RangeUpdaterRef(), aStartPoint);
@@ -91,10 +88,23 @@ class WhiteSpaceVisibilityKeeper final {
     return caretPointOrError;
   }
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CaretPoint, nsresult>
+  PrepareToDeleteRange(HTMLEditor& aHTMLEditor,
+                       const EditorDOMPoint& aStartPoint,
+                       const EditorDOMPoint& aEndPoint,
+                       const Element& aEditingHost) {
+    MOZ_ASSERT(aStartPoint.IsSetAndValid());
+    MOZ_ASSERT(aEndPoint.IsSetAndValid());
+    Result<CaretPoint, nsresult> caretPointOrError =
+        WhiteSpaceVisibilityKeeper::PrepareToDeleteRange(
+            aHTMLEditor, EditorDOMRange(aStartPoint, aEndPoint), aEditingHost);
+    NS_WARNING_ASSERTION(
+        caretPointOrError.isOk(),
+        "WhiteSpaceVisibilityKeeper::PrepareToDeleteRange() failed");
+    return caretPointOrError;
+  }
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CaretPoint, nsresult>
   PrepareToDeleteRange(HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange,
                        const Element& aEditingHost) {
-    MOZ_ASSERT(
-        !StaticPrefs::editor_white_space_normalization_blink_compatible());
     MOZ_ASSERT(aRange.IsPositionedAndValid());
     Result<CaretPoint, nsresult> caretPointOrError =
         WhiteSpaceVisibilityKeeper::
@@ -119,64 +129,6 @@ class WhiteSpaceVisibilityKeeper final {
   PrepareToSplitBlockElement(HTMLEditor& aHTMLEditor,
                              const EditorDOMPoint& aPointToSplit,
                              const Element& aSplittingBlockElement);
-
-  enum class NormalizeOption {
-    
-    HandleOnlyFollowingWhiteSpaces,
-    
-    HandleOnlyPrecedingWhiteSpaces,
-    
-    StopIfFollowingWhiteSpacesStartsWithNBSP,
-    
-    StopIfPrecedingWhiteSpacesEndsWithNBP,
-  };
-  using NormalizeOptions = EnumSet<NormalizeOption>;
-
-  
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMPoint, nsresult>
-  NormalizeWhiteSpacesBefore(HTMLEditor& aHTMLEditor,
-                             const EditorDOMPoint& aPoint,
-                             NormalizeOptions aOptions);
-
-  
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMPoint, nsresult>
-  NormalizeWhiteSpacesAfter(HTMLEditor& aHTMLEditor,
-                            const EditorDOMPoint& aPoint,
-                            NormalizeOptions aOptions);
-
-  
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMPoint, nsresult>
-  NormalizeWhiteSpacesToSplitAt(HTMLEditor& aHTMLEditor,
-                                const EditorDOMPoint& aPointToSplit,
-                                NormalizeOptions aOptions);
-
-  
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMRange, nsresult>
-  NormalizeSurroundingWhiteSpacesToJoin(HTMLEditor& aHTMLEditor,
-                                        const EditorDOMRange& aRangeToDelete);
 
   
 
@@ -273,8 +225,6 @@ class WhiteSpaceVisibilityKeeper final {
   InsertLineBreak(LineBreakType aLineBreakType, HTMLEditor& aHTMLEditor,
                   const EditorDOMPoint& aPointToInsert);
 
-  using InsertTextFor = EditorBase::InsertTextFor;
-
   
 
 
@@ -293,7 +243,7 @@ class WhiteSpaceVisibilityKeeper final {
     return WhiteSpaceVisibilityKeeper::
         InsertTextOrInsertOrUpdateCompositionString(
             aHTMLEditor, aStringToInsert, EditorDOMRange(aPointToInsert),
-            aInsertTextTo, InsertTextFor::NormalText);
+            aInsertTextTo, TextIsCompositionString::No);
   }
 
   
@@ -310,23 +260,14 @@ class WhiteSpaceVisibilityKeeper final {
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
-  InsertOrUpdateCompositionString(HTMLEditor& aHTMLEditor,
-                                  const nsAString& aCompositionString,
-                                  const EditorDOMRange& aCompositionStringRange,
-                                  InsertTextFor aPurpose) {
-    MOZ_ASSERT(EditorBase::InsertingTextForComposition(aPurpose));
+  InsertOrUpdateCompositionString(
+      HTMLEditor& aHTMLEditor, const nsAString& aCompositionString,
+      const EditorDOMRange& aCompositionStringRange) {
     return InsertTextOrInsertOrUpdateCompositionString(
         aHTMLEditor, aCompositionString, aCompositionStringRange,
-        HTMLEditor::InsertTextTo::ExistingTextNodeIfAvailable, aPurpose);
+        HTMLEditor::InsertTextTo::ExistingTextNodeIfAvailable,
+        TextIsCompositionString::Yes);
   }
-
-  
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
-  NormalizeVisibleWhiteSpacesWithoutDeletingInvisibleWhiteSpaces(
-      HTMLEditor& aHTMLEditor, const EditorDOMPointInText& aPoint);
 
   
 
@@ -403,72 +344,9 @@ class WhiteSpaceVisibilityKeeper final {
       HTMLEditor& aHTMLEditor, const EditorDOMRangeInTexts& aRangeToReplace,
       const nsAString& aReplaceString);
 
-  
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMPoint, nsresult>
-  NormalizeWhiteSpacesToSplitTextNodeAt(
-      HTMLEditor& aHTMLEditor, const EditorDOMPointInText& aPointToSplit,
-      NormalizeOptions aOptions);
+  enum class TextIsCompositionString : bool { No, Yes };
 
   
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMRange, nsresult>
-  NormalizeSurroundingWhiteSpacesToDeleteCharacters(HTMLEditor& aHTMLEditor,
-                                                    dom::Text& aTextNode,
-                                                    uint32_t aOffset,
-                                                    uint32_t aLength);
-
-  
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMPoint, nsresult>
-  EnsureNoInvisibleWhiteSpaces(HTMLEditor& aHTMLEditor,
-                               const EditorDOMPoint& aPoint);
-
-  
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
-  EnsureNoInvisibleWhiteSpacesBefore(HTMLEditor& aHTMLEditor,
-                                     const EditorDOMPoint& aPoint);
-
-  
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
-  EnsureNoInvisibleWhiteSpacesAfter(HTMLEditor& aHTMLEditor,
-                                    const EditorDOMPoint& aPoint);
-
-  
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMPoint, nsresult>
-  NormalizeWhiteSpacesAt(HTMLEditor& aHTMLEditor,
-                         const EditorDOMPointInText& aPoint);
-
-  
-
-
 
 
 
@@ -488,7 +366,7 @@ class WhiteSpaceVisibilityKeeper final {
   InsertTextOrInsertOrUpdateCompositionString(
       HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
       const EditorDOMRange& aRangeToBeReplaced, InsertTextTo aInsertTextTo,
-      InsertTextFor aPurpose);
+      TextIsCompositionString aTextIsCompositionString);
 };
 
 }  
