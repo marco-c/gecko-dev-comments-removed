@@ -24,4 +24,4 @@ pub type AnimatedFilter =
 
 
 #[cfg(not(feature = "gecko"))]
-pub type AnimatedFilter = GenericFilter<Angle, Number, Number, Length, Impossible, Impossible>;
+pub type AnimatedFilter = GenericFilter<Angle, Number, Number, Length, AnimatedSimpleShadow, Impossible>;
