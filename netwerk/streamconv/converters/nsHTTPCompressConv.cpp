@@ -509,12 +509,20 @@ nsHTTPCompressConv::OnDataAvailable(nsIRequest* request, nsIInputStream* iStr,
       [[fallthrough]];
 
     case HTTP_COMPRESS_DEFLATE:
+#if defined(__GNUC__) && (__GNUC__ >= 12) && !defined(__clang__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif  
 
+      
+      
+      
       if (mInpBuffer != nullptr && streamLen > mInpBufferLen) {
         unsigned char* originalInpBuffer = mInpBuffer;
         if (!(mInpBuffer = (unsigned char*)realloc(
-                  originalInpBuffer, mInpBufferLen = streamLen))) {
+                  mInpBuffer, mInpBufferLen = streamLen))) {
           free(originalInpBuffer);
+          mInpBufferLen = 0;
         }
 
         if (mOutBufferLen < streamLen * 2) {
@@ -522,8 +530,13 @@ nsHTTPCompressConv::OnDataAvailable(nsIRequest* request, nsIInputStream* iStr,
           if (!(mOutBuffer = (unsigned char*)realloc(
                     mOutBuffer, mOutBufferLen = streamLen * 3))) {
             free(originalOutBuffer);
+            mOutBufferLen = 0;
           }
         }
+
+#if defined(__GNUC__) && (__GNUC__ >= 12) && !defined(__clang__)
+#  pragma GCC diagnostic pop
+#endif  
 
         if (mInpBuffer == nullptr || mOutBuffer == nullptr) {
           return NS_ERROR_OUT_OF_MEMORY;
