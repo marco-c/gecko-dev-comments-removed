@@ -5284,19 +5284,42 @@ void Element::RegUnRegAccessKey(bool aDoReg) {
   }
 }
 
+
 void Element::SetHTML(const nsAString& aInnerHTML,
                       const SetHTMLOptions& aOptions, ErrorResult& aError) {
   
-  if (IsHTMLElement(nsGkAtoms::script)) {
-    aError.ThrowTypeError("This does not work on <script> elements");
+  
+
+  
+  
+  
+  
+  if (IsHTMLElement(nsGkAtoms::script) || IsSVGElement(nsGkAtoms::script)) {
+    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
+                                    OwnerDoc(), nsContentUtils::eDOM_PROPERTIES,
+                                    "SetHTMLScript");
     return;
   }
-  if (IsHTMLElement(nsGkAtoms::object)) {
-    aError.ThrowTypeError("This does not work on <object> elements");
+
+  
+  
+  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  if (!global) {
+    aError.ThrowInvalidStateError("Missing owner global.");
     return;
   }
-  if (IsHTMLElement(nsGkAtoms::iframe)) {
-    aError.ThrowTypeError("This does not work on <iframe> elements");
+
+  RefPtr<Sanitizer> sanitizer;
+  if (aOptions.mSanitizer.IsSanitizer()) {
+    sanitizer = aOptions.mSanitizer.GetAsSanitizer();
+  } else if (aOptions.mSanitizer.IsSanitizerConfig()) {
+    sanitizer = Sanitizer::New(
+        global, aOptions.mSanitizer.GetAsSanitizerConfig(), aError);
+  } else {
+    sanitizer = Sanitizer::New(
+        global, aOptions.mSanitizer.GetAsSanitizerPresets(), aError);
+  }
+  if (aError.Failed()) {
     return;
   }
 
@@ -5343,6 +5366,12 @@ void Element::SetHTML(const nsAString& aInnerHTML,
 
   
   
+  
+  
+  
+
+  
+  
   RefPtr<Document> inertDoc;
   nsAtom* contextLocalName = parseContext->NodeInfo()->NameAtom();
   int32_t contextNameSpaceID = parseContext->GetNameSpaceID();
@@ -5361,7 +5390,8 @@ void Element::SetHTML(const nsAString& aInnerHTML,
                                                contextLocalName,
                                                contextNameSpaceID, false, true);
 
-  } else if (doc->IsXMLDocument()) {
+  } else {
+    MOZ_ASSERT(doc->IsXMLDocument());
     inertDoc = nsContentUtils::CreateInertXMLDocument(nullptr);
     if (!inertDoc) {
       aError = NS_ERROR_FAILURE;
@@ -5390,31 +5420,13 @@ void Element::SetHTML(const nsAString& aInnerHTML,
 
   int32_t oldChildCount = static_cast<int32_t>(target->GetChildCount());
 
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
-  if (!global) {
-    aError.ThrowInvalidStateError("Missing owner global.");
-    return;
-  }
-
-  RefPtr<Sanitizer> sanitizer;
-  if (aOptions.mSanitizer.IsSanitizer()) {
-    sanitizer = aOptions.mSanitizer.GetAsSanitizer();
-  } else if (aOptions.mSanitizer.IsSanitizerConfig()) {
-    sanitizer = Sanitizer::New(
-        global, aOptions.mSanitizer.GetAsSanitizerConfig(), aError);
-  } else {
-    sanitizer = Sanitizer::New(
-        global, aOptions.mSanitizer.GetAsSanitizerPresets(), aError);
-  }
-  if (aError.Failed()) {
-    return;
-  }
-
+  
   sanitizer->SanitizeFragment(fragment,  true, aError);
   if (aError.Failed()) {
     return;
   }
 
+  
   target->AppendChild(*fragment, aError);
   if (aError.Failed()) {
     return;
