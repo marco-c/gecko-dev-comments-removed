@@ -14,6 +14,10 @@ const L10N = new LocalizationHelper(STRINGS_URI);
 
 
 
+
+
+
+
 const MAX_IMAGE_WIDTH = 10000;
 const MAX_IMAGE_HEIGHT = 10000;
 
