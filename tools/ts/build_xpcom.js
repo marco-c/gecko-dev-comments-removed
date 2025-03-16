@@ -91,25 +91,29 @@ function ts_interface(iface) {
   
   let partial = iface.id === "nsISupports" ? "?" : "";
 
-  let enums = iface.enums.map(e => `typeof ${iface.id}.${e.id}`).join(" & ");
+  let enums = iface.enums.map(e => `typeof ${iface.id}_${e.id}`).join(" & ");
   if (enums) {
     base += `, Enums<${enums}>`;
     iface.class += `, ${enums}`;
 
     
     lines.push("}  // global\n");
-    lines.push(`declare namespace ${iface.id} {\n`);
 
     for (let e of iface.enums) {
-      lines.push(`enum ${e.id} {`);
+      lines.push(`declare enum ${iface.id}_${e.id} {`);
       for (let v of e.variants) {
         lines.push(`  ${v.name} = ${v.value},`);
       }
       lines.push("}\n");
     }
 
-    lines.push("}\n");
     lines.push("declare global {\n");
+    lines.push(`namespace ${iface.id} {`);
+
+    for (let e of iface.enums) {
+      lines.push(`  type ${e.id} = ${iface.id}_${e.id};`);
+    }
+    lines.push("}\n");
   }
 
   

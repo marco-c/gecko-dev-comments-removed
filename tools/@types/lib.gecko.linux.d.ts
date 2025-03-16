@@ -74,7 +74,7 @@ type InOutParam<T> = { value: T };
 type OutParam<T> = { value?: T };
 
 
-type Enums<enums> = enums;
+type Enums<enums> = Partial<Pick<enums, keyof enums>>;
 
 
 type Callable<iface> = iface | Extract<iface[keyof iface], Function>
