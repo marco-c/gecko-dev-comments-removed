@@ -5,7 +5,7 @@
 
 
 
-use std::{cmp::Ordering, fmt, hash, marker::PhantomData};
+use core::{cmp::Ordering, fmt, hash, marker::PhantomData};
 
 
 
@@ -22,7 +22,7 @@ pub struct BadHandle {
 impl BadHandle {
     pub fn new<T>(handle: Handle<T>) -> Self {
         Self {
-            kind: std::any::type_name::<T>(),
+            kind: core::any::type_name::<T>(),
             index: handle.index(),
         }
     }

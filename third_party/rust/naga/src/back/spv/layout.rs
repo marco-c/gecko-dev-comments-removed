@@ -1,6 +1,12 @@
-use super::{Instruction, LogicalLayout, PhysicalLayout};
+use alloc::{vec, vec::Vec};
+use core::iter;
+
 use spirv::{Op, Word, MAGIC_NUMBER};
-use std::iter;
+
+use super::{Instruction, LogicalLayout, PhysicalLayout};
+
+#[cfg(test)]
+use alloc::format;
 
 
 const GENERATOR: Word = 28;

@@ -7,22 +7,59 @@
 mod polyfill;
 mod writer;
 
+use alloc::format;
+use alloc::string::String;
+
 use thiserror::Error;
 
 pub use writer::{Writer, WriterFlags};
 
+use crate::common::wgsl;
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]
-    FmtError(#[from] std::fmt::Error),
+    FmtError(#[from] core::fmt::Error),
     #[error("{0}")]
     Custom(String),
     #[error("{0}")]
     Unimplemented(String), 
-    #[error("Unsupported math function: {0:?}")]
-    UnsupportedMathFunction(crate::MathFunction),
     #[error("Unsupported relational function: {0:?}")]
     UnsupportedRelationalFunction(crate::RelationalFunction),
+    #[error("Unsupported {kind}: {value}")]
+    Unsupported {
+        
+        kind: &'static str,
+
+        
+        value: String,
+    },
+}
+
+impl Error {
+    
+    
+    
+    fn unsupported<T: core::fmt::Debug>(kind: &'static str, value: T) -> Error {
+        Error::Unsupported {
+            kind,
+            value: format!("{value:?}"),
+        }
+    }
+}
+
+trait ToWgslIfImplemented {
+    fn to_wgsl_if_implemented(self) -> Result<&'static str, Error>;
+}
+
+impl<T> ToWgslIfImplemented for T
+where
+    T: wgsl::TryToWgsl + core::fmt::Debug + Copy,
+{
+    fn to_wgsl_if_implemented(self) -> Result<&'static str, Error> {
+        self.try_to_wgsl()
+            .ok_or_else(|| Error::unsupported(T::DESCRIPTION, self))
+    }
 }
 
 pub fn write_string(

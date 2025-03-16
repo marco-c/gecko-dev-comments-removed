@@ -57,8 +57,11 @@
 
 
 
-use super::{Block, BlockContext, Instruction};
+use alloc::{vec, vec::Vec};
+
 use spirv::Word;
+
+use super::{Block, BlockContext, Instruction};
 
 
 pub(super) struct Selection<'b, M: MergeTuple> {
@@ -125,7 +128,7 @@ impl<'b, M: MergeTuple> Selection<'b, M> {
         let merge_label = self.make_merge_label(ctx);
         let next_label = ctx.gen_id();
         ctx.function.consume(
-            std::mem::replace(self.block, Block::new(next_label)),
+            core::mem::replace(self.block, Block::new(next_label)),
             Instruction::branch_conditional(cond, next_label, merge_label),
         );
     }
@@ -160,7 +163,7 @@ impl<'b, M: MergeTuple> Selection<'b, M> {
                 
                 values.push((final_values, block.label_id));
                 ctx.function.consume(
-                    std::mem::replace(block, Block::new(merge_label)),
+                    core::mem::replace(block, Block::new(merge_label)),
                     Instruction::branch(merge_label),
                 );
 
