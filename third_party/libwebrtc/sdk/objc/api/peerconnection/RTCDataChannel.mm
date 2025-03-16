@@ -118,11 +118,19 @@ class DataChannelDelegateAdapter : public DataChannelObserver {
 }
 
 - (uint16_t)maxPacketLifeTime {
-  return _nativeDataChannel->maxRetransmitTime();
+  
+  if (_nativeDataChannel->maxPacketLifeTime()) {
+    return *_nativeDataChannel->maxPacketLifeTime();
+  }
+  return -1;
 }
 
 - (uint16_t)maxRetransmits {
-  return _nativeDataChannel->maxRetransmits();
+  
+  if (_nativeDataChannel->maxRetransmitsOpt()) {
+    return *_nativeDataChannel->maxRetransmitsOpt();
+  }
+  return -1;
 }
 
 - (NSString *)protocol {

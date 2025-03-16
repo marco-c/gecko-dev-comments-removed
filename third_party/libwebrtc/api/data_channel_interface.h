@@ -161,8 +161,10 @@ class RTC_EXPORT DataChannelInterface : public RefCountInterface {
   
   virtual bool ordered() const;
   
-  virtual uint16_t maxRetransmitTime() const;
-  virtual uint16_t maxRetransmits() const;
+  [[deprecated("Use maxPacketLifeTime")]] virtual uint16_t maxRetransmitTime()
+      const;
+  [[deprecated("Use maxRetransmitsOpt")]] virtual uint16_t maxRetransmits()
+      const;
   virtual std::optional<int> maxRetransmitsOpt() const;
   virtual std::optional<int> maxPacketLifeTime() const;
   virtual std::string protocol() const;

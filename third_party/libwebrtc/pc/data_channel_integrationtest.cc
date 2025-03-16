@@ -607,7 +607,8 @@ TEST_P(DataChannelIntegrationTest, SctpDataChannelConfigSentToOtherSide) {
   
   EXPECT_NE(init.id, callee()->data_channel()->id());
   EXPECT_EQ("data-channel", callee()->data_channel()->label());
-  EXPECT_EQ(init.maxRetransmits, callee()->data_channel()->maxRetransmits());
+  EXPECT_EQ(init.maxRetransmits,
+            *callee()->data_channel()->maxRetransmitsOpt());
   EXPECT_FALSE(callee()->data_channel()->negotiated());
 }
 
