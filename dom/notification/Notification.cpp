@@ -286,23 +286,10 @@ bool Notification::PrefEnabled(JSContext* aCx, JSObject* aObj) {
   return StaticPrefs::dom_webnotifications_enabled();
 }
 
-Notification::Notification(nsIGlobalObject* aGlobal, const nsAString& aID,
-                           const nsAString& aTitle, const nsAString& aBody,
-                           NotificationDirection aDir, const nsAString& aLang,
-                           const nsAString& aTag, const nsAString& aIconUrl,
-                           bool aRequireInteraction, bool aSilent,
-                           nsTArray<uint32_t>&& aVibrate)
+Notification::Notification(nsIGlobalObject* aGlobal,
+                           IPCNotification&& aIPCNotification)
     : DOMEventTargetHelper(aGlobal),
-      mID(aID),
-      mTitle(aTitle),
-      mBody(aBody),
-      mDir(aDir),
-      mLang(aLang),
-      mTag(aTag),
-      mIconUrl(aIconUrl),
-      mRequireInteraction(aRequireInteraction),
-      mSilent(aSilent),
-      mVibrate(std::move(aVibrate)),
+      mIPCNotification(std::move(aIPCNotification)),
       mData(JS::NullValue()) {
   KeepAliveIfHasListenersFor(nsGkAtoms::onclick);
   KeepAliveIfHasListenersFor(nsGkAtoms::onshow);
@@ -358,12 +345,31 @@ already_AddRefed<Notification> Notification::Constructor(
 }
 
 
-Result<already_AddRefed<Notification>, QMResult> Notification::ConstructFromIPC(
+Result<Ok, nsresult> ValidateBase64Data(const nsAString& aData) {
+  if (aData.IsEmpty()) {
+    return Ok();
+  }
+
+  
+  RefPtr<nsStructuredCloneContainer> container =
+      new nsStructuredCloneContainer();
+  MOZ_TRY(container->InitFromBase64(aData, JS_STRUCTURED_CLONE_VERSION));
+
+  nsString result;
+  MOZ_TRY(container->GetDataAsBase64(result));
+
+  return Ok();
+}
+
+
+Result<already_AddRefed<Notification>, nsresult> Notification::ConstructFromIPC(
     nsIGlobalObject* aGlobal, const IPCNotification& aIPCNotification,
     const nsAString& aServiceWorkerRegistrationScope) {
   MOZ_ASSERT(aGlobal);
 
   const IPCNotificationOptions& ipcOptions = aIPCNotification.options();
+
+  MOZ_TRY(ValidateBase64Data(ipcOptions.dataSerialized()));
 
   RootedDictionary<NotificationOptions> options(RootingCx());
   options.mDir = ipcOptions.dir();
@@ -372,13 +378,12 @@ Result<already_AddRefed<Notification>, QMResult> Notification::ConstructFromIPC(
   options.mTag = ipcOptions.tag();
   options.mIcon = ipcOptions.icon();
   IgnoredErrorResult rv;
-  RefPtr<Notification> notification = CreateInternal(
-      aGlobal, aIPCNotification.id(), ipcOptions.title(), options, rv);
+  RefPtr<Notification> notification =
+      CreateInternal(aGlobal, aIPCNotification.id(), ipcOptions.title(),
+                     ipcOptions.dataSerialized(), options, rv);
   if (NS_WARN_IF(rv.Failed())) {
-    return Err(ToQMResult(NS_ERROR_FAILURE));
+    return Err(NS_ERROR_FAILURE);
   }
-
-  QM_TRY(notification->InitFromBase64(ipcOptions.dataSerialized()));
 
   notification->SetScope(aServiceWorkerRegistrationScope);
 
@@ -396,7 +401,8 @@ void Notification::MaybeNotifyClose() {
 
 already_AddRefed<Notification> Notification::CreateInternal(
     nsIGlobalObject* aGlobal, const nsAString& aID, const nsAString& aTitle,
-    const NotificationOptions& aOptions, ErrorResult& aRv) {
+    const nsAString& aDataSerialized, const NotificationOptions& aOptions,
+    ErrorResult& aRv) {
   
   bool silent = false;
   if (StaticPrefs::dom_webnotifications_silent_enabled()) {
@@ -433,10 +439,16 @@ already_AddRefed<Notification> Notification::CreateInternal(
   nsString iconUrl = aOptions.mIcon;
   ResolveIconURL(aGlobal, iconUrl);
 
-  RefPtr<Notification> notification = new Notification(
-      aGlobal, aID, aTitle, aOptions.mBody, aOptions.mDir, aOptions.mLang,
-      aOptions.mTag, iconUrl, aOptions.mRequireInteraction, silent,
-      std::move(vibrate));
+  IPCNotification ipcNotification(
+      nsString(aID),
+      IPCNotificationOptions(nsString(aTitle), aOptions.mDir,
+                             nsString(aOptions.mLang), nsString(aOptions.mBody),
+                             nsString(aOptions.mTag), iconUrl,
+                             aOptions.mRequireInteraction, silent, vibrate,
+                             nsString(aDataSerialized)));
+
+  RefPtr<Notification> notification =
+      new Notification(aGlobal, std::move(ipcNotification));
   return notification.forget();
 }
 
@@ -668,21 +680,26 @@ void Notification::Close() {
   }
 }
 
-bool Notification::RequireInteraction() const { return mRequireInteraction; }
+bool Notification::RequireInteraction() const {
+  return mIPCNotification.options().requireInteraction();
+}
 
-bool Notification::Silent() const { return mSilent; }
+bool Notification::Silent() const {
+  return mIPCNotification.options().silent();
+}
 
 void Notification::GetVibrate(nsTArray<uint32_t>& aRetval) const {
-  aRetval = mVibrate.Clone();
+  aRetval = mIPCNotification.options().vibrate().Clone();
 }
 
 void Notification::GetData(JSContext* aCx,
                            JS::MutableHandle<JS::Value> aRetval) {
-  if (mData.isNull() && !mDataAsBase64.IsEmpty()) {
+  const nsString& dataSerialized = mIPCNotification.options().dataSerialized();
+  if (mData.isNull() && !dataSerialized.IsEmpty()) {
     nsresult rv;
     RefPtr<nsStructuredCloneContainer> container =
         new nsStructuredCloneContainer();
-    rv = container->InitFromBase64(mDataAsBase64, JS_STRUCTURED_CLONE_VERSION);
+    rv = container->InitFromBase64(dataSerialized, JS_STRUCTURED_CLONE_VERSION);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       aRetval.setNull();
       return;
@@ -708,39 +725,19 @@ void Notification::GetData(JSContext* aCx,
   aRetval.set(mData);
 }
 
-void Notification::InitFromJSVal(JSContext* aCx, JS::Handle<JS::Value> aData,
-                                 ErrorResult& aRv) {
-  if (!mDataAsBase64.IsEmpty() || aData.isNull()) {
-    return;
+static Result<nsString, nsresult> SerializeDataAsBase64(
+    JSContext* aCx, JS::Handle<JS::Value> aData) {
+  if (aData.isNull()) {
+    return nsString();
   }
   RefPtr<nsStructuredCloneContainer> dataObjectContainer =
       new nsStructuredCloneContainer();
-  aRv = dataObjectContainer->InitFromJSVal(aData, aCx);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
+  MOZ_TRY(dataObjectContainer->InitFromJSVal(aData, aCx));
 
-  aRv = dataObjectContainer->GetDataAsBase64(mDataAsBase64);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-}
+  nsString result;
+  MOZ_TRY(dataObjectContainer->GetDataAsBase64(result));
 
-Result<Ok, QMResult> Notification::InitFromBase64(const nsAString& aData) {
-  MOZ_ASSERT(mDataAsBase64.IsEmpty());
-  if (aData.IsEmpty()) {
-    
-    return Ok();
-  }
-
-  
-  RefPtr<nsStructuredCloneContainer> container =
-      new nsStructuredCloneContainer();
-  QM_TRY(QM_TO_RESULT(
-      container->InitFromBase64(aData, JS_STRUCTURED_CLONE_VERSION)));
-  QM_TRY(QM_TO_RESULT(container->GetDataAsBase64(mDataAsBase64)));
-
-  return Ok();
+  return result;
 }
 
 
@@ -795,22 +792,25 @@ already_AddRefed<Promise> Notification::ShowPersistentNotification(
 }
 
 
+
 already_AddRefed<Notification> Notification::Create(
     JSContext* aCx, nsIGlobalObject* aGlobal, const nsAString& aTitle,
     const NotificationOptions& aOptions, const nsAString& aScope,
     ErrorResult& aRv) {
   MOZ_ASSERT(aGlobal);
 
-  RefPtr<Notification> notification =
-      CreateInternal(aGlobal, u""_ns, aTitle, aOptions, aRv);
-  if (aRv.Failed()) {
+  
+  
+  JS::Rooted<JS::Value> data(aCx, aOptions.mData);
+  Result<nsString, nsresult> dataResult = SerializeDataAsBase64(aCx, data);
+  if (dataResult.isErr()) {
+    aRv = dataResult.unwrapErr();
     return nullptr;
   }
 
-  
-  JS::Rooted<JS::Value> data(aCx, aOptions.mData);
-  notification->InitFromJSVal(aCx, data, aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+  RefPtr<Notification> notification = CreateInternal(
+      aGlobal, u""_ns, aTitle, dataResult.unwrap(), aOptions, aRv);
+  if (aRv.Failed()) {
     return nullptr;
   }
 
@@ -822,9 +822,6 @@ already_AddRefed<Notification> Notification::Create(
 bool Notification::CreateActor() {
   mozilla::ipc::PBackgroundChild* backgroundActor =
       mozilla::ipc::BackgroundChild::GetOrCreateForCurrentThread();
-  IPCNotificationOptions options(mTitle, mDir, mLang, mBody, mTag, mIconUrl,
-                                 mRequireInteraction, mSilent, mVibrate,
-                                 mDataAsBase64);
 
   
   
@@ -866,8 +863,8 @@ bool Notification::CreateActor() {
 
   (void)backgroundActor->SendCreateNotificationParent(
       std::move(parentEndpoint), WrapNotNull(principal),
-      WrapNotNull(effectiveStoragePrincipal), isSecureContext, mID, mScope,
-      options);
+      WrapNotNull(effectiveStoragePrincipal), isSecureContext, mScope,
+      mIPCNotification);
 
   return true;
 }
