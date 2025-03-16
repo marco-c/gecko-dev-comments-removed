@@ -22,13 +22,15 @@
 
 
 + (void)sendAsyncRequest:(NSURLRequest *)request
-       completionHandler:
-           (void (^)(NSURLResponse *response, NSData *data, NSError *error))completionHandler;
+       completionHandler:(void (^)(NSURLResponse *response,
+                                   NSData *data,
+                                   NSError *error))completionHandler;
 
 
 + (void)sendAsyncPostToURL:(NSURL *)url
                   withData:(NSData *)data
-         completionHandler:(void (^)(BOOL succeeded, NSData *data))completionHandler;
+         completionHandler:
+             (void (^)(BOOL succeeded, NSData *data))completionHandler;
 
 @end
 

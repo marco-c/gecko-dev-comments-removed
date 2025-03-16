@@ -60,6 +60,7 @@ extern NSString *const SRHTTPResponseErrorKey;
 @property(nonatomic, readonly, copy) NSString *protocol;
 
 
+
 - (id)initWithURLRequest:(NSURLRequest *)request protocols:(NSArray *)protocols;
 - (id)initWithURLRequest:(NSURLRequest *)request;
 
@@ -73,8 +74,10 @@ extern NSString *const SRHTTPResponseErrorKey;
 - (void)setDelegateDispatchQueue:(dispatch_queue_t)queue;
 
 
+
 - (void)scheduleInRunLoop:(NSRunLoop *)aRunLoop forMode:(NSString *)mode;
 - (void)unscheduleFromRunLoop:(NSRunLoop *)aRunLoop forMode:(NSString *)mode;
+
 
 
 - (void)open;

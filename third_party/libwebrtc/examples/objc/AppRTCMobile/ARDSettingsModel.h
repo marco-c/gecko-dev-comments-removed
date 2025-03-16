@@ -36,6 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
+
 - (NSString *)currentVideoResolutionSettingFromStore;
 - (int)currentVideoResolutionWidthFromStore;
 - (int)currentVideoResolutionHeightFromStore;
@@ -54,6 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 - (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *)availableVideoCodecs;
+
 
 
 
@@ -85,6 +87,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
+
 - (BOOL)currentAudioOnlySettingFromStore;
 
 
@@ -93,6 +96,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 - (void)storeAudioOnlySetting:(BOOL)audioOnly;
+
 
 
 

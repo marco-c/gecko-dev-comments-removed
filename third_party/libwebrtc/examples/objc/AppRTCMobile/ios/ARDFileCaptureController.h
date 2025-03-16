@@ -25,7 +25,8 @@ NS_CLASS_AVAILABLE_IOS(10)
 
 
 
-- (instancetype)initWithCapturer:(RTC_OBJC_TYPE(RTCFileVideoCapturer) *)capturer;
+- (instancetype)initWithCapturer:
+    (RTC_OBJC_TYPE(RTCFileVideoCapturer) *)capturer;
 
 
 

@@ -15,7 +15,8 @@
 
 @interface ARDCaptureController : NSObject
 
-- (instancetype)initWithCapturer:(RTC_OBJC_TYPE(RTCCameraVideoCapturer) *)capturer
+- (instancetype)initWithCapturer:
+                    (RTC_OBJC_TYPE(RTCCameraVideoCapturer) *)capturer
                         settings:(ARDSettingsModel *)settings;
 - (void)startCapture;
 - (void)startCapture:(void (^)(NSError *))completion;

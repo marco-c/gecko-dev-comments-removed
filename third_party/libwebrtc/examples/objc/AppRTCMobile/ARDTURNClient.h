@@ -17,7 +17,7 @@
 @protocol ARDTURNClient <NSObject>
 
 
-- (void)requestServersWithCompletionHandler:(void (^)(NSArray *turnServers,
-                                                      NSError *error))completionHandler;
+- (void)requestServersWithCompletionHandler:
+    (void (^)(NSArray *turnServers, NSError *error))completionHandler;
 
 @end
