@@ -33,7 +33,8 @@ struct TestTypeTraits {
 };
 }  
 
-using ScopedTestType = rtc::internal::ScopedTypeRef<TestTypeRef, TestTypeTraits>;
+using ScopedTestType =
+    rtc::internal::ScopedTypeRef<TestTypeRef, TestTypeTraits>;
 
 
 

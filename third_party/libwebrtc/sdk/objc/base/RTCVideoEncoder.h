@@ -20,8 +20,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 
-typedef BOOL (^RTCVideoEncoderCallback)(RTC_OBJC_TYPE(RTCEncodedImage) * frame,
-                                        id<RTC_OBJC_TYPE(RTCCodecSpecificInfo)> info);
+typedef BOOL (^RTCVideoEncoderCallback)(
+    RTC_OBJC_TYPE(RTCEncodedImage) * frame,
+    id<RTC_OBJC_TYPE(RTCCodecSpecificInfo)> info);
 
 
 RTC_OBJC_EXPORT
@@ -29,7 +30,8 @@ RTC_OBJC_EXPORT
 (RTCVideoEncoder)<NSObject>
 
     - (void)setCallback : (nullable RTCVideoEncoderCallback)callback;
-- (NSInteger)startEncodeWithSettings:(RTC_OBJC_TYPE(RTCVideoEncoderSettings) *)settings
+- (NSInteger)startEncodeWithSettings:
+                 (RTC_OBJC_TYPE(RTCVideoEncoderSettings) *)settings
                        numberOfCores:(int)numberOfCores;
 - (NSInteger)releaseEncoder;
 - (NSInteger)encode:(RTC_OBJC_TYPE(RTCVideoFrame) *)frame
@@ -45,6 +47,7 @@ RTC_OBJC_EXPORT
 
 
 @property(nonatomic, readonly) NSInteger resolutionAlignment;
+
 
 
 

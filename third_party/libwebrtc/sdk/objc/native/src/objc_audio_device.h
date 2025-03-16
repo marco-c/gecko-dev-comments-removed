@@ -29,7 +29,8 @@ namespace objc_adm {
 
 class ObjCAudioDeviceModule : public AudioDeviceModule {
  public:
-  explicit ObjCAudioDeviceModule(id<RTC_OBJC_TYPE(RTCAudioDevice)> audio_device);
+  explicit ObjCAudioDeviceModule(
+      id<RTC_OBJC_TYPE(RTCAudioDevice)> audio_device);
   ~ObjCAudioDeviceModule() override;
 
   
@@ -135,13 +136,14 @@ class ObjCAudioDeviceModule : public AudioDeviceModule {
 #endif  
 
  public:
-  OSStatus OnDeliverRecordedData(AudioUnitRenderActionFlags* flags,
-                                 const AudioTimeStamp* time_stamp,
-                                 NSInteger bus_number,
-                                 UInt32 num_frames,
-                                 const AudioBufferList* io_data,
-                                 void* render_context,
-                                 RTC_OBJC_TYPE(RTCAudioDeviceRenderRecordedDataBlock) render_block);
+  OSStatus OnDeliverRecordedData(
+      AudioUnitRenderActionFlags* flags,
+      const AudioTimeStamp* time_stamp,
+      NSInteger bus_number,
+      UInt32 num_frames,
+      const AudioBufferList* io_data,
+      void* render_context,
+      RTC_OBJC_TYPE(RTCAudioDeviceRenderRecordedDataBlock) render_block);
 
   OSStatus OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
                             const AudioTimeStamp* time_stamp,
@@ -162,6 +164,7 @@ class ObjCAudioDeviceModule : public AudioDeviceModule {
   
   void HandleAudioOutputParametersChange();
 
+  
   
   
   void HandleAudioInputInterrupted();
@@ -186,8 +189,12 @@ class ObjCAudioDeviceModule : public AudioDeviceModule {
   
   
   
+  
+  
+  
 
-  bool UpdateAudioParameters(AudioParameters& params, const AudioParameters& device_params);
+  bool UpdateAudioParameters(AudioParameters& params,
+                             const AudioParameters& device_params);
 
   
   
@@ -197,7 +204,9 @@ class ObjCAudioDeviceModule : public AudioDeviceModule {
   
   
   
-  void UpdateAudioDelay(std::atomic<int>& delay_ms, const NSTimeInterval device_latency);
+  
+  void UpdateAudioDelay(std::atomic<int>& delay_ms,
+                        const NSTimeInterval device_latency);
 
   
   
@@ -212,6 +221,7 @@ class ObjCAudioDeviceModule : public AudioDeviceModule {
 
   const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
 
+  
   
   
   

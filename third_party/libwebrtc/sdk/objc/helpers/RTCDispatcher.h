@@ -36,7 +36,8 @@ RTC_OBJC_EXPORT
 
 
 
-+ (void)dispatchAsyncOnType:(RTCDispatcherQueueType)dispatchType block:(dispatch_block_t)block;
++ (void)dispatchAsyncOnType:(RTCDispatcherQueueType)dispatchType
+                      block:(dispatch_block_t)block;
 
 
 

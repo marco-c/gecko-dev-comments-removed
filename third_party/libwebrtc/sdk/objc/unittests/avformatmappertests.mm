@@ -33,8 +33,8 @@ static cricket::VideoFormat expectedFormat =
 
 @interface AVCaptureDeviceFormatMock : NSObject
 
-@property (nonatomic, assign) CMVideoFormatDescriptionRef format;
-@property (nonatomic, strong) OCMockObject *rangeMock;
+@property(nonatomic, assign) CMVideoFormatDescriptionRef format;
+@property(nonatomic, strong) OCMockObject* rangeMock;
 
 - (instancetype)initWithMediaSubtype:(FourCharCode)subtype
                               minFps:(float)minFps
@@ -55,8 +55,8 @@ static cricket::VideoFormat expectedFormat =
                               maxFps:(float)maxFps {
   self = [super init];
   if (self) {
-    CMVideoFormatDescriptionCreate(nil, subtype, kFormatWidth, kFormatHeight,
-                                   nil, &_format);
+    CMVideoFormatDescriptionCreate(
+        nil, subtype, kFormatWidth, kFormatHeight, nil, &_format);
     
     _rangeMock = [OCMockObject mockForClass:[AVFrameRateRange class]];
     [[[_rangeMock stub] andReturnValue:@(minFps)] minFrameRate];
@@ -67,7 +67,7 @@ static cricket::VideoFormat expectedFormat =
 }
 
 + (instancetype)validFormat {
-  AVCaptureDeviceFormatMock *instance = [[AVCaptureDeviceFormatMock alloc]
+  AVCaptureDeviceFormatMock* instance = [[AVCaptureDeviceFormatMock alloc]
       initWithMediaSubtype:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
                     minFps:0.0
                     maxFps:30.0];
@@ -75,7 +75,7 @@ static cricket::VideoFormat expectedFormat =
 }
 
 + (instancetype)invalidFpsFormat {
-  AVCaptureDeviceFormatMock *instance = [[AVCaptureDeviceFormatMock alloc]
+  AVCaptureDeviceFormatMock* instance = [[AVCaptureDeviceFormatMock alloc]
       initWithMediaSubtype:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
                     minFps:0.0
                     maxFps:22.0];
@@ -83,7 +83,7 @@ static cricket::VideoFormat expectedFormat =
 }
 
 + (instancetype)invalidMediaSubtypeFormat {
-  AVCaptureDeviceFormatMock *instance = [[AVCaptureDeviceFormatMock alloc]
+  AVCaptureDeviceFormatMock* instance = [[AVCaptureDeviceFormatMock alloc]
       initWithMediaSubtype:kCVPixelFormatType_420YpCbCr8Planar
                     minFps:0.0
                     maxFps:60.0];
@@ -102,7 +102,7 @@ static cricket::VideoFormat expectedFormat =
   return self.format;
 }
 
-- (NSArray *)videoSupportedFrameRateRanges {
+- (NSArray*)videoSupportedFrameRateRanges {
   return @[ self.rangeMock ];
 }
 
@@ -202,8 +202,8 @@ TEST(AVFormatMapperTest, SetFormatWhenDeviceCannotLock) {
   [[[mockDevice stub] andReturn:@[]] formats];
 
   
-  bool resultFormat = webrtc::SetFormatForCaptureDevice(mockDevice, nil,
-                                                        cricket::VideoFormat());
+  bool resultFormat = webrtc::SetFormatForCaptureDevice(
+      mockDevice, nil, cricket::VideoFormat());
 
   
   EXPECT_FALSE(resultFormat);
@@ -222,8 +222,8 @@ TEST(AVFormatMapperTest, SetFormatWhenFormatIsIncompatible) {
   OCMExpect([mockDevice unlockForConfiguration]);
 
   
-  bool resultFormat = webrtc::SetFormatForCaptureDevice(mockDevice, nil,
-                                                        cricket::VideoFormat());
+  bool resultFormat = webrtc::SetFormatForCaptureDevice(
+      mockDevice, nil, cricket::VideoFormat());
 
   
   EXPECT_FALSE(resultFormat);

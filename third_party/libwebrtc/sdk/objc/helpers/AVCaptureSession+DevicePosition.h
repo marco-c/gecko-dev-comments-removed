@@ -16,7 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface AVCaptureSession (DevicePosition)
 
 
-+ (AVCaptureDevicePosition)devicePositionForSampleBuffer:(CMSampleBufferRef)sampleBuffer;
++ (AVCaptureDevicePosition)devicePositionForSampleBuffer:
+    (CMSampleBufferRef)sampleBuffer;
 
 @end
 

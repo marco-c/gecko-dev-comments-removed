@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 RTC_OBJC_EXPORT
 @protocol RTC_OBJC_TYPE
-(RTCMutableI420Buffer)<RTC_OBJC_TYPE(RTCI420Buffer), RTC_OBJC_TYPE(RTCMutableYUVPlanarBuffer)> @end
+(RTCMutableI420Buffer)<RTC_OBJC_TYPE(RTCI420Buffer),
+                       RTC_OBJC_TYPE(RTCMutableYUVPlanarBuffer)> @end
 
 NS_ASSUME_NONNULL_END

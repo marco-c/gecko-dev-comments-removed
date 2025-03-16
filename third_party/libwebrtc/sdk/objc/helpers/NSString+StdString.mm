@@ -24,7 +24,7 @@
                      charData.length);
 }
 
-+ (NSString *)stringForStdString:(const std::string&)stdString {
++ (NSString *)stringForStdString:(const std::string &)stdString {
   
   
   return [[NSString alloc] initWithBytes:stdString.data()

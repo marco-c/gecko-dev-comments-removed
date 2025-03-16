@@ -49,7 +49,8 @@
 
 
 
-#define RTC_OBJC_TYPE(type_name) RTC_SYMBOL_CONCAT(RTC_OBJC_TYPE_PREFIX, type_name)
+#define RTC_OBJC_TYPE(type_name) \
+  RTC_SYMBOL_CONCAT(RTC_OBJC_TYPE_PREFIX, type_name)
 
 #if defined(__cplusplus)
 #define RTC_EXTERN extern "C" RTC_OBJC_EXPORT
