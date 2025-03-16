@@ -552,16 +552,24 @@ nsFilePicker::ShowFilePicker(const nsString& aInitialDir) {
 
     
     switch (mMode) {
+      case modeOpenMultiple:
+        fos |= FOS_ALLOWMULTISELECT;
+        [[fallthrough]];
+
       case modeOpen:
         fos |= FOS_FILEMUSTEXIST;
-        break;
-
-      case modeOpenMultiple:
-        fos |= FOS_FILEMUSTEXIST | FOS_ALLOWMULTISELECT;
+        switch (mozilla::StaticPrefs::
+                    widget_windows_follow_shortcuts_on_file_open()) {
+          case 1:
+            break;
+          default:
+            fos |= FOS_NODEREFERENCELINKS;
+        }
         break;
 
       case modeSave:
         fos |= FOS_NOREADONLYRETURN;
+        
         
         
         if (IsDefaultPathLink()) {
