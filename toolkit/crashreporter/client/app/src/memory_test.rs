@@ -81,7 +81,20 @@ fn get_memtest_kinds() -> anyhow::Result<Vec<MemtestKind>> {
         .collect();
     remaining.shuffle(&mut thread_rng());
 
-    Ok([specified, remaining].concat())
+    let mut kinds = [specified, remaining].concat();
+
+    
+    
+    
+    let block_move_idx = kinds
+        .iter()
+        .position(|k| matches!(k, MemtestKind::BlockMove))
+        .expect("BlockMove should exist in MemtestKind::ALL");
+    if block_move_idx != 0 {
+        kinds.remove(block_move_idx);
+    }
+
+    Ok(kinds)
 }
 
 
