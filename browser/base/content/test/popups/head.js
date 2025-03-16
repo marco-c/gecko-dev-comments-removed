@@ -124,12 +124,8 @@ async function testPropertyDeltas(
     info(
       `${msg} ${resizeCount}. resize event: ${stringifyState(currentSizeState)}`
     );
-    
-    
-    const kSlop =
-      AppConstants.platform == "linux" && !SpecialPowers.isHeadless ? 1 : 0;
     let matchingIndex = validResizeStates.findIndex(state =>
-      sizeProps.every(p => Math.abs(state[p] - currentSizeState[p]) <= kSlop)
+      sizeProps.every(p => state[p] == currentSizeState[p])
     );
     if (matchingIndex < 0) {
       info(`${msg} Size state should have been one of:`);
