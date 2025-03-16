@@ -1397,6 +1397,7 @@ body {
 }
 </style>
 <input id="input">
+<p id="p">p</p>
   `,
   async function testTextSupportedTextSelection() {
     let result = await runPython(`
@@ -1411,9 +1412,20 @@ body {
       SupportedTextSelection_Multiple,
       "input SupportedTextSelection correct"
     );
-    
-    
     if (gIsUiaEnabled) {
+      
+      is(
+        await runPython(`
+          p = findUiaByDomId(doc, "p")
+          pLeaf = uiaClient.RawViewWalker.GetFirstChildElement(p)
+          text = getUiaPattern(pLeaf, "Text")
+          return text.SupportedTextSelection
+        `),
+        SupportedTextSelection_None,
+        "pLeaf SupportedTextSelection correct"
+      );
+      
+      
       is(
         await runPython(`getUiaPattern(doc, "Text").SupportedTextSelection`),
         SupportedTextSelection_None,
@@ -1427,18 +1439,34 @@ body {
 
 
 
-addUiaTask(``, async function testTextSupportedTextSelectionSelectableBody() {
-  is(
-    await runPython(`
-      global doc
-      doc = getDocUia()
-      text = getUiaPattern(doc, "Text")
-      return text.SupportedTextSelection
-    `),
-    SupportedTextSelection_Multiple,
-    "doc SupportedTextSelection correct"
-  );
-});
+addUiaTask(
+  `<p id="p">p</p>`,
+  async function testTextSupportedTextSelectionSelectableBody() {
+    is(
+      await runPython(`
+        global doc
+        doc = getDocUia()
+        text = getUiaPattern(doc, "Text")
+        return text.SupportedTextSelection
+      `),
+      SupportedTextSelection_Multiple,
+      "doc SupportedTextSelection correct"
+    );
+    
+    if (gIsUiaEnabled) {
+      is(
+        await runPython(`
+          p = findUiaByDomId(doc, "p")
+          pLeaf = uiaClient.RawViewWalker.GetFirstChildElement(p)
+          text = getUiaPattern(pLeaf, "Text")
+          return text.SupportedTextSelection
+        `),
+        SupportedTextSelection_Multiple,
+        "pLeaf SupportedTextSelection correct"
+      );
+    }
+  }
+);
 
 
 
