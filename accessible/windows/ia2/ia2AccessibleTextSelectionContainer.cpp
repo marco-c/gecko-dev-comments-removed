@@ -53,7 +53,7 @@ ia2AccessibleTextSelectionContainer::get_selections(
 STDMETHODIMP
 ia2AccessibleTextSelectionContainer::setSelections(
     long nSelections, IA2TextSelection* selections) {
-  if (nSelections < 0 || (nSelections > 0 && !selections)) {
+  if (nSelections <= 0 || !selections) {
     return E_INVALIDARG;
   }
   HyperTextAccessibleBase* text = TextAcc();
@@ -74,17 +74,9 @@ ia2AccessibleTextSelectionContainer::setSelections(
     newRanges.AppendElement(range);
   }
   
-  
-  
-  AutoTArray<TextRange, 1> oldRanges;
-  text->SelectionRanges(&oldRanges);
-  
-  for (long r = 0; r < nSelections; ++r) {
+  newRanges[0].SetSelection(TextLeafRange::kRemoveAllExistingSelectedRanges);
+  for (long r = 1; r < nSelections; ++r) {
     newRanges[r].SetSelection(r);
-  }
-  
-  for (long r = nSelections; r < static_cast<long>(oldRanges.Length()); ++r) {
-    text->RemoveFromSelection(r);
   }
   return S_OK;
 }

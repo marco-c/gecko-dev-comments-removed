@@ -319,7 +319,13 @@ class TextLeafRange final {
 
   static void GetSelection(Accessible* aAcc, nsTArray<TextLeafRange>& aRanges);
 
+  static const int32_t kCreateNewSelectionRange = -1;
+  static const int32_t kRemoveAllExistingSelectedRanges = -2;
+
   
+
+
+
 
 
 
