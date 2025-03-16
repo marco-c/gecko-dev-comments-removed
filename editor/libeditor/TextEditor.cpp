@@ -480,56 +480,23 @@ already_AddRefed<Element> TextEditor::GetInputEventTargetElement() const {
 }
 
 bool TextEditor::IsEmpty() const {
-  
-  
-  
-  Element* anonymousDivElement = GetRoot();
-  if (!anonymousDivElement) {
-    return true;  
-  }
-
-  MOZ_ASSERT(anonymousDivElement->GetFirstChild() &&
-             anonymousDivElement->GetFirstChild()->IsText());
-
-  
-  return !anonymousDivElement->GetFirstChild()->Length();
+  const Text* const textNode = GetTextNode();
+  MOZ_DIAGNOSTIC_ASSERT_IF(textNode,
+                           !Text::FromNodeOrNull(textNode->GetNextSibling()));
+  return !textNode || !textNode->TextDataLength();
 }
 
 NS_IMETHODIMP TextEditor::GetTextLength(uint32_t* aCount) {
   MOZ_ASSERT(aCount);
 
-  
-  *aCount = 0;
-
-  
-  
-  
-  
-  
-  if (IsEmpty()) {
-    return NS_OK;
-  }
-
-  Element* rootElement = GetRoot();
-  if (NS_WARN_IF(!rootElement)) {
+  if (NS_WARN_IF(!GetRoot())) {
     return NS_ERROR_FAILURE;
   }
 
-  uint32_t totalLength = 0;
-  PostContentIterator postOrderIter;
-  DebugOnly<nsresult> rvIgnored = postOrderIter.Init(rootElement);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                       "PostContentIterator::Init() failed, but ignored");
-  EditorType editorType = GetEditorType();
-  for (; !postOrderIter.IsDone(); postOrderIter.Next()) {
-    nsINode* currentNode = postOrderIter.GetCurrentNode();
-    if (currentNode && currentNode->IsText() &&
-        EditorUtils::IsEditableContent(*currentNode->AsText(), editorType)) {
-      totalLength += currentNode->Length();
-    }
-  }
-
-  *aCount = totalLength;
+  const Text* const textNode = GetTextNode();
+  MOZ_DIAGNOSTIC_ASSERT_IF(textNode,
+                           !Text::FromNodeOrNull(textNode->GetNextSibling()));
+  *aCount = textNode ? textNode->TextDataLength() : 0u;
   return NS_OK;
 }
 
@@ -947,11 +914,10 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  Element* rootElement = GetRoot();
-  if (NS_WARN_IF(!rootElement)) {
+  if (NS_WARN_IF(!GetRoot())) {
     return NS_ERROR_NOT_INITIALIZED;
   }
-  Text* text = Text::FromNodeOrNull(rootElement->GetFirstChild());
+  Text* const text = GetTextNode();
   if (!text || !text->Length()) {
     
     return aStart > 0 && aStart != UINT32_MAX ? NS_ERROR_INVALID_ARG : NS_OK;
@@ -965,8 +931,8 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
     
     
     
-    const nsTextFragment* textFragment = text->GetText();
-    if (textFragment->IsLowSurrogateFollowingHighSurrogateAt(aStart)) {
+    const nsTextFragment& textFragment = text->TextFragment();
+    if (textFragment.IsLowSurrogateFollowingHighSurrogateAt(aStart)) {
       mPasswordMaskData->mUnmaskedStart = aStart - 1;
       
       if (aLength > 0) {
@@ -981,7 +947,7 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
     
     
     if (UnmaskedEnd() < valueLength &&
-        textFragment->IsLowSurrogateFollowingHighSurrogateAt(UnmaskedEnd())) {
+        textFragment.IsLowSurrogateFollowingHighSurrogateAt(UnmaskedEnd())) {
       mPasswordMaskData->mUnmaskedLength++;
     }
     

@@ -259,6 +259,10 @@ class TextEditor final : public EditorBase,
     }
   }
 
+  
+
+
+
   dom::Text* GetTextNode() {
     MOZ_DIAGNOSTIC_ASSERT(GetRoot());
     MOZ_DIAGNOSTIC_ASSERT(GetRoot()->GetFirstChild());
