@@ -8,15 +8,26 @@
 
 
 
+#include <cstdint>
+#include <vector>
+
+#include "api/task_queue/task_queue_base.h"
+#include "api/test/rtc_error_matchers.h"
+#include "api/test/simulated_network.h"
+#include "api/units/time_delta.h"
 #include "audio/test/audio_end_to_end_test.h"
-#include "rtc_base/gunit.h"
+#include "call/audio_receive_stream.h"
+#include "call/audio_send_stream.h"
 #include "rtc_base/task_queue_for_test.h"
-#include "system_wrappers/include/sleep.h"
+#include "test/call_test.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/wait_until.h"
 
 namespace webrtc {
 namespace test {
 
+using ::testing::IsTrue;
 using NonSenderRttTest = CallTest;
 
 TEST_F(NonSenderRttTest, NonSenderRttStats) {
@@ -47,7 +58,10 @@ TEST_F(NonSenderRttTest, NonSenderRttStats) {
       
       
       
-      EXPECT_TRUE_WAIT(HasRoundTripTimeMeasurement(), kLongTimeoutMs);
+      EXPECT_THAT(
+          WaitUntil([&] { return HasRoundTripTimeMeasurement(); }, IsTrue(),
+                    {.timeout = webrtc::TimeDelta::Millis(kLongTimeoutMs)}),
+          IsRtcOk());
     }
 
     void OnStreamsStopped() override {
