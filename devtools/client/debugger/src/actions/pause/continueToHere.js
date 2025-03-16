@@ -25,10 +25,10 @@ export function continueToHere(location) {
       return;
     }
 
-    const debugLine = selectedFrame.location.line;
+    const pausedLine = selectedFrame.location.line;
     
     
-    if (!column && debugLine == line) {
+    if (!column && pausedLine == line) {
       return;
     }
 
