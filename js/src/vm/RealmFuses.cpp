@@ -6,6 +6,7 @@
 #include "vm/RealmFuses.h"
 
 #include "builtin/MapObject.h"
+#include "builtin/Promise.h"
 #include "builtin/WeakMapObject.h"
 #include "builtin/WeakSetObject.h"
 #include "vm/GlobalObject.h"
@@ -355,6 +356,44 @@ bool js::OptimizeArraySpeciesFuse::checkInvariant(JSContext* cx) {
   PropertyKey speciesKey = PropertyKey::Symbol(cx->wellKnownSymbols().species);
   return ObjectHasGetterFunction(ctor, speciesKey,
                                  cx->names().dollar_ArraySpecies_);
+}
+
+bool js::OptimizePromiseLookupFuse::checkInvariant(JSContext* cx) {
+  
+  auto* proto = cx->global()->maybeGetPrototype<NativeObject>(JSProto_Promise);
+  if (!proto) {
+    
+    return true;
+  }
+
+  auto* ctor = cx->global()->maybeGetConstructor<NativeObject>(JSProto_Promise);
+  MOZ_ASSERT(ctor);
+
+  
+  if (!ObjectHasDataPropertyValue(proto, NameToId(cx->names().constructor),
+                                  ObjectValue(*ctor))) {
+    return false;
+  }
+
+  
+  if (!ObjectHasDataPropertyFunction(proto, NameToId(cx->names().then),
+                                     js::Promise_then)) {
+    return false;
+  }
+
+  
+  PropertyKey speciesKey = PropertyKey::Symbol(cx->wellKnownSymbols().species);
+  if (!ObjectHasGetterFunction(ctor, speciesKey, js::Promise_static_species)) {
+    return false;
+  }
+
+  
+  if (!ObjectHasDataPropertyFunction(ctor, NameToId(cx->names().resolve),
+                                     js::Promise_static_resolve)) {
+    return false;
+  }
+
+  return true;
 }
 
 bool js::OptimizeMapObjectIteratorFuse::checkInvariant(JSContext* cx) {

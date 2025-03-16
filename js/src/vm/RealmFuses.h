@@ -157,6 +157,18 @@ struct OptimizeArraySpeciesFuse final : public InvalidatingRealmFuse {
 
 
 
+struct OptimizePromiseLookupFuse final : public InvalidatingRealmFuse {
+  virtual const char* name() override { return "OptimizePromiseLookupFuse"; }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
+
+
+
+
+
+
+
 
 
 
@@ -228,6 +240,7 @@ struct OptimizeWeakSetPrototypeAddFuse final : public RealmFuse {
   FUSE(IteratorPrototypeHasObjectProto, iteratorPrototypeHasObjectProto)       \
   FUSE(ObjectPrototypeHasNoReturnProperty, objectPrototypeHasNoReturnProperty) \
   FUSE(OptimizeArraySpeciesFuse, optimizeArraySpeciesFuse)                     \
+  FUSE(OptimizePromiseLookupFuse, optimizePromiseLookupFuse)                   \
   FUSE(OptimizeMapObjectIteratorFuse, optimizeMapObjectIteratorFuse)           \
   FUSE(OptimizeSetObjectIteratorFuse, optimizeSetObjectIteratorFuse)           \
   FUSE(OptimizeMapPrototypeSetFuse, optimizeMapPrototypeSetFuse)               \
