@@ -33,6 +33,8 @@ add_setup(async function () {
 });
 
 async function test_ml_alt_text_enabled(locale) {
+  
+  Services.prefs.clearUserPref("browser.ml.enable");
   const defaultBrowserMLPrefValue =
     Services.prefs.getBoolPref("browser.ml.enable");
 
