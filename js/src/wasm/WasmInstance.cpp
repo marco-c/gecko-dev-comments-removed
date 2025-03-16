@@ -1432,60 +1432,72 @@ static int32_t MemDiscardShared(Instance* instance, I byteOffset, I byteLen,
 
 
 template <bool ZeroFields>
-void* Instance::structNewIL(Instance* instance,
-                            TypeDefInstanceData* typeDefData) {
+void* Instance::structNewIL(Instance* instance, uint32_t typeDefIndex,
+                            gc::AllocSite* allocSite) {
   MOZ_ASSERT((ZeroFields ? SASigStructNewIL_true : SASigStructNewIL_false)
                  .failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
+  TypeDefInstanceData* typeDefData =
+      instance->typeDefInstanceData(typeDefIndex);
   
   
   return WasmStructObject::createStructIL<ZeroFields>(
-      cx, typeDefData, typeDefData->allocSite.initialHeap());
+      cx, typeDefData, allocSite, allocSite->initialHeap());
 }
 
 template void* Instance::structNewIL<true>(Instance* instance,
-                                           TypeDefInstanceData* typeDefData);
+                                           uint32_t typeDefIndex,
+                                           gc::AllocSite* allocSite);
 template void* Instance::structNewIL<false>(Instance* instance,
-                                            TypeDefInstanceData* typeDefData);
+                                            uint32_t typeDefIndex,
+                                            gc::AllocSite* allocSite);
 
 
 template <bool ZeroFields>
-void* Instance::structNewOOL(Instance* instance,
-                             TypeDefInstanceData* typeDefData) {
+void* Instance::structNewOOL(Instance* instance, uint32_t typeDefIndex,
+                             gc::AllocSite* allocSite) {
   MOZ_ASSERT((ZeroFields ? SASigStructNewOOL_true : SASigStructNewOOL_false)
                  .failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
+  TypeDefInstanceData* typeDefData =
+      instance->typeDefInstanceData(typeDefIndex);
   
   
   return WasmStructObject::createStructOOL<ZeroFields>(
-      cx, typeDefData, typeDefData->allocSite.initialHeap());
+      cx, typeDefData, allocSite, allocSite->initialHeap());
 }
 
 template void* Instance::structNewOOL<true>(Instance* instance,
-                                            TypeDefInstanceData* typeDefData);
+                                            uint32_t typeDefIndex,
+                                            gc::AllocSite* allocSite);
 template void* Instance::structNewOOL<false>(Instance* instance,
-                                             TypeDefInstanceData* typeDefData);
+                                             uint32_t typeDefIndex,
+                                             gc::AllocSite* allocSite);
 
 
 template <bool ZeroFields>
 void* Instance::arrayNew(Instance* instance, uint32_t numElements,
-                         TypeDefInstanceData* typeDefData) {
+                         uint32_t typeDefIndex, gc::AllocSite* allocSite) {
   MOZ_ASSERT(
       (ZeroFields ? SASigArrayNew_true : SASigArrayNew_false).failureMode ==
       FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
+  TypeDefInstanceData* typeDefData =
+      instance->typeDefInstanceData(typeDefIndex);
   
   
   return WasmArrayObject::createArray<ZeroFields>(
-      cx, typeDefData, typeDefData->allocSite.initialHeap(), numElements);
+      cx, typeDefData, allocSite, allocSite->initialHeap(), numElements);
 }
 
 template void* Instance::arrayNew<true>(Instance* instance,
                                         uint32_t numElements,
-                                        TypeDefInstanceData* typeDefData);
+                                        uint32_t typeDefIndex,
+                                        gc::AllocSite* allocSite);
 template void* Instance::arrayNew<false>(Instance* instance,
                                          uint32_t numElements,
-                                         TypeDefInstanceData* typeDefData);
+                                         uint32_t typeDefIndex,
+                                         gc::AllocSite* allocSite);
 
 
 
@@ -1581,13 +1593,13 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
 
 
 
- void* Instance::arrayNewData(Instance* instance,
-                                          uint32_t segByteOffset,
-                                          uint32_t numElements,
-                                          TypeDefInstanceData* typeDefData,
-                                          uint32_t segIndex) {
+ void* Instance::arrayNewData(
+    Instance* instance, uint32_t segByteOffset, uint32_t numElements,
+    uint32_t typeDefIndex, gc::AllocSite* allocSite, uint32_t segIndex) {
   MOZ_ASSERT(SASigArrayNewData.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
+  TypeDefInstanceData* typeDefData =
+      instance->typeDefInstanceData(typeDefIndex);
 
   
   MOZ_RELEASE_ASSERT(size_t(segIndex) < instance->passiveDataSegments_.length(),
@@ -1608,7 +1620,7 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   Rooted<WasmArrayObject*> arrayObj(
       cx,
       WasmArrayObject::createArray<true>(
-          cx, typeDefData, typeDefData->allocSite.initialHeap(), numElements));
+          cx, typeDefData, allocSite, allocSite->initialHeap(), numElements));
   if (!arrayObj) {
     
     return nullptr;
@@ -1634,13 +1646,13 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
 
 
 
- void* Instance::arrayNewElem(Instance* instance,
-                                          uint32_t srcOffset,
-                                          uint32_t numElements,
-                                          TypeDefInstanceData* typeDefData,
-                                          uint32_t segIndex) {
+ void* Instance::arrayNewElem(
+    Instance* instance, uint32_t srcOffset, uint32_t numElements,
+    uint32_t typeDefIndex, gc::AllocSite* allocSite, uint32_t segIndex) {
   MOZ_ASSERT(SASigArrayNewElem.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
+  TypeDefInstanceData* typeDefData =
+      instance->typeDefInstanceData(typeDefIndex);
 
   
   MOZ_RELEASE_ASSERT(size_t(segIndex) < instance->passiveElemSegments_.length(),
@@ -1658,7 +1670,7 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   Rooted<WasmArrayObject*> arrayObj(
       cx,
       WasmArrayObject::createArray<true>(
-          cx, typeDefData, typeDefData->allocSite.initialHeap(), numElements));
+          cx, typeDefData, allocSite, allocSite->initialHeap(), numElements));
   if (!arrayObj) {
     
     return nullptr;
@@ -1739,7 +1751,7 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
  int32_t Instance::arrayInitElem(Instance* instance, void* array,
                                              uint32_t index, uint32_t segOffset,
                                              uint32_t numElements,
-                                             TypeDefInstanceData* typeDefData,
+                                             uint32_t typeDefIndex,
                                              uint32_t segIndex) {
   MOZ_ASSERT(SASigArrayInitElem.failureMode == FailureMode::FailOnNegI32);
   JSContext* cx = instance->cx();
@@ -1755,13 +1767,12 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
     return -1;
   }
 
-  const TypeDef* typeDef = typeDefData->typeDef;
-
   
   
   
-  MOZ_RELEASE_ASSERT(typeDef->arrayType().elementType().size() ==
-                     sizeof(AnyRef));
+  DebugOnly<const TypeDef*> typeDef =
+      &instance->codeMeta().types->type(typeDefIndex);
+  MOZ_ASSERT(typeDef->arrayType().elementType().size() == sizeof(AnyRef));
 
   
   Rooted<WasmArrayObject*> arrayObj(cx, static_cast<WasmArrayObject*>(array));
@@ -2241,6 +2252,7 @@ Instance::Instance(JSContext* cx, Handle<WasmInstanceObject*> object,
                    UniqueDebugState maybeDebug)
     : realm_(cx->realm()),
       onSuspendableStack_(false),
+      allocSites_(nullptr),
       jsJitArgsRectifier_(
           cx->runtime()->jitRuntime()->getArgumentsRectifier().value),
       jsJitExceptionHandler_(
@@ -2375,9 +2387,6 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
       typeDefData->allocKind = allocKind;
 
       
-      typeDefData->allocSite.initWasm(zone);
-
-      
       
       
       
@@ -2398,6 +2407,21 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
     } else {
       MOZ_ASSERT(typeDef.kind() == TypeDefKind::None);
       MOZ_CRASH();
+    }
+  }
+
+  
+  uint32_t allocSitesCount = code().codeMeta().numAllocSites;
+  if (allocSitesCount > 0) {
+    allocSites_ =
+        (gc::AllocSite*)js_malloc(sizeof(gc::AllocSite) * allocSitesCount);
+    if (!allocSites_) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+    for (uint32_t i = 0; i < allocSitesCount; ++i) {
+      new (&allocSites_[i]) gc::AllocSite();
+      allocSites_[i].initWasm(zone);
     }
   }
 
@@ -2663,6 +2687,9 @@ Instance::~Instance() {
   }
   if (callRefMetrics_) {
     js_free(callRefMetrics_);
+  }
+  if (allocSites_) {
+    js_free(allocSites_);
   }
 
   
@@ -3856,10 +3883,10 @@ WasmStructObject* Instance::constantStructNewDefault(JSContext* cx,
   uint32_t totalBytes = typeDef->structType().size_;
 
   bool needsOOL = WasmStructObject::requiresOutlineBytes(totalBytes);
-  return needsOOL ? WasmStructObject::createStructOOL<true>(cx, typeDefData,
-                                                            gc::Heap::Tenured)
-                  : WasmStructObject::createStructIL<true>(cx, typeDefData,
-                                                           gc::Heap::Tenured);
+  return needsOOL ? WasmStructObject::createStructOOL<true>(
+                        cx, typeDefData, nullptr, gc::Heap::Tenured)
+                  : WasmStructObject::createStructIL<true>(
+                        cx, typeDefData, nullptr, gc::Heap::Tenured);
 }
 
 WasmArrayObject* Instance::constantArrayNewDefault(JSContext* cx,
@@ -3868,8 +3895,8 @@ WasmArrayObject* Instance::constantArrayNewDefault(JSContext* cx,
   TypeDefInstanceData* typeDefData = typeDefInstanceData(typeIndex);
   
   
-  return WasmArrayObject::createArray<true>(cx, typeDefData, gc::Heap::Tenured,
-                                            numElements);
+  return WasmArrayObject::createArray<true>(cx, typeDefData, nullptr,
+                                            gc::Heap::Tenured, numElements);
 }
 
 JSAtom* Instance::getFuncDisplayAtom(JSContext* cx, uint32_t funcIndex) const {

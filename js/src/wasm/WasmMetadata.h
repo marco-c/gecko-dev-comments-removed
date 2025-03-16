@@ -142,6 +142,13 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   
+  
+  
+  AllocSitesRangeVector funcDefAllocSites;
+
+  
+  
+  
   SharedBytes debugBytecode;
 
   
@@ -230,6 +237,9 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   uint32_t numCallRefMetrics;
 
+  
+  uint32_t numAllocSites;
+
   explicit CodeMetadata(const CompileArgs* compileArgs = nullptr,
                         ModuleKind kind = ModuleKind::Wasm)
       : kind(kind),
@@ -249,7 +259,8 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
         tablesOffsetStart(UINT32_MAX),
         tagsOffsetStart(UINT32_MAX),
         instanceDataLength(UINT32_MAX),
-        numCallRefMetrics(UINT32_MAX) {}
+        numCallRefMetrics(UINT32_MAX),
+        numAllocSites(UINT32_MAX) {}
 
   [[nodiscard]] bool init() {
     MOZ_ASSERT(!types);
@@ -347,6 +358,14 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     uint32_t funcDefIndex = funcIndex - numFuncImports;
     return funcDefCallRefs[funcDefIndex];
   }
+
+  AllocSitesRange getFuncDefAllocSites(uint32_t funcIndex) const {
+    MOZ_ASSERT(funcIndex >= numFuncImports);
+    uint32_t funcDefIndex = funcIndex - numFuncImports;
+    return funcDefAllocSites[funcDefIndex];
+  }
+
+  bool hasFuncDefAllocSites() const { return !funcDefAllocSites.empty(); }
 
   
   uint32_t findFuncExportIndex(uint32_t funcIndex) const;

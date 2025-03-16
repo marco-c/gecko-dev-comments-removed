@@ -70,8 +70,6 @@ struct TypeDefInstanceData {
   GCPtr<Shape*> shape;
   const JSClass* clasp;
   
-  alignas(8) gc::AllocSite allocSite;
-  
   gc::AllocKind allocKind;
 
   
@@ -96,9 +94,6 @@ struct TypeDefInstanceData {
   }
   static constexpr size_t offsetOfSuperTypeVector() {
     return offsetof(TypeDefInstanceData, superTypeVector);
-  }
-  static constexpr size_t offsetOfAllocSite() {
-    return offsetof(TypeDefInstanceData, allocSite);
   }
   static constexpr size_t offsetOfArrayElemSize() {
     return offsetof(TypeDefInstanceData, arrayElemSize);

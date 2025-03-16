@@ -244,7 +244,8 @@ class WasmArrayObject : public WasmGcObject,
   template <bool ZeroFields>
   static MOZ_ALWAYS_INLINE WasmArrayObject* createArrayOOL(
       JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-      js::gc::Heap initialHeap, uint32_t numElements, uint32_t storageBytes);
+      js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
+      uint32_t numElements, uint32_t storageBytes);
 
   
   
@@ -254,14 +255,16 @@ class WasmArrayObject : public WasmGcObject,
   template <bool ZeroFields>
   static MOZ_ALWAYS_INLINE WasmArrayObject* createArrayIL(
       JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-      js::gc::Heap initialHeap, uint32_t numElements, uint32_t storageBytes);
+      js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
+      uint32_t numElements, uint32_t storageBytes);
 
   
   
   template <bool ZeroFields>
   static MOZ_ALWAYS_INLINE WasmArrayObject* createArray(
       JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-      js::gc::Heap initialHeap, uint32_t numElements);
+      js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
+      uint32_t numElements);
 
   
   static constexpr size_t offsetOfNumElements() {
@@ -378,14 +381,14 @@ class WasmStructObject : public WasmGcObject,
   template <bool ZeroFields>
   static MOZ_ALWAYS_INLINE WasmStructObject* createStructIL(
       JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-      js::gc::Heap initialHeap);
+      gc::AllocSite* allocSite, js::gc::Heap initialHeap);
 
   
   
   template <bool ZeroFields>
   static MOZ_ALWAYS_INLINE WasmStructObject* createStructOOL(
       JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-      js::gc::Heap initialHeap);
+      gc::AllocSite* allocSite, js::gc::Heap initialHeap);
 
   
   

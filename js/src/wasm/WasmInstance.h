@@ -132,6 +132,10 @@ class alignas(16) Instance {
   
   const JS::shadow::Zone::BarrierState* addressOfNeedsIncrementalBarrier_;
 
+  
+  
+  js::gc::AllocSite* allocSites_;
+
  public:
   
   
@@ -314,6 +318,9 @@ class alignas(16) Instance {
   }
   static constexpr size_t offsetOfOnSuspendableStack() {
     return offsetof(Instance, onSuspendableStack_);
+  }
+  static constexpr size_t offsetOfAllocSites() {
+    return offsetof(Instance, allocSites_);
   }
   static constexpr size_t offsetOfAddressOfNeedsIncrementalBarrier() {
     return offsetof(Instance, addressOfNeedsIncrementalBarrier_);
@@ -588,29 +595,26 @@ class alignas(16) Instance {
   static void* exceptionNew(Instance* instance, void* exceptionArg);
   static int32_t throwException(Instance* instance, void* exceptionArg);
   template <bool ZeroFields>
-  static void* structNewIL(Instance* instance,
-                           TypeDefInstanceData* typeDefData);
+  static void* structNewIL(Instance* instance, uint32_t typeDefIndex,
+                           gc::AllocSite* allocSite);
   template <bool ZeroFields>
-  static void* structNewOOL(Instance* instance,
-                            TypeDefInstanceData* typeDefData);
+  static void* structNewOOL(Instance* instance, uint32_t typeDefIndex,
+                            gc::AllocSite* allocSite);
   template <bool ZeroFields>
   static void* arrayNew(Instance* instance, uint32_t numElements,
-                        TypeDefInstanceData* typeDefData);
+                        uint32_t typeDefIndex, gc::AllocSite* allocSite);
   static void* arrayNewData(Instance* instance, uint32_t segByteOffset,
-                            uint32_t numElements,
-                            TypeDefInstanceData* typeDefData,
-                            uint32_t segIndex);
+                            uint32_t numElements, uint32_t typeDefIndex,
+                            gc::AllocSite* allocSite, uint32_t segIndex);
   static void* arrayNewElem(Instance* instance, uint32_t srcOffset,
-                            uint32_t numElements,
-                            TypeDefInstanceData* typeDefData,
-                            uint32_t segIndex);
+                            uint32_t numElements, uint32_t typeDefIndex,
+                            gc::AllocSite* allocSite, uint32_t segIndex);
   static int32_t arrayInitData(Instance* instance, void* array, uint32_t index,
                                uint32_t segByteOffset, uint32_t numElements,
                                uint32_t segIndex);
   static int32_t arrayInitElem(Instance* instance, void* array, uint32_t index,
                                uint32_t segOffset, uint32_t numElements,
-                               TypeDefInstanceData* typeDefData,
-                               uint32_t segIndex);
+                               uint32_t typeDefIndex, uint32_t segIndex);
   static int32_t arrayCopy(Instance* instance, void* dstArray,
                            uint32_t dstIndex, void* srcArray, uint32_t srcIndex,
                            uint32_t numElements, uint32_t elementSize);

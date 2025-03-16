@@ -414,6 +414,7 @@ class FunctionCompiler {
   const ValTypeVector& locals_;
   size_t lastReadCallSite_;
   size_t numCallRefs_;
+  size_t numAllocSites_;
 
   
   
@@ -469,6 +470,7 @@ class FunctionCompiler {
         locals_(locals),
         lastReadCallSite_(0),
         numCallRefs_(0),
+        numAllocSites_(0),
         info_(compileInfo),
         curBlock_(nullptr),
         maxStackArgBytes_(0),
@@ -490,6 +492,7 @@ class FunctionCompiler {
         locals_(locals),
         lastReadCallSite_(0),
         numCallRefs_(0),
+        numAllocSites_(0),
         info_(compileInfo),
         curBlock_(nullptr),
         maxStackArgBytes_(0),
@@ -643,6 +646,9 @@ class FunctionCompiler {
     MOZ_ASSERT_IF(
         compilerEnv().mode() == CompileMode::LazyTiering,
         codeMeta().getFuncDefCallRefs(funcIndex()).length == numCallRefs_);
+    MOZ_ASSERT_IF(
+        compilerEnv().mode() != CompileMode::Once,
+        codeMeta().getFuncDefAllocSites(funcIndex()).length == numAllocSites_);
     MOZ_ASSERT_IF(!isInlined(),
                   pendingInlineReturns_.empty() && !pendingInlineCatchBlock_);
     MOZ_ASSERT(bodyRethrowPadPatches_.empty());
@@ -4920,10 +4926,31 @@ class FunctionCompiler {
     return load;
   }
 
-  [[nodiscard]] MDefinition* loadTypeDefInstanceData(uint32_t typeIndex) {
-    size_t offset = Instance::offsetInData(
-        codeMeta().offsetOfTypeDefInstanceData(typeIndex));
-    auto* result = MWasmDerivedPointer::New(alloc(), instancePointer_, offset);
+  uint32_t readAllocSiteIndex(uint32_t typeIndex) {
+    if (!codeMeta().hasFuncDefAllocSites()) {
+      
+      
+      return typeIndex;
+    }
+    AllocSitesRange rangeInModule =
+        codeMeta().getFuncDefAllocSites(funcIndex());
+    uint32_t localIndex = numAllocSites_++;
+    MOZ_RELEASE_ASSERT(localIndex < rangeInModule.length);
+    return rangeInModule.begin + localIndex;
+  }
+
+  [[nodiscard]] MDefinition* loadAllocSiteInstanceData(
+      uint32_t allocSiteIndex) {
+    auto* allocSites = MWasmLoadInstance::New(
+        alloc(), instancePointer_, Instance::offsetOfAllocSites(),
+        MIRType::Pointer, AliasSet::None());
+    if (!allocSites) {
+      return nullptr;
+    }
+    curBlock_->add(allocSites);
+
+    auto* result = MWasmDerivedPointer::New(
+        alloc(), allocSites, allocSiteIndex * sizeof(gc::AllocSite));
     if (!result) {
       return nullptr;
     }
@@ -4934,6 +4961,7 @@ class FunctionCompiler {
   
 
   [[nodiscard]] MDefinition* createStructObject(uint32_t typeIndex,
+                                                uint32_t allocSiteIndex,
                                                 bool zeroFields) {
     const TypeDef& typeDef = (*codeMeta().types)[typeIndex];
     gc::AllocKind allocKind = WasmStructObject::allocKindForTypeDef(&typeDef);
@@ -4941,15 +4969,16 @@ class FunctionCompiler {
         WasmStructObject::requiresOutlineBytes(typeDef.structType().size_);
 
     
-    
-    MDefinition* typeDefData = loadTypeDefInstanceData(typeIndex);
-    if (!typeDefData) {
+    MDefinition* allocSite = loadAllocSiteInstanceData(allocSiteIndex);
+    if (!allocSite) {
       return nullptr;
     }
 
+    size_t offsetOfTypeDefData = wasm::Instance::offsetInData(
+        codeMeta().offsetOfTypeDefInstanceData(typeIndex));
     auto* structObject = MWasmNewStructObject::New(
-        alloc(), instancePointer_, typeDefData, typeDef.structType(), isOutline,
-        zeroFields, allocKind, trapSiteDesc());
+        alloc(), instancePointer_, allocSite, typeIndex, offsetOfTypeDefData,
+        typeDef.structType(), isOutline, zeroFields, allocKind, trapSiteDesc());
     if (!structObject) {
       return nullptr;
     }
@@ -5135,20 +5164,21 @@ class FunctionCompiler {
   
   
   
-  [[nodiscard]] MDefinition* createArrayObject(uint32_t lineOrBytecode,
-                                               uint32_t typeIndex,
+  [[nodiscard]] MDefinition* createArrayObject(uint32_t typeIndex,
+                                               uint32_t allocSiteIndex,
                                                MDefinition* numElements,
                                                uint32_t elemSize,
                                                bool zeroFields) {
-    
-    MDefinition* typeDefData = loadTypeDefInstanceData(typeIndex);
-    if (!typeDefData) {
+    MDefinition* allocSite = loadAllocSiteInstanceData(allocSiteIndex);
+    if (!allocSite) {
       return nullptr;
     }
 
+    size_t offsetOfTypeDefData = wasm::Instance::offsetInData(
+        codeMeta().offsetOfTypeDefInstanceData(typeIndex));
     auto* arrayObject = MWasmNewArrayObject::New(
-        alloc(), instancePointer_, numElements, typeDefData, elemSize,
-        zeroFields, trapSiteDesc());
+        alloc(), instancePointer_, numElements, allocSite, typeIndex,
+        offsetOfTypeDefData, elemSize, zeroFields, trapSiteDesc());
     if (!arrayObject) {
       return nullptr;
     }
@@ -5320,13 +5350,14 @@ class FunctionCompiler {
   
   [[nodiscard]] MDefinition* createArrayNewCallAndLoop(uint32_t lineOrBytecode,
                                                        uint32_t typeIndex,
+                                                       uint32_t allocSiteIndex,
                                                        MDefinition* numElements,
                                                        MDefinition* fillValue) {
     const ArrayType& arrayType = (*codeMeta().types)[typeIndex].arrayType();
 
     
     MDefinition* arrayObject =
-        createArrayObject(lineOrBytecode, typeIndex, numElements,
+        createArrayObject(typeIndex, allocSiteIndex, numElements,
                           arrayType.elementType().size(), false);
     if (!arrayObject) {
       return nullptr;
@@ -8541,8 +8572,10 @@ bool FunctionCompiler::emitStructNew() {
   const TypeDef& typeDef = (*codeMeta().types)[typeIndex];
   const StructType& structType = typeDef.structType();
   MOZ_ASSERT(args.length() == structType.fields_.length());
+  uint32_t allocSiteIndex = readAllocSiteIndex(typeIndex);
 
-  MDefinition* structObject = createStructObject(typeIndex, false);
+  MDefinition* structObject =
+      createStructObject(typeIndex, allocSiteIndex, false);
   if (!structObject) {
     return false;
   }
@@ -8574,7 +8607,10 @@ bool FunctionCompiler::emitStructNewDefault() {
     return true;
   }
 
-  MDefinition* structObject = createStructObject(typeIndex, true);
+  uint32_t allocSiteIndex = readAllocSiteIndex(typeIndex);
+
+  MDefinition* structObject =
+      createStructObject(typeIndex, allocSiteIndex, true);
   if (!structObject) {
     return false;
   }
@@ -8648,10 +8684,12 @@ bool FunctionCompiler::emitArrayNew() {
     return true;
   }
 
+  uint32_t allocSiteIndex = readAllocSiteIndex(typeIndex);
+
   
   
   MDefinition* arrayObject = createArrayNewCallAndLoop(
-      lineOrBytecode, typeIndex, numElements, fillValue);
+      lineOrBytecode, typeIndex, allocSiteIndex, numElements, fillValue);
   if (!arrayObject) {
     return false;
   }
@@ -8663,8 +8701,6 @@ bool FunctionCompiler::emitArrayNew() {
 bool FunctionCompiler::emitArrayNewDefault() {
   
   
-  uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
-
   uint32_t typeIndex;
   MDefinition* numElements;
   if (!iter().readArrayNewDefault(&typeIndex, &numElements)) {
@@ -8675,10 +8711,12 @@ bool FunctionCompiler::emitArrayNewDefault() {
     return true;
   }
 
+  uint32_t allocSiteIndex = readAllocSiteIndex(typeIndex);
+
   
   const ArrayType& arrayType = (*codeMeta().types)[typeIndex].arrayType();
   MDefinition* arrayObject =
-      createArrayObject(lineOrBytecode, typeIndex, numElements,
+      createArrayObject(typeIndex, allocSiteIndex, numElements,
                         arrayType.elementType().size(), true);
   if (!arrayObject) {
     return false;
@@ -8703,6 +8741,8 @@ bool FunctionCompiler::emitArrayNewFixed() {
     return true;
   }
 
+  uint32_t allocSiteIndex = readAllocSiteIndex(typeIndex);
+
   MDefinition* numElementsDef = constantI32(int32_t(numElements));
   if (!numElementsDef) {
     return false;
@@ -8713,7 +8753,7 @@ bool FunctionCompiler::emitArrayNewFixed() {
   StorageType elemType = arrayType.elementType();
   uint32_t elemSize = elemType.size();
   MDefinition* arrayObject =
-      createArrayObject(lineOrBytecode, typeIndex, numElementsDef, elemSize,
+      createArrayObject(typeIndex, allocSiteIndex, numElementsDef, elemSize,
                         false);
   if (!arrayObject) {
     return false;
@@ -8769,9 +8809,15 @@ bool FunctionCompiler::emitArrayNewData() {
     return true;
   }
 
-  
-  MDefinition* typeDefData = loadTypeDefInstanceData(typeIndex);
-  if (!typeDefData) {
+  uint32_t allocSiteIndex = readAllocSiteIndex(typeIndex);
+
+  MDefinition* typeIndexValue = constantI32(int32_t(typeIndex));
+  if (!typeIndexValue) {
+    return false;
+  }
+
+  MDefinition* allocSite = loadAllocSiteInstanceData(allocSiteIndex);
+  if (!allocSite) {
     return false;
   }
 
@@ -8787,8 +8833,9 @@ bool FunctionCompiler::emitArrayNewData() {
   
   
   MDefinition* arrayObject;
-  if (!emitInstanceCall4(lineOrBytecode, SASigArrayNewData, segByteOffset,
-                         numElements, typeDefData, segIndexM, &arrayObject)) {
+  if (!emitInstanceCall5(lineOrBytecode, SASigArrayNewData, segByteOffset,
+                         numElements, typeIndexValue, allocSite, segIndexM,
+                         &arrayObject)) {
     return false;
   }
 
@@ -8811,10 +8858,15 @@ bool FunctionCompiler::emitArrayNewElem() {
     return true;
   }
 
-  
-  
-  MDefinition* typeDefData = loadTypeDefInstanceData(typeIndex);
-  if (!typeDefData) {
+  uint32_t allocSiteIndex = readAllocSiteIndex(typeIndex);
+
+  MDefinition* typeIndexValue = constantI32(int32_t(typeIndex));
+  if (!typeIndexValue) {
+    return false;
+  }
+
+  MDefinition* allocSite = loadAllocSiteInstanceData(allocSiteIndex);
+  if (!allocSite) {
     return false;
   }
 
@@ -8830,8 +8882,9 @@ bool FunctionCompiler::emitArrayNewElem() {
   
   
   MDefinition* arrayObject;
-  if (!emitInstanceCall4(lineOrBytecode, SASigArrayNewElem, segElemIndex,
-                         numElements, typeDefData, segIndexM, &arrayObject)) {
+  if (!emitInstanceCall5(lineOrBytecode, SASigArrayNewElem, segElemIndex,
+                         numElements, typeIndexValue, allocSite, segIndexM,
+                         &arrayObject)) {
     return false;
   }
 
@@ -8887,9 +8940,8 @@ bool FunctionCompiler::emitArrayInitElem() {
     return true;
   }
 
-  
-  MDefinition* typeDefData = loadTypeDefInstanceData(typeIndex);
-  if (!typeDefData) {
+  MDefinition* typeIndexValue = constantI32(int32_t(typeIndex));
+  if (!typeIndexValue) {
     return false;
   }
 
@@ -8904,7 +8956,7 @@ bool FunctionCompiler::emitArrayInitElem() {
   
   
   return emitInstanceCall6(lineOrBytecode, SASigArrayInitElem, array,
-                           arrayIndex, segOffset, length, typeDefData,
+                           arrayIndex, segOffset, length, typeIndexValue,
                            segIndexM);
 }
 

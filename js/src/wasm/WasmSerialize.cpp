@@ -1177,7 +1177,7 @@ CoderResult CodeCodeMetadata(Coder<mode>& coder,
   
   
 
-  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeMetadata, 1136);
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeMetadata, 1176);
   
   MOZ_RELEASE_ASSERT(mode == MODE_SIZE || !item->isAsmJS());
 
@@ -1239,6 +1239,7 @@ CoderResult CodeCodeMetadata(Coder<mode>& coder,
   MOZ_TRY(CodePodVector(coder, &item->funcDefRanges));
   MOZ_TRY(CodePodVector(coder, &item->funcDefFeatureUsages));
   MOZ_TRY(CodePodVector(coder, &item->funcDefCallRefs));
+  MOZ_TRY(CodePodVector(coder, &item->funcDefAllocSites));
 
   
   
@@ -1269,6 +1270,7 @@ CoderResult CodeCodeMetadata(Coder<mode>& coder,
   MOZ_TRY(CodePod(coder, &item->tagsOffsetStart));
   MOZ_TRY(CodePod(coder, &item->instanceDataLength));
   MOZ_TRY(CodePod(coder, &item->numCallRefMetrics));
+  MOZ_TRY(CodePod(coder, &item->numAllocSites));
 
   if constexpr (mode == MODE_DECODE) {
     

@@ -4121,26 +4121,26 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   void wasmNewStructObject(Register instance, Register result,
-                           Register typeDefData, Register temp1, Register temp2,
-                           Label* fail, gc::AllocKind allocKind,
-                           bool zeroFields);
+                           Register allocSite, Register temp1,
+                           size_t offsetOfTypeDefData, Label* fail,
+                           gc::AllocKind allocKind, bool zeroFields);
   
   
   
   
   void wasmNewArrayObject(Register instance, Register result,
-                          Register numElements, Register typeDefData,
-                          Register temp, Label* fail, uint32_t elemSize,
-                          bool zeroFields);
+                          Register numElements, Register allocSite,
+                          Register temp, size_t offsetOfTypeDefData,
+                          Label* fail, uint32_t elemSize, bool zeroFields);
   
   
   
   
   void wasmNewArrayObjectFixed(Register instance, Register result,
-                               Register typeDefData, Register temp1,
-                               Register temp2, Label* fail,
-                               uint32_t numElements, uint32_t storageBytes,
-                               bool zeroFields);
+                               Register allocSite, Register temp1,
+                               Register temp2, size_t offsetOfTypeDefData,
+                               Label* fail, uint32_t numElements,
+                               uint32_t storageBytes, bool zeroFields);
 
   
   
@@ -4151,15 +4151,15 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   void wasmBumpPointerAllocate(Register instance, Register result,
-                               Register typeDefData, Register temp1,
-                               Register temp2, Label* fail, uint32_t size);
+                               Register allocSite, Register temp1, Label* fail,
+                               uint32_t size);
   
   
   
   
   
   void wasmBumpPointerAllocateDynamic(Register instance, Register result,
-                                      Register typeDefData, Register size,
+                                      Register allocSite, Register size,
                                       Register temp1, Label* fail);
 
   

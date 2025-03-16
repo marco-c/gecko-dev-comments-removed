@@ -26,7 +26,7 @@ namespace js {
 template <bool ZeroFields>
 MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructIL(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap) {
+    gc::AllocSite* allocSite, js::gc::Heap initialHeap) {
   
   
 
@@ -40,8 +40,7 @@ MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructIL(
   
   
   WasmStructObject* structObj = (WasmStructObject*)cx->newCell<WasmGcObject>(
-      typeDefData->allocKind, initialHeap, typeDefData->clasp,
-      &typeDefData->allocSite);
+      typeDefData->allocKind, initialHeap, typeDefData->clasp, allocSite);
   if (MOZ_UNLIKELY(!structObj)) {
     ReportOutOfMemory(cx);
     return nullptr;
@@ -69,7 +68,7 @@ MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructIL(
 template <bool ZeroFields>
 MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructOOL(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap) {
+    gc::AllocSite* allocSite, js::gc::Heap initialHeap) {
   
   
 
@@ -103,8 +102,7 @@ MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructOOL(
   
   Rooted<WasmStructObject*> structObj(cx);
   structObj = (WasmStructObject*)cx->newCell<WasmGcObject>(
-      typeDefData->allocKind, initialHeap, typeDefData->clasp,
-      &typeDefData->allocSite);
+      typeDefData->allocKind, initialHeap, typeDefData->clasp, allocSite);
   if (MOZ_UNLIKELY(!structObj)) {
     ReportOutOfMemory(cx);
     if (outlineData.pointer()) {
@@ -182,7 +180,8 @@ inline gc::AllocKind WasmArrayObject::allocKind() const {
 template <bool ZeroFields>
 MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap, uint32_t numElements, uint32_t storageBytes) {
+    js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
+    uint32_t numElements, uint32_t storageBytes) {
   STATIC_ASSERT_WASMARRAYELEMENTS_NUMELEMENTS_IS_U32;
 
   MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
@@ -214,7 +213,7 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
   
   Rooted<WasmArrayObject*> arrayObj(cx);
   arrayObj = (WasmArrayObject*)cx->newCell<WasmGcObject>(
-      allocKind, initialHeap, typeDefData->clasp, &typeDefData->allocSite);
+      allocKind, initialHeap, typeDefData->clasp, allocSite);
   if (MOZ_UNLIKELY(!arrayObj)) {
     ReportOutOfMemory(cx);
     if (outlineAlloc.pointer()) {
@@ -266,16 +265,19 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
 
 template WasmArrayObject* WasmArrayObject::createArrayOOL<true>(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap, uint32_t numElements, uint32_t storageBytes);
+    js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
+    uint32_t numElements, uint32_t storageBytes);
 template WasmArrayObject* WasmArrayObject::createArrayOOL<false>(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap, uint32_t numElements, uint32_t storageBytes);
+    js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
+    uint32_t numElements, uint32_t storageBytes);
 
 
 template <bool ZeroFields>
 MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayIL(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap, uint32_t numElements, uint32_t storageBytes) {
+    js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
+    uint32_t numElements, uint32_t storageBytes) {
   STATIC_ASSERT_WASMARRAYELEMENTS_NUMELEMENTS_IS_U32;
 
   MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
@@ -292,7 +294,7 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayIL(
   
   
   WasmArrayObject* arrayObj = (WasmArrayObject*)cx->newCell<WasmGcObject>(
-      allocKind, initialHeap, typeDefData->clasp, &typeDefData->allocSite);
+      allocKind, initialHeap, typeDefData->clasp, allocSite);
   if (MOZ_UNLIKELY(!arrayObj)) {
     ReportOutOfMemory(cx);
     return nullptr;
@@ -327,16 +329,19 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayIL(
 
 template WasmArrayObject* WasmArrayObject::createArrayIL<true>(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap, uint32_t numElements, uint32_t storageBytes);
+    js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
+    uint32_t numElements, uint32_t storageBytes);
 template WasmArrayObject* WasmArrayObject::createArrayIL<false>(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap, uint32_t numElements, uint32_t storageBytes);
+    js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
+    uint32_t numElements, uint32_t storageBytes);
 
 
 template <bool ZeroFields>
 MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArray(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap, uint32_t numElements) {
+    js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
+    uint32_t numElements) {
   MOZ_ASSERT(typeDefData->arrayElemSize ==
              typeDefData->typeDef->arrayType().elementType().size());
   mozilla::CheckedUint32 storageBytes =
@@ -349,20 +354,22 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArray(
   }
 
   if (storageBytes.value() <= WasmArrayObject_MaxInlineBytes) {
-    return createArrayIL<ZeroFields>(cx, typeDefData, initialHeap, numElements,
-                                     storageBytes.value());
+    return createArrayIL<ZeroFields>(cx, typeDefData, allocSite, initialHeap,
+                                     numElements, storageBytes.value());
   }
 
-  return createArrayOOL<ZeroFields>(cx, typeDefData, initialHeap, numElements,
-                                    storageBytes.value());
+  return createArrayOOL<ZeroFields>(cx, typeDefData, allocSite, initialHeap,
+                                    numElements, storageBytes.value());
 }
 
 template WasmArrayObject* WasmArrayObject::createArray<true>(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap, uint32_t numElements);
+    js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
+    uint32_t numElements);
 template WasmArrayObject* WasmArrayObject::createArray<false>(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap, uint32_t numElements);
+    js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
+    uint32_t numElements);
 
 }  
 
