@@ -6987,10 +6987,14 @@ void nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width,
 
   if (mResizeState != RESIZING &&
       mFrameState->GetSizeMode() == nsSizeMode_Normal) {
-    
-    
-    nsCOMPtr<nsIScreenManager> sm = do_GetService(sScreenManagerContractID);
-    if (sm) {
+    if (nsCOMPtr<nsIScreenManager> sm =
+            do_GetService(sScreenManagerContractID)) {
+      
+      
+      
+      ScreenHelperWin::RefreshScreens();
+      
+      
       nsCOMPtr<nsIScreen> screen;
       sm->ScreenForRect(x, y, width, height, getter_AddRefs(screen));
       if (screen) {
