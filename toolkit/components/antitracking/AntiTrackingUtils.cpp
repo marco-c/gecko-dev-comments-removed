@@ -1018,6 +1018,20 @@ bool AntiTrackingUtils::IsThirdPartyDocument(Document* aDocument) {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<Document> parentDoc = aDocument->GetInProcessParentDocument();
+    if (parentDoc &&
+        aDocument->NodePrincipal()->Equals(parentDoc->NodePrincipal())) {
+      return IsThirdPartyDocument(parentDoc);
+    }
+
     RefPtr<BrowsingContext> bc = aDocument->GetBrowsingContext();
     return bc ? IsThirdPartyContext(bc) : true;
   }
