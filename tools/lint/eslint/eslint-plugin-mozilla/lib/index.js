@@ -115,6 +115,9 @@ const configurations = [
 function cloneLegacySection(section) {
   let config = structuredClone(section);
 
+  
+  delete config.name;
+
   if (config.overrides) {
     for (let overridesSection of config.overrides) {
       
@@ -153,6 +156,11 @@ function cloneFlatSection(section) {
   };
   if (!config.languageOptions) {
     config.languageOptions = {};
+  }
+
+  if (config.globals) {
+    config.languageOptions.globals = { ...config.globals };
+    delete config.globals;
   }
 
   
