@@ -40,7 +40,9 @@ struct TaskbarConcealerImpl {
     if (val >= 1 && val <= 3) return MarkingMethod(val);
 
     
-    return MarkingMethod::NonRudeHwnd;
+    
+    
+    return MarkingMethod(3);
   }
 
  private:
