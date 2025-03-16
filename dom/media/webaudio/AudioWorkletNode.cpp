@@ -8,6 +8,7 @@
 
 #include "AudioNodeEngine.h"
 #include "AudioParamMap.h"
+#include "AudioWorklet.h"
 #include "AudioWorkletImpl.h"
 #include "js/Array.h"  
 #include "js/CallAndConstruct.h"  
