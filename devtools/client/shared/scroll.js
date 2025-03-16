@@ -2,11 +2,6 @@
 
 
 
-"use strict";
-
-
-define(function (require, exports, module) {
-  
 
 
 
@@ -19,126 +14,119 @@ define(function (require, exports, module) {
 
 
 
-  function scrollIntoViewIfNeeded(elem, centered = true, smooth = false) {
-    const win = elem.ownerDocument.defaultView;
-    const clientRect = elem.getBoundingClientRect();
 
-    
-    
-    
-    
 
-    const topToBottom = clientRect.bottom;
-    const bottomToTop = clientRect.top - win.innerHeight;
-    
-    let yAllowed = true;
 
-    
-    const reducedMotion = win.matchMedia("(prefers-reduced-motion)").matches;
-    smooth = smooth && !reducedMotion;
-
-    const options = { behavior: smooth ? "smooth" : "auto" };
-
-    
-    
-    if ((topToBottom > 0 || !centered) && topToBottom <= elem.offsetHeight) {
-      win.scrollBy(
-        Object.assign(
-          { left: 0, top: topToBottom - elem.offsetHeight },
-          options
-        )
-      );
-      yAllowed = false;
-    } else if (
-      (bottomToTop < 0 || !centered) &&
-      bottomToTop >= -elem.offsetHeight
-    ) {
-      win.scrollBy(
-        Object.assign(
-          { left: 0, top: bottomToTop + elem.offsetHeight },
-          options
-        )
-      );
-
-      yAllowed = false;
-    }
-
-    
-    
-    if (centered) {
-      if (yAllowed && (topToBottom <= 0 || bottomToTop >= 0)) {
-        const x = win.scrollX;
-        const y =
-          win.scrollY +
-          clientRect.top -
-          (win.innerHeight - elem.offsetHeight) / 2;
-        win.scroll(Object.assign({ left: x, top: y }, options));
-      }
-    }
-  }
-
-  function closestScrolledParent(node) {
-    if (node == null) {
-      return null;
-    }
-
-    if (node.scrollHeight > node.clientHeight) {
-      return node;
-    }
-
-    return closestScrolledParent(node.parentNode);
-  }
+function scrollIntoViewIfNeeded(elem, centered = true, smooth = false) {
+  const win = elem.ownerDocument.defaultView;
+  const clientRect = elem.getBoundingClientRect();
 
   
+  
+  
+  
 
+  const topToBottom = clientRect.bottom;
+  const bottomToTop = clientRect.top - win.innerHeight;
+  
+  let yAllowed = true;
 
+  
+  const reducedMotion = win.matchMedia("(prefers-reduced-motion)").matches;
+  smooth = smooth && !reducedMotion;
 
+  const options = { behavior: smooth ? "smooth" : "auto" };
 
-
-
-
-
-
-
-
-
-
-
-
-  function scrollIntoView(element, options = {}) {
-    if (!element) {
-      return;
-    }
-
-    const { alignTo, center, container } = options;
-
-    const { top, bottom } = element.getBoundingClientRect();
-    const scrolledParent = closestScrolledParent(
-      container || element.parentNode
+  
+  
+  if ((topToBottom > 0 || !centered) && topToBottom <= elem.offsetHeight) {
+    win.scrollBy(
+      Object.assign({ left: 0, top: topToBottom - elem.offsetHeight }, options)
     );
-    const scrolledParentRect = scrolledParent
-      ? scrolledParent.getBoundingClientRect()
-      : null;
-    const isVisible =
-      !scrolledParent ||
-      (top >= scrolledParentRect.top && bottom <= scrolledParentRect.bottom);
+    yAllowed = false;
+  } else if (
+    (bottomToTop < 0 || !centered) &&
+    bottomToTop >= -elem.offsetHeight
+  ) {
+    win.scrollBy(
+      Object.assign({ left: 0, top: bottomToTop + elem.offsetHeight }, options)
+    );
 
-    if (isVisible) {
-      return;
-    }
-
-    if (center) {
-      element.scrollIntoView({ block: "center" });
-      return;
-    }
-
-    const scrollToTop = alignTo
-      ? alignTo === "top"
-      : !scrolledParentRect || top < scrolledParentRect.top;
-    element.scrollIntoView(scrollToTop);
+    yAllowed = false;
   }
 
   
-  module.exports.scrollIntoViewIfNeeded = scrollIntoViewIfNeeded;
-  module.exports.scrollIntoView = scrollIntoView;
-});
+  
+  if (centered) {
+    if (yAllowed && (topToBottom <= 0 || bottomToTop >= 0)) {
+      const x = win.scrollX;
+      const y =
+        win.scrollY +
+        clientRect.top -
+        (win.innerHeight - elem.offsetHeight) / 2;
+      win.scroll(Object.assign({ left: x, top: y }, options));
+    }
+  }
+}
+
+function closestScrolledParent(node) {
+  if (node == null) {
+    return null;
+  }
+
+  if (node.scrollHeight > node.clientHeight) {
+    return node;
+  }
+
+  return closestScrolledParent(node.parentNode);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function scrollIntoView(element, options = {}) {
+  if (!element) {
+    return;
+  }
+
+  const { alignTo, center, container } = options;
+
+  const { top, bottom } = element.getBoundingClientRect();
+  const scrolledParent = closestScrolledParent(container || element.parentNode);
+  const scrolledParentRect = scrolledParent
+    ? scrolledParent.getBoundingClientRect()
+    : null;
+  const isVisible =
+    !scrolledParent ||
+    (top >= scrolledParentRect.top && bottom <= scrolledParentRect.bottom);
+
+  if (isVisible) {
+    return;
+  }
+
+  if (center) {
+    element.scrollIntoView({ block: "center" });
+    return;
+  }
+
+  const scrollToTop = alignTo
+    ? alignTo === "top"
+    : !scrolledParentRect || top < scrolledParentRect.top;
+  element.scrollIntoView(scrollToTop);
+}
+
+
+export { scrollIntoViewIfNeeded, scrollIntoView };
