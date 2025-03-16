@@ -2129,6 +2129,7 @@ pref("browser.ml.chat.sidebar", true);
 
 
 pref("browser.ml.linkPreview.enabled", false);
+pref("browser.ml.linkPreview.outputSentences", 3);
 
 
 pref("security.mixed_content.block_active_content", true);
