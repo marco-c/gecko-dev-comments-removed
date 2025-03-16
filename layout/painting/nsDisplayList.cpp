@@ -1670,6 +1670,11 @@ void nsDisplayListBuilder::AdjustWindowDraggingRegion(nsIFrame* aFrame) {
     return;
   }
 
+  if (!aFrame->StyleVisibility()->IsVisible()) {
+    
+    return;
+  }
+
   LayoutDeviceToLayoutDeviceMatrix4x4 referenceFrameToRootReferenceFrame;
 
   
