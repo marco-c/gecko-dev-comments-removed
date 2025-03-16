@@ -10,6 +10,8 @@
 #include "NotificationUtils.h"
 #include "mozilla/AlertNotification.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/ClientOpenWindowUtils.h"
+#include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/Components.h"
 #include "nsComponentManagerUtils.h"
@@ -18,21 +20,146 @@
 
 namespace mozilla::dom::notification {
 
-NS_IMPL_ISUPPORTS(NotificationParent, nsIObserver)
+NS_IMPL_ISUPPORTS0(NotificationParent)
 
-NS_IMETHODIMP
-NotificationParent::Observe(nsISupports* aSubject, const char* aTopic,
-                            const char16_t* aData) {
-  if (!strcmp("alertdisablecallback", aTopic)) {
-    return RemovePermission(mPrincipal);
+
+
+
+class NotificationObserver final : public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
+
+  NotificationObserver(const nsAString& aScope, nsIPrincipal* aPrincipal,
+                       IPCNotification aNotification,
+                       NotificationParent& aParent)
+      : mScope(aScope),
+        mPrincipal(aPrincipal),
+        mNotification(std::move(aNotification)),
+        mActor(&aParent) {}
+
+  NS_IMETHODIMP Observe(nsISupports* aSubject, const char* aTopic,
+                        const char16_t* aData) override {
+    AlertTopic topic = ToAlertTopic(aTopic);
+
+    
+    if (topic == AlertTopic::Disable) {
+      return RemovePermission(mPrincipal);
+    }
+    if (topic == AlertTopic::Settings) {
+      return OpenSettings(mPrincipal);
+    }
+
+    RefPtr<NotificationParent> actor = mActor.get();
+
+    if (actor && actor->CanSend()) {
+      
+      
+      actor->HandleAlertTopic(topic);
+      if (mScope.IsEmpty()) {
+        
+        return NS_OK;
+      }
+    } else if (mScope.IsEmpty()) {
+      if (topic == AlertTopic::Click) {
+        
+        return OpenWindow();
+      }
+      
+      return NS_OK;
+    }
+
+    
+    MOZ_ASSERT(!mScope.IsEmpty());
+    if (topic == AlertTopic::Show) {
+      (void)NS_WARN_IF(NS_FAILED(
+          AdjustPushQuota(mPrincipal, NotificationStatusChange::Shown)));
+      nsresult rv = PersistNotification(mPrincipal, mNotification, mScope);
+      if (NS_FAILED(rv)) {
+        NS_WARNING("Could not persist Notification");
+      }
+      return NS_OK;
+    }
+
+    MOZ_ASSERT(topic == AlertTopic::Click || topic == AlertTopic::Finished);
+
+    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+    if (!swm) {
+      return NS_ERROR_FAILURE;
+    }
+
+    nsAutoCString originSuffix;
+    MOZ_TRY(mPrincipal->GetOriginSuffix(originSuffix));
+
+    if (topic == AlertTopic::Click) {
+      nsresult rv =
+          swm->SendNotificationClickEvent(originSuffix, mScope, mNotification);
+      if (NS_FAILED(rv)) {
+        
+        return OpenWindow();
+      }
+      return NS_OK;
+    }
+
+    MOZ_ASSERT(topic == AlertTopic::Finished);
+    (void)NS_WARN_IF(NS_FAILED(
+        AdjustPushQuota(mPrincipal, NotificationStatusChange::Closed)));
+    (void)NS_WARN_IF(
+        NS_FAILED(UnpersistNotification(mPrincipal, mNotification.id())));
+    (void)swm->SendNotificationCloseEvent(originSuffix, mScope, mNotification);
+
+    return NS_OK;
   }
-  if (!strcmp("alertsettingscallback", aTopic)) {
-    return OpenSettings(mPrincipal);
+
+ private:
+  virtual ~NotificationObserver() = default;
+
+  static AlertTopic ToAlertTopic(const char* aTopic) {
+    if (!strcmp("alertdisablecallback", aTopic)) {
+      return AlertTopic::Disable;
+    }
+    if (!strcmp("alertsettingscallback", aTopic)) {
+      return AlertTopic::Settings;
+    }
+    if (!strcmp("alertclickcallback", aTopic)) {
+      return AlertTopic::Click;
+    }
+    if (!strcmp("alertshow", aTopic)) {
+      return AlertTopic::Show;
+    }
+    if (!strcmp("alertfinished", aTopic)) {
+      return AlertTopic::Finished;
+    }
+    MOZ_ASSERT_UNREACHABLE("Unknown alert topic");
+    return AlertTopic::Finished;
   }
-  if (!strcmp("alertclickcallback", aTopic)) {
+
+  nsresult OpenWindow() {
+    nsAutoCString origin;
+    MOZ_TRY(mPrincipal->GetOrigin(origin));
+
+    
+    mozilla::ipc::PrincipalInfo info{};
+    MOZ_TRY(PrincipalToPrincipalInfo(mPrincipal, &info));
+
+    (void)ClientOpenWindow(
+        nullptr, ClientOpenWindowArgs(info, Nothing(), ""_ns, origin));
+    return NS_OK;
+  }
+
+  
+  nsString mScope;
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+  IPCNotification mNotification;
+  WeakPtr<NotificationParent> mActor;
+};
+
+NS_IMPL_ISUPPORTS(NotificationObserver, nsIObserver)
+
+nsresult NotificationParent::HandleAlertTopic(AlertTopic aTopic) {
+  if (aTopic == AlertTopic::Click) {
     return FireClickEvent();
   }
-  if (!strcmp("alertshow", aTopic)) {
+  if (aTopic == AlertTopic::Show) {
     if (!mResolver) {
 #ifdef ANDROID
       
@@ -43,19 +170,10 @@ NotificationParent::Observe(nsISupports* aSubject, const char* aTopic,
       return NS_ERROR_FAILURE;
 #endif
     }
-
-    (void)NS_WARN_IF(NS_FAILED(
-        AdjustPushQuota(mPrincipal, NotificationStatusChange::Shown)));
-    
-    nsresult rv =
-        PersistNotification(mPrincipal, IPCNotification(mId, mOptions), mScope);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("Could not persist Notification");
-    }
     mResolver.take().value()(CopyableErrorResult());
     return NS_OK;
   }
-  if (!strcmp("alertfinished", aTopic)) {
+  if (aTopic == AlertTopic::Finished) {
     if (mResolver) {
       
       
@@ -63,12 +181,6 @@ NotificationParent::Observe(nsISupports* aSubject, const char* aTopic,
       
       
       mResolver.take().value()(CopyableErrorResult(NS_ERROR_FAILURE));
-    } else {
-      
-      (void)NS_WARN_IF(NS_FAILED(
-          AdjustPushQuota(mPrincipal, NotificationStatusChange::Closed)));
-      (void)NS_WARN_IF(NS_FAILED(UnpersistNotification(mPrincipal, mId)));
-      (void)NS_WARN_IF(NS_FAILED(FireCloseEvent()));
     }
 
     
@@ -84,39 +196,10 @@ NotificationParent::Observe(nsISupports* aSubject, const char* aTopic,
 }
 
 nsresult NotificationParent::FireClickEvent() {
-  if (mScope.IsEmpty()) {
-    if (SendNotifyClick()) {
-      return NS_OK;
-    }
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  if (nsCOMPtr<nsIServiceWorkerManager> swm =
-          mozilla::components::ServiceWorkerManager::Service()) {
-    nsAutoCString originSuffix;
-    MOZ_TRY(mPrincipal->GetOriginSuffix(originSuffix));
-    MOZ_TRY(swm->SendNotificationClickEvent(originSuffix, mScope,
-                                            IPCNotification(mId, mOptions)));
-
+  if (!mScope.IsEmpty()) {
     return NS_OK;
   }
-
-  return NS_ERROR_FAILURE;
-}
-
-nsresult NotificationParent::FireCloseEvent() {
-  
-  
-  
-  if (nsCOMPtr<nsIServiceWorkerManager> swm =
-          mozilla::components::ServiceWorkerManager::Service()) {
-    nsAutoCString originSuffix;
-    MOZ_TRY(mPrincipal->GetOriginSuffix(originSuffix));
-    MOZ_TRY(swm->SendNotificationCloseEvent(originSuffix, mScope,
-                                            IPCNotification(mId, mOptions)));
+  if (SendNotifyClick()) {
     return NS_OK;
   }
   return NS_ERROR_FAILURE;
@@ -199,33 +282,35 @@ nsresult NotificationParent::Show() {
   MOZ_TRY(alert->GetId(mId));
 
   nsCOMPtr<nsIAlertsService> alertService = components::Alerts::Service();
-  MOZ_TRY(alertService->ShowAlert(alert, this));
+  RefPtr<NotificationObserver> observer = new NotificationObserver(
+      mScope, mPrincipal, IPCNotification(mId, mOptions), *this);
+  MOZ_TRY(alertService->ShowAlert(alert, observer));
 
 #ifdef ANDROID
   
   
   
   
-  Observe(nullptr, "alertshow", nullptr);
+  observer->Observe(nullptr, "alertshow", nullptr);
 #endif
 
   return NS_OK;
 }
 
 mozilla::ipc::IPCResult NotificationParent::RecvClose() {
-  Unregister(CloseMode::CloseMethod);
+  Unregister();
   Close();
   return IPC_OK();
 }
 
-void NotificationParent::Unregister(CloseMode aCloseMode) {
+void NotificationParent::Unregister() {
   if (mDangling) {
     
     return;
   }
 
   mDangling = true;
-  UnregisterNotification(mPrincipal, mId, aCloseMode);
+  UnregisterNotification(mPrincipal, mId);
 }
 
 nsresult NotificationParent::BindToMainThread(
@@ -248,10 +333,6 @@ nsresult NotificationParent::BindToMainThread(
       }));
 
   return NS_OK;
-}
-
-void NotificationParent::ActorDestroy(ActorDestroyReason aWhy) {
-  Unregister(CloseMode::InactiveGlobal);
 }
 
 }  
