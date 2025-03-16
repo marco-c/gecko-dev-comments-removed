@@ -34,7 +34,7 @@ class Platform {
 
 
 
-  static bool Create(Handle& aHandle, size_t aSize);
+  static bool Create(MutableHandle& aHandle, size_t aSize);
 
   
 

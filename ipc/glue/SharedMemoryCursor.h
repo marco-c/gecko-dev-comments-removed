@@ -30,7 +30,7 @@ class Cursor {
 
   
   
-  explicit Cursor(Handle&& aHandle) : mHandle(std::move(aHandle)) {}
+  explicit Cursor(MutableHandle&& aHandle) : mHandle(std::move(aHandle)) {}
 
   bool IsValid() const { return mHandle.IsValid(); }
   uint64_t Size() const { return mHandle.Size(); }
@@ -50,7 +50,7 @@ class Cursor {
   void Seek(uint64_t aOffset);
 
   
-  Handle TakeHandle();
+  MutableHandle TakeHandle();
 
   
   
@@ -76,9 +76,9 @@ class Cursor {
   bool EnsureMapping();
 
   
-  Handle mHandle;
+  MutableHandle mHandle;
   
-  Mapping mMapping;
+  MutableMapping mMapping;
   
   uint64_t mOffset = 0;
   
