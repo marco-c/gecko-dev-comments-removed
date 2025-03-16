@@ -4813,7 +4813,10 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
         
         
         
-        result = aFrame->BSize();
+        
+        
+        result = aFrame->BSize() - offsetInRequestedAxis.border -
+                 offsetInRequestedAxis.padding;
       }
     } else {
       
