@@ -327,13 +327,8 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
 
   
   
-  
-  
-  
-  if (aLoadInfo->RedirectChain().IsEmpty()) {
-    if (aLoadInfo->GetHasValidUserGestureActivation()) {
-      return false;
-    }
+  if (aLoadInfo->GetHasValidUserGestureActivation()) {
+    return false;
   }
 
   

@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const testPathUpgradeable = getRootDirectory(gTestPath).replace(
@@ -10,7 +8,7 @@ const testPathUpgradeable = getRootDirectory(gTestPath).replace(
   "http://example.com"
 );
 
-const kTestURI = testPathUpgradeable + "file_user_gesture.html";
+const kTestURI = testPathUpgradeable + "file_user_gesture.sjs";
 
 add_task(async function () {
   
@@ -18,38 +16,43 @@ add_task(async function () {
     set: [["dom.security.https_only_mode", true]],
   });
 
-  await BrowserTestUtils.withNewTab("about:blank", async function (browser) {
-    const loaded = BrowserTestUtils.browserLoaded(browser, false, null, true);
-    
-    BrowserTestUtils.startLoadingURIString(browser, kTestURI);
-    await loaded;
-    await ContentTask.spawn(browser, {}, async () => {
-      ok(
-        content.document.location.href.startsWith("https://"),
-        "Should be https"
-      );
+  for (const buttonId of ["directButton", "redirectButton"]) {
+    info(
+      {
+        directButton: "Testing direct upgrade after user gesture",
+        redirectButton: "Testing upgrade after user gesture and redirect",
+      }[buttonId]
+    );
 
+    await BrowserTestUtils.withNewTab("about:blank", async function (browser) {
+      let loaded = BrowserTestUtils.browserLoaded(browser, false, null, true);
       
-      
-      
-      let button = content.document.getElementById("httpLinkButton");
-      await EventUtils.synthesizeMouseAtCenter(
-        button,
-        { type: "mousedown" },
-        content
-      );
-      await EventUtils.synthesizeMouseAtCenter(
-        button,
-        { type: "mouseup" },
-        content
-      );
-      await ContentTaskUtils.waitForCondition(() => {
-        return content.document.location.href.startsWith("https://");
+      BrowserTestUtils.startLoadingURIString(browser, kTestURI);
+      await loaded;
+      await ContentTask.spawn(browser, [buttonId], async buttonId => {
+        ok(
+          content.document.location.href.startsWith("https://"),
+          "Should be https"
+        );
+
+        
+        
+        
+        let button = content.document.getElementById(buttonId);
+        await EventUtils.synthesizeMouseAtCenter(
+          button,
+          { type: "mousedown" },
+          content
+        );
+        await EventUtils.synthesizeMouseAtCenter(
+          button,
+          { type: "mouseup" },
+          content
+        );
       });
-      ok(
-        content.document.location.href.startsWith("https://"),
-        "Should be https"
-      );
+      await BrowserTestUtils.browserLoaded(browser, false, null, true);
+      info(browser.currentURI.spec);
+      is(browser.currentURI.scheme, "https", "Should be https");
     });
-  });
+  }
 });
