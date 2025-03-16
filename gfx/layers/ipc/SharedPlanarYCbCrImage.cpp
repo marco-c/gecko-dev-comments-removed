@@ -5,12 +5,13 @@
 
 
 #include "SharedPlanarYCbCrImage.h"
-#include <stddef.h>              
-#include <stdio.h>               
-#include "gfx2DGlue.h"           
-#include "ISurfaceAllocator.h"   
-#include "mozilla/Assertions.h"  
-#include "mozilla/gfx/Types.h"   
+#include <stddef.h>                    
+#include <stdio.h>                     
+#include "gfx2DGlue.h"                 
+#include "ISurfaceAllocator.h"         
+#include "mozilla/Assertions.h"        
+#include "mozilla/gfx/Types.h"         
+#include "mozilla/ipc/SharedMemory.h"  
 #include "mozilla/layers/ImageClient.h"     
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/TextureClient.h"

@@ -8,10 +8,10 @@
 
 #include "js/RootingAPI.h"
 #include "mozilla/dom/Nullable.h"
-#include "mozilla/ipc/SharedMemoryMapping.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
 #include "nsTArray.h"
 #include "ObjectModel.h"
+#include "mozilla/ipc/RawShmem.h"
 #include <memory>
 
 namespace mozilla {
@@ -112,7 +112,7 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
 
  private:
   Buffer(Device* const aParent, RawId aId, BufferAddress aSize, uint32_t aUsage,
-         ipc::SharedMemoryMapping&& aShmem);
+         ipc::WritableSharedMemoryMapping&& aShmem);
   virtual ~Buffer();
   Device& GetDevice() { return *mParent; }
   void Cleanup();
@@ -146,7 +146,7 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
   
   
   
-  std::shared_ptr<ipc::SharedMemoryMapping> mShmem;
+  std::shared_ptr<ipc::WritableSharedMemoryMapping> mShmem;
 };
 
 }  

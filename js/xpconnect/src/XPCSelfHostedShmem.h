@@ -12,8 +12,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/ipc/SharedMemoryHandle.h"
-#include "mozilla/ipc/SharedMemoryMapping.h"
+#include "mozilla/ipc/SharedMemory.h"
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
 #include "nsIThread.h"
@@ -49,14 +48,14 @@ class SelfHostedShmem final : public nsIMemoryReporter {
   
   
   
-  [[nodiscard]] bool InitFromChild(
-      mozilla::ipc::ReadOnlySharedMemoryHandle aHandle);
+  [[nodiscard]] bool InitFromChild(mozilla::ipc::SharedMemoryHandle aHandle,
+                                   size_t aLen);
 
   
   ContentType Content() const;
 
   
-  const mozilla::ipc::ReadOnlySharedMemoryHandle& Handle() const;
+  const mozilla::ipc::SharedMemoryHandle& Handle() const;
 
   
   void InitMemoryReporter();
@@ -76,8 +75,14 @@ class SelfHostedShmem final : public nsIMemoryReporter {
   static mozilla::StaticRefPtr<SelfHostedShmem> sSelfHostedXdr;
 
   
-  mozilla::ipc::ReadOnlySharedMemoryHandle mHandle;
-  mozilla::ipc::ReadOnlySharedMemoryMapping mMem;
+  
+  mozilla::ipc::SharedMemoryHandle mHandle;
+
+  
+  RefPtr<mozilla::ipc::SharedMemory> mMem;
+
+  
+  size_t mLen = 0;
 };
 
 }  

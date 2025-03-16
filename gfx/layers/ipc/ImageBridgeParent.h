@@ -14,6 +14,7 @@
 #include "mozilla/Attributes.h"  
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/ipc/ProtocolUtils.h"
+#include "mozilla/ipc/SharedMemory.h"  
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/PImageBridgeParent.h"
 #include "nsISupportsImpl.h"

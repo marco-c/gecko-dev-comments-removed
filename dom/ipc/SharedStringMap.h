@@ -9,8 +9,7 @@
 
 #include "mozilla/Result.h"
 #include "mozilla/dom/ipc/StringTable.h"
-#include "mozilla/ipc/SharedMemoryHandle.h"
-#include "mozilla/ipc/SharedMemoryMapping.h"
+#include "mozilla/ipc/SharedMemory.h"
 #include "nsTHashMap.h"
 
 namespace mozilla::dom::ipc {
@@ -89,7 +88,7 @@ class SharedStringMap {
   
   
   
-  explicit SharedStringMap(const mozilla::ipc::ReadOnlySharedMemoryHandle&);
+  explicit SharedStringMap(const mozilla::ipc::SharedMemoryHandle&, size_t);
   explicit SharedStringMap(SharedStringMapBuilder&&);
 
   
@@ -152,7 +151,7 @@ class SharedStringMap {
 
 
 
-  mozilla::ipc::ReadOnlySharedMemoryHandle CloneHandle() const;
+  mozilla::ipc::SharedMemoryHandle CloneHandle() const;
 
   size_t MapSize() const { return mMappedMemory.size(); }
 
@@ -173,23 +172,21 @@ class SharedStringMap {
 
   StringTable<nsCString> KeyTable() const {
     const auto& header = GetHeader();
-    return {
-        {const_cast<uint8_t*>(&mMappedMemory.data()[header.mKeyStringsOffset]),
-         header.mKeyStringsSize}};
+    return {{&mMappedMemory.data()[header.mKeyStringsOffset],
+             header.mKeyStringsSize}};
   }
 
   StringTable<nsString> ValueTable() const {
     const auto& header = GetHeader();
-    return {{const_cast<uint8_t*>(
-                 &mMappedMemory.data()[header.mValueStringsOffset]),
+    return {{&mMappedMemory.data()[header.mValueStringsOffset],
              header.mValueStringsSize}};
   }
 
-  mozilla::ipc::ReadOnlySharedMemoryHandle mHandle;
+  mozilla::ipc::SharedMemoryHandle mHandle;
   
   
   
-  mozilla::ipc::shared_memory::LeakedReadOnlyMapping mMappedMemory;
+  Span<uint8_t> mMappedMemory;
 };
 
 
@@ -210,7 +207,8 @@ class MOZ_RAII SharedStringMapBuilder {
 
 
 
-  Result<mozilla::ipc::ReadOnlySharedMemoryHandle, nsresult> Finalize();
+
+  Result<Ok, nsresult> Finalize(RefPtr<mozilla::ipc::SharedMemory>& aMap);
 
  private:
   using Entry = SharedStringMap::Entry;

@@ -16,8 +16,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UserAgentStyleSheetID.h"
 #include "mozilla/css/Loader.h"
-#include "mozilla/ipc/SharedMemoryHandle.h"
-#include "mozilla/ipc/SharedMemoryMapping.h"
+#include "mozilla/ipc/SharedMemory.h"
 
 class nsIFile;
 class nsIURI;
@@ -61,13 +60,13 @@ class GlobalStyleSheetCache final : public nsIObserver,
   
   
   
-  static void SetSharedMemory(mozilla::ipc::ReadOnlySharedMemoryHandle aHandle,
+  static void SetSharedMemory(mozilla::ipc::SharedMemory::Handle aHandle,
                               uintptr_t aAddress);
 
   
   
   
-  mozilla::ipc::ReadOnlySharedMemoryHandle CloneHandle();
+  mozilla::ipc::SharedMemoryHandle CloneHandle();
 
   
   
@@ -105,7 +104,7 @@ class GlobalStyleSheetCache final : public nsIObserver,
   RefPtr<StyleSheet> LoadSheet(nsIURI* aURI, css::SheetParsingMode aParsingMode,
                                css::FailureAction aFailureAction);
   void LoadSheetFromSharedMemory(const char* aURL, RefPtr<StyleSheet>* aSheet,
-                                 css::SheetParsingMode, const Header*,
+                                 css::SheetParsingMode, Header*,
                                  UserAgentStyleSheetID);
 
   static StaticRefPtr<GlobalStyleSheetCache> gStyleCache;
@@ -121,7 +120,7 @@ class GlobalStyleSheetCache final : public nsIObserver,
   RefPtr<StyleSheet> mUserContentSheet;
 
   
-  static mozilla::ipc::shared_memory::LeakedReadOnlyMapping sSharedMemory;
+  static Span<uint8_t> sSharedMemory;
 
   
   

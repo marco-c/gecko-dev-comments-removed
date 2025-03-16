@@ -13,6 +13,7 @@
 #include "mozilla/dom/WebXRBinding.h"
 #include "mozilla/dom/XRFrame.h"
 #include "mozilla/gfx/PVRManagerChild.h"
+#include "mozilla/ipc/SharedMemory.h"          
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayersTypes.h"        
 

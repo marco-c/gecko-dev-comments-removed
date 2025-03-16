@@ -60,9 +60,7 @@ TEST(BigBuffer, SmallSize)
 
 TEST(BigBuffer, BigSize)
 {
-  
-  
-  size_t size = BigBuffer::kShmemThreshold * 2 + 41;
+  size_t size = BigBuffer::kShmemThreshold * 2;
   
   nsTArray<uint8_t> data(size);
   for (size_t i = 0; i < size; ++i) {
@@ -71,7 +69,7 @@ TEST(BigBuffer, BigSize)
   BigBuffer in{Span(data)};
   EXPECT_NE(in.GetSharedMemory(), nullptr);
   EXPECT_EQ(in.Size(), size);
-  EXPECT_EQ(in.GetSharedMemory()->DataAs<uint8_t>(), in.Data());
+  EXPECT_EQ(in.GetSharedMemory()->Memory(), in.Data());
 
   BigBuffer out;
   ASSERT_TRUE(SerializeAndDeserialize(std::move(in), &out));
@@ -80,7 +78,7 @@ TEST(BigBuffer, BigSize)
   EXPECT_EQ(in.Size(), 0u);
   EXPECT_NE(out.GetSharedMemory(), nullptr);
   EXPECT_EQ(out.Size(), size);
-  EXPECT_EQ(out.GetSharedMemory()->DataAs<uint8_t>(), out.Data());
+  EXPECT_EQ(out.GetSharedMemory()->Memory(), out.Data());
 
   EXPECT_TRUE(out.AsSpan() == Span(data));
 }

@@ -12,6 +12,7 @@
 #include "mozilla/StaticMutex.h"            
 #include "mozilla/StaticPtr.h"              
 #include "mozilla/RefPtr.h"                 
+#include "mozilla/ipc/SharedMemory.h"       
 #include "mozilla/gfx/2D.h"                 
 #include "mozilla/gfx/Point.h"              
 #include "mozilla/layers/LayersSurfaces.h"  

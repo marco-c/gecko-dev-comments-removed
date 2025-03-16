@@ -26,6 +26,7 @@
 #include "mozilla/gfx/Logging.h"             
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ipc/CrossProcessSemaphore.h"
+#include "mozilla/ipc/SharedMemory.h"  
 #include "mozilla/layers/CanvasRenderer.h"
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/ISurfaceAllocator.h"

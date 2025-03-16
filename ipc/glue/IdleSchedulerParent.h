@@ -13,7 +13,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ipc/PIdleSchedulerParent.h"
-#include "mozilla/ipc/SharedMemoryMapping.h"
+#include "mozilla/ipc/SharedMemory.h"
 #include <bitset>
 
 #define NS_IDLE_SCHEDULER_COUNTER_ARRAY_LENGHT 1024
@@ -82,6 +82,14 @@ class IdleSchedulerParent final
   bool IsDoingIdleTask() const { return !isInList() && mRequestedIdleBudget; }
   bool IsNotDoingIdleTask() const { return !mRequestedIdleBudget; }
 
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<SharedMemory> sActiveChildCounter;
   
   
   

@@ -220,7 +220,7 @@ nsresult SharedSurfacesChild::ShareInternal(SourceSurfaceSharedData* aSurface,
   
   
   
-  ipc::ReadOnlySharedMemoryHandle handle;
+  ipc::SharedMemory::Handle handle = ipc::SharedMemory::NULLHandle();
   nsresult rv = aSurface->CloneHandle(handle);
   if (rv == NS_ERROR_NOT_AVAILABLE) {
     

@@ -14,7 +14,9 @@
 #include "nsXULAppAPI.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/ipc/SharedMemoryMapping.h"
+#include "mozilla/ipc/SharedMemory.h"
+
+
 
 
 
@@ -241,14 +243,14 @@ class FontList {
 
 
   void ShareShmBlockToProcess(uint32_t aIndex, base::ProcessId aPid,
-                              ipc::ReadOnlySharedMemoryHandle* aOut) {
+                              ipc::SharedMemory::Handle* aOut) {
     MOZ_RELEASE_ASSERT(mReadOnlyShmems.Length() == mBlocks.Length());
     if (aIndex >= mReadOnlyShmems.Length()) {
       
-      *aOut = nullptr;
+      *aOut = ipc::SharedMemory::NULLHandle();
       return;
     }
-    *aOut = mReadOnlyShmems[aIndex].Clone();
+    *aOut = mReadOnlyShmems[aIndex]->CloneHandle();
     if (!*aOut) {
       MOZ_CRASH("failed to share block");
     }
@@ -259,14 +261,14 @@ class FontList {
 
 
 
-  void ShareBlocksToProcess(nsTArray<ipc::ReadOnlySharedMemoryHandle>* aBlocks,
+  void ShareBlocksToProcess(nsTArray<ipc::SharedMemory::Handle>* aBlocks,
                             base::ProcessId aPid);
 
-  ipc::ReadOnlySharedMemoryHandle ShareBlockToProcess(uint32_t aIndex,
-                                                      base::ProcessId aPid);
+  ipc::SharedMemory::Handle ShareBlockToProcess(uint32_t aIndex,
+                                                base::ProcessId aPid);
 
   void ShmBlockAdded(uint32_t aGeneration, uint32_t aIndex,
-                     ipc::ReadOnlySharedMemoryHandle aHandle);
+                     ipc::SharedMemory::Handle aHandle);
   
 
 
@@ -298,20 +300,11 @@ class FontList {
   struct ShmBlock {
     
     
-    explicit ShmBlock(ipc::ReadOnlySharedMemoryMapping&& aShmem)
-        : mShmem(std::move(aShmem)) {
-      MOZ_ASSERT(!XRE_IsParentProcess());
-    }
-
-    explicit ShmBlock(ipc::SharedMemoryMapping&& aShmem)
-        : mShmem(std::move(aShmem)) {
-      MOZ_ASSERT(XRE_IsParentProcess());
-    }
+    explicit ShmBlock(RefPtr<ipc::SharedMemory>&& aShmem)
+        : mShmem(std::move(aShmem)) {}
 
     
-    void* Memory() const { return mShmem.Address(); }
-
-    void Clear() { mShmem = nullptr; }
+    void* Memory() const { return mShmem->Memory(); }
 
     
     
@@ -333,8 +326,7 @@ class FontList {
       return static_cast<BlockHeader*>(Memory())->mBlockSize;
     }
 
-   private:
-    ipc::MutableOrReadOnlySharedMemoryMapping mShmem;
+    RefPtr<ipc::SharedMemory> mShmem;
   };
 
   Header& GetHeader() const;
@@ -380,7 +372,7 @@ class FontList {
 
 
 
-  nsTArray<ipc::ReadOnlySharedMemoryHandle> mReadOnlyShmems;
+  nsTArray<RefPtr<ipc::SharedMemory>> mReadOnlyShmems;
 
 #ifdef XP_WIN
   

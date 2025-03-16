@@ -14,8 +14,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/ThreadLocal.h"
-#include "mozilla/ipc/SharedMemoryHandle.h"
-#include "mozilla/ipc/SharedMemoryMapping.h"
+#include "mozilla/ipc/SharedMemory.h"
 #include "mozilla/layers/LayersTypes.h"
 
 #include <vector>
@@ -383,12 +382,11 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   
   RefPtr<DrawTargetSkia> mSkiaNoClip;
   
-  
-  mozilla::ipc::ReadOnlySharedMemoryHandle mShmemHandle;
-  
-  mozilla::ipc::SharedMemoryMapping mShmem;
+  RefPtr<mozilla::ipc::SharedMemory> mShmem;
   
   RefPtr<SourceSurfaceWebgl> mSnapshot;
+  
+  uint32_t mShmemSize = 0;
   
   bool mIsClear = true;
   
@@ -607,9 +605,12 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     return stream.str();
   }
 
-  mozilla::ipc::ReadOnlySharedMemoryHandle TakeShmemHandle() {
-    return std::move(mShmemHandle);
+  mozilla::ipc::SharedMemory::Handle TakeShmemHandle() const {
+    return mShmem ? mShmem->TakeHandle()
+                  : mozilla::ipc::SharedMemory::NULLHandle();
   }
+
+  uint32_t GetShmemSize() const { return mShmemSize; }
 
  private:
   bool SupportsPattern(const Pattern& aPattern) {
