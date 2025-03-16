@@ -684,7 +684,11 @@ static void* base_alloc(size_t aSize);
 
 static bool malloc_initialized;
 #else
-static Atomic<bool, MemoryOrdering::ReleaseAcquire> malloc_initialized;
+
+
+
+
+static Atomic<bool, MemoryOrdering::Relaxed> malloc_initialized;
 #endif
 
 
