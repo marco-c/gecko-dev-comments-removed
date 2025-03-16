@@ -69,6 +69,33 @@ template <JSProtoKey ProtoKey>
   }
 
   
+  
+  switch (ProtoKey) {
+    case JSProto_Map:
+      if (cx->realm()->realmFuses.optimizeMapPrototypeSetFuse.intact()) {
+        return true;
+      }
+      break;
+    case JSProto_Set:
+      if (cx->realm()->realmFuses.optimizeSetPrototypeAddFuse.intact()) {
+        return true;
+      }
+      break;
+    case JSProto_WeakMap:
+      if (cx->realm()->realmFuses.optimizeWeakMapPrototypeSetFuse.intact()) {
+        return true;
+      }
+      break;
+    case JSProto_WeakSet:
+      if (cx->realm()->realmFuses.optimizeWeakSetPrototypeAddFuse.intact()) {
+        return true;
+      }
+      break;
+    default:
+      MOZ_CRASH("Unexpected ProtoKey");
+  }
+
+  
   auto* nproto = &proto->as<NativeObject>();
   PropertyName* propName = isSet ? cx->names().add : cx->names().set;
   mozilla::Maybe<PropertyInfo> prop = nproto->lookup(cx, propName);
@@ -79,11 +106,7 @@ template <JSProtoKey ProtoKey>
   
   
   Value propVal = nproto->getSlot(prop->slot());
-  if (!IsNativeFunction(propVal, addOrSetNative)) {
-    return false;
-  }
-
-  return true;
+  return IsNativeFunction(propVal, addOrSetNative);
 }
 
 }  
