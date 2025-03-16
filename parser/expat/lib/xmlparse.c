@@ -2145,13 +2145,7 @@ XML_GetBuffer(XML_Parser parser, int len)
 }
 
 enum XML_Status XMLCALL
-
-#if 0
 XML_StopParser(XML_Parser parser, XML_Bool resumable)
-#else
-XML_StopParser(XML_Parser parser, int resumable)
-#endif
-
 {
   if (parser == NULL)
     return XML_STATUS_ERROR;
