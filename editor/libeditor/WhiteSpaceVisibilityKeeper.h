@@ -130,6 +130,14 @@ class WhiteSpaceVisibilityKeeper final {
                              const EditorDOMPoint& aPointToSplit,
                              const Element& aSplittingBlockElement);
 
+  enum class NormalizeOption {
+    
+    StopIfFollowingWhiteSpacesStartsWithNBSP,
+    
+    StopIfPrecedingWhiteSpacesEndsWithNBP,
+  };
+  using NormalizeOptions = EnumSet<NormalizeOption>;
+
   
 
 
@@ -137,7 +145,8 @@ class WhiteSpaceVisibilityKeeper final {
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMPoint, nsresult>
   NormalizeWhiteSpacesToSplitAt(HTMLEditor& aHTMLEditor,
-                                const EditorDOMPoint& aPointToSplit);
+                                const EditorDOMPoint& aPointToSplit,
+                                NormalizeOptions aOptions);
 
   
 
@@ -365,7 +374,8 @@ class WhiteSpaceVisibilityKeeper final {
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMPoint, nsresult>
   NormalizeWhiteSpacesToSplitTextNodeAt(
-      HTMLEditor& aHTMLEditor, const EditorDOMPointInText& aPointToSplit);
+      HTMLEditor& aHTMLEditor, const EditorDOMPointInText& aPointToSplit,
+      NormalizeOptions aOptions);
 
   
 
