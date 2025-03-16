@@ -399,24 +399,27 @@ enum class MediaProtocolType {
 class RTC_EXPORT ContentInfo {
  public:
   explicit ContentInfo(MediaProtocolType type) : type(type) {}
+  ContentInfo(MediaProtocolType type,
+              std::unique_ptr<MediaContentDescription> description)
+      : type(type), description_(std::move(description)) {}
   ~ContentInfo();
+
   
   ContentInfo(const ContentInfo& o);
-  ContentInfo& operator=(const ContentInfo& o);
+  
+  ContentInfo& operator=(const ContentInfo& o) = delete;
+
   ContentInfo(ContentInfo&& o) = default;
   ContentInfo& operator=(ContentInfo&& o) = default;
 
   
-  std::string mid() const { return name; }
-  void set_mid(const std::string& mid) { this->name = mid; }
+  
+  const std::string& mid() const { return name; }
+  void set_mid(absl::string_view mid) { name = std::string(mid); }
 
   
   MediaContentDescription* media_description();
   const MediaContentDescription* media_description() const;
-
-  void set_media_description(std::unique_ptr<MediaContentDescription> desc) {
-    description_ = std::move(desc);
-  }
 
   
   std::string name;
@@ -462,11 +465,6 @@ class ContentGroup {
 typedef std::vector<ContentInfo> ContentInfos;
 typedef std::vector<ContentGroup> ContentGroups;
 
-const ContentInfo* FindContentInfoByName(const ContentInfos& contents,
-                                         const std::string& name);
-const ContentInfo* FindContentInfoByType(const ContentInfos& contents,
-                                         const std::string& type);
-
 
 
 enum MsidSignaling {
@@ -502,8 +500,8 @@ class SessionDescription {
   const ContentInfo* GetContentByName(const std::string& name) const;
   ContentInfo* GetContentByName(const std::string& name);
   const MediaContentDescription* GetContentDescriptionByName(
-      const std::string& name) const;
-  MediaContentDescription* GetContentDescriptionByName(const std::string& name);
+      absl::string_view name) const;
+  MediaContentDescription* GetContentDescriptionByName(absl::string_view name);
   const ContentInfo* FirstContentByType(MediaProtocolType type) const;
   const ContentInfo* FirstContent() const;
 
