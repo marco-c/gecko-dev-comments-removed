@@ -603,6 +603,82 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
   }
 }
 
+
+
+static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
+                                                   nsAtom* aLocalName,
+                                                   int32_t aNamespaceID) {
+  auto containsJavascriptURL = [&]() {
+    nsAutoString value;
+    if (!aElement->GetAttr(aNamespaceID, aLocalName, value)) {
+      return false;
+    }
+
+    
+    
+    
+    
+    nsCOMPtr<nsIURI> uri;
+    if (NS_FAILED(NS_NewURI(getter_AddRefs(uri), value))) {
+      
+      return false;
+    }
+
+    
+    return uri->SchemeIs("javascript");
+  };
+
+  
+  
+  
+  if ((aElement->IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area,
+                                     nsGkAtoms::base) &&
+       aLocalName == nsGkAtoms::href && aNamespaceID == kNameSpaceID_None) ||
+      (aElement->IsAnyOfHTMLElements(nsGkAtoms::button, nsGkAtoms::input) &&
+       aLocalName == nsGkAtoms::formaction &&
+       aNamespaceID == kNameSpaceID_None) ||
+      (aElement->IsHTMLElement(nsGkAtoms::form) &&
+       aLocalName == nsGkAtoms::action && aNamespaceID == kNameSpaceID_None) ||
+      (aElement->IsHTMLElement(nsGkAtoms::iframe) &&
+       aLocalName == nsGkAtoms::src && aNamespaceID == kNameSpaceID_None) ||
+      (aElement->IsSVGElement(nsGkAtoms::a) && aLocalName == nsGkAtoms::href &&
+       (aNamespaceID == kNameSpaceID_None ||
+        aNamespaceID == kNameSpaceID_XLink))) {
+    if (containsJavascriptURL()) {
+      return true;
+    }
+  };
+
+  
+  
+  
+  if (aElement->IsMathMLElement() && aLocalName == nsGkAtoms::href &&
+      (aNamespaceID == kNameSpaceID_None ||
+       aNamespaceID == kNameSpaceID_XLink)) {
+    if (containsJavascriptURL()) {
+      return true;
+    }
+  }
+
+  
+  
+  
+  if (aLocalName == nsGkAtoms::attributeName &&
+      aNamespaceID == kNameSpaceID_None &&
+      aElement->IsAnyOfSVGElements(nsGkAtoms::animate, nsGkAtoms::animateMotion,
+                                   nsGkAtoms::animateTransform,
+                                   nsGkAtoms::set)) {
+    nsAutoString value;
+    if (!aElement->GetAttr(aNamespaceID, aLocalName, value)) {
+      return false;
+    }
+
+    return value.EqualsLiteral("href") || value.EqualsLiteral("xlink:href");
+  }
+
+  return false;
+}
+
 void Sanitizer::SanitizeAttributes(Element* aChild,
                                    const CanonicalName& aElementName,
                                    bool aSafe) {
@@ -668,7 +744,8 @@ void Sanitizer::SanitizeAttributes(Element* aChild,
 
     
     else if (aSafe) {
-      
+      remove =
+          RemoveJavascriptNavigationURLAttribute(aChild, attrLocalName, attrNs);
     }
 
     if (remove) {
