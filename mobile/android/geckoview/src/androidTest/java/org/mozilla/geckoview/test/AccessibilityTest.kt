@@ -1667,6 +1667,8 @@ class AccessibilityTest : BaseSessionTest() {
     @Test
     fun testRemoteIframeTree() {
         testIframeTree(REMOTE_IFRAME)
+        
+        assumeThat(sessionRule.env.isX86, equalTo(false))
     }
 
     @Test
