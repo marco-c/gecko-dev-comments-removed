@@ -75,8 +75,6 @@ enum class SurfaceFormat : int8_t {
   
   YUV420,     
               
-  YUV420P10,  
-              
   YUV422P10,  
               
   NV12,       
@@ -160,7 +158,6 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
       break;
 
     case SurfaceFormat::YUV420:
-    case SurfaceFormat::YUV420P10:
     case SurfaceFormat::YUV422P10:
     case SurfaceFormat::NV12:
     case SurfaceFormat::P016:
@@ -218,7 +215,6 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
       break;
 
     case SurfaceFormat::YUV420:
-    case SurfaceFormat::YUV420P10:
     case SurfaceFormat::YUV422P10:
     case SurfaceFormat::NV12:
     case SurfaceFormat::P016:
