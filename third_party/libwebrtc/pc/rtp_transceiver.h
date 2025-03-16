@@ -275,9 +275,13 @@ class RtpTransceiver : public RtpTransceiverInterface {
   void StopInternal() override;
   RTCError SetCodecPreferences(
       rtc::ArrayView<RtpCodecCapability> codecs) override;
-  std::vector<RtpCodecCapability> codec_preferences() const override {
-    return codec_preferences_;
-  }
+  
+  
+  std::vector<RtpCodecCapability> codec_preferences() const override;
+  
+  
+  
+  std::vector<RtpCodecCapability> filtered_codec_preferences() const;
   std::vector<RtpHeaderExtensionCapability> GetHeaderExtensionsToNegotiate()
       const override;
   std::vector<RtpHeaderExtensionCapability> GetNegotiatedHeaderExtensions()
@@ -311,6 +315,9 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   void DeleteChannel();
 
+  RTCError UpdateCodecPreferencesCaches(
+      const std::vector<RtpCodecCapability>& codecs);
+
   
   TaskQueueBase* const thread_;
   const bool unified_plan_;
@@ -340,6 +347,9 @@ class RtpTransceiver : public RtpTransceiverInterface {
   std::unique_ptr<cricket::ChannelInterface> channel_ = nullptr;
   ConnectionContext* const context_;
   std::vector<RtpCodecCapability> codec_preferences_;
+  std::vector<RtpCodecCapability> sendrecv_codec_preferences_;
+  std::vector<RtpCodecCapability> sendonly_codec_preferences_;
+  std::vector<RtpCodecCapability> recvonly_codec_preferences_;
   std::vector<RtpHeaderExtensionCapability> header_extensions_to_negotiate_;
 
   
