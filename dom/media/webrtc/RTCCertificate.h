@@ -40,6 +40,7 @@ namespace dom {
 class GlobalObject;
 class ObjectOrString;
 class Promise;
+struct RTCDtlsFingerprint;
 
 class RTCCertificate final : public nsISupports, public nsWrapperCache {
  public:
@@ -63,6 +64,7 @@ class RTCCertificate final : public nsISupports, public nsWrapperCache {
   
   
   uint64_t Expires() const { return mExpires / PR_USEC_PER_MSEC; }
+  void GetFingerprints(nsTArray<dom::RTCDtlsFingerprint>& aFingerprintsOut);
 
   
   RefPtr<DtlsIdentity> CreateDtlsIdentity() const;
@@ -90,6 +92,7 @@ class RTCCertificate final : public nsISupports, public nsWrapperCache {
   UniqueCERTCertificate mCertificate;
   SSLKEAType mAuthType;
   PRTime mExpires;
+  nsTArray<RTCDtlsFingerprint> mFingerprints;
 };
 
 }  
