@@ -6,6 +6,7 @@
 
 
 add_task(async function () {
+  await pushPref("devtools.netmonitor.persistlog", true);
   const { monitor } = await initNetMonitor(SIMPLE_URL, {
     requestCount: 1,
   });
@@ -17,9 +18,20 @@ add_task(async function () {
 
   
   const state = store.getState();
-  state.ui = "foo";
 
-  await reloadBrowser();
+  
+  
+  
+  
+  
+  
+  
+  
+  state.requestBlocking = null;
+
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [SIMPLE_URL], url => {
+    content.fetch(url);
+  });
 
   
   const errorPanel = await waitUntil(() =>
