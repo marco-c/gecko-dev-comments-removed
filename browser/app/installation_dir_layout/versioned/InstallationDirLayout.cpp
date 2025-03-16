@@ -1,9 +1,0 @@
-
-
-
-
-#include "InstallationDirLayout.h"
-
-InstallationDirLayoutType GetInstallationDirLayoutType() {
-  return InstallationDirLayoutType::Versioned;
-}
