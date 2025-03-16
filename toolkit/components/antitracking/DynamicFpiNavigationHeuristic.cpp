@@ -13,10 +13,39 @@
 #include "mozilla/BounceTrackingState.h"
 #include "mozilla/Components.h"
 #include "mozilla/glean/AntitrackingMetrics.h"
+#include "mozilla/net/UrlClassifierCommon.h"
+#include "nsIChannel.h"
+#include "nsIClassifiedChannel.h"
+#include "nsNetUtil.h"
 #include "nsISHistory.h"
 #include "nsIURIClassifier.h"
 
 namespace mozilla {
+
+namespace {
+
+
+bool IsFirstPartyTrackingChannel(nsIChannel* aChannel) {
+  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
+      do_QueryInterface(aChannel);
+  if (!classifiedChannel) {
+    return false;
+  }
+
+  
+  
+  uint32_t firstPartyClassificationFlags =
+      classifiedChannel->GetFirstPartyClassificationFlags();
+
+  if (net::UrlClassifierCommon::IsTrackingClassificationFlag(
+          firstPartyClassificationFlags, NS_UsePrivateBrowsing(aChannel))) {
+    return true;
+  }
+
+  return false;
+}
+
+}  
 
 
 void DynamicFpiNavigationHeuristic::MaybeGrantStorageAccess(
@@ -34,6 +63,14 @@ void DynamicFpiNavigationHeuristic::MaybeGrantStorageAccess(
       aBrowsingContext->GetBounceTrackingState();
   NS_ENSURE_TRUE_VOID(bounceTrackingState);
   NS_ENSURE_TRUE_VOID(aChannel);
+
+  
+  
+  if (StaticPrefs::
+          privacy_restrict3rdpartystorage_heuristic_exclude_third_party_trackers() &&
+      IsFirstPartyTrackingChannel(aChannel)) {
+    return;
+  }
 
   nsCOMPtr<nsIPrincipal> resultPrincipal;
   nsresult rv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
