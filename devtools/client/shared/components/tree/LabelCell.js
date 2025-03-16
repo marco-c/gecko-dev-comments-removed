@@ -1,75 +1,69 @@
 
 
 
-"use strict";
+
+import { Component } from "resource://devtools/client/shared/vendor/react.mjs";
+import * as dom from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
+import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
 
 
-define(function (require, exports, module) {
-  const {
-    Component,
-  } = require("resource://devtools/client/shared/vendor/react.js");
-  const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
 
+
+class LabelCell extends Component {
   
-
-
-  class LabelCell extends Component {
-    
-    
-    static get propTypes() {
-      return {
-        title: PropTypes.string,
-        member: PropTypes.object.isRequired,
-        renderSuffix: PropTypes.func,
-      };
-    }
-
-    render() {
-      const title = this.props.title;
-      const member = this.props.member;
-      const level = member.level || 0;
-      const renderSuffix = this.props.renderSuffix;
-
-      const iconClassList = ["treeIcon"];
-      if (member.hasChildren && member.loading) {
-        iconClassList.push("devtools-throbber");
-      } else if (member.hasChildren) {
-        iconClassList.push("theme-twisty");
-      }
-      if (member.open) {
-        iconClassList.push("open");
-      }
-
-      return dom.td(
-        {
-          className: "treeLabelCell",
-          title,
-          style: {
-            
-            
-            "--tree-label-cell-indent": `${level * 16}px`,
-          },
-          key: "default",
-          role: "presentation",
-        },
-        dom.span({
-          className: iconClassList.join(" "),
-          role: "presentation",
-        }),
-        dom.span(
-          {
-            className: "treeLabel " + member.type + "Label",
-            title,
-            "data-level": level,
-          },
-          member.name
-        ),
-        renderSuffix && renderSuffix(member)
-      );
-    }
+  
+  static get propTypes() {
+    return {
+      title: PropTypes.string,
+      member: PropTypes.object.isRequired,
+      renderSuffix: PropTypes.func,
+    };
   }
 
-  
-  module.exports = LabelCell;
-});
+  render() {
+    const title = this.props.title;
+    const member = this.props.member;
+    const level = member.level || 0;
+    const renderSuffix = this.props.renderSuffix;
+
+    const iconClassList = ["treeIcon"];
+    if (member.hasChildren && member.loading) {
+      iconClassList.push("devtools-throbber");
+    } else if (member.hasChildren) {
+      iconClassList.push("theme-twisty");
+    }
+    if (member.open) {
+      iconClassList.push("open");
+    }
+
+    return dom.td(
+      {
+        className: "treeLabelCell",
+        title,
+        style: {
+          
+          
+          "--tree-label-cell-indent": `${level * 16}px`,
+        },
+        key: "default",
+        role: "presentation",
+      },
+      dom.span({
+        className: iconClassList.join(" "),
+        role: "presentation",
+      }),
+      dom.span(
+        {
+          className: "treeLabel " + member.type + "Label",
+          title,
+          "data-level": level,
+        },
+        member.name
+      ),
+      renderSuffix && renderSuffix(member)
+    );
+  }
+}
+
+
+export default LabelCell;

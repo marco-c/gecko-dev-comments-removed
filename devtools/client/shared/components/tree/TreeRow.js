@@ -1,306 +1,300 @@
 
 
 
-"use strict";
 
 
-define(function (require, exports, module) {
-  const {
-    Component,
-    createFactory,
-    createRef,
-  } = require("resource://devtools/client/shared/vendor/react.js");
-  const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
-  const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
-  const {
-    findDOMNode,
-  } = require("resource://devtools/client/shared/vendor/react-dom.js");
-  const { tr } = dom;
 
+import React from "resource://devtools/client/shared/vendor/react.mjs";
+import * as PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
+import * as dom from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
+import ReactDOM from "resource://devtools/client/shared/vendor/react-dom.mjs";
+
+import TreeCellClass from "resource://devtools/client/shared/components/tree/TreeCell.mjs";
+import LabelCellClass from "resource://devtools/client/shared/components/tree/LabelCell.mjs";
+
+import {
+  wrapMoveFocus,
+  getFocusableElements,
+} from "resource://devtools/client/shared/focus.js";
+
+const { tr } = dom;
+const { findDOMNode } = ReactDOM;
+const { Component, createFactory, createRef } = React;
+
+
+const TreeCell = createFactory(TreeCellClass);
+const LabelCell = createFactory(LabelCellClass);
+
+const UPDATE_ON_PROPS = [
+  "name",
+  "open",
+  "value",
+  "loading",
+  "level",
+  "selected",
+  "active",
+  "hasChildren",
+];
+
+
+
+
+
+class TreeRow extends Component {
   
-  const TreeCell = createFactory(
-    require("resource://devtools/client/shared/components/tree/TreeCell.js")
-  );
-  const LabelCell = createFactory(
-    require("resource://devtools/client/shared/components/tree/LabelCell.js")
-  );
-
-  const {
-    wrapMoveFocus,
-    getFocusableElements,
-  } = require("resource://devtools/client/shared/focus.js");
-
-  const UPDATE_ON_PROPS = [
-    "name",
-    "open",
-    "value",
-    "loading",
-    "level",
-    "selected",
-    "active",
-    "hasChildren",
-  ];
-
   
+  static get propTypes() {
+    return {
+      member: PropTypes.shape({
+        object: PropTypes.object,
+        name: PropTypes.string,
+        type: PropTypes.string.isRequired,
+        rowClass: PropTypes.string.isRequired,
+        level: PropTypes.number.isRequired,
+        hasChildren: PropTypes.bool,
+        value: PropTypes.any,
+        open: PropTypes.bool.isRequired,
+        path: PropTypes.string.isRequired,
+        hidden: PropTypes.bool,
+        selected: PropTypes.bool,
+        active: PropTypes.bool,
+        loading: PropTypes.bool,
+      }),
+      decorator: PropTypes.object,
+      renderCell: PropTypes.func,
+      renderLabelCell: PropTypes.func,
+      columns: PropTypes.array.isRequired,
+      id: PropTypes.string.isRequired,
+      provider: PropTypes.object.isRequired,
+      onClick: PropTypes.func.isRequired,
+      onContextMenu: PropTypes.func,
+      onMouseOver: PropTypes.func,
+      onMouseOut: PropTypes.func,
+    };
+  }
 
+  constructor(props) {
+    super(props);
 
+    this.treeRowRef = createRef();
 
-  class TreeRow extends Component {
+    this.getRowClass = this.getRowClass.bind(this);
+    this._onKeyDown = this._onKeyDown.bind(this);
+  }
+
+  componentDidMount() {
+    this._setTabbableState();
+
     
     
-    static get propTypes() {
-      return {
-        member: PropTypes.shape({
-          object: PropTypes.object,
-          name: PropTypes.string,
-          type: PropTypes.string.isRequired,
-          rowClass: PropTypes.string.isRequired,
-          level: PropTypes.number.isRequired,
-          hasChildren: PropTypes.bool,
-          value: PropTypes.any,
-          open: PropTypes.bool.isRequired,
-          path: PropTypes.string.isRequired,
-          hidden: PropTypes.bool,
-          selected: PropTypes.bool,
-          active: PropTypes.bool,
-          loading: PropTypes.bool,
-        }),
-        decorator: PropTypes.object,
-        renderCell: PropTypes.func,
-        renderLabelCell: PropTypes.func,
-        columns: PropTypes.array.isRequired,
-        id: PropTypes.string.isRequired,
-        provider: PropTypes.object.isRequired,
-        onClick: PropTypes.func.isRequired,
-        onContextMenu: PropTypes.func,
-        onMouseOver: PropTypes.func,
-        onMouseOut: PropTypes.func,
-      };
-    }
-
-    constructor(props) {
-      super(props);
-
-      this.treeRowRef = createRef();
-
-      this.getRowClass = this.getRowClass.bind(this);
-      this._onKeyDown = this._onKeyDown.bind(this);
-    }
-
-    componentDidMount() {
+    const win = this.treeRowRef.current.ownerDocument.defaultView;
+    const { MutationObserver } = win;
+    this.observer = new MutationObserver(() => {
       this._setTabbableState();
+    });
+    this.observer.observe(this.treeRowRef.current, {
+      childList: true,
+      subtree: true,
+    });
+  }
 
-      
-      
-      const win = this.treeRowRef.current.ownerDocument.defaultView;
-      const { MutationObserver } = win;
-      this.observer = new MutationObserver(() => {
-        this._setTabbableState();
-      });
-      this.observer.observe(this.treeRowRef.current, {
-        childList: true,
-        subtree: true,
-      });
-    }
-
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     
-    UNSAFE_componentWillReceiveProps(nextProps) {
-      
-      
-      
-      
-      
-      
-      if (nextProps.member.hidden != this.props.member.hidden) {
-        const row = findDOMNode(this);
-        row.classList.toggle("hidden");
-      }
-    }
-
     
-
-
-
-    shouldComponentUpdate(nextProps) {
-      for (const prop of UPDATE_ON_PROPS) {
-        if (nextProps.member[prop] !== this.props.member[prop]) {
-          return true;
-        }
-      }
-
-      return false;
-    }
-
-    componentWillUnmount() {
-      this.observer.disconnect();
-      this.observer = null;
-    }
-
     
-
-
-
-
-    _setTabbableState() {
-      const elms = getFocusableElements(this.treeRowRef.current);
-      if (elms.length === 0) {
-        return;
-      }
-
-      const { active } = this.props.member;
-      if (!active) {
-        elms.forEach(elm => elm.setAttribute("tabindex", "-1"));
-        return;
-      }
-
-      if (!elms.includes(document.activeElement)) {
-        elms[0].focus();
-      }
-    }
-
-    _onKeyDown(e) {
-      const { target, key, shiftKey } = e;
-
-      if (key !== "Tab") {
-        return;
-      }
-
-      const focusMoved = !!wrapMoveFocus(
-        getFocusableElements(this.treeRowRef.current),
-        target,
-        shiftKey
-      );
-      if (focusMoved) {
-        
-        
-        e.preventDefault();
-      }
-
-      e.stopPropagation();
-    }
-
-    getRowClass(object) {
-      const decorator = this.props.decorator;
-      if (!decorator || !decorator.getRowClass) {
-        return [];
-      }
-
-      
-      let classNames = decorator.getRowClass(object);
-      if (!classNames) {
-        return [];
-      }
-
-      if (typeof classNames == "string") {
-        classNames = [classNames];
-      }
-
-      return classNames;
-    }
-
-    render() {
-      const member = this.props.member;
-      const decorator = this.props.decorator;
-
-      const props = {
-        id: this.props.id,
-        ref: this.treeRowRef,
-        role: "treeitem",
-        "aria-level": member.level + 1,
-        "aria-selected": !!member.selected,
-        onClick: this.props.onClick,
-        onContextMenu: this.props.onContextMenu,
-        onKeyDownCapture: member.active ? this._onKeyDown : undefined,
-        onMouseOver: this.props.onMouseOver,
-        onMouseOut: this.props.onMouseOut,
-      };
-
-      
-      const classNames = this.getRowClass(member.object) || [];
-      classNames.push("treeRow");
-      classNames.push(member.type + "Row");
-
-      if (member.hasChildren) {
-        classNames.push("hasChildren");
-
-        
-        
-        
-        if (member.type !== "string") {
-          props["aria-expanded"] = member.open;
-        }
-      }
-
-      if (member.open) {
-        classNames.push("opened");
-      }
-
-      if (member.loading) {
-        classNames.push("loading");
-      }
-
-      if (member.selected) {
-        classNames.push("selected");
-      }
-
-      if (member.hidden) {
-        classNames.push("hidden");
-      }
-
-      props.className = classNames.join(" ");
-
-      
-      
-      
-      
-      const cells = [];
-
-      
-      let renderCell = this.props.renderCell || RenderCell;
-      let renderLabelCell = this.props.renderLabelCell || RenderLabelCell;
-      if (decorator?.renderLabelCell) {
-        renderLabelCell =
-          decorator.renderLabelCell(member.object) || renderLabelCell;
-      }
-
-      
-      this.props.columns.forEach(col => {
-        const cellProps = Object.assign({}, this.props, {
-          key: col.id,
-          id: col.id,
-          value: this.props.provider.getValue(member.object, col.id),
-        });
-
-        if (decorator?.renderCell) {
-          renderCell = decorator.renderCell(member.object, col.id);
-        }
-
-        const render = col.id == "default" ? renderLabelCell : renderCell;
-
-        
-        
-        
-        
-        if (render) {
-          cells.push(render(cellProps));
-        }
-      });
-
-      
-      return tr(props, cells);
+    
+    
+    
+    if (nextProps.member.hidden != this.props.member.hidden) {
+      const row = findDOMNode(this);
+      row.classList.toggle("hidden");
     }
   }
 
   
 
-  const RenderCell = props => {
-    return TreeCell(props);
-  };
 
-  const RenderLabelCell = props => {
-    return LabelCell(props);
-  };
+
+  shouldComponentUpdate(nextProps) {
+    for (const prop of UPDATE_ON_PROPS) {
+      if (nextProps.member[prop] !== this.props.member[prop]) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  componentWillUnmount() {
+    this.observer.disconnect();
+    this.observer = null;
+  }
 
   
-  module.exports = TreeRow;
-});
+
+
+
+
+  _setTabbableState() {
+    const elms = getFocusableElements(this.treeRowRef.current);
+    if (elms.length === 0) {
+      return;
+    }
+
+    const { active } = this.props.member;
+    if (!active) {
+      elms.forEach(elm => elm.setAttribute("tabindex", "-1"));
+      return;
+    }
+
+    if (!elms.includes(document.activeElement)) {
+      elms[0].focus();
+    }
+  }
+
+  _onKeyDown(e) {
+    const { target, key, shiftKey } = e;
+
+    if (key !== "Tab") {
+      return;
+    }
+
+    const focusMoved = !!wrapMoveFocus(
+      getFocusableElements(this.treeRowRef.current),
+      target,
+      shiftKey
+    );
+    if (focusMoved) {
+      
+      
+      e.preventDefault();
+    }
+
+    e.stopPropagation();
+  }
+
+  getRowClass(object) {
+    const decorator = this.props.decorator;
+    if (!decorator || !decorator.getRowClass) {
+      return [];
+    }
+
+    
+    let classNames = decorator.getRowClass(object);
+    if (!classNames) {
+      return [];
+    }
+
+    if (typeof classNames == "string") {
+      classNames = [classNames];
+    }
+
+    return classNames;
+  }
+
+  render() {
+    const member = this.props.member;
+    const decorator = this.props.decorator;
+
+    const props = {
+      id: this.props.id,
+      ref: this.treeRowRef,
+      role: "treeitem",
+      "aria-level": member.level + 1,
+      "aria-selected": !!member.selected,
+      onClick: this.props.onClick,
+      onContextMenu: this.props.onContextMenu,
+      onKeyDownCapture: member.active ? this._onKeyDown : undefined,
+      onMouseOver: this.props.onMouseOver,
+      onMouseOut: this.props.onMouseOut,
+    };
+
+    
+    const classNames = this.getRowClass(member.object) || [];
+    classNames.push("treeRow");
+    classNames.push(member.type + "Row");
+
+    if (member.hasChildren) {
+      classNames.push("hasChildren");
+
+      
+      
+      
+      if (member.type !== "string") {
+        props["aria-expanded"] = member.open;
+      }
+    }
+
+    if (member.open) {
+      classNames.push("opened");
+    }
+
+    if (member.loading) {
+      classNames.push("loading");
+    }
+
+    if (member.selected) {
+      classNames.push("selected");
+    }
+
+    if (member.hidden) {
+      classNames.push("hidden");
+    }
+
+    props.className = classNames.join(" ");
+
+    
+    
+    
+    
+    const cells = [];
+
+    
+    let renderCell = this.props.renderCell || RenderCell;
+    let renderLabelCell = this.props.renderLabelCell || RenderLabelCell;
+    if (decorator?.renderLabelCell) {
+      renderLabelCell =
+        decorator.renderLabelCell(member.object) || renderLabelCell;
+    }
+
+    
+    this.props.columns.forEach(col => {
+      const cellProps = Object.assign({}, this.props, {
+        key: col.id,
+        id: col.id,
+        value: this.props.provider.getValue(member.object, col.id),
+      });
+
+      if (decorator?.renderCell) {
+        renderCell = decorator.renderCell(member.object, col.id);
+      }
+
+      const render = col.id == "default" ? renderLabelCell : renderCell;
+
+      
+      
+      
+      
+      if (render) {
+        cells.push(render(cellProps));
+      }
+    });
+
+    
+    return tr(props, cells);
+  }
+}
+
+
+
+const RenderCell = props => {
+  return TreeCell(props);
+};
+
+const RenderLabelCell = props => {
+  return LabelCell(props);
+};
+
+
+export default TreeRow;

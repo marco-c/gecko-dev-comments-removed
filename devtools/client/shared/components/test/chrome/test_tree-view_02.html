@@ -1,11 +1,11 @@
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+- License, v. 2.0. If a copy of the MPL was not distributed with this
+- file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+Test that TreeView component filtering works with keyboard.
+-->
 <head>
   <meta charset="utf-8">
   <title>TreeView component filtering keyboard test</title>
@@ -35,8 +35,9 @@ window.onload = function() {
       findRenderedDOMComponentWithClass,
       scryRenderedDOMComponentsWithClass,
     } = browserRequire("devtools/client/shared/vendor/react-dom-test-utils");
-    const TreeView =
-      browserRequire("devtools/client/shared/components/tree/TreeView");
+    const TreeView = ChromeUtils.importESModule(
+      "resource://devtools/client/shared/components/tree/TreeView.mjs"
+    ).default;
 
       function testKeyboardInteraction(tree, treeViewEl, rows) {
         // Expected tree when filtered (C is filtered)
