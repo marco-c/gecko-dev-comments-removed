@@ -1,128 +1,42 @@
 
 
 
-let updatesDir = FileUtils.getDir("ProfD", ["features"]);
+const updatesDir = FileUtils.getDir("ProfD", ["features"]);
 
 AddonTestUtils.usePrivilegedSignatures = () => "system";
 
+add_task(async function setup() {
+  
+  let dir = FileUtils.getDir("ProfD", ["sysfeatures", "app1"]);
+  dir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+  let xpi = await getSystemAddonXPI(1, "1.0");
+  xpi.copyTo(dir, "system1@tests.mozilla.org.xpi");
 
-let scopes = AddonManager.SCOPE_PROFILE | AddonManager.SCOPE_APPLICATION;
-Services.prefs.setIntPref("extensions.enabledScopes", scopes);
+  xpi = await getSystemAddonXPI(2, "1.0");
+  xpi.copyTo(dir, "system2@tests.mozilla.org.xpi");
+
+  dir = FileUtils.getDir("ProfD", ["sysfeatures", "app2"]);
+  dir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+  xpi = await getSystemAddonXPI(1, "2.0");
+  xpi.copyTo(dir, "system1@tests.mozilla.org.xpi");
+
+  xpi = await getSystemAddonXPI(3, "1.0");
+  xpi.copyTo(dir, "system3@tests.mozilla.org.xpi");
+
+  dir = FileUtils.getDir("ProfD", ["sysfeatures", "app3"]);
+  dir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+  xpi = await getSystemAddonXPI(1, "1.0");
+  xpi.copyTo(dir, "system1@tests.mozilla.org.xpi");
+
+  xpi = await getSystemAddonXPI(3, "1.0");
+  xpi.copyTo(dir, "system3@tests.mozilla.org.xpi");
+});
 
 const distroDir = FileUtils.getDir("ProfD", ["sysfeatures", "app0"]);
 distroDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
 registerDirectory("XREAppFeat", distroDir);
 
-const SYSTEM_DEFAULTS_ADDON_IDS = [
-  "system1@tests.mozilla.org",
-  "system2@tests.mozilla.org",
-  "system3@tests.mozilla.org",
-  "system5@tests.mozilla.org",
-];
-
-
-async function setupOverrideBuiltinsApp1({ asBuiltIn = true }) {
-  if (!asBuiltIn) {
-    let dir = FileUtils.getDir("ProfD", ["sysfeatures", "app1"]);
-    if (!dir.exists()) {
-      dir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-      let xpi = await getSystemAddonXPI(1, "1.0");
-      xpi.copyTo(dir, "system1@tests.mozilla.org.xpi");
-      xpi = await getSystemAddonXPI(2, "1.0");
-      xpi.copyTo(dir, "system2@tests.mozilla.org.xpi");
-    }
-    distroDir.leafName = "app1";
-    await overrideBuiltIns({ system: SYSTEM_DEFAULTS_ADDON_IDS });
-    return;
-  }
-
-  const builtins = [
-    await getSystemBuiltin(1, "1.0", "app1-builtin-system1"),
-    await getSystemBuiltin(2, "1.0", "app1-builtin-system2"),
-    
-    
-    
-    {
-      addon_id: "system3@tests.mozilla.org",
-      addon_version: "1.0",
-      res_url: `resource://app1-builtin-system3/`,
-    },
-    {
-      addon_id: "system5@tests.mozilla.org",
-      addon_version: "1.0",
-      res_url: `resource://app1-builtin-system5/`,
-    },
-  ];
-  await overrideBuiltIns({ builtins });
-}
-
-
-async function setupOverrideBuiltinsApp2({ asBuiltIn = true }) {
-  if (!asBuiltIn) {
-    let dir = FileUtils.getDir("ProfD", ["sysfeatures", "app2"]);
-    if (!dir.exists()) {
-      dir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-      let xpi = await getSystemAddonXPI(1, "2.0");
-      xpi.copyTo(dir, "system1@tests.mozilla.org.xpi");
-      xpi = await getSystemAddonXPI(3, "1.0");
-      xpi.copyTo(dir, "system3@tests.mozilla.org.xpi");
-    }
-    distroDir.leafName = "app2";
-    await overrideBuiltIns({ system: SYSTEM_DEFAULTS_ADDON_IDS });
-    return;
-  }
-
-  const builtins = [
-    await getSystemBuiltin(1, "2.0", "app2-builtin-system1"),
-    await getSystemBuiltin(3, "1.0", "app2-builtin-system3"),
-    
-    {
-      addon_id: "system2@tests.mozilla.org",
-      addon_version: "1.0",
-      res_url: `resource://app2-builtin-system2/`,
-    },
-    {
-      addon_id: "system5@tests.mozilla.org",
-      addon_version: "1.0",
-      res_url: `resource://app2-builtin-system5/`,
-    },
-  ];
-  await overrideBuiltIns({ builtins });
-}
-
-
-async function setupOverrideBuiltinsApp3({ asBuiltIn = true }) {
-  if (!asBuiltIn) {
-    let dir = FileUtils.getDir("ProfD", ["sysfeatures", "app3"]);
-    if (!dir.exists()) {
-      dir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-      let xpi = await getSystemAddonXPI(1, "1.0");
-      xpi.copyTo(dir, "system1@tests.mozilla.org.xpi");
-      xpi = await getSystemAddonXPI(3, "1.0");
-      xpi.copyTo(dir, "system3@tests.mozilla.org.xpi");
-    }
-    distroDir.leafName = "app3";
-    await overrideBuiltIns({ system: SYSTEM_DEFAULTS_ADDON_IDS });
-    return;
-  }
-
-  const builtins = [
-    await getSystemBuiltin(1, "1.0", "app3-builtin-system1"),
-    await getSystemBuiltin(3, "1.0", "app3-builtin-system3"),
-    
-    {
-      addon_id: "system2@tests.mozilla.org",
-      addon_version: "1.0",
-      res_url: `resource://app3-builtin-system3/`,
-    },
-    {
-      addon_id: "system5@tests.mozilla.org",
-      addon_version: "1.0",
-      res_url: `resource://app3-builtin-system5/`,
-    },
-  ];
-  await overrideBuiltIns({ builtins });
-}
+createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "0");
 
 function makeUUID() {
   let uuidGen = Services.uuid;
@@ -140,10 +54,6 @@ async function check_installed(conditions) {
     }
     let isUpgrade = conditions[i].isUpgrade;
     let version = conditions[i].version;
-
-    const { builtins } =
-      AddonTestUtils.getXPIExports().XPIProvider.builtInAddons;
-    const foundAsBuiltIn = builtins?.find(entry => entry.addon_id === id);
 
     let expectedDir = isUpgrade ? updatesDir : distroDir;
 
@@ -167,15 +77,12 @@ async function check_installed(conditions) {
       }
 
       
-      if (!!foundAsBuiltIn && !isUpgrade) {
-        Assert.equal(addon.getResourceURI("").spec, foundAsBuiltIn.res_url);
-      } else {
-        let file = expectedDir.clone();
-        file.append(id + ".xpi");
-        Assert.ok(file.exists());
-        Assert.ok(file.isFile());
-        Assert.equal(getAddonFile(addon).path, file.path);
-      }
+      let file = expectedDir.clone();
+      file.append(id + ".xpi");
+      Assert.ok(file.exists());
+      Assert.ok(file.isFile());
+
+      Assert.equal(getAddonFile(addon).path, file.path);
 
       if (isUpgrade) {
         Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_SYSTEM);
@@ -191,25 +98,15 @@ async function check_installed(conditions) {
 }
 
 
-
-async function test_default_missing({ asBuiltIn = true } = {}) {
-  let overrideBuiltInsData = {
-    builtins: SYSTEM_DEFAULTS_ADDON_IDS.map(id => {
-      return {
-        addon_id: id,
-        addon_version: "1.0",
-        res_url: `resource://missing-builtin-${id.split("@")[0]}/`,
-      };
-    }),
-  };
-
-  if (!asBuiltIn) {
-    overrideBuiltInsData = {
-      system: SYSTEM_DEFAULTS_ADDON_IDS,
-    };
-  }
-
-  await overrideBuiltIns(overrideBuiltInsData);
+add_task(async function test_missing_app_dir() {
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   let conditions = [
@@ -223,13 +120,20 @@ async function test_default_missing({ asBuiltIn = true } = {}) {
   Assert.ok(!updatesDir.exists());
 
   await promiseShutdownManager();
-}
+});
 
 
-async function test_new_version({ asBuiltIn = true } = {}) {
+add_task(async function test_new_version() {
   gAppInfo.version = "1";
-
-  await setupOverrideBuiltinsApp1({ asBuiltIn });
+  distroDir.leafName = "app1";
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   let conditions = [
@@ -243,12 +147,20 @@ async function test_new_version({ asBuiltIn = true } = {}) {
   Assert.ok(!updatesDir.exists());
 
   await promiseShutdownManager();
-}
+});
 
 
-async function test_upgrade({ asBuiltIn = true } = {}) {
+add_task(async function test_upgrade() {
   gAppInfo.version = "2";
-  await setupOverrideBuiltinsApp2({ asBuiltIn });
+  distroDir.leafName = "app2";
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   let conditions = [
@@ -262,12 +174,20 @@ async function test_upgrade({ asBuiltIn = true } = {}) {
   Assert.ok(!updatesDir.exists());
 
   await promiseShutdownManager();
-}
+});
 
 
-async function test_downgrade({ asBuiltIn = true } = {}) {
+add_task(async function test_downgrade() {
   gAppInfo.version = "1";
-  await setupOverrideBuiltinsApp1({ asBuiltIn });
+  distroDir.leafName = "app1";
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   let conditions = [
@@ -281,15 +201,15 @@ async function test_downgrade({ asBuiltIn = true } = {}) {
   Assert.ok(!updatesDir.exists());
 
   await promiseShutdownManager();
-}
+});
 
 
-async function test_updated({ asBuiltIn = true } = {}) {
+add_task(async function test_updated() {
   
   let dirname = makeUUID();
   let dir = FileUtils.getDir("ProfD", ["features", dirname]);
   dir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-  updatesDir = dir;
+  updatesDir.append(dirname);
 
   
   let file = await getSystemAddonXPI(2, "2.0");
@@ -312,7 +232,14 @@ async function test_updated({ asBuiltIn = true } = {}) {
   };
   Services.prefs.setCharPref(PREF_SYSTEM_ADDON_SET, JSON.stringify(addonSet));
 
-  await setupOverrideBuiltinsApp1({ asBuiltIn });
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   let conditions = [
@@ -324,14 +251,20 @@ async function test_updated({ asBuiltIn = true } = {}) {
   await check_installed(conditions);
 
   await promiseShutdownManager();
-}
+});
 
 
 
-async function safe_mode_disabled({ asBuiltIn = true } = {}) {
+add_task(async function safe_mode_disabled() {
   gAppInfo.inSafeMode = true;
-
-  await setupOverrideBuiltinsApp1({ asBuiltIn });
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   let conditions = [
@@ -343,13 +276,19 @@ async function safe_mode_disabled({ asBuiltIn = true } = {}) {
   await check_installed(conditions);
 
   await promiseShutdownManager();
-}
+});
 
 
-async function normal_mode_enabled({ asBuiltIn = true } = {}) {
+add_task(async function normal_mode_enabled() {
   gAppInfo.inSafeMode = false;
-
-  await setupOverrideBuiltinsApp1({ asBuiltIn });
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   let conditions = [
@@ -361,15 +300,22 @@ async function normal_mode_enabled({ asBuiltIn = true } = {}) {
   await check_installed(conditions);
 
   await promiseShutdownManager();
-}
+});
 
 
-async function test_skips_additional({ asBuiltIn = true } = {}) {
+add_task(async function test_skips_additional() {
   
   let file = await getSystemAddonXPI(4, "1.0");
   file.copyTo(updatesDir, "system4@tests.mozilla.org.xpi");
 
-  await setupOverrideBuiltinsApp1({ asBuiltIn });
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   let conditions = [
@@ -381,13 +327,20 @@ async function test_skips_additional({ asBuiltIn = true } = {}) {
   await check_installed(conditions);
 
   await promiseShutdownManager();
-}
+});
 
 
-async function test_revert({ asBuiltIn = true } = {}) {
+add_task(async function test_revert() {
   manuallyUninstall(updatesDir, "system2@tests.mozilla.org");
 
-  await setupOverrideBuiltinsApp1({ asBuiltIn });
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   
@@ -401,14 +354,21 @@ async function test_revert({ asBuiltIn = true } = {}) {
   await check_installed(conditions);
 
   await promiseShutdownManager();
-}
+});
 
 
-async function test_reuse({ asBuiltIn = true } = {}) {
+add_task(async function test_reuse() {
   let file = await getSystemAddonXPI(2, "2.0");
   file.copyTo(updatesDir, "system2@tests.mozilla.org.xpi");
 
-  await setupOverrideBuiltinsApp1({ asBuiltIn });
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   let conditions = [
@@ -420,13 +380,20 @@ async function test_reuse({ asBuiltIn = true } = {}) {
   await check_installed(conditions);
 
   await promiseShutdownManager();
-}
+});
 
 
-async function test_corrupt_pref({ asBuiltIn = true } = {}) {
+add_task(async function test_corrupt_pref() {
   Services.prefs.setCharPref(PREF_SYSTEM_ADDON_SET, "foo");
 
-  await setupOverrideBuiltinsApp1({ asBuiltIn });
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   let conditions = [
@@ -438,10 +405,10 @@ async function test_corrupt_pref({ asBuiltIn = true } = {}) {
   await check_installed(conditions);
 
   await promiseShutdownManager();
-}
+});
 
 
-async function test_bad_profile_cert({ asBuiltIn = true } = {}) {
+add_task(async function test_bad_profile_cert() {
   let file = await getSystemAddonXPI(1, "1.0");
   file.copyTo(updatesDir, "system1@tests.mozilla.org.xpi");
 
@@ -463,7 +430,14 @@ async function test_bad_profile_cert({ asBuiltIn = true } = {}) {
   };
   Services.prefs.setCharPref(PREF_SYSTEM_ADDON_SET, JSON.stringify(addonSet));
 
-  await setupOverrideBuiltinsApp1({ asBuiltIn });
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   let conditions = [
@@ -475,17 +449,25 @@ async function test_bad_profile_cert({ asBuiltIn = true } = {}) {
   await check_installed(conditions);
 
   await promiseShutdownManager();
-}
+});
 
 
-async function test_bad_app_cert({ asBuiltIn = true } = {}) {
+add_task(async function test_bad_app_cert() {
   gAppInfo.version = "3";
+  distroDir.leafName = "app3";
 
   AddonTestUtils.usePrivilegedSignatures = id => {
     return id === "system1@tests.mozilla.org" ? false : "system";
   };
 
-  await setupOverrideBuiltinsApp3({ asBuiltIn });
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   
@@ -508,15 +490,15 @@ async function test_bad_app_cert({ asBuiltIn = true } = {}) {
   await promiseShutdownManager();
 
   AddonTestUtils.usePrivilegedSignatures = () => "system";
-}
+});
 
 
-async function test_updated_bad_update_set({ asBuiltIn = true } = {}) {
+add_task(async function test_updated_bad_update_set() {
   
   let dirname = makeUUID();
   let dir = FileUtils.getDir("ProfD", ["features", dirname]);
   dir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-  updatesDir = dir;
+  updatesDir.append(dirname);
 
   
   let file = await getSystemAddonXPI(2, "2.0");
@@ -539,7 +521,14 @@ async function test_updated_bad_update_set({ asBuiltIn = true } = {}) {
   };
   Services.prefs.setCharPref(PREF_SYSTEM_ADDON_SET, JSON.stringify(addonSet));
 
-  await setupOverrideBuiltinsApp3({ asBuiltIn });
+  await overrideBuiltIns({
+    system: [
+      "system1@tests.mozilla.org",
+      "system2@tests.mozilla.org",
+      "system3@tests.mozilla.org",
+      "system5@tests.mozilla.org",
+    ],
+  });
   await promiseStartupManager();
 
   let conditions = [{ isUpgrade: false, version: "1.0" }];
@@ -547,42 +536,4 @@ async function test_updated_bad_update_set({ asBuiltIn = true } = {}) {
   await check_installed(conditions);
 
   await promiseShutdownManager();
-}
-
-async function run_system_reset_scenarios({ asBuiltIn = true } = {}) {
-  createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "0");
-  clearSystemAddonUpdatesDir();
-  
-  
-  
-  const test_scenarios = [
-    test_default_missing,
-    test_new_version,
-    test_upgrade,
-    test_downgrade,
-    test_updated,
-    safe_mode_disabled,
-    normal_mode_enabled,
-    test_skips_additional,
-    test_revert,
-    test_reuse,
-    test_corrupt_pref,
-    test_bad_profile_cert,
-    test_bad_app_cert,
-    test_updated_bad_update_set,
-  ];
-  for (const test_fn of test_scenarios) {
-    info(`===== Entering test scenario: ${test_fn.name} =====`);
-    await test_fn({ asBuiltIn });
-    info(`===== Exiting test scenario: ${test_fn.name} =====`);
-  }
-}
-
-
-add_task(async function test_with_systemdefault_as_xpi() {
-  await run_system_reset_scenarios({ asBuiltIn: false });
-});
-
-add_task(async function test_with_systemdefault_as_builtin() {
-  await run_system_reset_scenarios();
 });

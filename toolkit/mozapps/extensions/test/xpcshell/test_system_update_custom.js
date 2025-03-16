@@ -1,9 +1,5 @@
 
 
-
-let scopes = AddonManager.SCOPE_PROFILE | AddonManager.SCOPE_APPLICATION;
-Services.prefs.setIntPref("extensions.enabledScopes", scopes);
-
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "2");
 
 let distroDir = FileUtils.getDir("ProfD", ["sysfeatures", "empty"]);
@@ -12,7 +8,7 @@ registerDirectory("XREAppFeat", distroDir);
 
 AddonTestUtils.usePrivilegedSignatures = () => "system";
 
-add_setup(initSystemAddonDirs);
+add_task(initSystemAddonDirs);
 
 
 
@@ -44,7 +40,7 @@ const TEST_CONDITIONS = {
     },
     initialState: [
       { isUpgrade: false, version: null },
-      { isUpgrade: false, version: "2.0", asBuiltin: true },
+      { isUpgrade: false, version: "2.0" },
       { isUpgrade: false, version: "2.0" },
       { isUpgrade: false, version: null },
       { isUpgrade: false, version: null },
