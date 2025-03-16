@@ -137,7 +137,7 @@ bool nsPresContext::IsDOMPaintEventPending() {
     
     
     NotifyInvalidation(drpc->mRefreshDriver->LastTransactionId().Next(),
-                       nsRect(0, 0, 0, 0));
+                       nsRect());
     return true;
   }
   return false;
@@ -2380,61 +2380,6 @@ void nsPresContext::FireDOMPaintEvent(
                                     static_cast<Event*>(event), this, nullptr);
 }
 
-static bool MayHavePaintEventListener(nsPIDOMWindowInner* aInnerWindow) {
-  if (!aInnerWindow) {
-    return false;
-  }
-  if (aInnerWindow->HasPaintEventListeners()) {
-    return true;
-  }
-
-  EventTarget* parentTarget = aInnerWindow->GetParentTarget();
-  if (!parentTarget) {
-    return false;
-  }
-
-  EventListenerManager* manager = nullptr;
-  if ((manager = parentTarget->GetExistingListenerManager()) &&
-      manager->MayHavePaintEventListener()) {
-    return true;
-  }
-
-  nsCOMPtr<nsINode> node;
-  if (parentTarget != aInnerWindow->GetChromeEventHandler()) {
-    nsCOMPtr<nsIInProcessContentFrameMessageManager> mm =
-        do_QueryInterface(parentTarget);
-    if (mm) {
-      node = mm->GetOwnerContent();
-    }
-  }
-
-  if (!node) {
-    node = nsINode::FromEventTarget(parentTarget);
-  }
-  if (node) {
-    return MayHavePaintEventListener(node->OwnerDoc()->GetInnerWindow());
-  }
-
-  if (nsCOMPtr<nsPIDOMWindowInner> window =
-          nsPIDOMWindowInner::FromEventTarget(parentTarget)) {
-    return MayHavePaintEventListener(window);
-  }
-
-  if (nsCOMPtr<nsPIWindowRoot> root =
-          nsPIWindowRoot::FromEventTarget(parentTarget)) {
-    EventTarget* browserChildGlobal;
-    return root && (browserChildGlobal = root->GetParentTarget()) &&
-           (manager = browserChildGlobal->GetExistingListenerManager()) &&
-           manager->MayHavePaintEventListener();
-  }
-
-  return false;
-}
-
-bool nsPresContext::MayHavePaintEventListener() {
-  return ::MayHavePaintEventListener(mDocument->GetInnerWindow());
-}
-
 void nsPresContext::NotifyInvalidation(TransactionId aTransactionId,
                                        const nsIntRect& aRect) {
   
@@ -2469,22 +2414,14 @@ void nsPresContext::NotifyInvalidation(TransactionId aTransactionId,
                                        const nsRect& aRect) {
   MOZ_ASSERT(GetContainerWeak(), "Invalidation in detached pres context");
 
-  
-  
-  
-  
-  
-
-  nsPresContext* pc;
-  for (pc = this; pc; pc = pc->GetParentPresContext()) {
+  for (nsPresContext* pc = this; pc; pc = pc->GetParentPresContext()) {
     TransactionInvalidations* transaction =
         pc->GetInvalidations(aTransactionId);
     if (transaction) {
       break;
-    } else {
-      transaction = pc->mTransactions.AppendElement();
-      transaction->mTransactionId = aTransactionId;
     }
+    transaction = pc->mTransactions.AppendElement();
+    transaction->mTransactionId = aTransactionId;
   }
 
   TransactionInvalidations* transaction = GetInvalidations(aTransactionId);

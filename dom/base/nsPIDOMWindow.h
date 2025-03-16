@@ -438,18 +438,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
 
 
-  void SetHasPaintEventListeners() { mMayHavePaintEventListener = true; }
-
-  
-
-
-
-  bool HasPaintEventListeners() { return mMayHavePaintEventListener; }
-
-  
-
-
-
   void SetHasTouchEventListeners() {
     if (!mMayHaveTouchEventListener) {
       mMayHaveTouchEventListener = true;
@@ -675,7 +663,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   bool mIsDocumentLoaded;
   bool mIsHandlingResizeEvent;
   bool mMayHaveDOMActivateEventListeners;
-  bool mMayHavePaintEventListener;
   bool mMayHaveTouchEventListener;
   bool mMayHaveSelectionChangeEventListener;
   bool mMayHaveFormSelectEventListener;
