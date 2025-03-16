@@ -43,6 +43,12 @@ AddonTestUtils.createAppInfo(
   "42"
 );
 
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /No listener for GeckoView:WebExtension:OptionalPrompt/
+);
+
 add_setup(async () => {
   
   
@@ -730,22 +736,14 @@ const GRANTED_WITHOUT_USER_PROMPT = [
   "activeTab",
   "activityLog",
   "alarms",
-  "captivePortal",
-  "contextMenus",
   "contextualIdentities",
   "cookies",
   "declarativeNetRequestWithHostAccess",
   "dns",
-  "geckoProfiler",
-  "identity",
   "idle",
-  "menus",
-  "menus.overrideContext",
   "mozillaAddons",
   "networkStatus",
-  "normandyAddonStudy",
   "scripting",
-  "search",
   "storage",
   "telemetry",
   "theme",
@@ -756,6 +754,27 @@ const GRANTED_WITHOUT_USER_PROMPT = [
   "webRequestFilterResponse",
   "webRequestFilterResponse.serviceWorkerScript",
 ];
+
+if (AppConstants.platform == "android") {
+  GRANTED_WITHOUT_USER_PROMPT.push(
+    "geckoViewAddons",
+    "nativeMessagingFromContent"
+  );
+} else if (AppConstants.MOZ_APP_NAME == "thunderbird") {
+  
+} else {
+  GRANTED_WITHOUT_USER_PROMPT.push(
+    "captivePortal",
+    "contextMenus",
+    "geckoProfiler",
+    "identity",
+    "menus",
+    "menus.overrideContext",
+    "normandyAddonStudy",
+    "search"
+  );
+}
+GRANTED_WITHOUT_USER_PROMPT.sort();
 
 add_task(async function test_permissions_have_localization_strings() {
   let noPromptNames = Schemas.getPermissionNames([
@@ -981,7 +1000,8 @@ async function test_permissions_prompt({
     });
   }
 
-  const PERMS = ["history", "tabs"];
+  
+  const PERMS = ["browsingData", "tabs"];
   const ORIGINS = ["https://test1.example.com/*", "https://test3.example.com/"];
   let xpi = AddonTestUtils.createTempWebExtensionFile({
     background,
