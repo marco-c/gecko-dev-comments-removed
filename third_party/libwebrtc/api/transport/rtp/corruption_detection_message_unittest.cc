@@ -8,7 +8,7 @@
 
 
 
-#include "common_video/corruption_detection_message.h"
+#include "api/transport/rtp/corruption_detection_message.h"
 
 #include <optional>
 #include <vector>
