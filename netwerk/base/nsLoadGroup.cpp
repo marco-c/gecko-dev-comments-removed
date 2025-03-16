@@ -1012,6 +1012,12 @@ void nsLoadGroup::TelemetryReportChannel(nsITimedChannel* aTimedChannel,
           responseEnd - asyncOpen);
       mozilla::glean::network::sub_complete_load_net.AccumulateRawDuration(
           responseEnd - asyncOpen);
+      
+      
+      
+      
+      mozilla::glean::glam_experiment::sub_complete_load_net
+          .AccumulateRawDuration(responseEnd - asyncOpen);
     }
   }
 #endif

@@ -1423,6 +1423,14 @@ nsresult nsHtml5StreamParser::OnStopRequest(
                "OnDataFinished after OnStopRequest");
     glean::networking::http_content_html5parser_ondatafinished_to_onstop_delay
         .AccumulateRawDuration(delta);
+    
+    
+    
+    
+    glean::glam_experiment::
+        http_content_html5parser_ondatafinished_to_onstop_delay
+            .AccumulateRawDuration(delta);
+    
   }
   return NS_OK;
 }
