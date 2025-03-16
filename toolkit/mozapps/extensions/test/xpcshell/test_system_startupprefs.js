@@ -3,6 +3,10 @@
 
 
 
+let scopes = AddonManager.SCOPE_PROFILE | AddonManager.SCOPE_APPLICATION;
+Services.prefs.setIntPref("extensions.enabledScopes", scopes);
+
+
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "2");
 
@@ -12,22 +16,24 @@ registerDirectory("XREAppFeat", distroDir);
 
 AddonTestUtils.usePrivilegedSignatures = "system";
 
-add_task(initSystemAddonDirs);
-
 BootstrapMonitor.init();
 
-add_task(async function setup() {
+add_setup(async function setup() {
+  await initSystemAddonDirs();
   let xpi = await getSystemAddonXPI(1, "1.0");
   await AddonTestUtils.manuallyInstall(xpi, distroDir);
 });
 
-add_task(async function systemAddonPreffedOff() {
+async function systemAddonPreffedOff({ asBuiltIn = true } = {}) {
   const id = "system1@tests.mozilla.org";
   Services.prefs.setBoolPref("extensions.system1.enabled", false);
 
-  await overrideBuiltIns({ system: [id] });
+  await overrideBuiltIns({
+    builtins: asBuiltIn ? [await getSystemBuiltin(1, "1.0")] : [],
+    system: !asBuiltIn ? [id] : [],
+  });
 
-  await promiseStartupManager();
+  await promiseStartupManager("1.0");
 
   BootstrapMonitor.checkInstalled(id);
   BootstrapMonitor.checkNotStarted(id);
@@ -37,11 +43,16 @@ add_task(async function systemAddonPreffedOff() {
   BootstrapMonitor.checkNotStarted(id);
 
   await promiseShutdownManager({ clearOverrides: false });
-});
+}
 
-add_task(async function systemAddonPreffedOn() {
+async function systemAddonPreffedOn({ asBuiltIn = true } = {}) {
   const id = "system1@tests.mozilla.org";
   Services.prefs.setBoolPref("extensions.system1.enabled", true);
+
+  await overrideBuiltIns({
+    builtins: asBuiltIn ? [await getSystemBuiltin(1, "1.0")] : [],
+    system: !asBuiltIn ? [id] : [],
+  });
 
   await promiseStartupManager("2.0");
 
@@ -52,5 +63,16 @@ add_task(async function systemAddonPreffedOn() {
 
   BootstrapMonitor.checkStarted(id);
 
-  await promiseShutdownManager();
+  await promiseShutdownManager({ clearOverrides: false });
+}
+
+
+add_task(async function systemPref_xpi() {
+  await systemAddonPreffedOff({ asBuiltIn: false });
+  await systemAddonPreffedOn({ asBuiltIn: false });
+});
+
+add_task(async function systemPref_builtin() {
+  await systemAddonPreffedOff();
+  await systemAddonPreffedOn();
 });
