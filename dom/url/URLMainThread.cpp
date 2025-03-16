@@ -89,10 +89,10 @@ void URLMainThread::RevokeObjectURL(const GlobalObject& aGlobal,
 }
 
 
-bool URLMainThread::IsValidObjectURL(const GlobalObject& aGlobal,
-                                     const nsACString& aURL, ErrorResult& aRv) {
+bool URLMainThread::IsBoundToBlob(const GlobalObject& aGlobal,
+                                  const nsACString& aURL, ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
-  return BlobURLProtocolHandler::HasDataEntry(aURL);
+  return BlobURLProtocolHandler::HasDataEntryTypeBlob(aURL);
 }
 
 }  

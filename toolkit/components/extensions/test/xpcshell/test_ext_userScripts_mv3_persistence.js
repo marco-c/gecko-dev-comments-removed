@@ -366,6 +366,7 @@ add_task(async function register_and_update_all_values() {
   const blobUrls = currentJsPaths.filter(url => url.startsWith("blob:"));
   for (const blobUrl of blobUrls) {
     info(`Confirming that the URLs are resolved`);
+    equal(URL.isBoundToBlob(blobUrl), true, `Valid URL: ${blobUrl}`);
     let res = await fetch(blobUrl);
     let txt = await res.text();
     
@@ -376,7 +377,7 @@ add_task(async function register_and_update_all_values() {
   await extension.unload();
 
   for (const blobUrl of blobUrls) {
-    equal(URL.isValidObjectURL(blobUrl), false, `Revoked URL: ${blobUrl}`);
+    equal(URL.isBoundToBlob(blobUrl), false, `Revoked URL: ${blobUrl}`);
     if (AppConstants.platform == "android") {
       
       
