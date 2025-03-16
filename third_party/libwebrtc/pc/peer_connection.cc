@@ -301,6 +301,8 @@ cricket::IceConfig ParseIceConfig(
   ice_config.network_preference = config.network_preference;
   ice_config.stable_writable_connection_ping_interval =
       config.stable_writable_connection_ping_interval_ms;
+  ice_config.dtls_handshake_in_stun =
+      false;  
   return ice_config;
 }
 
@@ -916,7 +918,11 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
             }));
       });
 
-  transport_controller_->SetIceConfig(ParseIceConfig(configuration));
+  auto ice_config = ParseIceConfig(configuration);
+  ice_config.dtls_handshake_in_stun =
+      CanAttemptDtlsStunPiggybacking(configuration);
+
+  transport_controller_->SetIceConfig(ice_config);
   return transport_controller_.get();
 }
 
@@ -1644,6 +1650,8 @@ RTCError PeerConnection::SetConfiguration(
       modified_config.GetTurnPortPrunePolicy() !=
           configuration_.GetTurnPortPrunePolicy();
   cricket::IceConfig ice_config = ParseIceConfig(modified_config);
+  ice_config.dtls_handshake_in_stun =
+      CanAttemptDtlsStunPiggybacking(modified_config);
 
   
   
@@ -3120,6 +3128,16 @@ PeerConnection::InitializeUnDemuxablePacketHandler() {
               [](const RtpPacketReceived& packet) { return false; });
         }));
   };
+}
+
+bool PeerConnection::CanAttemptDtlsStunPiggybacking(
+    const RTCConfiguration& configuration) {
+  
+  
+  
+  
+  return dtls_enabled_ && configuration.certificates.empty() &&
+         env_.field_trials().IsEnabled("WebRTC-IceHandshakeDtls");
 }
 
 }  
