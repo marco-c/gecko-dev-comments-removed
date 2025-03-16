@@ -264,3 +264,35 @@ TEST(TimeConverter, FractionalMillisBug1626734)
   
   EXPECT_TRUE(ts <= ts2);
 }
+
+TEST(TimeConverter, UnderflowWrapBaseline)
+{
+  MockTimeStamp::Init();
+
+  
+  TimeConverter converter;
+
+  
+  
+  MockCurrentTimeGetter<GTestTime> timeGetter(300);
+  TimeStamp ts = converter.GetTimeStampFromSystemTime(300, timeGetter);
+  
+  EXPECT_TS(ts, 0);
+
+  
+  MockTimeStamp::Advance(200);
+
+  
+  
+  
+  
+  
+  {
+    UnusedCurrentTimeGetter<GTestTime> unused;
+    TimeStamp ts2 = converter.GetTimeStampFromSystemTime(299, unused);
+
+    
+    ASSERT_GE(ts2, MockTimeStamp::Baseline())
+        << "Should not go behind the baseline!";
+  }
+}
