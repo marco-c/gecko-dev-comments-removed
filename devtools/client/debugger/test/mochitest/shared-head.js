@@ -2418,7 +2418,8 @@ async function scrollEditorIntoView(dbg, line, column) {
 
 
 function isScrolledPositionVisible(dbg, line, column = 0) {
-  line = isCm6Enabled ? line + 1 : line;
+  
+  line = isCm6Enabled ? line : line - 1;
   return getCMEditor(dbg).isPositionVisible(line, column);
 }
 
@@ -2448,9 +2449,9 @@ function getCoordsFromPosition(dbg, line, ch) {
 
 async function getTokenFromPosition(dbg, { line, column = 0 }) {
   info(`Get token at ${line}:${column}`);
+  await scrollEditorIntoView(dbg, line, column);
   line = isCm6Enabled ? line : line - 1;
   column = isCm6Enabled ? column : column - 1;
-  await scrollEditorIntoView(dbg, line, column);
 
   if (isCm6Enabled) {
     return getCMEditor(dbg).getElementAtPos(line, column);
@@ -2495,8 +2496,8 @@ async function waitForScrolling(dbg, { useTimeoutFallback = true } = {}) {
 async function codeMirrorGutterElement(dbg, line) {
   info(`CodeMirror line ${line}`);
 
-  line = isCm6Enabled ? line : line - 1;
   await scrollEditorIntoView(dbg, line, 0);
+  line = isCm6Enabled ? line : line - 1;
 
   const coords = getCoordsFromPosition(dbg, line);
 

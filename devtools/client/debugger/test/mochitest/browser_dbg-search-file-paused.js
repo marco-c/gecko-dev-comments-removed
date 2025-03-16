@@ -42,7 +42,7 @@ add_task(async function () {
 
   
   
-  ok(isScrolledPositionVisible(dbg, 0), "First search term is not in view");
+  ok(isScrolledPositionVisible(dbg, 1), "First search term is not in view");
 
   
   info("Switching to paused file via frame click");
