@@ -30,6 +30,18 @@ class WindowContext;
 class ContentParent;
 class DocGroup;
 
+struct DocGroupKey {
+  nsCString mKey;
+  bool mOriginKeyed = false;
+
+  bool operator==(const DocGroupKey& aOther) const {
+    return mKey == aOther.mKey && mOriginKeyed == aOther.mOriginKeyed;
+  };
+  PLDHashNumber Hash() const {
+    return mozilla::HashGeneric(mozilla::HashString(mKey), mOriginKeyed);
+  }
+};
+
 
 
 
@@ -157,8 +169,7 @@ class BrowsingContextGroup final : public nsWrapperCache {
   void GetDocGroups(nsTArray<DocGroup*>& aDocGroups);
 
   
-  already_AddRefed<DocGroup> AddDocument(const nsACString& aKey,
-                                         Document* aDocument);
+  already_AddRefed<DocGroup> AddDocument(Document* aDocument);
 
   
   
@@ -207,6 +218,8 @@ class BrowsingContextGroup final : public nsWrapperCache {
   void IncInputEventSuspensionLevel();
   void DecInputEventSuspensionLevel();
 
+  Maybe<bool> UsesOriginAgentCluster(nsIPrincipal* aPrincipal);
+
   void ChildDestroy();
 
  private:
@@ -252,7 +265,7 @@ class BrowsingContextGroup final : public nsWrapperCache {
   
   
   
-  nsRefPtrHashtable<nsCStringHashKey, DocGroup> mDocGroups;
+  nsRefPtrHashtable<nsGenericHashKey<DocGroupKey>, DocGroup> mDocGroups;
 
   
   

@@ -49,22 +49,36 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 
 already_AddRefed<DocGroup> DocGroup::Create(
-    BrowsingContextGroup* aBrowsingContextGroup, const nsACString& aKey) {
+    BrowsingContextGroup* aBrowsingContextGroup, const DocGroupKey& aKey) {
   return do_AddRef(new DocGroup(aBrowsingContextGroup, aKey));
 }
 
+void DocGroup::AssertMatches(const Document* aDocument) const {
+  nsCOMPtr<nsIPrincipal> principal = aDocument->NodePrincipal();
 
-nsresult DocGroup::GetKey(nsIPrincipal* aPrincipal, bool aCrossOriginIsolated,
-                          nsACString& aKey) {
+  
+  Maybe<bool> usesOriginAgentCluster =
+      mBrowsingContextGroup->UsesOriginAgentCluster(principal);
+  MOZ_RELEASE_ASSERT(
+      usesOriginAgentCluster.isSome(),
+      "Document principal with unknown OriginAgentCluster behaviour");
+  MOZ_RELEASE_ASSERT(*usesOriginAgentCluster == mKey.mOriginKeyed,
+                     "DocGroup origin keying does not match Principal");
+
   
   
-  nsresult rv = aCrossOriginIsolated ? aPrincipal->GetOrigin(aKey)
-                                     : aPrincipal->GetSiteOrigin(aKey);
-  if (NS_FAILED(rv)) {
-    aKey.Truncate();
+  
+  nsresult rv = NS_ERROR_FAILURE;
+  nsAutoCString key;
+  if (mKey.mOriginKeyed) {
+    rv = principal->GetOrigin(key);
+  } else {
+    rv = principal->GetSiteOrigin(key);
   }
-
-  return rv;
+  if (NS_SUCCEEDED(rv)) {
+    MOZ_RELEASE_ASSERT(key == mKey.mKey,
+                       "DocGroup Key does not match Document");
+  }
 }
 
 void DocGroup::SetExecutionManager(JSExecutionManager* aManager) {
@@ -107,7 +121,7 @@ void DocGroup::RemoveDocument(Document* aDocument) {
 }
 
 DocGroup::DocGroup(BrowsingContextGroup* aBrowsingContextGroup,
-                   const nsACString& aKey)
+                   const DocGroupKey& aKey)
     : mKey(aKey),
       mBrowsingContextGroup(aBrowsingContextGroup),
       mAgentClusterId(nsID::GenerateUUID()) {
