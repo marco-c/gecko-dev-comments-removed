@@ -27,6 +27,7 @@ const kValidIdentifiers = new Set([
   'array',
   'atomic',
   'bool',
+  'binding_array',
   'bf16',
   'bitcast',
   'f32',
@@ -75,6 +76,7 @@ const kValidIdentifiers = new Set([
   'vec3',
   'vec4',
 ]);
+
 const kInvalidIdentifiers = new Set([
   '_', 
   '__', 
@@ -133,7 +135,6 @@ const kInvalidIdentifiers = new Set([
   'auto',
   'await',
   'become',
-  'binding_array',
   'cast',
   'catch',
   'class',

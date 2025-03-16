@@ -1,3 +1,5 @@
+import { assert } from '../util/util.js';
+
 export type TestConfig = {
   
 
@@ -67,3 +69,14 @@ export const globalTestConfig: TestConfig = {
   enforceDefaultLimits: false,
   logToWebSocket: false,
 };
+
+
+
+
+
+export function isCompatibilityDevice(device: GPUDevice) {
+  if (globalTestConfig.compatibility) {
+    assert(!device.features.has('core-features-and-limits'));
+  }
+  return globalTestConfig.compatibility;
+}

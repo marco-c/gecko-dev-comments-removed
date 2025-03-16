@@ -6,11 +6,12 @@ Tests render results with different depth bias values like 'positive', 'negative
 `;import { makeTestGroup } from '../../../../common/framework/test_group.js';
 import { unreachable } from '../../../../common/util/util.js';
 import {
-  kTextureFormatInfo } from
 
 
+  isDepthTextureFormat,
+  isStencilTextureFormat } from
 '../../../format_info.js';
-import { GPUTest, TextureTestMixin } from '../../../gpu_test.js';
+import { AllFeaturesMaxLimitsGPUTest, TextureTestMixin } from '../../../gpu_test.js';
 import { TexelView } from '../../../util/texture/texel_view.js';var
 
 QuadAngle = function (QuadAngle) {QuadAngle[QuadAngle["Flat"] = 0] = "Flat";QuadAngle[QuadAngle["TiltedX"] = 1] = "TiltedX";return QuadAngle;}(QuadAngle || {});
@@ -29,7 +30,7 @@ QuadAngle = function (QuadAngle) {QuadAngle[QuadAngle["Flat"] = 0] = "Flat";Quad
 
 const kPointTwoFiveBiasForPointTwoFiveZOnFloat = 8388608;
 
-class DepthBiasTest extends TextureTestMixin(GPUTest) {
+class DepthBiasTest extends TextureTestMixin(AllFeaturesMaxLimitsGPUTest) {
   runDepthBiasTestInternal(
   depthFormat,
   {
@@ -47,7 +48,6 @@ class DepthBiasTest extends TextureTestMixin(GPUTest) {
   })
   {
     const renderTargetFormat = 'rgba8unorm';
-    const depthFormatInfo = kTextureFormatInfo[depthFormat];
 
     let vertexShaderCode;
     switch (quadAngle) {
@@ -103,10 +103,10 @@ class DepthBiasTest extends TextureTestMixin(GPUTest) {
 
     const depthStencilAttachment = {
       view: depthTexture.createView(),
-      depthLoadOp: depthFormatInfo.depth ? 'clear' : undefined,
-      depthStoreOp: depthFormatInfo.depth ? 'store' : undefined,
-      stencilLoadOp: depthFormatInfo.stencil ? 'clear' : undefined,
-      stencilStoreOp: depthFormatInfo.stencil ? 'store' : undefined,
+      depthLoadOp: isDepthTextureFormat(depthFormat) ? 'clear' : undefined,
+      depthStoreOp: isDepthTextureFormat(depthFormat) ? 'store' : undefined,
+      stencilLoadOp: isStencilTextureFormat(depthFormat) ? 'clear' : undefined,
+      stencilStoreOp: isStencilTextureFormat(depthFormat) ? 'store' : undefined,
       depthClearValue: initialDepth
     };
 

@@ -3216,7 +3216,7 @@ g.test('inverseSqrtInterval')
 
 
 
-const kRootSumSquareExpectionInterval = {
+const kRootSumSquareExpectationInterval = {
   f32: {
     '[0.1]': [reinterpretU64AsF64(0x3fb9_9998_9000_0000n), reinterpretU64AsF64(0x3fb9_999a_7000_0000n)],  
     '[1.0]' : [reinterpretU64AsF64(0x3fef_ffff_7000_0000n), reinterpretU64AsF64(0x3ff0_0000_9000_0000n)],  
@@ -3245,12 +3245,12 @@ g.test('lengthIntervalScalar')
         const constants = trait.constants();
         
         return [
-          {input: 1.0, expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          {input: -1.0, expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          {input: 0.1, expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
-          {input: -0.1, expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
-          {input: 10.0, expected: kRootSumSquareExpectionInterval[p.trait]['[10]'] },  
-          {input: -10.0, expected: kRootSumSquareExpectionInterval[p.trait]['[10]'] },  
+          {input: 1.0, expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          {input: -1.0, expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          {input: 0.1, expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
+          {input: -0.1, expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
+          {input: 10.0, expected: kRootSumSquareExpectationInterval[p.trait]['[10]'] },  
+          {input: -10.0, expected: kRootSumSquareExpectationInterval[p.trait]['[10]'] },  
 
           
           {input: 0, expected: kUnboundedEndpoints },
@@ -4269,18 +4269,18 @@ g.test('distanceIntervalScalar')
         const constants = trait.constants();
         
         return [
-          { input: [1.0, 0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [0.0, 1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [-0.0, -1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [0.0, -1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [0.1, 0], expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
-          { input: [0, 0.1], expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
-          { input: [-0.1, 0], expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
-          { input: [0, -0.1], expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
-          { input: [10.0, 0], expected: kRootSumSquareExpectionInterval[p.trait]['[10]'] },  
-          { input: [0, 10.0], expected: kRootSumSquareExpectionInterval[p.trait]['[10]'] },  
-          { input: [-10.0, 0], expected: kRootSumSquareExpectionInterval[p.trait]['[10]'] },  
-          { input: [0, -10.0], expected: kRootSumSquareExpectionInterval[p.trait]['[10]'] },  
+          { input: [1.0, 0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [0.0, 1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [-0.0, -1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [0.0, -1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [0.1, 0], expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
+          { input: [0, 0.1], expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
+          { input: [-0.1, 0], expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
+          { input: [0, -0.1], expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
+          { input: [10.0, 0], expected: kRootSumSquareExpectationInterval[p.trait]['[10]'] },  
+          { input: [0, 10.0], expected: kRootSumSquareExpectationInterval[p.trait]['[10]'] },  
+          { input: [-10.0, 0], expected: kRootSumSquareExpectationInterval[p.trait]['[10]'] },  
+          { input: [0, -10.0], expected: kRootSumSquareExpectationInterval[p.trait]['[10]'] },  
 
           
           
@@ -5941,31 +5941,31 @@ g.test('lengthIntervalVector')
         
         return [
           
-          {input: [1.0, 0.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          {input: [0.0, 1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          {input: [1.0, 1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0]'] },  
-          {input: [-1.0, -1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0]'] },  
-          {input: [-1.0, 1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0]'] },  
-          {input: [0.1, 0.0], expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
+          {input: [1.0, 0.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          {input: [0.0, 1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          {input: [1.0, 1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0]'] },  
+          {input: [-1.0, -1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0]'] },  
+          {input: [-1.0, 1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0]'] },  
+          {input: [0.1, 0.0], expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
 
           
-          {input: [1.0, 0.0, 0.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          {input: [0.0, 1.0, 0.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          {input: [0.0, 0.0, 1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          {input: [1.0, 1.0, 1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
-          {input: [-1.0, -1.0, -1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
-          {input: [1.0, -1.0, -1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
-          {input: [0.1, 0.0, 0.0], expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
+          {input: [1.0, 0.0, 0.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          {input: [0.0, 1.0, 0.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          {input: [0.0, 0.0, 1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          {input: [1.0, 1.0, 1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
+          {input: [-1.0, -1.0, -1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
+          {input: [1.0, -1.0, -1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
+          {input: [0.1, 0.0, 0.0], expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
 
           
-          {input: [1.0, 0.0, 0.0, 0.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          {input: [0.0, 1.0, 0.0, 0.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          {input: [0.0, 0.0, 1.0, 0.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          {input: [0.0, 0.0, 0.0, 1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          {input: [1.0, 1.0, 1.0, 1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
-          {input: [-1.0, -1.0, -1.0, -1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
-          {input: [-1.0, 1.0, -1.0, 1.0], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
-          {input: [0.1, 0.0, 0.0, 0.0], expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
+          {input: [1.0, 0.0, 0.0, 0.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          {input: [0.0, 1.0, 0.0, 0.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          {input: [0.0, 0.0, 1.0, 0.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          {input: [0.0, 0.0, 0.0, 1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          {input: [1.0, 1.0, 1.0, 1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
+          {input: [-1.0, -1.0, -1.0, -1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
+          {input: [-1.0, 1.0, -1.0, 1.0], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
+          {input: [0.1, 0.0, 0.0, 0.0], expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
 
           
           { input: [constants.positive.nearest_max, constants.positive.max, constants.negative.min], expected: kUnboundedEndpoints },
@@ -6002,44 +6002,44 @@ g.test('distanceIntervalVector')
 
           
           { input: [[1.0, 0.0], [1.0, 0.0]], expected: kUnboundedEndpoints },
-          { input: [[1.0, 0.0], [0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 0.0], [1.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[-1.0, 0.0], [0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 0.0], [-1.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 1.0], [-1.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0]'] },  
-          { input: [[0.1, 0.0], [0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
+          { input: [[1.0, 0.0], [0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 0.0], [1.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[-1.0, 0.0], [0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 0.0], [-1.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 1.0], [-1.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0]'] },  
+          { input: [[0.1, 0.0], [0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
 
           
           { input: [[1.0, 0.0, 0.0], [1.0, 0.0, 0.0]], expected: kUnboundedEndpoints },
-          { input: [[1.0, 0.0, 0.0], [0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 1.0, 0.0], [0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 0.0, 1.0], [0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[1.0, 1.0, 1.0], [0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
-          { input: [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
-          { input: [[-1.0, -1.0, -1.0], [0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
-          { input: [[0.0, 0.0, 0.0], [-1.0, -1.0, -1.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
-          { input: [[0.1, 0.0, 0.0], [0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
-          { input: [[0.0, 0.0, 0.0], [0.1, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
+          { input: [[1.0, 0.0, 0.0], [0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 1.0, 0.0], [0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 0.0, 1.0], [0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[1.0, 1.0, 1.0], [0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
+          { input: [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
+          { input: [[-1.0, -1.0, -1.0], [0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
+          { input: [[0.0, 0.0, 0.0], [-1.0, -1.0, -1.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0]'] },  
+          { input: [[0.1, 0.0, 0.0], [0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
+          { input: [[0.0, 0.0, 0.0], [0.1, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
 
           
           { input: [[1.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0]], expected: kUnboundedEndpoints },
-          { input: [[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0]'] },  
-          { input: [[1.0, 1.0, 1.0, 1.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
-          { input: [[0.0, 0.0, 0.0, 0.0], [1.0, 1.0, 1.0, 1.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
-          { input: [[-1.0, 1.0, -1.0, 1.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
-          { input: [[0.0, 0.0, 0.0, 0.0], [1.0, -1.0, 1.0, -1.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
-          { input: [[0.1, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
-          { input: [[0.0, 0.0, 0.0, 0.0], [0.1, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectionInterval[p.trait]['[0.1]'] },  
+          { input: [[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0]'] },  
+          { input: [[1.0, 1.0, 1.0, 1.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
+          { input: [[0.0, 0.0, 0.0, 0.0], [1.0, 1.0, 1.0, 1.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
+          { input: [[-1.0, 1.0, -1.0, 1.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
+          { input: [[0.0, 0.0, 0.0, 0.0], [1.0, -1.0, 1.0, -1.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[1.0, 1.0, 1.0, 1.0]'] },  
+          { input: [[0.1, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
+          { input: [[0.0, 0.0, 0.0, 0.0], [0.1, 0.0, 0.0, 0.0]], expected: kRootSumSquareExpectationInterval[p.trait]['[0.1]'] },  
         ];
       })
   )

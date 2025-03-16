@@ -1,6 +1,11 @@
 
 
-import { assert, ErrorWithExtra, unreachable } from '../../../common/util/util.js';import { kTextureFormatInfo } from '../../format_info.js';
+import { assert, ErrorWithExtra, unreachable } from '../../../common/util/util.js';import {
+  getTextureFormatType,
+  isColorTextureFormat,
+  isDepthTextureFormat } from
+'../../format_info.js';
+
 import { numbersApproximatelyEqual } from '../conversion.js';
 import { generatePrettyTable, numericToStringBuilder } from '../pretty_diff_tables.js';
 import { reifyExtent3D, reifyOrigin3D } from '../unions.js';
@@ -220,14 +225,13 @@ coords)
     return undefined;
   }
 
-  const info = kTextureFormatInfo[format];
   const repr = kTexelRepresentationInfo[format];
   
-  const printAsInteger = info.color ?
+  const printAsInteger = isColorTextureFormat(format) ?
   
-  ['uint', 'sint'].includes(info.color.type) :
+  ['uint', 'sint'].includes(getTextureFormatType(format)) :
   
-  !info.depth;
+  !isDepthTextureFormat(format);
   const numericToString = numericToStringBuilder(printAsInteger);
 
   const componentOrderStr = repr.componentOrder.join(',') + ':';

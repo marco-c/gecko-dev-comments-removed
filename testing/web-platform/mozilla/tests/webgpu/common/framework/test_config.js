@@ -1,5 +1,7 @@
 
 
+import { assert } from '../util/util.js';
+
 
 
 
@@ -67,3 +69,14 @@ export const globalTestConfig = {
   enforceDefaultLimits: false,
   logToWebSocket: false
 };
+
+
+
+
+
+export function isCompatibilityDevice(device) {
+  if (globalTestConfig.compatibility) {
+    assert(!device.features.has('core-features-and-limits'));
+  }
+  return globalTestConfig.compatibility;
+}

@@ -42,8 +42,17 @@ g.test('default')
     const device = await t.requestDeviceTracked(adapter, ...args);
     assert(device !== null);
 
-    
-    t.expect(device.features.size === 0, 'Default device should not have any features');
+    if (device.features.size === 1) {
+      t.expect(
+        device.features.has('core-features-and-limits'),
+        'Default device should not have any features other than "core-features-and-limits"'
+      );
+    } else {
+      t.expect(
+        device.features.size === 0,
+        'Default device should not have any features other than "core-features-and-limits"'
+      );
+    }
     
     const limitInfo = getDefaultLimitsForAdapter(adapter);
     for (const limit of kLimits) {
@@ -498,36 +507,29 @@ g.test('always_returns_device')
     tested in the same browser configuration.
   `
   )
-  .params(u => u.combine('compatibilityMode', [false, true] as const))
+  .params(u => u.combine('featureLevel', ['core', 'compatibility'] as const))
   .fn(async t => {
-    const { compatibilityMode } = t.params;
+    const { featureLevel } = t.params;
     const gpu = getGPU(t.rec);
-    
-    
     const adapter = await gpu.requestAdapter({
-      compatibilityMode,
-      featureLevel: compatibilityMode ? 'compatibility' : 'core',
+      featureLevel,
     } as GPURequestAdapterOptions);
     if (adapter) {
       const device = await t.requestDeviceTracked(adapter);
       assert(device instanceof GPUDevice, 'requestDevice must return a device or throw');
 
-      if (!compatibilityMode) {
+      if (featureLevel === 'core') {
         
 
         
         const adapterExtensions = adapter as unknown as {
-          isCompatibilityMode?: boolean;
           featureLevel?: string;
         };
         t.expect(
           
-          !adapterExtensions.isCompatibilityMode &&
+          adapterExtensions.featureLevel === 'core' ||
             
-            adapterExtensions.featureLevel !== 'compatibility' &&
-            
-            
-            !device.features.has('webgpu-core'),
+            device.features.has('core-features-and-limits'),
           'must not get a Compatibility adapter if not requested'
         );
       }

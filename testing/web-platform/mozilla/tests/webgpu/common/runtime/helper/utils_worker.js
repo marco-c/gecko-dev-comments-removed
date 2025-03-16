@@ -27,8 +27,7 @@ export function setupWorkerEnvironment(ctsOptions) {
   if (powerPreference || compatibility) {
     setDefaultRequestAdapterOptions({
       ...(powerPreference && { powerPreference }),
-      
-      ...(compatibility && { compatibilityMode: true, featureLevel: 'compatibility' })
+      ...(compatibility && { featureLevel: 'compatibility' })
     });
   }
 

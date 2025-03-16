@@ -1,5 +1,6 @@
 
 
+ 
 import { Fixture,
 
 
@@ -7,7 +8,7 @@ import { Fixture,
 
 
 '../common/framework/fixture.js';
-import { globalTestConfig } from '../common/framework/test_config.js';
+import { globalTestConfig, isCompatibilityDevice } from '../common/framework/test_config.js';
 import { getGPU } from '../common/util/navigator_gpu.js';
 import {
   assert,
@@ -30,8 +31,16 @@ import {
 
   isCompressedTextureFormat,
 
+  getRequiredFeatureForTextureFormat,
+  isTextureFormatUsableAsStorageFormatDeprecated,
+  isMultisampledTextureFormatDeprecated,
   isTextureFormatUsableAsStorageFormat,
-  isMultisampledTextureFormat } from
+  isTextureFormatUsableAsRenderAttachment,
+  isTextureFormatMultisampled,
+  is32Float,
+  isSintOrUintFormat,
+  isTextureFormatResolvable,
+  isTextureFormatUsableAsReadWriteStorageTexture } from
 './format_info.js';
 import { checkElementsEqual, checkElementsBetween } from './util/check_contents.js';
 import { CommandBufferMaker } from './util/command_buffer_maker.js';
@@ -206,7 +215,7 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
     const features = new Set();
     for (const format of formats) {
       if (format !== undefined) {
-        this.skipIfTextureFormatNotSupported(format);
+        this.skipIfTextureFormatNotSupportedDeprecated(format);
         features.add(kTextureFormatInfo[format].feature);
       }
     }
@@ -255,9 +264,7 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
   }
 
   
-
-
-  skipIfTextureFormatNotSupported(...formats) {
+  skipIfTextureFormatNotSupportedDeprecated(...formats) {
     if (this.isCompatibility) {
       for (const format of formats) {
         if (format === 'bgra8unorm-srgb') {
@@ -267,10 +274,11 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
     }
   }
 
-  skipIfMultisampleNotSupportedForFormat(...formats) {
+  
+  skipIfMultisampleNotSupportedForFormatDeprecated(...formats) {
     for (const format of formats) {
       if (format === undefined) continue;
-      if (!isMultisampledTextureFormat(format, this.isCompatibility)) {
+      if (!isMultisampledTextureFormatDeprecated(format, this.isCompatibility)) {
         this.skip(`texture format '${format}' is not supported to be multisampled`);
       }
     }
@@ -286,7 +294,10 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
     }
   }
 
-  skipIfTextureViewDimensionNotSupported(...dimensions) {
+  
+  skipIfTextureViewDimensionNotSupportedDeprecated(
+  ...dimensions)
+  {
     if (this.isCompatibility) {
       for (const dimension of dimensions) {
         if (dimension === 'cube-array') {
@@ -296,15 +307,19 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
     }
   }
 
-  skipIfTextureFormatNotUsableAsStorageTexture(...formats) {
+  
+  skipIfTextureFormatNotUsableAsStorageTextureDeprecated(
+  ...formats)
+  {
     for (const format of formats) {
-      if (format && !isTextureFormatUsableAsStorageFormat(format, this.isCompatibility)) {
+      if (format && !isTextureFormatUsableAsStorageFormatDeprecated(format, this.isCompatibility)) {
         this.skip(`Texture with ${format} is not usable as a storage texture`);
       }
     }
   }
 
-  skipIfTextureLoadNotSupportedForTextureType(...types) {
+  
+  skipIfTextureLoadNotSupportedForTextureTypeDeprecated(...types) {
     if (this.isCompatibility) {
       for (const type of types) {
         switch (type) {
@@ -344,7 +359,7 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
   }
 
   
-  skipIfDepthTextureCanNotBeUsedWithNonComparisonSampler() {
+  skipIfDepthTextureCanNotBeUsedWithNonComparisonSamplerDeprecated() {
     this.skipIf(
       this.isCompatibility,
       'depth textures are not usable with non-comparison samplers in compatibility mode'
@@ -504,9 +519,7 @@ export class GPUTestBase extends Fixture {
   }
 
   
-
-
-  skipIfTextureFormatNotSupported(...formats) {
+  skipIfTextureFormatNotSupportedDeprecated(...formats) {
     if (this.isCompatibility) {
       for (const format of formats) {
         if (format === 'bgra8unorm-srgb') {
@@ -516,7 +529,67 @@ export class GPUTestBase extends Fixture {
     }
   }
 
-  skipIfTextureViewDimensionNotSupported(...dimensions) {
+  
+
+
+
+  skipIfDeviceDoesNotHaveFeature(feature) {
+    this.skipIf(!this.device.features.has(feature), `device does not have feature: '${feature}'`);
+  }
+
+  
+
+
+  skipIfDeviceDoesNotSupportQueryType(...types) {
+    for (const type of types) {
+      const feature = kQueryTypeInfo[type].feature;
+      if (feature) {
+        this.skipIfDeviceDoesNotHaveFeature(feature);
+      }
+    }
+  }
+
+  skipIfDepthTextureCanNotBeUsedWithNonComparisonSampler() {
+    this.skipIf(
+      this.isCompatibility,
+      'depth textures are not usable with non-comparison samplers in compatibility mode'
+    );
+  }
+
+  
+
+
+  skipIfTextureFormatNotSupported(...formats) {
+    for (const format of formats) {
+      if (!format) {
+        continue;
+      }
+      if (format === 'bgra8unorm-srgb') {
+        if (isCompatibilityDevice(this.device)) {
+          this.skip(`texture format '${format}' is not supported`);
+        }
+      }
+      const feature = getRequiredFeatureForTextureFormat(format);
+      this.skipIf(
+        !!feature && !this.device.features.has(feature),
+        `texture format '${format}' requires feature: '${feature}`
+      );
+    }
+  }
+
+  skipIfTextureFormatNotResolvable(...formats) {
+    for (const format of formats) {
+      if (format === undefined) continue;
+      if (!isTextureFormatResolvable(this.device, format)) {
+        this.skip(`texture format '${format}' is not resolvable`);
+      }
+    }
+  }
+
+  
+  skipIfTextureViewDimensionNotSupportedDeprecated(
+  ...dimensions)
+  {
     if (this.isCompatibility) {
       for (const dimension of dimensions) {
         if (dimension === 'cube-array') {
@@ -526,7 +599,20 @@ export class GPUTestBase extends Fixture {
     }
   }
 
-  skipIfCopyTextureToTextureNotSupportedForFormat(...formats) {
+  skipIfTextureViewDimensionNotSupported(...dimensions) {
+    if (isCompatibilityDevice(this.device)) {
+      for (const dimension of dimensions) {
+        if (dimension === 'cube-array') {
+          this.skip(`texture view dimension '${dimension}' is not supported`);
+        }
+      }
+    }
+  }
+
+  
+  skipIfCopyTextureToTextureNotSupportedForFormatDeprecated(
+  ...formats)
+  {
     if (this.isCompatibility) {
       for (const format of formats) {
         if (format && isCompressedTextureFormat(format)) {
@@ -536,10 +622,113 @@ export class GPUTestBase extends Fixture {
     }
   }
 
+  skipIfCopyTextureToTextureNotSupportedForFormat(...formats) {
+    if (isCompatibilityDevice(this.device)) {
+      for (const format of formats) {
+        if (format && isCompressedTextureFormat(format)) {
+          this.skip(`copyTextureToTexture with ${format} is not supported`);
+        }
+      }
+    }
+  }
+
+  skipIfTextureFormatNotUsableAsStorageTextureDeprecated(
+  ...formats)
+  {
+    for (const format of formats) {
+      if (format && !isTextureFormatUsableAsStorageFormatDeprecated(format, this.isCompatibility)) {
+        this.skip(`Texture with ${format} is not usable as a storage texture`);
+      }
+    }
+  }
+
+  skipIfTextureLoadNotSupportedForTextureType(...types) {
+    if (this.isCompatibility) {
+      for (const type of types) {
+        switch (type) {
+          case 'texture_depth_2d':
+          case 'texture_depth_2d_array':
+          case 'texture_depth_multisampled_2d':
+            this.skip(`${type} is not supported by textureLoad in compatibility mode`);
+        }
+      }
+    }
+  }
+
   skipIfTextureFormatNotUsableAsStorageTexture(...formats) {
     for (const format of formats) {
-      if (format && !isTextureFormatUsableAsStorageFormat(format, this.isCompatibility)) {
+      if (format && !isTextureFormatUsableAsStorageFormat(this.device, format)) {
         this.skip(`Texture with ${format} is not usable as a storage texture`);
+      }
+    }
+  }
+
+  skipIfTextureFormatNotUsableAsReadWriteStorageTexture(
+  ...formats)
+  {
+    for (const format of formats) {
+      if (!format) continue;
+
+      if (!isTextureFormatUsableAsReadWriteStorageTexture(this.device, format)) {
+        this.skip(`Texture with ${format} is not usable as a storage texture`);
+      }
+    }
+  }
+
+  skipIfTextureFormatNotUsableAsRenderAttachment(...formats) {
+    for (const format of formats) {
+      if (format && !isTextureFormatUsableAsRenderAttachment(this.device, format)) {
+        this.skip(`Texture with ${format} is not usable as a render attachment`);
+      }
+    }
+  }
+
+  skipIfTextureFormatNotMultisampled(...formats) {
+    for (const format of formats) {
+      if (format === undefined) continue;
+      if (!isTextureFormatMultisampled(this.device, format)) {
+        this.skip(`texture format '${format}' does not support multisampling`);
+      }
+    }
+  }
+
+  skipIfTextureFormatNotBlendable(...formats) {
+    for (const format of formats) {
+      if (format === undefined) continue;
+      this.skipIf(isSintOrUintFormat(format), 'sint/uint formats are not blendable');
+      if (is32Float(format)) {
+        this.skipIf(
+          !this.device.features.has('float32-blendable'),
+          `texture format '${format}' is not blendable`
+        );
+      }
+    }
+  }
+
+  skipIfTextureFormatNotFilterable(...formats) {
+    for (const format of formats) {
+      if (format === undefined) continue;
+      this.skipIf(isSintOrUintFormat(format), 'sint/uint formats are not filterable');
+      if (is32Float(format)) {
+        this.skipIf(
+          !this.device.features.has('float32-filterable'),
+          `texture format '${format}' is not filterable`
+        );
+      }
+    }
+  }
+
+  skipIfTextureFormatDoesNotSupportUsage(
+  usage,
+  ...formats)
+  {
+    for (const format of formats) {
+      if (!format) continue;
+      if (usage & GPUTextureUsage.RENDER_ATTACHMENT) {
+        this.skipIfTextureFormatNotUsableAsRenderAttachment(format);
+      }
+      if (usage & GPUTextureUsage.STORAGE_BINDING) {
+        this.skipIfTextureFormatNotUsableAsStorageTexture(format);
       }
     }
   }
@@ -1366,7 +1555,9 @@ getRequiredLimits)
 }
 
 function getAdapterFeaturesAsDeviceRequiredFeatures(adapter) {
-  return adapter.features;
+  return [...adapter.features].filter(
+    (f) => f !== 'core-features-and-limits'
+  );
 }
 
 function applyFeaturesToDescriptor(
@@ -1526,6 +1717,19 @@ export class AllFeaturesMaxLimitsGPUTestSubcaseBatchState extends GPUTestSubcase
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+export class UniqueFeaturesOrLimitsGPUTest extends GPUTest {}
 
 
 

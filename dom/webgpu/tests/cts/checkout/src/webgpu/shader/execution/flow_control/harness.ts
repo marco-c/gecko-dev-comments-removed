@@ -1,10 +1,10 @@
 import { Colors } from '../../../../common/util/colors.js';
-import { GPUTest } from '../../../gpu_test.js';
+import { AllFeaturesMaxLimitsGPUTest } from '../../../gpu_test.js';
 
 
 
 
-interface FlowControlTest extends GPUTest {
+interface FlowControlTest extends AllFeaturesMaxLimitsGPUTest {
   params: {
     
 

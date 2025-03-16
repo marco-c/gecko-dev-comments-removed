@@ -813,13 +813,12 @@ export function getDefaultLimitsForAdapter(adapter: GPUAdapter) {
   
   
   const adapterExtensions = adapter as unknown as {
-    isCompatibilityMode?: boolean;
     featureLevel?: string;
   };
   const featureLevel =
-    adapterExtensions.featureLevel === 'compatibility' || adapterExtensions.isCompatibilityMode
-      ? 'compatibility'
-      : 'core';
+    adapterExtensions.featureLevel === 'core' || adapter.features.has('core-features-and-limits')
+      ? 'core'
+      : 'compatibility';
   return getDefaultLimits(featureLevel);
 }
 

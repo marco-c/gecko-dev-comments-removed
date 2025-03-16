@@ -1,5 +1,10 @@
 import { assert, ErrorWithExtra, unreachable } from '../../../common/util/util.js';
-import { kTextureFormatInfo, EncodableTextureFormat } from '../../format_info.js';
+import {
+  EncodableTextureFormat,
+  getTextureFormatType,
+  isColorTextureFormat,
+  isDepthTextureFormat,
+} from '../../format_info.js';
 import { GPUTestBase } from '../../gpu_test.js';
 import { numbersApproximatelyEqual } from '../conversion.js';
 import { generatePrettyTable, numericToStringBuilder } from '../pretty_diff_tables.js';
@@ -220,14 +225,13 @@ export function findFailedPixels(
     return undefined;
   }
 
-  const info = kTextureFormatInfo[format];
   const repr = kTexelRepresentationInfo[format];
   
-  const printAsInteger = info.color
+  const printAsInteger = isColorTextureFormat(format)
     ? 
-      ['uint', 'sint'].includes(info.color.type)
+      ['uint', 'sint'].includes(getTextureFormatType(format))
     : 
-      !info.depth;
+      !isDepthTextureFormat(format);
   const numericToString = numericToStringBuilder(printAsInteger);
 
   const componentOrderStr = repr.componentOrder.join(',') + ':';

@@ -125,9 +125,7 @@ for (let i = 0; i < sys.args.length; ++i) {
 let codeCoverage: CodeCoverageProvider | undefined = undefined;
 
 if (globalTestConfig.compatibility || globalTestConfig.forceFallbackAdapter) {
-  
   setDefaultRequestAdapterOptions({
-    compatibilityMode: globalTestConfig.compatibility,
     featureLevel: globalTestConfig.compatibility ? 'compatibility' : 'core',
     forceFallbackAdapter: globalTestConfig.forceFallbackAdapter,
   } as GPURequestAdapterOptions);

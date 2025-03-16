@@ -201,11 +201,6 @@ combine('type', [
 ).
 beginSubcases()
 ).
-beforeAllSubcases((t) => {
-  if (t.params.type.name.includes('f16')) {
-    t.selectDeviceOrSkipTestCase('shader-f16');
-  }
-}).
 fn((t) => {
   
   

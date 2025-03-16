@@ -68,17 +68,11 @@ Validates that constant evaluation and override evaluation of ${builtin}() rejec
       .beginSubcases()
       .expand('value', u => fullRangeForType(kValidArgumentTypes[u.type]))
   )
-  .beforeAllSubcases(t => {
-    if (scalarTypeOf(kValidArgumentTypes[t.params.type]) === Type.f16) {
-      t.selectDeviceOrSkipTestCase('shader-f16');
-    }
-  })
   .fn(t => {
     let expectedResult = true;
 
     const scalarType = scalarTypeOf(kValidArgumentTypes[t.params.type]);
     const quantizeFn = quantizeFunctionForScalarType(scalarType);
-
     
     
     
@@ -122,11 +116,6 @@ Validates that all scalar arguments and vector integer or boolean arguments are 
 `
   )
   .params(u => u.combine('type', keysOf(kInvalidArgumentTypes)))
-  .beforeAllSubcases(t => {
-    if (kInvalidArgumentTypes[t.params.type] === Type.f16) {
-      t.selectDeviceOrSkipTestCase('shader-f16');
-    }
-  })
   .fn(t => {
     const expectedResult = false; 
     validateConstOrOverrideBuiltinEval(

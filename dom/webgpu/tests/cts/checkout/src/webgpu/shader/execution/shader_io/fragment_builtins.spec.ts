@@ -20,15 +20,15 @@ is evaluated per-fragment or per-sample. With @interpolate(, sample) or usage of
 import { makeTestGroup } from '../../../../common/framework/test_group.js';
 import { ErrorWithExtra, assert, range, unreachable } from '../../../../common/util/util.js';
 import { InterpolationSampling, InterpolationType } from '../../../constants.js';
-import { kTextureFormatInfo } from '../../../format_info.js';
-import { GPUTest, TextureTestMixin } from '../../../gpu_test.js';
+import { getBlockInfoForTextureFormat } from '../../../format_info.js';
+import { AllFeaturesMaxLimitsGPUTest, GPUTest, TextureTestMixin } from '../../../gpu_test.js';
 import { getProvokingVertexForFlatInterpolationEitherSampling } from '../../../inter_stage.js';
 import { getMultisampleFragmentOffsets } from '../../../multisample_info.js';
 import { dotProduct, subtractVectors, align } from '../../../util/math.js';
 import { TexelView } from '../../../util/texture/texel_view.js';
 import { findFailedPixels } from '../../../util/texture/texture_ok.js';
 
-class FragmentBuiltinTest extends TextureTestMixin(GPUTest) {}
+class FragmentBuiltinTest extends TextureTestMixin(AllFeaturesMaxLimitsGPUTest) {}
 
 export const g = makeTestGroup(FragmentBuiltinTest);
 
@@ -1498,7 +1498,7 @@ fn vsMain(@builtin(vertex_index) index : u32) -> @builtin(position) vec4f {
     },
   });
 
-  const { blockWidth, blockHeight, bytesPerBlock } = kTextureFormatInfo[format];
+  const { blockWidth, blockHeight, bytesPerBlock } = getBlockInfoForTextureFormat(format);
   assert(bytesPerBlock !== undefined);
 
   const blocksPerRow = width / blockWidth;
@@ -1547,7 +1547,7 @@ fn vsMain(@builtin(vertex_index) index : u32) -> @builtin(position) vec4f {
   }
 }
 
-const kMaximiumSubgroupSize = 128;
+const kMaximumSubgroupSize = 128;
 
 
 const kSubgroupShaderNoError = 17;
@@ -1578,7 +1578,7 @@ function checkSubgroupSizeConsistency(
   width: number,
   height: number
 ): Error | undefined {
-  const { blockWidth, blockHeight, bytesPerBlock } = kTextureFormatInfo[format];
+  const { blockWidth, blockHeight, bytesPerBlock } = getBlockInfoForTextureFormat(format);
   const blocksPerRow = width / blockWidth;
   
   const bytesPerRow = align(blocksPerRow * (bytesPerBlock ?? 1), 256);
@@ -1650,10 +1650,8 @@ g.test('subgroup_size')
       .beginSubcases()
       .combineWithParams([{ format: 'rgba32uint' }] as const)
   )
-  .beforeAllSubcases(t => {
-    t.selectDeviceOrSkipTestCase('subgroups' as GPUFeatureName);
-  })
   .fn(async t => {
+    t.skipIfDeviceDoesNotHaveFeature('subgroups' as GPUFeatureName);
     interface SubgroupProperties extends GPUAdapterInfo {
       subgroupMinSize: number;
       subgroupMaxSize: number;
@@ -1663,7 +1661,7 @@ g.test('subgroup_size')
     const fsShader = `
 enable subgroups;
 
-const subgroupMaxSize = ${kMaximiumSubgroupSize}u;
+const subgroupMaxSize = ${kMaximumSubgroupSize}u;
 const noError = ${kSubgroupShaderNoError}u;
 
 const width = ${t.params.size[0]};
@@ -1747,7 +1745,7 @@ function checkSubgroupInvocationIdConsistency(
   width: number,
   height: number
 ): Error | undefined {
-  const { blockWidth, blockHeight, bytesPerBlock } = kTextureFormatInfo[format];
+  const { blockWidth, blockHeight, bytesPerBlock } = getBlockInfoForTextureFormat(format);
   const blocksPerRow = width / blockWidth;
   const bytesPerRow = align(blocksPerRow * (bytesPerBlock ?? 1), 256);
   const uintsPerRow = bytesPerRow / 4;
@@ -1815,7 +1813,7 @@ enable subgroups;
 const width = ${t.params.size[0]};
 const height = ${t.params.size[1]};
 
-const subgroupMaxSize = ${kMaximiumSubgroupSize}u;
+const subgroupMaxSize = ${kMaximumSubgroupSize}u;
 // A non-zero magic number indicating no expectation error, in order to prevent the
 // false no-error result from zero-initialization.
 const noError = ${kSubgroupShaderNoError}u;

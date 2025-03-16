@@ -25,7 +25,7 @@ import {
   kCanvasColorSpaces,
   kCanvasTextureFormats } from
 '../../capability_info.js';
-import { GPUTest } from '../../gpu_test.js';
+import { AllFeaturesMaxLimitsGPUTest } from '../../gpu_test.js';
 import { checkElementsEqual } from '../../util/check_contents.js';
 import {
   kAllCanvasTypes,
@@ -37,7 +37,7 @@ import {
 import { TexelView } from '../../util/texture/texel_view.js';
 import { findFailedPixels } from '../../util/texture/texture_ok.js';
 
-export const g = makeTestGroup(GPUTest);
+export const g = makeTestGroup(AllFeaturesMaxLimitsGPUTest);
 
 
 

@@ -431,7 +431,7 @@ function bitcastVec2F32ToVec4F16Comparator(f32x2: number[]): Comparator {
 }
 
 
-interface ExpectionFor32BitsScalarFromF16x2 {
+interface ExpectationFor32BitsScalarFromF16x2 {
   
   
   possibleExpectations: (ScalarValue | FPInterval)[];
@@ -456,7 +456,7 @@ function possibleBitsInU16FromFiniteF16InU16(f16InU16: number): number[] {
 function possible32BitScalarIntervalsFromF16x2(
   f16x2InU16x2: number[],
   type: 'i32' | 'u32' | 'f32'
-): ExpectionFor32BitsScalarFromF16x2 {
+): ExpectationFor32BitsScalarFromF16x2 {
   assert(f16x2InU16x2.length === 2);
   let reinterpretFromU32: (x: number) => number;
   let expectationsForValue: (x: number) => ScalarValue[] | FPInterval[];

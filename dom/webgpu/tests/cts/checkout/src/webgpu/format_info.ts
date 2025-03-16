@@ -1,3 +1,5 @@
+
+import { isCompatibilityDevice } from '../common/framework/test_config.js';
 import { keysOf } from '../common/util/data_tables.js';
 import { assert, unreachable } from '../common/util/util.js';
 
@@ -1436,9 +1438,18 @@ const kASTCTextureFormatInfo = formatTableWithDefaults({
  export const          kAllTextureFormats: readonly          GPUTextureFormat[] = keysOf(         kAllTextureFormatInfo);
 
 
+
 export const kRenderableColorTextureFormats = kRegularTextureFormats.filter(
   v => kColorTextureFormatInfo[v].colorRender
 );
+
+
+
+
+export const kPossiblyRenderableColorTextureFormats = [
+  ...kRegularTextureFormats.filter(v => kColorTextureFormatInfo[v].colorRender),
+  'rg11b10ufloat',
+] as const;
 
 
 interface TextureFormatAspectInfo {
@@ -1522,6 +1533,11 @@ type TextureFormatInfo_TypeCheck = {
 );
 
 
+
+
+
+
+
 export const kTextureFormatInfo = {
   ...kRegularTextureFormatInfo,
   ...kSizedDepthStencilFormatInfo,
@@ -1536,6 +1552,56 @@ export const kTextureFormatInfo = {
 const kTextureFormatInfo_TypeCheck: {
   readonly [F in GPUTextureFormat]: TextureFormatInfo_TypeCheck;
 } = kTextureFormatInfo;
+
+
+export const kDepthTextureFormats = [
+  ...kDepthStencilFormats.filter(v => kTextureFormatInfo[v].depth),
+] as const;
+
+export const kStencilTextureFormats = kDepthStencilFormats.filter(
+  v => kTextureFormatInfo[v].stencil
+);
+
+
+
+export const kPossibleStorageTextureFormats = [
+  ...kRegularTextureFormats.filter(f => kTextureFormatInfo[f].color?.storage),
+  'bgra8unorm',
+] as const;
+
+
+
+export const kPossibleMultisampledTextureFormats = [
+  ...kRegularTextureFormats.filter(f => kTextureFormatInfo[f].multisample),
+  ...kDepthStencilFormats.filter(f => kTextureFormatInfo[f].multisample),
+  'rg11b10ufloat',
+] as const;
+
+
+
+export const kPossibleColorRenderableTextureFormats = [
+  ...kRegularTextureFormats.filter(f => kTextureFormatInfo[f].colorRender),
+  'rg11b10ufloat',
+] as const;
+export type PossibleColorRenderTextureFormat =
+  (typeof kPossibleColorRenderableTextureFormats)[number];
+
+
+
+export const kDifferentBaseFormatTextureFormats = kColorTextureFormats.filter(
+  f => kTextureFormatInfo[f].baseFormat && kTextureFormatInfo[f].baseFormat !== f
+);
+
+
+
+export const kDifferentBaseFormatRegularTextureFormats = kRegularTextureFormats.filter(
+  f => kTextureFormatInfo[f].baseFormat && kTextureFormatInfo[f].baseFormat !== f
+);
+
+
+export const kOptionalTextureFormats = kAllTextureFormats.filter(
+  t => kTextureFormatInfo[t].feature !== undefined
+);
 
 
 export const kValidTextureFormatsForCopyE2T = [
@@ -1744,16 +1810,109 @@ export function textureDimensionAndFormatCompatible(
 }
 
 
-
-
-
-
-export function viewCompatible(
+export function viewCompatibleDeprecated(
   compatibilityMode: boolean,
   a: GPUTextureFormat,
   b: GPUTextureFormat
 ): boolean {
   return compatibilityMode ? a === b : a === b || a + '-srgb' === b || b + '-srgb' === a;
+}
+
+
+
+
+export function textureFormatsAreViewCompatible(
+  device: GPUDevice,
+  a: GPUTextureFormat,
+  b: GPUTextureFormat
+) {
+  return isCompatibilityDevice(device)
+    ? a === b
+    : a === b || a + '-srgb' === b || b + '-srgb' === a;
+}
+
+
+
+
+
+
+
+export function getBlockInfoForColorTextureFormat(format: ColorTextureFormat) {
+  const info = kTextureFormatInfo[format];
+  return {
+    blockWidth: info.blockWidth,
+    blockHeight: info.blockHeight,
+    bytesPerBlock: info.color?.bytes,
+  };
+}
+
+
+
+
+
+
+
+export function getBlockInfoForEncodableTextureFormat(format: EncodableTextureFormat) {
+  const info = kTextureFormatInfo[format];
+  const bytesPerBlock = info.color?.bytes || info.depth?.bytes || info.stencil?.bytes;
+  assert(!!bytesPerBlock);
+  return {
+    blockWidth: info.blockWidth,
+    blockHeight: info.blockHeight,
+    bytesPerBlock,
+  };
+}
+
+
+
+
+
+
+
+export function getBlockInfoForTextureFormat(format: GPUTextureFormat) {
+  const info = kTextureFormatInfo[format];
+  return {
+    blockWidth: info.blockWidth,
+    blockHeight: info.blockHeight,
+    bytesPerBlock: info.color?.bytes ?? info.depth?.bytes ?? info.stencil?.bytes,
+  };
+}
+
+
+
+
+
+
+export function getColorRenderByteCost(format: PossibleColorRenderTextureFormat) {
+  const byteCost =
+    format === 'rg11b10ufloat' ? 8 : kTextureFormatInfo[format].colorRender?.byteCost;
+  
+  
+  
+  assert(byteCost !== undefined);
+  return byteCost;
+}
+
+
+
+
+export function getBaseFormatForTextureFormat(
+  format: (typeof kDifferentBaseFormatTextureFormats)[number]
+): ColorTextureFormat {
+  return kTextureFormatInfo[format].baseFormat!;
+}
+
+export function getBaseFormatForRegularTextureFormat(
+  format: RegularTextureFormat
+): RegularTextureFormat | undefined {
+  return kTextureFormatInfo[format].baseFormat as RegularTextureFormat;
+}
+
+
+
+
+export function getRequiredFeatureForTextureFormat(format: GPUTextureFormat) {
+  return kTextureFormatInfo[format].feature;
 }
 
 export function getFeaturesForFormats<T>(
@@ -1769,8 +1928,75 @@ export function filterFormatsByFeature<T>(
   return formats.filter(f => f === undefined || kTextureFormatInfo[f].feature === feature);
 }
 
+export function canCopyToAspectOfTextureFormat(format: GPUTextureFormat, aspect: GPUTextureAspect) {
+  const info = kTextureFormatInfo[format];
+  switch (aspect) {
+    case 'depth-only':
+      assert(isDepthTextureFormat(format));
+      return info.depth && info.depth.copyDst;
+    case 'stencil-only':
+      assert(isStencilTextureFormat(format));
+      return info.stencil && info.stencil.copyDst;
+    case 'all':
+      return (
+        (!isDepthTextureFormat(format) || info.depth?.copyDst) &&
+        (!isStencilTextureFormat(format) || info.stencil?.copyDst) &&
+        (!isColorTextureFormat(format) || !info.color?.copyDst)
+      );
+  }
+}
+
+export function canCopyFromAspectOfTextureFormat(
+  format: GPUTextureFormat,
+  aspect: GPUTextureAspect
+) {
+  const info = kTextureFormatInfo[format];
+  switch (aspect) {
+    case 'depth-only':
+      assert(isDepthTextureFormat(format));
+      return info.depth && info.depth.copySrc;
+    case 'stencil-only':
+      assert(isStencilTextureFormat(format));
+      return info.stencil && info.stencil.copySrc;
+    case 'all':
+      return (
+        (!isDepthTextureFormat(format) || info.depth?.copySrc) &&
+        (!isStencilTextureFormat(format) || info.stencil?.copySrc) &&
+        (!isColorTextureFormat(format) || !info.color?.copySrc)
+      );
+  }
+}
+
+
+
+
+export function canCopyToAllAspectsOfTextureFormat(format: GPUTextureFormat) {
+  const info = kTextureFormatInfo[format];
+  return (
+    (!info.color || info.color.copyDst) &&
+    (!info.depth || info.depth.copyDst) &&
+    (!info.stencil || info.stencil.copyDst)
+  );
+}
+
+
+
+
+export function canCopyFromAllAspectsOfTextureFormat(format: GPUTextureFormat) {
+  const info = kTextureFormatInfo[format];
+  return (
+    (!info.color || info.color.copySrc) &&
+    (!info.depth || info.depth.copySrc) &&
+    (!info.stencil || info.stencil.copySrc)
+  );
+}
+
 export function isCompressedTextureFormat(format: GPUTextureFormat) {
   return format in kCompressedTextureFormatInfo;
+}
+
+export function isColorTextureFormat(format: GPUTextureFormat) {
+  return !!kTextureFormatInfo[format].color;
 }
 
 export function isDepthTextureFormat(format: GPUTextureFormat) {
@@ -1789,8 +2015,99 @@ export function isEncodableTextureFormat(format: GPUTextureFormat) {
   return kEncodableTextureFormats.includes(format as EncodableTextureFormat);
 }
 
-export function canUseAsRenderTarget(format: GPUTextureFormat) {
+
+export function canUseAsRenderTargetDeprecated(format: GPUTextureFormat) {
   return kTextureFormatInfo[format].colorRender || isDepthOrStencilTextureFormat(format);
+}
+
+
+
+
+
+export function isTextureFormatUsableAsRenderAttachment(
+  device: GPUDevice,
+  format: GPUTextureFormat
+) {
+  if (format === 'rg11b10ufloat' && device.features.has('rg11b10ufloat-renderable')) {
+    return true;
+  }
+  return kTextureFormatInfo[format].colorRender || isDepthOrStencilTextureFormat(format);
+}
+
+
+
+
+export function isTextureFormatColorRenderable(
+  device: GPUDevice,
+  format: GPUTextureFormat
+): boolean {
+  if (format === 'rg11b10ufloat' && device.features.has('rg11b10ufloat-renderable')) {
+    return true;
+  }
+  return !!kAllTextureFormatInfo[format].colorRender;
+}
+
+
+
+
+export function getTextureFormatType(format: GPUTextureFormat) {
+  const info = kTextureFormatInfo[format];
+  const type = info.color?.type ?? info.depth?.type ?? info.stencil?.type;
+  assert(!!type);
+  return type;
+}
+
+
+
+
+export function getTextureFormatColorType(format: RegularTextureFormat) {
+  const info = kTextureFormatInfo[format];
+  const type = info.color?.type;
+  assert(!!type);
+  return type;
+}
+
+
+
+
+
+export function isTextureFormatPossiblyUsableAsRenderAttachment(format: GPUTextureFormat) {
+  const info = kTextureFormatInfo[format];
+  return format === 'rg11b10ufloat' || isDepthOrStencilTextureFormat(format) || !!info.colorRender;
+}
+
+
+
+
+
+export function isTextureFormatPossiblyUsableAsColorRenderAttachment(format: GPUTextureFormat) {
+  const info = kTextureFormatInfo[format];
+  return format === 'rg11b10ufloat' || !!info.colorRender;
+}
+
+
+
+
+
+export function isTextureFormatPossiblyMultisampled(format: GPUTextureFormat) {
+  const info = kTextureFormatInfo[format];
+  return format === 'rg11b10ufloat' || info.multisample;
+}
+
+
+
+
+
+export function isTextureFormatPossiblyStorageReadable(format: GPUTextureFormat) {
+  return !!kTextureFormatInfo[format].color?.storage;
+}
+
+
+
+
+
+export function isTextureFormatPossiblyStorageReadWritable(format: GPUTextureFormat) {
+  return !!kTextureFormatInfo[format].color?.readWriteStorage;
 }
 
 export function is16Float(format: GPUTextureFormat) {
@@ -1809,7 +2126,7 @@ export function is32Float(format: GPUTextureFormat) {
 
 
 
-export function isFilterableAsTextureF32(format: GPUTextureFormat) {
+export function isTextureFormatPossiblyFilterableAsTextureF32(format: GPUTextureFormat) {
   const info = kTextureFormatInfo[format];
   return info.color?.type === 'float' || is32Float(format);
 }
@@ -1820,7 +2137,8 @@ export const kCompatModeUnsupportedStorageTextureFormats: readonly GPUTextureFor
   'rg32uint',
 ] as const;
 
-export function isTextureFormatUsableAsStorageFormat(
+
+export function isTextureFormatUsableAsStorageFormatDeprecated(
   format: GPUTextureFormat,
   isCompatibilityMode: boolean
 ): boolean {
@@ -1831,6 +2149,32 @@ export function isTextureFormatUsableAsStorageFormat(
   }
   const info = kTextureFormatInfo[format];
   return !!(info.color?.storage || info.depth?.storage || info.stencil?.storage);
+}
+
+export function isTextureFormatUsableAsStorageFormat(
+  device: GPUDevice,
+  format: GPUTextureFormat
+): boolean {
+  if (isCompatibilityDevice(device)) {
+    if (kCompatModeUnsupportedStorageTextureFormats.indexOf(format) >= 0) {
+      return false;
+    }
+  }
+  if (format === 'bgra8unorm' && device.features.has('bgra8unorm-storage')) {
+    return true;
+  }
+  const info = kTextureFormatInfo[format];
+  return !!(info.color?.storage || info.depth?.storage || info.stencil?.storage);
+}
+
+export function isTextureFormatUsableAsReadWriteStorageTexture(
+  device: GPUDevice,
+  format: GPUTextureFormat
+): boolean {
+  return (
+    isTextureFormatUsableAsStorageFormat(device, format) &&
+    !!kTextureFormatInfo[format].color?.readWriteStorage
+  );
 }
 
 export function isRegularTextureFormat(format: GPUTextureFormat) {
@@ -1857,11 +2201,25 @@ export function isSintOrUintFormat(format: GPUTextureFormat) {
 
 
 export const kCompatModeUnsupportedMultisampledTextureFormats: readonly GPUTextureFormat[] = [
+  'r8uint',
+  'r8sint',
+  'rg8uint',
+  'rg8sint',
+  'rgba8uint',
+  'rgba8sint',
+  'r16uint',
+  'r16sint',
+  'rg16uint',
+  'rg16sint',
+  'rgba16uint',
+  'rgba16sint',
+  'rgb10a2uint',
   'rgba16float',
   'r32float',
 ] as const;
 
-export function isMultisampledTextureFormat(
+
+export function isMultisampledTextureFormatDeprecated(
   format: GPUTextureFormat,
   isCompatibilityMode: boolean
 ): boolean {
@@ -1873,6 +2231,40 @@ export function isMultisampledTextureFormat(
   return kAllTextureFormatInfo[format].multisample;
 }
 
+
+
+
+export function isTextureFormatMultisampled(device: GPUDevice, format: GPUTextureFormat): boolean {
+  if (isCompatibilityDevice(device)) {
+    if (kCompatModeUnsupportedMultisampledTextureFormats.indexOf(format) >= 0) {
+      return false;
+    }
+  }
+  if (format === 'rg11b10ufloat' && device.features.has('rg11b10ufloat-renderable')) {
+    return true;
+  }
+  return kAllTextureFormatInfo[format].multisample;
+}
+
+
+
+
+
+export function isTextureFormatResolvable(device: GPUDevice, format: GPUTextureFormat): boolean {
+  if (format === 'rg11b10ufloat' && device.features.has('rg11b10ufloat-renderable')) {
+    return true;
+  }
+  
+  if (!isTextureFormatMultisampled(device, format)) {
+    return false;
+  }
+  const info = kAllTextureFormatInfo[format];
+  return !!info.colorRender?.resolve;
+}
+
+
+
+
 export const kFeaturesForFormats = getFeaturesForFormats(kAllTextureFormats);
 
 
@@ -1881,7 +2273,14 @@ export const kFeaturesForFormats = getFeaturesForFormats(kAllTextureFormats);
 export function computeBytesPerSampleFromFormats(formats: readonly GPUTextureFormat[]) {
   let bytesPerSample = 0;
   for (const format of formats) {
-    const info = kTextureFormatInfo[format];
+    
+    
+    
+    
+    const info =
+      format === 'rg11b10ufloat'
+        ? { colorRender: { alignment: 4, byteCost: 8 } }
+        : kTextureFormatInfo[format];
     const alignedBytesPerSample = align(bytesPerSample, info.colorRender!.alignment);
     bytesPerSample = alignedBytesPerSample + info.colorRender!.byteCost;
   }

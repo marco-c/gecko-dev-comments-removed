@@ -1,18 +1,20 @@
 export const description = `
 Test texture views can reinterpret the format of the original texture.
+
+- TODO: test compressed texture reinterpretation
 `;
 
 import { makeTestGroup } from '../../../../common/framework/test_group.js';
 import {
-  kRenderableColorTextureFormats,
-  kRegularTextureFormats,
-  viewCompatible,
   EncodableTextureFormat,
+  getBaseFormatForTextureFormat,
+  kDifferentBaseFormatRegularTextureFormats,
+  RegularTextureFormat,
 } from '../../../format_info.js';
-import { GPUTest, TextureTestMixin } from '../../../gpu_test.js';
+import { AllFeaturesMaxLimitsGPUTest, TextureTestMixin } from '../../../gpu_test.js';
 import { TexelView } from '../../../util/texture/texel_view.js';
 
-export const g = makeTestGroup(TextureTestMixin(GPUTest));
+export const g = makeTestGroup(TextureTestMixin(AllFeaturesMaxLimitsGPUTest));
 
 const kColors = [
   { R: 1.0, G: 0.0, B: 0.0, A: 0.8 },
@@ -97,95 +99,96 @@ g.test('texture_binding')
   .desc(`Test that a regular texture allocated as 'format' is correctly sampled as 'viewFormat'.`)
   .params(u =>
     u 
-      .combine('format', kRegularTextureFormats)
-      .combine('viewFormat', kRegularTextureFormats)
-      .filter(
-        ({ format, viewFormat }) =>
-          format !== viewFormat && viewCompatible(false, format, viewFormat)
-      )
+      .combine('format', kDifferentBaseFormatRegularTextureFormats)
   )
-  .beforeAllSubcases(t => {
-    const { format, viewFormat } = t.params;
-    t.skipIfTextureFormatNotSupported(format, viewFormat);
-    
-    t.skipIf(t.isCompatibility);
-  })
+  
+  .beforeAllSubcases(t => t.skipIf(t.isCompatibility))
   .fn(t => {
-    const { format, viewFormat } = t.params;
+    const { format } = t.params;
+    const viewFormat = getBaseFormatForTextureFormat(format) as RegularTextureFormat;
 
-    
-    const inputTexelView = makeInputTexelView(format);
+    t.skipIfTextureFormatNotSupported(format, viewFormat);
 
-    
-    const texture = t.createTextureFromTexelView(inputTexelView, {
-      size: [kTextureSize, kTextureSize],
-      usage: GPUTextureUsage.TEXTURE_BINDING,
-      viewFormats: [viewFormat],
-    });
+    const cases = [
+      { format, viewFormat },
+      { format: viewFormat, viewFormat: format },
+    ];
 
-    
-    
-    const reinterpretedView = texture.createView({ format: viewFormat });
-    const reinterpretedTexelView = TexelView.fromTexelsAsBytes(viewFormat, inputTexelView.bytes);
+    for (const { format, viewFormat } of cases) {
+      
+      const inputTexelView = makeInputTexelView(format);
 
-    
-    const pipeline = t.device.createComputePipeline({
-      layout: 'auto',
-      compute: {
-        module: t.device.createShaderModule({
-          code: `
-          @group(0) @binding(0) var src: texture_2d<f32>;
-          @group(0) @binding(1) var dst: texture_storage_2d<rgba8unorm, write>;
-          @compute @workgroup_size(1, 1) fn main(
-            @builtin(global_invocation_id) global_id: vec3<u32>,
-          ) {
-            var coord = vec2<i32>(global_id.xy);
-            textureStore(dst, coord, textureLoad(src, coord, 0));
-          }`,
+      
+      const texture = t.createTextureFromTexelView(inputTexelView, {
+        size: [kTextureSize, kTextureSize],
+        usage: GPUTextureUsage.TEXTURE_BINDING,
+        viewFormats: [viewFormat],
+      });
+
+      
+      
+      const reinterpretedView = texture.createView({ format: viewFormat });
+      const reinterpretedTexelView = TexelView.fromTexelsAsBytes(viewFormat, inputTexelView.bytes);
+
+      
+      const pipeline = t.device.createComputePipeline({
+        layout: 'auto',
+        compute: {
+          module: t.device.createShaderModule({
+            code: `
+            @group(0) @binding(0) var src: texture_2d<f32>;
+            @group(0) @binding(1) var dst: texture_storage_2d<rgba8unorm, write>;
+            @compute @workgroup_size(1, 1) fn main(
+              @builtin(global_invocation_id) global_id: vec3<u32>,
+            ) {
+              var coord = vec2<i32>(global_id.xy);
+              textureStore(dst, coord, textureLoad(src, coord, 0));
+            }`,
+          }),
+          entryPoint: 'main',
+        },
+      });
+
+      
+      const outputTexture = t.createTextureTracked({
+        format: 'rgba8unorm',
+        size: [kTextureSize, kTextureSize],
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC,
+      });
+
+      
+      
+      const commandEncoder = t.device.createCommandEncoder();
+      const pass = commandEncoder.beginComputePass();
+      pass.setPipeline(pipeline);
+      pass.setBindGroup(
+        0,
+        t.device.createBindGroup({
+          layout: pipeline.getBindGroupLayout(0),
+          entries: [
+            {
+              binding: 0,
+              resource: reinterpretedView,
+            },
+            {
+              binding: 1,
+              resource: outputTexture.createView(),
+            },
+          ],
+        })
+      );
+      pass.dispatchWorkgroups(kTextureSize, kTextureSize);
+      pass.end();
+      t.device.queue.submit([commandEncoder.finish()]);
+
+      t.expectTexelViewComparisonIsOkInTexture(
+        { texture: outputTexture },
+        TexelView.fromTexelsAsColors('rgba8unorm', reinterpretedTexelView.color, {
+          clampToFormatRange: true,
         }),
-        entryPoint: 'main',
-      },
-    });
-
-    
-    const outputTexture = t.createTextureTracked({
-      format: 'rgba8unorm',
-      size: [kTextureSize, kTextureSize],
-      usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC,
-    });
-
-    
-    
-    const commandEncoder = t.device.createCommandEncoder();
-    const pass = commandEncoder.beginComputePass();
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(
-      0,
-      t.device.createBindGroup({
-        layout: pipeline.getBindGroupLayout(0),
-        entries: [
-          {
-            binding: 0,
-            resource: reinterpretedView,
-          },
-          {
-            binding: 1,
-            resource: outputTexture.createView(),
-          },
-        ],
-      })
-    );
-    pass.dispatchWorkgroups(kTextureSize, kTextureSize);
-    pass.end();
-    t.device.queue.submit([commandEncoder.finish()]);
-
-    t.expectTexelViewComparisonIsOkInTexture(
-      { texture: outputTexture },
-      TexelView.fromTexelsAsColors('rgba8unorm', reinterpretedTexelView.color, {
-        clampToFormatRange: true,
-      }),
-      [kTextureSize, kTextureSize]
-    );
+        [kTextureSize, kTextureSize]
+      );
+    }
   });
 
 g.test('render_and_resolve_attachment')
@@ -198,113 +201,73 @@ in view format and match in base format.`
   )
   .params(u =>
     u 
-      .combine('format', kRenderableColorTextureFormats)
-      .combine('viewFormat', kRenderableColorTextureFormats)
-      .filter(
-        ({ format, viewFormat }) =>
-          format !== viewFormat && viewCompatible(false, format, viewFormat)
-      )
+      .combine('format', kDifferentBaseFormatRegularTextureFormats)
       .combine('sampleCount', [1, 4])
   )
-  .beforeAllSubcases(t => {
-    const { format, viewFormat } = t.params;
-    t.skipIfTextureFormatNotSupported(format, viewFormat);
-    
-    t.skipIf(t.isCompatibility);
-  })
+  
+  .beforeAllSubcases(t => t.skipIf(t.isCompatibility))
   .fn(t => {
-    const { format, viewFormat, sampleCount } = t.params;
+    const { format, sampleCount } = t.params;
+    const viewFormat = getBaseFormatForTextureFormat(format) as RegularTextureFormat;
 
-    
-    const inputTexelView = makeInputTexelView(format);
+    t.skipIfTextureFormatNotSupported(format, viewFormat);
 
-    
-    const renderTexture = t.createTextureTracked({
-      format,
-      size: [kTextureSize, kTextureSize],
-      usage:
-        GPUTextureUsage.RENDER_ATTACHMENT |
-        (sampleCount > 1 ? GPUTextureUsage.TEXTURE_BINDING : GPUTextureUsage.COPY_SRC),
-      viewFormats: [viewFormat],
-      sampleCount,
-    });
+    const cases = [
+      { format, viewFormat },
+      { format: viewFormat, viewFormat: format },
+    ];
 
-    const resolveTexture =
-      sampleCount === 1
-        ? undefined
-        : t.createTextureTracked({
-            format,
-            size: [kTextureSize, kTextureSize],
-            usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
-            viewFormats: [viewFormat],
-          });
+    for (const { format, viewFormat } of cases) {
+      
+      const inputTexelView = makeInputTexelView(format);
 
-    
-    
-    
-    const sampleSource = t.createTextureFromTexelView(inputTexelView, {
-      size: [kTextureSize, kTextureSize],
-      usage: GPUTextureUsage.TEXTURE_BINDING,
-    });
+      
+      const renderTexture = t.createTextureTracked({
+        format,
+        size: [kTextureSize, kTextureSize],
+        usage:
+          GPUTextureUsage.RENDER_ATTACHMENT |
+          (sampleCount > 1 ? GPUTextureUsage.TEXTURE_BINDING : GPUTextureUsage.COPY_SRC),
+        viewFormats: [viewFormat],
+        sampleCount,
+      });
 
-    
-    const reinterpretedRenderView = renderTexture.createView({ format: viewFormat });
-    const reinterpretedResolveView =
-      resolveTexture && resolveTexture.createView({ format: viewFormat });
+      const resolveTexture =
+        sampleCount === 1
+          ? undefined
+          : t.createTextureTracked({
+              format,
+              size: [kTextureSize, kTextureSize],
+              usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
+              viewFormats: [viewFormat],
+            });
 
-    
-    const pipeline = makeBlitPipeline(t.device, viewFormat, {
-      sample: 1,
-      render: sampleCount,
-    });
-
-    
-    const commandEncoder = t.device.createCommandEncoder();
-    const pass = commandEncoder.beginRenderPass({
-      colorAttachments: [
-        {
-          view: reinterpretedRenderView,
-          resolveTarget: reinterpretedResolveView,
-          loadOp: 'load',
-          storeOp: 'store',
-        },
-      ],
-    });
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(
-      0,
-      t.device.createBindGroup({
-        layout: pipeline.getBindGroupLayout(0),
-        entries: [
-          {
-            binding: 0,
-            resource: sampleSource.createView(),
-          },
-        ],
-      })
-    );
-    pass.draw(6);
-    pass.end();
-
-    
-    
-    const singleSampleRenderTexture = resolveTexture
-      ? t.createTextureTracked({
-          format,
-          size: [kTextureSize, kTextureSize],
-          usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
-        })
-      : renderTexture;
-
-    if (resolveTexture) {
       
       
       
-      const pipeline = makeBlitPipeline(t.device, format, { sample: sampleCount, render: 1 });
+      const sampleSource = t.createTextureFromTexelView(inputTexelView, {
+        size: [kTextureSize, kTextureSize],
+        usage: GPUTextureUsage.TEXTURE_BINDING,
+      });
+
+      
+      const reinterpretedRenderView = renderTexture.createView({ format: viewFormat });
+      const reinterpretedResolveView =
+        resolveTexture && resolveTexture.createView({ format: viewFormat });
+
+      
+      const pipeline = makeBlitPipeline(t.device, viewFormat, {
+        sample: 1,
+        render: sampleCount,
+      });
+
+      
+      const commandEncoder = t.device.createCommandEncoder();
       const pass = commandEncoder.beginRenderPass({
         colorAttachments: [
           {
-            view: singleSampleRenderTexture.createView(),
+            view: reinterpretedRenderView,
+            resolveTarget: reinterpretedResolveView,
             loadOp: 'load',
             storeOp: 'store',
           },
@@ -318,39 +281,80 @@ in view format and match in base format.`
           entries: [
             {
               binding: 0,
-              resource: renderTexture.createView(),
+              resource: sampleSource.createView(),
             },
           ],
         })
       );
       pass.draw(6);
       pass.end();
-    }
 
-    
-    t.device.queue.submit([commandEncoder.finish()]);
+      
+      
+      const singleSampleRenderTexture = resolveTexture
+        ? t.createTextureTracked({
+            format,
+            size: [kTextureSize, kTextureSize],
+            usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
+          })
+        : renderTexture;
 
-    
-    const renderViewTexels = TexelView.fromTexelsAsColors(viewFormat, inputTexelView.color, {
-      clampToFormatRange: true,
-    });
-    t.expectTexelViewComparisonIsOkInTexture(
-      { texture: singleSampleRenderTexture },
-      renderViewTexels,
-      [kTextureSize, kTextureSize],
-      { maxDiffULPsForNormFormat: 2 }
-    );
+      if (resolveTexture) {
+        
+        
+        
+        const pipeline = makeBlitPipeline(t.device, format, { sample: sampleCount, render: 1 });
+        const pass = commandEncoder.beginRenderPass({
+          colorAttachments: [
+            {
+              view: singleSampleRenderTexture.createView(),
+              loadOp: 'load',
+              storeOp: 'store',
+            },
+          ],
+        });
+        pass.setPipeline(pipeline);
+        pass.setBindGroup(
+          0,
+          t.device.createBindGroup({
+            layout: pipeline.getBindGroupLayout(0),
+            entries: [
+              {
+                binding: 0,
+                resource: renderTexture.createView(),
+              },
+            ],
+          })
+        );
+        pass.draw(6);
+        pass.end();
+      }
 
-    
-    if (resolveTexture) {
-      const resolveView = TexelView.fromTexelsAsColors(viewFormat, renderViewTexels.color, {
+      
+      t.device.queue.submit([commandEncoder.finish()]);
+
+      
+      const renderViewTexels = TexelView.fromTexelsAsColors(viewFormat, inputTexelView.color, {
         clampToFormatRange: true,
       });
       t.expectTexelViewComparisonIsOkInTexture(
-        { texture: resolveTexture },
-        resolveView,
+        { texture: singleSampleRenderTexture },
+        renderViewTexels,
         [kTextureSize, kTextureSize],
         { maxDiffULPsForNormFormat: 2 }
       );
+
+      
+      if (resolveTexture) {
+        const resolveView = TexelView.fromTexelsAsColors(viewFormat, renderViewTexels.color, {
+          clampToFormatRange: true,
+        });
+        t.expectTexelViewComparisonIsOkInTexture(
+          { texture: resolveTexture },
+          resolveView,
+          [kTextureSize, kTextureSize],
+          { maxDiffULPsForNormFormat: 2 }
+        );
+      }
     }
   });

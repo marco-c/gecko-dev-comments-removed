@@ -1,6 +1,6 @@
 
 
-import { assert, unreachable } from '../../../../../common/util/util.js';import { kTextureFormatInfo } from '../../../../format_info.js';import { virtualMipSize } from '../../../../util/texture/base.js';
+import { assert, unreachable } from '../../../../../common/util/util.js';import { virtualMipSize } from '../../../../util/texture/base.js';
 import {
   kTexelRepresentationInfo,
   getSingleDataType,
@@ -16,7 +16,6 @@ texture,
 state,
 subresourceRange) =>
 {
-  assert(params.format in kTextureFormatInfo);
   const format = params.format;
   const rep = kTexelRepresentationInfo[format];
 
