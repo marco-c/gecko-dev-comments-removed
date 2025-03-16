@@ -959,6 +959,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   
   bool CrossOriginIsolated() const override;
+  bool OriginAgentCluster() const;
 
   mozilla::dom::WebTaskScheduler* Scheduler();
 

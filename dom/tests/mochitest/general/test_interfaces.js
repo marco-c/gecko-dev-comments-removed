@@ -1935,6 +1935,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "origin", insecureContext: true },
   
+  { name: "originAgentCluster", insecureContext: true },
+  
   { name: "outerHeight", insecureContext: true },
   
   { name: "outerWidth", insecureContext: true },
