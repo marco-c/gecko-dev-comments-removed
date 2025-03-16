@@ -40,7 +40,8 @@ RTC_OBJC_EXPORT
 (RTCDataChannelDelegate)<NSObject>
 
     
-    - (void)dataChannelDidChangeState : (RTC_OBJC_TYPE(RTCDataChannel) *)dataChannel;
+    - (void)dataChannelDidChangeState
+    : (RTC_OBJC_TYPE(RTCDataChannel) *)dataChannel;
 
 
 - (void)dataChannel:(RTC_OBJC_TYPE(RTCDataChannel) *)dataChannel
@@ -77,7 +78,8 @@ RTC_OBJC_EXPORT
 @property(nonatomic, readonly) BOOL isOrdered;
 
 
-@property(nonatomic, readonly) NSUInteger maxRetransmitTime DEPRECATED_ATTRIBUTE;
+@property(nonatomic, readonly)
+    NSUInteger maxRetransmitTime DEPRECATED_ATTRIBUTE;
 
 
 

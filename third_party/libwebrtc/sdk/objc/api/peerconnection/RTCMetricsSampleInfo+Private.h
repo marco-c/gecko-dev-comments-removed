@@ -18,7 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
 ()
 
     
-    - (instancetype)initWithNativeSampleInfo : (const webrtc::metrics::SampleInfo &)info;
+    - (instancetype)initWithNativeSampleInfo
+    : (const webrtc::metrics::SampleInfo &)info;
 
 @end
 

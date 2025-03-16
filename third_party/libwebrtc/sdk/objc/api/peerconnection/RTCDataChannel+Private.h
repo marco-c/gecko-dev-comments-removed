@@ -37,7 +37,8 @@ NS_ASSUME_NONNULL_BEGIN
     
     - (instancetype)initWithFactory
     : (RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory nativeDataChannel
-    : (rtc::scoped_refptr<webrtc::DataChannelInterface>)nativeDataChannel NS_DESIGNATED_INITIALIZER;
+    : (rtc::scoped_refptr<webrtc::DataChannelInterface>)
+          nativeDataChannel NS_DESIGNATED_INITIALIZER;
 
 + (webrtc::DataChannelInterface::DataState)nativeDataChannelStateForState:
     (RTCDataChannelState)state;

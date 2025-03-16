@@ -21,16 +21,19 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
-    @property(nonatomic,
-              readonly) rtc::scoped_refptr<webrtc::MediaStreamInterface> nativeMediaStream;
+    @property(nonatomic, readonly)
+        rtc::scoped_refptr<webrtc::MediaStreamInterface> nativeMediaStream;
 
 
-- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
+- (instancetype)initWithFactory:
+                    (RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
                        streamId:(NSString *)streamId;
 
 
-- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
-              nativeMediaStream:(rtc::scoped_refptr<webrtc::MediaStreamInterface>)nativeMediaStream;
+- (instancetype)
+      initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
+    nativeMediaStream:
+        (rtc::scoped_refptr<webrtc::MediaStreamInterface>)nativeMediaStream;
 
 @end
 

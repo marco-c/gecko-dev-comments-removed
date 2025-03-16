@@ -41,7 +41,8 @@ RTC_OBJC_EXPORT
 @property(nonatomic) NSArray<NSString *> *streamIds;
 
 
-@property(nonatomic) NSArray<RTC_OBJC_TYPE(RTCRtpEncodingParameters) *> *sendEncodings;
+@property(nonatomic)
+    NSArray<RTC_OBJC_TYPE(RTCRtpEncodingParameters) *> *sendEncodings;
 
 @end
 
@@ -112,10 +113,13 @@ RTC_OBJC_EXPORT
 
 
 
+
 @property(nonatomic, readonly, copy)
-    NSArray<RTC_OBJC_TYPE(RTCRtpHeaderExtensionCapability) *> *headerExtensionsToNegotiate;
+    NSArray<RTC_OBJC_TYPE(RTCRtpHeaderExtensionCapability) *>
+        *headerExtensionsToNegotiate;
 @property(nonatomic, readonly, copy)
-    NSArray<RTC_OBJC_TYPE(RTCRtpHeaderExtensionCapability) *> *negotiatedHeaderExtensions;
+    NSArray<RTC_OBJC_TYPE(RTCRtpHeaderExtensionCapability) *>
+        *negotiatedHeaderExtensions;
 
 
 
@@ -135,11 +139,13 @@ RTC_OBJC_EXPORT
 
 
 
-- (BOOL)setCodecPreferences:(NSArray<RTC_OBJC_TYPE(RTCRtpCodecCapability) *> *_Nullable)codecs
+- (BOOL)setCodecPreferences:
+            (NSArray<RTC_OBJC_TYPE(RTCRtpCodecCapability) *> *_Nullable)codecs
                       error:(NSError **_Nullable)error;
 
 
-- (void)setCodecPreferences:(NSArray<RTC_OBJC_TYPE(RTCRtpCodecCapability) *> *_Nullable)codecs
+- (void)setCodecPreferences:
+    (NSArray<RTC_OBJC_TYPE(RTCRtpCodecCapability) *> *_Nullable)codecs
     RTC_OBJC_DEPRECATED("Use setCodecPreferences:error: instead.");
 
 
@@ -147,7 +153,8 @@ RTC_OBJC_EXPORT
 
 
 - (BOOL)setHeaderExtensionsToNegotiate:
-            (NSArray<RTC_OBJC_TYPE(RTCRtpHeaderExtensionCapability) *> *)extensions
+            (NSArray<RTC_OBJC_TYPE(RTCRtpHeaderExtensionCapability) *> *)
+                extensions
                                  error:(NSError **)error;
 
 
@@ -155,7 +162,8 @@ RTC_OBJC_EXPORT
 
 
 
-- (void)setDirection:(RTCRtpTransceiverDirection)direction error:(NSError **)error;
+- (void)setDirection:(RTCRtpTransceiverDirection)direction
+               error:(NSError **)error;
 
 @end
 

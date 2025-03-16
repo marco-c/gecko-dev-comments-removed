@@ -83,9 +83,11 @@ typedef NS_ENUM(NSInteger, RTCStatsOutputLevel) {
 };
 
 typedef void (^RTCCreateSessionDescriptionCompletionHandler)(
-    RTC_OBJC_TYPE(RTCSessionDescription) *_Nullable sdp, NSError *_Nullable error);
+    RTC_OBJC_TYPE(RTCSessionDescription) *_Nullable sdp,
+    NSError *_Nullable error);
 
-typedef void (^RTCSetSessionDescriptionCompletionHandler)(NSError *_Nullable error);
+typedef void (^RTCSetSessionDescriptionCompletionHandler)(
+    NSError *_Nullable error);
 
 @class RTC_OBJC_TYPE(RTCPeerConnection);
 
@@ -109,7 +111,8 @@ RTC_OBJC_EXPORT
        didRemoveStream:(RTC_OBJC_TYPE(RTCMediaStream) *)stream;
 
 
-- (void)peerConnectionShouldNegotiate:(RTC_OBJC_TYPE(RTCPeerConnection) *)peerConnection;
+- (void)peerConnectionShouldNegotiate:
+    (RTC_OBJC_TYPE(RTCPeerConnection) *)peerConnection;
 
 
 - (void)peerConnection:(RTC_OBJC_TYPE(RTCPeerConnection) *)peerConnection
@@ -125,7 +128,8 @@ RTC_OBJC_EXPORT
 
 
 - (void)peerConnection:(RTC_OBJC_TYPE(RTCPeerConnection) *)peerConnection
-    didRemoveIceCandidates:(NSArray<RTC_OBJC_TYPE(RTCIceCandidate) *> *)candidates;
+    didRemoveIceCandidates:
+        (NSArray<RTC_OBJC_TYPE(RTCIceCandidate) *> *)candidates;
 
 
 - (void)peerConnection:(RTC_OBJC_TYPE(RTCPeerConnection) *)peerConnection
@@ -146,7 +150,8 @@ RTC_OBJC_EXPORT
     didChangeConnectionState:(RTCPeerConnectionState)newState;
 
 - (void)peerConnection:(RTC_OBJC_TYPE(RTCPeerConnection) *)peerConnection
-    didStartReceivingOnTransceiver:(RTC_OBJC_TYPE(RTCRtpTransceiver) *)transceiver;
+    didStartReceivingOnTransceiver:
+        (RTC_OBJC_TYPE(RTCRtpTransceiver) *)transceiver;
 
 
 - (void)peerConnection:(RTC_OBJC_TYPE(RTCPeerConnection) *)peerConnection
@@ -166,7 +171,8 @@ RTC_OBJC_EXPORT
 
 
 - (void)peerConnection:(RTC_OBJC_TYPE(RTCPeerConnection) *)peerConnection
-    didFailToGatherIceCandidate:(RTC_OBJC_TYPE(RTCIceCandidateErrorEvent) *)event;
+    didFailToGatherIceCandidate:
+        (RTC_OBJC_TYPE(RTCIceCandidateErrorEvent) *)event;
 
 @end
 
@@ -180,14 +186,18 @@ RTC_OBJC_EXPORT
 
 
 
-@property(nonatomic, readonly) NSArray<RTC_OBJC_TYPE(RTCMediaStream) *> *localStreams;
-@property(nonatomic, readonly, nullable) RTC_OBJC_TYPE(RTCSessionDescription) * localDescription;
-@property(nonatomic, readonly, nullable) RTC_OBJC_TYPE(RTCSessionDescription) * remoteDescription;
+@property(nonatomic, readonly)
+    NSArray<RTC_OBJC_TYPE(RTCMediaStream) *> *localStreams;
+@property(nonatomic, readonly, nullable) RTC_OBJC_TYPE(RTCSessionDescription) *
+    localDescription;
+@property(nonatomic, readonly, nullable) RTC_OBJC_TYPE(RTCSessionDescription) *
+    remoteDescription;
 @property(nonatomic, readonly) RTCSignalingState signalingState;
 @property(nonatomic, readonly) RTCIceConnectionState iceConnectionState;
 @property(nonatomic, readonly) RTCPeerConnectionState connectionState;
 @property(nonatomic, readonly) RTCIceGatheringState iceGatheringState;
-@property(nonatomic, readonly, copy) RTC_OBJC_TYPE(RTCConfiguration) * configuration;
+@property(nonatomic, readonly, copy) RTC_OBJC_TYPE(RTCConfiguration) *
+    configuration;
 
 
 
@@ -199,7 +209,8 @@ RTC_OBJC_EXPORT
 
 
 
-@property(nonatomic, readonly) NSArray<RTC_OBJC_TYPE(RTCRtpReceiver) *> *receivers;
+@property(nonatomic, readonly)
+    NSArray<RTC_OBJC_TYPE(RTCRtpReceiver) *> *receivers;
 
 
 
@@ -207,7 +218,8 @@ RTC_OBJC_EXPORT
 
 
 
-@property(nonatomic, readonly) NSArray<RTC_OBJC_TYPE(RTCRtpTransceiver) *> *transceivers;
+@property(nonatomic, readonly)
+    NSArray<RTC_OBJC_TYPE(RTCRtpTransceiver) *> *transceivers;
 
 - (instancetype)init NS_UNAVAILABLE;
 
@@ -224,14 +236,16 @@ RTC_OBJC_EXPORT
 
 
 - (void)addIceCandidate:(RTC_OBJC_TYPE(RTCIceCandidate) *)candidate
-    DEPRECATED_MSG_ATTRIBUTE("Please use addIceCandidate:completionHandler: instead");
+    DEPRECATED_MSG_ATTRIBUTE(
+        "Please use addIceCandidate:completionHandler: instead");
 
 
 - (void)addIceCandidate:(RTC_OBJC_TYPE(RTCIceCandidate) *)candidate
       completionHandler:(void (^)(NSError *_Nullable error))completionHandler;
 
 
-- (void)removeIceCandidates:(NSArray<RTC_OBJC_TYPE(RTCIceCandidate) *> *)candidates;
+- (void)removeIceCandidates:
+    (NSArray<RTC_OBJC_TYPE(RTCIceCandidate) *> *)candidates;
 
 
 
@@ -253,8 +267,9 @@ RTC_OBJC_EXPORT
 
 
 
-- (nullable RTC_OBJC_TYPE(RTCRtpSender) *)addTrack:(RTC_OBJC_TYPE(RTCMediaStreamTrack) *)track
-                                         streamIds:(NSArray<NSString *> *)streamIds;
+- (nullable RTC_OBJC_TYPE(RTCRtpSender) *)
+     addTrack:(RTC_OBJC_TYPE(RTCMediaStreamTrack) *)track
+    streamIds:(NSArray<NSString *> *)streamIds;
 
 
 
@@ -295,7 +310,8 @@ RTC_OBJC_EXPORT
 
 
 
-- (nullable RTC_OBJC_TYPE(RTCRtpTransceiver) *)addTransceiverOfType:(RTCRtpMediaType)mediaType;
+- (nullable RTC_OBJC_TYPE(RTCRtpTransceiver) *)addTransceiverOfType:
+    (RTCRtpMediaType)mediaType;
 - (nullable RTC_OBJC_TYPE(RTCRtpTransceiver) *)
     addTransceiverOfType:(RTCRtpMediaType)mediaType
                     init:(RTC_OBJC_TYPE(RTCRtpTransceiverInit) *)init;
@@ -308,15 +324,18 @@ RTC_OBJC_EXPORT
 
 
 - (void)offerForConstraints:(RTC_OBJC_TYPE(RTCMediaConstraints) *)constraints
-          completionHandler:(RTCCreateSessionDescriptionCompletionHandler)completionHandler;
+          completionHandler:
+              (RTCCreateSessionDescriptionCompletionHandler)completionHandler;
 
 
 - (void)answerForConstraints:(RTC_OBJC_TYPE(RTCMediaConstraints) *)constraints
-           completionHandler:(RTCCreateSessionDescriptionCompletionHandler)completionHandler;
+           completionHandler:
+               (RTCCreateSessionDescriptionCompletionHandler)completionHandler;
 
 
 - (void)setLocalDescription:(RTC_OBJC_TYPE(RTCSessionDescription) *)sdp
-          completionHandler:(RTCSetSessionDescriptionCompletionHandler)completionHandler;
+          completionHandler:
+              (RTCSetSessionDescriptionCompletionHandler)completionHandler;
 
 
 
@@ -325,7 +344,8 @@ RTC_OBJC_EXPORT
 
 
 - (void)setRemoteDescription:(RTC_OBJC_TYPE(RTCSessionDescription) *)sdp
-           completionHandler:(RTCSetSessionDescriptionCompletionHandler)completionHandler;
+           completionHandler:
+               (RTCSetSessionDescriptionCompletionHandler)completionHandler;
 
 
 
@@ -337,7 +357,8 @@ RTC_OBJC_EXPORT
               maxBitrateBps:(nullable NSNumber *)maxBitrateBps;
 
 
-- (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath maxSizeInBytes:(int64_t)maxSizeInBytes;
+- (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath
+                      maxSizeInBytes:(int64_t)maxSizeInBytes;
 - (void)stopRtcEventLog;
 
 @end
@@ -360,11 +381,13 @@ RTC_OBJC_EXPORT
 
     
     - (nullable RTC_OBJC_TYPE(RTCDataChannel) *)dataChannelForLabel
-    : (NSString *)label configuration : (RTC_OBJC_TYPE(RTCDataChannelConfiguration) *)configuration;
+    : (NSString *)label configuration
+    : (RTC_OBJC_TYPE(RTCDataChannelConfiguration) *)configuration;
 
 @end
 
-typedef void (^RTCStatisticsCompletionHandler)(RTC_OBJC_TYPE(RTCStatisticsReport) *);
+typedef void (^RTCStatisticsCompletionHandler)(
+    RTC_OBJC_TYPE(RTCStatisticsReport) *);
 
 @interface RTC_OBJC_TYPE (RTCPeerConnection)
 (Stats)
@@ -372,13 +395,15 @@ typedef void (^RTCStatisticsCompletionHandler)(RTC_OBJC_TYPE(RTCStatisticsReport
     
 
 
-    - (void)statsForTrack
-    : (nullable RTC_OBJC_TYPE(RTCMediaStreamTrack) *)mediaStreamTrack statsOutputLevel
+    - (void)statsForTrack : (nullable RTC_OBJC_TYPE(RTCMediaStreamTrack) *)
+                                mediaStreamTrack statsOutputLevel
     : (RTCStatsOutputLevel)statsOutputLevel completionHandler
-    : (nullable void (^)(NSArray<RTC_OBJC_TYPE(RTCLegacyStatsReport) *> *stats))completionHandler;
+    : (nullable void (^)(NSArray<RTC_OBJC_TYPE(RTCLegacyStatsReport) *> *stats))
+          completionHandler;
 
 
-- (void)statisticsWithCompletionHandler:(RTCStatisticsCompletionHandler)completionHandler;
+- (void)statisticsWithCompletionHandler:
+    (RTCStatisticsCompletionHandler)completionHandler;
 
 
 

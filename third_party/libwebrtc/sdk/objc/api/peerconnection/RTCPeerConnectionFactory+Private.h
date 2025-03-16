@@ -24,8 +24,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
-    @property(nonatomic,
-              readonly) rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> nativeFactory;
+    @property(nonatomic, readonly) rtc::scoped_refptr<
+        webrtc::PeerConnectionFactoryInterface> nativeFactory;
 
 @property(nonatomic, readonly) rtc::Thread* signalingThread;
 @property(nonatomic, readonly) rtc::Thread* workerThread;

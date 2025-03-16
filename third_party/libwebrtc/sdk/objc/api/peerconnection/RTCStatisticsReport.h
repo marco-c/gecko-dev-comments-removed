@@ -24,7 +24,8 @@ RTC_OBJC_EXPORT
 @property(nonatomic, readonly) CFTimeInterval timestamp_us;
 
 
-@property(nonatomic, readonly) NSDictionary<NSString *, RTC_OBJC_TYPE(RTCStatistics) *> *statistics;
+@property(nonatomic, readonly)
+    NSDictionary<NSString *, RTC_OBJC_TYPE(RTCStatistics) *> *statistics;
 
 - (instancetype)init NS_UNAVAILABLE;
 
@@ -38,10 +39,12 @@ RTC_OBJC_EXPORT
 @property(nonatomic, readonly) NSString *id;
 
 
+
 @property(nonatomic, readonly) CFTimeInterval timestamp_us;
 
 
 @property(nonatomic, readonly) NSString *type;
+
 
 
 

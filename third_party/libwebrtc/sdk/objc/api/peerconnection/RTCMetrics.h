@@ -20,4 +20,5 @@
 RTC_EXTERN void RTCEnableMetrics(void);
 
 
-RTC_EXTERN NSArray<RTC_OBJC_TYPE(RTCMetricsSampleInfo) *>* RTCGetAndResetMetrics(void);
+RTC_EXTERN NSArray<RTC_OBJC_TYPE(RTCMetricsSampleInfo) *>*
+    RTCGetAndResetMetrics(void);

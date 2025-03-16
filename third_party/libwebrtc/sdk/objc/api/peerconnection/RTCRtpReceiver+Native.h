@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
+
 @interface RTC_OBJC_TYPE (RTCRtpReceiver)
 ()
 
@@ -25,7 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
-    - (void)setFrameDecryptor : (rtc::scoped_refptr<webrtc::FrameDecryptorInterface>)frameDecryptor;
+    - (void)setFrameDecryptor
+    : (rtc::scoped_refptr<webrtc::FrameDecryptorInterface>)frameDecryptor;
 
 @end
 

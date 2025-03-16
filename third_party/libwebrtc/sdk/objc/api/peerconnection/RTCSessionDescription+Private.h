@@ -22,8 +22,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
-    @property(nonatomic,
-              readonly) std::unique_ptr<webrtc::SessionDescriptionInterface> nativeDescription;
+    @property(nonatomic, readonly)
+        std::unique_ptr<webrtc::SessionDescriptionInterface> nativeDescription;
 
 
 

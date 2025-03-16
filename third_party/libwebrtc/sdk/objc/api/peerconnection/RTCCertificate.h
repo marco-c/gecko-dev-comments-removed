@@ -26,8 +26,10 @@ RTC_OBJC_EXPORT
 
 
 
+
 - (instancetype)initWithPrivateKey:(NSString *)private_key
-                       certificate:(NSString *)certificate NS_DESIGNATED_INITIALIZER;
+                       certificate:(NSString *)certificate
+    NS_DESIGNATED_INITIALIZER;
 
 - (instancetype)init NS_UNAVAILABLE;
 
@@ -37,7 +39,8 @@ RTC_OBJC_EXPORT
 
 
 
-+ (nullable RTC_OBJC_TYPE(RTCCertificate) *)generateCertificateWithParams:(NSDictionary *)params;
++ (nullable RTC_OBJC_TYPE(RTCCertificate) *)generateCertificateWithParams:
+    (NSDictionary *)params;
 
 @end
 

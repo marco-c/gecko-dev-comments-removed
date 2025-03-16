@@ -19,7 +19,8 @@ NS_ASSUME_NONNULL_BEGIN
 
     
 
-    @property(nonatomic, readonly) webrtc::PeerConnectionFactoryInterface::Options nativeOptions;
+    @property(nonatomic, readonly)
+        webrtc::PeerConnectionFactoryInterface::Options nativeOptions;
 
 @end
 

@@ -16,8 +16,8 @@
 NS_ASSUME_NONNULL_BEGIN
 
 typedef void (^RTCCallbackLoggerMessageHandler)(NSString *message);
-typedef void (^RTCCallbackLoggerMessageAndSeverityHandler)(NSString *message,
-                                                           RTCLoggingSeverity severity);
+typedef void (^RTCCallbackLoggerMessageAndSeverityHandler)(
+    NSString *message, RTCLoggingSeverity severity);
 
 
 

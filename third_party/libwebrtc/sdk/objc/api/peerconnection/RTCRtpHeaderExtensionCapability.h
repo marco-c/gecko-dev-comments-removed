@@ -26,7 +26,8 @@ RTC_OBJC_EXPORT
 @property(nonatomic, readonly, nullable) NSNumber* preferredId;
 
 
-@property(nonatomic, readonly, getter=isPreferredEncrypted) BOOL preferredEncrypted;
+@property(nonatomic, readonly, getter=isPreferredEncrypted)
+    BOOL preferredEncrypted;
 
 
 @property(nonatomic) RTCRtpTransceiverDirection direction;

@@ -23,17 +23,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
-@property(nonatomic, readonly) id<RTC_OBJC_TYPE(RTCVideoRenderer)> videoRenderer;
+@property(nonatomic, readonly) id<RTC_OBJC_TYPE(RTCVideoRenderer)>
+    videoRenderer;
 
 
 
 
 
 
-@property(nonatomic, readonly) rtc::VideoSinkInterface<webrtc::VideoFrame> *nativeVideoRenderer;
+@property(nonatomic, readonly)
+    rtc::VideoSinkInterface<webrtc::VideoFrame> *nativeVideoRenderer;
 
 
-- (instancetype)initWithNativeRenderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)videoRenderer
+- (instancetype)initWithNativeRenderer:
+    (id<RTC_OBJC_TYPE(RTCVideoRenderer)>)videoRenderer
     NS_DESIGNATED_INITIALIZER;
 
 @end

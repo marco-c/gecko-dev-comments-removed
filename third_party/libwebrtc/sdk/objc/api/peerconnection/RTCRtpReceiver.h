@@ -43,8 +43,9 @@ RTC_OBJC_EXPORT
 
 
 
-    - (void)rtpReceiver
-    : (RTC_OBJC_TYPE(RTCRtpReceiver) *)rtpReceiver didReceiveFirstPacketForMediaType
+
+    - (void)rtpReceiver : (RTC_OBJC_TYPE(RTCRtpReceiver) *)
+                              rtpReceiver didReceiveFirstPacketForMediaType
     : (RTCRtpMediaType)mediaType;
 
 @end
@@ -70,7 +71,8 @@ RTC_OBJC_EXPORT
 
 
 
-@property(nonatomic, readonly, nullable) RTC_OBJC_TYPE(RTCMediaStreamTrack) * track;
+@property(nonatomic, readonly, nullable) RTC_OBJC_TYPE(RTCMediaStreamTrack) *
+    track;
 
 
 

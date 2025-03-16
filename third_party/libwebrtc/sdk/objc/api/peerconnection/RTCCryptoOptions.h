@@ -50,10 +50,13 @@ RTC_OBJC_EXPORT
 
 
 
-- (instancetype)initWithSrtpEnableGcmCryptoSuites:(BOOL)srtpEnableGcmCryptoSuites
-              srtpEnableAes128Sha1_32CryptoCipher:(BOOL)srtpEnableAes128Sha1_32CryptoCipher
-           srtpEnableEncryptedRtpHeaderExtensions:(BOOL)srtpEnableEncryptedRtpHeaderExtensions
-                     sframeRequireFrameEncryption:(BOOL)sframeRequireFrameEncryption
+- (instancetype)
+         initWithSrtpEnableGcmCryptoSuites:(BOOL)srtpEnableGcmCryptoSuites
+       srtpEnableAes128Sha1_32CryptoCipher:
+           (BOOL)srtpEnableAes128Sha1_32CryptoCipher
+    srtpEnableEncryptedRtpHeaderExtensions:
+        (BOOL)srtpEnableEncryptedRtpHeaderExtensions
+              sframeRequireFrameEncryption:(BOOL)sframeRequireFrameEncryption
     NS_DESIGNATED_INITIALIZER;
 
 - (instancetype)init NS_UNAVAILABLE;

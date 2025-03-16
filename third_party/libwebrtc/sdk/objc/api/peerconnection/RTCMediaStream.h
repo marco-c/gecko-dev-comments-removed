@@ -25,7 +25,8 @@ RTC_OBJC_EXPORT
 @property(nonatomic, strong, readonly) NSArray<RTC_OBJC_TYPE(RTCAudioTrack) *> *audioTracks;
 
 
-@property(nonatomic, strong, readonly) NSArray<RTC_OBJC_TYPE(RTCVideoTrack) *> *videoTracks;
+@property(nonatomic, strong, readonly)
+    NSArray<RTC_OBJC_TYPE(RTCVideoTrack) *> *videoTracks;
 
 
 @property(nonatomic, readonly) NSString *streamId;

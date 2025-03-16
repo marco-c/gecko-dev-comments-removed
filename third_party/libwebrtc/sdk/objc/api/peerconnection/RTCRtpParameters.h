@@ -40,10 +40,12 @@ RTC_OBJC_EXPORT
     NSArray<RTC_OBJC_TYPE(RTCRtpHeaderExtension) *> *headerExtensions;
 
 
-@property(nonatomic, copy) NSArray<RTC_OBJC_TYPE(RTCRtpEncodingParameters) *> *encodings;
+@property(nonatomic, copy)
+    NSArray<RTC_OBJC_TYPE(RTCRtpEncodingParameters) *> *encodings;
 
 
-@property(nonatomic, copy) NSArray<RTC_OBJC_TYPE(RTCRtpCodecParameters) *> *codecs;
+@property(nonatomic, copy)
+    NSArray<RTC_OBJC_TYPE(RTCRtpCodecParameters) *> *codecs;
 
 
 

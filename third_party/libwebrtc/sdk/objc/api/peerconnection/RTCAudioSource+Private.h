@@ -19,16 +19,20 @@
 
 
 
-    @property(nonatomic,
-              readonly) rtc::scoped_refptr<webrtc::AudioSourceInterface> nativeAudioSource;
+    @property(nonatomic, readonly)
+        rtc::scoped_refptr<webrtc::AudioSourceInterface> nativeAudioSource;
 
 
-- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
-              nativeAudioSource:(rtc::scoped_refptr<webrtc::AudioSourceInterface>)nativeAudioSource
+- (instancetype)
+      initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
+    nativeAudioSource:
+        (rtc::scoped_refptr<webrtc::AudioSourceInterface>)nativeAudioSource
     NS_DESIGNATED_INITIALIZER;
 
-- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
-              nativeMediaSource:(rtc::scoped_refptr<webrtc::MediaSourceInterface>)nativeMediaSource
-                           type:(RTCMediaSourceType)type NS_UNAVAILABLE;
+- (instancetype)
+      initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
+    nativeMediaSource:
+        (rtc::scoped_refptr<webrtc::MediaSourceInterface>)nativeMediaSource
+                 type:(RTCMediaSourceType)type NS_UNAVAILABLE;
 
 @end

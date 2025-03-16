@@ -21,10 +21,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
-    @property(nonatomic, readonly) webrtc::PeerConnectionInterface::IceServer nativeServer;
+    @property(nonatomic,
+              readonly) webrtc::PeerConnectionInterface::IceServer nativeServer;
 
 
-- (instancetype)initWithNativeServer:(webrtc::PeerConnectionInterface::IceServer)nativeServer;
+- (instancetype)initWithNativeServer:
+    (webrtc::PeerConnectionInterface::IceServer)nativeServer;
 
 @end
 

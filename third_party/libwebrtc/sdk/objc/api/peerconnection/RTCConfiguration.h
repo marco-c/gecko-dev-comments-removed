@@ -35,7 +35,10 @@ typedef NS_ENUM(NSInteger, RTCBundlePolicy) {
 };
 
 
-typedef NS_ENUM(NSInteger, RTCRtcpMuxPolicy) { RTCRtcpMuxPolicyNegotiate, RTCRtcpMuxPolicyRequire };
+typedef NS_ENUM(NSInteger, RTCRtcpMuxPolicy) {
+  RTCRtcpMuxPolicyNegotiate,
+  RTCRtcpMuxPolicyRequire
+};
 
 
 typedef NS_ENUM(NSInteger, RTCTcpCandidatePolicy) {
@@ -95,7 +98,8 @@ RTC_OBJC_EXPORT
 @property(nonatomic, assign) RTCRtcpMuxPolicy rtcpMuxPolicy;
 @property(nonatomic, assign) RTCTcpCandidatePolicy tcpCandidatePolicy;
 @property(nonatomic, assign) RTCCandidateNetworkPolicy candidateNetworkPolicy;
-@property(nonatomic, assign) RTCContinualGatheringPolicy continualGatheringPolicy;
+@property(nonatomic, assign)
+    RTCContinualGatheringPolicy continualGatheringPolicy;
 
 
 
@@ -150,7 +154,8 @@ RTC_OBJC_EXPORT
 
 
 
-@property(nonatomic, assign) BOOL shouldSurfaceIceCandidatesOnIceTransportTypeChanged;
+@property(nonatomic, assign)
+    BOOL shouldSurfaceIceCandidatesOnIceTransportTypeChanged;
 
 
 
@@ -225,7 +230,8 @@ RTC_OBJC_EXPORT
 
 
 
-@property(nonatomic, copy, nullable) NSNumber *iceCheckIntervalStrongConnectivity;
+@property(nonatomic, copy, nullable)
+    NSNumber *iceCheckIntervalStrongConnectivity;
 
 
 

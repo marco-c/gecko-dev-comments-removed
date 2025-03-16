@@ -14,14 +14,17 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RTC_OBJC_TYPE (RTCRtpHeaderExtensionCapability)()
+@interface RTC_OBJC_TYPE (RTCRtpHeaderExtensionCapability)
+()
+
+    
 
 
 
 
+    @property(nonatomic, readonly) webrtc::RtpHeaderExtensionCapability
+    nativeRtpHeaderExtensionCapability;
 
-@property(nonatomic,
-          readonly) webrtc::RtpHeaderExtensionCapability nativeRtpHeaderExtensionCapability;
 
 
 

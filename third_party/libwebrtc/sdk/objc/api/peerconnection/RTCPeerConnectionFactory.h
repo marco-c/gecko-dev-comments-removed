@@ -42,27 +42,36 @@ RTC_OBJC_EXPORT
 - (instancetype)init;
 
 
-- (instancetype)
-    initWithEncoderFactory:(nullable id<RTC_OBJC_TYPE(RTCVideoEncoderFactory)>)encoderFactory
-            decoderFactory:(nullable id<RTC_OBJC_TYPE(RTCVideoDecoderFactory)>)decoderFactory;
-
 
 - (instancetype)
-    initWithEncoderFactory:(nullable id<RTC_OBJC_TYPE(RTCVideoEncoderFactory)>)encoderFactory
-            decoderFactory:(nullable id<RTC_OBJC_TYPE(RTCVideoDecoderFactory)>)decoderFactory
-               audioDevice:(nullable id<RTC_OBJC_TYPE(RTCAudioDevice)>)audioDevice;
+    initWithEncoderFactory:
+        (nullable id<RTC_OBJC_TYPE(RTCVideoEncoderFactory)>)encoderFactory
+            decoderFactory:(nullable id<RTC_OBJC_TYPE(RTCVideoDecoderFactory)>)
+                               decoderFactory;
+
+
+
+- (instancetype)
+    initWithEncoderFactory:
+        (nullable id<RTC_OBJC_TYPE(RTCVideoEncoderFactory)>)encoderFactory
+            decoderFactory:(nullable id<RTC_OBJC_TYPE(RTCVideoDecoderFactory)>)
+                               decoderFactory
+               audioDevice:
+                   (nullable id<RTC_OBJC_TYPE(RTCAudioDevice)>)audioDevice;
 
 
 
 
 
-- (RTC_OBJC_TYPE(RTCRtpCapabilities) *)rtpSenderCapabilitiesForKind:(NSString *)kind;
+- (RTC_OBJC_TYPE(RTCRtpCapabilities) *)rtpSenderCapabilitiesForKind:
+    (NSString *)kind;
 
 
 
 
 
-- (RTC_OBJC_TYPE(RTCRtpCapabilities) *)rtpReceiverCapabilitiesForKind:(NSString *)kind;
+- (RTC_OBJC_TYPE(RTCRtpCapabilities) *)rtpReceiverCapabilitiesForKind:
+    (NSString *)kind;
 
 
 - (RTC_OBJC_TYPE(RTCAudioSource) *)audioSourceWithConstraints:
@@ -74,7 +83,8 @@ RTC_OBJC_EXPORT
 - (RTC_OBJC_TYPE(RTCAudioTrack) *)audioTrackWithTrackId:(NSString *)trackId;
 
 
-- (RTC_OBJC_TYPE(RTCAudioTrack) *)audioTrackWithSource:(RTC_OBJC_TYPE(RTCAudioSource) *)source
+- (RTC_OBJC_TYPE(RTCAudioTrack) *)audioTrackWithSource:
+                                      (RTC_OBJC_TYPE(RTCAudioSource) *)source
                                                trackId:(NSString *)trackId;
 
 
@@ -91,7 +101,8 @@ RTC_OBJC_EXPORT
 - (RTC_OBJC_TYPE(RTCVideoSource) *)videoSourceForScreenCast:(BOOL)forScreenCast;
 
 
-- (RTC_OBJC_TYPE(RTCVideoTrack) *)videoTrackWithSource:(RTC_OBJC_TYPE(RTCVideoSource) *)source
+- (RTC_OBJC_TYPE(RTCVideoTrack) *)videoTrackWithSource:
+                                      (RTC_OBJC_TYPE(RTCVideoSource) *)source
                                                trackId:(NSString *)trackId;
 
 
@@ -101,22 +112,32 @@ RTC_OBJC_EXPORT
 
 
 - (nullable RTC_OBJC_TYPE(RTCPeerConnection) *)
-    peerConnectionWithConfiguration:(RTC_OBJC_TYPE(RTCConfiguration) *)configuration
-                        constraints:(RTC_OBJC_TYPE(RTCMediaConstraints) *)constraints
-                           delegate:(nullable id<RTC_OBJC_TYPE(RTCPeerConnectionDelegate)>)delegate;
+    peerConnectionWithConfiguration:
+        (RTC_OBJC_TYPE(RTCConfiguration) *)configuration
+                        constraints:
+                            (RTC_OBJC_TYPE(RTCMediaConstraints) *)constraints
+                           delegate:(nullable id<RTC_OBJC_TYPE(
+                                         RTCPeerConnectionDelegate)>)delegate;
 
 - (nullable RTC_OBJC_TYPE(RTCPeerConnection) *)
-    peerConnectionWithConfiguration:(RTC_OBJC_TYPE(RTCConfiguration) *)configuration
-                        constraints:(RTC_OBJC_TYPE(RTCMediaConstraints) *)constraints
+    peerConnectionWithConfiguration:
+        (RTC_OBJC_TYPE(RTCConfiguration) *)configuration
+                        constraints:
+                            (RTC_OBJC_TYPE(RTCMediaConstraints) *)constraints
                 certificateVerifier:
-                    (id<RTC_OBJC_TYPE(RTCSSLCertificateVerifier)>)certificateVerifier
-                           delegate:(nullable id<RTC_OBJC_TYPE(RTCPeerConnectionDelegate)>)delegate;
+                    (id<RTC_OBJC_TYPE(RTCSSLCertificateVerifier)>)
+                        certificateVerifier
+                           delegate:(nullable id<RTC_OBJC_TYPE(
+                                         RTCPeerConnectionDelegate)>)delegate;
 
 
-- (void)setOptions:(nonnull RTC_OBJC_TYPE(RTCPeerConnectionFactoryOptions) *)options;
+- (void)setOptions:
+    (nonnull RTC_OBJC_TYPE(RTCPeerConnectionFactoryOptions) *)options;
 
 
-- (BOOL)startAecDumpWithFilePath:(NSString *)filePath maxSizeInBytes:(int64_t)maxSizeInBytes;
+
+- (BOOL)startAecDumpWithFilePath:(NSString *)filePath
+                  maxSizeInBytes:(int64_t)maxSizeInBytes;
 
 
 - (void)stopAecDump;

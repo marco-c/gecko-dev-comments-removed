@@ -18,7 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
 ()
 
     
-    - (instancetype)initWithNativeReport : (const webrtc::StatsReport &)nativeReport;
+    - (instancetype)initWithNativeReport
+    : (const webrtc::StatsReport &)nativeReport;
 
 @end
 

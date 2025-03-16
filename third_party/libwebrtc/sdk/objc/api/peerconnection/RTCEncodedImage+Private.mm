@@ -16,12 +16,15 @@
 
 namespace {
 
+
 class ObjCEncodedImageBuffer : public webrtc::EncodedImageBufferInterface {
  public:
   static rtc::scoped_refptr<ObjCEncodedImageBuffer> Create(NSData *data) {
     return rtc::make_ref_counted<ObjCEncodedImageBuffer>(data);
   }
-  const uint8_t *data() const override { return static_cast<const uint8_t *>(data_.bytes); }
+  const uint8_t *data() const override {
+    return static_cast<const uint8_t *>(data_.bytes);
+  }
   
   uint8_t *data() override {
     return const_cast<uint8_t *>(static_cast<const uint8_t *>(data_.bytes));
@@ -34,12 +37,13 @@ class ObjCEncodedImageBuffer : public webrtc::EncodedImageBufferInterface {
 
   NSData *data_;
 };
-}
+}  
 
 
 
 @interface RTCWrappedEncodedImageBuffer : NSObject
-@property(nonatomic) rtc::scoped_refptr<webrtc::EncodedImageBufferInterface> buffer;
+@property(nonatomic) rtc::scoped_refptr<webrtc::EncodedImageBufferInterface>
+    buffer;
 - (instancetype)initWithEncodedImageBuffer:
     (rtc::scoped_refptr<webrtc::EncodedImageBufferInterface>)buffer;
 @end
@@ -64,7 +68,8 @@ class ObjCEncodedImageBuffer : public webrtc::EncodedImageBufferInterface {
   return wrappedBuffer.buffer;
 }
 
-- (void)setEncodedData:(rtc::scoped_refptr<webrtc::EncodedImageBufferInterface>)buffer {
+- (void)setEncodedData:
+    (rtc::scoped_refptr<webrtc::EncodedImageBufferInterface>)buffer {
   return objc_setAssociatedObject(
       self,
       @selector(encodedData),
@@ -72,7 +77,8 @@ class ObjCEncodedImageBuffer : public webrtc::EncodedImageBufferInterface {
       OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (instancetype)initWithNativeEncodedImage:(const webrtc::EncodedImage &)encodedImage {
+- (instancetype)initWithNativeEncodedImage:
+    (const webrtc::EncodedImage &)encodedImage {
   self = [super init];
   if (self) {
     
@@ -83,7 +89,8 @@ class ObjCEncodedImageBuffer : public webrtc::EncodedImageBufferInterface {
                                        length:encodedImage.size()
                                  freeWhenDone:NO];
     self.encodedWidth = rtc::dchecked_cast<int32_t>(encodedImage._encodedWidth);
-    self.encodedHeight = rtc::dchecked_cast<int32_t>(encodedImage._encodedHeight);
+    self.encodedHeight =
+        rtc::dchecked_cast<int32_t>(encodedImage._encodedHeight);
     self.timeStamp = encodedImage.RtpTimestamp();
     self.captureTimeMs = encodedImage.capture_time_ms_;
     self.ntpTimeMs = encodedImage.ntp_time_ms_;
@@ -93,7 +100,8 @@ class ObjCEncodedImageBuffer : public webrtc::EncodedImageBufferInterface {
     self.frameType = static_cast<RTCFrameType>(encodedImage._frameType);
     self.rotation = static_cast<RTCVideoRotation>(encodedImage.rotation_);
     self.qp = @(encodedImage.qp_);
-    self.contentType = (encodedImage.content_type_ == webrtc::VideoContentType::SCREENSHARE) ?
+    self.contentType =
+        (encodedImage.content_type_ == webrtc::VideoContentType::SCREENSHARE) ?
         RTCVideoContentTypeScreenshare :
         RTCVideoContentTypeUnspecified;
   }
@@ -111,7 +119,8 @@ class ObjCEncodedImageBuffer : public webrtc::EncodedImageBufferInterface {
   }
   encodedImage.set_size(self.buffer.length);
   encodedImage._encodedWidth = rtc::dchecked_cast<uint32_t>(self.encodedWidth);
-  encodedImage._encodedHeight = rtc::dchecked_cast<uint32_t>(self.encodedHeight);
+  encodedImage._encodedHeight =
+      rtc::dchecked_cast<uint32_t>(self.encodedHeight);
   encodedImage.SetRtpTimestamp(self.timeStamp);
   encodedImage.capture_time_ms_ = self.captureTimeMs;
   encodedImage.ntp_time_ms_ = self.ntpTimeMs;
@@ -121,7 +130,8 @@ class ObjCEncodedImageBuffer : public webrtc::EncodedImageBufferInterface {
   encodedImage._frameType = webrtc::VideoFrameType(self.frameType);
   encodedImage.rotation_ = webrtc::VideoRotation(self.rotation);
   encodedImage.qp_ = self.qp ? self.qp.intValue : -1;
-  encodedImage.content_type_ = (self.contentType == RTCVideoContentTypeScreenshare) ?
+  encodedImage.content_type_ =
+      (self.contentType == RTCVideoContentTypeScreenshare) ?
       webrtc::VideoContentType::SCREENSHARE :
       webrtc::VideoContentType::UNSPECIFIED;
 

@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
+
 @interface RTC_OBJC_TYPE (RTCRtpSender)
 ()
 
@@ -26,7 +27,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
-    - (void)setFrameEncryptor : (rtc::scoped_refptr<webrtc::FrameEncryptorInterface>)frameEncryptor;
+    - (void)setFrameEncryptor
+    : (rtc::scoped_refptr<webrtc::FrameEncryptorInterface>)frameEncryptor;
 
 @end
 

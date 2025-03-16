@@ -52,11 +52,13 @@ RTC_OBJC_EXPORT
 - (instancetype)init;
 
 
-- (instancetype)initWithDirPath:(NSString *)dirPath maxFileSize:(NSUInteger)maxFileSize;
+- (instancetype)initWithDirPath:(NSString *)dirPath
+                    maxFileSize:(NSUInteger)maxFileSize;
 
 - (instancetype)initWithDirPath:(NSString *)dirPath
                     maxFileSize:(NSUInteger)maxFileSize
-                   rotationType:(RTCFileLoggerRotationType)rotationType NS_DESIGNATED_INITIALIZER;
+                   rotationType:(RTCFileLoggerRotationType)rotationType
+    NS_DESIGNATED_INITIALIZER;
 
 
 
