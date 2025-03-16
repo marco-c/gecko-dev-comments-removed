@@ -686,6 +686,10 @@ class ThunderbirdInstance(GeckoInstance):
         except ImportError:
             try:
                 
+                here = os.path.dirname(__file__)
+                sys.path.append(
+                    os.path.join(here, "../../../../comm/testing/marionette")
+                )
                 from thunderbirdinstance import thunderbird_prefs
             except ImportError:
                 thunderbird_prefs = {}
