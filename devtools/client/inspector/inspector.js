@@ -196,7 +196,12 @@ Inspector.prototype = {
 
 
 
-  async init() {
+
+
+
+
+
+  async init(options = {}) {
     
     localizeMarkup(this.panelDoc);
 
@@ -214,6 +219,15 @@ Inspector.prototype = {
     
     
     this.setupSplitter();
+
+    
+    
+    this._defaultStartupNode = options.defaultStartupNode;
+
+    
+    
+    
+    this._defaultNode = null;
 
     await this.commands.targetCommand.watchTargets({
       types: [this.commands.targetCommand.TYPES.FRAME],
@@ -365,7 +379,6 @@ Inspector.prototype = {
     
     this._newRootStart = this.panelWin.performance.now();
 
-    this._defaultNode = null;
     this.selection.setNodeFront(null);
     this._destroyMarkup();
 
@@ -587,8 +600,10 @@ Inspector.prototype = {
 
 
   async _getDefaultNodeForSelection(rootNodeFront) {
-    if (this._defaultNode) {
-      return this._defaultNode;
+    if (this._defaultStartupNode) {
+      const node = this._defaultStartupNode;
+      this._defaultStartupNode = null;
+      return node;
     }
 
     

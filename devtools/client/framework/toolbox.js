@@ -4053,13 +4053,15 @@ Toolbox.prototype = {
     
 
 
-    const _getInspector = async () => {
+
+
+    const _getInspector = async options => {
       const inspector = this.getPanel("inspector");
       if (inspector) {
         return inspector;
       }
 
-      return this.loadTool("inspector");
+      return this.loadTool("inspector", options);
     };
 
     
@@ -4101,7 +4103,13 @@ Toolbox.prototype = {
             return null;
           }
 
-          const inspector = await _getInspector();
+          const inspector = await _getInspector({
+            
+            
+            
+            
+            defaultStartupNode: nodeFront,
+          });
           return inspector.highlighters.showHighlighterTypeForNode(
             inspector.highlighters.TYPES.BOXMODEL,
             nodeFront,

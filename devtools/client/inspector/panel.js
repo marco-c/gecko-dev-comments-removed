@@ -8,8 +8,14 @@ function InspectorPanel(iframeWindow, toolbox, commands) {
   this._inspector = new iframeWindow.Inspector(toolbox, commands);
 }
 InspectorPanel.prototype = {
-  open() {
-    return this._inspector.init();
+  
+
+
+
+
+
+  open(options = {}) {
+    return this._inspector.init(options);
   },
 
   destroy() {

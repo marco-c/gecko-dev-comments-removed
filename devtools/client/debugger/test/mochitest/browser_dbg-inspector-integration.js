@@ -107,10 +107,23 @@ add_task(async function () {
   
   await pushPref("devtools.inspector.three-pane-enabled", false);
 
-  const dbg = await initDebugger("doc-event-handler.html");
+  
+  const iframeUrl = EXAMPLE_URL + "doc-event-handler.html";
+  const dbg = await initDebuggerWithAbsoluteURL(
+    `https://example.org/document-builder.sjs?html=top<iframe src="${iframeUrl}"><iframe>`
+  );
   const { toolbox } = dbg;
 
-  invokeInTab("synthesizeClick");
+  
+  const iframeBc = await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [],
+    () => content.document.querySelector("iframe").browsingContext
+  );
+  SpecialPowers.spawn(iframeBc, [], () =>
+    content.wrappedJSObject.synthesizeClick()
+  );
+
   await waitForPaused(dbg);
 
   findElement(dbg, "frame", 2).focus();
@@ -123,6 +136,12 @@ add_task(async function () {
   await waitForDocumentLoadComplete(dbg);
 
   
+  const iframeThread = dbg.selectors
+    .getThreads()
+    .find(({ url }) => url === iframeUrl);
+  await waitForPausedThread(dbg, iframeThread.actor);
+
+  
   await tryHovering(dbg, 5, 8, "popup");
 
   info("Wait for top level node to expand and child nodes to load");
@@ -130,18 +149,65 @@ add_task(async function () {
     () => dbg.win.document.querySelectorAll(".preview-popup .node").length > 1
   );
 
+  info("Mouseover the open in inspector button");
+  const openInspectorEl = await waitForElement(dbg, "openInspector");
+  openInspectorEl.scrollIntoView();
+  const view = openInspectorEl.ownerDocument.defaultView;
+  EventUtils.synthesizeMouseAtCenter(
+    openInspectorEl,
+    { type: "mouseover" },
+    view
+  );
+
+  info("Wait for highligther to be shown");
   
-  await waitForElement(dbg, "openInspector");
+  
+  
+  
+  await SpecialPowers.spawn(iframeBc, [], () => {
+    const doc = content.document;
+    return ContentTaskUtils.waitForCondition(() => {
+      
+      const roots = doc.getConnectedShadowRoots();
+      const getBoxModelHighlighterInfoBarEl = root =>
+        root.querySelector(
+          ".highlighter-container.box-model #box-model-infobar-container"
+        );
+      const boxModelRoot = roots.find(root =>
+        getBoxModelHighlighterInfoBarEl(root)
+      );
+      if (!boxModelRoot) {
+        return false;
+      }
+      const boxModelInfoBarEl = getBoxModelHighlighterInfoBarEl(boxModelRoot);
+      return (
+        
+        boxModelInfoBarEl.getAttribute("hidden") === null &&
+        
+        boxModelInfoBarEl.querySelector(".box-model-infobar-id")
+          ?.textContent === "#clicky"
+      );
+    }, "wait for hihglighter to be visible");
+  });
+
+  
+  await wait(1000);
+  ok(dbg.selectors.getIsCurrentThreadPaused(), "current thread is paused");
+  ok(
+    findElement(dbg, "threadsPaneItemPause", 2).classList.contains("selected"),
+    `iframe thread is still selected`
+  );
 
   
   
-  const inspector = await toolbox.loadTool("inspector");
-
+  
+  const inspector = await toolbox.getPanel("inspector");
   const onInspectorSelected = toolbox.once("inspector-selected");
   const onInspectorUpdated = inspector.once("inspector-updated");
   const onNewNode = toolbox.selection.once("new-node-front");
 
-  findElement(dbg, "openInspector").click();
+  
+  openInspectorEl.click();
 
   await onInspectorSelected;
   await onInspectorUpdated;
