@@ -5,11 +5,7 @@ const INSTALL_XPI = `${BASE}/browser_webext_permissions.xpi`;
 
 
 
-
-
-
-
-const expectedPermsCount = !ExtensionsUI.SHOW_FULL_DOMAINS_LIST ? 5 : 4;
+const expectedPermsCount = 4;
 
 function assertPermissionsListCount({ grantedPermissionsCount }) {
   let permsUL = document.getElementById("addon-webext-perm-list");

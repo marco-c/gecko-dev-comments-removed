@@ -129,21 +129,6 @@ add_task(async function test_permissions_prompt() {
 
 
 add_task(async function testOptionalPermissionsDialogShowsFullDomainsList() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      
-      
-      
-      
-      ["extensions.ui.installDialogFullDomains", true],
-    ],
-  });
-  
-  ok(
-    ExtensionsUI.SHOW_FULL_DOMAINS_LIST,
-    "Expect SHOW_FULL_DOMAINS_LIST to be enabled"
-  );
-
   const createTestExtension = ({
     id,
     domainsListLength = 0,

@@ -180,21 +180,6 @@ add_task(async function test_sideloaded_extension_permissions_prompt() {
 });
 
 add_task(async function testInstallDialogShowsFullDomainsList() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      
-      
-      
-      
-      ["extensions.ui.installDialogFullDomains", true],
-    ],
-  });
-  
-  ok(
-    ExtensionsUI.SHOW_FULL_DOMAINS_LIST,
-    "Expect SHOW_FULL_DOMAINS_LIST to be enabled"
-  );
-
   const createTestExtensionXPI = ({
     id,
     domainsListLength = 0,
@@ -617,6 +602,4 @@ add_task(async function testInstallDialogShowsFullDomainsList() {
       });
     }
   }
-
-  await SpecialPowers.popPrefEnv();
 });

@@ -397,31 +397,9 @@ async function testInstallMethod(installFn) {
 
     let panel = await promisePopupNotificationShown("addon-webext-permissions");
     if (filename == PERMS_XPI) {
-      
-      
-      
-      
-      
-      
-      
-      
-      const hostPermissions = !ExtensionsUI.SHOW_FULL_DOMAINS_LIST
-        ? [
-            [
-              "webext-perms-host-description-wildcard",
-              { domain: "wildcard.domain" },
-            ],
-            [
-              "webext-perms-host-description-one-site",
-              { domain: "singlehost.domain" },
-            ],
-          ]
-        : [
-            [
-              "webext-perms-host-description-multiple-domains",
-              { domainCount: 2 },
-            ],
-          ];
+      const hostPermissions = [
+        ["webext-perms-host-description-multiple-domains", { domainCount: 2 }],
+      ];
 
       
       
