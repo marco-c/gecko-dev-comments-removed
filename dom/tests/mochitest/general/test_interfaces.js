@@ -905,7 +905,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "MouseScrollEvent", insecureContext: true },
   
-  { name: "MutationEvent", insecureContext: true },
+  { name: "MutationEvent", insecureContext: true, nightly: false },
   
   { name: "MutationObserver", insecureContext: true },
   
