@@ -5039,15 +5039,12 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElementHole(
              "Extensible objects should not have frozen elements");
 
   uint32_t initLength = nobj->getDenseInitializedLength();
+  uint32_t capacity = nobj->getDenseCapacity();
 
   
   
   
-  
-  
-  
-  
-  bool isAdd = index == initLength;
+  bool isAdd = index >= initLength && index <= capacity;
   bool isHoleInBounds =
       index < initLength && !nobj->containsDenseElement(index);
   if (!isAdd && !isHoleInBounds) {

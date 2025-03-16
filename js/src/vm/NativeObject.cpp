@@ -447,7 +447,6 @@ bool NativeObject::addDenseElementPure(JSContext* cx, NativeObject* obj) {
   
   AutoUnsafeCallWithABI unsafe;
 
-  MOZ_ASSERT(obj->getDenseInitializedLength() == obj->getDenseCapacity());
   MOZ_ASSERT(obj->isExtensible());
   MOZ_ASSERT(!obj->isIndexed());
   MOZ_ASSERT(!obj->is<TypedArrayObject>());

@@ -9302,26 +9302,30 @@ void MacroAssembler::registerIterator(Register enumeratorsList, Register iter,
 
 void MacroAssembler::prepareOOBStoreElement(Register object, Register index,
                                             Register elements,
-                                            Register spectreTemp,
-                                            Label* failure,
+                                            Register maybeTemp, Label* failure,
                                             LiveRegisterSet volatileLiveRegs) {
   Address length(elements, ObjectElements::offsetOfLength());
   Address initLength(elements, ObjectElements::offsetOfInitializedLength());
   Address capacity(elements, ObjectElements::offsetOfCapacity());
+  Address flags(elements, ObjectElements::offsetOfFlags());
 
   
-  branch32(Assembler::NotEqual, initLength, index, failure);
-
   
-  
-  Label allocElement, addNewElement;
-  spectreBoundsCheck32(index, capacity, spectreTemp, &allocElement);
-  jump(&addNewElement);
+  Label allocElement, enoughCapacity;
+  spectreBoundsCheck32(index, capacity, maybeTemp, &allocElement);
+  jump(&enoughCapacity);
 
   bind(&allocElement);
 
+  
+  
+  
+  branch32(Assembler::NotEqual, capacity, index, failure);
+
   volatileLiveRegs.takeUnchecked(elements);
-  volatileLiveRegs.takeUnchecked(spectreTemp);
+  if (maybeTemp != InvalidReg) {
+    volatileLiveRegs.takeUnchecked(maybeTemp);
+  }
   PushRegsInMask(volatileLiveRegs);
 
   
@@ -9339,16 +9343,45 @@ void MacroAssembler::prepareOOBStoreElement(Register object, Register index,
   
   loadPtr(Address(object, NativeObject::offsetOfElements()), elements);
 
-  bind(&addNewElement);
+  bind(&enoughCapacity);
 
   
-  add32(Imm32(1), initLength);
+  Register temp;
+  if (maybeTemp == InvalidReg) {
+    push(object);
+    temp = object;
+  } else {
+    temp = maybeTemp;
+  }
 
   
-  Label skipIncrementLength;
-  branch32(Assembler::Above, length, index, &skipIncrementLength);
-  add32(Imm32(1), length);
-  bind(&skipIncrementLength);
+  load32(initLength, temp);
+
+  
+  Label noHoles, loop, done;
+  branch32(Assembler::Equal, temp, index, &noHoles);
+  or32(Imm32(ObjectElements::NON_PACKED), flags);
+
+  
+  bind(&loop);
+  storeValue(MagicValue(JS_ELEMENTS_HOLE), BaseValueIndex(elements, temp));
+  add32(Imm32(1), temp);
+  branch32(Assembler::NotEqual, temp, index, &loop);
+
+  bind(&noHoles);
+
+  
+  add32(Imm32(1), temp);
+  store32(temp, initLength);
+
+  
+  branch32(Assembler::Above, length, temp, &done);
+  store32(temp, length);
+  bind(&done);
+
+  if (maybeTemp == InvalidReg) {
+    pop(object);
+  }
 }
 
 void MacroAssembler::toHashableNonGCThing(ValueOperand value,
