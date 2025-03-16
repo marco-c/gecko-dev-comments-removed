@@ -294,6 +294,14 @@ pub trait Flags: Sized + 'static {
     }
 
     
+    fn clear(&mut self)
+    where
+        Self: Sized,
+    {
+        *self = Self::empty();
+    }
+
+    
     #[must_use]
     fn intersection(self, other: Self) -> Self {
         Self::from_bits_retain(self.bits() & other.bits())
