@@ -42,6 +42,7 @@
 #include "nsDebug.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIScriptObjectPrincipal.h"
+#include "nsISupportsImpl.h"
 #include "nsJSEnvironment.h"
 #include "nsJSPrincipals.h"
 #include "nsJSUtils.h"
@@ -218,6 +219,119 @@ already_AddRefed<Promise> Promise::All(
   return CreateFromExisting(global, result, aPropagateUserInteraction);
 }
 
+struct WaitForAllEmptyTask : public MicroTaskRunnable {
+  WaitForAllEmptyTask(
+      nsIGlobalObject* aGlobal,
+      const std::function<void(const Span<JS::Heap<JS::Value>>&)>& aCallback)
+      : mGlobal(aGlobal), mCallback(aCallback) {}
+
+ private:
+  virtual void Run(AutoSlowOperation&) override { mCallback({}); }
+
+  virtual bool Suppressed() override { return mGlobal->IsInSyncOperation(); }
+
+  nsCOMPtr<nsIGlobalObject> mGlobal;
+  const std::function<void(const Span<JS::Heap<JS::Value>>&)> mCallback;
+};
+
+
+
+struct WaitForAllResults {
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(WaitForAllResults)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(WaitForAllResults)
+
+  explicit WaitForAllResults(size_t aSize) : mResult(aSize) {
+    HoldJSObjects(this);
+
+    mResult.EnsureLengthAtLeast(aSize);
+  }
+
+  
+  size_t mFullfilledCount = 0;
+
+  
+  bool mRejected = false;
+
+  nsTArray<JS::Heap<JS::Value>> mResult;
+
+ private:
+  ~WaitForAllResults() { DropJSObjects(this); };
+};
+
+NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(WaitForAllResults, (), (mResult))
+
+
+
+void Promise::WaitForAll(
+    nsIGlobalObject* aGlobal, const Span<RefPtr<Promise>>& aPromises,
+    const std::function<void(const Span<JS::Heap<JS::Value>>&)>& aSuccessSteps,
+    const std::function<void(JS::Handle<JS::Value>)>& aFailureSteps) {
+  
+
+  
+  const auto& rejectionHandlerSteps =
+      [aFailureSteps](JSContext* aCx, JS::Handle<JS::Value> aArg,
+                      ErrorResult& aRv,
+                      const RefPtr<WaitForAllResults>& aResult) {
+        
+        if (aResult->mRejected) {
+          return nullptr;
+        }
+        
+        aResult->mRejected = true;
+        
+        aFailureSteps(aArg);
+        return nullptr;
+      };
+  
+  const size_t total = aPromises.size();
+  
+  if (!total) {
+    CycleCollectedJSContext* context = CycleCollectedJSContext::Get();
+    if (context) {
+      RefPtr<MicroTaskRunnable> microTask =
+          new WaitForAllEmptyTask(aGlobal, aSuccessSteps);
+      
+      context->DispatchToMicroTask(microTask.forget());
+    }
+    
+    return;
+  }
+  
+  size_t index = 0;
+  
+  
+  
+  
+  RefPtr result = MakeAndAddRef<WaitForAllResults>(total);
+  
+  for (const auto& promise : aPromises) {
+    
+    const auto& fulfillmentHandlerSteps =
+        [aSuccessSteps, promiseIndex = index](
+            JSContext* aCx, JS::Handle<JS::Value> aArg, ErrorResult& aRv,
+            const RefPtr<WaitForAllResults>& aResult)
+        -> already_AddRefed<Promise> {
+      
+      aResult->mResult[promiseIndex].set(aArg.get());
+      
+      aResult->mFullfilledCount++;
+      
+      
+      if (aResult->mFullfilledCount == aResult->mResult.Length()) {
+        aSuccessSteps(aResult->mResult);
+      }
+      return nullptr;
+    };
+    
+    (void)promise->ThenCatchWithCycleCollectedArgs(
+        fulfillmentHandlerSteps, rejectionHandlerSteps, result);
+
+    
+    index++;
+  }
+}
+
 static void SettlePromise(Promise* aSettlingPromise, Promise* aCallbackPromise,
                           ErrorResult& aRv) {
   if (!aSettlingPromise) {
@@ -390,11 +504,11 @@ namespace {
 class PromiseNativeHandlerShim final : public PromiseNativeHandler {
   RefPtr<PromiseNativeHandler> mInner;
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  enum InnerState{
-      NotCleared,
-      ClearedFromResolve,
-      ClearedFromReject,
-      ClearedFromCC,
+  enum InnerState {
+    NotCleared,
+    ClearedFromResolve,
+    ClearedFromReject,
+    ClearedFromCC,
   };
   InnerState mState = NotCleared;
 #endif
