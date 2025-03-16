@@ -652,13 +652,14 @@ void Theme::PaintRadioControl(PaintBackendData& aPaintData,
   }
 
   if (aState.HasState(ElementState::CHECKED)) {
+    
+    const CSSCoord kInnerBorderWidth = 2.0f;
     LayoutDeviceRect rect(aRect);
-    
-    
-    rect.Deflate(std::max(LayoutDeviceIntCoord(1),
-                          (LayoutDeviceCoord(rect.width) * 0.25f).Truncated()));
-    PaintStrokedCircle(aPaintData, rect, checkColor, sTransparent, 0,
-                       aDpiRatio);
+    auto width = LayoutDeviceCoord(
+        ThemeDrawing::SnapBorderWidth(kInnerBorderWidth, aDpiRatio));
+    rect.Deflate(width);
+    PaintStrokedCircle(aPaintData, rect, backgroundColor, checkColor,
+                       kInnerBorderWidth, aDpiRatio);
   }
 
   if (aState.HasState(ElementState::FOCUSRING)) {
