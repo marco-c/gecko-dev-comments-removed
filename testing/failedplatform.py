@@ -4,7 +4,7 @@
 
 
 from functools import reduce
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 
 class FailedPlatform:
@@ -23,7 +23,12 @@ class FailedPlatform:
         
         
         
-        oop_permutations: Dict[str, Dict[str, Dict[str, int]]],
+        oop_permutations: Optional[
+            Dict[
+                str,  
+                Dict[str, Dict[str, int]],  
+            ]
+        ],
     ) -> None:
         
         self.failures: Dict[str, Set[str]] = {}
