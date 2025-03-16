@@ -1426,6 +1426,23 @@ body {
 
 
 
+
+addUiaTask(``, async function testTextSupportedTextSelectionSelectableBody() {
+  is(
+    await runPython(`
+      global doc
+      doc = getDocUia()
+      text = getUiaPattern(doc, "Text")
+      return text.SupportedTextSelection
+    `),
+    SupportedTextSelection_Multiple,
+    "doc SupportedTextSelection correct"
+  );
+});
+
+
+
+
 addUiaTask(
   `<textarea id="textarea" cols="2">ab cd</textarea>`,
   async function testTextGetSelectionCaret(browser, docAcc) {
