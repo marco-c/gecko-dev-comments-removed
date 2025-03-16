@@ -1756,7 +1756,10 @@ class ArenaCollection {
   
   Tree mMainThreadArenas MOZ_GUARDED_BY(mLock);
 
-  Atomic<int32_t, MemoryOrdering::Relaxed> mDefaultMaxDirtyPageModifier;
+  
+  
+  
+  Atomic<int32_t> mDefaultMaxDirtyPageModifier;
   
   Maybe<ThreadId> mMainThreadId;
 
