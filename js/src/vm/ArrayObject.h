@@ -19,7 +19,7 @@ class ArrayObject : public NativeObject {
   
   
   static const uint32_t EagerAllocationMaxLength =
-      2048 - ObjectElements::VALUES_PER_HEADER;
+      (1 << 16) - ObjectElements::VALUES_PER_HEADER - 1;
 
   static const JSClass class_;
 
