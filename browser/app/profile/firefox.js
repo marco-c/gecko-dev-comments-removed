@@ -2115,6 +2115,9 @@ pref("browser.ml.chat.shortcuts.longPress", 60000);
 pref("browser.ml.chat.sidebar", true);
 
 
+pref("browser.ml.linkPreview.enabled", false);
+
+
 pref("security.mixed_content.block_active_content", true);
 
 
