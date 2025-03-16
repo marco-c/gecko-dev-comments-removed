@@ -27,6 +27,12 @@ namespace mozilla::ipc {
 
 namespace shared_memory {
 
+enum class Type {
+  Mutable,
+  ReadOnly,
+  Freezable,
+};
+
 
 
 
@@ -38,8 +44,22 @@ using PlatformHandle = mozilla::UniqueMachSendRight;
 using PlatformHandle = mozilla::UniqueFileHandle;
 #endif
 
+template <Type T>
 struct Handle;
-struct ReadOnlyHandle;
+
+template <Type T, bool WithHandle = false>
+struct Mapping;
+
+using MutableHandle = Handle<Type::Mutable>;
+using ReadOnlyHandle = Handle<Type::ReadOnly>;
+using FreezableHandle = Handle<Type::Freezable>;
+
+using MutableMapping = Mapping<Type::Mutable>;
+using ReadOnlyMapping = Mapping<Type::ReadOnly>;
+using FreezableMapping = Mapping<Type::Freezable>;
+
+using MutableMappingWithHandle = Mapping<Type::Mutable, true>;
+using ReadOnlyMappingWithHandle = Mapping<Type::ReadOnly, true>;
 
 class HandleBase {
  public:
@@ -67,7 +87,7 @@ class HandleBase {
   PlatformHandle TakePlatformHandle() && { return std::move(mHandle); }
 
   friend class Platform;
-  friend struct IPC::ParamTraits<mozilla::ipc::shared_memory::Handle>;
+  friend struct IPC::ParamTraits<mozilla::ipc::shared_memory::MutableHandle>;
   friend struct IPC::ParamTraits<mozilla::ipc::shared_memory::ReadOnlyHandle>;
   friend struct mozilla::geckoargs::CommandLineArg<
       mozilla::ipc::shared_memory::ReadOnlyHandle>;
@@ -88,14 +108,14 @@ class HandleBase {
 
   HandleBase Clone() const;
 
-  template <typename Derived>
-  Derived CloneAs() const {
-    return Clone().ConvertTo<Derived>();
+  template <Type T>
+  Handle<T> CloneAs() const {
+    return Clone().ConvertTo<T>();
   }
 
-  template <typename Derived>
-  Derived ConvertTo() && {
-    Derived d;
+  template <Type T>
+  Handle<T> ConvertTo() && {
+    Handle<T> d;
     static_cast<HandleBase&>(d) = std::move(*this);
     return d;
   }
@@ -119,7 +139,8 @@ class HandleBase {
 
 
 
-struct Handle : HandleBase {
+template <>
+struct Handle<Type::Mutable> : HandleBase {
   
 
 
@@ -129,7 +150,7 @@ struct Handle : HandleBase {
   
 
 
-  Handle Clone() const { return CloneAs<Handle>(); }
+  Handle Clone() const { return CloneAs<Type::Mutable>(); }
 
   
 
@@ -150,40 +171,51 @@ struct Handle : HandleBase {
   
 
 
-  struct Mapping Map(void* aFixedAddress = nullptr) const;
+  MutableMapping Map(void* aFixedAddress = nullptr) const;
 
   
 
 
-  struct Mapping MapSubregion(uint64_t aOffset, size_t aSize,
+  MutableMapping MapSubregion(uint64_t aOffset, size_t aSize,
                               void* aFixedAddress = nullptr) const;
+
+  
+
+
+  MutableMappingWithHandle MapWithHandle(void* aFixedAddress = nullptr) &&;
 };
 
 
 
 
-struct ReadOnlyHandle : HandleBase {
+template <>
+struct Handle<Type::ReadOnly> : HandleBase {
   
 
 
-  ReadOnlyHandle() = default;
-  MOZ_IMPLICIT ReadOnlyHandle(std::nullptr_t) {}
-
-  
-
-
-  ReadOnlyHandle Clone() const { return CloneAs<ReadOnlyHandle>(); }
+  Handle() = default;
+  MOZ_IMPLICIT Handle(std::nullptr_t) {}
 
   
 
 
-  struct ReadOnlyMapping Map(void* aFixedAddress = nullptr) const;
+  Handle Clone() const { return CloneAs<Type::ReadOnly>(); }
 
   
 
 
-  struct ReadOnlyMapping MapSubregion(uint64_t aOffset, size_t aSize,
-                                      void* aFixedAddress = nullptr) const;
+  ReadOnlyMapping Map(void* aFixedAddress = nullptr) const;
+
+  
+
+
+  ReadOnlyMapping MapSubregion(uint64_t aOffset, size_t aSize,
+                               void* aFixedAddress = nullptr) const;
+
+  
+
+
+  ReadOnlyMappingWithHandle MapWithHandle(void* aFixedAddress = nullptr) &&;
 };
 
 
@@ -192,21 +224,22 @@ struct ReadOnlyHandle : HandleBase {
 
 
 
-struct FreezableHandle : HandleBase {
+template <>
+struct Handle<Type::Freezable> : HandleBase {
   
 
 
-  FreezableHandle() = default;
-  MOZ_IMPLICIT FreezableHandle(std::nullptr_t) {}
-  ~FreezableHandle();
+  Handle() = default;
+  MOZ_IMPLICIT Handle(std::nullptr_t) {}
+  ~Handle();
 
-  FreezableHandle(FreezableHandle&&) = default;
-  FreezableHandle& operator=(FreezableHandle&&) = default;
+  Handle(Handle&&) = default;
+  Handle& operator=(Handle&&) = default;
 
   
 
 
-  Handle WontFreeze() &&;
+  MutableHandle WontFreeze() &&;
 
   
 
@@ -216,13 +249,13 @@ struct FreezableHandle : HandleBase {
   
 
 
-  struct FreezableMapping Map(void* aFixedAddress = nullptr) &&;
+  FreezableMapping Map(void* aFixedAddress = nullptr) &&;
 
   
 
 
-  struct FreezableMapping MapSubregion(uint64_t aOffset, size_t aSize,
-                                       void* aFixedAddress = nullptr) &&;
+  FreezableMapping MapSubregion(uint64_t aOffset, size_t aSize,
+                                void* aFixedAddress = nullptr) &&;
 
   friend class Platform;
 #if !defined(XP_DARWIN) && !defined(XP_WIN) && !defined(ANDROID)
@@ -234,7 +267,7 @@ struct FreezableHandle : HandleBase {
 
 
 
-Handle Create(uint64_t aSize);
+MutableHandle Create(uint64_t aSize);
 
 
 
@@ -261,7 +294,7 @@ bool UsingPosixShm();
 
 }  
 
-using MutableSharedMemoryHandle = shared_memory::Handle;
+using MutableSharedMemoryHandle = shared_memory::MutableHandle;
 using ReadOnlySharedMemoryHandle = shared_memory::ReadOnlyHandle;
 using FreezableSharedMemoryHandle = shared_memory::FreezableHandle;
 
@@ -270,11 +303,11 @@ using FreezableSharedMemoryHandle = shared_memory::FreezableHandle;
 namespace IPC {
 
 template <>
-struct ParamTraits<mozilla::ipc::shared_memory::Handle> {
+struct ParamTraits<mozilla::ipc::shared_memory::MutableHandle> {
   static void Write(MessageWriter* aWriter,
-                    mozilla::ipc::shared_memory::Handle&& aParam);
+                    mozilla::ipc::shared_memory::MutableHandle&& aParam);
   static bool Read(MessageReader* aReader,
-                   mozilla::ipc::shared_memory::Handle* aResult);
+                   mozilla::ipc::shared_memory::MutableHandle* aResult);
 };
 
 template <>
