@@ -238,6 +238,8 @@ class nsHostResolver : public nsISupports, public AHostResolver {
 
 
 
+
+
   nsresult ConditionallyRefreshRecord(nsHostRecord* rec, const nsACString& host,
                                       const mozilla::MutexAutoLock& aLock)
       MOZ_REQUIRES(mLock);

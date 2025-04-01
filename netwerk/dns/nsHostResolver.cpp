@@ -697,10 +697,8 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromCache(
 
   
   RefPtr<nsHostRecord> result = aRec;
-  if (IS_ADDR_TYPE(aType)) {
-    glean::dns::lookup_method.AccumulateSingleSample(METHOD_HIT);
-  }
 
+  
   
   
   
@@ -709,9 +707,6 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromCache(
   if (aRec->negative) {
     LOG(("  Negative cache entry for host [%s].\n",
          nsPromiseFlatCString(aHost).get()));
-    if (IS_ADDR_TYPE(aType)) {
-      glean::dns::lookup_method.AccumulateSingleSample(METHOD_NEGATIVE_HIT);
-    }
     aStatus = NS_ERROR_UNKNOWN_HOST;
   }
 
@@ -805,7 +800,6 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromUnspecEntry(
         if (aRec->negative) {
           aStatus = NS_ERROR_UNKNOWN_HOST;
         }
-        glean::dns::lookup_method.AccumulateSingleSample(METHOD_HIT);
         ConditionallyRefreshRecord(aRec, aHost, lock);
       } else if (af == PR_AF_INET6) {
         
@@ -819,6 +813,8 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromUnspecEntry(
         result = aRec;
         aRec->negative = true;
         aStatus = NS_ERROR_UNKNOWN_HOST;
+        
+        
         glean::dns::lookup_method.AccumulateSingleSample(METHOD_NEGATIVE_HIT);
       }
     }
@@ -1223,12 +1219,24 @@ nsresult nsHostResolver::ConditionallyRefreshRecord(
          rec->negative ? "negative" : "positive", host.BeginReading()));
     NameLookup(rec, aLock);
 
-    if (rec->IsAddrRecord() && !rec->negative) {
-      
-      
-      glean::dns::lookup_method.AccumulateSingleSample(METHOD_RENEWAL);
+    if (rec->IsAddrRecord()) {
+      if (!rec->negative) {
+        glean::dns::lookup_method.AccumulateSingleSample(METHOD_RENEWAL);
+      } else {
+        glean::dns::lookup_method.AccumulateSingleSample(METHOD_NEGATIVE_HIT);
+      }
+    }
+  } else if (rec->IsAddrRecord()) {
+    
+    
+    
+    if (!rec->negative) {
+      glean::dns::lookup_method.AccumulateSingleSample(METHOD_HIT);
+    } else {
+      glean::dns::lookup_method.AccumulateSingleSample(METHOD_NEGATIVE_HIT);
     }
   }
+
   return NS_OK;
 }
 
