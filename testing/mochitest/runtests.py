@@ -2818,6 +2818,8 @@ toolbar#nav-bar {
             args = list(extraArgs)
             args.append("-marionette")
             
+            args.append("-remote-allow-system-access")
+            
             
             args.append("-foreground")
             self.start_script_kwargs["testUrl"] = testUrl or "about:blank"
