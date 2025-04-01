@@ -114,19 +114,18 @@
     static suggestionsSection =  `
       <html:div id="tab-group-suggestions-container" hidden="true">
 
-        <html:div
-          id="tab-group-suggestions-header"
-          data-l10n-id="tab-group-editor-suggestions-header">
-        </html:div>
-
+        <checkbox
+          checked="true"
+          type="checkbox"
+          id="tab-group-select-checkbox"
+          data-l10n-id="tab-group-editor-select-suggestions">
+        </checkbox>
+      
         <html:div id="tab-group-suggestions"></html:div>
 
-        <html:moz-button
-          id="tab-group-select-toggle"
-          data-l10n-id="tab-group-editor-deselect-suggestions"
-          size="small"
-          data-state="deselect">
-        </html:moz-button>
+        <html:p 
+          data-l10n-id="tab-group-editor-information-message">
+        </html:p>
 
         <html:moz-button-group class="panel-body tab-group-create-actions">
           <html:moz-button
@@ -305,7 +304,6 @@
     #defaultActions;
     #suggestionState = MozTabbrowserTabGroupMenu.State.CREATE_STANDARD_INITIAL;
     #suggestionsHeading;
-    #suggestionsHeader;
     #defaultHeader;
     #suggestionsContainer;
     #suggestions;
@@ -313,7 +311,7 @@
     #cancelSuggestionsButton;
     #createSuggestionsButton;
     #suggestionsLoading;
-    #selectSuggestionsToggle;
+    #selectSuggestionsCheckbox;
     #suggestionsMessage;
     #suggestionsMessageContainer;
     #selectedSuggestedTabs = [];
@@ -546,19 +544,21 @@
       this.#suggestionsHeading = this.querySelector(
         "#tab-group-suggestions-heading"
       );
-      this.#suggestionsHeader = this.querySelector(
-        "#tab-group-suggestions-header"
-      );
       this.#suggestionsContainer = this.querySelector(
         "#tab-group-suggestions-container"
       );
       this.#suggestions = this.querySelector("#tab-group-suggestions");
-      this.#selectSuggestionsToggle = this.querySelector(
-        "#tab-group-select-toggle"
+      this.#selectSuggestionsCheckbox = this.querySelector(
+        "#tab-group-select-checkbox"
       );
-      this.#selectSuggestionsToggle.addEventListener("click", () => {
-        this.#handleSelectToggle();
-      });
+      this.#selectSuggestionsCheckbox.addEventListener(
+        "CheckboxStateChange",
+        () => {
+          this.#selectSuggestionsCheckbox.checked
+            ? this.#handleSelectAll()
+            : this.#handleDeselectAll();
+        }
+      );
       this.#suggestionsMessageContainer = this.querySelector(
         "#tab-group-suggestions-message-container"
       );
@@ -900,16 +900,6 @@
         : MozTabbrowserTabGroupMenu.State.EDIT_AI_INITIAL;
     }
 
-    #handleSelectToggle() {
-      const currentState =
-        this.#selectSuggestionsToggle.getAttribute("data-state");
-      const isDeselect = currentState === "deselect";
-
-      isDeselect ? this.#handleDeselectAll() : this.#handleSelectAll();
-      const newState = isDeselect ? "select" : "deselect";
-      this.#setSelectToggleState(newState);
-    }
-
     #handleSelectAll() {
       document
         .querySelectorAll(".tab-group-suggestion-checkbox")
@@ -958,25 +948,25 @@
       this.#suggestionsOptin.headingIcon = "";
       this.#suggestionsOptin.isLoading = true;
 
-      // Init progress with value to show determiniate progress
+      
       this.#suggestionsOptin.progressStatus = 0;
       await this.#smartTabGroupingManager.preloadAllModels(prog => {
         this.#suggestionsOptin.progressStatus = prog.percentage;
       });
 
-      // Clean up optin UI
+      
       this.#setFormToDisabled(false);
       this.#suggestionsOptin.isHidden = true;
       this.#suggestionsOptin.isLoading = false;
 
-      // Continue on with the suggest flow
+      
       this.#handleMLOptinTelemetry("step3-optin-completed");
       this.#initMlGroupLabel();
       this.#handleSmartSuggest();
     }
 
     async #handleSmartSuggest() {
-      // Loading
+      
       this.suggestionState = MozTabbrowserTabGroupMenu.State.LOADING;
       const tabs = await this.#smartTabGroupingManager.smartTabGroupingForGroup(
         this.activeGroup,
@@ -984,13 +974,13 @@
       );
 
       if (!tabs.length) {
-        // No un-grouped tabs found
+        
         this.suggestionState = this.#createMode
           ? MozTabbrowserTabGroupMenu.State.CREATE_AI_WITH_NO_SUGGESTIONS
           : MozTabbrowserTabGroupMenu.State.EDIT_AI_WITH_NO_SUGGESTIONS;
 
-        // there's no "save" button from the edit ai interaction with
-        // no tab suggestions, so we need to capture here
+        
+        
         if (!this.#createMode) {
           this.#hasSuggestedMlTabs = true;
           this.#handleMlTelemetry("save");
@@ -1011,10 +1001,10 @@
       this.#hasSuggestedMlTabs = true;
     }
 
-    /**
-     * Sends Glean metrics if smart tab grouping is enabled
-     * @param {string} action "save", "save-popup-hidden" or "cancel"
-     */
+    
+
+
+
     #handleMlTelemetry(action) {
       if (!this.smartTabGroupsEnabled) {
         return;
@@ -1103,18 +1093,6 @@
 
 
 
-    #setSelectToggleState(state) {
-      this.#selectSuggestionsToggle.setAttribute("data-state", state);
-      this.#selectSuggestionsToggle.setAttribute(
-        "data-l10n-id",
-        `tab-group-editor-${state}-suggestions`
-      );
-    }
-
-    
-
-
-
 
 
 
@@ -1161,7 +1139,6 @@
 
 
     #setSuggestModeSuggestionState(value) {
-      this.#setElementVisibility(this.#suggestionsHeader, !value);
       this.#setElementVisibility(this.#tabGroupMain, !value);
       this.#setElementVisibility(this.#suggestionsHeading, value);
       this.#setElementVisibility(this.#defaultHeader, !value);
@@ -1195,7 +1172,6 @@
           this.#showSuggestionButton(true);
           this.#showDefaultTabGroupActions(true);
           this.#showSuggestionMessageContainer(false);
-          this.#setSelectToggleState("deselect");
           this.#setSuggestionsButtonCreateModeState(true);
           this.#showSuggestionsSeparator(true);
           break;
@@ -1242,7 +1218,6 @@
         case MozTabbrowserTabGroupMenu.State.EDIT_AI_INITIAL:
           this.#resetCommonUI();
           this.#showSuggestionMessageContainer(false);
-          this.#setSelectToggleState("deselect");
           this.#showSuggestionButton(true);
           this.#showDefaultTabGroupActions(false);
           this.#setSuggestionsButtonCreateModeState(false);
