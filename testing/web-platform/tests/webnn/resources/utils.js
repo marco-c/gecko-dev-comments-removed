@@ -294,29 +294,7 @@ const assert_array_approx_equals_ulp = (actual, expected, nulp, dataType, descri
     if (actual[i] === expected[i]) {
       continue;
     } else {
-      
-      if (dataType === 'float32') {
-        actualBitwise = getBitwise(actual[i], dataType);
-        expectedBitwise = getBitwise(expected[i], dataType);
-      } else if (dataType === 'float16') {
-        actualBitwise = actual[i];
-        
-        expectedBitwise = toHalf(expected[i]);
-      } else if (dataType === 'int64') {
-        actualBitwise = actual[i];
-        expectedBitwise = BigInt(expected[i]);
-      } else if (dataType === 'uint64') {
-        actualBitwise = actual[i];
-        expectedBitwise = BigUint64Array(expected[i]);
-      } else if (
-          dataType === 'int8' || dataType === 'uint8' || dataType === 'int32' ||
-          dataType === 'uint32' || dataType === 'int4' ||
-          dataType === 'uint4') {
-        actualBitwise = actual[i];
-        expectedBitwise = expected[i];
-      }
-      distance = actualBitwise - expectedBitwise;
-      distance = distance >= 0 ? distance : -distance;
+      distance = ulpDistance(actual[i], expected[i], dataType);
 
       
       
@@ -331,6 +309,40 @@ const assert_array_approx_equals_ulp = (actual, expected, nulp, dataType, descri
       }
     }
   }
+};
+
+
+
+
+
+
+
+
+
+
+const ulpDistance = (a, b, dataType) => {
+  let aBitwise, bBitwise;
+  
+  if (dataType === 'float32') {
+    aBitwise = getBitwise(a, dataType);
+    bBitwise = getBitwise(b, dataType);
+  } else if (dataType === 'float16') {
+    aBitwise = a;
+    
+    bBitwise = toHalf(b);
+  } else if (dataType === 'int64' || dataType === 'uint64') {
+    aBitwise = BigInt(a);
+    bBitwise = BigInt(b);
+  } else if (
+      dataType === 'int8' || dataType === 'uint8' || dataType === 'int32' ||
+      dataType === 'uint32' || dataType === 'int4' || dataType === 'uint4') {
+    aBitwise = a;
+    bBitwise = b;
+  } else {
+    throw new AssertionError(`Data type ${dataType} is not supported`);
+  }
+  const distance = aBitwise - bBitwise;
+  return distance >= 0 ? distance : -distance;
 };
 
 
