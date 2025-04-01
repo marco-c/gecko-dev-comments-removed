@@ -120,7 +120,9 @@ class EditEngineDialog extends EngineDialog {
 
 
 
-  constructor(engine) {
+
+
+  constructor({ engine }) {
     super();
     this._postData = document.getElementById("enginePostData");
 
@@ -231,13 +233,12 @@ class EditEngineDialog extends EngineDialog {
 
 
 
-class NewEngineFromFormDialog extends EngineDialog {
-  #formData;
-  #charset;
-  #method;
-  #icon;
-  #uri;
 
+
+
+
+
+class NewEngineFromFormDialog extends EngineDialog {
   
 
 
@@ -246,30 +247,16 @@ class NewEngineFromFormDialog extends EngineDialog {
 
 
 
-
-
-
-
-
-
-
-
-
-  constructor({ uri, formData, charset, method, icon }) {
+  constructor({ nameTemplate }) {
     super();
-    this.#formData = formData;
-    this.#charset = charset;
-    this.#method = method;
-    this.#icon = icon;
-    this.#uri = uri.spec;
-
-    this._name.value = uri.host;
+    this._name.value = nameTemplate;
     this.onNameInput();
     this.onAliasInput();
 
     document.getElementById("engineUrlRow").remove();
-    document.getElementById("suggestUrlRow").remove();
     this._url = null;
+    document.getElementById("suggestUrlRow").remove();
+    this._suggestUrl = null;
 
     let title = { raw: document.title };
     document.documentElement.setAttribute("headertitle", JSON.stringify(title));
@@ -280,15 +267,11 @@ class NewEngineFromFormDialog extends EngineDialog {
   }
 
   onAddEngine() {
-    Services.search.addUserEngine({
-      url: this.#uri,
+    window.arguments[0].engineInfo = {
       name: this._name.value.trim(),
+      
       alias: this._alias.value.trim(),
-      formData: this.#formData,
-      charset: this.#charset,
-      method: this.#method,
-      icon: this.#icon,
-    });
+    };
   }
 }
 
@@ -307,7 +290,7 @@ window.addEventListener("DOMContentLoaded", () => {
         gAddEngineDialog = new NewEngineDialog();
         break;
       case "EDIT":
-        gAddEngineDialog = new EditEngineDialog(window.arguments[0].engine);
+        gAddEngineDialog = new EditEngineDialog(window.arguments[0]);
         break;
       case "FORM":
         gAddEngineDialog = new NewEngineFromFormDialog(window.arguments[0]);
