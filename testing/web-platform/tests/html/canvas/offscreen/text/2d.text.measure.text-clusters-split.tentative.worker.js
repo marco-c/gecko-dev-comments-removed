@@ -24,22 +24,22 @@ t.step(function() {
   
   _assertSame(clusters.length, 6, "clusters.length", "6");
   
-  _assertSame(clusters[0].begin, 0, "clusters[\""+(0)+"\"].begin", "0");
+  _assertSame(clusters[0].start, 0, "clusters[\""+(0)+"\"].start", "0");
   _assertSame(clusters[0].end, 1, "clusters[\""+(0)+"\"].end", "1");
   
-  _assertSame(clusters[1].begin, 1, "clusters[\""+(1)+"\"].begin", "1");
+  _assertSame(clusters[1].start, 1, "clusters[\""+(1)+"\"].start", "1");
   _assertSame(clusters[1].end, 2, "clusters[\""+(1)+"\"].end", "2");
   
-  _assertSame(clusters[2].begin, 2, "clusters[\""+(2)+"\"].begin", "2");
+  _assertSame(clusters[2].start, 2, "clusters[\""+(2)+"\"].start", "2");
   _assertSame(clusters[2].end, 3, "clusters[\""+(2)+"\"].end", "3");
   
-  _assertSame(clusters[3].begin, 3, "clusters[\""+(3)+"\"].begin", "3");
+  _assertSame(clusters[3].start, 3, "clusters[\""+(3)+"\"].start", "3");
   _assertSame(clusters[3].end, 4, "clusters[\""+(3)+"\"].end", "4");
   
-  _assertSame(clusters[4].begin, 4, "clusters[\""+(4)+"\"].begin", "4");
+  _assertSame(clusters[4].start, 4, "clusters[\""+(4)+"\"].start", "4");
   _assertSame(clusters[4].end, 6, "clusters[\""+(4)+"\"].end", "6");
   
-  _assertSame(clusters[5].begin, 6, "clusters[\""+(5)+"\"].begin", "6");
+  _assertSame(clusters[5].start, 6, "clusters[\""+(5)+"\"].start", "6");
   _assertSame(clusters[5].end, 8, "clusters[\""+(5)+"\"].end", "8");
   t.done();
 });
