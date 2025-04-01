@@ -270,6 +270,9 @@ class imgLoader final : public imgILoader,
 
 
 
+
+
+
   static nsresult ClearCache(
       mozilla::Maybe<bool> aPrivateLoader = mozilla::Nothing(),
       mozilla::Maybe<bool> aChrome = mozilla::Nothing(),
@@ -277,7 +280,8 @@ class imgLoader final : public imgILoader,
           mozilla::Nothing(),
       const mozilla::Maybe<nsCString>& aSchemelessSite = mozilla::Nothing(),
       const mozilla::Maybe<mozilla::OriginAttributesPattern>& aPattern =
-          mozilla::Nothing());
+          mozilla::Nothing(),
+      const mozilla::Maybe<nsCString>& aURL = mozilla::Nothing());
 
   bool IsImageAvailable(nsIURI*, nsIPrincipal* aTriggeringPrincipal,
                         mozilla::CORSMode, mozilla::dom::Document*);
@@ -376,7 +380,8 @@ class imgLoader final : public imgILoader,
   nsresult RemoveEntriesInternal(
       const mozilla::Maybe<nsCOMPtr<nsIPrincipal>>& aPrincipal,
       const mozilla::Maybe<nsCString>& aSchemelessSite,
-      const mozilla::Maybe<mozilla::OriginAttributesPattern>& aPattern);
+      const mozilla::Maybe<mozilla::OriginAttributesPattern>& aPattern,
+      const mozilla::Maybe<nsCString>& aURL);
 
   
   
