@@ -174,12 +174,23 @@ class OwningElementRef final {
           return SortingIndex::Other;
       }
     };
+    auto cmp = sortingIndex(mTarget.mPseudoRequest) -
+               sortingIndex(aOther.mTarget.mPseudoRequest);
+    if (cmp != 0) {
+      return cmp;
+    }
+    auto* ident = mTarget.mPseudoRequest.mIdentifier.get();
+    auto* otherIdent = aOther.mTarget.mPseudoRequest.mIdentifier.get();
+    MOZ_ASSERT(!!ident == !!otherIdent);
+    if (ident == otherIdent) {
+      return 0;
+    }
     
     
     
     
-    return sortingIndex(mTarget.mPseudoRequest) -
-           sortingIndex(aOther.mTarget.mPseudoRequest);
+    return nsDependentAtomString(ident) < nsDependentAtomString(otherIdent) ? -1
+                                                                            : 1;
   }
 
   bool IsSet() const { return !!mTarget.mElement; }
