@@ -3389,8 +3389,12 @@ nsresult nsNavHistoryFolderResultNode::OnItemMoved(
     
 
     
-    ReindexRange(aOldIndex + 1, INT32_MAX, -1);
-    ReindexRange(aNewIndex, INT32_MAX, 1);
+    int32_t maxIndex = std::max(node->mBookmarkIndex, aNewIndex);
+    
+    
+    
+    ReindexRange(node->mBookmarkIndex + 1, maxIndex, -1);
+    ReindexRange(aNewIndex, maxIndex, 1);
 
     MOZ_ASSERT(node, "Can't find folder that is moving!");
     if (!node) {
