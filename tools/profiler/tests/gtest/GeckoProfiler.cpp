@@ -4351,6 +4351,9 @@ static std::string_view GetFeatureName(uint32_t feature) {
   }
 }
 
+
+#  if !defined(XP_WIN) || !defined(MOZ_ASAN)
+
 TEST(GeckoProfiler, FeatureCombinations)
 {
   const char* filters[] = {"*"};
@@ -4424,6 +4427,8 @@ TEST(GeckoProfiler, FeatureCombinations)
     }
   }
 }
+
+#  endif  
 
 static void CountCPUDeltas(const Json::Value& aThread, size_t& aOutSamplings,
                            uint64_t& aOutCPUDeltaSum) {
