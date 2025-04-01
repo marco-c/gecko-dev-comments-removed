@@ -754,10 +754,41 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
     
     
     
+    
+    
+    
+    
     if constexpr (!IsDefaultConfig) {
       if (aSafe && IsUnsafeElement(nameAtom, namespaceID)) {
         
         child->RemoveFromParent();
+        continue;
+      }
+    }
+
+    
+    
+    if constexpr (!IsDefaultConfig) {
+      if (mReplaceWithChildrenElements.Contains(*elementName)) {
+        
+        
+        
+        nsCOMPtr<nsIContent> parent = child->GetParent();
+        nsCOMPtr<nsIContent> firstChild = child->GetFirstChild();
+        nsCOMPtr<nsIContent> newChild = firstChild;
+        for (; newChild; newChild = child->GetFirstChild()) {
+          ErrorResult rv;
+          parent->InsertBefore(*newChild, child, rv);
+          if (rv.Failed()) {
+            
+            break;
+          }
+        }
+
+        child->RemoveFromParent();
+        if (firstChild) {
+          next = firstChild;
+        }
         continue;
       }
     }
@@ -800,33 +831,6 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
         continue;
       }
       MOZ_ASSERT(!IsUnsafeElement(nameAtom, namespaceID));
-    }
-
-    
-    
-    if constexpr (!IsDefaultConfig) {
-      if (mReplaceWithChildrenElements.Contains(*elementName)) {
-        
-        
-        
-        nsCOMPtr<nsIContent> parent = child->GetParent();
-        nsCOMPtr<nsIContent> firstChild = child->GetFirstChild();
-        nsCOMPtr<nsIContent> newChild = firstChild;
-        for (; newChild; newChild = child->GetFirstChild()) {
-          ErrorResult rv;
-          parent->InsertBefore(*newChild, child, rv);
-          if (rv.Failed()) {
-            
-            break;
-          }
-        }
-
-        child->RemoveFromParent();
-        if (firstChild) {
-          next = firstChild;
-        }
-        continue;
-      }
     }
 
     
