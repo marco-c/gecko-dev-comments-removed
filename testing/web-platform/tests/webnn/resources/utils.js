@@ -253,19 +253,18 @@ const sizeOfShape = (array) => {
 
 
 
-
 const getBitwise = (value, dataType) => {
   const buffer = new ArrayBuffer(8);
   const int64Array = new BigInt64Array(buffer);
-  int64Array[0] = value < 0 ? ~BigInt(0) : BigInt(0);
   let typedArray;
   if (dataType === "float32") {
     typedArray = new Float32Array(buffer);
   } else {
     throw new AssertionError(`Data type ${dataType} is not supported`);
   }
-  typedArray[0] = value;
-  return int64Array[0];
+  typedArray[0] = Math.abs(value);
+  const int64 = int64Array[0];
+  return (value < 0) ? -int64 : int64;
 };
 
 
