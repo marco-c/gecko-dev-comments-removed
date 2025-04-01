@@ -95,7 +95,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.218")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.219")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -144,6 +144,7 @@
     clippy::too_many_lines,
     
     clippy::doc_markdown,
+    clippy::elidable_lifetime_names,
     clippy::needless_lifetimes,
     clippy::unseparated_literal_suffix,
     
