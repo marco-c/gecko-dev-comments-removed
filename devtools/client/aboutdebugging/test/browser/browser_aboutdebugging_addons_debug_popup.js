@@ -6,6 +6,12 @@
 Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-addons.js", this);
 
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/inspector/test/shared-head.js",
+  this
+);
+
+
 
 const { PromiseTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PromiseTestUtils.sys.mjs"
@@ -127,6 +133,16 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
     "Got the expected manifest from WebExtension API"
   );
 
+  info("Check that node screenshots work in webextension targets");
+  const inspector = await toolbox.selectTool("inspector");
+  await selectNode("#node-to-screenshot", inspector);
+  const redScreenshot = await takeNodeScreenshot(inspector);
+  await assertSingleColorScreenshotImage(redScreenshot, 10, 10, {
+    r: 255,
+    g: 0,
+    b: 0,
+  });
+
   await closeWebExtAboutDevtoolsToolbox(devtoolsWindow, aboutDebuggingWindow);
 
   is(
@@ -192,6 +208,10 @@ async function installTestAddon(doc) {
           </head>
           <body>
             Background Page Body Test Content
+            <div
+              id="node-to-screenshot"
+              style="height: 10px; width: 10px; background: red;">
+            </div>
           </body>
         </html>
       `,
