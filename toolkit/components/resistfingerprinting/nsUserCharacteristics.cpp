@@ -668,6 +668,11 @@ void PopulateModelName() {
   modelName.Append(temp);
 #elif defined(XP_WIN)
   sysInfo->GetPropertyAsACString(u"winModelId"_ns, modelName);
+#elif defined(XP_LINUX)
+  sysInfo->GetPropertyAsACString(u"linuxProductSku"_ns, modelName);
+  if (modelName.IsEmpty()) {
+    sysInfo->GetPropertyAsACString(u"linuxProductName"_ns, modelName);
+  }
 #endif
 
   glean::characteristics::machine_model_name.Set(modelName);
@@ -704,7 +709,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 
 
 
-const int kSubmissionSchema = 22;
+const int kSubmissionSchema = 23;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";
