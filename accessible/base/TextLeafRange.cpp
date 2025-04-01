@@ -1068,14 +1068,20 @@ TextLeafPoint TextLeafPoint::GetCaret(Accessible* aAcc) {
       
       
       
-      if (point.mOffset == 0) {
-        
+      
+      
+      
+      
+      if (point.mOffset <
+          static_cast<int32_t>(nsAccUtils::TextLength(point.mAcc))) {
         
         
         point.mIsEndOfLineInsertionPoint =
-            IsLocalAccAtLineStart(point.mAcc->AsLocal()) &&
+            point.FindPrevLineStartSameLocalAcc( true) ==
+                point &&
             !point.IsParagraphStart();
       } else {
+        
         
         point.mIsEndOfLineInsertionPoint = true;
       }
