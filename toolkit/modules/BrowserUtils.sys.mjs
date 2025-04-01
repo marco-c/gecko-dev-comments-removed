@@ -9,6 +9,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
 });
@@ -142,6 +143,24 @@ export var BrowserUtils = {
     throw new Error(
       "Can't change the originAttributes of an expanded principal!"
     );
+  },
+
+  
+
+
+
+
+
+
+
+  copyLink(url, title) {
+    
+    
+    let node = {};
+    node.type = 0;
+    node.title = title;
+    node.uri = url;
+    lazy.PlacesUtils.copyNode(node);
   },
 
   
