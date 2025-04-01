@@ -87,13 +87,6 @@ public:
 
 
 
-    BuddhistCalendar& operator=(const BuddhistCalendar& right);
-
-    
-
-
-
-
     virtual BuddhistCalendar* clone() const override;
 
 public:

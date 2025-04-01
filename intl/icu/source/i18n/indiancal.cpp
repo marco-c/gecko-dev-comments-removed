@@ -41,7 +41,6 @@ IndianCalendar* IndianCalendar::clone() const {
 IndianCalendar::IndianCalendar(const Locale& aLocale, UErrorCode& success)
   :   Calendar(TimeZone::forLocaleOrDefault(aLocale), aLocale, success)
 {
-  setTimeInMillis(getNow(), success); 
 }
 
 IndianCalendar::IndianCalendar(const IndianCalendar& other) : Calendar(other) {
@@ -129,7 +128,8 @@ int32_t IndianCalendar::handleGetMonthLength(int32_t eyear, int32_t month, UErro
 
 
 
-int32_t IndianCalendar::handleGetYearLength(int32_t eyear) const {
+int32_t IndianCalendar::handleGetYearLength(int32_t eyear, UErrorCode& status) const {
+    if (U_FAILURE(status)) return 0;
     return isGregorianLeap(eyear + INDIAN_ERA_START) ? 366 : 365;
 }
 
@@ -141,18 +141,6 @@ int32_t IndianCalendar::handleGetYearLength(int32_t eyear) const {
 
 static double gregorianToJD(int32_t year, int32_t month, int32_t date) {
    return Grego::fieldsToDay(year, month, date) + kEpochStartAsJulianDay - 0.5;
-}
-
-
-
-
-
-
-static int32_t* jdToGregorian(double jd, int32_t gregorianDate[3], UErrorCode& status) {
-   int32_t gdow;
-   Grego::dayToFields(jd - kEpochStartAsJulianDay,
-                      gregorianDate[0], gregorianDate[1], gregorianDate[2], gdow, status);
-   return gregorianDate;
 }
 
    
@@ -266,10 +254,9 @@ int32_t IndianCalendar::handleGetExtendedYear(UErrorCode& status) {
 void IndianCalendar::handleComputeFields(int32_t julianDay, UErrorCode&  status) {
     double jdAtStartOfGregYear;
     int32_t leapMonth, IndianYear, yday, IndianMonth, IndianDayOfMonth, mday;
-    int32_t gregorianYear;      
-    int32_t gd[3];
+    
+    int32_t gregorianYear = Grego::dayToYear(julianDay - kEpochStartAsJulianDay, status);
 
-    gregorianYear = jdToGregorian(julianDay, gd, status)[0];          
     if (U_FAILURE(status)) return;
     IndianYear = gregorianYear - INDIAN_ERA_START;            
     jdAtStartOfGregYear = gregorianToJD(gregorianYear, 0, 1); 

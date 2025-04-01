@@ -105,7 +105,6 @@ typedef enum UMeasurePrefix {
 
     UMEASURE_PREFIX_YOTTA = UMEASURE_PREFIX_ONE + 24,
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -119,7 +118,6 @@ typedef enum UMeasurePrefix {
 
 
     UMEASURE_PREFIX_QUETTA = UMEASURE_PREFIX_ONE + 30,
-#endif  
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -268,7 +266,6 @@ typedef enum UMeasurePrefix {
 
     UMEASURE_PREFIX_YOCTO = UMEASURE_PREFIX_ONE + -24,
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -282,7 +279,6 @@ typedef enum UMeasurePrefix {
 
 
     UMEASURE_PREFIX_QUECTO = UMEASURE_PREFIX_ONE + -30,
-#endif  
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -442,6 +438,9 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+
+
+
     static MeasureUnit forIdentifier(StringPiece identifier, UErrorCode& status);
 
     
@@ -552,6 +551,44 @@ class U_I18N_API MeasureUnit: public UObject {
 
     UMeasurePrefix getPrefix(UErrorCode& status) const;
 
+#ifndef U_HIDE_DRAFT_API
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    MeasureUnit withConstantDenominator(uint64_t denominator, UErrorCode &status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    uint64_t getConstantDenominator(UErrorCode &status) const;
+
+#endif 
+
     
 
 
@@ -595,6 +632,8 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+
+
     MeasureUnit reciprocal(UErrorCode& status) const;
 
     
@@ -617,6 +656,10 @@ class U_I18N_API MeasureUnit: public UObject {
     MeasureUnit product(const MeasureUnit& other, UErrorCode& status) const;
 
     
+
+
+
+
 
 
 
@@ -1151,6 +1194,24 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getPermyriad();
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createPortionPer1E9(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getPortionPer1E9();
+#endif 
 
     
 
@@ -3889,4 +3950,4 @@ U_NAMESPACE_END
 
 #endif 
 
-#endif
+#endif 

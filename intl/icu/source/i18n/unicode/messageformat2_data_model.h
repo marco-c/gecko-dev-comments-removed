@@ -8,6 +8,8 @@
 
 #if U_SHOW_CPLUSPLUS_API
 
+#if !UCONFIG_NO_NORMALIZATION
+
 #if !UCONFIG_NO_FORMATTING
 
 #if !UCONFIG_NO_MF2
@@ -2211,7 +2213,7 @@ namespace message2 {
 
         friend class MFDataModel;
 
-        Matcher(Expression* ss, int32_t ns, Variant* vs, int32_t nv);
+        Matcher(VariableName* ss, int32_t ns, Variant* vs, int32_t nv);
         Matcher() {}
 
         
@@ -2220,7 +2222,7 @@ namespace message2 {
         bool bogus = false;
 
         
-        LocalArray<Expression> selectors;
+        LocalArray<VariableName> selectors;
         
         int32_t numSelectors = 0;
         
@@ -2328,13 +2330,13 @@ namespace message2 {
 
 
 
-        const std::vector<Expression> getSelectors() const {
+        std::vector<VariableName> getSelectors() const {
             if (std::holds_alternative<Pattern>(body)) {
                 return {};
             }
             const Matcher* match = std::get_if<Matcher>(&body);
             
-            return toStdVector<Expression>(match->selectors.getAlias(), match->numSelectors);
+            return toStdVector<VariableName>(match->selectors.getAlias(), match->numSelectors);
         }
         
 
@@ -2472,7 +2474,7 @@ namespace message2 {
 
 
 
-            Builder& addSelector(Expression&& selector, UErrorCode& errorCode) noexcept;
+            Builder& addSelector(VariableName&& selector, UErrorCode& errorCode);
             
 
 
@@ -2564,7 +2566,7 @@ namespace message2 {
         int32_t bindingsLen = 0;
 
         const Binding* getLocalVariablesInternal() const;
-        const Expression* getSelectorsInternal() const;
+        const VariableName* getSelectorsInternal() const;
         const Variant* getVariantsInternal() const;
 
         int32_t numSelectors() const {
@@ -2585,6 +2587,8 @@ namespace message2 {
 } 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

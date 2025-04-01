@@ -78,14 +78,12 @@ class U_I18N_API SimpleNumber : public UMemory {
 
     void roundTo(int32_t power, UNumberFormatRoundingMode roundingMode, UErrorCode& status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
 
 
     void setMaximumIntegerDigits(uint32_t maximumIntegerDigits, UErrorCode& status);
-#endif 
 
     
 

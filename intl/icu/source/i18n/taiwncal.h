@@ -84,13 +84,6 @@ public:
 
 
 
-    TaiwanCalendar& operator=(const TaiwanCalendar& right);
-
-    
-
-
-
-
     virtual TaiwanCalendar* clone() const override;
 
 public:

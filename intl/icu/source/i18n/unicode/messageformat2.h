@@ -8,6 +8,8 @@
 
 #if U_SHOW_CPLUSPLUS_API
 
+#if !UCONFIG_NO_NORMALIZATION
+
 #if !UCONFIG_NO_FORMATTING
 
 #if !UCONFIG_NO_MF2
@@ -20,6 +22,7 @@
 #include "unicode/messageformat2_arguments.h"
 #include "unicode/messageformat2_data_model.h"
 #include "unicode/messageformat2_function_registry.h"
+#include "unicode/normalizer2.h"
 #include "unicode/unistr.h"
 
 #ifndef U_HIDE_DEPRECATED_API
@@ -30,8 +33,8 @@ namespace message2 {
 
     class Environment;
     class MessageContext;
-    class ResolvedSelector;
     class StaticErrors;
+    class InternalValue;
 
     
 
@@ -325,6 +328,8 @@ namespace message2 {
 
     private:
         friend class Builder;
+        friend class Checker;
+        friend class MessageArguments;
         friend class MessageContext;
 
         MessageFormatter(const MessageFormatter::Builder& builder, UErrorCode &status);
@@ -333,9 +338,6 @@ namespace message2 {
 
         
         const MessageFormatter &operator=(const MessageFormatter &) = delete;
-
-        ResolvedSelector resolveVariables(const Environment& env, const data_model::Operand&, MessageContext&, UErrorCode &) const;
-        ResolvedSelector resolveVariables(const Environment& env, const data_model::Expression&, MessageContext&, UErrorCode &) const;
 
         
 
@@ -346,31 +348,35 @@ namespace message2 {
         
         void sortVariants(const UVector&, UVector&, UErrorCode&) const;
         
-        void matchSelectorKeys(const UVector&, MessageContext&, ResolvedSelector&& rv, UVector&, UErrorCode&) const;
+        void matchSelectorKeys(const UVector&, MessageContext&, InternalValue* rv, UVector&, UErrorCode&) const;
         
         
         void resolvePreferences(MessageContext&, UVector&, UVector&, UErrorCode&) const;
 
         
+
+        
+        UnicodeString normalizeNFC(const UnicodeString&) const;
         [[nodiscard]] FormattedPlaceholder formatLiteral(const data_model::Literal&) const;
         void formatPattern(MessageContext&, const Environment&, const data_model::Pattern&, UErrorCode&, UnicodeString&) const;
         
         
-        [[nodiscard]] FormattedPlaceholder evalFormatterCall(FormattedPlaceholder&& argument,
-                                                       MessageContext& context,
-                                                       UErrorCode& status) const;
+        [[nodiscard]] InternalValue* evalFunctionCall(FormattedPlaceholder&& argument,
+                                                     MessageContext& context,
+                                                     UErrorCode& status) const;
         
-        [[nodiscard]] FormattedPlaceholder evalFormatterCall(const FunctionName& functionName,
-                                                       FormattedPlaceholder&& argument,
-                                                       FunctionOptions&& options,
-                                                       MessageContext& context,
-                                                       UErrorCode& status) const;
+        [[nodiscard]] InternalValue* evalFunctionCall(const FunctionName& functionName,
+                                                     InternalValue* argument,
+                                                     FunctionOptions&& options,
+                                                     MessageContext& context,
+                                                     UErrorCode& status) const;
         
-        ResolvedSelector formatSelectorExpression(const Environment& env, const data_model::Expression&, MessageContext&, UErrorCode&) const;
-        
-        [[nodiscard]] FormattedPlaceholder formatExpression(const Environment&, const data_model::Expression&, MessageContext&, UErrorCode&) const;
+        [[nodiscard]] InternalValue* formatExpression(const Environment&,
+                                                     const data_model::Expression&,
+                                                     MessageContext&,
+                                                     UErrorCode&) const;
         [[nodiscard]] FunctionOptions resolveOptions(const Environment& env, const OptionMap&, MessageContext&, UErrorCode&) const;
-        [[nodiscard]] FormattedPlaceholder formatOperand(const Environment&, const data_model::Operand&, MessageContext&, UErrorCode&) const;
+        [[nodiscard]] InternalValue* formatOperand(const Environment&, const data_model::Operand&, MessageContext&, UErrorCode&) const;
         [[nodiscard]] FormattedPlaceholder evalArgument(const data_model::VariableName&, MessageContext&, UErrorCode&) const;
         void formatSelectors(MessageContext& context, const Environment& env, UErrorCode &status, UnicodeString& result) const;
 
@@ -445,11 +451,17 @@ namespace message2 {
         
         
         bool signalErrors = false;
+
+        
+        const Normalizer2* nfcNormalizer = nullptr;
+
     }; 
 
 } 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

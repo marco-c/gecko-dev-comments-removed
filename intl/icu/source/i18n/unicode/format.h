@@ -45,6 +45,7 @@
 
 U_NAMESPACE_BEGIN
 
+class CharString;
 
 
 
@@ -297,8 +298,8 @@ protected:
                             UParseError& parseError);
 
  private:
-    char actualLocale[ULOC_FULLNAME_CAPACITY];
-    char validLocale[ULOC_FULLNAME_CAPACITY];
+    CharString* actualLocale = nullptr;
+    CharString* validLocale = nullptr;
 };
 
 U_NAMESPACE_END

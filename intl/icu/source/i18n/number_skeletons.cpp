@@ -1015,6 +1015,12 @@ blueprint_helpers::parseExponentSignOption(const StringSegment& segment, MacroPr
     return true;
 }
 
+
+
+#if U_GCC_MAJOR_MINOR >= 1204
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdangling-pointer"
+#endif
 void blueprint_helpers::parseCurrencyOption(const StringSegment& segment, MacroProps& macros,
                                             UErrorCode& status) {
     
@@ -1034,6 +1040,9 @@ void blueprint_helpers::parseCurrencyOption(const StringSegment& segment, MacroP
     
     macros.unit = currency; 
 }
+#if U_GCC_MAJOR_MINOR >= 1204
+#pragma GCC diagnostic pop
+#endif
 
 void
 blueprint_helpers::generateCurrencyOption(const CurrencyUnit& currency, UnicodeString& sb, UErrorCode&) {

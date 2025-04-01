@@ -109,13 +109,6 @@ public:
 
 
 
-    JapaneseCalendar& operator=(const JapaneseCalendar& right);
-
-    
-
-
-
-
     virtual JapaneseCalendar* clone() const override;
 
     

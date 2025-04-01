@@ -43,6 +43,7 @@ U_NAMESPACE_BEGIN
 
 class SimpleDateFormat;
 class Hashtable;
+class CharString;
 
 
 
@@ -917,8 +918,8 @@ private:
     
 
 
-    char validLocale[ULOC_FULLNAME_CAPACITY];
-    char actualLocale[ULOC_FULLNAME_CAPACITY];
+    CharString* validLocale = nullptr;
+    CharString* actualLocale = nullptr;
 
     DateFormatSymbols() = delete; 
 

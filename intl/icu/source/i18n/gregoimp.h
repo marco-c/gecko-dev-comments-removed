@@ -210,8 +210,8 @@ class Grego {
 
 
 
-    static void dayToFields(int32_t day, int32_t& year, int32_t& month,
-                            int32_t& dom, int32_t& dow, int32_t& doy, UErrorCode& status);
+    static void dayToFields(int32_t day, int32_t& year, int8_t& month,
+                            int8_t& dom, int8_t& dow, int16_t& doy, UErrorCode& status);
 
     
 
@@ -223,8 +223,37 @@ class Grego {
 
 
 
-    static inline void dayToFields(int32_t day, int32_t& year, int32_t& month,
-                                   int32_t& dom, int32_t& dow, UErrorCode& status);
+    static void dayToFields(int32_t day, int32_t& year, int8_t& month,
+                            int8_t& dom, int16_t& doy, UErrorCode& status);
+
+    
+
+
+
+
+
+
+
+
+
+    static void dayToFields(int32_t day, int32_t& year, int8_t& month,
+                            int8_t& dom, int8_t& dow, UErrorCode& status);
+
+    
+
+
+
+
+
+    static int32_t dayToYear(int32_t day, UErrorCode& status);
+    
+
+
+
+
+
+
+    static int32_t dayToYear(int32_t day, int16_t& doy, UErrorCode& status);
 
     
 
@@ -238,8 +267,43 @@ class Grego {
 
 
 
-    static void timeToFields(UDate time, int32_t& year, int32_t& month,
-                            int32_t& dom, int32_t& dow, int32_t& doy, int32_t& mid, UErrorCode& status);
+    static void timeToFields(UDate time, int32_t& year, int8_t& month,
+                            int8_t& dom, int8_t& dow, int16_t& doy, int32_t& mid, UErrorCode& status);
+
+    
+
+
+
+
+
+
+
+
+
+
+    static void timeToFields(UDate time, int32_t& year, int8_t& month,
+                            int8_t& dom, int8_t& dow, int32_t& mid, UErrorCode& status);
+
+    
+
+
+
+
+
+
+
+
+
+    static void timeToFields(UDate time, int32_t& year, int8_t& month,
+                            int8_t& dom, int32_t& mid, UErrorCode& status);
+
+    
+
+
+
+
+
+    static int32_t timeToYear(UDate time, UErrorCode& status);
 
     
 
@@ -303,12 +367,6 @@ Grego::monthLength(int32_t year, int32_t month) {
 inline int8_t
 Grego::previousMonthLength(int y, int m) {
   return (m > 0) ? monthLength(y, m-1) : 31;
-}
-
-inline void Grego::dayToFields(int32_t day, int32_t& year, int32_t& month,
-                               int32_t& dom, int32_t& dow, UErrorCode& status) {
-  int32_t doy_unused;
-  dayToFields(day,year,month,dom,dow,doy_unused, status);
 }
 
 inline double Grego::julianDayToMillis(int32_t julian)

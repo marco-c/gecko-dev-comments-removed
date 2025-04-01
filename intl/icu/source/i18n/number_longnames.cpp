@@ -49,7 +49,11 @@ constexpr int32_t PER_INDEX = StandardPlural::Form::COUNT + 1;
 
 constexpr int32_t GENDER_INDEX = StandardPlural::Form::COUNT + 2;
 
-constexpr int32_t ARRAY_LENGTH = StandardPlural::Form::COUNT + 3;
+
+
+constexpr int32_t CONSTANT_DENOMINATOR_INDEX = StandardPlural::Form::COUNT + 3;
+
+constexpr int32_t ARRAY_LENGTH = StandardPlural::Form::COUNT + 4;
 
 
 
@@ -1010,6 +1014,11 @@ void LongNameHandler::forArbitraryUnit(const Locale &loc,
     
     MeasureUnitImpl unit;
     MeasureUnitImpl perUnit;
+
+    if (unitRef.getConstantDenominator(status) != 0) {
+        perUnit.constantDenominator = unitRef.getConstantDenominator(status);
+    }
+
     {
         MeasureUnitImpl fullUnit = MeasureUnitImpl::forMeasureUnitMaybeCopy(unitRef, status);
         if (U_FAILURE(status)) {
@@ -1195,6 +1204,12 @@ void LongNameHandler::processPatternTimes(MeasureUnitImpl &&productUnit,
     DerivedComponents derivedTimesPlurals(loc, "plural", "times");
     DerivedComponents derivedTimesCases(loc, "case", "times");
     DerivedComponents derivedPowerCases(loc, "case", "power");
+
+    if (productUnit.constantDenominator != 0) {
+        CharString constantString;
+        constantString.appendNumber(productUnit.constantDenominator, status);
+        outArray[CONSTANT_DENOMINATOR_INDEX] = UnicodeString::fromUTF8(constantString.toStringPiece());
+    }
 
     
     for (int32_t singleUnitIndex = 0; singleUnitIndex < productUnit.singleUnits.length();
@@ -1454,6 +1469,39 @@ void LongNameHandler::processPatternTimes(MeasureUnitImpl &&productUnit,
             }
         }
     }
+
+    
+    if (productUnit.constantDenominator != 0) {
+        int32_t pluralIndex = -1;
+        for (int32_t index = 0; index < StandardPlural::Form::COUNT; index++) {
+            if (!outArray[index].isBogus()) {
+                pluralIndex = index;
+                break;
+            }
+        }
+
+        U_ASSERT(pluralIndex >= 0); 
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (outArray[pluralIndex].length() == 0) {
+            outArray[pluralIndex] = outArray[CONSTANT_DENOMINATOR_INDEX];
+        } else {
+            UnicodeString tmp;
+            timesPatternFormatter.format(outArray[CONSTANT_DENOMINATOR_INDEX], outArray[pluralIndex],
+                                         tmp, status);
+            outArray[pluralIndex] = tmp;
+        }
+    }
+
     for (int32_t pluralIndex = 0; pluralIndex < StandardPlural::Form::COUNT; pluralIndex++) {
         if (globalPlaceholder[pluralIndex] == PH_BEGINNING) {
             UnicodeString tmp;

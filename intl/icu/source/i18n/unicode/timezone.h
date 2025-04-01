@@ -323,7 +323,7 @@ public:
 
 
 
-    static const UnicodeString U_EXPORT2 getEquivalentID(const UnicodeString& id,
+    static UnicodeString U_EXPORT2 getEquivalentID(const UnicodeString& id,
                                                int32_t index);
 
     

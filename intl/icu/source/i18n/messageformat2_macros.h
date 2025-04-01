@@ -10,6 +10,8 @@
 
 #if U_SHOW_CPLUSPLUS_API
 
+#if !UCONFIG_NO_NORMALIZATION
+
 #if !UCONFIG_NO_FORMATTING
 
 #if !UCONFIG_NO_MF2
@@ -92,6 +94,8 @@ static constexpr std::u16string_view ID_MATCH = u".match";
 
 } 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

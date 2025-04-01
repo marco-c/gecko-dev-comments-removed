@@ -588,6 +588,39 @@ enum URBNFRuleSetTag {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class U_I18N_API RuleBasedNumberFormat : public NumberFormat {
 public:
 

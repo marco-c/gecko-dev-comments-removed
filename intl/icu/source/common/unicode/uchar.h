@@ -675,7 +675,6 @@ typedef enum UProperty {
 
 
     UCHAR_VERTICAL_ORIENTATION=0x1018,
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -683,6 +682,7 @@ typedef enum UProperty {
 
 
     UCHAR_IDENTIFIER_STATUS=0x1019,
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -796,7 +796,6 @@ typedef enum UProperty {
     UCHAR_SCRIPT_EXTENSIONS=0x7000,
     
     UCHAR_OTHER_PROPERTY_START=UCHAR_SCRIPT_EXTENSIONS,
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -811,7 +810,6 @@ typedef enum UProperty {
 
 
     UCHAR_IDENTIFIER_TYPE=0x7001,
-#endif  
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -2791,7 +2789,6 @@ typedef enum UVerticalOrientation {
     U_VO_UPRIGHT,
 } UVerticalOrientation;
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -2851,7 +2848,6 @@ typedef enum UIdentifierType {
     
     U_ID_TYPE_RECOMMENDED,
 } UIdentifierType;
-#endif  
 
 
 
@@ -4057,7 +4053,6 @@ u_isIDStart(UChar32 c);
 U_CAPI UBool U_EXPORT2
 u_isIDPart(UChar32 c);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -4108,7 +4103,6 @@ u_hasIDType(UChar32 c, UIdentifierType type);
 
 U_CAPI int32_t U_EXPORT2
 u_getIDTypes(UChar32 c, UIdentifierType *types, int32_t capacity, UErrorCode *pErrorCode);
-#endif  
 
 
 

@@ -58,6 +58,8 @@ U_NAMESPACE_END
 
 U_NAMESPACE_BEGIN
 
+class CharString;
+
 
 
 
@@ -646,9 +648,9 @@ protected:
 private:
 
     
-    char actualLocale[ULOC_FULLNAME_CAPACITY];
-    char validLocale[ULOC_FULLNAME_CAPACITY];
-    char requestLocale[ULOC_FULLNAME_CAPACITY];
+    CharString* actualLocale = nullptr;
+    CharString* validLocale = nullptr;
+    CharString* requestLocale = nullptr;
 };
 
 #ifndef U_HIDE_DEPRECATED_API

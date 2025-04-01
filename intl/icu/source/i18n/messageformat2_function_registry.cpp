@@ -3,6 +3,8 @@
 
 #include "unicode/utypes.h"
 
+#if !UCONFIG_NO_NORMALIZATION
+
 #if !UCONFIG_NO_FORMATTING
 
 #if !UCONFIG_NO_MF2
@@ -85,10 +87,11 @@ MFFunctionRegistry::Builder::Builder(UErrorCode& errorCode) {
     formattersByType = new Hashtable();
     if (!(formatters != nullptr && selectors != nullptr && formattersByType != nullptr)) {
         errorCode = U_MEMORY_ALLOCATION_ERROR;
+    } else {
+        formatters->setValueDeleter(uprv_deleteUObject);
+        selectors->setValueDeleter(uprv_deleteUObject);
+        formattersByType->setValueDeleter(uprv_deleteUObject);
     }
-    formatters->setValueDeleter(uprv_deleteUObject);
-    selectors->setValueDeleter(uprv_deleteUObject);
-    formattersByType->setValueDeleter(uprv_deleteUObject);
 }
 
 MFFunctionRegistry::Builder::~Builder() {
@@ -158,9 +161,13 @@ void MFFunctionRegistry::checkStandard() const {
     checkFormatter("time");
     checkFormatter("number");
     checkFormatter("integer");
+    checkFormatter("test:function");
+    checkFormatter("test:format");
     checkSelector("number");
     checkSelector("integer");
     checkSelector("string");
+    checkSelector("test:function");
+    checkSelector("test:select");
 }
 
 
@@ -424,14 +431,14 @@ static FormattedPlaceholder notANumber(const FormattedPlaceholder& input) {
     return FormattedPlaceholder(input, FormattedValue(UnicodeString("NaN")));
 }
 
-static double parseNumberLiteral(const FormattedPlaceholder& input, UErrorCode& errorCode) {
+static double parseNumberLiteral(const Formattable& input, UErrorCode& errorCode) {
     if (U_FAILURE(errorCode)) {
         return {};
     }
 
     
     
-    UnicodeString inputStr = input.asFormattable().getString(errorCode);
+    UnicodeString inputStr = input.getString(errorCode);
     
     if (U_FAILURE(errorCode)) {
         return {};
@@ -463,8 +470,42 @@ static double parseNumberLiteral(const FormattedPlaceholder& input, UErrorCode& 
     return result;
 }
 
+static UChar32 digitToChar(int32_t val, UErrorCode errorCode) {
+    if (U_FAILURE(errorCode)) {
+        return '0';
+    }
+    if (val < 0 || val > 9) {
+        errorCode = U_ILLEGAL_ARGUMENT_ERROR;
+    }
+    switch(val) {
+        case 0:
+            return '0';
+        case 1:
+            return '1';
+        case 2:
+            return '2';
+        case 3:
+            return '3';
+        case 4:
+            return '4';
+        case 5:
+            return '5';
+        case 6:
+            return '6';
+        case 7:
+            return '7';
+        case 8:
+            return '8';
+        case 9:
+            return '9';
+        default:
+            errorCode = U_ILLEGAL_ARGUMENT_ERROR;
+            return '0';
+    }
+}
+
 static FormattedPlaceholder tryParsingNumberLiteral(const number::LocalizedNumberFormatter& nf, const FormattedPlaceholder& input, UErrorCode& errorCode) {
-    double numberValue = parseNumberLiteral(input, errorCode);
+    double numberValue = parseNumberLiteral(input.asFormattable(), errorCode);
     if (U_FAILURE(errorCode)) {
         return notANumber(input);
     }
@@ -1235,6 +1276,273 @@ void StandardFunctions::TextSelector::selectKey(FormattedPlaceholder&& toFormat,
 StandardFunctions::TextFactory::~TextFactory() {}
 StandardFunctions::TextSelector::~TextSelector() {}
 
+
+
+Formatter* StandardFunctions::TestFormatFactory::createFormatter(const Locale& locale, UErrorCode& errorCode) {
+    NULL_ON_ERROR(errorCode);
+
+    
+    (void) locale;
+
+    Formatter* result = new TestFormat();
+    if (result == nullptr) {
+        errorCode = U_MEMORY_ALLOCATION_ERROR;
+    }
+    return result;
+}
+
+StandardFunctions::TestFormatFactory::~TestFormatFactory() {}
+StandardFunctions::TestFormat::~TestFormat() {}
+
+
+
+double formattableToNumber(const Formattable& arg, UErrorCode& status) {
+    if (U_FAILURE(status)) {
+        return 0;
+    }
+
+    double result = 0;
+
+    switch (arg.getType()) {
+        case UFMT_DOUBLE: {
+            result = arg.getDouble(status);
+            U_ASSERT(U_SUCCESS(status));
+            break;
+        }
+        case UFMT_LONG: {
+            result = (double) arg.getLong(status);
+            U_ASSERT(U_SUCCESS(status));
+            break;
+        }
+        case UFMT_INT64: {
+            result = (double) arg.getInt64(status);
+            U_ASSERT(U_SUCCESS(status));
+            break;
+        }
+        case UFMT_STRING: {
+            
+            result = parseNumberLiteral(arg, status);
+            if (U_FAILURE(status)) {
+                status = U_MF_OPERAND_MISMATCH_ERROR;
+            }
+            break;
+        }
+        default: {
+            
+            status = U_MF_OPERAND_MISMATCH_ERROR;
+            break;
+        }
+        }
+    return result;
+}
+
+
+ void StandardFunctions::TestFormat::testFunctionParameters(const FormattedPlaceholder& arg,
+                                                                        const FunctionOptions& options,
+                                                                        int32_t& decimalPlaces,
+                                                                        bool& failsFormat,
+                                                                        bool& failsSelect,
+                                                                        double& input,
+                                                                        UErrorCode& status) {
+    CHECK_ERROR(status);
+
+    
+    decimalPlaces = 0;
+
+    
+    failsFormat = false;
+
+    
+    failsSelect = false;
+
+    
+    
+
+    
+    
+    input = formattableToNumber(arg.asFormattable(), status);
+    if (U_FAILURE(status)) {
+        
+        
+        status = U_MF_OPERAND_MISMATCH_ERROR;
+        
+        
+    }
+    
+    Formattable opt;
+    if (options.getFunctionOption(UnicodeString("decimalPlaces"), opt)) {
+        
+        
+        double decimalPlacesInput = formattableToNumber(opt, status);
+        if (U_SUCCESS(status)) {
+            if (decimalPlacesInput == 0 || decimalPlacesInput == 1) {
+                
+                decimalPlaces = decimalPlacesInput;
+            }
+        }
+        
+        else {
+            
+            status = U_MF_BAD_OPTION;
+            
+        }
+    }
+    
+    Formattable failsOpt;
+    if (options.getFunctionOption(UnicodeString("fails"), failsOpt)) {
+        UnicodeString failsString = failsOpt.getString(status);
+        if (U_SUCCESS(status)) {
+            
+            if (failsString == u"always") {
+                
+                failsFormat = true;
+                
+                failsSelect = true;
+            }
+            
+            else if (failsString == u"format") {
+                
+                failsFormat = true;
+            }
+            
+            else if (failsString == u"select") {
+                
+                failsSelect = true;
+            }
+            
+            else if (failsString != u"never") {
+                
+                status = U_MF_BAD_OPTION;
+            }
+        } else {
+            
+            status = U_MF_BAD_OPTION;
+        }
+    }
+}
+
+FormattedPlaceholder StandardFunctions::TestFormat::format(FormattedPlaceholder&& arg,
+                                                           FunctionOptions&& options,
+                                                           UErrorCode& status) const{
+
+    int32_t decimalPlaces;
+    bool failsFormat;
+    bool failsSelect;
+    double input;
+
+    testFunctionParameters(arg, options, decimalPlaces,
+                           failsFormat, failsSelect, input, status);
+    if (U_FAILURE(status)) {
+        return FormattedPlaceholder(arg.getFallback());
+    }
+
+    
+    
+    if (failsFormat) {
+        status = U_MF_FORMATTING_ERROR;
+        return FormattedPlaceholder(arg.getFallback());
+    }
+    UnicodeString result;
+    
+    
+    
+    if (input < 0) {
+        result += HYPHEN;
+    }
+    
+    
+    char buffer[256];
+    bool ignore;
+    int ignoreLen;
+    int ignorePoint;
+    double_conversion::DoubleToStringConverter::DoubleToAscii(floor(abs(input)),
+                                                              double_conversion::DoubleToStringConverter::DtoaMode::SHORTEST,
+                                                              0,
+                                                              buffer,
+                                                              256,
+                                                              &ignore,
+                                                              &ignoreLen,
+                                                              &ignorePoint);
+    result += UnicodeString(buffer);
+    
+    if (decimalPlaces == 1) {
+        
+        result += u".";
+        
+        
+        int32_t val = floor((abs(input) - floor(abs(input)) * 10));
+        result += digitToChar(val, status);
+        U_ASSERT(U_SUCCESS(status));
+    }
+    return FormattedPlaceholder(result);
+}
+
+
+
+StandardFunctions::TestSelectFactory::~TestSelectFactory() {}
+StandardFunctions::TestSelect::~TestSelect() {}
+
+Selector* StandardFunctions::TestSelectFactory::createSelector(const Locale& locale,
+                                                               UErrorCode& errorCode) const {
+    NULL_ON_ERROR(errorCode);
+
+    
+    (void) locale;
+
+    Selector* result = new TestSelect();
+    if (result == nullptr) {
+        errorCode = U_MEMORY_ALLOCATION_ERROR;
+    }
+    return result;
+}
+
+void StandardFunctions::TestSelect::selectKey(FormattedPlaceholder&& val,
+                                              FunctionOptions&& options,
+                                              const UnicodeString* keys,
+                                              int32_t keysLen,
+                                              UnicodeString* prefs,
+                                              int32_t& prefsLen,
+                                              UErrorCode& status) const {
+    int32_t decimalPlaces;
+    bool failsFormat;
+    bool failsSelect;
+    double input;
+
+    TestFormat::testFunctionParameters(val, options, decimalPlaces,
+                                       failsFormat, failsSelect, input, status);
+
+    if (U_FAILURE(status)) {
+        return;
+    }
+
+    if (failsSelect) {
+        status = U_MF_SELECTOR_ERROR;
+        return;
+    }
+
+    
+    
+    bool include1point0 = false;
+    bool include1 = false;
+    if (input == 1 && decimalPlaces == 1) {
+        include1point0 = true;
+        include1 = true;
+    } else if (input == 1 && decimalPlaces == 0) {
+        include1 = true;
+    }
+
+    
+    
+    
+    for (int32_t i = 0; i < keysLen; i++) {
+        if ((keys[i] == u"1" && include1)
+            || (keys[i] == u"1.0" && include1point0)) {
+            prefs[prefsLen] = keys[i];
+            prefsLen++;
+        }
+    }
+}
+
 } 
 U_NAMESPACE_END
 
@@ -1242,3 +1550,4 @@ U_NAMESPACE_END
 
 #endif 
 
+#endif 

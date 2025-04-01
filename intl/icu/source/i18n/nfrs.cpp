@@ -152,7 +152,7 @@ NFRuleSet::NFRuleSet(RuleBasedNumberFormat *_owner, UnicodeString* descriptions,
 
     UnicodeString& description = descriptions[index]; 
 
-    if (description.length() == 0) {
+    if (description.isEmpty()) {
         
         status = U_PARSE_ERROR;
         return;
@@ -177,16 +177,16 @@ NFRuleSet::NFRuleSet(RuleBasedNumberFormat *_owner, UnicodeString* descriptions,
         name.setTo(UNICODE_STRING_SIMPLE("%default"));
     }
 
-    if (description.length() == 0) {
+    if (description.isEmpty()) {
         
         status = U_PARSE_ERROR;
     }
 
     fIsPublic = name.indexOf(gPercentPercent, 2, 0) != 0;
 
-    if ( name.endsWith(gNoparse,8) ) {
+    if (name.endsWith(gNoparse, 8)) {
         fIsParseable = false;
-        name.truncate(name.length()-8); 
+        name.truncate(name.length() - 8); 
     }
 
     

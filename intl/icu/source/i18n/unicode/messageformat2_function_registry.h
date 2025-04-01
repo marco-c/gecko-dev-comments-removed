@@ -8,6 +8,8 @@
 
 #if U_SHOW_CPLUSPLUS_API
 
+#if !UCONFIG_NO_NORMALIZATION
+
 #if !UCONFIG_NO_FORMATTING
 
 #if !UCONFIG_NO_MF2
@@ -415,6 +417,8 @@ namespace message2 {
 } 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

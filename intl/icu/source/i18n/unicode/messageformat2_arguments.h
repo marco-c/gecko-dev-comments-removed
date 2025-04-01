@@ -8,6 +8,8 @@
 
 #if U_SHOW_CPLUSPLUS_API
 
+#if !UCONFIG_NO_NORMALIZATION
+
 #if !UCONFIG_NO_FORMATTING
 
 #if !UCONFIG_NO_MF2
@@ -43,7 +45,7 @@ template class U_I18N_API LocalArray<message2::Formattable>;
 
 namespace message2 {
 
-    class MessageContext;
+    class MessageFormatter;
 
     
     
@@ -112,7 +114,9 @@ namespace message2 {
     private:
         friend class MessageContext;
 
-        const Formattable* getArgument(const data_model::VariableName&, UErrorCode&) const;
+        const Formattable* getArgument(const MessageFormatter&,
+                                       const data_model::VariableName&,
+                                       UErrorCode&) const;
 
         
         
@@ -124,6 +128,8 @@ namespace message2 {
 } 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

@@ -15,6 +15,11 @@
 #include "charstr.h"
 #include "cmemory.h"
 #include "cstring.h"
+#ifdef JS_HAS_INTL_API
+#include "double-conversion/string-to-double.h"
+#else
+#include "double-conversion-string-to-double.h"
+#endif
 #include "measunit_impl.h"
 #include "resource.h"
 #include "uarrsort.h"
@@ -30,12 +35,18 @@
 #include "unicode/ustringtrie.h"
 #include "uresimp.h"
 #include "util.h"
+#include <limits.h>
 #include <cstdlib>
-
 U_NAMESPACE_BEGIN
 
 
 namespace {
+
+#ifdef JS_HAS_INTL_API
+using double_conversion::StringToDoubleConverter;
+#else
+using icu::double_conversion::StringToDoubleConverter;
+#endif
 
 
 constexpr UErrorCode kUnitIdentifierSyntaxError = U_ILLEGAL_ARGUMENT_ERROR;
@@ -467,37 +478,55 @@ void U_CALLCONV initUnitExtras(UErrorCode& status) {
 
 class Token {
 public:
-    Token(int32_t match) : fMatch(match) {}
+  Token(int64_t match) : fMatch(match) {
+      if (fMatch < kCompoundPartOffset) {
+          this->fType = TYPE_PREFIX;
+      } else if (fMatch < kInitialCompoundPartOffset) {
+          this->fType = TYPE_COMPOUND_PART;
+      } else if (fMatch < kPowerPartOffset) {
+          this->fType = TYPE_INITIAL_COMPOUND_PART;
+      } else if (fMatch < kSimpleUnitOffset) {
+          this->fType = TYPE_POWER_PART;
+      } else {
+          this->fType = TYPE_SIMPLE_UNIT;
+      }
+  }
 
-    enum Type {
-        TYPE_UNDEFINED,
-        TYPE_PREFIX,
-        
-        TYPE_COMPOUND_PART,
-        
-        TYPE_INITIAL_COMPOUND_PART,
-        TYPE_POWER_PART,
-        TYPE_SIMPLE_UNIT,
-    };
+  static Token constantToken(StringPiece str, UErrorCode &status) {
+      Token result;
+      auto value = Token::parseStringToLong(str, status);
+      if (U_FAILURE(status)) {
+          return result;
+      }
+      result.fMatch = value;
+      result.fType = TYPE_CONSTANT_DENOMINATOR;
+      return result;
+  }
 
-    
-    
-    Type getType() const {
-        U_ASSERT(fMatch > 0);
-        if (fMatch < kCompoundPartOffset) {
-            return TYPE_PREFIX;
-        }
-        if (fMatch < kInitialCompoundPartOffset) {
-            return TYPE_COMPOUND_PART;
-        }
-        if (fMatch < kPowerPartOffset) {
-            return TYPE_INITIAL_COMPOUND_PART;
-        }
-        if (fMatch < kSimpleUnitOffset) {
-            return TYPE_POWER_PART;
-        }
-        return TYPE_SIMPLE_UNIT;
-    }
+  enum Type {
+      TYPE_UNDEFINED,
+      TYPE_PREFIX,
+      
+      TYPE_COMPOUND_PART,
+      
+      TYPE_INITIAL_COMPOUND_PART,
+      TYPE_POWER_PART,
+      TYPE_SIMPLE_UNIT,
+      TYPE_CONSTANT_DENOMINATOR,
+  };
+
+  
+  
+  Type getType() const {
+      U_ASSERT(fMatch >= 0);
+      return this->fType;
+  }
+
+  
+  uint64_t getConstantDenominator() const {
+      U_ASSERT(getType() == TYPE_CONSTANT_DENOMINATOR);
+      return static_cast<uint64_t>(fMatch);
+  }
 
     UMeasurePrefix getUnitPrefix() const {
         U_ASSERT(getType() == TYPE_PREFIX);
@@ -530,8 +559,41 @@ public:
         return fMatch - kSimpleUnitOffset;
     }
 
+    
+    
+    
+    
+    static uint64_t parseStringToLong(const StringPiece strNum, UErrorCode &status) {
+        
+        
+        StringToDoubleConverter converter(0, 0, 0, "", "");
+        int32_t count;
+        double double_result = converter.StringToDouble(strNum.data(), strNum.length(), &count);
+        if (count != strNum.length()) {
+            status = kUnitIdentifierSyntaxError;
+            return 0;
+        }
+
+        if (U_FAILURE(status) || double_result < 1.0 || double_result > static_cast<double>(INT64_MAX)) {
+            status = kUnitIdentifierSyntaxError;
+            return 0;
+        }
+
+        
+        uint64_t int_result = static_cast<uint64_t>(double_result);
+        const double kTolerance = 1e-9;
+        if (abs(double_result - int_result) > kTolerance) {
+            status = kUnitIdentifierSyntaxError;
+            return 0;
+        }
+
+        return int_result;
+    }
+
 private:
-    int32_t fMatch;
+  Token() = default;
+  int64_t fMatch;
+  Type fType = TYPE_UNDEFINED;
 };
 
 class Parser {
@@ -555,6 +617,50 @@ public:
         return {source};
     }
 
+    
+
+
+    struct SingleUnitOrConstant {
+        enum ValueType {
+            kSingleUnit,
+            kConstantDenominator,
+        };
+
+        ValueType type = kSingleUnit;
+        SingleUnitImpl singleUnit;
+        uint64_t constantDenominator;
+
+        static SingleUnitOrConstant singleUnitValue(SingleUnitImpl singleUnit) {
+            SingleUnitOrConstant result;
+            result.type = kSingleUnit;
+            result.singleUnit = singleUnit;
+            result.constantDenominator = 0;
+            return result;
+        }
+
+        static SingleUnitOrConstant constantDenominatorValue(uint64_t constant) {
+            SingleUnitOrConstant result;
+            result.type = kConstantDenominator;
+            result.singleUnit = {};
+            result.constantDenominator = constant;
+            return result;
+        }
+
+        uint64_t getConstantDenominator() const {
+            U_ASSERT(type == kConstantDenominator);
+            return constantDenominator;
+        }
+
+        SingleUnitImpl getSingleUnit() const {
+            U_ASSERT(type == kSingleUnit);
+            return singleUnit;
+        }
+
+        bool isSingleUnit() const { return type == kSingleUnit; }
+
+        bool isConstantDenominator() const { return type == kConstantDenominator; }
+    };
+
     MeasureUnitImpl parse(UErrorCode& status) {
         MeasureUnitImpl result;
 
@@ -569,12 +675,19 @@ public:
         while (hasNext()) {
             bool sawAnd = false;
 
-            SingleUnitImpl singleUnit = nextSingleUnit(sawAnd, status);
+            auto singleUnitOrConstant = nextSingleUnitOrConstant(sawAnd, status);
             if (U_FAILURE(status)) {
                 return result;
             }
 
-            bool added = result.appendSingleUnit(singleUnit, status);
+            if (singleUnitOrConstant.isConstantDenominator()) {
+                result.constantDenominator = singleUnitOrConstant.getConstantDenominator();
+                result.complexity = UMEASURE_UNIT_COMPOUND;
+                continue;
+            }
+
+            U_ASSERT(singleUnitOrConstant.isSingleUnit());
+            bool added = result.appendSingleUnit(singleUnitOrConstant.getSingleUnit(), status);
             if (U_FAILURE(status)) {
                 return result;
             }
@@ -604,6 +717,12 @@ public:
             }
         }
 
+        if (result.singleUnits.length() == 0) {
+            
+            status = kUnitIdentifierSyntaxError;
+            return result; 
+        }
+
         return result;
     }
 
@@ -621,6 +740,10 @@ private:
     
     
     bool fAfterPer = false;
+
+    
+    
+    bool fJustSawPer = false;
 
     Parser() : fSource(""), fTrie(u"") {}
 
@@ -640,6 +763,10 @@ private:
         
         
         int32_t previ = -1;
+
+        
+        int32_t currentFIndex = fIndex;
+
         
         while (fIndex < fSource.length()) {
             auto result = fTrie.next(fSource.data()[fIndex++]);
@@ -658,12 +785,25 @@ private:
             
         }
 
-        if (match < 0) {
-            status = kUnitIdentifierSyntaxError;
-        } else {
+        if (match >= 0) {
             fIndex = previ;
+            return {match};
         }
-        return {match};
+
+        
+        
+        int32_t endOfConstantIndex = fSource.find("-", currentFIndex);
+        endOfConstantIndex = (endOfConstantIndex == -1) ? fSource.length() : endOfConstantIndex;
+        if (endOfConstantIndex <= currentFIndex) {
+            status = kUnitIdentifierSyntaxError;
+            return {match};
+        }
+
+        
+        StringPiece constantDenominatorStr =
+            fSource.substr(currentFIndex, endOfConstantIndex - currentFIndex);
+        fIndex = endOfConstantIndex;
+        return Token::constantToken(constantDenominatorStr, status);
     }
 
     
@@ -680,10 +820,10 @@ private:
 
 
 
-    SingleUnitImpl nextSingleUnit(bool &sawAnd, UErrorCode &status) {
-        SingleUnitImpl result;
+    SingleUnitOrConstant nextSingleUnitOrConstant(bool &sawAnd, UErrorCode &status) {
+        SingleUnitImpl singleUnitResult;
         if (U_FAILURE(status)) {
-            return result;
+            return {};
         }
 
         
@@ -695,19 +835,22 @@ private:
         bool atStart = fIndex == 0;
         Token token = nextToken(status);
         if (U_FAILURE(status)) {
-            return result;
+            return {};
         }
+
+        fJustSawPer = false;
 
         if (atStart) {
             
             if (token.getType() == Token::TYPE_INITIAL_COMPOUND_PART) {
                 U_ASSERT(token.getInitialCompoundPart() == INITIAL_COMPOUND_PART_PER);
                 fAfterPer = true;
-                result.dimensionality = -1;
+                fJustSawPer = true;
+                singleUnitResult.dimensionality = -1;
 
                 token = nextToken(status);
                 if (U_FAILURE(status)) {
-                    return result;
+                    return {};
                 }
             }
         } else {
@@ -715,7 +858,7 @@ private:
             
             if (token.getType() != Token::TYPE_COMPOUND_PART) {
                 status = kUnitIdentifierSyntaxError;
-                return result;
+                return {};
             }
 
             switch (token.getMatch()) {
@@ -724,15 +867,16 @@ private:
                     
                     
                     status = kUnitIdentifierSyntaxError;
-                    return result;
+                    return {};
                 }
                 fAfterPer = true;
-                result.dimensionality = -1;
+                fJustSawPer = true;
+                singleUnitResult.dimensionality = -1;
                 break;
 
             case COMPOUND_PART_TIMES:
                 if (fAfterPer) {
-                    result.dimensionality = -1;
+                    singleUnitResult.dimensionality = -1;
                 }
                 break;
 
@@ -741,7 +885,7 @@ private:
                     
                     
                     status = kUnitIdentifierSyntaxError;
-                    return result;
+                    return {};
                 }
                 sawAnd = true;
                 break;
@@ -749,52 +893,65 @@ private:
 
             token = nextToken(status);
             if (U_FAILURE(status)) {
-                return result;
+                return {};
             }
+        }
+
+        if (token.getType() == Token::TYPE_CONSTANT_DENOMINATOR) {
+            if (!fJustSawPer) {
+                status = kUnitIdentifierSyntaxError;
+                return {};
+            }
+
+            return SingleUnitOrConstant::constantDenominatorValue(token.getConstantDenominator());
         }
 
         
         while (true) {
             switch (token.getType()) {
-                case Token::TYPE_POWER_PART:
-                    if (state > 0) {
-                        status = kUnitIdentifierSyntaxError;
-                        return result;
-                    }
-                    result.dimensionality *= token.getPower();
-                    state = 1;
-                    break;
-
-                case Token::TYPE_PREFIX:
-                    if (state > 1) {
-                        status = kUnitIdentifierSyntaxError;
-                        return result;
-                    }
-                    result.unitPrefix = token.getUnitPrefix();
-                    state = 2;
-                    break;
-
-                case Token::TYPE_SIMPLE_UNIT:
-                    result.index = token.getSimpleUnitIndex();
-                    return result;
-
-                default:
+            case Token::TYPE_POWER_PART:
+                if (state > 0) {
                     status = kUnitIdentifierSyntaxError;
-                    return result;
+                    return {};
+                }
+                singleUnitResult.dimensionality *= token.getPower();
+                state = 1;
+                break;
+
+            case Token::TYPE_PREFIX:
+                if (state > 1) {
+                    status = kUnitIdentifierSyntaxError;
+                    return {};
+                }
+                singleUnitResult.unitPrefix = token.getUnitPrefix();
+                state = 2;
+                break;
+
+            case Token::TYPE_SIMPLE_UNIT:
+                singleUnitResult.index = token.getSimpleUnitIndex();
+                break;
+
+            default:
+                status = kUnitIdentifierSyntaxError;
+                return {};
+            }
+
+            if (token.getType() == Token::TYPE_SIMPLE_UNIT) {
+                break;
             }
 
             if (!hasNext()) {
                 
                 status = kUnitIdentifierSyntaxError;
-                return result;
+                return {};
             }
             token = nextToken(status);
             if (U_FAILURE(status)) {
-                return result;
+                return {};
             }
         }
 
-        return result;
+        return SingleUnitOrConstant::singleUnitValue(singleUnitResult);
     }
 };
 
@@ -1120,6 +1277,51 @@ MeasureUnitImpl::extractIndividualUnitsWithIndices(UErrorCode &status) const {
     return result;
 }
 
+int32_t countCharacter(const CharString &str, char c) {
+    int32_t count = 0;
+    for (int32_t i = 0, n = str.length(); i < n; i++) {
+        if (str[i] == c) {
+            count++;
+        }
+    }
+    return count;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+CharString getConstantsString(uint64_t constantDenominator, UErrorCode &status) {
+    U_ASSERT(constantDenominator > 0 && constantDenominator <= LLONG_MAX);
+
+    CharString result;
+    result.appendNumber(constantDenominator, status);
+    if (U_FAILURE(status)) {
+        return result;
+    }
+
+    if (constantDenominator <= 1000) {
+        return result;
+    }
+
+    
+    int32_t zeros = countCharacter(result, '0');
+    if (zeros == result.length() - 1 && result[0] == '1') {
+        result.clear();
+        result.append(StringPiece("1e"), status);
+        result.appendNumber(zeros, status);
+    }
+
+    return result;
+}
+
 
 
 
@@ -1128,7 +1330,7 @@ void MeasureUnitImpl::serialize(UErrorCode &status) {
         return;
     }
 
-    if (this->singleUnits.length() == 0) {
+    if (this->singleUnits.length() == 0 && this->constantDenominator == 0) {
         
         return;
     }
@@ -1145,6 +1347,7 @@ void MeasureUnitImpl::serialize(UErrorCode &status) {
     CharString result;
     bool beforePer = true;
     bool firstTimeNegativeDimension = false;
+    bool constantDenominatorAppended = false;
     for (int32_t i = 0; i < this->singleUnits.length(); i++) {
         if (beforePer && (*this->singleUnits[i]).dimensionality < 0) {
             beforePer = false;
@@ -1168,41 +1371,101 @@ void MeasureUnitImpl::serialize(UErrorCode &status) {
                 } else {
                     result.append(StringPiece("-per-"), status);
                 }
-            } else {
-                if (result.length() != 0) {
+
+                if (this->constantDenominator > 0) {
+                    result.append(getConstantsString(this->constantDenominator, status), status);
                     result.append(StringPiece("-"), status);
+                    constantDenominatorAppended = true;
                 }
+
+            } else if (result.length() != 0) {
+                result.append(StringPiece("-"), status);
             }
         }
 
         this->singleUnits[i]->appendNeutralIdentifier(result, status);
     }
 
+    if (!constantDenominatorAppended && this->constantDenominator > 0) {
+        result.append(StringPiece("-per-"), status);
+        result.append(getConstantsString(this->constantDenominator, status), status);
+    }
+
+    if (U_FAILURE(status)) {
+        return;
+    }
     this->identifier = CharString(result, status);
 }
 
-MeasureUnit MeasureUnitImpl::build(UErrorCode& status) && {
+MeasureUnit MeasureUnitImpl::build(UErrorCode &status) && {
     this->serialize(status);
     return MeasureUnit(std::move(*this));
 }
 
-MeasureUnit MeasureUnit::forIdentifier(StringPiece identifier, UErrorCode& status) {
+MeasureUnit MeasureUnit::forIdentifier(StringPiece identifier, UErrorCode &status) {
     return Parser::from(identifier, status).parse(status).build(status);
 }
 
-UMeasureUnitComplexity MeasureUnit::getComplexity(UErrorCode& status) const {
+UMeasureUnitComplexity MeasureUnit::getComplexity(UErrorCode &status) const {
     MeasureUnitImpl temp;
     return MeasureUnitImpl::forMeasureUnit(*this, temp, status).complexity;
 }
 
-UMeasurePrefix MeasureUnit::getPrefix(UErrorCode& status) const {
+UMeasurePrefix MeasureUnit::getPrefix(UErrorCode &status) const {
     return SingleUnitImpl::forMeasureUnit(*this, status).unitPrefix;
 }
 
-MeasureUnit MeasureUnit::withPrefix(UMeasurePrefix prefix, UErrorCode& status) const UPRV_NO_SANITIZE_UNDEFINED {
+MeasureUnit MeasureUnit::withPrefix(UMeasurePrefix prefix,
+                                    UErrorCode &status) const UPRV_NO_SANITIZE_UNDEFINED {
     SingleUnitImpl singleUnit = SingleUnitImpl::forMeasureUnit(*this, status);
     singleUnit.unitPrefix = prefix;
     return singleUnit.build(status);
+}
+
+uint64_t MeasureUnit::getConstantDenominator(UErrorCode &status) const {
+    auto complexity = this->getComplexity(status);
+    if (U_FAILURE(status)) {
+        return 0;
+    }
+
+    if (complexity != UMEASURE_UNIT_SINGLE && complexity != UMEASURE_UNIT_COMPOUND) {
+        status = U_ILLEGAL_ARGUMENT_ERROR;
+        return 0;
+    }
+
+    if (this->fImpl == nullptr) {
+        return 0;
+    }
+
+    return this->fImpl->constantDenominator;
+}
+
+MeasureUnit MeasureUnit::withConstantDenominator(uint64_t denominator, UErrorCode &status) const {
+    
+    
+    if (denominator > LONG_MAX) {
+        status = U_ILLEGAL_ARGUMENT_ERROR;
+        return {};
+    }
+
+    auto complexity = this->getComplexity(status);
+    if (U_FAILURE(status)) {
+        return {};
+    }
+    if (complexity != UMEASURE_UNIT_SINGLE && complexity != UMEASURE_UNIT_COMPOUND) {
+        status = U_ILLEGAL_ARGUMENT_ERROR;
+        return {};
+    }
+
+    MeasureUnitImpl impl = MeasureUnitImpl::forMeasureUnitMaybeCopy(*this, status);
+    if (U_FAILURE(status)) {
+        return {};
+    }
+
+    impl.constantDenominator = denominator;
+    impl.complexity = (impl.singleUnits.length() < 2 && denominator == 0) ? UMEASURE_UNIT_SINGLE
+                                                                          : UMEASURE_UNIT_COMPOUND;
+    return std::move(impl).build(status);
 }
 
 int32_t MeasureUnit::getDimensionality(UErrorCode& status) const {
@@ -1222,6 +1485,11 @@ MeasureUnit MeasureUnit::withDimensionality(int32_t dimensionality, UErrorCode& 
 
 MeasureUnit MeasureUnit::reciprocal(UErrorCode& status) const {
     MeasureUnitImpl impl = MeasureUnitImpl::forMeasureUnitMaybeCopy(*this, status);
+    
+    if (impl.constantDenominator != 0) {
+        status = U_ILLEGAL_ARGUMENT_ERROR;
+        return {};
+    }
     impl.takeReciprocal(status);
     return std::move(impl).build(status);
 }
@@ -1237,9 +1505,25 @@ MeasureUnit MeasureUnit::product(const MeasureUnit& other, UErrorCode& status) c
     for (int32_t i = 0; i < otherImpl.singleUnits.length(); i++) {
         impl.appendSingleUnit(*otherImpl.singleUnits[i], status);
     }
-    if (impl.singleUnits.length() > 1) {
+
+    uint64_t currentConstatDenominator = this->getConstantDenominator(status);
+    uint64_t otherConstantDenominator = other.getConstantDenominator(status);
+
+    
+    if (currentConstatDenominator != 0 && otherConstantDenominator != 0) {
+        
+        
+        status = U_ILLEGAL_ARGUMENT_ERROR;
+        return {};
+    }
+
+    
+    impl.constantDenominator = uprv_max(currentConstatDenominator, otherConstantDenominator);
+
+    if (impl.singleUnits.length() > 1 || impl.constantDenominator > 0) {
         impl.complexity = UMEASURE_UNIT_COMPOUND;
     }
+
     return std::move(impl).build(status);
 }
 

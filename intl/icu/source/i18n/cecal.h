@@ -82,13 +82,6 @@ protected:
 
     virtual ~CECalendar();
 
-    
-
-
-
-
-    CECalendar& operator=(const CECalendar& right);
-
 protected:
     
     

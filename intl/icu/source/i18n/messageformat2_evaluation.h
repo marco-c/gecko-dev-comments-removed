@@ -14,6 +14,7 @@
 
 
 
+#if !UCONFIG_NO_NORMALIZATION
 
 #if !UCONFIG_NO_FORMATTING
 
@@ -62,38 +63,6 @@ namespace message2 {
         }
         return 1;
     }
-
-    
-    
-    class ResolvedSelector : public UObject {
-    public:
-        ResolvedSelector() {}
-        ResolvedSelector(const FunctionName& fn,
-                         Selector* selector,
-                         FunctionOptions&& options,
-                         FormattedPlaceholder&& value);
-        
-        explicit ResolvedSelector(FormattedPlaceholder&& value);
-        bool hasSelector() const { return selector.isValid(); }
-        const FormattedPlaceholder& argument() const { return value; }
-        FormattedPlaceholder&& takeArgument() { return std::move(value); }
-        const Selector* getSelector() {
-            U_ASSERT(selector.isValid());
-            return selector.getAlias();
-        }
-        FunctionOptions&& takeOptions() {
-            return std::move(options);
-        }
-        const FunctionName& getSelectorName() const { return selectorName; }
-        virtual ~ResolvedSelector();
-        ResolvedSelector& operator=(ResolvedSelector&&) noexcept;
-        ResolvedSelector(ResolvedSelector&&);
-    private:
-        FunctionName selectorName; 
-        LocalPointer<Selector> selector;
-        FunctionOptions options;
-        FormattedPlaceholder value;
-    }; 
 
     
     
@@ -174,11 +143,15 @@ namespace message2 {
     
     
 
+    class MessageFormatter;
+
     class MessageContext : public UMemory {
     public:
         MessageContext(const MessageArguments&, const StaticErrors&, UErrorCode&);
 
-        const Formattable* getGlobal(const VariableName&, UErrorCode&) const;
+        const Formattable* getGlobal(const MessageFormatter&,
+                                     const VariableName&,
+                                     UErrorCode&) const;
 
         
         void checkErrors(UErrorCode& status) const;
@@ -191,11 +164,52 @@ namespace message2 {
         const MessageArguments& arguments; 
         
         DynamicErrors errors;
+
+    }; 
+
+    
+    
+
+    class InternalValue : public UObject {
+    public:
+        const FunctionName& getFunctionName() const { return name; }
+        bool canSelect() const { return selector != nullptr; }
+        const Selector* getSelector(UErrorCode&) const;
+        FormattedPlaceholder forceFormatting(DynamicErrors& errs,
+                                             UErrorCode& errorCode);
+        void forceSelection(DynamicErrors& errs,
+                            const UnicodeString* keys,
+                            int32_t keysLen,
+                            UnicodeString* prefs,
+                            int32_t& prefsLen,
+                            UErrorCode& errorCode);
+        
+        virtual ~InternalValue();
+        InternalValue(FormattedPlaceholder&&);
+        
+        InternalValue(InternalValue*, FunctionOptions&&, const FunctionName&, const Formatter*,
+                      const Selector*);
+        const UnicodeString& getFallback() const;
+        bool isFallback() const;
+        bool hasNullOperand() const;
+        
+        FormattedPlaceholder takeArgument(UErrorCode& errorCode);
+        InternalValue(InternalValue&& other) { *this = std::move(other); }
+        InternalValue& operator=(InternalValue&& other) noexcept;
+    private:
+        
+        std::variant<InternalValue*, FormattedPlaceholder> argument;
+        FunctionOptions options;
+        FunctionName name;
+        const Selector* selector; 
+        const Formatter* formatter; 
     }; 
 
 } 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

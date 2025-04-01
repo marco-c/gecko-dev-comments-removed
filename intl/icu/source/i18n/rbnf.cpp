@@ -1573,7 +1573,7 @@ RuleBasedNumberFormat::init(const UnicodeString& rules, LocalizationInfo* locali
     
     
     
-    if(!numRuleSets) {
+    if (!numRuleSets) {
         status = U_ILLEGAL_ARGUMENT_ERROR;
         return;
     }
@@ -1706,10 +1706,13 @@ RuleBasedNumberFormat::stripWhitespace(UnicodeString& description)
     UnicodeString result;
 
     int start = 0;
-    while (start != -1 && start < description.length()) {
+    UChar ch;
+    while (start < description.length()) {
+        
         
         while (start < description.length()
-            && PatternProps::isWhiteSpace(description.charAt(start))) {
+            && (PatternProps::isWhiteSpace(ch = description.charAt(start)) || ch == gSemiColon))
+        {
             ++start;
         }
 
@@ -1720,20 +1723,16 @@ RuleBasedNumberFormat::stripWhitespace(UnicodeString& description)
             
             
             result.append(description, start, description.length() - start);
-            start = -1;
+            break;
         }
         else if (p < description.length()) {
             result.append(description, start, p + 1 - start);
             start = p + 1;
         }
-
         
         
         
         
-        else {
-            start = -1;
-        }
     }
 
     description.setTo(result);

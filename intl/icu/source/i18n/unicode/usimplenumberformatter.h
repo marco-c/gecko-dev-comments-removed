@@ -156,7 +156,6 @@ U_CAPI void U_EXPORT2
 usnum_setMinimumFractionDigits(USimpleNumber* unumber, int32_t minimumFractionDigits, UErrorCode* ec);
 
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -164,7 +163,6 @@ usnum_setMinimumFractionDigits(USimpleNumber* unumber, int32_t minimumFractionDi
 
 U_CAPI void U_EXPORT2
 usnum_setMaximumIntegerDigits(USimpleNumber* unumber, int32_t maximumIntegerDigits, UErrorCode* ec);
-#endif 
 
 
 

@@ -508,7 +508,6 @@ class U_I18N_API LocalizedNumberRangeFormatter
     FormattedNumberRange formatFormattableRange(
         const Formattable& first, const Formattable& second, UErrorCode& status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -525,7 +524,6 @@ class U_I18N_API LocalizedNumberRangeFormatter
 
 
     UnlocalizedNumberRangeFormatter withoutLocale() &&;
-#endif 
 
     
 

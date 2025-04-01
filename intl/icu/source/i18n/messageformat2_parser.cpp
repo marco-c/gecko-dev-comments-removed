@@ -3,13 +3,18 @@
 
 #include "unicode/utypes.h"
 
+#if !UCONFIG_NO_NORMALIZATION
+
 #if !UCONFIG_NO_FORMATTING
 
 #if !UCONFIG_NO_MF2
 
+#include "unicode/uniset.h"
 #include "messageformat2_errors.h"
 #include "messageformat2_macros.h"
 #include "messageformat2_parser.h"
+#include "ucln_in.h"
+#include "umutex.h"
 #include "uvector.h" 
 
 U_NAMESPACE_BEGIN
@@ -93,96 +98,338 @@ static void copyContext(const UChar in[U_PARSE_CONTEXT_LEN], UChar out[U_PARSE_C
 
 
 
+namespace unisets {
 
-static bool inRange(UChar32 c, UChar32 first, UChar32 last) {
-    U_ASSERT(first < last);
-    return c >= first && c <= last;
+UnicodeSet* gUnicodeSets[unisets::UNISETS_KEY_COUNT] = {};
+
+inline UnicodeSet* getImpl(Key key) {
+    return gUnicodeSets[key];
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static bool isContentChar(UChar32 c) {
-    return inRange(c, 0x0001, 0x0008)    
-           || inRange(c, 0x000B, 0x000C) 
-           || inRange(c, 0x000E, 0x001F) 
-           || inRange(c, 0x0021, 0x002D) 
-           || inRange(c, 0x002F, 0x003F) 
-           || inRange(c, 0x0041, 0x005B) 
-           || inRange(c, 0x005D, 0x007A) 
-           || inRange(c, 0x007E, 0xD7FF) 
-           || inRange(c, 0xE000, 0x10FFFF);
+icu::UInitOnce gMF2ParseUniSetsInitOnce {};
 }
 
+UnicodeSet* initContentChars(UErrorCode& status) {
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
 
-inline bool isWhitespace(UChar32 c) {
-    switch (c) {
-    case SPACE:
-    case HTAB:
-    case CR:
-    case LF:
-    case IDEOGRAPHIC_SPACE:
-        return true;
-    default:
-        return false;
+    UnicodeSet* result = new UnicodeSet(0x0001, 0x0008); 
+    if (result == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return nullptr;
+    }
+    result->add(0x000B, 0x000C); 
+    result->add(0x000E, 0x001F); 
+    result->add(0x0021, 0x002D); 
+    result->add(0x002F, 0x003F); 
+    result->add(0x0041, 0x005B); 
+    result->add(0x005D, 0x007A); 
+    result->add(0x007E, 0x2FFF); 
+    result->add(0x3001, 0x10FFFF); 
+    result->freeze();
+    return result;
+}
+
+UnicodeSet* initWhitespace(UErrorCode& status) {
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+
+    UnicodeSet* result = new UnicodeSet();
+    if (result == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return nullptr;
+    }
+    result->add(SPACE);
+    result->add(HTAB);
+    result->add(CR);
+    result->add(LF);
+    result->add(IDEOGRAPHIC_SPACE);
+    result->freeze();
+    return result;
+}
+
+UnicodeSet* initBidiControls(UErrorCode& status) {
+    UnicodeSet* result = new UnicodeSet(UnicodeString("[\\u061C]"), status);
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+    result->add(0x200E, 0x200F);
+    result->add(0x2066, 0x2069);
+    result->freeze();
+    return result;
+}
+
+UnicodeSet* initAlpha(UErrorCode& status) {
+    UnicodeSet* result = new UnicodeSet(UnicodeString("[:letter:]"), status);
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+    result->freeze();
+    return result;
+}
+
+UnicodeSet* initDigits(UErrorCode& status) {
+    UnicodeSet* result = new UnicodeSet(UnicodeString("[:number:]"), status);
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+    result->freeze();
+    return result;
+}
+
+UnicodeSet* initNameStartChars(UErrorCode& status) {
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+
+    UnicodeSet* isAlpha = unisets::gUnicodeSets[unisets::ALPHA] = initAlpha(status);
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+    UnicodeSet* result = new UnicodeSet(*isAlpha);
+    if (result == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return nullptr;
+    };
+    result->add(UNDERSCORE);
+    result->add(0x00C0, 0x00D6);
+    result->add(0x00D8, 0x00F6);
+    result->add(0x00F8, 0x02FF);
+    result->add(0x0370, 0x037D);
+    result->add(0x037F, 0x061B);
+    result->add(0x061D, 0x1FFF);
+    result->add(0x200C, 0x200D);
+    result->add(0x2070, 0x218F);
+    result->add(0x2C00, 0x2FEF);
+    result->add(0x3001, 0xD7FF);
+    result->add(0xF900, 0xFDCF);
+    result->add(0xFDF0, 0xFFFD);
+    result->add(0x100000, 0xEFFFF);
+    result->freeze();
+    return result;
+}
+
+UnicodeSet* initNameChars(UErrorCode& status) {
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+
+    UnicodeSet* nameStart = unisets::gUnicodeSets[unisets::NAME_START] = initNameStartChars(status);
+    UnicodeSet* digit = unisets::gUnicodeSets[unisets::DIGIT] = initDigits(status);
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+    UnicodeSet* result = new UnicodeSet();
+    if (result == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return nullptr;
+    };
+    result->addAll(*nameStart);
+    result->addAll(*digit);
+    result->add(HYPHEN);
+    result->add(PERIOD);
+    result->add(0x00B7);
+    result->add(0x0300, 0x036F);
+    result->add(0x203F, 0x2040);
+    result->freeze();
+    return result;
+}
+
+UnicodeSet* initTextChars(UErrorCode& status) {
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+
+    UnicodeSet* content = unisets::gUnicodeSets[unisets::CONTENT] = initContentChars(status);
+    UnicodeSet* whitespace = unisets::gUnicodeSets[unisets::WHITESPACE] = initWhitespace(status);
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+    UnicodeSet* result = new UnicodeSet();
+    if (result == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return nullptr;
+    };
+    result->addAll(*content);
+    result->addAll(*whitespace);
+    result->add(PERIOD);
+    result->add(AT);
+    result->add(PIPE);
+    result->freeze();
+    return result;
+}
+
+UnicodeSet* initQuotedChars(UErrorCode& status) {
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+
+    unisets::gUnicodeSets[unisets::TEXT] = initTextChars(status);
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+    UnicodeSet* result = new UnicodeSet();
+    if (result == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return nullptr;
+    };
+    
+    UnicodeSet* content = unisets::getImpl(unisets::CONTENT);
+    if (content == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return nullptr;
+    }
+    result->addAll(*content);
+    UnicodeSet* whitespace = unisets::getImpl(unisets::WHITESPACE);
+    if (whitespace == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return nullptr;
+    }
+    result->addAll(*whitespace);
+    result->add(PERIOD);
+    result->add(AT);
+    result->add(LEFT_CURLY_BRACE);
+    result->add(RIGHT_CURLY_BRACE);
+    result->freeze();
+    return result;
+}
+
+UnicodeSet* initEscapableChars(UErrorCode& status) {
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+
+    UnicodeSet* result = new UnicodeSet();
+    if (result == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return nullptr;
+    }
+    result->add(PIPE);
+    result->add(BACKSLASH);
+    result->add(LEFT_CURLY_BRACE);
+    result->add(RIGHT_CURLY_BRACE);
+    result->freeze();
+    return result;
+}
+
+namespace unisets {
+
+UBool U_CALLCONV cleanupMF2ParseUniSets() {
+    for (int32_t i = 0; i < UNISETS_KEY_COUNT; i++) {
+        delete gUnicodeSets[i];
+        gUnicodeSets[i] = nullptr;
+    }
+    gMF2ParseUniSetsInitOnce.reset();
+    return true;
+}
+
+void U_CALLCONV initMF2ParseUniSets(UErrorCode& status) {
+    ucln_i18n_registerCleanup(UCLN_I18N_MF2_UNISETS, cleanupMF2ParseUniSets);
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    gUnicodeSets[unisets::BIDI] = initBidiControls(status);
+    gUnicodeSets[unisets::NAME_CHAR] = initNameChars(status);
+    gUnicodeSets[unisets::QUOTED] = initQuotedChars(status);
+    gUnicodeSets[unisets::ESCAPABLE] = initEscapableChars(status);
+
+    if (U_FAILURE(status)) {
+        cleanupMF2ParseUniSets();
     }
 }
 
-static bool isTextChar(UChar32 c) {
-    return isContentChar(c)
-        || isWhitespace(c)
-        || c == PERIOD
-        || c == AT
-        || c == PIPE;
+const UnicodeSet* get(Key key, UErrorCode& status) {
+    umtx_initOnce(gMF2ParseUniSetsInitOnce, &initMF2ParseUniSets, status);
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+    UnicodeSet* result = getImpl(key);
+    if (result == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+    }
+    return result;
 }
 
-static bool isAlpha(UChar32 c) { return inRange(c, 0x0041, 0x005A) || inRange(c, 0x0061, 0x007A); }
-
-static bool isDigit(UChar32 c) { return inRange(c, 0x0030, 0x0039); }
-
-static bool isNameStart(UChar32 c) {
-    return isAlpha(c) || c == UNDERSCORE || inRange(c, 0x00C0, 0x00D6) || inRange(c, 0x00D8, 0x00F6) ||
-           inRange(c, 0x00F8, 0x02FF) || inRange(c, 0x0370, 0x037D) || inRange(c, 0x037F, 0x1FFF) ||
-           inRange(c, 0x200C, 0x200D) || inRange(c, 0x2070, 0x218F) || inRange(c, 0x2C00, 0x2FEF) ||
-           inRange(c, 0x3001, 0xD7FF) || inRange(c, 0xF900, 0xFDCF) || inRange(c, 0xFDF0, 0xFFFD) ||
-           inRange(c, 0x10000, 0xEFFFF);
 }
 
-static bool isNameChar(UChar32 c) {
-    return isNameStart(c) || isDigit(c) || c == HYPHEN || c == PERIOD || c == 0x00B7 ||
-           inRange(c, 0x0300, 0x036F) || inRange(c, 0x203F, 0x2040);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool Parser::isContentChar(UChar32 c) const {
+    return contentChars->contains(c);
 }
 
-static bool isUnquotedStart(UChar32 c) {
-    return isNameStart(c) || isDigit(c) || c == HYPHEN || c == PERIOD || c == 0x00B7 ||
-           inRange(c, 0x0300, 0x036F) || inRange(c, 0x203F, 0x2040);
+
+bool Parser::isBidiControl(UChar32 c) const {
+    return bidiControlChars->contains(c);
 }
 
-static bool isQuotedChar(UChar32 c) {
-    return isContentChar(c)
-        || isWhitespace(c)
-        || c == PERIOD
-        || c == AT
-        || c == LEFT_CURLY_BRACE
-        || c == RIGHT_CURLY_BRACE;
+
+bool Parser::isWhitespace(UChar32 c) const {
+    return whitespaceChars->contains(c);
 }
 
-static bool isEscapableChar(UChar32 c) {
-    return c == PIPE
-        || c == BACKSLASH
-        || c == LEFT_CURLY_BRACE
-        || c == RIGHT_CURLY_BRACE;
+bool Parser::isTextChar(UChar32 c) const {
+    return textChars->contains(c);
+}
+
+bool Parser::isAlpha(UChar32 c) const {
+    return alphaChars->contains(c);
+}
+
+bool Parser::isDigit(UChar32 c) const {
+    return digitChars->contains(c);
+}
+
+bool Parser::isNameStart(UChar32 c) const {
+    return nameStartChars->contains(c);
+}
+
+bool Parser::isNameChar(UChar32 c) const {
+    return nameChars->contains(c);
+}
+
+bool Parser::isUnquotedStart(UChar32 c) const {
+    return isNameChar(c);
+}
+
+bool Parser::isQuotedChar(UChar32 c) const {
+    return quotedChars->contains(c);
+}
+
+bool Parser::isEscapableChar(UChar32 c) const {
+    return escapableChars->contains(c);
 }
 
 
@@ -203,12 +450,12 @@ static bool isAnnotationStart(UChar32 c) {
 }
 
 
-static bool isLiteralStart(UChar32 c) {
+bool Parser::isLiteralStart(UChar32 c) const {
     return (c == PIPE || isNameStart(c) || c == HYPHEN || isDigit(c));
 }
 
 
-static bool isKeyStart(UChar32 c) {
+bool Parser::isKeyStart(UChar32 c) const {
     return (c == ASTERISK || isLiteralStart(c));
 }
 
@@ -347,7 +594,7 @@ bool Parser::isDeclarationStart() {
 
 
 
-void Parser::parseWhitespaceMaybeRequired(bool required, UErrorCode& errorCode) {
+void Parser::parseRequiredWS(UErrorCode& errorCode) {
     bool sawWhitespace = false;
 
     
@@ -358,7 +605,7 @@ void Parser::parseWhitespaceMaybeRequired(bool required, UErrorCode& errorCode) 
             
             
             
-            if (!required || sawWhitespace) {
+            if (sawWhitespace) {
                 
                 return;
             }
@@ -380,24 +627,51 @@ void Parser::parseWhitespaceMaybeRequired(bool required, UErrorCode& errorCode) 
         }
     }
 
-    if (!sawWhitespace && required) {
+    if (!sawWhitespace) {
         ERROR(errorCode);
+    }
+}
+
+void Parser::parseOptionalBidi() {
+    while (true) {
+        if (!inBounds()) {
+            return;
+        }
+        if (isBidiControl(peek())) {
+            next();
+        } else {
+            break;
+        }
     }
 }
 
 
 
 
+
 void Parser::parseRequiredWhitespace(UErrorCode& errorCode) {
-    parseWhitespaceMaybeRequired(true, errorCode);
+    parseOptionalBidi();
+    parseRequiredWS(errorCode);
+    parseOptionalWhitespace();
     normalizedInput += SPACE;
 }
 
 
 
 
-void Parser::parseOptionalWhitespace(UErrorCode& errorCode) {
-    parseWhitespaceMaybeRequired(false, errorCode);
+void Parser::parseOptionalWhitespace() {
+    while (true) {
+        if (!inBounds()) {
+            return;
+        }
+        auto cp = peek();
+        if (isWhitespace(cp) || isBidiControl(cp)) {
+            maybeAdvanceLine();
+            next();
+        } else {
+            break;
+        }
+    }
 }
 
 
@@ -442,11 +716,11 @@ void Parser::parseToken(const std::u16string_view& token, UErrorCode& errorCode)
 
 void Parser::parseTokenWithWhitespace(const std::u16string_view& token, UErrorCode& errorCode) {
     
-    parseOptionalWhitespace(errorCode);
+    parseOptionalWhitespace();
     
     CHECK_BOUNDS(errorCode);
     parseToken(token, errorCode);
-    parseOptionalWhitespace(errorCode);
+    parseOptionalWhitespace();
     
     CHECK_BOUNDS(errorCode);
 }
@@ -459,11 +733,11 @@ void Parser::parseTokenWithWhitespace(const std::u16string_view& token, UErrorCo
 
 void Parser::parseTokenWithWhitespace(UChar32 c, UErrorCode& errorCode) {
     
-    parseOptionalWhitespace(errorCode);
+    parseOptionalWhitespace();
     
     CHECK_BOUNDS(errorCode);
     parseToken(c, errorCode);
-    parseOptionalWhitespace(errorCode);
+    parseOptionalWhitespace();
     
     CHECK_BOUNDS(errorCode);
 }
@@ -482,11 +756,17 @@ UnicodeString Parser::parseName(UErrorCode& errorCode) {
 
     U_ASSERT(inBounds());
 
-    if (!isNameStart(peek())) {
+    if (!(isNameStart(peek()) || isBidiControl(peek()))) {
         ERROR(errorCode);
         return name;
     }
 
+    
+
+    
+    parseOptionalBidi();
+
+    
     while (isNameChar(peek())) {
         UChar32 c = peek();
         name += c;
@@ -497,6 +777,10 @@ UnicodeString Parser::parseName(UErrorCode& errorCode) {
             break;
         }
     }
+
+    
+    parseOptionalBidi();
+
     return name;
 }
 
@@ -510,21 +794,13 @@ VariableName Parser::parseVariableName(UErrorCode& errorCode) {
     VariableName result;
 
     U_ASSERT(inBounds());
-    
-    
-    bool valid = peek() == DOLLAR;
+
     parseToken(DOLLAR, errorCode);
     if (!inBounds()) {
         ERROR(errorCode);
         return result;
     }
-    UnicodeString varName = parseName(errorCode);
-    
-    
-    if (!valid) {
-        varName.remove();
-    }
-    return VariableName(varName);
+    return VariableName(parseName(errorCode));
 }
 
 
@@ -853,7 +1129,7 @@ void Parser::parseAttribute(AttributeAdder<T>& attrAdder, UErrorCode& errorCode)
     
     
     int32_t savedIndex = index;
-    parseOptionalWhitespace(errorCode);
+    parseOptionalWhitespace();
 
     Operand rand;
     if (peek() == EQUALS) {
@@ -862,18 +1138,8 @@ void Parser::parseAttribute(AttributeAdder<T>& attrAdder, UErrorCode& errorCode)
 
         UnicodeString rhsStr;
         
-        switch (peek()) {
-        case DOLLAR: {
-            rand = Operand(parseVariableName(errorCode));
-            break;
-        }
-        default: {
-            
-            rand = Operand(parseLiteral(errorCode));
-            break;
-        }
-        }
-        U_ASSERT(!rand.isNull());
+        
+        rand = Operand(parseLiteral(errorCode));
     } else {
         
         
@@ -881,7 +1147,7 @@ void Parser::parseAttribute(AttributeAdder<T>& attrAdder, UErrorCode& errorCode)
         index = savedIndex;
     }
 
-    attrAdder.addAttribute(lhs, std::move(rand), errorCode);
+    attrAdder.addAttribute(lhs, std::move(Operand(rand)), errorCode);
 }
 
 
@@ -1149,7 +1415,7 @@ void Parser::parseLiteralOrVariableWithAnnotation(bool isVariable,
       
       
       
-      parseOptionalWhitespace(status);
+      parseOptionalWhitespace();
       
       CHECK_BOUNDS(status);
 
@@ -1220,7 +1486,7 @@ Expression Parser::parseExpression(UErrorCode& status) {
     
     parseToken(LEFT_CURLY_BRACE, status);
     
-    parseOptionalWhitespace(status);
+    parseOptionalWhitespace();
 
     Expression::Builder exprBuilder(status);
     
@@ -1263,7 +1529,7 @@ Expression Parser::parseExpression(UErrorCode& status) {
 
     
     
-    parseOptionalWhitespace(status);
+    parseOptionalWhitespace();
 
     
     
@@ -1339,7 +1605,7 @@ void Parser::parseInputDeclaration(UErrorCode& status) {
     CHECK_BOUNDS(status);
 
     parseToken(ID_INPUT, status);
-    parseOptionalWhitespace(status);
+    parseOptionalWhitespace();
 
     
     CHECK_BOUNDS(status);
@@ -1400,7 +1666,7 @@ void Parser::parseDeclarations(UErrorCode& status) {
         
         CHECK_ERROR(status);
 
-        parseOptionalWhitespace(status);
+        parseOptionalWhitespace();
         
         CHECK_BOUNDS(status);
     }
@@ -1510,8 +1776,8 @@ SelectorKeys Parser::parseNonEmptyKeys(UErrorCode& status) {
 
     
     
-    while (peek() != LEFT_CURLY_BRACE || isWhitespace(peek())) { 
-        bool wasWhitespace = isWhitespace(peek());
+    while (peek() != LEFT_CURLY_BRACE || isWhitespace(peek()) || isBidiControl(peek())) {
+        bool wasWhitespace = isWhitespace(peek()) || isBidiControl(peek());
         parseRequiredWhitespace(status);
         if (!wasWhitespace) {
             
@@ -1569,7 +1835,7 @@ Markup Parser::parseMarkup(UErrorCode& status) {
     
     next();
     normalizedInput += LEFT_CURLY_BRACE;
-    parseOptionalWhitespace(status);
+    parseOptionalWhitespace();
     bool closing = false;
     switch (peek()) {
     case NUMBER_SIGN: {
@@ -1596,19 +1862,19 @@ Markup Parser::parseMarkup(UErrorCode& status) {
 
     
     
-    if (inBounds() && isWhitespace(peek())) {
+    if (inBounds() && (isWhitespace(peek()) || isBidiControl(peek()))) {
         OptionAdder<Markup::Builder> optionAdder(builder);
         parseOptions(optionAdder, status);
     }
 
     
     
-    if (inBounds() && isWhitespace(peek())) {
+    if (inBounds() && (isWhitespace(peek()) || isBidiControl(peek()))) {
         AttributeAdder<Markup::Builder> attrAdder(builder);
         parseAttributes(attrAdder, status);
     }
 
-    parseOptionalWhitespace(status);
+    parseOptionalWhitespace();
 
     bool standalone = false;
     
@@ -1656,7 +1922,7 @@ std::variant<Expression, Markup> Parser::parsePlaceholder(UErrorCode& status) {
             isMarkup = true;
             break;
         }
-        if (!isWhitespace(c)){
+        if (!(isWhitespace(c) || isBidiControl(c))) {
             break;
         }
         tempIndex++;
@@ -1712,7 +1978,7 @@ Pattern Parser::parseSimpleMessage(UErrorCode& status) {
                 break;
             }
             
-            if (errors.hasSyntaxError()) {
+            if (errors.hasSyntaxError() || U_FAILURE(status)) {
                 break;
             }
         }
@@ -1720,6 +1986,22 @@ Pattern Parser::parseSimpleMessage(UErrorCode& status) {
     return result.build(status);
 }
 
+void Parser::parseVariant(UErrorCode& status) {
+    CHECK_ERROR(status);
+
+    
+    SelectorKeys keyList(parseNonEmptyKeys(status));
+
+    
+    
+
+    
+    
+    CHECK_BOUNDS(status);
+    Pattern rhs = parseQuotedPattern(status);
+
+    dataModel.addVariant(std::move(keyList), std::move(rhs), status);
+}
 
 
 
@@ -1739,22 +2021,25 @@ void Parser::parseSelectors(UErrorCode& status) {
     
     
     
-    while (isWhitespace(peek()) || peek() == LEFT_CURLY_BRACE) {
-        parseOptionalWhitespace(status);
+    while (isWhitespace(peek()) || peek() == DOLLAR) {
+        int32_t whitespaceStart = index;
+        parseRequiredWhitespace(status);
         
         CHECK_BOUNDS(status);
-        if (peek() != LEFT_CURLY_BRACE) {
+        if (peek() != DOLLAR) {
             
             
             
             
+            
+            normalizedInput.truncate(normalizedInput.length() - 1);
+            index = whitespaceStart;
             break;
         }
-        Expression expression;
-        expression = parseExpression(status);
+        VariableName var = parseVariableName(status);
         empty = false;
 
-        dataModel.addSelector(std::move(expression), status);
+        dataModel.addSelector(std::move(var), status);
         CHECK_ERROR(status);
     }
 
@@ -1770,27 +2055,29 @@ void Parser::parseSelectors(UErrorCode& status) {
         }                                          \
 
     
-    while (isWhitespace(peek()) || isKeyStart(peek())) {
+    
+
+    
+    parseRequiredWhitespace(status);
+    if (!inBounds()) {
+        ERROR(status);
+        return;
+    }
+    parseVariant(status);
+    if (!inBounds()) {
         
-        parseOptionalWhitespace(status);
+        return;
+    }
+
+    while (isWhitespace(peek()) || isBidiControl(peek()) || isKeyStart(peek())) {
+        parseOptionalWhitespace();
+        
+        
         if (!inBounds()) {
             return;
         }
 
-        
-        SelectorKeys keyList(parseNonEmptyKeys(status));
-
-        CHECK_ERROR(status);
-
-        
-        
-
-        
-        
-        CHECK_BOUNDS(status);
-        Pattern rhs = parseQuotedPattern(status);
-
-        dataModel.addVariant(std::move(keyList), std::move(rhs), status);
+        parseVariant(status);
 
         
         
@@ -1799,6 +2086,10 @@ void Parser::parseSelectors(UErrorCode& status) {
         
         
         CHECK_END_OF_INPUT
+
+        if (errors.hasSyntaxError() || U_FAILURE(status)) {
+            break;
+        }
     }
 }
 
@@ -1871,7 +2162,7 @@ void Parser::parse(UParseError &parseErrorResult, UErrorCode& status) {
     bool complex = false;
     
     
-    while (inBounds(index) && isWhitespace(peek())) {
+    while (inBounds(index) && (isWhitespace(peek()) || isBidiControl(peek()))) {
         next();
     }
 
@@ -1891,10 +2182,10 @@ void Parser::parse(UParseError &parseErrorResult, UErrorCode& status) {
     
     
     if (complex) {
-        parseOptionalWhitespace(status);
+        parseOptionalWhitespace();
         parseDeclarations(status);
         parseBody(status);
-        parseOptionalWhitespace(status);
+        parseOptionalWhitespace();
     } else {
         
         
@@ -1926,3 +2217,4 @@ U_NAMESPACE_END
 
 #endif 
 
+#endif 

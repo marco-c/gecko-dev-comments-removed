@@ -329,6 +329,14 @@ class U_I18N_API MeasureUnitImpl : public UMemory {
     CharString identifier;
 
     
+
+
+
+
+
+    uint64_t constantDenominator = 0;
+
+    
     
     friend class number::impl::LongNameHandler;
 };

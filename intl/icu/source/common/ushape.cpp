@@ -28,6 +28,7 @@
 #include "ubidi_props.h"
 #include "uassert.h"
 
+#include <limits>
 
 
 
@@ -747,6 +748,10 @@ handleGeneratedSpaces(char16_t *dest, int32_t sourceLength,
         }
     }
 
+    if (static_cast<size_t>(sourceLength) + 1 > std::numeric_limits<size_t>::max() / U_SIZEOF_UCHAR) {
+        *pErrorCode = U_INDEX_OUTOFBOUNDS_ERROR;
+        return 0;
+    }
     tempbuffer = static_cast<char16_t*>(uprv_malloc((sourceLength + 1) * U_SIZEOF_UCHAR));
     
     if(tempbuffer == nullptr) {

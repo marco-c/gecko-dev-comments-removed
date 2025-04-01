@@ -3,6 +3,8 @@
 
 #include "unicode/utypes.h"
 
+#if !UCONFIG_NO_NORMALIZATION
+
 #if !UCONFIG_NO_FORMATTING
 
 #if !UCONFIG_NO_MF2
@@ -286,6 +288,8 @@ namespace message2 {
 } 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

@@ -598,12 +598,13 @@ typedef enum UErrorCode {
     U_MF_DUPLICATE_DECLARATION_ERROR, 
     U_MF_OPERAND_MISMATCH_ERROR,     
     U_MF_DUPLICATE_VARIANT_ERROR, 
+    U_MF_BAD_OPTION,             
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    U_FMT_PARSE_ERROR_LIMIT = 0x10120,
+    U_FMT_PARSE_ERROR_LIMIT = 0x10121,
 #endif  
 
     

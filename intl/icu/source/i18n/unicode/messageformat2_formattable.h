@@ -8,6 +8,8 @@
 
 #if U_SHOW_CPLUSPLUS_API
 
+#if !UCONFIG_NO_NORMALIZATION
+
 #if !UCONFIG_NO_FORMATTING
 
 #if !UCONFIG_NO_MF2
@@ -549,6 +551,7 @@ class U_I18N_API FunctionOptions : public UObject {
 
     FunctionOptions& operator=(const FunctionOptions&) = delete;
  private:
+    friend class InternalValue;
     friend class MessageFormatter;
     friend class StandardFunctions;
 
@@ -566,12 +569,10 @@ class U_I18N_API FunctionOptions : public UObject {
     
     ResolvedFunctionOption* options;
     int32_t functionOptionsLen = 0;
+
+    
+    FunctionOptions mergeOptions(FunctionOptions&& other, UErrorCode&);
 }; 
-
-
-    
-    
-    
 
     
 
@@ -1003,6 +1004,8 @@ class U_I18N_API FunctionOptions : public UObject {
 } 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

@@ -449,6 +449,11 @@ public:
 
     static Locale U_EXPORT2 createFromName(const char *name);
 
+#ifndef U_HIDE_INTERNAL_API
+    
+    static Locale U_EXPORT2 createFromName(StringPiece name);
+#endif  
+
     
 
 
@@ -1133,7 +1138,9 @@ private:
 
 
 
-    Locale& init(const char* cLocaleID, UBool canonicalize);
+    Locale& init(const char* localeID, UBool canonicalize);
+    
+    Locale& init(StringPiece localeID, UBool canonicalize);
 
     
 

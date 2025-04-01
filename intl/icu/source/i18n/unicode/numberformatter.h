@@ -2609,7 +2609,6 @@ class U_I18N_API LocalizedNumberFormatter
 
     Format* toFormat(UErrorCode& status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2626,7 +2625,6 @@ class U_I18N_API LocalizedNumberFormatter
 
 
     UnlocalizedNumberFormatter withoutLocale() &&;
-#endif 
 
     
 

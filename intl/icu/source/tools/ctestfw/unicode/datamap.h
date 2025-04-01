@@ -40,7 +40,7 @@ public:
 
 
 
-  virtual const UnicodeString getString(const char* key, UErrorCode &status) const = 0;
+  virtual UnicodeString getString(const char* key, UErrorCode &status) const = 0;
 
   
 
@@ -121,7 +121,7 @@ public:
 
   virtual const ResourceBundle *getItem(const char* key, UErrorCode &status) const;
 
-  virtual const UnicodeString getString(const char* key, UErrorCode &status) const override;
+  virtual UnicodeString getString(const char* key, UErrorCode &status) const override;
   virtual int32_t getInt28(const char* key, UErrorCode &status) const override;
   virtual uint32_t getUInt28(const char* key, UErrorCode &status) const override;
   virtual const int32_t *getIntVector(int32_t &length, const char *key, UErrorCode &status) const override;

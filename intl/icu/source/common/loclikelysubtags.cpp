@@ -527,7 +527,7 @@ LSR LikelySubtags::makeMaximizedLsrFrom(const Locale &locale,
         return {};
     }
     const char *name = locale.getName();
-    if (uprv_isAtSign(name[0]) && name[1] == 'x' && name[2] == '=') {  
+    if (!returnInputIfUnmatch && uprv_isAtSign(name[0]) && name[1] == 'x' && name[2] == '=') {  
         
         
         return LSR(name, "", "", LSR::EXPLICIT_LSR);

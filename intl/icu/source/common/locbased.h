@@ -26,6 +26,7 @@
 
 U_NAMESPACE_BEGIN
 
+class CharString;
 
 
 
@@ -41,13 +42,7 @@ class U_COMMON_API LocaleBased : public UMemory {
 
 
 
-    inline LocaleBased(char* validAlias, char* actualAlias);
-
-    
-
-
-
-    inline LocaleBased(const char* validAlias, const char* actualAlias);
+    inline LocaleBased(CharString*& validAlias, CharString*& actualAlias);
 
     
 
@@ -57,7 +52,11 @@ class U_COMMON_API LocaleBased : public UMemory {
 
 
 
-    Locale getLocale(ULocDataLocaleType type, UErrorCode& status) const;
+
+
+    static Locale getLocale(
+        const CharString* valid, const CharString* actual,
+        ULocDataLocaleType type, UErrorCode& status);
 
     
 
@@ -67,7 +66,11 @@ class U_COMMON_API LocaleBased : public UMemory {
 
 
 
-    const char* getLocaleID(ULocDataLocaleType type, UErrorCode& status) const;
+
+
+    static const char* getLocaleID(
+        const CharString* valid, const CharString* actual,
+        ULocDataLocaleType type, UErrorCode& status);
 
     
 
@@ -75,31 +78,40 @@ class U_COMMON_API LocaleBased : public UMemory {
 
 
 
-    void setLocaleIDs(const char* valid, const char* actual);
+    void setLocaleIDs(const char* valid, const char* actual, UErrorCode& status);
+    void setLocaleIDs(const CharString* valid, const CharString* actual, UErrorCode& status);
 
-    
+    static void setLocaleID(const char* id, CharString*& dest, UErrorCode& status);
+    static void setLocaleID(const CharString* id, CharString*& dest, UErrorCode& status);
 
-
-
-
-
-    void setLocaleIDs(const Locale& valid, const Locale& actual);
+    static bool equalIDs(const CharString* left, const CharString* right);
 
  private:
 
-    char* valid;
-    
-    char* actual;
+    void setValidLocaleID(const CharString* id, UErrorCode& status);
+    void setActualLocaleID(const CharString* id, UErrorCode& status);
+    void setValidLocaleID(const char* id, UErrorCode& status);
+    void setActualLocaleID(const char* id, UErrorCode& status);
+
+    CharString*& valid;
+    CharString*& actual;
 };
 
-inline LocaleBased::LocaleBased(char* validAlias, char* actualAlias) :
+inline LocaleBased::LocaleBased(CharString*& validAlias, CharString*& actualAlias) :
     valid(validAlias), actual(actualAlias) {
 }
 
-inline LocaleBased::LocaleBased(const char* validAlias,
-                                const char* actualAlias) :
-    
-    valid(const_cast<char*>(validAlias)), actual(const_cast<char*>(actualAlias)) {
+inline void LocaleBased::setValidLocaleID(const CharString* id, UErrorCode& status) {
+    setLocaleID(id, valid, status);
+}
+inline void LocaleBased::setActualLocaleID(const CharString* id, UErrorCode& status) {
+    setLocaleID(id, actual, status);
+}
+inline void LocaleBased::setValidLocaleID(const char* id, UErrorCode& status) {
+    setLocaleID(id, valid, status);
+}
+inline void LocaleBased::setActualLocaleID(const char* id, UErrorCode& status) {
+    setLocaleID(id, actual, status);
 }
 
 U_NAMESPACE_END

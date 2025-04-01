@@ -32,12 +32,13 @@
 #include "unicode/utypes.h"
 #include "unicode/uchar.h"
 
-#if U_SHOW_CPLUSPLUS_API
+#if U_SHOW_CPLUSPLUS_API || U_SHOW_CPLUSPLUS_HEADER_API
+#include <string>
 #include <string_view>
 #include "unicode/char16ptr.h"
 #include "unicode/localpointer.h"
-#include "unicode/unistr.h"
-#endif   
+#include "unicode/utf16.h"
+#endif
 
 #ifndef USET_DEFINED
 
@@ -1392,8 +1393,8 @@ public:
 private:
     friend class USetCodePoints;
 
-    USetCodePointIterator(const USet *uset, int32_t rangeIndex, int32_t rangeCount)
-            : uset(uset), rangeIndex(rangeIndex), rangeCount(rangeCount),
+    USetCodePointIterator(const USet *pUset, int32_t nRangeIndex, int32_t nRangeCount)
+            : uset(pUset), rangeIndex(nRangeIndex), rangeCount(nRangeCount),
                 c(U_SENTINEL), end(U_SENTINEL) {
         
         operator++();
@@ -1429,7 +1430,7 @@ public:
 
 
 
-    USetCodePoints(const USet *uset) : uset(uset), rangeCount(uset_getRangeCount(uset)) {}
+    USetCodePoints(const USet *pUset) : uset(pUset), rangeCount(uset_getRangeCount(pUset)) {}
 
     
     USetCodePoints(const USetCodePoints &other) = default;
@@ -1460,7 +1461,7 @@ struct CodePointRange {
     
     struct iterator {
         
-        iterator(UChar32 c) : c(c) {}
+        iterator(UChar32 aC) : c(aC) {}
 
         
         bool operator==(const iterator &other) const { return c == other.c; }
@@ -1573,8 +1574,8 @@ public:
 private:
     friend class USetRanges;
 
-    USetRangeIterator(const USet *uset, int32_t rangeIndex, int32_t rangeCount)
-            : uset(uset), rangeIndex(rangeIndex), rangeCount(rangeCount) {}
+    USetRangeIterator(const USet *pUset, int32_t nRangeIndex, int32_t nRangeCount)
+            : uset(pUset), rangeIndex(nRangeIndex), rangeCount(nRangeCount) {}
 
     const USet *uset;
     int32_t rangeIndex;
@@ -1610,7 +1611,7 @@ public:
 
 
 
-    USetRanges(const USet *uset) : uset(uset), rangeCount(uset_getRangeCount(uset)) {}
+    USetRanges(const USet *pUset) : uset(pUset), rangeCount(uset_getRangeCount(pUset)) {}
 
     
     USetRanges(const USetRanges &other) = default;
@@ -1657,7 +1658,7 @@ public:
             int32_t length;
             const UChar *uchars = uset_getString(uset, index, &length);
             
-            return {ConstChar16Ptr(uchars), static_cast<uint32_t>(length)};
+            return {uprv_char16PtrFromUChar(uchars), static_cast<size_t>(length)};
         }
         return {};
     }
@@ -1684,13 +1685,15 @@ public:
 private:
     friend class USetStrings;
 
-    USetStringIterator(const USet *uset, int32_t index, int32_t count)
-            : uset(uset), index(index), count(count) {}
+    USetStringIterator(const USet *pUset, int32_t nIndex, int32_t nCount)
+            : uset(pUset), index(nIndex), count(nCount) {}
 
     const USet *uset;
     int32_t index;
     int32_t count;
 };
+
+
 
 
 
@@ -1718,7 +1721,7 @@ public:
 
 
 
-    USetStrings(const USet *uset) : uset(uset), count(uset_getStringCount(uset)) {}
+    USetStrings(const USet *pUset) : uset(pUset), count(uset_getStringCount(pUset)) {}
 
     
     USetStrings(const USetStrings &other) = default;
@@ -1737,7 +1740,9 @@ private:
     const USet *uset;
     int32_t count;
 };
+#endif
 
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -1760,16 +1765,18 @@ public:
     bool operator!=(const USetElementIterator &other) const { return !operator==(other); }
 
     
-    UnicodeString operator*() const {
+    std::u16string operator*() const {
         if (c >= 0) {
-            return UnicodeString(c);
+            return c <= 0xffff ?
+                std::u16string({static_cast<char16_t>(c)}) :
+                std::u16string({U16_LEAD(c), U16_TRAIL(c)});
         } else if (index < totalCount) {
             int32_t length;
             const UChar *uchars = uset_getString(uset, index - rangeCount, &length);
             
-            return UnicodeString(uchars, length);
+            return {uprv_char16PtrFromUChar(uchars), static_cast<size_t>(length)};
         } else {
-            return UnicodeString();
+            return {};
         }
     }
 
@@ -1811,8 +1818,8 @@ public:
 private:
     friend class USetElements;
 
-    USetElementIterator(const USet *uset, int32_t index, int32_t rangeCount, int32_t totalCount)
-            : uset(uset), index(index), rangeCount(rangeCount), totalCount(totalCount),
+    USetElementIterator(const USet *pUset, int32_t nIndex, int32_t nRangeCount, int32_t nTotalCount)
+            : uset(pUset), index(nIndex), rangeCount(nRangeCount), totalCount(nTotalCount),
                 c(U_SENTINEL), end(U_SENTINEL) {
         if (index < rangeCount) {
             
@@ -1862,15 +1869,18 @@ private:
 
 
 
+
+
+
 class USetElements {
 public:
     
 
 
 
-    USetElements(const USet *uset)
-        : uset(uset), rangeCount(uset_getRangeCount(uset)),
-            stringCount(uset_getStringCount(uset)) {}
+    USetElements(const USet *pUset)
+        : uset(pUset), rangeCount(uset_getRangeCount(pUset)),
+            stringCount(uset_getStringCount(pUset)) {}
 
     
     USetElements(const USetElements &other) = default;

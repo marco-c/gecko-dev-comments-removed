@@ -1173,8 +1173,11 @@ public:
     inline U_HEADER_NESTED_NAMESPACE::USetStrings strings() const {
         return U_HEADER_NESTED_NAMESPACE::USetStrings(toUSet());
     }
+#endif  
 
+#ifndef U_HIDE_DRAFT_API
     
+
 
 
 

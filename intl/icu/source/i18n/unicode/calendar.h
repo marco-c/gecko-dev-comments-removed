@@ -55,6 +55,7 @@ class ICUServiceFactory;
 typedef int32_t UFieldResolutionTable[12][8];
 
 class BasicTimeZone;
+class CharString;
 
 
 
@@ -1694,8 +1695,7 @@ protected:
 
 
 
-    virtual int32_t handleGetYearLength(int32_t eyear) const;
-
+    virtual int32_t handleGetYearLength(int32_t eyear, UErrorCode& status) const;
 
     
 
@@ -1881,42 +1881,7 @@ private:
 
     int32_t getActualHelper(UCalendarDateFields field, int32_t startValue, int32_t endValue, UErrorCode &status) const;
 
-
 protected:
-    
-
-
-
-    UBool      fIsTimeSet;
-
-    
-
-
-
-
-
-
-
-
-
-    UBool      fAreFieldsSet;
-
-    
-
-
-
-
-    UBool      fAreAllFieldsSet;
-
-    
-
-
-
-
-
-
-    UBool fAreFieldsVirtuallySet;
-
     
 
 
@@ -1940,14 +1905,7 @@ protected:
 
     int32_t     fFields[UCAL_FIELD_COUNT];
 
-#ifndef U_FORCE_HIDE_DEPRECATED_API
-    
-
-
-
-    UBool      fIsSet[UCAL_FIELD_COUNT];
-#endif  
-
+protected:
     
 
 
@@ -1957,14 +1915,15 @@ protected:
         kMinimumUserStamp
     };
 
+private:
     
 
 
 
 
+    int8_t        fStamp[UCAL_FIELD_COUNT];
 
-    int32_t        fStamp[UCAL_FIELD_COUNT];
-
+protected:
     
 
 
@@ -2178,7 +2137,7 @@ private:
     
 
 
-    int32_t fNextStamp;
+    int8_t fNextStamp = kMinimumUserStamp;
 
     
 
@@ -2189,30 +2148,18 @@ private:
     
 
 
-    UDate        fTime;
-
-    
-
-
-    UBool      fLenient;
+    UDate        fTime = 0;
 
     
 
 
 
-    TimeZone*   fZone;
+    TimeZone*   fZone = nullptr;
 
     
 
 
-
-    UCalendarWallTimeOption fRepeatedWallTime;
-
-    
-
-
-
-    UCalendarWallTimeOption fSkippedWallTime;
+    bool      fIsTimeSet:1;
 
     
 
@@ -2222,11 +2169,56 @@ private:
 
 
 
-    UCalendarDaysOfWeek fFirstDayOfWeek;
-    uint8_t     fMinimalDaysInFirstWeek;
-    UCalendarDaysOfWeek fWeekendOnset;
+
+    bool      fAreFieldsSet:1;
+
+    
+
+
+
+    bool      fAreAllFieldsSet:1;
+
+    
+
+
+
+
+
+    bool      fAreFieldsVirtuallySet:1;
+
+    
+
+
+    bool      fLenient:1;
+
+    
+
+
+
+    UCalendarWallTimeOption fRepeatedWallTime:3; 
+
+    
+
+
+
+    UCalendarWallTimeOption fSkippedWallTime:3; 
+
+    
+
+
+
+
+
+
+
+    UCalendarDaysOfWeek fFirstDayOfWeek:4; 
+                                           
+    UCalendarDaysOfWeek fWeekendOnset:4; 
+                                         
+    UCalendarDaysOfWeek fWeekendCease:4; 
+                                         
+    uint8_t fMinimalDaysInFirstWeek;
     int32_t fWeekendOnsetMillis;
-    UCalendarDaysOfWeek fWeekendCease;
     int32_t fWeekendCeaseMillis;
 
     
@@ -2264,31 +2256,23 @@ private:
 
 
 
-    int32_t fGregorianMonth;
+    int8_t fGregorianMonth;
 
     
 
 
 
 
-    int32_t fGregorianDayOfYear;
+    int8_t fGregorianDayOfMonth;
 
     
 
 
 
 
-    int32_t fGregorianDayOfMonth;
+    int16_t fGregorianDayOfYear;
 
     
-
-    
-
-
-
-
-
-    void computeGregorianAndDOWFields(int32_t julianDay, UErrorCode &ec);
 
 protected:
 
@@ -2359,8 +2343,8 @@ private:
 #endif  
 
  private:
-    char validLocale[ULOC_FULLNAME_CAPACITY];
-    char actualLocale[ULOC_FULLNAME_CAPACITY];
+    CharString* validLocale = nullptr;
+    CharString* actualLocale = nullptr;
 
  public:
 #if !UCONFIG_NO_SERVICE
@@ -2563,7 +2547,6 @@ Calendar::internalSet(UCalendarDateFields field, int32_t value)
 {
     fFields[field] = value;
     fStamp[field] = kInternallySet;
-    fIsSet[field]     = true; 
 }
 
 

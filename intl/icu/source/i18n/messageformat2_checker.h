@@ -10,6 +10,8 @@
 
 #if U_SHOW_CPLUSPLUS_API
 
+#if !UCONFIG_NO_NORMALIZATION
+
 #if !UCONFIG_NO_FORMATTING
 
 #if !UCONFIG_NO_MF2
@@ -56,15 +58,20 @@ namespace message2 {
                                         
     }; 
 
+    class MessageFormatter;
+
     
     
     class Checker {
     public:
         void check(UErrorCode&);
-        Checker(const MFDataModel& m, StaticErrors& e) : dataModel(m), errors(e) {}
+        Checker(const MFDataModel& d, StaticErrors& e, const MessageFormatter& mf)
+            : dataModel(d), errors(e), context(mf) {}
     private:
 
-        void requireAnnotated(const TypeEnvironment&, const Expression&, UErrorCode&);
+        Key normalizeNFC(const Key&) const;
+
+        void requireAnnotated(const TypeEnvironment&, const VariableName&, UErrorCode&);
         void addFreeVars(TypeEnvironment& t, const Operand&, UErrorCode&);
         void addFreeVars(TypeEnvironment& t, const Operator&, UErrorCode&);
         void addFreeVars(TypeEnvironment& t, const OptionMap&, UErrorCode&);
@@ -78,11 +85,16 @@ namespace message2 {
         void check(const Pattern&);
         const MFDataModel& dataModel;
         StaticErrors& errors;
+
+        
+        const MessageFormatter& context;
     }; 
 
 } 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

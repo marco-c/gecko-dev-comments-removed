@@ -77,6 +77,10 @@
 #include "dayperiodrules.h"
 #include "tznames_impl.h"   
 #include "number_utypes.h"
+#include "chnsecal.h"
+#include "dangical.h"
+#include "japancal.h"
+#include <typeinfo>
 
 #if defined( U_DEBUG_CALSVC ) || defined (U_DEBUG_CAL)
 #include <stdio.h>
@@ -945,7 +949,8 @@ SimpleDateFormat::initialize(const Locale& locale,
     
     
     if (fDateOverride.isBogus() && fHasHanYearChar &&
-            fCalendar != nullptr && uprv_strcmp(fCalendar->getType(),"japanese") == 0 &&
+            fCalendar != nullptr &&
+            typeid(*fCalendar) == typeid(JapaneseCalendar) &&
             uprv_strcmp(fLocale.getLanguage(),"ja") == 0) {
         fDateOverride.setTo(u"y=jpanyear", -1);
     }
@@ -1050,7 +1055,7 @@ SimpleDateFormat::_format(Calendar& cal, UnicodeString& appendTo,
     }
     Calendar* workCal = &cal;
     Calendar* calClone = nullptr;
-    if (&cal != fCalendar && uprv_strcmp(cal.getType(), fCalendar->getType()) != 0) {
+    if (&cal != fCalendar && typeid(cal) != typeid(*fCalendar)) {
         
         
         
@@ -1523,8 +1528,8 @@ SimpleDateFormat::subFormat(UnicodeString &appendTo,
     
     case UDAT_ERA_FIELD:
         {
-            const auto* calType = cal.getType();
-            if (uprv_strcmp(calType,"chinese") == 0 || uprv_strcmp(calType,"dangi") == 0) {
+            if (typeid(cal) == typeid(ChineseCalendar) ||
+                typeid(cal) == typeid(DangiCalendar)) {
                 zeroPaddingNumber(currentNumberFormat,appendTo, value, 1, 9); 
             } else {
                 if (count == 5) {
@@ -1575,7 +1580,7 @@ SimpleDateFormat::subFormat(UnicodeString &appendTo,
     
     case UDAT_MONTH_FIELD:
     case UDAT_STANDALONE_MONTH_FIELD:
-        if (uprv_strcmp(cal.getType(),"hebrew") == 0) {
+        if (typeid(cal) == typeid(HebrewCalendar)) {
            if (HebrewCalendar::isLeapYear(cal.get(UCAL_YEAR,status)) && value == 6 && count >= 3 )
                value = 13; 
            if (!HebrewCalendar::isLeapYear(cal.get(UCAL_YEAR,status)) && value >= 6 && count < 3 )
@@ -2272,7 +2277,7 @@ SimpleDateFormat::parse(const UnicodeString& text, Calendar& cal, ParsePosition&
 
     Calendar* calClone = nullptr;
     Calendar *workCal = &cal;
-    if (&cal != fCalendar && uprv_strcmp(cal.getType(), fCalendar->getType()) != 0) {
+    if (&cal != fCalendar && typeid(cal) != typeid(*fCalendar)) {
         
         
         
@@ -2903,7 +2908,7 @@ int32_t SimpleDateFormat::matchAlphaMonthStrings(const UnicodeString& text,
 
     if (bestMatch >= 0) { 
         
-        if (!strcmp(cal.getType(),"hebrew") && bestMatch==13) {
+        if (typeid(cal) == typeid(HebrewCalendar) && bestMatch==13) {
             cal.set(UCAL_MONTH,6);
         } else {
             cal.set(UCAL_MONTH, bestMatch);
@@ -2963,7 +2968,7 @@ int32_t SimpleDateFormat::matchString(const UnicodeString& text,
     if (bestMatch >= 0) {
         if (field < UCAL_FIELD_COUNT) {
             
-            if (!strcmp(cal.getType(),"hebrew") && field==UCAL_MONTH && bestMatch==13) {
+            if (typeid(cal) == typeid(HebrewCalendar) && field==UCAL_MONTH && bestMatch==13) {
                 cal.set(field,6);
             } else {
                 if (field == UCAL_YEAR) {
@@ -3052,7 +3057,6 @@ int32_t SimpleDateFormat::subParse(const UnicodeString& text, int32_t& start, ch
     if (numericLeapMonthFormatter != nullptr) {
         numericLeapMonthFormatter->setFormats(reinterpret_cast<const Format**>(&currentNumberFormat), 1);
     }
-    UBool isChineseCalendar = (uprv_strcmp(cal.getType(),"chinese") == 0 || uprv_strcmp(cal.getType(),"dangi") == 0);
 
     
     
@@ -3068,6 +3072,8 @@ int32_t SimpleDateFormat::subParse(const UnicodeString& text, int32_t& start, ch
     }
     pos.setIndex(start);
 
+    UBool isChineseCalendar = typeid(cal) == typeid(ChineseCalendar) ||
+            typeid(cal) == typeid(DangiCalendar);
     
     
     
@@ -3289,7 +3295,7 @@ int32_t SimpleDateFormat::subParse(const UnicodeString& text, int32_t& start, ch
             
             
             
-            if (!strcmp(cal.getType(),"hebrew")) {
+            if (typeid(cal) == typeid(HebrewCalendar)) {
                 HebrewCalendar *hc = (HebrewCalendar*)&cal;
                 if (cal.isSet(UCAL_YEAR)) {
                    UErrorCode monthStatus = U_ZERO_ERROR;
@@ -3852,7 +3858,7 @@ int32_t SimpleDateFormat::subParse(const UnicodeString& text, int32_t& start, ch
         switch (patternCharIndex) {
         case UDAT_MONTH_FIELD:
             
-            if (!strcmp(cal.getType(),"hebrew")) {
+            if (typeid(cal) == typeid(HebrewCalendar)) {
                 HebrewCalendar *hc = (HebrewCalendar*)&cal;
                 if (cal.isSet(UCAL_YEAR)) {
                    UErrorCode monthStatus = U_ZERO_ERROR;
@@ -4034,7 +4040,7 @@ SimpleDateFormat::applyPattern(const UnicodeString& pattern)
 
     
     
-    if (fCalendar != nullptr && uprv_strcmp(fCalendar->getType(),"japanese") == 0 &&
+    if (fCalendar != nullptr && typeid(*fCalendar) == typeid(JapaneseCalendar) &&
             uprv_strcmp(fLocale.getLanguage(),"ja") == 0) {
         if (fDateOverride==UnicodeString(u"y=jpanyear") && !fHasHanYearChar) {
             

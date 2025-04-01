@@ -115,7 +115,6 @@ JapaneseCalendar::JapaneseCalendar(const Locale& aLocale, UErrorCode& success)
 :   GregorianCalendar(aLocale, success)
 {
     init(success);
-    setTimeInMillis(getNow(), success); 
 }
 
 JapaneseCalendar::~JapaneseCalendar()
@@ -128,12 +127,6 @@ JapaneseCalendar::JapaneseCalendar(const JapaneseCalendar& source)
     UErrorCode status = U_ZERO_ERROR;
     init(status);
     U_ASSERT(U_SUCCESS(status));
-}
-
-JapaneseCalendar& JapaneseCalendar::operator= ( const JapaneseCalendar& right)
-{
-    GregorianCalendar::operator=(right);
-    return *this;
 }
 
 JapaneseCalendar* JapaneseCalendar::clone() const

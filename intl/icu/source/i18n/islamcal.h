@@ -235,7 +235,7 @@ class U_I18N_API IslamicCalendar : public Calendar {
 
 
 
-  virtual int32_t handleGetYearLength(int32_t extendedYear) const override;
+  virtual int32_t handleGetYearLength(int32_t extendedYear, UErrorCode& status) const override;
     
   
   
@@ -438,7 +438,7 @@ class U_I18N_API IslamicCivilCalendar : public IslamicCalendar {
 
 
 
-  virtual int32_t handleGetYearLength(int32_t extendedYear) const override;
+  virtual int32_t handleGetYearLength(int32_t extendedYear, UErrorCode& status) const override;
 
   
 
@@ -621,7 +621,7 @@ class U_I18N_API IslamicUmalquraCalendar : public IslamicCivilCalendar {
 
 
 
-  virtual int32_t handleGetYearLength(int32_t extendedYear) const override;
+  virtual int32_t handleGetYearLength(int32_t extendedYear, UErrorCode& status) const override;
 
   
 
