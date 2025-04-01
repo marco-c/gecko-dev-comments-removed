@@ -193,7 +193,6 @@
       
       BrowserSearchTelemetry.recordSearchSuggestionSelectionMethod(
         aEvent,
-        "searchbar",
         this.selectedIndex
       );
 
