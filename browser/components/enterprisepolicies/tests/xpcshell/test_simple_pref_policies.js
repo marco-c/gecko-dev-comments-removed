@@ -694,6 +694,34 @@ const POLICIES_TESTS = [
   {
     policies: {
       UserMessaging: {
+        SkipTermsOfUse: false,
+        Locked: false,
+      },
+    },
+    unlockedPrefs: {
+      "datareporting.policy.dataSubmissionPolicyAcceptedVersion": 0,
+      "datareporting.policy.dataSubmissionPolicyNotifiedTime": "0",
+    },
+  },
+
+  {
+    policies: {
+      UserMessaging: {
+        SkipTermsOfUse: true,
+        Locked: true,
+      },
+    },
+    lockedPrefs: {
+      "datareporting.policy.dataSubmissionPolicyAcceptedVersion": 999,
+      
+      
+      
+    },
+  },
+
+  {
+    policies: {
+      UserMessaging: {
         ExtensionRecommendations: false,
         Locked: false,
       },
