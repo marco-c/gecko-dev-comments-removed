@@ -33,6 +33,7 @@ class Document;
 
 namespace widget {
 class FullLookAndFeel;
+class LookAndFeelFont;
 }  
 
 enum class StyleSystemColor : uint8_t;
@@ -506,6 +507,7 @@ class LookAndFeel {
 
 
   static bool GetFont(FontID aID, nsString& aName, gfxFontStyle& aStyle);
+  static void GetFont(FontID, widget::LookAndFeelFont&);
 
   
 
@@ -570,11 +572,7 @@ class LookAndFeel {
 
 
 
-
-
-
-
-  static void NativeInit();
+  static void EnsureInit();
 
   static void SetData(widget::FullLookAndFeel&& aTables);
   static void NotifyChangedAllWindows(widget::ThemeChangeKind);

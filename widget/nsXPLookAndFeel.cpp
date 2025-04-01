@@ -6,6 +6,7 @@
 #include "mozilla/ArrayUtils.h"
 
 #include "mozilla/LookAndFeel.h"
+#include "mozilla/RWLock.h"
 #include "nscore.h"
 
 #include "nsXPLookAndFeel.h"
@@ -56,67 +57,34 @@ using FloatID = mozilla::LookAndFeel::FloatID;
 using ColorID = mozilla::LookAndFeel::ColorID;
 using FontID = mozilla::LookAndFeel::FontID;
 
-template <typename Index, typename Value, Index kEnd>
-class EnumeratedCache {
-  mozilla::EnumeratedArray<Index, Value, size_t(kEnd)> mEntries;
-  std::bitset<size_t(kEnd)> mValidity;
 
- public:
-  constexpr EnumeratedCache() = default;
+constexpr nscolor kNoColor = NS_RGBA(0xff, 0, 0, 0);
+using ColorStore =
+    EnumeratedArray<ColorID, RelaxedAtomicUint32, size_t(ColorID::End)>;
 
-  bool IsValid(Index aIndex) const { return mValidity[size_t(aIndex)]; }
-
-  const Value* Get(Index aIndex) const {
-    return IsValid(aIndex) ? &mEntries[aIndex] : nullptr;
-  }
-
-  void Insert(Index aIndex, Value aValue) {
-    mValidity[size_t(aIndex)] = true;
-    mEntries[aIndex] = aValue;
-  }
-
-  void Remove(Index aIndex) {
-    mValidity[size_t(aIndex)] = false;
-    mEntries[aIndex] = Value();
-  }
-
-  void Clear() {
-    mValidity.reset();
-    for (auto& entry : mEntries) {
-      entry = Value();
-    }
-  }
-};
-
-using ColorCache = EnumeratedCache<ColorID, Maybe<nscolor>, ColorID::End>;
-
-struct ColorCaches {
+struct ColorStores {
   using UseStandins = LookAndFeel::UseStandins;
 
-  ColorCache mCaches[2][2];
+  ColorStore mStores[2][2];
 
-  constexpr ColorCaches() = default;
+  constexpr ColorStores() = default;
 
-  ColorCache& Get(ColorScheme aScheme, UseStandins aUseStandins) {
-    return mCaches[aScheme == ColorScheme::Dark]
+  ColorStore& Get(ColorScheme aScheme, UseStandins aUseStandins) {
+    return mStores[aScheme == ColorScheme::Dark]
                   [aUseStandins == UseStandins::Yes];
-  }
-
-  void Clear() {
-    for (auto& c : mCaches) {
-      for (auto& cache : c) {
-        cache.Clear();
-      }
-    }
   }
 };
 
-static ColorCaches sColorCaches;
-
-static EnumeratedCache<FloatID, Maybe<float>, FloatID::End> sFloatCache;
-static EnumeratedCache<IntID, Maybe<int32_t>, IntID::End> sIntCache;
-MOZ_RUNINIT static EnumeratedCache<FontID, widget::LookAndFeelFont, FontID::End>
-    sFontCache;
+static ColorStores sColorStores;
+constexpr uint32_t kNoFloat = 0xffffff;
+static EnumeratedArray<FloatID, RelaxedAtomicUint32, size_t(FloatID::End)>
+    sFloatStore;
+constexpr int32_t kNoInt = INT32_MIN;
+static EnumeratedArray<IntID, RelaxedAtomicInt32, size_t(IntID::End)> sIntStore;
+StaticRWLock sFontStoreLock;
+MOZ_RUNINIT static EnumeratedArray<FontID, widget::LookAndFeelFont,
+                                   size_t(FontID::End)>
+    sFontStore MOZ_GUARDED_BY(sFontStoreLock);
 
 
 
@@ -348,8 +316,6 @@ const char* nsXPLookAndFeel::GetColorPrefName(ColorID aId) {
   return sColorPrefs[size_t(aId)];
 }
 
-bool nsXPLookAndFeel::sInitialized = false;
-
 nsXPLookAndFeel* nsXPLookAndFeel::sInstance = nullptr;
 bool nsXPLookAndFeel::sShutdown = false;
 
@@ -402,8 +368,47 @@ nsXPLookAndFeel* nsXPLookAndFeel::GetInstance() {
     *lnf = {};
   }
 
+  sInstance->Init();
+  sInstance->NativeInit();
+  FillStores(sInstance);
   widget::Theme::Init();
+  if (XRE_IsParentProcess()) {
+    nsLayoutUtils::RecomputeSmoothScrollDefault();
+  }
   return sInstance;
+}
+
+void nsXPLookAndFeel::FillStores(nsXPLookAndFeel* aInst) {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  for (auto scheme : {ColorScheme::Light, ColorScheme::Dark}) {
+    for (auto standins : {UseStandins::Yes, UseStandins::No}) {
+      auto& store = sColorStores.Get(scheme, standins);
+      for (ColorID id : MakeEnumeratedRange(ColorID(0), ColorID::End)) {
+        auto uncached = aInst->GetUncachedColor(id, scheme, standins);
+        MOZ_ASSERT_IF(uncached, uncached.value() != kNoColor);
+        store[id] = uncached.valueOr(kNoColor);
+      }
+    }
+  }
+  for (IntID id : MakeEnumeratedRange(IntID(0), IntID::End)) {
+    int32_t value = 0;
+    nsresult rv = aInst->GetIntValue(id, value);
+    MOZ_ASSERT_IF(NS_SUCCEEDED(rv), value != kNoInt);
+    sIntStore[id] = NS_SUCCEEDED(rv) ? value : kNoInt;
+  }
+
+  for (FloatID id : MakeEnumeratedRange(FloatID(0), FloatID::End)) {
+    float value = 0;
+    nsresult rv = aInst->GetFloatValue(id, value);
+    auto repr = BitwiseCast<uint32_t>(value);
+    MOZ_ASSERT_IF(NS_SUCCEEDED(rv), repr != kNoFloat);
+    sFloatStore[id] = NS_SUCCEEDED(rv) ? repr : kNoFloat;
+  }
+
+  StaticAutoWriteLock guard(sFontStoreLock);
+  for (FontID id : MakeEnumeratedRange(FontID(0), FontID::End)) {
+    sFontStore[id] = aInst->GetFontValue(id);
+  }
 }
 
 
@@ -417,7 +422,12 @@ void nsXPLookAndFeel::Shutdown() {
   sInstance = nullptr;
 
   
-  sFontCache.Clear();
+  {
+    StaticAutoWriteLock guard(sFontStoreLock);
+    for (auto& f : sFontStore) {
+      f = {};
+    }
+  }
 
   widget::Theme::Shutdown();
 }
@@ -523,14 +533,6 @@ void nsXPLookAndFeel::Init() {
 
   
   
-  sInitialized = true;
-
-  if (XRE_IsParentProcess()) {
-    nsLayoutUtils::RecomputeSmoothScrollDefault();
-  }
-
-  
-  
   
   Preferences::RegisterPrefixCallback(OnPrefChanged, "ui.");
 
@@ -546,8 +548,9 @@ void nsXPLookAndFeel::Init() {
 }
 
 nsXPLookAndFeel::~nsXPLookAndFeel() {
-  NS_ASSERTION(sInstance == this,
-               "This destroying instance isn't the singleton instance");
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(sInstance == this,
+             "This destroying instance isn't the singleton instance");
   sInstance = nullptr;
 }
 
@@ -954,29 +957,13 @@ static nsresult GetColorFromPref(LookAndFeel::ColorID aID, ColorScheme aScheme,
 nsresult nsXPLookAndFeel::GetColorValue(ColorID aID, ColorScheme aScheme,
                                         UseStandins aUseStandins,
                                         nscolor& aResult) {
-  if (!sInitialized) {
-    Init();
-  }
-
 #ifdef DEBUG_SYSTEM_COLOR_USE
   if (NS_SUCCEEDED(SystemColorUseDebuggingColor(aID, aResult))) {
     return NS_OK;
   }
 #endif
 
-  auto& cache = sColorCaches.Get(aScheme, aUseStandins);
-  if (const auto* cached = cache.Get(aID)) {
-    if (cached->isNothing()) {
-      return NS_ERROR_FAILURE;
-    }
-    aResult = cached->value();
-    return NS_OK;
-  }
-
-  
-  
   auto result = GetUncachedColor(aID, aScheme, aUseStandins);
-  cache.Insert(aID, result);
   if (!result) {
     return NS_ERROR_FAILURE;
   }
@@ -1001,59 +988,23 @@ Maybe<nscolor> nsXPLookAndFeel::GetUncachedColor(ColorID aID,
 }
 
 nsresult nsXPLookAndFeel::GetIntValue(IntID aID, int32_t& aResult) {
-  if (!sInitialized) {
-    Init();
-  }
-
-  if (const auto* cached = sIntCache.Get(aID)) {
-    if (cached->isNothing()) {
-      return NS_ERROR_FAILURE;
-    }
-    aResult = cached->value();
-    return NS_OK;
-  }
-
   if (NS_SUCCEEDED(Preferences::GetInt(sIntPrefs[size_t(aID)], &aResult))) {
-    sIntCache.Insert(aID, Some(aResult));
     return NS_OK;
   }
 
   if (NS_FAILED(NativeGetInt(aID, aResult))) {
-    sIntCache.Insert(aID, Nothing());
     return NS_ERROR_FAILURE;
   }
-
-  sIntCache.Insert(aID, Some(aResult));
   return NS_OK;
 }
 
 nsresult nsXPLookAndFeel::GetFloatValue(FloatID aID, float& aResult) {
-  if (!sInitialized) {
-    Init();
-  }
-
-  if (const auto* cached = sFloatCache.Get(aID)) {
-    if (cached->isNothing()) {
-      return NS_ERROR_FAILURE;
-    }
-    aResult = cached->value();
-    return NS_OK;
-  }
-
   int32_t pref = 0;
   if (NS_SUCCEEDED(Preferences::GetInt(sFloatPrefs[size_t(aID)], &pref))) {
     aResult = float(pref) / 100.0f;
-    sFloatCache.Insert(aID, Some(aResult));
     return NS_OK;
   }
-
-  if (NS_FAILED(NativeGetFloat(aID, aResult))) {
-    sFloatCache.Insert(aID, Nothing());
-    return NS_ERROR_FAILURE;
-  }
-
-  sFloatCache.Insert(aID, Some(aResult));
-  return NS_OK;
+  return NativeGetFloat(aID, aResult);
 }
 
 bool nsXPLookAndFeel::LookAndFeelFontToStyle(const LookAndFeelFont& aFont,
@@ -1098,20 +1049,14 @@ widget::LookAndFeelFont nsXPLookAndFeel::StyleToLookAndFeelFont(
   return font;
 }
 
-bool nsXPLookAndFeel::GetFontValue(FontID aID, nsString& aName,
-                                   gfxFontStyle& aStyle) {
-  if (const LookAndFeelFont* cached = sFontCache.Get(aID)) {
-    return LookAndFeelFontToStyle(*cached, aName, aStyle);
-  }
-
+widget::LookAndFeelFont nsXPLookAndFeel::GetFontValue(FontID aID) {
   LookAndFeelFont font;
   auto GetFontsFromPrefs = [&]() -> bool {
     nsDependentCString pref(sFontPrefs[size_t(aID)]);
-    if (NS_FAILED(Preferences::GetString(pref.get(), aName))) {
+    if (NS_FAILED(Preferences::GetString(pref.get(), font.name()))) {
       return false;
     }
     font.haveFont() = true;
-    font.name() = aName;
     font.size() = Preferences::GetFloat(nsAutoCString(pref + ".size"_ns).get());
     
     
@@ -1125,32 +1070,19 @@ bool nsXPLookAndFeel::GetFontValue(FontID aID, nsString& aName,
         Preferences::GetBool(nsAutoCString(pref + ".italic"_ns).get());
     return true;
   };
-
-  if (GetFontsFromPrefs()) {
-    LookAndFeelFontToStyle(font, aName, aStyle);
-  } else if (NativeGetFont(aID, aName, aStyle)) {
-    font = StyleToLookAndFeelFont(aName, aStyle);
-  } else {
-    MOZ_ASSERT(!font.haveFont());
+  if (!GetFontsFromPrefs()) {
+    nsAutoString name;
+    gfxFontStyle style;
+    if (NativeGetFont(aID, name, style)) {
+      font = StyleToLookAndFeelFont(name, style);
+    } else {
+      MOZ_ASSERT(!font.haveFont());
+    }
   }
-  bool success = font.haveFont();
-  sFontCache.Insert(aID, std::move(font));
-  return success;
+  return font;
 }
 
-void nsXPLookAndFeel::RefreshImpl() {
-  
-  sColorCaches.Clear();
-  sFontCache.Clear();
-  sFloatCache.Clear();
-  sIntCache.Clear();
-
-  if (XRE_IsParentProcess()) {
-    nsLayoutUtils::RecomputeSmoothScrollDefault();
-    
-    widget::RemoteLookAndFeel::ClearCachedData();
-  }
-}
+void nsXPLookAndFeel::RefreshImpl() {}
 
 static bool sRecordedLookAndFeelTelemetry = false;
 
@@ -1366,13 +1298,12 @@ LookAndFeel::ColorScheme LookAndFeel::ColorSchemeForFrame(
 
 Maybe<nscolor> LookAndFeel::GetColor(ColorID aId, ColorScheme aScheme,
                                      UseStandins aUseStandins) {
-  nscolor result;
-  nsresult rv = nsLookAndFeel::GetInstance()->GetColorValue(
-      aId, aScheme, aUseStandins, result);
-  if (NS_FAILED(rv)) {
+  MOZ_ASSERT(nsXPLookAndFeel::sInstance, "Not initialized");
+  nscolor color = sColorStores.Get(aScheme, aUseStandins)[aId];
+  if (color == kNoColor) {
     return Nothing();
   }
-  return Some(result);
+  return Some(color);
 }
 
 
@@ -1432,17 +1363,37 @@ Maybe<nscolor> LookAndFeel::GetColor(ColorID aId, const nsIFrame* aFrame) {
 
 
 nsresult LookAndFeel::GetInt(IntID aID, int32_t* aResult) {
-  return nsLookAndFeel::GetInstance()->GetIntValue(aID, *aResult);
+  MOZ_ASSERT(nsXPLookAndFeel::sInstance, "Not initialized?");
+  int32_t result = sIntStore[aID];
+  if (result == kNoInt) {
+    return NS_ERROR_FAILURE;
+  }
+  *aResult = result;
+  return NS_OK;
 }
 
 
 nsresult LookAndFeel::GetFloat(FloatID aID, float* aResult) {
-  return nsLookAndFeel::GetInstance()->GetFloatValue(aID, *aResult);
+  uint32_t result = sFloatStore[aID];
+  if (result == kNoFloat) {
+    return NS_ERROR_FAILURE;
+  }
+  *aResult = BitwiseCast<float>(result);
+  return NS_OK;
 }
 
 
+void LookAndFeel::GetFont(FontID aID, widget::LookAndFeelFont& aFont) {
+  MOZ_ASSERT(nsXPLookAndFeel::sInstance, "Not initialized?");
+  StaticAutoReadLock guard(sFontStoreLock);
+  aFont = sFontStore[aID];
+}
+
 bool LookAndFeel::GetFont(FontID aID, nsString& aName, gfxFontStyle& aStyle) {
-  return nsLookAndFeel::GetInstance()->GetFontValue(aID, aName, aStyle);
+  MOZ_ASSERT(nsXPLookAndFeel::sInstance, "Not initialized?");
+  StaticAutoReadLock guard(sFontStoreLock);
+  return nsXPLookAndFeel::LookAndFeelFontToStyle(sFontStore[aID], aName,
+                                                 aStyle);
 }
 
 
@@ -1508,14 +1459,21 @@ Modifiers LookAndFeel::GetMenuAccessKeyModifiers() {
   }
 }
 
+void LookAndFeel::EnsureInit() { Unused << nsXPLookAndFeel::GetInstance(); }
+
 
 void LookAndFeel::Refresh() {
-  nsLookAndFeel::GetInstance()->RefreshImpl();
+  auto* inst = nsLookAndFeel::GetInstance();
+  inst->RefreshImpl();
+  inst->NativeInit();
+  nsXPLookAndFeel::FillStores(inst);
+  if (XRE_IsParentProcess()) {
+    nsLayoutUtils::RecomputeSmoothScrollDefault();
+    
+    widget::RemoteLookAndFeel::ClearCachedData();
+  }
   widget::Theme::LookAndFeelChanged();
 }
-
-
-void LookAndFeel::NativeInit() { nsLookAndFeel::GetInstance()->NativeInit(); }
 
 
 void LookAndFeel::SetData(widget::FullLookAndFeel&& aTables) {

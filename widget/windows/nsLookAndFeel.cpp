@@ -15,6 +15,7 @@
 #include "WindowsUIUtils.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/intl/LocaleService.h"
 #include "mozilla/widget/WinRegistry.h"
 
 #define AVG2(a, b) (((a) + (b) + 1) >> 1)
@@ -518,38 +519,10 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       aResult = WinUtils::MicaPopupsEnabled();
       break;
     case IntID::AlertNotificationOrigin:
-      aResult = 0;
-      {
+      aResult = NS_ALERT_TOP;
+      if (intl::LocaleService::GetInstance()->IsAppLocaleRTL()) {
         
-        HWND shellWindow = FindWindowW(L"Shell_TrayWnd", nullptr);
-
-        if (shellWindow != nullptr) {
-          
-          APPBARDATA appBarData;
-          appBarData.hWnd = shellWindow;
-          appBarData.cbSize = sizeof(appBarData);
-          if (SHAppBarMessage(ABM_GETTASKBARPOS, &appBarData)) {
-            
-            
-            switch (appBarData.uEdge) {
-              case ABE_LEFT:
-                aResult = NS_ALERT_HORIZONTAL | NS_ALERT_LEFT;
-                break;
-              case ABE_RIGHT:
-                aResult = NS_ALERT_HORIZONTAL;
-                break;
-              case ABE_TOP:
-                aResult = NS_ALERT_TOP;
-                [[fallthrough]];
-              case ABE_BOTTOM:
-                
-                
-                if (::GetWindowLong(shellWindow, GWL_EXSTYLE) & WS_EX_LAYOUTRTL)
-                  aResult |= NS_ALERT_LEFT;
-                break;
-            }
-          }
-        }
+        aResult |= NS_ALERT_LEFT;
       }
       break;
     case IntID::IMERawInputUnderlineStyle:

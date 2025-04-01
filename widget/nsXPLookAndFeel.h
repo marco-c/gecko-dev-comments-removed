@@ -14,6 +14,7 @@
 class nsLookAndFeel;
 
 class nsXPLookAndFeel : public mozilla::LookAndFeel {
+  friend class mozilla::LookAndFeel;
  public:
   using FullLookAndFeel = mozilla::widget::FullLookAndFeel;
   using LookAndFeelFont = mozilla::widget::LookAndFeelFont;
@@ -23,23 +24,8 @@ class nsXPLookAndFeel : public mozilla::LookAndFeel {
   static nsXPLookAndFeel* GetInstance();
   static void Shutdown();
 
-  void Init();
-
   
   static const char* GetColorPrefName(ColorID);
-
-  
-  
-  
-  
-  
-  
-  nsresult GetColorValue(ColorID, ColorScheme, UseStandins, nscolor& aResult);
-  nsresult GetIntValue(IntID aID, int32_t& aResult);
-  nsresult GetFloatValue(FloatID aID, float& aResult);
-  
-  
-  bool GetFontValue(FontID aID, nsString& aName, gfxFontStyle& aStyle);
 
   virtual nsresult NativeGetInt(IntID aID, int32_t& aResult) = 0;
   virtual nsresult NativeGetFloat(FloatID aID, float& aResult) = 0;
@@ -79,7 +65,23 @@ class nsXPLookAndFeel : public mozilla::LookAndFeel {
  protected:
   nsXPLookAndFeel() = default;
 
+  void Init();
+
   static nscolor GetStandinForNativeColor(ColorID, ColorScheme);
+  static void FillStores(nsXPLookAndFeel* aInstance);
+
+  
+  
+  
+  
+  
+  
+  nsresult GetColorValue(ColorID, ColorScheme, UseStandins, nscolor& aResult);
+  nsresult GetIntValue(IntID aID, int32_t& aResult);
+  nsresult GetFloatValue(FloatID aID, float& aResult);
+  
+  bool GetFontValue(FontID aID, nsString& aName, gfxFontStyle& aStyle);
+  LookAndFeelFont GetFontValue(FontID aID);
 
   
   
