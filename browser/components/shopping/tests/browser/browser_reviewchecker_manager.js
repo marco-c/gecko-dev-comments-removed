@@ -44,6 +44,21 @@ async function testSidebarAutoOpen(testURL, isOpen) {
   });
 }
 
+async function clickCloseButton() {
+  await withReviewCheckerSidebar(async () => {
+    let shoppingContainer = await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector("shopping-container")?.wrappedJSObject,
+      "Review Checker is loaded."
+    );
+    let closeButtonEl = await ContentTaskUtils.waitForCondition(
+      () => shoppingContainer.closeButtonEl,
+      "close button is present."
+    );
+    closeButtonEl.click();
+  });
+}
+
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -192,7 +207,7 @@ add_task(async function test_auto_open_on_tab_switch() {
     );
 
     
-    SidebarController.hide();
+    await clickCloseButton();
 
     shownPromise = BrowserTestUtils.waitForEvent(window, "SidebarShown");
 
@@ -204,7 +219,7 @@ add_task(async function test_auto_open_on_tab_switch() {
     assertSidebarState(true);
 
     
-    SidebarController.hide();
+    await clickCloseButton();
 
     
     let firstTab = gBrowser.getTabForBrowser(browser);
@@ -213,6 +228,64 @@ add_task(async function test_auto_open_on_tab_switch() {
     
     await TestUtils.waitForTick();
 
+    assertSidebarState(false);
+
+    await BrowserTestUtils.removeTab(newProductTab);
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_close_on_tab_switch() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.shopping.experience2023.autoOpen.enabled", true],
+      ["browser.shopping.experience2023.autoOpen.userEnabled", true],
+    ],
+  });
+
+  let shownPromise = BrowserTestUtils.waitForEvent(window, "SidebarShown");
+
+  await BrowserTestUtils.withNewTab(PRODUCT_TEST_URL, async function (browser) {
+    
+    await shownPromise;
+
+    assertSidebarState(true);
+
+    
+    let newProductTab = BrowserTestUtils.addTab(
+      gBrowser,
+      OTHER_PRODUCT_TEST_URL
+    );
+    let newProductBrowser = newProductTab.linkedBrowser;
+    await BrowserTestUtils.browserLoaded(
+      newProductBrowser,
+      false,
+      OTHER_PRODUCT_TEST_URL
+    );
+
+    
+    await clickCloseButton();
+
+    shownPromise = BrowserTestUtils.waitForEvent(window, "SidebarShown");
+
+    await BrowserTestUtils.switchTab(gBrowser, newProductTab);
+
+    
+    await shownPromise;
+
+    assertSidebarState(true);
+
+    
+
+    
+    let firstTab = gBrowser.getTabForBrowser(browser);
+    await BrowserTestUtils.switchTab(gBrowser, firstTab);
+
+    
+    await TestUtils.waitForTick();
+
+    
     assertSidebarState(false);
 
     await BrowserTestUtils.removeTab(newProductTab);
@@ -397,6 +470,53 @@ add_task(async function test_sidebar_stays_closed_when_scrolling() {
     
     assertSidebarState(false);
   });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+add_task(async function test_auto_open_on_tab_switch_to_unsupported_site() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.shopping.experience2023.autoOpen.enabled", true],
+      ["browser.shopping.experience2023.autoOpen.userEnabled", true],
+      ["browser.shopping.experience2023.autoClose.userEnabled", true],
+    ],
+  });
+
+  SidebarController.hide();
+
+  let shownPromise = BrowserTestUtils.waitForEvent(window, "SidebarShown");
+
+  await BrowserTestUtils.withNewTab(PRODUCT_TEST_URL, async function (browser) {
+    
+    await shownPromise;
+
+    assertSidebarState(true);
+
+    
+    let unsupportedTab = BrowserTestUtils.addTab(gBrowser, "about:newtab");
+    await BrowserTestUtils.switchTab(gBrowser, unsupportedTab);
+
+    assertSidebarState(false);
+
+    
+    let firstTab = gBrowser.getTabForBrowser(browser);
+    shownPromise = BrowserTestUtils.waitForEvent(window, "SidebarShown");
+
+    await BrowserTestUtils.switchTab(gBrowser, firstTab);
+
+    
+    await shownPromise;
+
+    assertSidebarState(true);
+
+    await BrowserTestUtils.removeTab(unsupportedTab);
+  });
+
+  SidebarController.hide();
 
   await SpecialPowers.popPrefEnv();
 });
