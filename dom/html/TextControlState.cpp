@@ -764,7 +764,13 @@ TextInputSelectionController::ScrollCharacter(bool aRight) {
 void TextInputSelectionController::SelectionWillTakeFocus() {
   if (mFrameSelection) {
     if (PresShell* shell = mFrameSelection->GetPresShell()) {
-      shell->FrameSelectionWillTakeFocus(*mFrameSelection);
+      
+      
+      shell->FrameSelectionWillTakeFocus(
+          *mFrameSelection,
+          StaticPrefs::dom_selection_mimic_chrome_tostring_enabled()
+              ? PresShell::CanMoveLastSelectionForToString::Yes
+              : PresShell::CanMoveLastSelectionForToString::No);
     }
   }
 }
