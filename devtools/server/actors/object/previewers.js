@@ -1226,6 +1226,16 @@ previewers.Object = [
       for (const attr of safeRawObj.attributes) {
         preview.attributes[attr.nodeName] = objectActor.createValueGrip(attr.value, depth);
       }
+      
+      
+      
+      
+      const privatePropertiesSymbols = ObjectUtils.getSafePrivatePropertiesSymbols(
+        obj
+      );
+      if (privatePropertiesSymbols.length > 0) {
+        preview.privatePropertiesLength = privatePropertiesSymbols.length;
+      }
     } else if (className == "Attr") {
       preview.value = objectActor.createValueGrip(safeRawObj.value, depth);
     } else if (
