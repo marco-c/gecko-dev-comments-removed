@@ -39,6 +39,13 @@ function run_test() {
   Assert.equal(cr.minidumpPath.path, cwd.path);
 
   
+  
+  Services.prefs.setBoolPref(
+    "toolkit.crash_annotation.testing_validation",
+    true
+  );
+
+  
   try {
     cr.annotateCrashReport(undefined, "");
     do_throw(
@@ -87,4 +94,6 @@ function run_test() {
   
   cr.minidumpPath = cwd;
   Assert.equal(cr.minidumpPath.path, cwd.path);
+
+  Services.prefs.clearUserPref("toolkit.crash_annotation.testing_validation");
 }
