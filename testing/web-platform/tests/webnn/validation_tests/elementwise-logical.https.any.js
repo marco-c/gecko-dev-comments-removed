@@ -5,27 +5,44 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 'use strict';
 
-const kElementwiseLogicalBinaryOperators = [
-  'equal',
-  'greater',
-  'greaterOrEqual',
-  'lesser',
-  'lesserOrEqual',
-  'notEqual',
-  'logicalAnd',
-  'logicalOr',
-  'logicalXor',
-];
+const queryParams = new URLSearchParams(window.location.search);
+const operatorName = queryParams.get('op');
 
-const label = 'elementwise_logic_op';
-
-kElementwiseLogicalBinaryOperators.forEach((operatorName) => {
+if (operatorName === 'logicalNot') {
+  
+  validateInputFromAnotherBuilder(operatorName);
+} else {
+  const label = 'elementwise_logic_op';
   validateTwoInputsOfSameDataType(operatorName, label);
   validateTwoInputsFromMultipleBuilders(operatorName);
   validateTwoInputsBroadcastable(operatorName, label);
-});
-
-
-validateInputFromAnotherBuilder('logicalNot');
+}
