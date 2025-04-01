@@ -5372,43 +5372,20 @@ void Element::SetHTML(const nsAString& aInnerHTML,
 
   
   
-  RefPtr<Document> inertDoc;
-  nsAtom* contextLocalName = parseContext->NodeInfo()->NameAtom();
-  int32_t contextNameSpaceID = parseContext->GetNameSpaceID();
-  ElementCreationOptionsOrString options;
-  RefPtr<DocumentFragment> fragment;
-  if (doc->IsHTMLDocument()) {
-    inertDoc = nsContentUtils::CreateInertHTMLDocument(doc);
-    if (!inertDoc) {
-      aError = NS_ERROR_FAILURE;
-      return;
-    }
-    fragment = new (inertDoc->NodeInfoManager())
-        DocumentFragment(inertDoc->NodeInfoManager());
 
-    aError = nsContentUtils::ParseFragmentHTML(aInnerHTML, fragment,
-                                               contextLocalName,
-                                               contextNameSpaceID, false, true);
-
-  } else {
-    MOZ_ASSERT(doc->IsXMLDocument());
-    inertDoc = nsContentUtils::CreateInertXMLDocument(doc);
-    if (!inertDoc) {
-      aError = NS_ERROR_FAILURE;
-      return;
-    }
-    fragment = new (inertDoc->NodeInfoManager())
-        DocumentFragment(inertDoc->NodeInfoManager());
-
-    
-    
-    
-    AutoTArray<nsString, 0> emptyTagStack;
-    aError =
-        nsContentUtils::ParseFragmentXML(aInnerHTML, inertDoc, emptyTagStack,
-                                         true, -1, getter_AddRefs(fragment));
+  RefPtr<Document> inertDoc = nsContentUtils::CreateInertHTMLDocument(doc);
+  if (!inertDoc) {
+    aError = NS_ERROR_FAILURE;
+    return;
   }
 
+  RefPtr<DocumentFragment> fragment = new (inertDoc->NodeInfoManager())
+      DocumentFragment(inertDoc->NodeInfoManager());
+
+  nsAtom* contextLocalName = parseContext->NodeInfo()->NameAtom();
+  int32_t contextNameSpaceID = parseContext->GetNameSpaceID();
+  aError = nsContentUtils::ParseFragmentHTML(
+      aInnerHTML, fragment, contextLocalName, contextNameSpaceID, false, true);
   if (aError.Failed()) {
     return;
   }
