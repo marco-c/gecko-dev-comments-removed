@@ -32,6 +32,10 @@
 
 
 
+
+
+
+
 var dateTimeFormatCache = new_Record();
 
 
@@ -41,7 +45,11 @@ var dateTimeFormatCache = new_Record();
 
 
 
-function GetCachedFormat(format, required, defaults) {
+function GetCachedFormat(locale, format, required, defaults) {
+  assert(
+    locale === undefined || typeof locale === "string",
+    "bad locale type"
+  );
   assert(
     format === "dateTimeFormat" ||
       format === "dateFormat" ||
@@ -51,10 +59,12 @@ function GetCachedFormat(format, required, defaults) {
 
   var formatters;
   if (
+    locale !== dateTimeFormatCache.locale ||
     !intl_IsRuntimeDefaultLocale(dateTimeFormatCache.runtimeDefaultLocale) ||
     !intl_isDefaultTimeZone(dateTimeFormatCache.icuDefaultTimeZone)
   ) {
     formatters = dateTimeFormatCache.formatters = new_Record();
+    dateTimeFormatCache.locale = locale;
     dateTimeFormatCache.runtimeDefaultLocale = intl_RuntimeDefaultLocale();
     dateTimeFormatCache.icuDefaultTimeZone = intl_defaultTimeZone();
   } else {
@@ -63,7 +73,7 @@ function GetCachedFormat(format, required, defaults) {
 
   var fmt = formatters[format];
   if (fmt === undefined) {
-    fmt = formatters[format] = intl_CreateDateTimeFormat(undefined, undefined, required, defaults);
+    fmt = formatters[format] = intl_CreateDateTimeFormat(locale, undefined, required, defaults);
   }
 
   return fmt;
@@ -89,10 +99,12 @@ function Date_toLocaleString() {
 
   
   var dateTimeFormat;
-  if (locales === undefined && options === undefined) {
+  if (
+    (locales === undefined || typeof locales === "string") &&
+    options === undefined
+  ) {
     
-    
-    dateTimeFormat = GetCachedFormat("dateTimeFormat", "any", "all");
+    dateTimeFormat = GetCachedFormat(locales, "dateTimeFormat", "any", "all");
   } else {
     dateTimeFormat = intl_CreateDateTimeFormat(locales, options, "any", "all");
   }
@@ -121,10 +133,12 @@ function Date_toLocaleDateString() {
 
   
   var dateTimeFormat;
-  if (locales === undefined && options === undefined) {
+  if (
+    (locales === undefined || typeof locales === "string") &&
+    options === undefined
+  ) {
     
-    
-    dateTimeFormat = GetCachedFormat("dateFormat", "date", "date");
+    dateTimeFormat = GetCachedFormat(locales, "dateFormat", "date", "date");
   } else {
     dateTimeFormat = intl_CreateDateTimeFormat(locales, options, "date", "date");
   }
@@ -153,10 +167,12 @@ function Date_toLocaleTimeString() {
 
   
   var dateTimeFormat;
-  if (locales === undefined && options === undefined) {
+  if (
+    (locales === undefined || typeof locales === "string") &&
+    options === undefined
+  ) {
     
-    
-    dateTimeFormat = GetCachedFormat("timeFormat", "time", "time");
+    dateTimeFormat = GetCachedFormat(locales, "timeFormat", "time", "time");
   } else {
     dateTimeFormat = intl_CreateDateTimeFormat(locales, options, "time", "time");
   }
