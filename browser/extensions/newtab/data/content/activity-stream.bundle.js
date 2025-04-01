@@ -11391,6 +11391,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     this.prefersDarkQuery = null;
     this.categoryRef = []; 
     this.wallpaperRef = []; 
+    this.customColorPickerRef = external_React_default().createRef(); 
     this.state = {
       activeCategory: null,
       activeCategoryFluentID: null,
@@ -11418,9 +11419,16 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
 
     
     event.target.style.backgroundColor = `rgb(${rgbColors.toString()})`;
-    this.setState({
-      customHexValue: event.target.style.backgroundColor
-    });
+
+    
+    const isColorDark = this.isWallpaperColorDark(rgbColors);
+    if (this.customColorPickerRef.current) {
+      if (isColorDark) {
+        this.customColorPickerRef.current.classList.add("is-dark");
+      } else {
+        this.customColorPickerRef.current.classList.remove("is-dark");
+      }
+    }
 
     
     this.props.setPref("newtabWallpapers.wallpaper", id);
@@ -11598,6 +11606,9 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     const b = parseInt(input.substr(5, 2), 16);
     return [r, g, b];
   }
+  isWallpaperColorDark([r, g, b]) {
+    return 0.2125 * r + 0.7154 * g + 0.0721 * b <= 110;
+  }
   render() {
     const prefs = this.props.Prefs.values;
     const {
@@ -11648,7 +11659,8 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       filteredWallpapers = reduceColorsToFitCustomColorInput(filteredWallpapers);
     }
     let colorPickerInput = showColorPicker && activeCategory === "solid-colors" ? external_React_default().createElement("div", {
-      className: "theme-custom-color-picker"
+      className: "theme-custom-color-picker",
+      ref: this.customColorPickerRef
     }, external_React_default().createElement("input", {
       onInput: this.handleColorInput,
       onChange: this.debouncedHandleChange,
