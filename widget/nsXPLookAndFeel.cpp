@@ -407,6 +407,9 @@ void nsXPLookAndFeel::FillStores(nsXPLookAndFeel* aInst) {
     }
   }
 
+  
+  
+  
   StaticAutoWriteLock guard(sFontStoreLock);
   for (FontID id : MakeEnumeratedRange(FontID(0), FontID::End)) {
     sFontStore[id] = aInst->GetFontValue(id);
