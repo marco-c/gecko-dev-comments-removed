@@ -433,12 +433,24 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   
-  const bool paintColor = NS_GET_A(canvasBg.mColor) && canvasBg.mCSSSpecified;
-  if (paintColor) {
-    list.AppendNewToTop<nsDisplaySolidColor>(
+  
+  
+  
+  
+  
+  
+  nsDisplaySolidColor* backgroundColorItem = nullptr;
+  if (NS_GET_A(canvasBg.mColor)) {
+    
+    
+    MOZ_ASSERT(
+        canvasBg.mCSSSpecified || NS_GET_A(canvasBg.mColor) == 255,
+        "Default canvas background should either be transparent or opaque");
+    backgroundColorItem = MakeDisplayItem<nsDisplaySolidColor>(
         aBuilder, this,
         CanvasArea() + aBuilder->GetCurrentFrameOffsetToReferenceFrame(),
         canvasBg.mColor);
+    list.AppendToTop(backgroundColorItem);
   }
 
   
@@ -525,31 +537,13 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     BuildDisplayListForChild(aBuilder, kid, aLists);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!paintColor && NS_GET_A(canvasBg.mColor) && !isPage &&
-      !needBlendContainerForBackgroundBlendMode &&
-      !aBuilder->ContainsBlendMode()) {
-    MOZ_ASSERT(
-        NS_GET_A(canvasBg.mColor) == 255,
-        "Default canvas background should either be transparent or opaque");
+  if (!canvasBg.mCSSSpecified && backgroundColorItem &&
+      (needBlendContainerForBackgroundBlendMode ||
+       aBuilder->ContainsBlendMode())) {
     
-    nsDisplayList list(aBuilder);
-    list.AppendToTop(aLists.BorderBackground());
-    aLists.BorderBackground()->AppendNewToTop<nsDisplaySolidColor>(
-        aBuilder, this,
-        CanvasArea() + aBuilder->GetCurrentFrameOffsetToReferenceFrame(),
-        canvasBg.mColor);
-    aLists.BorderBackground()->AppendToTop(&list);
+    
+    
+    backgroundColorItem->OverrideColor(NS_TRANSPARENT);
   }
 
   if (mDoPaintFocus) {
