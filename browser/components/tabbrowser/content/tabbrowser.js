@@ -5907,21 +5907,28 @@
       if (typeof elementIndex == "number") {
         tabIndex = this.#elementIndexToTabIndex(elementIndex);
       }
-      if (this.isTab(aTab)) {
-        
-        if (aTab.pinned) {
-          tabIndex = Math.min(tabIndex, this.pinnedTabCount - 1);
-        } else {
-          tabIndex = Math.max(tabIndex, this.pinnedTabCount);
-        }
-        if (aTab._tPos == tabIndex && !(aTab.group && forceUngrouped)) {
-          return;
-        }
+
+      
+      if (this.isTab(aTab) && aTab.pinned) {
+        tabIndex = Math.min(tabIndex, this.pinnedTabCount - 1);
       } else {
+        tabIndex = Math.max(tabIndex, this.pinnedTabCount);
+      }
+
+      
+      if (
+        this.isTab(aTab) &&
+        aTab._tPos == tabIndex &&
+        !(aTab.group && forceUngrouped)
+      ) {
+        return;
+      }
+
+      
+      
+      if (this.isTabGroupLabel(aTab)) {
         forceUngrouped = true;
-        if (this.isTabGroupLabel(aTab)) {
-          aTab = aTab.group;
-        }
+        aTab = aTab.group;
       }
 
       this.#handleTabMove(aTab, () => {
