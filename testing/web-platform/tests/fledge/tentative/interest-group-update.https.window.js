@@ -10,7 +10,7 @@
 
 
 
-"use strict;"
+"use strict";
 
 
 
@@ -32,7 +32,7 @@ const makeTestForUpdate = ({
 }) => {
   subsetTest(promise_test, async test => {
     const uuid = generateUuid(test);
-    extraBiddingLogic = ``;
+    let extraBiddingLogic = ``;
 
     let replacePlaceholders = (ads) => ads.forEach(element => {
       element.renderURL = element.renderURL.replace(`UUID-PLACEHOLDER`, uuid);

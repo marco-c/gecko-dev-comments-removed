@@ -12,7 +12,7 @@
 
 
 
-"use strict;"
+"use strict";
 
 
 

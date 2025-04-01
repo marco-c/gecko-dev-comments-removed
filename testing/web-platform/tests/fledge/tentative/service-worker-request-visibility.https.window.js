@@ -6,7 +6,7 @@
 
 
 
-"use strict;"
+"use strict";
 
 const SERVICE_WORKER_SCRIPT = "resources/service-worker-helper.js";
 

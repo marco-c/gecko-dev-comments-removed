@@ -14,7 +14,7 @@
 
 
 
-"use strict;"
+"use strict";
 
 
 
@@ -460,7 +460,7 @@ const SIMPLE_JOIN_LEAVE_TEST_CASES = [
   },
 ];
 
-for (testCase of SIMPLE_JOIN_LEAVE_TEST_CASES) {
+for (let testCase of SIMPLE_JOIN_LEAVE_TEST_CASES) {
   var test_name = 'Join and leave interest group: ';
   if ('testCaseName' in testCase) {
     test_name += testCase.testCaseName;

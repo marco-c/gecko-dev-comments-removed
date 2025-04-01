@@ -4,12 +4,12 @@
 
 
 
-"use strict;"
+"use strict";
 
 
 
 async function runAuctionsUntilWinner(test, uuid, auctionConfigOverrides) {
-  fencedFrameConfig = null;
+  let fencedFrameConfig = null;
   while (!fencedFrameConfig) {
     fencedFrameConfig =
         await runBasicFledgeAuction(test, uuid, auctionConfigOverrides);
