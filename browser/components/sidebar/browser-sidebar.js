@@ -48,7 +48,11 @@ var SidebarController = {
     let switcherMenuitem;
     const updateMenus = visible => {
       
-      if (!visible && this.isOpen && this.currentID == commandID) {
+      
+      
+      if (!visible && this._state.command == commandID) {
+        this._state.command = "";
+        this.lastOpenedId = null;
         this.hide();
       }
 

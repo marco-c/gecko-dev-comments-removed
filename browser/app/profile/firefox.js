@@ -837,7 +837,6 @@ pref("browser.search.totalSearches", 0);
 
 
 
-
 pref("browser.shopping.experience2023.enabled", false);
 
 
@@ -890,11 +889,6 @@ pref("browser.shopping.experience2023.showKeepSidebarClosedMessage", true);
 
 
 pref("browser.shopping.experience2023.integratedSidebar", false);
-
-
-
-
-pref("browser.shopping.experience2023.shoppingSidebar", true);
 
 
 
