@@ -16,9 +16,14 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsISubstitutingProtocolHandler"
 );
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  AboutHomeStartupCache: "resource:///modules/AboutHomeStartupCache.sys.mjs",
+});
+
 const ResourceSubstitution = "newtab";
 
-this.resourceMapping = class extends ExtensionAPI {
+this.builtin_newtab = class extends ExtensionAPI {
   #chromeHandle = null;
 
   onStartup() {
@@ -65,5 +70,23 @@ this.resourceMapping = class extends ExtensionAPI {
     resProto.setSubstitution(ResourceSubstitution, null);
     this.#chromeHandle.destruct();
     this.#chromeHandle = null;
+  }
+
+  getAPI(_context) {
+    return {
+      builtin: {
+        newtab: {
+          handleUpdateAvailable() {
+            
+            
+            
+            
+            
+            
+            lazy.AboutHomeStartupCache.clearCacheAndUninit();
+          },
+        },
+      },
+    };
   }
 };
