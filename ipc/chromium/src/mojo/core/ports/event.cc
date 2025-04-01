@@ -106,8 +106,6 @@ static_assert(sizeof(UpdatePreviousPeerEventData) % kPortsMessageAlignment == 0,
 
 }  
 
-Event::PortDescriptor::PortDescriptor() { memset(padding, 0, sizeof(padding)); }
-
 Event::~Event() = default;
 
 
