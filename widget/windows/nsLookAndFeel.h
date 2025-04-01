@@ -64,6 +64,14 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
 
   nsresult GetKeyboardLayoutImpl(nsACString& aLayout) override;
 
+  bool NeedsMicaWorkaround() const {
+    
+    
+    
+    
+    return mTitlebarColors.mUseAccent && mTitlebarColors.mAccentInactive.isSome();
+  }
+
  private:
   struct TitlebarColors {
     
