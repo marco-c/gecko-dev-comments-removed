@@ -3838,9 +3838,6 @@ void PresShell::ScrollFrameIntoVisualViewport(Maybe<nsPoint>& aDestination,
     
     
     
-    if (!StaticPrefs::layout_scroll_fixed_content_into_view_visually()) {
-      return;
-    }
 
     const nsSize visualViewportSize =
         rootScrollContainer->GetVisualViewportSize();
