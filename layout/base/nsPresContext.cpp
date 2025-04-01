@@ -1485,7 +1485,21 @@ float nsPresContext::GetDeviceFullZoom() {
 }
 
 void nsPresContext::SetFullZoom(float aZoom) {
-  if (!mPresShell || mFullZoom == aZoom) {
+  if (!mPresShell) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (MOZ_UNLIKELY(!std::isfinite(aZoom) || aZoom <= 0.0f)) {
+    aZoom = 1.0f;
+  }
+
+  if (mFullZoom == aZoom) {
     return;
   }
 
