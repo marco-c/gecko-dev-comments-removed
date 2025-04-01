@@ -21,6 +21,7 @@ import {
   getPauseReason,
   getSourceTextContent,
   getCurrentThread,
+  getViewport,
 } from "../../selectors/index";
 import { features } from "../../utils/prefs";
 
@@ -171,6 +172,15 @@ const mapStateToProps = state => {
   const location = frame?.location;
   if (!location) {
     return {};
+  }
+  
+  
+  
+  if (features.codemirrorNext) {
+    const viewport = getViewport(state);
+    if (!viewport) {
+      return {};
+    }
   }
   const sourceTextContent = getSourceTextContent(state, location);
   if (!isDocumentReady(location, sourceTextContent)) {
