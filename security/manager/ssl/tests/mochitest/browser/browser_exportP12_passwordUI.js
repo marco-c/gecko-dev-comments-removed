@@ -109,8 +109,8 @@ add_task(async function testPasswordStrengthAndEquality() {
     password2Textbox.value = testCase.password2;
     
     
-    password1Textbox.dispatchEvent(new Event("input", { bubbles: true }));
-    password2Textbox.dispatchEvent(new Event("input", { bubbles: true }));
+    password1Textbox.oninput();
+    password2Textbox.oninput();
 
     Assert.equal(
       win.document.getElementById("setp12password").getButton("accept")
