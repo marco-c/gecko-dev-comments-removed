@@ -215,7 +215,7 @@ class SuspenderObject : public NativeObject {
 
   enum { DataSlot, PromisingPromiseSlot, SuspendingReturnTypeSlot, SlotCount };
 
-  enum class ReturnType : int32_t { Unknown, Promise, Value, Exception };
+  enum class ReturnType : int32_t { Unknown, Promise, Exception };
 
   static SuspenderObject* create(JSContext* cx) {
     for (;;) {
@@ -1235,20 +1235,6 @@ static bool WasmPISuspendTaskContinue(JSContext* cx, unsigned argc, Value* vp) {
   return RejectPromiseWithPendingError(cx, promise);
 }
 
-static bool IsPromiseValue(JSContext* aCx, JS::Handle<JS::Value> aValue) {
-  if (!aValue.isObject()) {
-    return false;
-  }
-
-  
-  JS::Rooted<JSObject*> obj(aCx, js::CheckedUnwrapStatic(&aValue.toObject()));
-  if (!obj) {
-    return false;
-  }
-
-  return JS::IsPromiseObject(obj);
-}
-
 
 
 
@@ -1777,20 +1763,16 @@ JSObject* GetSuspendingPromiseResult(Instance* instance, void* result,
   }
 
   
+  MOZ_ASSERT(promise->state() == JS::PromiseState::Fulfilled);
+  RootedValue jsValue(cx, promise->value());
+
+  
   Rooted<WasmStructObject*> results(
       cx, instance->constantStructNewDefault(
               cx, SuspendingFunctionModuleFactory::ResultsTypeIndex));
   const FieldTypeVector& fields = results->typeDef().structType().fields_;
 
   if (fields.length() > 0) {
-    MOZ_ASSERT_IF(promise, promise->state() == JS::PromiseState::Fulfilled);
-    RootedValue jsValue(cx);
-    if (promise) {
-      jsValue.set(promise->value());
-    } else {
-      jsValue.set(resultRef.get().toJSValue());
-    }
-
     
     
     const wasm::FuncType& sig = instance->codeMeta().getFuncType(
@@ -1850,13 +1832,6 @@ void* AddPromiseReactions(Instance* instance, SuspenderObject* suspender,
   RootedValue resultValue(cx, resultRef.get().toJSValue());
   Rooted<SuspenderObject*> suspenderObject(cx, suspender);
   RootedFunction fn(cx, continueOnSuspendable);
-
-  if (!IsPromiseValue(cx, resultValue)) {
-    suspenderObject->forwardToSuspendable();
-    suspenderObject->setSuspendingReturnType(
-        SuspenderObject::ReturnType::Value);
-    return resultRef.get().forCompiledCode();
-  }
 
   
   RootedObject promiseConstructor(cx, GetPromiseConstructor(cx));
