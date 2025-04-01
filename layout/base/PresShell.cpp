@@ -5562,17 +5562,17 @@ void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
     return;
   }
   const bool isViewport = aFrame->IsViewportFrame();
-  nscolor canvasColor;
+  const SingleCanvasBackground* canvasBg;
   if (isViewport) {
-    canvasColor = mCanvasBackground.mViewportColor;
+    canvasBg = &mCanvasBackground.mViewport;
   } else if (aFrame->IsPageContentFrame()) {
-    canvasColor = mCanvasBackground.mPageColor;
+    canvasBg = &mCanvasBackground.mPage;
   } else {
     
     
     return;
   }
-  const nscolor bgcolor = NS_ComposeColors(aBackstopColor, canvasColor);
+  const nscolor bgcolor = NS_ComposeColors(aBackstopColor, canvasBg->mColor);
   if (NS_GET_A(bgcolor) == 0) {
     return;
   }
@@ -5589,7 +5589,7 @@ void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
         
         
         addedScrollingBackgroundColor = AddCanvasBackgroundColor(
-            aList, canvasFrame, bgcolor, mCanvasBackground.mCSSSpecified);
+            aList, canvasFrame, bgcolor, canvasBg->mCSSSpecified);
       }
     }
   }
@@ -5694,11 +5694,6 @@ void PresShell::UpdateCanvasBackground() {
   mCanvasBackground = ComputeCanvasBackground();
 }
 
-struct SingleCanvasBackground {
-  nscolor mColor = 0;
-  bool mCSSSpecified = false;
-};
-
 static SingleCanvasBackground ComputeSingleCanvasBackground(nsIFrame* aCanvas) {
   MOZ_ASSERT(aCanvas->IsCanvasFrame());
   const nsIFrame* bgFrame = nsCSSRendering::FindBackgroundFrame(aCanvas);
@@ -5724,7 +5719,7 @@ PresShell::CanvasBackground PresShell::ComputeCanvasBackground() const {
     
     
     
-    return {color, color, false};
+    return {{color, false}, {color, false}};
   }
 
   auto viewportBg = ComputeSingleCanvasBackground(canvas);
@@ -5732,7 +5727,7 @@ PresShell::CanvasBackground PresShell::ComputeCanvasBackground() const {
     viewportBg.mColor =
         NS_ComposeColors(GetDefaultBackgroundColorToDraw(), viewportBg.mColor);
   }
-  nscolor pageColor = viewportBg.mColor;
+  auto pageBg = viewportBg;
   nsCanvasFrame* docElementCb =
       mFrameConstructor->GetDocElementContainingBlock();
   if (canvas != docElementCb) {
@@ -5740,9 +5735,9 @@ PresShell::CanvasBackground PresShell::ComputeCanvasBackground() const {
     
     
     MOZ_ASSERT(mPresContext->IsRootPaginatedDocument());
-    pageColor = ComputeSingleCanvasBackground(docElementCb).mColor;
+    pageBg = ComputeSingleCanvasBackground(docElementCb);
   }
-  return {viewportBg.mColor, pageColor, viewportBg.mCSSSpecified};
+  return {viewportBg, pageBg};
 }
 
 nscolor PresShell::ComputeBackstopColor(nsView* aDisplayRoot) {
@@ -6734,7 +6729,7 @@ void PresShell::PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags) {
     return;
   }
 
-  bgcolor = NS_ComposeColors(bgcolor, mCanvasBackground.mViewportColor);
+  bgcolor = NS_ComposeColors(bgcolor, mCanvasBackground.mViewport.mColor);
 
   if (renderer->GetBackendType() == layers::LayersBackend::LAYERS_WR) {
     LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(

@@ -143,6 +143,11 @@ class ScrollAnchorContainer;
 
 
 
+struct SingleCanvasBackground {
+  nscolor mColor = 0;
+  bool mCSSSpecified = false;
+};
+
 class PresShell final : public nsStubDocumentObserver,
                         public nsISelectionController,
                         public nsIObserver,
@@ -899,20 +904,23 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   void SetCanvasBackground(nscolor aColor) {
-    mCanvasBackground.mViewportColor = aColor;
+    mCanvasBackground.mViewport.mColor = aColor;
   }
   nscolor GetCanvasBackground() const {
-    return mCanvasBackground.mViewportColor;
+    return mCanvasBackground.mViewport.mColor;
+  }
+
+  const SingleCanvasBackground& GetCanvasBackground(bool aForPage) const {
+    return aForPage ? mCanvasBackground.mPage : mCanvasBackground.mViewport;
   }
 
   struct CanvasBackground {
     
-    nscolor mViewportColor = 0;
+    SingleCanvasBackground mViewport;
     
     
     
-    nscolor mPageColor = 0;
-    bool mCSSSpecified = false;
+    SingleCanvasBackground mPage;
   };
 
   
