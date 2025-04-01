@@ -332,9 +332,6 @@ var allowlist = [
 
   
   { file: "chrome://browser/content/places/interactionsViewer.html" },
-
-  
-  { file: "chrome://browser/content/genai/content/model-optin.mjs" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
