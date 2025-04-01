@@ -35,7 +35,7 @@ add_task(async function test_query_result_favicon_changed_on_child() {
         
         
         
-        PlacesUtils.favicons.setFaviconForPage(
+        PlacesTestUtils.setFaviconForPage(
           PAGE_URI,
           SMALLPNG_DATA_URI,
           SMALLPNG_DATA_URI
@@ -107,7 +107,7 @@ add_task(
     );
 
     let promise = promiseFaviconChanged(PAGE_URI2, SMALLPNG_DATA_URI);
-    PlacesUtils.favicons.setFaviconForPage(
+    PlacesTestUtils.setFaviconForPage(
       PAGE_URI2,
       SMALLPNG_DATA_URI,
       SMALLPNG_DATA_URI
