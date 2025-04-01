@@ -238,6 +238,23 @@ async function disableCacheAndReload(toolbox, waitForLoad) {
   }
 }
 
+async function enableCacheAndReload(toolbox, waitForLoad) {
+  
+  Services.prefs.setBoolPref("devtools.cache.disabled", false);
+
+  await toolbox.commands.targetConfigurationCommand.updateConfiguration({
+    cacheDisabled: false,
+  });
+
+  
+  
+  if (waitForLoad) {
+    await toolbox.commands.targetCommand.reloadTopLevelTarget();
+  } else {
+    toolbox.commands.targetCommand.reloadTopLevelTarget();
+  }
+}
+
 
 
 
@@ -381,6 +398,22 @@ function initNetMonitor(
         allComplete.push(waitForTimelineMarkers(monitor));
       }
       await disableCacheAndReload(toolbox, waitForLoad);
+      await Promise.all(allComplete);
+      await clearNetworkEvents(monitor);
+    } else if (Services.prefs.getBoolPref("devtools.cache.disabled")) {
+      info("Enabling cache and reloading page.");
+
+      const allComplete = [];
+      allComplete.push(
+        waitForNetworkEvents(monitor, requestCount, {
+          expectedEventTimings,
+        })
+      );
+
+      if (waitForLoad) {
+        allComplete.push(waitForTimelineMarkers(monitor));
+      }
+      await enableCacheAndReload(toolbox, waitForLoad);
       await Promise.all(allComplete);
       await clearNetworkEvents(monitor);
     }
