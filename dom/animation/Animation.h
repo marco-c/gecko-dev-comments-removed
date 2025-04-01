@@ -306,11 +306,13 @@ class Animation : public DOMEventTargetHelper,
   };
   
   
+  bool HasLowerCompositeOrderThan(const Maybe<EventContext>& aContext,
+                                  const Animation& aOther,
+                                  const Maybe<EventContext>& aOtherContext,
+                                  nsContentUtils::NodeIndexCache&) const;
   bool HasLowerCompositeOrderThan(
-      const Maybe<EventContext>& aContext, const Animation& aOther,
-      const Maybe<EventContext>& aOtherContext) const;
-  bool HasLowerCompositeOrderThan(const Animation& aOther) const {
-    return HasLowerCompositeOrderThan(Nothing(), aOther, Nothing());
+      const Animation& aOther, nsContentUtils::NodeIndexCache& aCache) const {
+    return HasLowerCompositeOrderThan(Nothing(), aOther, Nothing(), aCache);
   }
 
   
@@ -357,8 +359,6 @@ class Animation : public DOMEventTargetHelper,
 
 
   virtual void MaybeQueueCancelEvent(const StickyTimeDuration& aActiveTime) {};
-
-  Maybe<uint32_t>& CachedChildIndexRef() { return mCachedChildIndex; }
 
   void SetPartialPrerendered(uint64_t aIdOnCompositor) {
     mIdOnCompositor = aIdOnCompositor;
@@ -548,10 +548,6 @@ class Animation : public DOMEventTargetHelper,
   
   
   uint64_t mAnimationIndex;
-
-  
-  
-  Maybe<uint32_t> mCachedChildIndex;
 
   
   

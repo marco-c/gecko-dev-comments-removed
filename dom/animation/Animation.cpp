@@ -1194,7 +1194,8 @@ void Animation::Remove() {
 
 bool Animation::HasLowerCompositeOrderThan(
     const Maybe<EventContext>& aContext, const Animation& aOther,
-    const Maybe<EventContext>& aOtherContext) const {
+    const Maybe<EventContext>& aOtherContext,
+    nsContentUtils::NodeIndexCache& aCache) const {
   
   if (&aOther == this) {
     return false;
@@ -1216,7 +1217,7 @@ bool Animation::HasLowerCompositeOrderThan(
         asCSSTransitionForSorting(aOther, aOtherContext);
     if (thisTransition && otherTransition) {
       return thisTransition->HasLowerCompositeOrderThan(
-          aContext, *otherTransition, aOtherContext);
+          aContext, *otherTransition, aOtherContext, aCache);
     }
     if (thisTransition || otherTransition) {
       
@@ -1244,7 +1245,7 @@ bool Animation::HasLowerCompositeOrderThan(
     auto thisAnimation = asCSSAnimationForSorting(*this);
     auto otherAnimation = asCSSAnimationForSorting(aOther);
     if (thisAnimation && otherAnimation) {
-      return thisAnimation->HasLowerCompositeOrderThan(*otherAnimation);
+      return thisAnimation->HasLowerCompositeOrderThan(*otherAnimation, aCache);
     }
     if (thisAnimation || otherAnimation) {
       return thisAnimation;

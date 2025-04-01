@@ -567,16 +567,10 @@ class nsContentUtils {
   static Element* GetTargetElement(Document* aDocument,
                                    const nsAString& aAnchorName);
   
-
-
-
-
-
-
-
-  static bool PositionIsBefore(nsINode* aNode1, nsINode* aNode2,
-                               mozilla::Maybe<uint32_t>* aNode1Index = nullptr,
-                               mozilla::Maybe<uint32_t>* aNode2Index = nullptr);
+  static bool PositionIsBefore(const nsINode* aNode1, const nsINode* aNode2) {
+    return CompareTreePosition<TreeKind::DOM>(aNode1, aNode2, nullptr,
+                                              nullptr) < 0;
+  }
 
   
 
