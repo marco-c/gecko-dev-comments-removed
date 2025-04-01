@@ -98,16 +98,12 @@ static const JSFunctionSpec error_methods[] = {
     JS_FS_END,
 };
 
-#ifdef NIGHTLY_BUILD
 static bool exn_isError(JSContext* cx, unsigned argc, Value* vp);
-#endif
 
 static bool exn_captureStackTrace(JSContext* cx, unsigned argc, Value* vp);
 
 static const JSFunctionSpec error_static_methods[] = {
-#ifdef NIGHTLY_BUILD
     JS_FN("isError", exn_isError, 1, 0),
-#endif
     JS_FN("captureStackTrace", exn_captureStackTrace, 2, 0),
     JS_FS_END,
 };
@@ -979,8 +975,6 @@ static bool exn_toSource(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-#ifdef NIGHTLY_BUILD
-
 
 
 
@@ -1028,7 +1022,6 @@ static bool exn_isError(JSContext* cx, unsigned argc, Value* vp) {
   args.rval().setBoolean(false);
   return true;
 }
-#endif
 
 
 
