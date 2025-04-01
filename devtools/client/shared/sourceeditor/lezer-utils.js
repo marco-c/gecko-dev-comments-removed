@@ -62,7 +62,7 @@ const nodeTypeSets = {
     nodeTypes.AssignmentExpression,
   ]),
   functionsVarDecl: new Set([
-    ...nodeTypeSets.functions,
+    ...functionsSet,
     
     nodeTypes.VariableDeclaration,
   ]),

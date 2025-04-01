@@ -59,13 +59,13 @@ add_task(async function () {
 
   await toggleScopeNode(dbg, 10);
 
-  is(getScopeNodeLabel(dbg, 11), "binaryLookup:o(n, e, r)");
-  is(getScopeNodeLabel(dbg, 12), "comparer:t(n, e)");
+  is(getScopeNodeLabel(dbg, 11), "binaryLookup:r(n, o, t)");
+  is(getScopeNodeLabel(dbg, 12), "comparer:e(n, o)");
   is(getScopeNodeLabel(dbg, 13), "fancySort");
 
-  const frameLabels = [
-    ...findAllElementsWithSelector(dbg, ".pane.frames .frame .title"),
-  ].map(el => el.textContent);
+  info("Assert the mapped original frame display names");
+
+  let frameLabels = getFrameLabels(dbg);
   
   
   Assert.deepEqual(frameLabels, [
@@ -81,14 +81,64 @@ add_task(async function () {
   );
   await selectSource(dbg, "test.js");
 
-  const frameLabelsAfterUpdate = [
-    ...findAllElementsWithSelector(dbg, ".pane.frames .frame .title"),
-  ].map(el => el.textContent);
-  Assert.deepEqual(frameLabelsAfterUpdate, [
+  frameLabels = getFrameLabels(dbg);
+  Assert.deepEqual(frameLabels, [
     "comparer",
     "binaryLookup",
     "fancySort",
     "fancySort",
     "originalTestName", 
   ]);
+  await resume(dbg);
+
+  const testSrc = findSource(dbg, "test.js");
+
+  info("Add breakpoints");
+  await addBreakpoint(dbg, testSrc, 11);
+  await addBreakpoint(dbg, testSrc, 15);
+  await addBreakpoint(dbg, testSrc, 20);
+  await addBreakpoint(dbg, testSrc, 29);
+
+  invokeInTab("test2");
+
+  await waitForPaused(dbg);
+  await assertPausedAtSourceAndLine(dbg, testSrc.id, 11);
+  frameLabels = getFrameLabels(dbg);
+  
+  
+  Assert.deepEqual(frameLabels, ["originalTestName2", "originalTestName2"]);
+
+  await resume(dbg);
+
+  await waitForPaused(dbg);
+  await assertPausedAtSourceAndLine(dbg, testSrc.id, 15);
+  frameLabels = getFrameLabels(dbg);
+  Assert.deepEqual(frameLabels, ["originalTestName3", "originalTestName3"]);
+
+  await resume(dbg);
+
+  await waitForPaused(dbg);
+  await assertPausedAtSourceAndLine(dbg, testSrc.id, 20);
+  frameLabels = getFrameLabels(dbg);
+  Assert.deepEqual(frameLabels, [
+    "originalTestName4",
+    "run",
+    "run",
+    "originalTestName4",
+  ]);
+
+  await resume(dbg);
+
+  await waitForPaused(dbg);
+  await assertPausedAtSourceAndLine(dbg, testSrc.id, 29);
+  frameLabels = getFrameLabels(dbg);
+  Assert.deepEqual(frameLabels, ["constructor", "test2"]);
+
+  await resume(dbg);
 });
+
+function getFrameLabels(dbg) {
+  return [
+    ...findAllElementsWithSelector(dbg, ".pane.frames .frame .title"),
+  ].map(el => el.textContent);
+}
