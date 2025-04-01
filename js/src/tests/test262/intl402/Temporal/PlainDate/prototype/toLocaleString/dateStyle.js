@@ -20,14 +20,14 @@ assert(
   "dateStyle: short does not write month of March out in full"
 );
 
-const dateIslamic = new Temporal.PlainDate(2024, 3, 26, "islamic");
+const dateIslamic = new Temporal.PlainDate(2024, 3, 26, "islamic-tbla");
 
 assert(
-  dateIslamic.toLocaleString("en-u-ca-islamic", { dateStyle: "long" }).includes("Ramadan"),
+  dateIslamic.toLocaleString("en-u-ca-islamic-tbla", { dateStyle: "long" }).includes("Ramadan"),
   "dateStyle: long writes month of Ramadan out in full"
 );
 assert(
-  !dateIslamic.toLocaleString("en-u-ca-islamic", { dateStyle: "short" }).includes("Ramadan"),
+  !dateIslamic.toLocaleString("en-u-ca-islamic-tbla", { dateStyle: "short" }).includes("Ramadan"),
   "dateStyle: short does not write month of Ramadan out in full"
 );
 

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(
+  RangeError,
+  () => new Temporal.Instant(2n ** 128n),
+  "2n ** 128n"
+);
+
+assert.throws(
+  RangeError,
+  () => new Temporal.Instant(-(2n ** 128n)),
+  "-(2n ** 128n)"
+);
+
+reportCompare(0, 0);

@@ -16,8 +16,6 @@
 
 
 
-
-
 assert.throws(TypeError, function() {
   String.fromCodePoint(Symbol());
 });

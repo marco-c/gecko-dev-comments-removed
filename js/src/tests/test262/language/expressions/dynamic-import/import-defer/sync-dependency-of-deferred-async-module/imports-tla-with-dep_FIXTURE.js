@@ -1,0 +1,7 @@
+
+
+
+
+import "./tla-with-dep_FIXTURE.js";
+
+globalThis.evaluations.push("imports-tla-with-dep");

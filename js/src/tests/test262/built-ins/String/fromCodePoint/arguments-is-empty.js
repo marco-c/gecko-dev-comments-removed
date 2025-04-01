@@ -15,11 +15,6 @@
 
 
 
-
-
-
-
-
 assert.sameValue(String.fromCodePoint(), '');
 
 reportCompare(0, 0);

@@ -16,10 +16,6 @@
 
 
 
-
-
-
-
 assert.sameValue(String.fromCodePoint(0), '\x00');
 assert.sameValue(String.fromCodePoint(42), '*');
 assert.sameValue(String.fromCodePoint(65, 90), 'AZ');

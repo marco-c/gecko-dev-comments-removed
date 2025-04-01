@@ -85,6 +85,5 @@ try {
 
 assert.sameValue(log, 'eee');
 
-if ('assert.sameValue' in this)
 
 reportCompare(0, 0);

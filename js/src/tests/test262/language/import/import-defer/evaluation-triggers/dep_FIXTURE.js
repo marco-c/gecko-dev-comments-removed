@@ -1,0 +1,7 @@
+
+
+
+
+globalThis.evaluations.push("dep");
+
+export let exported = 3;

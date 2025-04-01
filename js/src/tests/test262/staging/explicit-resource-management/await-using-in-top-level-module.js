@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+await using x = {
+    [Symbol.asyncDispose]() {
+      return 42;
+    },
+};
+
+reportCompare(0, 0);

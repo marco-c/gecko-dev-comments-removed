@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var instance = new Temporal.Instant(0n);
+
+var options = {
+  get timeZone() {
+    throw new Test262Error();
+  }
+};
+
+assert.throws(Test262Error, () => instance.toString(options));
+
+reportCompare(0, 0);

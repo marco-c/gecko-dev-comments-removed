@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+(function TestDisposableStackDisposeReturnsUndefined() {
+    let stack = new DisposableStack();
+    assert.sameValue(stack.dispose(), undefined);
+})();
+
+reportCompare(0, 0);

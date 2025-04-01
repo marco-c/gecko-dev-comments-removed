@@ -49,7 +49,7 @@ function test(field)
   }
 
   inner();
-  gc(); 
+  $262.gc(); 
 }
 
 test("get");

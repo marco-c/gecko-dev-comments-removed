@@ -15,9 +15,13 @@
 
 
 
-
-
-
-$DONOTEVALUATE();
-
-import defer * as ns from "./resolution-error_FIXTURE.js";
+asyncTest(async () => {
+  globalThis.evaluated = false;
+  try {
+    await import("./main_FIXTURE.js");
+  } catch {
+    assert.sameValue(globalThis.evaluated, false, "The module should not be evaluated");
+    return;
+  }
+  throw new Error("The module should throw");
+})

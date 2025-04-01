@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import "./ensure-linking-error_FIXTURE.js";
+
+import
+
+  source
+
+  y from '<do not resolve>';

@@ -1,0 +1,7 @@
+
+
+
+
+globalThis.evaluations.push("then");
+
+export function then(cb) { cb(); }

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = SuppressedError();
+
+assert.sameValue(Object.getPrototypeOf(obj), SuppressedError.prototype);
+assert(obj instanceof SuppressedError);
+
+reportCompare(0, 0);

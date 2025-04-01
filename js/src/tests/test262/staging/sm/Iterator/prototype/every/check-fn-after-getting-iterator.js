@@ -33,7 +33,7 @@ assertThrowsInstanceOf(() => iter.every(1), TypeError);
 
 assert.compareArray(
   log,
-  ["get: every"]
+  ["get: every", "get: return"]
 );
 
 

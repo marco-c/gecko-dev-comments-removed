@@ -19,12 +19,12 @@
 
 
 
+var AsyncGeneratorFunction = getWellKnownIntrinsicObject('%AsyncGeneratorFunction%');
 assert.sameValue(
   isConstructor(AsyncGeneratorFunction),
   true,
   'isConstructor(AsyncGeneratorFunction) must return true'
 );
 new AsyncGeneratorFunction();
-  
 
 reportCompare(0, 0);

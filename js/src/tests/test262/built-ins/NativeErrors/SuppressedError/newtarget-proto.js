@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = new SuppressedError();
+
+assert.sameValue(Object.getPrototypeOf(obj), SuppressedError.prototype);
+
+reportCompare(0, 0);

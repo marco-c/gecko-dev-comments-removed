@@ -41,10 +41,15 @@ var end_of_time = 8.64e15;
 
 assert.deepEqual = function(actual, expected, message) {
   var format = assert.deepEqual.format;
-  assert(
-    assert.deepEqual._compare(actual, expected),
-    `Expected ${format(actual)} to be structurally equal to ${format(expected)}. ${(message || '')}`
-  );
+  var mustBeTrue = assert.deepEqual._compare(actual, expected);
+
+  
+  
+  if (mustBeTrue !== true) {
+    message = `Expected ${format(actual)} to be structurally equal to ${format(expected)}. ${(message || '')}`;
+  }
+
+  assert(mustBeTrue, message);
 };
 
 (function() {

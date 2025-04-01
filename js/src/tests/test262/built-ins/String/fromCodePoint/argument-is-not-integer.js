@@ -15,12 +15,6 @@
 
 
 
-
-
-
-
-
-
 assert.throws(RangeError, function() {
   String.fromCodePoint(3.14);
 });

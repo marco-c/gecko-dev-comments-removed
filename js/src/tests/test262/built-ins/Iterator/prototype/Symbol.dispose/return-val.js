@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const IteratorPrototype = Object.getPrototypeOf(
+  Object.getPrototypeOf([][Symbol.iterator]())
+);
+
+assert.sameValue(IteratorPrototype[Symbol.dispose](), undefined);
+
+reportCompare(0, 0);

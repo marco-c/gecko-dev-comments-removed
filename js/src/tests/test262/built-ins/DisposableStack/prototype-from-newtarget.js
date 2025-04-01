@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stack = new DisposableStack();
+assert.sameValue(Object.getPrototypeOf(stack), DisposableStack.prototype);
+
+reportCompare(0, 0);

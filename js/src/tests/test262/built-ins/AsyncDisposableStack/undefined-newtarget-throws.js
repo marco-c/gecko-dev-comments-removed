@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  AsyncDisposableStack();
+});
+
+reportCompare(0, 0);

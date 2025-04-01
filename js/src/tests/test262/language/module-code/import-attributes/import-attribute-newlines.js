@@ -32,7 +32,7 @@
 
 $DONOTEVALUATE();
 
-import "../resources/ensure-linking-error_FIXTURE.js";
+import "./ensure-linking-error_FIXTURE.js";
 
 import x from './import-attribute-1_FIXTURE.js' with
 

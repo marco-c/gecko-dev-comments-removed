@@ -1,0 +1,47 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import "./setup_FIXTURE.js";
+
+import.defer("./sync_FIXTURE.js").then(ns => {
+  assert.compareArray(globalThis.evaluations, []);
+  ns.x;
+  assert.compareArray(globalThis.evaluations, ["dep", "sync"]);
+}).then($DONE, $DONE);

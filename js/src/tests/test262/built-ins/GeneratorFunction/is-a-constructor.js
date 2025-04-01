@@ -19,8 +19,8 @@
 
 
 
+var GeneratorFunction = getWellKnownIntrinsicObject('%GeneratorFunction%');
 assert.sameValue(isConstructor(GeneratorFunction), true, 'isConstructor(GeneratorFunction) must return true');
 new GeneratorFunction();
-  
 
 reportCompare(0, 0);

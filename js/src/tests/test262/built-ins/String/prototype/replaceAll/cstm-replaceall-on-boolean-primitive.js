@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Object.defineProperty(Boolean.prototype, Symbol.replace, {
+  get: function() {
+    throw new Test262Error("should not be called");
+  },
+});
+
+var searchValue = true;
+
+const replaced = "atruebtruec".replaceAll(searchValue, "X");
+assert.sameValue(replaced, "aXbXc");
+
+reportCompare(0, 0);

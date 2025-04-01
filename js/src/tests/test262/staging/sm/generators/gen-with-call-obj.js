@@ -37,11 +37,11 @@ f2(10);
 
 
 
-gc();
+$262.gc();
 assert.sameValue(foo(), 10);
-gc();
+$262.gc();
 assert.sameValue(foo(), 11);
-gc();
+$262.gc();
 assert.sameValue(foo(), 12);
 
 

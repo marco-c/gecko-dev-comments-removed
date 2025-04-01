@@ -1,0 +1,7 @@
+
+
+
+
+import "./dep_FIXTURE.js";
+
+globalThis.evaluations.push("sync");

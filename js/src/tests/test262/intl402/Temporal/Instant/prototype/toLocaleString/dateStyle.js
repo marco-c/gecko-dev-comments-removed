@@ -20,11 +20,11 @@ assert(
   "dateStyle: short does not write month of March out in full"
 );
 assert(
-  instant.toLocaleString("en-u-ca-islamic", { dateStyle: "long" }).includes("Ramadan"),
+  instant.toLocaleString("en-u-ca-islamic-tbla", { dateStyle: "long" }).includes("Ramadan"),
   "dateStyle: long writes month of Ramadan out in full"
 );
 assert(
-  !instant.toLocaleString("en-u-ca-islamic", { dateStyle: "short" }).includes("Ramadan"),
+  !instant.toLocaleString("en-u-ca-islamic-tbla", { dateStyle: "short" }).includes("Ramadan"),
   "dateStyle: short does not write month of Ramadan out in full"
 );
 

@@ -12,7 +12,7 @@
 let withNullvalues = [];
 
 (function TestUsingWithNull() {
-  let using = null;
+  using x = null;
   withNullvalues.push(42);
 })();
 assert.compareArray(withNullvalues, [42]);
@@ -21,7 +21,7 @@ assert.compareArray(withNullvalues, [42]);
 let withUndefinedvalues = [];
 
 (function TestUsingWithUndefined() {
-  let using = undefined;
+  using x = undefined;
   withUndefinedvalues.push(42);
 })();
 assert.compareArray(withUndefinedvalues, [42]);

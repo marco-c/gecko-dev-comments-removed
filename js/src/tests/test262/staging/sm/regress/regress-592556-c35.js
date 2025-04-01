@@ -23,7 +23,7 @@ for (var i = 3; i < 20; i++)
 delete obj.g;  
 
 
-gc();
+$262.gc();
 obj.d = 3;
 obj.e = 4;
 

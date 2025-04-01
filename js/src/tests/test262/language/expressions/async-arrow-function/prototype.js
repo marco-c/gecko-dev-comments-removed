@@ -14,6 +14,7 @@
 
 
 
+var AsyncFunction = getWellKnownIntrinsicObject('%AsyncFunction%');
 assert.sameValue(Object.getPrototypeOf(async () => {}), AsyncFunction.prototype);
 
 reportCompare(0, 0);

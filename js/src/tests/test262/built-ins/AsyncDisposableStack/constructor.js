@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof AsyncDisposableStack, 'function',
+  'typeof AsyncDisposableStack is function'
+);
+
+reportCompare(0, 0);

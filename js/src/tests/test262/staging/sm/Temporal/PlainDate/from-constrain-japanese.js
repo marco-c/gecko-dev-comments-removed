@@ -16,6 +16,10 @@
 const eras = [
   {
     name: "meiji",
+    
+    
+    
+    
     start: "1868-09-08",
     end: "1912-07-29",
   },
@@ -66,8 +70,10 @@ for (let {name: era, start, end} of eras) {
         day,
       });
 
-      assert.sameValue(dateWithMonth.toString({calendarName: "never"}), start);
-      assert.sameValue(dateWithMonthCode.toString({calendarName: "never"}), start);
+      let expected = eraStart.with({month, day}).toString();
+
+      assert.sameValue(dateWithMonth.toString({calendarName: "never"}), expected);
+      assert.sameValue(dateWithMonthCode.toString({calendarName: "never"}), expected);
     }
   }
 
@@ -89,8 +95,10 @@ for (let {name: era, start, end} of eras) {
       day,
     });
 
-    assert.sameValue(dateWithMonth.toString({calendarName: "never"}), start);
-    assert.sameValue(dateWithMonthCode.toString({calendarName: "never"}), start);
+    let expected = eraStart.with({day}).toString();
+
+    assert.sameValue(dateWithMonth.toString({calendarName: "never"}), expected);
+    assert.sameValue(dateWithMonthCode.toString({calendarName: "never"}), expected);
   }
 
   
@@ -120,7 +128,7 @@ for (let {name: era, start, end} of eras) {
     assert.sameValue(dateWithMonth.toString({calendarName: "never"}), expected);
     assert.sameValue(dateWithMonthCode.toString({calendarName: "never"}), expected);
   }
-  
+
   
   for (let month = eraStart.month + 1; month <= 12; ++month) {
     for (let day = 1; day <= 32; ++day) {
@@ -155,7 +163,7 @@ for (let {name: era, start, end} of eras) {
 
   if (end) {
     let lastEraYear = (eraEnd.year - eraStart.year) + 1;
-    
+
     
     for (let day = 31; day <= 32; ++day) {
       let date = Temporal.PlainDate.from({
@@ -165,7 +173,12 @@ for (let {name: era, start, end} of eras) {
         monthCode: "M12",
         day,
       });
-      assert.sameValue(date.toString({calendarName: "never"}), end);
+
+      let expected = eraStart.add({years: 100 - 1})
+                             .with({month: 12, day})
+                             .toString();
+
+      assert.sameValue(date.toString({calendarName: "never"}), expected);
     }
 
     
@@ -177,7 +190,7 @@ for (let {name: era, start, end} of eras) {
         month: eraEnd.month,
         day,
       });
-    
+
       let dateWithMonthCode = Temporal.PlainDate.from({
         calendar: "japanese",
         era,
@@ -185,11 +198,13 @@ for (let {name: era, start, end} of eras) {
         monthCode: eraEnd.monthCode,
         day,
       });
-    
-      assert.sameValue(dateWithMonth.toString({calendarName: "never"}), end);
-      assert.sameValue(dateWithMonthCode.toString({calendarName: "never"}), end);
+
+      let expected = eraEnd.with({day}).toString();
+
+      assert.sameValue(dateWithMonth.toString({calendarName: "never"}), expected);
+      assert.sameValue(dateWithMonthCode.toString({calendarName: "never"}), expected);
     }
-  
+
     
     for (let month = eraEnd.month + 1; month <= 12; ++month) {
       for (let day = 1; day <= 32; ++day) {
@@ -202,7 +217,7 @@ for (let {name: era, start, end} of eras) {
           month,
           day,
         });
-    
+
         let dateWithMonthCode = Temporal.PlainDate.from({
           calendar: "japanese",
           era,
@@ -210,12 +225,14 @@ for (let {name: era, start, end} of eras) {
           monthCode,
           day,
         });
-        
-        assert.sameValue(dateWithMonth.toString({calendarName: "never"}), end);
-        assert.sameValue(dateWithMonthCode.toString({calendarName: "never"}), end);
+
+        let expected = eraEnd.with({month, day}).toString();
+
+        assert.sameValue(dateWithMonth.toString({calendarName: "never"}), expected);
+        assert.sameValue(dateWithMonthCode.toString({calendarName: "never"}), expected);
       }
     }
-    
+
     
     let yearAfterLastEraYear = lastEraYear + 1;
     for (let month = 1; month <= 12; ++month) {
@@ -238,8 +255,12 @@ for (let {name: era, start, end} of eras) {
           day,
         });
 
-        assert.sameValue(dateWithMonth.toString({calendarName: "never"}), end, `era=${era}, eraYear=${yearAfterLastEraYear}, month=${month}, day=${day}`);
-        assert.sameValue(dateWithMonthCode.toString({calendarName: "never"}), end, `era=${era}, eraYear=${yearAfterLastEraYear}, monthCode=${monthCode}, day=${day}`);
+        let expected = eraEnd.add({years: 1})
+                             .with({month, day})
+                             .toString();
+
+        assert.sameValue(dateWithMonth.toString({calendarName: "never"}), expected);
+        assert.sameValue(dateWithMonthCode.toString({calendarName: "never"}), expected);
       }
     }
   }

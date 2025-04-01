@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+var duration = new Temporal.Duration();
+
+assert.sameValue(typeof duration.toLocaleString(), "string");
+
+reportCompare(0, 0);

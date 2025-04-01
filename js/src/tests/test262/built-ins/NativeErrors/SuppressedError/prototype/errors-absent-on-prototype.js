@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(SuppressedError.prototype.hasOwnProperty("error"), false);
+assert.sameValue(SuppressedError.prototype.hasOwnProperty("suppressed"), false);
+
+reportCompare(0, 0);

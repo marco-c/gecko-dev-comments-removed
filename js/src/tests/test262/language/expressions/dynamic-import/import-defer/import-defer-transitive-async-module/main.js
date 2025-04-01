@@ -1,0 +1,73 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import "./setup_FIXTURE.js";
+
+import.defer("./imports-tla_FIXTURE.js").then(ns => {
+  assert.compareArray(globalThis.evaluations, ["tla start", "tla end"]);
+  ns.x;
+  assert.compareArray(globalThis.evaluations, ["tla start", "tla end", "imports-tla"]);
+}).then($DONE, $DONE);

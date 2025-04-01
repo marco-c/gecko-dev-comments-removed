@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => Temporal.Instant.fromEpochMilliseconds(42n), "number");
+assert.throws(TypeError, () => Temporal.Instant.fromEpochMilliseconds(Symbol()), "symbol");
+
+reportCompare(0, 0);

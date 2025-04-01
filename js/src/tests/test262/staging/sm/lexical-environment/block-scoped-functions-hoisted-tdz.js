@@ -37,6 +37,5 @@ try {
 
 assert.sameValue(log, "truetrue");
 
-if ("assert.sameValue" in this)
 
 reportCompare(0, 0);

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof DisposableStack, 'function',
+  'typeof DisposableStack is function'
+);
+
+reportCompare(0, 0);

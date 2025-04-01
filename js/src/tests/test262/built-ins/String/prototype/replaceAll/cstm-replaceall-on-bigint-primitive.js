@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Object.defineProperty(BigInt.prototype, Symbol.replace, {
+  get: function() {
+    throw new Test262Error("should not be called");
+  },
+});
+
+var searchValue = 1n;
+
+const replaced = "a1b1c".replaceAll(searchValue, "X");
+assert.sameValue(replaced, "aXbXc");
+
+reportCompare(0, 0);

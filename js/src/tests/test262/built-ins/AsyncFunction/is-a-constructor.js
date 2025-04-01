@@ -19,8 +19,8 @@
 
 
 
+var AsyncFunction = getWellKnownIntrinsicObject('%AsyncFunction%');
 assert.sameValue(isConstructor(AsyncFunction), true, 'isConstructor(AsyncFunction) must return true');
 new AsyncFunction();
-  
 
 reportCompare(0, 0);

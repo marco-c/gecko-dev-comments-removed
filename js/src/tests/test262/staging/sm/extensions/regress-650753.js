@@ -13,7 +13,7 @@
 
 var x = {}, h = new WeakMap;
 h.set(x, null);
-gc();
+$262.gc();
 
 
 reportCompare(0, 0);
