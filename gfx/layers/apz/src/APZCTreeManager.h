@@ -518,7 +518,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   APZUpdater* GetUpdater() const;
 
   bool AdvanceAnimationsInternal(const MutexAutoLock& aProofOfMapLock,
-                                 const SampleTime& aSampleTime);
+                                 const SampleTime& aSampleTime)
+      MOZ_REQUIRES(mMapLock);
 
   
   
@@ -555,6 +556,11 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   already_AddRefed<AsyncPanZoomController> GetTargetAPZC(
       const LayersId& aLayersId,
       const ScrollableLayerGuid::ViewID& aScrollId) const;
+  
+  
+  
+  
+  
   already_AddRefed<AsyncPanZoomController> GetTargetAPZC(
       const LayersId& aLayersId, const ScrollableLayerGuid::ViewID& aScrollId,
       const MutexAutoLock& aProofOfMapLock) const;
@@ -680,7 +686,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
   bool IsFixedToRootContent(const FixedPositionInfo& aFixedInfo,
-                            const MutexAutoLock& aProofOfMapLock) const;
+                            const MutexAutoLock& aProofOfMapLock) const
+      MOZ_REQUIRES(mMapLock);
 
   
   
@@ -690,7 +697,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
                                    AsyncTransformConsumer aMode) const;
   SideBits SidesStuckToRootContent(const StickyPositionInfo& aStickyInfo,
                                    AsyncTransformConsumer aMode,
-                                   const MutexAutoLock& aProofOfMapLock) const;
+                                   const MutexAutoLock& aProofOfMapLock) const
+      MOZ_REQUIRES(mMapLock);
 
   
 
@@ -809,10 +817,11 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   ParentLayerRect ComputeClippedCompositionBounds(
       const MutexAutoLock& aProofOfMapLock,
-      ClippedCompositionBoundsMap& aDestMap, ScrollableLayerGuid aGuid);
+      ClippedCompositionBoundsMap& aDestMap, ScrollableLayerGuid aGuid)
+      MOZ_REQUIRES(mMapLock);
 
   ScreenMargin GetCompositorFixedLayerMargins(
-      const MutexAutoLock& aProofOfMapLock) const;
+      const MutexAutoLock& aProofOfMapLock) const MOZ_REQUIRES(mMapLock);
 
   
 
@@ -822,23 +831,26 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   ScreenPoint ComputeFixedMarginsOffset(
       const MutexAutoLock& aProofOfMapLock, SideBits aFixedSides,
-      const ScreenMargin& aGeckoFixedLayerMargins) const;
+      const ScreenMargin& aGeckoFixedLayerMargins) const MOZ_REQUIRES(mMapLock);
 
   
   
-  bool IsSoftwareKeyboardVisible(const MutexAutoLock& aProofOfMapLock) const {
+  bool IsSoftwareKeyboardVisible(const MutexAutoLock& aProofOfMapLock) const
+      MOZ_REQUIRES(mMapLock) {
     return mIsSoftwareKeyboardVisible;
   }
   void SetIsSoftwareKeyboardVisible(bool aIsSoftwareKeyboardVisible,
-                                    const MutexAutoLock& aProofOfMapLock) {
+                                    const MutexAutoLock& aProofOfMapLock)
+      MOZ_REQUIRES(mMapLock) {
     mIsSoftwareKeyboardVisible = aIsSoftwareKeyboardVisible;
   }
   dom::InteractiveWidget InteractiveWidgetMode(
-      const MutexAutoLock& aProofOfMapLock) const {
+      const MutexAutoLock& aProofOfMapLock) const MOZ_REQUIRES(mMapLock) {
     return mInteractiveWidget;
   }
   void SetInteractiveWidgetMode(dom::InteractiveWidget aInteractiveWidgetMode,
-                                const MutexAutoLock& aProofOfMapLock) {
+                                const MutexAutoLock& aProofOfMapLock)
+      MOZ_REQUIRES(mMapLock) {
     mInteractiveWidget = aInteractiveWidgetMode;
   }
 
@@ -912,7 +924,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   std::unordered_map<ScrollableLayerGuid, ApzcMapData,
                      ScrollableLayerGuid::HashIgnoringPresShellFn,
                      ScrollableLayerGuid::EqualIgnoringPresShellFn>
-      mApzcMap;
+      mApzcMap MOZ_GUARDED_BY(mMapLock);
   
 
 
@@ -950,7 +962,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  std::vector<ScrollThumbInfo> mScrollThumbInfo;
+  std::vector<ScrollThumbInfo> mScrollThumbInfo MOZ_GUARDED_BY(mMapLock);
 
   
 
@@ -975,7 +987,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  std::vector<RootScrollbarInfo> mRootScrollbarInfo;
+  std::vector<RootScrollbarInfo> mRootScrollbarInfo MOZ_GUARDED_BY(mMapLock);
 
   
 
@@ -999,7 +1011,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  std::vector<FixedPositionInfo> mFixedPositionInfo;
+  std::vector<FixedPositionInfo> mFixedPositionInfo MOZ_GUARDED_BY(mMapLock);
 
   
 
@@ -1025,7 +1037,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  std::vector<StickyPositionInfo> mStickyPositionInfo;
+  std::vector<StickyPositionInfo> mStickyPositionInfo MOZ_GUARDED_BY(mMapLock);
 
   
 
@@ -1086,13 +1098,13 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  ScreenMargin mCompositorFixedLayerMargins;
+  ScreenMargin mCompositorFixedLayerMargins MOZ_GUARDED_BY(mMapLock);
   
 
 
 
 
-  ScreenMargin mGeckoFixedLayerMargins;
+  ScreenMargin mGeckoFixedLayerMargins MOZ_GUARDED_BY(mMapLock);
   
 
 
@@ -1123,11 +1135,11 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
   
-  dom::InteractiveWidget mInteractiveWidget;
+  dom::InteractiveWidget mInteractiveWidget MOZ_GUARDED_BY(mMapLock);
 
   
   
-  bool mIsSoftwareKeyboardVisible;
+  bool mIsSoftwareKeyboardVisible MOZ_GUARDED_BY(mMapLock);
 
   
   
