@@ -157,10 +157,10 @@ sRGBColor ThemeAccentColor::GetDarker() const {
   return sRGBColor::FromABGR(ColorPalette::GetDarker(*mAccentColor));
 }
 
-auto ThemeColors::ShouldBeHighContrast(const nsPresContext& aPc,
-                                       bool aCustomAccentColor)
+auto ThemeColors::ShouldBeHighContrast(const nsIFrame* aFrame)
     -> HighContrastInfo {
-  if (!aPc.GetBackgroundColorDraw()) {
+  auto* pc = aFrame->PresContext();
+  if (!pc->GetBackgroundColorDraw()) {
     
     
     
@@ -177,18 +177,18 @@ auto ThemeColors::ShouldBeHighContrast(const nsPresContext& aPc,
     
     
     
-    switch (aPc.ForcedColors()) {
+    switch (pc->ForcedColors()) {
       case StyleForcedColors::None:
         break;
       case StyleForcedColors::Requested:
-        return !aCustomAccentColor;
+        return aFrame->StyleUI()->mAccentColor.IsAuto();
       case StyleForcedColors::Active:
         return true;
     }
     return false;
   }();
   const bool mustUseLight =
-      PreferenceSheet::PrefsFor(*aPc.Document()).mMustUseLightSystemColors;
+      PreferenceSheet::PrefsFor(*pc->Document()).mMustUseLightSystemColors;
   return {highContrast, mustUseLight};
 }
 
