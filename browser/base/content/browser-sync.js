@@ -1296,7 +1296,9 @@ var gSync = {
         );
 
         if (state.syncEnabled) {
+          
           syncNowButtonEl.removeAttribute("hidden");
+          cadButtonEl.removeAttribute("hidden");
           oldSyncSetupEl.setAttribute("hidden", "true");
           newSyncSetupEl.setAttribute("hidden", "true");
         } else {
