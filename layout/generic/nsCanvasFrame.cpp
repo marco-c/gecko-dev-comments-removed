@@ -287,6 +287,13 @@ nsRect nsCanvasFrame::CanvasArea() const {
 
 Element* nsCanvasFrame::GetDefaultTooltip() { return mTooltipContent; }
 
+nsDisplayCanvasBackgroundColor::nsDisplayCanvasBackgroundColor(
+    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
+    : nsDisplaySolidColorBase(
+          aBuilder, aFrame,
+          aFrame->PresShell()->GetCSSSpecifiedCanvasBackground(
+              aFrame->GetParent()->IsPageContentFrame())) {}
+
 void nsDisplayCanvasBackgroundColor::Paint(nsDisplayListBuilder* aBuilder,
                                            gfxContext* aCtx) {
   if (!NS_GET_A(mColor)) {
@@ -547,25 +554,10 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     layerItems.AppendToTop(&thisItemList);
   }
 
-  bool hasFixedBottomLayer =
-      layers.mImageCount > 0 &&
-      layers.mLayers[0].mAttachment == StyleImageLayerAttachment::Fixed;
-
   nsDisplayList list(aBuilder);
 
-  if (!hasFixedBottomLayer || needBlendContainer) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    list.AppendNewToTop<nsDisplayCanvasBackgroundColor>(aBuilder, this);
-  }
+  
+  list.AppendNewToTop<nsDisplayCanvasBackgroundColor>(aBuilder, this);
 
   list.AppendToTop(&layerItems);
 

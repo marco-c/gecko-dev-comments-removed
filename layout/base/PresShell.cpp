@@ -5522,33 +5522,6 @@ static void AddDisplayItemToBottom(nsDisplayListBuilder* aBuilder,
   aList->AppendToTop(&list);
 }
 
-static bool AddCanvasBackgroundColor(const nsDisplayList* aList,
-                                     nsIFrame* aCanvasFrame, nscolor aColor,
-                                     bool aCSSBackgroundColor) {
-  for (nsDisplayItem* i : *aList) {
-    const DisplayItemType type = i->GetType();
-
-    if (i->Frame() == aCanvasFrame &&
-        type == DisplayItemType::TYPE_CANVAS_BACKGROUND_COLOR) {
-      auto* bg = static_cast<nsDisplayCanvasBackgroundColor*>(i);
-      bg->SetExtraBackgroundColor(aColor);
-      return true;
-    }
-
-    const bool isBlendContainer =
-        type == DisplayItemType::TYPE_BLEND_CONTAINER ||
-        type == DisplayItemType::TYPE_TABLE_BLEND_CONTAINER;
-
-    nsDisplayList* sublist = i->GetSameCoordinateSystemChildren();
-    if (sublist && !(isBlendContainer && !aCSSBackgroundColor) &&
-        AddCanvasBackgroundColor(sublist, aCanvasFrame, aColor,
-                                 aCSSBackgroundColor)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
                                              nsDisplayList* aList,
                                              nsIFrame* aFrame,
@@ -5568,6 +5541,7 @@ void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
     
     return;
   }
+
   const nscolor bgcolor = NS_ComposeColors(aBackstopColor, canvasBg->mColor);
   if (NS_GET_A(bgcolor) == 0) {
     return;
@@ -5577,33 +5551,19 @@ void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
   
   
   
-  bool addedScrollingBackgroundColor = false;
-  if (isViewport) {
-    if (ScrollContainerFrame* sf = GetRootScrollContainerFrame()) {
-      nsCanvasFrame* canvasFrame = do_QueryFrame(sf->GetScrolledFrame());
-      if (canvasFrame && canvasFrame->IsVisibleForPainting()) {
-        
-        
-        addedScrollingBackgroundColor = AddCanvasBackgroundColor(
-            aList, canvasFrame, bgcolor, canvasBg->mCSSSpecified);
-      }
-    }
-  }
-
   
   
   
   
   
-  
-  bool forceUnscrolledItem =
+  const bool forceUnscrolledItem =
       nsLayoutUtils::UsesAsyncScrolling(aFrame) && NS_GET_A(bgcolor) == 255;
-
-  if (!addedScrollingBackgroundColor || forceUnscrolledItem) {
+  if (!canvasBg->mCSSSpecified || forceUnscrolledItem) {
+    MOZ_ASSERT(NS_GET_A(bgcolor) == 255);
     const bool isRootContentDocumentCrossProcess =
         mPresContext->IsRootContentDocumentCrossProcess();
     MOZ_ASSERT_IF(
-        !aFrame->GetParent() && isRootContentDocumentCrossProcess &&
+        isViewport && isRootContentDocumentCrossProcess &&
             mPresContext->HasDynamicToolbar(),
         aBounds.Size() ==
             nsLayoutUtils::ExpandHeightForDynamicToolbar(
@@ -5611,7 +5571,7 @@ void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
 
     nsDisplaySolidColor* item = MakeDisplayItem<nsDisplaySolidColor>(
         aBuilder, aFrame, aBounds, bgcolor);
-    if (addedScrollingBackgroundColor && isRootContentDocumentCrossProcess) {
+    if (canvasBg->mCSSSpecified && isRootContentDocumentCrossProcess) {
       item->SetIsCheckerboardBackground();
     }
     AddDisplayItemToBottom(aBuilder, aList, item);
