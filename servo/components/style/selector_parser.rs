@@ -84,11 +84,12 @@ impl<'a> SelectorParser<'a> {
 }
 
 
-
-
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PseudoElementCascadeType {
+    
+    
+    
+    
     
     
     
@@ -98,9 +99,8 @@ pub enum PseudoElementCascadeType {
     
     
     
-    
-    
     Lazy,
+    
     
     
     
