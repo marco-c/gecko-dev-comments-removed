@@ -82,10 +82,12 @@ bool ImageCacheKey::operator==(const ImageCacheKey& aOther) const {
 void ImageCacheKey::EnsureHash() const {
   MOZ_ASSERT(mHash.isNothing());
 
+  
+  
   nsAutoCString spec;
   Unused << mURI->GetSpec(spec);
-  mHash.emplace(AddToHash(mPartitionPrincipal->GetHashValue(), HashString(spec),
-                          mControlledDocument, mAppType, mCORSMode));
+  mHash.emplace(
+      AddToHash(HashString(spec), mControlledDocument, mAppType, mCORSMode));
 }
 
 
