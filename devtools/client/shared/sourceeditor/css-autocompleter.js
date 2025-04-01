@@ -105,9 +105,9 @@ class CSSCompleter {
 
 
 
-  complete(source, caret) {
+  complete(source, cursor) {
     
-    if (!this.resolveState(source, caret)) {
+    if (!this.resolveState(source, cursor.line, cursor.ch)) {
       
       return Promise.resolve([]);
     }
@@ -159,8 +159,9 @@ class CSSCompleter {
 
 
 
+
   
-  resolveState(source, { line, ch }) {
+  resolveState(source, line, ch) {
     
     const peek = arr => arr[arr.length - 1];
     
@@ -1060,27 +1061,24 @@ class CSSCompleter {
 
 
   getInfoAt(source, caret) {
-    
-    function limit(sourceArg, { line, ch }) {
-      line++;
-      const list = sourceArg.split("\n");
-      if (list.length < line) {
-        return sourceArg;
-      }
-      if (line == 1) {
-        return list[0].slice(0, ch);
-      }
-      return [...list.slice(0, line - 1), list[line - 1].slice(0, ch)].join(
-        "\n"
-      );
-    }
-
-    
-    const state = this.resolveState(limit(source, caret), caret);
-    const propertyName = this.propertyName;
     let { line, ch } = caret;
     const sourceArray = source.split("\n");
-    let limitedSource = limit(source, caret);
+
+    
+    const limit = function () {
+      
+      if (sourceArray.length <= line) {
+        return source;
+      }
+      const list = sourceArray.slice(0, line + 1);
+      list[line] = list[line].slice(0, ch);
+      return list.join("\n");
+    };
+
+    const originalLimitedSource = limit(source);
+    let limitedSource = originalLimitedSource;
+    const state = this.resolveState(limitedSource, line, ch);
+    const propertyName = this.propertyName;
 
     
 
@@ -1091,7 +1089,6 @@ class CSSCompleter {
 
 
     const traverseForward = check => {
-      let location;
       
       do {
         let lineText = sourceArray[line];
@@ -1101,18 +1098,13 @@ class CSSCompleter {
 
         let prevToken = undefined;
         const tokensIterator = cssTokenizer(lineText);
-        let found = false;
+
         const ech = line == caret.line ? caret.ch : 0;
         for (let token of tokensIterator) {
-          
-          if (lineText.trim() == "") {
-            limitedSource += lineText;
-          } else {
-            limitedSource += sourceArray[line].substring(
-              ech + token.startOffset,
-              ech + token.endOffset
-            );
-          }
+          limitedSource += sourceArray[line].substring(
+            ech + token.startOffset,
+            ech + token.endOffset
+          );
 
           
           if (token.tokenType == "WhiteSpace") {
@@ -1120,29 +1112,25 @@ class CSSCompleter {
             continue;
           }
 
-          const forwState = this.resolveState(limitedSource, {
+          const forwState = this.resolveState(
+            limitedSource,
             line,
-            ch: token.endOffset + ech,
-          });
+            token.endOffset + ech
+          );
           if (check(forwState)) {
             if (prevToken && prevToken.tokenType == "WhiteSpace") {
               token = prevToken;
             }
-            location = {
+            return {
               line,
               ch: token.startOffset + ech,
             };
-            found = true;
-            break;
           }
           prevToken = token;
         }
         limitedSource += "\n";
-        if (found) {
-          break;
-        }
       } while (line++ < sourceArray.length);
-      return location;
+      return null;
     };
 
     
@@ -1181,10 +1169,11 @@ class CSSCompleter {
             continue;
           }
 
-          const backState = this.resolveState(limitedSource, {
+          const backState = this.resolveState(
+            limitedSource,
             line,
-            ch: token.startOffset,
-          });
+            token.startOffset
+          );
           if (check(backState)) {
             if (tokens[i + 1] && tokens[i + 1].tokenType == "WhiteSpace") {
               token = tokens[i + 1];
@@ -1218,7 +1207,7 @@ class CSSCompleter {
       });
 
       line = caret.line;
-      limitedSource = limit(source, caret);
+      limitedSource = originalLimitedSource;
       
       const end = traverseForward(forwState => {
         return (
@@ -1228,7 +1217,7 @@ class CSSCompleter {
       });
 
       
-      let selector = source.split("\n").slice(start.line, end.line + 1);
+      let selector = sourceArray.slice(start.line, end.line + 1);
       selector[selector.length - 1] = selector[selector.length - 1].substring(
         0,
         end.ch
@@ -1276,10 +1265,10 @@ class CSSCompleter {
       );
 
       line = caret.line;
-      limitedSource = limit(source, caret);
+      limitedSource = originalLimitedSource;
       const end = traverseForward(forwState => forwState != CSS_STATES.value);
 
-      let value = source.split("\n").slice(start.line, end.line + 1);
+      let value = sourceArray.slice(start.line, end.line + 1);
       value[value.length - 1] = value[value.length - 1].substring(0, end.ch);
       value[0] = value[0].substring(start.ch);
       value = value.join("\n");
