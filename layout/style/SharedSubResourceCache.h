@@ -239,6 +239,8 @@ class SharedSubResourceCache {
   
   void UnregisterLoader(Loader&);
 
+  void PrepareForShutdown();
+
   void ClearInProcess(const Maybe<bool>& aChrome,
                       const Maybe<nsCOMPtr<nsIPrincipal>>& aPrincipal,
                       const Maybe<nsCString>& aSchemelessSite,
