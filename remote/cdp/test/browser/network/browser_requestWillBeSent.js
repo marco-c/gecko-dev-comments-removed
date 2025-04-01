@@ -210,7 +210,9 @@ function configureHistory(client, total) {
   
   
   
-  ChromeUtils.clearScriptCache();
+  ChromeUtils.clearResourceCache({
+    types: ["script"],
+  });
 
   const REQUEST = "Network.requestWillBeSent";
 

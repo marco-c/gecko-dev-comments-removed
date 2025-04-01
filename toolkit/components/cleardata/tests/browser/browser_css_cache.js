@@ -125,7 +125,9 @@ add_task(async function test_deleteByPrincipal() {
 
   
   cleanupTestTabs();
-  ChromeUtils.clearStyleSheetCache();
+  ChromeUtils.clearResourceCache({
+    types: ["stylesheet"],
+  });
 });
 
 add_task(async function test_deleteBySite() {
@@ -158,7 +160,7 @@ add_task(async function test_deleteBySite() {
 
   
   cleanupTestTabs();
-  ChromeUtils.clearStyleSheetCache();
+  ChromeUtils.clearResourceCache(["stylesheet"]);
 });
 
 add_task(async function test_deleteBySite_oa_pattern() {
@@ -192,5 +194,5 @@ add_task(async function test_deleteBySite_oa_pattern() {
 
   
   cleanupTestTabs();
-  ChromeUtils.clearStyleSheetCache();
+  ChromeUtils.clearResourceCache(["stylesheet"]);
 });

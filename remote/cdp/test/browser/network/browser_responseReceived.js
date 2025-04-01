@@ -227,7 +227,9 @@ function configureHistory(client, total) {
   
   
   
-  ChromeUtils.clearScriptCache();
+  ChromeUtils.clearResourceCache({
+    types: ["script"],
+  });
 
   const RESPONSE = "Network.responseReceived";
 
