@@ -230,7 +230,12 @@ def _zsh_describe(value, description=None):
     help="File path to save completion script.",
 )
 def completion_bash(command_context, outfile):
-    commands_subcommands = []
+    
+    
+    
+    
+    
+    case_commands_subcommands = []
     case_options = []
     case_subcommands = []
     for i, cmd in enumerate(commands_info(command_context)):
@@ -274,9 +279,15 @@ def completion_bash(command_context, outfile):
         
         subcommands = [_zsh_describe(s.subcommand, None) for s in cmd.subcommands]
         if subcommands:
-            commands_subcommands.append(
-                '[{}]=" {} "'.format(
-                    cmd.name, " ".join([h.subcommand for h in cmd.subcommands])
+            comsubs = " ".join([h.subcommand for h in cmd.subcommands])
+            case_commands_subcommands.append(
+                "\n".join(
+                    [
+                        "            ({})".format(cmd.name),
+                        '            comsubs=" {} "'.format(comsubs),
+                        "            ;;",
+                        "",
+                    ]
                 )
             )
 
@@ -295,10 +306,10 @@ def completion_bash(command_context, outfile):
         opt for opt_strs in global_options(command_context) for opt in opt_strs
     ]
     context = {
+        "case_commands_subcommands": "\n".join(sorted(case_commands_subcommands)),
         "case_options": "\n".join(case_options),
         "case_subcommands": "\n".join(case_subcommands),
         "commands": " ".join(commands(command_context)),
-        "commands_subcommands": " ".join(sorted(commands_subcommands)),
         "globalopts": " ".join(sorted(globalopts)),
     }
 
