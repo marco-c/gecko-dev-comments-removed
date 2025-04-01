@@ -396,9 +396,26 @@ impl TileCacheBuilder {
                             curr_scroll_root != scroll_root
                         }
                     };
+
+                    
+                    
+
+                    let shared_clip_node_id = find_shared_clip_root(
+                        current_scroll_root,
+                        prim_instance.clip_leaf_id,
+                        spatial_tree,
+                        clip_tree_builder,
+                        interners,
+                    );
+
+                    let current_shared_clip_node_id = secondary_slices.last().unwrap().shared_clip_node_id;
+
+                    
+                    want_new_tile_cache |= shared_clip_node_id != current_shared_clip_node_id;
                 }
 
                 if want_new_tile_cache {
+
                     let shared_clip_node_id = find_shared_clip_root(
                         scroll_root,
                         prim_instance.clip_leaf_id,
