@@ -622,6 +622,11 @@ public class PanZoomController {
       return false;
     }
 
+    if (!mAttached) {
+      
+      return false;
+    }
+
     if (!GeckoDragAndDrop.onDragEvent(event)) {
       return false;
     }
