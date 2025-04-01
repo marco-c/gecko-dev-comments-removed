@@ -34,6 +34,11 @@ uint32_t AdapterInfo::SubgroupMinSize() const {
   
   
 
+  if (GetParentObject()->ShouldResistFingerprinting(
+          RFPTarget::WebGPUSubgroupSizes)) {
+    return 4;
+  }
+
   
   
   return 4;
@@ -51,6 +56,11 @@ uint32_t AdapterInfo::SubgroupMaxSize() const {
   
   
   
+
+  if (GetParentObject()->ShouldResistFingerprinting(
+          RFPTarget::WebGPUSubgroupSizes)) {
+    return 128;
+  }
 
   
   
