@@ -799,7 +799,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   
   
-  [[nodiscard]] bool emitDestructuringObjRestExclusionSet(ListNode* pattern);
+  [[nodiscard]] bool emitDestructuringObjRestExclusionSet(ListNode* pattern,
+                                                          uint8_t setSize);
 
   
   
