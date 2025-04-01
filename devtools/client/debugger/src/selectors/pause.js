@@ -135,6 +135,7 @@ function getGeneratedFrameId(frameId) {
   return frameId;
 }
 
+
 export function getGeneratedFrameScope(state, frame) {
   if (!frame) {
     return null;
