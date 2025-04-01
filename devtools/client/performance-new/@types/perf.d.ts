@@ -190,6 +190,15 @@ export type ReceiveProfile = (
 
 
 
+export type RestartBrowserWithEnvironmentVariable = (
+  envName: string,
+  value: string
+) => void;
+
+
+
+
+
 export type OnProfileReceived = (profile: MinimallyTypedGeckoProfile) => void;
 
 
@@ -388,12 +397,6 @@ export interface PerformancePref {
 
 
   PopupFeatureFlag: "devtools.performance.popup.feature-flag";
-  
-
-
-
-
-  AboutProfilingHasDeveloperOptions: "devtools.performance.aboutprofiling.has-developer-options";
 }
 
 
