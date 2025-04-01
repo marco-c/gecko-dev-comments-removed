@@ -1,6 +1,5 @@
 
 
- 
 import { isCompatibilityDevice } from '../common/framework/test_config.js';import { keysOf } from '../common/util/data_tables.js';import { assert, unreachable } from '../common/util/util.js';
 
 import { align } from './util/math.js';
@@ -1439,16 +1438,10 @@ export const kAllTextureFormats = keysOf(kAllTextureFormatInfo);
 
 
 
-export const kRenderableColorTextureFormats = kRegularTextureFormats.filter(
-  (v) => kColorTextureFormatInfo[v].colorRender
-);
 
 
 
 
-export const kPossiblyRenderableColorTextureFormats = [
-...kRegularTextureFormats.filter((v) => kColorTextureFormatInfo[v].colorRender),
-'rg11b10ufloat'];
 
 
 
@@ -1538,7 +1531,61 @@ export const kPossiblyRenderableColorTextureFormats = [
 
 
 
-export const kTextureFormatInfo = {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const kTextureFormatInfo = {
   ...kRegularTextureFormatInfo,
   ...kSizedDepthStencilFormatInfo,
   ...kUnsizedDepthStencilFormatInfo,
@@ -1567,6 +1614,12 @@ export const kStencilTextureFormats = kDepthStencilFormats.filter(
 export const kPossibleStorageTextureFormats = [
 ...kRegularTextureFormats.filter((f) => kTextureFormatInfo[f].color?.storage),
 'bgra8unorm'];
+
+
+
+
+export const kPossibleReadWriteStorageTextureFormats = [
+...kPossibleStorageTextureFormats.filter((f) => kTextureFormatInfo[f].color?.readWriteStorage)];
 
 
 
@@ -1810,15 +1863,6 @@ format)
 }
 
 
-export function viewCompatibleDeprecated(
-compatibilityMode,
-a,
-b)
-{
-  return compatibilityMode ? a === b : a === b || a + '-srgb' === b || b + '-srgb' === a;
-}
-
-
 
 
 export function textureFormatsAreViewCompatible(
@@ -1843,6 +1887,23 @@ export function getBlockInfoForColorTextureFormat(format) {
     blockWidth: info.blockWidth,
     blockHeight: info.blockHeight,
     bytesPerBlock: info.color?.bytes
+  };
+}
+
+
+
+
+
+
+
+export function getBlockInfoForSizedTextureFormat(format) {
+  const info = kTextureFormatInfo[format];
+  const bytesPerBlock = info.color?.bytes || info.depth?.bytes || info.stencil?.bytes;
+  assert(!!bytesPerBlock);
+  return {
+    blockWidth: info.blockWidth,
+    blockHeight: info.blockHeight,
+    bytesPerBlock
   };
 }
 
@@ -1891,6 +1952,21 @@ export function getColorRenderByteCost(format) {
   
   assert(byteCost !== undefined);
   return byteCost;
+}
+
+
+
+
+
+
+export function getColorRenderAlignment(format) {
+  const alignment =
+  format === 'rg11b10ufloat' ? 1 : kTextureFormatInfo[format].colorRender?.alignment;
+  
+  
+  
+  assert(alignment !== undefined);
+  return alignment;
 }
 
 
@@ -2016,11 +2092,6 @@ export function isEncodableTextureFormat(format) {
 }
 
 
-export function canUseAsRenderTargetDeprecated(format) {
-  return kTextureFormatInfo[format].colorRender || isDepthOrStencilTextureFormat(format);
-}
-
-
 
 
 
@@ -2045,6 +2116,22 @@ format)
     return true;
   }
   return !!kAllTextureFormatInfo[format].colorRender;
+}
+
+
+
+
+export function isTextureFormatBlendable(device, format) {
+  if (!isTextureFormatColorRenderable(device, format)) {
+    return false;
+  }
+  if (format === 'rg11b10ufloat' && device.features.has('rg11b10ufloat-renderable')) {
+    return true;
+  }
+  if (is32Float(format) && device.features.has('float32-blendable')) {
+    return true;
+  }
+  return !!kAllTextureFormatInfo[format].colorRender?.blend;
 }
 
 
@@ -2138,18 +2225,11 @@ export const kCompatModeUnsupportedStorageTextureFormats = [
 
 
 
-export function isTextureFormatUsableAsStorageFormatDeprecated(
-format,
-isCompatibilityMode)
-{
-  if (isCompatibilityMode) {
-    if (kCompatModeUnsupportedStorageTextureFormats.indexOf(format) >= 0) {
-      return false;
-    }
-  }
-  const info = kTextureFormatInfo[format];
-  return !!(info.color?.storage || info.depth?.storage || info.stencil?.storage);
-}
+
+
+
+
+
 
 export function isTextureFormatUsableAsStorageFormat(
 device,
@@ -2161,6 +2241,26 @@ format)
     }
   }
   if (format === 'bgra8unorm' && device.features.has('bgra8unorm-storage')) {
+    return true;
+  }
+  const info = kTextureFormatInfo[format];
+  return !!(info.color?.storage || info.depth?.storage || info.stencil?.storage);
+}
+
+
+
+
+
+
+
+
+
+
+export function isTextureFormatUsableAsStorageFormatInCreateShaderModule(
+device,
+format)
+{
+  if (format === 'bgra8unorm') {
     return true;
   }
   const info = kTextureFormatInfo[format];
@@ -2217,19 +2317,6 @@ export const kCompatModeUnsupportedMultisampledTextureFormats = [
 'rgba16float',
 'r32float'];
 
-
-
-export function isMultisampledTextureFormatDeprecated(
-format,
-isCompatibilityMode)
-{
-  if (isCompatibilityMode) {
-    if (kCompatModeUnsupportedMultisampledTextureFormats.indexOf(format) >= 0) {
-      return false;
-    }
-  }
-  return kAllTextureFormatInfo[format].multisample;
-}
 
 
 

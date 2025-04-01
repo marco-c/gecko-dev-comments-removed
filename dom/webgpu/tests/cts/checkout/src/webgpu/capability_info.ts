@@ -3,6 +3,7 @@
 
 
 
+import { globalTestConfig } from '../common/framework/test_config.js';
 import {
   keysOf,
   makeTable,
@@ -809,16 +810,21 @@ export function getDefaultLimits(featureLevel: FeatureLevel) {
   return kLimitInfos[featureLevel];
 }
 
-export function getDefaultLimitsForAdapter(adapter: GPUAdapter) {
-  
-  
-  const adapterExtensions = adapter as unknown as {
-    featureLevel?: string;
-  };
-  const featureLevel =
-    adapterExtensions.featureLevel === 'core' || adapter.features.has('core-features-and-limits')
-      ? 'core'
-      : 'compatibility';
+
+
+
+
+
+
+
+
+
+export function getDefaultLimitsForCTS() {
+  return getDefaultLimits(globalTestConfig.compatibility ? 'compatibility' : 'core');
+}
+
+export function getDefaultLimitsForDevice(device: GPUDevice) {
+  const featureLevel = device.features.has('core-features-and-limits') ? 'core' : 'compatibility';
   return getDefaultLimits(featureLevel);
 }
 

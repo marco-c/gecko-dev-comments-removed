@@ -149,7 +149,7 @@ fn frag(info : CaseInfo) -> @location(0) vec4u {
 
   
   const results = [];
-  const encoder = t.device.createCommandEncoder();
+  const encoder = t.device.createCommandEncoder({ label: 'runDerivativeTest' });
   for (let quad = 0; quad < cases.length / 2; quad++) {
     const pass = encoder.beginRenderPass({
       colorAttachments: [
@@ -187,6 +187,7 @@ fn frag(info : CaseInfo) -> @location(0) vec4u {
           const tx = i % 2;
           const ty = (i / 2) | 0;
           const [inputNdx, caseNdx] = dir === 'x' ? [tx, ty] : [ty, tx];
+          const caseNdxAlt = 1 - caseNdx;
           const c = cases[quadNdx * 2 + caseNdx];
 
           
@@ -201,7 +202,7 @@ fn frag(info : CaseInfo) -> @location(0) vec4u {
             
             
             if (!builtin.endsWith('Fine')) {
-              const c0 = cases[inputNdx];
+              const c0 = cases[quadNdx * 2 + caseNdxAlt];
               const cmp0 = toComparator(c0.expected).compare(result);
               if (!cmp0.matched) {
                 return new Error(`

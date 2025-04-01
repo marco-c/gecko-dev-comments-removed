@@ -8,7 +8,7 @@ import { attemptGarbageCollection } from '../../common/util/collect_garbage.js';
 import { keysOf } from '../../common/util/data_tables.js';
 import { getGPU } from '../../common/util/navigator_gpu.js';
 import { assert, iterRange } from '../../common/util/util.js';
-import { getDefaultLimitsForAdapter } from '../../webgpu/capability_info.js';
+import { getDefaultLimitsForCTS } from '../../webgpu/capability_info.js';
 
 export const g = makeTestGroup(Fixture);
 
@@ -34,7 +34,7 @@ async function createDeviceAndComputeCommands(t: Fixture, adapter: GPUAdapter) {
   
   
   
-  const limitInfo = getDefaultLimitsForAdapter(adapter);
+  const limitInfo = getDefaultLimitsForCTS();
   const kNumPipelines = 64;
   const kNumBindgroups = 128;
   const kNumBufferElements =
