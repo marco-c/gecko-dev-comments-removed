@@ -573,6 +573,12 @@ AntiTrackingUtils::GetStoragePermissionStateInParent(nsIChannel* aChannel) {
     return nsILoadInfo::NoStoragePermission;
   }
 
+
+  RefPtr<net::HttpBaseChannel> httpBaseChannel = do_QueryObject(aChannel);
+  if (httpBaseChannel && httpBaseChannel->HasRedirectTaintedOrigin()) {
+    return nsILoadInfo::NoStoragePermission;
+  }
+
   if (policyType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
     
     
