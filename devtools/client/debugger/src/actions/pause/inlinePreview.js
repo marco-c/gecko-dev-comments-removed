@@ -3,16 +3,12 @@
 
 
 import {
-  getOriginalFrameScope,
-  getGeneratedFrameScope,
   getSelectedFrameInlinePreviews,
   getSelectedLocation,
-  getSelectedFrame,
+  getSelectedScope,
 } from "../../selectors/index";
 import { features } from "../../utils/prefs";
 import { validateSelectedFrame } from "../../utils/context";
-
-
 
 
 
@@ -35,7 +31,7 @@ function getScopeLevels(scope) {
 
 
 
-export function generateInlinePreview() {
+export function generateInlinePreview(selectedFrame) {
   return async function ({ dispatch, getState, parserWorker, client }) {
     if (!features.inlinePreview) {
       return null;
@@ -45,20 +41,7 @@ export function generateInlinePreview() {
     if (getSelectedFrameInlinePreviews(getState())) {
       return null;
     }
-
-    const selectedFrame = getSelectedFrame(getState());
-
-    const originalFrameScopes = getOriginalFrameScope(
-      getState(),
-      selectedFrame
-    );
-
-    const generatedFrameScopes = getGeneratedFrameScope(
-      getState(),
-      selectedFrame
-    );
-
-    let scopes = originalFrameScopes?.scope || generatedFrameScopes?.scope;
+    let scopes = getSelectedScope(getState());
 
     if (!scopes || !scopes.bindings) {
       return null;
@@ -76,6 +59,7 @@ export function generateInlinePreview() {
     }
 
     const originalAstScopes = await parserWorker.getScopes(selectedLocation);
+
     
     validateSelectedFrame(getState(), selectedFrame);
 

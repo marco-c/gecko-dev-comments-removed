@@ -36,7 +36,7 @@ export function fetchScopes() {
         
         validateSelectedFrame(getState(), selectedFrame);
 
-        dispatch(generateInlinePreview());
+        dispatch(generateInlinePreview(selectedFrame));
       });
     }
 
