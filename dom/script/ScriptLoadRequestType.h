@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_ScriptLoadRequestType_h
+#define mozilla_dom_ScriptLoadRequestType_h
+
+namespace mozilla {
+namespace dom {
+
+enum class ScriptLoadRequestType { Inline, External, Preload };
+
+}  
+}  
+
+#endif  
