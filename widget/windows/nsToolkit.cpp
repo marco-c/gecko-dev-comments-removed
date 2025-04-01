@@ -13,6 +13,8 @@
 #include <objbase.h>
 #include "WinUtils.h"
 
+#include "nsUXThemeData.h"
+
 
 #include <unknwn.h>
 

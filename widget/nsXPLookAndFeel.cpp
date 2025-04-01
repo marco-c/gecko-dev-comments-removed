@@ -375,12 +375,21 @@ nsXPLookAndFeel* nsXPLookAndFeel::GetInstance() {
   if (XRE_IsParentProcess()) {
     nsLayoutUtils::RecomputeSmoothScrollDefault();
   }
-  PreferenceSheet::Refresh();
   return sInstance;
 }
 
 void nsXPLookAndFeel::FillStores(nsXPLookAndFeel* aInst) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  for (auto scheme : {ColorScheme::Light, ColorScheme::Dark}) {
+    for (auto standins : {UseStandins::Yes, UseStandins::No}) {
+      auto& store = sColorStores.Get(scheme, standins);
+      for (ColorID id : MakeEnumeratedRange(ColorID(0), ColorID::End)) {
+        auto uncached = aInst->GetUncachedColor(id, scheme, standins);
+        MOZ_ASSERT_IF(uncached, uncached.value() != kNoColor);
+        store[id] = uncached.valueOr(kNoColor);
+      }
+    }
+  }
   for (IntID id : MakeEnumeratedRange(IntID(0), IntID::End)) {
     int32_t value = 0;
     nsresult rv = aInst->GetIntValue(id, value);
@@ -394,17 +403,6 @@ void nsXPLookAndFeel::FillStores(nsXPLookAndFeel* aInst) {
     auto repr = BitwiseCast<uint32_t>(value);
     MOZ_ASSERT_IF(NS_SUCCEEDED(rv), repr != kNoFloat);
     sFloatStore[id] = NS_SUCCEEDED(rv) ? repr : kNoFloat;
-  }
-
-  for (auto scheme : {ColorScheme::Light, ColorScheme::Dark}) {
-    for (auto standins : {UseStandins::Yes, UseStandins::No}) {
-      auto& store = sColorStores.Get(scheme, standins);
-      for (ColorID id : MakeEnumeratedRange(ColorID(0), ColorID::End)) {
-        auto uncached = aInst->GetUncachedColor(id, scheme, standins);
-        MOZ_ASSERT_IF(uncached, uncached.value() != kNoColor);
-        store[id] = uncached.valueOr(kNoColor);
-      }
-    }
   }
 
   StaticAutoWriteLock guard(sFontStoreLock);
@@ -1158,6 +1156,10 @@ void LookAndFeel::DoHandleGlobalThemeChange() {
 
   
   
+  PreferenceSheet::Refresh();
+
+  
+  
   
   image::SurfaceCacheUtils::DiscardAll();
 
@@ -1471,9 +1473,6 @@ void LookAndFeel::Refresh() {
     widget::RemoteLookAndFeel::ClearCachedData();
   }
   widget::Theme::LookAndFeelChanged();
-  
-  
-  PreferenceSheet::Refresh();
 }
 
 

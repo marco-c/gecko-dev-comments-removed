@@ -701,6 +701,8 @@ nsWindow::nsWindow(bool aIsChildWindow)
     }
     NS_ASSERTION(sIsOleInitialized, "***** OLE is not initialized!\n");
     MouseScrollHandler::Initialize();
+    
+    nsUXThemeData::UpdateNativeThemeInfo();
     RedirectedKeyDownMessageManager::Forget();
   }  
 
@@ -4849,6 +4851,9 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
     case WM_THEMECHANGED: {
       
       UpdateNonClientMargins();
+      nsUXThemeData::UpdateNativeThemeInfo();
+
+      
       
       Invalidate(true, true, true);
     } break;
