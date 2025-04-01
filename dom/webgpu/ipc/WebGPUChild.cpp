@@ -255,7 +255,10 @@ void WebGPUChild::ActorDestroy(ActorDestroyReason) {
   for (const auto& targetIter : deviceMap) {
     RefPtr<Device> device = targetIter.second.get();
     MOZ_ASSERT(device);
-    ResolveLostForDeviceId(device->mId, Nothing(), u"WebGPUChild destroyed"_ns);
+    
+    
+    
+    device->ResolveLost(Nothing(), u"WebGPUChild destroyed"_ns);
   }
 }
 
