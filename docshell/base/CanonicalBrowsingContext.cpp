@@ -2398,18 +2398,18 @@ bool CanonicalBrowsingContext::SupportsLoadingInParent(
   
   
   
-  if (!net::SchemeIsHTTP(aLoadState->URI()) &&
-      !net::SchemeIsHTTPS(aLoadState->URI())) {
+  if (!net::SchemeIsHttpOrHttps(aLoadState->URI())) {
     return false;
   }
 
   if (WindowGlobalParent* global = GetCurrentWindowGlobal()) {
     nsCOMPtr<nsIURI> currentURI = global->GetDocumentURI();
     if (currentURI) {
+      nsCOMPtr<nsIURI> uri = aLoadState->URI();
       bool newURIHasRef = false;
-      aLoadState->URI()->GetHasRef(&newURIHasRef);
+      uri->GetHasRef(&newURIHasRef);
       bool equalsExceptRef = false;
-      aLoadState->URI()->EqualsExceptRef(currentURI, &equalsExceptRef);
+      uri->EqualsExceptRef(currentURI, &equalsExceptRef);
 
       if (equalsExceptRef && newURIHasRef) {
         
@@ -2454,7 +2454,7 @@ bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
     return false;
   }
 
-  MOZ_ASSERT(!net::SchemeIsJavascript(aLoadState->URI()));
+  MOZ_ASSERT(!aLoadState->URI()->SchemeIs("javascript"));
 
   MOZ_ALWAYS_SUCCEEDS(
       SetParentInitiatedNavigationEpoch(++gParentInitiatedNavigationEpoch));

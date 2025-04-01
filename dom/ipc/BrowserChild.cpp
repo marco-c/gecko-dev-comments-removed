@@ -3550,8 +3550,7 @@ nsresult BrowserChild::CanCancelContentJS(
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIURI> currentURI = entry->GetURI();
-  if (!currentURI->SchemeIs("http") && !currentURI->SchemeIs("https") &&
-      !currentURI->SchemeIs("file")) {
+  if (!net::SchemeIsHttpOrHttps(currentURI) && !currentURI->SchemeIs("file")) {
     
     
     return NS_OK;

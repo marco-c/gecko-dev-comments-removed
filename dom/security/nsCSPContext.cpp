@@ -1005,10 +1005,9 @@ void StripURIForReporting(nsIURI* aSelfURI, nsIURI* aURI,
   
   
   
-  bool isHttpOrWs = (aURI->SchemeIs("http") || aURI->SchemeIs("https") ||
-                     aURI->SchemeIs("ws") || aURI->SchemeIs("wss"));
+  bool isWsOrWss = aURI->SchemeIs("ws") || aURI->SchemeIs("wss");
 
-  if (!isHttpOrWs) {
+  if (!net::SchemeIsHttpOrHttps(aURI) && !isWsOrWss) {
     
     
     
@@ -1337,10 +1336,7 @@ nsresult nsCSPContext::SendReportsToURIs(
     }
 
     
-    bool isHttpScheme =
-        reportURI->SchemeIs("http") || reportURI->SchemeIs("https");
-
-    if (!isHttpScheme) {
+    if (!net::SchemeIsHttpOrHttps(reportURI)) {
       AutoTArray<nsString, 1> params = {reportURIs[r]};
       logToConsole("reportURInotHttpsOrHttp2", params,
                    NS_ConvertUTF16toUTF8(aViolationEventInit.mSourceFile),

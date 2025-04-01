@@ -109,7 +109,7 @@ static bool IsNullOrHttp(nsIURI* uri) {
     return true;
   }
 
-  return uri->SchemeIs("http") || uri->SchemeIs("https");
+  return SchemeIsHttpOrHttps(uri);
 }
 
 

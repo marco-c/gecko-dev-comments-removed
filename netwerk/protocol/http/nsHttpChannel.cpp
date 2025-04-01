@@ -3149,18 +3149,15 @@ void nsHttpChannel::UpdateCacheDisposition(bool aSuccessfulReval,
 nsresult nsHttpChannel::ContinueProcessResponse4(nsresult rv) {
   bool doNotRender = DoNotRender3xxBody(rv);
 
-  if (rv == NS_ERROR_DOM_BAD_URI && mRedirectURI) {
-    bool isHTTP =
-        mRedirectURI->SchemeIs("http") || mRedirectURI->SchemeIs("https");
-    if (!isHTTP) {
-      
-      
-      
-      
-      LOG(("ContinueProcessResponse4 detected rejected Non-HTTP Redirection"));
-      doNotRender = true;
-      rv = NS_ERROR_CORRUPTED_CONTENT;
-    }
+  if (rv == NS_ERROR_DOM_BAD_URI && mRedirectURI &&
+      !net::SchemeIsHttpOrHttps(mRedirectURI)) {
+    
+    
+    
+    
+    LOG(("ContinueProcessResponse4 detected rejected Non-HTTP Redirection"));
+    doNotRender = true;
+    rv = NS_ERROR_CORRUPTED_CONTENT;
   }
 
   if (doNotRender) {

@@ -2114,7 +2114,7 @@ nsresult nsIOService::SpeculativeConnectInternal(
     nsIInterfaceRequestor* aCallbacks, bool aAnonymous) {
   NS_ENSURE_ARG(aURI);
 
-  if (!aURI->SchemeIs("http") && !aURI->SchemeIs("https")) {
+  if (!SchemeIsHttpOrHttps(aURI)) {
     
     return NS_OK;
   }

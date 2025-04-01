@@ -58,6 +58,5 @@ bool ImageBlocker::ShouldBlock(nsIURI* aContentLocation) {
 
   
   
-  return aContentLocation->SchemeIs("http") ||
-         aContentLocation->SchemeIs("https");
+  return net::SchemeIsHttpOrHttps(aContentLocation);
 }

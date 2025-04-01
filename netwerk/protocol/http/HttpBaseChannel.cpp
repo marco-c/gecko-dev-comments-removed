@@ -4473,7 +4473,7 @@ already_AddRefed<nsILoadInfo> HttpBaseChannel::CloneLoadInfoForRedirect(
     
     
     
-    if (!aNewURI->SchemeIs("http") && !aNewURI->SchemeIs("https")) {
+    if (!net::SchemeIsHttpOrHttps(aNewURI)) {
       newLoadInfo->SetLoadTriggeredFromExternal(false);
     }
     newLoadInfo->ResetSandboxedNullPrincipalID();

@@ -260,7 +260,7 @@ nsHyphenator::nsHyphenator(nsIURI* aURI, bool aHyphenateCapitalized)
   
   
   
-  if (net::SchemeIsFile(aURI)) {
+  if (aURI->SchemeIs("file")) {
     
     
     

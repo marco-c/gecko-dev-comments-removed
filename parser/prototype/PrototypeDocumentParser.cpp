@@ -13,7 +13,6 @@
 #include "nsCharsetSource.h"
 #include "nsParser.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/URL.h"
 #include "mozilla/dom/PrototypeDocumentContentSink.h"
 
 using namespace mozilla::dom;
@@ -64,7 +63,7 @@ PrototypeDocumentParser::Parse(nsIURI* aURL) {
   
   
   nsXULPrototypeDocument* proto =
-      IsChromeURI(mDocumentURI)
+      mDocumentURI->SchemeIs("chrome")
           ? nsXULPrototypeCache::GetInstance()->GetPrototype(mDocumentURI)
           : nullptr;
 
@@ -183,7 +182,7 @@ nsresult PrototypeDocumentParser::PrepareToLoadPrototype(
 
   
   
-  if (IsChromeURI(mDocumentURI) &&
+  if (mDocumentURI->SchemeIs("chrome") &&
       nsXULPrototypeCache::GetInstance()->IsEnabled()) {
     nsXULPrototypeCache::GetInstance()->PutPrototype(mCurrentPrototype);
   }

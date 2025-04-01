@@ -1765,7 +1765,7 @@ nsXULAppInfo::GetServerURL(nsIURL** aServerURL) {
 NS_IMETHODIMP
 nsXULAppInfo::SetServerURL(nsIURL* aServerURL) {
   
-  if (!aServerURL->SchemeIs("http") && !aServerURL->SchemeIs("https")) {
+  if (!net::SchemeIsHttpOrHttps(aServerURL)) {
     return NS_ERROR_INVALID_ARG;
   }
 
