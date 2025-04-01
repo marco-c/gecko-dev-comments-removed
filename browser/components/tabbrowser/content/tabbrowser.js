@@ -5987,13 +5987,12 @@
       }
 
       
-
-
-
       if (tab.pinned && !targetElement?.pinned) {
-        
         targetElement = this.tabs[this.pinnedTabCount - 1];
         moveBefore = false;
+      } else if (!tab.pinned && targetElement && targetElement.pinned) {
+        targetElement = this.tabs[this.pinnedTabCount];
+        moveBefore = true;
       }
 
       let getContainer = () => {
