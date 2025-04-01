@@ -824,6 +824,24 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       const MutexAutoLock& aProofOfMapLock, SideBits aFixedSides,
       const ScreenMargin& aGeckoFixedLayerMargins) const;
 
+  
+  
+  bool IsSoftwareKeyboardVisible(const MutexAutoLock& aProofOfMapLock) const {
+    return mIsSoftwareKeyboardVisible;
+  }
+  void SetIsSoftwareKeyboardVisible(bool aIsSoftwareKeyboardVisible,
+                                    const MutexAutoLock& aProofOfMapLock) {
+    mIsSoftwareKeyboardVisible = aIsSoftwareKeyboardVisible;
+  }
+  dom::InteractiveWidget InteractiveWidgetMode(
+      const MutexAutoLock& aProofOfMapLock) const {
+    return mInteractiveWidget;
+  }
+  void SetInteractiveWidgetMode(dom::InteractiveWidget aInteractiveWidgetMode,
+                                const MutexAutoLock& aProofOfMapLock) {
+    mInteractiveWidget = aInteractiveWidgetMode;
+  }
+
  protected:
   
 
@@ -1104,8 +1122,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   
   
+  
   dom::InteractiveWidget mInteractiveWidget;
 
+  
   
   bool mIsSoftwareKeyboardVisible;
 
