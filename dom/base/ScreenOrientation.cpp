@@ -424,6 +424,46 @@ void ScreenOrientation::AbortInProcessOrientationPromises(
   });
 }
 
+
+
+
+bool ScreenOrientation::CommonSafetyChecks(nsPIDOMWindowInner* aOwner,
+                                           Document* aDocument,
+                                           ErrorResult& aRv) {
+  MOZ_ASSERT(aOwner);
+  MOZ_ASSERT(aDocument);
+
+  
+  if (aOwner->GetBrowsingContext()->IsChrome()) {
+    return true;
+  }
+
+  
+  
+  if (!aOwner->IsFullyActive()) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return false;
+  }
+
+  
+  
+  
+  if (aDocument->GetSandboxFlags() & SANDBOXED_ORIENTATION_LOCK) {
+    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return false;
+  }
+
+  
+  
+  
+  if (aDocument->Hidden()) {
+    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return false;
+  }
+
+  return true;
+}
+
 already_AddRefed<Promise> ScreenOrientation::LockInternal(
     hal::ScreenOrientation aOrientation, ErrorResult& aRv) {
   
@@ -436,10 +476,6 @@ already_AddRefed<Promise> ScreenOrientation::LockInternal(
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
-
-  
-  
-  
 
   nsCOMPtr<nsPIDOMWindowInner> owner = GetOwnerWindow();
   if (NS_WARN_IF(!owner)) {
@@ -460,18 +496,20 @@ already_AddRefed<Promise> ScreenOrientation::LockInternal(
     return nullptr;
   }
 
-  if (!owner->IsFullyActive()) {
-    p->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
+  if (!CommonSafetyChecks(owner, doc, aRv)) {
+    if (aOrientation == hal::ScreenOrientation::None) {
+      
+      return nullptr;
+    }
+    p->MaybeReject(aRv.StealNSResult());
     return p.forget();
   }
 
   
   
   
-  
-  
 
-  LockPermission perm = GetLockOrientationPermission(true);
+  LockPermission perm = GetLockOrientationPermission(owner, doc);
   if (perm == LOCK_DENIED) {
     p->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return p.forget();
@@ -687,26 +725,16 @@ uint16_t ScreenOrientation::GetAngle(CallerType aCallerType,
   return angle;
 }
 
+
 ScreenOrientation::LockPermission
-ScreenOrientation::GetLockOrientationPermission(bool aCheckSandbox) const {
-  nsCOMPtr<nsPIDOMWindowInner> owner = GetOwnerWindow();
-  if (!owner) {
-    return LOCK_DENIED;
-  }
+ScreenOrientation::GetLockOrientationPermission(nsPIDOMWindowInner* aOwner,
+                                                Document* aDocument) {
+  MOZ_ASSERT(aOwner);
+  MOZ_ASSERT(aDocument);
 
   
-  if (owner->GetBrowsingContext()->IsChrome()) {
+  if (aOwner->GetBrowsingContext()->IsChrome()) {
     return LOCK_ALLOWED;
-  }
-
-  nsCOMPtr<Document> doc = owner->GetDoc();
-  if (!doc || doc->Hidden()) {
-    return LOCK_DENIED;
-  }
-
-  
-  if (aCheckSandbox && doc->GetSandboxFlags() & SANDBOXED_ORIENTATION_LOCK) {
-    return LOCK_DENIED;
   }
 
   if (Preferences::GetBool(
@@ -715,7 +743,7 @@ ScreenOrientation::GetLockOrientationPermission(bool aCheckSandbox) const {
   }
 
   
-  return doc->Fullscreen() || doc->HasPendingFullscreenRequests()
+  return aDocument->Fullscreen() || aDocument->HasPendingFullscreenRequests()
              ? FULLSCREEN_LOCK_ALLOWED
              : LOCK_DENIED;
 }
