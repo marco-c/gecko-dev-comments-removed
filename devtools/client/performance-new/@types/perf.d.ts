@@ -388,6 +388,12 @@ export interface PerformancePref {
 
 
   PopupFeatureFlag: "devtools.performance.popup.feature-flag";
+  
+
+
+
+
+  AboutProfilingHasDeveloperOptions: "devtools.performance.aboutprofiling.has-developer-options";
 }
 
 

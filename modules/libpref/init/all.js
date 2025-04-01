@@ -702,6 +702,13 @@ pref("devtools.performance.recording.markers.external-url", "");
 pref("devtools.performance.popup.intro-displayed", false);
 
 
+#if defined(NIGHTLY_BUILD) || !defined(MOZILLA_OFFICIAL)
+  pref("devtools.performance.aboutprofiling.has-developer-options", true);
+#else
+  pref("devtools.performance.aboutprofiling.has-developer-options", false);
+#endif
+
+
 
 pref("devtools.inspector.compatibility.target-browsers", "");
 
