@@ -157,17 +157,39 @@ sRGBColor ThemeAccentColor::GetDarker() const {
   return sRGBColor::FromABGR(ColorPalette::GetDarker(*mAccentColor));
 }
 
-auto ThemeColors::ShouldBeHighContrast(const nsPresContext& aPc)
+auto ThemeColors::ShouldBeHighContrast(const nsPresContext& aPc,
+                                       bool aCustomAccentColor)
     -> HighContrastInfo {
-  
-  
-  
   if (!aPc.GetBackgroundColorDraw()) {
+    
+    
+    
+    
+    
+    
     return {};
   }
-  const auto& prefs = PreferenceSheet::PrefsFor(*aPc.Document());
-  return {prefs.NonNativeThemeShouldBeHighContrast(),
-          prefs.mMustUseLightSystemColors};
+  const bool highContrast = [&] {
+    if (StaticPrefs::widget_non_native_theme_always_high_contrast()) {
+      return true;
+    }
+    
+    
+    
+    
+    switch (aPc.ForcedColors()) {
+      case StyleForcedColors::None:
+        break;
+      case StyleForcedColors::Requested:
+        return !aCustomAccentColor;
+      case StyleForcedColors::Active:
+        return true;
+    }
+    return false;
+  }();
+  const bool mustUseLight =
+      PreferenceSheet::PrefsFor(*aPc.Document()).mMustUseLightSystemColors;
+  return {highContrast, mustUseLight};
 }
 
 ColorScheme ThemeColors::ColorSchemeForWidget(const nsIFrame* aFrame,

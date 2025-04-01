@@ -45,9 +45,6 @@ struct PreferenceSheet {
 
     ColorScheme mColorScheme = ColorScheme::Light;
 
-    
-    bool NonNativeThemeShouldBeHighContrast() const;
-
     void Load(bool aIsChrome);
     void LoadColors(bool aIsLight);
   };
