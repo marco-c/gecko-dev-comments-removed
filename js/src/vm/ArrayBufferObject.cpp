@@ -1076,6 +1076,77 @@ void ResizableArrayBufferObject::resize(size_t newByteLength) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 [[nodiscard]] bool WasmArrayRawBuffer::growToPagesInPlace(Pages newPages) {
   size_t newSize = newPages.byteLength();
   size_t oldSize = byteLength();

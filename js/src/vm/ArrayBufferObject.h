@@ -874,6 +874,8 @@ class WasmArrayRawBuffer {
         sourceMaxPages_(sourceMaxPages),
         mappedSize_(mappedSize),
         length_(length) {
+    
+    
     MOZ_ASSERT(buffer == dataPointer());
   }
 
@@ -904,7 +906,23 @@ class WasmArrayRawBuffer {
 
   uint8_t* basePointer() { return dataPointer() - gc::SystemPageSize(); }
 
+  
+
+
+
+
+
+
+
+
+
   size_t mappedSize() const { return mappedSize_; }
+
+  
+
+
+
+
 
   size_t byteLength() const { return length_; }
 
@@ -912,7 +930,26 @@ class WasmArrayRawBuffer {
     return wasm::Pages::fromByteLengthExact(length_);
   }
 
+  
+
+
+
+
+
+
+
+
+
   wasm::Pages clampedMaxPages() const { return clampedMaxPages_; }
+
+  
+
+
+
+
+
+
+
 
   mozilla::Maybe<wasm::Pages> sourceMaxPages() const { return sourceMaxPages_; }
 

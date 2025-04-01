@@ -193,6 +193,71 @@ bool wasm::ToAddressType(JSContext* cx, HandleValue value,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static const unsigned MaxMemoryAccessSize = LitVal::sizeofLargestValue();
 
 
