@@ -5,8 +5,8 @@
 
 promise_test(async t => {
   
-  const detector = await ai.languageDetector.create();
-  const availability = await detector.availability();
+  await ai.languageDetector.create();
+  const availability = await ai.languageDetector.availability();
   assert_equals(availability, 'available');
 }, 'Simple AILanguageDetector.availability() call');
 
