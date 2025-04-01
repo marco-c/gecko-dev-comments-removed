@@ -4,7 +4,7 @@
 
 const perfMetadata = {
   owner: "GenAI Team",
-  name: "ML Smart Tab Model",
+  name: "browser_ml_smart_tab_perf.js",
   description: "Testing Smart Tab Models",
   options: {
     default: {
