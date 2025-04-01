@@ -3059,6 +3059,10 @@ ScriptLoader::CacheBehavior ScriptLoader::GetCacheBehavior(
     return CacheBehavior::DoNothing;
   }
 
+  if (aRequest->GetScriptLoadContext()->mIsInline) {
+    return CacheBehavior::DoNothing;
+  }
+
   if (!aRequest->mURI->SchemeIs("http") && !aRequest->mURI->SchemeIs("https")) {
     
     
