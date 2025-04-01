@@ -1475,6 +1475,29 @@
 
         remove_virtual_pressure_source: function(source_type, context=null) {
             return window.test_driver_internal.remove_virtual_pressure_source(source_type, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        set_protected_audience_k_anonymity: function(owner, name, hashes, context = null) {
+            return window.test_driver_internal.set_protected_audience_k_anonymity(owner, name, hashes, context);
         }
     };
 
@@ -1732,6 +1755,10 @@
 
         async remove_virtual_pressure_source(source_type, context=null) {
             throw new Error("remove_virtual_pressure_source() is not implemented by testdriver-vendor.js");
+        },
+
+        async set_protected_audience_k_anonymity(owner, name, hashes, context=null) {
+            throw new Error("set_protected_audience_k_anonymity() is not implemented by testdriver-vendor.js");
         }
     };
 })();
