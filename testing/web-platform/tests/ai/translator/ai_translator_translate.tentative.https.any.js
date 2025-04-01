@@ -28,17 +28,18 @@ promise_test(async t => {
   await createTranslator(languagePair);
 
   
-  
-  
   const capabilities = await ai.translator.capabilities();
   const {sourceLanguage, targetLanguage} = languagePair;
   assert_equals(
       capabilities.languagePairAvailable(sourceLanguage, targetLanguage),
       'readily');
 
+  const availability = await ai.translator.availability(languagePair);
+  assert_equals(availability, 'available');
+
   
   await ai.translator.create(languagePair);
-}, 'AITranslator.create() requires user activation when availability is "after-download".');
+}, 'AITranslator.create() requires user activation when availability is "downloadable.');
 
 promise_test(async t => {
   const translator =
