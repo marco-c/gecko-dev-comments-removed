@@ -5036,6 +5036,8 @@ static UniquePtr<WidgetMouseEvent> CreateMouseOrPointerWidgetEvent(
   newEvent->mRelatedTarget = aRelatedTarget;
   newEvent->mRefPoint = aMouseEvent->mRefPoint;
   newEvent->mModifiers = aMouseEvent->mModifiers;
+  
+  
   if (!aMouseEvent->mFlags.mDispatchedAtLeastOnce &&
       aMouseEvent->InputSourceSupportsHover()) {
     
@@ -5070,13 +5072,7 @@ static UniquePtr<WidgetMouseEvent> CreateMouseOrPointerWidgetEvent(
     
     
     
-    if (newEvent->mButtons && aMouseEvent->mPressure == 0) {
-      newEvent->mPressure = 0.5f;
-    } else if (!newEvent->mButtons && aMouseEvent->mPressure != 0) {
-      newEvent->mPressure = 0;
-    } else {
-      newEvent->mPressure = aMouseEvent->mPressure;
-    }
+    newEvent->mPressure = newEvent->ComputeMouseButtonPressure();
   } else {
     
     
