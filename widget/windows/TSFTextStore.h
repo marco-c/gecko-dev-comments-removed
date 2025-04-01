@@ -9,6 +9,7 @@
 #include "nsIWidget.h"
 #include "nsWindow.h"
 
+#include "TSFUtils.h"
 #include "WinUtils.h"
 #include "WritingModes.h"
 
@@ -24,50 +25,11 @@
 #include <msctf.h>
 #include <textstor.h>
 
-
-
-#ifdef INPUTSCOPE_INIT_GUID
-#  include <initguid.h>
-#endif
-#ifdef TEXTATTRS_INIT_GUID
-#  include <tsattrs.h>
-#endif
-#include <inputscope.h>
-
-
-#define IS_SEARCH static_cast<InputScope>(50)
-
 struct ITfThreadMgr;
 struct ITfDocumentMgr;
 struct ITfDisplayAttributeMgr;
 struct ITfCategoryMgr;
 class nsWindow;
-
-inline std::ostream& operator<<(std::ostream& aStream,
-                                const TS_SELECTIONSTYLE& aSelectionStyle) {
-  const char* ase = "Unknown";
-  switch (aSelectionStyle.ase) {
-    case TS_AE_START:
-      ase = "TS_AE_START";
-      break;
-    case TS_AE_END:
-      ase = "TS_AE_END";
-      break;
-    case TS_AE_NONE:
-      ase = "TS_AE_NONE";
-      break;
-  }
-  aStream << "{ ase=" << ase << ", fInterimChar="
-          << (aSelectionStyle.fInterimChar ? "TRUE" : "FALSE") << " }";
-  return aStream;
-}
-
-inline std::ostream& operator<<(std::ostream& aStream,
-                                const TS_SELECTION_ACP& aACP) {
-  aStream << "{ acpStart=" << aACP.acpStart << ", acpEnd=" << aACP.acpEnd
-          << ", style=" << mozilla::ToString(aACP.style).c_str() << " }";
-  return aStream;
-}
 
 namespace mozilla::widget {
 
@@ -268,17 +230,6 @@ class TSFTextStore final : public ITextStoreACP,
 
   static bool IsATOKActive();
 
-  
-
-
-
-  static bool ShouldSetInputScopeOfURLBarToDefault();
-
-  
-
-
-  static bool DoNotReturnErrorFromGetSelection();
-
 #ifdef DEBUG
   
   static bool CurrentKeyboardLayoutHasIME();
@@ -292,8 +243,6 @@ class TSFTextStore final : public ITextStoreACP,
                                 const InputContext& aContext);
   static void EnsureToDestroyAndReleaseEnabledTextStoreIf(
       RefPtr<TSFTextStore>& aTextStore);
-  static void MarkContextAsKeyboardDisabled(ITfContext* aContext);
-  static void MarkContextAsEmpty(ITfContext* aContext);
 
   bool Init(nsWindow* aWidget, const InputContext& aContext);
   void Destroy();
@@ -1035,25 +984,7 @@ class TSFTextStore final : public ITextStoreACP,
   
   nsString mDocumentURL;
 
-  
-  
-  enum {
-    
-    eNotSupported = -1,
-
-    
-    eInputScope = 0,
-    eDocumentURL,
-    eTextVerticalWriting,
-    eTextOrientation,
-
-    
-    NUM_OF_SUPPORTED_ATTRS
-  };
-  bool mRequestedAttrs[NUM_OF_SUPPORTED_ATTRS] = {false};
-
-  int32_t GetRequestedAttrIndex(const TS_ATTRID& aAttrID);
-  TS_ATTRID GetAttrID(int32_t aIndex);
+  bool mRequestedAttrs[TSFUtils::NUM_OF_SUPPORTED_ATTRS] = {false};
 
   bool mRequestedAttrValues = false;
 
