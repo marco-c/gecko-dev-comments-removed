@@ -20,6 +20,7 @@
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Span.h"
 #include "mozilla/fallible.h"
+#include "mozilla/ipc/InputStreamUtils.h"
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsFileStreams.h"
@@ -40,12 +41,9 @@ DecryptingInputStream<CipherStrategy>::DecryptingInputStream(
 
   
   
-#ifdef DEBUG
-  bool baseNonBlocking;
-  nsresult rv = (*mBaseStream)->IsNonBlocking(&baseNonBlocking);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-  MOZ_ASSERT(!baseNonBlocking);
-#endif
+  
+  
+  
 }
 
 template <typename CipherStrategy>
@@ -285,6 +283,11 @@ bool DecryptingInputStream<CipherStrategy>::EnsureBuffers() {
                                            fallible))) {
       return false;
     }
+
+    
+    
+    
+    (*mBaseSeekableStream)->Seek(NS_SEEK_SET, 0);
   }
 
   return true;
@@ -520,16 +523,11 @@ void DecryptingInputStream<CipherStrategy>::Serialize(
   MOZ_ASSERT(mBaseStream);
   MOZ_ASSERT(mBaseIPCSerializableInputStream);
 
-  mozilla::ipc::InputStreamParams baseStreamParams;
-  (*mBaseIPCSerializableInputStream)
-      ->Serialize(baseStreamParams, aMaxSize, aSizeUsed);
-
-  MOZ_ASSERT(baseStreamParams.type() ==
-             mozilla::ipc::InputStreamParams::TFileInputStreamParams);
-
   mozilla::ipc::EncryptedFileInputStreamParams encryptedFileInputStreamParams;
-  encryptedFileInputStreamParams.fileInputStreamParams() =
-      std::move(baseStreamParams);
+  mozilla::ipc::InputStreamHelper::SerializeInputStream(
+      *mBaseStream, encryptedFileInputStreamParams.inputStreamParams(),
+      aMaxSize, aSizeUsed);
+
   encryptedFileInputStreamParams.key().AppendElements(
       mCipherStrategy.SerializeKey(*mKey));
   encryptedFileInputStreamParams.blockSize() = *mBlockSize;
@@ -540,18 +538,12 @@ void DecryptingInputStream<CipherStrategy>::Serialize(
 template <typename CipherStrategy>
 bool DecryptingInputStream<CipherStrategy>::Deserialize(
     const mozilla::ipc::InputStreamParams& aParams) {
-  MOZ_ASSERT(aParams.type() ==
-             mozilla::ipc::InputStreamParams::TEncryptedFileInputStreamParams);
   const auto& params = aParams.get_EncryptedFileInputStreamParams();
 
-  nsCOMPtr<nsIFileInputStream> stream;
-  nsFileInputStream::Create(NS_GET_IID(nsIFileInputStream),
-                            getter_AddRefs(stream));
-  nsCOMPtr<nsIIPCSerializableInputStream> baseSerializable =
-      do_QueryInterface(stream);
-
-  if (NS_WARN_IF(
-          !baseSerializable->Deserialize(params.fileInputStreamParams()))) {
+  nsCOMPtr<nsIInputStream> stream =
+      mozilla::ipc::InputStreamHelper::DeserializeInputStream(
+          params.inputStreamParams());
+  if (NS_WARN_IF(!stream)) {
     return false;
   }
 
