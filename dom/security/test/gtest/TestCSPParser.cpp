@@ -228,9 +228,15 @@ TEST(CSPParser, Directives)
       "script-src http://example.com"},
     { "require-trusted-types-for 'script'",
       "require-trusted-types-for 'script'" },
+    { "require-trusted-types-for 'script' invalid",
+      "require-trusted-types-for 'script' invalid" }, 
+    { "require-trusted-types-for 'script' 'invalid'",
+      "require-trusted-types-for 'script' 'invalid'" }, 
     { "trusted-types somePolicyName", "trusted-types somePolicyName" },
     { "trusted-types somePolicyName anotherPolicyName 1 - # = _ / @ . % *",
       "trusted-types somePolicyName anotherPolicyName 1 - # = _ / @ . % *" },
+    { "trusted-types $", "trusted-types $" }, 
+    { "trusted-types 'invalid'", "trusted-types 'invalid'" }, 
       
   };
 
@@ -608,8 +614,8 @@ TEST(CSPParser, BadPolicies)
     { "report-uri http://:foo", ""},
     { "require-sri-for", ""},
     { "require-sri-for style", ""},
-    { "trusted-types $", ""},
-    { "trusted-types 'report-sample'", "" },
+    { "require-trusted-types-for invalid" },
+    { "require-trusted-types-for 'invalid'" },
 
       
   };
