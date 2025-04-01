@@ -836,18 +836,6 @@ async function tabTo(match, win = window) {
   return undefined;
 }
 
-function filterFrameworkDetectorFails(ping, expected) {
-  
-  
-  if (!areObjectsEqual(ping.frameworks, expected.frameworks)) {
-    const { fastclick, mobify, marfeel } = ping.frameworks;
-    if (!fastclick && !mobify && !marfeel) {
-      console.info("Ignoring failure to get framework data");
-      expected.frameworks = ping.frameworks;
-    }
-  }
-}
-
 async function setupStrictETP() {
   await UrlClassifierTestUtils.addTestTrackers();
   registerCleanupFunction(() => {
