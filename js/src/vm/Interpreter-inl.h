@@ -500,10 +500,6 @@ static MOZ_ALWAYS_INLINE bool InitElemOperation(JSContext* cx, jsbytecode* pc,
   }
 
   unsigned flags = GetInitDataPropAttrs(JSOp(*pc));
-  if (id.isPrivateName()) {
-    
-    flags &= ~JSPROP_ENUMERATE;
-  }
   return DefineDataProperty(cx, obj, id, val, flags);
 }
 
