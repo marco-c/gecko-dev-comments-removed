@@ -744,7 +744,7 @@ void HTMLVideoElement::TakeVideoFrameRequestCallbacks(
   
   
   if (!selected || selected->mFrameID == layers::kContainerFrameID_Invalid ||
-      selected->mFrameID <= mLastPresentedFrameID) {
+      selected->mFrameID == mLastPresentedFrameID) {
     return;
   }
 
@@ -836,9 +836,22 @@ void HTMLVideoElement::TakeVideoFrameRequestCallbacks(
   
   
   
-  aMd.mPresentedFrames = selected->mFrameID;
-
+  
+  
+  
+  mPresentedFrames +=
+      selected->mFrameID > 1 && selected->mFrameID > mLastPresentedFrameID
+          ? selected->mFrameID - mLastPresentedFrameID
+          : 1;
   mLastPresentedFrameID = selected->mFrameID;
+
+  
+  
+  
+  
+  
+  aMd.mPresentedFrames = mPresentedFrames;
+
   mVideoFrameRequestManager.Take(aCallbacks);
 
   NS_DispatchToMainThread(NewRunnableMethod(
