@@ -5,6 +5,10 @@
 
 
 
+
+
+
+
 async function testNotificationCardThenCloseRC() {
   await withReviewCheckerSidebar(async _args => {
     let shoppingContainer = await ContentTaskUtils.waitForCondition(

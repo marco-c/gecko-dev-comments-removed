@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 test_newtab({
   test: async function test_contextMenuIcons() {
     const siteSelector = ".top-sites-list:not(.search-shortcut, .placeholder)";

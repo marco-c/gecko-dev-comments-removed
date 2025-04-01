@@ -6,6 +6,10 @@
 
 
 
+
+
+
+
 add_task(async function test_about_translations_language_swap() {
   const { runInPage, cleanup, resolveDownloads } = await openAboutTranslations({
     languagePairs: [

@@ -1,6 +1,10 @@
 "use strict";
 
 
+
+
+
+
 test_newtab({
   test: async function test_render_customizeMenu() {
     await ContentTaskUtils.waitForCondition(
