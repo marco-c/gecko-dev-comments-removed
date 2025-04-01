@@ -9,11 +9,13 @@
 
 #include "mozilla/DOMEventTargetHelper.h"
 
+class nsIGlobalObject;
 class nsStructuredCloneContainer;
 
 namespace mozilla::dom {
 
 class SessionHistoryInfo;
+
 
 class NavigationHistoryEntry final : public DOMEventTargetHelper {
  public:
@@ -21,7 +23,7 @@ class NavigationHistoryEntry final : public DOMEventTargetHelper {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(NavigationHistoryEntry,
                                            DOMEventTargetHelper)
 
-  NavigationHistoryEntry(nsPIDOMWindowInner* aWindow,
+  NavigationHistoryEntry(nsIGlobalObject* aGlobal,
                          const SessionHistoryInfo* aSHInfo, int64_t aIndex);
 
   void GetUrl(nsAString& aResult) const;
@@ -50,7 +52,9 @@ class NavigationHistoryEntry final : public DOMEventTargetHelper {
 
   Document* GetCurrentDocument() const;
 
-  nsCOMPtr<nsPIDOMWindowInner> mWindow;
+  bool HasActiveDocument() const;
+
+  
   UniquePtr<SessionHistoryInfo> mSHInfo;
   int64_t mIndex;
 };
