@@ -15,7 +15,6 @@
 #include "jit/RangeAnalysis.h"
 #include "jit/ReciprocalMulConstants.h"
 #include "js/ScalarType.h"  
-#include "util/DifferentialTesting.h"
 
 #include "jit/MacroAssembler-inl.h"
 #include "jit/shared/CodeGenerator-shared-inl.h"
@@ -378,9 +377,6 @@ void CodeGenerator::visitAsmJSStoreHeap(LAsmJSStoreHeap* ins) {
   const LAllocation* ptr = ins->ptr();
   const LAllocation* value = ins->value();
   const LAllocation* boundsCheckLimit = ins->boundsCheckLimit();
-
-  Scalar::Type accessType = mir->accessType();
-  canonicalizeIfDeterministic(accessType, value);
 
   Label rejoin;
   if (mir->needsBoundsCheck()) {
@@ -1987,37 +1983,6 @@ void CodeGeneratorX86Shared::visitOutOfLineWasmTruncateCheck(
   } else {
     MOZ_CRASH("unexpected type");
   }
-}
-
-void CodeGeneratorX86Shared::canonicalizeIfDeterministic(
-    Scalar::Type type, const LAllocation* value) {
-#ifdef DEBUG
-  if (!js::SupportDifferentialTesting()) {
-    return;
-  }
-
-  switch (type) {
-    case Scalar::Float16: {
-      
-      
-      MOZ_CRASH("asm.js doesn't support Float16");
-    }
-    case Scalar::Float32: {
-      FloatRegister in = ToFloatRegister(value);
-      masm.canonicalizeFloatIfDeterministic(in);
-      break;
-    }
-    case Scalar::Float64: {
-      FloatRegister in = ToFloatRegister(value);
-      masm.canonicalizeDoubleIfDeterministic(in);
-      break;
-    }
-    default: {
-      
-      break;
-    }
-  }
-#endif  
 }
 
 template <typename T>

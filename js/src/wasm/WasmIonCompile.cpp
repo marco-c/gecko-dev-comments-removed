@@ -33,6 +33,7 @@
 #include "jit/ShuffleAnalysis.h"
 #include "js/GCAPI.h"       
 #include "js/ScalarType.h"  
+#include "util/DifferentialTesting.h"
 #include "wasm/WasmBaselineCompile.h"
 #include "wasm/WasmBuiltinModule.h"
 #include "wasm/WasmBuiltins.h"
@@ -1445,6 +1446,20 @@ class FunctionCompiler {
     return load;
   }
 
+  MDefinition* maybeCanonicalizeNaN(Scalar::Type accessType,
+                                    MDefinition* value) {
+    MOZ_ASSERT(codeMeta().isAsmJS());
+
+    
+    if (Scalar::isFloatingType(accessType) &&
+        js::SupportDifferentialTesting()) {
+      auto* canonicalize = MCanonicalizeNaN::New(alloc(), value);
+      curBlock_->add(canonicalize);
+      return canonicalize;
+    }
+    return value;
+  }
+
   
   
   
@@ -1719,6 +1734,7 @@ class FunctionCompiler {
       MOZ_ASSERT(access->offset64() == 0);
       MWasmLoadInstance* boundsCheckLimit =
           maybeLoadBoundsCheckLimit(access->memoryIndex(), MIRType::Int32);
+      v = maybeCanonicalizeNaN(access->type(), v);
       store = MAsmJSStoreHeap::New(alloc(), memoryBase, base, boundsCheckLimit,
                                    access->type(), v);
     } else {
