@@ -135,6 +135,9 @@ static nsIScriptGlobalObject* GetGlobalObject(nsIChannel* aChannel) {
   return global;
 }
 
+
+
+
 static bool AllowedByCSP(nsIContentSecurityPolicy* aCSP,
                          const nsACString& aJavaScriptURL,
                          const mozilla::JSCallingLocation& aJSCallingLocation) {
@@ -142,7 +145,6 @@ static bool AllowedByCSP(nsIContentSecurityPolicy* aCSP,
     return true;
   }
 
-  
   
   
   
