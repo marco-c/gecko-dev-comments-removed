@@ -22,6 +22,73 @@ const TEST_LINK_URL = "https://example.com";
 
 
 
+add_task(async function test_skip_generate_if_non_eng() {
+  const TEST_LINK_URL_FR =
+    "https://example.com/browser/browser/components/genai/tests/browser/data/readableFr.html";
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.linkPreview.enabled", true]],
+  });
+
+  const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
+
+  window.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      altKey: true,
+      shiftKey: true,
+    })
+  );
+  XULBrowserWindow.setOverLink(TEST_LINK_URL_FR);
+
+  let panel = await TestUtils.waitForCondition(() =>
+    document.getElementById("link-preview-panel")
+  );
+  ok(panel, "Panel created for link preview");
+
+  await BrowserTestUtils.waitForEvent(panel, "popupshown");
+
+  is(
+    generateStub.callCount,
+    0,
+    "generateTextAI should not be called when article isn't English"
+  );
+
+  const card = panel.querySelector("link-preview-card");
+  ok(card, "card created for link preview");
+  ok(!card.generating, "card should not be in generating state");
+  ok(!card.showWait, "card should not be in waiting state");
+  ok(!LinkPreview.downloadingModel, "downloading model flag should not be set");
+
+  
+  panel.remove();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.linkPreview.allowedLanguages", ""]],
+  });
+  XULBrowserWindow.setOverLink(TEST_LINK_URL_FR);
+  panel = await TestUtils.waitForCondition(() =>
+    document.getElementById("link-preview-panel")
+  );
+  await BrowserTestUtils.waitForEvent(panel, "popupshown");
+
+  is(generateStub.callCount, 1, "generateTextAI for allowed language");
+
+  panel.remove();
+  generateStub.restore();
+  LinkPreview.keyboardComboActive = false;
+});
+
+
+
+
+
+
+
+
+
+
+
 add_task(async function test_link_preview_with_shift_alt_key_event() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.ml.linkPreview.enabled", true]],
@@ -131,7 +198,7 @@ add_task(async function test_fetch_page_data() {
   const actor =
     window.browsingContext.currentWindowContext.getActor("LinkPreview");
   const result = await actor.fetchPageData(
-    "https://example.com/browser/toolkit/components/reader/tests/browser/readerModeArticle.html"
+    "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html"
   );
 
   ok(result.article, "article should be populated");
@@ -202,7 +269,7 @@ add_task(async function test_link_preview_panel_shown() {
     });
 
   const READABLE_PAGE_URL =
-    "https://example.com/browser/toolkit/components/reader/tests/browser/readerModeArticle.html";
+    "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html";
 
   window.dispatchEvent(
     new KeyboardEvent("keydown", {
