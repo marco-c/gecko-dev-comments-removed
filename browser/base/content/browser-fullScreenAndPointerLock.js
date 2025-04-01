@@ -525,7 +525,7 @@ var FullScreen = {
         
         
         
-        this._abortEnterFullscreen();
+        this._abortEnterFullscreen(aActor);
         return;
       }
       
@@ -552,7 +552,7 @@ var FullScreen = {
       
       Services.focus.activeWindow != window
     ) {
-      this._abortEnterFullscreen();
+      this._abortEnterFullscreen(aActor);
       return;
     }
 
@@ -670,17 +670,18 @@ var FullScreen = {
     return needToWaitForChildExit;
   },
 
-  _abortEnterFullscreen() {
+  _abortEnterFullscreen(aActor) {
     
     
     
     
     
     setTimeout(() => document.exitFullscreen().catch(() => {}), 0);
-    if (TelemetryStopwatch.running("FULLSCREEN_CHANGE_MS")) {
+    if (aActor.timerId) {
       
       
-      TelemetryStopwatch.cancel("FULLSCREEN_CHANGE_MS");
+      Glean.fullscreen.change.cancel(aActor.timerId);
+      aActor.timerId = null;
     }
   },
 
