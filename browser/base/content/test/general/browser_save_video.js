@@ -2,13 +2,13 @@
 
 
 var MockFilePicker = SpecialPowers.MockFilePicker;
-MockFilePicker.init(window.browsingContext);
 
 
 
 
 
-add_task(async function () {
+async function testSaveVideo(isUsingHeader = true) {
+  MockFilePicker.init(window.browsingContext);
   var fileName;
 
   let loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
@@ -50,11 +50,13 @@ add_task(async function () {
         "Video file should have been downloaded successfully"
       );
 
-      is(
-        fileName,
-        "web-video1-expectedName.webm",
-        "Video file name is correctly retrieved from Content-Disposition http header"
-      );
+      if (isUsingHeader) {
+        is(
+          fileName,
+          "web-video1-expectedName.webm",
+          "Video file name is correctly retrieved from Content-Disposition http header"
+        );
+      }
       resolve();
     }
 
@@ -62,27 +64,30 @@ add_task(async function () {
     mockTransferRegisterer.register();
   });
 
-  registerCleanupFunction(function () {
+  
+  
+  
+  try {
+    
+    var saveVideoCommand = document.getElementById("context-savevideo");
+    saveVideoCommand.doCommand();
+    info("context-savevideo command executed");
+
+    let contextMenu = document.getElementById("contentAreaContextMenu");
+    let popupHiddenPromise = BrowserTestUtils.waitForEvent(
+      contextMenu,
+      "popuphidden"
+    );
+    contextMenu.hidePopup();
+    await popupHiddenPromise;
+
+    await transferCompletePromise;
+  } finally {
     mockTransferRegisterer.unregister();
     MockFilePicker.cleanup();
     destDir.remove(true);
-  });
-
-  
-  var saveVideoCommand = document.getElementById("context-savevideo");
-  saveVideoCommand.doCommand();
-  info("context-savevideo command executed");
-
-  let contextMenu = document.getElementById("contentAreaContextMenu");
-  let popupHiddenPromise = BrowserTestUtils.waitForEvent(
-    contextMenu,
-    "popuphidden"
-  );
-  contextMenu.hidePopup();
-  await popupHiddenPromise;
-
-  await transferCompletePromise;
-});
+  }
+}
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/toolkit/content/tests/browser/common/mockTransfer.js",
@@ -97,3 +102,27 @@ function createTemporarySaveDirectory() {
   }
   return saveDir;
 }
+
+add_task(async function test_save_video_normal() {
+  return testSaveVideo();
+});
+
+
+
+
+add_task(async function test_save_video_timed_out_request() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.download.saveLinkAsFilenameTimeout", 0]],
+  });
+  
+
+
+
+
+
+
+
+
+  await testSaveVideo( false);
+  await SpecialPowers.popPrefEnv();
+});
