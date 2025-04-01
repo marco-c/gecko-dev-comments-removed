@@ -33,8 +33,7 @@ enum CancelAnimationFlags : uint32_t {
   Default = 0x0,             
   ExcludeOverscroll = 0x1,   
   ScrollSnap = 0x2,          
-  ExcludeWheel = 0x4,        
-  TriggeredExternally = 0x8, 
+  TriggeredExternally = 0x4, 
 
 };
 
