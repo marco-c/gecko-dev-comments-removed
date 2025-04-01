@@ -3,6 +3,7 @@
 
 
 
+
 const MIN_HANG_TIME = 500; 
 const MAX_HANG_TIME = 5 * 1000; 
 
@@ -38,6 +39,7 @@ function hangContentProcess(browser, aMs) {
     }
   });
 }
+
 
 
 
@@ -97,3 +99,4 @@ add_setup(async function () {
 });
 
 add_task(testProbe.bind(null, "FX_TAB_SWITCH_SPINNER_VISIBLE_MS"));
+add_task(testProbe.bind(null, "FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS"));
