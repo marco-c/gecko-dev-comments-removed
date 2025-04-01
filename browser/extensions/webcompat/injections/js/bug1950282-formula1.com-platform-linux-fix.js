@@ -18,10 +18,7 @@ console.info(
   "navigator.platform has been overridden for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1950282 for details."
 );
 
-Object.defineProperty(window.navigator.wrappedJSObject, "platform", {
-  get: exportFunction(function () {
-    return "Win64";
-  }, window),
-
-  set: exportFunction(function () {}, window),
-});
+const nav = Object.getPrototypeOf(navigator.wrappedJSObject);
+const platform = Object.getOwnPropertyDescriptor(nav, "platform");
+platform.get = exportFunction(() => "Win64", window);
+Object.defineProperty(nav, "platform", platform);

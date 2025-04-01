@@ -14,22 +14,4 @@
 
 
 
-
-(function () {
-  const win = window.wrappedJSObject;
-
-  let val = new win.Object();
-  val.eventLag = false;
-
-  Object.defineProperty(win, "paceOptions", {
-    configurable: true,
-
-    get: exportFunction(function () {
-      return val;
-    }, window),
-
-    set: exportFunction(function (_val) {
-      val = _val;
-    }, window),
-  });
-})();
+window.wrappedJSObject.paceOptions = cloneInto({ eventLag: false }, window);
