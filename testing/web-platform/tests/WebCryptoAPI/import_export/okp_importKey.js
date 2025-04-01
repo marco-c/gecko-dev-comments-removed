@@ -69,25 +69,32 @@ function testFormat(format, algorithm, keyData, keySize, usages, extractable) {
 
 
 
+
+
+
 function testJwkAlgBehaviours(algorithm, keyData, crv, usages) {
     [algorithm, algorithm.name].forEach((alg) => {
-        promise_test(function(test) {
-            return subtle.importKey('jwk', { ...keyData, alg: 'this is ignored' }, alg, true, usages).
-                then(function(key) {
-                    assert_equals(key.constructor, CryptoKey, "Imported a CryptoKey object");
+        (crv.startsWith('Ed') ? [algorithm.name, 'EdDSA'] : ['this is ignored']).forEach((jwkAlg) => {
+            promise_test(function(test) {
+                return subtle.importKey('jwk', { ...keyData, alg: jwkAlg }, alg, true, usages).
+                    then(function(key) {
+                        assert_equals(key.constructor, CryptoKey, "Imported a CryptoKey object");
 
-                    return subtle.exportKey('jwk', key).
-                        then(function(result) {
-                            assert_equals(Object.keys(result).length, keyData.d ? 6 : 5, "Correct number of JWK members");
-                            assert_equals(result.alg, undefined, 'No JWK "alg" member is present');
-                            assert_true(equalJwk(keyData, result), "Round trip works");
-                        }, function(err) {
+                        return subtle.exportKey('jwk', key).
+                            then(function(result) {
+                                let expectedKeys = crv.startsWith('Ed') ? 6 : 5
+                                if (keyData.d) expectedKeys++
+                                assert_equals(Object.keys(result).length, expectedKeys, "Correct number of JWK members");
+                                assert_equals(result.alg, crv.startsWith('Ed') ? algorithm.name : undefined, 'Expected JWK "alg" member');
+                                assert_true(equalJwk(keyData, result), "Round trip works");
+                            }, function(err) {
+                            assert_unreached("Threw an unexpected error: " + err.toString());
+                            });
+                    }, function(err) {
                         assert_unreached("Threw an unexpected error: " + err.toString());
-                        });
-                }, function(err) {
-                    assert_unreached("Threw an unexpected error: " + err.toString());
-                });
-        }, "Good parameters with ignored JWK alg: " + crv.toString() + " " + parameterString('jwk', keyData, alg, true, usages));
+                    });
+            }, 'Good parameters with JWK alg' + (crv.startsWith('Ed') ? ` ${jwkAlg}: ` : ': ') + crv.toString() + " " + parameterString('jwk', keyData, alg, true, usages, jwkAlg));
+        });
     });
 }
 
