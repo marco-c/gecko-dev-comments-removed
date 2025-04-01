@@ -9,7 +9,6 @@ import re
 import signal
 import subprocess
 import sys
-from pathlib import Path
 
 from mozlint import result
 
@@ -66,19 +65,7 @@ def lint(paths, config, log, **lintargs):
     if not paths:
         return {"results": results, "fixed": fixed}
 
-    
-    
-    
-    exts = [e for e in config["extensions"] if e != "py"]
-    non_py_files = []
-    for path in paths:
-        p = Path(path)
-        if not p.is_dir():
-            continue
-        for ext in exts:
-            non_py_files.extend([str(f) for f in p.glob(f"**/*.{ext}")])
-
-    args = ["ruff", "check", "--force-exclude"] + paths + non_py_files
+    args = ["ruff", "check", "--force-exclude"] + paths
 
     if config.get("exclude"):
         args.append(f"--extend-exclude={','.join(config['exclude'])}")
