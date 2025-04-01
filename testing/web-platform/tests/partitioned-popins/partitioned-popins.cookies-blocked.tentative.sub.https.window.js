@@ -15,7 +15,6 @@
 
 
 
-
 async_test(t => {
   const id = String(Math.random());
   document.cookie = "FirstPartyStrict=" + id + "; SameSite=Strict; Secure";
@@ -39,7 +38,7 @@ async_test(t => {
       case 'popin-read':
         
         
-        assert_equals(e.data.message, "ReadOnLoad:ThirdPartyNone-,ReadOnFetch:ThirdPartyNone-ThirdPartyNonePopin-,ReadOnDocument:ThirdPartyNone-ThirdPartyNonePopin-,ReadOnFetchAfterRSA:FirstPartyNone-ThirdPartyNone-ThirdPartyNonePopin-FirstPartyNonePopinAfterRSA-ThirdPartyNonePopinAfterRSA-,ReadOnDocumentAfterRSA:FirstPartyNone-ThirdPartyNone-ThirdPartyNonePopin-FirstPartyNonePopinAfterRSA-ThirdPartyNonePopinAfterRSA-,ReadInPopinIframe:ThirdPartyNone-,ReadInPopinIframeAfterRSA:FirstPartyNone-ThirdPartyNone-FirstPartyNoneAfterRSA-ThirdPartyNoneAfterRSA-");
+        assert_equals(e.data.message, "ReadOnLoad:ThirdPartyNone-,ReadOnFetch:ThirdPartyNone-ThirdPartyNonePopin-,ReadOnDocument:ThirdPartyNone-ThirdPartyNonePopin-,ReadOnFetchAfterRSA:ThirdPartyNone-ThirdPartyNonePopin-ThirdPartyNonePopinAfterRSA-,ReadOnDocumentAfterRSA:ThirdPartyNone-ThirdPartyNonePopin-ThirdPartyNonePopinAfterRSA-");
         t.done();
         break;
     }
