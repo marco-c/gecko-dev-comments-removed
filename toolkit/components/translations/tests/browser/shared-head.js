@@ -1397,15 +1397,15 @@ function createAttachmentMock(
 
 
 
-const RECORDS_PER_LANGUAGE_PAIR = 3;
+const RECORDS_PER_LANGUAGE_PAIR_SHARED_VOCAB = 3;
 
 
 
 
 function downloadedFilesPerLanguagePair() {
   return Services.prefs.getBoolPref(USE_LEXICAL_SHORTLIST_PREF)
-    ? RECORDS_PER_LANGUAGE_PAIR
-    : RECORDS_PER_LANGUAGE_PAIR - 1;
+    ? RECORDS_PER_LANGUAGE_PAIR_SHARED_VOCAB
+    : RECORDS_PER_LANGUAGE_PAIR_SHARED_VOCAB - 1;
 }
 
 function createRecordsForLanguagePair(fromLang, toLang) {
@@ -1426,7 +1426,7 @@ function createRecordsForLanguagePair(fromLang, toLang) {
     isDownloaded: false,
   };
 
-  if (models.length !== RECORDS_PER_LANGUAGE_PAIR) {
+  if (models.length !== RECORDS_PER_LANGUAGE_PAIR_SHARED_VOCAB) {
     throw new Error("Files per language pair was wrong.");
   }
 
