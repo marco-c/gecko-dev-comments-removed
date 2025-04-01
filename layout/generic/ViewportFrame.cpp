@@ -83,10 +83,9 @@ void ViewportFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 #ifdef DEBUG
 
 
-
-
 static bool ShouldInTopLayerForFullscreen(dom::Element* aElement) {
-  return !!aElement->GetParent();
+  return !aElement->IsRootElement() &&
+         !aElement->IsXULElement(nsGkAtoms::browser);
 }
 #endif  
 
