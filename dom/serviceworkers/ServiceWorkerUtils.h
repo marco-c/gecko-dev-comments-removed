@@ -22,7 +22,9 @@ class ErrorResult;
 
 namespace dom {
 
+class Client;
 class ClientInfo;
+class ClientInfoAndState;
 class ServiceWorkerRegistrationData;
 class ServiceWorkerRegistrationDescriptor;
 struct NavigationPreloadState;
@@ -76,7 +78,35 @@ void ServiceWorkerScopeAndScriptAreValid(
     const ClientInfo& aClientInfo, nsIURI* aScopeURI, nsIURI* aScriptURI,
     ErrorResult& aRv, nsIGlobalObject* aGlobalForReporting = nullptr);
 
+
+
 bool ServiceWorkersEnabled(JSContext* aCx, JSObject* aGlobal);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool ServiceWorkersStorageAllowedForGlobal(nsIGlobalObject* aGlobal);
+
+
+
+
+
+
+bool ServiceWorkersStorageAllowedForClient(
+    const ClientInfoAndState& aInfoAndState);
 
 }  
 }  
