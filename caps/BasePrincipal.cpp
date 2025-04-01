@@ -1067,6 +1067,12 @@ NS_IMETHODIMP
 BasePrincipal::IsURIInPrefList(const char* aPref, bool* aResult) {
   AssertIsOnMainThread();
   *aResult = false;
+
+  if (Kind() != eContentPrincipal) {
+    
+    return NS_OK;
+  }
+
   nsCOMPtr<nsIURI> prinURI;
   nsresult rv = GetURI(getter_AddRefs(prinURI));
   if (NS_FAILED(rv) || !prinURI) {
