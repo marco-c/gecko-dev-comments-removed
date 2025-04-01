@@ -2335,10 +2335,10 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
   
   
   
-  
-  
-  
-  
+  nsresult status = NS_OK;
+  mChannel->GetStatus(&status);
+  bool silentErrorLoad = !DocShellWillDisplayContent(status);
+
   
   
   
@@ -2346,9 +2346,45 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
   nsresult rv = nsScriptSecurityManager::GetScriptSecurityManager()
                     ->GetChannelResultPrincipalIfNotSandboxed(
                         mChannel, getter_AddRefs(unsandboxedPrincipal));
-  if (NS_SUCCEEDED(rv) && aDestinationBrowsingContext->Group()
-                              ->UsesOriginAgentCluster(unsandboxedPrincipal)
-                              .isNothing()) {
+  if (NS_FAILED(rv)) {
+    LOG(
+        ("DocumentLoadListener::TriggerRedirectToRealChannel [this=%p] "
+         "GetChannelResultPrincipalIfNotSandboxed failed",
+         this));
+    RedirectToRealChannelFinished(NS_ERROR_FAILURE);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (!silentErrorLoad && contentParent &&
+      !contentParent->ValidatePrincipal(
+          unsandboxedPrincipal, {ValidatePrincipalOptions::AllowSystem})) {
+    ContentParent::LogAndAssertFailedPrincipalValidationInfo(
+        unsandboxedPrincipal, "TriggerRedirectToRealChannel");
+    RedirectToRealChannelFinished(NS_ERROR_FAILURE);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aDestinationBrowsingContext->Group()
+          ->UsesOriginAgentCluster(unsandboxedPrincipal)
+          .isNothing()) {
     
     
     
@@ -2464,14 +2500,6 @@ bool DocumentLoadListener::DocShellWillDisplayContent(nsresult aStatus) {
   nsresult rv = nsDocShell::FilterStatusForErrorPage(
       aStatus, mChannel, mLoadStateLoadType, loadingContext->IsTop(),
       loadingContext->GetUseErrorPages(), nullptr);
-
-  if (NS_SUCCEEDED(rv)) {
-    MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-            ("Skipping process switch, as DocShell will not display content "
-             "(status: %s) %s",
-             GetStaticErrorName(aStatus),
-             GetChannelCreationURI()->GetSpecOrDefault().get()));
-  }
 
   
   
@@ -2727,12 +2755,20 @@ nsresult DocumentLoadListener::DoOnStartRequest(nsIRequest* aRequest) {
   
   
   
+  bool silentErrorLoad = !DocShellWillDisplayContent(status);
+  if (silentErrorLoad) {
+    MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+            ("Skipping process switch, as DocShell will not display content "
+             "(status: %s) %s",
+             GetStaticErrorName(status),
+             GetChannelCreationURI()->GetSpecOrDefault().get()));
+  }
+
   
   
   
   bool willBeRemote = false;
-  if (!DocShellWillDisplayContent(status) ||
-      !MaybeTriggerProcessSwitch(&willBeRemote)) {
+  if (silentErrorLoad || !MaybeTriggerProcessSwitch(&willBeRemote)) {
     
     
     nsTArray<StreamFilterRequest> streamFilterRequests =
