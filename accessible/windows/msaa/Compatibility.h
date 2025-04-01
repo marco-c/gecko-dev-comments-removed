@@ -98,6 +98,14 @@ class Compatibility {
   }
   static SuppressionReasons A11ySuppressionReasons();
 
+  
+
+
+
+
+
+  static bool IsUiaEnabled();
+
  private:
   Compatibility();
   Compatibility(const Compatibility&);

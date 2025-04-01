@@ -214,3 +214,9 @@ SuppressionReasons Compatibility::A11ySuppressionReasons() {
   }
   return reasons;
 }
+
+
+bool Compatibility::IsUiaEnabled() {
+  
+  return StaticPrefs::accessibility_uia_enable_DoNotUseDirectly();
+}
