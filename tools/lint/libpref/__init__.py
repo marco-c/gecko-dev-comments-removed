@@ -24,7 +24,33 @@ IGNORE_PREFS = {
     "dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled",  
     "extensions.backgroundServiceWorker.enabled",  
 }
-PATTERN = re.compile(r"\s*pref\(\s*\"(?P<pref>.+)\"\s*,\s*(?P<val>.+)\)\s*;.*")
+
+
+
+
+PATTERN = re.compile(
+    r"""
+    \s*pref\(
+    \s*"
+        (?P<pref>[^"]+)
+    "
+    \s*,
+    \s*
+        (?P<val>
+            "(              # String value
+                [^"\\]+     # Any unescaped string character.
+                |
+                \\.         # An escaped character.
+            )*"
+            |
+            [^,)]+          # other literals: true, false, integers
+        )
+        (\s*,.*)?           # optional pref-attr: "sticky" | "locked"
+    \s*\)
+    \s*;.*
+    """,
+    re.VERBOSE,
+)
 
 
 def get_names(pref_list_filename):
@@ -40,6 +66,13 @@ def get_names(pref_list_filename):
         print("{}: error:\n  {}".format(pref_list_filename, e), file=sys.stderr)
         sys.exit(1)
 
+    
+    
+    
+    
+    
+    
+    
     for pref in pref_list:
         if pref["name"] not in IGNORE_PREFS:
             pref_names[pref["name"]] = pref["value"]

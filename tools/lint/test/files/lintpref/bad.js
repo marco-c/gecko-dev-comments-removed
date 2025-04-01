@@ -1,2 +1,11 @@
 
 pref("dom.webidl.test1", true);
+
+
+pref("editor.background_color", "#FFFFFF");
+
+
+pref("browser.theme.content-theme", 2, sticky);
+
+
+pref("browser.theme.toolbar-theme", 2, locked);
