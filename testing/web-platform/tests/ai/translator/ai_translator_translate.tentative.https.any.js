@@ -28,12 +28,6 @@ promise_test(async t => {
   await createTranslator(languagePair);
 
   
-  const capabilities = await ai.translator.capabilities();
-  const {sourceLanguage, targetLanguage} = languagePair;
-  assert_equals(
-      capabilities.languagePairAvailable(sourceLanguage, targetLanguage),
-      'readily');
-
   const availability = await ai.translator.availability(languagePair);
   assert_equals(availability, 'available');
 
