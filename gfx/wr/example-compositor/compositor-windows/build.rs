@@ -13,8 +13,8 @@ fn main() {
         .compile("windows");
 
     
-    println!("cargo:rustc-link-search=../../obj-x86_64-pc-mingw32/gfx/angle/targets/libEGL");
-    println!("cargo:rustc-link-search=../../obj-x86_64-pc-mingw32/gfx/angle/targets/libGLESv2");
+    println!("cargo:rustc-link-search=../../obj-x86_64-pc-windows-msvc/gfx/angle/targets/libEGL");
+    println!("cargo:rustc-link-search=../../obj-x86_64-pc-windows-msvc/gfx/angle/targets/libGLESv2");
 
     
     println!("cargo:rustc-link-lib=libEGL");

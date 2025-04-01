@@ -21,7 +21,7 @@ pub struct Window {
 }
 
 
-extern {
+extern "C" {
     fn com_dc_create_window(
         width: i32,
         height: i32,
