@@ -215,14 +215,26 @@ class WeakMap
   using Base::empty;
   using Base::has;
   using Base::shallowSizeOfExcludingThis;
+  using Base::shallowSizeOfIncludingThis;
 
   
   using Base::remove;
 
   using UnbarrieredKey = typename RemoveBarrier<Key>::Type;
+  using UnbarrieredValue = typename RemoveBarrier<Value>::Type;
 
   explicit WeakMap(JSContext* cx, JSObject* memOf = nullptr);
   explicit WeakMap(JS::Zone* zone, JSObject* memOf = nullptr);
+
+  
+  
+  UnbarrieredValue get(const Lookup& l) {
+    Ptr ptr = lookup(l);
+    if (!ptr) {
+      return UnbarrieredValue();
+    }
+    return ptr->value();
+  }
 
   
   
@@ -335,27 +347,7 @@ using ObjectValueWeakMap = WeakMap<HeapPtr<JSObject*>, HeapPtr<Value>>;
 using ValueValueWeakMap = WeakMap<HeapPtr<Value>, HeapPtr<Value>>;
 
 
-class ObjectWeakMap {
-  ObjectValueWeakMap map;
-
- public:
-  explicit ObjectWeakMap(JSContext* cx);
-
-  JS::Zone* zone() const { return map.zone(); }
-
-  JSObject* lookup(const JSObject* obj);
-  bool add(JSContext* cx, JSObject* obj, JSObject* target);
-  void remove(JSObject* key);
-  void clear();
-
-  void trace(JSTracer* trc);
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
-  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
-    return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
-  }
-
-  ObjectValueWeakMap& valueMap() { return map; }
-};
+using ObjectWeakMap = WeakMap<HeapPtr<JSObject*>, HeapPtr<JSObject*>>;
 
 
 HashNumber GetSymbolHash(JS::Symbol* sym);
