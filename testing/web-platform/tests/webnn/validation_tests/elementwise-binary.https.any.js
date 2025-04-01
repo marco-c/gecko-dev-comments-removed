@@ -5,17 +5,28 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 'use strict';
 
-const kElementwiseBinaryOperators = [
-  'add',
-  'sub',
-  'mul',
-  'div',
-  'max',
-  'min',
-  'pow',
-];
+const queryParams = new URLSearchParams(window.location.search);
+const operatorName = queryParams.get('op');
 
 const label = 'elementwise_binary_op';
 const regrexp = new RegExp('\\[' + label + '\\]');
@@ -54,40 +65,35 @@ const tests = [
   },
 ];
 
-function runElementWiseBinaryTests(operatorName, tests) {
-  tests.forEach(test => {
-    promise_test(async t => {
-      const builder = new MLGraphBuilder(context);
-      if (!context.opSupportLimits().input.dataTypes.includes(
-              test.a.dataType)) {
-        assert_throws_js(TypeError, () => builder.input('a', test.a));
-        return;
-      }
-      if (!context.opSupportLimits().input.dataTypes.includes(
-              test.b.dataType)) {
-        assert_throws_js(TypeError, () => builder.input('b', test.b));
-        return;
-      }
-      const a = builder.input('a', test.a);
-      const b = builder.input('b', test.b);
+tests.forEach(test => {
+  promise_test(async t => {
+    const builder = new MLGraphBuilder(context);
+    if (!context.opSupportLimits().input.dataTypes.includes(
+            test.a.dataType)) {
+      assert_throws_js(TypeError, () => builder.input('a', test.a));
+      return;
+    }
+    if (!context.opSupportLimits().input.dataTypes.includes(
+            test.b.dataType)) {
+      assert_throws_js(TypeError, () => builder.input('b', test.b));
+      return;
+    }
+    const a = builder.input('a', test.a);
+    const b = builder.input('b', test.b);
 
-      if (test.output) {
-        const output = builder[operatorName](a, b);
-        assert_equals(output.dataType, test.output.dataType);
-        assert_array_equals(output.shape, test.output.shape);
-      } else {
-        const options = {label};
-        assert_throws_with_label(
-            () => builder[operatorName](a, b, options), regrexp);
-      }
-    }, test.name.replace('[binary]', `[${operatorName}]`));
-  });
-}
-
-kElementwiseBinaryOperators.forEach((operatorName) => {
-  validateTwoInputsOfSameDataType(operatorName, label);
-  validateTwoInputsBroadcastable(operatorName, label);
-  validateTwoInputsFromMultipleBuilders(operatorName);
-  validateTwoBroadcastableInputsTensorLimit(operatorName, label);
-  runElementWiseBinaryTests(operatorName, tests);
+    if (test.output) {
+      const output = builder[operatorName](a, b);
+      assert_equals(output.dataType, test.output.dataType);
+      assert_array_equals(output.shape, test.output.shape);
+    } else {
+      const options = {label};
+      assert_throws_with_label(
+          () => builder[operatorName](a, b, options), regrexp);
+    }
+  }, test.name.replace('[binary]', `[${operatorName}]`));
 });
+
+validateTwoInputsOfSameDataType(operatorName, label);
+validateTwoInputsBroadcastable(operatorName, label);
+validateTwoInputsFromMultipleBuilders(operatorName);
+validateTwoBroadcastableInputsTensorLimit(operatorName, label);
