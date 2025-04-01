@@ -11460,9 +11460,11 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       id = `solid-color-picker-${event.target.value}`;
     }
     this.props.setPref("newtabWallpapers.wallpaper", id);
+    const uploadedPreviously = this.props.Prefs.values[PREF_WALLPAPER_UPLOADED_PREVIOUSLY];
     this.handleUserEvent(actionTypes.WALLPAPER_CLICK, {
       selected_wallpaper: id,
-      had_previous_wallpaper: !!this.props.activeWallpaper
+      had_previous_wallpaper: !!this.props.activeWallpaper,
+      had_uploaded_previously: !!uploadedPreviously
     });
   }
 
@@ -11529,16 +11531,24 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     this.wallpaperRef[nextIndex].click();
   }
   handleReset() {
-    this.props.setPref("newtabWallpapers.wallpaper", "");
     const uploadedPreviously = this.props.Prefs.values[PREF_WALLPAPER_UPLOADED_PREVIOUSLY];
-    if (uploadedPreviously) {
+    const selectedWallpaper = this.props.Prefs.values["newtabWallpapers.wallpaper"];
+
+    
+    if (selectedWallpaper === "custom") {
       this.props.dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WALLPAPER_REMOVE_UPLOAD
       }));
     }
+
+    
+    this.props.setPref("newtabWallpapers.wallpaper", "");
+
+    
     this.handleUserEvent(actionTypes.WALLPAPER_CLICK, {
       selected_wallpaper: "none",
-      had_previous_wallpaper: !!this.props.activeWallpaper
+      had_previous_wallpaper: !!this.props.activeWallpaper,
+      had_uploaded_previously: !!uploadedPreviously
     });
   }
   handleCategory = event => {
@@ -11567,14 +11577,9 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
 
   
   async handleUpload() {
-    
     const wallpaperUploadMaxFileSizeEnabled = this.props.Prefs.values[PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE_ENABLED];
     const wallpaperUploadMaxFileSize = this.props.Prefs.values[PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE];
-
-    
-    
-    
-    this.props.setPref(PREF_WALLPAPER_UPLOADED_PREVIOUSLY, true);
+    const uploadedPreviously = this.props.Prefs.values[PREF_WALLPAPER_UPLOADED_PREVIOUSLY];
 
     
     const fileInput = document.createElement("input");
@@ -11613,6 +11618,18 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
           type: actionTypes.WALLPAPER_UPLOAD,
           data: file
         }));
+
+        
+        this.props.setPref("newtabWallpapers.wallpaper", "custom");
+
+        
+        
+        this.props.setPref(PREF_WALLPAPER_UPLOADED_PREVIOUSLY, true);
+        this.handleUserEvent(actionTypes.WALLPAPER_CLICK, {
+          selected_wallpaper: "custom",
+          had_previous_wallpaper: !!this.props.activeWallpaper,
+          had_uploaded_previously: !!uploadedPreviously
+        });
       }
     };
     fileInput.click();
