@@ -54,7 +54,6 @@ const DEFAULT_DECLINED: &[&str] = &[];
 #[serde(tag = "schema_version")]
 pub enum PersistedGlobalState {
     
-
     
     
     

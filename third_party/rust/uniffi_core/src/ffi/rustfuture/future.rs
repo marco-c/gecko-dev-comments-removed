@@ -76,7 +76,6 @@
 
 
 use std::{
-    future::Future,
     marker::PhantomData,
     ops::Deref,
     panic,
@@ -85,14 +84,14 @@ use std::{
     task::{Context, Poll, Wake},
 };
 
-use super::{RustFutureContinuationCallback, RustFuturePoll, Scheduler};
+use super::{RustFutureContinuationCallback, RustFuturePoll, Scheduler, UniffiCompatibleFuture};
 use crate::{rust_call_with_out_status, FfiDefault, LiftArgsError, LowerReturn, RustCallStatus};
 
 
 struct WrappedFuture<F, T, UT>
 where
     
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
+    F: UniffiCompatibleFuture<Result<T, LiftArgsError>> + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {
@@ -106,7 +105,7 @@ where
 impl<F, T, UT> WrappedFuture<F, T, UT>
 where
     
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
+    F: UniffiCompatibleFuture<Result<T, LiftArgsError>> + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {
@@ -157,7 +156,7 @@ where
                 }
             }
         } else {
-            log::error!("poll with neither future nor result set");
+            trace!("poll with neither future nor result set");
             true
         }
     }
@@ -186,7 +185,7 @@ where
 unsafe impl<F, T, UT> Send for WrappedFuture<F, T, UT>
 where
     
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
+    F: UniffiCompatibleFuture<Result<T, LiftArgsError>> + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {
@@ -196,7 +195,7 @@ where
 pub(super) struct RustFuture<F, T, UT>
 where
     
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
+    F: UniffiCompatibleFuture<Result<T, LiftArgsError>> + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {
@@ -212,7 +211,7 @@ where
 impl<F, T, UT> RustFuture<F, T, UT>
 where
     
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
+    F: UniffiCompatibleFuture<Result<T, LiftArgsError>> + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {
@@ -225,12 +224,14 @@ where
     }
 
     pub(super) fn poll(self: Arc<Self>, callback: RustFutureContinuationCallback, data: u64) {
-        let ready = self.is_cancelled() || {
+        let cancelled = self.is_cancelled();
+        let ready = cancelled || {
             let mut locked = self.future.lock().unwrap();
             let waker: std::task::Waker = Arc::clone(&self).into();
             locked.poll(&mut Context::from_waker(&waker))
         };
         if ready {
+            trace!("RustFuture::poll is ready (cancelled: {cancelled})");
             callback(data, RustFuturePoll::Ready)
         } else {
             self.scheduler.lock().unwrap().store(callback, data);
@@ -242,6 +243,7 @@ where
     }
 
     pub(super) fn wake(&self) {
+        trace!("RustFuture::wake called");
         self.scheduler.lock().unwrap().wake();
     }
 
@@ -264,7 +266,7 @@ where
 impl<F, T, UT> Wake for RustFuture<F, T, UT>
 where
     
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
+    F: UniffiCompatibleFuture<Result<T, LiftArgsError>> + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {
@@ -299,7 +301,7 @@ pub trait RustFutureFfi<ReturnType>: Send + Sync {
 impl<F, T, UT> RustFutureFfi<T::ReturnType> for RustFuture<F, T, UT>
 where
     
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
+    F: UniffiCompatibleFuture<Result<T, LiftArgsError>> + 'static,
     T: LowerReturn<UT> + Send + 'static,
     UT: Send + 'static,
 {

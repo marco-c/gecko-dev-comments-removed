@@ -96,6 +96,8 @@ fn compile_swift_module<T: AsRef<OsStr>>(
     command
         .current_dir(out_dir)
         .arg("-emit-module")
+        
+        
         .arg("-module-name")
         .arg(module_name)
         .arg("-o")

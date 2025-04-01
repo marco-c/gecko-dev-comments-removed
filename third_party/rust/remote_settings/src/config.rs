@@ -17,7 +17,7 @@ use crate::{ApiResult, Error, RemoteSettingsContext, Result};
 
 
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[derive(Debug, Default, Clone, uniffi::Record)]
 pub struct RemoteSettingsConfig2 {
     
     #[uniffi(default = None)]

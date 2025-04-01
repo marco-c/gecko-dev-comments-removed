@@ -20,23 +20,25 @@ pub mod url_hash;
 
 use rand_distr::{Beta, Distribution};
 
+use std::{collections::HashMap, sync::Arc};
+
+use parking_lot::Mutex;
+use remote_settings::{RemoteSettingsClient, RemoteSettingsService};
+
 pub use db::RelevancyDb;
 pub use error::{ApiResult, Error, RelevancyApiError, Result};
 pub use interest::{Interest, InterestVector};
-use parking_lot::Mutex;
 pub use ranker::score;
 
 use error_support::handle_error;
 
 use db::BanditData;
-use std::{collections::HashMap, sync::Arc};
 
 uniffi::setup_scaffolding!();
 
 #[derive(uniffi::Object)]
 pub struct RelevancyStore {
-    db: RelevancyDb,
-    cache: Mutex<BanditCache>,
+    inner: RelevancyStoreInner<Arc<RemoteSettingsClient>>,
 }
 
 
@@ -46,16 +48,116 @@ impl RelevancyStore {
     
     
     
-    #[uniffi::constructor(default(remote_settings_service=None))]
-    pub fn new(
-        db_path: String,
-        #[allow(unused)] remote_settings_service: Option<
-            Arc<remote_settings::RemoteSettingsService>,
-        >,
-    ) -> Self {
+    #[uniffi::constructor]
+    #[handle_error(Error)]
+    pub fn new(db_path: String, remote_settings: Arc<RemoteSettingsService>) -> ApiResult<Self> {
+        Ok(Self {
+            inner: RelevancyStoreInner::new(
+                db_path,
+                remote_settings.make_client(rs::REMOTE_SETTINGS_COLLECTION.to_string())?,
+            ),
+        })
+    }
+
+    
+    
+    
+    pub fn close(&self) {
+        self.inner.close()
+    }
+
+    
+    pub fn interrupt(&self) {
+        self.inner.interrupt()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn ingest(&self, top_urls_by_frecency: Vec<String>) -> ApiResult<InterestVector> {
+        self.inner.ingest(top_urls_by_frecency)
+    }
+
+    
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn user_interest_vector(&self) -> ApiResult<InterestVector> {
+        self.inner.user_interest_vector()
+    }
+
+    
+    
+    
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn bandit_init(&self, bandit: String, arms: &[String]) -> ApiResult<()> {
+        self.inner.bandit_init(bandit, arms)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn bandit_select(&self, bandit: String, arms: &[String]) -> ApiResult<String> {
+        self.inner.bandit_select(bandit, arms)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[handle_error(Error)]
+    pub fn bandit_update(&self, bandit: String, arm: String, selected: bool) -> ApiResult<()> {
+        self.inner.bandit_update(bandit, arm, selected)
+    }
+
+    
+    #[handle_error(Error)]
+    pub fn get_bandit_data(&self, bandit: String, arm: String) -> ApiResult<BanditData> {
+        self.inner.get_bandit_data(bandit, arm)
+    }
+
+    
+    #[handle_error(Error)]
+    pub fn ensure_interest_data_populated(&self) -> ApiResult<()> {
+        self.inner.ensure_interest_data_populated()
+    }
+}
+
+pub(crate) struct RelevancyStoreInner<C> {
+    db: RelevancyDb,
+    cache: Mutex<BanditCache>,
+    client: C,
+}
+
+
+
+impl<C: rs::RelevancyRemoteSettingsClient> RelevancyStoreInner<C> {
+    pub fn new(db_path: String, client: C) -> Self {
         Self {
             db: RelevancyDb::new(db_path),
             cache: Mutex::new(BanditCache::new()),
+            client,
         }
     }
 
@@ -82,30 +184,28 @@ impl RelevancyStore {
     
     
     
-    #[handle_error(Error)]
-    pub fn ingest(&self, top_urls_by_frecency: Vec<String>) -> ApiResult<InterestVector> {
-        ingest::ensure_interest_data_populated(&self.db)?;
+    pub fn ingest(&self, top_urls_by_frecency: Vec<String>) -> Result<InterestVector> {
         let interest_vec = self.classify(top_urls_by_frecency)?;
         self.db
             .read_write(|dao| dao.update_frecency_user_interest_vector(&interest_vec))?;
         Ok(interest_vec)
     }
 
-    
-    
-    
-    
-    #[handle_error(Error)]
-    pub fn calculate_metrics(&self) -> ApiResult<InterestMetrics> {
-        todo!()
+    pub fn classify(&self, top_urls_by_frecency: Vec<String>) -> Result<InterestVector> {
+        let mut interest_vector = InterestVector::default();
+        for url in top_urls_by_frecency {
+            let interest_count = self.db.read(|dao| dao.get_url_interest_vector(&url))?;
+            log::trace!("classified: {url} {}", interest_count.summary());
+            interest_vector = interest_vector + interest_count;
+        }
+        Ok(interest_vector)
     }
 
     
     
     
     
-    #[handle_error(Error)]
-    pub fn user_interest_vector(&self) -> ApiResult<InterestVector> {
+    pub fn user_interest_vector(&self) -> Result<InterestVector> {
         self.db.read(|dao| dao.get_frecency_user_interest_vector())
     }
 
@@ -115,8 +215,7 @@ impl RelevancyStore {
     
     
     
-    #[handle_error(Error)]
-    pub fn bandit_init(&self, bandit: String, arms: &[String]) -> ApiResult<()> {
+    pub fn bandit_init(&self, bandit: String, arms: &[String]) -> Result<()> {
         self.db.read_write(|dao| {
             for arm in arms {
                 dao.initialize_multi_armed_bandit(&bandit, arm)?;
@@ -134,8 +233,7 @@ impl RelevancyStore {
     
     
     
-    #[handle_error(Error)]
-    pub fn bandit_select(&self, bandit: String, arms: &[String]) -> ApiResult<String> {
+    pub fn bandit_select(&self, bandit: String, arms: &[String]) -> Result<String> {
         let mut cache = self.cache.lock();
         let mut best_sample = f64::MIN;
         let mut selected_arm = String::new();
@@ -155,7 +253,7 @@ impl RelevancyStore {
             }
         }
 
-        return Ok(selected_arm);
+        Ok(selected_arm)
     }
 
     
@@ -165,8 +263,7 @@ impl RelevancyStore {
     
     
     
-    #[handle_error(Error)]
-    pub fn bandit_update(&self, bandit: String, arm: String, selected: bool) -> ApiResult<()> {
+    pub fn bandit_update(&self, bandit: String, arm: String, selected: bool) -> Result<()> {
         let mut cache = self.cache.lock();
 
         cache.clear(&bandit, &arm);
@@ -178,13 +275,16 @@ impl RelevancyStore {
     }
 
     
-    #[handle_error(Error)]
-    pub fn get_bandit_data(&self, bandit: String, arm: String) -> ApiResult<BanditData> {
+    pub fn get_bandit_data(&self, bandit: String, arm: String) -> Result<BanditData> {
         let bandit_data = self
             .db
             .read(|dao| dao.retrieve_bandit_data(&bandit, &arm))?;
 
         Ok(bandit_data)
+    }
+
+    pub fn ensure_interest_data_populated(&self) -> Result<()> {
+        ingest::ensure_interest_data_populated(&self.db, &self.client)
     }
 }
 
@@ -240,25 +340,6 @@ impl BanditCache {
     }
 }
 
-impl RelevancyStore {
-    
-    #[handle_error(Error)]
-    pub fn ensure_interest_data_populated(&self) -> ApiResult<()> {
-        ingest::ensure_interest_data_populated(&self.db)?;
-        Ok(())
-    }
-
-    pub fn classify(&self, top_urls_by_frecency: Vec<String>) -> Result<InterestVector> {
-        let mut interest_vector = InterestVector::default();
-        for url in top_urls_by_frecency {
-            let interest_count = self.db.read(|dao| dao.get_url_interest_vector(&url))?;
-            log::trace!("classified: {url} {}", interest_count.summary());
-            interest_vector = interest_vector + interest_count;
-        }
-        Ok(interest_vector)
-    }
-}
-
 
 
 
@@ -290,6 +371,7 @@ mod test {
     use crate::url_hash::hash_url;
 
     use super::*;
+    use crate::rs::test::NullRelavancyRemoteSettingsClient;
     use rand::Rng;
     use std::collections::HashMap;
 
@@ -311,10 +393,12 @@ mod test {
         }
     }
 
-    fn setup_store(test_id: &'static str) -> RelevancyStore {
-        let relevancy_store = RelevancyStore::new(
+    fn setup_store(
+        test_id: &'static str,
+    ) -> RelevancyStoreInner<NullRelavancyRemoteSettingsClient> {
+        let relevancy_store = RelevancyStoreInner::new(
             format!("file:test_{test_id}_data?mode=memory&cache=shared"),
-            None,
+            NullRelavancyRemoteSettingsClient,
         );
         relevancy_store
             .db
