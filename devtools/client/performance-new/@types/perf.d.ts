@@ -190,15 +190,6 @@ export type ReceiveProfile = (
 
 
 
-export type RestartBrowserWithEnvironmentVariable = (
-  envName: string,
-  value: string
-) => void;
-
-
-
-
-
 export type OnProfileReceived = (profile: MinimallyTypedGeckoProfile) => void;
 
 

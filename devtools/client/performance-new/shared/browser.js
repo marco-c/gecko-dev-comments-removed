@@ -20,7 +20,6 @@
 
 
 
-
 const {
   gDevTools,
 } = require("resource://devtools/client/framework/devtools.js");
@@ -147,8 +146,10 @@ function sharedLibrariesFromProfile(profile) {
 
 
 
-function restartBrowserWithEnvironmentVariable(envName, value) {
-  Services.env.set(envName, value);
+function restartBrowserWithEnvironmentVariable(env) {
+  for (const [envName, envValue] of Object.entries(env)) {
+    Services.env.set(envName, envValue);
+  }
 
   Services.startup.quit(
     Services.startup.eForceQuit | Services.startup.eRestart
