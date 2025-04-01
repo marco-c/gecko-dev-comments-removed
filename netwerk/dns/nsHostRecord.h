@@ -259,12 +259,8 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
 };
 
 
-#define ADDRHOSTRECORD_IID                           \
-  {                                                  \
-    0xb020e996, 0xf6ab, 0x45e5, {                    \
-      0x9b, 0xf5, 0x1d, 0xa7, 0x1d, 0xd0, 0x05, 0x3a \
-    }                                                \
-  }
+#define ADDRHOSTRECORD_IID \
+  {0xb020e996, 0xf6ab, 0x45e5, {0x9b, 0xf5, 0x1d, 0xa7, 0x1d, 0xd0, 0x05, 0x3a}}
 
 class AddrHostRecord final : public nsHostRecord {
   using Mutex = mozilla::Mutex;
@@ -357,12 +353,8 @@ class AddrHostRecord final : public nsHostRecord {
 NS_DEFINE_STATIC_IID_ACCESSOR(AddrHostRecord, ADDRHOSTRECORD_IID)
 
 
-#define TYPEHOSTRECORD_IID                           \
-  {                                                  \
-    0x77b786a7, 0x04be, 0x44f2, {                    \
-      0x98, 0x7c, 0xab, 0x8a, 0xa9, 0x66, 0x76, 0xe0 \
-    }                                                \
-  }
+#define TYPEHOSTRECORD_IID \
+  {0x77b786a7, 0x04be, 0x44f2, {0x98, 0x7c, 0xab, 0x8a, 0xa9, 0x66, 0x76, 0xe0}}
 
 class TypeHostRecord final : public nsHostRecord,
                              public nsIDNSTXTRecord,
