@@ -82,6 +82,11 @@ class nsDocumentOpenInfo : public nsIThreadRetargetableStreamListener {
 
   
   
+  
+  nsresult CheckContentLengthDiscrepancy(nsIRequest* request);
+
+  
+  
   nsresult DispatchContent(nsIRequest* request);
 
   
@@ -213,6 +218,13 @@ class nsDocumentOpenInfo : public nsIThreadRetargetableStreamListener {
 
 
   bool mAllowListenerConversions = true;
+
+  
+
+
+
+
+  bool mReceivedData = false;
 };
 
 #endif 
