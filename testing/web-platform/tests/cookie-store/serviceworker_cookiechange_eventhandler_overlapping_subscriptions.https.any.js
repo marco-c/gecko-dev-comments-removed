@@ -15,21 +15,18 @@ let g_cookie_changes = [];
 
 
 
-let g_cookie_change_received_promise = null;
 let g_cookie_change_received_promise_resolver = null;
 self.addEventListener('cookiechange', (event) => {
   g_cookie_changes.push(event);
   if (g_cookie_change_received_promise_resolver) {
     g_cookie_change_received_promise_resolver();
-    RearmCookieChangeReceivedPromise();
   }
 });
 function RearmCookieChangeReceivedPromise() {
-  g_cookie_change_received_promise = new Promise((resolve) => {
+  return new Promise((resolve) => {
     g_cookie_change_received_promise_resolver = resolve;
   });
 }
-RearmCookieChangeReceivedPromise();
 
 promise_test(async testCase => {
   await kServiceWorkerActivatedPromise;
@@ -41,14 +38,16 @@ promise_test(async testCase => {
   await registration.cookies.subscribe(subscriptions);
   testCase.add_cleanup(() => registration.cookies.unsubscribe(subscriptions));
 
+  let cookie_change_received_promise = RearmCookieChangeReceivedPromise();
+
   await cookieStore.set('cookie-name', 'cookie-value');
   testCase.add_cleanup(async () => {
     await cookieStore.delete('cookie-name');
   });
   testCase.add_cleanup(() => { g_cookie_changes = []; });
 
-  await g_cookie_change_received_promise;
-  testCase.add_cleanup(() => RearmCookieChangeReceivedPromise());
+  await cookie_change_received_promise;
+  cookie_change_received_promise = RearmCookieChangeReceivedPromise();
 
   
   
@@ -59,8 +58,7 @@ promise_test(async testCase => {
   });
   testCase.add_cleanup(() => { g_cookie_changes = []; });
 
-  await g_cookie_change_received_promise;
-  testCase.add_cleanup(() => RearmCookieChangeReceivedPromise());
+  await cookie_change_received_promise;
 
   assert_equals(g_cookie_changes.length, 2);
   {
