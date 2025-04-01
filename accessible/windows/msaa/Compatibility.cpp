@@ -218,5 +218,16 @@ SuppressionReasons Compatibility::A11ySuppressionReasons() {
 
 bool Compatibility::IsUiaEnabled() {
   
-  return StaticPrefs::accessibility_uia_enable_DoNotUseDirectly();
+  const uint32_t pref =
+      StaticPrefs::accessibility_uia_enable_DoNotUseDirectly();
+  if (pref == 0) {
+    return false;  
+  }
+  if (pref == 1) {
+    return true;  
+  }
+  
+  
+  return !IsJAWS() && !IsOldJAWS() && !IsVisperoShared() &&
+         !(sConsumers & NVDA);
 }
