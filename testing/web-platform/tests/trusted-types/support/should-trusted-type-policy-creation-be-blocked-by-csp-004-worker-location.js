@@ -1,0 +1,9 @@
+importScripts("/resources/testharness.js");
+importScripts("csp-violations.js");
+
+
+
+
+importScripts("should-trusted-type-policy-creation-be-blocked-by-csp-location.js");
+
+done();

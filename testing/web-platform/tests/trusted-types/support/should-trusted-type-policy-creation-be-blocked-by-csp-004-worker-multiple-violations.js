@@ -17,12 +17,12 @@ promise_test(async () => {
   assert_equals(sorted_violations.length, 4);
   assert_equals(sorted_violations[0].policy, "trusted-types other-policy-name");
   assert_equals(sorted_violations[0].disposition, "enforce");
-  assert_equals(sorted_violations[1].policy, "trusted-types none");
+  assert_equals(sorted_violations[1].policy, "trusted-types 'none'");
   assert_equals(sorted_violations[1].disposition, "enforce");
   assert_equals(sorted_violations[2].policy, "trusted-types other-policy-name");
   assert_equals(sorted_violations[2].disposition, "report");
-  assert_equals(sorted_violations[3].policy, "trusted-types none");
+  assert_equals(sorted_violations[3].policy, "trusted-types 'none'");
   assert_equals(sorted_violations[3].disposition, "report");
-}, "Checking reported violations for createPolicy('tt-policy-name') from DedicatedWorker");
+}, "Exception and violations for CSP with multiple enforce and report-only policies.");
 
 done();
