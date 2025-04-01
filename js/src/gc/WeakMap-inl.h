@@ -47,6 +47,14 @@ static CellColor GetEffectiveColor(GCMarker* marker, const T& item) {
 
 
 
+
+
+
+
+
+
+
+
 static MOZ_MAYBE_UNUSED JSObject* GetDelegateInternal(gc::Cell* key) {
   return nullptr;
 }
