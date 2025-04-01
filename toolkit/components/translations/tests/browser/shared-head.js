@@ -1230,26 +1230,21 @@ async function loadTestPage({
 
 
     runInPage(callback, data = {}) {
-      
-      
-      
-      const fn = new Function( `
-        const TranslationsTest = ChromeUtils.importESModule(
-          "chrome://mochitests/content/browser/toolkit/components/translations/tests/browser/translations-test.mjs"
-        );
-
-        // Pass in the values that get injected by the task runner.
-        TranslationsTest.setup({Assert, ContentTaskUtils, content});
-
-        const data = ${JSON.stringify(data)};
-
-        return (${callback.toString()})(TranslationsTest, data);
-      `);
-
       return ContentTask.spawn(
         tab.linkedBrowser,
-        {}, 
-        fn
+        { contentData: data, callbackSource: callback.toString() }, 
+        function ({ contentData, callbackSource }) {
+          const TranslationsTest = ChromeUtils.importESModule(
+            "chrome://mochitests/content/browser/toolkit/components/translations/tests/browser/translations-test.mjs"
+          );
+
+          
+          TranslationsTest.setup({ Assert, ContentTaskUtils, content });
+
+          
+          let contentCallback = eval(`(${callbackSource})`);
+          return contentCallback(TranslationsTest, contentData);
+        }
       );
     },
   };
