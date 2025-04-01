@@ -11362,6 +11362,8 @@ function WallpaperCategories_extends() { WallpaperCategories_extends = Object.as
 
 
 const PREF_WALLPAPER_UPLOADED_PREVIOUSLY = "newtabWallpapers.customWallpaper.uploadedPreviously";
+const PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE = "newtabWallpapers.customWallpaper.fileSize";
+const PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE_ENABLED = "newtabWallpapers.customWallpaper.fileSize.enabled";
 
 
 
@@ -11567,8 +11569,8 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
   
   async handleUpload() {
     
-
-    
+    const wallpaperUploadMaxFileSizeEnabled = this.props.Prefs.values[PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE_ENABLED];
+    const wallpaperUploadMaxFileSize = this.props.Prefs.values[PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE];
 
     
     
@@ -11600,6 +11602,18 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     
     fileInput.onchange = async event => {
       const [file] = event.target.files;
+
+      
+      
+      
+      const maxSize = wallpaperUploadMaxFileSize * 1024 * 1024;
+      if (wallpaperUploadMaxFileSizeEnabled && file && file.size > maxSize) {
+        console.error("File size exceeds limit");
+        this.setState({
+          isCustomWallpaperError: true
+        });
+        return;
+      }
       if (file) {
         this.props.dispatch(actionCreators.OnlyToMain({
           type: actionTypes.WALLPAPER_UPLOAD,
@@ -11657,6 +11671,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       activeCategoryFluentID
     } = this.state;
     let filteredWallpapers = wallpaperList.filter(wallpaper => wallpaper.category === activeCategory);
+    const wallpaperUploadMaxFileSize = this.props.Prefs.values[PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE];
     function reduceColorsToFitCustomColorInput(arr) {
       
       while (arr.length % 3 !== 2) {
@@ -11798,7 +11813,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       className: "icon icon-info"
     }), external_React_default().createElement("span", {
       "data-l10n-id": "newtab-wallpaper-error-max-file-size",
-      "data-l10n-args": `{"file_size": 10}`
+      "data-l10n-args": `{"file_size": ${wallpaperUploadMaxFileSize}}`
     }))), external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
       in: !!activeCategory,
       timeout: 300,
