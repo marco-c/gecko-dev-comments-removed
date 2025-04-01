@@ -137,9 +137,28 @@ WeakMap<K, V>::WeakMap(JS::Zone* zone, JSObject* memOf)
 
 template <class K, class V>
 WeakMap<K, V>::~WeakMap() {
+#ifdef DEBUG
+  
+  
+
+  
   
   MOZ_ASSERT_IF(!empty(),
                 CurrentThreadIsGCSweeping() || CurrentThreadIsGCFinalizing());
+
+  
+  
+  
+  
+  size_t i = 0;
+  for (auto r = all(); !r.empty() && i < 1000; r.popFront(), i++) {
+    K key = r.front().key();
+    MOZ_ASSERT_IF(gc::ToMarkable(key), !IsInsideNursery(gc::ToMarkable(key)));
+    V value = r.front().value();
+    MOZ_ASSERT_IF(gc::ToMarkable(value),
+                  !IsInsideNursery(gc::ToMarkable(value)));
+  }
+#endif
 }
 
 
