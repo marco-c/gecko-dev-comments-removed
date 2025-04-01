@@ -40,6 +40,7 @@ const {
 
 
 
+
 loader.lazyGetter(this, "RequestListColumnInitiator", function () {
   return createFactory(
     require("resource://devtools/client/netmonitor/src/components/request-list/RequestListColumnInitiator.js")
@@ -63,6 +64,11 @@ loader.lazyGetter(this, "RequestListColumnDomain", function () {
 loader.lazyGetter(this, "RequestListColumnFile", function () {
   return createFactory(
     require("resource://devtools/client/netmonitor/src/components/request-list/RequestListColumnFile.js")
+  );
+});
+loader.lazyGetter(this, "RequestListColumnPath", function () {
+  return createFactory(
+    require("resource://devtools/client/netmonitor/src/components/request-list/RequestListColumnPath.js")
   );
 });
 loader.lazyGetter(this, "RequestListColumnUrl", function () {
@@ -198,6 +204,11 @@ const COLUMN_COMPONENTS = [
     column: "file",
     ColumnComponent: RequestListColumnFile,
     props: ["onWaterfallMouseDown", "slowLimit"],
+  },
+  {
+    column: "path",
+    ColumnComponent: RequestListColumnPath,
+    props: ["onWaterfallMouseDown"],
   },
   {
     column: "url",

@@ -295,6 +295,18 @@ function getUrlScheme(url) {
 
 
 
+
+
+
+function getUrlPath(url) {
+  const href = getUrlProperty(url, "href");
+  const origin = getUrlProperty(url, "origin");
+  return href.replace(origin, "");
+}
+
+
+
+
 function getUrlDetails(url) {
   const urlObject = getUrl(url);
   const baseNameWithQuery = getUrlBaseNameWithQuery(urlObject);
@@ -302,6 +314,7 @@ function getUrlDetails(url) {
   const hostname = getUrlHostName(urlObject);
   const unicodeUrl = getUnicodeUrl(urlObject);
   const scheme = getUrlScheme(urlObject);
+  const path = getUrlPath(urlObject);
 
   
   
@@ -338,6 +351,7 @@ function getUrlDetails(url) {
     unicodeUrl,
     isLocal,
     url,
+    path,
   };
 }
 
