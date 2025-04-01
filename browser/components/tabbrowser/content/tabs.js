@@ -184,6 +184,13 @@
         false
       );
 
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "_sidebarVisibility",
+        "sidebar.visibility",
+        "always-show"
+      );
+
       if (gMultiProcessBrowser) {
         this.tabbox.tabpanels.setAttribute("async", "true");
       }
@@ -683,7 +690,7 @@
     }
 
     startTabDrag(event, tab, { fromTabList = false } = {}) {
-      if (this.#isContainerVerticalPinnedExpanded(tab)) {
+      if (this.#isContainerVerticalPinnedGrid(tab)) {
         
         
         let pinnedTabs = this.visibleTabs.slice(0, gBrowser.pinnedTabCount);
@@ -925,7 +932,7 @@
 
           
           
-          if (this.#isContainerVerticalPinnedExpanded(draggedTab)) {
+          if (this.#isContainerVerticalPinnedGrid(draggedTab)) {
             this.#animateExpandedPinnedTabMove(event);
             return;
           }
@@ -1105,7 +1112,7 @@
         let newTranslateX = oldTranslateX - translateOffsetX;
         let newTranslateY = oldTranslateY - translateOffsetY;
 
-        if (this.#isContainerVerticalPinnedExpanded(draggedTab)) {
+        if (this.#isContainerVerticalPinnedGrid(draggedTab)) {
           
           if (oldTranslateX > 0 && translateOffsetX > tabWidth / 2) {
             newTranslateX += tabWidth;
@@ -1166,7 +1173,7 @@
           !gReduceMotion &&
           !shouldCreateGroupOnDrop &&
           !isTabGroupLabel(draggedTab);
-        if (this.#isContainerVerticalPinnedExpanded(draggedTab)) {
+        if (this.#isContainerVerticalPinnedGrid(draggedTab)) {
           shouldTranslate &&=
             (oldTranslateX && oldTranslateX != newTranslateX) ||
             (oldTranslateY && oldTranslateY != newTranslateY);
@@ -1592,6 +1599,10 @@
       return this.getAttribute("orient") == "vertical";
     }
 
+    get expandOnHover() {
+      return this._sidebarVisibility == "expand-on-hover";
+    }
+
     get #rtlMode() {
       return !this.verticalMode && RTL_UI;
     }
@@ -1730,11 +1741,12 @@
       this.#focusableItems = null;
     }
 
-    #isContainerVerticalPinnedExpanded(tab) {
+    #isContainerVerticalPinnedGrid(tab) {
       return (
         this.verticalMode &&
         tab.hasAttribute("pinned") &&
-        this.hasAttribute("expanded")
+        this.hasAttribute("expanded") &&
+        !this.expandOnHover
       );
     }
 
