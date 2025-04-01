@@ -110,6 +110,8 @@
         PictureInPicture: "resource://gre/modules/PictureInPicture.sys.mjs",
         SmartTabGroupingManager:
           "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
+        TabStateFlusher:
+          "resource:///modules/sessionstore/TabStateFlusher.sys.mjs",
         UrlbarProviderOpenTabs:
           "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
       });
@@ -3000,6 +3002,16 @@
         })
       );
 
+      
+      
+      
+      
+      
+      
+      group.tabs.forEach(tab => {
+        this.TabStateFlusher.flush(tab.linkedBrowser);
+      });
+
       return group;
     }
 
@@ -4490,7 +4502,7 @@
             if (!skipSessionStore) {
               group.save();
             }
-            gBrowser.removeTabGroup(group, {
+            this.removeTabGroup(group, {
               animate,
               skipSessionStore,
               skipPermitUnload,
