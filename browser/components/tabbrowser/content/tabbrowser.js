@@ -110,6 +110,8 @@
         PictureInPicture: "resource://gre/modules/PictureInPicture.sys.mjs",
         SmartTabGroupingManager:
           "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
+        TabGroupMetrics:
+          "moz-src:///browser/components/tabbrowser/TabGroupMetrics.sys.mjs",
         UrlbarProviderOpenTabs:
           "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
       });
@@ -2966,6 +2968,8 @@
 
 
 
+
+
     addTabGroup(
       tabs,
       {
@@ -3024,7 +3028,22 @@
 
 
 
-    async removeTabGroup(group, options = {}) {
+
+
+
+
+
+
+
+
+
+    async removeTabGroup(
+      group,
+      options = {
+        isUserTriggered: false,
+        telemetrySource: this.TabGroupMetrics.METRIC_SOURCE.UNKNOWN,
+      }
+    ) {
       if (this.tabGroupMenu.panel.state != "closed") {
         this.tabGroupMenu.panel.hidePopup(options.animate);
       }
@@ -3058,6 +3077,8 @@
           bubbles: true,
           detail: {
             skipSessionStore: options.skipSessionStore,
+            isUserTriggered: options.isUserTriggered,
+            telemetrySource: options.telemetrySource,
           },
         })
       );
