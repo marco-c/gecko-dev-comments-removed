@@ -356,7 +356,8 @@ class FirefoxAndroidBrowser(Browser):
                                  
                                  
                                  "extensions": [],
-                                 "supports_devtools": False}
+                                 "supports_devtools": False,
+                                 "supports_window_resize": False}
 
     def check_crash(self, process, test):
         if not os.environ.get("MINIDUMP_STACKWALK", "") and self.stackwalk_binary:

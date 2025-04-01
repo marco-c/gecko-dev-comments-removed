@@ -996,6 +996,14 @@ class WebDriverTestharnessExecutor(TestharnessExecutor, TestDriverExecutorMixin)
 
         self.close_after_done = close_after_done
         self.cleanup_after_test = cleanup_after_test
+        self.initial_window_size = None
+
+    def setup(self, runner, protocol=None):
+        super().setup(runner, protocol)
+        try:
+            self.initial_window_size = self.protocol.window.get_rect()
+        except Exception:
+            pass
 
     def on_environment_change(self, new_environment):
         if new_environment["protocol"] != self.last_environment["protocol"]:
@@ -1025,6 +1033,13 @@ class WebDriverTestharnessExecutor(TestharnessExecutor, TestDriverExecutorMixin)
             
             
             protocol.testharness.close_old_windows()
+            
+            if self.initial_window_size:
+                try:
+                    self.protocol.window.set_rect(self.initial_window_size)
+                except Exception:
+                    pass
+
             raw_results = self.run_testdriver(protocol, url, timeout)
             extra = {}
             if counters := self._check_for_leaks(protocol):
