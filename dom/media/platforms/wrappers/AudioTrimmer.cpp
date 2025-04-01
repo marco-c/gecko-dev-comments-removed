@@ -220,3 +220,4 @@ void AudioTrimmer::PrepareTrimmers(MediaRawData* aRaw) {
 }  
 
 #undef LOG
+#undef LOGV
