@@ -290,71 +290,15 @@ void PerformanceMainThread::BufferLargestContentfulPaintEntryIfNeeded(
   }
 }
 
-
-void PerformanceMainThread::SetEventTimingDuration(
-    PerformanceEventTiming* aEntry, DOMHighResTimeStamp aRenderingTime) {
-  
-  if (aEntry->RawDuration() != 0) {
-    return;
-  }
-
-  
-  
-  
-  
-  aEntry->SetDuration(aRenderingTime - aEntry->RawStartTime());
-
-  
-  IncEventCount(aEntry->GetName());
-
-  
-  
-  if (!mHasDispatchedInputEvent) {
-    switch (aEntry->GetMessage()) {
-      case ePointerDown: {
-        mPendingPointerDown = aEntry->Clone();
-        mPendingPointerDown->SetEntryType(u"first-input"_ns);
-        break;
-      }
-      case ePointerUp: {
-        if (mPendingPointerDown) {
-          MOZ_ASSERT(!mFirstInputEvent);
-          mFirstInputEvent = mPendingPointerDown.forget();
-          QueueEntry(mFirstInputEvent);
-          SetHasDispatchedInputEvent();
-        }
-        break;
-      }
-      case ePointerCancel: {
-        if (StaticPrefs::dom_performance_event_timing_enable_interactionid()) {
-          mPendingPointerDown = nullptr;
-        }
-        break;
-      }
-      case ePointerClick:
-      case eKeyDown:
-      case eMouseDown: {
-        if (!StaticPrefs::dom_performance_event_timing_enable_interactionid() ||
-            !mPendingPointerDown) {
-          mFirstInputEvent = aEntry->Clone();
-          mFirstInputEvent->SetEntryType(u"first-input"_ns);
-          QueueEntry(mFirstInputEvent);
-          SetHasDispatchedInputEvent();
-        }
-        break;
-      }
-      default:
-        break;
-    }
-  }
-}
-
 void PerformanceMainThread::DispatchPendingEventTimingEntries() {
   DOMHighResTimeStamp renderingTime = NowUnclamped();
 
   bool allEntriesHaveKnownInteractionIds = true;
   for (auto* entry : mPendingEventTimingEntries) {
-    SetEventTimingDuration(entry, renderingTime);
+    
+    if (entry->RawDuration() == 0) {
+      entry->SetDuration(renderingTime - entry->RawStartTime());
+    }
 
     if (!entry->HasKnownInteractionId()) {
       allEntriesHaveKnownInteractionIds = false;
@@ -368,6 +312,50 @@ void PerformanceMainThread::DispatchPendingEventTimingEntries() {
           mPendingEventTimingEntries.popFirst();
       if (entry->RawDuration() >= kDefaultEventTimingMinDuration) {
         QueueEntry(entry);
+      }
+
+      
+      IncEventCount(entry->GetName());
+
+      
+      
+      if (StaticPrefs::dom_performance_event_timing_enable_interactionid()) {
+        if (!mHasDispatchedInputEvent && entry->InteractionId() != 0) {
+          mFirstInputEvent = entry->Clone();
+          mFirstInputEvent->SetEntryType(u"first-input"_ns);
+          QueueEntry(mFirstInputEvent);
+          SetHasDispatchedInputEvent();
+        }
+      } else {
+        if (!mHasDispatchedInputEvent) {
+          switch (entry->GetMessage()) {
+            case ePointerDown: {
+              mPendingPointerDown = entry->Clone();
+              mPendingPointerDown->SetEntryType(u"first-input"_ns);
+              break;
+            }
+            case ePointerUp: {
+              if (mPendingPointerDown) {
+                MOZ_ASSERT(!mFirstInputEvent);
+                mFirstInputEvent = mPendingPointerDown.forget();
+                QueueEntry(mFirstInputEvent);
+                SetHasDispatchedInputEvent();
+              }
+              break;
+            }
+            case ePointerClick:
+            case eKeyDown:
+            case eMouseDown: {
+              mFirstInputEvent = entry->Clone();
+              mFirstInputEvent->SetEntryType(u"first-input"_ns);
+              QueueEntry(mFirstInputEvent);
+              SetHasDispatchedInputEvent();
+              break;
+            }
+            default:
+              break;
+          }
+        }
       }
     }
   }
