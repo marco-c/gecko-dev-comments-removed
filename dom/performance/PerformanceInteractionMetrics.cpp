@@ -19,6 +19,8 @@ constexpr uint32_t kMinFirstInteractionID = 100;
 
 constexpr uint32_t kMaxFirstInteractionID = 10000;
 
+constexpr uint32_t kNonPointerId = -1;
+
 namespace mozilla::dom {
 
 PerformanceInteractionMetrics::PerformanceInteractionMetrics() {
@@ -93,6 +95,7 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
 
     
     mPendingKeyDowns.Remove(code);
+    mLastKeydownInteractionValue = Some(interactionId);
 
     
     return interactionId;
@@ -126,6 +129,7 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
       return 0;
     }
 
+    mLastKeydownInteractionValue = Nothing();
     return IncreaseInteractionValueAndCount();
   }
 
@@ -137,6 +141,13 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
 
   
   if (eventType == ePointerClick) {
+    if (pointerId == kNonPointerId) {
+      
+      
+      
+      return mLastKeydownInteractionValue.valueOr(0);
+    }
+
     
     auto value = mPointerInteractionValueMap.MaybeGet(pointerId);
     
