@@ -153,7 +153,7 @@ bool WindowNamedPropertiesHandler::getOwnPropDescriptor(
   }
 
   ErrorResult rv;
-  bool found = document->ResolveName(aCx, str, &v, rv);
+  bool found = document->ResolveNameForWindow(aCx, str, &v, rv);
   if (rv.MaybeSetPendingException(aCx)) {
     return false;
   }
@@ -216,7 +216,7 @@ bool WindowNamedPropertiesHandler::ownPropNames(
   nsHTMLDocument* document = doc->AsHTMLDocument();
   
   
-  document->GetSupportedNames(names);
+  document->GetSupportedNamesForWindow(names);
 
   JS::RootedVector<jsid> docProps(aCx);
   if (!AppendNamedPropertyIds(aCx, aProxy, names, false, &docProps)) {
