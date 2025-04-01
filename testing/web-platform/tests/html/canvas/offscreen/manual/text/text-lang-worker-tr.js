@@ -5,7 +5,7 @@ self.onmessage = function(e) {
   let test_font = new FontFace(
     
     "Lato-Medium",
-    "url(/css/css-fonts/support/fonts/Lato-Medium.ttf)"
+    "url(/fonts/Lato-Medium.ttf)"
   );
 
   test_font.load().then((font) => {
