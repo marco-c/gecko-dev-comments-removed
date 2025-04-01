@@ -6,8 +6,6 @@
 #ifndef ExternalTexture_H_
 #define ExternalTexture_H_
 
-#include "nsIGlobalObject.h"
-#include "ObjectModel.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
@@ -20,28 +18,6 @@ class Shmem;
 }
 
 namespace webgpu {
-
-
-
-
-
-
-
-class ExtTex : public ObjectBase {
- public:
-  GPU_DECL_CYCLE_COLLECTION(ExtTex)
-  GPU_DECL_JS_WRAP(ExtTex)
-
-  explicit ExtTex(nsIGlobalObject* const aGlobal) : mGlobal(aGlobal) {}
-
-  nsIGlobalObject* GetParentObject() const { return mGlobal; }
-
- private:
-  nsCOMPtr<nsIGlobalObject> mGlobal;
-
-  ~ExtTex() = default;
-  void Cleanup() {}
-};
 
 class ExternalTextureDMABuf;
 class ExternalTextureMacIOSurface;
