@@ -113,9 +113,6 @@ var gExceptionPaths = [
   "resource://builtin-addons/formautofill/",
 
   
-  "resource://builtin-addons/webcompat/",
-
-  
   "resource://builtin-addons/newtab/",
   "resource://newtab/",
   "chrome://newtab/",
@@ -281,6 +278,8 @@ var allowlist = [
     file: "resource://app/localization/en-US/browser/touchbar/touchbar.ftl",
     platforms: ["linux", "win"],
   },
+  
+  { file: "resource://gre/localization/en-US/toolkit/about/aboutCompat.ftl" },
 
   
   { file: "resource://gre/localization/en-US/dom/media.ftl" },
