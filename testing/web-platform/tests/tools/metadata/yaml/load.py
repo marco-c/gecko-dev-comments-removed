@@ -3,9 +3,24 @@ from ..meta.schema import SchemaValue
 
 import yaml
 
+
+
+
+
+
+class UniqueKeyLoader(yaml.SafeLoader):
+    def construct_mapping(self, node: yaml.MappingNode, deep: bool = False) -> Dict[Any, Any]:
+        mapping = set()
+        for key_node, value_node in node.value:
+            key = self.construct_object(key_node, deep=deep)  
+            if key in mapping:
+                raise ValueError(f"Duplicate {key!r} key found in YAML.")
+            mapping.add(key)
+        return super().construct_mapping(node, deep)
+
 def load_data_to_dict(f: IO[bytes]) -> Dict[str, Any]:
     try:
-        raw_data = yaml.safe_load(f)
+        raw_data = yaml.load(f, Loader=UniqueKeyLoader)
         return SchemaValue.from_dict(raw_data)
     except Exception as e:
         raise e
