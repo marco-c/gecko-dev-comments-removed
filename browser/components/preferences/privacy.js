@@ -1190,11 +1190,15 @@ var gPrivacyPane = {
     this.initDataCollection();
 
     if (AppConstants.MOZ_DATA_REPORTING) {
-      this.initSubmitHealthReport();
+      this.updateSubmitHealthReportFromPref();
+      Preferences.get(PREF_UPLOAD_ENABLED).on(
+        "change",
+        gPrivacyPane.updateSubmitHealthReportFromPref
+      );
       setEventListener(
         "submitHealthReportBox",
         "command",
-        gPrivacyPane.updateSubmitHealthReport
+        gPrivacyPane.updateSubmitHealthReportToPref
       );
       if (AppConstants.MOZ_NORMANDY) {
         this.initOptOutStudyCheckbox();
@@ -3416,8 +3420,9 @@ var gPrivacyPane = {
   
 
 
-  initSubmitHealthReport() {
+  updateSubmitHealthReportFromPref() {
     let checkbox = document.getElementById("submitHealthReportBox");
+    let telemetryContainer = document.getElementById("telemetry-container");
 
     
     
@@ -3433,12 +3438,13 @@ var gPrivacyPane = {
     checkbox.checked =
       Services.prefs.getBoolPref(PREF_UPLOAD_ENABLED) &&
       AppConstants.MOZ_TELEMETRY_REPORTING;
+    telemetryContainer.hidden = checkbox.checked;
   },
 
   
 
 
-  updateSubmitHealthReport() {
+  updateSubmitHealthReportToPref() {
     let checkbox = document.getElementById("submitHealthReportBox");
     let telemetryContainer = document.getElementById("telemetry-container");
 
