@@ -458,6 +458,9 @@ class SnapTests(SnapTestsBase):
         self.open_tab("https://www.youtube.com/channel/UCYfdidRxbB8Qhf0Nx7ioOYw")
 
         
+        time.sleep(5)
+
+        
         self._logger.info("Wait for consent form")
         try:
             self._wait.until(
@@ -469,27 +472,67 @@ class SnapTests(SnapTestsBase):
             self._logger.info("Wait for consent form: timed out, maybe it is not here")
 
         
+        time.sleep(3)
+
+        
+        self._logger.info("Wait for cable proposal")
+        try:
+            self._wait.until(
+                EC.visibility_of_element_located(
+                    (By.CSS_SELECTOR, "button[aria-label*=Dismiss]")
+                )
+            ).click()
+        except TimeoutException:
+            self._logger.info(
+                "Wait for cable proposal: timed out, maybe it is not here"
+            )
+
+        
+        time.sleep(3)
+
+        
         self._logger.info("Wait for one video")
         self._wait.until(
             EC.visibility_of_element_located((By.ID, "video-title-link"))
         ).click()
 
         
-        self._logger.info("Wait for video to start")
-        video = self._wait.until(
-            EC.visibility_of_element_located((By.CLASS_NAME, "html5-main-video"))
-        )
-        self._wait.until(lambda d: type(video.get_property("duration")) is float)
-        self._logger.info("video duration: {}".format(video.get_property("duration")))
-        assert (
-            video.get_property("duration") > exp["duration"]
-        ), "youtube video should have duration"
+        time.sleep(3)
 
-        self._wait.until(lambda d: video.get_property("currentTime") > exp["playback"])
-        self._logger.info("video played: {}".format(video.get_property("currentTime")))
-        assert (
-            video.get_property("currentTime") > exp["playback"]
-        ), "youtube video should perform playback"
+        
+        self._logger.info("Wait for video to start")
+        video = None
+        try:
+            video = self._longwait.until(
+                EC.visibility_of_element_located((By.CLASS_NAME, "html5-main-video"))
+            )
+            self._longwait.until(
+                lambda d: type(video.get_property("duration")) is float
+            )
+            self._logger.info(
+                "video duration: {}".format(video.get_property("duration"))
+            )
+            assert (
+                video.get_property("duration") > exp["duration"]
+            ), "youtube video should have duration"
+
+            self._wait.until(
+                lambda d: video.get_property("currentTime") > exp["playback"]
+            )
+            self._logger.info(
+                "video played: {}".format(video.get_property("currentTime"))
+            )
+            assert (
+                video.get_property("currentTime") > exp["playback"]
+            ), "youtube video should perform playback"
+        except TimeoutException as ex:
+            self._logger.info("video detection timed out")
+            self._logger.info("video: {}".format(video))
+            if video:
+                self._logger.info(
+                    "video duration: {}".format(video.get_property("duration"))
+                )
+            raise ex
 
         return True
 
