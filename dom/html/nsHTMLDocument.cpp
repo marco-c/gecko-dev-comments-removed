@@ -73,6 +73,7 @@
 #include "nsSandboxFlags.h"
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLDocumentBinding.h"
+#include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
@@ -549,9 +550,90 @@ void nsHTMLDocument::RemovedForm() { --mNumForms; }
 
 int32_t nsHTMLDocument::GetNumFormsSynchronous() const { return mNumForms; }
 
-bool nsHTMLDocument::ResolveName(JSContext* aCx, const nsAString& aName,
-                                 JS::MutableHandle<JS::Value> aRetval,
-                                 ErrorResult& aError) {
+
+void nsHTMLDocument::NamedGetter(JSContext* aCx, const nsAString& aName,
+                                 bool& aFound,
+                                 JS::MutableHandle<JSObject*> aRetVal,
+                                 mozilla::ErrorResult& aRv) {
+  if (!StaticPrefs::dom_document_name_getter_follow_spec_enabled()) {
+    JS::Rooted<JS::Value> v(aCx);
+    if ((aFound = ResolveNameForWindow(aCx, aName, &v, aRv))) {
+      SetUseCounter(mozilla::eUseCounter_custom_HTMLDocumentNamedGetterHit);
+      aRetVal.set(v.toObjectOrNull());
+    }
+    return;
+  }
+
+  aFound = false;
+  aRetVal.set(nullptr);
+
+  
+  
+  IdentifierMapEntry* entry = mIdentifierMap.GetEntry(aName);
+  if (!entry) {
+    return;
+  }
+
+  nsBaseContentList* list = entry->GetDocumentNameContentList();
+  if (!list || list->Length() == 0) {
+    return;
+  }
+
+  JS::Rooted<JS::Value> v(aCx);
+  if (list->Length() == 1) {
+    nsIContent* element = list->Item(0);
+    if (auto iframe = HTMLIFrameElement::FromNode(element)) {
+      
+      
+      
+      Nullable<WindowProxyHolder> win = iframe->GetContentWindow();
+      if (win.IsNull()) {
+        return;
+      }
+
+      if (!ToJSValue(aCx, win.Value(), &v)) {
+        aRv.NoteJSContextException(aCx);
+        return;
+      }
+    } else {
+      
+      
+      if (!ToJSValue(aCx, element, &v)) {
+        aRv.NoteJSContextException(aCx);
+        return;
+      }
+    }
+  } else {
+    
+    
+    if (!ToJSValue(aCx, list, &v)) {
+      aRv.NoteJSContextException(aCx);
+      return;
+    }
+  }
+
+  SetUseCounter(mozilla::eUseCounter_custom_HTMLDocumentNamedGetterHit);
+  aFound = true;
+  aRetVal.set(&v.toObject());
+}
+
+void nsHTMLDocument::GetSupportedNames(nsTArray<nsString>& aNames) {
+  if (!StaticPrefs::dom_document_name_getter_follow_spec_enabled()) {
+    GetSupportedNamesForWindow(aNames);
+    return;
+  }
+
+  for (const auto& entry : mIdentifierMap) {
+    if (entry.HasDocumentNameElement()) {
+      aNames.AppendElement(entry.GetKeyAsString());
+    }
+  }
+}
+
+bool nsHTMLDocument::ResolveNameForWindow(JSContext* aCx,
+                                          const nsAString& aName,
+                                          JS::MutableHandle<JS::Value> aRetval,
+                                          ErrorResult& aError) {
   IdentifierMapEntry* entry = mIdentifierMap.GetEntry(aName);
   if (!entry) {
     return false;
@@ -593,7 +675,7 @@ bool nsHTMLDocument::ResolveName(JSContext* aCx, const nsAString& aName,
   return true;
 }
 
-void nsHTMLDocument::GetSupportedNames(nsTArray<nsString>& aNames) {
+void nsHTMLDocument::GetSupportedNamesForWindow(nsTArray<nsString>& aNames) {
   for (const auto& entry : mIdentifierMap) {
     if (entry.HasNameElement() ||
         entry.HasIdElementExposedAsHTMLDocumentProperty()) {
