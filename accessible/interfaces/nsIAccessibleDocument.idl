@@ -8,6 +8,7 @@
 interface nsIAccessiblePivot;
 interface mozIDOMWindowProxy;
 
+webidl BrowsingContext;
 webidl Document;
 
 
@@ -67,4 +68,9 @@ interface nsIAccessibleDocument : nsISupports
 
 
   nsIAccessibleDocument getChildDocumentAt(in unsigned long index);
+
+  
+
+
+  readonly attribute BrowsingContext browsingContext;
 };
