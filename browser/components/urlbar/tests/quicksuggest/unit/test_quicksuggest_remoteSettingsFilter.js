@@ -62,7 +62,7 @@ add_setup(async function () {
             opts.filterExpression.country = country;
           }
           if (formFactor) {
-            opts.filterExpression.form_factor = formFactor;
+            opts.filterExpression.formFactor = formFactor;
           }
           remoteSettingsRecords.push(makeRecord(opts));
         }
