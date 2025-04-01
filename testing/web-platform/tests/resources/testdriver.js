@@ -1447,8 +1447,11 @@
 
 
 
-        update_virtual_pressure_source: function(source_type, sample, context=null) {
-            return window.test_driver_internal.update_virtual_pressure_source(source_type, sample, context);
+
+
+
+        update_virtual_pressure_source: function(source_type, sample, estimate, context=null) {
+            return window.test_driver_internal.update_virtual_pressure_source(source_type, sample, estimate, context);
         },
 
         
@@ -1723,7 +1726,7 @@
             throw new Error("create_virtual_pressure_source() is not implemented by testdriver-vendor.js");
         },
 
-        async update_virtual_pressure_source(source_type, sample, context=null) {
+        async update_virtual_pressure_source(source_type, sample, estimate, context=null) {
             throw new Error("update_virtual_pressure_source() is not implemented by testdriver-vendor.js");
         },
 
