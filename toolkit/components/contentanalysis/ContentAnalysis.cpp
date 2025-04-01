@@ -1844,6 +1844,26 @@ nsresult ContentAnalysis::RunAnalyzeRequestTask(
               return;
             }
 
+            nsCOMPtr<nsIObserverService> obsServ =
+                mozilla::services::GetObserverService();
+            
+            
+            
+            
+            if (obsServ->HasObservers("dlp-response-received-raw")) {
+              std::string responseString = aResponse->SerializeAsString();
+              nsTArray<char16_t> responseArray;
+              responseArray.SetLength(responseString.size() + 1);
+              for (size_t i = 0; i < responseString.size(); ++i) {
+                
+                
+                responseArray[i] = responseString[i] + 0xFF00;
+              }
+              responseArray[responseString.size()] = 0;
+              obsServ->NotifyObservers(owner, "dlp-response-received-raw",
+                                       responseArray.Elements());
+            }
+
             
             
             Maybe<nsCString> maybeUserActionId;
