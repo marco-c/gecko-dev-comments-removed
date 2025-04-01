@@ -3512,7 +3512,15 @@ void BrowsingContext::DidSet(FieldIndex<IDX_FullZoom>, float aOldValue) {
 
     for (BrowsingContext* child : Children()) {
       
-      Unused << child->SetFullZoom(GetFullZoom());
+      
+      auto fullZoom = GetFullZoom();
+      if (auto* elem = child->GetEmbedderElement()) {
+        if (auto* frame = elem->GetPrimaryFrame()) {
+          fullZoom = frame->Style()->EffectiveZoom().Zoom(fullZoom);
+        }
+      }
+      
+      Unused << child->SetFullZoom(fullZoom);
     }
   }
 

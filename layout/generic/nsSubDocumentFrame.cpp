@@ -170,6 +170,7 @@ void nsSubDocumentFrame::UpdateEmbeddedBrowsingContextDependentData() {
   mIsInObjectOrEmbed = bc->IsEmbedderTypeObjectOrEmbed();
   MaybeUpdateRemoteStyle();
   MaybeUpdateEmbedderColorScheme();
+  MaybeUpdateEmbedderZoom();
   PropagateIsUnderHiddenEmbedderElement(
       PresShell()->IsUnderHiddenEmbedderElement() ||
       !StyleVisibility()->IsVisible());
@@ -827,6 +828,26 @@ void nsSubDocumentFrame::MaybeUpdateEmbedderColorScheme() {
   }
 
   Unused << bc->SetEmbedderColorSchemes(schemes);
+}
+
+void nsSubDocumentFrame::MaybeUpdateEmbedderZoom() {
+  nsFrameLoader* fl = mFrameLoader.get();
+  if (!fl) {
+    return;
+  }
+
+  BrowsingContext* bc = fl->GetExtantBrowsingContext();
+  if (!bc) {
+    return;
+  }
+  
+  
+  
+  auto newZoom = Style()->EffectiveZoom().Zoom(PresContext()->GetFullZoom());
+  if (bc->GetFullZoom() == newZoom) {
+    return;
+  }
+  Unused << bc->SetFullZoom(newZoom);
 }
 
 void nsSubDocumentFrame::MaybeUpdateRemoteStyle(
