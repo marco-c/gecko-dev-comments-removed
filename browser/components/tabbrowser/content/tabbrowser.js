@@ -4278,7 +4278,7 @@
             this._getSwitcher().warmupTab(toBlurTo);
           }
         } else if (!skipPermitUnload && this._hasBeforeUnload(tab)) {
-          TelemetryStopwatch.start("FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS", tab);
+          let timerId = Glean.browserTabclose.permitUnloadTime.start();
           
           
           
@@ -4290,9 +4290,8 @@
             tab.linkedBrowser.asyncPermitUnload("dontUnload").then(
               ({ permitUnload }) => {
                 tab._pendingPermitUnload = false;
-                TelemetryStopwatch.finish(
-                  "FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS",
-                  tab
+                Glean.browserTabclose.permitUnloadTime.stopAndAccumulate(
+                  timerId
                 );
                 if (tab.closing) {
                   
@@ -4315,9 +4314,8 @@
               err => {
                 console.error("error while calling asyncPermitUnload", err);
                 tab._pendingPermitUnload = false;
-                TelemetryStopwatch.finish(
-                  "FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS",
-                  tab
+                Glean.browserTabclose.permitUnloadTime.stopAndAccumulate(
+                  timerId
                 );
               }
             )
@@ -4573,14 +4571,11 @@
 
       
       
-      if (
-        !TelemetryStopwatch.running("FX_TAB_CLOSE_TIME_ANIM_MS", aTab) &&
-        !TelemetryStopwatch.running("FX_TAB_CLOSE_TIME_NO_ANIM_MS", aTab)
-      ) {
+      if (!aTab._closeTimeAnimTimerId && !aTab._closeTimeNoAnimTimerId) {
         
         
-        TelemetryStopwatch.start("FX_TAB_CLOSE_TIME_ANIM_MS", aTab);
-        TelemetryStopwatch.start("FX_TAB_CLOSE_TIME_NO_ANIM_MS", aTab);
+        aTab._closeTimeAnimTimerId = Glean.browserTabclose.timeAnim.start();
+        aTab._closeTimeNoAnimTimerId = Glean.browserTabclose.timeNoAnim.start();
       }
 
       
@@ -4607,8 +4602,10 @@
           skipSessionStore,
         })
       ) {
-        TelemetryStopwatch.cancel("FX_TAB_CLOSE_TIME_ANIM_MS", aTab);
-        TelemetryStopwatch.cancel("FX_TAB_CLOSE_TIME_NO_ANIM_MS", aTab);
+        Glean.browserTabclose.timeAnim.cancel(aTab._closeTimeAnimTimerId);
+        aTab._closeTimeAnimTimerId = null;
+        Glean.browserTabclose.timeNoAnim.cancel(aTab._closeTimeNoAnimTimerId);
+        aTab._closeTimeNoAnimTimerId = null;
         return;
       }
 
@@ -4640,13 +4637,15 @@
         tabWidth == 0 
       ) {
         
-        TelemetryStopwatch.cancel("FX_TAB_CLOSE_TIME_ANIM_MS", aTab);
+        Glean.browserTabclose.timeAnim.cancel(aTab._closeTimeAnimTimerId);
+        aTab._closeTimeAnimTimerId = null;
         this._endRemoveTab(aTab);
         return;
       }
 
       
-      TelemetryStopwatch.cancel("FX_TAB_CLOSE_TIME_NO_ANIM_MS", aTab);
+      Glean.browserTabclose.timeNoAnim.cancel(aTab._closeTimeNoAnimTimerId);
+      aTab._closeTimeNoAnimTimerId = null;
 
       aTab.style.maxWidth = ""; 
       aTab.removeAttribute("fadein");
@@ -4709,7 +4708,7 @@
           }
         }
 
-        TelemetryStopwatch.start("FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS", aTab);
+        let timerId = Glean.browserTabclose.permitUnloadTime.start();
 
         
         
@@ -4718,7 +4717,7 @@
         let { permitUnload } = browser.permitUnload();
         aTab._pendingPermitUnload = false;
 
-        TelemetryStopwatch.finish("FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS", aTab);
+        Glean.browserTabclose.permitUnloadTime.stopAndAccumulate(timerId);
 
         
         
@@ -5000,16 +4999,18 @@
       
       
       
-      TelemetryStopwatch.finish(
-        "FX_TAB_CLOSE_TIME_ANIM_MS",
-        aTab,
-        true 
-      );
-      TelemetryStopwatch.finish(
-        "FX_TAB_CLOSE_TIME_NO_ANIM_MS",
-        aTab,
-        true 
-      );
+      if (aTab._closeTimeAnimTimerId) {
+        Glean.browserTabclose.timeAnim.stopAndAccumulate(
+          aTab._closeTimeAnimTimerId
+        );
+        aTab._closeTimeAnimTimerId = null;
+      }
+      if (aTab._closeTimeNoAnimTimerId) {
+        Glean.browserTabclose.timeNoAnim.stopAndAccumulate(
+          aTab._closeTimeNoAnimTimerId
+        );
+        aTab._closeTimeNoAnimTimerId = null;
+      }
 
       if (aCloseWindow) {
         this._windowIsClosing = closeWindow(
