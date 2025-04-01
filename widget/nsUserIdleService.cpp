@@ -20,7 +20,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/Services.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/WidgetMetrics.h"
 #include <algorithm>
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -739,7 +739,7 @@ void nsUserIdleService::IdleTimerCallback(void) {
   }
 
   
-  Telemetry::AutoTimer<Telemetry::IDLE_NOTIFY_IDLE_MS> timer;
+  auto timer = glean::widget::notify_idle.Measure();
 
   
   mDeltaToNextIdleSwitchInS = UINT32_MAX;
