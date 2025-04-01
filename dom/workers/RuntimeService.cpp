@@ -1195,8 +1195,6 @@ bool RuntimeService::RegisterWorker(WorkerPrivate& aWorkerPrivate) {
     }
   }
 
-  aWorkerPrivate.SetIsQueued(queued);
-
   
   if (parent) {
     if (!parent->AddChildWorker(aWorkerPrivate)) {
@@ -1364,19 +1362,12 @@ bool RuntimeService::ScheduleWorker(WorkerPrivate& aWorkerPrivate) {
 
   aWorkerPrivate.SetThread(thread.unsafeGetRawPtr());
   JSContext* cx = CycleCollectedJSContext::Get()->Context();
-
   nsCOMPtr<nsIRunnable> runnable = new WorkerThreadPrimaryRunnable(
       &aWorkerPrivate, thread.clonePtr(), JS_GetParentRuntime(cx));
   if (NS_FAILED(
           thread->DispatchPrimaryRunnable(friendKey, runnable.forget()))) {
     UnregisterWorker(aWorkerPrivate);
     return false;
-  }
-
-  
-  if (aWorkerPrivate.IsQueued()) {
-    aWorkerPrivate.SetIsQueued(false);
-    aWorkerPrivate.EnableRemoteDebugger();
   }
 
   return true;
@@ -2171,11 +2162,6 @@ WorkerThreadPrimaryRunnable::Run() {
       }
 
       failureCleanup.release();
-
-      
-      
-      mWorkerPrivate->BindRemoteWorkerDebuggerChild();
-
       runLoopRan = true;
 
       {
