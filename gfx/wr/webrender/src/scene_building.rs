@@ -785,6 +785,11 @@ impl<'a> SceneBuilder<'a> {
         
         
         
+        let is_snapshot = pictures[pic_index.0].snapshot.is_some();
+
+        
+        
+        
         
         
         let direct_parent = lca_tree_node
@@ -792,7 +797,7 @@ impl<'a> SceneBuilder<'a> {
             .map(|(lca_tree_node, pic_node_id)| lca_tree_node.parent == pic_node_id)
             .unwrap_or(false);
 
-        if let Some((lca_node, pic_node)) = lca_node.zip(pic_node) {
+        let should_set_clip_root = is_snapshot || lca_node.zip(pic_node).map_or(false, |(lca_node, pic_node)| {
             
             
             
@@ -801,9 +806,11 @@ impl<'a> SceneBuilder<'a> {
             
             
             
-            if lca_node.key == pic_node.key && !has_blur && direct_parent {
-                pictures[pic_index.0].clip_root = shared_clip_node_id;
-            }
+            lca_node.key == pic_node.key && !has_blur && direct_parent
+        });
+
+        if should_set_clip_root {
+            pictures[pic_index.0].clip_root = shared_clip_node_id;
         }
 
         
