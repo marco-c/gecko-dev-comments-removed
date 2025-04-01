@@ -379,3 +379,15 @@ nsXULAlerts::CloseAlert(const nsAString& aAlertName, bool aContextClosed) {
   }
   return NS_OK;
 }
+
+NS_IMETHODIMP nsXULAlerts::Teardown() {
+  mPendingPersistentAlerts.Clear();
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsXULAlerts::PbmTeardown() {
+  
+  
+  
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
