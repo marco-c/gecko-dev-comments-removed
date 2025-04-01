@@ -6,11 +6,15 @@
 
 #include "PerformanceEventTiming.h"
 #include "PerformanceMainThread.h"
+#include "mozilla/EventForwards.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/PerformanceEventTimingBinding.h"
+#include "PerformanceInteractionMetrics.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/Event.h"
+#include "mozilla/MouseEvents.h"
+#include "mozilla/TextEvents.h"
 #include "nsContentUtils.h"
 #include "nsIDocShell.h"
 #include <algorithm>
@@ -30,6 +34,7 @@ PerformanceEventTiming::PerformanceEventTiming(Performance* aPerformance,
                                                const nsAString& aName,
                                                const TimeStamp& aStartTime,
                                                bool aIsCacelable,
+                                               uint64_t aInteractionId,
                                                EventMessage aMessage)
     : PerformanceEntry(aPerformance->GetParentObject(), aName, u"event"_ns),
       mPerformance(aPerformance),
@@ -39,6 +44,7 @@ PerformanceEventTiming::PerformanceEventTiming(Performance* aPerformance,
           aPerformance->GetDOMTiming()->TimeStampToDOMHighRes(aStartTime)),
       mDuration(0),
       mCancelable(aIsCacelable),
+      mInteractionId(Some(aInteractionId)),
       mMessage(aMessage) {}
 
 PerformanceEventTiming::PerformanceEventTiming(
@@ -53,6 +59,7 @@ PerformanceEventTiming::PerformanceEventTiming(
       mStartTime(aEventTimingEntry.mStartTime),
       mDuration(aEventTimingEntry.mDuration),
       mCancelable(aEventTimingEntry.mCancelable),
+      mInteractionId(aEventTimingEntry.mInteractionId),
       mMessage(aEventTimingEntry.mMessage) {}
 
 JSObject* PerformanceEventTiming::WrapObject(
@@ -129,7 +136,7 @@ PerformanceEventTiming::TryGenerateEventTiming(const EventTarget* aTarget,
                new PerformanceEventTiming(
                    performance, nsDependentString(eventName),
                    aEvent->mTimeStamp, aEvent->mFlags.mCancelable,
-                   aEvent->mMessage))
+                   performance->ComputeInteractionId(aEvent), aEvent->mMessage))
         .forget();
   }
   return nullptr;
@@ -183,25 +190,93 @@ nsINode* PerformanceEventTiming::GetTarget() const {
                                                mPerformance->GetParentObject());
 }
 
-void PerformanceEventTiming::FinalizeEventTiming(EventTarget* aTarget) {
-  if (!aTarget) {
+void PerformanceEventTiming::FinalizeEventTiming(const WidgetEvent* aEvent) {
+  MOZ_ASSERT(aEvent);
+  EventTarget* target = aEvent->mTarget;
+  if (!target) {
     return;
   }
   nsCOMPtr<nsPIDOMWindowInner> global =
-      do_QueryInterface(aTarget->GetOwnerGlobal());
+      do_QueryInterface(target->GetOwnerGlobal());
   if (!global) {
     return;
   }
 
   mProcessingEnd = mPerformance->NowUnclamped();
 
-  Element* element = Element::FromEventTarget(aTarget);
+  Element* element = Element::FromEventTarget(target);
   if (!element || element->ChromeOnlyAccess()) {
     return;
   }
 
   mTarget = do_GetWeakReference(element);
 
-  mPerformance->InsertEventTimingEntry(this);
+  if (!StaticPrefs::dom_performance_event_timing_enable_interactionid()) {
+    mPerformance->InsertEventTimingEntry(this);
+    return;
+  }
+
+  if (aEvent->mMessage == ePointerDown) {
+    auto& interactionMetrics = mPerformance->GetPerformanceInteractionMetrics();
+    
+    
+    auto& pendingPointerDowns = interactionMetrics.PendingPointerDowns();
+
+    
+    uint32_t pointerId = aEvent->AsPointerEvent()->pointerId;
+
+    
+    
+    auto entry = pendingPointerDowns.MaybeGet(pointerId);
+    if (entry.isSome()) {
+      mPerformance->InsertEventTimingEntry(*entry);
+    }
+
+    
+    pendingPointerDowns.InsertOrUpdate(pointerId, this);
+  } else if (aEvent->mMessage == eKeyDown) {
+    const WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
+
+    
+    if (keyEvent->mIsComposing) {
+      
+      
+      mPerformance->InsertEventTimingEntry(this);
+      
+      return;
+    }
+
+    auto& interactionMetrics = mPerformance->GetPerformanceInteractionMetrics();
+
+    
+    auto& pendingKeyDowns = interactionMetrics.PendingKeyDowns();
+    
+    auto code = keyEvent->mKeyCode;
+
+    
+    auto entry = pendingKeyDowns.MaybeGet(code);
+    
+    if (entry) {
+      
+      if (code != 229) {
+        
+        
+        uint64_t interactionId =
+            interactionMetrics.IncreaseInteractionValueAndCount();
+        
+        
+        SetInteractionId(interactionId);
+      }
+
+      
+      mPerformance->InsertEventTimingEntry(*entry);
+    }
+
+    
+    pendingKeyDowns.InsertOrUpdate(code, this);
+  } else {
+    
+    mPerformance->InsertEventTimingEntry(this);
+  }
 }
 }  

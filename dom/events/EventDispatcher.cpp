@@ -1268,7 +1268,7 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
   aEvent->mFlags.mDispatchedAtLeastOnce = true;
 
   if (eventTimingEntry) {
-    eventTimingEntry->FinalizeEventTiming(aEvent->mTarget);
+    eventTimingEntry->FinalizeEventTiming(aEvent);
   }
   
   
