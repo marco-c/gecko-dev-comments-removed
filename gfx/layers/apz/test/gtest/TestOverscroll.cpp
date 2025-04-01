@@ -1978,8 +1978,6 @@ TEST_F(APZCOverscrollTesterMock, OverscrollIntoPreventDefault) {
   float overscrollY = rootApzc->GetOverscrollAmount().y;
 
   
-  manager->SetAllowedTouchBehavior(result.mInputBlockId,
-                                   {AllowedTouchBehavior::VERTICAL_PAN});
   manager->SetTargetAPZC(result.mInputBlockId, {result.mTargetGuid});
   manager->ContentReceivedInputBlock(result.mInputBlockId,
                                      true);
@@ -2003,8 +2001,6 @@ TEST_F(APZCOverscrollTesterMock, OverscrollIntoPreventDefault) {
   EXPECT_EQ(overscrollY, rootApzc->GetOverscrollAmount().y);
 
   
-  manager->SetAllowedTouchBehavior(result.mInputBlockId,
-                                   {AllowedTouchBehavior::VERTICAL_PAN});
   manager->SetTargetAPZC(result.mInputBlockId, {result.mTargetGuid});
   manager->ContentReceivedInputBlock(result.mInputBlockId,
                                      true);
