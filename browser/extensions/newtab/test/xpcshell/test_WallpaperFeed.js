@@ -14,6 +14,19 @@ ChromeUtils.defineESModuleGetters(this, {
 const PREF_WALLPAPERS_ENABLED =
   "browser.newtabpage.activity-stream.newtabWallpapers.enabled";
 
+const PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID =
+  "browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.uuid";
+
+function getWallpaperFeedForTest() {
+  let feed = new WallpaperFeed();
+
+  feed.store = {
+    dispatch: sinon.spy(),
+  };
+
+  return feed;
+}
+
 add_task(async function test_construction() {
   let feed = new WallpaperFeed();
 
@@ -116,4 +129,50 @@ add_task(async function test_onAction_WALLPAPER_UPLOAD() {
   Services.prefs.clearUserPref(PREF_WALLPAPERS_ENABLED);
 
   sandbox.restore();
+});
+
+add_task(async function test_Wallpaper_Upload() {
+  let sandbox = sinon.createSandbox();
+  let feed = getWallpaperFeedForTest(sandbox);
+
+  info(
+    "File uploaded via WallpaperFeed.wallpaperUpload should match the saved file"
+  );
+
+  
+  const testUploadContents = "custom-wallpaper-upload-test";
+  const testFileName = "test-wallpaper.jpg";
+
+  const testWallpaperFile = await IOUtils.createUniqueFile(
+    PathUtils.tempDir,
+    testFileName
+  );
+
+  await IOUtils.writeUTF8(testWallpaperFile, testUploadContents);
+  let testNsIFile = await IOUtils.getFile(testWallpaperFile);
+  let testFileToUpload = await File.createFromNsIFile(testNsIFile);
+
+  
+  let writtenFile = await feed.wallpaperUpload(testFileToUpload);
+
+  
+  Assert.ok(await IOUtils.exists(writtenFile));
+
+  
+  const storedWallpaperFeedFileContent = await IOUtils.readUTF8(writtenFile);
+  Assert.equal(storedWallpaperFeedFileContent, testUploadContents);
+
+  
+  const writtenUUID = PathUtils.filename(writtenFile);
+  const storedUUID = Services.prefs.getStringPref(
+    PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID
+  );
+
+  
+  Assert.equal(writtenUUID, storedUUID);
+
+  
+  await IOUtils.remove(testWallpaperFile);
+  await IOUtils.remove(writtenFile);
+  Services.prefs.clearUserPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID);
 });
