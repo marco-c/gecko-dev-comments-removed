@@ -1342,31 +1342,44 @@ bool ContentParent::ValidatePrincipal(
     return true;
   }
 
-  if (!mRemoteTypeIsolationPrincipal ||
-      RemoteTypePrefix(mRemoteType) != FISSION_WEB_REMOTE_TYPE) {
+  
+  
+  
+  
+  
+  if (aPrincipal->SchemeIs("moz-extension")) {
     return true;
   }
 
   
   
-  auto* addonPolicy = BasePrincipal::Cast(aPrincipal)->AddonPolicy();
-  if (addonPolicy) {
+  int32_t equalIdx = mRemoteType.FindChar('=');
+  if (equalIdx == kNotFound) {
     return true;
   }
 
+  
+  nsDependentCSubstring typePrefix(mRemoteType, 0, equalIdx);
+  nsDependentCSubstring typeOrigin(mRemoteType, equalIdx + 1);
+
+  
+  
+  if (typePrefix != FISSION_WEB_REMOTE_TYPE) {
+    return true;
+  }
+
+  
+  int32_t suffixIdx = typeOrigin.RFindChar('^');
+  nsDependentCSubstring typeOriginNoSuffix(typeOrigin, 0, suffixIdx);
+
+  
   
   
   nsAutoCString siteOriginNoSuffix;
   if (NS_FAILED(aPrincipal->GetSiteOriginNoSuffix(siteOriginNoSuffix))) {
     return false;
   }
-  nsAutoCString remoteTypeSiteOriginNoSuffix;
-  if (NS_FAILED(mRemoteTypeIsolationPrincipal->GetSiteOriginNoSuffix(
-          remoteTypeSiteOriginNoSuffix))) {
-    return false;
-  }
-
-  return remoteTypeSiteOriginNoSuffix.Equals(siteOriginNoSuffix);
+  return siteOriginNoSuffix == typeOriginNoSuffix;
 }
 
 
