@@ -14,54 +14,24 @@
 
 namespace mozilla::gl {
 
-static bool HasDmaBufExtensions(const GLContextEGL* gl) {
-  const auto& egl = *(gl->mEgl);
-  return egl.IsExtensionSupported(EGLExtension::EXT_image_dma_buf_import) &&
-         egl.IsExtensionSupported(
-             EGLExtension::EXT_image_dma_buf_import_modifiers) &&
-         egl.IsExtensionSupported(EGLExtension::MESA_image_dma_buf_export);
-}
-
 
 UniquePtr<SharedSurface_DMABUF> SharedSurface_DMABUF::Create(
     const SharedSurfaceDesc& desc) {
-  const auto& gle = GLContextEGL::Cast(desc.gl);
-  const auto& context = gle->mContext;
-  const auto& egl = *(gle->mEgl);
-
   RefPtr<DMABufSurface> surface;
   UniquePtr<MozFramebuffer> fb;
 
-  if (!HasDmaBufExtensions(gle) || !gfx::gfxVars::UseDMABufSurfaceExport()) {
-    
-    
-    
-    const auto flags = static_cast<DMABufSurfaceFlags>(
-        DMABUF_TEXTURE | DMABUF_USE_MODIFIERS | DMABUF_ALPHA);
-    surface = DMABufSurfaceRGBA::CreateDMABufSurface(desc.size.width,
-                                                     desc.size.height, flags);
-    if (!surface || !surface->CreateTexture(desc.gl)) {
-      return nullptr;
-    }
-    const auto tex = surface->GetTexture();
-    fb = MozFramebuffer::CreateForBacking(desc.gl, desc.size, 0, false,
-                                          LOCAL_GL_TEXTURE_2D, tex);
-    if (!fb) return nullptr;
-  } else {
-    
-    
-    fb = MozFramebuffer::Create(desc.gl, desc.size, 0, false);
-    if (!fb) return nullptr;
-
-    const auto buffer = reinterpret_cast<EGLClientBuffer>(fb->ColorTex());
-    const auto image =
-        egl.fCreateImage(context, LOCAL_EGL_GL_TEXTURE_2D, buffer, nullptr);
-    if (!image) return nullptr;
-
-    surface = DMABufSurfaceRGBA::CreateDMABufSurface(
-        desc.gl, image, desc.size.width, desc.size.height);
-    if (!surface) return nullptr;
+  const auto flags = static_cast<DMABufSurfaceFlags>(
+      DMABUF_SCANOUT | DMABUF_TEXTURE | DMABUF_USE_MODIFIERS | DMABUF_ALPHA);
+  surface = DMABufSurfaceRGBA::CreateDMABufSurface(desc.gl, desc.size.width,
+                                                   desc.size.height, flags);
+  if (!surface || !surface->CreateTexture(desc.gl)) {
+    return nullptr;
   }
+  const auto tex = surface->GetTexture();
+  fb = MozFramebuffer::CreateForBacking(desc.gl, desc.size, 0, false,
+                                        LOCAL_GL_TEXTURE_2D, tex);
+  if (!fb) return nullptr;
+
   return AsUnique(new SharedSurface_DMABUF(desc, std::move(fb), surface));
 }
 
