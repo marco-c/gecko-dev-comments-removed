@@ -6,6 +6,7 @@
 #include <objc/objc-runtime.h>
 
 #include "nsChildView.h"
+#include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
 #include "nsCocoaWindow.h"
 #include "nsMenuBarX.h"
@@ -507,9 +508,22 @@ nsresult nsMenuBarX::Paint() {
 
 
 
+
+
+
 void nsMenuBarX::PaintAsync() {
   NS_DispatchToCurrentThread(
       NewRunnableMethod("PaintMenuBar", this, &nsMenuBarX::Paint));
+}
+
+void nsMenuBarX::PaintAsyncIfNeeded() {
+  if (nsCocoaFeatures::OnSonomaOrLater()) {
+    
+    Paint();
+  } else {
+    
+    PaintAsync();
+  }
 }
 
 
