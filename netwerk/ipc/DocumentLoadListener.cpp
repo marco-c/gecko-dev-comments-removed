@@ -245,10 +245,17 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
   
   
   
+  
   bool TryDefaultContentListener(nsIChannel* aChannel,
                                  const nsCString& aContentType) {
     uint32_t canHandle = nsWebNavigationInfo::IsTypeSupported(aContentType);
-    if (canHandle != nsIWebNavigationInfo::UNSUPPORTED) {
+    
+    
+    
+    
+    
+    if (canHandle != nsIWebNavigationInfo::UNSUPPORTED &&
+        (mIsDocumentLoad || canHandle != nsIWebNavigationInfo::FALLBACK)) {
       m_targetStreamListener = mListener;
       nsLoadFlags loadFlags = 0;
       aChannel->GetLoadFlags(&loadFlags);
@@ -324,7 +331,50 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
     LOG(("ParentProcessDocumentOpenInfo OnDocumentStartRequest [this=%p]",
          this));
 
-    nsresult rv = nsDocumentOpenInfo::OnStartRequest(request);
+    return nsDocumentOpenInfo::OnStartRequest(request);
+  }
+
+  nsresult OnObjectStartRequest(nsIRequest* request) {
+    LOG(("ParentProcessDocumentOpenInfo OnObjectStartRequest [this=%p]", this));
+
+    
+    
+    if (nsCOMPtr<nsIChannel> channel = do_QueryInterface(request)) {
+      nsAutoCString channelType;
+      channel->GetContentType(channelType);
+      if (!mTypeHint.IsEmpty() &&
+          imgLoader::SupportImageWithMimeType(mTypeHint) &&
+          (channelType.EqualsASCII(APPLICATION_GUESS_FROM_EXT) ||
+           channelType.EqualsASCII(APPLICATION_OCTET_STREAM) ||
+           channelType.EqualsASCII(BINARY_OCTET_STREAM))) {
+        channel->SetContentType(mTypeHint);
+      }
+    }
+
+    
+    
+    
+    nsresult status = NS_OK;
+    if (!nsObjectLoadingContent::IsSuccessfulRequest(request, &status)) {
+      LOG(("OnObjectStartRequest for unsuccessful request [this=%p, status=%s]",
+           this, GetStaticErrorName(status)));
+      return NS_ERROR_WONT_HANDLE_CONTENT;
+    }
+
+    
+    
+    
+    
+    
+    
+    return OnDocumentStartRequest(request);
+  }
+
+  NS_IMETHOD OnStartRequest(nsIRequest* request) override {
+    LOG(("ParentProcessDocumentOpenInfo OnStartRequest [this=%p]", this));
+
+    nsresult rv = mIsDocumentLoad ? OnDocumentStartRequest(request)
+                                  : OnObjectStartRequest(request);
 
     
     
@@ -363,47 +413,8 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
                                  rv);
       }
     }
+
     return rv;
-  }
-
-  nsresult OnObjectStartRequest(nsIRequest* request) {
-    LOG(("ParentProcessDocumentOpenInfo OnObjectStartRequest [this=%p]", this));
-
-    
-    
-    
-    
-    
-    if (nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
-        channel && channel->IsDocument()) {
-      
-      
-      nsAutoCString channelType;
-      channel->GetContentType(channelType);
-      if (!mTypeHint.IsEmpty() &&
-          imgLoader::SupportImageWithMimeType(mTypeHint) &&
-          (channelType.EqualsASCII(APPLICATION_GUESS_FROM_EXT) ||
-           channelType.EqualsASCII(APPLICATION_OCTET_STREAM) ||
-           channelType.EqualsASCII(BINARY_OCTET_STREAM))) {
-        channel->SetContentType(mTypeHint);
-      }
-
-      return OnDocumentStartRequest(request);
-    }
-
-    
-    m_targetStreamListener = mListener;
-    return m_targetStreamListener->OnStartRequest(request);
-  }
-
-  NS_IMETHOD OnStartRequest(nsIRequest* request) override {
-    LOG(("ParentProcessDocumentOpenInfo OnStartRequest [this=%p]", this));
-
-    if (mIsDocumentLoad) {
-      return OnDocumentStartRequest(request);
-    }
-
-    return OnObjectStartRequest(request);
   }
 
   NS_IMETHOD OnAfterLastPart(nsresult aStatus) override {
@@ -1885,23 +1896,6 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
            "browserid=%" PRIx64 "]",
            this, GetChannelCreationURI()->GetSpecOrDefault().get(),
            GetLoadingBrowsingContext()->Top()->BrowserId()));
-
-  
-  
-  
-  if (!mIsDocumentLoad) {
-    if (!mChannel->IsDocument()) {
-      MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-              ("Process Switch Abort: non-document load"));
-      return false;
-    }
-    nsresult status;
-    if (!nsObjectLoadingContent::IsSuccessfulRequest(mChannel, &status)) {
-      MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-              ("Process Switch Abort: error page"));
-      return false;
-    }
-  }
 
   
   int32_t where = GetWhereToOpen(mChannel, mIsDocumentLoad);
