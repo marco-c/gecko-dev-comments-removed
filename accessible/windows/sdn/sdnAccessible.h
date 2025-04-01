@@ -13,7 +13,6 @@
 #include "MsaaAccessible.h"
 
 #include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
 
 namespace mozilla {
@@ -58,14 +57,6 @@ class sdnAccessible final : public ISimpleDOMNode {
 
 
   MsaaAccessible* GetMsaa();
-
-  void SetUniqueID(uint32_t aNewUniqueId) { mUniqueId = Some(aNewUniqueId); }
-
-  Maybe<uint32_t> ReleaseUniqueID() {
-    Maybe<uint32_t> result = mUniqueId;
-    mUniqueId = Nothing();
-    return result;
-  }
 
   
   DECL_IUNKNOWN
@@ -137,10 +128,8 @@ class sdnAccessible final : public ISimpleDOMNode {
 
  private:
   
-  
   nsCOMPtr<nsINode> mNode;
   RefPtr<MsaaAccessible> mMsaa;
-  Maybe<uint32_t> mUniqueId;
 };
 
 }  

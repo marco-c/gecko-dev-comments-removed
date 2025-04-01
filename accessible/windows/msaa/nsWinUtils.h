@@ -31,15 +31,6 @@ class nsWinUtils {
   
 
 
-
-
-
-  static already_AddRefed<nsICSSDeclaration> GetComputedStyleDeclaration(
-      nsIContent* aContent);
-
-  
-
-
   static bool MaybeStartWindowEmulation();
 
   
