@@ -3280,6 +3280,37 @@ public class GeckoSession {
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @AnyThread
+  public @NonNull GeckoResult<Void> sendMoreWebCompatInfo(@NonNull final JSONObject info) {
+    Log.i("todocathy", "sendMoreWebCompatInfo");
+    final GeckoBundle bundle = new GeckoBundle();
+    bundle.putString("info", info.toString());
+    return mEventDispatcher.queryVoid("GeckoView:SendMoreWebCompatInfo", bundle);
+  }
+
+  
   private GeckoDisplay mDisplay;
 
    interface Owner {
