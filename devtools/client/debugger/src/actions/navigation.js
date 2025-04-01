@@ -8,6 +8,9 @@ import { clearWasmStates } from "../utils/wasm";
 import { getMainThread } from "../selectors/index";
 import { evaluateExpressionsForCurrentContext } from "../actions/expressions";
 
+import { features } from "../utils/prefs";
+import { getEditor } from "../utils/editor/index";
+
 
 
 
@@ -21,6 +24,10 @@ export function willNavigate(event) {
   return async function ({ dispatch, getState, sourceMapLoader }) {
     sourceQueue.clear();
     sourceMapLoader.clearSourceMaps();
+    if (features.codemirrorNext) {
+      const editor = getEditor(features.codemirrorNext);
+      editor.clearSources();
+    }
     clearWasmStates();
     const thread = getMainThread(getState());
 

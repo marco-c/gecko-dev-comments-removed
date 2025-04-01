@@ -51,6 +51,14 @@ add_task(async function () {
   await dbg.actions.jumpToMappedSelectedLocation();
   await waitForSelectedSource(dbg, "bundle.js");
 
+  const editor = getCMEditor(dbg);
+  
+  Assert.greater(
+    editor.sourcesCount(),
+    0,
+    "Some sources exists in the source editor cache"
+  );
+
   
   Assert.greater(dbg.selectors.getSourceCount(), 0, "Some sources exists");
   is(dbg.selectors.getBreakpointCount(), 1, "There is one breakpoint");
@@ -129,6 +137,7 @@ add_task(async function () {
   
 
   
+  is(editor.sourcesCount(), 0, "No sources exists in the source editor cache");
   is(dbg.selectors.getSourceCount(), 0, "No sources exists");
   is(dbg.selectors.getBreakpointCount(), 0, "No breakpoints exists");
   is(dbg.selectors.getSourceTabs().length, 0, "No tabs exists");
