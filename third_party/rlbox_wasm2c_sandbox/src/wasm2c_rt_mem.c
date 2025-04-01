@@ -33,7 +33,8 @@ static void* os_mmap_aligned(void* addr,
                              int prot,
                              int flags,
                              size_t alignment,
-                             size_t alignment_offset);
+                             size_t alignment_offset,
+                             const char* name);
 
 static void os_munmap(void* addr, size_t size);
 
@@ -60,7 +61,10 @@ wasm_rt_funcref_table_t* w2c_env_0x5F_indirect_function_table(
 
 #  define WASM_HEAP_GUARD_PAGE_SIZE 0x100000000ull
 
-#  define WASM_HEAP_ALIGNMENT 0x100000000ull
+
+
+
+#  define WASM_HEAP_ALIGNMENT 0x200000000ull
 
 #  define WASM_HEAP_DEFAULT_MAX_PAGES 65536
 #elif UINTPTR_MAX == 0xffffffff
@@ -122,7 +126,8 @@ w2c_mem_capacity get_valid_wasm2c_memory_capacity(uint64_t min_capacity,
 }
 
 wasm_rt_memory_t create_wasm2c_memory(uint32_t initial_pages,
-                                      const w2c_mem_capacity* custom_capacity)
+                                      const w2c_mem_capacity* custom_capacity,
+                                      const char* name)
 {
 
   if (custom_capacity && !custom_capacity->is_valid) {
@@ -144,7 +149,8 @@ wasm_rt_memory_t create_wasm2c_memory(uint32_t initial_pages,
                                      MMAP_PROT_NONE,
                                      MMAP_MAP_NONE,
                                      WASM_HEAP_ALIGNMENT,
-                                     0 );
+                                     0 ,
+                                     name);
     if (data) {
       int ret =
         os_mmap_commit(data, byte_length, MMAP_PROT_READ | MMAP_PROT_WRITE);
@@ -234,7 +240,8 @@ static void* os_mmap_aligned(void* addr,
                              int prot,
                              int flags,
                              size_t alignment,
-                             size_t alignment_offset)
+                             size_t alignment_offset,
+                             const char* name)
 {
   size_t padded_length = requested_length + alignment + alignment_offset;
   uintptr_t unaligned =
@@ -308,6 +315,19 @@ static int os_mmap_commit(void* curr_heap_end_pointer,
 
 #  include <sys/mman.h>
 #  include <unistd.h>
+#if defined(linux)
+#  include <sys/prctl.h>
+#endif
+
+
+
+
+#  ifndef PR_SET_VMA
+#    define PR_SET_VMA 0x53564d41
+#  endif
+#  ifndef PR_SET_VMA_ANON_NAME
+#    define PR_SET_VMA_ANON_NAME 0
+#  endif
 
 static size_t os_getpagesize()
 {
@@ -328,7 +348,7 @@ static void* os_mmap(void* hint, size_t size, int prot, int flags)
     
     return NULL;
 
-  if (request_size > 16 * (uint64_t)UINT32_MAX)
+  if (request_size > (uint64_t)0x400000000)
     
     return NULL;
 
@@ -364,7 +384,8 @@ static void* os_mmap_aligned(void* addr,
                              int prot,
                              int flags,
                              size_t alignment,
-                             size_t alignment_offset)
+                             size_t alignment_offset,
+                             const char* name)
 {
   size_t padded_length = requested_length + alignment + alignment_offset;
   uintptr_t unaligned = (uintptr_t)os_mmap(addr, padded_length, prot, flags);
@@ -409,6 +430,15 @@ static void* os_mmap_aligned(void* addr,
       os_munmap((void*)(aligned + requested_length), unused_back);
     }
   }
+
+#if defined(linux)
+  if (name) {
+    
+    prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME,
+      (unsigned long)aligned, requested_length,
+      (unsigned long)name);
+  }
+#endif
 
   return (void*)aligned;
 }
