@@ -411,7 +411,7 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   const ActiveScrolledRoot* asr = aBuilder->CurrentActiveScrolledRoot();
 
-  bool needBlendContainer = false;
+  bool needBlendContainerForBackgroundBlendMode = false;
   nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
 
   const bool suppressBackgroundImage = [&] {
@@ -432,16 +432,37 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     return false;
   }();
 
-  nsDisplayList layerItems(aBuilder);
+  const bool isPage = GetParent()->IsPageContentFrame();
+  const auto& canvasBg = PresShell()->GetCanvasBackground(isPage);
+
+  
+  
+  nsDisplayList list(aBuilder);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool paintColor = NS_GET_A(canvasBg.mColor) && canvasBg.mCSSSpecified;
+  if (paintColor) {
+    list.AppendNewToTop<nsDisplaySolidColor>(
+        aBuilder, this,
+        CanvasArea() + aBuilder->GetCurrentFrameOffsetToReferenceFrame(),
+        canvasBg.mColor);
+  }
 
   
   const nsStyleImageLayers& layers = bg->StyleBackground()->mImage;
   NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, layers) {
     if (layers.mLayers[i].mImage.IsNone() || suppressBackgroundImage) {
       continue;
-    }
-    if (layers.mLayers[i].mBlendMode != StyleBlend::Normal) {
-      needBlendContainer = true;
     }
 
     nsRect bgRect = GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);
@@ -502,35 +523,50 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       thisItemList.AppendNewToTopWithIndex<nsDisplayBlendMode>(
           aBuilder, this, i + 1, &thisItemList, layers.mLayers[i].mBlendMode,
           thisItemASR, true);
+      needBlendContainerForBackgroundBlendMode = true;
     }
-    layerItems.AppendToTop(&thisItemList);
-  }
-  nsDisplayList list(aBuilder);
-
-  
-  const bool isPage = GetParent()->IsPageContentFrame();
-  const nscolor bgColor =
-      PresShell()->GetCSSSpecifiedCanvasBackground(isPage);
-  if (NS_GET_A(bgColor)) {
-    list.AppendNewToTop<nsDisplaySolidColor>(
-        aBuilder, this,
-        CanvasArea() + aBuilder->GetCurrentFrameOffsetToReferenceFrame(),
-        bgColor);
+    list.AppendToTop(&thisItemList);
   }
 
-  list.AppendToTop(&layerItems);
-
-  if (needBlendContainer) {
+  if (needBlendContainerForBackgroundBlendMode) {
     const ActiveScrolledRoot* containerASR = contASRTracker.GetContainerASR();
     DisplayListClipState::AutoSaveRestore blendContainerClip(aBuilder);
     list.AppendToTop(nsDisplayBlendContainer::CreateForBackgroundBlendMode(
         aBuilder, this, nullptr, &list, containerASR));
   }
+
   aLists.BorderBackground()->AppendToTop(&list);
 
   for (nsIFrame* kid : PrincipalChildList()) {
     
     BuildDisplayListForChild(aBuilder, kid, aLists);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!paintColor && NS_GET_A(canvasBg.mColor) && !isPage &&
+      !needBlendContainerForBackgroundBlendMode &&
+      !aBuilder->ContainsBlendMode()) {
+    MOZ_ASSERT(
+        NS_GET_A(canvasBg.mColor) == 255,
+        "Default canvas background should either be transparent or opaque");
+    
+    nsDisplayList list(aBuilder);
+    list.AppendToTop(aLists.BorderBackground());
+    aLists.BorderBackground()->AppendNewToTop<nsDisplaySolidColor>(
+        aBuilder, this,
+        CanvasArea() + aBuilder->GetCurrentFrameOffsetToReferenceFrame(),
+        canvasBg.mColor);
+    aLists.BorderBackground()->AppendToTop(&list);
   }
 
   if (mDoPaintFocus) {
