@@ -2259,6 +2259,10 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
         id == NameToId(cx->names().try_)) {
       return true;
     }
+    if (!JS::Prefs::experimental_error_iserror() &&
+        id == NameToId(cx->names().isError)) {
+      return true;
+    }
   }
 
 #ifdef JS_HAS_TEMPORAL_API
@@ -2273,10 +2277,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
   
   
   if (key == JSProto_Function) {
-    if (!JS::Prefs::experimental_error_iserror() &&
-        id == NameToId(cx->names().isError)) {
-      return true;
-    }
     if (!JS::Prefs::experimental_iterator_range() &&
         (id == NameToId(cx->names().range))) {
       return true;
