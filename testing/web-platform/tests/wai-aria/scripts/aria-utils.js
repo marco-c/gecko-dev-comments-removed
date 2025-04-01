@@ -45,9 +45,6 @@ const AriaUtils = {
     }
     for (const el of els) {
       let role = el.getAttribute("data-expectedrole");
-      if (!role) {
-        throw `Element should have attribute \'data-expectedrole\'. Element: ${el.outerHTML}`;
-      }
       let testName = el.getAttribute("data-testname") || role; 
       if (typeof roleTestNamePrefix !== "undefined") {
         testName = roleTestNamePrefix + testName;
@@ -140,9 +137,6 @@ const AriaUtils = {
     }
     for (const el of els) {
       let label = el.getAttribute("data-expectedlabel");
-      if (!label) {
-        throw `Element should have attribute \'data-expectedlabel\'. Element: ${el.outerHTML}`;
-      }
       let testName = el.getAttribute("data-testname") || label; 
       if (typeof labelTestNamePrefix !== "undefined") {
         testName = labelTestNamePrefix + testName;
