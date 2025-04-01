@@ -67,46 +67,52 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
         binary, _ = find_node_executable()
 
     if not binary:
-        print(ESLINT_NOT_FOUND_MESSAGE)
+        log.error(ESLINT_NOT_FOUND_MESSAGE)
         return 1
 
     extra_args = lintargs.get("extra_args") or []
-    exclude_args = []
-    for path in config.get("exclude", []):
-        exclude_args.extend(
-            ["--ignore-pattern", os.path.relpath(path, lintargs["root"])]
-        )
 
-    for rule in rules:
-        extra_args.extend(["--rule", rule])
+    result = {"results": [], "fixed": 0}
 
     
-    cmd_args = (
-        [
-            binary,
-            os.path.join(module_path, "node_modules", "eslint", "bin", "eslint.js"),
-            
-            "--ext",
-            "[{}]".format(",".join(config["extensions"])),
-            "--format",
-            "json",
-            "--no-error-on-unmatched-pattern",
-        ]
-        + rules
-        + extra_args
-        + exclude_args
-        + paths
-    )
+    
+    if not lintargs.get("formatonly", False):
+        exclude_args = []
+        for path in config.get("exclude", []):
+            exclude_args.extend(
+                ["--ignore-pattern", os.path.relpath(path, lintargs["root"])]
+            )
 
-    if fix:
+        for rule in rules:
+            extra_args.extend(["--rule", rule])
+
         
-        cmd_args.insert(2, "--fix")
+        cmd_args = (
+            [
+                binary,
+                os.path.join(module_path, "node_modules", "eslint", "bin", "eslint.js"),
+                
+                "--ext",
+                "[{}]".format(",".join(config["extensions"])),
+                "--format",
+                "json",
+                "--no-error-on-unmatched-pattern",
+            ]
+            + rules
+            + extra_args
+            + exclude_args
+            + paths
+        )
 
-    log.debug("ESLint command: {}".format(" ".join(cmd_args)))
+        if fix:
+            
+            cmd_args.insert(2, "--fix")
 
-    result = run(cmd_args, config)
-    if result == 1:
-        return result
+        log.debug("ESLint command: {}".format(" ".join(cmd_args)))
+
+        result = run(cmd_args, config)
+        if result == 1:
+            return result
 
     
     cmd_args = (
