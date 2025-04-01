@@ -371,7 +371,7 @@ void nsCocoaUtils::CleanUpAfterNativeAppModalDialog() {
   if (!mainWindow) {
     
     
-    hiddenWindowMenuBar->PaintAsync();
+    hiddenWindowMenuBar->PaintAsyncIfNeeded();
   } else {
     [WindowDelegate paintMenubarForWindow:mainWindow];
   }
