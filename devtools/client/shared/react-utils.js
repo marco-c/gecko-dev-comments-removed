@@ -6,7 +6,7 @@
 
 define(function (require, exports, module) {
   
-  const React = require("resource://devtools/client/shared/vendor/react.js");
+  const React = require("resource://devtools/client/shared/vendor/react.mjs");
 
   
 

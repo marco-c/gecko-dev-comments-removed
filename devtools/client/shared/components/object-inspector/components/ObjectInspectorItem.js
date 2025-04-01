@@ -2,7 +2,7 @@
 
 
 
-const { Component } = require("resource://devtools/client/shared/vendor/react.js");
+const { Component } = require("resource://devtools/client/shared/vendor/react.mjs");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 
 const isMacOS = Services.appinfo.OS === "Darwin";

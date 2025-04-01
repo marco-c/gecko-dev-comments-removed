@@ -10,7 +10,7 @@ const {
   createRef,
   Fragment,
   PureComponent,
-} = require("resource://devtools/client/shared/vendor/react.js");
+} = require("resource://devtools/client/shared/vendor/react.mjs");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
 
@@ -59,9 +59,9 @@ class FontList extends PureComponent {
       {
         className: "fonts-list",
       },
-      fonts.map((font, i) =>
+      fonts.map(font =>
         Font({
-          key: i,
+          key: font.name,
           font,
           onPreviewClick,
           onToggleFontHighlight,
