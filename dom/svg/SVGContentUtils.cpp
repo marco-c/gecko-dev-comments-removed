@@ -499,8 +499,26 @@ static gfx::Matrix GetCTMInternal(SVGElement* aElement, CTMType aCTMType,
   if (frame->IsSVGOuterSVGFrame()) {
     nsMargin bp = frame->GetUsedBorderAndPadding();
     int32_t appUnitsPerCSSPixel = AppUnitsPerCSSPixel();
-    tm.PostTranslate(NSAppUnitsToFloatPixels(bp.left, appUnitsPerCSSPixel),
-                     NSAppUnitsToFloatPixels(bp.top, appUnitsPerCSSPixel));
+    float xOffset = NSAppUnitsToFloatPixels(bp.left, appUnitsPerCSSPixel);
+    float yOffset = NSAppUnitsToFloatPixels(bp.top, appUnitsPerCSSPixel);
+    
+    
+    
+    
+    switch (frame->StyleDisplay()->mTransformBox) {
+      case StyleTransformBox::FillBox:
+      case StyleTransformBox::ContentBox:
+        
+        
+        tm.PostTranslate(xOffset, yOffset);
+        break;
+      case StyleTransformBox::StrokeBox:
+      case StyleTransformBox::ViewBox:
+      case StyleTransformBox::BorderBox:
+        
+        tm.PreTranslate(xOffset, yOffset);
+        break;
+    }
   }
 
   if (!ancestor || !ancestor->IsElement()) {
