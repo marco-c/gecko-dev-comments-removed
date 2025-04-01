@@ -6496,7 +6496,15 @@ void AsyncPanZoomController::ResetPanGestureInputState() {
 
   
   
-  CancelAnimationAndGestureState();
+  
+  
+  
+  
+  
+  if (!mAnimation) {
+    CancelAnimationAndGestureState();
+  }
+
   
   
   if (block) {
