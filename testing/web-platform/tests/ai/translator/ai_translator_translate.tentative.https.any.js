@@ -125,8 +125,10 @@ promise_test(async t => {
 
   
   assert_greater_than_equal(progressEvents.length, 2);
+
+  
   assert_equals(progressEvents.at(0).loaded, 0);
-  assert_equals(progressEvents.at(1).loaded, 1);
+  assert_equals(progressEvents.at(-1).loaded, 1);
 
   
   for (const progressEvent of progressEvents) {
