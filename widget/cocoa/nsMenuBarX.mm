@@ -507,22 +507,9 @@ nsresult nsMenuBarX::Paint() {
 
 
 
-
-
-
 void nsMenuBarX::PaintAsync() {
   NS_DispatchToCurrentThread(
       NewRunnableMethod("PaintMenuBar", this, &nsMenuBarX::Paint));
-}
-
-void nsMenuBarX::PaintAsyncIfNeeded() {
-  if (nsCocoaFeatures::OnVenturaOrLater()) {
-    
-    Paint();
-  } else {
-    
-    PaintAsync();
-  }
 }
 
 

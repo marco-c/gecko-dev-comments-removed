@@ -2161,7 +2161,7 @@ void nsCocoaWindow::SetMenuBar(RefPtr<nsMenuBarX>&& aMenuBar) {
                    mWindow.isMainWindow)) {
     
     
-    mMenuBar->PaintAsyncIfNeeded();
+    mMenuBar->PaintAsync();
   }
 }
 
@@ -2639,7 +2639,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   if (nsMenuBarX* geckoMenuBar = geckoWidget->GetMenuBar()) {
     
     
-    geckoMenuBar->PaintAsyncIfNeeded();
+    geckoMenuBar->PaintAsync();
   } else {
     
     if (!sApplicationMenu) {
@@ -2890,7 +2890,7 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   if (hiddenWindowMenuBar) {
     
     
-    hiddenWindowMenuBar->PaintAsyncIfNeeded();
+    hiddenWindowMenuBar->PaintAsync();
   }
 
   NSWindow* window = [aNotification object];
