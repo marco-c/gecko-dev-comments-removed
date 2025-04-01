@@ -529,7 +529,8 @@ void Selection::Stringify(nsAString& aResult, CallerType aCallerType,
   if (StaticPrefs::dom_selection_mimic_chrome_tostring_enabled() &&
       Type() == SelectionType::eNormal &&
       aCallerType == CallerType::NonSystem) {
-    if (mFrameSelection && !mFrameSelection->GetLimiter()) {
+    if (mFrameSelection &&
+        !mFrameSelection->GetIndependentSelectionRootElement()) {
       
       flags |= nsIDocumentEncoder::MimicChromeToStringBehaviour;
     }
