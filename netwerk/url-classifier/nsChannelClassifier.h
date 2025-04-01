@@ -54,14 +54,6 @@ class nsChannelClassifier final : public nsIURIClassifierCallback,
                                       const nsACString& aProvider,
                                       const nsACString& aList,
                                       const nsACString& aFullHash);
-
- public:
-  
-  
-  static nsresult SetBlockedContent(nsIChannel* channel, nsresult aErrorCode,
-                                    const nsACString& aList,
-                                    const nsACString& aProvider,
-                                    const nsACString& aFullHash);
 };
 
 }  
