@@ -295,6 +295,14 @@ function testEscapeStringPosix() {
     "$'\\xc3\\xa6 \\xc3\\xb8 \\xc3\\xbc \\xc3\\x9f \\xc3\\xb6 \\xc3\\xa9'",
     "Character codes outside of the decimal range 32 - 126 should be escaped."
   );
+
+  
+  const evilCommand = `query=evil\n\ncmd & calc.exe\n\n`;
+  is(
+    CurlUtils.escapeStringPosix(evilCommand),
+    "$'query=evil\\n\\ncmd ^& calc.exe\\n\\n'",
+    "The evil command is escaped properly"
+  );
 }
 
 function testEscapeStringWin() {
