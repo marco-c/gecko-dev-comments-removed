@@ -694,6 +694,8 @@ void RTCRtpReceiver::UpdateTransport() {
   }
 
   UniquePtr<MediaPipelineFilter> filter;
+  bool signalingStable =
+      (mPc->GetSignalingState() == RTCSignalingState::Stable);
 
   auto const& details = GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails();
   std::vector<webrtc::RtpExtension> extmaps;
@@ -724,14 +726,22 @@ void RTCRtpReceiver::UpdateTransport() {
     
     auto uniquePts =
         GetJsepTransceiver().mRecvTrack.GetUniqueReceivePayloadTypes();
-    for (unsigned char& uniquePt : uniquePts) {
+    for (auto uniquePt : uniquePts) {
       filter->AddUniqueReceivePT(uniquePt);
+    }
+
+    
+    auto duplicatePts =
+        GetJsepTransceiver().mRecvTrack.GetDuplicateReceivePayloadTypes();
+
+    for (auto duplicatePt : duplicatePts) {
+      filter->AddDuplicateReceivePT(duplicatePt);
     }
   }
 
-  if ((mPc->GetSignalingState() == RTCSignalingState::Stable) || filter) {
+  if (signalingStable || filter) {
     mPipeline->UpdateTransport_m(GetJsepTransceiver().mTransport.mTransportId,
-                                 std::move(filter));
+                                 std::move(filter), signalingStable);
   }
 }
 
