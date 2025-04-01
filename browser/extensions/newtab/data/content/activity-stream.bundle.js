@@ -13600,7 +13600,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     const {
       wallpaperList
     } = this.props.Wallpapers;
-    const activeWallpaper = this.props.Prefs.values[`newtabWallpapers.wallpaper-${this.state.colorMode}`];
+    const activeWallpaper = this.props.Prefs.values[`newtabWallpapers.wallpaper`];
     const selected = wallpaperList.find(wp => wp.title === activeWallpaper);
     
     if (!selected?.attribution) {
@@ -13795,7 +13795,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     const layoutsVariantBEnabled = prefs["newtabLayouts.variant-b"];
     const shortcutsRefresh = prefs["newtabShortcuts.refresh"];
     const layoutsVariantAorB = layoutsVariantAEnabled || layoutsVariantBEnabled;
-    const activeWallpaper = prefs[`newtabWallpapers.wallpaper-${this.state.colorMode}`];
+    const activeWallpaper = prefs[`newtabWallpapers.wallpaper`];
     const wallpapersV2Enabled = prefs["newtabWallpapers.v2.enabled"];
     const weatherEnabled = prefs.showWeather;
     const {
