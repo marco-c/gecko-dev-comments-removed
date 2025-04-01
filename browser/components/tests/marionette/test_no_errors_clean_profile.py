@@ -56,12 +56,6 @@ known_errors = [
     {
         
         
-        "message": "(NS_ERROR_NOT_IMPLEMENTED) [nsIAppStartup.secondsSinceLastOSRestart]",
-        "filename": "BrowserGlue",
-    },
-    {
-        
-        
         
         "message": "toggleSidebarKb",
     },
