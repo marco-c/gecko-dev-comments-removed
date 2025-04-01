@@ -428,7 +428,7 @@ function search(aQuery, aAttribute) {
   }
 }
 
-async function spotlight(subcategory, category) {
+function spotlight(subcategory, category) {
   let highlightedElements = document.querySelectorAll(".spotlight");
   if (highlightedElements.length) {
     for (let element of highlightedElements) {
@@ -440,14 +440,17 @@ async function spotlight(subcategory, category) {
   }
 }
 
-async function scrollAndHighlight(subcategory) {
+function scrollAndHighlight(subcategory) {
   let element = document.querySelector(`[data-subcategory="${subcategory}"]`);
   if (!element) {
     return;
   }
   let header = getClosestDisplayedHeader(element);
 
-  scrollContentTo(header);
+  header.scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+  });
   element.classList.add("spotlight");
 }
 
@@ -467,17 +470,6 @@ function getClosestDisplayedHeader(element) {
     header = header.previousElementSibling;
   }
   return header;
-}
-
-function scrollContentTo(element) {
-  const STICKY_CONTAINER_HEIGHT =
-    document.querySelector(".sticky-container").clientHeight;
-  let mainContent = document.querySelector(".main-content");
-  let top = element.getBoundingClientRect().top - STICKY_CONTAINER_HEIGHT;
-  mainContent.scroll({
-    top,
-    behavior: "smooth",
-  });
 }
 
 function friendlyPrefCategoryNameToInternalName(aName) {
@@ -611,7 +603,7 @@ async function ensureScrollPadding() {
   let stickyContainer = document.querySelector(".sticky-container");
   let height = await window.browsingContext.topChromeWindow
     .promiseDocumentFlushed(() => stickyContainer.clientHeight)
-    .catch(() => Cu.reportError); 
+    .catch(console.error); 
 
   
   
@@ -626,6 +618,6 @@ async function ensureScrollPadding() {
 function maybeDisplayPoliciesNotice() {
   if (Services.policies.status == Services.policies.ACTIVE) {
     document.getElementById("policies-container").removeAttribute("hidden");
-    ensureScrollPadding();
   }
+  ensureScrollPadding();
 }
