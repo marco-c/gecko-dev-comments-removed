@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef MOZILLA_PARAMTRAITS_STL_H
 #define MOZILLA_PARAMTRAITS_STL_H
@@ -31,7 +31,7 @@ struct ParamTraits<std::array<U, N>> final {
   }
 };
 
-
+// -
 
 template <typename U, size_t N>
 struct ParamTraits<U[N]> final {
@@ -52,7 +52,7 @@ struct ParamTraits<U[N]> final {
   }
 };
 
-
+// -
 
 template <class U>
 struct ParamTraits<std::optional<U>> final {
@@ -78,79 +78,6 @@ struct ParamTraits<std::optional<U>> final {
   }
 };
 
-
-
-template <class A, class B>
-struct ParamTraits<std::pair<A, B>> final {
-  using T = std::pair<A, B>;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    WriteParam(writer, in.first);
-    WriteParam(writer, in.second);
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    bool ok = true;
-    ok = ok && ReadParam(reader, &out->first);
-    ok = ok && ReadParam(reader, &out->second);
-    return ok;
-  }
-};
-
-
-
-template <class K, class V, class H, class E>
-struct ParamTraits<std::unordered_map<K, V, H, E>> final {
-  using T = std::unordered_map<K, V, H, E>;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    const auto size = uint64_t{in.size()};
-    WriteParam(writer, size);
-    for (const auto& pair : in) {
-      WriteParam(writer, pair);
-    }
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    out->clear();
-
-    auto size = uint64_t{};
-    if (!ReadParam(reader, &size)) return false;
-
-    out->reserve(static_cast<size_t>(size));
-    for (const auto i : mozilla::IntegerRange(size)) {
-      (void)i;
-      auto pair = std::pair<K, V>{};
-      if (!ReadParam(reader, &pair)) return false;
-      out->insert(pair);
-    }
-    return true;
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}  
+}  // namespace IPC
 
 #endif

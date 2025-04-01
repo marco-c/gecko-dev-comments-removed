@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef WEBGLIPDL_H_
 #define WEBGLIPDL_H_
@@ -22,15 +22,15 @@
 namespace mozilla {
 namespace webgl {
 
-
-
+// TODO: This should probably replace Shmem, or at least this should move to
+// ipc/glue.
 
 class RaiiShmem final {
   RefPtr<mozilla::ipc::ActorLifecycleProxy> mWeakRef;
   mozilla::ipc::Shmem mShmem = {};
 
  public:
-  
+  /// Returns zeroed data.
   static RaiiShmem Alloc(mozilla::ipc::IProtocol* const allocator,
                          const size_t size) {
     mozilla::ipc::Shmem shmem;
@@ -45,7 +45,7 @@ class RaiiShmem final {
     return {allocator, shmem};
   }
 
-  
+  // -
 
   RaiiShmem() = default;
 
@@ -55,8 +55,8 @@ class RaiiShmem final {
       return;
     }
 
-    
-    
+    // Shmems are handled by the top-level, so use that or we might leak after
+    // the actor dies.
     mWeakRef = allocator->ToplevelProtocol()->GetLifecycleProxy();
     mShmem = shmem;
     if (!mWeakRef || !mWeakRef->Get() || !IsShmem()) {
@@ -77,7 +77,7 @@ class RaiiShmem final {
 
   ~RaiiShmem() { reset(); }
 
-  
+  // -
 
   RaiiShmem(RaiiShmem&& rhs) { *this = std::move(rhs); }
   RaiiShmem& operator=(RaiiShmem&& rhs) {
@@ -87,13 +87,13 @@ class RaiiShmem final {
     return *this;
   }
 
-  
+  // -
 
   bool IsShmem() const { return mShmem.IsReadable(); }
 
   explicit operator bool() const { return IsShmem(); }
 
-  
+  // -
 
   const auto& Shmem() const {
     MOZ_ASSERT(IsShmem());
@@ -117,7 +117,7 @@ class RaiiShmem final {
 
 using Int32Vector = std::vector<int32_t>;
 
-}  
+}  // namespace webgl
 
 namespace ipc {
 
@@ -139,7 +139,7 @@ struct IPDLParamTraits<mozilla::webgl::FrontBufferSnapshotIpc> final {
   }
 };
 
-
+// -
 
 template <>
 struct IPDLParamTraits<mozilla::webgl::ReadPixelsResultIpc> final {
@@ -159,7 +159,7 @@ struct IPDLParamTraits<mozilla::webgl::ReadPixelsResultIpc> final {
   }
 };
 
-
+// -
 
 template <>
 struct IPDLParamTraits<mozilla::webgl::TexUnpackBlobDesc> final {
@@ -192,16 +192,16 @@ struct IPDLParamTraits<mozilla::webgl::TexUnpackBlobDesc> final {
   }
 };
 
-}  
+}  // namespace ipc
 
 namespace webgl {
 using Int32Vector = std::vector<int32_t>;
-}  
-}  
+}  // namespace webgl
+}  // namespace mozilla
 
 namespace IPC {
 
-
+// -
 
 template <class U, size_t PaddedSize>
 struct ParamTraits<mozilla::webgl::Padded<U, PaddedSize>> final {
@@ -216,7 +216,7 @@ struct ParamTraits<mozilla::webgl::Padded<U, PaddedSize>> final {
   }
 };
 
-
+// -
 
 template <>
 struct ParamTraits<mozilla::webgl::AttribBaseType>
@@ -247,8 +247,8 @@ struct ParamTraits<mozilla::dom::PredefinedColorSpace> final
     : public mozilla::dom::WebIDLEnumSerializer<
           mozilla::dom::PredefinedColorSpace> {};
 
-
-
+// -
+// ParamTraits_IsEnumCase
 
 #define USE_IS_ENUM_CASE(T) \
   template <>               \
@@ -258,8 +258,8 @@ USE_IS_ENUM_CASE(mozilla::webgl::OptionalRenderableFormatBits)
 
 #undef USE_IS_ENUM_CASE
 
-
-
+// -
+// ParamTraits_TiedFields
 
 template <>
 struct ParamTraits<mozilla::webgl::InitContextDesc> final
@@ -274,11 +274,7 @@ struct ParamTraits<mozilla::webgl::OpaqueFramebufferOptions> final
     : public ParamTraits_TiedFields<mozilla::webgl::OpaqueFramebufferOptions> {
 };
 
-template <>
-struct ParamTraits<mozilla::webgl::ShaderPrecisionFormat> final
-    : public ParamTraits_TiedFields<mozilla::webgl::ShaderPrecisionFormat> {};
-
-
+// -
 
 template <>
 struct ParamTraits<mozilla::gl::GLVendor>
@@ -306,7 +302,7 @@ template <>
 struct ParamTraits<mozilla::webgl::PixelUnpackStateWebgl> final
     : public ParamTraits_TiedFields<mozilla::webgl::PixelUnpackStateWebgl> {};
 
-
+// -
 
 template <>
 struct ParamTraits<mozilla::webgl::ReadPixelsDesc> final {
@@ -326,7 +322,7 @@ struct ParamTraits<mozilla::webgl::ReadPixelsDesc> final {
   }
 };
 
-
+// -
 
 template <>
 struct ParamTraits<mozilla::webgl::PackingInfo> final {
@@ -342,7 +338,7 @@ struct ParamTraits<mozilla::webgl::PackingInfo> final {
   }
 };
 
-
+// -
 
 template <>
 struct ParamTraits<mozilla::webgl::CompileResult> final {
@@ -362,7 +358,7 @@ struct ParamTraits<mozilla::webgl::CompileResult> final {
   }
 };
 
-
+// -
 
 template <>
 struct ParamTraits<mozilla::webgl::LinkResult> final {
@@ -384,7 +380,7 @@ struct ParamTraits<mozilla::webgl::LinkResult> final {
   }
 };
 
-
+// -
 
 template <>
 struct ParamTraits<mozilla::webgl::LinkActiveInfo> final {
@@ -405,7 +401,7 @@ struct ParamTraits<mozilla::webgl::LinkActiveInfo> final {
   }
 };
 
-
+// -
 
 template <>
 struct ParamTraits<mozilla::webgl::ActiveInfo> final {
@@ -423,7 +419,7 @@ struct ParamTraits<mozilla::webgl::ActiveInfo> final {
   }
 };
 
-
+// -
 
 template <>
 struct ParamTraits<mozilla::webgl::ActiveAttribInfo> final {
@@ -442,7 +438,7 @@ struct ParamTraits<mozilla::webgl::ActiveAttribInfo> final {
   }
 };
 
-
+// -
 
 template <>
 struct ParamTraits<mozilla::webgl::ActiveUniformInfo> final {
@@ -469,7 +465,7 @@ struct ParamTraits<mozilla::webgl::ActiveUniformInfo> final {
   }
 };
 
-
+// -
 
 template <>
 struct ParamTraits<mozilla::webgl::ActiveUniformBlockInfo> final {
@@ -491,7 +487,26 @@ struct ParamTraits<mozilla::webgl::ActiveUniformBlockInfo> final {
   }
 };
 
+// -
 
+template <>
+struct ParamTraits<mozilla::webgl::ShaderPrecisionFormat> final {
+  using T = mozilla::webgl::ShaderPrecisionFormat;
+
+  static void Write(MessageWriter* const writer, const T& in) {
+    WriteParam(writer, in.rangeMin);
+    WriteParam(writer, in.rangeMax);
+    WriteParam(writer, in.precision);
+  }
+
+  static bool Read(MessageReader* const reader, T* const out) {
+    return ReadParam(reader, &out->rangeMin) &&
+           ReadParam(reader, &out->rangeMax) &&
+           ReadParam(reader, &out->precision);
+  }
+};
+
+// -
 
 template <>
 struct ParamTraits<mozilla::webgl::GetUniformData> final {
@@ -508,7 +523,7 @@ struct ParamTraits<mozilla::webgl::GetUniformData> final {
   }
 };
 
-
+// -
 
 template <typename U>
 struct ParamTraits<mozilla::avec2<U>> final {
@@ -524,7 +539,7 @@ struct ParamTraits<mozilla::avec2<U>> final {
   }
 };
 
-
+// -
 
 template <typename U>
 struct ParamTraits<mozilla::avec3<U>> final {
@@ -542,6 +557,6 @@ struct ParamTraits<mozilla::avec3<U>> final {
   }
 };
 
-}  
+}  // namespace IPC
 
 #endif

@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: sw=2 ts=4 et :
+ */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef _QUEUEPARAMTRAITS_H_
 #define _QUEUEPARAMTRAITS_H_ 1
@@ -29,31 +29,31 @@ struct RemoveCVR {
       typename std::remove_reference<typename std::remove_cv<T>::type>::type;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * QueueParamTraits provide the user with a way to implement PCQ argument
+ * (de)serialization.  It uses a PcqView, which permits the system to
+ * abandon all changes to the underlying PCQ if any operation fails.
+ *
+ * The transactional nature of PCQ operations make the ideal behavior a bit
+ * complex.  Since the PCQ has a fixed amount of memory available to it,
+ * TryInsert operations operations are expected to sometimes fail and be
+ * re-issued later.  We want these failures to be inexpensive.  The same
+ * goes for TryRemove, which fails when there isn't enough data in
+ * the queue yet for them to complete.
+ *
+ * Their expected interface is:
+ *
+ * template<> struct QueueParamTraits<typename RemoveCVR<Arg>::Type> {
+ *   // Write data from aArg into the PCQ.
+ *   static QueueStatus Write(ProducerView& aProducerView, const Arg& aArg)
+ *   {...};
+ *
+ *   // Read data from the PCQ into aArg, or just skip the data if aArg is null.
+ *   static QueueStatus Read(ConsumerView& aConsumerView, Arg* aArg) {...}
+ * };
+ */
 template <typename Arg>
-struct QueueParamTraits;  
+struct QueueParamTraits;  // Todo: s/QueueParamTraits/SizedParamTraits/
 
 template <typename T>
 inline Range<T> AsRange(T* const begin, T* const end) {
@@ -62,8 +62,8 @@ inline Range<T> AsRange(T* const begin, T* const end) {
   return {begin, *size};
 }
 
-
-
+// -
+// BytesAlwaysValidT
 
 template <class T>
 struct BytesAlwaysValidT {
@@ -91,7 +91,7 @@ struct BytesAlwaysValidT<T[N]> {
 static_assert(BytesAlwaysValidT<int[4]>::value);
 static_assert(!BytesAlwaysValidT<bool[4]>::value);
 
-
+// -
 
 template <>
 struct BytesAlwaysValidT<webgl::UniformDataVal> {
@@ -102,14 +102,14 @@ struct BytesAlwaysValidT<const webgl::UniformDataVal> {
   static constexpr bool value = true;
 };
 
+// -
 
-
-
-
-
-
-
-
+/**
+ * Used to give QueueParamTraits a way to write to the Producer without
+ * actually altering it, in case the transaction fails.
+ * THis object maintains the error state of the transaction and
+ * discards commands issued after an error is encountered.
+ */
 template <typename _Producer>
 class ProducerView {
  public:
@@ -126,19 +126,19 @@ class ProducerView {
     return mOk;
   }
 
-  
-
-
-
+  /**
+   * Copy bytes from aBuffer to the producer if there is enough room.
+   * aBufferSize must not be 0.
+   */
   template <typename T>
   inline bool Write(const T* begin, const T* end) {
     MOZ_RELEASE_ASSERT(begin <= end);
     return WriteFromRange(AsRange(begin, end));
   }
 
-  
-
-
+  /**
+   * Serialize aArg using Arg's QueueParamTraits.
+   */
   template <typename Arg>
   bool WriteParam(const Arg& aArg) {
     return mozilla::webgl::QueueParamTraits<
@@ -152,10 +152,10 @@ class ProducerView {
   bool mOk = true;
 };
 
-
-
-
-
+/**
+ * Used to give QueueParamTraits a way to read from the Consumer without
+ * actually altering it, in case the transaction fails.
+ */
 template <typename _Consumer>
 class ConsumerView {
  public:
@@ -163,10 +163,10 @@ class ConsumerView {
 
   explicit ConsumerView(Consumer* aConsumer) : mConsumer(aConsumer) {}
 
-  
-
-
-
+  /**
+   * Read bytes from the consumer if there is enough data.  aBuffer may
+   * be null (in which case the data is skipped)
+   */
   template <typename T>
   inline bool Read(T* const destBegin, T* const destEnd) {
     MOZ_ASSERT(destBegin);
@@ -183,7 +183,7 @@ class ConsumerView {
     return mOk;
   }
 
-  
+  /// Return a view wrapping the shmem.
   template <typename T>
   inline Maybe<Range<const T>> ReadRange(const size_t elemCount) {
     static_assert(BytesAlwaysValidT<T>::value);
@@ -193,10 +193,10 @@ class ConsumerView {
     return view;
   }
 
-  
-
-
-
+  /**
+   * Deserialize aArg using Arg's QueueParamTraits.
+   * If the return value is not Success then aArg is not changed.
+   */
   template <typename Arg>
   bool ReadParam(Arg* aArg) {
     MOZ_ASSERT(aArg);
@@ -211,7 +211,7 @@ class ConsumerView {
   bool mOk = true;
 };
 
-
+// -
 
 template <typename Arg>
 struct QueueParamTraits {
@@ -220,7 +220,7 @@ struct QueueParamTraits {
     static_assert(BytesAlwaysValidT<Arg>::value,
                   "No QueueParamTraits specialization was found for this type "
                   "and it does not satisfy BytesAlwaysValid.");
-    
+    // Write self as binary
     const auto pArg = &aArg;
     return aProducerView.Write(pArg, pArg + 1);
   }
@@ -230,12 +230,12 @@ struct QueueParamTraits {
     static_assert(BytesAlwaysValidT<Arg>::value,
                   "No QueueParamTraits specialization was found for this type "
                   "and it does not satisfy BytesAlwaysValid.");
-    
+    // Read self as binary
     return aConsumerView.Read(aArg, aArg + 1);
   }
 };
 
-
+// ---------------------------------------------------------------
 
 template <>
 struct QueueParamTraits<bool> {
@@ -258,7 +258,7 @@ struct QueueParamTraits<bool> {
   }
 };
 
-
+// ---------------------------------------------------------------
 
 template <class T>
 struct QueueParamTraits_IsEnumCase {
@@ -281,17 +281,17 @@ struct QueueParamTraits_IsEnumCase {
   }
 };
 
+// ---------------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
+// We guarantee our robustness via these requirements:
+// * Object.MutTiedFields() gives us a tuple,
+// * where the combined sizeofs all field types sums to sizeof(Object),
+//   * (thus we know we are exhaustively listing all fields)
+// * where feeding each field back into ParamTraits succeeds,
+// * and ParamTraits is only automated for BytesAlwaysValidT<T> types.
+// (BytesAlwaysValidT rejects bool and enum types, and only accepts int/float
+// types, or array or std::arrays of such types)
+// (Yes, bit-field fields are rejected by MutTiedFields too)
 
 template <class T>
 struct QueueParamTraits_TiedFields {
@@ -323,11 +323,11 @@ struct QueueParamTraits_TiedFields {
   }
 };
 
+// ---------------------------------------------------------------
 
-
-
-
-
+// Adapted from IPC::EnumSerializer, this class safely handles enum values,
+// validating that they are in range using the same EnumValidators as IPDL
+// (namely ContiguousEnumValidator and ContiguousEnumValidatorInclusive).
 template <typename E, typename EnumValidator>
 struct EnumSerializer {
   using ParamType = E;
@@ -372,7 +372,7 @@ struct ContiguousEnumSerializerInclusive
                      ContiguousEnumValidatorInclusive<E, MinLegal, MaxLegal>> {
 };
 
-
+// ---------------------------------------------------------------
 
 template <>
 struct QueueParamTraits<webgl::TexUnpackBlobDesc> {
@@ -442,7 +442,7 @@ struct QueueParamTraits<webgl::TexUnpackBlobDesc> {
       const auto range = view.template ReadRange<uint8_t>(dataSize);
       if (!range) return false;
 
-      
+      // DataSourceSurface demands pointer-to-mutable.
       const auto bytes = const_cast<uint8_t*>(range->begin().get());
       out->sourceSurf = gfx::Factory::CreateWrappingDataSourceSurface(
           bytes, stride, surfSize, format);
@@ -452,7 +452,7 @@ struct QueueParamTraits<webgl::TexUnpackBlobDesc> {
   }
 };
 
-
+// ---------------------------------------------------------------
 
 template <>
 struct QueueParamTraits<nsACString> {
@@ -515,7 +515,7 @@ struct QueueParamTraits<nsAString> {
     if ((!aProducerView.WriteParam(aArg.IsVoid())) || (aArg.IsVoid())) {
       return false;
     }
-    
+    // DLP: No idea if this includes null terminator
     uint32_t len = aArg.Length();
     if ((!aProducerView.WriteParam(len)) || (len == 0)) {
       return false;
@@ -535,7 +535,7 @@ struct QueueParamTraits<nsAString> {
       return true;
     }
 
-    
+    // DLP: No idea if this includes null terminator
     uint32_t len = 0;
     if (!aConsumerView.ReadParam(&len)) {
       return false;
@@ -574,13 +574,13 @@ struct QueueParamTraits<nsString> : public QueueParamTraits<nsAString> {
   using ParamType = nsString;
 };
 
-
+// ---------------------------------------------------------------
 
 template <typename NSTArrayType,
           bool = BytesAlwaysValidT<typename NSTArrayType::value_type>::value>
 struct NSArrayQueueParamTraits;
 
-
+// For ElementTypes that are !BytesAlwaysValidT
 template <typename _ElementType>
 struct NSArrayQueueParamTraits<nsTArray<_ElementType>, false> {
   using ElementType = _ElementType;
@@ -614,13 +614,13 @@ struct NSArrayQueueParamTraits<nsTArray<_ElementType>, false> {
   }
 };
 
-
+// For ElementTypes that are BytesAlwaysValidT
 template <typename _ElementType>
 struct NSArrayQueueParamTraits<nsTArray<_ElementType>, true> {
   using ElementType = _ElementType;
   using ParamType = nsTArray<ElementType>;
 
-  
+  // TODO: Are there alignment issues?
   template <typename U>
   static bool Write(ProducerView<U>& aProducerView, const ParamType& aArg) {
     size_t arrayLen = aArg.Length();
@@ -649,13 +649,13 @@ struct QueueParamTraits<nsTArray<ElementType>>
   using ParamType = nsTArray<ElementType>;
 };
 
-
+// ---------------------------------------------------------------
 
 template <typename ArrayType,
           bool = BytesAlwaysValidT<typename ArrayType::ElementType>::value>
 struct ArrayQueueParamTraits;
 
-
+// For ElementTypes that are !BytesAlwaysValidT
 template <typename _ElementType, size_t Length>
 struct ArrayQueueParamTraits<Array<_ElementType, Length>, false> {
   using ElementType = _ElementType;
@@ -678,7 +678,7 @@ struct ArrayQueueParamTraits<Array<_ElementType, Length>, false> {
   }
 };
 
-
+// For ElementTypes that are BytesAlwaysValidT
 template <typename _ElementType, size_t Length>
 struct ArrayQueueParamTraits<Array<_ElementType, Length>, true> {
   using ElementType = _ElementType;
@@ -701,7 +701,7 @@ struct QueueParamTraits<Array<ElementType, Length>>
   using ParamType = Array<ElementType, Length>;
 };
 
-
+// ---------------------------------------------------------------
 
 template <typename ElementType>
 struct QueueParamTraits<Maybe<ElementType>> {
@@ -733,7 +733,7 @@ struct QueueParamTraits<Maybe<ElementType>> {
   }
 };
 
-
+// ---------------------------------------------------------------
 
 template <typename TypeA, typename TypeB>
 struct QueueParamTraits<std::pair<TypeA, TypeB>> {
@@ -752,66 +752,6 @@ struct QueueParamTraits<std::pair<TypeA, TypeB>> {
   }
 };
 
+}  // namespace mozilla::webgl
 
-
-template <class... T>
-struct QueueParamTraits<std::tuple<T...>> {
-  using ParamType = std::tuple<T...>;
-
-  template <typename U>
-  static bool Write(ProducerView<U>& aProducerView, const ParamType& aArg) {
-    bool ok = true;
-    mozilla::MapTuple(aArg, [&](const auto& field) {
-      ok &= aProducerView.WriteParam(field);
-      return true;  
-    });
-    return ok;
-  }
-
-  template <typename U>
-  static bool Read(ConsumerView<U>& aConsumerView, ParamType* aArg) {
-    bool ok = true;
-    mozilla::MapTuple(*aArg, [&](auto& field) {
-      ok &= aConsumerView.ReadParam(&field);
-      return true;  
-    });
-    return ok;
-  }
-};
-
-
-
-template <class K, class V, class H, class E>
-struct QueueParamTraits<std::unordered_map<K, V, H, E>> {
-  using ParamType = std::unordered_map<K, V, H, E>;
-
-  template <typename U>
-  static bool Write(ProducerView<U>& aProducerView, const ParamType& aArg) {
-    bool ok = aProducerView.WriteParam(uint64_t{aArg.size()});
-    for (const auto& pair : aArg) {
-      ok &= aProducerView.WriteParam(pair);
-    }
-    return ok;
-  }
-
-  template <typename U>
-  static bool Read(ConsumerView<U>& aConsumerView, ParamType* aArg) {
-    aArg->clear();
-
-    auto size = uint64_t{0};
-    if (!aConsumerView.ReadParam(&size)) return false;
-
-    aArg->reserve(size);
-    for (const auto i : IntegerRange(size)) {
-      (void)i;
-      auto pair = std::pair<K, V>{};
-      if (!aConsumerView.ReadParam(&pair)) return false;
-      aArg->insert(pair);
-    }
-    return true;
-  }
-};
-
-}  
-
-#endif  
+#endif  // _QUEUEPARAMTRAITS_H_

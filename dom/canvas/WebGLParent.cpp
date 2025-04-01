@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebGLParent.h"
 
@@ -31,7 +31,7 @@ WebGLParent::WebGLParent(layers::SharedSurfacesHolder* aSharedSurfacesHolder,
 
 WebGLParent::~WebGLParent() = default;
 
-
+// -
 
 using IPCResult = mozilla::ipc::IPCResult;
 
@@ -65,9 +65,9 @@ IPCResult WebGLParent::RecvDispatchCommands(BigBuffer&& shmem,
     size_t id = 0;
     if (!view.ReadParam(&id)) break;
 
-    
-    
-    
+    // We split this up so that we don't end up in a long callstack chain of
+    // WebGLMethodDispatcher<i>|i=0->N. First get the lambda for dispatch, then
+    // invoke the lambda with our args.
     const auto pfn =
         WebGLMethodDispatcher<0>::DispatchCommandFuncById<HostWebGLContext>(id);
     if (!pfn) {
@@ -109,7 +109,7 @@ IPCResult WebGLParent::RecvTexImage(const uint32_t level,
   return IPC_OK();
 }
 
-
+// -
 
 mozilla::ipc::IPCResult WebGLParent::Recv__delete__() {
   mHost = nullptr;
@@ -127,7 +127,7 @@ mozilla::ipc::IPCResult WebGLParent::RecvWaitForTxn(
   return IPC_OK();
 }
 
-
+// -
 
 IPCResult WebGLParent::RecvGetFrontBufferSnapshot(
     webgl::FrontBufferSnapshotIpc* const ret) {
@@ -167,7 +167,7 @@ IPCResult WebGLParent::GetFrontBufferSnapshot(
     return true;
   }();
   if (!ok) {
-    
+    // Zero means failure, as we still need to send any shmem we alloc.
     ret->surfSize = {0, 0};
   }
   return IPC_OK();
@@ -193,8 +193,8 @@ IPCResult WebGLParent::RecvGetBufferSubData(const GLenum target,
   const auto dataRange =
       Range<uint8_t>{shmemRange.begin() + 1, shmemRange.end()};
 
-  
-  
+  // We need to always send the shmem:
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1463831#c2
   const auto ok = mHost->GetBufferSubData(target, srcByteOffset, dataRange);
   *(shmemRange.begin().get()) = ok;
   *ret = shmem.Extract();
@@ -233,7 +233,7 @@ IPCResult WebGLParent::RecvReadPixels(const webgl::ReadPixelsDesc& desc,
   return IPC_OK();
 }
 
-
+// -
 
 IPCResult WebGLParent::RecvCheckFramebufferStatus(GLenum target,
                                                   GLenum* const ret) {
@@ -414,6 +414,17 @@ IPCResult WebGLParent::RecvGetSamplerParameter(ObjectId id, GLenum pname,
   return IPC_OK();
 }
 
+IPCResult WebGLParent::RecvGetShaderPrecisionFormat(
+    GLenum shaderType, GLenum precisionType,
+    Maybe<webgl::ShaderPrecisionFormat>* const ret) {
+  if (!mHost) {
+    return IPC_FAIL(this, "HostWebGLContext is not initialized.");
+  }
+
+  *ret = mHost->GetShaderPrecisionFormat(shaderType, precisionType);
+  return IPC_OK();
+}
+
 IPCResult WebGLParent::RecvGetString(GLenum pname,
                                      Maybe<std::string>* const ret) {
   if (!mHost) {
@@ -472,4 +483,4 @@ IPCResult WebGLParent::RecvValidateProgram(ObjectId id, bool* const ret) {
   return IPC_OK();
 }
 
-}  
+}  // namespace mozilla::dom

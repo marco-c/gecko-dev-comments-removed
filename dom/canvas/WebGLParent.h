@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef WEBGLPARENT_H_
 #define WEBGLPARENT_H_
@@ -20,7 +20,7 @@ namespace layers {
 class SharedSurfacesHolder;
 class SharedSurfaceTextureClient;
 class SurfaceDescriptor;
-}  
+}  // namespace layers
 
 namespace dom {
 
@@ -34,7 +34,7 @@ class WebGLParent : public PWebGLParent, public SupportsWeakPtr {
                                          webgl::InitContextResult* out);
 
   WebGLParent(layers::SharedSurfacesHolder* aSharedSurfacesHolder,
-              const dom::ContentParentId& aContentId);  
+              const dom::ContentParentId& aContentId);  // For IPDL
 
   using IPCResult = mozilla::ipc::IPCResult;
 
@@ -60,7 +60,7 @@ class WebGLParent : public PWebGLParent, public SupportsWeakPtr {
                            ReadPixelsBuffer&& buffer,
                            webgl::ReadPixelsResultIpc* ret);
 
-  
+  // -
 
   using ObjectId = webgl::ObjectId;
 
@@ -97,6 +97,9 @@ class WebGLParent : public PWebGLParent, public SupportsWeakPtr {
                                          Maybe<double>* ret);
   IPCResult RecvGetSamplerParameter(ObjectId id, GLenum pname,
                                     Maybe<double>* ret);
+  IPCResult RecvGetShaderPrecisionFormat(
+      GLenum shaderType, GLenum precisionType,
+      Maybe<webgl::ShaderPrecisionFormat>* ret);
   IPCResult RecvGetString(GLenum pname, Maybe<std::string>* ret);
   IPCResult RecvGetTexParameter(ObjectId id, GLenum pname, Maybe<double>* ret);
   IPCResult RecvGetUniform(ObjectId id, uint32_t loc,
@@ -105,7 +108,7 @@ class WebGLParent : public PWebGLParent, public SupportsWeakPtr {
   IPCResult RecvOnMemoryPressure();
   IPCResult RecvValidateProgram(ObjectId id, bool* ret);
 
-  
+  // -
 
   const RefPtr<layers::SharedSurfacesHolder> mSharedSurfacesHolder;
   const dom::ContentParentId mContentId;
@@ -123,11 +126,11 @@ class WebGLParent : public PWebGLParent, public SupportsWeakPtr {
 
   std::unique_ptr<HostWebGLContext> mHost;
 
-  
+  // Runnable that repeatedly processes our WebGL command queue
   RefPtr<Runnable> mRunCommandsRunnable;
 };
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif  
+#endif  // WEBGLPARENT_H_
