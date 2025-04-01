@@ -355,22 +355,11 @@ Promise* ViewTransition::GetFinished(ErrorResult& aRv) {
   return mFinishedPromise;
 }
 
-
-
-void ViewTransition::MaybeScheduleUpdateCallback() {
-  
-  
-  if (mPhase == Phase::Done) {
+void ViewTransition::CallUpdateCallbackIgnoringErrors(CallIfDone aCallIfDone) {
+  if (aCallIfDone == CallIfDone::No && mPhase == Phase::Done) {
     return;
   }
-
-  RefPtr doc = mDocument;
-
-  
-  doc->ScheduleViewTransitionUpdateCallback(this);
-
-  
-  doc->FlushViewTransitionUpdateCallbackQueue();
+  CallUpdateCallback(IgnoreErrors());
 }
 
 
@@ -613,7 +602,7 @@ static nsTArray<Keyframe> BuildGroupKeyframes(
       AnimatedPropertyID(eCSSProperty_height),
       Servo_DeclarationBlock_CreateEmpty().Consume(),
   };
-  SetProp(height.mServoDeclarationBlock, aDoc, eCSSProperty_height,
+  SetProp(width.mServoDeclarationBlock, aDoc, eCSSProperty_height,
           cssSize.height, eCSSUnit_Pixel);
   firstKeyframe.mPropertyValues.AppendElement(std::move(transform));
   firstKeyframe.mPropertyValues.AppendElement(std::move(width));
@@ -922,13 +911,6 @@ void ViewTransition::PerformPendingOperations() {
   MOZ_ASSERT(mDocument);
   MOZ_ASSERT(mDocument->GetActiveViewTransition() == this);
 
-  
-  
-  
-  
-  RefPtr doc = mDocument;
-  doc->FlushViewTransitionUpdateCallbackQueue();
-
   switch (mPhase) {
     case Phase::PendingCapture:
       return Setup();
@@ -1199,7 +1181,6 @@ void ViewTransition::Setup() {
     return SkipTransition(*skipReason);
   }
 
-  
   mDocument->SetRenderingSuppressedForViewTransitions(true);
 
   
@@ -1207,9 +1188,9 @@ void ViewTransition::Setup() {
   
   
   
-  mDocument->Dispatch(
-      NewRunnableMethod("ViewTransition::MaybeScheduleUpdateCallback", this,
-                        &ViewTransition::MaybeScheduleUpdateCallback));
+  mDocument->Dispatch(NewRunnableMethod<CallIfDone>(
+      "ViewTransition::CallUpdateCallbackFromSetup", this,
+      &ViewTransition::CallUpdateCallbackIgnoringErrors, CallIfDone::No));
 }
 
 
@@ -1430,8 +1411,12 @@ void ViewTransition::SkipTransition(
   }
   
   
+  
+  
   if (UnderlyingValue(mPhase) < UnderlyingValue(Phase::UpdateCallbackCalled)) {
-    mDocument->ScheduleViewTransitionUpdateCallback(this);
+    mDocument->Dispatch(NewRunnableMethod<CallIfDone>(
+        "ViewTransition::CallUpdateCallbackFromSkip", this,
+        &ViewTransition::CallUpdateCallbackIgnoringErrors, CallIfDone::Yes));
   }
 
   
