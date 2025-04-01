@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+'use strict';
+
+eventsTest('large values', [
+  ['open', 1],
+  ['get', 1],
+  ['getall', 4],
+  ['get', 3],
+  ['continue', 3],
+  ['open', 3],
+]);

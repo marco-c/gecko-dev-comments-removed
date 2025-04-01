@@ -1,15 +1,6 @@
 
 
 
-
-
-
-
-
-'use strict';
-
-
-
 const wrapThreshold = 128 * 1024;
 
 function populateStore(store) {
@@ -289,73 +280,3 @@ function eventsTest(label, operations) {
         });
   }, label);
 }
-
-eventsTest('small values', [
-  ['get', 2],       ['count', 4],       ['continue-empty', null],
-  ['get-empty', 5], ['add', 5],         ['open', 2],
-  ['continue', 2],  ['get', 4],         ['get-empty', 6],
-  ['count', 5],     ['put-with-id', 5], ['put', 6],
-  ['error', 3],     ['continue', 4],    ['count', 6],
-  ['get-empty', 7], ['open', 4],        ['open-empty', 7],
-  ['add', 7],
-]);
-
-eventsTest('large values', [
-  ['open', 1],
-  ['get', 1],
-  ['getall', 4],
-  ['get', 3],
-  ['continue', 3],
-  ['open', 3],
-]);
-
-eventsTest('large value followed by small values', [
-  ['get', 1],
-  ['getall', 4],
-  ['open', 2],
-  ['continue-empty', null],
-  ['get', 2],
-  ['get-empty', 5],
-  ['count', 4],
-  ['continue-empty', null],
-  ['open-empty', 5],
-  ['add', 5],
-  ['error', 1],
-  ['continue', 2],
-  ['get-empty', 6],
-  ['put-with-id', 5],
-  ['put', 6],
-]);
-
-eventsTest('large values mixed with small values', [
-  ['get', 1],
-  ['get', 2],
-  ['get-empty', 5],
-  ['count', 4],
-  ['continue-empty', null],
-  ['open', 1],
-  ['continue', 2],
-  ['open-empty', 5],
-  ['getall', 4],
-  ['open', 2],
-  ['continue-empty', null],
-  ['add', 5],
-  ['get', 3],
-  ['count', 5],
-  ['get-empty', 6],
-  ['put-with-id', 5],
-  ['getall', 5],
-  ['continue', 3],
-  ['open-empty', 6],
-  ['put', 6],
-  ['error', 1],
-  ['continue', 2],
-  ['open', 4],
-  ['get-empty', 7],
-  ['count', 6],
-  ['continue', 3],
-  ['add', 7],
-  ['getall', 7],
-  ['error', 3],
-  ['count', 7],
-]);
