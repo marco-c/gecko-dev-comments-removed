@@ -837,7 +837,12 @@ void nsSubDocumentFrame::MaybeUpdateEmbedderZoom() {
   }
 
   BrowsingContext* bc = fl->GetExtantBrowsingContext();
-  if (!bc || bc->IsTop()) {
+  if (!bc) {
+    return;
+  }
+
+  BrowsingContext* parent = bc->GetParent();
+  if (!parent) {
     
     
     
@@ -848,7 +853,7 @@ void nsSubDocumentFrame::MaybeUpdateEmbedderZoom() {
   
   
   
-  auto newZoom = Style()->EffectiveZoom().Zoom(PresContext()->GetFullZoom());
+  auto newZoom = Style()->EffectiveZoom().Zoom(parent->GetFullZoom());
   if (bc->GetFullZoom() == newZoom) {
     return;
   }
@@ -896,9 +901,15 @@ void nsSubDocumentFrame::MaybeUpdateRemoteStyle(
 void nsSubDocumentFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   nsAtomicContainerFrame::DidSetComputedStyle(aOldComputedStyle);
 
-  MaybeUpdateEmbedderColorScheme();
-
-  MaybeUpdateRemoteStyle(aOldComputedStyle);
+  if (aOldComputedStyle) {
+    
+    
+    MaybeUpdateEmbedderColorScheme();
+    MaybeUpdateRemoteStyle(aOldComputedStyle);
+    if (aOldComputedStyle->EffectiveZoom() != Style()->EffectiveZoom()) {
+      MaybeUpdateEmbedderZoom();
+    }
+  }
 
   
   
