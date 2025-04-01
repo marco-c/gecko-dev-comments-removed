@@ -98,9 +98,7 @@ static bool ConsumeUserActivation(nsPIDOMWindowInner* aParent) {
   return doc->ConsumeTransientUserGestureActivation();
 }
 
-
-bool CredentialsContainer::IsSameOriginWithAncestors(
-    nsPIDOMWindowInner* aParent) {
+static bool IsSameOriginWithAncestors(nsPIDOMWindowInner* aParent) {
   
   
   
