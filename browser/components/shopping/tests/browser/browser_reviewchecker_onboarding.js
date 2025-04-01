@@ -15,8 +15,14 @@ const PRODUCT_URI = Services.io.newURI(
   "https://example.com/product/B09TJGHL5F"
 );
 const CONTENT_PAGE_URI = Services.io.newURI("https://example.com");
-const UNSUPPORTED_NON_PDP_URI = Services.io.newURI("about:about");
+const UNSUPPORTED_NON_PDP_URL = "about:about";
+const UNSUPPORTED_NON_PDP_URI = Services.io.newURI(UNSUPPORTED_NON_PDP_URL);
+
 const REVIEW_CHECKER_ACTOR = "ReviewChecker";
+
+const EMPTY_STATE_CLASS_NAME = ".FS_OPT_IN_SIDEBAR_VARIANT";
+const EMPTY_STATE_UNSUPPORTED_PDP_CLASS_NAME =
+  ".FS_OPT_IN_SIDEBAR_VARIANT_UNSUPPORTED_NON_PDP";
 
 
 
@@ -74,6 +80,82 @@ function setOnboardingPrefs(states = {}) {
   }
 }
 
+
+
+
+
+
+
+
+
+async function assertEmptyStateType(browser, messageName) {
+  await SpecialPowers.spawn(browser, [messageName], async className => {
+    let shoppingContainer = await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("shopping-container"),
+      "shopping-container"
+    );
+    let containerElem =
+      shoppingContainer.shadowRoot.getElementById("shopping-container");
+    let messageSlot = containerElem.getElementsByTagName("slot");
+
+    
+    
+    ok(messageSlot.length, `message slot element exists`);
+    is(
+      messageSlot[0].name,
+      "multi-stage-message-slot",
+      "multi-stage-message-slot showing opt-in message rendered"
+    );
+
+    ok(
+      !content.document.getElementById("multi-stage-message-root").hidden,
+      "message is shown"
+    );
+    ok(content.document.querySelector(className), "Rendered correct message");
+  });
+}
+
+
+
+
+
+
+
+
+async function assertEmptyStateTypeWithRC(emptyStateClassName) {
+  await withReviewCheckerSidebar(
+    async className => {
+      let shoppingContainer = await ContentTaskUtils.waitForCondition(
+        () =>
+          content.document.querySelector("shopping-container")?.wrappedJSObject,
+        "Review Checker is loaded."
+      );
+      await shoppingContainer.updateComplete;
+      let containerElem =
+        shoppingContainer.shadowRoot.getElementById("shopping-container");
+      let messageSlot = containerElem.getElementsByTagName("slot");
+
+      
+      
+      ok(messageSlot.length, `message slot element exists`);
+      is(
+        messageSlot[0].name,
+        "multi-stage-message-slot",
+        "multi-stage-message-slot showing opt-in message rendered"
+      );
+      ok(
+        !content.document.getElementById("multi-stage-message-root").hidden,
+        "message is shown"
+      );
+      ok(
+        content.document.querySelector(`${className}`),
+        `Rendered correct message ${className}`
+      );
+    },
+    [emptyStateClassName]
+  );
+}
+
 add_setup(async function setup() {
   
   
@@ -117,35 +199,7 @@ add_task(async function test_showOnboarding_notOptedIn() {
         );
       actor.updateCurrentURL(PRODUCT_URI);
 
-      await SpecialPowers.spawn(browser, [], async () => {
-        let shoppingContainer = await ContentTaskUtils.waitForCondition(
-          () => content.document.querySelector("shopping-container"),
-          "shopping-container"
-        );
-
-        let containerElem =
-          shoppingContainer.shadowRoot.getElementById("shopping-container");
-        let messageSlot = containerElem.getElementsByTagName("slot");
-
-        
-        
-        ok(messageSlot.length, `message slot element exists`);
-        is(
-          messageSlot[0].name,
-          "multi-stage-message-slot",
-          "multi-stage-message-slot showing opt-in message rendered"
-        );
-
-        ok(
-          !content.document.getElementById("multi-stage-message-root").hidden,
-          "message is shown"
-        );
-
-        ok(
-          content.document.querySelector(".FS_OPT_IN_SIDEBAR_VARIANT"),
-          "Rendered correct message"
-        );
-      });
+      await assertEmptyStateType(browser, EMPTY_STATE_CLASS_NAME);
     }
   );
 
@@ -188,33 +242,7 @@ add_task(async function test_showOnboarding_notOptedIn_supported() {
         );
       actor.updateCurrentURL(CONTENT_PAGE_URI);
 
-      await SpecialPowers.spawn(browser, [], async () => {
-        let shoppingContainer = await ContentTaskUtils.waitForCondition(
-          () => content.document.querySelector("shopping-container"),
-          "shopping-container"
-        );
-        let containerElem =
-          shoppingContainer.shadowRoot.getElementById("shopping-container");
-        let messageSlot = containerElem.getElementsByTagName("slot");
-
-        
-        
-        ok(messageSlot.length, `message slot element exists`);
-        is(
-          messageSlot[0].name,
-          "multi-stage-message-slot",
-          "multi-stage-message-slot showing opt-in message rendered"
-        );
-
-        ok(
-          !content.document.getElementById("multi-stage-message-root").hidden,
-          "message is shown"
-        );
-        ok(
-          content.document.querySelector(".FS_OPT_IN_SIDEBAR_VARIANT"),
-          "Rendered correct message"
-        );
-      });
+      await assertEmptyStateType(browser, EMPTY_STATE_CLASS_NAME);
     }
   );
 
@@ -260,35 +288,10 @@ add_task(
           );
         actor.updateCurrentURL(UNSUPPORTED_NON_PDP_URI);
 
-        await SpecialPowers.spawn(browser, [], async () => {
-          let shoppingContainer = await ContentTaskUtils.waitForCondition(
-            () => content.document.querySelector("shopping-container"),
-            "shopping-container"
-          );
-
-          let containerElem =
-            shoppingContainer.shadowRoot.getElementById("shopping-container");
-          let messageSlot = containerElem.getElementsByTagName("slot");
-
-          
-          
-          ok(messageSlot.length, `message slot element exists`);
-          is(
-            messageSlot[0].name,
-            "multi-stage-message-slot",
-            "multi-stage-message-slot showing opt-in message rendered"
-          );
-          ok(
-            !content.document.getElementById("multi-stage-message-root").hidden,
-            "message is shown"
-          );
-          ok(
-            content.document.querySelector(
-              ".FS_OPT_IN_SIDEBAR_VARIANT_UNSUPPORTED_NON_PDP"
-            ),
-            "Rendered correct message"
-          );
-        });
+        await assertEmptyStateType(
+          browser,
+          EMPTY_STATE_UNSUPPORTED_PDP_CLASS_NAME
+        );
       }
     );
 
@@ -404,3 +407,80 @@ add_task(async function test_hideOnboarding_OptIn_AfterSurveySeen() {
   );
   await SpecialPowers.popPrefEnv();
 });
+
+
+
+
+
+add_task(
+  async function test_showOnboarding_integrated_sidebar_correct_ui_on_rerender() {
+    
+    setOnboardingPrefs({ optedIn: 0, telemetryEnabled: true });
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.shopping.experience2023.autoClose.userEnabled", false],
+        ["browser.shopping.experience2023.autoOpen.userEnabled", true],
+        ["toolkit.shopping.ohttpRelayURL", ""],
+        ["toolkit.shopping.ohttpConfigURL", ""],
+      ],
+    });
+
+    await BrowserTestUtils.withNewTab(PRODUCT_TEST_URL, async browser => {
+      await SidebarController.show("viewReviewCheckerSidebar");
+      await assertEmptyStateTypeWithRC(EMPTY_STATE_CLASS_NAME);
+
+      
+      let loadedPromise = BrowserTestUtils.browserLoaded(browser);
+      await BrowserTestUtils.reloadTab(gBrowser.selectedTab);
+      await loadedPromise;
+      Assert.ok(true, "Promise resolved after reloading tab");
+
+      info("Verifying UI for PDP after reload");
+      await assertEmptyStateTypeWithRC(EMPTY_STATE_CLASS_NAME);
+
+      
+      SidebarController.hide();
+      await SidebarController.show("viewReviewCheckerSidebar");
+
+      info("Verifying UI for PDP after closing then reopening the RC panel");
+      await assertEmptyStateTypeWithRC(EMPTY_STATE_CLASS_NAME);
+
+      
+      let unsupportedSiteTab = BrowserTestUtils.addTab(
+        gBrowser,
+        UNSUPPORTED_NON_PDP_URL
+      );
+      let nonPDPBrowser = unsupportedSiteTab.linkedBrowser;
+      await BrowserTestUtils.browserLoaded(
+        nonPDPBrowser,
+        false,
+        UNSUPPORTED_NON_PDP_URL
+      );
+
+      await BrowserTestUtils.switchTab(gBrowser, unsupportedSiteTab);
+      Assert.ok(true, "Browser is loaded after switching tabs");
+      Assert.ok(SidebarController.isOpen, "Sidebar is open now");
+
+      info(
+        "Verifying UI for unsupported sites after switching to an unsupported site tab"
+      );
+      await assertEmptyStateTypeWithRC(EMPTY_STATE_UNSUPPORTED_PDP_CLASS_NAME);
+
+      
+      SidebarController.hide();
+      await SidebarController.show("viewReviewCheckerSidebar");
+
+      info(
+        "Verifying UI for unsupported sites after closing then reopening the RC panel"
+      );
+      await assertEmptyStateTypeWithRC(EMPTY_STATE_UNSUPPORTED_PDP_CLASS_NAME);
+
+      await BrowserTestUtils.removeTab(unsupportedSiteTab);
+    });
+
+    SidebarController.hide();
+
+    await SpecialPowers.popPrefEnv();
+    await SpecialPowers.popPrefEnv();
+  }
+);
