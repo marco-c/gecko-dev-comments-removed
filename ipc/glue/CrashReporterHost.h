@@ -17,11 +17,8 @@
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 
-namespace CrashReporter {
-class CrashReporterInitArgs;
-}
-
-namespace mozilla::ipc {
+namespace mozilla {
+namespace ipc {
 
 
 
@@ -32,8 +29,7 @@ class CrashReporterHost {
 
  public:
   CrashReporterHost(GeckoProcessType aProcessType, base::ProcessId aPid,
-                    const CrashReporter::CrashReporterInitArgs& aInitArgs);
-  ~CrashReporterHost();
+                    CrashReporter::ThreadId aThreadId);
 
   
   
@@ -129,6 +125,7 @@ class CrashReporterHost {
   bool mFinalized;
 };
 
+}  
 }  
 
 #endif  

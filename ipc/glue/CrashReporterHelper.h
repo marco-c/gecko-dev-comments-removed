@@ -13,7 +13,8 @@
 #include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
 
-namespace mozilla::ipc {
+namespace mozilla {
+namespace ipc {
 
 
 
@@ -42,11 +43,10 @@ template <class Derived>
 class CrashReporterHelper {
  public:
   CrashReporterHelper() : mCrashReporter(nullptr) {}
-  IPCResult RecvInitCrashReporter(
-      const CrashReporter::CrashReporterInitArgs& aInitArgs) {
+  IPCResult RecvInitCrashReporter(const CrashReporter::ThreadId& aThreadId) {
     base::ProcessId pid = static_cast<Derived*>(this)->OtherPid();
     mCrashReporter = MakeUnique<ipc::CrashReporterHost>(Derived::PROCESS_TYPE,
-                                                        pid, aInitArgs);
+                                                        pid, aThreadId);
     return IPC_OK();
   }
 
@@ -100,6 +100,7 @@ class CrashReporterHelper {
   UniquePtr<ipc::CrashReporterHost> mCrashReporter;
 };
 
+}  
 }  
 
 #endif  

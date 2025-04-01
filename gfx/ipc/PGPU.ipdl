@@ -3,7 +3,6 @@
 
 
 
-include CrashReporterInitArgs;
 include GraphicsMessages;
 include MemoryReportTypes;
 include HangTypes;
@@ -148,7 +147,7 @@ child:
   
   async GraphicsError(nsCString aError);
 
-  async InitCrashReporter(CrashReporterInitArgs aInitArgs);
+  async InitCrashReporter(NativeThreadId threadId);
 
   async CreateVRProcess();
   async ShutdownVRProcess();

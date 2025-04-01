@@ -32,8 +32,7 @@
 #  include <mach/mach.h>
 #elif defined(XP_LINUX)
 #  include <signal.h>
-struct DirectAuxvDumpInfo;
-#endif  
+#endif
 
 class nsIFile;
 
@@ -61,13 +60,6 @@ typedef int ThreadId;
 typedef int FileHandle;
 const FileHandle kInvalidFileHandle = -1;
 #endif
-
-#if defined(XP_LINUX)
-void GetCurrentProcessAuxvInfo(DirectAuxvDumpInfo* aAuxvInfo);
-void RegisterChildAuxvInfo(pid_t aChildPid,
-                           const DirectAuxvDumpInfo& aAuxvInfo);
-void UnregisterChildAuxvInfo(pid_t aChildPid);
-#endif  
 
 
 
