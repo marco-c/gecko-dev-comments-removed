@@ -2655,8 +2655,7 @@ class nsContentUtils {
 
 
 
-
-  static bool IsAutocompleteEnabled(mozilla::dom::Element* aElement);
+  static bool IsAutocompleteEnabled(mozilla::dom::HTMLInputElement* aInput);
 
   enum AutocompleteAttrState : uint8_t {
     eAutocompleteAttrState_Unknown = 1,
