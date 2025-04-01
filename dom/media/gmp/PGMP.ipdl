@@ -3,6 +3,7 @@
 
 
 
+include CrashReporterInitArgs;
 include PrefsTypes;
 include protocol PGMPContent;
 include protocol PGMPTimer;
@@ -31,7 +32,7 @@ sync protocol PGMP
   manages PGMPStorage;
 
 parent:
-  async InitCrashReporter(NativeThreadId threadId);
+  async InitCrashReporter(CrashReporterInitArgs aInitArgs);
   async PGMPTimer();
   async PGMPStorage();
 
