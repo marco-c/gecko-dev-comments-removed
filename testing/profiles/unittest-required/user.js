@@ -220,7 +220,7 @@ user_pref("ui.caretBlinkTime", -1);
 
 
 user_pref("ui.scrollbarFadeDuration", 0);
-user_pref("webextensions.tests", true);
+
 
 user_pref("toolkit.telemetry.initDelay", 99999999);
 

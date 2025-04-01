@@ -3578,8 +3578,6 @@ pref("toolkit.pageThumbs.screenSizeDivisor", 7);
 pref("toolkit.pageThumbs.minWidth", 0);
 pref("toolkit.pageThumbs.minHeight", 0);
 
-pref("webextensions.tests", false);
-
 
 pref("webextensions.webRequest.requestBodyMaxRawBytes", 16777216);
 
