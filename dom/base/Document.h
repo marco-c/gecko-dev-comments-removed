@@ -1407,6 +1407,12 @@ class Document : public nsINode,
   nsICookieJarSettings* CookieJarSettings();
 
   
+  void SetCookieJarSettings(nsICookieJarSettings* aCookieJarSettings) {
+    MOZ_ASSERT(aCookieJarSettings);
+    mCookieJarSettings = aCookieJarSettings;
+  }
+
+  
   bool UsingStorageAccess();
 
   
