@@ -642,7 +642,13 @@ add_task(async function test_button_stuck() {
 
   info("Hide the SearchModeSwitcher");
   let promiseMenuClosed = BrowserTestUtils.waitForEvent(popup, "popuphidden");
-  EventUtils.synthesizeMouseAtCenter(button, {}, win);
+  
+  EventUtils.synthesizeNativeMouseEvent({
+    type: "click",
+    target: button,
+    atCenter: true,
+    win,
+  });
   await promiseMenuClosed;
   await BrowserTestUtils.closeWindow(win);
 });
