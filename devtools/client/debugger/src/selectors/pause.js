@@ -202,22 +202,30 @@ export function getSelectedFrameBindings(state, thread) {
   return frameBindings;
 }
 
-function getFrameScope(state, frame) {
-  return (
-    getOriginalFrameScope(state, frame) || getGeneratedFrameScope(state, frame)
-  );
-}
-
-
-export function getSelectedScope(state, thread) {
-  const frame = getSelectedFrame(state, thread);
-
-  const frameScope = getFrameScope(state, frame);
-  if (!frameScope) {
+export function getSelectedScope(state) {
+  const frame = getSelectedFrame(state);
+  if (!frame) {
     return null;
   }
 
-  return frameScope.scope || null;
+  let scopes;
+  
+  if (
+    frame.location.source.isOriginal &&
+    !frame.location.source.isPrettyPrinted &&
+    !frame.generatedLocation?.source.isWasm
+  ) {
+    scopes = getOriginalFrameScope(state, frame)?.scope;
+    
+    if (!scopes) {
+      scopes = getGeneratedFrameScope(state, frame)?.scope;
+    }
+  } else {
+    
+    
+    scopes = getGeneratedFrameScope(state, frame)?.scope;
+  }
+  return scopes;
 }
 
 export function getSelectedOriginalScope(state, thread) {
