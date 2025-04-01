@@ -274,7 +274,9 @@ NS_IMETHODIMP ConcurrentConnection::HandleError(mozIStorageError* aError) {
 
 NS_IMETHODIMP ConcurrentConnection::HandleCompletion(uint16_t aReason) {
   
-  if (aReason == mozIStorageStatementCallback::REASON_FINISHED) {
+  
+  
+  if (mConn && aReason == mozIStorageStatementCallback::REASON_FINISHED) {
     
     
     if (mSchemaVersion == nsINavHistoryService::DATABASE_SCHEMA_VERSION) {
