@@ -78,7 +78,6 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/h2/0.3.22")]
 #![deny(
     missing_debug_implementations,
     missing_docs,

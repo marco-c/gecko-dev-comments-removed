@@ -252,6 +252,12 @@ pub struct Builder {
 
     
     max_send_buffer_size: usize,
+
+    
+    
+    
+    
+    local_max_error_reset_streams: Option<usize>,
 }
 
 
@@ -650,6 +656,8 @@ impl Builder {
             settings: Settings::default(),
             initial_target_connection_window_size: None,
             max_send_buffer_size: proto::DEFAULT_MAX_SEND_BUFFER_SIZE,
+
+            local_max_error_reset_streams: Some(proto::DEFAULT_LOCAL_RESET_COUNT_MAX),
         }
     }
 
@@ -884,6 +892,24 @@ impl Builder {
     
     pub fn max_concurrent_reset_streams(&mut self, max: usize) -> &mut Self {
         self.reset_stream_max = max;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn max_local_error_reset_streams(&mut self, max: Option<usize>) -> &mut Self {
+        self.local_max_error_reset_streams = max;
         self
     }
 
@@ -1361,6 +1387,9 @@ where
                             reset_stream_duration: self.builder.reset_stream_duration,
                             reset_stream_max: self.builder.reset_stream_max,
                             remote_reset_stream_max: self.builder.pending_accept_reset_stream_max,
+                            local_error_reset_streams_max: self
+                                .builder
+                                .local_max_error_reset_streams,
                             settings: self.builder.settings.clone(),
                         },
                     );
@@ -1472,9 +1501,11 @@ impl proto::Peer for Peer {
 
     const NAME: &'static str = "Server";
 
-    fn is_server() -> bool {
-        true
-    }
+    
+
+
+
+
 
     fn r#dyn() -> proto::DynPeer {
         proto::DynPeer::Server

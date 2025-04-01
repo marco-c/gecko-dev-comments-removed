@@ -25,6 +25,7 @@ pub struct Error {
 #[derive(Debug)]
 enum Kind {
     
+    #[allow(dead_code)]
     Reset(StreamId, Reason, Initiator),
 
     

@@ -30,6 +30,8 @@ pub struct FramedRead<T> {
 
     max_header_list_size: usize,
 
+    max_continuation_frames: usize,
+
     partial: Option<Partial>,
 }
 
@@ -41,6 +43,8 @@ struct Partial {
 
     
     buf: BytesMut,
+
+    continuation_frames_count: usize,
 }
 
 #[derive(Debug)]
@@ -51,10 +55,14 @@ enum Continuable {
 
 impl<T> FramedRead<T> {
     pub fn new(inner: InnerFramedRead<T, LengthDelimitedCodec>) -> FramedRead<T> {
+        let max_header_list_size = DEFAULT_SETTINGS_MAX_HEADER_LIST_SIZE;
+        let max_continuation_frames =
+            calc_max_continuation_frames(max_header_list_size, inner.decoder().max_frame_length());
         FramedRead {
             inner,
             hpack: hpack::Decoder::new(DEFAULT_SETTINGS_HEADER_TABLE_SIZE),
-            max_header_list_size: DEFAULT_SETTINGS_MAX_HEADER_LIST_SIZE,
+            max_header_list_size,
+            max_continuation_frames,
             partial: None,
         }
     }
@@ -68,7 +76,6 @@ impl<T> FramedRead<T> {
     }
 
     
-    #[cfg(feature = "unstable")]
     #[inline]
     pub fn max_frame_size(&self) -> usize {
         self.inner.decoder().max_frame_length()
@@ -80,13 +87,17 @@ impl<T> FramedRead<T> {
     #[inline]
     pub fn set_max_frame_size(&mut self, val: usize) {
         assert!(DEFAULT_MAX_FRAME_SIZE as usize <= val && val <= MAX_MAX_FRAME_SIZE as usize);
-        self.inner.decoder_mut().set_max_frame_length(val)
+        self.inner.decoder_mut().set_max_frame_length(val);
+        
+        self.max_continuation_frames = calc_max_continuation_frames(self.max_header_list_size, val);
     }
 
     
     #[inline]
     pub fn set_max_header_list_size(&mut self, val: usize) {
         self.max_header_list_size = val;
+        
+        self.max_continuation_frames = calc_max_continuation_frames(val, self.max_frame_size());
     }
 
     
@@ -96,12 +107,22 @@ impl<T> FramedRead<T> {
     }
 }
 
+fn calc_max_continuation_frames(header_max: usize, frame_max: usize) -> usize {
+    
+    let min_frames_for_list = (header_max / frame_max).max(1);
+    
+    
+    let padding = min_frames_for_list >> 2;
+    min_frames_for_list.saturating_add(padding).max(5)
+}
+
 
 
 
 fn decode_frame(
     hpack: &mut hpack::Decoder,
     max_header_list_size: usize,
+    max_continuation_frames: usize,
     partial_inout: &mut Option<Partial>,
     mut bytes: BytesMut,
 ) -> Result<Option<Frame>, Error> {
@@ -169,6 +190,7 @@ fn decode_frame(
                 *partial_inout = Some(Partial {
                     frame: Continuable::$frame(frame),
                     buf: payload,
+                    continuation_frames_count: 0,
                 });
 
                 return Ok(None);
@@ -274,6 +296,22 @@ fn decode_frame(
             }
 
             
+            if is_end_headers {
+                partial.continuation_frames_count = 0;
+            } else {
+                let cnt = partial.continuation_frames_count + 1;
+                if cnt > max_continuation_frames {
+                    tracing::debug!("too_many_continuations, max = {}", max_continuation_frames);
+                    return Err(Error::library_go_away_data(
+                        Reason::ENHANCE_YOUR_CALM,
+                        "too_many_continuations",
+                    ));
+                } else {
+                    partial.continuation_frames_count = cnt;
+                }
+            }
+
+            
             if partial.buf.is_empty() {
                 partial.buf = bytes.split_off(frame::HEADER_LEN);
             } else {
@@ -354,9 +392,16 @@ where
                 ref mut hpack,
                 max_header_list_size,
                 ref mut partial,
+                max_continuation_frames,
                 ..
             } = *self;
-            if let Some(frame) = decode_frame(hpack, max_header_list_size, partial, bytes)? {
+            if let Some(frame) = decode_frame(
+                hpack,
+                max_header_list_size,
+                max_continuation_frames,
+                partial,
+                bytes,
+            )? {
                 tracing::debug!(?frame, "received");
                 return Poll::Ready(Some(Ok(frame)));
             }

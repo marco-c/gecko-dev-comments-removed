@@ -336,6 +336,12 @@ pub struct Builder {
     
     
     stream_id: StreamId,
+
+    
+    
+    
+    
+    local_max_error_reset_streams: Option<usize>,
 }
 
 #[derive(Debug)]
@@ -645,6 +651,7 @@ impl Builder {
             initial_max_send_streams: usize::MAX,
             settings: Default::default(),
             stream_id: 1.into(),
+            local_max_error_reset_streams: Some(proto::DEFAULT_LOCAL_RESET_COUNT_MAX),
         }
     }
 
@@ -985,6 +992,23 @@ impl Builder {
     
     
     
+    pub fn max_local_error_reset_streams(&mut self, max: Option<usize>) -> &mut Self {
+        self.local_max_error_reset_streams = max;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1293,6 +1317,7 @@ where
                 reset_stream_duration: builder.reset_stream_duration,
                 reset_stream_max: builder.reset_stream_max,
                 remote_reset_stream_max: builder.pending_accept_reset_stream_max,
+                local_error_reset_streams_max: builder.local_max_error_reset_streams,
                 settings: builder.settings.clone(),
             },
         );
@@ -1606,9 +1631,11 @@ impl proto::Peer for Peer {
         proto::DynPeer::Client
     }
 
-    fn is_server() -> bool {
-        false
-    }
+    
+
+
+
+
 
     fn convert_poll_message(
         pseudo: Pseudo,
