@@ -263,13 +263,23 @@
     
 
 
-    save() {
+
+
+
+
+
+    save({ isUserTriggered = false } = {}) {
       SessionStore.addSavedTabGroup(this);
-      this.dispatchEvent(new CustomEvent("TabGroupSaved", { bubbles: true }));
+      this.dispatchEvent(
+        new CustomEvent("TabGroupSaved", {
+          bubbles: true,
+          detail: { isUserTriggered },
+        })
+      );
     }
 
-    saveAndClose() {
-      this.save();
+    saveAndClose({ isUserTriggered } = {}) {
+      this.save({ isUserTriggered });
       gBrowser.removeTabGroup(this);
     }
 

@@ -2976,7 +2976,7 @@
         color = null,
         label = "",
         insertBefore = null,
-        isUserCreated = false,
+        isUserTriggered = false,
         telemetryUserCreateSource = "unknown",
       } = {}
     ) {
@@ -3009,7 +3009,7 @@
         new CustomEvent("TabGroupCreate", {
           bubbles: true,
           detail: {
-            isUserCreated,
+            isUserTriggered,
             telemetryUserCreateSource,
           },
         })
@@ -6879,7 +6879,7 @@
           break;
         }
         case "TabGroupCreate":
-          if (aEvent.detail.isUserCreated) {
+          if (aEvent.detail.isUserTriggered) {
             this.tabGroupMenu.openCreateModal(aEvent.target);
           }
           break;
@@ -9014,7 +9014,7 @@ var TabContextMenu = {
   moveTabsToNewGroup() {
     gBrowser.addTabGroup(this.contextTabs, {
       insertBefore: this.contextTab,
-      isUserCreated: true,
+      isUserTriggered: true,
       telemetryUserCreateSource: "tab_menu",
     });
 
