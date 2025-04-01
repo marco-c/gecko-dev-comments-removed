@@ -97,6 +97,23 @@ extern "C" {
 
 
 
+#define SRTP_SRCTP_INDEX_LEN 4
+
+
+
+
+
+
+
+
+
+#define SRTP_MAX_SRTCP_TRAILER_LEN                                             \
+    (SRTP_SRCTP_INDEX_LEN + SRTP_MAX_TAG_LEN + SRTP_MAX_MKI_LEN)
+
+
+
+
+
 
 #define SRTP_MAX_NUM_MASTER_KEYS 16
 
@@ -614,7 +631,7 @@ srtp_err_status_t srtp_add_stream(srtp_t session, const srtp_policy_t *policy);
 
 
 
-srtp_err_status_t srtp_remove_stream(srtp_t session, unsigned int ssrc);
+srtp_err_status_t srtp_remove_stream(srtp_t session, uint32_t ssrc);
 
 
 
@@ -1167,7 +1184,7 @@ typedef enum {
     srtp_profile_null_sha1_80 = 5,
     srtp_profile_null_sha1_32 = 6,
     srtp_profile_aead_aes_128_gcm = 7,
-    srtp_profile_aead_aes_256_gcm = 8,
+    srtp_profile_aead_aes_256_gcm = 8
 } srtp_profile_t;
 
 
