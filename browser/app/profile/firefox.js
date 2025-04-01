@@ -2107,7 +2107,7 @@ pref("sidebar.visibility", "always-show");
 
 
 pref("sidebar.backupState", "{}");
-pref("sidebar.expandOnHover", false);
+pref("sidebar.expandOnHover", true);
 pref("sidebar.old-sidebar.has-used", false);
 pref("sidebar.new-sidebar.has-used", false);
 
