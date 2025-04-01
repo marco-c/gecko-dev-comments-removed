@@ -57,8 +57,10 @@ CSPViolationData::CSPViolationData(uint32_t aViolatedPolicyIndex,
       
       
       
-      mSample{BlockedContentSourceOrUnknown() ==
-                      BlockedContentSource::TrustedTypesSink
+      mSample{(BlockedContentSourceOrUnknown() ==
+                   BlockedContentSource::TrustedTypesSink ||
+               BlockedContentSourceOrUnknown() ==
+                   BlockedContentSource::TrustedTypesPolicy)
                   ? nsString(aSample)
                   : MaybeTruncateSampleWithEllipsis(aSample)} {}
 
