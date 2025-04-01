@@ -937,8 +937,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "Navigator", insecureContext: true },
   
-  "NavigatorLogin",
-  
   { name: "NetworkInformation", insecureContext: true, disabled: true },
   
   { name: "Node", insecureContext: true },
