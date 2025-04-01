@@ -1,25 +1,28 @@
+#[cfg(all(feature = "serde", feature = "alloc"))]
+#[allow(unused_imports)]
+use alloc::string::ToString;
 #[cfg(feature = "bytemuck")]
 use bytemuck::{Pod, Zeroable};
 use core::{
     cmp::Ordering,
+    iter::{Product, Sum},
+    num::FpCategory,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign},
+};
+#[cfg(not(target_arch = "spirv"))]
+use core::{
     fmt::{
         Binary, Debug, Display, Error, Formatter, LowerExp, LowerHex, Octal, UpperExp, UpperHex,
     },
-    iter::{Product, Sum},
-    num::{FpCategory, ParseFloatError},
-    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign},
+    num::ParseFloatError,
     str::FromStr,
 };
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "zerocopy")]
-use zerocopy::{AsBytes, FromBytes};
+use zerocopy::{FromBytes, IntoBytes};
 
 pub(crate) mod convert;
-
-
-
-
 
 
 
@@ -32,14 +35,21 @@ pub(crate) mod convert;
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy, Default)]
 #[repr(transparent)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
+)]
+#[cfg_attr(feature = "rkyv", rkyv(resolver = Bf16Resolver))]
 #[cfg_attr(feature = "bytemuck", derive(Zeroable, Pod))]
-#[cfg_attr(feature = "zerocopy", derive(AsBytes, FromBytes))]
+#[cfg_attr(feature = "zerocopy", derive(IntoBytes, FromBytes))]
+#[cfg_attr(kani, derive(kani::Arbitrary))]
 pub struct bf16(u16);
 
 impl bf16 {
     
     #[inline]
+    #[must_use]
     pub const fn from_bits(bits: u16) -> bf16 {
         bf16(bits)
     }
@@ -50,7 +60,23 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub fn from_f32(value: f32) -> bf16 {
+        Self::from_f32_const(value)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub const fn from_f32_const(value: f32) -> bf16 {
         bf16(convert::f32_to_bf16(value))
     }
 
@@ -61,12 +87,30 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub fn from_f64(value: f64) -> bf16 {
+        Self::from_f64_const(value)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub const fn from_f64_const(value: f64) -> bf16 {
         bf16(convert::f64_to_bf16(value))
     }
 
     
     #[inline]
+    #[must_use]
     pub const fn to_bits(self) -> u16 {
         self.0
     }
@@ -82,6 +126,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn to_le_bytes(self) -> [u8; 2] {
         self.0.to_le_bytes()
     }
@@ -97,6 +142,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn to_be_bytes(self) -> [u8; 2] {
         self.0.to_be_bytes()
     }
@@ -120,6 +166,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn to_ne_bytes(self) -> [u8; 2] {
         self.0.to_ne_bytes()
     }
@@ -134,6 +181,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn from_le_bytes(bytes: [u8; 2]) -> bf16 {
         bf16::from_bits(u16::from_le_bytes(bytes))
     }
@@ -148,6 +196,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn from_be_bytes(bytes: [u8; 2]) -> bf16 {
         bf16::from_bits(u16::from_be_bytes(bytes))
     }
@@ -170,6 +219,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn from_ne_bytes(bytes: [u8; 2]) -> bf16 {
         bf16::from_bits(u16::from_ne_bytes(bytes))
     }
@@ -178,7 +228,21 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub fn to_f32(self) -> f32 {
+        self.to_f32_const()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub const fn to_f32_const(self) -> f32 {
         convert::bf16_to_f32(self.0)
     }
 
@@ -186,7 +250,21 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub fn to_f64(self) -> f64 {
+        self.to_f64_const()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub const fn to_f64_const(self) -> f64 {
         convert::bf16_to_f64(self.0)
     }
 
@@ -204,6 +282,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn is_nan(self) -> bool {
         self.0 & 0x7FFFu16 > 0x7F80u16
     }
@@ -227,6 +306,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn is_infinite(self) -> bool {
         self.0 & 0x7FFFu16 == 0x7F80u16
     }
@@ -250,6 +330,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn is_finite(self) -> bool {
         self.0 & 0x7F80u16 != 0x7F80u16
     }
@@ -276,6 +357,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn is_normal(self) -> bool {
         let exp = self.0 & 0x7F80u16;
         exp != 0x7F80u16 && exp != 0
@@ -298,6 +380,7 @@ impl bf16 {
     
     
     
+    #[must_use]
     pub const fn classify(self) -> FpCategory {
         let exp = self.0 & 0x7F80u16;
         let man = self.0 & 0x007Fu16;
@@ -328,6 +411,7 @@ impl bf16 {
     
     
     
+    #[must_use]
     pub const fn signum(self) -> bf16 {
         if self.is_nan() {
             self
@@ -356,6 +440,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn is_sign_positive(self) -> bool {
         self.0 & 0x8000u16 == 0
     }
@@ -378,6 +463,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn is_sign_negative(self) -> bool {
         self.0 & 0x8000u16 != 0
     }
@@ -401,6 +487,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn copysign(self, sign: bf16) -> bf16 {
         bf16((sign.0 & 0x8000u16) | (self.0 & 0x7FFFu16))
     }
@@ -419,6 +506,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub fn max(self, other: bf16) -> bf16 {
         if other > self && !other.is_nan() {
             other
@@ -441,6 +529,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub fn min(self, other: bf16) -> bf16 {
         if other < self && !other.is_nan() {
             other
@@ -469,6 +558,7 @@ impl bf16 {
     
     
     #[inline]
+    #[must_use]
     pub fn clamp(self, min: bf16, max: bf16) -> bf16 {
         assert!(min <= max);
         let mut x = self;
@@ -479,6 +569,137 @@ impl bf16 {
             x = max;
         }
         x
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub fn total_cmp(&self, other: &Self) -> Ordering {
+        let mut left = self.to_bits() as i16;
+        let mut right = other.to_bits() as i16;
+        left ^= (((left >> 15) as u16) >> 1) as i16;
+        right ^= (((right >> 15) as u16) >> 1) as i16;
+        left.cmp(&right)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "serde")]
+    pub fn serialize_as_f32<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_f32(self.to_f32())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(all(feature = "serde", feature = "alloc"))]
+    pub fn serialize_as_string<S: serde::Serializer>(
+        &self,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.to_string())
     }
 
     
@@ -694,6 +915,7 @@ impl PartialOrd for bf16 {
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl FromStr for bf16 {
     type Err = ParseFloatError;
     fn from_str(src: &str) -> Result<bf16, ParseFloatError> {
@@ -701,48 +923,56 @@ impl FromStr for bf16 {
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl Debug for bf16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "{:?}", self.to_f32())
+        Debug::fmt(&self.to_f32(), f)
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl Display for bf16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "{}", self.to_f32())
+        Display::fmt(&self.to_f32(), f)
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl LowerExp for bf16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{:e}", self.to_f32())
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl UpperExp for bf16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{:E}", self.to_f32())
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl Binary for bf16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{:b}", self.0)
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl Octal for bf16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{:o}", self.0)
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl LowerHex for bf16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{:x}", self.0)
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl UpperHex for bf16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{:X}", self.0)
@@ -754,6 +984,15 @@ impl Neg for bf16 {
 
     fn neg(self) -> Self::Output {
         Self(self.0 ^ 0x8000)
+    }
+}
+
+impl Neg for &bf16 {
+    type Output = <bf16 as Neg>::Output;
+
+    #[inline]
+    fn neg(self) -> Self::Output {
+        Neg::neg(*self)
     }
 }
 
@@ -1026,7 +1265,59 @@ impl Sum for bf16 {
 impl<'a> Sum<&'a bf16> for bf16 {
     #[inline]
     fn sum<I: Iterator<Item = &'a bf16>>(iter: I) -> Self {
-        bf16::from_f32(iter.map(|f| f.to_f32()).product())
+        bf16::from_f32(iter.map(|f| f.to_f32()).sum())
+    }
+}
+
+#[cfg(feature = "serde")]
+struct Visitor;
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for bf16 {
+    fn deserialize<D>(deserializer: D) -> Result<bf16, D::Error>
+    where
+        D: serde::de::Deserializer<'de>,
+    {
+        deserializer.deserialize_newtype_struct("bf16", Visitor)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::de::Visitor<'de> for Visitor {
+    type Value = bf16;
+
+    fn expecting(&self, formatter: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(formatter, "tuple struct bf16")
+    }
+
+    fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(bf16(<u16 as Deserialize>::deserialize(deserializer)?))
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        v.parse().map_err(|_| {
+            serde::de::Error::invalid_value(serde::de::Unexpected::Str(v), &"a float string")
+        })
+    }
+
+    fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(bf16::from_f32(v))
+    }
+
+    fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(bf16::from_f64(v))
     }
 }
 
@@ -1038,9 +1329,10 @@ impl<'a> Sum<&'a bf16> for bf16 {
 #[cfg(test)]
 mod test {
     use super::*;
+    #[allow(unused_imports)]
     use core::cmp::Ordering;
     #[cfg(feature = "num-traits")]
-    use num_traits::{AsPrimitive, FromPrimitive, ToPrimitive};
+    use num_traits::{AsPrimitive, FromBytes, FromPrimitive, ToBytes, ToPrimitive};
     use quickcheck_macros::quickcheck;
 
     #[cfg(feature = "num-traits")]
@@ -1073,6 +1365,16 @@ mod test {
         assert_eq!(<bf16 as FromPrimitive>::from_i32(2).unwrap(), two);
         assert_eq!(<bf16 as FromPrimitive>::from_f32(2.0).unwrap(), two);
         assert_eq!(<bf16 as FromPrimitive>::from_f64(2.0).unwrap(), two);
+    }
+
+    #[cfg(feature = "num-traits")]
+    #[test]
+    fn to_and_from_bytes() {
+        let two = bf16::from_f32(2.0);
+        assert_eq!(<bf16 as ToBytes>::to_le_bytes(&two), [0, 64]);
+        assert_eq!(<bf16 as FromBytes>::from_le_bytes(&[0, 64]), two);
+        assert_eq!(<bf16 as ToBytes>::to_be_bytes(&two), [64, 0]);
+        assert_eq!(<bf16 as FromBytes>::from_be_bytes(&[64, 0]), two);
     }
 
     #[test]
@@ -1213,12 +1515,14 @@ mod test {
         assert!(neg_nan64.is_nan() && neg_nan64.is_sign_negative());
         assert!(nan32.is_nan() && nan32.is_sign_positive());
         assert!(neg_nan32.is_nan() && neg_nan32.is_sign_negative());
-        assert!(nan32_from_64.is_nan() && nan32_from_64.is_sign_positive());
-        assert!(neg_nan32_from_64.is_nan() && neg_nan32_from_64.is_sign_negative());
-        assert!(nan16_from_64.is_nan() && nan16_from_64.is_sign_positive());
-        assert!(neg_nan16_from_64.is_nan() && neg_nan16_from_64.is_sign_negative());
-        assert!(nan16_from_32.is_nan() && nan16_from_32.is_sign_positive());
-        assert!(neg_nan16_from_32.is_nan() && neg_nan16_from_32.is_sign_negative());
+
+        
+        assert!(neg_nan32_from_64.is_nan());
+        assert!(nan32_from_64.is_nan());
+        assert!(nan16_from_64.is_nan());
+        assert!(neg_nan16_from_64.is_nan());
+        assert!(nan16_from_32.is_nan());
+        assert!(neg_nan16_from_32.is_nan());
     }
 
     #[test]
@@ -1238,12 +1542,14 @@ mod test {
         assert!(neg_nan16.is_nan() && neg_nan16.is_sign_negative());
         assert!(nan32.is_nan() && nan32.is_sign_positive());
         assert!(neg_nan32.is_nan() && neg_nan32.is_sign_negative());
-        assert!(nan32_from_16.is_nan() && nan32_from_16.is_sign_positive());
-        assert!(neg_nan32_from_16.is_nan() && neg_nan32_from_16.is_sign_negative());
-        assert!(nan64_from_16.is_nan() && nan64_from_16.is_sign_positive());
-        assert!(neg_nan64_from_16.is_nan() && neg_nan64_from_16.is_sign_negative());
-        assert!(nan64_from_32.is_nan() && nan64_from_32.is_sign_positive());
-        assert!(neg_nan64_from_32.is_nan() && neg_nan64_from_32.is_sign_negative());
+
+        
+        assert!(nan32_from_16.is_nan());
+        assert!(neg_nan32_from_16.is_nan());
+        assert!(nan64_from_16.is_nan());
+        assert!(neg_nan64_from_16.is_nan());
+        assert!(nan64_from_32.is_nan());
+        assert!(neg_nan64_from_32.is_nan());
     }
 
     #[test]
@@ -1525,6 +1831,22 @@ mod test {
             bf16::from_f64(252.51f64).to_bits(),
             bf16::from_f64(253.0).to_bits()
         );
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn formatting() {
+        let f = bf16::from_f32(0.1152344);
+
+        assert_eq!(format!("{:.3}", f), "0.115");
+        assert_eq!(format!("{:.4}", f), "0.1152");
+        assert_eq!(format!("{:+.4}", f), "+0.1152");
+        assert_eq!(format!("{:>+10.4}", f), "   +0.1152");
+
+        assert_eq!(format!("{:.3?}", f), "0.115");
+        assert_eq!(format!("{:.4?}", f), "0.1152");
+        assert_eq!(format!("{:+.4?}", f), "+0.1152");
+        assert_eq!(format!("{:>+10.4?}", f), "   +0.1152");
     }
 
     impl quickcheck::Arbitrary for bf16 {

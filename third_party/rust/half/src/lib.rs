@@ -78,6 +78,44 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![cfg_attr(
     feature = "alloc",
     doc = "
@@ -106,6 +144,7 @@
     doc = "
 [`ToPrimitive`]: ::num_traits::ToPrimitive
 [`FromPrimitive`]: ::num_traits::FromPrimitive
+[`ToBytes`]: ::num_traits::ToBytes
 [`AsPrimitive`]: ::num_traits::AsPrimitive
 [`Num`]: ::num_traits::Num
 [`Float`]: ::num_traits::Float
@@ -117,6 +156,7 @@
     doc = "
 [`ToPrimitive`]: https://docs.rs/num-traits/*/num_traits/cast/trait.ToPrimitive.html
 [`FromPrimitive`]: https://docs.rs/num-traits/*/num_traits/cast/trait.FromPrimitive.html
+[`ToBytes`]: https://docs.rs/num-traits/*/num_traits/ops/bytes/trait.ToBytes.html
 [`AsPrimitive`]: https://docs.rs/num-traits/*/num_traits/cast/trait.AsPrimitive.html
 [`Num`]: https://docs.rs/num-traits/*/num_traits/trait.Num.html
 [`Float`]: https://docs.rs/num-traits/*/num_traits/float/trait.Float.html
@@ -138,53 +178,67 @@
 #![cfg_attr(
     feature = "zerocopy",
     doc = "
-[`AsBytes`]: zerocopy::AsBytes
+[`IntoBytes`]: zerocopy::IntoBytes
 [`FromBytes`]: zerocopy::FromBytes"
 )]
 #![cfg_attr(
     not(feature = "zerocopy"),
     doc = "
-[`AsBytes`]: https://docs.rs/zerocopy/*/zerocopy/trait.AsBytes.html
+[`IntoBytes`]: https://docs.rs/zerocopy/*/zerocopy/trait.IntoBytes.html
 [`FromBytes`]: https://docs.rs/zerocopy/*/zerocopy/trait.FromBytes.html"
+)]
+#![cfg_attr(
+    feature = "rand_distr",
+    doc = "
+[`Distribution`]: rand::distr::Distribution"
+)]
+#![cfg_attr(
+    not(feature = "rand_distr"),
+    doc = "
+[`Distribution`]: https://docs.rs/rand/*/rand/distr/trait.Distribution.html"
+)]
+#![cfg_attr(
+    feature = "arbitrary",
+    doc = "
+[`Arbitrary`]: arbitrary::Arbitrary"
+)]
+#![cfg_attr(
+    not(feature = "arbitrary"),
+    doc = "
+[`Arbitrary`]: https://docs.rs/arbitrary/*/arbitrary/trait.Arbitrary.html"
 )]
 #![warn(
     missing_docs,
     missing_copy_implementations,
-    missing_debug_implementations,
     trivial_numeric_casts,
     future_incompatible
 )]
-#![allow(clippy::verbose_bit_mask, clippy::cast_lossless)]
+#![cfg_attr(not(target_arch = "spirv"), warn(missing_debug_implementations))]
+#![allow(clippy::verbose_bit_mask, clippy::cast_lossless, unexpected_cfgs)]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(
-    all(
-        feature = "use-intrinsics",
-        any(target_arch = "x86", target_arch = "x86_64")
-    ),
-    feature(stdsimd, f16c_target_feature)
-)]
-#![doc(html_root_url = "https://docs.rs/half/1.8.2")]
+#![doc(html_root_url = "https://docs.rs/half/2.5.0")]
 #![doc(test(attr(deny(warnings), allow(unused))))]
-#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
 mod bfloat;
 mod binary16;
+mod leading_zeros;
 #[cfg(feature = "num-traits")]
 mod num_traits;
 
+#[cfg(not(target_arch = "spirv"))]
 pub mod slice;
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub mod vec;
 
 pub use bfloat::bf16;
-#[doc(hidden)]
-#[allow(deprecated)]
-pub use binary16::consts;
 pub use binary16::f16;
+
+#[cfg(feature = "rand_distr")]
+mod rand_distr;
 
 
 
@@ -195,14 +249,14 @@ pub use binary16::f16;
 
 pub mod prelude {
     #[doc(no_inline)]
-    pub use crate::{
-        bf16, f16,
-        slice::{HalfBitsSliceExt, HalfFloatSliceExt},
-    };
+    pub use crate::{bf16, f16};
+
+    #[cfg(not(target_arch = "spirv"))]
+    #[doc(no_inline)]
+    pub use crate::slice::{HalfBitsSliceExt, HalfFloatSliceExt};
 
     #[cfg(feature = "alloc")]
     #[doc(no_inline)]
-    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub use crate::vec::{HalfBitsVecExt, HalfFloatVecExt};
 }
 

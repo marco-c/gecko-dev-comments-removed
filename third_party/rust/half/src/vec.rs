@@ -11,7 +11,8 @@
 
 use super::{bf16, f16, slice::HalfFloatSliceExt};
 #[cfg(feature = "alloc")]
-use alloc::vec::Vec;
+#[allow(unused_imports)]
+use alloc::{vec, vec::Vec};
 use core::mem;
 
 
@@ -32,6 +33,7 @@ pub trait HalfFloatVecExt: private::SealedHalfFloatVec {
     
     
     
+    #[must_use]
     fn reinterpret_into(self) -> Vec<u16>;
 
     
@@ -49,6 +51,7 @@ pub trait HalfFloatVecExt: private::SealedHalfFloatVec {
     
     
     
+    #[must_use]
     fn from_f32_slice(slice: &[f32]) -> Self;
 
     
@@ -66,6 +69,7 @@ pub trait HalfFloatVecExt: private::SealedHalfFloatVec {
     
     
     
+    #[must_use]
     fn from_f64_slice(slice: &[f64]) -> Self;
 }
 
@@ -89,6 +93,7 @@ pub trait HalfBitsVecExt: private::SealedHalfBitsVec {
     
     
     
+    #[must_use]
     fn reinterpret_into<H>(self) -> Vec<H>
     where
         H: crate::private::SealedHalf;
@@ -97,6 +102,7 @@ pub trait HalfBitsVecExt: private::SealedHalfBitsVec {
 mod private {
     use crate::{bf16, f16};
     #[cfg(feature = "alloc")]
+    #[allow(unused_imports)]
     use alloc::vec::Vec;
 
     pub trait SealedHalfFloatVec {}
@@ -128,22 +134,16 @@ impl HalfFloatVecExt for Vec<f16> {
         unsafe { Vec::from_raw_parts(pointer, length, capacity) }
     }
 
+    #[allow(clippy::uninit_vec)]
     fn from_f32_slice(slice: &[f32]) -> Self {
-        let mut vec = Vec::with_capacity(slice.len());
-        
-        
-        
-        unsafe { vec.set_len(slice.len()) };
+        let mut vec = vec![f16::from_bits(0); slice.len()];
         vec.convert_from_f32_slice(slice);
         vec
     }
 
+    #[allow(clippy::uninit_vec)]
     fn from_f64_slice(slice: &[f64]) -> Self {
-        let mut vec = Vec::with_capacity(slice.len());
-        
-        
-        
-        unsafe { vec.set_len(slice.len()) };
+        let mut vec = vec![f16::from_bits(0); slice.len()];
         vec.convert_from_f64_slice(slice);
         vec
     }
@@ -170,22 +170,16 @@ impl HalfFloatVecExt for Vec<bf16> {
         unsafe { Vec::from_raw_parts(pointer, length, capacity) }
     }
 
+    #[allow(clippy::uninit_vec)]
     fn from_f32_slice(slice: &[f32]) -> Self {
-        let mut vec = Vec::with_capacity(slice.len());
-        
-        
-        
-        unsafe { vec.set_len(slice.len()) };
+        let mut vec = vec![bf16::from_bits(0); slice.len()];
         vec.convert_from_f32_slice(slice);
         vec
     }
 
+    #[allow(clippy::uninit_vec)]
     fn from_f64_slice(slice: &[f64]) -> Self {
-        let mut vec = Vec::with_capacity(slice.len());
-        
-        
-        
-        unsafe { vec.set_len(slice.len()) };
+        let mut vec = vec![bf16::from_bits(0); slice.len()];
         vec.convert_from_f64_slice(slice);
         vec
     }
@@ -215,26 +209,6 @@ impl HalfBitsVecExt for Vec<u16> {
         
         unsafe { Vec::from_raw_parts(pointer, length, capacity) }
     }
-}
-
-#[doc(hidden)]
-#[deprecated(
-    since = "1.4.0",
-    note = "use `HalfBitsVecExt::reinterpret_into` instead"
-)]
-#[inline]
-pub fn from_bits(bits: Vec<u16>) -> Vec<f16> {
-    bits.reinterpret_into()
-}
-
-#[doc(hidden)]
-#[deprecated(
-    since = "1.4.0",
-    note = "use `HalfFloatVecExt::reinterpret_into` instead"
-)]
-#[inline]
-pub fn to_bits(numbers: Vec<f16>) -> Vec<u16> {
-    numbers.reinterpret_into()
 }
 
 #[cfg(test)]

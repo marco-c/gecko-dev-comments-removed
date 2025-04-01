@@ -1,24 +1,28 @@
+#[cfg(all(feature = "serde", feature = "alloc"))]
+#[allow(unused_imports)]
+use alloc::string::ToString;
 #[cfg(feature = "bytemuck")]
 use bytemuck::{Pod, Zeroable};
 use core::{
     cmp::Ordering,
+    iter::{Product, Sum},
+    num::FpCategory,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign},
+};
+#[cfg(not(target_arch = "spirv"))]
+use core::{
     fmt::{
         Binary, Debug, Display, Error, Formatter, LowerExp, LowerHex, Octal, UpperExp, UpperHex,
     },
-    iter::{Product, Sum},
-    num::{FpCategory, ParseFloatError},
-    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign},
+    num::ParseFloatError,
     str::FromStr,
 };
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "zerocopy")]
-use zerocopy::{AsBytes, FromBytes};
+use zerocopy::{FromBytes, IntoBytes};
 
-pub(crate) mod convert;
-
-
-
+pub(crate) mod arch;
 
 
 
@@ -30,97 +34,22 @@ pub(crate) mod convert;
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy, Default)]
 #[repr(transparent)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bytemuck", derive(Zeroable, Pod))]
-#[cfg_attr(feature = "zerocopy", derive(AsBytes, FromBytes))]
-pub struct f16(u16);
-
-#[doc(hidden)]
-#[deprecated(
-    since = "1.4.0",
-    note = "all constants moved to associated constants of `f16`"
+#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
 )]
-pub mod consts {
-    use super::f16;
-
-    #[deprecated(since = "1.4.0", note = "moved to `f16::DIGITS`")]
-    pub const DIGITS: u32 = f16::DIGITS;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::EPSILON`")]
-    pub const EPSILON: f16 = f16::EPSILON;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::INFINITY`")]
-    pub const INFINITY: f16 = f16::INFINITY;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::MANTISSA_DIGITS`")]
-    pub const MANTISSA_DIGITS: u32 = f16::MANTISSA_DIGITS;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::MAX`")]
-    pub const MAX: f16 = f16::MAX;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::MAX_10_EXP`")]
-    pub const MAX_10_EXP: i32 = f16::MAX_10_EXP;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::MAX_EXP`")]
-    pub const MAX_EXP: i32 = f16::MAX_EXP;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::MIN`")]
-    pub const MIN: f16 = f16::MIN;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::MIN_10_EXP`")]
-    pub const MIN_10_EXP: i32 = f16::MIN_10_EXP;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::MIN_EXP`")]
-    pub const MIN_EXP: i32 = f16::MIN_EXP;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::MIN_POSITIVE`")]
-    pub const MIN_POSITIVE: f16 = f16::MIN_POSITIVE;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::NAN`")]
-    pub const NAN: f16 = f16::NAN;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::NEG_INFINITY`")]
-    pub const NEG_INFINITY: f16 = f16::NEG_INFINITY;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::RADIX`")]
-    pub const RADIX: u32 = f16::RADIX;
-
-    #[deprecated(since = "1.4.0", note = "moved to `f16::MIN_POSITIVE_SUBNORMAL`")]
-    pub const MIN_POSITIVE_SUBNORMAL: f16 = f16::MIN_POSITIVE_SUBNORMAL;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::MAX_SUBNORMAL`")]
-    pub const MAX_SUBNORMAL: f16 = f16::MAX_SUBNORMAL;
-
-    #[deprecated(since = "1.4.0", note = "moved to `f16::ONE`")]
-    pub const ONE: f16 = f16::ONE;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::ZERO`")]
-    pub const ZERO: f16 = f16::ZERO;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::NEG_ZERO`")]
-    pub const NEG_ZERO: f16 = f16::NEG_ZERO;
-
-    #[deprecated(since = "1.4.0", note = "moved to `f16::E`")]
-    pub const E: f16 = f16::E;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::PI`")]
-    pub const PI: f16 = f16::PI;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::FRAC_1_PI`")]
-    pub const FRAC_1_PI: f16 = f16::FRAC_1_PI;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::FRAC_1_SQRT_2`")]
-    pub const FRAC_1_SQRT_2: f16 = f16::FRAC_1_SQRT_2;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::FRAC_2_PI`")]
-    pub const FRAC_2_PI: f16 = f16::FRAC_2_PI;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::FRAC_2_SQRT_PI`")]
-    pub const FRAC_2_SQRT_PI: f16 = f16::FRAC_2_SQRT_PI;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::FRAC_PI_2`")]
-    pub const FRAC_PI_2: f16 = f16::FRAC_PI_2;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::FRAC_PI_3`")]
-    pub const FRAC_PI_3: f16 = f16::FRAC_PI_3;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::FRAC_PI_4`")]
-    pub const FRAC_PI_4: f16 = f16::FRAC_PI_4;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::FRAC_PI_6`")]
-    pub const FRAC_PI_6: f16 = f16::FRAC_PI_6;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::FRAC_PI_8`")]
-    pub const FRAC_PI_8: f16 = f16::FRAC_PI_8;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::LN_10`")]
-    pub const LN_10: f16 = f16::LN_10;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::LN_2`")]
-    pub const LN_2: f16 = f16::LN_2;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::LOG10_E`")]
-    pub const LOG10_E: f16 = f16::LOG10_E;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::LOG2_E`")]
-    pub const LOG2_E: f16 = f16::LOG2_E;
-    #[deprecated(since = "1.4.0", note = "moved to `f16::SQRT_2`")]
-    pub const SQRT_2: f16 = f16::SQRT_2;
-}
+#[cfg_attr(feature = "rkyv", rkyv(resolver = F16Resolver))]
+#[cfg_attr(feature = "bytemuck", derive(Zeroable, Pod))]
+#[cfg_attr(feature = "zerocopy", derive(IntoBytes, FromBytes))]
+#[cfg_attr(kani, derive(kani::Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct f16(u16);
 
 impl f16 {
     
     #[inline]
+    #[must_use]
     pub const fn from_bits(bits: u16) -> f16 {
         f16(bits)
     }
@@ -133,8 +62,26 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub fn from_f32(value: f32) -> f16 {
-        f16(convert::f32_to_f16(value))
+        f16(arch::f32_to_f16(value))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub const fn from_f32_const(value: f32) -> f16 {
+        f16(arch::f32_to_f16_fallback(value))
     }
 
     
@@ -145,12 +92,31 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub fn from_f64(value: f64) -> f16 {
-        f16(convert::f64_to_f16(value))
+        f16(arch::f64_to_f16(value))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub const fn from_f64_const(value: f64) -> f16 {
+        f16(arch::f64_to_f16_fallback(value))
     }
 
     
     #[inline]
+    #[must_use]
     pub const fn to_bits(self) -> u16 {
         self.0
     }
@@ -166,6 +132,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn to_le_bytes(self) -> [u8; 2] {
         self.0.to_le_bytes()
     }
@@ -181,6 +148,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn to_be_bytes(self) -> [u8; 2] {
         self.0.to_be_bytes()
     }
@@ -204,6 +172,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn to_ne_bytes(self) -> [u8; 2] {
         self.0.to_ne_bytes()
     }
@@ -218,6 +187,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn from_le_bytes(bytes: [u8; 2]) -> f16 {
         f16::from_bits(u16::from_le_bytes(bytes))
     }
@@ -232,6 +202,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn from_be_bytes(bytes: [u8; 2]) -> f16 {
         f16::from_bits(u16::from_be_bytes(bytes))
     }
@@ -254,24 +225,33 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn from_ne_bytes(bytes: [u8; 2]) -> f16 {
         f16::from_bits(u16::from_ne_bytes(bytes))
     }
 
-    #[doc(hidden)]
-    #[deprecated(since = "1.2.0", note = "renamed to `to_bits`")]
-    #[inline]
-    pub fn as_bits(self) -> u16 {
-        self.to_bits()
-    }
-
     
     
     
     
     #[inline]
+    #[must_use]
     pub fn to_f32(self) -> f32 {
-        convert::f16_to_f32(self.0)
+        arch::f16_to_f32(self.0)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub const fn to_f32_const(self) -> f32 {
+        arch::f16_to_f32_fallback(self.0)
     }
 
     
@@ -279,8 +259,23 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub fn to_f64(self) -> f64 {
-        convert::f16_to_f64(self.0)
+        arch::f16_to_f64(self.0)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub const fn to_f64_const(self) -> f64 {
+        arch::f16_to_f64_fallback(self.0)
     }
 
     
@@ -297,6 +292,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn is_nan(self) -> bool {
         self.0 & 0x7FFFu16 > 0x7C00u16
     }
@@ -321,6 +317,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn is_infinite(self) -> bool {
         self.0 & 0x7FFFu16 == 0x7C00u16
     }
@@ -344,6 +341,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn is_finite(self) -> bool {
         self.0 & 0x7C00u16 != 0x7C00u16
     }
@@ -370,6 +368,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn is_normal(self) -> bool {
         let exp = self.0 & 0x7C00u16;
         exp != 0x7C00u16 && exp != 0
@@ -392,6 +391,7 @@ impl f16 {
     
     
     
+    #[must_use]
     pub const fn classify(self) -> FpCategory {
         let exp = self.0 & 0x7C00u16;
         let man = self.0 & 0x03FFu16;
@@ -422,6 +422,7 @@ impl f16 {
     
     
     
+    #[must_use]
     pub const fn signum(self) -> f16 {
         if self.is_nan() {
             self
@@ -450,6 +451,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn is_sign_positive(self) -> bool {
         self.0 & 0x8000u16 == 0
     }
@@ -472,6 +474,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn is_sign_negative(self) -> bool {
         self.0 & 0x8000u16 != 0
     }
@@ -495,6 +498,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub const fn copysign(self, sign: f16) -> f16 {
         f16((sign.0 & 0x8000u16) | (self.0 & 0x7FFFu16))
     }
@@ -513,6 +517,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub fn max(self, other: f16) -> f16 {
         if other > self && !other.is_nan() {
             other
@@ -535,6 +540,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub fn min(self, other: f16) -> f16 {
         if other < self && !other.is_nan() {
             other
@@ -563,6 +569,7 @@ impl f16 {
     
     
     #[inline]
+    #[must_use]
     pub fn clamp(self, min: f16, max: f16) -> f16 {
         assert!(min <= max);
         let mut x = self;
@@ -573,6 +580,137 @@ impl f16 {
             x = max;
         }
         x
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub fn total_cmp(&self, other: &Self) -> Ordering {
+        let mut left = self.to_bits() as i16;
+        let mut right = other.to_bits() as i16;
+        left ^= (((left >> 15) as u16) >> 1) as i16;
+        right ^= (((right >> 15) as u16) >> 1) as i16;
+        left.cmp(&right)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "serde")]
+    pub fn serialize_as_f32<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_f32(self.to_f32())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(all(feature = "serde", feature = "alloc"))]
+    pub fn serialize_as_string<S: serde::Serializer>(
+        &self,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.to_string())
     }
 
     
@@ -788,6 +926,7 @@ impl PartialOrd for f16 {
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl FromStr for f16 {
     type Err = ParseFloatError;
     fn from_str(src: &str) -> Result<f16, ParseFloatError> {
@@ -795,48 +934,56 @@ impl FromStr for f16 {
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl Debug for f16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "{:?}", self.to_f32())
+        Debug::fmt(&self.to_f32(), f)
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl Display for f16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "{}", self.to_f32())
+        Display::fmt(&self.to_f32(), f)
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl LowerExp for f16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{:e}", self.to_f32())
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl UpperExp for f16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{:E}", self.to_f32())
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl Binary for f16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{:b}", self.0)
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl Octal for f16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{:o}", self.0)
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl LowerHex for f16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{:x}", self.0)
     }
 }
 
+#[cfg(not(target_arch = "spirv"))]
 impl UpperHex for f16 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{:X}", self.0)
@@ -852,12 +999,21 @@ impl Neg for f16 {
     }
 }
 
+impl Neg for &f16 {
+    type Output = <f16 as Neg>::Output;
+
+    #[inline]
+    fn neg(self) -> Self::Output {
+        Neg::neg(*self)
+    }
+}
+
 impl Add for f16 {
     type Output = Self;
 
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
-        Self::from_f32(Self::to_f32(self) + Self::to_f32(rhs))
+        f16(arch::add_f16(self.0, rhs.0))
     }
 }
 
@@ -907,7 +1063,7 @@ impl Sub for f16 {
 
     #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
-        Self::from_f32(Self::to_f32(self) - Self::to_f32(rhs))
+        f16(arch::subtract_f16(self.0, rhs.0))
     }
 }
 
@@ -957,7 +1113,7 @@ impl Mul for f16 {
 
     #[inline]
     fn mul(self, rhs: Self) -> Self::Output {
-        Self::from_f32(Self::to_f32(self) * Self::to_f32(rhs))
+        f16(arch::multiply_f16(self.0, rhs.0))
     }
 }
 
@@ -1007,7 +1163,7 @@ impl Div for f16 {
 
     #[inline]
     fn div(self, rhs: Self) -> Self::Output {
-        Self::from_f32(Self::to_f32(self) / Self::to_f32(rhs))
+        f16(arch::divide_f16(self.0, rhs.0))
     }
 }
 
@@ -1057,7 +1213,7 @@ impl Rem for f16 {
 
     #[inline]
     fn rem(self, rhs: Self) -> Self::Output {
-        Self::from_f32(Self::to_f32(self) % Self::to_f32(rhs))
+        f16(arch::remainder_f16(self.0, rhs.0))
     }
 }
 
@@ -1105,28 +1261,80 @@ impl RemAssign<&f16> for f16 {
 impl Product for f16 {
     #[inline]
     fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
-        f16::from_f32(iter.map(|f| f.to_f32()).product())
+        f16(arch::product_f16(iter.map(|f| f.to_bits())))
     }
 }
 
 impl<'a> Product<&'a f16> for f16 {
     #[inline]
     fn product<I: Iterator<Item = &'a f16>>(iter: I) -> Self {
-        f16::from_f32(iter.map(|f| f.to_f32()).product())
+        f16(arch::product_f16(iter.map(|f| f.to_bits())))
     }
 }
 
 impl Sum for f16 {
     #[inline]
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        f16::from_f32(iter.map(|f| f.to_f32()).sum())
+        f16(arch::sum_f16(iter.map(|f| f.to_bits())))
     }
 }
 
 impl<'a> Sum<&'a f16> for f16 {
     #[inline]
     fn sum<I: Iterator<Item = &'a f16>>(iter: I) -> Self {
-        f16::from_f32(iter.map(|f| f.to_f32()).product())
+        f16(arch::sum_f16(iter.map(|f| f.to_bits())))
+    }
+}
+
+#[cfg(feature = "serde")]
+struct Visitor;
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for f16 {
+    fn deserialize<D>(deserializer: D) -> Result<f16, D::Error>
+    where
+        D: serde::de::Deserializer<'de>,
+    {
+        deserializer.deserialize_newtype_struct("f16", Visitor)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::de::Visitor<'de> for Visitor {
+    type Value = f16;
+
+    fn expecting(&self, formatter: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(formatter, "tuple struct f16")
+    }
+
+    fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(f16(<u16 as Deserialize>::deserialize(deserializer)?))
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        v.parse().map_err(|_| {
+            serde::de::Error::invalid_value(serde::de::Unexpected::Str(v), &"a float string")
+        })
+    }
+
+    fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(f16::from_f32(v))
+    }
+
+    fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(f16::from_f64(v))
     }
 }
 
@@ -1138,9 +1346,10 @@ impl<'a> Sum<&'a f16> for f16 {
 #[cfg(test)]
 mod test {
     use super::*;
+    #[allow(unused_imports)]
     use core::cmp::Ordering;
     #[cfg(feature = "num-traits")]
-    use num_traits::{AsPrimitive, FromPrimitive, ToPrimitive};
+    use num_traits::{AsPrimitive, FromBytes, FromPrimitive, ToBytes, ToPrimitive};
     use quickcheck_macros::quickcheck;
 
     #[cfg(feature = "num-traits")]
@@ -1173,6 +1382,16 @@ mod test {
         assert_eq!(<f16 as FromPrimitive>::from_i32(2).unwrap(), two);
         assert_eq!(<f16 as FromPrimitive>::from_f32(2.0).unwrap(), two);
         assert_eq!(<f16 as FromPrimitive>::from_f64(2.0).unwrap(), two);
+    }
+
+    #[cfg(feature = "num-traits")]
+    #[test]
+    fn to_and_from_bytes() {
+        let two = f16::from_f32(2.0);
+        assert_eq!(<f16 as ToBytes>::to_le_bytes(&two), [0, 64]);
+        assert_eq!(<f16 as FromBytes>::from_le_bytes(&[0, 64]), two);
+        assert_eq!(<f16 as ToBytes>::to_be_bytes(&two), [64, 0]);
+        assert_eq!(<f16 as FromBytes>::from_be_bytes(&[64, 0]), two);
     }
 
     #[test]
@@ -1365,12 +1584,14 @@ mod test {
         assert!(neg_nan64.is_nan() && neg_nan64.is_sign_negative());
         assert!(nan32.is_nan() && nan32.is_sign_positive());
         assert!(neg_nan32.is_nan() && neg_nan32.is_sign_negative());
-        assert!(nan32_from_64.is_nan() && nan32_from_64.is_sign_positive());
-        assert!(neg_nan32_from_64.is_nan() && neg_nan32_from_64.is_sign_negative());
-        assert!(nan16_from_64.is_nan() && nan16_from_64.is_sign_positive());
-        assert!(neg_nan16_from_64.is_nan() && neg_nan16_from_64.is_sign_negative());
-        assert!(nan16_from_32.is_nan() && nan16_from_32.is_sign_positive());
-        assert!(neg_nan16_from_32.is_nan() && neg_nan16_from_32.is_sign_negative());
+
+        
+        assert!(nan32_from_64.is_nan());
+        assert!(neg_nan32_from_64.is_nan());
+        assert!(nan16_from_64.is_nan());
+        assert!(neg_nan16_from_64.is_nan());
+        assert!(nan16_from_32.is_nan());
+        assert!(neg_nan16_from_32.is_nan());
     }
 
     #[test]
@@ -1390,12 +1611,14 @@ mod test {
         assert!(neg_nan16.is_nan() && neg_nan16.is_sign_negative());
         assert!(nan32.is_nan() && nan32.is_sign_positive());
         assert!(neg_nan32.is_nan() && neg_nan32.is_sign_negative());
-        assert!(nan32_from_16.is_nan() && nan32_from_16.is_sign_positive());
-        assert!(neg_nan32_from_16.is_nan() && neg_nan32_from_16.is_sign_negative());
-        assert!(nan64_from_16.is_nan() && nan64_from_16.is_sign_positive());
-        assert!(neg_nan64_from_16.is_nan() && neg_nan64_from_16.is_sign_negative());
-        assert!(nan64_from_32.is_nan() && nan64_from_32.is_sign_positive());
-        assert!(neg_nan64_from_32.is_nan() && neg_nan64_from_32.is_sign_negative());
+
+        
+        assert!(nan32_from_16.is_nan());
+        assert!(neg_nan32_from_16.is_nan());
+        assert!(nan64_from_16.is_nan());
+        assert!(neg_nan64_from_16.is_nan());
+        assert!(nan64_from_32.is_nan());
+        assert!(neg_nan64_from_32.is_nan());
     }
 
     #[test]
@@ -1681,6 +1904,33 @@ mod test {
             f16::from_f64(2002.51f64).to_bits(),
             f16::from_f64(2003.0).to_bits()
         );
+    }
+
+    #[test]
+    fn arithmetic() {
+        assert_eq!(f16::ONE + f16::ONE, f16::from_f32(2.));
+        assert_eq!(f16::ONE - f16::ONE, f16::ZERO);
+        assert_eq!(f16::ONE * f16::ONE, f16::ONE);
+        assert_eq!(f16::from_f32(2.) * f16::from_f32(2.), f16::from_f32(4.));
+        assert_eq!(f16::ONE / f16::ONE, f16::ONE);
+        assert_eq!(f16::from_f32(4.) / f16::from_f32(2.), f16::from_f32(2.));
+        assert_eq!(f16::from_f32(4.) % f16::from_f32(3.), f16::from_f32(1.));
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn formatting() {
+        let f = f16::from_f32(0.1152344);
+
+        assert_eq!(format!("{:.3}", f), "0.115");
+        assert_eq!(format!("{:.4}", f), "0.1152");
+        assert_eq!(format!("{:+.4}", f), "+0.1152");
+        assert_eq!(format!("{:>+10.4}", f), "   +0.1152");
+
+        assert_eq!(format!("{:.3?}", f), "0.115");
+        assert_eq!(format!("{:.4?}", f), "0.1152");
+        assert_eq!(format!("{:+.4?}", f), "+0.1152");
+        assert_eq!(format!("{:>+10.4?}", f), "   +0.1152");
     }
 
     impl quickcheck::Arbitrary for f16 {
