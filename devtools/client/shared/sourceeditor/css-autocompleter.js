@@ -73,28 +73,27 @@ const SELECTOR_STATES = {
   value: "value", 
 };
 
-
-
-
-
-
-
-
-
-
-function CSSCompleter(options = {}) {
-  this.walker = options.walker;
-  this.maxEntries = options.maxEntries || 15;
-  this.cssProperties = options.cssProperties;
-
-  this.propertyNames = this.cssProperties.getNames().sort();
-
+class CSSCompleter {
   
-  
-  this.nullStates = [];
-}
 
-CSSCompleter.prototype = {
+
+
+
+
+
+
+  constructor(options = {}) {
+    this.walker = options.walker;
+    this.maxEntries = options.maxEntries || 15;
+    this.cssProperties = options.cssProperties;
+
+    this.propertyNames = this.cssProperties.getNames().sort();
+
+    
+    
+    this.nullStates = [];
+  }
+
   
 
 
@@ -145,7 +144,7 @@ CSSCompleter.prototype = {
         }
     }
     return Promise.resolve([]);
-  },
+  }
 
   
 
@@ -784,7 +783,7 @@ CSSCompleter.prototype = {
       this.completing = "!" + this.completing;
     }
     return _state;
-  },
+  }
 
   
 
@@ -837,7 +836,7 @@ CSSCompleter.prototype = {
     return walker
       .getSuggestionsForQuery(query, this.completing, this.selectorState)
       .then(result => this.prepareSelectorResults(result));
-  },
+  }
 
   
 
@@ -905,7 +904,7 @@ CSSCompleter.prototype = {
       }
     }
     return completion;
-  },
+  }
 
   
 
@@ -936,7 +935,7 @@ CSSCompleter.prototype = {
       }
     }
     return Promise.resolve(finalList);
-  },
+  }
 
   
 
@@ -972,7 +971,7 @@ CSSCompleter.prototype = {
       }
     }
     return Promise.resolve(finalList);
-  },
+  }
 
   
 
@@ -1025,14 +1024,14 @@ CSSCompleter.prototype = {
     }
 
     return -1;
-  },
+  }
 
   
 
 
   invalidateCache(line) {
     this.nullStates.length = this.findNearestNullState(line) + 1;
-  },
+  }
 
   
 
@@ -1296,7 +1295,7 @@ CSSCompleter.prototype = {
       };
     }
     return null;
-  },
-};
+  }
+}
 
 module.exports = CSSCompleter;
