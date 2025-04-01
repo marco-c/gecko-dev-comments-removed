@@ -5,10 +5,6 @@
 
 
 
-
-
-
-
 const CONTENT_PAGE = "https://example.com";
 
 add_setup(async function setup() {

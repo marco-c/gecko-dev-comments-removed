@@ -6,10 +6,6 @@
 
 
 
-
-
-
-
 add_task(async function test_about_translations_debounce() {
   const { runInPage, cleanup, resolveDownloads } = await openAboutTranslations({
     languagePairs: [

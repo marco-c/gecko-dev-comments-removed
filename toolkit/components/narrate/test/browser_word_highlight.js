@@ -4,10 +4,6 @@
 
 "use strict";
 
-
-
-
-
 registerCleanupFunction(teardown);
 
 add_task(async function testNarrate() {

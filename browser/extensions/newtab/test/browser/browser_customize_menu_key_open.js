@@ -1,10 +1,6 @@
 "use strict";
 
 
-
-
-
-
 test_newtab({
   async before() {
     gBrowser.selectedBrowser.focus();
