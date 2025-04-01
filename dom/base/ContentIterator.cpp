@@ -649,7 +649,7 @@ nsIContent* ContentIteratorBase<NodeType>::GetNextSibling(
     return next;
   }
 
-  nsINode* parent = ShadowDOMSelectionHelpers::GetParentNode(
+  nsINode* parent = ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
       *aNode, aAllowCrossShadowBoundary);
   if (NS_WARN_IF(!parent)) {
     return nullptr;
@@ -683,7 +683,7 @@ nsIContent* ContentIteratorBase<NodeType>::GetPrevSibling(
     return prev;
   }
 
-  nsINode* parent = ShadowDOMSelectionHelpers::GetParentNode(
+  nsINode* parent = ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
       *aNode, aAllowCrossShadowBoundary);
   if (NS_WARN_IF(!parent)) {
     return nullptr;
@@ -953,7 +953,7 @@ void ContentSubtreeIterator::CacheInclusiveAncestorsOfEndContainer() {
   while (endNode) {
     mInclusiveAncestorsOfEndContainer.AppendElement(endNode);
     
-    nsINode* parent = ShadowDOMSelectionHelpers::GetParentNode(
+    nsINode* parent = ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
         *endNode, IterAllowCrossShadowBoundary());
     if (!parent || !parent->IsContent()) {
       break;
@@ -1222,7 +1222,7 @@ nsresult ContentSubtreeIterator::PositionAt(nsINode* aCurNode) {
 
 nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
     nsINode* aNode) const {
-  if (!aNode || !ShadowDOMSelectionHelpers::GetParentNode(
+  if (!aNode || !ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
                     *aNode, IterAllowCrossShadowBoundary())) {
     return nullptr;
   }
@@ -1241,7 +1241,7 @@ nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
 
   nsIContent* lastContentInShadowTree = nullptr;
   while (content) {
-    nsINode* parent = ShadowDOMSelectionHelpers::GetParentNode(
+    nsINode* parent = ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
         *content, IterAllowCrossShadowBoundary());
 
     
@@ -1254,7 +1254,7 @@ nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
     
     
     
-    if (!parent || !ShadowDOMSelectionHelpers::GetParentNode(
+    if (!parent || !ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
                        *parent, IterAllowCrossShadowBoundary())) {
       return content;
     }

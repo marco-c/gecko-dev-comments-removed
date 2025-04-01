@@ -109,10 +109,10 @@ class SelectionMovementUtils final {
 
 
 
-  static nsPrevNextBidiLevels GetPrevNextBidiLevels(nsIContent* aNode,
-                                                    uint32_t aContentOffset,
-                                                    CaretAssociationHint aHint,
-                                                    bool aJumpLines);
+
+  static nsPrevNextBidiLevels GetPrevNextBidiLevels(
+      nsIContent* aNode, uint32_t aContentOffset, CaretAssociationHint aHint,
+      bool aJumpLines, const dom::Element* aAncestorLimiter);
 
   
 

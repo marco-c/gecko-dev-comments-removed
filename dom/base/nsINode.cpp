@@ -29,6 +29,7 @@
 #include "mozilla/ServoBindings.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TextControlElement.h"
+#include "mozilla/TextControlState.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/BindContext.h"
@@ -601,8 +602,10 @@ static nsIContent* GetRootForContentSubtree(nsIContent* aContent) {
   return nsIContent::FromNode(aContent->SubtreeRoot());
 }
 
-nsIContent* nsINode::GetSelectionRootContent(PresShell* aPresShell,
-                                             bool aAllowCrossShadowBoundary) {
+nsIContent* nsINode::GetSelectionRootContent(
+    PresShell* aPresShell,
+    IgnoreOwnIndependentSelection aIgnoreOwnIndependentSelection,
+    AllowCrossShadowBoundary aAllowCrossShadowBoundary) {
   NS_ENSURE_TRUE(aPresShell, nullptr);
 
   const bool isContent = IsContent();
@@ -616,13 +619,11 @@ nsIContent* nsINode::GetSelectionRootContent(PresShell* aPresShell,
       return nullptr;
     }
 
-    if (AsContent()->HasIndependentSelection() ||
-        IsInNativeAnonymousSubtree()) {
-      
-      
-      
-      
-      
+    const bool computeTextEditorRoot =
+        IsInNativeAnonymousSubtree() ||
+        (aIgnoreOwnIndependentSelection == IgnoreOwnIndependentSelection::No &&
+         AsContent()->HasIndependentSelection());
+    if (computeTextEditorRoot) {
       
       
       
@@ -664,7 +665,7 @@ nsIContent* nsINode::GetSelectionRootContent(PresShell* aPresShell,
       MOZ_ASSERT(IsEditable());
       MOZ_ASSERT(!IsInDesignMode());
       MOZ_ASSERT(IsContent());
-      return static_cast<nsIContent*>(this)->GetEditingHost();
+      return AsContent()->GetEditingHost();
     }
   }
 
@@ -693,14 +694,51 @@ nsIContent* nsINode::GetSelectionRootContent(PresShell* aPresShell,
     
     if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(content)) {
       content = shadowRoot->GetHost();
-      if (content && aAllowCrossShadowBoundary) {
-        content = content->GetSelectionRootContent(aPresShell,
-                                                   aAllowCrossShadowBoundary);
+      if (content && bool(aAllowCrossShadowBoundary)) {
+        content = content->GetSelectionRootContent(
+            aPresShell, aIgnoreOwnIndependentSelection,
+            aAllowCrossShadowBoundary);
       }
     }
   }
 
   return content;
+}
+
+nsFrameSelection* nsINode::GetFrameSelection() const {
+  if (!IsInComposedDoc()) {
+    return nullptr;
+  }
+  if (IsInNativeAnonymousSubtree()) {
+    auto* const textControlElement = TextControlElement::FromNodeOrNull(
+        GetClosestNativeAnonymousSubtreeRootParentOrHost());
+    if (textControlElement &&
+        textControlElement->IsSingleLineTextControlOrTextArea()) {
+      nsFrameSelection* const independentFrameSelection =
+          textControlElement->GetIndependentFrameSelection();
+      if (!independentFrameSelection) {
+        return nullptr;  
+      }
+      const Element* const anonymousDiv =
+          independentFrameSelection->GetLimiter();
+      if (!anonymousDiv || !IsInclusiveDescendantOf(anonymousDiv)) {
+        return nullptr;  
+      }
+      return independentFrameSelection;
+    }
+    
+    
+  }
+  PresShell* const presShell = OwnerDoc()->GetPresShell();
+  if (!presShell) {
+    return nullptr;
+  }
+  
+  
+  
+  
+  
+  return const_cast<nsFrameSelection*>(presShell->ConstFrameSelection());
 }
 
 nsINodeList* nsINode::ChildNodes() {

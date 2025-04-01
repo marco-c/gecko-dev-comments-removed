@@ -4,13 +4,14 @@
 
 
 
-#include "mozilla/RangeUtils.h"
+#include "RangeUtils.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "nsContentUtils.h"
+#include "nsFrameSelection.h"
 
 namespace mozilla {
 
@@ -44,6 +45,38 @@ template nsresult RangeUtils::CompareNodeToRangeBoundaries(
     nsINode* aNode, const RawRangeBoundary& aStartBoundary,
     const RawRangeBoundary& aEndBoundary, bool* aNodeIsBeforeRange,
     bool* aNodeIsAfterRange);
+
+[[nodiscard]] static inline bool ParentNodeIsInSameSelection(
+    const nsINode& aNode) {
+  
+  
+  
+  if (!aNode.IsRootOfNativeAnonymousSubtree()) {
+    return true;
+  }
+  
+  
+  
+  const nsFrameSelection* frameSelection = aNode.GetFrameSelection();
+  if (!frameSelection || frameSelection->IsIndependentSelection()) {
+    MOZ_ASSERT_IF(aNode.GetClosestNativeAnonymousSubtreeRootParentOrHost(),
+                  aNode.GetClosestNativeAnonymousSubtreeRootParentOrHost()
+                      ->IsTextControlElement());
+    return false;
+  }
+  return true;
+}
+
+
+nsINode* RangeUtils::GetParentNodeInSameSelection(const nsINode* aNode) {
+  if (MOZ_UNLIKELY(!aNode)) {
+    return nullptr;
+  }
+  if (!ParentNodeIsInSameSelection(*aNode)) {
+    return nullptr;
+  }
+  return aNode->GetParentNode();
+}
 
 
 nsINode* RangeUtils::ComputeRootNode(nsINode* aNode) {
@@ -175,7 +208,7 @@ nsresult RangeUtils::CompareNodeToRangeBoundaries(
   
   int32_t nodeStart;
   uint32_t nodeEnd;
-  nsINode* parent = aNode->GetParentNode();
+  const nsINode* parent = GetParentNodeInSameSelection(aNode);
   if (!parent) {
     
     
@@ -272,8 +305,11 @@ uint32_t ShadowDOMSelectionHelpers::EndOffset(const AbstractRange* aRange,
 }
 
 
-nsINode* ShadowDOMSelectionHelpers::GetParentNode(
+nsINode* ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
     nsINode& aNode, bool aAllowCrossShadowBoundary) {
+  if (!ParentNodeIsInSameSelection(aNode)) {
+    return nullptr;
+  }
   return (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled() &&
           aAllowCrossShadowBoundary)
              ? aNode.GetParentOrShadowHostNode()

@@ -40,6 +40,7 @@ class nsAttrChildContentList;
 template <typename T>
 class nsCOMArray;
 class nsDOMAttributeMap;
+class nsFrameSelection;
 class nsGenericHTMLElement;
 class nsIAnimationObserver;
 class nsIContent;
@@ -112,6 +113,7 @@ class Text;
 class TextOrElementOrDocument;
 struct DOMPointInit;
 struct GetRootNodeOptions;
+enum class AllowRangeCrossShadowBoundary : bool;  
 enum class CallerType : uint32_t;
 }  
 }  
@@ -1729,6 +1731,9 @@ class nsINode : public mozilla::dom::EventTarget {
   MOZ_CAN_RUN_SCRIPT mozilla::dom::Element* GetAnonymousRootElementOfTextEditor(
       mozilla::TextEditor** aTextEditor = nullptr);
 
+  enum class IgnoreOwnIndependentSelection : bool { No, Yes };
+  using AllowCrossShadowBoundary = mozilla::dom::AllowRangeCrossShadowBoundary;
+
   
 
 
@@ -1737,8 +1742,20 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+
+
+
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT nsIContent* GetSelectionRootContent(
-      mozilla::PresShell* aPresShell, bool aAllowCrossShadowBoundary = false);
+      mozilla::PresShell* aPresShell,
+      IgnoreOwnIndependentSelection aIgnoreOwnIndependentSelection,
+      AllowCrossShadowBoundary aAllowCrossShadowBoundary);
+
+  [[nodiscard]] nsFrameSelection* GetFrameSelection() const;
 
   bool HasScheduledSelectionChangeEvent() {
     return HasFlag(NODE_HAS_SCHEDULED_SELECTION_CHANGE_EVENT);

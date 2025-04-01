@@ -269,16 +269,22 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
     
     
     nsCOMPtr<nsINode> startContainer = selRange->GetStartContainer();
-    mRootElement = Element::FromNodeOrNull(
-        startContainer->GetSelectionRootContent(presShell));
+    mRootElement =
+        Element::FromNodeOrNull(startContainer->GetSelectionRootContent(
+            presShell,
+            nsINode::IgnoreOwnIndependentSelection::No,  
+            nsINode::AllowCrossShadowBoundary::No));
   } else {
     MOZ_ASSERT(!mIsTextControl);
     
     
     
     nsCOMPtr<nsINode> editableNode = mEditableNode;
-    mRootElement = Element::FromNodeOrNull(
-        editableNode->GetSelectionRootContent(presShell));
+    mRootElement =
+        Element::FromNodeOrNull(editableNode->GetSelectionRootContent(
+            presShell,
+            nsINode::IgnoreOwnIndependentSelection::No,  
+            nsINode::AllowCrossShadowBoundary::No));
   }
   if (!mRootElement && mEditableNode->IsDocument()) {
     

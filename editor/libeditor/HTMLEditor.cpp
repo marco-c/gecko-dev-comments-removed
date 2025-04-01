@@ -5327,20 +5327,11 @@ nsresult HTMLEditor::SelectAllInternal() {
 
     
     
-    
-    
-    if (elementToBeSelected->HasIndependentSelection()) {
-      Element* parentElement = elementToBeSelected->GetParentElement();
-      if (MOZ_LIKELY(parentElement)) {
-        elementToBeSelected = parentElement;
-      }
-    }
-
-    
-    
     RefPtr<PresShell> presShell = GetPresShell();
     nsIContent* computedSelectionRootContent =
-        elementToBeSelected->GetSelectionRootContent(presShell);
+        elementToBeSelected->GetSelectionRootContent(
+            presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
+            nsINode::AllowCrossShadowBoundary::No);
     if (NS_WARN_IF(!computedSelectionRootContent)) {
       return nullptr;
     }

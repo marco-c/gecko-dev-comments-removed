@@ -238,6 +238,8 @@ enum class TableSelectionMode : uint32_t {
 
 class nsFrameSelection final {
  public:
+  friend std::ostream& operator<<(std::ostream&, const nsFrameSelection&);
+
   using CaretAssociationHint = mozilla::CaretAssociationHint;
   using Element = mozilla::dom::Element;
 
@@ -539,6 +541,15 @@ class nsFrameSelection final {
 
 
   nsresult RepaintSelection(mozilla::SelectionType aSelectionType);
+
+  
+
+
+
+
+
+
+
 
   [[nodiscard]] bool NodeIsInLimiters(const nsINode* aContainerNode) const;
 
@@ -849,6 +860,11 @@ class nsFrameSelection final {
 
 
   Element* GetAncestorLimiter() const { return mLimiters.mAncestorLimiter; }
+
+  Element* GetAncestorLimiterOrLimiter() const {
+    return mLimiters.mAncestorLimiter ? mLimiters.mAncestorLimiter
+                                      : mLimiters.mLimiter;
+  }
 
   
 
