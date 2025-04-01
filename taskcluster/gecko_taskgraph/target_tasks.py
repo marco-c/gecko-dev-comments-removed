@@ -768,6 +768,9 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                 if "jetstream2" in try_name:
                     return True
                 
+                if "jetstream3" in try_name:
+                    return False
+                
                 if "tp6m" in try_name and "a55" not in platform:
                     return False
                 
@@ -832,6 +835,9 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                     if "speedometer" in try_name:
                         return True
                 if "safari" and "benchmark" in try_name:
+                    
+                    if "jetstream3" in try_name and "safari-tp" not in try_name:
+                        return False
                     return True
         
         elif accept_raptor_android_build(platform):
@@ -870,6 +876,9 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                     return False
                 if "jetstream2" in try_name:
                     return True
+                
+                if "jetstream3" in try_name:
+                    return False
                 if "fenix" in try_name:
                     return False
                 if "speedometer" in try_name:
