@@ -225,7 +225,7 @@ class PaymentRequest final : public nsIPaymentRequest {
 
   
   
-  PaymentRequestParent* mIPC;
+  WeakPtr<PaymentRequestParent> mIPC;
   eState mState;
 };
 
