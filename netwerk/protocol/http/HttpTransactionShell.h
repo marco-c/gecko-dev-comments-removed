@@ -40,12 +40,8 @@ union NetAddr;
 
 
 
-#define HTTPTRANSACTIONSHELL_IID                     \
-  {                                                  \
-    0x95e5a5b7, 0x6aa2, 0x4011, {                    \
-      0x92, 0x0a, 0x09, 0x08, 0xb5, 0x2f, 0x95, 0xd4 \
-    }                                                \
-  }
+#define HTTPTRANSACTIONSHELL_IID \
+  {0x95e5a5b7, 0x6aa2, 0x4011, {0x92, 0x0a, 0x09, 0x08, 0xb5, 0x2f, 0x95, 0xd4}}
 
 class HttpTransactionShell : public nsISupports {
  public:
@@ -101,7 +97,8 @@ class HttpTransactionShell : public nsISupports {
 
   
   
-  virtual UniquePtr<nsHttpResponseHead> TakeResponseHead() = 0;
+  virtual UniquePtr<nsHttpResponseHead> TakeResponseHeadAndConnInfo(
+      nsHttpConnectionInfo** aOut) = 0;
 
   
   
@@ -193,7 +190,8 @@ NS_DEFINE_STATIC_IID_ACCESSOR(HttpTransactionShell, HTTPTRANSACTIONSHELL_IID)
       override;                                                                \
   virtual nsresult AsyncRead(nsIStreamListener* listener, nsIRequest** pump)   \
       override;                                                                \
-  virtual UniquePtr<nsHttpResponseHead> TakeResponseHead() override;           \
+  virtual UniquePtr<nsHttpResponseHead> TakeResponseHeadAndConnInfo(           \
+      nsHttpConnectionInfo** aOut) override;                                   \
   virtual UniquePtr<nsHttpHeaderArray> TakeResponseTrailers() override;        \
   virtual already_AddRefed<nsITransportSecurityInfo> SecurityInfo() override;  \
   virtual void SetSecurityCallbacks(nsIInterfaceRequestor* aCallbacks)         \

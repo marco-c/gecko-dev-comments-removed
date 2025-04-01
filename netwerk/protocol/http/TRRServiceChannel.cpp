@@ -1025,7 +1025,7 @@ TRRServiceChannel::OnStartRequest(nsIRequest* request) {
     
     
     
-    mResponseHead = mTransaction->TakeResponseHead();
+    mResponseHead = mTransaction->TakeResponseHeadAndConnInfo(nullptr);
     if (mResponseHead) {
       uint32_t httpStatus = mResponseHead->Status();
       if (mTransaction->ProxyConnectFailed()) {

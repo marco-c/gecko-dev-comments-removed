@@ -268,6 +268,8 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   already_AddRefed<Http2PushedStreamWrapper> TakePushedStreamById(
       uint32_t aStreamId);
 
+  void FinalizeConnInfo();
+
   
   
   enum HTTPSSVC_CONNECTION_FAILED_REASON : uint32_t {
@@ -578,6 +580,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   nsCOMPtr<nsITimer> mFastFallbackTimer;
   nsCOMPtr<nsITimer> mHttp3BackupTimer;
   RefPtr<nsHttpConnectionInfo> mBackupConnInfo;
+  
+  
+  RefPtr<nsHttpConnectionInfo> mFinalizedConnInfo;
   RefPtr<HTTPSRecordResolver> mResolver;
   TRANSACTION_RESTART_REASON mRestartReason = TRANSACTION_RESTART_NONE;
 
