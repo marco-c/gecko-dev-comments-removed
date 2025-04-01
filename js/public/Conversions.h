@@ -361,8 +361,9 @@ inline UnsignedInteger ToUnsignedInteger(double d) {
   }
 
   
-  return (bits & mozilla::FloatingPoint<double>::kSignBit) ? ~result + 1
-                                                           : result;
+  return (bits & mozilla::FloatingPoint<double>::kSignBit)
+             ? UnsignedInteger(~result) + 1
+             : result;
 }
 
 template <typename SignedInteger>
