@@ -1,7 +1,7 @@
 import * as __WEBPACK_EXTERNAL_MODULE_chrome_global_content_ml_ort_webgpu_dev_mjs_a2210ba4__ from "chrome://global/content/ml/ort.webgpu-dev.mjs";
  var __webpack_modules__ = ({
 
- "#onnxruntime-webgpu":
+ "onnxruntime-web":
 
 
 
@@ -756,18 +756,19 @@ function parse(tokens) {
     return left;
   }
   function parseCallMemberExpression() {
-    const member = parseMemberExpression();
+    const member = parseMemberExpression(parsePrimaryExpression());
     if (is(TOKEN_TYPES.OpenParen)) {
       return parseCallExpression(member);
     }
     return member;
   }
   function parseCallExpression(callee) {
-    let callExpression = new CallExpression(callee, parseArgs());
+    let expression = new CallExpression(callee, parseArgs());
+    expression = parseMemberExpression(expression);
     if (is(TOKEN_TYPES.OpenParen)) {
-      callExpression = parseCallExpression(callExpression);
+      expression = parseCallExpression(expression);
     }
-    return callExpression;
+    return expression;
   }
   function parseArgs() {
     expect(TOKEN_TYPES.OpenParen, "Expected opening parenthesis for arguments list");
@@ -821,8 +822,7 @@ function parse(tokens) {
     }
     return slices[0];
   }
-  function parseMemberExpression() {
-    let object = parsePrimaryExpression();
+  function parseMemberExpression(object) {
     while (is(TOKEN_TYPES.Dot) || is(TOKEN_TYPES.OpenSquareBracket)) {
       const operator = tokens[current];
       ++current;
@@ -1046,6 +1046,41 @@ var StringValue = class extends RuntimeValue {
       "lstrip",
       new FunctionValue(() => {
         return new StringValue(this.value.trimStart());
+      })
+    ],
+    [
+      "split",
+      
+      
+      new FunctionValue((args) => {
+        const sep = args[0] ?? new NullValue();
+        if (!(sep instanceof StringValue || sep instanceof NullValue)) {
+          throw new Error("sep argument must be a string or null");
+        }
+        const maxsplit = args[1] ?? new NumericValue(-1);
+        if (!(maxsplit instanceof NumericValue)) {
+          throw new Error("maxsplit argument must be a number");
+        }
+        let result = [];
+        if (sep instanceof NullValue) {
+          const text = this.value.trimStart();
+          for (const { 0: match, index } of text.matchAll(/\S+/g)) {
+            if (maxsplit.value !== -1 && result.length >= maxsplit.value && index !== void 0) {
+              result.push(match + text.slice(index + match.length));
+              break;
+            }
+            result.push(match);
+          }
+        } else {
+          if (sep.value === "") {
+            throw new Error("empty separator");
+          }
+          result = this.value.split(sep.value);
+          if (maxsplit.value !== -1 && result.length > maxsplit.value) {
+            result.push(result.splice(maxsplit.value).join(sep.value));
+          }
+        }
+        return new ArrayValue(result.map((part) => new StringValue(part)));
       })
     ]
   ]);
@@ -1383,6 +1418,8 @@ var Interpreter = class {
                 }
               })
             );
+          case "join":
+            return new StringValue(operand.value.map((x) => x.value).join(""));
           default:
             throw new Error(`Unknown ArrayValue filter: ${filter.value}`);
         }
@@ -1409,6 +1446,7 @@ var Interpreter = class {
                 )
               ).join("\n")
             );
+          case "join":
           case "string":
             return operand;
           default:
@@ -1447,6 +1485,21 @@ var Interpreter = class {
           throw new Error("If set, indent must be a number");
         }
         return new StringValue(toJSON(operand, indent.value));
+      } else if (filterName === "join") {
+        let value;
+        if (operand instanceof StringValue) {
+          value = Array.from(operand.value);
+        } else if (operand instanceof ArrayValue) {
+          value = operand.value.map((x) => x.value);
+        } else {
+          throw new Error(`Cannot apply filter "${filterName}" to type: ${operand.type}`);
+        }
+        const [args, kwargs] = this.evaluateArguments(filter.args, environment);
+        const separator = args.at(0) ?? kwargs.get("separator") ?? new StringValue("");
+        if (!(separator instanceof StringValue)) {
+          throw new Error("separator must be a string");
+        }
+        return new StringValue(value.join(separator.value));
       }
       if (operand instanceof ArrayValue) {
         switch (filterName) {
@@ -1908,8 +1961,10 @@ var Template = class {
       throw new Error(args);
     });
     env.set("range", range);
-    for (const [key, value] of Object.entries(items)) {
-      env.set(key, value);
+    if (items) {
+      for (const [key, value] of Object.entries(items)) {
+        env.set(key, value);
+      }
     }
     const interpreter = new Interpreter(env);
     const result = interpreter.run(this.parsed);
@@ -3886,7 +3941,7 @@ __webpack_require__.r(__webpack_exports__);
    isONNXTensor: () => ( isONNXTensor)
  });
  var _env_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/env.js");
- var _onnxruntime_webgpu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "#onnxruntime-webgpu");
+ var onnxruntime_web__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "onnxruntime-web");
  var onnxruntime_common__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./node_modules/onnxruntime-common/dist/esm/index.js");
 
 
@@ -3909,7 +3964,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
 const ONNX_NODE = null;
+
 
 
 
@@ -3945,8 +4002,8 @@ let ONNX;
 const ORT_SYMBOL = Symbol.for('onnxruntime');
 
 if (ORT_SYMBOL in globalThis) {
-  
-  ONNX = globalThis[ORT_SYMBOL];
+    
+    ONNX = globalThis[ORT_SYMBOL];
 
 } else if (_env_js__WEBPACK_IMPORTED_MODULE_0__.apis.IS_NODE_ENV) {
     ONNX = ONNX_NODE.default ?? ONNX_NODE;
@@ -3974,7 +4031,7 @@ if (ORT_SYMBOL in globalThis) {
     supportedDevices.push('cpu');
     defaultDevices = ['cpu'];
 } else {
-    ONNX = _onnxruntime_webgpu__WEBPACK_IMPORTED_MODULE_1__;
+    ONNX = onnxruntime_web__WEBPACK_IMPORTED_MODULE_1__;
 
     if (_env_js__WEBPACK_IMPORTED_MODULE_0__.apis.IS_WEBNN_AVAILABLE) {
         
@@ -4034,14 +4091,14 @@ let wasmInitPromise = null;
 
 
 
-async function createInferenceSession(buffer, session_options, session_config) {
+async function createInferenceSession(buffer_or_path, session_options, session_config) {
     if (wasmInitPromise) {
         
         
         await wasmInitPromise;
     }
 
-    const sessionPromise = InferenceSession.create(buffer, session_options);
+    const sessionPromise = InferenceSession.create(buffer_or_path, session_options);
     wasmInitPromise ??= sessionPromise;
     const session = await sessionPromise;
     session.config = session_config;
@@ -4065,9 +4122,13 @@ if (ONNX_ENV?.wasm) {
 
     
     
-    
-    
-    ONNX_ENV.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/@huggingface/transformers@${_env_js__WEBPACK_IMPORTED_MODULE_0__.env.version}/dist/`;
+    if (
+        
+        !(typeof ServiceWorkerGlobalScope !== 'undefined' && self instanceof ServiceWorkerGlobalScope)
+        && !ONNX_ENV.wasm.wasmPaths
+    ) {
+        ONNX_ENV.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/@huggingface/transformers@${_env_js__WEBPACK_IMPORTED_MODULE_0__.env.version}/dist/`;
+    }
 
     
     
@@ -4075,11 +4136,6 @@ if (ONNX_ENV?.wasm) {
     
     
     ONNX_ENV.wasm.proxy = false;
-
-    
-    if (typeof crossOriginIsolated === 'undefined' || !crossOriginIsolated) {
-        ONNX_ENV.wasm.numThreads = 1;
-    }
 }
 
 if (ONNX_ENV?.webgpu) {
@@ -4149,8 +4205,8 @@ class FeatureExtractor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_1__.Ca
 
 
     static async from_pretrained(pretrained_model_name_or_path, options) {
-        const preprocessorConfig = await (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_2__.getModelJSON)(pretrained_model_name_or_path, _utils_constants_js__WEBPACK_IMPORTED_MODULE_0__.FEATURE_EXTRACTOR_NAME, true, options);
-        return new this(preprocessorConfig);
+        const config = await (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_2__.getModelJSON)(pretrained_model_name_or_path, _utils_constants_js__WEBPACK_IMPORTED_MODULE_0__.FEATURE_EXTRACTOR_NAME, true, options);
+        return new this(config);
     }
 }
 
@@ -4182,6 +4238,7 @@ function validate_audio_inputs(audio, feature_extractor) {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    ImageProcessor: () => ( ImageProcessor),
+   center_to_corners_format: () => ( center_to_corners_format),
    post_process_instance_segmentation: () => ( post_process_instance_segmentation),
    post_process_object_detection: () => ( post_process_object_detection),
    post_process_panoptic_segmentation: () => ( post_process_panoptic_segmentation),
@@ -4800,14 +4857,20 @@ class ImageProcessor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
         this.do_thumbnail = config.do_thumbnail;
         this.size = config.size ?? config.image_size;
         this.do_resize = config.do_resize ?? (this.size !== undefined);
+        
         this.size_divisibility = config.size_divisibility ?? config.size_divisor;
 
         this.do_center_crop = config.do_center_crop;
+        
         this.crop_size = config.crop_size;
+        
         this.do_convert_rgb = config.do_convert_rgb ?? true;
+        
         this.do_crop_margin = config.do_crop_margin;
 
+        
         this.pad_size = config.pad_size;
+        
         this.do_pad = config.do_pad;
 
         if (this.do_pad && !this.pad_size && this.size && this.size.width !== undefined && this.size.height !== undefined) {
@@ -4913,6 +4976,8 @@ class ImageProcessor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
         if (typeof padSize === 'number') {
             paddedImageWidth = padSize;
             paddedImageHeight = padSize;
+        } else if (padSize === 'square') {
+            paddedImageWidth = paddedImageHeight = Math.max(imageHeight, imageWidth);
         } else {
             paddedImageWidth = padSize.width;
             paddedImageHeight = padSize.height;
@@ -5014,6 +5079,7 @@ class ImageProcessor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
         
         else if (Number.isInteger(size)) {
             shortest_edge = size;
+            
             longest_edge = this.config.max_size ?? shortest_edge;
 
         } else if (size !== undefined) {
@@ -5082,6 +5148,7 @@ class ImageProcessor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
         } else if (size.min_pixels !== undefined && size.max_pixels !== undefined) {
             
             const { min_pixels, max_pixels } = size;
+            
             const factor = this.config.patch_size * this.config.merge_size;
             return smart_resize(srcHeight, srcWidth, factor, min_pixels, max_pixels);
         } else {
@@ -5097,6 +5164,7 @@ class ImageProcessor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
     async resize(image) {
         const [newWidth, newHeight] = this.get_resize_output_image_size(image, this.size);
         return await image.resize(newWidth, newHeight, {
+            
             resample: this.resample,
         });
     }
@@ -5147,6 +5215,7 @@ class ImageProcessor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
 
         
         if (this.do_thumbnail) {
+            
             image = await this.thumbnail(image, this.size, this.resample);
         }
 
@@ -5168,6 +5237,7 @@ class ImageProcessor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
         
         const reshaped_input_size = [image.height, image.width];
 
+        
         
         
         
@@ -5334,6 +5404,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
 class Processor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_1__.Callable {
     static classes = [
         'image_processor_class',
@@ -5374,6 +5445,11 @@ class Processor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_1__.Callable 
         return this.components.feature_extractor;
     }
 
+    
+
+
+
+
     apply_chat_template(messages, options = {}) {
         if (!this.tokenizer) {
             throw new Error('Unable to apply chat template without a tokenizer.');
@@ -5384,11 +5460,26 @@ class Processor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_1__.Callable 
         });
     }
 
+    
+
+
+
     batch_decode(...args) {
         if (!this.tokenizer) {
             throw new Error('Unable to decode without a tokenizer.');
         }
         return this.tokenizer.batch_decode(...args);
+    }
+
+    
+
+
+
+    decode(...args) {
+        if (!this.tokenizer) {
+            throw new Error('Unable to decode without a tokenizer.');
+        }
+        return this.tokenizer.decode(...args);
     }
 
 
@@ -5530,15 +5621,22 @@ function getNormalizedConfig(config) {
         case 'paligemma':
         case 'florence2':
         case 'llava_onevision':
+        case 'idefics3':
+        case 'ultravox':
+        case 'smolvlm':
+            
             init_normalized_config = getNormalizedConfig(config.text_config);
             break;
         case 'moondream1':
+            
             init_normalized_config = getNormalizedConfig(config.phi_config);
             break;
         case 'musicgen':
+            
             init_normalized_config = getNormalizedConfig(config.decoder);
             break;
         case 'multi_modality':
+            
             init_normalized_config = getNormalizedConfig(config.language_config);
             break;
 
@@ -5555,8 +5653,6 @@ function getNormalizedConfig(config) {
         case 'gpt_neox':
         case 'stablelm':
         case 'opt':
-        case 'phi':
-        case 'phi3':
         case 'falcon':
             mapping['num_heads'] = 'num_attention_heads';
             mapping['num_layers'] = 'num_hidden_layers';
@@ -5564,6 +5660,7 @@ function getNormalizedConfig(config) {
             break;
         case 'llama':
         case 'olmo':
+        case 'olmo2':
         case 'mobilellm':
         case 'granite':
         case 'cohere':
@@ -5571,6 +5668,9 @@ function getNormalizedConfig(config) {
         case 'starcoder2':
         case 'qwen2':
         case 'qwen2_vl':
+        case 'phi':
+        case 'phi3':
+        case 'phi3_v':
             mapping['num_heads'] = 'num_key_value_heads';
             mapping['num_layers'] = 'num_hidden_layers';
             mapping['hidden_size'] = 'hidden_size';
@@ -5578,6 +5678,8 @@ function getNormalizedConfig(config) {
             break;
         case 'gemma':
         case 'gemma2':
+        case 'glm':
+        case 'helium':
             mapping['num_heads'] = 'num_key_value_heads';
             mapping['num_layers'] = 'num_hidden_layers';
             mapping['dim_kv'] = 'head_dim';
@@ -5603,6 +5705,12 @@ function getNormalizedConfig(config) {
             mapping['num_layers'] = 'n_layers';
             mapping['hidden_size'] = 'd_model';
             break;
+        case 'exaone':
+            mapping['num_heads'] = 'num_key_value_heads';
+            mapping['num_layers'] = 'num_layers';
+            mapping['dim_kv'] = 'head_dim';
+            mapping['num_attention_heads'] = 'num_attention_heads';
+            break;
 
         
         case 't5':
@@ -5619,6 +5727,7 @@ function getNormalizedConfig(config) {
         case 'mbart':
         case 'marian':
         case 'whisper':
+        case 'lite-whisper':
         case 'm2m_100':
         case 'blenderbot':
         case 'blenderbot-small':
@@ -5648,8 +5757,15 @@ function getNormalizedConfig(config) {
             mapping['num_encoder_heads'] = mapping['num_decoder_heads'] = 'num_attention_heads';
             mapping['encoder_hidden_size'] = mapping['decoder_hidden_size'] = 'hidden_size';
             break;
-
+        case 'moonshine':
+            mapping['num_decoder_layers'] = 'decoder_num_hidden_layers';
+            mapping['num_decoder_heads'] = 'decoder_num_key_value_heads';
+            mapping['num_encoder_layers'] = 'encoder_num_hidden_layers';
+            mapping['num_encoder_heads'] = 'encoder_num_key_value_heads';
+            mapping['encoder_hidden_size'] = mapping['decoder_hidden_size'] = 'hidden_size';
+            break;
         case 'vision-encoder-decoder':
+            
             const decoderConfig = getNormalizedConfig(config.decoder);
 
             const add_encoder_pkv = 'num_decoder_layers' in decoderConfig;
@@ -5892,12 +6008,12 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const VERSION = '3.1.0';
+const VERSION = '3.4.0';
 
 
-const IS_BROWSER_ENV = typeof self !== 'undefined';
-const IS_WEBWORKER_ENV = IS_BROWSER_ENV && self.constructor.name === 'DedicatedWorkerGlobalScope';
-const IS_WEB_CACHE_AVAILABLE = IS_BROWSER_ENV && 'caches' in self;
+const IS_BROWSER_ENV = typeof window !== "undefined" && typeof window.document !== "undefined";
+const IS_WEBWORKER_ENV = typeof self !== "undefined"  && self.constructor?.name === 'DedicatedWorkerGlobalScope';
+const IS_WEB_CACHE_AVAILABLE = typeof self !== "undefined" && 'caches' in self;
 const IS_WEBGPU_AVAILABLE = typeof navigator !== 'undefined' && 'gpu' in navigator;
 const IS_WEBNN_AVAILABLE = typeof navigator !== 'undefined' && 'ml' in navigator;
 
@@ -6003,7 +6119,7 @@ const env = {
     remoteHost: 'https://huggingface.co/',
     remotePathTemplate: '{model}/resolve/{revision}/',
 
-    allowLocalModels: !IS_BROWSER_ENV,
+    allowLocalModels: !(IS_BROWSER_ENV || IS_WEBWORKER_ENV),
     localModelPath: localModelPath,
     useFS: IS_FS_AVAILABLE,
 
@@ -6026,7 +6142,6 @@ const env = {
 function isEmpty(obj) {
     return Object.keys(obj).length === 0;
 }
-
 
 
  }),
@@ -6302,6 +6417,13 @@ class GenerationConfig {
 
 
     suppress_tokens = null;
+
+    
+
+
+
+
+    streamer = null;
 
     
 
@@ -6865,8 +6987,18 @@ class NoRepeatNGramLogitsProcessor extends LogitsProcessor {
 
 
 
+
+
+
+
+
+
+
+
 class RepetitionPenaltyLogitsProcessor extends LogitsProcessor {
     
+
+
 
 
 
@@ -6882,13 +7014,9 @@ class RepetitionPenaltyLogitsProcessor extends LogitsProcessor {
 
 
     _call(input_ids, logits) {
-        
-        
-        
-
         for (let i = 0; i < input_ids.length; ++i) {
             const batch_logits_data = (logits[i].data);
-            for (const input_id of input_ids[i]) {
+            for (const input_id of new Set(input_ids[i])) {
                 const token = Number(input_id);
                 if (batch_logits_data[token] < 0) {
                     batch_logits_data[token] *= this.penalty;
@@ -7624,10 +7752,17 @@ class TextStreamer extends BaseStreamer {
 
 
 
+
+
+
+
+
+
     constructor(tokenizer, {
         skip_prompt = false,
         callback_function = null,
         token_callback_function = null,
+        skip_special_tokens = true,
         decode_kwargs = {},
         ...kwargs
     } = {}) {
@@ -7636,7 +7771,7 @@ class TextStreamer extends BaseStreamer {
         this.skip_prompt = skip_prompt;
         this.callback_function = callback_function ?? stdout_write;
         this.token_callback_function = token_callback_function;
-        this.decode_kwargs = { ...decode_kwargs, ...kwargs };
+        this.decode_kwargs = { skip_special_tokens, ...decode_kwargs, ...kwargs };
 
         
         this.token_cache = [];
@@ -7653,9 +7788,10 @@ class TextStreamer extends BaseStreamer {
             throw Error('TextStreamer only supports batch size of 1');
         }
 
-        if (this.skip_prompt && this.next_tokens_are_prompt) {
+        const is_prompt = this.next_tokens_are_prompt;
+        if (is_prompt) {
             this.next_tokens_are_prompt = false;
-            return;
+            if (this.skip_prompt) return;
         }
 
         const tokens = value[0];
@@ -7666,7 +7802,7 @@ class TextStreamer extends BaseStreamer {
         const text = this.tokenizer.decode(this.token_cache, this.decode_kwargs);
 
         let printable_text;
-        if (text.endsWith('\n')) {
+        if (is_prompt || text.endsWith('\n')) {
             
             printable_text = text.slice(this.print_len);
             this.token_cache = [];
@@ -7752,9 +7888,10 @@ class WhisperTextStreamer extends TextStreamer {
     } = {}) {
         super(tokenizer, {
             skip_prompt,
+            skip_special_tokens,
             callback_function,
             token_callback_function,
-            decode_kwargs: { skip_special_tokens, ...decode_kwargs },
+            decode_kwargs,
         });
         this.timestamp_begin = tokenizer.timestamp_begin;
 
@@ -7821,6 +7958,7 @@ __webpack_require__.r(__webpack_exports__);
    AutoModel: () => ( AutoModel),
    AutoModelForAudioClassification: () => ( AutoModelForAudioClassification),
    AutoModelForAudioFrameClassification: () => ( AutoModelForAudioFrameClassification),
+   AutoModelForAudioTextToText: () => ( AutoModelForAudioTextToText),
    AutoModelForCTC: () => ( AutoModelForCTC),
    AutoModelForCausalLM: () => ( AutoModelForCausalLM),
    AutoModelForDepthEstimation: () => ( AutoModelForDepthEstimation),
@@ -7829,6 +7967,7 @@ __webpack_require__.r(__webpack_exports__);
    AutoModelForImageFeatureExtraction: () => ( AutoModelForImageFeatureExtraction),
    AutoModelForImageMatting: () => ( AutoModelForImageMatting),
    AutoModelForImageSegmentation: () => ( AutoModelForImageSegmentation),
+   AutoModelForImageTextToText: () => ( AutoModelForImageTextToText),
    AutoModelForImageToImage: () => ( AutoModelForImageToImage),
    AutoModelForMaskGeneration: () => ( AutoModelForMaskGeneration),
    AutoModelForMaskedLM: () => ( AutoModelForMaskedLM),
@@ -7914,6 +8053,12 @@ __webpack_require__.r(__webpack_exports__);
    DPTForDepthEstimation: () => ( DPTForDepthEstimation),
    DPTModel: () => ( DPTModel),
    DPTPreTrainedModel: () => ( DPTPreTrainedModel),
+   DacDecoderModel: () => ( DacDecoderModel),
+   DacDecoderOutput: () => ( DacDecoderOutput),
+   DacEncoderModel: () => ( DacEncoderModel),
+   DacEncoderOutput: () => ( DacEncoderOutput),
+   DacModel: () => ( DacModel),
+   DacPreTrainedModel: () => ( DacPreTrainedModel),
    DebertaForMaskedLM: () => ( DebertaForMaskedLM),
    DebertaForQuestionAnswering: () => ( DebertaForQuestionAnswering),
    DebertaForSequenceClassification: () => ( DebertaForSequenceClassification),
@@ -7944,6 +8089,9 @@ __webpack_require__.r(__webpack_exports__);
    Dinov2ForImageClassification: () => ( Dinov2ForImageClassification),
    Dinov2Model: () => ( Dinov2Model),
    Dinov2PreTrainedModel: () => ( Dinov2PreTrainedModel),
+   Dinov2WithRegistersForImageClassification: () => ( Dinov2WithRegistersForImageClassification),
+   Dinov2WithRegistersModel: () => ( Dinov2WithRegistersModel),
+   Dinov2WithRegistersPreTrainedModel: () => ( Dinov2WithRegistersPreTrainedModel),
    DistilBertForMaskedLM: () => ( DistilBertForMaskedLM),
    DistilBertForQuestionAnswering: () => ( DistilBertForQuestionAnswering),
    DistilBertForSequenceClassification: () => ( DistilBertForSequenceClassification),
@@ -7966,6 +8114,9 @@ __webpack_require__.r(__webpack_exports__);
    EsmForTokenClassification: () => ( EsmForTokenClassification),
    EsmModel: () => ( EsmModel),
    EsmPreTrainedModel: () => ( EsmPreTrainedModel),
+   ExaoneForCausalLM: () => ( ExaoneForCausalLM),
+   ExaoneModel: () => ( ExaoneModel),
+   ExaonePreTrainedModel: () => ( ExaonePreTrainedModel),
    FalconForCausalLM: () => ( FalconForCausalLM),
    FalconModel: () => ( FalconModel),
    FalconPreTrainedModel: () => ( FalconPreTrainedModel),
@@ -7998,11 +8149,19 @@ __webpack_require__.r(__webpack_exports__);
    GemmaForCausalLM: () => ( GemmaForCausalLM),
    GemmaModel: () => ( GemmaModel),
    GemmaPreTrainedModel: () => ( GemmaPreTrainedModel),
+   GlmForCausalLM: () => ( GlmForCausalLM),
+   GlmModel: () => ( GlmModel),
+   GlmPreTrainedModel: () => ( GlmPreTrainedModel),
    GraniteForCausalLM: () => ( GraniteForCausalLM),
    GraniteModel: () => ( GraniteModel),
    GranitePreTrainedModel: () => ( GranitePreTrainedModel),
+   GroundingDinoForObjectDetection: () => ( GroundingDinoForObjectDetection),
+   GroundingDinoPreTrainedModel: () => ( GroundingDinoPreTrainedModel),
    GroupViTModel: () => ( GroupViTModel),
    GroupViTPreTrainedModel: () => ( GroupViTPreTrainedModel),
+   HeliumForCausalLM: () => ( HeliumForCausalLM),
+   HeliumModel: () => ( HeliumModel),
+   HeliumPreTrainedModel: () => ( HeliumPreTrainedModel),
    HieraForImageClassification: () => ( HieraForImageClassification),
    HieraModel: () => ( HieraModel),
    HieraPreTrainedModel: () => ( HieraPreTrainedModel),
@@ -8010,6 +8169,11 @@ __webpack_require__.r(__webpack_exports__);
    HubertForSequenceClassification: () => ( HubertForSequenceClassification),
    HubertModel: () => ( HubertModel),
    HubertPreTrainedModel: () => ( HubertPreTrainedModel),
+   IJepaForImageClassification: () => ( IJepaForImageClassification),
+   IJepaModel: () => ( IJepaModel),
+   IJepaPreTrainedModel: () => ( IJepaPreTrainedModel),
+   Idefics3ForConditionalGeneration: () => ( Idefics3ForConditionalGeneration),
+   Idefics3PreTrainedModel: () => ( Idefics3PreTrainedModel),
    ImageMattingOutput: () => ( ImageMattingOutput),
    JAISLMHeadModel: () => ( JAISLMHeadModel),
    JAISModel: () => ( JAISModel),
@@ -8018,6 +8182,7 @@ __webpack_require__.r(__webpack_exports__);
    JinaCLIPPreTrainedModel: () => ( JinaCLIPPreTrainedModel),
    JinaCLIPTextModel: () => ( JinaCLIPTextModel),
    JinaCLIPVisionModel: () => ( JinaCLIPVisionModel),
+   LiteWhisperForConditionalGeneration: () => ( LiteWhisperForConditionalGeneration),
    LlamaForCausalLM: () => ( LlamaForCausalLM),
    LlamaModel: () => ( LlamaModel),
    LlamaPreTrainedModel: () => ( LlamaPreTrainedModel),
@@ -8054,6 +8219,12 @@ __webpack_require__.r(__webpack_exports__);
    MgpstrForSceneTextRecognition: () => ( MgpstrForSceneTextRecognition),
    MgpstrModelOutput: () => ( MgpstrModelOutput),
    MgpstrPreTrainedModel: () => ( MgpstrPreTrainedModel),
+   MimiDecoderModel: () => ( MimiDecoderModel),
+   MimiDecoderOutput: () => ( MimiDecoderOutput),
+   MimiEncoderModel: () => ( MimiEncoderModel),
+   MimiEncoderOutput: () => ( MimiEncoderOutput),
+   MimiModel: () => ( MimiModel),
+   MimiPreTrainedModel: () => ( MimiPreTrainedModel),
    MistralForCausalLM: () => ( MistralForCausalLM),
    MistralModel: () => ( MistralModel),
    MistralPreTrainedModel: () => ( MistralPreTrainedModel),
@@ -8066,15 +8237,19 @@ __webpack_require__.r(__webpack_exports__);
    MobileLLMModel: () => ( MobileLLMModel),
    MobileLLMPreTrainedModel: () => ( MobileLLMPreTrainedModel),
    MobileNetV1ForImageClassification: () => ( MobileNetV1ForImageClassification),
+   MobileNetV1ForSemanticSegmentation: () => ( MobileNetV1ForSemanticSegmentation),
    MobileNetV1Model: () => ( MobileNetV1Model),
    MobileNetV1PreTrainedModel: () => ( MobileNetV1PreTrainedModel),
    MobileNetV2ForImageClassification: () => ( MobileNetV2ForImageClassification),
+   MobileNetV2ForSemanticSegmentation: () => ( MobileNetV2ForSemanticSegmentation),
    MobileNetV2Model: () => ( MobileNetV2Model),
    MobileNetV2PreTrainedModel: () => ( MobileNetV2PreTrainedModel),
    MobileNetV3ForImageClassification: () => ( MobileNetV3ForImageClassification),
+   MobileNetV3ForSemanticSegmentation: () => ( MobileNetV3ForSemanticSegmentation),
    MobileNetV3Model: () => ( MobileNetV3Model),
    MobileNetV3PreTrainedModel: () => ( MobileNetV3PreTrainedModel),
    MobileNetV4ForImageClassification: () => ( MobileNetV4ForImageClassification),
+   MobileNetV4ForSemanticSegmentation: () => ( MobileNetV4ForSemanticSegmentation),
    MobileNetV4Model: () => ( MobileNetV4Model),
    MobileNetV4PreTrainedModel: () => ( MobileNetV4PreTrainedModel),
    MobileViTForImageClassification: () => ( MobileViTForImageClassification),
@@ -8084,7 +8259,15 @@ __webpack_require__.r(__webpack_exports__);
    MobileViTV2Model: () => ( MobileViTV2Model),
    MobileViTV2PreTrainedModel: () => ( MobileViTV2PreTrainedModel),
    ModelOutput: () => ( ModelOutput),
+   ModernBertForMaskedLM: () => ( ModernBertForMaskedLM),
+   ModernBertForSequenceClassification: () => ( ModernBertForSequenceClassification),
+   ModernBertForTokenClassification: () => ( ModernBertForTokenClassification),
+   ModernBertModel: () => ( ModernBertModel),
+   ModernBertPreTrainedModel: () => ( ModernBertPreTrainedModel),
    Moondream1ForConditionalGeneration: () => ( Moondream1ForConditionalGeneration),
+   MoonshineForConditionalGeneration: () => ( MoonshineForConditionalGeneration),
+   MoonshineModel: () => ( MoonshineModel),
+   MoonshinePreTrainedModel: () => ( MoonshinePreTrainedModel),
    MptForCausalLM: () => ( MptForCausalLM),
    MptModel: () => ( MptModel),
    MptPreTrainedModel: () => ( MptPreTrainedModel),
@@ -8099,6 +8282,9 @@ __webpack_require__.r(__webpack_exports__);
    OPTForCausalLM: () => ( OPTForCausalLM),
    OPTModel: () => ( OPTModel),
    OPTPreTrainedModel: () => ( OPTPreTrainedModel),
+   Olmo2ForCausalLM: () => ( Olmo2ForCausalLM),
+   Olmo2Model: () => ( Olmo2Model),
+   Olmo2PreTrainedModel: () => ( Olmo2PreTrainedModel),
    OlmoForCausalLM: () => ( OlmoForCausalLM),
    OlmoModel: () => ( OlmoModel),
    OlmoPreTrainedModel: () => ( OlmoPreTrainedModel),
@@ -8111,6 +8297,8 @@ __webpack_require__.r(__webpack_exports__);
    Owlv2ForObjectDetection: () => ( Owlv2ForObjectDetection),
    Owlv2Model: () => ( Owlv2Model),
    Owlv2PreTrainedModel: () => ( Owlv2PreTrainedModel),
+   PaliGemmaForConditionalGeneration: () => ( PaliGemmaForConditionalGeneration),
+   PaliGemmaPreTrainedModel: () => ( PaliGemmaPreTrainedModel),
    PatchTSMixerForPrediction: () => ( PatchTSMixerForPrediction),
    PatchTSMixerModel: () => ( PatchTSMixerModel),
    PatchTSMixerPreTrainedModel: () => ( PatchTSMixerPreTrainedModel),
@@ -8120,6 +8308,8 @@ __webpack_require__.r(__webpack_exports__);
    Phi3ForCausalLM: () => ( Phi3ForCausalLM),
    Phi3Model: () => ( Phi3Model),
    Phi3PreTrainedModel: () => ( Phi3PreTrainedModel),
+   Phi3VForCausalLM: () => ( Phi3VForCausalLM),
+   Phi3VPreTrainedModel: () => ( Phi3VPreTrainedModel),
    PhiForCausalLM: () => ( PhiForCausalLM),
    PhiModel: () => ( PhiModel),
    PhiPreTrainedModel: () => ( PhiPreTrainedModel),
@@ -8173,6 +8363,7 @@ __webpack_require__.r(__webpack_exports__);
    SiglipPreTrainedModel: () => ( SiglipPreTrainedModel),
    SiglipTextModel: () => ( SiglipTextModel),
    SiglipVisionModel: () => ( SiglipVisionModel),
+   SmolVLMForConditionalGeneration: () => ( SmolVLMForConditionalGeneration),
    SpeechT5ForSpeechToText: () => ( SpeechT5ForSpeechToText),
    SpeechT5ForTextToSpeech: () => ( SpeechT5ForTextToSpeech),
    SpeechT5HifiGan: () => ( SpeechT5HifiGan),
@@ -8189,10 +8380,13 @@ __webpack_require__.r(__webpack_exports__);
    Starcoder2ForCausalLM: () => ( Starcoder2ForCausalLM),
    Starcoder2Model: () => ( Starcoder2Model),
    Starcoder2PreTrainedModel: () => ( Starcoder2PreTrainedModel),
+   StyleTextToSpeech2Model: () => ( StyleTextToSpeech2Model),
+   StyleTextToSpeech2PreTrainedModel: () => ( StyleTextToSpeech2PreTrainedModel),
    Swin2SRForImageSuperResolution: () => ( Swin2SRForImageSuperResolution),
    Swin2SRModel: () => ( Swin2SRModel),
    Swin2SRPreTrainedModel: () => ( Swin2SRPreTrainedModel),
    SwinForImageClassification: () => ( SwinForImageClassification),
+   SwinForSemanticSegmentation: () => ( SwinForSemanticSegmentation),
    SwinModel: () => ( SwinModel),
    SwinPreTrainedModel: () => ( SwinPreTrainedModel),
    T5ForConditionalGeneration: () => ( T5ForConditionalGeneration),
@@ -8205,6 +8399,8 @@ __webpack_require__.r(__webpack_exports__);
    TokenClassifierOutput: () => ( TokenClassifierOutput),
    TrOCRForCausalLM: () => ( TrOCRForCausalLM),
    TrOCRPreTrainedModel: () => ( TrOCRPreTrainedModel),
+   UltravoxModel: () => ( UltravoxModel),
+   UltravoxPreTrainedModel: () => ( UltravoxPreTrainedModel),
    UniSpeechForCTC: () => ( UniSpeechForCTC),
    UniSpeechForSequenceClassification: () => ( UniSpeechForSequenceClassification),
    UniSpeechModel: () => ( UniSpeechModel),
@@ -8365,6 +8561,9 @@ const MODEL_TYPES = {
     ImageTextToText: 6,
     Musicgen: 7,
     MultiModality: 8,
+    Phi3V: 9,
+    AudioTextToText: 10,
+    AutoEncoder: 11,
 }
 
 
@@ -8416,6 +8615,22 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
         }
     }
 
+    if (dtype === _utils_dtypes_js__WEBPACK_IMPORTED_MODULE_2__.DATA_TYPES.auto) {
+        
+        let config_dtype = custom_config.dtype;
+        if (typeof config_dtype !== 'string') {
+            config_dtype = config_dtype[fileName];
+        }
+
+        if (config_dtype && config_dtype !== _utils_dtypes_js__WEBPACK_IMPORTED_MODULE_2__.DATA_TYPES.auto && _utils_dtypes_js__WEBPACK_IMPORTED_MODULE_2__.DATA_TYPES.hasOwnProperty(config_dtype)) {
+            
+            dtype = config_dtype;
+        } else {
+            
+            dtype = _utils_dtypes_js__WEBPACK_IMPORTED_MODULE_2__.DEFAULT_DEVICE_DTYPE_MAPPING[selectedDevice] ?? _utils_dtypes_js__WEBPACK_IMPORTED_MODULE_2__.DATA_TYPES.fp32;
+        }
+    }
+
     const selectedDtype = (dtype);
 
     if (!_utils_dtypes_js__WEBPACK_IMPORTED_MODULE_2__.DEFAULT_DTYPE_SUFFIX_MAPPING.hasOwnProperty(selectedDtype)) {
@@ -8442,7 +8657,8 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
 
     
     const suffix = _utils_dtypes_js__WEBPACK_IMPORTED_MODULE_2__.DEFAULT_DTYPE_SUFFIX_MAPPING[selectedDtype];
-    const modelFileName = `${options.subfolder ?? ''}/${fileName}${suffix}.onnx`;
+    const baseName = `${fileName}${suffix}.onnx`;
+    const modelFileName = `${options.subfolder ?? ''}/${baseName}`;
 
     const session_options = { ...options.session_options };
 
@@ -8460,35 +8676,47 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
         );
     }
 
-    const bufferPromise = (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.getModelFile)(pretrained_model_name_or_path, modelFileName, true, options);
+    const bufferOrPathPromise = (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.getModelFile)(pretrained_model_name_or_path, modelFileName, true, options, _env_js__WEBPACK_IMPORTED_MODULE_14__.apis.IS_NODE_ENV);
 
     
     const use_external_data_format = options.use_external_data_format ?? custom_config.use_external_data_format;
     
     let externalDataPromises = [];
-    if (use_external_data_format && (
-        use_external_data_format === true ||
-        (
-            typeof use_external_data_format === 'object' &&
-            use_external_data_format.hasOwnProperty(fileName) &&
-            use_external_data_format[fileName] === true
-        )
-    )) {
-        if (_env_js__WEBPACK_IMPORTED_MODULE_14__.apis.IS_NODE_ENV) {
-            throw new Error('External data format is not yet supported in Node.js');
+    if (use_external_data_format) {
+        let external_data_format;
+        if (typeof use_external_data_format === 'object') {
+            if (use_external_data_format.hasOwnProperty(baseName)) {
+                external_data_format = use_external_data_format[baseName];
+            } else if (use_external_data_format.hasOwnProperty(fileName)) {
+                external_data_format = use_external_data_format[fileName];
+            } else {
+                external_data_format = false;
+            }
+        } else {
+            external_data_format = use_external_data_format;
         }
-        const path = `${fileName}${suffix}.onnx_data`;
-        const fullPath = `${options.subfolder ?? ''}/${path}`;
-        externalDataPromises.push(new Promise(async (resolve, reject) => {
-            const data = await (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.getModelFile)(pretrained_model_name_or_path, fullPath, true, options);
-            resolve({ path, data })
-        }));
+
+        const num_chunks = +external_data_format; 
+        if (num_chunks > _utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.MAX_EXTERNAL_DATA_CHUNKS) {
+            throw new Error(`The number of external data chunks (${num_chunks}) exceeds the maximum allowed value (${_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.MAX_EXTERNAL_DATA_CHUNKS}).`);
+        }
+        for (let i = 0; i < num_chunks; ++i) {
+            const path = `${baseName}_data${i === 0 ? '' : '_' + i}`;
+            const fullPath = `${options.subfolder ?? ''}/${path}`;
+            externalDataPromises.push(new Promise(async (resolve, reject) => {
+                const data = await (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.getModelFile)(pretrained_model_name_or_path, fullPath, true, options, _env_js__WEBPACK_IMPORTED_MODULE_14__.apis.IS_NODE_ENV);
+                resolve(data instanceof Uint8Array ? { path, data } : path);
+            }));
+        }
 
     } else if (session_options.externalData !== undefined) {
         externalDataPromises = session_options.externalData.map(async (ext) => {
             
+            
             if (typeof ext.data === "string") {
+                
                 const ext_buffer = await (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.getModelFile)(pretrained_model_name_or_path, ext.data, true, options);
+                
                 return { ...ext, data: ext_buffer };
             }
             return ext;
@@ -8496,7 +8724,10 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
     }
 
     if (externalDataPromises.length > 0) {
-        session_options.externalData = await Promise.all(externalDataPromises);
+        const externalData = await Promise.all(externalDataPromises);
+        if (!_env_js__WEBPACK_IMPORTED_MODULE_14__.apis.IS_NODE_ENV) {
+            session_options.externalData = externalData;
+        }
     }
 
     if (selectedDevice === 'webgpu') {
@@ -8514,9 +8745,9 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
         }
     }
 
-    const buffer = await bufferPromise;
+    const buffer_or_path = await bufferOrPathPromise;
 
-    return { buffer, session_options, session_config };
+    return { buffer_or_path, session_options, session_config };
 }
 
 
@@ -8531,8 +8762,8 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
 async function constructSessions(pretrained_model_name_or_path, names, options) {
     return Object.fromEntries(await Promise.all(
         Object.keys(names).map(async (name) => {
-            const { buffer, session_options, session_config } = await getSession(pretrained_model_name_or_path, names[name], options);
-            const session = await (0,_backends_onnx_js__WEBPACK_IMPORTED_MODULE_1__.createInferenceSession)(buffer, session_options, session_config);
+            const { buffer_or_path, session_options, session_config } = await getSession(pretrained_model_name_or_path, names[name], options);
+            const session = await (0,_backends_onnx_js__WEBPACK_IMPORTED_MODULE_1__.createInferenceSession)(buffer_or_path, session_options, session_config);
             return [name, session];
         })
     ));
@@ -8622,8 +8853,16 @@ async function sessionRun(session, inputs) {
         return output;
     } catch (e) {
         
+        
+        const formatted = Object.fromEntries(Object.entries(checkedInputs)
+            .map(([k, { type, dims, data }]) => [k, {
+                
+                type, dims, data,
+            }]));
+
+        
         console.error(`An error occurred during model execution: "${e}".`);
-        console.error('Inputs given to model:', checkedInputs)
+        console.error('Inputs given to model:', formatted);
         throw e;
     }
 }
@@ -8738,15 +8977,30 @@ async function encoderForward(self, model_inputs) {
         encoderFeeds.inputs_embeds = await self.encode_text({ input_ids: model_inputs.input_ids });
     }
     if (session.inputNames.includes('token_type_ids') && !encoderFeeds.token_type_ids) {
+        if (!encoderFeeds.input_ids) {
+            throw new Error('Both `input_ids` and `token_type_ids` are missing in the model inputs.');
+        }
         
         
-        encoderFeeds.token_type_ids = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor(
-            'int64',
-            new BigInt64Array(encoderFeeds.input_ids.data.length),
-            encoderFeeds.input_ids.dims
-        )
+        encoderFeeds.token_type_ids = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.zeros_like)(encoderFeeds.input_ids);
     }
+    if (session.inputNames.includes('pixel_mask') && !encoderFeeds.pixel_mask) {
+        if (!encoderFeeds.pixel_values) {
+            throw new Error('Both `pixel_values` and `pixel_mask` are missing in the model inputs.');
+        }
+        
+        
+        const dims = encoderFeeds.pixel_values.dims;
+        encoderFeeds.pixel_mask = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.ones)([dims[0], dims[2], dims[3]]);
+    }
+
     return await sessionRun(session, encoderFeeds);
+}
+
+async function autoEncoderForward(self, model_inputs) {
+    const encoded = await self.encode(model_inputs);
+    const decoded = await self.decode(encoded);
+    return decoded;
 }
 
 
@@ -8768,7 +9022,9 @@ async function decoderForward(self, model_inputs, is_encoder_decoder = false) {
         new_model_inputs.use_cache_branch = boolTensor(!!past_key_values);
     }
     if (session.inputNames.includes('position_ids') && new_model_inputs.attention_mask && !new_model_inputs.position_ids) {
-        new_model_inputs.position_ids = createPositionIds(new_model_inputs, past_key_values);
+        
+        const start_index = self.config.model_type === 'paligemma' ? 1 : 0;
+        new_model_inputs.position_ids = createPositionIds(new_model_inputs, past_key_values, start_index);
     }
 
     
@@ -8777,6 +9033,72 @@ async function decoderForward(self, model_inputs, is_encoder_decoder = false) {
     
     const fixed = (0,_utils_core_js__WEBPACK_IMPORTED_MODULE_4__.pick)(new_model_inputs, session.inputNames);
     return await sessionRun(session, fixed);
+}
+
+
+
+function default_merge_input_ids_with_features({
+    modality_token_id,
+    inputs_embeds,
+    modality_features,
+    input_ids,
+    attention_mask,
+}) {
+    const token_positions = input_ids.tolist().map(ids =>
+        ids.reduce((acc, x, idx) => {
+            if (x == modality_token_id) acc.push(idx);
+            return acc;
+        }, [])
+    );
+    const n_tokens = token_positions.reduce((acc, x) => acc + x.length, 0);
+    const n_features = modality_features.dims[0];
+    if (n_tokens !== n_features) {
+        throw new Error(`Number of tokens and features do not match: tokens: ${n_tokens}, features ${n_features}`);
+    }
+
+    
+    let img = 0;
+    for (let i = 0; i < token_positions.length; ++i) {
+        const tokens = token_positions[i];
+        const embeds = inputs_embeds[i];
+        for (let j = 0; j < tokens.length; ++j) {
+            embeds[tokens[j]].data.set(modality_features[img++].data)
+        }
+    }
+    return { inputs_embeds, attention_mask }
+}
+
+
+function default_merge_input_ids_with_image_features({
+    image_token_id,
+    inputs_embeds,
+    image_features,
+    input_ids,
+    attention_mask,
+}) {
+    return default_merge_input_ids_with_features({
+        modality_token_id: image_token_id,
+        inputs_embeds,
+        modality_features: image_features,
+        input_ids,
+        attention_mask,
+    })
+}
+
+function default_merge_input_ids_with_audio_features({
+    audio_token_id,
+    inputs_embeds,
+    audio_features,
+    input_ids,
+    attention_mask,
+}) {
+    return default_merge_input_ids_with_features({
+        modality_token_id: audio_token_id,
+        inputs_embeds,
+        modality_features: audio_features,
+        input_ids,
+        attention_mask,
+    })
 }
 
 
@@ -8795,11 +9117,18 @@ async function decoderForward(self, model_inputs, is_encoder_decoder = false) {
 
 
 
-async function imageTextToTextForward(self, {
+
+
+async function genericTextToTextForward(self, {
+    
+    encode_function,
+    merge_function,
+    modality_input_name,
+    modality_output_name,
+
     
     input_ids = null,
     attention_mask = null,
-    pixel_values = null,
 
     
     position_ids = null,
@@ -8813,23 +9142,27 @@ async function imageTextToTextForward(self, {
     
     ...kwargs
 }) {
-
+    const modality_values = kwargs[modality_input_name];
     if (!inputs_embeds) {
         
         inputs_embeds = await self.encode_text({ input_ids, ...kwargs });
 
         
-        if (pixel_values && input_ids.dims[1] !== 1) {
-            const image_features = await self.encode_image({ pixel_values, ...kwargs });
-
-            ({ inputs_embeds, attention_mask } = self._merge_input_ids_with_image_features({
-                image_features,
+        if (modality_values && input_ids.dims[1] !== 1) {
+            const modality_features = await encode_function({
+                
+                
+                [modality_input_name]: modality_values,
+                ...kwargs
+            });
+            ({ inputs_embeds, attention_mask } = merge_function({
+                [modality_output_name]: modality_features,
                 inputs_embeds,
                 input_ids,
                 attention_mask,
             }));
 
-        } else if (past_key_values && pixel_values && input_ids.dims[1] === 1) {
+        } else if (past_key_values && modality_values && input_ids.dims[1] === 1) {
             
             const target_length = input_ids.dims[1]; 
             const past_length = Object.values(past_key_values)[0].dims.at(-2);
@@ -8851,6 +9184,7 @@ async function imageTextToTextForward(self, {
         }
     }
 
+    
     const outputs = await decoderForward(self, {
         inputs_embeds,
         past_key_values,
@@ -8869,16 +9203,50 @@ async function imageTextToTextForward(self, {
 
 
 
+async function audioTextToTextForward(self, params) {
+    return await genericTextToTextForward(self, {
+        ...params,
+        modality_input_name: 'audio_values',
+        modality_output_name: 'audio_features',
+        encode_function: self.encode_audio.bind(self),
+        merge_function: self._merge_input_ids_with_audio_features.bind(self),
+    });
+}
 
 
-function cumsum_masked_fill(attention_mask) {
+
+
+
+
+
+
+async function imageTextToTextForward(self, params) {
+    return await genericTextToTextForward(self, {
+        ...params,
+        modality_input_name: 'pixel_values',
+        modality_output_name: 'image_features',
+        encode_function: self.encode_image.bind(self),
+        merge_function: self._merge_input_ids_with_image_features.bind(self),
+    });
+}
+
+
+
+
+
+
+
+
+
+
+function cumsum_masked_fill(attention_mask, start_index = 0) {
     const [bz, seq_len] = attention_mask.dims;
     const attn_mask_data = attention_mask.data;
 
     const data = new BigInt64Array(attn_mask_data.length);
     for (let i = 0; i < bz; ++i) {
         const start = i * seq_len;
-        let sum = BigInt(0);
+        let sum = BigInt(start_index);
         for (let j = 0; j < seq_len; ++j) {
             const index = start + j;
             if (attn_mask_data[index] === 0n) {
@@ -8905,10 +9273,10 @@ function cumsum_masked_fill(attention_mask) {
 
 
 
-function createPositionIds(model_inputs, past_key_values = null) {
+function createPositionIds(model_inputs, past_key_values = null, start_index = 0) {
     const { input_ids, inputs_embeds, attention_mask } = model_inputs;
 
-    const { data, dims } = cumsum_masked_fill(attention_mask);
+    const { data, dims } = cumsum_masked_fill(attention_mask, start_index);
     let position_ids = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor('int64', data, dims);
     if (past_key_values) {
         const offset = -(input_ids ?? inputs_embeds).dims.at(1);
@@ -8975,7 +9343,7 @@ function encoder_decoder_prepare_inputs_for_generation(self, input_ids, model_in
     };
 }
 
-function image_text_to_text_prepare_inputs_for_generation(self, ...args) {
+function multimodal_text_to_text_prepare_inputs_for_generation(self, ...args) {
     if (self.config.is_encoder_decoder) {
         return encoder_decoder_prepare_inputs_for_generation(self, ...args);
     } else {
@@ -9079,14 +9447,24 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
             case MODEL_TYPES.ImageTextToText:
                 this.can_generate = true;
                 this._forward = imageTextToTextForward;
-                this._prepare_inputs_for_generation = image_text_to_text_prepare_inputs_for_generation;
+                this._prepare_inputs_for_generation = multimodal_text_to_text_prepare_inputs_for_generation;
                 break;
-
+            case MODEL_TYPES.AudioTextToText:
+                this.can_generate = true;
+                this._forward = audioTextToTextForward;
+                this._prepare_inputs_for_generation = multimodal_text_to_text_prepare_inputs_for_generation;
+                break;
+            case MODEL_TYPES.Phi3V:
+                this.can_generate = true;
+                this._prepare_inputs_for_generation = multimodal_text_to_text_prepare_inputs_for_generation;
+                break;
             case MODEL_TYPES.MultiModality:
                 this.can_generate = true;
                 this._prepare_inputs_for_generation = multimodality_prepare_inputs_for_generation;
                 break;
-
+            case MODEL_TYPES.AutoEncoder:
+                this._forward = autoEncoderForward;
+                break;
             default:
                 
                 this._forward = encoderForward;
@@ -9218,6 +9596,19 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
                 }, options),
             ]);
 
+        } else if (modelType === MODEL_TYPES.AudioTextToText) {
+            const sessions = {
+                embed_tokens: 'embed_tokens',
+                audio_encoder: 'audio_encoder',
+                decoder_model_merged: 'decoder_model_merged',
+            }
+            info = await Promise.all([
+                constructSessions(pretrained_model_name_or_path, sessions, options),
+                getOptionalConfigs(pretrained_model_name_or_path, {
+                    generation_config: 'generation_config.json',
+                }, options),
+            ]);
+
         } else if (modelType === MODEL_TYPES.Musicgen) {
             info = await Promise.all([
                 constructSessions(pretrained_model_name_or_path, {
@@ -9245,9 +9636,30 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
                 }, options),
             ]);
 
+        } else if (modelType === MODEL_TYPES.Phi3V) {
+            info = await Promise.all([
+                constructSessions(pretrained_model_name_or_path, {
+                    prepare_inputs_embeds: 'prepare_inputs_embeds',
+                    model: 'model',
+                    vision_encoder: 'vision_encoder',
+                }, options),
+                getOptionalConfigs(pretrained_model_name_or_path, {
+                    generation_config: 'generation_config.json',
+                }, options),
+            ]);
+        } else if (modelType === MODEL_TYPES.AutoEncoder) {
+            info = await Promise.all([
+                constructSessions(pretrained_model_name_or_path, {
+                    encoder_model: 'encoder_model',
+                    decoder_model: 'decoder_model',
+                }, options),
+            ]);
         } else { 
             if (modelType !== MODEL_TYPES.EncoderOnly) {
-                console.warn(`Model type for '${modelName ?? config?.model_type}' not found, assuming encoder-only architecture. Please report this at ${_utils_constants_js__WEBPACK_IMPORTED_MODULE_6__.GITHUB_ISSUE_URL}.`)
+                const type = modelName ?? config?.model_type;
+                if (type !== 'custom') {
+                    console.warn(`Model type for '${type}' not found, assuming encoder-only architecture. Please report this at ${_utils_constants_js__WEBPACK_IMPORTED_MODULE_6__.GITHUB_ISSUE_URL}.`)
+                }
             }
             info = await Promise.all([
                 constructSessions(pretrained_model_name_or_path, {
@@ -9674,6 +10086,7 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
                 if (this.config.model_type === 'musicgen') {
                     
                     decoder_input_ids = Array.from({
+                        
                         length: batch_size * this.config.decoder.num_codebooks
                     }, () => [decoder_start_token_id]);
 
@@ -9989,9 +10402,9 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         } else {
             const session = this.sessions['decoder_model_merged'] ?? this.sessions['model'];
             const dtype = session?.config?.kv_cache_dtype ?? 'float32';
-            const empty = (dtype === 'float16') ? new Uint16Array() : [];
+            const empty = (dtype === 'float16') ? new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.DataTypeMap.float16() : [];
 
-            const batch_size = (decoderFeeds[this.main_input_name] ?? decoderFeeds.attention_mask).dims?.[0] ?? 1;
+            const batch_size = (decoderFeeds[this.main_input_name] ?? decoderFeeds.attention_mask)?.dims?.[0] ?? 1;
             const shapes = (0,_configs_js__WEBPACK_IMPORTED_MODULE_0__.getKeyValueShapes)(this.config, { batch_size });
 
             for (const name in shapes) {
@@ -10003,11 +10416,13 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
     async encode_image({ pixel_values }) {
         
         const features = (await sessionRun(this.sessions['vision_encoder'], { pixel_values })).image_features;
+        
         if (!this.config.num_image_tokens) {
             console.warn(
                 'The number of image tokens was not set in the model configuration. ' +
                 `Setting it to the number of features detected by the vision encoder (${features.dims[1]}).`
             )
+            
             this.config.num_image_tokens = features.dims[1];
         }
         return features;
@@ -10016,6 +10431,11 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
     async encode_text({ input_ids }) {
         
         return (await sessionRun(this.sessions['embed_tokens'], { input_ids })).inputs_embeds;
+    }
+
+    async encode_audio({ audio_values }) {
+        
+        return (await sessionRun(this.sessions['audio_encoder'], { audio_values })).audio_features;
     }
 }
 
@@ -10104,6 +10524,49 @@ class BertForQuestionAnswering extends BertPreTrainedModel {
         return new QuestionAnsweringModelOutput(await super._call(model_inputs));
     }
 }
+
+
+
+
+class ModernBertPreTrainedModel extends PreTrainedModel { }
+class ModernBertModel extends ModernBertPreTrainedModel { }
+
+class ModernBertForMaskedLM extends ModernBertPreTrainedModel {
+    
+
+
+
+
+
+    async _call(model_inputs) {
+        return new MaskedLMOutput(await super._call(model_inputs));
+    }
+}
+
+class ModernBertForSequenceClassification extends ModernBertPreTrainedModel {
+    
+
+
+
+
+
+    async _call(model_inputs) {
+        return new SequenceClassifierOutput(await super._call(model_inputs));
+    }
+}
+
+class ModernBertForTokenClassification extends ModernBertPreTrainedModel {
+    
+
+
+
+
+
+    async _call(model_inputs) {
+        return new TokenClassifierOutput(await super._call(model_inputs));
+    }
+}
+
 
 
 
@@ -11392,6 +11855,7 @@ class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
 
         if (generation_config.return_token_timestamps) {
             outputs["token_timestamps"] = this._extract_token_timestamps(
+                
                 outputs,
                 generation_config.alignment_heads,
                 generation_config.num_frames,
@@ -11427,6 +11891,7 @@ class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
             );
         }
 
+        
         let median_filter_width = this.config.median_filter_width;
         if (median_filter_width === undefined) {
             console.warn("Model config has no `median_filter_width`, using default value of 7.")
@@ -11435,6 +11900,7 @@ class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
 
         
         const batch = generate_outputs.cross_attentions;
+        
         
         
         const cross_attentions = Array.from({ length: this.config.decoder_layers },
@@ -11514,6 +11980,30 @@ class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
 }
 
 
+class LiteWhisperForConditionalGeneration extends WhisperForConditionalGeneration { }
+
+
+
+class MoonshinePreTrainedModel extends PreTrainedModel {
+
+    requires_attention_mask = false;
+    main_input_name = 'input_values';
+    forward_params = [
+        'input_values',
+        'decoder_input_ids',
+        'past_key_values',
+    ];
+};
+
+
+
+
+class MoonshineModel extends MoonshinePreTrainedModel { }
+
+class MoonshineForConditionalGeneration extends MoonshinePreTrainedModel { }
+
+
+
 
 
 
@@ -11538,8 +12028,8 @@ class VisionEncoderDecoderModel extends PreTrainedModel {
 class LlavaPreTrainedModel extends PreTrainedModel {
     forward_params = [
         'input_ids',
-        'pixel_values',
         'attention_mask',
+        'pixel_values',
         'position_ids',
         'past_key_values',
     ];
@@ -11557,6 +12047,7 @@ class LlavaForConditionalGeneration extends LlavaPreTrainedModel {
         attention_mask,
     }) {
 
+        
         const image_token_index = this.config.image_token_index;
 
         const idsList = input_ids.tolist();
@@ -11721,6 +12212,148 @@ class Florence2ForConditionalGeneration extends Florence2PreTrainedModel {
         return decoder_outputs;
     }
 }
+
+class PaliGemmaPreTrainedModel extends PreTrainedModel {
+    forward_params = [
+        'input_ids',
+        
+        'attention_mask',
+        'pixel_values',
+        'position_ids',
+        'past_key_values',
+    ];
+}
+
+class PaliGemmaForConditionalGeneration extends PaliGemmaPreTrainedModel {
+    _merge_input_ids_with_image_features(kwargs) {
+        const vision_hidden_size = kwargs.image_features.dims.at(-1);
+        const reshaped_image_hidden_states = kwargs.image_features.view(-1, vision_hidden_size);
+
+        return default_merge_input_ids_with_image_features({
+            
+            image_token_id: this.config.image_token_index,
+            ...kwargs,
+            image_features: reshaped_image_hidden_states,
+        })
+    }
+}
+
+
+
+class Idefics3PreTrainedModel extends PreTrainedModel {
+    forward_params = [
+        'input_ids',
+        'attention_mask',
+        'pixel_values',
+        'pixel_attention_mask',
+        'position_ids',
+        'past_key_values',
+    ];
+}
+
+
+
+
+class Idefics3ForConditionalGeneration extends Idefics3PreTrainedModel {
+
+    async encode_image({ pixel_values, pixel_attention_mask }) {
+        const features = (await sessionRun(this.sessions['vision_encoder'], { pixel_values, pixel_attention_mask })).image_features;
+        return features;
+    }
+
+    _merge_input_ids_with_image_features(kwargs) {
+        const vision_hidden_size = kwargs.image_features.dims.at(-1);
+        const reshaped_image_hidden_states = kwargs.image_features.view(-1, vision_hidden_size);
+
+        return default_merge_input_ids_with_image_features({
+            
+            image_token_id: this.config.image_token_id,
+            ...kwargs,
+            image_features: reshaped_image_hidden_states,
+        })
+    }
+}
+
+
+
+
+
+
+class SmolVLMForConditionalGeneration extends Idefics3ForConditionalGeneration { }
+
+
+class Phi3VPreTrainedModel extends PreTrainedModel {
+    forward_params = [
+        'input_ids',
+        'inputs_embeds',
+        'attention_mask',
+        'position_ids',
+        'pixel_values',
+        'image_sizes',
+        'past_key_values',
+    ];
+}
+class Phi3VForCausalLM extends Phi3VPreTrainedModel {
+
+    async forward({
+        
+        input_ids = null,
+        attention_mask = null,
+        pixel_values = null,
+        image_sizes = null,
+
+        
+        position_ids = null,
+        inputs_embeds = null,
+        past_key_values = null,
+
+        
+        generation_config = null,
+        logits_processor = null,
+
+        
+        ...kwargs
+    }) {
+        if (!inputs_embeds) {
+            let image_features;
+            if (pixel_values && input_ids.dims[1] !== 1) {
+                if (!image_sizes) {
+                    throw new Error('`image_sizes` must be provided when `pixel_values` is provided.');
+                }
+
+                
+                ({ image_features } = await sessionRun(this.sessions['vision_encoder'], {
+                    pixel_values,
+                    image_sizes,
+                }));
+            } else {
+                const hidden_size = this.config.normalized_config.hidden_size;
+                image_features = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor(
+                    'float32',
+                    [],
+                    [0, hidden_size],
+                );
+            }
+
+            ({ inputs_embeds } = await sessionRun(this.sessions['prepare_inputs_embeds'], {
+                input_ids,
+                image_features,
+            }));
+        }
+
+        const outputs = await decoderForward(this, {
+            inputs_embeds,
+            past_key_values,
+            attention_mask,
+            position_ids,
+            generation_config,
+            logits_processor,
+        }, false);
+        return outputs;
+    }
+}
+
+
 class CLIPPreTrainedModel extends PreTrainedModel { }
 
 
@@ -11774,9 +12407,11 @@ class CLIPModel extends CLIPPreTrainedModel { }
 class CLIPTextModel extends CLIPPreTrainedModel {
     
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        
-        options.model_file_name ??= 'text_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'text_model',
+        });
     }
 }
 
@@ -11809,9 +12444,11 @@ class CLIPTextModel extends CLIPPreTrainedModel {
 class CLIPTextModelWithProjection extends CLIPPreTrainedModel {
     
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        
-        options.model_file_name ??= 'text_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'text_model',
+        });
     }
 }
 
@@ -11821,9 +12458,11 @@ class CLIPTextModelWithProjection extends CLIPPreTrainedModel {
 class CLIPVisionModel extends CLIPPreTrainedModel {
     
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        
-        options.model_file_name ??= 'vision_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'vision_model',
+        });
     }
 }
 
@@ -11856,9 +12495,11 @@ class CLIPVisionModel extends CLIPPreTrainedModel {
 class CLIPVisionModelWithProjection extends CLIPPreTrainedModel {
     
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        
-        options.model_file_name ??= 'vision_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'vision_model',
+        });
     }
 }
 
@@ -11942,9 +12583,11 @@ class SiglipModel extends SiglipPreTrainedModel { }
 class SiglipTextModel extends SiglipPreTrainedModel {
     
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        
-        options.model_file_name ??= 'text_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'text_model',
+        });
     }
 }
 
@@ -11977,9 +12620,11 @@ class SiglipTextModel extends SiglipPreTrainedModel {
 class SiglipVisionModel extends CLIPPreTrainedModel {
     
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        
-        options.model_file_name ??= 'vision_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'vision_model',
+        });
     }
 }
 
@@ -12034,18 +12679,22 @@ class JinaCLIPModel extends JinaCLIPPreTrainedModel {
 class JinaCLIPTextModel extends JinaCLIPPreTrainedModel {
     
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        
-        options.model_file_name ??= 'text_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'text_model',
+        });
     }
 }
 
 class JinaCLIPVisionModel extends JinaCLIPPreTrainedModel {
     
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        
-        options.model_file_name ??= 'vision_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'vision_model',
+        });
     }
 }
 
@@ -12206,6 +12855,27 @@ class LlamaForCausalLM extends LlamaPreTrainedModel { }
 
 
 
+class HeliumPreTrainedModel extends PreTrainedModel { }
+class HeliumModel extends HeliumPreTrainedModel { }
+class HeliumForCausalLM extends HeliumPreTrainedModel { }
+
+
+
+
+class GlmPreTrainedModel extends PreTrainedModel { }
+class GlmModel extends GlmPreTrainedModel { }
+class GlmForCausalLM extends GlmPreTrainedModel { }
+
+
+
+
+class ExaonePreTrainedModel extends PreTrainedModel { }
+class ExaoneModel extends ExaonePreTrainedModel { }
+class ExaoneForCausalLM extends ExaonePreTrainedModel { }
+
+
+
+
 
 class MobileLLMPreTrainedModel extends PreTrainedModel { }
 class MobileLLMModel extends MobileLLMPreTrainedModel { }
@@ -12218,6 +12888,13 @@ class MobileLLMForCausalLM extends MobileLLMPreTrainedModel { }
 class OlmoPreTrainedModel extends PreTrainedModel { }
 class OlmoModel extends OlmoPreTrainedModel { }
 class OlmoForCausalLM extends OlmoPreTrainedModel { }
+
+
+
+
+class Olmo2PreTrainedModel extends PreTrainedModel { }
+class Olmo2Model extends Olmo2PreTrainedModel { }
+class Olmo2ForCausalLM extends Olmo2PreTrainedModel { }
 
 
 
@@ -12376,6 +13053,7 @@ class Qwen2VLForConditionalGeneration extends Qwen2VLPreTrainedModel {
                 const image_nums = vision_tokens.filter(x => x == image_token_id).length;
                 const video_nums = vision_tokens.filter(x => x == video_token_id).length;
 
+                
                 let llm_pos_ids_list = [];
                 let st = 0;
                 let remain_images = image_nums;
@@ -12445,6 +13123,7 @@ class Qwen2VLForConditionalGeneration extends Qwen2VLPreTrainedModel {
                 
                 
                 const num_items = llm_pos_ids_list.reduce((acc, x) => acc + x.length, 0);
+                
                 const llm_positions = new Array(num_items);
                 let index = 0;
                 for (let x = 0; x < 3; ++x) {
@@ -12485,9 +13164,10 @@ class Qwen2VLForConditionalGeneration extends Qwen2VLPreTrainedModel {
                     { length: 3 * data.length },
                     (_, i) => data[i % data.length]
                 );
+                
                 const mrope_position_deltas = Array.from(
                     { length: dims[0] },
-                    (_, i) => (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_11__.max)(data.subarray(dims[1] * i, dims[1] * (i + 1)))[0] + 1 + dims[1]
+                    (_, i) => (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_11__.max)(data.subarray(dims[1] * i, dims[1] * (i + 1)))[0] + 1n + BigInt(dims[1])
                 );
 
                 return [
@@ -12514,36 +13194,12 @@ class Qwen2VLForConditionalGeneration extends Qwen2VLPreTrainedModel {
         return features;
     }
 
-    _merge_input_ids_with_image_features({
-        inputs_embeds,
-        image_features,
-        input_ids,
-        attention_mask,
-    }) {
-        
-        const { image_token_id } = this.config;
-        const image_tokens = input_ids.tolist().map(ids =>
-            ids.reduce((acc, x, idx) => {
-                if (x == image_token_id) acc.push(idx);
-                return acc;
-            }, [])
-        );
-        const n_image_tokens = image_tokens.reduce((acc, x) => acc + x.length, 0);
-        const n_image_features = image_features.dims[0];
-        if (n_image_tokens !== n_image_features) {
-            throw new Error(`Image features and image tokens do not match: tokens: ${n_image_tokens}, features ${n_image_features}`);
-        }
-
-        
-        let img = 0;
-        for (let i = 0; i < image_tokens.length; ++i) {
-            const tokens = image_tokens[i];
-            const embeds = inputs_embeds[i];
-            for (let j = 0; j < tokens.length; ++j) {
-                embeds[tokens[j]].data.set(image_features[img++].data)
-            }
-        }
-        return { inputs_embeds, attention_mask }
+    _merge_input_ids_with_image_features(kwargs) {
+        return default_merge_input_ids_with_image_features({
+            
+            image_token_id: this.config.image_token_id,
+            ...kwargs
+        })
     }
 
     prepare_inputs_for_generation(input_ids, model_inputs, generation_config) {
@@ -12650,6 +13306,20 @@ class OPTForCausalLM extends OPTPreTrainedModel { }
 class ViTPreTrainedModel extends PreTrainedModel { }
 class ViTModel extends ViTPreTrainedModel { }
 class ViTForImageClassification extends ViTPreTrainedModel {
+    
+
+
+    async _call(model_inputs) {
+        return new SequenceClassifierOutput(await super._call(model_inputs));
+    }
+}
+
+
+
+
+class IJepaPreTrainedModel extends PreTrainedModel { }
+class IJepaModel extends IJepaPreTrainedModel { }
+class IJepaForImageClassification extends IJepaPreTrainedModel {
     
 
 
@@ -13010,6 +13680,7 @@ class SwinForImageClassification extends SwinPreTrainedModel {
         return new SequenceClassifierOutput(await super._call(model_inputs));
     }
 }
+class SwinForSemanticSegmentation extends SwinPreTrainedModel { }
 
 
 
@@ -13099,6 +13770,11 @@ class DPTModel extends DPTPreTrainedModel { }
 
 
 
+
+
+
+
+
 class DPTForDepthEstimation extends DPTPreTrainedModel { }
 
 
@@ -13137,6 +13813,7 @@ class GLPNPreTrainedModel extends PreTrainedModel { }
 
 
 class GLPNModel extends GLPNPreTrainedModel { }
+
 
 
 
@@ -13322,6 +13999,28 @@ class Dinov2ForImageClassification extends Dinov2PreTrainedModel {
 }
 
 
+
+class Dinov2WithRegistersPreTrainedModel extends PreTrainedModel { }
+
+
+
+
+class Dinov2WithRegistersModel extends Dinov2WithRegistersPreTrainedModel { }
+
+
+
+
+class Dinov2WithRegistersForImageClassification extends Dinov2WithRegistersPreTrainedModel {
+    
+
+
+    async _call(model_inputs) {
+        return new SequenceClassifierOutput(await super._call(model_inputs));
+    }
+}
+
+class GroundingDinoPreTrainedModel extends PreTrainedModel { }
+class GroundingDinoForObjectDetection extends GroundingDinoPreTrainedModel { }
 
 
 class YolosPreTrainedModel extends PreTrainedModel { }
@@ -14020,6 +14719,9 @@ class WavLMForAudioFrameClassification extends WavLMPreTrainedModel {
     }
 }
 
+class StyleTextToSpeech2PreTrainedModel extends PreTrainedModel { }
+class StyleTextToSpeech2Model extends StyleTextToSpeech2PreTrainedModel { }
+
 
 
 
@@ -14114,10 +14816,12 @@ class SpeechT5ForTextToSpeech extends SpeechT5PreTrainedModel {
 
         const { encoder_outputs, encoder_attention_mask } = await encoderForward(this, model_inputs);
 
+        
         const r = encoder_outputs.dims[1] / this.config.reduction_factor;
         const maxlen = Math.floor(r * maxlenratio);
         const minlen = Math.floor(r * minlenratio);
 
+        
         const num_mel_bins = this.config.num_mel_bins;
 
         let spectrogramParts = [];
@@ -14270,9 +14974,11 @@ class ClapModel extends ClapPreTrainedModel { }
 class ClapTextModelWithProjection extends ClapPreTrainedModel {
     
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        
-        options.model_file_name ??= 'text_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'text_model',
+        });
     }
 }
 
@@ -14305,9 +15011,11 @@ class ClapTextModelWithProjection extends ClapPreTrainedModel {
 class ClapAudioModelWithProjection extends ClapPreTrainedModel {
     
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        
-        options.model_file_name ??= 'audio_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'audio_model',
+        });
     }
 }
 
@@ -14478,11 +15186,13 @@ class MusicgenForConditionalGeneration extends PreTrainedModel {
 
     _apply_and_filter_by_delay_pattern_mask(outputs) {
         const [bs_x_codebooks, seqLength] = outputs.dims;
+        
         const num_codebooks = this.config.decoder.num_codebooks;
         const upperBound = (seqLength - num_codebooks);
 
         let newDataSize = 0;
         for (let i = 0; i < outputs.size; ++i) {
+            
             if (outputs.data[i] === this.config.decoder.pad_token_id) {
                 continue;
             }
@@ -14512,7 +15222,9 @@ class MusicgenForConditionalGeneration extends PreTrainedModel {
         let clonedInputIds = structuredClone(input_ids);
         for (let i = 0; i < clonedInputIds.length; ++i) {
             for (let j = 0; j < clonedInputIds[i].length; ++j) {
+                
                 if ((i % this.config.decoder.num_codebooks) >= j) {
+                    
                     clonedInputIds[i][j] = BigInt(this.config.decoder.pad_token_id);
                 }
             }
@@ -14572,6 +15284,8 @@ class MobileNetV1ForImageClassification extends MobileNetV1PreTrainedModel {
     }
 }
 
+class MobileNetV1ForSemanticSegmentation extends MobileNetV1PreTrainedModel { }
+
 
 
 
@@ -14594,6 +15308,7 @@ class MobileNetV2ForImageClassification extends MobileNetV2PreTrainedModel {
         return new SequenceClassifierOutput(await super._call(model_inputs));
     }
 }
+class MobileNetV2ForSemanticSegmentation extends MobileNetV2PreTrainedModel { }
 
 
 
@@ -14617,6 +15332,7 @@ class MobileNetV3ForImageClassification extends MobileNetV3PreTrainedModel {
         return new SequenceClassifierOutput(await super._call(model_inputs));
     }
 }
+class MobileNetV3ForSemanticSegmentation extends MobileNetV3PreTrainedModel { }
 
 
 
@@ -14640,6 +15356,7 @@ class MobileNetV4ForImageClassification extends MobileNetV4PreTrainedModel {
         return new SequenceClassifierOutput(await super._call(model_inputs));
     }
 }
+class MobileNetV4ForSemanticSegmentation extends MobileNetV4PreTrainedModel { }
 
 
 
@@ -14668,6 +15385,9 @@ class MultiModalityCausalLM extends MultiModalityPreTrainedModel {
         'position_ids',
         'past_key_values',
     ];
+
+    
+
 
     constructor(...args) {
         super(...args);
@@ -14818,6 +15538,183 @@ class PatchTSMixerForPrediction extends PatchTSMixerPreTrainedModel { }
 
 
 
+class UltravoxPreTrainedModel extends PreTrainedModel {
+    forward_params = [
+        'input_ids',
+        'attention_mask',
+        'position_ids',
+        'audio_values',
+        'past_key_values',
+    ];
+}
+
+class UltravoxModel extends UltravoxPreTrainedModel {
+
+    _merge_input_ids_with_audio_features(kwargs) {
+        const audio_hidden_size = kwargs.audio_features.dims.at(-1);
+        const reshaped_audio_features = kwargs.audio_features.view(-1, audio_hidden_size);
+
+        return default_merge_input_ids_with_audio_features({
+            
+            audio_token_id: this.config.ignore_index,
+            ...kwargs,
+            audio_features: reshaped_audio_features,
+        })
+    }
+}
+
+
+
+
+class MimiPreTrainedModel extends PreTrainedModel {
+    main_input_name = 'input_values';
+    forward_params = ['input_values'];
+}
+
+class MimiEncoderOutput extends ModelOutput {
+    
+
+
+
+    constructor({ audio_codes }) {
+        super();
+        this.audio_codes = audio_codes;
+    }
+}
+
+class MimiDecoderOutput extends ModelOutput {
+    
+
+
+
+    constructor({ audio_values }) {
+        super();
+        this.audio_values = audio_values;
+    }
+}
+
+
+
+
+class MimiModel extends MimiPreTrainedModel {
+    
+
+
+
+
+
+    async encode(inputs) {
+        return new MimiEncoderOutput(await sessionRun(this.sessions['encoder_model'], inputs));
+    }
+
+    
+
+
+
+
+    async decode(inputs) {
+        return new MimiDecoderOutput(await sessionRun(this.sessions['decoder_model'], inputs));
+    }
+}
+
+class MimiEncoderModel extends MimiPreTrainedModel {
+    
+    static async from_pretrained(pretrained_model_name_or_path, options = {}) {
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'encoder_model',
+        });
+    }
+}
+class MimiDecoderModel extends MimiPreTrainedModel {
+    
+    static async from_pretrained(pretrained_model_name_or_path, options = {}) {
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'decoder_model',
+        });
+    }
+}
+
+
+
+
+
+class DacPreTrainedModel extends PreTrainedModel {
+    main_input_name = 'input_values';
+    forward_params = ['input_values'];
+}
+
+class DacEncoderOutput extends ModelOutput {
+    
+
+
+
+    constructor({ audio_codes }) {
+        super();
+        this.audio_codes = audio_codes;
+    }
+}
+
+class DacDecoderOutput extends ModelOutput {
+    
+
+
+
+    constructor({ audio_values }) {
+        super();
+        this.audio_values = audio_values;
+    }
+}
+
+
+
+
+class DacModel extends DacPreTrainedModel {
+    
+
+
+
+
+
+    async encode(inputs) {
+        return new DacEncoderOutput(await sessionRun(this.sessions['encoder_model'], inputs));
+    }
+
+    
+
+
+
+
+    async decode(inputs) {
+        return new DacDecoderOutput(await sessionRun(this.sessions['decoder_model'], inputs));
+    }
+}
+
+class DacEncoderModel extends DacPreTrainedModel {
+    
+    static async from_pretrained(pretrained_model_name_or_path, options = {}) {
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'encoder_model',
+        });
+    }
+}
+class DacDecoderModel extends DacPreTrainedModel {
+    
+    static async from_pretrained(pretrained_model_name_or_path, options = {}) {
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            
+            model_file_name: options.model_file_name ?? 'decoder_model',
+        });
+    }
+}
+
+
 
 
 
@@ -14873,26 +15770,36 @@ class PretrainedMixin {
         if (!this.MODEL_CLASS_MAPPINGS) {
             throw new Error("`MODEL_CLASS_MAPPINGS` not implemented for this type of `AutoClass`: " + this.name);
         }
-
+        const model_type = options.config.model_type;
         for (const MODEL_CLASS_MAPPING of this.MODEL_CLASS_MAPPINGS) {
-            const modelInfo = MODEL_CLASS_MAPPING.get(options.config.model_type);
+            let modelInfo = MODEL_CLASS_MAPPING.get(model_type);
             if (!modelInfo) {
-                continue; 
+                
+                for (const cls of MODEL_CLASS_MAPPING.values()) {
+                    if (cls[0] === model_type) {
+                        modelInfo = cls;
+                        break;
+                    }
+                }
+                if (!modelInfo) continue; 
             }
             return await modelInfo[1].from_pretrained(pretrained_model_name_or_path, options);
         }
 
         if (this.BASE_IF_FAIL) {
-            console.warn(`Unknown model class "${options.config.model_type}", attempting to construct from base class.`);
+            if (!(CUSTOM_ARCHITECTURES.has(model_type))) {
+                console.warn(`Unknown model class "${model_type}", attempting to construct from base class.`);
+            }
             return await PreTrainedModel.from_pretrained(pretrained_model_name_or_path, options);
         } else {
-            throw Error(`Unsupported model type: ${options.config.model_type}`)
+            throw Error(`Unsupported model type: ${model_type}`)
         }
     }
 }
 
 const MODEL_MAPPING_NAMES_ENCODER_ONLY = new Map([
     ['bert', ['BertModel', BertModel]],
+    ['modernbert', ['ModernBertModel', ModernBertModel]],
     ['nomic_bert', ['NomicBertModel', NomicBertModel]],
     ['roformer', ['RoFormerModel', RoFormerModel]],
     ['electra', ['ElectraModel', ElectraModel]],
@@ -14930,6 +15837,7 @@ const MODEL_MAPPING_NAMES_ENCODER_ONLY = new Map([
     ['rt_detr', ['RTDetrModel', RTDetrModel]],
     ['table-transformer', ['TableTransformerModel', TableTransformerModel]],
     ['vit', ['ViTModel', ViTModel]],
+    ['ijepa', ['IJepaModel', IJepaModel]],
     ['pvt', ['PvtModel', PvtModel]],
     ['vit_msn', ['ViTMSNModel', ViTMSNModel]],
     ['vit_mae', ['ViTMAEModel', ViTMAEModel]],
@@ -14945,6 +15853,7 @@ const MODEL_MAPPING_NAMES_ENCODER_ONLY = new Map([
     ['convnext', ['ConvNextModel', ConvNextModel]],
     ['convnextv2', ['ConvNextV2Model', ConvNextV2Model]],
     ['dinov2', ['Dinov2Model', Dinov2Model]],
+    ['dinov2_with_registers', ['Dinov2WithRegistersModel', Dinov2WithRegistersModel]],
     ['resnet', ['ResNetModel', ResNetModel]],
     ['swin', ['SwinModel', SwinModel]],
     ['swin2sr', ['Swin2SRModel', Swin2SRModel]],
@@ -14967,6 +15876,8 @@ const MODEL_MAPPING_NAMES_ENCODER_ONLY = new Map([
 
     ['maskformer', ['MaskFormerModel', MaskFormerModel]],
     ['mgp-str', ['MgpstrForSceneTextRecognition', MgpstrForSceneTextRecognition]],
+
+    ['style_text_to_speech_2', ['StyleTextToSpeech2Model', StyleTextToSpeech2Model]],
 ]);
 
 const MODEL_MAPPING_NAMES_ENCODER_DECODER = new Map([
@@ -14982,6 +15893,10 @@ const MODEL_MAPPING_NAMES_ENCODER_DECODER = new Map([
     ['blenderbot-small', ['BlenderbotSmallModel', BlenderbotSmallModel]],
 ]);
 
+const MODEL_MAPPING_NAMES_AUTO_ENCODER = new Map([
+    ['mimi', ['MimiModel', MimiModel]],
+    ['dac', ['DacModel', DacModel]],
+]);
 
 const MODEL_MAPPING_NAMES_DECODER_ONLY = new Map([
     ['bloom', ['BloomModel', BloomModel]],
@@ -14993,12 +15908,16 @@ const MODEL_MAPPING_NAMES_DECODER_ONLY = new Map([
     ['gpt_neox', ['GPTNeoXModel', GPTNeoXModel]],
     ['codegen', ['CodeGenModel', CodeGenModel]],
     ['llama', ['LlamaModel', LlamaModel]],
+    ['exaone', ['ExaoneModel', ExaoneModel]],
     ['olmo', ['OlmoModel', OlmoModel]],
+    ['olmo2', ['Olmo2Model', Olmo2Model]],
     ['mobilellm', ['MobileLLMModel', MobileLLMModel]],
     ['granite', ['GraniteModel', GraniteModel]],
     ['cohere', ['CohereModel', CohereModel]],
     ['gemma', ['GemmaModel', GemmaModel]],
     ['gemma2', ['Gemma2Model', Gemma2Model]],
+    ['helium', ['HeliumModel', HeliumModel]],
+    ['glm', ['GlmModel', GlmModel]],
     ['openelm', ['OpenELMModel', OpenELMModel]],
     ['qwen2', ['Qwen2Model', Qwen2Model]],
     ['phi', ['PhiModel', PhiModel]],
@@ -15014,6 +15933,8 @@ const MODEL_MAPPING_NAMES_DECODER_ONLY = new Map([
 const MODEL_FOR_SPEECH_SEQ_2_SEQ_MAPPING_NAMES = new Map([
     ['speecht5', ['SpeechT5ForSpeechToText', SpeechT5ForSpeechToText]],
     ['whisper', ['WhisperForConditionalGeneration', WhisperForConditionalGeneration]],
+    ['lite-whisper', ['LiteWhisperForConditionalGeneration', LiteWhisperForConditionalGeneration]],
+    ['moonshine', ['MoonshineForConditionalGeneration', MoonshineForConditionalGeneration]],
 ]);
 
 const MODEL_FOR_TEXT_TO_SPECTROGRAM_MAPPING_NAMES = new Map([
@@ -15027,6 +15948,7 @@ const MODEL_FOR_TEXT_TO_WAVEFORM_MAPPING_NAMES = new Map([
 
 const MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING_NAMES = new Map([
     ['bert', ['BertForSequenceClassification', BertForSequenceClassification]],
+    ['modernbert', ['ModernBertForSequenceClassification', ModernBertForSequenceClassification]],
     ['roformer', ['RoFormerForSequenceClassification', RoFormerForSequenceClassification]],
     ['electra', ['ElectraForSequenceClassification', ElectraForSequenceClassification]],
     ['esm', ['EsmForSequenceClassification', EsmForSequenceClassification]],
@@ -15048,6 +15970,7 @@ const MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING_NAMES = new Map([
 
 const MODEL_FOR_TOKEN_CLASSIFICATION_MAPPING_NAMES = new Map([
     ['bert', ['BertForTokenClassification', BertForTokenClassification]],
+    ['modernbert', ['ModernBertForTokenClassification', ModernBertForTokenClassification]],
     ['roformer', ['RoFormerForTokenClassification', RoFormerForTokenClassification]],
     ['electra', ['ElectraForTokenClassification', ElectraForTokenClassification]],
     ['esm', ['EsmForTokenClassification', EsmForTokenClassification]],
@@ -15084,12 +16007,16 @@ const MODEL_FOR_CAUSAL_LM_MAPPING_NAMES = new Map([
     ['gpt_neox', ['GPTNeoXForCausalLM', GPTNeoXForCausalLM]],
     ['codegen', ['CodeGenForCausalLM', CodeGenForCausalLM]],
     ['llama', ['LlamaForCausalLM', LlamaForCausalLM]],
+    ['exaone', ['ExaoneForCausalLM', ExaoneForCausalLM]],
     ['olmo', ['OlmoForCausalLM', OlmoForCausalLM]],
+    ['olmo2', ['Olmo2ForCausalLM', Olmo2ForCausalLM]],
     ['mobilellm', ['MobileLLMForCausalLM', MobileLLMForCausalLM]],
     ['granite', ['GraniteForCausalLM', GraniteForCausalLM]],
     ['cohere', ['CohereForCausalLM', CohereForCausalLM]],
     ['gemma', ['GemmaForCausalLM', GemmaForCausalLM]],
     ['gemma2', ['Gemma2ForCausalLM', Gemma2ForCausalLM]],
+    ['helium', ['HeliumForCausalLM', HeliumForCausalLM]],
+    ['glm', ['GlmForCausalLM', GlmForCausalLM]],
     ['openelm', ['OpenELMForCausalLM', OpenELMForCausalLM]],
     ['qwen2', ['Qwen2ForCausalLM', Qwen2ForCausalLM]],
     ['phi', ['PhiForCausalLM', PhiForCausalLM]],
@@ -15102,6 +16029,9 @@ const MODEL_FOR_CAUSAL_LM_MAPPING_NAMES = new Map([
     ['falcon', ['FalconForCausalLM', FalconForCausalLM]],
     ['trocr', ['TrOCRForCausalLM', TrOCRForCausalLM]],
     ['stablelm', ['StableLmForCausalLM', StableLmForCausalLM]],
+
+    
+    ['phi3_v', ['Phi3VForCausalLM', Phi3VForCausalLM]],
 ]);
 
 const MODEL_FOR_MULTIMODALITY_MAPPING_NAMES = new Map([
@@ -15111,6 +16041,7 @@ const MODEL_FOR_MULTIMODALITY_MAPPING_NAMES = new Map([
 
 const MODEL_FOR_MASKED_LM_MAPPING_NAMES = new Map([
     ['bert', ['BertForMaskedLM', BertForMaskedLM]],
+    ['modernbert', ['ModernBertForMaskedLM', ModernBertForMaskedLM]],
     ['roformer', ['RoFormerForMaskedLM', RoFormerForMaskedLM]],
     ['electra', ['ElectraForMaskedLM', ElectraForMaskedLM]],
     ['esm', ['EsmForMaskedLM', EsmForMaskedLM]],
@@ -15148,6 +16079,8 @@ const MODEL_FOR_QUESTION_ANSWERING_MAPPING_NAMES = new Map([
 
 const MODEL_FOR_VISION_2_SEQ_MAPPING_NAMES = new Map([
     ['vision-encoder-decoder', ['VisionEncoderDecoderModel', VisionEncoderDecoderModel]],
+    ['idefics3', ['Idefics3ForConditionalGeneration', Idefics3ForConditionalGeneration]],
+    ['smolvlm', ['SmolVLMForConditionalGeneration', SmolVLMForConditionalGeneration]],
 ]);
 
 const MODEL_FOR_IMAGE_TEXT_TO_TEXT_MAPPING_NAMES = new Map([
@@ -15156,7 +16089,15 @@ const MODEL_FOR_IMAGE_TEXT_TO_TEXT_MAPPING_NAMES = new Map([
     ['moondream1', ['Moondream1ForConditionalGeneration', Moondream1ForConditionalGeneration]],
     ['florence2', ['Florence2ForConditionalGeneration', Florence2ForConditionalGeneration]],
     ['qwen2-vl', ['Qwen2VLForConditionalGeneration', Qwen2VLForConditionalGeneration]],
+    ['idefics3', ['Idefics3ForConditionalGeneration', Idefics3ForConditionalGeneration]],
+    ['smolvlm', ['SmolVLMForConditionalGeneration', SmolVLMForConditionalGeneration]],
+    ['paligemma', ['PaliGemmaForConditionalGeneration', PaliGemmaForConditionalGeneration]],
 ]);
+
+const MODEL_FOR_AUDIO_TEXT_TO_TEXT_MAPPING_NAMES = new Map([
+    ['ultravox', ['UltravoxModel', UltravoxModel]],
+]);
+
 
 const MODEL_FOR_DOCUMENT_QUESTION_ANSWERING_MAPPING_NAMES = new Map([
     ['vision-encoder-decoder', ['VisionEncoderDecoderModel', VisionEncoderDecoderModel]],
@@ -15164,6 +16105,7 @@ const MODEL_FOR_DOCUMENT_QUESTION_ANSWERING_MAPPING_NAMES = new Map([
 
 const MODEL_FOR_IMAGE_CLASSIFICATION_MAPPING_NAMES = new Map([
     ['vit', ['ViTForImageClassification', ViTForImageClassification]],
+    ['ijepa', ['IJepaForImageClassification', IJepaForImageClassification]],
     ['pvt', ['PvtForImageClassification', PvtForImageClassification]],
     ['vit_msn', ['ViTMSNForImageClassification', ViTMSNForImageClassification]],
     ['fastvit', ['FastViTForImageClassification', FastViTForImageClassification]],
@@ -15175,6 +16117,7 @@ const MODEL_FOR_IMAGE_CLASSIFICATION_MAPPING_NAMES = new Map([
     ['convnext', ['ConvNextForImageClassification', ConvNextForImageClassification]],
     ['convnextv2', ['ConvNextV2ForImageClassification', ConvNextV2ForImageClassification]],
     ['dinov2', ['Dinov2ForImageClassification', Dinov2ForImageClassification]],
+    ['dinov2_with_registers', ['Dinov2WithRegistersForImageClassification', Dinov2WithRegistersForImageClassification]],
     ['resnet', ['ResNetForImageClassification', ResNetForImageClassification]],
     ['swin', ['SwinForImageClassification', SwinForImageClassification]],
     ['segformer', ['SegformerForImageClassification', SegformerForImageClassification]],
@@ -15195,6 +16138,7 @@ const MODEL_FOR_OBJECT_DETECTION_MAPPING_NAMES = new Map([
 const MODEL_FOR_ZERO_SHOT_OBJECT_DETECTION_MAPPING_NAMES = new Map([
     ['owlvit', ['OwlViTForObjectDetection', OwlViTForObjectDetection]],
     ['owlv2', ['Owlv2ForObjectDetection', Owlv2ForObjectDetection]],
+    ['grounding-dino', ['GroundingDinoForObjectDetection', GroundingDinoForObjectDetection]],
 ]);
 
 const MODEL_FOR_IMAGE_SEGMENTATION_MAPPING_NAMES = new Map([
@@ -15206,6 +16150,12 @@ const MODEL_FOR_IMAGE_SEGMENTATION_MAPPING_NAMES = new Map([
 const MODEL_FOR_SEMANTIC_SEGMENTATION_MAPPING_NAMES = new Map([
     ['segformer', ['SegformerForSemanticSegmentation', SegformerForSemanticSegmentation]],
     ['sapiens', ['SapiensForSemanticSegmentation', SapiensForSemanticSegmentation]],
+
+    ['swin', ['SwinForSemanticSegmentation', SwinForSemanticSegmentation]],
+    ['mobilenet_v1', ['MobileNetV1ForSemanticSegmentation', MobileNetV1ForSemanticSegmentation]],
+    ['mobilenet_v2', ['MobileNetV2ForSemanticSegmentation', MobileNetV2ForSemanticSegmentation]],
+    ['mobilenet_v3', ['MobileNetV3ForSemanticSegmentation', MobileNetV3ForSemanticSegmentation]],
+    ['mobilenet_v4', ['MobileNetV4ForSemanticSegmentation', MobileNetV4ForSemanticSegmentation]],
 ]);
 
 const MODEL_FOR_UNIVERSAL_SEGMENTATION_MAPPING_NAMES = new Map([
@@ -15285,9 +16235,12 @@ const MODEL_FOR_IMAGE_FEATURE_EXTRACTION_MAPPING_NAMES = new Map([
 ])
 
 const MODEL_CLASS_TYPE_MAPPING = [
+    
     [MODEL_MAPPING_NAMES_ENCODER_ONLY, MODEL_TYPES.EncoderOnly],
     [MODEL_MAPPING_NAMES_ENCODER_DECODER, MODEL_TYPES.EncoderDecoder],
     [MODEL_MAPPING_NAMES_DECODER_ONLY, MODEL_TYPES.DecoderOnly],
+    [MODEL_MAPPING_NAMES_AUTO_ENCODER, MODEL_TYPES.AutoEncoder],
+
     [MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_TOKEN_CLASSIFICATION_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_SEQ_TO_SEQ_CAUSAL_LM_MAPPING_NAMES, MODEL_TYPES.Seq2Seq],
@@ -15298,6 +16251,7 @@ const MODEL_CLASS_TYPE_MAPPING = [
     [MODEL_FOR_QUESTION_ANSWERING_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_VISION_2_SEQ_MAPPING_NAMES, MODEL_TYPES.Vision2Seq],
     [MODEL_FOR_IMAGE_TEXT_TO_TEXT_MAPPING_NAMES, MODEL_TYPES.ImageTextToText],
+    [MODEL_FOR_AUDIO_TEXT_TO_TEXT_MAPPING_NAMES, MODEL_TYPES.AudioTextToText],
     [MODEL_FOR_IMAGE_CLASSIFICATION_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_IMAGE_SEGMENTATION_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_UNIVERSAL_SEGMENTATION_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
@@ -15335,17 +16289,36 @@ const CUSTOM_MAPPING = [
     
     
     ['MusicgenForConditionalGeneration', MusicgenForConditionalGeneration, MODEL_TYPES.Musicgen],
+    ['Phi3VForCausalLM', Phi3VForCausalLM, MODEL_TYPES.Phi3V],
 
     ['CLIPTextModelWithProjection', CLIPTextModelWithProjection, MODEL_TYPES.EncoderOnly],
     ['SiglipTextModel', SiglipTextModel, MODEL_TYPES.EncoderOnly],
     ['JinaCLIPTextModel', JinaCLIPTextModel, MODEL_TYPES.EncoderOnly],
     ['ClapTextModelWithProjection', ClapTextModelWithProjection, MODEL_TYPES.EncoderOnly],
     ['ClapAudioModelWithProjection', ClapAudioModelWithProjection, MODEL_TYPES.EncoderOnly],
+
+    ['DacEncoderModel', DacEncoderModel, MODEL_TYPES.EncoderOnly],
+    ['DacDecoderModel', DacDecoderModel, MODEL_TYPES.EncoderOnly],
+    ['MimiEncoderModel', MimiEncoderModel, MODEL_TYPES.EncoderOnly],
+    ['MimiDecoderModel', MimiDecoderModel, MODEL_TYPES.EncoderOnly],
 ]
 for (const [name, model, type] of CUSTOM_MAPPING) {
     MODEL_TYPE_MAPPING.set(name, type);
     MODEL_CLASS_TO_NAME_MAPPING.set(model, name);
     MODEL_NAME_TO_CLASS_MAPPING.set(name, model);
+}
+
+const CUSTOM_ARCHITECTURES = new Map([
+    ['modnet', MODEL_FOR_IMAGE_SEGMENTATION_MAPPING_NAMES],
+    ['birefnet', MODEL_FOR_IMAGE_SEGMENTATION_MAPPING_NAMES],
+    ['isnet', MODEL_FOR_IMAGE_SEGMENTATION_MAPPING_NAMES],
+    ['ben', MODEL_FOR_IMAGE_SEGMENTATION_MAPPING_NAMES],
+]);
+for (const [name, mapping] of CUSTOM_ARCHITECTURES.entries()) {
+    mapping.set(name, ['PreTrainedModel', PreTrainedModel])
+    MODEL_TYPE_MAPPING.set(name, MODEL_TYPES.EncoderOnly);
+    MODEL_CLASS_TO_NAME_MAPPING.set(PreTrainedModel, name);
+    MODEL_NAME_TO_CLASS_MAPPING.set(name, PreTrainedModel);
 }
 
 
@@ -15588,6 +16561,14 @@ class AutoModelForImageFeatureExtraction extends PretrainedMixin {
     static MODEL_CLASS_MAPPINGS = [MODEL_FOR_IMAGE_FEATURE_EXTRACTION_MAPPING_NAMES];
 }
 
+class AutoModelForImageTextToText extends PretrainedMixin {
+    static MODEL_CLASS_MAPPINGS = [MODEL_FOR_IMAGE_TEXT_TO_TEXT_MAPPING_NAMES];
+}
+
+class AutoModelForAudioTextToText extends PretrainedMixin {
+    static MODEL_CLASS_MAPPINGS = [MODEL_FOR_AUDIO_TEXT_TO_TEXT_MAPPING_NAMES];
+}
+
 
 
 
@@ -15618,9 +16599,16 @@ class SequenceClassifierOutput extends ModelOutput {
 
 
 
-    constructor({ logits }) {
+
+
+    constructor({ logits, ...attentions }) {
         super();
         this.logits = logits;
+        const attentions_list = Object.values(attentions);
+        if (attentions_list.length > 0) {
+            
+            this.attentions = attentions_list;
+        }
     }
 }
 
@@ -15877,22 +16865,6 @@ __webpack_require__.r(__webpack_exports__);
 class AutoFeatureExtractor {
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
     static async from_pretrained(pretrained_model_name_or_path, options={}) {
 
         const preprocessorConfig = await (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_1__.getModelJSON)(pretrained_model_name_or_path, _utils_constants_js__WEBPACK_IMPORTED_MODULE_0__.FEATURE_EXTRACTOR_NAME, true, options);
@@ -16017,22 +16989,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 class AutoProcessor {
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     
     static async from_pretrained(pretrained_model_name_or_path, options={}) {
@@ -16351,6 +17307,7 @@ class ConvNextImageProcessor extends _base_image_processors_utils_js__WEBPACK_IM
         
 
 
+        
         this.crop_pct = this.config.crop_pct ?? (224 / 256);
     }
 
@@ -16385,6 +17342,24 @@ class ConvNextImageProcessor extends _base_image_processors_utils_js__WEBPACK_IM
     }
 }
 class ConvNextFeatureExtractor extends ConvNextImageProcessor { }
+
+
+ }),
+
+ "./src/models/dac/feature_extraction_dac.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   DacFeatureExtractor: () => ( DacFeatureExtractor)
+ });
+ var _encodec_feature_extraction_encodec_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/models/encodec/feature_extraction_encodec.js");
+
+
+class DacFeatureExtractor extends _encodec_feature_extraction_encodec_js__WEBPACK_IMPORTED_MODULE_0__.EncodecFeatureExtractor { }
 
 
  }),
@@ -16553,10 +17528,59 @@ __webpack_require__.r(__webpack_exports__);
 class EfficientNetImageProcessor extends _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_0__.ImageProcessor {
     constructor(config) {
         super(config);
+        
         this.include_top = this.config.include_top ?? true;
         if (this.include_top) {
             this.image_std = this.image_std.map(x => x * x);
         }
+    }
+}
+
+
+ }),
+
+ "./src/models/encodec/feature_extraction_encodec.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   EncodecFeatureExtractor: () => ( EncodecFeatureExtractor)
+ });
+ var _base_feature_extraction_utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/base/feature_extraction_utils.js");
+ var _utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/utils/tensor.js");
+
+
+
+
+class EncodecFeatureExtractor extends _base_feature_extraction_utils_js__WEBPACK_IMPORTED_MODULE_0__.FeatureExtractor {
+    
+
+
+
+
+    async _call(audio) {
+        (0,_base_feature_extraction_utils_js__WEBPACK_IMPORTED_MODULE_0__.validate_audio_inputs)(audio, 'EncodecFeatureExtractor');
+
+        if (audio instanceof Float64Array) {
+            audio = new Float32Array(audio);
+        }
+
+        const num_channels = this.config.feature_size;
+        if (audio.length % num_channels !== 0) {
+            throw new Error(`The length of the audio data must be a multiple of the number of channels (${num_channels}).`);
+        }
+
+        const shape = [
+            1,                              
+            num_channels,                   
+            audio.length / num_channels,    
+        ];
+        return {
+            input_values: new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.Tensor('float32', audio, shape),
+        };
     }
 }
 
@@ -16572,24 +17596,33 @@ class EfficientNetImageProcessor extends _base_image_processors_utils_js__WEBPAC
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    ASTFeatureExtractor: () => ( _audio_spectrogram_transformer_feature_extraction_audio_spectrogram_transformer_js__WEBPACK_IMPORTED_MODULE_0__.ASTFeatureExtractor),
-   ClapFeatureExtractor: () => ( _clap_feature_extraction_clap_js__WEBPACK_IMPORTED_MODULE_1__.ClapFeatureExtractor),
-   ImageFeatureExtractor: () => ( _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_8__.ImageProcessor),
-   PyAnnoteFeatureExtractor: () => ( _pyannote_feature_extraction_pyannote_js__WEBPACK_IMPORTED_MODULE_2__.PyAnnoteFeatureExtractor),
-   SeamlessM4TFeatureExtractor: () => ( _seamless_m4t_feature_extraction_seamless_m4t_js__WEBPACK_IMPORTED_MODULE_3__.SeamlessM4TFeatureExtractor),
-   SpeechT5FeatureExtractor: () => ( _speecht5_feature_extraction_speecht5_js__WEBPACK_IMPORTED_MODULE_4__.SpeechT5FeatureExtractor),
-   Wav2Vec2FeatureExtractor: () => ( _wav2vec2_feature_extraction_wav2vec2_js__WEBPACK_IMPORTED_MODULE_5__.Wav2Vec2FeatureExtractor),
-   WeSpeakerFeatureExtractor: () => ( _wespeaker_feature_extraction_wespeaker_js__WEBPACK_IMPORTED_MODULE_6__.WeSpeakerFeatureExtractor),
-   WhisperFeatureExtractor: () => ( _whisper_feature_extraction_whisper_js__WEBPACK_IMPORTED_MODULE_7__.WhisperFeatureExtractor)
+   ClapFeatureExtractor: () => ( _clap_feature_extraction_clap_js__WEBPACK_IMPORTED_MODULE_2__.ClapFeatureExtractor),
+   DacFeatureExtractor: () => ( _dac_feature_extraction_dac_js__WEBPACK_IMPORTED_MODULE_3__.DacFeatureExtractor),
+   EncodecFeatureExtractor: () => ( _encodec_feature_extraction_encodec_js__WEBPACK_IMPORTED_MODULE_1__.EncodecFeatureExtractor),
+   ImageFeatureExtractor: () => ( _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_11__.ImageProcessor),
+   MoonshineFeatureExtractor: () => ( _moonshine_feature_extraction_moonshine_js__WEBPACK_IMPORTED_MODULE_4__.MoonshineFeatureExtractor),
+   PyAnnoteFeatureExtractor: () => ( _pyannote_feature_extraction_pyannote_js__WEBPACK_IMPORTED_MODULE_5__.PyAnnoteFeatureExtractor),
+   SeamlessM4TFeatureExtractor: () => ( _seamless_m4t_feature_extraction_seamless_m4t_js__WEBPACK_IMPORTED_MODULE_6__.SeamlessM4TFeatureExtractor),
+   SpeechT5FeatureExtractor: () => ( _speecht5_feature_extraction_speecht5_js__WEBPACK_IMPORTED_MODULE_7__.SpeechT5FeatureExtractor),
+   Wav2Vec2FeatureExtractor: () => ( _wav2vec2_feature_extraction_wav2vec2_js__WEBPACK_IMPORTED_MODULE_8__.Wav2Vec2FeatureExtractor),
+   WeSpeakerFeatureExtractor: () => ( _wespeaker_feature_extraction_wespeaker_js__WEBPACK_IMPORTED_MODULE_9__.WeSpeakerFeatureExtractor),
+   WhisperFeatureExtractor: () => ( _whisper_feature_extraction_whisper_js__WEBPACK_IMPORTED_MODULE_10__.WhisperFeatureExtractor)
  });
  var _audio_spectrogram_transformer_feature_extraction_audio_spectrogram_transformer_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/models/audio_spectrogram_transformer/feature_extraction_audio_spectrogram_transformer.js");
- var _clap_feature_extraction_clap_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/models/clap/feature_extraction_clap.js");
- var _pyannote_feature_extraction_pyannote_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/models/pyannote/feature_extraction_pyannote.js");
- var _seamless_m4t_feature_extraction_seamless_m4t_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( "./src/models/seamless_m4t/feature_extraction_seamless_m4t.js");
- var _speecht5_feature_extraction_speecht5_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( "./src/models/speecht5/feature_extraction_speecht5.js");
- var _wav2vec2_feature_extraction_wav2vec2_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__( "./src/models/wav2vec2/feature_extraction_wav2vec2.js");
- var _wespeaker_feature_extraction_wespeaker_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__( "./src/models/wespeaker/feature_extraction_wespeaker.js");
- var _whisper_feature_extraction_whisper_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__( "./src/models/whisper/feature_extraction_whisper.js");
- var _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__( "./src/base/image_processors_utils.js");
+ var _encodec_feature_extraction_encodec_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/models/encodec/feature_extraction_encodec.js");
+ var _clap_feature_extraction_clap_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/models/clap/feature_extraction_clap.js");
+ var _dac_feature_extraction_dac_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( "./src/models/dac/feature_extraction_dac.js");
+ var _moonshine_feature_extraction_moonshine_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( "./src/models/moonshine/feature_extraction_moonshine.js");
+ var _pyannote_feature_extraction_pyannote_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__( "./src/models/pyannote/feature_extraction_pyannote.js");
+ var _seamless_m4t_feature_extraction_seamless_m4t_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__( "./src/models/seamless_m4t/feature_extraction_seamless_m4t.js");
+ var _speecht5_feature_extraction_speecht5_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__( "./src/models/speecht5/feature_extraction_speecht5.js");
+ var _wav2vec2_feature_extraction_wav2vec2_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__( "./src/models/wav2vec2/feature_extraction_wav2vec2.js");
+ var _wespeaker_feature_extraction_wespeaker_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__( "./src/models/wespeaker/feature_extraction_wespeaker.js");
+ var _whisper_feature_extraction_whisper_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__( "./src/models/whisper/feature_extraction_whisper.js");
+ var _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__( "./src/base/image_processors_utils.js");
+
+
+
 
 
 
@@ -16631,8 +17664,11 @@ class Florence2Processor extends _base_processing_utils_js__WEBPACK_IMPORTED_MOD
         super(config, components);
 
         const {
+            
             tasks_answer_post_processing_type,
+            
             task_prompts_without_inputs,
+            
             task_prompts_with_input,
         } = this.image_processor.config;
 
@@ -16769,6 +17805,569 @@ class GLPNFeatureExtractor extends _base_image_processors_utils_js__WEBPACK_IMPO
 
  }),
 
+ "./src/models/grounding_dino/image_processing_grounding_dino.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   GroundingDinoImageProcessor: () => ( GroundingDinoImageProcessor)
+ });
+ var _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/base/image_processors_utils.js");
+ var _utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/utils/tensor.js");
+
+
+
+
+
+
+
+
+
+
+
+class GroundingDinoImageProcessor extends _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_0__.ImageProcessor {
+    
+
+
+
+
+
+    async _call(images) {
+        const result = await super._call(images);
+
+        const dims = result.pixel_values.dims;
+        const pixel_mask = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.ones)([dims[0], dims[2], dims[3]]);
+
+        return { ...result, pixel_mask };
+    }
+}
+
+
+ }),
+
+ "./src/models/grounding_dino/processing_grounding_dino.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   GroundingDinoProcessor: () => ( GroundingDinoProcessor)
+ });
+ var _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/base/processing_utils.js");
+ var _auto_image_processing_auto_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/models/auto/image_processing_auto.js");
+ var _tokenizers_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/tokenizers.js");
+ var _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( "./src/base/image_processors_utils.js");
+
+
+
+
+
+
+
+
+
+
+function get_phrases_from_posmap(posmaps, input_ids) {
+
+    const left_idx = 0;
+    const right_idx = posmaps.dims.at(-1) - 1;
+
+    const posmaps_list = posmaps.tolist();
+    posmaps_list.fill(false, 0, left_idx + 1);
+    posmaps_list.fill(false, right_idx);
+
+    const input_ids_list = input_ids.tolist();
+    return posmaps_list
+        .map((val, idx) => val ? idx : null)
+        .filter(idx => idx !== null)
+        .map(i => input_ids_list[i]);
+}
+
+class GroundingDinoProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__.Processor {
+    static tokenizer_class = _tokenizers_js__WEBPACK_IMPORTED_MODULE_2__.AutoTokenizer
+    static image_processor_class = _auto_image_processing_auto_js__WEBPACK_IMPORTED_MODULE_1__.AutoImageProcessor
+
+    
+
+
+    
+
+
+
+
+
+    async _call(images, text, options = {}) {
+
+        const image_inputs = images ? await this.image_processor(images, options) : {};
+        const text_inputs = text ? this.tokenizer(text, options) : {};
+
+        return {
+            ...text_inputs,
+            ...image_inputs,
+        }
+    }
+    post_process_grounded_object_detection(outputs, input_ids, {
+        box_threshold = 0.25,
+        text_threshold = 0.25,
+        target_sizes = null
+    } = {}) {
+        const { logits, pred_boxes } = outputs;
+        const batch_size = logits.dims[0];
+
+        if (target_sizes !== null && target_sizes.length !== batch_size) {
+            throw Error("Make sure that you pass in as many target sizes as the batch dimension of the logits")
+        }
+        const num_queries = logits.dims.at(1);
+
+        const probs = logits.sigmoid(); 
+        const scores = probs.max(-1).tolist(); 
+
+        
+        const boxes = pred_boxes.tolist() 
+            .map(batch => batch.map(box => (0,_base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_3__.center_to_corners_format)(box)));
+
+        const results = [];
+        for (let i = 0; i < batch_size; ++i) {
+            const target_size = target_sizes !== null ? target_sizes[i] : null;
+
+            
+            if (target_size !== null) {
+                boxes[i] = boxes[i].map(box => box.map((x, j) => x * target_size[(j + 1) % 2]));
+            }
+
+            const batch_scores = scores[i];
+            const final_scores = [];
+            const final_phrases = [];
+            const final_boxes = [];
+            for (let j = 0; j < num_queries; ++j) {
+                const score = batch_scores[j];
+                if (score <= box_threshold) {
+                    continue;
+                }
+                const box = boxes[i][j];
+                const prob = probs[i][j];
+
+                final_scores.push(score);
+                final_boxes.push(box);
+
+                const phrases = get_phrases_from_posmap(prob.gt(text_threshold), input_ids[i]);
+                final_phrases.push(phrases);
+            }
+            results.push({ scores: final_scores, boxes: final_boxes, labels: this.batch_decode(final_phrases) });
+        }
+        return results;
+    }
+}
+
+
+ }),
+
+ "./src/models/idefics3/image_processing_idefics3.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   Idefics3ImageProcessor: () => ( Idefics3ImageProcessor)
+ });
+ var _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/base/image_processors_utils.js");
+ var _utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/utils/tensor.js");
+
+
+
+
+
+class Idefics3ImageProcessor extends _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_0__.ImageProcessor {
+    constructor(config) {
+        super(config);
+
+        this.do_image_splitting = config.do_image_splitting ?? true;
+        this.max_image_size = config.max_image_size;
+    }
+
+    
+
+
+
+
+    
+
+
+
+
+
+    get_resize_for_vision_encoder(pixel_values, vision_encoder_max_size) {
+        let [height, width] = pixel_values.dims.slice(-2);
+
+        const aspect_ratio = width / height;
+        if (width >= height) {
+            width = Math.ceil(width / vision_encoder_max_size) * vision_encoder_max_size;
+            height = Math.floor(width / aspect_ratio);
+            height = Math.ceil(height / vision_encoder_max_size) * vision_encoder_max_size;
+        } else {
+            height = Math.ceil(height / vision_encoder_max_size) * vision_encoder_max_size;
+            width = Math.floor(height * aspect_ratio);
+            width = Math.ceil(width / vision_encoder_max_size) * vision_encoder_max_size;
+        }
+        return { height, width };
+    }
+
+    
+    async _call(images, {
+        do_image_splitting = null,
+        return_row_col_info = false,
+    } = {}) {
+
+        
+        let batched_2d_images;
+        if (!Array.isArray(images)) {
+            batched_2d_images = [[images]];
+        } else {
+            if (images.length === 0 || !images[0]) {
+                throw new Error("No images provided.");
+            }
+            if (!Array.isArray(images[0])) {
+                batched_2d_images = [(images)];
+            } else {
+                batched_2d_images = (images);
+            }
+        }
+
+        
+        let all_pixel_values = [];
+        let images_list_rows = [];
+        let images_list_cols = [];
+
+        const original_sizes = [];
+        const reshaped_input_sizes = [];
+        for (const image_batch of batched_2d_images) {
+
+            let images_list = await Promise.all(image_batch.map(x => this.preprocess(x)));
+
+            
+            original_sizes.push(...images_list.map(x => x.original_size));
+
+            
+            reshaped_input_sizes.push(...images_list.map(x => x.reshaped_input_size));
+
+            
+            images_list.forEach(x => x.pixel_values.unsqueeze_(0));
+
+            const { longest_edge } = this.max_image_size;
+
+            
+            let images_tensor;
+            if (do_image_splitting ?? this.do_image_splitting) {
+                let image_rows = new Array(images_list.length);
+                let image_cols = new Array(images_list.length);
+
+                
+                images_tensor = await Promise.all(images_list.map(async (x, i) => {
+                    const new_size = this.get_resize_for_vision_encoder(x.pixel_values, longest_edge);
+
+                    const resized = await (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.interpolate_4d)(x.pixel_values, {
+                        size: [new_size.height, new_size.width],
+                    });
+
+                    const { frames, num_splits_h, num_splits_w } = await this.split_image(resized, this.max_image_size);
+                    image_rows[i] = num_splits_h;
+                    image_cols[i] = num_splits_w;
+                    return (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.cat)(frames, 0);
+                }));
+
+                images_list_rows.push(image_rows);
+                images_list_cols.push(image_cols);
+
+            } else {
+                
+                const size = [longest_edge, longest_edge];
+                images_tensor = await Promise.all(
+                    images_list.map(x => (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.interpolate_4d)(x.pixel_values, { size }))
+                );
+
+                images_list_rows.push(new Array(images_list.length).fill(0));
+                images_list_cols.push(new Array(images_list.length).fill(0));
+            }
+
+            all_pixel_values.push((0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.cat)(images_tensor, 0));
+        }
+
+        const batch_size = all_pixel_values.length;
+        const [n, c, h, w] = all_pixel_values[0].dims;
+
+        
+        let pixel_values;
+        let pixel_attention_mask;
+        if (batch_size === 1) {
+            pixel_values = all_pixel_values[0].unsqueeze_(0);
+            pixel_attention_mask = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.full)([batch_size, n, h, w], true);
+        } else {
+            
+            const max_num_patches = Math.max(...all_pixel_values.map(x => x.dims.at(0)));
+
+            pixel_attention_mask = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.full)([batch_size, max_num_patches, h, w], true);
+            const pixel_attention_mask_data = pixel_attention_mask.data;
+            const pixel_attention_mask_stride = max_num_patches * h * w;
+            for (let i = 0; i < batch_size; ++i) {
+                const num_patches = all_pixel_values[i].dims[0];
+                if (num_patches < max_num_patches) {
+                    all_pixel_values[i] = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.cat)([
+                        all_pixel_values[i],
+                        (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.full)([max_num_patches - num_patches, c, h, w], 0),
+                    ], 0);
+
+                    const start_offset = i * pixel_attention_mask_stride + num_patches * h * w;
+                    const end_offset = (i + 1) * pixel_attention_mask_stride;
+
+                    
+                    pixel_attention_mask_data.fill(false, start_offset, end_offset);
+                }
+            }
+            pixel_values = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.stack)(all_pixel_values, 0);
+        }
+
+        return {
+            pixel_values,
+            pixel_attention_mask,
+
+            original_sizes,
+            reshaped_input_sizes,
+            ...(
+                return_row_col_info
+                    ? { rows: images_list_rows, cols: images_list_cols }
+                    : {}
+            ),
+        }
+    }
+
+    async split_image(pixel_values, { longest_edge }) {
+        const max_height = longest_edge;
+        const max_width = longest_edge;
+
+        const frames = [];
+
+        const [height, width] = pixel_values.dims.slice(-2);
+
+        let num_splits_h = 0, num_splits_w = 0;
+
+        if (height > max_height || width > max_width) {
+            
+            num_splits_h = Math.ceil(height / max_height);
+            num_splits_w = Math.ceil(width / max_width);
+
+            
+            const optimal_height = Math.ceil(height / num_splits_h);
+            const optimal_width = Math.ceil(width / num_splits_w);
+
+            
+            for (let r = 0; r < num_splits_h; ++r) {
+                for (let c = 0; c < num_splits_w; ++c) {
+                    let start_x, start_y, end_x, end_y;
+                    if (r === num_splits_h - 1) { 
+                        start_y = height - optimal_height;
+                        end_y = height;
+                    } else {
+                        start_y = r * optimal_height;
+                        end_y = (r + 1) * optimal_height;
+                    }
+                    if (c === num_splits_w - 1) { 
+                        start_x = width - optimal_width;
+                        end_x = width;
+                    } else {
+                        start_x = c * optimal_width;
+                        end_x = (c + 1) * optimal_width;
+                    }
+
+                    const starts = [start_y, start_x];
+                    const ends = [end_y, end_x];
+
+                    const patch = await (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.slice)(pixel_values, starts, ends, [2, 3]);
+                    frames.push(patch);
+                }
+            }
+
+            
+            const global_image_height = max_height;
+            const global_image_width = max_width;
+
+            if (height !== global_image_height || width !== global_image_width) {
+                pixel_values = await (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.interpolate_4d)(pixel_values, {
+                    size: [global_image_height, global_image_width],
+                })
+            }
+        }
+
+        frames.push(pixel_values);
+
+        return { frames, num_splits_h, num_splits_w };
+    }
+}
+
+
+ }),
+
+ "./src/models/idefics3/processing_idefics3.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   Idefics3Processor: () => ( Idefics3Processor)
+ });
+ var _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/base/processing_utils.js");
+ var _auto_image_processing_auto_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/models/auto/image_processing_auto.js");
+ var _tokenizers_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/tokenizers.js");
+ var _utils_image_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( "./src/utils/image.js");
+ var _utils_core_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( "./src/utils/core.js");
+
+
+
+
+
+
+
+
+
+
+
+function _prompt_split_image(image_seq_len, image_rows, image_cols, fake_token_around_image, image_token, global_img_token) {
+    let text_split_images = "";
+    for (let n_h = 0; n_h < image_rows; ++n_h) {
+        for (let n_w = 0; n_w < image_cols; ++n_w) {
+            text_split_images += (
+                fake_token_around_image +
+                `<row_${n_h + 1}_col_${n_w + 1}>` +
+                image_token.repeat(image_seq_len)
+            );
+        }
+        text_split_images += "\n";
+    }
+
+    text_split_images += (
+        `\n${fake_token_around_image}` +
+        `${global_img_token}` +
+        image_token.repeat(image_seq_len) +
+        `${fake_token_around_image}`
+    );
+    return text_split_images;
+}
+
+
+
+
+
+function _prompt_single_image(image_seq_len, fake_token_around_image, image_token, global_img_token) {
+    return (
+        `${fake_token_around_image}` +
+        `${global_img_token}` +
+        image_token.repeat(image_seq_len) +
+        `${fake_token_around_image}`
+    );
+}
+
+function get_image_prompt_string(image_rows, image_cols, image_seq_len, fake_token_around_image, image_token, global_img_token) {
+    if (image_rows === 0 && image_cols === 0) {
+        return _prompt_single_image(
+            image_seq_len,
+            fake_token_around_image,
+            image_token,
+            global_img_token
+        );
+    }
+    return _prompt_split_image(
+        image_seq_len, image_rows, image_cols, fake_token_around_image, image_token, global_img_token
+    );
+}
+
+
+class Idefics3Processor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__.Processor {
+    static image_processor_class = _auto_image_processing_auto_js__WEBPACK_IMPORTED_MODULE_1__.AutoImageProcessor
+    static tokenizer_class = _tokenizers_js__WEBPACK_IMPORTED_MODULE_2__.AutoTokenizer
+    static uses_processor_config = true;
+
+    fake_image_token = "<fake_token_around_image>";
+    image_token = "<image>";
+    global_img_token = "<global-img>";
+
+    
+
+
+
+
+
+    async _call(text, images = null, options = {}) {
+        options.return_row_col_info ??= true;
+
+        let image_inputs;
+
+        if (images) {
+            image_inputs = await this.image_processor(images, options);
+        }
+
+        
+        if (!Array.isArray(text)) {
+            text = [text];
+        }
+
+        const image_rows = image_inputs.rows ?? [new Array(text.length).fill(0)];
+        const image_cols = image_inputs.cols ?? [new Array(text.length).fill(0)];
+
+        const image_seq_len = this.config.image_seq_len;
+        const n_images_in_text = []
+        const prompt_strings = [];
+        for (let i = 0; i < text.length; ++i) {
+            const sample = text[i];
+            const sample_rows = image_rows[i];
+            const sample_cols = image_cols[i];
+
+            n_images_in_text.push((0,_utils_core_js__WEBPACK_IMPORTED_MODULE_4__.count)(sample, this.image_token));
+
+            
+            const image_prompt_strings = sample_rows.map(
+                (n_rows, j) => get_image_prompt_string(
+                    n_rows,
+                    sample_cols[j],
+                    image_seq_len,
+                    this.fake_image_token,
+                    this.image_token,
+                    this.global_img_token,
+                )
+            );
+
+            const split_sample = sample.split(this.image_token);
+            if (split_sample.length === 0) {
+                throw new Error("The image token should be present in the text.");
+            }
+
+            
+            let new_sample = split_sample[0];
+            for (let j = 0; j < image_prompt_strings.length; ++j) {
+                new_sample += image_prompt_strings[j] + split_sample[j + 1];
+            }
+            prompt_strings.push(new_sample);
+        }
+
+        const text_inputs = this.tokenizer(prompt_strings);
+
+        return {
+            ...text_inputs,
+            ...image_inputs,
+        }
+    }
+}
+
+
+ }),
+
  "./src/models/image_processors.js":
 
 
@@ -16794,40 +18393,44 @@ __webpack_require__.r(__webpack_exports__);
    DonutImageProcessor: () => ( _donut_image_processing_donut_js__WEBPACK_IMPORTED_MODULE_7__.DonutImageProcessor),
    EfficientNetImageProcessor: () => ( _efficientnet_image_processing_efficientnet_js__WEBPACK_IMPORTED_MODULE_9__.EfficientNetImageProcessor),
    GLPNFeatureExtractor: () => ( _glpn_image_processing_glpn_js__WEBPACK_IMPORTED_MODULE_10__.GLPNFeatureExtractor),
-   JinaCLIPImageProcessor: () => ( _jina_clip_image_processing_jina_clip_js__WEBPACK_IMPORTED_MODULE_12__.JinaCLIPImageProcessor),
-   LlavaOnevisionImageProcessor: () => ( _llava_onevision_image_processing_llava_onevision_js__WEBPACK_IMPORTED_MODULE_13__.LlavaOnevisionImageProcessor),
-   Mask2FormerImageProcessor: () => ( _mask2former_image_processing_mask2former_js__WEBPACK_IMPORTED_MODULE_14__.Mask2FormerImageProcessor),
-   MaskFormerFeatureExtractor: () => ( _maskformer_image_processing_maskformer_js__WEBPACK_IMPORTED_MODULE_15__.MaskFormerFeatureExtractor),
-   MaskFormerImageProcessor: () => ( _maskformer_image_processing_maskformer_js__WEBPACK_IMPORTED_MODULE_15__.MaskFormerImageProcessor),
-   MobileNetV1FeatureExtractor: () => ( _mobilenet_v1_image_processing_mobilenet_v1_js__WEBPACK_IMPORTED_MODULE_16__.MobileNetV1FeatureExtractor),
-   MobileNetV1ImageProcessor: () => ( _mobilenet_v1_image_processing_mobilenet_v1_js__WEBPACK_IMPORTED_MODULE_16__.MobileNetV1ImageProcessor),
-   MobileNetV2FeatureExtractor: () => ( _mobilenet_v2_image_processing_mobilenet_v2_js__WEBPACK_IMPORTED_MODULE_17__.MobileNetV2FeatureExtractor),
-   MobileNetV2ImageProcessor: () => ( _mobilenet_v2_image_processing_mobilenet_v2_js__WEBPACK_IMPORTED_MODULE_17__.MobileNetV2ImageProcessor),
-   MobileNetV3FeatureExtractor: () => ( _mobilenet_v3_image_processing_mobilenet_v3_js__WEBPACK_IMPORTED_MODULE_18__.MobileNetV3FeatureExtractor),
-   MobileNetV3ImageProcessor: () => ( _mobilenet_v3_image_processing_mobilenet_v3_js__WEBPACK_IMPORTED_MODULE_18__.MobileNetV3ImageProcessor),
-   MobileNetV4FeatureExtractor: () => ( _mobilenet_v4_image_processing_mobilenet_v4_js__WEBPACK_IMPORTED_MODULE_19__.MobileNetV4FeatureExtractor),
-   MobileNetV4ImageProcessor: () => ( _mobilenet_v4_image_processing_mobilenet_v4_js__WEBPACK_IMPORTED_MODULE_19__.MobileNetV4ImageProcessor),
-   MobileViTFeatureExtractor: () => ( _mobilevit_image_processing_mobilevit_js__WEBPACK_IMPORTED_MODULE_20__.MobileViTFeatureExtractor),
-   MobileViTImageProcessor: () => ( _mobilevit_image_processing_mobilevit_js__WEBPACK_IMPORTED_MODULE_20__.MobileViTImageProcessor),
-   NougatImageProcessor: () => ( _nougat_image_processing_nougat_js__WEBPACK_IMPORTED_MODULE_21__.NougatImageProcessor),
-   OwlViTFeatureExtractor: () => ( _owlvit_image_processing_owlvit_js__WEBPACK_IMPORTED_MODULE_23__.OwlViTFeatureExtractor),
-   OwlViTImageProcessor: () => ( _owlvit_image_processing_owlvit_js__WEBPACK_IMPORTED_MODULE_23__.OwlViTImageProcessor),
-   Owlv2ImageProcessor: () => ( _owlv2_image_processing_owlv2_js__WEBPACK_IMPORTED_MODULE_22__.Owlv2ImageProcessor),
-   PvtImageProcessor: () => ( _pvt_image_processing_pvt_js__WEBPACK_IMPORTED_MODULE_24__.PvtImageProcessor),
-   Qwen2VLImageProcessor: () => ( _qwen2_vl_image_processing_qwen2_vl_js__WEBPACK_IMPORTED_MODULE_25__.Qwen2VLImageProcessor),
-   RTDetrImageProcessor: () => ( _rt_detr_image_processing_rt_detr_js__WEBPACK_IMPORTED_MODULE_26__.RTDetrImageProcessor),
-   SamImageProcessor: () => ( _sam_image_processing_sam_js__WEBPACK_IMPORTED_MODULE_27__.SamImageProcessor),
-   SegformerFeatureExtractor: () => ( _segformer_image_processing_segformer_js__WEBPACK_IMPORTED_MODULE_28__.SegformerFeatureExtractor),
-   SegformerImageProcessor: () => ( _segformer_image_processing_segformer_js__WEBPACK_IMPORTED_MODULE_28__.SegformerImageProcessor),
-   SiglipImageProcessor: () => ( _siglip_image_processing_siglip_js__WEBPACK_IMPORTED_MODULE_29__.SiglipImageProcessor),
-   Swin2SRImageProcessor: () => ( _swin2sr_image_processing_swin2sr_js__WEBPACK_IMPORTED_MODULE_30__.Swin2SRImageProcessor),
-   VLMImageProcessor: () => ( _janus_image_processing_janus_js__WEBPACK_IMPORTED_MODULE_11__.VLMImageProcessor),
-   ViTFeatureExtractor: () => ( _vit_image_processing_vit_js__WEBPACK_IMPORTED_MODULE_31__.ViTFeatureExtractor),
-   ViTImageProcessor: () => ( _vit_image_processing_vit_js__WEBPACK_IMPORTED_MODULE_31__.ViTImageProcessor),
-   VitMatteImageProcessor: () => ( _vitmatte_image_processing_vitmatte_js__WEBPACK_IMPORTED_MODULE_32__.VitMatteImageProcessor),
-   VitPoseImageProcessor: () => ( _vitpose_image_processing_vitpose_js__WEBPACK_IMPORTED_MODULE_33__.VitPoseImageProcessor),
-   YolosFeatureExtractor: () => ( _yolos_image_processing_yolos_js__WEBPACK_IMPORTED_MODULE_34__.YolosFeatureExtractor),
-   YolosImageProcessor: () => ( _yolos_image_processing_yolos_js__WEBPACK_IMPORTED_MODULE_34__.YolosImageProcessor)
+   GroundingDinoImageProcessor: () => ( _grounding_dino_image_processing_grounding_dino_js__WEBPACK_IMPORTED_MODULE_11__.GroundingDinoImageProcessor),
+   Idefics3ImageProcessor: () => ( _idefics3_image_processing_idefics3_js__WEBPACK_IMPORTED_MODULE_12__.Idefics3ImageProcessor),
+   JinaCLIPImageProcessor: () => ( _jina_clip_image_processing_jina_clip_js__WEBPACK_IMPORTED_MODULE_14__.JinaCLIPImageProcessor),
+   LlavaOnevisionImageProcessor: () => ( _llava_onevision_image_processing_llava_onevision_js__WEBPACK_IMPORTED_MODULE_15__.LlavaOnevisionImageProcessor),
+   Mask2FormerImageProcessor: () => ( _mask2former_image_processing_mask2former_js__WEBPACK_IMPORTED_MODULE_16__.Mask2FormerImageProcessor),
+   MaskFormerFeatureExtractor: () => ( _maskformer_image_processing_maskformer_js__WEBPACK_IMPORTED_MODULE_17__.MaskFormerFeatureExtractor),
+   MaskFormerImageProcessor: () => ( _maskformer_image_processing_maskformer_js__WEBPACK_IMPORTED_MODULE_17__.MaskFormerImageProcessor),
+   MobileNetV1FeatureExtractor: () => ( _mobilenet_v1_image_processing_mobilenet_v1_js__WEBPACK_IMPORTED_MODULE_18__.MobileNetV1FeatureExtractor),
+   MobileNetV1ImageProcessor: () => ( _mobilenet_v1_image_processing_mobilenet_v1_js__WEBPACK_IMPORTED_MODULE_18__.MobileNetV1ImageProcessor),
+   MobileNetV2FeatureExtractor: () => ( _mobilenet_v2_image_processing_mobilenet_v2_js__WEBPACK_IMPORTED_MODULE_19__.MobileNetV2FeatureExtractor),
+   MobileNetV2ImageProcessor: () => ( _mobilenet_v2_image_processing_mobilenet_v2_js__WEBPACK_IMPORTED_MODULE_19__.MobileNetV2ImageProcessor),
+   MobileNetV3FeatureExtractor: () => ( _mobilenet_v3_image_processing_mobilenet_v3_js__WEBPACK_IMPORTED_MODULE_20__.MobileNetV3FeatureExtractor),
+   MobileNetV3ImageProcessor: () => ( _mobilenet_v3_image_processing_mobilenet_v3_js__WEBPACK_IMPORTED_MODULE_20__.MobileNetV3ImageProcessor),
+   MobileNetV4FeatureExtractor: () => ( _mobilenet_v4_image_processing_mobilenet_v4_js__WEBPACK_IMPORTED_MODULE_21__.MobileNetV4FeatureExtractor),
+   MobileNetV4ImageProcessor: () => ( _mobilenet_v4_image_processing_mobilenet_v4_js__WEBPACK_IMPORTED_MODULE_21__.MobileNetV4ImageProcessor),
+   MobileViTFeatureExtractor: () => ( _mobilevit_image_processing_mobilevit_js__WEBPACK_IMPORTED_MODULE_22__.MobileViTFeatureExtractor),
+   MobileViTImageProcessor: () => ( _mobilevit_image_processing_mobilevit_js__WEBPACK_IMPORTED_MODULE_22__.MobileViTImageProcessor),
+   NougatImageProcessor: () => ( _nougat_image_processing_nougat_js__WEBPACK_IMPORTED_MODULE_23__.NougatImageProcessor),
+   OwlViTFeatureExtractor: () => ( _owlvit_image_processing_owlvit_js__WEBPACK_IMPORTED_MODULE_25__.OwlViTFeatureExtractor),
+   OwlViTImageProcessor: () => ( _owlvit_image_processing_owlvit_js__WEBPACK_IMPORTED_MODULE_25__.OwlViTImageProcessor),
+   Owlv2ImageProcessor: () => ( _owlv2_image_processing_owlv2_js__WEBPACK_IMPORTED_MODULE_24__.Owlv2ImageProcessor),
+   Phi3VImageProcessor: () => ( _phi3_v_image_processing_phi3_v_js__WEBPACK_IMPORTED_MODULE_26__.Phi3VImageProcessor),
+   PvtImageProcessor: () => ( _pvt_image_processing_pvt_js__WEBPACK_IMPORTED_MODULE_27__.PvtImageProcessor),
+   Qwen2VLImageProcessor: () => ( _qwen2_vl_image_processing_qwen2_vl_js__WEBPACK_IMPORTED_MODULE_28__.Qwen2VLImageProcessor),
+   RTDetrImageProcessor: () => ( _rt_detr_image_processing_rt_detr_js__WEBPACK_IMPORTED_MODULE_29__.RTDetrImageProcessor),
+   SamImageProcessor: () => ( _sam_image_processing_sam_js__WEBPACK_IMPORTED_MODULE_30__.SamImageProcessor),
+   SegformerFeatureExtractor: () => ( _segformer_image_processing_segformer_js__WEBPACK_IMPORTED_MODULE_31__.SegformerFeatureExtractor),
+   SegformerImageProcessor: () => ( _segformer_image_processing_segformer_js__WEBPACK_IMPORTED_MODULE_31__.SegformerImageProcessor),
+   SiglipImageProcessor: () => ( _siglip_image_processing_siglip_js__WEBPACK_IMPORTED_MODULE_32__.SiglipImageProcessor),
+   SmolVLMImageProcessor: () => ( _smolvlm_image_processing_smolvlm_js__WEBPACK_IMPORTED_MODULE_33__.SmolVLMImageProcessor),
+   Swin2SRImageProcessor: () => ( _swin2sr_image_processing_swin2sr_js__WEBPACK_IMPORTED_MODULE_34__.Swin2SRImageProcessor),
+   VLMImageProcessor: () => ( _janus_image_processing_janus_js__WEBPACK_IMPORTED_MODULE_13__.VLMImageProcessor),
+   ViTFeatureExtractor: () => ( _vit_image_processing_vit_js__WEBPACK_IMPORTED_MODULE_35__.ViTFeatureExtractor),
+   ViTImageProcessor: () => ( _vit_image_processing_vit_js__WEBPACK_IMPORTED_MODULE_35__.ViTImageProcessor),
+   VitMatteImageProcessor: () => ( _vitmatte_image_processing_vitmatte_js__WEBPACK_IMPORTED_MODULE_36__.VitMatteImageProcessor),
+   VitPoseImageProcessor: () => ( _vitpose_image_processing_vitpose_js__WEBPACK_IMPORTED_MODULE_37__.VitPoseImageProcessor),
+   YolosFeatureExtractor: () => ( _yolos_image_processing_yolos_js__WEBPACK_IMPORTED_MODULE_38__.YolosFeatureExtractor),
+   YolosImageProcessor: () => ( _yolos_image_processing_yolos_js__WEBPACK_IMPORTED_MODULE_38__.YolosImageProcessor)
  });
  var _beit_image_processing_beit_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/models/beit/image_processing_beit.js");
  var _bit_image_processing_bit_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/models/bit/image_processing_bit.js");
@@ -16840,30 +18443,38 @@ __webpack_require__.r(__webpack_exports__);
  var _dpt_image_processing_dpt_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__( "./src/models/dpt/image_processing_dpt.js");
  var _efficientnet_image_processing_efficientnet_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__( "./src/models/efficientnet/image_processing_efficientnet.js");
  var _glpn_image_processing_glpn_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__( "./src/models/glpn/image_processing_glpn.js");
- var _janus_image_processing_janus_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__( "./src/models/janus/image_processing_janus.js");
- var _jina_clip_image_processing_jina_clip_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__( "./src/models/jina_clip/image_processing_jina_clip.js");
- var _llava_onevision_image_processing_llava_onevision_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__( "./src/models/llava_onevision/image_processing_llava_onevision.js");
- var _mask2former_image_processing_mask2former_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__( "./src/models/mask2former/image_processing_mask2former.js");
- var _maskformer_image_processing_maskformer_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__( "./src/models/maskformer/image_processing_maskformer.js");
- var _mobilenet_v1_image_processing_mobilenet_v1_js__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__( "./src/models/mobilenet_v1/image_processing_mobilenet_v1.js");
- var _mobilenet_v2_image_processing_mobilenet_v2_js__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__( "./src/models/mobilenet_v2/image_processing_mobilenet_v2.js");
- var _mobilenet_v3_image_processing_mobilenet_v3_js__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__( "./src/models/mobilenet_v3/image_processing_mobilenet_v3.js");
- var _mobilenet_v4_image_processing_mobilenet_v4_js__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__( "./src/models/mobilenet_v4/image_processing_mobilenet_v4.js");
- var _mobilevit_image_processing_mobilevit_js__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__( "./src/models/mobilevit/image_processing_mobilevit.js");
- var _nougat_image_processing_nougat_js__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__( "./src/models/nougat/image_processing_nougat.js");
- var _owlv2_image_processing_owlv2_js__WEBPACK_IMPORTED_MODULE_22__ = __webpack_require__( "./src/models/owlv2/image_processing_owlv2.js");
- var _owlvit_image_processing_owlvit_js__WEBPACK_IMPORTED_MODULE_23__ = __webpack_require__( "./src/models/owlvit/image_processing_owlvit.js");
- var _pvt_image_processing_pvt_js__WEBPACK_IMPORTED_MODULE_24__ = __webpack_require__( "./src/models/pvt/image_processing_pvt.js");
- var _qwen2_vl_image_processing_qwen2_vl_js__WEBPACK_IMPORTED_MODULE_25__ = __webpack_require__( "./src/models/qwen2_vl/image_processing_qwen2_vl.js");
- var _rt_detr_image_processing_rt_detr_js__WEBPACK_IMPORTED_MODULE_26__ = __webpack_require__( "./src/models/rt_detr/image_processing_rt_detr.js");
- var _sam_image_processing_sam_js__WEBPACK_IMPORTED_MODULE_27__ = __webpack_require__( "./src/models/sam/image_processing_sam.js");
- var _segformer_image_processing_segformer_js__WEBPACK_IMPORTED_MODULE_28__ = __webpack_require__( "./src/models/segformer/image_processing_segformer.js");
- var _siglip_image_processing_siglip_js__WEBPACK_IMPORTED_MODULE_29__ = __webpack_require__( "./src/models/siglip/image_processing_siglip.js");
- var _swin2sr_image_processing_swin2sr_js__WEBPACK_IMPORTED_MODULE_30__ = __webpack_require__( "./src/models/swin2sr/image_processing_swin2sr.js");
- var _vit_image_processing_vit_js__WEBPACK_IMPORTED_MODULE_31__ = __webpack_require__( "./src/models/vit/image_processing_vit.js");
- var _vitmatte_image_processing_vitmatte_js__WEBPACK_IMPORTED_MODULE_32__ = __webpack_require__( "./src/models/vitmatte/image_processing_vitmatte.js");
- var _vitpose_image_processing_vitpose_js__WEBPACK_IMPORTED_MODULE_33__ = __webpack_require__( "./src/models/vitpose/image_processing_vitpose.js");
- var _yolos_image_processing_yolos_js__WEBPACK_IMPORTED_MODULE_34__ = __webpack_require__( "./src/models/yolos/image_processing_yolos.js");
+ var _grounding_dino_image_processing_grounding_dino_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__( "./src/models/grounding_dino/image_processing_grounding_dino.js");
+ var _idefics3_image_processing_idefics3_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__( "./src/models/idefics3/image_processing_idefics3.js");
+ var _janus_image_processing_janus_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__( "./src/models/janus/image_processing_janus.js");
+ var _jina_clip_image_processing_jina_clip_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__( "./src/models/jina_clip/image_processing_jina_clip.js");
+ var _llava_onevision_image_processing_llava_onevision_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__( "./src/models/llava_onevision/image_processing_llava_onevision.js");
+ var _mask2former_image_processing_mask2former_js__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__( "./src/models/mask2former/image_processing_mask2former.js");
+ var _maskformer_image_processing_maskformer_js__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__( "./src/models/maskformer/image_processing_maskformer.js");
+ var _mobilenet_v1_image_processing_mobilenet_v1_js__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__( "./src/models/mobilenet_v1/image_processing_mobilenet_v1.js");
+ var _mobilenet_v2_image_processing_mobilenet_v2_js__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__( "./src/models/mobilenet_v2/image_processing_mobilenet_v2.js");
+ var _mobilenet_v3_image_processing_mobilenet_v3_js__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__( "./src/models/mobilenet_v3/image_processing_mobilenet_v3.js");
+ var _mobilenet_v4_image_processing_mobilenet_v4_js__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__( "./src/models/mobilenet_v4/image_processing_mobilenet_v4.js");
+ var _mobilevit_image_processing_mobilevit_js__WEBPACK_IMPORTED_MODULE_22__ = __webpack_require__( "./src/models/mobilevit/image_processing_mobilevit.js");
+ var _nougat_image_processing_nougat_js__WEBPACK_IMPORTED_MODULE_23__ = __webpack_require__( "./src/models/nougat/image_processing_nougat.js");
+ var _owlv2_image_processing_owlv2_js__WEBPACK_IMPORTED_MODULE_24__ = __webpack_require__( "./src/models/owlv2/image_processing_owlv2.js");
+ var _owlvit_image_processing_owlvit_js__WEBPACK_IMPORTED_MODULE_25__ = __webpack_require__( "./src/models/owlvit/image_processing_owlvit.js");
+ var _phi3_v_image_processing_phi3_v_js__WEBPACK_IMPORTED_MODULE_26__ = __webpack_require__( "./src/models/phi3_v/image_processing_phi3_v.js");
+ var _pvt_image_processing_pvt_js__WEBPACK_IMPORTED_MODULE_27__ = __webpack_require__( "./src/models/pvt/image_processing_pvt.js");
+ var _qwen2_vl_image_processing_qwen2_vl_js__WEBPACK_IMPORTED_MODULE_28__ = __webpack_require__( "./src/models/qwen2_vl/image_processing_qwen2_vl.js");
+ var _rt_detr_image_processing_rt_detr_js__WEBPACK_IMPORTED_MODULE_29__ = __webpack_require__( "./src/models/rt_detr/image_processing_rt_detr.js");
+ var _sam_image_processing_sam_js__WEBPACK_IMPORTED_MODULE_30__ = __webpack_require__( "./src/models/sam/image_processing_sam.js");
+ var _segformer_image_processing_segformer_js__WEBPACK_IMPORTED_MODULE_31__ = __webpack_require__( "./src/models/segformer/image_processing_segformer.js");
+ var _siglip_image_processing_siglip_js__WEBPACK_IMPORTED_MODULE_32__ = __webpack_require__( "./src/models/siglip/image_processing_siglip.js");
+ var _smolvlm_image_processing_smolvlm_js__WEBPACK_IMPORTED_MODULE_33__ = __webpack_require__( "./src/models/smolvlm/image_processing_smolvlm.js");
+ var _swin2sr_image_processing_swin2sr_js__WEBPACK_IMPORTED_MODULE_34__ = __webpack_require__( "./src/models/swin2sr/image_processing_swin2sr.js");
+ var _vit_image_processing_vit_js__WEBPACK_IMPORTED_MODULE_35__ = __webpack_require__( "./src/models/vit/image_processing_vit.js");
+ var _vitmatte_image_processing_vitmatte_js__WEBPACK_IMPORTED_MODULE_36__ = __webpack_require__( "./src/models/vitmatte/image_processing_vitmatte.js");
+ var _vitpose_image_processing_vitpose_js__WEBPACK_IMPORTED_MODULE_37__ = __webpack_require__( "./src/models/vitpose/image_processing_vitpose.js");
+ var _yolos_image_processing_yolos_js__WEBPACK_IMPORTED_MODULE_38__ = __webpack_require__( "./src/models/yolos/image_processing_yolos.js");
+
+
+
+
 
 
 
@@ -16928,6 +18539,7 @@ class VLMImageProcessor extends _base_image_processors_utils_js__WEBPACK_IMPORTE
             },
             ...config,
         });
+        
         this.constant_values = this.config.background_color.map(x => x * this.rescale_factor)
     }
 
@@ -17369,6 +18981,8 @@ class MgpstrProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE
 
 
 
+    
+    
     batch_decode([char_logits, bpe_logits, wp_logits]) {
         const [char_preds, char_scores] = this._decode_helper(char_logits, 'char');
         const [bpe_preds, bpe_scores] = this._decode_helper(bpe_logits, 'bpe');
@@ -17526,6 +19140,85 @@ class MobileViTFeatureExtractor extends MobileViTImageProcessor { }
 
  }),
 
+ "./src/models/moonshine/feature_extraction_moonshine.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   MoonshineFeatureExtractor: () => ( MoonshineFeatureExtractor)
+ });
+ var _base_feature_extraction_utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/base/feature_extraction_utils.js");
+ var _utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/utils/tensor.js");
+
+
+
+
+class MoonshineFeatureExtractor extends _base_feature_extraction_utils_js__WEBPACK_IMPORTED_MODULE_0__.FeatureExtractor {
+    
+
+
+
+
+    async _call(audio) {
+        (0,_base_feature_extraction_utils_js__WEBPACK_IMPORTED_MODULE_0__.validate_audio_inputs)(audio, 'MoonshineFeatureExtractor');
+
+        if (audio instanceof Float64Array) {
+            audio = new Float32Array(audio);
+        }
+
+        const shape = [
+            1,            
+            audio.length, 
+        ];
+        return {
+            input_values: new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.Tensor('float32', audio, shape),
+        };
+    }
+}
+
+
+ }),
+
+ "./src/models/moonshine/processing_moonshine.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   MoonshineProcessor: () => ( MoonshineProcessor)
+ });
+ var _auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/models/auto/feature_extraction_auto.js");
+ var _tokenizers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/tokenizers.js");
+ var _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/base/processing_utils.js");
+
+
+
+
+
+
+
+class MoonshineProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_2__.Processor {
+    static tokenizer_class = _tokenizers_js__WEBPACK_IMPORTED_MODULE_1__.AutoTokenizer
+    static feature_extractor_class = _auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_0__.AutoFeatureExtractor
+
+    
+
+
+
+
+    async _call(audio) {
+        return await this.feature_extractor(audio);
+    }
+}
+
+
+ }),
+
  "./src/models/nougat/image_processing_nougat.js":
 
 
@@ -17615,6 +19308,354 @@ class OwlViTProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE
 
  }),
 
+ "./src/models/paligemma/processing_paligemma.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   PaliGemmaProcessor: () => ( PaliGemmaProcessor)
+ });
+ var _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/base/processing_utils.js");
+ var _auto_image_processing_auto_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/models/auto/image_processing_auto.js");
+ var _tokenizers_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/tokenizers.js");
+
+
+
+
+const IMAGE_TOKEN = "<image>";
+
+function build_string_from_input(
+    prompt,
+    bos_token,
+    image_seq_len,
+    image_token,
+    num_images,
+) {
+    return `${image_token.repeat(image_seq_len * num_images)}${bos_token}${prompt}\n`
+}
+
+class PaliGemmaProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__.Processor {
+    static tokenizer_class = _tokenizers_js__WEBPACK_IMPORTED_MODULE_2__.AutoTokenizer
+    static image_processor_class = _auto_image_processing_auto_js__WEBPACK_IMPORTED_MODULE_1__.AutoImageProcessor
+    static uses_processor_config = false;
+
+    
+
+
+
+    
+    async _call( images, text = null, kwargs = {}) {
+        if (!text) {
+            console.warn(
+                "You are using PaliGemma without a text prefix. It will perform as a picture-captioning model."
+            )
+            text = ""
+        }
+
+        if (!Array.isArray(images)) {
+            images = [images]
+        }
+
+        if (!Array.isArray(text)) {
+            text = [text]
+        }
+
+        const bos_token = this.tokenizer.bos_token;
+        
+        const image_seq_length = this.image_processor.config.image_seq_length;
+        let input_strings;
+        if (text.some((t) => t.includes(IMAGE_TOKEN))) {
+            input_strings = text.map(
+                sample => {
+                    const expanded_sample = sample.replaceAll(IMAGE_TOKEN, IMAGE_TOKEN.repeat(image_seq_length));
+                    const bos_rfind_index = expanded_sample.lastIndexOf(IMAGE_TOKEN);
+                    const bos_index = bos_rfind_index === -1 ? 0 : bos_rfind_index + IMAGE_TOKEN.length;
+                    return expanded_sample.slice(0, bos_index) + bos_token + expanded_sample.slice(bos_index) + "\n";
+                }
+            )
+        } else {
+            console.warn(
+                "You are passing both `text` and `images` to `PaliGemmaProcessor`. The processor expects special " +
+                "image tokens in the text, as many tokens as there are images per each text. It is recommended to " +
+                "add `<image>` tokens in the very beginning of your text. For this call, we will infer how many images " +
+                "each text has and add special tokens."
+            )
+
+            input_strings = text.map(
+                sample => build_string_from_input(
+                    sample,
+                    bos_token,
+                    image_seq_length,
+                    IMAGE_TOKEN,
+                    images.length,
+                )
+            )
+        }
+
+        const text_inputs = this.tokenizer(input_strings, kwargs);
+        const image_inputs = await this.image_processor(images, kwargs);
+
+        return {
+            ...image_inputs,
+            ...text_inputs,
+        }
+    }
+}
+
+
+ }),
+
+ "./src/models/phi3_v/image_processing_phi3_v.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   Phi3VImageProcessor: () => ( Phi3VImageProcessor)
+ });
+ var _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/base/image_processors_utils.js");
+ var _utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/utils/tensor.js");
+
+
+
+const IMAGE_SIZE = 336;
+const SLICE_AXES = [2, 3]; 
+const { ceil, floor, sqrt } = Math;
+
+class Phi3VImageProcessor extends _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_0__.ImageProcessor {
+    constructor(config) {
+        super({
+            ...config,
+            do_normalize: true,
+            do_pad: true,
+            pad_size: 'custom',
+            do_convert_rgb: true,
+            do_resize: true, 
+        });
+
+        this._num_crops = config.num_crops;
+    }
+    calc_num_image_tokens_from_image_size(width, height) {
+        
+        const { num_img_tokens } = this.config;
+        return floor(((floor((height / IMAGE_SIZE)) * floor((width / IMAGE_SIZE)) + 1) * num_img_tokens) + 1 + (floor(height / IMAGE_SIZE) + 1) * sqrt(num_img_tokens));
+    }
+
+    
+    get_resize_output_image_size(image, size) {
+        const hd_num = this._num_crops;
+        const [width, height] = image.size
+
+        let ratio = width / height;
+        let scale = 1;
+
+        
+        while (scale * Math.ceil(scale / ratio) <= hd_num) {
+            scale += 1;
+        }
+        scale -= 1;
+
+        
+        const new_w = Math.floor(scale * 336);
+        const new_h = Math.floor(new_w / ratio);
+
+        return [new_w, new_h]
+    }
+
+
+    
+    pad_image(pixelData, imgDims, padSize, options = {}) {
+        
+        
+        
+        const [imageHeight, imageWidth] = imgDims;
+        const height = IMAGE_SIZE * ceil(imageHeight / IMAGE_SIZE);
+        const width = IMAGE_SIZE * ceil(imageWidth / IMAGE_SIZE);
+
+        
+        const constant_values = [1, 1, 1].map((x, i) => (x - this.image_mean[i]) / this.image_std[i]);
+        return super.pad_image(pixelData, imgDims, { width, height }, {
+            center: true,
+            constant_values,
+            ...options,
+        });
+    }
+
+    async _call(images, {
+        num_crops = null,
+    } = {}) {
+        
+        this._num_crops = num_crops ??= this.config.num_crops;
+        if (num_crops < 4 || sqrt(num_crops) % 1 !== 0) {
+            throw new Error("num_crops must be a square number >= 4");
+        }
+
+        if (!Array.isArray(images)) {
+            images = [images];
+        }
+
+        const num_images = images.length;
+        const imageData = await Promise.all(images.map(x => this.preprocess(x)));
+
+        const original_sizes = imageData.map(x => x.original_size);
+        const reshaped_input_sizes = imageData.map(x => x.reshaped_input_size);
+
+        
+        const all_pixel_values = [];
+        for (const { pixel_values } of imageData) {
+            pixel_values.unsqueeze_(0); 
+
+            const [height, width] = pixel_values.dims.slice(-2);
+
+            
+            const batch_pixel_values = await (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.interpolate_4d)(pixel_values, {
+                size: [IMAGE_SIZE, IMAGE_SIZE],
+                mode: 'bicubic',
+            });
+
+            if (num_crops > 0) {
+                const patches = [];
+                const sqrt_patches = sqrt(num_crops);
+                const patch_width = floor(width / sqrt_patches);
+                const patch_height = floor(height / sqrt_patches);
+                for (let y = 0; y < sqrt_patches; ++y) {
+                    for (let x = 0; x < sqrt_patches; ++x) {
+                        let start_x, start_y, end_x, end_y;
+                        if (y === sqrt_patches - 1) { 
+                            start_y = height - patch_height;
+                            end_y = height;
+                        } else {
+                            start_y = y * patch_height;
+                            end_y = (y + 1) * patch_height;
+                        }
+                        if (x === sqrt_patches - 1) { 
+                            start_x = width - patch_width;
+                            end_x = width;
+                        } else {
+                            start_x = x * patch_width;
+                            end_x = (x + 1) * patch_width;
+                        }
+
+                        const starts = [start_y, start_x];
+                        const ends = [end_y, end_x];
+                        const patch = await (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.slice)(pixel_values, starts, ends, SLICE_AXES);
+                        patches.push(patch);
+                    }
+                }
+
+                const resized_tensors = await (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.interpolate_4d)((0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.cat)(patches, 0), {
+                    size: [IMAGE_SIZE, IMAGE_SIZE],
+                    mode: 'bicubic',
+                }); 
+
+                
+                all_pixel_values.push((0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.cat)([batch_pixel_values, resized_tensors], 0));
+            } else {
+                
+                
+                all_pixel_values.push(batch_pixel_values);
+            }
+        }
+
+        
+        const pixel_values = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.stack)(all_pixel_values, 0);
+
+        
+        const sizes = reshaped_input_sizes.map(x => x.map(y => IMAGE_SIZE * ceil(y / IMAGE_SIZE)));
+
+        const image_sizes = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.Tensor(
+            'int64',
+            sizes.flat(),
+            [num_images, 2],
+        );
+
+        const num_img_tokens = sizes.map(
+            ([height, width]) => this.calc_num_image_tokens_from_image_size(width, height),
+        );
+
+        return { pixel_values, original_sizes, reshaped_input_sizes, image_sizes, num_img_tokens };
+    }
+}
+
+
+ }),
+
+ "./src/models/phi3_v/processing_phi3_v.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   Phi3VProcessor: () => ( Phi3VProcessor)
+ });
+ var _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/base/processing_utils.js");
+ var _auto_image_processing_auto_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/models/auto/image_processing_auto.js");
+ var _tokenizers_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/tokenizers.js");
+ var _utils_image_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( "./src/utils/image.js");
+
+
+
+
+
+const IMAGE_TOKEN = "<|image|>";
+const IMAGE_TOKEN_PATTERN = /<\|image_\d+\|>/g;
+
+class Phi3VProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__.Processor {
+    static image_processor_class = _auto_image_processing_auto_js__WEBPACK_IMPORTED_MODULE_1__.AutoImageProcessor
+    static tokenizer_class = _tokenizers_js__WEBPACK_IMPORTED_MODULE_2__.AutoTokenizer
+
+    
+
+
+
+
+
+
+    async _call(text, images = null, {
+        padding = true,
+        truncation = true,
+        num_crops = null,
+    } = {}) {
+
+        if (!Array.isArray(text)) {
+            text = [text];
+        }
+
+        let text_inputs, image_inputs;
+        if (images) {
+            image_inputs = await this.image_processor(images, { num_crops });
+            const { num_img_tokens } = image_inputs;
+
+            
+            
+            const prompt_chunks = text.map((t, i) => t.split(IMAGE_TOKEN_PATTERN).join(IMAGE_TOKEN.repeat(num_img_tokens[i])));
+
+            text_inputs = this.tokenizer(prompt_chunks, { padding, truncation });
+
+            
+            const image_token_id = this.tokenizer.model.convert_tokens_to_ids([IMAGE_TOKEN])[0];
+            text_inputs.input_ids.map_(id => (id == image_token_id) ? -id : id);
+        } else {
+            text_inputs = this.tokenizer(text);
+        }
+
+        return {
+            ...text_inputs,
+            ...image_inputs,
+        }
+    }
+}
+
+
+ }),
+
  "./src/models/processors.js":
 
 
@@ -17624,28 +19665,52 @@ class OwlViTProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    Florence2Processor: () => ( _florence2_processing_florence2_js__WEBPACK_IMPORTED_MODULE_0__.Florence2Processor),
-   JinaCLIPProcessor: () => ( _jina_clip_processing_jina_clip_js__WEBPACK_IMPORTED_MODULE_3__.JinaCLIPProcessor),
-   MgpstrProcessor: () => ( _mgp_str_processing_mgp_str_js__WEBPACK_IMPORTED_MODULE_1__.MgpstrProcessor),
-   OwlViTProcessor: () => ( _owlvit_processing_owlvit_js__WEBPACK_IMPORTED_MODULE_4__.OwlViTProcessor),
-   PyAnnoteProcessor: () => ( _pyannote_processing_pyannote_js__WEBPACK_IMPORTED_MODULE_5__.PyAnnoteProcessor),
-   Qwen2VLProcessor: () => ( _qwen2_vl_processing_qwen2_vl_js__WEBPACK_IMPORTED_MODULE_6__.Qwen2VLProcessor),
-   SamProcessor: () => ( _sam_processing_sam_js__WEBPACK_IMPORTED_MODULE_7__.SamProcessor),
-   SpeechT5Processor: () => ( _speecht5_processing_speecht5_js__WEBPACK_IMPORTED_MODULE_8__.SpeechT5Processor),
-   VLChatProcessor: () => ( _janus_processing_janus_js__WEBPACK_IMPORTED_MODULE_2__.VLChatProcessor),
-   Wav2Vec2ProcessorWithLM: () => ( _wav2vec2_processing_wav2vec2_js__WEBPACK_IMPORTED_MODULE_9__.Wav2Vec2ProcessorWithLM),
-   WhisperProcessor: () => ( _whisper_processing_whisper_js__WEBPACK_IMPORTED_MODULE_10__.WhisperProcessor)
+   GroundingDinoProcessor: () => ( _grounding_dino_processing_grounding_dino_js__WEBPACK_IMPORTED_MODULE_1__.GroundingDinoProcessor),
+   Idefics3Processor: () => ( _idefics3_processing_idefics3_js__WEBPACK_IMPORTED_MODULE_2__.Idefics3Processor),
+   JinaCLIPProcessor: () => ( _jina_clip_processing_jina_clip_js__WEBPACK_IMPORTED_MODULE_4__.JinaCLIPProcessor),
+   MgpstrProcessor: () => ( _mgp_str_processing_mgp_str_js__WEBPACK_IMPORTED_MODULE_5__.MgpstrProcessor),
+   MoonshineProcessor: () => ( _moonshine_processing_moonshine_js__WEBPACK_IMPORTED_MODULE_6__.MoonshineProcessor),
+   OwlViTProcessor: () => ( _owlvit_processing_owlvit_js__WEBPACK_IMPORTED_MODULE_7__.OwlViTProcessor),
+   PaliGemmaProcessor: () => ( _paligemma_processing_paligemma_js__WEBPACK_IMPORTED_MODULE_9__.PaliGemmaProcessor),
+   Phi3VProcessor: () => ( _phi3_v_processing_phi3_v_js__WEBPACK_IMPORTED_MODULE_8__.Phi3VProcessor),
+   PyAnnoteProcessor: () => ( _pyannote_processing_pyannote_js__WEBPACK_IMPORTED_MODULE_10__.PyAnnoteProcessor),
+   Qwen2VLProcessor: () => ( _qwen2_vl_processing_qwen2_vl_js__WEBPACK_IMPORTED_MODULE_11__.Qwen2VLProcessor),
+   SamProcessor: () => ( _sam_processing_sam_js__WEBPACK_IMPORTED_MODULE_12__.SamProcessor),
+   SmolVLMProcessor: () => ( _smolvlm_processing_smolvlm_js__WEBPACK_IMPORTED_MODULE_13__.SmolVLMProcessor),
+   SpeechT5Processor: () => ( _speecht5_processing_speecht5_js__WEBPACK_IMPORTED_MODULE_14__.SpeechT5Processor),
+   UltravoxProcessor: () => ( _ultravox_processing_ultravox_js__WEBPACK_IMPORTED_MODULE_15__.UltravoxProcessor),
+   VLChatProcessor: () => ( _janus_processing_janus_js__WEBPACK_IMPORTED_MODULE_3__.VLChatProcessor),
+   Wav2Vec2Processor: () => ( _wav2vec2_processing_wav2vec2_js__WEBPACK_IMPORTED_MODULE_16__.Wav2Vec2Processor),
+   Wav2Vec2ProcessorWithLM: () => ( _wav2vec2_with_lm_processing_wav2vec2_with_lm_js__WEBPACK_IMPORTED_MODULE_17__.Wav2Vec2ProcessorWithLM),
+   WhisperProcessor: () => ( _whisper_processing_whisper_js__WEBPACK_IMPORTED_MODULE_18__.WhisperProcessor)
  });
  var _florence2_processing_florence2_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/models/florence2/processing_florence2.js");
- var _mgp_str_processing_mgp_str_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/models/mgp_str/processing_mgp_str.js");
- var _janus_processing_janus_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/models/janus/processing_janus.js");
- var _jina_clip_processing_jina_clip_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( "./src/models/jina_clip/processing_jina_clip.js");
- var _owlvit_processing_owlvit_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( "./src/models/owlvit/processing_owlvit.js");
- var _pyannote_processing_pyannote_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__( "./src/models/pyannote/processing_pyannote.js");
- var _qwen2_vl_processing_qwen2_vl_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__( "./src/models/qwen2_vl/processing_qwen2_vl.js");
- var _sam_processing_sam_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__( "./src/models/sam/processing_sam.js");
- var _speecht5_processing_speecht5_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__( "./src/models/speecht5/processing_speecht5.js");
- var _wav2vec2_processing_wav2vec2_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__( "./src/models/wav2vec2/processing_wav2vec2.js");
- var _whisper_processing_whisper_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__( "./src/models/whisper/processing_whisper.js");
+ var _grounding_dino_processing_grounding_dino_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/models/grounding_dino/processing_grounding_dino.js");
+ var _idefics3_processing_idefics3_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/models/idefics3/processing_idefics3.js");
+ var _janus_processing_janus_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( "./src/models/janus/processing_janus.js");
+ var _jina_clip_processing_jina_clip_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( "./src/models/jina_clip/processing_jina_clip.js");
+ var _mgp_str_processing_mgp_str_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__( "./src/models/mgp_str/processing_mgp_str.js");
+ var _moonshine_processing_moonshine_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__( "./src/models/moonshine/processing_moonshine.js");
+ var _owlvit_processing_owlvit_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__( "./src/models/owlvit/processing_owlvit.js");
+ var _phi3_v_processing_phi3_v_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__( "./src/models/phi3_v/processing_phi3_v.js");
+ var _paligemma_processing_paligemma_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__( "./src/models/paligemma/processing_paligemma.js");
+ var _pyannote_processing_pyannote_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__( "./src/models/pyannote/processing_pyannote.js");
+ var _qwen2_vl_processing_qwen2_vl_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__( "./src/models/qwen2_vl/processing_qwen2_vl.js");
+ var _sam_processing_sam_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__( "./src/models/sam/processing_sam.js");
+ var _smolvlm_processing_smolvlm_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__( "./src/models/smolvlm/processing_smolvlm.js");
+ var _speecht5_processing_speecht5_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__( "./src/models/speecht5/processing_speecht5.js");
+ var _ultravox_processing_ultravox_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__( "./src/models/ultravox/processing_ultravox.js");
+ var _wav2vec2_processing_wav2vec2_js__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__( "./src/models/wav2vec2/processing_wav2vec2.js");
+ var _wav2vec2_with_lm_processing_wav2vec2_with_lm_js__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__( "./src/models/wav2vec2_with_lm/processing_wav2vec2_with_lm.js");
+ var _whisper_processing_whisper_js__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__( "./src/models/whisper/processing_whisper.js");
+
+
+
+
+
+
+
+
 
 
 
@@ -17691,6 +19756,8 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _base_feature_extraction_utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/base/feature_extraction_utils.js");
  var _utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/utils/tensor.js");
+ var _utils_maths_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/utils/maths.js");
+
 
 
 
@@ -17716,40 +19783,6 @@ class PyAnnoteFeatureExtractor extends _base_feature_extraction_utils_js__WEBPAC
         return {
             input_values: new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.Tensor('float32', audio, shape),
         };
-    }
-
-}
-
-
- }),
-
- "./src/models/pyannote/processing_pyannote.js":
-
-
-
- ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, {
-   PyAnnoteProcessor: () => ( PyAnnoteProcessor)
- });
- var _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/base/processing_utils.js");
- var _auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/models/auto/feature_extraction_auto.js");
- var _utils_maths_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/utils/maths.js");
-
-
-
-
-class PyAnnoteProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__.Processor {
-    static feature_extractor_class = _auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_1__.AutoFeatureExtractor
-
-    
-
-
-
-
-    async _call(audio) {
-        return await this.feature_extractor(audio)
     }
 
     
@@ -17778,6 +19811,7 @@ class PyAnnoteProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODU
 
             let current_speaker = -1;
             for (let i = 0; i < scores.length; ++i) {
+                
                 const probabilities = (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_2__.softmax)(scores[i]);
                 const [score, id] = (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_2__.max)(probabilities);
                 const [start, end] = [i, i + 1];
@@ -17805,6 +19839,47 @@ class PyAnnoteProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODU
             ));
         }
         return results;
+    }
+
+}
+
+
+ }),
+
+ "./src/models/pyannote/processing_pyannote.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   PyAnnoteProcessor: () => ( PyAnnoteProcessor)
+ });
+ var _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/base/processing_utils.js");
+ var _feature_extraction_pyannote_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/models/pyannote/feature_extraction_pyannote.js");
+
+
+
+class PyAnnoteProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__.Processor {
+    static feature_extractor_class = _feature_extraction_pyannote_js__WEBPACK_IMPORTED_MODULE_1__.PyAnnoteFeatureExtractor
+
+    
+
+
+
+
+    async _call(audio) {
+        return await this.feature_extractor(audio)
+    }
+
+    
+    post_process_speaker_diarization(...args) {
+        return (this.feature_extractor).post_process_speaker_diarization(...args);
+    }
+
+    get sampling_rate() {
+        return this.feature_extractor.config.sampling_rate;
     }
 }
 
@@ -17921,6 +19996,7 @@ class Qwen2VLProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODUL
         }
 
         if (image_grid_thw) {
+            
             let merge_length = this.image_processor.config.merge_size ** 2;
             let index = 0;
 
@@ -18408,8 +20484,8 @@ class SeamlessM4TFeatureExtractor extends _base_feature_extraction_utils_js__WEB
                         'int64',
                         new BigInt64Array(numPaddedFrames),
                         [1, numPaddedFrames],
-                    )
-                    padded_attention_mask.data.fill(1n, 0, num_frames);
+                    );
+                     (padded_attention_mask.data).fill(1n, 0, num_frames);
                 }
             }
         }
@@ -18501,6 +20577,40 @@ class SiglipImageProcessor extends _base_image_processors_utils_js__WEBPACK_IMPO
 
  }),
 
+ "./src/models/smolvlm/image_processing_smolvlm.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   SmolVLMImageProcessor: () => ( _idefics3_image_processing_idefics3_js__WEBPACK_IMPORTED_MODULE_0__.Idefics3ImageProcessor)
+ });
+ var _idefics3_image_processing_idefics3_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/models/idefics3/image_processing_idefics3.js");
+
+
+
+
+ }),
+
+ "./src/models/smolvlm/processing_smolvlm.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   SmolVLMProcessor: () => ( _idefics3_processing_idefics3_js__WEBPACK_IMPORTED_MODULE_0__.Idefics3Processor)
+ });
+ var _idefics3_processing_idefics3_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/models/idefics3/processing_idefics3.js");
+
+
+
+
+ }),
+
  "./src/models/speecht5/feature_extraction_speecht5.js":
 
 
@@ -18587,6 +20697,77 @@ class Swin2SRImageProcessor extends _base_image_processors_utils_js__WEBPACK_IMP
         })
     }
 }
+
+ }),
+
+ "./src/models/ultravox/processing_ultravox.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   UltravoxProcessor: () => ( UltravoxProcessor)
+ });
+ var _auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/models/auto/feature_extraction_auto.js");
+ var _tokenizers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/tokenizers.js");
+ var _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/base/processing_utils.js");
+
+
+
+
+
+
+
+class UltravoxProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_2__.Processor {
+    static tokenizer_class = _tokenizers_js__WEBPACK_IMPORTED_MODULE_1__.AutoTokenizer
+    static feature_extractor_class = _auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_0__.AutoFeatureExtractor
+    static uses_processor_config = true;
+
+    
+
+
+
+    async _call(text, audio = null, kwargs = {}) {
+        
+        if (Array.isArray(text)) {
+            throw new Error("Batched inputs are not supported yet.");
+        }
+
+        let audio_inputs = {};
+        if (audio) {
+            const audio_len = audio.length;
+            const { input_features } = await this.feature_extractor(audio, {
+                ...kwargs,
+                max_length: audio_len,
+            });
+            const nb_encoder_frames = Math.round(audio_len / this.config.encoder_ds_factor + 1e-4);
+
+            
+            const audio_embed_frames = 1 + Math.ceil(nb_encoder_frames / this.config.stack_factor);
+            audio_inputs["audio_token_len"] = [audio_embed_frames];
+            audio_inputs["audio_values"] = input_features;
+
+            const image_token = this.config.audio_placeholder;
+            if (!text.includes(image_token)) {
+                throw new Error(`The input text does not contain the image token ${image_token}.`);
+            }
+            text = text.replaceAll(image_token, image_token.repeat(audio_embed_frames));
+        }
+
+        const text_inputs = this.tokenizer(text, {
+            add_special_tokens: false,
+            ...kwargs,
+        });
+
+        return {
+            ...text_inputs,
+            ...audio_inputs,
+        }
+    }
+}
+
 
  }),
 
@@ -18842,14 +21023,51 @@ class Wav2Vec2FeatureExtractor extends _base_feature_extraction_utils_js__WEBPAC
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
+   Wav2Vec2Processor: () => ( Wav2Vec2Processor)
+ });
+ var _tokenizers_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/tokenizers.js");
+ var _auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/models/auto/feature_extraction_auto.js");
+ var _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/base/processing_utils.js");
+
+
+
+
+class Wav2Vec2Processor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_2__.Processor {
+    static tokenizer_class = _tokenizers_js__WEBPACK_IMPORTED_MODULE_0__.AutoTokenizer
+    static feature_extractor_class = _auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_1__.AutoFeatureExtractor
+
+    
+
+
+
+
+    async _call(audio) {
+        return await this.feature_extractor(audio)
+    }
+}
+
+
+ }),
+
+ "./src/models/wav2vec2_with_lm/processing_wav2vec2_with_lm.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
    Wav2Vec2ProcessorWithLM: () => ( Wav2Vec2ProcessorWithLM)
  });
- var _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/base/processing_utils.js");
+ var _tokenizers_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/tokenizers.js");
  var _auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/models/auto/feature_extraction_auto.js");
+ var _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/base/processing_utils.js");
 
 
 
-class Wav2Vec2ProcessorWithLM extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_0__.Processor {
+
+class Wav2Vec2ProcessorWithLM extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_2__.Processor {
+    static tokenizer_class = _tokenizers_js__WEBPACK_IMPORTED_MODULE_0__.AutoTokenizer
     static feature_extractor_class = _auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_1__.AutoFeatureExtractor
 
     
@@ -19131,6 +21349,12 @@ function whisper_language_to_code(language) {
     if (language_code === undefined) {
         
 
+        
+        const language_special_token = language.match(/^<\|([a-z]{2})\|>$/);
+        if (language_special_token) {
+            language = language_special_token[1];
+        }
+
         if (WHISPER_LANGUAGE_MAPPING.has(language)) {
             
             language_code = language;
@@ -19140,7 +21364,7 @@ function whisper_language_to_code(language) {
             const is_language_code = language.length === 2;
             const langs = is_language_code ? WHISPER_LANGUAGE_MAPPING.keys() : WHISPER_LANGUAGE_MAPPING.values();
 
-            throw new Error(`Language "${language}" is not supported. Must be one of: ${JSON.stringify(langs)}`);
+            throw new Error(`Language "${language}" is not supported. Must be one of: ${JSON.stringify(Array.from(langs))}`);
         }
     }
     return language_code;
@@ -19204,12 +21428,15 @@ class WhisperFeatureExtractor extends _base_feature_extraction_utils_js__WEBPACK
                 log_mel: 'log10',
 
                 
-                max_num_frames: this.config.nb_max_frames, 
+                max_num_frames: Math.min(
+                    Math.floor(waveform.length / this.config.hop_length),
+                    this.config.nb_max_frames, 
+                )
             }
         )
 
         const data = features.data;
-        const maxValue = (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_3__.max)(data)[0];
+        const maxValue = (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_3__.max)((data))[0];
 
         for (let i = 0; i < data.length; ++i) {
             data[i] = (Math.max(data[i], maxValue - 8.0) + 4.0) / 4.0;
@@ -19223,20 +21450,25 @@ class WhisperFeatureExtractor extends _base_feature_extraction_utils_js__WEBPACK
 
 
 
-    async _call(audio) {
+    async _call(audio, {
+        max_length = null,
+    } = {}) {
         (0,_base_feature_extraction_utils_js__WEBPACK_IMPORTED_MODULE_0__.validate_audio_inputs)(audio, 'WhisperFeatureExtractor');
 
         let waveform;
-        if (audio.length > this.config.n_samples) {
-            console.warn(
-                "Attempting to extract features for audio longer than 30 seconds. " +
-                "If using a pipeline to extract transcript from a long audio clip, " +
-                "remember to specify `chunk_length_s` and/or `stride_length_s`."
-            );
-            waveform = audio.slice(0, this.config.n_samples);
+        const length = max_length ?? this.config.n_samples;
+        if (audio.length > length) {
+            if (audio.length > this.config.n_samples) {
+                console.warn(
+                    "Attempting to extract features for audio longer than 30 seconds. " +
+                    "If using a pipeline to extract transcript from a long audio clip, " +
+                    "remember to specify `chunk_length_s` and/or `stride_length_s`."
+                );
+            }
+            waveform = audio.slice(0, length);
         } else {
             
-            waveform = new Float32Array(this.config.n_samples);
+            waveform = new Float32Array(length);
             waveform.set(audio);
         }
 
@@ -19430,9 +21662,12 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _backends_onnx_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/backends/onnx.js");
  var _utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/utils/tensor.js");
+ var _env_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/env.js");
 
 
 
+
+const IS_WEB_ENV = _env_js__WEBPACK_IMPORTED_MODULE_2__.apis.IS_BROWSER_ENV || _env_js__WEBPACK_IMPORTED_MODULE_2__.apis.IS_WEBWORKER_ENV;
 
 
 
@@ -19448,9 +21683,16 @@ const wrap = async (session_bytes, session_options, names) => {
     const session = await (0,_backends_onnx_js__WEBPACK_IMPORTED_MODULE_0__.createInferenceSession)(
         new Uint8Array(session_bytes), session_options,
     );
+
+    
+    let chain = Promise.resolve();
+
     return (async ( inputs) => {
-        const ortFeed = Object.fromEntries(Object.entries(inputs).map(([k, v]) => [k, v.ort_tensor]));
-        const outputs = await session.run(ortFeed);
+        const proxied = (0,_backends_onnx_js__WEBPACK_IMPORTED_MODULE_0__.isONNXProxy)();
+        const ortFeed = Object.fromEntries(Object.entries(inputs).map(([k, v]) => [k, (proxied ? v.clone() : v).ort_tensor]));
+
+        
+        const outputs = await (chain = IS_WEB_ENV ? chain.then(() => session.run(ortFeed)) : session.run(ortFeed));
 
         if (Array.isArray(names)) {
             return names.map((n) => new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_1__.Tensor(outputs[n]));
@@ -19467,6 +21709,16 @@ class TensorOpRegistry {
         
     };
 
+    static get nearest_interpolate_4d() {
+        if (!this._nearest_interpolate_4d) {
+            this._nearest_interpolate_4d = wrap(
+                [8, 10, 18, 0, 58, 129, 1, 10, 41, 10, 1, 120, 10, 0, 10, 0, 10, 1, 115, 18, 1, 121, 34, 6, 82, 101, 115, 105, 122, 101, 42, 18, 10, 4, 109, 111, 100, 101, 34, 7, 110, 101, 97, 114, 101, 115, 116, 160, 1, 3, 18, 1, 114, 90, 31, 10, 1, 120, 18, 26, 10, 24, 8, 1, 18, 20, 10, 3, 18, 1, 98, 10, 3, 18, 1, 99, 10, 3, 18, 1, 104, 10, 3, 18, 1, 119, 90, 15, 10, 1, 115, 18, 10, 10, 8, 8, 7, 18, 4, 10, 2, 8, 4, 98, 31, 10, 1, 121, 18, 26, 10, 24, 8, 1, 18, 20, 10, 3, 18, 1, 98, 10, 3, 18, 1, 99, 10, 3, 18, 1, 104, 10, 3, 18, 1, 119, 66, 2, 16, 21],
+                this.session_options,
+                'y',
+            );
+        }
+        return this._nearest_interpolate_4d;
+    }
     static get bilinear_interpolate_4d() {
         if (!this._bilinear_interpolate_4d) {
             this._bilinear_interpolate_4d = wrap(
@@ -19532,6 +21784,17 @@ class TensorOpRegistry {
         }
         return this._top_k;
     }
+
+    static get slice() {
+        if (!this._slice) {
+            this._slice = wrap(
+                [8, 7, 18, 0, 58, 96, 10, 25, 10, 1, 120, 10, 1, 115, 10, 1, 101, 10, 1, 97, 10, 1, 116, 18, 1, 121, 34, 5, 83, 108, 105, 99, 101, 18, 1, 114, 90, 9, 10, 1, 120, 18, 4, 10, 2, 8, 1, 90, 9, 10, 1, 115, 18, 4, 10, 2, 8, 7, 90, 9, 10, 1, 101, 18, 4, 10, 2, 8, 7, 90, 9, 10, 1, 97, 18, 4, 10, 2, 8, 7, 90, 9, 10, 1, 116, 18, 4, 10, 2, 8, 7, 98, 9, 10, 1, 121, 18, 4, 10, 2, 8, 1, 66, 2, 16, 13],
+                this.session_options,
+                'y',
+            )
+        }
+        return this._slice;
+    }
 }
 
 
@@ -19547,6 +21810,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    AudioClassificationPipeline: () => ( AudioClassificationPipeline),
    AutomaticSpeechRecognitionPipeline: () => ( AutomaticSpeechRecognitionPipeline),
+   BackgroundRemovalPipeline: () => ( BackgroundRemovalPipeline),
    DepthEstimationPipeline: () => ( DepthEstimationPipeline),
    DocumentQuestionAnsweringPipeline: () => ( DocumentQuestionAnsweringPipeline),
    FeatureExtractionPipeline: () => ( FeatureExtractionPipeline),
@@ -19829,6 +22093,7 @@ class TextClassificationPipeline extends ( (Pipeline)) {
 
         
         const function_to_apply =
+            
             this.model.config.problem_type === 'multi_label_classification'
                 ? batch => batch.sigmoid()
                 : batch => new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor(
@@ -19837,6 +22102,7 @@ class TextClassificationPipeline extends ( (Pipeline)) {
                     batch.dims,
                 ); 
 
+        
         const id2label = this.model.config.id2label;
 
         const toReturn = [];
@@ -19939,6 +22205,7 @@ class TokenClassificationPipeline extends ( (Pipeline)) {
         const outputs = await this.model(model_inputs)
 
         const logits = outputs.logits;
+        
         const id2label = this.model.config.id2label;
 
         const toReturn = [];
@@ -20223,7 +22490,7 @@ class FillMaskPipeline extends ( (Pipeline)) {
                 return {
                     score: values[i],
                     token: Number(x),
-                    token_str: this.tokenizer.model.vocab[x],
+                    token_str: this.tokenizer.decode([x]),
                     sequence: this.tokenizer.decode(sequence, { skip_special_tokens: true }),
                 }
             }));
@@ -20278,10 +22545,13 @@ class Text2TextGenerationPipeline extends ( (Pipeline)) {
 
 
         
+        
         if (this.model.config.prefix) {
+            
             texts = texts.map(x => this.model.config.prefix + x)
         }
 
+        
         
         const task_specific_params = this.model.config.task_specific_params
         if (task_specific_params && task_specific_params[this.task]) {
@@ -21021,6 +23291,7 @@ class AudioClassificationPipeline extends ( (Pipeline)) {
         const sampling_rate = this.processor.feature_extractor.config.sampling_rate;
         const preparedAudios = await prepareAudios(audio, sampling_rate);
 
+        
         const id2label = this.model.config.id2label;
 
         const toReturn = [];
@@ -21257,6 +23528,7 @@ class AutomaticSpeechRecognitionPipeline extends ( (Pipeline)) {
     async _call(audio, kwargs = {}) {
         switch (this.model.config.model_type) {
             case 'whisper':
+            case 'lite-whisper':
                 return this._call_whisper(audio, kwargs)
             case 'wav2vec2':
             case 'wav2vec2-bert':
@@ -21264,6 +23536,8 @@ class AutomaticSpeechRecognitionPipeline extends ( (Pipeline)) {
             case 'unispeech-sat':
             case 'hubert':
                 return this._call_wav2vec2(audio, kwargs)
+            case 'moonshine':
+                return this._call_moonshine(audio, kwargs)
             default:
                 throw new Error(`AutomaticSpeechRecognitionPipeline does not support model type '${this.model.config.model_type}'.`)
         }
@@ -21329,6 +23603,7 @@ class AutomaticSpeechRecognitionPipeline extends ( (Pipeline)) {
             audio = [ (audio)];
         }
 
+        
         const time_precision = this.processor.feature_extractor.config.chunk_length / this.model.config.max_source_positions;
         const hop_length = this.processor.feature_extractor.config.hop_length;
 
@@ -21394,7 +23669,9 @@ class AutomaticSpeechRecognitionPipeline extends ( (Pipeline)) {
 
                 
                 if (return_timestamps === 'word') {
+                    
                     chunk.tokens = data.sequences.tolist()[0];
+                    
                     chunk.token_timestamps = data.token_timestamps.tolist()[0].map(
                         ( x) => (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_6__.round)(x, 2)
                     );
@@ -21417,6 +23694,34 @@ class AutomaticSpeechRecognitionPipeline extends ( (Pipeline)) {
         }
         return single ? toReturn[0] : toReturn;
     }
+
+    
+
+
+
+    async _call_moonshine(audio, kwargs) {
+        const single = !Array.isArray(audio);
+        if (single) {
+            audio = [ (audio)];
+        }
+        const sampling_rate = this.processor.feature_extractor.config.sampling_rate;
+        const preparedAudios = await prepareAudios(audio, sampling_rate);
+        const toReturn = [];
+        for (const aud of preparedAudios) {
+            const inputs = await this.processor(aud);
+
+            
+            
+            
+            const max_new_tokens = Math.floor(aud.length / sampling_rate) * 6;
+            const outputs = await this.model.generate({ max_new_tokens, ...kwargs, ...inputs });
+
+            const text = this.processor.batch_decode((outputs), { skip_special_tokens: true })[0];
+            toReturn.push({ text });
+        }
+        return single ? toReturn[0] : toReturn;
+    }
+
 }
 
 
@@ -21560,6 +23865,7 @@ class ImageClassificationPipeline extends ( (Pipeline)) {
         const { pixel_values } = await this.processor(preparedImages);
         const output = await this.model({ pixel_values });
 
+        
         const id2label = this.model.config.id2label;
 
         
@@ -21658,14 +23964,30 @@ class ImageSegmentationPipeline extends ( (Pipeline)) {
         const preparedImages = await prepareImages(images);
         const imageSizes = preparedImages.map(x => [x.height, x.width]);
 
-        const { pixel_values, pixel_mask } = await this.processor(preparedImages);
-        const output = await this.model({ pixel_values, pixel_mask });
+        const inputs = await this.processor(preparedImages);
+
+        const { inputNames, outputNames } = this.model.sessions['model'];
+        if (!inputNames.includes('pixel_values')) {
+            if (inputNames.length !== 1) {
+                throw Error(`Expected a single input name, but got ${inputNames.length} inputs: ${inputNames}.`);
+            }
+
+            const newName = inputNames[0];
+            if (newName in inputs) {
+                throw Error(`Input name ${newName} already exists in the inputs.`);
+            }
+            
+            
+            inputs[newName] = inputs.pixel_values;
+        }
+
+        const output = await this.model(inputs);
 
         let fn = null;
         if (subtask !== null) {
             fn = this.subtasks_mapping[subtask];
-        } else {
-            for (let [task, func] of Object.entries(this.subtasks_mapping)) {
+        } else if (this.processor.image_processor) {
+            for (const [task, func] of Object.entries(this.subtasks_mapping)) {
                 if (func in this.processor.image_processor) {
                     fn = this.processor.image_processor[func].bind(this.processor.image_processor);
                     subtask = task;
@@ -21674,11 +23996,28 @@ class ImageSegmentationPipeline extends ( (Pipeline)) {
             }
         }
 
+        
         const id2label = this.model.config.id2label;
 
         
         const annotation = [];
-        if (subtask === 'panoptic' || subtask === 'instance') {
+        if (!subtask) {
+            
+            const result = output[outputNames[0]];
+            for (let i = 0; i < imageSizes.length; ++i) {
+                const size = imageSizes[i];
+                const item = result[i];
+                if (item.data.some(x => x < 0 || x > 1)) {
+                    item.sigmoid_();
+                }
+                const mask = await _utils_image_js__WEBPACK_IMPORTED_MODULE_9__.RawImage.fromTensor(item.mul_(255).to('uint8')).resize(size[1], size[0]);
+                annotation.push({
+                    label: null,
+                    score: null,
+                    mask
+                });
+            }
+        } else if (subtask === 'panoptic' || subtask === 'instance') {
             const processed = fn(
                 output,
                 threshold,
@@ -21731,6 +24070,63 @@ class ImageSegmentationPipeline extends ( (Pipeline)) {
         }
 
         return annotation;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class BackgroundRemovalPipeline extends ( (ImageSegmentationPipeline)) {
+    
+
+
+
+    constructor(options) {
+        super(options);
+    }
+
+    
+    async _call(images, options = {}) {
+        const isBatched = Array.isArray(images);
+
+        if (isBatched && images.length !== 1) {
+            throw Error("Background removal pipeline currently only supports a batch size of 1.");
+        }
+
+        const preparedImages = await prepareImages(images);
+
+        
+        const masks = await super._call(images, options);
+        const result = preparedImages.map((img, i) => {
+            const cloned = img.clone();
+            cloned.putAlpha(masks[i].mask);
+            return cloned;
+        });
+
+        return result;
     }
 }
 
@@ -21900,6 +24296,7 @@ class ObjectDetectionPipeline extends ( (Pipeline)) {
         const processed = this.processor.image_processor.post_process_object_detection(output, threshold, imageSizes);
 
         
+        
         const id2label = this.model.config.id2label;
 
         
@@ -22044,13 +24441,35 @@ class ZeroShotObjectDetectionPipeline extends ( (Pipeline)) {
             
             const output = await this.model({ ...text_inputs, pixel_values });
 
-            
-            const processed = this.processor.image_processor.post_process_object_detection(output, threshold, imageSize, true)[0];
-            let result = processed.boxes.map((box, i) => ({
-                score: processed.scores[i],
-                label: candidate_labels[processed.classes[i]],
-                box: get_bounding_box(box, !percentage),
-            })).sort((a, b) => b.score - a.score);
+            let result;
+            if ('post_process_grounded_object_detection' in this.processor) {
+                
+                const processed = this.processor.post_process_grounded_object_detection(
+                    output,
+                    text_inputs.input_ids,
+                    {
+                        
+                        box_threshold: threshold,
+                        text_threshold: threshold,
+                        target_sizes: imageSize,
+                    },
+                )[0];
+                result = processed.boxes.map((box, i) => ({
+                    score: processed.scores[i],
+                    label: processed.labels[i],
+                    box: get_bounding_box(box, !percentage),
+                }))
+            } else {
+                
+                const processed = this.processor.image_processor.post_process_object_detection(output, threshold, imageSize, true)[0];
+                result = processed.boxes.map((box, i) => ({
+                    score: processed.scores[i],
+                    label: candidate_labels[processed.classes[i]],
+                    box: get_bounding_box(box, !percentage),
+                }))
+            }
+            result.sort((a, b) => b.score - a.score);
+
             if (top_k !== null) {
                 result = result.slice(0, top_k);
             }
@@ -22119,6 +24538,7 @@ class DocumentQuestionAnsweringPipeline extends ( (Pipeline)) {
         
         const output = await this.model.generate({
             inputs: pixel_values,
+            
             max_length: this.model.config.decoder.max_position_embeddings,
             decoder_input_ids,
             ...generate_kwargs,
@@ -22234,11 +24654,12 @@ class TextToAudioPipeline extends ( (Pipeline)) {
         
         const { waveform } = await this.model(inputs);
 
+        
         const sampling_rate = this.model.config.sampling_rate;
-        return {
-            audio: waveform.data,
+        return new _utils_audio_js__WEBPACK_IMPORTED_MODULE_7__.RawAudio(
+            waveform.data,
             sampling_rate,
-        }
+        )
     }
 
     async _call_text_to_spectrogram(text_inputs, { speaker_embeddings }) {
@@ -22278,10 +24699,10 @@ class TextToAudioPipeline extends ( (Pipeline)) {
         const { waveform } = await this.model.generate_speech(input_ids, speaker_embeddings, { vocoder: this.vocoder });
 
         const sampling_rate = this.processor.feature_extractor.config.sampling_rate;
-        return {
-            audio: waveform.data,
+        return new _utils_audio_js__WEBPACK_IMPORTED_MODULE_7__.RawAudio(
+            waveform.data,
             sampling_rate,
-        }
+        )
     }
 }
 
@@ -22391,11 +24812,23 @@ class DepthEstimationPipeline extends ( (Pipeline)) {
 
         const toReturn = [];
         for (let i = 0; i < preparedImages.length; ++i) {
-            const prediction = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.interpolate)(predicted_depth[i], preparedImages[i].size.reverse(), 'bilinear', false);
-            const formatted = prediction.mul_(255 / (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_6__.max)(prediction.data)[0]).to('uint8');
+            const batch = predicted_depth[i];
+            const [height, width] = batch.dims.slice(-2);
+            const [new_width, new_height] = preparedImages[i].size;
+
+            
+            const prediction = (await (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.interpolate_4d)(batch.view(1, 1, height, width), {
+                size: [new_height, new_width],
+                mode: 'bilinear',
+            })).view(new_height, new_width);
+
+            const minval = (prediction.min().item());
+            const maxval = (prediction.max().item());
+            const formatted = prediction.sub(minval).div_(maxval - minval).mul_(255).to('uint8').unsqueeze(0);
+            const depth = _utils_image_js__WEBPACK_IMPORTED_MODULE_9__.RawImage.fromTensor(formatted);
             toReturn.push({
-                predicted_depth: predicted_depth[i],
-                depth: _utils_image_js__WEBPACK_IMPORTED_MODULE_9__.RawImage.fromTensor(formatted),
+                predicted_depth: prediction,
+                depth,
             });
         }
 
@@ -22589,6 +25022,16 @@ const SUPPORTED_TASKS = Object.freeze({
         },
         "type": "multimodal",
     },
+    "background-removal": {
+        
+        "pipeline": BackgroundRemovalPipeline,
+        "model": [_models_js__WEBPACK_IMPORTED_MODULE_1__.AutoModelForImageSegmentation, _models_js__WEBPACK_IMPORTED_MODULE_1__.AutoModelForSemanticSegmentation, _models_js__WEBPACK_IMPORTED_MODULE_1__.AutoModelForUniversalSegmentation],
+        "processor": _models_auto_processing_auto_js__WEBPACK_IMPORTED_MODULE_2__.AutoProcessor,
+        "default": {
+            "model": "Xenova/modnet",
+        },
+        "type": "image",
+    },
 
     "zero-shot-image-classification": {
         "tokenizer": _tokenizers_js__WEBPACK_IMPORTED_MODULE_0__.AutoTokenizer,
@@ -22754,6 +25197,8 @@ async function pipeline(
         revision = 'main',
         device = null,
         dtype = null,
+        subfolder = 'onnx',
+        use_external_data_format = null,
         model_file_name = null,
         session_options = {},
     } = {}
@@ -22784,6 +25229,8 @@ async function pipeline(
         revision,
         device,
         dtype,
+        subfolder,
+        use_external_data_format,
         model_file_name,
         session_options,
     }
@@ -22875,6 +25322,7 @@ async function loadItems(mapping, model, pretrainedOptions) {
     return result;
 }
 
+
  }),
 
  "./src/tokenizers.js":
@@ -22943,8 +25391,6 @@ __webpack_require__.r(__webpack_exports__);
  var _utils_data_structures_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__( "./src/utils/data-structures.js");
  var _huggingface_jinja__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__( "./node_modules/@huggingface/jinja/dist/index.js");
  var _models_whisper_common_whisper_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__( "./src/models/whisper/common_whisper.js");
- var _utils_constants_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__( "./src/utils/constants.js");
-
 
 
 
@@ -23302,6 +25748,8 @@ class TokenizerModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
                         
                         
                         return new Unigram(config, ...args);
+                    } else if (typeof config.vocab === 'object' && config.continuing_subword_prefix && config.unk_token) {
+                        return new WordPieceTokenizer(config);
                     } else {
                         
                         return new LegacyTokenizerModel(config, ...args);
@@ -23472,11 +25920,10 @@ class Unigram extends TokenizerModel {
 
         const vocabSize = config.vocab.length;
         this.vocab = new Array(vocabSize);
+        
         this.scores = new Array(vocabSize);
         for (let i = 0; i < vocabSize; ++i) {
-            const piece = config.vocab[i];
-            this.vocab[i] = piece[0];
-            this.scores[i] = piece[1];
+            [this.vocab[i], this.scores[i]] = config.vocab[i];
         }
 
         this.unk_token_id = config.unk_id;
@@ -23925,6 +26372,8 @@ class Normalizer extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Callable
                 return new Replace(config);
             case 'NFC':
                 return new NFC(config);
+            case 'NFD':
+                return new NFD(config);
             case 'NFKC':
                 return new NFKC(config);
             case 'NFKD':
@@ -23986,14 +26435,21 @@ class Replace extends Normalizer {
 
 
 
-class NFC extends Normalizer {
+
+class UnicodeNormalizer extends Normalizer {
+    
+
+
+
+    form = undefined;
+
     
 
 
 
 
     normalize(text) {
-        text = text.normalize('NFC')
+        text = text.normalize(this.form)
         return text;
     }
 }
@@ -24002,31 +26458,36 @@ class NFC extends Normalizer {
 
 
 
-class NFKC extends Normalizer {
-    
 
-
-
-
-    normalize(text) {
-        text = text.normalize('NFKC')
-        return text;
-    }
+class NFC extends UnicodeNormalizer {
+    form = 'NFC';
 }
 
 
 
 
-class NFKD extends Normalizer {
-    
+
+
+class NFD extends UnicodeNormalizer {
+    form = 'NFD';
+}
 
 
 
 
-    normalize(text) {
-        text = text.normalize('NFKD')
-        return text;
-    }
+
+
+class NFKC extends UnicodeNormalizer {
+    form = 'NFKC';
+}
+
+
+
+
+
+
+class NFKD extends UnicodeNormalizer {
+    form = 'NFKD';
 }
 
 
@@ -25534,6 +27995,12 @@ class PreTrainedTokenizer extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__
         this.unk_token = this.getToken('unk_token');
         this.unk_token_id = this.model.tokens_to_ids.get(this.unk_token);
 
+        this.bos_token = this.getToken('bos_token');
+        this.bos_token_id = this.model.tokens_to_ids.get(this.bos_token);
+
+        this.eos_token = this.getToken('eos_token');
+        this.eos_token_id = this.model.tokens_to_ids.get(this.eos_token);
+
         this.model_max_length = tokenizerConfig.model_max_length;
 
         
@@ -26506,6 +28973,11 @@ class WhisperTokenizer extends PreTrainedTokenizer {
         let chunk = new_chunk();
         let time_offset = 0.0;
         const timestamp_begin = this.timestamp_begin;
+        
+        
+        
+        const total_timestamp_tokens = 1500; 
+        const timestamp_end = timestamp_begin + total_timestamp_tokens;
 
         let previous_tokens = [];
         let previous_token_timestamps = [];
@@ -26593,7 +29065,7 @@ class WhisperTokenizer extends PreTrainedTokenizer {
                     } else {
                         
                     }
-                } else if (token >= timestamp_begin) {
+                } else if (token >= timestamp_begin && token <= timestamp_end) {
                     
                     const time = (token - timestamp_begin) * time_precision + time_offset;
                     const rounded_time = (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_3__.round)(time, 2);
@@ -27304,6 +29776,7 @@ class AutoTokenizer {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
+   RawAudio: () => ( RawAudio),
    hamming: () => ( hamming),
    hanning: () => ( hanning),
    mel_filter_bank: () => ( mel_filter_bank),
@@ -27314,7 +29787,11 @@ __webpack_require__.r(__webpack_exports__);
  var _hub_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/utils/hub.js");
  var _maths_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/utils/maths.js");
  var _core_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( "./src/utils/core.js");
- var _tensor_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( "./src/utils/tensor.js");
+ var _env_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( "./src/env.js");
+ var fs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( "?7a2c");
+ var _tensor_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__( "./src/utils/tensor.js");
+
+
 
 
 
@@ -27461,6 +29938,7 @@ function hertz_to_mel(freq, mel_scale = "htk") {
         throw new Error('mel_scale should be one of "htk", "slaney" or "kaldi".');
     }
 
+    
     return typeof freq === 'number' ? fn(freq) : freq.map(x => fn(x));
 }
 
@@ -27484,6 +29962,7 @@ function mel_to_hertz(mels, mel_scale = "htk") {
         throw new Error('mel_scale should be one of "htk", "slaney" or "kaldi".');
     }
 
+    
     return typeof mels === 'number' ? fn(mels) : mels.map(x => fn(x));
 }
 
@@ -27923,10 +30402,10 @@ async function spectrogram(
     
     
     
-    let mel_spec = await (0,_tensor_js__WEBPACK_IMPORTED_MODULE_3__.matmul)(
+    let mel_spec = await (0,_tensor_js__WEBPACK_IMPORTED_MODULE_5__.matmul)(
         
-        new _tensor_js__WEBPACK_IMPORTED_MODULE_3__.Tensor('float32', mel_filters.flat(), [num_mel_filters, num_frequency_bins]),
-        new _tensor_js__WEBPACK_IMPORTED_MODULE_3__.Tensor('float32', transposedMagnitudeData, [num_frequency_bins, d1Max]),
+        new _tensor_js__WEBPACK_IMPORTED_MODULE_5__.Tensor('float32', mel_filters.flat(), [num_mel_filters, num_frequency_bins]),
+        new _tensor_js__WEBPACK_IMPORTED_MODULE_5__.Tensor('float32', transposedMagnitudeData, [num_frequency_bins, d1Max]),
     );
     if (transpose) {
         mel_spec = mel_spec.transpose(1, 0);
@@ -28017,6 +30496,116 @@ function window_function(window_length, name, {
 }
 
 
+
+
+
+
+
+
+
+
+function encodeWAV(samples, rate) {
+    let offset = 44;
+    const buffer = new ArrayBuffer(offset + samples.length * 4);
+    const view = new DataView(buffer);
+
+    
+    writeString(view, 0, "RIFF");
+    
+    view.setUint32(4, 36 + samples.length * 4, true);
+    
+    writeString(view, 8, "WAVE");
+    
+    writeString(view, 12, "fmt ");
+    
+    view.setUint32(16, 16, true);
+    
+    view.setUint16(20, 3, true);
+    
+    view.setUint16(22, 1, true);
+    
+    view.setUint32(24, rate, true);
+    
+    view.setUint32(28, rate * 4, true);
+    
+    view.setUint16(32, 4, true);
+    
+    view.setUint16(34, 32, true);
+    
+    writeString(view, 36, "data");
+    
+    view.setUint32(40, samples.length * 4, true);
+
+    for (let i = 0; i < samples.length; ++i, offset += 4) {
+        view.setFloat32(offset, samples[i], true);
+    }
+
+    return buffer;
+}
+
+function writeString(view, offset, string) {
+    for (let i = 0; i < string.length; ++i) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+    }
+}
+
+
+class RawAudio {
+
+    
+
+
+
+
+    constructor(audio, sampling_rate) {
+        this.audio = audio
+        this.sampling_rate = sampling_rate
+    }
+
+    
+
+
+
+    toWav() {
+        return encodeWAV(this.audio, this.sampling_rate)
+    }
+
+    
+
+
+
+    toBlob() {
+        const wav = this.toWav();
+        const blob = new Blob([wav], { type: 'audio/wav' });
+        return blob;
+    }
+
+    
+
+
+
+    async save(path) {
+        let fn;
+
+        if (_env_js__WEBPACK_IMPORTED_MODULE_3__.apis.IS_BROWSER_ENV) {
+            if (_env_js__WEBPACK_IMPORTED_MODULE_3__.apis.IS_WEBWORKER_ENV) {
+                throw new Error('Unable to save a file from a Web Worker.')
+            }
+            fn = _core_js__WEBPACK_IMPORTED_MODULE_2__.saveBlob;
+        } else if (_env_js__WEBPACK_IMPORTED_MODULE_3__.apis.IS_FS_AVAILABLE) {
+            fn = async ( path,  blob) => {
+                let buffer = await blob.arrayBuffer();
+                fs__WEBPACK_IMPORTED_MODULE_4__.writeFileSync(path, Buffer.from(buffer));
+            }
+        } else {
+            throw new Error('Unable to save because filesystem is disabled in this environment.')
+        }
+
+        await fn(path, this.toBlob())
+    }
+}
+
+
  }),
 
  "./src/utils/constants.js":
@@ -28058,6 +30647,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    calculateDimensions: () => ( calculateDimensions),
    calculateReflectOffset: () => ( calculateReflectOffset),
+   count: () => ( count),
    dispatchCallback: () => ( dispatchCallback),
    escapeRegExp: () => ( escapeRegExp),
    isIntegralNumber: () => ( isIntegralNumber),
@@ -28068,8 +30658,39 @@ __webpack_require__.r(__webpack_exports__);
    pick: () => ( pick),
    pop: () => ( pop),
    product: () => ( product),
-   reverseDictionary: () => ( reverseDictionary)
+   reverseDictionary: () => ( reverseDictionary),
+   saveBlob: () => ( saveBlob)
  });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -28236,6 +30857,32 @@ function calculateReflectOffset(i, w) {
 
 
 
+function saveBlob(path, blob){
+    
+    const dataURL = URL.createObjectURL(blob);
+
+    
+    const downloadLink = document.createElement('a');
+    downloadLink.href = dataURL;
+
+    
+    downloadLink.download = path;
+
+    
+    downloadLink.click();
+
+    
+    downloadLink.remove();
+
+    
+    URL.revokeObjectURL(dataURL);
+}
+
+
+
+
+
+
 
 function pick(o, props) {
     return Object.assign(
@@ -28258,6 +30905,20 @@ function len(s) {
     let length = 0;
     for (const c of s) ++length;
     return length;
+}
+
+
+
+
+
+
+
+function count(arr, value) {
+    let count = 0;
+    for (const v of arr) {
+        if (v === value) ++count;
+    }
+    return count;
 }
 
 
@@ -28788,6 +31449,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
 const isWebGpuFp16Supported = (function () {
     
     let cachedResult;
@@ -28810,6 +31473,7 @@ const isWebGpuFp16Supported = (function () {
 })();
 
 const DATA_TYPES = Object.freeze({
+    auto: 'auto', 
     fp32: 'fp32',
     fp16: 'fp16',
     q8: 'q8',
@@ -28898,6 +31562,7 @@ const Callable =  (class {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
+   MAX_EXTERNAL_DATA_CHUNKS: () => ( MAX_EXTERNAL_DATA_CHUNKS),
    getFile: () => ( getFile),
    getModelFile: () => ( getModelFile),
    getModelJSON: () => ( getModelJSON)
@@ -28918,6 +31583,13 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+
+
+
+
+const MAX_EXTERNAL_DATA_CHUNKS = 100;
 
 
 
@@ -28981,13 +31653,15 @@ class FileResponse {
 
             this.updateContentType();
 
-            let self = this;
+            const stream = fs__WEBPACK_IMPORTED_MODULE_0__.createReadStream(filePath);
             this.body = new ReadableStream({
                 start(controller) {
-                    self.arrayBuffer().then(buffer => {
-                        controller.enqueue(new Uint8Array(buffer));
-                        controller.close();
-                    })
+                    stream.on('data', (chunk) => controller.enqueue(chunk));
+                    stream.on('end', () => controller.close());
+                    stream.on('error', (err) => controller.error(err));
+                },
+                cancel() {
+                    stream.destroy();
                 }
             });
         } else {
@@ -29029,7 +31703,7 @@ class FileResponse {
 
     async arrayBuffer() {
         const data = await fs__WEBPACK_IMPORTED_MODULE_0__.promises.readFile(this.filePath);
-        return data.buffer;
+        return  (data.buffer);
     }
 
     
@@ -29098,7 +31772,7 @@ function isValidUrl(string, protocols = null, validHosts = null) {
 async function getFile(urlOrPath) {
 
     if (_env_js__WEBPACK_IMPORTED_MODULE_2__.env.useFS && !isValidUrl(urlOrPath, ['http:', 'https:', 'blob:'])) {
-        return new FileResponse(urlOrPath);
+        return new FileResponse(urlOrPath.toString());
 
     } else if (typeof process !== 'undefined' && process?.release?.name === 'node') {
         const IS_CI = !!process.env?.TESTING_REMOTELY;
@@ -29192,17 +31866,49 @@ class FileCache {
 
 
 
-    async put(request, response) {
-        const buffer = Buffer.from(await response.arrayBuffer());
 
-        let outputPath = path__WEBPACK_IMPORTED_MODULE_1__.join(this.path, request);
+
+    async put(request, response, progress_callback = undefined) {
+        let filePath = path__WEBPACK_IMPORTED_MODULE_1__.join(this.path, request);
 
         try {
-            await fs__WEBPACK_IMPORTED_MODULE_0__.promises.mkdir(path__WEBPACK_IMPORTED_MODULE_1__.dirname(outputPath), { recursive: true });
-            await fs__WEBPACK_IMPORTED_MODULE_0__.promises.writeFile(outputPath, buffer);
+            const contentLength = response.headers.get('Content-Length');
+            const total = parseInt(contentLength ?? '0');
+            let loaded = 0;
 
-        } catch (err) {
-            console.warn('An error occurred while writing the file to cache:', err)
+            await fs__WEBPACK_IMPORTED_MODULE_0__.promises.mkdir(path__WEBPACK_IMPORTED_MODULE_1__.dirname(filePath), { recursive: true });
+            const fileStream = fs__WEBPACK_IMPORTED_MODULE_0__.createWriteStream(filePath);
+            const reader = response.body.getReader();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    break;
+                }
+
+                await new Promise((resolve, reject) => {
+                    fileStream.write(value, (err) => {
+                        if (err) {
+                            reject(err);
+                            return;
+                        }
+                        resolve();
+                    });
+                });
+
+                loaded += value.length;
+                const progress = total ? (loaded / total) * 100 : 0;
+
+                progress_callback?.({ progress, loaded, total });
+            }
+
+            fileStream.close();
+        } catch (error) {
+            
+            try {
+                await fs__WEBPACK_IMPORTED_MODULE_0__.promises.unlink(filePath);
+            } catch { }
+            throw error;
         }
     }
 
@@ -29247,7 +31953,7 @@ async function tryCache(cache, ...names) {
 
 
 
-async function getModelFile(path_or_repo_id, filename, fatal = true, options = {}) {
+async function getModelFile(path_or_repo_id, filename, fatal = true, options = {}, return_path = false) {
 
     if (!_env_js__WEBPACK_IMPORTED_MODULE_2__.env.allowLocalModels) {
         
@@ -29311,8 +32017,9 @@ async function getModelFile(path_or_repo_id, filename, fatal = true, options = {
     const revision = options.revision ?? 'main';
 
     let requestURL = pathJoin(path_or_repo_id, filename);
-    let localPath = pathJoin(_env_js__WEBPACK_IMPORTED_MODULE_2__.env.localModelPath, requestURL);
+    let cachePath = pathJoin(_env_js__WEBPACK_IMPORTED_MODULE_2__.env.localModelPath, requestURL);
 
+    let localPath = requestURL;
     let remoteURL = pathJoin(
         _env_js__WEBPACK_IMPORTED_MODULE_2__.env.remoteHost,
         _env_js__WEBPACK_IMPORTED_MODULE_2__.env.remotePathTemplate
@@ -29341,7 +32048,7 @@ async function getModelFile(path_or_repo_id, filename, fatal = true, options = {
         
         
         
-        response = await tryCache(cache, localPath, proposedCacheKey);
+        response = await tryCache(cache, cachePath, proposedCacheKey);
     }
 
     const cacheHit = response !== undefined;
@@ -29363,9 +32070,9 @@ async function getModelFile(path_or_repo_id, filename, fatal = true, options = {
                     console.warn(`Unable to load from local path "${localPath}": "${e}"`);
                 }
             } else if (options.local_files_only) {
-                throw new Error(`\`local_files_only=true\`, but attempted to load a remote file from: ${requestURL}.`);
+                throw new Error(`\`local_files_only=true\`, but attempted to load a remote file from: ${localPath}.`);
             } else if (!_env_js__WEBPACK_IMPORTED_MODULE_2__.env.allowRemoteModels) {
-                throw new Error(`\`env.allowRemoteModels=false\`, but attempted to load a remote file from: ${requestURL}.`);
+                throw new Error(`\`env.allowRemoteModels=false\`, but attempted to load a remote file from: ${localPath}.`);
             }
         }
 
@@ -29412,44 +32119,45 @@ async function getModelFile(path_or_repo_id, filename, fatal = true, options = {
         file: filename
     })
 
-    
-    const progressInfo = {
-        status: 'progress',
-        name: path_or_repo_id,
-        file: filename
-    }
+    let result;
+    if (!(_env_js__WEBPACK_IMPORTED_MODULE_2__.apis.IS_NODE_ENV && return_path)) {
+        
+        let buffer;
 
-    
-    let buffer;
+        if (!options.progress_callback) {
+            
+            
+            buffer = new Uint8Array(await response.arrayBuffer());
 
-    if (!options.progress_callback) {
-        
-        
-        buffer = new Uint8Array(await response.arrayBuffer());
+        } else if (
+            cacheHit 
+            &&
+            typeof navigator !== 'undefined' && /firefox/i.test(navigator.userAgent) 
+        ) {
+            
+            
+            buffer = new Uint8Array(await response.arrayBuffer());
 
-    } else if (
-        cacheHit 
-        &&
-        typeof navigator !== 'undefined' && /firefox/i.test(navigator.userAgent) 
-    ) {
-        
-        
-        buffer = new Uint8Array(await response.arrayBuffer());
-
-        
-        (0,_core_js__WEBPACK_IMPORTED_MODULE_3__.dispatchCallback)(options.progress_callback, {
-            ...progressInfo,
-            progress: 100,
-            loaded: buffer.length,
-            total: buffer.length,
-        })
-    } else {
-        buffer = await readResponse(response, data => {
+            
             (0,_core_js__WEBPACK_IMPORTED_MODULE_3__.dispatchCallback)(options.progress_callback, {
-                ...progressInfo,
-                ...data,
+                status: 'progress',
+                name: path_or_repo_id,
+                file: filename,
+                progress: 100,
+                loaded: buffer.length,
+                total: buffer.length,
             })
-        })
+        } else {
+            buffer = await readResponse(response, data => {
+                (0,_core_js__WEBPACK_IMPORTED_MODULE_3__.dispatchCallback)(options.progress_callback, {
+                    status: 'progress',
+                    name: path_or_repo_id,
+                    file: filename,
+                    ...data,
+                })
+            })
+        }
+        result = buffer;
     }
 
     if (
@@ -29460,25 +32168,43 @@ async function getModelFile(path_or_repo_id, filename, fatal = true, options = {
         
         (await cache.match(cacheKey) === undefined)
     ) {
-        
-        await cache.put(cacheKey, new Response(buffer, {
-            headers: response.headers
-        }))
-            .catch(err => {
-                
-                
-                console.warn(`Unable to add response to browser cache: ${err}.`);
-            });
-
+        if (!result) {
+            
+            await cache.put(cacheKey, (response), options.progress_callback);
+        } else {
+            
+            await cache.put(cacheKey, new Response(result, {
+                headers: response.headers
+            }))
+                .catch(err => {
+                    
+                    
+                    console.warn(`Unable to add response to browser cache: ${err}.`);
+                });
+        }
     }
-
     (0,_core_js__WEBPACK_IMPORTED_MODULE_3__.dispatchCallback)(options.progress_callback, {
         status: 'done',
         name: path_or_repo_id,
         file: filename
     });
 
-    return buffer;
+    if (result) {
+        if (return_path) {
+            throw new Error("Cannot return path in a browser environment.")
+        }
+        return result;
+    }
+    if (response instanceof FileResponse) {
+        return response.filePath;
+    }
+
+    const path = await cache.match(cacheKey);
+    if (path instanceof FileResponse) {
+        return path.filePath;
+    }
+    throw new Error("Unable to return path for response.");
+
 }
 
 
@@ -29492,18 +32218,17 @@ async function getModelFile(path_or_repo_id, filename, fatal = true, options = {
 
 
 async function getModelJSON(modelPath, fileName, fatal = true, options = {}) {
-    let buffer = await getModelFile(modelPath, fileName, fatal, options);
+    const buffer = await getModelFile(modelPath, fileName, fatal, options, false);
     if (buffer === null) {
         
         return {}
     }
 
-    let decoder = new TextDecoder('utf-8');
-    let jsonData = decoder.decode(buffer);
+    const decoder = new TextDecoder('utf-8');
+    const jsonData = decoder.decode((buffer));
 
     return JSON.parse(jsonData);
 }
-
 
 
 
@@ -29526,30 +32251,26 @@ async function readResponse(response, progress_callback) {
         const { done, value } = await reader.read();
         if (done) return;
 
-        let newLoaded = loaded + value.length;
+        const newLoaded = loaded + value.length;
         if (newLoaded > total) {
             total = newLoaded;
 
             
             
-            let newBuffer = new Uint8Array(total);
+            const newBuffer = new Uint8Array(total);
 
             
             newBuffer.set(buffer);
 
             buffer = newBuffer;
         }
-        buffer.set(value, loaded)
+        buffer.set(value, loaded);
         loaded = newLoaded;
 
         const progress = (loaded / total) * 100;
 
         
-        progress_callback({
-            progress: progress,
-            loaded: loaded,
-            total: total,
-        })
+        progress_callback({ progress, loaded, total });
 
         return read();
     }
@@ -29591,7 +32312,8 @@ function pathJoin(...parts) {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   RawImage: () => ( RawImage)
+   RawImage: () => ( RawImage),
+   load_image: () => ( load_image)
  });
  var _core_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/utils/core.js");
  var _hub_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/utils/hub.js");
@@ -29616,13 +32338,11 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const BROWSER_ENV = typeof self !== 'undefined';
-const WEBWORKER_ENV = BROWSER_ENV && self.constructor.name === 'DedicatedWorkerGlobalScope';
-
 let createCanvasFunction;
 let ImageDataClass;
 let loadImageFunction;
-if (BROWSER_ENV) {
+const IS_BROWSER_OR_WEBWORKER = _env_js__WEBPACK_IMPORTED_MODULE_2__.apis.IS_BROWSER_ENV || _env_js__WEBPACK_IMPORTED_MODULE_2__.apis.IS_WEBWORKER_ENV;
+if (IS_BROWSER_OR_WEBWORKER) {
     
     createCanvasFunction = ( width,  height) => {
         if (!self.OffscreenCanvas) {
@@ -29732,7 +32452,7 @@ class RawImage {
 
 
     static fromCanvas(canvas) {
-        if (!BROWSER_ENV) {
+        if (!IS_BROWSER_OR_WEBWORKER) {
             throw new Error('fromCanvas() is only supported in browser environments.')
         }
 
@@ -29761,7 +32481,7 @@ class RawImage {
 
 
     static async fromBlob(blob) {
-        if (BROWSER_ENV) {
+        if (IS_BROWSER_OR_WEBWORKER) {
             
             const img = await loadImageFunction(blob);
 
@@ -29913,6 +32633,46 @@ class RawImage {
 
 
 
+    putAlpha(mask) {
+        if (mask.width !== this.width || mask.height !== this.height) {
+            throw new Error(`Expected mask size to be ${this.width}x${this.height}, but got ${mask.width}x${mask.height}`);
+        }
+        if (mask.channels !== 1) {
+            throw new Error(`Expected mask to have 1 channel, but got ${mask.channels}`);
+        }
+
+        const this_data = this.data;
+        const mask_data = mask.data;
+        const num_pixels = this.width * this.height;
+        if (this.channels === 3) {
+            
+            const newData = new Uint8ClampedArray(num_pixels * 4);
+            for (let i = 0, in_offset = 0, out_offset = 0; i < num_pixels; ++i) {
+                newData[out_offset++] = this_data[in_offset++];
+                newData[out_offset++] = this_data[in_offset++];
+                newData[out_offset++] = this_data[in_offset++];
+                newData[out_offset++] = mask_data[i];
+            }
+            return this._update(newData, this.width, this.height, 4);
+
+        } else if (this.channels === 4) {
+            
+            for (let i = 0; i < num_pixels; ++i) {
+                this_data[4 * i + 3] = mask_data[i];
+            }
+            return this;
+        }
+        throw new Error(`Expected image to have 3 or 4 channels, but got ${this.channels}`);
+    }
+
+    
+
+
+
+
+
+
+
     async resize(width, height, {
         resample = 2,
     } = {}) {
@@ -29939,7 +32699,7 @@ class RawImage {
             height = (width / this.width) * this.height;
         }
 
-        if (BROWSER_ENV) {
+        if (IS_BROWSER_OR_WEBWORKER) {
             
 
             
@@ -30012,7 +32772,7 @@ class RawImage {
             return this;
         }
 
-        if (BROWSER_ENV) {
+        if (IS_BROWSER_OR_WEBWORKER) {
             
             const numChannels = this.channels;
 
@@ -30061,7 +32821,7 @@ class RawImage {
         const crop_width = x_max - x_min + 1;
         const crop_height = y_max - y_min + 1;
 
-        if (BROWSER_ENV) {
+        if (IS_BROWSER_OR_WEBWORKER) {
             
             const numChannels = this.channels;
 
@@ -30109,7 +32869,7 @@ class RawImage {
         const height_offset = (this.height - crop_height) / 2;
 
 
-        if (BROWSER_ENV) {
+        if (IS_BROWSER_OR_WEBWORKER) {
             
             const numChannels = this.channels;
 
@@ -30214,7 +32974,7 @@ class RawImage {
     }
 
     async toBlob(type = 'image/png', quality = 1) {
-        if (!BROWSER_ENV) {
+        if (!IS_BROWSER_OR_WEBWORKER) {
             throw new Error('toBlob() is only supported in browser environments.')
         }
 
@@ -30240,7 +33000,7 @@ class RawImage {
     }
 
     toCanvas() {
-        if (!BROWSER_ENV) {
+        if (!IS_BROWSER_OR_WEBWORKER) {
             throw new Error('toCanvas() is only supported in browser environments.')
         }
 
@@ -30344,8 +33104,8 @@ class RawImage {
 
     async save(path) {
 
-        if (BROWSER_ENV) {
-            if (WEBWORKER_ENV) {
+        if (IS_BROWSER_OR_WEBWORKER) {
+            if (_env_js__WEBPACK_IMPORTED_MODULE_2__.apis.IS_WEBWORKER_ENV) {
                 throw new Error('Unable to save an image from a Web Worker.')
             }
 
@@ -30355,23 +33115,9 @@ class RawImage {
             
             const blob = await this.toBlob(mime);
 
-            
-            const dataURL = URL.createObjectURL(blob);
+            (0,_core_js__WEBPACK_IMPORTED_MODULE_0__.saveBlob)(path, blob)
 
-            
-            const downloadLink = document.createElement('a');
-            downloadLink.href = dataURL;
-
-            
-            downloadLink.download = path;
-
-            
-            downloadLink.click();
-
-            
-            downloadLink.remove();
-
-        } else if (!_env_js__WEBPACK_IMPORTED_MODULE_2__.env.useFS) {
+        } else if (!_env_js__WEBPACK_IMPORTED_MODULE_2__.apis.IS_FS_AVAILABLE) {
             throw new Error('Unable to save the image because filesystem is disabled in this environment.')
 
         } else {
@@ -30381,7 +33127,7 @@ class RawImage {
     }
 
     toSharp() {
-        if (BROWSER_ENV) {
+        if (IS_BROWSER_OR_WEBWORKER) {
             throw new Error('toSharp() is only supported in server-side environments.')
         }
 
@@ -30394,6 +33140,12 @@ class RawImage {
         });
     }
 }
+
+
+
+
+const load_image = RawImage.read.bind(RawImage);
+
 
 
  }),
@@ -30652,6 +33404,7 @@ function magnitude(arr) {
 
 
 
+
 function min(arr) {
     if (arr.length === 0) throw Error('Array must not be empty');
     let min = arr[0];
@@ -30662,8 +33415,9 @@ function min(arr) {
             indexOfMin = i;
         }
     }
-    return [min, indexOfMin];
+    return ([min, indexOfMin]);
 }
+
 
 
 
@@ -30682,7 +33436,7 @@ function max(arr) {
             indexOfMax = i;
         }
     }
-    return [Number(max), indexOfMax];
+    return ([max, indexOfMax]);
 }
 
 function isPowerOfTwo(number) {
@@ -31492,6 +34246,7 @@ function dynamic_time_warping(matrix) {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
+   DataTypeMap: () => ( DataTypeMap),
    Tensor: () => ( Tensor),
    cat: () => ( cat),
    full: () => ( full),
@@ -31506,7 +34261,9 @@ __webpack_require__.r(__webpack_exports__);
    ones_like: () => ( ones_like),
    permute: () => ( permute),
    quantize_embeddings: () => ( quantize_embeddings),
+   rand: () => ( rand),
    rfft: () => ( rfft),
+   slice: () => ( slice),
    stack: () => ( stack),
    std_mean: () => ( std_mean),
    topk: () => ( topk),
@@ -31533,7 +34290,9 @@ __webpack_require__.r(__webpack_exports__);
 
 const DataTypeMap = Object.freeze({
     float32: Float32Array,
-    float16: Uint16Array,
+    
+    
+    float16: typeof Float16Array !== "undefined" ? Float16Array: Uint16Array,
     float64: Float64Array,
     string: Array, 
     int8: Int8Array,
@@ -31545,6 +34304,8 @@ const DataTypeMap = Object.freeze({
     int64: BigInt64Array,
     uint64: BigUint64Array,
     bool: Uint8Array,
+    uint4: Uint8Array,
+    int4: Int8Array,
 });
 
 
@@ -31598,8 +34359,9 @@ class Tensor {
             
             this.ort_tensor = new _backends_onnx_js__WEBPACK_IMPORTED_MODULE_1__.Tensor(
                 (args[0]),
+                
                 (args[1]),
-                args[2]
+                args[2],
             );
         }
 
@@ -31977,8 +34739,6 @@ class Tensor {
 
     
 
-    
-
 
 
 
@@ -32005,55 +34765,22 @@ class Tensor {
         }
 
         const this_data = this.data;
+        const fn = (a, b) => a + (b ** p);
 
         if (dim === null) {
             
-            let val = this_data.reduce((a, b) => a + (b ** p), 0) ** (1 / p);
+            const val = this_data.reduce(fn, 0) ** (1 / p);
             return new Tensor(this.type, [val], []);
         }
 
-        
-        dim = safeIndex(dim, this.dims.length);
-
-        
-        const resultDims = this.dims.slice(); 
-        resultDims[dim] = 1; 
-
-        
-        
-        const result = new this_data.constructor(this_data.length / this.dims[dim]);
-
-        
-        for (let i = 0; i < this_data.length; ++i) {
-
-            
-            let resultIndex = 0;
-
-            for (let j = this.dims.length - 1, num = i, resultMultiplier = 1; j >= 0; --j) {
-                const size = this.dims[j];
-                if (j !== dim) {
-                    const index = num % size;
-                    resultIndex += index * resultMultiplier;
-                    resultMultiplier *= resultDims[j];
-                }
-                num = Math.floor(num / size);
-            }
-
-            
-            result[resultIndex] += (this_data[i]) ** p;
-        }
+        const [type, result, resultDims] = reduce_helper(fn, this, dim, keepdim);
 
         if (p !== 1) {
             for (let i = 0; i < result.length; ++i) {
                 result[i] = result[i] ** (1 / p);
             }
         }
-
-        if (!keepdim) {
-            resultDims.splice(dim, 1);
-        }
-
-        return new Tensor(this.type, result, resultDims);
+        return new Tensor(type, result, resultDims);
     }
 
     
@@ -32229,6 +34956,34 @@ class Tensor {
     
 
 
+
+
+    gt(val) {
+        const mask = new Uint8Array(this.data.length);
+        const this_data = this.data;
+        for (let i = 0; i < this_data.length; ++i) {
+            mask[i] = this_data[i] > val ? 1 : 0;
+        }
+        return new Tensor('bool', mask, this.dims);
+    }
+
+    
+
+
+
+
+    lt(val) {
+        const mask = new Uint8Array(this.data.length);
+        const this_data = this.data;
+        for (let i = 0; i < this_data.length; ++i) {
+            mask[i] = this_data[i] < val ? 1 : 0;
+        }
+        return new Tensor('bool', mask, this.dims);
+    }
+
+    
+
+
     clamp_(min, max) {
         const this_data = this.data;
         for (let i = 0; i < this_data.length; ++i) {
@@ -32270,6 +35025,41 @@ class Tensor {
         return mean(this, dim, keepdim);
     }
 
+    min(dim = null, keepdim = false) {
+        if (dim === null) {
+            
+            const val = (0,_maths_js__WEBPACK_IMPORTED_MODULE_0__.min)(this.data)[0];
+            return new Tensor(this.type, [val], []);
+        }
+        const [type, result, resultDims] = reduce_helper((a, b) => Math.min(a, b), this, dim, keepdim, Infinity);
+        return new Tensor(type, result, resultDims);
+    }
+
+    max(dim = null, keepdim = false) {
+        if (dim === null) {
+            
+            const val = (0,_maths_js__WEBPACK_IMPORTED_MODULE_0__.max)(this.data)[0];
+            return new Tensor(this.type, [val], []);
+        }
+        const [type, result, resultDims] = reduce_helper((a, b) => Math.max(a, b), this, dim, keepdim, -Infinity);
+        return new Tensor(type, result, resultDims);
+    }
+
+    argmin(dim = null, keepdim = false) {
+        if (dim !== null) {
+            throw new Error("`dim !== null` not yet implemented.");
+        }
+        const index = (0,_maths_js__WEBPACK_IMPORTED_MODULE_0__.min)(this.data)[1];
+        return new Tensor('int64', [BigInt(index)], []);
+    }
+    argmax(dim = null, keepdim = false) {
+        if (dim !== null) {
+            throw new Error("`dim !== null` not yet implemented.");
+        }
+        const index = (0,_maths_js__WEBPACK_IMPORTED_MODULE_0__.max)(this.data)[1];
+        return new Tensor('int64', [BigInt(index)], []);
+    }
+
     
 
 
@@ -32283,8 +35073,21 @@ class Tensor {
         if (!DataTypeMap.hasOwnProperty(type)) {
             throw new Error(`Unsupported type: ${type}`);
         }
+
         
-        return new Tensor(type, DataTypeMap[type].from(this.data), this.dims);
+        let map_fn;
+        const is_source_bigint = ['int64', 'uint64'].includes(this.type);
+        const is_dest_bigint = ['int64', 'uint64'].includes(type);
+        if (is_source_bigint && !is_dest_bigint) {
+            
+            map_fn = Number;
+        } else if (!is_source_bigint && is_dest_bigint) {
+            
+            map_fn = BigInt;
+        }
+
+        
+        return new Tensor(type, DataTypeMap[type].from(this.data, map_fn), this.dims);
     }
 }
 
@@ -32420,7 +35223,9 @@ async function interpolate_4d(input, {
     }
 
     let op;
-    if (mode === 'bilinear') {
+    if (mode === 'nearest') {
+        op = await _ops_registry_js__WEBPACK_IMPORTED_MODULE_2__.TensorOpRegistry.nearest_interpolate_4d;
+    } else if (mode === 'bilinear') {
         op = await _ops_registry_js__WEBPACK_IMPORTED_MODULE_2__.TensorOpRegistry.bilinear_interpolate_4d;
     } else if (mode === 'bicubic') {
         op = await _ops_registry_js__WEBPACK_IMPORTED_MODULE_2__.TensorOpRegistry.bicubic_interpolate_4d;
@@ -32467,7 +35272,7 @@ async function rfft(x, a) {
 async function topk(x, k) {
     const op = await _ops_registry_js__WEBPACK_IMPORTED_MODULE_2__.TensorOpRegistry.top_k;
 
-    if (k === null) {
+    if (k == null) {
         k = x.dims.at(-1);
     } else {
         k = Math.min(k, x.dims.at(-1));
@@ -32481,6 +35286,29 @@ async function topk(x, k) {
         )
     });
 }
+
+
+const arrayToIndexTensor = (array) => new Tensor('int64', array, [array.length]);
+
+
+
+
+
+
+
+
+
+async function slice(data, starts, ends, axes, steps) {
+    const op = await _ops_registry_js__WEBPACK_IMPORTED_MODULE_2__.TensorOpRegistry.slice;
+    return await op({
+        x: data,
+        s: arrayToIndexTensor(starts),
+        e: arrayToIndexTensor(ends),
+        a: arrayToIndexTensor(axes),
+        t: arrayToIndexTensor(steps ?? new Array(axes.length).fill(1)),
+    });
+}
+
 
 
 
@@ -32717,6 +35545,57 @@ function stack(tensors, dim = 0) {
 
 
 
+function reduce_helper(callbackfn, input, dim = null, keepdim = false, initialValue = null) {
+    const inputData = input.data;
+    const inputDims = input.dims;
+
+    
+    dim = safeIndex(dim, inputDims.length);
+
+    
+    const resultDims = inputDims.slice(); 
+    resultDims[dim] = 1; 
+
+    
+    
+    const result = new inputData.constructor(inputData.length / inputDims[dim]);
+    if (initialValue !== null) {
+        result.fill(initialValue);
+    }
+
+    
+    for (let i = 0; i < inputData.length; ++i) {
+
+        
+        let resultIndex = 0;
+
+        for (let j = inputDims.length - 1, num = i, resultMultiplier = 1; j >= 0; --j) {
+            const size = inputDims[j];
+            if (j !== dim) {
+                const index = num % size;
+                resultIndex += index * resultMultiplier;
+                resultMultiplier *= resultDims[j];
+            }
+            num = Math.floor(num / size);
+        }
+
+        
+        result[resultIndex] = callbackfn(result[resultIndex], inputData[i], i, resultIndex);
+    }
+
+    if (!keepdim) resultDims.splice(dim, 1);
+
+    return [input.type, result, resultDims];
+}
+
+
+
+
+
+
+
+
+
 
 function std_mean(input, dim = null, correction = 1, keepdim = false) {
     const inputData = (input.data);
@@ -32733,50 +35612,19 @@ function std_mean(input, dim = null, correction = 1, keepdim = false) {
 
         return [stdTensor, meanTensor];
     }
-
-    
     dim = safeIndex(dim, inputDims.length);
-
     const meanTensor = mean(input, dim, keepdim);
     const meanTensorData = meanTensor.data;
 
     
-    const resultDims = inputDims.slice(); 
-    resultDims[dim] = 1; 
+    const [type, result, resultDims] = reduce_helper((a, b, i, j) => a + (b - meanTensorData[j]) ** 2, input, dim, keepdim);
 
     
-    
-    const result = new inputData.constructor(inputData.length / inputDims[dim]);
-
-    
-    for (let i = 0; i < inputData.length; ++i) {
-
-        
-        let resultIndex = 0;
-
-        for (let j = inputDims.length - 1, num = i, resultMultiplier = 1; j >= 0; --j) {
-            const size = inputDims[j];
-            if (j !== dim) {
-                const index = num % size;
-                resultIndex += index * resultMultiplier;
-                resultMultiplier *= resultDims[j];
-            }
-            num = Math.floor(num / size);
-        }
-
-        
-        result[resultIndex] += (inputData[i] - meanTensorData[resultIndex]) ** 2;
-    }
-
     for (let i = 0; i < result.length; ++i) {
         result[i] = Math.sqrt(result[i] / (inputDims[dim] - correction));
     }
 
-    if (!keepdim) {
-        resultDims.splice(dim, 1);
-    }
-
-    const stdTensor = new Tensor(input.type, result, resultDims);
+    const stdTensor = new Tensor(type, result, resultDims);
 
     return [stdTensor, meanTensor];
 }
@@ -32788,60 +35636,28 @@ function std_mean(input, dim = null, correction = 1, keepdim = false) {
 
 
 
-
 function mean(input, dim = null, keepdim = false) {
+    const inputDims = input.dims;
     const inputData = (input.data);
 
     if (dim === null) {
         
-        
         const val = inputData.reduce((a, b) => a + b, 0);
         return new Tensor(input.type, [val / inputData.length], []);
     }
-    const inputDims = input.dims;
-
-    
     dim = safeIndex(dim, inputDims.length);
 
     
-    const resultDims = inputDims.slice(); 
-    resultDims[dim] = 1; 
+    const [type, result, resultDims] = reduce_helper((a, b) => a + b, input, dim, keepdim);
 
     
-    
-    const result = new inputData.constructor(inputData.length / inputDims[dim]);
-
-    
-    for (let i = 0; i < inputData.length; ++i) {
-
-        
-        let resultIndex = 0;
-
-        for (let j = inputDims.length - 1, num = i, resultMultiplier = 1; j >= 0; --j) {
-            const size = inputDims[j];
-            if (j !== dim) {
-                const index = num % size;
-                resultIndex += index * resultMultiplier;
-                resultMultiplier *= resultDims[j];
-            }
-            num = Math.floor(num / size);
-        }
-
-        
-        result[resultIndex] += inputData[i];
-    }
-
     if (inputDims[dim] !== 1) {
         for (let i = 0; i < result.length; ++i) {
-            result[i] = result[i] / inputDims[dim];
+            result[i] /= inputDims[dim];
         }
     }
 
-    if (!keepdim) {
-        resultDims.splice(dim, 1);
-    }
-
-    return new Tensor(input.type, result, resultDims);
+    return new Tensor(type, result, resultDims);
 }
 
 
@@ -32878,6 +35694,9 @@ function full(size, fill_value) {
     } else if (typeof fill_value === 'bigint') {
         dtype = 'int64';
         typedArrayCls = BigInt64Array;
+    } else if (typeof fill_value === 'boolean') {
+        dtype = 'bool';
+        typedArrayCls = Uint8Array;
     } else {
         
         throw new Error(`Unsupported data type: ${typeof fill_value}`);
@@ -32930,6 +35749,20 @@ function zeros_like(tensor) {
 
 
 
+function rand(size) {
+    const length = size.reduce((a, b) => a * b, 1);
+    return new Tensor(
+        "float32",
+        Float32Array.from({ length }, () => Math.random()),
+        size,
+    )
+}
+
+
+
+
+
+
 
 function quantize_embeddings(tensor, precision) {
     if (tensor.dims.length !== 2) {
@@ -32967,6 +35800,152 @@ function quantize_embeddings(tensor, precision) {
     };
 
     return new Tensor(dtype, outputData, [tensor.dims[0], tensor.dims[1] / 8]);
+}
+
+
+ }),
+
+ "./src/utils/video.js":
+
+
+
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   RawVideo: () => ( RawVideo),
+   RawVideoFrame: () => ( RawVideoFrame),
+   load_video: () => ( load_video)
+ });
+ var _image_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/utils/image.js");
+ var _env_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/env.js");
+
+
+
+class RawVideoFrame {
+
+    
+
+
+
+    constructor(image, timestamp) {
+        this.image = image;
+        this.timestamp = timestamp;
+    }
+}
+
+class RawVideo {
+    
+
+
+
+    constructor(frames, duration) {
+        if (frames.length > 0 && frames[0] instanceof _image_js__WEBPACK_IMPORTED_MODULE_0__.RawImage) {
+            
+            frames = frames.map((image, i) => new RawVideoFrame(image, (i + 1) / (frames.length + 1) * duration));
+        }
+        this.frames =  (frames);
+        this.duration = duration;
+    }
+
+    get width() {
+        return this.frames[0].image.width;
+    }
+    get height() {
+        return this.frames[0].image.height;
+    }
+
+    get fps() {
+        return this.frames.length / this.duration;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+async function load_video(src, { num_frames = null, fps = null } = {}) {
+    if (!_env_js__WEBPACK_IMPORTED_MODULE_1__.apis.IS_BROWSER_ENV) {
+        throw new Error("`load_video` is currently only supported in browser environments.");
+    }
+
+    
+    
+    if (num_frames == null && fps == null) {
+        throw new Error("Either num_frames or fps must be provided.");
+    }
+
+    const frames = [];
+
+    const video = document.createElement("video");
+    video.crossOrigin = "anonymous";
+    video.muted = true; 
+
+    if (typeof src === 'string') {
+        video.src = src;
+    } else if (src instanceof Blob) {
+        video.src = URL.createObjectURL(src);
+    } else if (src instanceof HTMLVideoElement) {
+        video.src = src.src;
+    } else {
+        throw new Error("Invalid URL or video element provided.");
+    }
+    
+    await new Promise((resolve) => video.onloadedmetadata = resolve);
+
+    if (video.seekable.start(0) === video.seekable.end(0)) {
+        
+        const response = await fetch(video.src);
+        const blob = await response.blob();
+        video.src = URL.createObjectURL(blob);
+        await new Promise((resolve) => video.onloadedmetadata = resolve);
+    }
+
+    const duration = video.duration;
+
+    let count, step;
+    if (num_frames != null) {
+        count = num_frames;
+        step = num_frames === 1 ? 0 : duration / (num_frames - 1);
+    } else {
+        step = 1 / fps;
+        count = Math.floor(duration / step);
+    }
+
+    
+    let sampleTimes = [];
+    for (let i = 0; i < count; ++i) {
+        sampleTimes.push(num_frames === 1 ? duration / 2 : i * step);
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    for (const t of sampleTimes) {
+        video.currentTime = t;
+        await new Promise((resolve) => {
+            video.onseeked = resolve;
+        });
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const frameData = new _image_js__WEBPACK_IMPORTED_MODULE_0__.RawImage(imageData.data, canvas.width, canvas.height, 4);
+
+        const frame = new RawVideoFrame(frameData, t);
+        frames.push(frame);
+    }
+
+    
+    video.remove();
+
+    return new RawVideo(frames, duration);
 }
 
 
@@ -33030,11 +36009,13 @@ function quantize_embeddings(tensor, precision) {
 
 var __webpack_exports__ = {};
 
+(() => {
+
 
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   ASTFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_10__.ASTFeatureExtractor),
+   ASTFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_11__.ASTFeatureExtractor),
    ASTForAudioClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ASTForAudioClassification),
    ASTModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ASTModel),
    ASTPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ASTPreTrainedModel),
@@ -33046,11 +36027,12 @@ __webpack_require__.r(__webpack_exports__);
    AlbertTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.AlbertTokenizer),
    AudioClassificationPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.AudioClassificationPipeline),
    AutoConfig: () => ( _configs_js__WEBPACK_IMPORTED_MODULE_4__.AutoConfig),
-   AutoFeatureExtractor: () => ( _models_auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_11__.AutoFeatureExtractor),
-   AutoImageProcessor: () => ( _models_auto_image_processing_auto_js__WEBPACK_IMPORTED_MODULE_14__.AutoImageProcessor),
+   AutoFeatureExtractor: () => ( _models_auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_12__.AutoFeatureExtractor),
+   AutoImageProcessor: () => ( _models_auto_image_processing_auto_js__WEBPACK_IMPORTED_MODULE_15__.AutoImageProcessor),
    AutoModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModel),
    AutoModelForAudioClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForAudioClassification),
    AutoModelForAudioFrameClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForAudioFrameClassification),
+   AutoModelForAudioTextToText: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForAudioTextToText),
    AutoModelForCTC: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForCTC),
    AutoModelForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForCausalLM),
    AutoModelForDepthEstimation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForDepthEstimation),
@@ -33059,6 +36041,7 @@ __webpack_require__.r(__webpack_exports__);
    AutoModelForImageFeatureExtraction: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForImageFeatureExtraction),
    AutoModelForImageMatting: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForImageMatting),
    AutoModelForImageSegmentation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForImageSegmentation),
+   AutoModelForImageTextToText: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForImageTextToText),
    AutoModelForImageToImage: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForImageToImage),
    AutoModelForMaskGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForMaskGeneration),
    AutoModelForMaskedLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForMaskedLM),
@@ -33077,17 +36060,18 @@ __webpack_require__.r(__webpack_exports__);
    AutoModelForVision2Seq: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForVision2Seq),
    AutoModelForXVector: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForXVector),
    AutoModelForZeroShotObjectDetection: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.AutoModelForZeroShotObjectDetection),
-   AutoProcessor: () => ( _models_auto_processing_auto_js__WEBPACK_IMPORTED_MODULE_17__.AutoProcessor),
+   AutoProcessor: () => ( _models_auto_processing_auto_js__WEBPACK_IMPORTED_MODULE_18__.AutoProcessor),
    AutoTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.AutoTokenizer),
    AutomaticSpeechRecognitionPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.AutomaticSpeechRecognitionPipeline),
+   BackgroundRemovalPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.BackgroundRemovalPipeline),
    BartForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BartForConditionalGeneration),
    BartForSequenceClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BartForSequenceClassification),
    BartModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BartModel),
    BartPretrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BartPretrainedModel),
    BartTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.BartTokenizer),
    BaseModelOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BaseModelOutput),
-   BaseStreamer: () => ( _generation_streamers_js__WEBPACK_IMPORTED_MODULE_18__.BaseStreamer),
-   BeitFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.BeitFeatureExtractor),
+   BaseStreamer: () => ( _generation_streamers_js__WEBPACK_IMPORTED_MODULE_19__.BaseStreamer),
+   BeitFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.BeitFeatureExtractor),
    BeitForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BeitForImageClassification),
    BeitModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BeitModel),
    BeitPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BeitPreTrainedModel),
@@ -33098,7 +36082,7 @@ __webpack_require__.r(__webpack_exports__);
    BertModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BertModel),
    BertPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BertPreTrainedModel),
    BertTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.BertTokenizer),
-   BitImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.BitImageProcessor),
+   BitImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.BitImageProcessor),
    BlenderbotForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BlenderbotForConditionalGeneration),
    BlenderbotModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BlenderbotModel),
    BlenderbotPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BlenderbotPreTrainedModel),
@@ -33111,8 +36095,8 @@ __webpack_require__.r(__webpack_exports__);
    BloomModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BloomModel),
    BloomPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.BloomPreTrainedModel),
    BloomTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.BloomTokenizer),
-   CLIPFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.CLIPFeatureExtractor),
-   CLIPImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.CLIPImageProcessor),
+   CLIPFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.CLIPFeatureExtractor),
+   CLIPImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.CLIPImageProcessor),
    CLIPModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.CLIPModel),
    CLIPPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.CLIPPreTrainedModel),
    CLIPSegForImageSegmentation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.CLIPSegForImageSegmentation),
@@ -33132,15 +36116,15 @@ __webpack_require__.r(__webpack_exports__);
    CamembertTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.CamembertTokenizer),
    CausalLMOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.CausalLMOutput),
    CausalLMOutputWithPast: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.CausalLMOutputWithPast),
-   ChineseCLIPFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.ChineseCLIPFeatureExtractor),
+   ChineseCLIPFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.ChineseCLIPFeatureExtractor),
    ChineseCLIPModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ChineseCLIPModel),
    ChineseCLIPPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ChineseCLIPPreTrainedModel),
    ClapAudioModelWithProjection: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ClapAudioModelWithProjection),
-   ClapFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_10__.ClapFeatureExtractor),
+   ClapFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_11__.ClapFeatureExtractor),
    ClapModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ClapModel),
    ClapPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ClapPreTrainedModel),
    ClapTextModelWithProjection: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ClapTextModelWithProjection),
-   ClassifierFreeGuidanceLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.ClassifierFreeGuidanceLogitsProcessor),
+   ClassifierFreeGuidanceLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.ClassifierFreeGuidanceLogitsProcessor),
    CodeGenForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.CodeGenForCausalLM),
    CodeGenModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.CodeGenModel),
    CodeGenPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.CodeGenPreTrainedModel),
@@ -33157,19 +36141,27 @@ __webpack_require__.r(__webpack_exports__);
    ConvBertModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ConvBertModel),
    ConvBertPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ConvBertPreTrainedModel),
    ConvBertTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.ConvBertTokenizer),
-   ConvNextFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.ConvNextFeatureExtractor),
+   ConvNextFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.ConvNextFeatureExtractor),
    ConvNextForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ConvNextForImageClassification),
-   ConvNextImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.ConvNextImageProcessor),
+   ConvNextImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.ConvNextImageProcessor),
    ConvNextModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ConvNextModel),
    ConvNextPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ConvNextPreTrainedModel),
    ConvNextV2ForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ConvNextV2ForImageClassification),
    ConvNextV2Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ConvNextV2Model),
    ConvNextV2PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ConvNextV2PreTrainedModel),
-   DPTFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.DPTFeatureExtractor),
+   DPTFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.DPTFeatureExtractor),
    DPTForDepthEstimation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DPTForDepthEstimation),
-   DPTImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.DPTImageProcessor),
+   DPTImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.DPTImageProcessor),
    DPTModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DPTModel),
    DPTPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DPTPreTrainedModel),
+   DacDecoderModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DacDecoderModel),
+   DacDecoderOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DacDecoderOutput),
+   DacEncoderModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DacEncoderModel),
+   DacEncoderOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DacEncoderOutput),
+   DacFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_11__.DacFeatureExtractor),
+   DacModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DacModel),
+   DacPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DacPreTrainedModel),
+   DataTypeMap: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.DataTypeMap),
    DebertaForMaskedLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DebertaForMaskedLM),
    DebertaForQuestionAnswering: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DebertaForQuestionAnswering),
    DebertaForSequenceClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DebertaForSequenceClassification),
@@ -33186,9 +36178,9 @@ __webpack_require__.r(__webpack_exports__);
    DebertaV2Tokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.DebertaV2Tokenizer),
    DecisionTransformerModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DecisionTransformerModel),
    DecisionTransformerPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DecisionTransformerPreTrainedModel),
-   DeiTFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.DeiTFeatureExtractor),
+   DeiTFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.DeiTFeatureExtractor),
    DeiTForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DeiTForImageClassification),
-   DeiTImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.DeiTImageProcessor),
+   DeiTImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.DeiTImageProcessor),
    DeiTModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DeiTModel),
    DeiTPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DeiTPreTrainedModel),
    DepthAnythingForDepthEstimation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DepthAnythingForDepthEstimation),
@@ -33196,10 +36188,10 @@ __webpack_require__.r(__webpack_exports__);
    DepthEstimationPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.DepthEstimationPipeline),
    DepthProForDepthEstimation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DepthProForDepthEstimation),
    DepthProPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DepthProPreTrainedModel),
-   DetrFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.DetrFeatureExtractor),
+   DetrFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.DetrFeatureExtractor),
    DetrForObjectDetection: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DetrForObjectDetection),
    DetrForSegmentation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DetrForSegmentation),
-   DetrImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.DetrImageProcessor),
+   DetrImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.DetrImageProcessor),
    DetrModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DetrModel),
    DetrObjectDetectionOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DetrObjectDetectionOutput),
    DetrPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DetrPreTrainedModel),
@@ -33207,6 +36199,9 @@ __webpack_require__.r(__webpack_exports__);
    Dinov2ForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Dinov2ForImageClassification),
    Dinov2Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Dinov2Model),
    Dinov2PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Dinov2PreTrainedModel),
+   Dinov2WithRegistersForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Dinov2WithRegistersForImageClassification),
+   Dinov2WithRegistersModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Dinov2WithRegistersModel),
+   Dinov2WithRegistersPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Dinov2WithRegistersPreTrainedModel),
    DistilBertForMaskedLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DistilBertForMaskedLM),
    DistilBertForQuestionAnswering: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DistilBertForQuestionAnswering),
    DistilBertForSequenceClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DistilBertForSequenceClassification),
@@ -33215,12 +36210,12 @@ __webpack_require__.r(__webpack_exports__);
    DistilBertPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DistilBertPreTrainedModel),
    DistilBertTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.DistilBertTokenizer),
    DocumentQuestionAnsweringPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.DocumentQuestionAnsweringPipeline),
-   DonutFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.DonutFeatureExtractor),
-   DonutImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.DonutImageProcessor),
+   DonutFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.DonutFeatureExtractor),
+   DonutImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.DonutImageProcessor),
    DonutSwinModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DonutSwinModel),
    DonutSwinPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.DonutSwinPreTrainedModel),
    EfficientNetForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.EfficientNetForImageClassification),
-   EfficientNetImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.EfficientNetImageProcessor),
+   EfficientNetImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.EfficientNetImageProcessor),
    EfficientNetModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.EfficientNetModel),
    EfficientNetPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.EfficientNetPreTrainedModel),
    ElectraForMaskedLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ElectraForMaskedLM),
@@ -33230,14 +36225,18 @@ __webpack_require__.r(__webpack_exports__);
    ElectraModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ElectraModel),
    ElectraPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ElectraPreTrainedModel),
    ElectraTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.ElectraTokenizer),
-   EosTokenCriteria: () => ( _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_19__.EosTokenCriteria),
+   EncodecFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_11__.EncodecFeatureExtractor),
+   EosTokenCriteria: () => ( _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_20__.EosTokenCriteria),
    EsmForMaskedLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.EsmForMaskedLM),
    EsmForSequenceClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.EsmForSequenceClassification),
    EsmForTokenClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.EsmForTokenClassification),
    EsmModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.EsmModel),
    EsmPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.EsmPreTrainedModel),
    EsmTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.EsmTokenizer),
-   FFT: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.FFT),
+   ExaoneForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ExaoneForCausalLM),
+   ExaoneModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ExaoneModel),
+   ExaonePreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ExaonePreTrainedModel),
+   FFT: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.FFT),
    FalconForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.FalconForCausalLM),
    FalconModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.FalconModel),
    FalconPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.FalconPreTrainedModel),
@@ -33246,14 +36245,14 @@ __webpack_require__.r(__webpack_exports__);
    FastViTModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.FastViTModel),
    FastViTPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.FastViTPreTrainedModel),
    FeatureExtractionPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.FeatureExtractionPipeline),
-   FeatureExtractor: () => ( _base_feature_extraction_utils_js__WEBPACK_IMPORTED_MODULE_9__.FeatureExtractor),
+   FeatureExtractor: () => ( _base_feature_extraction_utils_js__WEBPACK_IMPORTED_MODULE_10__.FeatureExtractor),
    FillMaskPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.FillMaskPipeline),
    Florence2ForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Florence2ForConditionalGeneration),
    Florence2PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Florence2PreTrainedModel),
-   Florence2Processor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_16__.Florence2Processor),
-   ForcedBOSTokenLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.ForcedBOSTokenLogitsProcessor),
-   ForcedEOSTokenLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.ForcedEOSTokenLogitsProcessor),
-   GLPNFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.GLPNFeatureExtractor),
+   Florence2Processor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.Florence2Processor),
+   ForcedBOSTokenLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.ForcedBOSTokenLogitsProcessor),
+   ForcedEOSTokenLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.ForcedEOSTokenLogitsProcessor),
+   GLPNFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.GLPNFeatureExtractor),
    GLPNForDepthEstimation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GLPNForDepthEstimation),
    GLPNModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GLPNModel),
    GLPNPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GLPNPreTrainedModel),
@@ -33281,12 +36280,22 @@ __webpack_require__.r(__webpack_exports__);
    GemmaModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GemmaModel),
    GemmaPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GemmaPreTrainedModel),
    GemmaTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.GemmaTokenizer),
+   GlmForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GlmForCausalLM),
+   GlmModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GlmModel),
+   GlmPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GlmPreTrainedModel),
    GraniteForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GraniteForCausalLM),
    GraniteModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GraniteModel),
    GranitePreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GranitePreTrainedModel),
    Grok1Tokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.Grok1Tokenizer),
+   GroundingDinoForObjectDetection: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GroundingDinoForObjectDetection),
+   GroundingDinoImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.GroundingDinoImageProcessor),
+   GroundingDinoPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GroundingDinoPreTrainedModel),
+   GroundingDinoProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.GroundingDinoProcessor),
    GroupViTModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GroupViTModel),
    GroupViTPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.GroupViTPreTrainedModel),
+   HeliumForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.HeliumForCausalLM),
+   HeliumModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.HeliumModel),
+   HeliumPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.HeliumPreTrainedModel),
    HerbertTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.HerbertTokenizer),
    HieraForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.HieraForImageClassification),
    HieraModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.HieraModel),
@@ -33295,35 +36304,43 @@ __webpack_require__.r(__webpack_exports__);
    HubertForSequenceClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.HubertForSequenceClassification),
    HubertModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.HubertModel),
    HubertPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.HubertPreTrainedModel),
+   IJepaForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.IJepaForImageClassification),
+   IJepaModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.IJepaModel),
+   IJepaPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.IJepaPreTrainedModel),
+   Idefics3ForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Idefics3ForConditionalGeneration),
+   Idefics3ImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.Idefics3ImageProcessor),
+   Idefics3PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Idefics3PreTrainedModel),
+   Idefics3Processor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.Idefics3Processor),
    ImageClassificationPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.ImageClassificationPipeline),
    ImageFeatureExtractionPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.ImageFeatureExtractionPipeline),
-   ImageFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_10__.ImageFeatureExtractor),
+   ImageFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_11__.ImageFeatureExtractor),
    ImageMattingOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ImageMattingOutput),
-   ImageProcessor: () => ( _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_12__.ImageProcessor),
+   ImageProcessor: () => ( _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_13__.ImageProcessor),
    ImageSegmentationPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.ImageSegmentationPipeline),
    ImageToImagePipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.ImageToImagePipeline),
    ImageToTextPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.ImageToTextPipeline),
-   InterruptableStoppingCriteria: () => ( _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_19__.InterruptableStoppingCriteria),
+   InterruptableStoppingCriteria: () => ( _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_20__.InterruptableStoppingCriteria),
    JAISLMHeadModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.JAISLMHeadModel),
    JAISModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.JAISModel),
    JAISPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.JAISPreTrainedModel),
-   JinaCLIPImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.JinaCLIPImageProcessor),
+   JinaCLIPImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.JinaCLIPImageProcessor),
    JinaCLIPModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.JinaCLIPModel),
    JinaCLIPPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.JinaCLIPPreTrainedModel),
-   JinaCLIPProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_16__.JinaCLIPProcessor),
+   JinaCLIPProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.JinaCLIPProcessor),
    JinaCLIPTextModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.JinaCLIPTextModel),
    JinaCLIPVisionModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.JinaCLIPVisionModel),
+   LiteWhisperForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.LiteWhisperForConditionalGeneration),
    LlamaForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.LlamaForCausalLM),
    LlamaModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.LlamaModel),
    LlamaPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.LlamaPreTrainedModel),
    LlamaTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.LlamaTokenizer),
    LlavaForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.LlavaForConditionalGeneration),
    LlavaOnevisionForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.LlavaOnevisionForConditionalGeneration),
-   LlavaOnevisionImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.LlavaOnevisionImageProcessor),
+   LlavaOnevisionImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.LlavaOnevisionImageProcessor),
    LlavaPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.LlavaPreTrainedModel),
-   LogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.LogitsProcessor),
-   LogitsProcessorList: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.LogitsProcessorList),
-   LogitsWarper: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.LogitsWarper),
+   LogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.LogitsProcessor),
+   LogitsProcessorList: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.LogitsProcessorList),
+   LogitsWarper: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.LogitsWarper),
    LongT5ForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.LongT5ForConditionalGeneration),
    LongT5Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.LongT5Model),
    LongT5PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.LongT5PreTrainedModel),
@@ -33352,21 +36369,27 @@ __webpack_require__.r(__webpack_exports__);
    MarianModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MarianModel),
    MarianPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MarianPreTrainedModel),
    MarianTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.MarianTokenizer),
-   Mask2FormerImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.Mask2FormerImageProcessor),
-   MaskFormerFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.MaskFormerFeatureExtractor),
+   Mask2FormerImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.Mask2FormerImageProcessor),
+   MaskFormerFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.MaskFormerFeatureExtractor),
    MaskFormerForInstanceSegmentation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MaskFormerForInstanceSegmentation),
-   MaskFormerImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.MaskFormerImageProcessor),
+   MaskFormerImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.MaskFormerImageProcessor),
    MaskFormerModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MaskFormerModel),
    MaskFormerPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MaskFormerPreTrainedModel),
    MaskedLMOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MaskedLMOutput),
-   MaxLengthCriteria: () => ( _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_19__.MaxLengthCriteria),
+   MaxLengthCriteria: () => ( _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_20__.MaxLengthCriteria),
    MgpstrForSceneTextRecognition: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MgpstrForSceneTextRecognition),
    MgpstrModelOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MgpstrModelOutput),
    MgpstrPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MgpstrPreTrainedModel),
-   MgpstrProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_16__.MgpstrProcessor),
+   MgpstrProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.MgpstrProcessor),
    MgpstrTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.MgpstrTokenizer),
-   MinLengthLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.MinLengthLogitsProcessor),
-   MinNewTokensLengthLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.MinNewTokensLengthLogitsProcessor),
+   MimiDecoderModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MimiDecoderModel),
+   MimiDecoderOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MimiDecoderOutput),
+   MimiEncoderModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MimiEncoderModel),
+   MimiEncoderOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MimiEncoderOutput),
+   MimiModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MimiModel),
+   MimiPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MimiPreTrainedModel),
+   MinLengthLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.MinLengthLogitsProcessor),
+   MinNewTokensLengthLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.MinNewTokensLengthLogitsProcessor),
    MistralForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MistralForCausalLM),
    MistralModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MistralModel),
    MistralPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MistralPreTrainedModel),
@@ -33379,36 +36402,50 @@ __webpack_require__.r(__webpack_exports__);
    MobileLLMForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileLLMForCausalLM),
    MobileLLMModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileLLMModel),
    MobileLLMPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileLLMPreTrainedModel),
-   MobileNetV1FeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.MobileNetV1FeatureExtractor),
+   MobileNetV1FeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.MobileNetV1FeatureExtractor),
    MobileNetV1ForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV1ForImageClassification),
-   MobileNetV1ImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.MobileNetV1ImageProcessor),
+   MobileNetV1ForSemanticSegmentation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV1ForSemanticSegmentation),
+   MobileNetV1ImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.MobileNetV1ImageProcessor),
    MobileNetV1Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV1Model),
    MobileNetV1PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV1PreTrainedModel),
-   MobileNetV2FeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.MobileNetV2FeatureExtractor),
+   MobileNetV2FeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.MobileNetV2FeatureExtractor),
    MobileNetV2ForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV2ForImageClassification),
-   MobileNetV2ImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.MobileNetV2ImageProcessor),
+   MobileNetV2ForSemanticSegmentation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV2ForSemanticSegmentation),
+   MobileNetV2ImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.MobileNetV2ImageProcessor),
    MobileNetV2Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV2Model),
    MobileNetV2PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV2PreTrainedModel),
-   MobileNetV3FeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.MobileNetV3FeatureExtractor),
+   MobileNetV3FeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.MobileNetV3FeatureExtractor),
    MobileNetV3ForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV3ForImageClassification),
-   MobileNetV3ImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.MobileNetV3ImageProcessor),
+   MobileNetV3ForSemanticSegmentation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV3ForSemanticSegmentation),
+   MobileNetV3ImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.MobileNetV3ImageProcessor),
    MobileNetV3Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV3Model),
    MobileNetV3PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV3PreTrainedModel),
-   MobileNetV4FeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.MobileNetV4FeatureExtractor),
+   MobileNetV4FeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.MobileNetV4FeatureExtractor),
    MobileNetV4ForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV4ForImageClassification),
-   MobileNetV4ImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.MobileNetV4ImageProcessor),
+   MobileNetV4ForSemanticSegmentation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV4ForSemanticSegmentation),
+   MobileNetV4ImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.MobileNetV4ImageProcessor),
    MobileNetV4Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV4Model),
    MobileNetV4PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileNetV4PreTrainedModel),
-   MobileViTFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.MobileViTFeatureExtractor),
+   MobileViTFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.MobileViTFeatureExtractor),
    MobileViTForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileViTForImageClassification),
-   MobileViTImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.MobileViTImageProcessor),
+   MobileViTImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.MobileViTImageProcessor),
    MobileViTModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileViTModel),
    MobileViTPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileViTPreTrainedModel),
    MobileViTV2ForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileViTV2ForImageClassification),
    MobileViTV2Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileViTV2Model),
    MobileViTV2PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MobileViTV2PreTrainedModel),
    ModelOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ModelOutput),
+   ModernBertForMaskedLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ModernBertForMaskedLM),
+   ModernBertForSequenceClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ModernBertForSequenceClassification),
+   ModernBertForTokenClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ModernBertForTokenClassification),
+   ModernBertModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ModernBertModel),
+   ModernBertPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ModernBertPreTrainedModel),
    Moondream1ForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Moondream1ForConditionalGeneration),
+   MoonshineFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_11__.MoonshineFeatureExtractor),
+   MoonshineForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MoonshineForConditionalGeneration),
+   MoonshineModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MoonshineModel),
+   MoonshinePreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MoonshinePreTrainedModel),
+   MoonshineProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.MoonshineProcessor),
    MptForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MptForCausalLM),
    MptModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MptModel),
    MptPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MptPreTrainedModel),
@@ -33419,32 +36456,38 @@ __webpack_require__.r(__webpack_exports__);
    MusicgenModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MusicgenModel),
    MusicgenPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.MusicgenPreTrainedModel),
    NllbTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.NllbTokenizer),
-   NoBadWordsLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.NoBadWordsLogitsProcessor),
-   NoRepeatNGramLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.NoRepeatNGramLogitsProcessor),
+   NoBadWordsLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.NoBadWordsLogitsProcessor),
+   NoRepeatNGramLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.NoRepeatNGramLogitsProcessor),
    NomicBertModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.NomicBertModel),
    NomicBertPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.NomicBertPreTrainedModel),
-   NougatImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.NougatImageProcessor),
+   NougatImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.NougatImageProcessor),
    NougatTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.NougatTokenizer),
    OPTForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.OPTForCausalLM),
    OPTModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.OPTModel),
    OPTPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.OPTPreTrainedModel),
    ObjectDetectionPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.ObjectDetectionPipeline),
+   Olmo2ForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Olmo2ForCausalLM),
+   Olmo2Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Olmo2Model),
+   Olmo2PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Olmo2PreTrainedModel),
    OlmoForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.OlmoForCausalLM),
    OlmoModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.OlmoModel),
    OlmoPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.OlmoPreTrainedModel),
    OpenELMForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.OpenELMForCausalLM),
    OpenELMModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.OpenELMModel),
    OpenELMPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.OpenELMPreTrainedModel),
-   OwlViTFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.OwlViTFeatureExtractor),
+   OwlViTFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.OwlViTFeatureExtractor),
    OwlViTForObjectDetection: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.OwlViTForObjectDetection),
-   OwlViTImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.OwlViTImageProcessor),
+   OwlViTImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.OwlViTImageProcessor),
    OwlViTModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.OwlViTModel),
    OwlViTPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.OwlViTPreTrainedModel),
-   OwlViTProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_16__.OwlViTProcessor),
+   OwlViTProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.OwlViTProcessor),
    Owlv2ForObjectDetection: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Owlv2ForObjectDetection),
-   Owlv2ImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.Owlv2ImageProcessor),
+   Owlv2ImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.Owlv2ImageProcessor),
    Owlv2Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Owlv2Model),
    Owlv2PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Owlv2PreTrainedModel),
+   PaliGemmaForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PaliGemmaForConditionalGeneration),
+   PaliGemmaPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PaliGemmaPreTrainedModel),
+   PaliGemmaProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.PaliGemmaProcessor),
    PatchTSMixerForPrediction: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PatchTSMixerForPrediction),
    PatchTSMixerModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PatchTSMixerModel),
    PatchTSMixerPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PatchTSMixerPreTrainedModel),
@@ -33454,6 +36497,10 @@ __webpack_require__.r(__webpack_exports__);
    Phi3ForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Phi3ForCausalLM),
    Phi3Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Phi3Model),
    Phi3PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Phi3PreTrainedModel),
+   Phi3VForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Phi3VForCausalLM),
+   Phi3VImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.Phi3VImageProcessor),
+   Phi3VPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Phi3VPreTrainedModel),
+   Phi3VProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.Phi3VProcessor),
    PhiForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PhiForCausalLM),
    PhiModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PhiModel),
    PhiPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PhiPreTrainedModel),
@@ -33462,16 +36509,16 @@ __webpack_require__.r(__webpack_exports__);
    PreTrainedTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.PreTrainedTokenizer),
    PretrainedConfig: () => ( _configs_js__WEBPACK_IMPORTED_MODULE_4__.PretrainedConfig),
    PretrainedMixin: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PretrainedMixin),
-   Processor: () => ( _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_15__.Processor),
+   Processor: () => ( _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_16__.Processor),
    PvtForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PvtForImageClassification),
-   PvtImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.PvtImageProcessor),
+   PvtImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.PvtImageProcessor),
    PvtModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PvtModel),
    PvtPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PvtPreTrainedModel),
-   PyAnnoteFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_10__.PyAnnoteFeatureExtractor),
+   PyAnnoteFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_11__.PyAnnoteFeatureExtractor),
    PyAnnoteForAudioFrameClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PyAnnoteForAudioFrameClassification),
    PyAnnoteModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PyAnnoteModel),
    PyAnnotePreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.PyAnnotePreTrainedModel),
-   PyAnnoteProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_16__.PyAnnoteProcessor),
+   PyAnnoteProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.PyAnnoteProcessor),
    QuestionAnsweringModelOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.QuestionAnsweringModelOutput),
    QuestionAnsweringPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.QuestionAnsweringPipeline),
    Qwen2ForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Qwen2ForCausalLM),
@@ -33479,16 +36526,19 @@ __webpack_require__.r(__webpack_exports__);
    Qwen2PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Qwen2PreTrainedModel),
    Qwen2Tokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.Qwen2Tokenizer),
    Qwen2VLForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Qwen2VLForConditionalGeneration),
-   Qwen2VLImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.Qwen2VLImageProcessor),
+   Qwen2VLImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.Qwen2VLImageProcessor),
    Qwen2VLPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Qwen2VLPreTrainedModel),
-   Qwen2VLProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_16__.Qwen2VLProcessor),
+   Qwen2VLProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.Qwen2VLProcessor),
    RTDetrForObjectDetection: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.RTDetrForObjectDetection),
-   RTDetrImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.RTDetrImageProcessor),
+   RTDetrImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.RTDetrImageProcessor),
    RTDetrModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.RTDetrModel),
    RTDetrObjectDetectionOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.RTDetrObjectDetectionOutput),
    RTDetrPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.RTDetrPreTrainedModel),
+   RawAudio: () => ( _utils_audio_js__WEBPACK_IMPORTED_MODULE_5__.RawAudio),
    RawImage: () => ( _utils_image_js__WEBPACK_IMPORTED_MODULE_6__.RawImage),
-   RepetitionPenaltyLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.RepetitionPenaltyLogitsProcessor),
+   RawVideo: () => ( _utils_video_js__WEBPACK_IMPORTED_MODULE_7__.RawVideo),
+   RawVideoFrame: () => ( _utils_video_js__WEBPACK_IMPORTED_MODULE_7__.RawVideoFrame),
+   RepetitionPenaltyLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.RepetitionPenaltyLogitsProcessor),
    ResNetForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ResNetForImageClassification),
    ResNetModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ResNetModel),
    ResNetPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ResNetPreTrainedModel),
@@ -33506,37 +36556,40 @@ __webpack_require__.r(__webpack_exports__);
    RobertaModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.RobertaModel),
    RobertaPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.RobertaPreTrainedModel),
    RobertaTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.RobertaTokenizer),
-   SamImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.SamImageProcessor),
+   SamImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.SamImageProcessor),
    SamImageSegmentationOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SamImageSegmentationOutput),
    SamModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SamModel),
    SamPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SamPreTrainedModel),
-   SamProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_16__.SamProcessor),
+   SamProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.SamProcessor),
    SapiensForDepthEstimation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SapiensForDepthEstimation),
    SapiensForNormalEstimation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SapiensForNormalEstimation),
    SapiensForSemanticSegmentation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SapiensForSemanticSegmentation),
    SapiensPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SapiensPreTrainedModel),
-   SeamlessM4TFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_10__.SeamlessM4TFeatureExtractor),
-   SegformerFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.SegformerFeatureExtractor),
+   SeamlessM4TFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_11__.SeamlessM4TFeatureExtractor),
+   SegformerFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.SegformerFeatureExtractor),
    SegformerForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SegformerForImageClassification),
    SegformerForSemanticSegmentation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SegformerForSemanticSegmentation),
-   SegformerImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.SegformerImageProcessor),
+   SegformerImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.SegformerImageProcessor),
    SegformerModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SegformerModel),
    SegformerPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SegformerPreTrainedModel),
    Seq2SeqLMOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Seq2SeqLMOutput),
    SequenceClassifierOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SequenceClassifierOutput),
-   SiglipImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.SiglipImageProcessor),
+   SiglipImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.SiglipImageProcessor),
    SiglipModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SiglipModel),
    SiglipPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SiglipPreTrainedModel),
    SiglipTextModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SiglipTextModel),
    SiglipTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.SiglipTokenizer),
    SiglipVisionModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SiglipVisionModel),
-   SpeechT5FeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_10__.SpeechT5FeatureExtractor),
+   SmolVLMForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SmolVLMForConditionalGeneration),
+   SmolVLMImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.SmolVLMImageProcessor),
+   SmolVLMProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.SmolVLMProcessor),
+   SpeechT5FeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_11__.SpeechT5FeatureExtractor),
    SpeechT5ForSpeechToText: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SpeechT5ForSpeechToText),
    SpeechT5ForTextToSpeech: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SpeechT5ForTextToSpeech),
    SpeechT5HifiGan: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SpeechT5HifiGan),
    SpeechT5Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SpeechT5Model),
    SpeechT5PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SpeechT5PreTrainedModel),
-   SpeechT5Processor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_16__.SpeechT5Processor),
+   SpeechT5Processor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.SpeechT5Processor),
    SpeechT5Tokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.SpeechT5Tokenizer),
    SqueezeBertForMaskedLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SqueezeBertForMaskedLM),
    SqueezeBertForQuestionAnswering: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SqueezeBertForQuestionAnswering),
@@ -33550,15 +36603,18 @@ __webpack_require__.r(__webpack_exports__);
    Starcoder2ForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Starcoder2ForCausalLM),
    Starcoder2Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Starcoder2Model),
    Starcoder2PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Starcoder2PreTrainedModel),
-   StoppingCriteria: () => ( _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_19__.StoppingCriteria),
-   StoppingCriteriaList: () => ( _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_19__.StoppingCriteriaList),
+   StoppingCriteria: () => ( _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_20__.StoppingCriteria),
+   StoppingCriteriaList: () => ( _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_20__.StoppingCriteriaList),
+   StyleTextToSpeech2Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.StyleTextToSpeech2Model),
+   StyleTextToSpeech2PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.StyleTextToSpeech2PreTrainedModel),
    SummarizationPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.SummarizationPipeline),
-   SuppressTokensAtBeginLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.SuppressTokensAtBeginLogitsProcessor),
+   SuppressTokensAtBeginLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.SuppressTokensAtBeginLogitsProcessor),
    Swin2SRForImageSuperResolution: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Swin2SRForImageSuperResolution),
-   Swin2SRImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.Swin2SRImageProcessor),
+   Swin2SRImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.Swin2SRImageProcessor),
    Swin2SRModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Swin2SRModel),
    Swin2SRPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Swin2SRPreTrainedModel),
    SwinForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SwinForImageClassification),
+   SwinForSemanticSegmentation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SwinForSemanticSegmentation),
    SwinModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SwinModel),
    SwinPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.SwinPreTrainedModel),
    T5ForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.T5ForConditionalGeneration),
@@ -33569,21 +36625,24 @@ __webpack_require__.r(__webpack_exports__);
    TableTransformerModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.TableTransformerModel),
    TableTransformerObjectDetectionOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.TableTransformerObjectDetectionOutput),
    TableTransformerPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.TableTransformerPreTrainedModel),
-   TemperatureLogitsWarper: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.TemperatureLogitsWarper),
-   Tensor: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.Tensor),
+   TemperatureLogitsWarper: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.TemperatureLogitsWarper),
+   Tensor: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor),
    Text2TextGenerationPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.Text2TextGenerationPipeline),
    TextClassificationPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.TextClassificationPipeline),
    TextGenerationPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.TextGenerationPipeline),
-   TextStreamer: () => ( _generation_streamers_js__WEBPACK_IMPORTED_MODULE_18__.TextStreamer),
+   TextStreamer: () => ( _generation_streamers_js__WEBPACK_IMPORTED_MODULE_19__.TextStreamer),
    TextToAudioPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.TextToAudioPipeline),
    TokenClassificationPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.TokenClassificationPipeline),
    TokenClassifierOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.TokenClassifierOutput),
    TokenizerModel: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.TokenizerModel),
-   TopKLogitsWarper: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.TopKLogitsWarper),
-   TopPLogitsWarper: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.TopPLogitsWarper),
+   TopKLogitsWarper: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.TopKLogitsWarper),
+   TopPLogitsWarper: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.TopPLogitsWarper),
    TrOCRForCausalLM: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.TrOCRForCausalLM),
    TrOCRPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.TrOCRPreTrainedModel),
    TranslationPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.TranslationPipeline),
+   UltravoxModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.UltravoxModel),
+   UltravoxPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.UltravoxPreTrainedModel),
+   UltravoxProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.UltravoxProcessor),
    UniSpeechForCTC: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.UniSpeechForCTC),
    UniSpeechForSequenceClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.UniSpeechForSequenceClassification),
    UniSpeechModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.UniSpeechModel),
@@ -33593,11 +36652,11 @@ __webpack_require__.r(__webpack_exports__);
    UniSpeechSatForSequenceClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.UniSpeechSatForSequenceClassification),
    UniSpeechSatModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.UniSpeechSatModel),
    UniSpeechSatPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.UniSpeechSatPreTrainedModel),
-   VLChatProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_16__.VLChatProcessor),
-   VLMImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.VLMImageProcessor),
-   ViTFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.ViTFeatureExtractor),
+   VLChatProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.VLChatProcessor),
+   VLMImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.VLMImageProcessor),
+   ViTFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.ViTFeatureExtractor),
    ViTForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ViTForImageClassification),
-   ViTImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.ViTImageProcessor),
+   ViTImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.ViTImageProcessor),
    ViTMAEModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ViTMAEModel),
    ViTMAEPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ViTMAEPreTrainedModel),
    ViTMSNForImageClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ViTMSNForImageClassification),
@@ -33607,10 +36666,10 @@ __webpack_require__.r(__webpack_exports__);
    ViTPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.ViTPreTrainedModel),
    VisionEncoderDecoderModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.VisionEncoderDecoderModel),
    VitMatteForImageMatting: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.VitMatteForImageMatting),
-   VitMatteImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.VitMatteImageProcessor),
+   VitMatteImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.VitMatteImageProcessor),
    VitMattePreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.VitMattePreTrainedModel),
    VitPoseForPoseEstimation: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.VitPoseForPoseEstimation),
-   VitPoseImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.VitPoseImageProcessor),
+   VitPoseImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.VitPoseImageProcessor),
    VitPosePreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.VitPosePreTrainedModel),
    VitsModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.VitsModel),
    VitsModelOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.VitsModelOutput),
@@ -33621,29 +36680,30 @@ __webpack_require__.r(__webpack_exports__);
    Wav2Vec2BertModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Wav2Vec2BertModel),
    Wav2Vec2BertPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Wav2Vec2BertPreTrainedModel),
    Wav2Vec2CTCTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.Wav2Vec2CTCTokenizer),
-   Wav2Vec2FeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_10__.Wav2Vec2FeatureExtractor),
+   Wav2Vec2FeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_11__.Wav2Vec2FeatureExtractor),
    Wav2Vec2ForAudioFrameClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Wav2Vec2ForAudioFrameClassification),
    Wav2Vec2ForCTC: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Wav2Vec2ForCTC),
    Wav2Vec2ForSequenceClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Wav2Vec2ForSequenceClassification),
    Wav2Vec2Model: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Wav2Vec2Model),
    Wav2Vec2PreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.Wav2Vec2PreTrainedModel),
-   Wav2Vec2ProcessorWithLM: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_16__.Wav2Vec2ProcessorWithLM),
+   Wav2Vec2Processor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.Wav2Vec2Processor),
+   Wav2Vec2ProcessorWithLM: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.Wav2Vec2ProcessorWithLM),
    WavLMForAudioFrameClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.WavLMForAudioFrameClassification),
    WavLMForCTC: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.WavLMForCTC),
    WavLMForSequenceClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.WavLMForSequenceClassification),
    WavLMForXVector: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.WavLMForXVector),
    WavLMModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.WavLMModel),
    WavLMPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.WavLMPreTrainedModel),
-   WeSpeakerFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_10__.WeSpeakerFeatureExtractor),
+   WeSpeakerFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_11__.WeSpeakerFeatureExtractor),
    WeSpeakerResNetModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.WeSpeakerResNetModel),
    WeSpeakerResNetPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.WeSpeakerResNetPreTrainedModel),
-   WhisperFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_10__.WhisperFeatureExtractor),
+   WhisperFeatureExtractor: () => ( _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_11__.WhisperFeatureExtractor),
    WhisperForConditionalGeneration: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.WhisperForConditionalGeneration),
    WhisperModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.WhisperModel),
    WhisperPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.WhisperPreTrainedModel),
-   WhisperProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_16__.WhisperProcessor),
-   WhisperTextStreamer: () => ( _generation_streamers_js__WEBPACK_IMPORTED_MODULE_18__.WhisperTextStreamer),
-   WhisperTimeStampLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__.WhisperTimeStampLogitsProcessor),
+   WhisperProcessor: () => ( _models_processors_js__WEBPACK_IMPORTED_MODULE_17__.WhisperProcessor),
+   WhisperTextStreamer: () => ( _generation_streamers_js__WEBPACK_IMPORTED_MODULE_19__.WhisperTextStreamer),
+   WhisperTimeStampLogitsProcessor: () => ( _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__.WhisperTimeStampLogitsProcessor),
    WhisperTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.WhisperTokenizer),
    XLMForQuestionAnswering: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.XLMForQuestionAnswering),
    XLMForSequenceClassification: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.XLMForSequenceClassification),
@@ -33660,9 +36720,9 @@ __webpack_require__.r(__webpack_exports__);
    XLMTokenizer: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.XLMTokenizer),
    XLMWithLMHeadModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.XLMWithLMHeadModel),
    XVectorOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.XVectorOutput),
-   YolosFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.YolosFeatureExtractor),
+   YolosFeatureExtractor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.YolosFeatureExtractor),
    YolosForObjectDetection: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.YolosForObjectDetection),
-   YolosImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__.YolosImageProcessor),
+   YolosImageProcessor: () => ( _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__.YolosImageProcessor),
    YolosModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.YolosModel),
    YolosObjectDetectionOutput: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.YolosObjectDetectionOutput),
    YolosPreTrainedModel: () => ( _models_js__WEBPACK_IMPORTED_MODULE_2__.YolosPreTrainedModel),
@@ -33670,48 +36730,52 @@ __webpack_require__.r(__webpack_exports__);
    ZeroShotClassificationPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.ZeroShotClassificationPipeline),
    ZeroShotImageClassificationPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.ZeroShotImageClassificationPipeline),
    ZeroShotObjectDetectionPipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.ZeroShotObjectDetectionPipeline),
-   bankers_round: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.bankers_round),
-   cat: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.cat),
-   cos_sim: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.cos_sim),
-   dot: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.dot),
-   dynamic_time_warping: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.dynamic_time_warping),
+   bankers_round: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.bankers_round),
+   cat: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.cat),
+   cos_sim: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.cos_sim),
+   dot: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.dot),
+   dynamic_time_warping: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.dynamic_time_warping),
    env: () => ( _env_js__WEBPACK_IMPORTED_MODULE_0__.env),
-   full: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.full),
-   full_like: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.full_like),
+   full: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.full),
+   full_like: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.full_like),
    getKeyValueShapes: () => ( _configs_js__WEBPACK_IMPORTED_MODULE_4__.getKeyValueShapes),
    hamming: () => ( _utils_audio_js__WEBPACK_IMPORTED_MODULE_5__.hamming),
    hanning: () => ( _utils_audio_js__WEBPACK_IMPORTED_MODULE_5__.hanning),
-   interpolate: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.interpolate),
-   interpolate_4d: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.interpolate_4d),
-   interpolate_data: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.interpolate_data),
+   interpolate: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.interpolate),
+   interpolate_4d: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.interpolate_4d),
+   interpolate_data: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.interpolate_data),
    is_chinese_char: () => ( _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.is_chinese_char),
-   layer_norm: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.layer_norm),
-   log_softmax: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.log_softmax),
-   magnitude: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.magnitude),
-   matmul: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.matmul),
-   max: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.max),
-   mean: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.mean),
-   mean_pooling: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.mean_pooling),
-   medianFilter: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.medianFilter),
+   layer_norm: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.layer_norm),
+   load_image: () => ( _utils_image_js__WEBPACK_IMPORTED_MODULE_6__.load_image),
+   load_video: () => ( _utils_video_js__WEBPACK_IMPORTED_MODULE_7__.load_video),
+   log_softmax: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.log_softmax),
+   magnitude: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.magnitude),
+   matmul: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.matmul),
+   max: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.max),
+   mean: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.mean),
+   mean_pooling: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.mean_pooling),
+   medianFilter: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.medianFilter),
    mel_filter_bank: () => ( _utils_audio_js__WEBPACK_IMPORTED_MODULE_5__.mel_filter_bank),
-   min: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.min),
-   ones: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.ones),
-   ones_like: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.ones_like),
-   permute: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.permute),
-   permute_data: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.permute_data),
+   min: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.min),
+   ones: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.ones),
+   ones_like: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.ones_like),
+   permute: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.permute),
+   permute_data: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.permute_data),
    pipeline: () => ( _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.pipeline),
-   quantize_embeddings: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.quantize_embeddings),
+   quantize_embeddings: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.quantize_embeddings),
+   rand: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.rand),
    read_audio: () => ( _utils_audio_js__WEBPACK_IMPORTED_MODULE_5__.read_audio),
-   rfft: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.rfft),
-   round: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.round),
-   softmax: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__.softmax),
+   rfft: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.rfft),
+   round: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.round),
+   slice: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.slice),
+   softmax: () => ( _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.softmax),
    spectrogram: () => ( _utils_audio_js__WEBPACK_IMPORTED_MODULE_5__.spectrogram),
-   stack: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.stack),
-   std_mean: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.std_mean),
-   topk: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.topk),
+   stack: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.stack),
+   std_mean: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.std_mean),
+   topk: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.topk),
    window_function: () => ( _utils_audio_js__WEBPACK_IMPORTED_MODULE_5__.window_function),
-   zeros: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.zeros),
-   zeros_like: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__.zeros_like)
+   zeros: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.zeros),
+   zeros_like: () => ( _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.zeros_like)
  });
  var _env_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( "./src/env.js");
  var _pipelines_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( "./src/pipelines.js");
@@ -33720,20 +36784,21 @@ __webpack_require__.r(__webpack_exports__);
  var _configs_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( "./src/configs.js");
  var _utils_audio_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__( "./src/utils/audio.js");
  var _utils_image_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__( "./src/utils/image.js");
- var _utils_tensor_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__( "./src/utils/tensor.js");
- var _utils_maths_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__( "./src/utils/maths.js");
- var _base_feature_extraction_utils_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__( "./src/base/feature_extraction_utils.js");
- var _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__( "./src/models/feature_extractors.js");
- var _models_auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__( "./src/models/auto/feature_extraction_auto.js");
- var _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__( "./src/base/image_processors_utils.js");
- var _models_image_processors_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__( "./src/models/image_processors.js");
- var _models_auto_image_processing_auto_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__( "./src/models/auto/image_processing_auto.js");
- var _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__( "./src/base/processing_utils.js");
- var _models_processors_js__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__( "./src/models/processors.js");
- var _models_auto_processing_auto_js__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__( "./src/models/auto/processing_auto.js");
- var _generation_streamers_js__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__( "./src/generation/streamers.js");
- var _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__( "./src/generation/stopping_criteria.js");
- var _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__( "./src/generation/logits_process.js");
+ var _utils_video_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__( "./src/utils/video.js");
+ var _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__( "./src/utils/tensor.js");
+ var _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__( "./src/utils/maths.js");
+ var _base_feature_extraction_utils_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__( "./src/base/feature_extraction_utils.js");
+ var _models_feature_extractors_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__( "./src/models/feature_extractors.js");
+ var _models_auto_feature_extraction_auto_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__( "./src/models/auto/feature_extraction_auto.js");
+ var _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__( "./src/base/image_processors_utils.js");
+ var _models_image_processors_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__( "./src/models/image_processors.js");
+ var _models_auto_image_processing_auto_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__( "./src/models/auto/image_processing_auto.js");
+ var _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__( "./src/base/processing_utils.js");
+ var _models_processors_js__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__( "./src/models/processors.js");
+ var _models_auto_processing_auto_js__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__( "./src/models/auto/processing_auto.js");
+ var _generation_streamers_js__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__( "./src/generation/streamers.js");
+ var _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__( "./src/generation/stopping_criteria.js");
+ var _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__( "./src/generation/logits_process.js");
 
 
 
@@ -33775,6 +36840,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+})();
 
 var __webpack_exports__ASTFeatureExtractor = __webpack_exports__.ASTFeatureExtractor;
 var __webpack_exports__ASTForAudioClassification = __webpack_exports__.ASTForAudioClassification;
@@ -33793,6 +36861,7 @@ var __webpack_exports__AutoImageProcessor = __webpack_exports__.AutoImageProcess
 var __webpack_exports__AutoModel = __webpack_exports__.AutoModel;
 var __webpack_exports__AutoModelForAudioClassification = __webpack_exports__.AutoModelForAudioClassification;
 var __webpack_exports__AutoModelForAudioFrameClassification = __webpack_exports__.AutoModelForAudioFrameClassification;
+var __webpack_exports__AutoModelForAudioTextToText = __webpack_exports__.AutoModelForAudioTextToText;
 var __webpack_exports__AutoModelForCTC = __webpack_exports__.AutoModelForCTC;
 var __webpack_exports__AutoModelForCausalLM = __webpack_exports__.AutoModelForCausalLM;
 var __webpack_exports__AutoModelForDepthEstimation = __webpack_exports__.AutoModelForDepthEstimation;
@@ -33801,6 +36870,7 @@ var __webpack_exports__AutoModelForImageClassification = __webpack_exports__.Aut
 var __webpack_exports__AutoModelForImageFeatureExtraction = __webpack_exports__.AutoModelForImageFeatureExtraction;
 var __webpack_exports__AutoModelForImageMatting = __webpack_exports__.AutoModelForImageMatting;
 var __webpack_exports__AutoModelForImageSegmentation = __webpack_exports__.AutoModelForImageSegmentation;
+var __webpack_exports__AutoModelForImageTextToText = __webpack_exports__.AutoModelForImageTextToText;
 var __webpack_exports__AutoModelForImageToImage = __webpack_exports__.AutoModelForImageToImage;
 var __webpack_exports__AutoModelForMaskGeneration = __webpack_exports__.AutoModelForMaskGeneration;
 var __webpack_exports__AutoModelForMaskedLM = __webpack_exports__.AutoModelForMaskedLM;
@@ -33822,6 +36892,7 @@ var __webpack_exports__AutoModelForZeroShotObjectDetection = __webpack_exports__
 var __webpack_exports__AutoProcessor = __webpack_exports__.AutoProcessor;
 var __webpack_exports__AutoTokenizer = __webpack_exports__.AutoTokenizer;
 var __webpack_exports__AutomaticSpeechRecognitionPipeline = __webpack_exports__.AutomaticSpeechRecognitionPipeline;
+var __webpack_exports__BackgroundRemovalPipeline = __webpack_exports__.BackgroundRemovalPipeline;
 var __webpack_exports__BartForConditionalGeneration = __webpack_exports__.BartForConditionalGeneration;
 var __webpack_exports__BartForSequenceClassification = __webpack_exports__.BartForSequenceClassification;
 var __webpack_exports__BartModel = __webpack_exports__.BartModel;
@@ -33912,6 +36983,14 @@ var __webpack_exports__DPTForDepthEstimation = __webpack_exports__.DPTForDepthEs
 var __webpack_exports__DPTImageProcessor = __webpack_exports__.DPTImageProcessor;
 var __webpack_exports__DPTModel = __webpack_exports__.DPTModel;
 var __webpack_exports__DPTPreTrainedModel = __webpack_exports__.DPTPreTrainedModel;
+var __webpack_exports__DacDecoderModel = __webpack_exports__.DacDecoderModel;
+var __webpack_exports__DacDecoderOutput = __webpack_exports__.DacDecoderOutput;
+var __webpack_exports__DacEncoderModel = __webpack_exports__.DacEncoderModel;
+var __webpack_exports__DacEncoderOutput = __webpack_exports__.DacEncoderOutput;
+var __webpack_exports__DacFeatureExtractor = __webpack_exports__.DacFeatureExtractor;
+var __webpack_exports__DacModel = __webpack_exports__.DacModel;
+var __webpack_exports__DacPreTrainedModel = __webpack_exports__.DacPreTrainedModel;
+var __webpack_exports__DataTypeMap = __webpack_exports__.DataTypeMap;
 var __webpack_exports__DebertaForMaskedLM = __webpack_exports__.DebertaForMaskedLM;
 var __webpack_exports__DebertaForQuestionAnswering = __webpack_exports__.DebertaForQuestionAnswering;
 var __webpack_exports__DebertaForSequenceClassification = __webpack_exports__.DebertaForSequenceClassification;
@@ -33949,6 +37028,9 @@ var __webpack_exports__DetrSegmentationOutput = __webpack_exports__.DetrSegmenta
 var __webpack_exports__Dinov2ForImageClassification = __webpack_exports__.Dinov2ForImageClassification;
 var __webpack_exports__Dinov2Model = __webpack_exports__.Dinov2Model;
 var __webpack_exports__Dinov2PreTrainedModel = __webpack_exports__.Dinov2PreTrainedModel;
+var __webpack_exports__Dinov2WithRegistersForImageClassification = __webpack_exports__.Dinov2WithRegistersForImageClassification;
+var __webpack_exports__Dinov2WithRegistersModel = __webpack_exports__.Dinov2WithRegistersModel;
+var __webpack_exports__Dinov2WithRegistersPreTrainedModel = __webpack_exports__.Dinov2WithRegistersPreTrainedModel;
 var __webpack_exports__DistilBertForMaskedLM = __webpack_exports__.DistilBertForMaskedLM;
 var __webpack_exports__DistilBertForQuestionAnswering = __webpack_exports__.DistilBertForQuestionAnswering;
 var __webpack_exports__DistilBertForSequenceClassification = __webpack_exports__.DistilBertForSequenceClassification;
@@ -33972,6 +37054,7 @@ var __webpack_exports__ElectraForTokenClassification = __webpack_exports__.Elect
 var __webpack_exports__ElectraModel = __webpack_exports__.ElectraModel;
 var __webpack_exports__ElectraPreTrainedModel = __webpack_exports__.ElectraPreTrainedModel;
 var __webpack_exports__ElectraTokenizer = __webpack_exports__.ElectraTokenizer;
+var __webpack_exports__EncodecFeatureExtractor = __webpack_exports__.EncodecFeatureExtractor;
 var __webpack_exports__EosTokenCriteria = __webpack_exports__.EosTokenCriteria;
 var __webpack_exports__EsmForMaskedLM = __webpack_exports__.EsmForMaskedLM;
 var __webpack_exports__EsmForSequenceClassification = __webpack_exports__.EsmForSequenceClassification;
@@ -33979,6 +37062,9 @@ var __webpack_exports__EsmForTokenClassification = __webpack_exports__.EsmForTok
 var __webpack_exports__EsmModel = __webpack_exports__.EsmModel;
 var __webpack_exports__EsmPreTrainedModel = __webpack_exports__.EsmPreTrainedModel;
 var __webpack_exports__EsmTokenizer = __webpack_exports__.EsmTokenizer;
+var __webpack_exports__ExaoneForCausalLM = __webpack_exports__.ExaoneForCausalLM;
+var __webpack_exports__ExaoneModel = __webpack_exports__.ExaoneModel;
+var __webpack_exports__ExaonePreTrainedModel = __webpack_exports__.ExaonePreTrainedModel;
 var __webpack_exports__FFT = __webpack_exports__.FFT;
 var __webpack_exports__FalconForCausalLM = __webpack_exports__.FalconForCausalLM;
 var __webpack_exports__FalconModel = __webpack_exports__.FalconModel;
@@ -34023,12 +37109,22 @@ var __webpack_exports__GemmaForCausalLM = __webpack_exports__.GemmaForCausalLM;
 var __webpack_exports__GemmaModel = __webpack_exports__.GemmaModel;
 var __webpack_exports__GemmaPreTrainedModel = __webpack_exports__.GemmaPreTrainedModel;
 var __webpack_exports__GemmaTokenizer = __webpack_exports__.GemmaTokenizer;
+var __webpack_exports__GlmForCausalLM = __webpack_exports__.GlmForCausalLM;
+var __webpack_exports__GlmModel = __webpack_exports__.GlmModel;
+var __webpack_exports__GlmPreTrainedModel = __webpack_exports__.GlmPreTrainedModel;
 var __webpack_exports__GraniteForCausalLM = __webpack_exports__.GraniteForCausalLM;
 var __webpack_exports__GraniteModel = __webpack_exports__.GraniteModel;
 var __webpack_exports__GranitePreTrainedModel = __webpack_exports__.GranitePreTrainedModel;
 var __webpack_exports__Grok1Tokenizer = __webpack_exports__.Grok1Tokenizer;
+var __webpack_exports__GroundingDinoForObjectDetection = __webpack_exports__.GroundingDinoForObjectDetection;
+var __webpack_exports__GroundingDinoImageProcessor = __webpack_exports__.GroundingDinoImageProcessor;
+var __webpack_exports__GroundingDinoPreTrainedModel = __webpack_exports__.GroundingDinoPreTrainedModel;
+var __webpack_exports__GroundingDinoProcessor = __webpack_exports__.GroundingDinoProcessor;
 var __webpack_exports__GroupViTModel = __webpack_exports__.GroupViTModel;
 var __webpack_exports__GroupViTPreTrainedModel = __webpack_exports__.GroupViTPreTrainedModel;
+var __webpack_exports__HeliumForCausalLM = __webpack_exports__.HeliumForCausalLM;
+var __webpack_exports__HeliumModel = __webpack_exports__.HeliumModel;
+var __webpack_exports__HeliumPreTrainedModel = __webpack_exports__.HeliumPreTrainedModel;
 var __webpack_exports__HerbertTokenizer = __webpack_exports__.HerbertTokenizer;
 var __webpack_exports__HieraForImageClassification = __webpack_exports__.HieraForImageClassification;
 var __webpack_exports__HieraModel = __webpack_exports__.HieraModel;
@@ -34037,6 +37133,13 @@ var __webpack_exports__HubertForCTC = __webpack_exports__.HubertForCTC;
 var __webpack_exports__HubertForSequenceClassification = __webpack_exports__.HubertForSequenceClassification;
 var __webpack_exports__HubertModel = __webpack_exports__.HubertModel;
 var __webpack_exports__HubertPreTrainedModel = __webpack_exports__.HubertPreTrainedModel;
+var __webpack_exports__IJepaForImageClassification = __webpack_exports__.IJepaForImageClassification;
+var __webpack_exports__IJepaModel = __webpack_exports__.IJepaModel;
+var __webpack_exports__IJepaPreTrainedModel = __webpack_exports__.IJepaPreTrainedModel;
+var __webpack_exports__Idefics3ForConditionalGeneration = __webpack_exports__.Idefics3ForConditionalGeneration;
+var __webpack_exports__Idefics3ImageProcessor = __webpack_exports__.Idefics3ImageProcessor;
+var __webpack_exports__Idefics3PreTrainedModel = __webpack_exports__.Idefics3PreTrainedModel;
+var __webpack_exports__Idefics3Processor = __webpack_exports__.Idefics3Processor;
 var __webpack_exports__ImageClassificationPipeline = __webpack_exports__.ImageClassificationPipeline;
 var __webpack_exports__ImageFeatureExtractionPipeline = __webpack_exports__.ImageFeatureExtractionPipeline;
 var __webpack_exports__ImageFeatureExtractor = __webpack_exports__.ImageFeatureExtractor;
@@ -34055,6 +37158,7 @@ var __webpack_exports__JinaCLIPPreTrainedModel = __webpack_exports__.JinaCLIPPre
 var __webpack_exports__JinaCLIPProcessor = __webpack_exports__.JinaCLIPProcessor;
 var __webpack_exports__JinaCLIPTextModel = __webpack_exports__.JinaCLIPTextModel;
 var __webpack_exports__JinaCLIPVisionModel = __webpack_exports__.JinaCLIPVisionModel;
+var __webpack_exports__LiteWhisperForConditionalGeneration = __webpack_exports__.LiteWhisperForConditionalGeneration;
 var __webpack_exports__LlamaForCausalLM = __webpack_exports__.LlamaForCausalLM;
 var __webpack_exports__LlamaModel = __webpack_exports__.LlamaModel;
 var __webpack_exports__LlamaPreTrainedModel = __webpack_exports__.LlamaPreTrainedModel;
@@ -34107,6 +37211,12 @@ var __webpack_exports__MgpstrModelOutput = __webpack_exports__.MgpstrModelOutput
 var __webpack_exports__MgpstrPreTrainedModel = __webpack_exports__.MgpstrPreTrainedModel;
 var __webpack_exports__MgpstrProcessor = __webpack_exports__.MgpstrProcessor;
 var __webpack_exports__MgpstrTokenizer = __webpack_exports__.MgpstrTokenizer;
+var __webpack_exports__MimiDecoderModel = __webpack_exports__.MimiDecoderModel;
+var __webpack_exports__MimiDecoderOutput = __webpack_exports__.MimiDecoderOutput;
+var __webpack_exports__MimiEncoderModel = __webpack_exports__.MimiEncoderModel;
+var __webpack_exports__MimiEncoderOutput = __webpack_exports__.MimiEncoderOutput;
+var __webpack_exports__MimiModel = __webpack_exports__.MimiModel;
+var __webpack_exports__MimiPreTrainedModel = __webpack_exports__.MimiPreTrainedModel;
 var __webpack_exports__MinLengthLogitsProcessor = __webpack_exports__.MinLengthLogitsProcessor;
 var __webpack_exports__MinNewTokensLengthLogitsProcessor = __webpack_exports__.MinNewTokensLengthLogitsProcessor;
 var __webpack_exports__MistralForCausalLM = __webpack_exports__.MistralForCausalLM;
@@ -34123,21 +37233,25 @@ var __webpack_exports__MobileLLMModel = __webpack_exports__.MobileLLMModel;
 var __webpack_exports__MobileLLMPreTrainedModel = __webpack_exports__.MobileLLMPreTrainedModel;
 var __webpack_exports__MobileNetV1FeatureExtractor = __webpack_exports__.MobileNetV1FeatureExtractor;
 var __webpack_exports__MobileNetV1ForImageClassification = __webpack_exports__.MobileNetV1ForImageClassification;
+var __webpack_exports__MobileNetV1ForSemanticSegmentation = __webpack_exports__.MobileNetV1ForSemanticSegmentation;
 var __webpack_exports__MobileNetV1ImageProcessor = __webpack_exports__.MobileNetV1ImageProcessor;
 var __webpack_exports__MobileNetV1Model = __webpack_exports__.MobileNetV1Model;
 var __webpack_exports__MobileNetV1PreTrainedModel = __webpack_exports__.MobileNetV1PreTrainedModel;
 var __webpack_exports__MobileNetV2FeatureExtractor = __webpack_exports__.MobileNetV2FeatureExtractor;
 var __webpack_exports__MobileNetV2ForImageClassification = __webpack_exports__.MobileNetV2ForImageClassification;
+var __webpack_exports__MobileNetV2ForSemanticSegmentation = __webpack_exports__.MobileNetV2ForSemanticSegmentation;
 var __webpack_exports__MobileNetV2ImageProcessor = __webpack_exports__.MobileNetV2ImageProcessor;
 var __webpack_exports__MobileNetV2Model = __webpack_exports__.MobileNetV2Model;
 var __webpack_exports__MobileNetV2PreTrainedModel = __webpack_exports__.MobileNetV2PreTrainedModel;
 var __webpack_exports__MobileNetV3FeatureExtractor = __webpack_exports__.MobileNetV3FeatureExtractor;
 var __webpack_exports__MobileNetV3ForImageClassification = __webpack_exports__.MobileNetV3ForImageClassification;
+var __webpack_exports__MobileNetV3ForSemanticSegmentation = __webpack_exports__.MobileNetV3ForSemanticSegmentation;
 var __webpack_exports__MobileNetV3ImageProcessor = __webpack_exports__.MobileNetV3ImageProcessor;
 var __webpack_exports__MobileNetV3Model = __webpack_exports__.MobileNetV3Model;
 var __webpack_exports__MobileNetV3PreTrainedModel = __webpack_exports__.MobileNetV3PreTrainedModel;
 var __webpack_exports__MobileNetV4FeatureExtractor = __webpack_exports__.MobileNetV4FeatureExtractor;
 var __webpack_exports__MobileNetV4ForImageClassification = __webpack_exports__.MobileNetV4ForImageClassification;
+var __webpack_exports__MobileNetV4ForSemanticSegmentation = __webpack_exports__.MobileNetV4ForSemanticSegmentation;
 var __webpack_exports__MobileNetV4ImageProcessor = __webpack_exports__.MobileNetV4ImageProcessor;
 var __webpack_exports__MobileNetV4Model = __webpack_exports__.MobileNetV4Model;
 var __webpack_exports__MobileNetV4PreTrainedModel = __webpack_exports__.MobileNetV4PreTrainedModel;
@@ -34150,7 +37264,17 @@ var __webpack_exports__MobileViTV2ForImageClassification = __webpack_exports__.M
 var __webpack_exports__MobileViTV2Model = __webpack_exports__.MobileViTV2Model;
 var __webpack_exports__MobileViTV2PreTrainedModel = __webpack_exports__.MobileViTV2PreTrainedModel;
 var __webpack_exports__ModelOutput = __webpack_exports__.ModelOutput;
+var __webpack_exports__ModernBertForMaskedLM = __webpack_exports__.ModernBertForMaskedLM;
+var __webpack_exports__ModernBertForSequenceClassification = __webpack_exports__.ModernBertForSequenceClassification;
+var __webpack_exports__ModernBertForTokenClassification = __webpack_exports__.ModernBertForTokenClassification;
+var __webpack_exports__ModernBertModel = __webpack_exports__.ModernBertModel;
+var __webpack_exports__ModernBertPreTrainedModel = __webpack_exports__.ModernBertPreTrainedModel;
 var __webpack_exports__Moondream1ForConditionalGeneration = __webpack_exports__.Moondream1ForConditionalGeneration;
+var __webpack_exports__MoonshineFeatureExtractor = __webpack_exports__.MoonshineFeatureExtractor;
+var __webpack_exports__MoonshineForConditionalGeneration = __webpack_exports__.MoonshineForConditionalGeneration;
+var __webpack_exports__MoonshineModel = __webpack_exports__.MoonshineModel;
+var __webpack_exports__MoonshinePreTrainedModel = __webpack_exports__.MoonshinePreTrainedModel;
+var __webpack_exports__MoonshineProcessor = __webpack_exports__.MoonshineProcessor;
 var __webpack_exports__MptForCausalLM = __webpack_exports__.MptForCausalLM;
 var __webpack_exports__MptModel = __webpack_exports__.MptModel;
 var __webpack_exports__MptPreTrainedModel = __webpack_exports__.MptPreTrainedModel;
@@ -34171,6 +37295,9 @@ var __webpack_exports__OPTForCausalLM = __webpack_exports__.OPTForCausalLM;
 var __webpack_exports__OPTModel = __webpack_exports__.OPTModel;
 var __webpack_exports__OPTPreTrainedModel = __webpack_exports__.OPTPreTrainedModel;
 var __webpack_exports__ObjectDetectionPipeline = __webpack_exports__.ObjectDetectionPipeline;
+var __webpack_exports__Olmo2ForCausalLM = __webpack_exports__.Olmo2ForCausalLM;
+var __webpack_exports__Olmo2Model = __webpack_exports__.Olmo2Model;
+var __webpack_exports__Olmo2PreTrainedModel = __webpack_exports__.Olmo2PreTrainedModel;
 var __webpack_exports__OlmoForCausalLM = __webpack_exports__.OlmoForCausalLM;
 var __webpack_exports__OlmoModel = __webpack_exports__.OlmoModel;
 var __webpack_exports__OlmoPreTrainedModel = __webpack_exports__.OlmoPreTrainedModel;
@@ -34187,6 +37314,9 @@ var __webpack_exports__Owlv2ForObjectDetection = __webpack_exports__.Owlv2ForObj
 var __webpack_exports__Owlv2ImageProcessor = __webpack_exports__.Owlv2ImageProcessor;
 var __webpack_exports__Owlv2Model = __webpack_exports__.Owlv2Model;
 var __webpack_exports__Owlv2PreTrainedModel = __webpack_exports__.Owlv2PreTrainedModel;
+var __webpack_exports__PaliGemmaForConditionalGeneration = __webpack_exports__.PaliGemmaForConditionalGeneration;
+var __webpack_exports__PaliGemmaPreTrainedModel = __webpack_exports__.PaliGemmaPreTrainedModel;
+var __webpack_exports__PaliGemmaProcessor = __webpack_exports__.PaliGemmaProcessor;
 var __webpack_exports__PatchTSMixerForPrediction = __webpack_exports__.PatchTSMixerForPrediction;
 var __webpack_exports__PatchTSMixerModel = __webpack_exports__.PatchTSMixerModel;
 var __webpack_exports__PatchTSMixerPreTrainedModel = __webpack_exports__.PatchTSMixerPreTrainedModel;
@@ -34196,6 +37326,10 @@ var __webpack_exports__PatchTSTPreTrainedModel = __webpack_exports__.PatchTSTPre
 var __webpack_exports__Phi3ForCausalLM = __webpack_exports__.Phi3ForCausalLM;
 var __webpack_exports__Phi3Model = __webpack_exports__.Phi3Model;
 var __webpack_exports__Phi3PreTrainedModel = __webpack_exports__.Phi3PreTrainedModel;
+var __webpack_exports__Phi3VForCausalLM = __webpack_exports__.Phi3VForCausalLM;
+var __webpack_exports__Phi3VImageProcessor = __webpack_exports__.Phi3VImageProcessor;
+var __webpack_exports__Phi3VPreTrainedModel = __webpack_exports__.Phi3VPreTrainedModel;
+var __webpack_exports__Phi3VProcessor = __webpack_exports__.Phi3VProcessor;
 var __webpack_exports__PhiForCausalLM = __webpack_exports__.PhiForCausalLM;
 var __webpack_exports__PhiModel = __webpack_exports__.PhiModel;
 var __webpack_exports__PhiPreTrainedModel = __webpack_exports__.PhiPreTrainedModel;
@@ -34229,7 +37363,10 @@ var __webpack_exports__RTDetrImageProcessor = __webpack_exports__.RTDetrImagePro
 var __webpack_exports__RTDetrModel = __webpack_exports__.RTDetrModel;
 var __webpack_exports__RTDetrObjectDetectionOutput = __webpack_exports__.RTDetrObjectDetectionOutput;
 var __webpack_exports__RTDetrPreTrainedModel = __webpack_exports__.RTDetrPreTrainedModel;
+var __webpack_exports__RawAudio = __webpack_exports__.RawAudio;
 var __webpack_exports__RawImage = __webpack_exports__.RawImage;
+var __webpack_exports__RawVideo = __webpack_exports__.RawVideo;
+var __webpack_exports__RawVideoFrame = __webpack_exports__.RawVideoFrame;
 var __webpack_exports__RepetitionPenaltyLogitsProcessor = __webpack_exports__.RepetitionPenaltyLogitsProcessor;
 var __webpack_exports__ResNetForImageClassification = __webpack_exports__.ResNetForImageClassification;
 var __webpack_exports__ResNetModel = __webpack_exports__.ResNetModel;
@@ -34272,6 +37409,9 @@ var __webpack_exports__SiglipPreTrainedModel = __webpack_exports__.SiglipPreTrai
 var __webpack_exports__SiglipTextModel = __webpack_exports__.SiglipTextModel;
 var __webpack_exports__SiglipTokenizer = __webpack_exports__.SiglipTokenizer;
 var __webpack_exports__SiglipVisionModel = __webpack_exports__.SiglipVisionModel;
+var __webpack_exports__SmolVLMForConditionalGeneration = __webpack_exports__.SmolVLMForConditionalGeneration;
+var __webpack_exports__SmolVLMImageProcessor = __webpack_exports__.SmolVLMImageProcessor;
+var __webpack_exports__SmolVLMProcessor = __webpack_exports__.SmolVLMProcessor;
 var __webpack_exports__SpeechT5FeatureExtractor = __webpack_exports__.SpeechT5FeatureExtractor;
 var __webpack_exports__SpeechT5ForSpeechToText = __webpack_exports__.SpeechT5ForSpeechToText;
 var __webpack_exports__SpeechT5ForTextToSpeech = __webpack_exports__.SpeechT5ForTextToSpeech;
@@ -34294,6 +37434,8 @@ var __webpack_exports__Starcoder2Model = __webpack_exports__.Starcoder2Model;
 var __webpack_exports__Starcoder2PreTrainedModel = __webpack_exports__.Starcoder2PreTrainedModel;
 var __webpack_exports__StoppingCriteria = __webpack_exports__.StoppingCriteria;
 var __webpack_exports__StoppingCriteriaList = __webpack_exports__.StoppingCriteriaList;
+var __webpack_exports__StyleTextToSpeech2Model = __webpack_exports__.StyleTextToSpeech2Model;
+var __webpack_exports__StyleTextToSpeech2PreTrainedModel = __webpack_exports__.StyleTextToSpeech2PreTrainedModel;
 var __webpack_exports__SummarizationPipeline = __webpack_exports__.SummarizationPipeline;
 var __webpack_exports__SuppressTokensAtBeginLogitsProcessor = __webpack_exports__.SuppressTokensAtBeginLogitsProcessor;
 var __webpack_exports__Swin2SRForImageSuperResolution = __webpack_exports__.Swin2SRForImageSuperResolution;
@@ -34301,6 +37443,7 @@ var __webpack_exports__Swin2SRImageProcessor = __webpack_exports__.Swin2SRImageP
 var __webpack_exports__Swin2SRModel = __webpack_exports__.Swin2SRModel;
 var __webpack_exports__Swin2SRPreTrainedModel = __webpack_exports__.Swin2SRPreTrainedModel;
 var __webpack_exports__SwinForImageClassification = __webpack_exports__.SwinForImageClassification;
+var __webpack_exports__SwinForSemanticSegmentation = __webpack_exports__.SwinForSemanticSegmentation;
 var __webpack_exports__SwinModel = __webpack_exports__.SwinModel;
 var __webpack_exports__SwinPreTrainedModel = __webpack_exports__.SwinPreTrainedModel;
 var __webpack_exports__T5ForConditionalGeneration = __webpack_exports__.T5ForConditionalGeneration;
@@ -34326,6 +37469,9 @@ var __webpack_exports__TopPLogitsWarper = __webpack_exports__.TopPLogitsWarper;
 var __webpack_exports__TrOCRForCausalLM = __webpack_exports__.TrOCRForCausalLM;
 var __webpack_exports__TrOCRPreTrainedModel = __webpack_exports__.TrOCRPreTrainedModel;
 var __webpack_exports__TranslationPipeline = __webpack_exports__.TranslationPipeline;
+var __webpack_exports__UltravoxModel = __webpack_exports__.UltravoxModel;
+var __webpack_exports__UltravoxPreTrainedModel = __webpack_exports__.UltravoxPreTrainedModel;
+var __webpack_exports__UltravoxProcessor = __webpack_exports__.UltravoxProcessor;
 var __webpack_exports__UniSpeechForCTC = __webpack_exports__.UniSpeechForCTC;
 var __webpack_exports__UniSpeechForSequenceClassification = __webpack_exports__.UniSpeechForSequenceClassification;
 var __webpack_exports__UniSpeechModel = __webpack_exports__.UniSpeechModel;
@@ -34369,6 +37515,7 @@ var __webpack_exports__Wav2Vec2ForCTC = __webpack_exports__.Wav2Vec2ForCTC;
 var __webpack_exports__Wav2Vec2ForSequenceClassification = __webpack_exports__.Wav2Vec2ForSequenceClassification;
 var __webpack_exports__Wav2Vec2Model = __webpack_exports__.Wav2Vec2Model;
 var __webpack_exports__Wav2Vec2PreTrainedModel = __webpack_exports__.Wav2Vec2PreTrainedModel;
+var __webpack_exports__Wav2Vec2Processor = __webpack_exports__.Wav2Vec2Processor;
 var __webpack_exports__Wav2Vec2ProcessorWithLM = __webpack_exports__.Wav2Vec2ProcessorWithLM;
 var __webpack_exports__WavLMForAudioFrameClassification = __webpack_exports__.WavLMForAudioFrameClassification;
 var __webpack_exports__WavLMForCTC = __webpack_exports__.WavLMForCTC;
@@ -34428,6 +37575,8 @@ var __webpack_exports__interpolate_4d = __webpack_exports__.interpolate_4d;
 var __webpack_exports__interpolate_data = __webpack_exports__.interpolate_data;
 var __webpack_exports__is_chinese_char = __webpack_exports__.is_chinese_char;
 var __webpack_exports__layer_norm = __webpack_exports__.layer_norm;
+var __webpack_exports__load_image = __webpack_exports__.load_image;
+var __webpack_exports__load_video = __webpack_exports__.load_video;
 var __webpack_exports__log_softmax = __webpack_exports__.log_softmax;
 var __webpack_exports__magnitude = __webpack_exports__.magnitude;
 var __webpack_exports__matmul = __webpack_exports__.matmul;
@@ -34443,9 +37592,11 @@ var __webpack_exports__permute = __webpack_exports__.permute;
 var __webpack_exports__permute_data = __webpack_exports__.permute_data;
 var __webpack_exports__pipeline = __webpack_exports__.pipeline;
 var __webpack_exports__quantize_embeddings = __webpack_exports__.quantize_embeddings;
+var __webpack_exports__rand = __webpack_exports__.rand;
 var __webpack_exports__read_audio = __webpack_exports__.read_audio;
 var __webpack_exports__rfft = __webpack_exports__.rfft;
 var __webpack_exports__round = __webpack_exports__.round;
+var __webpack_exports__slice = __webpack_exports__.slice;
 var __webpack_exports__softmax = __webpack_exports__.softmax;
 var __webpack_exports__spectrogram = __webpack_exports__.spectrogram;
 var __webpack_exports__stack = __webpack_exports__.stack;
@@ -34454,5 +37605,4 @@ var __webpack_exports__topk = __webpack_exports__.topk;
 var __webpack_exports__window_function = __webpack_exports__.window_function;
 var __webpack_exports__zeros = __webpack_exports__.zeros;
 var __webpack_exports__zeros_like = __webpack_exports__.zeros_like;
-export { __webpack_exports__ASTFeatureExtractor as ASTFeatureExtractor, __webpack_exports__ASTForAudioClassification as ASTForAudioClassification, __webpack_exports__ASTModel as ASTModel, __webpack_exports__ASTPreTrainedModel as ASTPreTrainedModel, __webpack_exports__AlbertForMaskedLM as AlbertForMaskedLM, __webpack_exports__AlbertForQuestionAnswering as AlbertForQuestionAnswering, __webpack_exports__AlbertForSequenceClassification as AlbertForSequenceClassification, __webpack_exports__AlbertModel as AlbertModel, __webpack_exports__AlbertPreTrainedModel as AlbertPreTrainedModel, __webpack_exports__AlbertTokenizer as AlbertTokenizer, __webpack_exports__AudioClassificationPipeline as AudioClassificationPipeline, __webpack_exports__AutoConfig as AutoConfig, __webpack_exports__AutoFeatureExtractor as AutoFeatureExtractor, __webpack_exports__AutoImageProcessor as AutoImageProcessor, __webpack_exports__AutoModel as AutoModel, __webpack_exports__AutoModelForAudioClassification as AutoModelForAudioClassification, __webpack_exports__AutoModelForAudioFrameClassification as AutoModelForAudioFrameClassification, __webpack_exports__AutoModelForCTC as AutoModelForCTC, __webpack_exports__AutoModelForCausalLM as AutoModelForCausalLM, __webpack_exports__AutoModelForDepthEstimation as AutoModelForDepthEstimation, __webpack_exports__AutoModelForDocumentQuestionAnswering as AutoModelForDocumentQuestionAnswering, __webpack_exports__AutoModelForImageClassification as AutoModelForImageClassification, __webpack_exports__AutoModelForImageFeatureExtraction as AutoModelForImageFeatureExtraction, __webpack_exports__AutoModelForImageMatting as AutoModelForImageMatting, __webpack_exports__AutoModelForImageSegmentation as AutoModelForImageSegmentation, __webpack_exports__AutoModelForImageToImage as AutoModelForImageToImage, __webpack_exports__AutoModelForMaskGeneration as AutoModelForMaskGeneration, __webpack_exports__AutoModelForMaskedLM as AutoModelForMaskedLM, __webpack_exports__AutoModelForNormalEstimation as AutoModelForNormalEstimation, __webpack_exports__AutoModelForObjectDetection as AutoModelForObjectDetection, __webpack_exports__AutoModelForPoseEstimation as AutoModelForPoseEstimation, __webpack_exports__AutoModelForQuestionAnswering as AutoModelForQuestionAnswering, __webpack_exports__AutoModelForSemanticSegmentation as AutoModelForSemanticSegmentation, __webpack_exports__AutoModelForSeq2SeqLM as AutoModelForSeq2SeqLM, __webpack_exports__AutoModelForSequenceClassification as AutoModelForSequenceClassification, __webpack_exports__AutoModelForSpeechSeq2Seq as AutoModelForSpeechSeq2Seq, __webpack_exports__AutoModelForTextToSpectrogram as AutoModelForTextToSpectrogram, __webpack_exports__AutoModelForTextToWaveform as AutoModelForTextToWaveform, __webpack_exports__AutoModelForTokenClassification as AutoModelForTokenClassification, __webpack_exports__AutoModelForUniversalSegmentation as AutoModelForUniversalSegmentation, __webpack_exports__AutoModelForVision2Seq as AutoModelForVision2Seq, __webpack_exports__AutoModelForXVector as AutoModelForXVector, __webpack_exports__AutoModelForZeroShotObjectDetection as AutoModelForZeroShotObjectDetection, __webpack_exports__AutoProcessor as AutoProcessor, __webpack_exports__AutoTokenizer as AutoTokenizer, __webpack_exports__AutomaticSpeechRecognitionPipeline as AutomaticSpeechRecognitionPipeline, __webpack_exports__BartForConditionalGeneration as BartForConditionalGeneration, __webpack_exports__BartForSequenceClassification as BartForSequenceClassification, __webpack_exports__BartModel as BartModel, __webpack_exports__BartPretrainedModel as BartPretrainedModel, __webpack_exports__BartTokenizer as BartTokenizer, __webpack_exports__BaseModelOutput as BaseModelOutput, __webpack_exports__BaseStreamer as BaseStreamer, __webpack_exports__BeitFeatureExtractor as BeitFeatureExtractor, __webpack_exports__BeitForImageClassification as BeitForImageClassification, __webpack_exports__BeitModel as BeitModel, __webpack_exports__BeitPreTrainedModel as BeitPreTrainedModel, __webpack_exports__BertForMaskedLM as BertForMaskedLM, __webpack_exports__BertForQuestionAnswering as BertForQuestionAnswering, __webpack_exports__BertForSequenceClassification as BertForSequenceClassification, __webpack_exports__BertForTokenClassification as BertForTokenClassification, __webpack_exports__BertModel as BertModel, __webpack_exports__BertPreTrainedModel as BertPreTrainedModel, __webpack_exports__BertTokenizer as BertTokenizer, __webpack_exports__BitImageProcessor as BitImageProcessor, __webpack_exports__BlenderbotForConditionalGeneration as BlenderbotForConditionalGeneration, __webpack_exports__BlenderbotModel as BlenderbotModel, __webpack_exports__BlenderbotPreTrainedModel as BlenderbotPreTrainedModel, __webpack_exports__BlenderbotSmallForConditionalGeneration as BlenderbotSmallForConditionalGeneration, __webpack_exports__BlenderbotSmallModel as BlenderbotSmallModel, __webpack_exports__BlenderbotSmallPreTrainedModel as BlenderbotSmallPreTrainedModel, __webpack_exports__BlenderbotSmallTokenizer as BlenderbotSmallTokenizer, __webpack_exports__BlenderbotTokenizer as BlenderbotTokenizer, __webpack_exports__BloomForCausalLM as BloomForCausalLM, __webpack_exports__BloomModel as BloomModel, __webpack_exports__BloomPreTrainedModel as BloomPreTrainedModel, __webpack_exports__BloomTokenizer as BloomTokenizer, __webpack_exports__CLIPFeatureExtractor as CLIPFeatureExtractor, __webpack_exports__CLIPImageProcessor as CLIPImageProcessor, __webpack_exports__CLIPModel as CLIPModel, __webpack_exports__CLIPPreTrainedModel as CLIPPreTrainedModel, __webpack_exports__CLIPSegForImageSegmentation as CLIPSegForImageSegmentation, __webpack_exports__CLIPSegModel as CLIPSegModel, __webpack_exports__CLIPSegPreTrainedModel as CLIPSegPreTrainedModel, __webpack_exports__CLIPTextModel as CLIPTextModel, __webpack_exports__CLIPTextModelWithProjection as CLIPTextModelWithProjection, __webpack_exports__CLIPTokenizer as CLIPTokenizer, __webpack_exports__CLIPVisionModel as CLIPVisionModel, __webpack_exports__CLIPVisionModelWithProjection as CLIPVisionModelWithProjection, __webpack_exports__CamembertForMaskedLM as CamembertForMaskedLM, __webpack_exports__CamembertForQuestionAnswering as CamembertForQuestionAnswering, __webpack_exports__CamembertForSequenceClassification as CamembertForSequenceClassification, __webpack_exports__CamembertForTokenClassification as CamembertForTokenClassification, __webpack_exports__CamembertModel as CamembertModel, __webpack_exports__CamembertPreTrainedModel as CamembertPreTrainedModel, __webpack_exports__CamembertTokenizer as CamembertTokenizer, __webpack_exports__CausalLMOutput as CausalLMOutput, __webpack_exports__CausalLMOutputWithPast as CausalLMOutputWithPast, __webpack_exports__ChineseCLIPFeatureExtractor as ChineseCLIPFeatureExtractor, __webpack_exports__ChineseCLIPModel as ChineseCLIPModel, __webpack_exports__ChineseCLIPPreTrainedModel as ChineseCLIPPreTrainedModel, __webpack_exports__ClapAudioModelWithProjection as ClapAudioModelWithProjection, __webpack_exports__ClapFeatureExtractor as ClapFeatureExtractor, __webpack_exports__ClapModel as ClapModel, __webpack_exports__ClapPreTrainedModel as ClapPreTrainedModel, __webpack_exports__ClapTextModelWithProjection as ClapTextModelWithProjection, __webpack_exports__ClassifierFreeGuidanceLogitsProcessor as ClassifierFreeGuidanceLogitsProcessor, __webpack_exports__CodeGenForCausalLM as CodeGenForCausalLM, __webpack_exports__CodeGenModel as CodeGenModel, __webpack_exports__CodeGenPreTrainedModel as CodeGenPreTrainedModel, __webpack_exports__CodeGenTokenizer as CodeGenTokenizer, __webpack_exports__CodeLlamaTokenizer as CodeLlamaTokenizer, __webpack_exports__CohereForCausalLM as CohereForCausalLM, __webpack_exports__CohereModel as CohereModel, __webpack_exports__CoherePreTrainedModel as CoherePreTrainedModel, __webpack_exports__CohereTokenizer as CohereTokenizer, __webpack_exports__ConvBertForMaskedLM as ConvBertForMaskedLM, __webpack_exports__ConvBertForQuestionAnswering as ConvBertForQuestionAnswering, __webpack_exports__ConvBertForSequenceClassification as ConvBertForSequenceClassification, __webpack_exports__ConvBertForTokenClassification as ConvBertForTokenClassification, __webpack_exports__ConvBertModel as ConvBertModel, __webpack_exports__ConvBertPreTrainedModel as ConvBertPreTrainedModel, __webpack_exports__ConvBertTokenizer as ConvBertTokenizer, __webpack_exports__ConvNextFeatureExtractor as ConvNextFeatureExtractor, __webpack_exports__ConvNextForImageClassification as ConvNextForImageClassification, __webpack_exports__ConvNextImageProcessor as ConvNextImageProcessor, __webpack_exports__ConvNextModel as ConvNextModel, __webpack_exports__ConvNextPreTrainedModel as ConvNextPreTrainedModel, __webpack_exports__ConvNextV2ForImageClassification as ConvNextV2ForImageClassification, __webpack_exports__ConvNextV2Model as ConvNextV2Model, __webpack_exports__ConvNextV2PreTrainedModel as ConvNextV2PreTrainedModel, __webpack_exports__DPTFeatureExtractor as DPTFeatureExtractor, __webpack_exports__DPTForDepthEstimation as DPTForDepthEstimation, __webpack_exports__DPTImageProcessor as DPTImageProcessor, __webpack_exports__DPTModel as DPTModel, __webpack_exports__DPTPreTrainedModel as DPTPreTrainedModel, __webpack_exports__DebertaForMaskedLM as DebertaForMaskedLM, __webpack_exports__DebertaForQuestionAnswering as DebertaForQuestionAnswering, __webpack_exports__DebertaForSequenceClassification as DebertaForSequenceClassification, __webpack_exports__DebertaForTokenClassification as DebertaForTokenClassification, __webpack_exports__DebertaModel as DebertaModel, __webpack_exports__DebertaPreTrainedModel as DebertaPreTrainedModel, __webpack_exports__DebertaTokenizer as DebertaTokenizer, __webpack_exports__DebertaV2ForMaskedLM as DebertaV2ForMaskedLM, __webpack_exports__DebertaV2ForQuestionAnswering as DebertaV2ForQuestionAnswering, __webpack_exports__DebertaV2ForSequenceClassification as DebertaV2ForSequenceClassification, __webpack_exports__DebertaV2ForTokenClassification as DebertaV2ForTokenClassification, __webpack_exports__DebertaV2Model as DebertaV2Model, __webpack_exports__DebertaV2PreTrainedModel as DebertaV2PreTrainedModel, __webpack_exports__DebertaV2Tokenizer as DebertaV2Tokenizer, __webpack_exports__DecisionTransformerModel as DecisionTransformerModel, __webpack_exports__DecisionTransformerPreTrainedModel as DecisionTransformerPreTrainedModel, __webpack_exports__DeiTFeatureExtractor as DeiTFeatureExtractor, __webpack_exports__DeiTForImageClassification as DeiTForImageClassification, __webpack_exports__DeiTImageProcessor as DeiTImageProcessor, __webpack_exports__DeiTModel as DeiTModel, __webpack_exports__DeiTPreTrainedModel as DeiTPreTrainedModel, __webpack_exports__DepthAnythingForDepthEstimation as DepthAnythingForDepthEstimation, __webpack_exports__DepthAnythingPreTrainedModel as DepthAnythingPreTrainedModel, __webpack_exports__DepthEstimationPipeline as DepthEstimationPipeline, __webpack_exports__DepthProForDepthEstimation as DepthProForDepthEstimation, __webpack_exports__DepthProPreTrainedModel as DepthProPreTrainedModel, __webpack_exports__DetrFeatureExtractor as DetrFeatureExtractor, __webpack_exports__DetrForObjectDetection as DetrForObjectDetection, __webpack_exports__DetrForSegmentation as DetrForSegmentation, __webpack_exports__DetrImageProcessor as DetrImageProcessor, __webpack_exports__DetrModel as DetrModel, __webpack_exports__DetrObjectDetectionOutput as DetrObjectDetectionOutput, __webpack_exports__DetrPreTrainedModel as DetrPreTrainedModel, __webpack_exports__DetrSegmentationOutput as DetrSegmentationOutput, __webpack_exports__Dinov2ForImageClassification as Dinov2ForImageClassification, __webpack_exports__Dinov2Model as Dinov2Model, __webpack_exports__Dinov2PreTrainedModel as Dinov2PreTrainedModel, __webpack_exports__DistilBertForMaskedLM as DistilBertForMaskedLM, __webpack_exports__DistilBertForQuestionAnswering as DistilBertForQuestionAnswering, __webpack_exports__DistilBertForSequenceClassification as DistilBertForSequenceClassification, __webpack_exports__DistilBertForTokenClassification as DistilBertForTokenClassification, __webpack_exports__DistilBertModel as DistilBertModel, __webpack_exports__DistilBertPreTrainedModel as DistilBertPreTrainedModel, __webpack_exports__DistilBertTokenizer as DistilBertTokenizer, __webpack_exports__DocumentQuestionAnsweringPipeline as DocumentQuestionAnsweringPipeline, __webpack_exports__DonutFeatureExtractor as DonutFeatureExtractor, __webpack_exports__DonutImageProcessor as DonutImageProcessor, __webpack_exports__DonutSwinModel as DonutSwinModel, __webpack_exports__DonutSwinPreTrainedModel as DonutSwinPreTrainedModel, __webpack_exports__EfficientNetForImageClassification as EfficientNetForImageClassification, __webpack_exports__EfficientNetImageProcessor as EfficientNetImageProcessor, __webpack_exports__EfficientNetModel as EfficientNetModel, __webpack_exports__EfficientNetPreTrainedModel as EfficientNetPreTrainedModel, __webpack_exports__ElectraForMaskedLM as ElectraForMaskedLM, __webpack_exports__ElectraForQuestionAnswering as ElectraForQuestionAnswering, __webpack_exports__ElectraForSequenceClassification as ElectraForSequenceClassification, __webpack_exports__ElectraForTokenClassification as ElectraForTokenClassification, __webpack_exports__ElectraModel as ElectraModel, __webpack_exports__ElectraPreTrainedModel as ElectraPreTrainedModel, __webpack_exports__ElectraTokenizer as ElectraTokenizer, __webpack_exports__EosTokenCriteria as EosTokenCriteria, __webpack_exports__EsmForMaskedLM as EsmForMaskedLM, __webpack_exports__EsmForSequenceClassification as EsmForSequenceClassification, __webpack_exports__EsmForTokenClassification as EsmForTokenClassification, __webpack_exports__EsmModel as EsmModel, __webpack_exports__EsmPreTrainedModel as EsmPreTrainedModel, __webpack_exports__EsmTokenizer as EsmTokenizer, __webpack_exports__FFT as FFT, __webpack_exports__FalconForCausalLM as FalconForCausalLM, __webpack_exports__FalconModel as FalconModel, __webpack_exports__FalconPreTrainedModel as FalconPreTrainedModel, __webpack_exports__FalconTokenizer as FalconTokenizer, __webpack_exports__FastViTForImageClassification as FastViTForImageClassification, __webpack_exports__FastViTModel as FastViTModel, __webpack_exports__FastViTPreTrainedModel as FastViTPreTrainedModel, __webpack_exports__FeatureExtractionPipeline as FeatureExtractionPipeline, __webpack_exports__FeatureExtractor as FeatureExtractor, __webpack_exports__FillMaskPipeline as FillMaskPipeline, __webpack_exports__Florence2ForConditionalGeneration as Florence2ForConditionalGeneration, __webpack_exports__Florence2PreTrainedModel as Florence2PreTrainedModel, __webpack_exports__Florence2Processor as Florence2Processor, __webpack_exports__ForcedBOSTokenLogitsProcessor as ForcedBOSTokenLogitsProcessor, __webpack_exports__ForcedEOSTokenLogitsProcessor as ForcedEOSTokenLogitsProcessor, __webpack_exports__GLPNFeatureExtractor as GLPNFeatureExtractor, __webpack_exports__GLPNForDepthEstimation as GLPNForDepthEstimation, __webpack_exports__GLPNModel as GLPNModel, __webpack_exports__GLPNPreTrainedModel as GLPNPreTrainedModel, __webpack_exports__GPT2LMHeadModel as GPT2LMHeadModel, __webpack_exports__GPT2Model as GPT2Model, __webpack_exports__GPT2PreTrainedModel as GPT2PreTrainedModel, __webpack_exports__GPT2Tokenizer as GPT2Tokenizer, __webpack_exports__GPTBigCodeForCausalLM as GPTBigCodeForCausalLM, __webpack_exports__GPTBigCodeModel as GPTBigCodeModel, __webpack_exports__GPTBigCodePreTrainedModel as GPTBigCodePreTrainedModel, __webpack_exports__GPTJForCausalLM as GPTJForCausalLM, __webpack_exports__GPTJModel as GPTJModel, __webpack_exports__GPTJPreTrainedModel as GPTJPreTrainedModel, __webpack_exports__GPTNeoForCausalLM as GPTNeoForCausalLM, __webpack_exports__GPTNeoModel as GPTNeoModel, __webpack_exports__GPTNeoPreTrainedModel as GPTNeoPreTrainedModel, __webpack_exports__GPTNeoXForCausalLM as GPTNeoXForCausalLM, __webpack_exports__GPTNeoXModel as GPTNeoXModel, __webpack_exports__GPTNeoXPreTrainedModel as GPTNeoXPreTrainedModel, __webpack_exports__GPTNeoXTokenizer as GPTNeoXTokenizer, __webpack_exports__Gemma2ForCausalLM as Gemma2ForCausalLM, __webpack_exports__Gemma2Model as Gemma2Model, __webpack_exports__Gemma2PreTrainedModel as Gemma2PreTrainedModel, __webpack_exports__GemmaForCausalLM as GemmaForCausalLM, __webpack_exports__GemmaModel as GemmaModel, __webpack_exports__GemmaPreTrainedModel as GemmaPreTrainedModel, __webpack_exports__GemmaTokenizer as GemmaTokenizer, __webpack_exports__GraniteForCausalLM as GraniteForCausalLM, __webpack_exports__GraniteModel as GraniteModel, __webpack_exports__GranitePreTrainedModel as GranitePreTrainedModel, __webpack_exports__Grok1Tokenizer as Grok1Tokenizer, __webpack_exports__GroupViTModel as GroupViTModel, __webpack_exports__GroupViTPreTrainedModel as GroupViTPreTrainedModel, __webpack_exports__HerbertTokenizer as HerbertTokenizer, __webpack_exports__HieraForImageClassification as HieraForImageClassification, __webpack_exports__HieraModel as HieraModel, __webpack_exports__HieraPreTrainedModel as HieraPreTrainedModel, __webpack_exports__HubertForCTC as HubertForCTC, __webpack_exports__HubertForSequenceClassification as HubertForSequenceClassification, __webpack_exports__HubertModel as HubertModel, __webpack_exports__HubertPreTrainedModel as HubertPreTrainedModel, __webpack_exports__ImageClassificationPipeline as ImageClassificationPipeline, __webpack_exports__ImageFeatureExtractionPipeline as ImageFeatureExtractionPipeline, __webpack_exports__ImageFeatureExtractor as ImageFeatureExtractor, __webpack_exports__ImageMattingOutput as ImageMattingOutput, __webpack_exports__ImageProcessor as ImageProcessor, __webpack_exports__ImageSegmentationPipeline as ImageSegmentationPipeline, __webpack_exports__ImageToImagePipeline as ImageToImagePipeline, __webpack_exports__ImageToTextPipeline as ImageToTextPipeline, __webpack_exports__InterruptableStoppingCriteria as InterruptableStoppingCriteria, __webpack_exports__JAISLMHeadModel as JAISLMHeadModel, __webpack_exports__JAISModel as JAISModel, __webpack_exports__JAISPreTrainedModel as JAISPreTrainedModel, __webpack_exports__JinaCLIPImageProcessor as JinaCLIPImageProcessor, __webpack_exports__JinaCLIPModel as JinaCLIPModel, __webpack_exports__JinaCLIPPreTrainedModel as JinaCLIPPreTrainedModel, __webpack_exports__JinaCLIPProcessor as JinaCLIPProcessor, __webpack_exports__JinaCLIPTextModel as JinaCLIPTextModel, __webpack_exports__JinaCLIPVisionModel as JinaCLIPVisionModel, __webpack_exports__LlamaForCausalLM as LlamaForCausalLM, __webpack_exports__LlamaModel as LlamaModel, __webpack_exports__LlamaPreTrainedModel as LlamaPreTrainedModel, __webpack_exports__LlamaTokenizer as LlamaTokenizer, __webpack_exports__LlavaForConditionalGeneration as LlavaForConditionalGeneration, __webpack_exports__LlavaOnevisionForConditionalGeneration as LlavaOnevisionForConditionalGeneration, __webpack_exports__LlavaOnevisionImageProcessor as LlavaOnevisionImageProcessor, __webpack_exports__LlavaPreTrainedModel as LlavaPreTrainedModel, __webpack_exports__LogitsProcessor as LogitsProcessor, __webpack_exports__LogitsProcessorList as LogitsProcessorList, __webpack_exports__LogitsWarper as LogitsWarper, __webpack_exports__LongT5ForConditionalGeneration as LongT5ForConditionalGeneration, __webpack_exports__LongT5Model as LongT5Model, __webpack_exports__LongT5PreTrainedModel as LongT5PreTrainedModel, __webpack_exports__M2M100ForConditionalGeneration as M2M100ForConditionalGeneration, __webpack_exports__M2M100Model as M2M100Model, __webpack_exports__M2M100PreTrainedModel as M2M100PreTrainedModel, __webpack_exports__M2M100Tokenizer as M2M100Tokenizer, __webpack_exports__MBart50Tokenizer as MBart50Tokenizer, __webpack_exports__MBartForCausalLM as MBartForCausalLM, __webpack_exports__MBartForConditionalGeneration as MBartForConditionalGeneration, __webpack_exports__MBartForSequenceClassification as MBartForSequenceClassification, __webpack_exports__MBartModel as MBartModel, __webpack_exports__MBartPreTrainedModel as MBartPreTrainedModel, __webpack_exports__MBartTokenizer as MBartTokenizer, __webpack_exports__MPNetForMaskedLM as MPNetForMaskedLM, __webpack_exports__MPNetForQuestionAnswering as MPNetForQuestionAnswering, __webpack_exports__MPNetForSequenceClassification as MPNetForSequenceClassification, __webpack_exports__MPNetForTokenClassification as MPNetForTokenClassification, __webpack_exports__MPNetModel as MPNetModel, __webpack_exports__MPNetPreTrainedModel as MPNetPreTrainedModel, __webpack_exports__MPNetTokenizer as MPNetTokenizer, __webpack_exports__MT5ForConditionalGeneration as MT5ForConditionalGeneration, __webpack_exports__MT5Model as MT5Model, __webpack_exports__MT5PreTrainedModel as MT5PreTrainedModel, __webpack_exports__MarianMTModel as MarianMTModel, __webpack_exports__MarianModel as MarianModel, __webpack_exports__MarianPreTrainedModel as MarianPreTrainedModel, __webpack_exports__MarianTokenizer as MarianTokenizer, __webpack_exports__Mask2FormerImageProcessor as Mask2FormerImageProcessor, __webpack_exports__MaskFormerFeatureExtractor as MaskFormerFeatureExtractor, __webpack_exports__MaskFormerForInstanceSegmentation as MaskFormerForInstanceSegmentation, __webpack_exports__MaskFormerImageProcessor as MaskFormerImageProcessor, __webpack_exports__MaskFormerModel as MaskFormerModel, __webpack_exports__MaskFormerPreTrainedModel as MaskFormerPreTrainedModel, __webpack_exports__MaskedLMOutput as MaskedLMOutput, __webpack_exports__MaxLengthCriteria as MaxLengthCriteria, __webpack_exports__MgpstrForSceneTextRecognition as MgpstrForSceneTextRecognition, __webpack_exports__MgpstrModelOutput as MgpstrModelOutput, __webpack_exports__MgpstrPreTrainedModel as MgpstrPreTrainedModel, __webpack_exports__MgpstrProcessor as MgpstrProcessor, __webpack_exports__MgpstrTokenizer as MgpstrTokenizer, __webpack_exports__MinLengthLogitsProcessor as MinLengthLogitsProcessor, __webpack_exports__MinNewTokensLengthLogitsProcessor as MinNewTokensLengthLogitsProcessor, __webpack_exports__MistralForCausalLM as MistralForCausalLM, __webpack_exports__MistralModel as MistralModel, __webpack_exports__MistralPreTrainedModel as MistralPreTrainedModel, __webpack_exports__MobileBertForMaskedLM as MobileBertForMaskedLM, __webpack_exports__MobileBertForQuestionAnswering as MobileBertForQuestionAnswering, __webpack_exports__MobileBertForSequenceClassification as MobileBertForSequenceClassification, __webpack_exports__MobileBertModel as MobileBertModel, __webpack_exports__MobileBertPreTrainedModel as MobileBertPreTrainedModel, __webpack_exports__MobileBertTokenizer as MobileBertTokenizer, __webpack_exports__MobileLLMForCausalLM as MobileLLMForCausalLM, __webpack_exports__MobileLLMModel as MobileLLMModel, __webpack_exports__MobileLLMPreTrainedModel as MobileLLMPreTrainedModel, __webpack_exports__MobileNetV1FeatureExtractor as MobileNetV1FeatureExtractor, __webpack_exports__MobileNetV1ForImageClassification as MobileNetV1ForImageClassification, __webpack_exports__MobileNetV1ImageProcessor as MobileNetV1ImageProcessor, __webpack_exports__MobileNetV1Model as MobileNetV1Model, __webpack_exports__MobileNetV1PreTrainedModel as MobileNetV1PreTrainedModel, __webpack_exports__MobileNetV2FeatureExtractor as MobileNetV2FeatureExtractor, __webpack_exports__MobileNetV2ForImageClassification as MobileNetV2ForImageClassification, __webpack_exports__MobileNetV2ImageProcessor as MobileNetV2ImageProcessor, __webpack_exports__MobileNetV2Model as MobileNetV2Model, __webpack_exports__MobileNetV2PreTrainedModel as MobileNetV2PreTrainedModel, __webpack_exports__MobileNetV3FeatureExtractor as MobileNetV3FeatureExtractor, __webpack_exports__MobileNetV3ForImageClassification as MobileNetV3ForImageClassification, __webpack_exports__MobileNetV3ImageProcessor as MobileNetV3ImageProcessor, __webpack_exports__MobileNetV3Model as MobileNetV3Model, __webpack_exports__MobileNetV3PreTrainedModel as MobileNetV3PreTrainedModel, __webpack_exports__MobileNetV4FeatureExtractor as MobileNetV4FeatureExtractor, __webpack_exports__MobileNetV4ForImageClassification as MobileNetV4ForImageClassification, __webpack_exports__MobileNetV4ImageProcessor as MobileNetV4ImageProcessor, __webpack_exports__MobileNetV4Model as MobileNetV4Model, __webpack_exports__MobileNetV4PreTrainedModel as MobileNetV4PreTrainedModel, __webpack_exports__MobileViTFeatureExtractor as MobileViTFeatureExtractor, __webpack_exports__MobileViTForImageClassification as MobileViTForImageClassification, __webpack_exports__MobileViTImageProcessor as MobileViTImageProcessor, __webpack_exports__MobileViTModel as MobileViTModel, __webpack_exports__MobileViTPreTrainedModel as MobileViTPreTrainedModel, __webpack_exports__MobileViTV2ForImageClassification as MobileViTV2ForImageClassification, __webpack_exports__MobileViTV2Model as MobileViTV2Model, __webpack_exports__MobileViTV2PreTrainedModel as MobileViTV2PreTrainedModel, __webpack_exports__ModelOutput as ModelOutput, __webpack_exports__Moondream1ForConditionalGeneration as Moondream1ForConditionalGeneration, __webpack_exports__MptForCausalLM as MptForCausalLM, __webpack_exports__MptModel as MptModel, __webpack_exports__MptPreTrainedModel as MptPreTrainedModel, __webpack_exports__MultiModalityCausalLM as MultiModalityCausalLM, __webpack_exports__MultiModalityPreTrainedModel as MultiModalityPreTrainedModel, __webpack_exports__MusicgenForCausalLM as MusicgenForCausalLM, __webpack_exports__MusicgenForConditionalGeneration as MusicgenForConditionalGeneration, __webpack_exports__MusicgenModel as MusicgenModel, __webpack_exports__MusicgenPreTrainedModel as MusicgenPreTrainedModel, __webpack_exports__NllbTokenizer as NllbTokenizer, __webpack_exports__NoBadWordsLogitsProcessor as NoBadWordsLogitsProcessor, __webpack_exports__NoRepeatNGramLogitsProcessor as NoRepeatNGramLogitsProcessor, __webpack_exports__NomicBertModel as NomicBertModel, __webpack_exports__NomicBertPreTrainedModel as NomicBertPreTrainedModel, __webpack_exports__NougatImageProcessor as NougatImageProcessor, __webpack_exports__NougatTokenizer as NougatTokenizer, __webpack_exports__OPTForCausalLM as OPTForCausalLM, __webpack_exports__OPTModel as OPTModel, __webpack_exports__OPTPreTrainedModel as OPTPreTrainedModel, __webpack_exports__ObjectDetectionPipeline as ObjectDetectionPipeline, __webpack_exports__OlmoForCausalLM as OlmoForCausalLM, __webpack_exports__OlmoModel as OlmoModel, __webpack_exports__OlmoPreTrainedModel as OlmoPreTrainedModel, __webpack_exports__OpenELMForCausalLM as OpenELMForCausalLM, __webpack_exports__OpenELMModel as OpenELMModel, __webpack_exports__OpenELMPreTrainedModel as OpenELMPreTrainedModel, __webpack_exports__OwlViTFeatureExtractor as OwlViTFeatureExtractor, __webpack_exports__OwlViTForObjectDetection as OwlViTForObjectDetection, __webpack_exports__OwlViTImageProcessor as OwlViTImageProcessor, __webpack_exports__OwlViTModel as OwlViTModel, __webpack_exports__OwlViTPreTrainedModel as OwlViTPreTrainedModel, __webpack_exports__OwlViTProcessor as OwlViTProcessor, __webpack_exports__Owlv2ForObjectDetection as Owlv2ForObjectDetection, __webpack_exports__Owlv2ImageProcessor as Owlv2ImageProcessor, __webpack_exports__Owlv2Model as Owlv2Model, __webpack_exports__Owlv2PreTrainedModel as Owlv2PreTrainedModel, __webpack_exports__PatchTSMixerForPrediction as PatchTSMixerForPrediction, __webpack_exports__PatchTSMixerModel as PatchTSMixerModel, __webpack_exports__PatchTSMixerPreTrainedModel as PatchTSMixerPreTrainedModel, __webpack_exports__PatchTSTForPrediction as PatchTSTForPrediction, __webpack_exports__PatchTSTModel as PatchTSTModel, __webpack_exports__PatchTSTPreTrainedModel as PatchTSTPreTrainedModel, __webpack_exports__Phi3ForCausalLM as Phi3ForCausalLM, __webpack_exports__Phi3Model as Phi3Model, __webpack_exports__Phi3PreTrainedModel as Phi3PreTrainedModel, __webpack_exports__PhiForCausalLM as PhiForCausalLM, __webpack_exports__PhiModel as PhiModel, __webpack_exports__PhiPreTrainedModel as PhiPreTrainedModel, __webpack_exports__Pipeline as Pipeline, __webpack_exports__PreTrainedModel as PreTrainedModel, __webpack_exports__PreTrainedTokenizer as PreTrainedTokenizer, __webpack_exports__PretrainedConfig as PretrainedConfig, __webpack_exports__PretrainedMixin as PretrainedMixin, __webpack_exports__Processor as Processor, __webpack_exports__PvtForImageClassification as PvtForImageClassification, __webpack_exports__PvtImageProcessor as PvtImageProcessor, __webpack_exports__PvtModel as PvtModel, __webpack_exports__PvtPreTrainedModel as PvtPreTrainedModel, __webpack_exports__PyAnnoteFeatureExtractor as PyAnnoteFeatureExtractor, __webpack_exports__PyAnnoteForAudioFrameClassification as PyAnnoteForAudioFrameClassification, __webpack_exports__PyAnnoteModel as PyAnnoteModel, __webpack_exports__PyAnnotePreTrainedModel as PyAnnotePreTrainedModel, __webpack_exports__PyAnnoteProcessor as PyAnnoteProcessor, __webpack_exports__QuestionAnsweringModelOutput as QuestionAnsweringModelOutput, __webpack_exports__QuestionAnsweringPipeline as QuestionAnsweringPipeline, __webpack_exports__Qwen2ForCausalLM as Qwen2ForCausalLM, __webpack_exports__Qwen2Model as Qwen2Model, __webpack_exports__Qwen2PreTrainedModel as Qwen2PreTrainedModel, __webpack_exports__Qwen2Tokenizer as Qwen2Tokenizer, __webpack_exports__Qwen2VLForConditionalGeneration as Qwen2VLForConditionalGeneration, __webpack_exports__Qwen2VLImageProcessor as Qwen2VLImageProcessor, __webpack_exports__Qwen2VLPreTrainedModel as Qwen2VLPreTrainedModel, __webpack_exports__Qwen2VLProcessor as Qwen2VLProcessor, __webpack_exports__RTDetrForObjectDetection as RTDetrForObjectDetection, __webpack_exports__RTDetrImageProcessor as RTDetrImageProcessor, __webpack_exports__RTDetrModel as RTDetrModel, __webpack_exports__RTDetrObjectDetectionOutput as RTDetrObjectDetectionOutput, __webpack_exports__RTDetrPreTrainedModel as RTDetrPreTrainedModel, __webpack_exports__RawImage as RawImage, __webpack_exports__RepetitionPenaltyLogitsProcessor as RepetitionPenaltyLogitsProcessor, __webpack_exports__ResNetForImageClassification as ResNetForImageClassification, __webpack_exports__ResNetModel as ResNetModel, __webpack_exports__ResNetPreTrainedModel as ResNetPreTrainedModel, __webpack_exports__RoFormerForMaskedLM as RoFormerForMaskedLM, __webpack_exports__RoFormerForQuestionAnswering as RoFormerForQuestionAnswering, __webpack_exports__RoFormerForSequenceClassification as RoFormerForSequenceClassification, __webpack_exports__RoFormerForTokenClassification as RoFormerForTokenClassification, __webpack_exports__RoFormerModel as RoFormerModel, __webpack_exports__RoFormerPreTrainedModel as RoFormerPreTrainedModel, __webpack_exports__RoFormerTokenizer as RoFormerTokenizer, __webpack_exports__RobertaForMaskedLM as RobertaForMaskedLM, __webpack_exports__RobertaForQuestionAnswering as RobertaForQuestionAnswering, __webpack_exports__RobertaForSequenceClassification as RobertaForSequenceClassification, __webpack_exports__RobertaForTokenClassification as RobertaForTokenClassification, __webpack_exports__RobertaModel as RobertaModel, __webpack_exports__RobertaPreTrainedModel as RobertaPreTrainedModel, __webpack_exports__RobertaTokenizer as RobertaTokenizer, __webpack_exports__SamImageProcessor as SamImageProcessor, __webpack_exports__SamImageSegmentationOutput as SamImageSegmentationOutput, __webpack_exports__SamModel as SamModel, __webpack_exports__SamPreTrainedModel as SamPreTrainedModel, __webpack_exports__SamProcessor as SamProcessor, __webpack_exports__SapiensForDepthEstimation as SapiensForDepthEstimation, __webpack_exports__SapiensForNormalEstimation as SapiensForNormalEstimation, __webpack_exports__SapiensForSemanticSegmentation as SapiensForSemanticSegmentation, __webpack_exports__SapiensPreTrainedModel as SapiensPreTrainedModel, __webpack_exports__SeamlessM4TFeatureExtractor as SeamlessM4TFeatureExtractor, __webpack_exports__SegformerFeatureExtractor as SegformerFeatureExtractor, __webpack_exports__SegformerForImageClassification as SegformerForImageClassification, __webpack_exports__SegformerForSemanticSegmentation as SegformerForSemanticSegmentation, __webpack_exports__SegformerImageProcessor as SegformerImageProcessor, __webpack_exports__SegformerModel as SegformerModel, __webpack_exports__SegformerPreTrainedModel as SegformerPreTrainedModel, __webpack_exports__Seq2SeqLMOutput as Seq2SeqLMOutput, __webpack_exports__SequenceClassifierOutput as SequenceClassifierOutput, __webpack_exports__SiglipImageProcessor as SiglipImageProcessor, __webpack_exports__SiglipModel as SiglipModel, __webpack_exports__SiglipPreTrainedModel as SiglipPreTrainedModel, __webpack_exports__SiglipTextModel as SiglipTextModel, __webpack_exports__SiglipTokenizer as SiglipTokenizer, __webpack_exports__SiglipVisionModel as SiglipVisionModel, __webpack_exports__SpeechT5FeatureExtractor as SpeechT5FeatureExtractor, __webpack_exports__SpeechT5ForSpeechToText as SpeechT5ForSpeechToText, __webpack_exports__SpeechT5ForTextToSpeech as SpeechT5ForTextToSpeech, __webpack_exports__SpeechT5HifiGan as SpeechT5HifiGan, __webpack_exports__SpeechT5Model as SpeechT5Model, __webpack_exports__SpeechT5PreTrainedModel as SpeechT5PreTrainedModel, __webpack_exports__SpeechT5Processor as SpeechT5Processor, __webpack_exports__SpeechT5Tokenizer as SpeechT5Tokenizer, __webpack_exports__SqueezeBertForMaskedLM as SqueezeBertForMaskedLM, __webpack_exports__SqueezeBertForQuestionAnswering as SqueezeBertForQuestionAnswering, __webpack_exports__SqueezeBertForSequenceClassification as SqueezeBertForSequenceClassification, __webpack_exports__SqueezeBertModel as SqueezeBertModel, __webpack_exports__SqueezeBertPreTrainedModel as SqueezeBertPreTrainedModel, __webpack_exports__SqueezeBertTokenizer as SqueezeBertTokenizer, __webpack_exports__StableLmForCausalLM as StableLmForCausalLM, __webpack_exports__StableLmModel as StableLmModel, __webpack_exports__StableLmPreTrainedModel as StableLmPreTrainedModel, __webpack_exports__Starcoder2ForCausalLM as Starcoder2ForCausalLM, __webpack_exports__Starcoder2Model as Starcoder2Model, __webpack_exports__Starcoder2PreTrainedModel as Starcoder2PreTrainedModel, __webpack_exports__StoppingCriteria as StoppingCriteria, __webpack_exports__StoppingCriteriaList as StoppingCriteriaList, __webpack_exports__SummarizationPipeline as SummarizationPipeline, __webpack_exports__SuppressTokensAtBeginLogitsProcessor as SuppressTokensAtBeginLogitsProcessor, __webpack_exports__Swin2SRForImageSuperResolution as Swin2SRForImageSuperResolution, __webpack_exports__Swin2SRImageProcessor as Swin2SRImageProcessor, __webpack_exports__Swin2SRModel as Swin2SRModel, __webpack_exports__Swin2SRPreTrainedModel as Swin2SRPreTrainedModel, __webpack_exports__SwinForImageClassification as SwinForImageClassification, __webpack_exports__SwinModel as SwinModel, __webpack_exports__SwinPreTrainedModel as SwinPreTrainedModel, __webpack_exports__T5ForConditionalGeneration as T5ForConditionalGeneration, __webpack_exports__T5Model as T5Model, __webpack_exports__T5PreTrainedModel as T5PreTrainedModel, __webpack_exports__T5Tokenizer as T5Tokenizer, __webpack_exports__TableTransformerForObjectDetection as TableTransformerForObjectDetection, __webpack_exports__TableTransformerModel as TableTransformerModel, __webpack_exports__TableTransformerObjectDetectionOutput as TableTransformerObjectDetectionOutput, __webpack_exports__TableTransformerPreTrainedModel as TableTransformerPreTrainedModel, __webpack_exports__TemperatureLogitsWarper as TemperatureLogitsWarper, __webpack_exports__Tensor as Tensor, __webpack_exports__Text2TextGenerationPipeline as Text2TextGenerationPipeline, __webpack_exports__TextClassificationPipeline as TextClassificationPipeline, __webpack_exports__TextGenerationPipeline as TextGenerationPipeline, __webpack_exports__TextStreamer as TextStreamer, __webpack_exports__TextToAudioPipeline as TextToAudioPipeline, __webpack_exports__TokenClassificationPipeline as TokenClassificationPipeline, __webpack_exports__TokenClassifierOutput as TokenClassifierOutput, __webpack_exports__TokenizerModel as TokenizerModel, __webpack_exports__TopKLogitsWarper as TopKLogitsWarper, __webpack_exports__TopPLogitsWarper as TopPLogitsWarper, __webpack_exports__TrOCRForCausalLM as TrOCRForCausalLM, __webpack_exports__TrOCRPreTrainedModel as TrOCRPreTrainedModel, __webpack_exports__TranslationPipeline as TranslationPipeline, __webpack_exports__UniSpeechForCTC as UniSpeechForCTC, __webpack_exports__UniSpeechForSequenceClassification as UniSpeechForSequenceClassification, __webpack_exports__UniSpeechModel as UniSpeechModel, __webpack_exports__UniSpeechPreTrainedModel as UniSpeechPreTrainedModel, __webpack_exports__UniSpeechSatForAudioFrameClassification as UniSpeechSatForAudioFrameClassification, __webpack_exports__UniSpeechSatForCTC as UniSpeechSatForCTC, __webpack_exports__UniSpeechSatForSequenceClassification as UniSpeechSatForSequenceClassification, __webpack_exports__UniSpeechSatModel as UniSpeechSatModel, __webpack_exports__UniSpeechSatPreTrainedModel as UniSpeechSatPreTrainedModel, __webpack_exports__VLChatProcessor as VLChatProcessor, __webpack_exports__VLMImageProcessor as VLMImageProcessor, __webpack_exports__ViTFeatureExtractor as ViTFeatureExtractor, __webpack_exports__ViTForImageClassification as ViTForImageClassification, __webpack_exports__ViTImageProcessor as ViTImageProcessor, __webpack_exports__ViTMAEModel as ViTMAEModel, __webpack_exports__ViTMAEPreTrainedModel as ViTMAEPreTrainedModel, __webpack_exports__ViTMSNForImageClassification as ViTMSNForImageClassification, __webpack_exports__ViTMSNModel as ViTMSNModel, __webpack_exports__ViTMSNPreTrainedModel as ViTMSNPreTrainedModel, __webpack_exports__ViTModel as ViTModel, __webpack_exports__ViTPreTrainedModel as ViTPreTrainedModel, __webpack_exports__VisionEncoderDecoderModel as VisionEncoderDecoderModel, __webpack_exports__VitMatteForImageMatting as VitMatteForImageMatting, __webpack_exports__VitMatteImageProcessor as VitMatteImageProcessor, __webpack_exports__VitMattePreTrainedModel as VitMattePreTrainedModel, __webpack_exports__VitPoseForPoseEstimation as VitPoseForPoseEstimation, __webpack_exports__VitPoseImageProcessor as VitPoseImageProcessor, __webpack_exports__VitPosePreTrainedModel as VitPosePreTrainedModel, __webpack_exports__VitsModel as VitsModel, __webpack_exports__VitsModelOutput as VitsModelOutput, __webpack_exports__VitsPreTrainedModel as VitsPreTrainedModel, __webpack_exports__VitsTokenizer as VitsTokenizer, __webpack_exports__Wav2Vec2BertForCTC as Wav2Vec2BertForCTC, __webpack_exports__Wav2Vec2BertForSequenceClassification as Wav2Vec2BertForSequenceClassification, __webpack_exports__Wav2Vec2BertModel as Wav2Vec2BertModel, __webpack_exports__Wav2Vec2BertPreTrainedModel as Wav2Vec2BertPreTrainedModel, __webpack_exports__Wav2Vec2CTCTokenizer as Wav2Vec2CTCTokenizer, __webpack_exports__Wav2Vec2FeatureExtractor as Wav2Vec2FeatureExtractor, __webpack_exports__Wav2Vec2ForAudioFrameClassification as Wav2Vec2ForAudioFrameClassification, __webpack_exports__Wav2Vec2ForCTC as Wav2Vec2ForCTC, __webpack_exports__Wav2Vec2ForSequenceClassification as Wav2Vec2ForSequenceClassification, __webpack_exports__Wav2Vec2Model as Wav2Vec2Model, __webpack_exports__Wav2Vec2PreTrainedModel as Wav2Vec2PreTrainedModel, __webpack_exports__Wav2Vec2ProcessorWithLM as Wav2Vec2ProcessorWithLM, __webpack_exports__WavLMForAudioFrameClassification as WavLMForAudioFrameClassification, __webpack_exports__WavLMForCTC as WavLMForCTC, __webpack_exports__WavLMForSequenceClassification as WavLMForSequenceClassification, __webpack_exports__WavLMForXVector as WavLMForXVector, __webpack_exports__WavLMModel as WavLMModel, __webpack_exports__WavLMPreTrainedModel as WavLMPreTrainedModel, __webpack_exports__WeSpeakerFeatureExtractor as WeSpeakerFeatureExtractor, __webpack_exports__WeSpeakerResNetModel as WeSpeakerResNetModel, __webpack_exports__WeSpeakerResNetPreTrainedModel as WeSpeakerResNetPreTrainedModel, __webpack_exports__WhisperFeatureExtractor as WhisperFeatureExtractor, __webpack_exports__WhisperForConditionalGeneration as WhisperForConditionalGeneration, __webpack_exports__WhisperModel as WhisperModel, __webpack_exports__WhisperPreTrainedModel as WhisperPreTrainedModel, __webpack_exports__WhisperProcessor as WhisperProcessor, __webpack_exports__WhisperTextStreamer as WhisperTextStreamer, __webpack_exports__WhisperTimeStampLogitsProcessor as WhisperTimeStampLogitsProcessor, __webpack_exports__WhisperTokenizer as WhisperTokenizer, __webpack_exports__XLMForQuestionAnswering as XLMForQuestionAnswering, __webpack_exports__XLMForSequenceClassification as XLMForSequenceClassification, __webpack_exports__XLMForTokenClassification as XLMForTokenClassification, __webpack_exports__XLMModel as XLMModel, __webpack_exports__XLMPreTrainedModel as XLMPreTrainedModel, __webpack_exports__XLMRobertaForMaskedLM as XLMRobertaForMaskedLM, __webpack_exports__XLMRobertaForQuestionAnswering as XLMRobertaForQuestionAnswering, __webpack_exports__XLMRobertaForSequenceClassification as XLMRobertaForSequenceClassification, __webpack_exports__XLMRobertaForTokenClassification as XLMRobertaForTokenClassification, __webpack_exports__XLMRobertaModel as XLMRobertaModel, __webpack_exports__XLMRobertaPreTrainedModel as XLMRobertaPreTrainedModel, __webpack_exports__XLMRobertaTokenizer as XLMRobertaTokenizer, __webpack_exports__XLMTokenizer as XLMTokenizer, __webpack_exports__XLMWithLMHeadModel as XLMWithLMHeadModel, __webpack_exports__XVectorOutput as XVectorOutput, __webpack_exports__YolosFeatureExtractor as YolosFeatureExtractor, __webpack_exports__YolosForObjectDetection as YolosForObjectDetection, __webpack_exports__YolosImageProcessor as YolosImageProcessor, __webpack_exports__YolosModel as YolosModel, __webpack_exports__YolosObjectDetectionOutput as YolosObjectDetectionOutput, __webpack_exports__YolosPreTrainedModel as YolosPreTrainedModel, __webpack_exports__ZeroShotAudioClassificationPipeline as ZeroShotAudioClassificationPipeline, __webpack_exports__ZeroShotClassificationPipeline as ZeroShotClassificationPipeline, __webpack_exports__ZeroShotImageClassificationPipeline as ZeroShotImageClassificationPipeline, __webpack_exports__ZeroShotObjectDetectionPipeline as ZeroShotObjectDetectionPipeline, __webpack_exports__bankers_round as bankers_round, __webpack_exports__cat as cat, __webpack_exports__cos_sim as cos_sim, __webpack_exports__dot as dot, __webpack_exports__dynamic_time_warping as dynamic_time_warping, __webpack_exports__env as env, __webpack_exports__full as full, __webpack_exports__full_like as full_like, __webpack_exports__getKeyValueShapes as getKeyValueShapes, __webpack_exports__hamming as hamming, __webpack_exports__hanning as hanning, __webpack_exports__interpolate as interpolate, __webpack_exports__interpolate_4d as interpolate_4d, __webpack_exports__interpolate_data as interpolate_data, __webpack_exports__is_chinese_char as is_chinese_char, __webpack_exports__layer_norm as layer_norm, __webpack_exports__log_softmax as log_softmax, __webpack_exports__magnitude as magnitude, __webpack_exports__matmul as matmul, __webpack_exports__max as max, __webpack_exports__mean as mean, __webpack_exports__mean_pooling as mean_pooling, __webpack_exports__medianFilter as medianFilter, __webpack_exports__mel_filter_bank as mel_filter_bank, __webpack_exports__min as min, __webpack_exports__ones as ones, __webpack_exports__ones_like as ones_like, __webpack_exports__permute as permute, __webpack_exports__permute_data as permute_data, __webpack_exports__pipeline as pipeline, __webpack_exports__quantize_embeddings as quantize_embeddings, __webpack_exports__read_audio as read_audio, __webpack_exports__rfft as rfft, __webpack_exports__round as round, __webpack_exports__softmax as softmax, __webpack_exports__spectrogram as spectrogram, __webpack_exports__stack as stack, __webpack_exports__std_mean as std_mean, __webpack_exports__topk as topk, __webpack_exports__window_function as window_function, __webpack_exports__zeros as zeros, __webpack_exports__zeros_like as zeros_like };
-
+export { __webpack_exports__ASTFeatureExtractor as ASTFeatureExtractor, __webpack_exports__ASTForAudioClassification as ASTForAudioClassification, __webpack_exports__ASTModel as ASTModel, __webpack_exports__ASTPreTrainedModel as ASTPreTrainedModel, __webpack_exports__AlbertForMaskedLM as AlbertForMaskedLM, __webpack_exports__AlbertForQuestionAnswering as AlbertForQuestionAnswering, __webpack_exports__AlbertForSequenceClassification as AlbertForSequenceClassification, __webpack_exports__AlbertModel as AlbertModel, __webpack_exports__AlbertPreTrainedModel as AlbertPreTrainedModel, __webpack_exports__AlbertTokenizer as AlbertTokenizer, __webpack_exports__AudioClassificationPipeline as AudioClassificationPipeline, __webpack_exports__AutoConfig as AutoConfig, __webpack_exports__AutoFeatureExtractor as AutoFeatureExtractor, __webpack_exports__AutoImageProcessor as AutoImageProcessor, __webpack_exports__AutoModel as AutoModel, __webpack_exports__AutoModelForAudioClassification as AutoModelForAudioClassification, __webpack_exports__AutoModelForAudioFrameClassification as AutoModelForAudioFrameClassification, __webpack_exports__AutoModelForAudioTextToText as AutoModelForAudioTextToText, __webpack_exports__AutoModelForCTC as AutoModelForCTC, __webpack_exports__AutoModelForCausalLM as AutoModelForCausalLM, __webpack_exports__AutoModelForDepthEstimation as AutoModelForDepthEstimation, __webpack_exports__AutoModelForDocumentQuestionAnswering as AutoModelForDocumentQuestionAnswering, __webpack_exports__AutoModelForImageClassification as AutoModelForImageClassification, __webpack_exports__AutoModelForImageFeatureExtraction as AutoModelForImageFeatureExtraction, __webpack_exports__AutoModelForImageMatting as AutoModelForImageMatting, __webpack_exports__AutoModelForImageSegmentation as AutoModelForImageSegmentation, __webpack_exports__AutoModelForImageTextToText as AutoModelForImageTextToText, __webpack_exports__AutoModelForImageToImage as AutoModelForImageToImage, __webpack_exports__AutoModelForMaskGeneration as AutoModelForMaskGeneration, __webpack_exports__AutoModelForMaskedLM as AutoModelForMaskedLM, __webpack_exports__AutoModelForNormalEstimation as AutoModelForNormalEstimation, __webpack_exports__AutoModelForObjectDetection as AutoModelForObjectDetection, __webpack_exports__AutoModelForPoseEstimation as AutoModelForPoseEstimation, __webpack_exports__AutoModelForQuestionAnswering as AutoModelForQuestionAnswering, __webpack_exports__AutoModelForSemanticSegmentation as AutoModelForSemanticSegmentation, __webpack_exports__AutoModelForSeq2SeqLM as AutoModelForSeq2SeqLM, __webpack_exports__AutoModelForSequenceClassification as AutoModelForSequenceClassification, __webpack_exports__AutoModelForSpeechSeq2Seq as AutoModelForSpeechSeq2Seq, __webpack_exports__AutoModelForTextToSpectrogram as AutoModelForTextToSpectrogram, __webpack_exports__AutoModelForTextToWaveform as AutoModelForTextToWaveform, __webpack_exports__AutoModelForTokenClassification as AutoModelForTokenClassification, __webpack_exports__AutoModelForUniversalSegmentation as AutoModelForUniversalSegmentation, __webpack_exports__AutoModelForVision2Seq as AutoModelForVision2Seq, __webpack_exports__AutoModelForXVector as AutoModelForXVector, __webpack_exports__AutoModelForZeroShotObjectDetection as AutoModelForZeroShotObjectDetection, __webpack_exports__AutoProcessor as AutoProcessor, __webpack_exports__AutoTokenizer as AutoTokenizer, __webpack_exports__AutomaticSpeechRecognitionPipeline as AutomaticSpeechRecognitionPipeline, __webpack_exports__BackgroundRemovalPipeline as BackgroundRemovalPipeline, __webpack_exports__BartForConditionalGeneration as BartForConditionalGeneration, __webpack_exports__BartForSequenceClassification as BartForSequenceClassification, __webpack_exports__BartModel as BartModel, __webpack_exports__BartPretrainedModel as BartPretrainedModel, __webpack_exports__BartTokenizer as BartTokenizer, __webpack_exports__BaseModelOutput as BaseModelOutput, __webpack_exports__BaseStreamer as BaseStreamer, __webpack_exports__BeitFeatureExtractor as BeitFeatureExtractor, __webpack_exports__BeitForImageClassification as BeitForImageClassification, __webpack_exports__BeitModel as BeitModel, __webpack_exports__BeitPreTrainedModel as BeitPreTrainedModel, __webpack_exports__BertForMaskedLM as BertForMaskedLM, __webpack_exports__BertForQuestionAnswering as BertForQuestionAnswering, __webpack_exports__BertForSequenceClassification as BertForSequenceClassification, __webpack_exports__BertForTokenClassification as BertForTokenClassification, __webpack_exports__BertModel as BertModel, __webpack_exports__BertPreTrainedModel as BertPreTrainedModel, __webpack_exports__BertTokenizer as BertTokenizer, __webpack_exports__BitImageProcessor as BitImageProcessor, __webpack_exports__BlenderbotForConditionalGeneration as BlenderbotForConditionalGeneration, __webpack_exports__BlenderbotModel as BlenderbotModel, __webpack_exports__BlenderbotPreTrainedModel as BlenderbotPreTrainedModel, __webpack_exports__BlenderbotSmallForConditionalGeneration as BlenderbotSmallForConditionalGeneration, __webpack_exports__BlenderbotSmallModel as BlenderbotSmallModel, __webpack_exports__BlenderbotSmallPreTrainedModel as BlenderbotSmallPreTrainedModel, __webpack_exports__BlenderbotSmallTokenizer as BlenderbotSmallTokenizer, __webpack_exports__BlenderbotTokenizer as BlenderbotTokenizer, __webpack_exports__BloomForCausalLM as BloomForCausalLM, __webpack_exports__BloomModel as BloomModel, __webpack_exports__BloomPreTrainedModel as BloomPreTrainedModel, __webpack_exports__BloomTokenizer as BloomTokenizer, __webpack_exports__CLIPFeatureExtractor as CLIPFeatureExtractor, __webpack_exports__CLIPImageProcessor as CLIPImageProcessor, __webpack_exports__CLIPModel as CLIPModel, __webpack_exports__CLIPPreTrainedModel as CLIPPreTrainedModel, __webpack_exports__CLIPSegForImageSegmentation as CLIPSegForImageSegmentation, __webpack_exports__CLIPSegModel as CLIPSegModel, __webpack_exports__CLIPSegPreTrainedModel as CLIPSegPreTrainedModel, __webpack_exports__CLIPTextModel as CLIPTextModel, __webpack_exports__CLIPTextModelWithProjection as CLIPTextModelWithProjection, __webpack_exports__CLIPTokenizer as CLIPTokenizer, __webpack_exports__CLIPVisionModel as CLIPVisionModel, __webpack_exports__CLIPVisionModelWithProjection as CLIPVisionModelWithProjection, __webpack_exports__CamembertForMaskedLM as CamembertForMaskedLM, __webpack_exports__CamembertForQuestionAnswering as CamembertForQuestionAnswering, __webpack_exports__CamembertForSequenceClassification as CamembertForSequenceClassification, __webpack_exports__CamembertForTokenClassification as CamembertForTokenClassification, __webpack_exports__CamembertModel as CamembertModel, __webpack_exports__CamembertPreTrainedModel as CamembertPreTrainedModel, __webpack_exports__CamembertTokenizer as CamembertTokenizer, __webpack_exports__CausalLMOutput as CausalLMOutput, __webpack_exports__CausalLMOutputWithPast as CausalLMOutputWithPast, __webpack_exports__ChineseCLIPFeatureExtractor as ChineseCLIPFeatureExtractor, __webpack_exports__ChineseCLIPModel as ChineseCLIPModel, __webpack_exports__ChineseCLIPPreTrainedModel as ChineseCLIPPreTrainedModel, __webpack_exports__ClapAudioModelWithProjection as ClapAudioModelWithProjection, __webpack_exports__ClapFeatureExtractor as ClapFeatureExtractor, __webpack_exports__ClapModel as ClapModel, __webpack_exports__ClapPreTrainedModel as ClapPreTrainedModel, __webpack_exports__ClapTextModelWithProjection as ClapTextModelWithProjection, __webpack_exports__ClassifierFreeGuidanceLogitsProcessor as ClassifierFreeGuidanceLogitsProcessor, __webpack_exports__CodeGenForCausalLM as CodeGenForCausalLM, __webpack_exports__CodeGenModel as CodeGenModel, __webpack_exports__CodeGenPreTrainedModel as CodeGenPreTrainedModel, __webpack_exports__CodeGenTokenizer as CodeGenTokenizer, __webpack_exports__CodeLlamaTokenizer as CodeLlamaTokenizer, __webpack_exports__CohereForCausalLM as CohereForCausalLM, __webpack_exports__CohereModel as CohereModel, __webpack_exports__CoherePreTrainedModel as CoherePreTrainedModel, __webpack_exports__CohereTokenizer as CohereTokenizer, __webpack_exports__ConvBertForMaskedLM as ConvBertForMaskedLM, __webpack_exports__ConvBertForQuestionAnswering as ConvBertForQuestionAnswering, __webpack_exports__ConvBertForSequenceClassification as ConvBertForSequenceClassification, __webpack_exports__ConvBertForTokenClassification as ConvBertForTokenClassification, __webpack_exports__ConvBertModel as ConvBertModel, __webpack_exports__ConvBertPreTrainedModel as ConvBertPreTrainedModel, __webpack_exports__ConvBertTokenizer as ConvBertTokenizer, __webpack_exports__ConvNextFeatureExtractor as ConvNextFeatureExtractor, __webpack_exports__ConvNextForImageClassification as ConvNextForImageClassification, __webpack_exports__ConvNextImageProcessor as ConvNextImageProcessor, __webpack_exports__ConvNextModel as ConvNextModel, __webpack_exports__ConvNextPreTrainedModel as ConvNextPreTrainedModel, __webpack_exports__ConvNextV2ForImageClassification as ConvNextV2ForImageClassification, __webpack_exports__ConvNextV2Model as ConvNextV2Model, __webpack_exports__ConvNextV2PreTrainedModel as ConvNextV2PreTrainedModel, __webpack_exports__DPTFeatureExtractor as DPTFeatureExtractor, __webpack_exports__DPTForDepthEstimation as DPTForDepthEstimation, __webpack_exports__DPTImageProcessor as DPTImageProcessor, __webpack_exports__DPTModel as DPTModel, __webpack_exports__DPTPreTrainedModel as DPTPreTrainedModel, __webpack_exports__DacDecoderModel as DacDecoderModel, __webpack_exports__DacDecoderOutput as DacDecoderOutput, __webpack_exports__DacEncoderModel as DacEncoderModel, __webpack_exports__DacEncoderOutput as DacEncoderOutput, __webpack_exports__DacFeatureExtractor as DacFeatureExtractor, __webpack_exports__DacModel as DacModel, __webpack_exports__DacPreTrainedModel as DacPreTrainedModel, __webpack_exports__DataTypeMap as DataTypeMap, __webpack_exports__DebertaForMaskedLM as DebertaForMaskedLM, __webpack_exports__DebertaForQuestionAnswering as DebertaForQuestionAnswering, __webpack_exports__DebertaForSequenceClassification as DebertaForSequenceClassification, __webpack_exports__DebertaForTokenClassification as DebertaForTokenClassification, __webpack_exports__DebertaModel as DebertaModel, __webpack_exports__DebertaPreTrainedModel as DebertaPreTrainedModel, __webpack_exports__DebertaTokenizer as DebertaTokenizer, __webpack_exports__DebertaV2ForMaskedLM as DebertaV2ForMaskedLM, __webpack_exports__DebertaV2ForQuestionAnswering as DebertaV2ForQuestionAnswering, __webpack_exports__DebertaV2ForSequenceClassification as DebertaV2ForSequenceClassification, __webpack_exports__DebertaV2ForTokenClassification as DebertaV2ForTokenClassification, __webpack_exports__DebertaV2Model as DebertaV2Model, __webpack_exports__DebertaV2PreTrainedModel as DebertaV2PreTrainedModel, __webpack_exports__DebertaV2Tokenizer as DebertaV2Tokenizer, __webpack_exports__DecisionTransformerModel as DecisionTransformerModel, __webpack_exports__DecisionTransformerPreTrainedModel as DecisionTransformerPreTrainedModel, __webpack_exports__DeiTFeatureExtractor as DeiTFeatureExtractor, __webpack_exports__DeiTForImageClassification as DeiTForImageClassification, __webpack_exports__DeiTImageProcessor as DeiTImageProcessor, __webpack_exports__DeiTModel as DeiTModel, __webpack_exports__DeiTPreTrainedModel as DeiTPreTrainedModel, __webpack_exports__DepthAnythingForDepthEstimation as DepthAnythingForDepthEstimation, __webpack_exports__DepthAnythingPreTrainedModel as DepthAnythingPreTrainedModel, __webpack_exports__DepthEstimationPipeline as DepthEstimationPipeline, __webpack_exports__DepthProForDepthEstimation as DepthProForDepthEstimation, __webpack_exports__DepthProPreTrainedModel as DepthProPreTrainedModel, __webpack_exports__DetrFeatureExtractor as DetrFeatureExtractor, __webpack_exports__DetrForObjectDetection as DetrForObjectDetection, __webpack_exports__DetrForSegmentation as DetrForSegmentation, __webpack_exports__DetrImageProcessor as DetrImageProcessor, __webpack_exports__DetrModel as DetrModel, __webpack_exports__DetrObjectDetectionOutput as DetrObjectDetectionOutput, __webpack_exports__DetrPreTrainedModel as DetrPreTrainedModel, __webpack_exports__DetrSegmentationOutput as DetrSegmentationOutput, __webpack_exports__Dinov2ForImageClassification as Dinov2ForImageClassification, __webpack_exports__Dinov2Model as Dinov2Model, __webpack_exports__Dinov2PreTrainedModel as Dinov2PreTrainedModel, __webpack_exports__Dinov2WithRegistersForImageClassification as Dinov2WithRegistersForImageClassification, __webpack_exports__Dinov2WithRegistersModel as Dinov2WithRegistersModel, __webpack_exports__Dinov2WithRegistersPreTrainedModel as Dinov2WithRegistersPreTrainedModel, __webpack_exports__DistilBertForMaskedLM as DistilBertForMaskedLM, __webpack_exports__DistilBertForQuestionAnswering as DistilBertForQuestionAnswering, __webpack_exports__DistilBertForSequenceClassification as DistilBertForSequenceClassification, __webpack_exports__DistilBertForTokenClassification as DistilBertForTokenClassification, __webpack_exports__DistilBertModel as DistilBertModel, __webpack_exports__DistilBertPreTrainedModel as DistilBertPreTrainedModel, __webpack_exports__DistilBertTokenizer as DistilBertTokenizer, __webpack_exports__DocumentQuestionAnsweringPipeline as DocumentQuestionAnsweringPipeline, __webpack_exports__DonutFeatureExtractor as DonutFeatureExtractor, __webpack_exports__DonutImageProcessor as DonutImageProcessor, __webpack_exports__DonutSwinModel as DonutSwinModel, __webpack_exports__DonutSwinPreTrainedModel as DonutSwinPreTrainedModel, __webpack_exports__EfficientNetForImageClassification as EfficientNetForImageClassification, __webpack_exports__EfficientNetImageProcessor as EfficientNetImageProcessor, __webpack_exports__EfficientNetModel as EfficientNetModel, __webpack_exports__EfficientNetPreTrainedModel as EfficientNetPreTrainedModel, __webpack_exports__ElectraForMaskedLM as ElectraForMaskedLM, __webpack_exports__ElectraForQuestionAnswering as ElectraForQuestionAnswering, __webpack_exports__ElectraForSequenceClassification as ElectraForSequenceClassification, __webpack_exports__ElectraForTokenClassification as ElectraForTokenClassification, __webpack_exports__ElectraModel as ElectraModel, __webpack_exports__ElectraPreTrainedModel as ElectraPreTrainedModel, __webpack_exports__ElectraTokenizer as ElectraTokenizer, __webpack_exports__EncodecFeatureExtractor as EncodecFeatureExtractor, __webpack_exports__EosTokenCriteria as EosTokenCriteria, __webpack_exports__EsmForMaskedLM as EsmForMaskedLM, __webpack_exports__EsmForSequenceClassification as EsmForSequenceClassification, __webpack_exports__EsmForTokenClassification as EsmForTokenClassification, __webpack_exports__EsmModel as EsmModel, __webpack_exports__EsmPreTrainedModel as EsmPreTrainedModel, __webpack_exports__EsmTokenizer as EsmTokenizer, __webpack_exports__ExaoneForCausalLM as ExaoneForCausalLM, __webpack_exports__ExaoneModel as ExaoneModel, __webpack_exports__ExaonePreTrainedModel as ExaonePreTrainedModel, __webpack_exports__FFT as FFT, __webpack_exports__FalconForCausalLM as FalconForCausalLM, __webpack_exports__FalconModel as FalconModel, __webpack_exports__FalconPreTrainedModel as FalconPreTrainedModel, __webpack_exports__FalconTokenizer as FalconTokenizer, __webpack_exports__FastViTForImageClassification as FastViTForImageClassification, __webpack_exports__FastViTModel as FastViTModel, __webpack_exports__FastViTPreTrainedModel as FastViTPreTrainedModel, __webpack_exports__FeatureExtractionPipeline as FeatureExtractionPipeline, __webpack_exports__FeatureExtractor as FeatureExtractor, __webpack_exports__FillMaskPipeline as FillMaskPipeline, __webpack_exports__Florence2ForConditionalGeneration as Florence2ForConditionalGeneration, __webpack_exports__Florence2PreTrainedModel as Florence2PreTrainedModel, __webpack_exports__Florence2Processor as Florence2Processor, __webpack_exports__ForcedBOSTokenLogitsProcessor as ForcedBOSTokenLogitsProcessor, __webpack_exports__ForcedEOSTokenLogitsProcessor as ForcedEOSTokenLogitsProcessor, __webpack_exports__GLPNFeatureExtractor as GLPNFeatureExtractor, __webpack_exports__GLPNForDepthEstimation as GLPNForDepthEstimation, __webpack_exports__GLPNModel as GLPNModel, __webpack_exports__GLPNPreTrainedModel as GLPNPreTrainedModel, __webpack_exports__GPT2LMHeadModel as GPT2LMHeadModel, __webpack_exports__GPT2Model as GPT2Model, __webpack_exports__GPT2PreTrainedModel as GPT2PreTrainedModel, __webpack_exports__GPT2Tokenizer as GPT2Tokenizer, __webpack_exports__GPTBigCodeForCausalLM as GPTBigCodeForCausalLM, __webpack_exports__GPTBigCodeModel as GPTBigCodeModel, __webpack_exports__GPTBigCodePreTrainedModel as GPTBigCodePreTrainedModel, __webpack_exports__GPTJForCausalLM as GPTJForCausalLM, __webpack_exports__GPTJModel as GPTJModel, __webpack_exports__GPTJPreTrainedModel as GPTJPreTrainedModel, __webpack_exports__GPTNeoForCausalLM as GPTNeoForCausalLM, __webpack_exports__GPTNeoModel as GPTNeoModel, __webpack_exports__GPTNeoPreTrainedModel as GPTNeoPreTrainedModel, __webpack_exports__GPTNeoXForCausalLM as GPTNeoXForCausalLM, __webpack_exports__GPTNeoXModel as GPTNeoXModel, __webpack_exports__GPTNeoXPreTrainedModel as GPTNeoXPreTrainedModel, __webpack_exports__GPTNeoXTokenizer as GPTNeoXTokenizer, __webpack_exports__Gemma2ForCausalLM as Gemma2ForCausalLM, __webpack_exports__Gemma2Model as Gemma2Model, __webpack_exports__Gemma2PreTrainedModel as Gemma2PreTrainedModel, __webpack_exports__GemmaForCausalLM as GemmaForCausalLM, __webpack_exports__GemmaModel as GemmaModel, __webpack_exports__GemmaPreTrainedModel as GemmaPreTrainedModel, __webpack_exports__GemmaTokenizer as GemmaTokenizer, __webpack_exports__GlmForCausalLM as GlmForCausalLM, __webpack_exports__GlmModel as GlmModel, __webpack_exports__GlmPreTrainedModel as GlmPreTrainedModel, __webpack_exports__GraniteForCausalLM as GraniteForCausalLM, __webpack_exports__GraniteModel as GraniteModel, __webpack_exports__GranitePreTrainedModel as GranitePreTrainedModel, __webpack_exports__Grok1Tokenizer as Grok1Tokenizer, __webpack_exports__GroundingDinoForObjectDetection as GroundingDinoForObjectDetection, __webpack_exports__GroundingDinoImageProcessor as GroundingDinoImageProcessor, __webpack_exports__GroundingDinoPreTrainedModel as GroundingDinoPreTrainedModel, __webpack_exports__GroundingDinoProcessor as GroundingDinoProcessor, __webpack_exports__GroupViTModel as GroupViTModel, __webpack_exports__GroupViTPreTrainedModel as GroupViTPreTrainedModel, __webpack_exports__HeliumForCausalLM as HeliumForCausalLM, __webpack_exports__HeliumModel as HeliumModel, __webpack_exports__HeliumPreTrainedModel as HeliumPreTrainedModel, __webpack_exports__HerbertTokenizer as HerbertTokenizer, __webpack_exports__HieraForImageClassification as HieraForImageClassification, __webpack_exports__HieraModel as HieraModel, __webpack_exports__HieraPreTrainedModel as HieraPreTrainedModel, __webpack_exports__HubertForCTC as HubertForCTC, __webpack_exports__HubertForSequenceClassification as HubertForSequenceClassification, __webpack_exports__HubertModel as HubertModel, __webpack_exports__HubertPreTrainedModel as HubertPreTrainedModel, __webpack_exports__IJepaForImageClassification as IJepaForImageClassification, __webpack_exports__IJepaModel as IJepaModel, __webpack_exports__IJepaPreTrainedModel as IJepaPreTrainedModel, __webpack_exports__Idefics3ForConditionalGeneration as Idefics3ForConditionalGeneration, __webpack_exports__Idefics3ImageProcessor as Idefics3ImageProcessor, __webpack_exports__Idefics3PreTrainedModel as Idefics3PreTrainedModel, __webpack_exports__Idefics3Processor as Idefics3Processor, __webpack_exports__ImageClassificationPipeline as ImageClassificationPipeline, __webpack_exports__ImageFeatureExtractionPipeline as ImageFeatureExtractionPipeline, __webpack_exports__ImageFeatureExtractor as ImageFeatureExtractor, __webpack_exports__ImageMattingOutput as ImageMattingOutput, __webpack_exports__ImageProcessor as ImageProcessor, __webpack_exports__ImageSegmentationPipeline as ImageSegmentationPipeline, __webpack_exports__ImageToImagePipeline as ImageToImagePipeline, __webpack_exports__ImageToTextPipeline as ImageToTextPipeline, __webpack_exports__InterruptableStoppingCriteria as InterruptableStoppingCriteria, __webpack_exports__JAISLMHeadModel as JAISLMHeadModel, __webpack_exports__JAISModel as JAISModel, __webpack_exports__JAISPreTrainedModel as JAISPreTrainedModel, __webpack_exports__JinaCLIPImageProcessor as JinaCLIPImageProcessor, __webpack_exports__JinaCLIPModel as JinaCLIPModel, __webpack_exports__JinaCLIPPreTrainedModel as JinaCLIPPreTrainedModel, __webpack_exports__JinaCLIPProcessor as JinaCLIPProcessor, __webpack_exports__JinaCLIPTextModel as JinaCLIPTextModel, __webpack_exports__JinaCLIPVisionModel as JinaCLIPVisionModel, __webpack_exports__LiteWhisperForConditionalGeneration as LiteWhisperForConditionalGeneration, __webpack_exports__LlamaForCausalLM as LlamaForCausalLM, __webpack_exports__LlamaModel as LlamaModel, __webpack_exports__LlamaPreTrainedModel as LlamaPreTrainedModel, __webpack_exports__LlamaTokenizer as LlamaTokenizer, __webpack_exports__LlavaForConditionalGeneration as LlavaForConditionalGeneration, __webpack_exports__LlavaOnevisionForConditionalGeneration as LlavaOnevisionForConditionalGeneration, __webpack_exports__LlavaOnevisionImageProcessor as LlavaOnevisionImageProcessor, __webpack_exports__LlavaPreTrainedModel as LlavaPreTrainedModel, __webpack_exports__LogitsProcessor as LogitsProcessor, __webpack_exports__LogitsProcessorList as LogitsProcessorList, __webpack_exports__LogitsWarper as LogitsWarper, __webpack_exports__LongT5ForConditionalGeneration as LongT5ForConditionalGeneration, __webpack_exports__LongT5Model as LongT5Model, __webpack_exports__LongT5PreTrainedModel as LongT5PreTrainedModel, __webpack_exports__M2M100ForConditionalGeneration as M2M100ForConditionalGeneration, __webpack_exports__M2M100Model as M2M100Model, __webpack_exports__M2M100PreTrainedModel as M2M100PreTrainedModel, __webpack_exports__M2M100Tokenizer as M2M100Tokenizer, __webpack_exports__MBart50Tokenizer as MBart50Tokenizer, __webpack_exports__MBartForCausalLM as MBartForCausalLM, __webpack_exports__MBartForConditionalGeneration as MBartForConditionalGeneration, __webpack_exports__MBartForSequenceClassification as MBartForSequenceClassification, __webpack_exports__MBartModel as MBartModel, __webpack_exports__MBartPreTrainedModel as MBartPreTrainedModel, __webpack_exports__MBartTokenizer as MBartTokenizer, __webpack_exports__MPNetForMaskedLM as MPNetForMaskedLM, __webpack_exports__MPNetForQuestionAnswering as MPNetForQuestionAnswering, __webpack_exports__MPNetForSequenceClassification as MPNetForSequenceClassification, __webpack_exports__MPNetForTokenClassification as MPNetForTokenClassification, __webpack_exports__MPNetModel as MPNetModel, __webpack_exports__MPNetPreTrainedModel as MPNetPreTrainedModel, __webpack_exports__MPNetTokenizer as MPNetTokenizer, __webpack_exports__MT5ForConditionalGeneration as MT5ForConditionalGeneration, __webpack_exports__MT5Model as MT5Model, __webpack_exports__MT5PreTrainedModel as MT5PreTrainedModel, __webpack_exports__MarianMTModel as MarianMTModel, __webpack_exports__MarianModel as MarianModel, __webpack_exports__MarianPreTrainedModel as MarianPreTrainedModel, __webpack_exports__MarianTokenizer as MarianTokenizer, __webpack_exports__Mask2FormerImageProcessor as Mask2FormerImageProcessor, __webpack_exports__MaskFormerFeatureExtractor as MaskFormerFeatureExtractor, __webpack_exports__MaskFormerForInstanceSegmentation as MaskFormerForInstanceSegmentation, __webpack_exports__MaskFormerImageProcessor as MaskFormerImageProcessor, __webpack_exports__MaskFormerModel as MaskFormerModel, __webpack_exports__MaskFormerPreTrainedModel as MaskFormerPreTrainedModel, __webpack_exports__MaskedLMOutput as MaskedLMOutput, __webpack_exports__MaxLengthCriteria as MaxLengthCriteria, __webpack_exports__MgpstrForSceneTextRecognition as MgpstrForSceneTextRecognition, __webpack_exports__MgpstrModelOutput as MgpstrModelOutput, __webpack_exports__MgpstrPreTrainedModel as MgpstrPreTrainedModel, __webpack_exports__MgpstrProcessor as MgpstrProcessor, __webpack_exports__MgpstrTokenizer as MgpstrTokenizer, __webpack_exports__MimiDecoderModel as MimiDecoderModel, __webpack_exports__MimiDecoderOutput as MimiDecoderOutput, __webpack_exports__MimiEncoderModel as MimiEncoderModel, __webpack_exports__MimiEncoderOutput as MimiEncoderOutput, __webpack_exports__MimiModel as MimiModel, __webpack_exports__MimiPreTrainedModel as MimiPreTrainedModel, __webpack_exports__MinLengthLogitsProcessor as MinLengthLogitsProcessor, __webpack_exports__MinNewTokensLengthLogitsProcessor as MinNewTokensLengthLogitsProcessor, __webpack_exports__MistralForCausalLM as MistralForCausalLM, __webpack_exports__MistralModel as MistralModel, __webpack_exports__MistralPreTrainedModel as MistralPreTrainedModel, __webpack_exports__MobileBertForMaskedLM as MobileBertForMaskedLM, __webpack_exports__MobileBertForQuestionAnswering as MobileBertForQuestionAnswering, __webpack_exports__MobileBertForSequenceClassification as MobileBertForSequenceClassification, __webpack_exports__MobileBertModel as MobileBertModel, __webpack_exports__MobileBertPreTrainedModel as MobileBertPreTrainedModel, __webpack_exports__MobileBertTokenizer as MobileBertTokenizer, __webpack_exports__MobileLLMForCausalLM as MobileLLMForCausalLM, __webpack_exports__MobileLLMModel as MobileLLMModel, __webpack_exports__MobileLLMPreTrainedModel as MobileLLMPreTrainedModel, __webpack_exports__MobileNetV1FeatureExtractor as MobileNetV1FeatureExtractor, __webpack_exports__MobileNetV1ForImageClassification as MobileNetV1ForImageClassification, __webpack_exports__MobileNetV1ForSemanticSegmentation as MobileNetV1ForSemanticSegmentation, __webpack_exports__MobileNetV1ImageProcessor as MobileNetV1ImageProcessor, __webpack_exports__MobileNetV1Model as MobileNetV1Model, __webpack_exports__MobileNetV1PreTrainedModel as MobileNetV1PreTrainedModel, __webpack_exports__MobileNetV2FeatureExtractor as MobileNetV2FeatureExtractor, __webpack_exports__MobileNetV2ForImageClassification as MobileNetV2ForImageClassification, __webpack_exports__MobileNetV2ForSemanticSegmentation as MobileNetV2ForSemanticSegmentation, __webpack_exports__MobileNetV2ImageProcessor as MobileNetV2ImageProcessor, __webpack_exports__MobileNetV2Model as MobileNetV2Model, __webpack_exports__MobileNetV2PreTrainedModel as MobileNetV2PreTrainedModel, __webpack_exports__MobileNetV3FeatureExtractor as MobileNetV3FeatureExtractor, __webpack_exports__MobileNetV3ForImageClassification as MobileNetV3ForImageClassification, __webpack_exports__MobileNetV3ForSemanticSegmentation as MobileNetV3ForSemanticSegmentation, __webpack_exports__MobileNetV3ImageProcessor as MobileNetV3ImageProcessor, __webpack_exports__MobileNetV3Model as MobileNetV3Model, __webpack_exports__MobileNetV3PreTrainedModel as MobileNetV3PreTrainedModel, __webpack_exports__MobileNetV4FeatureExtractor as MobileNetV4FeatureExtractor, __webpack_exports__MobileNetV4ForImageClassification as MobileNetV4ForImageClassification, __webpack_exports__MobileNetV4ForSemanticSegmentation as MobileNetV4ForSemanticSegmentation, __webpack_exports__MobileNetV4ImageProcessor as MobileNetV4ImageProcessor, __webpack_exports__MobileNetV4Model as MobileNetV4Model, __webpack_exports__MobileNetV4PreTrainedModel as MobileNetV4PreTrainedModel, __webpack_exports__MobileViTFeatureExtractor as MobileViTFeatureExtractor, __webpack_exports__MobileViTForImageClassification as MobileViTForImageClassification, __webpack_exports__MobileViTImageProcessor as MobileViTImageProcessor, __webpack_exports__MobileViTModel as MobileViTModel, __webpack_exports__MobileViTPreTrainedModel as MobileViTPreTrainedModel, __webpack_exports__MobileViTV2ForImageClassification as MobileViTV2ForImageClassification, __webpack_exports__MobileViTV2Model as MobileViTV2Model, __webpack_exports__MobileViTV2PreTrainedModel as MobileViTV2PreTrainedModel, __webpack_exports__ModelOutput as ModelOutput, __webpack_exports__ModernBertForMaskedLM as ModernBertForMaskedLM, __webpack_exports__ModernBertForSequenceClassification as ModernBertForSequenceClassification, __webpack_exports__ModernBertForTokenClassification as ModernBertForTokenClassification, __webpack_exports__ModernBertModel as ModernBertModel, __webpack_exports__ModernBertPreTrainedModel as ModernBertPreTrainedModel, __webpack_exports__Moondream1ForConditionalGeneration as Moondream1ForConditionalGeneration, __webpack_exports__MoonshineFeatureExtractor as MoonshineFeatureExtractor, __webpack_exports__MoonshineForConditionalGeneration as MoonshineForConditionalGeneration, __webpack_exports__MoonshineModel as MoonshineModel, __webpack_exports__MoonshinePreTrainedModel as MoonshinePreTrainedModel, __webpack_exports__MoonshineProcessor as MoonshineProcessor, __webpack_exports__MptForCausalLM as MptForCausalLM, __webpack_exports__MptModel as MptModel, __webpack_exports__MptPreTrainedModel as MptPreTrainedModel, __webpack_exports__MultiModalityCausalLM as MultiModalityCausalLM, __webpack_exports__MultiModalityPreTrainedModel as MultiModalityPreTrainedModel, __webpack_exports__MusicgenForCausalLM as MusicgenForCausalLM, __webpack_exports__MusicgenForConditionalGeneration as MusicgenForConditionalGeneration, __webpack_exports__MusicgenModel as MusicgenModel, __webpack_exports__MusicgenPreTrainedModel as MusicgenPreTrainedModel, __webpack_exports__NllbTokenizer as NllbTokenizer, __webpack_exports__NoBadWordsLogitsProcessor as NoBadWordsLogitsProcessor, __webpack_exports__NoRepeatNGramLogitsProcessor as NoRepeatNGramLogitsProcessor, __webpack_exports__NomicBertModel as NomicBertModel, __webpack_exports__NomicBertPreTrainedModel as NomicBertPreTrainedModel, __webpack_exports__NougatImageProcessor as NougatImageProcessor, __webpack_exports__NougatTokenizer as NougatTokenizer, __webpack_exports__OPTForCausalLM as OPTForCausalLM, __webpack_exports__OPTModel as OPTModel, __webpack_exports__OPTPreTrainedModel as OPTPreTrainedModel, __webpack_exports__ObjectDetectionPipeline as ObjectDetectionPipeline, __webpack_exports__Olmo2ForCausalLM as Olmo2ForCausalLM, __webpack_exports__Olmo2Model as Olmo2Model, __webpack_exports__Olmo2PreTrainedModel as Olmo2PreTrainedModel, __webpack_exports__OlmoForCausalLM as OlmoForCausalLM, __webpack_exports__OlmoModel as OlmoModel, __webpack_exports__OlmoPreTrainedModel as OlmoPreTrainedModel, __webpack_exports__OpenELMForCausalLM as OpenELMForCausalLM, __webpack_exports__OpenELMModel as OpenELMModel, __webpack_exports__OpenELMPreTrainedModel as OpenELMPreTrainedModel, __webpack_exports__OwlViTFeatureExtractor as OwlViTFeatureExtractor, __webpack_exports__OwlViTForObjectDetection as OwlViTForObjectDetection, __webpack_exports__OwlViTImageProcessor as OwlViTImageProcessor, __webpack_exports__OwlViTModel as OwlViTModel, __webpack_exports__OwlViTPreTrainedModel as OwlViTPreTrainedModel, __webpack_exports__OwlViTProcessor as OwlViTProcessor, __webpack_exports__Owlv2ForObjectDetection as Owlv2ForObjectDetection, __webpack_exports__Owlv2ImageProcessor as Owlv2ImageProcessor, __webpack_exports__Owlv2Model as Owlv2Model, __webpack_exports__Owlv2PreTrainedModel as Owlv2PreTrainedModel, __webpack_exports__PaliGemmaForConditionalGeneration as PaliGemmaForConditionalGeneration, __webpack_exports__PaliGemmaPreTrainedModel as PaliGemmaPreTrainedModel, __webpack_exports__PaliGemmaProcessor as PaliGemmaProcessor, __webpack_exports__PatchTSMixerForPrediction as PatchTSMixerForPrediction, __webpack_exports__PatchTSMixerModel as PatchTSMixerModel, __webpack_exports__PatchTSMixerPreTrainedModel as PatchTSMixerPreTrainedModel, __webpack_exports__PatchTSTForPrediction as PatchTSTForPrediction, __webpack_exports__PatchTSTModel as PatchTSTModel, __webpack_exports__PatchTSTPreTrainedModel as PatchTSTPreTrainedModel, __webpack_exports__Phi3ForCausalLM as Phi3ForCausalLM, __webpack_exports__Phi3Model as Phi3Model, __webpack_exports__Phi3PreTrainedModel as Phi3PreTrainedModel, __webpack_exports__Phi3VForCausalLM as Phi3VForCausalLM, __webpack_exports__Phi3VImageProcessor as Phi3VImageProcessor, __webpack_exports__Phi3VPreTrainedModel as Phi3VPreTrainedModel, __webpack_exports__Phi3VProcessor as Phi3VProcessor, __webpack_exports__PhiForCausalLM as PhiForCausalLM, __webpack_exports__PhiModel as PhiModel, __webpack_exports__PhiPreTrainedModel as PhiPreTrainedModel, __webpack_exports__Pipeline as Pipeline, __webpack_exports__PreTrainedModel as PreTrainedModel, __webpack_exports__PreTrainedTokenizer as PreTrainedTokenizer, __webpack_exports__PretrainedConfig as PretrainedConfig, __webpack_exports__PretrainedMixin as PretrainedMixin, __webpack_exports__Processor as Processor, __webpack_exports__PvtForImageClassification as PvtForImageClassification, __webpack_exports__PvtImageProcessor as PvtImageProcessor, __webpack_exports__PvtModel as PvtModel, __webpack_exports__PvtPreTrainedModel as PvtPreTrainedModel, __webpack_exports__PyAnnoteFeatureExtractor as PyAnnoteFeatureExtractor, __webpack_exports__PyAnnoteForAudioFrameClassification as PyAnnoteForAudioFrameClassification, __webpack_exports__PyAnnoteModel as PyAnnoteModel, __webpack_exports__PyAnnotePreTrainedModel as PyAnnotePreTrainedModel, __webpack_exports__PyAnnoteProcessor as PyAnnoteProcessor, __webpack_exports__QuestionAnsweringModelOutput as QuestionAnsweringModelOutput, __webpack_exports__QuestionAnsweringPipeline as QuestionAnsweringPipeline, __webpack_exports__Qwen2ForCausalLM as Qwen2ForCausalLM, __webpack_exports__Qwen2Model as Qwen2Model, __webpack_exports__Qwen2PreTrainedModel as Qwen2PreTrainedModel, __webpack_exports__Qwen2Tokenizer as Qwen2Tokenizer, __webpack_exports__Qwen2VLForConditionalGeneration as Qwen2VLForConditionalGeneration, __webpack_exports__Qwen2VLImageProcessor as Qwen2VLImageProcessor, __webpack_exports__Qwen2VLPreTrainedModel as Qwen2VLPreTrainedModel, __webpack_exports__Qwen2VLProcessor as Qwen2VLProcessor, __webpack_exports__RTDetrForObjectDetection as RTDetrForObjectDetection, __webpack_exports__RTDetrImageProcessor as RTDetrImageProcessor, __webpack_exports__RTDetrModel as RTDetrModel, __webpack_exports__RTDetrObjectDetectionOutput as RTDetrObjectDetectionOutput, __webpack_exports__RTDetrPreTrainedModel as RTDetrPreTrainedModel, __webpack_exports__RawAudio as RawAudio, __webpack_exports__RawImage as RawImage, __webpack_exports__RawVideo as RawVideo, __webpack_exports__RawVideoFrame as RawVideoFrame, __webpack_exports__RepetitionPenaltyLogitsProcessor as RepetitionPenaltyLogitsProcessor, __webpack_exports__ResNetForImageClassification as ResNetForImageClassification, __webpack_exports__ResNetModel as ResNetModel, __webpack_exports__ResNetPreTrainedModel as ResNetPreTrainedModel, __webpack_exports__RoFormerForMaskedLM as RoFormerForMaskedLM, __webpack_exports__RoFormerForQuestionAnswering as RoFormerForQuestionAnswering, __webpack_exports__RoFormerForSequenceClassification as RoFormerForSequenceClassification, __webpack_exports__RoFormerForTokenClassification as RoFormerForTokenClassification, __webpack_exports__RoFormerModel as RoFormerModel, __webpack_exports__RoFormerPreTrainedModel as RoFormerPreTrainedModel, __webpack_exports__RoFormerTokenizer as RoFormerTokenizer, __webpack_exports__RobertaForMaskedLM as RobertaForMaskedLM, __webpack_exports__RobertaForQuestionAnswering as RobertaForQuestionAnswering, __webpack_exports__RobertaForSequenceClassification as RobertaForSequenceClassification, __webpack_exports__RobertaForTokenClassification as RobertaForTokenClassification, __webpack_exports__RobertaModel as RobertaModel, __webpack_exports__RobertaPreTrainedModel as RobertaPreTrainedModel, __webpack_exports__RobertaTokenizer as RobertaTokenizer, __webpack_exports__SamImageProcessor as SamImageProcessor, __webpack_exports__SamImageSegmentationOutput as SamImageSegmentationOutput, __webpack_exports__SamModel as SamModel, __webpack_exports__SamPreTrainedModel as SamPreTrainedModel, __webpack_exports__SamProcessor as SamProcessor, __webpack_exports__SapiensForDepthEstimation as SapiensForDepthEstimation, __webpack_exports__SapiensForNormalEstimation as SapiensForNormalEstimation, __webpack_exports__SapiensForSemanticSegmentation as SapiensForSemanticSegmentation, __webpack_exports__SapiensPreTrainedModel as SapiensPreTrainedModel, __webpack_exports__SeamlessM4TFeatureExtractor as SeamlessM4TFeatureExtractor, __webpack_exports__SegformerFeatureExtractor as SegformerFeatureExtractor, __webpack_exports__SegformerForImageClassification as SegformerForImageClassification, __webpack_exports__SegformerForSemanticSegmentation as SegformerForSemanticSegmentation, __webpack_exports__SegformerImageProcessor as SegformerImageProcessor, __webpack_exports__SegformerModel as SegformerModel, __webpack_exports__SegformerPreTrainedModel as SegformerPreTrainedModel, __webpack_exports__Seq2SeqLMOutput as Seq2SeqLMOutput, __webpack_exports__SequenceClassifierOutput as SequenceClassifierOutput, __webpack_exports__SiglipImageProcessor as SiglipImageProcessor, __webpack_exports__SiglipModel as SiglipModel, __webpack_exports__SiglipPreTrainedModel as SiglipPreTrainedModel, __webpack_exports__SiglipTextModel as SiglipTextModel, __webpack_exports__SiglipTokenizer as SiglipTokenizer, __webpack_exports__SiglipVisionModel as SiglipVisionModel, __webpack_exports__SmolVLMForConditionalGeneration as SmolVLMForConditionalGeneration, __webpack_exports__SmolVLMImageProcessor as SmolVLMImageProcessor, __webpack_exports__SmolVLMProcessor as SmolVLMProcessor, __webpack_exports__SpeechT5FeatureExtractor as SpeechT5FeatureExtractor, __webpack_exports__SpeechT5ForSpeechToText as SpeechT5ForSpeechToText, __webpack_exports__SpeechT5ForTextToSpeech as SpeechT5ForTextToSpeech, __webpack_exports__SpeechT5HifiGan as SpeechT5HifiGan, __webpack_exports__SpeechT5Model as SpeechT5Model, __webpack_exports__SpeechT5PreTrainedModel as SpeechT5PreTrainedModel, __webpack_exports__SpeechT5Processor as SpeechT5Processor, __webpack_exports__SpeechT5Tokenizer as SpeechT5Tokenizer, __webpack_exports__SqueezeBertForMaskedLM as SqueezeBertForMaskedLM, __webpack_exports__SqueezeBertForQuestionAnswering as SqueezeBertForQuestionAnswering, __webpack_exports__SqueezeBertForSequenceClassification as SqueezeBertForSequenceClassification, __webpack_exports__SqueezeBertModel as SqueezeBertModel, __webpack_exports__SqueezeBertPreTrainedModel as SqueezeBertPreTrainedModel, __webpack_exports__SqueezeBertTokenizer as SqueezeBertTokenizer, __webpack_exports__StableLmForCausalLM as StableLmForCausalLM, __webpack_exports__StableLmModel as StableLmModel, __webpack_exports__StableLmPreTrainedModel as StableLmPreTrainedModel, __webpack_exports__Starcoder2ForCausalLM as Starcoder2ForCausalLM, __webpack_exports__Starcoder2Model as Starcoder2Model, __webpack_exports__Starcoder2PreTrainedModel as Starcoder2PreTrainedModel, __webpack_exports__StoppingCriteria as StoppingCriteria, __webpack_exports__StoppingCriteriaList as StoppingCriteriaList, __webpack_exports__StyleTextToSpeech2Model as StyleTextToSpeech2Model, __webpack_exports__StyleTextToSpeech2PreTrainedModel as StyleTextToSpeech2PreTrainedModel, __webpack_exports__SummarizationPipeline as SummarizationPipeline, __webpack_exports__SuppressTokensAtBeginLogitsProcessor as SuppressTokensAtBeginLogitsProcessor, __webpack_exports__Swin2SRForImageSuperResolution as Swin2SRForImageSuperResolution, __webpack_exports__Swin2SRImageProcessor as Swin2SRImageProcessor, __webpack_exports__Swin2SRModel as Swin2SRModel, __webpack_exports__Swin2SRPreTrainedModel as Swin2SRPreTrainedModel, __webpack_exports__SwinForImageClassification as SwinForImageClassification, __webpack_exports__SwinForSemanticSegmentation as SwinForSemanticSegmentation, __webpack_exports__SwinModel as SwinModel, __webpack_exports__SwinPreTrainedModel as SwinPreTrainedModel, __webpack_exports__T5ForConditionalGeneration as T5ForConditionalGeneration, __webpack_exports__T5Model as T5Model, __webpack_exports__T5PreTrainedModel as T5PreTrainedModel, __webpack_exports__T5Tokenizer as T5Tokenizer, __webpack_exports__TableTransformerForObjectDetection as TableTransformerForObjectDetection, __webpack_exports__TableTransformerModel as TableTransformerModel, __webpack_exports__TableTransformerObjectDetectionOutput as TableTransformerObjectDetectionOutput, __webpack_exports__TableTransformerPreTrainedModel as TableTransformerPreTrainedModel, __webpack_exports__TemperatureLogitsWarper as TemperatureLogitsWarper, __webpack_exports__Tensor as Tensor, __webpack_exports__Text2TextGenerationPipeline as Text2TextGenerationPipeline, __webpack_exports__TextClassificationPipeline as TextClassificationPipeline, __webpack_exports__TextGenerationPipeline as TextGenerationPipeline, __webpack_exports__TextStreamer as TextStreamer, __webpack_exports__TextToAudioPipeline as TextToAudioPipeline, __webpack_exports__TokenClassificationPipeline as TokenClassificationPipeline, __webpack_exports__TokenClassifierOutput as TokenClassifierOutput, __webpack_exports__TokenizerModel as TokenizerModel, __webpack_exports__TopKLogitsWarper as TopKLogitsWarper, __webpack_exports__TopPLogitsWarper as TopPLogitsWarper, __webpack_exports__TrOCRForCausalLM as TrOCRForCausalLM, __webpack_exports__TrOCRPreTrainedModel as TrOCRPreTrainedModel, __webpack_exports__TranslationPipeline as TranslationPipeline, __webpack_exports__UltravoxModel as UltravoxModel, __webpack_exports__UltravoxPreTrainedModel as UltravoxPreTrainedModel, __webpack_exports__UltravoxProcessor as UltravoxProcessor, __webpack_exports__UniSpeechForCTC as UniSpeechForCTC, __webpack_exports__UniSpeechForSequenceClassification as UniSpeechForSequenceClassification, __webpack_exports__UniSpeechModel as UniSpeechModel, __webpack_exports__UniSpeechPreTrainedModel as UniSpeechPreTrainedModel, __webpack_exports__UniSpeechSatForAudioFrameClassification as UniSpeechSatForAudioFrameClassification, __webpack_exports__UniSpeechSatForCTC as UniSpeechSatForCTC, __webpack_exports__UniSpeechSatForSequenceClassification as UniSpeechSatForSequenceClassification, __webpack_exports__UniSpeechSatModel as UniSpeechSatModel, __webpack_exports__UniSpeechSatPreTrainedModel as UniSpeechSatPreTrainedModel, __webpack_exports__VLChatProcessor as VLChatProcessor, __webpack_exports__VLMImageProcessor as VLMImageProcessor, __webpack_exports__ViTFeatureExtractor as ViTFeatureExtractor, __webpack_exports__ViTForImageClassification as ViTForImageClassification, __webpack_exports__ViTImageProcessor as ViTImageProcessor, __webpack_exports__ViTMAEModel as ViTMAEModel, __webpack_exports__ViTMAEPreTrainedModel as ViTMAEPreTrainedModel, __webpack_exports__ViTMSNForImageClassification as ViTMSNForImageClassification, __webpack_exports__ViTMSNModel as ViTMSNModel, __webpack_exports__ViTMSNPreTrainedModel as ViTMSNPreTrainedModel, __webpack_exports__ViTModel as ViTModel, __webpack_exports__ViTPreTrainedModel as ViTPreTrainedModel, __webpack_exports__VisionEncoderDecoderModel as VisionEncoderDecoderModel, __webpack_exports__VitMatteForImageMatting as VitMatteForImageMatting, __webpack_exports__VitMatteImageProcessor as VitMatteImageProcessor, __webpack_exports__VitMattePreTrainedModel as VitMattePreTrainedModel, __webpack_exports__VitPoseForPoseEstimation as VitPoseForPoseEstimation, __webpack_exports__VitPoseImageProcessor as VitPoseImageProcessor, __webpack_exports__VitPosePreTrainedModel as VitPosePreTrainedModel, __webpack_exports__VitsModel as VitsModel, __webpack_exports__VitsModelOutput as VitsModelOutput, __webpack_exports__VitsPreTrainedModel as VitsPreTrainedModel, __webpack_exports__VitsTokenizer as VitsTokenizer, __webpack_exports__Wav2Vec2BertForCTC as Wav2Vec2BertForCTC, __webpack_exports__Wav2Vec2BertForSequenceClassification as Wav2Vec2BertForSequenceClassification, __webpack_exports__Wav2Vec2BertModel as Wav2Vec2BertModel, __webpack_exports__Wav2Vec2BertPreTrainedModel as Wav2Vec2BertPreTrainedModel, __webpack_exports__Wav2Vec2CTCTokenizer as Wav2Vec2CTCTokenizer, __webpack_exports__Wav2Vec2FeatureExtractor as Wav2Vec2FeatureExtractor, __webpack_exports__Wav2Vec2ForAudioFrameClassification as Wav2Vec2ForAudioFrameClassification, __webpack_exports__Wav2Vec2ForCTC as Wav2Vec2ForCTC, __webpack_exports__Wav2Vec2ForSequenceClassification as Wav2Vec2ForSequenceClassification, __webpack_exports__Wav2Vec2Model as Wav2Vec2Model, __webpack_exports__Wav2Vec2PreTrainedModel as Wav2Vec2PreTrainedModel, __webpack_exports__Wav2Vec2Processor as Wav2Vec2Processor, __webpack_exports__Wav2Vec2ProcessorWithLM as Wav2Vec2ProcessorWithLM, __webpack_exports__WavLMForAudioFrameClassification as WavLMForAudioFrameClassification, __webpack_exports__WavLMForCTC as WavLMForCTC, __webpack_exports__WavLMForSequenceClassification as WavLMForSequenceClassification, __webpack_exports__WavLMForXVector as WavLMForXVector, __webpack_exports__WavLMModel as WavLMModel, __webpack_exports__WavLMPreTrainedModel as WavLMPreTrainedModel, __webpack_exports__WeSpeakerFeatureExtractor as WeSpeakerFeatureExtractor, __webpack_exports__WeSpeakerResNetModel as WeSpeakerResNetModel, __webpack_exports__WeSpeakerResNetPreTrainedModel as WeSpeakerResNetPreTrainedModel, __webpack_exports__WhisperFeatureExtractor as WhisperFeatureExtractor, __webpack_exports__WhisperForConditionalGeneration as WhisperForConditionalGeneration, __webpack_exports__WhisperModel as WhisperModel, __webpack_exports__WhisperPreTrainedModel as WhisperPreTrainedModel, __webpack_exports__WhisperProcessor as WhisperProcessor, __webpack_exports__WhisperTextStreamer as WhisperTextStreamer, __webpack_exports__WhisperTimeStampLogitsProcessor as WhisperTimeStampLogitsProcessor, __webpack_exports__WhisperTokenizer as WhisperTokenizer, __webpack_exports__XLMForQuestionAnswering as XLMForQuestionAnswering, __webpack_exports__XLMForSequenceClassification as XLMForSequenceClassification, __webpack_exports__XLMForTokenClassification as XLMForTokenClassification, __webpack_exports__XLMModel as XLMModel, __webpack_exports__XLMPreTrainedModel as XLMPreTrainedModel, __webpack_exports__XLMRobertaForMaskedLM as XLMRobertaForMaskedLM, __webpack_exports__XLMRobertaForQuestionAnswering as XLMRobertaForQuestionAnswering, __webpack_exports__XLMRobertaForSequenceClassification as XLMRobertaForSequenceClassification, __webpack_exports__XLMRobertaForTokenClassification as XLMRobertaForTokenClassification, __webpack_exports__XLMRobertaModel as XLMRobertaModel, __webpack_exports__XLMRobertaPreTrainedModel as XLMRobertaPreTrainedModel, __webpack_exports__XLMRobertaTokenizer as XLMRobertaTokenizer, __webpack_exports__XLMTokenizer as XLMTokenizer, __webpack_exports__XLMWithLMHeadModel as XLMWithLMHeadModel, __webpack_exports__XVectorOutput as XVectorOutput, __webpack_exports__YolosFeatureExtractor as YolosFeatureExtractor, __webpack_exports__YolosForObjectDetection as YolosForObjectDetection, __webpack_exports__YolosImageProcessor as YolosImageProcessor, __webpack_exports__YolosModel as YolosModel, __webpack_exports__YolosObjectDetectionOutput as YolosObjectDetectionOutput, __webpack_exports__YolosPreTrainedModel as YolosPreTrainedModel, __webpack_exports__ZeroShotAudioClassificationPipeline as ZeroShotAudioClassificationPipeline, __webpack_exports__ZeroShotClassificationPipeline as ZeroShotClassificationPipeline, __webpack_exports__ZeroShotImageClassificationPipeline as ZeroShotImageClassificationPipeline, __webpack_exports__ZeroShotObjectDetectionPipeline as ZeroShotObjectDetectionPipeline, __webpack_exports__bankers_round as bankers_round, __webpack_exports__cat as cat, __webpack_exports__cos_sim as cos_sim, __webpack_exports__dot as dot, __webpack_exports__dynamic_time_warping as dynamic_time_warping, __webpack_exports__env as env, __webpack_exports__full as full, __webpack_exports__full_like as full_like, __webpack_exports__getKeyValueShapes as getKeyValueShapes, __webpack_exports__hamming as hamming, __webpack_exports__hanning as hanning, __webpack_exports__interpolate as interpolate, __webpack_exports__interpolate_4d as interpolate_4d, __webpack_exports__interpolate_data as interpolate_data, __webpack_exports__is_chinese_char as is_chinese_char, __webpack_exports__layer_norm as layer_norm, __webpack_exports__load_image as load_image, __webpack_exports__load_video as load_video, __webpack_exports__log_softmax as log_softmax, __webpack_exports__magnitude as magnitude, __webpack_exports__matmul as matmul, __webpack_exports__max as max, __webpack_exports__mean as mean, __webpack_exports__mean_pooling as mean_pooling, __webpack_exports__medianFilter as medianFilter, __webpack_exports__mel_filter_bank as mel_filter_bank, __webpack_exports__min as min, __webpack_exports__ones as ones, __webpack_exports__ones_like as ones_like, __webpack_exports__permute as permute, __webpack_exports__permute_data as permute_data, __webpack_exports__pipeline as pipeline, __webpack_exports__quantize_embeddings as quantize_embeddings, __webpack_exports__rand as rand, __webpack_exports__read_audio as read_audio, __webpack_exports__rfft as rfft, __webpack_exports__round as round, __webpack_exports__slice as slice, __webpack_exports__softmax as softmax, __webpack_exports__spectrogram as spectrogram, __webpack_exports__stack as stack, __webpack_exports__std_mean as std_mean, __webpack_exports__topk as topk, __webpack_exports__window_function as window_function, __webpack_exports__zeros as zeros, __webpack_exports__zeros_like as zeros_like };
