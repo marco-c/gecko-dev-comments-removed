@@ -3668,6 +3668,25 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
   if (!mIsRoot) {
     return;
   }
+  nsIFrame* rootStyleFrame = GetFrameForStyle();
+
+  nsDisplayList rootResultList(aBuilder);
+  bool serializedList = false;
+  auto SerializeList = [&] {
+    if (!serializedList) {
+      serializedList = true;
+      aSet.SerializeWithCorrectZOrder(&rootResultList, GetContent());
+    }
+  };
+
+  if (rootStyleFrame &&
+      rootStyleFrame->HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
+      StaticPrefs::dom_viewTransitions_live_capture()) {
+    SerializeList();
+    rootResultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
+        aBuilder, this, &rootResultList, nullptr,
+         true);
+  }
 
   
   
@@ -3685,24 +3704,19 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
       
       
       
-      if (topLayerIsOpaque && PresContext()->IsRootContentDocumentInProcess()) {
+      if (topLayerIsOpaque && !serializedList &&
+          PresContext()->IsRootContentDocumentInProcess()) {
         aSet.DeleteAll(aBuilder);
       }
-      aSet.PositionedDescendants()->AppendToTop(topLayerWrapList);
+      if (serializedList) {
+        rootResultList.AppendToTop(topLayerWrapList);
+      } else {
+        aSet.PositionedDescendants()->AppendToTop(topLayerWrapList);
+      }
     }
   }
 
-  nsDisplayList rootResultList(aBuilder);
-
-  bool serializedList = false;
-  auto SerializeList = [&] {
-    if (!serializedList) {
-      serializedList = true;
-      aSet.SerializeWithCorrectZOrder(&rootResultList, GetContent());
-    }
-  };
-
-  if (nsIFrame* rootStyleFrame = GetFrameForStyle()) {
+  if (rootStyleFrame) {
     bool usingBackdropFilter =
         rootStyleFrame->StyleEffects()->HasBackdropFilters() &&
         rootStyleFrame->IsVisibleForPainting();

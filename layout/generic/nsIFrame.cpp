@@ -3578,12 +3578,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
   
   if (HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
       StaticPrefs::dom_viewTransitions_live_capture()) {
-    resultList.AppendNewToTopWithIndex<nsDisplayOwnLayer>(
-        aBuilder, this,
-         nsDisplayOwnLayer::OwnLayerForViewTransitionCapture,
-        &resultList, containerItemASR, nsDisplayOwnLayerFlags::None,
-        ScrollbarData{},
-         false, false);
+    resultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
+        aBuilder, this, &resultList, containerItemASR,  false);
     createdContainer = true;
   }
 
