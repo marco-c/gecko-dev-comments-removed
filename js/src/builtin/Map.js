@@ -205,43 +205,6 @@ function MapGroupBy(items, callbackfn) {
 
 
 
-function MapGetOrInsert(key, value) {
-  
-  var M = this;
-
-  
-  if (!IsObject(M) || (M = GuardToMapObject(M)) === null) {
-    return callFunction(
-      CallMapMethodIfWrapped,
-      this,
-      key,
-      value,
-      "MapGetOrInsert"
-    );
-  }
-
-  
-  
-  
-  if (callFunction(std_Map_has, M, key)) {
-    return callFunction(std_Map_get, M, key);
-  }
-
-  
-  
-  callFunction(std_Map_set, M, key, value);
-
-  
-  return value;
-}
-
-
-
-
-
-
-
-
 function MapGetOrInsertComputed(key, callbackfn) {
   
   var M = this;
@@ -283,3 +246,4 @@ function MapGetOrInsertComputed(key, callbackfn) {
   return value;
 }
 #endif  // #ifdef NIGHTLY_BUILD
+

@@ -728,6 +728,38 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     return true;
   }
 
+#ifdef NIGHTLY_BUILD
+  
+
+
+
+
+
+
+
+  template <typename ElementInput>
+  [[nodiscard]] T* getOrAdd(JSContext* cx, ElementInput&& element) {
+    HashNumber h;
+    if (hasAllocatedBuffer()) {
+      h = prepareHash(Ops::getKey(element));
+      if (Data* e = lookup(Ops::getKey(element), h)) {
+        return &e->element;
+      }
+      if (getDataLength() == getDataCapacity() && !rehashOnFull(cx)) {
+        return nullptr;
+      }
+    } else {
+      if (!initBuffer(cx)) {
+        return nullptr;
+      }
+      h = prepareHash(Ops::getKey(element));
+    }
+    auto [entry, chain] = addEntry(h);
+    new (entry) Data(std::forward<ElementInput>(element), chain);
+    return &entry->element;
+  }
+#endif  
+
   
 
 
@@ -1324,6 +1356,14 @@ class MOZ_STACK_CLASS OrderedHashMapImpl {
   [[nodiscard]] bool put(JSContext* cx, K&& key, V&& value) {
     return impl.put(cx, Entry(std::forward<K>(key), std::forward<V>(value)));
   }
+
+#ifdef NIGHTLY_BUILD
+  template <typename K, typename V>
+  [[nodiscard]] Entry* getOrAdd(JSContext* cx, K&& key, V&& value) {
+    return impl.getOrAdd(cx,
+                         Entry(std::forward<K>(key), std::forward<V>(value)));
+  }
+#endif  
 
 #ifdef DEBUG
   mozilla::Maybe<HashNumber> hash(const Lookup& key) const {
