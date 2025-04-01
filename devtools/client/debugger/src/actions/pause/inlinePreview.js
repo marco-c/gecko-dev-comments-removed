@@ -76,35 +76,27 @@ export function generateInlinePreview(selectedFrame) {
       curLevel <= levels && scopes && scopes.bindings;
       curLevel++
     ) {
+      
       const bindings = getScopeBindings(scopes);
-      const previewBindings = Object.keys(bindings).map(async name => {
-        
-        
-        let properties = null;
-        const objectGrip = bindings[name].value;
-        if (objectGrip.actor && objectGrip.class === "Object") {
-          properties = await client.loadObjectProperties(
-            {
-              name,
-              path: name,
-              contents: { value: objectGrip },
-            },
+
+      
+      const allPreviewBindingsComplete = Object.keys(bindings).map(
+        async name => {
+          
+          const previews = await generatePreviewsForBinding(
+            originalAstScopes[curLevel]?.bindings[name],
+            pausedOnLine,
+            name,
+            bindings[name].value,
+            client,
             selectedFrame.thread
           );
+
+          allPreviews.push(...previews);
         }
+      );
+      await Promise.all(allPreviewBindingsComplete);
 
-        const previewsFromBindings = getBindingValues(
-          originalAstScopes,
-          pausedOnLine,
-          name,
-          bindings[name].value,
-          curLevel,
-          properties
-        );
-
-        allPreviews.push(...previewsFromBindings);
-      });
-      await Promise.all(previewBindings);
       
       validateSelectedFrame(getState(), selectedFrame);
 
@@ -146,7 +138,6 @@ export function generateInlinePreview(selectedFrame) {
 
 
 
-
 function getScopeBindings(scopes) {
   const bindings = { ...scopes.bindings.variables };
   scopes.bindings.arguments.forEach(argument => {
@@ -157,29 +148,37 @@ function getScopeBindings(scopes) {
   return bindings;
 }
 
-function getBindingValues(
-  originalAstScopes,
+
+
+
+
+
+
+
+
+
+
+
+async function generatePreviewsForBinding(
+  bindingData,
   pausedOnLine,
   name,
   value,
-  curLevel,
-  properties
+  client,
+  thread
 ) {
-  const previews = [];
-
-  const binding = originalAstScopes[curLevel]?.bindings[name];
-  if (!binding) {
-    return previews;
+  if (!bindingData) {
+    return [];
   }
 
   
   
   const identifiers = new Set();
-
+  const previews = [];
   
   
-  for (let i = binding.refs.length - 1; i >= 0; i--) {
-    const ref = binding.refs[i];
+  for (let i = bindingData.refs.length - 1; i >= 0; i--) {
+    const ref = bindingData.refs[i];
     
     const line = ref.start.line - 1;
     const column = ref.start.column;
@@ -188,11 +187,12 @@ function getBindingValues(
       continue;
     }
 
-    const { displayName, displayValue } = getExpressionNameAndValue(
+    const { displayName, displayValue } = await getExpressionNameAndValue(
       name,
       value,
       ref,
-      properties
+      client,
+      thread
     );
 
     
@@ -214,15 +214,33 @@ function getBindingValues(
   return previews;
 }
 
-function getExpressionNameAndValue(
-  name,
-  value,
-  
-  ref,
-  properties
-) {
+
+
+
+
+
+
+
+
+
+
+async function getExpressionNameAndValue(name, value, ref, client, thread) {
   let displayName = name;
   let displayValue = value;
+
+  
+  
+  let properties = null;
+  if (value.actor && value.class === "Object") {
+    properties = await client.loadObjectProperties(
+      {
+        name,
+        path: name,
+        contents: { value },
+      },
+      thread
+    );
+  }
 
   
   if (properties) {
