@@ -103,6 +103,10 @@ CookieParser::~CookieParser() {
       COOKIE_LOGGING_WITH_NAME(CONSOLE_REJECTION_CATEGORY,
                                "CookieRejectedInvalidPrefix"_ns);
       break;
+    case RejectedInvalidPath:
+      COOKIE_LOGGING_WITH_NAME(CONSOLE_REJECTION_CATEGORY,
+                               "CookieRejectedInvalidPath"_ns);
+      break;
 
     case RejectedInvalidCharValue:
       COOKIE_LOGGING_WITH_NAME(CONSOLE_REJECTION_CATEGORY,
@@ -375,16 +379,22 @@ static inline void SetSameSiteAttributeDefault(CookieStruct& aCookieData) {
   aCookieData.rawSameSite() = nsICookie::SAMESITE_NONE;
 }
 
+
 bool CookieParser::CheckAttributeSize(const nsACString& currentValue,
                                       const char* aAttribute,
-                                      const nsACString& aValue) {
+                                      const nsACString& aValue,
+                                      CookieParser* aParser) {
   if (aValue.Length() > ATTRIBUTE_MAX_LENGTH) {
-    mWarnings.mAttributeOversize.AppendElement(aAttribute);
+    if (aParser) {
+      aParser->mWarnings.mAttributeOversize.AppendElement(aAttribute);
+    }
     return false;
   }
 
   if (!currentValue.IsEmpty()) {
-    mWarnings.mAttributeOverwritten.AppendElement(aAttribute);
+    if (aParser) {
+      aParser->mWarnings.mAttributeOverwritten.AppendElement(aAttribute);
+    }
   }
 
   return true;
@@ -448,22 +458,23 @@ void CookieParser::ParseAttributes(nsCString& aCookieHeader,
 
     
     if (tokenString.LowerCaseEqualsLiteral(ATTRIBUTE_PATH)) {
-      if (CheckAttributeSize(mCookieData.path(), ATTRIBUTE_PATH, tokenValue)) {
+      if (CheckAttributeSize(mCookieData.path(), ATTRIBUTE_PATH, tokenValue,
+                             this)) {
         mCookieData.path() = tokenValue;
       }
 
     } else if (tokenString.LowerCaseEqualsLiteral(kDomain)) {
-      if (CheckAttributeSize(mCookieData.host(), kDomain, tokenValue)) {
+      if (CheckAttributeSize(mCookieData.host(), kDomain, tokenValue, this)) {
         mCookieData.host() = tokenValue;
       }
 
     } else if (tokenString.LowerCaseEqualsLiteral(kExpires)) {
-      if (CheckAttributeSize(aExpires, kExpires, tokenValue)) {
+      if (CheckAttributeSize(aExpires, kExpires, tokenValue, this)) {
         aExpires = tokenValue;
       }
 
     } else if (tokenString.LowerCaseEqualsLiteral(kMaxage)) {
-      if (CheckAttributeSize(aMaxage, kMaxage, tokenValue)) {
+      if (CheckAttributeSize(aMaxage, kMaxage, tokenValue, this)) {
         aMaxage = tokenValue;
       }
 
@@ -572,18 +583,20 @@ nsAutoCString GetPathFromURI(nsIURI* aHostURI) {
 
 }  
 
-bool CookieParser::CheckPath() {
+
+bool CookieParser::CheckPath(CookieStruct& aCookieData, nsIURI* aHostURI,
+                             CookieParser* aParser) {
   
-  if (mCookieData.path().IsEmpty() || mCookieData.path().First() != '/') {
-    nsAutoCString path = GetPathFromURI(mHostURI);
-    if (CheckAttributeSize(mCookieData.path(), ATTRIBUTE_PATH, path)) {
-      mCookieData.path() = path;
+  if (aCookieData.path().IsEmpty() || aCookieData.path().First() != '/') {
+    nsAutoCString path = GetPathFromURI(aHostURI);
+    if (CheckAttributeSize(aCookieData.path(), ATTRIBUTE_PATH, path, aParser)) {
+      aCookieData.path() = path;
     }
   }
 
-  MOZ_ASSERT(CookieCommons::CheckPathSize(mCookieData));
+  MOZ_ASSERT(CookieCommons::CheckPathSize(aCookieData));
 
-  return !mCookieData.path().Contains('\t');
+  return !aCookieData.path().Contains('\t');
 }
 
 
@@ -597,6 +610,8 @@ bool CookieParser::HasHostPrefix(const nsACString& aString) {
   return StringBeginsWith(aString, "__Host-"_ns,
                           nsCaseInsensitiveCStringComparator);
 }
+
+
 
 
 
@@ -847,6 +862,90 @@ static void RecordPartitionedTelemetry(const CookieStruct& aCookieData,
 }
 
 
+CookieParser::Rejection CookieParser::CheckCookieStruct(
+    CookieStruct& aCookieStruct, nsIURI* aHostURI,
+    const nsCString& aCookieString, const nsACString& aBaseDomain,
+    bool aRequireHostMatch, bool aFromHttp, CookieParser* aParser) {
+  
+  if (aCookieStruct.name().IsEmpty() && aCookieStruct.value().IsEmpty()) {
+    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
+                      "cookie name and value are empty");
+
+    return RejectedEmptyNameAndValue;
+  }
+
+  
+  if (!CookieCommons::CheckNameAndValueSize(aCookieStruct)) {
+    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
+                      "cookie too big (> 4kb)");
+    return RejectedNameValueOversize;
+  }
+
+  if (!CookieCommons::CheckName(aCookieStruct)) {
+    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
+                      "invalid name character");
+    return RejectedInvalidCharName;
+  }
+
+  
+  if (!CheckDomain(aCookieStruct, aHostURI, aBaseDomain, aRequireHostMatch)) {
+    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
+                      "failed the domain tests");
+    return RejectedInvalidDomain;
+  }
+
+  if (!CheckPath(aCookieStruct, aHostURI, aParser)) {
+    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
+                      "failed the path tests");
+    return RejectedInvalidPath;
+  }
+
+  
+  
+  if (aCookieStruct.name().IsEmpty() &&
+      (HasSecurePrefix(aCookieStruct.value()) ||
+       HasHostPrefix(aCookieStruct.value()))) {
+    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
+                      "failed hidden prefix tests");
+    return RejectedInvalidPrefix;
+  }
+
+  bool potentiallyTrustworthy =
+      nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aHostURI);
+
+  
+  if (!CheckPrefixes(aCookieStruct, potentiallyTrustworthy)) {
+    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
+                      "failed the prefix tests");
+    return RejectedInvalidPrefix;
+  }
+
+  if (!CookieCommons::CheckValue(aCookieStruct)) {
+    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
+                      "invalid value character");
+    return RejectedInvalidCharValue;
+  }
+
+  
+  if (!aFromHttp && aCookieStruct.isHttpOnly()) {
+    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
+                      "cookie is httponly; coming from script");
+    return RejectedHttpOnlyButFromScript;
+  }
+
+  
+  
+  
+  if (aCookieStruct.isSecure() && !potentiallyTrustworthy) {
+    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
+                      "non-https cookie can't set secure flag");
+    return RejectedSecureButNonHttps;
+  }
+
+  return NoRejection;
+}
+
+
 
 void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
                          CookieStatus aStatus, nsCString& aCookieHeader,
@@ -874,16 +973,6 @@ void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  bool potentiallyTrustworthy =
-      nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(mHostURI);
-
   int64_t currentTimeInUsec = PR_Now();
 
   
@@ -897,89 +986,16 @@ void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
   }
 
   
-  if (mCookieData.name().IsEmpty() && mCookieData.value().IsEmpty()) {
-    COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
-                      "cookie name and value are empty");
-
-    RejectCookie(RejectedEmptyNameAndValue);
-    return;
-  }
-
-  
-  if (!CookieCommons::CheckNameAndValueSize(mCookieData)) {
-    COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
-                      "cookie too big (> 4kb)");
-    RejectCookie(RejectedNameValueOversize);
-    return;
-  }
-
-  
   
   if (XRE_IsParentProcess() || !aFromHttp) {
     RecordPartitionedTelemetry(mCookieData, aIsForeignAndNotAddon);
   }
 
-  if (!CookieCommons::CheckName(mCookieData)) {
-    COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
-                      "invalid name character");
-    RejectCookie(RejectedInvalidCharName);
-    return;
-  }
-
-  
-  if (!CheckDomain(mCookieData, mHostURI, aBaseDomain, aRequireHostMatch)) {
-    COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
-                      "failed the domain tests");
-    RejectCookie(RejectedInvalidDomain);
-    return;
-  }
-
-  if (!CheckPath()) {
-    COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
-                      "failed the path tests");
-    return;
-  }
-
-  
-  
-  if (mCookieData.name().IsEmpty() && (HasSecurePrefix(mCookieData.value()) ||
-                                       HasHostPrefix(mCookieData.value()))) {
-    COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
-                      "failed hidden prefix tests");
-    RejectCookie(RejectedInvalidPrefix);
-    return;
-  }
-
-  
-  if (!CheckPrefixes(mCookieData, potentiallyTrustworthy)) {
-    COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
-                      "failed the prefix tests");
-    RejectCookie(RejectedInvalidPrefix);
-    return;
-  }
-
-  if (!CookieCommons::CheckValue(mCookieData)) {
-    COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
-                      "invalid value character");
-    RejectCookie(RejectedInvalidCharValue);
-    return;
-  }
-
-  
-  if (!aFromHttp && mCookieData.isHttpOnly()) {
-    COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, mCookieString,
-                      "cookie is httponly; coming from script");
-    RejectCookie(RejectedHttpOnlyButFromScript);
-    return;
-  }
-
-  
-  
-  
-  if (mCookieData.isSecure() && !potentiallyTrustworthy) {
-    COOKIE_LOGFAILURE(SET_COOKIE, mHostURI, aCookieHeader,
-                      "non-https cookie can't set secure flag");
-    RejectCookie(RejectedSecureButNonHttps);
+  auto result =
+      CheckCookieStruct(mCookieData, mHostURI, mCookieString, aBaseDomain,
+                        aRequireHostMatch, aFromHttp, this);
+  if (result != NoRejection) {
+    RejectCookie(result);
     return;
   }
 
