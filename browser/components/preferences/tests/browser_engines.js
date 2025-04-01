@@ -30,9 +30,9 @@ add_task(async function test_engine_list() {
   );
 
   
-  let defaultEngines = await Services.search.getAppProvidedEngines();
-  for (let i = 0; i < defaultEngines.length; i++) {
-    let engine = defaultEngines[i];
+  let appProvidedEngines = await Services.search.getAppProvidedEngines();
+  for (let i = 0; i < appProvidedEngines.length; i++) {
+    let engine = appProvidedEngines[i];
     is(
       getCellText(tree, i, "engineName"),
       engine.name,
@@ -40,7 +40,7 @@ add_task(async function test_engine_list() {
     );
   }
 
-  let customEngineIndex = defaultEngines.length;
+  let customEngineIndex = appProvidedEngines.length;
   is(
     getCellText(tree, customEngineIndex, "engineKeyword"),
     "testing, customkeyword",
