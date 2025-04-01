@@ -133,6 +133,7 @@ ServiceWorkerRegistration::CreateForWorker(
 
 void ServiceWorkerRegistration::DisconnectFromOwner() {
   DOMEventTargetHelper::DisconnectFromOwner();
+  Shutdown();
 }
 
 void ServiceWorkerRegistration::RegistrationCleared() {
@@ -272,6 +273,10 @@ already_AddRefed<Promise> ServiceWorkerRegistration::Update(ErrorResult& aRv) {
     }
   }
 
+  
+  
+  
+  
   RefPtr<ServiceWorkerRegistration> self = this;
 
   if (!mActor) {
@@ -281,9 +286,9 @@ already_AddRefed<Promise> ServiceWorkerRegistration::Update(ErrorResult& aRv) {
 
   mActor->SendUpdate(
       newestWorkerDescriptor.ref().ScriptURL(),
-      [outer,
-       self](const IPCServiceWorkerRegistrationDescriptorOrCopyableErrorResult&
-                 aResult) {
+      [outer, self = std::move(self)](
+          const IPCServiceWorkerRegistrationDescriptorOrCopyableErrorResult&
+              aResult) {
         AUTO_PROFILER_MARKER_UNTYPED(
             "ServiceWorkerRegistration::Update (inner)", DOM, {});
 
@@ -305,20 +310,15 @@ already_AddRefed<Promise> ServiceWorkerRegistration::Update(ErrorResult& aRv) {
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        MOZ_ASSERT_DEBUG_OR_FUZZING(global);
         if (!global) {
           outer->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
           return;
         }
+        
+        
+        
+        
         RefPtr<ServiceWorkerRegistration> ref =
             global->GetOrCreateServiceWorkerRegistration(
                 ServiceWorkerRegistrationDescriptor(ipcDesc));
@@ -354,8 +354,14 @@ already_AddRefed<Promise> ServiceWorkerRegistration::Unregister(
     return outer.forget();
   }
 
+  
+  
+  
+  
+  RefPtr<ServiceWorkerRegistration> self = this;
   mActor->SendUnregister(
-      [outer](std::tuple<bool, CopyableErrorResult>&& aResult) {
+      [self = std::move(self),
+       outer](std::tuple<bool, CopyableErrorResult>&& aResult) {
         if (std::get<1>(aResult).Failed()) {
           
           
@@ -467,9 +473,16 @@ already_AddRefed<Promise> ServiceWorkerRegistration::GetNotifications(
 
   
   
+  
+  
+  RefPtr<ServiceWorkerRegistration> self = this;
+
+  
+  
   mActor->SendGetNotifications(aOptions.mTag)
       ->Then(GetCurrentSerialEventTarget(), __func__,
-             [promise, scope = NS_ConvertUTF8toUTF16(mDescriptor.Scope())](
+             [self = std::move(self), promise,
+              scope = NS_ConvertUTF8toUTF16(mDescriptor.Scope())](
                  const PServiceWorkerRegistrationChild::
                      GetNotificationsPromise::ResolveOrRejectValue&& aValue) {
                if (aValue.IsReject()) {
@@ -521,9 +534,16 @@ void ServiceWorkerRegistration::SetNavigationPreloadEnabled(
     return;
   }
 
+  
+  
+  
+  
+  RefPtr<ServiceWorkerRegistration> self = this;
+
   mActor->SendSetNavigationPreloadEnabled(
       aEnabled,
-      [successCB = std::move(aSuccessCB), aFailureCB](bool aResult) {
+      [self = std::move(self), successCB = std::move(aSuccessCB),
+       aFailureCB](bool aResult) {
         if (!aResult) {
           aFailureCB(CopyableErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
           return;
@@ -543,9 +563,16 @@ void ServiceWorkerRegistration::SetNavigationPreloadHeader(
     return;
   }
 
+  
+  
+  
+  
+  RefPtr<ServiceWorkerRegistration> self = this;
+
   mActor->SendSetNavigationPreloadHeader(
       aHeader,
-      [successCB = std::move(aSuccessCB), aFailureCB](bool aResult) {
+      [self = std::move(self), successCB = std::move(aSuccessCB),
+       aFailureCB](bool aResult) {
         if (!aResult) {
           aFailureCB(CopyableErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
           return;
@@ -565,8 +592,14 @@ void ServiceWorkerRegistration::GetNavigationPreloadState(
     return;
   }
 
+  
+  
+  
+  
+  RefPtr<ServiceWorkerRegistration> self = this;
+
   mActor->SendGetNavigationPreloadState(
-      [successCB = std::move(aSuccessCB),
+      [self = std::move(self), successCB = std::move(aSuccessCB),
        aFailureCB](Maybe<IPCNavigationPreloadState>&& aState) {
         if (NS_WARN_IF(!aState)) {
           aFailureCB(CopyableErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
@@ -757,7 +790,7 @@ void ServiceWorkerRegistration::Shutdown() {
 
   if (mActor) {
     mActor->RevokeOwner(this);
-    mActor->MaybeStartTeardown();
+    mActor->Shutdown();
     mActor = nullptr;
   }
 }
