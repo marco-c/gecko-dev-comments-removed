@@ -6,7 +6,10 @@ import { generatedToOriginalId } from "devtools/client/shared/source-map-loader/
 
 import assert from "../../utils/assert";
 import { recordEvent } from "../../utils/telemetry";
-import { updateBreakpointsForNewPrettyPrintedSource } from "../breakpoints/index";
+import {
+  updateBreakpointPositionsForNewPrettyPrintedSource,
+  updateBreakpointsForNewPrettyPrintedSource,
+} from "../breakpoints/index";
 
 import { getPrettySourceURL, isJavaScript } from "../../utils/source";
 import { isFulfilled, fulfilled } from "../../utils/async-value";
@@ -319,6 +322,10 @@ export async function doPrettyPrintSource(source, thunkArgs) {
   
   
   await dispatch(mapFrames(sourceActor.thread));
+
+  
+  
+  await dispatch(updateBreakpointPositionsForNewPrettyPrintedSource(source));
 
   
   await dispatch(updateBreakpointsForNewPrettyPrintedSource(source));
