@@ -3,7 +3,8 @@
 
 
 use super::CodeType;
-use crate::{backend::Literal, bail, ComponentInterface, Result};
+use crate::backend::Literal;
+use crate::ComponentInterface;
 
 #[derive(Debug)]
 pub struct EnumCodeType {
@@ -25,15 +26,15 @@ impl CodeType for EnumCodeType {
         format!("Type{}", self.id)
     }
 
-    fn literal(&self, literal: &Literal, ci: &ComponentInterface) -> Result<String> {
+    fn literal(&self, literal: &Literal, ci: &ComponentInterface) -> String {
         if let Literal::Enum(v, _) = literal {
-            Ok(format!(
+            format!(
                 "{}.{}",
                 self.type_label(ci),
                 super::KotlinCodeOracle.enum_variant_name(v)
-            ))
+            )
         } else {
-            bail!("Invalid literal for enum type: {literal:?}")
+            unreachable!();
         }
     }
 }

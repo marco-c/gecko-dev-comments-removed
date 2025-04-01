@@ -107,27 +107,13 @@ impl BindingGenerator for SwiftBindingGenerator {
             }
 
             if settings.try_format_code {
-                let commands_to_try = [
-                    
-                    vec!["xcrun", "swift-format"],
-                    
-                    vec!["swift-format"],
-                    
-                    vec!["swift", "format"],
-                    vec!["swiftformat"],
-                ];
-
-                let successful_output = commands_to_try.into_iter().find_map(|command| {
-                    Command::new(command[0])
-                        .args(&command[1..])
-                        .arg(source_file.as_str())
-                        .output()
-                        .ok()
-                });
-                if successful_output.is_none() {
+                if let Err(e) = Command::new("swiftformat")
+                    .arg(source_file.as_str())
+                    .output()
+                {
                     println!(
-                        "Warning: Unable to auto-format {} using swift-format. Please make sure it is installed.",
-                        source_file.as_str()
+                        "Warning: Unable to auto-format {} using swiftformat: {e:?}",
+                        source_file.file_name().unwrap(),
                     );
                 }
             }

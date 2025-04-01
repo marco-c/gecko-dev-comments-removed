@@ -1,5 +1,8 @@
 
 
+
+
+
 {%- let const_udl_var = "UNIFFI_META_CONST_UDL_{}"|format(ci.namespace().to_shouty_snake_case()) %}
 {%- let static_udl_var = "UNIFFI_META_UDL_{}"|format(ci.namespace().to_shouty_snake_case()) %}
 

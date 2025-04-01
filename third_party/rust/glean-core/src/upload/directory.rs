@@ -30,8 +30,6 @@ pub struct PingPayload {
     pub body_has_info_sections: bool,
     
     pub ping_name: String,
-    
-    pub uploader_capabilities: Vec<String>,
 }
 
 
@@ -88,8 +86,6 @@ pub struct PingMetadata {
     pub body_has_info_sections: Option<bool>,
     
     pub ping_name: Option<String>,
-    
-    pub uploader_capabilities: Option<Vec<String>>,
 }
 
 
@@ -200,7 +196,6 @@ impl PingDirectoryManager {
                 headers,
                 body_has_info_sections,
                 ping_name,
-                uploader_capabilities,
             } = metadata
                 .and_then(|m| process_metadata(&path, &m))
                 .unwrap_or_default();
@@ -213,7 +208,6 @@ impl PingDirectoryManager {
                 headers,
                 body_has_info_sections: body_has_info_sections.unwrap_or(true),
                 ping_name,
-                uploader_capabilities: uploader_capabilities.unwrap_or_default(),
             });
         } else {
             log::warn!(
@@ -343,18 +337,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new(
-            "test",
-            true,
-            true,
-            true,
-            true,
-            true,
-            vec![],
-            vec![],
-            true,
-            vec![],
-        );
+        let ping_type = PingType::new("test", true, true, true, true, true, vec![], vec![], true);
         glean.register_ping_type(&ping_type);
 
         
@@ -381,18 +364,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new(
-            "test",
-            true,
-            true,
-            true,
-            true,
-            true,
-            vec![],
-            vec![],
-            true,
-            vec![],
-        );
+        let ping_type = PingType::new("test", true, true, true, true, true, vec![], vec![], true);
         glean.register_ping_type(&ping_type);
 
         
@@ -428,18 +400,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new(
-            "test",
-            true,
-            true,
-            true,
-            true,
-            true,
-            vec![],
-            vec![],
-            true,
-            vec![],
-        );
+        let ping_type = PingType::new("test", true, true, true, true, true, vec![], vec![], true);
         glean.register_ping_type(&ping_type);
 
         

@@ -1,37 +1,20 @@
-{%- let obj = ci.get_object_definition(name).unwrap() %}
+{%- let obj = ci|get_object_definition(name) %}
+{%- let (protocol_name, impl_name) = obj|object_names %}
 {%- let methods = obj.methods() %}
-{%- let protocol_name = format!("{type_name}Protocol") %}
 {%- let protocol_docstring = obj.docstring() %}
-{%- let protocol_base_class = "typing.Protocol" %}
-{%- include "Protocol.py" %}
 
-{%- let impl_name %}
-{%- if obj.has_callback_interface() %}
+{% include "Protocol.py" %}
 
-
-
-{
-{%-     let protocol_name = format!("{type_name}") %}
-{%-     let protocol_base_class = "" %}
-{%      include "Protocol.py" %}
-
-{%-     let impl_name = format!("{type_name}Impl") %}
-
-{%- else %}
-
-{%-     let impl_name = type_name.clone() %}
-{%- endif %}
-
-{%- if ci.is_name_used_as_error(name) %}
+{% if ci.is_name_used_as_error(name) %}
 class {{ impl_name }}(Exception):
 {%- else %}
-class {{ impl_name }}({% for t in obj.trait_impls() %}{{ t.trait_name }},{% endfor %}):
+class {{ impl_name }}:
 {%- endif %}
     {%- call py::docstring(obj, 4) %}
     _pointer: ctypes.c_void_p
 
 {%- match obj.primary_constructor() %}
-{%-     when Some(cons) %}
+{%-     when Some with (cons) %}
 {%-         if cons.is_async() %}
     def __init__(self, *args, **kw):
         raise ValueError("async constructors not supported.")

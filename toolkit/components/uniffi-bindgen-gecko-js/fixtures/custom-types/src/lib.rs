@@ -8,17 +8,33 @@ use url::Url;
 pub struct Handle(pub i64);
 
 
-uniffi::custom_type!(Handle, i64, {
-    try_lift: |val| Ok(Handle(val)),
-    lower: |obj| obj.0,
-});
+impl UniffiCustomTypeConverter for Handle {
+    
+    type Builtin = i64;
+
+    
+    fn into_custom(val: Self::Builtin) -> uniffi::Result<Self> {
+        Ok(Handle(val))
+    }
+
+    
+    fn from_custom(obj: Self) -> Self::Builtin {
+        obj.0
+    }
+}
 
 
-uniffi::custom_type!(Url, String, {
-    remote,
-    try_lift: |val| Ok(Url::parse(&val)?),
-    lower: |obj| obj.to_string(),
-});
+impl UniffiCustomTypeConverter for Url {
+    type Builtin = String;
+
+    fn into_custom(val: Self::Builtin) -> uniffi::Result<Self> {
+        Ok(Url::parse(&val)?)
+    }
+
+    fn from_custom(obj: Self) -> Self::Builtin {
+        obj.to_string()
+    }
+}
 
 
 pub struct CustomTypesDemo {

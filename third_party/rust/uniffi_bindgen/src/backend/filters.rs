@@ -4,29 +4,73 @@
 
 
 
-use crate::interface::{AsType, FfiType};
+use crate::interface::{
+    AsType, CallbackInterface, ComponentInterface, Enum, FfiType, Function, Object, Record,
+};
+use askama::Result;
 use std::fmt;
 
 
 
-pub fn to_rinja_error<T: ToString + ?Sized>(t: &T) -> rinja::Error {
-    rinja::Error::Custom(Box::new(FilterError(t.to_string())))
+#[derive(Debug)]
+pub struct UniFFIError {
+    message: String,
 }
 
-
-
-#[derive(Debug)]
-struct FilterError(String);
-
-impl fmt::Display for FilterError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+impl UniFFIError {
+    pub fn new(message: String) -> Self {
+        Self { message }
     }
 }
 
-impl std::error::Error for FilterError {}
+impl fmt::Display for UniFFIError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for UniFFIError {}
+
+macro_rules! lookup_error {
+    ($($args:tt)*) => {
+        askama::Error::Custom(Box::new(UniFFIError::new(format!($($args)*))))
+    }
+}
 
 
-pub fn ffi_type(type_: &impl AsType) -> rinja::Result<FfiType, rinja::Error> {
+pub fn get_enum_definition<'a>(ci: &'a ComponentInterface, name: &str) -> Result<&'a Enum> {
+    ci.get_enum_definition(name)
+        .ok_or_else(|| lookup_error!("enum {name} not found"))
+}
+
+
+pub fn get_record_definition<'a>(ci: &'a ComponentInterface, name: &str) -> Result<&'a Record> {
+    ci.get_record_definition(name)
+        .ok_or_else(|| lookup_error!("record {name} not found"))
+}
+
+
+pub fn get_function_definition<'a>(ci: &'a ComponentInterface, name: &str) -> Result<&'a Function> {
+    ci.get_function_definition(name)
+        .ok_or_else(|| lookup_error!("function {name} not found"))
+}
+
+
+pub fn get_object_definition<'a>(ci: &'a ComponentInterface, name: &str) -> Result<&'a Object> {
+    ci.get_object_definition(name)
+        .ok_or_else(|| lookup_error!("object {name} not found"))
+}
+
+
+pub fn get_callback_interface_definition<'a>(
+    ci: &'a ComponentInterface,
+    name: &str,
+) -> Result<&'a CallbackInterface> {
+    ci.get_callback_interface_definition(name)
+        .ok_or_else(|| lookup_error!("callback interface {name} not found"))
+}
+
+
+pub fn ffi_type(type_: &impl AsType) -> Result<FfiType, askama::Error> {
     Ok(type_.as_type().into())
 }

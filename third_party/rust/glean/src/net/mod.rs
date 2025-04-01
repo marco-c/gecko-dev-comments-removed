@@ -35,26 +35,6 @@ pub struct PingUploadRequest {
 }
 
 
-pub struct CapablePingUploadRequest {
-    request: PingUploadRequest,
-    capabilities: Vec<String>,
-}
-
-impl CapablePingUploadRequest {
-    
-    
-    pub fn capable<F>(self, func: F) -> Option<PingUploadRequest>
-    where
-        F: FnOnce(Vec<String>) -> bool,
-    {
-        if func(self.capabilities) {
-            return Some(self.request);
-        }
-        None
-    }
-}
-
-
 pub trait PingUploader: std::fmt::Debug + Send + Sync {
     
     
@@ -64,7 +44,7 @@ pub trait PingUploader: std::fmt::Debug + Send + Sync {
     
     
     
-    fn upload(&self, upload_request: CapablePingUploadRequest) -> UploadResult;
+    fn upload(&self, upload_request: PingUploadRequest) -> UploadResult;
 }
 
 
@@ -151,10 +131,6 @@ impl UploadManager {
                                 headers,
                                 body_has_info_sections: request.body_has_info_sections,
                                 ping_name: request.ping_name,
-                            };
-                            let upload_request = CapablePingUploadRequest {
-                                request: upload_request,
-                                capabilities: request.uploader_capabilities,
                             };
                             let result = inner.uploader.upload(upload_request);
                             

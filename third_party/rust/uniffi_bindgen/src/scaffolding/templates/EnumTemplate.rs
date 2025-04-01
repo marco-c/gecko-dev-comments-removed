@@ -2,11 +2,7 @@
 
 #}
 
-{%- if e.remote() %}
-#[::uniffi::udl_remote(Enum)]
-{%- else %}
 #[::uniffi::udl_derive(Enum)]
-{%- endif %}
 {%- if e.is_non_exhaustive() %}
 #[non_exhaustive]
 {%- endif %}
