@@ -476,6 +476,22 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       JS::loader::ParserMetadata aParserMetadata,
       ScriptLoadRequestType aRequestType);
 
+  
+
+
+
+  void TryUseCache(
+      ScriptLoadRequest* aRequest, nsIScriptElement* aElement = nullptr,
+      const nsAString& aNonce = u""_ns,
+      ScriptLoadRequestType aRequestType = ScriptLoadRequestType::External);
+
+  
+
+
+  void EmulateNetworkEvents(ScriptLoadRequest* aRequest,
+                            nsIScriptElement* aElement,
+                            SubResourceNetworkMetadataHolder* aNetworkMetadata);
+
   void NotifyObserversForCachedScript(
       nsIURI* aURI, nsINode* aContext, nsIPrincipal* aTriggeringPrincipal,
       nsSecurityFlags aSecurityFlags, nsContentPolicyType aContentPolicyType,
@@ -512,10 +528,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-  static nsresult CheckContentPolicy(Document* aDocument,
-                                     nsIScriptElement* aElement,
-                                     const nsAString& aNonce,
-                                     ScriptLoadRequest* aRequest);
+  nsresult CheckContentPolicy(nsIScriptElement* aElement,
+                              const nsAString& aNonce,
+                              ScriptLoadRequest* aRequest);
 
   
 
