@@ -7522,10 +7522,12 @@ Element* HTMLEditor::ComputeEditingHostInternal(
     }
     if (Element* focusedElementInWindow = innerWindow->GetFocusedElement()) {
       if (focusedElementInWindow->ChromeOnlyAccess()) {
-        focusedElementInWindow =
-            Element::FromNodeOrNull(const_cast<nsIContent*>(
-                focusedElementInWindow
-                    ->GetChromeOnlyAccessSubtreeRootParent()));
+        focusedElementInWindow = Element::FromNodeOrNull(
+            
+            
+            
+            focusedElementInWindow
+                ->GetClosestNativeAnonymousSubtreeRootParentOrHost());
       }
       if (focusedElementInWindow) {
         return focusedElementInWindow->IsEditable() ? focusedElementInWindow

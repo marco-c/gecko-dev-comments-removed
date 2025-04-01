@@ -3727,8 +3727,11 @@ static nsMargin GetScrollMargin(const nsIFrame* aFrame) {
   
   
   if (aFrame->GetContent() && aFrame->GetContent()->ChromeOnlyAccess()) {
+    
+    
     if (const nsIContent* userContent =
-            aFrame->GetContent()->GetChromeOnlyAccessSubtreeRootParent()) {
+            aFrame->GetContent()
+                ->GetClosestNativeAnonymousSubtreeRootParentOrHost()) {
       if (const nsIFrame* frame = userContent->GetPrimaryFrame()) {
         return frame->StyleMargin()->GetScrollMargin();
       }

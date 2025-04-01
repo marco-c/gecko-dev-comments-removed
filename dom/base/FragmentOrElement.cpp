@@ -141,12 +141,12 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE_AND_DESTROY(nsIContent,
 
 nsIContent* nsIContent::FindFirstNonChromeOnlyAccessContent() const {
   
-  for (const nsIContent* content = this; content;
-       content = content->GetChromeOnlyAccessSubtreeRootParent()) {
+  
+  
+  for (nsIContent* content = const_cast<nsIContent*>(this); content;
+       content = content->GetClosestNativeAnonymousSubtreeRootParentOrHost()) {
     if (!content->ChromeOnlyAccess()) {
-      
-      
-      return const_cast<nsIContent*>(content);
+      return content;
     }
   }
   return nullptr;
@@ -739,7 +739,7 @@ static nsINode* FindChromeAccessOnlySubtreeOwnerForEvents(nsINode* aNode) {
   if (!aNode->ChromeOnlyAccessForEvents()) {
     return aNode;
   }
-  return const_cast<nsIContent*>(aNode->GetChromeOnlyAccessSubtreeRootParent());
+  return aNode->GetClosestNativeAnonymousSubtreeRootParentOrHost();
 }
 
 nsINode* FindChromeAccessOnlySubtreeOwnerForEvents(EventTarget* aTarget) {
