@@ -1047,7 +1047,8 @@ class Editor extends EventEmitter {
           
           event.target.ownerGlobal.setTimeout(() => {
             const view = editor.viewState;
-            const cursorPos = this.#posToLineColumn(
+            const cursorPos = lezerUtils.positionToLocation(
+              view.state.doc,
               view.state.selection.main.head
             );
             handler(event, view, cursorPos.line, cursorPos.column);
@@ -1868,12 +1869,16 @@ class Editor extends EventEmitter {
       const {
         codemirrorLanguage: { syntaxTree },
       } = this.#CodeMirror6;
-      const lineObject = cm.state.doc.line(line);
-      const pos = lineObject.from + column;
-      const token = syntaxTree(cm.state).resolve(pos, 1);
+
+      const token = lezerUtils.getTreeNodeAtLocation(
+        cm.state.doc,
+        syntaxTree(cm.state),
+        { line, column }
+      );
       if (!token) {
         return null;
       }
+
       return {
         startColumn: column,
         endColumn: token.to - token.from,
@@ -2150,7 +2155,10 @@ class Editor extends EventEmitter {
         handle: {
           markedSpans: markedSpans
             ? markedSpans.map(span => {
-                const { column } = this.#posToLineColumn(cm.posAtDOM(span));
+                const { column } = lezerUtils.positionToLocation(
+                  cm.state.doc,
+                  cm.posAtDOM(span)
+                );
                 return {
                   marker: { className: span.className },
                   from: column,
@@ -2198,8 +2206,8 @@ class Editor extends EventEmitter {
           name,
           klass: lezerUtils.getFunctionClass(cm.state.doc, syntaxNode),
           location: {
-            start: this.#posToLineColumn(node.from),
-            end: this.#posToLineColumn(node.to),
+            start: lezerUtils.positionToLocation(cm.state.doc, node.from),
+            end: lezerUtils.positionToLocation(cm.state.doc, node.to),
           },
           parameterNames: lezerUtils.getFunctionParameterNames(
             cm.state.doc,
@@ -2236,8 +2244,8 @@ class Editor extends EventEmitter {
             classVarDefNode.to
           ),
           location: {
-            start: this.#posToLineColumn(node.from),
-            end: this.#posToLineColumn(node.to),
+            start: lezerUtils.positionToLocation(cm.state.doc, node.from),
+            end: lezerUtils.positionToLocation(cm.state.doc, node.to),
           },
         });
       },
@@ -2290,8 +2298,14 @@ class Editor extends EventEmitter {
       doc = cm.state.toText(sourceContent);
       tree = lezerUtils.getTree(javascriptLanguage, sourceId, sourceContent);
     }
+
     const token = lezerUtils.getTreeNodeAtLocation(doc, tree, location);
-    return lezerUtils.getEnclosingFunctionName(doc, token);
+    if (!token) {
+      return null;
+    }
+
+    const enclosingScope = lezerUtils.getEnclosingFunction(doc, token);
+    return enclosingScope ? enclosingScope.funcName : "";
   }
 
   
@@ -2321,8 +2335,8 @@ class Editor extends EventEmitter {
             computed: false,
             expression: cm.state.doc.sliceString(node.from, node.to),
             location: {
-              start: this.#posToLineColumn(node.from),
-              end: this.#posToLineColumn(node.to),
+              start: lezerUtils.positionToLocation(cm.state.doc, node.from),
+              end: lezerUtils.positionToLocation(cm.state.doc, node.to),
             },
             from: node.from,
             to: node.to,
@@ -2433,6 +2447,73 @@ class Editor extends EventEmitter {
     
     
     return sourceLines.filter(i => i != undefined);
+  }
+
+  
+
+
+
+
+
+
+
+
+  async getBindingReferences(location, bindings) {
+    const cm = editors.get(this);
+    const {
+      codemirrorLanguage: { syntaxTree },
+    } = this.#CodeMirror6;
+
+    const token = lezerUtils.getTreeNodeAtLocation(
+      cm.state.doc,
+      syntaxTree(cm.state),
+      location
+    );
+    if (!token) {
+      return null;
+    }
+
+    const enclosingScope = lezerUtils.getEnclosingFunction(
+      cm.state.doc,
+      token,
+      { includeAnonymousFunctions: true }
+    );
+
+    if (!enclosingScope) {
+      return null;
+    }
+
+    const bindingReferences = {};
+    
+    await lezerUtils.walkCursor(enclosingScope.node.cursor(), {
+      filterSet: lezerUtils.nodeTypeSets.bindingReferences,
+      enterVisitor: node => {
+        const bindingName = cm.state.doc.sliceString(node.from, node.to);
+        if (!bindings.includes(bindingName)) {
+          return;
+        }
+        const ref = {
+          start: lezerUtils.positionToLocation(cm.state.doc, node.from),
+          end: lezerUtils.positionToLocation(cm.state.doc, node.to),
+        };
+        const syntaxNode = node.node;
+        
+        
+        if (syntaxNode.parent.name == lezerUtils.nodeTypes.MemberExpression) {
+          ref.meta = lezerUtils.getMetaBindings(
+            cm.state.doc,
+            syntaxNode.parent
+          );
+        }
+
+        if (!bindingReferences[bindingName]) {
+          bindingReferences[bindingName] = { refs: [] };
+        }
+        bindingReferences[bindingName].refs.push(ref);
+      },
+    });
+
+    return bindingReferences;
   }
 
   
@@ -3402,27 +3483,6 @@ class Editor extends EventEmitter {
 
 
 
-  #posToLineColumn(pos) {
-    const cm = editors.get(this);
-    if (pos == null) {
-      return {
-        line: null,
-        column: null,
-      };
-    }
-    const line = cm.state.doc.lineAt(pos);
-    return {
-      line: line.number,
-      column: pos - line.from,
-    };
-  }
-
-  
-
-
-
-
-
   #positionToOffset(line, col = 0) {
     const cm = editors.get(this);
     try {
@@ -3617,7 +3677,10 @@ class Editor extends EventEmitter {
         return { text: "", line: -1, column: -1 };
       }
 
-      const cursorPosition = this.#posToLineColumn(cursor.to);
+      const cursorPosition = lezerUtils.positionToLocation(
+        cm.state.doc,
+        cursor.to
+      );
       
       return {
         text: cursor.match[0],

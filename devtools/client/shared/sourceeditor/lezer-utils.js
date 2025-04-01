@@ -71,6 +71,11 @@ const nodeTypeSets = {
   numberAndProperty: new Set([nodeTypes.PropertyDefinition, nodeTypes.Number]),
   memberExpression: new Set([nodeTypes.MemberExpression]),
   classes: new Set([nodeTypes.ClassDeclaration, nodeTypes.ClassExpression]),
+  bindingReferences: new Set([
+    nodeTypes.VariableDefinition,
+    nodeTypes.VariableName,
+  ]),
+  expressionProperty: new Set([nodeTypes.PropertyName]),
 };
 
 const ast = new Map();
@@ -139,18 +144,35 @@ function clear() {
 
 
 
-function getEnclosingFunctionName(doc, node) {
+
+
+function getEnclosingFunction(
+  doc,
+  node,
+  options = { includeAnonymousFunctions: false }
+) {
   let parentNode = node.parent;
   while (parentNode !== null) {
     if (nodeTypeSets.functionsVarDecl.has(parentNode.name)) {
+      
+      if (
+        parentNode.name == nodeTypes.VariableDeclaration &&
+        !hasChildNodeOfType(parentNode.node, nodeTypeSets.functionExpressions)
+      ) {
+        parentNode = parentNode.parent;
+        continue;
+      }
       const funcName = getFunctionName(doc, parentNode);
-      if (funcName) {
-        return funcName;
+      if (funcName || options.includeAnonymousFunctions) {
+        return {
+          node: parentNode,
+          funcName,
+        };
       }
     }
     parentNode = parentNode.parent;
   }
-  return "";
+  return null;
 }
 
 
@@ -162,9 +184,36 @@ function getEnclosingFunctionName(doc, node) {
 
 
 function getTreeNodeAtLocation(doc, tree, location) {
-  const line = doc.line(location.line);
-  const pos = line.from + location.column;
-  return tree.resolve(pos, 1);
+  try {
+    const line = doc.line(location.line);
+    const pos = line.from + location.column;
+    return tree.resolve(pos, 1);
+  } catch (e) {
+    
+    console.warn(e.message);
+  }
+  return null;
+}
+
+
+
+
+
+
+
+
+function positionToLocation(doc, pos) {
+  if (pos == null) {
+    return {
+      line: null,
+      column: null,
+    };
+  }
+  const line = doc.lineAt(pos);
+  return {
+    line: line.number,
+    column: pos - line.from,
+  };
 }
 
 
@@ -356,6 +405,28 @@ function getFunctionClass(doc, node) {
 
 
 
+function getMetaBindings(doc, node) {
+  if (!node || node.name !== nodeTypes.MemberExpression) {
+    return null;
+  }
+
+  const memExpr = doc.sliceString(node.from, node.to).split(".");
+  return {
+    type: "member",
+    start: positionToLocation(doc, node.from),
+    end: positionToLocation(doc, node.to),
+    property: memExpr.at(-1),
+    parent: getMetaBindings(doc, node.parent),
+  };
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -380,15 +451,34 @@ async function walkTree(view, language, options) {
   });
 }
 
+
+
+
+
+
+
+
+
+async function walkCursor(cursor, options) {
+  await cursor.iterate(node => {
+    if (options.filterSet?.has(node.name)) {
+      options.enterVisitor(node);
+    }
+  });
+}
+
 module.exports = {
   getFunctionName,
   getFunctionParameterNames,
   getFunctionClass,
-  getEnclosingFunctionName,
+  getEnclosingFunction,
   getTreeNodeAtLocation,
+  getMetaBindings,
   nodeTypes,
   nodeTypeSets,
   walkTree,
   getTree,
   clear,
+  walkCursor,
+  positionToLocation,
 };
