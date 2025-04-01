@@ -1065,11 +1065,16 @@ var IdleManager = class IdleManager {
       }
 
       if (Cu.now() - start > backgroundIdleTimeout) {
-        ExtensionTelemetry.eventPageIdleResult.histogramAdd({
-          extension: this.extension,
-          category: reason,
-          value: Math.round((Cu.now() - start) / backgroundIdleTimeout),
-        });
+        let value = Math.round((Cu.now() - start) / backgroundIdleTimeout);
+        
+        
+        
+        while (value--) {
+          ExtensionTelemetry.eventPageIdleResult.histogramAdd({
+            extension: this.extension,
+            category: reason,
+          });
+        }
       }
     });
   }
