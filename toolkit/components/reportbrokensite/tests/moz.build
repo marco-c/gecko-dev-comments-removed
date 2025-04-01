@@ -1,0 +1,10 @@
+
+
+
+
+
+
+PYTHON_UNITTEST_MANIFESTS += ["pytest/python.toml"]
+
+with Files("**"):
+    BUG_COMPONENT = ("Web Compatibility", "Tooling & Investigations")
