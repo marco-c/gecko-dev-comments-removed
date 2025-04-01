@@ -219,6 +219,11 @@ bool SelectionManager::SelectionRangeChanged(SelectionType aType,
   dom::Document* doc = start->OwnerDoc();
   MOZ_ASSERT(doc);
   nsINode* node = aRange.GetClosestCommonInclusiveAncestor();
+  if (!node) {
+    
+    
+    return false;
+  }
   HyperTextAccessible* acc = nsAccUtils::GetTextContainer(node);
   if (!acc) {
     return true;
