@@ -875,11 +875,17 @@ static bool IsValidRequireTrustedTypesForDirectiveValue(
 }
 
 void nsCSPParser::handleRequireTrustedTypesForDirective(nsCSPDirective* aDir) {
-  
-  
-  
+  CSPPARSERLOG(("nsCSPParser::handleTrustedTypesDirective"));
 
-  if (mCurDir.Length() != 2) {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mCurDir.Length() < 2) {
     nsString numberOfTokensStr;
 
     
@@ -892,24 +898,33 @@ void nsCSPParser::handleRequireTrustedTypesForDirective(nsCSPDirective* aDir) {
     return;
   }
 
-  mCurToken = mCurDir.LastElement();
+  nsTArray<nsCSPBaseSrc*> trustedTypesSinkGroupKeywords;
+  bool foundValidTrustedTypesSinkGroupKeyword = false;
+  for (uint32_t i = 1; i < mCurDir.Length(); ++i) {
+    mCurToken = mCurDir[i];
 
-  CSPPARSERLOG(
-      ("nsCSPParser::handleRequireTrustedTypesForDirective, mCurToken: %s",
-       NS_ConvertUTF16toUTF8(mCurToken).get()));
+    CSPPARSERLOG(
+        ("nsCSPParser::handleRequireTrustedTypesForDirective, mCurToken: %s",
+         NS_ConvertUTF16toUTF8(mCurToken).get()));
 
-  if (!IsValidRequireTrustedTypesForDirectiveValue(mCurToken)) {
-    AutoTArray<nsString, 1> token = {mCurToken};
-    logWarningErrorToConsole(nsIScriptError::errorFlag,
-                             "invalidRequireTrustedTypesForDirectiveValue",
-                             token);
+    if (!IsValidRequireTrustedTypesForDirectiveValue(mCurToken)) {
+      AutoTArray<nsString, 1> token = {mCurToken};
+      logWarningErrorToConsole(nsIScriptError::warningFlag,
+                               "invalidRequireTrustedTypesForDirectiveValue",
+                               token);
+    } else {
+      foundValidTrustedTypesSinkGroupKeyword = true;
+    }
+    trustedTypesSinkGroupKeywords.AppendElement(
+        new nsCSPRequireTrustedTypesForDirectiveValue(mCurToken));
+  }
+  if (!foundValidTrustedTypesSinkGroupKeyword) {
+    for (auto* trustedTypesSinkGroupKeyword : trustedTypesSinkGroupKeywords) {
+      delete trustedTypesSinkGroupKeyword;
+    }
     return;
   }
-
-  nsTArray<nsCSPBaseSrc*> srcs = {
-      new nsCSPRequireTrustedTypesForDirectiveValue(mCurToken)};
-
-  aDir->addSrcs(srcs);
+  aDir->addSrcs(trustedTypesSinkGroupKeywords);
   mPolicy->addDirective(aDir);
 }
 
