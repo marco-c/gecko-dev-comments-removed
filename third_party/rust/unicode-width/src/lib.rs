@@ -42,32 +42,155 @@
 
 
 
-#![deny(missing_docs, unsafe_code)]
-#![doc(html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
-       html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png")]
 
-#![cfg_attr(feature = "bench", feature(test))]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![forbid(unsafe_code)]
+#![deny(missing_docs)]
+#![doc(
+    html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
+    html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png"
+)]
 #![no_std]
 
-#[cfg(test)]
-#[macro_use]
-extern crate std;
-
-#[cfg(feature = "bench")]
-extern crate test;
-
-use tables::charwidth as cw;
 pub use tables::UNICODE_VERSION;
-
-use core::ops::Add;
 
 mod tables;
 
-#[cfg(test)]
-mod tests;
+mod private {
+    pub trait Sealed {}
+    #[cfg(not(feature = "cjk"))]
+    impl Sealed for char {}
+    #[cfg(not(feature = "cjk"))]
+    impl Sealed for str {}
+    #[cfg(feature = "cjk")]
+    impl<T: ?Sized> Sealed for T {}
+}
 
 
-pub trait UnicodeWidthChar {
+pub trait UnicodeWidthChar: private::Sealed {
     
     
     
@@ -84,28 +207,32 @@ pub trait UnicodeWidthChar {
     
     
     
+    #[cfg(feature = "cjk")]
     fn width_cjk(self) -> Option<usize>;
 }
 
 impl UnicodeWidthChar for char {
     #[inline]
-    fn width(self) -> Option<usize> { cw::width(self, false) }
+    fn width(self) -> Option<usize> {
+        tables::single_char_width(self)
+    }
 
+    #[cfg(feature = "cjk")]
     #[inline]
-    fn width_cjk(self) -> Option<usize> { cw::width(self, true) }
+    fn width_cjk(self) -> Option<usize> {
+        tables::single_char_width_cjk(self)
+    }
 }
 
 
-pub trait UnicodeWidthStr {
+pub trait UnicodeWidthStr: private::Sealed {
     
     
     
     
     
     
-    
-    
-    fn width<'a>(&'a self) -> usize;
+    fn width(&self) -> usize;
 
     
     
@@ -113,19 +240,19 @@ pub trait UnicodeWidthStr {
     
     
     
-    
-    
-    fn width_cjk<'a>(&'a self) -> usize;
+    #[cfg(feature = "cjk")]
+    fn width_cjk(&self) -> usize;
 }
 
 impl UnicodeWidthStr for str {
     #[inline]
     fn width(&self) -> usize {
-        self.chars().map(|c| cw::width(c, false).unwrap_or(0)).fold(0, Add::add)
+        tables::str_width(self)
     }
 
+    #[cfg(feature = "cjk")]
     #[inline]
     fn width_cjk(&self) -> usize {
-        self.chars().map(|c| cw::width(c, true).unwrap_or(0)).fold(0, Add::add)
+        tables::str_width_cjk(self)
     }
 }
