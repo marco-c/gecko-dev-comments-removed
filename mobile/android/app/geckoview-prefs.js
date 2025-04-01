@@ -371,12 +371,6 @@ pref("network.protocol-handler.warn-external.vnd.youtube", false);
 pref("network.tickle-wifi.enabled", true);
 
 
-pref("network.ohttp.configURL", "https://prod.ohttp-gateway.prod.webservices.mozgcp.net/ohttp-configs");
-
-
-pref("network.ohttp.relayURL", "https://mozilla-ohttp.fastly-edge.com/");
-
-
 
 
 

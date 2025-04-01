@@ -10,12 +10,6 @@
 #include "mozilla/java/GeckoResultWrappers.h"
 #include "mozilla/java/WebRequestWrappers.h"
 
-#if defined(ENABLE_TESTS)
-#  include "nsIOhttpClientTest.h"
-#endif  
-
-class nsIChannel;
-
 namespace mozilla {
 namespace widget {
 
@@ -26,33 +20,10 @@ class WebExecutorSupport final
                     jni::Object::Param result);
   static void Resolve(jni::String::Param aUri, jni::Object::Param result);
 
-  static void CompleteWithError(java::GeckoResult::Param aResult,
-                                nsresult aStatus, nsIChannel* aChannel);
-
-  static void CompleteWithError(java::GeckoResult::Param aResult,
-                                nsresult aStatus) {
-    CompleteWithError(aResult, aStatus, nullptr);
-  }
-
+ protected:
   static nsresult CreateStreamLoader(java::WebRequest::Param aRequest,
                                      int32_t aFlags,
                                      java::GeckoResult::Param aResult);
-
-  
-  
-  static nsresult PerformOrQueueOhttpRequest(java::WebRequest::Param aRequest,
-                                             int32_t aFlags,
-                                             java::GeckoResult::Param aResult,
-                                             bool bypassConfigCache = false);
-#if defined(ENABLE_TESTS)
-  
-  
-  static void TestOhttp(const nsACString& url, const nsACString& method,
-                        const nsACString& body,
-                        const nsTArray<nsCString>& headerKeys,
-                        const nsTArray<nsCString>& headerValues,
-                        ohttpClientTestCallback* callback);
-#endif  
 };
 
 }  

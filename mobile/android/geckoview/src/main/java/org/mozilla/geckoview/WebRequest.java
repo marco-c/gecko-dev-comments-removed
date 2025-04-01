@@ -119,7 +119,6 @@ public class WebRequest extends WebMessage {
   }
 
   
-  @WrapForJNI
   @AnyThread
   public static class Builder extends WebMessage.Builder {
      String mMethod = "GET";
