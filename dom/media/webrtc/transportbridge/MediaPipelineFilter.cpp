@@ -85,20 +85,17 @@ bool MediaPipelineFilter::Filter(const webrtc::RTPHeader& header) {
   
   
 
-  if (!remote_ssrc_set_.empty()) {
-    if (remote_ssrc_set_.count(header.ssrc)) {
-      DEBUG_LOG(
-          ("MediaPipelineFilter SSRC: %u matched remote SSRC set."
-           " passing packet",
-           header.ssrc));
-      return true;
-    }
+  if (remote_ssrc_set_.count(header.ssrc)) {
     DEBUG_LOG(
-        ("MediaPipelineFilter SSRC: %u did not match any of %zu"
-         " remote SSRCS.",
-         header.ssrc, remote_ssrc_set_.size()));
-    return false;
+        ("MediaPipelineFilter SSRC: %u matched remote SSRC set."
+         " passing packet",
+         header.ssrc));
+    return true;
   }
+  DEBUG_LOG(
+      ("MediaPipelineFilter SSRC: %u did not match any of %zu"
+       " remote SSRCS.",
+       header.ssrc, remote_ssrc_set_.size()));
 
   
   

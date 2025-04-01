@@ -615,7 +615,7 @@ TEST_F(MediaPipelineFilterTest, TestSSRCFilterOverridesPayloadTypeFilter) {
   filter.AddRemoteSSRC(555);
   filter.AddUniqueReceivePT(110);
   
-  EXPECT_FALSE(Filter(filter, 556, 110));
+  EXPECT_TRUE(Filter(filter, 556, 110));
   EXPECT_TRUE(Filter(filter, 555, 110));
 }
 
@@ -655,7 +655,7 @@ TEST_F(MediaPipelineFilterTest, TestPayloadTypeFilter) {
   EXPECT_TRUE(Filter(filter, 555, 98));
   
   
-  EXPECT_FALSE(Filter(filter, 557, 110));
+  EXPECT_TRUE(Filter(filter, 557, 110));
 }
 
 TEST_F(MediaPipelineFilterTest, TestSSRCMovedWithMid) {

@@ -3164,6 +3164,18 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
               mMaxSending[i] = sending[i];
             }
           }
+        } else if (aSdpType == dom::RTCSdpType::Offer && !aRemote) {
+          
+          
+          
+          for (const auto& transceiverImpl : mTransceivers) {
+            if ((transceiverImpl->Direction() ==
+                 RTCRtpTransceiverDirection::Sendrecv) ||
+                (transceiverImpl->Direction() ==
+                 RTCRtpTransceiverDirection::Recvonly)) {
+              transceiverImpl->Receiver()->UpdateTransport();
+            }
+          }
         }
 
         mPendingRemoteDescription =
