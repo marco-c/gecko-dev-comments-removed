@@ -709,8 +709,6 @@ static bool IsUnsafeElement(nsAtom* aLocalName, int32_t aNamespaceID) {
 template <bool IsDefaultConfig>
 void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
   
-
-  
   nsCOMPtr<nsIContent> next = nullptr;
   for (nsCOMPtr<nsIContent> child = aNode->GetFirstChild(); child;
        child = next) {
@@ -844,6 +842,7 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
                                       aSafe);
     }
 
+    
     
     
     SanitizeChildren<IsDefaultConfig>(child, aSafe);
