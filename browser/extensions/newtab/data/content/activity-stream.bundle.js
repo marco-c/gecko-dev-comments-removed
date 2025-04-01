@@ -11351,6 +11351,7 @@ const WallpapersSection = (0,external_ReactRedux_namespaceObject.connect)(state 
   };
 })(_WallpapersSection);
 ;
+function WallpaperCategories_extends() { WallpaperCategories_extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return WallpaperCategories_extends.apply(this, arguments); }
 
 
 
@@ -11399,7 +11400,8 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       activeCategoryFluentID: null,
       showColorPicker: false,
       inputType: "radio",
-      activeId: null
+      activeId: null,
+      isCustomWallpaperError: false
     };
   }
   componentDidMount() {
@@ -11583,6 +11585,19 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     fileInput.type = "file";
     fileInput.accept = "image/*"; 
 
+    
+    fileInput.oncancel = async () => {
+      this.setState({
+        isCustomWallpaperError: false
+      });
+    };
+
+    
+    this.setState({
+      isCustomWallpaperError: false
+    });
+
+    
     fileInput.onchange = async event => {
       const [file] = event.target.files;
       if (file) {
@@ -11755,7 +11770,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       }
       return external_React_default().createElement("div", {
         key: category
-      }, external_React_default().createElement("input", {
+      }, external_React_default().createElement("input", WallpaperCategories_extends({
         ref: el => {
           if (el) {
             this.categoryRef[index] = el;
@@ -11770,10 +11785,20 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
         onClick: category !== "custom-wallpaper" ? this.handleCategory : this.handleUpload,
         className: category !== "custom-wallpaper" ? `wallpaper-input` : `wallpaper-input theme-custom-wallpaper`,
         tabIndex: index === 0 ? 0 : -1
-      }), external_React_default().createElement("label", {
+      }, category === "custom-wallpaper" ? {
+        "aria-errormessage": "customWallpaperError"
+      } : {})), external_React_default().createElement("label", {
         htmlFor: category,
         "data-l10n-id": fluent_id
       }, fluent_id));
+    })), this.state.isCustomWallpaperError && external_React_default().createElement("div", {
+      className: "custom-wallpaper-error",
+      id: "customWallpaperError"
+    }, external_React_default().createElement("span", {
+      className: "icon icon-info"
+    }), external_React_default().createElement("span", {
+      "data-l10n-id": "newtab-wallpaper-error-max-file-size",
+      "data-l10n-args": `{"file_size": 10}`
     }))), external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
       in: !!activeCategory,
       timeout: 300,
