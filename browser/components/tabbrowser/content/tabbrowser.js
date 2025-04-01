@@ -385,7 +385,7 @@
       return this.tabGroups
         .filter(tabGroup => tabGroup.collapsed)
         .flatMap(tabGroup => tabGroup.tabs)
-        .filter(tab => !tab.hidden && !tab.isClosing);
+        .filter(tab => !tab.hidden && !tab.closing);
     }
 
     addEventListener(...args) {
@@ -819,7 +819,10 @@
           this.verticalPinnedTabsContainer.appendChild(aTab)
         );
       } else {
-        this.moveTabTo(aTab, this.pinnedTabCount, { forceUngrouped: true });
+        this.moveTabTo(aTab, {
+          tabIndex: this.pinnedTabCount,
+          forceUngrouped: true,
+        });
       }
       aTab.setAttribute("pinned", "true");
       this._updateTabBarForPinnedTabs();
@@ -840,7 +843,8 @@
           this.tabContainer.arrowScrollbox.prepend(aTab);
         });
       } else {
-        this.moveTabTo(aTab, this.pinnedTabCount - 1, {
+        this.moveTabTo(aTab, {
+          tabIndex: this.pinnedTabCount - 1,
           forceUngrouped: true,
         });
         aTab.removeAttribute("pinned");
@@ -2623,6 +2627,7 @@
         fromExternal,
         inBackground = true,
         index,
+        elementIndex,
         lazyTabTitle,
         name,
         noInitialLabel,
@@ -2724,9 +2729,11 @@
           skipBackgroundNotify,
         });
         if (insertTab) {
+          if (typeof index == "number") {
+            elementIndex = this.#tabIndexToElementIndex(index);
+          }
           
-          this._insertTabAtIndex(t, {
-            index,
+          this.#insertTabAtElementIndex(t, elementIndex, {
             ownerTab,
             openerTab,
             pinned,
@@ -2877,6 +2884,30 @@
         this.selectedTab = t;
       }
       return t;
+    }
+
+    #elementIndexToTabIndex(elementIndex) {
+      if (elementIndex < 0) {
+        return -1;
+      }
+      if (elementIndex >= this.tabContainer.ariaFocusableItems.length) {
+        return this.tabs.length;
+      }
+      let element = this.tabContainer.ariaFocusableItems[elementIndex];
+      if (this.isTabGroupLabel(element)) {
+        element = element.group.tabs[0];
+      }
+      return element._tPos;
+    }
+
+    #tabIndexToElementIndex(tabIndex) {
+      if (tabIndex < 0) {
+        return -1;
+      }
+      if (tabIndex >= this.tabs.length) {
+        return this.tabContainer.ariaFocusableItems.length;
+      }
+      return this.tabs.at(tabIndex).elementIndex;
     }
 
     
@@ -3050,7 +3081,7 @@
 
 
 
-    adoptTabGroup(group, index) {
+    adoptTabGroup(group, elementIndex) {
       if (group.ownerDocument == document) {
         return group;
       }
@@ -3058,13 +3089,14 @@
 
       let newTabs = [];
       for (let tab of group.tabs) {
-        newTabs.push(this.adoptTab(tab, index));
+        newTabs.push(this.adoptTab(tab, { elementIndex }));
       }
 
       return this.addTabGroup(newTabs, {
         id: group.id,
         label: group.label,
         color: group.color,
+        insertBefore: newTabs[0],
       });
     }
 
@@ -3798,9 +3830,11 @@
 
 
 
-    _insertTabAtIndex(
+
+    #insertTabAtElementIndex(
       tab,
-      { index, ownerTab, openerTab, pinned, bulkOrderedOpen, tabGroup } = {}
+      index,
+      { ownerTab, openerTab, pinned, bulkOrderedOpen, tabGroup } = {}
     ) {
       
       if (ownerTab) {
@@ -3833,7 +3867,7 @@
           ) {
             index = Infinity;
           } else if (previousTab.visible) {
-            index = previousTab._tPos + 1;
+            index = previousTab.elementIndex + 1;
           } else if (previousTab == FirefoxViewHandler.tab) {
             index = 0;
           }
@@ -3860,17 +3894,17 @@
         index = Math.min(index, this.pinnedTabCount);
       } else {
         index = Math.max(index, this.pinnedTabCount);
-        index = Math.min(index, this.tabs.length);
+        index = Math.min(index, this.tabContainer.ariaFocusableItems.length);
       }
 
       
-      let tabAfter = this.tabs.at(index);
+      let itemAfter = this.tabContainer.ariaFocusableItems.at(index);
       this.tabContainer._invalidateCachedTabs();
 
       if (tabGroup) {
-        if (tabAfter && tabAfter.group == tabGroup) {
+        if (this.isTab(itemAfter) && itemAfter.group == tabGroup) {
           
-          this.tabContainer.insertBefore(tab, tabAfter);
+          this.tabContainer.insertBefore(tab, itemAfter);
         } else {
           
           
@@ -3883,7 +3917,7 @@
         
         
         
-        this.tabContainer.insertBefore(tab, tabAfter?.group ?? tabAfter);
+        this.tabContainer.insertBefore(tab, itemAfter?.group ?? itemAfter);
       }
 
       this._updateTabsAfterInsert();
@@ -4697,6 +4731,9 @@
         }
       }
 
+      aTab.closing = true;
+      this.tabContainer._invalidateCachedVisibleTabs();
+
       
       
       let tabCacheIndex = this._tabLayerCache.indexOf(aTab);
@@ -4715,13 +4752,7 @@
 
       var closeWindow = false;
       var newTab = false;
-      let anyRemainingTabsInCollapsedTabGroups =
-        !!this.tabsInCollapsedTabGroups.length;
-      if (
-        aTab.visible &&
-        this.visibleTabs.length == 1 &&
-        !anyRemainingTabsInCollapsedTabGroups
-      ) {
+      if (!this.visibleTabs.length && !this.tabsInCollapsedTabGroups.length) {
         closeWindow =
           closeWindowWithLastTab != null
             ? closeWindowWithLastTab
@@ -4782,7 +4813,6 @@
         aTab.linkedBrowser.mute(true);
       }
 
-      aTab.closing = true;
       this._removingTabs.add(aTab);
       this.tabContainer._invalidateCachedTabs();
 
@@ -5722,17 +5752,17 @@
       win.addEventListener(
         "before-initial-tab-adopted",
         () => {
-          let index = 0;
+          let tabIndex = 0;
           for (let tab of tabs) {
             if (tab !== selectedTab) {
-              const newTab = win.gBrowser.adoptTab(tab, index);
+              const newTab = win.gBrowser.adoptTab(tab, { tabIndex });
               if (!newTab) {
                 
                 tab.setAttribute("fadein", "true");
                 continue;
               }
             }
-            ++index;
+            ++tabIndex;
           }
           
           let winVisibleTabs = win.gBrowser.visibleTabs;
@@ -5844,15 +5874,22 @@
 
 
 
-    moveTabTo(aTab, aIndex, { forceUngrouped = false } = {}) {
+
+
+
+
+    moveTabTo(aTab, { elementIndex, tabIndex, forceUngrouped = false } = {}) {
+      if (typeof elementIndex == "number") {
+        tabIndex = this.#elementIndexToTabIndex(elementIndex);
+      }
       if (this.isTab(aTab)) {
         
         if (aTab.pinned) {
-          aIndex = Math.min(aIndex, this.pinnedTabCount - 1);
+          tabIndex = Math.min(tabIndex, this.pinnedTabCount - 1);
         } else {
-          aIndex = Math.max(aIndex, this.pinnedTabCount);
+          tabIndex = Math.max(tabIndex, this.pinnedTabCount);
         }
-        if (aTab._tPos == aIndex && !(aTab.group && forceUngrouped)) {
+        if (aTab._tPos == tabIndex && !(aTab.group && forceUngrouped)) {
           return;
         }
       } else {
@@ -5863,11 +5900,11 @@
       }
 
       this.#handleTabMove(aTab, () => {
-        let neighbor = this.tabs[aIndex];
+        let neighbor = this.tabs[tabIndex];
         if (forceUngrouped && neighbor.group) {
           neighbor = neighbor.group;
         }
-        if (neighbor && aIndex > aTab._tPos) {
+        if (neighbor && tabIndex > aTab._tPos) {
           neighbor.after(aTab);
         } else {
           this.tabContainer.insertBefore(aTab, neighbor);
@@ -5915,6 +5952,13 @@
 
 
     #moveTabNextTo(tab, targetElement, moveBefore = false) {
+      if (this.isTabGroupLabel(targetElement)) {
+        targetElement = targetElement.group;
+        if (!moveBefore) {
+          targetElement = targetElement.tabs[0];
+          moveBefore = true;
+        }
+      }
       if (this.isTabGroupLabel(tab)) {
         tab = tab.group;
         if (targetElement?.group) {
@@ -6011,29 +6055,33 @@
 
 
 
-    adoptTab(aTab, aIndex, aSelectTab) {
+    adoptTab(aTab, { elementIndex, tabIndex, selectTab = false } = {}) {
       
       
       
       
       
+      if (typeof tabIndex == "number") {
+        elementIndex = this.#tabIndexToElementIndex(tabIndex);
+      }
       let linkedBrowser = aTab.linkedBrowser;
       let createLazyBrowser = !aTab.linkedPanel;
+      let nextElement = this.tabContainer.ariaFocusableItems.at(elementIndex);
       let params = {
         eventDetail: { adoptedTab: aTab },
         preferredRemoteType: linkedBrowser.remoteType,
         initialBrowsingContextGroupId: linkedBrowser.browsingContext?.group.id,
         skipAnimation: true,
-        index: aIndex,
-        tabGroup:
-          typeof aIndex == "number" && aIndex > -1
-            ? this.tabs.at(aIndex)?.group
-            : null,
+        elementIndex,
+        tabGroup: this.isTab(nextElement) && nextElement.group,
         createLazyBrowser,
       };
 
       let numPinned = this.pinnedTabCount;
-      if (aIndex < numPinned || (aTab.pinned && aIndex == numPinned)) {
+      if (
+        elementIndex < numPinned ||
+        (aTab.pinned && elementIndex == numPinned)
+      ) {
         params.pinned = true;
       }
 
@@ -6044,7 +6092,7 @@
       let newTab = this.addWebTab("about:blank", params);
       let newBrowser = this.getBrowserForTab(newTab);
 
-      aTab.container._finishAnimateTabMove();
+      aTab.container.finishAnimateTabMove();
 
       if (!createLazyBrowser) {
         
@@ -6057,7 +6105,7 @@
         return null;
       }
 
-      if (aSelectTab) {
+      if (selectTab) {
         this.selectedTab = newTab;
       }
 
@@ -6127,11 +6175,14 @@
     }
 
     moveTabToStart(aTab = this.selectedTab) {
-      this.moveTabTo(aTab, 0, { forceUngrouped: true });
+      this.moveTabTo(aTab, { tabIndex: 0, forceUngrouped: true });
     }
 
     moveTabToEnd(aTab = this.selectedTab) {
-      this.moveTabTo(aTab, this.tabs.length - 1, { forceUngrouped: true });
+      this.moveTabTo(aTab, {
+        tabIndex: this.tabs.length - 1,
+        forceUngrouped: true,
+      });
     }
 
     
@@ -8851,7 +8902,7 @@ var TabContextMenu = {
     let newIndex = this.contextTabs.at(-1)._tPos + 1;
     for (let tab of this.contextTabs) {
       let newTab = SessionStore.duplicateTab(window, tab);
-      gBrowser.moveTabTo(newTab, newIndex++);
+      gBrowser.moveTabTo(newTab, { tabIndex: newIndex++ });
     }
   },
   reopenInContainer(event) {

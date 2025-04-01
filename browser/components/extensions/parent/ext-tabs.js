@@ -1163,11 +1163,13 @@ this.tabs = class extends ExtensionAPIPersistent {
 
             if (isSameWindow) {
               
-              gBrowser.moveTabTo(nativeTab, insertionPoint);
+              gBrowser.moveTabTo(nativeTab, { tabIndex: insertionPoint });
             } else {
               
               
-              nativeTab = gBrowser.adoptTab(nativeTab, insertionPoint, false);
+              nativeTab = gBrowser.adoptTab(nativeTab, {
+                tabIndex: insertionPoint,
+              });
             }
             lastInsertionMap.set(window, nativeTab._tPos);
             tabsMoved.push(nativeTab);

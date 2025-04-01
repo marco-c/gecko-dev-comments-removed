@@ -41,7 +41,7 @@ add_task(async function () {
   
   
   
-  win.gBrowser.moveTabTo(win.gBrowser.tabs[0], win.gBrowser.tabs.length - 1);
+  win.gBrowser.moveTabToEnd(win.gBrowser.tabs[0]);
 
   let winState = ss.getWindowState(win);
 
@@ -147,7 +147,7 @@ add_task(async function () {
 
   
   
-  win2.gBrowser.moveTabTo(win2.gBrowser.tabs[0], win2.gBrowser.tabs.length - 1);
+  win2.gBrowser.moveTabToEnd(win2.gBrowser.tabs[0]);
   await TabStateFlusher.flush(win2.gBrowser.tabs[0].linkedBrowser);
 
   let tabsRestored = promiseTabsRestored(win2, 2);
