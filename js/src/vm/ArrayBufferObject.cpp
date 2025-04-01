@@ -266,37 +266,6 @@ bool js::CommitBufferMemory(void* dataEnd, size_t delta) {
   return true;
 }
 
-bool js::ExtendBufferMapping(void* dataPointer, size_t mappedSize,
-                             size_t newMappedSize) {
-  MOZ_ASSERT(mappedSize % gc::SystemPageSize() == 0);
-  MOZ_ASSERT(newMappedSize % gc::SystemPageSize() == 0);
-  MOZ_ASSERT(newMappedSize >= mappedSize);
-
-#ifdef XP_WIN
-  void* mappedEnd = (char*)dataPointer + mappedSize;
-  uint32_t delta = newMappedSize - mappedSize;
-  if (!VirtualAlloc(mappedEnd, delta, MEM_RESERVE, PAGE_NOACCESS)) {
-    return false;
-  }
-  gc::RecordMemoryAlloc(delta);
-  return true;
-#elif defined(__wasi__)
-  return false;
-#elif defined(XP_LINUX)
-  
-  if (MAP_FAILED == mremap(dataPointer, mappedSize, newMappedSize, 0)) {
-    return false;
-  }
-  uint32_t delta = newMappedSize - mappedSize;
-  gc::RecordMemoryAlloc(delta);
-  return true;
-#else
-  
-  
-  return false;
-#endif
-}
-
 void js::UnmapBufferMemory(wasm::AddressType t, void* base, size_t mappedSize,
                            size_t committedSize) {
   MOZ_ASSERT(mappedSize % gc::SystemPageSize() == 0);
@@ -1143,10 +1112,6 @@ void ResizableArrayBufferObject::resize(size_t newByteLength) {
 
 
 
-
-
-
-
 [[nodiscard]] bool WasmArrayRawBuffer::growToPagesInPlace(Pages newPages) {
   size_t newSize = newPages.byteLength();
   size_t oldSize = byteLength();
@@ -1168,36 +1133,6 @@ void ResizableArrayBufferObject::resize(size_t newByteLength) {
   length_ = newSize;
 
   return true;
-}
-
-bool WasmArrayRawBuffer::extendMappedSize(Pages maxPages) {
-  size_t newMappedSize = wasm::ComputeMappedSize(maxPages);
-  MOZ_ASSERT(mappedSize_ <= newMappedSize);
-  if (mappedSize_ == newMappedSize) {
-    return true;
-  }
-
-  if (!ExtendBufferMapping(dataPointer(), mappedSize_, newMappedSize)) {
-    return false;
-  }
-
-  mappedSize_ = newMappedSize;
-  return true;
-}
-
-void WasmArrayRawBuffer::tryGrowMaxPagesInPlace(Pages deltaMaxPages) {
-  Pages newMaxPages = clampedMaxPages_;
-
-  DebugOnly<bool> valid = newMaxPages.checkedIncrement(deltaMaxPages);
-  
-  
-  MOZ_ASSERT(valid);
-  MOZ_ASSERT_IF(sourceMaxPages_.isSome(), newMaxPages <= *sourceMaxPages_);
-
-  if (!extendMappedSize(newMaxPages)) {
-    return;
-  }
-  clampedMaxPages_ = newMaxPages;
 }
 
 void WasmArrayRawBuffer::discard(size_t byteOffset, size_t byteLen) {
@@ -1363,11 +1298,6 @@ static ArrayBufferObjectMaybeShared* CreateSpecificWasmBuffer(
                 initialPages.value());
       ReportOutOfMemory(cx);
       return nullptr;
-    }
-
-    
-    for (size_t d = cur / 2; d >= 1; d /= 2) {
-      buffer->tryGrowMaxPagesInPlace(Pages(d));
     }
   }
 
@@ -1751,10 +1681,9 @@ ArrayBufferObject* ArrayBufferObject::wasmMovingGrowToPages(
   
   size_t newSize = newPages.byteLength();
 
-  if (wasm::ComputeMappedSize(newPages) <= oldBuf->wasmMappedSize() ||
-      oldBuf->contents().wasmBuffer()->extendMappedSize(newPages)) {
-    return wasmGrowToPagesInPlace(t, newPages, oldBuf, cx);
-  }
+  
+  
+  
 
   Rooted<ArrayBufferObject*> newBuf(cx, ArrayBufferObject::createEmpty(cx));
   if (!newBuf) {

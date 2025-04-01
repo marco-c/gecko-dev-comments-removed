@@ -49,14 +49,6 @@ bool CommitBufferMemory(void* dataEnd, size_t delta);
 
 
 
-
-
-
-bool ExtendBufferMapping(void* dataStart, size_t mappedSize,
-                         size_t newMappedSize);
-
-
-
 void UnmapBufferMemory(wasm::AddressType t, void* dataStart, size_t mappedSize,
                        size_t committedSize);
 
@@ -954,12 +946,6 @@ class WasmArrayRawBuffer {
   mozilla::Maybe<wasm::Pages> sourceMaxPages() const { return sourceMaxPages_; }
 
   [[nodiscard]] bool growToPagesInPlace(wasm::Pages newPages);
-
-  [[nodiscard]] bool extendMappedSize(wasm::Pages maxPages);
-
-  
-  
-  void tryGrowMaxPagesInPlace(wasm::Pages deltaMaxPages);
 
   
   
