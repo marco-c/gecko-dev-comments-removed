@@ -351,6 +351,9 @@ struct FormatUsageInfo {
   std::map<PackingInfo, DriverUnpackInfo> validUnpacks;
   const DriverUnpackInfo* idealUnpack = nullptr;
 
+  
+  mutable std::optional<PackingInfo> implReadPiCache;
+
   const GLint* textureSwizzleRGBA = nullptr;
 
  private:
