@@ -102,6 +102,11 @@ addMessageListener("content-task:spawn", async function (msg) {
   }
   
 
+  
+  
+  
+  
+
   try {
     let runnablestr = `
       (() => {
