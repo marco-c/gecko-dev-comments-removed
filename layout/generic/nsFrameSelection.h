@@ -295,6 +295,13 @@ class nsFrameSelection final {
 
 
 
+
+  [[nodiscard]] bool IsIndependentSelection() const { return !!GetLimiter(); }
+
+  
+
+
+
   [[nodiscard]] bool IsDoubleClickSelection() const {
     return mClickSelectionType == mozilla::dom::ClickSelectionType::Double;
   }
@@ -823,7 +830,18 @@ class nsFrameSelection final {
 
 
 
+
   Element* GetLimiter() const { return mLimiters.mLimiter; }
+
+  
+
+
+
+  Element* GetIndependentSelectionRootParentElement() const {
+    MOZ_DIAGNOSTIC_ASSERT(IsIndependentSelection());
+    return Element::FromNodeOrNull(
+        mLimiters.mLimiter->GetClosestNativeAnonymousSubtreeRootParentOrHost());
+  }
 
   
 

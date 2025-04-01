@@ -126,26 +126,28 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
 
   
   
-  nsCOMPtr<nsIContent> textControl;
-  if ((maybeHasFormSelectEventListeners &&
-       (aReason & nsISelectionListener::JS_REASON)) ||
-      maybeHasSelectionChangeEventListeners) {
-    if (const nsFrameSelection* fs = aSel->GetFrameSelection()) {
-      if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
-        textControl = root->GetClosestNativeAnonymousSubtreeRootParentOrHost();
-        MOZ_ASSERT_IF(textControl,
-                      textControl->IsTextControlElement() &&
-                          !textControl->IsInNativeAnonymousSubtree());
-      }
+  const RefPtr<Element> textControlElement = [&]() -> Element* {
+    if (!(maybeHasFormSelectEventListeners &&
+          (aReason & nsISelectionListener::JS_REASON)) &&
+        !maybeHasSelectionChangeEventListeners) {
+      return nullptr;
     }
-  };
+    const nsFrameSelection* fs = aSel->GetFrameSelection();
+    if (!fs || !fs->IsIndependentSelection()) {
+      return nullptr;
+    }
+    Element* textControl = fs->GetIndependentSelectionRootParentElement();
+    MOZ_ASSERT_IF(textControl, textControl->IsTextControlElement());
+    MOZ_ASSERT_IF(textControl, !textControl->IsInNativeAnonymousSubtree());
+    return textControl;
+  }();
 
   
   
-  if (textControl && maybeHasFormSelectEventListeners &&
+  if (textControlElement && maybeHasFormSelectEventListeners &&
       (aReason & nsISelectionListener::JS_REASON)) {
-    RefPtr<AsyncEventDispatcher> asyncDispatcher =
-        new AsyncEventDispatcher(textControl, eFormSelect, CanBubble::eYes);
+    RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
+        textControlElement, eFormSelect, CanBubble::eYes);
     asyncDispatcher->PostDOMEvent();
   }
 
@@ -157,13 +159,14 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
   
   
   
-  if (textControl &&
+  if (textControlElement &&
       !StaticPrefs::dom_select_events_textcontrols_selectionchange_enabled()) {
     return;
   }
 
-  nsINode* target =
-      textControl ? static_cast<nsINode*>(textControl.get()) : aDoc;
+  nsINode* target = textControlElement
+                        ? static_cast<nsINode*>(textControlElement.get())
+                        : aDoc;
   if (!target) {
     return;
   }
@@ -174,7 +177,7 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
 
   target->SetHasScheduledSelectionChangeEvent();
 
-  CanBubble canBubble = textControl ? CanBubble::eYes : CanBubble::eNo;
+  CanBubble canBubble = textControlElement ? CanBubble::eYes : CanBubble::eNo;
   RefPtr<AsyncEventDispatcher> asyncDispatcher =
       new AsyncSelectionChangeEventDispatcher(target, eSelectionChange,
                                               canBubble);

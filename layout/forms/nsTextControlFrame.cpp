@@ -288,7 +288,7 @@ nsresult nsTextControlFrame::EnsureEditorInitialized() {
     
     
     AutoHideSelectionChanges hideSelectionChanges(
-        textControlElement->GetConstFrameSelection());
+        textControlElement->GetIndependentFrameSelection());
 
     nsAutoScriptBlocker scriptBlocker;
 
