@@ -6203,7 +6203,22 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
       const CSSCoord scrollableRectHeight =
           Metrics().GetScrollableRect().height;
 
-      if (scrollableRectHeight > svh && scrollableRectHeight < lvh) {
+      auto mightNeedToHideToolbar = [&]() -> bool {
+        
+        
+        
+        if (aFlags & ZOOM_TO_FOCUSED_INPUT_ON_RESIZES_VISUAL) {
+          return true;
+        }
+        
+        
+        
+        
+        
+        return scrollableRectHeight > svh && scrollableRectHeight < lvh;
+      };
+
+      if (mightNeedToHideToolbar()) {
         const CSSCoord targetDistanceFromBottom =
             (Metrics().GetScrollableRect().YMost() -
              aZoomTarget.targetRect.YMost());
