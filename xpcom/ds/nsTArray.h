@@ -286,47 +286,6 @@ class nsTArray_CopyDisabler {
   nsTArray_CopyDisabler& operator=(const nsTArray_CopyDisabler&) = delete;
 };
 
-template <typename Iter, typename Comparator>
-void AssertStrictWeakOrder(Iter aBegin, Iter aEnd, const Comparator& aCmp) {
-  
-  
-  
-#if defined(DEBUG) && !defined(_LIBCPP_VERSION)
-  MOZ_ASSERT(std::is_sorted(aBegin, aEnd, aCmp),
-             "Invalid strict-weak ordering comparator");
-  
-  auto size = std::min(size_t(aEnd - aBegin), size_t(100));
-  size_t p = 0;
-  while (p < size) {
-    size_t q = p + size_t(1);
-    
-    while (q < size && !aCmp(*(aBegin + p), *(aBegin + q))) {
-      ++q;
-    }
-    
-    for (size_t b = p; b < q; ++b) {
-      for (size_t a = p; a <= b; ++a) {
-        MOZ_ASSERT(!aCmp(*(aBegin + a), *(aBegin + b)),
-                   "Your comparator is not a valid strict-weak ordering");
-        MOZ_ASSERT(!aCmp(*(aBegin + b), *(aBegin + a)),
-                   "Your comparator is not a valid strict-weak ordering");
-      }
-    }
-    
-    for (size_t a = p; a < q; ++a) {
-      for (size_t b = q; b < size; ++b) {
-        MOZ_ASSERT(aCmp(*(aBegin + a), *(aBegin + b)),
-                   "Your comparator is not a valid strict-weak ordering");
-        MOZ_ASSERT(!aCmp(*(aBegin + b), *(aBegin + a)),
-                   "Your comparator is not a valid strict-weak ordering");
-      }
-    }
-    
-    p = q;
-  }
-#endif
-}
-
 }  
 
 
@@ -2382,11 +2341,10 @@ class nsTArray_Impl
     static_assert(std::is_move_constructible_v<value_type>);
 
     ::detail::CompareWrapper<Comparator, value_type> comp(aComp);
-    auto compFn = [&comp](const auto& left, const auto& right) {
-      return comp.LessThan(left, right);
-    };
-    std::sort(Elements(), Elements() + Length(), compFn);
-    ::detail::AssertStrictWeakOrder(Elements(), Elements() + Length(), compFn);
+    std::sort(Elements(), Elements() + Length(),
+              [&comp](const auto& left, const auto& right) {
+                return comp.LessThan(left, right);
+              });
   }
 
   
@@ -2408,11 +2366,10 @@ class nsTArray_Impl
     static_assert(std::is_move_constructible_v<value_type>);
 
     const ::detail::CompareWrapper<Comparator, value_type> comp(aComp);
-    auto compFn = [&comp](const auto& lhs, const auto& rhs) {
-      return comp.LessThan(lhs, rhs);
-    };
-    std::stable_sort(Elements(), Elements() + Length(), compFn);
-    ::detail::AssertStrictWeakOrder(Elements(), Elements() + Length(), compFn);
+    std::stable_sort(Elements(), Elements() + Length(),
+                     [&comp](const auto& lhs, const auto& rhs) {
+                       return comp.LessThan(lhs, rhs);
+                     });
   }
 
   
