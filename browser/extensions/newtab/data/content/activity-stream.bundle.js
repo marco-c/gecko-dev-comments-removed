@@ -11575,11 +11575,6 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     
     
     
-    const uploadedPreviously = this.props.Prefs.values[PREF_WALLPAPER_UPLOADED_PREVIOUSLY];
-    this.handleUserEvent(actionTypes.WALLPAPER_UPLOAD, {
-      had_uploaded_previously: !!uploadedPreviously,
-      had_previous_wallpaper: !!this.props.activeWallpaper
-    });
     this.props.setPref(PREF_WALLPAPER_UPLOADED_PREVIOUSLY, true);
 
     
