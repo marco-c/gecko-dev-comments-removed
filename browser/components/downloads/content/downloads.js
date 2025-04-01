@@ -288,6 +288,12 @@ var DownloadsPanel = {
       case "dragstart":
         DownloadsView._onDownloadDragStart(aEvent);
         break;
+      case "mousedown":
+        if (DownloadsView.richListBox.hasAttribute("disabled")) {
+          this._handlePotentiallySpammyDownloadActivation(aEvent);
+        }
+        break;
+
       case "keydown":
         if (aEvent.currentTarget == DownloadsSummary._summaryNode) {
           DownloadsSummary._onKeyDown(aEvent);
@@ -400,6 +406,8 @@ var DownloadsPanel = {
     
     
     this.panel.addEventListener("keypress", this);
+    
+    this.panel.addEventListener("mousedown", this);
     this.panel.addEventListener("mousemove", this);
     this.panel.addEventListener("popupshown", this);
     this.panel.addEventListener("popuphidden", this);
@@ -426,6 +434,7 @@ var DownloadsPanel = {
   _unattachEventListeners() {
     this.panel.removeEventListener("keydown", this);
     this.panel.removeEventListener("keypress", this);
+    this.panel.removeEventListener("mousedown", this);
     this.panel.removeEventListener("mousemove", this);
     this.panel.removeEventListener("popupshown", this);
     this.panel.removeEventListener("popuphidden", this);
@@ -620,7 +629,11 @@ var DownloadsPanel = {
 
   _lastBeepTime: 0,
   _handlePotentiallySpammyDownloadActivation(aEvent) {
-    if (aEvent.key == "Enter" || aEvent.key == " ") {
+    let isSpammyKey =
+      aEvent.type.startsWith("key") &&
+      (aEvent.key == "Enter" || aEvent.key == " ");
+    let isSpammyMouse = aEvent.type.startsWith("mouse") && aEvent.button == 0;
+    if (isSpammyKey || isSpammyMouse) {
       
       
       if (Date.now() - this._lastBeepTime > 1000) {
@@ -938,9 +951,10 @@ var DownloadsView = {
   onDownloadClick(aEvent) {
     
     if (aEvent.button == 0 && aEvent.target.closest(".downloadMainArea")) {
-      let target = aEvent.target;
-      while (target.nodeName != "richlistitem") {
-        target = target.parentNode;
+      let target = aEvent.target.closest("richlistitem");
+      
+      if (target.closest("richlistbox").hasAttribute("disabled")) {
+        return;
       }
       let download = DownloadsView.itemForElement(target).download;
       if (download.succeeded) {
