@@ -692,13 +692,14 @@ TextInputSelectionController::CompleteMove(bool aForward, bool aExtend) {
   RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
 
   
-  nsIContent* parentDIV = frameSelection->GetLimiter();
+  Element* const parentDIV =
+      frameSelection->GetIndependentSelectionRootElement();
   if (!parentDIV) {
     return NS_ERROR_UNEXPECTED;
   }
 
   
-  int32_t offset = 0;
+  uint32_t offset = 0;
   CaretAssociationHint hint = CaretAssociationHint::Before;
   if (aForward) {
     offset = parentDIV->GetChildCount();
@@ -706,7 +707,7 @@ TextInputSelectionController::CompleteMove(bool aForward, bool aExtend) {
     
     
 
-    if (offset > 0) {
+    if (offset) {
       nsIContent* child = parentDIV->GetLastChild();
 
       if (child->IsHTMLElement(nsGkAtoms::br)) {
@@ -716,7 +717,7 @@ TextInputSelectionController::CompleteMove(bool aForward, bool aExtend) {
     }
   }
 
-  const RefPtr<nsIContent> pinnedParentDIV{parentDIV};
+  const OwningNonNull<Element> pinnedParentDIV(*parentDIV);
   const nsFrameSelection::FocusMode focusMode =
       aExtend ? nsFrameSelection::FocusMode::kExtendSelection
               : nsFrameSelection::FocusMode::kCollapseToNewPoint;

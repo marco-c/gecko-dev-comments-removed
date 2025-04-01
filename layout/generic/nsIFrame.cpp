@@ -4532,11 +4532,13 @@ nsresult nsIFrame::GetDataForTableSelection(
   bool foundTable = false;
 
   
-  nsIContent* limiter = aFrameSelection->GetLimiter();
+  const Element* const independentSelectionLimiter =
+      aFrameSelection->GetIndependentSelectionRootElement();
 
   
   
-  if (limiter && limiter->IsInclusiveDescendantOf(GetContent())) {
+  if (independentSelectionLimiter &&
+      independentSelectionLimiter->IsInclusiveDescendantOf(GetContent())) {
     return NS_OK;
   }
 
@@ -4566,7 +4568,7 @@ nsresult nsIFrame::GetDataForTableSelection(
       } else {
         frame = frame->GetParent();
         
-        if (frame && frame->GetContent() == limiter) {
+        if (frame && frame->GetContent() == independentSelectionLimiter) {
           break;
         }
       }
@@ -5143,8 +5145,10 @@ nsresult nsIFrame::PeekBackwardAndForwardForSelection(
 
   Element* const ancestorLimiter = [&]() -> Element* {
     const nsFrameSelection* const frameSelection = GetConstFrameSelection();
-    return frameSelection ? frameSelection->GetAncestorLimiterOrLimiter()
-                          : nullptr;
+    return frameSelection
+               ? frameSelection
+                     ->GetAncestorLimiterOrIndependentSelectionRootElement()
+               : nullptr;
   }();
 
   if (aAmountBack == eSelectWord) {

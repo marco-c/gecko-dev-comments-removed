@@ -526,8 +526,8 @@ class MOZ_STACK_CLASS AutoClonedSelectionRangeArray final
 
 
 
-  [[nodiscard]] dom::Element* GetLimiter() const {
-    return mLimitersAndCaretData.mLimiter;
+  [[nodiscard]] dom::Element* GetIndependentSelectionRootElement() const {
+    return mLimitersAndCaretData.mIndependentSelectionRootElement;
   }
   
 

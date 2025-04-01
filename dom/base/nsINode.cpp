@@ -674,14 +674,16 @@ nsIContent* nsINode::GetSelectionRootContent(
   }
 
   RefPtr<nsFrameSelection> fs = aPresShell->FrameSelection();
-  nsCOMPtr<nsIContent> content = fs->GetLimiter();
+  nsCOMPtr<nsIContent> content = fs->GetIndependentSelectionRootElement();
   if (!content) {
     content = fs->GetAncestorLimiter();
     if (!content) {
       Document* doc = aPresShell->GetDocument();
       NS_ENSURE_TRUE(doc, nullptr);
       content = doc->GetRootElement();
-      if (!content) return nullptr;
+      if (!content) {
+        return nullptr;
+      }
     }
   }
 
@@ -720,7 +722,7 @@ nsFrameSelection* nsINode::GetFrameSelection() const {
         return nullptr;  
       }
       const Element* const anonymousDiv =
-          independentFrameSelection->GetLimiter();
+          independentFrameSelection->GetIndependentSelectionRootElement();
       if (!anonymousDiv || !IsInclusiveDescendantOf(anonymousDiv)) {
         return nullptr;  
       }

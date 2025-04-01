@@ -298,7 +298,9 @@ class nsFrameSelection final {
 
 
 
-  [[nodiscard]] bool IsIndependentSelection() const { return !!GetLimiter(); }
+  [[nodiscard]] bool IsIndependentSelection() const {
+    return !!GetIndependentSelectionRootElement();
+  }
 
   
 
@@ -554,7 +556,8 @@ class nsFrameSelection final {
   [[nodiscard]] bool NodeIsInLimiters(const nsINode* aContainerNode) const;
 
   [[nodiscard]] static bool NodeIsInLimiters(
-      const nsINode* aContainerNode, const Element* aSelectionLimiter,
+      const nsINode* aContainerNode,
+      const Element* aIndependentSelectionLimiterElement,
       const Element* aSelectionAncestorLimiter);
 
   
@@ -840,9 +843,9 @@ class nsFrameSelection final {
 
 
 
-
-
-  Element* GetLimiter() const { return mLimiters.mLimiter; }
+  [[nodiscard]] Element* GetIndependentSelectionRootElement() const {
+    return mLimiters.mIndependentSelectionRootElement;
+  }
 
   
 
@@ -851,7 +854,8 @@ class nsFrameSelection final {
   Element* GetIndependentSelectionRootParentElement() const {
     MOZ_DIAGNOSTIC_ASSERT(IsIndependentSelection());
     return Element::FromNodeOrNull(
-        mLimiters.mLimiter->GetClosestNativeAnonymousSubtreeRootParentOrHost());
+        mLimiters.mIndependentSelectionRootElement
+            ->GetClosestNativeAnonymousSubtreeRootParentOrHost());
   }
 
   
@@ -859,11 +863,15 @@ class nsFrameSelection final {
 
 
 
-  Element* GetAncestorLimiter() const { return mLimiters.mAncestorLimiter; }
+  [[nodiscard]] Element* GetAncestorLimiter() const {
+    return mLimiters.mAncestorLimiter;
+  }
 
-  Element* GetAncestorLimiterOrLimiter() const {
-    return mLimiters.mAncestorLimiter ? mLimiters.mAncestorLimiter
-                                      : mLimiters.mLimiter;
+  [[nodiscard]] Element* GetAncestorLimiterOrIndependentSelectionRootElement()
+      const {
+    return mLimiters.mAncestorLimiter
+               ? mLimiters.mAncestorLimiter
+               : mLimiters.mIndependentSelectionRootElement;
   }
 
   
@@ -1060,7 +1068,7 @@ class nsFrameSelection final {
                                       CaretMovementStyle aMovementStyle) const {
     MOZ_ASSERT(aSelection);
     return CreatePeekOffsetOptionsForCaretMove(
-        mLimiters.mLimiter,
+        mLimiters.mIndependentSelectionRootElement,
         static_cast<ForceEditableRegion>(aSelection->IsEditorSelection()),
         aExtendSelection, aMovementStyle);
   }
@@ -1254,9 +1262,7 @@ class nsFrameSelection final {
   struct Limiters {
     
     
-    
-    
-    RefPtr<Element> mLimiter;
+    RefPtr<Element> mIndependentSelectionRootElement;
     
     
     
@@ -1365,14 +1371,15 @@ struct LimitersAndCaretData {
 
   LimitersAndCaretData() = default;
   explicit LimitersAndCaretData(const nsFrameSelection& aFrameSelection)
-      : mLimiter(aFrameSelection.GetLimiter()),
+      : mIndependentSelectionRootElement(
+            aFrameSelection.GetIndependentSelectionRootElement()),
         mAncestorLimiter(aFrameSelection.GetAncestorLimiter()),
         mCaretAssociationHint(aFrameSelection.GetHint()),
         mCaretBidiLevel(aFrameSelection.GetCaretBidiLevel()) {}
 
   [[nodiscard]] bool NodeIsInLimiters(const nsINode* aContainerNode) const {
-    return nsFrameSelection::NodeIsInLimiters(aContainerNode, mLimiter,
-                                              mAncestorLimiter);
+    return nsFrameSelection::NodeIsInLimiters(
+        aContainerNode, mIndependentSelectionRootElement, mAncestorLimiter);
   }
   [[nodiscard]] bool RangeInLimiters(const dom::AbstractRange& aRange) const {
     return NodeIsInLimiters(aRange.GetStartContainer()) &&
@@ -1381,7 +1388,7 @@ struct LimitersAndCaretData {
   }
 
   
-  RefPtr<Element> mLimiter;
+  RefPtr<Element> mIndependentSelectionRootElement;
   
   RefPtr<Element> mAncestorLimiter;
   
