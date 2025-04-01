@@ -180,7 +180,8 @@ document.addEventListener(
           SidebarController.reversePosition();
           break;
         case "sidebar-menu-close":
-          SidebarController.hide();
+          
+          SidebarController.hide({ dismissPanel: false });
           break;
 
         
