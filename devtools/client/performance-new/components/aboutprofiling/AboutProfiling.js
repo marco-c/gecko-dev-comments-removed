@@ -7,26 +7,14 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
 const {
   PureComponent,
   createFactory,
+  createElement: h,
+  Fragment,
+  createRef,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
 const {
   connect,
@@ -50,6 +38,67 @@ const selectors = require("resource://devtools/client/performance-new/store/sele
 const {
   restartBrowserWithEnvironmentVariable,
 } = require("resource://devtools/client/performance-new/shared/browser.js");
+
+
+
+
+
+
+class MoreActionsButton extends PureComponent {
+  _menuRef = createRef();
+
+  
+
+
+
+
+
+
+  handleClickOrMousedown = e => {
+    
+    
+    if (this._menuRef.current && (e.type == "mousedown" || e.detail === 0)) {
+      this._menuRef.current.toggle(e.nativeEvent, e.currentTarget);
+    }
+  };
+
+  render() {
+    return h(
+      Fragment,
+      null,
+      Localized(
+        {
+          id: "perftools-menu-more-actions-button",
+          attrs: { title: true },
+        },
+        h("moz-button", {
+          iconsrc: "chrome://global/skin/icons/more.svg",
+          "aria-expanded": "false",
+          "aria-haspopup": "menu",
+          onClick: this.handleClickOrMousedown,
+          onMouseDown: this.handleClickOrMousedown,
+        })
+      ),
+      h(
+        "panel-list",
+        { ref: this._menuRef },
+        h("panel-item", null, "To be continued")
+      )
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -115,9 +164,13 @@ class AboutProfiling extends PureComponent {
 
       div(
         { className: "perf-intro" },
-        h1(
-          { className: "perf-intro-title" },
-          Localized({ id: "perftools-intro-title" })
+        div(
+          { className: "perf-intro-title-bar" },
+          h1(
+            { className: "perf-intro-title" },
+            Localized({ id: "perftools-intro-title" })
+          ),
+          h(MoreActionsButton)
         ),
         div(
           { className: "perf-intro-row" },
