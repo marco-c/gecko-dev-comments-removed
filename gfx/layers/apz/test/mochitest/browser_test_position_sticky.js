@@ -12,6 +12,38 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochikit/content/tests/SimpleTest/WindowSnapshot.js",
+  this
+);
+
+
+
+
+
+
+function usesFailurePatterns() {
+  return false;
+}
+
+async function convertDataURLtoCanvas(aDataURL, aWidth, aHeight) {
+  const canvas = document.createElementNS(
+    "http://www.w3.org/1999/xhtml",
+    "canvas"
+  );
+  canvas.width = aWidth;
+  canvas.height = aHeight;
+  const image = new Image();
+  const ctx = canvas.getContext("2d");
+  const loadPromise = new Promise(resolve =>
+    image.addEventListener("load", resolve)
+  );
+  image.src = aDataURL;
+  await loadPromise;
+  ctx.drawImage(image, 0, 0);
+  return canvas;
+}
+
 add_task(async () => {
   function httpURL(filename) {
     let chromeURL = getRootDirectory(gTestPath) + filename;
@@ -63,7 +95,12 @@ add_task(async () => {
   );
 
   
-  const reference = await getSnapshot(rect);
+  const referenceDataURL = await getSnapshot(rect);
+  const referenceCanvas = await convertDataURLtoCanvas(
+    referenceDataURL,
+    rect.width,
+    rect.height
+  );
 
   let mouseX = window.innerWidth - scrollbarWidth / 2;
   let mouseY = tab.linkedBrowser.getBoundingClientRect().y + 5;
@@ -90,15 +127,22 @@ add_task(async () => {
   }
 
   
-  const snapshot = await getSnapshot(rect);
+  const snapshotDataURL = await getSnapshot(rect);
+  const snapshotCanvas = await convertDataURLtoCanvas(
+    snapshotDataURL,
+    rect.width,
+    rect.height
+  );
 
   await dragFinisher();
 
-  is(
-    snapshot,
-    reference,
-    "The position:sticky element should stay at the " +
-      "same place after scrolling on heavy load"
+  assertSnapshots(
+    snapshotCanvas,
+    referenceCanvas,
+    true ,
+    null ,
+    "test case",
+    "reference"
   );
 
   BrowserTestUtils.removeTab(tab);
