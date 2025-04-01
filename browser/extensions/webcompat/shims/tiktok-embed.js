@@ -10,15 +10,23 @@ if (!window.smartblockTikTokShimInitialized) {
 
   const SHIM_ID = "TiktokEmbed";
 
+  const SHIM_EMBED_CLASSES = ["tiktok-embed"];
+  const SHIM_CLASS_SELECTORS = SHIM_EMBED_CLASSES.map(
+    className => `.${className}`
+  ).join(",");
+
   
   const ORIGINAL_URL = "https://www.tiktok.com/embed.js";
-
   const LOGO_URL = "https://smartblock.firefox.etp/tiktok.svg";
 
-  let originalEmbedContainers = document.querySelectorAll(".tiktok-embed");
+  
+  const OBSERVER_TIMEOUT_MS = 10000;
+  let observerTimeout;
+  let newEmbedObserver;
+
+  let originalEmbedContainers = [];
   let embedPlaceholders = [];
 
-  
   function sendMessageToAddon(message) {
     return browser.runtime.sendMessage({ message, shimId: SHIM_ID });
   }
@@ -31,6 +39,15 @@ if (!window.smartblockTikTokShimInitialized) {
     }
 
     if (topic === "smartblock:unblock-embed") {
+      if (newEmbedObserver) {
+        newEmbedObserver.disconnect();
+        newEmbedObserver = null;
+      }
+
+      if (observerTimeout) {
+        clearTimeout(observerTimeout);
+      }
+
       
       embedPlaceholders.forEach((p, idx) => {
         p.replaceWith(originalEmbedContainers[idx]);
@@ -47,11 +64,24 @@ if (!window.smartblockTikTokShimInitialized) {
     }
   }
 
-  async function createShimPlaceholders() {
+  
+
+
+
+
+
+
+
+  async function createShimPlaceholders(embedContainers = []) {
     const [titleString, descriptionString, buttonString] =
       await sendMessageToAddon("smartblockGetFluentString");
 
-    originalEmbedContainers.forEach(originalEmbedContainer => {
+    if (!embedContainers.length) {
+      
+      embedContainers = document.querySelectorAll(SHIM_CLASS_SELECTORS);
+    }
+
+    embedContainers.forEach(originalContainer => {
       
       
       const SMARTBLOCK_PLACEHOLDER_HTML_STRING = `
@@ -124,7 +154,6 @@ if (!window.smartblockTikTokShimInitialized) {
 
       
       const placeholderDiv = document.createElement("div");
-      embedPlaceholders.push(placeholderDiv);
 
       const shadowRoot = placeholderDiv.attachShadow({ mode: "closed" });
 
@@ -150,7 +179,11 @@ if (!window.smartblockTikTokShimInitialized) {
         });
 
       
-      originalEmbedContainer.replaceWith(placeholderDiv);
+      embedPlaceholders.push(placeholderDiv);
+      originalEmbedContainers.push(originalContainer);
+
+      
+      originalContainer.replaceWith(placeholderDiv);
 
       sendMessageToAddon("smartblockEmbedReplaced");
     });
@@ -160,6 +193,45 @@ if (!window.smartblockTikTokShimInitialized) {
   browser.runtime.onMessage.addListener(request => {
     addonMessageHandler(request);
   });
+
+  
+  
+  newEmbedObserver = new MutationObserver(mutations => {
+    for (let { addedNodes, target, type } of mutations) {
+      const nodes = type === "attributes" ? [target] : addedNodes;
+      for (const node of nodes) {
+        if (
+          SHIM_EMBED_CLASSES.some(className =>
+            node.classList?.contains(className)
+          )
+        ) {
+          
+          createShimPlaceholders([node]);
+        } else {
+          
+          
+          let maybeEmbedNodeList =
+            node.querySelectorAll?.(SHIM_CLASS_SELECTORS);
+          if (maybeEmbedNodeList) {
+            createShimPlaceholders(maybeEmbedNodeList);
+          }
+        }
+      }
+    }
+  });
+
+  newEmbedObserver.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+
+  
+  observerTimeout = setTimeout(
+    () => newEmbedObserver.disconnect(),
+    OBSERVER_TIMEOUT_MS
+  );
 
   createShimPlaceholders();
 }
