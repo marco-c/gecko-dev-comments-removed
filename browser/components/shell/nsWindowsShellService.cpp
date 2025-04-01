@@ -381,21 +381,19 @@ NS_IMETHODIMP
 nsWindowsShellService::CheckCurrentProcessAUMIDForTesting(
     nsAString& aRetAumid) {
   PWSTR id;
-  HRESULT hr;
+  HRESULT hr = GetCurrentProcessExplicitAppUserModelID(&id);
 
-  
-  
-  
-  if (widget::WinUtils::HasPackageIdentity()) {
-    aRetAumid.Assign(u"MSIXAumidTestValue"_ns);
-  } else {
-    hr = GetCurrentProcessExplicitAppUserModelID(&id);
-    if (FAILED(hr)) {
-      return NS_ERROR_FAILURE;
+  if (FAILED(hr)) {
+    
+    
+    if (widget::WinUtils::HasPackageIdentity()) {
+      aRetAumid.Assign(u"MSIXAumidTestValue"_ns);
+      return NS_OK;
     }
-    aRetAumid.Assign(id);
-    CoTaskMemFree(id);
+    return NS_ERROR_FAILURE;
   }
+  aRetAumid.Assign(id);
+  CoTaskMemFree(id);
 
   return NS_OK;
 }
