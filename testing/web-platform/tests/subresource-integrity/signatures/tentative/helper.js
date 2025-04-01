@@ -19,6 +19,27 @@ const kValidKeys = {
 };
 
 
+const kValidKeysJWK = {
+  
+  rfc: {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "kid": "test-key-ed25519",
+    "d": "n4Ni-HpISpVObnQMW0wOhCKROaIKqKtW_2ZYb2p9KcU",
+    "x": "JrQLj5P_89iXES9-vFgrIy29clF9CC_oPPsw3c5D0bs"
+  },
+
+  
+  arbitrary: {
+    "crv": "Ed25519",
+    "d": "MTodZiTA9CBsuIvSfO679TThkG3b7ce6R3sq_CdyVp4",
+    "ext": true,
+    "kty": "OKP",
+    "x": "xDnP380zcL4rJ76rXYjeHlfMyPZEOqpJYjsjEppbuXE"
+  }
+};
+
+
 
 const kInvalidKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 
@@ -42,6 +63,31 @@ function resourceURL(data, host) {
     result.host = host;
   }
   return result.href;
+}
+
+
+
+
+async function signSignatureBase(signatureBase, privateKeyJWK) {
+  assert_true(self.isSecureContext, "Signatures can only be generated in secure contexts.");
+  const privateKey = await crypto.subtle.importKey(
+    'jwk',
+    privateKeyJWK,
+    'Ed25519',
+    true, 
+    ['sign']
+  );
+
+  const encoder = new TextEncoder();
+  const messageBytes = encoder.encode(signatureBase);
+
+  const signatureBytes = await crypto.subtle.sign(
+    { name: 'Ed25519' },
+    privateKey,
+    messageBytes
+  );
+
+  return btoa(String.fromCharCode(...new Uint8Array(signatureBytes)));
 }
 
 function generate_fetch_test(request_data, options, expectation, description) {
