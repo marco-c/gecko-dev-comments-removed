@@ -3,7 +3,7 @@
 
 
 #include <cstdlib>
-#include <iostream>
+#include <cstdio>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -27,7 +27,7 @@ namespace detail {
       #ifdef RLBOX_CUSTOM_ABORT
         RLBOX_CUSTOM_ABORT(msg);
       #else
-        std::cerr << msg << std::endl;
+        fprintf(stderr, "%s\n", msg);
         std::abort();
       #endif
     #endif
@@ -65,11 +65,11 @@ namespace detail {
   void printTypes()
   {
 #if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
-    std::cout << __PRETTY_FUNCTION__ << std::endl; 
+    puts(__PRETTY_FUNCTION__); 
 #elif defined(_MSC_VER)
-    std::cout << __FUNCSIG__ << std::endl; 
+    puts(__FUNCSIG__); 
 #else
-    std::cout << "Unsupported" << std::endl;
+    puts("Unsupported");
 #endif
   }
 

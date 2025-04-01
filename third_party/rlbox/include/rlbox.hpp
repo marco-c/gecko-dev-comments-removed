@@ -788,12 +788,20 @@ BinaryOpWrappedRhs(&);
 BinaryOpWrappedRhs(|);
 BinaryOpWrappedRhs(<<);
 BinaryOpWrappedRhs(>>);
+
+
+
+
+
+#if __cplusplus < 202002L
 BinaryOpWrappedRhs(==);
 BinaryOpWrappedRhs(!=);
 BinaryOpWrappedRhs(<);
 BinaryOpWrappedRhs(<=);
 BinaryOpWrappedRhs(>);
 BinaryOpWrappedRhs(>=);
+#endif
+
 #undef BinaryOpWrappedRhs
 
 #define BooleanBinaryOpWrappedRhs(opSymbol)                                    \
