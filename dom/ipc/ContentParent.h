@@ -11,6 +11,7 @@
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/dom/MessageManagerCallback.h"
 #include "mozilla/dom/MediaSessionBinding.h"
+#include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/RemoteBrowser.h"
 #include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/JSProcessActorParent.h"
@@ -653,11 +654,6 @@ class ContentParent final : public PContentParent,
 
   
   
-  enum class ValidatePrincipalOptions {
-    AllowNullPtr,  
-    AllowSystem,
-    AllowExpanded,
-  };
   bool ValidatePrincipal(
       nsIPrincipal* aPrincipal,
       const EnumSet<ValidatePrincipalOptions>& aOptions = {});
