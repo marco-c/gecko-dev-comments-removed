@@ -1070,6 +1070,8 @@ pref("browser.tabs.dragDrop.moveOverThresholdPercent", 80);
 
 pref("browser.tabs.firefox-view.logLevel", "Warn");
 
+pref("browser.tabs.groups.smart.userEnabled", true);
+
 
 
 pref("security.allow_eval_with_system_principal", false);
