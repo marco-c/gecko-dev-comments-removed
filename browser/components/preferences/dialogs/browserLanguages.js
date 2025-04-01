@@ -15,10 +15,6 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource:///modules/SelectionChangedMenulist.sys.mjs",
 });
 
-document
-  .getElementById("BrowserLanguagesDialog")
-  .addEventListener("dialoghelp", window.top.openPrefsHelp);
-
 
 
 

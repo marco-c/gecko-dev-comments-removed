@@ -5,10 +5,6 @@
 
 
 document
-  .getElementById("ColorsDialog")
-  .addEventListener("dialoghelp", window.top.openPrefsHelp);
-
-document
   .getElementById("key_close")
   .addEventListener("command", event => Preferences.close(event));
 
