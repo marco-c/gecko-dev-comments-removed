@@ -5,9 +5,6 @@
 
 add_setup(async () => {
   await initGroupDatabase();
-  await SpecialPowers.pushPrefEnv({
-    set: [["dom.require_user_interaction_for_beforeunload", false]],
-  });
 
   
   await SelectableProfileService.init();
