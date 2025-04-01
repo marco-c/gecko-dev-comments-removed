@@ -1949,27 +1949,25 @@ var SidebarController = {
   },
 
   handleMouseOver(e) {
-    if (!SidebarController.mouseOverTask) {
-      SidebarController.mouseOverTask = new DeferredTask(
-        () => {
-          if (!SidebarController.sidebarContainer.matches(":hover")) {
-            
-            e?.stopPropagation();
-          } else {
-            if (!SidebarController._launcherMouseOutListenerAdded) {
-              SidebarController.sidebarContainer.addEventListener(
-                "mouseout",
-                SidebarController.onMouseOut
-              );
-              SidebarController._launcherMouseOutListenerAdded = true;
-            }
-            SidebarController.onMouseOver();
+    SidebarController.mouseOverTask = new DeferredTask(
+      () => {
+        if (!SidebarController.sidebarContainer.matches(":hover")) {
+          
+          e?.stopPropagation();
+        } else {
+          if (!SidebarController._launcherMouseOutListenerAdded) {
+            SidebarController.sidebarContainer.addEventListener(
+              "mouseout",
+              SidebarController.onMouseOut
+            );
+            SidebarController._launcherMouseOutListenerAdded = true;
           }
-        },
-        EXPAND_ON_HOVER_DEBOUNCE_RATE_MS,
-        EXPAND_ON_HOVER_DEBOUNCE_TIMEOUT_MS
-      );
-    }
+          SidebarController.onMouseOver();
+        }
+      },
+      EXPAND_ON_HOVER_DEBOUNCE_RATE_MS,
+      EXPAND_ON_HOVER_DEBOUNCE_TIMEOUT_MS
+    );
     SidebarController.mouseOverTask?.arm();
   },
 
