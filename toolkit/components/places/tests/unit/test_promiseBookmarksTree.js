@@ -253,7 +253,11 @@ add_task(async function () {
     url: urlWithCharsetAndFavicon,
     annotations: new Map([[PlacesUtils.CHARSET_ANNO, "UTF-16"]]),
   });
-  await setFaviconForPage(urlWithCharsetAndFavicon, SMALLPNG_DATA_URI);
+  await PlacesTestUtils.setFaviconForPage(
+    urlWithCharsetAndFavicon,
+    SMALLPNG_DATA_URI,
+    SMALLPNG_DATA_URI
+  );
   
   await test_promiseBookmarksTreeAgainstResult();
 

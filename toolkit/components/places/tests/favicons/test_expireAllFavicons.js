@@ -15,7 +15,11 @@ add_task(async function test_expireAllFavicons() {
   });
 
   
-  await setFaviconForPage(TEST_PAGE_URI, SMALLPNG_DATA_URI);
+  await PlacesTestUtils.setFaviconForPage(
+    TEST_PAGE_URI,
+    SMALLPNG_DATA_URI,
+    SMALLPNG_DATA_URI
+  );
 
   
   await PlacesUtils.bookmarks.insert({
@@ -25,7 +29,11 @@ add_task(async function test_expireAllFavicons() {
   });
 
   
-  await setFaviconForPage(BOOKMARKED_PAGE_URI, SMALLPNG_DATA_URI);
+  await PlacesTestUtils.setFaviconForPage(
+    BOOKMARKED_PAGE_URI,
+    SMALLPNG_DATA_URI,
+    SMALLPNG_DATA_URI
+  );
 
   
   let promise = promiseTopicObserved(PlacesUtils.TOPIC_FAVICONS_EXPIRED);
