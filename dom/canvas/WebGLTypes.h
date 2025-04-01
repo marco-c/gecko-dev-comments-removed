@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef WEBGLTYPES_H_
 #define WEBGLTYPES_H_
@@ -42,22 +42,22 @@
 #include "nsString.h"
 #include "mozilla/dom/WebGLRenderingContextBinding.h"
 
-// Manual reflection of WebIDL typedefs that are different from their
-// OpenGL counterparts.
+
+
 using WebGLsizeiptr = int64_t;
 using WebGLintptr = int64_t;
 using WebGLboolean = bool;
 
-// -
+
 
 namespace mozilla {
 namespace gl {
-class GLContext;  // This is going to be needed a lot.
-}  // namespace gl
+class GLContext;  
+}  
 
-// -
-// Prevent implicit conversions into calloc and malloc. (mozilla namespace
-// only!)
+
+
+
 
 template <typename DestT>
 class ForbidNarrowing final {
@@ -86,9 +86,9 @@ inline void* calloc(const ForbidNarrowing<size_t> n,
   return ::calloc(size_t(n), size_t(size));
 }
 
-// -
 
-// TODO: Remove this now-mere-alias.
+
+
 template <typename From>
 inline auto AutoAssertCast(const From val) {
   return LazyAssertedCast(val);
@@ -103,7 +103,7 @@ struct QueueParamTraits;
 class TexUnpackBytes;
 class TexUnpackImage;
 class TexUnpackSurface;
-}  // namespace webgl
+}  
 
 class ClientWebGLContext;
 struct WebGLTexPboOffset;
@@ -120,7 +120,7 @@ class WebGLTexture;
 class WebGLTransformFeedback;
 class WebGLVertexArray;
 
-// -
+
 
 class VRefCounted : public RefCounted<VRefCounted> {
  public:
@@ -132,67 +132,67 @@ class VRefCounted : public RefCounted<VRefCounted> {
 #endif
 };
 
-// -
 
-/*
- * Implementing WebGL (or OpenGL ES 2.0) on top of desktop OpenGL requires
- * emulating the vertex attrib 0 array when it's not enabled. Indeed,
- * OpenGL ES 2.0 allows drawing without vertex attrib 0 array enabled, but
- * desktop OpenGL does not allow that.
- */
+
+
+
+
+
+
+
 enum class WebGLVertexAttrib0Status : uint8_t {
-  Default,                     // default status - no emulation needed
-  EmulatedUninitializedArray,  // need an artificial attrib 0 array, but
-                               // contents may be left uninitialized
-  EmulatedInitializedArray  // need an artificial attrib 0 array, and contents
-                            // must be initialized
+  Default,                     
+  EmulatedUninitializedArray,  
+                               
+  EmulatedInitializedArray  
+                            
 };
 
-/*
- * The formats that may participate, either as source or destination formats,
- * in WebGL texture conversions. This includes:
- *  - all the formats accepted by WebGL.texImage2D, e.g. RGBA4444
- *  - additional formats provided by extensions, e.g. RGB32F
- *  - additional source formats, depending on browser details, used when
- * uploading textures from DOM elements. See gfxImageSurface::Format().
- */
+
+
+
+
+
+
+
+
 enum class WebGLTexelFormat : uint8_t {
-  // returned by SurfaceFromElementResultToImageSurface to indicate absence of
-  // image data
+  
+  
   None,
-  // common value for formats for which format conversions are not supported
+  
   FormatNotSupportingAnyConversion,
-  // dummy pseudo-format meaning "use the other format".
-  // For example, if SrcFormat=Auto and DstFormat=RGB8, then the source
-  // is implicitly treated as being RGB8 itself.
+  
+  
+  
   Auto,
-  // 1-channel formats
+  
   A8,
-  A16F,  // OES_texture_half_float
-  A32F,  // OES_texture_float
+  A16F,  
+  A32F,  
   R8,
-  R16F,  // OES_texture_half_float
-  R32F,  // OES_texture_float
-  // 2-channel formats
+  R16F,  
+  R32F,  
+  
   RA8,
-  RA16F,  // OES_texture_half_float
-  RA32F,  // OES_texture_float
+  RA16F,  
+  RA32F,  
   RG8,
   RG16F,
   RG32F,
-  // 3-channel formats
+  
   RGB8,
   RGB565,
   RGB11F11F10F,
-  RGB16F,  // OES_texture_half_float
-  RGB32F,  // OES_texture_float
-  // 4-channel formats
+  RGB16F,  
+  RGB32F,  
+  
   RGBA8,
   RGBA5551,
   RGBA4444,
-  RGBA16F,  // OES_texture_half_float
-  RGBA32F,  // OES_texture_float
-  // DOM element source only formats.
+  RGBA16F,  
+  RGBA32F,  
+  
   RGBX8,
   BGRX8,
   BGRA8
@@ -209,7 +209,7 @@ enum class WebGLTexImageFunc : uint8_t {
 
 enum class WebGLTexDimensions : uint8_t { Tex2D, Tex3D };
 
-// Please keep extensions in alphabetic order.
+
 enum class WebGLExtensionID : uint8_t {
   ANGLE_instanced_arrays,
   EXT_blend_minmax,
@@ -254,7 +254,7 @@ enum class WebGLExtensionID : uint8_t {
 };
 
 class UniqueBuffer final {
-  // Like unique_ptr<>, but for void* and malloc/calloc/free.
+  
   void* mBuffer = nullptr;
 
  public:
@@ -282,9 +282,9 @@ class UniqueBuffer final {
   void* get() const { return mBuffer; }
 
   void reset() {
-    // Believe it or not, when `free` unconditional, it was showing up
-    // in profiles, nearly 20% of time spent in MethodDispatcther<UniformData>
-    // on Aquarium.
+    
+    
+    
     if (mBuffer) {
       free(mBuffer);
       mBuffer = nullptr;
@@ -307,12 +307,12 @@ struct SampleableInfo final {
 };
 
 enum class AttribBaseType : uint8_t {
-  Boolean,  // Can convert from anything.
-  Float,    // Also includes NormU?Int
+  Boolean,  
+  Float,    
   Int,
   Uint,
 };
-}  // namespace webgl
+}  
 template <>
 inline constexpr bool IsEnumCase<webgl::AttribBaseType>(
     const webgl::AttribBaseType v) {
@@ -344,11 +344,11 @@ enum class BufferKind : uint8_t {
   NonIndex,
 };
 
-}  // namespace webgl
+}  
 
-// -
 
-struct FloatOrInt final  // For TexParameter[fi] and friends.
+
+struct FloatOrInt final  
 {
   bool isFloat = false;
   uint8_t padding[3] = {};
@@ -362,7 +362,7 @@ struct FloatOrInt final  // For TexParameter[fi] and friends.
   auto MutTiedFields() { return std::tie(isFloat, padding, f, i); }
 };
 
-// -
+
 
 struct WebGLContextOptions final {
   bool alpha = true;
@@ -380,10 +380,9 @@ struct WebGLContextOptions final {
   bool forceSoftwareRendering = false;
   bool shouldResistFingerprinting = true;
   bool enableDebugRendererInfo = false;
-  PaddingField<bool, 7> _padding;
 
   auto MutTiedFields() {
-    // clang-format off
+    
     return std::tie(
       alpha,
       depth,
@@ -398,12 +397,11 @@ struct WebGLContextOptions final {
       powerPreference,
       forceSoftwareRendering,
       shouldResistFingerprinting,
-      enableDebugRendererInfo,
-      _padding);
-    // clang-format on
+      enableDebugRendererInfo);
+    
   }
 
-  // -
+  
 
   WebGLContextOptions();
   WebGLContextOptions(const WebGLContextOptions&) = default;
@@ -427,9 +425,9 @@ inline ColorSpace2 ToColorSpace2(const dom::PredefinedColorSpace cs) {
   MOZ_CRASH("Exhaustive switch");
 }
 
-}  // namespace gfx
+}  
 
-// -
+
 
 template <typename _T>
 struct avec2 {
@@ -496,7 +494,7 @@ avec2<T> MaxExtents(const avec2<T>& a, const avec2<T>& b) {
   return {std::max(a.x, b.x), std::max(a.y, b.y)};
 }
 
-// -
+
 
 template <typename _T>
 struct avec3 {
@@ -538,7 +536,7 @@ using uvec3 = avec3<uint32_t>;
 
 inline ivec2 AsVec(const gfx::IntSize& s) { return {s.width, s.height}; }
 
-// -
+
 
 namespace webgl {
 
@@ -572,7 +570,7 @@ struct DriverUnpackInfo final {
   PackingInfo ToPacking() const { return {unpackFormat, unpackType}; }
 };
 
-// -
+
 
 template <typename E>
 class EnumMask {
@@ -604,14 +602,14 @@ class EnumMask {
   BitRef operator[](const E i) { return {*this, Mask(i)}; }
   bool operator[](const E i) const { return mBits & Mask(i); }
 
-  // -
+  
 
   auto MutTiedFields() { return std::tie(mBits); }
 };
 
 using ExtensionBits = EnumMask<WebGLExtensionID>;
 
-// -
+
 
 enum class ContextLossReason : uint8_t {
   None,
@@ -628,7 +626,7 @@ inline bool ReadContextLossReason(const uint8_t val,
   return true;
 }
 
-// -
+
 
 struct InitContextDesc final {
   bool isWebgl2 = false;
@@ -637,11 +635,10 @@ struct InitContextDesc final {
   uint32_t principalKey = 0;
   uvec2 size = {};
   WebGLContextOptions options;
-  std::array<uint8_t, 5> _padding2;
 
   auto MutTiedFields() {
     return std::tie(isWebgl2, resistFingerprinting, _padding, principalKey,
-                    size, options, _padding2);
+                    size, options);
   }
 };
 
@@ -650,7 +647,7 @@ constexpr uint32_t kMaxTransformFeedbackSeparateAttribs = 4;
 struct Limits final {
   ExtensionBits supportedExtensions;
 
-  // WebGL 1
+  
   uint32_t maxTexUnits = 0;
   uint32_t maxTex2dSize = 0;
   uint32_t maxTexCubeSize = 0;
@@ -659,13 +656,13 @@ struct Limits final {
   std::array<float, 2> pointSizeRange = {{1, 1}};
   std::array<float, 2> lineWidthRange = {{1, 1}};
 
-  // WebGL 2
+  
   uint32_t maxTexArrayLayers = 0;
   uint32_t maxTex3dSize = 0;
   uint32_t maxUniformBufferBindings = 0;
   uint32_t uniformBufferOffsetAlignment = 0;
 
-  // Exts
+  
   bool astcHdr = false;
   std::array<uint8_t, 3> _padding;
   uint32_t maxColorDrawBuffers = 1;
@@ -687,7 +684,7 @@ struct Limits final {
   }
 };
 
-// -
+
 namespace details {
 template <class T, size_t Padding>
 struct PaddedBase {
@@ -703,10 +700,13 @@ struct PaddedBase<T, 0> {
  protected:
   T val = {};
 };
-}  // namespace details
+}  
 
 template <class T, size_t PaddedSize>
 struct Padded : details::PaddedBase<T, PaddedSize - sizeof(T)> {
+  static_assert(PaddedSize >= sizeof(T));
+
+  
   operator T&() { return this->val; }
   operator const T&() const { return this->val; }
 
@@ -719,7 +719,7 @@ struct Padded : details::PaddedBase<T, PaddedSize - sizeof(T)> {
   auto operator->() const { return &this->val; }
 };
 
-// -
+
 
 enum class OptionalRenderableFormatBits : uint8_t {
   RGB8 = (1 << 0),
@@ -727,7 +727,7 @@ enum class OptionalRenderableFormatBits : uint8_t {
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(OptionalRenderableFormatBits)
 
-}  // namespace webgl
+}  
 template <>
 inline constexpr bool IsEnumCase<webgl::OptionalRenderableFormatBits>(
     const webgl::OptionalRenderableFormatBits raw) {
@@ -735,7 +735,7 @@ inline constexpr bool IsEnumCase<webgl::OptionalRenderableFormatBits>(
   auto bit = decltype(rawWithoutValidBits){1};
   while (bit) {
     switch (webgl::OptionalRenderableFormatBits{bit}) {
-      // -Werror=switch ensures exhaustive.
+      
       case webgl::OptionalRenderableFormatBits::RGB8:
       case webgl::OptionalRenderableFormatBits::SRGB8:
         rawWithoutValidBits &= ~bit;
@@ -747,37 +747,70 @@ inline constexpr bool IsEnumCase<webgl::OptionalRenderableFormatBits>(
 }
 namespace webgl {
 
-// -
 
-struct InitContextResult final {
-  Padded<std::string, 32> error;  // MINGW 32-bit needs this padding.
-  WebGLContextOptions options;
-  gl::GLVendor vendor;
-  OptionalRenderableFormatBits optionalRenderableFormatBits;
-  std::array<uint8_t, 3> _padding = {};
-  Limits limits;
-  EnumMask<layers::SurfaceDescriptor::Type> uploadableSdTypes;
 
-  auto MutTiedFields() {
-    return std::tie(error, options, vendor, optionalRenderableFormatBits,
-                    _padding, limits, uploadableSdTypes);
+using GetShaderPrecisionFormatArgs = std::tuple<GLenum, GLenum>;
+
+template <class Tuple>
+struct TupleStdHash {
+  size_t operator()(const Tuple& t) const {
+    size_t ret = 0;
+    mozilla::MapTuple(t, [&](const auto& field) {
+      using FieldT = std::remove_cv_t<std::remove_reference_t<decltype(field)>>;
+      ret ^= std::hash<FieldT>{}(field);
+      return true;  
+    });
+    return ret;
   }
 };
 
-// -
+struct ShaderPrecisionFormat final {
+  
+  
+  uint8_t rangeMin = 0;  
+  uint8_t rangeMax = 0;
+  uint8_t precision = 0;
+  uint8_t _padding = 0;
+
+  auto MutTiedFields() {
+    return std::tie(rangeMin, rangeMax, precision, _padding);
+  }
+};
+
+
+
+struct InitContextResult final {
+  Padded<std::string, 32> error;  
+  WebGLContextOptions options;
+  gl::GLVendor vendor;
+  OptionalRenderableFormatBits optionalRenderableFormatBits;
+  std::array<uint8_t, 2> _padding = {};
+  Limits limits;
+  EnumMask<layers::SurfaceDescriptor::Type> uploadableSdTypes;
+  
+  Padded<
+    std::unordered_map<
+      GetShaderPrecisionFormatArgs,
+      ShaderPrecisionFormat,
+      TupleStdHash<GetShaderPrecisionFormatArgs>
+    >,
+    64
+  > shaderPrecisions;
+
+  auto MutTiedFields() {
+    return std::tie(error, options, vendor, optionalRenderableFormatBits,
+                    _padding, limits, uploadableSdTypes, shaderPrecisions);
+  }
+};
+
+
 
 struct ErrorInfo final {
   GLenum type;
   std::string info;
 };
 
-struct ShaderPrecisionFormat final {
-  GLint rangeMin = 0;
-  GLint rangeMax = 0;
-  GLint precision = 0;
-};
 
-// -
 
 enum class LossStatus {
   Ready,
@@ -787,7 +820,7 @@ enum class LossStatus {
   LostManually,
 };
 
-// -
+
 
 struct CompileResult final {
   bool pending = true;
@@ -796,7 +829,7 @@ struct CompileResult final {
   bool success = false;
 };
 
-// -
+
 
 struct OpaqueFramebufferOptions final {
   bool depthStencil = true;
@@ -810,14 +843,14 @@ struct OpaqueFramebufferOptions final {
   }
 };
 
-// -
+
 
 struct SwapChainOptions final {
   layers::RemoteTextureId remoteTextureId;
   layers::RemoteTextureOwnerId remoteTextureOwnerId;
   bool bgra = false;
   bool forceAsyncPresent = false;
-  // Pad to sizeof(u64):
+  
   uint16_t padding1 = 0;
   uint32_t padding2 = 0;
 
@@ -827,11 +860,11 @@ struct SwapChainOptions final {
   }
 };
 
-// -
+
 
 struct ActiveInfo {
-  GLenum elemType = 0;     // `type`
-  uint32_t elemCount = 0;  // `size`
+  GLenum elemType = 0;     
+  uint32_t elemCount = 0;  
   std::string name;
 };
 
@@ -842,9 +875,9 @@ struct ActiveAttribInfo final : public ActiveInfo {
 
 struct ActiveUniformInfo final : public ActiveInfo {
   std::unordered_map<uint32_t, uint32_t>
-      locByIndex;  // Uniform array locations are sparse.
+      locByIndex;  
   int32_t block_index = -1;
-  int32_t block_offset = -1;  // In block, offset.
+  int32_t block_offset = -1;  
   int32_t block_arrayStride = -1;
   int32_t block_matrixStride = -1;
   bool block_isRowMajor = false;
@@ -852,7 +885,7 @@ struct ActiveUniformInfo final : public ActiveInfo {
 
 struct ActiveUniformBlockInfo final {
   std::string name;
-  // BLOCK_BINDING is dynamic state
+  
   uint32_t dataSize = 0;
   std::vector<uint32_t> activeUniformIndices;
   bool referencedByVertexShader = false;
@@ -874,9 +907,9 @@ struct LinkResult final {
   GLenum tfBufferMode = 0;
 };
 
-// -
 
-/// 4x32-bit primitives, with a type tag.
+
+
 struct TypedQuad final {
   alignas(alignof(float)) std::array<uint8_t, 4 * sizeof(float)> data = {};
   webgl::AttribBaseType type = webgl::AttribBaseType::Float;
@@ -885,7 +918,7 @@ struct TypedQuad final {
   constexpr auto MutTiedFields() { return std::tie(data, type, padding); }
 };
 
-/// [1-16]x32-bit primitives, with a type tag.
+
 struct GetUniformData final {
   alignas(alignof(float)) uint8_t data[4 * 4 * sizeof(float)] = {};
   GLenum type = 0;
@@ -922,18 +955,18 @@ struct VertAttribPointerDesc final {
 
 struct VertAttribPointerCalculated final {
   uint8_t byteSize = 4 * 4;
-  uint8_t byteStride = 4 * 4;  // at-most 255
+  uint8_t byteStride = 4 * 4;  
   webgl::AttribBaseType baseType = webgl::AttribBaseType::Float;
 };
 
-}  // namespace webgl
+}  
 
 template <class T>
 inline Range<T> ShmemRange(const mozilla::ipc::Shmem& shmem) {
   return {shmem.get<T>(), shmem.Size<T>()};
 }
 
-// -
+
 
 template <typename C, typename K>
 inline auto MaybeFind(C& container, const K& key)
@@ -952,7 +985,7 @@ inline typename C::mapped_type Find(
   return itr->second;
 }
 
-// -
+
 
 template <typename T, typename U>
 inline Maybe<T> MaybeAs(const U val) {
@@ -961,7 +994,7 @@ inline Maybe<T> MaybeAs(const U val) {
   return Some(checked.value());
 }
 
-// -
+
 
 inline GLenum IsTexImageTarget(const GLenum imageTarget) {
   switch (imageTarget) {
@@ -1006,7 +1039,7 @@ inline bool IsTexTarget3D(const GLenum texTarget) {
   }
 }
 
-// -
+
 
 namespace dom {
 class Element;
@@ -1014,7 +1047,7 @@ class ImageBitmap;
 class ImageData;
 class OffscreenCanvas;
 class VideoFrame;
-}  // namespace dom
+}  
 
 struct TexImageSource {
   const dom::ArrayBufferView* mView = nullptr;
@@ -1045,7 +1078,7 @@ struct DeriveNotEq {
 };
 
 struct PixelPackingState : public DeriveNotEq<PixelPackingState> {
-  uint32_t alignmentInTypeElems = 4;  // ALIGNMENT isn't naive byte alignment!
+  uint32_t alignmentInTypeElems = 4;  
   uint32_t rowLength = 0;
   uint32_t imageHeight = 0;
   uint32_t skipPixels = 0;
@@ -1091,19 +1124,19 @@ struct ExplicitPixelPackingState final {
     uvec3 usedSize = {};
     size_t bytesPerPixel = 0;
 
-    // (srcStrideAndRowOverride.x, otherwise ROW_LENGTH != 0, otherwise size.x)
-    // ...aligned to ALIGNMENT.
+    
+    
     size_t bytesPerRowStride = 0;
 
-    // structuredSrcSize.y, otherwise IMAGE_HEIGHT*(SKIP_IMAGES+size.z)
+    
     size_t totalRows = 0;
 
-    // This ensures that no one else needs to do CheckedInt math.
+    
     size_t totalBytesUsed = 0;
     size_t totalBytesStrided = 0;
   };
 
-  // It's so important that these aren't modified once evaluated.
+  
   const PixelPackingState state;
   const Metrics metrics;
 
@@ -1121,7 +1154,7 @@ struct ReadPixelsDesc final {
   auto MutTiedFields() { return std::tie(srcOffset, size, pi, packState); }
 };
 
-}  // namespace webgl
+}  
 
 namespace webgl {
 
@@ -1141,7 +1174,7 @@ struct TexUnpackBlobDesc final {
   webgl::PixelUnpackStateWebgl unpacking;
   bool applyUnpackTransforms = true;
 
-  // -
+  
 
   auto ExplicitUnpacking(const webgl::PackingInfo& pi,
                          const Maybe<size_t> bytesPerRowStrideOverride) const {
@@ -1153,10 +1186,10 @@ struct TexUnpackBlobDesc final {
   void Shrink(const webgl::PackingInfo&);
 };
 
-}  // namespace webgl
+}  
 
-// ---------------------------------------
-// MakeRange
+
+
 
 template <typename T, size_t N>
 inline Range<const T> MakeRange(T (&arr)[N]) {
@@ -1168,7 +1201,7 @@ inline Range<const T> MakeRange(const dom::Sequence<T>& seq) {
   return {seq.Elements(), seq.Length()};
 }
 
-// -
+
 
 constexpr auto kUniversalAlignment = alignof(std::max_align_t);
 
@@ -1186,7 +1219,7 @@ inline size_t ByteSize(const Range<T>& range) {
   return range.length() * sizeof(T);
 }
 
-// -
+
 
 Maybe<webgl::ErrorInfo> CheckBindBufferRange(
     const GLenum target, const GLuint index, const bool isBuffer,
@@ -1211,7 +1244,7 @@ inline std::string ToString(const nsACString& text) {
 inline void Memcpy(const RangedPtr<uint8_t>& destBytes,
                    const RangedPtr<const uint8_t>& srcBytes,
                    const size_t byteSize) {
-  // Trigger range asserts
+  
   (void)(srcBytes + byteSize);
   (void)(destBytes + byteSize);
 
@@ -1236,21 +1269,21 @@ inline void Memcpy(const Span<Dst>* const dest, const Span<Src>& src) {
   memcpy(dest->data(), src.data(), dest->size_bytes());
 }
 
-// -
+
 
 inline bool StartsWith(const std::string_view str,
                        const std::string_view part) {
   return str.find(part) == 0;
 }
 
-// -
+
 
 namespace webgl {
 
-// In theory, this number can be unbounded based on the driver. However, no
-// driver appears to expose more than 8. We might as well stop there too, for
-// now.
-// (http://opengl.gpuinfo.org/gl_stats_caps_single.php?listreportsbycap=GL_MAX_COLOR_ATTACHMENTS)
+
+
+
+
 inline constexpr size_t kMaxDrawBuffers = 8;
 
 union UniformDataVal {
@@ -1264,7 +1297,7 @@ enum class ProvokingVertex : GLenum {
   LastVertex = LOCAL_GL_LAST_VERTEX_CONVENTION,
 };
 
-}  // namespace webgl
+}  
 
 template <>
 inline constexpr bool IsEnumCase<webgl::ProvokingVertex>(
@@ -1279,14 +1312,14 @@ inline constexpr bool IsEnumCase<webgl::ProvokingVertex>(
 
 namespace webgl {
 
-// -
+
 
 struct BufferAndIndex final {
   const WebGLBuffer* buffer = nullptr;
   uint32_t id = -1;
 };
 
-}  // namespace webgl
+}  
 
 struct IndexedBufferBinding final {
   RefPtr<WebGLBuffer> mBufferBinding;
@@ -1299,7 +1332,7 @@ struct IndexedBufferBinding final {
   uint64_t ByteCount() const;
 };
 
-// -
+
 
 template <class... Args>
 inline std::string PrintfStdString(const char* const format,
@@ -1322,7 +1355,7 @@ struct ReinterpretToSpan {
   }
 };
 
-// -
+
 
 inline std::string Join(Span<const std::string> ss,
                         const std::string_view& delim) {
@@ -1356,16 +1389,45 @@ inline std::string ToStringWithCommas(uint64_t v) {
   return Join(chunks, ",");
 }
 
-// -
+
+
+
+
+namespace detail {
+template<class T, size_t N, size_t... I>
+constexpr std::array<std::remove_cv_t<T>, N>
+  to_array_impl(T (&a)[N], std::index_sequence<I...>)
+{
+  return {{a[I]...}};
+}
+
+template <class T, size_t N, size_t... I>
+constexpr std::array<std::remove_cv_t<T>, N> to_array_impl(
+    T (&&a)[N], std::index_sequence<I...>) {
+  return {{std::move(a[I])...}};
+}
+}  
+
+template<class T, size_t N>
+constexpr std::array<std::remove_cv_t<T>, N> to_array(T (&a)[N]) {
+    return detail::to_array_impl(a, std::make_index_sequence<N>{});
+}
+
+template <class T, size_t N>
+constexpr std::array<std::remove_cv_t<T>, N> to_array(T (&&a)[N]) {
+  return detail::to_array_impl(std::move(a), std::make_index_sequence<N>{});
+}
+
+
 
 namespace webgl {
 
 std::unordered_map<GLenum, bool> MakeIsEnabledMap(bool webgl2);
 
 static constexpr uint32_t kMaxClientWaitSyncTimeoutNS =
-    1000 * 1000 * 1000;  // 1000ms in ns.
+    1000 * 1000 * 1000;  
 
-}  // namespace webgl
-}  // namespace mozilla
+}  
+}  
 
 #endif
