@@ -793,8 +793,6 @@ class DisplayListBuilder final {
                      const wr::BorderRadius& aBorderRadius,
                      const wr::BoxShadowClipMode& aClipMode);
 
-  void PushDebug(uint32_t aVal);
-
   
 
 
