@@ -31,9 +31,6 @@ extern LazyLogModule gMediaDecoderLog;
 #define LOG(x, ...) \
   MOZ_LOG(gMediaDecoderLog, LogLevel::Debug, (x, ##__VA_ARGS__))
 
-#define LOGV(x, ...) \
-  MOZ_LOG(gMediaDecoderLog, LogLevel::Verbose, (x, ##__VA_ARGS__))
-
 
 
 inline double GetPixelAspectRatio(const gfx::IntSize& aImage,
@@ -247,6 +244,8 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
             : nullptr;
     
     auto curConfig = HVCCConfig::Parse(mCurrentConfig.mExtraData);
+    LOG("current config: %s",
+        curConfig.isOk() ? curConfig.inspect().ToString().get() : "invalid");
     if ((!extraData || extraData->IsEmpty()) && curConfig.unwrap().HasSPS()) {
       return NS_OK;
     }
@@ -258,9 +257,7 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       return NS_OK;
     }
     const HVCCConfig newConfig = rv.unwrap();
-    LOGV("Current config: %s, new config: %s",
-         curConfig.isOk() ? curConfig.inspect().ToString().get() : "invalid",
-         newConfig.ToString().get());
+    LOG("new config: %s", newConfig.ToString().get());
 
     if (!newConfig.HasSPS() && !curConfig.unwrap().HasSPS()) {
       
