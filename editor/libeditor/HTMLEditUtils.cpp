@@ -849,24 +849,35 @@ EditorDOMPoint HTMLEditUtils::LineRequiresPaddingLineBreakToBeVisible(
         point.IsStartOfContainer()) {
       return true;
     }
-    const WSScanResult previousThing =
-        WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::EditableNodes, preferredPaddingLineBreakPoint,
+    
+    
+    
+    nsIContent* const previousVisibleLeafOrChildBlock =
+        HTMLEditUtils::GetPreviousNonEmptyLeafContentOrPreviousBlockElement(
+            preferredPaddingLineBreakPoint,
+            {LeafNodeType::LeafNodeOrChildBlock},
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
-    if (previousThing.ContentIsText()) {
-      if (MOZ_UNLIKELY(!previousThing.TextPtr()->TextDataLength())) {
-        return false;
-      }
-      auto atLastChar = EditorRawDOMPointInText(
-          previousThing.TextPtr(),
-          previousThing.TextPtr()->TextDataLength() - 1);
-      if (atLastChar.IsCharCollapsibleASCIISpace()) {
-        preferredPaddingLineBreakPoint.SetAfter(previousThing.TextPtr());
-        return true;
-      }
+    if (!previousVisibleLeafOrChildBlock) {
+      
+      return true;
+    }
+    if (HTMLEditUtils::IsBlockElement(
+            *previousVisibleLeafOrChildBlock,
+            BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
+      
+      return true;
+    }
+    Text* const previousVisibleText =
+        Text::FromNode(previousVisibleLeafOrChildBlock);
+    if (!previousVisibleText) {
+      
       return false;
     }
-    return previousThing.ReachedBlockBoundary();
+    MOZ_ASSERT(previousVisibleText->TextDataLength());
+    
+    
+    return EditorRawDOMPoint::AtEndOf(*previousVisibleText)
+        .IsPreviousCharASCIISpace();
   }();
   if (!followingBlockBoundaryOrCollapsibleWhiteSpace) {
     return EditorDOMPoint();

@@ -407,6 +407,16 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
 
   [[nodiscard]] virtual bool HasSavedRanges() const { return false; }
 
+  
+
+
+
+
+
+
+  void ExtendRangeToContainSurroundingInvisibleWhiteSpaces(
+      nsIEditor::EStripWrappers aStripWrappers);
+
  protected:
   AutoClonedRangeArray() = default;
 
