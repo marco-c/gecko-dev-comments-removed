@@ -90,10 +90,17 @@ class ScriptFetchOptions {
   
   
   inline bool IsCompatible(ScriptFetchOptions* other) {
-    bool equals;
-    (void)mTriggeringPrincipal->Equals(other->mTriggeringPrincipal, &equals);
+    if (this == other) {
+      return true;
+    }
 
-    if (!equals) {
+    if (mTriggeringPrincipal && other->mTriggeringPrincipal) {
+      bool equals;
+      (void)mTriggeringPrincipal->Equals(other->mTriggeringPrincipal, &equals);
+      if (!equals) {
+        return false;
+      }
+    } else if (mTriggeringPrincipal || other->mTriggeringPrincipal) {
       return false;
     }
 
