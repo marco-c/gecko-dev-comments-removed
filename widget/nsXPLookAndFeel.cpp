@@ -375,6 +375,7 @@ nsXPLookAndFeel* nsXPLookAndFeel::GetInstance() {
   if (XRE_IsParentProcess()) {
     nsLayoutUtils::RecomputeSmoothScrollDefault();
   }
+  PreferenceSheet::Refresh();
   return sInstance;
 }
 
@@ -522,6 +523,24 @@ static constexpr struct {
     
     {"browser.theme.toolbar-theme"_ns, widget::ThemeChangeKind::AllBits},
     {"browser.theme.content-theme"_ns},
+    
+    {"browser.anchor_color"_ns, widget::ThemeChangeKind::Style},
+    {"browser.anchor_color.dark"_ns, widget::ThemeChangeKind::Style},
+    {"browser.active_color"_ns, widget::ThemeChangeKind::Style},
+    {"browser.active_color.dark"_ns, widget::ThemeChangeKind::Style},
+    {"browser.visited_color"_ns, widget::ThemeChangeKind::Style},
+    {"browser.visited_color.dark"_ns, widget::ThemeChangeKind::Style},
+    {"browser.display.background_color"_ns, widget::ThemeChangeKind::Style},
+    {"browser.display.background_color.dark"_ns,
+     widget::ThemeChangeKind::Style},
+    {"browser.display.foreground_color"_ns, widget::ThemeChangeKind::Style},
+    {"browser.display.foreground_color.dark"_ns,
+     widget::ThemeChangeKind::Style},
+    {"browser.display.document_color_use"_ns, widget::ThemeChangeKind::Style},
+    {"browser.display.permit_backplate"_ns, widget::ThemeChangeKind::Style},
+    {"ui.use_standins_for_native_colors"_ns, widget::ThemeChangeKind::Style},
+    {"privacy.resistFingerprinting"_ns, widget::ThemeChangeKind::Style},
+    
 };
 
 
@@ -1156,10 +1175,6 @@ void LookAndFeel::DoHandleGlobalThemeChange() {
 
   
   
-  PreferenceSheet::Refresh();
-
-  
-  
   
   image::SurfaceCacheUtils::DiscardAll();
 
@@ -1474,6 +1489,9 @@ void LookAndFeel::Refresh() {
     widget::RemoteLookAndFeel::ClearCachedData();
   }
   widget::Theme::LookAndFeelChanged();
+  
+  
+  PreferenceSheet::Refresh();
 }
 
 
