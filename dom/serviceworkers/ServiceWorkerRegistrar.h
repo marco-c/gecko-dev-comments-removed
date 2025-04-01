@@ -41,8 +41,12 @@ class ServiceWorkerRegistrar : public nsIObserver,
 
   
  public:
+  
+  
+  
   struct ExpandoHandler {
     nsCString mKey;
+    
     void (*mServiceWorkerLoaded)(const ServiceWorkerRegistrationData& aData,
                                  const nsACString& aValue);
     void (*mServiceWorkerUpdated)(const ServiceWorkerRegistrationData& aData);

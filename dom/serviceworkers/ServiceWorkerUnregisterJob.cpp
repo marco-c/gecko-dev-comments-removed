@@ -7,6 +7,7 @@
 #include "ServiceWorkerUnregisterJob.h"
 
 #include "mozilla/Unused.h"
+#include "mozilla/dom/CookieStoreSubscriptionService.h"
 #include "nsIPushService.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
@@ -61,6 +62,8 @@ void ServiceWorkerUnregisterJob::AsyncExecute() {
     Finish(NS_ERROR_DOM_ABORT_ERR);
     return;
   }
+
+  CookieStoreSubscriptionService::ServiceWorkerUnregistered(mPrincipal, mScope);
 
   
   
