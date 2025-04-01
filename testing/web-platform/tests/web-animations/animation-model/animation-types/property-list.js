@@ -439,6 +439,12 @@ const gCSSProperties1 = {
       { type: 'discrete', options: [ [ 'auto', 'balance' ] ] }
     ]
   },
+  'column-wrap': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'nowrap', 'wrap' ] ] }
+    ]
+  },
   'column-rule-style': {
     
     types: [
@@ -455,6 +461,12 @@ const gCSSProperties1 = {
     }
   },
   'column-width': {
+    
+    types: [ 'length',
+      { type: 'discrete', options: [ [ 'auto', '1px' ] ] }
+    ]
+  },
+  'column-height': {
     
     types: [ 'length',
       { type: 'discrete', options: [ [ 'auto', '1px' ] ] }
