@@ -136,11 +136,20 @@ add_task(async () => {
 
   await dragFinisher();
 
+  const disablePixelAlignment = SpecialPowers.getBoolPref(
+    "layout.scroll.disable-pixel-alignment"
+  );
+  
+  
+  const fuzz = disablePixelAlignment
+    ? { maxDifference: 1, numDifferentPixels: rect.width }
+    : null;
+
   assertSnapshots(
     snapshotCanvas,
     referenceCanvas,
     true ,
-    null ,
+    fuzz,
     "test case",
     "reference"
   );
