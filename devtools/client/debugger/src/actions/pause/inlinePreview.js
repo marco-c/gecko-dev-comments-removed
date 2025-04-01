@@ -3,19 +3,33 @@
 
 
 import {
+  getOriginalFrameScope,
+  getGeneratedFrameScope,
   getSelectedFrameInlinePreviews,
   getSelectedLocation,
-  getSelectedScope,
+  getSelectedFrame,
 } from "../../selectors/index";
 import { features } from "../../utils/prefs";
 import { validateSelectedFrame } from "../../utils/context";
 
 
 
+function getLocalScopeLevels(originalAstScopes) {
+  let levels = 0;
+  while (
+    originalAstScopes[levels] &&
+    originalAstScopes[levels].type === "block"
+  ) {
+    levels++;
+  }
+  return levels;
+}
 
-export function generateInlinePreview(selectedFrame) {
-  return async function (thunkArgs) {
-    const { dispatch, getState } = thunkArgs;
+
+
+
+export function generateInlinePreview() {
+  return async function ({ dispatch, getState, parserWorker, client }) {
     if (!features.inlinePreview) {
       return null;
     }
@@ -24,13 +38,94 @@ export function generateInlinePreview(selectedFrame) {
     if (getSelectedFrameInlinePreviews(getState())) {
       return null;
     }
-    const scope = getSelectedScope(getState());
 
-    if (!scope || !scope.bindings) {
+    const selectedFrame = getSelectedFrame(getState());
+
+    const originalFrameScopes = getOriginalFrameScope(
+      getState(),
+      selectedFrame
+    );
+
+    const generatedFrameScopes = getGeneratedFrameScope(
+      getState(),
+      selectedFrame
+    );
+
+    let scopes = originalFrameScopes?.scope || generatedFrameScopes?.scope;
+
+    if (!scopes || !scopes.bindings) {
       return null;
     }
 
-    const allPreviews = await getPreviews(selectedFrame, scope, thunkArgs);
+    
+    
+    const selectedLocation = getSelectedLocation(getState());
+    if (!selectedLocation) {
+      return null;
+    }
+
+    if (!parserWorker.isLocationSupported(selectedLocation)) {
+      return null;
+    }
+
+    const originalAstScopes = await parserWorker.getScopes(selectedLocation);
+    
+    validateSelectedFrame(getState(), selectedFrame);
+
+    if (!originalAstScopes) {
+      return null;
+    }
+
+    const allPreviews = [];
+    const pausedOnLine = selectedLocation.line;
+    const levels = getLocalScopeLevels(originalAstScopes);
+
+    for (
+      let curLevel = 0;
+      curLevel <= levels && scopes && scopes.bindings;
+      curLevel++
+    ) {
+      const bindings = { ...scopes.bindings.variables };
+      scopes.bindings.arguments.forEach(argument => {
+        Object.keys(argument).forEach(key => {
+          bindings[key] = argument[key];
+        });
+      });
+
+      const previewBindings = Object.keys(bindings).map(async name => {
+        
+        
+        let properties = null;
+        const objectGrip = bindings[name].value;
+        if (objectGrip.actor && objectGrip.class === "Object") {
+          properties = await client.loadObjectProperties(
+            {
+              name,
+              path: name,
+              contents: { value: objectGrip },
+            },
+            selectedFrame.thread
+          );
+        }
+
+        const previewsFromBindings = getBindingValues(
+          originalAstScopes,
+          pausedOnLine,
+          name,
+          bindings[name].value,
+          curLevel,
+          properties
+        );
+
+        allPreviews.push(...previewsFromBindings);
+      });
+      await Promise.all(previewBindings);
+      
+      validateSelectedFrame(getState(), selectedFrame);
+
+      scopes = scopes.parent;
+    }
+
     
     allPreviews.sort((previewA, previewB) => {
       if (previewA.line < previewB.line) {
@@ -60,118 +155,29 @@ export function generateInlinePreview(selectedFrame) {
   };
 }
 
-
-
-
-
-
-
-
-async function getPreviews(selectedFrame, scope, thunkArgs) {
-  const { client, parserWorker, getState } = thunkArgs;
-
-  
-  
-  const selectedLocation = getSelectedLocation(getState());
-  if (!selectedLocation) {
-    return [];
-  }
-
-  if (!parserWorker.isLocationSupported(selectedLocation)) {
-    return [];
-  }
-
-  const originalAstScopes = await parserWorker.getScopes(selectedLocation);
-  if (!originalAstScopes) {
-    return [];
-  }
-
-  
-  validateSelectedFrame(getState(), selectedFrame);
-
-  const allPreviews = [];
-  let level = 0;
-  while (scope && scope.bindings) {
-    
-    const bindings = getScopeBindings(scope);
-
-    
-    const allPreviewBindingsComplete = Object.keys(bindings).map(async name => {
-      
-      const previews = await generatePreviewsForBinding(
-        originalAstScopes[level]?.bindings[name],
-        selectedLocation.line,
-        name,
-        bindings[name].value,
-        client,
-        selectedFrame.thread
-      );
-
-      allPreviews.push(...previews);
-    });
-    await Promise.all(allPreviewBindingsComplete);
-
-    
-    validateSelectedFrame(getState(), selectedFrame);
-
-    
-    
-    if (scope.type === "function") {
-      break;
-    }
-    level++;
-    scope = scope.parent;
-  }
-  return allPreviews;
-}
-
-
-
-
-
-
-
-function getScopeBindings(scope) {
-  const bindings = { ...scope.bindings.variables };
-  scope.bindings.arguments.forEach(argument => {
-    Object.keys(argument).forEach(key => {
-      bindings[key] = argument[key];
-    });
-  });
-  return bindings;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-async function generatePreviewsForBinding(
-  bindingData,
+function getBindingValues(
+  originalAstScopes,
   pausedOnLine,
   name,
   value,
-  client,
-  thread
+  curLevel,
+  properties
 ) {
-  if (!bindingData) {
-    return [];
+  const previews = [];
+
+  const binding = originalAstScopes[curLevel]?.bindings[name];
+  if (!binding) {
+    return previews;
   }
 
   
   
   const identifiers = new Set();
-  const previews = [];
+
   
   
-  for (let i = bindingData.refs.length - 1; i >= 0; i--) {
-    const ref = bindingData.refs[i];
+  for (let i = binding.refs.length - 1; i >= 0; i--) {
+    const ref = binding.refs[i];
     
     const line = ref.start.line - 1;
     const column = ref.start.column;
@@ -180,12 +186,11 @@ async function generatePreviewsForBinding(
       continue;
     }
 
-    const { displayName, displayValue } = await getExpressionNameAndValue(
+    const { displayName, displayValue } = getExpressionNameAndValue(
       name,
       value,
       ref,
-      client,
-      thread
+      properties
     );
 
     
@@ -207,33 +212,15 @@ async function generatePreviewsForBinding(
   return previews;
 }
 
-
-
-
-
-
-
-
-
-
-
-async function getExpressionNameAndValue(name, value, ref, client, thread) {
+function getExpressionNameAndValue(
+  name,
+  value,
+  
+  ref,
+  properties
+) {
   let displayName = name;
   let displayValue = value;
-
-  
-  
-  let properties = null;
-  if (value.actor && value.class === "Object") {
-    properties = await client.loadObjectProperties(
-      {
-        name,
-        path: name,
-        contents: { value },
-      },
-      thread
-    );
-  }
 
   
   if (properties) {

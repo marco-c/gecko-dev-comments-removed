@@ -584,10 +584,7 @@ function assertPaused(dbg, msg = "client is paused") {
 async function waitForPaused(
   dbg,
   url,
-  options = {
-    shouldWaitForLoadedScopes: true,
-    shouldWaitForInlinePreviews: true,
-  }
+  options = { shouldWaitForLoadedScopes: true }
 ) {
   info("Waiting for the debugger to pause");
   const { getSelectedScope, getCurrentThread, getCurrentThreadFrames } =
@@ -595,7 +592,7 @@ async function waitForPaused(
 
   await waitForState(
     dbg,
-    () => isPaused(dbg) && !!getSelectedScope(),
+    () => isPaused(dbg) && !!getSelectedScope(getCurrentThread()),
     "paused"
   );
 
@@ -608,10 +605,6 @@ async function waitForPaused(
   
   
   await waitForSelectedSource(dbg, url);
-
-  if (options.shouldWaitForInlinePreviews) {
-    await waitForInlinePreviews(dbg);
-  }
 }
 
 

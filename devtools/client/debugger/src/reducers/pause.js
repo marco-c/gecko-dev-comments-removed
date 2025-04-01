@@ -236,8 +236,6 @@ function update(state = initialPauseState(), action) {
         ...threadState().frameScopes.generated,
         [selectedFrameId]: {
           pending: status !== "done",
-          
-          
           scope: value,
         },
       };

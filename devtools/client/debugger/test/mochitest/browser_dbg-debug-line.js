@@ -19,6 +19,7 @@ add_task(async function () {
   
   invokeInTab("main");
   await waitForPaused(dbg);
+  await waitForDispatch(dbg.store, "ADD_INLINE_PREVIEW");
 
   
   findElement(dbg, "frame", 2).focus();

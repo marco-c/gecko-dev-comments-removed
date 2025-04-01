@@ -135,7 +135,6 @@ function getGeneratedFrameId(frameId) {
   return frameId;
 }
 
-
 export function getGeneratedFrameScope(state, frame) {
   if (!frame) {
     return null;
@@ -202,27 +201,22 @@ export function getSelectedFrameBindings(state, thread) {
   return frameBindings;
 }
 
-export function getSelectedScope(state) {
-  const frame = getSelectedFrame(state);
+function getFrameScope(state, frame) {
+  return (
+    getOriginalFrameScope(state, frame) || getGeneratedFrameScope(state, frame)
+  );
+}
 
-  let scopes;
-  
-  if (
-    frame.location.source.isOriginal &&
-    !frame.location.source.isPrettyPrinted &&
-    !frame.generatedLocation?.source.isWasm
-  ) {
-    scopes = getOriginalFrameScope(state, frame)?.scope;
-    
-    if (!scopes) {
-      scopes = getGeneratedFrameScope(state, frame)?.scope;
-    }
-  } else {
-    
-    
-    scopes = getGeneratedFrameScope(state, frame)?.scope;
+
+export function getSelectedScope(state, thread) {
+  const frame = getSelectedFrame(state, thread);
+
+  const frameScope = getFrameScope(state, frame);
+  if (!frameScope) {
+    return null;
   }
-  return scopes;
+
+  return frameScope.scope || null;
 }
 
 export function getSelectedOriginalScope(state, thread) {
