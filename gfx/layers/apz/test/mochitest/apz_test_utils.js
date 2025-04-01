@@ -406,6 +406,8 @@ async function promiseApzFlushedRepaints(aPopupElement = null) {
 
 
 
+
+
 function runSubtestsSeriallyInFreshWindows(aSubtests) {
   return new Promise(function (resolve, reject) {
     var testIndex = -1;
@@ -462,7 +464,13 @@ function runSubtestsSeriallyInFreshWindows(aSubtests) {
 
       test = aSubtests[testIndex];
 
-      let recognizedProps = ["file", "prefs", "dp_suppression", "onload"];
+      let recognizedProps = [
+        "file",
+        "prefs",
+        "dp_suppression",
+        "onload",
+        "windowFeatures",
+      ];
       for (let prop in test) {
         if (!recognizedProps.includes(prop)) {
           SimpleTest.ok(
@@ -505,7 +513,11 @@ function runSubtestsSeriallyInFreshWindows(aSubtests) {
       }
 
       function spawnTest(aFile) {
-        w = window.open("", "_blank");
+        w = window.open(
+          "",
+          "_blank",
+          test.windowFeatures ? test.windowFeatures : ""
+        );
         w.subtestDone = advanceSubtestExecution;
         w.subtestFailed = advanceSubtestExecutionWithFailure;
         w.isApzSubtest = true;
