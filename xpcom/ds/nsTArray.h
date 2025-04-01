@@ -43,7 +43,6 @@ class Heap;
 } 
 
 class nsCycleCollectionTraversalCallback;
-struct TraceCallbacks;
 class nsRegion;
 
 namespace mozilla::a11y {
@@ -2686,11 +2685,21 @@ inline void ImplCycleCollectionUnlink(nsTArray_Impl<E, Alloc>& aField) {
   aField.Clear();
 }
 
-template <typename E, typename Alloc, typename Callback>
-inline void ImplCycleCollectionIndexedContainer(nsTArray_Impl<E, Alloc>& aField,
-                                                Callback&& aCallback) {
-  for (auto& value : aField) {
-    aCallback(value);
+namespace detail {
+
+
+void SetCycleCollectionArrayFlag(uint32_t& aFlags);
+}  
+
+template <typename E, typename Alloc>
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    nsTArray_Impl<E, Alloc>& aField, const char* aName, uint32_t aFlags = 0) {
+  ::detail::SetCycleCollectionArrayFlag(aFlags);
+  size_t length = aField.Length();
+  E* elements = aField.Elements();
+  for (size_t i = 0; i < length; ++i) {
+    ImplCycleCollectionTraverse(aCallback, elements[i], aName, aFlags);
   }
 }
 
