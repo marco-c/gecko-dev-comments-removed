@@ -122,5 +122,3 @@ class AboutCompatBroker {
     });
   }
 }
-
-module.exports = AboutCompatBroker;

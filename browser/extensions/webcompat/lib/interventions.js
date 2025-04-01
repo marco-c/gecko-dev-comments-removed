@@ -430,5 +430,3 @@ class Interventions {
     return [registration];
   }
 }
-
-module.exports = Interventions;

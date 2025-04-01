@@ -415,5 +415,3 @@ var InterventionHelpers = {
     return InterventionHelpers.matchPatternsForTLDs(base, suffix, GOOGLE_TLDS);
   },
 };
-
-module.exports = InterventionHelpers;
