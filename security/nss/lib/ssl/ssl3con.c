@@ -3520,6 +3520,27 @@ ssl3_ComputeMasterSecretInt(sslSocket *ss, PK11SymKey *pms,
     CK_TLS12_MASTER_KEY_DERIVE_PARAMS master_params;
     unsigned int master_params_len;
 
+    
+
+
+
+
+
+    if (isTLS) {
+        PRUint32 policy;
+        SECStatus rv;
+
+        
+        rv = NSS_GetAlgorithmPolicy(SEC_OID_TLS_REQUIRE_EMS, &policy);
+        
+        if ((rv == SECSuccess) && (policy & NSS_USE_ALG_IN_SSL_KX)) {
+            
+
+            PORT_SetError(SSL_ERROR_MISSING_EXTENDED_MASTER_SECRET);
+            return SECFailure;
+        }
+    }
+
     if (isTLS12) {
         if (isDH)
             master_derive = CKM_TLS12_MASTER_KEY_DERIVE_DH;
@@ -3580,6 +3601,7 @@ tls_ComputeExtendedMasterSecretInt(sslSocket *ss, PK11SymKey *pms,
     ssl3CipherSpec *pwSpec = ss->ssl3.pwSpec;
     CK_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE_PARAMS extended_master_params;
     SSL3Hashes hashes;
+
     
 
 
@@ -9496,7 +9518,7 @@ ssl3_HandleClientHelloPart2(sslSocket *ss,
                 if (suite->cipher_suite == sid->u.ssl3.cipherSuite)
                     break;
             }
-            PORT_Assert(j > 0);
+
             if (j == 0)
                 break;
 

@@ -143,8 +143,8 @@ rsa_build_from_primes(const mp_int *p, const mp_int *q,
     
     CHECK_MPI_OK(mp_sub_d(p, 1, &psub1));
     CHECK_MPI_OK(mp_sub_d(q, 1, &qsub1));
+    CHECK_MPI_OK(mp_lcm(&psub1, &qsub1, &phi));
     if (needPublicExponent || needPrivateExponent) {
-        CHECK_MPI_OK(mp_lcm(&psub1, &qsub1, &phi));
         
         
         if (needPublicExponent) {
@@ -162,6 +162,15 @@ rsa_build_from_primes(const mp_int *p, const mp_int *q,
             err = MP_OKAY; 
             rv = SECFailure;
         }
+        goto cleanup;
+    }
+
+    
+    
+    CHECK_MPI_OK(mp_mod(d, &phi, &tmp));
+    if (mp_cmp_d(&tmp, 1) == MP_EQ) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        rv = SECFailure;
         goto cleanup;
     }
 
@@ -1157,6 +1166,8 @@ rsa_PrivateKeyOpCRTCheckedPubKey(RSAPrivateKey *key, mp_int *m, mp_int *c)
     
     CHECK_MPI_OK(mp_exptmod(m, &e, &n, &v));
     if (mp_cmp(&v, c) != 0) {
+        
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
         rv = SECFailure;
     }
 cleanup:

@@ -737,9 +737,13 @@ ssl_CallCustomExtensionSenders(sslSocket *ss, sslBuffer *buf,
         }
     }
 
-    rv = sslBuffer_Append(buf, tail.buf, tail.len);
-    if (rv != SECSuccess) {
-        goto loser; 
+    
+    if (ss->xtnData.lastXtnOffset) {
+        ss->xtnData.lastXtnOffset = buf->len;
+        rv = sslBuffer_Append(buf, tail.buf, tail.len);
+        if (rv != SECSuccess) {
+            goto loser; 
+        }
     }
 
     sslBuffer_Clear(&tail);

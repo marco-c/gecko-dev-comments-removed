@@ -260,7 +260,7 @@ NSS_CMSDigestContext_FinishSingle(NSSCMSDigestContext *cmsdigcx,
 
     
     rv = NSS_CMSDigestContext_FinishMultiple(cmsdigcx, arena, &dp);
-    if (rv == SECSuccess && dp) {
+    if (rv == SECSuccess && dp && dp[0]) {
         
         rv = SECITEM_CopyItem(poolp, digest, dp[0]);
     }

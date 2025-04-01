@@ -92,14 +92,6 @@ extern const float s_logv_2[];
 
 
 
-#define MP_LT -1
-#define MP_EQ 0
-#define MP_GT 1
-
-
-
-
-
 void s_mp_setz(mp_digit *dp, mp_size count);                     
 void s_mp_copy(const mp_digit *sp, mp_digit *dp, mp_size count); 
 void *s_mp_alloc(size_t nb, size_t ni);                          

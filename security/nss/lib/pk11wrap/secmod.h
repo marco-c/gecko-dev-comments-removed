@@ -193,6 +193,31 @@ SECStatus SECMOD_CancelWait(SECMODModule *mod);
 
 
 SECStatus SECMOD_UpdateSlotList(SECMODModule *mod);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SECOidTag SECMOD_PolicyStringToOid(const char *policy, const char *list);
+
+PRUint32 SECMOD_PolicyStringToOpt(const char *optionString);
+
+
+
+
+const char *SECMOD_FlagsToPolicyString(PRUint32 val, PRBool exact);
+
 SEC_END_PROTOS
 
 #endif
