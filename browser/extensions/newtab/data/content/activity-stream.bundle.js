@@ -13792,7 +13792,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       wallpaperList,
       uploadedWallpaper
     } = this.props.Wallpapers;
-    if (selectedWallpaper === "custom" && uploadedWallpaper) {
+    if (uploadedWallpaper) {
       
       if (this.uploadedWallpaperUrl) {
         URL.revokeObjectURL(this.uploadedWallpaperUrl);
