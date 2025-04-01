@@ -91,6 +91,14 @@ class PivotRoleRule : public PivotRule {
 
 
 
+class PivotARIASelectedRule : public PivotRule {
+ public:
+  virtual uint16_t Match(Accessible* aAcc) override;
+};
+
+
+
+
 class PivotStateRule : public PivotRule {
  public:
   explicit PivotStateRule(uint64_t aState);
