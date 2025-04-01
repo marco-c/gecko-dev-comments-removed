@@ -21,16 +21,6 @@
 
 
 
-
-const getInstanceNormPrecisionTolerance = (graphResources) => {
-  
-  
-  const toleranceValueDict = {float32: 840, float16: 8400};
-  const expectedDataType =
-      getExpectedDataTypeOfSingleOutput(graphResources.expectedOutputs);
-  return {metricType: 'ULP', value: toleranceValueDict[expectedDataType]};
-};
-
 const instanceNormTests = [
   {
     'name': 'instanceNormalization float32 4D tensor default options',
