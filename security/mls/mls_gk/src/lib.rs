@@ -1022,7 +1022,214 @@ pub unsafe extern "C" fn mls_receive(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn mls_receive_ack(
+pub unsafe extern "C" fn mls_has_pending_proposals(
+    storage_prefix: &nsACString,
+    group_id_bytes_ptr: *const u8,
+    group_id_bytes_len: usize,
+    identifier_bytes_ptr: *const u8,
+    identifier_bytes_len: usize,
+    ret_has_pending_proposals: &mut bool,
+) -> nsresult {
+    
+    log::debug!("Entering mls_has_pending_proposals");
+
+    
+    if group_id_bytes_len == 0 {
+        log::error!("Group Identifier argument cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+    if identifier_bytes_len == 0 {
+        log::error!("Identifier argument cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    
+    let group_id_bytes: &[u8] =
+        unsafe { std::slice::from_raw_parts(group_id_bytes_ptr, group_id_bytes_len) };
+    let identifier_bytes: &[u8] =
+        unsafe { std::slice::from_raw_parts(identifier_bytes_ptr, identifier_bytes_len) };
+
+    
+    let Ok(pstate) = state_access(storage_prefix) else {
+        return NS_ERROR_FAILURE;
+    };
+
+    
+    let has_pending_proposals = match mls_platform_api::mls_has_pending_proposals(
+        &pstate,
+        group_id_bytes,
+        identifier_bytes,
+    ) {
+        Ok(result) => result,
+        Err(e) => {
+            log::error!("{:?}", e);
+            return NS_ERROR_FAILURE;
+        }
+    };
+
+    
+    *ret_has_pending_proposals = has_pending_proposals;
+
+    log::info!("Successfully retrieved has pending proposals");
+    NS_OK
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn mls_clear_pending_proposals(
+    storage_prefix: &nsACString,
+    group_id_bytes_ptr: *const u8,
+    group_id_bytes_len: usize,
+    identifier_bytes_ptr: *const u8,
+    identifier_bytes_len: usize,
+    ret_cleared_pending_proposals: &mut bool,
+) -> nsresult {
+    
+    log::debug!("Entering mls_clear_pending_proposals");
+
+    
+    if group_id_bytes_len == 0 {
+        log::error!("Group Identifier argument cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+    if identifier_bytes_len == 0 {
+        log::error!("Identifier argument cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    
+    let group_id_bytes: &[u8] =
+        unsafe { std::slice::from_raw_parts(group_id_bytes_ptr, group_id_bytes_len) };
+    let identifier_bytes: &[u8] =
+        unsafe { std::slice::from_raw_parts(identifier_bytes_ptr, identifier_bytes_len) };
+
+    
+    let Ok(pstate) = state_access(storage_prefix) else {
+        return NS_ERROR_FAILURE;
+    };
+
+    
+    let has_cleared_pending_proposals = match mls_platform_api::mls_clear_pending_proposals(
+        &pstate,
+        group_id_bytes,
+        identifier_bytes,
+    ) {
+        Ok(result) => result,
+        Err(e) => {
+            log::error!("{:?}", e);
+            return NS_ERROR_FAILURE;
+        }
+    };
+
+    
+    *ret_cleared_pending_proposals = has_cleared_pending_proposals;
+
+    log::info!("Successfully cleared pending proposals");
+    NS_OK
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn mls_has_pending_commit(
+    storage_prefix: &nsACString,
+    group_id_bytes_ptr: *const u8,
+    group_id_bytes_len: usize,
+    identifier_bytes_ptr: *const u8,
+    identifier_bytes_len: usize,
+    ret_has_pending_commit: &mut bool,
+) -> nsresult {
+    
+    log::debug!("Entering mls_has_pending_commit");
+
+    
+    if group_id_bytes_len == 0 {
+        log::error!("Group Identifier argument cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+    if identifier_bytes_len == 0 {
+        log::error!("Identifier argument cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    
+    let group_id_bytes: &[u8] =
+        unsafe { std::slice::from_raw_parts(group_id_bytes_ptr, group_id_bytes_len) };
+    let identifier_bytes: &[u8] =
+        unsafe { std::slice::from_raw_parts(identifier_bytes_ptr, identifier_bytes_len) };
+
+    
+    let Ok(pstate) = state_access(storage_prefix) else {
+        return NS_ERROR_FAILURE;
+    };
+
+    
+    let has_pending_commit =
+        match mls_platform_api::mls_has_pending_commit(&pstate, group_id_bytes, identifier_bytes) {
+            Ok(result) => result,
+            Err(e) => {
+                log::error!("{:?}", e);
+                return NS_ERROR_FAILURE;
+            }
+        };
+
+    
+    *ret_has_pending_commit = has_pending_commit;
+
+    log::info!("Successfully retrieved has pending commit");
+    NS_OK
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn mls_clear_pending_commit(
+    storage_prefix: &nsACString,
+    group_id_bytes_ptr: *const u8,
+    group_id_bytes_len: usize,
+    identifier_bytes_ptr: *const u8,
+    identifier_bytes_len: usize,
+    ret_cleared_pending_commit: &mut bool,
+) -> nsresult {
+    
+    log::debug!("Entering mls_clear_pending_commit");
+
+    
+    if group_id_bytes_len == 0 {
+        log::error!("Group Identifier argument cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+    if identifier_bytes_len == 0 {
+        log::error!("Identifier argument cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    
+    let group_id_bytes: &[u8] =
+        unsafe { std::slice::from_raw_parts(group_id_bytes_ptr, group_id_bytes_len) };
+    let identifier_bytes: &[u8] =
+        unsafe { std::slice::from_raw_parts(identifier_bytes_ptr, identifier_bytes_len) };
+
+    
+    let Ok(pstate) = state_access(storage_prefix) else {
+        return NS_ERROR_FAILURE;
+    };
+
+    
+    let has_cleared_pending_commit =
+        match mls_platform_api::mls_clear_pending_commit(&pstate, group_id_bytes, identifier_bytes)
+        {
+            Ok(result) => result,
+            Err(e) => {
+                log::error!("{:?}", e);
+                return NS_ERROR_FAILURE;
+            }
+        };
+
+    
+    *ret_cleared_pending_commit = has_cleared_pending_commit;
+
+    log::info!("Successfully cleared pending commit");
+    NS_OK
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn mls_apply_pending_commit(
     storage_prefix: &nsACString,
     group_id_bytes_ptr: *const u8,
     group_id_bytes_len: usize,
@@ -1031,7 +1238,7 @@ pub unsafe extern "C" fn mls_receive_ack(
     ret_received: &mut GkReceived,
 ) -> nsresult {
     
-    log::debug!("Entering mls_receive");
+    log::debug!("Entering mls_apply_pending_commit");
 
     
     if group_id_bytes_len == 0 {
@@ -1314,5 +1521,53 @@ pub unsafe extern "C" fn mls_get_group_id(
     log::debug!(" (returns) Group Identifier: {:?}", hex::encode(&gid));
     log::info!("Successfully retrieved group id");
 
+    NS_OK
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn mls_get_group_epoch(
+    message_bytes_ptr: *const u8,
+    message_bytes_len: usize,
+    ret_group_epoch: &mut ThinVec<u8>,
+) -> nsresult {
+    
+    log::debug!("Entering mls_get_group_epoch");
+
+    
+    if message_bytes_len == 0 {
+        log::error!("Message argument cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    let message_bytes: &[u8] =
+        unsafe { std::slice::from_raw_parts(message_bytes_ptr, message_bytes_len) };
+
+    
+    let message = match mls_platform_api::MlsMessage::from_bytes(&message_bytes) {
+        Ok(kp) => kp,
+        Err(e) => {
+            log::error!("{:?}", e);
+            return NS_ERROR_INVALID_ARG;
+        }
+    };
+
+    
+    let group_epoch = match mls_platform_api::mls_get_group_epoch(
+        &mls_platform_api::MessageOrAck::MlsMessage(message),
+    ) {
+        Ok(epoch) => epoch,
+        Err(e) => {
+            log::error!("{:?}", e);
+            return NS_ERROR_FAILURE;
+        }
+    };
+
+    
+    
+    let epoch_bytes = group_epoch.to_le_bytes();
+    ret_group_epoch.extend_from_slice(&epoch_bytes);
+
+    log::info!(" (returns) Group Epoch: {:?}", group_epoch);
+    log::info!("Successfully retrieved group epoch");
     NS_OK
 }
