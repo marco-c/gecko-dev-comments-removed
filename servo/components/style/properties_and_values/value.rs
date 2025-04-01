@@ -344,12 +344,6 @@ impl ComputedValue {
     }
 
     
-    #[cfg(debug_assertions)]
-    pub fn is_parsed(&self, registration: &PropertyRegistrationData) -> bool {
-        registration.syntax.is_universal() || !matches!(self.v, ValueInner::Universal(_))
-    }
-
-    
     pub fn to_variable_value(&self) -> ComputedPropertyValue {
         if let ValueInner::Universal(ref value) = self.v {
             return (**value).clone();
