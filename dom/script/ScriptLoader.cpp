@@ -4027,11 +4027,25 @@ void ScriptLoader::ReportErrorToConsole(ScriptLoadRequest* aRequest,
   JS::ColumnNumberOneOrigin columnNo =
       aRequest->GetScriptLoadContext()->GetScriptColumnNumber();
 
+  SourceLocation loc{mDocument->GetDocumentURI(), lineNo,
+                     columnNo.oneOriginValue()};
+
+  
+  
+  if (aRequest->IsModuleRequest()) {
+    ModuleLoadRequest* modRequest = aRequest->AsModuleRequest();
+    if (!modRequest->IsTopLevel()) {
+      ModuleLoadRequest* parent = modRequest->mWaitingParentRequest;
+      if (parent) {
+        nsCString parentURL = parent->mURL;
+        loc = SourceLocation(std::move(parentURL));
+      }
+    }
+  }
+
   nsContentUtils::ReportToConsole(
       nsIScriptError::warningFlag, "Script Loader"_ns, mDocument,
-      nsContentUtils::eDOM_PROPERTIES, message, params,
-      SourceLocation{mDocument->GetDocumentURI(), lineNo,
-                     columnNo.oneOriginValue()});
+      nsContentUtils::eDOM_PROPERTIES, message, params, loc);
 }
 
 void ScriptLoader::ReportWarningToConsole(
