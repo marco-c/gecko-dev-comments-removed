@@ -1192,13 +1192,13 @@ void Animation::Remove() {
   QueuePlaybackEvent(nsGkAtoms::onremove, GetTimelineCurrentTimeAsTimeStamp());
 }
 
-bool Animation::HasLowerCompositeOrderThan(
+int32_t Animation::CompareCompositeOrder(
     const Maybe<EventContext>& aContext, const Animation& aOther,
     const Maybe<EventContext>& aOtherContext,
     nsContentUtils::NodeIndexCache& aCache) const {
   
   if (&aOther == this) {
-    return false;
+    return 0;
   }
 
   
@@ -1216,8 +1216,8 @@ bool Animation::HasLowerCompositeOrderThan(
     const auto* const otherTransition =
         asCSSTransitionForSorting(aOther, aOtherContext);
     if (thisTransition && otherTransition) {
-      return thisTransition->HasLowerCompositeOrderThan(
-          aContext, *otherTransition, aOtherContext, aCache);
+      return thisTransition->CompareCompositeOrder(aContext, *otherTransition,
+                                                   aOtherContext, aCache);
     }
     if (thisTransition || otherTransition) {
       
@@ -1231,7 +1231,7 @@ bool Animation::HasLowerCompositeOrderThan(
       
       
       
-      return thisTransition;
+      return thisTransition ? -1 : 1;
     }
   }
 
@@ -1245,10 +1245,10 @@ bool Animation::HasLowerCompositeOrderThan(
     auto thisAnimation = asCSSAnimationForSorting(*this);
     auto otherAnimation = asCSSAnimationForSorting(aOther);
     if (thisAnimation && otherAnimation) {
-      return thisAnimation->HasLowerCompositeOrderThan(*otherAnimation, aCache);
+      return thisAnimation->CompareCompositeOrder(*otherAnimation, aCache);
     }
     if (thisAnimation || otherAnimation) {
-      return thisAnimation;
+      return thisAnimation ? -1 : 1;
     }
   }
 
@@ -1261,7 +1261,7 @@ bool Animation::HasLowerCompositeOrderThan(
 
   
   
-  return mAnimationIndex < aOther.mAnimationIndex;
+  return mAnimationIndex > aOther.mAnimationIndex ? 1 : -1;
 }
 
 void Animation::WillComposeStyle() {

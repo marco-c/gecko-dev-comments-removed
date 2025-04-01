@@ -306,13 +306,13 @@ class Animation : public DOMEventTargetHelper,
   };
   
   
-  bool HasLowerCompositeOrderThan(const Maybe<EventContext>& aContext,
-                                  const Animation& aOther,
-                                  const Maybe<EventContext>& aOtherContext,
-                                  nsContentUtils::NodeIndexCache&) const;
-  bool HasLowerCompositeOrderThan(
-      const Animation& aOther, nsContentUtils::NodeIndexCache& aCache) const {
-    return HasLowerCompositeOrderThan(Nothing(), aOther, Nothing(), aCache);
+  int32_t CompareCompositeOrder(const Maybe<EventContext>& aContext,
+                                const Animation& aOther,
+                                const Maybe<EventContext>& aOtherContext,
+                                nsContentUtils::NodeIndexCache&) const;
+  int32_t CompareCompositeOrder(const Animation& aOther,
+                                nsContentUtils::NodeIndexCache& aCache) const {
+    return CompareCompositeOrder(Nothing(), aOther, Nothing(), aCache);
   }
 
   

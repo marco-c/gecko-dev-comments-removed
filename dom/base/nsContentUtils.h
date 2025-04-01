@@ -236,7 +236,7 @@ enum EventNameType {
   EventNameType_All = 0xFFFF
 };
 
-enum class TreeKind : uint8_t { DOM, Flat };
+enum class TreeKind : uint8_t { DOM, ShadowIncludingDOM, Flat };
 
 enum class SerializeShadowRoots : uint8_t { Yes, No };
 
@@ -584,15 +584,17 @@ class nsContentUtils {
 
 
 
-  template <TreeKind aTreeKind, size_t cache_size = 100>
+  template <size_t cache_size = 100>
   struct ResizableNodeIndexCache {
     
 
 
+    template <TreeKind aTreeKind>
     void ComputeIndicesOf(const nsINode* aParent, const nsINode* aChild1,
                           const nsINode* aChild2,
                           mozilla::Maybe<int32_t>& aChild1Index,
                           mozilla::Maybe<int32_t>& aChild2Index) {
+      AssertTreeKind(aTreeKind);
       bool foundChild1 = false;
       bool foundChild2 = false;
       for (size_t cacheIndex = 0; cacheIndex < cache_size; ++cacheIndex) {
@@ -616,17 +618,21 @@ class nsContentUtils {
         }
       }
       if (!foundChild1) {
-        aChild1Index = ComputeAndInsertIndexIntoCache(aParent, aChild1);
+        aChild1Index =
+            ComputeAndInsertIndexIntoCache<aTreeKind>(aParent, aChild1);
       }
       if (!foundChild2) {
-        aChild2Index = ComputeAndInsertIndexIntoCache(aParent, aChild2);
+        aChild2Index =
+            ComputeAndInsertIndexIntoCache<aTreeKind>(aParent, aChild2);
       }
     }
     
 
 
+    template <TreeKind aTreeKind>
     mozilla::Maybe<int32_t> ComputeIndexOf(const nsINode* aParent,
                                            const nsINode* aChild) {
+      AssertTreeKind(aTreeKind);
       for (size_t cacheIndex = 0; cacheIndex < cache_size; ++cacheIndex) {
         const nsINode* node = mNodes[cacheIndex];
         if (!node) {
@@ -636,7 +642,7 @@ class nsContentUtils {
           return mIndices[cacheIndex];
         }
       }
-      return ComputeAndInsertIndexIntoCache(aParent, aChild);
+      return ComputeAndInsertIndexIntoCache<aTreeKind>(aParent, aChild);
     }
 
    private:
@@ -644,8 +650,10 @@ class nsContentUtils {
 
 
 
+    template <TreeKind aTreeKind>
     mozilla::Maybe<int32_t> ComputeAndInsertIndexIntoCache(
         const nsINode* aParent, const nsINode* aChild) {
+      AssertTreeKind(aTreeKind);
       mozilla::Maybe<int32_t> childIndex =
           nsContentUtils::GetIndexInParent<aTreeKind>(aParent, aChild);
 
@@ -672,6 +680,17 @@ class nsContentUtils {
     
     
     size_t mNext{0};
+
+#ifdef DEBUG
+    mozilla::Maybe<TreeKind> mTreeKind;
+#endif
+
+    void AssertTreeKind(TreeKind aKind) {
+#ifdef DEBUG
+      MOZ_ASSERT(!mTreeKind || mTreeKind.value() == aKind, "Mixing queries");
+      mTreeKind = mozilla::Some(aKind);
+#endif
+    }
   };
 
   
@@ -679,7 +698,7 @@ class nsContentUtils {
 
 
 
-  using NodeIndexCache = ResizableNodeIndexCache<TreeKind::DOM>;
+  using NodeIndexCache = ResizableNodeIndexCache<100>;
 
   
 
@@ -3519,8 +3538,9 @@ class nsContentUtils {
   static int32_t CompareTreePosition(const nsINode* aNode1,
                                      const nsINode* aNode2,
                                      const nsINode* aCommonAncestor,
-                                     ResizableNodeIndexCache<aKind>* = nullptr);
+                                     NodeIndexCache* = nullptr);
 
+  
   
   
   

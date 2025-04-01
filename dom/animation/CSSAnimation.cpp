@@ -128,7 +128,7 @@ void CSSAnimation::Tick(TickState& aState) {
   QueueEvents();
 }
 
-bool CSSAnimation::HasLowerCompositeOrderThan(
+int32_t CSSAnimation::CompareCompositeOrder(
     const CSSAnimation& aOther, nsContentUtils::NodeIndexCache& aCache) const {
   MOZ_ASSERT(IsTiedToMarkup() && aOther.IsTiedToMarkup(),
              "Should only be called for CSS animations that are sorted "
@@ -136,16 +136,17 @@ bool CSSAnimation::HasLowerCompositeOrderThan(
 
   
   if (&aOther == this) {
-    return false;
+    return 0;
   }
 
   
   if (!mOwningElement.Equals(aOther.mOwningElement)) {
-    return mOwningElement.LessThan(aOther.mOwningElement, aCache);
+    return mOwningElement.Compare(aOther.mOwningElement, aCache);
   }
 
   
-  return mAnimationIndex < aOther.mAnimationIndex;
+  MOZ_ASSERT(mAnimationIndex != aOther.mAnimationIndex);
+  return mAnimationIndex < aOther.mAnimationIndex ? -1 : 1;
 }
 
 void CSSAnimation::QueueEvents(const StickyTimeDuration& aActiveTime) {
