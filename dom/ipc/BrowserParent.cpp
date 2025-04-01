@@ -1404,7 +1404,7 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
 
   
   
-  EnumSet<ValidatePrincipalOptions> validationOptions = {};
+  EnumSet<ContentParent::ValidatePrincipalOptions> validationOptions = {};
   nsCOMPtr<nsIURI> docURI = aInit.documentURI();
   if (docURI->SchemeIs("blob") || docURI->SchemeIs("chrome")) {
     
@@ -1414,7 +1414,7 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
     
     
     
-    validationOptions = {ValidatePrincipalOptions::AllowSystem};
+    validationOptions = {ContentParent::ValidatePrincipalOptions::AllowSystem};
   }
 
   
@@ -1426,7 +1426,8 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
                       IPC_FAIL(this, "Should have spec for about: URI"));
     if (spec.Equals("about:blank") && wgp &&
         wgp->DocumentPrincipal()->IsSystemPrincipal()) {
-      validationOptions = {ValidatePrincipalOptions::AllowSystem};
+      validationOptions = {
+          ContentParent::ValidatePrincipalOptions::AllowSystem};
     }
   }
 
