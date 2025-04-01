@@ -267,8 +267,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "GPUError", nightly: true },
   
-  { name: "GPUExternalTexture", nightly: true },
-  
   { name: "GPUInternalError", nightly: true },
   
   { name: "GPUMapMode", nightly: true },
