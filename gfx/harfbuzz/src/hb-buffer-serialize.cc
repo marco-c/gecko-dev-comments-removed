@@ -169,11 +169,13 @@ _hb_buffer_serialize_glyphs_json (hb_buffer_t *buffer,
     if (flags & HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS)
     {
       hb_glyph_extents_t extents;
-      hb_font_get_glyph_extents(font, info[i].codepoint, &extents);
-      p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"xb\":%d,\"yb\":%d",
-                                extents.x_bearing, extents.y_bearing));
-      p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"w\":%d,\"h\":%d",
-                                extents.width, extents.height));
+      if (hb_font_get_glyph_extents(font, info[i].codepoint, &extents))
+      {
+	p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"xb\":%d,\"yb\":%d",
+				  extents.x_bearing, extents.y_bearing));
+	p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"w\":%d,\"h\":%d",
+				  extents.width, extents.height));
+      }
     }
 
     *p++ = '}';
@@ -318,8 +320,8 @@ _hb_buffer_serialize_glyphs_text (hb_buffer_t *buffer,
     if (flags & HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS)
     {
       hb_glyph_extents_t extents;
-      hb_font_get_glyph_extents(font, info[i].codepoint, &extents);
-      p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), "<%d,%d,%d,%d>", extents.x_bearing, extents.y_bearing, extents.width, extents.height));
+      if (hb_font_get_glyph_extents(font, info[i].codepoint, &extents))
+	p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), "<%d,%d,%d,%d>", extents.x_bearing, extents.y_bearing, extents.width, extents.height));
     }
 
     if (i == end-1) {
@@ -741,7 +743,6 @@ parse_hex (const char *pp, const char *end, uint32_t *pv)
 
 
 
-
 hb_bool_t
 hb_buffer_deserialize_glyphs (hb_buffer_t *buffer,
                               const char *buf,
@@ -796,7 +797,6 @@ hb_buffer_deserialize_glyphs (hb_buffer_t *buffer,
 
   }
 }
-
 
 
 

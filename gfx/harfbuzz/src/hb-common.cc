@@ -42,7 +42,7 @@
 
 
 
-hb_atomic_int_t _hb_options;
+hb_atomic_t<unsigned> _hb_options;
 
 void
 _hb_options_init ()
@@ -273,7 +273,7 @@ struct hb_language_item_t {
 
 
 
-static hb_atomic_ptr_t <hb_language_item_t> langs;
+static hb_atomic_t<hb_language_item_t *> langs;
 
 static inline void
 free_langs ()
@@ -403,7 +403,7 @@ hb_language_to_string (hb_language_t language)
 hb_language_t
 hb_language_get_default ()
 {
-  static hb_atomic_ptr_t <hb_language_t> default_language;
+  static hb_atomic_t<hb_language_t> default_language;
 
   hb_language_t language = default_language;
   if (unlikely (language == HB_LANGUAGE_INVALID))
@@ -970,6 +970,9 @@ hb_feature_from_string (const char *str, int len,
 
 
 
+
+
+
 void
 hb_feature_to_string (hb_feature_t *feature,
 		      char *buf, unsigned int size)
@@ -1123,6 +1126,8 @@ get_C_locale ()
 
 
 
+
+
 void
 hb_variation_to_string (hb_variation_t *variation,
 			char *buf, unsigned int size)
@@ -1211,6 +1216,58 @@ uint8_t
 {
   return hb_color_get_blue (color);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+void* hb_malloc(size_t size) { return hb_malloc_impl (size); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+void* hb_calloc(size_t nmemb, size_t size) { return hb_calloc_impl (nmemb, size); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+void* hb_realloc(void *ptr, size_t size) { return hb_realloc_impl (ptr, size); }
+
+
+
+
+
+
+
+
+
+
+void  hb_free(void *ptr) { hb_free_impl (ptr); }
 
 
 

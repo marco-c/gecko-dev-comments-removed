@@ -142,9 +142,9 @@ struct TrackData
     unsigned j = count - 1;
 
     
-    while (i + 1 < count && trackTable[i + 1].get_track_value () < track)
+    while (i + 1 < count && trackTable[i + 1].get_track_value () <= track)
       i++;
-    while (j > 0 && trackTable[j - 1].get_track_value () > track)
+    while (j > 0 && trackTable[j - 1].get_track_value () >= track)
       j--;
 
     
