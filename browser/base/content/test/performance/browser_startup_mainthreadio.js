@@ -293,12 +293,6 @@ const startupPhases = {
       close: 1,
     },
     {
-      path: "XREAppFeat:webcompat@mozilla.org.xpi",
-      condition: LINUX,
-      ignoreIfUnused: true, 
-      close: 1,
-    },
-    {
       
       path: "XREAppDist:distribution.ini",
       
