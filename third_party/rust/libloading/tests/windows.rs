@@ -2,7 +2,7 @@
 extern crate libloading;
 use libloading::os::windows::*;
 use std::ffi::CStr;
-
+use std::os::raw::c_void;
 
 
 
@@ -34,6 +34,17 @@ fn test_ordinal() {
     unsafe {
         let windows: Symbol<unsafe fn() -> *const i8> = lib.get_ordinal(1).expect("function");
         assert_eq!(CStr::from_ptr(windows()).to_bytes(), b"bunny");
+    }
+}
+
+#[cfg(any(target_arch="x86", target_arch="x86_64"))]
+#[test]
+fn test_try_into_ptr() {
+    let lib = load_ordinal_lib();
+    unsafe {
+        let windows: Symbol<unsafe fn() -> *const i8> = lib.get_ordinal(1).expect("function");
+        let ptr : *mut c_void = windows.as_raw_ptr();
+        assert!(!ptr.is_null());
     }
 }
 

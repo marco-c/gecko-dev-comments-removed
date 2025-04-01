@@ -396,6 +396,12 @@ impl<T> Symbol<T> {
     pub fn into_raw(self) -> *mut raw::c_void {
         self.pointer
     }
+
+    
+    
+    pub fn as_raw_ptr(self) -> *mut raw::c_void {
+        self.pointer
+    }
 }
 
 impl<T> Symbol<Option<T>> {
