@@ -979,6 +979,8 @@ static bool exn_toSource(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+#ifdef NIGHTLY_BUILD
+
 
 
 
@@ -1026,6 +1028,7 @@ static bool exn_isError(JSContext* cx, unsigned argc, Value* vp) {
   args.rval().setBoolean(false);
   return true;
 }
+#endif
 
 
 
