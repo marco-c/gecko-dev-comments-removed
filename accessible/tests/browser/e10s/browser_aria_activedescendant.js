@@ -328,34 +328,35 @@ addAccessibleTask(
 );
 
 addAccessibleTask(
-  `
-<div id="shadow"></div>
-<script>
-  let host = document.getElementById("shadow");
-  let shadow = host.attachShadow({mode: "open"});
-  let listbox = document.createElement("div");
-  listbox.id = "shadowListbox";
-  listbox.setAttribute("role", "listbox");
-  listbox.setAttribute("tabindex", "0");
-  shadow.appendChild(listbox);
-  let item = document.createElement("div");
-  item.id = "shadowItem1";
-  item.setAttribute("role", "option");
-  listbox.appendChild(item);
-  listbox.setAttribute("aria-activedescendant", "shadowItem1");
-  item = document.createElement("div");
-  item.id = "shadowItem2";
-  item.setAttribute("role", "option");
-  listbox.appendChild(item);
-</script>`,
+  `<div id="shadow"></div>`,
   async function (browser) {
     info("Test aria-activedescendant in shadow root");
-    
-    
-    
+
     await invokeContentTask(browser, [], () => {
-      content.document._testGetElementById = id =>
-        content.document.getElementById("shadow").shadowRoot.getElementById(id);
+      const doc = content.document;
+
+      let host = doc.getElementById("shadow");
+      let shadow = host.attachShadow({ mode: "open" });
+      let listbox = doc.createElement("div");
+      listbox.id = "shadowListbox";
+      listbox.setAttribute("role", "listbox");
+      listbox.setAttribute("tabindex", "0");
+      shadow.appendChild(listbox);
+      let item = doc.createElement("div");
+      item.id = "shadowItem1";
+      item.setAttribute("role", "option");
+      listbox.appendChild(item);
+      listbox.setAttribute("aria-activedescendant", "shadowItem1");
+      item = doc.createElement("div");
+      item.id = "shadowItem2";
+      item.setAttribute("role", "option");
+      listbox.appendChild(item);
+
+      
+      
+      
+      doc._testGetElementById = id =>
+        doc.getElementById("shadow").shadowRoot.getElementById(id);
     });
 
     await synthFocus(browser, "shadowListbox", "shadowItem1");
