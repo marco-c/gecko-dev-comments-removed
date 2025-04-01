@@ -10,7 +10,6 @@ ChromeUtils.defineESModuleGetters(this, {
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   TelemetryArchiveTesting:
     "resource://testing-common/TelemetryArchiveTesting.sys.mjs",
-  TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
   CustomizableUITestUtils:
     "resource://testing-common/CustomizableUITestUtils.sys.mjs",
@@ -78,23 +77,6 @@ var tests = [
       );
 
       done();
-    }, "http://example.org/");
-  },
-  function test_unsecure_host_override(done) {
-    Services.prefs.setBoolPref("browser.uitour.requireSecure", false);
-    loadUITourTestPage(function () {
-      let highlight = document.getElementById("UITourHighlight");
-      is_element_hidden(highlight, "Highlight should initially be hidden");
-
-      gContentAPI.showHighlight("urlbar").then(() => {
-        waitForElementToBeVisible(
-          highlight,
-          done,
-          "Highlight should be shown on a unsecure host when override pref is set"
-        );
-
-        Services.prefs.setBoolPref("browser.uitour.requireSecure", true);
-      });
     }, "http://example.org/");
   },
   function test_disabled(done) {
@@ -680,24 +662,6 @@ var tests = [
     let submissionUrl = engine
       .getSubmission("dummy")
       .uri.spec.replace("dummy", "");
-
-    TelemetryTestUtils.assertEvents(
-      [
-        {
-          object: "change_default",
-          value: "uitour",
-          extra: {
-            prev_id: defaultEngine.telemetryId,
-            new_id: engine.telemetryId,
-            new_name: engine.name,
-            new_load_path: engine.wrappedJSObject._loadPath,
-            
-            new_sub_url: submissionUrl.slice(0, 80),
-          },
-        },
-      ],
-      { category: "search", method: "engine" }
-    );
 
     let snapshot = await Glean.searchEngineDefault.changed.testGetValue();
     delete snapshot[0].timestamp;
