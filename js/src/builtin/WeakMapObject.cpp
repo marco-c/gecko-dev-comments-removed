@@ -299,9 +299,6 @@ JS_PUBLIC_API bool JS::GetWeakMapEntry(JSContext* cx, HandleObject mapObj,
   }
 
   if (ValueValueWeakMap::Ptr ptr = map->lookup(key)) {
-    
-    
-    ExposeValueToActiveJS(ptr->value().get());
     rval.set(ptr->value());
   }
   return true;
