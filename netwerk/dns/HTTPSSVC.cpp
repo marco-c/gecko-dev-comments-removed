@@ -151,7 +151,7 @@ SvcParam::GetODoHConfig(nsACString& aODoHConfig) {
 }
 
 bool SVCB::operator<(const SVCB& aOther) const {
-  if (gHttpHandler->EchConfigEnabled()) {
+  if (nsHttpHandler::EchConfigEnabled()) {
     if (mHasEchConfig && !aOther.mHasEchConfig) {
       return true;
     }
@@ -445,8 +445,8 @@ DNSHTTPSSVCRecordBase::GetServiceModeRecordInternal(
         
         
         if (record.mRecord.mHasEchConfig &&
-            (gHttpHandler->EchConfigEnabled() &&
-             !gHttpHandler->EchConfigEnabled(true))) {
+            (nsHttpHandler::EchConfigEnabled() &&
+             !nsHttpHandler::EchConfigEnabled(true))) {
           if (!h3RecordWithEchConfig) {
             
             h3RecordWithEchConfig =

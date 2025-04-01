@@ -488,7 +488,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
                                 nsIInterfaceRequestor* aCallbacks,
                                 const OriginAttributes& aOriginAttributes);
 
-  bool EchConfigEnabled(bool aIsHttp3 = false) const;
+  static bool EchConfigEnabled(bool aIsHttp3 = false);
   
   
   
