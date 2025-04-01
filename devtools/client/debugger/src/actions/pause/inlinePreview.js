@@ -14,13 +14,20 @@ import { validateSelectedFrame } from "../../utils/context";
 
 
 
-function getLocalScopeLevels(originalAstScopes) {
+
+
+
+
+
+
+
+
+
+function getScopeLevels(scope) {
   let levels = 0;
-  while (
-    originalAstScopes[levels] &&
-    originalAstScopes[levels].type === "block"
-  ) {
+  while (scope && scope.type === "block") {
     levels++;
+    scope = scope.parent;
   }
   return levels;
 }
@@ -78,7 +85,7 @@ export function generateInlinePreview() {
 
     const allPreviews = [];
     const pausedOnLine = selectedLocation.line;
-    const levels = getLocalScopeLevels(originalAstScopes);
+    const levels = getScopeLevels(scopes);
 
     for (
       let curLevel = 0;
