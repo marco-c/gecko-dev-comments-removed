@@ -863,6 +863,11 @@ void PointerEventHandler::NotifyDestroyPresContext(
 }
 
 bool PointerEventHandler::IsDragAndDropEnabled(WidgetMouseEvent& aEvent) {
+  
+  
+  if (!aEvent.IsReal()) {
+    return false;
+  }
 #ifdef XP_WIN
   if (StaticPrefs::dom_w3c_pointer_events_dispatch_by_pointer_messages()) {
     
