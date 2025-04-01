@@ -1810,9 +1810,28 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetMaxWidth() {
 
 
 
-
 bool nsComputedDOMStyle::ShouldHonorMinSizeAutoInAxis(PhysicalAxis aAxis) {
-  return mOuterFrame && mOuterFrame->IsFlexOrGridItem();
+  if (!mOuterFrame) {
+    
+    
+    return false;
+  }
+  if (mOuterFrame->IsFlexOrGridItem()) {
+    
+    
+    
+    return true;
+  }
+  if (mOuterFrame->StylePosition()->mAspectRatio != StyleAspectRatio::Auto()) {
+    
+    
+    
+    return true;
+  }
+
+  
+  
+  return false;
 }
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetMinHeight() {
