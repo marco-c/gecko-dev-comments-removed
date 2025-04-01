@@ -60,13 +60,10 @@ function onLoad() {
     "trustHeader",
     bundle.getFormattedString("newCAMessage1", [caName])
   );
-}
 
-
-
-
-function viewCert() {
-  viewCertHelper(window, gCert, "window");
+  document.getElementById("viewC-button").addEventListener("command", () => {
+    viewCertHelper(window, gCert, "window");
+  });
 }
 
 
@@ -89,3 +86,5 @@ function onDialogCancel() {
   let retVals = window.arguments[1].QueryInterface(Ci.nsIWritablePropertyBag2);
   retVals.setPropertyAsBool("importConfirmed", false);
 }
+
+window.addEventListener("load", () => onLoad());
