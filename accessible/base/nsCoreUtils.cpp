@@ -661,3 +661,19 @@ Element* nsCoreUtils::GetAriaActiveDescendantElement(Element* aElement) {
 
   return nullptr;
 }
+
+bool nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(nsIFrame* aFrame) {
+  if (!aFrame->GetRect().IsEmpty() ||
+      !aFrame->HasAnyStateBits(TEXT_END_OF_LINE)) {
+    return false;
+  }
+  
+  
+  
+  
+  
+  nsIFrame::RenderedText text = aFrame->GetRenderedText(
+      0, UINT32_MAX, nsIFrame::TextOffsetType::OffsetsInContentText,
+      nsIFrame::TrailingWhitespace::Trim);
+  return text.mString.IsEmpty();
+}

@@ -336,6 +336,17 @@ class nsCoreUtils {
                                                        nsINode* aStartAncestor);
 
   static Element* GetAriaActiveDescendantElement(Element* aElement);
+
+  
+
+
+
+
+
+
+
+
+  static bool IsTrimmedWhitespaceBeforeHardLineBreak(nsIFrame* aFrame);
 };
 
 #endif
