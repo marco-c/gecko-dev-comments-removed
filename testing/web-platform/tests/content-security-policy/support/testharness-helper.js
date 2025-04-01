@@ -88,39 +88,37 @@ function assert_service_worker_is_loaded(url, description) {
 
 function assert_worker_is_blocked(url, description) {
   async_test(t => {
+    var w = new Worker(url);
+    w.onmessage = t.unreached_func("Ping should not be sent.");
     
     var reportedURL = new URL(url).protocol == "blob:" ? "blob" : url;
-    waitUntilCSPEventForURL(t, reportedURL)
-      .then(t.step_func_done(e => {
-        assert_equals(e.blockedURI, reportedURL);
-        assert_equals(e.violatedDirective, "worker-src");
-        assert_equals(e.effectiveDirective, "worker-src");
-      }));
-
-    
-    
-    assert_throws_dom("SecurityError", function () {
-      var w = new Worker(url);
-    });
+    Promise.all([
+      waitUntilCSPEventForURL(t, reportedURL)
+        .then(t.step_func(e => {
+          assert_equals(e.blockedURI, reportedURL);
+          assert_equals(e.violatedDirective, "worker-src");
+          assert_equals(e.effectiveDirective, "worker-src");
+        })),
+      waitUntilEvent(w, "error")
+    ]).then(t.step_func_done());
   }, description);
 }
 
 function assert_shared_worker_is_blocked(url, description) {
   async_test(t => {
+    var w = new SharedWorker(url);
+    w.onmessage = t.unreached_func("Ping should not be sent.");
     
     var reportedURL = new URL(url).protocol == "blob:" ? "blob" : url;
-    waitUntilCSPEventForURL(t, reportedURL)
-      .then(t.step_func_done(e => {
-        assert_equals(e.blockedURI, reportedURL);
-        assert_equals(e.violatedDirective, "worker-src");
-        assert_equals(e.effectiveDirective, "worker-src");
-      }));
-
-    
-    
-    assert_throws_dom("SecurityError", function () {
-      var w = new SharedWorker(url);
-    });
+    Promise.all([
+      waitUntilCSPEventForURL(t, reportedURL)
+        .then(t.step_func(e => {
+          assert_equals(e.blockedURI, reportedURL);
+          assert_equals(e.violatedDirective, "worker-src");
+          assert_equals(e.effectiveDirective, "worker-src");
+        })),
+      waitUntilEvent(w, "error")
+    ]).then(t.step_func_done());
   }, description);
 }
 
