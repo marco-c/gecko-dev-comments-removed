@@ -34,7 +34,7 @@ PerformanceEventTiming::PerformanceEventTiming(Performance* aPerformance,
                                                const nsAString& aName,
                                                const TimeStamp& aStartTime,
                                                bool aIsCacelable,
-                                               uint64_t aInteractionId,
+                                               Maybe<uint64_t> aInteractionId,
                                                EventMessage aMessage)
     : PerformanceEntry(aPerformance->GetParentObject(), aName, u"event"_ns),
       mPerformance(aPerformance),
@@ -44,7 +44,7 @@ PerformanceEventTiming::PerformanceEventTiming(Performance* aPerformance,
           aPerformance->GetDOMTiming()->TimeStampToDOMHighRes(aStartTime)),
       mDuration(0),
       mCancelable(aIsCacelable),
-      mInteractionId(Some(aInteractionId)),
+      mInteractionId(aInteractionId),
       mMessage(aMessage) {}
 
 PerformanceEventTiming::PerformanceEventTiming(
@@ -226,13 +226,6 @@ void PerformanceEventTiming::FinalizeEventTiming(const WidgetEvent* aEvent) {
     uint32_t pointerId = aEvent->AsPointerEvent()->pointerId;
 
     
-    
-    auto entry = pendingPointerDowns.MaybeGet(pointerId);
-    if (entry.isSome()) {
-      mPerformance->InsertEventTimingEntry(*entry);
-    }
-
-    
     pendingPointerDowns.InsertOrUpdate(pointerId, this);
   } else if (aEvent->mMessage == eKeyDown) {
     const WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
@@ -267,16 +260,12 @@ void PerformanceEventTiming::FinalizeEventTiming(const WidgetEvent* aEvent) {
         
         SetInteractionId(interactionId);
       }
-
-      
-      mPerformance->InsertEventTimingEntry(*entry);
     }
 
     
     pendingKeyDowns.InsertOrUpdate(code, this);
-  } else {
-    
-    mPerformance->InsertEventTimingEntry(this);
   }
+
+  mPerformance->InsertEventTimingEntry(this);
 }
 }  

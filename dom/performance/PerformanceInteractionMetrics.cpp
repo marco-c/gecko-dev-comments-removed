@@ -21,9 +21,7 @@ constexpr uint32_t kMaxFirstInteractionID = 10000;
 
 namespace mozilla::dom {
 
-PerformanceInteractionMetrics::PerformanceInteractionMetrics(
-    PerformanceMainThread* aPerformance)
-    : mPerformance(aPerformance) {
+PerformanceInteractionMetrics::PerformanceInteractionMetrics() {
   uint64_t randVal = RandomUint64().valueOr(kMinFirstInteractionID);
   
   
@@ -94,9 +92,6 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
     (*entry)->SetInteractionId(interactionId);
 
     
-    mPerformance->InsertEventTimingEntry(*entry);
-
-    
     mPendingKeyDowns.Remove(code);
 
     
@@ -109,7 +104,7 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
     for (auto iter = mPendingKeyDowns.Iter(); !iter.Done(); iter.Next()) {
       PerformanceEventTiming* entry = iter.Data();
       
-      mPerformance->InsertEventTimingEntry(entry);
+      entry->SetInteractionId(0);
     }
 
     
@@ -177,10 +172,10 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
     
     
     (*entry)->SetInteractionId(interactionId);
+  } else {
+    (*entry)->SetInteractionId(0);
   }
 
-  
-  mPerformance->InsertEventTimingEntry(*entry);
   
   mPendingPointerDowns.Remove(pointerId);
 
