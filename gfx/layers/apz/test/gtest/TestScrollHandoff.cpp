@@ -531,12 +531,11 @@ TEST_F(APZScrollHandoffTester, OpposingConstrainedAxes_Bug1201098) {
 
 
 
-TEST_F(APZScrollHandoffTesterMock, PartialFlingHandoff) {
+TEST_F(APZScrollHandoffTesterMock, DiagonalFlingNoHandoff) {
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
 
   CreateScrollHandoffLayerTree1();
 
-  
   
   
   QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
@@ -551,7 +550,9 @@ TEST_F(APZScrollHandoffTesterMock, PartialFlingHandoff) {
   child->AdvanceAnimations(mcc->GetSampleTime());
 
   
+  
   child->AssertStateIsFling();
+  parent->AssertStateIsReset();
 }
 
 
