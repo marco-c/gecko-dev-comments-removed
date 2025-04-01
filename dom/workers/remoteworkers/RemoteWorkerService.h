@@ -19,6 +19,7 @@ class nsIThread;
 namespace mozilla::dom {
 
 class RemoteWorkerDebuggerManagerChild;
+class RemoteWorkerDebuggerManagerParent;
 class RemoteWorkerService;
 class RemoteWorkerServiceChild;
 class RemoteWorkerServiceShutdownBlocker;
@@ -123,7 +124,8 @@ class RemoteWorkerService final : public nsIObserver {
 
   nsCOMPtr<nsIThread> mThread;
   RefPtr<RemoteWorkerServiceChild> mActor;
-  RefPtr<RemoteWorkerDebuggerManagerChild> mDebuggerManagerActor;
+  RefPtr<RemoteWorkerDebuggerManagerChild> mDebuggerManagerChild;
+  RefPtr<RemoteWorkerDebuggerManagerParent> mDebuggerManagerParent;
   
   
   
