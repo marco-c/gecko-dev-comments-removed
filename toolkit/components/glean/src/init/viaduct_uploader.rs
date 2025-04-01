@@ -2,7 +2,7 @@
 
 
 
-use glean::net::{CapablePingUploadRequest, PingUploadRequest, PingUploader, UploadResult};
+use glean::net::{PingUploadRequest, PingUploader, UploadResult};
 use once_cell::sync::OnceCell;
 use std::sync::Once;
 use url::Url;
@@ -22,13 +22,7 @@ impl PingUploader for ViaductUploader {
     
     
     
-    fn upload(&self, upload_request: CapablePingUploadRequest) -> UploadResult {
-        let upload_request = match upload_request
-            .capable(|capabilities| capabilities.is_empty() || capabilities == ["ohttp"])
-        {
-            Some(req) => req,
-            None => return UploadResult::incapable(),
-        };
+    fn upload(&self, upload_request: PingUploadRequest) -> UploadResult {
         log::trace!("FOG Ping Uploader uploading to {}", upload_request.url);
 
         
@@ -49,7 +43,6 @@ impl PingUploader for ViaductUploader {
             return UploadResult::http_status(200);
         }
 
-        
         
         
         let result = if localhost_port == 0 && should_ohttp_upload(&upload_request) {

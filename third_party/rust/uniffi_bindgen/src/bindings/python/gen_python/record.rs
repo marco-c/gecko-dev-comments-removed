@@ -3,6 +3,7 @@
 
 
 use super::CodeType;
+use crate::backend::Literal;
 
 #[derive(Debug)]
 pub struct RecordCodeType {
@@ -22,5 +23,9 @@ impl CodeType for RecordCodeType {
 
     fn canonical_name(&self) -> String {
         format!("Type{}", self.type_label())
+    }
+
+    fn literal(&self, _literal: &Literal) -> String {
+        unreachable!();
     }
 }

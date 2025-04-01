@@ -12,18 +12,33 @@ use glean_core::Lifetime;
 
 fn nofollows_ping(glean: &mut Glean) -> PingType {
     
-    let ping = PingBuilder::new("nofollows")
-        .with_send_if_empty(true)
-        .with_include_info_sections(false)
-        .with_enabled(false)
-        .with_follows_collection_enabled(false)
-        .build();
+    let ping = PingType::new(
+        "nofollows",
+         false,
+         true,
+         true,
+         false,
+         false,
+        vec![],
+        vec![],
+         false,
+    );
     glean.register_ping_type(&ping);
     ping
 }
 
 fn manual_ping(glean: &mut Glean) -> PingType {
-    let ping = PingBuilder::new("manual").build();
+    let ping = PingType::new(
+        "manual",
+         true,
+         false,
+         true,
+         true,
+         true,
+        vec![],
+        vec![],
+         true,
+    );
     glean.register_ping_type(&ping);
     ping
 }
@@ -89,9 +104,17 @@ fn nofollows_ping_can_ride_along() {
 
     let nofollows_ping = nofollows_ping(&mut glean);
     
-    let manual_ping = PingBuilder::new("manual")
-        .with_schedules_pings(vec!["nofollows".to_string()])
-        .build();
+    let manual_ping = PingType::new(
+        "manual",
+         true,
+         false,
+         true,
+         true,
+         true,
+        vec!["nofollows".to_string()],
+        vec![],
+         true,
+    );
     glean.register_ping_type(&manual_ping);
 
     

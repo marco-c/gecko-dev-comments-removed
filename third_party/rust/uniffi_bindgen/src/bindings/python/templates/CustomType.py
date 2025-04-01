@@ -24,11 +24,13 @@ class _UniffiConverterType{{ name }}:
 
 {%- when Some(config) %}
 
-{%- if let Some(imports) = config.imports %}
+{%- match config.imports %}
+{%- when Some(imports) %}
 {%- for import_name in imports %}
 {{ self.add_import(import_name) }}
 {%- endfor %}
-{%- endif %}
+{%- else %}
+{%- endmatch %}
 
 {
 class _UniffiConverterType{{ name }}:

@@ -39,6 +39,9 @@ pub fn generate_scaffolding_for_crate(
     
     
     println!("cargo:rerun-if-env-changed=UNIFFI_TESTS_DISABLE_EXTENSIONS");
+    
+    
+    
     let out_dir = env::var("OUT_DIR").context("$OUT_DIR missing?!")?;
     uniffi_bindgen::generate_component_scaffolding_for_crate(
         udl_file,

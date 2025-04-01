@@ -2,7 +2,7 @@
 
 
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{bail, Context};
 use camino::Utf8Path;
 use fs_err as fs;
 use goblin::{
@@ -36,57 +36,22 @@ fn extract_from_bytes(file_data: &[u8]) -> anyhow::Result<Vec<Metadata>> {
 
 pub fn extract_from_elf(elf: Elf<'_>, file_data: &[u8]) -> anyhow::Result<Vec<Metadata>> {
     let mut extracted = ExtractedItems::new();
-
-    
-    
-    let symtab_shndx_section_offset = elf
-        .section_headers
+    let iter = elf
+        .syms
         .iter()
-        .find(|sh| sh.sh_type == goblin::elf::section_header::SHT_SYMTAB_SHNDX)
-        .map(|sh| sh.sh_offset as usize);
+        .filter_map(|sym| elf.section_headers.get(sym.st_shndx).map(|sh| (sym, sh)));
 
-    for (i, sym) in elf.syms.iter().enumerate() {
+    for (sym, sh) in iter {
         let name = elf
             .strtab
             .get_at(sym.st_name)
             .context("Error getting symbol name")?;
-        if !is_metadata_symbol(name) {
-            continue;
-        }
-
-        let header_index = match sym.st_shndx as u32 {
-            goblin::elf::section_header::SHN_XINDEX => {
-                
-                
-                
-                let section_offset = symtab_shndx_section_offset
-                    .ok_or_else(|| anyhow!("Symbol {name} has st_shndx=SHN_XINDEX, but no SHT_SYMTAB_SHNDX section present"))?;
-
-                let offset = section_offset + (i * 4);
-                let slice = file_data.get(offset..offset + 4).ok_or_else(|| {
-                    anyhow!("Index error looking up {name} in the SHT_SYMTAB_SHNDX section")
-                })?;
-                
-                
-                let byte_array = slice.try_into().unwrap();
-                if elf.little_endian {
-                    u32::from_le_bytes(byte_array) as usize
-                } else {
-                    u32::from_be_bytes(byte_array) as usize
-                }
-            }
+        if is_metadata_symbol(name) {
             
-            _ => sym.st_shndx,
-        };
-
-        let sh = elf
-            .section_headers
-            .get(header_index)
-            .ok_or_else(|| anyhow!("Index error looking up section header for {name}"))?;
-
-        
-        let section_offset = sym.st_value - sh.sh_addr;
-        extracted.extract_item(name, file_data, (sh.sh_offset + section_offset) as usize)?;
+            let section_offset = sym.st_value - sh.sh_addr;
+            
+            extracted.extract_item(name, file_data, (sh.sh_offset + section_offset) as usize)?;
+        }
     }
     Ok(extracted.into_metadata())
 }
@@ -137,7 +102,7 @@ pub fn extract_from_macho(macho: MachO<'_>, file_data: &[u8]) -> anyhow::Result<
         if nlist.is_global()
             && nlist.get_type() == symbols::N_SECT
             && is_metadata_symbol(name)
-            && nlist.n_sect != symbols::NO_SECT as usize
+            && nlist.n_sect != goblin::mach::symbols::NO_SECT as usize
         {
             let section = &sections[nlist.n_sect - 1];
 
@@ -215,9 +180,7 @@ impl ExtractedItems {
         
         
         let data = &file_data[offset..];
-        self.items.push(
-            Metadata::read(data).with_context(|| format!("extracting metadata for '{name}'"))?,
-        );
+        self.items.push(Metadata::read(data)?);
         self.names.insert(name.to_string());
         Ok(())
     }
