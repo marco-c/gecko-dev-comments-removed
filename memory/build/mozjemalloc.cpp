@@ -1585,7 +1585,9 @@ class ArenaCollection {
     MOZ_PUSH_IGNORE_THREAD_SAFETY
     mArenas.Init();
     mPrivateArenas.Init();
+#ifndef NON_RANDOM_ARENA_IDS
     mMainThreadArenas.Init();
+#endif
     MOZ_POP_THREAD_SAFETY
     arena_params_t params;
     
@@ -1613,7 +1615,10 @@ class ArenaCollection {
     {
       MutexAutoLock lock(mLock);
       Tree& tree =
-          aArena->IsMainThreadOnly() ? mMainThreadArenas : mPrivateArenas;
+#ifndef NON_RANDOM_ARENA_IDS
+          aArena->IsMainThreadOnly() ? mMainThreadArenas :
+#endif
+                                     mPrivateArenas;
 
       MOZ_RELEASE_ASSERT(tree.Search(aArena), "Arena not in tree");
       tree.Remove(aArena);
@@ -1690,7 +1695,11 @@ class ArenaCollection {
   };
 
   Iterator iter() MOZ_REQUIRES(mLock) {
+#ifdef NON_RANDOM_ARENA_IDS
+    return Iterator(&mArenas, &mPrivateArenas);
+#else
     return Iterator(&mArenas, &mPrivateArenas, &mMainThreadArenas);
+#endif
   }
 
   inline arena_t* GetDefault() { return mDefaultArena; }
@@ -1797,10 +1806,12 @@ class ArenaCollection {
  private:
   const static arena_id_t MAIN_THREAD_ARENA_BIT = 0x1;
 
+#ifndef NON_RANDOM_ARENA_IDS
   
   inline arena_t* GetByIdInternal(Tree& aTree, arena_id_t aArenaId);
 
   arena_id_t MakeRandArenaId(bool aIsMainThreadOnly) const MOZ_REQUIRES(mLock);
+#endif
   static bool ArenaIdIsMainThreadOnly(arena_id_t aArenaId) {
     return aArenaId & MAIN_THREAD_ARENA_BIT;
   }
@@ -1812,9 +1823,16 @@ class ArenaCollection {
   Tree mArenas MOZ_GUARDED_BY(mLock);
   Tree mPrivateArenas MOZ_GUARDED_BY(mLock);
 
+#ifdef NON_RANDOM_ARENA_IDS
+  
+  
+  arena_id_t mArenaIdKey = 0;
+  int8_t mArenaIdRotation = 0;
+#else
   
   
   Tree mMainThreadArenas MOZ_GUARDED_BY(mLock);
+#endif
 
   
   
@@ -5082,6 +5100,23 @@ arena_t* ArenaCollection::CreateArena(bool aIsPrivate,
     return ret;
   }
 
+#ifdef NON_RANDOM_ARENA_IDS
+  
+  
+  if (mArenaIdKey == 0) {
+    mozilla::Maybe<uint64_t> maybeRandom = mozilla::RandomUint64();
+    MOZ_RELEASE_ASSERT(maybeRandom.isSome());
+    mArenaIdKey = maybeRandom.value();
+    maybeRandom = mozilla::RandomUint64();
+    MOZ_RELEASE_ASSERT(maybeRandom.isSome());
+    mArenaIdRotation = maybeRandom.value() & (sizeof(void*) * 8 - 1);
+  }
+  arena_id_t id = reinterpret_cast<arena_id_t>(ret) ^ mArenaIdKey;
+  ret->mId =
+      (id >> mArenaIdRotation) | (id << (sizeof(void*) * 8 - mArenaIdRotation));
+  mPrivateArenas.Insert(ret);
+  return ret;
+#else
   
   
   
@@ -5097,8 +5132,10 @@ arena_t* ArenaCollection::CreateArena(bool aIsPrivate,
   ret->mId = arena_id;
   tree.Insert(ret);
   return ret;
+#endif
 }
 
+#ifndef NON_RANDOM_ARENA_IDS
 arena_id_t ArenaCollection::MakeRandArenaId(bool aIsMainThreadOnly) const {
   uint64_t rand;
   do {
@@ -5120,6 +5157,7 @@ arena_id_t ArenaCollection::MakeRandArenaId(bool aIsMainThreadOnly) const {
 
   return arena_id_t(rand);
 }
+#endif
 
 
 
@@ -5950,6 +5988,7 @@ inline void MozJemalloc::jemalloc_free_excess_dirty_pages(void) {
   }
 }
 
+#ifndef NON_RANDOM_ARENA_IDS
 inline arena_t* ArenaCollection::GetByIdInternal(Tree& aTree,
                                                  arena_id_t aArenaId) {
   
@@ -5958,12 +5997,25 @@ inline arena_t* ArenaCollection::GetByIdInternal(Tree& aTree,
   key.addr()->mId = aArenaId;
   return aTree.Search(key.addr());
 }
+#endif
 
 inline arena_t* ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate) {
   if (!malloc_initialized) {
     return nullptr;
   }
 
+#ifdef NON_RANDOM_ARENA_IDS
+  
+  
+  
+  MOZ_RELEASE_ASSERT(aIsPrivate);
+  
+  
+  MOZ_RELEASE_ASSERT(mArenaIdKey);
+  arena_id_t id = (aArenaId << mArenaIdRotation) |
+                  (aArenaId >> (sizeof(void*) * 8 - mArenaIdRotation));
+  arena_t* result = reinterpret_cast<arena_t*>(id ^ mArenaIdKey);
+#else
   Tree* tree = nullptr;
   if (aIsPrivate) {
     if (ArenaIdIsMainThreadOnly(aArenaId)) {
@@ -5988,7 +6040,9 @@ inline arena_t* ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate) {
 
   MutexAutoLock lock(mLock);
   arena_t* result = GetByIdInternal(*tree, aArenaId);
+#endif
   MOZ_RELEASE_ASSERT(result);
+  MOZ_RELEASE_ASSERT(result->mId == aArenaId);
   return result;
 }
 
