@@ -4960,22 +4960,6 @@ function undoCloseWindow(aIndex) {
 
 
 
-
-
-function ReportSiteIssue() {
-  let subject = { wrappedJSObject: gBrowser.selectedTab };
-  Services.obs.notifyObservers(subject, "report-site-issue");
-}
-
-
-
-
-
-
-
-
-
-
 const gRemoteControl = {
   observe() {
     gRemoteControl.updateVisualCue();
