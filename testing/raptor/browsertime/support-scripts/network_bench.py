@@ -202,6 +202,10 @@ class NetworkBench(BasePythonSupport):
                     },
                 },
                 "tls": {
+                    
+                    
+                    
+                    "session_tickets": {"disabled": True},
                     "certificates": {
                         "load_files": [
                             {
@@ -210,7 +214,7 @@ class NetworkBench(BasePythonSupport):
                                 "tags": ["cert1"],
                             }
                         ]
-                    }
+                    },
                 },
             },
         }
