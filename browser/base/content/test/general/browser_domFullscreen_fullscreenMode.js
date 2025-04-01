@@ -2,12 +2,6 @@
 
 "use strict";
 
-
-
-
-
-SimpleTest.ignoreAllUncaughtExceptions(true);
-
 function listenOneEvent(aEvent, aListener) {
   function listener(evt) {
     removeEventListener(aEvent, listener);

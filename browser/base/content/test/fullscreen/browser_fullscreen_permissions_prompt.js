@@ -3,11 +3,6 @@
 
 "use strict";
 
-
-
-
-
-SimpleTest.ignoreAllUncaughtExceptions(true);
 const { PromiseTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PromiseTestUtils.sys.mjs"
 );

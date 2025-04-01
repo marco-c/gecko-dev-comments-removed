@@ -1,11 +1,5 @@
 "use strict";
 
-
-
-
-
-SimpleTest.ignoreAllUncaughtExceptions(true);
-
 const kPage =
   "https://example.org/browser/dom/base/test/fullscreen/dummy_page.html";
 const kInterval = 3000;

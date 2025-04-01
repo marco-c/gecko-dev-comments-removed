@@ -10,12 +10,6 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-
-
-
-
-SimpleTest.ignoreAllUncaughtExceptions(true);
-
 add_setup(async function () {
   await pushPrefs(
     ["full-screen-api.transition-duration.enter", "0 0"],

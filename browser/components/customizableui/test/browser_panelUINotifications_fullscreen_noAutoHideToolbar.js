@@ -1,11 +1,5 @@
 "use strict";
 
-
-
-
-
-SimpleTest.ignoreAllUncaughtExceptions(true);
-
 const { AppMenuNotifications } = ChromeUtils.importESModule(
   "resource://gre/modules/AppMenuNotifications.sys.mjs"
 );

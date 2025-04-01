@@ -3,12 +3,6 @@
 
 "use strict";
 
-
-
-
-
-SimpleTest.ignoreAllUncaughtExceptions(true);
-
 add_task(async function test_identityPopupCausesFSExit() {
   let url = "https://example.com/";
 

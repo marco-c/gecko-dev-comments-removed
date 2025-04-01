@@ -7,12 +7,6 @@
 
 
 
-
-
-
-
-SimpleTest.ignoreAllUncaughtExceptions(true);
-
 let statuspanel = document.getElementById("statuspanel");
 let statuspanelLabel = document.getElementById("statuspanel-label");
 

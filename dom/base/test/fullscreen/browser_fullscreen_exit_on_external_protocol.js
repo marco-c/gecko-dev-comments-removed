@@ -39,12 +39,6 @@ const CONTENT = `data:text/html,
     </html>
 `;
 
-
-
-
-
-SimpleTest.ignoreAllUncaughtExceptions(true);
-
 function setupMailHandler() {
   let mailHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("mailto");
   let gOldMailHandlers = [];

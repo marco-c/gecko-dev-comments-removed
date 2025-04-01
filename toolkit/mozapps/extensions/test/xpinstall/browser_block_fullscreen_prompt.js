@@ -8,12 +8,6 @@
 
 
 
-SimpleTest.ignoreAllUncaughtExceptions(true);
-
-
-
-
-
 
 function changeFullscreen(browser, fullscreenState) {
   return SpecialPowers.spawn(

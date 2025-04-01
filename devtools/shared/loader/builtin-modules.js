@@ -115,7 +115,6 @@ exports.modules = {
   
   
   Promise,
-  TelemetryStopwatch,
 };
 
 defineLazyGetter(exports.modules, "Debugger", () => {

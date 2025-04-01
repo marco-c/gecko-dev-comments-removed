@@ -8,12 +8,6 @@ async function pause() {
   return new Promise(resolve => setTimeout(resolve, 500));
 }
 
-
-
-
-
-SimpleTest.ignoreAllUncaughtExceptions(true);
-
 const IFRAME_ID = "testIframe";
 
 async function testWindowFocus(isPopup, iframeID) {

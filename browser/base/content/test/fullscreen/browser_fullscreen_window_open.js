@@ -3,11 +3,6 @@
 
 "use strict";
 
-
-
-
-
-SimpleTest.ignoreAllUncaughtExceptions(true);
 SimpleTest.requestLongerTimeout(2);
 
 const IFRAME_ID = "testIframe";
