@@ -614,14 +614,6 @@ bool Stopwatch::Start(const dom::GlobalObject& aGlobal,
 }
 
 
-bool Stopwatch::Running(const dom::GlobalObject& aGlobal,
-                        const nsAString& aHistogram,
-                        JS::Handle<JSObject*> aObj) {
-  return Timers::Singleton().TimeElapsed(aGlobal.Context(), aHistogram, aObj,
-                                         VoidString(), true) != -1;
-}
-
-
 bool Stopwatch::Finish(const dom::GlobalObject& aGlobal,
                        const nsAString& aHistogram, JS::Handle<JSObject*> aObj,
                        bool aCanceledOkay) {
