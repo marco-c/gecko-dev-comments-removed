@@ -244,7 +244,40 @@ class imgLoader final : public imgILoader,
   imgLoader();
   nsresult Init();
 
-  nsresult ClearCache(mozilla::Maybe<bool> chrome);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsresult ClearCache(
+      mozilla::Maybe<bool> aPrivateLoader = mozilla::Nothing(),
+      mozilla::Maybe<bool> aChrome = mozilla::Nothing(),
+      const mozilla::Maybe<nsCOMPtr<nsIPrincipal>>& aPrincipal =
+          mozilla::Nothing(),
+      const mozilla::Maybe<nsCString>& aSchemelessSite = mozilla::Nothing(),
+      const mozilla::Maybe<mozilla::OriginAttributesPattern>& aPattern =
+          mozilla::Nothing());
 
   bool IsImageAvailable(nsIURI*, nsIPrincipal* aTriggeringPrincipal,
                         mozilla::CORSMode, mozilla::dom::Document*);
