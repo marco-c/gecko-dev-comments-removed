@@ -107,7 +107,7 @@ class CSSCompleter {
 
   complete(source, cursor) {
     
-    if (!this.resolveState(source, cursor.line, cursor.ch)) {
+    if (!this.resolveState({ source, line: cursor.line, column: cursor.ch })) {
       
       return Promise.resolve([]);
     }
@@ -160,8 +160,19 @@ class CSSCompleter {
 
 
 
+
+
+
+
+
   
-  resolveState(source, line, ch) {
+  resolveState({ sourceTokens, source, line, column }) {
+    if (sourceTokens && source) {
+      throw new Error(
+        "This function only accepts sourceTokens or source, not both"
+      );
+    }
+
     
     let _state = CSS_STATES.null;
     let selector = "";
@@ -171,12 +182,15 @@ class CSSCompleter {
     let selectors = [];
 
     
-    const matchedStateIndex = this.findNearestNullState(line);
+    
+    const matchedStateIndex = !sourceTokens
+      ? this.findNearestNullState(line)
+      : -1;
     if (matchedStateIndex > -1) {
       const state = this.nullStates[matchedStateIndex];
       line -= state[0];
       if (line == 0) {
-        ch -= state[1];
+        column -= state[1];
       }
       source = source.split("\n").slice(state[0]);
       source[0] = source[0].slice(state[1]);
@@ -186,13 +200,16 @@ class CSSCompleter {
     } else {
       this.nullStates = [];
     }
-    const tokens = cssTokenizerWithLineColumn(source);
+
+    const tokens = sourceTokens || cssTokenizerWithLineColumn(source);
     const tokIndex = tokens.length - 1;
+
     if (
+      !sourceTokens &&
       tokIndex >= 0 &&
       (tokens[tokIndex].loc.end.line < line ||
         (tokens[tokIndex].loc.end.line === line &&
-          tokens[tokIndex].loc.end.column < ch))
+          tokens[tokIndex].loc.end.column < column))
     ) {
       
       
@@ -738,7 +755,15 @@ class CSSCompleter {
     this.selectorBeforeNot =
       selectorBeforeNot == null ? null : selectorBeforeNot;
     if (token) {
-      selector = selector.slice(0, selector.length + token.loc.end.column - ch);
+      
+      
+      
+      if (!sourceTokens) {
+        selector = selector.slice(
+          0,
+          selector.length + token.loc.end.column - column
+        );
+      }
       this.selector = selector;
     } else {
       this.selector = "";
@@ -747,9 +772,7 @@ class CSSCompleter {
 
     if (token && token.tokenType != "WhiteSpace") {
       let text;
-      if (token.tokenType == "Dimension" || !token.text) {
-        text = source.substring(token.startOffset, token.endOffset);
-      } else if (
+      if (
         token.tokenType === "IDHash" ||
         token.tokenType === "Hash" ||
         token.tokenType === "AtKeyword" ||
@@ -760,9 +783,14 @@ class CSSCompleter {
       } else {
         text = token.text;
       }
-      this.completing = text
-        .slice(0, ch - token.loc.start.column)
-        .replace(/^[.#]$/, "");
+      this.completing = (
+        sourceTokens
+          ? text
+          : 
+            
+            
+            text.slice(0, column - token.loc.start.column)
+      ).replace(/^[.#]$/, "");
     } else {
       this.completing = "";
     }
@@ -1075,7 +1103,16 @@ class CSSCompleter {
 
     const originalLimitedSource = limit(source);
     let limitedSource = originalLimitedSource;
-    const state = this.resolveState(limitedSource, line, ch);
+
+    
+    
+    
+    
+    
+    const limitedSourceTokens = cssTokenizerWithLineColumn(limitedSource);
+    const state = this.resolveState({
+      sourceTokens: limitedSourceTokens,
+    });
     const propertyName = this.propertyName;
 
     
@@ -1110,11 +1147,11 @@ class CSSCompleter {
             continue;
           }
 
-          const forwState = this.resolveState(
-            limitedSource,
+          const forwState = this.resolveState({
+            source: limitedSource,
             line,
-            token.endOffset + ech
-          );
+            column: token.endOffset + ech,
+          });
           if (check(forwState)) {
             if (prevToken && prevToken.tokenType == "WhiteSpace") {
               token = prevToken;
@@ -1142,54 +1179,36 @@ class CSSCompleter {
 
 
     const traverseBackwards = (check, isValue) => {
-      let location;
+      let token;
+      let previousToken;
+      const remainingTokens = Array.from(limitedSourceTokens);
+
       
-      do {
-        let lineText = sourceArray[line];
-        if (line == caret.line) {
-          lineText = lineText.substring(0, caret.ch);
+      while (((previousToken = token), (token = remainingTokens.pop()))) {
+        const length = token.endOffset - token.startOffset;
+        limitedSource = limitedSource.slice(0, -1 * length);
+
+        
+        if (token.tokenType == "WhiteSpace") {
+          continue;
         }
 
-        const tokens = Array.from(cssTokenizer(lineText));
-        let found = false;
-        for (let i = tokens.length - 1; i >= 0; i--) {
-          let token = tokens[i];
-          
-          if (lineText.trim() == "") {
-            limitedSource = limitedSource.slice(0, -1 * lineText.length);
-          } else {
-            const length = token.endOffset - token.startOffset;
-            limitedSource = limitedSource.slice(0, -1 * length);
+        const backState = this.resolveState({
+          sourceTokens: remainingTokens,
+        });
+        if (check(backState)) {
+          if (previousToken?.tokenType == "WhiteSpace") {
+            token = previousToken;
           }
 
-          
-          if (token.tokenType == "WhiteSpace") {
-            continue;
-          }
-
-          const backState = this.resolveState(
-            limitedSource,
-            line,
-            token.startOffset
-          );
-          if (check(backState)) {
-            if (tokens[i + 1] && tokens[i + 1].tokenType == "WhiteSpace") {
-              token = tokens[i + 1];
-            }
-            location = {
-              line,
-              ch: isValue ? token.endOffset : token.startOffset,
-            };
-            found = true;
-            break;
-          }
+          const loc = isValue ? token.loc.end : token.loc.start;
+          return {
+            line: loc.line,
+            ch: loc.column,
+          };
         }
-        limitedSource = limitedSource.slice(0, -1);
-        if (found) {
-          break;
-        }
-      } while (line-- >= 0);
-      return location;
+      }
+      return null;
     };
 
     if (state == CSS_STATES.selector) {
@@ -1232,8 +1251,8 @@ class CSSCompleter {
       };
     } else if (state == CSS_STATES.property) {
       
-      const tokens = cssTokenizer(sourceArray[line]);
-      for (const token of tokens) {
+      const tokensIterator = cssTokenizer(sourceArray[line]);
+      for (const token of tokensIterator) {
         
         
         if (token.startOffset <= ch && token.endOffset >= ch) {
