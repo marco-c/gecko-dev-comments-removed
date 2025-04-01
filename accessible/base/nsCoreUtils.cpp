@@ -116,10 +116,8 @@ void nsCoreUtils::DispatchClickEvent(XULTreeElement* aTree, int32_t aRowIndex,
   int32_t cnvdY = presContext->CSSPixelsToDevPixels(tcY + int32_t(rect.y) + 1) +
                   presContext->AppUnitsToDevPixels(offset.y);
 
-  if (StaticPrefs::dom_popup_experimental()) {
-    
-    tcElm->OwnerDoc()->NotifyUserGestureActivation();
-  }
+  
+  tcElm->OwnerDoc()->NotifyUserGestureActivation();
 
   
   DispatchMouseEvent(eMouseDown, cnvdX, cnvdY, tcElm, tcFrame, presShell,

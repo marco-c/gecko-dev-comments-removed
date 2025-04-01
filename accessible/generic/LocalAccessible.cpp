@@ -2573,10 +2573,9 @@ void LocalAccessible::DispatchClickEvent(uint32_t aActionIndex) const {
   nsCoreUtils::DispatchTouchEvent(eTouchStart, x, y, mContent, frame, presShell,
                                   widget);
 
-  if (StaticPrefs::dom_popup_experimental()) {
-    
-    mContent->OwnerDoc()->NotifyUserGestureActivation();
-  }
+  
+  mContent->OwnerDoc()->NotifyUserGestureActivation();
+
   nsCoreUtils::DispatchMouseEvent(eMouseDown, x, y, mContent, frame, presShell,
                                   widget);
   nsCoreUtils::DispatchTouchEvent(eTouchEnd, x, y, mContent, frame, presShell,
