@@ -19267,15 +19267,6 @@ class CGBindingRoot(CGThing):
 
         for d in dictionaries:
             addPrefHeadersForDictionary(bindingHeaders, d)
-            try:
-                if CGDictionary.dictionaryNeedsCycleCollection(d):
-                    bindingDeclareHeaders["nsCycleCollectionParticipant.h"] = True
-            except CycleCollectionUnsupported:
-                
-                
-                
-                pass
-
         for d in descriptors:
             interface = d.interface
             addPrefHeaderForObject(bindingHeaders, interface)

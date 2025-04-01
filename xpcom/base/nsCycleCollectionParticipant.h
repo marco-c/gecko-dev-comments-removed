@@ -21,8 +21,12 @@
 
 
 
-#define NS_XPCOMCYCLECOLLECTIONPARTICIPANT_IID \
-  {0xc61eac14, 0x5f7a, 0x4481, {0x96, 0x5e, 0x7e, 0xaa, 0x6e, 0xff, 0xa8, 0x5e}}
+#define NS_XPCOMCYCLECOLLECTIONPARTICIPANT_IID       \
+  {                                                  \
+    0xc61eac14, 0x5f7a, 0x4481, {                    \
+      0x96, 0x5e, 0x7e, 0xaa, 0x6e, 0xff, 0xa8, 0x5e \
+    }                                                \
+  }
 
 
 
@@ -31,8 +35,12 @@
 
 
 
-#define NS_CYCLECOLLECTIONISUPPORTS_IID \
-  {0xc61eac14, 0x5f7a, 0x4481, {0x96, 0x5e, 0x7e, 0xaa, 0x6e, 0xff, 0xa8, 0x5f}}
+#define NS_CYCLECOLLECTIONISUPPORTS_IID              \
+  {                                                  \
+    0xc61eac14, 0x5f7a, 0x4481, {                    \
+      0x96, 0x5e, 0x7e, 0xaa, 0x6e, 0xff, 0xa8, 0x5f \
+    }                                                \
+  }
 
 namespace mozilla {
 enum class CCReason : uint8_t {
@@ -189,109 +197,6 @@ struct TraceCallbackFunc : public TraceCallbacks {
  private:
   Func mCallback;
 };
-
-template <typename T,
-          typename = std::enable_if_t<
-              std::is_same_v<
-                  void, decltype(std::declval<TraceCallbacks*>()->Trace(
-                            std::declval<T*>(), std::declval<const char*>(),
-                            std::declval<void*>()))>,
-              void>>
-using TraceableType = T;
-
-
-
-
-template <typename T>
-inline void ImplCycleCollectionTrace(const TraceCallbacks& aCallbacks,
-                                     TraceableType<T>& aField,
-                                     const char* aName, void* aClosure) {
-  aCallbacks.Trace(&aField, aName, aClosure);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T, typename = void>
-struct ImplCycleCollectionNonIndexedContainerT : std::false_type {};
-
-template <typename T>
-struct ImplCycleCollectionNonIndexedContainerT<
-    T,
-    std::void_t<decltype(ImplCycleCollectionContainer(std::declval<T&>(), 0))>>
-    : std::true_type {};
-
-template <typename T, typename = void>
-struct ImplCycleCollectionIndexedContainerT : std::false_type {};
-
-template <typename T>
-struct ImplCycleCollectionIndexedContainerT<
-    T, std::void_t<decltype(ImplCycleCollectionIndexedContainer(
-           std::declval<T&>(), 0))>> : std::true_type {};
-
-template <typename T>
-constexpr bool ImplCycleCollectionCollectNonIndexedContainer =
-    ImplCycleCollectionNonIndexedContainerT<T>::value;
-
-template <typename T>
-constexpr bool ImplCycleCollectionCollectIndexedContainer =
-    ImplCycleCollectionIndexedContainerT<T>::value;
-
-template <typename T>
-constexpr bool ImplCycleCollectionCollectContainer =
-    ImplCycleCollectionNonIndexedContainerT<T>::value ||
-    ImplCycleCollectionIndexedContainerT<T>::value;
-
-template <typename T, typename = std::enable_if_t<
-                          ImplCycleCollectionCollectContainer<T>, void>>
-void ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
-                                 T& aField, const char* aName,
-                                 uint32_t aFlags = 0) {
-  if constexpr (ImplCycleCollectionIndexedContainerT<T>::value) {
-    aFlags |= CycleCollectionEdgeNameArrayFlag;
-    ImplCycleCollectionIndexedContainer(aField, [&](auto& aFieldMember) {
-      ImplCycleCollectionTraverse(aCallback, aFieldMember, aName, aFlags);
-    });
-  } else {
-    ImplCycleCollectionContainer(aField, [&](auto& aFieldMember) {
-      ImplCycleCollectionTraverse(aCallback, aFieldMember, aName, aFlags);
-    });
-  }
-}
-
-template <typename T, typename = std::enable_if_t<
-                          ImplCycleCollectionCollectContainer<T>, void>>
-void ImplCycleCollectionTrace(const TraceCallbacks& aCallbacks, T& aField,
-                              const char* aName, void* aClosure) {
-  if constexpr (ImplCycleCollectionIndexedContainerT<T>::value) {
-    ImplCycleCollectionIndexedContainer(aField, [&](auto& aFieldMember) {
-      ImplCycleCollectionTrace(aCallbacks, aFieldMember, aName, aClosure);
-    });
-  } else {
-    ImplCycleCollectionContainer(aField, [&](auto& aFieldMember) {
-      ImplCycleCollectionTrace(aCallbacks, aFieldMember, aName, aClosure);
-    });
-  }
-}
 
 
 
@@ -715,7 +620,7 @@ T* DowncastCCParticipant(void* aPtr) {
     NS_CYCLE_COLLECTION_CLASSNAME(_base_class)::Trace(s, aCallbacks, aClosure);
 
 #define NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(_field) \
-  ImplCycleCollectionTrace(aCallbacks, tmp->_field, #_field, aClosure);
+  aCallbacks.Trace(&tmp->_field, #_field, aClosure);
 
 
 
