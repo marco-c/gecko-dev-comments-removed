@@ -389,7 +389,7 @@ srtp_err_status_t cipher_driver_test_buffering(srtp_cipher_t *c)
 
             
             if (current + len > end)
-                len = (unsigned)(end - current);
+                len = end - current;
 
             status = srtp_cipher_encrypt(c, current, &len);
             if (status)
@@ -438,7 +438,7 @@ srtp_err_status_t cipher_array_alloc_init(srtp_cipher_t ***ca,
 {
     int i, j;
     srtp_err_status_t status;
-    uint8_t *key = NULL;
+    uint8_t *key;
     srtp_cipher_t **cipher_array;
     
 
@@ -454,12 +454,10 @@ srtp_err_status_t cipher_array_alloc_init(srtp_cipher_t ***ca,
     *ca = cipher_array;
 
     
-    if (klen_pad > 0) {
-        key = srtp_crypto_alloc(klen_pad);
-        if (key == NULL) {
-            srtp_crypto_free(cipher_array);
-            return srtp_err_status_alloc_fail;
-        }
+    key = srtp_crypto_alloc(klen_pad);
+    if (key == NULL) {
+        srtp_crypto_free(cipher_array);
+        return srtp_err_status_alloc_fail;
     }
 
     

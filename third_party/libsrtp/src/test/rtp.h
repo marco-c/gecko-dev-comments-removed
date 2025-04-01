@@ -123,14 +123,14 @@ int srtp_sender_init(
     struct sockaddr_in name,           
     srtp_sec_serv_t security_services, 
     unsigned char *input_key           
-);
+    );
 
 int srtp_receiver_init(
     rtp_receiver_t rtp_ctx,            
     struct sockaddr_in name,           
     srtp_sec_serv_t security_services, 
     unsigned char *input_key           
-);
+    );
 
 int rtp_sender_init_srtp(rtp_sender_t sender, const srtp_policy_t *policy);
 

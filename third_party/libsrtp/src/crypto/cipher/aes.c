@@ -1818,7 +1818,7 @@ static inline void aes_inv_round(v128_t *state, const v128_t *round_key)
 {
     uint32_t column0, column1, column2, column3;
 
-    
+
 
 
 #ifdef WORDS_BIGENDIAN
