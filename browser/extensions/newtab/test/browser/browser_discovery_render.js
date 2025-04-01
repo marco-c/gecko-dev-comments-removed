@@ -1,5 +1,9 @@
 "use strict";
 
+
+
+
+
 async function before({ pushPrefs }) {
   await pushPrefs([
     "browser.newtabpage.activity-stream.discoverystream.config",

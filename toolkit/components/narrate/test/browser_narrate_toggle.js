@@ -7,6 +7,10 @@
 
 
 
+
+
+
+
 registerCleanupFunction(teardown);
 
 add_task(async function testToggleNarrate() {

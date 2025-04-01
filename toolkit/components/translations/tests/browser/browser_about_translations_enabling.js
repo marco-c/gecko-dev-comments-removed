@@ -7,6 +7,10 @@
 
 
 
+
+
+
+
 add_task(async function test_about_translations_enabled() {
   const { runInPage, cleanup } = await openAboutTranslations({
     autoDownloadFromRemoteSettings: true,

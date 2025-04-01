@@ -3,6 +3,10 @@
 
 "use strict";
 
+
+
+
+
 add_task(async function test_about_translations_dropdowns() {
   const languagePairs = [
     { fromLang: "en", toLang: "es" },
