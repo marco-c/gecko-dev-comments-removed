@@ -1899,28 +1899,27 @@ nsresult HTMLFormElement::AddElementToTableInternal(
             list->Length() > 1,
             "List should have been converted back to a single element");
 
+        PositionComparator cmp(aChild);
+
         
         
         
         
-        if (nsContentUtils::PositionIsBefore(list->Item(list->Length() - 1),
-                                             aChild)) {
+        if (cmp(list->Item(list->Length() - 1)) > 0) {
           list->AppendElement(aChild);
           return NS_OK;
         }
 
-        
-        
-        if (list->IndexOf(aChild) != -1) {
+        size_t idx;
+        const bool found = BinarySearchIf(RadioNodeListAdaptor(list), 0,
+                                          list->Length(), cmp, &idx);
+        if (found &&
+            (list->Item(idx) == aChild || list->IndexOf(aChild) != -1)) {
+          
+          
+          
           return NS_OK;
         }
-
-        size_t idx;
-        DebugOnly<bool> found =
-            BinarySearchIf(RadioNodeListAdaptor(list), 0, list->Length(),
-                           PositionComparator(aChild), &idx);
-        MOZ_ASSERT(!found, "should not have found an element");
-
         list->InsertElementAt(aChild, idx);
       }
     }
