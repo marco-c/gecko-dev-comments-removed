@@ -4,7 +4,7 @@
 
 const perfMetadata = {
   owner: "GenAI Team",
-  name: "ML Autofill Model",
+  name: "browser_ml_autofill_perf.js",
   description: "Template test for latency for ML Autofill model",
   options: {
     default: {
