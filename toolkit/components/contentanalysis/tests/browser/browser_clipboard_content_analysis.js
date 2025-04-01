@@ -37,6 +37,9 @@ async function testClipboardWithContentAnalysis(allowPaste, plainTextOnly) {
   let tab = BrowserTestUtils.addTab(gBrowser);
   let browser = gBrowser.getBrowserForTab(tab);
 
+  const kNewWhiteSpaceNormalizerEnabled = Services.prefs.getBoolPref(
+    "editor.white_space_normalization.blink_compatible"
+  );
   gBrowser.selectedTab = tab;
 
   await promiseTabLoadEvent(tab, "data:text/html," + escape(testPage));
@@ -371,15 +374,18 @@ async function testClipboardWithContentAnalysis(allowPaste, plainTextOnly) {
   
   await SpecialPowers.spawn(
     browser,
-    [allowPaste, plainTextOnly],
-    (allowPaste, plainTextOnly) => {
+    [allowPaste, plainTextOnly, kNewWhiteSpaceNormalizerEnabled],
+    (allowPaste, plainTextOnly, newWhiteSpaceNormalizerEnabled) => {
       var main = content.document.getElementById("main");
       let expectedContents;
       if (allowPaste) {
-        expectedContents =
-          '<i>Italic</i> <img id="img" tabindex="1" ' +
-          'src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
-          "Test <b>Bold</b> After<b></b>";
+        expectedContents = newWhiteSpaceNormalizerEnabled
+          ? '<i>Italic</i>&nbsp;<img id="img" tabindex="1" ' +
+            'src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
+            "Test <b>Bold</b> After<b></b>"
+          : '<i>Italic</i> <img id="img" tabindex="1" ' +
+            'src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
+            "Test <b>Bold</b> After<b></b>";
       } else {
         
         
