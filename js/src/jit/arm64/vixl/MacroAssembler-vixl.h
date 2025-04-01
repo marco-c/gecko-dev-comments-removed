@@ -2527,7 +2527,7 @@ class UseScratchRegisterScope {
 
 
   bool IsAvailable(const CPURegister& reg) const;
-
+  bool HasAvailableRegister() const;
 
   
   
