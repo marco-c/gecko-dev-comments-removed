@@ -167,8 +167,8 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-  void EndBatchChanges(const char* aDetails,
-                       int16_t aReason = nsISelectionListener::NO_REASON);
+  MOZ_CAN_RUN_SCRIPT void EndBatchChanges(
+      const char* aDetails, int16_t aReason = nsISelectionListener::NO_REASON);
 
   
 
@@ -781,8 +781,8 @@ class Selection final : public nsSupportsWeakReference,
                              const TextRangeStyle& aTextRangeStyle);
 
   
-  Element* GetAncestorLimiter() const;
-  void SetAncestorLimiter(Element* aLimiter);
+  [[nodiscard]] Element* GetAncestorLimiter() const;
+  MOZ_CAN_RUN_SCRIPT void SetAncestorLimiter(Element* aLimiter);
 
   
 
@@ -1172,15 +1172,13 @@ class MOZ_STACK_CLASS SelectionBatcher final {
 
 
 
-  
-  
-  explicit SelectionBatcher(Selection& aSelectionRef,
-                            const char* aRequesterFuncName,
-                            int16_t aReasons = nsISelectionListener::NO_REASON)
+  MOZ_CAN_RUN_SCRIPT explicit SelectionBatcher(
+      Selection& aSelectionRef, const char* aRequesterFuncName,
+      int16_t aReasons = nsISelectionListener::NO_REASON)
       : SelectionBatcher(&aSelectionRef, aRequesterFuncName, aReasons) {}
-  explicit SelectionBatcher(Selection* aSelection,
-                            const char* aRequesterFuncName,
-                            int16_t aReasons = nsISelectionListener::NO_REASON)
+  MOZ_CAN_RUN_SCRIPT explicit SelectionBatcher(
+      Selection* aSelection, const char* aRequesterFuncName,
+      int16_t aReasons = nsISelectionListener::NO_REASON)
       : mSelection(aSelection),
         mReasons(aReasons),
         mRequesterFuncName(aRequesterFuncName) {
@@ -1189,9 +1187,9 @@ class MOZ_STACK_CLASS SelectionBatcher final {
     }
   }
 
-  ~SelectionBatcher() {
+  MOZ_CAN_RUN_SCRIPT ~SelectionBatcher() {
     if (mSelection) {
-      mSelection->EndBatchChanges(mRequesterFuncName, mReasons);
+      MOZ_KnownLive(mSelection)->EndBatchChanges(mRequesterFuncName, mReasons);
     }
   }
 };

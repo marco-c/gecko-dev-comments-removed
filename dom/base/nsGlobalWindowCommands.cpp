@@ -122,10 +122,9 @@ class nsSelectionCommandsBase : public nsIControllerCommand {
   NS_IMETHOD GetCommandStateParams(const char* aCommandName,
                                    nsICommandParams* aParams,
                                    nsISupports* aCommandContext) override;
-  MOZ_CAN_RUN_SCRIPT
-  NS_IMETHOD DoCommandParams(const char* aCommandName,
-                             nsICommandParams* aParams,
-                             nsISupports* aCommandContext) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD
+  DoCommandParams(const char* aCommandName, nsICommandParams* aParams,
+                  nsISupports* aCommandContext) override;
 
  protected:
   virtual ~nsSelectionCommandsBase() = default;
@@ -142,8 +141,8 @@ class nsSelectionCommandsBase : public nsIControllerCommand {
 
 class nsSelectMoveScrollCommand : public nsSelectionCommandsBase {
  public:
-  NS_IMETHOD DoCommand(const char* aCommandName,
-                       nsISupports* aCommandContext) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD
+  DoCommand(const char* aCommandName, nsISupports* aCommandContext) override;
 
   
 };
@@ -151,8 +150,8 @@ class nsSelectMoveScrollCommand : public nsSelectionCommandsBase {
 
 class nsPhysicalSelectMoveScrollCommand : public nsSelectionCommandsBase {
  public:
-  NS_IMETHOD DoCommand(const char* aCommandName,
-                       nsISupports* aCommandContext) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD
+  DoCommand(const char* aCommandName, nsISupports* aCommandContext) override;
 
   
 };
@@ -160,8 +159,8 @@ class nsPhysicalSelectMoveScrollCommand : public nsSelectionCommandsBase {
 
 class nsSelectCommand : public nsSelectionCommandsBase {
  public:
-  NS_IMETHOD DoCommand(const char* aCommandName,
-                       nsISupports* aCommandContext) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD
+  DoCommand(const char* aCommandName, nsISupports* aCommandContext) override;
 
   
 };
@@ -169,8 +168,8 @@ class nsSelectCommand : public nsSelectionCommandsBase {
 
 class nsPhysicalSelectCommand : public nsSelectionCommandsBase {
  public:
-  NS_IMETHOD DoCommand(const char* aCommandName,
-                       nsISupports* aCommandContext) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD
+  DoCommand(const char* aCommandName, nsISupports* aCommandContext) override;
 
   
 };

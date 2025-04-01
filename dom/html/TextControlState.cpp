@@ -357,9 +357,9 @@ class TextInputSelectionController final : public nsSupportsWeakReference,
   NS_IMETHOD GetSelectionFromScript(RawSelectionType aRawSelectionType,
                                     Selection** aSelection) override;
   Selection* GetSelection(RawSelectionType aRawSelectionType) override;
-  NS_IMETHOD ScrollSelectionIntoView(RawSelectionType aRawSelectionType,
-                                     SelectionRegion aRegion,
-                                     ControllerScrollFlags aFlags) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD ScrollSelectionIntoView(
+      RawSelectionType aRawSelectionType, SelectionRegion aRegion,
+      ControllerScrollFlags aFlags) override;
   NS_IMETHOD RepaintSelection(RawSelectionType aRawSelectionType) override;
   nsresult RepaintSelection(nsPresContext* aPresContext,
                             SelectionType aSelectionType);
@@ -368,15 +368,16 @@ class TextInputSelectionController final : public nsSupportsWeakReference,
   NS_IMETHOD GetCaretEnabled(bool* _retval) override;
   NS_IMETHOD GetCaretVisible(bool* _retval) override;
   NS_IMETHOD SetCaretVisibilityDuringSelection(bool aVisibility) override;
-  NS_IMETHOD PhysicalMove(int16_t aDirection, int16_t aAmount,
-                          bool aExtend) override;
-  NS_IMETHOD CharacterMove(bool aForward, bool aExtend) override;
-  NS_IMETHOD WordMove(bool aForward, bool aExtend) override;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD LineMove(bool aForward,
-                                                  bool aExtend) override;
-  NS_IMETHOD IntraLineMove(bool aForward, bool aExtend) override;
-  MOZ_CAN_RUN_SCRIPT
-  NS_IMETHOD PageMove(bool aForward, bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD PhysicalMove(int16_t aDirection,
+                                             int16_t aAmount,
+                                             bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD CharacterMove(bool aForward,
+                                              bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD WordMove(bool aForward, bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD LineMove(bool aForward, bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD IntraLineMove(bool aForward,
+                                              bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD PageMove(bool aForward, bool aExtend) override;
   NS_IMETHOD CompleteScroll(bool aForward) override;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD CompleteMove(bool aForward,
                                              bool aExtend) override;
@@ -2296,7 +2297,9 @@ void TextControlState::SetRangeText(const nsAString& aReplacement,
   Selection* selection =
       mSelCon ? mSelCon->GetSelection(SelectionType::eNormal) : nullptr;
   SelectionBatcher selectionBatcher(
-      selection, __FUNCTION__,
+      
+      
+      MOZ_KnownLive(selection), __FUNCTION__,
       nsISelectionListener::JS_REASON);  
 
   MOZ_ASSERT(aStart <= aEnd);
@@ -2791,7 +2794,10 @@ bool TextControlState::SetValueWithTextEditor(
   
   
   Selection* selection = mSelCon->GetSelection(SelectionType::eNormal);
-  SelectionBatcher selectionBatcher(selection, __FUNCTION__);
+  SelectionBatcher selectionBatcher(
+      
+      
+      MOZ_KnownLive(selection), __FUNCTION__);
 
   
   

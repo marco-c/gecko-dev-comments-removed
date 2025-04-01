@@ -726,7 +726,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  void NotifyEditingHostMaybeChanged();
+  MOZ_CAN_RUN_SCRIPT void NotifyEditingHostMaybeChanged();
 
   
 

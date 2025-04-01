@@ -1503,10 +1503,10 @@ nsresult nsFrameSelection::TakeFocus(nsIContent& aNewFocus,
         
         ParentAndOffset parentAndOffset{
             *mTableSelection.mClosestInclusiveTableCellAncestor};
-        if (parentAndOffset.mParent) {
-          const nsresult result = HandleTableSelection(
-              parentAndOffset.mParent, parentAndOffset.mOffset,
-              TableSelectionMode::Cell, &event);
+        if (const nsCOMPtr<nsINode> previousParent = parentAndOffset.mParent) {
+          const nsresult result =
+              HandleTableSelection(previousParent, parentAndOffset.mOffset,
+                                   TableSelectionMode::Cell, &event);
           if (NS_WARN_IF(NS_FAILED(result))) {
             return result;
           }
@@ -1518,13 +1518,13 @@ nsresult nsFrameSelection::TakeFocus(nsIContent& aNewFocus,
         
         
         event.mModifiers &= ~MODIFIER_SHIFT;  
-        if (parentAndOffset.mParent) {
+        if (const nsCOMPtr<nsINode> newParent = parentAndOffset.mParent) {
           mTableSelection.mClosestInclusiveTableCellAncestor =
               inclusiveTableCellAncestor;
           
-          const nsresult result = HandleTableSelection(
-              parentAndOffset.mParent, parentAndOffset.mOffset,
-              TableSelectionMode::Cell, &event);
+          const nsresult result =
+              HandleTableSelection(newParent, parentAndOffset.mOffset,
+                                   TableSelectionMode::Cell, &event);
           if (NS_WARN_IF(NS_FAILED(result))) {
             return result;
           }
@@ -2364,7 +2364,8 @@ nsresult nsFrameSelection::TableSelection::HandleDragSelecting(
       }
 
       
-      return SelectBlockOfCells(mStartSelectedCell, aChildContent,
+      const nsCOMPtr<nsIContent> startSelectedCell = mStartSelectedCell;
+      return SelectBlockOfCells(startSelectedCell, aChildContent,
                                 aNormalSelection);
     }
   }
@@ -2482,7 +2483,9 @@ nsresult nsFrameSelection::TableSelection::HandleMouseUpOrDown(
       
       mDragSelectingCells = false;
 
-      return SelectBlockOfCells(mAppendStartSelectedCell, aChildContent,
+      const OwningNonNull<nsIContent> appendStartSelectedCell =
+          *mAppendStartSelectedCell;
+      return SelectBlockOfCells(appendStartSelectedCell, aChildContent,
                                 aNormalSelection);
     }
 
@@ -2892,8 +2895,10 @@ nsresult nsFrameSelection::TableSelection::SelectRowOrColumn(
       mStartSelectedCell = firstAndLastCell.inspect().mFirst;
     }
 
-    rv = SelectBlockOfCells(mStartSelectedCell,
-                            firstAndLastCell.inspect().mLast, aNormalSelection);
+    const nsCOMPtr<nsIContent> startSelectedCell = mStartSelectedCell;
+    rv = SelectBlockOfCells(startSelectedCell,
+                            MOZ_KnownLive(firstAndLastCell.inspect().mLast),
+                            aNormalSelection);
 
     
     

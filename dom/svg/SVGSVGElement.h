@@ -16,12 +16,8 @@ nsresult NS_NewSVGSVGElement(
     mozilla::dom::FromParser aFromParser);
 
 
-#define MOZILLA_SVGSVGELEMENT_IID                    \
-  {                                                  \
-    0x4b83982c, 0xe5e9, 0x4ca1, {                    \
-      0xab, 0xd4, 0x14, 0xd2, 0x7e, 0x8b, 0x35, 0x31 \
-    }                                                \
-  }
+#define MOZILLA_SVGSVGELEMENT_IID \
+  {0x4b83982c, 0xe5e9, 0x4ca1, {0xab, 0xd4, 0x14, 0xd2, 0x7e, 0x8b, 0x35, 0x31}}
 
 namespace mozilla {
 class AutoSVGViewHandler;
@@ -112,7 +108,7 @@ class SVGSVGElement final : public SVGSVGElementBase {
   bool AnimationsPaused();
   float GetCurrentTimeAsFloat();
   void SetCurrentTime(float seconds);
-  void DeselectAll();
+  MOZ_CAN_RUN_SCRIPT void DeselectAll();
   already_AddRefed<DOMSVGNumber> CreateSVGNumber();
   already_AddRefed<DOMSVGLength> CreateSVGLength();
   already_AddRefed<DOMSVGAngle> CreateSVGAngle();

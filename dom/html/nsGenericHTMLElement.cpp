@@ -2534,7 +2534,7 @@ void nsGenericHTMLElement::ChangeEditableState(int32_t aChange) {
   
   if (IsInDesignMode() && !IsInShadowTree() && aChange > 0 &&
       previousEditingState == Document::EditingState::eContentEditable) {
-    if (HTMLEditor* htmlEditor =
+    if (const RefPtr<HTMLEditor> htmlEditor =
             nsContentUtils::GetHTMLEditor(document->GetPresContext())) {
       htmlEditor->NotifyEditingHostMaybeChanged();
     }
