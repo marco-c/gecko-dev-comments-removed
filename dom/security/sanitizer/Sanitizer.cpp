@@ -770,7 +770,9 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
       if (mRemoveElements.Contains(*elementName) ||
           (!mElements.IsEmpty() && !mElements.Contains(*elementName))) {
         
+        
         child->RemoveFromParent();
+        
         continue;
       }
     } else {
@@ -792,7 +794,9 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
         }
       }
       if (!found) {
+        
         child->RemoveFromParent();
+        
         continue;
       }
       MOZ_ASSERT(!IsUnsafeElement(nameAtom, namespaceID));
@@ -812,6 +816,7 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
           ErrorResult rv;
           parent->InsertBefore(*newChild, child, rv);
           if (rv.Failed()) {
+            
             break;
           }
         }
