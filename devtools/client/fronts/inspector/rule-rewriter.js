@@ -586,7 +586,7 @@ class RuleRewriter {
     
     
     
-    let nestedDeclarationIndex = -1;
+    let insertIndex = -1;
     
     if (this.result.includes("{")) {
       
@@ -599,29 +599,41 @@ class RuleRewriter {
         const nestedRuleColumn = InspectorUtils.getRuleColumn(nestedRule);
         
         
-        const actualLine = nestedRuleLine - 2;
+        let actualLine = nestedRuleLine - 2;
         const actualColumn = nestedRuleColumn - 1;
 
-        let lineOffset = 0;
-        for (let i = 0; i < actualLine; i++) {
-          lineOffset = this.result.indexOf("\n", lineOffset);
+        
+        
+        insertIndex = 0;
+        for (
+          ;
+          insertIndex < this.result.length && actualLine > 0;
+          insertIndex++
+        ) {
+          if (this.result[insertIndex] === "\n") {
+            actualLine--;
+          }
         }
 
-        nestedDeclarationIndex = lineOffset + actualColumn;
+        
+        
+        
+        if (!this.hasNewLine) {
+          insertIndex += actualColumn;
+        }
       }
     }
 
-    if (nestedDeclarationIndex == -1) {
+    if (insertIndex == -1) {
       this.result += newText;
     } else {
       this.result =
-        this.result.substring(0, nestedDeclarationIndex) +
+        this.result.substring(0, insertIndex) +
         newText +
-        this.result.substring(nestedDeclarationIndex);
+        this.result.substring(insertIndex);
     }
 
     if (this.decl) {
-      
       
       this.completeCopying(this.decl.offsets[0]);
     }
