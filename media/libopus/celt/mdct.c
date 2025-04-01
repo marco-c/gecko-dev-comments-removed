@@ -330,8 +330,8 @@ void clt_mdct_backward_c(const mdct_lookup *l, kiss_fft_scalar *in, kiss_fft_sca
          t0 = t[i];
          t1 = t[N4+i];
          
-         yr = PSHR32(ADD32_ovflw(S_MUL(re,t0), S_MUL(im,t1)), IMDCT_HEADROOM);
-         yi = PSHR32(SUB32_ovflw(S_MUL(re,t1), S_MUL(im,t0)), IMDCT_HEADROOM);
+         yr = PSHR32_ovflw(ADD32_ovflw(S_MUL(re,t0), S_MUL(im,t1)), IMDCT_HEADROOM);
+         yi = PSHR32_ovflw(SUB32_ovflw(S_MUL(re,t1), S_MUL(im,t0)), IMDCT_HEADROOM);
          
          re = yp1[1];
          im = yp1[0];
@@ -341,8 +341,8 @@ void clt_mdct_backward_c(const mdct_lookup *l, kiss_fft_scalar *in, kiss_fft_sca
          t0 = t[(N4-i-1)];
          t1 = t[(N2-i-1)];
          
-         yr = PSHR32(ADD32_ovflw(S_MUL(re,t0), S_MUL(im,t1)), IMDCT_HEADROOM);
-         yi = PSHR32(SUB32_ovflw(S_MUL(re,t1), S_MUL(im,t0)), IMDCT_HEADROOM);
+         yr = PSHR32_ovflw(ADD32_ovflw(S_MUL(re,t0), S_MUL(im,t1)), IMDCT_HEADROOM);
+         yi = PSHR32_ovflw(SUB32_ovflw(S_MUL(re,t1), S_MUL(im,t0)), IMDCT_HEADROOM);
          yp1[0] = yr;
          yp0[1] = yi;
          yp0 += 2;

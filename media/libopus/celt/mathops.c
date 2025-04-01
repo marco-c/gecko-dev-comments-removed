@@ -31,10 +31,12 @@
 
 
 
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#include "float_cast.h"
 #include "mathops.h"
 
 
@@ -215,3 +217,16 @@ opus_val32 celt_rcp(opus_val32 x)
 }
 
 #endif
+
+#ifndef DISABLE_FLOAT_API
+
+void celt_float2int16_c(const float * OPUS_RESTRICT in, short * OPUS_RESTRICT out, int cnt)
+{
+   int i;
+   for (i = 0; i < cnt; i++)
+   {
+      out[i] = FLOAT2INT16(in[i]);
+   }
+}
+
+#endif 

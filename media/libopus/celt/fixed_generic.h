@@ -148,6 +148,8 @@
 
 #define NEG32_ovflw(a) ((opus_val32)(0-(opus_uint32)(a)))
 
+#define PSHR32_ovflw(a,shift) (SHR32(ADD32_ovflw(a, (EXTEND32(1)<<(shift)>>1)),shift))
+
 
 #define MULT16_16_16(a,b)     ((((opus_val16)(a))*((opus_val16)(b))))
 

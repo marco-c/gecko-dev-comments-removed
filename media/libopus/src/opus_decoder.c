@@ -25,6 +25,7 @@
 
 
 
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -835,7 +836,7 @@ int opus_decode(OpusDecoder *st, const unsigned char *data,
       opus_int32 len, opus_int16 *pcm, int frame_size, int decode_fec)
 {
        VARDECL(opus_res, out);
-       int ret, i;
+       int ret;
        int nb_samples;
        ALLOC_STACK;
 
@@ -858,8 +859,13 @@ int opus_decode(OpusDecoder *st, const unsigned char *data,
        ret = opus_decode_native(st, data, len, out, frame_size, decode_fec, 0, NULL, OPTIONAL_CLIP, NULL, 0);
        if (ret > 0)
        {
+# if defined(FIXED_POINT)
+          int i;
           for (i=0;i<ret*st->channels;i++)
              pcm[i] = RES2INT16(out[i]);
+# else
+          celt_float2int16(out, pcm, ret*st->channels, st->arch);
+# endif
        }
        RESTORE_STACK;
        return ret;

@@ -25,15 +25,29 @@
 
 
 
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include "pitch.h"
 #include "kiss_fft.h"
+#include "mathops.h"
 #include "mdct.h"
+#include "pitch.h"
 
 #if defined(OPUS_HAVE_RTCD)
+
+# if !defined(DISABLE_FLOAT_API)
+#  if defined(OPUS_ARM_MAY_HAVE_NEON_INTR) && !defined(OPUS_ARM_PRESUME_NEON_INTR)
+void (*const CELT_FLOAT2INT16_IMPL[OPUS_ARCHMASK+1])(const float * OPUS_RESTRICT in, short * OPUS_RESTRICT out, int cnt) = {
+  celt_float2int16_c,   
+  celt_float2int16_c,   
+  celt_float2int16_c,   
+  celt_float2int16_neon,
+  celt_float2int16_neon 
+};
+#  endif
+# endif
 
 # if defined(OPUS_ARM_MAY_HAVE_NEON_INTR) && !defined(OPUS_ARM_PRESUME_NEON_INTR)
 opus_val32 (*const CELT_INNER_PROD_IMPL[OPUS_ARCHMASK+1])(const opus_val16 *x, const opus_val16 *y, int N) = {
