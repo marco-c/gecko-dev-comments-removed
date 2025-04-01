@@ -36,6 +36,12 @@ function runGenericSensorTests(sensorData, readingData) {
     }, name, properties);
   }
 
+  promise_setup(async () => {
+    
+    
+    await test_driver.click(document.documentElement);
+  });
+
   sensor_test(async t => {
     await test_driver.set_permission({name: permissionName}, 'denied');
 
@@ -626,7 +632,7 @@ function runGenericSensorTests(sensorData, readingData) {
   
   
 
-  test(() => {
+  promise_test(async () => {
     const invalidFreqs = ['invalid', NaN, Infinity, -Infinity, {}];
     invalidFreqs.map(freq => {
       assert_throws_js(
