@@ -11354,20 +11354,6 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   }  
 
   
-  
-  if (nsCOMPtr<nsPIDOMWindowInner> window = document->GetInnerWindow()) {
-    if (RefPtr<Navigation> navigation = window->Navigation();
-        navigation &&
-        navigation->FirePushReplaceReloadNavigateEvent(
-            aReplace ? NavigationType::Replace : NavigationType::Push, newURI,
-             true,  Nothing(),
-             nullptr,  Nothing(),
-             nullptr, scContainer)) {
-      return NS_OK;
-    }
-  }
-
-  
   rv = UpdateURLAndHistory(document, newURI, scContainer,
                            aReplace ? NavigationHistoryBehavior::Replace
                                     : NavigationHistoryBehavior::Push,
@@ -13659,11 +13645,6 @@ bool nsDocShell::GetIsAttemptingToNavigate() {
   }
 
   return mCheckingSessionHistory;
-}
-
-mozilla::dom::SessionHistoryInfo* nsDocShell::GetActiveSessionHistoryInfo()
-    const {
-  return mActiveEntry.get();
 }
 
 void nsDocShell::SetLoadingSessionHistoryInfo(

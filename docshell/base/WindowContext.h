@@ -230,7 +230,8 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   bool HasValidHistoryActivation() const;
 
   
-  void ConsumeHistoryActivation();
+  
+  bool ConsumeHistoryActivation();
 
   bool GetTransientUserGestureActivationModifiers(
       UserActivation::Modifiers* aModifiers);
