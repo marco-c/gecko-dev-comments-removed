@@ -18,13 +18,9 @@ class nsIThread;
 
 namespace mozilla::dom {
 
-class RemoteWorkerDebuggerManagerChild;
-class RemoteWorkerDebuggerManagerParent;
 class RemoteWorkerService;
 class RemoteWorkerServiceChild;
 class RemoteWorkerServiceShutdownBlocker;
-class PRemoteWorkerDebuggerManagerChild;
-class PRemoteWorkerDebuggerParent;
 class PRemoteWorkerServiceChild;
 
 
@@ -75,14 +71,9 @@ class RemoteWorkerService final : public nsIObserver {
   
   static void InitializeParent();
   static void InitializeChild(
-      mozilla::ipc::Endpoint<PRemoteWorkerServiceChild> aEndpoint,
-      mozilla::ipc::Endpoint<PRemoteWorkerDebuggerManagerChild>
-          aDebuggerChildEp);
+      mozilla::ipc::Endpoint<PRemoteWorkerServiceChild> aEndpoint);
 
   static nsIThread* Thread();
-  static void RegisterRemoteDebugger(
-      RemoteWorkerDebuggerInfo aDebuggerInfo,
-      mozilla::ipc::Endpoint<PRemoteWorkerDebuggerParent> aDebuggerParentEp);
 
   
   
@@ -105,9 +96,7 @@ class RemoteWorkerService final : public nsIObserver {
   ~RemoteWorkerService();
 
   nsresult InitializeOnMainThread(
-      mozilla::ipc::Endpoint<PRemoteWorkerServiceChild> aEndpoint,
-      mozilla::ipc::Endpoint<PRemoteWorkerDebuggerManagerChild>
-          aDebuggerChildEp);
+      mozilla::ipc::Endpoint<PRemoteWorkerServiceChild> aEndpoint);
 
   void InitializeOnTargetThread(
       mozilla::ipc::Endpoint<PRemoteWorkerServiceChild> aEndpoint);
@@ -124,8 +113,6 @@ class RemoteWorkerService final : public nsIObserver {
 
   nsCOMPtr<nsIThread> mThread;
   RefPtr<RemoteWorkerServiceChild> mActor;
-  RefPtr<RemoteWorkerDebuggerManagerChild> mDebuggerManagerChild;
-  RefPtr<RemoteWorkerDebuggerManagerParent> mDebuggerManagerParent;
   
   
   
