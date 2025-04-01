@@ -105,13 +105,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   BranchHintCollection branchHints;
 
   
-  mozilla::Maybe<Name> moduleName;
-  NameVector funcNames;
-  
-  
-  
-  SharedBytes namePayload;
-  mozilla::Maybe<uint32_t> nameCustomSectionIndex;
+  mozilla::Maybe<NameSection> nameSection;
 
   
   CustomSectionRangeVector customSectionRanges;

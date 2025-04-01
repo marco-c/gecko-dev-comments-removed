@@ -756,6 +756,18 @@ WASM_DECLARE_CACHEABLE_POD(Name);
 
 using NameVector = Vector<Name, 0, SystemAllocPolicy>;
 
+struct NameSection {
+  Name moduleName;
+  NameVector funcNames;
+  
+  
+  
+  SharedBytes payload;
+  uint32_t customSectionIndex;
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+};
+
 
 
 enum class LimitsKind {
