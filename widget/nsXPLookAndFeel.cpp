@@ -375,6 +375,7 @@ nsXPLookAndFeel* nsXPLookAndFeel::GetInstance() {
   if (XRE_IsParentProcess()) {
     nsLayoutUtils::RecomputeSmoothScrollDefault();
   }
+  PreferenceSheet::Refresh();
   return sInstance;
 }
 
@@ -1156,10 +1157,6 @@ void LookAndFeel::DoHandleGlobalThemeChange() {
 
   
   
-  PreferenceSheet::Refresh();
-
-  
-  
   
   image::SurfaceCacheUtils::DiscardAll();
 
@@ -1473,6 +1470,9 @@ void LookAndFeel::Refresh() {
     widget::RemoteLookAndFeel::ClearCachedData();
   }
   widget::Theme::LookAndFeelChanged();
+  
+  
+  PreferenceSheet::Refresh();
 }
 
 
