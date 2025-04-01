@@ -18,7 +18,7 @@
 
 
 
-use uniffi_meta::{ExternalKind, Type};
+use uniffi_meta::Type;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum FfiType {
@@ -61,12 +61,18 @@ pub enum FfiType {
     
     Reference(Box<FfiType>),
     
+    MutReference(Box<FfiType>),
+    
     VoidPointer,
 }
 
 impl FfiType {
     pub fn reference(self) -> FfiType {
         FfiType::Reference(Box::new(self))
+    }
+
+    pub fn mut_reference(self) -> FfiType {
+        FfiType::MutReference(Box::new(self))
     }
 
     
@@ -124,35 +130,35 @@ impl From<&Type> for FfiType {
             
             Type::CallbackInterface { .. } => FfiType::UInt64,
             
-            Type::Enum { .. }
-            | Type::Record { .. }
-            | Type::Optional { .. }
+            Type::Enum { name, module_path } | Type::Record { name, module_path } => {
+                FfiType::RustBuffer(Some(ExternalFfiMetadata {
+                    name: name.clone(),
+                    module_path: module_path.clone(),
+                }))
+            }
+            Type::Optional { .. }
             | Type::Sequence { .. }
             | Type::Map { .. }
             | Type::Timestamp
             | Type::Duration => FfiType::RustBuffer(None),
-            Type::External {
+            Type::Custom {
+                builtin,
                 name,
-                kind: ExternalKind::Interface,
-                ..
-            }
-            | Type::External {
-                name,
-                kind: ExternalKind::Trait,
-                ..
-            } => FfiType::RustArcPtr(name.clone()),
-            Type::External {
-                name,
-                kind: ExternalKind::DataClass,
                 module_path,
-                namespace,
                 ..
-            } => FfiType::RustBuffer(Some(ExternalFfiMetadata {
-                name: name.clone(),
-                module_path: module_path.clone(),
-                namespace: namespace.clone(),
-            })),
-            Type::Custom { builtin, .. } => FfiType::from(builtin.as_ref()),
+            } => {
+                
+                match FfiType::from(builtin.as_ref()) {
+                    
+                    
+                    
+                    FfiType::RustBuffer(None) => FfiType::RustBuffer(Some(ExternalFfiMetadata {
+                        name: name.clone(),
+                        module_path: module_path.clone(),
+                    })),
+                    t => t,
+                }
+            }
         }
     }
 }
@@ -161,7 +167,6 @@ impl From<&Type> for FfiType {
 pub struct ExternalFfiMetadata {
     pub name: String,
     pub module_path: String,
-    pub namespace: String,
 }
 
 

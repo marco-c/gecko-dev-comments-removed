@@ -40,7 +40,8 @@ pub mod codes {
     pub const UNIFFI_TRAIT: u8 = 11;
     pub const TRAIT_INTERFACE: u8 = 12;
     pub const CALLBACK_TRAIT_INTERFACE: u8 = 13;
-    pub const UNKNOWN: u8 = 255;
+    pub const OBJECT_TRAIT_IMPL: u8 = 14;
+    pub const CUSTOM_TYPE: u8 = 15;
 
     
     pub const TYPE_U8: u8 = 0;
@@ -237,6 +238,12 @@ impl MetadataBuffer {
     
     pub const fn checksum(&self) -> u16 {
         calc_checksum(&self.bytes, self.size)
+    }
+}
+
+impl Default for MetadataBuffer {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

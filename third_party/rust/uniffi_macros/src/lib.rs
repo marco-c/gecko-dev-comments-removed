@@ -5,15 +5,15 @@
 #![warn(rust_2018_idioms, unused_qualifications)]
 
 
+#![allow(dead_code)]
+
+
 
 #[cfg(feature = "trybuild")]
 use camino::Utf8Path;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{
-    parse::{Parse, ParseStream},
-    parse_macro_input, Ident, LitStr, Path, Token,
-};
+use syn::{parse_macro_input, LitStr};
 
 mod custom;
 mod default;
@@ -25,6 +25,7 @@ mod ffiops;
 mod fnsig;
 mod object;
 mod record;
+mod remote;
 mod setup_scaffolding;
 mod test;
 mod util;
@@ -33,20 +34,6 @@ use self::{
     derive::DeriveOptions, enum_::expand_enum, error::expand_error, export::expand_export,
     object::expand_object, record::expand_record,
 };
-
-struct CustomTypeInfo {
-    ident: Ident,
-    builtin: Path,
-}
-
-impl Parse for CustomTypeInfo {
-    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        let ident = input.parse()?;
-        input.parse::<Token![,]>()?;
-        let builtin = input.parse()?;
-        Ok(Self { ident, builtin })
-    }
-}
 
 
 
@@ -135,22 +122,17 @@ pub fn derive_error(input: TokenStream) -> TokenStream {
 }
 
 
-
 #[proc_macro]
 pub fn custom_type(tokens: TokenStream) -> TokenStream {
-    let input: CustomTypeInfo = syn::parse_macro_input!(tokens);
-    custom::expand_ffi_converter_custom_type(&input.ident, &input.builtin, true)
+    custom::expand_custom_type(parse_macro_input!(tokens))
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }
-
-
 
 
 #[proc_macro]
 pub fn custom_newtype(tokens: TokenStream) -> TokenStream {
-    let input: CustomTypeInfo = syn::parse_macro_input!(tokens);
-    custom::expand_ffi_converter_custom_newtype(&input.ident, &input.builtin, true)
+    custom::expand_custom_newtype(parse_macro_input!(tokens))
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }
@@ -162,6 +144,17 @@ pub fn custom_newtype(tokens: TokenStream) -> TokenStream {
 
 
 
+#[doc(hidden)]
+#[proc_macro_attribute]
+pub fn remote(attrs: TokenStream, input: TokenStream) -> TokenStream {
+    derive::expand_derive(
+        parse_macro_input!(attrs),
+        parse_macro_input!(input),
+        DeriveOptions::remote(),
+    )
+    .unwrap_or_else(syn::Error::into_compile_error)
+    .into()
+}
 
 
 
@@ -169,11 +162,17 @@ pub fn custom_newtype(tokens: TokenStream) -> TokenStream {
 
 
 
-
-
-
-
-
+#[doc(hidden)]
+#[proc_macro_attribute]
+pub fn udl_remote(attrs: TokenStream, input: TokenStream) -> TokenStream {
+    derive::expand_derive(
+        parse_macro_input!(attrs),
+        parse_macro_input!(input),
+        DeriveOptions::udl_remote(),
+    )
+    .unwrap_or_else(syn::Error::into_compile_error)
+    .into()
+}
 
 
 
@@ -254,43 +253,10 @@ pub fn include_scaffolding(udl_stem: TokenStream) -> TokenStream {
 
 
 
-#[proc_macro]
-pub fn use_udl_record(tokens: TokenStream) -> TokenStream {
-    use_udl_simple_type(tokens)
-}
 
 #[proc_macro]
-pub fn use_udl_enum(tokens: TokenStream) -> TokenStream {
-    use_udl_simple_type(tokens)
-}
-
-#[proc_macro]
-pub fn use_udl_error(tokens: TokenStream) -> TokenStream {
-    use_udl_simple_type(tokens)
-}
-
-fn use_udl_simple_type(tokens: TokenStream) -> TokenStream {
-    let util::ExternalTypeItem {
-        crate_ident,
-        type_ident,
-        ..
-    } = parse_macro_input!(tokens);
-    quote! {
-        ::uniffi::ffi_converter_forward!(#type_ident, #crate_ident::UniFfiTag, crate::UniFfiTag);
-    }
-    .into()
-}
-
-#[proc_macro]
-pub fn use_udl_object(tokens: TokenStream) -> TokenStream {
-    let util::ExternalTypeItem {
-        crate_ident,
-        type_ident,
-        ..
-    } = parse_macro_input!(tokens);
-    quote! {
-        ::uniffi::ffi_converter_arc_forward!(#type_ident, #crate_ident::UniFfiTag, crate::UniFfiTag);
-    }.into()
+pub fn use_remote_type(tokens: TokenStream) -> TokenStream {
+    remote::expand_remote_type(parse_macro_input!(tokens)).into()
 }
 
 

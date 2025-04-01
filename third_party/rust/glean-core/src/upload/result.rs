@@ -28,6 +28,16 @@ pub enum UploadResult {
     
     
     
+    
+    Incapable {
+        #[doc(hidden)]
+        
+        unused: i8,
+    },
+
+    
+    
+    
     HttpStatus {
         
         code: i32,
@@ -55,6 +65,7 @@ impl UploadResult {
             UploadResult::HttpStatus { .. } => Some("status_code_unknown"),
             UploadResult::UnrecoverableFailure { .. } => Some("unrecoverable"),
             UploadResult::RecoverableFailure { .. } => Some("recoverable"),
+            UploadResult::Incapable { .. } => Some("incapable"),
             UploadResult::Done { .. } => None,
         }
     }
@@ -73,6 +84,14 @@ impl UploadResult {
     
     pub fn unrecoverable_failure() -> Self {
         Self::UnrecoverableFailure { unused: 0 }
+    }
+
+    
+    
+    
+    
+    pub fn incapable() -> Self {
+        Self::Incapable { unused: 0 }
     }
 
     

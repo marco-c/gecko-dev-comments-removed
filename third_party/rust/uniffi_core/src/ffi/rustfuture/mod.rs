@@ -36,13 +36,71 @@ pub type RustFutureContinuationCallback = extern "C" fn(callback_data: u64, Rust
 
 
 
+
+
+#[doc(hidden)]
+pub trait UniffiCompatibleFuture<T>: Future<Output = T> {}
+
+
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<T, F> UniffiCompatibleFuture<T> for F where F: Future<Output = T> + Send {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(target_arch = "wasm32")]
+impl<T, F> UniffiCompatibleFuture<T> for F where F: Future<Output = T> {}
+
+
+
+
+
+
+
+
+#[allow(clippy::let_and_return)]
 pub fn rust_future_new<F, T, UT>(future: F, tag: UT) -> Handle
 where
     
     
     
     
-    F: Future<Output = Result<T, LiftArgsError>> + Send + 'static,
+    F: UniffiCompatibleFuture<Result<T, LiftArgsError>> + 'static,
     
     
     T: LowerReturn<UT> + Send + 'static,
@@ -51,9 +109,11 @@ where
     
     dyn RustFutureFfi<T::ReturnType>: HandleAlloc<UT>,
 {
-    <dyn RustFutureFfi<T::ReturnType> as HandleAlloc<UT>>::new_handle(
-        RustFuture::new(future, tag) as Arc<dyn RustFutureFfi<T::ReturnType>>
-    )
+    let handle = <dyn RustFutureFfi<T::ReturnType> as HandleAlloc<UT>>::new_handle(
+        RustFuture::new(future, tag) as Arc<dyn RustFutureFfi<T::ReturnType>>,
+    );
+    trace!("rust_future_new: {handle:?}");
+    handle
 }
 
 
@@ -72,6 +132,7 @@ pub unsafe fn rust_future_poll<ReturnType, UT>(
 ) where
     dyn RustFutureFfi<ReturnType>: HandleAlloc<UT>,
 {
+    trace!("rust_future_poll: {handle:?}");
     <dyn RustFutureFfi<ReturnType> as HandleAlloc<UT>>::get_arc(handle).ffi_poll(callback, data)
 }
 
@@ -89,6 +150,7 @@ pub unsafe fn rust_future_cancel<ReturnType, UT>(handle: Handle)
 where
     dyn RustFutureFfi<ReturnType>: HandleAlloc<UT>,
 {
+    trace!("rust_future_cancel: {handle:?}");
     <dyn RustFutureFfi<ReturnType> as HandleAlloc<UT>>::get_arc(handle).ffi_cancel()
 }
 
@@ -109,6 +171,7 @@ pub unsafe fn rust_future_complete<ReturnType, UT>(
 where
     dyn RustFutureFfi<ReturnType>: HandleAlloc<UT>,
 {
+    trace!("rust_future_complete: {handle:?}");
     <dyn RustFutureFfi<ReturnType> as HandleAlloc<UT>>::get_arc(handle).ffi_complete(out_status)
 }
 
@@ -122,6 +185,7 @@ pub unsafe fn rust_future_free<ReturnType, UT>(handle: Handle)
 where
     dyn RustFutureFfi<ReturnType>: HandleAlloc<UT>,
 {
+    trace!("rust_future_free: {handle:?}");
     <dyn RustFutureFfi<ReturnType> as HandleAlloc<UT>>::consume_handle(handle).ffi_free()
 }
 

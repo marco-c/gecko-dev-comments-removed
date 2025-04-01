@@ -3,19 +3,19 @@
 
 
 use std::{collections::BTreeMap, hash::Hasher};
-pub use uniffi_checksum_derive::Checksum;
+pub use uniffi_internal_macros::Checksum;
 
 mod ffi_names;
 pub use ffi_names::*;
 
 mod group;
-pub use group::{create_metadata_groups, fixup_external_type, group_metadata, MetadataGroup};
+pub use group::{create_metadata_groups, group_metadata, MetadataGroup};
 
 mod reader;
 pub use reader::{read_metadata, read_metadata_type};
 
 mod types;
-pub use types::{AsType, ExternalKind, ObjectImpl, Type, TypeIterator};
+pub use types::{AsType, ObjectImpl, Type, TypeIterator};
 
 mod metadata;
 
@@ -23,7 +23,7 @@ mod metadata;
 
 
 
-pub const UNIFFI_CONTRACT_VERSION: u32 = 26;
+pub const UNIFFI_CONTRACT_VERSION: u32 = 29;
 
 
 
@@ -297,6 +297,7 @@ pub enum Radix {
 pub struct RecordMetadata {
     pub module_path: String,
     pub name: String,
+    pub remote: bool, 
     pub fields: Vec<FieldMetadata>,
     pub docstring: Option<String>,
 }
@@ -339,6 +340,7 @@ pub struct EnumMetadata {
     pub module_path: String,
     pub name: String,
     pub shape: EnumShape,
+    pub remote: bool, 
     pub variants: Vec<VariantMetadata>,
     pub discr_type: Option<Type>,
     pub non_exhaustive: bool,
@@ -357,6 +359,7 @@ pub struct VariantMetadata {
 pub struct ObjectMetadata {
     pub module_path: String,
     pub name: String,
+    pub remote: bool, 
     pub imp: types::ObjectImpl,
     pub docstring: Option<String>,
 }
@@ -384,6 +387,8 @@ impl ObjectMetadata {
         free_fn_symbol_name(&self.module_path, &self.name)
     }
 }
+
+
 
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -446,11 +451,29 @@ impl UniffiTraitDiscriminants {
     }
 }
 
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ObjectTraitImplMetadata {
+    pub ty: Type,
+    pub trait_name: String,
+    pub tr_module_path: Option<String>,
+}
+
+impl Checksum for ObjectTraitImplMetadata {
+    fn checksum<H: Hasher>(&self, state: &mut H) {
+        Checksum::checksum(&self.ty, state);
+        Checksum::checksum(&self.trait_name, state);
+        Checksum::checksum(&self.tr_module_path, state);
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CustomTypeMetadata {
     pub module_path: String,
     pub name: String,
     pub builtin: Type,
+    pub docstring: Option<String>,
 }
 
 
@@ -478,6 +501,7 @@ pub enum Metadata {
     TraitMethod(TraitMethodMetadata),
     CustomType(CustomTypeMetadata),
     UniffiTrait(UniffiTraitMetadata),
+    ObjectTraitImpl(ObjectTraitImplMetadata),
 }
 
 impl Metadata {
@@ -485,7 +509,7 @@ impl Metadata {
         read_metadata(data)
     }
 
-    pub(crate) fn module_path(&self) -> &String {
+    pub(crate) fn module_path(&self) -> &str {
         match self {
             Metadata::Namespace(meta) => &meta.crate_name,
             Metadata::UdlFile(meta) => &meta.module_path,
@@ -499,6 +523,7 @@ impl Metadata {
             Metadata::TraitMethod(meta) => &meta.module_path,
             Metadata::CustomType(meta) => &meta.module_path,
             Metadata::UniffiTrait(meta) => meta.module_path(),
+            Metadata::ObjectTraitImpl(t) => t.ty.module_path().expect("type has no module"),
         }
     }
 }
@@ -572,5 +597,11 @@ impl From<CustomTypeMetadata> for Metadata {
 impl From<UniffiTraitMetadata> for Metadata {
     fn from(v: UniffiTraitMetadata) -> Self {
         Self::UniffiTrait(v)
+    }
+}
+
+impl From<ObjectTraitImplMetadata> for Metadata {
+    fn from(t: ObjectTraitImplMetadata) -> Self {
+        Self::ObjectTraitImpl(t)
     }
 }

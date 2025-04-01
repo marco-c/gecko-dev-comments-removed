@@ -34,6 +34,8 @@ pub struct Ping<'a> {
     pub includes_info_sections: bool,
     
     pub schedules_pings: Vec<String>,
+    
+    pub uploader_capabilities: Vec<String>,
 }
 
 
@@ -334,6 +336,7 @@ impl PingMaker {
             headers: self.get_headers(glean),
             includes_info_sections: ping.include_info_sections(),
             schedules_pings: ping.schedules_pings().to_vec(),
+            uploader_capabilities: ping.uploader_capabilities().to_vec(),
         })
     }
 
@@ -392,6 +395,7 @@ impl PingMaker {
                 headers: Some(ping.headers.clone()),
                 body_has_info_sections: Some(ping.includes_info_sections),
                 ping_name: Some(ping.name.to_string()),
+                uploader_capabilities: Some(ping.uploader_capabilities.clone()),
             };
             file.write_all(::serde_json::to_string(&metadata)?.as_bytes())?;
         }

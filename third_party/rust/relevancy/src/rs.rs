@@ -4,7 +4,9 @@
 
 
 use crate::{Error, Result};
-use remote_settings::RemoteSettingsResponse;
+use remote_settings::{
+    RemoteSettings, RemoteSettingsConfig, RemoteSettingsResponse, RemoteSettingsServer,
+};
 use serde::Deserialize;
 
 pub(crate) const REMOTE_SETTINGS_COLLECTION: &str = "content-relevance";
@@ -31,6 +33,25 @@ impl RelevancyRemoteSettingsClient for remote_settings::RemoteSettings {
             self, location,
         )?)
     }
+}
+
+impl<T: RelevancyRemoteSettingsClient> RelevancyRemoteSettingsClient for &T {
+    fn get_records(&self) -> Result<RemoteSettingsResponse> {
+        (*self).get_records()
+    }
+
+    fn get_attachment(&self, location: &str) -> Result<Vec<u8>> {
+        (*self).get_attachment(location)
+    }
+}
+
+pub fn create_client() -> Result<RemoteSettings> {
+    Ok(RemoteSettings::new(RemoteSettingsConfig {
+        collection_name: REMOTE_SETTINGS_COLLECTION.to_string(),
+        server: Some(RemoteSettingsServer::Prod),
+        server_url: None,
+        bucket_name: None,
+    })?)
 }
 
 
@@ -82,4 +103,24 @@ pub fn from_json_slice<T: serde::de::DeserializeOwned>(value: &[u8]) -> Result<T
             error: e,
         })?;
     from_json(json_value)
+}
+
+#[cfg(test)]
+pub mod test {
+    use super::*;
+
+    
+    
+    
+    pub struct NullRelavancyRemoteSettingsClient;
+
+    impl RelevancyRemoteSettingsClient for NullRelavancyRemoteSettingsClient {
+        fn get_records(&self) -> Result<RemoteSettingsResponse> {
+            panic!("NullRelavancyRemoteSettingsClient::get_records was called")
+        }
+
+        fn get_attachment(&self, _location: &str) -> Result<Vec<u8>> {
+            panic!("NullRelavancyRemoteSettingsClient::get_records was called")
+        }
+    }
 }
