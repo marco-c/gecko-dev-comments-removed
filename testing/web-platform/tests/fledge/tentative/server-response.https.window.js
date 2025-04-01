@@ -26,6 +26,7 @@
 
 
 
+
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   const adA = createTrackerURL(window.location.origin, uuid, 'track_get', 'a');
@@ -556,12 +557,10 @@ subsetTest(promise_test, async test => {
       test,  true, msg => {msg.isChaff = false});
 }, 'Basic B&A auction - response marked as non-chaff');
 
-
-
-
-
-
-
+subsetTest(promise_test, async test => {
+  await BA.testWithMutatedServerResponse(
+      test,  false, msg => {msg.isChaff = 'yes'});
+}, 'Basic B&A auction - response marked as chaff incorrectly');
 
 subsetTest(promise_test, async test => {
   await BA.testWithMutatedServerResponse(
@@ -569,12 +568,10 @@ subsetTest(promise_test, async test => {
       msg => {msg.topLevelSeller = 'https://example.org/'});
 }, 'Basic B&A auction - incorrectly includes topLevelSeller');
 
-
-
-
-
-
-
+subsetTest(promise_test, async test => {
+  await BA.testWithMutatedServerResponse(
+      test,  false, msg => {msg.topLevelSeller = 1});
+}, 'Basic B&A auction - non-string top-level seller invalid');
 
 subsetTest(promise_test, async test => {
   await BA.testWithMutatedServerResponse(
@@ -582,12 +579,10 @@ subsetTest(promise_test, async test => {
       msg => {msg.topLevelSeller = 'http://example.org/'});
 }, 'Basic B&A auction - http:// topLevelSeller is bad, too');
 
-
-
-
-
-
-
+subsetTest(promise_test, async test => {
+  await BA.testWithMutatedServerResponse(
+      test,  false, msg => {msg.bid = '10 cents'});
+}, 'Basic B&A auction - non-number bid is invalid');
 
 subsetTest(promise_test, async test => {
   await BA.testWithMutatedServerResponse(
