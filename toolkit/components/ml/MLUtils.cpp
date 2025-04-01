@@ -28,39 +28,17 @@ namespace mozilla::ml {
 
 NS_IMPL_ISUPPORTS(MLUtils, nsIMLUtils)
 
+NS_IMETHODIMP MLUtils::GetTotalPhysicalMemory(uint64_t* _retval) {
+  *_retval = PR_GetPhysicalMemorySize();
+  return NS_OK;
+}
 
-
-
-NS_IMETHODIMP MLUtils::HasEnoughMemoryToInfer(uint64_t aModelSizeInMemory,
-                                              uint32_t aThresholdPercentage,
-                                              uint64_t aMinMemoryRequirement,
-                                              bool* _retval) {
-  
-  
-  uint64_t totalMemory = PR_GetPhysicalMemorySize();
-
-  if (totalMemory <= aMinMemoryRequirement) {
-    
-    *_retval = false;
-    return NS_OK;
-  }
-
-  
-  if (aThresholdPercentage <= 0 || aThresholdPercentage > 100) {
-    *_retval = false;
-    return NS_ERROR_FAILURE;  
-  }
-
-  
-  double threshold = static_cast<double>(aThresholdPercentage) / 100.0f;
-
-  
-  uint64_t availableResidentMemory = 0;
+NS_IMETHODIMP MLUtils::GetAvailablePhysicalMemory(uint64_t* _retval) {
 #if defined(XP_WIN)
   MEMORYSTATUSEX memStatus = {sizeof(memStatus)};
 
   if (GlobalMemoryStatusEx(&memStatus)) {
-    availableResidentMemory = memStatus.ullAvailPhys;
+    *_retval = memStatus.ullAvailPhys;
   } else {
     return NS_ERROR_FAILURE;
   }
@@ -76,11 +54,10 @@ NS_IMETHODIMP MLUtils::HasEnoughMemoryToInfer(uint64_t aModelSizeInMemory,
       host_statistics64(host_port, HOST_VM_INFO64,
                         reinterpret_cast<host_info64_t>(&vm_stats),
                         &count) != KERN_SUCCESS) {
-    *_retval = false;
     return NS_ERROR_FAILURE;
   }
 
-  availableResidentMemory =
+  *_retval =
       static_cast<uint64_t>(vm_stats.free_count + vm_stats.inactive_count) *
       page_size;
 #endif
@@ -88,15 +65,11 @@ NS_IMETHODIMP MLUtils::HasEnoughMemoryToInfer(uint64_t aModelSizeInMemory,
 #if defined(XP_LINUX)
   struct sysinfo memInfo{0};
   if (sysinfo(&memInfo) != 0) {
-    *_retval = false;
     return NS_ERROR_FAILURE;
   }
-  availableResidentMemory = memInfo.freeram * memInfo.mem_unit;
+  *_retval = memInfo.freeram * memInfo.mem_unit;
 #endif
 
-  
-  *_retval = AssertedCast<double>(aModelSizeInMemory) <=
-             AssertedCast<double>(availableResidentMemory) * threshold;
   return NS_OK;
 }
 

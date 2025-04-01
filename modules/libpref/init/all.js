@@ -3670,18 +3670,9 @@ pref("browser.ml.modelCacheTimeout", 120000);
 
 pref("browser.ml.minimumPhysicalMemory", 4);
 
-pref("browser.ml.defaultModelMemoryUsage", 1);
-
-pref("browser.ml.checkForMemory", false);
-
-pref("browser.ml.maximumMemoryPressure", 80);
-
-pref("browser.ml.queueWaitTimeout", 60);
-
-pref("browser.ml.queueWaitInterval", 1);
+pref("browser.ml.checkForMemory", true);
 
 pref("browser.ml.overridePipelineOptions", "{}");
-
 
 
 
