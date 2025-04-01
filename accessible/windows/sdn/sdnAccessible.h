@@ -8,7 +8,6 @@
 #define mozilla_a11y_sdnAccessible_h_
 
 #include "ISimpleDOM.h"
-#include "AccessibleWrap.h"
 #include "IUnknownImpl.h"
 #include "MsaaAccessible.h"
 
@@ -20,43 +19,8 @@ namespace a11y {
 
 class sdnAccessible final : public ISimpleDOMNode {
  public:
-  explicit sdnAccessible(nsINode* aNode) : mNode(aNode) {
-    if (!mNode) MOZ_CRASH();
-  }
-
-  explicit sdnAccessible(NotNull<MsaaAccessible*> aMsaa) : mMsaa(aMsaa) {
-    Accessible* acc = aMsaa->Acc();
-    MOZ_ASSERT(acc);
-    if (LocalAccessible* localAcc = acc->AsLocal()) {
-      mNode = localAcc->GetNode();
-    }
-  }
-
+  explicit sdnAccessible(NotNull<MsaaAccessible*> aMsaa) : mMsaa(aMsaa) {}
   ~sdnAccessible();
-
-  
-
-
-  bool IsDefunct() const {
-    if (mMsaa && !mMsaa->Acc()) {
-      return true;
-    }
-    if (!mNode) {
-      MOZ_ASSERT(mMsaa && mMsaa->Acc()->IsRemote());
-      return false;
-    }
-    return !GetDocument();
-  }
-
-  
-
-
-  DocAccessible* GetDocument() const;
-
-  
-
-
-  MsaaAccessible* GetMsaa();
 
   
   DECL_IUNKNOWN
@@ -127,8 +91,6 @@ class sdnAccessible final : public ISimpleDOMNode {
        BSTR __RPC_FAR* aLanguage);
 
  private:
-  
-  nsCOMPtr<nsINode> mNode;
   RefPtr<MsaaAccessible> mMsaa;
 };
 
