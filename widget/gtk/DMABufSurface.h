@@ -95,6 +95,8 @@ class DMABufSurface {
   constexpr static const char* sSurfaceTypeNames[] = {"RGBA", "YUV"};
 #endif
 
+  nsAutoCString GetDebugTag() const;
+
   
   
   
