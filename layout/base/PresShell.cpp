@@ -3939,6 +3939,11 @@ bool PresShell::ScrollFrameIntoView(
 
   nsIFrame* container = aTargetFrame;
 
+  bool inPositionFixedSubtree = false;
+  auto isPositionFixed = [&](const nsIFrame* aFrame) -> bool {
+    return aFrame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
+           nsLayoutUtils::IsReallyFixedPos(aFrame);
+  };
   
   nsRect rect = [&] {
     if (aKnownRectRelativeToTarget) {
@@ -3946,6 +3951,9 @@ bool PresShell::ScrollFrameIntoView(
     }
     MaybeSkipPaddingSides(aTargetFrame);
     while (nsIFrame* parent = container->GetParent()) {
+      if (isPositionFixed(container)) {
+        inPositionFixedSubtree = true;
+      }
       container = parent;
       if (container->IsScrollContainerOrSubclass()) {
         
@@ -3983,16 +3991,13 @@ bool PresShell::ScrollFrameIntoView(
 
     return targetFrameBounds;
   }();
-
   bool didScroll = false;
-  bool inPositionFixedSubtree = false;
   const nsIFrame* target = aTargetFrame;
   Maybe<nsPoint> rootScrollDestination;
   
   
   do {
-    if (container->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
-        nsLayoutUtils::IsReallyFixedPos(container)) {
+    if (isPositionFixed(container)) {
       inPositionFixedSubtree = true;
     }
 
