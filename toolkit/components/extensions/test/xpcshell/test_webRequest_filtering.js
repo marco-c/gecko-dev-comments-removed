@@ -79,7 +79,11 @@ async function openAndCloseContentPage() {
   
   
   
-  await contentPage.spawn([], () => content.windowUtils.clearStyleSheetCache());
+  await contentPage.spawn([], () => {
+    ChromeUtils.clearResourceCache({
+      types: ["stylesheet"],
+    });
+  });
   await contentPage.close();
 }
 

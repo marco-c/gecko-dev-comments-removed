@@ -123,10 +123,9 @@ add_task(async () => {
     );
 
     await contentPage.spawn([], () => {
-      
-      content.windowUtils.clearStyleSheetCache();
-      
-      content.windowUtils.clearScriptCache();
+      ChromeUtils.clearResourceCache({
+        types: ["stylesheet", "script"],
+      });
     });
 
     await contentPage.close();
