@@ -84,6 +84,12 @@ class AttrArray {
   BorrowedAttrInfo AttrInfoAt(uint32_t aPos) const;
 
   
+  
+  [[nodiscard]] bool GetSafeAttrNameAt(uint32_t aPos,
+                                       const nsAttrName** aResult) const;
+
+  
+  
   const nsAttrName* GetSafeAttrNameAt(uint32_t aPos) const;
 
   const nsAttrName* GetExistingAttrNameFromQName(const nsAString& aName) const;

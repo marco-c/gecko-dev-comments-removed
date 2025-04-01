@@ -1091,6 +1091,14 @@ class Element : public FragmentOrElement {
   
 
 
+  [[nodiscard]] bool GetAttrNameAt(uint32_t aIndex,
+                                   const nsAttrName** aResult) const {
+    return mAttrs.GetSafeAttrNameAt(aIndex, aResult);
+  }
+
+  
+
+
   BorrowedAttrInfo GetAttrInfoAt(uint32_t aIndex) const {
     if (aIndex >= mAttrs.AttrCount()) {
       return BorrowedAttrInfo(nullptr, nullptr);
