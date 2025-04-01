@@ -103,6 +103,18 @@ impl<T> Arena<T> {
     }
 
     
+    
+    pub fn iter_mut_span(
+        &mut self,
+    ) -> impl DoubleEndedIterator<Item = (Handle<T>, &mut T, &Span)> + ExactSizeIterator {
+        self.data
+            .iter_mut()
+            .zip(self.span_info.iter())
+            .enumerate()
+            .map(|(i, (v, span))| unsafe { (Handle::from_usize_unchecked(i), v, span) })
+    }
+
+    
     pub fn drain(&mut self) -> impl DoubleEndedIterator<Item = (Handle<T>, T, Span)> {
         let arena = core::mem::take(self);
         arena

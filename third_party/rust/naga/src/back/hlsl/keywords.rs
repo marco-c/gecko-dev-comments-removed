@@ -1,3 +1,7 @@
+use std::sync::LazyLock;
+
+use hashbrown::HashSet;
+
 
 
 
@@ -911,6 +915,22 @@ pub const TYPES: &[&str] = &{
 
     res
 };
+
+
+
+
+
+pub static RESERVED_SET: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+    let mut set = HashSet::default();
+    set.reserve(RESERVED.len() + TYPES.len());
+    for &word in RESERVED {
+        set.insert(word);
+    }
+    for &word in TYPES {
+        set.insert(word);
+    }
+    set
+});
 
 pub const RESERVED_PREFIXES: &[&str] = &[
     "__dynamic_buffer_offsets",

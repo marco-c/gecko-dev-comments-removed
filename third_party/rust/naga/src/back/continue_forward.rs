@@ -185,6 +185,7 @@ impl ContinueCtx {
     
     
     
+    #[allow(dead_code, reason = "only used by some backends")]
     pub fn clear(&mut self) {
         self.stack.clear();
     }

@@ -1,3 +1,7 @@
+use std::sync::LazyLock;
+
+use hashbrown::HashSet;
+
 pub const RESERVED_KEYWORDS: &[&str] = &[
     
     
@@ -490,3 +494,16 @@ pub const RESERVED_KEYWORDS: &[&str] = &[
     super::FREXP_FUNCTION,
     super::FIRST_INSTANCE_BINDING,
 ];
+
+
+
+
+
+pub static RESERVED_KEYWORD_SET: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+    let mut set = HashSet::default();
+    set.reserve(RESERVED_KEYWORDS.len());
+    for &word in RESERVED_KEYWORDS {
+        set.insert(word);
+    }
+    set
+});

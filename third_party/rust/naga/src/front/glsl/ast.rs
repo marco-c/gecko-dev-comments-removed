@@ -179,6 +179,8 @@ pub enum QualifierKey<'a> {
     Layout,
     
     Format,
+    
+    Index,
 }
 
 #[derive(Debug)]

@@ -2,28 +2,42 @@
 
 
 
-use crate::{front::wgsl::error::Error, Span};
+use crate::front::wgsl::{Error, Result};
+use crate::Span;
+
+use alloc::boxed::Box;
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct EnableExtensions {}
+pub struct EnableExtensions {
+    dual_source_blending: bool,
+    
+    f16: bool,
+}
 
 impl EnableExtensions {
     pub(crate) const fn empty() -> Self {
-        Self {}
+        Self {
+            f16: false,
+            dual_source_blending: false,
+        }
     }
 
     
-    #[allow(unreachable_code)]
     pub(crate) fn add(&mut self, ext: ImplementedEnableExtension) {
-        let _field: &mut bool = match ext {};
-        *_field = true;
+        let field = match ext {
+            ImplementedEnableExtension::DualSourceBlending => &mut self.dual_source_blending,
+            ImplementedEnableExtension::F16 => &mut self.f16,
+        };
+        *field = true;
     }
 
     
-    #[allow(unused)]
     pub(crate) const fn contains(&self, ext: ImplementedEnableExtension) -> bool {
-        match ext {}
+        match ext {
+            ImplementedEnableExtension::DualSourceBlending => self.dual_source_blending,
+            ImplementedEnableExtension::F16 => self.f16,
+        }
     }
 }
 
@@ -38,7 +52,6 @@ impl Default for EnableExtensions {
 
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
 pub enum EnableExtension {
-    #[allow(unused)]
     Implemented(ImplementedEnableExtension),
     Unimplemented(UnimplementedEnableExtension),
 }
@@ -55,27 +68,28 @@ impl EnableExtension {
     const DUAL_SOURCE_BLENDING: &'static str = "dual_source_blending";
 
     
-    pub(crate) fn from_ident(word: &str, span: Span) -> Result<Self, Error<'_>> {
+    pub(crate) fn from_ident(word: &str, span: Span) -> Result<Self> {
         Ok(match word {
-            Self::F16 => Self::Unimplemented(UnimplementedEnableExtension::F16),
+            Self::F16 => Self::Implemented(ImplementedEnableExtension::F16),
             Self::CLIP_DISTANCES => {
                 Self::Unimplemented(UnimplementedEnableExtension::ClipDistances)
             }
             Self::DUAL_SOURCE_BLENDING => {
-                Self::Unimplemented(UnimplementedEnableExtension::DualSourceBlending)
+                Self::Implemented(ImplementedEnableExtension::DualSourceBlending)
             }
-            _ => return Err(Error::UnknownEnableExtension(span, word)),
+            _ => return Err(Box::new(Error::UnknownEnableExtension(span, word))),
         })
     }
 
     
     pub const fn to_ident(self) -> &'static str {
         match self {
-            Self::Implemented(kind) => match kind {},
+            Self::Implemented(kind) => match kind {
+                ImplementedEnableExtension::DualSourceBlending => Self::DUAL_SOURCE_BLENDING,
+                ImplementedEnableExtension::F16 => Self::F16,
+            },
             Self::Unimplemented(kind) => match kind {
-                UnimplementedEnableExtension::F16 => Self::F16,
                 UnimplementedEnableExtension::ClipDistances => Self::CLIP_DISTANCES,
-                UnimplementedEnableExtension::DualSourceBlending => Self::DUAL_SOURCE_BLENDING,
             },
         }
     }
@@ -83,7 +97,20 @@ impl EnableExtension {
 
 
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
-pub enum ImplementedEnableExtension {}
+pub enum ImplementedEnableExtension {
+    
+    
+    
+    
+    
+    DualSourceBlending,
+    
+    
+    
+    
+    
+    F16,
+}
 
 
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
@@ -93,27 +120,13 @@ pub enum UnimplementedEnableExtension {
     
     
     
-    F16,
-    
-    
-    
-    
-    
     ClipDistances,
-    
-    
-    
-    
-    
-    DualSourceBlending,
 }
 
 impl UnimplementedEnableExtension {
     pub(crate) const fn tracking_issue_num(self) -> u16 {
         match self {
-            Self::F16 => 4384,
             Self::ClipDistances => 6236,
-            Self::DualSourceBlending => 6402,
         }
     }
 }

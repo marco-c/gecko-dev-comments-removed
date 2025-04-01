@@ -258,13 +258,6 @@ impl super::Instance {
         extensions.push(khr::surface::NAME);
 
         
-        extensions.push(khr::display::NAME);
-        extensions.push(ext::physical_device_drm::NAME);
-        extensions.push(khr::get_display_properties2::NAME);
-        extensions.push(ext::direct_mode_display::NAME);
-        extensions.push(ext::acquire_drm_display::NAME);
-
-        
         if cfg!(all(
             unix,
             not(target_os = "android"),
@@ -289,6 +282,19 @@ impl super::Instance {
             
             extensions.push(ext::metal_surface::NAME);
             extensions.push(khr::portability_enumeration::NAME);
+        }
+        if cfg!(all(
+            unix,
+            not(target_vendor = "apple"),
+            not(target_family = "wasm")
+        )) {
+            
+            extensions.push(ext::acquire_drm_display::NAME);
+            extensions.push(ext::direct_mode_display::NAME);
+            extensions.push(khr::display::NAME);
+            
+            extensions.push(ext::physical_device_drm::NAME);
+            extensions.push(khr::get_display_properties2::NAME);
         }
 
         if flags.contains(wgt::InstanceFlags::DEBUG) {

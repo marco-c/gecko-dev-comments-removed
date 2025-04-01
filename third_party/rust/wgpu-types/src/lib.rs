@@ -16,7 +16,9 @@ extern crate alloc;
 
 use alloc::{string::String, vec, vec::Vec};
 use core::{
+    fmt,
     hash::{Hash, Hasher},
+    mem,
     num::NonZeroU32,
     ops::Range,
 };
@@ -39,11 +41,27 @@ pub use features::*;
 pub use instance::*;
 
 
+
+
 pub type BufferAddress = u64;
+
+
+
+
+
+
+
 
 pub type BufferSize = core::num::NonZeroU64;
 
+
+
+
+
+
 pub type ShaderLocation = u32;
+
+
 
 pub type DynamicOffset = u32;
 
@@ -53,19 +71,39 @@ pub type DynamicOffset = u32;
 
 
 
+
 pub const COPY_BYTES_PER_ROW_ALIGNMENT: u32 = 256;
+
+
+
 
 pub const QUERY_RESOLVE_BUFFER_ALIGNMENT: BufferAddress = 256;
 
+
 pub const COPY_BUFFER_ALIGNMENT: BufferAddress = 4;
+
+
+
+
+
+
 
 pub const MAP_ALIGNMENT: BufferAddress = 8;
 
+
+
+
 pub const VERTEX_STRIDE_ALIGNMENT: BufferAddress = 4;
+
+
 
 pub const PUSH_CONSTANT_ALIGNMENT: u32 = 4;
 
+
 pub const QUERY_SET_MAX_QUERIES: u32 = 4096;
+
+
+
 
 pub const QUERY_SIZE: u32 = 8;
 
@@ -110,6 +148,16 @@ pub enum Backend {
 }
 
 impl Backend {
+    
+    pub const ALL: [Backend; Backends::all().bits().count_ones() as usize] = [
+        Self::Noop,
+        Self::Vulkan,
+        Self::Metal,
+        Self::Dx12,
+        Self::Gl,
+        Self::BrowserWebGpu,
+    ];
+
     
     #[must_use]
     pub const fn to_str(self) -> &'static str {
@@ -309,6 +357,88 @@ impl<S> Default for RequestAdapterOptions<S> {
             force_fallback_adapter: false,
             compatible_surface: None,
         }
+    }
+}
+
+
+
+
+
+
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum RequestAdapterError {
+    
+    NotFound {
+        
+        
+        #[doc(hidden)]
+        active_backends: Backends,
+        #[doc(hidden)]
+        requested_backends: Backends,
+        #[doc(hidden)]
+        supported_backends: Backends,
+        #[doc(hidden)]
+        no_fallback_backends: Backends,
+        #[doc(hidden)]
+        no_adapter_backends: Backends,
+        #[doc(hidden)]
+        incompatible_surface_backends: Backends,
+    },
+
+    
+    
+    EnvNotSet,
+}
+
+impl core::error::Error for RequestAdapterError {}
+impl fmt::Display for RequestAdapterError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RequestAdapterError::NotFound {
+                active_backends,
+                requested_backends,
+                supported_backends,
+                no_fallback_backends,
+                no_adapter_backends,
+                incompatible_surface_backends,
+            } => {
+                write!(f, "No suitable graphics adapter found; ")?;
+                let mut first = true;
+                for backend in Backend::ALL {
+                    let bit = Backends::from(backend);
+                    let comma = if mem::take(&mut first) { "" } else { ", " };
+                    let explanation = if !requested_backends.contains(bit) {
+                        
+                        
+                        
+                        "not requested"
+                    } else if !supported_backends.contains(bit) {
+                        "support not compiled in"
+                    } else if no_adapter_backends.contains(bit) {
+                        "found no adapters"
+                    } else if incompatible_surface_backends.contains(bit) {
+                        "not compatible with provided surface"
+                    } else if no_fallback_backends.contains(bit) {
+                        "had no fallback adapters"
+                    } else if !active_backends.contains(bit) {
+                        
+                        if backend == Backend::Noop {
+                            "not explicitly enabled"
+                        } else {
+                            "drivers/libraries could not be loaded"
+                        }
+                    } else {
+                        
+                        "[unknown reason]"
+                    };
+                    write!(f, "{comma}{backend} {explanation}")?;
+                }
+            }
+            RequestAdapterError::EnvNotSet => f.write_str("WGPU_ADAPTER_NAME not set")?,
+        }
+        Ok(())
     }
 }
 
@@ -1112,6 +1242,9 @@ pub struct DeviceDescriptor<L> {
     pub required_limits: Limits,
     
     pub memory_hints: MemoryHints,
+    
+    
+    pub trace: Trace,
 }
 
 impl<L> DeviceDescriptor<L> {
@@ -1123,8 +1256,29 @@ impl<L> DeviceDescriptor<L> {
             required_features: self.required_features,
             required_limits: self.required_limits.clone(),
             memory_hints: self.memory_hints.clone(),
+            trace: self.trace.clone(),
         }
     }
+}
+
+
+
+
+
+#[derive(Clone, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+
+#[non_exhaustive]
+pub enum Trace {
+    
+    #[default]
+    Off,
+
+    
+    #[cfg(feature = "trace")]
+    
+    
+    Directory(std::path::PathBuf),
 }
 
 bitflags::bitflags! {
@@ -1151,6 +1305,10 @@ bitflags::bitflags! {
         const COMPUTE = 1 << 2;
         /// Binding is visible from the vertex and fragment shaders of a render pipeline.
         const VERTEX_FRAGMENT = Self::VERTEX.bits() | Self::FRAGMENT.bits();
+        /// Binding is visible from the task shader of a mesh pipeline
+        const TASK = 1 << 3;
+        /// Binding is visible from the mesh shader of a mesh pipeline
+        const MESH = 1 << 4;
     }
 }
 
@@ -1738,6 +1896,21 @@ pub enum AstcChannel {
     
     Hdr,
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4563,6 +4736,9 @@ pub enum VertexStepMode {
 
 
 
+
+
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -5682,6 +5858,9 @@ fn test_max_mips() {
 
 
 
+
+
+
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct TextureViewDescriptor<L> {
     
@@ -5900,6 +6079,11 @@ impl<L: Default> Default for SamplerDescriptor<L> {
         }
     }
 }
+
+
+
+
+
 
 
 
@@ -6362,6 +6546,10 @@ pub enum SamplerBindingType {
     
     Comparison,
 }
+
+
+
+
 
 
 
@@ -6957,6 +7145,8 @@ impl<L> QuerySetDescriptor<L> {
 
 
 
+
+
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum QueryType {
@@ -6984,14 +7174,16 @@ pub enum QueryType {
 }
 
 bitflags::bitflags! {
-    /// Flags for which pipeline data should be recorded.
+    /// Flags for which pipeline data should be recorded in a query.
+    ///
+    /// Used in [`QueryType`].
     ///
     /// The amount of values written when resolved depends
-    /// on the amount of flags. If 3 flags are enabled, 3
-    /// 64-bit values will be written per-query.
+    /// on the amount of flags set. For example, if 3 flags are set, 3
+    /// 64-bit values will be written per query.
     ///
     /// The order they are written is the order they are declared
-    /// in this bitflags. If you enabled `CLIPPER_PRIMITIVES_OUT`
+    /// in these bitflags. For example, if you enabled `CLIPPER_PRIMITIVES_OUT`
     
     
     

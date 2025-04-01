@@ -1,3 +1,7 @@
+use std::sync::LazyLock;
+
+use hashbrown::HashSet;
+
 
 
 
@@ -347,3 +351,16 @@ pub const RESERVED: &[&str] = &[
     super::writer::NEG_FUNCTION,
     super::writer::ARGUMENT_BUFFER_WRAPPER_STRUCT,
 ];
+
+
+
+
+
+pub static RESERVED_SET: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+    let mut set = HashSet::default();
+    set.reserve(RESERVED.len());
+    for &word in RESERVED {
+        set.insert(word);
+    }
+    set
+});

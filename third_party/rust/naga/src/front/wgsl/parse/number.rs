@@ -1,7 +1,9 @@
 use alloc::format;
 
 use crate::front::wgsl::error::NumberError;
+use crate::front::wgsl::parse::directive::enable_extension::ImplementedEnableExtension;
 use crate::front::wgsl::parse::lexer::Token;
+use half::f16;
 
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -19,9 +21,20 @@ pub enum Number {
     
     U64(u64),
     
+    F16(f16),
+    
     F32(f32),
     
     F64(f64),
+}
+
+impl Number {
+    pub(super) const fn requires_enable_extension(&self) -> Option<ImplementedEnableExtension> {
+        match *self {
+            Number::F16(_) => Some(ImplementedEnableExtension::F16),
+            _ => None,
+        }
+    }
 }
 
 pub(in crate::front::wgsl) fn consume_number(input: &str) -> (Token<'_>, &str) {
@@ -369,7 +382,8 @@ fn parse_hex_float(input: &str, kind: Option<FloatKind>) -> Result<Number, Numbe
             
             _ => Err(NumberError::NotRepresentable),
         },
-        Some(FloatKind::F16) => Err(NumberError::UnimplementedF16),
+        
+        Some(FloatKind::F16) => Err(NumberError::NotRepresentable),
         Some(FloatKind::F32) => match hexf_parse::parse_hexf32(input, false) {
             Ok(num) => Ok(Number::F32(num)),
             
@@ -405,7 +419,12 @@ fn parse_dec_float(input: &str, kind: Option<FloatKind>) -> Result<Number, Numbe
                 .then_some(Number::F64(num))
                 .ok_or(NumberError::NotRepresentable)
         }
-        Some(FloatKind::F16) => Err(NumberError::UnimplementedF16),
+        Some(FloatKind::F16) => {
+            let num = input.parse::<f16>().unwrap(); 
+            num.is_finite()
+                .then_some(Number::F16(num))
+                .ok_or(NumberError::NotRepresentable)
+        }
     }
 }
 
