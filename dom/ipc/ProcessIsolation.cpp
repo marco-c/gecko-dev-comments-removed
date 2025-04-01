@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/ProcessIsolation.h"
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
@@ -1176,6 +1177,12 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
   
   if (aPrincipal->IsSystemPrincipal()) {
     return aOptions.contains(ValidatePrincipalOptions::AllowSystem);
+  }
+
+  
+  
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownFinal)) {
+    return true;
   }
 
   
