@@ -3,132 +3,162 @@
 
 
 
-
-
-
-async function generateAltText(targetElementId) {
-  const { altTextModal } = window;
-  try {
-    const imageUrl = browser.menus.getTargetElement(targetElementId).src;
-    altTextModal.updateText("Running inference...");
-
-    const res = await browser.trial.ml.runEngine({
-      args: [imageUrl],
-    });
-    altTextModal.updateText(res[0].generated_text);
-  } catch (err) {
-    altTextModal.updateText(`${err}`);
-  }
-}
+"use strict";
 
 
 
 
-async function _displayMessage(message) {
-  const { altTextModal } = window;
-  altTextModal.updateText(message);
-}
-
-
-
-
-async function displayMessage(tab, message) {
+const displayMessage = async (tabId, message) => {
   await browser.scripting.executeScript({
-    target: {
-      tabId: tab.id,
+    target: { tabId },
+    func: message => {
+      const { altTextModal } = window;
+      altTextModal.updateText(message);
     },
-    func: _displayMessage.bind(null, message),
+    args: [message],
   });
-}
-
-
-const firstRunOnTab = new Map();
+};
 
 
 
 
 
 
+const ensureEngineIsReady = async tabId => {
+  const { engineCreated } = await browser.storage.session.get({
+    engineCreated: false,
+  });
 
-function setFirstRun(tabId, isFirstRun) {
-  firstRunOnTab.set(tabId, isFirstRun);
-}
-
-
-
-
-
-
-
-
-function isFirstRun(tabId) {
-  return firstRunOnTab.get(tabId) !== false;
-}
-
-
-
-
-
-
-function clearFirstRun(tabId) {
-  firstRunOnTab.delete(tabId);
-}
-
-async function onclick(info, tab) {
-  if (isFirstRun(tab.id)) {
-    browser.tabs.insertCSS(tab.id, {
-      file: "./alt-text-modal.css",
-    });
+  if (engineCreated) {
+    return;
   }
 
   const listener = progressData => {
-    browser.tabs.sendMessage(tab.id, progressData);
+    browser.tabs.sendMessage(tabId, progressData);
   };
-
   browser.trial.ml.onProgress.addListener(listener);
 
   try {
-    if (isFirstRun(tab.id)) {
-      
-      await browser.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ["./content-script.js"],
-      });
-
-      await displayMessage(tab, "Initializing...");
-      try {
-        await browser.trial.ml.createEngine({
-          modelHub: "mozilla",
-          taskName: "image-to-text",
-        });
-      } catch (err) {
-        await displayMessage(tab, `${err}`);
-        return;
-      }
-    }
-    
-    await browser.scripting.executeScript({
-      target: {
-        tabId: tab.id,
-      },
-      func: generateAltText,
-      args: [info.targetElementId],
+    await displayMessage(tabId, "Initializing...");
+    await browser.trial.ml.createEngine({
+      modelHub: "mozilla",
+      taskName: "image-to-text",
     });
+    browser.storage.session.set({ engineCreated: true });
+  } catch (err) {
+    await displayMessage(tabId, `${err}`);
   } finally {
     browser.trial.ml.onProgress.removeListener(listener);
-    setFirstRun(tab.id, false);
   }
+};
+
+
+
+
+
+const generateAltText = async (tabId, imageUrl) => {
+  const [{ result: hasAltTextModal }] = await browser.scripting.executeScript({
+    target: { tabId },
+    func: () => {
+      return typeof window.altTextModal !== "undefined";
+    },
+  });
+
+  if (!hasAltTextModal) {
+    
+    await browser.scripting.insertCSS({
+      target: { tabId },
+      files: ["./alt-text-modal.css"],
+    });
+    await browser.scripting.executeScript({
+      target: { tabId },
+      files: ["./alt-text-modal.js"],
+    });
+  }
+
+  try {
+    
+    await ensureEngineIsReady(tabId);
+
+    
+    await browser.scripting.executeScript({
+      target: { tabId },
+      func: async imageUrl => {
+        const { altTextModal } = window;
+        try {
+          altTextModal.updateText("Running inference...");
+
+          const res = await browser.trial.ml.runEngine({
+            args: [imageUrl],
+          });
+          altTextModal.updateText(res[0].generated_text);
+        } catch (err) {
+          altTextModal.updateText(`${err}`);
+        }
+      },
+      args: [imageUrl],
+    });
+  } catch (err) {
+    console.warn(err);
+  }
+};
+
+
+
+
+if ("menus" in browser) {
+  
+  
+  browser.menus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId !== "generate-alt-text" || !info.srcUrl) {
+      return;
+    }
+
+    generateAltText(tab.id, info.srcUrl);
+  });
+} else {
+  
+  
+  
+  
+  
+  
+  browser.runtime.onMessage.addListener((msg, sender) => {
+    if (msg.type !== "generate-alt-text") {
+      return;
+    }
+
+    generateAltText(sender.tab.id, msg.data.url);
+  });
 }
 
-browser.menus.create({
-  title: "✨ Generate Alt Text",
-  documentUrlPatterns: ["*://*/*"],
-  contexts: ["image"],
-  onclick,
-});
+browser.runtime.onInstalled.addListener(async () => {
+  if ("menus" in browser) {
+    await browser.menus.create({
+      id: "generate-alt-text",
+      title: "✨ Generate Alt Text",
+      contexts: ["image"],
+    });
+  } else {
+    const scripts = await browser.scripting.getRegisteredContentScripts();
+    if (!scripts.some(script => script.id === "contextmenu-shim")) {
+      await browser.scripting.registerContentScripts([
+        {
+          id: "contextmenu-shim",
+          js: ["./contextmenu-shim.js"],
+          matches: ["<all_urls>"],
+        },
+      ]);
+    }
+  }
 
-browser.permissions.contains({ permissions: ["trialML"] }).then(granted => {
+  const granted = await browser.permissions.contains({
+    permissions: ["trialML"],
+  });
+
   if (!granted) {
+    
+    
     browser.tabs.create({ url: browser.runtime.getURL("settings.html") });
   }
 });

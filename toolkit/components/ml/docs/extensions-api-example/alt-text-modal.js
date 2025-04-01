@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* globals browser */
 
 class AltTextModal {
   constructor() {
@@ -71,18 +71,18 @@ class AltTextModal {
     const progressPercentage = Math.round(data.progress) || 100;
     let progressBarContainer = document.getElementById(dataId);
 
-    
+    // Create a new progress bar container if it doesn't exist
     if (!progressBarContainer) {
       progressBarContainer = document.createElement("div");
       progressBarContainer.id = dataId;
       progressBarContainer.className = "progress-bar-container";
 
-      
+      // Create the label
       const label = document.createElement("div");
       label.textContent = data.metadata.file;
       progressBarContainer.appendChild(label);
 
-      
+      // Create the progress bar
       const progressBar = document.createElement("div");
       progressBar.className = "progress-bar";
 
@@ -93,17 +93,17 @@ class AltTextModal {
       progressBar.appendChild(progressBarFill);
       progressBarContainer.appendChild(progressBar);
 
-      
+      // Add the progress bar container to the modal
       this.modal.appendChild(progressBarContainer);
     } else {
-      
+      // Update the existing progress bar
       const progressBarFill =
         progressBarContainer.querySelector(".progress-bar-fill");
       progressBarFill.style.width = `${progressPercentage}%`;
       progressBarFill.textContent = `${progressPercentage}%`;
     }
 
-    
+    // Remove the progress bar when it reaches 100% or more
     if (progressBarContainer && progressPercentage >= 100) {
       this.modal.removeChild(progressBarContainer);
     }
