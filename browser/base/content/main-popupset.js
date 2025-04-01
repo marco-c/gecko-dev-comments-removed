@@ -8,12 +8,6 @@
 document.addEventListener(
   "DOMContentLoaded",
   () => {
-    const lazy = {};
-    ChromeUtils.defineESModuleGetters(lazy, {
-      TabGroupMetrics:
-        "moz-src:///browser/components/tabbrowser/TabGroupMetrics.sys.mjs",
-    });
-
     let mainPopupSet = document.getElementById("mainPopupSet");
     
     mainPopupSet.addEventListener("command", event => {
@@ -136,11 +130,7 @@ document.addEventListener(
             let tabGroup = gBrowser.getTabGroupById(tabGroupId);
             
             
-            tabGroup.ownerGlobal.gBrowser.removeTabGroup(tabGroup, {
-              isUserTriggered: true,
-              telemetrySource:
-                lazy.TabGroupMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU,
-            });
+            tabGroup.ownerGlobal.gBrowser.removeTabGroup(tabGroup);
           }
           break;
 
