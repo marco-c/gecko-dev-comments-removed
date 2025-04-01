@@ -3935,16 +3935,8 @@ class nsDisplayBorder : public nsPaintedDisplayItem {
 
 
 
-
-
-
-
-class nsDisplaySolidColorBase : public nsPaintedDisplayItem {
+class nsDisplaySolidColor final : public nsPaintedDisplayItem {
  public:
-  nsDisplaySolidColorBase(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                          nscolor aColor)
-      : nsPaintedDisplayItem(aBuilder, aFrame), mColor(aColor) {}
-
   nsDisplayItemGeometry* AllocateGeometry(
       nsDisplayListBuilder* aBuilder) override {
     return new nsDisplaySolidColorGeometry(this, aBuilder, mColor);
@@ -3977,18 +3969,12 @@ class nsDisplaySolidColorBase : public nsPaintedDisplayItem {
     return Some(mColor);
   }
 
- protected:
-  nscolor mColor;
-};
-
-class nsDisplaySolidColor final : public nsDisplaySolidColorBase {
- public:
   nsDisplaySolidColor(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                       const nsRect& aBounds, nscolor aColor,
                       bool aCanBeReused = true)
-      : nsDisplaySolidColorBase(aBuilder, aFrame, aColor),
-        mBounds(aBounds),
-        mIsCheckerboardBackground(false) {
+      : nsPaintedDisplayItem(aBuilder, aFrame),
+        mColor(aColor),
+        mBounds(aBounds) {
     NS_ASSERTION(NS_GET_A(aColor) > 0,
                  "Don't create invisible nsDisplaySolidColors!");
     MOZ_COUNT_CTOR(nsDisplaySolidColor);
@@ -4015,15 +4001,16 @@ class nsDisplaySolidColor final : public nsDisplaySolidColorBase {
     if (mOverrideZIndex) {
       return mOverrideZIndex.value();
     }
-    return nsDisplaySolidColorBase::ZIndex();
+    return nsPaintedDisplayItem::ZIndex();
   }
 
   void SetOverrideZIndex(int32_t aZIndex) { mOverrideZIndex = Some(aZIndex); }
 
  private:
+  nscolor mColor;
   nsRect mBounds;
-  bool mIsCheckerboardBackground;
   Maybe<int32_t> mOverrideZIndex;
+  bool mIsCheckerboardBackground = false;
 };
 
 
