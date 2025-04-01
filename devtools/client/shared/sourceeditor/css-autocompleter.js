@@ -1265,8 +1265,30 @@ class CSSCompleter {
       );
 
       line = caret.line;
-      limitedSource = originalLimitedSource;
-      const end = traverseForward(forwState => forwState != CSS_STATES.value);
+
+      
+      const remainingSource = source.substring(originalLimitedSource.length);
+      const parser = new InspectorCSSParser(remainingSource);
+      let end;
+      while (true) {
+        const token = parser.nextToken();
+        if (
+          !token ||
+          token.tokenType === "Semicolon" ||
+          token.tokenType === "CloseCurlyBracket"
+        ) {
+          
+          
+          end = {
+            line: parser.lineNumber + line,
+            ch: parser.columnNumber,
+          };
+          if (end.line === line) {
+            end.ch = end.ch + ch;
+          }
+          break;
+        }
+      }
 
       let value = sourceArray.slice(start.line, end.line + 1);
       value[value.length - 1] = value[value.length - 1].substring(0, end.ch);
