@@ -21,6 +21,42 @@ namespace mozilla::webgpu {
 GPU_IMPL_CYCLE_COLLECTION(AdapterInfo, mParent)
 GPU_IMPL_JS_WRAP(AdapterInfo)
 
+uint32_t AdapterInfo::SubgroupMinSize() const {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  return 4;
+}
+
+uint32_t AdapterInfo::SubgroupMaxSize() const {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  return 128;
+}
+
 bool AdapterInfo::IsFallbackAdapter() const {
   if (GetParentObject()->ShouldResistFingerprinting(
           RFPTarget::WebGPUIsFallbackAdapter)) {
@@ -183,6 +219,11 @@ struct FeatureImplementationStatus {
         
         return unimplemented(
             "https://bugzilla.mozilla.org/show_bug.cgi?id=1924328");
+
+      case dom::GPUFeatureName::Subgroups:
+        
+        return unimplemented(
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=1955417");
     }
     MOZ_CRASH("Bad GPUFeatureName.");
   }
