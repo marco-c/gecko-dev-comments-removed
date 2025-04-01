@@ -470,11 +470,19 @@ class nsCSPDirective {
                       const nsAString& aHashOrNonce) const;
   bool allowsAllInlineBehavior(CSPDirective aDir) const;
 
+  void getTrustedTypesDirectiveExpressions(
+      nsTArray<nsString>& outExpressions) const;
+
   
   
   bool ShouldCreateViolationForNewTrustedTypesPolicy(
       const nsAString& aPolicyName,
       const nsTArray<nsString>& aCreatedPolicyNames) const;
+
+  static bool ShouldCreateViolationForNewTrustedTypesPolicy(
+      const nsTArray<nsString>& aTrustedTypesDirectiveExpressions,
+      const nsAString& aPolicyName,
+      const nsTArray<nsString>& aCreatedPolicyNames);
 
   
   
@@ -740,6 +748,9 @@ class nsCSPPolicy {
   bool visitDirectiveSrcs(CSPDirective aDir, nsCSPSrcVisitor* aVisitor) const;
 
   bool allowsAllInlineBehavior(CSPDirective aDir) const;
+
+  void getTrustedTypesDirectiveExpressions(
+      nsTArray<nsString>& outExpressions) const;
 
   
 
