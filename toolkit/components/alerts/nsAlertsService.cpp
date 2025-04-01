@@ -253,7 +253,8 @@ NS_IMETHODIMP nsAlertsService::Teardown() {
     backend = mBackend;
   }
   if (!backend) {
-    backend = nsXULAlerts::GetInstance();
+    
+    return NS_OK;
   }
   return backend->Teardown();
 }
