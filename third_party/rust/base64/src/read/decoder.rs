@@ -1,4 +1,4 @@
-use crate::{engine::Engine, DecodeError, PAD_BYTE};
+use crate::{engine::Engine, DecodeError, DecodeSliceError, PAD_BYTE};
 use std::{cmp, fmt, io};
 
 
@@ -46,26 +46,28 @@ pub struct DecoderReader<'e, E: Engine, R: io::Read> {
     
     
     
-    decoded_buffer: [u8; DECODED_CHUNK_SIZE],
+    decoded_chunk_buffer: [u8; DECODED_CHUNK_SIZE],
     
     decoded_offset: usize,
     
     decoded_len: usize,
     
-    total_b64_decoded: usize,
+    
+    input_consumed_len: usize,
     
     padding_offset: Option<usize>,
 }
+
 
 impl<'e, E: Engine, R: io::Read> fmt::Debug for DecoderReader<'e, E, R> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("DecoderReader")
             .field("b64_offset", &self.b64_offset)
             .field("b64_len", &self.b64_len)
-            .field("decoded_buffer", &self.decoded_buffer)
+            .field("decoded_chunk_buffer", &self.decoded_chunk_buffer)
             .field("decoded_offset", &self.decoded_offset)
             .field("decoded_len", &self.decoded_len)
-            .field("total_b64_decoded", &self.total_b64_decoded)
+            .field("input_consumed_len", &self.input_consumed_len)
             .field("padding_offset", &self.padding_offset)
             .finish()
     }
@@ -80,10 +82,10 @@ impl<'e, E: Engine, R: io::Read> DecoderReader<'e, E, R> {
             b64_buffer: [0; BUF_SIZE],
             b64_offset: 0,
             b64_len: 0,
-            decoded_buffer: [0; DECODED_CHUNK_SIZE],
+            decoded_chunk_buffer: [0; DECODED_CHUNK_SIZE],
             decoded_offset: 0,
             decoded_len: 0,
-            total_b64_decoded: 0,
+            input_consumed_len: 0,
             padding_offset: None,
         }
     }
@@ -100,7 +102,7 @@ impl<'e, E: Engine, R: io::Read> DecoderReader<'e, E, R> {
         debug_assert!(copy_len <= self.decoded_len);
 
         buf[..copy_len].copy_from_slice(
-            &self.decoded_buffer[self.decoded_offset..self.decoded_offset + copy_len],
+            &self.decoded_chunk_buffer[self.decoded_offset..self.decoded_offset + copy_len],
         );
 
         self.decoded_offset += copy_len;
@@ -131,6 +133,10 @@ impl<'e, E: Engine, R: io::Read> DecoderReader<'e, E, R> {
     
     
     
+    
+    
+    
+    
     fn decode_to_buf(&mut self, b64_len_to_decode: usize, buf: &mut [u8]) -> io::Result<usize> {
         debug_assert!(self.b64_len >= b64_len_to_decode);
         debug_assert!(self.b64_offset + self.b64_len <= BUF_SIZE);
@@ -144,22 +150,35 @@ impl<'e, E: Engine, R: io::Read> DecoderReader<'e, E, R> {
                 buf,
                 self.engine.internal_decoded_len_estimate(b64_len_to_decode),
             )
-            .map_err(|e| match e {
-                DecodeError::InvalidByte(offset, byte) => {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    DecodeError::InvalidByte(self.total_b64_decoded + offset, byte)
+            .map_err(|dse| match dse {
+                DecodeSliceError::DecodeError(de) => {
+                    match de {
+                        DecodeError::InvalidByte(offset, byte) => {
+                            match (byte, self.padding_offset) {
+                                
+                                
+                                
+                                
+                                (PAD_BYTE, Some(first_pad_offset)) => {
+                                    DecodeError::InvalidByte(first_pad_offset, PAD_BYTE)
+                                }
+                                _ => {
+                                    DecodeError::InvalidByte(self.input_consumed_len + offset, byte)
+                                }
+                            }
+                        }
+                        DecodeError::InvalidLength(len) => {
+                            DecodeError::InvalidLength(self.input_consumed_len + len)
+                        }
+                        DecodeError::InvalidLastSymbol(offset, byte) => {
+                            DecodeError::InvalidLastSymbol(self.input_consumed_len + offset, byte)
+                        }
+                        DecodeError::InvalidPadding => DecodeError::InvalidPadding,
+                    }
                 }
-                DecodeError::InvalidLength => DecodeError::InvalidLength,
-                DecodeError::InvalidLastSymbol(offset, byte) => {
-                    DecodeError::InvalidLastSymbol(self.total_b64_decoded + offset, byte)
+                DecodeSliceError::OutputSliceTooSmall => {
+                    unreachable!("buf is sized correctly in calling code")
                 }
-                DecodeError::InvalidPadding => DecodeError::InvalidPadding,
             })
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
@@ -176,8 +195,8 @@ impl<'e, E: Engine, R: io::Read> DecoderReader<'e, E, R> {
 
         self.padding_offset = self.padding_offset.or(decode_metadata
             .padding_offset
-            .map(|offset| self.total_b64_decoded + offset));
-        self.total_b64_decoded += b64_len_to_decode;
+            .map(|offset| self.input_consumed_len + offset));
+        self.input_consumed_len += b64_len_to_decode;
         self.b64_offset += b64_len_to_decode;
         self.b64_len -= b64_len_to_decode;
 
@@ -283,7 +302,7 @@ impl<'e, E: Engine, R: io::Read> io::Read for DecoderReader<'e, E, R> {
                 let to_decode = cmp::min(self.b64_len, BASE64_CHUNK_SIZE);
 
                 let decoded = self.decode_to_buf(to_decode, &mut decoded_chunk[..])?;
-                self.decoded_buffer[..decoded].copy_from_slice(&decoded_chunk[..decoded]);
+                self.decoded_chunk_buffer[..decoded].copy_from_slice(&decoded_chunk[..decoded]);
 
                 self.decoded_offset = 0;
                 self.decoded_len = decoded;

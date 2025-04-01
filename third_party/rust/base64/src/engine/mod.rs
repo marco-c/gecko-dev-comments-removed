@@ -1,14 +1,14 @@
 
-#[cfg(any(feature = "alloc", feature = "std", test))]
+#[cfg(any(feature = "alloc", test))]
 use crate::chunked_encoder;
 use crate::{
     encode::{encode_with_padding, EncodeSliceError},
     encoded_len, DecodeError, DecodeSliceError,
 };
-#[cfg(any(feature = "alloc", feature = "std", test))]
+#[cfg(any(feature = "alloc", test))]
 use alloc::vec::Vec;
 
-#[cfg(any(feature = "alloc", feature = "std", test))]
+#[cfg(any(feature = "alloc", test))]
 use alloc::{string::String, vec};
 
 pub mod general_purpose;
@@ -83,17 +83,13 @@ pub trait Engine: Send + Sync {
     
     
     
-    
-    
-    
-    
     #[doc(hidden)]
     fn internal_decode(
         &self,
         input: &[u8],
         output: &mut [u8],
         decode_estimate: Self::DecodeEstimate,
-    ) -> Result<DecodeMetadata, DecodeError>;
+    ) -> Result<DecodeMetadata, DecodeSliceError>;
 
     
     fn config(&self) -> &Self::Config;
@@ -113,7 +109,8 @@ pub trait Engine: Send + Sync {
     
     
     
-    #[cfg(any(feature = "alloc", feature = "std", test))]
+    
+    #[cfg(any(feature = "alloc", test))]
     #[inline]
     fn encode<T: AsRef<[u8]>>(&self, input: T) -> String {
         fn inner<E>(engine: &E, input_bytes: &[u8]) -> String
@@ -153,7 +150,7 @@ pub trait Engine: Send + Sync {
     
     
     
-    #[cfg(any(feature = "alloc", feature = "std", test))]
+    #[cfg(any(feature = "alloc", test))]
     #[inline]
     fn encode_string<T: AsRef<[u8]>>(&self, input: T, output_buf: &mut String) {
         fn inner<E>(engine: &E, input_bytes: &[u8], output_buf: &mut String)
@@ -178,7 +175,8 @@ pub trait Engine: Send + Sync {
     
     
     
-    
+    #[cfg_attr(feature = "alloc", doc = "```")]
+    #[cfg_attr(not(feature = "alloc"), doc = "```ignore")]
     
     
     
@@ -241,7 +239,7 @@ pub trait Engine: Send + Sync {
     
     
     
-    #[cfg(any(feature = "alloc", feature = "std", test))]
+    #[cfg(any(feature = "alloc", test))]
     #[inline]
     fn decode<T: AsRef<[u8]>>(&self, input: T) -> Result<Vec<u8>, DecodeError> {
         fn inner<E>(engine: &E, input_bytes: &[u8]) -> Result<Vec<u8>, DecodeError>
@@ -252,7 +250,13 @@ pub trait Engine: Send + Sync {
             let mut buffer = vec![0; estimate.decoded_len_estimate()];
 
             let bytes_written = engine
-                .internal_decode(input_bytes, &mut buffer, estimate)?
+                .internal_decode(input_bytes, &mut buffer, estimate)
+                .map_err(|e| match e {
+                    DecodeSliceError::DecodeError(e) => e,
+                    DecodeSliceError::OutputSliceTooSmall => {
+                        unreachable!("Vec is sized conservatively")
+                    }
+                })?
                 .decoded_len;
 
             buffer.truncate(bytes_written);
@@ -293,7 +297,7 @@ pub trait Engine: Send + Sync {
     
     
     
-    #[cfg(any(feature = "alloc", feature = "std", test))]
+    #[cfg(any(feature = "alloc", test))]
     #[inline]
     fn decode_vec<T: AsRef<[u8]>>(
         &self,
@@ -317,7 +321,13 @@ pub trait Engine: Send + Sync {
             let buffer_slice = &mut buffer.as_mut_slice()[starting_output_len..];
 
             let bytes_written = engine
-                .internal_decode(input_bytes, buffer_slice, estimate)?
+                .internal_decode(input_bytes, buffer_slice, estimate)
+                .map_err(|e| match e {
+                    DecodeSliceError::DecodeError(e) => e,
+                    DecodeSliceError::OutputSliceTooSmall => {
+                        unreachable!("Vec is sized conservatively")
+                    }
+                })?
                 .decoded_len;
 
             buffer.truncate(starting_output_len + bytes_written);
@@ -353,15 +363,12 @@ pub trait Engine: Send + Sync {
         where
             E: Engine + ?Sized,
         {
-            let estimate = engine.internal_decoded_len_estimate(input_bytes.len());
-
-            if output.len() < estimate.decoded_len_estimate() {
-                return Err(DecodeSliceError::OutputSliceTooSmall);
-            }
-
             engine
-                .internal_decode(input_bytes, output, estimate)
-                .map_err(|e| e.into())
+                .internal_decode(
+                    input_bytes,
+                    output,
+                    engine.internal_decoded_len_estimate(input_bytes.len()),
+                )
                 .map(|dm| dm.decoded_len)
         }
 
@@ -399,6 +406,12 @@ pub trait Engine: Send + Sync {
                     engine.internal_decoded_len_estimate(input_bytes.len()),
                 )
                 .map(|dm| dm.decoded_len)
+                .map_err(|e| match e {
+                    DecodeSliceError::DecodeError(e) => e,
+                    DecodeSliceError::OutputSliceTooSmall => {
+                        panic!("Output slice is too small")
+                    }
+                })
         }
 
         inner(self, input.as_ref(), output)

@@ -1,6 +1,6 @@
 use crate::{
     engine::{general_purpose::INVALID_VALUE, DecodeMetadata, DecodePaddingMode},
-    DecodeError, PAD_BYTE,
+    DecodeError, DecodeSliceError, PAD_BYTE,
 };
 
 
@@ -16,17 +16,19 @@ pub(crate) fn decode_suffix(
     decode_table: &[u8; 256],
     decode_allow_trailing_bits: bool,
     padding_mode: DecodePaddingMode,
-) -> Result<DecodeMetadata, DecodeError> {
-    
-    
-    let mut leftover_bits: u64 = 0;
-    let mut morsels_in_leftover = 0;
-    let mut padding_bytes = 0;
-    let mut first_padding_index: usize = 0;
-    let mut last_symbol = 0_u8;
-    let start_of_leftovers = input_index;
+) -> Result<DecodeMetadata, DecodeSliceError> {
+    debug_assert!((input.len() - input_index) <= 4);
 
-    for (i, &b) in input[start_of_leftovers..].iter().enumerate() {
+    
+    
+    let mut morsels_in_leftover = 0;
+    let mut padding_bytes_count = 0;
+    
+    let mut first_padding_offset: usize = 0;
+    let mut last_symbol = 0_u8;
+    let mut morsels = [0_u8; 4];
+
+    for (leftover_index, &b) in input[input_index..].iter().enumerate() {
         
         if b == PAD_BYTE {
             
@@ -41,30 +43,22 @@ pub(crate) fn decode_suffix(
             
             
 
-            if i % 4 < 2 {
+            if leftover_index < 2 {
                 
-                let bad_padding_index = start_of_leftovers
-                    + if padding_bytes > 0 {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        first_padding_index
-                    } else {
-                        
-                        i
-                    };
-                return Err(DecodeError::InvalidByte(bad_padding_index, b));
+                
+                
+                debug_assert!(
+                    leftover_index == 0 || (leftover_index == 1 && padding_bytes_count == 0)
+                );
+                let bad_padding_index = input_index + leftover_index;
+                return Err(DecodeError::InvalidByte(bad_padding_index, b).into());
             }
 
-            if padding_bytes == 0 {
-                first_padding_index = i;
+            if padding_bytes_count == 0 {
+                first_padding_offset = leftover_index;
             }
 
-            padding_bytes += 1;
+            padding_bytes_count += 1;
             continue;
         }
 
@@ -72,39 +66,44 @@ pub(crate) fn decode_suffix(
         
         
         
-        if padding_bytes > 0 {
-            return Err(DecodeError::InvalidByte(
-                start_of_leftovers + first_padding_index,
-                PAD_BYTE,
-            ));
+        if padding_bytes_count > 0 {
+            return Err(
+                DecodeError::InvalidByte(input_index + first_padding_offset, PAD_BYTE).into(),
+            );
         }
 
         last_symbol = b;
 
         
         
-        let shift = 64 - (morsels_in_leftover + 1) * 6;
         let morsel = decode_table[b as usize];
         if morsel == INVALID_VALUE {
-            return Err(DecodeError::InvalidByte(start_of_leftovers + i, b));
+            return Err(DecodeError::InvalidByte(input_index + leftover_index, b).into());
         }
 
-        leftover_bits |= (morsel as u64) << shift;
+        morsels[morsels_in_leftover] = morsel;
         morsels_in_leftover += 1;
+    }
+
+    
+    
+    if !input.is_empty() && morsels_in_leftover < 2 {
+        return Err(DecodeError::InvalidLength(input_index + morsels_in_leftover).into());
     }
 
     match padding_mode {
         DecodePaddingMode::Indifferent => {  }
         DecodePaddingMode::RequireCanonical => {
-            if (padding_bytes + morsels_in_leftover) % 4 != 0 {
-                return Err(DecodeError::InvalidPadding);
+            
+            if (padding_bytes_count + morsels_in_leftover) % 4 != 0 {
+                return Err(DecodeError::InvalidPadding.into());
             }
         }
         DecodePaddingMode::RequireNone => {
-            if padding_bytes > 0 {
+            if padding_bytes_count > 0 {
                 
                 
-                return Err(DecodeError::InvalidPadding);
+                return Err(DecodeError::InvalidPadding.into());
             }
         }
     }
@@ -121,46 +120,41 @@ pub(crate) fn decode_suffix(
     
     
 
-    let leftover_bits_ready_to_append = match morsels_in_leftover {
-        0 => 0,
-        2 => 8,
-        3 => 16,
-        4 => 24,
-        6 => 32,
-        7 => 40,
-        8 => 48,
-        
-        _ => unreachable!(
-            "Impossible: must only have 0 to 8 input bytes in last chunk, with no invalid lengths"
-        ),
-    };
+    let leftover_bytes_to_append = morsels_in_leftover * 6 / 8;
+    
+    
+    let mut leftover_num = (u32::from(morsels[0]) << 26)
+        | (u32::from(morsels[1]) << 20)
+        | (u32::from(morsels[2]) << 14)
+        | (u32::from(morsels[3]) << 8);
 
     
     
-    let mask = !0 >> leftover_bits_ready_to_append;
-    if !decode_allow_trailing_bits && (leftover_bits & mask) != 0 {
+    let mask = !0_u32 >> (leftover_bytes_to_append * 8);
+    if !decode_allow_trailing_bits && (leftover_num & mask) != 0 {
         
         return Err(DecodeError::InvalidLastSymbol(
-            start_of_leftovers + morsels_in_leftover - 1,
+            input_index + morsels_in_leftover - 1,
             last_symbol,
-        ));
+        )
+        .into());
     }
 
     
-    let mut leftover_bits_appended_to_buf = 0;
-    while leftover_bits_appended_to_buf < leftover_bits_ready_to_append {
-        
-        let selected_bits = (leftover_bits >> (56 - leftover_bits_appended_to_buf)) as u8;
-        output[output_index] = selected_bits;
+    
+    for _ in 0..leftover_bytes_to_append {
+        let hi_byte = (leftover_num >> 24) as u8;
+        leftover_num <<= 8;
+        *output
+            .get_mut(output_index)
+            .ok_or(DecodeSliceError::OutputSliceTooSmall)? = hi_byte;
         output_index += 1;
-
-        leftover_bits_appended_to_buf += 8;
     }
 
     Ok(DecodeMetadata::new(
         output_index,
-        if padding_bytes > 0 {
-            Some(input_index + first_padding_index)
+        if padding_bytes_count > 0 {
+            Some(input_index + first_padding_offset)
         } else {
             None
         },

@@ -1,47 +1,28 @@
 use crate::{
     engine::{general_purpose::INVALID_VALUE, DecodeEstimate, DecodeMetadata, DecodePaddingMode},
-    DecodeError, PAD_BYTE,
+    DecodeError, DecodeSliceError, PAD_BYTE,
 };
-
-
-const INPUT_CHUNK_LEN: usize = 8;
-const DECODED_CHUNK_LEN: usize = 6;
-
-
-
-
-const DECODED_CHUNK_SUFFIX: usize = 2;
-
-
-const CHUNKS_PER_FAST_LOOP_BLOCK: usize = 4;
-
-const INPUT_BLOCK_LEN: usize = CHUNKS_PER_FAST_LOOP_BLOCK * INPUT_CHUNK_LEN;
-
-
-const DECODED_BLOCK_LEN: usize =
-    CHUNKS_PER_FAST_LOOP_BLOCK * DECODED_CHUNK_LEN + DECODED_CHUNK_SUFFIX;
 
 #[doc(hidden)]
 pub struct GeneralPurposeEstimate {
     
-    num_chunks: usize,
-    decoded_len_estimate: usize,
+    rem: usize,
+    conservative_decoded_len: usize,
 }
 
 impl GeneralPurposeEstimate {
     pub(crate) fn new(encoded_len: usize) -> Self {
-        
+        let rem = encoded_len % 4;
         Self {
-            num_chunks: encoded_len / INPUT_CHUNK_LEN
-                + (encoded_len % INPUT_CHUNK_LEN > 0) as usize,
-            decoded_len_estimate: (encoded_len / 4 + (encoded_len % 4 > 0) as usize) * 3,
+            rem,
+            conservative_decoded_len: (encoded_len / 4 + (rem > 0) as usize) * 3,
         }
     }
 }
 
 impl DecodeEstimate for GeneralPurposeEstimate {
     fn decoded_len_estimate(&self) -> usize {
-        self.decoded_len_estimate
+        self.conservative_decoded_len
     }
 }
 
@@ -58,140 +39,81 @@ pub(crate) fn decode_helper(
     decode_table: &[u8; 256],
     decode_allow_trailing_bits: bool,
     padding_mode: DecodePaddingMode,
-) -> Result<DecodeMetadata, DecodeError> {
-    let remainder_len = input.len() % INPUT_CHUNK_LEN;
+) -> Result<DecodeMetadata, DecodeSliceError> {
+    let input_complete_nonterminal_quads_len =
+        complete_quads_len(input, estimate.rem, output.len(), decode_table)?;
+
+    const UNROLLED_INPUT_CHUNK_SIZE: usize = 32;
+    const UNROLLED_OUTPUT_CHUNK_SIZE: usize = UNROLLED_INPUT_CHUNK_SIZE / 4 * 3;
+
+    let input_complete_quads_after_unrolled_chunks_len =
+        input_complete_nonterminal_quads_len % UNROLLED_INPUT_CHUNK_SIZE;
+
+    let input_unrolled_loop_len =
+        input_complete_nonterminal_quads_len - input_complete_quads_after_unrolled_chunks_len;
 
     
-    
-    
-    
-    let trailing_bytes_to_skip = match remainder_len {
-        
-        
-        0 => INPUT_CHUNK_LEN,
-        
-        1 | 5 => {
-            
-            
-            if let Some(b) = input.last() {
-                if *b != PAD_BYTE && decode_table[*b as usize] == INVALID_VALUE {
-                    return Err(DecodeError::InvalidByte(input.len() - 1, *b));
-                }
-            }
-
-            return Err(DecodeError::InvalidLength);
-        }
-        
-        
-        
-        2 => INPUT_CHUNK_LEN + 2,
-        
-        
-        
-        
-        3 => INPUT_CHUNK_LEN + 3,
-        
-        
-        4 => INPUT_CHUNK_LEN + 4,
-        
-        
-        _ => remainder_len,
-    };
-
-    
-    let mut remaining_chunks = estimate.num_chunks;
-
-    let mut input_index = 0;
-    let mut output_index = 0;
-
+    for (chunk_index, chunk) in input[..input_unrolled_loop_len]
+        .chunks_exact(UNROLLED_INPUT_CHUNK_SIZE)
+        .enumerate()
     {
-        let length_of_fast_decode_chunks = input.len().saturating_sub(trailing_bytes_to_skip);
+        let input_index = chunk_index * UNROLLED_INPUT_CHUNK_SIZE;
+        let chunk_output = &mut output[chunk_index * UNROLLED_OUTPUT_CHUNK_SIZE
+            ..(chunk_index + 1) * UNROLLED_OUTPUT_CHUNK_SIZE];
 
-        
-        
-        if let Some(max_start_index) = length_of_fast_decode_chunks.checked_sub(INPUT_BLOCK_LEN) {
-            while input_index <= max_start_index {
-                let input_slice = &input[input_index..(input_index + INPUT_BLOCK_LEN)];
-                let output_slice = &mut output[output_index..(output_index + DECODED_BLOCK_LEN)];
-
-                decode_chunk(
-                    &input_slice[0..],
-                    input_index,
-                    decode_table,
-                    &mut output_slice[0..],
-                )?;
-                decode_chunk(
-                    &input_slice[8..],
-                    input_index + 8,
-                    decode_table,
-                    &mut output_slice[6..],
-                )?;
-                decode_chunk(
-                    &input_slice[16..],
-                    input_index + 16,
-                    decode_table,
-                    &mut output_slice[12..],
-                )?;
-                decode_chunk(
-                    &input_slice[24..],
-                    input_index + 24,
-                    decode_table,
-                    &mut output_slice[18..],
-                )?;
-
-                input_index += INPUT_BLOCK_LEN;
-                output_index += DECODED_BLOCK_LEN - DECODED_CHUNK_SUFFIX;
-                remaining_chunks -= CHUNKS_PER_FAST_LOOP_BLOCK;
-            }
-        }
-
-        
-        
-        if let Some(max_start_index) = length_of_fast_decode_chunks.checked_sub(INPUT_CHUNK_LEN) {
-            while input_index < max_start_index {
-                decode_chunk(
-                    &input[input_index..(input_index + INPUT_CHUNK_LEN)],
-                    input_index,
-                    decode_table,
-                    &mut output
-                        [output_index..(output_index + DECODED_CHUNK_LEN + DECODED_CHUNK_SUFFIX)],
-                )?;
-
-                output_index += DECODED_CHUNK_LEN;
-                input_index += INPUT_CHUNK_LEN;
-                remaining_chunks -= 1;
-            }
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    for _ in 1..remaining_chunks {
-        decode_chunk_precise(
-            &input[input_index..],
+        decode_chunk_8(
+            &chunk[0..8],
             input_index,
             decode_table,
-            &mut output[output_index..(output_index + DECODED_CHUNK_LEN)],
+            &mut chunk_output[0..6],
         )?;
-
-        input_index += INPUT_CHUNK_LEN;
-        output_index += DECODED_CHUNK_LEN;
+        decode_chunk_8(
+            &chunk[8..16],
+            input_index + 8,
+            decode_table,
+            &mut chunk_output[6..12],
+        )?;
+        decode_chunk_8(
+            &chunk[16..24],
+            input_index + 16,
+            decode_table,
+            &mut chunk_output[12..18],
+        )?;
+        decode_chunk_8(
+            &chunk[24..32],
+            input_index + 24,
+            decode_table,
+            &mut chunk_output[18..24],
+        )?;
     }
 
     
-    debug_assert!(input.len() - input_index > 1 || input.is_empty());
-    debug_assert!(input.len() - input_index <= 8);
+    let output_unrolled_loop_len = input_unrolled_loop_len / 4 * 3;
+    let output_complete_quad_len = input_complete_nonterminal_quads_len / 4 * 3;
+    {
+        let output_after_unroll = &mut output[output_unrolled_loop_len..output_complete_quad_len];
+
+        for (chunk_index, chunk) in input
+            [input_unrolled_loop_len..input_complete_nonterminal_quads_len]
+            .chunks_exact(4)
+            .enumerate()
+        {
+            let chunk_output = &mut output_after_unroll[chunk_index * 3..chunk_index * 3 + 3];
+
+            decode_chunk_4(
+                chunk,
+                input_unrolled_loop_len + chunk_index * 4,
+                decode_table,
+                chunk_output,
+            )?;
+        }
+    }
 
     super::decode_suffix::decode_suffix(
         input,
-        input_index,
+        input_complete_nonterminal_quads_len,
         output,
-        output_index,
+        output_complete_quad_len,
         decode_table,
         decode_allow_trailing_bits,
         padding_mode,
@@ -206,115 +128,173 @@ pub(crate) fn decode_helper(
 
 
 
+pub(crate) fn complete_quads_len(
+    input: &[u8],
+    input_len_rem: usize,
+    output_len: usize,
+    decode_table: &[u8; 256],
+) -> Result<usize, DecodeSliceError> {
+    debug_assert!(input.len() % 4 == input_len_rem);
+
+    
+    if input_len_rem == 1 {
+        let last_byte = input[input.len() - 1];
+        
+        if last_byte != PAD_BYTE && decode_table[usize::from(last_byte)] == INVALID_VALUE {
+            return Err(DecodeError::InvalidByte(input.len() - 1, last_byte).into());
+        }
+    };
+
+    
+    let input_complete_nonterminal_quads_len = input
+        .len()
+        .saturating_sub(input_len_rem)
+        
+        .saturating_sub((input_len_rem == 0) as usize * 4);
+    debug_assert!(
+        input.is_empty() || (1..=4).contains(&(input.len() - input_complete_nonterminal_quads_len))
+    );
+
+    
+    if output_len < input_complete_nonterminal_quads_len / 4 * 3 {
+        return Err(DecodeSliceError::OutputSliceTooSmall);
+    };
+    Ok(input_complete_nonterminal_quads_len)
+}
+
+
+
+
+
+
+
 
 
 #[inline(always)]
-fn decode_chunk(
+fn decode_chunk_8(
     input: &[u8],
     index_at_start_of_input: usize,
     decode_table: &[u8; 256],
     output: &mut [u8],
 ) -> Result<(), DecodeError> {
-    let morsel = decode_table[input[0] as usize];
+    let morsel = decode_table[usize::from(input[0])];
     if morsel == INVALID_VALUE {
         return Err(DecodeError::InvalidByte(index_at_start_of_input, input[0]));
     }
-    let mut accum = (morsel as u64) << 58;
+    let mut accum = u64::from(morsel) << 58;
 
-    let morsel = decode_table[input[1] as usize];
+    let morsel = decode_table[usize::from(input[1])];
     if morsel == INVALID_VALUE {
         return Err(DecodeError::InvalidByte(
             index_at_start_of_input + 1,
             input[1],
         ));
     }
-    accum |= (morsel as u64) << 52;
+    accum |= u64::from(morsel) << 52;
 
-    let morsel = decode_table[input[2] as usize];
+    let morsel = decode_table[usize::from(input[2])];
     if morsel == INVALID_VALUE {
         return Err(DecodeError::InvalidByte(
             index_at_start_of_input + 2,
             input[2],
         ));
     }
-    accum |= (morsel as u64) << 46;
+    accum |= u64::from(morsel) << 46;
 
-    let morsel = decode_table[input[3] as usize];
+    let morsel = decode_table[usize::from(input[3])];
     if morsel == INVALID_VALUE {
         return Err(DecodeError::InvalidByte(
             index_at_start_of_input + 3,
             input[3],
         ));
     }
-    accum |= (morsel as u64) << 40;
+    accum |= u64::from(morsel) << 40;
 
-    let morsel = decode_table[input[4] as usize];
+    let morsel = decode_table[usize::from(input[4])];
     if morsel == INVALID_VALUE {
         return Err(DecodeError::InvalidByte(
             index_at_start_of_input + 4,
             input[4],
         ));
     }
-    accum |= (morsel as u64) << 34;
+    accum |= u64::from(morsel) << 34;
 
-    let morsel = decode_table[input[5] as usize];
+    let morsel = decode_table[usize::from(input[5])];
     if morsel == INVALID_VALUE {
         return Err(DecodeError::InvalidByte(
             index_at_start_of_input + 5,
             input[5],
         ));
     }
-    accum |= (morsel as u64) << 28;
+    accum |= u64::from(morsel) << 28;
 
-    let morsel = decode_table[input[6] as usize];
+    let morsel = decode_table[usize::from(input[6])];
     if morsel == INVALID_VALUE {
         return Err(DecodeError::InvalidByte(
             index_at_start_of_input + 6,
             input[6],
         ));
     }
-    accum |= (morsel as u64) << 22;
+    accum |= u64::from(morsel) << 22;
 
-    let morsel = decode_table[input[7] as usize];
+    let morsel = decode_table[usize::from(input[7])];
     if morsel == INVALID_VALUE {
         return Err(DecodeError::InvalidByte(
             index_at_start_of_input + 7,
             input[7],
         ));
     }
-    accum |= (morsel as u64) << 16;
+    accum |= u64::from(morsel) << 16;
 
-    write_u64(output, accum);
+    output[..6].copy_from_slice(&accum.to_be_bytes()[..6]);
 
     Ok(())
 }
 
 
-
-#[inline]
-fn decode_chunk_precise(
+#[inline(always)]
+fn decode_chunk_4(
     input: &[u8],
     index_at_start_of_input: usize,
     decode_table: &[u8; 256],
     output: &mut [u8],
 ) -> Result<(), DecodeError> {
-    let mut tmp_buf = [0_u8; 8];
+    let morsel = decode_table[usize::from(input[0])];
+    if morsel == INVALID_VALUE {
+        return Err(DecodeError::InvalidByte(index_at_start_of_input, input[0]));
+    }
+    let mut accum = u32::from(morsel) << 26;
 
-    decode_chunk(
-        input,
-        index_at_start_of_input,
-        decode_table,
-        &mut tmp_buf[..],
-    )?;
+    let morsel = decode_table[usize::from(input[1])];
+    if morsel == INVALID_VALUE {
+        return Err(DecodeError::InvalidByte(
+            index_at_start_of_input + 1,
+            input[1],
+        ));
+    }
+    accum |= u32::from(morsel) << 20;
 
-    output[0..6].copy_from_slice(&tmp_buf[0..6]);
+    let morsel = decode_table[usize::from(input[2])];
+    if morsel == INVALID_VALUE {
+        return Err(DecodeError::InvalidByte(
+            index_at_start_of_input + 2,
+            input[2],
+        ));
+    }
+    accum |= u32::from(morsel) << 14;
+
+    let morsel = decode_table[usize::from(input[3])];
+    if morsel == INVALID_VALUE {
+        return Err(DecodeError::InvalidByte(
+            index_at_start_of_input + 3,
+            input[3],
+        ));
+    }
+    accum |= u32::from(morsel) << 8;
+
+    output[..3].copy_from_slice(&accum.to_be_bytes()[..3]);
 
     Ok(())
-}
-
-#[inline]
-fn write_u64(output: &mut [u8], value: u64) {
-    output[..8].copy_from_slice(&value.to_be_bytes());
 }
 
 #[cfg(test)]
@@ -324,37 +304,36 @@ mod tests {
     use crate::engine::general_purpose::STANDARD;
 
     #[test]
-    fn decode_chunk_precise_writes_only_6_bytes() {
+    fn decode_chunk_8_writes_only_6_bytes() {
         let input = b"Zm9vYmFy"; 
         let mut output = [0_u8, 1, 2, 3, 4, 5, 6, 7];
 
-        decode_chunk_precise(&input[..], 0, &STANDARD.decode_table, &mut output).unwrap();
+        decode_chunk_8(&input[..], 0, &STANDARD.decode_table, &mut output).unwrap();
         assert_eq!(&vec![b'f', b'o', b'o', b'b', b'a', b'r', 6, 7], &output);
     }
 
     #[test]
-    fn decode_chunk_writes_8_bytes() {
-        let input = b"Zm9vYmFy"; 
-        let mut output = [0_u8, 1, 2, 3, 4, 5, 6, 7];
+    fn decode_chunk_4_writes_only_3_bytes() {
+        let input = b"Zm9v"; 
+        let mut output = [0_u8, 1, 2, 3];
 
-        decode_chunk(&input[..], 0, &STANDARD.decode_table, &mut output).unwrap();
-        assert_eq!(&vec![b'f', b'o', b'o', b'b', b'a', b'r', 0, 0], &output);
+        decode_chunk_4(&input[..], 0, &STANDARD.decode_table, &mut output).unwrap();
+        assert_eq!(&vec![b'f', b'o', b'o', 3], &output);
     }
 
     #[test]
     fn estimate_short_lengths() {
-        for (range, (num_chunks, decoded_len_estimate)) in [
-            (0..=0, (0, 0)),
-            (1..=4, (1, 3)),
-            (5..=8, (1, 6)),
-            (9..=12, (2, 9)),
-            (13..=16, (2, 12)),
-            (17..=20, (3, 15)),
+        for (range, decoded_len_estimate) in [
+            (0..=0, 0),
+            (1..=4, 3),
+            (5..=8, 6),
+            (9..=12, 9),
+            (13..=16, 12),
+            (17..=20, 15),
         ] {
             for encoded_len in range {
                 let estimate = GeneralPurposeEstimate::new(encoded_len);
-                assert_eq!(num_chunks, estimate.num_chunks);
-                assert_eq!(decoded_len_estimate, estimate.decoded_len_estimate);
+                assert_eq!(decoded_len_estimate, estimate.decoded_len_estimate());
             }
         }
     }
@@ -370,13 +349,8 @@ mod tests {
 
                 let estimate = GeneralPurposeEstimate::new(encoded_len);
                 assert_eq!(
-                    ((len_128 + (INPUT_CHUNK_LEN - 1) as u128) / (INPUT_CHUNK_LEN as u128))
-                        as usize,
-                    estimate.num_chunks
-                );
-                assert_eq!(
-                    ((len_128 + 3) / 4 * 3) as usize,
-                    estimate.decoded_len_estimate
+                    (len_128 + 3) / 4 * 3,
+                    estimate.conservative_decoded_len as u128
                 );
             })
     }

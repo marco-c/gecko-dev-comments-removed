@@ -5,7 +5,8 @@
 
 
 
-
+#![cfg_attr(feature = "alloc", doc = "```")]
+#![cfg_attr(not(feature = "alloc"), doc = "```ignore")]
 
 
 

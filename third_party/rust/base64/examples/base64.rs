@@ -2,51 +2,40 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::path::PathBuf;
 use std::process;
-use std::str::FromStr;
 
 use base64::{alphabet, engine, read, write};
-use structopt::StructOpt;
+use clap::Parser;
 
-#[derive(Debug, StructOpt)]
+#[derive(Clone, Debug, Parser, strum::EnumString, Default)]
+#[strum(serialize_all = "kebab-case")]
 enum Alphabet {
+    #[default]
     Standard,
     UrlSafe,
 }
 
-impl Default for Alphabet {
-    fn default() -> Self {
-        Self::Standard
-    }
-}
 
-impl FromStr for Alphabet {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, String> {
-        match s {
-            "standard" => Ok(Self::Standard),
-            "urlsafe" => Ok(Self::UrlSafe),
-            _ => Err(format!("alphabet '{}' unrecognized", s)),
-        }
-    }
-}
-
-
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 struct Opt {
     
-    #[structopt(short = "d", long = "decode")]
+    #[structopt(short = 'd', long = "decode")]
     decode: bool,
-    
+
     
     #[structopt(long = "alphabet")]
     alphabet: Option<Alphabet>,
+
     
-    #[structopt(parse(from_os_str))]
+    #[structopt(short = 'p', long = "no-padding")]
+    no_padding: bool,
+
+    
+    #[structopt(name = "FILE", parse(from_os_str))]
     file: Option<PathBuf>,
 }
 
 fn main() {
-    let opt = Opt::from_args();
+    let opt = Opt::parse();
     let stdin;
     let mut input: Box<dyn Read> = match opt.file {
         None => {
@@ -66,7 +55,10 @@ fn main() {
             Alphabet::Standard => alphabet::STANDARD,
             Alphabet::UrlSafe => alphabet::URL_SAFE,
         },
-        engine::general_purpose::PAD,
+        match opt.no_padding {
+            true => engine::general_purpose::NO_PAD,
+            false => engine::general_purpose::PAD,
+        },
     );
 
     let stdout = io::stdout();

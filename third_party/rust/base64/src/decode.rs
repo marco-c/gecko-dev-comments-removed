@@ -1,5 +1,5 @@
 use crate::engine::{general_purpose::STANDARD, DecodeEstimate, Engine};
-#[cfg(any(feature = "alloc", feature = "std", test))]
+#[cfg(any(feature = "alloc", test))]
 use alloc::vec::Vec;
 use core::fmt;
 #[cfg(any(feature = "std", test))]
@@ -10,13 +10,15 @@ use std::error;
 pub enum DecodeError {
     
     
+    
+    
+    
+    
+    
     InvalidByte(usize, u8),
     
     
-    
-    
-    
-    InvalidLength,
+    InvalidLength(usize),
     
     
     
@@ -30,8 +32,10 @@ pub enum DecodeError {
 impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Self::InvalidByte(index, byte) => write!(f, "Invalid byte {}, offset {}.", byte, index),
-            Self::InvalidLength => write!(f, "Encoded text cannot have a 6-bit remainder."),
+            Self::InvalidByte(index, byte) => {
+                write!(f, "Invalid symbol {}, offset {}.", byte, index)
+            }
+            Self::InvalidLength(len) => write!(f, "Invalid input length: {}", len),
             Self::InvalidLastSymbol(index, byte) => {
                 write!(f, "Invalid last symbol {}, offset {}.", byte, index)
             }
@@ -48,8 +52,6 @@ impl error::Error for DecodeError {}
 pub enum DecodeSliceError {
     
     DecodeError(DecodeError),
-    
-    
     
     OutputSliceTooSmall,
 }
@@ -83,7 +85,7 @@ impl From<DecodeError> for DecodeSliceError {
 
 
 #[deprecated(since = "0.21.0", note = "Use Engine::decode")]
-#[cfg(any(feature = "alloc", feature = "std", test))]
+#[cfg(any(feature = "alloc", test))]
 pub fn decode<T: AsRef<[u8]>>(input: T) -> Result<Vec<u8>, DecodeError> {
     STANDARD.decode(input)
 }
@@ -93,7 +95,7 @@ pub fn decode<T: AsRef<[u8]>>(input: T) -> Result<Vec<u8>, DecodeError> {
 
 
 #[deprecated(since = "0.21.0", note = "Use Engine::decode")]
-#[cfg(any(feature = "alloc", feature = "std", test))]
+#[cfg(any(feature = "alloc", test))]
 pub fn decode_engine<E: Engine, T: AsRef<[u8]>>(
     input: T,
     engine: &E,
@@ -104,7 +106,7 @@ pub fn decode_engine<E: Engine, T: AsRef<[u8]>>(
 
 
 
-#[cfg(any(feature = "alloc", feature = "std", test))]
+#[cfg(any(feature = "alloc", test))]
 #[deprecated(since = "0.21.0", note = "Use Engine::decode_vec")]
 pub fn decode_engine_vec<E: Engine, T: AsRef<[u8]>>(
     input: T,
@@ -336,5 +338,49 @@ mod tests {
                 &decode_buf[offset + decode_bytes_written..]
             );
         }
+    }
+}
+
+#[allow(deprecated)]
+#[cfg(test)]
+mod coverage_gaming {
+    use super::*;
+    use std::error::Error;
+
+    #[test]
+    fn decode_error() {
+        let _ = format!("{:?}", DecodeError::InvalidPadding.clone());
+        let _ = format!(
+            "{} {} {} {}",
+            DecodeError::InvalidByte(0, 0),
+            DecodeError::InvalidLength(0),
+            DecodeError::InvalidLastSymbol(0, 0),
+            DecodeError::InvalidPadding,
+        );
+    }
+
+    #[test]
+    fn decode_slice_error() {
+        let _ = format!("{:?}", DecodeSliceError::OutputSliceTooSmall.clone());
+        let _ = format!(
+            "{} {}",
+            DecodeSliceError::OutputSliceTooSmall,
+            DecodeSliceError::DecodeError(DecodeError::InvalidPadding)
+        );
+        let _ = DecodeSliceError::OutputSliceTooSmall.source();
+        let _ = DecodeSliceError::DecodeError(DecodeError::InvalidPadding).source();
+    }
+
+    #[test]
+    fn deprecated_fns() {
+        let _ = decode("");
+        let _ = decode_engine("", &crate::prelude::BASE64_STANDARD);
+        let _ = decode_engine_vec("", &mut Vec::new(), &crate::prelude::BASE64_STANDARD);
+        let _ = decode_engine_slice("", &mut [], &crate::prelude::BASE64_STANDARD);
+    }
+
+    #[test]
+    fn decoded_len_est() {
+        assert_eq!(3, decoded_len_estimate(4));
     }
 }

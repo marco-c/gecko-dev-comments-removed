@@ -50,6 +50,7 @@ const ALPHABET_SIZE: usize = 64;
 
 
 
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Alphabet {
     pub(crate) symbols: [u8; ALPHABET_SIZE],
@@ -121,6 +122,11 @@ impl Alphabet {
         }
 
         Ok(Self::from_str_unchecked(alphabet))
+    }
+
+    
+    pub fn as_str(&self) -> &str {
+        core::str::from_utf8(&self.symbols).unwrap()
     }
 }
 
@@ -196,7 +202,7 @@ pub const IMAP_MUTF7: Alphabet = Alphabet::from_str_unchecked(
 
 
 pub const BIN_HEX: Alphabet = Alphabet::from_str_unchecked(
-    "!\"#$%&'()*+,-0123456789@ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdehijklmpqr",
+    "!\"#$%&'()*+,-012345689@ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr",
 );
 
 #[cfg(test)]
@@ -268,5 +274,12 @@ mod tests {
             Alphabet::try_from("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")
                 .unwrap()
         );
+    }
+
+    #[test]
+    fn str_same_as_input() {
+        let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        let a = Alphabet::try_from(alphabet).unwrap();
+        assert_eq!(alphabet, a.as_str())
     }
 }
