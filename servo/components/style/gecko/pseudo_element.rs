@@ -62,6 +62,13 @@ impl ::selectors::parser::PseudoElement for PseudoElement {
         
         self.is_named_view_transition()
     }
+
+    
+    
+    #[inline]
+    fn is_element_backed(&self) -> bool {
+        self.is_named_view_transition() || *self == PseudoElement::DetailsContent
+    }
 }
 
 impl PseudoElement {
@@ -189,12 +196,6 @@ impl PseudoElement {
                 Self::ViewTransitionOld(..) |
                 Self::ViewTransitionNew(..)
         )
-    }
-
-    
-    
-    pub fn is_part_like(&self) -> bool {
-        self.is_named_view_transition() || *self == PseudoElement::DetailsContent
     }
 
     
