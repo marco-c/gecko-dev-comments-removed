@@ -348,6 +348,12 @@ function wrapWithIFrame(doc, options = {}) {
     id: DEFAULT_IFRAME_DOC_BODY_ID,
     ...iframeDocBodyAttrs,
   };
+  if (options.contentSetup) {
+    
+    
+    
+    iframeDocBodyAttrs["aria-hidden"] = "true";
+  }
   if (options.remoteIframe) {
     
     const srcURL = new URL(`http://example.net/document-builder.sjs`);
@@ -418,6 +424,11 @@ function snippetToURL(doc, options = {}) {
 
   if (gIsIframe) {
     doc = wrapWithIFrame(doc, options);
+  } else if (options.contentSetup) {
+    
+    
+    
+    attrs["aria-hidden"] = "true";
   }
 
   const encodedDoc = encodeURIComponent(
@@ -595,6 +606,21 @@ function accessibleTask(doc, task, options = {}) {
           }
         }
 
+        if (options.contentSetup) {
+          info("Executing contentSetup");
+          const ready = waitForEvent(EVENT_REORDER, currentContentDoc());
+          await invokeContentTask(browser, [], options.contentSetup);
+          
+          
+          
+          
+          
+          await invokeContentTask(browser, [], () => {
+            content.document.body.removeAttribute("aria-hidden");
+          });
+          await ready;
+          info("contentSetup done");
+        }
         await loadContentScripts(browser, {
           script: "Common.sys.mjs",
           symbol: "CommonUtils",
@@ -627,6 +653,22 @@ function accessibleTask(doc, task, options = {}) {
   Object.defineProperty(wrapped, "name", { value: task.name });
   return wrapped;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
