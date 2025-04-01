@@ -8,7 +8,7 @@ importScripts(testSetupPolicy.createScriptURL("csp-violations.js"));
 
 
 promise_test(async () => {
-  let {violations, exception} = await trusted_type_violations_and_exception_for(_ => setTimeout("unsafe"));
+  let {violations, exception} = await trusted_type_violations_and_exception_for(_ => setTimeout(";;;;;"));
 
   
   assert_true(exception instanceof TypeError, "TypeError is thrown");
@@ -30,6 +30,6 @@ promise_test(async () => {
   assert_equals(sorted_violations[4].disposition, "report");
   assert_equals(sorted_violations[5].policy, "require-trusted-types-for 'invalid' 'script'");
   assert_equals(sorted_violations[5].disposition, "report");
-}, "Checking reported violations for setTimeout('unsafe') from DedicatedWorker");
+}, "Checking reported violations for setTimeout(';;;;;') from DedicatedWorker");
 
 done();
