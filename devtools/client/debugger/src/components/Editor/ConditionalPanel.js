@@ -74,8 +74,15 @@ export class ConditionalPanel extends PureComponent {
 
 
   saveAndClose = (expression = null) => {
-    if (expression) {
-      this.setBreakpoint(expression.trim());
+    if (typeof expression === "string") {
+      const trimmedExpression = expression.trim();
+      if (trimmedExpression) {
+        this.setBreakpoint(trimmedExpression);
+      } else if (this.props.breakpoint) {
+        
+        
+        this.setBreakpoint(null);
+      }
     }
 
     this.props.closeConditionalPanel();
