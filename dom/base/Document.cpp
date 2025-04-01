@@ -2653,6 +2653,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMidasCommandManager)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAll)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActiveViewTransition)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mViewTransitionUpdateCallbacks)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocGroup)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameRequestManager)
 
@@ -2784,6 +2785,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mMidasCommandManager)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAll)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mActiveViewTransition)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mViewTransitionUpdateCallbacks)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReferrerInfo)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreloadReferrerInfo)
 
@@ -16176,6 +16178,42 @@ void Document::MaybeSkipTransitionAfterVisibilityChange() {
 }
 
 
+void Document::ScheduleViewTransitionUpdateCallback(ViewTransition* aVt) {
+  MOZ_ASSERT(aVt);
+  const bool hasTasks = !mViewTransitionUpdateCallbacks.IsEmpty();
+
+  
+  
+  mViewTransitionUpdateCallbacks.AppendElement(aVt);
+
+  
+  
+  
+  
+  if (!hasTasks) {
+    Dispatch(NewRunnableMethod(
+        "Document::FlushViewTransitionUpdateCallbackQueue", this,
+        &Document::FlushViewTransitionUpdateCallbackQueue));
+  }
+}
+
+
+void Document::FlushViewTransitionUpdateCallbackQueue() {
+  
+  
+  
+  
+  auto callbacks = std::move(mViewTransitionUpdateCallbacks);
+  MOZ_ASSERT(mViewTransitionUpdateCallbacks.IsEmpty());
+  for (RefPtr<ViewTransition>& vt : callbacks) {
+    MOZ_KnownLive(vt)->CallUpdateCallback(IgnoreErrors());
+  }
+
+  
+  
+}
+
+
 void Document::UpdateVisibilityState(DispatchVisibilityChange aDispatchEvent) {
   const dom::VisibilityState visibilityState = ComputeVisibilityState();
   if (mVisibilityState == visibilityState) {
@@ -18090,10 +18128,13 @@ void Document::SetRenderingSuppressedForViewTransitions(bool aValue) {
 
 void Document::PerformPendingViewTransitionOperations() {
   if (mActiveViewTransition && !RenderingSuppressedForViewTransitions()) {
-    mActiveViewTransition->PerformPendingOperations();
+    RefPtr activeVT = mActiveViewTransition;
+    activeVT->PerformPendingOperations();
   }
-  EnumerateSubDocuments([](Document& aDoc) {
-    aDoc.PerformPendingViewTransitionOperations();
+  EnumerateSubDocuments([](Document& aDoc) MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION {
+    
+    
+    MOZ_KnownLive(aDoc).PerformPendingViewTransitionOperations();
     return CallState::Continue;
   });
 }

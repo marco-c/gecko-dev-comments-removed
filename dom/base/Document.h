@@ -3882,9 +3882,12 @@ class Document : public nsINode,
     return mActiveViewTransition;
   }
   void ClearActiveViewTransition();
-  void PerformPendingViewTransitionOperations();
+  MOZ_CAN_RUN_SCRIPT void PerformPendingViewTransitionOperations();
   void EnsureViewTransitionOperationsHappen();
   void MaybeSkipTransitionAfterVisibilityChange();
+
+  void ScheduleViewTransitionUpdateCallback(ViewTransition* aVt);
+  MOZ_CAN_RUN_SCRIPT void FlushViewTransitionUpdateCallbackQueue();
 
   
   PermissionDelegateHandler* GetPermissionDelegateHandler();
@@ -5440,7 +5443,11 @@ class Document : public nsINode,
   RefPtr<HTMLAllCollection> mAll;
 
   
+  
   RefPtr<ViewTransition> mActiveViewTransition;
+  
+  
+  nsTArray<RefPtr<ViewTransition>> mViewTransitionUpdateCallbacks;
 
   nsTHashSet<RefPtr<WorkerDocumentListener>> mWorkerListeners;
 

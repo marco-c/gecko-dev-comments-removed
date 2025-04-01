@@ -355,11 +355,22 @@ Promise* ViewTransition::GetFinished(ErrorResult& aRv) {
   return mFinishedPromise;
 }
 
-void ViewTransition::CallUpdateCallbackIgnoringErrors(CallIfDone aCallIfDone) {
-  if (aCallIfDone == CallIfDone::No && mPhase == Phase::Done) {
+
+
+void ViewTransition::MaybeScheduleUpdateCallback() {
+  
+  
+  if (mPhase == Phase::Done) {
     return;
   }
-  CallUpdateCallback(IgnoreErrors());
+
+  RefPtr doc = mDocument;
+
+  
+  doc->ScheduleViewTransitionUpdateCallback(this);
+
+  
+  doc->FlushViewTransitionUpdateCallbackQueue();
 }
 
 
@@ -911,6 +922,13 @@ void ViewTransition::PerformPendingOperations() {
   MOZ_ASSERT(mDocument);
   MOZ_ASSERT(mDocument->GetActiveViewTransition() == this);
 
+  
+  
+  
+  
+  RefPtr doc = mDocument;
+  doc->FlushViewTransitionUpdateCallbackQueue();
+
   switch (mPhase) {
     case Phase::PendingCapture:
       return Setup();
@@ -1181,6 +1199,7 @@ void ViewTransition::Setup() {
     return SkipTransition(*skipReason);
   }
 
+  
   mDocument->SetRenderingSuppressedForViewTransitions(true);
 
   
@@ -1188,9 +1207,9 @@ void ViewTransition::Setup() {
   
   
   
-  mDocument->Dispatch(NewRunnableMethod<CallIfDone>(
-      "ViewTransition::CallUpdateCallbackFromSetup", this,
-      &ViewTransition::CallUpdateCallbackIgnoringErrors, CallIfDone::No));
+  mDocument->Dispatch(
+      NewRunnableMethod("ViewTransition::MaybeScheduleUpdateCallback", this,
+                        &ViewTransition::MaybeScheduleUpdateCallback));
 }
 
 
@@ -1411,12 +1430,8 @@ void ViewTransition::SkipTransition(
   }
   
   
-  
-  
   if (UnderlyingValue(mPhase) < UnderlyingValue(Phase::UpdateCallbackCalled)) {
-    mDocument->Dispatch(NewRunnableMethod<CallIfDone>(
-        "ViewTransition::CallUpdateCallbackFromSkip", this,
-        &ViewTransition::CallUpdateCallbackIgnoringErrors, CallIfDone::Yes));
+    mDocument->ScheduleViewTransitionUpdateCallback(this);
   }
 
   
