@@ -685,6 +685,9 @@ class nsINode : public mozilla::dom::EventTarget {
   uint32_t GetChildCount() const { return mChildCount; }
 
   
+  uint32_t GetFlatTreeChildCount() const;
+
+  
 
 
 

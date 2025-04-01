@@ -45,6 +45,10 @@ class FlattenedChildIterator {
 
   bool ShadowDOMInvolved() const { return mShadowDOMInvolved; }
 
+  static uint32_t GetLength(const nsINode* aParent);
+  static Maybe<uint32_t> GetIndexOf(const nsINode* aParent,
+                                    const nsINode* aPossibleChild);
+
  protected:
   
   
