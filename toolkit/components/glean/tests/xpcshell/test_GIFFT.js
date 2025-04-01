@@ -782,6 +782,7 @@ add_task(async function test_gifft_labeled_timing_dist() {
   
   
   
+  
   Glean.testOnly.whereHasTheTimeGone["hourglass sands"].accumulateSamples([
     1, 2, 3,
   ]);
@@ -792,9 +793,7 @@ add_task(async function test_gifft_labeled_timing_dist() {
   data = Telemetry.getKeyedHistogramById(
     "TELEMETRY_TEST_MIRROR_FOR_LABELED_TIMING"
   ).snapshot();
-  Assert.ok("hourglass sands" in data, "Has the key");
-  data = data["hourglass sands"];
-  Assert.equal(data.sum, 7);
+  Assert.ok(!("hourglass sands" in data), "Doesn't have the key");
 });
 
 add_task(async function test_gifft_labeled_quantity() {
