@@ -1,5 +1,7 @@
 from typing import Any, Callable, Dict, List, Mapping
 from webdriver.bidi.modules.script import ContextTarget
+from webdriver.bidi.undefined import UNDEFINED
+
 
 
 
@@ -17,11 +19,19 @@ def recursive_compare(expected: Any, actual: Any) -> None:
         return
 
     if isinstance(actual, Dict) and isinstance(expected, Dict):
+
+        
+        unexpected_keys = {key: value for key, value in expected.items() if
+                             value is UNDEFINED}.keys()
+        assert not (unexpected_keys & actual.keys()), \
+            f"Keys should not be present: {unexpected_keys & actual.keys()}"
+
+        expected_keys = expected.keys() - unexpected_keys
         
         assert (
-            expected.keys() <= actual.keys()
-        ), f"Key set should be present: {set(expected.keys()) - set(actual.keys())}"
-        for key in expected.keys():
+            expected_keys <= actual.keys()
+        ), f"Key set should be present: {set(expected_keys) - set(actual.keys())}"
+        for key in expected_keys:
             recursive_compare(expected[key], actual[key])
         return
 
