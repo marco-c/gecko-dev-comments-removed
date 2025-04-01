@@ -2393,7 +2393,7 @@ struct nsGridContainerFrame::Tracks {
       nsTArray<SpanningItemData>::iterator aIterEnd,
       nsTArray<uint32_t>& aTracks, nsTArray<TrackSize>& aPlan,
       nsTArray<TrackSize>& aItemPlan, TrackSize::StateBits aSelector,
-      const TrackSizingFunctions& aFunctions,
+      bool aIsGridIntrinsicSizing, const TrackSizingFunctions& aFunctions,
       const FitContentClamper& aFitContentClamper = nullptr,
       bool aNeedInfinitelyGrowableFlag = false);
   
@@ -3452,7 +3452,8 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
   const ReflowInput* const mReflowInput;
   gfxContext& mRenderingContext;
   nsGridContainerFrame* const mFrame;
-  SharedGridData* mSharedGridData;  
+  
+  SharedGridData* mSharedGridData = nullptr;
   
   LogicalMargin mBorderPadding;
   
@@ -3460,19 +3461,21 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
 
 
 
-  nscoord mFragBStart;
+  nscoord mFragBStart = 0;
   
-  uint32_t mStartRow;
+  uint32_t mStartRow = 0;
   
 
 
 
-  uint32_t mNextFragmentStartRow;
+  uint32_t mNextFragmentStartRow = 0;
   
   LogicalSides mSkipSides;
   const WritingMode mWM;
   
-  bool mInFragmentainer;
+  bool mInFragmentainer = false;
+  
+  bool mIsGridIntrinsicSizing = false;
 
  private:
   GridReflowInput(nsGridContainerFrame* aFrame, gfxContext& aRenderingContext,
@@ -3489,14 +3492,9 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
         mReflowInput(aReflowInput),
         mRenderingContext(aRenderingContext),
         mFrame(aFrame),
-        mSharedGridData(nullptr),
         mBorderPadding(aWM),
-        mFragBStart(0),
-        mStartRow(0),
-        mNextFragmentStartRow(0),
         mSkipSides(aFrame->GetWritingMode()),
-        mWM(aWM),
-        mInFragmentainer(false) {
+        mWM(aWM) {
     MOZ_ASSERT(!aReflowInput || aReflowInput->mFrame == mFrame);
     if (aReflowInput) {
       mBorderPadding = aReflowInput->ComputedLogicalBorderPadding(mWM);
@@ -6684,7 +6682,8 @@ bool nsGridContainerFrame::Tracks::GrowSizeForSpanningItems(
     nsTArray<SpanningItemData>::iterator aIter,
     nsTArray<SpanningItemData>::iterator aIterEnd, nsTArray<uint32_t>& aTracks,
     nsTArray<TrackSize>& aPlan, nsTArray<TrackSize>& aItemPlan,
-    TrackSize::StateBits aSelector, const TrackSizingFunctions& aFunctions,
+    TrackSize::StateBits aSelector, bool aIsGridIntrinsicSizing,
+    const TrackSizingFunctions& aFunctions,
     const FitContentClamper& aFitContentClamper,
     bool aNeedInfinitelyGrowableFlag) {
   constexpr bool isMaxSizingPhase =
@@ -6701,6 +6700,11 @@ bool nsGridContainerFrame::Tracks::GrowSizeForSpanningItems(
       for (auto i : item.mLineRange.Range()) {
         aPlan[i].mState |= TrackSize::eModified;
       }
+    }
+    if (step == TrackSizingStep::Flex && aIsGridIntrinsicSizing) {
+      
+      
+      continue;
     }
     nscoord space = item.SizeContributionForPhase<phase>();
     if (space <= 0) {
@@ -6948,7 +6952,7 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
             GrowSizeForSpanningItems<TrackSizingStep::NotFlex,
                                      TrackSizingPhase::IntrinsicMinimums>(
                 spanGroupStart, spanGroupEnd, tracks, plan, itemPlan, selector,
-                aFunctions);
+                aGridRI.mIsGridIntrinsicSizing, aFunctions);
       }
 
       selector = contentBasedMinSelector;
@@ -6959,7 +6963,7 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
             GrowSizeForSpanningItems<TrackSizingStep::NotFlex,
                                      TrackSizingPhase::ContentBasedMinimums>(
                 spanGroupStart, spanGroupEnd, tracks, plan, itemPlan, selector,
-                aFunctions);
+                aGridRI.mIsGridIntrinsicSizing, aFunctions);
       }
 
       selector = maxContentMinSelector;
@@ -6970,7 +6974,7 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
             GrowSizeForSpanningItems<TrackSizingStep::NotFlex,
                                      TrackSizingPhase::MaxContentMinimums>(
                 spanGroupStart, spanGroupEnd, tracks, plan, itemPlan, selector,
-                aFunctions);
+                aGridRI.mIsGridIntrinsicSizing, aFunctions);
       }
 
       if (updatedBase) {
@@ -6990,7 +6994,8 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
         GrowSizeForSpanningItems<TrackSizingStep::NotFlex,
                                  TrackSizingPhase::IntrinsicMaximums>(
             spanGroupStart, spanGroupEnd, tracks, plan, itemPlan, selector,
-            aFunctions, fitContentClamper, willRunStep3_6);
+            aGridRI.mIsGridIntrinsicSizing, aFunctions, fitContentClamper,
+            willRunStep3_6);
 
         if (willRunStep3_6) {
           
@@ -6998,7 +7003,7 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
           GrowSizeForSpanningItems<TrackSizingStep::NotFlex,
                                    TrackSizingPhase::MaxContentMaximums>(
               spanGroupStart, spanGroupEnd, tracks, plan, itemPlan, selector,
-              aFunctions, fitContentClamper);
+              aGridRI.mIsGridIntrinsicSizing, aFunctions, fitContentClamper);
         }
       }
     }
@@ -7020,7 +7025,7 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
           GrowSizeForSpanningItems<TrackSizingStep::Flex,
                                    TrackSizingPhase::IntrinsicMinimums>(
               flexSpanningItems.begin(), flexSpanningItems.end(), tracks, plan,
-              itemPlan, selector, aFunctions);
+              itemPlan, selector, aGridRI.mIsGridIntrinsicSizing, aFunctions);
     }
 
     selector = contentBasedMinSelector;
@@ -7031,7 +7036,7 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
           GrowSizeForSpanningItems<TrackSizingStep::Flex,
                                    TrackSizingPhase::ContentBasedMinimums>(
               flexSpanningItems.begin(), flexSpanningItems.end(), tracks, plan,
-              itemPlan, selector, aFunctions);
+              itemPlan, selector, aGridRI.mIsGridIntrinsicSizing, aFunctions);
     }
 
     selector = maxContentMinSelector;
@@ -7042,7 +7047,7 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
           GrowSizeForSpanningItems<TrackSizingStep::Flex,
                                    TrackSizingPhase::MaxContentMinimums>(
               flexSpanningItems.begin(), flexSpanningItems.end(), tracks, plan,
-              itemPlan, selector, aFunctions);
+              itemPlan, selector, aGridRI.mIsGridIntrinsicSizing, aFunctions);
     }
 
     if (updatedBase) {
@@ -9757,6 +9762,8 @@ nscoord nsGridContainerFrame::ComputeIntrinsicISize(
   
   NormalizeChildLists();
   GridReflowInput gridRI(this, *aInput.mContext);
+  
+  gridRI.mIsGridIntrinsicSizing = true;
   InitImplicitNamedAreas(gridRI.mGridStyle);  
 
   
