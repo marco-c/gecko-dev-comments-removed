@@ -39,10 +39,12 @@ function trusted_type_violations_and_exception_for(fn) {
     }
     
     
+    
+    
     try {
-      new EventSource("/common/blank.html");
+      new WebSocket("ws:/common/blank.html");
     } catch(e) {
-      if (!e instanceof DOMException || e.name !== "SecurityError") {
+      if ((!e instanceof DOMException || e.name !== "SecurityError") && e.name !== "NS_ERROR_CONTENT_BLOCKED") {
         throw e;
       }
     }
