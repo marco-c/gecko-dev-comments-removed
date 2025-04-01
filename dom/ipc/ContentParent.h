@@ -1576,8 +1576,6 @@ class ContentParent final : public PContentParent,
   nsTHashSet<nsCString> mActivePermissionKeys;
   nsTHashSet<nsCString> mActiveSecondaryPermissionKeys;
 
-  nsTArray<nsCString> mBlobURLs;
-
   nsTArray<nsCOMPtr<nsIPrincipal>> mCookieInContentListCache;
 
   
