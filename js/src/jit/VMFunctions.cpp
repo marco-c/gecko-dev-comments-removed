@@ -368,7 +368,7 @@ struct VMFunctionDataHelper<R (*)(JSContext*, Args...)>
 
 static constexpr VMFunctionData vmFunctions[] = {
 #define DEF_VMFUNCTION(name, fp, valuesToPop...) \
-  VMFunctionDataHelper<decltype(&(::fp))>(#name, PopValues(valuesToPop)),
+  VMFunctionDataHelper<decltype(&fp)>(#name, PopValues(valuesToPop)),
     VMFUNCTION_LIST(DEF_VMFUNCTION)
 #undef DEF_VMFUNCTION
 };
@@ -381,7 +381,7 @@ static constexpr VMFunctionData vmFunctions[] = {
 
 
 
-#define DEF_VMFUNCTION(name, fp, ...) (void*)(::fp),
+#define DEF_VMFUNCTION(name, fp, ...) (void*)(fp),
 static void* const vmFunctionTargets[] = {VMFUNCTION_LIST(DEF_VMFUNCTION)};
 #undef DEF_VMFUNCTION
 
