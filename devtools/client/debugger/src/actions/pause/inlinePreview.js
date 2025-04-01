@@ -13,26 +13,9 @@ import { validateSelectedFrame } from "../../utils/context";
 
 
 
-
-
-
-
-
-
-function getScopeLevels(scope) {
-  let levels = 0;
-  while (scope && scope.type === "block") {
-    levels++;
-    scope = scope.parent;
-  }
-  return levels;
-}
-
-
-
-
 export function generateInlinePreview(selectedFrame) {
-  return async function ({ dispatch, getState, parserWorker, client }) {
+  return async function (thunkArgs) {
+    const { dispatch, getState } = thunkArgs;
     if (!features.inlinePreview) {
       return null;
     }
@@ -41,68 +24,13 @@ export function generateInlinePreview(selectedFrame) {
     if (getSelectedFrameInlinePreviews(getState())) {
       return null;
     }
-    let scopes = getSelectedScope(getState());
+    const scope = getSelectedScope(getState());
 
-    if (!scopes || !scopes.bindings) {
+    if (!scope || !scope.bindings) {
       return null;
     }
 
-    
-    
-    const selectedLocation = getSelectedLocation(getState());
-    if (!selectedLocation) {
-      return null;
-    }
-
-    if (!parserWorker.isLocationSupported(selectedLocation)) {
-      return null;
-    }
-
-    const originalAstScopes = await parserWorker.getScopes(selectedLocation);
-
-    
-    validateSelectedFrame(getState(), selectedFrame);
-
-    if (!originalAstScopes) {
-      return null;
-    }
-
-    const allPreviews = [];
-    const pausedOnLine = selectedLocation.line;
-    const levels = getScopeLevels(scopes);
-
-    for (
-      let curLevel = 0;
-      curLevel <= levels && scopes && scopes.bindings;
-      curLevel++
-    ) {
-      
-      const bindings = getScopeBindings(scopes);
-
-      
-      const allPreviewBindingsComplete = Object.keys(bindings).map(
-        async name => {
-          
-          const previews = await generatePreviewsForBinding(
-            originalAstScopes[curLevel]?.bindings[name],
-            pausedOnLine,
-            name,
-            bindings[name].value,
-            client,
-            selectedFrame.thread
-          );
-
-          allPreviews.push(...previews);
-        }
-      );
-      await Promise.all(allPreviewBindingsComplete);
-
-      
-      validateSelectedFrame(getState(), selectedFrame);
-
-      scopes = scopes.parent;
-    }
-
+    const allPreviews = await getPreviews(selectedFrame, scope, thunkArgs);
     
     allPreviews.sort((previewA, previewB) => {
       if (previewA.line < previewB.line) {
@@ -138,9 +66,74 @@ export function generateInlinePreview(selectedFrame) {
 
 
 
-function getScopeBindings(scopes) {
-  const bindings = { ...scopes.bindings.variables };
-  scopes.bindings.arguments.forEach(argument => {
+
+async function getPreviews(selectedFrame, scope, thunkArgs) {
+  const { client, parserWorker, getState } = thunkArgs;
+
+  
+  
+  const selectedLocation = getSelectedLocation(getState());
+  if (!selectedLocation) {
+    return [];
+  }
+
+  if (!parserWorker.isLocationSupported(selectedLocation)) {
+    return [];
+  }
+
+  const originalAstScopes = await parserWorker.getScopes(selectedLocation);
+  if (!originalAstScopes) {
+    return [];
+  }
+
+  
+  validateSelectedFrame(getState(), selectedFrame);
+
+  const allPreviews = [];
+  let level = 0;
+  while (scope && scope.bindings) {
+    
+    const bindings = getScopeBindings(scope);
+
+    
+    const allPreviewBindingsComplete = Object.keys(bindings).map(async name => {
+      
+      const previews = await generatePreviewsForBinding(
+        originalAstScopes[level]?.bindings[name],
+        selectedLocation.line,
+        name,
+        bindings[name].value,
+        client,
+        selectedFrame.thread
+      );
+
+      allPreviews.push(...previews);
+    });
+    await Promise.all(allPreviewBindingsComplete);
+
+    
+    validateSelectedFrame(getState(), selectedFrame);
+
+    
+    
+    if (scope.type === "function") {
+      break;
+    }
+    level++;
+    scope = scope.parent;
+  }
+  return allPreviews;
+}
+
+
+
+
+
+
+
+function getScopeBindings(scope) {
+  const bindings = { ...scope.bindings.variables };
+  scope.bindings.arguments.forEach(argument => {
     Object.keys(argument).forEach(key => {
       bindings[key] = argument[key];
     });
