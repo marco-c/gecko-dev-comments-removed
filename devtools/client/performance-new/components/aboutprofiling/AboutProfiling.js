@@ -7,6 +7,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -40,6 +41,29 @@ const {
 } = require("resource://devtools/client/performance-new/shared/browser.js");
 
 
+const ABOUTPROFILING_HAS_DEVELOPER_OPTIONS_PREF =
+  "devtools.performance.aboutprofiling.has-developer-options";
+
+
+
+
+
+
+
+
+
+
+
+
+
+function encodeShellValue(value) {
+  return "'" + value.replaceAll("'", `'"'"'`) + "'";
+}
+
+
+
+
+
 
 
 
@@ -54,7 +78,36 @@ const {
 
 
 class MoreActionsButtonImpl extends PureComponent {
+  state = {
+    hasDeveloperOptions: Services.prefs.getBoolPref(
+      ABOUTPROFILING_HAS_DEVELOPER_OPTIONS_PREF,
+      false
+    ),
+  };
+
+  componentDidMount() {
+    Services.prefs.addObserver(
+      ABOUTPROFILING_HAS_DEVELOPER_OPTIONS_PREF,
+      this.onHasDeveloperOptionsPrefChanges
+    );
+  }
+
+  componentWillUnmount() {
+    Services.prefs.removeObserver(
+      ABOUTPROFILING_HAS_DEVELOPER_OPTIONS_PREF,
+      this.onHasDeveloperOptionsPrefChanges
+    );
+  }
   _menuRef = createRef();
+
+  onHasDeveloperOptionsPrefChanges = () => {
+    this.setState({
+      hasDeveloperOptions: Services.prefs.getBoolPref(
+        ABOUTPROFILING_HAS_DEVELOPER_OPTIONS_PREF,
+        false
+      ),
+    });
+  };
 
   
 
@@ -92,6 +145,28 @@ class MoreActionsButtonImpl extends PureComponent {
     restartBrowserWithEnvironmentVariable(envVariables);
   };
 
+  onCopyEnvVariables = async () => {
+    const envVariables =
+      this.getEnvironmentVariablesForStartupFromRecordingSettings();
+    const envString = Object.entries(envVariables)
+      .map(([key, value]) => `${key}=${encodeShellValue(value)}`)
+      .join(" ");
+    await navigator.clipboard.writeText(envString);
+  };
+
+  onCopyTestVariables = async () => {
+    const { interval, entries, threads, features } =
+      this.props.recordingSettings;
+
+    const envString =
+      "--gecko-profile" +
+      ` --gecko-profile-interval ${interval}` +
+      ` --gecko-profile-entries ${entries}` +
+      ` --gecko-profile-features ${encodeShellValue(features.join(","))}` +
+      ` --gecko-profile-threads ${encodeShellValue(threads.join(","))}`;
+    await navigator.clipboard.writeText(envString);
+  };
+
   render() {
     return h(
       Fragment,
@@ -119,7 +194,27 @@ class MoreActionsButtonImpl extends PureComponent {
             { onClick: this.onRestartWithProfiling },
             "Restart Firefox with startup profiling enabled"
           )
-        )
+        ),
+        this.state.hasDeveloperOptions
+          ? Localized(
+              { id: "perftools-menu-more-actions-copy-for-startup" },
+              h(
+                "panel-item",
+                { onClick: this.onCopyEnvVariables },
+                "Copy environment variables for startup profiling"
+              )
+            )
+          : null,
+        this.state.hasDeveloperOptions
+          ? Localized(
+              { id: "perftools-menu-more-actions-copy-for-perf-tests" },
+              h(
+                "panel-item",
+                { onClick: this.onCopyTestVariables },
+                "Copy parameters for mach try perf"
+              )
+            )
+          : null
       )
     );
   }
