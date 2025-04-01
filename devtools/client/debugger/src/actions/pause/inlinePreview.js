@@ -76,13 +76,7 @@ export function generateInlinePreview(selectedFrame) {
       curLevel <= levels && scopes && scopes.bindings;
       curLevel++
     ) {
-      const bindings = { ...scopes.bindings.variables };
-      scopes.bindings.arguments.forEach(argument => {
-        Object.keys(argument).forEach(key => {
-          bindings[key] = argument[key];
-        });
-      });
-
+      const bindings = getScopeBindings(scopes);
       const previewBindings = Object.keys(bindings).map(async name => {
         
         
@@ -144,6 +138,23 @@ export function generateInlinePreview(selectedFrame) {
       previews,
     });
   };
+}
+
+
+
+
+
+
+
+
+function getScopeBindings(scopes) {
+  const bindings = { ...scopes.bindings.variables };
+  scopes.bindings.arguments.forEach(argument => {
+    Object.keys(argument).forEach(key => {
+      bindings[key] = argument[key];
+    });
+  });
+  return bindings;
 }
 
 function getBindingValues(
