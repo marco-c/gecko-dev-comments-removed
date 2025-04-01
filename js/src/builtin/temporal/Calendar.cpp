@@ -1411,8 +1411,21 @@ static bool CalendarDateEra(JSContext* cx, CalendarId calendar,
   
   constexpr size_t MaxLength = 15;
 #ifdef IMPLEMENTS_DR2126
+
+
+
+#  ifdef __clang__
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wtautological-value-range-compare"
+#  endif
+
   static_assert(MaxLength >= ICUEraNameMaxLength(),
                 "Storage size is at least as large as the largest known era");
+
+#  ifdef __clang__
+#    pragma clang diagnostic pop
+#  endif
+
 #endif
 
   
