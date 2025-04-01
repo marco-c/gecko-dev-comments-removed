@@ -50,13 +50,26 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
                                                          ScriptLoadRequest)
   using SRIMetadata = mozilla::dom::SRIMetadata;
 
+  enum class Kind {
+    
+    TopLevel,
+
+    
+    StaticImport,
+
+    
+    
+    
+    DynamicImport,
+  };
+
   ModuleLoadRequest(nsIURI* aURI, JS::ModuleType aModuleType,
                     mozilla::dom::ReferrerPolicy aReferrerPolicy,
                     ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata& aIntegrity, nsIURI* aReferrer,
-                    LoadContextBase* aContext, bool aIsTopLevel,
-                    bool aIsDynamicImport, ModuleLoaderBase* aLoader,
-                    VisitedURLSet* aVisitedSet, ModuleLoadRequest* aRootModule);
+                    LoadContextBase* aContext, Kind aKind,
+                    ModuleLoaderBase* aLoader, VisitedURLSet* aVisitedSet,
+                    ModuleLoadRequest* aRootModule);
 
   static VisitedURLSet* NewVisitedSetForTopLevelImport(
       nsIURI* aURI, JS::ModuleType aModuleType);

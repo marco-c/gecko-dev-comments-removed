@@ -1092,9 +1092,8 @@ nsresult mozJSModuleLoader::ImportESModule(
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
       uri, JS::ModuleType::JavaScript, dom::ReferrerPolicy::No_referrer,
       options, dom::SRIMetadata(),
-       nullptr, context,
-       true,
-       false, mModuleLoader, visitedSet, nullptr);
+       nullptr, context, ModuleLoadRequest::Kind::TopLevel,
+      mModuleLoader, visitedSet, nullptr);
 
   request->NoCacheEntryFound();
 

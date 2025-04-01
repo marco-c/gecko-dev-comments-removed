@@ -65,9 +65,9 @@ already_AddRefed<ModuleLoadRequest> SyncModuleLoader::CreateStaticImport(
   RefPtr<SyncLoadContext> context = new SyncLoadContext();
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
       aURI, aModuleType, aParent->ReferrerPolicy(), aParent->mFetchOptions,
-      dom::SRIMetadata(), aParent->mURI, context, false, 
-      false,                                             
-      this, aParent->mVisitedSet, aParent->GetRootModule());
+      dom::SRIMetadata(), aParent->mURI, context,
+      ModuleLoadRequest::Kind::StaticImport, this, aParent->mVisitedSet,
+      aParent->GetRootModule());
   request->NoCacheEntryFound();
   return request.forget();
 }
@@ -83,8 +83,7 @@ already_AddRefed<ModuleLoadRequest> SyncModuleLoader::CreateDynamicImport(
       aURI, aModuleType, aMaybeActiveScript->ReferrerPolicy(),
       aMaybeActiveScript->GetFetchOptions(), dom::SRIMetadata(),
       aMaybeActiveScript->BaseURL(), context,
-       true,  true, this,
-      visitedSet, nullptr);
+      ModuleLoadRequest::Kind::DynamicImport, this, visitedSet, nullptr);
 
   request->SetDynamicImport(aMaybeActiveScript, aSpecifier, aPromise);
   request->NoCacheEntryFound();

@@ -57,9 +57,9 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateStaticImport(
       aParent->GetWorkerLoadContext()->mOnlyExistingCachedResourcesAllowed);
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
       aURI, aModuleType, aParent->ReferrerPolicy(), aParent->mFetchOptions,
-      SRIMetadata(), aParent->mURI, loadContext, false, 
-      false,                                            
-      this, aParent->mVisitedSet, aParent->GetRootModule());
+      SRIMetadata(), aParent->mURI, loadContext,
+      ModuleLoadRequest::Kind::StaticImport, this, aParent->mVisitedSet,
+      aParent->GetRootModule());
 
   request->mURL = request->mURI->GetSpecOrDefault();
   request->NoCacheEntryFound();
@@ -142,11 +142,10 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
       ModuleLoadRequest::NewVisitedSetForTopLevelImport(aURI, aModuleType);
 
   ReferrerPolicy referrerPolicy = workerPrivate->GetReferrerPolicy();
-  RefPtr<ModuleLoadRequest> request =
-      new ModuleLoadRequest(aURI, aModuleType, referrerPolicy, options,
-                            SRIMetadata(), baseURL, context, true,
-                             true, 
-                            this, visitedSet, nullptr);
+  RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
+      aURI, aModuleType, referrerPolicy, options, SRIMetadata(), baseURL,
+      context, ModuleLoadRequest::Kind::DynamicImport, this, visitedSet,
+      nullptr);
 
   request->SetDynamicImport(aMaybeActiveScript, aSpecifier, aPromise);
   request->NoCacheEntryFound();

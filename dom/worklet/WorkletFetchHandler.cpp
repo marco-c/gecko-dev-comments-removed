@@ -119,8 +119,7 @@ NS_IMETHODIMP StartModuleLoadRunnable::RunOnWorkletThread() {
   
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
       mURI, JS::ModuleType::JavaScript, ReferrerPolicy::_empty, fetchOptions,
-      SRIMetadata(), mReferrer, loadContext, true, 
-      false,                                       
+      SRIMetadata(), mReferrer, loadContext, ModuleLoadRequest::Kind::TopLevel,
       moduleLoader, visitedSet, nullptr);
 
   request->mURL = request->mURI->GetSpecOrDefault();
