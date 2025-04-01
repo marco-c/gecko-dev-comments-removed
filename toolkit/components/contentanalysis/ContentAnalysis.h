@@ -14,7 +14,6 @@
 #include "mozilla/WeakPtr.h"
 #include "nsIClipboard.h"
 #include "nsIContentAnalysis.h"
-#include "nsIThreadPool.h"
 #include "nsITransferable.h"
 #include "nsString.h"
 #include "nsTHashMap.h"
@@ -180,13 +179,11 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
 
 class ContentAnalysisResponse;
 class ContentAnalysis final : public nsIContentAnalysis,
-                              public nsIObserver,
                               public SupportsWeakPtr {
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(CONTENTANALYSIS_IID)
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSICONTENTANALYSIS
-  NS_DECL_NSIOBSERVER
 
   ContentAnalysis();
 
@@ -278,10 +275,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
 
   
   
-  nsCOMPtr<nsIThreadPool> mThreadPool;
-
-  
-  
   
   
   
@@ -322,10 +315,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
   bool LastRequestSucceeded();
 
   
-  void Close();
-
-  
-  bool IsShutDown();
+  bool IsShuttingDown();
 
   
   
@@ -471,7 +461,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
   std::vector<std::regex> mDenyUrlList;
   bool mParsedUrlLists = false;
   bool mForbidFutureRequests = false;
-  DataMutex<bool> mIsShutDown{false, "ContentAnalysis::IsShutDown"};
+  DataMutex<bool> mIsShuttingDown{false, "ContentAnalysis::IsShuttingDown"};
 
   friend class ContentAnalysisResponse;
   friend class ::ContentAnalysisTest;
