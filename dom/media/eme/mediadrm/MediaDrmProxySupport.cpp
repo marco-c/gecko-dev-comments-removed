@@ -223,7 +223,8 @@ void MediaDrmProxySupport::CreateSession(uint32_t aCreateSessionToken,
   MOZ_ASSERT(mBridgeProxy);
 
   auto initDataBytes = mozilla::jni::ByteArray::New(
-      reinterpret_cast<const int8_t*>(&aInitData[0]), aInitData.Length());
+      reinterpret_cast<const int8_t*>(aInitData.Elements()),
+      aInitData.Length());
   
   
   

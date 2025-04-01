@@ -52,7 +52,7 @@ class WriteRecordClient : public FileIOClient {
     if (aStatus != Status::kSuccess) {
       Done(aStatus);
     } else if (mFileIO) {  
-      mFileIO->Write(&mData[0], mData.size());
+      mFileIO->Write(mData.data(), mData.size());
     }
   }
 
