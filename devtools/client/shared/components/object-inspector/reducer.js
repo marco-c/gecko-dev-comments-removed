@@ -83,8 +83,10 @@ function reducer(state = initialOIState(), action = {}) {
 
   
   
-  if (type === "RESUME" || type == "NAVIGATE") {
-    return initialOIState({ watchpoints: state.watchpoints });
+  
+  
+  if (type === "RESUME" || type === "PAUSED" || type == "NAVIGATE" || type == "SELECT_THREAD" || type == "SELECT_FRAME") {
+      return initialOIState({ watchpoints: state.watchpoints });
   }
 
   return state;
