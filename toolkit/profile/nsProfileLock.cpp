@@ -534,7 +534,12 @@ nsresult nsProfileLock::Lock(nsIFile* aProfileDir,
 nsresult nsProfileLock::Unlock(bool aFatalSignal) {
   nsresult rv = NS_OK;
 
+#pragma GCC diagnostic push
+
+
+#pragma GCC diagnostic ignored "-Wuninitialized"
   if (mHaveLock) {
+#pragma GCC diagnostic pop
 #if defined(XP_WIN)
     if (mLockFileHandle != INVALID_HANDLE_VALUE) {
       CloseHandle(mLockFileHandle);
