@@ -94,13 +94,6 @@ const processes = {
       stat: 1,
     },
     {
-      
-      path: "XREAppFeat:formautofill@mozilla.org.xpi",
-      condition: !WIN,
-      ignoreIfUnused: true,
-      stat: 1,
-    },
-    {
       path: "*ShaderCache*", 
       condition: WIN,
       ignoreIfUnused: true,
@@ -151,13 +144,6 @@ const processes = {
       path: "XCurProcD:",
       condition: WIN,
       stat: 1,
-    },
-    {
-      
-      path: "*screenshots@mozilla.org.xpi",
-      condition: true,
-      ignoreIfUnused: true,
-      close: 1,
     },
   ],
 };

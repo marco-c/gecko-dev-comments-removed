@@ -287,12 +287,6 @@ const startupPhases = {
   
   "before first paint": [
     {
-      path: "XREAppFeat:formautofill@mozilla.org.xpi",
-      condition: !WIN,
-      stat: 1,
-      close: 1,
-    },
-    {
       
       path: "XREAppDist:distribution.ini",
       
@@ -390,13 +384,6 @@ const startupPhases = {
       close: 1,
     },
     {
-      path: "XREAppFeat:webcompat-reporter@mozilla.org.xpi",
-      condition: !WIN,
-      ignoreIfUnused: true,
-      stat: 1,
-      close: 1,
-    },
-    {
       
       path: "ProfD:wmfvpxvideo.guard",
       condition: WIN,
@@ -460,17 +447,6 @@ const startupPhases = {
       path: `ProfD:key4.db-wal`,
       condition: WIN,
       stat: 7,
-    },
-    {
-      path: "XREAppFeat:screenshots@mozilla.org.xpi",
-      ignoreIfUnused: true,
-      close: 1,
-    },
-    {
-      path: "XREAppFeat:webcompat-reporter@mozilla.org.xpi",
-      ignoreIfUnused: true,
-      stat: 1,
-      close: 1,
     },
     {
       
@@ -639,26 +615,6 @@ add_task(async function () {
   let startupRecorder =
     Cc["@mozilla.org/test/startuprecorder;1"].getService().wrappedJSObject;
   await startupRecorder.done;
-
-  
-  
-  {
-    let addons = await AddonManager.getAddonsByTypes(["extension"]);
-    for (let addon of addons) {
-      if (addon.isSystem) {
-        startupPhases["before opening first browser window"].push({
-          path: `XREAppFeat:${addon.id}.xpi`,
-          stat: 3,
-          close: 2,
-        });
-        startupPhases["before handling user events"].push({
-          path: `XREAppFeat:${addon.id}.xpi`,
-          condition: WIN,
-          stat: 2,
-        });
-      }
-    }
-  }
 
   
   let profile = startupRecorder.data.profile.threads[0];
