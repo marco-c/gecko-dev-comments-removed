@@ -96,8 +96,7 @@ void nsLookAndFeel::RefreshImpl() {
 }
 
 static bool UseNonNativeMenuColors(ColorScheme aScheme) {
-  return !LookAndFeel::GetInt(LookAndFeel::IntID::UseAccessibilityTheme) ||
-         aScheme == ColorScheme::Dark;
+  return !nsUXThemeData::IsHighContrastOn() || aScheme == ColorScheme::Dark;
 }
 
 nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
@@ -664,8 +663,8 @@ LookAndFeelFont nsLookAndFeel::GetLookAndFeelFontInternal(
   result.haveFont() = false;
 
   
-  double pixelScale =
-      1.0 / WinUtils::SystemScaleFactor() / LookAndFeel::GetTextScaleFactor();
+  double pixelScale = 1.0 / WinUtils::SystemScaleFactor() /
+                      WindowsUIUtils::ComputeTextScaleFactor();
 
   
   
