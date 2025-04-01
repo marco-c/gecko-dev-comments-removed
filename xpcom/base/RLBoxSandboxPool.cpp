@@ -5,7 +5,7 @@
 
 
 #include "nsThreadUtils.h"
-#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/RLBoxSandboxPool.h"
 #ifdef MOZ_USING_WASM_SANDBOXING
@@ -19,11 +19,7 @@ NS_IMPL_ISUPPORTS(RLBoxSandboxPool, nsITimerCallback, nsINamed)
 void RLBoxSandboxPool::StartTimer() {
   mMutex.AssertCurrentThreadOwns();
   MOZ_ASSERT(!mTimer, "timer already initialized");
-  if (NS_IsMainThread() &&
-      PastShutdownPhase(ShutdownPhase::AppShutdownConfirmed)) {
-    
-    
-    
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
     
     
     mPool.Clear();
