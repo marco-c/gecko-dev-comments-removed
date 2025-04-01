@@ -5967,6 +5967,16 @@
         }
       }
 
+      
+
+
+
+      if (tab.pinned && !targetElement?.pinned) {
+        
+        targetElement = this.tabs[this.pinnedTabCount - 1];
+        moveBefore = false;
+      }
+
       let getContainer = () => {
         if (tab.pinned && this.tabContainer.verticalMode) {
           return this.tabContainer.verticalPinnedTabsContainer;
