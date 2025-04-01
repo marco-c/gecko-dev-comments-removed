@@ -2761,6 +2761,16 @@ public class GeckoSessionTestRule implements TestRule {
   }
 
   
+  public void setHandlingUserInput(final GeckoSession session, final boolean handlingUserInput) {
+    webExtensionApiCall(
+        session,
+        "SetHandlingUserInput",
+        args -> {
+          args.put("handlingUserInput", handlingUserInput);
+        });
+  }
+
+  
   public boolean usingGpuProcess() {
     return (Boolean) webExtensionApiCall("UsingGpuProcess", null);
   }
