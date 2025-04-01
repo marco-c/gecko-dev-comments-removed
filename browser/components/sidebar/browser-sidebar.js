@@ -595,7 +595,7 @@ var SidebarController = {
           
           
           
-          this.hide({ dismissPanel: false });
+          this.hide();
           this.showInitially(this.lastOpenedId);
           break;
         }
@@ -773,7 +773,7 @@ var SidebarController = {
     await this.promiseInitialized;
     let wasOpen = this.isOpen;
     if (wasOpen) {
-      this.hide({ dismissPanel: false });
+      this.hide();
     }
     
     let extensionsArr = [];
@@ -993,10 +993,7 @@ var SidebarController = {
     }
 
     if (this.isOpen && commandID == this.currentID) {
-      
-      
-      this.hide({ triggerNode, dismissPanel: this.sidebarRevampEnabled });
-      this.updateToolbarButton();
+      this.hide(triggerNode);
       return Promise.resolve();
     }
     return this.show(commandID, triggerNode);
@@ -1186,42 +1183,25 @@ var SidebarController = {
 
 
   async handleToolbarButtonClick() {
+    let initialExpandedValue = this._state.launcherExpanded;
     if (this.inSingleTabWindow || this.uninitializing) {
       return;
     }
-
-    const initialExpandedValue = this._state.launcherExpanded;
-
-    
-    const expandOnToggle = ["always-show", "expand-on-hover"].includes(
-      this.sidebarRevampVisibility
-    );
-
-    
     if (this.sidebarRevampVisibility === "expand-on-hover") {
       this.toggleExpandOnHover(initialExpandedValue);
     }
-
     if (this._animationEnabled && !window.gReduceMotion) {
       this._animateSidebarMain();
     }
+    const showLauncher = !this._state.launcherVisible;
 
-    if (expandOnToggle) {
-      
-      this._state.updateVisibility(true, !initialExpandedValue);
-    } else {
-      const shouldShowLauncher = !this._state.launcherVisible;
-      
-      this._state.updateVisibility(shouldShowLauncher);
-      
-      if (shouldShowLauncher && this._state.command) {
-        this._show(this._state.command);
-      } else if (!shouldShowLauncher) {
-        
-        this.hide({ dismissPanel: false });
-      }
+    this._state.updateVisibility(showLauncher, true);
+    if (showLauncher && this._state.command) {
+      this._show(this._state.command);
     }
-
+    if (this.sidebarRevampVisibility === "expand-on-hover") {
+      this.toggleExpandOnHover(initialExpandedValue);
+    }
     this.updateToolbarButton();
 
     if (this.lastOpenedId == "viewReviewCheckerSidebar") {
@@ -1581,9 +1561,7 @@ var SidebarController = {
       return;
     }
     if (this.currentID === commandID) {
-      
-      
-      this.hide({ dismissPanel: false });
+      this.hide();
     }
     document.getElementById(sidebar.menuId)?.remove();
     document.getElementById(sidebar.switcherMenuId)?.remove();
@@ -1606,7 +1584,7 @@ var SidebarController = {
     if (this.inSingleTabWindow) {
       return false;
     }
-    if (this.currentID && commandID !== this.currentID) {
+    if (this.currentID) {
       
       
       this._recordPanelToggle(this.currentID, false);
@@ -1751,9 +1729,7 @@ var SidebarController = {
 
 
 
-
-
-  hide({ triggerNode, dismissPanel = true } = {}) {
+  hide(triggerNode) {
     if (!this.isOpen) {
       return;
     }
@@ -1769,13 +1745,6 @@ var SidebarController = {
     this.hideSwitcherPanel();
     this._recordPanelToggle(this.currentID, false);
     this._state.panelOpen = false;
-    if (dismissPanel) {
-      
-      
-      this._state.command = "";
-      this.lastOpenedId = null;
-    }
-
     if (this.sidebarRevampEnabled) {
       this._box.dispatchEvent(new CustomEvent("sidebar-hide"));
     }
@@ -1798,6 +1767,17 @@ var SidebarController = {
     if (triggerNode) {
       updateToggleControlLabel(triggerNode);
     }
+    let showLauncher = false;
+    if (
+      this.sidebarRevampEnabled &&
+      this.sidebarRevampVisibility !== "hide-sidebar"
+    ) {
+      showLauncher = true;
+    }
+    this._state.updateVisibility(
+      showLauncher,
+      false 
+    );
     this.updateToolbarButton();
   },
 
@@ -1882,11 +1862,8 @@ var SidebarController = {
 
   onWidgetRemoved(aWidgetId) {
     if (aWidgetId == "sidebar-button") {
-      if (this.isOpen) {
-        this.hide();
-      }
-      this._state.loadInitialState({ ...this.SidebarState.defaultProperties });
       Services.prefs.setStringPref("sidebar.visibility", "hide-sidebar");
+      this._state.updateVisibility(false, false, true);
     }
   },
 
@@ -2156,15 +2133,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
         ) {
           SidebarController._animateSidebarMain();
         }
-
-        
-        let forceExpand = false;
-        if (
-          isVerticalTabs &&
-          ["always-show", "hide-sidebar"].includes(newValue)
-        ) {
-          forceExpand = true;
-        }
+        const forceExpand = isVerticalTabs && newValue === "always-show";
 
         
         
@@ -2172,7 +2141,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
         if (newValue == "hide-sidebar" && isVerticalTabs) {
           showLauncher = false;
         }
-        SidebarController._state.updateVisibility(showLauncher, forceExpand);
+        SidebarController._state.updateVisibility(
+          showLauncher,
+          false,
+          false,
+          forceExpand
+        );
       }
       SidebarController.updateToolbarButton();
     }
