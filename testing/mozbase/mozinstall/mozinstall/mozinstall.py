@@ -375,13 +375,28 @@ def _get_msix_install_location(pkg):
                             cmd = (
                                 f'powershell.exe "Get-AppxPackage" "-Name" "{pkgname}"'
                             )
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            location = None
                             for line in (
                                 subprocess.check_output(cmd)
                                 .decode("utf-8")
                                 .splitlines()
                             ):
                                 if line.startswith("InstallLocation"):
-                                    return "C:{}".format(line.split(":")[-1].strip())
+                                    location = line[line.find(": ") + 2 :]
+                                elif location is not None:
+                                    if line.startswith(" "):
+                                        location += line.lstrip()
+                                    else:
+                                        break
+                            return location
 
     raise Exception(f"Couldn't find install location of {pkg}")
 
