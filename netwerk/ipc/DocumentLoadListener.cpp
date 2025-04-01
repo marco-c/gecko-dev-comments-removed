@@ -2762,6 +2762,16 @@ nsresult DocumentLoadListener::DoOnStartRequest(nsIRequest* aRequest) {
              "(status: %s) %s",
              GetStaticErrorName(status),
              GetChannelCreationURI()->GetSpecOrDefault().get()));
+
+    
+    
+    
+    
+    
+    if (!httpChannel) {
+      DisconnectListeners(status, status);
+      return NS_OK;
+    }
   }
 
   
