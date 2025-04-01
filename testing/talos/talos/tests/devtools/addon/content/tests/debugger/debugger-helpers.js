@@ -187,12 +187,7 @@ async function waitForPaused(
     promises.push(waitForLoadedScopes(dbg));
   }
   const {
-    selectors: {
-      getSelectedScope,
-      getIsPaused,
-      getCurrentThread,
-      getSelectedLocation,
-    },
+    selectors: { getSelectedScope, getIsPaused, getCurrentThread },
   } = dbg;
   const onStateChange = waitForState(dbg, state => {
     const thread = getCurrentThread(state);
@@ -202,13 +197,8 @@ async function waitForPaused(
 
   await Promise.all(promises);
 
-  const state = dbg.store.getState();
-  const selectedSource = getSelectedLocation(state);
   
-  
-  
-  
-  if (!isCm6Enabled() || selectedSource.isOriginal) {
+  if (!isCm6Enabled()) {
     await waitForSymbols(dbg);
   }
 }

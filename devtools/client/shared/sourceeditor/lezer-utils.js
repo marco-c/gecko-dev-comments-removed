@@ -61,12 +61,19 @@ const nodeTypeSets = {
     nodeTypes.VariableDeclaration,
     nodeTypes.AssignmentExpression,
   ]),
+  functionsVarDecl: new Set([
+    ...nodeTypeSets.functions,
+    
+    nodeTypes.VariableDeclaration,
+  ]),
   paramList: new Set([nodeTypes.ParamList]),
   variableDefinition: new Set([nodeTypes.VariableDefinition]),
   numberAndProperty: new Set([nodeTypes.PropertyDefinition, nodeTypes.Number]),
   memberExpression: new Set([nodeTypes.MemberExpression]),
   classes: new Set([nodeTypes.ClassDeclaration, nodeTypes.ClassExpression]),
 };
+
+const ast = new Map();
 
 
 
@@ -102,6 +109,62 @@ function findChildNodeOfType(node, types) {
     childNode = childNode.nextSibling;
   }
   return null;
+}
+
+
+
+
+
+
+
+
+
+function getTree(parserLanguage, id, content) {
+  if (ast.has(id)) {
+    return ast.get(id);
+  }
+  const tree = parserLanguage.parser.parse(content);
+  ast.set(id, tree);
+  return tree;
+}
+
+function clear() {
+  ast.clear();
+}
+
+
+
+
+
+
+
+
+function getEnclosingFunctionName(doc, node) {
+  let parentNode = node.parent;
+  while (parentNode !== null) {
+    if (nodeTypeSets.functionsVarDecl.has(parentNode.name)) {
+      const funcName = getFunctionName(doc, parentNode);
+      if (funcName) {
+        return funcName;
+      }
+    }
+    parentNode = parentNode.parent;
+  }
+  return "";
+}
+
+
+
+
+
+
+
+
+
+function getTreeNodeAtLocation(doc, tree, location) {
+  const line = doc.line(location.line);
+  const pos = line.from + location.column;
+  return tree.resolve(pos, 1);
 }
 
 
@@ -321,7 +384,11 @@ module.exports = {
   getFunctionName,
   getFunctionParameterNames,
   getFunctionClass,
+  getEnclosingFunctionName,
+  getTreeNodeAtLocation,
   nodeTypes,
   nodeTypeSets,
   walkTree,
+  getTree,
+  clear,
 };

@@ -255,15 +255,7 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
 
       const selectedFrame = getSelectedFrame(getCurrentThread());
       
-      const isPausedInSource =
-        selectedFrame?.location.source.id == location.source.id;
-      
-      
-      
-      const hasSymbols =
-        !isCm6Enabled || selectedFrame?.location.source.isOriginal
-          ? getSymbols(location)
-          : true;
+      const hasSymbols = !isCm6Enabled ? getSymbols(location) : true;
       
       if (
         

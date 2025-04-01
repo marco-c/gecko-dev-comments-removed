@@ -35,9 +35,9 @@ function getSelectedFrameId(state, thread, frames) {
   return selectedFrame?.id;
 }
 
-async function updateFrameLocationAndDisplayName(frame, thunkArgs) {
+async function updateFrameLocation(frame, thunkArgs) {
   
-  if (frame.isOriginal) {
+  if (isWasmOriginalSourceFrame(frame)) {
     return frame;
   }
 
@@ -50,17 +50,10 @@ async function updateFrameLocationAndDisplayName(frame, thunkArgs) {
   }
 
   
-  
-  const originalDisplayName = location.source.isPrettyPrinted
-    ? frame.displayName
-    : await thunkArgs.dispatch(getOriginalFunctionDisplayName(location));
-
-  
   return {
     ...frame,
     location,
     generatedLocation: frame.generatedLocation || frame.location,
-    originalDisplayName,
   };
 }
 
@@ -116,6 +109,57 @@ async function expandWasmFrames(frames, { getState, sourceMapLoader }) {
   return result;
 }
 
+async function updateFrameDisplayName(frame, thunkArgs) {
+  const location = frame.location;
+  
+  if (
+    location.source.isWasm ||
+    !location.source.isOriginal ||
+    location.source.isPrettyPrinted
+  ) {
+    return frame;
+  }
+
+  
+  
+  const originalDisplayName = location.source.isPrettyPrinted
+    ? frame.displayName
+    : await thunkArgs.dispatch(getOriginalFunctionDisplayName(location));
+
+  
+  return {
+    ...frame,
+    originalDisplayName,
+  };
+}
+
+
+
+
+
+
+
+export function updateAllFrameDisplayNames(thread) {
+  return async function (thunkArgs) {
+    const { dispatch, getState } = thunkArgs;
+    const frames = getFrames(getState(), thread);
+    if (!frames || !frames.length) {
+      return;
+    }
+
+    
+    const updatedFrames = await Promise.all(
+      frames.map(frame => updateFrameDisplayName(frame, thunkArgs))
+    );
+
+    dispatch({
+      type: "UPDATE_FRAMES",
+      frames: updatedFrames,
+      thread,
+    });
+  };
+}
+
 
 
 
@@ -135,7 +179,7 @@ export function mapFrames(thread) {
 
     
     let mappedFrames = await Promise.all(
-      frames.map(frame => updateFrameLocationAndDisplayName(frame, thunkArgs))
+      frames.map(frame => updateFrameLocation(frame, thunkArgs))
     );
 
     mappedFrames = await expandWasmFrames(mappedFrames, thunkArgs);

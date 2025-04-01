@@ -44,7 +44,10 @@ export function getOriginalFunctionDisplayName(location) {
   return async ({ parserWorker, dispatch }) => {
     
     await dispatch(loadSourceText(location.source, location.sourceActor));
-    return parserWorker.getClosestFunctionName(location);
+    const editor = getEditor();
+    return features.codemirrorNext
+      ? editor.getClosestFunctionName(location)
+      : parserWorker.getClosestFunctionName(location);
   };
 }
 

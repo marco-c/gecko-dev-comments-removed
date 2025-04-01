@@ -355,9 +355,7 @@ export function selectLocation(
       (selectedFrame.location.source.id == location.source.id ||
         selectedFrame.generatedLocation.source.id == location.source.id) &&
       
-      
-      
-      (!features.codemirrorNext || selectedFrame.location.source.isOriginal)
+      !features.codemirrorNext
     ) {
       
       

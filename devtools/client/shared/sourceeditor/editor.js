@@ -2255,6 +2255,53 @@ class Editor extends EventEmitter {
 
 
 
+  async getClosestFunctionName(location) {
+    const cm = editors.get(this);
+    const {
+      codemirrorLangJavascript: { javascriptLanguage },
+      codemirrorLanguage: { forceParsing, syntaxTree },
+    } = this.#CodeMirror6;
+
+    let doc, tree;
+    
+    
+    
+    const sourceId = location.source.id;
+    if (this.#currentDocumentId === sourceId) {
+      doc = cm.state.doc;
+      
+      await forceParsing(cm, doc.length, 10000);
+
+      tree = syntaxTree(cm.state);
+    } else {
+      
+      
+      
+      
+      const sourceContent = this.#sources.get(location.source.id);
+      if (!sourceContent) {
+        console.error(
+          `Can't find source content for ${location.source.id}, no function name can be determined`
+        );
+        return "";
+      }
+
+      
+      doc = cm.state.toText(sourceContent);
+      tree = lezerUtils.getTree(javascriptLanguage, sourceId, sourceContent);
+    }
+    const token = lezerUtils.getTreeNodeAtLocation(doc, tree, location);
+    return lezerUtils.getEnclosingFunctionName(doc, token);
+  }
+
+  
+
+
+
+
+
+
+
   async findBestMatchExpressions(tokenLocation) {
     const cm = editors.get(this);
     const { codemirrorLanguage } = this.#CodeMirror6;
@@ -2495,6 +2542,7 @@ class Editor extends EventEmitter {
       }
     } else {
       this.#sources.clear();
+      lezerUtils.clear();
     }
   }
 

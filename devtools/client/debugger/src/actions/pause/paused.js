@@ -8,7 +8,7 @@ import {
   getSelectedFrame,
 } from "../../selectors/index";
 
-import { mapFrames, fetchFrames } from "./index";
+import { mapFrames, fetchFrames, updateAllFrameDisplayNames } from "./index";
 import { removeBreakpoint } from "../breakpoints/index";
 import { evaluateExpressions } from "../expressions";
 import { selectLocation } from "../sources/index";
@@ -54,6 +54,12 @@ export function paused(pauseInfo) {
       
       
       validateSelectedFrame(getState(), selectedFrame);
+
+      
+      
+      
+      
+      await dispatch(updateAllFrameDisplayNames(thread));
 
       
       await dispatch(fetchScopes());
