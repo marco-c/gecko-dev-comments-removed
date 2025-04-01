@@ -23,7 +23,7 @@ function verifySignatures() {
   });
 }
 
-createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "4", "4");
+createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "4", "48");
 
 add_setup(async () => {
   await promiseStartupManager();
@@ -534,4 +534,50 @@ add_task(useAMOStageCert(), async function test_disable() {
 
   await addon.uninstall();
   AddonManager.removeAddonListener(listener);
+});
+
+
+
+
+
+
+
+add_task(async function test_xpi_signed_in_or_before_feb_2018() {
+  
+  
+  
+  
+  
+  ExtensionTestUtils.failOnSchemaWarnings(false);
+
+  async function checkAddonIsValid(xpiPath) {
+    let { addon } = await promiseInstallFile(do_get_file(xpiPath));
+    Assert.notEqual(addon, null);
+    Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_SIGNED);
+    Assert.ok(addon.isActive);
+    Assert.equal(addon.appDisabled, false);
+    await addon.uninstall();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+
+  info("Checking add-on signed before 2018, 2016-12-22");
+  
+  
+  
+  const resetWeakSignaturePref =
+    AddonTestUtils.setWeakSignatureInstallAllowed(true);
+  await checkAddonIsValid(`${DATA}/disable_ctrl_q_and_cmd_q-1.xpi`);
+  resetWeakSignaturePref();
+
+  info("Checking add-on signed after 2018, 2024-04-25");
+  await checkAddonIsValid(`${DATA}/disable_ctrl_q_and_cmd_q-2resigned1.xpi`);
+
+  ExtensionTestUtils.failOnSchemaWarnings(true);
 });
