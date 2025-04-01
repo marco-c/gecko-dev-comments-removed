@@ -384,6 +384,10 @@ nsAppStartup::Quit(uint32_t aMode, int aExitCode, bool* aUserAllowedQuit) {
       }
     }
 
+    
+    
+    
+
     PROFILER_MARKER_UNTYPED("Shutdown start", OTHER);
     mozilla::RecordShutdownStartTimeStamp();
 
@@ -433,14 +437,19 @@ nsAppStartup::Quit(uint32_t aMode, int aExitCode, bool* aUserAllowedQuit) {
     }
 
     
-
-
-
     CloseAllWindows();
 
     if (mediator) {
       if (ferocity == eAttemptQuit) {
         ferocity = eForceQuit;  
+
+        
+        
+        
+        
+        
+        
+        
 
         
 
@@ -461,6 +470,8 @@ nsAppStartup::Quit(uint32_t aMode, int aExitCode, bool* aUserAllowedQuit) {
             nsCOMPtr<nsPIDOMWindowOuter> domWindow = do_QueryInterface(window);
             if (domWindow) {
               if (!domWindow->Closed()) {
+                MOZ_DIAGNOSTIC_ASSERT(false,
+                                      "CloseAllWindows() did not succeed.");
                 rv = NS_ERROR_FAILURE;
                 break;
               }
