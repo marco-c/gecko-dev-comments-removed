@@ -53,7 +53,3 @@ user_pref('media.block-autoplay-until-in-foreground', true);
 
 
 user_pref("app.update.disabledForTesting", true);
-
-
-
-user_pref("remote.system-access-check.enabled", false);

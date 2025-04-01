@@ -2816,14 +2816,7 @@ toolbar#nav-bar {
             
             cmd = os.path.abspath(app)
             args = list(extraArgs)
-
-            
-            
             args.append("-marionette")
-            
-            
-            env["MOZ_REMOTE_ALLOW_SYSTEM_ACCESS"] = "1"
-
             
             
             args.append("-foreground")
