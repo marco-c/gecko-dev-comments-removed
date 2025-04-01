@@ -19,7 +19,10 @@ RegionTestUtils.setNetworkRegion("US");
 
 
 
-async function assertEmptyStore(store, { cleanup = false } = {}) {
+
+
+
+function assertEmptyStore(store) {
   Assert.deepEqual(
     store
       .getAll()
@@ -42,12 +45,4 @@ async function assertEmptyStore(store, { cleanup = false } = {}) {
     [],
     "Store should have no inactive enrollments"
   );
-
-  if (cleanup) {
-    
-    
-    store._store.saveSoon();
-    await store._store.finalize();
-    await IOUtils.remove(store._store.path);
-  }
 }
