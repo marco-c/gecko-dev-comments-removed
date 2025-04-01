@@ -494,7 +494,7 @@ static bool MustReresolveStyle(const ComputedStyle* aStyle) {
 
   
   
-  return aStyle->HasPseudoElementData() && !aStyle->IsPseudoElement();
+  return aStyle->IsInFirstLineSubtree() && !aStyle->IsPseudoElement();
 }
 
 static bool IsInFlatTree(const Element& aElement) {
@@ -1103,9 +1103,6 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
 
     SetResolvedComputedStyle(std::move(resolvedComputedStyle),
                              currentGeneration);
-    NS_ASSERTION(mPseudo.mType != PseudoStyleType::NotPseudo ||
-                     !mComputedStyle->HasPseudoElementData(),
-                 "should not have pseudo-element data");
   }
 
   

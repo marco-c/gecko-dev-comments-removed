@@ -170,11 +170,8 @@ class ComputedStyle {
   }
 
   
-  
-  
-  
-  bool HasPseudoElementData() const {
-    return bool(Flags() & Flag::IS_IN_PSEUDO_ELEMENT_SUBTREE);
+  bool IsInFirstLineSubtree() const {
+    return bool(Flags() & Flag::IS_IN_FIRST_LINE_SUBTREE);
   }
 
   bool SelfOrAncestorHasContainStyle() const {
