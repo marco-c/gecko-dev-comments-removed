@@ -6376,7 +6376,8 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
     }
 
     
-    if (!zoomOut && (sizeAfterZoom.height - rect.Height() > COORDINATE_EPSILON)) {
+    if (!zoomOut &&
+        (sizeAfterZoom.height - rect.Height() > COORDINATE_EPSILON)) {
       rect.MoveByY(-(sizeAfterZoom.height - rect.Height()) * 0.5f);
       if (rect.Y() < 0.0f) {
         rect.MoveToY(0.0f);
@@ -6396,7 +6397,8 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
     
     
     
-    if (!zoomOut && (rect.Height() - sizeAfterZoom.height > COORDINATE_EPSILON)) {
+    if (!zoomOut &&
+        (rect.Height() - sizeAfterZoom.height > COORDINATE_EPSILON)) {
       rect.y =
           scrollOffset.y + (sizeBeforeZoom.height - sizeAfterZoom.height) / 2;
       rect.height = sizeAfterZoom.Height();
