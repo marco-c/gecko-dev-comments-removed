@@ -11392,6 +11392,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     this.categoryRef = []; 
     this.wallpaperRef = []; 
     this.customColorPickerRef = external_React_default().createRef(); 
+    this.customColorInput = external_React_default().createRef(); 
     this.state = {
       activeCategory: null,
       activeCategoryFluentID: null,
@@ -11419,6 +11420,10 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
 
     
     event.target.style.backgroundColor = `rgb(${rgbColors.toString()})`;
+    if (this.customColorPickerRef.current) {
+      const colorInputBackground = this.customColorPickerRef.current.children[0].style.backgroundColor;
+      this.customColorPickerRef.current.style.backgroundColor = colorInputBackground;
+    }
 
     
     const isColorDark = this.isWallpaperColorDark(rgbColors);
@@ -11428,6 +11433,9 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       } else {
         this.customColorPickerRef.current.classList.remove("is-dark");
       }
+
+      
+      this.customColorPickerRef.current.classList.remove("custom-color-set", "custom-color-dark", "default-color-set");
     }
 
     
@@ -11658,8 +11666,25 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     if (prefs["newtabWallpapers.customColor.enabled"] && activeCategory === "solid-colors") {
       filteredWallpapers = reduceColorsToFitCustomColorInput(filteredWallpapers);
     }
+
+    
+    
+    
+    const starterColorHex = this.prefersDarkQuery?.matches ? "#054096" : "#deeafc";
+
+    
+    let initStateClassname = wallpaperCustomSolidColorHex ? "custom-color-set" : "default-color-set";
+
+    
+    if (wallpaperCustomSolidColorHex) {
+      const rgbColors = this.getRGBColors(wallpaperCustomSolidColorHex);
+      const isColorDark = this.isWallpaperColorDark(rgbColors);
+      if (isColorDark) {
+        initStateClassname += " custom-color-dark";
+      }
+    }
     let colorPickerInput = showColorPicker && activeCategory === "solid-colors" ? external_React_default().createElement("div", {
-      className: "theme-custom-color-picker",
+      className: `theme-custom-color-picker ${initStateClassname}`,
       ref: this.customColorPickerRef
     }, external_React_default().createElement("input", {
       onInput: this.handleColorInput,
@@ -11671,12 +11696,11 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       id: "solid-color-picker"
       
       ,
-      "aria-current": this.state.activeId === "solid-color-picker"
-      
-      ,
-      value: wallpaperCustomSolidColorHex || "#00d230",
+      "aria-current": this.state.activeId === "solid-color-picker",
+      value: wallpaperCustomSolidColorHex || starterColorHex,
       className: `wallpaper-input
-              ${this.state.activeId === "solid-color-picker" ? "active" : ""}`
+              ${this.state.activeId === "solid-color-picker" ? "active" : ""}`,
+      ref: this.customColorInput
     }), external_React_default().createElement("label", {
       htmlFor: "solid-color-picker",
       "data-l10n-id": "newtab-wallpaper-custom-color"
