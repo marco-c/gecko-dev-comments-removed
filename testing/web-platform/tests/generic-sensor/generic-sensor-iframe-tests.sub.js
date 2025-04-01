@@ -48,6 +48,11 @@ function run_generic_sensor_iframe_tests(sensorData, readingData) {
     }, name, properties);
   }
 
+  promise_setup(async () => {
+    
+    await test_driver.click(document.documentElement);
+  });
+
   sensor_test(async (t, readings) => {
     
     
