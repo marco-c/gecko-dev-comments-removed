@@ -250,6 +250,11 @@ UniquePtr<hal::PerformanceHintSession> CreatePerformanceHintSession(
 
 const Maybe<hal::HeterogeneousCpuInfo>& GetHeterogeneousCpuInfo();
 
+
+
+
+void PerformHapticFeedback(int32_t aType);
+
 }  
 }  
 
