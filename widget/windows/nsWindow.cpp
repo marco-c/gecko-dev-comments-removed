@@ -2144,9 +2144,14 @@ void nsWindow::AsyncUpdateWorkspaceID(Desktop& aDesktop) {
           mSelf(aSelf) {}
 
     TaskResult Run() override {
-      auto desktop = mSelf->mDesktopId.Lock();
+      RefPtr<nsWindow> self(mSelf);
+      
+      if (!self) {
+        return TaskResult::Complete;
+      }
+      auto desktop = self->mDesktopId.Lock();
       if (desktop->mUpdateIsQueued) {
-        DoGetWorkspaceID(mSelf->mWnd, &desktop->mID);
+        DoGetWorkspaceID(self->mWnd, &desktop->mID);
         desktop->mUpdateIsQueued = false;
       }
       return TaskResult::Complete;
@@ -2159,7 +2164,9 @@ void nsWindow::AsyncUpdateWorkspaceID(Desktop& aDesktop) {
     }
 #endif
 
-    RefPtr<nsWindow> mSelf;
+    
+    
+    ThreadSafeWeakPtr<nsWindow> mSelf;
   };
 
   if (aDesktop.mUpdateIsQueued) {
