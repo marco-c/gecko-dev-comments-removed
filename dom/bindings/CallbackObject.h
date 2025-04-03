@@ -70,7 +70,7 @@ namespace dom {
     }                                                \
   }
 
-class CallbackObject : public nsISupports {
+class CallbackObject : public nsISupports, public JSHolderBase {
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(DOM_CALLBACKOBJECT_IID)
 
@@ -200,7 +200,7 @@ class CallbackObject : public nsISupports {
   }
 
  protected:
-  virtual ~CallbackObject() { mozilla::DropJSObjects(this); }
+  virtual ~CallbackObject() { mozilla::DropJSObjectsWithKey(this); }
 
   explicit CallbackObject(CallbackObject* aCallbackObject) {
     Init(aCallbackObject->mCallback, aCallbackObject->mCallbackGlobal,
@@ -256,7 +256,7 @@ class CallbackObject : public nsISupports {
     
     
     InitNoHold(aCallback, aCallbackGlobal, aCreationStack, aIncumbentGlobal);
-    mozilla::HoldJSObjects(this);
+    mozilla::HoldJSObjectsWithKey(this);
   }
 
   
@@ -264,7 +264,10 @@ class CallbackObject : public nsISupports {
   
   
   
-  void Reset() { ClearJSReferences(); }
+  void Reset() {
+    ClearJSReferences();
+    mozilla::DropJSObjectsWithKey(this);
+  }
   friend class mozilla::PromiseJobRunnable;
 
   inline void ClearJSReferences() {
