@@ -347,6 +347,10 @@ class nsIGlobalObject : public nsISupports {
 
   virtual bool IsXPCSandbox() { return false; }
 
+  virtual bool HasScheduledNormalOrHighPriorityWebTasks() const {
+    return false;
+  }
+
   
 
 
