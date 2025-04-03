@@ -589,6 +589,11 @@ class NodeActor extends Actor {
 
 
   scrollIntoView() {
+    
+    
+    if (typeof this.rawNode.scrollIntoView !== "function") {
+      return;
+    }
     this.rawNode.scrollIntoView(true);
   }
 
