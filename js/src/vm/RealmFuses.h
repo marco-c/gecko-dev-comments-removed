@@ -157,7 +157,7 @@ struct OptimizeArraySpeciesFuse final : public InvalidatingRealmFuse {
 
 
 
-struct OptimizePromiseLookupFuse final : public InvalidatingRealmFuse {
+struct OptimizePromiseLookupFuse final : public RealmFuse {
   virtual const char* name() override { return "OptimizePromiseLookupFuse"; }
   virtual bool checkInvariant(JSContext* cx) override;
   virtual void popFuse(JSContext* cx, RealmFuses& realmFuses) override;
