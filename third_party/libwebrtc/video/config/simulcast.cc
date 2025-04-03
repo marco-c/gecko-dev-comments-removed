@@ -325,7 +325,7 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
           
           rate_factor = 0.4 / 0.6;
         }
-      } else {
+      } else if (num_temporal_layers > 3) {
         rate_factor =
             webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
                 3, 0, false) /
