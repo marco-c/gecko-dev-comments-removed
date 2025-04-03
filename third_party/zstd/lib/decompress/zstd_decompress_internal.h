@@ -136,7 +136,7 @@ struct ZSTD_DCtx_s
     const void* virtualStart;     
     const void* dictEnd;          
     size_t expected;
-    ZSTD_frameHeader fParams;
+    ZSTD_FrameHeader fParams;
     U64 processedCSize;
     U64 decodedSize;
     blockType_e bType;            
@@ -154,7 +154,7 @@ struct ZSTD_DCtx_s
     size_t rleSize;
     size_t staticSize;
     int isFrameDecompression;
-#if DYNAMIC_BMI2 != 0
+#if DYNAMIC_BMI2
     int bmi2;                     
 #endif
 
@@ -211,11 +211,11 @@ struct ZSTD_DCtx_s
 };  
 
 MEM_STATIC int ZSTD_DCtx_get_bmi2(const struct ZSTD_DCtx_s *dctx) {
-#if DYNAMIC_BMI2 != 0
-	return dctx->bmi2;
+#if DYNAMIC_BMI2
+    return dctx->bmi2;
 #else
     (void)dctx;
-	return 0;
+    return 0;
 #endif
 }
 

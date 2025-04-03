@@ -11,10 +11,6 @@
 #ifndef POOL_H
 #define POOL_H
 
-#if defined (__cplusplus)
-extern "C" {
-#endif
-
 
 #include "zstd_deps.h"
 #define ZSTD_STATIC_LINKING_ONLY
@@ -81,10 +77,5 @@ void POOL_add(POOL_ctx* ctx, POOL_function function, void* opaque);
 
 
 int POOL_tryAdd(POOL_ctx* ctx, POOL_function function, void* opaque);
-
-
-#if defined (__cplusplus)
-}
-#endif
 
 #endif

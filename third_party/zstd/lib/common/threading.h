@@ -16,10 +16,6 @@
 
 #include "debug.h"
 
-#if defined (__cplusplus)
-extern "C" {
-#endif
-
 #if defined(ZSTD_MULTITHREAD) && defined(_WIN32)
 
 
@@ -67,7 +63,6 @@ int ZSTD_pthread_create(ZSTD_pthread_t* thread, const void* unused,
                    void* (*start_routine) (void*), void* arg);
 
 int ZSTD_pthread_join(ZSTD_pthread_t thread);
-
 
 
 
@@ -143,8 +138,5 @@ typedef int ZSTD_pthread_cond_t;
 
 #endif 
 
-#if defined (__cplusplus)
-}
-#endif
 
 #endif 

@@ -11,10 +11,6 @@
 #ifndef ZSTD_TRACE_H
 #define ZSTD_TRACE_H
 
-#if defined (__cplusplus)
-extern "C" {
-#endif
-
 #include <stddef.h>
 
 
@@ -27,7 +23,8 @@ extern "C" {
 
 #if !defined(ZSTD_HAVE_WEAK_SYMBOLS) && \
     defined(__GNUC__) && defined(__ELF__) && \
-    (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86) || defined(__aarch64__)) && \
+    (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \
+     defined(_M_IX86) || defined(__aarch64__) || defined(__riscv)) && \
     !defined(__APPLE__) && !defined(_WIN32) && !defined(__MINGW32__) && \
     !defined(__CYGWIN__) && !defined(_AIX)
 #  define ZSTD_HAVE_WEAK_SYMBOLS 1
@@ -64,7 +61,7 @@ typedef struct {
     
 
 
-    unsigned streaming;
+    int streaming;
     
 
 
@@ -73,7 +70,7 @@ typedef struct {
 
 
 
-    unsigned dictionaryIsCold;
+    int dictionaryIsCold;
     
 
 
@@ -155,9 +152,5 @@ ZSTD_WEAK_ATTR void ZSTD_trace_decompress_end(
     ZSTD_Trace const* trace);
 
 #endif 
-
-#if defined (__cplusplus)
-}
-#endif
 
 #endif 

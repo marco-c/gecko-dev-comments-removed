@@ -14,9 +14,6 @@
 #ifndef BITSTREAM_H_MODULE
 #define BITSTREAM_H_MODULE
 
-#if defined (__cplusplus)
-extern "C" {
-#endif
 
 
 
@@ -31,7 +28,6 @@ extern "C" {
 #include "debug.h"          
 #include "error_private.h"  
 #include "bits.h"           
-
 
 
 
@@ -52,12 +48,13 @@ extern "C" {
 
 
 
+typedef size_t BitContainerType;
 
 
 
 
 typedef struct {
-    size_t bitContainer;
+    BitContainerType bitContainer;
     unsigned bitPos;
     char*  startPtr;
     char*  ptr;
@@ -65,7 +62,7 @@ typedef struct {
 } BIT_CStream_t;
 
 MEM_STATIC size_t BIT_initCStream(BIT_CStream_t* bitC, void* dstBuffer, size_t dstCapacity);
-MEM_STATIC void   BIT_addBits(BIT_CStream_t* bitC, size_t value, unsigned nbBits);
+MEM_STATIC void   BIT_addBits(BIT_CStream_t* bitC, BitContainerType value, unsigned nbBits);
 MEM_STATIC void   BIT_flushBits(BIT_CStream_t* bitC);
 MEM_STATIC size_t BIT_closeCStream(BIT_CStream_t* bitC);
 
@@ -90,7 +87,6 @@ MEM_STATIC size_t BIT_closeCStream(BIT_CStream_t* bitC);
 
 
 
-typedef size_t BitContainerType;
 typedef struct {
     BitContainerType bitContainer;
     unsigned bitsConsumed;
@@ -106,7 +102,7 @@ typedef enum { BIT_DStream_unfinished = 0,
     } BIT_DStream_status;  
 
 MEM_STATIC size_t   BIT_initDStream(BIT_DStream_t* bitD, const void* srcBuffer, size_t srcSize);
-MEM_STATIC size_t   BIT_readBits(BIT_DStream_t* bitD, unsigned nbBits);
+MEM_STATIC BitContainerType BIT_readBits(BIT_DStream_t* bitD, unsigned nbBits);
 MEM_STATIC BIT_DStream_status BIT_reloadDStream(BIT_DStream_t* bitD);
 MEM_STATIC unsigned BIT_endOfDStream(const BIT_DStream_t* bitD);
 
@@ -125,7 +121,7 @@ MEM_STATIC unsigned BIT_endOfDStream(const BIT_DStream_t* bitD);
 
 
 
-MEM_STATIC void BIT_addBitsFast(BIT_CStream_t* bitC, size_t value, unsigned nbBits);
+MEM_STATIC void BIT_addBitsFast(BIT_CStream_t* bitC, BitContainerType value, unsigned nbBits);
 
 
 MEM_STATIC void BIT_flushBitsFast(BIT_CStream_t* bitC);
@@ -163,10 +159,15 @@ MEM_STATIC size_t BIT_initCStream(BIT_CStream_t* bitC,
     return 0;
 }
 
-FORCE_INLINE_TEMPLATE size_t BIT_getLowerBits(size_t bitContainer, U32 const nbBits)
+FORCE_INLINE_TEMPLATE BitContainerType BIT_getLowerBits(BitContainerType bitContainer, U32 const nbBits)
 {
-#if defined(STATIC_BMI2) && STATIC_BMI2 == 1 && !defined(ZSTD_NO_INTRINSICS)
-    return  _bzhi_u64(bitContainer, nbBits);
+#if STATIC_BMI2 && !defined(ZSTD_NO_INTRINSICS)
+#  if (defined(__x86_64__) || defined(_M_X64)) && !defined(__ILP32__)
+    return _bzhi_u64(bitContainer, nbBits);
+#  else
+    DEBUG_STATIC_ASSERT(sizeof(bitContainer) == sizeof(U32));
+    return _bzhi_u32(bitContainer, nbBits);
+#  endif
 #else
     assert(nbBits < BIT_MASK_SIZE);
     return bitContainer & BIT_mask[nbBits];
@@ -177,7 +178,7 @@ FORCE_INLINE_TEMPLATE size_t BIT_getLowerBits(size_t bitContainer, U32 const nbB
 
 
 MEM_STATIC void BIT_addBits(BIT_CStream_t* bitC,
-                            size_t value, unsigned nbBits)
+                            BitContainerType value, unsigned nbBits)
 {
     DEBUG_STATIC_ASSERT(BIT_MASK_SIZE == 32);
     assert(nbBits < BIT_MASK_SIZE);
@@ -190,7 +191,7 @@ MEM_STATIC void BIT_addBits(BIT_CStream_t* bitC,
 
 
 MEM_STATIC void BIT_addBitsFast(BIT_CStream_t* bitC,
-                                size_t value, unsigned nbBits)
+                                BitContainerType value, unsigned nbBits)
 {
     assert((value>>nbBits) == 0);
     assert(nbBits + bitC->bitPos < sizeof(bitC->bitContainer) * 8);
@@ -237,7 +238,7 @@ MEM_STATIC size_t BIT_closeCStream(BIT_CStream_t* bitC)
     BIT_addBitsFast(bitC, 1, 1);   
     BIT_flushBits(bitC);
     if (bitC->ptr >= bitC->endPtr) return 0; 
-    return (bitC->ptr - bitC->startPtr) + (bitC->bitPos > 0);
+    return (size_t)(bitC->ptr - bitC->startPtr) + (bitC->bitPos > 0);
 }
 
 
@@ -298,12 +299,12 @@ MEM_STATIC size_t BIT_initDStream(BIT_DStream_t* bitD, const void* srcBuffer, si
     return srcSize;
 }
 
-FORCE_INLINE_TEMPLATE size_t BIT_getUpperBits(BitContainerType bitContainer, U32 const start)
+FORCE_INLINE_TEMPLATE BitContainerType BIT_getUpperBits(BitContainerType bitContainer, U32 const start)
 {
     return bitContainer >> start;
 }
 
-FORCE_INLINE_TEMPLATE size_t BIT_getMiddleBits(BitContainerType bitContainer, U32 const start, U32 const nbBits)
+FORCE_INLINE_TEMPLATE BitContainerType BIT_getMiddleBits(BitContainerType bitContainer, U32 const start, U32 const nbBits)
 {
     U32 const regMask = sizeof(bitContainer)*8 - 1;
     
@@ -313,7 +314,7 @@ FORCE_INLINE_TEMPLATE size_t BIT_getMiddleBits(BitContainerType bitContainer, U3
 
 
 
-#if defined(__x86_64__) || defined(_M_X86)
+#if defined(__x86_64__) || defined(_M_X64)
     return (bitContainer >> (start & regMask)) & ((((U64)1) << nbBits) - 1);
 #else
     return (bitContainer >> (start & regMask)) & BIT_mask[nbBits];
@@ -326,7 +327,7 @@ FORCE_INLINE_TEMPLATE size_t BIT_getMiddleBits(BitContainerType bitContainer, U3
 
 
 
-FORCE_INLINE_TEMPLATE size_t BIT_lookBits(const BIT_DStream_t*  bitD, U32 nbBits)
+FORCE_INLINE_TEMPLATE BitContainerType BIT_lookBits(const BIT_DStream_t*  bitD, U32 nbBits)
 {
     
 #if 1
@@ -342,7 +343,7 @@ FORCE_INLINE_TEMPLATE size_t BIT_lookBits(const BIT_DStream_t*  bitD, U32 nbBits
 
 
 
-MEM_STATIC size_t BIT_lookBitsFast(const BIT_DStream_t* bitD, U32 nbBits)
+MEM_STATIC BitContainerType BIT_lookBitsFast(const BIT_DStream_t* bitD, U32 nbBits)
 {
     U32 const regMask = sizeof(bitD->bitContainer)*8 - 1;
     assert(nbBits >= 1);
@@ -358,18 +359,18 @@ FORCE_INLINE_TEMPLATE void BIT_skipBits(BIT_DStream_t* bitD, U32 nbBits)
 
 
 
-FORCE_INLINE_TEMPLATE size_t BIT_readBits(BIT_DStream_t* bitD, unsigned nbBits)
+FORCE_INLINE_TEMPLATE BitContainerType BIT_readBits(BIT_DStream_t* bitD, unsigned nbBits)
 {
-    size_t const value = BIT_lookBits(bitD, nbBits);
+    BitContainerType const value = BIT_lookBits(bitD, nbBits);
     BIT_skipBits(bitD, nbBits);
     return value;
 }
 
 
 
-MEM_STATIC size_t BIT_readBitsFast(BIT_DStream_t* bitD, unsigned nbBits)
+MEM_STATIC BitContainerType BIT_readBitsFast(BIT_DStream_t* bitD, unsigned nbBits)
 {
-    size_t const value = BIT_lookBitsFast(bitD, nbBits);
+    BitContainerType const value = BIT_lookBitsFast(bitD, nbBits);
     assert(nbBits >= 1);
     BIT_skipBits(bitD, nbBits);
     return value;
@@ -449,9 +450,5 @@ MEM_STATIC unsigned BIT_endOfDStream(const BIT_DStream_t* DStream)
 {
     return ((DStream->ptr == DStream->start) && (DStream->bitsConsumed == sizeof(DStream->bitContainer)*8));
 }
-
-#if defined (__cplusplus)
-}
-#endif
 
 #endif 

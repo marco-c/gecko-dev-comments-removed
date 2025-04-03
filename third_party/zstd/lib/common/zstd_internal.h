@@ -39,10 +39,6 @@
 #  define ZSTD_TRACE 0
 #endif
 
-#if defined (__cplusplus)
-extern "C" {
-#endif
-
 
 #define ZSTD_STATIC_ASSERT(c) DEBUG_STATIC_ASSERT(c)
 #define ZSTD_isError ERR_isError   /* for inlining */
@@ -95,7 +91,7 @@ typedef enum { bt_raw, bt_rle, bt_compressed, bt_reserved } blockType_e;
 #define MIN_CBLOCK_SIZE (1 /*litCSize*/ + 1 /* RLE or RAW */)   /* for a non-null block */
 #define MIN_LITERALS_FOR_4_STREAMS 6
 
-typedef enum { set_basic, set_rle, set_compressed, set_repeat } symbolEncodingType_e;
+typedef enum { set_basic, set_rle, set_compressed, set_repeat } SymbolEncodingType_e;
 
 #define LONGNBSEQ 0x7F00
 
@@ -278,62 +274,6 @@ typedef enum {
 
 
 
-typedef struct seqDef_s {
-    U32 offBase;   
-    U16 litLength;
-    U16 mlBase;    
-} seqDef;
-
-
-typedef enum {
-    ZSTD_llt_none = 0,             
-    ZSTD_llt_literalLength = 1,    
-    ZSTD_llt_matchLength = 2       
-} ZSTD_longLengthType_e;
-
-typedef struct {
-    seqDef* sequencesStart;
-    seqDef* sequences;      
-    BYTE*  litStart;
-    BYTE*  lit;             
-    BYTE*  llCode;
-    BYTE*  mlCode;
-    BYTE*  ofCode;
-    size_t maxNbSeq;
-    size_t maxNbLit;
-
-    
-
-
-
-    ZSTD_longLengthType_e longLengthType;
-    U32                   longLengthPos;  
-} seqStore_t;
-
-typedef struct {
-    U32 litLength;
-    U32 matchLength;
-} ZSTD_sequenceLength;
-
-
-
-
-
-MEM_STATIC ZSTD_sequenceLength ZSTD_getSequenceLength(seqStore_t const* seqStore, seqDef const* seq)
-{
-    ZSTD_sequenceLength seqLen;
-    seqLen.litLength = seq->litLength;
-    seqLen.matchLength = seq->mlBase + MINMATCH;
-    if (seqStore->longLengthPos == (U32)(seq - seqStore->sequencesStart)) {
-        if (seqStore->longLengthType == ZSTD_llt_literalLength) {
-            seqLen.litLength += 0x10000;
-        }
-        if (seqStore->longLengthType == ZSTD_llt_matchLength) {
-            seqLen.matchLength += 0x10000;
-        }
-    }
-    return seqLen;
-}
 
 
 
@@ -346,10 +286,6 @@ typedef struct {
     size_t compressedSize;
     unsigned long long decompressedBound;
 } ZSTD_frameSizeInfo;   
-
-const seqStore_t* ZSTD_getSeqStore(const ZSTD_CCtx* ctx);   
-int ZSTD_seqToCodes(const seqStore_t* seqStorePtr);   
-
 
 
 
@@ -384,9 +320,5 @@ MEM_STATIC int ZSTD_cpuSupportsBmi2(void)
     ZSTD_cpuid_t cpuid = ZSTD_cpuid();
     return ZSTD_cpuid_bmi1(cpuid) && ZSTD_cpuid_bmi2(cpuid);
 }
-
-#if defined (__cplusplus)
-}
-#endif
 
 #endif   

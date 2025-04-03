@@ -75,18 +75,31 @@
 #endif
 
 
+#ifndef STATIC_BMI2
+#  if defined(__BMI2__)
+#    define STATIC_BMI2 1
+#  elif defined(_MSC_VER) && defined(__AVX2__)
+#    define STATIC_BMI2 1 /* MSVC does not have a BMI2 specific flag, but every CPU that supports AVX2 also supports BMI2 */
+#  endif
+#endif
+
+#ifndef STATIC_BMI2
+#  define STATIC_BMI2 0
+#endif
+
+
 
 
 #ifndef DYNAMIC_BMI2
-  #if ((defined(__clang__) && __has_attribute(__target__)) \
+#  if ((defined(__clang__) && __has_attribute(__target__)) \
       || (defined(__GNUC__) \
           && (__GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)))) \
-      && (defined(__x86_64__) || defined(_M_X64)) \
+      && (defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)) \
       && !defined(__BMI2__)
-  #  define DYNAMIC_BMI2 1
-  #else
-  #  define DYNAMIC_BMI2 0
-  #endif
+#    define DYNAMIC_BMI2 1
+#  else
+#    define DYNAMIC_BMI2 0
+#  endif
 #endif
 
 
@@ -101,7 +114,7 @@
 
 
 #if defined(__GNUC__)
-#  if defined(__linux__) || defined(__linux) || defined(__APPLE__)
+#  if defined(__linux__) || defined(__linux) || defined(__APPLE__) || defined(_WIN32)
 #    if ZSTD_MEMORY_SANITIZER
 #      define ZSTD_ASM_SUPPORTED 0
 #    elif ZSTD_DATAFLOW_SANITIZER

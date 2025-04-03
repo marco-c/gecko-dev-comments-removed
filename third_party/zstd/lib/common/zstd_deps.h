@@ -24,6 +24,18 @@
 #ifndef ZSTD_DEPS_COMMON
 #define ZSTD_DEPS_COMMON
 
+
+
+
+
+
+#if defined(__linux) || defined(__linux__) || defined(linux) || defined(__gnu_linux__) || \
+    defined(__CYGWIN__) || defined(__MSYS__)
+#if !defined(_GNU_SOURCE) && !defined(__ANDROID__) 
+#define _GNU_SOURCE
+#endif
+#endif
+
 #include <limits.h>
 #include <stddef.h>
 #include <string.h>

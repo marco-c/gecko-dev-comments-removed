@@ -27,7 +27,7 @@
 #  define INLINE_KEYWORD
 #endif
 
-#if defined(__GNUC__) || defined(__ICCARM__)
+#if defined(__GNUC__) || defined(__IAR_SYSTEMS_ICC__)
 #  define FORCE_INLINE_ATTR __attribute__((always_inline))
 #elif defined(_MSC_VER)
 #  define FORCE_INLINE_ATTR __forceinline
@@ -54,7 +54,7 @@
 #endif
 
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__IAR_SYSTEMS_ICC__)
 #  define UNUSED_ATTR __attribute__((unused))
 #else
 #  define UNUSED_ATTR
@@ -95,6 +95,8 @@
 #ifndef MEM_STATIC  
 #if defined(__GNUC__)
 #  define MEM_STATIC static __inline UNUSED_ATTR
+#elif defined(__IAR_SYSTEMS_ICC__)
+#  define MEM_STATIC static inline UNUSED_ATTR
 #elif defined (__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) )
 #  define MEM_STATIC static inline
 #elif defined(_MSC_VER)
@@ -108,7 +110,7 @@
 #ifdef _MSC_VER
 #  define FORCE_NOINLINE static __declspec(noinline)
 #else
-#  if defined(__GNUC__) || defined(__ICCARM__)
+#  if defined(__GNUC__) || defined(__IAR_SYSTEMS_ICC__)
 #    define FORCE_NOINLINE static __attribute__((__noinline__))
 #  else
 #    define FORCE_NOINLINE static
@@ -117,7 +119,7 @@
 
 
 
-#if defined(__GNUC__) || defined(__ICCARM__)
+#if defined(__GNUC__) || defined(__IAR_SYSTEMS_ICC__)
 #  define TARGET_ATTRIBUTE(target) __attribute__((__target__(target)))
 #else
 #  define TARGET_ATTRIBUTE(target)
@@ -206,29 +208,20 @@
 #endif
 
 
-#ifndef STATIC_BMI2
-#  if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_I86))
-#    ifdef __AVX2__  
-#       define STATIC_BMI2 1
-#    endif
-#  elif defined(__BMI2__) && defined(__x86_64__) && defined(__GNUC__)
-#    define STATIC_BMI2 1
-#  endif
-#endif
-
-#ifndef STATIC_BMI2
-    #define STATIC_BMI2 0
-#endif
-
-
 #if !defined(ZSTD_NO_INTRINSICS)
-#  if defined(__SSE2__) || defined(_M_AMD64) || (defined (_M_IX86) && defined(_M_IX86_FP) && (_M_IX86_FP >= 2))
+#  if defined(__AVX2__)
+#    define ZSTD_ARCH_X86_AVX2
+#  endif
+#  if defined(__SSE2__) || defined(_M_X64) || (defined (_M_IX86) && defined(_M_IX86_FP) && (_M_IX86_FP >= 2))
 #    define ZSTD_ARCH_X86_SSE2
 #  endif
 #  if defined(__ARM_NEON) || defined(_M_ARM64)
 #    define ZSTD_ARCH_ARM_NEON
 #  endif
 #
+#  if defined(ZSTD_ARCH_X86_AVX2)
+#    include <immintrin.h>
+#  endif
 #  if defined(ZSTD_ARCH_X86_SSE2)
 #    include <emmintrin.h>
 #  elif defined(ZSTD_ARCH_ARM_NEON)
@@ -278,6 +271,12 @@
 
 
 
+MEM_STATIC int ZSTD_isPower2(size_t u) {
+    return (u & (u-1)) == 0;
+}
+
+
+
 
 
 
@@ -300,6 +299,21 @@
 
 # endif
 #endif 
+
+#ifndef ZSTD_ALIGNED
+
+# if defined(__GNUC__) || defined(__clang__)
+#  define ZSTD_ALIGNED(a) __attribute__((aligned(a)))
+# elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L) 
+#  define ZSTD_ALIGNED(a) _Alignas(a)
+#elif defined(_MSC_VER)
+#  define ZSTD_ALIGNED(n) __declspec(align(n))
+# else
+   
+#  define ZSTD_ALIGNED(...)
+# endif
+#endif 
+
 
 
 

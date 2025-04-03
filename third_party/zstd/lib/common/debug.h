@@ -32,10 +32,6 @@
 #ifndef DEBUG_H_12987983217
 #define DEBUG_H_12987983217
 
-#if defined (__cplusplus)
-extern "C" {
-#endif
-
 
 
 
@@ -106,11 +102,6 @@ extern int g_debuglevel;
 #else
 #  define RAWLOG(l, ...)   do { } while (0)    /* disabled */
 #  define DEBUGLOG(l, ...) do { } while (0)    /* disabled */
-#endif
-
-
-#if defined (__cplusplus)
-}
 #endif
 
 #endif 
