@@ -13731,6 +13731,41 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.prefersDarkQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
     this.prefersDarkQuery.addEventListener("change", this.handleColorModeChange);
     this.handleColorModeChange();
+    this.updateWallpaper();
+  }
+  componentDidUpdate(prevProps) {
+    
+    
+    const {
+      Wallpapers: {
+        uploadedWallpaper = null,
+        wallpaperList = null
+      } = {},
+      Prefs: {
+        values: currentPrefs = {}
+      } = {}
+    } = this.props;
+    const {
+      Wallpapers: {
+        uploadedWallpaper: prevUploadedWallpaper = null,
+        wallpaperList: prevWallpaperList = null
+      } = {},
+      Prefs: {
+        values: prevPrefs = {}
+      } = {}
+    } = prevProps;
+    const selectedWallpaper = currentPrefs["newtabWallpapers.wallpaper"];
+    const prevSelectedWallpaper = prevPrefs["newtabWallpapers.wallpaper"];
+
+    
+    if (selectedWallpaper !== prevSelectedWallpaper ||
+    
+    uploadedWallpaper !== prevUploadedWallpaper ||
+    
+    wallpaperList !== prevWallpaperList 
+    ) {
+      this.updateWallpaper();
+    }
   }
   handleColorModeChange() {
     const colorMode = this.prefersDarkQuery?.matches ? "dark" : "light";
@@ -14101,9 +14136,6 @@ class BaseContent extends (external_React_default()).PureComponent {
     
     pocketEnabled ? "has-recommended-stories" : "no-recommended-stories", sectionsEnabled ? "has-sections-grid" : ""].filter(v => v).join(" ");
     const outerClassName = ["outer-wrapper", isDiscoveryStream && pocketEnabled && "ds-outer-wrapper-search-alignment", isDiscoveryStream && "ds-outer-wrapper-breakpoint-override", prefs.showSearch && this.state.fixedSearch && !noSectionsEnabled && "fixed-search", prefs.showSearch && noSectionsEnabled && "only-search", prefs["feeds.topsites"] && !pocketEnabled && !prefs.showSearch && "only-topsites", noSectionsEnabled && "no-sections", prefs["logowordmark.alwaysVisible"] && "visible-logo", hasThumbsUpDownLayout && hasThumbsUpDown && "thumbs-ui-compact"].filter(v => v).join(" ");
-    if (wallpapersV2Enabled) {
-      this.updateWallpaper();
-    }
     return external_React_default().createElement("div", {
       className: featureClassName
     }, external_React_default().createElement("menu", {
