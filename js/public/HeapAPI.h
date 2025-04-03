@@ -489,6 +489,9 @@ class JS_PUBLIC_API GCCellPtr {
     return asCell();
   }
 
+  bool operator==(const GCCellPtr other) const { return ptr == other.ptr; }
+  bool operator!=(const GCCellPtr other) const { return ptr != other.ptr; }
+
   
   template <typename T, typename = std::enable_if_t<JS::IsBaseTraceType_v<T>>>
   bool is() const {
@@ -578,17 +581,6 @@ void ApplyGCThingTyped(GCCellPtr thing, F&& f) {
 }
 
 } 
-
-
-
-
-inline bool operator==(JS::GCCellPtr ptr1, JS::GCCellPtr ptr2) {
-  return ptr1.asCell() == ptr2.asCell();
-}
-
-inline bool operator!=(JS::GCCellPtr ptr1, JS::GCCellPtr ptr2) {
-  return !(ptr1 == ptr2);
-}
 
 namespace js {
 namespace gc {
