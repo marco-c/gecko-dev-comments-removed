@@ -32,6 +32,7 @@
 #include "mozilla/HelperMacros.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Logging.h"
+#include "mozilla/LookAndFeel.h"
 #include "mozilla/MacroForEach.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/Preferences.h"
@@ -2473,6 +2474,12 @@ float nsRFPService::GetDefaultPixelDensity() { return 2.0f; }
 
 
 double nsRFPService::GetDevicePixelRatioAtZoom(float aZoom) {
+  
+  
+  
+  
+  aZoom /= LookAndFeel::SystemZoomSettings().mFullZoom;
+
   
   
   int32_t unzoomedAppUnits =
