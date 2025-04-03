@@ -18,14 +18,21 @@
 namespace js {
 namespace gc {
 
+inline constexpr AllocKind slotsToThingKind[] = {
+    
+     AllocKind::OBJECT0,  AllocKind::OBJECT2,  AllocKind::OBJECT2,  AllocKind::OBJECT4,
+     AllocKind::OBJECT4,  AllocKind::OBJECT8,  AllocKind::OBJECT8,  AllocKind::OBJECT8,
+     AllocKind::OBJECT8,  AllocKind::OBJECT12, AllocKind::OBJECT12, AllocKind::OBJECT12,
+     AllocKind::OBJECT12, AllocKind::OBJECT16, AllocKind::OBJECT16, AllocKind::OBJECT16,
+     AllocKind::OBJECT16
+    
+};
 
-const size_t SLOTS_TO_THING_KIND_LIMIT = 17;
-extern const AllocKind slotsToThingKind[];
 extern const uint32_t slotsToAllocKindBytes[];
 
 
-static inline AllocKind GetGCObjectKind(size_t numSlots) {
-  if (numSlots >= SLOTS_TO_THING_KIND_LIMIT) {
+static constexpr AllocKind GetGCObjectKind(size_t numSlots) {
+  if (numSlots >= std::size(slotsToThingKind)) {
     return AllocKind::OBJECT16;
   }
   return slotsToThingKind[numSlots];
@@ -45,11 +52,11 @@ static constexpr bool CanUseFixedElementsForArray(size_t numElements) {
     return false;
   }
   size_t numSlots = numElements + ObjectElements::VALUES_PER_HEADER;
-  return numSlots < SLOTS_TO_THING_KIND_LIMIT;
+  return numSlots < std::size(slotsToThingKind);
 }
 
 
-static inline AllocKind GetGCArrayKind(size_t numElements) {
+static constexpr AllocKind GetGCArrayKind(size_t numElements) {
   
 
 
@@ -64,7 +71,7 @@ static inline AllocKind GetGCArrayKind(size_t numElements) {
 }
 
 static inline AllocKind GetGCObjectFixedSlotsKind(size_t numFixedSlots) {
-  MOZ_ASSERT(numFixedSlots < SLOTS_TO_THING_KIND_LIMIT);
+  MOZ_ASSERT(numFixedSlots < std::size(slotsToThingKind));
   return slotsToThingKind[numFixedSlots];
 }
 
@@ -84,7 +91,7 @@ static inline AllocKind GetGCObjectKindForBytes(size_t nbytes) {
 }
 
 
-static constexpr inline size_t GetGCKindSlots(AllocKind thingKind) {
+static constexpr size_t GetGCKindSlots(AllocKind thingKind) {
   
   
   switch (thingKind) {

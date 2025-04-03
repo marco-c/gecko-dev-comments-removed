@@ -265,18 +265,6 @@ using JS::SliceBudget;
 using JS::TimeBudget;
 using JS::WorkBudget;
 
-const AllocKind gc::slotsToThingKind[] = {
-    
-     AllocKind::OBJECT0,  AllocKind::OBJECT2,  AllocKind::OBJECT2,  AllocKind::OBJECT4,
-     AllocKind::OBJECT4,  AllocKind::OBJECT8,  AllocKind::OBJECT8,  AllocKind::OBJECT8,
-     AllocKind::OBJECT8,  AllocKind::OBJECT12, AllocKind::OBJECT12, AllocKind::OBJECT12,
-     AllocKind::OBJECT12, AllocKind::OBJECT16, AllocKind::OBJECT16, AllocKind::OBJECT16,
-     AllocKind::OBJECT16
-    
-};
-
-static_assert(std::size(slotsToThingKind) == SLOTS_TO_THING_KIND_LIMIT,
-              "We have defined a slot count for each kind.");
 
 
 
@@ -285,8 +273,7 @@ static_assert(std::size(slotsToThingKind) == SLOTS_TO_THING_KIND_LIMIT,
 
 
 
-
-const constexpr uint32_t gc::slotsToAllocKindBytes[] = {
+constexpr uint32_t gc::slotsToAllocKindBytes[] = {
     
     
     
@@ -299,7 +286,7 @@ const constexpr uint32_t gc::slotsToAllocKindBytes[] = {
     
 };
 
-static_assert(std::size(slotsToAllocKindBytes) == SLOTS_TO_THING_KIND_LIMIT);
+static_assert(std::size(slotsToAllocKindBytes) == std::size(slotsToThingKind));
 
 MOZ_THREAD_LOCAL(JS::GCContext*) js::TlsGCContext;
 
