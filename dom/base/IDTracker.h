@@ -51,7 +51,7 @@ class IDTracker {
   
 
 
-  Element* get() { return mElement; }
+  Element* get() const { return mElement; }
 
   
 
