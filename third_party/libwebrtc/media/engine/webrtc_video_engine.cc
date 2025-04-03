@@ -200,50 +200,34 @@ std::vector<webrtc::SdpVideoFormat> GetDefaultSupportedFormats(
 
 
 
-webrtc::RTCErrorOr<std::vector<Codec>> AssignPayloadTypes(
-    const std::vector<webrtc::SdpVideoFormat>& supported_formats,
+webrtc::RTCErrorOr<Codec> AssignPayloadType(
+    const webrtc::SdpVideoFormat& format,
     webrtc::PayloadTypePicker& pt_mapper,
     const webrtc::FieldTrialsView& trials) {
-  std::vector<Codec> output_codecs;
-  for (const webrtc::SdpVideoFormat& format : supported_formats) {
-    Codec codec = cricket::CreateVideoCodec(format);
-    codec.id = pt_mapper.SuggestMapping(codec,  nullptr).value();
-    
-    AddDefaultFeedbackParams(&codec, trials);
-    output_codecs.push_back(codec);
+  Codec codec = cricket::CreateVideoCodec(format);
+  webrtc::RTCErrorOr<webrtc::PayloadType> result =
+      pt_mapper.SuggestMapping(codec,  nullptr);
+  if (!result.ok()) {
+    return result.MoveError();
   }
-  return output_codecs;
+  codec.id = result.value();
+  AddDefaultFeedbackParams(&codec, trials);
+  return codec;
 }
 
 
 
-webrtc::RTCErrorOr<std::vector<Codec>> AddRtx(
-    const std::vector<Codec>& input_codecs,
-    webrtc::PayloadTypePicker& pt_mapper) {
-  std::vector<Codec> output_codecs;
-  for (const Codec& codec : input_codecs) {
-    
-    output_codecs.push_back(codec);
-    bool isFecCodec = absl::EqualsIgnoreCase(codec.name, kUlpfecCodecName) ||
-                      absl::EqualsIgnoreCase(codec.name, kFlexfecCodecName);
-    
-    if (!isFecCodec) {
-      Codec rtx_codec =
-          cricket::CreateVideoRtxCodec(Codec::kIdNotSet, codec.id);
-      webrtc::RTCErrorOr<webrtc::PayloadType> result =
-          pt_mapper.SuggestMapping(rtx_codec,  nullptr);
-      if (!result.ok()) {
-        if (result.error().type() == webrtc::RTCErrorType::RESOURCE_EXHAUSTED) {
-          
-          break;
-        }
-        return result.MoveError();
-      }
-      rtx_codec.id = result.value();
-      output_codecs.push_back(rtx_codec);
-    }
+webrtc::RTCErrorOr<Codec> AddRtx(const Codec& primary_codec,
+                                 webrtc::PayloadTypePicker& pt_mapper) {
+  Codec rtx_codec =
+      cricket::CreateVideoRtxCodec(Codec::kIdNotSet, primary_codec.id);
+  webrtc::RTCErrorOr<webrtc::PayloadType> result =
+      pt_mapper.SuggestMapping(rtx_codec,  nullptr);
+  if (!result.ok()) {
+    return result.MoveError();
   }
-  return output_codecs;
+  rtx_codec.id = result.value();
+  return rtx_codec;
 }
 
 
@@ -258,30 +242,34 @@ std::vector<Codec> GetPayloadTypesAndDefaultCodecs(
       GetDefaultSupportedFormats(factory, is_decoder_factory, trials);
 
   
-  
   webrtc::PayloadTypePicker pt_mapper;
   std::vector<Codec> output_codecs;
   for (const auto& supported_format : supported_formats) {
-    webrtc::RTCErrorOr<std::vector<Codec>> result =
-        AssignPayloadTypes({supported_format}, pt_mapper, trials);
-    RTC_DCHECK(result.ok());
-    if (result.ok()) {
-      for (const auto& codec : result.value()) {
-        if (include_rtx) {
-          
-          result = AddRtx({codec}, pt_mapper);
-          if (result.ok()) {
-            for (const auto& codec : result.value()) {
-              output_codecs.push_back(codec);
-            }
-          } else {
-            output_codecs.push_back(codec);
-          }
-
-        } else {
-          output_codecs.push_back(codec);
-        }
+    webrtc::RTCErrorOr<Codec> result =
+        AssignPayloadType(supported_format, pt_mapper, trials);
+    if (!result.ok()) {
+      
+      
+      continue;
+    }
+    output_codecs.push_back(result.value());
+    if (include_rtx) {
+      Codec::ResiliencyType resiliency_type =
+          result.value().GetResiliencyType();
+      
+      if (resiliency_type == Codec::ResiliencyType::kFlexfec ||
+          resiliency_type == Codec::ResiliencyType::kUlpfec) {
+        continue;
       }
+
+      webrtc::RTCErrorOr<Codec> rtx_result = AddRtx(result.value(), pt_mapper);
+      if (!rtx_result.ok()) {
+        
+        
+        
+        continue;
+      }
+      output_codecs.push_back(rtx_result.MoveValue());
     }
   }
   return output_codecs;
