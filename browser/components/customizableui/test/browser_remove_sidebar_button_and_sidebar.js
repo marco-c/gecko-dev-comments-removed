@@ -14,7 +14,7 @@ registerCleanupFunction(async () => {
   gBrowser.removeAllTabsBut(gBrowser.tabs[0]);
 });
 
-add_task(async function () {
+add_task(async function test_button_removed() {
   const { SidebarController } = window;
   await SidebarController.show("viewBookmarksSidebar");
 
@@ -51,4 +51,43 @@ add_task(async function () {
   ok(!sidebarButton, "Sidebar button has been removed.");
   ok(sidebarMain.hidden, "Sidebar launcher has been hidden.");
   ok(sidebarBox.hidden, "Sidebar panel has been hidden.");
+
+  CustomizableUI.reset();
+  CustomizableUI.addWidgetToArea("sidebar-button", "nav-bar", 0);
+});
+
+add_task(async function test_button_moved() {
+  const { SidebarController } = window;
+  await SidebarController.show("viewBookmarksSidebar");
+
+  let sidebarButton = document.getElementById("sidebar-button");
+  let sidebarMain = document.getElementById("sidebar-main");
+  let sidebarBox = document.getElementById("sidebar-box");
+
+  await startCustomizing();
+  is(gBrowser.tabs.length, 2, "Should have 2 tabs");
+  let nonCustomizingTab = gBrowser.tabContainer.querySelector(
+    "tab:not([customizemode=true])"
+  );
+  let finishedCustomizing = BrowserTestUtils.waitForEvent(
+    gNavToolbox,
+    "aftercustomization"
+  );
+  
+  CustomizableUI.addWidgetToArea("sidebar-button", "TabsToolbar");
+  
+  
+  
+  
+  
+  
+  await BrowserTestUtils.switchTab(gBrowser, nonCustomizingTab);
+  await finishedCustomizing;
+
+  ok(sidebarButton, "Sidebar button has not been removed.");
+  ok(!sidebarMain.hidden, "Sidebar launcher has not been hidden.");
+  ok(!sidebarBox.hidden, "Sidebar panel has not been hidden.");
+
+  CustomizableUI.reset();
+  CustomizableUI.addWidgetToArea("sidebar-button", "nav-bar", 0);
 });
