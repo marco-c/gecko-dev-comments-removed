@@ -11,17 +11,6 @@ function StringProtoHasNoMatch() {
   return !(GetBuiltinSymbol("match") in StringProto);
 }
 
-function IsStringMatchOptimizable() {
-  var RegExpProto = GetBuiltinPrototype("RegExp");
-  
-  
-  return (
-    RegExpPrototypeOptimizable(RegExpProto) &&
-    RegExpProto.exec === RegExp_prototype_Exec &&
-    RegExpProto[GetBuiltinSymbol("match")] === RegExpMatch
-  );
-}
-
 function ThrowIncompatibleMethod(name, thisv) {
   ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "String", name, ToString(thisv));
 }
@@ -51,7 +40,7 @@ function String_match(regexp) {
   
   var S = ToString(this);
 
-  if (isPatternString && IsStringMatchOptimizable()) {
+  if (isPatternString && IsRegExpPrototypeOptimizable()) {
     var flatResult = FlatStringMatch(S, regexp);
     if (flatResult !== undefined) {
       return flatResult;
@@ -62,7 +51,7 @@ function String_match(regexp) {
   var rx = RegExpCreate(regexp);
 
   
-  if (IsStringMatchOptimizable()) {
+  if (IsRegExpPrototypeOptimizable()) {
     return RegExpMatcher(rx, S, 0);
   }
 
@@ -418,17 +407,6 @@ function StringProtoHasNoSearch() {
   return !(GetBuiltinSymbol("search") in StringProto);
 }
 
-function IsStringSearchOptimizable() {
-  var RegExpProto = GetBuiltinPrototype("RegExp");
-  
-  
-  return (
-    RegExpPrototypeOptimizable(RegExpProto) &&
-    RegExpProto.exec === RegExp_prototype_Exec &&
-    RegExpProto[GetBuiltinSymbol("search")] === RegExpSearch
-  );
-}
-
 
 function String_search(regexp) {
   
@@ -454,7 +432,7 @@ function String_search(regexp) {
   
   var string = ToString(this);
 
-  if (isPatternString && IsStringSearchOptimizable()) {
+  if (isPatternString && IsRegExpPrototypeOptimizable()) {
     var flatResult = FlatStringSearch(string, regexp);
     if (flatResult !== -2) {
       return flatResult;

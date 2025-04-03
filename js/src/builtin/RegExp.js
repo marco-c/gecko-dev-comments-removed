@@ -120,7 +120,7 @@ function RegExpMatch(string) {
   var S = ToString(string);
 
   
-  if (IsRegExpMethodOptimizable(rx)) {
+  if (IsOptimizableRegExpObject(rx)) {
     
     var flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
     var global = !!(flags & REGEXP_GLOBAL_FLAG);
@@ -245,34 +245,6 @@ function RegExpGlobalMatchOpt(rx, S, fullUnicode) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-function IsRegExpMethodOptimizable(rx) {
-  if (!IsRegExpObject(rx)) {
-    return false;
-  }
-
-  var RegExpProto = GetBuiltinPrototype("RegExp");
-  
-  
-  return (
-    RegExpPrototypeOptimizable(RegExpProto) &&
-    RegExpInstanceOptimizable(rx, RegExpProto) &&
-    RegExpProto.exec === RegExp_prototype_Exec
-  );
-}
-
-
-
 function RegExpReplace(string, replaceValue) {
   
   var rx = this;
@@ -306,7 +278,7 @@ function RegExpReplace(string, replaceValue) {
   }
 
   
-  if (IsRegExpMethodOptimizable(rx)) {
+  if (IsOptimizableRegExpObject(rx)) {
     
     var flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
 
@@ -894,7 +866,7 @@ function RegExpSearch(string) {
     rx.lastIndex = 0;
   }
 
-  if (IsRegExpMethodOptimizable(rx) && S.length < 0x7fff) {
+  if (IsOptimizableRegExpObject(rx) && S.length < 0x7fff) {
     
     var result = RegExpSearcher(rx, S, 0);
 
@@ -951,26 +923,6 @@ function RegExpSearchSlowPath(rx, S, previousLastIndex) {
   return result.index;
 }
 
-function IsRegExpSplitOptimizable(rx, C) {
-  if (!IsRegExpObject(rx)) {
-    return false;
-  }
-
-  var RegExpCtor = GetBuiltinConstructor("RegExp");
-  if (C !== RegExpCtor) {
-    return false;
-  }
-
-  var RegExpProto = RegExpCtor.prototype;
-  
-  
-  return (
-    RegExpPrototypeOptimizable(RegExpProto) &&
-    RegExpInstanceOptimizable(rx, RegExpProto) &&
-    RegExpProto.exec === RegExp_prototype_Exec
-  );
-}
-
 
 function RegExpSplit(string, limit) {
   
@@ -985,10 +937,12 @@ function RegExpSplit(string, limit) {
   var S = ToString(string);
 
   
-  var C = SpeciesConstructor(rx, GetBuiltinConstructor("RegExp"));
+  var builtinCtor = GetBuiltinConstructor("RegExp");
+  var C = SpeciesConstructor(rx, builtinCtor);
 
   var optimizable =
-    IsRegExpSplitOptimizable(rx, C) &&
+    IsOptimizableRegExpObject(rx) &&
+    C === builtinCtor &&
     (limit === undefined || typeof limit === "number");
 
   var flags, unicodeMatching, splitter;
@@ -1236,23 +1190,6 @@ function $RegExpSpecies() {
 }
 SetCanonicalName($RegExpSpecies, "get [Symbol.species]");
 
-function IsRegExpMatchAllOptimizable(rx, C) {
-  if (!IsRegExpObject(rx)) {
-    return false;
-  }
-
-  var RegExpCtor = GetBuiltinConstructor("RegExp");
-  if (C !== RegExpCtor) {
-    return false;
-  }
-
-  var RegExpProto = RegExpCtor.prototype;
-  return (
-    RegExpPrototypeOptimizable(RegExpProto) &&
-    RegExpInstanceOptimizable(rx, RegExpProto)
-  );
-}
-
 
 
 
@@ -1269,10 +1206,11 @@ function RegExpMatchAll(string) {
   var str = ToString(string);
 
   
-  var C = SpeciesConstructor(rx, GetBuiltinConstructor("RegExp"));
+  var builtinCtor = GetBuiltinConstructor("RegExp");
+  var C = SpeciesConstructor(rx, builtinCtor);
 
   var source, flags, matcher, lastIndex;
-  if (IsRegExpMatchAllOptimizable(rx, C)) {
+  if (IsOptimizableRegExpObject(rx) && C === builtinCtor) {
     
     source = UnsafeGetStringFromReservedSlot(rx, REGEXP_SOURCE_SLOT);
     flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
@@ -1337,16 +1275,6 @@ function CreateRegExpStringIterator(regexp, string, source, flags, lastIndex) {
   return iterator;
 }
 
-function IsRegExpStringIteratorNextOptimizable() {
-  var RegExpProto = GetBuiltinPrototype("RegExp");
-  
-  
-  return (
-    RegExpPrototypeOptimizable(RegExpProto) &&
-    RegExpProto.exec === RegExp_prototype_Exec
-  );
-}
-
 
 
 
@@ -1401,7 +1329,7 @@ function RegExpStringIteratorNext() {
       REGEXP_STRING_ITERATOR_SOURCE_SLOT
     );
     if (
-      IsRegExpStringIteratorNextOptimizable() &&
+      IsRegExpPrototypeOptimizable() &&
       UnsafeGetStringFromReservedSlot(regexp, REGEXP_SOURCE_SLOT) === source &&
       UnsafeGetInt32FromReservedSlot(regexp, REGEXP_FLAGS_SLOT) === flags
     ) {

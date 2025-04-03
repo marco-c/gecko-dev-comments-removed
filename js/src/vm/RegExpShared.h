@@ -375,28 +375,6 @@ class RegExpRealm {
 
   GCPtr<SharedShape*> matchResultShapes_[ResultShapeKind::NumKinds];
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  GCPtr<Shape*> optimizableRegExpPrototypeShape_;
-
-  
-
-
-
-
-  GCPtr<Shape*> optimizableRegExpInstanceShape_;
-
   SharedShape* createMatchResultShape(JSContext* cx, ResultShapeKind kind);
 
  public:
@@ -438,25 +416,6 @@ class RegExpRealm {
     return createMatchResultShape(cx, kind);
   }
 
-  Shape* getOptimizableRegExpPrototypeShape() {
-    return optimizableRegExpPrototypeShape_;
-  }
-  void setOptimizableRegExpPrototypeShape(Shape* shape) {
-    optimizableRegExpPrototypeShape_ = shape;
-  }
-  Shape* getOptimizableRegExpInstanceShape() {
-    return optimizableRegExpInstanceShape_;
-  }
-  void setOptimizableRegExpInstanceShape(Shape* shape) {
-    optimizableRegExpInstanceShape_ = shape;
-  }
-
-  static constexpr size_t offsetOfOptimizableRegExpPrototypeShape() {
-    return offsetof(RegExpRealm, optimizableRegExpPrototypeShape_);
-  }
-  static constexpr size_t offsetOfOptimizableRegExpInstanceShape() {
-    return offsetof(RegExpRealm, optimizableRegExpInstanceShape_);
-  }
   static constexpr size_t offsetOfRegExpStatics() {
     return offsetof(RegExpRealm, regExpStatics);
   }

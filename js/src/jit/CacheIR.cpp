@@ -7884,48 +7884,58 @@ AttachDecision InlinableNativeIRGenerator::tryAttachRegExpHasCaptureGroups() {
 }
 
 AttachDecision
-InlinableNativeIRGenerator::tryAttachRegExpPrototypeOptimizable() {
+InlinableNativeIRGenerator::tryAttachIsRegExpPrototypeOptimizable() {
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(args_.length() == 0);
 
   
   initializeInputOperand();
 
   
 
-  ValOperandId arg0Id = loadArgumentIntrinsic(ArgumentKind::Arg0);
-  ObjOperandId protoId = writer.guardToObject(arg0Id);
+  if (cx_->realm()->realmFuses.optimizeRegExpPrototypeFuse.intact()) {
+    writer.guardFuse(RealmFuses::FuseIndex::OptimizeRegExpPrototypeFuse);
+    writer.loadBooleanResult(true);
+    writer.returnFromIC();
+    trackAttached("IsRegExpPrototypeOptimizable.Optimized");
+  } else {
+    writer.loadBooleanResult(false);
+    writer.returnFromIC();
+    trackAttached("IsRegExpPrototypeOptimizable.Deoptimized");
+  }
 
-  writer.regExpPrototypeOptimizableResult(protoId);
-  writer.returnFromIC();
-
-  trackAttached("RegExpPrototypeOptimizable");
   return AttachDecision::Attach;
 }
 
 AttachDecision
-InlinableNativeIRGenerator::tryAttachRegExpInstanceOptimizable() {
+InlinableNativeIRGenerator::tryAttachIsOptimizableRegExpObject() {
   
-  MOZ_ASSERT(args_.length() == 2);
+  MOZ_ASSERT(args_.length() == 1);
   MOZ_ASSERT(args_[0].isObject());
-  MOZ_ASSERT(args_[1].isObject());
+
+  Shape* optimizableShape = cx_->global()->maybeRegExpShapeWithDefaultProto();
+  if (!optimizableShape) {
+    return AttachDecision::NoAction;
+  }
 
   
   initializeInputOperand();
 
   
 
-  ValOperandId arg0Id = loadArgumentIntrinsic(ArgumentKind::Arg0);
-  ObjOperandId regexpId = writer.guardToObject(arg0Id);
+  if (cx_->realm()->realmFuses.optimizeRegExpPrototypeFuse.intact()) {
+    ValOperandId argId = loadArgumentIntrinsic(ArgumentKind::Arg0);
+    ObjOperandId objId = writer.guardToObject(argId);
+    writer.guardFuse(RealmFuses::FuseIndex::OptimizeRegExpPrototypeFuse);
+    writer.hasShapeResult(objId, optimizableShape);
+    writer.returnFromIC();
+    trackAttached("IsOptimizableRegExpObject.Optimized");
+  } else {
+    writer.loadBooleanResult(false);
+    writer.returnFromIC();
+    trackAttached("IsOptimizableRegExpObject.Deoptimized");
+  }
 
-  ValOperandId arg1Id = loadArgumentIntrinsic(ArgumentKind::Arg1);
-  ObjOperandId protoId = writer.guardToObject(arg1Id);
-
-  writer.regExpInstanceOptimizableResult(regexpId, protoId);
-  writer.returnFromIC();
-
-  trackAttached("RegExpInstanceOptimizable");
   return AttachDecision::Attach;
 }
 
@@ -12367,10 +12377,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachRegExpSearcherLastLimit();
     case InlinableNative::RegExpHasCaptureGroups:
       return tryAttachRegExpHasCaptureGroups();
-    case InlinableNative::RegExpPrototypeOptimizable:
-      return tryAttachRegExpPrototypeOptimizable();
-    case InlinableNative::RegExpInstanceOptimizable:
-      return tryAttachRegExpInstanceOptimizable();
+    case InlinableNative::IsRegExpPrototypeOptimizable:
+      return tryAttachIsRegExpPrototypeOptimizable();
+    case InlinableNative::IsOptimizableRegExpObject:
+      return tryAttachIsOptimizableRegExpObject();
     case InlinableNative::GetFirstDollarIndex:
       return tryAttachGetFirstDollarIndex();
     case InlinableNative::IntrinsicRegExpBuiltinExec:
