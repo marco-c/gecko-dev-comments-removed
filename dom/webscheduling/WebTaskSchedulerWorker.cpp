@@ -46,7 +46,8 @@ bool WebTaskWorkerRunnable::WorkerRun(JSContext* aCx,
   aWorkerPrivate->AssertIsOnWorkerThread();
 
   if (mSchedulerWorker) {
-    RefPtr<WebTask> task = mSchedulerWorker->GetNextTask();
+    RefPtr<WebTask> task =
+        mSchedulerWorker->GetNextTask(false );
     if (task) {
       task->Run();
     }
