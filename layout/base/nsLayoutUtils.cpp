@@ -4606,6 +4606,49 @@ static void AddStateBitToAncestors(nsIFrame* aFrame, nsFrameState aBit) {
   }
 }
 
+static nsSize MeasureIntrinsicContentSize(
+    gfxContext* aContext, nsIFrame* aFrame,
+    const Maybe<LogicalSize>& aPercentageBasis) {
+  nsPresContext* pc = aFrame->PresContext();
+  nsIFrame* parent = aFrame->GetParent();
+  const WritingMode parentWM = parent->GetWritingMode();
+  const WritingMode childWM = aFrame->GetWritingMode();
+
+  
+  
+  MOZ_ASSERT(childWM.IsOrthogonalTo(parentWM));
+
+  const ReflowInput dummyParentRI(
+      pc, parent, aContext,
+      LogicalSize(parentWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE),
+      ReflowInput::InitFlag::DummyParentReflowInput);
+  const ReflowInput reflowInput(
+      pc, dummyParentRI, aFrame,
+      LogicalSize(childWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE),
+      aPercentageBasis);
+
+  
+  
+  
+  
+  ReflowOutput reflowOutput(reflowInput);
+  nsReflowStatus status;
+  aFrame->Reflow(pc, reflowOutput, reflowInput, status);
+  MOZ_ASSERT(status.IsFullyComplete());
+
+  const nsIFrame::ReflowChildFlags flags =
+      nsIFrame::ReflowChildFlags::NoMoveFrame |
+      nsIFrame::ReflowChildFlags::NoSizeView |
+      nsIFrame::ReflowChildFlags::NoDeleteNextInFlowChild;
+  nsContainerFrame::FinishReflowChild(aFrame, pc, reflowOutput, &reflowInput,
+                                      childWM, LogicalPoint(parentWM), nsSize(),
+                                      flags);
+
+  
+  
+  return aFrame->ContentSize(childWM).GetPhysicalSize(childWM);
+}
+
 
 nscoord nsLayoutUtils::IntrinsicForAxis(
     PhysicalAxis aAxis, gfxContext* aRenderingContext, nsIFrame* aFrame,
@@ -4800,17 +4843,9 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
         if (aFlags & BAIL_IF_REFLOW_NEEDED) {
           return NS_INTRINSIC_ISIZE_UNKNOWN;
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        result = aFrame->BSize() - offsetInRequestedAxis.border -
-                 offsetInRequestedAxis.padding;
+        nsSize size = MeasureIntrinsicContentSize(aRenderingContext, aFrame,
+                                                  aPercentageBasis);
+        result = horizontalAxis ? size.Width() : size.Height();
       }
     } else {
       

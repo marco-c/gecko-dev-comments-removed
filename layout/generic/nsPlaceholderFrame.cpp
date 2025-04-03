@@ -101,9 +101,15 @@ void nsPlaceholderFrame::Reflow(nsPresContext* aPresContext,
   
   
   
+  
+  
+  
+  
+  
   if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW) &&
       !mOutOfFlowFrame->IsMenuPopupFrame() &&
-      !mOutOfFlowFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
+      !mOutOfFlowFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW) &&
+      !mOutOfFlowFrame->GetWritingMode().IsOrthogonalTo(GetWritingMode())) {
     
     
     
