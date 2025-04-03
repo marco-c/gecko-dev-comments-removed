@@ -200,6 +200,9 @@ class GlobalObjectData {
   GCPtr<SharedShape*> boundFunctionShapeWithDefaultProto;
 
   
+  GCPtr<SharedShape*> regExpShapeWithDefaultProto;
+
+  
   RegExpRealm regExpRealm;
 
   GCPtr<ArgumentsObject*> mappedArgumentsTemplate;
@@ -1110,6 +1113,13 @@ class GlobalObject : public NativeObject {
   }
   void setBoundFunctionShapeWithDefaultProto(SharedShape* shape) {
     data().boundFunctionShapeWithDefaultProto = shape;
+  }
+
+  SharedShape* maybeRegExpShapeWithDefaultProto() const {
+    return data().regExpShapeWithDefaultProto;
+  }
+  void setRegExpShapeWithDefaultProto(SharedShape* shape) {
+    data().regExpShapeWithDefaultProto = shape;
   }
 
   static PropertyIteratorObject* getOrCreateEmptyIterator(JSContext* cx);
