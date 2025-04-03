@@ -57,6 +57,7 @@ const platformSpecificInterfaces = new Map([
   
   ["nsIGeckoViewBridge", "any"],
   ["nsIGeckoViewView", "any"],
+  ["nsIOhttpClientTest", "any"],
   
   ["nsICodeCoverage", "any"],
   
