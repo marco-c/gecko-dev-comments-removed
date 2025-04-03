@@ -9,6 +9,7 @@
 #include "nsIWidget.h"
 #include "nsWindow.h"
 
+#include "TSFTextStoreBase.h"
 #include "TSFUtils.h"
 #include "WinUtils.h"
 #include "WritingModes.h"
@@ -40,54 +41,32 @@ struct MSGResult;
 
 
 
-class TSFTextStore final : public ITextStoreACP,
+class TSFTextStore final : public TSFTextStoreBase,
                            public ITfContextOwnerCompositionSink,
                            public ITfMouseTrackerACP {
   friend class TSFStaticSink;
 
- private:
-  using SelectionChangeDataBase = IMENotification::SelectionChangeDataBase;
-  using SelectionChangeData = IMENotification::SelectionChangeData;
-  using TextChangeDataBase = IMENotification::TextChangeDataBase;
-  using TextChangeData = IMENotification::TextChangeData;
-
  public: 
   STDMETHODIMP QueryInterface(REFIID, void**);
 
-  NS_INLINE_DECL_IUNKNOWN_REFCOUNTING(TSFTextStore)
+  NS_INLINE_DECL_IUNKNOWN_ADDREF_RELEASE(TSFTextStore);
 
  public: 
-  STDMETHODIMP AdviseSink(REFIID, IUnknown*, DWORD);
-  STDMETHODIMP UnadviseSink(IUnknown*);
   STDMETHODIMP RequestLock(DWORD, HRESULT*);
-  STDMETHODIMP GetStatus(TS_STATUS*);
   STDMETHODIMP QueryInsert(LONG, LONG, ULONG, LONG*, LONG*);
   STDMETHODIMP GetSelection(ULONG, ULONG, TS_SELECTION_ACP*, ULONG*);
   STDMETHODIMP SetSelection(ULONG, const TS_SELECTION_ACP*);
   STDMETHODIMP GetText(LONG, LONG, WCHAR*, ULONG, ULONG*, TS_RUNINFO*, ULONG,
                        ULONG*, LONG*);
   STDMETHODIMP SetText(DWORD, LONG, LONG, const WCHAR*, ULONG, TS_TEXTCHANGE*);
-  STDMETHODIMP GetFormattedText(LONG, LONG, IDataObject**);
-  STDMETHODIMP GetEmbedded(LONG, REFGUID, REFIID, IUnknown**);
-  STDMETHODIMP QueryInsertEmbedded(const GUID*, const FORMATETC*, BOOL*);
-  STDMETHODIMP InsertEmbedded(DWORD, LONG, LONG, IDataObject*, TS_TEXTCHANGE*);
   STDMETHODIMP RequestSupportedAttrs(DWORD, ULONG, const TS_ATTRID*);
   STDMETHODIMP RequestAttrsAtPosition(LONG, ULONG, const TS_ATTRID*, DWORD);
-  STDMETHODIMP RequestAttrsTransitioningAtPosition(LONG, ULONG,
-                                                   const TS_ATTRID*, DWORD);
-  STDMETHODIMP FindNextAttrTransition(LONG, LONG, ULONG, const TS_ATTRID*,
-                                      DWORD, LONG*, BOOL*, LONG*);
   STDMETHODIMP RetrieveRequestedAttrs(ULONG, TS_ATTRVAL*, ULONG*);
   STDMETHODIMP GetEndACP(LONG*);
-  STDMETHODIMP GetActiveView(TsViewCookie*);
   STDMETHODIMP GetACPFromPoint(TsViewCookie, const POINT*, DWORD, LONG*);
   STDMETHODIMP GetTextExt(TsViewCookie, LONG, LONG, RECT*, BOOL*);
-  STDMETHODIMP GetScreenExt(TsViewCookie, RECT*);
-  STDMETHODIMP GetWnd(TsViewCookie, HWND*);
   STDMETHODIMP InsertTextAtSelection(DWORD, const WCHAR*, ULONG, LONG*, LONG*,
                                      TS_TEXTCHANGE*);
-  STDMETHODIMP InsertEmbeddedAtSelection(DWORD, IDataObject*, LONG*, LONG*,
-                                         TS_TEXTCHANGE*);
 
  public: 
   STDMETHODIMP OnStartComposition(ITfCompositionView*, BOOL*);
@@ -248,20 +227,10 @@ class TSFTextStore final : public ITextStoreACP,
   void Destroy();
   void ReleaseTSFObjects();
 
-  bool IsReadLock(DWORD aLock) const {
-    return (TS_LF_READ == (aLock & TS_LF_READ));
-  }
-  bool IsReadWriteLock(DWORD aLock) const {
-    return (TS_LF_READWRITE == (aLock & TS_LF_READWRITE));
-  }
-  bool IsReadLocked() const { return IsReadLock(mLock); }
-  bool IsReadWriteLocked() const { return IsReadWriteLock(mLock); }
-
   
   
-  void DidLockGranted();
+  void DidLockGranted() final;
 
-  bool GetScreenExtInternal(RECT& aScreenExt);
   
   
   
@@ -291,10 +260,6 @@ class TSFTextStore final : public ITextStoreACP,
   HRESULT RecordCompositionUpdateAction();
   HRESULT RecordCompositionEndAction();
 
-  
-  
-  
-  void DispatchEvent(WidgetGUIEvent& aEvent);
   void OnLayoutInformationAvailable();
 
   
@@ -326,8 +291,6 @@ class TSFTextStore final : public ITextStoreACP,
 
   HRESULT HandleRequestAttrs(DWORD aFlags, ULONG aFilterCount,
                              const TS_ATTRID* aFilterAttrs);
-  void SetInputScope(const nsString& aHTMLInputType,
-                     const nsString& aHTMLInputMode);
 
   
   
@@ -361,25 +324,6 @@ class TSFTextStore final : public ITextStoreACP,
 
 
   bool MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd);
-
-  
-  RefPtr<nsWindow> mWidget;
-  
-  RefPtr<TextEventDispatcher> mDispatcher;
-  
-  RefPtr<ITfDocumentMgr> mDocumentMgr;
-  
-  DWORD mEditCookie = 0;
-  
-  RefPtr<ITfContext> mContext;
-  
-  RefPtr<ITextStoreACPSink> mSink;
-  
-  DWORD mSinkMask = 0;
-  
-  DWORD mLock = 0;
-  
-  DWORD mLockQueued = 0;
 
   uint32_t mHandlingKeyMessage = 0;
   void OnStartToHandleKeyMessage() {
@@ -465,26 +409,6 @@ class TSFTextStore final : public ITextStoreACP,
   
   
   Maybe<Composition> mComposition;
-
-  
-
-
-
-
-
-
-
-  bool IsHandlingCompositionInParent() const {
-    return mDispatcher && mDispatcher->IsComposing();
-  }
-
-  
-
-
-
-  bool IsHandlingCompositionInContent() const {
-    return mDispatcher && mDispatcher->IsHandlingComposition();
-  }
 
   class Selection {
    public:
@@ -978,12 +902,6 @@ class TSFTextStore final : public ITextStoreACP,
   
   nsTArray<MouseTracker> mMouseTrackers;
 
-  
-  nsTArray<InputScope> mInputScopes;
-
-  
-  nsString mDocumentURL;
-
   bool mRequestedAttrs[TSFUtils::NUM_OF_SUPPORTED_ATTRS] = {false};
 
   bool mRequestedAttrValues = false;
@@ -997,14 +915,6 @@ class TSFTextStore final : public ITextStoreACP,
   bool mHasReturnedNoLayoutError = false;
   
   
-  
-  
-  bool mWaitingQueryLayout = false;
-  
-  
-  bool mPendingDestroy = false;
-  
-  
   bool mPendingToCreateNativeCaret = false;
   
   
@@ -1013,28 +923,8 @@ class TSFTextStore final : public ITextStoreACP,
   
   
   
-  bool mDeferNotifyingTSF = false;
-  
-  
-  
-  
-  
-  
-  bool mDeferNotifyingTSFUntilNextUpdate = false;
-  
-  
-  
-  
   bool mDeferCommittingComposition = false;
   bool mDeferCancellingComposition = false;
-  
-  
-  bool mDestroyed = false;
-  
-  
-  bool mBeingDestroyed = false;
-  
-  bool mInPrivateBrowsing = true;
   
   
   bool mIsInitializingContentForTSF = false;

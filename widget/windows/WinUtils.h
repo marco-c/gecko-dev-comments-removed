@@ -50,7 +50,9 @@
 
 
 
-#define NS_INLINE_DECL_IUNKNOWN_REFCOUNTING(_class)                         \
+
+
+#define NS_INLINE_DECL_IUNKNOWN_ADDREF_RELEASE(_class)                      \
  public:                                                                    \
   STDMETHODIMP_(ULONG) AddRef() {                                           \
     MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(_class)                              \
@@ -73,11 +75,15 @@
       return 0;                                                             \
     }                                                                       \
     return static_cast<ULONG>(mRefCnt.get());                               \
-  }                                                                         \
-                                                                            \
- protected:                                                                 \
-  nsAutoRefCnt mRefCnt;                                                     \
-  NS_DECL_OWNINGTHREAD                                                      \
+  }
+
+#define NS_INLINE_DECL_IUNKNOWN_REFCOUNTING(_class) \
+ public:                                            \
+  NS_INLINE_DECL_IUNKNOWN_ADDREF_RELEASE(_class)    \
+                                                    \
+ protected:                                         \
+  nsAutoRefCnt mRefCnt;                             \
+  NS_DECL_OWNINGTHREAD                              \
  public:
 
 class nsWindow;
