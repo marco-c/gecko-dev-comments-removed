@@ -942,20 +942,18 @@ static constexpr nsLiteralCString kRfpPrefs[] = {
     "privacy.fingerprintingProtection"_ns,
     "privacy.fingerprintingProtection.pbmode"_ns,
     "privacy.fingerprintingProtection.overrides"_ns,
-    "privacy.baselineFingerprintingProtection"_ns,
-    "privacy.baselineFingerprintingProtection.overrides"_ns,
 };
 
 static void RecomputeResistFingerprintingAllDocs(const char*, void*) {
   AutoTArray<RefPtr<Document>, 64> allDocuments;
   Document::GetAllInProcessDocuments(allDocuments);
   for (auto& doc : allDocuments) {
-    doc->RecomputeResistFingerprinting(
-         true);
-    if (auto* pc = doc->GetPresContext()) {
-      pc->MediaFeatureValuesChanged(
-          {MediaFeatureChangeReason::PreferenceChange},
-          MediaFeatureChangePropagation::JustThisDocument);
+    if (doc->RecomputeResistFingerprinting()) {
+      if (auto* pc = doc->GetPresContext()) {
+        pc->MediaFeatureValuesChanged(
+            {MediaFeatureChangeReason::PreferenceChange},
+            MediaFeatureChangePropagation::JustThisDocument);
+      }
     }
   }
 }
@@ -2440,7 +2438,22 @@ bool nsContentUtils::ETPSaysShouldNotResistFingerprinting(
   
 
   
-  if (nsRFPService::IsRFPPrefEnabled(aIsPBM)) {
+  
+  
+  
+  
+  
+  if (StaticPrefs::privacy_fingerprintingProtection_DoNotUseDirectly() &&
+      !StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() &&
+      StaticPrefs::privacy_resistFingerprinting_pbmode_DoNotUseDirectly()) {
+    if (aIsPBM) {
+      
+      return false;
+    }
+  } else if (StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() ||
+             (aIsPBM &&
+              StaticPrefs::
+                  privacy_resistFingerprinting_pbmode_DoNotUseDirectly())) {
     
     
     
@@ -2709,6 +2722,19 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
           ("Inside ShouldResistFingerprinting_dangerous(nsIURI*,"
            " OriginAttributes) and the URI is %s",
            aURI->GetSpecOrDefault().get()));
+
+  if (!StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() &&
+      !StaticPrefs::privacy_fingerprintingProtection_DoNotUseDirectly()) {
+    
+    
+    
+    if (!aOriginAttributes.IsPrivateBrowsing()) {
+      MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
+              ("Inside ShouldResistFingerprinting_dangerous(nsIURI*,"
+               " OriginAttributes) OA PBM Check said false"));
+      return false;
+    }
+  }
 
   
   if (SchemeSaysShouldNotResistFingerprinting(aURI)) {
@@ -6607,8 +6633,8 @@ void nsContentUtils::AddScriptRunner(already_AddRefed<nsIRunnable> aRunnable) {
   }
 
   if (sScriptBlockerCount) {
-    PROFILER_MARKER("nsContentUtils::AddScriptRunner", OTHER, {},
-                    FlowMarker, Flow::FromPointer(runnable.get()));
+    PROFILER_MARKER("nsContentUtils::AddScriptRunner", OTHER, {}, FlowMarker,
+                    Flow::FromPointer(runnable.get()));
     sBlockedScriptRunners->AppendElement(runnable.forget());
     return;
   }
