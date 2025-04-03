@@ -25,6 +25,12 @@ const gCSSProperties1 = {
       { type: 'discrete', options: [ [ 'flex-start', 'flex-end' ] ] }
     ]
   },
+  'anchor-name': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'none', '--anchor' ] ] }
+    ]
+  },
   'anchor-scope': {
     
     types: [
@@ -1277,6 +1283,30 @@ const gCSSProperties2 = {
     
     types: [
       { type: 'discrete', options: [ [ 'absolute', 'fixed' ] ] }
+    ]
+  },
+  'position-anchor': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'auto', '--anchor' ] ] }
+    ]
+  },
+  'position-visibility': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'always', 'anchors-valid' ] ] }
+    ]
+  },
+  'position-try-fallbacks': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'none', 'flip-block' ] ] }
+    ]
+  },
+  'position-try-order': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'normal', 'most-width' ] ] }
     ]
   },
   'quotes': {
