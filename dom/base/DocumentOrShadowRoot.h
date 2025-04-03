@@ -190,7 +190,7 @@ class DocumentOrShadowRoot {
 
 
 
-  Element* LookupImageElement(const nsAString& aElementId);
+  Element* LookupImageElement(nsAtom* aId);
 
   
 
