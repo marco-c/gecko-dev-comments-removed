@@ -75,9 +75,6 @@ struct BuiltInNetworkBehaviorConfig {
   
   int delay_standard_deviation_ms = 0;
   
-  
-  
-  int link_capacity_kbps = 0;
   DataRate link_capacity = DataRate::Infinity();
   
   double loss_percent = 0.;
