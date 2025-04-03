@@ -21,6 +21,7 @@
 #include "api/environment/environment_factory.h"
 #include "api/test/create_frame_generator.h"
 #include "api/test/frame_generator_interface.h"
+#include "api/video/i420_buffer.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -29,6 +30,8 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/scoped_key_value_config.h"
+#include "test/testsupport/file_utils.h"
+#include "test/testsupport/frame_reader.h"
 
 namespace webrtc {
 namespace {
@@ -237,7 +240,7 @@ class LibaomAv1EncoderMaxConsecDropTest
 TEST_P(LibaomAv1EncoderMaxConsecDropTest, MaxConsecDrops) {
   VideoBitrateAllocation allocation;
   allocation.SetBitrate(0, 0,
-                        1000);  
+                        2000);  
   std::unique_ptr<VideoEncoder> encoder =
       CreateLibaomAv1Encoder(CreateEnvironment());
   VideoCodec codec_settings = DefaultCodecSettings();
@@ -507,6 +510,73 @@ TEST(LibaomAv1EncoderTest, DisableAutomaticResize) {
             WEBRTC_VIDEO_CODEC_OK);
   EXPECT_EQ(encoder->GetEncoderInfo().scaling_settings.thresholds,
             std::nullopt);
+}
+
+TEST(LibaomAv1EncoderTest, PostEncodeFrameDrop) {
+  
+  
+  
+  
+  
+  
+  
+  VideoFrame input_frame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(
+              test::CreateYuvFrameReader(
+                  test::ResourcePath("photo_1850_1110", "yuv"),
+                  {.width = 1850, .height = 1110})
+                  ->PullFrame())
+          .build();
+
+  VideoBitrateAllocation allocation;
+  allocation.SetBitrate(0, 0,
+                        10000000);
+  std::unique_ptr<VideoEncoder> encoder =
+      CreateLibaomAv1Encoder(CreateEnvironment());
+  VideoCodec codec_settings = DefaultCodecSettings();
+  codec_settings.width = input_frame.width();
+  codec_settings.height = input_frame.height();
+  codec_settings.startBitrate = allocation.get_sum_kbps();
+  codec_settings.SetFrameDropEnabled(true);
+  codec_settings.SetScalabilityMode(ScalabilityMode::kL1T1);
+  ASSERT_EQ(encoder->InitEncode(&codec_settings, DefaultEncoderSettings()),
+            WEBRTC_VIDEO_CODEC_OK);
+  encoder->SetRates(VideoEncoder::RateControlParameters(
+      allocation, codec_settings.maxFramerate));
+
+  class EncoderCallback : public EncodedImageCallback {
+   public:
+    EncoderCallback() = default;
+    int frames_encoded() const { return frames_encoded_; }
+
+   private:
+    Result OnEncodedImage(
+        const EncodedImage& encoded_image,
+        const CodecSpecificInfo* ) override {
+      frames_encoded_++;
+      return Result(Result::Error::OK);
+    }
+
+    int frames_encoded_ = 0;
+  } callback;
+  encoder->RegisterEncodeCompleteCallback(&callback);
+
+  input_frame.set_rtp_timestamp(1 * kVideoPayloadTypeFrequency /
+                                codec_settings.maxFramerate);
+  RTC_CHECK_EQ(encoder->Encode(input_frame, nullptr),
+               WEBRTC_VIDEO_CODEC_OK);
+
+  allocation.SetBitrate(0, 0,
+                        1000);
+  encoder->SetRates(VideoEncoder::RateControlParameters(
+      allocation, codec_settings.maxFramerate));
+
+  input_frame.set_rtp_timestamp(2 * kVideoPayloadTypeFrequency /
+                                codec_settings.maxFramerate);
+  RTC_CHECK_EQ(encoder->Encode(input_frame, nullptr),
+               WEBRTC_VIDEO_CODEC_OK);
+  RTC_CHECK_EQ(callback.frames_encoded(), 1);
 }
 
 }  
