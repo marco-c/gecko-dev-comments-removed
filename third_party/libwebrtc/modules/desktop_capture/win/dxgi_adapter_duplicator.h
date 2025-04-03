@@ -58,7 +58,7 @@ class DxgiAdapterDuplicator {
   
   
   
-  std::optional<int32_t> GetDeviceScaleFactor(int screen_id) const;
+  std::optional<float> GetDeviceScaleFactor(int screen_id) const;
 
   
   

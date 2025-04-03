@@ -27,7 +27,7 @@ DxgiFrame::~DxgiFrame() = default;
 
 bool DxgiFrame::Prepare(DesktopSize size,
                         DesktopCapturer::SourceId source_id,
-                        std::optional<int32_t> device_scale_factor) {
+                        std::optional<float> device_scale_factor) {
   if (source_id != source_id_) {
     
     source_id_ = source_id;

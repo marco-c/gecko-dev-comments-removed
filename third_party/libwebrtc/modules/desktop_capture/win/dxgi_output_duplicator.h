@@ -86,7 +86,9 @@ class DxgiOutputDuplicator {
 
   
   
-  std::optional<DEVICE_SCALE_FACTOR> device_scale_factor() const;
+  std::optional<float> device_scale_factor() const {
+    return device_scale_factor_;
+  }
 
   
   void TranslateRect(const DesktopVector& position);
@@ -138,7 +140,7 @@ class DxgiOutputDuplicator {
   std::unique_ptr<DxgiTexture> texture_;
   Rotation rotation_;
   DesktopSize unrotated_size_;
-  DEVICE_SCALE_FACTOR device_scale_factor_ = DEVICE_SCALE_FACTOR_INVALID;
+  std::optional<float> device_scale_factor_;
 
   
   

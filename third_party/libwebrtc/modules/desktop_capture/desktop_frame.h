@@ -75,10 +75,10 @@ class RTC_EXPORT DesktopFrame {
   const DesktopVector& dpi() const { return dpi_; }
   void set_dpi(const DesktopVector& dpi) { dpi_ = dpi; }
 
-  std::optional<int32_t> device_scale_factor() const {
+  std::optional<float> device_scale_factor() const {
     return device_scale_factor_;
   }
-  void set_device_scale_factor(std::optional<int32_t> device_scale_factor) {
+  void set_device_scale_factor(std::optional<float> device_scale_factor) {
     device_scale_factor_ = device_scale_factor;
   }
   
@@ -182,7 +182,7 @@ class RTC_EXPORT DesktopFrame {
   
   
   
-  std::optional<int32_t> device_scale_factor_;
+  std::optional<float> device_scale_factor_;
 };
 
 

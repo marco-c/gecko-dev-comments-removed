@@ -153,7 +153,7 @@ class WgcCaptureSession final {
   
   
   
-  DEVICE_SCALE_FACTOR device_scale_factor_ = DEVICE_SCALE_FACTOR_INVALID;
+  std::optional<float> device_scale_factor_;
 
   SequenceChecker sequence_checker_;
 };

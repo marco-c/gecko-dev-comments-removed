@@ -49,7 +49,7 @@ class DxgiFrame final {
   
   bool Prepare(DesktopSize size,
                DesktopCapturer::SourceId source_id,
-               std::optional<int32_t> device_scale_factor);
+               std::optional<float> device_scale_factor);
 
   
   Context* context();
