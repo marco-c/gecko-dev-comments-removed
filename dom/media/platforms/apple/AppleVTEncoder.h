@@ -89,8 +89,6 @@ class AppleVTEncoder final : public MediaDataEncoder {
   
   Atomic<bool> mIsHardwareAccelerated;
   
-  Atomic<bool> mInited;
-  
   nsCOMPtr<nsITimer> mTimer;
 };
 
