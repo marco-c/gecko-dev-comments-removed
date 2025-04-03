@@ -2686,14 +2686,16 @@ TEST_F(VideoStreamEncoderTest,
   video_stream_encoder_->ConfigureEncoder(config.Copy(), kMaxPayloadLength);
 
   
+  
   video_source_.IncomingCapturedFrame(CreateFrame(1, 480, 270));
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
   EXPECT_EQ(fake_encoder_.config().numberOfSimulcastStreams, kNumStreams);
   EXPECT_EQ(static_cast<uint32_t>(kEncoderLimits270p.min_bitrate_bps),
             fake_encoder_.config().simulcastStream[1].minBitrate * 1000);
-  EXPECT_EQ(static_cast<uint32_t>(kEncoderLimits270p.max_bitrate_bps),
+  EXPECT_EQ(static_cast<uint32_t>(kMaxBitrateBps),
             fake_encoder_.config().simulcastStream[1].maxBitrate * 1000);
 
+  
   
   video_source_.IncomingCapturedFrame(CreateFrame(2, 640, 360));
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
