@@ -13,7 +13,8 @@ use glean::traits::Datetime;
 
 #[cfg(feature = "with_gecko")]
 use super::profiler_utils::{
-    glean_to_chrono_datetime, local_now_with_offset, TelemetryProfilerCategory,
+    glean_to_chrono_datetime, local_now_with_offset, stream_identifiers_by_id,
+    TelemetryProfilerCategory,
 };
 
 #[cfg(feature = "with_gecko")]
@@ -32,8 +33,14 @@ impl gecko_profiler::ProfilerMarker for DatetimeMetricMarker {
     fn marker_type_display() -> gecko_profiler::MarkerSchema {
         use gecko_profiler::schema::*;
         let mut schema = MarkerSchema::new(&[Location::MarkerChart, Location::MarkerTable]);
-        schema.set_tooltip_label("{marker.data.id} {marker.data.time}");
-        schema.set_table_label("{marker.name} - {marker.data.id}: {marker.data.time}");
+        schema.set_tooltip_label("{marker.data.cat}.{marker.data.id} {marker.data.time}");
+        schema.set_table_label("{marker.data.cat}.{marker.data.id}: {marker.data.time}");
+        schema.add_key_label_format_searchable(
+            "cat",
+            "Category",
+            Format::UniqueString,
+            Searchable::Searchable,
+        );
         schema.add_key_label_format_searchable(
             "id",
             "Metric",
@@ -47,8 +54,7 @@ impl gecko_profiler::ProfilerMarker for DatetimeMetricMarker {
     }
 
     fn stream_json_marker_data(&self, json_writer: &mut gecko_profiler::JSONWriter) {
-        let name = self.id.get_name();
-        json_writer.unique_string_property("id", &name);
+        stream_identifiers_by_id::<DatetimeMetric>(&self.id.into(), json_writer);
         
         
         
@@ -86,6 +92,9 @@ pub enum DatetimeMetric {
     },
     Child(ChildMetricMeta),
 }
+
+crate::define_metric_metadata_getter!(DatetimeMetric, DATETIME_MAP);
+crate::define_metric_namer!(DatetimeMetric);
 
 impl DatetimeMetric {
     

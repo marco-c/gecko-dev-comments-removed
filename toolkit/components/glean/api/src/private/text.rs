@@ -2,11 +2,10 @@
 
 
 
-use inherent::inherent;
-use std::sync::Arc;
-
 use super::{BaseMetricId, CommonMetricData};
 use crate::ipc::need_ipc;
+use inherent::inherent;
+use std::sync::Arc;
 
 
 
@@ -50,6 +49,9 @@ pub enum TextMetric {
     Child(TextMetricIpc),
 }
 
+crate::define_metric_metadata_getter!(TextMetric, TEXT_MAP);
+crate::define_metric_namer!(TextMetric, PARENT_ONLY);
+
 #[derive(Clone, Debug)]
 pub struct TextMetricIpc;
 
@@ -91,7 +93,10 @@ impl glean::traits::Text for TextMetric {
                 gecko_profiler::lazy_add_marker!(
                     "Text::set",
                     super::profiler_utils::TelemetryProfilerCategory,
-                    super::profiler_utils::StringLikeMetricMarker::new((*id).into(), &value)
+                    super::profiler_utils::StringLikeMetricMarker::<TextMetric>::new(
+                        (*id).into(),
+                        &value
+                    )
                 );
                 inner.set(value);
             }
