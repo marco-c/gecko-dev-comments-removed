@@ -14,7 +14,6 @@
 #include "nsHttpRequestHead.h"
 #include "nsISocketTransport.h"
 #include "Http2Session.h"
-#include "PSpdyPush.h"
 #include "nsIRequestContext.h"
 #include "nsHttpTransaction.h"
 #include "nsSocketTransportService2.h"
@@ -79,13 +78,6 @@ nsresult Http2Stream::CheckPushCache() {
                     authorityHeader, originAttributes, session->Serial(),
                     requestURI, mOrigin, hashkey);
 
-  
-  nsIRequestContext* requestContext = mTransaction->RequestContext();
-  SpdyPushCache* cache = nullptr;
-  if (requestContext) {
-    cache = requestContext->GetSpdyPushCache();
-  }
-
   RefPtr<Http2PushedStreamWrapper> pushedStreamWrapper;
   Http2PushedStream* pushedStream = nullptr;
 
@@ -107,18 +99,6 @@ nsresult Http2Stream::CheckPushCache() {
       pushedStream = nullptr;
     }
   }
-
-  
-  
-  
-  if (cache && !pushedStream) {
-    pushedStream = cache->RemovePushedStreamHttp2(hashkey);
-  }
-
-  LOG3(
-      ("Pushed Stream Lookup "
-       "session=%p key=%s requestcontext=%p cache=%p hit=%p\n",
-       session.get(), hashkey.get(), requestContext, cache, pushedStream));
 
   if (pushedStream) {
     LOG3(("Pushed Stream Match located %p id=0x%X key=%s\n", pushedStream,
