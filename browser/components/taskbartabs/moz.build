@@ -4,7 +4,7 @@
 
 
 
-EXTRA_JS_MODULES += [
+EXTRA_JS_MODULES.taskbartabs += [
     "TaskbarTabUI.sys.mjs",
 ]
 
