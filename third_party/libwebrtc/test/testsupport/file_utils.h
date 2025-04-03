@@ -91,6 +91,9 @@ bool CreateDir(absl::string_view directory_name);
 bool RemoveDir(absl::string_view directory_name);
 
 
+bool RemoveNonEmptyDir(absl::string_view directory_name);
+
+
 bool RemoveFile(absl::string_view file_name);
 
 
