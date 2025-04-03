@@ -84,6 +84,9 @@ async function testWatchingCachedCssMessages() {
   
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function () {
     content.docShell.cssErrorReportingEnabled = true;
+    ChromeUtils.clearResourceCache({
+      types: ["stylesheet"],
+    });
   });
 
   
