@@ -69,38 +69,6 @@ NS_DEFINE_STATIC_IID_ACCESSOR(ISVGFilterObserverList,
 
 
 
-class URLAndReferrerInfo {
- public:
-  URLAndReferrerInfo(nsIURI* aURI, nsIReferrerInfo* aReferrerInfo)
-      : mURI(aURI), mReferrerInfo(aReferrerInfo) {
-    MOZ_ASSERT(aURI);
-  }
-
-  URLAndReferrerInfo(nsIURI* aURI, const URLExtraData& aExtraData)
-      : mURI(aURI), mReferrerInfo(aExtraData.ReferrerInfo()) {
-    MOZ_ASSERT(aURI);
-  }
-
-  NS_INLINE_DECL_REFCOUNTING(URLAndReferrerInfo)
-
-  nsIURI* GetURI() const { return mURI; }
-  nsIReferrerInfo* GetReferrerInfo() const { return mReferrerInfo; }
-
-  bool operator==(const URLAndReferrerInfo& aRHS) const;
-
- private:
-  ~URLAndReferrerInfo() = default;
-
-  nsCOMPtr<nsIURI> mURI;
-  nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
-};
-
-
-
-
-
-
-
 
 
 

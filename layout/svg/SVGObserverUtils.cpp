@@ -42,6 +42,38 @@ using namespace mozilla::dom;
 
 namespace mozilla {
 
+
+
+
+
+
+
+class URLAndReferrerInfo {
+ public:
+  URLAndReferrerInfo(nsIURI* aURI, nsIReferrerInfo* aReferrerInfo)
+      : mURI(aURI), mReferrerInfo(aReferrerInfo) {
+    MOZ_ASSERT(aURI);
+  }
+
+  URLAndReferrerInfo(nsIURI* aURI, const URLExtraData& aExtraData)
+      : mURI(aURI), mReferrerInfo(aExtraData.ReferrerInfo()) {
+    MOZ_ASSERT(aURI);
+  }
+
+  NS_INLINE_DECL_REFCOUNTING(URLAndReferrerInfo)
+
+  nsIURI* GetURI() const { return mURI; }
+  nsIReferrerInfo* GetReferrerInfo() const { return mReferrerInfo; }
+
+  bool operator==(const URLAndReferrerInfo& aRHS) const;
+
+ private:
+  ~URLAndReferrerInfo() = default;
+
+  nsCOMPtr<nsIURI> mURI;
+  nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
+};
+
 bool URLAndReferrerInfo::operator==(const URLAndReferrerInfo& aRHS) const {
   bool uriEqual = false, referrerEqual = false;
   this->mURI->Equals(aRHS.mURI, &uriEqual);
