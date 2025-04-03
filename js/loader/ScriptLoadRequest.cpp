@@ -171,23 +171,43 @@ void ScriptLoadRequest::CacheEntryFound(LoadedScript* aLoadedScript) {
   MOZ_ASSERT(IsCheckingCache());
   MOZ_ASSERT(mURI);
 
-  mLoadedScript = aLoadedScript;
-
-  MOZ_ASSERT(mFetchOptions->IsCompatible(mLoadedScript->GetFetchOptions()));
+  MOZ_ASSERT(mFetchOptions->IsCompatible(aLoadedScript->GetFetchOptions()));
 
   switch (mKind) {
     case ScriptKind::eClassic:
     case ScriptKind::eImportMap:
-      MOZ_ASSERT(mLoadedScript->IsClassicScript());
+      MOZ_ASSERT(aLoadedScript->IsClassicScript());
+
+      mLoadedScript = aLoadedScript;
+
+      
+      mState = State::Ready;
       break;
     case ScriptKind::eModule:
-      MOZ_ASSERT(mLoadedScript->IsModuleScript());
+      
+      
+      MOZ_ASSERT(aLoadedScript->IsModuleScript());
+
+      mLoadedScript = ModuleScript::FromCache(*aLoadedScript);
+
+#ifdef DEBUG
+      {
+        bool equals = false;
+        mURI->Equals(mLoadedScript->GetURI(), &equals);
+        MOZ_ASSERT(equals);
+      }
+#endif
+
+      mBaseURL = mLoadedScript->BaseURL();
+
+      
+      
+      mState = State::Fetching;
       break;
     case ScriptKind::eEvent:
       MOZ_ASSERT_UNREACHABLE("EventScripts are not using ScriptLoadRequest");
       break;
   }
-  mState = State::Ready;
 }
 
 void ScriptLoadRequest::NoCacheEntryFound() {
