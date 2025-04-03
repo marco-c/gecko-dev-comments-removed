@@ -193,7 +193,7 @@ struct OptimizeRegExpPrototypeFuse final : public InvalidatingRealmFuse {
 
 
 
-struct OptimizeStringPrototypeSymbolsFuse final : public RealmFuse {
+struct OptimizeStringPrototypeSymbolsFuse final : public InvalidatingRealmFuse {
   virtual const char* name() override {
     return "OptimizeStringPrototypeSymbolsFuse";
   }
