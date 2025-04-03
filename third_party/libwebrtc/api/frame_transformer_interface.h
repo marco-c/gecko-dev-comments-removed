@@ -19,6 +19,7 @@
 #include "api/array_view.h"
 #include "api/ref_count.h"
 #include "api/scoped_refptr.h"
+#include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "api/video/video_frame_metadata.h"
 #include "rtc_base/system/rtc_export.h"
@@ -100,6 +101,7 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
 
   virtual const std::optional<uint16_t> SequenceNumber() const = 0;
 
+  
   virtual std::optional<uint64_t> AbsoluteCaptureTimestamp() const = 0;
 
   enum class FrameType { kEmptyFrame, kAudioFrameSpeech, kAudioFrameCN };
@@ -116,6 +118,21 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
   
   
   virtual std::optional<Timestamp> ReceiveTime() const = 0;
+
+  
+  
+  
+  
+  
+  virtual std::optional<Timestamp> CaptureTime() const = 0;
+
+  
+  
+  
+  
+  
+  
+  virtual std::optional<TimeDelta> SenderCaptureTimeOffset() const = 0;
 };
 
 
