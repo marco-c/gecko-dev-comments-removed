@@ -18,7 +18,7 @@
 
 #include "rtc_base/checks.h"
 
-namespace rtc {
+namespace webrtc {
 HistogramPercentileCounter::HistogramPercentileCounter(
     uint32_t long_tail_boundary)
     : histogram_low_(size_t{long_tail_boundary}),

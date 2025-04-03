@@ -18,7 +18,7 @@
 #include <optional>
 #include <vector>
 
-namespace rtc {
+namespace webrtc {
 
 
 class HistogramPercentileCounter {
@@ -40,5 +40,11 @@ class HistogramPercentileCounter {
   size_t total_elements_;
   size_t total_elements_low_;
 };
+}  
+
+
+
+namespace rtc {
+using ::webrtc::HistogramPercentileCounter;
 }  
 #endif  
