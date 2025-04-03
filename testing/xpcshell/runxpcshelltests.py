@@ -470,7 +470,7 @@ class XPCShellTestThread(Thread):
             
             profile.merge(self._rootTempDir, interpolation=interpolation)
 
-            prefs = self.test_object["prefs"].strip().split("\n")
+            prefs = self.test_object["prefs"].strip().split()
             name = self.test_object["id"]
             if self.verbose:
                 self.log.info(
