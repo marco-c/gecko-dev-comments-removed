@@ -1539,34 +1539,10 @@ class RTC_EXPORT PeerConnectionFactoryInterface
 
   
   
-  
-  
   virtual RTCErrorOr<rtc::scoped_refptr<PeerConnectionInterface>>
   CreatePeerConnectionOrError(
       const PeerConnectionInterface::RTCConfiguration& configuration,
-      PeerConnectionDependencies dependencies);
-  
-  
-  ABSL_DEPRECATED("Use CreatePeerConnectionOrError")
-  virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
-      const PeerConnectionInterface::RTCConfiguration& configuration,
-      PeerConnectionDependencies dependencies);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ABSL_DEPRECATED("Use CreatePeerConnectionOrError")
-  virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
-      const PeerConnectionInterface::RTCConfiguration& configuration,
-      std::unique_ptr<cricket::PortAllocator> allocator,
-      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-      PeerConnectionObserver* observer);
+      PeerConnectionDependencies dependencies) = 0;
 
   
   
