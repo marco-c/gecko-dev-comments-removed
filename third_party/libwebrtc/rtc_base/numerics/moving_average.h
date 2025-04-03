@@ -17,7 +17,7 @@
 #include <optional>
 #include <vector>
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -61,5 +61,11 @@ class MovingAverage {
   std::vector<int> history_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::MovingAverage;
 }  
 #endif  

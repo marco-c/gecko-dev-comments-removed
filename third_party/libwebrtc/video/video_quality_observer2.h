@@ -72,7 +72,7 @@ class VideoQualityObserver {
   bool is_last_frame_blocky_;
   
   int64_t last_unfreeze_time_ms_;
-  rtc::MovingAverage render_interframe_delays_;
+  MovingAverage render_interframe_delays_;
   double sum_squared_interframe_delays_secs_;
   
   

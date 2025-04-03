@@ -17,7 +17,7 @@
 
 #include "rtc_base/checks.h"
 
-namespace rtc {
+namespace webrtc {
 
 MovingAverage::MovingAverage(size_t window_size) : history_(window_size, 0) {
   
