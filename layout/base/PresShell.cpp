@@ -3213,6 +3213,8 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
 
   if (target) {
     
+    target->RevealAncestorClosedDetails();
+    
     
     ErrorResult rv;
     target->RevealAncestorHiddenUntilFoundAndFireBeforematchEvent(rv);

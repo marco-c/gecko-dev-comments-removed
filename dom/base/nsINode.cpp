@@ -43,6 +43,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/Link.h"
+#include "mozilla/dom/HTMLDetailsElement.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
@@ -3955,6 +3956,34 @@ void nsINode::RevealAncestorHiddenUntilFoundAndFireBeforematchEvent(
     
     
     currentNode = parentNode;
+  }
+}
+
+
+void nsINode::RevealAncestorClosedDetails() {
+  AutoTArray<RefPtr<HTMLDetailsElement>, 16> detailsElements;
+  
+  for (auto* currentNode : InclusiveFlatTreeAncestors(*this)) {
+    
+    auto* slot = HTMLSlotElement::FromNode(currentNode);
+    if (!slot) {
+      continue;
+    }
+    
+    
+    if (auto* details =
+            HTMLDetailsElement::FromNodeOrNull(slot->GetContainingShadowHost());
+        details && !details->Open() && !slot->HasName()) {
+      detailsElements.AppendElement(details);
+      
+      
+      
+    }
+  }
+  
+  
+  for (auto& details : detailsElements) {
+    details->SetOpen(true, IgnoreErrors());
   }
 }
 
