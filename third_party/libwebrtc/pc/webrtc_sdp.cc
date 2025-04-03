@@ -375,8 +375,9 @@ static bool ParseMsidAttribute(absl::string_view line,
                                std::string* track_id,
                                SdpParseError* error);
 
-static void RemoveInvalidRidDescriptions(const std::vector<int>& payload_types,
-                                         std::vector<RidDescription>* rids);
+static void RemoveDuplicateRidDescriptions(
+    const std::vector<int>& payload_types,
+    std::vector<RidDescription>* rids);
 
 static SimulcastLayerList RemoveRidsFromSimulcastLayerList(
     const std::set<std::string>& to_remove,
@@ -1712,7 +1713,7 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     for (const RidDescription& rid_description : track.rids()) {
       InitAttrLine(kAttributeRid, &os);
       os << kSdpDelimiterColon
-         << serializer.SerializeRidDescription(rid_description);
+         << serializer.SerializeRidDescription(*media_desc, rid_description);
       AddLine(os.str(), message);
     }
   }
@@ -1720,7 +1721,7 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
   for (const RidDescription& rid_description : media_desc->receive_rids()) {
     InitAttrLine(kAttributeRid, &os);
     os << kSdpDelimiterColon
-       << serializer.SerializeRidDescription(rid_description);
+       << serializer.SerializeRidDescription(*media_desc, rid_description);
     AddLine(os.str(), message);
   }
 
@@ -2396,57 +2397,19 @@ static bool ParseMsidAttribute(absl::string_view line,
   return true;
 }
 
-static void RemoveInvalidRidDescriptions(const std::vector<int>& payload_types,
-                                         std::vector<RidDescription>* rids) {
+static void RemoveDuplicateRidDescriptions(
+    const std::vector<int>& payload_types,
+    std::vector<RidDescription>* rids) {
   RTC_DCHECK(rids);
   std::set<std::string> to_remove;
   std::set<std::string> unique_rids;
-
   
   for (RidDescription& rid : *rids) {
-    
-    
-    
-    auto pair = unique_rids.insert(rid.rid);
-    
-    if (!pair.second) {
+    if (!unique_rids.insert(rid.rid).second) {
       to_remove.insert(rid.rid);
       continue;
-    }
-
-    
-    
-    
-    
-    
-    
-    if (rid.payload_types.empty()) {
-      
-      continue;
-    }
-
-    
-    
-    std::set<int> removed_formats;
-    for (int payload_type : rid.payload_types) {
-      if (!absl::c_linear_search(payload_types, payload_type)) {
-        removed_formats.insert(payload_type);
-      }
-    }
-
-    rid.payload_types.erase(
-        std::remove_if(rid.payload_types.begin(), rid.payload_types.end(),
-                       [&removed_formats](int format) {
-                         return removed_formats.count(format) > 0;
-                       }),
-        rid.payload_types.end());
-
-    
-    if (rid.payload_types.empty()) {
-      to_remove.insert(rid.rid);
     }
   }
-
   
   if (!to_remove.empty()) {
     rids->erase(std::remove_if(rids->begin(), rids->end(),
@@ -3301,7 +3264,7 @@ bool ParseContent(absl::string_view message,
         }
         RTCErrorOr<RidDescription> error_or_rid_description =
             deserializer.DeserializeRidDescription(
-                line->substr(kRidPrefixLength));
+                *media_desc, line->substr(kRidPrefixLength));
 
         
         if (!error_or_rid_description.ok()) {
@@ -3352,7 +3315,7 @@ bool ParseContent(absl::string_view message,
   }
 
   
-  RemoveInvalidRidDescriptions(payload_types, &rids);
+  RemoveDuplicateRidDescriptions(payload_types, &rids);
 
   
   

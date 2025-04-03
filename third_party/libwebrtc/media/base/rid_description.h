@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+#include "media/base/codec.h"
+
 namespace cricket {
 
 enum class RidDirection { kSend, kReceive };
@@ -75,7 +77,9 @@ struct RidDescription final {
 
   
   
-  std::vector<int> payload_types;
+  
+  
+  std::vector<Codec> codecs;
 
   
   

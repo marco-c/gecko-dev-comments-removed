@@ -19,6 +19,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/strings/string_view.h"
+#include "media/base/codec_comparators.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/string_encode.h"
@@ -139,12 +140,13 @@ RTCErrorOr<SimulcastLayerList> ParseSimulcastLayerList(const std::string& str) {
 }
 
 webrtc::RTCError ParseRidPayloadList(const std::string& payload_list,
-                                     RidDescription* rid_description) {
+                                     RidDescription* rid_description,
+                                     std::vector<int>* rid_payload_types) {
   RTC_DCHECK(rid_description);
-  std::vector<int>& payload_types = rid_description->payload_types;
+  RTC_DCHECK(rid_payload_types);
   
   
-  if (!payload_types.empty()) {
+  if (!rid_payload_types->empty()) {
     return ParseError("Multiple pt= found in RID Description.");
   }
   if (!rid_description->restrictions.empty()) {
@@ -170,10 +172,10 @@ webrtc::RTCError ParseRidPayloadList(const std::string& payload_list,
     }
 
     
-    if (absl::c_linear_search(payload_types, value.value())) {
+    if (absl::c_linear_search(*rid_payload_types, value.value())) {
       return ParseError("Duplicate payload type in list: " + payload_type);
     }
-    payload_types.push_back(value.value());
+    rid_payload_types->push_back(value.value());
   }
 
   return RTCError::OK();
@@ -266,6 +268,7 @@ SimulcastSdpSerializer::DeserializeSimulcastDescription(
 }
 
 std::string SimulcastSdpSerializer::SerializeRidDescription(
+    const cricket::MediaContentDescription& media_desc,
     const RidDescription& rid_description) const {
   RTC_DCHECK(!rid_description.rid.empty());
   RTC_DCHECK(rid_description.direction == RidDirection::kSend ||
@@ -277,7 +280,27 @@ std::string SimulcastSdpSerializer::SerializeRidDescription(
                   ? kSendDirection
                   : kReceiveDirection);
 
-  const auto& payload_types = rid_description.payload_types;
+  
+  
+  
+  std::vector<int> payload_types;
+  for (const cricket::Codec& codec : rid_description.codecs) {
+    RtpCodec rtp_codec = codec.ToCodecParameters();
+    const auto it = std::find_if(
+        media_desc.codecs().begin(), media_desc.codecs().end(),
+        [&rtp_codec](const cricket::Codec& m_section_codec) {
+          return IsSameRtpCodecIgnoringLevel(m_section_codec, rtp_codec);
+        });
+    
+    
+    if (it == media_desc.codecs().end() ||
+        it->id == cricket::Codec::kIdNotSet) {
+      RTC_DCHECK_NE(it->id, cricket::Codec::kIdNotSet);
+      break;
+    }
+    payload_types.push_back(it->id);
+  }
+
   const auto& restrictions = rid_description.restrictions;
 
   
@@ -321,6 +344,7 @@ std::string SimulcastSdpSerializer::SerializeRidDescription(
 
 
 RTCErrorOr<RidDescription> SimulcastSdpSerializer::DeserializeRidDescription(
+    const cricket::MediaContentDescription& media_desc,
     absl::string_view string) const {
   std::vector<std::string> tokens;
   rtc::tokenize(std::string(string), kDelimiterSpaceChar, &tokens);
@@ -345,6 +369,7 @@ RTCErrorOr<RidDescription> SimulcastSdpSerializer::DeserializeRidDescription(
                                                        : RidDirection::kReceive;
 
   RidDescription rid_description(tokens[0], direction);
+  std::vector<int> rid_payload_types;
 
   
   if (tokens.size() == 3) {
@@ -369,8 +394,9 @@ RTCErrorOr<RidDescription> SimulcastSdpSerializer::DeserializeRidDescription(
       
       
       if (parts[0] == kPayloadType) {
-        RTCError error = ParseRidPayloadList(
-            parts.size() > 1 ? parts[1] : std::string(), &rid_description);
+        RTCError error =
+            ParseRidPayloadList(parts.size() > 1 ? parts[1] : std::string(),
+                                &rid_description, &rid_payload_types);
         if (!error.ok()) {
           return std::move(error);
         }
@@ -387,6 +413,25 @@ RTCErrorOr<RidDescription> SimulcastSdpSerializer::DeserializeRidDescription(
       rid_description.restrictions[parts[0]] =
           parts.size() > 1 ? parts[1] : std::string();
     }
+  }
+
+  
+  
+  for (const int& payload_type : rid_payload_types) {
+    const auto it =
+        std::find_if(media_desc.codecs().begin(), media_desc.codecs().end(),
+                     [&payload_type](const cricket::Codec& m_section_codec) {
+                       return m_section_codec.id == payload_type;
+                     });
+    if (it == media_desc.codecs().end()) {
+      
+      
+      
+      
+      RTC_LOG(LS_WARNING) << "A RID contains an unknown payload type.";
+      continue;
+    }
+    rid_description.codecs.push_back(*it);
   }
 
   return std::move(rid_description);
