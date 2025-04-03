@@ -8462,6 +8462,41 @@ pub extern "C" fn Servo_ResolveCalcLengthPercentageWithAnchorFunctions(
     true
 }
 
+
+
+#[repr(u8)]
+pub enum CalcAnchorPositioningFunctionResolution {
+    
+    
+    
+    Invalid,
+    
+    
+    Valid(computed::LengthPercentage),
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_ResolveAnchorFunctionsInCalcPercentage(
+    calc: &computed::length_percentage::CalcLengthPercentage,
+    axis: PhysicalAxis,
+    position_property: PositionProperty,
+    out: &mut CalcAnchorPositioningFunctionResolution,
+) {
+    let resolved = calc.resolve_anchor(CalcAnchorFunctionResolutionInfo {
+        axis: axis,
+        position_property,
+    });
+
+    match resolved {
+        Err(()) => *out = CalcAnchorPositioningFunctionResolution::Invalid,
+        Ok((node, clamping_mode)) => {
+            *out = CalcAnchorPositioningFunctionResolution::Valid(
+                computed::LengthPercentage::new_calc(node, clamping_mode),
+            )
+        },
+    };
+}
+
 #[no_mangle]
 pub extern "C" fn Servo_ConvertColorSpace(
     color: &AbsoluteColor,

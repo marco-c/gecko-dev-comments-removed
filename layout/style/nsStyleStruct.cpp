@@ -1391,20 +1391,13 @@ AnchorResolved<mozilla::StyleInset> AnchorResolvedInset::FromUnresolved(
     case StyleInset::Tag::AnchorContainingCalcFunction: {
       const auto& lp = aValue.AsAnchorContainingCalcFunction();
       const auto& c = lp.AsCalc();
-      float result{};
-      bool percentageUsed{};
-      if (!Servo_ResolveCalcLengthPercentageWithAnchorFunctions(
-              &c, 0.0, aAxis, aPosition, &result, &percentageUsed)) {
+      auto result = StyleCalcAnchorPositioningFunctionResolution::Invalid();
+      Servo_ResolveAnchorFunctionsInCalcPercentage(&c, aAxis, aPosition,
+                                                   &result);
+      if (result.IsInvalid()) {
         return Invalid();
       }
-      if (percentageUsed) {
-        
-        
-        
-        return Unchanged(aValue);
-      }
-      
-      return Evaluated(StyleLengthPercentage::FromPixels(result));
+      return Evaluated(result.AsValid());
     }
     case StyleInset::Tag::AnchorFunction: {
       auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
