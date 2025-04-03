@@ -97,6 +97,7 @@ class ByteBufferWriterT {
                        val.size());
   }
   
+  [[deprecated("issues.webrtc.org/4225170 - use Write(ArrayView)")]]
   void WriteBytes(const uint8_t* val, size_t len) {
     WriteBytesInternal(reinterpret_cast<const value_type*>(val), len);
   }
