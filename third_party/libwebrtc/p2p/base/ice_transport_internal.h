@@ -24,6 +24,7 @@
 #include "api/array_view.h"
 #include "api/candidate.h"
 #include "api/field_trials_view.h"
+#include "api/peer_connection_interface.h"
 #include "api/rtc_error.h"
 #include "api/transport/enums.h"
 #include "api/transport/stun.h"
@@ -109,9 +110,6 @@ webrtc::RTCError VerifyCandidate(const Candidate& cand);
 
 
 webrtc::RTCError VerifyCandidates(const Candidates& candidates);
-
-
-
 
 
 
@@ -215,7 +213,15 @@ struct RTC_EXPORT IceConfig {
             bool presume_writable_when_fully_relayed,
             int regather_on_failed_networks_interval_ms,
             int receiving_switching_delay_ms);
+  
+  
+  
+  explicit IceConfig(
+      const webrtc::PeerConnectionInterface::RTCConfiguration& config);
   ~IceConfig();
+
+  
+  webrtc::RTCError IsValid() const;
 
   
   
