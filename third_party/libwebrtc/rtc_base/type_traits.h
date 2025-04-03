@@ -15,7 +15,7 @@
 #include <string>
 #include <type_traits>
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -136,6 +136,15 @@ static_assert(!IsIntlike<S>::value, "");
 
 }  
 
+}  
+
+
+
+namespace rtc {
+template <typename DS, typename T>
+using HasDataAndSize = ::webrtc::HasDataAndSize<DS, T>;
+template <typename T>
+using IsIntlike = ::webrtc::IsIntlike<T>;
 }  
 
 #endif  

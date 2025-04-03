@@ -38,7 +38,7 @@
 
 #include "rtc_base/type_traits.h"
 
-namespace rtc {
+namespace webrtc {
 
 namespace safe_cmp_impl {
 
@@ -170,6 +170,17 @@ RTC_SAFECMP_MAKE_FUN(Gt)
 RTC_SAFECMP_MAKE_FUN(Ge)
 #undef RTC_SAFECMP_MAKE_FUN
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::SafeEq;
+using ::webrtc::SafeGe;
+using ::webrtc::SafeGt;
+using ::webrtc::SafeLe;
+using ::webrtc::SafeLt;
+using ::webrtc::SafeNe;
 }  
 
 #endif

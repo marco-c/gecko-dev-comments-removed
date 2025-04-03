@@ -52,7 +52,9 @@ RTC_NORETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
 #ifdef __cplusplus
 
 
+#include <cstdint>
 #include <string>
+#include <type_traits>
 
 #include "absl/meta/type_traits.h"
 #include "absl/strings/has_absl_stringify.h"
@@ -101,7 +103,10 @@ RTC_NORETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
 
 
 
-namespace rtc {
+
+#define RTC_CHECKS_IN_WEBRTC_NAMESPACE 1
+
+namespace webrtc {
 namespace webrtc_checks_impl {
 enum class CheckArgType : int8_t {
   kEnd = 0,
@@ -205,7 +210,7 @@ inline Val<CheckArgType::kVoidP, const void*> MakeVal(const void* x) {
 
 template <typename T>
 inline Val<CheckArgType::kVoidP, const void*> MakeVal(
-    const rtc::scoped_refptr<T>& p) {
+    const webrtc::scoped_refptr<T>& p) {
   return {p.get()};
 }
 
@@ -380,17 +385,17 @@ RTC_NORETURN RTC_EXPORT void UnreachableCodeReached();
 
 
 
-#define RTC_EAT_STREAM_PARAMETERS(ignored)                          \
-  (true ? true : ((void)(ignored), true))                           \
-      ? static_cast<void>(0)                                        \
-      : ::rtc::webrtc_checks_impl::FatalLogCall<false>("", 0, "") & \
-            ::rtc::webrtc_checks_impl::LogStreamer<>()
+#define RTC_EAT_STREAM_PARAMETERS(ignored)                             \
+  (true ? true : ((void)(ignored), true))                              \
+      ? static_cast<void>(0)                                           \
+      : ::webrtc::webrtc_checks_impl::FatalLogCall<false>("", 0, "") & \
+            ::webrtc::webrtc_checks_impl::LogStreamer<>()
 
 
 
 
 #define RTC_EAT_STREAM_PARAMETERS_OP(op, a, b) \
-  RTC_EAT_STREAM_PARAMETERS(((void)::rtc::Safe##op(a, b)))
+  RTC_EAT_STREAM_PARAMETERS(((void)::webrtc::Safe##op(a, b)))
 
 
 
@@ -402,34 +407,34 @@ RTC_NORETURN RTC_EXPORT void UnreachableCodeReached();
 
 
 #if RTC_CHECK_MSG_ENABLED
-#define RTC_CHECK(condition)                                    \
-  (condition) ? static_cast<void>(0)                            \
-              : ::rtc::webrtc_checks_impl::FatalLogCall<false>( \
-                    __FILE__, __LINE__, #condition) &           \
-                    ::rtc::webrtc_checks_impl::LogStreamer<>()
+#define RTC_CHECK(condition)                                       \
+  (condition) ? static_cast<void>(0)                               \
+              : ::webrtc::webrtc_checks_impl::FatalLogCall<false>( \
+                    __FILE__, __LINE__, #condition) &              \
+                    ::webrtc::webrtc_checks_impl::LogStreamer<>()
 
 #define RTC_CHECK_OP(name, op, val1, val2)                 \
-  ::rtc::Safe##name((val1), (val2))                        \
+  ::webrtc::Safe##name((val1), (val2))                     \
       ? static_cast<void>(0)                               \
-      : ::rtc::webrtc_checks_impl::FatalLogCall<true>(     \
+      : ::webrtc::webrtc_checks_impl::FatalLogCall<true>(  \
             __FILE__, __LINE__, #val1 " " #op " " #val2) & \
-            ::rtc::webrtc_checks_impl::LogStreamer<>() << (val1) << (val2)
+            ::webrtc::webrtc_checks_impl::LogStreamer<>() << (val1) << (val2)
 #else
-#define RTC_CHECK(condition)                                                  \
-  (condition) ? static_cast<void>(0)                                          \
-  : true ? ::rtc::webrtc_checks_impl::FatalLogCall<false>(__FILE__, __LINE__, \
-                                                          "") &               \
-               ::rtc::webrtc_checks_impl::LogStreamer<>()                     \
-         : ::rtc::webrtc_checks_impl::FatalLogCall<false>("", 0, "") &        \
-               ::rtc::webrtc_checks_impl::LogStreamer<>()
+#define RTC_CHECK(condition)                                                      \
+  (condition) ? static_cast<void>(0)                                              \
+  : true      ? ::webrtc::webrtc_checks_impl::FatalLogCall<false>(__FILE__,       \
+                                                                  __LINE__, "") & \
+               ::webrtc::webrtc_checks_impl::LogStreamer<>()                      \
+         : ::webrtc::webrtc_checks_impl::FatalLogCall<false>("", 0, "") &         \
+               ::webrtc::webrtc_checks_impl::LogStreamer<>()
 
-#define RTC_CHECK_OP(name, op, val1, val2)                                   \
-  ::rtc::Safe##name((val1), (val2)) ? static_cast<void>(0)                   \
-  : true ? ::rtc::webrtc_checks_impl::FatalLogCall<true>(__FILE__, __LINE__, \
-                                                         "") &               \
-               ::rtc::webrtc_checks_impl::LogStreamer<>()                    \
-         : ::rtc::webrtc_checks_impl::FatalLogCall<false>("", 0, "") &       \
-               ::rtc::webrtc_checks_impl::LogStreamer<>()
+#define RTC_CHECK_OP(name, op, val1, val2)                                  \
+  ::webrtc::Safe##name((val1), (val2)) ? static_cast<void>(0)               \
+  : true ? ::webrtc::webrtc_checks_impl::FatalLogCall<true>(__FILE__,       \
+                                                            __LINE__, "") & \
+               ::webrtc::webrtc_checks_impl::LogStreamer<>()                \
+         : ::webrtc::webrtc_checks_impl::FatalLogCall<false>("", 0, "") &   \
+               ::webrtc::webrtc_checks_impl::LogStreamer<>()
 #endif
 
 #define RTC_CHECK_EQ(val1, val2) RTC_CHECK_OP(Eq, ==, val1, val2)
@@ -465,16 +470,16 @@ RTC_NORETURN RTC_EXPORT void UnreachableCodeReached();
 
 
 
-#define RTC_CHECK_NOTREACHED()                         \
-  do {                                                 \
-    ::rtc::webrtc_checks_impl::UnreachableCodeReached( \
-        RTC_UNREACHABLE_FILE_AND_LINE_CALL_ARGS);      \
+#define RTC_CHECK_NOTREACHED()                            \
+  do {                                                    \
+    ::webrtc::webrtc_checks_impl::UnreachableCodeReached( \
+        RTC_UNREACHABLE_FILE_AND_LINE_CALL_ARGS);         \
   } while (0)
 
-#define RTC_FATAL()                                                  \
-  ::rtc::webrtc_checks_impl::FatalLogCall<false>(__FILE__, __LINE__, \
-                                                 "FATAL()") &        \
-      ::rtc::webrtc_checks_impl::LogStreamer<>()
+#define RTC_FATAL()                                                     \
+  ::webrtc::webrtc_checks_impl::FatalLogCall<false>(__FILE__, __LINE__, \
+                                                    "FATAL()") &        \
+      ::webrtc::webrtc_checks_impl::LogStreamer<>()
 
 
 
@@ -484,6 +489,12 @@ inline T CheckedDivExact(T a, T b) {
   return a / b;
 }
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::CheckedDivExact;
 }  
 
 #else  
