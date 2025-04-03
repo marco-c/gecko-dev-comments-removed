@@ -516,6 +516,19 @@
 
       
       this.#suggestionsOptin.addEventListener(
+        "MlModelOptinMessageLinkClick",
+        () => {
+          this.#handleMLOptinTelemetry("step0-optin-link-click");
+          openTrustedLinkIn(
+            
+            "https://support.mozilla.org",
+            "tab"
+          );
+        }
+      );
+
+      
+      this.#suggestionsOptin.addEventListener(
         "MlModelOptinFooterLinkClick",
         () => {
           openTrustedLinkIn("about:preferences", "tab");
