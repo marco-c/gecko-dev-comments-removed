@@ -1326,7 +1326,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   using nsGenericHTMLElement::DispatchEvent;
   
-  nsresult DispatchEvent(const nsAString& aName);
+  
+  MOZ_CAN_RUN_SCRIPT nsresult FireEvent(const nsAString& aName);
 
   already_AddRefed<nsMediaEventRunner> GetEventRunner(
       const nsAString& aName, EventFlag aFlag = EventFlag::eNone);
