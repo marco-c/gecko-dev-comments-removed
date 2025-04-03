@@ -23,12 +23,22 @@ add_task(function test_data_storage() {
 
   
   Assert.throws(
+    () => dataStorage.get("test", Ci.nsIDataStorage.Temporary),
+    /NS_ERROR_NOT_AVAILABLE/,
+    "getting a value of a type that hasn't been set yet should throw"
+  );
+  Assert.throws(
     () => dataStorage.get("test", Ci.nsIDataStorage.Private),
     /NS_ERROR_NOT_AVAILABLE/,
     "getting a value of a type that hasn't been set yet should throw"
   );
 
   
+  dataStorage.put("test", "temporary", Ci.nsIDataStorage.Temporary);
+  Assert.equal(
+    dataStorage.get("test", Ci.nsIDataStorage.Temporary),
+    "temporary"
+  );
   dataStorage.put("test", "private", Ci.nsIDataStorage.Private);
   Assert.equal(dataStorage.get("test", Ci.nsIDataStorage.Private), "private");
   Assert.equal(dataStorage.get("test", Ci.nsIDataStorage.Persistent), "value");
@@ -45,9 +55,19 @@ add_task(function test_data_storage() {
     "getting a removed value should throw"
   );
   
+  Assert.equal(
+    dataStorage.get("test", Ci.nsIDataStorage.Temporary),
+    "temporary"
+  );
   Assert.equal(dataStorage.get("test", Ci.nsIDataStorage.Private), "private");
   
+  dataStorage.remove("test", Ci.nsIDataStorage.Temporary);
   dataStorage.remove("test", Ci.nsIDataStorage.Private);
+  Assert.throws(
+    () => dataStorage.get("test", Ci.nsIDataStorage.Temporary),
+    /NS_ERROR_NOT_AVAILABLE/,
+    "getting a removed value should throw"
+  );
   Assert.throws(
     () => dataStorage.get("test", Ci.nsIDataStorage.Private),
     /NS_ERROR_NOT_AVAILABLE/,

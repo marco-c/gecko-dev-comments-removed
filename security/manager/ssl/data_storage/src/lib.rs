@@ -50,6 +50,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 enum DataType {
     Persistent,
     Private,
+    Temporary,
 }
 
 impl From<u8> for DataType {
@@ -57,6 +58,7 @@ impl From<u8> for DataType {
         match value {
             nsIDataStorage::Persistent => DataType::Persistent,
             nsIDataStorage::Private => DataType::Private,
+            nsIDataStorage::Temporary => DataType::Temporary,
             _ => panic!("invalid nsIDataStorage::DataType"),
         }
     }
@@ -67,6 +69,7 @@ impl From<DataType> for u8 {
         match value {
             DataType::Persistent => nsIDataStorage::Persistent,
             DataType::Private => nsIDataStorage::Private,
+            DataType::Temporary => nsIDataStorage::Temporary,
         }
     }
 }
@@ -249,6 +252,10 @@ struct DataStorageInner {
     
     private_slots: Vec<Entry>,
     
+    temporary_table: DataStorageTable,
+    
+    temporary_slots: Vec<Entry>,
+    
     name: String,
     
     value_length: usize,
@@ -271,6 +278,8 @@ impl DataStorageInner {
             persistent_slots: Vec::new(),
             private_table: DataStorageTable::new(),
             private_slots: Vec::new(),
+            temporary_table: DataStorageTable::new(),
+            temporary_slots: Vec::new(),
             name,
             value_length,
             maybe_profile_path,
@@ -515,6 +524,7 @@ impl DataStorageInner {
         match type_ {
             DataType::Persistent => (&self.persistent_table, &self.persistent_slots),
             DataType::Private => (&self.private_table, &self.private_slots),
+            DataType::Temporary => (&self.temporary_table, &self.temporary_slots),
         }
     }
 
@@ -527,6 +537,7 @@ impl DataStorageInner {
         match type_ {
             DataType::Persistent => (&mut self.persistent_table, &mut self.persistent_slots),
             DataType::Private => (&mut self.private_table, &mut self.private_slots),
+            DataType::Temporary => (&mut self.temporary_table, &mut self.temporary_slots),
         }
     }
 
@@ -591,8 +602,10 @@ impl DataStorageInner {
     fn clear(&mut self) -> Result<(), nsresult> {
         self.persistent_table.clear();
         self.private_table.clear();
+        self.temporary_table.clear();
         self.persistent_slots.clear();
         self.private_slots.clear();
+        self.temporary_slots.clear();
         let Some(profile_path) = self.maybe_profile_path.clone() else {
             return Ok(());
         };
@@ -660,6 +673,9 @@ impl DataStorageInner {
         }
         for entry in self.private_slots.iter().filter(|entry| !entry.is_empty()) {
             f(entry, DataType::Private);
+        }
+        for entry in self.temporary_slots.iter().filter(|entry| !entry.is_empty()) {
+            f(entry, DataType::Temporary);
         }
     }
 

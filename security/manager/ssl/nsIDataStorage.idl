@@ -73,9 +73,12 @@ interface nsIDataStorage : nsISupports {
 
 
 
+
+
   cenum DataType : 8 {
     Persistent,
     Private,
+    Temporary,
   };
 
   
