@@ -26,6 +26,7 @@ add_task(async function () {
     },
     files: {
       "content-script.js": function () {
+        
         browser.test.notifyPass("contentScriptRan");
       },
     },
@@ -149,6 +150,7 @@ add_task(async function () {
     },
     files: {
       "content-script.js": function () {
+        
         browser.test.notifyPass("contentScriptRan");
       },
     },

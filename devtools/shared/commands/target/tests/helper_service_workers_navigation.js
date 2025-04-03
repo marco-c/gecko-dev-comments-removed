@@ -5,11 +5,13 @@
 
 
 
+
 async function setupServiceWorkerNavigationTest() {
   
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
 }
+
 
 async function watchServiceWorkerTargets(tab) {
   info("Create a target list for a tab target");
@@ -52,6 +54,7 @@ async function watchServiceWorkerTargets(tab) {
 
 
 
+
 async function waitForRegistrationReady(tab, expectedPageUrl, workerUrl) {
   await asyncWaitUntil(() =>
     SpecialPowers.spawn(tab.linkedBrowser, [expectedPageUrl], function (_url) {
@@ -86,6 +89,7 @@ async function waitForRegistrationReady(tab, expectedPageUrl, workerUrl) {
     return false;
   });
 }
+
 
 
 

@@ -194,6 +194,7 @@ class TargetCommand extends EventEmitter {
   
   
   
+  
   async _onTargetAvailable(targetFront) {
     
     
@@ -1154,12 +1155,12 @@ class TargetCommand extends EventEmitter {
 
 
 
-  selectTarget(targetFront) {
+  async selectTarget(targetFront) {
     
     if (targetFront.isDestroyedOrBeingDestroyed()) {
       return;
     }
-    return this._onTargetSelected(targetFront);
+    await this._onTargetSelected(targetFront);
   }
 
   

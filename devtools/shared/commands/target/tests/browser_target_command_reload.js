@@ -86,7 +86,7 @@ add_task(async function () {
   await targetCommand.startListening();
 
   
-  let reloadedTargets = [];
+  const reloadedTargets = [];
   await commands.resourceCommand.watchResources(
     [commands.resourceCommand.TYPES.DOCUMENT_EVENT],
     {

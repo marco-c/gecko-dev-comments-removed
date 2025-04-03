@@ -239,11 +239,11 @@ module.exports = [
   "servo/",
 
   
-  "target/",
-  "servo/ports/geckolib/target/",
-  "dom/base/rust/target/",
-  "servo/components/style/target/",
-  "dom/webgpu/tests/cts/vendor/target/",
+  "/target/",
+  "/servo/ports/geckolib/target/",
+  "/dom/base/rust/target/",
+  "/servo/components/style/target/",
+  "/dom/webgpu/tests/cts/vendor/target/",
 
   
   "testing/condprofile/condprof/tests/profile",
