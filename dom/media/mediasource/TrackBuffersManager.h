@@ -34,6 +34,10 @@ class MediaRawData;
 class MediaSourceDemuxer;
 class SourceBufferResource;
 
+namespace dom {
+enum class MediaSourceEndOfStreamError : uint8_t;
+}  
+
 class SourceBufferTaskQueue {
  public:
   SourceBufferTaskQueue() = default;
@@ -131,7 +135,7 @@ class TrackBuffersManager final
   int64_t GetSize() const;
 
   
-  void Ended();
+  void SetEnded(const dom::Optional<dom::MediaSourceEndOfStreamError>& aError);
 
   
   void Detach();
@@ -150,7 +154,7 @@ class TrackBuffersManager final
   const media::TimeIntervals& Buffered(TrackInfo::TrackType) const;
   const media::TimeUnit& HighestStartTime(TrackInfo::TrackType) const;
   media::TimeIntervals SafeBuffered(TrackInfo::TrackType) const;
-  bool IsEnded() const { return mEnded; }
+  bool HaveAllData() const { return mHaveAllData; }
   uint32_t Evictable(TrackInfo::TrackType aTrack) const;
   media::TimeUnit Seek(TrackInfo::TrackType aTrack,
                        const media::TimeUnit& aTime,
@@ -190,6 +194,9 @@ class TrackBuffersManager final
   using CodedFrameProcessingPromise = MozPromise<bool, MediaResult, true>;
 
   ~TrackBuffersManager();
+  
+  void Reopen();
+
   
   RefPtr<AppendPromise> DoAppendData(already_AddRefed<MediaByteBuffer> aData,
                                      const SourceBufferAttributes& aAttributes);
@@ -542,7 +549,7 @@ class TrackBuffersManager final
       nsTArray<const media::TimeIntervals*>& aTracks) const;
 
   
-  Atomic<bool> mEnded;
+  Atomic<bool> mHaveAllData{false};
 
   
   Atomic<int64_t> mSizeSourceBuffer;
@@ -568,6 +575,8 @@ class TrackBuffersManager final
   media::TimeIntervals mAudioBufferedRanges;
   
   MediaInfo mInfo;
+  
+  bool mEnded MOZ_GUARDED_BY(mMutex) = false;
   
 
   

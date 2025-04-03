@@ -76,7 +76,7 @@ class SourceBufferList final : public DOMEventTargetHelper {
   void RangeRemoval(double aStart, double aEnd);
 
   
-  void Ended();
+  void SetEnded(const Optional<MediaSourceEndOfStreamError>& aError);
 
   
   media::TimeUnit GetHighestBufferedEndTime();
