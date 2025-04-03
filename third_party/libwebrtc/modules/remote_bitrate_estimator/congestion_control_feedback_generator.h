@@ -40,6 +40,14 @@ namespace webrtc {
 
 
 
+
+
+
+
+
+
+
+
 class CongestionControlFeedbackGenerator
     : public RtpTransportFeedbackGenerator {
  public:
@@ -50,7 +58,7 @@ class CongestionControlFeedbackGenerator
 
   void OnReceivedPacket(const RtpPacketReceived& packet) override;
 
-  void OnSendBandwidthEstimateChanged(DataRate estimate) override;
+  void OnSendBandwidthEstimateChanged(DataRate estimate) override {}
 
   TimeDelta Process(Timestamp now) override;
 
@@ -70,7 +78,6 @@ class CongestionControlFeedbackGenerator
   FieldTrialParameter<TimeDelta> max_time_to_wait_for_packet_with_marker_;
   FieldTrialParameter<TimeDelta> max_time_between_feedback_;
 
-  DataRate max_feedback_rate_ = DataRate::KilobitsPerSec(1000);
   DataSize packet_overhead_ = DataSize::Zero();
   DataSize send_rate_debt_ = DataSize::Zero();
 

@@ -26,8 +26,16 @@
 
 namespace webrtc {
 
+constexpr int kMaxPacketsPerSsrc = 16384;
+
 void CongestionControlFeedbackTracker::ReceivedPacket(
     const RtpPacketReceived& packet) {
+  if (packets_.size() > kMaxPacketsPerSsrc) {
+    RTC_LOG(LS_VERBOSE)
+        << "Unexpected number of packets without sending reports:"
+        << packets_.size();
+    return;
+  }
   int64_t unwrapped_sequence_number =
       unwrapper_.Unwrap(packet.SequenceNumber());
   if (last_sequence_number_in_feedback_ &&
@@ -69,7 +77,9 @@ void CongestionControlFeedbackTracker::AddPacketsToFeedback(
   auto packet_it = packets_.begin();
   uint32_t ssrc = packet_it->ssrc;
   for (int64_t sequence_number = *last_sequence_number_in_feedback_ + 1;
-       sequence_number <= packets_.back().unwrapped_sequence_number;
+       sequence_number <= packets_.back().unwrapped_sequence_number &&
+       sequence_number <=
+           *last_sequence_number_in_feedback_ + kMaxPacketsPerSsrc;
        ++sequence_number) {
     RTC_DCHECK(packet_it != packets_.end());
     RTC_DCHECK_EQ(ssrc, packet_it->ssrc);
