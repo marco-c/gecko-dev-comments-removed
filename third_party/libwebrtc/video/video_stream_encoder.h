@@ -325,8 +325,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   bool was_encode_called_since_last_initialization_
       RTC_GUARDED_BY(encoder_queue_) = false;
 
-  bool encoder_failed_ RTC_GUARDED_BY(encoder_queue_) = false;
-
   
   int64_t last_captured_timestamp_ RTC_GUARDED_BY(encoder_queue_) = 0;
   
@@ -381,6 +379,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   
   VideoStreamInputStateProvider input_state_provider_;
+
+  bool encoder_fallback_requested_ RTC_GUARDED_BY(encoder_queue_) = false;
 
   const std::unique_ptr<VideoStreamAdapter> video_stream_adapter_
       RTC_GUARDED_BY(encoder_queue_);

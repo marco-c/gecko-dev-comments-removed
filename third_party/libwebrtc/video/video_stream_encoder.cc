@@ -80,6 +80,10 @@ constexpr char kFrameDropperFieldTrial[] = "WebRTC-FrameDropper";
 constexpr char kSwitchEncoderOnInitializationFailuresFieldTrial[] =
     "WebRTC-SwitchEncoderOnInitializationFailures";
 
+
+constexpr char kSwitchEncoderFollowCodecPreferenceOrderFieldTrial[] =
+    "WebRTC-SwitchEncoderFollowCodecPreferenceOrder";
+
 const size_t kDefaultPayloadSize = 1440;
 
 const int64_t kParameterUpdateIntervalMs = 1000;
@@ -1484,15 +1488,21 @@ void VideoStreamEncoder::RequestEncoderSwitch() {
   }
 
   
-  
   std::optional<SdpVideoFormat> preferred_fallback_encoder;
   if (is_encoder_selector_available) {
     preferred_fallback_encoder = encoder_selector_->OnEncoderBroken();
   }
 
   if (!preferred_fallback_encoder) {
-    preferred_fallback_encoder =
-        SdpVideoFormat(CodecTypeToPayloadString(kVideoCodecVP8));
+    if (!env_.field_trials().IsDisabled(
+            kSwitchEncoderFollowCodecPreferenceOrderFieldTrial)) {
+      encoder_fallback_requested_ = true;
+      settings_.encoder_switch_request_callback->RequestEncoderFallback();
+      return;
+    } else {
+      preferred_fallback_encoder =
+          SdpVideoFormat(CodecTypeToPayloadString(kVideoCodecVP8));
+    }
   }
 
   settings_.encoder_switch_request_callback->RequestEncoderSwitch(
@@ -1898,8 +1908,11 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   
   
   
-  if (encoder_failed_ || !encoder_initialized_)
+  
+  
+  if (encoder_fallback_requested_ || !encoder_initialized_) {
     return;
+  }
 
   
   
