@@ -135,9 +135,12 @@ uint64_t PerformanceInteractionMetrics::ComputeInteractionId(
 
   
 
-  const auto* pointerEvent = aEvent->AsPointerEvent();
+  MOZ_ASSERT(eventType == ePointerCancel || eventType == ePointerUp ||
+                 eventType == ePointerClick,
+             "Unexpected event type");
+  const auto* mouseEvent = aEvent->AsMouseEvent();
   
-  auto pointerId = pointerEvent->pointerId;
+  auto pointerId = mouseEvent->pointerId;
 
   
   if (eventType == ePointerClick) {
