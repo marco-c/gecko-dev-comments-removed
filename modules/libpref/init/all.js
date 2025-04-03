@@ -3663,11 +3663,7 @@ pref("browser.translations.chaos.errors", false);
 pref("browser.translations.chaos.timeoutMS", 0);
 
 
-#ifdef NIGHTLY_BUILD
-  pref("browser.ml.enable", true);
-#else
-  pref("browser.ml.enable", false);
-#endif
+pref("browser.ml.enable", true);
 
 pref("browser.ml.logLevel", "Error");
 
