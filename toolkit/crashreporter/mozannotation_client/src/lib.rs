@@ -2,6 +2,7 @@
 
 
 
+use nsstring::nsCString;
 use std::{
     alloc::{self, Layout},
     cmp::min,
@@ -73,10 +74,6 @@ impl AnnotationTable {
     pub fn len(&self) -> usize {
         self.data.len()
     }
-
-    pub fn is_empty(&self) -> bool {
-        self.data.is_empty()
-    }
 }
 
 pub type AnnotationMutex = Mutex<AnnotationTable>;
@@ -102,10 +99,10 @@ extern "C" {
 }
 
 #[cfg(target_os = "windows")]
-pub const ANNOTATION_SECTION: &[u8; 8] = b"mozannot";
+pub const ANNOTATION_SECTION: &'static [u8; 8] = b"mozannot";
 
 #[cfg(target_os = "macos")]
-pub const ANNOTATION_SECTION: &[u8; 16] = b"mozannotation\0\0\0";
+pub const ANNOTATION_SECTION: &'static [u8; 16] = b"mozannotation\0\0\0";
 
 
 
@@ -259,7 +256,7 @@ fn store_annotation<T>(id: u32, contents: AnnotationContents, address: *const T)
                 let len = len as usize;
                 let align = min(usize::next_power_of_two(len), 32);
                 unsafe {
-                    let layout = Layout::from_size_align_unchecked(len, align);
+                    let layout = Layout::from_size_align_unchecked(len as usize, align);
                     let src = address as *mut u8;
                     let dst = alloc::alloc(layout);
                     copy_nonoverlapping(src, dst, len);
@@ -304,10 +301,6 @@ fn store_annotation<T>(id: u32, contents: AnnotationContents, address: *const T)
 
     old
 }
-
-
-#[allow(non_camel_case_types)]
-pub struct nsCString {}
 
 
 
@@ -366,12 +359,8 @@ pub extern "C" fn mozannotation_register_cstring(id: u32, address: *const c_char
 
 
 
-
-
-
-
 #[no_mangle]
-pub unsafe extern "C" fn mozannotation_record_cstring(id: u32, address: *const c_char) {
+pub extern "C" fn mozannotation_record_cstring(id: u32, address: *const c_char) {
     let len = unsafe { CStr::from_ptr(address).to_bytes().len() };
     store_annotation(id, AnnotationContents::OwnedByteBuffer(len as u32), address);
 }
@@ -413,15 +402,8 @@ pub extern "C" fn mozannotation_unregister(id: u32) -> *const c_void {
 
 
 
-
-
-
-
 #[no_mangle]
-pub unsafe extern "C" fn mozannotation_get_contents(
-    id: u32,
-    contents: *mut AnnotationContents,
-) -> usize {
+pub extern "C" fn mozannotation_get_contents(id: u32, contents: *mut AnnotationContents) -> usize {
     let annotations = &MOZANNOTATIONS.lock().unwrap().data;
     if let Some(annotation) = annotations.iter().find(|e| e.id == id) {
         if annotation.contents == AnnotationContents::Empty {
@@ -432,7 +414,7 @@ pub unsafe extern "C" fn mozannotation_get_contents(
         return annotation.address;
     }
 
-    0
+    return 0;
 }
 
 #[no_mangle]

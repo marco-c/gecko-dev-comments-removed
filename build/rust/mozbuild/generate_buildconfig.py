@@ -107,9 +107,7 @@ def generate(output):
 
     
     output.write(generate_string("MOZ_MACBUNDLE_ID"))
-    output.write(generate_string("MOZ_APP_BASENAME"))
     output.write(generate_string("MOZ_APP_NAME"))
-    output.write(generate_string("MOZ_APP_VENDOR"))
 
     
     output.write(generate_bool("MOZ_FOLD_LIBS"))
