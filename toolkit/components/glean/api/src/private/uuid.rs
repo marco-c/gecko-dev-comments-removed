@@ -6,7 +6,7 @@ use inherent::inherent;
 
 use uuid::Uuid;
 
-use super::{CommonMetricData, MetricId};
+use super::{BaseMetricId, CommonMetricData};
 
 use crate::ipc::need_ipc;
 
@@ -19,7 +19,7 @@ pub enum UuidMetric {
         
         
         
-        id: MetricId,
+        id: BaseMetricId,
         inner: glean::private::UuidMetric,
     },
     Child(UuidMetricIpc),
@@ -30,7 +30,7 @@ pub struct UuidMetricIpc;
 
 impl UuidMetric {
     
-    pub fn new(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
             UuidMetric::Child(UuidMetricIpc)
         } else {

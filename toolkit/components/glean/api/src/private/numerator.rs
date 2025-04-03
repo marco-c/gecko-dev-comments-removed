@@ -10,7 +10,7 @@ use glean::traits::Numerator;
 use glean::Rate;
 
 use crate::ipc::{need_ipc, with_ipc_payload};
-use crate::private::MetricId;
+use crate::private::BaseMetricId;
 
 
 
@@ -24,17 +24,17 @@ pub enum NumeratorMetric {
         
         
         
-        id: MetricId,
+        id: BaseMetricId,
         inner: glean::private::NumeratorMetric,
     },
     Child(NumeratorMetricIpc),
 }
 #[derive(Clone, Debug)]
-pub struct NumeratorMetricIpc(MetricId);
+pub struct NumeratorMetricIpc(BaseMetricId);
 
 impl NumeratorMetric {
     
-    pub fn new(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
             NumeratorMetric::Child(NumeratorMetricIpc(id))
         } else {
@@ -44,7 +44,7 @@ impl NumeratorMetric {
     }
 
     #[cfg(test)]
-    pub(crate) fn metric_id(&self) -> MetricId {
+    pub(crate) fn metric_id(&self) -> BaseMetricId {
         match self {
             NumeratorMetric::Parent { id, .. } => *id,
             NumeratorMetric::Child(c) => c.0,

@@ -9,7 +9,7 @@ use super::CommonMetricData;
 use glean::traits::Rate;
 
 use crate::ipc::{need_ipc, with_ipc_payload};
-use crate::private::MetricId;
+use crate::private::BaseMetricId;
 
 
 
@@ -23,17 +23,17 @@ pub enum RateMetric {
         
         
         
-        id: MetricId,
+        id: BaseMetricId,
         inner: glean::private::RateMetric,
     },
     Child(RateMetricIpc),
 }
 #[derive(Clone, Debug)]
-pub struct RateMetricIpc(MetricId);
+pub struct RateMetricIpc(BaseMetricId);
 
 impl RateMetric {
     
-    pub fn new(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
             RateMetric::Child(RateMetricIpc(id))
         } else {
@@ -43,7 +43,7 @@ impl RateMetric {
     }
 
     #[cfg(test)]
-    pub(crate) fn metric_id(&self) -> MetricId {
+    pub(crate) fn metric_id(&self) -> BaseMetricId {
         match self {
             RateMetric::Parent { id, .. } => *id,
             RateMetric::Child(c) => c.0,

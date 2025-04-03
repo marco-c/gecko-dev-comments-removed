@@ -4,7 +4,7 @@
 
 use inherent::inherent;
 
-use super::{CommonMetricData, MetricId};
+use super::{BaseMetricId, CommonMetricData};
 
 use super::TimeUnit;
 use crate::ipc::need_ipc;
@@ -19,7 +19,7 @@ use super::profiler_utils::{
 #[cfg(feature = "with_gecko")]
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct DatetimeMetricMarker {
-    id: MetricId,
+    id: BaseMetricId,
     time: chrono::DateTime<FixedOffset>,
 }
 
@@ -81,7 +81,7 @@ pub enum DatetimeMetric {
         
         
         
-        id: MetricId,
+        id: BaseMetricId,
         inner: glean::private::DatetimeMetric,
     },
     Child(DatetimeMetricIpc),
@@ -91,7 +91,7 @@ pub struct DatetimeMetricIpc;
 
 impl DatetimeMetric {
     
-    pub fn new(id: MetricId, meta: CommonMetricData, time_unit: TimeUnit) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData, time_unit: TimeUnit) -> Self {
         if need_ipc() {
             DatetimeMetric::Child(DatetimeMetricIpc)
         } else {

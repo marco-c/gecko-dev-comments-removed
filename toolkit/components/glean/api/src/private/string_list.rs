@@ -4,7 +4,7 @@
 
 use inherent::inherent;
 
-use super::{CommonMetricData, MetricId};
+use super::{BaseMetricId, CommonMetricData};
 
 use glean::traits::StringList;
 
@@ -20,17 +20,17 @@ pub enum StringListMetric {
         
         
         
-        id: MetricId,
+        id: BaseMetricId,
         inner: glean::private::StringListMetric,
     },
     Child(StringListMetricIpc),
 }
 #[derive(Clone, Debug)]
-pub struct StringListMetricIpc(MetricId);
+pub struct StringListMetricIpc(BaseMetricId);
 
 impl StringListMetric {
     
-    pub fn new(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
             StringListMetric::Child(StringListMetricIpc(id))
         } else {

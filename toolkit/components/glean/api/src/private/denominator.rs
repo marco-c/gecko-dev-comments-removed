@@ -9,7 +9,7 @@ use super::CommonMetricData;
 use glean::traits::Counter;
 
 use crate::ipc::{need_ipc, with_ipc_payload};
-use crate::private::MetricId;
+use crate::private::BaseMetricId;
 
 
 
@@ -24,17 +24,21 @@ pub enum DenominatorMetric {
         
         
         
-        id: MetricId,
+        id: BaseMetricId,
         inner: glean::private::DenominatorMetric,
     },
     Child(DenominatorMetricIpc),
 }
 #[derive(Clone, Debug)]
-pub struct DenominatorMetricIpc(MetricId);
+pub struct DenominatorMetricIpc(BaseMetricId);
 
 impl DenominatorMetric {
     
-    pub fn new(id: MetricId, meta: CommonMetricData, numerators: Vec<CommonMetricData>) -> Self {
+    pub fn new(
+        id: BaseMetricId,
+        meta: CommonMetricData,
+        numerators: Vec<CommonMetricData>,
+    ) -> Self {
         if need_ipc() {
             DenominatorMetric::Child(DenominatorMetricIpc(id))
         } else {
@@ -44,7 +48,7 @@ impl DenominatorMetric {
     }
 
     #[cfg(test)]
-    pub(crate) fn metric_id(&self) -> MetricId {
+    pub(crate) fn metric_id(&self) -> BaseMetricId {
         match self {
             DenominatorMetric::Parent { id, .. } => *id,
             DenominatorMetric::Child(c) => c.0,

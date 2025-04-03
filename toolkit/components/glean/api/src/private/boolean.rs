@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use glean::traits::Boolean;
 
-use super::{CommonMetricData, MetricGetter, MetricId};
+use super::{BaseMetricId, CommonMetricData, MetricId};
 
 use crate::ipc::{need_ipc, with_ipc_payload};
 
@@ -20,18 +20,18 @@ pub enum BooleanMetric {
         
         
         
-        id: MetricGetter,
+        id: MetricId,
         inner: Arc<glean::private::BooleanMetric>,
     },
     Child(BooleanMetricIpc),
-    UnorderedChild(MetricId),
+    UnorderedChild(BaseMetricId),
 }
 #[derive(Clone, Debug)]
 pub struct BooleanMetricIpc;
 
 impl BooleanMetric {
     
-    pub fn new(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
             BooleanMetric::Child(BooleanMetricIpc)
         } else {
@@ -42,7 +42,7 @@ impl BooleanMetric {
         }
     }
 
-    pub fn with_unordered_ipc(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn with_unordered_ipc(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
             BooleanMetric::UnorderedChild(id)
         } else {
@@ -51,7 +51,7 @@ impl BooleanMetric {
     }
 
     #[cfg(test)]
-    pub(crate) fn metric_id(&self) -> MetricGetter {
+    pub(crate) fn metric_id(&self) -> MetricId {
         match self {
             BooleanMetric::Parent { id, .. } => *id,
             BooleanMetric::UnorderedChild(id) => (*id).into(),

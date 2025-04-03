@@ -5,7 +5,7 @@
 use inherent::inherent;
 use std::sync::Arc;
 
-use super::{CommonMetricData, MetricGetter, MetricId};
+use super::{BaseMetricId, CommonMetricData, MetricId};
 use glean::{DistributionData, ErrorType, HistogramType};
 
 use crate::ipc::{need_ipc, with_ipc_payload};
@@ -26,18 +26,18 @@ pub enum CustomDistributionMetric {
         
         
         
-        id: MetricGetter,
+        id: MetricId,
         inner: Arc<glean::private::CustomDistributionMetric>,
     },
     Child(CustomDistributionMetricIpc),
 }
 #[derive(Debug, Clone)]
-pub struct CustomDistributionMetricIpc(pub MetricId);
+pub struct CustomDistributionMetricIpc(pub BaseMetricId);
 
 impl CustomDistributionMetric {
     
     pub fn new(
-        id: MetricId,
+        id: BaseMetricId,
         meta: CommonMetricData,
         range_min: i64,
         range_max: i64,
@@ -62,7 +62,7 @@ impl CustomDistributionMetric {
     }
 
     #[cfg(test)]
-    pub(crate) fn metric_id(&self) -> MetricGetter {
+    pub(crate) fn metric_id(&self) -> MetricId {
         match self {
             CustomDistributionMetric::Parent { id, .. } => *id,
             CustomDistributionMetric::Child(c) => c.0.into(),
@@ -77,7 +77,7 @@ impl CustomDistributionMetric {
                 
                 
                 
-                CustomDistributionMetricIpc(id.metric_id().unwrap()),
+                CustomDistributionMetricIpc(id.base_metric_id().unwrap()),
             ),
             CustomDistributionMetric::Child(_) => {
                 panic!("Can't get a child metric from a child metric")
@@ -136,7 +136,7 @@ impl CustomDistribution for CustomDistributionMetric {
                         payload.custom_samples.insert(c.0, samples);
                     }
                 });
-                MetricGetter::Id(c.0)
+                MetricId::Id(c.0)
             }
         };
 
@@ -163,7 +163,7 @@ impl CustomDistribution for CustomDistributionMetric {
                         payload.custom_samples.insert(c.0, vec![sample]);
                     }
                 });
-                MetricGetter::Id(c.0)
+                MetricId::Id(c.0)
             }
         };
         #[cfg(feature = "with_gecko")]

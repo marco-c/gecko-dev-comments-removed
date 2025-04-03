@@ -2,7 +2,7 @@
 
 
 
-use super::{CommonMetricData, MetricId};
+use super::{BaseMetricId, CommonMetricData};
 
 use crate::ipc::need_ipc;
 
@@ -14,7 +14,7 @@ use super::profiler_utils::{truncate_string_for_marker, TelemetryProfilerCategor
 #[cfg(feature = "with_gecko")]
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct ObjectMetricMarker {
-    id: MetricId,
+    id: BaseMetricId,
     value: String,
 }
 
@@ -73,7 +73,7 @@ pub enum ObjectMetric<K> {
         
         
         
-        id: MetricId,
+        id: BaseMetricId,
         inner: glean::private::ObjectMetric<K>,
     },
     Child,
@@ -81,7 +81,7 @@ pub enum ObjectMetric<K> {
 
 impl<K: ObjectSerialize + Clone> ObjectMetric<K> {
     
-    pub fn new(id: MetricId, meta: CommonMetricData) -> Self {
+    pub fn new(id: BaseMetricId, meta: CommonMetricData) -> Self {
         if need_ipc() {
             ObjectMetric::Child
         } else {
