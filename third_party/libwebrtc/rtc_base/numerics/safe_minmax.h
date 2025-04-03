@@ -84,7 +84,7 @@
 #include "rtc_base/numerics/safe_compare.h"
 #include "rtc_base/type_traits.h"
 
-namespace rtc {
+namespace webrtc {
 
 namespace safe_minmax_impl {
 
@@ -331,6 +331,14 @@ R2 SafeClamp(T x, L min, H max) {
                           : static_cast<R2>(x);
 }
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::SafeClamp;
+using ::webrtc::SafeMax;
+using ::webrtc::SafeMin;
 }  
 
 #endif  

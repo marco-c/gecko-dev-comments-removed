@@ -428,15 +428,15 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
       max_packet_size_ - max_padding_fec_packet_header_;
   if (audio_configured_) {
     
-    padding_bytes_in_packet = rtc::SafeClamp<size_t>(
-        bytes_left, kMinAudioPaddingLength,
-        rtc::SafeMin(max_payload_size, kMaxPaddingLength));
+    padding_bytes_in_packet =
+        SafeClamp<size_t>(bytes_left, kMinAudioPaddingLength,
+                          SafeMin(max_payload_size, kMaxPaddingLength));
   } else {
     
     
     
     
-    padding_bytes_in_packet = rtc::SafeMin(max_payload_size, kMaxPaddingLength);
+    padding_bytes_in_packet = SafeMin(max_payload_size, kMaxPaddingLength);
   }
 
   while (bytes_left > 0) {
