@@ -20,6 +20,12 @@ function String_match(regexp) {
     !IsNullOrUndefined(regexp)
   ) {
     
+    
+    if (IsObject(regexp) && IsOptimizableRegExpObject(regexp)) {
+      return callFunction(RegExpMatch, regexp, this);
+    }
+
+    
     var matcher = GetMethod(regexp, GetBuiltinSymbol("match"));
 
     
@@ -75,6 +81,12 @@ function String_matchAll(regexp) {
       if (!callFunction(std_String_includes, ToString(flags), "g")) {
         ThrowTypeError(JSMSG_REQUIRES_GLOBAL_REGEXP, "matchAll");
       }
+    }
+
+    
+    
+    if (IsObject(regexp) && IsOptimizableRegExpObject(regexp)) {
+      return callFunction(RegExpMatchAll, regexp, this);
     }
 
     
@@ -199,6 +211,12 @@ function String_replace(searchValue, replaceValue) {
     !IsNullOrUndefined(searchValue)
   ) {
     
+    
+    if (IsObject(searchValue) && IsOptimizableRegExpObject(searchValue)) {
+      return callFunction(RegExpReplace, searchValue, this, replaceValue);
+    }
+
+    
     var replacer = GetMethod(searchValue, GetBuiltinSymbol("replace"));
 
     
@@ -282,6 +300,12 @@ function String_replaceAll(searchValue, replaceValue) {
       if (!callFunction(std_String_includes, ToString(flags), "g")) {
         ThrowTypeError(JSMSG_REQUIRES_GLOBAL_REGEXP, "replaceAll");
       }
+    }
+
+    
+    
+    if (IsObject(searchValue) && IsOptimizableRegExpObject(searchValue)) {
+      return callFunction(RegExpReplace, searchValue, this, replaceValue);
     }
 
     
@@ -394,6 +418,12 @@ function String_search(regexp) {
     !IsNullOrUndefined(regexp)
   ) {
     
+    
+    if (IsObject(regexp) && IsOptimizableRegExpObject(regexp)) {
+      return callFunction(RegExpSearch, regexp, this);
+    }
+
+    
     var searcher = GetMethod(regexp, GetBuiltinSymbol("search"));
 
     
@@ -450,6 +480,12 @@ function String_split(separator, limit) {
     !(typeof separator === "string" && CanOptimizeStringProtoSymbolLookup()) &&
     !IsNullOrUndefined(separator)
   ) {
+    
+    
+    if (IsObject(separator) && IsOptimizableRegExpObject(separator)) {
+      return callFunction(RegExpSplit, separator, this, limit);
+    }
+
     
     var splitter = GetMethod(separator, GetBuiltinSymbol("split"));
 
