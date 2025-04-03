@@ -213,6 +213,111 @@ class JSHolderMap::Iter {
   EntryVectorIter mIter;
 };
 
+struct JSHolderListEntry {
+  void* mHolder;
+  JSHolderKey* mKey;
+  nsScriptObjectTracer* mTracer;
+
+  JSHolderListEntry();
+  JSHolderListEntry(void* aHolder, JSHolderKey* aKey,
+                    nsScriptObjectTracer* aTracer);
+};
+
+
+
+
+
+
+class JSHolderList {
+ public:
+  class Iter;
+
+  JSHolderList();
+  ~JSHolderList() { MOZ_RELEASE_ASSERT(!mHasIterator); }
+
+  bool Has(JSHolderKey* aKey) const;
+  nsScriptObjectTracer* Get(void* aHolder, JSHolderKey* aKey) const;
+  nsScriptObjectTracer* Extract(void* aHolder, JSHolderKey* aKey);
+  void Put(void* aHolder, nsScriptObjectTracer* aTracer, JSHolderKey* aKey);
+
+  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
+
+ private:
+  using Entry = JSHolderListEntry;
+
+  using EntryVector = SegmentedVector<Entry, 256, InfallibleAllocPolicy>;
+
+  class EntryVectorIter;
+
+  bool RemoveEntry(EntryVector& aJSHolders, Entry* aEntry);
+
+  
+  
+  EntryVector mJSHolders;
+
+  
+  
+  bool mHasIterator = false;
+};
+
+
+
+class JSHolderList::EntryVectorIter {
+ public:
+  EntryVectorIter(JSHolderList& aList, EntryVector& aVector)
+      : mHolderList(aList), mVector(aVector), mIter(aVector.Iter()) {
+    Settle();
+  }
+
+  const EntryVector& Vector() const { return mVector; }
+
+  bool Done() const { return mIter.Done(); }
+  const Entry& Get() const { return mIter.Get(); }
+  void Next() {
+    mIter.Next();
+    Settle();
+  }
+
+  operator const Entry*() const { return &Get(); }
+  const Entry* operator->() const { return &Get(); }
+
+ private:
+  void Settle();
+  friend class JSHolderList::Iter;
+
+  JSHolderList& mHolderList;
+  EntryVector& mVector;
+  EntryVector::IterImpl mIter;
+};
+
+class JSHolderList::Iter {
+ public:
+  explicit Iter(JSHolderList& aList, WhichJSHolders aWhich = AllJSHolders);
+
+  ~Iter() {
+    MOZ_RELEASE_ASSERT(mHolderList.mHasIterator);
+    mHolderList.mHasIterator = false;
+  }
+
+  bool Done() const { return mIter.Done(); }
+  const Entry& Get() const { return mIter.Get(); }
+  void Next() { mIter.Next(); }
+
+  
+  
+  
+  void UpdateForRemovals();
+
+  operator const Entry*() const { return &Get(); }
+  const Entry* operator->() const { return &Get(); }
+
+  JS::Zone* Zone() const { return nullptr; }
+
+ private:
+  JSHolderList& mHolderList;
+  EntryVectorIter mIter;
+};
+
 class CycleCollectedJSRuntime {
   friend class JSGCThingParticipant;
   friend class JSZoneParticipant;
@@ -270,6 +375,10 @@ class CycleCollectedJSRuntime {
 
   void TraverseNativeRoots(nsCycleCollectionNoteRootCallback& aCb);
 
+  template <typename ContainerT>
+  void TraverseJSHolders(ContainerT& aHolders,
+                         nsCycleCollectionNoteRootCallback& aCb);
+
   static void TraceBlackJS(JSTracer* aTracer, void* aData);
 
   
@@ -299,7 +408,8 @@ class CycleCollectedJSRuntime {
 
   bool TraceNativeGrayRoots(JSTracer* aTracer, WhichJSHolders aWhich,
                             JS::SliceBudget& aBudget);
-  bool TraceJSHolders(JSTracer* aTracer, JSHolderMap::Iter& aIter,
+  template <typename IterT>
+  bool TraceJSHolders(JSTracer* aTracer, IterT& aIter,
                       JS::SliceBudget& aBudget);
 
  public:
@@ -396,7 +506,10 @@ class CycleCollectedJSRuntime {
  public:
   void AddJSHolder(void* aHolder, nsScriptObjectTracer* aTracer,
                    JS::Zone* aZone);
+  void AddJSHolderWithKey(void* aHolder, nsScriptObjectTracer* aTracer,
+                          JSHolderKey* aKey);
   void RemoveJSHolder(void* aHolder);
+  void RemoveJSHolderWithKey(void* aHolder, JSHolderKey* aKey);
 #ifdef DEBUG
   void AssertNoObjectsToTrace(void* aPossibleJSHolder);
 #endif
@@ -463,11 +576,12 @@ class CycleCollectedJSRuntime {
 
   mozilla::TimeStamp mLatestNurseryCollectionStart;
 
-  JSHolderMap mJSHolders;
+  JSHolderMap mJSHolderMap;
+  JSHolderList mJSHolderList;
 
   
   
-  Variant<Nothing, JSHolderMap::Iter> mTraceState;
+  Variant<Nothing, JSHolderMap::Iter, JSHolderList::Iter> mTraceState;
 
   using DeferredFinalizerTable = nsTHashMap<DeferredFinalizeFunction, void*>;
   DeferredFinalizerTable mDeferredFinalizerTable;
