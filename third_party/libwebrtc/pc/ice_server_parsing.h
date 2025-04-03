@@ -32,6 +32,13 @@ ParseIceServersOrError(const PeerConnectionInterface::IceServers& servers,
                        cricket::ServerAddresses* stun_servers,
                        std::vector<cricket::RelayServerConfig>* turn_servers);
 
+
+
+RTC_EXPORT RTCError ParseAndValidateIceServersFromConfiguration(
+    const PeerConnectionInterface::RTCConfiguration& configuration,
+    cricket::ServerAddresses& stun_servers,
+    std::vector<cricket::RelayServerConfig>& turn_servers);
+
 }  
 
 #endif  
