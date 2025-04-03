@@ -295,6 +295,9 @@ pub enum GenericInset<P, LP> {
         #[distance(field_bound)]
         Box<GenericAnchorSizeFunction<LP>>,
     ),
+    
+    
+    AnchorContainingCalcFunction(LP),
 }
 
 impl<P, LP> SpecifiedValueInfo for GenericInset<P, LP>

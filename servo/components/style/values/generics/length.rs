@@ -177,6 +177,7 @@ pub enum GenericSize<LengthPercent> {
         #[distance(field_bound)]
         Box<GenericAnchorSizeFunction<LengthPercent>>
     ),
+    AnchorContainingCalcFunction(LengthPercent),
 }
 
 impl<LengthPercent> SpecifiedValueInfo for GenericSize<LengthPercent>
@@ -253,6 +254,7 @@ pub enum GenericMaxSize<LengthPercent> {
         #[distance(field_bound)]
         Box<GenericAnchorSizeFunction<LengthPercent>>
     ),
+    AnchorContainingCalcFunction(LengthPercent),
 }
 
 impl<LP> SpecifiedValueInfo for GenericMaxSize<LP>
@@ -585,6 +587,9 @@ pub enum GenericMargin<LP> {
         #[distance(field_bound)]
         Box<GenericAnchorSizeFunction<LP>>,
     ),
+    
+    
+    AnchorContainingCalcFunction(LP),
 }
 
 #[cfg(feature = "servo")]
@@ -628,7 +633,9 @@ where
     fn is_zero(&self) -> bool {
         match self {
             Self::LengthPercentage(l) => l.is_zero(),
-            Self::Auto | Self::AnchorSizeFunction(_) => false,
+            Self::Auto | Self::AnchorSizeFunction(_) | Self::AnchorContainingCalcFunction(_) => {
+                false
+            },
         }
     }
 

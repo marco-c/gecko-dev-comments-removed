@@ -1289,7 +1289,7 @@ nsChangeHint nsStylePosition::CalcDifference(
     if (IsEqualInsetType(mOffset, aNewData.mOffset) &&
         aNewData.mOffset.All([](const StyleInset& aInset) {
           
-          return !aInset.IsAnchorPositioningFunction();
+          return !aInset.HasAnchorPositioningFunction();
         })) {
       hint |=
           nsChangeHint_RecomputePosition | nsChangeHint_UpdateParentOverflow;
@@ -1384,29 +1384,27 @@ AnchorResolved<mozilla::StyleInset> AnchorResolvedInset::FromUnresolved(
   static_assert(static_cast<uint8_t>(mozilla::PhysicalAxis::Horizontal) ==
                     static_cast<uint8_t>(StylePhysicalAxis::Horizontal),
                 "Horizontal axis doesn't match");
+  if (!aValue.HasAnchorPositioningFunction()) {
+    return AnchorResolved::Unchanged(aValue);
+  }
   switch (aValue.tag) {
-    case StyleInset::Tag::Auto:
-      return AnchorResolved::Unchanged(aValue);
-    case StyleInset::Tag::LengthPercentage: {
-      const auto& lp = aValue.AsLengthPercentage();
-      if (lp.IsCalc()) {
-        const auto& c = lp.AsCalc();
-        float result{};
-        bool percentageUsed{};
-        if (!Servo_ResolveCalcLengthPercentageWithAnchorFunctions(
-                &c, 0.0, aAxis, aPosition, &result, &percentageUsed)) {
-          return Invalid();
-        }
-        if (percentageUsed) {
-          
-          
-          
-          return Unchanged(aValue);
-        }
-        
-        return Evaluated(StyleLengthPercentage::FromPixels(result));
+    case StyleInset::Tag::AnchorContainingCalcFunction: {
+      const auto& lp = aValue.AsAnchorContainingCalcFunction();
+      const auto& c = lp.AsCalc();
+      float result{};
+      bool percentageUsed{};
+      if (!Servo_ResolveCalcLengthPercentageWithAnchorFunctions(
+              &c, 0.0, aAxis, aPosition, &result, &percentageUsed)) {
+        return Invalid();
       }
-      return Unchanged(aValue);
+      if (percentageUsed) {
+        
+        
+        
+        return Unchanged(aValue);
+      }
+      
+      return Evaluated(StyleLengthPercentage::FromPixels(result));
     }
     case StyleInset::Tag::AnchorFunction: {
       auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
