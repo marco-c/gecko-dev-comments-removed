@@ -1,10 +1,14 @@
 
 
 
-import json
 import os
 import shutil
 import tempfile
+
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 from mozlog import get_proxy_logger
 
