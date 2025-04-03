@@ -652,12 +652,6 @@ void WebSocketImpl::Disconnect(const RefPtr<WebSocketImpl>& aProofOfRef) {
 
   if (NS_IsMainThread()) {
     DisconnectInternal();
-
-    
-    
-    if (nsGlobalWindowInner* win = mWebSocket->GetOwnerWindow()) {
-      win->UpdateWebSocketCount(-1);
-    }
   } else {
     RefPtr<DisconnectInternalRunnable> runnable =
         new DisconnectInternalRunnable(this);
@@ -666,6 +660,12 @@ void WebSocketImpl::Disconnect(const RefPtr<WebSocketImpl>& aProofOfRef) {
     
     
     rv.SuppressException();
+  }
+
+  
+  
+  if (nsIGlobalObject* global = mWebSocket->GetOwnerGlobal()) {
+    global->UpdateWebSocketCount(-1);
   }
 
   NS_ReleaseOnMainThread("WebSocketImpl::mChannel", mChannel.forget());
@@ -1380,14 +1380,11 @@ already_AddRefed<WebSocket> WebSocket::ConstructorCommon(
 
   bool connectionFailed = true;
 
+  global->UpdateWebSocketCount(1);
+
   if (NS_IsMainThread()) {
     
     
-    nsCOMPtr<nsIGlobalObject> global;
-    if (nsGlobalWindowInner* win = webSocket->GetOwnerWindow()) {
-      win->UpdateWebSocketCount(1);
-      global = win->AsGlobal();
-    }
 
     bool isSecure = principal->SchemeIs("https");
     aRv = webSocketImpl->IsSecure(&isSecure);
@@ -1593,9 +1590,8 @@ NS_IMPL_RELEASE_INHERITED(WebSocket, DOMEventTargetHelper)
 void WebSocket::DisconnectFromOwner() {
   
   
-  if (NS_IsMainThread() && mImpl && !mImpl->mDisconnectingOrDisconnected &&
-      GetOwnerWindow()) {
-    GetOwnerWindow()->UpdateWebSocketCount(-1);
+  if (mImpl && !mImpl->mDisconnectingOrDisconnected) {
+    GetOwnerGlobal()->UpdateWebSocketCount(-1);
   }
 
   DOMEventTargetHelper::DisconnectFromOwner();

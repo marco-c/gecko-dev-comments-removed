@@ -351,6 +351,8 @@ class nsIGlobalObject : public nsISupports {
     return false;
   }
 
+  virtual void UpdateWebSocketCount(int32_t aDelta) {};
+
   
 
 
