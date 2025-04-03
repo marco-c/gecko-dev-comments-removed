@@ -369,36 +369,40 @@ void* ArenaLists::refillFreeListAndAllocate(
 
   JSRuntime* rt = runtimeFromAnyThread();
 
-  mozilla::Maybe<AutoLockGCBgAlloc> maybeLock;
-
-  
-  if (concurrentUse(thingKind) != ConcurrentUse::None) {
-    maybeLock.emplace(rt);
-  }
-
+retry_loop:
   Arena* arena = arenaList(thingKind).takeInitialNonFullArena();
   if (arena) {
     
     MOZ_ASSERT(!arena->isEmpty());
-
     return freeLists().setArenaAndAllocate(arena, thingKind);
   }
 
   
   
-  if (maybeLock.isNothing()) {
-    maybeLock.emplace(rt);
+  if (MOZ_UNLIKELY(concurrentUse(thingKind) ==
+                   ConcurrentUse::BackgroundFinalizeFinished)) {
+    ArenaList sweptArenas;
+    {
+      AutoLockGC lock(rt);
+      sweptArenas = std::move(collectingArenaList(thingKind));
+    }
+    mergeSweptArenas(thingKind, sweptArenas);
+    concurrentUse(thingKind) = ConcurrentUse::None;
+    goto retry_loop;
   }
 
-  ArenaChunk* chunk = rt->gc.pickChunk(stallAndRetry, maybeLock.ref());
+  
+  
+  AutoLockGCBgAlloc lock(rt);
+
+  ArenaChunk* chunk = rt->gc.pickChunk(stallAndRetry, lock);
   if (!chunk) {
     return nullptr;
   }
 
   
   
-  arena = rt->gc.allocateArena(chunk, zone_, thingKind, checkThresholds,
-                               maybeLock.ref());
+  arena = rt->gc.allocateArena(chunk, zone_, thingKind, checkThresholds, lock);
   if (!arena) {
     return nullptr;
   }
