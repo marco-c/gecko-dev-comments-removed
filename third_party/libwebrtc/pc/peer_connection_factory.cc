@@ -296,18 +296,17 @@ PeerConnectionFactory::CreatePeerConnectionOrError(
       });
 
   auto pc = PeerConnection::Create(env, context_, options_, std::move(call),
-                                   configuration, std::move(dependencies),
-                                   stun_servers, turn_servers);
+                                   configuration, dependencies, stun_servers,
+                                   turn_servers);
   
   
   
   
   
   
-  rtc::scoped_refptr<PeerConnectionInterface> result_proxy =
+  return rtc::scoped_refptr<PeerConnectionInterface>(
       PeerConnectionProxy::Create(signaling_thread(), network_thread(),
-                                  std::move(pc));
-  return result_proxy;
+                                  std::move(pc)));
 }
 
 rtc::scoped_refptr<MediaStreamInterface>

@@ -120,7 +120,7 @@ class PeerConnection : public PeerConnectionInternal,
       const PeerConnectionFactoryInterface::Options& options,
       std::unique_ptr<Call> call,
       const PeerConnectionInterface::RTCConfiguration& configuration,
-      PeerConnectionDependencies dependencies,
+      PeerConnectionDependencies& dependencies,
       const cricket::ServerAddresses& stun_servers,
       const std::vector<cricket::RelayServerConfig>& turn_servers);
 
@@ -472,15 +472,18 @@ class PeerConnection : public PeerConnectionInternal,
                  bool is_unified_plan,
                  std::unique_ptr<Call> call,
                  PeerConnectionDependencies& dependencies,
+                 const cricket::ServerAddresses& stun_servers,
+                 const std::vector<cricket::RelayServerConfig>& turn_servers,
                  bool dtls_enabled);
 
   ~PeerConnection() override;
 
  private:
-  void Initialize(
-      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-      std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
-          video_bitrate_allocator_factory,
+  
+  
+  
+  
+  JsepTransportController* InitializeNetworkThread(
       const cricket::ServerAddresses& stun_servers,
       const std::vector<cricket::RelayServerConfig>& turn_servers);
   JsepTransportController* InitializeTransportController_n(
@@ -623,6 +626,8 @@ class PeerConnection : public PeerConnectionInternal,
   std::function<void(const RtpPacketReceived& parsed_packet)>
   InitializeUnDemuxablePacketHandler();
 
+  bool CanAttemptDtlsStunPiggybacking(const RTCConfiguration& configuration);
+
   const Environment env_;
   const rtc::scoped_refptr<ConnectionContext> context_;
   const PeerConnectionFactoryInterface::Options options_;
@@ -630,6 +635,12 @@ class PeerConnection : public PeerConnectionInternal,
       nullptr;
 
   const bool is_unified_plan_;
+  const bool dtls_enabled_;
+  bool return_histogram_very_quickly_ RTC_GUARDED_BY(signaling_thread()) =
+      false;
+  
+  
+  bool was_ever_connected_ RTC_GUARDED_BY(signaling_thread()) = false;
 
   IceConnectionState ice_connection_state_ RTC_GUARDED_BY(signaling_thread()) =
       kIceConnectionNew;
@@ -681,15 +692,6 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   
-  std::unique_ptr<JsepTransportController> transport_controller_
-      RTC_GUARDED_BY(network_thread());
-  JsepTransportController* transport_controller_copy_
-      RTC_GUARDED_BY(signaling_thread()) = nullptr;
-
-  
-  
-  
-  
   
   
   
@@ -697,15 +699,7 @@ class PeerConnection : public PeerConnectionInternal,
   std::optional<std::string> sctp_mid_n_ RTC_GUARDED_BY(network_thread());
   std::string sctp_transport_name_s_ RTC_GUARDED_BY(signaling_thread());
 
-  
-  std::unique_ptr<SdpOfferAnswerHandler> sdp_handler_
-      RTC_GUARDED_BY(signaling_thread()) RTC_PT_GUARDED_BY(signaling_thread());
-
-  const bool dtls_enabled_;
-
   UsagePattern usage_pattern_ RTC_GUARDED_BY(signaling_thread());
-  bool return_histogram_very_quickly_ RTC_GUARDED_BY(signaling_thread()) =
-      false;
 
   
   
@@ -715,19 +709,27 @@ class PeerConnection : public PeerConnectionInternal,
   PeerConnectionMessageHandler message_handler_
       RTC_GUARDED_BY(signaling_thread());
 
+  PayloadTypePicker payload_type_picker_;
+
+  
+  
+  
+  
+  std::unique_ptr<JsepTransportController> transport_controller_
+      RTC_GUARDED_BY(network_thread());
+  JsepTransportController* transport_controller_copy_
+      RTC_GUARDED_BY(signaling_thread()) = nullptr;
+
+  
+  std::unique_ptr<SdpOfferAnswerHandler> sdp_handler_
+      RTC_GUARDED_BY(signaling_thread()) RTC_PT_GUARDED_BY(signaling_thread());
+
   
   
   std::unique_ptr<RtpTransmissionManager> rtp_manager_;
 
   
-  
-  bool was_ever_connected_ RTC_GUARDED_BY(signaling_thread()) = false;
-
-  PayloadTypePicker payload_type_picker_;
-  
   WeakPtrFactory<PeerConnection> weak_factory_;
-
-  bool CanAttemptDtlsStunPiggybacking(const RTCConfiguration& configuration);
 };
 
 }  
