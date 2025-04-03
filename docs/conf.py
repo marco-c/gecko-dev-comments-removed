@@ -50,6 +50,14 @@ extensions = [
     "bzlink",
 ]
 
+myst_enable_extensions = [
+    "colon_fence",
+    "smartquotes",
+    "deflist",
+    "html_admonition",
+    "fieldlist",
+]
+
 
 
 
