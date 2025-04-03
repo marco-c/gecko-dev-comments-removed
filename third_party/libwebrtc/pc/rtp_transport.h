@@ -35,13 +35,14 @@
 
 namespace rtc {
 
-class CopyOnWriteBuffer;
 struct PacketOptions;
 class PacketTransportInternal;
 
 }  
 
 namespace webrtc {
+
+class CopyOnWriteBuffer;
 
 class RtpTransport : public RtpTransportInternal {
  public:

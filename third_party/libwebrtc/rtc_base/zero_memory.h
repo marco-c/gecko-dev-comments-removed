@@ -17,7 +17,7 @@
 
 #include "api/array_view.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -30,6 +30,12 @@ void ExplicitZeroMemory(rtc::ArrayView<T> a) {
   ExplicitZeroMemory(a.data(), a.size());
 }
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::ExplicitZeroMemory;
 }  
 
 #endif  

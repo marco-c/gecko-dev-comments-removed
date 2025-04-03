@@ -14,7 +14,7 @@
 
 #include "absl/strings/string_view.h"
 
-namespace rtc {
+namespace webrtc {
 
 CopyOnWriteBuffer::CopyOnWriteBuffer() : offset_(0), size_(0) {
   RTC_DCHECK(IsConsistent());

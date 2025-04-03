@@ -22,11 +22,12 @@
 #include "rtc_base/ssl_stream_adapter.h"
 
 namespace rtc {
-class CopyOnWriteBuffer;
 struct PacketOptions;
 }  
 
 namespace webrtc {
+
+class CopyOnWriteBuffer;
 
 
 

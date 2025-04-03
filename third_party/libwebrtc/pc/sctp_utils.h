@@ -22,11 +22,8 @@
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/ssl_stream_adapter.h"  
 
-namespace rtc {
-class CopyOnWriteBuffer;
-}  
-
 namespace webrtc {
+class CopyOnWriteBuffer;
 struct DataChannelInit;
 
 

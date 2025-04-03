@@ -20,7 +20,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/type_traits.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -330,6 +330,16 @@ inline ArrayView<U, Size> reinterpret_array_view(ArrayView<T, Size> view) {
   return ArrayView<U, Size>(reinterpret_cast<U*>(view.data()), view.size());
 }
 
+}  
+
+
+
+namespace rtc {
+template <typename T,
+          std::ptrdiff_t Size = webrtc::array_view_internal::kArrayViewVarSize>
+using ArrayView = ::webrtc::ArrayView<T, Size>;
+using ::webrtc::MakeArrayView;
+using ::webrtc::reinterpret_array_view;
 }  
 
 #endif  

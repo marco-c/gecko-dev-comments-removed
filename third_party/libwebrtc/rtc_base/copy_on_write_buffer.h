@@ -27,7 +27,7 @@
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/type_traits.h"
 
-namespace rtc {
+namespace webrtc {
 
 class RTC_EXPORT CopyOnWriteBuffer {
  public:
@@ -316,6 +316,12 @@ class RTC_EXPORT CopyOnWriteBuffer {
                    
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::CopyOnWriteBuffer;
 }  
 
 #endif  
