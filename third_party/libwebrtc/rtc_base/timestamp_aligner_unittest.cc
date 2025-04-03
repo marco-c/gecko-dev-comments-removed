@@ -19,7 +19,7 @@
 #include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 
-namespace rtc {
+namespace webrtc {
 
 namespace {
 
@@ -60,7 +60,7 @@ void TestTimestampFilter(double rel_freq_error) {
 
   int64_t interval_error_us = kIntervalUs * rel_freq_error;
   int64_t system_start_us = rtc::TimeMicros();
-  webrtc::Random random(17);
+  Random random(17);
 
   int64_t prev_translated_time_us = system_start_us;
 

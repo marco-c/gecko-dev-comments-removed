@@ -16,7 +16,7 @@
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/time_utils.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -88,6 +88,12 @@ class RTC_EXPORT TimestampAligner {
   int64_t prev_time_offset_us_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::TimestampAligner;
 }  
 
 #endif  

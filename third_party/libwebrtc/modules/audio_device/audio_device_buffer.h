@@ -240,7 +240,7 @@ class AudioDeviceBuffer {
 
   
   
-  rtc::TimestampAligner timestamp_aligner_;
+  TimestampAligner timestamp_aligner_;
 
 
 
