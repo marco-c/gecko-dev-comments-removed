@@ -377,17 +377,6 @@ function getWinDrive(path) {
   return path.slice(0, index + 1);
 }
 
-class UnhandledCaseError extends Error {
-  
-
-
-
-  constructor(value, typeName) {
-    super(`There was an unhandled case for "${typeName}": ${value}`);
-    this.name = "UnhandledCaseError";
-  }
-}
-
 
 
 
@@ -593,6 +582,5 @@ module.exports = {
   scaleRangeWithClamping,
   calculateOverhead,
   withCommonPathPrefixRemoved,
-  UnhandledCaseError,
   featureDescriptions,
 };
