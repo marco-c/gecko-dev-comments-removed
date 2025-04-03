@@ -17,7 +17,7 @@
 #include "absl/strings/string_view.h"
 #include "json/json.h"  
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -78,6 +78,41 @@ bool GetDoubleFromJsonObject(const Json::Value& in,
 
 std::string JsonValueToString(const Json::Value& json);
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::BoolVectorToJsonArray;
+using ::webrtc::DoubleVectorToJsonArray;
+using ::webrtc::GetBoolFromJson;
+using ::webrtc::GetBoolFromJsonArray;
+using ::webrtc::GetBoolFromJsonObject;
+using ::webrtc::GetDoubleFromJson;
+using ::webrtc::GetDoubleFromJsonArray;
+using ::webrtc::GetDoubleFromJsonObject;
+using ::webrtc::GetIntFromJson;
+using ::webrtc::GetIntFromJsonArray;
+using ::webrtc::GetIntFromJsonObject;
+using ::webrtc::GetStringFromJson;
+using ::webrtc::GetStringFromJsonArray;
+using ::webrtc::GetStringFromJsonObject;
+using ::webrtc::GetUIntFromJson;
+using ::webrtc::GetUIntFromJsonArray;
+using ::webrtc::GetUIntFromJsonObject;
+using ::webrtc::GetValueFromJsonArray;
+using ::webrtc::GetValueFromJsonObject;
+using ::webrtc::IntVectorToJsonArray;
+using ::webrtc::JsonArrayToBoolVector;
+using ::webrtc::JsonArrayToDoubleVector;
+using ::webrtc::JsonArrayToIntVector;
+using ::webrtc::JsonArrayToStringVector;
+using ::webrtc::JsonArrayToUIntVector;
+using ::webrtc::JsonArrayToValueVector;
+using ::webrtc::JsonValueToString;
+using ::webrtc::StringVectorToJsonArray;
+using ::webrtc::UIntVectorToJsonArray;
+using ::webrtc::ValueVectorToJsonArray;
 }  
 
 #endif  

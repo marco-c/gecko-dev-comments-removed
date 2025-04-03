@@ -14,7 +14,7 @@
 
 #include "test/gtest.h"
 
-namespace rtc {
+namespace webrtc {
 
 static Json::Value in_s("foo");
 static Json::Value in_sn("99");
