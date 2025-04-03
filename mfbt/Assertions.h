@@ -243,45 +243,39 @@ MOZ_NoReturn(int aLine) {
 
 
 
-
-
-#  if !defined(MOZ_ASAN)
 static inline void MOZ_CrashSequence(void* aAddress, intptr_t aLine) {
-#    if defined(__i386__) || defined(__x86_64__)
+#  if defined(__i386__) || defined(__x86_64__)
   asm volatile(
       "mov %1, (%0);\n"  
       :                  
       : "r"(aAddress), "r"(aLine));
-#    elif defined(__arm__) || defined(__aarch64__)
+#  elif defined(__arm__) || defined(__aarch64__)
   asm volatile(
       "str %1,[%0];\n"  
       :                 
       : "r"(aAddress), "r"(aLine));
-#    elif defined(__riscv) && (__riscv_xlen == 64)
+#  elif defined(__riscv) && (__riscv_xlen == 64)
   asm volatile(
       "sd %1,0(%0);\n"  
       :                 
       : "r"(aAddress), "r"(aLine));
-#    elif defined(__sparc__) && defined(__arch64__)
+#  elif defined(__sparc__) && defined(__arch64__)
   asm volatile(
       "stx %1,[%0];\n"  
       :                 
       : "r"(aAddress), "r"(aLine));
-#    elif defined(__loongarch64)
+#  elif defined(__loongarch64)
   asm volatile(
       "st.d %1,%0,0;\n"  
       :                  
       : "r"(aAddress), "r"(aLine));
-#    else
-#      warning \
-          "Unsupported architecture, replace the code below with assembly suitable to crash the process"
+#  else
+#    warning \
+        "Unsupported architecture, replace the code below with assembly suitable to crash the process"
   asm volatile("" ::: "memory");
   *((volatile int*)aAddress) = aLine; 
-#    endif
-}
-#  else
-#    define MOZ_CrashSequence(x, y) __builtin_trap()
 #  endif
+}
 
 
 
@@ -294,7 +288,7 @@ static inline void MOZ_CrashSequence(void* aAddress, intptr_t aLine) {
 
 
 #  ifdef MOZ_UBSAN
-#    define MOZ_CRASH_WRITE_ADDR 0x1
+#    define MOZ_CRASH_WRITE_ADDR ((void*)0x1)
 #  else
 #    define MOZ_CRASH_WRITE_ADDR NULL
 #  endif
