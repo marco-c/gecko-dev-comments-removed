@@ -333,7 +333,7 @@ bool CheckRedParameters(
 
   
   
-  auto red_parameters = red_codec.params.find("");
+  auto red_parameters = red_codec.params.find(kCodecParamNotInNameValueFormat);
   if (red_parameters == red_codec.params.end()) {
     RTC_LOG(LS_WARNING) << "audio/RED missing fmtp parameters.";
     return false;
