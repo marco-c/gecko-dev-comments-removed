@@ -13,7 +13,7 @@
 
 #include <string>
 
-namespace rtc {
+namespace webrtc {
 
 #if defined(__GNUC__)
 #define RTC_PRINTF_FORMAT(format_param, dots_param) \
@@ -26,6 +26,12 @@ namespace rtc {
 
 
 std::string StringFormat(const char* fmt, ...) RTC_PRINTF_FORMAT(1, 2);
+}  
+
+
+
+namespace rtc {
+using ::webrtc::StringFormat;
 }  
 
 #endif  

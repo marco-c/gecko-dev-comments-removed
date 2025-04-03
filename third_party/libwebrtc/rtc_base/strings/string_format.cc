@@ -14,7 +14,7 @@
 
 #include "rtc_base/checks.h"
 
-namespace rtc {
+namespace webrtc {
 
 namespace {
 
