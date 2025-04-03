@@ -3212,8 +3212,15 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
   }
 
   if (target) {
+    
+    
+    ErrorResult rv;
+    target->RevealAncestorHiddenUntilFoundAndFireBeforematchEvent(rv);
+    if(MOZ_UNLIKELY(rv.Failed())) {
+      return rv.StealNSResult();
+    }
+
     if (aScroll) {
-      
       
       
       
