@@ -15,7 +15,7 @@
 
 #include <optional>
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -56,5 +56,12 @@ class SampleCounterWithVariance : public SampleCounter {
   int64_t sum_squared_ = 0;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::SampleCounter;
+using ::webrtc::SampleCounterWithVariance;
 }  
 #endif  

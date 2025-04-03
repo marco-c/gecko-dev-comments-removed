@@ -18,7 +18,7 @@
 
 using ::testing::Eq;
 
-namespace rtc {
+namespace webrtc {
 
 TEST(SampleCounterTest, ProcessesNoSamples) {
   constexpr int kMinSamples = 1;

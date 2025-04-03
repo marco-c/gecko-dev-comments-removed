@@ -76,10 +76,10 @@ class VideoQualityObserver {
   double sum_squared_interframe_delays_secs_;
   
   
-  rtc::SampleCounter freezes_durations_;
-  rtc::SampleCounter pauses_durations_;
+  SampleCounter freezes_durations_;
+  SampleCounter pauses_durations_;
   
-  rtc::SampleCounter smooth_playback_durations_;
+  SampleCounter smooth_playback_durations_;
   
   
   
