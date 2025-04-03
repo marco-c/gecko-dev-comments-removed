@@ -1,0 +1,24 @@
+
+
+
+
+
+
+#include "Fence.h"
+
+namespace mozilla {
+namespace layers {
+
+FenceFileHandle::FenceFileHandle(UniqueFileHandle&& aFileHandle)
+    : mFileHandle(std::move(aFileHandle)) {
+  MOZ_ASSERT(mFileHandle);
+}
+
+FenceFileHandle::~FenceFileHandle() = default;
+
+UniqueFileHandle FenceFileHandle::DuplicateFileHandle() {
+  return mozilla::DuplicateFileHandle(mFileHandle);
+}
+
+}  
+}  
