@@ -13,7 +13,7 @@
 
 
 
-namespace rtc {
+namespace webrtc {
 namespace internal {
 
 void WeakReference::Flag::Invalidate() {

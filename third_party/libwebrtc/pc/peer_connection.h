@@ -721,7 +721,7 @@ class PeerConnection : public PeerConnectionInternal,
 
   PayloadTypePicker payload_type_picker_;
   
-  rtc::WeakPtrFactory<PeerConnection> weak_factory_;
+  WeakPtrFactory<PeerConnection> weak_factory_;
 
   bool CanAttemptDtlsStunPiggybacking(const RTCConfiguration& configuration);
 };

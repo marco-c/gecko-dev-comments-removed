@@ -690,7 +690,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   std::optional<bool> initial_offerer_ RTC_GUARDED_BY(signaling_thread());
 
-  rtc::WeakPtrFactory<SdpOfferAnswerHandler> weak_ptr_factory_
+  WeakPtrFactory<SdpOfferAnswerHandler> weak_ptr_factory_
       RTC_GUARDED_BY(signaling_thread());
 };
 
