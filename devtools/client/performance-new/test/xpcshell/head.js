@@ -3,10 +3,10 @@
 
 "use strict";
 
+const PrefsPresets = ChromeUtils.importESModule(
+  "resource://devtools/shared/performance-new/prefs-presets.sys.mjs"
+);
+
 registerCleanupFunction(() => {
-  
-  const { revertRecordingSettings } = ChromeUtils.importESModule(
-    "resource://devtools/client/performance-new/shared/background.sys.mjs"
-  );
-  revertRecordingSettings();
+  PrefsPresets.revertRecordingSettings();
 });

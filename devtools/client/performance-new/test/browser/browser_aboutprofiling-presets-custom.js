@@ -16,7 +16,7 @@ add_task(async function test() {
   }
   
   
-  BackgroundJSM.changePreset(
+  PrefsPresets.changePreset(
     "aboutprofiling",
     "web-developer",
     supportedFeatures

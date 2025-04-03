@@ -43,7 +43,7 @@
 
 
 const { presets } = ChromeUtils.importESModule(
-  "resource://devtools/client/performance-new/shared/background.sys.mjs"
+  "resource://devtools/shared/performance-new/prefs-presets.sys.mjs"
 );
 
 const ReactDOM = require("resource://devtools/client/shared/vendor/react-dom.mjs");

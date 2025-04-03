@@ -7,7 +7,7 @@
 add_task(async function test_change_in_popup() {
   
   
-  BackgroundJSM.changePreset(
+  PrefsPresets.changePreset(
     "aboutprofiling",
     "web-developer",
     Services.profiler.GetFeatures()
@@ -122,7 +122,7 @@ add_task(async function test_change_in_popup() {
 add_task(async function test_change_in_about_profiling() {
   
   
-  BackgroundJSM.changePreset(
+  PrefsPresets.changePreset(
     "aboutprofiling",
     "web-developer",
     Services.profiler.GetFeatures()
@@ -307,7 +307,7 @@ add_task(async function test_change_in_about_profiling() {
 add_task(async function test_change_in_devtools_panel() {
   
   
-  BackgroundJSM.changePreset(
+  PrefsPresets.changePreset(
     "aboutprofiling",
     "web-developer",
     Services.profiler.GetFeatures()

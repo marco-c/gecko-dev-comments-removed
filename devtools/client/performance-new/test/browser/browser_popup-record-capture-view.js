@@ -25,7 +25,7 @@ add_task(async function test() {
 
   
   
-  BackgroundJSM.changePreset(
+  PrefsPresets.changePreset(
     "aboutprofiling",
     "web-developer",
     Services.profiler.GetFeatures()
@@ -61,7 +61,7 @@ add_task(async function test_in_private_window() {
 
   
   
-  BackgroundJSM.changePreset(
+  PrefsPresets.changePreset(
     "aboutprofiling",
     "web-developer",
     Services.profiler.GetFeatures()
