@@ -4586,7 +4586,7 @@ TEST_F(WebRtcSdpTest, TestDeserializeIgnoresMalformedRidLines) {
 }
 
 
-TEST_F(WebRtcSdpTest, TestDeserializeRemovesRidsWithInvalidCodec) {
+TEST_F(WebRtcSdpTest, TestDeserializeIgnoresInvalidPayloadTypesInRid) {
   std::string sdp = kUnifiedPlanSdpFullStringNoSsrc;
   sdp += "a=rid:1 send pt=121,120\r\n";  
   sdp += "a=rid:2 send pt=121\r\n";      
