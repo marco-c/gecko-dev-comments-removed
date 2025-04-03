@@ -193,6 +193,9 @@ struct RtpConfig {
   uint32_t GetMediaSsrcAssociatedWithRtxSsrc(uint32_t rtx_ssrc) const;
   uint32_t GetMediaSsrcAssociatedWithFlexfecSsrc(uint32_t flexfec_ssrc) const;
   std::optional<std::string> GetRidForSsrc(uint32_t ssrc) const;
+
+  
+  RtpStreamConfig GetStreamConfig(size_t index) const;
 };
 }  
 #endif  
