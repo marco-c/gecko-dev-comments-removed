@@ -388,6 +388,9 @@ nsRFPService::Observe(nsISupports* aObject, const char* aTopic,
 
   if (bitsetForUserCharacteristics == 0b111) {
     nsUserCharacteristics::MaybeSubmitPing();
+    
+    
+    bitsetForUserCharacteristics |= 1 << 3;
   }
 
   if (!strcmp(USER_CHARACTERISTICS_TEST_REQUEST, aTopic) &&
