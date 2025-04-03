@@ -50,6 +50,7 @@ namespace cricket {
 namespace {
 
 using rtc::UniqueRandomIdGenerator;
+using webrtc::PayloadTypeSuggester;
 using webrtc::RTCError;
 using webrtc::RTCErrorOr;
 using webrtc::RTCErrorType;
@@ -517,12 +518,57 @@ RTCError NegotiateCodecs(const CodecList& local_codecs,
   return RTCError::OK();
 }
 
+
+
+
+
+
+webrtc::RTCError AssignCodecIdsAndLinkRed(
+    webrtc::PayloadTypeSuggester* pt_suggester,
+    const std::string& mid,
+    std::vector<Codec>& codecs) {
+  int codec_payload_type = Codec::kIdNotSet;
+  for (cricket::Codec& codec : codecs) {
+    if (codec.id == Codec::kIdNotSet) {
+      
+      
+      
+      RTC_CHECK(pt_suggester);
+      auto result = pt_suggester->SuggestPayloadType(mid, codec);
+      if (!result.ok()) {
+        return result.error();
+      }
+      codec.id = result.value();
+    }
+    
+    if (absl::EqualsIgnoreCase(codec.name, kOpusCodecName) &&
+        codec_payload_type == Codec::kIdNotSet) {
+      codec_payload_type = codec.id;
+    }
+  }
+  if (codec_payload_type != Codec::kIdNotSet) {
+    for (cricket::Codec& codec : codecs) {
+      if (codec.type == Codec::Type::kAudio &&
+          absl::EqualsIgnoreCase(codec.name, kRedCodecName)) {
+        if (codec.params.empty()) {
+          char buffer[100];
+          rtc::SimpleStringBuilder param(buffer);
+          param << codec_payload_type << "/" << codec_payload_type;
+          codec.SetParam(kCodecParamNotInNameValueFormat, param.str());
+        }
+      }
+    }
+  }
+  return webrtc::RTCError::OK();
+}
+
 }  
 
 webrtc::RTCErrorOr<std::vector<Codec>> CodecVendor::GetNegotiatedCodecsForOffer(
     const MediaDescriptionOptions& media_description_options,
     const MediaSessionOptions& session_options,
     const ContentInfo* current_content,
+    PayloadTypeSuggester& pt_suggester,
     const CodecList& codecs) {
   CodecList filtered_codecs;
   CodecList supported_codecs =
@@ -530,85 +576,102 @@ webrtc::RTCErrorOr<std::vector<Codec>> CodecVendor::GetNegotiatedCodecsForOffer(
           ? GetAudioCodecsForOffer(media_description_options.direction)
           : GetVideoCodecsForOffer(media_description_options.direction);
 
-  if (!media_description_options.codec_preferences.empty()) {
-    
-    
-    filtered_codecs = MatchCodecPreference(
-        media_description_options.codec_preferences, codecs, supported_codecs);
+  if (media_description_options.codecs_to_include.empty()) {
+    if (!media_description_options.codec_preferences.empty()) {
+      
+      
+      filtered_codecs =
+          MatchCodecPreference(media_description_options.codec_preferences,
+                               codecs, supported_codecs);
+    } else {
+      
+      
+      if (current_content && !current_content->rejected &&
+          current_content->mid() == media_description_options.mid) {
+        if (!IsMediaContentOfType(current_content,
+                                  media_description_options.type)) {
+          
+          LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
+                               "Media type for content with mid='" +
+                                   current_content->mid() +
+                                   "' does not match previous type.");
+        }
+        const MediaContentDescription* mcd =
+            current_content->media_description();
+        for (const Codec& codec : mcd->codecs()) {
+          if (webrtc::FindMatchingCodec(mcd->codecs(), codecs.codecs(),
+                                        codec)) {
+            filtered_codecs.push_back(codec);
+          }
+        }
+      }
+      
+      UsedPayloadTypes
+          used_pltypes;  
+      for (auto& codec : filtered_codecs) {
+        
+        
+        used_pltypes.FindAndSetIdUsed(&codec);
+      }
+      
+      for (const Codec& codec : supported_codecs) {
+        std::optional<Codec> found_codec =
+            FindMatchingCodec(supported_codecs, codecs, codec);
+        if (found_codec &&
+            !FindMatchingCodec(supported_codecs, filtered_codecs, codec)) {
+          
+          
+          if (media_description_options.type == MEDIA_TYPE_VIDEO &&
+              found_codec->GetResiliencyType() == Codec::ResiliencyType::kRtx) {
+            
+            
+            
+            
+            auto referenced_codec =
+                GetAssociatedCodecForRtx(supported_codecs, codec);
+            RTC_DCHECK(referenced_codec);
+
+            
+            std::optional<Codec> changed_referenced_codec = FindMatchingCodec(
+                supported_codecs, filtered_codecs, *referenced_codec);
+            if (changed_referenced_codec) {
+              found_codec->SetParam(kCodecParamAssociatedPayloadType,
+                                    changed_referenced_codec->id);
+            }
+          }
+          
+          used_pltypes.FindAndSetIdUsed(&(*found_codec));
+          filtered_codecs.push_back(*found_codec);
+        }
+      }
+    }
+
+    if (media_description_options.type == MEDIA_TYPE_AUDIO &&
+        !session_options.vad_enabled) {
+      
+      StripCNCodecs(filtered_codecs);
+    } else if (media_description_options.type == MEDIA_TYPE_VIDEO &&
+               session_options.raw_packetization_for_video) {
+      for (Codec& codec : filtered_codecs) {
+        if (codec.IsMediaCodec()) {
+          codec.packetization = kPacketizationParamRaw;
+        }
+      }
+    }
+    NegotiateVideoCodecLevelsForOffer(media_description_options,
+                                      supported_codecs, filtered_codecs);
   } else {
     
     
-    if (current_content && !current_content->rejected &&
-        current_content->mid() == media_description_options.mid) {
-      if (!IsMediaContentOfType(current_content,
-                                media_description_options.type)) {
-        
-        LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
-                             "Media type for content with mid='" +
-                                 current_content->mid() +
-                                 "' does not match previous type.");
-      }
-      const MediaContentDescription* mcd = current_content->media_description();
-      for (const Codec& codec : mcd->codecs()) {
-        if (webrtc::FindMatchingCodec(mcd->codecs(), codecs.codecs(), codec)) {
-          filtered_codecs.push_back(codec);
-        }
-      }
+    RTCErrorOr<CodecList> codecs_from_arg =
+        CodecList::Create(media_description_options.codecs_to_include);
+    if (!codecs_from_arg.ok()) {
+      return codecs_from_arg.MoveError();
     }
-    
-    UsedPayloadTypes
-        used_pltypes;  
-    for (auto& codec : filtered_codecs) {
-      
-      
-      used_pltypes.FindAndSetIdUsed(&codec);
-    }
-    
-    for (const Codec& codec : supported_codecs) {
-      std::optional<Codec> found_codec =
-          FindMatchingCodec(supported_codecs, codecs, codec);
-      if (found_codec &&
-          !FindMatchingCodec(supported_codecs, filtered_codecs, codec)) {
-        
-        
-        if (media_description_options.type == MEDIA_TYPE_VIDEO &&
-            found_codec->GetResiliencyType() == Codec::ResiliencyType::kRtx) {
-          
-          
-          
-          auto referenced_codec =
-              GetAssociatedCodecForRtx(supported_codecs, codec);
-          RTC_DCHECK(referenced_codec);
-
-          
-          std::optional<Codec> changed_referenced_codec = FindMatchingCodec(
-              supported_codecs, filtered_codecs, *referenced_codec);
-          if (changed_referenced_codec) {
-            found_codec->SetParam(kCodecParamAssociatedPayloadType,
-                                  changed_referenced_codec->id);
-          }
-        }
-        
-        used_pltypes.FindAndSetIdUsed(&(*found_codec));
-        filtered_codecs.push_back(*found_codec);
-      }
-    }
+    filtered_codecs = codecs_from_arg.MoveValue();
   }
-
-  if (media_description_options.type == MEDIA_TYPE_AUDIO &&
-      !session_options.vad_enabled) {
-    
-    StripCNCodecs(filtered_codecs);
-  } else if (media_description_options.type == MEDIA_TYPE_VIDEO &&
-             session_options.raw_packetization_for_video) {
-    for (Codec& codec : filtered_codecs) {
-      if (codec.IsMediaCodec()) {
-        codec.packetization = kPacketizationParamRaw;
-      }
-    }
-  }
-  NegotiateVideoCodecLevelsForOffer(media_description_options, supported_codecs,
-                                    filtered_codecs);
+  AssignCodecIdsAndLinkRed(&pt_suggester, media_description_options.mid,
+                           filtered_codecs.writable_codecs());
   return filtered_codecs.codecs();
 }
 
@@ -619,76 +682,88 @@ webrtc::RTCErrorOr<Codecs> CodecVendor::GetNegotiatedCodecsForAnswer(
     webrtc::RtpTransceiverDirection answer_rtd,
     const ContentInfo* current_content,
     const std::vector<Codec> codecs_from_offer,
+    PayloadTypeSuggester& pt_suggester,
     const CodecList& codecs) {
   CodecList filtered_codecs;
-
-  const CodecList& supported_codecs =
-      media_description_options.type == MEDIA_TYPE_AUDIO
-          ? GetAudioCodecsForAnswer(offer_rtd, answer_rtd)
-          : GetVideoCodecsForAnswer(offer_rtd, answer_rtd);
-  if (!media_description_options.codec_preferences.empty()) {
-    filtered_codecs = MatchCodecPreference(
-        media_description_options.codec_preferences, codecs, supported_codecs);
-  } else {
-    
-    
-    if (current_content && !current_content->rejected &&
-        current_content->mid() == media_description_options.mid) {
-      if (!IsMediaContentOfType(current_content,
-                                media_description_options.type)) {
-        
-        LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
-                             "Media type for content with mid='" +
-                                 current_content->mid() +
-                                 "' does not match previous type.");
+  CodecList negotiated_codecs;
+  if (media_description_options.codecs_to_include.empty()) {
+    const CodecList& supported_codecs =
+        media_description_options.type == MEDIA_TYPE_AUDIO
+            ? GetAudioCodecsForAnswer(offer_rtd, answer_rtd)
+            : GetVideoCodecsForAnswer(offer_rtd, answer_rtd);
+    if (!media_description_options.codec_preferences.empty()) {
+      filtered_codecs =
+          MatchCodecPreference(media_description_options.codec_preferences,
+                               codecs, supported_codecs);
+    } else {
+      
+      
+      if (current_content && !current_content->rejected &&
+          current_content->mid() == media_description_options.mid) {
+        if (!IsMediaContentOfType(current_content,
+                                  media_description_options.type)) {
+          
+          LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
+                               "Media type for content with mid='" +
+                                   current_content->mid() +
+                                   "' does not match previous type.");
+        }
+        const MediaContentDescription* mcd =
+            current_content->media_description();
+        for (const Codec& codec : mcd->codecs()) {
+          if (webrtc::FindMatchingCodec(mcd->codecs(), codecs.codecs(),
+                                        codec)) {
+            filtered_codecs.push_back(codec);
+          }
+        }
       }
-      const MediaContentDescription* mcd = current_content->media_description();
-      for (const Codec& codec : mcd->codecs()) {
-        if (webrtc::FindMatchingCodec(mcd->codecs(), codecs.codecs(), codec)) {
-          filtered_codecs.push_back(codec);
+      
+      CodecList other_codecs;
+      for (const Codec& codec : supported_codecs) {
+        if (FindMatchingCodec(supported_codecs, codecs, codec) &&
+            !FindMatchingCodec(supported_codecs, filtered_codecs, codec)) {
+          
+          
+          other_codecs.push_back(codec);
+        }
+      }
+
+      
+      
+      filtered_codecs = ComputeCodecsUnion(filtered_codecs, other_codecs);
+    }
+
+    if (media_description_options.type == MEDIA_TYPE_AUDIO &&
+        !session_options.vad_enabled) {
+      
+      StripCNCodecs(filtered_codecs);
+    } else if (media_description_options.type == MEDIA_TYPE_VIDEO &&
+               session_options.raw_packetization_for_video) {
+      for (Codec& codec : filtered_codecs) {
+        if (codec.IsMediaCodec()) {
+          codec.packetization = kPacketizationParamRaw;
         }
       }
     }
     
-    CodecList other_codecs;
-    for (const Codec& codec : supported_codecs) {
-      if (FindMatchingCodec(supported_codecs, codecs, codec) &&
-          !FindMatchingCodec(supported_codecs, filtered_codecs, codec)) {
-        
-        
-        other_codecs.push_back(codec);
-      }
+    auto checked_codecs_from_offer = CodecList::Create(codecs_from_offer);
+    if (!checked_codecs_from_offer.ok()) {
+      return checked_codecs_from_offer.MoveError();
     }
-
+    NegotiateCodecs(filtered_codecs, checked_codecs_from_offer.value(),
+                    negotiated_codecs,
+                    media_description_options.codec_preferences.empty());
+  } else {
     
-    
-    filtered_codecs = ComputeCodecsUnion(filtered_codecs, other_codecs);
-  }
-
-  if (media_description_options.type == MEDIA_TYPE_AUDIO &&
-      !session_options.vad_enabled) {
-    
-    StripCNCodecs(filtered_codecs);
-  } else if (media_description_options.type == MEDIA_TYPE_VIDEO &&
-             session_options.raw_packetization_for_video) {
-    for (Codec& codec : filtered_codecs) {
-      if (codec.IsMediaCodec()) {
-        codec.packetization = kPacketizationParamRaw;
-      }
+    RTCErrorOr<CodecList> codecs_from_arg =
+        CodecList::Create(media_description_options.codecs_to_include);
+    if (!codecs_from_arg.ok()) {
+      return codecs_from_arg.MoveError();
     }
+    negotiated_codecs = codecs_from_arg.MoveValue();
   }
-  CodecList negotiated_codecs;
-  
-  auto checked_codecs_from_offer = CodecList::Create(codecs_from_offer);
-  if (!checked_codecs_from_offer.ok()) {
-    return checked_codecs_from_offer.MoveError();
-  }
-  auto error = NegotiateCodecs(
-      filtered_codecs, checked_codecs_from_offer.value(), negotiated_codecs,
-      media_description_options.codec_preferences.empty());
-  if (!error.ok()) {
-    return error;
-  }
+  AssignCodecIdsAndLinkRed(&pt_suggester, media_description_options.mid,
+                           negotiated_codecs.writable_codecs());
   return negotiated_codecs.codecs();
 }
 
