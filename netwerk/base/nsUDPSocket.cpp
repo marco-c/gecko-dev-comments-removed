@@ -416,6 +416,13 @@ void nsUDPSocket::OnSocketReady(PRFileDesc* fd, int16_t outFlags) {
   }
 
   if (mSyncListener) {
+    if (outFlags & PR_POLL_WRITE) {
+      
+      
+      
+      
+      mPollFlags = (PR_POLL_READ | PR_POLL_EXCEPT);
+    }
     mSyncListener->OnPacketReceived(this);
     return;
   }
@@ -1207,6 +1214,16 @@ int64_t nsUDPSocket::GetFileDescriptor() {
   return PR_FileDesc2NativeHandle(mFD);
 }
 
+
+
+
+
+
+
+void nsUDPSocket::EnableWritePoll() {
+  mPollFlags = (PR_POLL_WRITE | PR_POLL_READ | PR_POLL_EXCEPT);
+}
+
 NS_IMETHODIMP
 nsUDPSocket::SendBinaryStream(const nsACString& aHost, uint16_t aPort,
                               nsIInputStream* aStream) {
@@ -1251,7 +1268,7 @@ nsUDPSocket::RecvWithAddr(NetAddr* addr, nsTArray<uint8_t>& aData) {
 
   if (!aData.AppendElements(buff, count, fallible)) {
     UDPSOCKET_LOG((
-        "nsUDPSocket::OnSocketReady: AppendElements FAILED [this=%p]\n", this));
+        "nsUDPSocket::RecvWithAddr: AppendElements FAILED [this=%p]\n", this));
     mCondition = NS_ERROR_UNEXPECTED;
   }
   return NS_OK;

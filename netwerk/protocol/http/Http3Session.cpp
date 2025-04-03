@@ -990,8 +990,11 @@ nsresult Http3Session::ProcessOutput(nsIUDPSocket* socket) {
         Http3Session* self = (Http3Session*)aContext;
         self->SetupTimer(timeout);
       });
-  
-  if (NS_FAILED(rv.result)) {
+  if (rv.result == NS_BASE_STREAM_WOULD_BLOCK) {
+    
+    
+    socket->EnableWritePoll();
+  } else if (NS_FAILED(rv.result)) {
     mSocketError = rv.result;
     
     
