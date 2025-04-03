@@ -11,7 +11,6 @@
 #include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ScriptLoadRequest.h"
 #include "ScriptLoader.h"
-#include "mozilla/dom/ScriptLoadRequestType.h"
 
 class nsIURI;
 
@@ -62,10 +61,9 @@ class ModuleLoader final : public JS::loader::ModuleLoaderBase {
 
   
   already_AddRefed<ModuleLoadRequest> CreateTopLevel(
-      nsIURI* aURI, nsIScriptElement* aElement, ReferrerPolicy aReferrerPolicy,
+      nsIURI* aURI, ReferrerPolicy aReferrerPolicy,
       ScriptFetchOptions* aFetchOptions, const SRIMetadata& aIntegrity,
-      nsIURI* aReferrer, ScriptLoadContext* aContext,
-      ScriptLoadRequestType aRequestType);
+      nsIURI* aReferrer, ScriptLoadContext* aContext);
 
   
   already_AddRefed<ModuleLoadRequest> CreateStaticImport(
