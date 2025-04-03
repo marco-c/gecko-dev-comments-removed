@@ -942,6 +942,8 @@ static constexpr nsLiteralCString kRfpPrefs[] = {
     "privacy.fingerprintingProtection"_ns,
     "privacy.fingerprintingProtection.pbmode"_ns,
     "privacy.fingerprintingProtection.overrides"_ns,
+    "privacy.baselineFingerprintingProtection"_ns,
+    "privacy.baselineFingerprintingProtection.overrides"_ns,
 };
 
 static void RecomputeResistFingerprintingAllDocs(const char*, void*) {
@@ -2438,22 +2440,7 @@ bool nsContentUtils::ETPSaysShouldNotResistFingerprinting(
   
 
   
-  
-  
-  
-  
-  
-  if (StaticPrefs::privacy_fingerprintingProtection_DoNotUseDirectly() &&
-      !StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() &&
-      StaticPrefs::privacy_resistFingerprinting_pbmode_DoNotUseDirectly()) {
-    if (aIsPBM) {
-      
-      return false;
-    }
-  } else if (StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() ||
-             (aIsPBM &&
-              StaticPrefs::
-                  privacy_resistFingerprinting_pbmode_DoNotUseDirectly())) {
+  if (nsRFPService::IsRFPPrefEnabled(aIsPBM)) {
     
     
     
@@ -2722,19 +2709,6 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
           ("Inside ShouldResistFingerprinting_dangerous(nsIURI*,"
            " OriginAttributes) and the URI is %s",
            aURI->GetSpecOrDefault().get()));
-
-  if (!StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() &&
-      !StaticPrefs::privacy_fingerprintingProtection_DoNotUseDirectly()) {
-    
-    
-    
-    if (!aOriginAttributes.IsPrivateBrowsing()) {
-      MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
-              ("Inside ShouldResistFingerprinting_dangerous(nsIURI*,"
-               " OriginAttributes) OA PBM Check said false"));
-      return false;
-    }
-  }
 
   
   if (SchemeSaysShouldNotResistFingerprinting(aURI)) {
