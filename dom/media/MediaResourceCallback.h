@@ -47,8 +47,6 @@ class MediaResourceCallback
   virtual void NotifyDataArrived() {}
 
   
-  
-  
   virtual void NotifyDataEnded(nsresult aStatus) {}
 
   
