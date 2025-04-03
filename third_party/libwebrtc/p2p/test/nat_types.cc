@@ -8,7 +8,7 @@
 
 
 
-#include "rtc_base/nat_types.h"
+#include "p2p/test/nat_types.h"
 
 #include "rtc_base/checks.h"
 

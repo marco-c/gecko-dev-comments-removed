@@ -8,8 +8,8 @@
 
 
 
-#ifndef P2P_BASE_FAKE_PACKET_TRANSPORT_H_
-#define P2P_BASE_FAKE_PACKET_TRANSPORT_H_
+#ifndef P2P_TEST_FAKE_PACKET_TRANSPORT_H_
+#define P2P_TEST_FAKE_PACKET_TRANSPORT_H_
 
 #include <map>
 #include <string>

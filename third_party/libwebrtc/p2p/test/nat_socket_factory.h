@@ -8,8 +8,8 @@
 
 
 
-#ifndef RTC_BASE_NAT_SOCKET_FACTORY_H_
-#define RTC_BASE_NAT_SOCKET_FACTORY_H_
+#ifndef P2P_TEST_NAT_SOCKET_FACTORY_H_
+#define P2P_TEST_NAT_SOCKET_FACTORY_H_
 
 #include <stddef.h>
 
@@ -19,9 +19,9 @@
 #include <set>
 
 #include "api/array_view.h"
+#include "p2p/test/nat_server.h"
+#include "p2p/test/nat_types.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/nat_server.h"
-#include "rtc_base/nat_types.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/socket_factory.h"

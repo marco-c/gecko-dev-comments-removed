@@ -8,7 +8,7 @@
 
 
 
-#include "p2p/base/test_stun_server.h"
+#include "p2p/test/test_stun_server.h"
 
 #include <memory>
 

@@ -8,8 +8,8 @@
 
 
 
-#ifndef RTC_BASE_NAT_TYPES_H_
-#define RTC_BASE_NAT_TYPES_H_
+#ifndef P2P_TEST_NAT_TYPES_H_
+#define P2P_TEST_NAT_TYPES_H_
 
 namespace rtc {
 

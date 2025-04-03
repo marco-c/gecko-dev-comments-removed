@@ -8,8 +8,8 @@
 
 
 
-#ifndef P2P_BASE_STUN_SERVER_H_
-#define P2P_BASE_STUN_SERVER_H_
+#ifndef P2P_TEST_STUN_SERVER_H_
+#define P2P_TEST_STUN_SERVER_H_
 
 #include <stddef.h>
 
