@@ -5,10 +5,15 @@
 
 
 EXTRA_JS_MODULES.taskbartabs += [
+    "TaskbarTabCmd.sys.mjs",
     "TaskbarTabs.sys.mjs",
     "TaskbarTabUI.sys.mjs",
 ]
 
 BROWSER_CHROME_MANIFESTS += [
     "test/browser/browser.toml",
+]
+
+XPCOM_MANIFESTS += [
+    "components.conf",
 ]
