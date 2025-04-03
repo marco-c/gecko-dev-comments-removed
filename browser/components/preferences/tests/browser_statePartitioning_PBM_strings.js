@@ -106,7 +106,7 @@ add_task(async function runTests() {
   
   
   await testCookieBlockingInfoStrict(
-    "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,emailTP,emailTPPrivate,lvl2,rp,rpTop,ocsp,fpp,fppPrivate,3pcd",
+    "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cryptoTP,fp,stp,emailTP,emailTPPrivate,-consentmanagerSkip,-consentmanagerSkipPrivate,lvl2,rp,rpTop,ocsp,fpp,fppPrivate,3pcd",
     false
   );
 
@@ -114,7 +114,7 @@ add_task(async function runTests() {
   
   
   await testCookieBlockingInfoStrict(
-    "tp,tpPrivate,cookieBehavior4,cookieBehaviorPBM5,cm,fp,stp,emailTP,emailTPPrivate,lvl2,rp,rpTop,ocsp,fpp,fppPrivate,3pcd",
+    "tp,tpPrivate,cookieBehavior4,cookieBehaviorPBM5,cryptoTP,fp,stp,emailTP,emailTPPrivate,-consentmanagerSkip,-consentmanagerSkipPrivate,lvl2,rp,rpTop,ocsp,fpp,fppPrivate,3pcd",
     true
   );
 
