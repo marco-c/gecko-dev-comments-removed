@@ -295,15 +295,11 @@ static bool ToTemporalYearMonth(JSContext* cx, Handle<Value> item,
   }
 
   
-
-  
   YearMonthOptions ignoredOptions;
   if (!ToTemporalYearMonthOptions(cx, options, &ignoredOptions)) {
     return false;
   }
 
-  
-  
   
   Rooted<PlainYearMonth> yearMonth(cx);
   if (!CreateTemporalYearMonth(cx, date, calendar, &yearMonth)) {
