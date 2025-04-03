@@ -106,21 +106,9 @@ WgcCaptureSession::WgcCaptureSession(intptr_t source_id,
                                      ABI::Windows::Graphics::SizeInt32 size)
     : d3d11_device_(std::move(d3d11_device)),
       item_(std::move(item)),
-      size_(size) {
+      size_(size),
+      source_id_(source_id) {
   RTC_CHECK(source_id);
-  HMONITOR monitor = 0;
-  if (!GetHmonitorFromDeviceIndex(source_id, &monitor)) {
-    monitor = MonitorFromWindow(reinterpret_cast<HWND>(source_id),
-                                MONITOR_DEFAULTTONEAREST);
-  }
-  DEVICE_SCALE_FACTOR device_scale_factor = DEVICE_SCALE_FACTOR_INVALID;
-  HRESULT hr = GetScaleFactorForMonitor(monitor, &device_scale_factor);
-  RTC_LOG_IF(LS_ERROR, FAILED(hr))
-      << "Failed to get scale factor for monitor: " << hr;
-
-  if (device_scale_factor != DEVICE_SCALE_FACTOR_INVALID) {
-    device_scale_factor_ = static_cast<float>(device_scale_factor) / 100.0f;
-  }
 }
 
 WgcCaptureSession::~WgcCaptureSession() {
@@ -479,8 +467,30 @@ HRESULT WgcCaptureSession::ProcessFrame() {
   }
 
   DesktopFrame* current_frame = queue_.current_frame();
-  current_frame->set_device_scale_factor(device_scale_factor_);
   DesktopFrame* previous_frame = queue_.previous_frame();
+
+  
+  
+  
+  HMONITOR monitor;
+  if (!GetHmonitorFromDeviceIndex(source_id_, &monitor)) {
+    monitor = MonitorFromWindow(reinterpret_cast<HWND>(source_id_),
+                                MONITOR_DEFAULTTONEAREST);
+  }
+
+  
+  
+  
+  
+  DEVICE_SCALE_FACTOR device_scale_factor = DEVICE_SCALE_FACTOR_INVALID;
+  HRESULT scale_factor_hr =
+      GetScaleFactorForMonitor(monitor, &device_scale_factor);
+  RTC_LOG_IF(LS_ERROR, FAILED(scale_factor_hr))
+      << "Failed to get scale factor for monitor: " << scale_factor_hr;
+  if (device_scale_factor != DEVICE_SCALE_FACTOR_INVALID) {
+    current_frame->set_device_scale_factor(
+        static_cast<float>(device_scale_factor) / 100.0f);
+  }
 
   
   

@@ -150,10 +150,7 @@ class WgcCaptureSession final {
   DesktopRegion damage_region_;
 
   
-  
-  
-  
-  std::optional<float> device_scale_factor_;
+  intptr_t source_id_;
 
   SequenceChecker sequence_checker_;
 };

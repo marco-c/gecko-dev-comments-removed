@@ -46,10 +46,7 @@ class DxgiFrame final {
   friend class DxgiDuplicatorController;
 
   
-  
-  bool Prepare(DesktopSize size,
-               DesktopCapturer::SourceId source_id,
-               std::optional<float> device_scale_factor);
+  bool Prepare(DesktopSize size, DesktopCapturer::SourceId source_id);
 
   
   Context* context();
