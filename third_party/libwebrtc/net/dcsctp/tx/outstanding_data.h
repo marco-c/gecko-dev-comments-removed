@@ -101,7 +101,11 @@ class OutstandingData {
   
   std::vector<std::pair<TSN, Data>> GetChunksToBeRetransmitted(size_t max_size);
 
-  size_t unacked_bytes() const { return unacked_bytes_; }
+  
+  size_t unacked_packet_bytes() const { return unacked_packet_bytes_; }
+
+  
+  size_t unacked_payload_bytes() const { return unacked_payload_bytes_; }
 
   
   size_t unacked_items() const { return unacked_items_; }
@@ -359,7 +363,9 @@ class OutstandingData {
   
   std::deque<Item> outstanding_data_;
   
-  size_t unacked_bytes_ = 0;
+  size_t unacked_payload_bytes_ = 0;
+  
+  size_t unacked_packet_bytes_ = 0;
   
   
   size_t unacked_items_ = 0;

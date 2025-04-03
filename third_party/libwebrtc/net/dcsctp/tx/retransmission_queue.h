@@ -121,7 +121,9 @@ class RetransmissionQueue {
   uint64_t rtx_bytes_count() const { return rtx_bytes_count_; }
 
   
-  size_t unacked_bytes() const { return outstanding_data_.unacked_bytes(); }
+  size_t unacked_packet_bytes() const {
+    return outstanding_data_.unacked_packet_bytes();
+  }
 
   
   size_t unacked_items() const { return outstanding_data_.unacked_items(); }
@@ -190,7 +192,7 @@ class RetransmissionQueue {
 
   
   
-  void HandleIncreasedCumulativeTsnAck(size_t unacked_bytes,
+  void HandleIncreasedCumulativeTsnAck(size_t unacked_packet_bytes,
                                        size_t total_bytes_acked);
   
   
