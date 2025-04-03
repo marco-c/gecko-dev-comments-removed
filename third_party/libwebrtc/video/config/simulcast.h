@@ -21,16 +21,15 @@
 #include "api/video/resolution.h"
 #include "video/config/video_encoder_config.h"
 
-namespace cricket {
+namespace webrtc {
 
 
-webrtc::DataRate GetTotalMaxBitrate(
-    const std::vector<webrtc::VideoStream>& streams);
+DataRate GetTotalMaxBitrate(const std::vector<VideoStream>& streams);
 
 
 
-void BoostMaxSimulcastLayer(webrtc::DataRate max_bitrate,
-                            std::vector<webrtc::VideoStream>* layers);
+void BoostMaxSimulcastLayer(DataRate max_bitrate,
+                            std::vector<VideoStream>* layers);
 
 
 
@@ -39,17 +38,26 @@ size_t LimitSimulcastLayerCount(size_t min_num_layers,
                                 size_t max_num_layers,
                                 int width,
                                 int height,
-                                const webrtc::FieldTrialsView& trials,
-                                webrtc::VideoCodecType codec);
+                                const FieldTrialsView& trials,
+                                VideoCodecType codec);
 
 
-std::vector<webrtc::VideoStream> GetSimulcastConfig(
-    rtc::ArrayView<const webrtc::Resolution> resolutions,
+std::vector<VideoStream> GetSimulcastConfig(
+    rtc::ArrayView<const Resolution> resolutions,
     bool is_screenshare_with_conference_mode,
     bool temporal_layers_supported,
-    const webrtc::FieldTrialsView& trials,
-    webrtc::VideoCodecType codec);
+    const FieldTrialsView& trials,
+    VideoCodecType codec);
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::BoostMaxSimulcastLayer;
+using ::webrtc::GetSimulcastConfig;
+using ::webrtc::GetTotalMaxBitrate;
+using ::webrtc::LimitSimulcastLayerCount;
 }  
 
 #endif  
