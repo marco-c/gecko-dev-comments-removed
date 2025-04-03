@@ -3469,6 +3469,15 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
+
+  bool IsHiddenUntilFound() const;
+
+  
+
+
+
   bool IsHiddenByContentVisibilityOfInFlowParentForLayout() const;
 
   
