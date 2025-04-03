@@ -351,11 +351,11 @@ void LazyInstantiator::TransplantRefCnt() {
 
 HRESULT
 LazyInstantiator::MaybeResolveRoot() {
-  if (mWeakAccessible) {
-    return S_OK;
+  if (!GetAccService() && !ShouldInstantiate()) {
+    return E_FAIL;
   }
 
-  if (GetAccService() || ShouldInstantiate()) {
+  if (!mWeakAccessible) {
     mWeakMsaaRoot = ResolveMsaaRoot();
     if (!mWeakMsaaRoot) {
       return E_POINTER;
@@ -380,23 +380,26 @@ LazyInstantiator::MaybeResolveRoot() {
     }
     
     mWeakAccessible->Release();
-    if (Compatibility::IsUiaEnabled()) {
-      hr = mRealRootUnk->QueryInterface(IID_IRawElementProviderSimple,
-                                        (void**)&mWeakUia);
-      if (FAILED(hr)) {
-        return hr;
-      }
-      mWeakUia->Release();
-    }
 
     
     
     ClearProp();
-
-    return S_OK;
   }
 
-  return E_FAIL;
+  
+  
+  
+  if (!mWeakUia && Compatibility::IsUiaEnabled()) {
+    MOZ_ASSERT(mWeakAccessible);
+    HRESULT hr = mRealRootUnk->QueryInterface(IID_IRawElementProviderSimple,
+                                              (void**)&mWeakUia);
+    if (FAILED(hr)) {
+      return hr;
+    }
+    mWeakUia->Release();
+  }
+
+  return S_OK;
 }
 
 #define RESOLVE_ROOT                 \
