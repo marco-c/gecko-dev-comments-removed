@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/field_trials_view.h"
@@ -33,6 +34,7 @@
 #include "rtc_base/network.h"
 #include "rtc_base/network_constants.h"
 #include "rtc_base/socket_address.h"
+#include "rtc_base/socket_factory.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
@@ -132,15 +134,33 @@ class EmulatedNetworkManagerInterface {
   
   
   
-  virtual rtc::Thread* network_thread() = 0;
+  virtual absl::Nonnull<rtc::Thread*> network_thread() = 0;
+
   
   
   
-  virtual rtc::NetworkManager* network_manager() = 0;
   
   
   
-  virtual rtc::PacketSocketFactory* packet_socket_factory() = 0;
+  
+  virtual absl::Nonnull<rtc::NetworkManager*> network_manager() = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  virtual absl::Nonnull<rtc::PacketSocketFactory*> packet_socket_factory() = 0;
+
+  
+  virtual absl::Nonnull<rtc::SocketFactory*> socket_factory() = 0;
+  virtual absl::Nonnull<std::unique_ptr<rtc::NetworkManager>>
+  ReleaseNetworkManager() = 0;
+
+  
+  
   webrtc::webrtc_pc_e2e::PeerNetworkDependencies network_dependencies() {
     return {network_thread(), network_manager(), packet_socket_factory()};
   }
@@ -353,7 +373,7 @@ class NetworkEmulationManager {
   
   
   
-  virtual EmulatedNetworkManagerInterface*
+  virtual absl::Nonnull<EmulatedNetworkManagerInterface*>
   CreateEmulatedNetworkManagerInterface(
       const std::vector<EmulatedEndpoint*>& endpoints) = 0;
 
