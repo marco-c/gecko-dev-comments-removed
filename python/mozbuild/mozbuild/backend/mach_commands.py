@@ -20,7 +20,7 @@ from mozbuild.util import cpu_count
     "ide",
     category="devenv",
     description="Generate a project and launch an IDE.",
-    virtualenv_name="ide",
+    virtualenv_name="build",
 )
 @CommandArgument("ide", choices=["eclipse", "visualstudio", "vscode"])
 @CommandArgument(
@@ -174,15 +174,7 @@ def setup_vscode(command_context, interactive):
     }
 
     import difflib
-
-    try:
-        import json5 as json
-
-        dump_extra = {"quote_keys": True, "trailing_commas": False}
-    except ImportError:
-        import json
-
-        dump_extra = {}
+    import json
 
     
     
@@ -200,7 +192,7 @@ def setup_vscode(command_context, interactive):
     if old_settings_str is None:
         
         with open(vscode_settings, "w") as fh:
-            json.dump(new_settings, fh, indent=4, **dump_extra)
+            json.dump(new_settings, fh, indent=4)
     else:
         
         
@@ -231,7 +223,7 @@ def setup_vscode(command_context, interactive):
 
         if old_settings != settings:
             
-            new_settings_str = json.dumps(settings, indent=4, **dump_extra)
+            new_settings_str = json.dumps(settings, indent=4)
             if interactive:
                 print(
                     "\nThe following modifications to {settings} will occur:\n{diff}".format(
