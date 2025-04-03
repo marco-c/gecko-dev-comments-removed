@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "URLClassifierParent.h"
 #include "nsComponentManagerUtils.h"
@@ -14,8 +14,10 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-/////////////////////////////////////////////////////////////////////
-// URLClassifierParent.
+class nsIUrlClassifierExceptionList;
+
+
+
 
 NS_IMPL_ISUPPORTS(URLClassifierParent, nsIURIClassifierCallback)
 
@@ -23,33 +25,33 @@ mozilla::ipc::IPCResult URLClassifierParent::StartClassify(
     nsIPrincipal* aPrincipal, bool* aSuccess) {
   *aSuccess = false;
   nsresult rv = NS_OK;
-  // Note that in safe mode, the URL classifier service isn't available, so we
-  // should handle the service not being present gracefully.
+  
+  
   nsCOMPtr<nsIURIClassifier> uriClassifier =
       do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID, &rv);
   if (NS_SUCCEEDED(rv)) {
     rv = uriClassifier->Classify(aPrincipal, this, aSuccess);
   }
   if (NS_FAILED(rv) || !*aSuccess) {
-    // We treat the case where we fail to classify and the case where the
-    // classifier returns successfully but doesn't perform a lookup as the
-    // classification not yielding any results, so we just kill the child actor
-    // without ever calling out callback in both cases.
-    // This means that code using this in the child process will only get a hit
-    // on its callback if some classification actually happens.
+    
+    
+    
+    
+    
+    
     *aSuccess = false;
     ClassificationFailed();
   }
   return IPC_OK();
 }
 
-/////////////////////////////////////////////////////////////////////
-// URLClassifierLocalParent.
+
+
 
 namespace {
 
-// This class implements a nsIUrlClassifierFeature on the parent side, starting
-// from an IPC data struct.
+
+
 class IPCFeature final : public nsIUrlClassifierFeature {
  public:
   NS_DECL_ISUPPORTS
@@ -88,8 +90,7 @@ class IPCFeature final : public nsIUrlClassifierFeature {
   }
 
   NS_IMETHOD
-  GetExceptionHostList(nsACString& aList) override {
-    aList = mIPCFeature.exceptionHostList();
+  GetExceptionList(nsIUrlClassifierExceptionList** aList) override {
     return NS_OK;
   }
 
@@ -100,7 +101,7 @@ class IPCFeature final : public nsIUrlClassifierFeature {
     NS_ENSURE_ARG_POINTER(aShouldContinue);
     *aShouldContinue = true;
 
-    // Nothing to do here.
+    
     return NS_OK;
   }
 
@@ -111,7 +112,7 @@ class IPCFeature final : public nsIUrlClassifierFeature {
                    nsIURI** aURI) override {
     NS_ENSURE_ARG_POINTER(aURI);
 
-    // This method should not be called, but we have a URI, let's return it.
+    
     nsCOMPtr<nsIURI> uri = mURI;
     uri.forget(aURI);
     *aURIType = aListType == nsIUrlClassifierFeature::blocklist
@@ -129,7 +130,7 @@ class IPCFeature final : public nsIUrlClassifierFeature {
 
 NS_IMPL_ISUPPORTS(IPCFeature, nsIUrlClassifierFeature)
 
-}  // namespace
+}  
 
 NS_IMPL_ISUPPORTS(URLClassifierLocalParent, nsIUrlClassifierFeatureCallback)
 
@@ -138,8 +139,8 @@ mozilla::ipc::IPCResult URLClassifierLocalParent::StartClassify(
   MOZ_ASSERT(aURI);
 
   nsresult rv = NS_OK;
-  // Note that in safe mode, the URL classifier service isn't available, so we
-  // should handle the service not being present gracefully.
+  
+  
   nsCOMPtr<nsIURIClassifier> uriClassifier =
       do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID, &rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -152,8 +153,8 @@ mozilla::ipc::IPCResult URLClassifierLocalParent::StartClassify(
     features.AppendElement(new IPCFeature(aURI, feature));
   }
 
-  // Doesn't matter if we pass blocklist, entitylist or any other list.
-  // IPCFeature returns always the same values.
+  
+  
   rv = uriClassifier->AsyncClassifyLocalWithFeatures(
       aURI, features, nsIUrlClassifierFeature::blocklist, this, false);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -194,8 +195,8 @@ mozilla::ipc::IPCResult URLClassifierLocalByNameParent::StartClassify(
   MOZ_ASSERT(aURI);
 
   nsresult rv = NS_OK;
-  // Note that in safe mode, the URL classifier service isn't available, so we
-  // should handle the service not being present gracefully.
+  
+  
   nsCOMPtr<nsIURIClassifier> uriClassifier =
       do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID, &rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -208,8 +209,8 @@ mozilla::ipc::IPCResult URLClassifierLocalByNameParent::StartClassify(
     features.AppendElement(new IPCFeature(aURI, feature));
   }
 
-  // Doesn't matter if we pass blocklist, entitylist or any other list.
-  // IPCFeature returns always the same values.
+  
+  
   rv = uriClassifier->AsyncClassifyLocalWithFeatures(aURI, features, aListType,
                                                      this, false);
   if (NS_WARN_IF(NS_FAILED(rv))) {
