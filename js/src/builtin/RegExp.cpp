@@ -2159,6 +2159,19 @@ bool js::RegExpBuiltinExec(JSContext* cx, Handle<RegExpObject*> regexp,
                                           int32_t(lastIndex), nullptr, rval);
 }
 
+bool js::IsOptimizableRegExpObject(JSObject* obj, JSContext* cx) {
+  
+  
+  
+  bool optimizable =
+      obj->shape() == cx->global()->maybeRegExpShapeWithDefaultProto() &&
+      cx->realm()->realmFuses.optimizeRegExpPrototypeFuse.intact();
+  MOZ_ASSERT_IF(optimizable,
+                obj->is<RegExpObject>() &&
+                    obj->as<RegExpObject>().realm() == cx->realm());
+  return optimizable;
+}
+
 
 
 
@@ -2170,6 +2183,13 @@ bool js::RegExpExec(JSContext* cx, Handle<JSObject*> regexp,
                     Handle<JSString*> string, bool forTest,
                     MutableHandle<Value> rval) {
   
+  
+  if (MOZ_LIKELY(IsOptimizableRegExpObject(regexp, cx))) {
+    return RegExpBuiltinExec(cx, regexp.as<RegExpObject>(), string, forTest,
+                             rval);
+  }
+
+  
   Rooted<Value> exec(cx);
   Rooted<PropertyKey> execKey(cx, NameToId(cx->names().exec));
   if (!GetProperty(cx, regexp, regexp, execKey, &exec)) {
@@ -2180,8 +2200,7 @@ bool js::RegExpExec(JSContext* cx, Handle<JSObject*> regexp,
   
   
   PropertyName* execName = cx->names().RegExp_prototype_Exec;
-  if (MOZ_LIKELY(IsSelfHostedFunctionWithName(exec, execName)) ||
-      !IsCallable(exec)) {
+  if (IsSelfHostedFunctionWithName(exec, execName) || !IsCallable(exec)) {
     
     if (MOZ_LIKELY(regexp->is<RegExpObject>())) {
       return RegExpBuiltinExec(cx, regexp.as<RegExpObject>(), string, forTest,
@@ -2439,15 +2458,7 @@ bool js::IsOptimizableRegExpObject(JSContext* cx, unsigned argc, Value* vp) {
 
   JSObject* obj = &args[0].toObject();
 
-  
-  
-  
-  bool optimizable =
-      obj->shape() == cx->global()->maybeRegExpShapeWithDefaultProto() &&
-      cx->realm()->realmFuses.optimizeRegExpPrototypeFuse.intact();
-  MOZ_ASSERT_IF(optimizable,
-                obj->is<RegExpObject>() &&
-                    obj->as<RegExpObject>().realm() == cx->realm());
+  bool optimizable = IsOptimizableRegExpObject(obj, cx);
   args.rval().setBoolean(optimizable);
   return true;
 }

@@ -7715,7 +7715,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIntrinsicRegExpExec(
   MOZ_ASSERT(args_[0].isObject());
   MOZ_ASSERT(args_[1].isString());
 
-  if (!args_[0].toObject().is<RegExpObject>()) {
+  
+  
+  if (!IsOptimizableRegExpObject(&args_[0].toObject(), cx_)) {
     return AttachDecision::NoAction;
   }
 
@@ -7730,33 +7732,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIntrinsicRegExpExec(
   }
 
   
-  
-  if (re->containsPure(cx_->names().exec)) {
-    return AttachDecision::NoAction;
-  }
-  MOZ_ASSERT(cx_->global()->maybeGetRegExpPrototype());
-  auto* regExpProto =
-      &cx_->global()->maybeGetRegExpPrototype()->as<NativeObject>();
-  if (re->staticPrototype() != regExpProto) {
-    return AttachDecision::NoAction;
-  }
-  auto execProp = regExpProto->as<NativeObject>().lookupPure(cx_->names().exec);
-  if (!execProp || !execProp->isDataProperty()) {
-    return AttachDecision::NoAction;
-  }
-  
-  
-  if (regExpProto->isFixedSlot(execProp->slot())) {
-    return AttachDecision::NoAction;
-  }
-  Value execVal = regExpProto->getSlot(execProp->slot());
-  PropertyName* execName = cx_->names().RegExp_prototype_Exec;
-  if (!IsSelfHostedFunctionWithName(execVal, execName)) {
-    return AttachDecision::NoAction;
-  }
-  JSFunction* execFunction = &execVal.toObject().as<JSFunction>();
-
-  
   initializeInputOperand();
 
   
@@ -7764,15 +7739,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIntrinsicRegExpExec(
   ValOperandId arg0Id = loadArgumentIntrinsic(ArgumentKind::Arg0);
   ObjOperandId regExpId = writer.guardToObject(arg0Id);
   writer.guardShape(regExpId, re->shape());
+  writer.guardFuse(RealmFuses::FuseIndex::OptimizeRegExpPrototypeFuse);
   EmitGuardLastIndexIsNonNegativeInt32(writer, regExpId);
-
-  
-  ObjOperandId regExpProtoId = writer.loadObject(regExpProto);
-  writer.guardShape(regExpProtoId, regExpProto->shape());
-  size_t offset =
-      regExpProto->dynamicSlotIndex(execProp->slot()) * sizeof(Value);
-  writer.guardDynamicSlotValue(regExpProtoId, offset,
-                               ObjectValue(*execFunction));
 
   ValOperandId arg1Id = loadArgumentIntrinsic(ArgumentKind::Arg1);
   StringOperandId inputId = writer.guardToString(arg1Id);
