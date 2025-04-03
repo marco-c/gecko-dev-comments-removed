@@ -2392,7 +2392,9 @@ bool nsDisplayImage::CreateWebRenderCommands(
         aBuilder, aResources, aSc, aManager, aDisplayListBuilder);
     return true;
   }
-  if (frame->HasImageMap()) {
+
+  if (nsImageMap* map = frame->GetImageMap(); map && map->HasFocus()) {
+    
     
     return false;
   }
@@ -2517,7 +2519,7 @@ ImgDrawResult nsImageFrame::PaintImage(gfxContext& aRenderingContext,
       nsLayoutUtils::GetSamplingFilterForFrame(this), dest, aDirtyRect,
       svgContext, aFlags, &anchorPoint);
 
-  if (nsImageMap* map = GetImageMap()) {
+  if (nsImageMap* map = GetImageMap(); map && map->HasFocus()) {
     gfxPoint devPixelOffset = nsLayoutUtils::PointToGfxPoint(
         dest.TopLeft(), PresContext()->AppUnitsPerDevPixel());
     AutoRestoreTransform autoRestoreTransform(drawTarget);
@@ -2526,13 +2528,13 @@ ImgDrawResult nsImageFrame::PaintImage(gfxContext& aRenderingContext,
 
     
     ColorPattern white(ToDeviceColor(sRGBColor::OpaqueWhite()));
-    map->Draw(this, *drawTarget, white);
+    map->DrawFocus(this, *drawTarget, white);
 
     
     ColorPattern black(ToDeviceColor(sRGBColor::OpaqueBlack()));
     StrokeOptions strokeOptions;
     nsLayoutUtils::InitDashPattern(strokeOptions, StyleBorderStyle::Dotted);
-    map->Draw(this, *drawTarget, black, strokeOptions);
+    map->DrawFocus(this, *drawTarget, black, strokeOptions);
   }
 
   if (result == ImgDrawResult::SUCCESS) {

@@ -47,18 +47,17 @@ class nsImageMap final : public nsStubMutationObserver,
   mozilla::dom::HTMLAreaElement* GetArea(const mozilla::CSSIntPoint& aPt) const;
 
   
-
-
   uint32_t AreaCount() const { return mAreas.Length(); }
 
   
+  bool HasFocus() const { return mHasFocus; }
 
-
+  
   mozilla::dom::HTMLAreaElement* GetAreaAt(uint32_t aIndex) const;
 
-  void Draw(nsIFrame* aFrame, DrawTarget& aDrawTarget,
-            const ColorPattern& aColor,
-            const StrokeOptions& aStrokeOptions = StrokeOptions());
+  void DrawFocus(nsIFrame* aFrame, DrawTarget& aDrawTarget,
+                 const ColorPattern& aColor,
+                 const StrokeOptions& aStrokeOptions = StrokeOptions());
 
   
 
@@ -97,7 +96,7 @@ class nsImageMap final : public nsStubMutationObserver,
 
   void MaybeUpdateAreas(nsIContent* aContent);
 
-  nsImageFrame* mImageFrame;  
+  nsImageFrame* mImageFrame = nullptr;  
   nsCOMPtr<nsIContent> mMap;
 
   
@@ -106,7 +105,10 @@ class nsImageMap final : public nsStubMutationObserver,
   
   
   
-  bool mConsiderWholeSubtree;
+  bool mConsiderWholeSubtree = false;
+
+  
+  bool mHasFocus = false;
 };
 
 #endif 
