@@ -240,7 +240,6 @@ NS_IMPL_CYCLE_COLLECTION_WEAK_PTR_INHERITED(nsGeolocationRequest,
 
 void nsGeolocationRequest::Notify() {
   MOZ_LOG(gGeolocationLog, LogLevel::Debug, ("nsGeolocationRequest::Notify"));
-  SetTimeoutTimer();
   NotifyErrorAndShutdown(GeolocationPositionError_Binding::TIMEOUT);
 }
 
@@ -548,7 +547,17 @@ void nsGeolocationRequest::SendLocation(nsIDOMGeoPosition* aPosition) {
     return;
   }
 
-  if (!mIsWatchPositionRequest) {
+  if (mIsWatchPositionRequest) {
+    
+    
+    
+    
+    
+    
+    
+    
+    StopTimeoutTimer();
+  } else {
     
     
     Shutdown();
@@ -570,9 +579,6 @@ void nsGeolocationRequest::SendLocation(nsIDOMGeoPosition* aPosition) {
     callback->HandleEvent(aPosition);
   }
 
-  if (mIsWatchPositionRequest && !mShutdown) {
-    SetTimeoutTimer();
-  }
   MOZ_ASSERT(mShutdown || mIsWatchPositionRequest,
              "non-shutdown getCurrentPosition request after callback!");
 }
