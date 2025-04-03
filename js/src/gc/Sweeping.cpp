@@ -246,16 +246,16 @@ void ArenaLists::initBackgroundSweep(AllocKind thingKind) {
   }
 }
 
-void GCRuntime::backgroundFinalize(JS::GCContext* gcx, Zone* zone,
-                                   AllocKind kind, Arena** empty) {
+void ArenaLists::backgroundFinalize(JS::GCContext* gcx, AllocKind kind,
+                                    Arena** empty) {
   MOZ_ASSERT(empty);
 
-  ArenaLists* lists = &zone->arenas;
-  ArenaList& arenas = lists->collectingArenaList(kind);
+  ArenaList& arenas = collectingArenaList(kind);
   if (arenas.isEmpty()) {
-    MOZ_ASSERT(lists->concurrentUse(kind) == ArenaLists::ConcurrentUse::None);
+    MOZ_ASSERT(concurrentUse(kind) == ConcurrentUse::None);
     return;
   }
+  MOZ_ASSERT(concurrentUse(kind) == ConcurrentUse::BackgroundFinalize);
 
   SortedArenaList finalizedSorted(kind);
 
@@ -276,13 +276,11 @@ void GCRuntime::backgroundFinalize(JS::GCContext* gcx, Zone* zone,
   
   
   {
-    AutoLockGC lock(rt);
-    MOZ_ASSERT(lists->concurrentUse(kind) ==
-               ArenaLists::ConcurrentUse::BackgroundFinalize);
-    lists->mergeFinalizedArenas(kind, finalizedSorted);
+    AutoLockGC lock(gcx->runtimeFromAnyThread());
+    mergeFinalizedArenas(kind, finalizedSorted);
   }
 
-  lists->concurrentUse(kind) = ArenaLists::ConcurrentUse::None;
+  concurrentUse(kind) = ConcurrentUse::None;
 }
 
 
@@ -327,14 +325,15 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
 
     TimeStamp startTime = TimeStamp::Now();
 
-    Arena* emptyArenas = zone->arenas.takeSweptEmptyArenas();
+    ArenaLists& arenaLists = zone->arenas;
+    Arena* emptyArenas = arenaLists.takeSweptEmptyArenas();
 
     
     
 
     for (const auto& phase : BackgroundFinalizePhases) {
       for (auto kind : phase.kinds) {
-        backgroundFinalize(gcx, zone, kind, &emptyArenas);
+        arenaLists.backgroundFinalize(gcx, kind, &emptyArenas);
       }
     }
 
@@ -1817,25 +1816,22 @@ void GCRuntime::beginSweepPhase(JS::GCReason reason, AutoGCSession& session) {
   sweepActions->assertFinished();
 }
 
-bool GCRuntime::foregroundFinalize(JS::GCContext* gcx, Zone* zone,
-                                   AllocKind thingKind,
-                                   SliceBudget& sliceBudget,
-                                   SortedArenaList& sweepList) {
-  ArenaLists& lists = zone->arenas;
-  lists.checkNoArenasToUpdateForKind(thingKind);
+bool ArenaLists::foregroundFinalize(JS::GCContext* gcx, AllocKind thingKind,
+                                    SliceBudget& sliceBudget,
+                                    SortedArenaList& sweepList) {
+  checkNoArenasToUpdateForKind(thingKind);
 
   
   
   
   
-  if (!FinalizeArenas(gcx, lists.collectingArenaList(thingKind), sweepList,
-                      thingKind, sliceBudget)) {
+  ArenaList& arenas = collectingArenaList(thingKind);
+  if (!FinalizeArenas(gcx, arenas, sweepList, thingKind, sliceBudget)) {
     return false;
   }
 
-  sweepList.extractEmptyTo(&lists.savedEmptyArenas.ref());
-  lists.mergeFinalizedArenas(thingKind, sweepList);
-
+  sweepList.extractEmptyTo(&savedEmptyArenas.ref());
+  mergeFinalizedArenas(thingKind, sweepList);
   return true;
 }
 
@@ -2042,8 +2038,9 @@ IncrementalProgress GCRuntime::finalizeAllocKind(JS::GCContext* gcx,
   }
 
   AutoSetThreadIsFinalizing threadIsFinalizing(gcx);
-  if (!foregroundFinalize(gcx, sweepZone, sweepAllocKind, budget,
-                          finalizedArenas.ref())) {
+  ArenaLists& arenaLists = sweepZone->arenas;
+  if (!arenaLists.foregroundFinalize(gcx, sweepAllocKind, budget,
+                                     finalizedArenas.ref())) {
     return NotFinished;
   }
 
