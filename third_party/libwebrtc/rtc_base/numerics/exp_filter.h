@@ -11,7 +11,7 @@
 #ifndef RTC_BASE_NUMERICS_EXP_FILTER_H_
 #define RTC_BASE_NUMERICS_EXP_FILTER_H_
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -43,6 +43,12 @@ class ExpFilter {
   float filtered_;  
   const float max_;
 };
+}  
+
+
+
+namespace rtc {
+using ::webrtc::ExpFilter;
 }  
 
 #endif  

@@ -319,7 +319,7 @@ class AudioEncoderOpusImpl::PacketLossFractionSmoother {
   
   float GetAverage() const {
     float value = smoother_.filtered();
-    return (value == rtc::ExpFilter::kValueUndefined) ? 0.0f : value;
+    return (value == ExpFilter::kValueUndefined) ? 0.0f : value;
   }
 
   
@@ -334,7 +334,7 @@ class AudioEncoderOpusImpl::PacketLossFractionSmoother {
   int64_t last_sample_time_ms_;
 
   
-  rtc::ExpFilter smoother_;
+  ExpFilter smoother_;
 };
 
 std::unique_ptr<AudioEncoderOpusImpl> AudioEncoderOpusImpl::CreateForTesting(

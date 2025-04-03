@@ -59,8 +59,8 @@ class FrameDropper {
   void UpdateRatio();
   void CapAccumulator();
 
-  rtc::ExpFilter key_frame_ratio_;
-  rtc::ExpFilter delta_frame_size_avg_kbits_;
+  ExpFilter key_frame_ratio_;
+  ExpFilter delta_frame_size_avg_kbits_;
 
   
   
@@ -81,7 +81,7 @@ class FrameDropper {
   float accumulator_max_;
   float target_bitrate_;
   bool drop_next_;
-  rtc::ExpFilter drop_ratio_;
+  ExpFilter drop_ratio_;
   int drop_count_;
   float incoming_frame_rate_;
   bool was_below_max_;
