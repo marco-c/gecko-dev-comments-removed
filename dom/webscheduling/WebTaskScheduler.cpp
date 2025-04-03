@@ -8,7 +8,6 @@
 #include "WebTaskScheduler.h"
 #include "WebTaskSchedulerWorker.h"
 #include "WebTaskSchedulerMainThread.h"
-#include "TaskSignal.h"
 #include "nsGlobalWindowInner.h"
 
 #include "mozilla/dom/WorkerPrivate.h"
@@ -22,6 +21,23 @@ inline void ImplCycleCollectionTraverse(
   ImplCycleCollectionTraverse(aCallback, aQueue.Tasks(), aName, aFlags);
 }
 
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    const WebTaskQueueHashKey& aField, const char* aName, uint32_t aFlags = 0) {
+  const WebTaskQueueHashKey::WebTaskQueueTypeKey& typeKey = aField.GetTypeKey();
+  if (typeKey.is<RefPtr<TaskSignal>>()) {
+    ImplCycleCollectionTraverse(aCallback, typeKey.as<RefPtr<TaskSignal>>(),
+                                aName, aFlags);
+  }
+}
+
+inline void ImplCycleCollectionUnlink(WebTaskQueueHashKey& aField) {
+  WebTaskQueueHashKey::WebTaskQueueTypeKey& typeKey = aField.GetTypeKey();
+  if (typeKey.is<RefPtr<TaskSignal>>()) {
+    ImplCycleCollectionUnlink(typeKey.as<RefPtr<TaskSignal>>());
+  }
+}
+
 NS_IMPL_CYCLE_COLLECTION_CLASS(WebTaskSchedulingState)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WebTaskSchedulingState)
@@ -31,16 +47,21 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WebTaskSchedulingState)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAbortSource, mPrioritySource);
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+
 NS_IMPL_CYCLE_COLLECTION_CLASS(WebTask)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WebTask)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCallback)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPromise)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWebTaskQueueHashKey)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSchedulingState)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WebTask)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mCallback)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPromise)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mWebTaskQueueHashKey)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSchedulingState)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -59,6 +80,22 @@ NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(DelayedWebTaskHandler)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(DelayedWebTaskHandler)
+
+WebTask::WebTask(uint32_t aEnqueueOrder,
+                 const Maybe<SchedulerPostTaskCallback&>& aCallback,
+                 WebTaskSchedulingState* aSchedlingState, Promise* aPromise,
+                 WebTaskScheduler* aWebTaskScheduler,
+                 const WebTaskQueueHashKey& aHashKey)
+    : mEnqueueOrder(aEnqueueOrder),
+      mPromise(aPromise),
+      mHasScheduled(false),
+      mSchedulingState(aSchedlingState),
+      mScheduler(aWebTaskScheduler),
+      mWebTaskQueueHashKey(aHashKey) {
+  if (aCallback.isSome()) {
+    mCallback = &aCallback.ref();
+  }
+}
 
 void WebTask::RunAbortAlgorithm() {
   
@@ -88,13 +125,20 @@ void WebTask::RunAbortAlgorithm() {
 
 bool WebTask::Run() {
   MOZ_ASSERT(HasScheduled());
-  MOZ_ASSERT(mOwnerQueue);
+  MOZ_ASSERT(mScheduler);
   remove();
 
-  mOwnerQueue->RemoveEntryFromTaskQueueMapIfNeeded();
-  mOwnerQueue = nullptr;
-  
-  
+  mScheduler->RemoveEntryFromTaskQueueMapIfNeeded(mWebTaskQueueHashKey);
+  ClearWebTaskScheduler();
+
+  if (!mCallback) {
+    
+    mPromise->MaybeResolveWithUndefined();
+    MOZ_ASSERT(!isInList());
+    return true;
+  }
+
+  MOZ_ASSERT(mSchedulingState);
 
   ErrorResult error;
 
@@ -102,6 +146,9 @@ bool WebTask::Run() {
   if (!global || global->IsDying()) {
     return false;
   }
+
+  
+  global->SetWebTaskSchedulingState(mSchedulingState);
 
   AutoJSAPI jsapi;
   if (!jsapi.Init(global)) {
@@ -114,6 +161,9 @@ bool WebTask::Run() {
 
   MOZ_KnownLive(mCallback)->Call(&returnVal, error, "WebTask",
                                  CallbackFunction::eRethrowExceptions);
+
+  
+  global->SetWebTaskSchedulingState(nullptr);
 
   error.WouldReportJSException();
 
@@ -140,9 +190,27 @@ bool WebTask::Run() {
   return true;
 }
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WebTaskScheduler, mParent,
-                                      mStaticPriorityTaskQueues,
-                                      mDynamicPriorityTaskQueues)
+inline void ImplCycleCollectionUnlink(
+    nsTHashMap<WebTaskQueueHashKey, WebTaskQueue>& aField) {
+  aField.Clear();
+}
+
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    nsTHashMap<WebTaskQueueHashKey, WebTaskQueue>& aField, const char* aName,
+    uint32_t aFlags = 0) {
+  for (auto& entry : aField) {
+    ImplCycleCollectionTraverse(
+        aCallback, entry.GetKey(),
+        "nsTHashMap<WebTaskQueueHashKey, WebTaskQueue>::WebTaskQueueHashKey",
+        aFlags);
+    ImplCycleCollectionTraverse(
+        aCallback, *entry.GetModifiableData(),
+        "nsTHashMap<WebTaskQueueHashKey, WebTaskQueue>::WebTaskQueue", aFlags);
+  }
+}
+
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WebTaskScheduler, mParent, mWebTaskQueues)
 
 
 already_AddRefed<WebTaskSchedulerMainThread>
@@ -170,6 +238,28 @@ JSObject* WebTaskScheduler::WrapObject(JSContext* cx,
   return Scheduler_Binding::Wrap(cx, this, aGivenProto);
 }
 
+static bool ShouldRejectPromiseWithReasonCausedByAbortSignal(
+    AbortSignal& aAbortSignal, nsIGlobalObject* aGlobal, Promise& aPromise) {
+  MOZ_ASSERT(aGlobal);
+  if (!aAbortSignal.Aborted()) {
+    return false;
+  }
+
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(aGlobal)) {
+    aPromise.MaybeRejectWithNotSupportedError(
+        "Failed to initialize the JS context");
+    return true;
+  }
+
+  JSContext* cx = jsapi.cx();
+  JS::Rooted<JS::Value> reason(cx);
+  aAbortSignal.GetReason(cx, &reason);
+  aPromise.MaybeReject(reason);
+  return true;
+}
+
+
 already_AddRefed<Promise> WebTaskScheduler::PostTask(
     SchedulerPostTaskCallback& aCallback,
     const SchedulerPostTaskOptions& aOptions) {
@@ -192,33 +282,59 @@ already_AddRefed<Promise> WebTaskScheduler::PostTask(
     return promise.forget();
   }
 
+  
+  RefPtr<WebTaskSchedulingState> newState = new WebTaskSchedulingState();
+  AbortSignal* signalValue = nullptr;
   if (taskSignal.WasPassed()) {
-    AbortSignal& signalValue = taskSignal.Value();
-
-    if (signalValue.Aborted()) {
-      AutoJSAPI jsapi;
-      if (!jsapi.Init(global)) {
-        promise->MaybeReject(NS_ERROR_UNEXPECTED);
-        return promise.forget();
-      }
-
-      JSContext* cx = jsapi.cx();
-      JS::Rooted<JS::Value> reason(cx);
-      signalValue.GetReason(cx, &reason);
-      promise->MaybeReject(reason);
+    signalValue = &taskSignal.Value();
+    
+    
+    if (ShouldRejectPromiseWithReasonCausedByAbortSignal(*signalValue, global,
+                                                         *promise)) {
       return promise.forget();
     }
+
+    
+    newState->SetAbortSource(signalValue);
   }
 
+  if (taskPriority.WasPassed()) {
+    
+    
+    
+    newState->SetPrioritySource(
+        new TaskSignal(GetParentObject(), taskPriority.Value()));
+  } else if (signalValue && signalValue->IsTaskSignal()) {
+    
+    
+    newState->SetPrioritySource(signalValue);
+  }
+
+  if (!newState->GetPrioritySource()) {
+    
+    
+    
+    newState->SetPrioritySource(
+        new TaskSignal(GetParentObject(), TaskPriority::User_visible));
+  }
+
+  const uint64_t delay = aOptions.mDelay;
+
   
   
-  WebTaskQueue& taskQueue = SelectTaskQueue(taskSignal, taskPriority);
+  RefPtr<WebTask> task =
+      CreateTask(taskSignal, taskPriority, false ,
+                 SomeRef(aCallback), newState, promise);
 
-  uint64_t delay = aOptions.mDelay;
+  MOZ_ASSERT(newState->GetPrioritySource() &&
+             newState->GetPrioritySource()->IsTaskSignal());
 
-  RefPtr<WebTask> task = CreateTask(taskQueue, taskSignal, aCallback, promise);
+  const TaskSignal* finalPrioritySource =
+      static_cast<TaskSignal*>(newState->GetPrioritySource());
+
   if (delay > 0) {
-    nsresult rv = SetTimeoutForDelayedTask(task, delay);
+    nsresult rv = SetTimeoutForDelayedTask(
+        task, delay, GetEventQueuePriority(finalPrioritySource->Priority()));
     if (NS_FAILED(rv)) {
       promise->MaybeRejectWithUnknownError(
           "Failed to setup timeout for delayed task");
@@ -226,7 +342,8 @@ already_AddRefed<Promise> WebTaskScheduler::PostTask(
     return promise.forget();
   }
 
-  if (!QueueTask(task)) {
+  if (!QueueTask(task,
+                 GetEventQueuePriority(finalPrioritySource->Priority()))) {
     MOZ_ASSERT(task->isInList());
     task->remove();
 
@@ -237,15 +354,98 @@ already_AddRefed<Promise> WebTaskScheduler::PostTask(
   return promise.forget();
 }
 
+
+already_AddRefed<Promise> WebTaskScheduler::YieldImpl() {
+  ErrorResult rv;
+  
+  RefPtr<Promise> promise = Promise::Create(mParent, rv);
+  if (rv.Failed()) {
+    return nullptr;
+  }
+
+  nsIGlobalObject* global = GetParentObject();
+  if (!global || global->IsDying()) {
+    promise->MaybeRejectWithNotSupportedError("Current window is detached");
+    return promise.forget();
+  }
+
+  RefPtr<AbortSignal> abortSource;
+  RefPtr<TaskSignal> prioritySource;
+  
+  
+  if (auto* schedulingState = global->GetWebTaskSchedulingState()) {
+    
+    
+    abortSource = schedulingState->GetAbortSource();
+    
+    
+    if (AbortSignal* inheritedPrioritySource =
+            schedulingState->GetPrioritySource()) {
+      MOZ_ASSERT(inheritedPrioritySource->IsTaskSignal());
+      prioritySource = static_cast<TaskSignal*>(inheritedPrioritySource);
+    }
+  }
+
+  if (abortSource) {
+    
+    
+    if (ShouldRejectPromiseWithReasonCausedByAbortSignal(*abortSource, global,
+                                                         *promise)) {
+      return promise.forget();
+    }
+  }
+
+  if (!prioritySource) {
+    
+    
+    prioritySource =
+        new TaskSignal(GetParentObject(), TaskPriority::User_visible);
+  }
+
+  const OwningNonNull<AbortSignal> owningSignal(*prioritySource);
+
+  Optional<OwningNonNull<AbortSignal>> optionalSignal;
+  optionalSignal.Construct(*prioritySource);
+
+  
+  
+  
+  
+  RefPtr<WebTask> task =
+      CreateTask(optionalSignal, {}, true , Nothing(),
+                 nullptr, promise);
+
+  EventQueuePriority eventQueuePriority =
+      GetEventQueuePriority(prioritySource->Priority());
+  if (!QueueTask(task, eventQueuePriority)) {
+    MOZ_ASSERT(task->isInList());
+    
+    
+    task->remove();
+
+    promise->MaybeRejectWithNotSupportedError("Unable to queue the task");
+    return promise.forget();
+  }
+
+  return promise.forget();
+}
+
 already_AddRefed<WebTask> WebTaskScheduler::CreateTask(
-    WebTaskQueue& aQueue, const Optional<OwningNonNull<AbortSignal>>& aSignal,
-    SchedulerPostTaskCallback& aCallback, Promise* aPromise) {
+    const Optional<OwningNonNull<AbortSignal>>& aSignal,
+    const Optional<TaskPriority>& aPriority, bool aIsContinuation,
+    const Maybe<SchedulerPostTaskCallback&>& aCallback,
+    WebTaskSchedulingState* aSchedulingState, Promise* aPromise) {
+  WebTaskScheduler::SelectedTaskQueueData selectedTaskQueueData =
+      SelectTaskQueue(aSignal, aPriority, aIsContinuation);
+
   uint32_t nextEnqueueOrder = mNextEnqueueOrder;
   ++mNextEnqueueOrder;
 
-  RefPtr<WebTask> task = new WebTask(nextEnqueueOrder, aCallback, aPromise);
+  RefPtr<WebTask> task =
+      new WebTask(nextEnqueueOrder, aCallback, aSchedulingState, aPromise, this,
+                  selectedTaskQueueData.mSelectedQueueHashKey);
 
-  aQueue.AddTask(task);
+  selectedTaskQueueData.mSelectedTaskQueue.AddTask(task);
 
   if (aSignal.WasPassed()) {
     AbortSignal& signalValue = aSignal.Value();
@@ -255,8 +455,8 @@ already_AddRefed<WebTask> WebTaskScheduler::CreateTask(
   return task.forget();
 }
 
-bool WebTaskScheduler::QueueTask(WebTask* aTask) {
-  if (!DispatchEventLoopRunnable()) {
+bool WebTaskScheduler::QueueTask(WebTask* aTask, EventQueuePriority aPriority) {
+  if (!DispatchEventLoopRunnable(aPriority)) {
     return false;
   }
   MOZ_ASSERT(!aTask->HasScheduled());
@@ -264,35 +464,24 @@ bool WebTaskScheduler::QueueTask(WebTask* aTask) {
   return true;
 }
 
-WebTask* WebTaskScheduler::GetNextTask() const {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsTHashMap<nsUint32HashKey, nsTArray<WebTaskQueue*>> allQueues;
+WebTask* WebTaskScheduler::GetNextTask() {
 
-  for (auto iter = mStaticPriorityTaskQueues.ConstIter(); !iter.Done();
-       iter.Next()) {
-    const auto& queue = iter.Data();
-    if (!queue->Tasks().isEmpty() && queue->GetFirstScheduledTask()) {
+  
+  AutoTArray<nsTArray<WebTaskQueue*>, WebTaskQueue::EffectivePriorityCount>
+      allQueues;
+  allQueues.SetLength(WebTaskQueue::EffectivePriorityCount);
+
+  
+  
+  
+  
+  for (auto iter = mWebTaskQueues.Iter(); !iter.Done(); iter.Next()) {
+    auto& queue = iter.Data();
+    if (queue.HasScheduledTasks()) {
+      const WebTaskQueueHashKey& key = iter.Key();
       nsTArray<WebTaskQueue*>& queuesForThisPriority =
-          allQueues.LookupOrInsert(static_cast<uint32_t>(iter.Key()));
-      queuesForThisPriority.AppendElement(queue.get());
-    }
-  }
-
-  for (auto iter = mDynamicPriorityTaskQueues.ConstIter(); !iter.Done();
-       iter.Next()) {
-    const auto& queue = iter.Data();
-    if (!queue->Tasks().isEmpty() && queue->GetFirstScheduledTask()) {
-      nsTArray<WebTaskQueue*>& queuesForThisPriority = allQueues.LookupOrInsert(
-          static_cast<uint32_t>(iter.Key()->Priority()));
-      queuesForThisPriority.AppendElement(queue.get());
+          allQueues[key.EffectivePriority()];
+      queuesForThisPriority.AppendElement(&queue);
     }
   }
 
@@ -300,91 +489,92 @@ WebTask* WebTaskScheduler::GetNextTask() const {
     return nullptr;
   }
 
-  for (TaskPriority priority : MakeWebIDLEnumeratedRange<TaskPriority>()) {
-    if (auto queues = allQueues.Lookup(UnderlyingValue(priority))) {
-      WebTaskQueue* oldestQueue = nullptr;
-      MOZ_ASSERT(!queues.Data().IsEmpty());
-      for (auto& webTaskQueue : queues.Data()) {
-        MOZ_ASSERT(webTaskQueue->GetFirstScheduledTask());
-        if (!oldestQueue) {
+  
+  for (auto& queues : Reversed(allQueues)) {
+    if (queues.IsEmpty()) {
+      continue;
+    }
+    WebTaskQueue* oldestQueue = nullptr;
+    for (auto& webTaskQueue : queues) {
+      MOZ_ASSERT(webTaskQueue->HasScheduledTasks());
+      if (!oldestQueue) {
+        oldestQueue = webTaskQueue;
+      } else {
+        WebTask* firstScheduledRunnableForCurrentQueue =
+            webTaskQueue->GetFirstScheduledTask();
+        WebTask* firstScheduledRunnableForOldQueue =
+            oldestQueue->GetFirstScheduledTask();
+        if (firstScheduledRunnableForOldQueue->EnqueueOrder() >
+            firstScheduledRunnableForCurrentQueue->EnqueueOrder()) {
           oldestQueue = webTaskQueue;
-        } else {
-          WebTask* firstScheduledRunnableForCurrentQueue =
-              webTaskQueue->GetFirstScheduledTask();
-          WebTask* firstScheduledRunnableForOldQueue =
-              oldestQueue->GetFirstScheduledTask();
-          if (firstScheduledRunnableForOldQueue->EnqueueOrder() >
-              firstScheduledRunnableForCurrentQueue->EnqueueOrder()) {
-            oldestQueue = webTaskQueue;
-          }
         }
       }
-      MOZ_ASSERT(oldestQueue);
-      return oldestQueue->GetFirstScheduledTask();
     }
+    MOZ_ASSERT(oldestQueue);
+    return oldestQueue->GetFirstScheduledTask();
   }
   return nullptr;
 }
 
-void WebTaskScheduler::Disconnect() {
-  mStaticPriorityTaskQueues.Clear();
-  mDynamicPriorityTaskQueues.Clear();
-}
+void WebTaskScheduler::Disconnect() { mWebTaskQueues.Clear(); }
 
 void WebTaskScheduler::RunTaskSignalPriorityChange(TaskSignal* aTaskSignal) {
-  if (WebTaskQueue* const taskQueue =
-          mDynamicPriorityTaskQueues.Get(aTaskSignal)) {
-    taskQueue->SetPriority(aTaskSignal->Priority());
+  if (auto entry = mWebTaskQueues.Lookup({aTaskSignal, false})) {
+    entry.Data().SetPriority(aTaskSignal->Priority());
   }
 }
 
-WebTaskQueue& WebTaskScheduler::SelectTaskQueue(
+WebTaskScheduler::SelectedTaskQueueData WebTaskScheduler::SelectTaskQueue(
     const Optional<OwningNonNull<AbortSignal>>& aSignal,
-    const Optional<TaskPriority>& aPriority) {
+    const Optional<TaskPriority>& aPriority, const bool aIsContinuation) {
   bool useSignal = !aPriority.WasPassed() && aSignal.WasPassed() &&
                    aSignal.Value().IsTaskSignal();
 
   if (useSignal) {
     TaskSignal* taskSignal = static_cast<TaskSignal*>(&(aSignal.Value()));
-    WebTaskQueue* const taskQueue =
-        mDynamicPriorityTaskQueues.GetOrInsertNew(taskSignal, taskSignal, this);
-    taskQueue->SetPriority(taskSignal->Priority());
-    taskSignal->SetWebTaskScheduler(this);
-    MOZ_ASSERT(mDynamicPriorityTaskQueues.Contains(taskSignal));
+    WebTaskQueueHashKey signalHashKey(taskSignal, aIsContinuation);
+    WebTaskQueue& taskQueue =
+        mWebTaskQueues.LookupOrInsert(signalHashKey, this);
 
-    return *taskQueue;
+    taskQueue.SetPriority(taskSignal->Priority());
+    taskSignal->SetWebTaskScheduler(this);
+
+    return SelectedTaskQueueData{WebTaskQueueHashKey(signalHashKey), taskQueue};
   }
 
   TaskPriority taskPriority =
       aPriority.WasPassed() ? aPriority.Value() : TaskPriority::User_visible;
 
   uint32_t staticTaskQueueMapKey = static_cast<uint32_t>(taskPriority);
-  WebTaskQueue* const taskQueue = mStaticPriorityTaskQueues.GetOrInsertNew(
-      staticTaskQueueMapKey, staticTaskQueueMapKey, this);
-  taskQueue->SetPriority(taskPriority);
-  MOZ_ASSERT(
-      mStaticPriorityTaskQueues.Contains(static_cast<uint32_t>(taskPriority)));
-  return *taskQueue;
+  WebTaskQueueHashKey staticHashKey(staticTaskQueueMapKey, aIsContinuation);
+  WebTaskQueue& taskQueue = mWebTaskQueues.LookupOrInsert(staticHashKey, this);
+  taskQueue.SetPriority(taskPriority);
+
+  return SelectedTaskQueueData{WebTaskQueueHashKey(staticHashKey), taskQueue};
 }
 
-void WebTaskScheduler::DeleteEntryFromStaticQueueMap(uint32_t aKey) {
-  DebugOnly<bool> result = mStaticPriorityTaskQueues.Remove(aKey);
-  MOZ_ASSERT(result);
+EventQueuePriority WebTaskScheduler::GetEventQueuePriority(
+    const TaskPriority& aPriority) const {
+  switch (aPriority) {
+    case TaskPriority::User_blocking:
+    case TaskPriority::User_visible:
+    case TaskPriority::Background:
+      
+      
+      return EventQueuePriority::Normal;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Invalid TaskPriority");
+      return EventQueuePriority::Normal;
+  }
 }
 
-void WebTaskScheduler::DeleteEntryFromDynamicQueueMap(TaskSignal* aKey) {
-  DebugOnly<bool> result = mDynamicPriorityTaskQueues.Remove(aKey);
-  MOZ_ASSERT(result);
-}
-
-void WebTaskQueue::RemoveEntryFromTaskQueueMapIfNeeded() {
-  MOZ_ASSERT(mScheduler);
-  if (mTasks.isEmpty()) {
-    if (mOwnerKey.is<uint32_t>()) {
-      mScheduler->DeleteEntryFromStaticQueueMap(mOwnerKey.as<uint32_t>());
-    } else {
-      MOZ_ASSERT(mOwnerKey.is<TaskSignal*>());
-      mScheduler->DeleteEntryFromDynamicQueueMap(mOwnerKey.as<TaskSignal*>());
+void WebTaskScheduler::RemoveEntryFromTaskQueueMapIfNeeded(
+    const WebTaskQueueHashKey& aHashKey) {
+  MOZ_ASSERT(mWebTaskQueues.Contains(aHashKey));
+  if (auto entry = mWebTaskQueues.Lookup(aHashKey)) {
+    WebTaskQueue& taskQueue = *entry;
+    if (taskQueue.IsEmpty()) {
+      DeleteEntryFromWebTaskQueueMap(aHashKey);
     }
   }
 }
