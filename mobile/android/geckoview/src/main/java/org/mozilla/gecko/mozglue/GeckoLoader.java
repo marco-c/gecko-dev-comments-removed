@@ -413,8 +413,13 @@ public final class GeckoLoader {
   private static native void putenv(String map);
 
   
+  public static final int PROCESS_TYPE_MAIN = 0;
+  public static final int PROCESS_TYPE_CHILD = 1;
+  public static final int PROCESS_TYPE_XPCSHELL = 2;
+
+  
   public static native void nativeRun(
-      String[] args, int[] fds, boolean xpcshell, String outFilePath);
+      String[] args, int[] fds, int processType, String outFilePath);
 
   private static native void loadGeckoLibsNative();
 

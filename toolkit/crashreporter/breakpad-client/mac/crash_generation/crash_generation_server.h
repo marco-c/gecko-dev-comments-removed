@@ -104,6 +104,9 @@ class CrashGenerationServer {
   
   bool Stop();
 
+  
+  void SetPath(const char* dump_path);
+
  private:
   
   bool MakeMinidumpFilename(std::string &outFilename);
@@ -127,6 +130,7 @@ class CrashGenerationServer {
 
   bool generate_dumps_;
 
+  pthread_mutex_t dump_dir_mutex_;
   std::string dump_dir_;
 
   bool started_;
