@@ -26,6 +26,28 @@ namespace cricket {
 
 
 
+class TypedCodecVendor {
+ public:
+  
+  
+  TypedCodecVendor() {}
+  TypedCodecVendor(MediaEngineInterface* media_engine,
+                   MediaType type,
+                   bool is_sender,
+                   bool rtx_enabled);
+  const CodecList& codecs() const { return codecs_; }
+  void set_codecs(const CodecList& codecs) { codecs_ = codecs; }
+  
+  TypedCodecVendor(const TypedCodecVendor& from) = default;
+  TypedCodecVendor& operator=(const TypedCodecVendor& from) = default;
+
+ private:
+  CodecList codecs_;
+};
+
+
+
+
 
 
 
@@ -82,40 +104,33 @@ class CodecVendor {
                         const std::vector<Codec>& recv_codecs) {
     set_video_codecs(CodecList(send_codecs), CodecList(recv_codecs));
   }
-  const CodecList& audio_sendrecv_codecs() const;
+  CodecList audio_sendrecv_codecs() const;
   const CodecList& audio_send_codecs() const;
   const CodecList& audio_recv_codecs() const;
-  const CodecList& video_sendrecv_codecs() const;
+  CodecList video_sendrecv_codecs() const;
   const CodecList& video_send_codecs() const;
   const CodecList& video_recv_codecs() const;
 
  private:
-  const CodecList& GetAudioCodecsForOffer(
+  CodecList GetAudioCodecsForOffer(
       const webrtc::RtpTransceiverDirection& direction) const;
-  const CodecList& GetAudioCodecsForAnswer(
+  CodecList GetAudioCodecsForAnswer(
       const webrtc::RtpTransceiverDirection& offer,
       const webrtc::RtpTransceiverDirection& answer) const;
-  const CodecList& GetVideoCodecsForOffer(
+  CodecList GetVideoCodecsForOffer(
       const webrtc::RtpTransceiverDirection& direction) const;
-  const CodecList& GetVideoCodecsForAnswer(
+  CodecList GetVideoCodecsForAnswer(
       const webrtc::RtpTransceiverDirection& offer,
       const webrtc::RtpTransceiverDirection& answer) const;
-  void ComputeAudioCodecsIntersectionAndUnion();
 
-  void ComputeVideoCodecsIntersectionAndUnion();
+  CodecList all_video_codecs() const;
+  CodecList all_audio_codecs() const;
 
-  CodecList audio_send_codecs_;
-  CodecList audio_recv_codecs_;
-  
-  CodecList audio_sendrecv_codecs_;
-  
-  CodecList all_audio_codecs_;
-  CodecList video_send_codecs_;
-  CodecList video_recv_codecs_;
-  
-  CodecList video_sendrecv_codecs_;
-  
-  CodecList all_video_codecs_;
+  TypedCodecVendor audio_send_codecs_;
+  TypedCodecVendor audio_recv_codecs_;
+
+  TypedCodecVendor video_send_codecs_;
+  TypedCodecVendor video_recv_codecs_;
 };
 
 }  
