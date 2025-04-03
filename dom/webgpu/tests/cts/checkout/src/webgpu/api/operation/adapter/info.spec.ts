@@ -138,13 +138,6 @@ different orders to make sure that they are consistent regardless of the access 
     }
   });
 
-
-
-interface SubgroupProperties extends GPUAdapterInfo {
-  subgroupMinSize?: number;
-  subgroupMaxSize?: number;
-}
-
 const kSubgroupMinSizeBound = 4;
 const kSubgroupMaxSizeBound = 128;
 
@@ -161,7 +154,7 @@ If they exist, they must both exist and be powers of two, and
     const gpu = getGPU(t.rec);
     const adapter = await gpu.requestAdapter();
     assert(adapter !== null);
-    const { subgroupMinSize, subgroupMaxSize } = adapter.info as SubgroupProperties;
+    const { subgroupMinSize, subgroupMaxSize } = adapter.info;
     
     
     

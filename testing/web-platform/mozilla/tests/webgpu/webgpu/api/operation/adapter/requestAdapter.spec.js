@@ -114,12 +114,16 @@ fn(async (t) => {
     ...(forceFallbackAdapter !== undefined && { forceFallbackAdapter })
   });
 
-  
-  if (forceFallbackAdapter && !adapter) {
-    t.skip('No adapter available');
+  if (!adapter) {
+    
+    t.expect(forceFallbackAdapter === true);
+
+    
+    t.skip('No fallback adapter available');
     return;
   }
 
+  t.expect(adapter.info.isFallbackAdapter === Boolean(forceFallbackAdapter));
   await testAdapter(t, adapter);
 });
 

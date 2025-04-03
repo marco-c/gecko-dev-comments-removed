@@ -138,13 +138,6 @@ fn(async (t) => {
   }
 });
 
-
-
-
-
-
-
-
 const kSubgroupMinSizeBound = 4;
 const kSubgroupMaxSizeBound = 128;
 
