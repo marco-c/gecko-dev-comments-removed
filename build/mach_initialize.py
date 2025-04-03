@@ -155,7 +155,7 @@ def initialize(topsrcdir, args=()):
     
     
     
-    if args and args[0] == "environment":
+    if args and (args[0] == "environment" or "--quiet" in args):
         quiet = True
     else:
         quiet = False
