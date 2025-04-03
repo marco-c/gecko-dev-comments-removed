@@ -140,6 +140,9 @@ class RootActor extends Actor {
       
       
       
+      
+      
+      
       supportsEnableWindowGlobalThreadActors: true,
     };
   }
