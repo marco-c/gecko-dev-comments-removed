@@ -53,7 +53,9 @@ EncoderInfoSettings::GetDefaultSinglecastBitrateLimits(
             {1280 * 720, 576000, 0, 1536000}};
   }
 
-  if (codec_type == kVideoCodecVP9) {
+  if (codec_type == kVideoCodecVP9 || codec_type == kVideoCodecH265) {
+    
+    
     
     
     
@@ -85,18 +87,28 @@ EncoderInfoSettings::GetDefaultSinglecastBitrateLimitsForResolution(
 
 
 
-
-
 std::vector<VideoEncoder::ResolutionBitrateLimits>
-EncoderInfoSettings::GetDefaultSinglecastBitrateLimitsWhenQpIsUntrusted() {
-  
-  return {{0 * 0, 0, 0, 0},
-          {320 * 180, 0, 30000, 300000},
-          {480 * 270, 300000, 30000, 500000},
-          {640 * 360, 500000, 30000, 800000},
-          {960 * 540, 800000, 30000, 1500000},
-          {1280 * 720, 1500000, 30000, 2500000},
-          {1920 * 1080, 2500000, 30000, 4000000}};
+EncoderInfoSettings::GetDefaultSinglecastBitrateLimitsWhenQpIsUntrusted(
+    VideoCodecType codec_type) {
+  if (codec_type == kVideoCodecH265) {
+    
+    return {{0 * 0, 0, 0, 0},
+            {320 * 180, 0, 30000, 150000},
+            {480 * 270, 150000, 30000, 300000},
+            {640 * 360, 300000, 30000, 420000},
+            {960 * 540, 420000, 30000, 1000000},
+            {1280 * 720, 1000000, 30000, 1500000},
+            {1920 * 1080, 1500000, 30000, 3300000}};
+  } else {
+    
+    return {{0 * 0, 0, 0, 0},
+            {320 * 180, 0, 30000, 300000},
+            {480 * 270, 300000, 30000, 500000},
+            {640 * 360, 500000, 30000, 800000},
+            {960 * 540, 800000, 30000, 1500000},
+            {1280 * 720, 1500000, 30000, 2500000},
+            {1920 * 1080, 2500000, 30000, 4000000}};
+  }
 }
 
 

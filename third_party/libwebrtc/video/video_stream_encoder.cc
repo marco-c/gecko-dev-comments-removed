@@ -386,10 +386,24 @@ VideoEncoder::EncoderInfo GetEncoderInfoWithBitrateLimitUpdate(
     const VideoEncoder::EncoderInfo& info,
     const VideoEncoderConfig& encoder_config,
     bool default_limits_allowed) {
-  if (!default_limits_allowed || !info.resolution_bitrate_limits.empty() ||
+  bool are_all_bitrate_limits_zero = true;
+  
+  
+  
+  if (!info.resolution_bitrate_limits.empty()) {
+    are_all_bitrate_limits_zero = std::all_of(
+        info.resolution_bitrate_limits.begin(),
+        info.resolution_bitrate_limits.end(),
+        [](const VideoEncoder::ResolutionBitrateLimits& limit) {
+          return limit.max_bitrate_bps == 0 && limit.min_bitrate_bps == 0;
+        });
+  }
+
+  if (!default_limits_allowed || !are_all_bitrate_limits_zero ||
       encoder_config.simulcast_layers.size() <= 1) {
     return info;
   }
+
   
   
   VideoEncoder::EncoderInfo new_info = info;
@@ -1071,7 +1085,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     const std::vector<VideoEncoder::ResolutionBitrateLimits>& bitrate_limits =
         encoder_->GetEncoderInfo().resolution_bitrate_limits.empty()
             ? EncoderInfoSettings::
-                  GetDefaultSinglecastBitrateLimitsWhenQpIsUntrusted()
+                  GetDefaultSinglecastBitrateLimitsWhenQpIsUntrusted(
+                      encoder_config_.codec_type)
             : encoder_->GetEncoderInfo().resolution_bitrate_limits;
 
     

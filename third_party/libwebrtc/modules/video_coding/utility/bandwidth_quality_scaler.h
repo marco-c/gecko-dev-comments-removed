@@ -63,7 +63,8 @@ class BandwidthQualityScaler {
   
   void SetResolutionBitrateLimits(
       const std::vector<VideoEncoder::ResolutionBitrateLimits>&
-          resolution_bitrate_limits);
+          resolution_bitrate_limits,
+      VideoCodecType codec_type);
 
  private:
   enum class CheckBitrateResult {
