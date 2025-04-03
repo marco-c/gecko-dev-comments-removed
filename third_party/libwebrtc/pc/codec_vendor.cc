@@ -421,11 +421,14 @@ void NegotiateVideoCodecLevelsForOffer(
 #endif
 }
 
-void NegotiateCodecs(const CodecList& local_codecs,
-                     const CodecList& offered_codecs,
-                     CodecList& negotiated_codecs,
-                     bool keep_offer_order) {
+RTCError NegotiateCodecs(const CodecList& local_codecs,
+                         const CodecList& offered_codecs,
+                         CodecList& negotiated_codecs_out,
+                         bool keep_offer_order) {
   std::map<int, int> pt_mapping_table;
+  
+  
+  std::vector<Codec> negotiated_codecs;
   for (const Codec& ours : local_codecs) {
     std::optional<Codec> theirs =
         FindMatchingCodec(local_codecs, offered_codecs, ours);
@@ -506,6 +509,12 @@ void NegotiateCodecs(const CodecList& local_codecs,
       return payload_type_preferences[a.id] > payload_type_preferences[b.id];
     });
   }
+  RTCErrorOr<CodecList> result = CodecList::Create(negotiated_codecs);
+  if (!result.ok()) {
+    return result.MoveError();
+  }
+  negotiated_codecs_out = result.MoveValue();
+  return RTCError::OK();
 }
 
 }  
@@ -674,9 +683,12 @@ webrtc::RTCErrorOr<Codecs> CodecVendor::GetNegotiatedCodecsForAnswer(
   if (!checked_codecs_from_offer.ok()) {
     return checked_codecs_from_offer.MoveError();
   }
-  NegotiateCodecs(filtered_codecs, checked_codecs_from_offer.value(),
-                  negotiated_codecs,
-                  media_description_options.codec_preferences.empty());
+  auto error = NegotiateCodecs(
+      filtered_codecs, checked_codecs_from_offer.value(), negotiated_codecs,
+      media_description_options.codec_preferences.empty());
+  if (!error.ok()) {
+    return error;
+  }
   return negotiated_codecs.codecs();
 }
 
@@ -951,8 +963,10 @@ CodecList CodecVendor::audio_sendrecv_codecs() const {
   
   
   CodecList audio_sendrecv_codecs;
-  NegotiateCodecs(audio_recv_codecs_.codecs(), audio_send_codecs_.codecs(),
-                  audio_sendrecv_codecs, true);
+  auto error =
+      NegotiateCodecs(audio_recv_codecs_.codecs(), audio_send_codecs_.codecs(),
+                      audio_sendrecv_codecs, true);
+  RTC_DCHECK(error.ok());
   return audio_sendrecv_codecs;
 }
 
@@ -966,8 +980,10 @@ CodecList CodecVendor::video_sendrecv_codecs() const {
   
   
   CodecList video_sendrecv_codecs;
-  NegotiateCodecs(video_recv_codecs_.codecs(), video_send_codecs_.codecs(),
-                  video_sendrecv_codecs, true);
+  auto error =
+      NegotiateCodecs(video_recv_codecs_.codecs(), video_send_codecs_.codecs(),
+                      video_sendrecv_codecs, true);
+  RTC_DCHECK(error.ok());
   return video_sendrecv_codecs;
 }
 

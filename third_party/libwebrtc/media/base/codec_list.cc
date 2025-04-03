@@ -71,13 +71,14 @@ RTCError CheckInputConsistency(const std::vector<Codec>& codecs) {
           LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
                                "Non-numeric argument to rtx apt parameter");
         }
-        
-        
-        
-        
         if (pt_to_index.count(associated_pt) != 1) {
           RTC_LOG(LS_WARNING)
-              << "Surprising condition: RTX codec APT not found: " << codec;
+              << "Surprising condition: RTX codec APT not found: " << codec
+              << " points to a PT that occurs "
+              << pt_to_index.count(associated_pt) << " times";
+          LOG_AND_RETURN_ERROR(
+              RTCErrorType::INVALID_PARAMETER,
+              "PT pointed to by rtx apt parameter does not exist");
         }
         
         
