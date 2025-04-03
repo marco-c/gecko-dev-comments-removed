@@ -8,6 +8,8 @@
 
 
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 
 #include "modules/audio_coding/codecs/g711/audio_decoder_pcm.h"

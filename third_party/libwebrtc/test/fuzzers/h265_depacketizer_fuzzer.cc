@@ -7,7 +7,11 @@
 
 
 
+#include <cstddef>
+#include <cstdint>
+
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_h265.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
 void FuzzOneInput(const uint8_t* data, size_t size) {

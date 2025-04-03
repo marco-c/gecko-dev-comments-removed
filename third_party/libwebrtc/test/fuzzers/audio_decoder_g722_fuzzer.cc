@@ -8,6 +8,10 @@
 
 
 
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+
 #include "modules/audio_coding/codecs/g722/audio_decoder_g722.h"
 #include "test/fuzzers/audio_decoder_fuzzer.h"
 

@@ -7,6 +7,9 @@
 
 
 
+#include <cstddef>
+#include <cstdint>
+
 #include "api/array_view.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_vp8.h"

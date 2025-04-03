@@ -8,11 +8,12 @@
 
 
 
+#include <cstddef>
+#include <cstdint>
 #include <string>
 
 #include "api/audio/echo_canceller3_config.h"
 #include "modules/audio_processing/test/echo_canceller3_config_json.h"
-#include "test/fuzzers/fuzz_data_helper.h"
 
 namespace webrtc {
 void FuzzOneInput(const uint8_t* data, size_t size) {

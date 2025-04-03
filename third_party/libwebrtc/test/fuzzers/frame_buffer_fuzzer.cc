@@ -8,6 +8,11 @@
 
 
 
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <utility>
+
 #include "api/array_view.h"
 #include "api/video/encoded_frame.h"
 #include "api/video/frame_buffer.h"

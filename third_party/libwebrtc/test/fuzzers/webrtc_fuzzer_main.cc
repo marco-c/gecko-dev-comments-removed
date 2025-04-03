@@ -12,6 +12,9 @@
 
 
 
+#include <cstddef>
+#include <cstdint>
+
 #include "rtc_base/logging.h"
 
 namespace {
