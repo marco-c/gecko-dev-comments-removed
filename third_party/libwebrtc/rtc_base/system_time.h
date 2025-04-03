@@ -13,12 +13,21 @@
 
 #include <cstdint>
 
-namespace rtc {
+namespace webrtc {
 
 
 
 int64_t SystemTimeNanos();
 
 }  
+
+
+#define RTC_SYSTEM_TIME_IN_WEBRTC_NAMESPACE 1
+
+
+
+namespace rtc {
+using ::webrtc::SystemTimeNanos;
+}
 
 #endif  
