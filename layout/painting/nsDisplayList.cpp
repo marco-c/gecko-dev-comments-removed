@@ -2343,12 +2343,13 @@ struct FramesWithDepth {
   explicit FramesWithDepth(float aDepth) : mDepth(aDepth) {}
 
   bool operator<(const FramesWithDepth& aOther) const {
-    if (!FuzzyEqual(mDepth, aOther.mDepth, 0.1f)) {
-      
-      
-      return mDepth > aOther.mDepth;
-    }
-    return false;
+    
+    
+    
+    
+    double lDepth = round(mDepth * 8.);
+    double rDepth = round(aOther.mDepth * 8.);
+    return lDepth > rDepth;
   }
   bool operator==(const FramesWithDepth& aOther) const {
     return this == &aOther;
