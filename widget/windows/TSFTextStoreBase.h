@@ -12,6 +12,7 @@
 #include "WinUtils.h"
 #include "WritingModes.h"
 
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/widget/IMEData.h"
@@ -98,6 +99,10 @@ class TSFTextStoreBase : public ITextStoreACP {
 
   [[nodiscard]] bool GetScreenExtInternal(RECT& aScreenExt);
 
+  [[nodiscard]] virtual Maybe<WritingMode> GetWritingMode() {
+    return Nothing();
+  }
+
   
   
   
@@ -117,24 +122,12 @@ class TSFTextStoreBase : public ITextStoreACP {
 
   void PrintExposingURL(const char* aPrefix) const;
 
-  
-  RefPtr<nsWindow> mWidget;
-  
-  RefPtr<TextEventDispatcher> mDispatcher;
-  
-  RefPtr<ITfDocumentMgr> mDocumentMgr;
-  
-  DWORD mEditCookie = 0;
-  
-  RefPtr<ITfContext> mContext;
-  
-  RefPtr<ITextStoreACPSink> mSink;
-  
-  DWORD mSinkMask = 0;
-  
-  DWORD mLock = 0;
-  
-  DWORD mLockQueued = 0;
+  HRESULT HandleRequestAttrs(DWORD aFlags, ULONG aFilterCount,
+                             const TS_ATTRID* aFilterAttrs,
+                             int32_t aNumOfSupportedAttrs);
+  HRESULT RetrieveRequestedAttrsInternal(ULONG ulCount, TS_ATTRVAL* paAttrVals,
+                                         ULONG* pcFetched,
+                                         int32_t aNumOfSupportedAttrs);
 
   
 
@@ -157,10 +150,33 @@ class TSFTextStoreBase : public ITextStoreACP {
   }
 
   
+  RefPtr<nsWindow> mWidget;
+  
+  RefPtr<TextEventDispatcher> mDispatcher;
+  
+  RefPtr<ITfDocumentMgr> mDocumentMgr;
+  
+  DWORD mEditCookie = 0;
+  
+  RefPtr<ITfContext> mContext;
+  
+  RefPtr<ITextStoreACPSink> mSink;
+  
+  DWORD mSinkMask = 0;
+  
+  DWORD mLock = 0;
+  
+  DWORD mLockQueued = 0;
+
+  
   nsTArray<InputScope> mInputScopes;
 
   
   nsString mDocumentURL;
+
+  bool mRequestedAttrs[TSFUtils::NUM_OF_SUPPORTED_ATTRS] = {false};
+
+  bool mRequestedAttrValues = false;
 
   
   
