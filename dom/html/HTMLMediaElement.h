@@ -1079,8 +1079,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  void NoSupportedMediaSourceError(
-      const nsACString& aErrorDetails = nsCString());
+  void NoSupportedMediaSourceError(const nsACString& aErrorDetails);
 
   
 
