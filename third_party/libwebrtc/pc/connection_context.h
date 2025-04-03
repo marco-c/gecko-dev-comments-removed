@@ -30,10 +30,10 @@
 #include "rtc_base/socket_factory.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
+#include "rtc_base/unique_id_generator.h"
 
 namespace rtc {
 class BasicPacketSocketFactory;
-class UniqueRandomIdGenerator;
 }  
 
 namespace webrtc {
@@ -91,7 +91,7 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
     RTC_DCHECK_RUN_ON(worker_thread());
     return call_factory_.get();
   }
-  rtc::UniqueRandomIdGenerator* ssrc_generator() { return &ssrc_generator_; }
+  UniqueRandomIdGenerator* ssrc_generator() { return &ssrc_generator_; }
   
   
   
@@ -129,7 +129,7 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
   
   
   
-  rtc::UniqueRandomIdGenerator ssrc_generator_;
+  UniqueRandomIdGenerator ssrc_generator_;
   std::unique_ptr<rtc::NetworkMonitorFactory> const network_monitor_factory_
       RTC_GUARDED_BY(signaling_thread_);
   std::unique_ptr<rtc::NetworkManager> default_network_manager_

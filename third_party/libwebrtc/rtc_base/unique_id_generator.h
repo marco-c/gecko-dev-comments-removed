@@ -21,7 +21,7 @@
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/no_unique_address.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -53,7 +53,7 @@ class UniqueNumberGenerator {
   bool AddKnownId(TIntegral value);
 
  private:
-  RTC_NO_UNIQUE_ADDRESS webrtc::SequenceChecker sequence_checker_{
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_{
       webrtc::SequenceChecker::kDetached};
   static_assert(std::is_integral<TIntegral>::value, "Must be integral type.");
   TIntegral counter_ RTC_GUARDED_BY(sequence_checker_);
@@ -88,7 +88,7 @@ class UniqueRandomIdGenerator {
  private:
   
   
-  webrtc::Mutex mutex_;
+  Mutex mutex_;
   std::set<uint32_t> known_ids_ RTC_GUARDED_BY(&mutex_);
 };
 
@@ -145,6 +145,14 @@ bool UniqueNumberGenerator<TIntegral>::AddKnownId(TIntegral value) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   return known_ids_.insert(value).second;
 }
+}  
+
+
+
+namespace rtc {
+using ::webrtc::UniqueNumberGenerator;
+using ::webrtc::UniqueRandomIdGenerator;
+using ::webrtc::UniqueStringGenerator;
 }  
 
 #endif  

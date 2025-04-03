@@ -25,21 +25,21 @@
 using ::testing::IsEmpty;
 using ::testing::Test;
 
-namespace rtc {
+namespace webrtc {
 namespace {
 
-class FakeTaskQueue : public webrtc::TaskQueueBase {
+class FakeTaskQueue : public TaskQueueBase {
  public:
   FakeTaskQueue() : task_queue_setter_(this) {}
 
   void Delete() override {}
   void PostTaskImpl(absl::AnyInvocable<void() &&> task,
                     const PostTaskTraits& traits,
-                    const webrtc::Location& location) override {}
+                    const Location& location) override {}
   void PostDelayedTaskImpl(absl::AnyInvocable<void() &&> task,
-                           webrtc::TimeDelta delay,
+                           TimeDelta delay,
                            const PostDelayedTaskTraits& traits,
-                           const webrtc::Location& location) override {}
+                           const Location& location) override {}
 
  private:
   CurrentTaskQueueSetter task_queue_setter_;

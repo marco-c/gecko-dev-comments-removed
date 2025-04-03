@@ -641,7 +641,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   
   
-  rtc::UniqueStringGenerator mid_generator_ RTC_GUARDED_BY(signaling_thread());
+  UniqueStringGenerator mid_generator_ RTC_GUARDED_BY(signaling_thread());
 
   
   std::set<std::string> pending_ice_restarts_
