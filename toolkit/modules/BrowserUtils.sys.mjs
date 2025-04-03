@@ -103,6 +103,13 @@ function stringPrefToSet(prefVal) {
   );
 }
 
+
+
+
+
+
+
+
 export var BrowserUtils = {
   
 
@@ -221,7 +228,7 @@ export var BrowserUtils = {
 
   promiseObserved(topic, test = () => true) {
     return new Promise(resolve => {
-      let observer = (subject, topic, data) => {
+      let observer = (subject, _topic, data) => {
         if (test(subject, data)) {
           Services.obs.removeObserver(observer, topic);
           resolve({ subject, data });
@@ -424,6 +431,7 @@ export var BrowserUtils = {
 
 
 
+
   whereToOpenLink(e, ignoreButton, ignoreAlt) {
     
     
@@ -492,15 +500,6 @@ export var BrowserUtils = {
   },
 
   
-
-
-
-
-
-
-
-
-
 
 
 
