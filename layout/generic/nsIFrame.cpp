@@ -3577,14 +3577,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
   }
 
   
-  if (HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
-      StaticPrefs::dom_viewTransitions_live_capture()) {
-    resultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
-        aBuilder, this, &resultList, containerItemASR,  false);
-    createdContainer = true;
-  }
-
-  
   
   
   
@@ -3643,6 +3635,14 @@ void nsIFrame::BuildDisplayListForStackingContext(
     resultList.AppendNewToTop<nsDisplayOpacity>(
         aBuilder, this, &resultList, containerItemASR, opacityItemForEventsOnly,
         needsActiveOpacityLayer, usingBackdropFilter);
+    createdContainer = true;
+  }
+
+  
+  if (HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
+      StaticPrefs::dom_viewTransitions_live_capture()) {
+    resultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
+        aBuilder, this, &resultList, containerItemASR,  false);
     createdContainer = true;
   }
 
