@@ -77,6 +77,25 @@ class TransformableFrameInterface {
   
   virtual Direction GetDirection() const { return Direction::kUnknown; }
   virtual std::string GetMimeType() const = 0;
+
+  
+  
+  virtual std::optional<Timestamp> ReceiveTime() const = 0;
+
+  
+  
+  
+  
+  
+  virtual std::optional<Timestamp> CaptureTime() const = 0;
+
+  
+  
+  
+  
+  
+  
+  virtual std::optional<TimeDelta> SenderCaptureTimeOffset() const = 0;
 };
 
 class TransformableVideoFrameInterface : public TransformableFrameInterface {
@@ -114,25 +133,6 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
   
   
   virtual std::optional<uint8_t> AudioLevel() const = 0;
-
-  
-  
-  virtual std::optional<Timestamp> ReceiveTime() const = 0;
-
-  
-  
-  
-  
-  
-  virtual std::optional<Timestamp> CaptureTime() const = 0;
-
-  
-  
-  
-  
-  
-  
-  virtual std::optional<TimeDelta> SenderCaptureTimeOffset() const = 0;
 };
 
 
