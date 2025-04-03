@@ -2470,7 +2470,13 @@ float nsRFPService::GetDefaultPixelDensity() { return 2.0f; }
 
 
 double nsRFPService::GetDevicePixelRatioAtZoom(float aZoom) {
-  return double(AppUnitsPerCSSPixel()) /
-         double(NSToIntRound(AppUnitsPerCSSPixel() / GetDefaultPixelDensity() /
-                             aZoom));
+  
+  
+  int32_t unzoomedAppUnits =
+      NS_lround(AppUnitsPerCSSPixel() / GetDefaultPixelDensity());
+  int32_t appUnitsPerDevPixel =
+      aZoom == 1.0f
+          ? unzoomedAppUnits
+          : std::max(1, NSToIntRound(float(unzoomedAppUnits) / aZoom));
+  return double(AppUnitsPerCSSPixel()) / double(appUnitsPerDevPixel);
 }
