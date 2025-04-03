@@ -181,7 +181,6 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
   
   HDC hDC = ::BeginPaint(mWnd, &ps);
   LayoutDeviceIntRegion region = GetRegionToPaint(ps, hDC);
-  LayoutDeviceIntRegion regionToClear;
   
   if (mTransparencyMode == TransparencyMode::Transparent) {
     auto translucentRegion = GetTranslucentRegion();
@@ -192,25 +191,22 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
     
     
     
-    regionToClear = translucentRegion;
+    LayoutDeviceIntRegion regionToClear = translucentRegion;
     if (!mClearedRegion.IsEmpty()) {
       mClearedRegion.SubOut(region);
       regionToClear.SubOut(mClearedRegion);
     }
     region.OrWith(translucentRegion);
     mClearedRegion = std::move(translucentRegion);
-  }
-  if (mNeedsNCAreaClear) {
-    regionToClear.OrWith(ComputeNonClientRegion());
-    mNeedsNCAreaClear = false;
-  }
-  if (!regionToClear.IsEmpty()) {
-    auto black = reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
-    
-    
-    for (auto it = regionToClear.RectIter(); !it.Done(); it.Next()) {
-      auto rect = WinUtils::ToWinRect(it.Get());
-      ::FillRect(hDC, &rect, black);
+
+    if (!regionToClear.IsEmpty()) {
+      auto black = reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
+      
+      
+      for (auto it = regionToClear.RectIter(); !it.Done(); it.Next()) {
+        auto rect = WinUtils::ToWinRect(it.Get());
+        ::FillRect(hDC, &rect, black);
+      }
     }
   }
 

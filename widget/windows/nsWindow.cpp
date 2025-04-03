@@ -945,9 +945,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 
       
       SetCustomTitlebar(true);
-      
-      
-      mNeedsNCAreaClear = false;
 
       
       
@@ -2685,19 +2682,6 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     
     
     metrics.mOffset.top = metrics.mCaptionHeight;
-
-    if (StaticPrefs::widget_windows_hidden_taskbar_hack_size()) {
-      if (mozilla::Maybe<UINT> maybeEdge = GetHiddenTaskbarEdge()) {
-        auto edge = maybeEdge.value();
-        if (ABE_LEFT == edge) {
-          metrics.mOffset.left -= kHiddenTaskbarSize;
-        } else if (ABE_RIGHT == edge) {
-          metrics.mOffset.right -= kHiddenTaskbarSize;
-        } else if (ABE_BOTTOM == edge || ABE_TOP == edge) {
-          metrics.mOffset.bottom -= kHiddenTaskbarSize;
-        }
-      }
-    }
   } else if (mPIPWindow &&
              !StaticPrefs::widget_windows_pip_decorations_enabled()) {
     metrics.mOffset = metrics.DefaultMargins();
@@ -2706,12 +2690,6 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   }
 
   UpdateOpaqueRegionInternal();
-  if (StaticPrefs::widget_windows_hidden_taskbar_hack_paint()) {
-    
-    
-    mNeedsNCAreaClear = true;
-  }
-
   if (aReflowWindow) {
     
     
@@ -2779,26 +2757,6 @@ void nsWindow::SetCustomTitlebar(bool aCustomTitlebar) {
 
 void nsWindow::SetResizeMargin(mozilla::LayoutDeviceIntCoord aResizeMargin) {
   mCustomResizeMargin = aResizeMargin;
-}
-
-LayoutDeviceIntRegion nsWindow::ComputeNonClientRegion() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  auto winRect = LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetSize());
-  LayoutDeviceIntRegion region{winRect};
-  winRect.Deflate(mCustomNonClientMetrics.DefaultMargins());
-  region.SubOut(winRect);
-  return region;
 }
 
 
@@ -7213,9 +7171,9 @@ LayoutDeviceIntRegion nsWindow::GetTranslucentRegion() {
   if (mTransparencyMode != TransparencyMode::Transparent) {
     return {};
   }
-  const auto winRect = LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetSize());
-  LayoutDeviceIntRegion translucentRegion{winRect};
-  translucentRegion.SubOut(mOpaqueRegion.MovedBy(GetClientOffset()));
+  const auto clientRect = LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetClientSize());
+  LayoutDeviceIntRegion translucentRegion{clientRect};
+  translucentRegion.SubOut(mOpaqueRegion);
   return translucentRegion;
 }
 

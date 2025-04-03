@@ -554,7 +554,6 @@ class nsWindow final : public nsBaseWidget,
   bool UpdateNonClientMargins(bool aReflowWindow = true);
   void UpdateDarkModeToolbar();
   void ResetLayout();
-  LayoutDeviceIntRegion ComputeNonClientRegion();
   HWND GetOwnerWnd() const { return ::GetWindow(mWnd, GW_OWNER); }
   bool IsOwnerForegroundWindow() const {
     HWND owner = GetOwnerWnd();
@@ -646,7 +645,6 @@ class nsWindow final : public nsBaseWidget,
   LayoutDeviceIntRegion GetOpaqueRegionForTesting() const override {
     return mOpaqueRegion;
   }
-  
   
   LayoutDeviceIntRegion GetTranslucentRegion();
   void MaybeInvalidateTranslucentRegion();
@@ -941,10 +939,6 @@ class nsWindow final : public nsBaseWidget,
       mWindowBtnRect;
 
   mozilla::DataMutex<Desktop> mDesktopId;
-
-  
-  
-  bool mNeedsNCAreaClear = false;
 
   friend class nsWindowGfx;
 
