@@ -324,6 +324,7 @@
     #smartTabGroupingManager;
     #suggestionsOptinContainer;
     #suggestionsOptin;
+    #suggestionsRunToken;
 
     constructor() {
       super();
@@ -505,6 +506,7 @@
       this.#suggestionsOptin.addEventListener(
         "MlModelOptinCancelDownload",
         () => {
+          this.#suggestionsRunToken = null;
           this.#handleMLOptinTelemetry("step2-optin-cancel-download");
           this.#smartTabGroupingManager.terminateProcess();
           this.suggestionState = this.createMode
@@ -600,6 +602,7 @@
       );
       this.#cancelSuggestionsButton.addEventListener("click", () => {
         this.#handleMlTelemetry("cancel");
+        this.#suggestionsRunToken = null;
         this.close();
       });
       this.#suggestionsSeparator = this.querySelector(
@@ -620,6 +623,7 @@
         "#tab-group-suggestions-load-cancel"
       );
       this.#suggestionsLoadCancel.addEventListener("click", () => {
+        this.#suggestionsRunToken = null;
         this.#handleLoadSuggestionsCancel();
       });
     }
@@ -914,7 +918,8 @@
     }
 
     #handleLoadSuggestionsCancel() {
-      
+      this.#suggestionsRunToken = null;
+
       this.suggestionState = this.createMode
         ? MozTabbrowserTabGroupMenu.State.CREATE_AI_INITIAL
         : MozTabbrowserTabGroupMenu.State.EDIT_AI_INITIAL;
@@ -970,14 +975,20 @@
 
       
       this.#suggestionsOptin.progressStatus = 0;
+      const runToken = Date.now();
+      this.#suggestionsRunToken = runToken;
       await this.#smartTabGroupingManager.preloadAllModels(prog => {
         this.#suggestionsOptin.progressStatus = prog.percentage;
       });
-
       
       this.#setFormToDisabled(false);
       this.#suggestionsOptin.isHidden = true;
       this.#suggestionsOptin.isLoading = false;
+
+      if (runToken !== this.#suggestionsRunToken) {
+        
+        return;
+      }
 
       
       this.#handleMLOptinTelemetry("step3-optin-completed");
@@ -987,12 +998,18 @@
 
     async #handleSmartSuggest() {
       
+      const runToken = Date.now();
+      this.#suggestionsRunToken = runToken;
+
       this.suggestionState = MozTabbrowserTabGroupMenu.State.LOADING;
       const tabs = await this.#smartTabGroupingManager.smartTabGroupingForGroup(
         this.activeGroup,
         gBrowser.tabs
       );
-
+      if (this.#suggestionsRunToken != runToken) {
+        
+        return;
+      }
       if (!tabs.length) {
         
         this.suggestionState = this.#createMode
