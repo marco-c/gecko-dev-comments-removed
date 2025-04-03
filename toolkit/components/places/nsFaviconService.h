@@ -12,6 +12,7 @@
 #include "FaviconHelpers.h"
 #include "imgITools.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/storage.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
@@ -76,6 +77,22 @@ class nsFaviconService final : public nsIFaviconService {
 
   nsresult GetFaviconDataAsync(const nsCString& aFaviconSpec,
                                mozIStorageStatementCallback* aCallback);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  RefPtr<mozilla::places::FaviconPromise> AsyncGetFaviconForPage(
+      nsIURI* aPageURI, uint16_t aPreferredWidth = 0);
 
   
 

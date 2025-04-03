@@ -187,6 +187,26 @@ interface nsIFaviconService : nsISupports
 
 
 
+
+  [implicit_jscontext, must_use]
+  Promise getFaviconForPage(in nsIURI aPageURI, [optional]
+                            in unsigned short aPreferredWidth);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   void copyFavicons(in nsIURI aFromPageURI,
                     in nsIURI aToPageURI,
                     in unsigned long aFaviconLoadType,
@@ -233,6 +253,35 @@ interface nsIFaviconDataCallback : nsISupports
                   [const,array,size_is(aDataLen)] in octet aData,
                   in AUTF8String aMimeType,
                   in unsigned short aWidth);
+};
+
+[scriptable, uuid(c23c74d6-9c36-4223-a9c4-c8b95526f4d3)]
+interface nsIFavicon : nsISupports
+{
+  
+
+
+  readonly attribute nsIURI uri;
+
+  
+
+
+  readonly attribute nsIURI dataURI;
+
+  
+
+
+  readonly attribute Array<octet> rawData;
+
+  
+
+
+  readonly attribute ACString mimeType;
+
+  
+
+
+  readonly attribute unsigned short width;
 };
 
 %{C++
