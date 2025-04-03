@@ -5109,9 +5109,12 @@ void nsFocusManager::SetFocusedBrowsingContext(BrowsingContext* aContext,
   }
   MOZ_ASSERT(!ActionIdComparableAndLower(
       aActionId, mActionIdForFocusedBrowsingContextInContent));
+
+  const bool shouldSendSetFocusedBrowsingContext =
+      aContext && mFocusedBrowsingContextInContent != aContext;
   mFocusedBrowsingContextInContent = aContext;
   mActionIdForFocusedBrowsingContextInContent = aActionId;
-  if (aContext) {
+  if (shouldSendSetFocusedBrowsingContext) {
     
     
     MOZ_ASSERT(aContext->IsInProcess());
