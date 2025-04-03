@@ -8,6 +8,58 @@ add_setup(async function setup() {
   registerCleanupFunction(cleanup);
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function childSharedDataChanged(browser) {
+  const MESSAGE = "browser_experimentapi_child:shared-data-changed";
+
+  const deferred = Promise.withResolvers();
+  const listener = () => {
+    deferred.resolve();
+    Services.ppmm.removeMessageListener(MESSAGE, listener);
+  };
+
+  Services.ppmm.addMessageListener(MESSAGE, listener);
+
+  await SpecialPowers.spawn(browser, [MESSAGE], async MESSAGE => {
+    Services.cpmm.sharedData.addEventListener(
+      "change",
+      async () => {
+        await Services.cpmm.sendAsyncMessage(MESSAGE);
+      },
+      { once: true }
+    );
+  });
+
+  
+  
+  
+  return { promise: deferred.promise };
+}
+
 add_task(async function testGetExperimentFromChildNewEnrollment() {
   const browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
 
@@ -15,6 +67,7 @@ add_task(async function testGetExperimentFromChildNewEnrollment() {
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser: browserWindow.gBrowser,
     url: "https://example.com",
+    forceNewProcess: true,
   });
   const browser = tab.linkedBrowser;
 
@@ -45,6 +98,8 @@ add_task(async function testGetExperimentFromChildNewEnrollment() {
     );
   });
 
+  let childUpdated = await childSharedDataChanged(browser);
+
   
   await ExperimentAPI._manager.enroll(
     ExperimentFakes.recipe("foo", {
@@ -68,6 +123,16 @@ add_task(async function testGetExperimentFromChildNewEnrollment() {
       ],
     })
   );
+
+  
+  
+  
+  
+  
+  
+  
+  Services.ppmm.sharedData.flush();
+  await childUpdated.promise;
 
   
   await SpecialPowers.spawn(browser, [], async () => {
@@ -114,8 +179,12 @@ add_task(async function testGetExperimentFromChildNewEnrollment() {
     }
   });
 
+  childUpdated = await childSharedDataChanged(browser);
   
   ExperimentAPI._manager.unenroll("foo");
+  
+  Services.ppmm.sharedData.flush();
+  await childUpdated.promise;
 
   
   await SpecialPowers.spawn(browser, [], async () => {
@@ -152,11 +221,17 @@ add_task(async function testGetExperimentFromChildNewEnrollment() {
   ExperimentAPI._manager.store._deleteForTests("foo");
 
   BrowserTestUtils.removeTab(tab);
+
+  Services.ppmm.sharedData.flush();
 });
 
 add_task(async function testGetExperimentFromChildExistingEnrollment() {
   const browserWindow =
     Services.wm.getMostRecentBrowserWindow("navigator:browser");
+
+  
+  
+  Services.ppmm.releaseCachedProcesses();
 
   await ExperimentAPI._manager.enroll(
     ExperimentFakes.recipe("qux", {
@@ -182,9 +257,15 @@ add_task(async function testGetExperimentFromChildExistingEnrollment() {
   );
 
   
+  
+  
+  Services.ppmm.sharedData.flush();
+
+  
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser: browserWindow.gBrowser,
     url: "https://example.com",
+    forceNewProcess: true,
   });
   const browser = tab.linkedBrowser;
 
@@ -233,4 +314,6 @@ add_task(async function testGetExperimentFromChildExistingEnrollment() {
   ExperimentAPI._manager.unenroll("qux");
   ExperimentAPI._manager.store._deleteForTests("qux");
   BrowserTestUtils.removeTab(tab);
+
+  Services.ppmm.sharedData.flush();
 });
