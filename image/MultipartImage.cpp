@@ -18,6 +18,44 @@ namespace image {
 
 
 
+static void FinishPotentialVectorImage(Image* aImage) {
+  if (!aImage || aImage->GetType() != imgIContainer::TYPE_VECTOR) {
+    return;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  RefPtr<ProgressTracker> tracker = aImage->GetProgressTracker();
+  if (tracker && !(tracker->GetProgress() & FLAG_LOAD_COMPLETE)) {
+    Progress loadProgress =
+        LoadCompleteProgress( false,  false,
+                              NS_OK);
+    tracker->SyncNotifyProgress(loadProgress | FLAG_SIZE_AVAILABLE);
+  }
+}
+
 class NextPartObserver : public IProgressObserver {
  public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(NextPartObserver)
@@ -42,42 +80,9 @@ class NextPartObserver : public IProgressObserver {
     mImage->RequestDecodeForSize(gfx::IntSize(0, 0),
                                  imgIContainer::FLAG_SYNC_DECODE);
 
-    if (mImage && mImage->GetType() == imgIContainer::TYPE_VECTOR) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-
-      RefPtr<ProgressTracker> tracker = mImage->GetProgressTracker();
-      if (tracker && !(tracker->GetProgress() & FLAG_LOAD_COMPLETE)) {
-        Progress loadProgress =
-            LoadCompleteProgress( false,  false,
-                                  NS_OK);
-        tracker->SyncNotifyProgress(loadProgress | FLAG_SIZE_AVAILABLE);
-      }
-    }
+    
+    
+    FinishPotentialVectorImage(mImage);
 
     
     
@@ -244,6 +249,12 @@ void MultipartImage::FinishTransition() {
 
     return;
   }
+
+  
+  
+  
+  
+  FinishPotentialVectorImage(InnerImage());
 
   
   {
