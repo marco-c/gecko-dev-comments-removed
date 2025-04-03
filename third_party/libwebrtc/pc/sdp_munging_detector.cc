@@ -15,6 +15,7 @@
 
 #include "absl/algorithm/container.h"
 #include "api/jsep.h"
+#include "api/media_types.h"
 #include "api/uma_metrics.h"
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
@@ -275,19 +276,59 @@ SdpMungingType DetermineSdpMungingType(
       continue;
     }
     
-    if (last_created_media_description->as_video() != nullptr) {
+    cricket::MediaType media_type = last_created_media_description->type();
+    if (media_type == cricket::MEDIA_TYPE_VIDEO) {
       type = DetermineVideoSdpMungingType(last_created_media_description,
                                           media_description_to_set);
       if (type != SdpMungingType::kNoModification) {
         return type;
       }
-    } else if (last_created_media_description->as_audio() != nullptr) {
+    } else if (media_type == cricket::MEDIA_TYPE_AUDIO) {
       type = DetermineAudioSdpMungingType(last_created_media_description,
                                           media_description_to_set);
       if (type != SdpMungingType::kNoModification) {
         return type;
       }
     }
+
+    
+    
+    auto last_created_codecs = last_created_media_description->codecs();
+    auto codecs_to_set = media_description_to_set->codecs();
+    if (last_created_codecs.size() == codecs_to_set.size()) {
+      for (size_t i = 0; i < last_created_codecs.size(); i++) {
+        if (last_created_codecs[i] == codecs_to_set[i]) {
+          continue;
+        }
+        
+        for (size_t j = i + 1; j < last_created_codecs.size(); j++) {
+          if (last_created_codecs[i] == codecs_to_set[j]) {
+            return media_type == cricket::MEDIA_TYPE_AUDIO
+                       ? SdpMungingType::kAudioCodecsReordered
+                       : SdpMungingType::kVideoCodecsReordered;
+          }
+        }
+        
+        if (last_created_codecs[i].name == codecs_to_set[i].name &&
+            last_created_codecs[i].id != codecs_to_set[i].id) {
+          return SdpMungingType::kPayloadTypes;
+        }
+        if (last_created_codecs[i].params != codecs_to_set[i].params) {
+          return media_type == cricket::MEDIA_TYPE_AUDIO
+                     ? SdpMungingType::kAudioCodecsFmtp
+                     : SdpMungingType::kVideoCodecsFmtp;
+        }
+        if (last_created_codecs[i].feedback_params !=
+            codecs_to_set[i].feedback_params) {
+          return media_type == cricket::MEDIA_TYPE_AUDIO
+                     ? SdpMungingType::kAudioCodecsRtcpFb
+                     : SdpMungingType::kVideoCodecsRtcpFb;
+        }
+        
+        
+      }
+    }
+
     
     if (last_created_media_description->streams().size() !=
         media_description_to_set->streams().size()) {

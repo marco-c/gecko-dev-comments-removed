@@ -105,7 +105,9 @@ struct RTC_EXPORT Codec {
 
   
   
+  
   webrtc::CodecParameterMap params;
+  
   FeedbackParams feedback_params;
 
   Codec(const Codec& c);
