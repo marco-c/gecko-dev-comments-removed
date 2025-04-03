@@ -44,8 +44,6 @@ class TRR : public Runnable, public nsITimerCallback, public nsIStreamListener {
   explicit TRR(AHostResolver* aResolver, nsHostRecord* aRec, nsCString& aHost,
                enum TrrType& aType, unsigned int aLoopCount, bool aPB);
   
-  explicit TRR(AHostResolver* aResolver, bool aPB);
-  
   explicit TRR(AHostResolver* aResolver, nsACString& aHost, enum TrrType aType,
                const nsACString& aOriginSuffix, bool aPB,
                bool aUseFreshConnection);
@@ -93,8 +91,6 @@ class TRR : public Runnable, public nsITimerCallback, public nsIStreamListener {
   
   
   nsresult FailData(nsresult error);
-  static nsresult DohDecodeQuery(const nsCString& query, nsCString& host,
-                                 enum TrrType& type);
   nsresult On200Response(nsIChannel* aChannel);
   nsresult FollowCname(nsIChannel* aChannel);
 
