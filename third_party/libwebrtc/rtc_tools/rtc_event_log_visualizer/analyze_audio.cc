@@ -240,7 +240,7 @@ class ReplacementAudioDecoderFactory : public AudioDecoderFactory {
 
 
 std::unique_ptr<test::NetEqStatsGetter> CreateNetEqTestAndRun(
-    ParsedRtcEventLog parsed_log,
+    const ParsedRtcEventLog& parsed_log,
     uint32_t ssrc,
     const std::string& replacement_file_name,
     int file_sample_rate_hz) {
