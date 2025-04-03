@@ -1867,10 +1867,10 @@ gfxFontGroup::gfxFontGroup(nsPresContext* aPresContext,
     case StyleFontVariantEmoji::Unicode:
       break;
     case StyleFontVariantEmoji::Text:
-      mEmojiPresentation = eFontPresentation::TextExplicit;
+      mEmojiPresentation = FontPresentation::TextExplicit;
       break;
     case StyleFontVariantEmoji::Emoji:
-      mEmojiPresentation = eFontPresentation::EmojiExplicit;
+      mEmojiPresentation = FontPresentation::EmojiExplicit;
       break;
   }
   
@@ -3062,7 +3062,7 @@ gfxTextRun* gfxFontGroup::GetEllipsisTextRun(
 
 already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
     gfxFontFamily* aFamily, uint32_t aCh, uint32_t aNextCh,
-    eFontPresentation aPresentation) {
+    FontPresentation aPresentation) {
   GlobalFontMatch data(aCh, aNextCh, mStyle, aPresentation);
   aFamily->SearchAllFontsForChar(&data);
   gfxFontEntry* fe = data.mBestMatch;
@@ -3074,7 +3074,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
 
 already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
     fontlist::Family* aFamily, uint32_t aCh, uint32_t aNextCh,
-    eFontPresentation aPresentation) {
+    FontPresentation aPresentation) {
   auto* pfl = gfxPlatformFontList::PlatformFontList();
   auto* list = pfl->SharedFontList();
 
@@ -3098,7 +3098,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
 
 already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
     const FamilyFace& aFamily, uint32_t aCh, uint32_t aNextCh,
-    eFontPresentation aPresentation) {
+    FontPresentation aPresentation) {
   if (aFamily.IsSharedFamily()) {
     return FindFallbackFaceForChar(aFamily.SharedFamily(), aCh, aNextCh,
                                    aPresentation);
@@ -3211,18 +3211,18 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   
   
   
-  eFontPresentation presentation = eFontPresentation::Any;
+  FontPresentation presentation = FontPresentation::Any;
   if (EmojiPresentation emojiPresentation = GetEmojiPresentation(aCh);
       emojiPresentation != TextOnly) {
     
     presentation = mEmojiPresentation;
     
     
-    if (presentation == eFontPresentation::Any) {
+    if (presentation == FontPresentation::Any) {
       if (emojiPresentation == EmojiPresentation::TextDefault) {
-        presentation = eFontPresentation::TextDefault;
+        presentation = FontPresentation::TextDefault;
       } else {
-        presentation = eFontPresentation::EmojiDefault;
+        presentation = FontPresentation::EmojiDefault;
       }
     }
     
@@ -3236,15 +3236,15 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
         gfxFontUtils::IsEmojiFlagAndTag(aCh, aNextCh)) {
       
       
-      presentation = eFontPresentation::EmojiExplicit;
+      presentation = FontPresentation::EmojiExplicit;
     } else if (aNextCh == kVariationSelector15) {
       
-      presentation = eFontPresentation::TextExplicit;
+      presentation = FontPresentation::TextExplicit;
     }
   }
 
   if (!isJoinControl && !wasJoinCauser && !isVarSelector &&
-      !nextIsVarSelector && presentation == eFontPresentation::Any) {
+      !nextIsVarSelector && presentation == FontPresentation::Any) {
     RefPtr<gfxFont> firstFont = GetFontAt(0, aCh, &loading);
     if (firstFont) {
       if (firstFont->HasCharacter(aCh) ||
@@ -3312,7 +3312,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   
   auto CheckCandidate = [&](gfxFont* f, FontMatchType t) -> bool {
     
-    if (presentation == eFontPresentation::Any) {
+    if (presentation == FontPresentation::Any) {
       *aMatchType = t;
       return true;
     }
@@ -3329,7 +3329,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     
     
     if (aNextCh == kVariationSelector16 &&
-        presentation <= eFontPresentation::TextDefault &&
+        presentation == FontPresentation::TextDefault &&
         f->HasCharacter(aNextCh) && f->GetFontEntry()->TryGetColorGlyphs()) {
       return true;
     }
@@ -3512,8 +3512,8 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   
   
   
-  if (presentation == eFontPresentation::Any) {
-    presentation = eFontPresentation::TextDefault;
+  if (presentation == FontPresentation::Any) {
+    presentation = FontPresentation::TextDefault;
   }
 
   
@@ -3615,7 +3615,7 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
         
         
         ((sizeof(T) == sizeof(uint8_t) &&
-          (mEmojiPresentation != eFontPresentation::EmojiExplicit ||
+          (mEmojiPresentation != FontPresentation::EmojiExplicit ||
            GetEmojiPresentation(ch) == TextOnly)) ||
          
          (sizeof(T) == sizeof(char16_t) &&
@@ -3825,7 +3825,7 @@ bool gfxFontGroup::ContainsUserFont(const gfxUserFontEntry* aUserFont) {
 }
 
 already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
-    uint32_t aCh, uint32_t aNextCh, eFontPresentation aPresentation) {
+    uint32_t aCh, uint32_t aNextCh, FontPresentation aPresentation) {
   eFontPrefLang charLang;
   gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
 
@@ -3902,7 +3902,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
         if (!prefFont) {
           continue;
         }
-        if (aPresentation == eFontPresentation::EmojiExplicit &&
+        if (aPresentation == FontPresentation::EmojiExplicit &&
             !prefFont->HasColorGlyphFor(aCh, aNextCh)) {
           continue;
         }
@@ -3932,7 +3932,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
 
 already_AddRefed<gfxFont> gfxFontGroup::WhichSystemFontSupportsChar(
     uint32_t aCh, uint32_t aNextCh, Script aRunScript,
-    eFontPresentation aPresentation) {
+    FontPresentation aPresentation) {
   FontVisibility visibility;
   return gfxPlatformFontList::PlatformFontList()->SystemFindFontForChar(
       mPresContext, aCh, aNextCh, aRunScript, aPresentation, &mStyle,

@@ -102,7 +102,7 @@ enum eGfxLog {
 
 
 
-enum class eFontPresentation : uint8_t {
+enum class FontPresentation : uint8_t {
   
   
   Any = 0,
@@ -119,8 +119,8 @@ enum class eFontPresentation : uint8_t {
   EmojiExplicit,
 };
 
-inline bool PrefersColor(eFontPresentation aPresentation) {
-  return aPresentation >= eFontPresentation::EmojiDefault;
+inline bool PrefersColor(FontPresentation aPresentation) {
+  return aPresentation >= FontPresentation::EmojiDefault;
 }
 
 
@@ -490,7 +490,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
   
   virtual void GetCommonFallbackFonts(uint32_t , Script ,
-                                      eFontPresentation ,
+                                      FontPresentation ,
                                       nsTArray<const char*>& ) {
     
   }

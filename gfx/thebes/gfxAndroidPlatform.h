@@ -31,7 +31,7 @@ class gfxAndroidPlatform final : public gfxPlatform {
   void ReadSystemFontList(mozilla::dom::SystemFontList*) override;
 
   void GetCommonFallbackFonts(uint32_t aCh, Script aRunScript,
-                              eFontPresentation aPresentation,
+                              FontPresentation aPresentation,
                               nsTArray<const char*>& aFontList) override;
 
   bool FontHintingEnabled() override;
@@ -42,13 +42,26 @@ class gfxAndroidPlatform final : public gfxPlatform {
 
   static bool CheckVariationFontSupport();
 
+  
+  
+  
+  static void InitializeFontAPI();
+  static void WaitForInitializeFontAPI();
+
+  static bool IsFontAPIDisabled(bool aDontCheckPref = false);
+
  protected:
   void InitAcceleration() override;
 
   bool AccelerateLayersByDefault() override { return true; }
 
  private:
+  static void FontAPIInitializeCallback(void*);
+
   gfxImageFormat mOffscreenFormat;
+
+  static PRThread* sFontAPIInitializeThread;
+  static nsCString sManufacturer;
 };
 
 #endif 

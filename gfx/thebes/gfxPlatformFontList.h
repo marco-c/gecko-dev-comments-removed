@@ -296,7 +296,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   already_AddRefed<gfxFont> SystemFindFontForChar(
       nsPresContext* aPresContext, uint32_t aCh, uint32_t aNextCh,
-      Script aRunScript, eFontPresentation aPresentation,
+      Script aRunScript, FontPresentation aPresentation,
       const gfxFontStyle* aStyle, FontVisibility* aVisibility);
 
   
@@ -807,7 +807,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   already_AddRefed<gfxFont> CommonFontFallback(nsPresContext* aPresContext,
                                                uint32_t aCh, uint32_t aNextCh,
                                                Script aRunScript,
-                                               eFontPresentation aPresentation,
+                                               FontPresentation aPresentation,
                                                const gfxFontStyle* aMatchStyle,
                                                FontFamily& aMatchedFamily)
       MOZ_REQUIRES(mLock);
@@ -815,7 +815,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
   already_AddRefed<gfxFont> GlobalFontFallback(
       nsPresContext* aPresContext, uint32_t aCh, uint32_t aNextCh,
-      Script aRunScript, eFontPresentation aPresentation,
+      Script aRunScript, FontPresentation aPresentation,
       const gfxFontStyle* aMatchStyle, uint32_t& aCmapCount,
       FontFamily& aMatchedFamily) MOZ_REQUIRES(mLock);
 

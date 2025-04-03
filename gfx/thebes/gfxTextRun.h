@@ -1097,11 +1097,11 @@ class gfxFontGroup final : public gfxTextRunFactory {
   
   
   already_AddRefed<gfxFont> WhichPrefFontSupportsChar(
-      uint32_t aCh, uint32_t aNextCh, eFontPresentation aPresentation);
+      uint32_t aCh, uint32_t aNextCh, FontPresentation aPresentation);
 
   already_AddRefed<gfxFont> WhichSystemFontSupportsChar(
       uint32_t aCh, uint32_t aNextCh, Script aRunScript,
-      eFontPresentation aPresentation);
+      FontPresentation aPresentation);
 
   template <typename T>
   void ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
@@ -1394,7 +1394,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
   bool mResolvedFonts = false;  
 
-  eFontPresentation mEmojiPresentation = eFontPresentation::Any;
+  FontPresentation mEmojiPresentation = FontPresentation::Any;
 
   
   mozilla::StyleGenericFontFamily mFallbackGeneric =
@@ -1468,15 +1468,15 @@ class gfxFontGroup final : public gfxTextRunFactory {
   
   already_AddRefed<gfxFont> FindFallbackFaceForChar(
       const FamilyFace& aFamily, uint32_t aCh, uint32_t aNextCh,
-      eFontPresentation aPresentation);
+      FontPresentation aPresentation);
 
   already_AddRefed<gfxFont> FindFallbackFaceForChar(
       mozilla::fontlist::Family* aFamily, uint32_t aCh, uint32_t aNextCh,
-      eFontPresentation aPresentation);
+      FontPresentation aPresentation);
 
   already_AddRefed<gfxFont> FindFallbackFaceForChar(
       gfxFontFamily* aFamily, uint32_t aCh, uint32_t aNextCh,
-      eFontPresentation aPresentation);
+      FontPresentation aPresentation);
 
   
 
