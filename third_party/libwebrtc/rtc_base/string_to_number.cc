@@ -17,7 +17,7 @@
 
 #include "rtc_base/checks.h"
 
-namespace rtc {
+namespace webrtc {
 namespace string_to_number_internal {
 
 std::optional<signed_type> ParseSigned(absl::string_view str, int base) {

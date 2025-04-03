@@ -18,7 +18,7 @@
 
 #include "absl/strings/string_view.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -100,6 +100,12 @@ StringToNumber(absl::string_view str, int  = 10) {
   return string_to_number_internal::ParseFloatingPoint<T>(str);
 }
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::StringToNumber;
 }  
 
 #endif  

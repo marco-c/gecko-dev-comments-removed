@@ -19,7 +19,7 @@
 #include "absl/strings/string_view.h"
 #include "test/gtest.h"
 
-namespace rtc {
+namespace webrtc {
 
 namespace {
 
