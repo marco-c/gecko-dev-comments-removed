@@ -1867,7 +1867,7 @@ gfxFontGroup::gfxFontGroup(nsPresContext* aPresContext,
     case StyleFontVariantEmoji::Unicode:
       break;
     case StyleFontVariantEmoji::Text:
-      mEmojiPresentation = eFontPresentation::Text;
+      mEmojiPresentation = eFontPresentation::TextExplicit;
       break;
     case StyleFontVariantEmoji::Emoji:
       mEmojiPresentation = eFontPresentation::EmojiExplicit;
@@ -3212,13 +3212,19 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   
   
   eFontPresentation presentation = eFontPresentation::Any;
-  EmojiPresentation emojiPresentation = GetEmojiPresentation(aCh);
-  if (emojiPresentation != TextOnly) {
+  if (EmojiPresentation emojiPresentation = GetEmojiPresentation(aCh);
+      emojiPresentation != TextOnly) {
     
     presentation = mEmojiPresentation;
     
     
-    
+    if (presentation == eFontPresentation::Any) {
+      if (emojiPresentation == EmojiPresentation::TextDefault) {
+        presentation = eFontPresentation::TextDefault;
+      } else {
+        presentation = eFontPresentation::EmojiDefault;
+      }
+    }
     
     
     
@@ -3231,15 +3237,9 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
       
       
       presentation = eFontPresentation::EmojiExplicit;
-    } else if (emojiPresentation == EmojiPresentation::EmojiDefault &&
-               aNextCh != kVariationSelector15) {
-      
-      
-      
-      presentation = eFontPresentation::EmojiDefault;
     } else if (aNextCh == kVariationSelector15) {
       
-      presentation = eFontPresentation::Text;
+      presentation = eFontPresentation::TextExplicit;
     }
   }
 
@@ -3305,22 +3305,14 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
 
   
   
-  
-  
-  
-  
   RefPtr<gfxFont> candidateFont;
   FontMatchType candidateMatchType;
 
   
   
-  
-  
   auto CheckCandidate = [&](gfxFont* f, FontMatchType t) -> bool {
     
-    if (presentation == eFontPresentation::Any ||
-        (presentation == eFontPresentation::EmojiDefault &&
-         f->GetFontEntry()->IsUserFont())) {
+    if (presentation == eFontPresentation::Any) {
       *aMatchType = t;
       return true;
     }
@@ -3336,7 +3328,8 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     
     
     
-    if (aNextCh == kVariationSelector16 && emojiPresentation == TextDefault &&
+    if (aNextCh == kVariationSelector16 &&
+        presentation <= eFontPresentation::TextDefault &&
         f->HasCharacter(aNextCh) && f->GetFontEntry()->TryGetColorGlyphs()) {
       return true;
     }
@@ -3458,6 +3451,16 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     }
   }
 
+  
+  
+  
+  
+  if (candidateFont &&
+      candidateMatchType.generic == StyleGenericFontFamily::None) {
+    *aMatchType = candidateMatchType;
+    return candidateFont.forget();
+  }
+
   if (fontListLength == 0) {
     RefPtr<gfxFont> defaultFont = GetDefaultFont();
     if (defaultFont->HasCharacter(aCh) ||
@@ -3510,7 +3513,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   
   
   if (presentation == eFontPresentation::Any) {
-    presentation = eFontPresentation::Text;
+    presentation = eFontPresentation::TextDefault;
   }
 
   

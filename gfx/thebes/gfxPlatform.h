@@ -107,14 +107,16 @@ enum class eFontPresentation : uint8_t {
   
   Any = 0,
   
-  
-  Text = 1,
-  
-  
-  EmojiDefault = 2,
+  TextDefault,
   
   
-  EmojiExplicit = 3
+  TextExplicit,
+  
+  
+  EmojiDefault,
+  
+  
+  EmojiExplicit,
 };
 
 inline bool PrefersColor(eFontPresentation aPresentation) {
