@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <vector>
 
+#include "api/rtc_error.h"
 #include "media/base/codec.h"
 
 namespace cricket {
@@ -25,10 +26,15 @@ class CodecList {
   using value_type = Codec;
 
   CodecList() {}
+  
   explicit CodecList(const std::vector<Codec>& codecs) {
     codecs_ = codecs;
     CheckConsistency();
   }
+  
+  
+  static webrtc::RTCErrorOr<CodecList> CreateCodecList(
+      const std::vector<Codec>& codecs);
   
   iterator begin() { return codecs_.begin(); }
   iterator end() { return codecs_.end(); }
