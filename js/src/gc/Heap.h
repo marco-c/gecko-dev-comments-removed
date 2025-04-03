@@ -245,9 +245,12 @@ class alignas(ArenaSize) Arena {
     last->initAsEmpty();
   }
 
+  inline void freeAtomMarkingBitmapIndex(GCRuntime* gc, const AutoLockGC& lock);
+
   
   
-  inline void release(GCRuntime* gc, const AutoLockGC* maybeLock);
+  
+  inline void release();
 
   uintptr_t address() const {
     checkAddress();

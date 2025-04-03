@@ -47,29 +47,26 @@ namespace gc {
 
 
 
-void AtomMarkingRuntime::registerArena(Arena* arena, const AutoLockGC& lock) {
-  MOZ_ASSERT(arena->getThingSize() != 0);
-  MOZ_ASSERT(arena->getThingSize() % CellAlignBytes == 0);
-  MOZ_ASSERT(arena->zone()->isAtomsZone());
-
+size_t AtomMarkingRuntime::allocateIndex(const AutoLockGC& lock) {
   
 
   
   if (freeArenaIndexes.ref().length()) {
-    arena->atomBitmapStart() = freeArenaIndexes.ref().popCopy();
-    return;
+    return freeArenaIndexes.ref().popCopy();
   }
 
   
-  arena->atomBitmapStart() = allocatedWords;
+  size_t index = allocatedWords;
   allocatedWords += ArenaBitmapWords;
+  return index;
 }
 
-void AtomMarkingRuntime::unregisterArena(Arena* arena, const AutoLockGC& lock) {
-  MOZ_ASSERT(arena->zone()->isAtomsZone());
+void AtomMarkingRuntime::freeIndex(size_t index, const AutoLockGC& lock) {
+  MOZ_ASSERT((index % ArenaBitmapWords) == 0);
+  MOZ_ASSERT(index < allocatedWords);
 
   
-  (void)freeArenaIndexes.ref().emplaceBack(arena->atomBitmapStart());
+  (void)freeArenaIndexes.ref().emplaceBack(index);
 }
 
 void AtomMarkingRuntime::refineZoneBitmapsForCollectedZones(

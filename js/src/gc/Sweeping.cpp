@@ -366,35 +366,36 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
     
     
     static constexpr size_t BatchSize = 32;
+    bool isAtomsZone = zone->isAtomsZone();
     while (emptyArenas) {
       Arena* arenasToRelease[BatchSize];
+      size_t atomsBitmapIndexes[BatchSize];
       size_t count = 0;
 
       size_t gcHeapBytesFreed = 0;
       size_t mallocHeapBytesFreed = 0;
 
-      {
-        mozilla::Maybe<AutoLockGC> maybeLock;
-        if (zone->isAtomsZone()) {
-          
-          maybeLock.emplace(this);
+      
+      for (size_t i = 0; emptyArenas && i < BatchSize; i++) {
+        Arena* arena = emptyArenas;
+        emptyArenas = arena->next;
+
+        if (IsBufferAllocKind(arena->getAllocKind())) {
+          mallocHeapBytesFreed += ArenaSize - arena->getFirstThingOffset();
+        } else {
+          gcHeapBytesFreed += ArenaSize;
         }
 
-        
-        for (size_t i = 0; emptyArenas && i < BatchSize; i++) {
-          Arena* arena = emptyArenas;
-          emptyArenas = arena->next;
-
-          if (IsBufferAllocKind(arena->getAllocKind())) {
-            mallocHeapBytesFreed += ArenaSize - arena->getFirstThingOffset();
-          } else {
-            gcHeapBytesFreed += ArenaSize;
-          }
-
-          arena->release(this, maybeLock.ptrOr(nullptr));
-          arenasToRelease[i] = arena;
-          count++;
+        if (isAtomsZone) {
+          atomsBitmapIndexes[i] = arena->atomBitmapStart();
+#ifdef DEBUG
+          arena->atomBitmapStart() = 0;
+#endif
         }
+
+        arena->release();
+        arenasToRelease[i] = arena;
+        count++;
       }
 
       zone->mallocHeapSize.removeBytes(mallocHeapBytesFreed, true);
@@ -403,6 +404,9 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
       AutoLockGC lock(this);
       for (size_t i = 0; i < count; i++) {
         Arena* arena = arenasToRelease[i];
+        if (isAtomsZone) {
+          atomMarking.freeIndex(atomsBitmapIndexes[i], lock);
+        }
         arena->chunk()->releaseArena(this, arena, lock);
       }
     }

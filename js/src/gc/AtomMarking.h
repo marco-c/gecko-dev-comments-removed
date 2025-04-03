@@ -38,10 +38,10 @@ class AtomMarkingRuntime {
   AtomMarkingRuntime() : allocatedWords(0) {}
 
   
-  void registerArena(Arena* arena, const AutoLockGC& lock);
+  size_t allocateIndex(const AutoLockGC& lock);
 
   
-  void unregisterArena(Arena* arena, const AutoLockGC& lock);
+  void freeIndex(size_t index, const AutoLockGC& lock);
 
   
   

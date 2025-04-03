@@ -913,7 +913,10 @@ void GCRuntime::clearRelocatedArenasWithoutUnlocking(Arena* arenaList,
     }
 
     
-    arena->release(this, &lock);
+    MOZ_ASSERT(!zone->isAtomsZone());
+
+    
+    arena->release();
   }
 }
 
