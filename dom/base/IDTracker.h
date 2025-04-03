@@ -72,7 +72,7 @@ class IDTracker {
 
 
 
-  void ResetToURIWithFragmentID(nsIContent* aFrom, nsIURI* aURI,
+  void ResetToURIWithFragmentID(Element& aFrom, nsIURI* aURI,
                                 nsIReferrerInfo* aReferrerInfo,
                                 bool aReferenceImage = false);
 
@@ -85,7 +85,15 @@ class IDTracker {
 
 
 
-  void ResetToLocalFragmentID(Element& aFrom, const nsAString& aLocalRef);
+
+
+
+
+
+  void ResetToLocalFragmentID(Element& aFrom, const nsAString& aLocalRef,
+                              nsIURI* aBaseURI = nullptr,
+                              nsIReferrerInfo* aReferrerInfo = nullptr,
+                              bool aReferenceImage = false);
 
   
 
@@ -95,7 +103,8 @@ class IDTracker {
 
 
 
-  void ResetToID(Element& aFrom, nsAtom* aID);
+
+  void ResetToID(Element& aFrom, nsAtom* aID, bool aReferenceImage = false);
 
   
 
@@ -106,6 +115,11 @@ class IDTracker {
   void Traverse(nsCycleCollectionTraversalCallback* aCB);
 
  protected:
+  
+  void ResetToExternalResource(nsIURI* aURI, nsIReferrerInfo* aReferrerInfo,
+                               const nsAString& aRef, Element& aFrom,
+                               bool aReferenceImage);
+
   
 
 
@@ -124,7 +138,7 @@ class IDTracker {
 
 
   void HaveNewDocumentOrShadowRoot(DocumentOrShadowRoot*, bool aWatch,
-                                   const nsString& aRef);
+                                   const nsAString& aRef);
 
  private:
   static bool Observe(Element* aOldElement, Element* aNewElement, void* aData);
@@ -169,7 +183,7 @@ class IDTracker {
 
   class DocumentLoadNotification : public Notification, public nsIObserver {
    public:
-    DocumentLoadNotification(IDTracker* aTarget, const nsString& aRef)
+    DocumentLoadNotification(IDTracker* aTarget, const nsAString& aRef)
         : Notification(aTarget) {
       if (!mTarget->IsPersistent()) {
         mRef = aRef;

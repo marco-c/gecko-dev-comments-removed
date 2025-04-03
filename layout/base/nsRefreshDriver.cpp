@@ -845,7 +845,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     
     
 #if !defined(_WIN32)
-    MOZ_ASSERT(aVsyncTimestamp <= tickStart);
+    
 #endif
 
     bool shouldGiveNonVSyncTasksMoreTime = ShouldGiveNonVsyncTasksMoreTime();

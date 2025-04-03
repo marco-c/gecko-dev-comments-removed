@@ -10,6 +10,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/dom/SVGUseElement.h"
 #include "nsAtom.h"
 #include "nsContentUtils.h"
 #include "nsIURI.h"
@@ -55,15 +56,14 @@ IDTracker::IDTracker() = default;
 
 IDTracker::~IDTracker() { Unlink(); }
 
-void IDTracker::ResetToURIWithFragmentID(nsIContent* aFromContent, nsIURI* aURI,
+void IDTracker::ResetToURIWithFragmentID(Element& aFrom, nsIURI* aURI,
                                          nsIReferrerInfo* aReferrerInfo,
                                          bool aReferenceImage) {
-  MOZ_ASSERT(aFromContent,
-             "ResetToURIWithFragmentID() expects non-null content pointer");
-
   Unlink();
 
-  if (!aURI) return;
+  if (!aURI) {
+    return;
+  }
 
   nsAutoCString refPart;
   aURI->GetRef(refPart);
@@ -72,7 +72,7 @@ void IDTracker::ResetToURIWithFragmentID(nsIContent* aFromContent, nsIURI* aURI,
   NS_UnescapeURL(refPart);
 
   
-  Document* doc = aFromContent->OwnerDoc();
+  Document* doc = aFrom.OwnerDoc();
   auto encoding = doc->GetDocumentCharacterSet();
 
   nsAutoString ref;
@@ -81,13 +81,12 @@ void IDTracker::ResetToURIWithFragmentID(nsIContent* aFromContent, nsIURI* aURI,
     return;
   }
 
-  if (aFromContent->IsInNativeAnonymousSubtree()) {
+  if (aFrom.IsInNativeAnonymousSubtree()) {
     
     
     
     
-    Element* anonRoot =
-        doc->GetAnonRootIfInAnonymousContentContainer(aFromContent);
+    Element* anonRoot = doc->GetAnonRootIfInAnonymousContentContainer(&aFrom);
     if (anonRoot) {
       mElement = nsContentUtils::MatchElementId(anonRoot, ref);
       
@@ -98,35 +97,71 @@ void IDTracker::ResetToURIWithFragmentID(nsIContent* aFromContent, nsIURI* aURI,
 
   bool isEqualExceptRef;
   rv = aURI->EqualsExceptRef(doc->GetDocumentURI(), &isEqualExceptRef);
-  DocumentOrShadowRoot* docOrShadow;
   if (NS_FAILED(rv) || !isEqualExceptRef) {
-    RefPtr<Document::ExternalResourceLoad> load;
-    doc = doc->RequestExternalResource(aURI, aReferrerInfo, aFromContent,
-                                       getter_AddRefs(load));
-    docOrShadow = doc;
-    if (!doc) {
-      if (!load) {
-        
-        return;
-      }
-
-      DocumentLoadNotification* observer =
-          new DocumentLoadNotification(this, ref);
-      mPendingNotification = observer;
-      load->AddObserver(observer);
-      
-    }
-  } else {
-    docOrShadow = FindTreeToWatch(*aFromContent, ref, aReferenceImage);
+    return ResetToExternalResource(aURI, aReferrerInfo, ref, aFrom,
+                                   aReferenceImage);
   }
 
-  mWatchID = NS_Atomize(ref);
+  RefPtr<nsAtom> id = NS_Atomize(ref);
+  ResetToID(aFrom, id, aReferenceImage);
+}
+
+void IDTracker::ResetToExternalResource(nsIURI* aURI,
+                                        nsIReferrerInfo* aReferrerInfo,
+                                        const nsAString& aRef, Element& aFrom,
+                                        bool aReferenceImage) {
+  Unlink();
+
+  RefPtr<Document::ExternalResourceLoad> load;
+  Document* resourceDoc = aFrom.OwnerDoc()->RequestExternalResource(
+      aURI, aReferrerInfo, &aFrom, getter_AddRefs(load));
+  if (!resourceDoc) {
+    if (!load) {
+      
+      return;
+    }
+    auto* observer = new DocumentLoadNotification(this, aRef);
+    mPendingNotification = observer;
+    load->AddObserver(observer);
+  }
+
+  mWatchID = NS_Atomize(aRef);
   mReferencingImage = aReferenceImage;
-  HaveNewDocumentOrShadowRoot(docOrShadow,  true, ref);
+  HaveNewDocumentOrShadowRoot(resourceDoc,  true, aRef);
+}
+
+static nsIURI* GetExternalResourceURIIfNeeded(nsIURI* aBaseURI,
+                                              Element& aFrom) {
+  if (!aBaseURI) {
+    
+    return nullptr;
+  }
+  SVGUseElement* use = aFrom.GetContainingSVGUseShadowHost();
+  if (!use) {
+    return nullptr;
+  }
+  nsIURI* originalURI = use->GetSourceDocURI();
+  if (!originalURI) {
+    return nullptr;
+  }
+  
+  
+  
+  
+  
+  
+  bool equals = false;
+  if (NS_FAILED(aBaseURI->EqualsExceptRef(originalURI, &equals)) || !equals) {
+    return nullptr;
+  }
+  return originalURI;
 }
 
 void IDTracker::ResetToLocalFragmentID(Element& aFrom,
-                                       const nsAString& aLocalRef) {
+                                       const nsAString& aLocalRef,
+                                       nsIURI* aBaseURI,
+                                       nsIReferrerInfo* aReferrerInfo,
+                                       bool aReferenceImage) {
   MOZ_ASSERT(nsContentUtils::IsLocalRefURL(aLocalRef));
 
   auto ref = Substring(aLocalRef, 1);
@@ -152,11 +187,17 @@ void IDTracker::ResetToLocalFragmentID(Element& aFrom,
     return;
   }
 
+  if (nsIURI* resourceUri = GetExternalResourceURIIfNeeded(aBaseURI, aFrom)) {
+    NS_ConvertUTF8toUTF16 utf16ref(unescaped);
+    return ResetToExternalResource(resourceUri, aReferrerInfo, utf16ref, aFrom,
+                                   aReferenceImage);
+  }
+
   RefPtr<nsAtom> idAtom = NS_Atomize(unescaped);
-  ResetToID(aFrom, idAtom);
+  ResetToID(aFrom, idAtom, aReferenceImage);
 }
 
-void IDTracker::ResetToID(Element& aFrom, nsAtom* aID) {
+void IDTracker::ResetToID(Element& aFrom, nsAtom* aID, bool aReferenceImage) {
   MOZ_ASSERT(aID);
 
   Unlink();
@@ -166,16 +207,17 @@ void IDTracker::ResetToID(Element& aFrom, nsAtom* aID) {
   }
 
   mWatchID = aID;
-  mReferencingImage = false;
+  mReferencingImage = aReferenceImage;
 
   nsDependentAtomString str(aID);
   DocumentOrShadowRoot* docOrShadow =
-      FindTreeToWatch(aFrom, str,  false);
+      FindTreeToWatch(aFrom, str, aReferenceImage);
   HaveNewDocumentOrShadowRoot(docOrShadow,  true, str);
 }
 
 void IDTracker::HaveNewDocumentOrShadowRoot(DocumentOrShadowRoot* aDocOrShadow,
-                                            bool aWatch, const nsString& aRef) {
+                                            bool aWatch,
+                                            const nsAString& aRef) {
   if (aWatch) {
     mWatchDocumentOrShadowRoot = nullptr;
     if (aDocOrShadow) {
