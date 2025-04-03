@@ -15,6 +15,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "api/async_dns_resolver.h"
@@ -26,7 +27,6 @@
 #include "api/field_trials_view.h"
 #include "api/ice_transport_interface.h"
 #include "api/neteq/neteq_factory.h"
-#include "api/packet_socket_factory.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "api/scoped_refptr.h"
@@ -56,6 +56,8 @@ namespace webrtc_pc_e2e {
 
 
 struct PeerConnectionFactoryComponents {
+  std::unique_ptr<rtc::NetworkManager> network_manager;
+  rtc::SocketFactory* socket_factory = nullptr;
   std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory;
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory;
   std::unique_ptr<NetworkControllerFactoryInterface> network_controller_factory;
@@ -80,17 +82,7 @@ struct PeerConnectionFactoryComponents {
 
 
 
-
 struct PeerConnectionComponents {
-  PeerConnectionComponents(rtc::NetworkManager* network_manager,
-                           rtc::PacketSocketFactory* packet_socket_factory)
-      : network_manager(network_manager),
-        packet_socket_factory(packet_socket_factory) {
-    RTC_CHECK(network_manager);
-  }
-
-  rtc::NetworkManager* const network_manager;
-  rtc::PacketSocketFactory* const packet_socket_factory;
   std::unique_ptr<webrtc::AsyncDnsResolverFactoryInterface>
       async_dns_resolver_factory;
   std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
@@ -102,15 +94,15 @@ struct PeerConnectionComponents {
 
 struct InjectableComponents {
   InjectableComponents(rtc::Thread* network_thread,
-                       rtc::NetworkManager* network_manager,
-                       rtc::PacketSocketFactory* packet_socket_factory)
+                       std::unique_ptr<rtc::NetworkManager> network_manager,
+                       rtc::SocketFactory* socket_factory)
       : network_thread(network_thread),
         worker_thread(nullptr),
         pcf_dependencies(std::make_unique<PeerConnectionFactoryComponents>()),
-        pc_dependencies(
-            std::make_unique<PeerConnectionComponents>(network_manager,
-                                                       packet_socket_factory)) {
+        pc_dependencies(std::make_unique<PeerConnectionComponents>()) {
     RTC_CHECK(network_thread);
+    pcf_dependencies->network_manager = std::move(network_manager);
+    pcf_dependencies->socket_factory = socket_factory;
   }
 
   rtc::Thread* const network_thread;
@@ -133,9 +125,7 @@ struct Params {
   
   
   
-  
-  
-  std::optional<uint32_t> port_allocator_flags = std::nullopt;
+  uint32_t port_allocator_flags = cricket::PORTALLOCATOR_DISABLE_TCP;
   
   
   std::optional<std::string> rtc_event_log_path;
