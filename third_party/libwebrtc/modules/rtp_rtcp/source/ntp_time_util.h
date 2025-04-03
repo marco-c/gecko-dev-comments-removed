@@ -42,8 +42,7 @@ inline constexpr int64_t ToNtpUnits(TimeDelta delta) {
   
   
   
-  return (rtc::saturated_cast<int32_t>(delta.us()) * (int64_t{1} << 32)) /
-         1'000'000;
+  return (saturated_cast<int32_t>(delta.us()) * (int64_t{1} << 32)) / 1'000'000;
 }
 
 

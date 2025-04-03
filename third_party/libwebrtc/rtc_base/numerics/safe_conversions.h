@@ -18,7 +18,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions_impl.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -69,6 +69,15 @@ inline constexpr Dst saturated_cast(Src value) {
   RTC_CHECK_NOTREACHED();
 }
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::checked_cast;
+using ::webrtc::dchecked_cast;
+using ::webrtc::IsValueInRangeForNumericType;
+using ::webrtc::saturated_cast;
 }  
 
 #endif  

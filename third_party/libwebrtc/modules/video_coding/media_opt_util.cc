@@ -129,8 +129,8 @@ bool VCMNackFecMethod::ProtectionFactor(
 
     
     
-    _protectionFactorD = rtc::saturated_cast<uint8_t>(
-        adjustRtt * rtc::saturated_cast<float>(_protectionFactorD));
+    _protectionFactorD = saturated_cast<uint8_t>(
+        adjustRtt * saturated_cast<float>(_protectionFactorD));
     
     VCMFecMethod::UpdateProtectionFactorD(_protectionFactorD);
   }
@@ -152,9 +152,9 @@ int VCMNackFecMethod::ComputeMaxFramesFec(
   
   float base_layer_framerate =
       parameters->frameRate /
-      rtc::saturated_cast<float>(1 << (parameters->numLayers - 1));
+      saturated_cast<float>(1 << (parameters->numLayers - 1));
   int max_frames_fec = std::max(
-      rtc::saturated_cast<int>(
+      saturated_cast<int>(
           2.0f * base_layer_framerate * parameters->rtt / 1000.0f + 0.5f),
       1);
   
@@ -270,9 +270,9 @@ uint8_t VCMFecMethod::BoostCodeRateKey(uint8_t packetFrameDelta,
 }
 
 uint8_t VCMFecMethod::ConvertFECRate(uint8_t codeRateRTP) const {
-  return rtc::saturated_cast<uint8_t>(
-      VCM_MIN(255, (0.5 + 255.0 * codeRateRTP /
-                              rtc::saturated_cast<float>(255 - codeRateRTP))));
+  return saturated_cast<uint8_t>(VCM_MIN(
+      255,
+      (0.5 + 255.0 * codeRateRTP / saturated_cast<float>(255 - codeRateRTP))));
 }
 
 
@@ -289,7 +289,7 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   
 
   
-  uint8_t packetLoss = rtc::saturated_cast<uint8_t>(255 * parameters->lossPr);
+  uint8_t packetLoss = saturated_cast<uint8_t>(255 * parameters->lossPr);
   if (packetLoss == 0) {
     _protectionFactorK = 0;
     _protectionFactorD = 0;
@@ -300,7 +300,7 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   
 
   
-  uint8_t firstPartitionProt = rtc::saturated_cast<uint8_t>(255 * 0.20);
+  uint8_t firstPartitionProt = saturated_cast<uint8_t>(255 * 0.20);
 
   
   
@@ -316,9 +316,9 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   const uint8_t ratePar2 = 49;
 
   
-  float spatialSizeToRef = rtc::saturated_cast<float>(parameters->codecWidth *
-                                                      parameters->codecHeight) /
-                           (rtc::saturated_cast<float>(704 * 576));
+  float spatialSizeToRef =
+      saturated_cast<float>(parameters->codecWidth * parameters->codecHeight) /
+      (saturated_cast<float>(704 * 576));
   
   
   
@@ -327,9 +327,9 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   const int bitRatePerFrame = BitsPerFrame(parameters);
 
   
-  const uint8_t avgTotPackets = rtc::saturated_cast<uint8_t>(
-      1.5f + rtc::saturated_cast<float>(bitRatePerFrame) * 1000.0f /
-                 rtc::saturated_cast<float>(8.0 * _maxPayloadSize));
+  const uint8_t avgTotPackets = saturated_cast<uint8_t>(
+      1.5f + saturated_cast<float>(bitRatePerFrame) * 1000.0f /
+                 saturated_cast<float>(8.0 * _maxPayloadSize));
 
   
   uint8_t codeRateDelta = 0;
@@ -339,8 +339,8 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   
   
   const uint16_t effRateFecTable =
-      rtc::saturated_cast<uint16_t>(resolnFac * bitRatePerFrame);
-  uint8_t rateIndexTable = rtc::saturated_cast<uint8_t>(
+      saturated_cast<uint16_t>(resolnFac * bitRatePerFrame);
+  uint8_t rateIndexTable = saturated_cast<uint8_t>(
       VCM_MAX(VCM_MIN((effRateFecTable - ratePar1) / ratePar1, ratePar2), 0));
 
   
@@ -373,12 +373,12 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   
   
   const uint8_t packetFrameDelta =
-      rtc::saturated_cast<uint8_t>(0.5 + parameters->packetsPerFrame);
+      saturated_cast<uint8_t>(0.5 + parameters->packetsPerFrame);
   const uint8_t packetFrameKey =
-      rtc::saturated_cast<uint8_t>(0.5 + parameters->packetsPerFrameKey);
+      saturated_cast<uint8_t>(0.5 + parameters->packetsPerFrameKey);
   const uint8_t boostKey = BoostCodeRateKey(packetFrameDelta, packetFrameKey);
 
-  rateIndexTable = rtc::saturated_cast<uint8_t>(VCM_MAX(
+  rateIndexTable = saturated_cast<uint8_t>(VCM_MAX(
       VCM_MIN(1 + (boostKey * effRateFecTable - ratePar1) / ratePar1, ratePar2),
       0));
   uint16_t indexTableKey = rateIndexTable * kPacketLossMax + packetLoss;
@@ -399,7 +399,7 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
 
   
   
-  codeRateKey = rtc::saturated_cast<uint8_t>(
+  codeRateKey = saturated_cast<uint8_t>(
       VCM_MAX(packetLoss, VCM_MAX(boostKeyProt, codeRateKey)));
 
   
@@ -420,13 +420,12 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   
 
   float numPacketsFl =
-      1.0f + (rtc::saturated_cast<float>(bitRatePerFrame) * 1000.0 /
-                  rtc::saturated_cast<float>(8.0 * _maxPayloadSize) +
+      1.0f + (saturated_cast<float>(bitRatePerFrame) * 1000.0 /
+                  saturated_cast<float>(8.0 * _maxPayloadSize) +
               0.5);
 
   const float estNumFecGen =
-      0.5f +
-      rtc::saturated_cast<float>(_protectionFactorD * numPacketsFl / 255.0f);
+      0.5f + saturated_cast<float>(_protectionFactorD * numPacketsFl / 255.0f);
 
   
   
@@ -459,7 +458,7 @@ int VCMFecMethod::BitsPerFrame(const VCMProtectionParameters* parameters) {
   if (frameRate < 1.0f)
     frameRate = 1.0f;
   
-  return rtc::saturated_cast<int>(adjustmentFactor * bitRate / frameRate);
+  return saturated_cast<int>(adjustmentFactor * bitRate / frameRate);
 }
 
 bool VCMFecMethod::EffectivePacketLoss(
@@ -603,8 +602,8 @@ uint8_t VCMLossProtectionLogic::FilteredLoss(int64_t nowMs,
   UpdateMaxLossHistory(lossPr255, nowMs);
 
   
-  _lossPr255.Apply(rtc::saturated_cast<float>(nowMs - _lastPrUpdateT),
-                   rtc::saturated_cast<float>(lossPr255));
+  _lossPr255.Apply(saturated_cast<float>(nowMs - _lastPrUpdateT),
+                   saturated_cast<float>(lossPr255));
   _lastPrUpdateT = nowMs;
 
   
@@ -614,7 +613,7 @@ uint8_t VCMLossProtectionLogic::FilteredLoss(int64_t nowMs,
     case kNoFilter:
       break;
     case kAvgFilter:
-      filtered_loss = rtc::saturated_cast<uint8_t>(_lossPr255.filtered() + 0.5);
+      filtered_loss = saturated_cast<uint8_t>(_lossPr255.filtered() + 0.5);
       break;
     case kMaxFilter:
       filtered_loss = MaxFilteredLossPr(nowMs);
@@ -625,7 +624,7 @@ uint8_t VCMLossProtectionLogic::FilteredLoss(int64_t nowMs,
 }
 
 void VCMLossProtectionLogic::UpdateFilteredLossPr(uint8_t packetLossEnc) {
-  _lossPr = rtc::saturated_cast<float>(packetLossEnc) / 255.0;
+  _lossPr = saturated_cast<float>(packetLossEnc) / 255.0;
 }
 
 void VCMLossProtectionLogic::UpdateBitRate(float bitRate) {
@@ -635,15 +634,14 @@ void VCMLossProtectionLogic::UpdateBitRate(float bitRate) {
 void VCMLossProtectionLogic::UpdatePacketsPerFrame(float nPackets,
                                                    int64_t nowMs) {
   _packetsPerFrame.Apply(
-      rtc::saturated_cast<float>(nowMs - _lastPacketPerFrameUpdateT), nPackets);
+      saturated_cast<float>(nowMs - _lastPacketPerFrameUpdateT), nPackets);
   _lastPacketPerFrameUpdateT = nowMs;
 }
 
 void VCMLossProtectionLogic::UpdatePacketsPerFrameKey(float nPackets,
                                                       int64_t nowMs) {
   _packetsPerFrameKey.Apply(
-      rtc::saturated_cast<float>(nowMs - _lastPacketPerFrameUpdateTKey),
-      nPackets);
+      saturated_cast<float>(nowMs - _lastPacketPerFrameUpdateTKey), nPackets);
   _lastPacketPerFrameUpdateTKey = nowMs;
 }
 

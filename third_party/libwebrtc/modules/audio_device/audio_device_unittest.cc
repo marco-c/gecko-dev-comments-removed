@@ -116,7 +116,7 @@ class AudioStream {
 
 
 int IndexToMilliseconds(size_t index, size_t frames_per_10ms_buffer) {
-  return rtc::checked_cast<int>(
+  return checked_cast<int>(
       10.0 * (static_cast<double>(index) / frames_per_10ms_buffer) + 0.5);
 }
 

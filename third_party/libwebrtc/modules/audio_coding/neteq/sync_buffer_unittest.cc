@@ -58,7 +58,7 @@ TEST(SyncBuffer, PushBackAndFlush) {
   
   for (size_t channel = 0; channel < kChannels; ++channel) {
     for (size_t i = 0; i < kNewLen; ++i) {
-      new_data[channel][i] = rtc::checked_cast<int16_t>(i);
+      new_data[channel][i] = checked_cast<int16_t>(i);
     }
   }
   
@@ -98,7 +98,7 @@ TEST(SyncBuffer, PushFrontZeros) {
   
   for (size_t channel = 0; channel < kChannels; ++channel) {
     for (size_t i = 0; i < kNewLen; ++i) {
-      new_data[channel][i] = rtc::checked_cast<int16_t>(1000 + i);
+      new_data[channel][i] = checked_cast<int16_t>(1000 + i);
     }
   }
   sync_buffer.PushBack(new_data);
@@ -131,7 +131,7 @@ TEST(SyncBuffer, GetNextAudioInterleaved) {
   
   for (size_t channel = 0; channel < kChannels; ++channel) {
     for (size_t i = 0; i < kNewLen; ++i) {
-      new_data[channel][i] = rtc::checked_cast<int16_t>(i);
+      new_data[channel][i] = checked_cast<int16_t>(i);
     }
   }
   
