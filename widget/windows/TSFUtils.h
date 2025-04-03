@@ -14,8 +14,10 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/ToString.h"
+#include "mozilla/widget/IMEData.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
 #include "nsTArray.h"
@@ -33,12 +35,66 @@
 
 #define IS_SEARCH static_cast<InputScope>(50)
 
+class nsWindow;
+
 namespace mozilla::widget {
+class TSFTextStore;
 
 class TSFUtils final {
  public:
   TSFUtils() = delete;
   ~TSFUtils() = delete;
+
+  static void Initialize();
+  static void Shutdown();
+
+  
+
+
+  [[nodiscard]] static bool IsAvailable() { return sThreadMgr; }
+
+  enum class GotFocus : bool { No, Yes };
+  
+
+
+
+  static nsresult OnFocusChange(GotFocus aGotFocus, nsWindow* aFocusedWindow,
+                                const InputContext& aContext);
+
+  
+
+
+  [[nodiscard]] static TSFTextStore* GetActiveTextStore() {
+    return sActiveTextStore.get();
+  }
+
+  template <typename TSFTextStoreClass>
+  static void ClearStoringTextStoresIf(
+      const RefPtr<TSFTextStoreClass>& aTextStore);
+
+  [[nodiscard]] static ITfThreadMgr* GetThreadMgr() { return sThreadMgr; }
+  [[nodiscard]] static ITfMessagePump* GetMessagePump() {
+    if (!sMessagePump) {
+      EnsureMessagePump();
+    }
+    return sMessagePump;
+  }
+  [[nodiscard]] static ITfKeystrokeMgr* GetKeystrokeMgr() {
+    if (!sKeystrokeMgr) {
+      EnsureKeystrokeMgr();
+    }
+    return sKeystrokeMgr;
+  }
+  [[nodiscard]] static ITfInputProcessorProfiles* GetInputProcessorProfiles();
+  [[nodiscard]] static ITfDisplayAttributeMgr* GetDisplayAttributeMgr();
+  [[nodiscard]] static ITfCategoryMgr* GetCategoryMgr();
+  [[nodiscard]] static ITfCompartment* GetCompartmentForOpenClose();
+
+  [[nodiscard]] static ITfDocumentMgr* GetDocumentMgrForDisabled() {
+    return sDisabledDocumentMgr;
+  }
+
+  [[nodiscard]] static DWORD ClientId() { return sClientId; }
 
   
   
@@ -130,15 +186,14 @@ class TSFUtils final {
 
 
 
-  static bool MarkContextAsKeyboardDisabled(DWORD aClientId,
-                                            ITfContext* aContext);
+  static bool MarkContextAsKeyboardDisabled(ITfContext* aContext);
 
   
 
 
 
 
-  static bool MarkContextAsEmpty(DWORD aClientId, ITfContext* aContext);
+  static bool MarkContextAsEmpty(ITfContext* aContext);
 
   static const char* BoolToChar(bool aValue) {
     return aValue ? "true" : "false";
@@ -146,6 +201,39 @@ class TSFUtils final {
   static const char* MouseButtonToChar(int16_t aButton);
   static const char* CommonHRESULTToChar(HRESULT);
   static const char* HRESULTToChar(HRESULT);
+
+ private:
+  static void EnsureMessagePump();
+  static void EnsureKeystrokeMgr();
+
+  
+  static StaticRefPtr<ITfThreadMgr> sThreadMgr;
+  
+  static StaticRefPtr<ITfMessagePump> sMessagePump;
+  
+  static StaticRefPtr<ITfKeystrokeMgr> sKeystrokeMgr;
+
+  
+  static StaticRefPtr<ITfDisplayAttributeMgr> sDisplayAttrMgr;
+  
+  static StaticRefPtr<ITfCategoryMgr> sCategoryMgr;
+  
+  static StaticRefPtr<ITfCompartment> sCompartmentForOpenClose;
+
+  static StaticRefPtr<ITfInputProcessorProfiles> sInputProcessorProfiles;
+
+  
+  static StaticRefPtr<ITfDocumentMgr> sDisabledDocumentMgr;
+  static StaticRefPtr<ITfContext> sDisabledContext;
+
+  
+  
+  
+  
+  static StaticRefPtr<TSFTextStore> sActiveTextStore;
+
+  
+  static DWORD sClientId;
 };
 
 class AutoFlagsCString : public nsAutoCString {

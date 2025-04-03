@@ -78,9 +78,6 @@ class TSFTextStore final : public TSFTextStoreBase,
   STDMETHODIMP UnadviseMouseSink(DWORD);
 
  public:
-  static void Initialize(void);
-  static void Terminate(void);
-
   static bool ProcessRawKeyMessage(const MSG& aMsg);
   static void ProcessMessage(nsWindow* aWindow, UINT aMessage, WPARAM& aWParam,
                              LPARAM& aLParam, MSGResult& aResult);
@@ -90,100 +87,71 @@ class TSFTextStore final : public TSFTextStoreBase,
 
   static void CommitComposition(bool aDiscard) {
     NS_ASSERTION(IsInTSFMode(), "Not in TSF mode, shouldn't be called");
-    if (!sEnabledTextStore) {
-      return;
+    if (const RefPtr<TSFTextStore> textStore = TSFUtils::GetActiveTextStore()) {
+      textStore->CommitCompositionInternal(aDiscard);
     }
-    RefPtr<TSFTextStore> textStore(sEnabledTextStore);
-    textStore->CommitCompositionInternal(aDiscard);
   }
 
   static void SetInputContext(nsWindow* aWidget, const InputContext& aContext,
                               const InputContextAction& aAction);
 
-  static nsresult OnFocusChange(bool aGotFocus, nsWindow* aFocusedWidget,
-                                const InputContext& aContext);
   static nsresult OnTextChange(const IMENotification& aIMENotification) {
     NS_ASSERTION(IsInTSFMode(), "Not in TSF mode, shouldn't be called");
-    if (!sEnabledTextStore) {
-      return NS_OK;
+    if (const RefPtr<TSFTextStore> textStore = TSFUtils::GetActiveTextStore()) {
+      return textStore->OnTextChangeInternal(aIMENotification);
     }
-    RefPtr<TSFTextStore> textStore(sEnabledTextStore);
-    return textStore->OnTextChangeInternal(aIMENotification);
+    return NS_OK;
   }
 
   static nsresult OnSelectionChange(const IMENotification& aIMENotification) {
     NS_ASSERTION(IsInTSFMode(), "Not in TSF mode, shouldn't be called");
-    if (!sEnabledTextStore) {
-      return NS_OK;
+    if (const RefPtr<TSFTextStore> textStore = TSFUtils::GetActiveTextStore()) {
+      return textStore->OnSelectionChangeInternal(aIMENotification);
     }
-    RefPtr<TSFTextStore> textStore(sEnabledTextStore);
-    return textStore->OnSelectionChangeInternal(aIMENotification);
+    return NS_OK;
   }
 
   static nsresult OnLayoutChange() {
     NS_ASSERTION(IsInTSFMode(), "Not in TSF mode, shouldn't be called");
-    if (!sEnabledTextStore) {
-      return NS_OK;
+    if (const RefPtr<TSFTextStore> textStore = TSFUtils::GetActiveTextStore()) {
+      return textStore->OnLayoutChangeInternal();
     }
-    RefPtr<TSFTextStore> textStore(sEnabledTextStore);
-    return textStore->OnLayoutChangeInternal();
+    return NS_OK;
   }
 
   static nsresult OnUpdateComposition() {
     NS_ASSERTION(IsInTSFMode(), "Not in TSF mode, shouldn't be called");
-    if (!sEnabledTextStore) {
-      return NS_OK;
+    if (const RefPtr<TSFTextStore> textStore = TSFUtils::GetActiveTextStore()) {
+      return textStore->OnUpdateCompositionInternal();
     }
-    RefPtr<TSFTextStore> textStore(sEnabledTextStore);
-    return textStore->OnUpdateCompositionInternal();
+    return NS_OK;
   }
 
   static nsresult OnMouseButtonEvent(const IMENotification& aIMENotification) {
     NS_ASSERTION(IsInTSFMode(), "Not in TSF mode, shouldn't be called");
-    if (!sEnabledTextStore) {
-      return NS_OK;
+    if (const RefPtr<TSFTextStore> textStore = TSFUtils::GetActiveTextStore()) {
+      return textStore->OnMouseButtonEventInternal(aIMENotification);
     }
-    RefPtr<TSFTextStore> textStore(sEnabledTextStore);
-    return textStore->OnMouseButtonEventInternal(aIMENotification);
+    return NS_OK;
   }
 
   static IMENotificationRequests GetIMENotificationRequests();
 
-  
-  
-  
-  static void* GetNativeData(uint32_t aDataType) {
-    switch (aDataType) {
-      case NS_NATIVE_TSF_THREAD_MGR:
-        Initialize();  
-        return static_cast<void*>(&sThreadMgr);
-      case NS_NATIVE_TSF_CATEGORY_MGR:
-        return static_cast<void*>(&sCategoryMgr);
-      case NS_NATIVE_TSF_DISPLAY_ATTR_MGR:
-        return static_cast<void*>(&sDisplayAttrMgr);
-      default:
-        return nullptr;
-    }
-  }
-
-  static void* GetThreadManager() { return static_cast<void*>(sThreadMgr); }
-
-  static bool ThinksHavingFocus() {
-    return (sEnabledTextStore && sEnabledTextStore->mContext);
-  }
-
-  static bool IsInTSFMode() { return sThreadMgr != nullptr; }
+  static bool IsInTSFMode() { return TSFUtils::GetThreadMgr() != nullptr; }
 
   static bool IsComposing() {
-    return (sEnabledTextStore && sEnabledTextStore->mComposition.isSome());
+    return TSFUtils::GetActiveTextStore() &&
+           TSFUtils::GetActiveTextStore()->mComposition.isSome();
   }
 
   static bool IsComposingOn(nsWindow* aWidget) {
-    return (IsComposing() && sEnabledTextStore->mWidget == aWidget);
+    return IsComposing() && TSFUtils::GetActiveTextStore()->mWidget == aWidget;
   }
 
-  static nsWindow* GetEnabledWindowBase() {
-    return sEnabledTextStore ? sEnabledTextStore->mWidget.get() : nullptr;
+  static nsWindow* GetEnabledWindow() {
+    return TSFUtils::GetActiveTextStore()
+               ? TSFUtils::GetActiveTextStore()->mWidget.get()
+               : nullptr;
   }
 
   
@@ -214,17 +182,16 @@ class TSFTextStore final : public TSFTextStoreBase,
   static bool CurrentKeyboardLayoutHasIME();
 #endif  
 
+  void Destroy() final;
+
+  [[nodiscard]] static Result<RefPtr<TSFTextStore>, nsresult> CreateAndSetFocus(
+      nsWindow* aFocusedWindow, const InputContext& aContext);
+
  protected:
   TSFTextStore();
   ~TSFTextStore();
 
-  static bool CreateAndSetFocus(nsWindow* aFocusedWidget,
-                                const InputContext& aContext);
-  static void EnsureToDestroyAndReleaseEnabledTextStoreIf(
-      RefPtr<TSFTextStore>& aTextStore);
-
   bool Init(nsWindow* aWidget, const InputContext& aContext);
-  void Destroy();
   void ReleaseTSFObjects();
 
   
@@ -930,48 +897,9 @@ class TSFTextStore final : public TSFTextStoreBase,
   bool mIsInitializingContentForTSF = false;
   bool mIsInitializingSelectionForTSF = false;
 
-  
-  static StaticRefPtr<ITfThreadMgr> sThreadMgr;
-  static already_AddRefed<ITfThreadMgr> GetThreadMgr();
-  
-  static StaticRefPtr<ITfMessagePump> sMessagePump;
-
- public:
-  
-  static already_AddRefed<ITfMessagePump> GetMessagePump();
-
  private:
   
-  static StaticRefPtr<ITfKeystrokeMgr> sKeystrokeMgr;
-  
-  static StaticRefPtr<ITfDisplayAttributeMgr> sDisplayAttrMgr;
-  static already_AddRefed<ITfDisplayAttributeMgr> GetDisplayAttributeMgr();
-  
-  static StaticRefPtr<ITfCategoryMgr> sCategoryMgr;
-  static already_AddRefed<ITfCategoryMgr> GetCategoryMgr();
-  
-  static StaticRefPtr<ITfCompartment> sCompartmentForOpenClose;
-  static already_AddRefed<ITfCompartment> GetCompartmentForOpenClose();
-
-  
-  
-  
-  
-  static StaticRefPtr<TSFTextStore> sEnabledTextStore;
-
-  
-  static StaticRefPtr<ITfDocumentMgr> sDisabledDocumentMgr;
-  static StaticRefPtr<ITfContext> sDisabledContext;
-
-  static StaticRefPtr<ITfInputProcessorProfiles> sInputProcessorProfiles;
-  static already_AddRefed<ITfInputProcessorProfiles>
-  GetInputProcessorProfiles();
-
-  
   static const MSG* sHandlingKeyMsg;
-
-  
-  static DWORD sClientId;
 
   
   

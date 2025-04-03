@@ -204,12 +204,11 @@ class IMEHandler final {
                                     const nsAString& aHTMLInputType,
                                     const nsAString& aHTMLInputMode,
                                     bool aInPrivateBrowsing);
-  static bool sIsInTSFMode;
   
   
   static bool sIsIMMEnabled;
 
-  static bool IsTSFAvailable() { return sIsInTSFMode; }
+  static bool IsTSFAvailable();
   static bool IsIMMActive();
 
   static bool IsOnScreenKeyboardSupported();
