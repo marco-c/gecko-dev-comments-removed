@@ -21,7 +21,6 @@
 
 
 
-
 #include "mozilla/layers/NativeLayerWayland.h"
 
 #include <dlfcn.h>
@@ -409,13 +408,6 @@ bool NativeLayerRootWayland::CommitToScreenLocked(
   mFrameInProcess = false;
 
   
-  if (IsEmptyLocked(aProofOfLock)) {
-    return true;
-  }
-
-  LOG("NativeLayerRootWayland::CommitToScreen()");
-
-  
   
   WaylandSurfaceLock surfaceLock(mSurface,  true);
   if (!mSurface->IsMapped()) {
@@ -423,6 +415,8 @@ bool NativeLayerRootWayland::CommitToScreenLocked(
     LOG("NativeLayerRootWayland::CommitToScreen() root surface is not mapped");
     return false;
   }
+
+  LOG("NativeLayerRootWayland::CommitToScreen()");
 
   
   
