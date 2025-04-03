@@ -60,6 +60,7 @@ public class GeckoWebExecutor {
     FETCH_FLAGS_NO_REDIRECTS,
     FETCH_FLAGS_PRIVATE,
     FETCH_FLAGS_STREAM_FAILURE_TEST,
+    FETCH_FLAGS_OHTTP,
   })
   public @interface FetchFlags {}
 
@@ -80,6 +81,9 @@ public class GeckoWebExecutor {
 
   
   @WrapForJNI public static final int FETCH_FLAGS_STREAM_FAILURE_TEST = 1 << 10;
+
+  
+  @WrapForJNI public static final int FETCH_FLAGS_OHTTP = 1 << 11;
 
   
 
