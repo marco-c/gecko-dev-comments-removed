@@ -2657,6 +2657,17 @@
         if (this.#rtlMode) {
           dropBefore = !dropBefore;
         }
+
+        
+        
+        let isOutOfBounds = isPinned
+          ? dropElement.elementIndex >= numPinned
+          : dropElement.elementIndex < numPinned;
+        if (isOutOfBounds) {
+          
+          dropElement = this.ariaFocusableItems[numPinned - 1];
+          dropBefore = false;
+        }
       }
 
       if (gBrowser._tabGroupsEnabled && isTab(draggedTab) && !isPinned) {
