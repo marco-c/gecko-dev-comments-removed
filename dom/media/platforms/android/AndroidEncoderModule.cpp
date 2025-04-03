@@ -17,7 +17,8 @@ extern LazyLogModule sPEMLog;
       ("AndroidEncoderModule(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
 
 bool AndroidEncoderModule::SupportsCodec(CodecType aCodec) const {
-  return aCodec == CodecType::H264 ||
+  return (aCodec == CodecType::H264 &&
+          java::HardwareCodecCapabilityUtils::HasHWH264(true )) ||
          (aCodec == CodecType::VP8 &&
           java::HardwareCodecCapabilityUtils::HasHWVP8(true )) ||
          (aCodec == CodecType::VP9 &&

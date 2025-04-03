@@ -652,15 +652,7 @@ class ConfigureCodec {
         mUseTransportCC(false),
         mUseAudioFec(false),
         mRedUlpfecEnabled(false) {
-#ifdef MOZ_WIDGET_ANDROID
-    
-    
-    MOZ_ASSERT(!PeerConnectionCtx::GetInstance()->gmpHasH264(),
-               "GMP plugin not allowed on Android");
-    mSoftwareH264Enabled = true;
-#else
     mSoftwareH264Enabled = PeerConnectionCtx::GetInstance()->gmpHasH264();
-#endif
 
     if (WebrtcVideoConduit::HasH264Hardware()) {
       glean::webrtc::has_h264_hardware
@@ -751,8 +743,8 @@ class ConfigureCodec {
           
           videoCodec.mEnabled = mH264Enabled;
 
-          if (videoCodec.mPacketizationMode == 0 &&
-              !PeerConnectionCtx::GetInstance()->gmpHasH264()) {
+          if (videoCodec.mPacketizationMode == 0 && !mSoftwareH264Enabled) {
+            
             
             videoCodec.mEnabled = false;
           }
