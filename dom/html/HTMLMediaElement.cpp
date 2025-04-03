@@ -2012,9 +2012,6 @@ class HTMLMediaElement::ErrorSink {
     }
 
     ReportErrorProbe(aErrorCode, aResult);
-    mError = new MediaError(mOwner, aErrorCode,
-                            aResult ? aResult->Message() : nsCString());
-    mOwner->QueueEvent(u"error"_ns);
     if (mOwner->ReadyState() == HAVE_NOTHING &&
         aErrorCode == MEDIA_ERR_ABORTED) {
       
@@ -2025,11 +2022,21 @@ class HTMLMediaElement::ErrorSink {
       if (mOwner->mDecoder) {
         mOwner->ShutdownDecoder();
       }
-    } else if (aErrorCode == MEDIA_ERR_SRC_NOT_SUPPORTED) {
+      return;
+    }
+
+    if (aErrorCode == MEDIA_ERR_SRC_NOT_SUPPORTED) {
+      
       mOwner->ChangeNetworkState(NETWORK_NO_SOURCE);
     } else {
+      
+      
+      
       mOwner->ChangeNetworkState(NETWORK_IDLE);
     }
+    mError = new MediaError(mOwner, aErrorCode,
+                            aResult ? aResult->Message() : nsCString());
+    mOwner->QueueEvent(u"error"_ns);
   }
 
   void ResetError() { mError = nullptr; }
