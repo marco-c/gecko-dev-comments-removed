@@ -108,12 +108,6 @@ class CrashGenerationServer {
   
   bool Start();
 
-  
-  void SetPath(const wchar_t* dump_path);
-
-  
-  std::wstring GetPath();
-
   void pre_fetch_custom_info(bool do_pre_fetch) {
     pre_fetch_custom_info_ = do_pre_fetch;
   }
@@ -289,7 +283,7 @@ class CrashGenerationServer {
   bool pre_fetch_custom_info_;
 
   
-  std::wstring dump_path_;
+  const std::wstring dump_path_;
 
   
   

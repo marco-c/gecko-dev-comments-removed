@@ -46,12 +46,6 @@ struct BootstrapConfig {
 
 
   const char* appDataPath;
-#if defined(MOZ_WIDGET_ANDROID)
-  
-  int crashChildNotificationSocket;
-  
-  int crashHelperSocket;
-#endif
 };
 
 

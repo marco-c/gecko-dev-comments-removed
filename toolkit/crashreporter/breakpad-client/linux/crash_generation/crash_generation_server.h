@@ -47,8 +47,7 @@ public:
   
   
   
-  using OnClientDumpRequestCallback = void (void* dump_context,
-                                            const ClientInfo& client_info,
+  using OnClientDumpRequestCallback = void (const ClientInfo& client_info,
                                             const string& file_path);
 
   
@@ -61,9 +60,11 @@ public:
   
   
   
+  
+  
+  
   CrashGenerationServer(const int listen_fd,
                         std::function<OnClientDumpRequestCallback> dump_callback,
-                        void* dump_context,
                         const string* dump_path);
 
   ~CrashGenerationServer();
@@ -75,9 +76,6 @@ public:
 
   
   void Stop();
-
-  
-  void SetPath(const char* dump_path);
 
   
   
@@ -103,12 +101,15 @@ private:
   
   bool MakeMinidumpFilename(string& outFilename);
 
+  
+  
+  void ReserveFileDescriptors();
+  void ReleaseFileDescriptors();
+
   int server_fd_;
 
   std::function<OnClientDumpRequestCallback> dump_callback_;
-  void* dump_context_;
 
-  pthread_mutex_t dump_dir_mutex_;
   string dump_dir_;
 
   bool started_;
@@ -116,6 +117,9 @@ private:
   pthread_t thread_;
   int control_pipe_in_;
   int control_pipe_out_;
+
+  static const size_t RESERVED_FDS_NUM = 2;
+  std::array<int, RESERVED_FDS_NUM> reserved_fds_;
 };
 
 } 
