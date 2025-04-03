@@ -23,7 +23,7 @@ constexpr double kError = 0.1;
 
 }  
 
-namespace rtc {
+namespace webrtc {
 
 TEST(EventBasedExponentialMovingAverageTest, NoValue) {
   EventBasedExponentialMovingAverage average(kHalfTime);

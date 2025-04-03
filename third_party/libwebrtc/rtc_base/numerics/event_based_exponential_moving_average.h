@@ -16,7 +16,7 @@
 #include <limits>
 #include <optional>
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -65,6 +65,12 @@ class EventBasedExponentialMovingAverage {
   std::optional<int64_t> last_observation_timestamp_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::EventBasedExponentialMovingAverage;
 }  
 
 #endif  
