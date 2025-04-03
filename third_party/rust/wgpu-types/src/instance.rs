@@ -5,7 +5,7 @@ use alloc::string::String;
 use crate::Backends;
 
 #[cfg(doc)]
-use crate::Backend;
+use crate::{Backend, DownlevelFlags};
 
 
 #[derive(Clone, Debug)]
@@ -98,6 +98,11 @@ bitflags::bitflags! {
         ///
         /// When `Self::from_env()` is used takes value from `WGPU_GPU_BASED_VALIDATION` environment variable.
         const GPU_BASED_VALIDATION = 1 << 4;
+
+        /// Validate indirect buffer content prior to issuing indirect draws/dispatches.
+        ///
+        /// When `Self::from_env()` is used takes value from `WGPU_VALIDATION_INDIRECT_CALL` environment variable.
+        const VALIDATION_INDIRECT_CALL = 1 << 5;
     }
 }
 
@@ -111,7 +116,7 @@ impl InstanceFlags {
     
     #[must_use]
     pub fn debugging() -> Self {
-        InstanceFlags::DEBUG | InstanceFlags::VALIDATION
+        InstanceFlags::DEBUG | InstanceFlags::VALIDATION | InstanceFlags::VALIDATION_INDIRECT_CALL
     }
 
     
@@ -130,7 +135,7 @@ impl InstanceFlags {
             return InstanceFlags::debugging();
         }
 
-        InstanceFlags::empty()
+        InstanceFlags::VALIDATION_INDIRECT_CALL
     }
 
     
@@ -139,6 +144,7 @@ impl InstanceFlags {
         Self::default().with_env()
     }
 
+    
     
     
     
@@ -166,6 +172,7 @@ impl InstanceFlags {
         if let Some(bit) = env("WGPU_VALIDATION") {
             self.set(Self::VALIDATION, bit);
         }
+
         if let Some(bit) = env("WGPU_DEBUG") {
             self.set(Self::DEBUG, bit);
         }
@@ -177,6 +184,9 @@ impl InstanceFlags {
         }
         if let Some(bit) = env("WGPU_GPU_BASED_VALIDATION") {
             self.set(Self::GPU_BASED_VALIDATION, bit);
+        }
+        if let Some(bit) = env("WGPU_VALIDATION_INDIRECT_CALL") {
+            self.set(Self::VALIDATION_INDIRECT_CALL, bit);
         }
 
         self

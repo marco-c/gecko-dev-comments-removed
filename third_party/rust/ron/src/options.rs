@@ -1,13 +1,13 @@
 
 
-use std::io;
+use std::{fmt, io};
 
 use serde::{de, ser};
 use serde_derive::{Deserialize, Serialize};
 
 use crate::{
     de::Deserializer,
-    error::{Result, SpannedResult},
+    error::{Position, Result, SpannedError, SpannedResult},
     extensions::Extensions,
     ser::{PrettyConfig, Serializer},
 };
@@ -27,7 +27,7 @@ use crate::{
 
 
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)] 
 #[serde(default)]
 #[non_exhaustive]
 pub struct Options {
@@ -92,15 +92,12 @@ impl Options {
 impl Options {
     
     
-    pub fn from_reader<R, T>(&self, mut rdr: R) -> SpannedResult<T>
+    pub fn from_reader<R, T>(&self, rdr: R) -> SpannedResult<T>
     where
         R: io::Read,
         T: de::DeserializeOwned,
     {
-        let mut bytes = Vec::new();
-        rdr.read_to_end(&mut bytes)?;
-
-        self.from_bytes(&bytes)
+        self.from_reader_seed(rdr, std::marker::PhantomData)
     }
 
     
@@ -109,7 +106,7 @@ impl Options {
     where
         T: de::Deserialize<'a>,
     {
-        self.from_bytes(s.as_bytes())
+        self.from_str_seed(s, std::marker::PhantomData)
     }
 
     
@@ -124,15 +121,34 @@ impl Options {
     
     
     
+    
+    #[allow(clippy::missing_panics_doc)]
     pub fn from_reader_seed<R, S, T>(&self, mut rdr: R, seed: S) -> SpannedResult<T>
     where
         R: io::Read,
         S: for<'a> de::DeserializeSeed<'a, Value = T>,
     {
         let mut bytes = Vec::new();
-        rdr.read_to_end(&mut bytes)?;
 
-        self.from_bytes_seed(&bytes, seed)
+        let io_err = if let Err(err) = rdr.read_to_end(&mut bytes) {
+            err
+        } else {
+            return self.from_bytes_seed(&bytes, seed);
+        };
+
+        
+        
+        #[allow(clippy::expect_used)]
+        let valid_input = match std::str::from_utf8(&bytes) {
+            Ok(valid_input) => valid_input,
+            Err(err) => std::str::from_utf8(&bytes[..err.valid_up_to()])
+                .expect("source is valid up to error"),
+        };
+
+        Err(SpannedError {
+            code: io_err.into(),
+            position: Position::from_src_end(valid_input),
+        })
     }
 
     
@@ -142,7 +158,15 @@ impl Options {
     where
         S: de::DeserializeSeed<'a, Value = T>,
     {
-        self.from_bytes_seed(s.as_bytes(), seed)
+        let mut deserializer = Deserializer::from_str_with_options(s, self)?;
+
+        let value = seed
+            .deserialize(&mut deserializer)
+            .map_err(|e| deserializer.span_error(e))?;
+
+        deserializer.end().map_err(|e| deserializer.span_error(e))?;
+
+        Ok(value)
     }
 
     
@@ -152,7 +176,7 @@ impl Options {
     where
         S: de::DeserializeSeed<'a, Value = T>,
     {
-        let mut deserializer = Deserializer::from_bytes_with_options(s, self.clone())?;
+        let mut deserializer = Deserializer::from_bytes_with_options(s, self)?;
 
         let value = seed
             .deserialize(&mut deserializer)
@@ -170,20 +194,20 @@ impl Options {
     
     pub fn to_writer<W, T>(&self, writer: W, value: &T) -> Result<()>
     where
-        W: io::Write,
+        W: fmt::Write,
         T: ?Sized + ser::Serialize,
     {
-        let mut s = Serializer::with_options(writer, None, self.clone())?;
+        let mut s = Serializer::with_options(writer, None, self)?;
         value.serialize(&mut s)
     }
 
     
     pub fn to_writer_pretty<W, T>(&self, writer: W, value: &T, config: PrettyConfig) -> Result<()>
     where
-        W: io::Write,
+        W: fmt::Write,
         T: ?Sized + ser::Serialize,
     {
-        let mut s = Serializer::with_options(writer, Some(config), self.clone())?;
+        let mut s = Serializer::with_options(writer, Some(config), self)?;
         value.serialize(&mut s)
     }
 
@@ -196,10 +220,10 @@ impl Options {
     where
         T: ?Sized + ser::Serialize,
     {
-        let mut output = Vec::new();
-        let mut s = Serializer::with_options(&mut output, None, self.clone())?;
+        let mut output = String::new();
+        let mut s = Serializer::with_options(&mut output, None, self)?;
         value.serialize(&mut s)?;
-        Ok(String::from_utf8(output).expect("Ron should be utf-8"))
+        Ok(output)
     }
 
     
@@ -207,9 +231,9 @@ impl Options {
     where
         T: ?Sized + ser::Serialize,
     {
-        let mut output = Vec::new();
-        let mut s = Serializer::with_options(&mut output, Some(config), self.clone())?;
+        let mut output = String::new();
+        let mut s = Serializer::with_options(&mut output, Some(config), self)?;
         value.serialize(&mut s)?;
-        Ok(String::from_utf8(output).expect("Ron should be utf-8"))
+        Ok(output)
     }
 }
