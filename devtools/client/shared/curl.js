@@ -58,11 +58,17 @@ const Curl = {
   generateCommand(data, platform) {
     const utils = CurlUtils;
 
-    let commandParts = [];
+    let command = ["curl"];
 
     
-    const escapeStringifNeeded = value => {
-      return /^[a-zA-Z-]+$/.test(value) ? value : escapeString(value);
+    const addParam = value => {
+      const safe = /^[a-zA-Z-]+$/.test(value) ? value : escapeString(value);
+      command.push(safe);
+    };
+
+    const addPostData = value => {
+      const safe = /^[a-zA-Z-]+$/.test(value) ? value : escapeString(value);
+      postData.push(safe);
     };
 
     const ignoredHeaders = new Set();
@@ -71,17 +77,17 @@ const Curl = {
     
     
     const escapeString =
-      currentPlatform === "WINNT"
+      currentPlatform == "WINNT"
         ? utils.escapeStringWin
         : utils.escapeStringPosix;
 
     
-    commandParts.push(escapeString(data.url));
+    addParam(data.url);
 
     
     
     if (data.url.includes("[") || data.url.includes("]")) {
-      commandParts.push("--globoff");
+      addParam("--globoff");
     }
 
     let postDataText = null;
@@ -98,13 +104,13 @@ const Curl = {
       
       
       postDataText = data.postDataText;
-      postData.push("--data-binary");
+      addPostData("--data-binary");
       const boundary = utils.getMultipartBoundary(data);
       const text = utils.removeBinaryDataFromMultipartText(
         postDataText,
         boundary
       );
-      postData.push(escapeStringifNeeded(text));
+      addPostData(text);
       ignoredHeaders.add("content-length");
     } else if (
       data.postDataText &&
@@ -113,10 +119,8 @@ const Curl = {
     ) {
       
       postDataText = data.postDataText;
-      postData.push(
-        "--data-raw " +
-          escapeStringifNeeded(`${utils.writePostDataTextParams(postDataText)}`)
-      );
+      addPostData("--data-raw");
+      addPostData(utils.writePostDataTextParams(postDataText));
       ignoredHeaders.add("content-length");
     }
     
@@ -124,19 +128,20 @@ const Curl = {
 
     
     if (utils.isContentEncodedResponse(data)) {
-      commandParts.push("--compressed");
+      addParam("--compressed");
     }
 
     
     
     
     if (data.method === "HEAD") {
-      commandParts.push("-I");
+      addParam("-I");
     } else if (data.method !== "GET") {
       
       
       
-      commandParts.push("-X " + escapeStringifNeeded(`${data.method}`));
+      addParam("-X");
+      addParam(data.method);
     }
 
     
@@ -150,26 +155,14 @@ const Curl = {
       if (ignoredHeaders.has(header.name.toLowerCase())) {
         continue;
       }
-      commandParts.push(
-        "-H " + escapeStringifNeeded(`${header.name}: ${header.value}`)
-      );
+      addParam("-H");
+      addParam(header.name + ": " + header.value);
     }
 
     
-    commandParts = commandParts.concat(postData);
+    command = command.concat(postData);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    const joinStr = currentPlatform === "WINNT" ? " ^\n  " : " \\\n  ";
-    return (
-      "curl " + commandParts.join(commandParts.length >= 3 ? joinStr : " ")
-    );
+    return command.join(" ");
   },
 };
 
@@ -451,16 +444,18 @@ const CurlUtils = {
 
 
 
-    const encapsChars = '^"';
+    const encapsChars = '"';
     return (
       encapsChars +
       str
+
         
         
         .replace(/\\/g, "\\\\")
 
         
-        .replace(/"/g, '\\"')
+        
+        .replace(/"/g, '""')
 
         
         .replace(/[`$]/g, "\\$&")
@@ -480,8 +475,13 @@ const CurlUtils = {
 
         
         
+        .replace(/\r\n?/g, "\n")
+
         
-        .replace(/\r?\n/g, "^\n\n") +
+        
+        
+        
+        .replace(/\n/g, '"^\r\n\r\n"') +
       encapsChars
     );
   },
