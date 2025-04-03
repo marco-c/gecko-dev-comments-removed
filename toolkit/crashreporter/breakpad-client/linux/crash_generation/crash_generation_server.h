@@ -47,7 +47,8 @@ public:
   
   
   
-  using OnClientDumpRequestCallback = void (const ClientInfo& client_info,
+  using OnClientDumpRequestCallback = void (void* dump_context,
+                                            const ClientInfo& client_info,
                                             const string& file_path);
 
   
@@ -60,11 +61,9 @@ public:
   
   
   
-  
-  
-  
   CrashGenerationServer(const int listen_fd,
                         std::function<OnClientDumpRequestCallback> dump_callback,
+                        void* dump_context,
                         const string* dump_path);
 
   ~CrashGenerationServer();
@@ -76,6 +75,9 @@ public:
 
   
   void Stop();
+
+  
+  void SetPath(const char* dump_path);
 
   
   
@@ -109,7 +111,9 @@ private:
   int server_fd_;
 
   std::function<OnClientDumpRequestCallback> dump_callback_;
+  void* dump_context_;
 
+  pthread_mutex_t dump_dir_mutex_;
   string dump_dir_;
 
   bool started_;

@@ -343,7 +343,6 @@ void ExceptionHandler::RestoreHandlersLocked() {
 
 
 void ExceptionHandler::SignalHandler(int sig, siginfo_t* info, void* uc) {
-
   
   
   
