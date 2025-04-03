@@ -33,7 +33,7 @@ class MediaDecoderOwner {
   virtual void DownloadProgressed() = 0;
 
   
-  virtual void DispatchAsyncEvent(const nsAString& aName) = 0;
+  virtual void QueueEvent(const nsAString& aName) = 0;
 
   
   virtual void UpdateReadyState() = 0;

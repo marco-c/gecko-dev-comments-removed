@@ -67,6 +67,10 @@ class HTMLMediaElement;
 
 
 
+
+
+
+
 class nsMediaEventRunner : public nsIRunnable, public nsINamed {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -107,6 +111,9 @@ class nsAsyncEventRunner : public nsMediaEventRunner {
       : nsMediaEventRunner(u"nsAsyncEventRunner"_ns, aElement, aEventName) {}
   NS_IMETHOD Run() override;
 };
+
+
+
 
 
 

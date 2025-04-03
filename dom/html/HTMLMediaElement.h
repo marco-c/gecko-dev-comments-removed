@@ -311,8 +311,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
       const PrincipalHandle& aNewPrincipalHandle) override;
 
   
-  void DispatchAsyncEvent(const nsAString& aName) final;
-  void DispatchAsyncEvent(RefPtr<nsMediaEventRunner> aRunner);
+  void QueueEvent(const nsAString& aName) final;
+  
+  
+  void QueueTask(RefPtr<nsMediaEventRunner> aRunner);
 
   
   void UpdateReadyState() override {
