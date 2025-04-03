@@ -67,8 +67,13 @@ class IvfVideoFrameGenerator : public FrameGeneratorInterface {
   std::unique_ptr<IvfFileReader> file_reader_;
   std::unique_ptr<VideoDecoder> video_decoder_;
 
-  size_t width_;
-  size_t height_;
+  
+  
+  Resolution original_resolution_;
+  
+  
+  
+  std::optional<Resolution> output_resolution_;
   std::optional<int> fps_hint_;
 
   
