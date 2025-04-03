@@ -1,10 +1,21 @@
-use std::io::{self, Write};
-use std::ops::Range;
-use termcolor::{ColorSpec, WriteColor};
+use alloc::string::String;
+use core::ops::Range;
 
 use crate::diagnostic::{LabelStyle, Severity};
 use crate::files::{Error, Location};
-use crate::term::{Chars, Config, Styles};
+use crate::term::{Chars, Config};
+
+#[cfg(feature = "termcolor")]
+use {
+    crate::term::Styles,
+    termcolor::{ColorSpec, WriteColor},
+};
+
+#[cfg(feature = "std")]
+use std::io::{self, Write};
+
+#[cfg(not(feature = "std"))]
+use core::fmt::{Arguments, Write};
 
 
 pub struct Locus {
@@ -109,14 +120,18 @@ type Underline = (LabelStyle, VerticalBound);
 
 
 pub struct Renderer<'writer, 'config> {
+    #[cfg(feature = "termcolor")]
     writer: &'writer mut dyn WriteColor,
+    #[cfg(not(feature = "termcolor"))]
+    writer: &'writer mut dyn Write,
     config: &'config Config,
 }
 
 impl<'writer, 'config> Renderer<'writer, 'config> {
     
     pub fn new(
-        writer: &'writer mut dyn WriteColor,
+        #[cfg(feature = "termcolor")] writer: &'writer mut dyn WriteColor,
+        #[cfg(not(feature = "termcolor"))] writer: &'writer mut dyn Write,
         config: &'config Config,
     ) -> Renderer<'writer, 'config> {
         Renderer { writer, config }
@@ -126,6 +141,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         &self.config.chars
     }
 
+    #[cfg(feature = "termcolor")]
     fn styles(&self) -> &'config Styles {
         &self.config.styles
     }
@@ -157,6 +173,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         
         
         
+        #[cfg(feature = "termcolor")]
         self.set_color(self.styles().header(severity))?;
         match severity {
             Severity::Bug => write!(self, "bug")?,
@@ -180,8 +197,10 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         
         
         
+        #[cfg(feature = "termcolor")]
         self.set_color(&self.styles().header_message)?;
         write!(self, ": {}", message)?;
+        #[cfg(feature = "termcolor")]
         self.reset()?;
 
         writeln!(self)?;
@@ -207,12 +226,14 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     ) -> Result<(), Error> {
         self.outer_gutter(outer_padding)?;
 
+        #[cfg(feature = "termcolor")]
         self.set_color(&self.styles().source_border)?;
         write!(self, "{}", self.chars().snippet_start)?;
+        #[cfg(feature = "termcolor")]
         self.reset()?;
 
         write!(self, " ")?;
-        self.snippet_locus(&locus)?;
+        self.snippet_locus(locus)?;
 
         writeln!(self)?;
 
@@ -225,6 +246,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     
     
     
+    #[allow(clippy::too_many_arguments)]
     pub fn render_snippet_source(
         &mut self,
         outer_padding: usize,
@@ -291,9 +313,11 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
 
                 
                 if is_primary && !in_primary {
+                    #[cfg(feature = "termcolor")]
                     self.set_color(self.styles().label(severity, LabelStyle::Primary))?;
                     in_primary = true;
                 } else if !is_primary && in_primary {
+                    #[cfg(feature = "termcolor")]
                     self.reset()?;
                     in_primary = false;
                 }
@@ -304,6 +328,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 }
             }
             if in_primary {
+                #[cfg(feature = "termcolor")]
                 self.reset()?;
             }
             writeln!(self)?;
@@ -368,8 +393,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 if !message.is_empty() {
                     num_messages += 1;
                 }
-                max_label_start = std::cmp::max(max_label_start, range.start);
-                max_label_end = std::cmp::max(max_label_end, range.end);
+                max_label_start = core::cmp::max(max_label_start, range.start);
+                max_label_end = core::cmp::max(max_label_end, range.end);
                 
                 if range.end == max_label_end {
                     if message.is_empty() {
@@ -418,7 +443,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 
                 
                 
-                .chain(std::iter::once((placeholder_metrics, '\0')))
+                .chain(core::iter::once((placeholder_metrics, '\0')))
             {
                 
                 let column_range = metrics.byte_index..(metrics.byte_index + ch.len_utf8());
@@ -431,8 +456,13 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 
                 if previous_label_style != current_label_style {
                     match current_label_style {
-                        None => self.reset()?,
+                        None => {
+                            #[cfg(feature = "termcolor")]
+                            self.reset()?;
+                        }
+                        #[cfg_attr(not(feature = "termcolor"), allow(unused))]
                         Some(label_style) => {
+                            #[cfg(feature = "termcolor")]
                             self.set_color(self.styles().label(severity, label_style))?;
                         }
                     }
@@ -454,13 +484,17 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             }
             
             if previous_label_style.is_some() {
+                #[cfg(feature = "termcolor")]
                 self.reset()?;
             }
             
+            #[cfg_attr(not(feature = "termcolor"), allow(unused))]
             if let Some((_, (label_style, _, message))) = trailing_label {
                 write!(self, " ")?;
+                #[cfg(feature = "termcolor")]
                 self.set_color(self.styles().label(severity, *label_style))?;
                 write!(self, "{}", message)?;
+                #[cfg(feature = "termcolor")]
                 self.reset()?;
             }
             writeln!(self)?;
@@ -499,6 +533,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 
                 
                 
+                #[cfg_attr(not(feature = "termcolor"), allow(unused))]
                 for (label_style, range, message) in
                     hanging_labels(single_labels, trailing_label).rev()
                 {
@@ -515,8 +550,10 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                             .char_indices()
                             .take_while(|(byte_index, _)| *byte_index < range.start),
                     )?;
+                    #[cfg(feature = "termcolor")]
                     self.set_color(self.styles().label(severity, *label_style))?;
                     write!(self, "{}", message)?;
+                    #[cfg(feature = "termcolor")]
                     self.reset()?;
                     writeln!(self)?;
                 }
@@ -646,8 +683,10 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             self.outer_gutter(outer_padding)?;
             match note_line_index {
                 0 => {
+                    #[cfg(feature = "termcolor")]
                     self.set_color(&self.styles().note_bullet)?;
                     write!(self, "{}", self.chars().note_bullet)?;
+                    #[cfg(feature = "termcolor")]
                     self.reset()?;
                 }
                 _ => write!(self, " ")?,
@@ -710,6 +749,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         line_number: usize,
         outer_padding: usize,
     ) -> Result<(), Error> {
+        #[cfg(feature = "termcolor")]
         self.set_color(&self.styles().line_number)?;
         write!(
             self,
@@ -717,6 +757,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             line_number = line_number,
             width = outer_padding,
         )?;
+        #[cfg(feature = "termcolor")]
         self.reset()?;
         write!(self, " ")?;
         Ok(())
@@ -724,16 +765,20 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
 
     
     fn border_left(&mut self) -> Result<(), Error> {
+        #[cfg(feature = "termcolor")]
         self.set_color(&self.styles().source_border)?;
         write!(self, "{}", self.chars().source_border_left)?;
+        #[cfg(feature = "termcolor")]
         self.reset()?;
         Ok(())
     }
 
     
     fn border_left_break(&mut self) -> Result<(), Error> {
+        #[cfg(feature = "termcolor")]
         self.set_color(&self.styles().source_border)?;
         write!(self, "{}", self.chars().source_border_left_break)?;
+        #[cfg(feature = "termcolor")]
         self.reset()?;
         Ok(())
     }
@@ -741,7 +786,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     
     fn caret_pointers(
         &mut self,
-        severity: Severity,
+        #[cfg_attr(not(feature = "termcolor"), allow(unused))] severity: Severity,
         max_label_start: usize,
         single_labels: &[SingleLabel<'_>],
         trailing_label: Option<(usize, &SingleLabel<'_>)>,
@@ -756,9 +801,12 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
 
             let mut spaces = match label_style {
                 None => 0..metrics.unicode_width,
+                #[cfg_attr(not(feature = "termcolor"), allow(unused))]
                 Some(label_style) => {
+                    #[cfg(feature = "termcolor")]
                     self.set_color(self.styles().label(severity, label_style))?;
                     write!(self, "{}", self.chars().pointer_left)?;
+                    #[cfg(feature = "termcolor")]
                     self.reset()?;
                     1..metrics.unicode_width
                 }
@@ -779,21 +827,26 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     
     fn label_multi_left(
         &mut self,
-        severity: Severity,
-        label_style: LabelStyle,
+        #[cfg_attr(not(feature = "termcolor"), allow(unused))] severity: Severity,
+        #[cfg_attr(not(feature = "termcolor"), allow(unused))] label_style: LabelStyle,
         underline: Option<LabelStyle>,
     ) -> Result<(), Error> {
         match underline {
             None => write!(self, " ")?,
             
+            #[cfg_attr(not(feature = "termcolor"), allow(unused))]
             Some(label_style) => {
+                #[cfg(feature = "termcolor")]
                 self.set_color(self.styles().label(severity, label_style))?;
                 write!(self, "{}", self.chars().multi_top)?;
+                #[cfg(feature = "termcolor")]
                 self.reset()?;
             }
         }
+        #[cfg(feature = "termcolor")]
         self.set_color(self.styles().label(severity, label_style))?;
         write!(self, "{}", self.chars().multi_left)?;
+        #[cfg(feature = "termcolor")]
         self.reset()?;
         Ok(())
     }
@@ -805,12 +858,14 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     
     fn label_multi_top_left(
         &mut self,
-        severity: Severity,
-        label_style: LabelStyle,
+        #[cfg_attr(not(feature = "termcolor"), allow(unused))] severity: Severity,
+        #[cfg_attr(not(feature = "termcolor"), allow(unused))] label_style: LabelStyle,
     ) -> Result<(), Error> {
         write!(self, " ")?;
+        #[cfg(feature = "termcolor")]
         self.set_color(self.styles().label(severity, label_style))?;
         write!(self, "{}", self.chars().multi_top_left)?;
+        #[cfg(feature = "termcolor")]
         self.reset()?;
         Ok(())
     }
@@ -822,12 +877,14 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     
     fn label_multi_bottom_left(
         &mut self,
-        severity: Severity,
-        label_style: LabelStyle,
+        #[cfg_attr(not(feature = "termcolor"), allow(unused))] severity: Severity,
+        #[cfg_attr(not(feature = "termcolor"), allow(unused))] label_style: LabelStyle,
     ) -> Result<(), Error> {
         write!(self, " ")?;
+        #[cfg(feature = "termcolor")]
         self.set_color(self.styles().label(severity, label_style))?;
         write!(self, "{}", self.chars().multi_bottom_left)?;
+        #[cfg(feature = "termcolor")]
         self.reset()?;
         Ok(())
     }
@@ -839,11 +896,12 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     
     fn label_multi_top_caret(
         &mut self,
-        severity: Severity,
+        #[cfg_attr(not(feature = "termcolor"), allow(unused))] severity: Severity,
         label_style: LabelStyle,
         source: &str,
         start: usize,
     ) -> Result<(), Error> {
+        #[cfg(feature = "termcolor")]
         self.set_color(self.styles().label(severity, label_style))?;
 
         for (metrics, _) in self
@@ -860,6 +918,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             LabelStyle::Secondary => self.config.chars.multi_secondary_caret_start,
         };
         write!(self, "{}", caret_start)?;
+        #[cfg(feature = "termcolor")]
         self.reset()?;
         writeln!(self)?;
         Ok(())
@@ -872,12 +931,13 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     
     fn label_multi_bottom_caret(
         &mut self,
-        severity: Severity,
+        #[cfg_attr(not(feature = "termcolor"), allow(unused))] severity: Severity,
         label_style: LabelStyle,
         source: &str,
         start: usize,
         message: &str,
     ) -> Result<(), Error> {
+        #[cfg(feature = "termcolor")]
         self.set_color(self.styles().label(severity, label_style))?;
 
         for (metrics, _) in self
@@ -897,6 +957,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         if !message.is_empty() {
             write!(self, " {}", message)?;
         }
+        #[cfg(feature = "termcolor")]
         self.reset()?;
         writeln!(self)?;
         Ok(())
@@ -905,18 +966,21 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     
     fn inner_gutter_column(
         &mut self,
-        severity: Severity,
+        #[cfg_attr(not(feature = "termcolor"), allow(unused))] severity: Severity,
         underline: Option<Underline>,
     ) -> Result<(), Error> {
         match underline {
             None => self.inner_gutter_space(),
+            #[cfg_attr(not(feature = "termcolor"), allow(unused))]
             Some((label_style, vertical_bound)) => {
+                #[cfg(feature = "termcolor")]
                 self.set_color(self.styles().label(severity, label_style))?;
                 let ch = match vertical_bound {
                     VerticalBound::Top => self.config.chars.multi_top,
                     VerticalBound::Bottom => self.config.chars.multi_bottom,
                 };
                 write!(self, "{0}{0}", ch)?;
+                #[cfg(feature = "termcolor")]
                 self.reset()?;
                 Ok(())
             }
@@ -957,7 +1021,23 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     }
 }
 
-impl<'writer, 'config> Write for Renderer<'writer, 'config> {
+#[cfg(not(feature = "std"))]
+impl Write for Renderer<'_, '_> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        self.writer.write_str(s)
+    }
+
+    fn write_char(&mut self, c: char) -> core::fmt::Result {
+        self.writer.write_char(c)
+    }
+
+    fn write_fmt(&mut self, args: Arguments<'_>) -> core::fmt::Result {
+        self.writer.write_fmt(args)
+    }
+}
+
+#[cfg(feature = "std")]
+impl Write for Renderer<'_, '_> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.writer.write(buf)
     }
@@ -967,7 +1047,8 @@ impl<'writer, 'config> Write for Renderer<'writer, 'config> {
     }
 }
 
-impl<'writer, 'config> WriteColor for Renderer<'writer, 'config> {
+#[cfg(feature = "termcolor")]
+impl WriteColor for Renderer<'_, '_> {
     fn supports_color(&self) -> bool {
         self.writer.supports_color()
     }
@@ -992,8 +1073,8 @@ struct Metrics {
 
 
 fn is_overlapping(range0: &Range<usize>, range1: &Range<usize>) -> bool {
-    let start = std::cmp::max(range0.start, range1.start);
-    let end = std::cmp::min(range0.end, range1.end);
+    let start = core::cmp::max(range0.start, range1.start);
+    let end = core::cmp::min(range0.end, range1.end);
     start < end
 }
 

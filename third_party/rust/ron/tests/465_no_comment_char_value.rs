@@ -1,0 +1,13 @@
+#[test]
+fn value_deserialises_r_name() {
+    
+    
+    assert_eq!(
+        ron::from_str("A('/')"),
+        Ok(ron::Value::Seq(vec![ron::Value::Char('/')]))
+    );
+    assert_eq!(
+        ron::from_str("A(\"/\")"),
+        Ok(ron::Value::Seq(vec![ron::Value::String(String::from("/"))]))
+    );
+}

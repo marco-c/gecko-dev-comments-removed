@@ -34,9 +34,6 @@
     
     clippy::too_many_arguments,
     
-    
-    unused_braces,
-    
     clippy::pattern_type_mismatch,
     
     rustdoc::private_intra_doc_links
@@ -79,7 +76,6 @@ mod hash_utils;
 pub mod hub;
 pub mod id;
 pub mod identity;
-#[cfg(feature = "indirect-validation")]
 mod indirect_validation;
 mod init_tracker;
 pub mod instance;

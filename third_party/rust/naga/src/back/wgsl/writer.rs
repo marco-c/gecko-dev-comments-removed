@@ -1150,8 +1150,9 @@ impl<W: Write> Writer<W> {
                     
                     
                     
+                    
                     if value == i64::MIN {
-                        write!(self.out, "i64({value})")?;
+                        write!(self.out, "{}li - 1li", value + 1)?;
                     } else {
                         write!(self.out, "{value}li")?;
                     }

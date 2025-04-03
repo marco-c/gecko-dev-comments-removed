@@ -23,7 +23,14 @@
 
 
 
-use std::ops::Range;
+use alloc::vec::Vec;
+use core::ops::Range;
+
+#[cfg(feature = "std")]
+use std::error;
+
+#[cfg(not(feature = "std"))]
+use core::error;
 
 
 #[derive(Debug)]
@@ -40,17 +47,27 @@ pub enum Error {
     
     InvalidCharBoundary { given: usize },
     
+    #[cfg(feature = "std")]
     Io(std::io::Error),
+    
+    FormatError,
 }
 
+#[cfg(feature = "std")]
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Error {
         Error::Io(err)
     }
 }
 
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl From<core::fmt::Error> for Error {
+    fn from(_err: core::fmt::Error) -> Error {
+        Error::FormatError
+    }
+}
+
+impl core::fmt::Display for Error {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Error::FileMissing => write!(f, "file missing"),
             Error::IndexTooLarge { given, max } => {
@@ -63,14 +80,17 @@ impl std::fmt::Display for Error {
                 write!(f, "invalid column {}, maximum column {}", given, max)
             }
             Error::InvalidCharBoundary { .. } => write!(f, "index is not a code point boundary"),
+            #[cfg(feature = "std")]
             Error::Io(err) => write!(f, "{}", err),
+            Error::FormatError => write!(f, "formatting error"),
         }
     }
 }
 
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match &self {
+            #[cfg(feature = "std")]
             Error::Io(err) => Some(err),
             _ => None,
         }
@@ -87,7 +107,7 @@ pub trait Files<'a> {
     
     type FileId: 'a + Copy + PartialEq;
     
-    type Name: 'a + std::fmt::Display;
+    type Name: 'a + core::fmt::Display;
     
     type Source: 'a + AsRef<str>;
 
@@ -204,7 +224,7 @@ pub struct Location {
 
 
 pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -> usize {
-    let end_index = std::cmp::min(byte_index, std::cmp::min(line_range.end, source.len()));
+    let end_index = core::cmp::min(byte_index, core::cmp::min(line_range.end, source.len()));
 
     (line_range.start..end_index)
         .filter(|byte_index| source.is_char_boundary(byte_index + 1))
@@ -248,8 +268,8 @@ pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -
 
 
 
-pub fn line_starts<'source>(source: &'source str) -> impl 'source + Iterator<Item = usize> {
-    std::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1))
+pub fn line_starts(source: &str) -> impl '_ + Iterator<Item = usize> {
+    core::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1))
 }
 
 
@@ -272,7 +292,7 @@ pub struct SimpleFile<Name, Source> {
 
 impl<Name, Source> SimpleFile<Name, Source>
 where
-    Name: std::fmt::Display,
+    Name: core::fmt::Display,
     Source: AsRef<str>,
 {
     
@@ -297,7 +317,7 @@ where
     
     
     fn line_start(&self, line_index: usize) -> Result<usize, Error> {
-        use std::cmp::Ordering;
+        use core::cmp::Ordering;
 
         match line_index.cmp(&self.line_starts.len()) {
             Ordering::Less => Ok(self
@@ -316,7 +336,7 @@ where
 
 impl<'a, Name, Source> Files<'a> for SimpleFile<Name, Source>
 where
-    Name: 'a + std::fmt::Display + Clone,
+    Name: 'a + core::fmt::Display + Clone,
     Source: 'a + AsRef<str>,
 {
     type FileId = ();
@@ -351,14 +371,14 @@ where
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct SimpleFiles<Name, Source> {
     files: Vec<SimpleFile<Name, Source>>,
 }
 
 impl<Name, Source> SimpleFiles<Name, Source>
 where
-    Name: std::fmt::Display,
+    Name: core::fmt::Display,
     Source: AsRef<str>,
 {
     
@@ -382,7 +402,7 @@ where
 
 impl<'a, Name, Source> Files<'a> for SimpleFiles<Name, Source>
 where
-    Name: 'a + std::fmt::Display + Clone,
+    Name: 'a + core::fmt::Display + Clone,
     Source: 'a + AsRef<str>,
 {
     type FileId = usize;

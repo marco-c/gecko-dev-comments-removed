@@ -1,8 +1,13 @@
 
 
+use alloc::{
+    string::{String, ToString},
+    vec::Vec,
+};
+use core::ops::Range;
+
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
-use std::ops::Range;
 
 
 
@@ -16,38 +21,19 @@ use std::ops::Range;
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Copy, Clone, Hash, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum Severity {
     
-    Bug,
-    
-    Error,
-    
-    Warning,
+    Help,
     
     Note,
     
-    Help,
-}
-
-impl Severity {
+    Warning,
     
-    fn to_cmp_int(self) -> u8 {
-        match self {
-            Severity::Bug => 5,
-            Severity::Error => 4,
-            Severity::Warning => 3,
-            Severity::Note => 2,
-            Severity::Help => 1,
-        }
-    }
-}
-
-impl PartialOrd for Severity {
-    fn partial_cmp(&self, other: &Severity) -> Option<std::cmp::Ordering> {
-        u8::partial_cmp(&self.to_cmp_int(), &other.to_cmp_int())
-    }
+    Error,
+    
+    Bug,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd)]
@@ -104,8 +90,8 @@ impl<FileId> Label<FileId> {
     }
 
     
-    pub fn with_message(mut self, message: impl Into<String>) -> Label<FileId> {
-        self.message = message.into();
+    pub fn with_message(mut self, message: impl ToString) -> Label<FileId> {
+        self.message = message.to_string();
         self
     }
 }
@@ -184,14 +170,20 @@ impl<FileId> Diagnostic<FileId> {
     }
 
     
-    pub fn with_code(mut self, code: impl Into<String>) -> Diagnostic<FileId> {
-        self.code = Some(code.into());
+    pub fn with_code(mut self, code: impl ToString) -> Diagnostic<FileId> {
+        self.code = Some(code.to_string());
         self
     }
 
     
-    pub fn with_message(mut self, message: impl Into<String>) -> Diagnostic<FileId> {
-        self.message = message.into();
+    pub fn with_message(mut self, message: impl ToString) -> Diagnostic<FileId> {
+        self.message = message.to_string();
+        self
+    }
+
+    
+    pub fn with_label(mut self, label: Label<FileId>) -> Diagnostic<FileId> {
+        self.labels.push(label);
         self
     }
 
@@ -202,8 +194,32 @@ impl<FileId> Diagnostic<FileId> {
     }
 
     
+    pub fn with_labels_iter(
+        mut self,
+        labels: impl IntoIterator<Item = Label<FileId>>,
+    ) -> Diagnostic<FileId> {
+        self.labels.extend(labels);
+        self
+    }
+
+    
+    pub fn with_note(mut self, note: impl ToString) -> Diagnostic<FileId> {
+        self.notes.push(note.to_string());
+        self
+    }
+
+    
     pub fn with_notes(mut self, mut notes: Vec<String>) -> Diagnostic<FileId> {
         self.notes.append(&mut notes);
+        self
+    }
+
+    
+    pub fn with_notes_iter(
+        mut self,
+        notes: impl IntoIterator<Item = String>,
+    ) -> Diagnostic<FileId> {
+        self.notes.extend(notes);
         self
     }
 }
