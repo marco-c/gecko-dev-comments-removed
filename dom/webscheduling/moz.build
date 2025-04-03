@@ -5,7 +5,7 @@
 
 
 with Files("**"):
-    BUG_COMPONENT = ("Core", "DOM: Performance")
+    BUG_COMPONENT = ("Core", "DOM: Performance APIs")
 
 EXPORTS.mozilla.dom += [
     "TaskSignal.h",
