@@ -313,10 +313,6 @@ void GCRuntime::verifyAllChunks() {
   fullChunks(lock).verifyChunks();
   availableChunks(lock).verifyChunks();
   emptyChunks(lock).verifyChunks();
-  if (currentChunk_) {
-    MOZ_ASSERT(currentChunk_->info.isCurrentChunk);
-    currentChunk_->verify();
-  }
 }
 #endif
 
@@ -396,10 +392,7 @@ void GCRuntime::releaseArena(Arena* arena, const AutoLockGC& lock) {
   } else {
     arena->zone()->gcHeapSize.removeBytes(ArenaSize, true, heapSize);
   }
-  if (arena->zone()->isAtomsZone()) {
-    arena->freeAtomMarkingBitmapIndex(this, lock);
-  }
-  arena->release();
+  arena->release(this, &lock);
   arena->chunk()->releaseArena(this, arena, lock);
 }
 
@@ -1009,11 +1002,6 @@ void GCRuntime::finish() {
   }
 
   zones().clear();
-
-  {
-    AutoLockGC lock(this);
-    clearCurrentChunk(lock);
-  }
 
   FreeChunkPool(fullChunks_.ref());
   FreeChunkPool(availableChunks_.ref());
@@ -2201,13 +2189,7 @@ void GCRuntime::decommitFreeArenas(const bool& cancel, AutoLockGC& lock) {
   for (ArenaChunk* chunk : chunksToDecommit) {
     MOZ_ASSERT(chunk->getKind() == ChunkKind::TenuredArenas);
     MOZ_ASSERT(!chunk->isEmpty());
-
     if (!chunk->hasAvailableArenas()) {
-      
-      continue;
-    }
-
-    if (chunk->info.isCurrentChunk) {
       
       continue;
     }
@@ -4008,22 +3990,11 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
         break;
       }
 
-      for (GCZonesIter zone(this); !zone.done(); zone.next()) {
-        zone->arenas.mergeBackgroundSweptArenas();
-      }
-
       {
         BufferAllocator::AutoLock lock(this);
         for (GCZonesIter zone(this); !zone.done(); zone.next()) {
           zone->bufferAllocator.finishMajorCollection(lock);
         }
-      }
-
-      atomMarking.mergePendingFreeArenaIndexes(this);
-
-      {
-        AutoLockGC lock(this);
-        clearCurrentChunk(lock);
       }
 
       assertBackgroundSweepingFinished();

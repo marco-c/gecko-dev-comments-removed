@@ -8,7 +8,6 @@
 
 #include <type_traits>
 
-#include "gc/GCLock.h"
 #include "gc/PublicIterators.h"
 
 #include "gc/GC-inl.h"
@@ -48,61 +47,29 @@ namespace gc {
 
 
 
-size_t AtomMarkingRuntime::allocateIndex(GCRuntime* gc) {
+void AtomMarkingRuntime::registerArena(Arena* arena, const AutoLockGC& lock) {
+  MOZ_ASSERT(arena->getThingSize() != 0);
+  MOZ_ASSERT(arena->getThingSize() % CellAlignBytes == 0);
+  MOZ_ASSERT(arena->zone()->isAtomsZone());
+
   
 
   
-  if (freeArenaIndexes.ref().empty()) {
-    mergePendingFreeArenaIndexes(gc);
+  if (freeArenaIndexes.ref().length()) {
+    arena->atomBitmapStart() = freeArenaIndexes.ref().popCopy();
+    return;
   }
 
   
-  if (!freeArenaIndexes.ref().empty()) {
-    return freeArenaIndexes.ref().popCopy();
-  }
-
-  
-  size_t index = allocatedWords;
+  arena->atomBitmapStart() = allocatedWords;
   allocatedWords += ArenaBitmapWords;
-  return index;
 }
 
-void AtomMarkingRuntime::freeIndex(size_t index, const AutoLockGC& lock) {
-  MOZ_ASSERT((index % ArenaBitmapWords) == 0);
-  MOZ_ASSERT(index < allocatedWords);
-
-  bool wasEmpty = pendingFreeArenaIndexes.ref().empty();
-  MOZ_ASSERT_IF(wasEmpty, !hasPendingFreeArenaIndexes);
-
-  if (!pendingFreeArenaIndexes.ref().append(index)) {
-    
-    return;
-  }
-
-  if (wasEmpty) {
-    hasPendingFreeArenaIndexes = true;
-  }
-}
-
-void AtomMarkingRuntime::mergePendingFreeArenaIndexes(GCRuntime* gc) {
-  MOZ_ASSERT(CurrentThreadCanAccessRuntime(gc->rt));
-  if (!hasPendingFreeArenaIndexes) {
-    return;
-  }
-
-  AutoLockGC lock(gc);
-  MOZ_ASSERT(!pendingFreeArenaIndexes.ref().empty());
-
-  hasPendingFreeArenaIndexes = false;
-
-  if (freeArenaIndexes.ref().empty()) {
-    std::swap(freeArenaIndexes.ref(), pendingFreeArenaIndexes.ref());
-    return;
-  }
+void AtomMarkingRuntime::unregisterArena(Arena* arena, const AutoLockGC& lock) {
+  MOZ_ASSERT(arena->zone()->isAtomsZone());
 
   
-  (void)freeArenaIndexes.ref().appendAll(pendingFreeArenaIndexes.ref());
-  pendingFreeArenaIndexes.ref().clear();
+  (void)freeArenaIndexes.ref().emplaceBack(arena->atomBitmapStart());
 }
 
 void AtomMarkingRuntime::refineZoneBitmapsForCollectedZones(

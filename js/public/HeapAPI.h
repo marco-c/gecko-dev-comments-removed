@@ -167,9 +167,6 @@ struct ArenaChunkInfo {
 
   
   uint32_t numArenasFreeCommitted;
-
-  
-  bool isCurrentChunk = false;
 };
 
 
@@ -332,7 +329,6 @@ class ArenaChunkBase : public ChunkBase {
   ArenaChunkInfo info;
   ChunkMarkBitmap markBits;
   ChunkArenaBitmap freeCommittedArenas;
-  ChunkArenaBitmap pendingFreeCommittedArenas;
   ChunkPageBitmap decommittedPages;
 
  protected:

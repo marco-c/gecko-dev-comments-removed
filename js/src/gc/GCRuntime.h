@@ -566,18 +566,12 @@ class GCRuntime {
   }
   using NonEmptyChunksIter = ChainedIterator<ChunkPool::Iter, 2>;
   NonEmptyChunksIter allNonEmptyChunks(const AutoLockGC& lock) {
-    clearCurrentChunk(lock);
     return NonEmptyChunksIter(availableChunks(lock), fullChunks(lock));
   }
   uint32_t minEmptyChunkCount(const AutoLockGC& lock) const {
     return minEmptyChunkCount_;
   }
-  void setCurrentChunk(ArenaChunk* chunk, const AutoLockGC& lock);
-  void clearCurrentChunk(const AutoLockGC& lock);
 #ifdef DEBUG
-  bool isCurrentChunk(ArenaChunk* chunk) const {
-    return chunk == currentChunk_;
-  }
   void verifyAllChunks();
 #endif
 
@@ -721,7 +715,8 @@ class GCRuntime {
   friend class ArenaLists;
   ArenaChunk* pickChunk(StallAndRetry stallAndRetry, AutoLockGCBgAlloc& lock);
   Arena* allocateArena(ArenaChunk* chunk, Zone* zone, AllocKind kind,
-                       ShouldCheckThresholds checkThresholds);
+                       ShouldCheckThresholds checkThresholds,
+                       const AutoLockGC& lock);
 
   
 
@@ -921,6 +916,9 @@ class GCRuntime {
                                       JS::SliceBudget& budget);
   IncrementalProgress finalizeAllocKind(JS::GCContext* gcx,
                                         JS::SliceBudget& budget);
+  bool foregroundFinalize(JS::GCContext* gcx, Zone* zone, AllocKind thingKind,
+                          JS::SliceBudget& sliceBudget,
+                          SortedArenaList& sweepList);
   IncrementalProgress sweepPropMapTree(JS::GCContext* gcx,
                                        JS::SliceBudget& budget);
   void endSweepPhase(bool destroyingRuntime);
@@ -929,6 +927,8 @@ class GCRuntime {
   void startBackgroundFree();
   void freeFromBackgroundThread(AutoLockHelperThreadState& lock);
   void sweepBackgroundThings(ZoneList& zones);
+  void backgroundFinalize(JS::GCContext* gcx, Zone* zone, AllocKind kind,
+                          Arena** empty);
   void prepareForSweepSlice(JS::GCReason reason);
   void assertBackgroundSweepingFinished();
 #ifdef DEBUG
@@ -1092,11 +1092,6 @@ class GCRuntime {
   
   
   GCLockData<ChunkPool> fullChunks_;
-
-  
-  
-  
-  MainThreadData<ArenaChunk*> currentChunk_;
 
   
 

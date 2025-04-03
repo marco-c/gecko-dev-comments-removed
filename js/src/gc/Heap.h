@@ -230,7 +230,8 @@ class alignas(ArenaSize) Arena {
   uint8_t data[ArenaSize - ArenaHeaderSize];
 
   
-  void init(GCRuntime* gc, JS::Zone* zone, AllocKind kind);
+  void init(GCRuntime* gc, JS::Zone* zoneArg, AllocKind kind,
+            const AutoLockGC& lock);
 
   JS::Zone* zone() const { return zone_; }
 
@@ -246,12 +247,7 @@ class alignas(ArenaSize) Arena {
 
   
   
-  inline void freeAtomMarkingBitmapIndex(GCRuntime* gc, const AutoLockGC& lock);
-
-  
-  
-  
-  inline void release();
+  inline void release(GCRuntime* gc, const AutoLockGC* maybeLock);
 
   uintptr_t address() const {
     checkAddress();
@@ -527,13 +523,14 @@ class ArenaChunk : public ArenaChunkBase {
 
   bool isNurseryChunk() const { return storeBuffer; }
 
-  Arena* allocateArena(GCRuntime* gc, JS::Zone* zone, AllocKind kind);
+  Arena* allocateArena(GCRuntime* gc, JS::Zone* zone, AllocKind kind,
+                       const AutoLockGC& lock);
 
   void releaseArena(GCRuntime* gc, Arena* arena, const AutoLockGC& lock);
 
   void decommitFreeArenas(GCRuntime* gc, const bool& cancel, AutoLockGC& lock);
   [[nodiscard]] bool decommitOneFreePage(GCRuntime* gc, size_t pageIndex,
-                                         const AutoLockGC& lock);
+                                         AutoLockGC& lock);
   void decommitAllArenas();
 
   
@@ -545,9 +542,6 @@ class ArenaChunk : public ArenaChunkBase {
 
   
   Arena* fetchNextFreeArena(GCRuntime* gc);
-
-  
-  void mergePendingFreeArenas(const AutoLockGC& lock);
 
 #ifdef DEBUG
   void verify() const;
@@ -562,11 +556,6 @@ class ArenaChunk : public ArenaChunkBase {
                                   const AutoLockGC& lock);
   void updateFreeCountsAfterFree(GCRuntime* gc, size_t numArenasFreed,
                                  bool wasCommitted, const AutoLockGC& lock);
-
-  
-  
-  
-  void updateCurrentChunkAfterAlloc(GCRuntime* gc);
 
   
   bool canDecommitPage(size_t pageIndex) const;

@@ -7,8 +7,6 @@
 #ifndef gc_AtomMarking_h
 #define gc_AtomMarking_h
 
-#include "mozilla/Atomics.h"
-
 #include "NamespaceImports.h"
 #include "js/Vector.h"
 #include "threading/ProtectedData.h"
@@ -27,11 +25,7 @@ class GCRuntime;
 
 class AtomMarkingRuntime {
   
-  js::MainThreadData<Vector<size_t, 0, SystemAllocPolicy>> freeArenaIndexes;
-
-  
-  js::GCLockData<Vector<size_t, 0, SystemAllocPolicy>> pendingFreeArenaIndexes;
-  mozilla::Atomic<bool, mozilla::Relaxed> hasPendingFreeArenaIndexes;
+  js::GCLockData<Vector<size_t, 0, SystemAllocPolicy>> freeArenaIndexes;
 
   inline void markChildren(JSContext* cx, JSAtom*);
   inline void markChildren(JSContext* cx, JS::Symbol* symbol);
@@ -44,12 +38,10 @@ class AtomMarkingRuntime {
   AtomMarkingRuntime() : allocatedWords(0) {}
 
   
-  size_t allocateIndex(GCRuntime* gc);
+  void registerArena(Arena* arena, const AutoLockGC& lock);
 
   
-  void freeIndex(size_t index, const AutoLockGC& lock);
-
-  void mergePendingFreeArenaIndexes(GCRuntime* gc);
+  void unregisterArena(Arena* arena, const AutoLockGC& lock);
 
   
   
