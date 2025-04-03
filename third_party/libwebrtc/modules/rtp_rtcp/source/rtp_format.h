@@ -13,11 +13,13 @@
 
 #include <stdint.h>
 
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <vector>
 
 #include "api/array_view.h"
+#include "api/video/video_codec_type.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 
 namespace webrtc {
@@ -40,9 +42,7 @@ class RtpPacketizer {
       rtc::ArrayView<const uint8_t> payload,
       PayloadSizeLimits limits,
       
-      const RTPVideoHeader& rtp_video_header,
-      
-      bool enable_av1_even_split = true);
+      const RTPVideoHeader& rtp_video_header);
 
   virtual ~RtpPacketizer() = default;
 
