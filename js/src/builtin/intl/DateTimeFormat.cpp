@@ -1180,9 +1180,6 @@ GetDateTimeFormat(const mozilla::intl::DateTimeFormat::ComponentsBag& options,
     }
 
     
-    
-
-    
     if (defaults == Defaults::ZonedDateTime && !formatOptions.timeZoneName) {
       formatOptions.timeZoneName =
           mozilla::Some(mozilla::intl::DateTimeFormat::TimeZoneName::Short);
