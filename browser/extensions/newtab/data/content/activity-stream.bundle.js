@@ -3251,14 +3251,16 @@ const DSSource = ({
   }
 
   
-  return external_React_default().createElement("p", {
-    className: "source clamp"
+  return external_React_default().createElement("div", {
+    className: "source-wrapper"
   }, icon_src && external_React_default().createElement("img", {
     src: icon_src,
     height: "16",
     width: "16",
     alt: ""
-  }), source);
+  }), external_React_default().createElement("p", {
+    className: "source clamp"
+  }, source));
 };
 const DefaultMeta = ({
   source,
