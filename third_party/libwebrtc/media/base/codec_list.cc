@@ -100,8 +100,8 @@ RTCError CheckInputConsistency(const std::vector<Codec>& codecs) {
 
 }  
 
-RTCErrorOr<CodecList> CodecList::CreateCodecList(
-    const std::vector<Codec>& codecs) {
+
+RTCErrorOr<CodecList> CodecList::Create(const std::vector<Codec>& codecs) {
   RTCError error = CheckInputConsistency(codecs);
   if (!error.ok()) {
     return error;

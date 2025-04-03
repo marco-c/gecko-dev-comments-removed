@@ -20,11 +20,11 @@ using webrtc::RTCErrorOr;
 using webrtc::RTCErrorType;
 
 TEST(CodecList, StoreAndRecall) {
-  CodecList empty_list(std::vector<Codec>{});
+  CodecList empty_list = CodecList::CreateFromTrustedData(std::vector<Codec>{});
   EXPECT_TRUE(empty_list.empty());
   EXPECT_TRUE(empty_list.codecs().empty());
   Codec video_codec = CreateVideoCodec({webrtc::SdpVideoFormat{"VP8"}});
-  CodecList one_codec{{video_codec}};
+  CodecList one_codec = CodecList::CreateFromTrustedData({{video_codec}});
   EXPECT_EQ(one_codec.size(), 1U);
   EXPECT_EQ(one_codec.codecs()[0], video_codec);
 }
@@ -34,7 +34,7 @@ TEST(CodecList, RejectIllegalConstructorArguments) {
       CreateVideoCodec({webrtc::SdpVideoFormat{
           "rtx", webrtc::CodecParameterMap{{"apt", "not-a-number"}}}})};
   RTCErrorOr<CodecList> checked_codec_list =
-      CodecList::CreateCodecList(apt_without_number);
+      CodecList::Create(apt_without_number);
   EXPECT_FALSE(checked_codec_list.ok());
   EXPECT_EQ(checked_codec_list.error().type(), RTCErrorType::INVALID_PARAMETER);
 }
@@ -52,10 +52,12 @@ TEST(CodecList, CrashOnIllegalConstructorArguments) {
       CreateVideoCodec({webrtc::SdpVideoFormat{
           "rtx", webrtc::CodecParameterMap{{"apt", "not-a-number"}}}})};
 #if RTC_DCHECK_IS_ON
-  EXPECT_DEATH(CodecList bad(apt_without_number), "CheckInputConsistency");
+  EXPECT_DEATH(
+      CodecList bad = CodecList::CreateFromTrustedData(apt_without_number),
+      "CheckInputConsistency");
 #else
   
-  CodecList bad{apt_without_number};
+  CodecList bad = CodecList::CreateFromTrustedData(apt_without_number);
   EXPECT_EQ(bad.size(), 1U);
 #endif
 }
