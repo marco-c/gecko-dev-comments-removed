@@ -128,7 +128,7 @@ std::unique_ptr<ScalableVideoController> CreateVp9ScalabilityStructure(
   }
 
   char name[20];
-  rtc::SimpleStringBuilder ss(name);
+  SimpleStringBuilder ss(name);
   if (codec.mode == VideoCodecMode::kScreensharing) {
     
     

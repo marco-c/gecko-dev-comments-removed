@@ -19,7 +19,7 @@
 #include "api/array_view.h"
 #include "rtc_base/string_encode.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -165,6 +165,13 @@ class StringBuilder {
   std::string str_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::SimpleStringBuilder;
+using ::webrtc::StringBuilder;
 }  
 
 #endif  

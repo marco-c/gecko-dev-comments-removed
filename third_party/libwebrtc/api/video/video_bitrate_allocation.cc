@@ -147,7 +147,7 @@ std::string VideoBitrateAllocation::ToString() const {
   
   
   char string_buf[512];
-  rtc::SimpleStringBuilder ssb(string_buf);
+  SimpleStringBuilder ssb(string_buf);
 
   ssb << "VideoBitrateAllocation [";
   uint32_t spatial_cumulator = 0;

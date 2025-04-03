@@ -261,7 +261,7 @@ TEST_F(NetEqDecodingTest, MAYBE_DecoderError) {
   static const int kExpectedOutputLength = 160;  
   const int16_t* const_out_frame_data = out_frame_.data();
   for (int i = 0; i < kExpectedOutputLength; ++i) {
-    rtc::StringBuilder ss;
+    StringBuilder ss;
     ss << "i = " << i;
     SCOPED_TRACE(ss.str());  
     EXPECT_EQ(0, const_out_frame_data[i]);
@@ -283,7 +283,7 @@ TEST_F(NetEqDecodingTest, GetAudioBeforeInsertPacket) {
       kInitSampleRateHz / 100;  
   const int16_t* const_out_frame_data = out_frame_.data();
   for (int i = 0; i < kExpectedOutputLength; ++i) {
-    rtc::StringBuilder ss;
+    StringBuilder ss;
     ss << "i = " << i;
     SCOPED_TRACE(ss.str());  
     EXPECT_EQ(0, const_out_frame_data[i]);
@@ -799,7 +799,7 @@ TEST_F(NetEqDecodingTestTwoInstances, CompareMutedStateOnOff) {
   AudioFrame out_frame1, out_frame2;
   bool muted;
   for (int i = 0; i < 1000; ++i) {
-    rtc::StringBuilder ss;
+    StringBuilder ss;
     ss << "i = " << i;
     SCOPED_TRACE(ss.str());  
     EXPECT_EQ(0, neteq_->GetAudio(&out_frame1, &muted));
@@ -825,7 +825,7 @@ TEST_F(NetEqDecodingTestTwoInstances, CompareMutedStateOnOff) {
   int counter = 0;
   while (out_frame1.speech_type_ != AudioFrame::kNormalSpeech) {
     ASSERT_LT(counter++, 1000) << "Test timed out";
-    rtc::StringBuilder ss;
+    StringBuilder ss;
     ss << "counter = " << counter;
     SCOPED_TRACE(ss.str());  
     EXPECT_EQ(0, neteq_->GetAudio(&out_frame1, &muted));

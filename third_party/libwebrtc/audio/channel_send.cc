@@ -411,7 +411,7 @@ int32_t ChannelSend::SendData(AudioFrameType frameType,
     
     
     char buf[1024];
-    rtc::SimpleStringBuilder mime_type(buf);
+    SimpleStringBuilder mime_type(buf);
     mime_type << MediaTypeToString(cricket::MEDIA_TYPE_AUDIO) << "/"
               << encoder_format_.name;
     frame_transformer_delegate_->Transform(

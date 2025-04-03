@@ -84,7 +84,7 @@ namespace webrtc {
 namespace {
 
 std::string SsrcToString(uint32_t ssrc) {
-  rtc::StringBuilder ss;
+  StringBuilder ss;
   ss << "SSRC " << ssrc;
   return ss.Release();
 }
@@ -332,7 +332,7 @@ std::string GetCandidatePairLogDescriptionAsString(
   
   
   
-  rtc::StringBuilder ss;
+  StringBuilder ss;
   ss << GetIceCandidateTypeAsString(config.local_candidate_type);
 
   if (config.local_candidate_type == IceCandidateType::kRelay) {

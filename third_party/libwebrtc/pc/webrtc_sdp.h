@@ -35,10 +35,6 @@ namespace cricket {
 class Candidate;
 }  
 
-namespace rtc {
-class StringBuilder;
-}  
-
 namespace webrtc {
 class IceCandidateInterface;
 class JsepIceCandidate;
@@ -110,7 +106,7 @@ RTC_EXPORT bool ParseCandidate(absl::string_view message,
 
 
 bool WriteFmtpParameters(const webrtc::CodecParameterMap& parameters,
-                         rtc::StringBuilder* os);
+                         StringBuilder* os);
 
 
 bool ParseFmtpParameterSet(absl::string_view line_params,

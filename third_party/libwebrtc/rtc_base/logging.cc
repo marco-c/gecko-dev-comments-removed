@@ -105,7 +105,7 @@ webrtc::Mutex& GetLoggingLock() {
 }  
 
 std::string LogLineRef::DefaultLogLine() const {
-  rtc::StringBuilder log_output;
+  webrtc::StringBuilder log_output;
   if (timestamp_ != webrtc::Timestamp::MinusInfinity()) {
     
     char timestamp[50];  
@@ -181,7 +181,7 @@ LogMessage::LogMessage(const char* file,
 
   if (err_ctx != ERRCTX_NONE) {
     char tmp_buf[1024];
-    SimpleStringBuilder tmp(tmp_buf);
+    webrtc::SimpleStringBuilder tmp(tmp_buf);
     tmp.AppendFormat("[0x%08X]", err);
     switch (err_ctx) {
       case ERRCTX_ERRNO:
@@ -245,7 +245,7 @@ void LogMessage::AddTag([[maybe_unused]] const char* tag) {
 #endif
 }
 
-rtc::StringBuilder& LogMessage::stream() {
+webrtc::StringBuilder& LogMessage::stream() {
   return print_stream_;
 }
 

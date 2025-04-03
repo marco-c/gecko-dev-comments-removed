@@ -476,7 +476,7 @@ class LogMessage {
   LogMessage& operator=(const LogMessage&) = delete;
 
   void AddTag(const char* tag);
-  rtc::StringBuilder& stream();
+  webrtc::StringBuilder& stream();
   
   
   
@@ -624,7 +624,7 @@ class LogMessage {
 #endif  
 
   
-  rtc::StringBuilder print_stream_;
+  webrtc::StringBuilder print_stream_;
 
   static bool aec_debug_;
   static std::string aec_filename_base_;

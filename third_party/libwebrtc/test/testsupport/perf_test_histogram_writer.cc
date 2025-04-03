@@ -110,7 +110,7 @@ class PerfTestHistogramWriter : public PerfTestResultWriter {
     
     
     
-    rtc::StringBuilder measurement_and_story;
+    StringBuilder measurement_and_story;
     measurement_and_story << graph_name << trace_name;
     MutexLock lock(&mutex_);
     if (histograms_.count(measurement_and_story.str()) == 0) {

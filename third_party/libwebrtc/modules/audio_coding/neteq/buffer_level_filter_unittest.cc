@@ -31,7 +31,7 @@ TEST(BufferLevelFilter, ConvergenceTest) {
     for (int value = 100; value <= 200; value += 10) {
       filter.Reset();
       filter.SetTargetBufferLevel(20);  
-      rtc::StringBuilder ss;
+      StringBuilder ss;
       ss << "times = " << times << ", value = " << value;
       SCOPED_TRACE(ss.str());  
       for (int i = 0; i < times; ++i) {
