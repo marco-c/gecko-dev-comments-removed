@@ -23,8 +23,8 @@ add_setup(async function () {
         "social-tracking.example.org",
       ],
       
-      ["urlclassifier.trackingSkipURLs", "trackertest.org"],
-      ["urlclassifier.trackingAnnotationSkipURLs", "trackertest.org"],
+      ["urlclassifier.trackingSkipURLs", "*://trackertest.org/*"],
+      ["urlclassifier.trackingAnnotationSkipURLs", "*://trackertest.org/*"],
       ["privacy.trackingprotection.enabled", false],
       ["privacy.trackingprotection.annotate_channels", true],
     ],

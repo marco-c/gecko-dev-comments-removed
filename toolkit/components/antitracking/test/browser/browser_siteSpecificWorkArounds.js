@@ -35,7 +35,7 @@ AntiTracking.runTest(
       );
     });
   },
-  [["urlclassifier.trackingAnnotationSkipURLs", "TRACKING.EXAMPLE.ORG"]],
+  [["urlclassifier.trackingAnnotationSkipURLs", "*://tracking.example.org/*"]],
   false, 
   false, 
   Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
@@ -82,7 +82,7 @@ AntiTracking.runTest(
   [
     [
       "urlclassifier.trackingAnnotationSkipURLs",
-      "foobar.example,*.example.org,baz.example",
+      "*://foobar.example/*,*://*.example.org/*,*://baz.example/*",
     ],
   ],
   false, 
@@ -113,7 +113,12 @@ AntiTracking.runTest(
       );
     });
   },
-  [["urlclassifier.trackingAnnotationSkipURLs", "*.tracking.example.org"]],
+  [
+    [
+      "urlclassifier.trackingAnnotationSkipURLs",
+      "*://*.foo.tracking.example.org/*",
+    ],
+  ],
   false, 
   false, 
   Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
@@ -143,7 +148,7 @@ AntiTracking.runTest(
     });
   },
   [
-    ["urlclassifier.trackingAnnotationSkipURLs", "TRACKING.EXAMPLE.ORG"],
+    ["urlclassifier.trackingAnnotationSkipURLs", "*://tracking.example.org/*"],
     ["privacy.antitracking.enableWebcompat", false],
   ],
   false, 
