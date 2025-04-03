@@ -82,14 +82,13 @@ void IMEHandler::Initialize() {
   IMMHandler::Initialize();
 
   sForceDisableCurrentIMM_IME = IMMHandler::IsActiveIMEInBlockList();
+
+  mozilla::RunOnShutdown(IMEHandler::Terminate);
 }
 
 
 void IMEHandler::Terminate() {
-  if (TSFUtils::IsAvailable()) {
-    TSFUtils::Shutdown();
-  }
-
+  TSFUtils::Shutdown();
   IMMHandler::Terminate();
   WinTextEventDispatcherListener::Shutdown();
 }
@@ -355,7 +354,7 @@ nsresult IMEHandler::NotifyIME(nsWindow* aWindow,
 IMENotificationRequests IMEHandler::GetIMENotificationRequests() {
   if (IsTSFAvailable()) {
     if (!sIsIMMEnabled) {
-      return TSFTextStore::GetIMENotificationRequests();
+      return TSFUtils::GetIMENotificationRequests();
     }
     
     
@@ -363,7 +362,7 @@ IMENotificationRequests IMEHandler::GetIMENotificationRequests() {
     
     
     return IMMHandler::GetIMENotificationRequests() |
-           TSFTextStore::GetIMENotificationRequests();
+           TSFUtils::GetIMENotificationRequests();
   }
 
   return IMMHandler::GetIMENotificationRequests();
@@ -433,7 +432,7 @@ void IMEHandler::SetInputContext(nsWindow* aWindow, InputContext& aInputContext,
 
   
   if (TSFUtils::IsAvailable()) {
-    TSFTextStore::SetInputContext(aWindow, aInputContext, aAction);
+    TSFTextStoreBase::SetInputContext(aWindow, aInputContext, aAction);
     if (IsTSFAvailable()) {
       if (sIsIMMEnabled) {
         
@@ -496,7 +495,7 @@ void IMEHandler::InitInputContext(nsWindow* aWindow,
   aInputContext.mIMEState.mEnabled = IMEEnabled::Enabled;
 
   if (TSFUtils::IsAvailable()) {
-    TSFTextStore::SetInputContext(
+    TSFTextStoreBase::SetInputContext(
         aWindow, aInputContext,
         InputContextAction(InputContextAction::CAUSE_UNKNOWN,
                            InputContextAction::WIDGET_CREATED));

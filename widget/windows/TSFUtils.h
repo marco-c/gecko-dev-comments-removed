@@ -39,6 +39,10 @@ class nsWindow;
 
 namespace mozilla::widget {
 class TSFTextStore;
+class TSFTextStoreBase;
+struct IMENotificationRequests;
+struct InputContext;
+struct InputContextAction;
 
 class TSFUtils final {
  public:
@@ -53,6 +57,8 @@ class TSFUtils final {
 
   [[nodiscard]] static bool IsAvailable() { return sThreadMgr; }
 
+  [[nodiscard]] static IMENotificationRequests GetIMENotificationRequests();
+
   enum class GotFocus : bool { No, Yes };
   
 
@@ -64,8 +70,41 @@ class TSFUtils final {
   
 
 
+
+  static void OnSetInputContext(nsWindow* aWindow, const InputContext& aContext,
+                                const InputContextAction& aAction);
+
+  
+
+
+
+
+
   [[nodiscard]] static TSFTextStore* GetActiveTextStore() {
+    MOZ_ASSERT_IF(sActiveTextStore, (void*)sActiveTextStore.get() ==
+                                        (void*)sCurrentTextStore.get());
     return sActiveTextStore.get();
+  }
+
+  
+
+
+
+  [[nodiscard]] static TSFTextStoreBase* GetCurrentTextStore() {
+    MOZ_ASSERT_IF(sActiveTextStore, (void*)sActiveTextStore.get() ==
+                                        (void*)sCurrentTextStore.get());
+    return sCurrentTextStore.get();
+  }
+
+  
+
+
+
+
+  [[nodiscard]] static bool CurrentTextStoreIsEditable() {
+    MOZ_ASSERT_IF(sActiveTextStore, (void*)sActiveTextStore.get() ==
+                                        (void*)sCurrentTextStore.get());
+    return sActiveTextStore;
   }
 
   template <typename TSFTextStoreClass>
@@ -89,10 +128,6 @@ class TSFUtils final {
   [[nodiscard]] static ITfDisplayAttributeMgr* GetDisplayAttributeMgr();
   [[nodiscard]] static ITfCategoryMgr* GetCategoryMgr();
   [[nodiscard]] static ITfCompartment* GetCompartmentForOpenClose();
-
-  [[nodiscard]] static ITfDocumentMgr* GetDocumentMgrForDisabled() {
-    return sDisabledDocumentMgr;
-  }
 
   [[nodiscard]] static DWORD ClientId() { return sClientId; }
 
@@ -157,11 +192,16 @@ class TSFUtils final {
     
     InputScope = 0,
     DocumentURL,
-    TextVerticalWriting,
+
+    
+    NUM_OF_SUPPORTED_ATTRS_IN_EMPTY_TEXT_STORE,
+
+    
+    TextVerticalWriting = NUM_OF_SUPPORTED_ATTRS_IN_EMPTY_TEXT_STORE,
     TextOrientation,
 
     
-    NUM_OF_SUPPORTED_ATTRS
+    NUM_OF_SUPPORTED_ATTRS,
   };
 
   
@@ -202,6 +242,13 @@ class TSFUtils final {
   static const char* CommonHRESULTToChar(HRESULT);
   static const char* HRESULTToChar(HRESULT);
 
+  static TS_SELECTION_ACP EmptySelectionACP() {
+    return TS_SELECTION_ACP{
+        .acpStart = 0,
+        .acpEnd = 0,
+        .style = {.ase = TS_AE_NONE, .fInterimChar = FALSE}};
+  }
+
  private:
   static void EnsureMessagePump();
   static void EnsureKeystrokeMgr();
@@ -223,14 +270,13 @@ class TSFUtils final {
   static StaticRefPtr<ITfInputProcessorProfiles> sInputProcessorProfiles;
 
   
-  static StaticRefPtr<ITfDocumentMgr> sDisabledDocumentMgr;
-  static StaticRefPtr<ITfContext> sDisabledContext;
-
-  
   
   
   
   static StaticRefPtr<TSFTextStore> sActiveTextStore;
+
+  
+  static StaticRefPtr<TSFTextStoreBase> sCurrentTextStore;
 
   
   static DWORD sClientId;
