@@ -678,20 +678,17 @@ nsWindowsShellService::SetDesktopBackground(dom::Element* aElement,
   if (!container) return NS_ERROR_FAILURE;
 
   
-  nsCOMPtr<nsIStringBundleService> bundleService(
-      do_GetService(NS_STRINGBUNDLE_CONTRACTID, &rv));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIStringBundle> shellBundle;
-  rv = bundleService->CreateBundle(SHELLSERVICE_PROPERTIES,
-                                   getter_AddRefs(shellBundle));
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
-  nsAutoString fileLeafName;
-  rv = shellBundle->GetStringFromName("desktopBackgroundLeafNameWin",
-                                      fileLeafName);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsTArray<nsCString> resIds = {
+      "browser/browser/setDesktopBackground.ftl"_ns,
+  };
+  RefPtr<Localization> l10n = Localization::Create(resIds, true);
+  nsAutoCString fileLeafNameUtf8;
+  IgnoredErrorResult locRv;
+  l10n->FormatValueSync("set-desktop-background-filename"_ns, {},
+                        fileLeafNameUtf8, locRv);
+  nsAutoString fileLeafName = NS_ConvertUTF8toUTF16(fileLeafNameUtf8);
+  fileLeafName.AppendLiteral(".bmp");
 
   
   nsCOMPtr<nsIFile> file;
