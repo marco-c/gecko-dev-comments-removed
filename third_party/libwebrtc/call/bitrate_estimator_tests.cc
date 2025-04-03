@@ -67,8 +67,8 @@ class LogObserver {
       
       
       
-      if (message.find("BitrateEstimator") != absl::string_view::npos &&
-          message.find("packet is missing") == absl::string_view::npos) {
+      if (absl::StrContains(message, "BitrateEstimator") &&
+          !absl::StrContains(message, "packet is missing")) {
         received_log_lines_.push_back(std::string(message));
       }
 
