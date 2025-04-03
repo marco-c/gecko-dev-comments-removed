@@ -258,10 +258,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
   void CancelWithError(nsCString&& aUserActionId, nsresult aResult);
 
   
-  
-  
-  static constexpr uint32_t kDefaultCachedDataTimeoutInMs = 5000;
-  
   static constexpr const char* kKnownClipboardTypes[] = {
       kTextMime, kHTMLMime, kCustomTypesMime, kFileMime};
 
