@@ -1,12 +1,6 @@
 
 
 #![forbid(unsafe_code)]
-#![no_std]
-
-extern crate alloc;
-
-#[cfg(feature = "std")]
-extern crate std;
 
 pub mod diagnostic;
 pub mod files;

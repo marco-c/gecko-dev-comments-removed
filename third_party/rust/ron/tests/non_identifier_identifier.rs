@@ -79,11 +79,7 @@ test_non_identifier! { test_u128 => deserialize_u128() }
 test_non_identifier! { test_f32 => deserialize_f32() }
 test_non_identifier! { test_f64 => deserialize_f64() }
 test_non_identifier! { test_char => deserialize_char() }
-
-
-
-
-
+test_non_identifier! { test_string => deserialize_string() }
 test_non_identifier! { test_bytes => deserialize_bytes() }
 test_non_identifier! { test_byte_buf => deserialize_byte_buf() }
 test_non_identifier! { test_option => deserialize_option() }

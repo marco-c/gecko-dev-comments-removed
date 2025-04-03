@@ -1,7 +1,6 @@
 use bitflags::bitflags;
 use option_set::option_set;
 
-
 bitflags! {
     #[derive(
         Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash,
@@ -14,8 +13,6 @@ bitflags! {
     }
 }
 
-
-
 option_set! {
     struct TestBad: UpperCamel + u8 {
         const ONE = 1;
@@ -23,7 +20,6 @@ option_set! {
         const THREE  = 1 << 2;
     }
 }
-
 
 #[test]
 fn test_bitflags() {

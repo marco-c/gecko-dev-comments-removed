@@ -23,8 +23,6 @@ use core::{
     ops::Range,
 };
 
-use bytemuck::{Pod, Zeroable};
-
 #[cfg(any(feature = "serde", test))]
 use {
     alloc::format,
@@ -32,7 +30,6 @@ use {
 };
 
 pub mod assertions;
-mod cast_utils;
 mod counters;
 mod env;
 mod features;
@@ -964,8 +961,6 @@ bitflags::bitflags! {
         /// Supports binding storage buffers and textures to fragment shaders.
         const FRAGMENT_WRITABLE_STORAGE = 1 << 1;
         /// Supports indirect drawing and dispatching.
-        ///
-        /// [`Self::COMPUTE_SHADERS`] must be present for this flag.
         ///
         /// WebGL2, GLES 3.0, and Metal on Apple1/Apple2 GPUs do not support indirect.
         const INDIRECT_EXECUTION = 1 << 2;
@@ -7219,7 +7214,7 @@ bitflags::bitflags! {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Pod, Zeroable)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct DrawIndirectArgs {
     
     pub vertex_count: u32,
@@ -7237,13 +7232,18 @@ impl DrawIndirectArgs {
     
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
-        bytemuck::bytes_of(self)
+        unsafe {
+            core::mem::transmute(core::slice::from_raw_parts(
+                core::ptr::from_ref(self).cast::<u8>(),
+                size_of::<Self>(),
+            ))
+        }
     }
 }
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Pod, Zeroable)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct DrawIndexedIndirectArgs {
     
     pub index_count: u32,
@@ -7263,13 +7263,18 @@ impl DrawIndexedIndirectArgs {
     
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
-        bytemuck::bytes_of(self)
+        unsafe {
+            core::mem::transmute(core::slice::from_raw_parts(
+                core::ptr::from_ref(self).cast::<u8>(),
+                size_of::<Self>(),
+            ))
+        }
     }
 }
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Pod, Zeroable)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct DispatchIndirectArgs {
     
     pub x: u32,
@@ -7283,7 +7288,12 @@ impl DispatchIndirectArgs {
     
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
-        bytemuck::bytes_of(self)
+        unsafe {
+            core::mem::transmute(core::slice::from_raw_parts(
+                core::ptr::from_ref(self).cast::<u8>(),
+                size_of::<Self>(),
+            ))
+        }
     }
 }
 

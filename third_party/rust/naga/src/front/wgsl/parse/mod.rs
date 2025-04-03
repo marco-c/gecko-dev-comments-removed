@@ -3120,7 +3120,12 @@ impl Parser {
         
         
         
-        const BRACE_NESTING_MAXIMUM: u8 = 127;
+        
+        
+        
+        
+        
+        const BRACE_NESTING_MAXIMUM: u8 = 64;
         if brace_nesting_level + 1 > BRACE_NESTING_MAXIMUM {
             return Err(Box::new(Error::ExceededLimitForNestedBraces {
                 span: brace_span,
