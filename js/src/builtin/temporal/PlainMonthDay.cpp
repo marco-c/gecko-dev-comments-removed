@@ -274,20 +274,17 @@ static bool ToTemporalMonthDay(JSContext* cx, Handle<Value> item,
   }
 
   
-  if (!hasYear) {
-    
-    MOZ_ASSERT(calendar.identifier() == CalendarId::ISO8601);
-
+  if (calendar.identifier() == CalendarId::ISO8601) {
     
     constexpr int32_t referenceISOYear = 1972;
 
     
-    return CreateTemporalMonthDay(cx, {referenceISOYear, date.month, date.day},
-                                  calendar, result);
+    auto isoDate = ISODate{referenceISOYear, date.month, date.day};
+
+    
+    return CreateTemporalMonthDay(cx, isoDate, calendar, result);
   }
 
-  
-  
   
   Rooted<PlainMonthDay> monthDay(cx);
   if (!CreateTemporalMonthDay(cx, date, calendar, &monthDay)) {
