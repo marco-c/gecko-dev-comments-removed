@@ -1908,7 +1908,7 @@ uint32_t VideoFrame::AllocationSize(const VideoFrameCopyToOptions& aOptions,
 
 
 already_AddRefed<Promise> VideoFrame::CopyTo(
-    const MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aDestination,
+    const AllowSharedBufferSource& aDestination,
     const VideoFrameCopyToOptions& aOptions, ErrorResult& aRv) {
   AssertIsOnOwningThread();
 

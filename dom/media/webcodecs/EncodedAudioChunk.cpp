@@ -208,9 +208,8 @@ uint32_t EncodedAudioChunk::ByteLength() const {
 }
 
 
-void EncodedAudioChunk::CopyTo(
-    const MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aDestination,
-    ErrorResult& aRv) {
+void EncodedAudioChunk::CopyTo(const AllowSharedBufferSource& aDestination,
+                               ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
   ProcessTypedArraysFixed(aDestination, [&](const Span<uint8_t>& aData) {
