@@ -7457,6 +7457,30 @@ AttachDecision InlinableNativeIRGenerator::tryAttachCanOptimizeArraySpecies() {
   return AttachDecision::Attach;
 }
 
+AttachDecision
+InlinableNativeIRGenerator::tryAttachCanOptimizeStringProtoSymbolLookup() {
+  
+  MOZ_ASSERT(args_.length() == 0);
+
+  
+  initializeInputOperand();
+
+  
+
+  if (cx_->realm()->realmFuses.optimizeStringPrototypeSymbolsFuse.intact()) {
+    writer.guardFuse(RealmFuses::FuseIndex::OptimizeStringPrototypeSymbolsFuse);
+    writer.loadBooleanResult(true);
+    writer.returnFromIC();
+    trackAttached("CanOptimizeStringProtoSymbolLookup.Optimized");
+  } else {
+    writer.loadBooleanResult(false);
+    writer.returnFromIC();
+    trackAttached("CanOptimizeStringProtoSymbolLookup.Deoptimized");
+  }
+
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachGuardToClass(
     InlinableNative native) {
   
@@ -12300,6 +12324,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachIsCrossRealmArrayConstructor();
     case InlinableNative::IntrinsicCanOptimizeArraySpecies:
       return tryAttachCanOptimizeArraySpecies();
+    case InlinableNative::IntrinsicCanOptimizeStringProtoSymbolLookup:
+      return tryAttachCanOptimizeStringProtoSymbolLookup();
     case InlinableNative::IntrinsicGuardToArrayIterator:
     case InlinableNative::IntrinsicGuardToMapIterator:
     case InlinableNative::IntrinsicGuardToSetIterator:

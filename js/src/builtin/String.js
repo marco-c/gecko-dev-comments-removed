@@ -2,15 +2,6 @@
 
 
 
-function StringProtoHasNoMatch() {
-  var ObjectProto = GetBuiltinPrototype("Object");
-  var StringProto = GetBuiltinPrototype("String");
-  if (!ObjectHasPrototype(StringProto, ObjectProto)) {
-    return false;
-  }
-  return !(GetBuiltinSymbol("match") in StringProto);
-}
-
 function ThrowIncompatibleMethod(name, thisv) {
   ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "String", name, ToString(thisv));
 }
@@ -25,7 +16,7 @@ function String_match(regexp) {
   
   var isPatternString = typeof regexp === "string";
   if (
-    !(isPatternString && StringProtoHasNoMatch()) &&
+    !(isPatternString && CanOptimizeStringProtoSymbolLookup()) &&
     !IsNullOrUndefined(regexp)
   ) {
     
@@ -175,15 +166,6 @@ function String_pad_end(maxLength, fillString = " ") {
   return callFunction(String_pad, this, maxLength, fillString, true);
 }
 
-function StringProtoHasNoReplace() {
-  var ObjectProto = GetBuiltinPrototype("Object");
-  var StringProto = GetBuiltinPrototype("String");
-  if (!ObjectHasPrototype(StringProto, ObjectProto)) {
-    return false;
-  }
-  return !(GetBuiltinSymbol("replace") in StringProto);
-}
-
 
 
 function Substring(str, from, length) {
@@ -213,7 +195,7 @@ function String_replace(searchValue, replaceValue) {
 
   
   if (
-    !(typeof searchValue === "string" && StringProtoHasNoReplace()) &&
+    !(typeof searchValue === "string" && CanOptimizeStringProtoSymbolLookup()) &&
     !IsNullOrUndefined(searchValue)
   ) {
     
@@ -398,15 +380,6 @@ function String_replaceAll(searchValue, replaceValue) {
   return result;
 }
 
-function StringProtoHasNoSearch() {
-  var ObjectProto = GetBuiltinPrototype("Object");
-  var StringProto = GetBuiltinPrototype("String");
-  if (!ObjectHasPrototype(StringProto, ObjectProto)) {
-    return false;
-  }
-  return !(GetBuiltinSymbol("search") in StringProto);
-}
-
 
 function String_search(regexp) {
   
@@ -417,7 +390,7 @@ function String_search(regexp) {
   
   var isPatternString = typeof regexp === "string";
   if (
-    !(isPatternString && StringProtoHasNoSearch()) &&
+    !(isPatternString && CanOptimizeStringProtoSymbolLookup()) &&
     !IsNullOrUndefined(regexp)
   ) {
     
@@ -450,15 +423,6 @@ function String_search(regexp) {
   );
 }
 
-function StringProtoHasNoSplit() {
-  var ObjectProto = GetBuiltinPrototype("Object");
-  var StringProto = GetBuiltinPrototype("String");
-  if (!ObjectHasPrototype(StringProto, ObjectProto)) {
-    return false;
-  }
-  return !(GetBuiltinSymbol("split") in StringProto);
-}
-
 
 function String_split(separator, limit) {
   
@@ -470,7 +434,7 @@ function String_split(separator, limit) {
   
   
   if (typeof this === "string") {
-    if (StringProtoHasNoSplit()) {
+    if (CanOptimizeStringProtoSymbolLookup()) {
       if (typeof separator === "string") {
         if (limit === undefined) {
           
@@ -483,7 +447,7 @@ function String_split(separator, limit) {
 
   
   if (
-    !(typeof separator === "string" && StringProtoHasNoSplit()) &&
+    !(typeof separator === "string" && CanOptimizeStringProtoSymbolLookup()) &&
     !IsNullOrUndefined(separator)
   ) {
     
