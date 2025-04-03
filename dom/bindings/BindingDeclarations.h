@@ -42,6 +42,14 @@ class CopyableErrorResult;
 
 namespace dom {
 
+
+class MaybeSharedArrayBufferOrMaybeSharedArrayBufferView;
+class OwningMaybeSharedArrayBufferOrMaybeSharedArrayBufferView;
+using AllowSharedBufferSource =
+    MaybeSharedArrayBufferOrMaybeSharedArrayBufferView;
+using OwningAllowSharedBufferSource =
+    OwningMaybeSharedArrayBufferOrMaybeSharedArrayBufferView;
+
 class BindingCallContext;
 
 
