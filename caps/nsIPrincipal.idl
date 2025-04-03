@@ -99,7 +99,12 @@ interface nsIPrincipal : nsISupports
 
 
 
-    [notxpcom, nostdcall] readonly attribute unsigned long hashValue;
+
+
+
+    %{C++
+    uint32_t GetHashValue() const;
+    %}
 
     
 
