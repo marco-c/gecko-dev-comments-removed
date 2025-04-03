@@ -26,6 +26,7 @@
 #include "api/rtp_parameters.h"
 #include "api/rtp_sender_setparameters_callback.h"
 #include "api/scoped_refptr.h"
+#include "api/units/data_rate.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_source_interface.h"
@@ -96,6 +97,9 @@ class VideoSendStream {
     uint64_t total_encoded_bytes_target = 0;
     uint32_t huge_frames_sent = 0;
     std::optional<ScalabilityMode> scalability_mode;
+    
+    
+    std::optional<DataRate> target_bitrate;
   };
 
   struct Stats {
@@ -119,6 +123,9 @@ class VideoSendStream {
     uint32_t frames_dropped_by_rate_limiter = 0;
     uint32_t frames_dropped_by_congestion_window = 0;
     uint32_t frames_dropped_by_encoder = 0;
+    
+    
+    
     
     
     int target_media_bitrate_bps = 0;
