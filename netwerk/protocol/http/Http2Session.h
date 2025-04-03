@@ -403,9 +403,8 @@ class Http2Session final : public ASpdySession,
   RefPtr<nsAHttpSegmentReader> mSegmentReader;
   nsAHttpSegmentWriter* mSegmentWriter;
 
-  uint32_t mSendingChunkSize; 
-  uint32_t mNextStreamID;     
-  uint32_t mLastPushedID;
+  uint32_t mSendingChunkSize;    
+  uint32_t mNextStreamID;        
   uint32_t mConcurrentHighWater; 
   uint32_t mPushAllowance;       
 
@@ -425,7 +424,6 @@ class Http2Session final : public ASpdySession,
   nsTArray<WeakPtr<Http2StreamBase>> mQueuedStreams;
   nsTArray<WeakPtr<Http2StreamBase>> mPushesReadyForRead;
   nsTArray<WeakPtr<Http2StreamBase>> mSlowConsumersReadyForRead;
-  nsTArray<Http2PushedStream*> mPushedStreams;
 
   
   
@@ -475,7 +473,6 @@ class Http2Session final : public ASpdySession,
   
   uint32_t mExpectedHeaderID;
   uint32_t mExpectedPushPromiseID;
-  uint32_t mContinuedPromiseStream;
 
   
   

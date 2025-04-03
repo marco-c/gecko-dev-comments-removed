@@ -7,7 +7,6 @@
 
 #include "HttpLog.h"
 
-#include "Http2Push.h"
 #include "Http2Stream.h"
 #include "nsHttp.h"
 #include "nsHttpConnectionInfo.h"
@@ -31,96 +30,11 @@ Http2Stream::Http2Stream(nsAHttpTransaction* httpTransaction,
   LOG1(("Http2Stream::Http2Stream %p trans=%p", this, httpTransaction));
 }
 
-Http2Stream::~Http2Stream() { ClearPushSource(); }
+Http2Stream::~Http2Stream() {}
 
 void Http2Stream::CloseStream(nsresult reason) {
-  
-  
-  
-  ClearPushSource();
-
   mTransaction->Close(reason);
   mSession = nullptr;
-}
-
-void Http2Stream::ClearPushSource() {
-  if (mPushSource) {
-    mPushSource->SetConsumerStream(nullptr);
-    mPushSource = nullptr;
-  }
-}
-
-nsresult Http2Stream::CheckPushCache() {
-  nsHttpRequestHead* head = mTransaction->RequestHead();
-
-  
-  if (!head->IsGet()) {
-    return NS_OK;
-  }
-
-  RefPtr<Http2Session> session = Session();
-
-  nsAutoCString authorityHeader;
-  nsAutoCString hashkey;
-  nsresult rv = head->GetHeader(nsHttp::Host, authorityHeader);
-  if (NS_FAILED(rv)) {
-    MOZ_ASSERT(false);
-    return rv;
-  }
-
-  nsAutoCString requestURI;
-  head->RequestURI(requestURI);
-
-  mozilla::OriginAttributes originAttributes;
-  mSocketTransport->GetOriginAttributes(&originAttributes);
-
-  CreatePushHashKey(nsDependentCString(head->IsHTTPS() ? "https" : "http"),
-                    authorityHeader, originAttributes, session->Serial(),
-                    requestURI, mOrigin, hashkey);
-
-  RefPtr<Http2PushedStreamWrapper> pushedStreamWrapper;
-  Http2PushedStream* pushedStream = nullptr;
-
-  
-  
-  
-  nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
-  if (trans && (pushedStreamWrapper = trans->TakePushedStream()) &&
-      (pushedStream = pushedStreamWrapper->GetStream())) {
-    RefPtr<Http2Session> pushSession = pushedStream->Session();
-    if (pushSession == session) {
-      LOG3(
-          ("Pushed Stream match based on OnPush correlation %p", pushedStream));
-    } else {
-      LOG3(("Pushed Stream match failed due to stream mismatch %p %" PRId64
-            " %" PRId64 "\n",
-            pushedStream, pushSession->Serial(), session->Serial()));
-      pushedStream->OnPushFailed();
-      pushedStream = nullptr;
-    }
-  }
-
-  if (pushedStream) {
-    LOG3(("Pushed Stream Match located %p id=0x%X key=%s\n", pushedStream,
-          pushedStream->StreamID(), hashkey.get()));
-    pushedStream->SetConsumerStream(this);
-    mPushSource = pushedStream;
-    SetSentFin(true);
-    AdjustPushedPriority();
-
-    
-    
-    session->ConnectPushedStream(this);
-    mOpenGenerated = 1;
-
-    
-    RefPtr<nsHttpConnectionInfo> ci(Transaction()->ConnectionInfo());
-    if (ci && ci->GetIsTrrServiceChannel()) {
-      session->IncrementTrrCounter();
-    }
-  }
-
-  return NS_OK;
 }
 
 uint32_t Http2Stream::GetWireStreamId() {
@@ -128,21 +42,7 @@ uint32_t Http2Stream::GetWireStreamId() {
   
   
   if (!mStreamID) {
-    MOZ_ASSERT(mPushSource);
-    if (!mPushSource) {
-      return 0;
-    }
-
-    MOZ_ASSERT(mPushSource->StreamID());
-    MOZ_ASSERT(!(mPushSource->StreamID() & 1));  
-
-    
-    
-    if (mPushSource->RecvdFin() || mPushSource->RecvdReset() ||
-        (mPushSource->HTTPState() == RESERVED_BY_REMOTE)) {
-      return 0;
-    }
-    return mPushSource->StreamID();
+    return 0;
   }
 
   if (mState == RESERVED_BY_REMOTE) {
@@ -152,42 +52,6 @@ uint32_t Http2Stream::GetWireStreamId() {
   return mStreamID;
 }
 
-void Http2Stream::AdjustPushedPriority() {
-  
-  
-
-  if (mStreamID || !mPushSource) return;
-
-  MOZ_ASSERT(mPushSource->StreamID() && !(mPushSource->StreamID() & 1));
-
-  
-  
-  if (mPushSource->RecvdFin() || mPushSource->RecvdReset()) return;
-
-  
-  UpdatePriorityDependency();
-
-  EnsureBuffer(mTxInlineFrame,
-               mTxInlineFrameUsed + Http2Session::kFrameHeaderBytes + 5,
-               mTxInlineFrameUsed, mTxInlineFrameSize);
-  uint8_t* packet = mTxInlineFrame.get() + mTxInlineFrameUsed;
-  mTxInlineFrameUsed += Http2Session::kFrameHeaderBytes + 5;
-
-  RefPtr<Http2Session> session = Session();
-  session->CreateFrameHeader(packet, 5, Http2Session::FRAME_TYPE_PRIORITY, 0,
-                             mPushSource->StreamID());
-
-  mPushSource->SetPriorityDependency(mRFC7540Priority, mPriorityDependency);
-  uint32_t wireDep = PR_htonl(mPriorityDependency);
-  memcpy(packet + Http2Session::kFrameHeaderBytes, &wireDep, 4);
-  memcpy(packet + Http2Session::kFrameHeaderBytes + 4, &mPriorityWeight, 1);
-
-  LOG3(("AdjustPushedPriority %p id 0x%X to dep %X weight %X\n", this,
-        mPushSource->StreamID(), mPriorityDependency, mPriorityWeight));
-}
-
-bool Http2Stream::IsReadingFromPushStream() { return !!mPushSource; }
-
 nsresult Http2Stream::OnWriteSegment(char* buf, uint32_t count,
                                      uint32_t* countWritten) {
   LOG3(("Http2Stream::OnWriteSegment %p count=%d state=%x 0x%X\n", this, count,
@@ -195,16 +59,6 @@ nsresult Http2Stream::OnWriteSegment(char* buf, uint32_t count,
 
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(mSegmentWriter);
-
-  if (mPushSource) {
-    nsresult rv;
-    rv = mPushSource->GetBufferedData(buf, count, countWritten);
-    if (NS_FAILED(rv)) return rv;
-
-    RefPtr<Http2Session> session = Session();
-    session->ConnectPushedStream(this);
-    return NS_OK;
-  }
 
   return Http2StreamBase::OnWriteSegment(buf, count, countWritten);
 }

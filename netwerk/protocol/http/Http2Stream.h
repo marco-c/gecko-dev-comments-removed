@@ -25,11 +25,6 @@ class Http2Stream : public Http2StreamBase {
   nsresult OnWriteSegment(char* buf, uint32_t count,
                           uint32_t* countWritten) override;
 
-  nsresult CheckPushCache();
-  Http2PushedStream* PushSource() { return mPushSource; }
-  bool IsReadingFromPushStream();
-  void ClearPushSource();
-
   nsAHttpTransaction* Transaction() override { return mTransaction; }
   nsIRequestContext* RequestContext() override {
     return mTransaction ? mTransaction->RequestContext() : nullptr;
@@ -43,10 +38,6 @@ class Http2Stream : public Http2StreamBase {
                            uint8_t& firstFrameFlags) override;
 
  private:
-  
-  void AdjustPushedPriority();
-  Http2PushedStream* mPushSource{nullptr};
-
   
   
   
