@@ -1,0 +1,17 @@
+
+
+
+
+
+#include "WebTransportSessionBase.h"
+
+#include "nsIWebTransport.h"
+
+namespace mozilla::net {
+
+void WebTransportSessionBase::SetWebTransportSessionEventListener(
+    WebTransportSessionEventListener* listener) {
+  mListener = listener;
+}
+
+}  

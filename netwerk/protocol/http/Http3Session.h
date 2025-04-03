@@ -104,6 +104,8 @@ namespace mozilla::net {
 class HttpConnectionUDP;
 class Http3StreamBase;
 class QuicSocketControl;
+class Http3WebTransportSession;
+class Http3WebTransportStream;
 
 
 #define NS_HTTP3SESSION_IID \

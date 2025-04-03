@@ -263,6 +263,9 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   void MarkAsDontReuse();
 
+  virtual WebTransportSessionBase* GetWebTransportSession(
+      nsAHttpTransaction* aTransaction) override;
+
  private:
   
   
