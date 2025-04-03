@@ -4,14 +4,4 @@ module.exports = {
   env: {
     jest: true,
   },
-  overrides: [
-    {
-      
-      
-      files: ["html_module-script-cache.html"],
-      parserOptions: {
-        sourceType: "module",
-      },
-    },
-  ],
 };

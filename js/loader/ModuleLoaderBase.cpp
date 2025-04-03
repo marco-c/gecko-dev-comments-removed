@@ -466,11 +466,8 @@ nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
                                                     RestartRequest aRestart) {
   MOZ_ASSERT(aRequest->mLoader == this);
   MOZ_ASSERT(aRequest->IsFetching() || aRequest->IsPendingFetchingError());
-  MOZ_ASSERT_IF(aRequest->IsStencil(), aRestart == RestartRequest::No);
 
-  if (!aRequest->IsStencil()) {
-    aRequest->SetUnknownDataType();
-  }
+  aRequest->SetUnknownDataType();
 
   
   
@@ -496,12 +493,6 @@ nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
 
   rv = StartFetch(aRequest);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  if (aRequest->IsStencil()) {
-    MOZ_ASSERT(
-        IsModuleFetched(ModuleMapKey(aRequest->mURI, aRequest->mModuleType)));
-    return NS_OK;
-  }
 
   
   
@@ -725,29 +716,10 @@ nsresult ModuleLoaderBase::CreateModuleScript(ModuleLoadRequest* aRequest) {
     }
 
     MOZ_ASSERT(aRequest->mLoadedScript->IsModuleScript());
-    MOZ_ASSERT(aRequest->mFetchOptions->IsCompatible(
-        aRequest->mLoadedScript->GetFetchOptions()));
-#ifdef DEBUG
-    {
-      bool equals = false;
-      aRequest->mURI->Equals(aRequest->mLoadedScript->GetURI(), &equals);
-      MOZ_ASSERT(equals);
-    }
-#endif
-
-    if (!aRequest->mLoadedScript->BaseURL()) {
-      
-      
-      aRequest->mLoadedScript->SetBaseURL(aRequest->mBaseURL);
-    } else {
-      
-      
-#ifdef DEBUG
-      bool equals = false;
-      aRequest->mBaseURL->Equals(aRequest->mLoadedScript->BaseURL(), &equals);
-      MOZ_ASSERT(equals);
-#endif
-    }
+    MOZ_ASSERT(aRequest->mLoadedScript->GetFetchOptions() ==
+               aRequest->mFetchOptions);
+    MOZ_ASSERT(aRequest->mLoadedScript->GetURI() == aRequest->mURI);
+    aRequest->mLoadedScript->SetBaseURL(aRequest->mBaseURL);
     RefPtr<ModuleScript> moduleScript =
         aRequest->mLoadedScript->AsModuleScript();
     aRequest->mModuleScript = moduleScript;
