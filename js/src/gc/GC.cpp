@@ -349,7 +349,7 @@ static void FreeChunkPool(ChunkPool& pool) {
     ArenaChunk* chunk = iter.get();
     iter.next();
     pool.remove(chunk);
-    MOZ_ASSERT(chunk->unused());
+    MOZ_ASSERT(chunk->isEmpty());
     UnmapPages(static_cast<void*>(chunk), ChunkSize);
   }
   MOZ_ASSERT(pool.count() == 0);
@@ -2064,7 +2064,7 @@ void GCRuntime::startDecommit() {
     
     for (ChunkPool::Iter chunk(emptyChunks(lock)); !chunk.done();
          chunk.next()) {
-      MOZ_ASSERT(chunk->unused());
+      MOZ_ASSERT(chunk->isEmpty());
     }
   }
 #endif
@@ -2129,7 +2129,7 @@ void js::gc::BackgroundDecommitTask::run(AutoLockHelperThreadState& lock) {
 }
 
 static inline bool CanDecommitWholeChunk(ArenaChunk* chunk) {
-  return chunk->unused() && chunk->info.numArenasFreeCommitted != 0;
+  return chunk->isEmpty() && chunk->info.numArenasFreeCommitted != 0;
 }
 
 
@@ -2188,7 +2188,7 @@ void GCRuntime::decommitFreeArenas(const bool& cancel, AutoLockGC& lock) {
 
   for (ArenaChunk* chunk : chunksToDecommit) {
     MOZ_ASSERT(chunk->getKind() == ChunkKind::TenuredArenas);
-    MOZ_ASSERT(!chunk->unused());
+    MOZ_ASSERT(!chunk->isEmpty());
     if (!chunk->hasAvailableArenas()) {
       
       continue;
