@@ -10,12 +10,13 @@
 #include <unordered_map>
 
 #include "mozilla/gfx/FileHandleWrapper.h"
-#include "mozilla/layers/Fence.h"
+#include "nsISupportsImpl.h"
 
 struct ID3D11Device;
 struct ID3D11Fence;
 
 namespace mozilla {
+
 namespace layers {
 
 
@@ -35,19 +36,16 @@ namespace layers {
 
 
 
-class FenceD3D11 final : public Fence {
+class FenceD3D11 final {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FenceD3D11);
 
   static RefPtr<FenceD3D11> Create(ID3D11Device* aDevice);
   static RefPtr<FenceD3D11> CreateFromHandle(
       RefPtr<gfx::FileHandleWrapper> aHandle);
 
-  FenceD3D11* AsFenceD3D11() override { return this; }
-
   
   static bool IsSupported(ID3D11Device* aDevice);
-
-  RefPtr<FenceD3D11> CloneFromHandle();
 
   
   
@@ -68,7 +66,7 @@ class FenceD3D11 final : public Fence {
 
  protected:
   explicit FenceD3D11(RefPtr<gfx::FileHandleWrapper>& aHandle);
-  virtual ~FenceD3D11();
+  ~FenceD3D11();
 
   
   RefPtr<ID3D11Device> mDevice;

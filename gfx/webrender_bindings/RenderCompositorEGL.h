@@ -46,7 +46,7 @@ class RenderCompositorEGL : public RenderCompositor {
   void SetBufferDamageRegion(const wr::DeviceIntRect* aRects,
                              size_t aNumRects) override;
 
-  RefPtr<layers::Fence> GetAndResetReleaseFence() override;
+  UniqueFileHandle GetAndResetReleaseFence() override;
 
  protected:
   EGLSurface CreateEGLSurface();
@@ -66,7 +66,7 @@ class RenderCompositorEGL : public RenderCompositor {
   
   
   
-  RefPtr<layers::Fence> mReleaseFence;
+  UniqueFileHandle mReleaseFenceFd;
 };
 
 }  

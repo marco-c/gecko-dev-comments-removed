@@ -19,6 +19,50 @@ using namespace mozilla::gfx;
 namespace mozilla {
 namespace layers {
 
+class AutoCheckLockD3D11Texture final {
+ public:
+  explicit AutoCheckLockD3D11Texture(ID3D11Texture2D* aTexture)
+      : mIsLocked(false) {
+    aTexture->QueryInterface((IDXGIKeyedMutex**)getter_AddRefs(mMutex));
+    if (!mMutex) {
+      
+      
+      mIsLocked = true;
+      return;
+    }
+
+    
+    HRESULT hr = mMutex->AcquireSync(0, 0);
+    if (hr == S_OK || hr == WAIT_ABANDONED) {
+      mIsLocked = true;
+      
+      
+      
+      
+      
+      
+      mSyncAcquired = true;
+    }
+  }
+
+  ~AutoCheckLockD3D11Texture() {
+    if (!mSyncAcquired) {
+      return;
+    }
+    HRESULT hr = mMutex->ReleaseSync(0);
+    if (FAILED(hr)) {
+      NS_WARNING("Failed to unlock the texture");
+    }
+  }
+
+  bool IsLocked() const { return mIsLocked; }
+
+ private:
+  bool mIsLocked;
+  bool mSyncAcquired = false;
+  RefPtr<IDXGIKeyedMutex> mMutex;
+};
+
 DXGIYCbCrTextureAllocationHelper::DXGIYCbCrTextureAllocationHelper(
     const PlanarYCbCrData& aData, TextureFlags aTextureFlags,
     ID3D11Device* aDevice)
@@ -43,10 +87,23 @@ bool DXGIYCbCrTextureAllocationHelper::IsCompatible(
   }
 
   ID3D11Texture2D* textureY = dxgiData->GetD3D11Texture(0);
+  ID3D11Texture2D* textureCb = dxgiData->GetD3D11Texture(1);
+  ID3D11Texture2D* textureCr = dxgiData->GetD3D11Texture(2);
 
   RefPtr<ID3D11Device> device;
   textureY->GetDevice(getter_AddRefs(device));
   if (!device || device != gfx::DeviceManagerDx::Get()->GetImageDevice()) {
+    return false;
+  }
+
+  
+  
+
+  AutoCheckLockD3D11Texture lockY(textureY);
+  AutoCheckLockD3D11Texture lockCr(textureCr);
+  AutoCheckLockD3D11Texture lockCb(textureCb);
+
+  if (!lockY.IsLocked() || !lockCr.IsLocked() || !lockCb.IsLocked()) {
     return false;
   }
 
@@ -61,13 +118,26 @@ already_AddRefed<TextureClient> DXGIYCbCrTextureAllocationHelper::Allocate(
                                     ? DXGI_FORMAT_R8_UNORM
                                     : DXGI_FORMAT_R16_UNORM,
                                 ySize.width, ySize.height, 1, 1);
-  
-  newDesc.MiscFlags =
-      D3D11_RESOURCE_MISC_SHARED_NTHANDLE | D3D11_RESOURCE_MISC_SHARED;
+  newDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_NTHANDLE |
+                      D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
+
+  RefPtr<ID3D10Multithread> mt;
+  HRESULT hr = mDevice->QueryInterface((ID3D10Multithread**)getter_AddRefs(mt));
+
+  if (FAILED(hr) || !mt) {
+    gfxCriticalError() << "Multithread safety interface not supported. " << hr;
+    return nullptr;
+  }
+
+  if (!mt->GetMultithreadProtected()) {
+    gfxCriticalError() << "Device used not marked as multithread-safe.";
+    return nullptr;
+  }
+
+  D3D11MTAutoEnter mtAutoEnter(mt.forget());
 
   RefPtr<ID3D11Texture2D> textureY;
-  HRESULT hr =
-      mDevice->CreateTexture2D(&newDesc, nullptr, getter_AddRefs(textureY));
+  hr = mDevice->CreateTexture2D(&newDesc, nullptr, getter_AddRefs(textureY));
   NS_ENSURE_TRUE(SUCCEEDED(hr), nullptr);
 
   newDesc.Width = cbcrSize.width;
