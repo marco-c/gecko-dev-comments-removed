@@ -55,7 +55,6 @@ async function openAboutWelcome() {
     info(`evaluateScreenTargeting called with args: ${args}`);
     
     const falseTargeting = [
-      "isRTAMO",
       "doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser",
       "!doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser",
       "doesAppNeedPin && (!'browser.shell.checkDefaultBrowser'|preferenceValue || isDefaultBrowser || (unhandledCampaignAction == 'SET_DEFAULT_BROWSER'))",
