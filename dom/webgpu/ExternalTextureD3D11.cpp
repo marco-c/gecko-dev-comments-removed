@@ -101,8 +101,7 @@ Maybe<layers::SurfaceDescriptor> ExternalTextureD3D11::ToSurfaceDescriptor(
        Nothing(),
        0, format, gfx::IntSize(mWidth, mHeight),
       gfx::ColorSpace2::SRGB, gfx::ColorRange::FULL,
-       false, aFenceInfo,
-       Nothing()));
+       false, aFenceInfo));
 }
 
 void ExternalTextureD3D11::GetSnapshot(const ipc::Shmem& aDestShmem,

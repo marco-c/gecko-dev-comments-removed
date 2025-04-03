@@ -30,7 +30,6 @@
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/layers/D3D11ShareHandleImage.h"
 #include "mozilla/layers/D3D11ZeroCopyTextureImage.h"
-#include "mozilla/layers/HelpersD3D11.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/TextureD3D11.h"
 #include "mozilla/layers/TextureForwarder.h"
@@ -1220,43 +1219,6 @@ HRESULT D3D11DXVA2Manager::CopyTextureToImage(
     client->SyncWithObject(mSyncObject);
     if (!mSyncObject->Synchronize(true)) {
       return DXGI_ERROR_DEVICE_RESET;
-    }
-  } else if (mDevice == DeviceManagerDx::Get()->GetCompositorDevice() &&
-             mVendorID != 0x8086) {
-    MOZ_ASSERT(XRE_IsGPUProcess());
-    MOZ_ASSERT(mVendorID);
-
-    
-    
-    
-    
-    
-    
-
-    RefPtr<ID3D11DeviceContext> context;
-    mDevice->GetImmediateContext(getter_AddRefs(context));
-
-    RefPtr<ID3D11Query> query;
-    CD3D11_QUERY_DESC desc(D3D11_QUERY_EVENT);
-    HRESULT hr = mDevice->CreateQuery(&desc, getter_AddRefs(query));
-    if (SUCCEEDED(hr) && query) {
-      context->End(query);
-
-      auto* data = client->GetInternalData()->AsD3D11TextureData();
-      MOZ_ASSERT(data);
-      if (data) {
-        
-        
-        
-        const bool onlyForOverlay = mVendorID != 0x10DE;
-        
-        data->RegisterQuery(query, onlyForOverlay);
-      } else {
-        gfxCriticalNoteOnce << "D3D11TextureData does not exist";
-      }
-    } else {
-      gfxCriticalNoteOnce << "Could not create D3D11_QUERY_EVENT: "
-                          << gfx::hexa(hr);
     }
   }
 
