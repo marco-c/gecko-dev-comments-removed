@@ -2802,23 +2802,7 @@ void HTMLMediaElement::SelectResource() {
       ReportLoadError("MediaLoadInvalidURI", params);
       rv = MediaResult(rv.Code(), "MediaLoadInvalidURI");
     }
-    
-    
-    
-    
-    
-    GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
-        "HTMLMediaElement::NoSupportedMediaSourceError",
-        [this, self = RefPtr{this}, loadId = GetCurrentLoadID(),
-         description = rv.Description()]() {
-          
-          
-          
-          if (GetCurrentLoadID() == loadId) {
-            
-            NoSupportedMediaSourceError(description);
-          }
-        }));
+    NoSupportedMediaSourceError(rv.Description());
   } else {
     
     mIsLoadingFromSourceChildren = true;
