@@ -272,9 +272,9 @@ void nsGenericHTMLElement::GetAccessKeyLabel(nsString& aLabel) {
 
 void nsGenericHTMLElement::GetHidden(
     Nullable<OwningBooleanOrUnrestrictedDoubleOrString>& aHidden) const {
-      OwningBooleanOrUnrestrictedDoubleOrString value;
-      
-      
+  OwningBooleanOrUnrestrictedDoubleOrString value;
+  
+  
   nsAutoString result;
   if (GetAttr(kNameSpaceID_None, nsGkAtoms::hidden, result)) {
     if (StaticPrefs::dom_hidden_until_found_enabled() &&
@@ -1494,8 +1494,15 @@ void nsGenericHTMLElement::MapCommonAttributesIntoExceptHidden(
 void nsGenericHTMLElement::MapCommonAttributesInto(
     MappedDeclarationsBuilder& aBuilder) {
   MapCommonAttributesIntoExceptHidden(aBuilder);
-  if (!aBuilder.PropertyIsSet(eCSSProperty_display)) {
-    if (aBuilder.GetAttr(nsGkAtoms::hidden)) {
+  MOZ_ASSERT(!aBuilder.PropertyIsSet(eCSSProperty_display));
+  MOZ_ASSERT(!aBuilder.PropertyIsSet(eCSSProperty_content_visibility));
+
+  if (const nsAttrValue* hidden = aBuilder.GetAttr(nsGkAtoms::hidden)) {
+    if (StaticPrefs::dom_hidden_until_found_enabled() &&
+        hidden->Equals(nsGkAtoms::untilFound, eIgnoreCase)) {
+      aBuilder.SetKeywordValue(eCSSProperty_content_visibility,
+                               StyleContentVisibility::Hidden);
+    } else {
       aBuilder.SetKeywordValue(eCSSProperty_display, StyleDisplay::None._0);
     }
   }
