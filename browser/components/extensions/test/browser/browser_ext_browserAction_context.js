@@ -2,6 +2,11 @@
 
 "use strict";
 
+
+
+
+requestLongerTimeout(2);
+
 async function runTests(options) {
   async function background(getTests) {
     let manifest = browser.runtime.getManifest();
