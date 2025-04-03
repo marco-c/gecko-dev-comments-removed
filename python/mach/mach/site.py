@@ -720,9 +720,9 @@ class CommandSiteManager:
         if require_hashes:
             args.append("--require-hashes")
 
-        install_result = self._virtualenv.pip_install(args)
-
-        if install_result.returncode:
+        try:
+            install_result = self._virtualenv.pip_install(args)
+        except subprocess.CalledProcessError:
             raise InstallPipRequirementsException(
                 f'Failed to install "{path}" into the "{self._site_name}" site.'
             )
@@ -1047,26 +1047,32 @@ class PythonVirtualenv:
                 ),
                 **kwargs,
             )
-            return install_result
         except subprocess.CalledProcessError as cpe:
             if not self._quiet:
+                
+                
+                
                 if cpe.stdout:
                     print(cpe.stdout)
                 if cpe.stderr:
                     print(cpe.stderr, file=sys.stderr)
-            sys.exit(1)
+            raise cpe
+
+        
+        
+        
+        return install_result
 
     def install_optional_packages(self, optional_requirements):
         for requirement in optional_requirements:
             try:
                 self.pip_install_with_constraints([str(requirement.requirement)])
-            except subprocess.CalledProcessError as error:
-                print(
-                    f"{error.output if error.output else ''}"
-                    f"{error.stderr if error.stderr else ''}"
-                    f"Could not install {requirement.requirement.name}, so "
-                    f"{requirement.repercussion}. Continuing."
-                )
+            except subprocess.CalledProcessError:
+                if not self._quiet:
+                    print(
+                        f"Could not install {requirement.requirement.name}, so "
+                        f"{requirement.repercussion}. Continuing."
+                    )
 
     def _resolve_installed_packages(self):
         return _resolve_installed_packages(self.python_path)
