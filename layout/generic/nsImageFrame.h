@@ -100,6 +100,8 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
       Visibility aNewVisibility,
       const Maybe<OnNonvisible>& aNonvisibleAction = Nothing()) final;
 
+  void MarkIntrinsicISizesDirty() override;
+
   void ResponsiveContentDensityChanged();
   void ElementStateChanged(mozilla::dom::ElementState) override;
   void SetupOwnedRequest();
@@ -236,7 +238,16 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
   ~nsImageFrame() override;
 
-  void EnsureIntrinsicSizeAndRatio();
+  
+
+
+
+
+
+
+
+
+  void EnsureIntrinsicSizeAndRatio(bool aConsiderIntrinsicsDirty = false);
 
   bool GotInitialReflow() const {
     return !HasAnyStateBits(NS_FRAME_FIRST_REFLOW);
@@ -287,11 +298,6 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
 
   void MaybeDecodeForPredictedSize();
-
-  
-
-
-  bool IsForMarkerPseudo() const;
 
  protected:
   friend class nsImageListener;

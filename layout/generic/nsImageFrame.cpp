@@ -559,8 +559,8 @@ void nsImageFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
   nsAtomicContainerFrame::DidSetComputedStyle(aOldStyle);
 
   
-  if (IsForMarkerPseudo()) {
-    mIntrinsicSize = IntrinsicSize(0, 0);
+  
+  if (mKind == Kind::ListStyleImage) {
     UpdateIntrinsicSize();
   }
 
@@ -1474,15 +1474,7 @@ nsRect nsImageFrame::GetDestRect(const nsRect& aFrameContentBox,
                                               aAnchorPoint);
 }
 
-bool nsImageFrame::IsForMarkerPseudo() const {
-  if (mKind == Kind::ImageLoadingContent) {
-    return false;
-  }
-  auto* subtreeRoot = GetContent()->GetClosestNativeAnonymousSubtreeRoot();
-  return subtreeRoot && subtreeRoot->IsGeneratedContentContainerForMarker();
-}
-
-void nsImageFrame::EnsureIntrinsicSizeAndRatio() {
+void nsImageFrame::EnsureIntrinsicSizeAndRatio(bool aConsiderIntrinsicsDirty) {
   const auto containAxes = GetContainSizeAxes();
   if (containAxes.IsBoth()) {
     
@@ -1496,7 +1488,14 @@ void nsImageFrame::EnsureIntrinsicSizeAndRatio() {
   
   
   
-  if (mIntrinsicSize != IntrinsicSize(0, 0) && !IsForMarkerPseudo()) {
+  
+  
+  
+  
+  
+  
+  if (!aConsiderIntrinsicsDirty && mIntrinsicSize != IntrinsicSize(0, 0) &&
+      mKind != Kind::ListStyleImage) {
     return;
   }
 
@@ -2892,6 +2891,21 @@ void nsImageFrame::OnVisibilityChange(
   }
 
   nsAtomicContainerFrame::OnVisibilityChange(aNewVisibility, aNonvisibleAction);
+}
+
+void nsImageFrame::MarkIntrinsicISizesDirty() {
+  
+  
+  
+  
+  
+  
+  
+  
+  EnsureIntrinsicSizeAndRatio(true);
+
+  
+  nsAtomicContainerFrame::MarkIntrinsicISizesDirty();
 }
 
 #ifdef DEBUG_FRAME_DUMP
