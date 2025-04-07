@@ -1945,7 +1945,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.spocMessageVariant", ""
 pref("browser.newtabpage.activity-stream.discoverystream.sendToPocket.enabled", true);
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.reportContent.enabled", false);
+pref("browser.newtabpage.activity-stream.discoverystream.reportAds.enabled", false);
 
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-stories-block", "");

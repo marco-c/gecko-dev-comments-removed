@@ -2439,19 +2439,16 @@ class _DSLinkMenu extends (external_React_default()).PureComponent {
       dispatch
     } = this.props;
     let TOP_STORIES_CONTEXT_MENU_OPTIONS;
-    const PREF_REPORT_CONTENT_ENABLED = "discoverystream.reportContent.enabled";
+    const PREF_REPORT_ADS_ENABLED = "discoverystream.reportAds.enabled";
     const prefs = this.props.Prefs.values;
-    const showReporting = prefs[PREF_REPORT_CONTENT_ENABLED];
+    const showAdsReporting = prefs[PREF_REPORT_ADS_ENABLED];
     const isSpoc = this.props.card_type === "spoc";
     if (isSpoc) {
-      TOP_STORIES_CONTEXT_MENU_OPTIONS = ["BlockUrl", ...(showReporting ? ["ReportAd"] : []), "ManageSponsoredContent", "OurSponsorsAndYourPrivacy"];
+      TOP_STORIES_CONTEXT_MENU_OPTIONS = ["BlockUrl", ...(showAdsReporting ? ["ReportAd"] : []), "ManageSponsoredContent", "OurSponsorsAndYourPrivacy"];
     } else {
       const saveToPocketOptions = this.props.pocket_button_enabled ? ["CheckArchiveFromPocket", "CheckSavedToPocket"] : [];
-      TOP_STORIES_CONTEXT_MENU_OPTIONS = ["CheckBookmark", ...(showReporting && this.props.section ? ["ReportContent"] : []), ...saveToPocketOptions, "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"];
+      TOP_STORIES_CONTEXT_MENU_OPTIONS = ["CheckBookmark", ...(this.props.section ? ["ReportContent"] : []), ...saveToPocketOptions, "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"];
     }
-
-    
-    console.log("dslinkmenu prop", this.props);
     const type = this.props.type || "DISCOVERY_STREAM";
     const title = this.props.title || this.props.source;
     return external_React_default().createElement("div", {
@@ -4526,16 +4523,15 @@ function ListFeed({
 
 
 
+
 function AdBannerContextMenu({
   dispatch,
   spoc,
   position,
   type,
-  prefs
+  showAdReporting
 }) {
-  const PREF_REPORT_CONTENT_ENABLED = "discoverystream.reportContent.enabled";
-  const showReporting = prefs[PREF_REPORT_CONTENT_ENABLED];
-  const ADBANNER_CONTEXT_MENU_OPTIONS = ["BlockAdUrl", ...(showReporting ? ["ReportAd"] : []), "ManageSponsoredContent", "OurSponsorsAndYourPrivacy"];
+  const ADBANNER_CONTEXT_MENU_OPTIONS = ["BlockAdUrl", ...(showAdReporting ? ["ReportAd"] : []), "ManageSponsoredContent", "OurSponsorsAndYourPrivacy"];
   const [showContextMenu, setShowContextMenu] = (0,external_React_namespaceObject.useState)(false);
   const onClick = e => {
     e.preventDefault();
@@ -4635,6 +4631,7 @@ const AdBanner = ({
     };
   };
   const sectionsEnabled = prefs["discoverystream.sections.enabled"];
+  const showAdReporting = prefs["discoverystream.reportAds.enabled"];
   const {
     width: imgWidth,
     height: imgHeight
@@ -4677,7 +4674,7 @@ const AdBanner = ({
     spoc: spoc,
     position: row,
     type: type,
-    prefs: prefs
+    showAdReporting: showAdReporting
   }), external_React_default().createElement(SafeAnchor, {
     className: "ad-banner-link",
     url: spoc.url,
@@ -11414,7 +11411,8 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       config
     } = this.props.DiscoveryStream;
     const topicSelectionEnabled = this.props.Prefs.values["discoverystream.topicSelection.enabled"];
-    const reportContentEnabled = this.props.Prefs.values["discoverystream.reportContent.enabled"];
+    const reportAdsEnabled = this.props.Prefs.values["discoverystream.reportAds.enabled"];
+    const spocsEnabled = this.props.Prefs.values["unifiedAds.spocs.enabled"];
 
     
     if (!config.collapsible) {
@@ -11476,14 +11474,12 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
         sectionTitle = "Editor’s Picks";
       }
     }
-
-    
     const {
       DiscoveryStream
     } = this.props;
     return external_React_default().createElement((external_React_default()).Fragment, null, this.props.DiscoveryStream.isPrivacyInfoModalVisible && external_React_default().createElement(DSPrivacyModal, {
       dispatch: this.props.dispatch
-    }), reportContentEnabled && external_React_default().createElement(ReportContent, {
+    }), (reportAdsEnabled && spocsEnabled || sectionsEnabled) && external_React_default().createElement(ReportContent, {
       spocs: DiscoveryStream.spocs
     }), topSites && this.renderLayout([{
       width: 12,
