@@ -1528,24 +1528,6 @@ void nsRefreshDriver::DispatchScrollEvents() {
   }
 }
 
-void nsRefreshDriver::PostVisualViewportScrollEvent(
-    VVPScrollEvent* aScrollEvent) {
-  mVisualViewportScrollEvents.AppendElement(aScrollEvent);
-  EnsureTimerStarted();
-}
-
-void nsRefreshDriver::DispatchVisualViewportScrollEvents() {
-  
-  
-  
-  
-  VisualViewportScrollEventArray events =
-      std::move(mVisualViewportScrollEvents);
-  for (auto& event : events) {
-    event->Run();
-  }
-}
-
 
 void nsRefreshDriver::EvaluateMediaQueriesAndReportChanges() {
   if (!mMightNeedMediaQueryListenerUpdate) {
@@ -1974,9 +1956,6 @@ auto nsRefreshDriver::GetReasonsToTick() const -> TickReasons {
   if (!mScrollEvents.IsEmpty()) {
     reasons |= TickReasons::eHasScrollEvents;
   }
-  if (!mVisualViewportScrollEvents.IsEmpty()) {
-    reasons |= TickReasons::eHasVisualViewportScrollEvents;
-  }
   if (mPresContext && mPresContext->IsRoot() &&
       mPresContext->NeedsMoreTicksForUserInput()) {
     reasons |= TickReasons::eRootNeedsMoreTicksForUserInput;
@@ -2025,9 +2004,6 @@ void nsRefreshDriver::AppendTickReasonsToString(TickReasons aReasons,
   }
   if (aReasons & TickReasons::eHasScrollEvents) {
     aStr.AppendLiteral(" HasScrollEvents");
-  }
-  if (aReasons & TickReasons::eHasVisualViewportScrollEvents) {
-    aStr.AppendLiteral(" HasVisualViewportScrollEvents");
   }
   if (aReasons & TickReasons::eRootNeedsMoreTicksForUserInput) {
     aStr.AppendLiteral(" RootNeedsMoreTicksForUserInput");
@@ -2725,7 +2701,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   
   DispatchScrollEvents();
-  DispatchVisualViewportScrollEvents();
 
   
   
