@@ -37,7 +37,7 @@ class UniffiCallHandlerBase {
   
   
   virtual void ExtractSuccessfulCallResult(
-      JSContext* aCx, dom::Optional<dom::UniFFIScaffoldingValue>& aDest,
+      JSContext* aCx, dom::Optional<dom::OwningUniFFIScaffoldingValue>& aDest,
       ErrorResult& aError) = 0;
 
   
@@ -70,7 +70,7 @@ class UniffiSyncCallHandler : public UniffiCallHandlerBase {
   
   
   virtual void PrepareRustArgs(
-      const dom::Sequence<dom::UniFFIScaffoldingValue>& aArgs,
+      const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs,
       ErrorResult& aError) = 0;
 
   
@@ -91,7 +91,7 @@ class UniffiSyncCallHandler : public UniffiCallHandlerBase {
   static void CallSync(
       UniquePtr<UniffiSyncCallHandler> aHandler,
       const dom::GlobalObject& aGlobal,
-      const dom::Sequence<dom::UniFFIScaffoldingValue>& aArgs,
+      const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs,
       dom::RootedDictionary<dom::UniFFIScaffoldingCallResult>& aReturnValue,
       ErrorResult& aError);
 
@@ -99,7 +99,7 @@ class UniffiSyncCallHandler : public UniffiCallHandlerBase {
   static already_AddRefed<dom::Promise> CallAsyncWrapper(
       UniquePtr<UniffiSyncCallHandler> aHandler,
       const dom::GlobalObject& aGlobal,
-      const dom::Sequence<dom::UniFFIScaffoldingValue>& aArgs,
+      const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs,
       ErrorResult& aError);
 };
 
@@ -119,7 +119,7 @@ class UniffiAsyncCallHandler : public UniffiCallHandlerBase {
   
   
   virtual void PrepareArgsAndMakeRustCall(
-      const dom::Sequence<dom::UniFFIScaffoldingValue>& aArgs,
+      const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs,
       ErrorResult& aError) = 0;
 
   
@@ -154,7 +154,7 @@ class UniffiAsyncCallHandler : public UniffiCallHandlerBase {
   static already_AddRefed<dom::Promise> CallAsync(
       UniquePtr<UniffiAsyncCallHandler> aHandler,
       const dom::GlobalObject& aGlobal,
-      const dom::Sequence<dom::UniFFIScaffoldingValue>& aArgs,
+      const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs,
       ErrorResult& aError);
 
  private:
