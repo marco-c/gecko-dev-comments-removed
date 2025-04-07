@@ -321,6 +321,7 @@ BoundFunctionObject* BoundFunctionObject::functionBindImpl(
   
   
   static_assert(gc::GetGCKindSlots(allocKind) == SlotCount);
+  static_assert(gc::GetFinalizeKind(allocKind) == gc::FinalizeKind::None);
 
   
   

@@ -89,8 +89,8 @@ static T* CreateEnvironmentObject(JSContext* cx, Handle<SharedShape*> shape,
 
   
   gc::AllocKind allocKind = gc::GetGCObjectKind(shape->numFixedSlots());
-  MOZ_ASSERT(CanChangeToBackgroundAllocKind(allocKind, &T::class_));
-  allocKind = gc::ForegroundToBackgroundAllocKind(allocKind);
+  MOZ_ASSERT(gc::GetObjectFinalizeKind(&T::class_) == gc::FinalizeKind::None);
+  MOZ_ASSERT(!gc::IsFinalizedKind(allocKind));
 
   return NativeObject::create<T>(cx, allocKind, heap, shape);
 }

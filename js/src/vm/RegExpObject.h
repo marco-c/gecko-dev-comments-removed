@@ -56,7 +56,7 @@ class RegExpObject : public NativeObject {
   static const unsigned RESERVED_SLOTS = 4;
 
   
-  static constexpr gc::AllocKind AllocKind = gc::AllocKind::OBJECT4_BACKGROUND;
+  static constexpr gc::AllocKind AllocKind = gc::AllocKind::OBJECT4;
 
   static const JSClass class_;
   static const JSClass protoClass_;

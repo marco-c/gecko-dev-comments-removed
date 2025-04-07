@@ -131,10 +131,6 @@ class MapObject : public OrderedHashMapObject {
     SlotCount
   };
 
-  
-  
-  static constexpr gc::AllocKind allocKind = gc::AllocKind::OBJECT12_BACKGROUND;
-
   using IteratorKind = TableIteratorObject::Kind;
 
   static const JSClass class_;
@@ -276,10 +272,6 @@ class SetObject : public OrderedHashSetObject {
     RegisteredNurseryIteratorsSlot,
     SlotCount
   };
-
-  
-  
-  static constexpr gc::AllocKind allocKind = gc::AllocKind::OBJECT12_BACKGROUND;
 
   using IteratorKind = TableIteratorObject::Kind;
 
