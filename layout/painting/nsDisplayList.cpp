@@ -2346,7 +2346,6 @@ struct FramesWithDepth {
     
     
     
-    
     double lDepth = round(mDepth * 8.);
     double rDepth = round(aOther.mDepth * 8.);
     return lDepth > rDepth;
@@ -5365,7 +5364,6 @@ nsDisplaySubDocument::nsDisplaySubDocument(nsDisplayListBuilder* aBuilder,
                                            nsDisplayOwnLayerFlags aFlags)
     : nsDisplayOwnLayer(aBuilder, aFrame, aList,
                         aBuilder->CurrentActiveScrolledRoot(), aFlags),
-      mScrollParentId(aBuilder->GetCurrentScrollParentId()),
       mShouldFlatten(false),
       mSubDocFrame(aSubDocFrame) {
   MOZ_COUNT_CTOR(nsDisplaySubDocument);

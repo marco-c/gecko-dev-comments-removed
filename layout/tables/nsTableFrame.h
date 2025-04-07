@@ -95,9 +95,6 @@ class nsDisplayTableBackgroundSet {
   }
 
   const ActiveScrolledRoot* GetTableASR() { return mTableASR; }
-  layers::ScrollableLayerGuid::ViewID GetScrollParentId() {
-    return mCurrentScrollParentId;
-  }
 
  private:
   
@@ -114,7 +111,6 @@ class nsDisplayTableBackgroundSet {
   nsTArray<nsTableColFrame*> mColumns;
   nsPoint mToReferenceFrame;
   nsRect mDirtyRect;
-  layers::ScrollableLayerGuid::ViewID mCurrentScrollParentId;
 
   const DisplayItemClipChain* mCombinedTableClipChain;
   const ActiveScrolledRoot* mTableASR;
