@@ -34,7 +34,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DAPTelemetrySender: "resource://gre/modules/DAPTelemetrySender.sys.mjs",
   DAPVisitCounter: "resource://gre/modules/DAPVisitCounter.sys.mjs",
   Discovery: "resource:///modules/Discovery.sys.mjs",
-  DoHController: "resource:///modules/DoHController.sys.mjs",
+  DoHController: "resource://gre/modules/DoHController.sys.mjs",
   DownloadsViewableInternally:
     "resource:///modules/DownloadsViewableInternally.sys.mjs",
   ExtensionsUI: "resource:///modules/ExtensionsUI.sys.mjs",
@@ -1849,9 +1849,7 @@ BrowserGlue.prototype = {
 
   _firstWindowTelemetry(aWindow) {
     let scaling = aWindow.devicePixelRatio * 100;
-    try {
-      Services.telemetry.getHistogramById("DISPLAY_SCALING").add(scaling);
-    } catch (ex) {}
+    Glean.gfxDisplay.scaling.accumulateSingleSample(scaling);
   },
 
   _collectStartupConditionsTelemetry() {
