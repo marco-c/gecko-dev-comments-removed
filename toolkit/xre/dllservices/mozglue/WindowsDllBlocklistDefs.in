@@ -253,6 +253,9 @@ ALL_PROCESSES += [
 
     
     DllBlocklistEntry("CylanceMemDef64.dll", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("chromesafe64.dll", (2, 0, 0, 42)),
 ]
 
 
