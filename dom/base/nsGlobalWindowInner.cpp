@@ -87,7 +87,7 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/StoragePrincipalHelper.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/DomMetrics.h"
 #include "mozilla/TelemetryHistogramEnums.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -1088,8 +1088,10 @@ nsGlobalWindowInner::~nsGlobalWindowInner() {
   MOZ_LOG(gDOMLeakPRLogInner, LogLevel::Debug,
           ("DOMWINDOW %p destroyed", this));
 
-  Telemetry::Accumulate(Telemetry::INNERWINDOWS_WITH_MUTATION_LISTENERS,
-                        mMutationBits ? 1 : 0);
+  glean::dom::innerwindows_with_mutation_listeners
+      .EnumGet(static_cast<glean::dom::InnerwindowsWithMutationListenersLabel>(
+          mMutationBits ? 1 : 0))
+      .Add();
 
   
   
@@ -1871,8 +1873,10 @@ void nsGlobalWindowInner::InitDocumentDependentState(JSContext* aCx) {
   mLastOpenedURI = mDoc->GetDocumentURI();
 #endif
 
-  Telemetry::Accumulate(Telemetry::INNERWINDOWS_WITH_MUTATION_LISTENERS,
-                        mMutationBits ? 1 : 0);
+  glean::dom::innerwindows_with_mutation_listeners
+      .EnumGet(static_cast<glean::dom::InnerwindowsWithMutationListenersLabel>(
+          mMutationBits ? 1 : 0))
+      .Add();
 
   
   mMutationBits = 0;
@@ -5045,7 +5049,7 @@ nsGlobalWindowInner::ShowSlowScriptDialog(JSContext* aCx,
   
   
   if (!mHasHadSlowScript) {
-    Telemetry::Accumulate(Telemetry::SLOW_SCRIPT_PAGE_COUNT, 1);
+    glean::dom::slow_script_page_count.Add(1);
   }
   mHasHadSlowScript = true;
 
@@ -5082,7 +5086,7 @@ nsGlobalWindowInner::ShowSlowScriptDialog(JSContext* aCx,
 
   
   
-  Telemetry::Accumulate(Telemetry::SLOW_SCRIPT_NOTICE_COUNT, 1);
+  glean::dom::slow_script_notice_count.Add(1);
 
   
   nsCOMPtr<nsIDocShell> ds = GetDocShell();

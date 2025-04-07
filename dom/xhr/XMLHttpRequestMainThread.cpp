@@ -87,7 +87,7 @@
 #include "nsIConsoleService.h"
 #include "nsAsyncRedirectVerifyHelper.h"
 #include "nsIFileChannel.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/DomMetrics.h"
 #include "js/ArrayBuffer.h"  
 #include "js/JSON.h"         
 #include "js/MemoryFunctions.h"
@@ -1541,8 +1541,10 @@ void XMLHttpRequestMainThread::Open(const nsACString& aMethod,
         DeprecatedOperations::eSyncXMLHttpRequestDeprecated);
   }
 
-  Telemetry::Accumulate(Telemetry::XMLHTTPREQUEST_ASYNC_OR_SYNC,
-                        aAsync ? 0 : 1);
+  glean::dom::xmlhttprequest_async_or_sync
+      .EnumGet(static_cast<glean::dom::XmlhttprequestAsyncOrSyncLabel>(
+          aAsync ? 0 : 1))
+      .Add();
 
   
   nsCOMPtr<Document> responsibleDocument = GetDocumentIfCurrent();

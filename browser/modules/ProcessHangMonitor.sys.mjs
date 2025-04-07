@@ -666,7 +666,7 @@ export var ProcessHangMonitor = {
 
     
     
-    Services.telemetry.getHistogramById("SLOW_SCRIPT_NOTICE_COUNT").add();
+    Glean.dom.slowScriptNoticeCount.add(1);
 
     this._activeReports.set(report, {
       deselectCount: 0,
