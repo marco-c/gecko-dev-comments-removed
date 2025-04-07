@@ -36,6 +36,7 @@ class GLContext;
 }  
 namespace layers {
 class CompositorBridgeParent;
+class Fence;
 class ShaderProgramOGLsHolder;
 class SurfacePool;
 }  

@@ -27,6 +27,7 @@ class GLContext;
 
 namespace layers {
 class CompositorBridgeParent;
+class Fence;
 class SyncObjectHost;
 }  
 
@@ -70,7 +71,7 @@ class RendererOGL {
   void WaitForGPU();
 
   
-  UniqueFileHandle GetAndResetReleaseFence();
+  RefPtr<layers::Fence> GetAndResetReleaseFence();
 
   
   RenderedFrameId GetLastCompletedFrameId();
