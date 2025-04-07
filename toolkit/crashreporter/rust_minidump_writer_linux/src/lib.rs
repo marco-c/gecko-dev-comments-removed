@@ -7,8 +7,12 @@
 use {
     anyhow::Context,
     libc::pid_t,
-    minidump_writer::{crash_context::CrashContext, minidump_writer::MinidumpWriter},
+    minidump_writer::{
+        crash_context::CrashContext,
+        minidump_writer::{DirectAuxvDumpInfo as InternalDumpInfo, MinidumpWriter},
+    },
     std::{
+        convert::TryInto,
         ffi::{c_char, CStr, CString},
         fs::File,
     },
@@ -30,6 +34,19 @@ type fpregset_t = u8;
 pub struct MinidumpWriterContext {
     dump_file: File,
     writer: MinidumpWriter,
+}
+
+
+
+
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct DirectAuxvDumpInfo {
+    pub program_header_count: usize,
+    pub program_header_address: usize,
+    pub linux_gate_address: usize,
+    pub entry_address: usize,
 }
 
 
@@ -116,6 +133,31 @@ pub extern "C" fn minidump_writer_set_crash_context(
             pid: context.writer.process_id,
             tid: context.writer.blamed_thread,
         },
+    });
+}
+
+
+
+
+
+
+
+#[no_mangle]
+pub extern "C" fn minidump_writer_set_direct_auxv_dump_info(
+    context: &mut MinidumpWriterContext,
+    direct_auxv_dump_info: &DirectAuxvDumpInfo,
+) {
+    context.writer.set_direct_auxv_dump_info(InternalDumpInfo {
+        program_header_count: direct_auxv_dump_info
+            .program_header_count
+            .try_into()
+            .unwrap(),
+        program_header_address: direct_auxv_dump_info
+            .program_header_address
+            .try_into()
+            .unwrap(),
+        linux_gate_address: direct_auxv_dump_info.linux_gate_address.try_into().unwrap(),
+        entry_address: direct_auxv_dump_info.entry_address.try_into().unwrap(),
     });
 }
 

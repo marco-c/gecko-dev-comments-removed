@@ -38,6 +38,10 @@
 
 #include "common/using_std_string.h"
 
+#if defined(MOZ_OXIDIZED_BREAKPAD)
+struct DirectAuxvDumpInfo;
+#endif 
+
 namespace google_breakpad {
 
 class ClientInfo;
@@ -50,22 +54,21 @@ public:
   using OnClientDumpRequestCallback = void (const ClientInfo& client_info,
                                             const string& file_path);
 
+#if defined(MOZ_OXIDIZED_BREAKPAD)
+  using GetAuxvInfo = bool (pid_t pid, DirectAuxvDumpInfo*);
+#endif 
+
   
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  CrashGenerationServer(const int listen_fd,
-                        std::function<OnClientDumpRequestCallback> dump_callback,
-                        const string* dump_path);
+  CrashGenerationServer(
+    const int listen_fd,
+#if defined(MOZ_OXIDIZED_BREAKPAD)
+    std::function<GetAuxvInfo> get_auxv_info,
+#endif 
+    std::function<OnClientDumpRequestCallback> dump_callback,
+    const string* dump_path);
 
   ~CrashGenerationServer();
 
@@ -82,6 +85,9 @@ public:
   
   
   static bool CreateReportChannel(int* server_fd, int* client_fd);
+
+  CrashGenerationServer(CrashGenerationServer&&) = delete;
+  CrashGenerationServer& operator=(CrashGenerationServer&&) = delete;
 
   CrashGenerationServer(const CrashGenerationServer&) = delete;
   CrashGenerationServer& operator=(const CrashGenerationServer&) = delete;
@@ -107,6 +113,10 @@ private:
   void ReleaseFileDescriptors();
 
   int server_fd_;
+
+#if defined(MOZ_OXIDIZED_BREAKPAD)
+  std::function<GetAuxvInfo> get_auxv_info_;
+#endif 
 
   std::function<OnClientDumpRequestCallback> dump_callback_;
 

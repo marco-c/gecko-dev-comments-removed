@@ -44,6 +44,10 @@
 #include "common/using_std_string.h"
 #include "google_breakpad/common/minidump_format.h"
 
+#if defined(MOZ_OXIDIZED_BREAKPAD)
+struct DirectAuxvDumpInfo;
+#endif 
+
 #ifdef MOZ_PHC
 #include "PHC.h"
 #else
@@ -189,6 +193,9 @@ class ExceptionHandler {
   
   static bool WriteMinidumpForChild(pid_t child,
                                     pid_t child_blamed_thread,
+                                    #if defined(MOZ_OXIDIZED_BREAKPAD)
+                                    const DirectAuxvDumpInfo* auxv_info,
+                                    #endif 
                                     const string& dump_path,
                                     MinidumpCallback callback,
                                     void* callback_context);

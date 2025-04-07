@@ -3,6 +3,7 @@
 
 
 
+include CrashReporterInitArgs;
 include GraphicsMessages;
 include MemoryReportTypes;
 include PrefsTypes;
@@ -98,7 +99,7 @@ parent:
 
 child:
 
-  async InitCrashReporter(NativeThreadId threadId);
+  async InitCrashReporter(CrashReporterInitArgs aInitArgs);
 
   async AddMemoryReport(MemoryReport aReport);
 
