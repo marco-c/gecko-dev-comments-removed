@@ -311,17 +311,6 @@ impl Display {
     }
 
     
-    #[cfg(feature = "servo")]
-    #[inline]
-    pub fn is_atomic_inline_level(&self) -> bool {
-        match *self {
-            Display::InlineBlock | Display::InlineFlex => true,
-            Display::InlineTable => true,
-            _ => false,
-        }
-    }
-
-    
     
     
     
