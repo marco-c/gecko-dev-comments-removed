@@ -3348,15 +3348,6 @@ bool nsGlobalWindowInner::DeviceSensorsEnabled(JSContext*, JSObject*) {
 }
 
 
-bool nsGlobalWindowInner::CachesEnabled(JSContext* aCx, JSObject* aObj) {
-  if (!IsSecureContextOrObjectIsFromSecureContext(aCx, aObj)) {
-    return StaticPrefs::dom_caches_testing_enabled() ||
-           ServiceWorkersEnabled(aCx, aObj);
-  }
-  return true;
-}
-
-
 bool nsGlobalWindowInner::IsGleanNeeded(JSContext* aCx, JSObject* aObj) {
   
   nsIPrincipal* principal = nsContentUtils::SubjectPrincipal(aCx);
