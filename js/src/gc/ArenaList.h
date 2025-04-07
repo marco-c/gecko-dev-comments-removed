@@ -46,6 +46,9 @@ class TenuredCell;
 class TenuringTracer;
 
 
+enum class ReleaseEmpty : bool { No = false, Yes = true };
+
+
 
 
 
@@ -146,6 +149,8 @@ class SortedArenaList {
   
   inline void insertAt(Arena* arena, size_t nfree);
 
+  inline bool hasEmptyArenas() const;
+
   
   
   inline void extractEmptyTo(Arena** destListHeadPtr);
@@ -236,10 +241,13 @@ class FreeLists {
 };
 
 class ArenaLists {
-  enum class ConcurrentUse : uint32_t { None, BackgroundFinalize };
+  enum class ConcurrentUse : uint32_t {
+    None,
+    BackgroundFinalize,
+    BackgroundFinalizeFinished
+  };
 
-  using ConcurrentUseState =
-      mozilla::Atomic<ConcurrentUse, mozilla::SequentiallyConsistent>;
+  using ConcurrentUseState = mozilla::Atomic<ConcurrentUse, mozilla::Relaxed>;
 
   JS::Zone* zone_;
 
@@ -304,10 +312,18 @@ class ArenaLists {
   void queueForegroundObjectsForSweep(JS::GCContext* gcx);
   void queueForegroundThingsForSweep();
 
+  bool foregroundFinalize(JS::GCContext* gcx, AllocKind thingKind,
+                          JS::SliceBudget& sliceBudget,
+                          SortedArenaList& sweepList);
+  template <ReleaseEmpty releaseEmpty>
+  void backgroundFinalize(JS::GCContext* gcx, AllocKind kind,
+                          Arena** empty = nullptr);
+
   Arena* takeSweptEmptyArenas();
 
-  void mergeFinalizedArenas(AllocKind thingKind,
-                            SortedArenaList& finalizedArenas);
+  void mergeBackgroundSweptArenas();
+  void maybeMergeSweptArenas(AllocKind thingKind);
+  void mergeSweptArenas(AllocKind thingKind, ArenaList& sweptArenas);
 
   void moveArenasToCollectingLists();
   void mergeArenasFromCollectingLists();
