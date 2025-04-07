@@ -20,9 +20,6 @@ const { HttpServer } = ChromeUtils.importESModule(
 const { Preferences } = ChromeUtils.importESModule(
   "resource://gre/modules/Preferences.sys.mjs"
 );
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
 const { UpdateUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/UpdateUtils.sys.mjs"
 );
@@ -564,7 +561,7 @@ add_task(async function test_checkForAddons_updatesWithAddons() {
 add_task(async function test_checkForAddons_contentSignatureSuccess() {
   const previousUrlOverride = setupContentSigTestPrefs();
 
-  const xmlFetchResultHistogram = resetGmpTelemetryAndGetHistogram();
+  Services.fog.testResetFOG();
 
   const testServerInfo = getTestServerForContentSignatureTests();
   Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, testServerInfo.validUpdateUri);
@@ -610,8 +607,6 @@ add_task(async function test_checkForAddons_contentSignatureSuccess() {
   }
 
   
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 2, 1);
-  
   const expectedGleanValues = {
     cert_pin_success: 0,
     cert_pin_net_request_error: 0,
@@ -642,7 +637,7 @@ add_task(async function test_checkForAddons_contentSignatureSuccess() {
 add_task(async function test_checkForAddons_contentSignatureFailure() {
   const previousUrlOverride = setupContentSigTestPrefs();
 
-  const xmlFetchResultHistogram = resetGmpTelemetryAndGetHistogram();
+  Services.fog.testResetFOG();
 
   const testServerInfo = getTestServerForContentSignatureTests();
   Preferences.set(
@@ -698,8 +693,6 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
   }
 
   
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 1);
-  
   Assert.equal(
     Glean.gmp.updateXmlFetchResult.content_sig_missing_data.testGetValue(),
     1
@@ -711,8 +704,6 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
   
   Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, testServerInfo.badContentSigUri);
   await installManager.checkForAddons();
-  
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 2);
   
   
   Assert.equal(
@@ -727,8 +718,6 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
   );
   await installManager.checkForAddons();
   
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 3);
-  
   Assert.equal(
     Glean.gmp.updateXmlFetchResult.content_sig_invalid.testGetValue(),
     1
@@ -740,8 +729,6 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
     "https://this.url.doesnt/go/anywhere"
   );
   await installManager.checkForAddons();
-  
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 4);
   
   Assert.equal(
     Glean.gmp.updateXmlFetchResult.content_sig_net_request_error.testGetValue(),
@@ -759,7 +746,6 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
     overriddenServiceRequest,
     () => installManager.checkForAddons()
   );
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 5);
   
   Assert.equal(
     Glean.gmp.updateXmlFetchResult.content_sig_net_timeout.testGetValue(),
@@ -781,8 +767,6 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
   }, 100);
   await promise;
   
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 6);
-  
   Assert.equal(
     Glean.gmp.updateXmlFetchResult.content_sig_abort.testGetValue(),
     1
@@ -791,7 +775,6 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
   Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, testServerInfo.badXmlUri);
   await installManager.checkForAddons();
   
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 7);
   
   Assert.equal(
     Glean.gmp.updateXmlFetchResult.content_sig_xml_parse_error.testGetValue(),
@@ -801,8 +784,6 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
   
   Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, testServerInfo.badX5uRequestUri);
   await installManager.checkForAddons();
-  
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 8);
   
   Assert.equal(
     Glean.gmp.updateXmlFetchResult.content_sig_net_request_error.testGetValue(),
@@ -821,8 +802,6 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
   delete testServerInfo.promiseHolder.installPromise;
   delete testServerInfo.promiseHolder.serverPromise;
   
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 9);
-  
   Assert.equal(
     Glean.gmp.updateXmlFetchResult.content_sig_net_timeout.testGetValue(),
     2
@@ -839,8 +818,6 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
   await testServerInfo.promiseHolder.serverPromise;
   delete testServerInfo.promiseHolder.installPromise;
   delete testServerInfo.promiseHolder.serverPromise;
-  
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 10);
   
   Assert.equal(
     Glean.gmp.updateXmlFetchResult.content_sig_abort.testGetValue(),
@@ -938,7 +915,7 @@ add_task(async function test_checkForAddons_telemetry_certPinning() {
   
   const previousUrlOverride = Preferences.get(GMPPrefs.KEY_URL_OVERRIDE, "");
 
-  let xmlFetchResultHistogram = resetGmpTelemetryAndGetHistogram();
+  Services.fog.testResetFOG();
 
   
   
@@ -960,25 +937,17 @@ add_task(async function test_checkForAddons_telemetry_certPinning() {
   }
 
   
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 0, 1);
-  
   Assert.equal(
     Glean.gmp.updateXmlFetchResult.cert_pin_success.testGetValue(),
     1
   );
 
   
-  xmlFetchResultHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "MEDIA_GMP_UPDATE_XML_FETCH_RESULT"
-  );
-  
   Preferences.set(
     GMPPrefs.KEY_URL_OVERRIDE,
     "https://this.url.doesnt/go/anywhere"
   );
   await installManager.checkForAddons();
-  
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 1, 1);
   
   Assert.equal(
     Glean.gmp.updateXmlFetchResult.cert_pin_net_request_error.testGetValue(),
@@ -996,7 +965,6 @@ add_task(async function test_checkForAddons_telemetry_certPinning() {
     overriddenServiceRequest,
     () => installManager.checkForAddons()
   );
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 1, 2);
   
   Assert.equal(
     Glean.gmp.updateXmlFetchResult.cert_pin_net_timeout.testGetValue(),
@@ -1017,8 +985,6 @@ add_task(async function test_checkForAddons_telemetry_certPinning() {
     overriddenServiceRequest.abort();
   }, 100);
   await promise;
-  
-  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 1, 3);
   
   Assert.equal(Glean.gmp.updateXmlFetchResult.cert_pin_abort.testGetValue(), 1);
 
@@ -1950,19 +1916,6 @@ function revertContentSigTestPrefs(previousUrlOverride) {
     Preferences.reset(GMPPrefs.KEY_URL_OVERRIDE);
   }
   Preferences.set("media.gmp-manager.checkContentSignature", false);
-}
-
-
-
-
-
-
-
-function resetGmpTelemetryAndGetHistogram() {
-  Services.fog.testResetFOG();
-  return TelemetryTestUtils.getAndClearHistogram(
-    "MEDIA_GMP_UPDATE_XML_FETCH_RESULT"
-  );
 }
 
 
