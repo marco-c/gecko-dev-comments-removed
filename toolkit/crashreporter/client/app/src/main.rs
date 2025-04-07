@@ -252,3 +252,9 @@ fn try_run(config: &mut Arc<Config>) -> anyhow::Result<bool> {
         logic::ReportCrash::new(config.clone(), extra)?.run()
     }
 }
+
+
+
+#[cfg(all(target_os = "windows", target_env = "gnu"))]
+#[link(name="bcryptprimitives")]
+extern "C" {}

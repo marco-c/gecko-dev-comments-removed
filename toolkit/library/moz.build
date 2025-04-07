@@ -27,6 +27,7 @@ def Libxul(name, output_category=None):
 
     DELAYLOAD_DLLS += [
         "avrt.dll",
+        "bcryptprimitives.dll",
         "comdlg32.dll",
         "credui.dll",
         "d3d11.dll",
@@ -378,6 +379,11 @@ if CONFIG["OS_ARCH"] == "WINNT":
         "d3dcompiler",
         "runtimeobject",
     ]
+
+    
+    
+    if CONFIG["CC_TYPE"] != "clang-cl":
+        OS_LIBS += ["bcryptprimitives"]
 
     if CONFIG["ACCESSIBILITY"]:
         OS_LIBS += [
