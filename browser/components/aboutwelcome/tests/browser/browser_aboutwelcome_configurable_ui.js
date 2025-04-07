@@ -535,7 +535,7 @@ add_task(async function test_aboutwelcome_with_progress_bar() {
     for (let [key, val] of Object.entries({
       
       
-      "background-color": "rgb(0, 97, 224)",
+      "background-color": "oklch(0.55 0.24 260)",
       
       height: "6px",
       "margin-inline": "-1px",

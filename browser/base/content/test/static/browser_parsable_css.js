@@ -177,6 +177,10 @@ let propNameAllowlist = [
 
   
   { propName: "--input-space-block", isFromDevTools: false },
+
+  
+  
+  { propName: /--color-[a-z]+-\d+/, isFromDevTools: false },
 ];
 
 
@@ -442,6 +446,13 @@ function shouldIgnorePropSource(item, prop) {
     .some(f => item.sourceName.test(f));
 }
 
+function shouldIgnorePropPattern(item, prop) {
+  if (!item.propName || !(item.propName instanceof RegExp)) {
+    return false;
+  }
+  return item.propName.test(prop);
+}
+
 add_task(async function checkAllTheCSS() {
   
   
@@ -567,7 +578,9 @@ add_task(async function checkAllTheCSS() {
       for (let item of propNameAllowlist) {
         if (
           isDevtools == item.isFromDevTools &&
-          (item.propName == prop || shouldIgnorePropSource(item, prop))
+          (item.propName == prop ||
+            shouldIgnorePropPattern(item, prop) ||
+            shouldIgnorePropSource(item, prop))
         ) {
           item.used = true;
           if (
