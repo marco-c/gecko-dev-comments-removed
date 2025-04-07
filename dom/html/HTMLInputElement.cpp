@@ -3348,7 +3348,9 @@ void HTMLInputElement::LegacyPreActivationBehavior(
   }
 
   
-  if (mForm) {
+  
+  
+  if (mForm && mType != FormControlType::InputRadio) {
     aVisitor.mItemFlags |= NS_IN_SUBMIT_CLICK;
     aVisitor.mItemData = static_cast<Element*>(mForm);
     
