@@ -5,6 +5,7 @@
 
 
 #include "NSSErrorsService.h"
+#include "mozilla/glean/DomSecurityMetrics.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/WindowGlobalParent.h"
@@ -84,8 +85,7 @@ nsHTTPSOnlyStreamListener::OnStopRequest(nsIRequest* request,
 void nsHTTPSOnlyStreamListener::RecordUpgradeTelemetry(nsIRequest* request,
                                                        nsresult aStatus) {
   
-  int64_t duration =
-      (mozilla::TimeStamp::Now() - mCreationStart).ToMilliseconds();
+  mozilla::TimeDuration duration = mozilla::TimeStamp::Now() - mCreationStart;
 
   
   
@@ -138,8 +138,8 @@ void nsHTTPSOnlyStreamListener::RecordUpgradeTelemetry(nsIRequest* request,
       category.AppendLiteral("f_other");
     }
   }
-  mozilla::Telemetry::Accumulate(
-      mozilla::Telemetry::HTTPS_ONLY_MODE_UPGRADE_TIME_MS, category, duration);
+  mozilla::glean::security::https_only_mode_upgrade_time.Get(category)
+      .AccumulateRawDuration(duration);
 
   bool success = NS_SUCCEEDED(aStatus);
   ExtContentPolicyType externalType = loadInfo->GetExternalContentPolicyType();
@@ -243,6 +243,8 @@ void nsHTTPSOnlyStreamListener::RecordUpgradeTelemetry(nsIRequest* request,
     }
   }
 
+  
+  
   mozilla::Telemetry::Accumulate(
       mozilla::Telemetry::HTTPS_ONLY_MODE_UPGRADE_TYPE, typeKey, success);
 }
