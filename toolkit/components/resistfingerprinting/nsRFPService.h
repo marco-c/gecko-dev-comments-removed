@@ -355,7 +355,7 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
   
   static Maybe<RFPTargetSet> GetOverriddenFingerprintingSettingsForURI(
-      nsIURI* aFirstPartyURI, nsIURI* aThirdPartyURI);
+      nsIURI* aFirstPartyURI, nsIURI* aThirdPartyURI, bool aIsPrivate);
 
   
 

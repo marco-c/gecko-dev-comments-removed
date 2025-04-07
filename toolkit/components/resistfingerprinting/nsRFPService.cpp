@@ -2072,6 +2072,10 @@ nsresult nsRFPService::CreateOverrideDomainKey(
   nsresult rv = aOverride->GetFirstPartyDomain(firstPartyDomain);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  bool isBaseline = false;
+  rv = aOverride->GetIsBaseline(&isBaseline);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   
   
   if (firstPartyDomain.IsEmpty() ||
@@ -2101,6 +2105,9 @@ nsresult nsRFPService::CreateOverrideDomainKey(
     aDomainKey.Append(FP_OVERRIDES_DOMAIN_KEY_DELIMITER);
     aDomainKey.Append(thirdPartyDomain);
   }
+
+  aDomainKey.Append(FP_OVERRIDES_DOMAIN_KEY_DELIMITER);
+  aDomainKey.Append(isBaseline ? "1" : "0");
 
   return NS_OK;
 }
@@ -2162,8 +2169,9 @@ nsRFPService::SetFingerprintingOverrides(
     const nsTArray<RefPtr<nsIFingerprintingOverride>>& aOverrides) {
   MOZ_ASSERT(XRE_IsParentProcess());
   
-  mFingerprintingOverrides.Clear();
+  CleanAllOverrides();
 
+  StaticMutexAutoLock lock(sEnabledFingerprintingProtectionsMutex);
   for (const auto& fpOverride : aOverrides) {
     nsAutoCString domainKey;
 
@@ -2177,14 +2185,18 @@ nsRFPService::SetFingerprintingOverrides(
     rv = fpOverride->GetOverrides(overridesText);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    StaticMutexAutoLock lock(sEnabledFingerprintingProtectionsMutex);
+    bool isBaseline = false;
+    rv = fpOverride->GetIsBaseline(&isBaseline);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    RFPTargetSet baseOverrides = isBaseline
+                                     ? sEnabledFingerprintingProtectionsBase
+                                     : sEnabledFingerprintingProtections;
     RFPTargetSet targets = nsRFPService::CreateOverridesFromText(
         NS_ConvertUTF8toUTF16(overridesText),
         mFingerprintingOverrides.Contains(domainKey)
             ? mFingerprintingOverrides.Get(domainKey)
-            
-            
-            : sEnabledFingerprintingProtections);
+            : baseOverrides);
 
     
     
@@ -2273,9 +2285,11 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
     return Nothing();
   }
 
+  bool isPrivate = loadInfo->GetOriginAttributes().IsPrivateBrowsing();
+
   
   if (!AntiTrackingUtils::IsThirdPartyChannel(aChannel)) {
-    return GetOverriddenFingerprintingSettingsForURI(uri, nullptr);
+    return GetOverriddenFingerprintingSettingsForURI(uri, nullptr, isPrivate);
   }
 
   
@@ -2328,7 +2342,7 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
     rv = NS_NewURI(getter_AddRefs(topURI), scheme + u"://"_ns + domain);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-    return GetOverriddenFingerprintingSettingsForURI(topURI, uri);
+    return GetOverriddenFingerprintingSettingsForURI(topURI, uri, isPrivate);
   }
 
   nsCOMPtr<nsIPrincipal> topPrincipal = topWGP->DocumentPrincipal();
@@ -2380,12 +2394,12 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
                     attrsForeignByAncestor.mPartitionKey.Equals(partitionKey));
 #endif
 
-  return GetOverriddenFingerprintingSettingsForURI(topURI, uri);
+  return GetOverriddenFingerprintingSettingsForURI(topURI, uri, isPrivate);
 }
 
 
 Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForURI(
-    nsIURI* aFirstPartyURI, nsIURI* aThirdPartyURI) {
+    nsIURI* aFirstPartyURI, nsIURI* aThirdPartyURI, bool aIsPrivate) {
   MOZ_ASSERT(aFirstPartyURI);
   MOZ_ASSERT(XRE_IsParentProcess());
 
@@ -2399,9 +2413,17 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForURI(
   
   
 
+  bool isBaseline = !IsFPPEnabled(aIsPrivate);
+  auto addIsBaseline = [](nsAutoCString& aKey, bool aIsBaseline) {
+    aKey.Append(FP_OVERRIDES_DOMAIN_KEY_DELIMITER);
+    aKey.Append(aIsBaseline ? "1" : "0");
+  };
+
   
-  Maybe<RFPTargetSet> result =
-      service->mFingerprintingOverrides.MaybeGet("*"_ns);
+  nsAutoCString key;
+  key.Assign("*"_ns);
+  addIsBaseline(key, isBaseline);
+  Maybe<RFPTargetSet> result = service->mFingerprintingOverrides.MaybeGet(key);
 
   nsCOMPtr<nsIEffectiveTLDService> eTLDService =
       mozilla::components::EffectiveTLD::Service();
@@ -2424,11 +2446,10 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForURI(
   
   if (!aThirdPartyURI) {
     
-    nsAutoCString key;
     key.Assign(firstPartyDomain);
     key.Append(FP_OVERRIDES_DOMAIN_KEY_DELIMITER);
-    key.Append("*");
-
+    key.Append("*"_ns);
+    addIsBaseline(key, isBaseline);
     Maybe<RFPTargetSet> fpOverrides =
         service->mFingerprintingOverrides.MaybeGet(key);
     if (fpOverrides) {
@@ -2436,7 +2457,9 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForURI(
     }
 
     
-    fpOverrides = service->mFingerprintingOverrides.MaybeGet(firstPartyDomain);
+    key.Assign(firstPartyDomain);
+    addIsBaseline(key, isBaseline);
+    fpOverrides = service->mFingerprintingOverrides.MaybeGet(key);
     if (fpOverrides) {
       result = fpOverrides;
     }
@@ -2460,10 +2483,10 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForURI(
   }
 
   
-  nsAutoCString key;
   key.Assign(firstPartyDomain);
   key.Append(FP_OVERRIDES_DOMAIN_KEY_DELIMITER);
-  key.Append("*");
+  key.Append("*"_ns);
+  addIsBaseline(key, isBaseline);
   Maybe<RFPTargetSet> fpOverrides =
       service->mFingerprintingOverrides.MaybeGet(key);
   if (fpOverrides) {
@@ -2474,6 +2497,7 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForURI(
   key.Assign("*");
   key.Append(FP_OVERRIDES_DOMAIN_KEY_DELIMITER);
   key.Append(thirdPartyDomain);
+  addIsBaseline(key, isBaseline);
   fpOverrides = service->mFingerprintingOverrides.MaybeGet(key);
   if (fpOverrides) {
     result = fpOverrides;
@@ -2483,6 +2507,7 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForURI(
   key.Assign(firstPartyDomain);
   key.Append(FP_OVERRIDES_DOMAIN_KEY_DELIMITER);
   key.Append(thirdPartyDomain);
+  addIsBaseline(key, isBaseline);
   fpOverrides = service->mFingerprintingOverrides.MaybeGet(key);
   if (fpOverrides) {
     result = fpOverrides;
