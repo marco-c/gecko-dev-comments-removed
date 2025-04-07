@@ -4240,7 +4240,7 @@ class Document : public nsINode,
 
   
   
-  bool RecomputeResistFingerprinting();
+  bool RecomputeResistFingerprinting(bool aForceRefreshRTPCallerType = false);
 
   
   
