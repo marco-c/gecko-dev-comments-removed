@@ -2855,7 +2855,7 @@ void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
   
   
   slli(temp, val.valueReg(), 1);
-  slri(temp, temp, 1);
+  srli(temp, temp, 1);
 
   
   static_assert(JS::detail::CanonicalizedNaNSignBit == 0);
