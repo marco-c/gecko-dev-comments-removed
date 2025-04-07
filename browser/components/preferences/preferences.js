@@ -445,31 +445,12 @@ function scrollAndHighlight(subcategory) {
   if (!element) {
     return;
   }
-  let header = getClosestDisplayedHeader(element);
 
-  header.scrollIntoView({
+  element.scrollIntoView({
     behavior: "smooth",
     block: "center",
   });
   element.classList.add("spotlight");
-}
-
-
-
-
-
-
-function getClosestDisplayedHeader(element) {
-  let header = element.closest("groupbox");
-  let searchHeader = header.querySelector(".search-header");
-  if (
-    searchHeader &&
-    searchHeader.hidden &&
-    header.previousElementSibling.classList.contains("subcategory")
-  ) {
-    header = header.previousElementSibling;
-  }
-  return header;
 }
 
 function friendlyPrefCategoryNameToInternalName(aName) {
