@@ -230,8 +230,7 @@ class alignas(ArenaSize) Arena {
   uint8_t data[ArenaSize - ArenaHeaderSize];
 
   
-  void init(GCRuntime* gc, JS::Zone* zoneArg, AllocKind kind,
-            const AutoLockGC& lock);
+  void init(GCRuntime* gc, JS::Zone* zone, AllocKind kind);
 
   JS::Zone* zone() const { return zone_; }
 
@@ -247,7 +246,12 @@ class alignas(ArenaSize) Arena {
 
   
   
-  inline void release(GCRuntime* gc, const AutoLockGC* maybeLock);
+  inline void freeAtomMarkingBitmapIndex(GCRuntime* gc, const AutoLockGC& lock);
+
+  
+  
+  
+  inline void release();
 
   uintptr_t address() const {
     checkAddress();
@@ -402,7 +406,7 @@ class alignas(ArenaSize) Arena {
   inline ArenaCellSet*& bufferedCells();
   inline size_t& atomBitmapStart();
 
-  template <typename T>
+  template <typename T, FinalizeKind finalizeKind>
   size_t finalize(JS::GCContext* gcx, AllocKind thingKind, size_t thingSize);
 
   static void staticAsserts();
@@ -523,14 +527,13 @@ class ArenaChunk : public ArenaChunkBase {
 
   bool isNurseryChunk() const { return storeBuffer; }
 
-  Arena* allocateArena(GCRuntime* gc, JS::Zone* zone, AllocKind kind,
-                       const AutoLockGC& lock);
+  Arena* allocateArena(GCRuntime* gc, JS::Zone* zone, AllocKind kind);
 
   void releaseArena(GCRuntime* gc, Arena* arena, const AutoLockGC& lock);
 
   void decommitFreeArenas(GCRuntime* gc, const bool& cancel, AutoLockGC& lock);
   [[nodiscard]] bool decommitOneFreePage(GCRuntime* gc, size_t pageIndex,
-                                         AutoLockGC& lock);
+                                         const AutoLockGC& lock);
   void decommitAllArenas();
 
   
@@ -542,6 +545,9 @@ class ArenaChunk : public ArenaChunkBase {
 
   
   Arena* fetchNextFreeArena(GCRuntime* gc);
+
+  
+  void mergePendingFreeArenas(const AutoLockGC& lock);
 
 #ifdef DEBUG
   void verify() const;
@@ -556,6 +562,11 @@ class ArenaChunk : public ArenaChunkBase {
                                   const AutoLockGC& lock);
   void updateFreeCountsAfterFree(GCRuntime* gc, size_t numArenasFreed,
                                  bool wasCommitted, const AutoLockGC& lock);
+
+  
+  
+  
+  void updateCurrentChunkAfterAlloc(GCRuntime* gc);
 
   
   bool canDecommitPage(size_t pageIndex) const;

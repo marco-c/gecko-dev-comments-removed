@@ -91,7 +91,6 @@ class Symbol
   static const JS::TraceKind TraceKind = JS::TraceKind::Symbol;
 
   void traceChildren(JSTracer* trc);
-  void finalize(JS::GCContext* gcx) {}
 
   
   bool isPermanentAndMayBeShared() const { return isWellKnownSymbol(); }

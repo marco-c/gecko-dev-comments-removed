@@ -885,9 +885,6 @@ class alignas(gc::CellAlignBytes) SmallBuffer : public TenuredCell {
   void setNurseryOwned(bool value);
 
   static const JS::TraceKind TraceKind = JS::TraceKind::SmallBuffer;
-  void finalize(JS::GCContext* gcx) {
-    
-  }
   void traceChildren(JSTracer* trc) {
     
     
