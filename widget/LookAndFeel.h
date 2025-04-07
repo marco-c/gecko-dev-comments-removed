@@ -333,6 +333,9 @@ class LookAndFeel {
     PointingDeviceKinds,
 
     
+    NativeMenubar,
+
+    
 
 
     End,
