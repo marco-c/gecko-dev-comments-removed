@@ -7,6 +7,21 @@
 const StyleDictionary = require("style-dictionary");
 const Color = require("tinycolor2");
 
+
+
+
+
+
+
+
+
+function isValidColor(color) {
+  if (typeof color === "string" && color.startsWith("oklch")) {
+    return true;
+  }
+  return Color(color).isValid();
+}
+
 function transformIfValid(color) {
   const c = Color(color);
   return c.isValid() ? c.toHex8String() : color;
@@ -14,6 +29,10 @@ function transformIfValid(color) {
 
 function hex8Transform(token) {
   if (typeof token.value === "string") {
+    if (token.value.startsWith("oklch")) {
+      return token.value;
+    }
+
     return Color(token.value).toHex8String();
   }
 
@@ -30,7 +49,7 @@ StyleDictionary.registerTransform({
   transitive: true,
   name: "color/hex8figma",
   matcher: token =>
-    Color(token.value).isValid() ||
+    isValidColor(token.value) ||
     (typeof token.value === "object" &&
       (token.value.light || token.value.dark || token.value.forcedColors)),
   transformer: hex8Transform,
@@ -136,7 +155,7 @@ function filterFigmaTokens(token) {
   
   if (
     typeof token.value === "number" ||
-    (typeof token.value === "string" && !Color(token.value).isValid())
+    (typeof token.value === "string" && !isValidColor(token.value))
   ) {
     return false;
   }
@@ -147,7 +166,7 @@ function filterFigmaTokens(token) {
       if (
         typeof value !== "string" ||
         (value !== "inherit" &&
-          !Color(value).isValid() &&
+          !isValidColor(value) &&
           !value.startsWith("color-mix") &&
           !HCM_VALUES.includes(value))
       ) {
