@@ -80,10 +80,13 @@ class AnimationEffect : public nsISupports, public nsWrapperCache {
   static ComputedTiming GetComputedTimingAt(
       const Nullable<TimeDuration>& aLocalTime, const TimingParams& aTiming,
       double aPlaybackRate,
-      Animation::ProgressTimelinePosition aProgressTimelinePosition);
+      Animation::ProgressTimelinePosition aProgressTimelinePosition,
+      EndpointBehavior aEndpointBehavior = EndpointBehavior::Exclusive);
   
   
-  ComputedTiming GetComputedTiming(const TimingParams* aTiming = nullptr) const;
+  ComputedTiming GetComputedTiming(
+      const TimingParams* aTiming = nullptr,
+      EndpointBehavior aEndpointBehavior = EndpointBehavior::Exclusive) const;
 
   virtual void SetAnimation(Animation* aAnimation) = 0;
   Animation* GetAnimation() const { return mAnimation; };

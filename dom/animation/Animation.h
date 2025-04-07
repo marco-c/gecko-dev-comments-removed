@@ -343,8 +343,10 @@ class Animation : public DOMEventTargetHelper,
 
 
 
-  void ComposeStyle(StyleAnimationValueMap& aComposeResult,
-                    const InvertibleAnimatedPropertyIDSet& aPropertiesToSkip);
+  void ComposeStyle(
+      StyleAnimationValueMap& aComposeResult,
+      const InvertibleAnimatedPropertyIDSet& aPropertiesToSkip,
+      EndpointBehavior aEndpointBehavior = EndpointBehavior::Exclusive);
 
   void NotifyEffectTimingUpdated();
   void NotifyEffectPropertiesUpdated();

@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_EndpointBehavior_h
+#define mozilla_dom_EndpointBehavior_h
+
+namespace mozilla::dom {
+
+enum class EndpointBehavior : bool { Exclusive, Inclusive };
+
+}  
+
+#endif  

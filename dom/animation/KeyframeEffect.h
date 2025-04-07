@@ -275,8 +275,10 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
-  void ComposeStyle(StyleAnimationValueMap& aComposeResult,
-                    const InvertibleAnimatedPropertyIDSet& aPropertiesToSkip);
+  void ComposeStyle(
+      StyleAnimationValueMap& aComposeResult,
+      const InvertibleAnimatedPropertyIDSet& aPropertiesToSkip,
+      EndpointBehavior aEndpointBehavior = EndpointBehavior::Exclusive);
 
   
   bool IsRunningOnCompositor() const;
@@ -338,6 +340,8 @@ class KeyframeEffect : public AnimationEffect {
     MOZ_ASSERT(hasProperty || result.IsNull());
     return result;
   }
+
+  void UpdateBaseStyle(const ComputedStyle* aStyle);
 
   enum class MatchForCompositor {
     
