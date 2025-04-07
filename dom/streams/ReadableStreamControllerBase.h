@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_ReadableStreamController_h
-#define mozilla_dom_ReadableStreamController_h
+#ifndef mozilla_dom_ReadableStreamControllerBase_h
+#define mozilla_dom_ReadableStreamControllerBase_h
 
 #include "mozilla/ErrorResult.h"
 #include "nsCycleCollectionParticipant.h"
@@ -19,12 +19,12 @@ class ReadableStream;
 class ReadableStreamDefaultController;
 class ReadableByteStreamController;
 
-class ReadableStreamController : public nsISupports {
+class ReadableStreamControllerBase : public nsISupports {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(ReadableStreamController)
+  NS_DECL_CYCLE_COLLECTION_CLASS(ReadableStreamControllerBase)
 
-  ReadableStreamController(nsIGlobalObject* aGlobal);
+  ReadableStreamControllerBase(nsIGlobalObject* aGlobal);
 
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
@@ -65,7 +65,7 @@ class ReadableStreamController : public nsISupports {
 
   RefPtr<ReadableStream> mStream;
 
-  virtual ~ReadableStreamController() = default;
+  virtual ~ReadableStreamControllerBase() = default;
 };
 
 }  

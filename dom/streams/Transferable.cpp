@@ -697,16 +697,16 @@ class CrossRealmReadableUnderlyingSourceAlgorithms final
   explicit CrossRealmReadableUnderlyingSourceAlgorithms(MessagePort* aPort)
       : mPort(aPort) {}
 
-  void StartCallback(JSContext* aCx, ReadableStreamController& aController,
+  void StartCallback(JSContext* aCx, ReadableStreamControllerBase& aController,
                      JS::MutableHandle<JS::Value> aRetVal,
                      ErrorResult& aRv) override {
     
     aRetVal.setUndefined();
   }
 
-  already_AddRefed<Promise> PullCallback(JSContext* aCx,
-                                         ReadableStreamController& aController,
-                                         ErrorResult& aRv) override {
+  already_AddRefed<Promise> PullCallback(
+      JSContext* aCx, ReadableStreamControllerBase& aController,
+      ErrorResult& aRv) override {
     
 
     
