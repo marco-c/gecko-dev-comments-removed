@@ -645,7 +645,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   CodeOffset farJumpWithPatch() PER_SHARED_ARCH;
   void patchFarJump(CodeOffset farJump, uint32_t targetOffset) PER_SHARED_ARCH;
   static void patchFarJump(uint8_t* farJump, uint8_t* target)
-      DEFINED_ON(arm, arm64, x86_shared, loong64, mips64);
+      DEFINED_ON(arm, arm64, x86_shared, loong64, mips64, riscv64);
 
   
   
@@ -671,9 +671,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   CodeOffset move32WithPatch(Register dest)
-      DEFINED_ON(x86_shared, arm, arm64, loong64, mips64);
+      DEFINED_ON(x86_shared, arm, arm64, loong64, mips64, riscv64);
   void patchMove32(CodeOffset offset, Imm32 n)
-      DEFINED_ON(x86_shared, arm, arm64, loong64, mips64);
+      DEFINED_ON(x86_shared, arm, arm64, loong64, mips64, riscv64);
 
  public:
   
